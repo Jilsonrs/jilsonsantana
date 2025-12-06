@@ -3,6 +3,7 @@
     "builder": "NIXPACKS"
   },
   "deploy": {
-    "startCommand": "python manage.py migrate && python manage.py collectstatic --noinput && gunicorn website.wsgi:application --bind 0.0.0.0:$PORT"
+    "startCommand": "cd website && python manage.py migrate && python manage.py collectstatic --noinput && gunicorn website.wsgi:application --bind 0.0.0.0:$PORT"
   }
 }
+
