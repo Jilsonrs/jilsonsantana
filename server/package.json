@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "tsc --noEmit",
     "db:pull": "prisma db pull",
-    "db:generate": "prisma generate",
+    "db:generate": "if grep -qE '^model ' prisma/schema.prisma; then prisma generate; else echo 'No models defined — skipping prisma generate'; fi",
     "db:migrate": "prisma migrate dev"
   },
   "dependencies": {
