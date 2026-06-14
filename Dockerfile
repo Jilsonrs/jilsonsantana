@@ -3,7 +3,7 @@ FROM node:20-alpine AS core-build
 WORKDIR /app
 
 # Copy workspace root manifests
-COPY package.json package-lock.json ./
+COPY package.json package-lock.json tsconfig.base.json ./
 COPY core/package.json ./core/
 
 # Stub out other workspaces so npm ci resolves the graph without their files
@@ -41,7 +41,7 @@ RUN npm --workspace client run build
 FROM node:20-alpine AS server-build
 WORKDIR /app
 
-COPY package.json package-lock.json ./
+COPY package.json package-lock.json tsconfig.base.json ./
 COPY core/package.json ./core/
 COPY server/package.json ./server/
 COPY client/package.json ./client/
@@ -55,8 +55,8 @@ COPY core/package.json ./core/
 COPY server/ ./server/
 RUN npm --workspace server run build
 
-# Generate Prisma client
-RUN npm --workspace server run db:generate
+# Generate Prisma client (skips gracefully when no models are defined yet)
+RUN npm --workspace server run db:generate && mkdir -p server/node_modules/.prisma
 
 
 # ─── Stage 4: Production image ────────────────────────────────────────────────
