@@ -1,0 +1,21 @@
+{
+  "name": "jilsonsantana",
+  "private": true,
+  "workspaces": [
+    "core",
+    "client",
+    "server",
+    "e2e"
+  ],
+  "scripts": {
+    "dev:client": "npm --workspace client run dev",
+    "dev:server": "npm --workspace server run dev",
+    "build": "npm --workspace core run build && npm --workspace client run build && npm --workspace server run build",
+    "typecheck": "npm --workspace core run typecheck && npm --workspace client run typecheck && npm --workspace server run typecheck",
+    "lint": "npm --workspace client run lint && npm --workspace server run lint"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  }
+}

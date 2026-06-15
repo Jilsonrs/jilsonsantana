@@ -2,3 +2,21 @@ node_modules/
 dist/
 .env
 *.log
+
+# Vite
+client/dist/
+
+# Prisma
+server/prisma/migrations/migration_lock.toml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Test results
+playwright-report/
+test-results/

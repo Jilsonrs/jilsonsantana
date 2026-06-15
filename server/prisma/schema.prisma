@@ -1,0 +1,17 @@
+// Prisma schema — source of truth for all DB models.
+// Run "npm --workspace server run db:pull" (with DATABASE_URL set) to sync from Supabase.
+// Run "npm --workspace server run db:generate" after any schema change.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// Phase 0: no models yet.
+// Phase 1: Better Auth tables (user, session, account, verification) added here.
+// Legacy tables (users, sessions) from old model will be dropped in Phase 1 migration.
