@@ -19,7 +19,7 @@ const clientDist = path.join(__dirname, "../public");
 if (process.env.NODE_ENV === "production") {
   app.use(express.static(clientDist));
   // SPA fallback — must be after all API routes
-  app.get("*", (_req, res) => {
+  app.get("/*splat", (_req, res) => {
     res.sendFile(path.join(clientDist, "index.html"));
   });
 }
