@@ -10,15 +10,18 @@
 
 ## Phase 0 — Foundation & Deploy Pipeline  *(low–medium risk)*
 
-- [ ] Initialize npm-workspace monorepo: `/core`, `/client`, `/server`, `/e2e`
-- [ ] `/client`: React + TypeScript + Vite + Tailwind + shadcn/ui init; `@/` path alias
-- [ ] `/server`: Express + TypeScript; `/api/health` endpoint
-- [ ] `/core`: workspace package for Zod schemas + constants; importable from client and server
-- [ ] Connect Prisma to Supabase (`DATABASE_URL`); `prisma db pull` baseline
-- [ ] Dockerfile (multi-stage: build client → serve via server) + `.dockerignore`
-- [ ] `railway.toml` (healthcheck `/api/health`) ; confirm Railway auto-deploy on push
-- [ ] GitHub Actions: lint + typecheck + build on push
-- [ ] CLAUDE.md committed at repo root
+- [x] Initialize npm-workspace monorepo: `/core`, `/client`, `/server`, `/e2e`
+- [x] `/client`: React + TypeScript + Vite + Tailwind + shadcn/ui init; `@/` path alias
+- [x] `/server`: Express + TypeScript; `/api/health` endpoint
+- [x] `/core`: workspace package for Zod schemas + constants; importable from client and server
+- [x] Connect Prisma to Supabase (`DATABASE_URL`); `prisma db pull` baseline
+- [x] Dockerfile (multi-stage: build client → serve via server) + `.dockerignore`
+- [x] `railway.toml` (healthcheck `/api/health`) ; confirm Railway auto-deploy on push
+- [x] GitHub Actions: lint + typecheck + build on push
+- [x] CLAUDE.md committed at repo root
+- [x] `DATABASE_URL` + `DIRECT_URL` configuradas no Railway (Supabase pooler + direct)
+- [x] Deploy verde no Railway; `/api/health` respondendo em produção
+- [x] Domínio custom `www.jilsonsantana.com` com SSL configurado
 - **Done when:** push to `main` → Railway serves the app + `/api/health` returns OK.
 
 ## Phase 1 — Authentication & App Shell  *(low risk)*
