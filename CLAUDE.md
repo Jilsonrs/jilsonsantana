@@ -1,5 +1,5 @@
 # jilsonsantana.com — AI Learning Platform
-
+2
 ## Project Overview
 
 A subscription learning platform: a single accessible membership = **courses + community + JilsonAI**. Turns Jilson's YouTube/Udemy audience into recurring members. Built modular to grow (analytics, live cohorts, corporate) without rewrites. One operator, sustainable at 47. See `docs/project-scope.md` for requirements, `docs/tech-stack.md` for stack rationale, `docs/implementation-plan.md` for the phased task breakdown.
