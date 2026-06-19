@@ -6,7 +6,7 @@
 ## Frontend
 
 - **React + TypeScript + Vite** — SPA
-- **Tailwind CSS + shadcn/ui** — UI; use shadcn semantic tokens (`bg-background`, `text-muted-foreground`), not hardcoded colors. Aesthetic: Apple simplicity.
+- **Tailwind CSS + shadcn/ui** — UI; use shadcn semantic tokens (`bg-background`, `text-muted-foreground`), not hardcoded colors. **Aesthetic: Apple — light, airy, creative, beautiful imagery, light transitions.** Brand accent = blue **#238FE8** (`--primary`), with black text + gray #838383 secondary; **MuseoModerno SemiBold** for display/brand, neutral sans for body. See DESIGN.md.
 - **React Router** — routing
 - **TanStack React Query** — server state (`useQuery` / `useMutation`), not `useEffect` + `useState`
 - **Axios** — HTTP client (not `fetch`)
@@ -36,7 +36,7 @@
 
 ## Billing
 
-- **Stripe** — recurring subscription (monthly + annual) + Customer Portal + webhooks. Membership access gated on active subscription status synced from Stripe webhooks.
+- **Stripe** — recurring subscription via **2 prices on one product**: monthly **R$99,90 (no fidelity)** + annual **~R$995**. **No free trial, no free content in the school, no lifetime price lock.** Customer Portal + webhooks. Membership access gated on active subscription status synced from Stripe webhooks.
 
 ## Video
 
@@ -44,7 +44,7 @@
 
 ## AI (JilsonAI)
 
-- **Claude API (Anthropic)** — teaching assistant in Jilson's voice/method. Server-side only; the Claude API key never touches the frontend.
+- **Claude API (Anthropic)** via `@anthropic-ai/sdk` — teaching assistant in Jilson's voice/method. Server-side only; the key never touches the frontend. One gateway (`askJilsonAI()`); model behind an abstraction with **default = top model (Sonnet)** (cheap model for trivial only). Generous monthly **quota + visible calm "usage" meter**; rate-limit per member; usage tiers as post-launch seams. Pricing confirmed (Jun 2026): Haiku 4.5 $1/$5, Sonnet 4.6 $3/$15, Opus 4.8 $5/$25 per Mtok; prompt caching −90% on cached input. See `docs/jilsonai.md`.
 
 ## Background Jobs
 
@@ -56,7 +56,7 @@
 
 ## Certificates
 
-- **Server-side PDF** generation on course completion (post-MVP).
+- **Server-side PDF** generation on trilha/course completion (100%) — **MVP (Fase 6.5)**, "a escola nasce completa". Certificate carries the trilha name + `skillsCovered` (competencies), valuable for students targeting employers.
 
 ## Testing
 

@@ -17,6 +17,10 @@ Thumbs.db
 .vscode/
 .idea/
 
+# Claude Code (never commit sessions or local config)
+.claude/
+.claude.json
+
 # Test results
 playwright-report/
 test-results/

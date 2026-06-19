@@ -17,23 +17,24 @@ A subscription learning platform — a single, accessible membership that bundle
 ## Core Features (MVP — launch in 2–3 months)
 
 - Sign up / log in (email + password)
-- Single membership subscription (monthly + annual) via Stripe; access gated by active subscription
-- Course catalog → course → module → lesson structure
+- Single membership subscription via Stripe — **Mensal R$99,90 (sem fidelidade) + Anual ~R$995 (~17% off); sem free trial; sem conteúdo grátis na escola.** Access gated by active subscription.
+- Course catalog → course → module → lesson structure; **lessons are first-class & searchable**
+- **Trilhas (curadas):** Jilson curates a few guided tracks (a `LearningPlan` = ordered mix of courses + standalone lessons). A member can save a curated trilha as their own; it tracks progress and issues a certificate on completion. (AI-assembled personalized plans = post-MVP / JilsonAI Fase 4–5.)
 - Gated video playback (member-only, protected URLs)
-- "Mark lesson as watched" + progress shown in the lesson list
-- JilsonAI — teaching assistant in Jilson's voice (lean v1 at launch)
-- Admin: manage courses/modules/lessons, upload video, list members
+- "Mark lesson as watched" + progress shown in the lesson list and per trilha
+- **Certificates** — server-side PDF on trilha/course completion (name + skills covered)
+- JilsonAI — teaching assistant in Jilson's voice (lean v1) **+ support front door**: answers, escalates unresolved questions to Jilson, handles operational questions (certificate name/dates), and suggests a curated trilha by goal
+- **"Comunidade" = JilsonAI support + direct channel to Jilson + announcements** (NOT a peer forum — deliberately, to stay sustainable solo)
+- Admin: manage courses/modules/lessons, **build curated trilhas**, upload video, list members
 - Account page: manage subscription (Stripe Customer Portal), log out
 - Transactional emails (welcome, receipts, password reset)
 
 ## Post-MVP (modular additions, no rewrite)
 
 - **Analytics** — watch time, drop-off, re-watch, engagement (built on captured lesson events)
-- **Community** — simple member space
-- **Certificates** — server-side PDF on course completion
+- **JilsonAI Fase 4–6** — living knowledge base, RAG over transcripts, **AI-assembled personalized trilhas** (`buildLearningPlan`: free mix of courses+lessons, adapts to level, cert by competencies), memory + proactive winback. See JILSONAI.md.
 - **Value ladder tier 2** — live cohorts (Zoom), higher price
 - **Value ladder tier 3** — corporate/B2B
-- **EN phase** (2027+)
 
 ## Membership Tiers (value ladder)
 
@@ -45,7 +46,7 @@ Base stays accessible; upper tiers carry the high ticket.
 
 ## Content Slate (first courses)
 
-First course at launch: **Excel + IA**. Then: PL-300, Google Antigravity, SQL + Claude, AI + Claude, Data Modeling, Python + Claude, N8N. Through-line: *data in the AI era* ("X + Claude").
+First course at launch: **Excel + IA**, packaged inside **Trilha 1 — Comece por aqui (Fundamentos)**. Then: PL-300, Google Antigravity, SQL + Claude, AI + Claude, Data Modeling, Python + Claude, N8N — organized into a few curated **trilhas** (Fundamentos · Business Intelligence · Dados + Código · Automação & IA). Through-line: *data in the AI era* ("X + Claude").
 
 ## Roles
 
