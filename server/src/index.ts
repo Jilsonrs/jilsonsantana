@@ -5,6 +5,8 @@ import { fileURLToPath } from "node:url";
 import { toNodeHandler } from "better-auth/node";
 import { auth } from "./lib/auth.js";
 import healthRouter from "./routes/health.js";
+import meRouter from "./routes/me.js";
+import adminRouter from "./routes/admin.js";
 
 const app = express();
 const PORT = process.env.PORT ?? 3000;
@@ -22,6 +24,8 @@ app.use(express.json());
 
 // API routes
 app.use("/api", healthRouter);
+app.use("/api", meRouter);
+app.use("/api", adminRouter);
 
 // Serve client static files in production
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
