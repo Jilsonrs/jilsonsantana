@@ -40,6 +40,11 @@ CLAUDE.md - this file (repo root — read every session)
 - **Never leave `main` broken.** Work on the `dev` branch; commit small functional steps; merge to `main` only when lint + typecheck + tests pass. `main` auto-deploys to Railway, so it is "sacred" — only tested code reaches it. Stopping mid-session is safe as long as the last commit builds. (PR + CI + automated review come in a later phase.)
 - When unsure about a library's current API, fetch up-to-date docs before coding (don't guess versions).
 - Prefer battle-tested libraries over custom code — this is a solo, burnout-conscious project.
+- **Keep docs honest (do this in the SAME session, never "depois").** A doc that lies is worse than no doc. When a phase (or a sliceable task) is done, before the final merge:
+  1. **Mark it** — flip the `- [ ]` to `- [x]` in `docs/implementation-plan.md` (and `✅ DONE` on the phase heading when the whole phase closes).
+  2. **Reconcile any contradiction** — if a build decision diverged from what a living doc says (`CLAUDE.md`, `PROJECT_DESCRIPTION`, `JILSONAI.md`, `DESIGN.md`, `TECH-STACK.md`), update that doc now. A doc must never disagree with `main` for more than one session — same discipline as the sacred `main`.
+  3. **Log it if it's a decision, not just a task** — if the work resolved an open question or changed an approach, add a one-line note to the affected doc's footer decision log. Routine task completion needs no log entry (don't inflate).
+  > Scope guard: this is reconciliation, not a rewrite. If a "doc update" starts feeling like a big writing session, stop — that's a signal the build diverged structurally and the divergence itself needs a decision, not prose.
 
 ## Key Conventions
 
@@ -174,3 +179,4 @@ CLAUDE.md - this file (repo root — read every session)
 ---
 *Atualizado Jun 2026: trilhas (LearningPlan/PlanItem) + aula first-class; pricing 2-prices sem fidelidade/trial/lock; JilsonAI default modelo de ponta + quota + medidor visível; certificados no MVP; comunidade = JilsonAI (fórum removido); AI no DNA; design Apple-claro + #238FE8.*
 *Atualizado Jun 2026 (rev. externa Gemini): UTM capture nos campos do User (P1); Bunny signed URL elástico sem IP-lock; Stripe force-sync (admin/server-only, nunca GET destravante) + offboarding anti roach-motel; certificado com URL pública opt-in (LGPD); regra anti-alucinação na persona do JilsonAI.*
+*Atualizado Jun 2026: adicionada ao Working Method a regra de doc-sync ao fim de cada fase/task (marcar [x], reconciliar contradição no mesmo session, logar só se for decisão) — mantém os docs honestos vs `main`.*
