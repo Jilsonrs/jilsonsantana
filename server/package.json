@@ -16,10 +16,12 @@
   "dependencies": {
     "@jilson/core": "*",
     "@prisma/client": "^5.16.1",
+    "better-auth": "^1.6.20",
     "dotenv": "^16.4.5",
     "express": "^5.0.1"
   },
   "devDependencies": {
+    "@better-auth/cli": "^1.4.21",
     "@types/express": "^5.0.0",
     "@types/node": "^20.14.10",
     "prisma": "^5.16.1",

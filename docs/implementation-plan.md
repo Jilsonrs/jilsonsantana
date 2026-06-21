@@ -26,9 +26,9 @@
 
 - [ ] Better Auth server config (Prisma adapter); mount at `/api/auth/{*any}` before `express.json()`
 - [ ] `User` additionalFields: `name` optional, `image`, `role` (default `member`), `birthday` (day+month, optional), `preferredLanguage` (default `"pt"`, dormant seam), `marketingConsent` (default `false`), **`acquisitionSource` + `acquisitionCampaign` (optional — UTM capture)**, `deletedAt`
-- [ ] Drop legacy `public.users` + `public.sessions` (0 rows — safe)
-- [ ] Better Auth migration → creates `user`, `session`, `account`, `verification` tables; **add RLS ENABLE for each in the same migration**
-- [ ] Run `get_advisors(security)` → 0 `rls_disabled_in_public`
+- [x] Drop legacy `public.users` + `public.sessions` (0 rows — safe); also dropped orphaned `"Role"` enum type
+- [x] Better Auth migration → creates `user`, `session`, `account`, `verification` tables; **add RLS ENABLE for each in the same migration**
+- [x] Run `get_advisors(security)` → 0 `rls_disabled_in_public`
 - [ ] `requireAuth` (rejects soft-deleted users) + `requireAdmin` middleware (sets `req.user`)
 - [ ] Client: auth-client, `LoginPage`, `ProtectedRoute`, `AdminRoute`, `Layout`
 - [ ] `disableSignUp: true`; seed admin (Jilson) + a seeded **test member** (lets login be tested before billing exists); registration open to all countries

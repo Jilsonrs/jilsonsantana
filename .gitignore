@@ -6,9 +6,6 @@ dist/
 # Vite
 client/dist/
 
-# Prisma
-server/prisma/migrations/migration_lock.toml
-
 # OS
 .DS_Store
 Thumbs.db
