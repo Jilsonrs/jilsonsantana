@@ -29,9 +29,17 @@ natural — *"quero virar analista de dados"* — e, na frente dele, o JilsonAI 
 nomeada**, agrupada por competência, com cursos e aulas aparecendo em sequência suave. É um
 **demo vivo**, não uma ilustração. É a tese ("a escola É IA") tornada visível em 4 segundos.
 
-- No load, roda uma vez sozinha (uma demo curada, sem precisar o aluno digitar).
-- O aluno pode trocar o objetivo e ver montar de novo → prova interativa antes do cadastro.
+- No load, roda uma vez sozinha (sequência **roteirizada/mockada** — CSS/Framer, sem API).
+- Interatividade via **presets**: 3–4 objetivos-chip ("analista de dados", "Power BI", "Excel +
+  IA") que mapeiam pra trilhas **pré-computadas e versionadas no front**. O aluno troca o chip e
+  vê montar de novo → prova interativa **sem chamar a Claude API**.
 - `prefers-reduced-motion`: mostra o resultado final montado, sem a animação de digitação.
+
+> **TRAVA (rev. externa jun/2026):** o hero da landing **pública NUNCA chama a Claude API**.
+> Motivo: latência + custo + superfície de abuso (anônimo martelando a API na vitrine). A
+> montagem **real** de trilha pelo JilsonAI só roda na **área logada** (`recommendTrilha` /
+> `buildLearningPlan`). A vitrine demonstra a tese ("a escola É IA") com dados pré-baked — o
+> "AI no DNA" aparece sem expor o gateway.
 
 **Motivo escolhido (não-template):** o hero óbvio seria foto + "104K alunos" + CTA. Isso é o que
 qualquer escola faz. A trilha auto-montável é a única coisa que **só esta escola** pode mostrar, e
@@ -158,8 +166,9 @@ Corpo com `line-height` generoso (1.6) e medida de linha ~66ch — leitura confo
 
 ## 6. Componentes-chave
 
-- **HeroTrilhaDemo** — a assinatura. Input de objetivo + a trilha montando (cursos/aulas aparecendo
-  agrupados por competência). Pilar 2 (JilsonAI) é o herói visual da página.
+- **HeroTrilhaDemo** — a assinatura. Chips de objetivo + a trilha montando (cursos/aulas aparecendo
+  agrupados por competência). Pilar 2 (JilsonAI) é o herói visual da página. **Presets pré-computados,
+  sem chamar a Claude API** (ver §2 — TRAVA).
 - **PillarCard** (3) — ícone limpo (Lucide), título MuseoModerno, 1 frase. JilsonAI ganha leve
   destaque (tint azul sutil), sem virar carnaval.
 - **TrilhaCard / CourseCard / LessonRow** — thumbnail, título, duração, progresso. Aula é
@@ -247,3 +256,6 @@ Direção: Apple claro + acessível, acento único #238FE8 (azul da logomarca), 
 Hanken Grotesk (corpo) + JetBrains Mono (dados). Assinatura = a trilha que se monta sozinha no hero
 (AI no DNA tornado visível). Medidor de consumo calmo (não countdown). Tokens semânticos shadcn, sem
 cor hardcoded; dark mode fora do MVP (seam preservado). Ordem das seções = decisão de construção.*
+*Atualizado: Jun 2026 (rev. externa Gemini) — §2: hero da landing pública é MOCKADO/roteirizado
+com presets pré-computados; NUNCA chama a Claude API (latência/custo/abuso). Montagem real de
+trilha só na área logada.*

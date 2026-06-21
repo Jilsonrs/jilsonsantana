@@ -85,6 +85,11 @@ Internamente, sempre nesta ordem:
 - Gateway `askJilsonAI()` + os 2 registros (vazios) + `llm.complete()` wrapper.
 - Tabelas `AiConversation`, `AiMessage`, `AiEvent`, `AiEscalation` (+ RLS) ; migration.
 - Persona v1 em `persona/jilson.md` (voz/método).
+  - **Regra anti-alucinação (na persona):** ao entregar DAX/SQL/Python, SEMPRE declarar as
+    premissas estruturais assumidas (nomes/tipos de coluna, relações entre tabelas, granularidade)
+    e recomendar teste isolado antes de usar em produção. Nunca apresentar código como verdade
+    absoluta sobre um schema que o JilsonAI não viu. Protege a credibilidade técnica — uma fórmula
+    errada dada com confiança queima a confiança rápido. (Custo zero: é texto na persona.)
 - Guarda-corpos: rate-limit por membro, cota, **modelo default de ponta (Sonnet)** — Haiku só
   pra trivial/roteamento, Opus raro; seam de triagem (no-op), limiar de confiança (constante).
 - **Depende de:** Auth (Fase 1 do plano geral). **Done when:** o gateway responde um
@@ -105,6 +110,11 @@ Internamente, sempre nesta ordem:
   aluno (Resend via pg-boss).
 - **Seam-chave:** a resposta do Jilson é marcada como candidata a base de conhecimento
   (`promotedToKb` capturado agora, mesmo sem KB construída — separar escrita de leitura).
+- **Seam (fast-follow, NÃO bloqueia launch): rascunho de resposta no admin.** Ao escalar, o
+  JilsonAI gera um *draft* de resposta (1 chamada LLM extra) que o Jilson aprova/edita em 1 clique.
+  Anti-burnout direto: acelera o loop resposta→KB (princípio 8). **A escalação da Fase 2 funciona
+  100% sem o draft** (Jilson responde do zero) — o draft entra logo depois, sem reescrever. Não
+  inflar a Fase 2 de lançamento com ele.
 - **Done when:** dúvida não resolvida chega ao Jilson, ele responde, aluno recebe.
 
 ### Fase 3 — Mensagem privada + perguntas operacionais (tools com escopo)  *(LANÇAMENTO ou logo após)*
@@ -134,6 +144,10 @@ Internamente, sempre nesta ordem:
 ### Fase 5 — RAG sobre transcrições (contexto profundo do curso)  *(pós-lançamento)*
 - `LessonChunk` (transcrição em pedaços + embedding + `startSec`) (+ RLS) ; migration.
   Fonte: legendas do Bunny ou transcrição.
+  - **Auto-ingestão = decisão de build da Fase 5, NÃO antes.** O pipeline "upload Bunny → webhook →
+    transcrição (Whisper/Groq/outro) → chunk → embedding" é seam **parqueado**. Adiciona fornecedor
+    novo e é o **maior risco de prazo** do projeto. No lançamento `LessonChunk` nem existe. Não
+    puxar pra frente sob nenhuma justificativa de "já que estou no Bunny".
 - `TranscriptProvider` registrado: recupera trechos relevantes → IA responde **fundada no
   conteúdo real**, citando "na aula X, min Y".
 - **Depende de:** vídeo (Fase 3 do plano geral) + Fase 4 (infra de vetor).
@@ -273,9 +287,13 @@ de aula, e acompanha o aluno até o certificado.
 - O plano R$99,90 inclui uma **quota generosa** de interações/mês (ex.: 100–150 ou "uso justo").
 - **Medidor de consumo visível** na UI do chat — clima Apple: calmo e positivo ("uso do mês"),
   **nunca** countdown ansioso. O aluno vê que há limite e que dá pra ter mais.
-- **Onboarding aberto e livre:** trilhas e cursos à mostra, o aluno clica e assiste o que quiser.
-  `recommendTrilha` é **ajuda opcional**, nunca um portão. (Ordem das seções na home = decisão de
-  construção.)
+- **Onboarding aberto e livre (TRAVA dura):** trilhas e cursos à mostra, o aluno clica e assiste o
+  que quiser. Um **modal de boas-vindas** do JilsonAI pode perguntar o objetivo e acionar
+  `recommendTrilha` — mas é **convite dispensável**: dismiss óbvio, fecha e a navegação livre está
+  intacta por trás. Nunca é gate, nunca bloqueia, nunca é pré-requisito pra ver conteúdo.
+  `recommendTrilha` é ajuda opcional. (O nome "Zero-UI" da revisão externa vende demais — na
+  prática é um nudge de primeiro acesso, não um fluxo obrigatório.) Ordem das seções na home =
+  decisão de construção.
 
 **Pós-lançamento (seams — ligar quando o DADO justificar):**
 - **Pacote avulso** (destrava +N interações no mês corrente) — Stripe one-time.
@@ -320,3 +338,7 @@ aluno. Nova seção "Quotas & tiers de uso": medidor de consumo visível (clima 
 onboarding aberto/livre (recommendTrilha = ajuda opcional, não portão), quota generosa calibrada
 por dado (AiEvent), tiers (avulso + JilsonAI+) como seams pós-launch. Founding member sem lock
 de preço vitalício.*
+*Atualizado: Jun 2026 (rev. externa Gemini) — (Fase 0) regra anti-alucinação na persona ao
+entregar código; (Fase 2) draft de resposta no admin como seam fast-follow que não bloqueia
+launch; (onboarding) trava dura reforçada — modal dispensável, nunca portão; (Fase 5) auto-ingestão
+de LessonChunks anotada como seam parqueado (não construir; não puxar RAG pra frente).*

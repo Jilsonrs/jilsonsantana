@@ -333,3 +333,11 @@ JilsonAI: default modelo de ponta + quota + medidor de consumo visível + tiers 
 removido da escola. Udemy fora do escopo (projeto à parte). B2B/corporativo como horizonte (Tier 3,
 Fase 12, seams prontos). Design travado (Apple-claro + azul #238FE8 da logomarca). Stack atualizada
 (Vite, shadcn, Better Auth, pg-boss). Fase 0 concluída.*
+
+*Atualização: Jun 2026 (rev. externa Gemini aplicada) — seams de execução distribuídos por fase
+sem inflar o MVP (0–7): UTM capture (P1), hero da landing MOCKADO/sem-API (DESIGN §2), signed URL
+elástico sem IP-lock (P3), force-sync Stripe + offboarding anti roach-motel (P4), certificado
+público opt-in (P6.5), motivo de cancelamento no launch (P7), regra anti-alucinação na persona
+(JilsonAI Fase 0), draft de resposta no admin (fast-follow). Parqueado: auto-ingestão de
+LessonChunks (Fase 5 RAG, pós-MVP). Detalhe em IMPLEMENTATION-PLAN.md / JILSONAI.md / DESIGN.md /
+CLAUDE.md / TECH-STACK.md.*

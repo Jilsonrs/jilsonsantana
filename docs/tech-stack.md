@@ -36,11 +36,11 @@
 
 ## Billing
 
-- **Stripe** — recurring subscription via **2 prices on one product**: monthly **R$99,90 (no fidelity)** + annual **~R$995**. **No free trial, no free content in the school, no lifetime price lock.** Customer Portal + webhooks. Membership access gated on active subscription status synced from Stripe webhooks.
+- **Stripe** — recurring subscription via **2 prices on one product**: monthly **R$99,90 (no fidelity)** + annual **~R$995**. **No free trial, no free content in the school, no lifetime price lock.** Customer Portal + webhooks. Membership access gated on active subscription status synced from Stripe webhooks. A **force-sync fallback** (`subscriptions.retrieve`, admin/server-only) reconciles access if a webhook fails; cancel runs through a native offboarding screen (reason capture; anti roach-motel) before the Portal.
 
 ## Video
 
-- **Bunny Stream** — video hosting + DRM + signed URLs. Playback gated to active members via short-lived signed URLs issued by the server. (Panda Video = fallback.)
+- **Bunny Stream** — video hosting + DRM + signed URLs. Playback gated to active members via short-lived signed URLs issued by the server, with an **elastic window (~6–12h) and no IP-lock** (don't break playback on Wi-Fi↔4G switches). (Panda Video = fallback.)
 
 ## AI (JilsonAI)
 

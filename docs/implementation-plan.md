@@ -25,7 +25,7 @@
 ## Phase 1 — Authentication & App Shell  *(low risk)*
 
 - [ ] Better Auth server config (Prisma adapter); mount at `/api/auth/{*any}` before `express.json()`
-- [ ] `User` additionalFields: `name` optional, `image`, `role` (default `member`), `birthday` (day+month, optional), `preferredLanguage` (default `"pt"`, dormant seam), `marketingConsent` (default `false`), `deletedAt`
+- [ ] `User` additionalFields: `name` optional, `image`, `role` (default `member`), `birthday` (day+month, optional), `preferredLanguage` (default `"pt"`, dormant seam), `marketingConsent` (default `false`), **`acquisitionSource` + `acquisitionCampaign` (optional — UTM capture)**, `deletedAt`
 - [ ] Drop legacy `public.users` + `public.sessions` (0 rows — safe)
 - [ ] Better Auth migration → creates `user`, `session`, `account`, `verification` tables; **add RLS ENABLE for each in the same migration**
 - [ ] Run `get_advisors(security)` → 0 `rls_disabled_in_public`
@@ -33,6 +33,7 @@
 - [ ] Client: auth-client, `LoginPage`, `ProtectedRoute`, `AdminRoute`, `Layout`
 - [ ] `disableSignUp: true`; seed admin (Jilson) + a seeded **test member** (lets login be tested before billing exists); registration open to all countries
 - [ ] Account page (log out; profile)
+- [ ] **Attribution capture (UTM).** Client reads `utm_source`/`utm_campaign`/`utm_*` on first visit and stores in cookie/localStorage; on user creation (here in P1 for the seed/test member, and at the Stripe webhook in P4) persist into `User.acquisitionSource`/`acquisitionCampaign`. ~Zero build cost, high value: without it the YouTube→site funnel runs blind (can't tell which video converts a subscriber). Must exist **before** the channel starts sending traffic. (Not "Priority Zero" over auth/billing — it's a cheap seam that just needs to be live by funnel go-live.)
 - **Done when:** members log in, protected routes redirect, admin gate works, soft-deleted users are blocked.
 
 > Note: `Subscription` and `temAcessoAtivo()` are NOT built here — they are born with Stripe in Phase 4. Phase 1 stays lean (identity + shell). The `User` already carries its optional fields so it never needs reshaping later.
@@ -62,7 +63,12 @@
 ## Phase 3 — Video Playback (Bunny Stream)  *(HIGH RISK — own sessions)*
 
 - [ ] Bunny account + library; store video IDs on `Lesson`
-- [ ] Server: issue short-lived **signed URLs**, member-only
+- [ ] Server: issue short-lived **signed URLs**, member-only. **Elastic window (~6–12h) and NO
+      IP-lock** — so the video doesn't break when the student switches Wi-Fi↔4G mid-lesson (classic
+      mobile support ticket). *Inferência:* exact controls (path-token + expiry, optional IP) are
+      Bunny's API — confirm flags at build. Trade-off accepted: no IP-lock slightly raises URL-share
+      risk, mitigated by the short window + DRM + per-user signing. UX > marginal anti-piracy for a
+      solo operator.
 - [ ] Server: admin upload flow (or direct-to-Bunny + store reference)
 - [ ] Client: gated player on the lesson page
 - [ ] E2E: non-member cannot get a playable URL
@@ -77,9 +83,11 @@
 - [ ] `temAcessoAtivo(userId)` lib — individual path only (`assinaturaIndividualAtiva`); the single source of truth for access
 - [ ] Checkout session endpoint; Customer Portal endpoint
 - [ ] **Webhook handler** (subscription created/updated/canceled) → responds fast (200) then enqueues via pg-boss → CREATES user+subscription on first payment (replaces seed as the trigger) and syncs status; verify Stripe signature
+- [ ] **"Force sync" fallback.** Function that re-queries the Stripe API (`subscriptions.retrieve`) and reconciles access, in case a webhook (pg-boss) ever fails — prevents the worst support case: a paying member locked out. **TRAVA:** admin-only OR a secure server scope (authenticated session). NEVER an unauthenticated GET that unlocks access — that would be a billing bypass.
 - [ ] `requireActiveMembership` middleware (wraps `temAcessoAtivo`) gating content + video URLs
 - [ ] On access loss: `session.deleteMany({ userId })` to force logout
 - [ ] Client: pricing page, subscribe flow, manage-subscription (portal)
+- [ ] **Offboarding screen before the Stripe Customer Portal (seam).** Intercepts "cancelar", collects the reason, then forwards to the Portal. **TRAVA (anti roach-motel — Procon/CDC sensibility already raised in pricing):** a clear **"cancelar mesmo assim"** is always visible, 1 click; calm tone, not retentive. **Phasing:** reason capture = **launch (lands with this screen in P4 / wired in P7)**; **"pausar 1 mês" = fast-follow post-launch** (*inferência:* uses Stripe native `pause_collection` — confirm at build). Do NOT build the pause for launch.
 - [ ] E2E: subscribe → access granted; cancel → access revoked at period end
 - **Done when:** paying members get access, status survives reload, webhooks reconcile truth.
 
@@ -103,9 +111,10 @@
 
 ## Phase 6.5 — Certificates (trilha + course completion)  *(low–medium risk — MVP: "escola nasce completa")*
 
-- [ ] `Certificate` (user, planId/courseId, issuedAt, `nameSnapshot`, `skillsCovered[]`) + RLS ; migration
+- [ ] `Certificate` (user, planId/courseId, issuedAt, `nameSnapshot`, `skillsCovered[]`, **`isPublic` default false**) + RLS ; migration
 - [ ] Server-side PDF on 100% completion of a trilha (or course). Name = trilha name; lists skills covered.
 - [ ] If `User.name` missing at issue time, prompt the student for the name to print.
+- [ ] **Public verifiable URL.** Route `/certificado/[id]` listing the `skillsCovered`, with Open Graph optimized for LinkedIn sharing → each graduate becomes an organic marketing vector and feeds the "emprego em empresa" angle (cert by competencies). **TRAVA:** student opt-in (`isPublic`, default false). The cert always exists; the public route is private/404 unless the student allows it (LGPD).
 - **Done when:** completing a curated trilha issues a certificate PDF with name + competencies.
 
 ## Phase 7 — Launch Prep  *(medium risk)*
@@ -115,6 +124,7 @@
 - [ ] Error/loading states everywhere; security review (subagent) on auth/billing/video
 - [ ] Performance pass (< 3s load); mobile responsive
 - [ ] Founding-member offer wiring (scarcity for Udemy students)
+- [ ] **Cancellation-reason capture wired.** The offboarding screen (P4) collects the reason on exit — cheap data, gold for churn. Connects to STRATEGY.md churn KPIs (winback, MRR-perdido). (Storage = a small `CancellationReason` row or a field on `Subscription`; reason capture ships at launch, the "pausar 1 mês" path stays fast-follow.)
 - **Done when:** the Excel + IA course is buyable and watchable end to end. **→ LAUNCH**
 
 ---
@@ -147,3 +157,4 @@ MVP = **Phases 0 → 7** (incl. trilhas curadas na Phase 2, certificados na Phas
 
 ---
 *Atualizado: Jun 2026 — trilhas (LearningPlan/PlanModule/PlanItem) entram na Fase 2; aula vira first-class pesquisável; certificados puxados pro MVP (Fase 6.5); pricing mensal-sem-fidelidade + anual + 2 prices Stripe (Fase 4); comunidade-fórum removida (JilsonAI absorve); EN/Phase 13 removida. Ver JILSONAI.md p/ trilhas curadas vs montagem por IA.*
+*Atualizado: Jun 2026 (rev. externa Gemini) — seams de engenharia distribuídos por fase, sem inflar o MVP (0–7): UTM capture (P1), signed URL elástico sem IP-lock (P3), force-sync Stripe + offboarding screen anti roach-motel (P4), certificado público opt-in (P6.5), captura de motivo de cancelamento no launch + "pausar 1 mês" como fast-follow (P7). Auto-ingestão de LessonChunks fica PARQUEADA na Fase 5 (RAG, pós-MVP) — não construir, não puxar pra frente.*

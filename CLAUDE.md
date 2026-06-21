@@ -80,7 +80,7 @@ CLAUDE.md - this file (repo root — read every session)
   - `PlanModule` — grouping by competency (`title`, `order`).
   - `PlanItem` — `itemType[COURSE|LESSON]` + `courseId?`/`lessonId?`. This is what gives the **free mix** of whole courses + standalone lessons (only lessons, only courses, or any combination).
 - **Curated and personalized trilhas are the SAME entity** — only `ownerUserId`/`isTemplate` differ. Launch ships **curated** trilhas (Jilson hand-builds them; he is the "AI v0"). AI-assembled personalized plans (`buildLearningPlan`) land in JilsonAI Fase 4–5 — no rewrite.
-- A member can **save/clone** a curated trilha (becomes theirs, own progress), **edit** it (add/remove courses, lessons, modules), and earns a **certificate at 100%** (name = trilha name; lists `skillsCovered`).
+- A member can **save/clone** a curated trilha (becomes theirs, own progress), **edit** it (add/remove courses, lessons, modules), and earns a **certificate at 100%** (name = trilha name; lists `skillsCovered`). The certificate has an **opt-in public verifiable URL** (`/certificado/[id]`, `isPublic` default false, OG-optimized for LinkedIn) — public only if the student allows it (LGPD).
 - **Onboarding is open and free:** trilhas + courses are browsable; the student clicks and watches whatever they want. `recommendTrilha` is **optional help, never a gate.** (Home section order = a build-time decision.)
 
 
@@ -96,6 +96,7 @@ CLAUDE.md - this file (repo root — read every session)
   - `birthday` **optional**, day+month only (e.g. `"06-15"`) — never the year (LGPD / sensitive-data minimization).
   - `preferredLanguage` default `"pt"` — **dormant seam.** Everything is PT today; the column exists so EN is never walled off. Do NOT build any multi-language UI now.
   - `marketingConsent` default `false` (LGPD) — gates promotional email only; transactional email (receipt, password reset) ignores it.
+  - `acquisitionSource` / `acquisitionCampaign` **optional** — UTM capture. Read on first visit (cookie/localStorage), persisted at user creation (seed in P1, Stripe webhook in P4). Lets the YouTube→site funnel be measured (which video converts). Must be live before the channel sends traffic.
   - `deletedAt` (soft-delete). `requireAuth` rejects soft-deleted users.
 - These extras are Better Auth `additionalFields` (mark `input: false` where users shouldn't set them directly, e.g. `role`). Re-run the Better Auth migration after adding fields.
 
@@ -118,10 +119,12 @@ CLAUDE.md - this file (repo root — read every session)
 - `requireActiveMembership` middleware gates member content AND video signed-URL issuance. It is the HTTP wrapper around `temAcessoAtivo(userId)` (see Access Architecture). Corporate students (post-MVP) pass the same gate via their org's subscription — the gate never needs to know which path granted access.
 - `Subscription` includes `ownerUserId?`, `organizationId?` (nullable), `seats` (default 1) from the start, so corporate (Phase 12) is additive, not a rewrite.
 - Process webhooks via pg-boss for reliability (retry on failure). Verify Stripe signature. Webhook responds fast (200) then enqueues work (user/subscription sync, welcome email) — never blocks on the response.
+- **Force-sync fallback:** a `subscriptions.retrieve` reconciliation path exists for when a webhook fails (paying member locked out). **Admin-only or secure server scope — NEVER an unauthenticated GET that unlocks access** (that would be a billing bypass).
+- **Offboarding:** the cancel flow goes through a native screen (collect reason → forward to Customer Portal). Anti roach-motel: a clear 1-click "cancelar mesmo assim" always visible (Procon/CDC). Reason capture = launch; "pausar 1 mês" (`pause_collection`) = fast-follow.
 
 ## Video (Bunny Stream)
 
-- Never expose raw Bunny URLs. The server issues short-lived signed URLs, only to members with an active subscription.
+- Never expose raw Bunny URLs. The server issues short-lived signed URLs, only to members with an active subscription. **Elastic window (~6–12h) and NO IP-lock** — don't break playback when a student switches Wi-Fi↔4G mid-lesson. Trade-off accepted: short window + DRM + per-user signing over marginal anti-piracy (solo-operator UX call).
 - Store Bunny video IDs on the `Lesson` model.
 
 ## Analytics Convention (modular growth)
@@ -149,7 +152,7 @@ CLAUDE.md - this file (repo root — read every session)
   - **Two registries:** `contextProviders[]` (build the prompt context) + `tools[]` (scoped server-side — `userId` ALWAYS injected by the server, never from the model). Each phase registers a new provider/tool; never edit old ones.
   - **Model behind an abstraction** (`llm.complete()`): **default = a top model (Sonnet)** — the AI is always smart (product decision). Cheap model (Haiku) only for trivial/routing; Opus rare. Switching is config, not a rewrite. Prompt caching on persona + repeated context.
   - **Quota + visible meter:** the plan includes a generous monthly quota of JilsonAI interactions; the chat UI shows a **calm "usage this month" meter** (Apple vibe, never an anxious countdown). Rate-limit per member caps tail-risk. Usage tiers (one-time top-up + JilsonAI+) are **post-launch seams**, switched on when real `AiEvent` data justifies. Quota value is set FROM data, not guessed.
-  - Persona (voice/method) lives in a versioned `persona/jilson.md`, not in code.
+  - Persona (voice/method) lives in a versioned `persona/jilson.md`, not in code. **Anti-hallucination rule in the persona:** when giving DAX/SQL/Python, always state the assumed table structure (column names/types, relationships, granularity) and recommend isolated testing — never present code as absolute truth about a schema it hasn't seen.
   - Trilha tools: `recommendTrilha` (launch — suggests a curated trilha by goal) and `buildLearningPlan` (Fase 4–5 — assembles a personalized plan).
 
 ## Testing
@@ -170,3 +173,4 @@ CLAUDE.md - this file (repo root — read every session)
 
 ---
 *Atualizado Jun 2026: trilhas (LearningPlan/PlanItem) + aula first-class; pricing 2-prices sem fidelidade/trial/lock; JilsonAI default modelo de ponta + quota + medidor visível; certificados no MVP; comunidade = JilsonAI (fórum removido); AI no DNA; design Apple-claro + #238FE8.*
+*Atualizado Jun 2026 (rev. externa Gemini): UTM capture nos campos do User (P1); Bunny signed URL elástico sem IP-lock; Stripe force-sync (admin/server-only, nunca GET destravante) + offboarding anti roach-motel; certificado com URL pública opt-in (LGPD); regra anti-alucinação na persona do JilsonAI.*
