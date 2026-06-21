@@ -2,11 +2,22 @@ import "dotenv/config";
 import express from "express";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { toNodeHandler } from "better-auth/node";
+import { auth } from "./lib/auth.js";
 import healthRouter from "./routes/health.js";
 
 const app = express();
 const PORT = process.env.PORT ?? 3000;
 
+// Better Auth HTTP handler — MUST be mounted BEFORE express.json(). If JSON
+// parsing runs first it consumes the request body and breaks auth (known
+// pitfall). toNodeHandler returns a promise; Express 5 does NOT auto-catch
+// rejections from adapter-style handlers, so we chain .catch(next) (this was
+// the Phase 0 boot bug). Path uses the Express 5 named-wildcard syntax.
+const authHandler = toNodeHandler(auth);
+app.all("/api/auth/{*any}", (req, res, next) => authHandler(req, res).catch(next));
+
+// JSON body parsing for the REST of the API — AFTER the auth handler.
 app.use(express.json());
 
 // API routes
