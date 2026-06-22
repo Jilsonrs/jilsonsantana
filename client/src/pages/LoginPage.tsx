@@ -31,7 +31,14 @@ export function LoginPage() {
       password: values.password,
     });
     if (error) {
-      setFormError("E-mail ou senha incorretos.");
+      // 401 = bad credentials. Anything else (origin/CSRF, network, server) is
+      // a different failure and must not be reported as "wrong password".
+      if (error.status === 401) {
+        setFormError("E-mail ou senha incorretos.");
+      } else {
+        console.error("Falha no login:", error);
+        setFormError("Não foi possível entrar agora. Tente novamente.");
+      }
       return;
     }
     navigate("/conta", { replace: true });
