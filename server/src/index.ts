@@ -8,6 +8,16 @@ import healthRouter from "./routes/health.js";
 import meRouter from "./routes/me.js";
 import adminRouter from "./routes/admin.js";
 
+// Fail fast in production if a required secret is missing — a clear startup
+// error instead of booting and then crashing on an async Better Auth error
+// (which previously surfaced only as a confusing Railway healthcheck failure).
+if (process.env.NODE_ENV === "production" && !process.env.BETTER_AUTH_SECRET) {
+  console.error(
+    "FATAL: BETTER_AUTH_SECRET must be set in production. Aborting startup.",
+  );
+  process.exit(1);
+}
+
 const app = express();
 const PORT = process.env.PORT ?? 3000;
 
