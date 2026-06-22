@@ -41,6 +41,9 @@ RUN npm --workspace client run build
 FROM node:20-alpine AS server-build
 WORKDIR /app
 
+# Prisma needs OpenSSL (+ libc6-compat on alpine) to detect and run its engine
+RUN apk add --no-cache openssl libc6-compat
+
 COPY package.json package-lock.json tsconfig.base.json ./
 COPY core/package.json ./core/
 COPY server/package.json ./server/
@@ -53,10 +56,12 @@ COPY --from=core-build /app/core/dist ./core/dist
 COPY core/package.json ./core/
 
 COPY server/ ./server/
-RUN npm --workspace server run build
 
-# Generate Prisma client (skips gracefully when no models are defined yet)
-RUN npm --workspace server run db:generate && mkdir -p server/node_modules/.prisma
+# Generate the Prisma client BEFORE building: server code imports @prisma/client,
+# so tsc fails without the generated types. Workspace install hoists Prisma to the
+# ROOT node_modules, so the client is generated to /app/node_modules/.prisma.
+RUN npm --workspace server run db:generate
+RUN npm --workspace server run build
 
 
 # ─── Stage 4: Production image ────────────────────────────────────────────────
@@ -64,6 +69,9 @@ FROM node:20-alpine AS production
 WORKDIR /app
 
 ENV NODE_ENV=production
+
+# Prisma query engine runtime deps
+RUN apk add --no-cache openssl libc6-compat
 
 # Copy root package files (needed for workspace resolution)
 COPY package.json package-lock.json ./
@@ -78,7 +86,8 @@ RUN npm ci --workspace server --omit=dev --ignore-scripts
 # Copy built artifacts
 COPY --from=core-build /app/core/dist ./core/dist
 COPY --from=server-build /app/server/dist ./server/dist
-COPY --from=server-build /app/server/node_modules/.prisma ./server/node_modules/.prisma
+# Generated Prisma client lives in the ROOT node_modules (workspace hoisting)
+COPY --from=server-build /app/node_modules/.prisma ./node_modules/.prisma
 COPY server/prisma ./server/prisma
 
 # Client dist is served as static files from server/public
