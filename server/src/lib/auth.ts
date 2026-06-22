@@ -66,6 +66,48 @@ export const auth = betterAuth({
         defaultValue: Role.MEMBER,
         input: false,
       },
+      // Day+month only (e.g. "06-15") — NEVER the year (LGPD minimization).
+      // User-editable later (Account page), so input stays allowed.
+      birthday: {
+        type: "string",
+        required: false,
+        input: true,
+      },
+      // Dormant seam: everything is PT today; no multi-language UI is built.
+      // Set server-side, not user input.
+      preferredLanguage: {
+        type: "string",
+        required: false,
+        defaultValue: "pt",
+        input: false,
+      },
+      // LGPD: gates promotional email only (transactional ignores it). No public
+      // consent form in P1, so it is set server-side, not user input.
+      marketingConsent: {
+        type: "boolean",
+        required: false,
+        defaultValue: false,
+        input: false,
+      },
+      // UTM capture — persisted at user creation (seed in P1, Stripe webhook in
+      // P4). Always server-injected, never from the model/client.
+      acquisitionSource: {
+        type: "string",
+        required: false,
+        input: false,
+      },
+      acquisitionCampaign: {
+        type: "string",
+        required: false,
+        input: false,
+      },
+      // Soft-delete — requireAuth rejects users whose deletedAt is set.
+      // Admin/system only.
+      deletedAt: {
+        type: "date",
+        required: false,
+        input: false,
+      },
     },
   },
 });

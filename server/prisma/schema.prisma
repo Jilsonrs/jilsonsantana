@@ -33,6 +33,13 @@ model User {
   sessions      Session[]
   accounts      Account[]
 
+  birthday            String?
+  preferredLanguage   String?   @default("pt")
+  marketingConsent    Boolean?  @default(false)
+  acquisitionSource   String?
+  acquisitionCampaign String?
+  deletedAt           DateTime?
+
   @@unique([email])
   @@map("user")
 }
