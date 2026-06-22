@@ -19,14 +19,29 @@ import { Role } from "@jilson/core";
 
 const prisma = new PrismaClient();
 
-// Allow-list for Better Auth's CSRF origin check. In dev the Vite client (5173)
-// proxies /api to the server (3000), but the browser still sends
-// `Origin: http://localhost:5173`, so the client URL must be trusted. In prod
-// the client is served same-origin (Express static), and baseURL is trusted
-// implicitly. CLIENT_URL is optional → filtered out when unset.
-const trustedOrigins = [process.env.CLIENT_URL].filter(
-  (origin): origin is string => Boolean(origin),
-);
+// Dev-only trusted origins for Better Auth's CSRF check. The browser may reach
+// the Vite client via localhost, 127.0.0.1, or (in a GitHub Codespace) the
+// forwarded HTTPS URL — all distinct origins. None of this runs in production
+// (Railway): there NODE_ENV=production, the client is served same-origin by
+// Express, and baseURL is trusted implicitly.
+function devOrigins(): string[] {
+  if (process.env.NODE_ENV === "production") return [];
+  const origins = ["http://localhost:5173", "http://127.0.0.1:5173"];
+  const name = process.env.CODESPACE_NAME;
+  const domain = process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN;
+  if (name && domain) origins.push(`https://${name}-5173.${domain}`);
+  return origins;
+}
+
+// Allow-list: CLIENT_URL (canonical client origin) + the dev origins above.
+// Deduplicated; undefined entries (unset CLIENT_URL) filtered out.
+const trustedOrigins = [
+  ...new Set(
+    [process.env.CLIENT_URL, ...devOrigins()].filter(
+      (origin): origin is string => Boolean(origin),
+    ),
+  ),
+];
 
 export const auth = betterAuth({
   // Runtime secrets/URLs come from env — never hardcoded. Better Auth also reads

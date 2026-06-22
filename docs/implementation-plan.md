@@ -30,9 +30,9 @@
 - [x] Better Auth migration → creates `user`, `session`, `account`, `verification` tables; **add RLS ENABLE for each in the same migration**
 - [x] Run `get_advisors(security)` → 0 `rls_disabled_in_public`
 - [x] `requireAuth` (rejects soft-deleted users) + `requireAdmin` middleware (sets `req.user`)
-- [ ] Client: auth-client, `LoginPage`, `ProtectedRoute`, `AdminRoute`, `Layout`
+- [x] Client: auth-client, `LoginPage`, `ProtectedRoute`, `AdminRoute`, `Layout`
 - [x] `disableSignUp: true`; seed admin (Jilson) + a seeded **test member** (lets login be tested before billing exists); registration open to all countries
-- [ ] Account page (log out; profile)
+- [x] Account page (log out; profile)
 - [ ] **Attribution capture (UTM).** Client reads `utm_source`/`utm_campaign`/`utm_*` on first visit and stores in cookie/localStorage; on user creation (here in P1 for the seed/test member, and at the Stripe webhook in P4) persist into `User.acquisitionSource`/`acquisitionCampaign`. ~Zero build cost, high value: without it the YouTube→site funnel runs blind (can't tell which video converts a subscriber). Must exist **before** the channel starts sending traffic. (Not "Priority Zero" over auth/billing — it's a cheap seam that just needs to be live by funnel go-live.)
 - **Done when:** members log in, protected routes redirect, admin gate works, soft-deleted users are blocked.
 

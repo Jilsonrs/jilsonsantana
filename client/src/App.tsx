@@ -1,16 +1,25 @@
-import { Role } from "@jilson/core";
+import { Routes, Route } from "react-router-dom";
+import { Layout } from "@/components/Layout";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { AdminRoute } from "@/components/auth/AdminRoute";
+import { HomePage } from "@/pages/HomePage";
+import { LoginPage } from "@/pages/LoginPage";
+import { AccountPage } from "@/pages/AccountPage";
+import { AdminPage } from "@/pages/AdminPage";
 
 export default function App() {
   return (
-    <div className="flex min-h-svh items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="text-2xl font-semibold text-foreground">
-          jilsonsantana.com
-        </h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Platform launching soon. Role: {Role.MEMBER}
-        </p>
-      </div>
-    </div>
+    <Routes>
+      <Route element={<Layout />}>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route element={<ProtectedRoute />}>
+          <Route path="/conta" element={<AccountPage />} />
+        </Route>
+        <Route element={<AdminRoute />}>
+          <Route path="/admin" element={<AdminPage />} />
+        </Route>
+      </Route>
+    </Routes>
   );
 }
