@@ -1,4 +1,4 @@
-# jilsonsantana.com — AI Learning Platform
+project-description# jilsonsantana.com — AI Learning Platform
 
 ## Project Overview
 
@@ -6,7 +6,30 @@ A subscription learning platform: a single accessible membership = **courses + J
 
 **Guiding principle — AI in the DNA:** the school doesn't just *teach* AI, it *is* AI — discovering what to study, building the curriculum, answering doubts, and accompanying the student all happen through the JilsonAI. Decision filter for any feature: *"is this a living demo of well-used AI, or common mechanics?"* "Community" is NOT a peer forum — it's JilsonAI (support front door) + direct channel to Jilson + announcements.
 
-See `docs/project-scope.md` for requirements, `docs/tech-stack.md` for stack rationale, `docs/implementation-plan.md` for the phased task breakdown, and `docs/jilsonai.md` for the JilsonAI internal roadmap (chat, escalation, trilhas, quotas).
+See the **Document Map** below for every doc, what it holds, and where it is edited.
+
+## Document Map (where each doc lives and who edits it)
+
+Two synced copies exist: the **repo** (canonical — what this agent reads) and the **Claude Project** (context for the operator's strategy chats). Each doc has ONE edit home, below. **In any divergence, the repo (git) wins** — it carries the real build history.
+
+Sync mechanic:
+- **Edit = repo** → the agent edits it in the repo (doc-sync); the operator downloads it and refreshes the Project copy (at end of phase).
+- **Edit = Project** → the operator edits it in the Project, downloads it, and uploads it to the repo. The agent treats these as read-only context and does NOT edit them.
+
+**Execution docs — content tracks what gets BUILT → `Edit = repo` (agent maintains via doc-sync):**
+- **`CLAUDE.md`** *(repo ROOT, not `docs/`)* — engineering conventions + Block Execution Protocol. The build law, read every session. When a convention is decided in a strategy chat, it is drafted and uploaded here; from then on the agent keeps it synced. **Edit = repo.**
+- **`docs/implementation-plan.md`** — phased task breakdown with checkboxes. The agent flips `[ ]→[x]` in the SAME commit as the work. **Edit = repo.**
+- **`docs/tech-stack.md`** — the actual stack + versions + rationale. Updated when the build adds/swaps/upgrades a library. **Edit = repo.**
+
+**Planning / strategy docs — content tracks the OPERATOR's decisions → `Edit = Project` (agent consults only when a decision needs them, does not edit):**
+- **`docs/project-description.md`** — identity, vision, the "AI-in-the-DNA" north star (the Project's project-description / strategy source of truth). **Edit = Project.**
+- **`docs/project-scope.md`** — product requirements; what is in/out of the MVP. Scope changes are product decisions. **Edit = Project.**
+- **`docs/strategy.md`** — positioning, pricing rationale, churn/KPIs, funnel. Pure business. **Edit = Project.**
+- **`docs/jilsonai.md`** — JilsonAI internal roadmap (chat, escalation, trilhas, quotas). **Edit = Project.**
+- **`docs/design.md`** — design system / tokens / aesthetic direction (Apple-clean, `#238FE8`). The direction is an operator decision. **Edit = Project.**
+- **`docs/content.md`** — pedagogical content / course-script material. **Edit = Project.**
+
+> Build-phase exception: when a planning doc's phase is actually built (UI/`design.md` in P1–P2, `jilsonai.md` in P6), the agent MAY reconcile build-specific details (e.g. a final token value, a tool signature) in the repo copy — flag it so the operator pulls those back into the Project. This is reconciliation of build facts, not redeciding strategy.
 
 ## Tech Stack
 
@@ -29,22 +52,34 @@ See `docs/project-scope.md` for requirements, `docs/tech-stack.md` for stack rat
 /client   - React frontend (Vite)
 /server   - Express backend
 /e2e      - Playwright E2E tests
-/docs     - project-scope.md, tech-stack.md, implementation-plan.md
+/docs     - planning + execution docs (see Document Map for the full list + edit owner)
 CLAUDE.md - this file (repo root — read every session)
 ```
 
 ## Working Method (read this every session)
 
-- The single source of strategy/identity is the project's `PROJECT_DESCRIPTION` (Claude Project). This file is the single source of **engineering conventions**.
+- The single source of strategy/identity is the project's `project-description` (Claude Project). This file is the single source of **engineering conventions**.
 - Build **phase by phase** per `docs/implementation-plan.md`. Do one sliceable task at a time.
-- **Never leave `main` broken.** Work on the `dev` branch; commit small functional steps; merge to `main` only when lint + typecheck + tests pass. `main` auto-deploys to Railway, so it is "sacred" — only tested code reaches it. Stopping mid-session is safe as long as the last commit builds. (PR + CI + automated review come in a later phase.)
+- **Never leave `main` broken.** Work on the `dev` branch; commit small functional steps. `main` auto-deploys to Railway, so it is "sacred" — only tested code reaches it. Stopping mid-session is safe as long as the last commit builds. **Merging `dev → main` is the operator's explicit decision, taken at the end of a phase once that phase's `Done when` is met — NOT the agent's call, and NOT triggered by green CI alone.** Green lint/typecheck/tests is the *floor* that makes a merge eligible, not the trigger: the agent commits to `dev` and stops, and asks for an explicit go before any merge. The agent never merges to `main` on its own initiative. (Automated PR + CI-gated merge replaces this only in the later phase that introduces it.)
 - When unsure about a library's current API, fetch up-to-date docs before coding (don't guess versions).
 - Prefer battle-tested libraries over custom code — this is a solo, burnout-conscious project.
 - **Keep docs honest (do this in the SAME session, never "depois").** A doc that lies is worse than no doc. When a phase (or a sliceable task) is done, before the final merge:
   1. **Mark it** — flip the `- [ ]` to `- [x]` in `docs/implementation-plan.md` (and `✅ DONE` on the phase heading when the whole phase closes).
-  2. **Reconcile any contradiction** — if a build decision diverged from what a living doc says (`CLAUDE.md`, `PROJECT_DESCRIPTION`, `JILSONAI.md`, `DESIGN.md`, `TECH-STACK.md`), update that doc now. A doc must never disagree with `main` for more than one session — same discipline as the sacred `main`.
+  2. **Reconcile any contradiction** — if a build decision diverged from what a living doc says (`CLAUDE.md`, `project-description`, `JILSONAI.md`, `DESIGN.md`, `TECH-STACK.md`), update that doc now. A doc must never disagree with `main` for more than one session — same discipline as the sacred `main`.
   3. **Log it if it's a decision, not just a task** — if the work resolved an open question or changed an approach, add a one-line note to the affected doc's footer decision log. Routine task completion needs no log entry (don't inflate).
   > Scope guard: this is reconciliation, not a rewrite. If a "doc update" starts feeling like a big writing session, stop — that's a signal the build diverged structurally and the divergence itself needs a decision, not prose.
+
+## Block Execution Protocol (agent self-discipline)
+
+How each sliceable task ("block") is executed. This encodes the review discipline so it runs WITHOUT a human babysitting every step — the operator approves the plan and the merge, not each keystroke.
+
+- **Plan before writing code.** Read `docs/implementation-plan.md` + this file, then produce a short plan (plan mode) and get the operator's OK before editing anything. The plan states: files touched, the migration (if any), the acceptance gates, and what is explicitly OUT of scope for this block. The plan comes from the docs — do not invent scope the plan doesn't have, and do not silently drop scope the plan requires (e.g. a `User` field the plan lists for this phase).
+- **Pre-flight on any migration or risky change ("Passo 0").** Capture the current state FIRST (seeded rows present, admin/member still sign in). Make the change. Then re-verify the SAME state survived. A change that silently breaks seeded data or login STOPS the block — report it, don't proceed.
+- **Prove gates in runtime, not by reasoning.** "It typechecks" is necessary, never sufficient. Close each gate with empirical proof: a curl status matrix (e.g. 401/403/200), a real INSERT that persists, a real sign-in that returns a session, `get_advisors` output. If a claim is testable ("RLS bypasses", "the body arrives intact", "the admin can log in"), TEST it before asserting it. A row existing is not proof the account can log in; a 200 on a disabled path is not proof the body parsed.
+- **End-of-block gate checklist.** Finish with an explicit pass/fail gate: the runtime proofs above + typecheck + lint + "scope held — nothing out-of-scope crept in." Show the checklist. Do not commit until every gate is green.
+- **Stop and surface, don't paper over.** If something architectural is surprising — a migration fails on permissions, an API doesn't behave as its own docs imply — STOP and report it as a decision for the operator. Do NOT invent a workaround that masks the surprise (e.g. adding an RLS policy just to force an INSERT through, when the real question is which DB role is connecting).
+- **Commit per block on `dev`, checkbox in the same commit.** Conventional-commit message; the body lists what landed AND any item deliberately left pending validation (so the next block picks it up). Flip the matching `docs/implementation-plan.md` checkbox in the SAME commit (see Working Method doc-sync). Then stop — merge to `main` is the operator's call (see Working Method).
+- **Risk tiering.** Low-risk phases (1, 2, 5, 6.5): the agent's own gate checklist is enough. HIGH-RISK phases (3 Bunny, 4 Stripe — ~70% of project risk): additionally run the `security-vulnerability-reviewer` agent on auth/billing/video-gating code, and expect a separate human review pass before the operator authorizes the merge. Don't rush a high-risk phase to "green" — green is the floor, the gate is "the access boundary actually holds (member can, non-member cannot, status survives reload)."
 
 ## Key Conventions
 
@@ -180,3 +215,4 @@ CLAUDE.md - this file (repo root — read every session)
 *Atualizado Jun 2026: trilhas (LearningPlan/PlanItem) + aula first-class; pricing 2-prices sem fidelidade/trial/lock; JilsonAI default modelo de ponta + quota + medidor visível; certificados no MVP; comunidade = JilsonAI (fórum removido); AI no DNA; design Apple-claro + #238FE8.*
 *Atualizado Jun 2026 (rev. externa Gemini): UTM capture nos campos do User (P1); Bunny signed URL elástico sem IP-lock; Stripe force-sync (admin/server-only, nunca GET destravante) + offboarding anti roach-motel; certificado com URL pública opt-in (LGPD); regra anti-alucinação na persona do JilsonAI.*
 *Atualizado Jun 2026: adicionada ao Working Method a regra de doc-sync ao fim de cada fase/task (marcar [x], reconciliar contradição no mesmo session, logar só se for decisão) — mantém os docs honestos vs `main`.*
+*Atualizado Jun 2026: adicionado **Document Map** no topo — os 9 docs espelhados em repo + Claude Project, cada um com dono de edição (Edit=repo: CLAUDE, implementation-plan, tech-stack; Edit=Project: project-description, project-scope, strategy, jilsonai, design, content). Regra: divergência → o repo (git) ganha; agente não edita docs de planejamento, só consulta.*
