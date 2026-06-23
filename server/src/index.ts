@@ -7,6 +7,9 @@ import { auth } from "./lib/auth.js";
 import healthRouter from "./routes/health.js";
 import meRouter from "./routes/me.js";
 import adminRouter from "./routes/admin.js";
+import coursesRouter from "./routes/courses.js";
+import trilhasRouter from "./routes/trilhas.js";
+import lessonsRouter from "./routes/lessons.js";
 
 // Fail fast in production if a required secret is missing — a clear startup
 // error instead of booting and then crashing on an async Better Auth error
@@ -36,6 +39,10 @@ app.use(express.json());
 app.use("/api", healthRouter);
 app.use("/api", meRouter);
 app.use("/api", adminRouter);
+// Phase 2 — public content reads (catalog/course/trilha/lesson; PUBLISHED only).
+app.use("/api", coursesRouter);
+app.use("/api", trilhasRouter);
+app.use("/api", lessonsRouter);
 
 // Serve client static files in production
 const __dirname = path.dirname(fileURLToPath(import.meta.url));

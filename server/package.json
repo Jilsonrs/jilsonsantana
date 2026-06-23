@@ -12,7 +12,8 @@
     "db:pull": "prisma db pull",
     "db:generate": "if grep -qE '^model ' prisma/schema.prisma; then prisma generate; else echo 'No models defined — skipping prisma generate'; fi",
     "db:migrate": "prisma migrate dev",
-    "db:seed": "tsx src/seed.ts"
+    "db:seed": "tsx src/seed.ts",
+    "db:seed:content": "tsx src/seed-content.ts"
   },
   "dependencies": {
     "@jilson/core": "*",

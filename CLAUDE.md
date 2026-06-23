@@ -96,8 +96,7 @@ How each sliceable task ("block") is executed. This encodes the review disciplin
 ### Shared `core/` package
 - Define shared Zod schemas in `core/schemas/` (e.g. `core/schemas/lessons.ts`) and import in BOTH client and server.
 - Define shared constants/domain types in `core/constants/` as `as const` objects (runtime access, e.g. `Role`) or plain union types (type-only). Avoid TS `enum`.
-- Validate request bodies with the shared `validate` helper (Zod schema + body + `res` → parsed data or `null` after sending 400).
-- Parse numeric route IDs with the shared `parseId` helper.
+- Validate request bodies with `validate(schema, body, res)` and parse numeric route IDs with `parseId(param, res)` — both live in `server/src/lib/http.ts` (they touch the Express `res`: send 400 + return `null` on bad input, so the caller does `if (x === null) return;`). They're server-side; the *schemas* they validate are the shared `core/` ones.
 
 ### Server
 - Organize endpoints as Express `Router` modules under `server/src/routes/` (one per domain, e.g. `routes/courses.ts`), mounted in `index.ts`.
