@@ -48,7 +48,7 @@
       `PlanModule` (grouping by competency), `PlanItem` (`itemType[COURSE|LESSON]`,
       `courseId?`/`lessonId?` — **free mix of whole courses + standalone lessons**) (+ RLS) ; migration
 - [x] `core/schemas/` for course/module/lesson + **plan/planItem** + `core/constants/`
-- [ ] Server routes: CRUD under `/api/courses`, `/api/modules`, `/api/lessons`,
+- [x] Server routes: CRUD under `/api/courses`, `/api/modules`, `/api/lessons`,
       **`/api/trilhas`** (admin-protected for writes; a member can save/clone a curated trilha)
 - [ ] **Keyword search** endpoint over trilhas/courses/lessons (semantic/IA search = JILSONAI Fase 4–5)
 - [ ] Client: catalog page (trilhas + courses), course page, lesson list (no video yet)
