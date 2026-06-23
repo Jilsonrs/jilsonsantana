@@ -1,6 +1,9 @@
 import { Router } from "express";
-import { ContentStatus } from "@jilson/core";
+import { Prisma } from "@prisma/client";
+import { ContentStatus, courseCreateSchema, courseUpdateSchema } from "@jilson/core";
 import { prisma } from "../lib/prisma.js";
+import { requireAdmin } from "../middleware/auth.js";
+import { validate, parseId } from "../lib/http.js";
 
 const router = Router();
 const PUBLISHED = ContentStatus.PUBLISHED;
@@ -70,6 +73,63 @@ router.get("/courses/:slug", async (req, res) => {
 
   const lessonCount = course.modules.reduce((sum, m) => sum + m.lessons.length, 0);
   res.json({ ...course, moduleCount: course.modules.length, lessonCount });
+});
+
+// ── Writes (admin only) ──────────────────────────────────────────────────────
+// Express 5 auto-catches rejected promises, so no try/catch (CLAUDE.md). The
+// jsonb columns are Zod-typed; cast them to Prisma's Json input.
+function jsonFields(input: { highlights?: unknown; faq?: unknown; camadaOverride?: unknown }) {
+  return {
+    highlights: input.highlights as Prisma.InputJsonValue | undefined,
+    faq: input.faq as Prisma.InputJsonValue | undefined,
+    camadaOverride: input.camadaOverride as Prisma.InputJsonValue | undefined,
+  };
+}
+
+// POST /api/courses — create. Friendly 409 on duplicate slug (the unique index
+// is the hard guard; a rare race surfaces as 500).
+router.post("/courses", requireAdmin, async (req, res) => {
+  const data = validate(courseCreateSchema, req.body, res);
+  if (data === null) return;
+  if (await prisma.course.findUnique({ where: { slug: data.slug } })) {
+    res.status(409).json({ error: "SlugTaken" });
+    return;
+  }
+  const course = await prisma.course.create({ data: { ...data, ...jsonFields(data) } });
+  res.status(201).json(course);
+});
+
+// PATCH /api/courses/:id — update (404 if missing; 409 if slug taken by another).
+router.patch("/courses/:id", requireAdmin, async (req, res) => {
+  const id = parseId(req.params.id, res);
+  if (id === null) return;
+  const data = validate(courseUpdateSchema, req.body, res);
+  if (data === null) return;
+  if (!(await prisma.course.findUnique({ where: { id } }))) {
+    res.status(404).json({ error: "NotFound" });
+    return;
+  }
+  if (data.slug) {
+    const bySlug = await prisma.course.findUnique({ where: { slug: data.slug } });
+    if (bySlug && bySlug.id !== id) {
+      res.status(409).json({ error: "SlugTaken" });
+      return;
+    }
+  }
+  const course = await prisma.course.update({ where: { id }, data: { ...data, ...jsonFields(data) } });
+  res.json(course);
+});
+
+// DELETE /api/courses/:id — hard delete (cascades modules/lessons + plan_items).
+router.delete("/courses/:id", requireAdmin, async (req, res) => {
+  const id = parseId(req.params.id, res);
+  if (id === null) return;
+  if (!(await prisma.course.findUnique({ where: { id } }))) {
+    res.status(404).json({ error: "NotFound" });
+    return;
+  }
+  await prisma.course.delete({ where: { id } });
+  res.status(204).end();
 });
 
 export default router;

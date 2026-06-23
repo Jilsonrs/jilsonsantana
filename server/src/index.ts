@@ -8,6 +8,7 @@ import healthRouter from "./routes/health.js";
 import meRouter from "./routes/me.js";
 import adminRouter from "./routes/admin.js";
 import coursesRouter from "./routes/courses.js";
+import modulesRouter from "./routes/modules.js";
 import trilhasRouter from "./routes/trilhas.js";
 import lessonsRouter from "./routes/lessons.js";
 
@@ -39,8 +40,10 @@ app.use(express.json());
 app.use("/api", healthRouter);
 app.use("/api", meRouter);
 app.use("/api", adminRouter);
-// Phase 2 — public content reads (catalog/course/trilha/lesson; PUBLISHED only).
+// Phase 2 — content routes. Public reads (catalog/course/trilha/lesson;
+// PUBLISHED only) + admin writes (gated per-route inside each router).
 app.use("/api", coursesRouter);
+app.use("/api", modulesRouter);
 app.use("/api", trilhasRouter);
 app.use("/api", lessonsRouter);
 
