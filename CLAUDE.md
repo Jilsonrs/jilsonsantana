@@ -1,4 +1,4 @@
-project-description# jilsonsantana.com — AI Learning Platform
+# jilsonsantana.com — AI Learning Platform
 
 ## Project Overview
 
@@ -8,28 +8,33 @@ A subscription learning platform: a single accessible membership = **courses + J
 
 See the **Document Map** below for every doc, what it holds, and where it is edited.
 
-## Document Map (where each doc lives and who edits it)
+## Document Map (governance — git is the source of truth)
 
-Two synced copies exist: the **repo** (canonical — what this agent reads) and the **Claude Project** (context for the operator's strategy chats). Each doc has ONE edit home, below. **In any divergence, the repo (git) wins** — it carries the real build history.
+**Governance rule (updated Jun 2026 — replaces the old `Edit=repo` / `Edit=Project` split):**
+**Any author may edit any doc when relevant — the operator, this agent (chat), or the build agent (Code). There is ONE non-negotiable rule: the repo (git) is the single source of truth. In any divergence, git wins.**
 
-Sync mechanic:
-- **Edit = repo** → the agent edits it in the repo (doc-sync); the operator downloads it and refreshes the Project copy (at end of phase).
-- **Edit = Project** → the operator edits it in the Project, downloads it, and uploads it to the repo. The agent treats these as read-only context and does NOT edit them.
+Why this exists (read before editing): the docs live in two places — the **repo** (git) and the **Claude Project** (chat context). The risk is not "who is allowed to edit"; it is **two copies disagreeing**. The rule that prevents that is git-wins + bidirectional sync, not edit-ownership.
 
-**Execution docs — content tracks what gets BUILT → `Edit = repo` (agent maintains via doc-sync):**
-- **`CLAUDE.md`** *(repo ROOT, not `docs/`)* — engineering conventions + Block Execution Protocol. The build law, read every session. When a convention is decided in a strategy chat, it is drafted and uploaded here; from then on the agent keeps it synced. **Edit = repo.**
-- **`docs/implementation-plan.md`** — phased task breakdown with checkboxes. The agent flips `[ ]→[x]` in the SAME commit as the work. **Edit = repo.**
-- **`docs/tech-stack.md`** — the actual stack + versions + rationale. Updated when the build adds/swaps/upgrades a library. **Edit = repo.**
+Sync discipline (cheap, non-optional):
+- Anything edited in **chat** (by the agent or operator) → the operator uploads it to the repo. Git now holds the truth.
+- Anything edited in the **repo** (by Code, in the same commit as the work) → the operator pulls it back into the Project so the chat context stays current.
+- **Diverged? Git wins.** Never trust the Project copy over git; re-sync from git.
 
-**Planning / strategy docs — content tracks the OPERATOR's decisions → `Edit = Project` (agent consults only when a decision needs them, does not edit):**
-- **`docs/project-description.md`** — identity, vision, the "AI-in-the-DNA" north star (the Project's project-description / strategy source of truth). **Edit = Project.**
-- **`docs/project-scope.md`** — product requirements; what is in/out of the MVP. Scope changes are product decisions. **Edit = Project.**
-- **`docs/strategy.md`** — positioning, pricing rationale, churn/KPIs, funnel. Pure business. **Edit = Project.**
-- **`docs/jilsonai.md`** — JilsonAI internal roadmap (chat, escalation, trilhas, quotas). **Edit = Project.**
-- **`docs/design.md`** — design system / tokens / aesthetic direction (Apple-clean, `#238FE8`). The direction is an operator decision. **Edit = Project.**
-- **`docs/content.md`** — pedagogical content / course-script material. **Edit = Project.**
+Special caution — `CLAUDE.md`: this is the build law the Code agent reads **every session**. If it diverges between chat and repo, the build runs on a stale rule. So `CLAUDE.md` needs the git-wins discipline **most**, not least. Edit it deliberately; sync it immediately.
 
-> Build-phase exception: when a planning doc's phase is actually built (UI/`design.md` in P1–P2, `jilsonai.md` in P6), the agent MAY reconcile build-specific details (e.g. a final token value, a tool signature) in the repo copy — flag it so the operator pulls those back into the Project. This is reconciliation of build facts, not redeciding strategy.
+The docs and what they hold (no edit-owner anymore — all follow git-wins):
+- **`CLAUDE.md`** *(repo ROOT, not `docs/`)* — engineering conventions + Block Execution Protocol. The build law, read every session.
+- **`docs/implementation-plan.md`** — phased task breakdown with checkboxes. Code flips `[ ]→[x]` in the SAME commit as the work; the agent may draft amendments ahead of a phase.
+- **`docs/tech-stack.md`** — the actual stack + versions + rationale.
+- **`docs/project-description.md`** — identity, vision, the "AI-in-the-DNA" north star (strategy source of truth).
+- **`docs/project-scope.md`** — product requirements; in/out of the MVP.
+- **`docs/strategy.md`** — positioning, pricing rationale, churn/KPIs, funnel.
+- **`docs/jilsonai.md`** — JilsonAI internal roadmap (chat, escalation, trilhas, quotas).
+- **`docs/design.md`** — design system / tokens / aesthetic direction (Apple-clean, `#238FE8`).
+- **`docs/content.md`** — landing copy + course-page copy / message direction.
+- **`docs/courses.md`** — course engineering, slate, content map (3-camadas methodology, Udemy×Escola).
+
+> When a planning doc's phase is actually built, the build agent reconciles build-specific details (a final token value, a tool signature, a field name) into the doc in the same commit — and flags it so the operator re-syncs the Project. This is reconciliation of build facts, not redeciding strategy: a strategy change is still the operator's call.
 
 ## Tech Stack
 
@@ -123,7 +128,36 @@ How each sliceable task ("block") is executed. This encodes the review disciplin
 - A member can **save/clone** a curated trilha (becomes theirs, own progress), **edit** it (add/remove courses, lessons, modules), and earns a **certificate at 100%** (name = trilha name; lists `skillsCovered`). The certificate has an **opt-in public verifiable URL** (`/certificado/[id]`, `isPublic` default false, OG-optimized for LinkedIn) — public only if the student allows it (LGPD).
 - **Onboarding is open and free:** trilhas + courses are browsable; the student clicks and watches whatever they want. `recommendTrilha` is **optional help, never a gate.** (Home section order = a build-time decision.)
 
+### Course page fields (Phase 2 — the course-detail page, mapped from competitor analysis)
 
+The course-detail page is **light by design** (this is a membership — the landing sells the subscription; the course page is catalog, not a heavy sales page). Fields split into **derived** (computed, never typed) and **manual** (operator fills per course). Keep manual fields few — solo sustainability.
+
+`Course` carries:
+- `title`, `subtitle?` (one result-framed sentence), `description?` (long), `level?` (`INICIANTE|INTERMEDIARIO|AVANCADO` — `as const` in `core/`, not a TS enum).
+- `learnTags[]` — "o que você vai aprender", rendered as **clickable tag pills** (Hashtag-style). `requirements[]` — pré-requisitos **shown openly** (vantagem: competitors hide them; in a membership, showing them costs no sale and cuts refunds/support). `personas[]` — "pra quem é".
+- `faq[]?` of `{ pergunta, resposta }` — **per-course FAQ, OPTIONAL**. Renders only if filled; most courses leave it empty. The landing already has a global FAQ (assinatura-level: fidelity, certificate, JilsonAI). Per-course FAQ is for content-specific doubts only — and **JilsonAI is the living FAQ** (a course-specific question goes to JilsonAI in that course's context). So: fill 2–3 entries only where a recurring real doubt exists; don't write a full FAQ per course (burnout — the catalog is broad). Same pattern as `camadas`/`highlights`: optional, exception-filled, AI covers the general case.
+- `highlights[]` of `{ icon, title, text }` — "diferenciais do curso" as **icon cards** (Xperiun-style). 3–4 per course. Icons from a fixed Lucide set (avoid bespoke art per course = burnout).
+- `thumbnailUrl?` — **course image shown in the catalog/list**. `introVideoId?` — **presentation video shown on the detail page** (Bunny). **TRAVA:** the intro video is a *sales* asset — it must play for **non-members** (NOT gated by `temAcessoAtivo()`); wired in Phase 3. Both are **optional** (don't force a bespoke thumbnail + intro video per course at launch).
+- `displayOrder` (manual ordering — NOT automatic/popularity ranking, which is post-launch read-side). `status` (`DRAFT|PUBLISHED|ARCHIVED`).
+- **Derived, never a column:** carga horária and lesson count (Σ from lessons); the 3-camadas grouping (from the marked layers); metadata strip.
+
+`Module` carries: `layer?` (optional — see below), `displayOrder`, `status`. `Lesson` carries: `displayOrder`, `status`.
+
+### Metodologia 3 Camadas (the differentiator — selo opcional, per course)
+
+A pedagogical methodology shown as a **selo (seal)** on the course page, the equivalent of competitors' "4 pilares". **Not every course has all three layers** (N8N may have only some) — so it is **not a boolean**; it is a selection.
+
+- **The three layers (internal enum, agnostic of tool):** `UNIVERSAL` · `MODERNO` · `IA`. ("Excel 365" is the *example* of `MODERNO` in the Excel context only — never put "Excel 365" in the global layer text; it breaks for SQL/Python/N8N.)
+- `Course.camadas[]` — array of the layers **this** course shows (`[]` = no selo; `[UNIVERSAL,IA]` = shows only two). This is what handles "nem todo curso tem as 3 camadas".
+- **Layer texts (name + blurb + icon) are GLOBAL — written once**, in `core/` constants. Per course the operator only **picks which layers**. This is what keeps it premium WITHOUT recurring per-course copy work (the Xperiun trap).
+- `Course.camadaOverride?` (jsonb, null) — optional per-course text override for a layer, for courses whose story the global text doesn't fit (e.g. N8N). **Exception, not routine:** if you override on *every* course, the global text is wrong — fix the global, don't write one per course.
+- **Global defaults (approved Jun 2026):**
+  - `UNIVERSAL` — icon `stack-2` · "Fundamentos sólidos" · "A base que funciona em qualquer versão — você aplica com o que já tem."
+  - `MODERNO` — icon `bolt` · "Recursos modernos" · "Os recursos mais atuais que aceleram seu trabalho e poucos dominam."
+  - `IA` — icon `sparkles` (**azul `--primary` #238FE8 — the only colored one**) · "Com IA do seu lado" · "A IA como copiloto pra gerar lógica, destravar erros e ganhar tempo."
+- **Icons:** Lucide, fine-stroke, monochrome (inherit `currentColor`); only the `IA` layer gets the blue (the "brilho do JilsonAI"). `MODERNO`=`bolt` is "energy/speed", not hype — no rocket/wand.
+- **Reveal vs internal:** the *promise* of the layers is shown to the student; the production economics (~75/15/10 %, "reaproveitado", the word "3 camadas" as jargon) stay **internal** — never in the student UI. The "precisa do Excel 365 pra praticar" note is **spoken in the lesson**, not a field.
+- **Not built at launch:** grouping the accordion sections by layer (refinement), and the per-layer filter ("só o que roda no meu Excel 2016" = post-launch read-side). Launch = the selo only.
 
 - Email/password, database sessions, Prisma adapter on Supabase Postgres. Mounted at `/api/auth/{*any}` (before `express.json()`).
 - Server middleware: `requireAuth` (sets `req.user`/`req.session`), `requireAdmin`.
@@ -216,3 +250,5 @@ How each sliceable task ("block") is executed. This encodes the review disciplin
 *Atualizado Jun 2026 (rev. externa Gemini): UTM capture nos campos do User (P1); Bunny signed URL elástico sem IP-lock; Stripe force-sync (admin/server-only, nunca GET destravante) + offboarding anti roach-motel; certificado com URL pública opt-in (LGPD); regra anti-alucinação na persona do JilsonAI.*
 *Atualizado Jun 2026: adicionada ao Working Method a regra de doc-sync ao fim de cada fase/task (marcar [x], reconciliar contradição no mesmo session, logar só se for decisão) — mantém os docs honestos vs `main`.*
 *Atualizado Jun 2026: adicionado **Document Map** no topo — os 9 docs espelhados em repo + Claude Project, cada um com dono de edição (Edit=repo: CLAUDE, implementation-plan, tech-stack; Edit=Project: project-description, project-scope, strategy, jilsonai, design, content). Regra: divergência → o repo (git) ganha; agente não edita docs de planejamento, só consulta.*
+*Atualizado Jun 2026 — **GOVERNANÇA SIMPLIFICADA (decisão do operador):** removida a separação Edit=repo / Edit=Project. Agora **qualquer autor (operador, agente do chat, agente Code) pode editar qualquer doc quando relevante**; a única regra é **git = fonte única da verdade** (divergiu → git ganha, sincroniza nos dois sentidos). `CLAUDE.md` exige a disciplina git-wins ao máximo (é lido todo session pelo Code). `courses.md` adicionado ao mapa.*
+*Atualizado Jun 2026 — **Página de curso + Metodologia 3 Camadas (Fase 2):** campos do `Course` (subtitle, level, learnTags[], requirements[] mostrados, personas[], highlights[] com ícone, thumbnailUrl=lista, introVideoId=detalhe/não-gated, displayOrder, status) + `Module`/`Lesson` (displayOrder, status). Selo 3 camadas = `Course.camadas[]` (não-boolean — curso pode ter 1, 2 ou 3) + textos globais em `core/` + `camadaOverride?` (exceção, ex. N8N). Enum `UNIVERSAL/MODERNO/IA` (agnóstico; "Excel 365" = exemplo só no Excel). Ícones `stack-2`·`bolt`·`sparkles`, azul só na IA. Revelar a promessa, esconder a economia (%/reaproveitado). Filtro por camada + agrupamento do accordion = pós-launch. FAQ por curso = `Course.faq[]` opcional (JilsonAI é a FAQ viva).*

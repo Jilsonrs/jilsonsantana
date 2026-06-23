@@ -230,6 +230,51 @@ quiser trilha, tutor 24/7 e certificado, a escola te espera."
 
 ---
 
+## 15. Página de Curso (copy dos blocos) — NÃO é a landing
+> `CoursePage.tsx` · **ATIVO (Fase 2)** · página leve (catálogo), não landing de venda
+> Mapeada da análise dos concorrentes (Mosh/Xperiun/Hashtag). A *landing* vende a assinatura;
+> a página de curso só apresenta o curso pra quem já é (ou está a 1 clique de ser) membro.
+
+**Ordem dos blocos (mobile-first):**
+1. **Hero** — título + subtítulo (1 frase de resultado) + strip de metadados em ícone
+   (⏱ carga · 🎬 nº aulas · 📊 nível · 🏅 certificado). Carga e nº de aulas = **derivados**.
+   Vídeo de apresentação toca aqui (e toca pra quem **ainda não é membro** — é venda).
+2. **Diferenciais do curso** — cards com ícone (não texto corrido). 3–4 por curso.
+   *Ex. (Excel + IA):* "Foco em aplicação real" · "Cenário profissional coerente" · "Aulas
+   diretas e objetivas" · "Excel moderno que poucos dominam".
+3. **Metodologia 3 Camadas** (selo — ver abaixo). Só aparece com as camadas que o curso tem.
+4. **O que você vai aprender** — tag pills clicáveis.
+5. **Pré-requisitos** — **mostrados abertamente** (os concorrentes escondem; aqui é transparência
+   que reduz frustração/reembolso — e numa assinatura não custa venda).
+6. **Pra quem é** — personas.
+7. **Conteúdo** — accordion Módulo → Aula.
+8. **FAQ do curso** *(opcional)* — accordion. Só aparece se preenchido. A FAQ global da landing
+   (§11) já cobre a assinatura; aqui é só dúvida específica do conteúdo. **O JilsonAI é a FAQ viva**
+   (pergunta de curso → responde no contexto do curso), então preencha 2–3 itens só onde houver
+   dúvida recorrente real — não escreva FAQ completa por curso (catálogo amplo = burnout).
+
+> Imagem do curso = aparece na **lista/catálogo**. Vídeo de apresentação = aparece na **página de
+> detalhe**. São dois ativos distintos, ambos opcionais (não obrigue thumbnail caprichada + vídeo
+> por curso no lançamento — produção recorrente).
+
+### Bloco "Metodologia 3 Camadas" (o diferencial — equivalente aos "pilares" dos concorrentes)
+
+**Frase de abertura:** "Cada curso, montado em três camadas — pra você aplicar hoje e evoluir sempre."
+
+**As 3 camadas (texto global — escrito 1 vez, igual em todo curso que tiver a camada):**
+- 📐 **Fundamentos sólidos** — "A base que funciona em qualquer versão — você aplica com o que já tem."
+- ⚡ **Recursos modernos** — "Os recursos mais atuais que aceleram seu trabalho e poucos dominam."
+- ✦ **Com IA do seu lado** — "A IA como copiloto pra gerar lógica, destravar erros e ganhar tempo."
+
+> Build: ícones Lucide `stack-2` · `bolt` · `sparkles` (azul #238FE8 **só** na camada IA). O curso
+> marca quais camadas tem (`Course.camadas[]`) — pode ter 1, 2 ou 3. Nem todo curso tem as três
+> (N8N pode ter só IA). Texto global por padrão; `camadaOverride` por curso é exceção (ex. N8N).
+> **REVELAR** a promessa das camadas; **NÃO revelar** a economia interna (% de reaproveitamento,
+> a palavra "reaproveitado", o jargão "3 camadas"). O "precisa do Excel 365 pra praticar" o Jilson
+> **fala na aula** — não vira texto. "Excel 365" nunca entra no texto global (quebra fora do Excel).
+
+---
+
 ## Removido nesta versão (não reintroduzir)
 Consultoria (6 serviços/Service 6/$100hr/Process/Portfolio), ContactForm de consultoria,
 cursos a $119 avulsos, membership $29.99, free trial, conteúdo grátis na escola, fórum de
@@ -242,3 +287,6 @@ pares, copy em inglês, "cursos escondidos até 10K subs", ataque direto à Udem
 Comunidade redefinida como suporte AI-nativo + anúncios (sem fórum de pares). Certificado e
 suporte no lançamento. Tecnicas de concorrente aproveitadas: tabela medieval×IA, "decisão/
 problema primeiro", inversão "não prende" vs "não evapora". 1 TBD: condição de Founding Member.*
+
+*Atualizado: Jun 2026 — adicionada **§15 Página de Curso** (mapeada da análise Mosh/Xperiun/Hashtag): ordem dos blocos, diferenciais como cards-ícone, pré-requisitos mostrados, imagem (lista) vs vídeo de apresentação (detalhe). **Bloco Metodologia 3 Camadas** = selo opcional com textos globais (Fundamentos sólidos · Recursos modernos · Com IA do seu lado), ícones stack-2·bolt·sparkles (azul só na IA). Revelar a promessa, esconder a economia. É página de curso, NÃO a landing.*
+*Atualizado: Jun 2026 — §15 ganhou bloco 8 (FAQ do curso, opcional): só aparece se preenchida, JilsonAI cobre o caso geral, 2–3 itens por exceção.*
