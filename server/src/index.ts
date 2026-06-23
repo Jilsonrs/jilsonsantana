@@ -41,7 +41,57 @@ app.use("/api", adminRouter);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const clientDist = path.join(__dirname, "../public");
 
+// Reads the `preview` cookie straight from the header (one cookie, trivial
+// parse) so we avoid adding cookie-parser. Returns true only when it matches
+// the configured PREVIEW_TOKEN.
+function hasPreviewCookie(req: express.Request): boolean {
+  const token = process.env.PREVIEW_TOKEN;
+  if (!token) return false;
+  const raw = req.headers.cookie;
+  if (!raw) return false;
+  return raw.split(";").some((part) => {
+    const [name, ...rest] = part.trim().split("=");
+    return name === "preview" && rest.join("=") === token;
+  });
+}
+
 if (process.env.NODE_ENV === "production") {
+  // ── Coming-soon gate ────────────────────────────────────────────────────
+  // Public visitors see a standalone "Em breve" page; the operator bypasses it
+  // by visiting /__preview?token=<PREVIEW_TOKEN> once, which sets a long-lived
+  // cookie. Toggled at REQUEST time by the COMING_SOON env var, so launch day
+  // is just flipping the Railway variable (service restart) — no code change.
+
+  // Operator bypass: validate the token, drop the preview cookie, land on the
+  // real app. Registered BEFORE the gate (it has no extension, so the gate
+  // below would otherwise intercept it).
+  app.get("/__preview", (req, res) => {
+    const token = process.env.PREVIEW_TOKEN;
+    if (token && req.query.token === token) {
+      res.cookie("preview", token, {
+        httpOnly: true,
+        secure: true,
+        sameSite: "lax",
+        maxAge: 1000 * 60 * 60 * 24 * 90, // 90 days
+      });
+      return res.redirect("/");
+    }
+    return res.status(404).send("Not found");
+  });
+
+  // The gate sits AFTER the /api routers, so the API (incl. /api/health used by
+  // the Railway healthcheck) is never blocked.
+  app.use((req, res, next) => {
+    if (process.env.COMING_SOON !== "true") return next();
+    if (hasPreviewCookie(req)) return next();
+    // Only intercept page navigations; let static assets (.js/.css/.svg) pass
+    // through — coming-soon.html references none of them anyway.
+    if (req.method === "GET" && path.extname(req.path) === "") {
+      return res.sendFile(path.join(clientDist, "coming-soon.html"));
+    }
+    return next();
+  });
+
   app.use(express.static(clientDist));
   // SPA fallback — must be after all API routes
   app.get("/*splat", (_req, res) => {

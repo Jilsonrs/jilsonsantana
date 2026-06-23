@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Pré-lançamento: não indexar enquanto o gate estiver ativo. -->
+    <meta name="robots" content="noindex" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>Em breve — Jilson Santana</title>
+    <style>
+      :root {
+        --brand: #238fe8;
+        --ink: #0a0a0b;
+        --muted: #6b7280;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+      }
+      body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        padding: 24px;
+        background: #ffffff;
+        color: var(--ink);
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+          Arial, sans-serif;
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+      }
+      main {
+        width: 100%;
+        max-width: 30rem;
+        text-align: center;
+        animation: rise 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+      }
+      .mark {
+        width: 56px;
+        height: 56px;
+        margin: 0 auto 32px;
+        display: block;
+      }
+      h1 {
+        margin: 0 0 14px;
+        font-size: clamp(2.25rem, 7vw, 3rem);
+        line-height: 1.05;
+        letter-spacing: -0.03em;
+        font-weight: 600;
+      }
+      p {
+        margin: 0 auto 36px;
+        max-width: 24rem;
+        font-size: clamp(1rem, 3.4vw, 1.125rem);
+        line-height: 1.5;
+        color: var(--muted);
+      }
+      .cta {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 13px 26px;
+        border-radius: 999px;
+        background: var(--brand);
+        color: #fff;
+        font-size: 1rem;
+        font-weight: 500;
+        text-decoration: none;
+        transition:
+          transform 0.15s ease,
+          filter 0.15s ease;
+      }
+      .cta:hover {
+        filter: brightness(1.05);
+        transform: translateY(-1px);
+      }
+      .cta:active {
+        transform: translateY(0);
+      }
+      .cta svg {
+        width: 18px;
+        height: 18px;
+      }
+      @keyframes rise {
+        from {
+          opacity: 0;
+          transform: translateY(12px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        main {
+          animation: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <!-- Marca (mesmo glifo do favicon, inline para evitar request extra). -->
+      <svg
+        class="mark"
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 32 32"
+        aria-label="Jilson Santana"
+      >
+        <rect width="32" height="32" rx="7" fill="#238FE8" />
+        <g stroke="#FFFFFF" stroke-width="3.4" stroke-linecap="round">
+          <line x1="13" y1="7" x2="13" y2="25" />
+          <line x1="20" y1="7" x2="20" y2="25" />
+          <line x1="7" y1="13" x2="25" y2="13" />
+          <line x1="7" y1="20" x2="25" y2="20" />
+        </g>
+      </svg>
+      <h1>Em breve.</h1>
+      <p>A escola de IA do Jilson Santana está chegando.</p>
+      <a
+        class="cta"
+        href="https://youtube.com/@JilsonSantanaBI"
+        target="_blank"
+        rel="noopener"
+      >
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path
+            d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.6 12 3.6 12 3.6s-7.5 0-9.4.5A3 3 0 0 0 .5 6.2 31 31 0 0 0 0 12a31 31 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1A31 31 0 0 0 24 12a31 31 0 0 0-.5-5.8ZM9.6 15.6V8.4l6.3 3.6-6.3 3.6Z"
+          />
+        </svg>
+        Ver no YouTube
+      </a>
+    </main>
+  </body>
+</html>
