@@ -26,10 +26,11 @@ centrado em **habilidades de dados práticas, ensinadas de forma simples, acess�
 era da IA.
 
 Jilson é **instrutor e analista de dados sênior** que já ajudou **+100.000 alunos** no mundo a
-aprender dados de forma prática e aplicada. Tem 47 anos, é consciente de burnout e **não está
-construindo um império**. Sustentabilidade é restrição de design, não meta secundária. Todo o
-modelo é desenhado pra que **uma pessoa atenda muitos sem se esgotar** — por isso o **JilsonAI**
-(assistente de ensino na voz e método dele) é **prioridade de produto, não acessório**.
+aprender dados de forma prática e aplicada. A aposta agora é **construir um negócio maior**: usar
+**IA + sistemas integrados** pra que **uma pessoa atenda centenas de alunos** sem montar time — por
+isso o **JilsonAI** (assistente de ensino na voz e método dele) é **prioridade de produto, não
+acessório**. É ele que faz o suporte escalar sem virar headcount, viabilizando a **meta de receita
+(US$ 6k líq/mês, B2C-first)** com um operador só.
 
 **O modelo é uma assinatura única**, deliberadamente simples:
 
@@ -71,7 +72,8 @@ sobre crescimento rápido.
 - +100.000 alunos formados, dezenas de países
 - Udemy Business: milhares de alunos corporativos
 - 12+ anos como analista de dados e desenvolvedor full-stack
-- YouTube @JilsonUS — conteúdo de dados + IA aplicada, audiência grande (~177K)
+- YouTube "Jilson Santana" — canal de dados + IA aplicada, em **rebuild de inglês → português**
+  (~1.580 inscritos em jun/2026, base a reconstruir; o número "177K" era incorreto e foi descartado)
 - Catálogo "Formação Especialista" na Udemy (marca estabelecida)
 - Certificação PL-300
 
@@ -79,8 +81,10 @@ sobre crescimento rápido.
 
 ## Modelo, preço & esteira de valor
 
-> A base fica **acessível**; os tiers de cima carregam o ticket alto.
-> Resolve "acessibilidade + sem teto de receita" sem precificar a base alto.
+> **B2C-first:** a base (assinatura) fica **acessível** E é o **motor de receita** — a meta de US$ 6k
+> vem da base de **pessoas físicas** (~365 ativos). Os tiers de cima (cohorts, B2B) são **bônus** que
+> dão folga e aceleram, **não a via principal**. A escala vem do **volume da base**, viabilizada pelo
+> JilsonAI (suporte não escala com horas) — não de precificar a base alto.
 
 | Tier | O quê | Preço | Papel |
 |------|-------|-------|-------|
@@ -100,6 +104,29 @@ sobre crescimento rápido.
   conversão × LTV; fidelidade 12x carrega risco de Procon/CDC/chargeback pra operador solo.
 - *KPIs a observar:* churn <8% (saudável BR 6–10%), conversão 3–5%, winback 15–25%,
   MRR-novo ≥20%>MRR-perdido, mix de plano 20–30% anual.
+
+### Meta de receita (B2C-first — atualizada Jun 2026)
+
+**Alvo: US$ 6.000 líquidos/mês.** Motor = **base de pessoas físicas** (assinatura). Cohorts e B2B = **bônus**.
+
+| Item | Valor | Nota |
+|------|-------|------|
+| Câmbio de referência | R$ 5,15/US$ | spot 23/jun/2026 — *atualizar no dia* |
+| Meta líquida | **≈ R$ 30.900/mês** | US$ 6.000 × câmbio |
+| Haircut | ~11% | Stripe ~4–5% + imposto Simples ~6% — *confirmar c/ contador* |
+| ARPU líquido | ≈ R$ 85/assinante/mês | mix 75% mensal / 25% anual |
+| **Assinantes ativos-alvo** | **≈ 365** (faixa 350–420) | planejar p/ ~400 (margem câmbio + churn) |
+| Faturamento bruto implícito | ≈ R$ 35k/mês ≈ R$ 420k/ano | **território EPP** — Simples acima do ME |
+
+**Aquisição (churn-adjusted):** a churn 7%, 365 ativos perdem ~26/mês → ~26 vendas novas/mês só pra
+**manter**. Trajetória 0 → 365: ~40 novas/mês ≈ 14 meses · ~50/mês ≈ 10 meses · ~60/mês ≈ 8 meses.
+**Churn é a maior alavanca** (7% → 5% derruba a reposição p/ ~18/mês). Funil: `vendas/mês = visitantes
+× conversão (3–5%)`. Inputs reais a preencher: views/mês YouTube, CTR→site, lista de e-mail. Detalhe
+completo em **STRATEGY.md §6**.
+
+> **Regime tributário:** a meta estoura MEI (R$ 81k/ano) e ME (R$ 360k/ano) → **EPP no Simples
+> Nacional**. Planejar desenquadramento + pró-labore/distribuição de lucros **com contador antes de
+> escalar** (não depois — desenquadramento por excesso é retroativo).
 
 ### Valor recorrente (o que a Udemy não dá)
 Conteúdo continuamente atualizado, JilsonAI 24/7, suporte direto, trilhas e certificados.
@@ -171,14 +198,16 @@ Automação & IA). Fio condutor: **dados na era da IA** ("X + Claude").
 
 ## Canais
 
-- **YouTube @JilsonUS — funil primário de aquisição + AdSense bônus.** 1 vídeo/semana, PT.
-  AdSense é **bônus real**, não a renda principal (assinatura + tiers de cima são). RPM PT/BR é baixo
-  — é compounding de longo prazo, não atalho.
-- **Udemy — descoberta / prova social + âncora de credibilidade** ("+100 mil alunos"). **Fora do
-  escopo deste projeto** — tratada em projeto Claude separado. Não há UDEMY.md aqui.
-- **Táticas de captura aprovadas:** lição "Próximos passos" no fim dos cursos; 1–2 e-mails
-  educativos/mês; trailer do canal; CTA guiada por identidade (tagline oficial); escassez de
-  founding member (sem lock vitalício) pros alunos Udemy.
+- **Udemy (+100 mil alunos) — MOTOR de aquisição inicial.** A alavanca de curto prazo é **e-mail
+  pra base Udemy** convidando pro canal/site. Mesmo conversão baixa (0,3–0,5%) já dá centenas de
+  assinantes (ordem da meta de ~365). Udemy em si fica **fora do escopo de build** (projeto à parte),
+  mas é o canal de aquisição nº 1 no lançamento. Não há UDEMY.md aqui.
+- **YouTube "Jilson Santana" — em rebuild PT (~1.580 inscritos), compounding de médio/longo prazo.**
+  Era inglês, está virando PT. 1 vídeo/semana. **Não é o motor no curto prazo** (base pequena, ainda
+  a reconstruir) — vira motor à medida que cresce. AdSense é **bônus** (RPM PT/BR baixo).
+- **Táticas de captura aprovadas:** **campanha de e-mail pra base Udemy** (convite pro canal + site);
+  lição "Próximos passos" no fim dos cursos; 1–2 e-mails educativos/mês; trailer do canal; CTA guiada
+  por identidade (tagline oficial); escassez de founding member (sem lock vitalício) pros alunos Udemy.
 
 ---
 
@@ -298,16 +327,17 @@ GitHub Actions.**
   frontend.
 - **Type-safe**, conteúdo gerido por admin onde possível.
 - **Construído pra durar e pra um operador** — limpo, documentado, sustentável de rodar solo aos 47.
-- **Acessibilidade é valor, não compromisso.** A base fica acessível; a receita escala pela esteira,
-  nunca por subir a base.
+- **Acessibilidade é valor, não compromisso.** A base fica acessível **e é o motor de receita** — a
+  meta vem do **volume da base** (pessoas físicas), viabilizado pelo JilsonAI. A esteira (cohorts/B2B)
+  é bônus/upside, não a via principal.
 
 ---
 
 ## Princípio-guia
 
 > Simples como a Apple, autoridade como o Mosh, **AI no DNA** como assinatura única —
-> base acessível, ticket alto nos tiers de cima, AdSense de bônus, escalável pelo JilsonAI,
-> sustentável aos 47. **A escola não ensina IA: a escola É IA.**
+> base acessível **como motor de receita** (meta **US$ 6k líq ≈ ~365 assinantes**), cohorts/B2B/AdSense
+> de bônus, escalável pelo JilsonAI. **A escola não ensina IA: a escola É IA.**
 
 ---
 
@@ -333,6 +363,15 @@ JilsonAI: default modelo de ponta + quota + medidor de consumo visível + tiers 
 removido da escola. Udemy fora do escopo (projeto à parte). B2B/corporativo como horizonte (Tier 3,
 Fase 12, seams prontos). Design travado (Apple-claro + azul #238FE8 da logomarca). Stack atualizada
 (Vite, shadcn, Better Auth, pg-boss). Fase 0 concluída.*
+
+*Atualização: Jun 2026 — META B2C-FIRST. Adicionado alvo explícito de receita: **US$ 6.000 líq/mês
+≈ ~365 assinantes ativos** (pessoa física = motor; cohorts/B2B = bônus, não load-bearing). Nova seção
+"Meta de receita (B2C-first)" com premissas (câmbio R$5,15, haircut ~11%, ARPU líq ~R$85) + matemática
+de aquisição churn-adjusted + alerta de regime tributário (EPP, planejar com contador). Visão geral,
+esteira de valor, princípio de acessibilidade e princípio-guia reescritos: base = motor de receita
+(volume), não "base modesta". Removido o enquadramento "não construindo um império / sem se esgotar"
+— substituído pela tese de alavancagem (IA + sistemas atendem centenas solo). Detalhe econômico em
+STRATEGY.md §6. Premissas de câmbio/imposto a confirmar (câmbio no dia; tributação com contador).*
 
 *Atualização: Jun 2026 (rev. externa Gemini aplicada) — seams de execução distribuídos por fase
 sem inflar o MVP (0–7): UTM capture (P1), hero da landing MOCKADO/sem-API (DESIGN §2), signed URL
