@@ -40,15 +40,15 @@
 
 ## Phase 2 — Content Model (Courses / Modules / Lessons) + Trilhas  *(low–medium risk)*
 
-- [x] Prisma models: `Course`, `Module`, `Lesson` (+ RLS on each) ; migration
+- [ ] Prisma models: `Course`, `Module`, `Lesson` (+ RLS on each) ; migration
 - [ ] **`Lesson` is first-class & searchable** (own title + tags) — a lesson can appear in
       results and inside a trilha on its own, not only nested in a course.
-- [x] **Trilha entities** (the "currículo" — see JILSONAI.md → Trilhas): `LearningPlan`
+- [ ] **Trilha entities** (the "currículo" — see JILSONAI.md → Trilhas): `LearningPlan`
       (`ownerUserId?` null = curated template, `isTemplate`, `skillsCovered[]`),
       `PlanModule` (grouping by competency), `PlanItem` (`itemType[COURSE|LESSON]`,
       `courseId?`/`lessonId?` — **free mix of whole courses + standalone lessons**) (+ RLS) ; migration
-- [x] `core/schemas/` for course/module/lesson + **plan/planItem** + `core/constants/`
-- [x] Server routes: CRUD under `/api/courses`, `/api/modules`, `/api/lessons`,
+- [ ] `core/schemas/` for course/module/lesson + **plan/planItem** + `core/constants/`
+- [ ] Server routes: CRUD under `/api/courses`, `/api/modules`, `/api/lessons`,
       **`/api/trilhas`** (admin-protected for writes; a member can save/clone a curated trilha)
 - [ ] **Keyword search** endpoint over trilhas/courses/lessons (semantic/IA search = JILSONAI Fase 4–5)
 - [ ] Client: catalog page (trilhas + courses), course page, lesson list (no video yet)
@@ -56,10 +56,10 @@
 - [ ] Seed the **Trilha 1 — Fundamentos (Excel + IA)** + its course structure
 
 **Course-page fields + Metodologia 3 Camadas (mapped from competitor analysis Jun 2026 — see CLAUDE.md → Course page fields):**
-- [x] `Course` fields: `subtitle?`, `description?`, `level?` (`INICIANTE|INTERMEDIARIO|AVANCADO`, `as const` in `core/`), `learnTags[]`, `requirements[]`, `personas[]`, `highlights[]` (`{icon,title,text}`), `faq[]?` (`{pergunta,resposta}` — optional per-course FAQ, renders only if filled), `thumbnailUrl?` (catalog image), `introVideoId?` (detail-page presentation video), `displayOrder`, `status` (`DRAFT|PUBLISHED|ARCHIVED`)
-- [x] `Module`: `layer?` (`UNIVERSAL|MODERNO|IA`, optional), `displayOrder`, `status` ; `Lesson`: `displayOrder`, `status`
-- [x] **3-camadas as `Course.camadas[]`** (array, NOT boolean — a course may have 1, 2 or 3 layers) + `camadaOverride?` (jsonb, per-course text exception) ; migration (+ RLS on new tables)
-- [x] **Global layer config** in `core/` (icon `stack-2`/`bolt`/`sparkles` + name + blurb per layer) — written once, not per course. Blue `--primary` only on the `IA` layer.
+- [ ] `Course` fields: `subtitle?`, `description?`, `level?` (`INICIANTE|INTERMEDIARIO|AVANCADO`, `as const` in `core/`), `learnTags[]`, `requirements[]`, `personas[]`, `highlights[]` (`{icon,title,text}`), `faq[]?` (`{pergunta,resposta}` — optional per-course FAQ, renders only if filled), `thumbnailUrl?` (catalog image), `introVideoId?` (detail-page presentation video), `displayOrder`, `status` (`DRAFT|PUBLISHED|ARCHIVED`)
+- [ ] `Module`: `layer?` (`UNIVERSAL|MODERNO|IA`, optional), `displayOrder`, `status` ; `Lesson`: `displayOrder`, `status`
+- [ ] **3-camadas as `Course.camadas[]`** (array, NOT boolean — a course may have 1, 2 or 3 layers) + `camadaOverride?` (jsonb, per-course text exception) ; migration (+ RLS on new tables)
+- [ ] **Global layer config** in `core/` (icon `stack-2`/`bolt`/`sparkles` + name + blurb per layer) — written once, not per course. Blue `--primary` only on the `IA` layer.
 - [ ] Client course-detail page: hero (title/subtitle/metadata strip — carga & lesson count **derived**), `highlights[]` icon cards, **3-camadas selo** (renders only the layers in `camadas[]`), `learnTags[]` as tag pills, `requirements[]` shown openly, `personas[]`, accordion (Module→Lesson), `faq[]` accordion (renders only if filled)
 - [ ] Catalog/list shows `thumbnailUrl`; admin can set all the above per course
 - **Done when:** the Excel + IA course AND a curated trilha are visible; a member can save a
@@ -85,21 +85,21 @@
 - [ ] E2E: non-member cannot get a playable URL
 - **Done when:** a member plays a lesson; a non-member is blocked. *Test the gate hard.*
 
-## Phase 4 — Billing & Membership Gate (Stripe)  *(HIGH RISK — own sessions)*
+## Phase 4 — Billing & Membership Gate (Stripe Padrão, recorrência in-house)  *(HIGH RISK — own sessions)*
 
-- [ ] Stripe products/prices: **2 prices on one "Membership" product** — Mensal R$99,90 (sem
-      fidelidade, padrão) + Anual ~R$995 (~17% off, cobrança única recorrente anual). **Sem free
-      trial. Sem conteúdo grátis na escola.** Upgrade mensal→anual usa proration nativo do Stripe.
-- [ ] `Subscription` model with growth seams: `ownerUserId?`, `organizationId?` (nullable), `seats` (default 1), `status` + Stripe columns (`stripeSubscriptionId`, `stripeCustomerId`, `currentPeriodEnd`) (+ RLS) ; migration
-- [ ] `temAcessoAtivo(userId)` lib — individual path only (`assinaturaIndividualAtiva`); the single source of truth for access
-- [ ] Checkout session endpoint; Customer Portal endpoint
-- [ ] **Webhook handler** (subscription created/updated/canceled) → responds fast (200) then enqueues via pg-boss → CREATES user+subscription on first payment (replaces seed as the trigger) and syncs status; verify Stripe signature
-- [ ] **"Force sync" fallback.** Function that re-queries the Stripe API (`subscriptions.retrieve`) and reconciles access, in case a webhook (pg-boss) ever fails — prevents the worst support case: a paying member locked out. **TRAVA:** admin-only OR a secure server scope (authenticated session). NEVER an unauthenticated GET that unlocks access — that would be a billing bypass.
+- [ ] **Stripe Plano Padrão**, conta MEI/CNPJ, payout Banco do Brasil. **Sem Stripe Billing, sem Customer Portal.** Preços (Mensal R$99,90 sem fidelidade / Anual ~R$995 ~17% off) são **lógica nossa**, não objetos `Price` do Billing. Sem free trial, sem conteúdo grátis.
+- [ ] **Captura de cartão na própria escola via Payment Element.** `SetupIntent` salva o `PaymentMethod` no `Customer`; o aluno **nunca sai do site**. Dado do cartão vai direto pro Stripe (não toca nosso servidor).
+- [ ] `Subscription` model (fonte única de acesso) with growth seams: `ownerUserId?`, `organizationId?` (nullable), `seats` (default 1), `status`, `currentPeriodEnd`, colunas Stripe (`stripeCustomerId`, `stripePaymentMethodId`, `stripeSubscriptionId?` *— nullable, reservado caso migremos pro Billing*) (+ RLS) ; migration
+- [ ] **Agendador de cobrança recorrente próprio (pg-boss):** no `currentPeriodEnd`, dispara `PaymentIntent` off-session no `PaymentMethod` salvo → sucesso estende o período; falha entra no dunning.
+- [ ] **Dunning in-house:** retry de cartão recusado (cronograma próprio), e-mail Resend "atualize seu cartão", janela de tolerância antes de cortar acesso. **TRAVA: 3DS/SCA off-session** — tratar `requires_action` (renovação que exige re-autenticação do banco) sem quebrar a cobrança nem trancar quem pagou.
+- [ ] `temAcessoAtivo(userId)` lib — caminho individual (`assinaturaIndividualAtiva`); fonte única de verdade do acesso, lida da NOSSA `Subscription`
+- [ ] **Webhook handler** (`payment_intent.succeeded` / `payment_intent.payment_failed` / `charge.refunded` / `charge.dispute.created`) → responde rápido (200) → enfileira via pg-boss → CRIA user+subscription no primeiro pagamento (substitui o seed) e sincroniza status; **verifica assinatura do Stripe**
+- [ ] **"Force sync" fallback.** Reconsulta a Stripe API (status do `PaymentIntent`/`Customer`) e reconcilia acesso caso um webhook (pg-boss) falhe — evita o pior caso de suporte: assinante pagante trancado pra fora. **TRAVA:** admin-only OU escopo de servidor seguro (sessão autenticada). NUNCA um GET não autenticado que libere acesso — seria bypass de billing.
 - [ ] `requireActiveMembership` middleware (wraps `temAcessoAtivo`) gating content + video URLs
 - [ ] On access loss: `session.deleteMany({ userId })` to force logout
-- [ ] Client: pricing page, subscribe flow, manage-subscription (portal)
-- [ ] **Offboarding screen before the Stripe Customer Portal (seam).** Intercepts "cancelar", collects the reason, then forwards to the Portal. **TRAVA (anti roach-motel — Procon/CDC sensibility already raised in pricing):** a clear **"cancelar mesmo assim"** is always visible, 1 click; calm tone, not retentive. **Phasing:** reason capture = **launch (lands with this screen in P4 / wired in P7)**; **"pausar 1 mês" = fast-follow post-launch** (*inferência:* uses Stripe native `pause_collection` — confirm at build). Do NOT build the pause for launch.
-- [ ] E2E: subscribe → access granted; cancel → access revoked at period end
+- [ ] Client: pricing page + **checkout embutido (Payment Element)** + **tela de gestão de assinatura DENTRO da escola** (trocar cartão, ver próxima cobrança, mudar mensal↔anual, cancelar) — substitui o Customer Portal. *Proration mensal↔anual agora é cálculo nosso (crédito dos dias restantes).*
+- [ ] **Tela de offboarding antes do cancelamento (seam).** Intercepta "cancelar", coleta o motivo, depois executa o **nosso** cancelamento (marca `Subscription` pra encerrar no fim do período; não recobra). **TRAVA (anti roach-motel — sensibilidade Procon/CDC já levantada no pricing):** "cancelar mesmo assim" sempre visível, 1 clique; tom calmo, não retentivo. **Faseamento:** captura de motivo = **launch**; **"pausar 1 mês" = fast-follow** (agora é lógica nossa — só não recobrar no próximo ciclo; confirmar no build). Não construir a pausa no launch.
+- [ ] E2E: assinar → acesso liberado; renovação off-session → período estende; cancelar → acesso revogado no fim do período; cartão recusado → dunning → corte após tolerância
 - **Done when:** paying members get access, status survives reload, webhooks reconcile truth.
 
 ## Phase 5 — Lesson Progress + Event Capture Foundation  *(low–medium risk)*
@@ -172,3 +172,4 @@ MVP = **Phases 0 → 7** (incl. trilhas curadas na Phase 2, certificados na Phas
 *Atualizado: Jun 2026 (rev. externa Gemini) — seams de engenharia distribuídos por fase, sem inflar o MVP (0–7): UTM capture (P1), signed URL elástico sem IP-lock (P3), force-sync Stripe + offboarding screen anti roach-motel (P4), certificado público opt-in (P6.5), captura de motivo de cancelamento no launch + "pausar 1 mês" como fast-follow (P7). Auto-ingestão de LessonChunks fica PARQUEADA na Fase 5 (RAG, pós-MVP) — não construir, não puxar pra frente.*
 *Atualizado: Jun 2026 — **Fase 2 ganhou a página de curso** (mapeada da análise Mosh/Xperiun/Hashtag): campos do Course (subtitle, level, learnTags, requirements mostrados, personas, highlights c/ ícone, thumbnailUrl=lista, introVideoId=detalhe, displayOrder, status) + Module/Lesson (displayOrder, status). **Metodologia 3 Camadas** = selo opcional via `Course.camadas[]` (não-boolean; curso pode ter 1–3 camadas) + textos globais em core/ + `camadaOverride?` (exceção, ex. N8N). Enum UNIVERSAL/MODERNO/IA, ícones stack-2·bolt·sparkles (azul só na IA). Seams pós-launch: introVideoId não-gated (wiring P3), filtro/agrupamento por camada, "pergunte ao JilsonAI" na página de curso (P6), prova social pesada.*
 *Atualizado: Jun 2026 — FAQ por curso adicionada como `Course.faq[]` **opcional** (renderiza só se preenchida; JilsonAI é a FAQ viva; preencher por exceção, não obrigatório — evita burnout no catálogo amplo).*
+*Atualizado: Jun 2026 — **Fase 4 reescrita: Stripe Plano Padrão + recorrência IN-HOUSE.** Conta MEI/CNPJ, payout Banco do Brasil (substitui C6). NÃO usar Stripe Billing nem Customer Portal — assinatura recorrente construída nos primitivos (Customer/SetupIntent/PaymentMethod/PaymentIntent), agendada via pg-boss; captura de cartão via Payment Element embutido (aluno nunca sai da escola); gestão/cancelamento dentro do site. Custo da decisão = dunning + 3DS/SCA off-session + proration mensal↔anual viram código nosso (por isso é bloco MAX/Ultracode). Confirmar o % do Stripe Billing antes de fechar a economia unitária.*

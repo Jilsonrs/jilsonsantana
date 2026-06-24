@@ -36,7 +36,14 @@
 
 ## Billing
 
-- **Stripe** — recurring subscription via **2 prices on one product**: monthly **R$99,90 (no fidelity)** + annual **~R$995**. **No free trial, no free content in the school, no lifetime price lock.** Customer Portal + webhooks. Membership access gated on active subscription status synced from Stripe webhooks. A **force-sync fallback** (`subscriptions.retrieve`, admin/server-only) reconciles access if a webhook fails; cancel runs through a native offboarding screen (reason capture; anti roach-motel) before the Portal.
+- **Stripe — Plano Padrão** (pay-as-you-go: **3,99% + R$ 0,39** por transação, cartão nacional; sem mensalidade/setup/taxa oculta). Conta criada como **MEI (CNPJ)**; payout para **Banco do Brasil**.
+- **NÃO usamos Stripe Billing.** A camada de assinatura recorrente é **construída in-house** (Express + Prisma + Stripe API nos primitivos de pagamento: `Customer`, `SetupIntent`/`PaymentMethod`, `PaymentIntent`) para evitar a taxa adicional do Billing sobre receita recorrente. *(Confirmar o % exato do Billing na Stripe Brasil antes de fechar a economia unitária — é o único número que muda o líquido por assinante.)*
+- **NÃO usamos Customer Portal** (página hospedada da Stripe). **Princípio de UX central: o aluno nunca sai de jilsonsantana.com pra nada** — checkout, gestão de cartão, troca de plano e cancelamento vivem dentro da escola, com a marca. Reforça o membership all-in-one (cursos + comunidade + JilsonAI sob um teto só).
+- **Captura de cartão embutida via Stripe Payment Element (Elements):** o formulário roda na própria página; o dado do cartão vai direto pro Stripe — **nunca toca nosso servidor** (PCI no escopo mais leve).
+- **Preços (lógica nossa, não objetos `Price` do Billing):** Mensal **R$99,90 (sem fidelidade)** + Anual **~R$995 (~17% off)**. **Sem free trial, sem conteúdo grátis, sem trava de preço vitalícia.**
+- **Cobrança recorrente própria:** no `currentPeriodEnd`, **pg-boss** dispara `PaymentIntent` off-session no `PaymentMethod` salvo; `status` + `currentPeriodEnd` na nossa tabela `Subscription` são a fonte única de acesso.
+- **A parte difícil (e onde mora o risco):** dunning (retry de cartão recusado na renovação), **3DS/SCA off-session** (`requires_action`), reembolso/chargeback, proration mensal↔anual — tudo passa a ser código nosso. Por isso billing é um **bloco MAX/Ultracode** (irreversível-financeiro): "Ask before edits" ON + revisão humana.
+- **Force-sync fallback** (reconsulta status do `PaymentIntent`/`Customer`, admin/server-only) reconcilia acesso se um webhook falhar.
 
 ## Video
 
@@ -81,6 +88,7 @@
 ## What We Do NOT Use (and why)
 
 - **Supabase Auth / JS Client / Realtime / Data API** — auth is Better Auth via Prisma; all DB access via Prisma.
+- **Stripe Billing + Customer Portal** — recorrência construída in-house (evita a taxa do Billing); gestão de assinatura embutida na escola (aluno nunca sai do site). Captura de cartão via Payment Element. `stripeSubscriptionId` fica reservado/nullable como seam, caso um dia migremos pro Billing.
 - **Bun** — Node is the existing environment; less novelty to manage.
 - **Teachable / course platforms** — building an owned asset.
 - **Next.js** — audience comes from YouTube, not Google search; SPA is sufficient.
