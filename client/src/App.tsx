@@ -9,6 +9,8 @@ import { AdminPage } from "@/pages/AdminPage";
 import { CatalogPage } from "@/pages/CatalogPage";
 import { CourseDetailPage } from "@/pages/CourseDetailPage";
 import { TrilhaDetailPage } from "@/pages/TrilhaDetailPage";
+import { AdminCoursesPage } from "@/pages/admin/AdminCoursesPage";
+import { AdminCourseFormPage } from "@/pages/admin/AdminCourseFormPage";
 
 export default function App() {
   return (
@@ -24,6 +26,9 @@ export default function App() {
         </Route>
         <Route element={<AdminRoute />}>
           <Route path="/admin" element={<AdminPage />} />
+          <Route path="/admin/cursos" element={<AdminCoursesPage />} />
+          <Route path="/admin/cursos/novo" element={<AdminCourseFormPage />} />
+          <Route path="/admin/cursos/:id" element={<AdminCourseFormPage />} />
         </Route>
       </Route>
     </Routes>

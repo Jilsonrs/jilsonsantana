@@ -75,6 +75,53 @@ router.get("/courses/:slug", async (req, res) => {
   res.json({ ...course, moduleCount: course.modules.length, lessonCount });
 });
 
+// ── Admin reads (any status) ─────────────────────────────────────────────────
+// The public reads above only ever return PUBLISHED content — an admin
+// drafting a course (the normal state while authoring) needs to see DRAFT/
+// ARCHIVED too. Same shape as the public routes, just without the status
+// filter and keyed by id instead of slug.
+
+// GET /api/admin/courses — every course, any status.
+router.get("/admin/courses", requireAdmin, async (_req, res) => {
+  const courses = await prisma.course.findMany({
+    orderBy: byOrder,
+    select: {
+      id: true,
+      slug: true,
+      title: true,
+      status: true,
+      displayOrder: true,
+      modules: { select: { _count: { select: { lessons: true } } } },
+    },
+  });
+  const cards = courses.map(({ modules, ...course }) => ({
+    ...course,
+    moduleCount: modules.length,
+    lessonCount: modules.reduce((sum, m) => sum + m._count.lessons, 0),
+  }));
+  res.json(cards);
+});
+
+// GET /api/admin/courses/:id — full tree by id, modules/lessons of ANY status.
+router.get("/admin/courses/:id", requireAdmin, async (req, res) => {
+  const id = parseId(req.params.id, res);
+  if (id === null) return;
+  const course = await prisma.course.findUnique({
+    where: { id },
+    include: {
+      modules: {
+        orderBy: byOrder,
+        include: { lessons: { orderBy: byOrder } },
+      },
+    },
+  });
+  if (!course) {
+    res.status(404).json({ error: "NotFound" });
+    return;
+  }
+  res.json(course);
+});
+
 // ── Writes (admin only) ──────────────────────────────────────────────────────
 // Express 5 auto-catches rejected promises, so no try/catch (CLAUDE.md). The
 // jsonb columns are Zod-typed; cast them to Prisma's Json input.

@@ -1,4 +1,5 @@
 import { Link, Outlet, useNavigate } from "react-router-dom";
+import { Role } from "@jilson/core";
 import { useSession, signOut } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 
@@ -23,6 +24,11 @@ export function Layout() {
           <Button asChild variant="ghost" size="sm">
             <Link to="/cursos">Catálogo</Link>
           </Button>
+          {session?.user.role === Role.ADMIN && (
+            <Button asChild variant="ghost" size="sm">
+              <Link to="/admin">Admin</Link>
+            </Button>
+          )}
           {session ? (
             <Button variant="ghost" size="sm" onClick={handleSignOut}>
               Sair
