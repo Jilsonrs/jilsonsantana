@@ -41,7 +41,7 @@
 ## Phase 2 — Content Model (Courses / Modules / Lessons) + Trilhas  *(low–medium risk)*
 
 - [ ] Prisma models: `Course`, `Module`, `Lesson` (+ RLS on each) ; migration
-- [ ] **`Lesson` is first-class & searchable** (own title + tags) — a lesson can appear in
+- [x] **`Lesson` is first-class & searchable** (own title + tags) — a lesson can appear in
       results and inside a trilha on its own, not only nested in a course.
 - [ ] **Trilha entities** (the "currículo" — see JILSONAI.md → Trilhas): `LearningPlan`
       (`ownerUserId?` null = curated template, `isTemplate`, `skillsCovered[]`),
@@ -50,7 +50,7 @@
 - [ ] `core/schemas/` for course/module/lesson + **plan/planItem** + `core/constants/`
 - [ ] Server routes: CRUD under `/api/courses`, `/api/modules`, `/api/lessons`,
       **`/api/trilhas`** (admin-protected for writes; a member can save/clone a curated trilha)
-- [ ] **Keyword search** endpoint over trilhas/courses/lessons (semantic/IA search = JILSONAI Fase 4–5)
+- [x] **Keyword search** endpoint over trilhas/courses/lessons (semantic/IA search = JILSONAI Fase 4–5)
 - [ ] Client: catalog page (trilhas + courses), course page, lesson list (no video yet)
 - [ ] Admin: manage courses/modules/lessons **+ build curated trilhas** (Jilson = "IA v0")
 - [ ] Seed the **Trilha 1 — Fundamentos (Excel + IA)** + its course structure

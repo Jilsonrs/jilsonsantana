@@ -11,6 +11,7 @@ import coursesRouter from "./routes/courses.js";
 import modulesRouter from "./routes/modules.js";
 import trilhasRouter from "./routes/trilhas.js";
 import lessonsRouter from "./routes/lessons.js";
+import searchRouter from "./routes/search.js";
 
 // Fail fast in production if a required secret is missing — a clear startup
 // error instead of booting and then crashing on an async Better Auth error
@@ -46,6 +47,7 @@ app.use("/api", coursesRouter);
 app.use("/api", modulesRouter);
 app.use("/api", trilhasRouter);
 app.use("/api", lessonsRouter);
+app.use("/api", searchRouter);
 
 // Serve client static files in production
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
