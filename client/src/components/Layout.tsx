@@ -19,7 +19,10 @@ export function Layout() {
         <Link to="/" className="font-semibold tracking-tight">
           <span className="text-primary">#</span>Jilson Santana
         </Link>
-        <nav>
+        <nav className="flex items-center gap-2">
+          <Button asChild variant="ghost" size="sm">
+            <Link to="/cursos">Catálogo</Link>
+          </Button>
           {session ? (
             <Button variant="ghost" size="sm" onClick={handleSignOut}>
               Sair
