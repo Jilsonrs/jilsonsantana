@@ -72,6 +72,70 @@
 > Language seam: content is modeled so language can become a LAYER later (a course can have content in N languages) — but build PT-only now. Do not build any multi-language content system yet.
 > Trilha seam: curated and (future) AI-assembled plans are the SAME `LearningPlan` entity — only `ownerUserId`/`isTemplate` differ. AI-assembled plans (member describes a goal → JilsonAI builds a custom plan) land in JILSONAI Fase 4–5, no rewrite. Progress counts per `Lesson`.
 
+### Estado real da Fase 2 (Jun 2026) + checklist de continuidade
+
+> Esta seção existe pra qualquer chat/agente novo retomar o trabalho **só lendo este doc**, sem
+> precisar do histórico da conversa que a gerou. Atualize-a conforme for fechando os itens.
+
+**Confirmado funcionando (commitado em `dev`, testado em browser real, typecheck/lint/test
+verdes):** Blocos 1–4 (modelo de dados, read API, CRUD admin via API, autoria de trilha via API,
+busca por keyword); Bloco 5 (catálogo `/cursos`, página de curso `/curso/:slug`, página de trilha
+`/trilha/:slug`, busca embutida, botão salvar-trilha); Bloco 6a (admin de curso/módulo/aula em
+`/admin/cursos`).
+
+**Checklist — fechar o Bloco 5 100% (achados de auditoria Jun 2026, ainda NÃO corrigidos):**
+cada item abaixo já tem o arquivo e o fix apontados — quem for implementar não precisa reabrir a
+investigação.
+- [ ] `SaveTrilhaButton` não reflete uma trilha já salva em sessão anterior — só usa o estado local
+      da mutation (`mutation.isSuccess`), nunca consulta `GET /api/trilhas/mine` (existe desde o
+      Bloco 3b). Ao recarregar a página, um membro que já salvou volta a ver "Salvar trilha".
+      Arquivo: `client/src/components/content/SaveTrilhaButton.tsx`.
+- [ ] Aula isolada (`PlanItem` tipo `LESSON`) dentro de uma trilha não mostra contexto nenhum —
+      vira texto solto sem curso/módulo. Falta `module: { select: { title, course: { select:
+      { slug, title } } } }` no `select` de `lesson` dentro de `itemInclude`, em
+      `server/src/routes/trilhas.ts` (usado por TODAS as leituras de trilha — curada e mine).
+      Depois, `PlanItemRow` em `client/src/pages/TrilhaDetailPage.tsx` passa a linkar a aula
+      isolada pro curso-pai (mesmo padrão que a busca já usa: aula → curso, não aula → aula,
+      que ainda não tem página própria, Fase 3).
+- [ ] Sem tela "Minhas trilhas" — a leitura já existe (`GET /trilhas/mine`, `GET
+      /trilhas/mine/:id`, Bloco 3b), só falta a UI. Sem ela, salvar uma trilha é um beco sem
+      saída (o membro não acha de novo). Precisa: `getMyTrilhas()`/`getMyTrilha(id)` em
+      `client/src/lib/api.ts`; `client/src/pages/MyTrilhasPage.tsx` (`/minhas-trilhas`, dentro de
+      `ProtectedRoute`) + `MyTrilhaDetailPage.tsx` (`/minhas-trilhas/:id`); extrair o accordion
+      PlanModule→PlanItem de `TrilhaDetailPage.tsx` pra um componente compartilhado (reusado pela
+      trilha curada e pela trilha própria); link "Minhas trilhas" no `Layout.tsx` (qualquer
+      logado, não só admin).
+- [ ] Selo 3-camadas e "Diferenciais" (highlights) sem heading de seção em
+      `client/src/pages/CourseDetailPage.tsx` — os dois blocos de cards (ícone+título+texto) ficam
+      empilhados sem título, parecem duplicados (achado nas capturas desktop/mobile).
+- [ ] (bônus, baixa prioridade) sem link "← Catálogo" no topo de `CourseDetailPage`/
+      `TrilhaDetailPage` — hoje só dá pra voltar pelo nav ("Catálogo") ou botão do browser.
+
+**O que falta na Fase 2 depois do Bloco 5 fechado:**
+- [ ] Bloco 6b — UI de montagem de trilha curada (admin): `GET /api/admin/trilhas` +
+      `GET /api/admin/trilhas/:id` novos (espelho admin, qualquer status, mesmo padrão do Bloco
+      6a); `/admin/trilhas`, `/admin/trilhas/novo`, `/admin/trilhas/:id`; árvore inline
+      PlanModule→PlanItem com reordenar ↑/↓; ao adicionar um PlanItem tipo LESSON, dois selects
+      dependentes (curso → aula daquele curso).
+- [ ] Autoria real da **Trilha 1 — Fundamentos (Excel + IA)** pelo admin, pela UI (não é bloco de
+      código — é o operador usando o Bloco 6a/6b prontos; o seed atual é só smoke descartável).
+
+**Backlog de polish (sem dono de bloco ainda — não bloqueia o fechamento da Fase 2, mas precisa
+de uma sessão própria antes do launch):**
+- [ ] Fotos/imagens reais (thumbnails de curso, qualquer asset de marca) — hoje tudo usa
+      placeholder (`BookOpen` icon quando `thumbnailUrl` é nulo).
+- [ ] A direção visual completa de `docs/design.md` (paleta off-white `--surface-alt`, fontes
+      MuseoModerno/Hanken Grotesk, o hero animado "trilha que se monta sozinha") ainda não foi
+      implementada — o client hoje usa os tokens default do shadcn (`zinc`) só com `--primary`
+      trocado pro azul da marca. Isto já está anotado no código
+      (`client/src/index.css`: "the full design.md palette/fonts land in the later design pass") —
+      não é uma divergência nova, é um adiamento já decidido.
+- [ ] Navegação mobile mais elaborada se o menu crescer (hoje é só uma lista horizontal de
+      botões no header — funciona bem nas larguras testadas, mas não tem um padrão de menu
+      hambúrguer se mais itens entrarem).
+- [ ] Qualquer ajuste visual que só aparece usando o produto de verdade com conteúdo real (não o
+      smoke seed) — preencher conforme for revisando.
+
 ## Phase 3 — Video Playback (Bunny Stream)  *(HIGH RISK — own sessions)*
 
 - [ ] Bunny account + library; store video IDs on `Lesson`
@@ -177,3 +241,4 @@ MVP = **Phases 0 → 7** (incl. trilhas curadas na Phase 2, certificados na Phas
 *Atualizado: Jun 2026 — **Fase 2 Bloco 5 (UI do aluno):** catálogo (`/cursos`, trilhas+cursos, busca embutida via `/api/search`), página de curso (`/curso/:slug` — hero, selo 3-camadas, highlights, learnTags, requirements, personas, accordion módulo→aula, FAQ condicional) e página de trilha (`/trilha/:slug` — árvore módulo→item, botão salvar/clonar). Reconciliação de doc-sync: os checkboxes de schema/campos do Course/Module/Lesson e do `LAYER_CONFIG` global (linhas acima) já estavam implementados desde o Bloco 1 mas ficaram sem marcar — corrigido agora, sem trabalho novo nessas linhas. `QueryClient` global ganhou uma política de retry que não reten­ta em 4xx (achado em teste manual: sem isso, toda página "não encontrado" ficava ~10s em "Carregando…" por causa dos 3 retries padrão do React Query num 404 que nunca teria sucesso).*
 *Atualizado: Jun 2026 — reconciliação de doc-sync adicional: os 4 checkboxes de fundação da Fase 2 (modelos Prisma `Course`/`Module`/`Lesson`+RLS, entidades de trilha `LearningPlan`/`PlanModule`/`PlanItem`, `core/schemas/`, rotas CRUD `/api/courses`/`/api/modules`/`/api/lessons`/`/api/trilhas`) estavam implementados desde os Blocos 1/2/3a/3b mas ficaram sem marcar — corrigido agora, sem trabalho novo.*
 *Atualizado: Jun 2026 — **Fase 2 Bloco 6a (UI admin de curso/módulo/aula):** `GET /api/admin/courses` + `GET /api/admin/courses/:id` novos (qualquer status, só admin — as leituras públicas só devolvem PUBLISHED). Cliente: `/admin/cursos` (lista, qualquer status), `/admin/cursos/novo` e `/admin/cursos/:id` (form completo — todos os campos do curso + seletor de camadas + `useFieldArray` pra highlights/faq + árvore inline de módulos/aulas com reordenar ↑/↓). Link "Admin" na nav só pra `role===ADMIN`. O item "Admin: build curated trilhas" do checklist abaixo fica pro Bloco 6b. Achado em teste manual (corrigido): módulo/aula novos nasciam todos com `displayOrder:0` (sem incrementar), o que tornava o reordenar ↑/↓ um no-op pra itens recém-criados — `createModule`/`createLesson` agora calculam `max(displayOrder existente)+1`. Confirmado também: mutations de escrita contra o Supabase remoto levam ~4–8s (mesma latência já vista no Bloco 5) — não é regressão, é a infra de dev.*
+*Atualizado: Jun 2026 — **Auditoria do Bloco 5** (leitura de código + browser real desktop/mobile, sem erros de console): achados registrados como checklist na nova seção "Estado real da Fase 2 + checklist de continuidade" (logo abaixo do "Done when" da Fase 2) — `SaveTrilhaButton` não reflete trilha já salva entre sessões, aula isolada numa trilha sem contexto de curso, sem tela "Minhas trilhas", selo 3-camadas/highlights sem heading de seção. Nenhum desses itens foi corrigido nesta passada — é só o registro pra continuidade entre chats, por pedido explícito do operador (revisão manual item a item, possivelmente em sessão nova). Backlog de polish (fotos/imagens, direção visual completa do `design.md`, navegação mobile) também registrado, sem dono de bloco ainda.*
