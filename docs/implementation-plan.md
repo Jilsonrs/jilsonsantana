@@ -40,15 +40,15 @@
 
 ## Phase 2 — Content Model (Courses / Modules / Lessons) + Trilhas  *(low–medium risk)*
 
-- [ ] Prisma models: `Course`, `Module`, `Lesson` (+ RLS on each) ; migration
+- [x] Prisma models: `Course`, `Module`, `Lesson` (+ RLS on each) ; migration
 - [x] **`Lesson` is first-class & searchable** (own title + tags) — a lesson can appear in
       results and inside a trilha on its own, not only nested in a course.
-- [ ] **Trilha entities** (the "currículo" — see JILSONAI.md → Trilhas): `LearningPlan`
+- [x] **Trilha entities** (the "currículo" — see JILSONAI.md → Trilhas): `LearningPlan`
       (`ownerUserId?` null = curated template, `isTemplate`, `skillsCovered[]`),
       `PlanModule` (grouping by competency), `PlanItem` (`itemType[COURSE|LESSON]`,
       `courseId?`/`lessonId?` — **free mix of whole courses + standalone lessons**) (+ RLS) ; migration
-- [ ] `core/schemas/` for course/module/lesson + **plan/planItem** + `core/constants/`
-- [ ] Server routes: CRUD under `/api/courses`, `/api/modules`, `/api/lessons`,
+- [x] `core/schemas/` for course/module/lesson + **plan/planItem** + `core/constants/`
+- [x] Server routes: CRUD under `/api/courses`, `/api/modules`, `/api/lessons`,
       **`/api/trilhas`** (admin-protected for writes; a member can save/clone a curated trilha)
 - [x] **Keyword search** endpoint over trilhas/courses/lessons (semantic/IA search = JILSONAI Fase 4–5)
 - [x] Client: catalog page (trilhas + courses), course page, lesson list (no video yet)
@@ -174,3 +174,4 @@ MVP = **Phases 0 → 7** (incl. trilhas curadas na Phase 2, certificados na Phas
 *Atualizado: Jun 2026 — FAQ por curso adicionada como `Course.faq[]` **opcional** (renderiza só se preenchida; JilsonAI é a FAQ viva; preencher por exceção, não obrigatório — evita burnout no catálogo amplo).*
 *Atualizado: Jun 2026 — **Fase 4 reescrita: Stripe Plano Padrão + recorrência IN-HOUSE.** Conta MEI/CNPJ, payout Banco do Brasil (substitui C6). NÃO usar Stripe Billing nem Customer Portal — assinatura recorrente construída nos primitivos (Customer/SetupIntent/PaymentMethod/PaymentIntent), agendada via pg-boss; captura de cartão via Payment Element embutido (aluno nunca sai da escola); gestão/cancelamento dentro do site. Custo da decisão = dunning + 3DS/SCA off-session + proration mensal↔anual viram código nosso (por isso é bloco MAX/Ultracode). Confirmar o % do Stripe Billing antes de fechar a economia unitária.*
 *Atualizado: Jun 2026 — **Fase 2 Bloco 5 (UI do aluno):** catálogo (`/cursos`, trilhas+cursos, busca embutida via `/api/search`), página de curso (`/curso/:slug` — hero, selo 3-camadas, highlights, learnTags, requirements, personas, accordion módulo→aula, FAQ condicional) e página de trilha (`/trilha/:slug` — árvore módulo→item, botão salvar/clonar). Reconciliação de doc-sync: os checkboxes de schema/campos do Course/Module/Lesson e do `LAYER_CONFIG` global (linhas acima) já estavam implementados desde o Bloco 1 mas ficaram sem marcar — corrigido agora, sem trabalho novo nessas linhas. `QueryClient` global ganhou uma política de retry que não reten­ta em 4xx (achado em teste manual: sem isso, toda página "não encontrado" ficava ~10s em "Carregando…" por causa dos 3 retries padrão do React Query num 404 que nunca teria sucesso).*
+*Atualizado: Jun 2026 — reconciliação de doc-sync adicional: os 4 checkboxes de fundação da Fase 2 (modelos Prisma `Course`/`Module`/`Lesson`+RLS, entidades de trilha `LearningPlan`/`PlanModule`/`PlanItem`, `core/schemas/`, rotas CRUD `/api/courses`/`/api/modules`/`/api/lessons`/`/api/trilhas`) estavam implementados desde os Blocos 1/2/3a/3b mas ficaram sem marcar — corrigido agora, sem trabalho novo.*
