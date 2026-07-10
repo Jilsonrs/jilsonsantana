@@ -43,7 +43,7 @@ The docs and what they hold (no edit-owner anymore — all follow git-wins):
 - **Shared**: `core/` workspace package — Zod schemas + constants used by client AND server
 - **Database**: Supabase PostgreSQL via Prisma ORM (Prisma is the SOLE accessor)
 - **Auth**: Better Auth (email/password, database sessions, Prisma adapter) — NOT Supabase Auth
-- **Billing**: Stripe (recurring subscription + Customer Portal + webhooks)
+- **Billing**: Stripe Plano Padrão — **in-house recurrence** on payment primitives (Customer/SetupIntent/PaymentMethod/PaymentIntent) + embedded Payment Element + webhooks. **NO Stripe Billing, NO Customer Portal, NO hosted pages** (the student never leaves the site)
 - **Video**: Bunny Stream (signed URLs, member-gated)
 - **AI (JilsonAI)**: Claude API via `@anthropic-ai/sdk` (server-side only)
 - **Jobs**: pg-boss (PostgreSQL-backed queue, `pgboss` schema)
@@ -61,6 +61,14 @@ The docs and what they hold (no edit-owner anymore — all follow git-wins):
 CLAUDE.md - this file (repo root — read every session)
 ```
 
+## Commands
+
+<!-- TODO operador: confirmar os nomes reais dos scripts no package.json raiz e apagar este comentário -->
+- `npm run dev` — client + server in watch mode
+- `npm run typecheck` · `npm run lint` · `npm run test` — the local gates (same as CI)
+- `npm run test:e2e` — Playwright (needs the server running)
+- `npx prisma migrate dev --name <snake_case>` — new migration; `npx prisma db pull` to reconcile tables created via Supabase MCP
+
 ## Working Method (read this every session)
 
 - The single source of strategy/identity is the project's `project-description` (Claude Project). This file is the single source of **engineering conventions**.
@@ -68,6 +76,7 @@ CLAUDE.md - this file (repo root — read every session)
 - **Never leave `main` broken.** Work on the `dev` branch; commit small functional steps. `main` auto-deploys to Railway, so it is "sacred" — only tested code reaches it. Stopping mid-session is safe as long as the last commit builds. **Merging `dev → main` is the operator's explicit decision, taken at the end of a phase once that phase's `Done when` is met — NOT the agent's call, and NOT triggered by green CI alone.** Green lint/typecheck/tests is the *floor* that makes a merge eligible, not the trigger: the agent commits to `dev` and stops, and asks for an explicit go before any merge. The agent never merges to `main` on its own initiative. (Automated PR + CI-gated merge replaces this only in the later phase that introduces it.)
 - When unsure about a library's current API, fetch up-to-date docs before coding (don't guess versions).
 - Prefer battle-tested libraries over custom code — this is a solo, burnout-conscious project.
+- **New runtime dependencies are a plan-level decision:** name them in the block plan (with the problem they solve) and get the operator's OK — no drive-by `npm install` mid-block.
 - **Keep docs honest (do this in the SAME session, never "depois").** A doc that lies is worse than no doc. When a phase (or a sliceable task) is done, before the final merge:
   1. **Mark it** — flip the `- [ ]` to `- [x]` in `docs/implementation-plan.md` (and `✅ DONE` on the phase heading when the whole phase closes).
   2. **Reconcile any contradiction** — if a build decision diverged from what a living doc says (`CLAUDE.md`, `project-description`, `JILSONAI.md`, `DESIGN.md`, `TECH-STACK.md`), update that doc now. A doc must never disagree with `main` for more than one session — same discipline as the sacred `main`.
@@ -83,6 +92,7 @@ How each sliceable task ("block") is executed. This encodes the review disciplin
 - **Prove gates in runtime, not by reasoning.** "It typechecks" is necessary, never sufficient. Close each gate with empirical proof: a curl status matrix (e.g. 401/403/200), a real INSERT that persists, a real sign-in that returns a session, `get_advisors` output. If a claim is testable ("RLS bypasses", "the body arrives intact", "the admin can log in"), TEST it before asserting it. A row existing is not proof the account can log in; a 200 on a disabled path is not proof the body parsed.
 - **End-of-block gate checklist.** Finish with an explicit pass/fail gate: the runtime proofs above + typecheck + lint + "scope held — nothing out-of-scope crept in." Show the checklist. Do not commit until every gate is green.
 - **Stop and surface, don't paper over.** If something architectural is surprising — a migration fails on permissions, an API doesn't behave as its own docs imply — STOP and report it as a decision for the operator. Do NOT invent a workaround that masks the surprise (e.g. adding an RLS policy just to force an INSERT through, when the real question is which DB role is connecting).
+- **Refactor trigger — no layers on layers.** If a fix would stack a workaround on top of an existing workaround, or push a file past the component/size discipline (see Key Conventions → Client), STOP: don't land the quick fix silently. Propose a dedicated refactor block (or fold the split into this block's plan with the operator's OK). Quick fixes that each "add another layer" are how god components are born — pay the 30 minutes now, not the 3 days of re-architecture later.
 - **Commit per block on `dev`, checkbox in the same commit.** Conventional-commit message; the body lists what landed AND any item deliberately left pending validation (so the next block picks it up). Flip the matching `docs/implementation-plan.md` checkbox in the SAME commit (see Working Method doc-sync). Then stop — merge to `main` is the operator's call (see Working Method).
 - **Risk tiering.** Low-risk phases (1, 2, 5, 6.5): the agent's own gate checklist is enough. HIGH-RISK phases (3 Bunny, 4 Stripe — ~70% of project risk): additionally run the `security-vulnerability-reviewer` agent on auth/billing/video-gating code, and expect a separate human review pass before the operator authorizes the merge. Don't rush a high-risk phase to "green" — green is the floor, the gate is "the access boundary actually holds (member can, non-member cannot, status survives reload)."
 
@@ -90,6 +100,7 @@ How each sliceable task ("block") is executed. This encodes the review disciplin
 
 ### General
 - Node + npm (npm workspaces). TypeScript everywhere.
+- TypeScript strict. No `any` (use `unknown` + narrowing); an `as` cast needs a 1-line justification comment.
 - Use shadcn/ui for all UI (`@/components/ui/*`); use semantic tokens (`bg-background`, `text-muted-foreground`, `text-destructive`), never hardcoded Tailwind colors.
 - Use the `@/` path alias (maps to `./src/`) in the client.
 
@@ -104,12 +115,18 @@ How each sliceable task ("block") is executed. This encodes the review disciplin
 - Secrets (Stripe, Bunny, Claude API, Resend, DB) live in server env vars ONLY — never sent to the frontend.
 - The server is the **sole gateway** to Supabase, Stripe, Bunny, Resend, and the Claude API.
 - Use the shared `Role` constant, never hardcoded `"admin"`/`"member"` strings.
+- **Public reads return `PUBLISHED` content only.** Admin reads live under `/api/admin/*` (behind `requireAdmin`) and may see any status — never widen a public endpoint to expose drafts/archived.
+- Never log secrets, session tokens, signed video URLs, or full webhook payloads — log IDs + status. (Railway logs are not a vault.)
 
 ### Client
 - TanStack React Query (`useQuery`/`useMutation`) for server state — not `useEffect` + `useState`.
+- Global `QueryClient` retry policy: **never retry 4xx** (a 404 must fail fast, not hang "Carregando…" through the 3 default retries — landed in Fase 2 Bloco 5).
 - Axios for HTTP (not `fetch`).
 - React Hook Form + `zodResolver` for forms.
 - Reuse the shared error components for error/field messages.
+- **Component discipline (anti god-component):** one responsibility per component; soft cap ~200 lines. Crossing the cap, or accumulating 3+ unrelated state concerns in one component, means STOP and propose a split (in the plan, or via the Refactor trigger in the Block Protocol) — never "just keep growing it". Pages compose sections; business logic lives in hooks (`useX`) or `client/src/lib`; components render.
+- **`useEffect` discipline:** React Query owns server state, so effects are RARE. Every remaining `useEffect` carries a 1-line comment saying why it must be an effect. If a value can be derived from props/state, derive it (or `useMemo`) — no state-syncing effects. Never chain effects that trigger each other.
+- Adding a global state library (Zustand/Redux/etc.) is an operator decision, not a default — local state + React Query first.
 
 ### Database & Migrations
 - One migration per feature (incremental, named in snake_case). Keep `schema.prisma` as the source of truth; `prisma db pull` to reconcile when tables are created via Supabase MCP.
@@ -158,6 +175,8 @@ A pedagogical methodology shown as a **selo (seal)** on the course page, the equ
 - **Reveal vs internal:** the *promise* of the layers is shown to the student; the production economics (~75/15/10 %, "reaproveitado", the word "3 camadas" as jargon) stay **internal** — never in the student UI. The "precisa do Excel 365 pra praticar" note is **spoken in the lesson**, not a field.
 - **Not built at launch:** grouping the accordion sections by layer (refinement), and the per-layer filter ("só o que roda no meu Excel 2016" = post-launch read-side). Launch = the selo only.
 
+## Auth (Better Auth)
+
 - Email/password, database sessions, Prisma adapter on Supabase Postgres. Mounted at `/api/auth/{*any}` (before `express.json()`).
 - Server middleware: `requireAuth` (sets `req.user`/`req.session`), `requireAdmin`.
 - Client: `ProtectedRoute` (redirect to `/login` if unauthenticated), `AdminRoute` (redirect non-admins).
@@ -187,13 +206,14 @@ A pedagogical methodology shown as a **selo (seal)** on the course page, the equ
 
 ## Membership Gating (Stripe)
 
-- **Pricing = 2 prices on ONE "Membership" product:** Monthly **R$99,90 (no fidelity/lock-in, default)** + Annual **~R$995 (~17% off, single recurring annual charge)**. **No free trial. No free content inside the school** (free lives on YouTube). Monthly→annual upgrade uses Stripe's native proration. `temAcessoAtivo()` ignores which price the member holds. **No lifetime price lock** for founders (founding = temporary bonus/condition only).
-- Source of truth for access = subscription status synced from Stripe webhooks into our DB.
+- **Pricing = 2 plans, OUR logic (not Stripe Billing `Price` objects):** Monthly **R$99,90 (no fidelity/lock-in, default)** + Annual **~R$995 (~17% off, single recurring annual charge)**. **No free trial. No free content inside the school** (free lives on YouTube). Monthly→annual upgrade: proration is **our code** (there is no Billing proration to lean on). `temAcessoAtivo()` ignores which plan the member holds. **No lifetime price lock** for founders (founding = temporary bonus/condition only).
+- **In-house recurrence (Fase 4 rewrite — see tech-stack.md):** at `currentPeriodEnd`, pg-boss fires an off-session `PaymentIntent` on the saved `PaymentMethod`. **Source of truth for access = `status` + `currentPeriodEnd` on OUR `Subscription` table**, updated by the scheduler + Stripe payment webhooks. Card capture via embedded **Payment Element** — card data goes straight to Stripe and **never touches our server** (lightest PCI scope). The hard parts are OUR code — dunning (declined renewals), **3DS/SCA off-session** (`requires_action`), refund/chargeback, proration — which is why billing blocks are MAX-effort + "Ask before edits" ON + human review before merge.
 - `requireActiveMembership` middleware gates member content AND video signed-URL issuance. It is the HTTP wrapper around `temAcessoAtivo(userId)` (see Access Architecture). Corporate students (post-MVP) pass the same gate via their org's subscription — the gate never needs to know which path granted access.
-- `Subscription` includes `ownerUserId?`, `organizationId?` (nullable), `seats` (default 1) from the start, so corporate (Phase 12) is additive, not a rewrite.
+- `Subscription` carries the growth seams from the start (fields defined once in **Access Architecture** — don't re-list here), so corporate (Phase 12) is additive, not a rewrite.
 - Process webhooks via pg-boss for reliability (retry on failure). Verify Stripe signature. Webhook responds fast (200) then enqueues work (user/subscription sync, welcome email) — never blocks on the response.
-- **Force-sync fallback:** a `subscriptions.retrieve` reconciliation path exists for when a webhook fails (paying member locked out). **Admin-only or secure server scope — NEVER an unauthenticated GET that unlocks access** (that would be a billing bypass).
-- **Offboarding:** the cancel flow goes through a native screen (collect reason → forward to Customer Portal). Anti roach-motel: a clear 1-click "cancelar mesmo assim" always visible (Procon/CDC). Reason capture = launch; "pausar 1 mês" (`pause_collection`) = fast-follow.
+- **Webhook handlers are idempotent + order-safe.** Stripe delivers at-least-once, and pg-boss retries multiply that: record processed `event.id`s (repeat = no-op) and never blind-increment/append. Events can also arrive out of order — on any doubt, re-fetch the canonical object from Stripe (`paymentIntents.retrieve` / Customer) and recompute our `Subscription` state from it instead of trusting the event payload's snapshot.
+- **Force-sync fallback:** a reconciliation path (re-query `PaymentIntent`/`Customer` status, recompute the local `Subscription`) exists for when a webhook fails (paying member locked out). **Admin-only or secure server scope — NEVER an unauthenticated GET that unlocks access** (that would be a billing bypass).
+- **Offboarding (in-site — there is no Customer Portal):** cancel/manage lives in native screens inside the school (collect reason → cancel). Anti roach-motel: a clear 1-click "cancelar mesmo assim" always visible (Procon/CDC). Reason capture = launch; "pausar 1 mês" (pause handled by our scheduler) = fast-follow.
 
 ## Video (Bunny Stream)
 
@@ -227,11 +247,19 @@ A pedagogical methodology shown as a **selo (seal)** on the course page, the equ
   - **Quota + visible meter:** the plan includes a generous monthly quota of JilsonAI interactions; the chat UI shows a **calm "usage this month" meter** (Apple vibe, never an anxious countdown). Rate-limit per member caps tail-risk. Usage tiers (one-time top-up + JilsonAI+) are **post-launch seams**, switched on when real `AiEvent` data justifies. Quota value is set FROM data, not guessed.
   - Persona (voice/method) lives in a versioned `persona/jilson.md`, not in code. **Anti-hallucination rule in the persona:** when giving DAX/SQL/Python, always state the assumed table structure (column names/types, relationships, granularity) and recommend isolated testing — never present code as absolute truth about a schema it hasn't seen.
   - Trilha tools: `recommendTrilha` (launch — suggests a curated trilha by goal) and `buildLearningPlan` (Fase 4–5 — assembles a personalized plan).
+  - **TRAVA — the public landing hero is MOCKED** (pre-computed presets, scripted): it NEVER calls the Claude API (latency/cost/abuse). Real trilha assembly happens only behind auth (DESIGN.md §2).
+  - **Injection posture:** member messages and any retrieved context are UNTRUSTED input. Tools expose fixed, parameterized operations only — the model never builds raw SQL/filters and never chooses the `userId` (server-injected, above). Render AI output as sanitized markdown (never `dangerouslySetInnerHTML` on raw model text). Log `AiEvent`s without secrets and without full prompts containing personal data.
 
 ## Testing
 
 - **Prefer component tests** (Vitest + React Testing Library) for most coverage — rendering, states, data display, error handling. Place next to component as `Name.test.tsx`.
 - **E2E (Playwright)** only for things needing a real browser + server: auth redirects, navigation, full-stack flows (webhook → DB → UI), and the **access gates** (member can / non-member cannot). Use the `e2e-test-writer` agent.
+- **Test quality (a test that can't fail is not a test):**
+  - Every test must FAIL if the logic it covers breaks. Render-only smoke tests don't count as coverage for logic-bearing code; asserts like `expect(x).toBeTruthy()` on something that's always truthy prove nothing.
+  - Mocks must never hardcode the expected answer into the path under test — if the mock returns X and the assert checks X without the real logic running, delete the test.
+  - Test observable behavior, not implementation details (internal state, exact classNames).
+  - Auth/billing/gating suites MUST cover failure paths — non-member 403, expired/canceled sub, invalid Stripe signature, duplicate webhook event — not only the happy path. Happy-path-only on a gate does NOT make a merge eligible.
+  - Agent-written tests get reviewed like code: read WHAT is asserted before trusting a green run.
 - Run the `security-vulnerability-reviewer` agent on auth, billing, and video-gating code before merging those phases.
 
 ## Quality Gates
@@ -248,6 +276,7 @@ A pedagogical methodology shown as a **selo (seal)** on the course page, the equ
 *Atualizado Jun 2026: trilhas (LearningPlan/PlanItem) + aula first-class; pricing 2-prices sem fidelidade/trial/lock; JilsonAI default modelo de ponta + quota + medidor visível; certificados no MVP; comunidade = JilsonAI (fórum removido); AI no DNA; design Apple-claro + #238FE8.*
 *Atualizado Jun 2026 (rev. externa Gemini): UTM capture nos campos do User (P1); Bunny signed URL elástico sem IP-lock; Stripe force-sync (admin/server-only, nunca GET destravante) + offboarding anti roach-motel; certificado com URL pública opt-in (LGPD); regra anti-alucinação na persona do JilsonAI.*
 *Atualizado Jun 2026: adicionada ao Working Method a regra de doc-sync ao fim de cada fase/task (marcar [x], reconciliar contradição no mesmo session, logar só se for decisão) — mantém os docs honestos vs `main`.*
-*Atualizado Jun 2026: adicionado **Document Map** no topo — os 9 docs espelhados em repo + Claude Project, cada um com dono de edição (Edit=repo: CLAUDE, implementation-plan, tech-stack; Edit=Project: project-description, project-scope, strategy, jilsonai, design, content). Regra: divergência → o repo (git) ganha; agente não edita docs de planejamento, só consulta.*
-*Atualizado Jun 2026 — **GOVERNANÇA SIMPLIFICADA (decisão do operador):** removida a separação Edit=repo / Edit=Project. Agora **qualquer autor (operador, agente do chat, agente Code) pode editar qualquer doc quando relevante**; a única regra é **git = fonte única da verdade** (divergiu → git ganha, sincroniza nos dois sentidos). `CLAUDE.md` exige a disciplina git-wins ao máximo (é lido todo session pelo Code). `courses.md` adicionado ao mapa.*
+*Atualizado Jun 2026 — **Document Map no topo + GOVERNANÇA SIMPLIFICADA (decisão do operador):** removida a separação Edit=repo / Edit=Project. Agora **qualquer autor (operador, agente do chat, agente Code) pode editar qualquer doc quando relevante**; a única regra é **git = fonte única da verdade** (divergiu → git ganha, sincroniza nos dois sentidos). `CLAUDE.md` exige a disciplina git-wins ao máximo (é lido todo session pelo Code). `courses.md` adicionado ao mapa.*
 *Atualizado Jun 2026 — **Página de curso + Metodologia 3 Camadas (Fase 2):** campos do `Course` (subtitle, level, learnTags[], requirements[] mostrados, personas[], highlights[] com ícone, thumbnailUrl=lista, introVideoId=detalhe/não-gated, displayOrder, status) + `Module`/`Lesson` (displayOrder, status). Selo 3 camadas = `Course.camadas[]` (não-boolean — curso pode ter 1, 2 ou 3) + textos globais em `core/` + `camadaOverride?` (exceção, ex. N8N). Enum `UNIVERSAL/MODERNO/IA` (agnóstico; "Excel 365" = exemplo só no Excel). Ícones `stack-2`·`bolt`·`sparkles`, azul só na IA. Revelar a promessa, esconder a economia (%/reaproveitado). Filtro por camada + agrupamento do accordion = pós-launch. FAQ por curso = `Course.faq[]` opcional (JilsonAI é a FAQ viva).*
+*Atualizado Jul 2026 — **auditoria de engenharia (gaps do relato Mosh/vibe-coding):** disciplina de componentes no Client (anti god-component, cap ~200 linhas, lógica em hooks, state lib = decisão do operador) + regras de `useEffect`; **Test quality** ("teste que não pode falhar não é teste"; caminhos de falha obrigatórios em auth/billing/gating; revisar asserts de testes gerados); **Refactor trigger** no Block Protocol (sem camada sobre camada); webhooks Stripe **idempotentes + order-safe**; postura anti-injeção no JilsonAI; log sem segredos; dependências novas = decisão de plano; TS sem `any`; seção **Commands** (TODO operador preencher scripts reais); heading `## Auth (Better Auth)` restaurado (bloco estava órfão sob 3 Camadas); dedup dos campos de `Subscription` (Membership Gating agora referencia Access Architecture); entrada obsoleta do changelog removida (contradizia a governança atual; histórico completo no git).*
+*Atualizado Jul 2026 (2) — **reconciliação cruzada com os 9 docs do Project:** corrigida a contradição Stripe (este arquivo ainda descrevia Billing/Customer Portal/proration nativa — o modelo vigente desde a reescrita da Fase 4 é **recorrência IN-HOUSE nos primitivos** com Payment Element embutido; fonte de acesso = `status`+`currentPeriodEnd` na NOSSA `Subscription`, pg-boss dispara PaymentIntent off-session; dunning/3DS/proration = código nosso; force-sync e idempotência reconciliam via `paymentIntents.retrieve`, não `subscriptions.retrieve`; offboarding 100% in-site). Convenções já implementadas trazidas do implementation-plan: QueryClient **sem retry em 4xx** (Bloco 5); leituras públicas só `PUBLISHED`, admin em `/api/admin/*` (Bloco 6a). TRAVA do design.md §2 adicionada ao JilsonAI: hero público MOCKADO, nunca chama a Claude API. Pendência sinalizada fora deste arquivo: project-description.md ainda cita "Customer Portal"/"proration nativo do Stripe"/"2 prices" — reconciliar no repo.*
