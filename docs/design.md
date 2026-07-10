@@ -182,6 +182,13 @@ Corpo com `line-height` generoso (1.6) e medida de linha ~66ch — leitura confo
 - **Button** — primary `bg-primary text-primary-foreground rounded-full`; hover `--primary-hover` +
   leve `scale-[1.01]`; secondary = contorno fino. Foco visível sempre (`--ring`).
 - **Certificate (preview)** — mostra nome da trilha + **competências cobertas** (o que vale pro RH).
+- **CertificatePublicPage (P6.5)** — o certificado como **mídia de aquisição** (badges AWS/Google
+  no LinkedIn = distribuição com CAC zero). Página pública **opt-in** (`isPublic`, LGPD — trava já
+  existe no plano) com: **OG image dedicada** gerada server-side junto com o PDF (wordmark + nome
+  do aluno + trilha + competências — clima Apple, azul só no acento); botão **"Adicionar ao
+  LinkedIn"** (deep-link Add-to-Profile pré-preenchido); e **UTM `utm_source=certificate`** em todo
+  link de volta pro site — fecha o loop com o attribution capture da P1 e torna cada aluno formado
+  um canal de aquisição **rastreável**.
 
 ---
 
@@ -259,3 +266,7 @@ cor hardcoded; dark mode fora do MVP (seam preservado). Ordem das seções = dec
 *Atualizado: Jun 2026 (rev. externa Gemini) — §2: hero da landing pública é MOCKADO/roteirizado
 com presets pré-computados; NUNCA chama a Claude API (latência/custo/abuso). Montagem real de
 trilha só na área logada.*
+*Atualizado: Jul 2026 — §6 ganha CertificatePublicPage (P6.5): certificado como mídia de aquisição
+(OG image dedicada server-side, botão Add-to-Profile do LinkedIn, UTM utm_source=certificate
+fechando o loop com a captura de atribuição da P1). Racional no playbook big-tech→solo em
+STRATEGY.md; opt-in/LGPD inalterados.*

@@ -17,6 +17,16 @@ própria experiência de estudar é um caso de uso de IA bem-feito.
 > A busca não é caixa+filtros → é o JilsonAI entendendo o objetivo. O onboarding não é formulário →
 > é navegar livre com a IA por perto. O suporte não é fórum → é IA que resolve e escala.
 
+**Filtro 2 — patrimônio do aluno (switching cost ético; aplicar junto com o filtro acima):**
+> *"Essa feature aumenta o patrimônio que o aluno acumula aqui?"*
+> [FATO] O fosso da Apple não é o iPhone — é a biblioteca de fotos/iCloud: sair custa abandonar o
+> que se acumulou. As peças já existem espalhadas (trilha em progresso, certificados, histórico,
+> memória do JilsonAI na Fase 6); este filtro as trata como **um ativo só** e vira critério de
+> design de cada feature nova. Ética já alinhada ao anti-roach-motel (P4): **sair continua fácil**
+> — o que o aluno construiu fica esperando, o que transforma o patrimônio em motor de **winback**
+> (KPI 15–25%). A FAQ já promete "volte quando quiser, sem perder nada" — este filtro é a versão
+> estratégica dessa promessa.
+
 ---
 
 ## Visão geral
@@ -380,3 +390,10 @@ público opt-in (P6.5), motivo de cancelamento no launch (P7), regra anti-alucin
 (JilsonAI Fase 0), draft de resposta no admin (fast-follow). Parqueado: auto-ingestão de
 LessonChunks (Fase 5 RAG, pós-MVP). Detalhe em IMPLEMENTATION-PLAN.md / JILSONAI.md / DESIGN.md /
 CLAUDE.md / TECH-STACK.md.*
+
+*Atualização: Jul 2026 — Filtro 2 "patrimônio do aluno" adicionado ao lado do filtro AI-no-DNA
+(switching cost ético: cada mês de uso aumenta o valor de ficar; sair segue fácil — anti-roach-motel
+— e o patrimônio persistente vira motor de winback). Parte do playbook big-tech→solo: demais peças
+em STRATEGY.md (categoria nomeada "AI-nativa", ferramentas grátis pós-launch, cadência ritual),
+DESIGN.md §6 + IMPLEMENTATION-PLAN P6.5 (certificado como mídia) e JILSONAI.md ("De tutor a
+ferramenta"). Nada infla o MVP (0–7) — são lentes, filtros e seams, não fases novas.*

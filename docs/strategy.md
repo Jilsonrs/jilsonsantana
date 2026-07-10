@@ -12,6 +12,13 @@
 > caminho conversando, a IA monta seu currículo, e o JilsonAI te acompanha até virar especialista.
 > Simples como a Apple, na voz do Jilson, por R$99,90/mês.
 
+**Nome da categoria (nomear antes que alguém nomeie):** *a primeira escola de dados **AI-nativa**
+do Brasil.* [FATO] Quem batiza a categoria vira dono dela — a HubSpot criou "inbound marketing" e
+virou a referência contra a qual os outros se comparam. "AI-nativa" é termo de **posicionamento**
+(manifesto, imprensa, SEO, bio) — na copy pro aluno a tradução acessível continua sendo "a escola
+É IA" (content.md, A tese). Quando Hashtag/Xperiun colarem um chatbot na lateral, estarão entrando
+na **nossa** categoria — atrasados por definição. Custo: zero (é copy).
+
 **Quem serve:** profissional/estudante BR que quer aprender dados de forma prática e aplicada
 (Excel, Power BI, SQL, Python, IA aplicada) — do iniciante ao que quer subir de nível. PT primeiro.
 
@@ -78,6 +85,17 @@ tutor 24/7) + autoridade pessoal + simplicidade Apple — combinação que nenhu
   Base pequena hoje → não é o motor no curto prazo; cresce alimentado pela própria campanha Udemy.
   AdSense **bônus** (RPM PT/BR baixo).
 - **Site** = conversão (assinatura R$99,90) + entrega de valor recorrente.
+- **Ferramentas gratuitas — "comoditize o complemento" (pós-launch, 1 piloto):** [FATO] estratégia
+  formalizada por Joel Spolsky (Strategy Letter V) e executada pelas big techs — Google deu o
+  Android de graça pra comoditizar o smartphone e proteger a busca. O complemento da assinatura
+  (acompanhamento) é a **informação**, que os concorrentes vendem. Distribuir **ferramentas** grátis
+  fora da escola (template de planilha pronto, biblioteca de prompts pra dados, cheat sheet) que
+  capturam e-mail e apontam pro que só a escola tem. [INFER] Grátis-ferramenta converte melhor que
+  grátis-vídeo (entra no fluxo de trabalho da pessoa); um template com marca discreta circulando
+  numa empresa é mídia que se distribui sozinha. **Não viola a trava "sem grátis na escola"** — o
+  grátis vive fora, como já decidido. ⚠️ Anti-burnout: é projeto, não decisão — fila pós-launch,
+  começar com **1 template piloto** + captura de e-mail (Resend já existe). Candidato natural:
+  material do "Excel do Zero" (courses.md §7.3).
 
 ---
 
@@ -105,6 +123,13 @@ tutor 24/7) + autoridade pessoal + simplicidade Apple — combinação que nenhu
     **~50/mês ≈ 10 meses** · **~60/mês ≈ 8 meses**.
   - **Churn é a maior alavanca:** baixar de 7% → 5% derruba a reposição de ~26 p/ ~18 novas/mês e
     acelera o ramp inteiro. Retenção (JilsonAI + trilhas + "sempre atualizado") vale mais que volume bruto.
+  - **Cadência ritual (anti-churn com relógio):** [FATO observável] streamings migraram de binge
+    pra lançamento semanal justamente por retenção — cadência previsível dá razão concreta de não
+    cancelar *este mês*. "Sempre atualizado" é abstrato; **"todo dia X do mês tem novidade"** é
+    relógio: cria hábito e argumento anti-churn com data. ⚠️ Anti-burnout: cadência é **promessa
+    pública** — mensal, nunca semanal; o drop pode ser mínimo (1 aula nova, 1 atualização de camada
+    IA). O valor está na **previsibilidade, não no volume**. Decidir o dia **antes do go-live**
+    (vira copy — content.md §3/§11).
   - *Funil:* `vendas/mês = alcance × conversão`. **Motor inicial = e-mail pra base Udemy (100k)** →
     convite pro canal/site; a 0,3–0,5% direto já gera centenas de assinantes. **YouTube PT (~1.580,
     em rebuild)** entra como compounding de médio prazo, não fonte primária no launch. **Inputs reais
@@ -113,7 +138,9 @@ tutor 24/7) + autoridade pessoal + simplicidade Apple — combinação que nenhu
 - **Custo JilsonAI não é existencial:** aluno médio gasta poucos reais/mês de API; a cauda
   (heavy/abusivo) é limitada por quota + rate-limit + medidor visível. Tiers de uso = seams pós-launch.
 - **KPIs a observar:** churn <8% (saudável BR 6–10%), conversão 3–5%, winback 15–25%,
-  MRR-novo ≥20%>MRR-perdido, mix anual 20–30%.
+  MRR-novo ≥20%>MRR-perdido, mix anual 20–30%; **% de conversas JilsonAI sobre problema real de
+  trabalho** vs. conteúdo de aula — quando essa fração cresce, a assinatura migrou de "curso" pra
+  "ferramenta" e o churn muda de natureza (ver JILSONAI.md, "De tutor a ferramenta").
 
 ---
 
@@ -177,3 +204,12 @@ câmbio/haircut e matemática de aquisição (churn-adjusted + funil). §8 reord
 §10 reposicionada de "restrição de burnout" para "alavancagem" (IA/sistemas como habilitadores da meta).
 Removido o enquadramento "alvo não é milhares / base modesta" — substituído pela meta de ~365. Câmbio,
 haircut e enquadramento tributário (EPP) são premissas a confirmar (câmbio no dia; impostos com contador).*
+
+*Atualização Jul 2026 — PLAYBOOK BIG-TECH→SOLO (assimetrias replicáveis, custo ~zero em doc): §1
+nomeia a categoria ("a primeira escola de dados AI-nativa do Brasil" — posicionamento/SEO; copy do
+aluno segue "a escola É IA"). §5 adiciona "comoditize o complemento" (ferramentas grátis fora da
+escola; pós-launch, 1 piloto). §6 adiciona cadência ritual (drop mensal em dia fixo — decidir o dia
+no go-live; promessa mensal e humilde) + KPI "% conversas problema-real" (migração curso→ferramenta,
+ver JILSONAI.md). Peças-irmãs: filtro "patrimônio do aluno" em PROJECT_DESCRIPTION; certificado-
+como-mídia em DESIGN.md §6 / IMPLEMENTATION-PLAN P6.5. Nada infla o MVP — são lentes e seams, não
+fases novas.*

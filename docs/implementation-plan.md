@@ -191,6 +191,12 @@ de uma sessão própria antes do launch):**
 - [ ] Server-side PDF on 100% completion of a trilha (or course). Name = trilha name; lists skills covered.
 - [ ] If `User.name` missing at issue time, prompt the student for the name to print.
 - [ ] **Public verifiable URL.** Route `/certificado/[id]` listing the `skillsCovered`, with Open Graph optimized for LinkedIn sharing → each graduate becomes an organic marketing vector and feeds the "emprego em empresa" angle (cert by competencies). **TRAVA:** student opt-in (`isPublic`, default false). The cert always exists; the public route is private/404 unless the student allows it (LGPD).
+- [ ] **Certificate-as-media upgrade (same phase, small):** dedicated **OG image** rendered
+      server-side alongside the PDF (wordmark + student name + trilha + skills — Apple-clean, spec
+      in DESIGN.md §6); **"Add to LinkedIn"** button (Add-to-Profile deep-link, pre-filled); every
+      link back to the site carries **`utm_source=certificate`** → closes the loop with P1
+      attribution capture and makes each graduate a *measurable*, CAC-zero acquisition channel.
+      Opt-in gate (`isPublic`) unchanged.
 - **Done when:** completing a curated trilha issues a certificate PDF with name + competencies.
 
 ## Phase 7 — Launch Prep  *(medium risk)*
@@ -235,6 +241,10 @@ MVP = **Phases 0 → 7** (incl. trilhas curadas na Phase 2, certificados na Phas
 ---
 *Atualizado: Jun 2026 — trilhas (LearningPlan/PlanModule/PlanItem) entram na Fase 2; aula vira first-class pesquisável; certificados puxados pro MVP (Fase 6.5); pricing mensal-sem-fidelidade + anual + 2 prices Stripe (Fase 4); comunidade-fórum removida (JilsonAI absorve); EN/Phase 13 removida. Ver JILSONAI.md p/ trilhas curadas vs montagem por IA.*
 *Atualizado: Jun 2026 (rev. externa Gemini) — seams de engenharia distribuídos por fase, sem inflar o MVP (0–7): UTM capture (P1), signed URL elástico sem IP-lock (P3), force-sync Stripe + offboarding screen anti roach-motel (P4), certificado público opt-in (P6.5), captura de motivo de cancelamento no launch + "pausar 1 mês" como fast-follow (P7). Auto-ingestão de LessonChunks fica PARQUEADA na Fase 5 (RAG, pós-MVP) — não construir, não puxar pra frente.*
+*Atualizado: Jul 2026 — P6.5 ganha o upgrade "certificate-as-media" (OG image server-side, botão
+LinkedIn Add-to-Profile, `utm_source=certificate` fechando o loop com a UTM capture da P1).
+Racional: playbook big-tech→solo em STRATEGY.md. Escopo pequeno, mesma fase, opt-in/LGPD
+inalterados. Nada muda no roadmap de fases.*
 *Atualizado: Jun 2026 — **Fase 2 ganhou a página de curso** (mapeada da análise Mosh/Xperiun/Hashtag): campos do Course (subtitle, level, learnTags, requirements mostrados, personas, highlights c/ ícone, thumbnailUrl=lista, introVideoId=detalhe, displayOrder, status) + Module/Lesson (displayOrder, status). **Metodologia 3 Camadas** = selo opcional via `Course.camadas[]` (não-boolean; curso pode ter 1–3 camadas) + textos globais em core/ + `camadaOverride?` (exceção, ex. N8N). Enum UNIVERSAL/MODERNO/IA, ícones stack-2·bolt·sparkles (azul só na IA). Seams pós-launch: introVideoId não-gated (wiring P3), filtro/agrupamento por camada, "pergunte ao JilsonAI" na página de curso (P6), prova social pesada.*
 *Atualizado: Jun 2026 — FAQ por curso adicionada como `Course.faq[]` **opcional** (renderiza só se preenchida; JilsonAI é a FAQ viva; preencher por exceção, não obrigatório — evita burnout no catálogo amplo).*
 *Atualizado: Jun 2026 — **Fase 4 reescrita: Stripe Plano Padrão + recorrência IN-HOUSE.** Conta MEI/CNPJ, payout Banco do Brasil (substitui C6). NÃO usar Stripe Billing nem Customer Portal — assinatura recorrente construída nos primitivos (Customer/SetupIntent/PaymentMethod/PaymentIntent), agendada via pg-boss; captura de cartão via Payment Element embutido (aluno nunca sai da escola); gestão/cancelamento dentro do site. Custo da decisão = dunning + 3DS/SCA off-session + proration mensal↔anual viram código nosso (por isso é bloco MAX/Ultracode). Confirmar o % do Stripe Billing antes de fechar a economia unitária.*

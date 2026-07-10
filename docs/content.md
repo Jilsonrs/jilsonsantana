@@ -28,6 +28,11 @@ congela, dúvida que demora dias, fórum onde ninguém responde, ou IA empacotad
 enterprise separado. Aqui a **IA é a experiência** — tutor, suporte e guia do aluno, no plano
 acessível. Conteúdo da era da IA exige escola da era da IA.
 
+> **Nome da categoria (posicionamento/SEO — não jargão de vitrine):** *a primeira escola de dados
+> **AI-nativa** do Brasil.* O termo vive em manifesto, bio, imprensa e SEO — nomeia a categoria
+> antes que um concorrente nomeie (racional em STRATEGY.md §1). Na copy pro aluno, a tradução
+> acessível continua sendo a tese acima: "aqui a IA é a experiência".
+
 ---
 
 ## Copy Filter (aplicar a TODO conteúdo)
@@ -84,6 +89,11 @@ com conteúdo velho.
 
 > Pilar 2 é o herói (centro visual) — ataca o medo nº1 de quem estuda dados: "vou empacar e
 > desistir". Pilar 3 responde "por que continuo pagando depois de terminar?" — anti-churn virando copy.
+
+> **Cadência ritual no Pilar 3 (decidir o dia no go-live — TBD):** a promessa "sempre à frente"
+> ganha **relógio público** — ex.: *"toda primeira segunda do mês, novidade na escola."* Vira 1
+> frase aqui no Pilar 3 + 1 item na FAQ (§11). ⚠️ Mensal e humilde (1 aula/atualização basta):
+> **previsibilidade > volume** — é promessa pública (racional em STRATEGY.md §6).
 
 ---
 
@@ -202,6 +212,9 @@ quiser trilha, tutor 24/7 e certificado, a escola te espera."
 - **Tem certificado?** Sim, ao concluir.
 - **O que é o JilsonAI?** Um tutor de IA no meu método, 24/7. Tira dúvida na hora — e quando ele não resolve, eu entro.
 - **Quanto tempo até aplicar?** Aulas curtas, feitas pra aplicar no mesmo dia.
+- **Com que frequência sai coisa nova?** *(rascunho — ativar quando o dia da cadência for decidido,
+  ver §3)* Todo mês, em dia fixo — [dia TBD]. A ferramenta mudou, a aula muda; e a novidade chega
+  sempre na mesma data.
 
 ---
 
@@ -290,3 +303,7 @@ problema primeiro", inversão "não prende" vs "não evapora". 1 TBD: condição
 
 *Atualizado: Jun 2026 — adicionada **§15 Página de Curso** (mapeada da análise Mosh/Xperiun/Hashtag): ordem dos blocos, diferenciais como cards-ícone, pré-requisitos mostrados, imagem (lista) vs vídeo de apresentação (detalhe). **Bloco Metodologia 3 Camadas** = selo opcional com textos globais (Fundamentos sólidos · Recursos modernos · Com IA do seu lado), ícones stack-2·bolt·sparkles (azul só na IA). Revelar a promessa, esconder a economia. É página de curso, NÃO a landing.*
 *Atualizado: Jun 2026 — §15 ganhou bloco 8 (FAQ do curso, opcional): só aparece se preenchida, JilsonAI cobre o caso geral, 2–3 itens por exceção.*
+*Atualizado: Jul 2026 — playbook big-tech→solo (racional em STRATEGY.md): nome da categoria
+adicionado em "A tese" (AI-nativa = posicionamento/SEO; copy do aluno inalterada); cadência ritual
+anotada no §3 (Pilar 3) + item de FAQ como rascunho TBD (dia fixo mensal, decidir no go-live —
+promessa mensal e humilde). Nenhuma seção nova na landing.*
