@@ -258,6 +258,56 @@ Corpo com `line-height` generoso (1.6) e medida de linha ~66ch — leitura confo
 
 ---
 
+## 13. Área logada — shell de aplicação
+
+The logged-in area is an APP SHELL, not a landing page. It inherits the brand, not the
+landing's grammar.
+
+**INHERITS:** color tokens, MuseoModerno (titles) + Hanken Grotesk (body), `rounded-2xl`,
+near-zero shadows, hairline `--border`, visible focus ring, AA contrast, spacing precision.
+
+**DOES NOT INHERIT:** hero type scale (`clamp 2.5–4.5rem`), `py-24`/`py-32` section rhythm,
+the signature element, scroll reveals, concentrated boldness. Logged-in is denser and
+quieter — the student returns here daily. Elegance comes from precision, not from moments.
+
+### Layout
+
+Left icon rail (fixed, ~72px) + content area. No second nav column at launch — a solo
+product doesn't earn two levels of chrome. Item count is open; the rail must work from 4 to
+8 items without redesign.
+
+### Rail
+
+- **Background:** `--surface-alt` (#F6F9FC). **NOT dark** — §3 keeps the product light, and a
+  dark rail introduces a second visual language.
+- **Icons:** Lucide, thin stroke, `--muted-foreground`.
+- **ACTIVE item:** `--primary-tint` pill background + `--primary` icon. This is the ONLY
+  place the blue appears in the rail.
+- **Rationale:** the blue is the single accent (§3). Flooding the rail with #238FE8 would
+  spend it on navigation chrome and leave primary actions ("Continuar trilha", "Assinar")
+  with nothing to stand out against.
+- Hairline `--border` separating rail from content. No shadow.
+
+### Type scale (reduced from landing)
+
+- **Page title:** 1.75rem, MuseoModerno 600
+- **Section:** 1.25rem, Hanken 600
+- **Body/UI:** 0.9375–1rem, Hanken 400
+- **Meta:** 0.8125rem, `--muted-foreground`
+
+### Density
+
+- Content padding: `py-8` to `py-12` (NOT `py-24`)
+- Card gap: `gap-4` to `gap-6` (NOT `gap-8`)
+- No entrance animation on navigation. Hover/focus micro-interactions only.
+
+### Piso de qualidade (mesmo do §9)
+
+Responsive to mobile (rail collapses to bottom bar or drawer — decide at build time),
+visible keyboard focus, `prefers-reduced-motion` respected, AA contrast.
+
+---
+
 *Criado: Jun 2026 — reescrita total. Substitui o design.md de consultoria (dark/#238FE8/$119/Service 6).
 Direção: Apple claro + acessível, acento único #238FE8 (azul da logomarca), MuseoModerno (marca) +
 Hanken Grotesk (corpo) + JetBrains Mono (dados). Assinatura = a trilha que se monta sozinha no hero
@@ -270,3 +320,14 @@ trilha só na área logada.*
 (OG image dedicada server-side, botão Add-to-Profile do LinkedIn, UTM utm_source=certificate
 fechando o loop com a captura de atribuição da P1). Racional no playbook big-tech→solo em
 STRATEGY.md; opt-in/LGPD inalterados.*
+*Atualizado: Ago 2026 — **§13 nova: área logada = shell de aplicação**, não landing. Herda a marca
+(tokens, MuseoModerno+Hanken, rounded-2xl, sombra quase zero, hairline `--border`, foco visível, AA)
+e NÃO herda a gramática da landing (escala do hero, ritmo py-24/py-32, elemento-assinatura, scroll
+reveals, ousadia concentrada) — logado é mais denso e mais quieto, o aluno volta todo dia. Layout =
+rail de ícones à esquerda (~72px, fixo) + conteúdo, sem segunda coluna de nav no launch (de 4 a 8
+itens sem redesenho). Rail em `--surface-alt` (claro, nunca escuro — evita uma segunda linguagem
+visual) e o azul aparece SÓ no item ativo (pill `--primary-tint` + ícone `--primary`): o acento
+único do §3 fica reservado pras ações primárias ("Continuar trilha", "Assinar"), não pro chrome de
+navegação. Escala tipográfica e densidade reduzidas (título 1.75rem; py-8/py-12; gap-4/gap-6; sem
+animação de entrada na navegação). Piso de qualidade do §9 vale igual; colapso do rail no mobile
+(bottom bar ou drawer) = decisão de build.*
