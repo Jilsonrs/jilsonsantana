@@ -260,51 +260,57 @@ Corpo com `line-height` generoso (1.6) e medida de linha ~66ch — leitura confo
 
 ## 13. Área logada — shell de aplicação
 
-The logged-in area is an APP SHELL, not a landing page. It inherits the brand, not the
-landing's grammar.
+A área logada é um **shell de aplicação**, não uma landing. Herda a marca, não a gramática
+da landing.
 
-**INHERITS:** color tokens, MuseoModerno (titles) + Hanken Grotesk (body), `rounded-2xl`,
-near-zero shadows, hairline `--border`, visible focus ring, AA contrast, spacing precision.
+**HERDA:** tokens de cor, MuseoModerno (títulos) + Hanken Grotesk (corpo), `rounded-2xl`,
+sombra quase zero, hairline `--border`, foco visível, contraste AA, precisão de espaçamento.
 
-**DOES NOT INHERIT:** hero type scale (`clamp 2.5–4.5rem`), `py-24`/`py-32` section rhythm,
-the signature element, scroll reveals, concentrated boldness. Logged-in is denser and
-quieter — the student returns here daily. Elegance comes from precision, not from moments.
+**NÃO HERDA:** a escala tipográfica do hero (`clamp 2.5–4.5rem`), o ritmo de seção
+`py-24`/`py-32`, o elemento-assinatura, os scroll reveals, a ousadia concentrada. Logado é
+mais denso e mais quieto — o aluno volta aqui todo dia. A elegância vem da precisão, não de
+momentos.
 
 ### Layout
 
-Left icon rail (fixed, ~72px) + content area. No second nav column at launch — a solo
-product doesn't earn two levels of chrome. Item count is open; the rail must work from 4 to
-8 items without redesign.
+Rail de ícones à esquerda (fixo, ~72px) + área de conteúdo. Sem segunda coluna de navegação
+no launch — um produto solo não sustenta dois níveis de cromo. O número de itens é aberto; o
+rail tem que funcionar de 4 a 8 itens sem redesenho.
 
 ### Rail
 
-- **Background:** `--surface-alt` (#F6F9FC). **NOT dark** — §3 keeps the product light, and a
-  dark rail introduces a second visual language.
-- **Icons:** Lucide, thin stroke, `--muted-foreground`.
-- **ACTIVE item:** `--primary-tint` pill background + `--primary` icon. This is the ONLY
-  place the blue appears in the rail.
-- **Rationale:** the blue is the single accent (§3). Flooding the rail with #238FE8 would
-  spend it on navigation chrome and leave primary actions ("Continuar trilha", "Assinar")
-  with nothing to stand out against.
-- Hairline `--border` separating rail from content. No shadow.
+- **Fundo:** `--surface-alt` (#F6F9FC). **Nunca escuro** — o §3 mantém o produto claro, e um
+  rail escuro introduz uma segunda linguagem visual.
+- **Ícones:** Lucide, traço fino, `--muted-foreground`.
+- **Item ATIVO:** pill de fundo `--primary-tint` + ícone `--primary`. É o ÚNICO lugar onde o
+  azul aparece no rail.
+- **Motivo:** o azul é o acento único (§3). Inundar o rail de #238FE8 gastaria ele no cromo
+  de navegação e deixaria as ações primárias ("Continuar trilha", "Assinar") sem nada contra
+  o que se destacar.
+- **JilsonAI no rail segue a regra do rail:** inativo = ícone neutro (`--muted-foreground`),
+  como qualquer outro item. O "brilho" azul do JilsonAI (§3) vive DENTRO da feature —
+  avatar, ação de enviar, painel de chat — nunca no cromo de navegação. Motivo: se o item do
+  JilsonAI é azul permanentemente, o rail perde o único sinal de "onde estou". Navegação tem
+  uma verdade só.
+- Hairline `--border` separando rail e conteúdo. Sem sombra.
 
-### Type scale (reduced from landing)
+### Escala tipográfica (reduzida em relação à landing)
 
-- **Page title:** 1.75rem, MuseoModerno 600
-- **Section:** 1.25rem, Hanken 600
-- **Body/UI:** 0.9375–1rem, Hanken 400
+- **Título de página:** 1.75rem, MuseoModerno 600
+- **Seção:** 1.25rem, Hanken 600
+- **Corpo/UI:** 0.9375–1rem, Hanken 400
 - **Meta:** 0.8125rem, `--muted-foreground`
 
-### Density
+### Densidade
 
-- Content padding: `py-8` to `py-12` (NOT `py-24`)
-- Card gap: `gap-4` to `gap-6` (NOT `gap-8`)
-- No entrance animation on navigation. Hover/focus micro-interactions only.
+- Padding de conteúdo: `py-8` a `py-12` (NÃO `py-24`)
+- Gap de cards: `gap-4` a `gap-6` (NÃO `gap-8`)
+- Sem animação de entrada na navegação. Só micro-interações de hover/foco.
 
 ### Piso de qualidade (mesmo do §9)
 
-Responsive to mobile (rail collapses to bottom bar or drawer — decide at build time),
-visible keyboard focus, `prefers-reduced-motion` respected, AA contrast.
+Responsivo até mobile (o rail colapsa em bottom bar ou drawer — decidir no build), foco de
+teclado visível, `prefers-reduced-motion` respeitado, contraste AA.
 
 ---
 
@@ -331,3 +337,9 @@ visual) e o azul aparece SÓ no item ativo (pill `--primary-tint` + ícone `--pr
 navegação. Escala tipográfica e densidade reduzidas (título 1.75rem; py-8/py-12; gap-4/gap-6; sem
 animação de entrada na navegação). Piso de qualidade do §9 vale igual; colapso do rail no mobile
 (bottom bar ou drawer) = decisão de build.*
+*Atualizado: Ago 2026 (2) — **§13: JilsonAI no rail segue a regra do rail** (resolve o conflito
+§3 × §13 levantado quando a seção entrou). Inativo = ícone neutro `--muted-foreground`, como
+qualquer outro item; o "brilho" azul do JilsonAI vive DENTRO da feature (avatar, ação de enviar,
+painel de chat), nunca no cromo de navegação — um item permanentemente azul faria o rail perder o
+único sinal de "onde estou". Navegação tem uma verdade só. Corpo do §13 também traduzido pro PT,
+na voz dos §§1-12 (tokens, valores Tailwind e CSS vars seguem em inglês — são código, não prosa).*
