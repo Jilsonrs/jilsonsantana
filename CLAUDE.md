@@ -244,6 +244,7 @@ A pedagogical methodology shown as a **selo (seal)** on the course page, the equ
 - Config in `server/src/lib/queue.ts` (uses `DATABASE_URL`). Started before `app.listen()`; stopped on SIGTERM/SIGINT.
 - New job = create queue + register worker in `startQueue()` + export a `send*Job()` function.
 - Use for: emails (Resend), Stripe/Bunny webhook processing, JilsonAI async, certificate generation.
+- **Detection, not just retry:** any job that exhausts its pg-boss retries in a billing/webhook/dunning queue MUST alert the admin (Resend e-mail via an `admin-alerts` queue). The Stripe force-sync is the *recovery* path; this alert is how the operator learns it's needed — a paying member locked out must be discovered by us, never by the student.
 
 ## JilsonAI
 

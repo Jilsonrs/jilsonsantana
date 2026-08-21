@@ -161,15 +161,31 @@ de uma sessão própria antes do launch):**
 - [ ] **Captura de cartão na própria escola via Payment Element.** `SetupIntent` salva o `PaymentMethod` no `Customer`; o aluno **nunca sai do site**. Dado do cartão vai direto pro Stripe (não toca nosso servidor).
 - [ ] `Subscription` model (fonte única de acesso) with growth seams: `ownerUserId?`, `organizationId?` (nullable), `seats` (default 1), `status`, `currentPeriodEnd`, colunas Stripe (`stripeCustomerId`, `stripePaymentMethodId`, `stripeSubscriptionId?` *— nullable, reservado caso migremos pro Billing*) (+ RLS) ; migration
 - [ ] **Agendador de cobrança recorrente próprio (pg-boss):** no `currentPeriodEnd`, dispara `PaymentIntent` off-session no `PaymentMethod` salvo → sucesso estende o período; falha entra no dunning.
-- [ ] **Dunning in-house:** retry de cartão recusado (cronograma próprio), e-mail Resend "atualize seu cartão", janela de tolerância antes de cortar acesso. **TRAVA: 3DS/SCA off-session** — tratar `requires_action` (renovação que exige re-autenticação do banco) sem quebrar a cobrança nem trancar quem pagou.
+- [ ] **Dunning in-house (régua v1 — Jul 2026; ajustar é 1 linha, confirmar na abertura da fase):**
+      cobrança no **D0** (`currentPeriodEnd`); falhou → retries automáticos **D+2** e **D+5**
+      (pg-boss); **corte no D+7** (status `UNPAID` + `session.deleteMany`). **Acesso MANTIDO
+      durante toda a janela** (status `PAST_DUE`) — churn involuntário é a maior alavanca
+      (STRATEGY.md), e retry recusado não paga taxa (Plano Padrão cobra só transação aprovada).
+      **Atualizou o cartão em qualquer ponto da janela → retry imediato** (retry-on-update).
+      **TRAVA: 3DS/SCA off-session** — `requires_action` em qualquer tentativa → e-mail com
+      deep-link pra tela logada **"Resolver pagamento"** (confirma o PaymentIntent no browser
+      do aluno); não resolvido até D+7 → corta junto, sem recobrar. **E-mails (Resend via
+      pg-boss):** 1 por tentativa falha ("atualize seu cartão" + link) · aviso final no D+6 ·
+      confirmação de corte no D+7 com link de winback (reassinar reativa na hora — progresso e
+      certificados intactos: o "patrimônio do aluno" fazendo o winback). Mesma régua pro anual.
 - [ ] `temAcessoAtivo(userId)` lib — caminho individual (`assinaturaIndividualAtiva`); fonte única de verdade do acesso, lida da NOSSA `Subscription`
 - [ ] **Webhook handler** (`payment_intent.succeeded` / `payment_intent.payment_failed` / `charge.refunded` / `charge.dispute.created`) → responde rápido (200) → enfileira via pg-boss → CRIA user+subscription no primeiro pagamento (substitui o seed) e sincroniza status; **verifica assinatura do Stripe**
 - [ ] **"Force sync" fallback.** Reconsulta a Stripe API (status do `PaymentIntent`/`Customer`) e reconcilia acesso caso um webhook (pg-boss) falhe — evita o pior caso de suporte: assinante pagante trancado pra fora. **TRAVA:** admin-only OU escopo de servidor seguro (sessão autenticada). NUNCA um GET não autenticado que libere acesso — seria bypass de billing.
+- [ ] **Alerta de falha (detecção, não só retry):** qualquer job que esgote os retries do
+      pg-boss nas filas de billing/webhook/dunning → e-mail imediato pro admin via Resend
+      (fila `admin-alerts`). O force-sync é a *recuperação*; este alerta é como o operador
+      fica sabendo que precisa dela — assinante pagante trancado é descoberto por nós,
+      nunca pelo aluno. (Convenção no CLAUDE.md → Background Jobs.)
 - [ ] `requireActiveMembership` middleware (wraps `temAcessoAtivo`) gating content + video URLs
 - [ ] On access loss: `session.deleteMany({ userId })` to force logout
 - [ ] Client: pricing page + **checkout embutido (Payment Element)** + **tela de gestão de assinatura DENTRO da escola** (trocar cartão, ver próxima cobrança, mudar mensal↔anual, cancelar) — substitui o Customer Portal. *Proration mensal↔anual agora é cálculo nosso (crédito dos dias restantes).*
 - [ ] **Tela de offboarding antes do cancelamento (seam).** Intercepta "cancelar", coleta o motivo, depois executa o **nosso** cancelamento (marca `Subscription` pra encerrar no fim do período; não recobra). **TRAVA (anti roach-motel — sensibilidade Procon/CDC já levantada no pricing):** "cancelar mesmo assim" sempre visível, 1 clique; tom calmo, não retentivo. **Faseamento:** captura de motivo = **launch**; **"pausar 1 mês" = fast-follow** (agora é lógica nossa — só não recobrar no próximo ciclo; confirmar no build). Não construir a pausa no launch.
-- [ ] E2E: assinar → acesso liberado; renovação off-session → período estende; cancelar → acesso revogado no fim do período; cartão recusado → dunning → corte após tolerância
+- [ ] E2E: assinar → acesso liberado; renovação off-session → período estende; cancelar → acesso revogado no fim do período; cartão recusado → dunning → corte no D+7; atualizar cartão na janela → retry imediato reativa; `requires_action` → tela "Resolver pagamento" resolve
 - **Done when:** paying members get access, status survives reload, webhooks reconcile truth.
 
 ## Phase 5 — Lesson Progress + Event Capture Foundation  *(low–medium risk)*
