@@ -17,6 +17,8 @@ Thumbs.db
 # Claude Code (never commit sessions or local config)
 .claude/
 .claude.json
+# MCP server config carries API keys — keep it in user/global scope, never in the repo
+/.mcp.json
 
 # Test results
 playwright-report/
