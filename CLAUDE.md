@@ -132,6 +132,7 @@ How each sliceable task ("block") is executed. This encodes the review disciplin
 - One migration per feature (incremental, named in snake_case). Keep `schema.prisma` as the source of truth; `prisma db pull` to reconcile when tables are created via Supabase MCP.
 - **RLS convention (non-negotiable):** every table created in the `public` schema MUST get `ALTER TABLE public.<t> ENABLE ROW LEVEL SECURITY;` in the SAME migration. No policies needed — Prisma connects via a `BYPASSRLS` role and is the sole accessor; RLS blocks the Supabase Data API (`anon`/`authenticated`).
 - After every DDL migration, run `Supabase get_advisors(type='security')`. Expected: 0 `rls_disabled_in_public` errors; INFO `rls_enabled_no_policy` notices are the desired state.
+- **Prod migrations:** `npx prisma migrate deploy` runs as the Railway **pre-deploy command** — once per deploy, before the new instance starts serving. NEVER in the Docker entrypoint (it would re-run on every container restart), and never `migrate dev` against prod. First-time setup is a Fase 3 task (see implementation-plan).
 
 ### Secrets in agent sessions
 NEVER pass a secret as a CLI argument or read one back into the transcript. Command-line args land in shell history; transcript content is transmitted as conversation context and cannot be scrubbed after the fact.

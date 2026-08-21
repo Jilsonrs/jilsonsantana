@@ -138,6 +138,11 @@ de uma sessão própria antes do launch):**
 
 ## Phase 3 — Video Playback (Bunny Stream)  *(HIGH RISK — own sessions)*
 
+- [ ] **Infra (pré-requisito da fase): migrations em prod via pre-deploy.** Configurar
+      `npx prisma migrate deploy` como **pre-deploy command** do Railway (railway.json /
+      service settings) — roda 1× por deploy, antes da instância nova subir. NUNCA no
+      entrypoint do Docker (re-executaria a cada restart) e nunca `migrate dev` contra prod.
+      Validar com a primeira migration desta fase. (Convenção no CLAUDE.md → Database & Migrations.)
 - [ ] Bunny account + library; store video IDs on `Lesson`
 - [ ] Server: issue short-lived **signed URLs**, member-only. **Elastic window (~6–12h) and NO
       IP-lock** — so the video doesn't break when the student switches Wi-Fi↔4G mid-lesson (classic
