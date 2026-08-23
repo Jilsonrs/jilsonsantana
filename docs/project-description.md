@@ -104,12 +104,12 @@ sobre crescimento rápido.
 
 ### Pricing da assinatura (TRAVADO)
 - **Mensal R$99,90/mês — sem fidelidade** (padrão, motor de aquisição).
-- **Anual ~R$995/ano** (~17% de desconto, cobrança única recorrente anual). Upgrade mensal→anual
-  usa proration nativo do Stripe.
+- **Anual ~R$995/ano** (~17% de desconto, cobrança única recorrente anual). Troca mensal↔anual
+  usa **proração nativa do Stripe Billing**, previsualizada antes de o aluno confirmar.
 - **Sem free trial. Sem conteúdo grátis dentro da escola** (o grátis vive no YouTube).
 - **Sem lock de preço vitalício** pra fundadores. Founding member, se houver, é por bônus/condição
   temporária — nunca preço travado pra sempre.
-- Build = **2 prices num produto "Assinatura"**; `temAcessoAtivo()` ignora qual price o aluno tem.
+- Build = **2 objetos `Price` da Stripe num produto "Assinatura"**; `temAcessoAtivo()` ignora qual price o aluno tem.
 - *Validação (Gemini, convergência ~95%):* mensal-sem-fidelidade ganha de anual-12x-travado em
   conversão × LTV; fidelidade 12x carrega risco de Procon/CDC/chargeback pra operador solo.
 - *KPIs a observar:* churn <8% (saudável BR 6–10%), conversão 3–5%, winback 15–25%,
@@ -123,10 +123,15 @@ sobre crescimento rápido.
 |------|-------|------|
 | Câmbio de referência | R$ 5,15/US$ | spot 23/jun/2026 — *atualizar no dia* |
 | Meta líquida | **≈ R$ 30.900/mês** | US$ 6.000 × câmbio |
-| Haircut | ~11% | Stripe ~4–5% + imposto Simples ~6% — *confirmar c/ contador* |
-| ARPU líquido | ≈ R$ 85/assinante/mês | mix 75% mensal / 25% anual |
-| **Assinantes ativos-alvo** | **≈ 365** (faixa 350–420) | planejar p/ ~400 (margem câmbio + churn) |
+| Haircut | ~11–12% | Stripe **~5,2%** (Payments 3,99% + R$0,50 + Billing 0,7% — verificado ago/2026) + imposto Simples ~6% — *confirmar c/ contador* |
+| ARPU líquido | **R$ 85,04**/assinante/mês | mix 75% mensal / 25% anual — conta por plano em `strategy.md` §6 |
+| **Assinantes ativos-alvo** | **≈ 365** (363; faixa 350–420) | planejar p/ ~400 (margem câmbio + churn) |
 | Faturamento bruto implícito | ≈ R$ 35k/mês ≈ R$ 420k/ano | **território EPP** — Simples acima do ME |
+
+> **Premissa dominante, não confirmada:** o Simples de **~6% (Anexo III)**. Em **Anexo V (~15,5%)** o
+> ARPU cai pra ~R$ 76 e o alvo sobe pra **~407** — 44 assinantes, ordem de grandeza acima do delta de 3
+> do recálculo de ago/2026. Segue dentro do "planejar p/ ~400", então não muda decisão agora; é o
+> número a fechar com o contador. *(Derivação completa em `strategy.md` §6.)*
 
 **Aquisição (churn-adjusted):** a churn 7%, 365 ativos perdem ~26/mês → ~26 vendas novas/mês só pra
 **manter**. Trajetória 0 → 365: ~40 novas/mês ≈ 14 meses · ~50/mês ≈ 10 meses · ~60/mês ≈ 8 meses.
@@ -286,7 +291,7 @@ GitHub Actions.**
 | DB | Supabase (PostgreSQL) | Armazenamento (auth data hospedada aqui) |
 | Auth | **Better Auth** (adapter Prisma, sessões em DB) | **NÃO** Supabase Auth |
 | Vídeo | Bunny Stream (DRM) | Vídeo de curso gated |
-| Billing | Stripe (recorrente + Customer Portal) | Assinatura |
+| Billing | Stripe Payments + **Stripe Billing** (Payment Element embutido; **sem** Customer Portal) | Assinatura |
 | IA | Claude API (`@anthropic-ai/sdk`) | JilsonAI |
 | Fila | pg-boss (Postgres-native) | Jobs async (e-mail, etc.) |
 | E-mail | Resend | Transacional + educativo |
@@ -315,7 +320,7 @@ GitHub Actions.**
 | 1 — Auth (Better Auth) | login, rotas protegidas, admin gate | baixo |
 | 2 — Conteúdo + **Trilhas** | curso/módulo/aula (aula first-class) + LearningPlan/PlanItem + busca | baixo–médio |
 | 3 — Vídeo (Bunny) | upload, signed URL, gate de acesso | **ALTO** |
-| 4 — Billing (Stripe) | 2 prices, webhooks, portal, `temAcessoAtivo` | **ALTO** |
+| 4 — Billing (Stripe) | 2 prices, Payment Element, webhooks de assinatura, telas próprias de gestão, `temAcessoAtivo` | **ALTO** |
 | 5 — Progresso + captura de evento | LessonProgress + conclusão de trilha + LessonEvent | baixo–médio |
 | 6 — JilsonAI (v1 + suporte) | ver JILSONAI.md (Fases 0–3) + `recommendTrilha` | médio |
 | 6.5 — Certificados | PDF a 100% (nome + competências) | baixo–médio |
@@ -397,3 +402,5 @@ CLAUDE.md / TECH-STACK.md.*
 em STRATEGY.md (categoria nomeada "AI-nativa", ferramentas grátis pós-launch, cadência ritual),
 DESIGN.md §6 + IMPLEMENTATION-PLAN P6.5 (certificado como mídia) e JILSONAI.md ("De tutor a
 ferramenta"). Nada infla o MVP (0–7) — são lentes, filtros e seams, não fases novas.*
+
+*Atualizado Ago 2026 — **Stripe Billing adotado** (Payment Element embutido; Customer Portal segue fora — gestão e cancelamento em telas nossas via Subscriptions API). Reconcilia a pendência aberta desde Jul 2026: as menções a "Customer Portal", "proration nativo do Stripe" e "2 prices" resolvem-se agora **a favor** do Billing, não contra. Haircut de Stripe corrigido de ~4–5% para **~5,2%** (Payments BR 3,99% + R$ 0,50, verificado ago/2026 — a nota anterior dizia R$ 0,39 — mais Billing 0,7%). **Recálculo feito (pendência resolvida):** ARPU líquido **R$ 85,04** e alvo **363** — confirmam os ~R$85 / ~365 que já estavam aqui, delta de 3 assinantes. A metodologia detalhada (conta por plano, R$ 0,50 por transação, Simples sobre o bruto) fica registrada em `strategy.md` §6 e **não é duplicada aqui**. Marcada a premissa que realmente move o número: o **Simples ~6% (Anexo III) é não confirmado** — em Anexo V (~15,5%) o alvo sobe pra ~407.*

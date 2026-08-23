@@ -108,8 +108,28 @@ tutor 24/7) + autoridade pessoal + simplicidade Apple — combinação que nenhu
 - **META DE RECEITA (B2C-first, atualizada Jun 2026): US$ 6.000 líquidos/mês.** O motor é a
   **base de pessoas físicas** (assinatura). Cohorts e B2B são **bônus em cima** — não load-bearing.
   - *Premissas (atualizar quando mudarem):* câmbio **R$ 5,15/US$** (spot 23/jun/2026) → meta
-    **≈ R$ 30.900 líq/mês**; haircut **~11%** (Stripe ~4–5% + imposto Simples ~6% — *confirmar c/
-    contador*); mix **75% mensal / 25% anual** → **ARPU líquido ≈ R$ 85/assinante/mês**.
+    **≈ R$ 30.900 líq/mês**; haircut **~11–12%** (Stripe **~5,2%** = Payments 3,99% + R$ 0,50 e
+    Billing 0,7%, verificado em stripe.com/en-br/billing/pricing ago/2026 + imposto Simples ~6%
+    — *confirmar c/ contador*); mix **75% mensal / 25% anual** → **ARPU líquido R$ 85,04/assinante/mês**.
+  - **Como o ARPU é derivado (metodologia registrada Ago 2026 — conta POR PLANO, não banda agregada):**
+    - **Mensal:** R$ 99,90 − (3,99% = 3,986 · R$ 0,50 · Billing 0,7% = 0,699) = **R$ 94,72/mês**.
+    - **Anual:** R$ 995 − (39,701 · R$ 0,50 · 6,965) = R$ 947,83/ano → **R$ 78,99/mês**.
+    - **O R$ 0,50 é POR TRANSAÇÃO** — 12 cobranças/ano no mensal, **1 só no anual**. Por isso a taxa
+      efetiva do anual (**~4,03%**) é menor que a do mensal (**~4,38%**): no anual a taxa fixa se
+      amortiza em 12 meses. Uma banda agregada não enxerga essa diferença.
+    - **Mix 75/25:** bruto R$ 95,65 → pós-Stripe R$ 90,78.
+    - **O Simples ~6% incide sobre o BRUTO** (faturamento), não sobre o pós-Stripe: −R$ 5,74 sobre
+      95,65 → **R$ 85,04**. *(Aplicar os 6% sobre os R$ 90,78 daria R$ 85,34 — está errado.)*
+    - **Alvo:** 30.900 ÷ 85,04 = **363**.
+  - **Por que trocamos de método — não é só o haircut corrigido.** A metodologia anterior era uma
+    **banda percentual chapada** sobre o bruto misto (95,65 × 0,89 = R$ 85,13). Ela e a conta por
+    plano **só coincidem no mix 75/25**: se o mix migrar pra mais anual, a banda chapada
+    **subestima o ganho**, porque não vê o R$ 0,50 se amortizando. O método novo continua correto
+    quando o mix muda; o antigo, não.
+  - **Premissa dominante, NÃO CONFIRMADA — o Simples de ~6% (Anexo III).** Em **Anexo V (~15,5%)** o
+    ARPU cai pra **~R$ 76** e o alvo sobe pra **~407**: **44 assinantes**, ordem de grandeza acima do
+    delta de 3 deste recálculo. Segue dentro do "planejar p/ ~400" abaixo, então **não muda decisão
+    agora** — mas é ESTA a premissa a fechar com o contador, não o haircut da Stripe.
   - **Assinantes ativos-alvo ≈ 365** (faixa 350–420 conforme câmbio + mix anual). Planejar p/ **~400**
     pra absorver variação de câmbio e churn.
   - **Faturamento bruto implícito ≈ R$ 35k/mês ≈ R$ 420k/ano → território EPP** (Simples Nacional,
@@ -213,3 +233,5 @@ no go-live; promessa mensal e humilde) + KPI "% conversas problema-real" (migra�
 ver JILSONAI.md). Peças-irmãs: filtro "patrimônio do aluno" em PROJECT_DESCRIPTION; certificado-
 como-mídia em DESIGN.md §6 / IMPLEMENTATION-PLAN P6.5. Nada infla o MVP — são lentes e seams, não
 fases novas.*
+
+*Atualização Ago 2026 — **custo Stripe corrigido** após adoção do Stripe Billing (decisão de tech-stack.md): Payments BR **3,99% + R$ 0,50** (a premissa anterior dizia R$ 0,39) **+ Billing 0,7%** = **~R$ 5,19 por assinante/mês** em R$99,90 → haircut de Stripe passa de ~4–5% para **~5,2%**. **Recálculo feito e fechado (pendência ⚠️ resolvida):** ARPU líquido **R$ 85,04** e alvo **363** — ambos confirmam os números que já estavam no doc (~R$85, ~365); o delta é de **3 assinantes**, dentro da faixa 350–420. A troca não muda a estratégia (a taxa é ~0,7 p.p. a mais). **O que mudou de verdade foi o método:** §6 agora registra a conta **por plano** em vez da banda percentual chapada — o R$ 0,50 é por transação (12x/ano no mensal, 1x no anual, efetivo ~4,38% vs ~4,03%) e o Simples incide sobre o bruto, não sobre o pós-Stripe. Os dois métodos **só coincidem no mix 75/25**: com mais anual, a banda chapada subestima o ganho. Fica marcada a premissa que de fato move o número — o **Simples ~6% (Anexo III) é NÃO CONFIRMADO**; em Anexo V (~15,5%) o ARPU cai pra ~R$76 e o alvo sobe pra ~407 (44 assinantes, contra 3 deste recálculo).*
