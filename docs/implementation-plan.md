@@ -119,6 +119,23 @@ investigação.
 - [ ] (bônus, baixa prioridade) sem link "← Catálogo" no topo de `CourseDetailPage`/
       `TrilhaDetailPage` — hoje só dá pra voltar pelo nav ("Catálogo") ou botão do browser.
 
+**Achados P1 do `security-vulnerability-reviewer` (Ago 2026, HEAD `a5f7d77`) — código DESTA fase,
+fecham com ela.** Os dois furam a mesma convenção (CLAUDE.md → Server: "public reads return
+`PUBLISHED` content only"). Nenhum está *ativo* com o seed atual — os caminhos de código estão.
+- [ ] `GET /api/trilhas/:slug` (`server/src/routes/trilhas.ts:26`, usado em `:122`) — `itemInclude`
+      resolve `course`/`lesson` de cada `PlanItem` **sem filtro de status**, em rota pública sem
+      auth. Cenário: a trilha é montada antes do curso ir ao ar (fluxo normal) → visitante anônimo
+      recebe `id`, `slug`, `title`, `subtitle`, `level`, `thumbnailUrl`, `camadas` de curso
+      `DRAFT`/`ARCHIVED`. O predicado transitivo correto já existe em
+      `server/src/routes/search.ts:61` — espelhar. Filtrar no nível do `PlanItem` (relação to-one
+      no Prisma não aceita `where`), mantendo a variante sem filtro só para leitura admin/owner.
+- [ ] `POST /api/trilhas/:id/save` (`server/src/routes/trilhas.ts:211`) — rejeita só
+      `!template.isTemplate`, **não checa `status`**. Qualquer usuário autenticado (não precisa ser
+      admin) itera ids e clona trilha curada ainda em `DRAFT`; o clone nasce `PUBLISHED` (`:233`) e
+      a árvore inteira fica legível em `GET /api/trilhas/mine/:id` (`:110`), que também não filtra.
+      Regra "só PUBLISHED" contornada por um endpoint de **escrita**. Fix: `status: PUBLISHED` no
+      `where` do template (ou `findFirst`), 404 caso contrário.
+
 **O que falta na Fase 2 depois do Bloco 5 fechado:**
 - [ ] Bloco 6b — UI de montagem de trilha curada (admin): `GET /api/admin/trilhas` +
       `GET /api/admin/trilhas/:id` novos (espelho admin, qualquer status, mesmo padrão do Bloco
@@ -152,6 +169,15 @@ de uma sessão própria antes do launch):**
       entrypoint do Docker (re-executaria a cada restart) e nunca `migrate dev` contra prod.
       Validar com a primeira migration desta fase. (Convenção no CLAUDE.md → Database & Migrations.)
 - [ ] Bunny account + library; store video IDs on `Lesson`
+- [ ] **TRAVA (achado do `security-vulnerability-reviewer`, Ago 2026):** o campo de vídeo de
+      **membro** nasce em **coluna PRÓPRIA** — **nunca** reaproveitar `Course.introVideoId`.
+      `introVideoId` sai hoje na resposta pública de `GET /api/courses/:slug`, e isso está
+      **correto** (vídeo de intro é ativo de venda, não-gated — TRAVA do CLAUDE.md → Course page
+      fields). Justamente por isso, pendurar vídeo gated na mesma coluna = vazamento silencioso:
+      a rota pública continua servindo o id sem nenhum erro aparecer. Relacionado: trocar o
+      `include` por `select` explícito nessa rota **antes** de adicionar colunas de vídeo
+      (ver backlog P2 na Fase 7) — com `include`, qualquer coluna nova entra na resposta pública
+      automaticamente.
 - [ ] Server: issue short-lived **signed URLs**, member-only. **Elastic window (~6–12h) and NO
       IP-lock** — so the video doesn't break when the student switches Wi-Fi↔4G mid-lesson (classic
       mobile support ticket). *Inferência:* exact controls (path-token + expiry, optional IP) are
@@ -181,6 +207,13 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
 - [ ] `Subscription` model = **espelho local** (o gate lê daqui) com growth seams: `ownerUserId?`, `organizationId?` (nullable), `seats` (default 1), `status`, `currentPeriodEnd`, `stripeCustomerId`, **`stripeSubscriptionId` (obrigatório — é a chave do objeto canônico)** (+ RLS); migration
 - [ ] `temAcessoAtivo(userId)` lib — caminho individual (`assinaturaIndividualAtiva`); **fonte única de verdade do acesso para a aplicação**, lida do espelho local. *(A verdade canônica é a `Subscription` da Stripe; o espelho é o que o gate consulta em tempo de request.)*
 - [ ] **Webhook handler** dos eventos de assinatura (`customer.subscription.created/updated/deleted`, `invoice.paid`, `invoice.payment_failed`) → responde rápido (200) → enfileira via pg-boss → CRIA user+subscription no primeiro pagamento (substitui o seed) e sincroniza o espelho; **verifica assinatura do Stripe**
+- [ ] **TRAVA de montagem (achado do `security-vulnerability-reviewer`, Ago 2026):** a rota do
+      webhook Stripe é montada **ACIMA** de `express.json()` (`server/src/index.ts:38`) — junto do
+      handler do Better Auth, que já vive lá por essa mesma razão — ou com `express.raw`. Se o body
+      chegar já parseado, a verificação de assinatura (`constructEvent`) falha **em silêncio**: o
+      raw body não é mais recuperável e a checagem passa a validar algo que não é o payload
+      original. Hoje os routers de API são montados depois da linha 38 (`:41-50`), então o padrão
+      default do repo é o errado para esta rota.
 - [ ] **Idempotência + order-safety (TRAVA):** registrar `event.id` processados (repetido = no-op); eventos podem chegar fora de ordem → em qualquer dúvida, `subscriptions.retrieve` e **recomputar** o espelho, nunca confiar no snapshot do payload.
 - [ ] **"Force sync" fallback.** `subscriptions.retrieve` + recomputa o espelho, caso um webhook (pg-boss) falhe — evita o pior caso de suporte: assinante pagante trancado pra fora. **TRAVA:** admin-only OU escopo de servidor seguro. NUNCA um GET não autenticado que libere acesso — seria bypass de billing.
 - [ ] **Alerta de falha (detecção, não só retry):** qualquer job que esgote os retries do
@@ -232,6 +265,54 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
 - [ ] Transactional emails (Resend): welcome, receipt, password reset (transactional ignores `marketingConsent`)
 - [ ] LGPD: privacy policy, terms, consent, data export/delete path
 - [ ] Error/loading states everywhere; security review (subagent) on auth/billing/video
+- [ ] **Rate-limit de auth — VERIFICAR a borda ANTES de escrever código** (achado do
+      `security-vulnerability-reviewer`, Ago 2026). `rateLimit` está ligado em produção
+      (`server/src/lib/auth.ts:72`), mas sem `advanced.ipAddress` o Better Auth lê
+      `x-forwarded-for` e usa o **primeiro** elemento — o que o cliente controla quando a borda
+      **anexa** em vez de sobrescrever. Nesse caso o atacante varia o header e faz brute-force
+      ilimitado contra o e-mail do admin em `/api/auth/sign-in/email`, o único caminho de entrada
+      (`disableSignUp: true`). A convenção "rate-limit auth routes in production" fica satisfeita
+      na letra e **vazia no efeito**. Passo 1: confirmar qual header a Railway garante sobrescrever
+      (não presumir). Se houver, fixar em `advanced: { ipAddress: { ipAddressHeaders: [...] } }`;
+      se não houver, `express-rate-limit` à frente de `app.all("/api/auth/{*any}")` com
+      `app.set('trust proxy', <hops>)`.
+- [ ] **CI não roda testes** (`.github/workflows/ci.yml:20-42`; não existe script `test` no
+      `package.json` raiz). Hoje o workflow faz `npm ci` + build do core + typecheck + build. As
+      suítes que cobrem a fronteira (`AdminRoute.test.tsx`, `ProtectedRoute.test.tsx`) e o E2E de
+      auth **nunca executam** em push nem PR — dá pra remover a checagem de `Role.ADMIN` e o CI
+      fica verde. Contradiz CLAUDE.md → Quality Gates ("lint + typecheck + tests on push") e a
+      seção Commands, que lista `npm run test` como gate local igual ao CI. Fix: script `test` na
+      raiz + step no `ci.yml`; E2E como job separado quando houver banco no CI (declarar no plano
+      do bloco, não deixar implícito).
+- [ ] **Backlog P2 do `security-vulnerability-reviewer` (7 itens — nenhum bloqueia merge, todos
+      antes do primeiro aluno pagante):**
+      (1) **sem teste de fronteira no servidor** — não há suíte no workspace `server`; o E2E só
+      assere redirect do React Router, que é guarda cosmético do client. Falta a matriz
+      401/403/200 em `/api/me`, `/api/admin/ping`, writes de curso, e `/api/courses` excluindo o
+      curso `DRAFT` semeado (CLAUDE.md → Testing: happy-path-only num gate não conta).
+      (2) **`include` em vez de `select`** nas rotas públicas de detalhe (`courses.ts:54`,
+      `trilhas.ts:126`) — devolve todas as escalares (`status`, `createdAt`, `ownerUserId`,
+      `sourcePlanId`) e qualquer coluna futura entra sozinha. Pré-requisito da Fase 3.
+      (3) **`PREVIEW_TOKEN` em query string** (`index.ts:80-92`) — aparece em log de proxy,
+      histórico e `Referer`; comparação não é de tempo constante; `PREVIEW_TOKEN` e `COMING_SOON`
+      não constam no `server/.env.example`.
+      (4) **escritas admin fora do prefixo `/api/admin/*`** (`courses.ts:138,150,171`,
+      `modules.ts:14,25,39`, `lessons.ts:44,55,69`, `trilhas.ts:139`) — todas corretamente atrás de
+      `requireAdmin`, custo é de auditabilidade: "essa rota é admin?" deixa de ser respondível pelo
+      path. Mover ou registrar a exceção como decisão do operador — não deixar leitura em
+      `/admin/courses` e escrita em `/courses` no mesmo router.
+      (5) **`_prisma_migrations` provavelmente sem RLS** — criada pelo Prisma fora das migrations
+      versionadas. As 10 tabelas de domínio estão cobertas. Confirmar com
+      `get_advisors(type='security')`; se aparecer, migration só com o `ENABLE ROW LEVEL SECURITY`.
+      (6) **`lint` é alias de `tsc --noEmit`** (`client/package.json:11`, `server/package.json:11`)
+      — não existe ESLint no repo, então "no `any`" do CLAUDE.md não tem enforcement automático
+      (hoje o código de auth está limpo; nada impede a regressão). Ou instalar
+      `typescript-eslint` com `no-explicit-any: error`, ou renomear o script e ajustar
+      CLAUDE.md/CI — o gate não pode mentir sobre o que executa.
+      (7) **`server/src/seed.ts:101`** — `console.error("Seed failed:", err)` despeja o erro
+      inteiro de um caminho que passa por `signUpEmail({ body: { email, password, name } })`; se o
+      `APIError` do Better Auth carregar o body, a senha vai em claro pro stdout. *Suspeita, não
+      confirmada por leitura estática.*
 - [ ] Performance pass (< 3s load); mobile responsive
 - [ ] Founding-member offer wiring (scarcity for Udemy students)
 - [ ] **Cancellation-reason capture wired.** The offboarding screen (P4) collects the reason on exit — cheap data, gold for churn. Connects to STRATEGY.md churn KPIs (winback, MRR-perdido). (Storage = a small `CancellationReason` row or a field on `Subscription`; reason capture ships at launch, the "pausar 1 mês" path stays fast-follow.)
