@@ -174,10 +174,18 @@ de uma sessão própria antes do launch):**
       `introVideoId` sai hoje na resposta pública de `GET /api/courses/:slug`, e isso está
       **correto** (vídeo de intro é ativo de venda, não-gated — TRAVA do CLAUDE.md → Course page
       fields). Justamente por isso, pendurar vídeo gated na mesma coluna = vazamento silencioso:
-      a rota pública continua servindo o id sem nenhum erro aparecer. Relacionado: trocar o
-      `include` por `select` explícito nessa rota **antes** de adicionar colunas de vídeo
-      (ver backlog P2 na Fase 7) — com `include`, qualquer coluna nova entra na resposta pública
-      automaticamente.
+      a rota pública continua servindo o id sem nenhum erro aparecer.
+- [ ] **PRÉ-REQUISITO desta fase — `include` → `select` nas rotas públicas de detalhe** (movido do
+      backlog P2 da Fase 7; achado do `security-vulnerability-reviewer`, Ago 2026). `GET
+      /api/courses/:slug` (`server/src/routes/courses.ts:54`) e `GET /api/trilhas/:slug`
+      (`server/src/routes/trilhas.ts:126`) usam `include:`, então devolvem **todas** as colunas
+      escalares — e qualquer coluna futura entra na resposta pública **automaticamente**, sem
+      ninguém decidir isso. Esta fase adiciona exatamente o tipo de coluna que não pode vazar, e a
+      migration vem **antes** da revisão da rota na ordem natural do trabalho — ou seja, o furo se
+      abre sozinho se este item não vier primeiro. **Fazer ANTES de qualquer coluna de vídeo entrar
+      no modelo.** Fix: `select` explícito listando só os campos que `CourseDetail`/`TrilhaDetail`
+      (`client/src/lib/api.ts:51,107`) consomem. As rotas irmãs já fazem certo
+      (`courses.ts:25`, `lessons.ts:19`) — copiar o padrão.
 - [ ] Server: issue short-lived **signed URLs**, member-only. **Elastic window (~6–12h) and NO
       IP-lock** — so the video doesn't break when the student switches Wi-Fi↔4G mid-lesson (classic
       mobile support ticket). *Inferência:* exact controls (path-token + expiry, optional IP) are
@@ -284,15 +292,16 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       seção Commands, que lista `npm run test` como gate local igual ao CI. Fix: script `test` na
       raiz + step no `ci.yml`; E2E como job separado quando houver banco no CI (declarar no plano
       do bloco, não deixar implícito).
-- [ ] **Backlog P2 do `security-vulnerability-reviewer` (7 itens — nenhum bloqueia merge, todos
-      antes do primeiro aluno pagante):**
+- [ ] **Backlog P2 do `security-vulnerability-reviewer` (7 no relatório; o nº 2 foi movido para a
+      Fase 3 → **6 pendentes aqui**. Nenhum bloqueia merge; todos antes do primeiro aluno
+      pagante.)** A numeração original do relatório é preservada para o mapeamento não quebrar:
       (1) **sem teste de fronteira no servidor** — não há suíte no workspace `server`; o E2E só
       assere redirect do React Router, que é guarda cosmético do client. Falta a matriz
       401/403/200 em `/api/me`, `/api/admin/ping`, writes de curso, e `/api/courses` excluindo o
       curso `DRAFT` semeado (CLAUDE.md → Testing: happy-path-only num gate não conta).
-      (2) **`include` em vez de `select`** nas rotas públicas de detalhe (`courses.ts:54`,
-      `trilhas.ts:126`) — devolve todas as escalares (`status`, `createdAt`, `ownerUserId`,
-      `sourcePlanId`) e qualquer coluna futura entra sozinha. Pré-requisito da Fase 3.
+      (2) **→ MOVIDO para a Fase 3** (`include` → `select` nas rotas públicas de detalhe). Virou
+      pré-requisito de escopo lá, não backlog daqui: tem que estar feito **antes** de qualquer
+      coluna de vídeo entrar no modelo. Não contar neste backlog.
       (3) **`PREVIEW_TOKEN` em query string** (`index.ts:80-92`) — aparece em log de proxy,
       histórico e `Referer`; comparação não é de tempo constante; `PREVIEW_TOKEN` e `COMING_SOON`
       não constam no `server/.env.example`.
