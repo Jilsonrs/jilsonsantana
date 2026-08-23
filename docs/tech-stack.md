@@ -79,7 +79,7 @@
 
 ## AI-Assisted Dev (quality gates)
 
-- **Claude subagents** (`.claude/agents/`): `security-vulnerability-reviewer`, `e2e-test-writer` (adapted from the Mosh reference).
+- **Claude subagents** (`.claude/agents/` — versionado; ver a exceção de ignore no `CLAUDE.md`): `security-vulnerability-reviewer` (existe; tools read-only, sem Edit/Write — reporta, nunca corrige). `e2e-test-writer` — **PENDENTE, Fase 4** (adapted from the Mosh reference); ainda não existe.
 - **Skills** (`.agents/skills/`): `frontend-design`, `better-auth-best-practices`, pinned via `skills-lock.json`.
 
 ## Server library (decision needed before Phase 6)
