@@ -109,7 +109,8 @@ Internamente, sempre nesta ordem:
 ### Fase 2 — Escalação humana (modelo "tickets do Mosh")  *(LANÇAMENTO)*
 - `AiEscalation` ativado: feedback=não OU confiança baixa → cria item na fila do Jilson.
 - Inbox admin: Jilson vê a conversa inteira, responde **uma vez**; resposta volta ao
-  aluno (Resend via pg-boss).
+  aluno (**Resend inline, dentro de `try/catch` — não há fila no MVP**; ver CLAUDE.md →
+  Background Jobs).
 - **Seam-chave:** a resposta do Jilson é marcada como candidata a base de conhecimento
   (`promotedToKb` capturado agora, mesmo sem KB construída — separar escrita de leitura).
 - **Seam (fast-follow, NÃO bloqueia launch): rascunho de resposta no admin.** Ao escalar, o
@@ -141,6 +142,10 @@ Internamente, sempre nesta ordem:
 - **Decisão de build:** vetor via **pgvector no Supabase** (sem infra nova, sustentável).
   Embeddings precisam de provider separado (Anthropic recomenda Voyage AI; alternativas:
   OpenAI/embeddings open-source) — **decisão da Fase 4, verificar no build**.
+- **GATILHO DE VOLTA DA FILA (registrado em Ago 2026, quando o pg-boss saiu do MVP):** é **aqui**
+  que a fila volta a fazer sentido — gerar embeddings da KB é **lote, demorado e retentável**, o
+  caso de uso legítimo. É código que **ainda não existe**, então adicionar a fila nesta fase
+  **não refatora nada**. Ver `CLAUDE.md` → Background Jobs.
 - **Done when:** perguntas repetidas são respondidas pela KB sem chegar ao Jilson.
 
 ### Fase 5 — RAG sobre transcrições (contexto profundo do curso)  *(pós-lançamento)*
@@ -150,6 +155,9 @@ Internamente, sempre nesta ordem:
     transcrição (Whisper/Groq/outro) → chunk → embedding" é seam **parqueado**. Adiciona fornecedor
     novo e é o **maior risco de prazo** do projeto. No lançamento `LessonChunk` nem existe. Não
     puxar pra frente sob nenhuma justificativa de "já que estou no Bunny".
+  - **Este pipeline é o segundo caso legítimo da fila** (o outro é a KB da Fase 4): lote, demorado,
+    retentável. No MVP não há fila — o chat das Fases 0–3 é **síncrono com streaming**, e enfileirar
+    ali **pioraria o produto**. Ver `CLAUDE.md` → Background Jobs.
 - `TranscriptProvider` registrado: recupera trechos relevantes → IA responde **fundada no
   conteúdo real**, citando "na aula X, min Y". **A citação vira deep-link:** clique abre o
   player da aula no `startSec` do chunk — o `sources[]` do contrato já carrega isso. [FATO —
@@ -161,7 +169,8 @@ Internamente, sempre nesta ordem:
 - **Done when:** JilsonAI responde a partir do vídeo, com citação/timestamp.
 
 ### Fase 6 — Memória + proatividade (camada de relação)  *(pós-lançamento)*
-- `AiMemory` (resumo por aluno: onde travou, onde está) (+ RLS), atualizado async (pg-boss).
+- `AiMemory` (resumo por aluno: onde travou, onde está) (+ RLS), atualizado async **pela fila que
+  nasce na Fase 4** (ver o gatilho de volta ali) — não presumir fila antes disso.
 - Proativo: *"você travou em DAX semana passada — saiu aula nova sobre isso"* →
   **vira motor de winback/retenção** (conecta direto com a estratégia de churn).
 - **Gatilho:** foco em retenção (quando aquisição estabiliza e LTV vira a alavanca).
@@ -655,3 +664,10 @@ mini-tabela) + parágrafo de formato na persona, custo ~zero; v2 = blocos tipado
 transcrição vira deep-link pro minuto da aula via `startSec` ([FATO/docs Bunny: `?t=` no
 embed/direct-play + `setCurrentTime()` na Playback Control API — sintaxe a confirmar no build]).
 Seam novo na tabela. Roadmap inalterado (MVP = Fases 0–3).*
+*Atualizado: Ago 2026 — **pg-boss saiu do MVP** (auditoria de stack; razão completa em `CLAUDE.md` →
+Background Jobs e `tech-stack.md` → What We Do NOT Use). Impacto aqui: a Fase 2 manda a resposta da
+escalação por **Resend inline em `try/catch`**, não por fila; a Fase 6 (`AiMemory` async) passa a
+depender da fila que **nasce na Fase 4**. **Gatilho de volta registrado nas Fases 4 e 5** — embeddings
+da KB e o pipeline transcrição→chunk→embedding são o caso de uso legítimo (lote, demorado,
+retentável) e são código que ainda não existe, logo adicionar a fila lá não refatora nada. No MVP
+(Fases 0–3) o chat é **síncrono com streaming**: fila pioraria o produto. Roadmap inalterado.*

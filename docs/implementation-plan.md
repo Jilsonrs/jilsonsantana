@@ -163,6 +163,47 @@ de uma sessão própria antes do launch):**
 
 ## Phase 3 — Video Playback (Bunny Stream)  *(HIGH RISK — own sessions)*
 
+### Bloco 0 — GATES  *(promovido da Fase 7 em Ago 2026 — fazer ANTES de qualquer código de vídeo)*
+
+> **Por que isto vem na frente de tudo:** **gate não é feature.** Sem CI que execute a suíte,
+> qualquer teste escrito depois vale **zero** — o operador trabalha em sessões separadas por
+> semanas, ninguém roda a suíte na mão, e um gate que mente é pior que gate nenhum (dá a sensação
+> de cobertura sem a cobertura). Estes três itens estavam na Fase 7 (ou seja, **depois** do Stripe)
+> e foram promovidos pro topo da primeira fase ainda não aberta.
+
+- [ ] **CI passa a rodar teste.** [FATO] Não existe script `test` no `package.json` **raiz**; o
+      `.github/workflows/ci.yml` faz `npm ci` + build do core + typecheck (client/server) + build
+      (client/server) — e **não tem step de lint nenhum**, apesar de o job se chamar
+      "Lint, typecheck & build". Consequência hoje: `AdminRoute.test.tsx`, `ProtectedRoute.test.tsx`
+      e o E2E de auth **nunca executam** em push nem em PR — dá pra remover a checagem de
+      `Role.ADMIN` e o CI fica verde. Contradiz CLAUDE.md → Quality Gates e a seção Commands (já
+      reconciliadas na mesma passada). Fix: script `test` na raiz agregando os workspaces que têm
+      suíte + step no `ci.yml`. **E2E entra como job separado**, só quando houver banco de teste no
+      CI — declarar no plano do bloco, não deixar implícito.
+- [ ] **`lint` para de mentir.** [FATO] `client/package.json:11` e `server/package.json:11` definem
+      `"lint": "tsc --noEmit"` — idêntico ao `typecheck`; **não existe ESLint no repo**. Logo a
+      regra "no `any`" do CLAUDE.md **não tem enforcement automático** (o código de auth está limpo
+      hoje; nada impede a regressão). Duas saídas aceitas: instalar `typescript-eslint` com
+      `no-explicit-any: error`, **ou** renomear o script e ajustar CLAUDE.md/CI. O que não pode é o
+      gate continuar dizendo que faz uma coisa e fazendo outra. *(Dependência de runtime nova =
+      decisão de plano, com OK do operador — CLAUDE.md → Working Method.)*
+- [ ] **Rate-limit de login — VERIFICAR a borda ANTES de escrever código** (achado do
+      `security-vulnerability-reviewer`, Ago 2026). `rateLimit` está ligado em produção
+      (`server/src/lib/auth.ts:72`), mas sem `advanced.ipAddress` o Better Auth lê
+      `x-forwarded-for` e usa o **primeiro** elemento — o que o cliente controla quando a borda
+      **anexa** em vez de sobrescrever. Nesse caso o atacante varia o header e faz brute-force
+      ilimitado contra o e-mail do admin em `/api/auth/sign-in/email` — **a única porta de entrada**
+      (`disableSignUp: true`), e ela dá no admin. A convenção "rate-limit auth routes in production"
+      fica satisfeita **na letra** e **vazia no efeito**. **Passo 1 (não pular, não codar antes):**
+      confirmar qual header a Railway **garante sobrescrever** — não presumir. Se houver, fixar em
+      `advanced: { ipAddress: { ipAddressHeaders: [...] } }`; se não houver, `express-rate-limit` à
+      frente de `app.all("/api/auth/{*any}")` com `app.set('trust proxy', <hops>)`.
+- **Done when (Bloco 0):** um push com teste quebrado **reprova** o CI; o script `lint` faz o que o
+      nome diz (ou não se chama mais `lint`); e o brute-force contra `/api/auth/sign-in/email` é
+      barrado por um limite que **não** depende de header controlado pelo cliente.
+
+### Vídeo (o corpo da fase)
+
 - [ ] **Infra (pré-requisito da fase): migrations em prod via pre-deploy.** Configurar
       `npx prisma migrate deploy` como **pre-deploy command** do Railway (railway.json /
       service settings) — roda 1× por deploy, antes da instância nova subir. NUNCA no
@@ -214,7 +255,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
 - [ ] **Checkout embutido (Payment Element).** Cria `Customer` + `Subscription` na Stripe e confirma o primeiro pagamento na própria página. O dado do cartão vai direto pro Stripe (não toca nosso servidor). **`requires_action`/3DS é tratado pelo Element no fluxo de assinatura.**
 - [ ] `Subscription` model = **espelho local** (o gate lê daqui) com growth seams: `ownerUserId?`, `organizationId?` (nullable), `seats` (default 1), `status`, `currentPeriodEnd`, `stripeCustomerId`, **`stripeSubscriptionId` (obrigatório — é a chave do objeto canônico)** (+ RLS); migration
 - [ ] `temAcessoAtivo(userId)` lib — caminho individual (`assinaturaIndividualAtiva`); **fonte única de verdade do acesso para a aplicação**, lida do espelho local. *(A verdade canônica é a `Subscription` da Stripe; o espelho é o que o gate consulta em tempo de request.)*
-- [ ] **Webhook handler** dos eventos de assinatura (`customer.subscription.created/updated/deleted`, `invoice.paid`, `invoice.payment_failed`) → responde rápido (200) → enfileira via pg-boss → CRIA user+subscription no primeiro pagamento (substitui o seed) e sincroniza o espelho; **verifica assinatura do Stripe**
+- [ ] **Webhook handler** dos eventos de assinatura (`customer.subscription.created/updated/deleted`, `invoice.paid`, `invoice.payment_failed`) — **TUDO INLINE, SEM FILA** (pg-boss removido do MVP em Ago 2026; ver CLAUDE.md → Background Jobs). A ordem é: **verifica assinatura do Stripe → grava o `event.id` → atualiza o espelho local → responde 200**, tudo na mesma request (milissegundos). CRIA user+subscription no primeiro pagamento (substitui o seed). **A confiabilidade vem da Stripe:** devolvemos 5xx e ela reentrega — era isso que a fila duplicava. E-mail (Resend) sai na mesma request, dentro de `try/catch`: falha de e-mail **nunca** derruba o 200 de um evento já processado.
 - [ ] **TRAVA de montagem (achado do `security-vulnerability-reviewer`, Ago 2026):** a rota do
       webhook Stripe é montada **ACIMA** de `express.json()` (`server/src/index.ts:38`) — junto do
       handler do Better Auth, que já vive lá por essa mesma razão — ou com `express.raw`. Se o body
@@ -223,17 +264,45 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       original. Hoje os routers de API são montados depois da linha 38 (`:41-50`), então o padrão
       default do repo é o errado para esta rota.
 - [ ] **Idempotência + order-safety (TRAVA):** registrar `event.id` processados (repetido = no-op); eventos podem chegar fora de ordem → em qualquer dúvida, `subscriptions.retrieve` e **recomputar** o espelho, nunca confiar no snapshot do payload.
-- [ ] **"Force sync" fallback.** `subscriptions.retrieve` + recomputa o espelho, caso um webhook (pg-boss) falhe — evita o pior caso de suporte: assinante pagante trancado pra fora. **TRAVA:** admin-only OU escopo de servidor seguro. NUNCA um GET não autenticado que libere acesso — seria bypass de billing.
-- [ ] **Alerta de falha (detecção, não só retry):** qualquer job que esgote os retries do
-      pg-boss nas filas de billing/webhook → e-mail imediato pro admin via Resend
-      (fila `admin-alerts`). O force-sync é a *recuperação*; este alerta é como o operador
-      fica sabendo que precisa dela — assinante pagante trancado é descoberto por nós,
-      nunca pelo aluno. (Convenção no CLAUDE.md → Background Jobs.)
+- [ ] **"Force sync" fallback.** `subscriptions.retrieve` + recomputa o espelho, caso um webhook falhe até esgotar as reentregas da Stripe — evita o pior caso de suporte: assinante pagante trancado pra fora. **TRAVA:** admin-only OU escopo de servidor seguro. NUNCA um GET não autenticado que libere acesso — seria bypass de billing.
+- [ ] **Detecção de falha = monitor de erro externo, NÃO uma fila nossa.** O desenho antigo
+      (alerta via fila `admin-alerts` do pg-boss) tinha um defeito de raiz: **a detecção dependia
+      exatamente da coisa que deveria detectar.** Com a fila fora, o webhook que estourar cai no
+      **monitor externo gerenciado** — item de pré-requisito do primeiro aluno pagante na Fase 7
+      (fornecedor ainda **PENDENTE**). O force-sync continua sendo a *recuperação*; o monitor é a
+      *detecção*. (Convenção no CLAUDE.md → Background Jobs.)
+- [ ] **TESTES DE SERVIDOR (~15, supertest, sem browser) — escritos JUNTO com o handler acima, não
+      depois.** Este é o item que fecha a fase; não é polish de fim de ciclo. **Justificativa
+      (Ago 2026):** 100% do risco catastrófico do projeto é servidor — *assinante pagante trancado
+      pra fora* e *acesso liberado sem pagar* — e **nada disso é observável por browser: webhook não
+      tem tela.** Casos mínimos:
+      **Webhook** — (1) assinatura inválida → **400**; (2) `event.id` repetido → **no-op** (espelho
+      inalterado, sem efeito colateral duplicado); (3) evento fora de ordem → **recomputa via
+      `subscriptions.retrieve`**, nunca confia no snapshot do payload.
+      **Gate de acesso** — (4) `PAST_DUE` **mantém** acesso dentro da janela; (5) `CANCELED` **não**;
+      (6) sem `Subscription` → não.
+      **Matriz HTTP** — (7–10) **401/403/200** em `/api/me` e `/api/admin/ping` (anônimo /
+      member / admin).
+      **Vazamento de conteúdo** — (11–12) rotas públicas **não devolvem `DRAFT`** — *fecha por teste
+      os dois achados P1 já abertos na Fase 2 (`GET /api/trilhas/:slug` e `POST
+      /api/trilhas/:id/save`); referência, não duplicação: o fix e o diagnóstico moram lá.*
+      **Billing bypass** — (13) force-sync **sem auth → 401**; (14) force-sync como member comum →
+      403.
+      **Rate limit** — (15) o limite do Bloco 0 (Fase 3) **liga e bloqueia** de verdade.
+      *Requer o banco de teste (2º projeto Supabase + trava `_test`) — CLAUDE.md → Database &
+      Migrations.*
 - [ ] `requireActiveMembership` middleware (wraps `temAcessoAtivo`) gating content + video URLs
 - [ ] On access loss: `session.deleteMany({ userId })` to force logout
 - [ ] Client: pricing page + **checkout embutido (Payment Element)** + **tela de gestão de assinatura DENTRO da escola** (trocar cartão, ver próxima cobrança, mudar mensal↔anual, cancelar) — substitui o Customer Portal, chamando a Subscriptions API. *Mostrar a proração da Stripe **previsualizada** antes de confirmar a troca de plano.*
 - [ ] **Tela de offboarding antes do cancelamento (seam).** Intercepta "cancelar", coleta o motivo, depois executa `cancel_at_period_end` (não recobra; acesso segue até o fim do período pago). **TRAVA (anti roach-motel — sensibilidade Procon/CDC já levantada no pricing):** "cancelar mesmo assim" sempre visível, 1 clique; tom calmo, não retentivo. **Faseamento:** captura de motivo = **launch**; **"pausar 1 mês" (pause collection da Stripe) = fast-follow.** Não construir a pausa no launch.
-- [ ] E2E: assinar → acesso liberado; renovação → período estende; cancelar → acesso revogado no fim do período; **pagamento falhado → `past_due` com acesso MANTIDO → corte no fim da janela**; webhook duplicado → no-op; webhook fora de ordem → espelho correto após `subscriptions.retrieve`; assinatura inválida de webhook → 400
+- [ ] E2E: assinar → acesso liberado; renovação → período estende; cancelar → acesso revogado no fim do período; **pagamento falhado → `past_due` com acesso MANTIDO → corte no fim da janela**. *(Os três casos de webhook — duplicado, fora de ordem, assinatura inválida — saem daqui e viram **teste de servidor** no item acima: são mais baratos, mais rápidos e não precisam de browser.)*
+- [ ] **E2E full-stack habilitado (6–8 testes) — DEPOIS dos testes de servidor.** **Correção de
+      diagnóstico (Ago 2026):** o E2E atual só assere redirect do React Router **porque falta o
+      `globalSetup` com banco de teste** — não porque Playwright seja a ferramenta errada;
+      **Playwright fica na stack**. Primeiro o `globalSetup` (banco `_test`, seed determinístico),
+      depois o escopo alvo: login válido / senha errada; rota protegida sem auth; rota admin sem
+      auth; gate de vídeo membro **vs** não-membro (Fase 3); checkout com cartão de teste;
+      cancelamento. *O `e2e-test-writer` continua **ADIADO** — CLAUDE.md → Testing.*
 - **Done when:** paying members get access, status survives reload, webhooks reconcile truth, **and a non-member cannot reach gated content by any path.**
 
 ## Phase 5 — Lesson Progress + Event Capture Foundation  *(low–medium risk)*
@@ -273,32 +342,25 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
 - [ ] Transactional emails (Resend): welcome, receipt, password reset (transactional ignores `marketingConsent`)
 - [ ] LGPD: privacy policy, terms, consent, data export/delete path
 - [ ] Error/loading states everywhere; security review (subagent) on auth/billing/video
-- [ ] **Rate-limit de auth — VERIFICAR a borda ANTES de escrever código** (achado do
-      `security-vulnerability-reviewer`, Ago 2026). `rateLimit` está ligado em produção
-      (`server/src/lib/auth.ts:72`), mas sem `advanced.ipAddress` o Better Auth lê
-      `x-forwarded-for` e usa o **primeiro** elemento — o que o cliente controla quando a borda
-      **anexa** em vez de sobrescrever. Nesse caso o atacante varia o header e faz brute-force
-      ilimitado contra o e-mail do admin em `/api/auth/sign-in/email`, o único caminho de entrada
-      (`disableSignUp: true`). A convenção "rate-limit auth routes in production" fica satisfeita
-      na letra e **vazia no efeito**. Passo 1: confirmar qual header a Railway garante sobrescrever
-      (não presumir). Se houver, fixar em `advanced: { ipAddress: { ipAddressHeaders: [...] } }`;
-      se não houver, `express-rate-limit` à frente de `app.all("/api/auth/{*any}")` com
-      `app.set('trust proxy', <hops>)`.
-- [ ] **CI não roda testes** (`.github/workflows/ci.yml:20-42`; não existe script `test` no
-      `package.json` raiz). Hoje o workflow faz `npm ci` + build do core + typecheck + build. As
-      suítes que cobrem a fronteira (`AdminRoute.test.tsx`, `ProtectedRoute.test.tsx`) e o E2E de
-      auth **nunca executam** em push nem PR — dá pra remover a checagem de `Role.ADMIN` e o CI
-      fica verde. Contradiz CLAUDE.md → Quality Gates ("lint + typecheck + tests on push") e a
-      seção Commands, que lista `npm run test` como gate local igual ao CI. Fix: script `test` na
-      raiz + step no `ci.yml`; E2E como job separado quando houver banco no CI (declarar no plano
-      do bloco, não deixar implícito).
-- [ ] **Backlog P2 do `security-vulnerability-reviewer` (7 no relatório; o nº 2 foi movido para a
-      Fase 3 → **6 pendentes aqui**. Nenhum bloqueia merge; todos antes do primeiro aluno
+- **→ MOVIDOS para a Fase 3, bloco "Gates" (Ago 2026):** *rate-limit de auth* e *CI não roda
+      testes*. Razão: **gate não é feature** — sem CI, teste escrito depois vale zero. O texto
+      completo dos dois (com os `[FATO]` e o "passo 1 = verificar a borda") mora agora no **Bloco 0
+      da Fase 3**; não duplicar aqui.
+- [ ] **Monitor de erro externo gerenciado — PRÉ-REQUISITO DO PRIMEIRO ALUNO PAGANTE.** Hoje a
+      única forma de descobrir um erro em produção é **o aluno reclamar**: não há captura de
+      exceção, nem alerta, nem histórico (o log do Railway não é ferramenta de detecção). Serviço
+      gerenciado, **tier grátis**, tipo Sentry — client + server. **Fornecedor NÃO escolhido:
+      decisão PENDENTE**, resolver na abertura do item. Substitui o antigo alerta por fila
+      `admin-alerts` do pg-boss, cujo defeito era a detecção depender da própria coisa que deveria
+      detectar (ver Fase 4 e CLAUDE.md → Background Jobs).
+- [ ] **Backlog P2 do `security-vulnerability-reviewer` (7 no relatório; os nº 1, 2 e 6 foram
+      movidos → **4 pendentes aqui**. Nenhum bloqueia merge; todos antes do primeiro aluno
       pagante.)** A numeração original do relatório é preservada para o mapeamento não quebrar:
-      (1) **sem teste de fronteira no servidor** — não há suíte no workspace `server`; o E2E só
-      assere redirect do React Router, que é guarda cosmético do client. Falta a matriz
-      401/403/200 em `/api/me`, `/api/admin/ping`, writes de curso, e `/api/courses` excluindo o
-      curso `DRAFT` semeado (CLAUDE.md → Testing: happy-path-only num gate não conta).
+      (1) **→ MOVIDO para a Fase 4** (testes de servidor, supertest). Era "sem teste de fronteira
+      no servidor": não há suíte no workspace `server`, e o E2E só assere redirect do React Router,
+      que é guarda cosmético do client. A matriz 401/403/200 (`/api/me`, `/api/admin/ping`) e o
+      "público não vaza `DRAFT`" agora são checkboxes **colados ao handler de webhook** na Fase 4 —
+      escrever junto, não depois. Não contar neste backlog.
       (2) **→ MOVIDO para a Fase 3** (`include` → `select` nas rotas públicas de detalhe). Virou
       pré-requisito de escopo lá, não backlog daqui: tem que estar feito **antes** de qualquer
       coluna de vídeo entrar no modelo. Não contar neste backlog.
@@ -313,11 +375,10 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       (5) **`_prisma_migrations` provavelmente sem RLS** — criada pelo Prisma fora das migrations
       versionadas. As 10 tabelas de domínio estão cobertas. Confirmar com
       `get_advisors(type='security')`; se aparecer, migration só com o `ENABLE ROW LEVEL SECURITY`.
-      (6) **`lint` é alias de `tsc --noEmit`** (`client/package.json:11`, `server/package.json:11`)
-      — não existe ESLint no repo, então "no `any`" do CLAUDE.md não tem enforcement automático
-      (hoje o código de auth está limpo; nada impede a regressão). Ou instalar
-      `typescript-eslint` com `no-explicit-any: error`, ou renomear o script e ajustar
-      CLAUDE.md/CI — o gate não pode mentir sobre o que executa.
+      (6) **→ MOVIDO para a Fase 3, bloco "Gates"** (`lint` é alias de `tsc --noEmit`, sem ESLint
+      no repo). Foi junto com o "CI não roda testes" porque são o **mesmo** problema — dois gates
+      que mentem sobre o que executam — e gate não é feature: resolver depois do Stripe seria
+      resolver tarde demais. Não contar neste backlog.
       (7) **`server/src/seed.ts:101`** — `console.error("Seed failed:", err)` despeja o erro
       inteiro de um caminho que passa por `signUpEmail({ body: { email, password, name } })`; se o
       `APIError` do Better Auth carregar o body, a senha vai em claro pro stdout. *Suspeita, não
@@ -376,4 +437,5 @@ inalterados. Nada muda no roadmap de fases.*
 *Atualizado: Jul 2026 — **fechamento das 3 lacunas de produção** (auditoria pré-Fase 3/4): (P3) migrations em prod = `npx prisma migrate deploy` como **pre-deploy command** do Railway (nunca no entrypoint, nunca `migrate dev` em prod) — novo 1º checkbox da fase; (P4) **régua de dunning v1** especificada (D0 → retries D+2 e D+5 → corte D+7; acesso mantido na janela via `PAST_DUE`; retry-on-update; `requires_action` → tela logada "Resolver pagamento"; e-mails por tentativa + aviso D+6 + corte com winback) + novo checkbox **alerta de falha** (fila `admin-alerts`: job de billing/webhook/dunning que esgota retries → e-mail admin; force-sync é a recuperação, o alerta é a detecção) + E2E ampliado com retry-on-update e `requires_action`; (P7) upgrade Supabase Free→Pro vira item pré-launch, antes do primeiro aluno pagante. Convenções permanentes correspondentes já no CLAUDE.md (Database & Migrations + Background Jobs).*
 *Atualizado: Ago 2026 — **plano de bloco ganha lar + governança de merge alinhada ao CLAUDE.md:** (1) o blockquote de regras do topo passa a exigir que **todo plano de bloco declare, antes de qualquer código**, quatro coisas — a task sliceável, os arquivos que vai tocar, dependências de runtime novas (se houver) e a linha `Docs check (context7): <superfície> → <ID pinado> → <o que foi verificado>` (ou `not triggered` explícito). O CLAUDE.md exigia essa linha mas não havia template de plano no repo pra abrigá-la; em vez de criar um arquivo novo, a exigência mora na regra que já é lida no topo deste plano. (2) Corrigida a contradição de merge: o topo dizia "merge to `main` when green (`main` auto-deploys)", o que conflita com o Working Method do CLAUDE.md — **CI verde é o piso que torna o merge elegível, nunca o gatilho**; o merge `dev → main` é decisão explícita do operador ao fim de uma fase. CLAUDE.md é a fonte única de convenções de engenharia e vence. Pendência sinalizada, não alterada nesta passada: a linha "Merge to `main` only when green" na seção de git mais abaixo repete a formulação antiga — reconciliar quando o operador decidir.*
 *Atualizado: Ago 2026 (2) — **varredura fecha a pendência da entrada acima:** `git grep` por "when green" / "sacred" / "auto-deploy" / "merge" em `docs/` + `CLAUDE.md` achou a formulação de gatilho em exatamente dois lugares, ambos na seção "Branching workflow (all phases)". Corrigidos: (1) "Merge to `main` only when green" → **verde é o piso que torna o merge elegível, nunca o gatilho**; o merge `dev → main` é decisão explícita do operador ao fim de uma fase. A parte verdadeira — `main` faz auto-deploy pro Railway, logo é "sacred", só código testado chega lá — foi **preservada**, era só o gatilho que estava errado. (2) "até lá, `dev → main` after local testing" virou "**merge manual que o operador autoriza** after local testing" (mesma forma de gatilho implícito, escala menor). Não alteradas por serem factuais, não regras de merge: `railway.json`/Railway auto-deploy on push (Fase 0), `tech-stack.md` (Railway auto-deploy on push to `main`), CLAUDE.md linhas 51/76/82/96 (já são a fonte correta). Nenhuma outra ocorrência no repo.*
-*Atualizado: Ago 2026 — **Fase 4 reescrita de novo: Stripe Payments + STRIPE BILLING** (Payment Element embutido mantido, Customer Portal segue fora). Reverte a decisão de recorrência in-house de Jun 2026: ela empacotava *checkout na nossa página* (requisito de UX) com *quem opera a recorrência* (era in-house pra evitar a taxa) — só a primeira é requisito. Custo verificado: Billing 0,7% do volume + Payments BR 3,99% + R$ 0,50 → ~R$ 5,19/assinante/mês. **Saem da fase:** agendador pg-boss de renovação, régua de dunning D0/D+2/D+5/D+7 como código, `PaymentIntent` off-session, tela "Resolver pagamento" para `requires_action`, cálculo de proração. **Entram/permanecem:** espelho local `Subscription` (`stripeSubscriptionId` agora obrigatório), webhooks de assinatura idempotentes e order-safe, force-sync via `subscriptions.retrieve`, gate de acesso, telas de assinatura/offboarding. A política de dunning continua **decisão nossa** (acesso mantido na janela, `past_due`) — vira configuração de Smart Retries. A fase **continua HIGH RISK**: o Billing removeu a mecânica do dinheiro, não a fronteira de acesso. E2E ampliado com webhook duplicado / fora de ordem / assinatura inválida.*
+*Atualizado: Ago 2026 (3) — **Fase 4 reescrita de novo: Stripe Payments + STRIPE BILLING** (Payment Element embutido mantido, Customer Portal segue fora). Reverte a decisão de recorrência in-house de Jun 2026: ela empacotava *checkout na nossa página* (requisito de UX) com *quem opera a recorrência* (era in-house pra evitar a taxa) — só a primeira é requisito. Custo verificado: Billing 0,7% do volume + Payments BR 3,99% + R$ 0,50 → ~R$ 5,19/assinante/mês. **Saem da fase:** agendador pg-boss de renovação, régua de dunning D0/D+2/D+5/D+7 como código, `PaymentIntent` off-session, tela "Resolver pagamento" para `requires_action`, cálculo de proração. **Entram/permanecem:** espelho local `Subscription` (`stripeSubscriptionId` agora obrigatório), webhooks de assinatura idempotentes e order-safe, force-sync via `subscriptions.retrieve`, gate de acesso, telas de assinatura/offboarding. A política de dunning continua **decisão nossa** (acesso mantido na janela, `past_due`) — vira configuração de Smart Retries. A fase **continua HIGH RISK**: o Billing removeu a mecânica do dinheiro, não a fronteira de acesso. E2E ampliado com webhook duplicado / fora de ordem / assinatura inválida.*
+*Atualizado: Ago 2026 (4) — **auditoria de testes + de stack** (aulas de E2E do curso de referência × este projeto). **Ordem do roadmap mudou em dois pontos, e por um motivo só: gate não é feature.** (1) **Bloco 0 — GATES no topo da Fase 3**, promovido da Fase 7: CI que roda teste de verdade (não existe script `test` na raiz; o `ci.yml` só faz `npm ci` + typecheck + build — e o job se chama "Lint, typecheck & build" **sem step de lint**), `lint` que para de mentir (é alias de `tsc --noEmit`, não há ESLint), e rate-limit de login (com o passo 1 = **verificar** qual header a Railway garante sobrescrever, preservado). Sem CI, qualquer suíte escrita depois vale zero — o operador trabalha em sessões separadas por semanas. (2) **Testes de servidor (~15, supertest) entram DENTRO da Fase 4**, colados ao handler de webhook: 100% do risco catastrófico é servidor e **webhook não tem tela**. Os casos de webhook duplicado / fora de ordem / assinatura inválida **saíram do E2E** e viraram teste de servidor (mais baratos, sem browser); os dois achados P1 da Fase 2 (vazamento de `DRAFT`) passam a ter teste que os fecha — por referência, sem duplicar o diagnóstico. **pg-boss removido do MVP:** o webhook vira **inline** (assinatura → `event.id` → espelho → 200; e-mail Resend na mesma request em `try/catch`), porque a Stripe já reentrega em cima de 5xx — a fila duplicava o fornecedor, e o **alerta** de falha era ele mesmo uma fila, ou seja, a detecção dependia da coisa que deveria detectar. Detecção passa a ser **monitor de erro externo** (tier grátis, tipo Sentry; **fornecedor PENDENTE**), agora checkbox de **pré-requisito do primeiro aluno pagante** na Fase 7. **Gatilho de volta da fila registrado: JilsonAI Fases 4–5** (embeddings da KB; pipeline transcrição→chunk→embedding) — lote, demorado, retentável, e código que ainda não existe. **Playwright fica**: o E2E de hoje só assere redirect do React Router por falta do `globalSetup` com **banco de teste (2º projeto Supabase, trava `_test`)** — corrigido o diagnóstico, alvo 6–8 testes full-stack **depois** dos de servidor; `e2e-test-writer` **ADIADO**. Backlog P2 do reviewer: nº 1 → Fase 4, nº 6 → Fase 3, **restam 4** (numeração original preservada). Nota de manutenção: a entrada anterior ("Fase 4 reescrita de novo") estava sem número apesar de ser a 3ª de Ago 2026 — renumerada para **(3)** nesta passada, sem alterar o texto.*

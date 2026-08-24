@@ -281,7 +281,7 @@ Custom-built (não Teachable), como ativo transferível e independente:
 
 **React + TypeScript + Vite + Tailwind + shadcn/ui + Express + TypeScript + Prisma +
 Supabase (PostgreSQL) + Better Auth (sessões em DB) + Bunny Stream (vídeo + DRM) +
-Stripe (recorrência) + Claude API @anthropic-ai/sdk (JilsonAI) + pg-boss + Railway + Resend +
+Stripe (recorrência) + Claude API @anthropic-ai/sdk (JilsonAI) + Railway + Resend +
 GitHub Actions.**
 
 | Camada | Ferramenta | Papel |
@@ -293,9 +293,9 @@ GitHub Actions.**
 | Vídeo | Bunny Stream (DRM) | Vídeo de curso gated |
 | Billing | Stripe Payments + **Stripe Billing** (Payment Element embutido; **sem** Customer Portal) | Assinatura |
 | IA | Claude API (`@anthropic-ai/sdk`) | JilsonAI |
-| Fila | pg-boss (Postgres-native) | Jobs async (e-mail, etc.) |
+| Fila | **nenhuma no MVP** (pg-boss removido Ago 2026) | Volta só com o JilsonAI Fases 4–5 — ver `tech-stack.md` |
 | E-mail | Resend | Transacional + educativo |
-| Deploy/CI | Railway + GitHub Actions | Hosting, lint/test/build |
+| Deploy/CI | Railway + GitHub Actions | Hosting, CI (hoje typecheck/build; teste e lint entram no bloco Gates da Fase 3) |
 | Certificado | PDF server-side | Conclusão de trilha/curso |
 
 - **Custo de infra no lançamento:** baixo (Supabase free → Pro $25 quando alunos chegarem).
@@ -404,3 +404,5 @@ DESIGN.md §6 + IMPLEMENTATION-PLAN P6.5 (certificado como mídia) e JILSONAI.md
 ferramenta"). Nada infla o MVP (0–7) — são lentes, filtros e seams, não fases novas.*
 
 *Atualizado Ago 2026 — **Stripe Billing adotado** (Payment Element embutido; Customer Portal segue fora — gestão e cancelamento em telas nossas via Subscriptions API). Reconcilia a pendência aberta desde Jul 2026: as menções a "Customer Portal", "proration nativo do Stripe" e "2 prices" resolvem-se agora **a favor** do Billing, não contra. Haircut de Stripe corrigido de ~4–5% para **~5,2%** (Payments BR 3,99% + R$ 0,50, verificado ago/2026 — a nota anterior dizia R$ 0,39 — mais Billing 0,7%). **Recálculo feito (pendência resolvida):** ARPU líquido **R$ 85,04** e alvo **363** — confirmam os ~R$85 / ~365 que já estavam aqui, delta de 3 assinantes. A metodologia detalhada (conta por plano, R$ 0,50 por transação, Simples sobre o bruto) fica registrada em `strategy.md` §6 e **não é duplicada aqui**. Marcada a premissa que realmente move o número: o **Simples ~6% (Anexo III) é não confirmado** — em Anexo V (~15,5%) o alvo sobe pra ~407.*
+
+*Atualizado Ago 2026 (2) — **pg-boss sai da stack** (auditoria de testes/stack). A tabela e o parágrafo de stack acima foram reconciliados: **não há fila no MVP** — o webhook da Stripe roda inline e a fila só volta com o JilsonAI Fases 4–5. Razão completa (e o gatilho de volta) em `tech-stack.md` → What We Do NOT Use e `CLAUDE.md` → Background Jobs; **não duplicada aqui**. A linha Deploy/CI também deixou de dizer "lint/test/build": [FATO] o CI hoje não roda nem teste nem lint — conserto promovido pro bloco **Gates** no topo da Fase 3 (`implementation-plan.md`). Nasce junto o critério que decidiu isso: **toda peça de stack precisa impedir uma falha descritível em uma frase; na dúvida, remove** (`CLAUDE.md` → Working Method).*
