@@ -33,7 +33,9 @@ The docs and what they hold (no edit-owner anymore — all follow git-wins):
 - **`docs/design.md`** — design system / tokens / aesthetic direction (Apple-clean, `#238FE8`).
 - **`docs/content.md`** — landing copy + course-page copy / message direction.
 - **`docs/courses.md`** — course engineering, slate, content map (3-camadas methodology, Udemy×Escola).
-- **`docs/decisions-archive.md`** — changelog histórico deste arquivo (Jun 2026 → Ago 2026 (5)). **NÃO é lido por sessão**: consulta sob demanda, quando alguém pergunta *"por que essa decisão foi tomada assim?"*. As 3 entradas mais recentes ficam no rodapé do `CLAUDE.md`; ao entrar uma nova, a mais antiga desce pra cá. Mesma disciplina git-wins dos demais.
+- **`docs/decisions-archive.md`** — **o PORQUÊ**: changelog histórico deste arquivo. **NÃO lido por sessão** — consulta por GATILHO (ver *Arquivos de memória*): antes de propor mexer no stack, ou de reabrir decisão fechada.
+- **`docs/build-history.md`** — **o QUÊ**: fases já concluídas (0, 1) com checkboxes intactos + changelog histórico do plano. **NÃO lido por sessão** — consulta por GATILHO: antes de afirmar que algo "não existe" ou "não foi feito".
+> Os dois acima são **memória, não gaveta**: têm gatilho de consulta e regra de rotação (`CLAUDE.md` → *Arquivos de memória*). O par vivo (`CLAUDE.md` + `implementation-plan.md`) guarda **o que está em vigor e o que falta**; o par histórico guarda **como chegamos aqui**. Mesma disciplina git-wins de todos.
 
 > When a planning doc's phase is actually built, the build agent reconciles build-specific details (a final token value, a tool signature, a field name) into the doc in the same commit — and flags it so the operator re-syncs the Project. This is reconciliation of build facts, not redeciding strategy: a strategy change is still the operator's call.
 
@@ -70,6 +72,53 @@ CLAUDE.md - this file (repo root — read every session)
 - `npm --workspace e2e run test` — Playwright (precisa do servidor de pé)
 - `npx prisma migrate dev --name <snake_case>` — new migration; `npx prisma db pull` to reconcile tables created via Supabase MCP
 
+## Arquivos de memória (histórico vivo — consulta por GATILHO, não por hábito)
+
+Dois arquivos guardam o histórico e **NÃO são carregados por sessão**. Isso é de propósito: eles
+existem pra manter `CLAUDE.md` e `implementation-plan.md` **funcionais** (só o que está em vigor e
+o que falta fazer) **sem perder o contexto de como chegamos aqui**.
+
+- **[`docs/decisions-archive.md`](docs/decisions-archive.md)** — **o PORQUÊ.** Decisões e o
+  raciocínio que as produziu.
+- **[`docs/build-history.md`](docs/build-history.md)** — **o QUÊ.** Fases já concluídas, com os
+  checkboxes intactos.
+
+### CONSULTE ANTES DE (mecânico — não é julgamento, igual ao gate do context7)
+
+| Situação | Arquivo | Por quê |
+|---|---|---|
+| Propor **adicionar ou remover peça de stack** | `decisions-archive` | Pode já ter sido decidido. A proposta precisa trazer **DADO NOVO**, não repetir um argumento já vencido. |
+| **Reabrir** item marcado *"não reabrir"*, *"decisão do operador"* ou *"PROPOSTO e REJEITADO"* | `decisions-archive` | Idem — e esses rótulos existem porque já foram reabertos antes. |
+| Afirmar que algo **"não existe"** ou **"não foi feito"** | `build-history` | Dezenas de checkboxes fechados moram lá. Supor que falta é como se re-implementa o que já existe. |
+
+O arquivo guarda justamente as decisões **contraintuitivas** — pg-boss removido, Stripe Billing
+adotado revertendo o in-house, TTL curto de signed URL **proposto e rejeitado**. São exatamente as
+que um agente futuro "redescobre" e propõe de volta com toda a confiança. **Se a situação era uma
+das três e a consulta não aconteceu, o plano está incompleto** — mesma disciplina da linha
+`Docs check (context7)`.
+
+### ROTAÇÃO (o que mantém isto vivo em vez de virar gaveta)
+
+Não é ritual novo: acontece **dentro** do passo *Keep docs honest* do Working Method, que já
+dispara ao fim de cada bloco/fase — a mão já está no documento.
+
+| Movimento | Dispara quando | Unidade |
+|---|---|---|
+| `implementation-plan` → `build-history` | uma **fase fecha** (`Done when` cumprido) | a **fase inteira**, com os checkboxes |
+| `CLAUDE.md` → `decisions-archive` | entra a **4ª** entrada de changelog | a mais antiga desce |
+| entra no `CLAUDE.md` | convenção nova **em vigor** | a **regra**, não a história dela |
+| entra no `implementation-plan` | tarefa nova | o checkbox |
+| **volta** do arquivo | decisão reaberta **com dado novo** | **entrada nova** citando a antiga (nunca editar o histórico) |
+
+**A unidade de movimento do plano é a FASE, nunca o checkbox solto:** durante uma fase aberta, os
+itens já feitos ficam lá, porque dão contexto aos pendentes ao lado. É por isso que a Fase 2 segue
+inteira no plano mesmo com 18 itens marcados.
+
+**Antes de mover, confira que não se perde regra operativa.** Já aconteceu uma vez: ao extrair o
+changelog do `CLAUDE.md` (Ago 2026), o padrão de `.gitignore` que versiona `.claude/agents/` era a
+única regra que existia **só** no texto movido — voltou pro corpo no mesmo dia. Narrativa desce;
+**regra em vigor fica.**
+
 ## Working Method (read this every session)
 
 - The single source of strategy/identity is the project's `project-description` (Claude Project). This file is the single source of **engineering conventions**.
@@ -83,6 +132,7 @@ CLAUDE.md - this file (repo root — read every session)
   1. **Mark it** — flip the `- [ ]` to `- [x]` in `docs/implementation-plan.md` (and `✅ DONE` on the phase heading when the whole phase closes).
   2. **Reconcile any contradiction** — if a build decision diverged from what a living doc says (`CLAUDE.md`, `project-description`, `JILSONAI.md`, `DESIGN.md`, `TECH-STACK.md`), update that doc now. A doc must never disagree with `main` for more than one session — same discipline as the sacred `main`.
   3. **Log it if it's a decision, not just a task** — if the work resolved an open question or changed an approach, add a one-line note to the affected doc's footer decision log. Routine task completion needs no log entry (don't inflate).
+  4. **Rotacione** (ver [Arquivos de memória](#arquivos-de-memória-histórico-vivo--consulta-por-gatilho-não-por-hábito)) — se a FASE fechou, mova-a inteira pro `build-history.md` e atualize o bloco **Estado atual** no topo do plano (incluindo *o que está no ar em produção*, que não é a mesma coisa que *o que está codado*). Se você acabou de escrever a 4ª entrada de changelog, a mais antiga desce pro `decisions-archive.md`. **Movimento lossless:** extraia o texto, confira que chegou inteiro no destino, só então apague da origem — e verifique que nenhuma **regra em vigor** foi junto (narrativa desce, regra fica).
   > Scope guard: this is reconciliation, not a rewrite. If a "doc update" starts feeling like a big writing session, stop — that's a signal the build diverged structurally and the divergence itself needs a decision, not prose.
 
 ## Block Execution Protocol (agent self-discipline)
