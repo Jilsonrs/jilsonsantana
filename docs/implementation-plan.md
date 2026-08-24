@@ -171,7 +171,12 @@ de uma sessão própria antes do launch):**
 > de cobertura sem a cobertura). Estes três itens estavam na Fase 7 (ou seja, **depois** do Stripe)
 > e foram promovidos pro topo da primeira fase ainda não aberta.
 
-- [ ] **CI passa a rodar teste.** [FATO] Não existe script `test` no `package.json` **raiz**; o
+- [x] **CI passa a rodar teste.** ✅ *(Ago 2026 — script `test` na raiz + step `Test client` no
+      `ci.yml`, **depois do build do core**, porque as suítes importam `@jilson/core` → `core/dist`.
+      Provado por **mutação**: apagar a checagem de `Role.ADMIN` em `AdminRoute.tsx` reprova o CI.
+      O script cobre só o `client` — é o único workspace com runner; o `server` entra na Fase 4.
+      **E2E ficou de fora explicitamente**, como o próprio item pedia: precisa de banco de teste.)*
+      [FATO histórico] Não existia script `test` no `package.json` **raiz**; o
       `.github/workflows/ci.yml` faz `npm ci` + build do core + typecheck (client/server) + build
       (client/server) — e **não tem step de lint nenhum**, apesar de o job se chamar
       "Lint, typecheck & build". Consequência hoje: `AdminRoute.test.tsx`, `ProtectedRoute.test.tsx`
@@ -180,13 +185,26 @@ de uma sessão própria antes do launch):**
       reconciliadas na mesma passada). Fix: script `test` na raiz agregando os workspaces que têm
       suíte + step no `ci.yml`. **E2E entra como job separado**, só quando houver banco de teste no
       CI — declarar no plano do bloco, não deixar implícito.
-- [ ] **`lint` para de mentir.** [FATO] `client/package.json:11` e `server/package.json:11` definem
+- [x] **`lint` para de mentir.** ✅ *(Ago 2026 — resolvido pela **terceira** saída, decidida no plano
+      do bloco: **apagar** o script (raiz + `client` + `server`), não renomear. Motivo: ele executava
+      `tsc --noEmit`, comando que **já tem nome aqui — `typecheck`**; renomear "pro que faz" criaria
+      colisão, porque a mentira era a **duplicata**, não o nome. Job do CI renomeado para
+      "Typecheck, test & build". **ESLint NÃO entrou** — continua sendo decisão própria, e o nome
+      `lint` fica livre pra ela. **Custo aceito e registrado no checkbox abaixo.**)*
+      [FATO histórico] `client/package.json:11` e `server/package.json:11` definiam
       `"lint": "tsc --noEmit"` — idêntico ao `typecheck`; **não existe ESLint no repo**. Logo a
       regra "no `any`" do CLAUDE.md **não tem enforcement automático** (o código de auth está limpo
       hoje; nada impede a regressão). Duas saídas aceitas: instalar `typescript-eslint` com
       `no-explicit-any: error`, **ou** renomear o script e ajustar CLAUDE.md/CI. O que não pode é o
       gate continuar dizendo que faz uma coisa e fazendo outra. *(Dependência de runtime nova =
       decisão de plano, com OK do operador — CLAUDE.md → Working Method.)*
+- [x] **Consequência aceita da remoção do `lint`: "sem `any`" fica SEM enforcement automático.** ✅
+      *(Ago 2026 — registrado como item explícito, não como nota de rodapé, porque é uma convenção
+      do `CLAUDE.md` (Key Conventions → General) que passa a valer **só por revisão de diff**. Nada
+      no CI barra um `any` novo. Preferível a fingir que um gate cobre isso: o `lint` anterior
+      **também** não cobria — ele rodava `tsc --noEmit`, que aceita `any` sem reclamar. Ou seja, a
+      remoção não perdeu cobertura nenhuma; só parou de simular que havia. Fecha de vez quando
+      ESLint + `typescript-eslint` com `no-explicit-any: error` entrarem em bloco próprio.)*
 - [ ] **Rate-limit de login — VERIFICAR a borda ANTES de escrever código** (achado do
       `security-vulnerability-reviewer`, Ago 2026). `rateLimit` está ligado em produção
       (`server/src/lib/auth.ts:72`), mas sem `advanced.ipAddress` o Better Auth lê
@@ -198,17 +216,34 @@ de uma sessão própria antes do launch):**
       confirmar qual header a Railway **garante sobrescrever** — não presumir. Se houver, fixar em
       `advanced: { ipAddress: { ipAddressHeaders: [...] } }`; se não houver, `express-rate-limit` à
       frente de `app.all("/api/auth/{*any}")` com `app.set('trust proxy', <hops>)`.
-- [ ] **(NÃO-BLOQUEANTE — adicionado Ago 2026, não veio da Fase 7) `npm audit --audit-level=high`
-      no `ci.yml`.** Entra como step **informativo**: **não trava o gate no primeiro dia.** Se
+- [x] **(NÃO-BLOQUEANTE — adicionado Ago 2026, não veio da Fase 7) `npm audit --audit-level=high`
+      no `ci.yml`.** ✅ *(Ago 2026 — step com `continue-on-error: true`. **Nasce falho-porém-tolerado
+      e isso é o esperado, não regressão:** medido na hora da implementação, o comando já sai com
+      exit 1 — `{low:2, moderate:6, high:5, critical:1}`, puxados por advisory transitivo do
+      `react-router`. O job fica **verde**; o step aparece marcado. Registrado antes do push pra não
+      virar susto no primeiro PR.)* Entra como step **informativo**: **não trava o gate no primeiro dia.** Se
       produzir ruído de dependência transitiva (vulnerabilidade em pacote fora do caminho de
       execução, ou sem fix publicado), **degrada para conferência mensal manual** — não vira alarme
       permanente. *Um gate que grita sempre é um gate que ninguém lê*, e o custo disso é maior que o
       benefício de bloquear cedo demais. (É step de CI, não dependência de runtime — não cai na
       regra de "dependência nova = decisão de plano".)
+- [ ] **Revisar UMA vez o advisory `critical` puxado pelo `react-router`** (acréscimo do operador,
+      Ago 2026 — **fora do escopo do bloco que ligou o audit**, registrado aqui pra não sumir).
+      Decidir se **alcança o nosso uso** — é dev-only? é caminho não exercido pela app? (o advisory
+      visto na implementação é de **hidratação SSR**, e este cliente é **SPA Vite sem SSR**, o que
+      *sugere* não-alcance — **verificar, não presumir**) — e **registrar a conclusão** aqui.
+      Razão de ser um item próprio: ruído transitivo é a regra e por isso o step é não-bloqueante,
+      mas **`critical: 1` não é ruído por padrão** — exige um olhar, não zero. Sem este checkbox, a
+      tolerância vira permanente sem ninguém nunca ter lido o que está sendo tolerado.
 - **Done when (Bloco 0):** um push com teste quebrado **reprova** o CI; o script `lint` faz o que o
       nome diz (ou não se chama mais `lint`); e o brute-force contra `/api/auth/sign-in/email` é
       barrado por um limite que **não** depende de header controlado pelo cliente. *(O `npm audit`
       é informativo — não entra neste "Done when".)*
+      > **STATUS (Ago 2026): PARCIAL — 2 de 3 critérios verdes, bloco NÃO fechado.** ✅ push com
+      > teste quebrado reprova o CI (provado por mutação) · ✅ o `lint` parou de mentir (apagado) ·
+      > ❌ **rate-limit de login pendente** — é bloco próprio: toca `server/src/lib/auth.ts`, o que
+      > dispara o gate obrigatório de context7 (`/better-auth/better-auth`), e o **passo 1 continua
+      > sendo VERIFICAR** qual header a Railway garante sobrescrever, nunca codar antes.
 
 ### Vídeo (o corpo da fase)
 
@@ -402,10 +437,10 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       (5) **`_prisma_migrations` provavelmente sem RLS** — criada pelo Prisma fora das migrations
       versionadas. As 10 tabelas de domínio estão cobertas. Confirmar com
       `get_advisors(type='security')`; se aparecer, migration só com o `ENABLE ROW LEVEL SECURITY`.
-      (6) **→ MOVIDO para a Fase 3, bloco "Gates"** (`lint` é alias de `tsc --noEmit`, sem ESLint
-      no repo). Foi junto com o "CI não roda testes" porque são o **mesmo** problema — dois gates
-      que mentem sobre o que executam — e gate não é feature: resolver depois do Stripe seria
-      resolver tarde demais. Não contar neste backlog.
+      (6) **✅ FECHADO no Bloco 0 da Fase 3 (Ago 2026)** — pela via da **remoção** do script, não da
+      renomeação; a consequência ("sem `any`" sem enforcement automático) ficou registrada como
+      checkbox próprio lá. Detalhes nos itens do Bloco 0 — **não duplicar aqui**. Não contar neste
+      backlog.
       (7) **`server/src/seed.ts:101`** — `console.error("Seed failed:", err)` despeja o erro
       inteiro de um caminho que passa por `signUpEmail({ body: { email, password, name } })`; se o
       `APIError` do Better Auth carregar o body, a senha vai em claro pro stdout. *Suspeita, não
@@ -500,3 +535,4 @@ inalterados. Nada muda no roadmap de fases.*
 *Atualizado: Ago 2026 (4) — **auditoria de testes + de stack** (aulas de E2E do curso de referência × este projeto). **Ordem do roadmap mudou em dois pontos, e por um motivo só: gate não é feature.** (1) **Bloco 0 — GATES no topo da Fase 3**, promovido da Fase 7: CI que roda teste de verdade (não existe script `test` na raiz; o `ci.yml` só faz `npm ci` + typecheck + build — e o job se chama "Lint, typecheck & build" **sem step de lint**), `lint` que para de mentir (é alias de `tsc --noEmit`, não há ESLint), e rate-limit de login (com o passo 1 = **verificar** qual header a Railway garante sobrescrever, preservado). Sem CI, qualquer suíte escrita depois vale zero — o operador trabalha em sessões separadas por semanas. (2) **Testes de servidor (~15, supertest) entram DENTRO da Fase 4**, colados ao handler de webhook: 100% do risco catastrófico é servidor e **webhook não tem tela**. Os casos de webhook duplicado / fora de ordem / assinatura inválida **saíram do E2E** e viraram teste de servidor (mais baratos, sem browser); os dois achados P1 da Fase 2 (vazamento de `DRAFT`) passam a ter teste que os fecha — por referência, sem duplicar o diagnóstico. **pg-boss removido do MVP:** o webhook vira **inline** (assinatura → `event.id` → espelho → 200; e-mail Resend na mesma request em `try/catch`), porque a Stripe já reentrega em cima de 5xx — a fila duplicava o fornecedor, e o **alerta** de falha era ele mesmo uma fila, ou seja, a detecção dependia da coisa que deveria detectar. Detecção passa a ser **monitor de erro externo** (tier grátis, tipo Sentry; **fornecedor PENDENTE**), agora checkbox de **pré-requisito do primeiro aluno pagante** na Fase 7. **Gatilho de volta da fila registrado: JilsonAI Fases 4–5** (embeddings da KB; pipeline transcrição→chunk→embedding) — lote, demorado, retentável, e código que ainda não existe. **Playwright fica**: o E2E de hoje só assere redirect do React Router por falta do `globalSetup` com **banco de teste (2º projeto Supabase, trava `_test`)** — corrigido o diagnóstico, alvo 6–8 testes full-stack **depois** dos de servidor; `e2e-test-writer` **ADIADO**. Backlog P2 do reviewer: nº 1 → Fase 4, nº 6 → Fase 3, **restam 4** (numeração original preservada). Nota de manutenção: a entrada anterior ("Fase 4 reescrita de novo") estava sem número apesar de ser a 3ª de Ago 2026 — renumerada para **(3)** nesta passada, sem alterar o texto.*
 *Atualizado: Ago 2026 (5) — **fechamento da auditoria: continuidade do operador.** O raciocínio completo (e o que ficou deliberadamente de fora) está no changelog do `CLAUDE.md`, entrada **Ago 2026 (7)** — **não duplicado aqui**. O que mudou neste plano: (1) **Bloco 0 (Fase 3)** ganha `npm audit --audit-level=high` como step **NÃO-BLOQUEANTE**, com a degradação pra conferência mensal já decidida — não entra no "Done when" do bloco. (2) **Fase 3 (vídeo)** ganha o checkbox de **TTL curto da signed URL** (minutos, por requisição, sem cache, sem log) com a razão de negócio registrada: o gate protege a *página*, mas a URL assinada é a *fechadura real* do arquivo no Bunny — URL de vida longa vira link em grupo e a receita vaza **sem nenhum erro aparecer**. **Fica marcado como CONTRADIÇÃO ABERTA** contra a janela elástica ~6–12h (mesma fase, + CLAUDE.md → Video + tech-stack.md → Video): os dois não coexistem sem renovação de token no player, que é decisão de código — resolver **antes** de escrever o player e alinhar os três lugares no mesmo commit. (3) **Fase 7** ganha a seção **"Continuidade do operador (pré-primeiro aluno pagante)"**: 2FA por app (nunca SMS) nos fornecedores + e-mail do admin, códigos de recuperação fora do Mac, senha única por serviço, **restore de teste** contra o 2º projeto Supabase (a *política* de backup continua no checkbox de upgrade Free→Pro, por referência), e LGPD mínimo como pendência de lançamento. Tudo antes do GO-LIVE.*
 *Atualizado: Ago 2026 (6) — **CONTRADIÇÃO ABERTA da entrada (5) RESOLVIDA pelo operador: a janela elástica ~6–12h sem IP-lock fica**, e **não** se constrói renovação de token durante a reprodução. O checkbox de "TTL curto" e o bloco de contradição foram **apagados** da Fase 3; a razão da recusa passou a viver **junto do checkbox de signed URL** que já existia (TTL curto cobre link vazando passivamente, não o vetor real — baixar e re-subir — que atravessa qualquer janela; renovação de token é código que falha em silêncio e é depurado por um operador sozinho; a razão de UX original segue válida). `CLAUDE.md` → Video e `tech-stack.md` → Video **não** foram alterados — continuam corretos, e a razão não é duplicada neles. **No lugar entrou:** restrição de **domínio/referrer no Bunny** (`[PENDENTE DE VERIFICAÇÃO]` de existência e nome), que ataca o mesmo risco pelo lado certo — configuração no fornecedor, sem tocar no playback e sem código nosso — mais o registro de que **marca d'água por aluno** é a única defesa contra re-upload e fica para quando houver receita.*
+*Atualizado: Ago 2026 (7) — **Bloco 0 (Fase 3) executado PARCIALMENTE: 3 dos 4 checkboxes fechados, o bloco NÃO.** O raciocínio completo está no changelog do `CLAUDE.md`, entrada **Ago 2026 (8)** — **não duplicado aqui**. O que mudou neste plano: (1) `[x]` em **CI roda teste** (script `test` na raiz + step `Test client` **depois do build do core**; gate provado por **mutação** — apagar `Role.ADMIN` de `AdminRoute.tsx` reprova o CI, e antes passava verde) e em **`lint` para de mentir** (resolvido por uma **terceira** saída que o item não previa: **apagar**, porque `tsc --noEmit` já se chama `typecheck` neste repo e renomear colidiria — a mentira era a duplicata, não o nome). (2) **Checkbox novo registrando o custo**: "sem `any`" fica **sem enforcement automático** até ESLint entrar — com a observação de que o `lint` anterior **também não cobria** isso (`tsc --noEmit` aceita `any`), então a remoção não perdeu cobertura, só parou de simular. (3) `[x]` no **`npm audit`**, com o resultado medido antes do push (`high:5, critical:1`, transitivo do `react-router`) e o comportamento esperado registrado: step falho-porém-tolerado, job verde. (4) **Checkbox novo do operador**: revisar **UMA vez** o advisory `critical` e registrar a conclusão — ruído transitivo justifica o step não-bloqueante, mas `critical` não é ruído por padrão, e sem este item a tolerância viraria permanente sem ninguém ter lido. (5) **"Done when" marcado como PARCIAL**: falta o **rate-limit de login**, que é bloco próprio por tocar auth (gate obrigatório de context7) e por ter o "passo 1 = verificar a borda da Railway" preservado. (6) Backlog P2, item **(6) fechado** por referência. Convenção nova correspondente no `CLAUDE.md`: **"Definição de pronto por fatia"** (teto-não-piso; vale daqui pra frente; fronteira transversal é fatia própria sem teste de componente).*

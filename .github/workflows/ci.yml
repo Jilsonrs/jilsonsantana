@@ -8,7 +8,7 @@ on:
 
 jobs:
   ci:
-    name: Lint, typecheck & build
+    name: Typecheck, test & build
     runs-on: ubuntu-latest
 
     steps:
@@ -32,8 +32,21 @@ jobs:
       - name: Typecheck server
         run: npm --workspace @jilson/server run typecheck
 
+      # Runs after "Build core": the suites import @jilson/core, which resolves
+      # to core/dist — absent in a fresh runner until that step has run.
+      # E2E (Playwright) is deliberately NOT here: it needs a server + a test DB.
+      - name: Test client
+        run: npm --workspace @jilson/client run test
+
       - name: Build client
         run: npm --workspace @jilson/client run build
 
       - name: Build server
         run: npm --workspace @jilson/server run build
+
+      # Informative only — NEVER blocks the gate (CLAUDE.md → Quality Gates).
+      # Expected to report findings today (transitive react-router advisory);
+      # if it becomes permanent noise, it degrades to a monthly manual check.
+      - name: Audit dependencies (informative)
+        run: npm audit --audit-level=high
+        continue-on-error: true
