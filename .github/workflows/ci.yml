@@ -29,6 +29,14 @@ jobs:
       - name: Typecheck client
         run: npm --workspace @jilson/client run typecheck
 
+      # Mirrors Dockerfile:60-63 — server code imports @prisma/client, so tsc
+      # fails on a fresh runner without the generated types. Needs no
+      # DATABASE_URL: generate only reads the schema and writes to node_modules.
+      # (CI lacked this while the Dockerfile had it — see implementation-plan
+      # Bloco 0: dev CI was red for 5 commits because the two diverged.)
+      - name: Generate Prisma client
+        run: npm --workspace @jilson/server run db:generate
+
       - name: Typecheck server
         run: npm --workspace @jilson/server run typecheck
 

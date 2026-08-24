@@ -227,6 +227,13 @@ de uma sessão própria antes do launch):**
       permanente. *Um gate que grita sempre é um gate que ninguém lê*, e o custo disso é maior que o
       benefício de bloquear cedo demais. (É step de CI, não dependência de runtime — não cai na
       regra de "dependência nova = decisão de plano".)
+- [ ] **(BACKLOG, não executar agora) Node 20 depreciado nas actions do CI.** O run avisa que
+      `actions/checkout@v4` e `actions/setup-node@v4` estão sendo **forçadas para Node 24**. É
+      **warning, não erro** — o CI passa. Registrado aqui em Ago 2026 para virar bloco próprio, não
+      conserto oportunista: mexer em versão de runtime do CI junto com outra coisa é como um gate
+      quebra sem ninguém entender por quê. Avaliar junto: subir as actions para `@v5` e alinhar o
+      `node-version` do workflow com o `engines.node` da raiz (`>=20`) e o `node:20-alpine` do
+      `Dockerfile` — os três devem contar a mesma história.
 - [ ] **Revisar UMA vez o advisory `critical` puxado pelo `react-router`** (acréscimo do operador,
       Ago 2026 — **fora do escopo do bloco que ligou o audit**, registrado aqui pra não sumir).
       Decidir se **alcança o nosso uso** — é dev-only? é caminho não exercido pela app? (o advisory
@@ -239,6 +246,31 @@ de uma sessão própria antes do launch):**
       nome diz (ou não se chama mais `lint`); e o brute-force contra `/api/auth/sign-in/email` é
       barrado por um limite que **não** depende de header controlado pelo cliente. *(O `npm audit`
       é informativo — não entra neste "Done when".)*
+      > **⚠️ ACHADO DE EXECUÇÃO (Ago 2026) — a premissa do bloco estava ERRADA: o CI não estava
+      > verde-mas-vazio, estava VERMELHO há 5 commits e ninguém viu.** Descoberto só ao dar o
+      > primeiro push com o step de teste. Sequência real na `dev`: último verde em `18d963a`;
+      > vermelho desde **`ca1d02a`** — o push que carregou a **Fase 2 Blocos 1 e 2** — e assim em
+      > `ec044e7`, `a91588d`, `8360ad3` e no próprio commit deste bloco. Sempre a MESMA falha:
+      > `Typecheck server`.
+      > **Causa:** o `ci.yml` **nunca rodou `prisma generate`**. O código do server importa tipos do
+      > `@prisma/client`; a Fase 2 introduziu os models; num runner limpo esses tipos não existem e
+      > o `tsc` quebra. Local passava porque `node_modules/.prisma` já estava gerado. O
+      > **`Dockerfile` ganhou esse fix em `d3d2135`** ("generate Prisma client before build") e o
+      > **`ci.yml` ficou para trás** — deploy e CI divergiram sem ninguém notar. Corrigido em commit
+      > separado (`ci: gera Prisma client antes do typecheck`), espelhando `Dockerfile:60-63`; o
+      > `generate` **não precisa de `DATABASE_URL`** (só lê o schema e escreve em `node_modules`),
+      > verificado antes do push.
+      > **Os 10 erros do log eram UMA causa raiz, não dez problemas** — e isto fica registrado
+      > explicitamente para ninguém, daqui a seis meses, ler o histórico e concluir que havia dívida
+      > de tipagem no server: os 2 primeiros eram `Namespace '...prisma/client/default'.Prisma has
+      > no exported member 'InputJsonValue'`, e os outros 8 (`Parameter 'm' implicitly has an 'any'
+      > type`, `Binding element 'modules'…`) eram **SINTOMA da ausência dos tipos gerados** — sem
+      > eles o `tsc` não infere nada das queries. **Não eram violações da convenção "sem `any`"**
+      > (CLAUDE.md → Key Conventions). O `prisma generate` zera a lista inteira.
+      > **A lição, que é a do próprio bloco um nível abaixo:** *gate que grita sem ninguém escutar*
+      > é o mesmo defeito de *gate que mente*. O Bloco 0 nasceu para consertar o segundo e
+      > tropeçou no primeiro. Notificação de falha de CI = candidato a item futuro.
+      >
       > **STATUS (Ago 2026): PARCIAL — 2 de 3 critérios verdes, bloco NÃO fechado.** ✅ push com
       > teste quebrado reprova o CI (provado por mutação) · ✅ o `lint` parou de mentir (apagado) ·
       > ❌ **rate-limit de login pendente** — é bloco próprio: toca `server/src/lib/auth.ts`, o que
