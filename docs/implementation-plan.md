@@ -227,13 +227,24 @@ de uma sessão própria antes do launch):**
       permanente. *Um gate que grita sempre é um gate que ninguém lê*, e o custo disso é maior que o
       benefício de bloquear cedo demais. (É step de CI, não dependência de runtime — não cai na
       regra de "dependência nova = decisão de plano".)
-- [ ] **(BACKLOG, não executar agora) Node 20 depreciado nas actions do CI.** O run avisa que
-      `actions/checkout@v4` e `actions/setup-node@v4` estão sendo **forçadas para Node 24**. É
-      **warning, não erro** — o CI passa. Registrado aqui em Ago 2026 para virar bloco próprio, não
-      conserto oportunista: mexer em versão de runtime do CI junto com outra coisa é como um gate
-      quebra sem ninguém entender por quê. Avaliar junto: subir as actions para `@v5` e alinhar o
-      `node-version` do workflow com o `engines.node` da raiz (`>=20`) e o `node:20-alpine` do
-      `Dockerfile` — os três devem contar a mesma história.
+- [ ] **(BACKLOG, não executar agora) Divergência de runtime Node — TRÊS fontes, três histórias.**
+      Não é só o warning de depreciação; o warning é o **sintoma**. O que o log do run `32743912121`
+      revela (texto literal: *"Node 20 is being deprecated. This workflow is running with **Node 24
+      by default**"*):
+      - `ci.yml` pede **`node-version: "20"`**
+      - o workflow **executa em Node 24 na prática** (as actions forçam)
+      - o `Dockerfile` publica em **`node:20-alpine`**
+      - a raiz declara **`engines.node: ">=20"`** — permissivo demais pra arbitrar entre os dois
+      **Consequência, que é o motivo de isto ser um item e não uma nota:** **validamos num runtime e
+      publicamos em outro.** Um teste que passa no CI (Node 24) não prova nada sobre o Node 20 que
+      serve o aluno em produção — e o inverso também vale. É a **MESMA FAMÍLIA** da divergência
+      Docker↔CI que causou o bug do Prisma (`d3d2135` corrigiu o Dockerfile e o `ci.yml` ficou pra
+      trás): duas definições do mesmo ambiente evoluindo separadas, sem nada que force a igualdade.
+      O do Prisma custou dois meses de CI vermelho; este ainda não custou nada — por enquanto.
+      **Escopo do bloco futuro:** escolher UMA versão, alinhar as quatro fontes acima (incluindo
+      apertar o `engines.node`) e subir as actions pra `@v5`. **Bloco próprio, não conserto
+      oportunista:** mexer em runtime de CI de carona em outra coisa é exatamente como um gate
+      quebra sem ninguém entender por quê.
 - [ ] **Revisar UMA vez o advisory `critical` puxado pelo `react-router`** (acréscimo do operador,
       Ago 2026 — **fora do escopo do bloco que ligou o audit**, registrado aqui pra não sumir).
       Decidir se **alcança o nosso uso** — é dev-only? é caminho não exercido pela app? (o advisory
@@ -247,11 +258,19 @@ de uma sessão própria antes do launch):**
       barrado por um limite que **não** depende de header controlado pelo cliente. *(O `npm audit`
       é informativo — não entra neste "Done when".)*
       > **⚠️ ACHADO DE EXECUÇÃO (Ago 2026) — a premissa do bloco estava ERRADA: o CI não estava
-      > verde-mas-vazio, estava VERMELHO há 5 commits e ninguém viu.** Descoberto só ao dar o
-      > primeiro push com o step de teste. Sequência real na `dev`: último verde em `18d963a`;
-      > vermelho desde **`ca1d02a`** — o push que carregou a **Fase 2 Blocos 1 e 2** — e assim em
-      > `ec044e7`, `a91588d`, `8360ad3` e no próprio commit deste bloco. Sempre a MESMA falha:
-      > `Typecheck server`.
+      > verde-mas-vazio, estava VERMELHO por DOIS MESES e ninguém viu.** Descoberto só ao dar o
+      > primeiro push com o step de teste. **CORREÇÃO (registrada ao ler o histórico completo via
+      > `gh run list`, depois de instalar o GitHub CLI):** a primeira redação deste achado dizia
+      > "5 commits" — era o que a API pública mostrava na primeira página. A janela real é
+      > **24/jun/2026 → 24/ago/2026**, de `ca1d02a` (o push que carregou a **Fase 2 Blocos 1 e 2**)
+      > até o commit deste bloco, passando por `ec044e7`, `a91588d` e `8360ad3`. Último verde:
+      > `18d963a`. Sempre a MESMA falha: `Typecheck server`.
+      > **Por que dois meses passaram em branco — e este é o ponto que importa mais que a duração:**
+      > quase todos os pushes do período eram de **documentação** ("Documentos atualizados…",
+      > "docs(plan): …"). **Commit de doc não faz ninguém abrir o Actions** — a expectativa mental é
+      > "não mexi em código, não tem o que quebrar". Só que o CI roda em `branches: ["**"]` e falhava
+      > igual. A cegueira não foi descuido pontual: foi **estrutural**, e maior do que o bloco supôs
+      > quando foi planejado.
       > **Causa:** o `ci.yml` **nunca rodou `prisma generate`**. O código do server importa tipos do
       > `@prisma/client`; a Fase 2 introduziu os models; num runner limpo esses tipos não existem e
       > o `tsc` quebra. Local passava porque `node_modules/.prisma` já estava gerado. O
@@ -270,6 +289,19 @@ de uma sessão própria antes do launch):**
       > **A lição, que é a do próprio bloco um nível abaixo:** *gate que grita sem ninguém escutar*
       > é o mesmo defeito de *gate que mente*. O Bloco 0 nasceu para consertar o segundo e
       > tropeçou no primeiro. Notificação de falha de CI = candidato a item futuro.
+      >
+      > **✅ CONFIRMADO POR LOG (run `32743912121`, lido via `gh run view --log` — não inferido da
+      > API).** Duas coisas que antes eram só dedução ficaram provadas textualmente:
+      > 1. **`Test client` executou de verdade: `Test Files 9 passed (9)` · `Tests 23 passed (23)`.**
+      >    O step tinha ficado `skipped` no run anterior (o `Typecheck server` morria antes), então
+      >    esta é a primeira execução real da suíte em CI na história do repo.
+      > 2. **O step de audit tem `outcome=failure` / `conclusion=success`** — falhou de fato
+      >    (`14 vulnerabilities (2 low, 6 moderate, 5 high, 1 critical)` + `##[error]Process
+      >    completed with exit code 1`) e foi **tolerado por desenho** pelo `continue-on-error: true`.
+      >    A API REST expõe só `conclusion`, que mascara isso; o `outcome` só aparece no log ou em
+      >    expressão de workflow. **Registrado porque a leitura ingênua ("audit: success") diria o
+      >    oposto da verdade** — e porque confirma que o **advisory `critical` segue EM ABERTO**,
+      >    aguardando o checkbox de revisão acima. Nada foi silenciosamente consertado.
       >
       > **STATUS (Ago 2026): PARCIAL — 2 de 3 critérios verdes, bloco NÃO fechado.** ✅ push com
       > teste quebrado reprova o CI (provado por mutação) · ✅ o `lint` parou de mentir (apagado) ·
