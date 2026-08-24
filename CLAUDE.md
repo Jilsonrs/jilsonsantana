@@ -172,6 +172,7 @@ NEVER pass a secret as a CLI argument or read one back into the transcript. Comm
 - **Installing a credential:** use the vendor's interactive wizard (prompt input), not a flag-based command.
 - **If a secret reaches the transcript: rotate it.** Deleting the local file does not undo it.
 - **Definição de agente nunca carrega credencial.** `mcpServers` no frontmatter referencia servidor já configurado POR NOME — nunca definição inline com key. `.claude/agents/` é versionado; tudo ali é público-para-o-repo.
+- **`.gitignore`: o padrão que versiona `.claude/agents/` é `.claude/*` + `!.claude/agents/` — NUNCA `.claude/` + `!.claude/agents/`.** O git **não desce em diretório excluído**, então nessa segunda forma a negação é **ignorada em silêncio**: sem erro, sem warning, o arquivo simplesmente nunca aparece. Por que isto é regra e não trivia: o `security-vulnerability-reviewer` é **obrigatório** nas Fases 3 e 4 (ver Risk tiering) e precisa viajar com o repo — se alguém "simplificar" o padrão de volta, o agente para de ser versionado e **ninguém é avisado**; descobre-se no próximo clone, quando a revisão obrigatória de segurança não existe mais.
 ## Content Model & Trilhas (the curriculum seam)
 
 - **Course → Module → Lesson**, but the **`Lesson` is first-class and searchable** (own title + tags). A lesson can appear in search results and inside a trilha on its own — not only nested in a course. The lesson is the minimum unit (progress counts per lesson).
