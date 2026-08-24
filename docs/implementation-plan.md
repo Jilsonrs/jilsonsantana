@@ -198,9 +198,17 @@ de uma sessão própria antes do launch):**
       confirmar qual header a Railway **garante sobrescrever** — não presumir. Se houver, fixar em
       `advanced: { ipAddress: { ipAddressHeaders: [...] } }`; se não houver, `express-rate-limit` à
       frente de `app.all("/api/auth/{*any}")` com `app.set('trust proxy', <hops>)`.
+- [ ] **(NÃO-BLOQUEANTE — adicionado Ago 2026, não veio da Fase 7) `npm audit --audit-level=high`
+      no `ci.yml`.** Entra como step **informativo**: **não trava o gate no primeiro dia.** Se
+      produzir ruído de dependência transitiva (vulnerabilidade em pacote fora do caminho de
+      execução, ou sem fix publicado), **degrada para conferência mensal manual** — não vira alarme
+      permanente. *Um gate que grita sempre é um gate que ninguém lê*, e o custo disso é maior que o
+      benefício de bloquear cedo demais. (É step de CI, não dependência de runtime — não cai na
+      regra de "dependência nova = decisão de plano".)
 - **Done when (Bloco 0):** um push com teste quebrado **reprova** o CI; o script `lint` faz o que o
       nome diz (ou não se chama mais `lint`); e o brute-force contra `/api/auth/sign-in/email` é
-      barrado por um limite que **não** depende de header controlado pelo cliente.
+      barrado por um limite que **não** depende de header controlado pelo cliente. *(O `npm audit`
+      é informativo — não entra neste "Done when".)*
 
 ### Vídeo (o corpo da fase)
 
@@ -233,6 +241,25 @@ de uma sessão própria antes do launch):**
       Bunny's API — confirm flags at build. Trade-off accepted: no IP-lock slightly raises URL-share
       risk, mitigated by the short window + DRM + per-user signing. UX > marginal anti-piracy for a
       solo operator.
+- [ ] **TTL da URL assinada: CURTO — minutos, não horas.** Gerada **por requisição**, **nunca
+      cacheada** (nem em memória, nem em resposta de API, nem no state do client) e **nunca
+      logada** — a regra de não logar signed URL já existe em CLAUDE.md → Server; aqui é só o
+      reforço, não uma regra nova. **Razão de negócio (é o ponto):** todo o gate protege a
+      **página**, mas o arquivo mora no Bunny e **a URL assinada é a fechadura real**. Uma URL de
+      vida longa vira link colado num grupo, e o gate continua funcionando **perfeitamente**
+      enquanto a receita vaza — falha silenciosa, sem erro, sem alerta. É o **vetor de perda de
+      receita mais provável** de uma escola de cursos. [PENDENTE DE VERIFICAÇÃO: o valor exato que
+      a Bunny expõe/aceita — confirmar via context7 (`/bunnyway/documentation`, query dizendo
+      "Stream") na abertura da fase.]
+      **⚠️ CONTRADIÇÃO ABERTA — resolver ANTES de escrever o código do player, não durante.** Este
+      item conflita de frente com o checkbox imediatamente acima e com **CLAUDE.md → Video** e
+      **tech-stack.md → Video**, que registram *janela elástica ~6–12h sem IP-lock*, justificada por
+      UX (não quebrar o playback quando o aluno troca Wi-Fi↔4G no meio da aula). **Minutos e 6–12h
+      não coexistem**: com TTL de minutos, uma aula de 40min só sobrevive se o player **renovar o
+      token durante a reprodução** — o que é decisão de desenho de código, não de doc. Os outros
+      dois docs **não foram reconciliados nesta passada** (é mudança de estratégia, decisão do
+      operador). Ao resolver: escolher um dos dois, apagar o outro checkbox e alinhar os três
+      lugares no mesmo commit.
 - [ ] Server: admin upload flow (or direct-to-Bunny + store reference)
 - [ ] Client: gated player on the lesson page
 - [ ] E2E: non-member cannot get a playable URL
@@ -390,6 +417,38 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       não garante backup automático — confirmar a política vigente no dia). Dado real de aluno
       nunca fica em banco sem backup. Custo já previsto (~$25/mo, dentro do teto de infra).
 - [ ] **🚀 GO-LIVE — desligar o gate "Em breve" (ÚLTIMA AÇÃO, sem deploy de código).** O site ao vivo está atrás de um gate pré-lançamento (público vê "Em breve"; operador acessa via `/__preview?token=<PREVIEW_TOKEN>`). Para abrir ao público: no Railway (projeto `jilsonsantana` → env `production` → service `jilsonsantana`), setar **`COMING_SOON=false`** (ou apagar a variável) → o serviço reinicia → público passa a ver o app real. Nenhum merge/código necessário. *(Mecanismo em [server/src/index.ts](../server/src/index.ts) + [client/public/coming-soon.html](../client/public/coming-soon.html); detalhe operacional na memória `coming-soon-gate`.)* **Fazer só quando o "Done when" abaixo estiver verde.**
+### Continuidade do operador (pré-primeiro aluno pagante)
+
+> **Por que esta seção existe — e por que ela não aparece em curso nenhum:** curso pressupõe
+> **equipe**. Aqui não há. **Sou operador único:** não existe colega com acesso, não existe conta de
+> equipe, não existe quem note que algo quebrou enquanto eu não estou olhando. Nesse arranjo,
+> **invasão ou perda de acesso a uma conta de fornecedor causa mais dano em minutos do que qualquer
+> falha de aplicação.** A camada de aplicação já está coberta (RLS, segredo só no servidor, webhook
+> com assinatura + idempotência, leitura pública só `PUBLISHED`, rate-limit no Bloco 0,
+> `security-vulnerability-reviewer` obrigatório nas Fases 3 e 4). O elo fraco que sobra **não é o
+> código: é a conta.** **Tudo abaixo fica pronto ANTES do GO-LIVE.**
+
+- [ ] **2FA por app autenticador (NÃO SMS)** em: **Supabase, Railway, Stripe, GitHub, Bunny,
+      registrador do domínio** e **no e-mail do admin da plataforma**. SMS fica de fora por
+      SIM-swap. O e-mail entra na lista porque é o **caminho de reset de todos os outros** —
+      blindar os seis e deixar o e-mail aberto é não blindar nada.
+- [ ] **Códigos de recuperação guardados FORA do Mac** — impressos ou em gerenciador de senhas.
+      Guardados apenas na máquina que autentica, eles somem exatamente no cenário em que serviriam
+      (perda, roubo ou pane do Mac).
+- [ ] **Senha única por serviço, em gerenciador.** Senha repetida transforma vazamento de terceiro
+      em invasão nossa — e um operador só não tem quem perceba o acesso estranho.
+- [ ] **Backup: política CONFIRMADA + RESTORE DE TESTE executado uma vez.** A confirmação da
+      política do tier vive no checkbox *"Upgrade Supabase Free → Pro"* acima — não duplicar aqui
+      [PENDENTE DE VERIFICAÇÃO]. **O que é novo é o restore:** executar um restore de teste **uma
+      vez**, contra o **2º projeto Supabase** (o de teste), e registrar que funcionou. Porquê:
+      **backup nunca testado é fé, não é plano.** E o cenário realista não é invasão — é
+      **migration ruim ou reset apontado pro lugar errado** (a trava `_test` do CLAUDE.md nasceu
+      desse mesmo risco). *Depende de o 2º projeto existir — ver o [PENDENTE] do tier grátis.*
+- [ ] **LGPD mínimo: política de privacidade publicada + caminho de exclusão de conta.** É
+      **pendência de lançamento, não item de engenharia** — não vira bloco de código. O checkbox
+      amplo de LGPD no topo desta fase cobre o resto (termos, consentimento, export); aqui fica só
+      o mínimo que não pode faltar no dia do GO-LIVE.
+
 - **Done when:** the Excel + IA course is buyable and watchable end to end. **→ LAUNCH**
 
 ---
@@ -439,3 +498,4 @@ inalterados. Nada muda no roadmap de fases.*
 *Atualizado: Ago 2026 (2) — **varredura fecha a pendência da entrada acima:** `git grep` por "when green" / "sacred" / "auto-deploy" / "merge" em `docs/` + `CLAUDE.md` achou a formulação de gatilho em exatamente dois lugares, ambos na seção "Branching workflow (all phases)". Corrigidos: (1) "Merge to `main` only when green" → **verde é o piso que torna o merge elegível, nunca o gatilho**; o merge `dev → main` é decisão explícita do operador ao fim de uma fase. A parte verdadeira — `main` faz auto-deploy pro Railway, logo é "sacred", só código testado chega lá — foi **preservada**, era só o gatilho que estava errado. (2) "até lá, `dev → main` after local testing" virou "**merge manual que o operador autoriza** after local testing" (mesma forma de gatilho implícito, escala menor). Não alteradas por serem factuais, não regras de merge: `railway.json`/Railway auto-deploy on push (Fase 0), `tech-stack.md` (Railway auto-deploy on push to `main`), CLAUDE.md linhas 51/76/82/96 (já são a fonte correta). Nenhuma outra ocorrência no repo.*
 *Atualizado: Ago 2026 (3) — **Fase 4 reescrita de novo: Stripe Payments + STRIPE BILLING** (Payment Element embutido mantido, Customer Portal segue fora). Reverte a decisão de recorrência in-house de Jun 2026: ela empacotava *checkout na nossa página* (requisito de UX) com *quem opera a recorrência* (era in-house pra evitar a taxa) — só a primeira é requisito. Custo verificado: Billing 0,7% do volume + Payments BR 3,99% + R$ 0,50 → ~R$ 5,19/assinante/mês. **Saem da fase:** agendador pg-boss de renovação, régua de dunning D0/D+2/D+5/D+7 como código, `PaymentIntent` off-session, tela "Resolver pagamento" para `requires_action`, cálculo de proração. **Entram/permanecem:** espelho local `Subscription` (`stripeSubscriptionId` agora obrigatório), webhooks de assinatura idempotentes e order-safe, force-sync via `subscriptions.retrieve`, gate de acesso, telas de assinatura/offboarding. A política de dunning continua **decisão nossa** (acesso mantido na janela, `past_due`) — vira configuração de Smart Retries. A fase **continua HIGH RISK**: o Billing removeu a mecânica do dinheiro, não a fronteira de acesso. E2E ampliado com webhook duplicado / fora de ordem / assinatura inválida.*
 *Atualizado: Ago 2026 (4) — **auditoria de testes + de stack** (aulas de E2E do curso de referência × este projeto). **Ordem do roadmap mudou em dois pontos, e por um motivo só: gate não é feature.** (1) **Bloco 0 — GATES no topo da Fase 3**, promovido da Fase 7: CI que roda teste de verdade (não existe script `test` na raiz; o `ci.yml` só faz `npm ci` + typecheck + build — e o job se chama "Lint, typecheck & build" **sem step de lint**), `lint` que para de mentir (é alias de `tsc --noEmit`, não há ESLint), e rate-limit de login (com o passo 1 = **verificar** qual header a Railway garante sobrescrever, preservado). Sem CI, qualquer suíte escrita depois vale zero — o operador trabalha em sessões separadas por semanas. (2) **Testes de servidor (~15, supertest) entram DENTRO da Fase 4**, colados ao handler de webhook: 100% do risco catastrófico é servidor e **webhook não tem tela**. Os casos de webhook duplicado / fora de ordem / assinatura inválida **saíram do E2E** e viraram teste de servidor (mais baratos, sem browser); os dois achados P1 da Fase 2 (vazamento de `DRAFT`) passam a ter teste que os fecha — por referência, sem duplicar o diagnóstico. **pg-boss removido do MVP:** o webhook vira **inline** (assinatura → `event.id` → espelho → 200; e-mail Resend na mesma request em `try/catch`), porque a Stripe já reentrega em cima de 5xx — a fila duplicava o fornecedor, e o **alerta** de falha era ele mesmo uma fila, ou seja, a detecção dependia da coisa que deveria detectar. Detecção passa a ser **monitor de erro externo** (tier grátis, tipo Sentry; **fornecedor PENDENTE**), agora checkbox de **pré-requisito do primeiro aluno pagante** na Fase 7. **Gatilho de volta da fila registrado: JilsonAI Fases 4–5** (embeddings da KB; pipeline transcrição→chunk→embedding) — lote, demorado, retentável, e código que ainda não existe. **Playwright fica**: o E2E de hoje só assere redirect do React Router por falta do `globalSetup` com **banco de teste (2º projeto Supabase, trava `_test`)** — corrigido o diagnóstico, alvo 6–8 testes full-stack **depois** dos de servidor; `e2e-test-writer` **ADIADO**. Backlog P2 do reviewer: nº 1 → Fase 4, nº 6 → Fase 3, **restam 4** (numeração original preservada). Nota de manutenção: a entrada anterior ("Fase 4 reescrita de novo") estava sem número apesar de ser a 3ª de Ago 2026 — renumerada para **(3)** nesta passada, sem alterar o texto.*
+*Atualizado: Ago 2026 (5) — **fechamento da auditoria: continuidade do operador.** O raciocínio completo (e o que ficou deliberadamente de fora) está no changelog do `CLAUDE.md`, entrada **Ago 2026 (7)** — **não duplicado aqui**. O que mudou neste plano: (1) **Bloco 0 (Fase 3)** ganha `npm audit --audit-level=high` como step **NÃO-BLOQUEANTE**, com a degradação pra conferência mensal já decidida — não entra no "Done when" do bloco. (2) **Fase 3 (vídeo)** ganha o checkbox de **TTL curto da signed URL** (minutos, por requisição, sem cache, sem log) com a razão de negócio registrada: o gate protege a *página*, mas a URL assinada é a *fechadura real* do arquivo no Bunny — URL de vida longa vira link em grupo e a receita vaza **sem nenhum erro aparecer**. **Fica marcado como CONTRADIÇÃO ABERTA** contra a janela elástica ~6–12h (mesma fase, + CLAUDE.md → Video + tech-stack.md → Video): os dois não coexistem sem renovação de token no player, que é decisão de código — resolver **antes** de escrever o player e alinhar os três lugares no mesmo commit. (3) **Fase 7** ganha a seção **"Continuidade do operador (pré-primeiro aluno pagante)"**: 2FA por app (nunca SMS) nos fornecedores + e-mail do admin, códigos de recuperação fora do Mac, senha única por serviço, **restore de teste** contra o 2º projeto Supabase (a *política* de backup continua no checkbox de upgrade Free→Pro, por referência), e LGPD mínimo como pendência de lançamento. Tudo antes do GO-LIVE.*
