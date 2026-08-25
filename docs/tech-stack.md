@@ -79,7 +79,7 @@
 
 - **Docker** — multi-stage build (client + server)
 - **Railway** — hosting; auto-deploy on push to `main` (railway.toml + Dockerfile). Health check at `/api/health`.
-- **GitHub Actions** — hoje: `npm ci` + build do core + typecheck + build. **Não roda teste e não roda lint** [FATO, `.github/workflows/ci.yml`]. Conserto = bloco **Gates** no topo da Fase 3 (`implementation-plan.md`). Claude code review on PRs.
+- **GitHub Actions** — `npm ci` + build do core + typecheck (client/server) + **`Test client`** + **`Test server`** + build (client/server) + `npm audit` informativo. *(A frase antiga aqui — "não roda teste e não roda lint" — ficou obsoleta em duas etapas: o Bloco 0 da Fase 3 ligou o teste de client e apagou o `lint`, e a fatia do `globalSetup` ligou o de servidor. Não há ESLint no repo; o nome `lint` segue livre.)* O step de servidor precisa de **dois secrets** do repositório: `TEST_DATABASE_URL` e `TEST_DIRECT_URL`. Claude code review on PRs: pendente.
 - **Monitor de erro em produção** — **decisão PENDENTE** (gerenciado, tier grátis, tipo Sentry; fornecedor não escolhido). Não é opcional: é pré-requisito do primeiro aluno pagante (`implementation-plan.md` → Fase 7).
 
 ## AI-Assisted Dev (quality gates)

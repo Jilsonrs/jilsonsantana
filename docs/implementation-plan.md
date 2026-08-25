@@ -501,6 +501,39 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       **monitor externo gerenciado** — item de pré-requisito do primeiro aluno pagante na Fase 7
       (fornecedor ainda **PENDENTE**). O force-sync continua sendo a *recuperação*; o monitor é a
       *detecção*. (Convenção no CLAUDE.md → Background Jobs.)
+- [x] **INFRAESTRUTURA da suíte de servidor — PRONTA (Ago 2026).** Entrega o encanamento, não os
+      testes de negócio. **`app.ts` novo**: monta e exporta o app **sem** `listen()`, que ficou em
+      `index.ts` — enquanto `index.ts` escutava porta no import, supertest não tinha o que importar.
+      Entrada de produção segue `dist/index.js`; Dockerfile e Railway intocados. **`vitest.config.ts`**
+      (`environment: node`, `fileParallelism: false` — workers em paralelo disputariam o mesmo banco e
+      gerariam falha intermitente, que é a pior classe de teste). **`src/test/`**: `test-env.ts` (trava
+      por REF + `loadEnv` com `override: true`, para a suíte não depender de o operador ter feito
+      `set -a`), `global-setup.ts` (trava → `migrate reset --force --skip-seed` → seed, com env
+      **passado explicitamente** ao filho, nunca herdado do `.env`), `setup.ts` (roda em cada worker,
+      porque o globalSetup roda em outro contexto e `process.env` não atravessa). **3 testes de
+      fumaça**: `/api/health` 200 · `/api/me` sem sessão 401 · admin semeado autentica e `/api/me`
+      devolve `role=admin`. **`tsconfig.build.json`** exclui `src/test/` do build — código de teste
+      não vai para a imagem de produção; o `typecheck` continua cobrindo os testes.
+      **Provado por MUTAÇÃO, não presumido:** (a) com o `.env.test` apontando para o ref de
+      **produção**, o setup **aborta** — `[test-setup] migrate reset` executou **0 vezes**, `Seed
+      complete` **0 vezes**, exit code **1**; *(a primeira tentativa de mutação, passando
+      `DATABASE_URL` pelo shell, NÃO disparou a trava — o `override: true` sobrescreve o shell com o
+      arquivo. Isso é o requisito, não um furo: o vetor real é o **arquivo** apontar errado, que é o
+      erro que de fato aconteceu esta semana. Registrado porque a mutação ingênua dá falso conforto.)*
+      (b) removendo `requireAuth` de `me.ts`, **2 dos 3 testes reprovam** — a suíte pode falhar, logo
+      é teste. **CI:** step `Test server` novo; exige os secrets `TEST_DATABASE_URL` e
+      `TEST_DIRECT_URL`, com o resto gerado no run.
+      **Achado colateral corrigido:** o `.dockerignore` tinha `**/.env`, que **não** cobre
+      `.env.test` — o `COPY server/ ./server/` levaria o arquivo de segredo para uma camada do
+      builder. **Mesmo defeito que o `.gitignore` tinha**, no mesmo padrão, em outro arquivo.
+- [ ] **(decisão adiada, com GATILHO — escolha do operador, Ago 2026) Rodar a suíte APAGA o banco de
+      desenvolvimento**, porque `mvaobzypsiuhqzipcelw` serve dev **e** teste e o `globalSetup` dá
+      `migrate reset --force`. Hoje o custo é **zero** (0 cursos, 0 módulos, 0 aulas, 0 trilhas lá).
+      **Gatilho de reabertura:** quando o operador começar a **autorar conteúdo de verdade em dev**
+      nesse banco — a Trilha 1 pela UI admin, por exemplo. Aí escolher entre (a) aceitar e recriar com
+      `db:seed:content` depois de cada suíte, ou (b) um **terceiro** projeto Supabase só para dev
+      (+US$ 10/mês no Pro, teto ~35 → ~45, e reabre a decisão dos 2 projetos). **Não decidir antes do
+      gatilho:** hoje seria escolher com base em conteúdo que não existe.
 - [ ] **TESTES DE SERVIDOR (~15, supertest, sem browser) — escritos JUNTO com o handler acima, não
       depois.** Este é o item que fecha a fase; não é polish de fim de ciclo. **Justificativa
       (Ago 2026):** 100% do risco catastrófico do projeto é servidor — *assinante pagante trancado

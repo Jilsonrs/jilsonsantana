@@ -46,6 +46,38 @@ jobs:
       - name: Test client
         run: npm --workspace @jilson/client run test
 
+      # A suíte de servidor é FRONTEIRA (gate de acesso, webhook, auth): não tem
+      # tela, então precisa de banco real. O .env.test não é versionado, então é
+      # montado aqui. Só DUAS coisas são secret de repositório — as connection
+      # strings; o resto é EFÊMERO e gerado no run, porque o globalSetup dá
+      # `migrate reset` no banco antes de cada execução: guardar essas senhas em
+      # lugar nenhum é menos superfície para vazar.
+      #
+      # Se os secrets não existirem, DATABASE_URL sai vazia e a TRAVA do
+      # globalSetup aborta com a causa dita. Isso é DE PROPÓSITO: pular a suíte
+      # em silêncio seria um gate que mente, que é o defeito que o Bloco 0 da
+      # Fase 3 existiu para remover.
+      - name: Prepare server test env
+        run: |
+          umask 077
+          cat > server/.env.test <<'STATIC'
+          NODE_ENV=test
+          BETTER_AUTH_URL=http://localhost:3000
+          CLIENT_URL=http://localhost:5173
+          SEED_ADMIN_EMAIL=admin@ci.local
+          SEED_MEMBER_EMAIL=member@ci.local
+          STATIC
+          {
+            echo "DATABASE_URL=${{ secrets.TEST_DATABASE_URL }}"
+            echo "DIRECT_URL=${{ secrets.TEST_DIRECT_URL }}"
+            echo "BETTER_AUTH_SECRET=$(openssl rand -base64 32)"
+            echo "SEED_ADMIN_PASSWORD=$(openssl rand -base64 24)"
+            echo "SEED_MEMBER_PASSWORD=$(openssl rand -base64 24)"
+          } >> server/.env.test
+
+      - name: Test server
+        run: npm --workspace @jilson/server run test
+
       - name: Build client
         run: npm --workspace @jilson/client run build
 

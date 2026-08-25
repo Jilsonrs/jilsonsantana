@@ -1,0 +1,5 @@
+{
+  "extends": "./tsconfig.json",
+  "//": "Build de PRODUÇÃO. Igual ao tsconfig.json, menos os arquivos de teste: sem isto, `src/test/**` vira `dist/test/**` e a imagem de produção carrega código de teste que importa `supertest` — uma devDependency que o estágio final nem instala (`npm ci --omit=dev`). Nada executa esses arquivos, então não quebra; é peso morto e um import que não resolveria. O `typecheck` continua usando o tsconfig.json, ou seja, os testes SEGUEM sendo checados por tipo.",
+  "exclude": ["src/test"]
+}
