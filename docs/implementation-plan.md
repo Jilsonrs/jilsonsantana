@@ -396,11 +396,13 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       - [x] `server/.env.test` criado (**esqueleto, valores em branco**) + cobertura no
             `.gitignore` — o padrão era só `.env`, que **não** casa com `.env.test`; agora é
             `.env` + `.env.*` + `!.env.example`. Verificado com `git check-ignore`.
-      - [ ] **PENDENTE (só o operador pode fazer — exige a senha, que nunca passa por transcript de
-            agente):** colar `DATABASE_URL`/`DIRECT_URL` do projeto de teste no `server/.env.test` e
-            conferir que as duas contêm `mvaobzypsiuhqzipcelw`.
-      - [ ] Rodar as 3 migrations existentes com **`prisma migrate deploy`** (NÃO `migrate dev` — o
-            histórico já está definido) e depois o seed. **Receita sem dependência nova** (o
+      - [x] `server/.env.test` preenchido pelo operador. ⚠️ **As credenciais coladas nele vazaram
+            para o transcript do agente** (a notificação de mudança de arquivo do IDE despeja o
+            conteúdo no contexto) — **rotacionadas** pela regra `CLAUDE.md` → *Secrets in agent
+            sessions*. **Convenção implícita que isto revela: arquivo de segredo ABERTO no editor
+            entra no contexto do agente.** Não basta não colar a senha no chat.
+      - [x] Migrations aplicadas no banco de teste com **`prisma migrate deploy`** (NÃO
+            `migrate dev` — o histórico já está definido). **Receita sem dependência nova** (o
             `dotenv/config` do server só lê `.env`, e o Prisma CLI não sobrescreve variável já
             exportada):
             ```bash
@@ -409,6 +411,17 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             npx prisma migrate deploy
             npx tsx src/seed.ts
             ```
+            **PEGADINHA verificada na execução:** o Prisma imprime *"Environment variables loaded
+            from .env"* **mesmo quando as variáveis exportadas do `.env.test` é que estão valendo**
+            (ele carrega o `.env`, mas `dotenv` não sobrescreve variável já presente no ambiente). A
+            linha que diz a verdade é a do **`Datasource`**, que mostra o host real — foi ela que
+            confirmou `db.mvaobzypsiuhqzipcelw.supabase.co`. **Não ler a primeira linha como se
+            fosse a resposta.** Some daí a guarda explícita de ref antes de cada `deploy`.
+            **Nota sobre o `.env` de PRODUÇÃO: ele NÃO pode ser lido com `. ./.env`** — a
+            `DATABASE_URL` do pooler tem `?pgbouncer=true&connection_limit=1`, e o `&` quebra o
+            shell (`parse error near '&'`). Para produção, deixe o **próprio Prisma** carregar o
+            `.env` e faça a guarda por `grep -c "<ref>" .env` (conta ocorrências sem imprimir
+            segredo; lembre que `grep -c` sai com código 1 quando o resultado é zero).
             **O `cd server` não é estilo, é obrigatório — MEDIDO em Ago 2026, não inferido:** da
             raiz do monorepo, `npx prisma <cmd>` falha com *"Could not find Prisma Schema"*.
             **A correção óbvia NÃO resolve:** declarar `"prisma": {"schema": ...}` no
@@ -425,11 +438,26 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             automática, e hoje ele **obriga** a passar por `server/`, onde o `.env` escolhe o banco.
             Se um dia virar script de conveniência, o script tem que fixar o ambiente
             (`--env-file=.env.test`), nunca herdar o que estiver no `.env`.
-      - [ ] Verificar paridade com produção: **11 tabelas** em `public`, **3 migrations** aplicadas.
-            **Sobre RLS:** com o "Automatic RLS" desligado no projeto de teste, as tabelas devem vir
-            do jeito que as **nossas migrations** mandam. Se faltar RLS em alguma, **corrigir por
-            MIGRATION**, nunca por comando avulso no painel — comando avulso não viaja pro git e
-            reabre a divergência que o desligamento evitou.
+      - [x] **Paridade verificada — e foi ela que pegou o furo do RLS.** Estado final **idêntico nos
+            dois bancos**: 11 tabelas em `public`, **0 sem RLS**, 4 migrations aplicadas, 0
+            rollbacks, advisors só INFO `rls_enabled_no_policy`. A divergência encontrada no caminho
+            (`_prisma_migrations` com RLS em produção e sem no teste) virou o backlog P2 nº (5)
+            reaberto e a migration `20260824214838_rls_prisma_migrations_table` — ver Fase 7.
+            Confirmado o que o item já mandava: divergência se corrige **por MIGRATION**, nunca por
+            comando avulso no painel, senão não viaja pro git.
+      - [ ] **Rodar o seed** (`npx tsx src/seed.ts`) contra o banco de teste — admin + member. Ainda
+            **não feito**: as credenciais de seed no `.env.test` vazaram para o transcript e estão
+            sendo rotacionadas, então semear agora gravaria senha queimada. Rodar **depois** da
+            rotação, com os valores novos.
+      - [ ] **(follow-up, decisão do operador) O "Automatic RLS" está LIGADO em produção e DESLIGADO
+            no teste — isso é divergência viva, não histórica.** Ela não afeta tabela nossa (toda
+            migration nossa liga o RLS explicitamente), mas afeta qualquer tabela criada **fora** das
+            migrations — que foi exatamente o caso da `_prisma_migrations`. Enquanto os dois projetos
+            divergirem nessa chave, produção continua "se consertando sozinha" em silêncio e o teste
+            não, o que é justamente o que esconde o próximo furo. Opções: desligar em produção (os
+            dois passam a depender só do versionamento, que é a convenção) ou ligar no teste (os dois
+            mentem juntos). **Recomendo desligar em produção**; é mudança de configuração no
+            fornecedor, então é chamada do operador.
 - [ ] **DECISÃO REGISTRADA — usuários semeados (admin + member de teste) são PERMANENTES e existem
       em TODOS os ambientes, produção inclusive.** O **admin é obrigatório** (`disableSignUp: true`
       — não há outro caminho para criar o primeiro usuário). O **member de teste em produção recebe
@@ -548,9 +576,13 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       `admin-alerts` do pg-boss, cujo defeito era a detecção depender da própria coisa que deveria
       detectar (ver Fase 4 e CLAUDE.md → Background Jobs).
 - [ ] **Backlog P2 do `security-vulnerability-reviewer` (7 no relatório; os nº 1, 2 e 6 foram
-      movidos e o nº 5 foi **verificado e fechado** → **3 pendentes aqui**. Nenhum bloqueia merge;
-      todos antes do primeiro aluno pagante.)** A numeração original do relatório é preservada para
-      o mapeamento não quebrar:
+      movidos e o nº 5 foi **fechado por migration versionada** → **3 pendentes aqui**. Nenhum
+      bloqueia merge; todos antes do primeiro aluno pagante.)** A numeração original do relatório é
+      preservada para o mapeamento não quebrar.
+      > **Nota de processo — o nº 5 foi fechado errado, reaberto e fechado de novo no mesmo dia.**
+      > Fica registrado porque a contagem "3 pendentes" já esteve certa pelo **motivo errado**: o
+      > primeiro fechamento verificou **um** ambiente e concluiu "suspeita falsa". Contagem de
+      > backlog é resultado, não prova — ler a razão do fechamento antes de confiar no número.
       (1) **→ MOVIDO para a Fase 4** (testes de servidor, supertest). Era "sem teste de fronteira
       no servidor": não há suíte no workspace `server`, e o E2E só assere redirect do React Router,
       que é guarda cosmético do client. A matriz 401/403/200 (`/api/me`, `/api/admin/ping`) e o
@@ -567,20 +599,39 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       `requireAdmin`, custo é de auditabilidade: "essa rota é admin?" deixa de ser respondível pelo
       path. Mover ou registrar a exceção como decisão do operador — não deixar leitura em
       `/admin/courses` e escrita em `/courses` no mesmo router.
-      (5) **✅ FECHADO por verificação (Ago 2026) — a suspeita era FALSA: `_prisma_migrations` JÁ
-      TEM RLS.** A hipótese do relatório era razoável (a tabela é criada pelo Prisma **fora** das
-      migrations versionadas, então nenhum `ENABLE ROW LEVEL SECURITY` nosso passa por ela), mas o
-      banco diz o contrário. Evidência direta, não inferida de advisor: consulta a `pg_class` no
-      projeto de produção `gaxmbnhwltljlkukdwba` devolve `relrowsecurity = true` para **as 11
-      tabelas de `public`** — as 10 de domínio **mais** `_prisma_migrations`. `get_advisors
-      (type='security')` também só retorna INFO. **Nenhuma migration é necessária.** *(Causa
-      provável, NÃO verificada: o "Automatic RLS" do Supabase, que liga RLS em tabela nova de
-      `public` sem ninguém pedir — foi **desligado de propósito** na criação do projeto de teste,
-      pra que o RLS entre por migration versionada e teste não divirja de produção. Se for isso, o
-      projeto de teste **não** vai reproduzir este comportamento, e a tabela lá vai nascer sem RLS
-      — o que **não** é problema: é banco de teste, sem Data API e sem dado real. Não confiar nesse
-      default é justamente por que a convenção do `CLAUDE.md` exige o `ENABLE` explícito nas nossas
-      migrations.)* **Não contar neste backlog.**
+      (5) **✅ FECHADO DE VERDADE (Ago 2026) por migration versionada — depois de ter sido fechado
+      ERRADO e REABERTO no mesmo dia.** A suspeita original do relatório era **VERDADEIRA**: a
+      tabela `_prisma_migrations` é criada pelo Prisma **fora** das migrations versionadas, então
+      nenhum `ENABLE ROW LEVEL SECURITY` nosso jamais passou por ela.
+      **Por que o primeiro fechamento errou:** foi verificado **só produção**
+      (`gaxmbnhwltljlkukdwba`), onde `pg_class.relrowsecurity` já era `true` — e daí se concluiu
+      "suspeita falsa, nenhuma migration necessária". **O dado que derrubou isso:** o banco de teste
+      `mvaobzypsiuhqzipcelw` recebeu **as MESMAS 3 migrations** por `prisma migrate deploy` e lá a
+      mesma tabela veio com **`relrowsecurity = false`**. As 10 tabelas de domínio vieram `true` nos
+      dois. Logo o RLS de produção **não vinha do versionamento** — vinha de um ajuste **de fora**.
+      *(Causa mais provável, não distinguida pela evidência: o **"Automatic RLS"** do projeto de
+      produção, que estava ligado — no projeto de teste ele foi **desligado de propósito** na
+      criação. O que a evidência prova é o que importa: **não veio das migrations**. Se foi um
+      humano no painel ou um ajuste de projeto não muda nem o conserto nem a lição.)*
+      **Conserto aplicado:** migration `20260824214838_rls_prisma_migrations_table` com o
+      `ALTER TABLE "public"."_prisma_migrations" ENABLE ROW LEVEL SECURITY;`, aplicada **nos dois
+      bancos por `prisma migrate deploy`** — nunca por painel, nunca por MCP, porque o objetivo é o
+      estado ser **REPRODUZÍVEL em qualquer banco futuro**. Idempotência confirmada **antes** de
+      escrever a migration (três `ALTER` consecutivos numa tabela de sondagem descartável, sem
+      erro), e é por isso que ela roda limpa em produção, onde o estado já era o desejado.
+      **Prova final, nos DOIS bancos:** 11 tabelas em `public`, **0 sem RLS**,
+      `_prisma_migrations.relrowsecurity = true`, 4 migrations aplicadas, 0 rollbacks; advisors só
+      INFO `rls_enabled_no_policy`. Produção reconferida após a aplicação: **2 users e 39 sessions,
+      idênticos ao pré-voo**.
+      > **LIÇÃO (o motivo de este item valer mais reaberto que fechado): estado verificado em UM
+      > ambiente não prova estado REPRODUZÍVEL.** Produção carregava um ajuste manual invisível e,
+      > por isso, *parecia* correta — a verificação confirmou o **sintoma certo pelo motivo errado**.
+      > Só a criação de um **segundo** banco a partir das mesmas migrations revelou o furo. É a mesma
+      > família de *"gate que mente"* (o `lint` que rodava `tsc`) e de *"backup nunca testado é fé,
+      > não é plano"*: **a coisa só é verdade quando é reproduzida, não quando é observada uma vez.**
+      > Corolário operacional: `get_advisors` num banco só responde *"este banco está ok"*, nunca
+      > *"o repo produz um banco ok"*.
+      **Não contar neste backlog.**
       (6) **✅ FECHADO no Bloco 0 da Fase 3 (Ago 2026)** — pela via da **remoção** do script, não da
       renomeação; a consequência ("sem `any`" sem enforcement automático) ficou registrada como
       checkbox próprio lá. Detalhes nos itens do Bloco 0 — **não duplicar aqui**. Não contar neste
@@ -671,6 +722,6 @@ MVP = **Phases 0 → 7** (incl. trilhas curadas na Phase 2, certificados na Phas
 
 
 ---
-*Atualizado: Ago 2026 (6) — **CONTRADIÇÃO ABERTA da entrada (5) RESOLVIDA pelo operador: a janela elástica ~6–12h sem IP-lock fica**, e **não** se constrói renovação de token durante a reprodução. O checkbox de "TTL curto" e o bloco de contradição foram **apagados** da Fase 3; a razão da recusa passou a viver **junto do checkbox de signed URL** que já existia (TTL curto cobre link vazando passivamente, não o vetor real — baixar e re-subir — que atravessa qualquer janela; renovação de token é código que falha em silêncio e é depurado por um operador sozinho; a razão de UX original segue válida). `CLAUDE.md` → Video e `tech-stack.md` → Video **não** foram alterados — continuam corretos, e a razão não é duplicada neles. **No lugar entrou:** restrição de **domínio/referrer no Bunny** (`[PENDENTE DE VERIFICAÇÃO]` de existência e nome), que ataca o mesmo risco pelo lado certo — configuração no fornecedor, sem tocar no playback e sem código nosso — mais o registro de que **marca d'água por aluno** é a única defesa contra re-upload e fica para quando houver receita.*
 *Atualizado: Ago 2026 (7) — **Bloco 0 (Fase 3) executado PARCIALMENTE: 3 dos 4 checkboxes fechados, o bloco NÃO.** O raciocínio completo está no changelog do `CLAUDE.md`, entrada **Ago 2026 (8)** — **não duplicado aqui**. O que mudou neste plano: (1) `[x]` em **CI roda teste** (script `test` na raiz + step `Test client` **depois do build do core**; gate provado por **mutação** — apagar `Role.ADMIN` de `AdminRoute.tsx` reprova o CI, e antes passava verde) e em **`lint` para de mentir** (resolvido por uma **terceira** saída que o item não previa: **apagar**, porque `tsc --noEmit` já se chama `typecheck` neste repo e renomear colidiria — a mentira era a duplicata, não o nome). (2) **Checkbox novo registrando o custo**: "sem `any`" fica **sem enforcement automático** até ESLint entrar — com a observação de que o `lint` anterior **também não cobria** isso (`tsc --noEmit` aceita `any`), então a remoção não perdeu cobertura, só parou de simular. (3) `[x]` no **`npm audit`**, com o resultado medido antes do push (`high:5, critical:1`, transitivo do `react-router`) e o comportamento esperado registrado: step falho-porém-tolerado, job verde. (4) **Checkbox novo do operador**: revisar **UMA vez** o advisory `critical` e registrar a conclusão — ruído transitivo justifica o step não-bloqueante, mas `critical` não é ruído por padrão, e sem este item a tolerância viraria permanente sem ninguém ter lido. (5) **"Done when" marcado como PARCIAL**: falta o **rate-limit de login**, que é bloco próprio por tocar auth (gate obrigatório de context7) e por ter o "passo 1 = verificar a borda da Railway" preservado. (6) Backlog P2, item **(6) fechado** por referência. Convenção nova correspondente no `CLAUDE.md`: **"Definição de pronto por fatia"** (teto-não-piso; vale daqui pra frente; fronteira transversal é fatia própria sem teste de componente).*
 *Atualizado: Ago 2026 (8) — **separação de ambientes de banco vira PRÉ-REQUISITO da Fase 4, e a trava do banco de teste é CORRIGIDA porque não funcionava.** (1) **[FATO] o ambiente local aponta para o mesmo projeto que o Railway serve** — os usuários semeados na Fase 1 e as 39 sessões de desenvolvimento deles vivem em produção; *as sessões são normais, o achado é a **localização** delas*. Vira bloqueio agora porque esta fase traz o espelho de `Subscription`: um `migrate reset` com o `.env` errado deixa de ser "perdi meu seed" e passa a apagar o estado de acesso de quem paga. Resolução: `mvaobzypsiuhqzipcelw` serve **dev E teste**. Registrado junto o que a trava **não** cobre: existem **três** caminhos até o banco (Vitest, MCP, comando manual) e **só o primeiro tem trava automática** — nos outros dois vale declarar o ref antes de rodar, e **não** inventar guarda que não segura. (2) **Trava `_test` → trava por REF** (`CLAUDE.md` → Database & Migrations): no Supabase o host vem do **project ref opaco**, não do nome do projeto — "Jilson Santana Website" atende em `db.gaxmbnhwltljlkukdwba.supabase.co` —, então a checagem antiga **nunca dispararia**, que é o mesmo defeito do `lint` apagado no Bloco 0. O REF é único globalmente: a trava passa a verificar **identidade**, não semelhança de texto. `[PENDENTE]` do tier grátis **resolvido** (o Free permite 2 projetos ativos). (3) **Decisão registrada, sem gatilho (arquitetural): admin + member de teste são PERMANENTES em todos os ambientes**, e o member em produção recebe acesso por **assinatura real com cupom de 100%** — nunca bypass no `temAcessoAtivo()`, flag de teste ou exceção por e-mail; um segundo caminho "só para teste" é porta sem revisão que sobrevive ao motivo que a criou. Efeito colateral desejável: o mesmo mecanismo serve cortesia e promoções. (4) **Backlog P2 nº (5) FECHADO por verificação — a suspeita era falsa**: `_prisma_migrations` **já tem** RLS (`pg_class.relrowsecurity = true` nas 11 tabelas de `public`), nenhuma migration necessária; **restam 3** no backlog. (5) **Custo do upgrade Supabase Pro corrigido: US$ 35/mês, não 25** — o plano é por **organização** e a nossa tem dois projetos (US$ 25 + US$ 10). Decisão do operador: manter os dois na mesma org, porque no Free o projeto **pausa após 7 dias** e banco de teste é inativo por definição — despausar toda semana custa mais que US$ 10. Teto de infra ~US$ 30 → **~US$ 35**. (6) **Medido, não inferido:** `npx prisma` **da raiz** do monorepo não acha o schema, e **nem a chave `prisma.schema` conserta** (o CLI lê o `package.json` mais próximo do CWD; declarada na raiz, ela acha o schema mas morre em `Environment variable not found: DIRECT_URL`, porque o `.env` mora em `server/`). A chave foi adicionada ao `server/package.json` por ser declaração explícita, **não** por consertar o comando da raiz — registrado pra ninguém tentar de novo. Consequência útil: todo comando de migration passa obrigatoriamente por `server/`, onde o `.env` escolhe o banco.*
+*Atualizado: Ago 2026 (9) — **CORREÇÃO da entrada (8): o backlog P2 nº (5) foi fechado ERRADO ali e está reaberto e refechado aqui, agora por migration versionada.** A entrada (8) afirma *"nº (5) FECHADO por verificação — a suspeita era falsa"*; **isso está incorreto** e fica registrado como entrada nova, sem editar a anterior (regra de rotação: histórico não se edita). **O dado que derrubou:** o fechamento anterior verificou **só produção**, onde `_prisma_migrations` já tinha `relrowsecurity = true`. Depois disso o banco de teste `mvaobzypsiuhqzipcelw` recebeu as **MESMAS 3 migrations** por `prisma migrate deploy` e a mesma tabela nasceu **`false`** — as 10 de domínio vieram `true` nos dois. Logo o RLS de produção **não vinha do versionamento**; vinha de fora (causa provável: o *Automatic RLS* do projeto de produção, ligado — no de teste foi desligado de propósito; a evidência não distingue "humano clicou" de "ajuste de projeto", e não precisa: o que ela prova é que **não veio das migrations**). **A suspeita original do `security-vulnerability-reviewer` era VERDADEIRA.** **Conserto:** migration `20260824214838_rls_prisma_migrations_table` (`ALTER TABLE "public"."_prisma_migrations" ENABLE ROW LEVEL SECURITY;`), aplicada **nos dois bancos por `migrate deploy`** — nunca painel, nunca MCP —, porque o alvo é estado **reproduzível em qualquer banco futuro**, não estado correto num banco. Idempotência confirmada **antes** de escrever (três `ALTER` seguidos numa tabela de sondagem descartável, sem erro), o que a faz rodar limpa em produção. Estado final idêntico nos dois: 11 tabelas, **0 sem RLS**, 4 migrations, 0 rollbacks, advisors só INFO; produção reconferida pós-aplicação com **2 users e 39 sessions**, iguais ao pré-voo. **LIÇÃO, promovida a convenção no `CLAUDE.md` → Database & Migrations: estado verificado em UM ambiente não prova estado REPRODUZÍVEL** — `get_advisors` responde *"este banco está ok"*, nunca *"o repo produz um banco ok"*. Mesma família de *gate que mente* e de *backup nunca testado é fé*: a coisa só é verdade quando é **reproduzida**, não quando é **observada uma vez**. Corolário de processo, também registrado: **contagem de backlog é resultado, não prova** — "3 pendentes" já esteve certo pelo motivo errado. **Aberto no caminho:** o *Automatic RLS* está **ligado em produção e desligado no teste**, divergência **viva** que não afeta tabela nossa (nossas migrations ligam RLS explicitamente) mas afeta qualquer tabela criada fora delas — recomendação: desligar em produção; é config no fornecedor, decisão do operador.*
