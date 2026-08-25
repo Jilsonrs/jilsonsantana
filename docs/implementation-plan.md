@@ -396,11 +396,19 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       - [x] `server/.env.test` criado (**esqueleto, valores em branco**) + cobertura no
             `.gitignore` — o padrão era só `.env`, que **não** casa com `.env.test`; agora é
             `.env` + `.env.*` + `!.env.example`. Verificado com `git check-ignore`.
-      - [x] `server/.env.test` preenchido pelo operador. ⚠️ **As credenciais coladas nele vazaram
-            para o transcript do agente** (a notificação de mudança de arquivo do IDE despeja o
-            conteúdo no contexto) — **rotacionadas** pela regra `CLAUDE.md` → *Secrets in agent
-            sessions*. **Convenção implícita que isto revela: arquivo de segredo ABERTO no editor
-            entra no contexto do agente.** Não basta não colar a senha no chat.
+      - [x] `server/.env.test` preenchido e **conectando pelo POOLER** (`postgres.<ref>@aws-0-us-east-1.pooler.supabase.com`, 6543/5432), igual a produção. **Não usar o host da aba "Direct" do painel** — ver `CLAUDE.md` → Database & Migrations; foi o que travou esta fatia por horas.
+      - [x] ⚠️ **INCIDENTE DE CREDENCIAL (Ago 2026) — RESOLVIDO.** As `SEED_*` foram **copiadas de
+            `server/.env`** para o `.env.test`, então a senha do admin de teste **era a mesma de
+            produção**: o vazamento não ficou contido no ambiente barato. Ele aconteceu porque o
+            arquivo estava **ABERTO no editor** — a notificação de mudança do IDE despeja o
+            **conteúdo** no contexto do agente, sem ninguém colar nada no chat. **Rotação concluída
+            nos DOIS ambientes** com senhas novas, independentes (conferido por hash: diferentes),
+            sign-in provado em cada usuário e **0 sessões ativas** nos dois bancos. Também
+            rotacionada a senha do Postgres do projeto de teste. As duas convenções que saíram
+            disto estão no `CLAUDE.md` → *Secrets in agent sessions*: **cada ambiente nasce com
+            credencial própria** e **arquivo de segredo aberto no editor entra no contexto do
+            agente**. Ferramenta: `server/src/rotate-credentials.ts` (o `seed.ts` é create-only
+            para senha — não serve para rotacionar).
       - [x] Migrations aplicadas no banco de teste com **`prisma migrate deploy`** (NÃO
             `migrate dev` — o histórico já está definido). **Receita sem dependência nova** (o
             `dotenv/config` do server só lê `.env`, e o Prisma CLI não sobrescreve variável já
@@ -445,10 +453,11 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             reaberto e a migration `20260824214838_rls_prisma_migrations_table` — ver Fase 7.
             Confirmado o que o item já mandava: divergência se corrige **por MIGRATION**, nunca por
             comando avulso no painel, senão não viaja pro git.
-      - [ ] **Rodar o seed** (`npx tsx src/seed.ts`) contra o banco de teste — admin + member. Ainda
-            **não feito**: as credenciais de seed no `.env.test` vazaram para o transcript e estão
-            sendo rotacionadas, então semear agora gravaria senha queimada. Rodar **depois** da
-            rotação, com os valores novos.
+      - [x] **Usuários semeados presentes no banco de teste** — admin + member (2 users, 2 contas
+            `credential`), com as credenciais **já rotacionadas** e sign-in provado. Não foi preciso
+            re-rodar o seed: ele havia rodado antes, e de todo modo `seed.ts` é **create-only para
+            senha** (retorna cedo se o usuário existe), então quem troca credencial é o
+            `rotate-credentials.ts`, não ele.
       - [ ] **(follow-up, decisão do operador) O "Automatic RLS" está LIGADO em produção e DESLIGADO
             no teste — isso é divergência viva, não histórica.** Ela não afeta tabela nossa (toda
             migration nossa liga o RLS explicitamente), mas afeta qualquer tabela criada **fora** das
