@@ -78,9 +78,27 @@ async function main(): Promise<void> {
     console.log(`✓ conexão VERIFICADA — ${envFile} atualizado (ref ${expectedRef}).`);
   } catch (err: unknown) {
     writeFileSync(envFile, original, "utf8");
-    const message = err instanceof Error ? err.message.split("\n")[0] : "erro desconhecido";
     console.error(`✗ a senha gravada NÃO conecta — arquivo RESTAURADO ao estado anterior.`);
-    console.error(`  motivo: ${message}`);
+
+    // A mensagem do Prisma COMEÇA com "\n" e o motivo real fica nas ÚLTIMAS
+    // linhas, depois do code frame. Pegar a linha 0 devolvia string vazia — foi
+    // o que apagou o diagnóstico na primeira tentativa.
+    if (err instanceof Error) {
+      // O código (P1000 = auth recusada, P1001 = servidor inalcançável,
+      // P1002 = timeout) distingue "senha errada" de "rede/endpoint errado".
+      const code = (err as { errorCode?: string; code?: string }).errorCode
+        ?? (err as { code?: string }).code;
+      if (code) console.error(`  código: ${code}`);
+      const lines = err.message
+        .split("\n")
+        .map((line) => line.trim())
+        .filter((line) => line.length > 0)
+        // Redação defensiva: nunca deixar uma URL com credencial no output.
+        .map((line) => line.replace(/postgresql:\/\/[^@\s]*@/g, "postgresql://***@"));
+      for (const line of lines.slice(-4)) console.error(`  ${line}`);
+    } else {
+      console.error("  erro desconhecido (não é Error)");
+    }
     process.exitCode = 1;
   } finally {
     await prisma.$disconnect();
