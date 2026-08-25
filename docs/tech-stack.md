@@ -24,7 +24,9 @@
 
 ## Database
 
-- **Supabase (PostgreSQL)** — DB host + Storage. Free tier now → Pro ($25/mo) when students arrive.
+- **Supabase (PostgreSQL)** — DB host + Storage. Free tier now → Pro when students arrive: **US$ 35/mo**, não 25 — o plano é por **organização** e a org `hdmecfinlnocurhcxrdb` tem **dois** projetos (US$ 25 da org + US$ 10 do 2º projeto). Detalhe e a decisão de manter os dois na mesma org: `implementation-plan.md` → Fase 7.
+- **Dois projetos, papéis distintos:** `gaxmbnhwltljlkukdwba` ("Jilson Santana Website", **us-east-2**) = **produção**, alcançável só pelo Railway · `mvaobzypsiuhqzipcelw` ("Jilson Santana Test", **us-east-1**) = **dev E teste**. Postgres `17.6.1.155` nos dois (canal `ga`).
+- **REGIÕES DIFERENTES DE PROPÓSITO — não recriar projeto por causa disso.** A latência extra pro Brasil (~150 ms por query) **não é o gargalo**: o **vídeo** domina o tempo do aluno e vem do **Bunny com PoP local**, e a meta de carregamento é **< 3 s** — 0,15 s é **5%** desse orçamento. Consultas em **paralelo** não somam latência; o que custa é consulta em **cascata**, e isso é **decisão de código, não de região**. *Gatilho de reabertura: reclamação real de lentidão de aluno, **OU** outro motivo que exija recriar o projeto — nesse caso escolher `sa-east-1`.*
 - Accessed **only via Prisma** through `DATABASE_URL`.
 - **RLS convention:** every `public` table has Row Level Security ENABLED (without policies) in the same migration that creates it. Prisma uses a `BYPASSRLS` role; RLS blocks the Supabase Data API (`anon`/`authenticated`). Run `get_advisors(type='security')` after every DDL migration. NOT used: Supabase Auth, JS Client, Realtime, Data API.
 
@@ -71,7 +73,7 @@
 - **Vitest + React Testing Library** — component tests (the majority of coverage)
 - **Vitest + supertest** — **testes de servidor, sem browser** (o único lugar onde mora o risco catastrófico: assinante pagante trancado fora / acesso liberado sem pagar). Nascem **dentro da Fase 4**, colados ao handler de webhook. Lista dos casos: `implementation-plan.md` → Fase 4.
 - **Playwright** — E2E only for what needs a real browser + server (auth redirects, navigation, full-stack flows like webhook → DB → UI). **Permanece na stack:** o E2E de hoje só assere redirect do React Router porque falta o `globalSetup` com banco de teste — não é escolha errada de ferramenta. Alvo: 6–8 testes full-stack, **depois** dos testes de servidor.
-- **Banco de teste = um SEGUNDO projeto Supabase** (não Postgres local em Docker — menos infra pro operador solo), com a trava `_test` obrigatória no setup. Convenção e o porquê da trava: `CLAUDE.md` → Database & Migrations. [PENDENTE DE VERIFICAÇÃO: se o tier grátis permite um 2º projeto.]
+- **Banco de teste = um SEGUNDO projeto Supabase** (não Postgres local em Docker — menos infra pro operador solo). **CRIADO em Ago 2026:** ref `mvaobzypsiuhqzipcelw` ("Jilson Santana Test", us-east-1) — o antigo `[PENDENTE]` sobre o tier grátis está **resolvido** (o Free permite 2 projetos ativos). Serve **dev E teste**; produção fica sozinha, alcançável só pelo Railway. A trava obrigatória do setup compara contra o **project REF**, não contra a substring `_test` — que **nunca dispararia**, porque o host do Supabase é montado do ref opaco e não do nome do projeto. Convenção, código da trava e o porquê: `CLAUDE.md` → Database & Migrations.
 
 ## Deployment & CI
 

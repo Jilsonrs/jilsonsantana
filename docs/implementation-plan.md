@@ -28,6 +28,14 @@
 > esquecer: a dívida de integração da Fase 2 (env vars, migrations em prod, build do Docker com os
 > models novos) **ainda não foi paga** e aparece de uma vez no primeiro merge.
 >
+> **Infra de banco (Ago 2026):** **dois** projetos Supabase na org `hdmecfinlnocurhcxrdb` —
+> `gaxmbnhwltljlkukdwba` (us-east-2) = **produção**, e `mvaobzypsiuhqzipcelw` (us-east-1) =
+> **dev + teste**, criado e ainda **vazio**. Os dois em Postgres `17.6.1.155`. Detalhes em
+> [`build-history.md`](build-history.md) → *Infraestrutura*.
+> **⚠️ ATÉ o `server/.env.test` ser preenchido, o ambiente LOCAL ainda aponta para PRODUÇÃO** —
+> é o pré-requisito de separação de ambientes da Fase 4, e ele é o que impede um `migrate reset`
+> local de acertar o banco que o Railway serve.
+>
 > **Próximo bloqueio:** rate-limit de login — único item que segura o `Done when` do Bloco 0
 > (Fase 3). Toca auth ⇒ dispara o gate obrigatório do context7.
 
@@ -362,6 +370,78 @@ de uma sessão própria antes do launch):**
 `Docs check (context7)`: **obrigatório** nesta fase — Stripe → `/websites/stripe`. Preencher no
 plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
 
+- [ ] **PRÉ-REQUISITO DA FASE — separar o banco de DEV do banco de PRODUÇÃO.**
+      **[FATO, Ago 2026] O ambiente local aponta hoje para o MESMO projeto que o Railway serve.**
+      Evidência: os usuários semeados na Fase 1 (admin + member) e as **39 sessões de
+      desenvolvimento** deles vivem no banco de produção `gaxmbnhwltljlkukdwba`. *As sessões em si
+      são normais — o achado é a **LOCALIZAÇÃO** delas.*
+      **Por que isto vira bloqueio agora e não antes:** a partir desta fase o banco passa a ter o
+      **espelho de `Subscription`**. Um `migrate reset` com o `.env` errado deixa de ser "perdi meu
+      seed" e passa a ser **apagar o estado de acesso de quem paga**.
+      **Resolução:** o projeto **`mvaobzypsiuhqzipcelw`** ("Jilson Santana Test") serve **dev E
+      teste**; produção fica sozinha no `gaxmbnhwltljlkukdwba`, alcançável só pelo Railway.
+      **REGISTRAR (é o ponto que a trava não cobre): existem TRÊS caminhos até o banco — (1) Vitest
+      via `globalSetup`, (2) chamada de MCP, (3) comando digitado à mão — e SÓ O PRIMEIRO tem trava
+      automática** (a checagem do `TEST_DB_REF`, CLAUDE.md → Database & Migrations). MCP recebe o
+      `project_id` como argumento e comando manual lê o `.env` que estiver lá: nos dois, a única
+      proteção é **declarar contra qual ref se está apontando antes de rodar**. Não inventar trava
+      para (2) e (3) — inventar guarda que não segura é o defeito do `lint` que mentia; o que vale
+      aqui é a disciplina explícita.
+      **Preparo do banco de teste — estado em Ago 2026:**
+      - [x] Projeto criado (`mvaobzypsiuhqzipcelw`, us-east-1, Postgres 17.6.1.155). **Data API
+            DESLIGADA** (PostgREST não participa da arquitetura — o acesso é Prisma via
+            `DATABASE_URL`) e **"Automatic RLS" também desligado de propósito**, pra que o RLS entre
+            por **migration versionada** igual em produção: trigger fazendo isso por fora criaria
+            divergência entre teste e produção.
+      - [x] `server/.env.test` criado (**esqueleto, valores em branco**) + cobertura no
+            `.gitignore` — o padrão era só `.env`, que **não** casa com `.env.test`; agora é
+            `.env` + `.env.*` + `!.env.example`. Verificado com `git check-ignore`.
+      - [ ] **PENDENTE (só o operador pode fazer — exige a senha, que nunca passa por transcript de
+            agente):** colar `DATABASE_URL`/`DIRECT_URL` do projeto de teste no `server/.env.test` e
+            conferir que as duas contêm `mvaobzypsiuhqzipcelw`.
+      - [ ] Rodar as 3 migrations existentes com **`prisma migrate deploy`** (NÃO `migrate dev` — o
+            histórico já está definido) e depois o seed. **Receita sem dependência nova** (o
+            `dotenv/config` do server só lê `.env`, e o Prisma CLI não sobrescreve variável já
+            exportada):
+            ```bash
+            cd server
+            set -a && . ./.env.test && set +a     # exporta o ambiente de TESTE
+            npx prisma migrate deploy
+            npx tsx src/seed.ts
+            ```
+            **O `cd server` não é estilo, é obrigatório — MEDIDO em Ago 2026, não inferido:** da
+            raiz do monorepo, `npx prisma <cmd>` falha com *"Could not find Prisma Schema"*.
+            **A correção óbvia NÃO resolve:** declarar `"prisma": {"schema": ...}` no
+            `server/package.json` **não muda nada da raiz**, porque o CLI lê o `package.json` mais
+            próximo do **CWD** — da raiz, esse é o `package.json` da raiz. E declarar no
+            `package.json` **da raiz** resolve o schema mas **para no passo seguinte**:
+            `Environment variable not found: DIRECT_URL`, porque o Prisma carrega `.env` relativo ao
+            CWD e o nosso `.env` mora em `server/`. *(A chave **foi** adicionada ao
+            `server/package.json` — ela deixa o caminho do schema **explícito**, o que vale por si;
+            só não é o conserto do comando da raiz, e este parágrafo existe pra ninguém tentar de
+            novo achando que é.)*
+            **Consequência que vale manter:** rodar Prisma da raiz **não funciona**, e isso é um
+            freio acidental útil — o caminho (3), "comando digitado à mão", é o único sem trava
+            automática, e hoje ele **obriga** a passar por `server/`, onde o `.env` escolhe o banco.
+            Se um dia virar script de conveniência, o script tem que fixar o ambiente
+            (`--env-file=.env.test`), nunca herdar o que estiver no `.env`.
+      - [ ] Verificar paridade com produção: **11 tabelas** em `public`, **3 migrations** aplicadas.
+            **Sobre RLS:** com o "Automatic RLS" desligado no projeto de teste, as tabelas devem vir
+            do jeito que as **nossas migrations** mandam. Se faltar RLS em alguma, **corrigir por
+            MIGRATION**, nunca por comando avulso no painel — comando avulso não viaja pro git e
+            reabre a divergência que o desligamento evitou.
+- [ ] **DECISÃO REGISTRADA — usuários semeados (admin + member de teste) são PERMANENTES e existem
+      em TODOS os ambientes, produção inclusive.** O **admin é obrigatório** (`disableSignUp: true`
+      — não há outro caminho para criar o primeiro usuário). O **member de teste em produção recebe
+      acesso via assinatura REAL na Stripe com cupom de 100%** — **NUNCA** via bypass no
+      `temAcessoAtivo()`, flag de "usuário de teste" no `User`, ou exceção por e-mail.
+      **Razão:** o gate tem **fonte única e caminho único**. Um segundo caminho "só para teste" é
+      **porta sem revisão que sobrevive ao motivo que a criou** — e é a única classe de bug que
+      libera acesso sem pagamento sem nenhum erro aparecer.
+      **Efeito colateral desejável:** o mesmo mecanismo (cupom de 100% na Stripe) já serve para
+      **assinaturas cortesia** e para **promoções** (Black Friday, founding member) — não é
+      concessão, é o caminho normal.
+      *Sem gatilho de reabertura — arquitetural.*
 - [ ] **Setup no dashboard (sem código):** Payments Plano Padrão (conta MEI/CNPJ, payout Banco do Brasil) + **Stripe Billing ativado**. Produto **"Assinatura"** com **2 `Price`**: Mensal R$99,90 (sem fidelidade) / Anual ~R$995 (~17% off). Sem free trial, sem conteúdo grátis. **Sem Customer Portal.**
 - [ ] **Configurar Smart Retries + automações de recuperação** conforme a política de produto abaixo. Isto é **configuração, não código**.
 - [ ] **Política de dunning (decisão NOSSA, executada pela Stripe):** falha na renovação → retries automáticos → corte. **Acesso MANTIDO durante toda a janela de retry** (`past_due`) — churn involuntário é a maior alavanca (strategy.md §6). Corte no fim da janela → `unpaid`/`canceled` + `session.deleteMany`. Ajustar a janela é mudança de configuração. *Confirmar os intervalos exatos que a Stripe expõe na abertura da fase, via context7.*
@@ -402,8 +482,8 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       **Billing bypass** — (13) force-sync **sem auth → 401**; (14) force-sync como member comum →
       403.
       **Rate limit** — (15) o limite do Bloco 0 (Fase 3) **liga e bloqueia** de verdade.
-      *Requer o banco de teste (2º projeto Supabase + trava `_test`) — CLAUDE.md → Database &
-      Migrations.*
+      *Requer o banco de teste (projeto `mvaobzypsiuhqzipcelw` + trava por **REF** no `globalSetup`)
+      — CLAUDE.md → Database & Migrations.*
 - [ ] `requireActiveMembership` middleware (wraps `temAcessoAtivo`) gating content + video URLs
 - [ ] On access loss: `session.deleteMany({ userId })` to force logout
 - [ ] Client: pricing page + **checkout embutido (Payment Element)** + **tela de gestão de assinatura DENTRO da escola** (trocar cartão, ver próxima cobrança, mudar mensal↔anual, cancelar) — substitui o Customer Portal, chamando a Subscriptions API. *Mostrar a proração da Stripe **previsualizada** antes de confirmar a troca de plano.*
@@ -412,7 +492,8 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
 - [ ] **E2E full-stack habilitado (6–8 testes) — DEPOIS dos testes de servidor.** **Correção de
       diagnóstico (Ago 2026):** o E2E atual só assere redirect do React Router **porque falta o
       `globalSetup` com banco de teste** — não porque Playwright seja a ferramenta errada;
-      **Playwright fica na stack**. Primeiro o `globalSetup` (banco `_test`, seed determinístico),
+      **Playwright fica na stack**. Primeiro o `globalSetup` (banco de teste travado por **REF**,
+      seed determinístico),
       depois o escopo alvo: login válido / senha errada; rota protegida sem auth; rota admin sem
       auth; gate de vídeo membro **vs** não-membro (Fase 3); checkout com cartão de teste;
       cancelamento. *O `e2e-test-writer` continua **ADIADO** — CLAUDE.md → Testing.*
@@ -467,8 +548,9 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       `admin-alerts` do pg-boss, cujo defeito era a detecção depender da própria coisa que deveria
       detectar (ver Fase 4 e CLAUDE.md → Background Jobs).
 - [ ] **Backlog P2 do `security-vulnerability-reviewer` (7 no relatório; os nº 1, 2 e 6 foram
-      movidos → **4 pendentes aqui**. Nenhum bloqueia merge; todos antes do primeiro aluno
-      pagante.)** A numeração original do relatório é preservada para o mapeamento não quebrar:
+      movidos e o nº 5 foi **verificado e fechado** → **3 pendentes aqui**. Nenhum bloqueia merge;
+      todos antes do primeiro aluno pagante.)** A numeração original do relatório é preservada para
+      o mapeamento não quebrar:
       (1) **→ MOVIDO para a Fase 4** (testes de servidor, supertest). Era "sem teste de fronteira
       no servidor": não há suíte no workspace `server`, e o E2E só assere redirect do React Router,
       que é guarda cosmético do client. A matriz 401/403/200 (`/api/me`, `/api/admin/ping`) e o
@@ -485,9 +567,20 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       `requireAdmin`, custo é de auditabilidade: "essa rota é admin?" deixa de ser respondível pelo
       path. Mover ou registrar a exceção como decisão do operador — não deixar leitura em
       `/admin/courses` e escrita em `/courses` no mesmo router.
-      (5) **`_prisma_migrations` provavelmente sem RLS** — criada pelo Prisma fora das migrations
-      versionadas. As 10 tabelas de domínio estão cobertas. Confirmar com
-      `get_advisors(type='security')`; se aparecer, migration só com o `ENABLE ROW LEVEL SECURITY`.
+      (5) **✅ FECHADO por verificação (Ago 2026) — a suspeita era FALSA: `_prisma_migrations` JÁ
+      TEM RLS.** A hipótese do relatório era razoável (a tabela é criada pelo Prisma **fora** das
+      migrations versionadas, então nenhum `ENABLE ROW LEVEL SECURITY` nosso passa por ela), mas o
+      banco diz o contrário. Evidência direta, não inferida de advisor: consulta a `pg_class` no
+      projeto de produção `gaxmbnhwltljlkukdwba` devolve `relrowsecurity = true` para **as 11
+      tabelas de `public`** — as 10 de domínio **mais** `_prisma_migrations`. `get_advisors
+      (type='security')` também só retorna INFO. **Nenhuma migration é necessária.** *(Causa
+      provável, NÃO verificada: o "Automatic RLS" do Supabase, que liga RLS em tabela nova de
+      `public` sem ninguém pedir — foi **desligado de propósito** na criação do projeto de teste,
+      pra que o RLS entre por migration versionada e teste não divirja de produção. Se for isso, o
+      projeto de teste **não** vai reproduzir este comportamento, e a tabela lá vai nascer sem RLS
+      — o que **não** é problema: é banco de teste, sem Data API e sem dado real. Não confiar nesse
+      default é justamente por que a convenção do `CLAUDE.md` exige o `ENABLE` explícito nas nossas
+      migrations.)* **Não contar neste backlog.**
       (6) **✅ FECHADO no Bloco 0 da Fase 3 (Ago 2026)** — pela via da **remoção** do script, não da
       renomeação; a consequência ("sem `any`" sem enforcement automático) ficou registrada como
       checkbox próprio lá. Detalhes nos itens do Bloco 0 — **não duplicar aqui**. Não contar neste
@@ -501,7 +594,18 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
 - [ ] **Cancellation-reason capture wired.** The offboarding screen (P4) collects the reason on exit — cheap data, gold for churn. Connects to STRATEGY.md churn KPIs (winback, MRR-perdido). (Storage = a small `CancellationReason` row or a field on `Subscription`; reason capture ships at launch, the "pausar 1 mês" path stays fast-follow.)
 - [ ] **Upgrade Supabase Free → Pro ANTES do primeiro aluno pagante** (backups diários; o Free
       não garante backup automático — confirmar a política vigente no dia). Dado real de aluno
-      nunca fica em banco sem backup. Custo já previsto (~$25/mo, dentro do teto de infra).
+      nunca fica em banco sem backup.
+      **Custo REVISADO (Ago 2026), depois que o 2º projeto passou a existir: US$ 35/mês, não 25.**
+      O plano Supabase é por **ORGANIZAÇÃO**, não por projeto: ao virar Pro, os **dois** projetos da
+      org `hdmecfinlnocurhcxrdb` viram Pro juntos. Conta = **US$ 25 (org) + US$ 10 (2º projeto) =
+      US$ 35/mês**. Cotas (MAU, egress, storage) são **partilhadas pela org**, e o consumo do banco
+      de teste é desprezível — o que ele custa é **compute**, daí os US$ 10 fixos.
+      **DECISÃO DO OPERADOR: manter os dois projetos na MESMA org e pagar os US$ 10**, em vez de
+      mover o teste pra uma org Free separada. Razão: no Free o projeto **pausa após 7 dias de
+      inatividade**, e banco de teste é inativo **por definição** — despausar toda semana é atrito
+      recorrente, e em operador solo atrito recorrente custa mais que US$ 10.
+      **Teto de infra sobe de ~US$ 30 para ~US$ 35/mês.** *Sem gatilho de reabertura — decisão de
+      conforto operacional, deliberada.*
 - [ ] **🚀 GO-LIVE — desligar o gate "Em breve" (ÚLTIMA AÇÃO, sem deploy de código).** O site ao vivo está atrás de um gate pré-lançamento (público vê "Em breve"; operador acessa via `/__preview?token=<PREVIEW_TOKEN>`). Para abrir ao público: no Railway (projeto `jilsonsantana` → env `production` → service `jilsonsantana`), setar **`COMING_SOON=false`** (ou apagar a variável) → o serviço reinicia → público passa a ver o app real. Nenhum merge/código necessário. *(Mecanismo em [server/src/index.ts](../server/src/index.ts) + [client/public/coming-soon.html](../client/public/coming-soon.html); detalhe operacional na memória `coming-soon-gate`.)* **Fazer só quando o "Done when" abaixo estiver verde.**
 ### Continuidade do operador (pré-primeiro aluno pagante)
 
@@ -526,10 +630,11 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
 - [ ] **Backup: política CONFIRMADA + RESTORE DE TESTE executado uma vez.** A confirmação da
       política do tier vive no checkbox *"Upgrade Supabase Free → Pro"* acima — não duplicar aqui
       [PENDENTE DE VERIFICAÇÃO]. **O que é novo é o restore:** executar um restore de teste **uma
-      vez**, contra o **2º projeto Supabase** (o de teste), e registrar que funcionou. Porquê:
-      **backup nunca testado é fé, não é plano.** E o cenário realista não é invasão — é
-      **migration ruim ou reset apontado pro lugar errado** (a trava `_test` do CLAUDE.md nasceu
-      desse mesmo risco). *Depende de o 2º projeto existir — ver o [PENDENTE] do tier grátis.*
+      vez**, contra o **2º projeto Supabase** (`mvaobzypsiuhqzipcelw`, o de teste), e registrar que
+      funcionou. Porquê: **backup nunca testado é fé, não é plano.** E o cenário realista não é
+      invasão — é **migration ruim ou reset apontado pro lugar errado** (a trava por REF do
+      CLAUDE.md nasceu desse mesmo risco). *A dependência "o 2º projeto precisa existir" está
+      **satisfeita** desde Ago 2026 — o [PENDENTE] do tier grátis foi resolvido.*
 - [ ] **LGPD mínimo: política de privacidade publicada + caminho de exclusão de conta.** É
       **pendência de lançamento, não item de engenharia** — não vira bloco de código. O checkbox
       amplo de LGPD no topo desta fase cobre o resto (termos, consentimento, export); aqui fica só
@@ -566,6 +671,6 @@ MVP = **Phases 0 → 7** (incl. trilhas curadas na Phase 2, certificados na Phas
 
 
 ---
-*Atualizado: Ago 2026 (5) — **fechamento da auditoria: continuidade do operador.** O raciocínio completo (e o que ficou deliberadamente de fora) está no changelog do `CLAUDE.md`, entrada **Ago 2026 (7)** — **não duplicado aqui**. O que mudou neste plano: (1) **Bloco 0 (Fase 3)** ganha `npm audit --audit-level=high` como step **NÃO-BLOQUEANTE**, com a degradação pra conferência mensal já decidida — não entra no "Done when" do bloco. (2) **Fase 3 (vídeo)** ganha o checkbox de **TTL curto da signed URL** (minutos, por requisição, sem cache, sem log) com a razão de negócio registrada: o gate protege a *página*, mas a URL assinada é a *fechadura real* do arquivo no Bunny — URL de vida longa vira link em grupo e a receita vaza **sem nenhum erro aparecer**. **Fica marcado como CONTRADIÇÃO ABERTA** contra a janela elástica ~6–12h (mesma fase, + CLAUDE.md → Video + tech-stack.md → Video): os dois não coexistem sem renovação de token no player, que é decisão de código — resolver **antes** de escrever o player e alinhar os três lugares no mesmo commit. (3) **Fase 7** ganha a seção **"Continuidade do operador (pré-primeiro aluno pagante)"**: 2FA por app (nunca SMS) nos fornecedores + e-mail do admin, códigos de recuperação fora do Mac, senha única por serviço, **restore de teste** contra o 2º projeto Supabase (a *política* de backup continua no checkbox de upgrade Free→Pro, por referência), e LGPD mínimo como pendência de lançamento. Tudo antes do GO-LIVE.*
 *Atualizado: Ago 2026 (6) — **CONTRADIÇÃO ABERTA da entrada (5) RESOLVIDA pelo operador: a janela elástica ~6–12h sem IP-lock fica**, e **não** se constrói renovação de token durante a reprodução. O checkbox de "TTL curto" e o bloco de contradição foram **apagados** da Fase 3; a razão da recusa passou a viver **junto do checkbox de signed URL** que já existia (TTL curto cobre link vazando passivamente, não o vetor real — baixar e re-subir — que atravessa qualquer janela; renovação de token é código que falha em silêncio e é depurado por um operador sozinho; a razão de UX original segue válida). `CLAUDE.md` → Video e `tech-stack.md` → Video **não** foram alterados — continuam corretos, e a razão não é duplicada neles. **No lugar entrou:** restrição de **domínio/referrer no Bunny** (`[PENDENTE DE VERIFICAÇÃO]` de existência e nome), que ataca o mesmo risco pelo lado certo — configuração no fornecedor, sem tocar no playback e sem código nosso — mais o registro de que **marca d'água por aluno** é a única defesa contra re-upload e fica para quando houver receita.*
 *Atualizado: Ago 2026 (7) — **Bloco 0 (Fase 3) executado PARCIALMENTE: 3 dos 4 checkboxes fechados, o bloco NÃO.** O raciocínio completo está no changelog do `CLAUDE.md`, entrada **Ago 2026 (8)** — **não duplicado aqui**. O que mudou neste plano: (1) `[x]` em **CI roda teste** (script `test` na raiz + step `Test client` **depois do build do core**; gate provado por **mutação** — apagar `Role.ADMIN` de `AdminRoute.tsx` reprova o CI, e antes passava verde) e em **`lint` para de mentir** (resolvido por uma **terceira** saída que o item não previa: **apagar**, porque `tsc --noEmit` já se chama `typecheck` neste repo e renomear colidiria — a mentira era a duplicata, não o nome). (2) **Checkbox novo registrando o custo**: "sem `any`" fica **sem enforcement automático** até ESLint entrar — com a observação de que o `lint` anterior **também não cobria** isso (`tsc --noEmit` aceita `any`), então a remoção não perdeu cobertura, só parou de simular. (3) `[x]` no **`npm audit`**, com o resultado medido antes do push (`high:5, critical:1`, transitivo do `react-router`) e o comportamento esperado registrado: step falho-porém-tolerado, job verde. (4) **Checkbox novo do operador**: revisar **UMA vez** o advisory `critical` e registrar a conclusão — ruído transitivo justifica o step não-bloqueante, mas `critical` não é ruído por padrão, e sem este item a tolerância viraria permanente sem ninguém ter lido. (5) **"Done when" marcado como PARCIAL**: falta o **rate-limit de login**, que é bloco próprio por tocar auth (gate obrigatório de context7) e por ter o "passo 1 = verificar a borda da Railway" preservado. (6) Backlog P2, item **(6) fechado** por referência. Convenção nova correspondente no `CLAUDE.md`: **"Definição de pronto por fatia"** (teto-não-piso; vale daqui pra frente; fronteira transversal é fatia própria sem teste de componente).*
+*Atualizado: Ago 2026 (8) — **separação de ambientes de banco vira PRÉ-REQUISITO da Fase 4, e a trava do banco de teste é CORRIGIDA porque não funcionava.** (1) **[FATO] o ambiente local aponta para o mesmo projeto que o Railway serve** — os usuários semeados na Fase 1 e as 39 sessões de desenvolvimento deles vivem em produção; *as sessões são normais, o achado é a **localização** delas*. Vira bloqueio agora porque esta fase traz o espelho de `Subscription`: um `migrate reset` com o `.env` errado deixa de ser "perdi meu seed" e passa a apagar o estado de acesso de quem paga. Resolução: `mvaobzypsiuhqzipcelw` serve **dev E teste**. Registrado junto o que a trava **não** cobre: existem **três** caminhos até o banco (Vitest, MCP, comando manual) e **só o primeiro tem trava automática** — nos outros dois vale declarar o ref antes de rodar, e **não** inventar guarda que não segura. (2) **Trava `_test` → trava por REF** (`CLAUDE.md` → Database & Migrations): no Supabase o host vem do **project ref opaco**, não do nome do projeto — "Jilson Santana Website" atende em `db.gaxmbnhwltljlkukdwba.supabase.co` —, então a checagem antiga **nunca dispararia**, que é o mesmo defeito do `lint` apagado no Bloco 0. O REF é único globalmente: a trava passa a verificar **identidade**, não semelhança de texto. `[PENDENTE]` do tier grátis **resolvido** (o Free permite 2 projetos ativos). (3) **Decisão registrada, sem gatilho (arquitetural): admin + member de teste são PERMANENTES em todos os ambientes**, e o member em produção recebe acesso por **assinatura real com cupom de 100%** — nunca bypass no `temAcessoAtivo()`, flag de teste ou exceção por e-mail; um segundo caminho "só para teste" é porta sem revisão que sobrevive ao motivo que a criou. Efeito colateral desejável: o mesmo mecanismo serve cortesia e promoções. (4) **Backlog P2 nº (5) FECHADO por verificação — a suspeita era falsa**: `_prisma_migrations` **já tem** RLS (`pg_class.relrowsecurity = true` nas 11 tabelas de `public`), nenhuma migration necessária; **restam 3** no backlog. (5) **Custo do upgrade Supabase Pro corrigido: US$ 35/mês, não 25** — o plano é por **organização** e a nossa tem dois projetos (US$ 25 + US$ 10). Decisão do operador: manter os dois na mesma org, porque no Free o projeto **pausa após 7 dias** e banco de teste é inativo por definição — despausar toda semana custa mais que US$ 10. Teto de infra ~US$ 30 → **~US$ 35**. (6) **Medido, não inferido:** `npx prisma` **da raiz** do monorepo não acha o schema, e **nem a chave `prisma.schema` conserta** (o CLI lê o `package.json` mais próximo do CWD; declarada na raiz, ela acha o schema mas morre em `Environment variable not found: DIRECT_URL`, porque o `.env` mora em `server/`). A chave foi adicionada ao `server/package.json` por ser declaração explícita, **não** por consertar o comando da raiz — registrado pra ninguém tentar de novo. Consequência útil: todo comando de migration passa obrigatoriamente por `server/`, onde o `.env` escolhe o banco.*

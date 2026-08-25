@@ -1,6 +1,10 @@
 node_modules/
 dist/
+# `.env` sozinho NÃO cobre `.env.test`/`.env.local` — o padrão precisa do glob.
+# `.env.example` é versionado de propósito (é o contrato de variáveis), daí a negação.
 .env
+.env.*
+!.env.example
 *.log
 
 # Vite
