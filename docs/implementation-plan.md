@@ -94,7 +94,7 @@ once and reused in N courses**.
       already exists and may cover this without any schema change). **Do not add a many-to-many
       until (b) is proven insufficient.**
 
-**Course-page fields + Metodologia 3 Camadas (mapped from competitor analysis Jun 2026 — see CLAUDE.md → Course page fields):**
+**Course-page fields + Metodologia 3 Camadas** — spec de produto (catálogo de campos, textos e ícones globais das camadas) em **`courses.md` §2.2–2.3**; invariantes de build em **`CLAUDE.md` → Página de curso e selo 3 Camadas**:
 - [x] `Course` fields: `subtitle?`, `description?`, `level?` (`INICIANTE|INTERMEDIARIO|AVANCADO`, `as const` in `core/`), `learnTags[]`, `requirements[]`, `personas[]`, `highlights[]` (`{icon,title,text}`), `faq[]?` (`{pergunta,resposta}` — optional per-course FAQ, renders only if filled), `thumbnailUrl?` (catalog image), `introVideoId?` (detail-page presentation video), `displayOrder`, `status` (`DRAFT|PUBLISHED|ARCHIVED`)
 - [x] `Module`: `layer?` (`UNIVERSAL|MODERNO|IA`, optional), `displayOrder`, `status` ; `Lesson`: `displayOrder`, `status`
 - [x] **3-camadas as `Course.camadas[]`** (array, NOT boolean — a course may have 1, 2 or 3 layers) + `camadaOverride?` (jsonb, per-course text exception) ; migration (+ RLS on new tables)

@@ -248,7 +248,60 @@ as camadas viram um **selo na página de curso** com regras próprias:
   não a economia de bastidor. O "precisa do Excel 365 pra praticar" o Jilson **fala na aula**, não é texto.
 - **Textos + ícones globais** (escritos 1 vez): `stack-2` Fundamentos sólidos · `bolt` Recursos modernos ·
   `sparkles` (azul) Com IA do seu lado. Override por curso (`camadaOverride`) é exceção (ex. N8N).
-- Detalhe de build em **CLAUDE.md → Metodologia 3 Camadas** e na cópia da landing em **content.md §15**.
+- Invariantes de build (o que quebra código se ignorado) em **CLAUDE.md → Página de curso e selo 3
+  Camadas**; a cópia da landing em **content.md §15**. **Os textos globais são os de §2.2 abaixo.**
+
+### 2.2 Textos e ícones globais do selo `[FATO, aprovados Jun 2026]`
+
+Escritos **UMA vez**, vivem em `core/src/constants/` e valem para todo curso. Por curso o operador
+só **escolhe quais camadas** aparecem — nunca reescreve o texto.
+
+| Enum | Ícone | Nome (o aluno vê) | Blurb |
+|---|---|---|---|
+| `UNIVERSAL` | `stack-2` | **Fundamentos sólidos** | "A base que funciona em qualquer versão — você aplica com o que já tem." |
+| `MODERNO` | `bolt` | **Recursos modernos** | "Os recursos mais atuais que aceleram seu trabalho e poucos dominam." |
+| `IA` | `sparkles` **(azul `--primary` #238FE8)** | **Com IA do seu lado** | "A IA como copiloto pra gerar lógica, destravar erros e ganhar tempo." |
+
+- **Ícones:** Lucide, traço fino, monocromáticos (herdam `currentColor`). **Só a camada IA recebe o
+  azul** — é o "brilho do JilsonAI". `MODERNO` = `bolt` é *energia/velocidade*, não hype: **nada de
+  foguete ou varinha.**
+- `Course.camadaOverride?` (jsonb) sobrescreve o texto de uma camada num curso específico cuja
+  história o texto global não serve (ex.: N8N). **Exceção, não rotina:** se você sobrescreve em
+  *todo* curso, o texto global está errado — conserte o global.
+- **Não construir no lançamento:** agrupar as seções do accordion por camada, e o filtro por camada
+  ("só o que roda no meu Excel 2016") — os dois são read-side pós-lançamento. **Lançamento = o selo.**
+
+### 2.3 Campos da página de curso (spec de produto) `[FATO — mapeado de análise de concorrentes]`
+
+A página é **vitrine** montada de **campos estruturados**, nunca de copy escrita curso a curso (a
+trava e o porquê estão no `CLAUDE.md`). Os campos se dividem em **derivados** (calculados, nunca
+digitados) e **manuais**. Manter os manuais poucos é o que sustenta o operador solo.
+
+`Course` carrega:
+- `title` · `subtitle?` (uma frase enquadrada em **resultado**) · `description?` (longa) ·
+  `level?` (`INICIANTE|INTERMEDIARIO|AVANCADO`).
+- `learnTags[]` — "o que você vai aprender", renderizado como **pills clicáveis**.
+- `requirements[]` — pré-requisitos **mostrados abertamente.** Vantagem competitiva: os concorrentes
+  escondem; **numa assinatura, mostrar não custa venda e corta reembolso e suporte.**
+- `personas[]` — "pra quem é".
+- `faq[]?` de `{ pergunta, resposta }` — **por curso, OPCIONAL.** Renderiza só se preenchido, e a
+  maioria dos cursos deixa vazio. A landing já tem o FAQ global (nível assinatura: fidelidade,
+  certificado, JilsonAI); o FAQ por curso é só para dúvida de conteúdo — e **o JilsonAI é o FAQ
+  vivo** (pergunta específica do curso vai pra ele, no contexto daquele curso). Preencher 2–3
+  entradas **só onde existir dúvida real recorrente**; escrever um FAQ completo por curso é burnout,
+  porque o catálogo é largo. Mesmo padrão de `camadas`/`highlights`: opcional, preenchido por
+  exceção, a IA cobre o caso geral.
+- `highlights[]` de `{ icon, title, text }` — "diferenciais do curso" como **cards com ícone**, 3–4
+  por curso. Ícones de um conjunto **fixo** do Lucide (arte sob medida por curso = burnout).
+- `thumbnailUrl?` — imagem do curso na **lista/catálogo**. `introVideoId?` — vídeo de apresentação na
+  página de detalhe (Bunny). **Os dois são opcionais** — não forçar thumbnail e intro sob medida por
+  curso no lançamento. ⚠️ **A trava de acesso do intro video** (toca para não-membro, **não** passa
+  por `temAcessoAtivo()`) mora no `CLAUDE.md` → Access Architecture.
+- `displayOrder` — ordenação **manual**, não ranking automático por popularidade (isso é read-side
+  pós-lançamento). `status` — `DRAFT|PUBLISHED|ARCHIVED`.
+
+**Derivados, nunca coluna:** carga horária e número de aulas (Σ das aulas), o agrupamento por
+camada (vem das camadas marcadas), a metadata strip.
 
 ---
 
