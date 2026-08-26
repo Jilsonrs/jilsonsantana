@@ -67,6 +67,8 @@
 ## Certificates
 
 - **Server-side PDF** generation on trilha/course completion (100%) — **MVP (Fase 6.5)**, "a escola nasce completa". Certificate carries the trilha name + `skillsCovered` (competencies), valuable for students targeting employers.
+- **Biblioteca de geração NÃO escolhida** — é dependência de runtime nova, logo é **decisão de plano** (`CLAUDE.md` → Working Method: nada de `npm install` no meio do bloco). Decidir na abertura da Fase 6.5, não antes.
+- **A URL do certificado usa `publicId` (cuid), nunca a PK sequencial** — `/certificado/:publicId`. Convenção e o porquê: `CLAUDE.md` → Database & Migrations.
 
 ## Testing
 
