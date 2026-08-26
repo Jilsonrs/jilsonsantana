@@ -11,6 +11,30 @@ jobs:
     name: Typecheck, test & build
     runs-on: ubuntu-latest
 
+    # Postgres efêmero, criado e destruído a cada run. Substituiu o projeto
+    # Supabase de teste em Ago 2026 (CLAUDE.md → Database & Migrations): é mais
+    # rápido (sem rede), é grátis, e ELIMINOU os secrets TEST_DATABASE_URL /
+    # TEST_DIRECT_URL do repositório — connection string de nuvem guardada em
+    # secret é superfície; `localhost` não é segredo nenhum.
+    # A major (17) acompanha produção de propósito — ver a nota no plano sobre
+    # divergência de runtime.
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: jilsonsantana_test
+        ports:
+          - 5432:5432
+        # Sem o health check o step de teste corre antes de o banco aceitar
+        # conexão, e falha com "can't reach database" que parece bug do código.
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - uses: actions/checkout@v4
 
@@ -48,15 +72,15 @@ jobs:
 
       # A suíte de servidor é FRONTEIRA (gate de acesso, webhook, auth): não tem
       # tela, então precisa de banco real. O .env.test não é versionado, então é
-      # montado aqui. Só DUAS coisas são secret de repositório — as connection
-      # strings; o resto é EFÊMERO e gerado no run, porque o globalSetup dá
-      # `migrate reset` no banco antes de cada execução: guardar essas senhas em
-      # lugar nenhum é menos superfície para vazar.
+      # montado aqui — e agora SEM NENHUM SECRET de repositório: o banco é o
+      # service container acima, em localhost, e todo segredo é EFÊMERO, gerado
+      # no run. O globalSetup dá `migrate reset` antes de cada execução, então
+      # nada aqui precisa sobreviver ao job; guardar em lugar nenhum é menos
+      # superfície para vazar.
       #
-      # Se os secrets não existirem, DATABASE_URL sai vazia e a TRAVA do
-      # globalSetup aborta com a causa dita. Isso é DE PROPÓSITO: pular a suíte
-      # em silêncio seria um gate que mente, que é o defeito que o Bloco 0 da
-      # Fase 3 existiu para remover.
+      # A TRAVA do globalSetup exige host local — este `localhost` a satisfaz
+      # pelo mesmo motivo que a máquina do operador: um banco em localhost não
+      # pode ser o banco que o Railway serve.
       - name: Prepare server test env
         run: |
           umask 077
@@ -66,10 +90,10 @@ jobs:
           CLIENT_URL=http://localhost:5173
           SEED_ADMIN_EMAIL=admin@ci.local
           SEED_MEMBER_EMAIL=member@ci.local
+          DATABASE_URL=postgresql://postgres:postgres@localhost:5432/jilsonsantana_test
+          DIRECT_URL=postgresql://postgres:postgres@localhost:5432/jilsonsantana_test
           STATIC
           {
-            echo "DATABASE_URL=${{ secrets.TEST_DATABASE_URL }}"
-            echo "DIRECT_URL=${{ secrets.TEST_DIRECT_URL }}"
             echo "BETTER_AUTH_SECRET=$(openssl rand -base64 32)"
             echo "SEED_ADMIN_PASSWORD=$(openssl rand -base64 24)"
             echo "SEED_MEMBER_PASSWORD=$(openssl rand -base64 24)"

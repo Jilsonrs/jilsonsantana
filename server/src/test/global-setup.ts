@@ -4,7 +4,6 @@ import {
   assertTestDatabase,
   childEnv,
   SERVER_ROOT,
-  TEST_DB_REF,
 } from "./test-env.js";
 
 // globalSetup do Vitest — roda UMA vez, antes de qualquer arquivo de teste.
@@ -30,7 +29,11 @@ export default function setup(): void {
   //    for a do banco de teste, isto lança e NADA abaixo executa.
   loadTestEnv();
   assertTestDatabase();
-  process.stdout.write(`[test-setup] trava ok — banco de teste ${TEST_DB_REF}\n`);
+  // O host vem da URL já validada — logar o hostname (nunca a URL, que carrega
+  // usuário e senha) diz em UMA linha contra o que a suíte vai rodar.
+  process.stdout.write(
+    `[test-setup] trava ok — banco local em ${new URL(process.env.DATABASE_URL!).host}\n`,
+  );
 
   // 2. Reset. `--skip-seed` é explícito: hoje não há `prisma.seed` configurado,
   //    mas se alguém adicionar depois, o seed rodaria duas vezes sem isto.

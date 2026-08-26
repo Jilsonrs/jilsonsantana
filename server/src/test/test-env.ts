@@ -10,21 +10,30 @@ import { fileURLToPath } from "node:url";
 // mutar `process.env` em um não garante o outro. Daí os dois importarem isto.
 
 /**
- * Ref do projeto Supabase de TESTE ("Jilson Santana Test").
+ * Hosts aceitos para o banco de TESTE — e só eles.
  *
- * É comparado contra a `DATABASE_URL` antes de qualquer conexão porque o passo
- * seguinte é `prisma migrate reset --force`, que DROPA TODAS AS TABELAS sem
- * pedir confirmação. Apontado para o lugar errado, apaga a produção.
+ * É verificado antes de qualquer conexão porque o passo seguinte é
+ * `prisma migrate reset --force`, que DROPA TODAS AS TABELAS sem pedir
+ * confirmação. Apontado para o lugar errado, apaga a produção.
  *
- * Por que o REF e não a substring `_test` (a regra anterior, que NÃO
- * funcionava): o host do Supabase é montado a partir do project ref opaco,
- * nunca do nome do projeto — "Jilson Santana Website" atende em
- * `...gaxmbnhwltljlkukdwba...`, onde o nome não aparece. Uma trava contra
- * `_test` nunca dispararia, e trava que nunca dispara é o mesmo defeito do
- * `lint` que mentia. O ref é único globalmente: isto verifica IDENTIDADE, não
- * semelhança de texto. (CLAUDE.md → Database & Migrations.)
+ * HISTÓRICO DA TRAVA — duas mudanças, cada uma consertando o defeito da
+ * anterior. Registrado aqui porque as duas vezes o problema foi o MESMO:
+ * comparar TEXTO em vez de verificar IDENTIDADE.
+ *
+ *  1. `url.includes("_test")` — nunca disparava. O host do Supabase é montado
+ *     a partir do project ref opaco, não do nome do projeto: "Jilson Santana
+ *     Website" atende em `...gaxmbnhwltljlkukdwba...`, sem o nome em lugar
+ *     nenhum. Trava que nunca dispara é o defeito do `lint` que mentia.
+ *  2. `url.includes(TEST_DB_REF)` — funcionava, mas o banco de teste deixou de
+ *     morar no Supabase (Ago 2026: Postgres local, ver CLAUDE.md → Database &
+ *     Migrations), então não há mais ref a comparar.
+ *
+ * A forma atual verifica o **hostname parseado**, não uma substring da URL, e
+ * isso não é preciosismo: `postgresql://u:p@evil.com:5432/localhost` **passa**
+ * num `includes("localhost")` e é BLOQUEADO aqui. Um banco em `localhost` não
+ * pode ser um banco de nuvem — a garantia é estrutural, não textual.
  */
-export const TEST_DB_REF = "mvaobzypsiuhqzipcelw";
+export const ALLOWED_TEST_HOSTS = ["localhost", "127.0.0.1", "::1"] as const;
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 /** Raiz do workspace `server` — daqui saem `.env.test`, o schema e o seed. */
@@ -59,12 +68,23 @@ export function assertTestDatabase(): void {
   if (!url) {
     throw new Error("DATABASE_URL não está definida após carregar .env.test — abortando.");
   }
-  if (!url.includes(TEST_DB_REF)) {
+  let hostname: string;
+  try {
+    hostname = new URL(url).hostname;
+  } catch {
     throw new Error(
-      `TRAVA DE BANCO DE TESTE: DATABASE_URL não aponta para o projeto de teste ` +
-        `(ref esperado: ${TEST_DB_REF}). A suíte roda ` +
-        `\`prisma migrate reset --force\`, que apaga todas as tabelas. Abortando ` +
-        `antes de qualquer conexão.`,
+      "TRAVA DE BANCO DE TESTE: DATABASE_URL não é uma URL parseável — abortando " +
+        "antes de qualquer conexão.",
+    );
+  }
+  // O parser devolve IPv6 entre colchetes (`[::1]`); a lista guarda a forma nua.
+  const host = hostname.replace(/^\[|\]$/g, "");
+  if (!(ALLOWED_TEST_HOSTS as readonly string[]).includes(host)) {
+    throw new Error(
+      `TRAVA DE BANCO DE TESTE: DATABASE_URL aponta para o host "${host}", que não ` +
+        `é local (aceitos: ${ALLOWED_TEST_HOSTS.join(", ")}). A suíte roda ` +
+        `\`prisma migrate reset --force\`, que apaga todas as tabelas — em produção ` +
+        `isso destrói o banco que o Railway serve. Abortando antes de qualquer conexão.`,
     );
   }
   // Sem BETTER_AUTH_SECRET o Better Auth falha de forma obscura no meio do seed;

@@ -28,16 +28,40 @@
 > esquecer: a dívida de integração da Fase 2 (env vars, migrations em prod, build do Docker com os
 > models novos) **ainda não foi paga** e aparece de uma vez no primeiro merge.
 >
-> **Infra de banco (Ago 2026):** **dois** projetos Supabase na org `hdmecfinlnocurhcxrdb` —
-> `gaxmbnhwltljlkukdwba` (us-east-2) = **produção**, e `mvaobzypsiuhqzipcelw` (us-east-1) =
-> **dev + teste**, criado e ainda **vazio**. Os dois em Postgres `17.6.1.155`. Detalhes em
-> [`build-history.md`](build-history.md) → *Infraestrutura*.
-> **⚠️ ATÉ o `server/.env.test` ser preenchido, o ambiente LOCAL ainda aponta para PRODUÇÃO** —
-> é o pré-requisito de separação de ambientes da Fase 4, e ele é o que impede um `migrate reset`
-> local de acertar o banco que o Railway serve.
+> **Infra de banco (atualizado Ago 2026) — TRÊS ambientes, um por papel:**
+> `gaxmbnhwltljlkukdwba` (Supabase, us-east-2) = **produção**, só o Railway ·
+> `mvaobzypsiuhqzipcelw` (Supabase, us-east-1) = **dev / a escola**, **nunca apagado** ·
+> **`localhost:5432/jilsonsantana_test`** (PostgreSQL 17.11 local) = **teste**, apagado a cada
+> execução da suíte. Org no plano **Free** (2 projetos ativos, US$ 0).
+> ✅ **RESOLVIDO — o ambiente local NÃO aponta mais para produção.** O `server/.env` foi apontado
+> para o Supabase de dev e o `server/.env.test` para o Postgres local; provado em runtime
+> (`GET /api/courses` devolveu o catálogo de dev, não o de produção) e por mutação (a trava
+> bloqueia os dois refs do Supabase). **Rodar `npm test` já não apaga o banco de desenvolvimento** —
+> verificado: depois de uma execução completa, o banco de dev seguia com 2 cursos, 2 módulos,
+> 3 aulas e 1 trilha intactos.
+>
+> **Cobertura de teste — o que EXISTE hoje (medido em Ago 2026, não estimado):** cliente **9
+> arquivos / 23 testes** (Vitest + RTL) ✅ no CI · servidor **1 arquivo / 3 testes de fumaça**
+> (supertest, banco real) ✅ no CI · E2E **1 arquivo / 6 testes** ❌ **fora do CI, sem
+> `globalSetup` e — achado de Ago 2026 — apontando para o `server/.env`, ou seja, hoje ele roda
+> contra o banco de PRODUÇÃO** (detalhe e correção em Fase 3 → Bloco T1). É a única das três
+> camadas que ainda não prova nada, e a única que hoje é um risco em vez de só uma lacuna.
+> Não há teste de servidor
+> de **negócio** (a matriz de acesso e os casos de webhook são a Fase 4) e não há suíte nenhuma de
+> Bunny ou Stripe, porque esse código não existe. Plano de cobertura: **Fase 3 → Bloco T**.
+>
+> **⚠️ GATILHO DISPARADO (registrado, não resolvido) — `CLAUDE.md` passou de ~85 KB.** A entrada
+> (11c) do próprio changelog escreveu: *"se o arquivo passar de ~85 KB com o critério em vigor, o
+> problema é ESCOPO, não redação."* Medido em Ago 2026: **já estava em 91,8 KB antes desta sessão**
+> e foi a **101,1 KB** depois (+9,3 KB de convenções de teste/XSS/segurança). O gatilho não pede
+> reescrita — pede **decisão do operador sobre escopo**: quais seções ainda passam no critério de
+> entrada (*"um agente prestes a escrever código produziria um diff ERRADO sem esta linha?"*).
+> **Não tratar como tarefa de redação**, que é exatamente o erro que o gatilho existe para evitar.
 >
 > **Próximo bloqueio:** rate-limit de login — único item que segura o `Done when` do Bloco 0
-> (Fase 3). Toca auth ⇒ dispara o gate obrigatório do context7.
+> (Fase 3). Toca auth ⇒ dispara o gate obrigatório do context7. **Agora acompanhado**: o fix do
+> `secure` do cookie (P1-d do Bloco T) toca o MESMO arquivo e pode sair na mesma chamada de
+> context7 — o gate custa uma chamada, não duas.
 
 ---
 
@@ -355,6 +379,384 @@ de uma sessão própria antes do launch):**
       > dispara o gate obrigatório de context7 (`/better-auth/better-auth`), e o **passo 1 continua
       > sendo VERIFICAR** qual header a Railway garante sobrescrever, nunca codar antes.
 
+### Bloco T — Cobertura: infra de teste, os P1 abertos e a fronteira de XSS  *(Ago 2026 · precede o corpo da fase)*
+
+> **ABORDAGEM DECIDIDA — "infra uma vez, cobertura por fase".** Registrada porque as duas
+> alternativas óbvias falham, cada uma do seu jeito. *Parar e retro-cobrir tudo antes de avançar*
+> é a fase que não fecha: operador solo, telas que já funcionam há meses, e o repo **já decidiu**
+> que Fases 0/1/2 não são retro-completadas (`CLAUDE.md` → Definição de pronto por fatia).
+> *Deixar pra depois* é o modo de falha que este repo **já viveu**: a doutrina de teste sempre
+> existiu e mesmo assim o CI não rodava suíte. O meio-termo é o único que sobrevive a sessões
+> separadas por semanas: **paga-se AGORA só o que DESTRAVA** — a infra que falta e o que já é bug
+> em código escrito — e **cada fase seguinte nasce com os testes dela**, nunca um "bloco de
+> testes" no fim.
+>
+> **O que NÃO entra aqui, de propósito:** teste de componente em tela que já funciona · meta de
+> cobertura · qualquer suíte de Bunny ou Stripe. Teste escrito antes do handler existir testa a
+> imaginação de quem escreveu, não o código.
+
+**T0 — o que NÃO precisa ser configurado (leia antes de configurar qualquer coisa).**
+A pergunta natural é *"preciso configurar os testes para começar"*. Medido em Ago 2026, a resposta
+é **não, em duas das três camadas** — e isso muda por onde se começa:
+
+| Camada | Configuração | Para escrever um teste novo, hoje |
+|---|---|---|
+| **Componente** (Vitest + RTL) | ✅ **pronta** | criar `Name.test.tsx` ao lado do componente. Nada a montar. |
+| **Servidor** (supertest) | ✅ **pronta** | criar `src/**/*.test.ts` e `import app`. Nada a montar. |
+| **E2E** (Playwright) | ❌ **falta, e hoje é perigosa** | é o T1 abaixo — a única configuração real deste bloco. |
+
+> **Registrado porque a intuição erra aqui:** "configurar os testes" soa como pré-requisito único e
+> grande. Não é — o pré-requisito grande é só o E2E. **Teste de tela pode ser escrito hoje, sem
+> nenhum setup**, e é isso que destrava começar pela tela de login sem esperar o resto.
+
+**T1 — o E2E deixa de ser teatro.** Hoje [`e2e/tests/auth.spec.ts`](../e2e/tests/auth.spec.ts) tem
+**6 testes que nunca rodam em CI**, e que quando rodam só provam redirect do React Router.
+
+> **O QUE A PASTA `e2e/` JÁ TEM** *(inventariado em Ago 2026 — são 4 arquivos, nada mais)*:
+> `playwright.config.ts` (55 linhas — `webServer` para 3000 e 5173 **já configurado**, `baseURL`,
+> projeto chromium, `retries: 2` no CI) · `tests/auth.spec.ts` (6 testes: 2 redirects de anônimo,
+> member entra em `/conta` e é barrado em `/admin`, admin entra em `/admin`, logout, senha errada) ·
+> `package.json` (só `@playwright/test` + `typescript`) · `tsconfig.json`.
+> **Não existe:** `global-setup.ts`, seed, job no CI, `.env` próprio. **O que falta é exatamente o
+> que a lista abaixo cria** — a estrutura em si está de pé, e o `webServer` é reaproveitado.
+>
+> **ESTADO DO BANCO DE TESTE** `mvaobzypsiuhqzipcelw` *(medido via MCP, Ago 2026)*: 11 tabelas ·
+> **4 migrations aplicadas** · `user` = **2**, `account` = **2**, `session` = 1 → **o seed de
+> usuários JÁ RODOU** (admin + member existem, que é o que as 6 specs usam) · **`course`,
+> `module`, `lesson`, `learning_plan`, `plan_module`, `plan_item` = 0** — conteúdo **vazio**.
+> **Consequência prática para o T1:** as 6 specs de auth funcionam com o que já está lá; **qualquer
+> spec futura que precise de um curso vai precisar de `db:seed:content` no `globalSetup`.**
+> Melhor descobrir isso agora do que num teste vermelho sem causa aparente.
+>
+> **⚠️ ACHADO (Ago 2026, ao conferir o arquivo em vez de presumir): o E2E de hoje roda contra
+> PRODUÇÃO.** [`e2e/playwright.config.ts:9`](../e2e/playwright.config.ts#L9) chama
+> `loadServerEnv()`, que lê **`../server/.env`** — e o `webServer` (`:39-54`) sobe
+> `npm run dev:server`, que carrega **esse mesmo `.env`**. Enquanto o `.env` local apontar para o
+> banco que o Railway serve (o que o *Estado atual* deste plano registra que ainda é o caso),
+> `npm --workspace e2e run test` **autentica com credencial semeada contra o banco de produção**.
+> Hoje o dano é limitado porque as 6 specs só leem — mas a **primeira** spec que criar ou apagar
+> algo grava lá, e nada no repo avisa. Isto é o mesmo defeito de família da trava por REF: falta de
+> identidade verificada, não falta de cuidado. **É o item que justifica T1 vir antes de tudo.**
+
+- [ ] `e2e/global-setup.ts` com a **MESMA trava por REF** de `server/src/test/test-env.ts`
+      (`TEST_DB_REF`) — importada de um lugar só, **não** copiada: duas cópias divergem, e a que
+      diverge é sempre a que ninguém está olhando.
+- [ ] `loadServerEnv()` passa a ler **`../server/.env.test`**, não `../server/.env`. Se o arquivo
+      não existir, **abortar com a causa dita** — nunca cair no `catch` silencioso que existe hoje
+      (`:14-16`), que é o que transforma "sem env de teste" em "roda contra o que estiver lá".
+- [ ] `webServer` (**já existe**, `:39-54`) passa a subir o server com o env de **teste**
+      (`--env-file=.env.test`), senão a trava do `globalSetup` protege o Playwright e o servidor
+      que ele dirige continua falando com outro banco.
+- [ ] `fullyParallel: true` (`:22`) → **`false`**. Mesma razão já decidida para o
+      `fileParallelism: false` do servidor: workers em paralelo disputam o **mesmo banco** e
+      produzem falha intermitente, que é a pior classe de teste.
+- [ ] Seed **compartilhado** com a suíte de servidor (mesma função, não um segundo seed "parecido")
+      — seed duplicado faz o E2E testar um mundo que o servidor não tem.
+- [ ] Job **separado** no `ci.yml` (`e2e`), não um step do job atual — precisa de banco e de
+      servidor de pé; juntar faz o job rápido esperar pelo lento em todo push.
+- [ ] **Prova por MUTAÇÃO antes de marcar o checkbox:** remover `<ProtectedRoute>` de `/conta` tem
+      que **reprovar** o job. Se continuar verde, o setup não está sendo usado — que é exatamente o
+      defeito de hoje, só que mais bem escondido.
+
+**T2 — fechar os P1 de vazamento, com o teste colado ao fix.** São os achados de segurança em
+**código que já existe**; o resto do backlog é sobre código ainda não escrito.
+
+> **Eram 2; a varredura do `security-vulnerability-reviewer` (Ago 2026) achou mais 2** — um deles
+> na mesma família dos conhecidos, o outro numa família nova (cookie). **A informação central para
+> este bloco:** nenhum dos quatro reprovaria o CI de hoje. São exatamente a classe de bug que
+> **teste de servidor pega e typecheck nunca pega** — que é a justificativa do Bloco T inteiro.
+
+- [ ] **P1-a — `GET /api/lessons/:id` não checa a cadeia** (`server/src/routes/lessons.ts:17-19`).
+      O `where` filtra só a própria aula. **Cenário:** o operador arquiva um curso; as aulas
+      continuam `PUBLISHED`, e a rota segue devolvendo título, tags, título do módulo e **slug +
+      título do curso retirado do ar** — idem curso `DRAFT` cujas aulas foram publicadas uma a uma
+      durante a autoria. **A forma correta já existe no repo**: `search.ts:61` faz
+      `lesson → module → course`. É inconsistência, não escolha de desenho.
+- [ ] **P1-b — `itemInclude` sem filtro de status** (`server/src/routes/trilhas.ts:24-29`, usado em
+      `:113` e `:122`) — *conhecido, confirmado, e **pior** do que estava registrado.* O vazamento
+      passivo (trilha `PUBLISHED` que referencia curso `DRAFT`) é o caso menor. O maior:
+      `POST /api/plan-items` (`:328-336`) verifica só que o curso **existe**, nunca que está
+      publicado ⇒ qualquer usuário logado adiciona um `courseId` chutado ao **próprio** plano e lê
+      os metadados de volta por `GET /api/trilhas/mine/:id`. Vira **oráculo de enumeração** do
+      catálogo não lançado, e passa por toda checagem de dono, porque o plano **é** dele.
+      **⚠️ Nota de implementação que muda o fix:** o Prisma **não aceita `where` em include de
+      relação to-one**, então o filtro sobe para `items` (to-many) em `planTreeInclude:31` — e
+      `:329`/`:333` viram `findFirst` com `status: PUBLISHED`.
+- [ ] **P1-c — `POST /api/trilhas/:id/save` rejeita só parcialmente** (`:211`) — *conhecido,
+      confirmado.* `if (!template || !template.isTemplate)` nunca checa `status`: membro salva uma
+      trilha curada `DRAFT` ou `ARCHIVED`, o servidor clona a árvore inteira para a conta dele, e o
+      `GET /api/trilhas/mine/:id` renderiza o material não lançado. `GET /api/trilhas/:slug` exige
+      `PUBLISHED` corretamente — **o save/clone é o desvio em volta desse gate.**
+- [ ] **P1-d — `secure` do cookie de sessão não está fixado** (`server/src/lib/auth.ts:46-51`) —
+      **família diferente das outras três, e a de maior impacto.** Hoje `secure` depende da
+      **grafia** de `BETTER_AUTH_URL`; gravada sem esquema ou com `http://` no Railway, o cookie de
+      sessão viaja em claro **sem erro e sem log**. Fix: `advanced: { useSecureCookies:
+      process.env.NODE_ENV === "production" }`. **Toca `lib/auth.ts` ⇒ dispara o gate obrigatório
+      do context7** (`/better-auth/better-auth`) — pode sair na MESMA chamada do rate-limit, que já
+      é exigida pelo Bloco 0 e mexe no mesmo arquivo.
+- [ ] **NÃO esperar a verificação do Railway para aplicar o fix — ele é INCONDICIONAL.** Registrado
+      porque a pergunta *"a `BETTER_AUTH_URL` começa com `https://`?"* parecia bloqueante e **não
+      é**: `useSecureCookies: NODE_ENV === "production"` é o valor correto **nos dois casos**. Se a
+      URL já está certa, o fix não muda comportamento e **remove a dependência de uma grafia**; se
+      está errada, o fix **conserta**. Não há resposta que mude o código.
+      **PRÉ-REQUISITO VERIFICADO antes de recomendar** `[FATO — `Dockerfile:71`, estágio
+      `production`, de onde sai o `CMD`]`: `ENV NODE_ENV=production` está fixado na imagem. **Sem
+      isso o fix seria pior que o problema** — `secure` viraria `false` em produção sem ninguém
+      notar. Não é detalhe: é a premissa inteira.
+      **⚠️ DEPENDÊNCIA RESIDUAL, escrita porque é o jeito de furar este fix: NUNCA declarar
+      `NODE_ENV` nas variáveis do Railway.** Variável de serviço **sobrepõe** o `ENV` do Dockerfile;
+      declarada ali com qualquer outro valor, o cookie volta a ser inseguro em silêncio.
+      **Por que o fix ainda assim é melhor que o estado atual:** a dependência sai de uma string de
+      painel **não versionada, não revisada e com muitas grafias válidas** (`BETTER_AUTH_URL`) e
+      passa para uma linha **versionada, revisada em diff e de valor canônico único** (o
+      `Dockerfile`). Não é remover a dependência — é movê-la para onde o git enxerga.
+- [x] **`PREVIEW_TOKEN` e `COMING_SOON` estão SET no Railway** *(Ago 2026, conferido pelo operador
+      no painel — só a presença, nunca o valor)*. Fecha a verificação nº 3 da seção (C) do
+      `security-vulnerability-reviewer`: `PREVIEW_TOKEN` vazio faria `hasPreviewCookie` devolver
+      sempre `false` (`app.ts:60-61`) e trancaria o operador fora do próprio bypass da coming-soon.
+      As 7 variáveis do serviço são `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `CLIENT_URL`,
+      `COMING_SOON`, `DATABASE_URL`, `DIRECT_URL`, `PREVIEW_TOKEN` — **e `NODE_ENV` corretamente
+      NÃO está entre elas** (ver a dependência residual acima).
+- [x] **O espaço de falha é MENOR do que a análise supunha — resolvido por dedução, não por
+      inspeção do painel** `[FATO — `better-auth/dist/utils/url.mjs:36` da 1.6.20 instalada]`: o
+      Better Auth **lança** `Invalid base URL: … URL must include 'http://' or 'https://'` quando o
+      protocolo não é um dos dois. **Logo `BETTER_AUTH_URL` não pode conter lixo:** se contivesse, o
+      servidor **não subiria**, e ele está no ar servindo a coming-soon. A hipótese de "as duas
+      variáveis foram trocadas na configuração" está **descartada por evidência**, sem precisar
+      revelar valor nenhum.
+      **O que sobra é binário — `http://` ou `https://`** —, e nenhum dos dois muda o fix. Registrado
+      porque a análise original tratava "URL mal escrita" como espaço aberto de possibilidades; o
+      fornecedor já fecha quase todo ele, e **saber onde o fornecedor já protege evita construir
+      guarda em cima de guarda**.
+- [ ] **A verificação continua valendo — mas mede URGÊNCIA, não decide o fix.** Ela responde *"o
+      cookie está inseguro AGORA em produção?"*, o que muda se isto é conserto de rotina ou incidente.
+      **Como olhar sem expor valor:** painel do Railway → o serviço → aba **Variables** → conferir
+      só os **8 primeiros caracteres** de `BETTER_AUTH_URL`. *(Não há CLI do Railway instalada nesta
+      máquina — verificado Ago 2026; via CLI o padrão seguro seria
+      `railway variables --json | jq -r '.BETTER_AUTH_URL | startswith("https://")'`, que imprime
+      **apenas `true`/`false`**.)*
+      **Contexto que limita a urgência:** `main` está parada em `431e989` servindo a coming-soon, e
+      existem **2 usuários** (admin + member). Mesmo no pior caso, a exposição hoje é a sessão do
+      próprio operador — não há aluno com sessão em produção. **Isso muda no primeiro merge**, que
+      é quando o fix precisa já estar dentro.
+- [ ] **Teste de servidor no MESMO commit dos quatro** — é fronteira, então a exceção da *fronteira
+      transversal* se aplica: supertest, sem teste de componente. Os de vazamento viram os casos
+      **(11–12)** da lista da Fase 4; quando a fase chegar, o checkbox de lá **aponta para cá** em
+      vez de reescrever.
+- [x] **`get_advisors(type='security')` nos DOIS projetos — ✅ VERDE, e fecha uma divergência
+      aberta.** *(Ago 2026, via MCP.)* Produção (`gaxmbnhwltljlkukdwba`) e teste
+      (`mvaobzypsiuhqzipcelw`) devolvem **exatamente o mesmo resultado**: **11 tabelas, 11 avisos
+      `rls_enabled_no_policy` de nível INFO, ZERO erro `rls_disabled_in_public`** — que é o estado
+      desejado descrito no `CLAUDE.md`, não uma lacuna.
+      **O que isto prova além do óbvio:** o banco de teste foi construído **só a partir das
+      migrations versionadas** (`_prisma_migrations` = 4 linhas) e chegou **idêntico** à produção.
+      Era exatamente essa comparação que o `CLAUDE.md` pede quando diz que *`get_advisors` responde
+      "ESTE banco está ok", nunca "o REPO produz um banco ok"* — agora responde as duas.
+      **Não é fechamento novo, é RE-verificação independente:** o backlog P2 nº 5
+      (`_prisma_migrations` sem RLS no teste) já havia sido fechado pela migration
+      `20260824214838_rls_prisma_migrations_table`, e esta leitura confirma que o estado **se
+      manteve** nos dois bancos. Registrado assim de propósito — dizer "eu resolvi" o que já estava
+      resolvido é o tipo de crédito errado que faz a próxima pessoa procurar um conserto que nunca
+      houve.
+      **⚠️ E o que esta verificação NÃO cobre, porque advisor não enxerga:** o *Automatic RLS*
+      segue **ligado em produção e desligado no teste** — divergência **viva** registrada no
+      changelog (9) deste plano. Ela não afeta tabela nossa (nossas migrations ligam RLS
+      explicitamente), mas afeta **qualquer tabela criada fora delas**. Continua sendo decisão do
+      operador, no painel do fornecedor: recomendação é **desligar em produção**, para que os dois
+      ambientes dependam só do versionamento.
+
+**T3 — XSS: a convenção agora, o helper no bloco que o usa.** A defesa que o repo tem hoje é a
+proibição de `dangerouslySetInnerHTML` — uma regra **do React**. A superfície pública decidida em
+Ago 2026 **sai do React**, e a proteção não migra sozinha: template de string no Express não
+escapa nada.
+
+- [x] **Convenção escrita** em `CLAUDE.md` → Rendering Boundary (mesma passada que criou este
+      bloco). É o item que tem custo zero e prazo curto: precisa existir **antes** de alguém
+      escrever o primeiro template, não depois.
+- [ ] O helper (`escapeHtml`/`jsonLd`) + teste unitário ficam **no bloco da superfície indexável**,
+      não aqui. **Razão:** função escrita dois meses antes de ter uso é função que alguém esquece
+      que existe e reimplementa — *na dúvida, remove* (critério de decisão de stack). A convenção
+      é o que sobrevive à espera; o código, não.
+
+**T4 — LOGIN: a primeira tela fechada de verdade, e o molde que se repete.**
+
+> **⚠️ ACHADO (Ago 2026) — `LoginPage.test.tsx` EXISTE e não cobre nada.** São 12 linhas que
+> renderizam e conferem que três nós existem, com `expect(...).toBeTruthy()` — **o anti-padrão
+> nomeado com todas as letras em `CLAUDE.md` → Test quality**. **Provado por MUTAÇÃO, não por
+> leitura:** removendo o tratamento de erro inteiro do `onSubmit` (o 401, o erro genérico, o
+> `console.error`), a suíte deu **`Test Files 9 passed · Tests 23 passed`**. Ou seja: o login pode
+> parar de reportar senha errada e **nada no repo avisa**.
+> **Por que isto vale mais que a lacuna em si:** um arquivo `.test.tsx` presente e verde é *pior*
+> que arquivo nenhum — ele responde "essa tela tem teste" para quem for procurar, e desliga a
+> pergunta. É a mesma família do `lint` que rodava `tsc --noEmit` e da trava `_test` que nunca
+> disparava: **parece proteção e não protege**. O `.test.tsx` é reescrito, não acrescentado.
+
+- [ ] **GRUPO A — sete testes, um por ramo real de
+      [`LoginPage.tsx`](../client/src/pages/LoginPage.tsx)** (a lista sai do código, não de um
+      modelo genérico de formulário):
+      **(1)** e-mail inválido → mensagem do `loginSchema`, e `signIn.email` **não** é chamado ·
+      **(2)** campos vazios → idem · **(3)** erro **401** → *"E-mail ou senha incorretos."* ·
+      **(4)** erro **não-401** (500) → *"Não foi possível entrar agora. Tente novamente."* ·
+      **(5)** sucesso → navega para `/conta` com `replace` · **(6)** durante o envio → botão
+      **desabilitado** e rótulo *"Entrando…"* · **(7)** sessão já ativa → redireciona sem
+      renderizar o formulário.
+
+- [ ] **GRUPO B — sete erros clássicos.** Os três primeiros **não são hipótese: foram medidos**
+      contra o `loginSchema` real (`core/src/schemas/auth.ts`) em Ago 2026.
+      **(8) e (9) — RESOLVIDOS JUNTOS por uma mudança no `loginSchema`, verificada antes de
+      propor.** O impasse aparente era: senha só de espaços (`"   "`) **PASSA** `[MEDIDO]`, e-mail
+      com espaço nas pontas é **REJEITADO** `[MEDIDO]` — mas `.trim()` na senha **não é opção**,
+      porque alteraria os bytes enviados e trancaria para fora quem tem espaço na senha de verdade.
+      **A saída é separar VALIDAR de TRANSFORMAR:**
+      ```ts
+      email:    z.string().trim().email("Informe um e-mail válido."),
+      // .refine VALIDA sem TRANSFORMAR — a senha segue byte a byte a que foi digitada.
+      password: z.string().min(1, "Informe sua senha.")
+                 .refine((v) => v.trim().length > 0, "Informe sua senha."),
+      ```
+      **Comportamento medido com a proposta aplicada:** `" a@b.com "` → vira `"a@b.com"` e passa ·
+      `"   "` na senha → **rejeitado com a mensagem certa**, em vez de virar um 401 que mente ·
+      `"  senha com espaços  "` → **preservada byte a byte** · `A@B.COM` → segue passando no
+      client, porque **quem decide caixa de e-mail é o servidor** (é o teste (10)).
+      **Cobertura de teste que isto exige:** um teste para o e-mail trimado, um para a senha só de
+      espaços, e — o que **trava a regra** — um afirmando que a senha com espaços nas pontas
+      **chega intacta** ao `signIn.email`. Sem esse terceiro, um "simplifica isso aí" futuro põe
+      `.trim()` na senha e ninguém percebe até o chamado de suporte.
+      **Escopo:** mexe em `core/src/schemas/auth.ts`, que é do `core/` compartilhado — o login é o
+      único consumidor hoje, então o raio é pequeno.
+      **(10) E-mail em MAIÚSCULAS (`A@B.COM`) — `PASSA` o schema** `[MEDIDO]`, mas **quem decide é
+      o servidor**: se o Better Auth casar e-mail com sensibilidade a caixa, este é o chamado
+      clássico de *"não consigo entrar"*. **Não é respondível lendo o client** — vira **teste de
+      servidor** (supertest: semear `admin@x.com`, autenticar com `ADMIN@X.COM`).
+      **(11) Senha com espaço nas pontas (`"senha "`) NÃO pode ser trimada.** Teste que trava o
+      comportamento: senha é bytes do usuário. Trimar senha **tranca gente para fora** e o suporte
+      nunca descobre por quê — é o inverso exato do (9), e é por isso que os dois andam juntos.
+      **(12) Duplo clique no botão** → `signIn.email` chamado **uma vez só**. O `disabled={isSubmitting}`
+      (`:90`) deveria cobrir; o teste prova. Sem isso, duas requisições de login concorrentes.
+      **(13) Erro anterior some no envio seguinte.** `setFormError(null)` (`:28`) deveria limpar;
+      o clássico é o aluno corrigir a senha e continuar lendo o erro velho, achando que falhou de novo.
+      **(14) `signIn.email` REJEITA (throw) em vez de devolver `{ error }`.** O `onSubmit`
+      (`:27-45`) **não tem `try/catch`** — ele espera sempre a forma `{ error }`. Numa queda de rede,
+      se a promise rejeitar, a rejeição escapa do handler. **Este teste é investigativo: ele revela
+      o comportamento, e pode virar achado** — mesma família do `try/catch` sem `await` do webhook
+      já registrado no `CLAUDE.md`. Se virar achado, o fix entra no mesmo bloco.
+- [ ] **(3) e (4) são o par que carrega o valor do bloco** — o `onSubmit` distingue os dois de
+      propósito (`LoginPage.tsx:36-41`), e o bug clássico é colapsar tudo em "senha incorreta",
+      que faz o aluno tentar de novo para sempre enquanto o servidor está fora. **Um teste só, do
+      caminho feliz, não pega isso.** Escrever os dois separados ou não escrever nenhum.
+- [ ] **Mock em `@/lib/auth-client`** (a nossa fronteira), nunca no `better-auth/react` — o
+      arquivo atual já acerta nisso; é a única coisa dele que se aproveita.
+- [ ] **`renderWithProviders`** (`@/test-utils`) em vez do `MemoryRouter` montado à mão.
+      **⚠️ Detalhe de implementação que vai aparecer no meio do caminho:** o helper monta **uma**
+      rota só (`path`, default `"*"`), então o teste (5) não tem `/conta` onde aterrissar. Resolver
+      **estendendo o helper** com uma rota extra opcional — não mockando `useNavigate`, que testaria
+      implementação em vez de comportamento observável.
+- [ ] **Prova por mutação antes de marcar:** repetir a mutação acima (apagar o tratamento de erro
+      do `onSubmit`) e confirmar que a suíte **reprova**. Se passar, os testes novos valem tanto
+      quanto o antigo.
+
+**T5 — a cadência, escrita uma vez para não ser redecidida por tela.**
+
+> **DECISÃO DO OPERADOR (Ago 2026): fase não fecha sem teste — e o gatilho é TOCAR a tela, não a
+> data da fase.** Isto **refina, não reverte**, o *"vale daqui pra frente"* da *Definição de pronto
+> por fatia*: não se volta para cobrir tela parada, mas **toda tela que entra em trabalho sai
+> fechada**. **Razão do operador: evitar retrabalho** — descobrir o defeito na tela seguinte custa
+> reabrir a anterior, e reabrir é o que consome a sessão de quem trabalha sozinho e em semanas
+> alternadas. *Gatilho de reabertura: se a cadência começar a segurar entrega — duas telas seguidas
+> em que o teste custou mais que a feature —, o problema é o tamanho da fatia, não a regra.*
+
+Ao fechar **qualquer** tela, nesta ordem (é a *Definição de pronto por fatia* do `CLAUDE.md`,
+tornada executável — não uma lista nova):
+1. Caminho feliz funciona no browser.
+2. **Loading, erro e vazio existem** na tela.
+3. **Um teste de componente por estado acima** + um por ramo de decisão do arquivo.
+4. **Teste de servidor SE a rota tocar acesso ou dinheiro** (aí é fatia própria: supertest, sem
+   teste de componente — a fronteira não tem tela).
+5. **Mutação:** quebrar de propósito o ramo mais importante e confirmar que a suíte **reprova**.
+   *Sem este passo os 4 anteriores não provam nada — é o que este bloco acabou de demonstrar.*
+6. CI verde · diff revisado · checkbox e doc no **MESMO** commit.
+
+- **Done when (Bloco T):** existe job E2E no CI e ele **reprova por mutação** · os **quatro** P1
+  fecham com teste de servidor no mesmo commit · a convenção de escape está no `CLAUDE.md` · **a
+  tela de login fecha pelos 6 passos do T5, e a mutação do `onSubmit` reprova a suíte**.
+  **Não** inclui escrever template público nenhum — isso é o bloco da superfície indexável, depois
+  do Bunny.
+
+#### Postura de segurança — o que JÁ está coberto  *(varredura completa do `security-vulnerability-reviewer`, Ago 2026, branch `dev` @ `d9b22ea`)*
+
+> **Por que isto está escrito:** sem inventário, toda auditoria futura re-descobre o mesmo chão e
+> "propõe" proteção que já existe — o mesmo desperdício que o `decisions-archive` evita do lado das
+> decisões. **Cada linha tem o arquivo que a prova**; nenhuma é afirmação de memória.
+
+- **Fronteira de acesso:** `requireAuth`/`requireAdmin` compartilham `loadSession()`
+  (`middleware/auth.ts:27-35`), que rejeita `deletedAt` **antes** de qualquer uso — soft-delete vale
+  para os dois guards · `requireAdmin` faz auth antes de papel (401 sem sessão, 403 não-admin,
+  `:61-69`) e compara com `Role.ADMIN`, nunca literal · **`userId` nunca vem do client** — toda rota
+  de dono lê `req.user.id` da sessão · `isTemplate`/`ownerUserId` são forçados no servidor e
+  **ausentes do Zod**, então membro não fabrica template · `/trilhas/mine` registrada **antes** de
+  `/trilhas/:slug`, então `:slug` não captura `mine`.
+- **Leitura pública:** `/api/courses` e `/api/courses/:slug` filtram `PUBLISHED` em curso **e**
+  módulo **e** aula · `/api/search` faz a cadeia completa — **é a referência correta do repo** ·
+  leituras admin de qualquer status vivem sob `/api/admin/*`.
+- **Validação:** **todas** as rotas que recebem body usam `validate()`; nenhuma escapou. Todo `:id`
+  numérico passa por `parseId`.
+- **Segredos:** zero segredo hardcoded no repo · **zero `VITE_*` e zero `import.meta.env`** no
+  client, então nenhuma superfície de env chega ao bundle · `.gitignore` com o padrão correto
+  (`.claude/*` + `!.claude/agents/`, `.env.*` + `!.env.example`) · **zero `console.*` em qualquer
+  handler** · em produção o stack **não** vai no corpo da resposta (`NODE_ENV=production` fixado no
+  Dockerfile).
+- **Auth:** `disableSignUp: true` · `role`/`deletedAt`/`marketingConsent`/`acquisition*` todos com
+  `input: false` · Better Auth montado **antes** do `express.json()` com `.catch(next)` ·
+  `trustedOrigins` é allow-list que devolve `[]` em produção para origens de dev.
+- **Client:** **zero `dangerouslySetInnerHTML`**, zero `innerHTML`, zero `eval` · o único sink de
+  URL vinda do servidor é `<img src={course.thumbnailUrl}>` (`CourseCard.tsx:28`) — **não existe
+  nenhum `<a href={dadoDoServidor}>`** · Axios com `baseURL` relativo, sem `cors` instalado,
+  coerente com o desenho de mesma origem.
+- **RLS: 11/11 tabelas**, cada uma na MESMA migration que a criou — as 4 do Better Auth, as 6 de
+  conteúdo/trilhas, e `_prisma_migrations`. *(Prova estática; a confirmação no banco vivo é o
+  checkbox de `get_advisors` acima.)*
+- **Travas de banco de teste:** `TEST_DB_REF` verifica **identidade** do ref e roda antes de
+  qualquer conexão; `childEnv()` passa o ambiente explicitamente para não herdar `server/.env`.
+
+#### Backlog P2 — endurecimento (não bloqueia o Bloco T; ordenado por quando o risco aparece)
+
+- [ ] **`app.ts` não tem handler de erro nenhum** — o único rastro de um 500 hoje é o `logerror`
+      default do Express: `console.error(err.stack)`, cru e sem redação. **É pré-requisito da Fase
+      4**, não polish: o checklist do webhook exige registrar "IDs + status", e não existe lugar que
+      faça isso; um stack cru de cliente Stripe/Bunny/Resend é exatamente o que carrega chave ou
+      payload inteiro para o log do Railway. Handler terminal logando
+      `{ method, path, status, errorName, message }` — **nunca `err.stack` verbatim**.
+- [ ] **`.max()` nos campos de texto autorados** (`core/src/schemas/content.ts:29-41,56-73`) e
+      **trocar `z.string().url()` por checagem explícita de esquema** em `thumbnailUrl` — ver a
+      convenção nova em `CLAUDE.md` → Shared `core/` package (o `.url()` aceita `javascript:` e
+      `data:text/html`, **medido neste repo**, não suposto).
+- [ ] **`introVideoId` sem formato** (`content.ts:70`) — hoje inerte, mas na Fase 3 esse valor vai
+      ser interpolado numa URL/iframe do Bunny **numa rota de HTML de servidor sem escape
+      automático**. Restringir ao GUID do Bunny Stream; **confirmar o formato exato via context7
+      `/bunnyway/documentation`** (query dizendo "Stream") na MESMA chamada que a fase já exige.
+      Custa zero agora, caro depois do template existir.
+- [ ] **Escritas admin fora de `/api/admin/*`** (`courses.ts:138,150,171` · `modules.ts` ·
+      `lessons.ts` · `trilhas.ts:139`). O `requireAdmin` **está presente em todas** — nada exposto
+      hoje. O achado é que **o path deixou de codificar a fronteira**: `POST /api/courses` parece
+      rota pública, e uma rota nova acrescentada ao lado herda o path público e **nenhum middleware
+      por default**, com o erro invisível no diff. Alternativa mais barata que mover tudo:
+      `router.use("/admin", requireAdmin)`, para prefixo e guard virarem o mesmo fato.
+- [ ] **Token de preview no query string** comparado com `===` (`app.ts:80-92`). Impacto baixo (o
+      ativo é o bypass da coming-soon), mas **contradiz "nunca logar segredo" por construção**:
+      token em URL é gravado por proxy, histórico e `Referer` — o operador não tem como evitar o
+      log. Receber por header/POST + `crypto.timingSafeEqual`.
+- [ ] **`seed.ts:101` despeja o objeto de erro inteiro** (`console.error("Seed failed:", err)`), e o
+      caminho passa por `signUpEmail({ body: { password } })` — o `APIError` do Better Auth
+      serializa seu `body`. O padrão correto está no arquivo ao lado (`rotate-credentials.ts:157`,
+      só `err.message`). Idem `seed-content.ts:165`.
+- [ ] **Sem `helmet`** — nenhum header de segurança. Hoje o que expõe é estreito (app mesma-origem,
+      sem `dangerouslySetInnerHTML`, sem sink de `href`): falta `nosniff`, falta
+      `X-Frame-Options`/`frame-ancestors` (**a app pode ser enquadrada** → clickjacking em `/conta`
+      e `/admin`), falta `Referrer-Policy` — que é justamente o que faz a URL `/__preview?token=`
+      vazar. **Entra no MESMO bloco que introduzir o HTML público de servidor**, não antes: a CSP
+      precisa conhecer a origem do Bunny (`frame-src`) e a da Stripe (`script-src`), e escrita antes
+      é escrita duas vezes. Dependência de runtime nova ⇒ **decisão de nível de plano**.
+
 ### Vídeo (o corpo da fase)
 
 - [ ] **Infra (pré-requisito da fase): migrations em prod via pre-deploy.** Configurar
@@ -407,6 +809,15 @@ de uma sessão própria antes do launch):**
       de decisão de stack, CLAUDE.md → Working Method).
 - [ ] Server: admin upload flow (or direct-to-Bunny + store reference)
 - [ ] Client: gated player on the lesson page
+- [ ] **TESTES DE SERVIDOR do gate de vídeo — escritos JUNTO com a rota que assina a URL, não
+      depois** (mesma disciplina da Fase 4; a rota é fronteira de acesso e **não tem tela**, então
+      é fatia própria: supertest, sem teste de componente). Casos mínimos:
+      **(a)** anônimo pede URL assinada → **401** · **(b)** membro autenticado **sem assinatura
+      ativa** → **403** · **(c)** membro com acesso → **200 + URL assinada** · **(d)** a URL
+      devolvida **não** é a URL crua do Bunny (assere a presença do token, não a ausência de erro)
+      · **(e)** `introVideoId` responde para **não-membro** — é a TRAVA do vídeo de venda, e é o
+      único caso em que "200 sem sessão" é o comportamento correto; sem teste, o próximo agente
+      fechando buracos de gating **conserta** essa exceção e quebra a página de vendas.
 - [ ] E2E: non-member cannot get a playable URL
 - **Done when:** a member plays a lesson; a non-member is blocked. *Test the gate hard.*
 
@@ -418,8 +829,31 @@ de uma sessão própria antes do launch):**
 > significa construí-la duas vezes. A **fronteira** já está decidida, então o player nasce do lado
 > privado desde o dia um — só o payload de SEO espera.
 
+- [ ] **PRIMEIRO ITEM DO BLOCO — `server/src/lib/html.ts`: `escapeHtml()` + `jsonLd()`.** Vem antes
+      do primeiro template, não depois: escape retrofitado é escape com furo, porque ninguém
+      relê 6 arquivos procurando a interpolação que escapou. **São DUAS funções porque são dois
+      problemas diferentes:** `escapeHtml` cobre texto e atributo (`&`, `<`, `>`, `"`, `'`);
+      `jsonLd` serializa o bloco `<script type="application/ld+json">`, onde escapar HTML
+      produziria `&amp;` **visível para o crawler** (quebrando o dado estruturado que o bloco
+      inteiro existe para emitir) e o risco real é outro — fechar o `</script>` de dentro da
+      string, o que se resolve com `JSON.stringify` + `<` → `<`. Usar um no lugar do outro
+      falha nas duas direções.
+- [ ] **Teste unitário do helper** — é a **única unidade genuína de todo o plano**, e cabe aqui
+      porque a função é pura: sem I/O, sem banco, sem tela. Casos: `<script>` em texto · `"` em
+      atributo (o que quebra `content="…"` das metas OG) · `</script>` dentro do JSON-LD · e o que
+      passa despercebido em revisão de diff — **string já escapada não pode ser escapada duas
+      vezes** (`&amp;amp;` na página é o sintoma).
 - [ ] **Template das rotas públicas** — Express + Tailwind, **sem React**: `/`, `/cursos`,
       `/curso/:slug`, `/trilha/:slug`, `/certificado/:publicId`, páginas legais.
+      **TRAVA: todo valor vindo do banco passa por `escapeHtml()`** (`CLAUDE.md` → Rendering
+      Boundary). Os campos que alimentam estas páginas — `subtitle`, `description`, `learnTags[]`,
+      `requirements[]`, `personas[]`, `highlights[]`, `faq[]` — são **texto livre autorado no
+      painel admin**, e o Zod do `validate()` confere **forma, não conteúdo**.
+- [ ] **Teste de servidor de XSS na rota pública** (supertest, sem browser): semear um curso com
+      `<script>alert(1)</script>` na `description` e no `faq[].resposta`, pedir `GET /curso/:slug`
+      e assertar que o HTML de resposta contém `&lt;script&gt;` e **não** contém `<script>alert`.
+      *É um teste que só existe porque a defesa saiu do React — enquanto era React, o framework
+      garantia isso e testá-lo seria testar o React.*
 - [ ] **Metas por rota, no HTML da primeira resposta:** `<title>` e `description` **próprios da
       página** (nunca o genérico do site), Open Graph completo (`og:title`, `og:description`,
       `og:image`, `og:url`, `og:type`, `og:site_name`) + `twitter:card=summary_large_image`, e
@@ -629,14 +1063,61 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       **Achado colateral corrigido:** o `.dockerignore` tinha `**/.env`, que **não** cobre
       `.env.test` — o `COPY server/ ./server/` levaria o arquivo de segredo para uma camada do
       builder. **Mesmo defeito que o `.gitignore` tinha**, no mesmo padrão, em outro arquivo.
-- [ ] **(decisão adiada, com GATILHO — escolha do operador, Ago 2026) Rodar a suíte APAGA o banco de
-      desenvolvimento**, porque `mvaobzypsiuhqzipcelw` serve dev **e** teste e o `globalSetup` dá
-      `migrate reset --force`. Hoje o custo é **zero** (0 cursos, 0 módulos, 0 aulas, 0 trilhas lá).
-      **Gatilho de reabertura:** quando o operador começar a **autorar conteúdo de verdade em dev**
-      nesse banco — a Trilha 1 pela UI admin, por exemplo. Aí escolher entre (a) aceitar e recriar com
-      `db:seed:content` depois de cada suíte, ou (b) um **terceiro** projeto Supabase só para dev
-      (+US$ 10/mês no Pro, teto ~35 → ~45, e reabre a decisão dos 2 projetos). **Não decidir antes do
-      gatilho:** hoje seria escolher com base em conteúdo que não existe.
+- [x] **DECISÃO TOMADA (Ago 2026) — o gatilho disparou e a resposta é POSTGRES LOCAL SÓ PARA TESTE.
+      Reverte a decisão de Ago 2026 que rejeitava banco local; a reversão traz DADO NOVO, como a
+      regra exige.** O gatilho registrado era *"quando o operador começar a autorar conteúdo de
+      verdade em dev"* — e ele disparou no dia em que o operador abriu o `/admin` local para
+      trabalhar. **O dado novo é a colisão em si:** `mvaobzypsiuhqzipcelw` servia dev **e** teste, e
+      `migrate reset --force` não distingue um do outro.
+      **O desenho que fica — TRÊS ambientes, um por papel:**
+
+      | Ambiente | Banco | Quem usa | Apagado? |
+      |---|---|---|---|
+      | Produção | Supabase `gaxmbnhwltljlkukdwba` | só o Railway | nunca |
+      | Dev / escola | Supabase `mvaobzypsiuhqzipcelw` | `dev:server`, o operador no `/admin` | **nunca** |
+      | Teste | **Postgres local** | `server run test` · `e2e run test` | a cada execução |
+
+      **Por que local e não um terceiro projeto Supabase:** custo **US$ 0** contra US$ 10/mês, e
+      `migrate reset` deixa de ser perigoso — martelo só é problema quando o que está embaixo tem
+      valor. **Resolve por CONSTRUÇÃO, não por disciplina**, que é o que importa para quem trabalha
+      sozinho em semanas alternadas: prefixo de fixture e limpeza seletiva (ambos considerados)
+      dependem de lembrar, e lembrar decai com duas semanas fora.
+      **A premissa de custo foi VERIFICADA, não suposta** `[FATO — MCP `get_organization`, Ago 2026:
+      `"plan": "free"`]`: a organização está no **Free**, que permite 2 projetos ativos, então hoje
+      os dois Supabase custam **US$ 0**. Os US$ 10 do segundo só existem depois do upgrade para Pro,
+      que o `CLAUDE.md` já amarra à chegada de alunos pagantes — custo já orçado, não custo novo.
+      **O que se temeu perder e NÃO se perde:** a comparação de paridade que pegou o furo do
+      `_prisma_migrations` exige um banco construído **só a partir das migrations** para confrontar
+      com produção — e o projeto de dev continua sendo exatamente isso, agora nesse papel. O
+      `get_advisors` segue valendo nele.
+      **Instalação: PostgreSQL 17.11 — NÃO o 18**, ainda que o instalador ofereça o 18.6. **Duas
+      razões, e a primeira é a que decide:** *(i)* o Prisma deste repo é o **5.22.0**, pinado por
+      decisão própria, e é **anterior** ao PostgreSQL 18 — usar o 18 é rodar uma combinação que o
+      Prisma nunca viu, justamente em migration e introspecção; o risco não é "quebra", é
+      **depurar na direção errada** quando quebrar. *(ii)* produção roda `17.6.1`, então a mesma
+      major mantém a paridade — e o repo **já tem essa dor catalogada** no backlog de divergência
+      de runtime do Node (*"testamos num runtime e publicamos em outro"*): abrir um segundo caso da
+      mesma família, agora no banco, com o primeiro ainda aberto, não passa no critério de decisão
+      de stack. O 18 não impede nenhuma falha descritível em uma frase.
+      Marcar **Command Line Tools** (o `psql` é o que dá inspeção do banco local, já que não há MCP
+      para ele); desmarcar **Stack Builder**; pgAdmin 4 é opcional. **Trava do Prisma:** sem pooler local,
+      `DATABASE_URL` e `DIRECT_URL` recebem **o mesmo valor** — sem isso o Prisma reclama de
+      variável ausente e a mensagem não deixa óbvio que é essa.
+      **Gatilho de reabertura:** se a suíte passar a precisar de recurso que só o Supabase tem
+      (Data API, extensão específica, comportamento de RLS sob o papel `anon`), o banco de teste
+      volta para a nuvem — hoje nada disso é exercitado, porque o Prisma conecta com papel que
+      ignora RLS.
+      **✅ EXECUTADO (Ago 2026), com as provas:** PostgreSQL **17.11** instalado · banco
+      `jilsonsantana_test` criado · **4 migrations aplicadas** · **11 tabelas, 0 sem RLS** — mesma
+      contagem do Supabase, o que faz do banco local uma **terceira testemunha** de que o repo
+      produz um banco protegido, agora em outra plataforma · seed com admin + member · suíte
+      **3/3 verde** em 4s · trava reescrita e **provada nos 7 casos** (local ✓ · `127.0.0.1` ✓ ·
+      `[::1]` ✓ · Supabase produção ✗ · Supabase dev ✗ · a armadilha `evil.com:5432/localhost` ✗ ·
+      lixo não-parseável ✗). *A trava foi testada como **função isolada**, nunca pelo `globalSetup`
+      inteiro: se tivesse bug, o `migrate reset` teria acertado a nuvem de verdade.*
+      **A prova que fecha o item:** rodar `npm test` (que executa `migrate reset --force`) e
+      confirmar em seguida, via MCP, que o banco de **dev** seguia com 2 cursos, 2 módulos, 3 aulas,
+      1 trilha e 2 usuários — **intacto**. Era exatamente esse comando que destruía o trabalho.
 - [ ] **TESTES DE SERVIDOR (~15, supertest, sem browser) — escritos JUNTO com o handler acima, não
       depois.** Este é o item que fecha a fase; não é polish de fim de ciclo. **Justificativa
       (Ago 2026):** 100% do risco catastrófico do projeto é servidor — *assinante pagante trancado
@@ -687,6 +1168,20 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
 - [ ] JilsonAI Fases 0–3 (gateway, chat com contexto do curso, escalação humana, tools com
       escopo + msg privada). Inclui tool `recommendTrilha` (sugere trilha curada pelo objetivo).
 - [ ] Anthropic SDK server-side only; rate-limited per member; chat panel in member area.
+- [ ] **DECISÃO PENDENTE — qual renderer de Markdown.** O `CLAUDE.md` já **proíbe**
+      `dangerouslySetInnerHTML` e manda renderizar "com HTML bruto desabilitado ou sanitizado",
+      mas **a biblioteca nunca foi escolhida nem instalada** (conferido em Ago 2026: não há
+      `react-markdown`, `marked` nem `dompurify` em nenhum `package.json`). É dependência nova ⇒
+      **decisão de nível de plano** (Working Method), não `npm install` no meio do bloco.
+      **Requisito que decide:** desabilitar HTML bruto por **configuração**, não por sanitização
+      posterior — desligar a porta é verificável em uma linha de config; sanitizar é confiar numa
+      lista de bloqueio que envelhece.
+- [ ] **Teste de componente do painel de chat cobrindo o caso adversário**, não só o feliz: uma
+      resposta do modelo contendo `<img src=x onerror=alert(1)>` e uma contendo `[link](javascript:…)`
+      renderizam como **texto**, nunca como nó ativo. **Por que este teste é obrigatório e o resto
+      da tela não é:** este é o **único** ponto do produto onde conteúdo gerado por um modelo
+      **alimentado com input de aluno** vira DOM — é o vetor nomeado no `CLAUDE.md` como o real,
+      não hipotético.
 - **Done when:** members ask and get answers in Jilson's voice; unresolved → escalation; JilsonAI
       suggests a curated trilha by goal. (RAG, KB, montagem de plano por IA = JILSONAI Fase 4–5, pós-launch.)
 
