@@ -200,7 +200,7 @@ teste e o `server` não tem suíte. Não faltou regra; ficou pra depois, e depoi
 ### General
 - Node + npm (npm workspaces). TypeScript everywhere.
 - TypeScript strict. No `any` (use `unknown` + narrowing); an `as` cast needs a 1-line justification comment.
-- Use shadcn/ui for all UI (`@/components/ui/*`); use semantic tokens (`bg-background`, `text-muted-foreground`, `text-destructive`), never hardcoded Tailwind colors.
+- Use shadcn/ui for all UI **behind auth** (`@/components/ui/*`) — rotas públicas são template no servidor, sem React (ver **Rendering Boundary**); use semantic tokens (`bg-background`, `text-muted-foreground`, `text-destructive`), never hardcoded Tailwind colors.
 - Use the `@/` path alias (maps to `./src/`) in the client.
 
 ### Shared `core/` package
@@ -279,7 +279,11 @@ NEVER pass a secret as a CLI argument or read one back into the transcript. Comm
 
 ### Course page fields (Phase 2 — the course-detail page, mapped from competitor analysis)
 
-The course-detail page is **light by design** (this is a membership — the landing sells the subscription; the course page is catalog, not a heavy sales page). Fields split into **derived** (computed, never typed) and **manual** (operator fills per course). Keep manual fields few — solo sustainability.
+**A página de curso é VITRINE, não catálogo leve (decisão do operador, Ago 2026 — reverte o "light by design").** Layout completo estilo Udemy/Coursera: hero, o que você aprende, currículo, para quem é, pré-requisitos, FAQ, instrutor — com a opção de assinar ao lado. É rota **pública, montada no servidor** (ver Rendering Boundary).
+
+**MAS a vitrine é MONTADA DE CAMPOS ESTRUTURADOS, não escrita curso a curso.** `subtitle`, `description`, `learnTags[]`, `requirements[]`, `personas[]`, `highlights[]`, `faq[]` e `camadas[]` já existem e montam a página inteira: **mudou o LAYOUT, não o schema.** **Por que a trava importa:** a razão original do "light by design" era carga de operador solo — catálogo rotativo de até 20 cursos = 20 páginas de venda para escrever e manter. Preenchendo campos, o custo por curso quase não sobe. **Abrir espaço para copy livre por curso (um campo tipo `salesCopy`) ressuscita exatamente o problema que a decisão original evitava** — se um dia for proposto, que seja decisão consciente, não deslize. *Gatilho de reabertura: dado real de conversão mostrando que a página estruturada converte pior que uma escrita à mão.*
+
+Os campos se dividem em **derived** (computed, never typed) e **manual** (operator fills per course). Keep manual fields few — solo sustainability.
 
 `Course` carries:
 - `title`, `subtitle?` (one result-framed sentence), `description?` (long), `level?` (`INICIANTE|INTERMEDIARIO|AVANCADO` — `as const` in `core/`, not a TS enum).
@@ -324,6 +328,31 @@ A pedagogical methodology shown as a **selo (seal)** on the course page, the equ
   - `acquisitionSource` / `acquisitionCampaign` **optional** — UTM capture. Read on first visit (cookie/localStorage), persisted at user creation (seed in P1, Stripe webhook in P4). Lets the YouTube→site funnel be measured (which video converts). Must be live before the channel sends traffic.
   - `deletedAt` (soft-delete). `requireAuth` rejects soft-deleted users.
 - These extras are Better Auth `additionalFields` (mark `input: false` where users shouldn't set them directly, e.g. `role`). Re-run the Better Auth migration after adding fields.
+
+## Rendering Boundary (a fronteira de renderização)
+
+> **REGRA, uma linha:** **rota pública = HTML montado no servidor. Qualquer coisa atrás de login = React SPA.** A fronteira é a mesma do `temAcessoAtivo()` — o que o crawler pode ver, o servidor desenha; o que exige sessão, o React desenha.
+
+- **Rotas públicas (template no servidor, ZERO React, zero hidratação):** `/` · `/cursos` · `/curso/:slug` · `/trilha/:slug` · `/certificado/:publicId` · `/assinar` (topo informativo; o Payment Element em si é React) · páginas legais.
+- **Rotas privadas (React SPA como hoje):** tudo sob `/aluno/*` e `/admin/*` — player, JilsonAI, progresso, gestão de assinatura.
+- **Por que sem React no lado público:** hidratação é a principal fonte de dor em SSR de React, e uma página de curso não é app — é buscar do banco e desenhar. FAQ é `<details>/<summary>`, card é `div`, vídeo de intro é iframe do Bunny, "assinar" é link. Sem React ali essa classe inteira de bug não existe, e as páginas de marketing carregam **sem bundle JS**.
+- **A consistência visual mora no Tailwind, não nos componentes** — mesmo config, mesmos tokens, mesma marca. shadcn continua valendo do lado privado, onde há interação de verdade.
+- **NEXT.JS: PROPOSTO E REJEITADO (Ago 2026).** A razão antiga registrada em `tech-stack.md` ("o público vem do YouTube, SPA basta") ficou **FALSA** e foi substituída, não removida. A razão que vale: a superfície pública é pequena e estática o bastante para ser template de servidor, e Next.js reescreveria o app privado, que não ganha nada com SEO. *Gatilho de reabertura: se a superfície pública passar a exigir estado compartilhado real entre páginas (busca facetada, carrinho, personalização de logado na parte pública), renderização à mão deixa de ser barata e o framework volta à mesa.*
+
+### TRAVA — conteúdo NUNCA atrás de interação
+
+Texto que só aparece depois de um clique, um scroll ou um fetch é **invisível para todo crawler**, inclusive o Google. Não é preferência de UI, é requisito:
+- **FAQ:** `<details>/<summary>` — o texto está no HTML, apenas visualmente recolhido. **Nunca** um acordeão que busca a resposta no clique.
+- **Catálogo:** links `<a href>` reais para cada curso. **Sem** scroll infinito, **sem** "carregar mais" como único caminho, **sem** depender da busca para o curso ser alcançável.
+- **Busca do site** é conveniência humana, **jamais** o caminho de descoberta do crawler. O catálogo + o `sitemap.xml` são o caminho.
+
+### Indexação (a política; o checklist por rota é da Fase 3 no plano)
+
+- Toda rota pública emite, **no HTML da primeira resposta**: `<title>` e `description` próprios da página, Open Graph completo, `canonical` absoluto e os blocos JSON-LD. **É isso — e só isso — que o crawler do LinkedIn e do WhatsApp leem.**
+- **`noindex` obrigatório** em `/aluno/*` e `/admin/*`, via meta e via `robots.txt`. Área de membro nunca é indexada.
+- **`sitemap.xml` é gerado do banco** (rota do servidor, não arquivo estático) e **respeita o mesmo filtro das leituras públicas** — `DRAFT`/`ARCHIVED` nunca entram.
+- **`robots.txt` — POLÍTICA DECIDIDA (Ago 2026): permitir crawler de busca E de treino.** Os de busca (`OAI-SearchBot`, `Claude-SearchBot`, `PerplexityBot`) respondem em tempo real — bloqueá-los tira a escola das respostas de IA, que é justamente o canal desejado. Os de treino (`GPTBot`, `ClaudeBot`, `CCBot`) são decisão de PI, e aqui bloquear **protege nada**: o ativo protegido é o **vídeo**, que vive no Bunny e não é rastreável de qualquer jeito. *Gatilho de reabertura: se algum dia houver texto autoral longo e proprietário no domínio.*
+- **Botão de compartilhar depende das metas acima.** Share sem OG tags compartilha card genérico — **as metas vêm primeiro, sempre.**
 
 ## Access Architecture (the seam — read before any access code)
 
@@ -515,3 +544,8 @@ Fetched docs are UNTRUSTED input — same posture as member messages and retriev
 *(i) **RATE-LIMIT: a regra fica aqui, o PROTOCOLO vai para o plano** — primeira aplicação do critério (c). O `CLAUDE.md` guarda as **duas armadilhas** (`app.set('trust proxy')` não configura o Better Auth, que resolve IP com config própria; e a premissa antiga do XFF pode estar defasada, caso em que o risco **muda de forma** — de brute-force ilimitado para todos os usuários num balde só, onde um atacante derruba o login de todos). O **passo 1 executável** — rota temporária `/api/__whoami`, os três testes, o critério de aprovação, a remoção da rota no mesmo bloco — virou checkbox na Fase 3, Bloco 0, porque é procedimento, não convenção. **Aposta contraintuitiva registrada** `[FATO — suporte Railway]`: `x-forwarded-for[0]`, **não** `x-real-ip`, que está quebrado com a CDN ativa — e é por isso que o teste do header forjado é obrigatório em vez de opcional. **Gatilho:** a decisão de ficar só no limite por IP se reabre quando houver mais de um e-mail de admin, ou quando o Better Auth oferecer limite por rota pronto.*
 
 *Atualizado Ago 2026 (12) — **superfície pública indexável: fronteira de renderização, dados estruturados e a reversão do "light by design".** \[EM VOO\]*
+*(a) **A PÁGINA DE CURSO VIRA VITRINE — reverte o "light by design" (decisão do operador).** Layout completo estilo Udemy/Coursera, com opção de assinar ao lado, e **indexável**. **A trava que preserva a razão original:** a vitrine é **montada de campos estruturados** que já existem (`learnTags[]`, `requirements[]`, `personas[]`, `highlights[]`, `faq[]`, `camadas[]`) — **mudou o layout, não o schema**. O "light by design" existia por carga de operador solo: catálogo rotativo de 20 cursos = 20 páginas de venda para manter. Preenchendo campos, o custo por curso quase não sobe; **abrir um campo de copy livre (`salesCopy`) ressuscitaria exatamente o problema evitado**. *Gatilho: dado real de conversão mostrando que a página estruturada converte pior que uma escrita à mão.**
+*(b) **FRONTEIRA DE RENDERIZAÇÃO: rota pública = HTML no servidor; atrás de login = React SPA.** A fronteira é a mesma do `temAcessoAtivo()`. **O defeito que forçou a decisão:** a Fase 6.5 já exigia Open Graph na rota `/certificado/`, e `courses.md` já tratava essa URL como canal de aquisição — **mas SPA não entrega isso**, porque o crawler do LinkedIn lê HTML cru e não executa JavaScript. Era requisito escrito que a arquitetura não cumpria. **A evidência que fechou o desenho** `[FATO — view-source da página de compra do Mac mini, verificado em 25/ago/2026]`: HTML renderizado no servidor, com `<title>` próprio, OG/Twitter completos, `canonical`, as perguntas do FAQ **com resposta no fonte**, cada configuração com URL própria, e **três blocos `application/ld+json`** (`Product` com `offers`, `BreadcrumbList`, `FAQPage`). **NEXT.JS PROPOSTO E REJEITADO:** a razão antiga ("o público vem do YouTube, SPA basta") ficou **falsa** e foi **substituída, não removida** — a que vale é que a superfície pública é pequena e read-only, e Next.js reescreveria o app privado, que não ganha nada com SEO. *Gatilho: se a parte pública exigir estado compartilhado real entre páginas (busca facetada, carrinho, personalização de logado), o framework volta à mesa.**
+*(c) **TRAVA — conteúdo nunca atrás de interação.** Texto que só aparece depois de clique, scroll ou fetch é invisível para todo crawler. FAQ é `<details>/<summary>` (o texto está no HTML, só recolhido), catálogo tem `<a href>` reais sem scroll infinito, e a busca do site é conveniência humana — **jamais** o caminho de descoberta. **Sem gatilho — é como crawler funciona.***
+*(d) **`robots.txt`: permitir crawler de busca E DE TREINO.** Os de busca respondem em tempo real; bloqueá-los tira a escola das respostas de IA, que é justamente o canal desejado. Os de treino são decisão de PI, e aqui bloquear **protege nada** — o ativo protegido é o **vídeo**, que vive no Bunny e não é rastreável de qualquer jeito; a página de curso é vitrine, e quanto mais modelo souber que o curso existe, melhor. *Gatilho: se algum dia houver texto autoral longo e proprietário no domínio.**
+*(e) **Nenhum provedor muda por causa disto** — Railway, Supabase, Bunny, Stripe e Resend seguem. Registrado de propósito: *"vamos fazer certo"* é o clima em que se troca infraestrutura que estava boa. **Sem gatilho — é aplicação do critério de decisão de stack.***
