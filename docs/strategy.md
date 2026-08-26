@@ -79,7 +79,7 @@ tutor 24/7) + autoridade pessoal + simplicidade Apple — combinação que nenhu
 
 - **Udemy (+100 mil alunos)** = **motor de aquisição inicial**. Alavanca de lançamento = **e-mail
   pra base** convidando pro canal/site. Mesmo a 0,3–0,5% de conversão = centenas de assinantes (ordem
-  da meta ~365). Udemy fica fora do escopo de build (projeto à parte), mas é o canal nº 1 no launch.
+  da meta de 500). Udemy fica fora do escopo de build (projeto à parte), mas é o canal nº 1 no launch.
   Regra de termos: Udemy não manda direto pro site → manda pro YouTube (gratuito permitido) → site.
 - **YouTube "Jilson Santana"** = **rebuild PT, compounding de médio/longo prazo** (1 vídeo/semana).
   Base pequena hoje → não é o motor no curto prazo; cresce alimentado pela própria campanha Udemy.
@@ -130,13 +130,37 @@ tutor 24/7) + autoridade pessoal + simplicidade Apple — combinação que nenhu
     ARPU cai pra **~R$ 76** e o alvo sobe pra **~407**: **44 assinantes**, ordem de grandeza acima do
     delta de 3 deste recálculo. Segue dentro do "planejar p/ ~400" abaixo, então **não muda decisão
     agora** — mas é ESTA a premissa a fechar com o contador, não o haircut da Stripe.
-  - **Assinantes ativos-alvo ≈ 365** (faixa 350–420 conforme câmbio + mix anual). Planejar p/ **~400**
-    pra absorver variação de câmbio e churn.
+  - **Assinantes ativos: 363 é a CONTA, ~400 é o PISO, 500 é a META.** `[FATO, decisão do operador — Ago 2026]`
+    Os três números respondem perguntas diferentes e **não se substituem**:
+    - **363** = o que a renda-objetivo exige (30.900 ÷ 85,04). É a **conta**, e ela não muda por vontade.
+    - **~400** = piso de planejamento, absorvendo câmbio, mix anual e churn (faixa 350–420). **Piso de
+      SUSTENTAÇÃO — abaixo disso o objetivo de renda não fecha.**
+    - **500** = a **meta**. R$ 42.520/mês líquido · R$ 47.825/mês bruto · **≈ R$ 574k/ano**.
+      Decisão registrada porque tratar o piso como destino é o erro clássico: quem planeja para o
+      break-even chega ao break-even e para.
+    > **O que a trajetória para 500 revela — e é o argumento mais forte a favor da retenção que
+    > este doc tem** `[INFER — modelo `N(t) = (adds/churn)·(1−(1−churn)^t)`]`:
+    >
+    > | vendas novas/mês | churn 7% | churn 5% |
+    > |---|---|---|
+    > | 40 | **29 meses** (teto do modelo: 571 — passa raspando) | **19 meses** |
+    > | 50 | 17 meses | 14 meses |
+    > | 60 | 12 meses | 11 meses |
+    >
+    > A 7% de churn e 40 vendas/mês o modelo **satura em 571** — 500 é quase o teto, alcançado em
+    > ~2,5 anos. **Derrubar a churn de 7% para 5% economiza 10 meses sem vender um assinante a mais.**
+    > Reposição só para *manter*: 400 ativos = 28/mês a 7% (20 a 5%); 500 ativos = 35/mês (25 a 5%).
+    > **Conclusão operacional: 500 se conquista com retenção, não com volume de aquisição** — o que
+    > coloca JilsonAI, trilhas e "sempre atualizado" no caminho crítico da meta, não como diferencial
+    > de marketing.
+    >
+    > **Gatilho de reabertura da meta:** revisar quando houver **12 meses de churn medida** (a de 7%
+    > é premissa, não medição) ou se o câmbio/enquadramento mover o ARPU líquido em mais de ~10%.
   - **Faturamento bruto implícito ≈ R$ 35k/mês ≈ R$ 420k/ano → território EPP** (Simples Nacional,
     faixa acima do teto ME R$360k). Regime/enquadramento: **confirmar com contador** antes do
     desenquadramento (a meta estoura MEI e ME).
   - *Marco de break-even (mantido como referência, não como meta):* ~60 alunos ≈ a receita anual do
-    carro-chefe Udemy. É o **piso** de viabilidade — a **meta é ~365**.
+    carro-chefe Udemy. É o **piso de VIABILIDADE**; **~400 é o piso de SUSTENTAÇÃO** (fecha a renda-objetivo) e **500 é a META**.
 - **Aquisição (churn-adjusted):** a churn 7%, 365 ativos perdem **~26/mês** → precisa de ~26 vendas
   novas/mês só pra **manter**. Crescer exige vendas acima da reposição.
   - *Trajetória 0 → 365* (modelo `N(t) = (adds/churn)·(1−(1−churn)^t)`): **~40 novas/mês ≈ 14 meses** ·
@@ -206,7 +230,7 @@ objetivo dele, não da técnica. ("Construa o dashboard que seu chefe vai amar" 
 ## 10. Alavancagem (como US$ 6k é viável solo)
 
 A tese: **IA + sistemas integrados** permitem que uma pessoa atenda **centenas** de assinantes — é o
-que torna a meta de US$ 6k (~365 ativos) viável sem montar time. O JilsonAI faz o suporte **não
+que torna a renda-objetivo de US$ 6k (363 ativos) viável sem montar time — e a meta de 500 alcançável pelo mesmo motivo. O JilsonAI faz o suporte **não
 escalar com as horas** do Jilson; onboarding e trilhas se auto-servem; o catálogo já existe (Udemy)
 e compõe. **Filtro de toda decisão de crescimento:** *isto escala via sistema/IA, ou via minhas
 horas?* — priorizar sempre o primeiro. O crescimento vem de **alavancagem** (automação + retenção +
@@ -235,3 +259,5 @@ como-mídia em DESIGN.md §6 / IMPLEMENTATION-PLAN P6.5. Nada infla o MVP — s�
 fases novas.*
 
 *Atualização Ago 2026 — **custo Stripe corrigido** após adoção do Stripe Billing (decisão de tech-stack.md): Payments BR **3,99% + R$ 0,50** (a premissa anterior dizia R$ 0,39) **+ Billing 0,7%** = **~R$ 5,19 por assinante/mês** em R$99,90 → haircut de Stripe passa de ~4–5% para **~5,2%**. **Recálculo feito e fechado (pendência ⚠️ resolvida):** ARPU líquido **R$ 85,04** e alvo **363** — ambos confirmam os números que já estavam no doc (~R$85, ~365); o delta é de **3 assinantes**, dentro da faixa 350–420. A troca não muda a estratégia (a taxa é ~0,7 p.p. a mais). **O que mudou de verdade foi o método:** §6 agora registra a conta **por plano** em vez da banda percentual chapada — o R$ 0,50 é por transação (12x/ano no mensal, 1x no anual, efetivo ~4,38% vs ~4,03%) e o Simples incide sobre o bruto, não sobre o pós-Stripe. Os dois métodos **só coincidem no mix 75/25**: com mais anual, a banda chapada subestima o ganho. Fica marcada a premissa que de fato move o número — o **Simples ~6% (Anexo III) é NÃO CONFIRMADO**; em Anexo V (~15,5%) o ARPU cai pra ~R$76 e o alvo sobe pra ~407 (44 assinantes, contra 3 deste recálculo).*
+
+*Atualização Ago 2026 (2) — **a meta de assinantes passa a ser 500; o ~400 é reclassificado como PISO, não destino** `[decisão do operador]`. **O que NÃO mudou: a conta.** Os 363 continuam derivados da renda-objetivo (30.900 ÷ 85,04 de ARPU líquido) e o ~400 continua sendo essa conta mais a margem de câmbio, mix anual e churn — sobrescrever esses números destruiria a derivação que a §6 corrigiu em ago/2026. **O que mudou é a camada acima deles:** o piso vinha sendo lido como destino, e quem planeja para o break-even chega ao break-even e para. **500 = R$ 42.520/mês líquido, ≈ R$ 574k/ano bruto** — segue em território EPP, sem mudar enquadramento em relação ao que já estava previsto. **O achado que a trajetória revelou e que reforça a estratégia já escrita:** a 7% de churn e 40 vendas novas/mês o modelo **satura em 571**, então 500 chega em ~29 meses passando raspando; **baixar a churn para 5% economiza 10 meses sem vender um assinante a mais**. Isso move JilsonAI, trilhas e "sempre atualizado" do lugar de *diferencial de marketing* para o de **caminho crítico da meta**. **Gatilho de reabertura:** 12 meses de churn **medida** (a de 7% é premissa, não medição), ou câmbio/enquadramento movendo o ARPU líquido mais de ~10%.*

@@ -92,7 +92,7 @@ sobre crescimento rápido.
 ## Modelo, preço & esteira de valor
 
 > **B2C-first:** a base (assinatura) fica **acessível** E é o **motor de receita** — a meta de US$ 6k
-> vem da base de **pessoas físicas** (~365 ativos). Os tiers de cima (cohorts, B2B) são **bônus** que
+> vem da base de **pessoas físicas** (363 ativos fecham a conta; **a meta é 500**). Os tiers de cima (cohorts, B2B) são **bônus** que
 > dão folga e aceleram, **não a via principal**. A escala vem do **volume da base**, viabilizada pelo
 > JilsonAI (suporte não escala com horas) — não de precificar a base alto.
 
@@ -125,8 +125,10 @@ sobre crescimento rápido.
 | Meta líquida | **≈ R$ 30.900/mês** | US$ 6.000 × câmbio |
 | Haircut | ~11–12% | Stripe **~5,2%** (Payments 3,99% + R$0,50 + Billing 0,7% — verificado ago/2026) + imposto Simples ~6% — *confirmar c/ contador* |
 | ARPU líquido | **R$ 85,04**/assinante/mês | mix 75% mensal / 25% anual — conta por plano em `strategy.md` §6 |
-| **Assinantes ativos-alvo** | **≈ 365** (363; faixa 350–420) | planejar p/ ~400 (margem câmbio + churn) |
-| Faturamento bruto implícito | ≈ R$ 35k/mês ≈ R$ 420k/ano | **território EPP** — Simples acima do ME |
+| Assinantes — **a conta** | **363** (faixa 350–420) | o que a renda-objetivo exige |
+| Assinantes — **o PISO** | **~400** | margem de câmbio + mix anual + churn. Abaixo disto o objetivo de renda não fecha |
+| Assinantes — **a META** | **500** `[decisão do operador, Ago 2026]` | R$ 42,5k/mês líquido · **≈ R$ 574k/ano** bruto |
+| Faturamento bruto implícito | R$ 38k/mês no piso · **R$ 48k/mês na meta** | **território EPP** — Simples acima do ME |
 
 > **Premissa dominante, não confirmada:** o Simples de **~6% (Anexo III)**. Em **Anexo V (~15,5%)** o
 > ARPU cai pra ~R$ 76 e o alvo sobe pra **~407** — 44 assinantes, ordem de grandeza acima do delta de 3
@@ -215,7 +217,7 @@ Automação & IA). Fio condutor: **dados na era da IA** ("X + Claude").
 
 - **Udemy (+100 mil alunos) — MOTOR de aquisição inicial.** A alavanca de curto prazo é **e-mail
   pra base Udemy** convidando pro canal/site. Mesmo conversão baixa (0,3–0,5%) já dá centenas de
-  assinantes (ordem da meta de ~365). Udemy em si fica **fora do escopo de build** (projeto à parte),
+  assinantes (ordem da meta de 500). Udemy em si fica **fora do escopo de build** (projeto à parte),
   mas é o canal de aquisição nº 1 no lançamento. Não há UDEMY.md aqui.
 - **YouTube "Jilson Santana" — em rebuild PT (~1.580 inscritos), compounding de médio/longo prazo.**
   Era inglês, está virando PT. 1 vídeo/semana. **Não é o motor no curto prazo** (base pequena, ainda
@@ -406,3 +408,5 @@ ferramenta"). Nada infla o MVP (0–7) — são lentes, filtros e seams, não fa
 *Atualizado Ago 2026 — **Stripe Billing adotado** (Payment Element embutido; Customer Portal segue fora — gestão e cancelamento em telas nossas via Subscriptions API). Reconcilia a pendência aberta desde Jul 2026: as menções a "Customer Portal", "proration nativo do Stripe" e "2 prices" resolvem-se agora **a favor** do Billing, não contra. Haircut de Stripe corrigido de ~4–5% para **~5,2%** (Payments BR 3,99% + R$ 0,50, verificado ago/2026 — a nota anterior dizia R$ 0,39 — mais Billing 0,7%). **Recálculo feito (pendência resolvida):** ARPU líquido **R$ 85,04** e alvo **363** — confirmam os ~R$85 / ~365 que já estavam aqui, delta de 3 assinantes. A metodologia detalhada (conta por plano, R$ 0,50 por transação, Simples sobre o bruto) fica registrada em `strategy.md` §6 e **não é duplicada aqui**. Marcada a premissa que realmente move o número: o **Simples ~6% (Anexo III) é não confirmado** — em Anexo V (~15,5%) o alvo sobe pra ~407.*
 
 *Atualizado Ago 2026 (2) — **pg-boss sai da stack** (auditoria de testes/stack). A tabela e o parágrafo de stack acima foram reconciliados: **não há fila no MVP** — o webhook da Stripe roda inline e a fila só volta com o JilsonAI Fases 4–5. Razão completa (e o gatilho de volta) em `tech-stack.md` → What We Do NOT Use e `CLAUDE.md` → Background Jobs; **não duplicada aqui**. A linha Deploy/CI também deixou de dizer "lint/test/build": [FATO] o CI hoje não roda nem teste nem lint — conserto promovido pro bloco **Gates** no topo da Fase 3 (`implementation-plan.md`). Nasce junto o critério que decidiu isso: **toda peça de stack precisa impedir uma falha descritível em uma frase; na dúvida, remove** (`CLAUDE.md` → Working Method).*
+
+*Atualizado Ago 2026 (3) — **meta de assinantes: 500** `[decisão do operador]`. A tabela de economia passa a distinguir três números que antes vinham colapsados em um: **363 = a conta** (derivada da renda-objetivo), **~400 = o piso** (a conta + margem de câmbio/mix/churn), **500 = a meta**. Nenhum número da derivação foi sobrescrito — a mudança é de *enquadramento*: o piso vinha sendo tratado como destino. Racional completo, trajetória e gatilho de reabertura em `strategy.md` §6.*
