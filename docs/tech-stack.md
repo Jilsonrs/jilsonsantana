@@ -93,6 +93,12 @@
 
 - **Claude API SDK**: use Anthropic's official TypeScript SDK (`@anthropic-ai/sdk`) for JilsonAI. (The Mosh reference used the Vercel AI SDK with OpenAI; we use Anthropic directly.)
 
+## Public Surface (SEO)
+
+- **Rotas públicas = HTML montado no servidor** (Express + template + Tailwind, **sem React**). O app privado (`/aluno/*`, `/admin/*`) continua React SPA. Lista de rotas, trava do conteúdo-atrás-de-interação e política de `robots.txt`: `CLAUDE.md` → **Rendering Boundary**.
+- **Nenhum provedor muda por causa disto.** Railway, Supabase, Bunny, Stripe e Resend seguem. Registrado de propósito: *"vamos fazer certo"* é o clima em que se troca infraestrutura que estava boa. Nada se troca sem uma falha nomeável.
+- **Google Search Console** — conectar **agora** (a verificação demora e queremos histórico desde o dia um), mas **só produz dado ~30–60 dias depois do catálogo ir ao ar**. GSC mede **o nosso** desempenho no que já existe; ele **não substitui** ferramenta de pesquisa de mercado (volume, dificuldade de termo, tráfego de concorrente), que responde perguntas de **antes** de existir site.
+
 ## What We Do NOT Use (and why)
 
 - **Supabase Auth / JS Client / Realtime / Data API** — auth is Better Auth via Prisma; all DB access via Prisma.
@@ -100,5 +106,5 @@
 - **pg-boss (fila de jobs)** — **removido do MVP em Ago 2026.** Aplicação direta do critério de decisão de stack (`CLAUDE.md` → Working Method: *toda peça precisa impedir uma falha descritível em uma frase*). A falha que a fila evitaria é "o webhook falhou e ninguém retentou" — mas **a Stripe já reentrega quando devolvemos 5xx**, então mantínhamos worker + schema `pgboss` + um modo de falha próprio só pra duplicar o fornecedor. Agravante: o **alerta** de falha era ele mesmo uma fila do pg-boss — a detecção dependia da coisa que deveria detectar (a detecção agora é o monitor externo, acima). O webhook passa a ser **inline**: assinatura → `event.id` → espelho local → 200. **GATILHO DE VOLTA:** a fila retorna nas **Fases 4–5 do JilsonAI** (embeddings da KB; pipeline transcrição→chunk→embedding) — lote, demorado, retentável — e é código que ainda não existe, então entrar depois não refatora nada. No MVP do JilsonAI (Fases 0–3) o chat é síncrono com streaming: fila ali pioraria o produto. A razão do Mosh pra adotá-la é **CONHECIDA desde Ago 2026 e CONFIRMA a remoção** — as filas dele retentam chamada de LLM de terceiro, não o webhook; o caso de uso tem a forma exata do nosso gatilho de volta. Detalhe em `CLAUDE.md` → Background Jobs.
 - **Bun** — Node is the existing environment; less novelty to manage.
 - **Teachable / course platforms** — building an owned asset.
-- **Next.js** — audience comes from YouTube, not Google search; SPA is sufficient.
+- **Next.js** — PROPOSTO e REJEITADO de novo em Ago 2026, com razão **nova**: a razão antiga ("o público vem do YouTube, SPA basta") ficou **FALSA** quando a página de curso virou vitrine indexável. A razão que vale: a superfície pública é pequena e read-only e é servida como **template no servidor** (ver `CLAUDE.md` → Rendering Boundary); Next.js reescreveria o app privado, que não ganha nada com SEO. *Gatilho de reabertura no `CLAUDE.md`.*
 - **Gamification** — deliberately excluded (solo maintainability).

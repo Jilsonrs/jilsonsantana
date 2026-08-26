@@ -410,6 +410,50 @@ de uma sessão própria antes do launch):**
 - [ ] E2E: non-member cannot get a playable URL
 - **Done when:** a member plays a lesson; a non-member is blocked. *Test the gate hard.*
 
+### Bloco — Superfície pública indexável  *(Ago 2026 · política em `CLAUDE.md` → Rendering Boundary)*
+
+> **SEQUENCIAMENTO DECIDIDO: este bloco vem DEPOIS do Bunny.** O `introVideoId` é ativo do Bunny
+> numa rota **pública** (o vídeo de apresentação toca para não-membro), e é o único ponto onde as
+> duas frentes se tocam. Construir a página pública antes de saber como o Bunny assina e embeda
+> significa construí-la duas vezes. A **fronteira** já está decidida, então o player nasce do lado
+> privado desde o dia um — só o payload de SEO espera.
+
+- [ ] **Template das rotas públicas** — Express + Tailwind, **sem React**: `/`, `/cursos`,
+      `/curso/:slug`, `/trilha/:slug`, `/certificado/:publicId`, páginas legais.
+- [ ] **Metas por rota, no HTML da primeira resposta:** `<title>` e `description` **próprios da
+      página** (nunca o genérico do site), Open Graph completo (`og:title`, `og:description`,
+      `og:image`, `og:url`, `og:type`, `og:site_name`) + `twitter:card=summary_large_image`, e
+      `<link rel="canonical">` absoluto.
+- [ ] **Três blocos `<script type="application/ld+json">`, separados** (receita verificada no fonte
+      da página de compra do Mac mini, ago/2026):
+      **`Course`** com `provider` (Organization), `offers` (a assinatura), `teaches`/`about` (de
+      `learnTags[]`), `educationalLevel` (de `level`) · **`FAQPage`** com `Question`/`acceptedAnswer`
+      alimentado por `faq[]`, que **já existe** no modelo — **é o mais valioso**, porque o texto fica
+      duas vezes no HTML (visível + JSON) e é a forma que crawler de IA extrai melhor ·
+      **`BreadcrumbList`** — Início → Cursos → [curso].
+      ⚠️ `[VERIFICAR antes de codar]` campos obrigatórios de `Course` em schema.org e os requisitos
+      do Google para resultado rico de curso — **a lista acima é proposta, não doc verificada.**
+- [ ] **`sitemap.xml` gerado do banco** (rota do servidor, não arquivo estático): cursos e trilhas
+      `PUBLISHED`, certificados com `isPublic=true`. `DRAFT`/`ARCHIVED` **nunca** entram — o sitemap
+      respeita o mesmo filtro das leituras públicas.
+- [ ] **`robots.txt`** conforme a política decidida (permite busca **e** treino) + **`noindex`** em
+      `/aluno/*` e `/admin/*`, via meta **e** via `robots.txt`.
+- [ ] **Botão de compartilhar** em curso, trilha e certificado — `navigator.share` quando existir,
+      com fallback de copiar link + links diretos LinkedIn/WhatsApp. **ORDEM IMPORTA:** share **sem**
+      as OG tags compartilha card genérico. As metas vêm primeiro.
+- [ ] **Google Search Console — conectar AGORA** (a verificação demora e queremos histórico desde o
+      dia um), sabendo que **só produz dado ~30–60 dias depois do catálogo ir ao ar**: hoje o que
+      está no ar é a coming-soon e não há página indexável. GSC mede **o nosso** desempenho no que
+      já existe; **não substitui** ferramenta de pesquisa de mercado (volume, dificuldade de termo,
+      tráfego de concorrente), que responde perguntas de **antes** de existir site.
+- **Done when (teste de aceitação — obrigatório antes de marcar os checkboxes):**
+  1. `curl -s https://www.jilsonsantana.com/curso/<slug> | grep -c "<uma frase visível da página>"`
+     → tem que ser **≥ 1**.
+  2. No browser: `Cmd+U` (view-source) e `Cmd+F` numa frase que aparece na tela → **tem que achar**.
+  3. ⚠️ **NUNCA usar o DevTools para este teste** — ele mostra o DOM já renderizado e mente sempre
+     a favor do JavaScript. O único juiz é o fonte cru.
+  4. Os três JSON-LD validam no Rich Results Test do Google.
+
 ## Phase 4 — Billing & Membership Gate (Stripe Payments + Stripe Billing)  *(HIGH RISK — own sessions)*
 
 > **Decisão revista Ago 2026:** usamos **Stripe Billing** para operar a recorrência, mantendo
@@ -651,7 +695,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
 - [ ] `Certificate` (user, planId/courseId, issuedAt, `nameSnapshot`, `skillsCovered[]`, **`isPublic` default false**) + RLS ; migration
 - [ ] Server-side PDF on 100% completion of a trilha (or course). Name = trilha name; lists skills covered.
 - [ ] If `User.name` missing at issue time, prompt the student for the name to print.
-- [ ] **Public verifiable URL.** Route `/certificado/[id]` listing the `skillsCovered`, with Open Graph optimized for LinkedIn sharing → each graduate becomes an organic marketing vector and feeds the "emprego em empresa" angle (cert by competencies). **TRAVA:** student opt-in (`isPublic`, default false). The cert always exists; the public route is private/404 unless the student allows it (LGPD).
+- [ ] **Public verifiable URL.** Route **`/certificado/:publicId`** (`publicId` cuid — **nunca a PK sequencial**; ver `CLAUDE.md` → Database & Migrations) listing the `skillsCovered`, with Open Graph optimized for LinkedIn sharing → each graduate becomes an organic marketing vector and feeds the "emprego em empresa" angle (cert by competencies). **TRAVA:** student opt-in (`isPublic`, default false). The cert always exists; the public route is private/404 unless the student allows it (LGPD). ✅ **O requisito de OG passa a ser CUMPRÍVEL desde Ago 2026** — esta rota é pública e montada no servidor (`CLAUDE.md` → Rendering Boundary); enquanto o site era SPA puro, este checkbox pedia algo que a arquitetura não entregava, porque o crawler do LinkedIn lê HTML cru.
 - [ ] **Certificate-as-media upgrade (same phase, small):** dedicated **OG image** rendered
       server-side alongside the PDF (wordmark + student name + trilha + skills — Apple-clean, spec
       in DESIGN.md §6); **"Add to LinkedIn"** button (Add-to-Profile deep-link, pre-filled); every
