@@ -242,10 +242,26 @@ de uma sessão própria antes do launch):**
       **anexa** em vez de sobrescrever. Nesse caso o atacante varia o header e faz brute-force
       ilimitado contra o e-mail do admin em `/api/auth/sign-in/email` — **a única porta de entrada**
       (`disableSignUp: true`), e ela dá no admin. A convenção "rate-limit auth routes in production"
-      fica satisfeita **na letra** e **vazia no efeito**. **Passo 1 (não pular, não codar antes):**
-      confirmar qual header a Railway **garante sobrescrever** — não presumir. Se houver, fixar em
+      fica satisfeita **na letra** e **vazia no efeito**. Se houver header confiável, fixar em
       `advanced: { ipAddress: { ipAddressHeaders: [...] } }`; se não houver, `express-rate-limit` à
       frente de `app.all("/api/auth/{*any}")` com `app.set('trust proxy', <hops>)`.
+      **As duas armadilhas** (`trust proxy` não configura o Better Auth; a premissa do XFF pode
+      estar defasada) estão em `CLAUDE.md` → Quality Gates — **não duplicar aqui**.
+  - [ ] **PASSO 1 — provar qual header é confiável. Não toca em auth, não escreve rate-limit.**
+        Rota **temporária** `GET /api/__whoami` devolvendo **apenas os headers do próprio
+        chamador**: `x-forwarded-for`, `x-real-ip`, `x-envoy-external-address` e
+        `req.socket.remoteAddress`. Não vaza nada — o chamador já conhece o próprio IP.
+  - [ ] Três provas, nesta ordem: **(1)** do celular no 4G, anotar os quatro valores;
+        **(2)** `curl -H "X-Forwarded-For: 1.2.3.4" https://www.jilsonsantana.com/api/__whoami`
+        — **é este teste que decide**: se `1.2.3.4` aparecer em **qualquer** posição, aquele header
+        não serve para segurança; **(3)** do Mac, confirmar que o valor muda com a rede.
+  - [ ] **Critério de aprovação:** o header escolhido contém o IP real **e** ignora o falso do
+        teste 2. **Hipótese de partida** `[FATO — suporte Railway, mar/jun 2026]`: a aposta é
+        **`x-forwarded-for[0]`, NÃO `x-real-ip`** (que está quebrado com a CDN ativa, devolvendo IP
+        da Fastly) — contraintuitivo em relação ao conselho genérico de segurança, e é por isso que
+        o teste 2 é obrigatório em vez de opcional.
+  - [ ] **Remover a rota `/api/__whoami` no MESMO bloco.** Rota de diagnóstico que sobrevive ao
+        diagnóstico é superfície que ninguém revisa depois.
 - [x] **(NÃO-BLOQUEANTE — adicionado Ago 2026, não veio da Fase 7) `npm audit --audit-level=high`
       no `ci.yml`.** ✅ *(Ago 2026 — step com `continue-on-error: true`. **Nasce falho-porém-tolerado
       e isso é o esperado, não regressão:** medido na hora da implementação, o comando já sai com
@@ -405,6 +421,14 @@ de uma sessão própria antes do launch):**
 `Docs check (context7)`: **obrigatório** nesta fase — Stripe → `/websites/stripe`. Preencher no
 plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
 
+- [ ] **ESLint entra AQUI** (gatilho registrado em `CLAUDE.md` → changelog Ago 2026 (11)):
+      typescript-eslint, escopo inicial `server/src`, **bloqueante no CI**, 2–3 regras. A que se
+      justifica sozinha é **`no-floating-promises`** — promise não aguardada escapa do `try/catch`,
+      vira *unhandled rejection* e pode derrubar o Node **dentro do handler de webhook da Stripe**;
+      typecheck passa, teste passa, cai em produção. O nome `lint` está livre desde o Bloco 0.
+      **Por que não antes:** trazer o ESLint agora seria limpar avisos em código que já funciona,
+      com zero aluno — não passa no critério de decisão de stack. Aqui ele entra junto do código
+      que a regra protege.
 - [ ] **PRÉ-REQUISITO DA FASE — separar o banco de DEV do banco de PRODUÇÃO.**
       **[FATO, Ago 2026] O ambiente local aponta hoje para o MESMO projeto que o Railway serve.**
       Evidência: os usuários semeados na Fase 1 (admin + member) e as **39 sessões de
