@@ -59,9 +59,26 @@ export const auth = betterAuth({
     disableSignUp: true,
   },
 
-  // Database sessions. Session cookies are HTTP-only + SameSite=Lax by default,
-  // and Secure is auto-enabled when baseURL is https (production). We do not
-  // loosen those defaults.
+  // `secure` do cookie FIXADO NO AMBIENTE, nunca inferido da URL.
+  //
+  // Sem esta linha, o Better Auth 1.6.20 decide `secure` por
+  // `baseURL.startsWith("https://")` [medido: dist/cookies/index.mjs:21,32].
+  // Como `baseURL` é string e truthy, o fallback por `isProduction` NUNCA é
+  // alcançado — ou seja, a segurança do cookie de produção passava a depender da
+  // GRAFIA de uma variável de ambiente. `BETTER_AUTH_URL` escrita sem esquema,
+  // com `http://`, ou copiada do valor de dev fazia a sessão viajar em claro
+  // sem erro, sem log e sem teste que pegasse.
+  //
+  // A dependência não some — ela MUDA de lugar: sai de uma string de painel não
+  // versionada para o `ENV NODE_ENV=production` do Dockerfile, que o git enxerga
+  // e o diff revisa. Corolário: NUNCA declarar NODE_ENV nas variáveis do
+  // Railway; variável de serviço sobrepõe o ENV da imagem.
+  advanced: {
+    useSecureCookies: process.env.NODE_ENV === "production",
+  },
+
+  // Sessões em banco. `httpOnly` e `sameSite: "lax"` são default hardcoded da
+  // versão instalada [dist/cookies/index.mjs:33,35] — não os afrouxamos.
   session: {
     expiresIn: 60 * 60 * 24 * 7, // 7 days
     updateAge: 60 * 60 * 24, // refresh the expiry at most once per day

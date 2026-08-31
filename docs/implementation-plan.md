@@ -22,11 +22,15 @@
 > [`build-history.md`](build-history.md). **Fase 2** (conteúdo/trilhas) segue **aberta**: ver
 > "Estado real da Fase 2" abaixo.
 >
-> **⚠️ O QUE ESTÁ NO AR ≠ O QUE ESTÁ CODADO.** `main` está parada em `431e989` (23/jun) e é ela que
-> o Railway serve. **Toda a Fase 2 vive só em `dev`** e nunca rodou em produção. O público vê a
-> coming-soon (`COMING_SOON=true`); o operador entra via `/__preview?token=`. Consequência a não
-> esquecer: a dívida de integração da Fase 2 (env vars, migrations em prod, build do Docker com os
-> models novos) **ainda não foi paga** e aparece de uma vez no primeiro merge.
+> **✅ `main` ATUALIZADA (Ago 2026) — a dívida de integração da Fase 2 foi paga.** O merge levou
+> `main` de `431e989` (23/jun) para `cc2bde1`: 65 commits, a Fase 2 inteira, a infraestrutura de
+> testes e o login fechado. **O público segue vendo a coming-soon** (`COMING_SOON=true`), então
+> nada mudou para quem visita; o operador entra via `/__preview?token=`.
+> Verificado antes do merge, não presumido: as **4 migrations já estavam aplicadas** em produção e
+> as **7 variáveis do Railway cobrem** tudo que o servidor lê em runtime — por isso o merge não
+> exigiu janela de manutenção.
+> **Pendência de véspera de lançamento:** os dois cursos `exemplo-*` do seed estão **PUBLISHED em
+> produção**. Invisíveis hoje; aparecem no dia em que a coming-soon for desligada.
 >
 > **Infra de banco (atualizado Ago 2026) — TRÊS ambientes, um por papel:**
 > `gaxmbnhwltljlkukdwba` (Supabase, us-east-2) = **produção**, só o Railway ·
@@ -486,13 +490,13 @@ A pergunta natural é *"preciso configurar os testes para começar"*. Medido em 
 > este bloco:** nenhum dos quatro reprovaria o CI de hoje. São exatamente a classe de bug que
 > **teste de servidor pega e typecheck nunca pega** — que é a justificativa do Bloco T inteiro.
 
-- [ ] **P1-a — `GET /api/lessons/:id` não checa a cadeia** (`server/src/routes/lessons.ts:17-19`).
+- [x] **P1-a — `GET /api/lessons/:id` não checa a cadeia** (`server/src/routes/lessons.ts:17-19`).
       O `where` filtra só a própria aula. **Cenário:** o operador arquiva um curso; as aulas
       continuam `PUBLISHED`, e a rota segue devolvendo título, tags, título do módulo e **slug +
       título do curso retirado do ar** — idem curso `DRAFT` cujas aulas foram publicadas uma a uma
       durante a autoria. **A forma correta já existe no repo**: `search.ts:61` faz
       `lesson → module → course`. É inconsistência, não escolha de desenho.
-- [ ] **P1-b — `itemInclude` sem filtro de status** (`server/src/routes/trilhas.ts:24-29`, usado em
+- [x] **P1-b — `itemInclude` sem filtro de status** (`server/src/routes/trilhas.ts:24-29`, usado em
       `:113` e `:122`) — *conhecido, confirmado, e **pior** do que estava registrado.* O vazamento
       passivo (trilha `PUBLISHED` que referencia curso `DRAFT`) é o caso menor. O maior:
       `POST /api/plan-items` (`:328-336`) verifica só que o curso **existe**, nunca que está
@@ -502,12 +506,12 @@ A pergunta natural é *"preciso configurar os testes para começar"*. Medido em 
       **⚠️ Nota de implementação que muda o fix:** o Prisma **não aceita `where` em include de
       relação to-one**, então o filtro sobe para `items` (to-many) em `planTreeInclude:31` — e
       `:329`/`:333` viram `findFirst` com `status: PUBLISHED`.
-- [ ] **P1-c — `POST /api/trilhas/:id/save` rejeita só parcialmente** (`:211`) — *conhecido,
+- [x] **P1-c — `POST /api/trilhas/:id/save` rejeita só parcialmente** (`:211`) — *conhecido,
       confirmado.* `if (!template || !template.isTemplate)` nunca checa `status`: membro salva uma
       trilha curada `DRAFT` ou `ARCHIVED`, o servidor clona a árvore inteira para a conta dele, e o
       `GET /api/trilhas/mine/:id` renderiza o material não lançado. `GET /api/trilhas/:slug` exige
       `PUBLISHED` corretamente — **o save/clone é o desvio em volta desse gate.**
-- [ ] **P1-d — `secure` do cookie de sessão não está fixado** (`server/src/lib/auth.ts:46-51`) —
+- [x] **P1-d — `secure` do cookie de sessão não está fixado** (`server/src/lib/auth.ts:46-51`) —
       **família diferente das outras três, e a de maior impacto.** Hoje `secure` depende da
       **grafia** de `BETTER_AUTH_URL`; gravada sem esquema ou com `http://` no Railway, o cookie de
       sessão viaja em claro **sem erro e sem log**. Fix: `advanced: { useSecureCookies:
@@ -559,7 +563,7 @@ A pergunta natural é *"preciso configurar os testes para começar"*. Medido em 
       existem **2 usuários** (admin + member). Mesmo no pior caso, a exposição hoje é a sessão do
       próprio operador — não há aluno com sessão em produção. **Isso muda no primeiro merge**, que
       é quando o fix precisa já estar dentro.
-- [ ] **Teste de servidor no MESMO commit dos quatro** — é fronteira, então a exceção da *fronteira
+- [x] **Teste de servidor no MESMO commit dos quatro** — é fronteira, então a exceção da *fronteira
       transversal* se aplica: supertest, sem teste de componente. Os de vazamento viram os casos
       **(11–12)** da lista da Fase 4; quando a fase chegar, o checkbox de lá **aponta para cá** em
       vez de reescrever.
