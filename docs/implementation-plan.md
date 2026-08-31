@@ -864,6 +864,13 @@ tornada executável — não uma lista nova):
       busca dados; com a home, que não busca, estabilizou. *Registrado porque a causa provável —
       clicar durante uma busca em andamento — vai reaparecer quando a home passar a buscar, e aí a
       spec precisa esperar o dado, não o navegador.*
+- [x] **Cabeçalho provisório completo:** Início · Catálogo · Minha conta · Sair (+ Admin por
+      papel), e **a marca leva para `/inicio` quando há sessão** — logada, ela levava para a landing
+      pública, ou seja, mandava quem já assina de volta para a página que tenta convencê-lo a
+      assinar. **Lacuna fechada junto: o `Layout` nunca teve teste**, apesar de ser ele que decide o
+      que cada papel enxerga. 6 testes (visitante / aluno / admin); o que mais importa é o aluno
+      **não ver o item Admin** — não é sobre acesso (o servidor barra, e isso já é testado), é sobre
+      não anunciar a existência de uma área que não é dele. Mutação derruba.
 - [ ] Barra lateral (ícone + rótulo, agrupada), substituindo o link provisório do cabeçalho.
       **ESCOPO — a MESMA barra serve os DOIS ambientes** *(operador, Ago 2026)*: área do aluno **e**
       área administrativa inteira. Não são dois componentes; é um, com itens diferentes por papel —

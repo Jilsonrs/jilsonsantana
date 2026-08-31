@@ -17,10 +17,23 @@ export function Layout() {
   return (
     <div className="flex min-h-svh flex-col bg-background text-foreground">
       <header className="flex items-center justify-between border-b border-border px-6 py-4">
-        <Link to="/" className="font-semibold tracking-tight">
+        {/* Logado, a marca leva para a home DO ALUNO. Levar para a landing
+            pública seria mandar quem já é assinante de volta para a página que
+            tenta convencê-lo a assinar. */}
+        <Link
+          to={session ? "/inicio" : "/"}
+          className="font-semibold tracking-tight"
+        >
           <span className="text-primary">#</span>Jilson Santana
         </Link>
         <nav className="flex items-center gap-2">
+          {session && (
+            // Link explícito além da marca: clicar no logotipo é hábito de quem
+            // já conhece o padrão, não de quem está começando.
+            <Button asChild variant="ghost" size="sm">
+              <Link to="/inicio">Início</Link>
+            </Button>
+          )}
           <Button asChild variant="ghost" size="sm">
             <Link to="/cursos">Catálogo</Link>
           </Button>
