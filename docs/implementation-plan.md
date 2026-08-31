@@ -42,10 +42,9 @@
 >
 > **Cobertura de teste — o que EXISTE hoje (medido em Ago 2026, não estimado):** cliente **9
 > arquivos / 23 testes** (Vitest + RTL) ✅ no CI · servidor **1 arquivo / 3 testes de fumaça**
-> (supertest, banco real) ✅ no CI · E2E **1 arquivo / 6 testes** ❌ **fora do CI, sem
-> `globalSetup` e — achado de Ago 2026 — apontando para o `server/.env`, ou seja, hoje ele roda
-> contra o banco de PRODUÇÃO** (detalhe e correção em Fase 3 → Bloco T1). É a única das três
-> camadas que ainda não prova nada, e a única que hoje é um risco em vez de só uma lacuna.
+> (supertest, Postgres local) ✅ no CI · E2E **1 arquivo / 6 testes** ✅ **no CI, em job próprio,
+> com trava de host local e prova por mutação** *(T1 fechado — antes rodava contra o banco de
+> produção, sem `globalSetup`)*. As três camadas agora rodam e podem falhar.
 > Não há teste de servidor
 > de **negócio** (a matriz de acesso e os casos de webhook são a Fase 4) e não há suíte nenhuma de
 > Bunny ou Stripe, porque esse código não existe. Plano de cobertura: **Fase 3 → Bloco T**.
@@ -438,25 +437,39 @@ A pergunta natural é *"preciso configurar os testes para começar"*. Medido em 
 > algo grava lá, e nada no repo avisa. Isto é o mesmo defeito de família da trava por REF: falta de
 > identidade verificada, não falta de cuidado. **É o item que justifica T1 vir antes de tudo.**
 
-- [ ] `e2e/global-setup.ts` com a **MESMA trava por REF** de `server/src/test/test-env.ts`
-      (`TEST_DB_REF`) — importada de um lugar só, **não** copiada: duas cópias divergem, e a que
-      diverge é sempre a que ninguém está olhando.
-- [ ] `loadServerEnv()` passa a ler **`../server/.env.test`**, não `../server/.env`. Se o arquivo
-      não existir, **abortar com a causa dita** — nunca cair no `catch` silencioso que existe hoje
-      (`:14-16`), que é o que transforma "sem env de teste" em "roda contra o que estiver lá".
-- [ ] `webServer` (**já existe**, `:39-54`) passa a subir o server com o env de **teste**
-      (`--env-file=.env.test`), senão a trava do `globalSetup` protege o Playwright e o servidor
-      que ele dirige continua falando com outro banco.
-- [ ] `fullyParallel: true` (`:22`) → **`false`**. Mesma razão já decidida para o
-      `fileParallelism: false` do servidor: workers em paralelo disputam o **mesmo banco** e
-      produzem falha intermitente, que é a pior classe de teste.
-- [ ] Seed **compartilhado** com a suíte de servidor (mesma função, não um segundo seed "parecido")
-      — seed duplicado faz o E2E testar um mundo que o servidor não tem.
-- [ ] Job **separado** no `ci.yml` (`e2e`), não um step do job atual — precisa de banco e de
-      servidor de pé; juntar faz o job rápido esperar pelo lento em todo push.
-- [ ] **Prova por MUTAÇÃO antes de marcar o checkbox:** remover `<ProtectedRoute>` de `/conta` tem
-      que **reprovar** o job. Se continuar verde, o setup não está sendo usado — que é exatamente o
-      defeito de hoje, só que mais bem escondido.
+- [x] `e2e/global-setup.ts` com a **MESMA trava** de `server/src/test/test-env.ts` — **importada**,
+      não copiada. *(Passou a ser a trava de host local, não mais por REF: o banco de teste virou
+      Postgres local no commit anterior.)*
+- [x] `loadServerEnv()` **removido**. Ele lia `../server/.env` num `try/catch` silencioso, e era
+      isso que transformava "sem env de teste" em "roda contra o que estiver lá". O env agora vem do
+      `globalSetup`, que aborta com a causa dita.
+- [x] `webServer` sobe o server com **`--env-file=server/.env.test`**. Sem isso o
+      `import "dotenv/config"` do `index.ts` carregaria o `.env` (dev) e o Playwright resetaria um
+      banco para dirigir um servidor ligado a outro. `reuseExistingServer: false` no server pela
+      mesma razão. **Custo operacional aceito: é preciso parar o `dev:server` antes de rodar E2E.**
+- [x] `fullyParallel: false` + `workers: 1`.
+- [x] Reset e seed são os **mesmos comandos** da suíte de servidor (executados como subprocesso —
+      `seed.ts` não exporta função, e rodar o mesmo script torna a divergência impossível).
+- [x] Job **separado** `e2e` no `ci.yml`, com service container `postgres:17`, browser só chromium
+      e upload do report em falha. YAML validado.
+- [x] **DESCOBERTO NO CAMINHO — o workspace `e2e` era o único em CommonJS.** `core`, `client` e
+      `server` são `"type": "module"`. Isso quebrava `import.meta.url` e **impedia importar a trava
+      do servidor**, que é ESM. Alinhado para ESM.
+- [x] **`e2e` entrou no `npm run typecheck` da raiz.** Não estava no plano: virou necessário quando
+      o workspace passou a ter código de verdade (`global-setup.ts`) — sem isso, um erro de tipo ali
+      só apareceria no job lento, e o gate rápido mentiria por omissão.
+- [x] **PROVA POR MUTAÇÃO — feita, e reprovou.** Removido o `<Route element={<ProtectedRoute />}>`
+      que envolve `/conta` em `App.tsx:24-26`: **2 testes falharam**; revertido, 6/6 verdes.
+      *(A primeira tentativa de mutação não casou o padrão — o guard é uma rota-PAI, não um wrapper
+      inline —, e o script abortou sem escrever. Registrado porque o output "6 passed" daquela
+      rodada era do código **não mutado**: mutação que não aplica dá falso conforto, exatamente como
+      o teste que não pode falhar.)*
+- [x] **ACHADO — a suíte estava STALE e ninguém sabia.** Ligado o E2E, `admin reaches /admin`
+      falhou: esperava o texto *"Área administrativa"*, renomeado para *"Admin"* no commit `de17fe6`
+      (Fase 2, Bloco 6a). **Quebrada desde então, em silêncio, porque o E2E não rodava.** É a
+      demonstração exata da premissa do bloco. Reescrita com `getByRole` em vez de texto solto
+      (sobrevive a mudança de copy) e com asserção de URL, que é o que o teste de fato quer provar:
+      o admin **não** é redirecionado, ao contrário do member.
 
 **T2 — fechar os P1 de vazamento, com o teste colado ao fix.** São os achados de segurança em
 **código que já existe**; o resto do backlog é sobre código ainda não escrito.

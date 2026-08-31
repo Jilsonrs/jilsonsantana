@@ -37,7 +37,17 @@ test("member reaches /conta but is blocked from /admin", async ({ page }) => {
 test("admin reaches /admin", async ({ page }) => {
   await login(page, ADMIN);
   await page.goto("/admin");
-  await expect(page.getByText(/Área administrativa/)).toBeVisible();
+
+  // Duas asserções, e a primeira é a que carrega o teste: o admin NÃO é
+  // redirecionado (o member, no teste acima, é mandado para /conta). Sem ela,
+  // uma tela de admin vazia passaria.
+  await expect(page).toHaveURL(/\/admin$/);
+  // Conteúdo que só existe atrás do AdminRoute. `getByRole` em vez de texto
+  // solto: sobrevive a mudança de copy, que é justamente o que quebrou esta
+  // spec — ela esperava "Área administrativa", texto renomeado para "Admin" no
+  // Bloco 6a e não detectado por meses, porque o E2E não rodava no CI.
+  await expect(page.getByRole("heading", { name: "Admin" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Cursos" })).toBeVisible();
 });
 
 test("logout returns to /login", async ({ page }) => {
