@@ -170,6 +170,12 @@ investigação.
 - [ ] Selo 3-camadas e "Diferenciais" (highlights) sem heading de seção em
       `client/src/pages/CourseDetailPage.tsx` — os dois blocos de cards (ícone+título+texto) ficam
       empilhados sem título, parecem duplicados (achado nas capturas desktop/mobile).
+- [ ] **Destaque VISUAL no campo com erro** (login e todo formulário) — hoje o erro é só texto
+      abaixo do campo; a referência (Apple Store, ago/2026) pinta borda e fundo do campo errado.
+      **Barato e sem retrabalho:** o estado de erro por campo já existe no formulário, só não é
+      usado visualmente. **Fazer junto com `aria-invalid`**, não só cor: quem usa leitor de tela ou
+      não distingue vermelho não recebe aviso nenhum hoje, e é a mesma linha de código. Cai na
+      passada de direção visual (`design.md`), não abre bloco próprio.
 - [ ] (bônus, baixa prioridade) sem link "← Catálogo" no topo de `CourseDetailPage`/
       `TrilhaDetailPage` — hoje só dá pra voltar pelo nav ("Catálogo") ou botão do browser.
 
@@ -831,7 +837,22 @@ tornada executável — não uma lista nova):
 
 ### Vídeo (o corpo da fase)
 
-- [ ] **Infra (pré-requisito da fase): migrations em prod via pre-deploy.** Configurar
+- [x] **Infra: migrations em prod via pre-deploy — FEITO (Ago 2026), por CONFIG-AS-CODE.**
+      `railway.json` na raiz com `deploy.preDeployCommand`, em vez de configurar no painel.
+      **Por que arquivo e não painel:** é a mesma lição do `NODE_ENV` — configuração em painel não
+      é versionada, não passa por revisão de diff e ninguém audita. No arquivo, ela viaja com o
+      repo. **Garantia que a Railway dá** `[FATO — context7 `/railwayapp/docs`]`: *"if your command
+      fails, the deployment will not proceed"* — migration quebrada **bloqueia** a publicação em
+      vez de subir código novo contra banco velho, que é exatamente o modo de falha temido.
+      **⚠️ ACHADO que teria quebrado a primeira publicação:** o `prisma` (a CLI que roda a migração)
+      era **devDependency**, e o estágio de produção do Dockerfile instala com `--omit=dev` — o
+      comando falharia em TODO deploy. Movido para `dependencies`. As migrations já eram copiadas
+      para a imagem (`Dockerfile:91`), então só faltava a ferramenta.
+      **Comando verificado rodando da RAIZ**, que é onde o container executa (`WORKDIR /app`), não
+      de dentro de `server/` como fazemos aqui — daí o `--schema server/prisma/schema.prisma`
+      explícito, sem o qual o Prisma não acha o schema (CLAUDE.md → Database & Migrations).
+      *(Não substituído: o item original abaixo descrevia a configuração pelo painel.)*
+- [ ] ~~Configurar~~ *(substituído pelo item acima — mantido o texto original por rastreabilidade)*
       `npx prisma migrate deploy` como **pre-deploy command** do Railway (railway.json /
       service settings) — roda 1× por deploy, antes da instância nova subir. NUNCA no
       entrypoint do Docker (re-executaria a cada restart) e nunca `migrate dev` contra prod.
