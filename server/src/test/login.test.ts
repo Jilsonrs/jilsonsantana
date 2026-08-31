@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import request from "supertest";
 import app from "../app.js";
+import { prisma } from "../lib/prisma.js";
 
 // Suíte de SERVIDOR do login — a fronteira de acesso, que NÃO TEM TELA.
 //
@@ -141,6 +142,35 @@ describe("login — cadastro fechado", () => {
     // (context7, Ago 2026): a recusa acontece ANTES de qualquer escrita no banco.
     expect(res.status).toBe(400);
     expect(res.body.code).toBe("EMAIL_PASSWORD_SIGN_UP_DISABLED");
+  });
+});
+
+describe("login — aluno excluído (LGPD)", () => {
+  // Exclusão a pedido do titular marca `deletedAt` e NÃO apaga a linha (o
+  // histórico do aluno é preservado). A pergunta que este teste responde: quem
+  // foi excluído ainda consegue entrar?
+  //
+  // Restaura no `finally` porque a suíte compartilha um banco e roda em série —
+  // deixar o member excluído quebraria os testes seguintes de um jeito que
+  // pareceria bug de outra coisa.
+  it("usuário com deletedAt não obtém acesso", async () => {
+    const email = requireEnv("SEED_MEMBER_EMAIL");
+    const password = requireEnv("SEED_MEMBER_PASSWORD");
+
+    await prisma.user.update({ where: { email }, data: { deletedAt: new Date() } });
+    try {
+      const signIn = await request(app).post(SIGN_IN).send({ email, password });
+
+      // MEDIDO, não presumido: o Better Auth não conhece `deletedAt`, então o
+      // sign-in em si pode devolver 200 e emitir cookie. O que decide o acesso é
+      // `loadSession` (middleware/auth.ts:31), que devolve null para excluído.
+      // Por isso a asserção que importa é a SEGUNDA: o cookie eventualmente
+      // emitido não abre nada.
+      const me = await request(app).get("/api/me").set("Cookie", cookiesFrom(signIn));
+      expect(me.status).toBe(401);
+    } finally {
+      await prisma.user.update({ where: { email }, data: { deletedAt: null } });
+    }
   });
 });
 

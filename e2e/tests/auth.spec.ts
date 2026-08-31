@@ -50,6 +50,23 @@ test("admin reaches /admin", async ({ page }) => {
   await expect(page.getByRole("link", { name: "Cursos" })).toBeVisible();
 });
 
+// A sessão sobreviver ao F5 é o caso que SÓ um browser de verdade prova: depende
+// do cookie ter sido gravado com os atributos certos e de o app reidratar a
+// sessão a partir dele. Teste de componente não vê isso (a sessão é mockada) e
+// teste de servidor também não (não há browser guardando cookie).
+// Se este teste quebrar, o sintoma para o aluno é: entrou, apertou F5, foi
+// deslogado — e ele desiste antes de abrir chamado.
+test("session survives a page reload", async ({ page }) => {
+  await login(page, MEMBER);
+  await expect(page.getByText("Minha conta")).toBeVisible();
+
+  await page.reload();
+
+  // Continua em /conta (não foi jogado para /login) e a tela ainda é a de membro.
+  await expect(page).toHaveURL(/\/conta$/);
+  await expect(page.getByText("Minha conta")).toBeVisible();
+});
+
 test("logout returns to /login", async ({ page }) => {
   await login(page, MEMBER);
   await page.getByRole("button", { name: "Sair" }).first().click();

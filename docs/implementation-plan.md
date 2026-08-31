@@ -701,6 +701,23 @@ escapa nada.
       `not.toBe(200)` — que **um 500 satisfaz**: servidor quebrado seria lido como "acesso negado
       corretamente". Trocado por 401/400 exatos. *Mesmo defeito de família do `.toBeTruthy()` que
       condenou o teste antigo desta tela, agora encontrado no próprio código novo.*
+- [x] **Dois últimos casos do login fechados.** **(a) E2E: a sessão sobrevive ao F5** — é o caso
+      que só um browser prova (componente mockaria a sessão; servidor não guarda cookie). O sintoma
+      que ele evita: o aluno entra, aperta F5, é deslogado e desiste antes de abrir chamado.
+      **(b) Servidor: aluno excluído (LGPD) não obtém acesso** — o `deletedAt` marca sem apagar, e
+      o teste prova que o cookie eventualmente emitido **não abre nada** (`/api/me` → 401). Mutado
+      o `deletedAt` de `middleware/auth.ts:31`, a suíte **reprova**.
+- [x] **ACHADO DE MÉTODO (registrado como convenção no `CLAUDE.md` → Testing): E2E não prova a
+      fronteira do servidor.** Mutando `loadSession` para devolver `null` sempre — servidor
+      recusando TODA sessão — os **7 testes de E2E passaram**. A tela resolve "estou logado?" pelo
+      cliente do Better Auth; o middleware protege as rotas de **dados**, que a navegação não
+      exerce. A mesma mutação reprova a suíte de servidor. **É fácil olhar "E2E verde" e concluir
+      que o acesso está provado; não está, e a conclusão errada é indetectável.**
+- [x] **Honestidade sobre o teste de F5:** ele passa, mas **não achei mutação que só ele pegue** —
+      os testes existentes já fazem `page.goto()` depois do login, que é igualmente um carregamento
+      de página completo. Valor único baixo; fica porque nomeia a intenção explicitamente e custa
+      ~1s de CI. Registrado em vez de omitido, porque cobertura que não se sabe medir é a mesma
+      família do teste que não pode falhar.
 - [x] **Prova por mutação da suíte de servidor:** `disableSignUp: true → false` derruba o teste de
       cadastro (`expected 200 to be 400`); revertido, 13/13.
       **⚠️ LIÇÃO REGISTRADA — a mutação FALHOU EM APLICAR duas vezes nesta sessão, e nas duas o
