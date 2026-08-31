@@ -9,6 +9,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
+// Depois de entrar, o aluno cai na HOME DELE — não na conta (destino de tarefa)
+// nem no catálogo (uma seção da home, não o começo). A home cresce para virar
+// painel de estudo; este é o único lugar que aponta para ela.
+const POS_LOGIN = "/inicio";
+
 export function LoginPage() {
   const navigate = useNavigate();
   const { data: session, isPending } = useSession();
@@ -21,7 +26,7 @@ export function LoginPage() {
 
   // Already signed in -> skip the form.
   if (!isPending && session) {
-    return <Navigate to="/conta" replace />;
+    return <Navigate to={POS_LOGIN} replace />;
   }
 
   async function onSubmit(values: LoginInput) {
@@ -51,8 +56,15 @@ export function LoginPage() {
       setFormError("Não foi possível entrar agora. Tente novamente.");
       return;
     }
-    navigate("/conta", { replace: true });
+    navigate(POS_LOGIN, { replace: true });
   }
+
+  // Numa credencial recusada o servidor diz "e-mail OU senha incorretos" — ele
+  // não revela qual, de propósito (é o que impede alguém de descobrir quais
+  // e-mails têm conta). Como não dá para saber qual campo está errado, os DOIS
+  // são marcados; marcar só um seria uma dica errada.
+  const emailInvalid = Boolean(errors.email) || Boolean(formError);
+  const passwordInvalid = Boolean(errors.password) || Boolean(formError);
 
   return (
     <div className="mx-auto max-w-md px-6 py-16">
@@ -67,35 +79,62 @@ export function LoginPage() {
             noValidate
           >
             <div className="space-y-1.5">
-              <Label htmlFor="email">E-mail</Label>
+              <Label
+                htmlFor="email"
+                className={emailInvalid ? "text-destructive" : undefined}
+              >
+                E-mail
+              </Label>
               <Input
                 id="email"
                 type="email"
                 autoComplete="email"
+                aria-invalid={emailInvalid}
+                aria-describedby={
+                  errors.email ? "email-error" : formError ? "form-error" : undefined
+                }
                 {...register("email")}
               />
               {errors.email && (
-                <p className="text-sm text-destructive">
+                <p id="email-error" className="text-sm text-destructive">
                   {errors.email.message}
                 </p>
               )}
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="password">Senha</Label>
+              <Label
+                htmlFor="password"
+                className={passwordInvalid ? "text-destructive" : undefined}
+              >
+                Senha
+              </Label>
               <Input
                 id="password"
                 type="password"
                 autoComplete="current-password"
+                aria-invalid={passwordInvalid}
+                aria-describedby={
+                  errors.password
+                    ? "password-error"
+                    : formError
+                      ? "form-error"
+                      : undefined
+                }
                 {...register("password")}
               />
               {errors.password && (
-                <p className="text-sm text-destructive">
+                <p id="password-error" className="text-sm text-destructive">
                   {errors.password.message}
                 </p>
               )}
             </div>
+            {/* `role="alert"` faz o leitor de tela ANUNCIAR a falha assim que
+                ela aparece. Sem isso, quem não vê a tela só descobre que o login
+                falhou ao tentar de novo. */}
             {formError && (
-              <p className="text-sm text-destructive">{formError}</p>
+              <p id="form-error" role="alert" className="text-sm text-destructive">
+                {formError}
+              </p>
             )}
             <Button type="submit" className="w-full" disabled={isSubmitting}>
               {isSubmitting ? "Entrando…" : "Entrar"}

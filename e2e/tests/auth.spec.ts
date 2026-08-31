@@ -14,7 +14,7 @@ async function login(page: Page, creds: { email: string; password: string }) {
   await page.getByLabel("E-mail").fill(creds.email);
   await page.getByLabel("Senha").fill(creds.password);
   await page.getByRole("button", { name: "Entrar" }).click();
-  await page.waitForURL("**/conta");
+  await page.waitForURL("**/inicio");
 }
 
 test("unauthenticated visit to /conta redirects to /login", async ({ page }) => {
@@ -29,7 +29,14 @@ test("unauthenticated visit to /admin redirects to /login", async ({ page }) => 
 
 test("member reaches /conta but is blocked from /admin", async ({ page }) => {
   await login(page, MEMBER);
-  await expect(page.getByText("Minha conta")).toBeVisible();
+
+  // Chega ao catálogo e alcança a conta PELO LINK do cabeçalho — não pela URL.
+  // É o caminho que o aluno realmente percorre; se o link sumir, este teste cai.
+  await page.getByRole("link", { name: "Minha conta" }).click();
+  await expect(page).toHaveURL(/\/conta$/);
+  // `heading` desambigua do link do cabeçalho, que tem o mesmo texto.
+  await expect(page.getByRole("heading", { name: "Minha conta" })).toBeVisible();
+
   await page.goto("/admin");
   await expect(page).toHaveURL(/\/conta$/);
 });
@@ -58,13 +65,14 @@ test("admin reaches /admin", async ({ page }) => {
 // deslogado — e ele desiste antes de abrir chamado.
 test("session survives a page reload", async ({ page }) => {
   await login(page, MEMBER);
-  await expect(page.getByText("Minha conta")).toBeVisible();
+  await expect(page).toHaveURL(/\/inicio$/);
 
   await page.reload();
 
-  // Continua em /conta (não foi jogado para /login) e a tela ainda é a de membro.
-  await expect(page).toHaveURL(/\/conta$/);
-  await expect(page.getByText("Minha conta")).toBeVisible();
+  // Segue logado: continua no catálogo (não foi jogado para /login) e o link de
+  // conta — que só aparece para quem tem sessão — continua lá.
+  await expect(page).toHaveURL(/\/inicio$/);
+  await expect(page.getByRole("link", { name: "Minha conta" })).toBeVisible();
 });
 
 test("logout returns to /login", async ({ page }) => {

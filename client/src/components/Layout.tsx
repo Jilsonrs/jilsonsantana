@@ -30,9 +30,17 @@ export function Layout() {
             </Button>
           )}
           {session ? (
-            <Button variant="ghost" size="sm" onClick={handleSignOut}>
-              Sair
-            </Button>
+            <>
+              {/* Sem este link, quem entra só chega na própria conta digitando
+                  o endereço. Provisório: some quando o menu lateral do aluno
+                  entrar (implementation-plan → shell do aluno). */}
+              <Button asChild variant="ghost" size="sm">
+                <Link to="/conta">Minha conta</Link>
+              </Button>
+              <Button variant="ghost" size="sm" onClick={handleSignOut}>
+                Sair
+              </Button>
+            </>
           ) : (
             <Button asChild variant="ghost" size="sm">
               <Link to="/login">Entrar</Link>

@@ -23,10 +23,13 @@ export function AccountPage() {
   }
 
   return (
-    <div className="mx-auto max-w-md px-6 py-16">
+    <div className="mx-auto max-w-md space-y-4 px-6 py-16">
+      {/* `CardTitle` renderiza uma `div`, não um cabeçalho — quem usa leitor de
+          tela não conseguia navegar por títulos aqui. Achado pelo E2E. */}
+      <h1 className="text-2xl font-semibold tracking-tight">Minha conta</h1>
       <Card>
         <CardHeader>
-          <CardTitle>Minha conta</CardTitle>
+          <CardTitle className="text-base">Seus dados</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <Field label="Nome" value={user?.name ?? "—"} />

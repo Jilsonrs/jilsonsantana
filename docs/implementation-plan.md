@@ -835,6 +835,53 @@ tornada executável — não uma lista nova):
       precisa conhecer a origem do Bunny (`frame-src`) e a da Stripe (`script-src`), e escrita antes
       é escrita duas vezes. Dependência de runtime nova ⇒ **decisão de nível de plano**.
 
+### Bloco S — Shell do aluno: menu lateral e, depois, painel  *(Ago 2026 · direção do operador)*
+
+> **DIREÇÃO DECIDIDA: o modelo é o LinkedIn Learning, não o Udemy nem o Mosh.**
+> *(Operador, Ago 2026, comparando as três referências.)* Udemy usa barra de ícones sem rótulo —
+> econômica em espaço, mas exige aprender os ícones. Mosh usa menu horizontal no topo — não cresce.
+> **LinkedIn: barra lateral com ícone + rótulo, agrupada por seção** — é a que suporta o destino
+> real desta tela.
+>
+> **O destino é um PAINEL DE ESTUDO**, não uma home institucional: progresso, o que falta concluir,
+> o que estudar em seguida, trilhas em andamento. Isso é o que decide o formato — um painel tem
+> muitas entradas e vai ganhar mais; menu de topo satura, barra lateral não.
+
+- [x] **Já em vigor:** link "Minha conta" no cabeçalho, e **o login cai em `/inicio`** — a home do
+      aluno. *Nem a conta (destino de TAREFA: mudar dados, assinatura) nem o catálogo (uma SEÇÃO da
+      home, não o começo dela).* Destino declarado numa constante única (`POS_LOGIN` em
+      `LoginPage.tsx`): quando a home virar painel, nada mais muda de lugar.
+      **`StudentHomePage` nasce magra de propósito** — saudação, o vazio de "continue estudando" e
+      a porta para o catálogo. **Não busca dados**, e por isso não tem estado de carregando nem de
+      erro; quando passar a buscar, os três entram junto com os testes deles. O conteúdo real
+      **depende da Fase 5** (progresso): sem `LessonProgress` não existe "o que você estava vendo",
+      e encher a tela com dado de mentira esconderia a dependência.
+- [x] **DOIS ACHADOS que só apareceram porque o E2E agora roda:**
+      **(a)** `CardTitle` renderiza uma `div`, não um cabeçalho — a página da conta **não tinha
+      título nenhum** para leitor de tela, que navega por títulos. Ganhou um `<h1>` de verdade
+      (mesmo padrão do `AdminPage`).
+      **(b)** O teste de logout ficou instável enquanto o destino pós-login era o **catálogo**, que
+      busca dados; com a home, que não busca, estabilizou. *Registrado porque a causa provável —
+      clicar durante uma busca em andamento — vai reaparecer quando a home passar a buscar, e aí a
+      spec precisa esperar o dado, não o navegador.*
+- [ ] Barra lateral (ícone + rótulo, agrupada), substituindo o link provisório do cabeçalho.
+      **ESCOPO — a MESMA barra serve os DOIS ambientes** *(operador, Ago 2026)*: área do aluno **e**
+      área administrativa inteira. Não são dois componentes; é um, com itens diferentes por papel —
+      dois componentes divergem em espaçamento, comportamento e estados de foco, e a divergência
+      aparece como "o admin parece outro site".
+- [ ] **Retraída ↔ expandida, como na Udemy** — recolhida mostra só ícone, expande ao passar o
+      mouse; e o estado escolhido **persiste** (quem recolheu não quer recolher de novo a cada
+      visita). **Trava de acessibilidade:** expandir só por mouse exclui quem navega por teclado —
+      o rótulo tem que estar sempre disponível para leitor de tela (via `aria-label` ou texto
+      visualmente oculto), mesmo com a barra recolhida. Mesma regra do destaque de erro do login:
+      **a informação nunca pode existir só no visual.**
+- [ ] **Painel do aluno** como destino pós-login: progresso, próxima aula, trilhas em andamento.
+      **Depende da Fase 5** (captura de progresso) — sem `LessonProgress` não há o que mostrar, e
+      construir a casca antes deixa uma tela vazia que ninguém sabe se está quebrada.
+- [ ] Navegação mobile — o menu lateral obriga a decidir isto, que o cabeçalho atual adiava.
+- **Done when:** o aluno entra e vê para onde ir sem digitar URL; a conta é alcançável em 1 clique
+  de qualquer tela.
+
 ### Vídeo (o corpo da fase)
 
 - [x] **Infra: migrations em prod via pre-deploy — FEITO (Ago 2026), por CONFIG-AS-CODE.**

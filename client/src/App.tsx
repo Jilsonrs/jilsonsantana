@@ -4,6 +4,7 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { AdminRoute } from "@/components/auth/AdminRoute";
 import { HomePage } from "@/pages/HomePage";
 import { LoginPage } from "@/pages/LoginPage";
+import { StudentHomePage } from "@/pages/StudentHomePage";
 import { AccountPage } from "@/pages/AccountPage";
 import { AdminPage } from "@/pages/AdminPage";
 import { CatalogPage } from "@/pages/CatalogPage";
@@ -22,6 +23,7 @@ export default function App() {
         <Route path="/curso/:slug" element={<CourseDetailPage />} />
         <Route path="/trilha/:slug" element={<TrilhaDetailPage />} />
         <Route element={<ProtectedRoute />}>
+          <Route path="/inicio" element={<StudentHomePage />} />
           <Route path="/conta" element={<AccountPage />} />
         </Route>
         <Route element={<AdminRoute />}>

@@ -19,7 +19,7 @@ function renderLogin() {
   return renderWithProviders(<LoginPage />, {
     route: "/login",
     path: "/login",
-    extraRoutes: [{ path: "/conta", element: <div>PÁGINA DA CONTA</div> }],
+    extraRoutes: [{ path: "/inicio", element: <div>HOME DO ALUNO</div> }],
   });
 }
 
@@ -86,12 +86,12 @@ describe("LoginPage — ramos da tela", () => {
     expect(screen.queryByText("E-mail ou senha incorretos.")).toBeNull();
   });
 
-  it("sucesso: navega para /conta", async () => {
+  it("sucesso: navega para a home do aluno", async () => {
     renderLogin();
     preencher({ email: "a@b.com", senha: "minhasenha" });
     enviar();
 
-    expect(await screen.findByText("PÁGINA DA CONTA")).toBeTruthy();
+    expect(await screen.findByText("HOME DO ALUNO")).toBeTruthy();
   });
 
   it("durante o envio: botão desabilitado e rótulo 'Entrando…'", async () => {
@@ -106,15 +106,94 @@ describe("LoginPage — ramos da tela", () => {
     expect((botao as HTMLButtonElement).disabled).toBe(true);
 
     liberar({ error: null });
-    await waitFor(() => expect(screen.getByText("PÁGINA DA CONTA")).toBeTruthy());
+    await waitFor(() => expect(screen.getByText("HOME DO ALUNO")).toBeTruthy());
   });
 
   it("sessão já ativa: redireciona sem renderizar o formulário", async () => {
     useSession.mockReturnValue({ data: { user: { id: "1" } }, isPending: false });
     renderLogin();
 
-    expect(await screen.findByText("PÁGINA DA CONTA")).toBeTruthy();
+    expect(await screen.findByText("HOME DO ALUNO")).toBeTruthy();
     expect(screen.queryByLabelText("Senha")).toBeNull();
+  });
+});
+
+describe("LoginPage — destaque visual do erro", () => {
+  // A cor sozinha não avisa quem não distingue vermelho ou usa leitor de tela.
+  // `aria-invalid` é a MESMA marcação que pinta o campo e que o leitor anuncia —
+  // por isso os testes olham para ela, e não para classe de CSS (que é detalhe
+  // de implementação e muda na próxima passada de design).
+  it("campo com erro de validação é marcado como inválido", async () => {
+    renderLogin();
+    preencher({ email: "sem-arroba", senha: "minhasenha" });
+    enviar();
+
+    await screen.findByText("Informe um e-mail válido.");
+    expect(screen.getByLabelText("E-mail").getAttribute("aria-invalid")).toBe("true");
+    // O campo CERTO não é marcado — marcar tudo é o mesmo que não marcar nada.
+    expect(screen.getByLabelText("Senha").getAttribute("aria-invalid")).toBe("false");
+  });
+
+  it("credencial recusada marca os DOIS campos", async () => {
+    signInEmail.mockResolvedValue({ error: { status: 401 } });
+    renderLogin();
+    preencher({ email: "a@b.com", senha: "errada" });
+    enviar();
+
+    await screen.findByText("E-mail ou senha incorretos.");
+    // Os dois, porque o servidor não revela qual está errado — de propósito.
+    // Marcar só um seria dica errada.
+    expect(screen.getByLabelText("E-mail").getAttribute("aria-invalid")).toBe("true");
+    expect(screen.getByLabelText("Senha").getAttribute("aria-invalid")).toBe("true");
+  });
+
+  it("sem erro, nenhum campo é marcado", () => {
+    renderLogin();
+    expect(screen.getByLabelText("E-mail").getAttribute("aria-invalid")).toBe("false");
+    expect(screen.getByLabelText("Senha").getAttribute("aria-invalid")).toBe("false");
+  });
+
+  it("a falha é ANUNCIADA por leitor de tela, não só pintada", async () => {
+    signInEmail.mockResolvedValue({ error: { status: 401 } });
+    renderLogin();
+    preencher({ email: "a@b.com", senha: "errada" });
+    enviar();
+
+    // role="alert" é o que faz o leitor falar assim que a mensagem aparece.
+    const alerta = await screen.findByRole("alert");
+    expect(alerta.textContent).toBe("E-mail ou senha incorretos.");
+  });
+
+  // O detalhe que faltava para ficar igual à referência (Apple Store): o RÓTULO
+  // também muda de cor, não só a borda do campo. Ajuda quem varre a tela rápido
+  // e não lê a mensagem — o olho acha o campo errado pelo texto, não pela borda.
+  it("o rótulo do campo com erro também fica destacado", async () => {
+    signInEmail.mockResolvedValue({ error: { status: 401 } });
+    renderLogin();
+    preencher({ email: "a@b.com", senha: "errada" });
+    enviar();
+
+    await screen.findByText("E-mail ou senha incorretos.");
+    // `closest("label")` em vez de classe do container: o teste continua válido
+    // se o layout mudar de lugar na próxima passada de design.
+    expect(screen.getByText("E-mail").className).toContain("text-destructive");
+    expect(screen.getByText("Senha").className).toContain("text-destructive");
+  });
+
+  it("sem erro, os rótulos ficam normais", () => {
+    renderLogin();
+    expect(screen.getByText("E-mail").className).not.toContain("text-destructive");
+    expect(screen.getByText("Senha").className).not.toContain("text-destructive");
+  });
+
+  it("o campo aponta para a mensagem que o descreve", async () => {
+    renderLogin();
+    preencher({ email: "sem-arroba", senha: "minhasenha" });
+    enviar();
+
+    const msg = await screen.findByText("Informe um e-mail válido.");
+    // Sem esta ligação, o leitor de tela diz "campo inválido" sem dizer por quê.
+    expect(screen.getByLabelText("E-mail").getAttribute("aria-describedby")).toBe(msg.id);
   });
 });
 
