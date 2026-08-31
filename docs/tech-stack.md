@@ -24,7 +24,9 @@
 
 ## Database
 
-- **Supabase (PostgreSQL)** — DB host + Storage. Free tier now → Pro ($25/mo) when students arrive.
+- **Supabase (PostgreSQL)** — DB host + Storage. Free tier now → Pro when students arrive: **US$ 35/mo**, não 25 — o plano é por **organização** e a org `hdmecfinlnocurhcxrdb` tem **dois** projetos (US$ 25 da org + US$ 10 do 2º projeto). Detalhe e a decisão de manter os dois na mesma org: `implementation-plan.md` → Fase 7.
+- **Dois projetos, papéis distintos:** `gaxmbnhwltljlkukdwba` ("Jilson Santana Website", **us-east-2**) = **produção**, alcançável só pelo Railway · `mvaobzypsiuhqzipcelw` ("Jilson Santana Test", **us-east-1**) = **dev / a escola** (o nome do projeto ficou legado — desde Ago 2026 o banco de **teste** é local; ver *Testing*). Postgres `17.6.1.155` nos dois (canal `ga`). Organização no plano **Free**, que permite 2 projetos ativos: custo **US$ 0** até o upgrade para Pro.
+- **REGIÕES DIFERENTES DE PROPÓSITO — não recriar projeto por causa disso.** A latência extra pro Brasil (~150 ms por query) **não é o gargalo**: o **vídeo** domina o tempo do aluno e vem do **Bunny com PoP local**, e a meta de carregamento é **< 3 s** — 0,15 s é **5%** desse orçamento. Consultas em **paralelo** não somam latência; o que custa é consulta em **cascata**, e isso é **decisão de código, não de região**. *Gatilho de reabertura: reclamação real de lentidão de aluno, **OU** outro motivo que exija recriar o projeto — nesse caso escolher `sa-east-1`.*
 - Accessed **only via Prisma** through `DATABASE_URL`.
 - **RLS convention:** every `public` table has Row Level Security ENABLED (without policies) in the same migration that creates it. Prisma uses a `BYPASSRLS` role; RLS blocks the Supabase Data API (`anon`/`authenticated`). Run `get_advisors(type='security')` after every DDL migration. NOT used: Supabase Auth, JS Client, Realtime, Data API.
 
@@ -36,7 +38,15 @@
 
 ## Billing
 
-- **Stripe** — recurring subscription via **2 prices on one product**: monthly **R$99,90 (no fidelity)** + annual **~R$995**. **No free trial, no free content in the school, no lifetime price lock.** Customer Portal + webhooks. Membership access gated on active subscription status synced from Stripe webhooks. A **force-sync fallback** (`subscriptions.retrieve`, admin/server-only) reconciles access if a webhook fails; cancel runs through a native offboarding screen (reason capture; anti roach-motel) before the Portal.
+- **Stripe — Payments (Plano Padrão) + Stripe Billing**, com **Payment Element embutido**. Conta criada como **MEI (CNPJ)**; payout para **Banco do Brasil**.
+- **Custos (verificados em `stripe.com/en-br/billing/pricing`, ago 2026):** Payments **3,99% + R$ 0,50** por cobrança de cartão bem-sucedida · Billing **0,7% do volume de Billing** (pay-as-you-go, sem mensalidade). Em R$99,90/mês: ~R$ 4,49 + R$ 0,70 = **~R$ 5,19 por assinante/mês**.
+- **Por que Billing (decisão REVISTA em Ago 2026):** a decisão anterior ("recorrência in-house pra evitar a taxa") empacotava duas escolhas independentes — *checkout na nossa página* e *quem opera a recorrência*. Só a primeira é requisito de UX, e ela **não** exige abrir mão do Billing. Billing entrega, incluído: renovação agendada, **Smart Retries**, lembretes automáticos de pagamento em atraso, automações de recuperação/retenção, proração, faturas, e atualização de cartão vencido junto às bandeiras. Construir isso in-house era o maior bloco de código financeiro irreversível do projeto — e o maior passivo de manutenção permanente pra operador solo. Aplica a regra do CLAUDE.md: *prefer battle-tested libraries over custom code*.
+- **NÃO usamos Customer Portal** (página hospedada da Stripe), embora venha incluído no Billing. **Princípio de UX central: o aluno nunca sai de jilsonsantana.com** — assinar, trocar cartão, mudar de plano e cancelar vivem em telas nossas, chamando a Subscriptions API. A doc da Stripe trata a API como caminho principal e o portal como opcional, então isso não é contramão.
+- **Captura de cartão embutida via Stripe Payment Element (Elements):** o formulário roda na própria página; o dado do cartão vai direto pro Stripe — **nunca toca nosso servidor** (PCI no escopo mais leve).
+- **Preços = objetos `Price` da Stripe** (um produto "Assinatura", dois prices): Mensal **R$99,90 (sem fidelidade)** + Anual **~R$995 (~17% off)**. **Sem free trial, sem conteúdo grátis, sem trava de preço vitalícia.** Troca mensal↔anual = `subscriptions.update` com proração da Stripe (previsualizável antes de mostrar ao aluno).
+- **Fonte da verdade do acesso:** a `Subscription` **da Stripe é canônica**; a nossa tabela `Subscription` é o **espelho local** (status + `currentPeriodEnd`) que o gate lê, sincronizado por webhooks de assinatura. Em qualquer dúvida, re-buscar `subscriptions.retrieve` e recomputar o espelho — nunca confiar no snapshot do evento.
+- **Dunning = configuração, não código.** A régua (D0 → retries → corte) continua sendo **decisão de produto nossa** — em especial **acesso MANTIDO durante a janela** (status `past_due`), porque churn involuntário é a maior alavanca (strategy.md §6). O que muda é *quem executa*: Smart Retries + automações de recuperação da Stripe, não um agendador nosso.
+- **O que continua sendo código nosso — e onde mora o risco restante:** o **gate de acesso** (`temAcessoAtivo` + `requireActiveMembership`), webhooks **idempotentes e à prova de ordem**, o **force-sync** de reconciliação, e as telas de assinatura/cancelamento. O Billing removeu a *mecânica do dinheiro*, não a *fronteira de acesso*. A Fase 4 segue HIGH RISK com "Ask before edits" ON + revisão humana; o que encolheu foi a **superfície**. Se mantém nível MAX/Ultracode é decisão do operador na abertura da fase.
 
 ## Video
 
@@ -48,7 +58,7 @@
 
 ## Background Jobs
 
-- **pg-boss** — PostgreSQL-backed job queue (no extra infra). For: sending emails, processing Stripe/Bunny webhooks asynchronously, JilsonAI async tasks, certificate generation. Auto-creates its own `pgboss` schema (no Prisma migration needed).
+- **Nenhuma fila no MVP** (pg-boss removido em Ago 2026 — o porquê e o gatilho de volta estão em *What We Do NOT Use*, e a convenção de execução em `CLAUDE.md` → Background Jobs). Webhook, e-mail e afins rodam **inline na request**.
 
 ## Email
 
@@ -57,31 +67,47 @@
 ## Certificates
 
 - **Server-side PDF** generation on trilha/course completion (100%) — **MVP (Fase 6.5)**, "a escola nasce completa". Certificate carries the trilha name + `skillsCovered` (competencies), valuable for students targeting employers.
+- **Biblioteca de geração NÃO escolhida** — é dependência de runtime nova, logo é **decisão de plano** (`CLAUDE.md` → Working Method: nada de `npm install` no meio do bloco). Decidir na abertura da Fase 6.5, não antes.
+- **A URL do certificado usa `publicId` (cuid), nunca a PK sequencial** — `/certificado/:publicId`. Convenção e o porquê: `CLAUDE.md` → Database & Migrations.
 
 ## Testing
 
 - **Vitest + React Testing Library** — component tests (the majority of coverage)
-- **Playwright** — E2E only for what needs a real browser + server (auth redirects, navigation, full-stack flows like webhook → DB → UI)
+- **Vitest + supertest** — **testes de servidor, sem browser** (o único lugar onde mora o risco catastrófico: assinante pagante trancado fora / acesso liberado sem pagar). Nascem **dentro da Fase 4**, colados ao handler de webhook. Lista dos casos: `implementation-plan.md` → Fase 4.
+- **Playwright** — E2E only for what needs a real browser + server (auth redirects, navigation, full-stack flows like webhook → DB → UI). **Permanece na stack:** o E2E de hoje só assere redirect do React Router porque falta o `globalSetup` com banco de teste — não é escolha errada de ferramenta. Alvo: 6–8 testes full-stack, **depois** dos testes de servidor. **O `globalSetup` deixou de ser pendência vaga e virou trabalho datado:** `implementation-plan.md` → Fase 3, **Bloco T**.
+- **Teste unitário: NÃO é uma camada aqui** — só função pura, sem I/O (hoje: um caso, o `escapeHtml`/`jsonLd`). Rota se testa por supertest contra o app real; tela, por component test. Convenção em `CLAUDE.md` → Testing.
+- **Renderer de Markdown do JilsonAI: PENDENTE — não há biblioteca escolhida nem instalada** (conferido Ago 2026: sem `react-markdown`, `marked` ou `dompurify` em nenhum `package.json`). O `CLAUDE.md` já **proíbe** `dangerouslySetInnerHTML` e exige HTML bruto desabilitado ou sanitizado, mas a regra não tem implementação porque a superfície ainda não existe. É **dependência nova ⇒ decisão de nível de plano**, com um requisito que já decide a escolha: desabilitar HTML bruto por **configuração**, não por sanitização posterior. Cai na Fase 6.
+- **Banco de teste = PostgreSQL 17 LOCAL** (`localhost:5432/jilsonsantana_test`), instalado pelo instalador oficial EDB. **Decisão REVISTA em Ago 2026:** a anterior ("um segundo projeto Supabase, não Postgres local — menos infra pro operador solo") caiu quando o mesmo projeto passou a servir **dev E teste** e o `migrate reset --force` da suíte começou a apagar o trabalho de desenvolvimento. **Martelo só é problema quando o que está embaixo tem valor:** com o banco de teste local e descartável, o reset volta a ser inofensivo, e a separação é **estrutural, não disciplinar**. Custo US$ 0. **Major 17 de propósito** — acompanha produção, e o Prisma 5.22 deste repo é anterior ao PostgreSQL 18. A trava do setup verifica **hostname parseado** contra uma lista de hosts locais (terceira forma da trava; as duas anteriores comparavam texto). Código, histórico e gatilho de reabertura: `CLAUDE.md` → Database & Migrations.
+- **Os dois projetos Supabase permanecem, com papéis novos:** `gaxmbnhwltljlkukdwba` = produção · `mvaobzypsiuhqzipcelw` = **dev / a escola**, nunca apagado, e é ele que serve de testemunha de reprodutibilidade contra produção (banco feito só de migrations, comparável por `get_advisors`).
 
 ## Deployment & CI
 
 - **Docker** — multi-stage build (client + server)
 - **Railway** — hosting; auto-deploy on push to `main` (railway.toml + Dockerfile). Health check at `/api/health`.
-- **GitHub Actions** — lint + test + build on push; Claude code review on PRs.
+- **GitHub Actions** — `npm ci` + build do core + typecheck (client/server) + **`Test client`** + **`Test server`** + build (client/server) + `npm audit` informativo. *(A frase antiga aqui — "não roda teste e não roda lint" — ficou obsoleta em duas etapas: o Bloco 0 da Fase 3 ligou o teste de client e apagou o `lint`, e a fatia do `globalSetup` ligou o de servidor. Não há ESLint no repo; o nome `lint` segue livre.)* O step de servidor **não precisa de secret nenhum** desde Ago 2026: o banco é um **service container `postgres:17`** em `localhost`, e todo segredo do run (`BETTER_AUTH_SECRET`, senhas de seed) é gerado no próprio job — o `globalSetup` reseta o banco a cada execução, então nada precisa sobreviver. *(Antes eram dois secrets, `TEST_DATABASE_URL` e `TEST_DIRECT_URL`, apontando para o Supabase; saíram junto com a mudança para banco local — connection string de nuvem em secret é superfície, `localhost` não é segredo.)* Claude code review on PRs: pendente.
+- **Monitor de erro em produção** — **decisão PENDENTE** (gerenciado, tier grátis, tipo Sentry; fornecedor não escolhido). Não é opcional: é pré-requisito do primeiro aluno pagante (`implementation-plan.md` → Fase 7).
 
 ## AI-Assisted Dev (quality gates)
 
-- **Claude subagents** (`.claude/agents/`): `security-vulnerability-reviewer`, `e2e-test-writer` (adapted from the Mosh reference).
+- **Claude subagents** (`.claude/agents/` — versionado; ver a exceção de ignore no `CLAUDE.md`): `security-vulnerability-reviewer` (existe; tools read-only, sem Edit/Write — reporta, nunca corrige). `e2e-test-writer` — **PENDENTE e ADIADO** (não existe; adapted from the Mosh reference): gerar teste numa camada que hoje nem roda no CI é dívida, não cobertura — só faz sentido depois do bloco Gates. Duas restrições já decididas pra quando nascer: Write/Edit **restrito a `e2e/**`** (sem acesso a `server/src`/`client/src`) e **só a mecânica** vai pro arquivo do agente. Detalhe em `CLAUDE.md` → Testing.
 - **Skills** (`.agents/skills/`): `frontend-design`, `better-auth-best-practices`, pinned via `skills-lock.json`.
 
 ## Server library (decision needed before Phase 6)
 
 - **Claude API SDK**: use Anthropic's official TypeScript SDK (`@anthropic-ai/sdk`) for JilsonAI. (The Mosh reference used the Vercel AI SDK with OpenAI; we use Anthropic directly.)
 
+## Public Surface (SEO)
+
+- **Rotas públicas = HTML montado no servidor** (Express + template + Tailwind, **sem React**). O app privado (`/aluno/*`, `/admin/*`) continua React SPA. Lista de rotas, trava do conteúdo-atrás-de-interação e política de `robots.txt`: `CLAUDE.md` → **Rendering Boundary**.
+- **Nenhum provedor muda por causa disto.** Railway, Supabase, Bunny, Stripe e Resend seguem. Registrado de propósito: *"vamos fazer certo"* é o clima em que se troca infraestrutura que estava boa. Nada se troca sem uma falha nomeável.
+- **Google Search Console** — conectar **agora** (a verificação demora e queremos histórico desde o dia um), mas **só produz dado ~30–60 dias depois do catálogo ir ao ar**. GSC mede **o nosso** desempenho no que já existe; ele **não substitui** ferramenta de pesquisa de mercado (volume, dificuldade de termo, tráfego de concorrente), que responde perguntas de **antes** de existir site.
+
 ## What We Do NOT Use (and why)
 
 - **Supabase Auth / JS Client / Realtime / Data API** — auth is Better Auth via Prisma; all DB access via Prisma.
+- **Stripe Customer Portal** — vem incluído no Billing, mas não usamos: a gestão de assinatura fica embutida na escola (aluno nunca sai do site), via Subscriptions API em telas nossas. *(Stripe Billing SIM — decisão revista em Ago 2026; ver a seção Billing.)*
+- **pg-boss (fila de jobs)** — **removido do MVP em Ago 2026.** Aplicação direta do critério de decisão de stack (`CLAUDE.md` → Working Method: *toda peça precisa impedir uma falha descritível em uma frase*). A falha que a fila evitaria é "o webhook falhou e ninguém retentou" — mas **a Stripe já reentrega quando devolvemos 5xx**, então mantínhamos worker + schema `pgboss` + um modo de falha próprio só pra duplicar o fornecedor. Agravante: o **alerta** de falha era ele mesmo uma fila do pg-boss — a detecção dependia da coisa que deveria detectar (a detecção agora é o monitor externo, acima). O webhook passa a ser **inline**: assinatura → `event.id` → espelho local → 200. **GATILHO DE VOLTA:** a fila retorna nas **Fases 4–5 do JilsonAI** (embeddings da KB; pipeline transcrição→chunk→embedding) — lote, demorado, retentável — e é código que ainda não existe, então entrar depois não refatora nada. No MVP do JilsonAI (Fases 0–3) o chat é síncrono com streaming: fila ali pioraria o produto. A razão do Mosh pra adotá-la é **CONHECIDA desde Ago 2026 e CONFIRMA a remoção** — as filas dele retentam chamada de LLM de terceiro, não o webhook; o caso de uso tem a forma exata do nosso gatilho de volta. Detalhe em `CLAUDE.md` → Background Jobs.
 - **Bun** — Node is the existing environment; less novelty to manage.
 - **Teachable / course platforms** — building an owned asset.
-- **Next.js** — audience comes from YouTube, not Google search; SPA is sufficient.
+- **Next.js** — PROPOSTO e REJEITADO de novo em Ago 2026, com razão **nova**: a razão antiga ("o público vem do YouTube, SPA basta") ficou **FALSA** quando a página de curso virou vitrine indexável. A razão que vale: a superfície pública é pequena e read-only e é servida como **template no servidor** (ver `CLAUDE.md` → Rendering Boundary); Next.js reescreveria o app privado, que não ganha nada com SEO. *Gatilho de reabertura no `CLAUDE.md`.*
 - **Gamification** — deliberately excluded (solo maintainability).

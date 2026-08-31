@@ -17,6 +17,16 @@ própria experiência de estudar é um caso de uso de IA bem-feito.
 > A busca não é caixa+filtros → é o JilsonAI entendendo o objetivo. O onboarding não é formulário →
 > é navegar livre com a IA por perto. O suporte não é fórum → é IA que resolve e escala.
 
+**Filtro 2 — patrimônio do aluno (switching cost ético; aplicar junto com o filtro acima):**
+> *"Essa feature aumenta o patrimônio que o aluno acumula aqui?"*
+> [FATO] O fosso da Apple não é o iPhone — é a biblioteca de fotos/iCloud: sair custa abandonar o
+> que se acumulou. As peças já existem espalhadas (trilha em progresso, certificados, histórico,
+> memória do JilsonAI na Fase 6); este filtro as trata como **um ativo só** e vira critério de
+> design de cada feature nova. Ética já alinhada ao anti-roach-motel (P4): **sair continua fácil**
+> — o que o aluno construiu fica esperando, o que transforma o patrimônio em motor de **winback**
+> (KPI 15–25%). A FAQ já promete "volte quando quiser, sem perder nada" — este filtro é a versão
+> estratégica dessa promessa.
+
 ---
 
 ## Visão geral
@@ -26,10 +36,11 @@ centrado em **habilidades de dados práticas, ensinadas de forma simples, acess�
 era da IA.
 
 Jilson é **instrutor e analista de dados sênior** que já ajudou **+100.000 alunos** no mundo a
-aprender dados de forma prática e aplicada. Tem 47 anos, é consciente de burnout e **não está
-construindo um império**. Sustentabilidade é restrição de design, não meta secundária. Todo o
-modelo é desenhado pra que **uma pessoa atenda muitos sem se esgotar** — por isso o **JilsonAI**
-(assistente de ensino na voz e método dele) é **prioridade de produto, não acessório**.
+aprender dados de forma prática e aplicada. A aposta agora é **construir um negócio maior**: usar
+**IA + sistemas integrados** pra que **uma pessoa atenda centenas de alunos** sem montar time — por
+isso o **JilsonAI** (assistente de ensino na voz e método dele) é **prioridade de produto, não
+acessório**. É ele que faz o suporte escalar sem virar headcount, viabilizando a **meta de receita
+(US$ 6k líq/mês, B2C-first)** com um operador só.
 
 **O modelo é uma assinatura única**, deliberadamente simples:
 
@@ -71,7 +82,8 @@ sobre crescimento rápido.
 - +100.000 alunos formados, dezenas de países
 - Udemy Business: milhares de alunos corporativos
 - 12+ anos como analista de dados e desenvolvedor full-stack
-- YouTube @JilsonUS — conteúdo de dados + IA aplicada, audiência grande (~177K)
+- YouTube "Jilson Santana" — canal de dados + IA aplicada, em **rebuild de inglês → português**
+  (~1.580 inscritos em jun/2026, base a reconstruir; o número "177K" era incorreto e foi descartado)
 - Catálogo "Formação Especialista" na Udemy (marca estabelecida)
 - Certificação PL-300
 
@@ -79,8 +91,10 @@ sobre crescimento rápido.
 
 ## Modelo, preço & esteira de valor
 
-> A base fica **acessível**; os tiers de cima carregam o ticket alto.
-> Resolve "acessibilidade + sem teto de receita" sem precificar a base alto.
+> **B2C-first:** a base (assinatura) fica **acessível** E é o **motor de receita** — a meta de US$ 6k
+> vem da base de **pessoas físicas** (363 ativos fecham a conta; **a meta é 500**). Os tiers de cima (cohorts, B2B) são **bônus** que
+> dão folga e aceleram, **não a via principal**. A escala vem do **volume da base**, viabilizada pelo
+> JilsonAI (suporte não escala com horas) — não de precificar a base alto.
 
 | Tier | O quê | Preço | Papel |
 |------|-------|-------|-------|
@@ -90,16 +104,46 @@ sobre crescimento rápido.
 
 ### Pricing da assinatura (TRAVADO)
 - **Mensal R$99,90/mês — sem fidelidade** (padrão, motor de aquisição).
-- **Anual ~R$995/ano** (~17% de desconto, cobrança única recorrente anual). Upgrade mensal→anual
-  usa proration nativo do Stripe.
+- **Anual ~R$995/ano** (~17% de desconto, cobrança única recorrente anual). Troca mensal↔anual
+  usa **proração nativa do Stripe Billing**, previsualizada antes de o aluno confirmar.
 - **Sem free trial. Sem conteúdo grátis dentro da escola** (o grátis vive no YouTube).
 - **Sem lock de preço vitalício** pra fundadores. Founding member, se houver, é por bônus/condição
   temporária — nunca preço travado pra sempre.
-- Build = **2 prices num produto "Assinatura"**; `temAcessoAtivo()` ignora qual price o aluno tem.
+- Build = **2 objetos `Price` da Stripe num produto "Assinatura"**; `temAcessoAtivo()` ignora qual price o aluno tem.
 - *Validação (Gemini, convergência ~95%):* mensal-sem-fidelidade ganha de anual-12x-travado em
   conversão × LTV; fidelidade 12x carrega risco de Procon/CDC/chargeback pra operador solo.
 - *KPIs a observar:* churn <8% (saudável BR 6–10%), conversão 3–5%, winback 15–25%,
   MRR-novo ≥20%>MRR-perdido, mix de plano 20–30% anual.
+
+### Meta de receita (B2C-first — atualizada Jun 2026)
+
+**Alvo: US$ 6.000 líquidos/mês.** Motor = **base de pessoas físicas** (assinatura). Cohorts e B2B = **bônus**.
+
+| Item | Valor | Nota |
+|------|-------|------|
+| Câmbio de referência | R$ 5,15/US$ | spot 23/jun/2026 — *atualizar no dia* |
+| Meta líquida | **≈ R$ 30.900/mês** | US$ 6.000 × câmbio |
+| Haircut | ~11–12% | Stripe **~5,2%** (Payments 3,99% + R$0,50 + Billing 0,7% — verificado ago/2026) + imposto Simples ~6% — *confirmar c/ contador* |
+| ARPU líquido | **R$ 85,04**/assinante/mês | mix 75% mensal / 25% anual — conta por plano em `strategy.md` §6 |
+| Assinantes — **a conta** | **363** (faixa 350–420) | o que a renda-objetivo exige |
+| Assinantes — **o PISO** | **~400** | margem de câmbio + mix anual + churn. Abaixo disto o objetivo de renda não fecha |
+| Assinantes — **a META** | **500** `[decisão do operador, Ago 2026]` | R$ 42,5k/mês líquido · **≈ R$ 574k/ano** bruto |
+| Faturamento bruto implícito | R$ 38k/mês no piso · **R$ 48k/mês na meta** | **território EPP** — Simples acima do ME |
+
+> **Premissa dominante, não confirmada:** o Simples de **~6% (Anexo III)**. Em **Anexo V (~15,5%)** o
+> ARPU cai pra ~R$ 76 e o alvo sobe pra **~407** — 44 assinantes, ordem de grandeza acima do delta de 3
+> do recálculo de ago/2026. Segue dentro do "planejar p/ ~400", então não muda decisão agora; é o
+> número a fechar com o contador. *(Derivação completa em `strategy.md` §6.)*
+
+**Aquisição (churn-adjusted):** a churn 7%, 365 ativos perdem ~26/mês → ~26 vendas novas/mês só pra
+**manter**. Trajetória 0 → 365: ~40 novas/mês ≈ 14 meses · ~50/mês ≈ 10 meses · ~60/mês ≈ 8 meses.
+**Churn é a maior alavanca** (7% → 5% derruba a reposição p/ ~18/mês). Funil: `vendas/mês = visitantes
+× conversão (3–5%)`. Inputs reais a preencher: views/mês YouTube, CTR→site, lista de e-mail. Detalhe
+completo em **STRATEGY.md §6**.
+
+> **Regime tributário:** a meta estoura MEI (R$ 81k/ano) e ME (R$ 360k/ano) → **EPP no Simples
+> Nacional**. Planejar desenquadramento + pró-labore/distribuição de lucros **com contador antes de
+> escalar** (não depois — desenquadramento por excesso é retroativo).
 
 ### Valor recorrente (o que a Udemy não dá)
 Conteúdo continuamente atualizado, JilsonAI 24/7, suporte direto, trilhas e certificados.
@@ -171,14 +215,16 @@ Automação & IA). Fio condutor: **dados na era da IA** ("X + Claude").
 
 ## Canais
 
-- **YouTube @JilsonUS — funil primário de aquisição + AdSense bônus.** 1 vídeo/semana, PT.
-  AdSense é **bônus real**, não a renda principal (assinatura + tiers de cima são). RPM PT/BR é baixo
-  — é compounding de longo prazo, não atalho.
-- **Udemy — descoberta / prova social + âncora de credibilidade** ("+100 mil alunos"). **Fora do
-  escopo deste projeto** — tratada em projeto Claude separado. Não há UDEMY.md aqui.
-- **Táticas de captura aprovadas:** lição "Próximos passos" no fim dos cursos; 1–2 e-mails
-  educativos/mês; trailer do canal; CTA guiada por identidade (tagline oficial); escassez de
-  founding member (sem lock vitalício) pros alunos Udemy.
+- **Udemy (+100 mil alunos) — MOTOR de aquisição inicial.** A alavanca de curto prazo é **e-mail
+  pra base Udemy** convidando pro canal/site. Mesmo conversão baixa (0,3–0,5%) já dá centenas de
+  assinantes (ordem da meta de 500). Udemy em si fica **fora do escopo de build** (projeto à parte),
+  mas é o canal de aquisição nº 1 no lançamento. Não há UDEMY.md aqui.
+- **YouTube "Jilson Santana" — em rebuild PT (~1.580 inscritos), compounding de médio/longo prazo.**
+  Era inglês, está virando PT. 1 vídeo/semana. **Não é o motor no curto prazo** (base pequena, ainda
+  a reconstruir) — vira motor à medida que cresce. AdSense é **bônus** (RPM PT/BR baixo).
+- **Táticas de captura aprovadas:** **campanha de e-mail pra base Udemy** (convite pro canal + site);
+  lição "Próximos passos" no fim dos cursos; 1–2 e-mails educativos/mês; trailer do canal; CTA guiada
+  por identidade (tagline oficial); escassez de founding member (sem lock vitalício) pros alunos Udemy.
 
 ---
 
@@ -237,7 +283,7 @@ Custom-built (não Teachable), como ativo transferível e independente:
 
 **React + TypeScript + Vite + Tailwind + shadcn/ui + Express + TypeScript + Prisma +
 Supabase (PostgreSQL) + Better Auth (sessões em DB) + Bunny Stream (vídeo + DRM) +
-Stripe (recorrência) + Claude API @anthropic-ai/sdk (JilsonAI) + pg-boss + Railway + Resend +
+Stripe (recorrência) + Claude API @anthropic-ai/sdk (JilsonAI) + Railway + Resend +
 GitHub Actions.**
 
 | Camada | Ferramenta | Papel |
@@ -247,11 +293,11 @@ GitHub Actions.**
 | DB | Supabase (PostgreSQL) | Armazenamento (auth data hospedada aqui) |
 | Auth | **Better Auth** (adapter Prisma, sessões em DB) | **NÃO** Supabase Auth |
 | Vídeo | Bunny Stream (DRM) | Vídeo de curso gated |
-| Billing | Stripe (recorrente + Customer Portal) | Assinatura |
+| Billing | Stripe Payments + **Stripe Billing** (Payment Element embutido; **sem** Customer Portal) | Assinatura |
 | IA | Claude API (`@anthropic-ai/sdk`) | JilsonAI |
-| Fila | pg-boss (Postgres-native) | Jobs async (e-mail, etc.) |
+| Fila | **nenhuma no MVP** (pg-boss removido Ago 2026) | Volta só com o JilsonAI Fases 4–5 — ver `tech-stack.md` |
 | E-mail | Resend | Transacional + educativo |
-| Deploy/CI | Railway + GitHub Actions | Hosting, lint/test/build |
+| Deploy/CI | Railway + GitHub Actions | Hosting, CI (hoje typecheck/build; teste e lint entram no bloco Gates da Fase 3) |
 | Certificado | PDF server-side | Conclusão de trilha/curso |
 
 - **Custo de infra no lançamento:** baixo (Supabase free → Pro $25 quando alunos chegarem).
@@ -276,7 +322,7 @@ GitHub Actions.**
 | 1 — Auth (Better Auth) | login, rotas protegidas, admin gate | baixo |
 | 2 — Conteúdo + **Trilhas** | curso/módulo/aula (aula first-class) + LearningPlan/PlanItem + busca | baixo–médio |
 | 3 — Vídeo (Bunny) | upload, signed URL, gate de acesso | **ALTO** |
-| 4 — Billing (Stripe) | 2 prices, webhooks, portal, `temAcessoAtivo` | **ALTO** |
+| 4 — Billing (Stripe) | 2 prices, Payment Element, webhooks de assinatura, telas próprias de gestão, `temAcessoAtivo` | **ALTO** |
 | 5 — Progresso + captura de evento | LessonProgress + conclusão de trilha + LessonEvent | baixo–médio |
 | 6 — JilsonAI (v1 + suporte) | ver JILSONAI.md (Fases 0–3) + `recommendTrilha` | médio |
 | 6.5 — Certificados | PDF a 100% (nome + competências) | baixo–médio |
@@ -298,16 +344,17 @@ GitHub Actions.**
   frontend.
 - **Type-safe**, conteúdo gerido por admin onde possível.
 - **Construído pra durar e pra um operador** — limpo, documentado, sustentável de rodar solo aos 47.
-- **Acessibilidade é valor, não compromisso.** A base fica acessível; a receita escala pela esteira,
-  nunca por subir a base.
+- **Acessibilidade é valor, não compromisso.** A base fica acessível **e é o motor de receita** — a
+  meta vem do **volume da base** (pessoas físicas), viabilizado pelo JilsonAI. A esteira (cohorts/B2B)
+  é bônus/upside, não a via principal.
 
 ---
 
 ## Princípio-guia
 
 > Simples como a Apple, autoridade como o Mosh, **AI no DNA** como assinatura única —
-> base acessível, ticket alto nos tiers de cima, AdSense de bônus, escalável pelo JilsonAI,
-> sustentável aos 47. **A escola não ensina IA: a escola É IA.**
+> base acessível **como motor de receita** (meta **US$ 6k líq ≈ ~365 assinantes**), cohorts/B2B/AdSense
+> de bônus, escalável pelo JilsonAI. **A escola não ensina IA: a escola É IA.**
 
 ---
 
@@ -334,6 +381,15 @@ removido da escola. Udemy fora do escopo (projeto à parte). B2B/corporativo com
 Fase 12, seams prontos). Design travado (Apple-claro + azul #238FE8 da logomarca). Stack atualizada
 (Vite, shadcn, Better Auth, pg-boss). Fase 0 concluída.*
 
+*Atualização: Jun 2026 — META B2C-FIRST. Adicionado alvo explícito de receita: **US$ 6.000 líq/mês
+≈ ~365 assinantes ativos** (pessoa física = motor; cohorts/B2B = bônus, não load-bearing). Nova seção
+"Meta de receita (B2C-first)" com premissas (câmbio R$5,15, haircut ~11%, ARPU líq ~R$85) + matemática
+de aquisição churn-adjusted + alerta de regime tributário (EPP, planejar com contador). Visão geral,
+esteira de valor, princípio de acessibilidade e princípio-guia reescritos: base = motor de receita
+(volume), não "base modesta". Removido o enquadramento "não construindo um império / sem se esgotar"
+— substituído pela tese de alavancagem (IA + sistemas atendem centenas solo). Detalhe econômico em
+STRATEGY.md §6. Premissas de câmbio/imposto a confirmar (câmbio no dia; tributação com contador).*
+
 *Atualização: Jun 2026 (rev. externa Gemini aplicada) — seams de execução distribuídos por fase
 sem inflar o MVP (0–7): UTM capture (P1), hero da landing MOCKADO/sem-API (DESIGN §2), signed URL
 elástico sem IP-lock (P3), force-sync Stripe + offboarding anti roach-motel (P4), certificado
@@ -341,3 +397,16 @@ público opt-in (P6.5), motivo de cancelamento no launch (P7), regra anti-alucin
 (JilsonAI Fase 0), draft de resposta no admin (fast-follow). Parqueado: auto-ingestão de
 LessonChunks (Fase 5 RAG, pós-MVP). Detalhe em IMPLEMENTATION-PLAN.md / JILSONAI.md / DESIGN.md /
 CLAUDE.md / TECH-STACK.md.*
+
+*Atualização: Jul 2026 — Filtro 2 "patrimônio do aluno" adicionado ao lado do filtro AI-no-DNA
+(switching cost ético: cada mês de uso aumenta o valor de ficar; sair segue fácil — anti-roach-motel
+— e o patrimônio persistente vira motor de winback). Parte do playbook big-tech→solo: demais peças
+em STRATEGY.md (categoria nomeada "AI-nativa", ferramentas grátis pós-launch, cadência ritual),
+DESIGN.md §6 + IMPLEMENTATION-PLAN P6.5 (certificado como mídia) e JILSONAI.md ("De tutor a
+ferramenta"). Nada infla o MVP (0–7) — são lentes, filtros e seams, não fases novas.*
+
+*Atualizado Ago 2026 — **Stripe Billing adotado** (Payment Element embutido; Customer Portal segue fora — gestão e cancelamento em telas nossas via Subscriptions API). Reconcilia a pendência aberta desde Jul 2026: as menções a "Customer Portal", "proration nativo do Stripe" e "2 prices" resolvem-se agora **a favor** do Billing, não contra. Haircut de Stripe corrigido de ~4–5% para **~5,2%** (Payments BR 3,99% + R$ 0,50, verificado ago/2026 — a nota anterior dizia R$ 0,39 — mais Billing 0,7%). **Recálculo feito (pendência resolvida):** ARPU líquido **R$ 85,04** e alvo **363** — confirmam os ~R$85 / ~365 que já estavam aqui, delta de 3 assinantes. A metodologia detalhada (conta por plano, R$ 0,50 por transação, Simples sobre o bruto) fica registrada em `strategy.md` §6 e **não é duplicada aqui**. Marcada a premissa que realmente move o número: o **Simples ~6% (Anexo III) é não confirmado** — em Anexo V (~15,5%) o alvo sobe pra ~407.*
+
+*Atualizado Ago 2026 (2) — **pg-boss sai da stack** (auditoria de testes/stack). A tabela e o parágrafo de stack acima foram reconciliados: **não há fila no MVP** — o webhook da Stripe roda inline e a fila só volta com o JilsonAI Fases 4–5. Razão completa (e o gatilho de volta) em `tech-stack.md` → What We Do NOT Use e `CLAUDE.md` → Background Jobs; **não duplicada aqui**. A linha Deploy/CI também deixou de dizer "lint/test/build": [FATO] o CI hoje não roda nem teste nem lint — conserto promovido pro bloco **Gates** no topo da Fase 3 (`implementation-plan.md`). Nasce junto o critério que decidiu isso: **toda peça de stack precisa impedir uma falha descritível em uma frase; na dúvida, remove** (`CLAUDE.md` → Working Method).*
+
+*Atualizado Ago 2026 (3) — **meta de assinantes: 500** `[decisão do operador]`. A tabela de economia passa a distinguir três números que antes vinham colapsados em um: **363 = a conta** (derivada da renda-objetivo), **~400 = o piso** (a conta + margem de câmbio/mix/churn), **500 = a meta**. Nenhum número da derivação foi sobrescrito — a mudança é de *enquadramento*: o piso vinha sendo tratado como destino. Racional completo, trajetória e gatilho de reabertura em `strategy.md` §6.*

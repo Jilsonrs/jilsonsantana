@@ -1,0 +1,45 @@
+import type { ReactElement } from "react";
+import { render } from "@testing-library/react";
+import { MemoryRouter, Routes, Route } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+// Shared by content-page tests (Catalog/CourseDetail/TrilhaDetail) — each
+// needs both a router (for :slug params / Link navigation) and a QueryClient
+// (retry disabled so error-state tests don't hang on retries). `path` is the
+// Route pattern (e.g. "/curso/:slug") so useParams resolves; `route` is the
+// initial location to render.
+export function renderWithProviders(
+  ui: ReactElement,
+  {
+    route = "/",
+    path = "*",
+    extraRoutes = [],
+  }: {
+    route?: string;
+    path?: string;
+    /**
+     * Rotas adicionais para onde o componente sob teste pode NAVEGAR.
+     *
+     * Existe porque só havia UMA rota montada, e um teste de "entrou e foi
+     * redirecionado" não tinha destino — o `<Navigate>` renderizava no vazio e
+     * não dava o que assertar. A alternativa seria mockar `useNavigate`, que
+     * testaria implementação; um marcador na rota de destino testa o
+     * comportamento OBSERVÁVEL: a pessoa chegou na outra tela.
+     */
+    extraRoutes?: { path: string; element: ReactElement }[];
+  } = {},
+) {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter initialEntries={[route]}>
+        <Routes>
+          <Route path={path} element={ui} />
+          {extraRoutes.map((r) => (
+            <Route key={r.path} path={r.path} element={r.element} />
+          ))}
+        </Routes>
+      </MemoryRouter>
+    </QueryClientProvider>,
+  );
+}

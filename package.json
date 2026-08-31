@@ -11,8 +11,8 @@
     "dev:client": "npm --workspace client run dev",
     "dev:server": "npm --workspace server run dev",
     "build": "npm --workspace core run build && npm --workspace client run build && npm --workspace server run build",
-    "typecheck": "npm --workspace core run typecheck && npm --workspace client run typecheck && npm --workspace server run typecheck",
-    "lint": "npm --workspace client run lint && npm --workspace server run lint"
+    "typecheck": "npm --workspace core run typecheck && npm --workspace client run typecheck && npm --workspace server run typecheck && npm --workspace e2e run typecheck",
+    "test": "npm --workspace client run test && npm --workspace server run test"
   },
   "engines": {
     "node": ">=20.0.0",

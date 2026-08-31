@@ -182,6 +182,13 @@ Corpo com `line-height` generoso (1.6) e medida de linha ~66ch — leitura confo
 - **Button** — primary `bg-primary text-primary-foreground rounded-full`; hover `--primary-hover` +
   leve `scale-[1.01]`; secondary = contorno fino. Foco visível sempre (`--ring`).
 - **Certificate (preview)** — mostra nome da trilha + **competências cobertas** (o que vale pro RH).
+- **CertificatePublicPage (P6.5)** — o certificado como **mídia de aquisição** (badges AWS/Google
+  no LinkedIn = distribuição com CAC zero). Página pública **opt-in** (`isPublic`, LGPD — trava já
+  existe no plano) com: **OG image dedicada** gerada server-side junto com o PDF (wordmark + nome
+  do aluno + trilha + competências — clima Apple, azul só no acento); botão **"Adicionar ao
+  LinkedIn"** (deep-link Add-to-Profile pré-preenchido); e **UTM `utm_source=certificate`** em todo
+  link de volta pro site — fecha o loop com o attribution capture da P1 e torna cada aluno formado
+  um canal de aquisição **rastreável**.
 
 ---
 
@@ -251,6 +258,62 @@ Corpo com `line-height` generoso (1.6) e medida de linha ~66ch — leitura confo
 
 ---
 
+## 13. Área logada — shell de aplicação
+
+A área logada é um **shell de aplicação**, não uma landing. Herda a marca, não a gramática
+da landing.
+
+**HERDA:** tokens de cor, MuseoModerno (títulos) + Hanken Grotesk (corpo), `rounded-2xl`,
+sombra quase zero, hairline `--border`, foco visível, contraste AA, precisão de espaçamento.
+
+**NÃO HERDA:** a escala tipográfica do hero (`clamp 2.5–4.5rem`), o ritmo de seção
+`py-24`/`py-32`, o elemento-assinatura, os scroll reveals, a ousadia concentrada. Logado é
+mais denso e mais quieto — o aluno volta aqui todo dia. A elegância vem da precisão, não de
+momentos.
+
+### Layout
+
+Rail de ícones à esquerda (fixo, ~72px) + área de conteúdo. Sem segunda coluna de navegação
+no launch — um produto solo não sustenta dois níveis de cromo. O número de itens é aberto; o
+rail tem que funcionar de 4 a 8 itens sem redesenho.
+
+### Rail
+
+- **Fundo:** `--surface-alt` (#F6F9FC). **Nunca escuro** — o §3 mantém o produto claro, e um
+  rail escuro introduz uma segunda linguagem visual.
+- **Ícones:** Lucide, traço fino, `--muted-foreground`.
+- **Item ATIVO:** pill de fundo `--primary-tint` + ícone `--primary`. É o ÚNICO lugar onde o
+  azul aparece no rail.
+- **Motivo:** o azul é o acento único (§3). Inundar o rail de #238FE8 gastaria ele no cromo
+  de navegação e deixaria as ações primárias ("Continuar trilha", "Assinar") sem nada contra
+  o que se destacar.
+- **JilsonAI no rail segue a regra do rail:** inativo = ícone neutro (`--muted-foreground`),
+  como qualquer outro item. O "brilho" azul do JilsonAI (§3) vive DENTRO da feature —
+  avatar, ação de enviar, painel de chat — nunca no cromo de navegação. Motivo: se o item do
+  JilsonAI é azul permanentemente, o rail perde o único sinal de "onde estou". Navegação tem
+  uma verdade só.
+- Hairline `--border` separando rail e conteúdo. Sem sombra.
+
+### Escala tipográfica (reduzida em relação à landing)
+
+- **Título de página:** 1.75rem, MuseoModerno 600
+- **Seção:** 1.25rem, Hanken 600
+- **Corpo/UI:** 0.9375–1rem, Hanken 400
+- **Meta:** 0.8125rem, `--muted-foreground`
+
+### Densidade
+
+- Padding de conteúdo: `py-8` a `py-12` (NÃO `py-24`)
+- Gap de cards: `gap-4` a `gap-6` (NÃO `gap-8`)
+- Sem animação de entrada na navegação. Só micro-interações de hover/foco.
+
+### Piso de qualidade (mesmo do §9)
+
+Responsivo até mobile (o rail colapsa em bottom bar ou drawer — decidir no build), foco de
+teclado visível, `prefers-reduced-motion` respeitado, contraste AA.
+
+---
+
 *Criado: Jun 2026 — reescrita total. Substitui o design.md de consultoria (dark/#238FE8/$119/Service 6).
 Direção: Apple claro + acessível, acento único #238FE8 (azul da logomarca), MuseoModerno (marca) +
 Hanken Grotesk (corpo) + JetBrains Mono (dados). Assinatura = a trilha que se monta sozinha no hero
@@ -259,3 +322,24 @@ cor hardcoded; dark mode fora do MVP (seam preservado). Ordem das seções = dec
 *Atualizado: Jun 2026 (rev. externa Gemini) — §2: hero da landing pública é MOCKADO/roteirizado
 com presets pré-computados; NUNCA chama a Claude API (latência/custo/abuso). Montagem real de
 trilha só na área logada.*
+*Atualizado: Jul 2026 — §6 ganha CertificatePublicPage (P6.5): certificado como mídia de aquisição
+(OG image dedicada server-side, botão Add-to-Profile do LinkedIn, UTM utm_source=certificate
+fechando o loop com a captura de atribuição da P1). Racional no playbook big-tech→solo em
+STRATEGY.md; opt-in/LGPD inalterados.*
+*Atualizado: Ago 2026 — **§13 nova: área logada = shell de aplicação**, não landing. Herda a marca
+(tokens, MuseoModerno+Hanken, rounded-2xl, sombra quase zero, hairline `--border`, foco visível, AA)
+e NÃO herda a gramática da landing (escala do hero, ritmo py-24/py-32, elemento-assinatura, scroll
+reveals, ousadia concentrada) — logado é mais denso e mais quieto, o aluno volta todo dia. Layout =
+rail de ícones à esquerda (~72px, fixo) + conteúdo, sem segunda coluna de nav no launch (de 4 a 8
+itens sem redesenho). Rail em `--surface-alt` (claro, nunca escuro — evita uma segunda linguagem
+visual) e o azul aparece SÓ no item ativo (pill `--primary-tint` + ícone `--primary`): o acento
+único do §3 fica reservado pras ações primárias ("Continuar trilha", "Assinar"), não pro chrome de
+navegação. Escala tipográfica e densidade reduzidas (título 1.75rem; py-8/py-12; gap-4/gap-6; sem
+animação de entrada na navegação). Piso de qualidade do §9 vale igual; colapso do rail no mobile
+(bottom bar ou drawer) = decisão de build.*
+*Atualizado: Ago 2026 (2) — **§13: JilsonAI no rail segue a regra do rail** (resolve o conflito
+§3 × §13 levantado quando a seção entrou). Inativo = ícone neutro `--muted-foreground`, como
+qualquer outro item; o "brilho" azul do JilsonAI vive DENTRO da feature (avatar, ação de enviar,
+painel de chat), nunca no cromo de navegação — um item permanentemente azul faria o rail perder o
+único sinal de "onde estou". Navegação tem uma verdade só. Corpo do §13 também traduzido pro PT,
+na voz dos §§1-12 (tokens, valores Tailwind e CSS vars seguem em inglês — são código, não prosa).*

@@ -2,9 +2,12 @@
   "name": "@jilson/e2e",
   "version": "0.0.1",
   "private": true,
+  "// type": "ESM para casar com core/client/server, que já são. Sem isto o e2e é o único workspace em CJS: `import.meta.url` não existe, e importar a trava de `server/src/test` (ESM) falha.",
+  "type": "module",
   "scripts": {
     "test": "playwright test",
-    "test:ui": "playwright test --ui"
+    "test:ui": "playwright test --ui",
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "@playwright/test": "^1.45.1",

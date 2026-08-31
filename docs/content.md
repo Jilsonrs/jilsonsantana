@@ -28,6 +28,11 @@ congela, dúvida que demora dias, fórum onde ninguém responde, ou IA empacotad
 enterprise separado. Aqui a **IA é a experiência** — tutor, suporte e guia do aluno, no plano
 acessível. Conteúdo da era da IA exige escola da era da IA.
 
+> **Nome da categoria (posicionamento/SEO — não jargão de vitrine):** *a primeira escola de dados
+> **AI-nativa** do Brasil.* O termo vive em manifesto, bio, imprensa e SEO — nomeia a categoria
+> antes que um concorrente nomeie (racional em STRATEGY.md §1). Na copy pro aluno, a tradução
+> acessível continua sendo a tese acima: "aqui a IA é a experiência".
+
 ---
 
 ## Copy Filter (aplicar a TODO conteúdo)
@@ -84,6 +89,11 @@ com conteúdo velho.
 
 > Pilar 2 é o herói (centro visual) — ataca o medo nº1 de quem estuda dados: "vou empacar e
 > desistir". Pilar 3 responde "por que continuo pagando depois de terminar?" — anti-churn virando copy.
+
+> **Cadência ritual no Pilar 3 (decidir o dia no go-live — TBD):** a promessa "sempre à frente"
+> ganha **relógio público** — ex.: *"toda primeira segunda do mês, novidade na escola."* Vira 1
+> frase aqui no Pilar 3 + 1 item na FAQ (§11). ⚠️ Mensal e humilde (1 aula/atualização basta):
+> **previsibilidade > volume** — é promessa pública (racional em STRATEGY.md §6).
 
 ---
 
@@ -202,6 +212,9 @@ quiser trilha, tutor 24/7 e certificado, a escola te espera."
 - **Tem certificado?** Sim, ao concluir.
 - **O que é o JilsonAI?** Um tutor de IA no meu método, 24/7. Tira dúvida na hora — e quando ele não resolve, eu entro.
 - **Quanto tempo até aplicar?** Aulas curtas, feitas pra aplicar no mesmo dia.
+- **Com que frequência sai coisa nova?** *(rascunho — ativar quando o dia da cadência for decidido,
+  ver §3)* Todo mês, em dia fixo — [dia TBD]. A ferramenta mudou, a aula muda; e a novidade chega
+  sempre na mesma data.
 
 ---
 
@@ -230,6 +243,51 @@ quiser trilha, tutor 24/7 e certificado, a escola te espera."
 
 ---
 
+## 15. Página de Curso (copy dos blocos) — NÃO é a landing
+> `CoursePage.tsx` · **ATIVO (Fase 2)** · página leve (catálogo), não landing de venda
+> Mapeada da análise dos concorrentes (Mosh/Xperiun/Hashtag). A *landing* vende a assinatura;
+> a página de curso só apresenta o curso pra quem já é (ou está a 1 clique de ser) membro.
+
+**Ordem dos blocos (mobile-first):**
+1. **Hero** — título + subtítulo (1 frase de resultado) + strip de metadados em ícone
+   (⏱ carga · 🎬 nº aulas · 📊 nível · 🏅 certificado). Carga e nº de aulas = **derivados**.
+   Vídeo de apresentação toca aqui (e toca pra quem **ainda não é membro** — é venda).
+2. **Diferenciais do curso** — cards com ícone (não texto corrido). 3–4 por curso.
+   *Ex. (Excel + IA):* "Foco em aplicação real" · "Cenário profissional coerente" · "Aulas
+   diretas e objetivas" · "Excel moderno que poucos dominam".
+3. **Metodologia 3 Camadas** (selo — ver abaixo). Só aparece com as camadas que o curso tem.
+4. **O que você vai aprender** — tag pills clicáveis.
+5. **Pré-requisitos** — **mostrados abertamente** (os concorrentes escondem; aqui é transparência
+   que reduz frustração/reembolso — e numa assinatura não custa venda).
+6. **Pra quem é** — personas.
+7. **Conteúdo** — accordion Módulo → Aula.
+8. **FAQ do curso** *(opcional)* — accordion. Só aparece se preenchido. A FAQ global da landing
+   (§11) já cobre a assinatura; aqui é só dúvida específica do conteúdo. **O JilsonAI é a FAQ viva**
+   (pergunta de curso → responde no contexto do curso), então preencha 2–3 itens só onde houver
+   dúvida recorrente real — não escreva FAQ completa por curso (catálogo amplo = burnout).
+
+> Imagem do curso = aparece na **lista/catálogo**. Vídeo de apresentação = aparece na **página de
+> detalhe**. São dois ativos distintos, ambos opcionais (não obrigue thumbnail caprichada + vídeo
+> por curso no lançamento — produção recorrente).
+
+### Bloco "Metodologia 3 Camadas" (o diferencial — equivalente aos "pilares" dos concorrentes)
+
+**Frase de abertura:** "Cada curso, montado em três camadas — pra você aplicar hoje e evoluir sempre."
+
+**As 3 camadas (texto global — escrito 1 vez, igual em todo curso que tiver a camada):**
+- 📐 **Fundamentos sólidos** — "A base que funciona em qualquer versão — você aplica com o que já tem."
+- ⚡ **Recursos modernos** — "Os recursos mais atuais que aceleram seu trabalho e poucos dominam."
+- ✦ **Com IA do seu lado** — "A IA como copiloto pra gerar lógica, destravar erros e ganhar tempo."
+
+> Build: ícones Lucide `stack-2` · `bolt` · `sparkles` (azul #238FE8 **só** na camada IA). O curso
+> marca quais camadas tem (`Course.camadas[]`) — pode ter 1, 2 ou 3. Nem todo curso tem as três
+> (N8N pode ter só IA). Texto global por padrão; `camadaOverride` por curso é exceção (ex. N8N).
+> **REVELAR** a promessa das camadas; **NÃO revelar** a economia interna (% de reaproveitamento,
+> a palavra "reaproveitado", o jargão "3 camadas"). O "precisa do Excel 365 pra praticar" o Jilson
+> **fala na aula** — não vira texto. "Excel 365" nunca entra no texto global (quebra fora do Excel).
+
+---
+
 ## Removido nesta versão (não reintroduzir)
 Consultoria (6 serviços/Service 6/$100hr/Process/Portfolio), ContactForm de consultoria,
 cursos a $119 avulsos, membership $29.99, free trial, conteúdo grátis na escola, fórum de
@@ -242,3 +300,10 @@ pares, copy em inglês, "cursos escondidos até 10K subs", ataque direto à Udem
 Comunidade redefinida como suporte AI-nativo + anúncios (sem fórum de pares). Certificado e
 suporte no lançamento. Tecnicas de concorrente aproveitadas: tabela medieval×IA, "decisão/
 problema primeiro", inversão "não prende" vs "não evapora". 1 TBD: condição de Founding Member.*
+
+*Atualizado: Jun 2026 — adicionada **§15 Página de Curso** (mapeada da análise Mosh/Xperiun/Hashtag): ordem dos blocos, diferenciais como cards-ícone, pré-requisitos mostrados, imagem (lista) vs vídeo de apresentação (detalhe). **Bloco Metodologia 3 Camadas** = selo opcional com textos globais (Fundamentos sólidos · Recursos modernos · Com IA do seu lado), ícones stack-2·bolt·sparkles (azul só na IA). Revelar a promessa, esconder a economia. É página de curso, NÃO a landing.*
+*Atualizado: Jun 2026 — §15 ganhou bloco 8 (FAQ do curso, opcional): só aparece se preenchida, JilsonAI cobre o caso geral, 2–3 itens por exceção.*
+*Atualizado: Jul 2026 — playbook big-tech→solo (racional em STRATEGY.md): nome da categoria
+adicionado em "A tese" (AI-nativa = posicionamento/SEO; copy do aluno inalterada); cadência ritual
+anotada no §3 (Pilar 3) + item de FAQ como rascunho TBD (dia fixo mensal, decidir no go-live —
+promessa mensal e humilde). Nenhuma seção nova na landing.*

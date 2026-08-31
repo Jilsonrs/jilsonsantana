@@ -1,0 +1,29 @@
+-- Habilita RLS na tabela de bookkeeping do PRÓPRIO Prisma.
+--
+-- POR QUE ESTA MIGRATION EXISTE (ela é a única que mexe numa tabela que não é
+-- nossa): `_prisma_migrations` é criada pelo Prisma FORA das migrations
+-- versionadas, então nenhum ENABLE ROW LEVEL SECURITY nosso jamais passou por
+-- ela. A convenção do CLAUDE.md ("toda tabela em `public` tem RLS habilitado,
+-- sem policies") vinha sendo cumprida para as 10 tabelas de domínio e furada
+-- justamente nesta.
+--
+-- A lacuna ficou INVISÍVEL por um motivo específico, que é a lição a guardar:
+-- em produção a tabela JÁ ESTAVA com RLS ligado — mas por um ajuste MANUAL,
+-- fora do versionamento. Verificar só produção dizia "está tudo certo". Foi a
+-- criação de um SEGUNDO banco a partir das MESMAS 3 migrations que revelou o
+-- furo: lá `_prisma_migrations` nasceu com relrowsecurity = false.
+-- Estado verificado em UM ambiente não prova estado REPRODUZÍVEL.
+--
+-- Idempotência: `ENABLE ROW LEVEL SECURITY` é no-op quando o RLS já está
+-- ligado — verificado empiricamente antes de escrever esta migration (três
+-- ALTERs consecutivos numa tabela de sondagem, sem erro). Por isso ela roda
+-- limpa em produção, onde o estado já é o desejado, sem precisar de guarda
+-- condicional.
+--
+-- Segurança: RLS aqui NÃO tranca o Prisma fora do próprio histórico. O papel
+-- que conecta é dono da tabela e `relforcerowsecurity` é false, então o dono
+-- ignora RLS. Produção é a prova viva: já está assim e o `migrate deploy`
+-- funciona. RLS bloqueia a Data API do Supabase (anon/authenticated), que é
+-- exatamente o alvo da convenção.
+
+ALTER TABLE "public"."_prisma_migrations" ENABLE ROW LEVEL SECURITY;

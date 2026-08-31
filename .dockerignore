@@ -4,7 +4,11 @@ dist/
 **/dist/
 .git/
 .gitignore
+# `**/.env` casa só com o nome exato — NÃO cobre `.env.test`/`.env.local`.
+# Sem o glob, `COPY server/ ./server/` leva o arquivo de segredo para uma camada
+# do builder. Mesmo defeito que o `.gitignore` tinha (corrigido em Ago 2026).
 **/.env
+**/.env.*
 *.log
 playwright-report/
 test-results/
