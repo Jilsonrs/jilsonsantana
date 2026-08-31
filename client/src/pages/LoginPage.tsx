@@ -26,19 +26,29 @@ export function LoginPage() {
 
   async function onSubmit(values: LoginInput) {
     setFormError(null);
-    const { error } = await signIn.email({
-      email: values.email,
-      password: values.password,
-    });
-    if (error) {
-      // 401 = bad credentials. Anything else (origin/CSRF, network, server) is
-      // a different failure and must not be reported as "wrong password".
-      if (error.status === 401) {
-        setFormError("E-mail ou senha incorretos.");
-      } else {
-        console.error("Falha no login:", error);
-        setFormError("Não foi possível entrar agora. Tente novamente.");
+    try {
+      const { error } = await signIn.email({
+        email: values.email,
+        password: values.password,
+      });
+      if (error) {
+        // 401 = bad credentials. Anything else (origin/CSRF, network, server) is
+        // a different failure and must not be reported as "wrong password".
+        if (error.status === 401) {
+          setFormError("E-mail ou senha incorretos.");
+        } else {
+          console.error("Falha no login:", error);
+          setFormError("Não foi possível entrar agora. Tente novamente.");
+        }
+        return;
       }
+    } catch (err) {
+      // `signIn.email` normalmente RESOLVE com `{ error }`, mas numa queda de
+      // rede ela pode REJEITAR. Sem este catch a rejeição escapava do handler:
+      // nenhuma mensagem aparecia e o botão ficava preso em "Entrando…", sem a
+      // pessoa saber o que houve. Achado por teste, não por leitura.
+      console.error("Falha no login:", err);
+      setFormError("Não foi possível entrar agora. Tente novamente.");
       return;
     }
     navigate("/conta", { replace: true });

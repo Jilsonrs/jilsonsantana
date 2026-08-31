@@ -41,7 +41,8 @@
 > 3 aulas e 1 trilha intactos.
 >
 > **Cobertura de teste — o que EXISTE hoje (medido em Ago 2026, não estimado):** cliente **9
-> arquivos / 23 testes** (Vitest + RTL) ✅ no CI · servidor **1 arquivo / 3 testes de fumaça**
+> arquivos / 35 testes** (Vitest + RTL) ✅ no CI — a tela de **login** fechada pelos 8 critérios,
+> com prova por mutação · servidor **1 arquivo / 3 testes de fumaça**
 > (supertest, Postgres local) ✅ no CI · E2E **1 arquivo / 6 testes** ✅ **no CI, em job próprio,
 > com trava de host local e prova por mutação** *(T1 fechado — antes rodava contra o banco de
 > produção, sem `globalSetup`)*. As três camadas agora rodam e podem falhar.
@@ -664,9 +665,27 @@ escapa nada.
       rota só (`path`, default `"*"`), então o teste (5) não tem `/conta` onde aterrissar. Resolver
       **estendendo o helper** com uma rota extra opcional — não mockando `useNavigate`, que testaria
       implementação em vez de comportamento observável.
-- [ ] **Prova por mutação antes de marcar:** repetir a mutação acima (apagar o tratamento de erro
-      do `onSubmit`) e confirmar que a suíte **reprova**. Se passar, os testes novos valem tanto
-      quanto o antigo.
+- [x] **Prova por mutação — feita, e o contraste é o resultado do bloco.** A MESMA mutação (apagar
+      o tratamento de erro do `onSubmit`) que antes dava **23/23 verde** agora derruba **4 testes**;
+      revertida, **35/35**. O arquivo antigo tinha 12 linhas e não podia falhar; o novo tem 13
+      testes e falha quando deve.
+- [x] **BUG REAL ENCONTRADO PELO TESTE (14), não por leitura.** `signIn.email` normalmente resolve
+      com `{ error }`, mas numa **queda de rede ela REJEITA** — e o `onSubmit` não tinha `try/catch`.
+      A rejeição escapava do handler: **nenhuma mensagem aparecia e o botão ficava preso em
+      "Entrando…"**, sem a pessoa saber o que houve. O teste falhou de primeira, o `try/catch`
+      entrou, e passou. *Registrado porque é o argumento inteiro do passo 8 em uma frase: o teste
+      investigativo pagou por si mesmo na primeira execução.*
+- [x] **`loginSchema` mudado** (`core/src/schemas/auth.ts`): `.trim()` no e-mail (transforma) e
+      `.refine()` na senha (valida sem transformar). Consumidor único é o `LoginPage`.
+- [x] **`renderWithProviders` ganhou `extraRoutes`** — sem uma rota de destino, o teste de "entrou
+      e foi redirecionado" não tinha o que assertar. A alternativa era mockar `useNavigate`, que
+      testaria implementação; um marcador na rota de destino testa comportamento observável.
+- [x] **Sem dependência nova:** usado `fireEvent` + `waitFor`, o idioma que os testes existentes já
+      usam. `@testing-library/user-event` não está instalado e não foi instalado — dependência é
+      decisão de plano, não `npm install` no meio do bloco.
+- [ ] **PENDENTE — o caso (10) é teste de SERVIDOR, não de tela:** e-mail em MAIÚSCULAS passa a
+      validação do client, e quem decide se `ADMIN@X.COM` autentica como `admin@x.com` é o Better
+      Auth. Vai junto com a matriz 401/403/200 da Fase 4 (supertest), não aqui.
 
 **T5 — a cadência, escrita uma vez para não ser redecidida por tela.**
 
