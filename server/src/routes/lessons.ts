@@ -15,7 +15,11 @@ router.get("/lessons/:id", async (req, res) => {
   if (id === null) return;
 
   const lesson = await prisma.lesson.findFirst({
-    where: { id, status: PUBLISHED },
+    // A CADEIA inteira, não só a aula: aula publicada dentro de módulo publicado
+    // dentro de curso ARQUIVADO continuava saindo por aqui — e levava junto o
+    // slug e o título do curso que saiu do ar. Mesma forma de `search.ts`, que
+    // já estava correta; isto era inconsistência, não escolha.
+    where: { id, status: PUBLISHED, module: { status: PUBLISHED, course: { status: PUBLISHED } } },
     select: {
       id: true,
       title: true,

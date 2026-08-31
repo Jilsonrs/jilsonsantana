@@ -27,8 +27,32 @@ const itemInclude = {
   },
   lesson: { select: { id: true, title: true, tags: true } },
 };
+// Só itens cujo alvo está PUBLICADO atravessam para a resposta.
+//
+// O filtro mora AQUI, em `items` (relação to-many), e não em `itemInclude`:
+// o Prisma não aceita `where` em include de relação to-one, então filtrar o
+// `course`/`lesson` de dentro do item é impossível — a única barreira é decidir
+// quais ITENS entram.
+//
+// Sem isto, uma trilha publicada que referencia curso ainda em DRAFT (o estado
+// normal enquanto se monta a trilha antes do lançamento) entregava id, slug,
+// título, subtítulo, nível, thumbnail e camadas do curso não lançado.
+const publicadoNaCadeia = {
+  OR: [
+    { itemType: PlanItemType.COURSE, course: { status: PUBLISHED } },
+    {
+      itemType: PlanItemType.LESSON,
+      lesson: { status: PUBLISHED, module: { status: PUBLISHED, course: { status: PUBLISHED } } },
+    },
+  ],
+};
 const planTreeInclude = {
-  planModules: { orderBy: byOrder, include: { items: { orderBy: byOrder, include: itemInclude } } },
+  planModules: {
+    orderBy: byOrder,
+    include: {
+      items: { where: publicadoNaCadeia, orderBy: byOrder, include: itemInclude },
+    },
+  },
 };
 
 // Authorization for trilha writes: admin edits any plan; a member edits only a
@@ -208,7 +232,12 @@ router.post("/trilhas/:id/save", requireAuth, async (req, res) => {
     where: { id },
     include: { planModules: { include: { items: true } } },
   });
-  if (!template || !template.isTemplate) {
+  // `status` além de `isTemplate`: sem ele, qualquer membro salvava para a
+  // própria conta uma trilha curada ainda em DRAFT (em construção) ou ARCHIVED
+  // (aposentada), e lia nome, descrição, skillsCovered, módulos e itens do
+  // material não lançado. `GET /trilhas/:slug` já exigia PUBLISHED — o save era
+  // o desvio em volta desse mesmo gate.
+  if (!template || !template.isTemplate || template.status !== PUBLISHED) {
     res.status(404).json({ error: "NotFound" });
     return;
   }
@@ -324,15 +353,33 @@ router.post("/plan-items", requireAuth, async (req, res) => {
     return;
   }
   if (!(await loadEditablePlan(mod.planId, user, res))) return;
-  // Verify the referenced course/lesson exists (friendly 404; FK is the hard guard).
+  // O alvo tem que estar PUBLICADO, não só existir.
+  //
+  // Provar só a existência transformava esta rota em ORÁCULO DE ENUMERAÇÃO do
+  // catálogo não lançado: o membro chuta um id, adiciona ao PRÓPRIO plano, e lê
+  // os metadados de volta por `GET /trilhas/mine/:id` — que passa em qualquer
+  // checagem de dono, porque o plano é mesmo dele.
+  // CHECAGEM DE DONO NÃO SUBSTITUI CHECAGEM DE STATUS.
   if (data.itemType === PlanItemType.COURSE) {
-    if (!(await prisma.course.findUnique({ where: { id: data.courseId! } }))) {
+    const curso = await prisma.course.findFirst({
+      where: { id: data.courseId!, status: PUBLISHED },
+    });
+    if (!curso) {
       res.status(404).json({ error: "CourseNotFound" });
       return;
     }
-  } else if (!(await prisma.lesson.findUnique({ where: { id: data.lessonId! } }))) {
-    res.status(404).json({ error: "LessonNotFound" });
-    return;
+  } else {
+    const aula = await prisma.lesson.findFirst({
+      where: {
+        id: data.lessonId!,
+        status: PUBLISHED,
+        module: { status: PUBLISHED, course: { status: PUBLISHED } },
+      },
+    });
+    if (!aula) {
+      res.status(404).json({ error: "LessonNotFound" });
+      return;
+    }
   }
   const created = await prisma.planItem.create({ data });
   res.status(201).json(created);
