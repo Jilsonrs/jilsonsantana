@@ -683,9 +683,32 @@ escapa nada.
 - [x] **Sem dependência nova:** usado `fireEvent` + `waitFor`, o idioma que os testes existentes já
       usam. `@testing-library/user-event` não está instalado e não foi instalado — dependência é
       decisão de plano, não `npm install` no meio do bloco.
-- [ ] **PENDENTE — o caso (10) é teste de SERVIDOR, não de tela:** e-mail em MAIÚSCULAS passa a
-      validação do client, e quem decide se `ADMIN@X.COM` autentica como `admin@x.com` é o Better
-      Auth. Vai junto com a matriz 401/403/200 da Fase 4 (supertest), não aqui.
+- [x] **SUÍTE DE SERVIDOR DO LOGIN — `server/src/test/login.test.ts`, 10 testes.** É o critério 4
+      (*rota que toca acesso exige teste de servidor*), e faltava: os 13 testes de tela mockam a
+      API, logo provam que o formulário se comporta — **nenhum prova que o servidor recusa quem
+      deve recusar**. Cobre: credencial correta emite sessão UTILIZÁVEL (linha criada não prova
+      sessão) · senha errada, e-mail inexistente, senha vazia e senha só de espaços → **401
+      exato** · **cadastro público → 400 `EMAIL_PASSWORD_SIGN_UP_DISABLED`** · cookie com
+      `httpOnly` e `sameSite`.
+      **Achado que vale além do login — ENUMERAÇÃO DE USUÁRIO está fechada:** senha errada e e-mail
+      inexistente devolvem status **e corpo idênticos** (`INVALID_EMAIL_OR_PASSWORD`), então
+      ninguém descobre quais e-mails têm conta na escola sem ter a senha. Havia um teste para isso
+      porque é propriedade de segurança de qualquer login, não porque suspeitávamos.
+- [x] **Caso (10) RESOLVIDO por medição: e-mail em MAIÚSCULAS AUTENTICA** — o Better Auth normaliza
+      a caixa. O chamado de suporte que se temia não existe. O teste fica no repo com falha
+      explicativa, para que uma regressão futura apareça no CI em vez de na caixa de entrada.
+- [x] **Asserções apertadas depois de MEDIR os status reais.** A primeira versão usava
+      `not.toBe(200)` — que **um 500 satisfaz**: servidor quebrado seria lido como "acesso negado
+      corretamente". Trocado por 401/400 exatos. *Mesmo defeito de família do `.toBeTruthy()` que
+      condenou o teste antigo desta tela, agora encontrado no próprio código novo.*
+- [x] **Prova por mutação da suíte de servidor:** `disableSignUp: true → false` derruba o teste de
+      cadastro (`expected 200 to be 400`); revertido, 13/13.
+      **⚠️ LIÇÃO REGISTRADA — a mutação FALHOU EM APLICAR duas vezes nesta sessão, e nas duas o
+      output verde parecia aprovação.** Na primeira, o padrão casou um **comentário** em vez da
+      configuração; na segunda (bloco T1) o guard era rota-pai e o script abortou sem escrever.
+      **Toda mutação passa a exigir verificação de que ela de fato entrou no arquivo** — imprimir a
+      linha alterada antes de rodar a suíte. Mutação que não aplica é a mesma família do teste que
+      não pode falhar: dá confiança sem dar informação.
 
 **T5 — a cadência, escrita uma vez para não ser redecidida por tela.**
 
