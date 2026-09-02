@@ -29,9 +29,15 @@ base de conhecimento viva**, com o Jilson como escalação rara.
 3. **Ferramentas = registro com escopo injetado no servidor.** Tools (consultar
    progresso, dados do certificado, etc.) entram num **registro**. O `userId`/escopo é
    SEMPRE injetado pelo servidor — nunca vem do modelo. Segurança por desenho.
-4. **Modelo atrás de abstração.** `llm.complete()` encapsula o `@anthropic-ai/sdk`.
-   Trocar/atualizar modelo (Haiku → Sonnet → futuro) é config, não reescrita. Seam de
-   prompt caching reservado aqui.
+4. **Modelo atrás de abstração — e MULTI-PROVEDOR** *(revisto Set 2026)*. `llm.complete()`
+   encapsula a **AI SDK** (`ai` + `@ai-sdk/anthropic` + `@ai-sdk/google`), não mais um SDK
+   único. O modelo é uma **string** resolvida em runtime (`"anthropic:claude-sonnet-5"`,
+   `"google:gemini-…"`) via `createProviderRegistry` — é isto que permite **escolher a IA
+   no admin, sem deploy**. Default segue Claude; Gemini entra como segunda opção.
+   Trocar/atualizar modelo é config, não reescrita. Seam de prompt caching reservado aqui.
+   **A AI SDK é implementação, nunca substituta:** `generateText`/`streamText` não saem
+   deste arquivo — a Vercel também é fornecedor, e sair dela tem que custar um arquivo.
+   **Seletor sem eval não existe:** ver princípio 5 e a Fase 3.
 5. **Separar escrita de leitura.** Captura toda interação/feedback barato AGORA
    (`AiEvent`, event-sourced como `LessonEvent`); analytics e evals vêm depois como
    módulos de leitura. Não modificam a feature.
@@ -142,6 +148,15 @@ Internamente, sempre nesta ordem:
 - **Decisão de build:** vetor via **pgvector no Supabase** (sem infra nova, sustentável).
   Embeddings precisam de provider separado (Anthropic recomenda Voyage AI; alternativas:
   OpenAI/embeddings open-source) — **decisão da Fase 4, verificar no build**.
+- **TRAVA — o EMBEDDING é o único travamento real de fornecedor do JilsonAI, e a AI SDK NÃO o
+  resolve** *(Set 2026, junto da decisão multi-provedor)*. Vetor gerado por um provedor **não é
+  lido** por outro: trocar significa **re-embedar a base inteira**. Não é limitação de API — é
+  como embedding funciona, e por isso não tem solução de biblioteca. **O que torna administrável
+  é uma linha de schema: gravar o MODELO e a DIMENSÃO junto de cada vetor** (aqui e no
+  `LessonChunk` da Fase 5). Com isso a troca vira migração roteirizável — "re-embedar tudo que
+  está no modelo X" — em vez de arqueologia sobre linhas de origem desconhecida. **Custo hoje:
+  zero**, porque o model ainda não existe; custo se esquecido: descobrir depois quais linhas
+  vieram de onde, sem ter como saber. **Sem gatilho — é física do formato.**
 - **GATILHO DE VOLTA DA FILA (registrado em Ago 2026, quando o pg-boss saiu do MVP):** é **aqui**
   que a fila volta a fazer sentido — gerar embeddings da KB é **lote, demorado e retentável**, o
   caso de uso legítimo. É código que **ainda não existe**, então adicionar a fila nesta fase
@@ -276,7 +291,10 @@ de aula, e acompanha o aluno até o certificado.
 
 ## Custo: escala com a receita (não à frente)
 
-> Custo confirmado (jun/2026): Haiku 4.5 $1/$5 · Sonnet 4.6 $3/$15 · Opus 4.8 $5/$25 por Mtok;
+> **Custo reconferido (set/2026) — o orçamento MELHOROU:** Haiku 4.5 $1/$5 · **Sonnet 5 $2/$10**
+> · Opus 5 $5/$25 por Mtok. O número antigo aqui era Sonnet 4.6 a $3/$15; a geração nova é
+> **~⅓ mais barata na entrada** e a estimativa abaixo passa a ser **conservadora**, não otimista.
+> *(Preço de fornecedor envelhece sozinho — reconferir ao abrir a Fase 6, nunca copiar daqui.)*
 > cache de prompt corta 90% da entrada cacheada. Estimativa por interação no Sonnet c/ cache:
 > ~R$0,10–0,20. Por aluno/mês: ~R$5–9 (leve, 50 int) a ~R$25–45 (heavy, 250 int) — confortável
 > dentro de R$99,90. **Custo não é risco existencial; o risco é a cauda (heavy/abusivo), que a

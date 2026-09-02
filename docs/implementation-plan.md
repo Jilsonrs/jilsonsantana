@@ -1318,7 +1318,25 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
 
 - [ ] JilsonAI Fases 0–3 (gateway, chat com contexto do curso, escalação humana, tools com
       escopo + msg privada). Inclui tool `recommendTrilha` (sugere trilha curada pelo objetivo).
-- [ ] Anthropic SDK server-side only; rate-limited per member; chat panel in member area.
+- [ ] **INSTALAR a AI SDK — dependência nova JÁ APROVADA pelo operador (Set 2026), só executar:**
+      `npm --workspace server i ai @ai-sdk/anthropic @ai-sdk/google`. Server-side only;
+      rate-limited per member; chat panel in member area. **A aprovação é desta lista exata** —
+      qualquer pacote além destes três volta a ser decisão de plano.
+- [ ] **`llm.complete()` resolve o modelo por STRING** via `createProviderRegistry`
+      (`"anthropic:claude-sonnet-5"` default, `"google:gemini-…"` como segunda opção).
+      **`generateText`/`streamText` NÃO saem deste arquivo** — a Vercel é fornecedor como
+      qualquer outro, e sair dela tem que custar um arquivo (ver `CLAUDE.md` → JilsonAI).
+- [ ] **Catálogo de modelos permitidos em `core/src/constants/`**, e o valor que vem do admin é
+      **validado contra ele** — nunca repassado cru ao registry. (String de modelo escolhida pelo
+      usuário é entrada não confiável, como qualquer outra.)
+- [ ] **`AiEvent` grava QUAL modelo atendeu.** Sem essa coluna não há como responder depois
+      *"a qualidade caiu quando eu troquei?"* — e é a única evidência que sobra.
+- [ ] **Seletor de modelo no admin — SÓ ENTRA JUNTO com o harness de eval** (JILSONAI.md Fase 3).
+      **Não é preferência de sequência:** trocar de modelo sem reexecutar conversas antigas
+      degrada o JilsonAI **sem erro, sem log e sem aviso** — descobre-se pelo aluno reclamando
+      semanas depois. Seletor sozinho é um botão para piorar o produto às cegas.
+- [ ] **Reconferir preço de API na abertura desta fase** — os números do `jilsonai.md` são de
+      set/2026 e preço de fornecedor envelhece sozinho. Não copiar do doc; conferir.
 - [ ] **DECISÃO PENDENTE — qual renderer de Markdown.** O `CLAUDE.md` já **proíbe**
       `dangerouslySetInnerHTML` e manda renderizar "com HTML bruto desabilitado ou sanitizado",
       mas **a biblioteca nunca foi escolhida nem instalada** (conferido em Ago 2026: não há

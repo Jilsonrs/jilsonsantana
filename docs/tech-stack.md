@@ -54,7 +54,9 @@
 
 ## AI (JilsonAI)
 
-- **Claude API (Anthropic)** via `@anthropic-ai/sdk` — teaching assistant in Jilson's voice/method. Server-side only; the key never touches the frontend. One gateway (`askJilsonAI()`); model behind an abstraction with **default = top model (Sonnet)** (cheap model for trivial only). Generous monthly **quota + visible calm "usage" meter**; rate-limit per member; usage tiers as post-launch seams. Pricing confirmed (Jun 2026): Haiku 4.5 $1/$5, Sonnet 4.6 $3/$15, Opus 4.8 $5/$25 per Mtok; prompt caching −90% on cached input. See `docs/jilsonai.md`.
+- **MULTI-PROVEDOR via AI SDK** (`ai` + `@ai-sdk/anthropic` + `@ai-sdk/google`) — **decisão do operador, Set 2026**. **Claude é o default; Gemini é a segunda opção**, escolhida por **string em runtime** (`createProviderRegistry`), o que permite **trocar de IA pelo admin sem deploy**. Teaching assistant in Jilson's voice/method. Server-side only; a chave nunca toca o frontend. Um gateway (`askJilsonAI()`); **a AI SDK é implementação de `llm.complete()`, nunca substituta** — a Vercel também é fornecedor, e sair dela tem que custar um arquivo. Default = **modelo de ponta (Sonnet)**, barato só pra trivial. **Quota + medidor calmo**; rate-limit por membro; tiers como seams pós-lançamento.
+  - **Preço reconferido (set/2026):** Haiku 4.5 $1/$5 · **Sonnet 5 $2/$10** · Opus 5 $5/$25 por Mtok — a linha antiga citava Sonnet 4.6 a $3/$15, então **o orçamento melhorou ~⅓ na entrada**. Prompt caching −90% na entrada cacheada.
+  - **NADA instalado ainda, de propósito:** o JilsonAI não tem uma linha de código (o `server` tem 6 dependências, nenhuma de IA). Os pacotes entram na **Fase 6**, como dependência nova declarada no plano do bloco — não antes. Ver `docs/jilsonai.md` e `CLAUDE.md` → changelog Set 2026 (14).
 
 ## Background Jobs
 
