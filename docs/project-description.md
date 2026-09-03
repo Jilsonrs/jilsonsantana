@@ -282,7 +282,7 @@ sombras suaves, transições leves, imagens bonitas, ícones limpos. **Com a cor
 Custom-built (não Teachable), como ativo transferível e independente:
 
 **React + TypeScript + Vite + Tailwind + shadcn/ui + Express + TypeScript + Prisma +
-Supabase (PostgreSQL) + Better Auth (sessões em DB) + Bunny Stream (vídeo + DRM) +
+Neon (PostgreSQL serverless) + Better Auth (sessões em DB) + Bunny Stream (vídeo + DRM) +
 Stripe (recorrência) + Claude API @anthropic-ai/sdk (JilsonAI) + Railway + Resend +
 GitHub Actions.**
 
@@ -290,8 +290,8 @@ GitHub Actions.**
 |--------|-----------|-------|
 | Frontend | React + TS + Vite + Tailwind + shadcn | UI, SPA |
 | Backend | Express + TS + Prisma | API, lógica, DB type-safe |
-| DB | Supabase (PostgreSQL) | Armazenamento (auth data hospedada aqui) |
-| Auth | **Better Auth** (adapter Prisma, sessões em DB) | **NÃO** Supabase Auth |
+| DB | Neon (PostgreSQL serverless, branches) | Armazenamento (auth data hospedada aqui) |
+| Auth | **Better Auth** (adapter Prisma, sessões em DB) | **NÃO** o auth do fornecedor de banco |
 | Vídeo | Bunny Stream (DRM) | Vídeo de curso gated |
 | Billing | Stripe Payments + **Stripe Billing** (Payment Element embutido; **sem** Customer Portal) | Assinatura |
 | IA | Claude API (`@anthropic-ai/sdk`) | JilsonAI |
@@ -300,17 +300,19 @@ GitHub Actions.**
 | Deploy/CI | Railway + GitHub Actions | Hosting, CI (hoje typecheck/build; teste e lint entram no bloco Gates da Fase 3) |
 | Certificado | PDF server-side | Conclusão de trilha/curso |
 
-- **Custo de infra no lançamento:** baixo (Supabase free → Pro $25 quando alunos chegarem).
+- **Custo de infra no lançamento:** baixo (Neon Free hoje; plano pago quando alunos chegarem — o preço não é fixado nos docs de propósito, ver `CLAUDE.md` → Costs).
 - **Construído via Claude Code.** UX: simplicidade Apple.
 
-> **Auth:** "Supabase (PostgreSQL)" significa que o Supabase **hospeda** os dados de auth — **não** é
-> o produto Supabase Auth. Autenticação = **sessões em banco via Better Auth + Prisma + Express**
-> (cookies HTTP-only). Supabase Auth, JS Client, Realtime e Data API **não** são usados.
+> **Auth:** "Neon (PostgreSQL)" significa que o Neon **hospeda** os dados de auth — **não** é o
+> produto Neon Auth. Autenticação = **sessões em banco via Better Auth + Prisma + Express**
+> (cookies HTTP-only). Auth, Data API e Storage do fornecedor **não** são usados. *Consequência
+> medida em Set 2026: trocar de fornecedor de banco (Supabase → Neon) não custou uma linha de
+> autenticação — as tabelas migraram como dados comuns.*
 >
 > **RLS (mantido):** toda tabela do schema `public` DEVE ter Row Level Security habilitada (sem
-> policies) no mesmo migration que a cria. O Prisma conecta via `DATABASE_URL` (role `BYPASSRLS`) e
-> é o único acessor; o RLS bloqueia o Data API (`anon`/`authenticated`). Verificar com
-> `Supabase:get_advisors(type='security')` após cada migration de DDL.
+> policies) no mesmo migration que a cria. O Prisma conecta como a role dona e é o único acessor; o
+> RLS bloqueia a **Data API do Neon** (hoje desligada). Verificar com SQL sobre
+> `pg_class.relrowsecurity` após cada migration de DDL — ver `CLAUDE.md` → Database & Migrations.
 
 ---
 
@@ -340,7 +342,7 @@ GitHub Actions.**
   gamificação, sem fórum.
 - **Uma oferta clara.** Resistir a feature creep — simplicidade Apple.
 - **AI no DNA** como filtro de decisão em cada feature.
-- **Servidor é o único gateway** pra Supabase, Stripe, Bunny, Resend e Claude API. Nada de segredo no
+- **Servidor é o único gateway** pra Neon, Stripe, Bunny, Resend e Claude API. Nada de segredo no
   frontend.
 - **Type-safe**, conteúdo gerido por admin onde possível.
 - **Construído pra durar e pra um operador** — limpo, documentado, sustentável de rodar solo aos 47.

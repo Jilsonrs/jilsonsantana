@@ -145,7 +145,9 @@ Internamente, sempre nesta ordem:
 - **O loop fecha:** Jilson responde escalação → vira KB → IA responde sozinha na próxima
   → escalações encolhem. O ativo que compõe.
 - **Gatilho:** volume de escalações repetidas (ex: >X/semana de temas recorrentes).
-- **Decisão de build:** vetor via **pgvector no Supabase** (sem infra nova, sustentável).
+- **Decisão de build:** vetor via **pgvector no Neon** (sem infra nova, sustentável). `[FATO — Set
+  2026: `vector` **0.8.6** disponível no projeto, ainda não instalada. Instalar é `CREATE EXTENSION`
+  dentro da migration da Fase 4, com o `ENABLE ROW LEVEL SECURITY` da tabela nova no mesmo arquivo.]`
   Embeddings precisam de provider separado (Anthropic recomenda Voyage AI; alternativas:
   OpenAI/embeddings open-source) — **decisão da Fase 4, verificar no build**.
 - **TRAVA — o EMBEDDING é o único travamento real de fornecedor do JilsonAI, e a AI SDK NÃO o

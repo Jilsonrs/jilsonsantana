@@ -1,5 +1,5 @@
 // Prisma schema — source of truth for all DB models.
-// Run "npm --workspace server run db:pull" (with DATABASE_URL set) to sync from Supabase.
+// Run "npm --workspace server run db:pull" (with DATABASE_URL set) to sync from the database.
 // Run "npm --workspace server run db:generate" after any schema change.
 
 generator client {
