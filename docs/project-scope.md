@@ -58,7 +58,7 @@ First course at launch: **Excel + IA**, packaged inside **Trilha 1 — Comece po
 - No gamification (kept simple to run solo).
 - No consulting / freelancer / portfolio features.
 - Not Teachable — custom-built as an owned, transferable asset.
-- No Supabase Auth / Data API / Realtime (auth is Better Auth via Prisma).
+- No provider-managed Auth / Data API / Storage (Neon's, as previously Supabase's) — auth is Better Auth via Prisma.
 
 ## Guiding Constraints
 

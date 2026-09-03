@@ -31,3 +31,4 @@ Thumbs.db
 # Test results
 playwright-report/
 test-results/
+.neon

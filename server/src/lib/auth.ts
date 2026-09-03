@@ -7,7 +7,7 @@ import { Role } from "@jilson/core";
 // index.ts via toNodeHandler — see the middleware-order note there.
 //
 // Conventions (see CLAUDE.md → Better Auth):
-// - Prisma adapter on Supabase Postgres; Prisma is the sole DB accessor.
+// - Prisma adapter on Neon Postgres; Prisma is the sole DB accessor.
 // - Email/password + database sessions (the generated `session` table).
 // - Public sign-up stays closed (`disableSignUp: true`): users are created by a
 //   trusted trigger (admin/test-member seed in Bloco 3, Stripe webhook in P4),

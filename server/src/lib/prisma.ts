@@ -1,7 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 
 // Single shared Prisma client for the app's route handlers (Phase 2 on). Prisma
-// is the SOLE accessor to Supabase (CLAUDE.md). The globalThis cache keeps tsx
+// is the SOLE accessor to the database (CLAUDE.md). The globalThis cache keeps tsx
 // `dev` hot-reloads from opening a new connection pool on every file change.
 //
 // Note: lib/auth.ts and seed.ts still construct their own PrismaClient (Better

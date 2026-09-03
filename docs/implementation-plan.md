@@ -32,17 +32,27 @@
 > **Pendência de véspera de lançamento:** os dois cursos `exemplo-*` do seed estão **PUBLISHED em
 > produção**. Invisíveis hoje; aparecem no dia em que a coming-soon for desligada.
 >
-> **Infra de banco (atualizado Ago 2026) — TRÊS ambientes, um por papel:**
-> `gaxmbnhwltljlkukdwba` (Supabase, us-east-2) = **produção**, só o Railway ·
-> `mvaobzypsiuhqzipcelw` (Supabase, us-east-1) = **dev / a escola**, **nunca apagado** ·
+> **Infra de banco (atualizado Set 2026 — MIGRADA DO SUPABASE PARA O NEON) — TRÊS ambientes, um por
+> papel, agora com DOIS deles no MESMO projeto:**
+> Neon `falling-snow-79489296` (aws-us-east-2, **PG18.6**), branch **`production`**
+> (`ep-still-breeze-aebrui0f`) = **produção**, só o Railway · branch **`dev`**
+> (`ep-lingering-morning-aehqd81z`) = **dev / a escola**, **nunca apagado** ·
 > **`localhost:5432/jilsonsantana_test`** (PostgreSQL 17.11 local) = **teste**, apagado a cada
-> execução da suíte. Org no plano **Free** (2 projetos ativos, US$ 0).
-> ✅ **RESOLVIDO — o ambiente local NÃO aponta mais para produção.** O `server/.env` foi apontado
-> para o Supabase de dev e o `server/.env.test` para o Postgres local; provado em runtime
-> (`GET /api/courses` devolveu o catálogo de dev, não o de produção) e por mutação (a trava
-> bloqueia os dois refs do Supabase). **Rodar `npm test` já não apaga o banco de desenvolvimento** —
-> verificado: depois de uma execução completa, o banco de dev seguia com 2 cursos, 2 módulos,
-> 3 aulas e 1 trilha intactos.
+> execução da suíte. Plano **Free**, US$ 0 — o 2º ambiente virou **branch**, não um 2º projeto, e é
+> isso que zerou os US$ 10/mês que o Supabase cobraria.
+> ✅ **Migração verificada, não presumida:** 11 tabelas / 19 linhas conferidas uma a uma, diff de
+> schema completo (colunas, tipos, defaults, constraints, índices, enums, RLS) idêntico, `last_value`
+> das 6 sequences preservado, `migrate deploy` no pre-deploy do Railway = *"No pending migrations"*,
+> e **login real em produção gravando sessão no Neon enquanto o Supabase permaneceu inalterado**.
+> ✅ **A separação de ambientes se manteve na troca:** `server/.env` → branch `dev`, `server/.env.test`
+> → Postgres local (a trava de hostname disparou e confirmou `localhost`). As senhas das contas
+> semeadas foram **rotacionadas no branch `dev`**, e provado por sign-in que a credencial de dev é
+> **rejeitada em produção**.
+> ✅ **Supabase APAGADO pelo operador em Set 2026, na mesma sessão da migração.** Ele foi mantido
+> intocado e somente-leitura durante toda a troca, serviu de rollback até a validação fechar, e então
+> saiu. **Não há mais rollback para o Supabase** — o caminho de recuperação hoje é o PITR do Neon
+> (janela do plano Free, curta) mais o `pg_dump` frio, que é o checkbox de backup da Fase 7 e segue
+> **em aberto**. Enquanto ele estiver aberto, a rede de segurança do banco é **só** a janela do Free.
 >
 > **Cobertura de teste — o que EXISTE hoje (medido em Ago 2026, não estimado):** cliente **9
 > arquivos / 35 testes** (Vitest + RTL) ✅ no CI — a tela de **login** fechada pelos 8 critérios,
@@ -1318,7 +1328,25 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
 
 - [ ] JilsonAI Fases 0–3 (gateway, chat com contexto do curso, escalação humana, tools com
       escopo + msg privada). Inclui tool `recommendTrilha` (sugere trilha curada pelo objetivo).
-- [ ] Anthropic SDK server-side only; rate-limited per member; chat panel in member area.
+- [ ] **INSTALAR a AI SDK — dependência nova JÁ APROVADA pelo operador (Set 2026), só executar:**
+      `npm --workspace server i ai @ai-sdk/anthropic @ai-sdk/google`. Server-side only;
+      rate-limited per member; chat panel in member area. **A aprovação é desta lista exata** —
+      qualquer pacote além destes três volta a ser decisão de plano.
+- [ ] **`llm.complete()` resolve o modelo por STRING** via `createProviderRegistry`
+      (`"anthropic:claude-sonnet-5"` default, `"google:gemini-…"` como segunda opção).
+      **`generateText`/`streamText` NÃO saem deste arquivo** — a Vercel é fornecedor como
+      qualquer outro, e sair dela tem que custar um arquivo (ver `CLAUDE.md` → JilsonAI).
+- [ ] **Catálogo de modelos permitidos em `core/src/constants/`**, e o valor que vem do admin é
+      **validado contra ele** — nunca repassado cru ao registry. (String de modelo escolhida pelo
+      usuário é entrada não confiável, como qualquer outra.)
+- [ ] **`AiEvent` grava QUAL modelo atendeu.** Sem essa coluna não há como responder depois
+      *"a qualidade caiu quando eu troquei?"* — e é a única evidência que sobra.
+- [ ] **Seletor de modelo no admin — SÓ ENTRA JUNTO com o harness de eval** (JILSONAI.md Fase 3).
+      **Não é preferência de sequência:** trocar de modelo sem reexecutar conversas antigas
+      degrada o JilsonAI **sem erro, sem log e sem aviso** — descobre-se pelo aluno reclamando
+      semanas depois. Seletor sozinho é um botão para piorar o produto às cegas.
+- [ ] **Reconferir preço de API na abertura desta fase** — os números do `jilsonai.md` são de
+      set/2026 e preço de fornecedor envelhece sozinho. Não copiar do doc; conferir.
 - [ ] **DECISÃO PENDENTE — qual renderer de Markdown.** O `CLAUDE.md` já **proíbe**
       `dangerouslySetInnerHTML` e manda renderizar "com HTML bruto desabilitado ou sanitizado",
       mas **a biblioteca nunca foi escolhida nem instalada** (conferido em Ago 2026: não há
@@ -1441,18 +1469,21 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
 - [ ] Performance pass (< 3s load); mobile responsive
 - [ ] Founding-member offer wiring (scarcity for Udemy students)
 - [ ] **Cancellation-reason capture wired.** The offboarding screen (P4) collects the reason on exit — cheap data, gold for churn. Connects to STRATEGY.md churn KPIs (winback, MRR-perdido). (Storage = a small `CancellationReason` row or a field on `Subscription`; reason capture ships at launch, the "pausar 1 mês" path stays fast-follow.)
-- [ ] **Upgrade Supabase Free → Pro ANTES do primeiro aluno pagante** (backups diários; o Free
-      não garante backup automático — confirmar a política vigente no dia). Dado real de aluno
-      nunca fica em banco sem backup.
-      **Custo REVISADO (Ago 2026), depois que o 2º projeto passou a existir: US$ 35/mês, não 25.**
-      O plano Supabase é por **ORGANIZAÇÃO**, não por projeto: ao virar Pro, os **dois** projetos da
-      org `hdmecfinlnocurhcxrdb` viram Pro juntos. Conta = **US$ 25 (org) + US$ 10 (2º projeto) =
-      US$ 35/mês**. Cotas (MAU, egress, storage) são **partilhadas pela org**, e o consumo do banco
-      de teste é desprezível — o que ele custa é **compute**, daí os US$ 10 fixos.
-      **DECISÃO DO OPERADOR: manter os dois projetos na MESMA org e pagar os US$ 10**, em vez de
-      mover o teste pra uma org Free separada. Razão: no Free o projeto **pausa após 7 dias de
-      inatividade**, e banco de teste é inativo **por definição** — despausar toda semana é atrito
-      recorrente, e em operador solo atrito recorrente custa mais que US$ 10.
+- [ ] **Upgrade do plano Neon ANTES do primeiro aluno pagante.** Dado real de aluno nunca fica em
+      banco sem backup. *(Reescrito em Set 2026 — o checkbox dizia "Supabase Free → Pro"; a métrica
+      de decisão mudou junto com o fornecedor.)*
+      **O que decide o upgrade é a JANELA DE RETENÇÃO DO PITR, não CPU nem storage.** O *Point-in-Time
+      Restore* do Neon é a recuperação de erro dentro de uma janela; no Free a janela é curta, e
+      cresce nos planos pagos. **Confirmar a janela vigente no painel no dia** — preço e política de
+      fornecedor envelhecem, e por isso o número **não** está fixado nos docs.
+      **PITR NÃO É BACKUP, e confundir os dois é o modo de falha aqui.** O PITR protege de erro
+      **seu** dentro da janela (apaguei a tabela errada, rodei o `UPDATE` sem `WHERE`). Ele **não**
+      protege de perder a conta — suspensão, cobrança falhada, comprometimento do login. São dois
+      riscos, e exigem duas coisas: **janela de PITR adequada** *mais* **`pg_dump` periódico guardado
+      fora do fornecedor**. O segundo é o checkbox de restauração logo abaixo.
+      **O custo de US$ 35/mês do desenho antigo NÃO se transporta:** ele vinha do plano Supabase ser
+      por **organização** com 2 projetos (US$ 25 + US$ 10). No Neon o 2º ambiente é um **branch** do
+      mesmo projeto, então aquele item de US$ 10 simplesmente deixou de existir.
       **Teto de infra sobe de ~US$ 30 para ~US$ 35/mês.** *Sem gatilho de reabertura — decisão de
       conforto operacional, deliberada.*
 - [ ] **🚀 GO-LIVE — desligar o gate "Em breve" (ÚLTIMA AÇÃO, sem deploy de código).** O site ao vivo está atrás de um gate pré-lançamento (público vê "Em breve"; operador acessa via `/__preview?token=<PREVIEW_TOKEN>`). Para abrir ao público: no Railway (projeto `jilsonsantana` → env `production` → service `jilsonsantana`), setar **`COMING_SOON=false`** (ou apagar a variável) → o serviço reinicia → público passa a ver o app real. Nenhum merge/código necessário. *(Mecanismo em [server/src/index.ts](../server/src/index.ts) + [client/public/coming-soon.html](../client/public/coming-soon.html); detalhe operacional na memória `coming-soon-gate`.)* **Fazer só quando o "Done when" abaixo estiver verde.**
@@ -1467,7 +1498,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
 > `security-vulnerability-reviewer` obrigatório nas Fases 3 e 4). O elo fraco que sobra **não é o
 > código: é a conta.** **Tudo abaixo fica pronto ANTES do GO-LIVE.**
 
-- [ ] **2FA por app autenticador (NÃO SMS)** em: **Supabase, Railway, Stripe, GitHub, Bunny,
+- [ ] **2FA por app autenticador (NÃO SMS)** em: **Neon, Railway, Stripe, GitHub, Bunny,
       registrador do domínio** e **no e-mail do admin da plataforma**. SMS fica de fora por
       SIM-swap. O e-mail entra na lista porque é o **caminho de reset de todos os outros** —
       blindar os seis e deixar o e-mail aberto é não blindar nada.
@@ -1476,14 +1507,20 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       (perda, roubo ou pane do Mac).
 - [ ] **Senha única por serviço, em gerenciador.** Senha repetida transforma vazamento de terceiro
       em invasão nossa — e um operador só não tem quem perceba o acesso estranho.
-- [ ] **Backup: política CONFIRMADA + RESTORE DE TESTE executado uma vez.** A confirmação da
-      política do tier vive no checkbox *"Upgrade Supabase Free → Pro"* acima — não duplicar aqui
-      [PENDENTE DE VERIFICAÇÃO]. **O que é novo é o restore:** executar um restore de teste **uma
-      vez**, contra o **2º projeto Supabase** (`mvaobzypsiuhqzipcelw`, o de teste), e registrar que
-      funcionou. Porquê: **backup nunca testado é fé, não é plano.** E o cenário realista não é
-      invasão — é **migration ruim ou reset apontado pro lugar errado** (a trava por REF do
-      CLAUDE.md nasceu desse mesmo risco). *A dependência "o 2º projeto precisa existir" está
-      **satisfeita** desde Ago 2026 — o [PENDENTE] do tier grátis foi resolvido.*
+- [ ] **Backup: política CONFIRMADA + RESTORE DE TESTE executado uma vez.** A confirmação da janela
+      de PITR vive no checkbox *"Upgrade do plano Neon"* acima — não duplicar aqui. **O que é novo é
+      o restore:** executar um restore de teste **uma vez** e registrar que funcionou. Porquê:
+      **backup nunca testado é fé, não é plano.** E o cenário realista não é invasão — é **migration
+      ruim ou reset apontado pro lugar errado** (a trava de hostname do CLAUDE.md nasceu desse mesmo
+      risco).
+      **O alvo do teste ficou MAIS BARATO com o Neon, e são DOIS testes, não um:**
+      **(1) PITR** — criar um branch a partir de um ponto no tempo anterior a um estrago proposital,
+      e conferir que o dado voltou. Custa um branch descartável, não um projeto.
+      **(2) `pg_dump` frio** — restaurar um dump guardado fora do fornecedor num Postgres limpo
+      (o local serve) e comparar contagem **e schema**. Este é o único que cobre "perdi a conta".
+      *A receita já foi exercitada em Set 2026, na própria migração Supabase → Neon: `pg_dump
+      --schema=public --no-owner --no-privileges` + `psql --single-transaction -v ON_ERROR_STOP=1`,
+      com diff de linhas, de catálogo e de `last_value` das sequences.*
 - [ ] **LGPD mínimo: política de privacidade publicada + caminho de exclusão de conta.** É
       **pendência de lançamento, não item de engenharia** — não vira bloco de código. O checkbox
       amplo de LGPD no topo desta fase cobre o resto (termos, consentimento, export); aqui fica só
@@ -1525,3 +1562,5 @@ MVP = **Phases 0 → 7** (incl. trilhas curadas na Phase 2, certificados na Phas
 *Atualizado: Ago 2026 (9) — **CORREÇÃO da entrada (8): o backlog P2 nº (5) foi fechado ERRADO ali e está reaberto e refechado aqui, agora por migration versionada.** A entrada (8) afirma *"nº (5) FECHADO por verificação — a suspeita era falsa"*; **isso está incorreto** e fica registrado como entrada nova, sem editar a anterior (regra de rotação: histórico não se edita). **O dado que derrubou:** o fechamento anterior verificou **só produção**, onde `_prisma_migrations` já tinha `relrowsecurity = true`. Depois disso o banco de teste `mvaobzypsiuhqzipcelw` recebeu as **MESMAS 3 migrations** por `prisma migrate deploy` e a mesma tabela nasceu **`false`** — as 10 de domínio vieram `true` nos dois. Logo o RLS de produção **não vinha do versionamento**; vinha de fora (causa provável: o *Automatic RLS* do projeto de produção, ligado — no de teste foi desligado de propósito; a evidência não distingue "humano clicou" de "ajuste de projeto", e não precisa: o que ela prova é que **não veio das migrations**). **A suspeita original do `security-vulnerability-reviewer` era VERDADEIRA.** **Conserto:** migration `20260824214838_rls_prisma_migrations_table` (`ALTER TABLE "public"."_prisma_migrations" ENABLE ROW LEVEL SECURITY;`), aplicada **nos dois bancos por `migrate deploy`** — nunca painel, nunca MCP —, porque o alvo é estado **reproduzível em qualquer banco futuro**, não estado correto num banco. Idempotência confirmada **antes** de escrever (três `ALTER` seguidos numa tabela de sondagem descartável, sem erro), o que a faz rodar limpa em produção. Estado final idêntico nos dois: 11 tabelas, **0 sem RLS**, 4 migrations, 0 rollbacks, advisors só INFO; produção reconferida pós-aplicação com **2 users e 39 sessions**, iguais ao pré-voo. **LIÇÃO, promovida a convenção no `CLAUDE.md` → Database & Migrations: estado verificado em UM ambiente não prova estado REPRODUZÍVEL** — `get_advisors` responde *"este banco está ok"*, nunca *"o repo produz um banco ok"*. Mesma família de *gate que mente* e de *backup nunca testado é fé*: a coisa só é verdade quando é **reproduzida**, não quando é **observada uma vez**. Corolário de processo, também registrado: **contagem de backlog é resultado, não prova** — "3 pendentes" já esteve certo pelo motivo errado. **Aberto no caminho:** o *Automatic RLS* está **ligado em produção e desligado no teste**, divergência **viva** que não afeta tabela nossa (nossas migrations ligam RLS explicitamente) mas afeta qualquer tabela criada fora delas — recomendação: desligar em produção; é config no fornecedor, decisão do operador.*
 
 *Atualizado: Ago 2026 — **catálogo rotativo + ambiente único (decisões de `courses.md` D8/D9 que tocam o build).** Fase 2 ganha o bloco **`ARCHIVED` read semantics**: o enum já existia em `Course.status`, mas a semântica de leitura não — a regra "leitura pública só `PUBLISHED`" precisa virar **duas** regras (catálogo/busca = só `PUBLISHED`; acesso direto de membro ativo = `PUBLISHED` **ou** `ARCHIVED` atrás de `temAcessoAtivo()`), senão arquivar um curso **revoga em silêncio** de quem estava no meio dele — o oposto da decisão. Sem model novo e **sem tabela de entitlement**: o operador escolheu a regra simples (acesso enquanto a assinatura estiver ativa), que o enum existente cobre. Junto: trilha salva com curso arquivado continua resolvendo; **deleção de vídeo NÃO se constrói** (reprovada no critério de decisão de stack — o Bunny cobra banda, não prateleira; deletar no painel leva 5 min), registrado aqui pra ninguém repropor como lacuna. Novo `[VERIFICAR]` do **módulo de setup compartilhado**: SQL e Python usam o mesmo ambiente, então as ~15–20 min de "criar conta + primeira query" são gravadas uma vez e reusadas em N cursos — mas `Course → Module → Lesson` prende a aula a um módulo só; decidir antes de fechar a Fase 2 entre aceitar a duplicação de cadastro ou usar o seam de `PlanItem itemType=LESSON` que já existe (**não** adicionar many-to-many antes de provar que o seam não cobre). Fase 6.5 ganha o checkbox de que **arquivamento não afeta certificado emitido** — o desenho de snapshot (`nameSnapshot`/`skillsCovered[]`) já garante, mas as duas consequências viram explícitas: a rota pública `/certificado/[id]` **permanece no ar** e a elegibilidade é avaliada **no momento da conclusão**, nunca re-derivada do catálogo atual. Racional completo e gatilhos de reabertura em `decisions-archive.md` → Ago 2026 (8).*
+
+*Atualizado: Set 2026 (10) — **banco migrado do Supabase para o Neon: produção e dev, com o teste deliberadamente INALTERADO.** **(1) O que a migração exigiu, e o que ela não exigiu.** Foi Postgres→Postgres puro — `pg_dump --schema=public --no-owner --no-privileges` + `psql --single-transaction -v ON_ERROR_STOP=1` — porque a autenticação **já era nossa**: Better Auth guarda `user`/`session`/`account` no schema `public` via Prisma, então elas migraram como dados comuns e **zero linha de código de auth foi tocada**. Registrado porque é o argumento que torna a troca barata, e ele não existiria se o projeto usasse o auth do fornecedor. **(2) A verificação foi de SCHEMA, não só de contagem — e a distinção pagou.** As 11 tabelas / 19 linhas bateram, mas o diff de catálogo acusou **61 diferenças**, todas `NOT NULL` materializado em `pg_constraint`: **mudança do PG18** (o 17 guardava só em `pg_attribute.attnotnull`). Semântica idêntica, provado pelo `is_nullable` do `information_schema` batendo coluna a coluna. Conferidas à parte as **`last_value` das 6 sequences** (10, 8, 11, 13, 9, 9) — contagem de linhas não pega sequence dessincronizada, que é o erro clássico deste tipo de migração. **(3) [FATO que derruba a entrada (10) do changelog do `CLAUDE.md`] Prisma 5.22 funciona com PG18.** A premissa registrada era *"o 5.22 é anterior ao 18"*; medido contra o Neon 18.6, `migrate deploy`, `migrate status`, client gerado, transação e rollback passam. O banco de teste segue no 17 por o CI usar `postgres:17`, **não** mais por esse motivo — e a divergência prod-PG18 / teste-PG17 fica **registrada como aceita**, com gatilho. **(4) INCIDENTE DE CREDENCIAL.** `neon branches create` imprime a connection URI **com senha** por padrão, e **branch do Neon herda a senha da role do pai** — as duas juntas fizeram o vazamento de uma credencial de *dev* ser um vazamento de **produção**. Rotacionadas as duas e **verificado por teste** que a senha antiga falha em ambas. Virou regra no `CLAUDE.md`: rotacionar branch novo antes de usar, e redirecionar a saída de comando que possa emitir connection string. **(5) `DATABASE_URL` e `DIRECT_URL` mudam JUNTAS.** Trocada só a primeira, o app lê um banco e o `migrate deploy` do pre-deploy migra **outro** — e o deploy fica **verde**. Aconteceu aqui; dano zero só porque não havia migration pendente. **(6) O 2º ambiente virou BRANCH, não 2º projeto** — o que **derruba** o teto de US$ 35/mês da entrada (8) deste stream: aquele valor vinha do plano Supabase ser por organização com dois projetos (US$ 25 + US$ 10), e o item de US$ 10 deixou de existir. O checkbox de upgrade da Fase 7 foi reescrito: o que decide o plano passa a ser a **janela de retenção do PITR**, e ficou explícito que **PITR não é backup** (protege de erro seu na janela, não de perder a conta) — o checkbox de restore agora pede **dois** testes, PITR e `pg_dump` frio. **(7) Teste continua LOCAL, e isso é decisão reafirmada, não inércia.** Branch de nuvem é barato e instantâneo, o que torna tentador usá-lo como banco de teste — mas devolveria o `migrate reset --force` para um banco alcançável pela internet, exatamente o que a decisão de Ago 2026 evita. A trava de hostname disparou e confirmou `localhost` durante toda a sessão. **(8) Supabase intocado como rollback durante a migração e APAGADO pelo operador na mesma sessão**, depois de a validação fechar (somente leitura o tempo todo, verificado por comparação antes/depois). **Consequência que vira prioridade:** sem o Supabase de pé, a única rede de segurança do banco passa a ser a **janela curta de PITR do plano Free** — o que promove o checkbox de backup da Fase 7 de "antes do primeiro aluno pagante" para **o próximo item de infra a fechar**, já que o `pg_dump` frio é o que cobre "perdi a conta".*
