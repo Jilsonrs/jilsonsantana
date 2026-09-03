@@ -24,6 +24,11 @@ Thumbs.db
 # diretório excluído e a negação NÃO funciona (falha em silêncio).
 .claude/*
 !.claude/agents/
+# EXCEÇÃO 2 (Set 2026): .claude/skills/ são SYMLINKS para .agents/skills/, criados
+# por `neon skills`. Sem versioná-los, um clone novo traz o conteúdo (.agents/ é
+# versionado) mas NÃO a ligação — as skills existem e nunca carregam, sem erro e
+# sem aviso. Mesmo modo de falha que a exceção de agents/ acima previne.
+!.claude/skills/
 .claude.json
 # MCP server config carries API keys — keep it in user/global scope, never in the repo
 /.mcp.json
