@@ -21,17 +21,34 @@
 
 ## 0. Quem faz o quê (parceria de design)
 
-- **Direção de arte — agente parceiro (Gemini/Antigravity).** Concebe, itera e constrói mockups e
-  protótipos em HTML/CSS dentro de `design-lab/`. Liberdade total para explorar ali.
-- **Engenharia — Claude Code.** Depois do mock aprovado, fatia, implementa e integra aos
-  componentes oficiais, com testes e provas de contraste.
-- **`design-lab/` é o ESTÚDIO; este arquivo é a LEI.** *(governança, Set 2026)* O que for aprovado
-  no estúdio é incorporado aqui, e é **aqui** que se consulta. **Por que a distinção existe:** dois
-  documentos se declarando "fonte da verdade" divergem em semanas, e é exatamente a falha que a
-  regra *git-wins* do `CLAUDE.md` existe para impedir. Mock é exploração — vale enquanto não
-  contradiz esta lei; contradisse e a ideia é melhor? **Reescreva esta lei**, não conviva com as
-  duas.
-- **Mocks são descartáveis.** `design-lab/` não entra na build e não é referência de código.
+**O front-end tem DOIS autores, e isso é desenho, não improviso** *(Set 2026)*:
+
+- **Direção de arte — agente parceiro (Gemini/Antigravity).** Concebe e constrói mockups em
+  HTML/CSS dentro de `design-lab/`, **e depois formata o resultado direto no código do app**. Este
+  último passo é deliberado: ele elimina a etapa em que a engenharia traduz o mock e perde
+  acabamento no caminho.
+- **Engenharia — Claude Code.** Constrói a estrutura, a lógica e os testes; incorpora aqui o que o
+  estúdio aprovou; mede contraste.
+- **As instruções operacionais do parceiro vivem em [`design-lab/GEMINI.md`](../design-lab/GEMINI.md)**
+  — quais arquivos ele toca, quais não toca, as sete regras e como ele verifica que não quebrou
+  nada. **Esse arquivo é versionado; o resto de `design-lab/` não é.**
+
+**`design-lab/` é o ESTÚDIO; este arquivo é a LEI.** O que for aprovado no estúdio é incorporado
+aqui, e é **aqui** que se consulta. **Por que a distinção existe:** dois documentos se declarando
+"fonte da verdade" divergem em semanas — a falha que a regra *git-wins* do `CLAUDE.md` existe para
+impedir. Mock é exploração: vale enquanto não contradiz esta lei; contradisse e a ideia é melhor?
+**Reescreva esta lei**, não conviva com as duas.
+
+**Os mocks NÃO são versionados** (`.gitignore`: `design-lab/*` + `!design-lab/GEMINI.md`). São
+exploração descartável, e o que importa deles já está aqui. **Consequência a saber:** num clone
+novo a pasta chega só com o `GEMINI.md` — se você procurar um mock citado num commit antigo e não
+achar, não é defeito, é o desenho.
+
+**A rede de segurança que torna isso seguro são os TESTES.** O parceiro edita `.tsx` de verdade, e
+o que o impede de apagar acessibilidade sem querer não é a boa vontade dele: é a suíte reprovar.
+Expansão por teclado, `aria-current`, rótulo do rail recolhido, visibilidade por papel e destino de
+link **têm teste**. Por isso a regra correspondente no `GEMINI.md` é *"não edite o teste, avise"* —
+teste ajustado para passar deixa de proteger.
 
 ---
 

@@ -37,3 +37,15 @@ Thumbs.db
 playwright-report/
 test-results/
 .neon
+
+# Estúdio de design (mocks do parceiro de arte). Os .html e imagens são
+# EXPLORAÇÃO descartável e não entram no repo — a lei visual mora em
+# docs/design.md, e o que for aprovado é incorporado lá.
+# EXCEÇÃO: GEMINI.md é versionado — é a instrução do parceiro, e precisa viajar
+# com o repo pelo mesmo motivo que .claude/agents/ acima. Sem ele, uma máquina
+# nova recebe o projeto sem as regras de quem formata o front.
+# Mesma armadilha da exceção de agents: PRECISA ser `design-lab/*` com barra e
+# asterisco. Com `design-lab/` o git não desce no diretório excluído e a negação
+# é ignorada EM SILÊNCIO — sem erro, sem aviso, o arquivo só nunca aparece.
+design-lab/*
+!design-lab/GEMINI.md
