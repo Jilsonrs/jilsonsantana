@@ -1,10 +1,9 @@
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import * as api from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { PlanModuleAccordion } from "@/components/content/PlanModuleAccordion";
 import { SaveTrilhaButton } from "@/components/content/SaveTrilhaButton";
-import type { PlanItemDetail } from "@/lib/api";
 
 export function TrilhaDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -36,37 +35,10 @@ export function TrilhaDetailPage() {
 
       <section>
         <h2 className="text-lg font-medium">Conteúdo da trilha</h2>
-        <Accordion type="multiple" className="mt-3">
-          {trilha.planModules.map((mod) => (
-            <AccordionItem key={mod.id} value={String(mod.id)}>
-              <AccordionTrigger>{mod.title}</AccordionTrigger>
-              <AccordionContent>
-                <ul className="space-y-2">
-                  {mod.items.map((item) => (
-                    <li key={item.id}>
-                      <PlanItemRow item={item} />
-                    </li>
-                  ))}
-                </ul>
-              </AccordionContent>
-            </AccordionItem>
-          ))}
-        </Accordion>
+        <div className="mt-3">
+          <PlanModuleAccordion planModules={trilha.planModules} />
+        </div>
       </section>
     </div>
   );
-}
-
-function PlanItemRow({ item }: { item: PlanItemDetail }) {
-  if (item.course) {
-    return (
-      <Link to={`/curso/${item.course.slug}`} className="text-sm text-primary hover:underline">
-        {item.course.title}
-      </Link>
-    );
-  }
-  if (item.lesson) {
-    return <span className="text-sm text-muted-foreground">{item.lesson.title}</span>;
-  }
-  return null;
 }

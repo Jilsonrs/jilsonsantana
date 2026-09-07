@@ -113,6 +113,19 @@ export type TrilhaDetail = {
   planModules: PlanModuleDetail[];
 };
 
+// Trilha SALVA pelo aluno (clone de uma curada). Não é `TrilhaCard`: o clone
+// não carrega slug — é alcançado por id (`/trilhas/mine/:id`) — e carrega
+// `sourcePlanId`, que diz de qual trilha curada ele saiu.
+export type MyTrilhaSummary = {
+  id: number;
+  name: string;
+  description: string | null;
+  skillsCovered: string[];
+  sourcePlanId: number | null;
+  displayOrder: number;
+  _count: { planModules: number };
+};
+
 export type SearchLessonResult = {
   id: number;
   title: string;
@@ -249,6 +262,21 @@ export async function getTrilhas(): Promise<TrilhaCard[]> {
 
 export async function getTrilhaBySlug(slug: string): Promise<TrilhaDetail> {
   const { data } = await client.get<TrilhaDetail>(`/trilhas/${slug}`);
+  return data;
+}
+
+// ── Trilhas do próprio aluno (exigem sessão; o servidor filtra por dono) ─────
+
+export async function getMyTrilhas(): Promise<MyTrilhaSummary[]> {
+  const { data } = await client.get<MyTrilhaSummary[]>("/trilhas/mine");
+  return data;
+}
+
+// A árvore da trilha salva tem a MESMA forma da curada (`planTreeInclude` no
+// servidor), por isso reusa `TrilhaDetail` em vez de um tipo paralelo que
+// precisaria ser mantido em sincronia com ele.
+export async function getMyTrilha(id: number): Promise<TrilhaDetail> {
+  const { data } = await client.get<TrilhaDetail>(`/trilhas/mine/${id}`);
   return data;
 }
 
