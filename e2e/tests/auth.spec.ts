@@ -54,7 +54,12 @@ test("admin reaches /admin", async ({ page }) => {
   // spec — ela esperava "Área administrativa", texto renomeado para "Admin" no
   // Bloco 6a e não detectado por meses, porque o E2E não rodava no CI.
   await expect(page.getByRole("heading", { name: "Admin" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Cursos" })).toBeVisible();
+  // Escopado ao conteúdo (`main`) porque a barra lateral também tem um item
+  // "Cursos" — os dois apontam para o mesmo lugar, então não é ambiguidade
+  // para o aluno, só para o seletor. E o escopo devolve a INTENÇÃO original
+  // desta linha: provar que a PÁGINA do admin tem o link, não que a navegação
+  // tem. `.first()` faria o teste passar escondendo qual dos dois foi achado.
+  await expect(page.getByRole("main").getByRole("link", { name: "Cursos" })).toBeVisible();
 });
 
 // A sessão sobreviver ao F5 é o caso que SÓ um browser de verdade prova: depende

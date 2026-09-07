@@ -9,3 +9,24 @@ import { cleanup } from "@testing-library/react";
 afterEach(() => {
   cleanup();
 });
+
+// O jsdom não implementa `window.matchMedia`, e o `useIsMobile` da barra
+// lateral chama isso num efeito — sem este stub, TODO teste que renderiza o
+// `Layout` quebra com "matchMedia is not a function", que é um erro de
+// ambiente disfarçado de erro de componente.
+//
+// Responde "não é mobile" de propósito: é o ramo desktop da barra, o que os
+// testes de papel exercitam. Quem precisar do ramo da gaveta sobrescreve.
+if (!window.matchMedia) {
+  window.matchMedia = (query: string): MediaQueryList =>
+    ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      addListener: () => {},
+      removeListener: () => {},
+      dispatchEvent: () => false,
+    }) as MediaQueryList;
+}

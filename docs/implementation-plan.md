@@ -54,12 +54,13 @@
 > (janela do plano Free, curta) mais o `pg_dump` frio, que é o checkbox de backup da Fase 7 e segue
 > **em aberto**. Enquanto ele estiver aberto, a rede de segurança do banco é **só** a janela do Free.
 >
-> **Cobertura de teste — o que EXISTE hoje (medido em Ago 2026, não estimado):** cliente **9
-> arquivos / 35 testes** (Vitest + RTL) ✅ no CI — a tela de **login** fechada pelos 8 critérios,
-> com prova por mutação · servidor **1 arquivo / 3 testes de fumaça**
-> (supertest, Postgres local) ✅ no CI · E2E **1 arquivo / 6 testes** ✅ **no CI, em job próprio,
-> com trava de host local e prova por mutação** *(T1 fechado — antes rodava contra o banco de
-> produção, sem `globalSetup`)*. As três camadas agora rodam e podem falhar.
+> **Cobertura de teste — o que EXISTE hoje (medido em Set 2026, não estimado):** cliente **15
+> arquivos / 73 testes** (Vitest + RTL) ✅ no CI — a tela de **login** fechada pelos 8 critérios e
+> a **barra lateral** com 6 mutações provadas · servidor **3 arquivos / 19 testes**
+> (supertest, Postgres local) ✅ no CI — fumaça, login e leituras públicas · E2E **1 arquivo / 7
+> testes** ✅ **no CI, em job próprio, com trava de host local e prova por mutação** *(T1 fechado —
+> antes rodava contra o banco de produção, sem `globalSetup`)*. As três camadas rodam e podem
+> falhar.
 > Não há teste de servidor
 > de **negócio** (a matriz de acesso e os casos de webhook são a Fase 4) e não há suíte nenhuma de
 > Bunny ou Stripe, porque esse código não existe. Plano de cobertura: **Fase 3 → Bloco T**.
@@ -891,23 +892,87 @@ tornada executável — não uma lista nova):
       que cada papel enxerga. 6 testes (visitante / aluno / admin); o que mais importa é o aluno
       **não ver o item Admin** — não é sobre acesso (o servidor barra, e isso já é testado), é sobre
       não anunciar a existência de uma área que não é dele. Mutação derruba.
-- [ ] Barra lateral (ícone + rótulo, agrupada), substituindo o link provisório do cabeçalho.
+- [x] Barra lateral (ícone + rótulo, agrupada), substituindo o link provisório do cabeçalho.
       **ESCOPO — a MESMA barra serve os DOIS ambientes** *(operador, Ago 2026)*: área do aluno **e**
       área administrativa inteira. Não são dois componentes; é um, com itens diferentes por papel —
       dois componentes divergem em espaçamento, comportamento e estados de foco, e a divergência
       aparece como "o admin parece outro site".
-- [ ] **Retraída ↔ expandida, como na Udemy** — recolhida mostra só ícone, expande ao passar o
+      ✅ **Set 2026.** `AppSidebar.tsx`, um componente, itens por papel. O `Layout` escolhe pela
+      sessão: sem sessão o cabeçalho público de hoje, com sessão a barra — **o cromo segue a
+      pessoa, não a rota**, então o aluno logado mantém a barra no catálogo, que é rota pública.
+- [x] **Retraída ↔ expandida, como na Udemy** — recolhida mostra só ícone, expande ao passar o
       mouse; e o estado escolhido **persiste** (quem recolheu não quer recolher de novo a cada
       visita). **Trava de acessibilidade:** expandir só por mouse exclui quem navega por teclado —
       o rótulo tem que estar sempre disponível para leitor de tela (via `aria-label` ou texto
       visualmente oculto), mesmo com a barra recolhida. Mesma regra do destaque de erro do login:
       **a informação nunca pode existir só no visual.**
+      ✅ **Set 2026, com DOIS achados que o texto acima não previa:**
+      **(a) A persistência NÃO vinha de graça** — a peça do shadcn *escreve* o cookie e nunca o
+      lê; quem lê, no desenho dela, é um servidor que renderiza a página, e num app Vite ele não
+      existe. A barra voltaria aberta **sempre**, sem erro e sem log. O `Layout` passou a ler o
+      cookie (`barraComecaAberta()`), e o `SIDEBAR_COOKIE_NAME` virou export para não haver um
+      literal repetido que divergisse em silêncio. Tem teste nos três casos.
+      **(b) A trava de acessibilidade já estava satisfeita — mas por acidente, e agora tem
+      guarda.** O shadcn recorta o rótulo com `overflow`, não com `display:none`, então ele
+      permanece na árvore de acessibilidade. Isso é fácil de "otimizar" para `display:none` sem
+      ninguém notar, porque a tela fica idêntica; o teste da barra recolhida existe para reprovar
+      quem tentar.
 - [ ] **Painel do aluno** como destino pós-login: progresso, próxima aula, trilhas em andamento.
       **Depende da Fase 5** (captura de progresso) — sem `LessonProgress` não há o que mostrar, e
       construir a casca antes deixa uma tela vazia que ninguém sabe se está quebrada.
-- [ ] Navegação mobile — o menu lateral obriga a decidir isto, que o cabeçalho atual adiava.
+      **NOTA (Set 2026): a dependência encolheu.** "Trilhas em andamento" já tem dado real desde
+      `GET /api/trilhas/mine` (Bloco 5) — só as barras de **progresso** ainda dependem da Fase 5.
+      A home pode ganhar a seção de trilhas antes, e isso é fatia própria, não este bloco.
+- [x] Navegação mobile — o menu lateral obriga a decidir isto, que o cabeçalho atual adiava.
+      ✅ **Set 2026:** gaveta (`Sheet`) abaixo de 768px, aberta pelo mesmo botão do cabeçalho.
+      **A gaveta e a barra desktop NUNCA renderizam juntas** (o componente ramifica em
+      `useIsMobile`) — verificado porque o risco previsto era nome duplicado no DOM, e ele não se
+      materializou por aqui. Materializou-se **em outro lugar**: ver o achado do E2E abaixo.
 - **Done when:** o aluno entra e vê para onde ir sem digitar URL; a conta é alcançável em 1 clique
-  de qualquer tela.
+  de qualquer tela. ✅ **CUMPRIDO (Set 2026)** para a navegação; o painel de progresso segue aberto
+  acima, e é fatia da Fase 5.
+
+#### Bloco S2 — NAVEGAÇÃO EM TRÊS NÍVEIS  *(direção do operador, Set 2026 — SUCEDE o Bloco S)*
+
+> **O Bloco S entregou uma barra; este entrega um SISTEMA.** Registrado como bloco novo, e não
+> como correção do anterior, porque o anterior **não estava errado** — o escopo é que mudou, e
+> apagar aquele histórico esconderia que a barra simples existiu e funcionou.
+
+**O que muda em relação ao que foi entregue** (referência: painel de instrutor da Udemy, capturas
+do operador; especificação visual em `design.md` §13, que foi reescrito na mesma sessão):
+- Rail **escuro** e **recolhido por padrão** — hoje é claro e nasce aberto.
+- Expande **ao passar o mouse**, **sobrepondo** o conteúdo — hoje é botão de clique, e empurra.
+- **Nível 2** (coluna secundária, com grupos retráteis) e **nível 3** (abas no topo) passam a
+  existir, ligados por tela.
+- Mobile vira **gaveta com navegação em profundidade** (`Comunicação ›` … `‹ Menu`) — hoje é
+  gaveta de um nível só.
+
+**O QUE DÁ VALOR AO BLOCO, e por que não é over-engineering:** a navegação inteira vira **dado**,
+num mapa único; cada tela **declara** seus níveis e o cromo se monta sozinho. Passa no critério de
+decisão de stack porque o dia ruim é nomeável: *"a cada tela nova eu reinvento a navegação"* — e o
+sistema administrativo inteiro ainda está por construir (Bloco 6b, Fase 4, Fase 5, Fase 6).
+
+- [ ] **Mapa de navegação** (`client/src/lib/navigation.ts`): níveis, subníveis, abas, visibilidade
+      por papel. **Nasce como RASCUNHO do sistema inteiro** — decisão do operador: *"cada página
+      será única, mas o sistema de navegação é para todo o sistema"* — e é editado conforme as
+      telas nascem, sem tocar nos componentes.
+- [ ] **Nível 1** — rail escuro, recolhido, hover expande sobrepondo. **Foco de teclado expande
+      também** (a trava do `design.md` §13, não negociável).
+- [ ] **Nível 2** — coluna secundária, grupos retráteis, só quando a seção tem subitens.
+- [ ] **Nível 3** — abas horizontais, só quando a tela tem abas.
+- [ ] **Mobile** — gaveta com navegação em profundidade (ida e volta entre níveis).
+- **Done when:** uma tela nova entra no sistema **declarando** seus níveis no mapa, sem escrever
+  componente de navegação nenhum — e os três níveis somem sozinhos onde não há dado.
+
+**ACHADO DO E2E — duplicidade de nome, e por que o conserto NÃO foi `.first()`** *(Set 2026)*.
+`admin reaches /admin` quebrou: a barra ganhou um item "Cursos" e a página `/admin` já tinha um
+link "Cursos", então o seletor por nome achou dois. **Não é ambiguidade para o aluno** — os dois
+levam ao mesmo lugar — só para o seletor. O conserto foi **escopar ao `main`**, o que devolve a
+intenção original daquela linha (provar que a PÁGINA tem o link, não que a navegação tem);
+`.first()` faria passar escondendo qual dos dois foi encontrado, que é a família de gate-que-mente
+já nomeada em *Test quality*. **Segundo achado na mesma investigação:** `SidebarInset` já É um
+`<main>`, e o `Layout` estava aninhando outro dentro — HTML inválido e landmark dentro de
+landmark. Corrigido junto.
 
 ### Vídeo (o corpo da fase)
 

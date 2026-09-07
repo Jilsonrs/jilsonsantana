@@ -271,19 +271,56 @@ sombra quase zero, hairline `--border`, foco visível, contraste AA, precisão d
 mais denso e mais quieto — o aluno volta aqui todo dia. A elegância vem da precisão, não de
 momentos.
 
-### Layout
+### Layout — NAVEGAÇÃO EM TRÊS NÍVEIS  *(decisão do operador, Set 2026 — referência: painel de instrutor da Udemy)*
 
-Rail de ícones à esquerda (fixo, ~72px) + área de conteúdo. Sem segunda coluna de navegação
-no launch — um produto solo não sustenta dois níveis de cromo. O número de itens é aberto; o
-rail tem que funcionar de 4 a 8 itens sem redesenho.
+> **Esta seção REVERTE duas decisões anteriores deste mesmo §13**, e as duas reversões são do
+> operador, com o raciocínio registrado. **Não voltar atrás sem dado novo.**
 
-### Rail
+O cromo da área logada é **um sistema de navegação, não uma barra**. Três níveis, e **cada tela
+liga só os que precisa**:
 
-- **Fundo:** `--surface-alt` (#F6F9FC). **Nunca escuro** — o §3 mantém o produto claro, e um
-  rail escuro introduz uma segunda linguagem visual.
+| Nível | O que é | Aparece quando |
+|---|---|---|
+| **1 — rail** | ícones, **escuro**, recolhido por padrão; o mouse expande **sobrepondo** o conteúdo | sempre |
+| **2 — coluna secundária** | menu lateral claro, com grupos retráteis | a seção tem subitens |
+| **3 — abas horizontais** | abas no topo do conteúdo | a tela tem abas |
+
+**REVERSÃO 1 — o segundo nível passa a EXISTIR.** Este parágrafo dizia *"sem segunda coluna de
+navegação no launch — um produto solo não sustenta dois níveis de cromo"*. O argumento era carga
+de operador solo, e o operador apresentou o contrário: a estrutura pronta **reduz** a carga,
+porque cada tela nova **declara** seus níveis em vez de reinventar navegação. *"Dá para mapear
+níveis e subníveis e construir todo o sistema administrativo sem reinventar os menus a cada nova
+tela."* **Gatilho de reabertura:** se o mapa de navegação virar manutenção maior que as telas que
+ele serve — aí o cromo passou a custar mais que o conteúdo, que era o medo original.
+
+**REVERSÃO 2 — o rail é ESCURO.** Este parágrafo dizia *"nunca escuro — um rail escuro introduz
+uma segunda linguagem visual"*. Decisão do operador contra a referência da Udemy. O conteúdo
+continua claro; o escuro fica **confinado ao nível 1**, que é justamente o que separa cromo de
+conteúdo. *Gatilho: se o nível 2 também precisar escurecer para não brigar com o rail, a
+"segunda linguagem visual" que este item temia terá acontecido de fato — reabrir.*
+
+**Trava de acessibilidade (não reversível — vale nos três níveis):** o rótulo continua na árvore
+de acessibilidade **mesmo com o rail recolhido** (recorte visual, nunca `display:none`), e
+expandir por **foco de teclado** além do mouse. Expandir só por mouse excluiria quem navega por
+teclado, e isso não é preferência de UI.
+
+### Rail *(nível 1)*
+
+- **Fundo:** escuro (ver REVERSÃO 2 acima). O conteúdo e o nível 2 seguem claros.
 - **Ícones:** Lucide, traço fino, `--muted-foreground`.
-- **Item ATIVO:** pill de fundo `--primary-tint` + ícone `--primary`. É o ÚNICO lugar onde o
-  azul aparece no rail.
+- **Item ATIVO:** azul, e é o ÚNICO lugar onde o azul aparece no rail. **A forma segue a
+  referência da Udemy: barra vertical na borda esquerda + fundo levemente mais claro** — não a
+  pílula, que era desenho de rail claro. **Os valores para fundo escuro ainda NÃO existem** e
+  entram com a construção do nível 1; `--primary-tint` / `--primary-tint-foreground` continuam
+  válidos, mas para as superfícies **claras** (nível 2 e conteúdo).
+  **Correção MEDIDA (Set 2026), que vale para o nível 2:** este item dizia "ícone `--primary`",
+  e o #238FE8 da marca
+  sobre a pílula dá **2,96:1** — reprova o AA que o *Piso de qualidade* abaixo exige, e o rótulo
+  do item ativo é **texto**, que precisa de 4,5:1. Daí o token próprio, um azul escurecido que dá
+  **4,6:1**. O rótulo inativo (`--muted-foreground` sobre o rail) foi conferido junto: 4,56:1.
+- **Hover é NEUTRO, não azul.** Escrito porque a peça do shadcn usa o mesmo token para hover e
+  para item ativo: mapear o azul direto pintaria o hover também, e o rail perderia o único sinal
+  de "onde estou" — exatamente o que o motivo abaixo protege.
 - **Motivo:** o azul é o acento único (§3). Inundar o rail de #238FE8 gastaria ele no cromo
   de navegação e deixaria as ações primárias ("Continuar trilha", "Assinar") sem nada contra
   o que se destacar.

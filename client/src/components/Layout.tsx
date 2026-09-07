@@ -1,72 +1,83 @@
-import { Link, Outlet, useNavigate } from "react-router-dom";
-import { Role } from "@jilson/core";
-import { useSession, signOut } from "@/lib/auth-client";
+import { Link, Outlet } from "react-router-dom";
+import { useSession } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
+import { AppSidebar } from "@/components/AppSidebar";
+import {
+  SIDEBAR_COOKIE_NAME,
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
 
-// Minimal app shell — a thin header + the routed content. The definitive
-// design.md layout (fonts, hero, polish) lands in the later design pass.
+/**
+ * Quem recolheu a barra não quer recolher de novo a cada visita.
+ *
+ * A peça do shadcn ESCREVE este cookie mas nunca o lê — no desenho dela quem
+ * lê é o servidor que renderiza a página, que aqui não existe. Sem esta
+ * função a barra voltaria aberta sempre, sem erro nenhum: a persistência
+ * simplesmente não aconteceria, e ninguém notaria além do aluno.
+ *
+ * Aberta é o padrão quando não há cookie (decisão do operador: começa aberta).
+ */
+function barraComecaAberta(): boolean {
+  const achado = document.cookie
+    .split("; ")
+    .find((c) => c.startsWith(`${SIDEBAR_COOKIE_NAME}=`));
+  return achado ? achado.split("=")[1] !== "false" : true;
+}
+
+/**
+ * O shell do app. DUAS gramáticas, escolhidas pela sessão:
+ *
+ * - **Sem sessão** — cabeçalho simples. É a superfície pública (landing,
+ *   catálogo, página de curso), que na Fase 3 vira template de servidor.
+ * - **Com sessão** — barra lateral (design.md §13: a área logada é um shell de
+ *   aplicação, não uma landing).
+ *
+ * O cromo segue a PESSOA, não a rota: o aluno logado que abre o catálogo — que
+ * é rota pública — continua com a barra.
+ */
 export function Layout() {
   const { data: session } = useSession();
-  const navigate = useNavigate();
 
-  async function handleSignOut() {
-    await signOut();
-    navigate("/login", { replace: true });
-  }
-
-  return (
-    <div className="flex min-h-svh flex-col bg-background text-foreground">
-      <header className="flex items-center justify-between border-b border-border px-6 py-4">
-        {/* Logado, a marca leva para a home DO ALUNO. Levar para a landing
-            pública seria mandar quem já é assinante de volta para a página que
-            tenta convencê-lo a assinar. */}
-        <Link
-          to={session ? "/inicio" : "/"}
-          className="font-semibold tracking-tight"
-        >
-          <span className="text-primary">#</span>Jilson Santana
-        </Link>
-        <nav className="flex items-center gap-2">
-          {session && (
-            // Link explícito além da marca: clicar no logotipo é hábito de quem
-            // já conhece o padrão, não de quem está começando.
+  if (!session) {
+    return (
+      <div className="flex min-h-svh flex-col bg-background text-foreground">
+        <header className="flex items-center justify-between border-b border-border px-6 py-4">
+          <Link to="/" className="font-semibold tracking-tight">
+            <span className="text-primary">#</span>Jilson Santana
+          </Link>
+          <nav className="flex items-center gap-2">
             <Button asChild variant="ghost" size="sm">
-              <Link to="/inicio">Início</Link>
+              <Link to="/cursos">Catálogo</Link>
             </Button>
-          )}
-          <Button asChild variant="ghost" size="sm">
-            <Link to="/cursos">Catálogo</Link>
-          </Button>
-          {session?.user.role === Role.ADMIN && (
-            <Button asChild variant="ghost" size="sm">
-              <Link to="/admin">Admin</Link>
-            </Button>
-          )}
-          {session ? (
-            <>
-              <Button asChild variant="ghost" size="sm">
-                <Link to="/minhas-trilhas">Minhas trilhas</Link>
-              </Button>
-              {/* Sem este link, quem entra só chega na própria conta digitando
-                  o endereço. Provisório: some quando o menu lateral do aluno
-                  entrar (implementation-plan → shell do aluno). */}
-              <Button asChild variant="ghost" size="sm">
-                <Link to="/conta">Minha conta</Link>
-              </Button>
-              <Button variant="ghost" size="sm" onClick={handleSignOut}>
-                Sair
-              </Button>
-            </>
-          ) : (
             <Button asChild variant="ghost" size="sm">
               <Link to="/login">Entrar</Link>
             </Button>
-          )}
-        </nav>
-      </header>
-      <main className="flex-1">
+          </nav>
+        </header>
+        <main className="flex-1">
+          <Outlet />
+        </main>
+      </div>
+    );
+  }
+
+  return (
+    <SidebarProvider defaultOpen={barraComecaAberta()}>
+      <AppSidebar />
+      {/* `SidebarInset` JÁ é o <main> da página — por isso o conteúdo entra
+          direto aqui. Envolver o Outlet num segundo <main> aninharia landmark
+          dentro de landmark, que é HTML inválido e confunde quem navega por
+          regiões no leitor de tela. */}
+      <SidebarInset>
+        {/* Cabeçalho magro: só o botão que recolhe/expande (e que no celular
+            abre a gaveta). A navegação inteira mora na barra agora. */}
+        <header className="flex h-14 shrink-0 items-center gap-2 border-b border-border px-4">
+          <SidebarTrigger />
+        </header>
         <Outlet />
-      </main>
-    </div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }
