@@ -173,7 +173,7 @@ investigação.
       Depois, `PlanItemRow` em `client/src/pages/TrilhaDetailPage.tsx` passa a linkar a aula
       isolada pro curso-pai (mesmo padrão que a busca já usa: aula → curso, não aula → aula,
       que ainda não tem página própria, Fase 3).
-- [ ] Sem tela "Minhas trilhas" — a leitura já existe (`GET /trilhas/mine`, `GET
+- [x] Sem tela "Minhas trilhas" — a leitura já existe (`GET /trilhas/mine`, `GET
       /trilhas/mine/:id`, Bloco 3b), só falta a UI. Sem ela, salvar uma trilha é um beco sem
       saída (o membro não acha de novo). Precisa: `getMyTrilhas()`/`getMyTrilha(id)` em
       `client/src/lib/api.ts`; `client/src/pages/MyTrilhasPage.tsx` (`/minhas-trilhas`, dentro de
@@ -181,6 +181,12 @@ investigação.
       PlanModule→PlanItem de `TrilhaDetailPage.tsx` pra um componente compartilhado (reusado pela
       trilha curada e pela trilha própria); link "Minhas trilhas" no `Layout.tsx` (qualquer
       logado, não só admin).
+      ✅ **Set 2026.** Entregue como especificado. Dois detalhes que o texto acima não previa e
+      ficam registrados porque mudam código vizinho: o accordion compartilhado é
+      `client/src/components/content/PlanModuleAccordion.tsx` e **ganhou estado VAZIO** (módulo
+      cujos itens todos apontam para curso não publicado chega vazio pelo filtro
+      `publicadoNaCadeia`); e `TrilhaCard` ganhou um `to?` opcional — a trilha salva não tem slug,
+      então o card não conseguia derivar o link e virava `<div>` sem destino.
 - [ ] Selo 3-camadas e "Diferenciais" (highlights) sem heading de seção em
       `client/src/pages/CourseDetailPage.tsx` — os dois blocos de cards (ícone+título+texto) ficam
       empilhados sem título, parecem duplicados (achado nas capturas desktop/mobile).

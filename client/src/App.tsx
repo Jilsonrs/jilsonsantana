@@ -10,6 +10,8 @@ import { AdminPage } from "@/pages/AdminPage";
 import { CatalogPage } from "@/pages/CatalogPage";
 import { CourseDetailPage } from "@/pages/CourseDetailPage";
 import { TrilhaDetailPage } from "@/pages/TrilhaDetailPage";
+import { MyTrilhasPage } from "@/pages/MyTrilhasPage";
+import { MyTrilhaDetailPage } from "@/pages/MyTrilhaDetailPage";
 import { AdminCoursesPage } from "@/pages/admin/AdminCoursesPage";
 import { AdminCourseFormPage } from "@/pages/admin/AdminCourseFormPage";
 
@@ -24,6 +26,8 @@ export default function App() {
         <Route path="/trilha/:slug" element={<TrilhaDetailPage />} />
         <Route element={<ProtectedRoute />}>
           <Route path="/inicio" element={<StudentHomePage />} />
+          <Route path="/minhas-trilhas" element={<MyTrilhasPage />} />
+          <Route path="/minhas-trilhas/:id" element={<MyTrilhaDetailPage />} />
           <Route path="/conta" element={<AccountPage />} />
         </Route>
         <Route element={<AdminRoute />}>

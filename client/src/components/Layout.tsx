@@ -44,6 +44,9 @@ export function Layout() {
           )}
           {session ? (
             <>
+              <Button asChild variant="ghost" size="sm">
+                <Link to="/minhas-trilhas">Minhas trilhas</Link>
+              </Button>
               {/* Sem este link, quem entra só chega na própria conta digitando
                   o endereço. Provisório: some quando o menu lateral do aluno
                   entrar (implementation-plan → shell do aluno). */}

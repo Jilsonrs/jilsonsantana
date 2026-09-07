@@ -32,6 +32,7 @@ describe("Layout — visitante sem sessão", () => {
 
     expect(screen.getByRole("link", { name: "Entrar" })).toBeTruthy();
     expect(screen.queryByRole("link", { name: "Início" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "Minhas trilhas" })).toBeNull();
     expect(screen.queryByRole("link", { name: "Minha conta" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Sair" })).toBeNull();
   });
@@ -47,11 +48,12 @@ describe("Layout — aluno logado", () => {
     useSession.mockReturnValue({ data: { user: { role: Role.MEMBER } } });
   });
 
-  it("mostra Início, Catálogo, Minha conta e Sair", () => {
+  it("mostra Início, Catálogo, Minhas trilhas, Minha conta e Sair", () => {
     renderWithProviders(<Layout />);
 
     expect(screen.getByRole("link", { name: "Início" })).toBeTruthy();
     expect(screen.getByRole("link", { name: "Catálogo" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Minhas trilhas" })).toBeTruthy();
     expect(screen.getByRole("link", { name: "Minha conta" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Sair" })).toBeTruthy();
     expect(screen.queryByRole("link", { name: "Entrar" })).toBeNull();
