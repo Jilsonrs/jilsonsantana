@@ -17,7 +17,10 @@ afterEach(() => {
 //
 // Responde "não é mobile" de propósito: é o ramo desktop da barra, o que os
 // testes de papel exercitam. Quem precisar do ramo da gaveta sobrescreve.
-if (!window.matchMedia) {
+// `typeof window` e não `window`: este setup roda para TODA a suíte, e teste de
+// função pura (o mapa de navegação) roda em Node, onde `window` não existe —
+// sem a guarda, ele quebraria antes de coletar um teste sequer.
+if (typeof window !== "undefined" && !window.matchMedia) {
   window.matchMedia = (query: string): MediaQueryList =>
     ({
       matches: false,

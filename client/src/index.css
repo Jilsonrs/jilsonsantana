@@ -1,55 +1,59 @@
+@import "./fonts.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* Tokens do design.md §3. Os números de contraste nos comentários foram
+   MEDIDOS sobre estes valores — se mudar um token, meça de novo. */
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
+    --background: 0 0% 100%; /* #FFFFFF */
+    --foreground: 240 4% 4%; /* #0A0A0B */
     --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
+    --card-foreground: 240 4% 4%;
     --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    /* Brand accent — #238FE8 (Jilson blue) in HSL. The single accent now;
-       the full design.md palette/fonts land in the later design pass. */
+    --popover-foreground: 240 4% 4%;
+    /* O azul da marca (#238FE8) — acento ÚNICO do produto. */
     --primary: 207 81% 52%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
-    --destructive: 0 84.2% 60.2%;
+    --primary-hover: 207 75% 42%; /* #1A6FBB */
+    --secondary: 240 5% 96%;
+    --secondary-foreground: 240 6% 10%;
+    --muted: 240 5% 96%;
+    /* #737373 — o cinza mais CLARO que ainda passa AA nos dois fundos (4,74:1
+       no branco, 4,53:1 no surface-alt). O cinza da logomarca (#838383) dá
+       3,79:1 e REPROVA para texto: ele é cor de marca, não de corpo. */
+    --muted-foreground: 0 0% 45%;
+    --accent: 240 5% 96%;
+    --accent-foreground: 240 6% 10%;
+    --destructive: 358 75% 59%; /* #E5484D */
     --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
+    --success: 163 69% 39%; /* #1FA97E */
+    --border: 210 25% 93%; /* #E8ECF1 — hairline ESTRUTURAL */
+    --input: 210 25% 93%;
     --ring: 207 81% 52%;
-    --radius: 0.5rem;
+    --radius: 0.75rem; /* 12px */
 
-    /* Shell da área logada (design.md §13). Só os tokens que a barra lateral
-       precisa — a paleta completa e as fontes continuam adiadas. */
-    --surface-alt: 210 50% 97.6%; /* #F6F9FC — fundo do rail */
-    --primary-tint: 207 81% 94%; /* pílula do item ativo */
-    /* Azul ESCURECIDO, e o motivo é medido, não estético: o #238FE8 da marca
-       sobre a pílula dá 2,96:1 — reprova o AA que o §13 exige como piso. Este
-       tom dá 4,6:1. O rótulo do item ativo é texto, e texto precisa de 4,5:1. */
+    --surface-alt: 210 40% 98%; /* #F8FAFC — quebra de seção e coluna secundária */
+    /* Azul ESCURECIDO para superfície CLARA: o #238FE8 sobre o tint dá 2,96:1 e
+       reprova. Este dá 4,6:1. No rail escuro o azul passa sozinho (5,81:1) e
+       não precisa disto — não copie um tratamento para o outro. */
+    --primary-tint: 207 81% 94%;
     --primary-tint-foreground: 207 81% 40%;
 
-    /* A barra do shadcn lê os `--sidebar-*`; apontamos cada um para o token do
-       design em vez de manter uma segunda paleta que divergiria em silêncio. */
-    --sidebar-background: var(--surface-alt);
-    --sidebar-foreground: var(--muted-foreground);
-    --sidebar-primary: var(--primary);
-    --sidebar-primary-foreground: var(--primary-foreground);
-    /* Hover NEUTRO de propósito: o shadcn usa o mesmo token para hover e para
-       item ativo, e o §13 diz que o azul é o ÚNICO sinal de "onde estou". Se o
-       hover também fosse azul, o rail perderia esse sinal. O azul do ativo é
-       aplicado no `AppSidebar`, não aqui. */
-    --sidebar-accent: var(--muted);
-    --sidebar-accent-foreground: var(--foreground);
-    --sidebar-border: var(--border);
-    --sidebar-ring: var(--ring);
+    /* RAIL — nível 1 da navegação (design.md §6). É a ÚNICA superfície escura
+       do produto, e ser a única é o que impede a "segunda linguagem visual".
+       Sobre ele o azul da marca passa AA sozinho (5,81:1), então o item ativo
+       usa `--primary` de verdade. */
+    --rail: 240 4% 4%; /* #0A0A0B — preto profundo */
+    --rail-foreground: 240 5% 65%; /* #A1A1AA — 7,72:1 sobre o rail */
+    --rail-item-ativo: 220 6% 20%; /* #303236 */
+
+    /* Fio de cabelo DECORATIVO (1,07:1). Quebra de seção sem linha dura, sim;
+       separador de item, contorno de campo ou indicador de ativo, NÃO — esses
+       comunicam estrutura e precisam de 3:1 (use `--border` ou o azul). */
+    --border-fine: 0 0% 0% / 0.03;
   }
 
   .dark {
@@ -79,15 +83,15 @@
     --surface-alt: 240 5.9% 10%;
     --primary-tint: 207 40% 20%;
     --primary-tint-foreground: 207 81% 78%;
+    --primary-hover: 207 81% 62%;
+    --success: 163 60% 45%;
+    --border-fine: 0 0% 100% / 0.05;
 
-    --sidebar-background: var(--surface-alt);
-    --sidebar-foreground: var(--muted-foreground);
-    --sidebar-primary: var(--primary);
-    --sidebar-primary-foreground: var(--primary-foreground);
-    --sidebar-accent: var(--muted);
-    --sidebar-accent-foreground: var(--foreground);
-    --sidebar-border: var(--border);
-    --sidebar-ring: var(--ring);
+    /* O rail já é escuro no tema claro; aqui ele só não fica mais escuro que o
+       fundo, senão deixaria de se distinguir do conteúdo. */
+    --rail: 240 6% 8%;
+    --rail-foreground: 240 5% 65%;
+    --rail-item-ativo: 220 6% 22%;
   }
 }
 
@@ -96,6 +100,14 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    /* Hanken Grotesk é o padrão de tudo; a MuseoModerno entra por classe, com
+       restrição (design.md §4) — nunca em corpo de texto. */
+    @apply bg-background text-foreground font-body antialiased;
+  }
+  /* Títulos herdam a fonte da marca sem cada tela precisar lembrar. */
+  h1,
+  h2,
+  h3 {
+    @apply font-display tracking-tight;
   }
 }

@@ -5,6 +5,15 @@ const config: Config = {
   content: ["./index.html", "./src/**/*.{ts,tsx}"],
   theme: {
   	extend: {
+  		// design.md §4. `display` carrega a personalidade da marca e entra com
+  		// restrição (títulos e números); `body` é o padrão de tudo; `emphasis` é
+  		// o itálico serifado de UMA palavra por título, nunca de frase inteira.
+  		fontFamily: {
+  			display: ['MuseoModerno', 'system-ui', 'sans-serif'],
+  			body: ['"Hanken Grotesk"', 'system-ui', 'sans-serif'],
+  			mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
+  			emphasis: ['"Playfair Display"', 'Georgia', 'serif']
+  		},
   		colors: {
   			border: 'hsl(var(--border))',
   			input: 'hsl(var(--input))',
@@ -20,6 +29,12 @@ const config: Config = {
   			},
   			// Fundo do shell da área logada (design.md §13).
   			'surface-alt': 'hsl(var(--surface-alt))',
+  			// Rail escuro — nível 1 da navegação (design.md §13).
+  			rail: {
+  				DEFAULT: 'hsl(var(--rail))',
+  				foreground: 'hsl(var(--rail-foreground))',
+  				ativo: 'hsl(var(--rail-item-ativo))'
+  			},
   			secondary: {
   				DEFAULT: 'hsl(var(--secondary))',
   				foreground: 'hsl(var(--secondary-foreground))'

@@ -1,24 +1,59 @@
 # DESIGN.md — Direção Visual & Design System
 
-> **SUBSTITUI** o design.md antigo (era consultoria: dark, $119, Service 6). Aquele está morto.
-> Fonte de identidade: **PROJECT_DESCRIPTION.md** · Convenções de UI: **CLAUDE.md** · Stack: **tech-stack.md**.
-> Princípio que rege tudo: **AI no DNA** — *a escola não ensina IA, a escola É IA.*
+> **Fonte de verdade visual do projeto.** Identidade e estratégia: `project-description.md` ·
+> Convenções de engenharia: `CLAUDE.md` · Stack: `tech-stack.md`.
+> Princípio que rege tudo: **IA no DNA** — *a escola não ensina IA, a escola É IA.*
+>
+> **Este documento é vivo, não pedra.** *(direção do operador, Set 2026: "não adianta ser a escola
+> de IA com documentos como rocha"; "se o Opus 6 ou 7 revir o que fizemos e resolver reescrever
+> melhor, faremos — funciona para o momento atual, daqui a 2 anos pode ser outra coisa".)*
+>
+> **Um modelo futuro reescrever isto é o funcionamento esperado, não uma falha.** É por isso que
+> cada decisão carrega um **gatilho de reabertura**: sem ele, uma escolha vira dogma (ninguém ousa
+> tocar) ou vira ruído (todo mundo ignora). Com ele, quem chega depois sabe exatamente **que evento
+> torna a decisão obsoleta** — e pode reabrir com segurança em vez de adivinhar.
+>
+> **A exceção, e é uma só:** as travas de **acessibilidade** (contraste, teclado, tamanho mínimo de
+> texto) não são moda e não têm gatilho. Elas não descrevem gosto de 2026 — descrevem quem
+> consegue usar o produto. Essas ficam.
+
+---
+
+## 0. Quem faz o quê (parceria de design)
+
+- **Direção de arte — agente parceiro (Gemini/Antigravity).** Concebe, itera e constrói mockups e
+  protótipos em HTML/CSS dentro de `design-lab/`. Liberdade total para explorar ali.
+- **Engenharia — Claude Code.** Depois do mock aprovado, fatia, implementa e integra aos
+  componentes oficiais, com testes e provas de contraste.
+- **`design-lab/` é o ESTÚDIO; este arquivo é a LEI.** *(governança, Set 2026)* O que for aprovado
+  no estúdio é incorporado aqui, e é **aqui** que se consulta. **Por que a distinção existe:** dois
+  documentos se declarando "fonte da verdade" divergem em semanas, e é exatamente a falha que a
+  regra *git-wins* do `CLAUDE.md` existe para impedir. Mock é exploração — vale enquanto não
+  contradiz esta lei; contradisse e a ideia é melhor? **Reescreva esta lei**, não conviva com as
+  duas.
+- **Mocks são descartáveis.** `design-lab/` não entra na build e não é referência de código.
 
 ---
 
 ## 1. Tese de design
 
-A coisa mais característica do produto não é o Jilson nem um número de "+100 mil alunos" — é o
-**momento em que a IA transforma um objetivo do aluno num caminho.** Então o design não abre com
-headshot + barra de stats (resposta-template). Abre com **a IA em ação.**
+A coisa mais característica do produto não é o Jilson nem "+100 mil alunos" — é o **momento em que
+a IA transforma um objetivo do aluno num caminho.** Então o design não abre com headshot + barra de
+stats (resposta-template). Abre com **a IA em ação.**
 
-**Clima:** Apple — claro, arejado, calmo, premium, acessível. Branco, muito respiro, tipografia
-grande e confiante, imagens bonitas, transições leves. Nada de escuro "tech-autoridade", nada de
-gradientes berrantes, nada de gamificação. A elegância vem da **precisão** (espaçamento, tipo,
-detalhe), não da decoração.
+**Clima:** editorial, imaculado, premium — claro, arejado, calmo, silencioso. Muito respiro,
+tipografia grande e confiante, transições leves. Nada de "tech-autoridade" escuro, nada de
+gradiente berrante, nada de gamificação. **A elegância vem da precisão** (espaçamento, tipo,
+detalhe), não da decoração. A IA aparece **natural e fluida**, nunca intimidadora.
 
-**A cor é dele.** Sobre o branco Apple, **um único acento azul #238FE8** (o azul da logomarca)
-carrega marca, ação e o "brilho" do JilsonAI. Disciplina total: um acento, muito neutro em volta.
+**A cor é dele.** Sobre o branco, **um único acento azul #238FE8** (o azul da logomarca) carrega
+marca, ação e o "brilho" do JilsonAI. Disciplina total: um acento, muito neutro em volta.
+
+**TRAVA — leveza é requisito técnico, não gosto.** Boa parte do público acessa de aparelho antigo e
+conexão móvel instável. Estética premium **não** justifica peso: sem biblioteca pesada em runtime,
+sem dependência externa em caminho crítico, animação sempre degradando com elegância. Se um efeito
+custa desempenho perceptível num aparelho fraco, ele não entra. *(Sem gatilho: é sobre quem é o
+aluno, e isso não muda.)*
 
 ---
 
@@ -26,111 +61,150 @@ carrega marca, ação e o "brilho" do JilsonAI. Disciplina total: um acento, mui
 
 **A trilha que se monta sozinha.** No hero, o aluno digita (ou escolhe) um objetivo em linguagem
 natural — *"quero virar analista de dados"* — e, na frente dele, o JilsonAI **monta uma trilha
-nomeada**, agrupada por competência, com cursos e aulas aparecendo em sequência suave. É um
-**demo vivo**, não uma ilustração. É a tese ("a escola É IA") tornada visível em 4 segundos.
+nomeada**, agrupada por competência, com cursos e aulas aparecendo em sequência suave. É um **demo
+vivo**, não uma ilustração: a tese ("a escola É IA") visível em 4 segundos.
 
-- No load, roda uma vez sozinha (sequência **roteirizada/mockada** — CSS/Framer, sem API).
-- Interatividade via **presets**: 3–4 objetivos-chip ("analista de dados", "Power BI", "Excel +
-  IA") que mapeiam pra trilhas **pré-computadas e versionadas no front**. O aluno troca o chip e
-  vê montar de novo → prova interativa **sem chamar a Claude API**.
+- No load, roda uma vez sozinha (sequência **roteirizada**, sem API).
+- Interatividade via **presets**: 3–4 objetivos-chip que mapeiam para trilhas **pré-computadas e
+  versionadas no front**. Trocar o chip remonta → prova interativa **sem chamar a Claude API**.
 - `prefers-reduced-motion`: mostra o resultado final montado, sem a animação de digitação.
 
-> **TRAVA (rev. externa jun/2026):** o hero da landing **pública NUNCA chama a Claude API**.
-> Motivo: latência + custo + superfície de abuso (anônimo martelando a API na vitrine). A
-> montagem **real** de trilha pelo JilsonAI só roda na **área logada** (`recommendTrilha` /
-> `buildLearningPlan`). A vitrine demonstra a tese ("a escola É IA") com dados pré-baked — o
-> "AI no DNA" aparece sem expor o gateway.
+> **TRAVA — o hero público NUNCA chama a Claude API.** Motivo: latência, custo e superfície de
+> abuso (anônimo martelando a API na vitrine). A montagem **real** de trilha só roda na área
+> logada (`recommendTrilha` / `buildLearningPlan`). *Gatilho: só se houver proteção de abuso e
+> orçamento medido — não antes.*
 
-**Motivo escolhido (não-template):** o hero óbvio seria foto + "104K alunos" + CTA. Isso é o que
-qualquer escola faz. A trilha auto-montável é a única coisa que **só esta escola** pode mostrar, e
-é literalmente o produto. Gasto minha ousadia aqui; o resto fica quieto.
+**Motivo de ser não-template:** o hero óbvio seria foto + "104K alunos" + CTA, que qualquer escola
+faz. A trilha auto-montável é a única coisa que **só esta escola** pode mostrar, e é literalmente o
+produto. **A ousadia se gasta aqui; o resto fica quieto.**
 
-**Motivo da marca:** o "**#**" da logomarca (#Jilson) vira um marcador estrutural discreto —
-eyebrow de seção, marcador de item — porque é identidade real do Jilson, não enfeite. Usar com
-parcimônia (não como 01/02/03 numerado, que não faz sentido aqui).
+**A marca no layout:** o "**#**" da logomarca vira marcador estrutural discreto — eyebrow de seção,
+marcador de item. Com parcimônia.
 
 ---
 
-## 3. Paleta (tokens) — claro, com o azul como único acento
+## 3. Paleta (tokens)
 
 ```css
 :root {
-  /* Canvas — branco Apple + um off-white levemente azulado (não cinza neutro) */
-  --background:        #FFFFFF;   /* fundo padrão */
-  --surface-alt:       #F6F9FC;   /* quebra de seção fria (eco sutil do azul) */
+  /* Superfícies claras — o produto */
+  --background:        #FFFFFF;   /* fundo do conteúdo */
+  --surface-alt:       #F8FAFC;   /* quebra de seção / coluna secundária */
   --card:              #FFFFFF;
 
-  /* Texto — preto do Jilson + cinza 131 da logomarca */
-  --foreground:        #111114;   /* "Jilson Preto" — títulos/corpo */
-  --muted-foreground:  #838383;   /* RGB 131 — texto secundário */
+  /* Texto */
+  --foreground:        #0A0A0B;   /* títulos e corpo */
+  --muted-foreground:  #737373;   /* texto secundário — o mais claro que passa AA */
+  --brand-gray:        #838383;   /* cinza RGB 131 da LOGOMARCA — ver trava abaixo */
 
-  /* Acento — o azul da marca (#238FE8), único */
-  --primary:           #238FE8;   /* botões, links, brilho JilsonAI */
+  /* Acento — o azul da marca, ÚNICO */
+  --primary:           #238FE8;   /* botões, links, item ativo, brilho JilsonAI */
   --primary-foreground:#FFFFFF;
-  --primary-hover:     #1A6FBB;   /* hover/active */
-  --primary-tint:      rgba(35,143,232,0.08); /* glows, fundos de chip, fill do medidor */
-  --ring:              #238FE8;   /* foco visível (acessibilidade) */
+  --primary-hover:     #1A6FBB;
+  --primary-tint:      rgba(35,143,232,0.08); /* glows, chips, fill do medidor */
+  --ring:              #238FE8;   /* foco visível */
 
   /* Linhas */
-  --border:            #E8ECF1;   /* hairlines frias e leves */
+  --border:            #E8ECF1;   /* hairline estrutural */
+  --border-fine:       rgba(0,0,0,0.03); /* fio de cabelo — DECORATIVO só */
 
-  /* Semânticos — discretos, estilo Apple */
+  /* Rail escuro — nível 1 da navegação (§6) */
+  --rail:              #0A0A0B;   /* a ÚNICA superfície escura do produto */
+  --rail-foreground:   #A1A1AA;   /* ícones e rótulos inativos */
+  --rail-item-ativo:   #303236;   /* fundo do item ativo */
+
+  /* Semânticos — discretos */
   --success:           #1FA97E;
   --destructive:       #E5484D;
+  --radius:            12px;
 }
 ```
 
-**Regra de ouro:** sem cor hardcoded no código — sempre os tokens semânticos do shadcn
-(`bg-background`, `text-muted-foreground`, `text-primary`, `border-border`). O azul vive em
-`--primary`. Dark mode **não** entra no MVP (a marca é clara); o seam de tokens já permite adicionar
-depois sem reescrever.
+**Regra de ouro:** sem cor hardcoded — sempre os tokens semânticos (`bg-background`,
+`text-muted-foreground`, `text-primary`, `border-border`). Dark mode **não** entra no MVP; o rail é
+a exceção deliberada ao "produto claro", e **ser a única** é o que impede a segunda linguagem
+visual.
+
+### TRAVAS DE CONTRASTE — medidas, não estimadas *(Set 2026)*
+
+> **Nenhum número aqui é lembrado; todos foram calculados sobre os tokens reais.** Mudou um token,
+> **meça de novo**. Régua: **4,5:1** para texto; **3:1** para ícone, borda estrutural e texto grande
+> (≥24px, ou ≥18,7px em negrito).
+
+| Par | Medido | Veredito |
+|---|---|---|
+| `--rail-foreground` sobre `--rail` | 7,72:1 | ✅ |
+| `--primary` sobre `--rail` (item ativo) | **5,81:1** | ✅ |
+| `--muted-foreground` sobre branco | 4,74:1 | ✅ |
+| `--muted-foreground` sobre `--surface-alt` | 4,53:1 | ✅ |
+| `--brand-gray` sobre branco | 3,79:1 | ❌ **texto, não** |
+| `--border-fine` sobre branco | 1,07:1 | decorativo só |
+
+- **`--brand-gray` NÃO serve para texto.** É cor de **logomarca**: wordmark, grafismo e texto
+  **grande**. Para texto secundário existe `--muted-foreground` (#737373), escolhido por busca como
+  **o cinza mais claro que ainda passa nos dois fundos** — o mais próximo possível da marca sem
+  reprovar. *(A versão anterior deste doc dizia "usar só em texto ≥16px", regra ERRADA: o WCAG
+  libera 3:1 só para texto GRANDE, e 16px não é grande. A licença era mais larga que a norma.)*
+- **`--border-fine` é decorativo.** Quebra de seção sem linha dura, sim; separador de item,
+  contorno de campo ou indicador de ativo, **não** — esses precisam de 3:1, use `--border` ou azul.
+- **No escuro o azul passa sozinho; no claro, não.** `--primary` sobre o rail dá 5,81:1; sobre um
+  azul-claro dá **2,96:1** e reprova. **Não copie o tratamento de um para o outro** — em superfície
+  clara, azul sobre azul precisa de tom escurecido.
 
 ---
 
-## 4. Tipografia
-
-Par deliberado, não o Inter-de-sempre:
+## 4. Tipografia — a alma da interface
 
 ```css
---font-display: 'MuseoModerno', system-ui;     /* marca + títulos — a fonte da logomarca */
---font-body:    'Hanken Grotesk', system-ui;   /* corpo — grotesca quente, legível, acessível */
---font-mono:    'JetBrains Mono', monospace;    /* código/dados — o assunto é dados, isto importa */
+--font-display:  'MuseoModerno', system-ui;     /* marca + títulos — a fonte da logomarca */
+--font-body:     'Hanken Grotesk', system-ui;   /* corpo e UI */
+--font-mono:     'JetBrains Mono', monospace;   /* código, fórmulas, etiquetas */
+--font-emphasis: 'Playfair Display', serif;     /* itálico — UMA palavra por título */
 ```
 
-- **MuseoModerno SemiBold** (600) — geométrica e arredondada; carrega a personalidade do Jilson.
-  Usada com **restrição**: wordmark, H1/H2, números grandes. Nunca em corpo de texto.
-- **Hanken Grotesk** — corpo e UI. Quente o suficiente pra não ser fria, neutra o suficiente pra
-  ler longo. Pareia bem com a redondeza da MuseoModerno.
-- **JetBrains Mono** — trechos de código, fórmulas, DAX/SQL, dados. Escolha ancorada no assunto.
+- **MuseoModerno** (600/700) — geométrica e arredondada, carrega a personalidade do Jilson. Com
+  **restrição**: wordmark, H1/H2/H3, números grandes. Nunca em corpo.
+- **Hanken Grotesk** (400/500/600) — corpo, menus, botões. Quente sem ser fria, legível no longo.
+- **JetBrains Mono** — código, DAX/SQL, fórmulas e **micro-etiquetas** (`[ SKILLS • COWORK ]`),
+  maiúsculas com `letter-spacing: 0.1em`. Escolha ancorada no assunto: o produto é dados.
+- **Playfair Display Itálico** (600) — **o charme editorial, e a regra é a restrição**: destaca
+  **UMA palavra** dentro de um título da MuseoModerno, em `--primary` (ex.: "Stack *moderno*"). É a
+  mistura de peso geométrico com serifa em itálico que faz o título parecer editorial em vez de
+  genérico. **Nunca em frase inteira, nunca em corpo, no máximo um destaque por título** — usada em
+  tudo, deixa de destacar e vira enfeite.
 
-### Escala (confiante, Apple-grande)
+### Escala
 
 | Papel | Tamanho | Peso | Fonte |
 |-------|---------|------|-------|
-| Wordmark | — | 600 | MuseoModerno |
 | Hero H1 | `clamp(2.5rem, 6vw, 4.5rem)` | 600 | MuseoModerno |
 | Seção H2 | `clamp(1.75rem, 3vw, 2.5rem)` | 600 | MuseoModerno |
-| Card H3 | 1.25rem | 600 | Hanken Grotesk |
-| Eyebrow (com "#") | 0.8rem | 600, tracking +0.04em, uppercase | Hanken Grotesk |
-| Corpo | 1.0–1.125rem | 400 | Hanken Grotesk |
-| Legenda/meta | 0.875rem | 400 | Hanken Grotesk |
-| Número grande | `clamp(2rem, 4vw, 3rem)` | 600 | MuseoModerno |
-| Código/dados | 0.9rem | 400 | JetBrains Mono |
+| Título de página (logado) | 1,75rem | 600 | MuseoModerno |
+| Card H3 | 1,25rem | 600 | Hanken Grotesk |
+| Corpo | 1,0–1,125rem | 400 | Hanken Grotesk |
+| Legenda/meta | 0,875rem | 400 | Hanken Grotesk |
+| Micro-etiqueta | **0,75rem** (mínimo absoluto) | 400 | JetBrains Mono |
 
-Corpo com `line-height` generoso (1.6) e medida de linha ~66ch — leitura confortável (acessível).
+Corpo com `line-height` 1,6–1,8 e medida ~66ch. **Nada abaixo de 0,75rem (12px)** — ver §9.
 
 ---
 
 ## 5. Layout & espaçamento
 
-- **Respiro Apple:** seções com `py-24` a `py-32`; conteúdo `max-w-6xl` centralizado; cards `gap-8`.
-- **Ritmo de fundo:** alterna `--background` (branco) e `--surface-alt` (off-white azulado) pra
-  separar seções **sem** linhas pesadas. Hairline `--border` só onde precisa.
-- **Grade de cards:** 1 coluna (mobile) → 2 (`md`) → 3 (`lg`).
-- **Cantos:** `rounded-2xl` nos cards/superfícies (suavidade Apple), `rounded-full` em botões/chips.
-- **Sombra:** quase nada — sombras suaves e difusas (`shadow-sm`/`shadow-md` discretas), nunca duras.
+- **Respiro:** seções públicas `py-24`/`py-32`; conteúdo `max-w-6xl` (texto corrido `max-w-[1000px]`).
+  **Nunca espremer.** O conteúdo expande naturalmente até o limite estrutural, sem se sentir
+  confinado em caixas desnecessárias.
+- **Ritmo de fundo:** alterna `--background` e `--surface-alt` para separar seções **sem linha
+  dura**.
+- **Cantos:** `--radius` (12px) em cards e superfícies; 16px em cards grandes; `rounded-full` em
+  botões e chips.
+- **Sombra:** quase nada. Difusa e suave, nunca dura. **Cuidado com blur grande em grade de
+  cards** — é das operações de pintura mais caras, e contraria a trava de leveza do §1.
+- **Grade:** 1 coluna (mobile) → 2 (`md`) → 3 (`lg`).
+- **A área logada é MAIS DENSA que a landing:** `py-8`/`py-12`, `gap-4`/`gap-6`. O aluno volta ali
+  todo dia — a landing impressiona, o painel trabalha.
 
-### Wireframe da landing (ASCII)
+### Wireframe da landing
 
 ```
 ┌──────────────────────────────────────────────┐
@@ -158,225 +232,195 @@ Corpo com `line-height` generoso (1.6) e medida de linha ~66ch — leitura confo
 └──────────────────────────────────────────────┘
 ```
 
-> A **ordem definitiva das seções é decisão de construção** (PROJECT_DESCRIPTION). Onboarding do
-> aluno logado é **aberto**: trilhas e cursos navegáveis livremente; `recommendTrilha` é ajuda
-> opcional, não portão.
+> Ordem definitiva das seções é decisão de construção. Onboarding do aluno logado é **aberto**:
+> trilhas e cursos navegáveis livremente; `recommendTrilha` é ajuda opcional, **nunca portão**.
 
 ---
 
-## 6. Componentes-chave
+## 6. Área logada — navegação em TRÊS NÍVEIS
 
-- **HeroTrilhaDemo** — a assinatura. Chips de objetivo + a trilha montando (cursos/aulas aparecendo
-  agrupados por competência). Pilar 2 (JilsonAI) é o herói visual da página. **Presets pré-computados,
-  sem chamar a Claude API** (ver §2 — TRAVA).
-- **PillarCard** (3) — ícone limpo (Lucide), título MuseoModerno, 1 frase. JilsonAI ganha leve
-  destaque (tint azul sutil), sem virar carnaval.
-- **TrilhaCard / CourseCard / LessonRow** — thumbnail, título, duração, progresso. Aula é
-  first-class (aparece sozinha em busca/trilha).
-- **JilsonAIChat** — painel de chat calmo; bolhas claras; o brilho azul só no avatar/ação.
-- **UsageMeter** — cápsula horizontal, trilho `--surface-alt`, fill `--primary-tint→--primary`,
-  rótulo *"uso do mês"*. **Calmo e positivo**, nunca countdown. (Referência: tela "Usage" da
-  Anthropic — barras de %, créditos opt-in.)
+A área logada é um **shell de aplicação**, não uma landing. Herda a marca (tokens, fontes, cantos,
+hairlines, foco visível), **não** herda a escala do hero, o ritmo `py-24`, o elemento-assinatura nem
+os scroll reveals. Logado é mais denso e mais quieto.
+
+> **Esta seção REVERTEU duas decisões anteriores, as duas do operador, com gatilho.** Não voltar
+> atrás sem dado novo.
+> **REVERSÃO 1 — o nível 2 existe.** Dizia-se *"sem segunda coluna de navegação; um produto solo
+> não sustenta dois níveis de cromo"*. O argumento era carga; o contrário se mostrou verdadeiro: a
+> estrutura pronta **reduz** a carga, porque cada tela **declara** seus níveis em vez de reinventar
+> navegação. *Gatilho: se o mapa de navegação virar manutenção maior que as telas que serve.*
+> **REVERSÃO 2 — o rail é escuro.** Dizia-se *"nunca escuro — introduz uma segunda linguagem
+> visual"*. Referência: painel de instrutor da Udemy. O escuro fica **confinado ao nível 1**, que é
+> o que separa cromo de conteúdo. *Gatilho: se o nível 2 também precisar escurecer para não brigar
+> com o rail, a segunda linguagem terá acontecido de fato — reabrir.*
+
+**Cada tela liga só os níveis que precisa.** A navegação é **dado** (`client/src/lib/navigation.ts`),
+não código espalhado: uma tela nova declara seus níveis e o cromo se monta sozinho.
+
+### Nível 1 — Rail escuro (esquerda)
+
+- Fundo `--rail`. **Recolhido: 80px** (só ícones + o "#" da marca). **Expandido: 280px.**
+- Expande ao **passar o mouse** *e* ao **receber foco de teclado**, **sobrepondo** o conteúdo
+  (`position: fixed` + espaçador que reserva os 80px). Sombra densa ao expandir, para descolar do
+  conteúdo.
+- **Item ativo — "glow timeline":** ponto luminoso azul (`box-shadow` radial) + linha fina em
+  gradiente descendo, imitando uma jornada. Ícone e rótulo em `--primary`. É o **único** lugar onde
+  o azul aparece no rail: hover é **neutro**, senão o rail perde o sinal de "onde estou".
+- **TRAVA de acessibilidade:** o rótulo recolhido usa `opacity: 0` + `white-space: nowrap`, **nunca
+  `display:none`** — assim continua na árvore de acessibilidade e o leitor de tela o anuncia nos
+  dois estados. E expandir **só por mouse** excluiria quem navega por teclado: as duas condições
+  andam juntas, sempre. *(Sem gatilho — é acessibilidade, não estilo.)*
+
+### Nível 2 — Coluna secundária (meio)
+
+- Só aparece quando a seção tem subitens. **Com um item só, não aparece** — coluna de uma linha é
+  ruído, não navegação.
+- Fundo `--surface-alt`, largura ~280px, hairline à direita.
+- **Acordeão nativo `<details>/<summary>`** para grupos retráteis: ícone `+` que gira para `×`,
+  separadores finos. Nativo por três motivos — sem JavaScript, acessível de graça, e o conteúdo
+  existe no HTML mesmo fechado.
+- Item ativo: texto `--primary` + borda esquerda azul de 2px.
+
+### Nível 3 — Abas horizontais (topo do conteúdo)
+
+- Só quando a tela tem abas. Sublinhado azul de 2px no ativo, com brilho suave; inativas em
+  `--muted-foreground`.
+- Assentam sobre a hairline da área de conteúdo (`margin-bottom: -1px`).
+
+### Conteúdo (direita)
+
+- Fundo branco. **"Luz de IA":** um `radial-gradient` azul quase invisível (~3% de opacidade) no
+  canto superior, dando volume e assinatura sem custar leitura.
+
+### Mobile (< 768px)
+
+- O rail vira **gaveta** (off-canvas), aberta por botão no cabeçalho.
+- **TRAVA — a gaveta navega em PROFUNDIDADE.** `Comunicação ›` entra no submenu, `‹ Menu` volta.
+  **Esconder o nível 2 no celular sem alternativa deixaria as sub-páginas inalcançáveis** — o
+  aparelho mais usado ficaria com menos navegação, não com navegação diferente.
+
+### TRAVA — o app não sequestra o scroll
+
+**Nada de `height: 100vh; overflow: hidden` no `body`.** Duas quebras reais: `100vh` está errado em
+navegador de celular (a barra de endereço entra na conta — use `svh`), e travar o scroll do
+documento quebra página de curso longa e o catálogo público. O rail é `fixed`, o que já entrega o
+efeito de painel **sem** tirar o scroll natural do documento.
+
+---
+
+## 7. Componentes-chave
+
+**Públicos**
+- **HeroTrilhaDemo** — a assinatura (§2). Presets pré-computados, **sem** Claude API.
+- **PillarCard** (3) — ícone Lucide, título MuseoModerno, uma frase. O JilsonAI ganha destaque leve
+  (tint azul), sem virar carnaval.
 - **PriceCard** — um card claro, sem tabela de comparação pesada. Mensal em destaque, anual como
   "economize ~17%". Nada de "de/por" agressivo.
-- **Button** — primary `bg-primary text-primary-foreground rounded-full`; hover `--primary-hover` +
-  leve `scale-[1.01]`; secondary = contorno fino. Foco visível sempre (`--ring`).
-- **Certificate (preview)** — mostra nome da trilha + **competências cobertas** (o que vale pro RH).
-- **CertificatePublicPage (P6.5)** — o certificado como **mídia de aquisição** (badges AWS/Google
-  no LinkedIn = distribuição com CAC zero). Página pública **opt-in** (`isPublic`, LGPD — trava já
-  existe no plano) com: **OG image dedicada** gerada server-side junto com o PDF (wordmark + nome
-  do aluno + trilha + competências — clima Apple, azul só no acento); botão **"Adicionar ao
-  LinkedIn"** (deep-link Add-to-Profile pré-preenchido); e **UTM `utm_source=certificate`** em todo
-  link de volta pro site — fecha o loop com o attribution capture da P1 e torna cada aluno formado
-  um canal de aquisição **rastreável**.
+- **FAQ** — `<details>/<summary>`, com o texto **no HTML**. Não é preferência: conteúdo atrás de
+  clique que busca dados é invisível para o crawler (`CLAUDE.md` → Rendering Boundary).
+
+**Compartilhados**
+- **Card** — fundo branco, borda `--border-fine`, raio 12–16px. **Hover:** sobe
+  (`translateY(-4px)`), a sombra cresce um pouco e a borda fica sutilmente azul. Ícone do card num
+  círculo `--surface-alt` com o glifo em `--primary`.
+- **Lista customizada** — **nunca bolinha**. O marcador é um travessão azul
+  (`content: '—'; color: var(--primary); font-weight: 700`).
+- **Micro-badge** — etiqueta monoespaçada minúscula com ponto azul ao lado simulando status.
+  **Piso de 0,75rem** (§9).
+- **Campo de IA (prompt)** — cantos arredondados, ícone dentro, e no `:focus-within` a borda vira
+  azul com brilho difuso. É o componente que faz a IA parecer fluida em vez de intimidadora.
+- **Button** — primary `--primary` sólido, `rounded-full`, hover `--primary-hover` + `scale-[1.01]`;
+  secondary é contorno fino. Foco visível sempre.
+
+**Do aluno**
+- **TrilhaCard / CourseCard / LessonRow** — thumbnail, título, duração, progresso. A aula é
+  first-class (aparece sozinha em busca e em trilha).
+- **JilsonAIChat** — painel calmo, bolhas claras; o brilho azul só no avatar e na ação.
+- **UsageMeter** — cápsula horizontal, trilho `--surface-alt`, fill `--primary-tint → --primary`,
+  rótulo *"uso do mês"*. **Calmo e positivo, nunca countdown.**
+- **Certificate** — nome da trilha + **competências cobertas** (o que vale para o RH).
+- **CertificatePublicPage** — o certificado é **mídia de aquisição**: página pública **opt-in**
+  (`isPublic`, LGPD), **OG image dedicada** gerada no servidor junto com o PDF, botão "Adicionar ao
+  LinkedIn" e **UTM `utm_source=certificate`** em todo link de volta. Fecha o loop com a captura de
+  atribuição e torna cada formado um canal rastreável.
 
 ---
 
-## 7. Iconografia & imagens
+## 8. Movimento e micro-interações
 
-- **Ícones:** Lucide, traço fino, monocromáticos (herdam `currentColor`). Sem ícones coloridos
-  "stickers". O azul aparece só quando o ícone é uma ação/destaque.
-- **Imagens:** fotografia/render limpos, bem iluminados, fundo claro — estética Apple. Pessoas reais
-  estudando/aplicando, telas de produto reais (Power BI, Excel, código). Evitar stock genérico
-  "corporativo sorridente". Imagens com cantos `rounded-2xl`.
-- **Ilustração de dado:** quando precisar (dashboard, gráfico), usar o real do produto, não vetor
-  decorativo.
-
----
-
-## 8. Movimento (leve, deliberado)
-
-- **Load do hero:** a trilha se monta uma vez (sequência orquestrada) — o momento que vende.
-- **Scroll reveals:** fade/translate sutil ao entrar (curto, ~250ms, ease-out). Não em tudo — só
-  nas entradas de seção.
-- **Hover:** micro-interações discretas em cards/botões (lift leve, brilho do azul).
-- **Medidor:** preenche suave ao carregar (transmite "uso", não ansiedade).
-- **Sempre:** respeitar `prefers-reduced-motion` (corta animações, mantém o conteúdo final).
-- **Cuidado:** excesso de animação faz parecer "gerado por IA". Menos é mais — a assinatura concentra
-  o movimento; o resto é quase parado.
+- **Revelação suave:** elementos "nascem" — `opacity: 0 → 1` com `translateY(20px) → 0`. **Só nas
+  entradas de seção**, curto (~250ms, ease-out), nunca em tudo.
+- **Hover:** cards e botões flutuam sutilmente e revelam **glow** (sombra azul difusa) em vez de
+  borda dura.
+- **Load do hero:** a trilha se monta uma vez. É o momento que vende, e é onde o movimento se
+  concentra.
+- **Medidor:** preenche suave ao carregar — transmite uso, não ansiedade.
+- **`prefers-reduced-motion` sempre respeitado:** corta transição e animação, **mantém o conteúdo
+  final** — nunca deixa alguém sem ver o resultado.
+- **Cuidado:** excesso de animação faz parecer "gerado por IA". Menos é mais — a assinatura
+  concentra o movimento, o resto é quase parado. **Nada que rode continuamente.**
 
 ---
 
 ## 9. Piso de qualidade (não-negociável)
 
-- Responsivo até mobile (testar 375 / 768 / 1024 / 1440).
-- Foco de teclado visível em tudo (`--ring`).
-- Contraste AA: `#111114` sobre branco ✅; cuidado com `#838383` sobre branco (≈ 3.5:1 — usar só em
-  texto ≥ 16px/secundário, nunca em texto pequeno crítico).
-- `prefers-reduced-motion` respeitado.
-- Carregamento < 3s; fontes com `display=swap`.
+- **Contraste AA** — números e regras em §3. O cinza da logomarca **reprova para texto**.
+- **Texto mínimo 0,75rem (12px)** — em etiqueta, badge, rodapé de card, em tudo. O público inclui
+  gente de mais idade em tela pequena, e "premium" nunca justificou texto que não se lê.
+- **Foco de teclado visível** em tudo (`--ring`), e **toda** interação alcançável por teclado.
+- **Responsivo de 320px a 1920px** (testar 375 / 768 / 1024 / 1440).
+- **`prefers-reduced-motion`** respeitado.
+- **Carregamento < 3s** — e lembrar que ~1,2s do orçamento já pode ir para acordar o banco no
+  primeiro acesso do dia (medição em `implementation-plan.md`).
+- **Sem dependência externa em caminho crítico** — ver §10.
 
 ---
 
-## 10. Copy na interface (estilo)
+## 10. Carregamento de fontes — LOCAL, não CDN
 
-- Voz da marca: tornar o complexo simples; curto, direto, ativo. Frase de produto, não jargão.
-- Botões dizem o que acontece: **"Começar agora"**, **"Assinar"**, **"Continuar trilha"** — não
-  "Enviar". A ação mantém o nome no fluxo todo.
-- Erros não pedem desculpa nem são vagos: dizem o que houve e como resolver, na voz da interface.
-- Tela vazia é convite à ação, não decoração.
-- Palavras a evitar (herdadas da estratégia): guru, ninja, hack, "mágica da IA", "destrave seu
-  potencial". Palavras a usar: aplicar, prática, simples, no seu ritmo, especialista, era da IA.
+**As quatro famílias são hospedadas no projeto** (`woff2`, subconjunto latino, `font-display: swap`,
+`preload` só nas duas do primeiro dobra).
 
----
+**Por que não o CDN do Google** *(decisão de Set 2026)*, e o motivo é o mesmo §1: são requisições
+bloqueantes a um terceiro no caminho crítico, exatamente para o público de conexão instável que a
+trava de leveza protege. Somam-se dois motivos independentes: as rotas públicas viram **template de
+servidor sem bundle** na Fase 3, e reintroduzir um CDN desfaria parte do ganho; e o CDN do Google
+entrega o IP do visitante a um terceiro — evitável de graça hospedando o arquivo.
 
-## 11. Carregamento de fontes
-
-```html
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=MuseoModerno:wght@600&family=Hanken+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-```
+*Gatilho de reabertura: se o custo de manter os arquivos passar a doer, ou se medição mostrar o
+local mais lento que o CDN — aí é dado novo.*
 
 ---
 
-## 12. Favicon & OG
+## 11. Copy na interface
 
-- **Favicon:** o "**#**" da logomarca em #238FE8 sobre branco.
-- **OG image:** wordmark #Jilson Santana + tagline "Torne-se um especialista em dados na era da IA"
-  sobre fundo claro com um respiro do azul. Limpo, Apple.
-
----
-
-## 13. Área logada — shell de aplicação
-
-A área logada é um **shell de aplicação**, não uma landing. Herda a marca, não a gramática
-da landing.
-
-**HERDA:** tokens de cor, MuseoModerno (títulos) + Hanken Grotesk (corpo), `rounded-2xl`,
-sombra quase zero, hairline `--border`, foco visível, contraste AA, precisão de espaçamento.
-
-**NÃO HERDA:** a escala tipográfica do hero (`clamp 2.5–4.5rem`), o ritmo de seção
-`py-24`/`py-32`, o elemento-assinatura, os scroll reveals, a ousadia concentrada. Logado é
-mais denso e mais quieto — o aluno volta aqui todo dia. A elegância vem da precisão, não de
-momentos.
-
-### Layout — NAVEGAÇÃO EM TRÊS NÍVEIS  *(decisão do operador, Set 2026 — referência: painel de instrutor da Udemy)*
-
-> **Esta seção REVERTE duas decisões anteriores deste mesmo §13**, e as duas reversões são do
-> operador, com o raciocínio registrado. **Não voltar atrás sem dado novo.**
-
-O cromo da área logada é **um sistema de navegação, não uma barra**. Três níveis, e **cada tela
-liga só os que precisa**:
-
-| Nível | O que é | Aparece quando |
-|---|---|---|
-| **1 — rail** | ícones, **escuro**, recolhido por padrão; o mouse expande **sobrepondo** o conteúdo | sempre |
-| **2 — coluna secundária** | menu lateral claro, com grupos retráteis | a seção tem subitens |
-| **3 — abas horizontais** | abas no topo do conteúdo | a tela tem abas |
-
-**REVERSÃO 1 — o segundo nível passa a EXISTIR.** Este parágrafo dizia *"sem segunda coluna de
-navegação no launch — um produto solo não sustenta dois níveis de cromo"*. O argumento era carga
-de operador solo, e o operador apresentou o contrário: a estrutura pronta **reduz** a carga,
-porque cada tela nova **declara** seus níveis em vez de reinventar navegação. *"Dá para mapear
-níveis e subníveis e construir todo o sistema administrativo sem reinventar os menus a cada nova
-tela."* **Gatilho de reabertura:** se o mapa de navegação virar manutenção maior que as telas que
-ele serve — aí o cromo passou a custar mais que o conteúdo, que era o medo original.
-
-**REVERSÃO 2 — o rail é ESCURO.** Este parágrafo dizia *"nunca escuro — um rail escuro introduz
-uma segunda linguagem visual"*. Decisão do operador contra a referência da Udemy. O conteúdo
-continua claro; o escuro fica **confinado ao nível 1**, que é justamente o que separa cromo de
-conteúdo. *Gatilho: se o nível 2 também precisar escurecer para não brigar com o rail, a
-"segunda linguagem visual" que este item temia terá acontecido de fato — reabrir.*
-
-**Trava de acessibilidade (não reversível — vale nos três níveis):** o rótulo continua na árvore
-de acessibilidade **mesmo com o rail recolhido** (recorte visual, nunca `display:none`), e
-expandir por **foco de teclado** além do mouse. Expandir só por mouse excluiria quem navega por
-teclado, e isso não é preferência de UI.
-
-### Rail *(nível 1)*
-
-- **Fundo:** escuro (ver REVERSÃO 2 acima). O conteúdo e o nível 2 seguem claros.
-- **Ícones:** Lucide, traço fino, `--muted-foreground`.
-- **Item ATIVO:** azul, e é o ÚNICO lugar onde o azul aparece no rail. **A forma segue a
-  referência da Udemy: barra vertical na borda esquerda + fundo levemente mais claro** — não a
-  pílula, que era desenho de rail claro. **Os valores para fundo escuro ainda NÃO existem** e
-  entram com a construção do nível 1; `--primary-tint` / `--primary-tint-foreground` continuam
-  válidos, mas para as superfícies **claras** (nível 2 e conteúdo).
-  **Correção MEDIDA (Set 2026), que vale para o nível 2:** este item dizia "ícone `--primary`",
-  e o #238FE8 da marca
-  sobre a pílula dá **2,96:1** — reprova o AA que o *Piso de qualidade* abaixo exige, e o rótulo
-  do item ativo é **texto**, que precisa de 4,5:1. Daí o token próprio, um azul escurecido que dá
-  **4,6:1**. O rótulo inativo (`--muted-foreground` sobre o rail) foi conferido junto: 4,56:1.
-- **Hover é NEUTRO, não azul.** Escrito porque a peça do shadcn usa o mesmo token para hover e
-  para item ativo: mapear o azul direto pintaria o hover também, e o rail perderia o único sinal
-  de "onde estou" — exatamente o que o motivo abaixo protege.
-- **Motivo:** o azul é o acento único (§3). Inundar o rail de #238FE8 gastaria ele no cromo
-  de navegação e deixaria as ações primárias ("Continuar trilha", "Assinar") sem nada contra
-  o que se destacar.
-- **JilsonAI no rail segue a regra do rail:** inativo = ícone neutro (`--muted-foreground`),
-  como qualquer outro item. O "brilho" azul do JilsonAI (§3) vive DENTRO da feature —
-  avatar, ação de enviar, painel de chat — nunca no cromo de navegação. Motivo: se o item do
-  JilsonAI é azul permanentemente, o rail perde o único sinal de "onde estou". Navegação tem
-  uma verdade só.
-- Hairline `--border` separando rail e conteúdo. Sem sombra.
-
-### Escala tipográfica (reduzida em relação à landing)
-
-- **Título de página:** 1.75rem, MuseoModerno 600
-- **Seção:** 1.25rem, Hanken 600
-- **Corpo/UI:** 0.9375–1rem, Hanken 400
-- **Meta:** 0.8125rem, `--muted-foreground`
-
-### Densidade
-
-- Padding de conteúdo: `py-8` a `py-12` (NÃO `py-24`)
-- Gap de cards: `gap-4` a `gap-6` (NÃO `gap-8`)
-- Sem animação de entrada na navegação. Só micro-interações de hover/foco.
-
-### Piso de qualidade (mesmo do §9)
-
-Responsivo até mobile (o rail colapsa em bottom bar ou drawer — decidir no build), foco de
-teclado visível, `prefers-reduced-motion` respeitado, contraste AA.
+- Voz da marca: tornar o complexo simples. Curto, direto, ativo. Frase de produto, não jargão.
+- Botões dizem o que acontece — **"Começar agora"**, **"Assinar"**, **"Continuar trilha"**, nunca
+  "Enviar". A ação mantém o nome no fluxo inteiro.
+- Erros não pedem desculpa nem são vagos: dizem **o que houve e como resolver**.
+- Tela vazia é **convite à ação**, não decoração — e sempre com saída (um link para onde ir).
+- Evitar: guru, ninja, hack, "mágica da IA", "destrave seu potencial".
+  Usar: aplicar, prática, simples, no seu ritmo, especialista, era da IA.
 
 ---
 
-*Criado: Jun 2026 — reescrita total. Substitui o design.md de consultoria (dark/#238FE8/$119/Service 6).
-Direção: Apple claro + acessível, acento único #238FE8 (azul da logomarca), MuseoModerno (marca) +
-Hanken Grotesk (corpo) + JetBrains Mono (dados). Assinatura = a trilha que se monta sozinha no hero
-(AI no DNA tornado visível). Medidor de consumo calmo (não countdown). Tokens semânticos shadcn, sem
-cor hardcoded; dark mode fora do MVP (seam preservado). Ordem das seções = decisão de construção.*
-*Atualizado: Jun 2026 (rev. externa Gemini) — §2: hero da landing pública é MOCKADO/roteirizado
-com presets pré-computados; NUNCA chama a Claude API (latência/custo/abuso). Montagem real de
-trilha só na área logada.*
-*Atualizado: Jul 2026 — §6 ganha CertificatePublicPage (P6.5): certificado como mídia de aquisição
-(OG image dedicada server-side, botão Add-to-Profile do LinkedIn, UTM utm_source=certificate
-fechando o loop com a captura de atribuição da P1). Racional no playbook big-tech→solo em
-STRATEGY.md; opt-in/LGPD inalterados.*
-*Atualizado: Ago 2026 — **§13 nova: área logada = shell de aplicação**, não landing. Herda a marca
-(tokens, MuseoModerno+Hanken, rounded-2xl, sombra quase zero, hairline `--border`, foco visível, AA)
-e NÃO herda a gramática da landing (escala do hero, ritmo py-24/py-32, elemento-assinatura, scroll
-reveals, ousadia concentrada) — logado é mais denso e mais quieto, o aluno volta todo dia. Layout =
-rail de ícones à esquerda (~72px, fixo) + conteúdo, sem segunda coluna de nav no launch (de 4 a 8
-itens sem redesenho). Rail em `--surface-alt` (claro, nunca escuro — evita uma segunda linguagem
-visual) e o azul aparece SÓ no item ativo (pill `--primary-tint` + ícone `--primary`): o acento
-único do §3 fica reservado pras ações primárias ("Continuar trilha", "Assinar"), não pro chrome de
-navegação. Escala tipográfica e densidade reduzidas (título 1.75rem; py-8/py-12; gap-4/gap-6; sem
-animação de entrada na navegação). Piso de qualidade do §9 vale igual; colapso do rail no mobile
-(bottom bar ou drawer) = decisão de build.*
-*Atualizado: Ago 2026 (2) — **§13: JilsonAI no rail segue a regra do rail** (resolve o conflito
-§3 × §13 levantado quando a seção entrou). Inativo = ícone neutro `--muted-foreground`, como
-qualquer outro item; o "brilho" azul do JilsonAI vive DENTRO da feature (avatar, ação de enviar,
-painel de chat), nunca no cromo de navegação — um item permanentemente azul faria o rail perder o
-único sinal de "onde estou". Navegação tem uma verdade só. Corpo do §13 também traduzido pro PT,
-na voz dos §§1-12 (tokens, valores Tailwind e CSS vars seguem em inglês — são código, não prosa).*
+## 12. Iconografia, imagens, favicon e OG
+
+- **Ícones:** Lucide, traço fino, monocromáticos (herdam `currentColor`). Sem ícone colorido.
+- **Favicon:** o "**#**" da logomarca em `--primary` sobre branco.
+- **OG image:** wordmark #Jilson Santana + a tagline sobre fundo claro com um respiro do azul.
+  Limpo. **Toda rota pública precisa da sua** — sem OG, compartilhar gera card genérico.
+
+---
+
+*Atualizado Set 2026 — **reescrito**, incorporando o design system do parceiro de arte
+(`design-lab/design-ia-apple.md` + `ia-apple.html`): navegação em três níveis detalhada, quarta
+fonte (Playfair itálico como ênfase de uma palavra), acordeão nativo, glow timeline no item ativo,
+luz de IA no conteúdo, cards com lift, lista com travessão, campo de IA com brilho no foco.*
+*O que foi **corrigido** em cima do mock, com medição: o cinza da marca reprova AA para texto
+(3,79:1 → `--muted-foreground` #737373); `--border-fine` é decorativo e não serve de separador
+estrutural; piso de 0,75rem para texto; fontes locais em vez do CDN; e **nada de
+`100vh`/`overflow:hidden` no body**, que quebraria página longa e o scroll no celular.*
+*O que foi **preservado** do doc anterior: a tese, o elemento-assinatura e sua TRAVA de não chamar
+a API no hero público, o certificado como canal de aquisição, o medidor calmo, as regras de copy, e
+as duas reversões do §6 com seus gatilhos.*

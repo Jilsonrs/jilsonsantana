@@ -14,28 +14,26 @@ vi.mock("@/lib/auth-client", () => ({
 import { Layout } from "./Layout";
 
 function marca() {
-  return screen.getByRole("link", { name: /Jilson Santana/ });
+  return screen.getAllByRole("link", { name: /Jilson Santana/ })[0];
 }
 
 beforeEach(() => {
   vi.clearAllMocks();
   useSession.mockReturnValue({ data: null });
-  document.cookie = "sidebar_state=; max-age=0; path=/";
 });
 
 // O Layout escolhe entre DUAS gramáticas pela sessão: cabeçalho público para
-// quem não entrou, shell de aplicação (barra lateral) para quem entrou. Quais
-// itens cada papel vê é assunto do AppSidebar e tem teste próprio.
+// quem não entrou, navegação em três níveis para quem entrou. QUAIS itens cada
+// papel vê é assunto do mapa e do AppRail, que têm testes próprios.
 describe("Layout — visitante sem sessão", () => {
-  it("recebe o cabeçalho público, não a barra lateral", () => {
+  it("recebe o cabeçalho público, não o rail", () => {
     renderWithProviders(<Layout />);
 
     expect(screen.getByRole("link", { name: "Entrar" })).toBeTruthy();
     expect(screen.getByRole("link", { name: "Catálogo" })).toBeTruthy();
     expect(screen.queryByRole("link", { name: "Início" })).toBeNull();
     expect(screen.queryByRole("link", { name: "Minha conta" })).toBeNull();
-    expect(screen.queryByRole("button", { name: "Sair" })).toBeNull();
-    expect(screen.queryByRole("button", { name: /barra lateral/i })).toBeNull();
+    expect(screen.queryByRole("navigation", { name: "Principal" })).toBeNull();
   });
 
   it("a marca leva para a landing pública", () => {
@@ -49,13 +47,13 @@ describe("Layout — quem entrou", () => {
     useSession.mockReturnValue({ data: { user: { role: Role.MEMBER } } });
   });
 
-  it("troca o cabeçalho pela barra lateral", () => {
+  it("troca o cabeçalho público pelo rail", () => {
     renderWithProviders(<Layout />);
 
+    expect(screen.getByRole("navigation", { name: "Principal" })).toBeTruthy();
     expect(screen.getByRole("link", { name: "Início" })).toBeTruthy();
-    expect(screen.getByRole("link", { name: "Minha conta" })).toBeTruthy();
-    // O cabeçalho público não sobra por baixo: "Entrar" é o item que só existe
-    // lá, e vê-lo logado significaria as duas gramáticas na mesma tela.
+    // "Entrar" só existe no cabeçalho público: vê-lo logado significaria as
+    // duas gramáticas na mesma tela.
     expect(screen.queryByRole("link", { name: "Entrar" })).toBeNull();
   });
 
@@ -65,39 +63,10 @@ describe("Layout — quem entrou", () => {
     expect(marca().getAttribute("href")).toBe("/inicio");
   });
 
-  it("oferece o botão que recolhe e expande", () => {
+  // O rail é `md:block`: abaixo disso a gaveta é a ÚNICA navegação que existe,
+  // e sem este botão o celular fica sem navegação nenhuma.
+  it("oferece o botão do menu no celular", () => {
     renderWithProviders(<Layout />);
-    expect(screen.getByRole("button", { name: /barra lateral/i })).toBeTruthy();
-  });
-});
-
-// A peça do shadcn ESCREVE este cookie e nunca o lê — quem lê, no desenho
-// dela, é um servidor que renderiza, e aqui não existe. Sem a leitura que o
-// Layout faz, a barra voltaria aberta a cada visita: nenhum erro, nenhum log,
-// só o aluno recolhendo de novo todo dia. Por isso é teste e não confiança.
-describe("Layout — o estado da barra sobrevive à visita seguinte", () => {
-  beforeEach(() => {
-    useSession.mockReturnValue({ data: { user: { role: Role.MEMBER } } });
-  });
-
-  it("volta RECOLHIDA quando foi assim que ficou", () => {
-    document.cookie = "sidebar_state=false; path=/";
-    renderWithProviders(<Layout />);
-
-    expect(document.querySelector('[data-state="collapsed"]')).toBeTruthy();
-    expect(document.querySelector('[data-state="expanded"]')).toBeNull();
-  });
-
-  it("volta ABERTA quando foi assim que ficou", () => {
-    document.cookie = "sidebar_state=true; path=/";
-    renderWithProviders(<Layout />);
-
-    expect(document.querySelector('[data-state="expanded"]')).toBeTruthy();
-  });
-
-  it("começa ABERTA na primeira visita, sem cookie", () => {
-    renderWithProviders(<Layout />);
-
-    expect(document.querySelector('[data-state="expanded"]')).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Abrir o menu" })).toBeTruthy();
   });
 });
