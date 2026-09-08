@@ -170,6 +170,48 @@ How each sliceable task ("block") is executed. This encodes the review disciplin
 - **Commit per block on `dev`, checkbox in the same commit.** Conventional-commit message; the body lists what landed AND any item deliberately left pending validation (so the next block picks it up). Flip the matching `docs/implementation-plan.md` checkbox in the SAME commit (see Working Method doc-sync). Then stop — merge to `main` is the operator's call (see Working Method).
 - **Risk tiering.** Low-risk phases (1, 2, 5, 6.5): the agent's own gate checklist is enough. HIGH-RISK phases (3 Bunny, 4 Stripe — ~70% of project risk): additionally run the `security-vulnerability-reviewer` agent on auth/billing/video-gating code, and expect a separate human review pass before the operator authorizes the merge. Don't rush a high-risk phase to "green" — green is the floor, the gate is "the access boundary actually holds (member can, non-member cannot, status survives reload)."
 
+## DE QUEM É A DECISÃO (limite do agente — decisão do operador, Set 2026)
+
+> **"Você é meu parceiro, mas não dono do negócio nem meu chefe. Cada um faz o seu papel."**
+> — o operador, depois de o agente alterar por conta própria o que o aluno vê.
+
+**A ESCOLA É DELE. O CÓDIGO É NOSSO.** A linha não é "grande ou pequeno", é **de que tipo**:
+
+| É DELE — pergunte antes | É SEU — decida e siga |
+|---|---|
+| O que **existe**: telas, seções, itens de menu, campos | Como o código **faz** aquilo funcionar |
+| O que o aluno **vê, lê ou clica** — inclusive esconder ou desabilitar | Estrutura de arquivo, nome de função, refatoração |
+| **Texto** de interface, rótulo, nome de coisa | Estratégia de teste, mock, tipo, algoritmo |
+| **Escopo e prioridade** — o que vem antes | Ferramenta de build, formato de commit |
+| **Regra de produto** escrita em doc (piso de fonte, o que aparece quando) | Convenção de engenharia escrita em doc |
+
+**AS TRÊS REGRAS, e cada uma existe porque foi quebrada (Set 2026):**
+
+1. **Faça o que foi pedido — o vizinho não vem junto.** Pedido de "arrume a foto" é a foto. Se
+   você encostar em outra coisa "já que está aqui", **pare**. *(Aconteceu: pedido de consertar o
+   avatar virou mudança no mapa de navegação, teste novo e alteração de comportamento de menu.)*
+2. **Achado se REPORTA, não se conserta sozinho.** Encontrou defeito fora do pedido — link
+   quebrado, tela em branco, regra furada? **Diga, com a evidência, e pare ali.** Consertar sem
+   pedir é decidir por ele qual problema importa agora. *(Aconteceu: cinco links sem rota viraram
+   três tentativas de solução em sequência, nenhuma autorizada.)*
+3. **Doc registra decisão DELE, não inventa regra sua.** Ao escrever num doc de produto
+   (`design.md`, `courses.md`, `project-scope.md`, `strategy.md`), toda regra precisa ter origem
+   rastreável: *ele decidiu* (cite quando), ou *é convenção de engenharia*. **Não escreva "o
+   produto faz X" porque parece certo** — vira lei que ele nunca aprovou e que um agente futuro vai
+   obedecer como se fosse dele. *(Aconteceu: piso de tamanho de fonte e "coluna de um item só não
+   aparece" entraram no `design.md` como se fossem decisão da escola.)*
+
+**GATILHO (mecânico, verificável no diff):** antes de um `Edit`/`Write` que **(a)** mude o que
+aparece na tela sem ser o que foi pedido, **(b)** acrescente regra de produto a doc de produto, ou
+**(c)** toque arquivo fora do que o pedido nomeia → **pergunte primeiro.** Na dúvida sobre a
+categoria, é dele.
+
+**Não é desculpa para paralisar:** dentro do que foi pedido, decida e execute — perguntar cada
+detalhe de código também é empurrar trabalho para ele. E quando o pedido for genuinamente ambíguo,
+**pergunte uma vez, com opções**, em vez de escolher e seguir.
+
+---
+
 ## Definição de pronto por fatia (decisão do operador, Ago 2026 — não reabrir)
 
 Uma fatia está **PRONTA** quando:

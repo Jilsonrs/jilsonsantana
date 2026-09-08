@@ -66,11 +66,11 @@ detalhe), não da decoração. A IA aparece **natural e fluida**, nunca intimida
 **A cor é dele.** Sobre o branco, **um único acento azul #238FE8** (o azul da logomarca) carrega
 marca, ação e o "brilho" do JilsonAI. Disciplina total: um acento, muito neutro em volta.
 
-**TRAVA — leveza é requisito técnico, não gosto.** Boa parte do público acessa de aparelho antigo e
-conexão móvel instável. Estética premium **não** justifica peso: sem biblioteca pesada em runtime,
-sem dependência externa em caminho crítico, animação sempre degradando com elegância. Se um efeito
-custa desempenho perceptível num aparelho fraco, ele não entra. *(Sem gatilho: é sobre quem é o
-aluno, e isso não muda.)*
+**Leveza é requisito técnico, não gosto** *(princípio do parceiro de design, aprovado pelo
+operador — "Acessibilidade de Performance / Realidade Brasileira")*. Boa parte do público acessa de
+aparelho antigo e conexão móvel instável. Estética premium **não** justifica peso: sem biblioteca
+pesada em runtime, sem dependência externa em caminho crítico, animação sempre degradando com
+elegância.
 
 ---
 
@@ -286,12 +286,12 @@ não código espalhado: uma tela nova declara seus níveis e o cromo se monta so
 - **TRAVA de acessibilidade:** o rótulo recolhido usa `opacity: 0` + `white-space: nowrap`, **nunca
   `display:none`** — assim continua na árvore de acessibilidade e o leitor de tela o anuncia nos
   dois estados. E expandir **só por mouse** excluiria quem navega por teclado: as duas condições
-  andam juntas, sempre. *(Sem gatilho — é acessibilidade, não estilo.)*
+  andam juntas, sempre. *(Isto é norma de acessibilidade — WCAG 2.1.1, operável por teclado —, não
+  preferência do agente.)*
 
 ### Nível 2 — Coluna secundária (meio)
 
-- Só aparece quando a seção tem subitens. **Com um item só, não aparece** — coluna de uma linha é
-  ruído, não navegação.
+- Aparece quando a seção tem subitens.
 - Fundo `--surface-alt`, largura ~280px, hairline à direita.
 - **Acordeão nativo `<details>/<summary>`** para grupos retráteis: ícone `+` que gira para `×`,
   separadores finos. Nativo por três motivos — sem JavaScript, acessível de graça, e o conteúdo
@@ -382,18 +382,10 @@ efeito de painel **sem** tirar o scroll natural do documento.
 ## 9. Piso de qualidade (não-negociável)
 
 - **Contraste AA** — números e regras em §3. O cinza da logomarca **reprova para texto**.
-- **Texto mínimo 0,75rem (12px) para tudo que CARREGA INFORMAÇÃO** — rótulo, legenda, meta, rodapé
-  de card. O público inclui gente de mais idade em tela pequena, e "premium" nunca justificou texto
-  que não se lê.
-  **EXCEÇÃO NOMEADA (operador, Set 2026): a etiqueta ornamental do rail ("PLATAFORMA") fica em
-  0,6rem.** Registrada como exceção com nome e não como afrouxamento da regra, para não virar
-  licença geral: ela é **decorativa** — não diz ao aluno nada que ele precise ler, e some junto com
-  os rótulos quando o rail está recolhido.
-  **E é honesto dizer de onde vinha o piso:** ele foi escrito por este agente como julgamento, não
-  copiado de norma — **o WCAG não exige tamanho mínimo de fonte**, exige que o texto sobreviva a
-  200% de ampliação, o que unidade relativa já garante. Por isso o operador podia mesmo decidir
-  diferente. *Gatilho: se aparecer texto pequeno que o aluno PRECISE ler, o piso volta a valer
-  inteiro — a exceção é para ornamento, não para conteúdo.*
+- **Tamanho de texto é decisão do operador**, não regra deste documento. *(Set 2026: um piso de
+  0,75rem chegou a ser escrito aqui pelo agente, por julgamento próprio, e o operador decidiu
+  diferente ao ver a tela. O WCAG não exige tamanho mínimo — exige que o texto sobreviva a 200% de
+  ampliação, o que unidade relativa já garante.)*
 - **Foco de teclado visível** em tudo (`--ring`), e **toda** interação alcançável por teclado.
 - **Responsivo de 320px a 1920px** (testar 375 / 768 / 1024 / 1440).
 - **`prefers-reduced-motion`** respeitado.
@@ -408,7 +400,11 @@ efeito de painel **sem** tirar o scroll natural do documento.
 **As quatro famílias são hospedadas no projeto** (`woff2`, subconjunto latino, `font-display: swap`,
 `preload` só nas duas do primeiro dobra).
 
-**Por que não o CDN do Google** *(decisão de Set 2026)*, e o motivo é o mesmo §1: são requisições
+**Escolha DELEGADA ao agente pelo operador** *(Set 2026: "seja fontes locais ou remotas, desde que
+o resultado final seja tão lindo e premium")* — o visual é idêntico nos dois caminhos, então a
+decisão virou técnica.
+
+**Por que não o CDN do Google**, e o motivo é o mesmo §1: são requisições
 bloqueantes a um terceiro no caminho crítico, exatamente para o público de conexão instável que a
 trava de leveza protege. Somam-se dois motivos independentes: as rotas públicas viram **template de
 servidor sem bundle** na Fase 3, e reintroduzir um CDN desfaria parte do ganho; e o CDN do Google

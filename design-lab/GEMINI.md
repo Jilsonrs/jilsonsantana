@@ -82,12 +82,9 @@ sem isso, só quem usa mouse consegue ler os rótulos.
   `--muted-foreground`.
 No **rail escuro** o azul passa sozinho (5,81:1) e pode ser usado direto.
 
-**6. 0,75rem (12px) é o piso para texto que CARREGA INFORMAÇÃO** — rótulo, legenda, meta, rodapé de
-card. O público inclui gente de mais idade em tela pequena, e "premium" nunca justificou texto que
-não se lê.
-**Ornamento pode ser menor, e há uma exceção já aprovada:** a etiqueta "PLATAFORMA" do rail em
-0,6rem (operador, Set 2026). A régua é: *o aluno precisa LER isso para usar o produto?* Se sim,
-0,75rem. Se é enfeite, use o seu julgamento.
+**6. Tamanho de texto é decisão do operador — não há piso definido por este documento.** Use seu
+julgamento de design; se achar que algo ficou pequeno demais para o público (parte dele é de mais
+idade, em tela pequena), **levante com ele**, não imponha.
 
 **7. Leveza é requisito técnico, não gosto.** Boa parte do público acessa de aparelho antigo e
 conexão instável.

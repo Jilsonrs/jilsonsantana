@@ -957,7 +957,7 @@ sistema administrativo inteiro ainda está por construir (Bloco 6b, Fase 4, Fase
       será única, mas o sistema de navegação é para todo o sistema"* — e é editado conforme as
       telas nascem, sem tocar nos componentes.
 - [ ] **Nível 1** — rail escuro, recolhido, hover expande sobrepondo. **Foco de teclado expande
-      também** (a trava do `design.md` §13, não negociável).
+      também** (`design.md` §6 — norma de acessibilidade, WCAG 2.1.1).
 - [ ] **Nível 2** — coluna secundária, grupos retráteis, só quando a seção tem subitens.
 - [ ] **Nível 3** — abas horizontais, só quando a tela tem abas.
 - [ ] **Mobile** — gaveta com navegação em profundidade (ida e volta entre níveis).
