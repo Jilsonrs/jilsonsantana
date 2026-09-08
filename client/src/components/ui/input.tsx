@@ -7,13 +7,15 @@ const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
       <input
         type={type}
         className={cn(
-          "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+          "flex h-[56px] w-full rounded-xl border border-border/60 bg-background px-6 py-4 text-[1.05rem] file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-300",
+          "shadow-[0_10px_40px_rgba(0,0,0,0.03),0_2px_10px_rgba(35,143,232,0.05)]",
+          "focus-visible:border-primary focus-visible:shadow-[0_10px_40px_rgba(35,143,232,0.12)]",
           // Estado de erro dirigido por `aria-invalid`, não por uma prop nossa.
           // Assim a mesma marcação que pinta o campo é a que o leitor de tela
           // anuncia — cor sozinha não serve para quem não distingue vermelho.
           // Vale para TODO formulário do site, não só o login.
           "aria-[invalid=true]:border-destructive aria-[invalid=true]:bg-destructive/5",
-          "aria-[invalid=true]:focus-visible:ring-destructive",
+          "aria-[invalid=true]:shadow-[0_0_0_1px_hsl(var(--destructive)),0_10px_40px_hsl(var(--destructive)/0.1)]",
           className,
         )}
         ref={ref}

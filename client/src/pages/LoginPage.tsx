@@ -67,11 +67,30 @@ export function LoginPage() {
   const passwordInvalid = Boolean(errors.password) || Boolean(formError);
 
   return (
-    <div className="mx-auto max-w-md px-6 py-16">
-      <Card>
-        <CardHeader>
-          <CardTitle>Entrar</CardTitle>
-        </CardHeader>
+    <div className="relative overflow-hidden">
+      {/* "Luz de IA" (§6): gradiente radial azul no canto esquerdo. */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -left-40 -top-40 size-[800px] bg-[radial-gradient(circle,hsl(var(--primary)/0.05)_0%,transparent_70%)]"
+      />
+
+      <div className="relative z-10 mx-auto w-full max-w-[440px] px-6 py-16">
+        <div className="mb-10 flex flex-col items-center text-center">
+          <h1 className="text-[2.5rem] font-semibold leading-none tracking-tight">
+            Acesso <span className="font-emphasis italic text-primary">Seguro</span>.
+          </h1>
+          <p className="mt-4 font-mono text-[0.75rem] tracking-[0.1em] text-muted-foreground uppercase">
+            [ Área do Aluno ]
+          </p>
+        </div>
+
+        <Card className="relative overflow-hidden border-border/60 shadow-[0_4px_20px_rgba(0,0,0,0.03),0_20px_40px_rgba(35,143,232,0.03)] sm:rounded-2xl">
+          {/* Fio de luz no topo do card (accent) */}
+          <div className="absolute left-0 top-0 h-[2px] w-full bg-gradient-to-r from-primary to-transparent" />
+          
+          <CardHeader className="pt-8 pb-4">
+            <CardTitle className="sr-only">Entrar</CardTitle>
+          </CardHeader>
         <CardContent>
           <form
             onSubmit={handleSubmit(onSubmit)}
@@ -96,7 +115,8 @@ export function LoginPage() {
                 {...register("email")}
               />
               {errors.email && (
-                <p id="email-error" className="text-sm text-destructive">
+                <p id="email-error" className="text-[13px] text-destructive/90 flex items-center gap-2 mt-1.5 font-medium">
+                  <span className="w-1.5 h-1.5 rounded-full bg-destructive shadow-[0_0_6px_hsl(var(--destructive))]"></span>
                   {errors.email.message}
                 </p>
               )}
@@ -123,7 +143,8 @@ export function LoginPage() {
                 {...register("password")}
               />
               {errors.password && (
-                <p id="password-error" className="text-sm text-destructive">
+                <p id="password-error" className="text-[13px] text-destructive/90 flex items-center gap-2 mt-1.5 font-medium">
+                  <span className="w-1.5 h-1.5 rounded-full bg-destructive shadow-[0_0_6px_hsl(var(--destructive))]"></span>
                   {errors.password.message}
                 </p>
               )}
@@ -132,16 +153,18 @@ export function LoginPage() {
                 ela aparece. Sem isso, quem não vê a tela só descobre que o login
                 falhou ao tentar de novo. */}
             {formError && (
-              <p id="form-error" role="alert" className="text-sm text-destructive">
-                {formError}
-              </p>
+              <div id="form-error" role="alert" className="flex items-center gap-2.5 mt-2 p-3 border border-destructive/20 rounded-lg bg-destructive/5 text-[13px] text-destructive/90 font-medium">
+                <span className="w-1.5 h-1.5 shrink-0 rounded-full bg-destructive shadow-[0_0_6px_hsl(var(--destructive))]"></span>
+                <span>{formError}</span>
+              </div>
             )}
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
+            <Button type="submit" className="w-full h-11 rounded-lg" disabled={isSubmitting}>
               {isSubmitting ? "Entrando…" : "Entrar"}
             </Button>
           </form>
         </CardContent>
       </Card>
+    </div>
     </div>
   );
 }
