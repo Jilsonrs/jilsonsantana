@@ -104,10 +104,11 @@
        restrição (design.md §4) — nunca em corpo de texto. */
     @apply bg-background text-foreground font-body antialiased;
   }
-  /* Títulos herdam a fonte da marca sem cada tela precisar lembrar. */
+  /* Títulos herdam a fonte da marca sem cada tela precisar lembrar. O H3 fica
+     de FORA de propósito (design.md §4): título de card é Hanken Grotesk, e
+     herdar daqui daria MuseoModerno a todo card por omissão. */
   h1,
-  h2,
-  h3 {
+  h2 {
     @apply font-display tracking-tight;
   }
 }

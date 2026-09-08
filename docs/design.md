@@ -180,7 +180,9 @@ visual.
 ```
 
 - **MuseoModerno** (600/700) — geométrica e arredondada, carrega a personalidade do Jilson. Com
-  **restrição**: wordmark, H1/H2/H3, números grandes. Nunca em corpo.
+  **restrição**: wordmark, H1/H2, números grandes. Nunca em corpo. **H3 fica de FORA** — título de
+  card é Hanken Grotesk (decisão do operador, Set 2026, resolvendo a contradição que esta seção
+  tinha com a tabela de escala abaixo).
 - **Hanken Grotesk** (400/500/600) — corpo, menus, botões. Quente sem ser fria, legível no longo.
 - **JetBrains Mono** — código, DAX/SQL, fórmulas e **micro-etiquetas** (`[ SKILLS • COWORK ]`),
   maiúsculas com `letter-spacing: 0.1em`. Escolha ancorada no assunto: o produto é dados.
@@ -447,3 +449,13 @@ estrutural; piso de 0,75rem para texto; fontes locais em vez do CDN; e **nada de
 *O que foi **preservado** do doc anterior: a tese, o elemento-assinatura e sua TRAVA de não chamar
 a API no hero público, o certificado como canal de aquisição, o medidor calmo, as regras de copy, e
 as duas reversões do §6 com seus gatilhos.*
+
+*Atualizado Set 2026 — **H3 sai da MuseoModerno; título de card é Hanken Grotesk. Decisão do
+operador.** O §4 se contradizia desde a reescrita: o texto mandava MuseoModerno em "H1/H2/H3" e a
+tabela de escala, três linhas abaixo, dava Hanken Grotesk ao card H3. Prevaleceu a tabela. Custo
+zero hoje — **não existe um `<h3>` no client**, então nenhuma tela muda; a regra vale para os cards
+de curso, que nascem na Fase 3. **Código já alinhado na mesma sessão:** a camada base do
+`client/src/index.css` aplica `font-display` a `h1, h2` apenas — o H3 ficou de fora de propósito,
+senão todo card herdaria MuseoModerno por omissão. **Gatilho de reabertura:** se um card de curso real
+ficar sem hierarquia visível contra o corpo do texto ao lado — aí o problema é a escala, e o H3
+volta à mesa junto com ela.*
