@@ -445,6 +445,9 @@ local mais lento que o CDN — aí é dado novo.*
 - **OG image → PNG ou JPG, 1200×630.** **A exceção ao WebP, e o porquê é o que impede alguém de
   "corrigir" a inconsistência:** quem lê essa imagem não é o aluno, é o robô do WhatsApp e do
   LinkedIn — e nem todos aceitam WebP. Servida em WebP, o card compartilhado sai sem imagem.
+  **É postura conservadora, NÃO medição** — a verificação está marcada como checkbox na Fase 3 do
+  `implementation-plan.md` (junto do item da imagem de OG), com as ferramentas e o critério. Se as
+  plataformas aceitarem WebP, esta linha cai.
 - Toda `<img>` precisa de `alt`: descritivo, ou `alt=""` quando for puramente decorativa.
 
 **Onde os arquivos moram:** `client/public/img/`, servida na raiz do site (`/img/logo.svg`) — é

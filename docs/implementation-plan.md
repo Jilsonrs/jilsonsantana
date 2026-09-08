@@ -1090,6 +1090,24 @@ landmark. Corrigido junto.
       página** (nunca o genérico do site), Open Graph completo (`og:title`, `og:description`,
       `og:image`, `og:url`, `og:type`, `og:site_name`) + `twitter:card=summary_large_image`, e
       `<link rel="canonical">` absoluto.
+- [ ] **A IMAGEM de OG em si** (o arquivo, não a meta tag). Arte conforme `design.md` §12; mora em
+      `client/public/img/`, que é servida na raiz (`/img/og-…`).
+      **Duas travas que fazem o card sair sem imagem, as duas silenciosas:**
+      **(a)** `og:image` exige **URL ABSOLUTA** (`https://…`) — caminho relativo é ignorado pelo
+      crawler, e no nosso HTML ele passa por `escapeHtml()` como todo atributo.
+      **(b)** a imagem precisa ser alcançável **sem sessão**. Nada de OG apontando para arquivo
+      atrás do gate — o robô não faz login.
+      ⚠️ `[MEDIR antes de fechar, nunca supor]` **o formato.** A `design.md` §12 manda PNG/JPG
+      1200×630 e trata WebP como risco — postura **conservadora, não medida**, e o gatilho de
+      reabertura dela é exatamente este item. Meça com as ferramentas das próprias plataformas:
+      **Post Inspector** (LinkedIn) e **Sharing Debugger** (Facebook) renderizam o card e forçam
+      limpeza de cache; no WhatsApp, mande o link para você mesmo.
+      **Se as três aceitarem WebP, a exceção morreu** — atualize a §12 e registre; se qualquer uma
+      falhar, a §12 está certa e o motivo passa a ser medido em vez de suposto.
+      **Por que MEDIR e não confiar no verde:** card sem imagem não gera erro, não reprova teste e
+      **não aparece para quem compartilha** (o cache local já tem o card). O sintoma é queda de
+      clique que ninguém liga à causa — e o link do certificado é canal de aquisição por decisão de
+      produto (`courses.md`).
 - [ ] **Três blocos `<script type="application/ld+json">`, separados** (receita verificada no fonte
       da página de compra do Mac mini, ago/2026):
       **`Course`** com `provider` (Organization), `offers` (a assinatura), `teaches`/`about` (de
