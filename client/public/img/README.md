@@ -10,25 +10,11 @@ Referencie sempre pelo caminho absoluto, começando com `/`:
 <img src="/img/logo.svg" alt="Jilson Santana" />
 ```
 
-## O que entra aqui
+## As regras estão na lei visual, não aqui
 
-O que é **fixo e faz parte do produto**: a logomarca, o logo do JilsonAI, ícones
-de marca, ilustração de tela vazia, a imagem de OG (a que aparece quando alguém
-compartilha um link no WhatsApp ou LinkedIn).
+**O que entra nesta pasta, em que formato, e o que fica de fora: `docs/design.md`
+§12.** Este arquivo não repete nenhuma delas de propósito — regra escrita em dois
+lugares é regra que diverge, e a que ninguém está olhando é a errada.
 
-## O que NÃO entra aqui
-
-**Thumbnail de curso.** Ela vive no campo `Course.thumbnailUrl`, preenchido pelo
-painel admin — é conteúdo, muda sem deploy. Colocar aqui obrigaria um deploy a
-cada curso novo.
-
-## Formato
-
-- **Logo e ícone → SVG.** Escala sem borrar em qualquer tela e pesa pouco.
-- **Foto e ilustração → WebP.** Parte do público acessa de aparelho antigo e
-  conexão instável, e leveza é requisito técnico (`docs/design.md` §1), não
-  gosto. WebP costuma pesar bem menos que o mesmo PNG/JPG.
-- **Imagem de OG → PNG ou JPG, 1200×630.** É a exceção ao WebP: quem lê essa
-  imagem é o robô do WhatsApp e do LinkedIn, e nem todos aceitam WebP.
-
-Toda `<img>` precisa de `alt` — descritivo, ou `alt=""` se for decorativa.
+Este README existe por um motivo mecânico: o git não versiona pasta vazia. Sem
+um arquivo aqui, a pasta sumiria no próximo clone.

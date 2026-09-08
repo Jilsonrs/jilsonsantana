@@ -436,6 +436,22 @@ local mais lento que o CDN — aí é dado novo.*
 - **OG image:** wordmark #Jilson Santana + a tagline sobre fundo claro com um respiro do azul.
   Limpo. **Toda rota pública precisa da sua** — sem OG, compartilhar gera card genérico.
 
+### Formato de arquivo (decisão do operador, Set 2026)
+
+- **Logo e ícone → SVG.** Escala sem borrar em qualquer tela, pesa pouco e acompanha a cor do tema.
+- **Foto e ilustração → WebP.** É aplicação da trava de leveza do §1, não preferência: parte do
+  público acessa de aparelho antigo e conexão instável, e o mesmo arquivo em WebP costuma pesar
+  bem menos que em PNG/JPG.
+- **OG image → PNG ou JPG, 1200×630.** **A exceção ao WebP, e o porquê é o que impede alguém de
+  "corrigir" a inconsistência:** quem lê essa imagem não é o aluno, é o robô do WhatsApp e do
+  LinkedIn — e nem todos aceitam WebP. Servida em WebP, o card compartilhado sai sem imagem.
+- Toda `<img>` precisa de `alt`: descritivo, ou `alt=""` quando for puramente decorativa.
+
+**Onde os arquivos moram:** `client/public/img/`, servida na raiz do site (`/img/logo.svg`) — é
+para o que é **fixo e faz parte do produto** (logo, logo do JilsonAI, ilustração de tela vazia, OG).
+**Thumbnail de curso NÃO vai ali:** é o campo `Course.thumbnailUrl`, preenchido no painel admin —
+conteúdo que muda sem deploy, e guardar no repo obrigaria um deploy a cada curso novo.
+
 ---
 
 *Atualizado Set 2026 — **reescrito**, incorporando o design system do parceiro de arte
@@ -459,3 +475,10 @@ de curso, que nascem na Fase 3. **Código já alinhado na mesma sessão:** a cam
 senão todo card herdaria MuseoModerno por omissão. **Gatilho de reabertura:** se um card de curso real
 ficar sem hierarquia visível contra o corpo do texto ao lado — aí o problema é a escala, e o H3
 volta à mesa junto com ela.*
+
+*Atualizado Set 2026 — **formato de arquivo de imagem entra no §12. Decisão do operador.** SVG para
+logo e ícone, WebP para foto e ilustração, PNG/JPG 1200×630 para a OG. As regras nasceram no
+`client/public/img/README.md` e **foram movidas** para cá a pedido do operador: regra em dois
+lugares diverge, e aquele README agora só aponta para esta seção. **Gatilho de reabertura:** a
+exceção da OG cai no dia em que WhatsApp e LinkedIn aceitarem WebP no card compartilhado — aí ela
+deixa de ser exceção e vira mais uma imagem. O resto é físico do formato e não tem gatilho.*
