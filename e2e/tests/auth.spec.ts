@@ -80,9 +80,20 @@ test("session survives a page reload", async ({ page }) => {
   await expect(page.getByRole("link", { name: "Minha conta" })).toBeVisible();
 });
 
+// O "Sair" mora DENTRO de "Minha conta" desde que a barra lateral substituiu o
+// cabeçalho — não existe mais botão global, e é assim de propósito (decisão do
+// operador, Set 2026). Por isso o teste percorre o caminho real do aluno: entra,
+// abre a conta pelo link, e só então sai.
 test("logout returns to /login", async ({ page }) => {
   await login(page, MEMBER);
-  await page.getByRole("button", { name: "Sair" }).first().click();
+
+  await page.getByRole("link", { name: "Minha conta" }).click();
+  await expect(page).toHaveURL(/\/conta$/);
+
+  // Escopado ao `main` porque há DOIS "Sair" nesta tela — o da coluna lateral e
+  // o do card da conta. `.first()` faria o teste passar sem dizer qual dos dois
+  // foi exercido, o mesmo defeito apontado no teste do admin acima.
+  await page.getByRole("main").getByRole("button", { name: "Sair" }).click();
   await expect(page).toHaveURL(/\/login$/);
 });
 
