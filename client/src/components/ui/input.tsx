@@ -7,9 +7,9 @@ const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
       <input
         type={type}
         className={cn(
-          "flex h-11 w-full rounded-lg border border-input/60 bg-background px-4 py-2 text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-300",
-          "shadow-[0_10px_40px_hsl(var(--foreground)/0.03),0_2px_10px_hsl(var(--primary)/0.05)]",
-          "focus-visible:border-primary focus-visible:shadow-[0_10px_40px_hsl(var(--primary)/0.12)]",
+          "flex h-[56px] w-full rounded-xl border border-border/60 bg-background px-6 py-4 text-[1.05rem] file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-300",
+          "shadow-[0_10px_40px_rgba(0,0,0,0.03),0_2px_10px_rgba(35,143,232,0.05)]",
+          "focus-visible:border-primary focus-visible:shadow-[0_10px_40px_rgba(35,143,232,0.12)]",
           // Estado de erro dirigido por `aria-invalid`, não por uma prop nossa.
           // Assim a mesma marcação que pinta o campo é a que o leitor de tela
           // anuncia — cor sozinha não serve para quem não distingue vermelho.

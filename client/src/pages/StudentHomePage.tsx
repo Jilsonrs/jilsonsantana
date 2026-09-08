@@ -105,7 +105,7 @@ export function StudentHomePage() {
                 className={
                   "group flex flex-col items-center rounded-2xl border border-border/60 bg-card p-8 text-center " +
                   "shadow-[0_4px_20px_rgba(0,0,0,0.02)] transition-[transform,box-shadow,border-color] " +
-                  "hover:-translate-y-1 hover:border-primary/30 hover:shadow-[0_20px_40px_hsl(var(--primary)/0.08)] " +
+                  "hover:-translate-y-1 hover:border-primary/30 hover:shadow-[0_20px_40px_hsl(var(--primary)/0.08),0_1px_3px_hsl(var(--primary)/0.05)] " +
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring " +
                   "motion-reduce:transition-none motion-reduce:hover:translate-y-0"
                 }
@@ -115,7 +115,7 @@ export function StudentHomePage() {
                 </span>
                 <span className="mt-6 font-display text-lg font-semibold">{titulo}</span>
                 {/* Piso de 0,75rem (§9): etiqueta pequena continua legível. */}
-                <span className="mt-2 font-mono text-[0.75rem] tracking-[0.05em] text-muted-foreground">
+                <span className="mt-2 font-mono text-[0.75rem] tracking-[0.05em] uppercase text-muted-foreground">
                   {legenda}
                 </span>
               </Link>
