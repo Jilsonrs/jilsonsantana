@@ -1,6 +1,5 @@
 import { Fragment } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { secaoAtiva, secoesVisiveis, type Secao } from "@/lib/navigation";
 
@@ -58,7 +57,7 @@ const ROTULO =
 const GLOW_ATIVO = cn(
   "before:absolute before:left-0 before:top-1/2 before:size-1.5 before:-translate-y-1/2",
   "before:rounded-full before:bg-primary before:shadow-[0_0_12px_2px_hsl(var(--primary)/0.6)]",
-  "after:absolute after:left-[2px] after:top-1/2 after:bottom-[-28px] after:w-px",
+  "after:absolute after:left-[2px] after:top-1/2 after:bottom-[-28px] after:w-[2px]",
   "after:bg-gradient-to-b after:from-primary after:to-transparent",
 );
 
@@ -70,26 +69,26 @@ function ItemRail({ secao, ativa }: { secao: Secao; ativa: boolean }) {
         to={secao.to}
         aria-current={ativa ? "page" : undefined}
         className={cn(
-          // `pl-[26px]` + ícone de 24px = 50px, que centra o ícone nos 80px do
-          // rail recolhido.
-          "relative mx-3 flex h-12 items-center gap-4 rounded-[10px] pl-[26px] pr-4 text-sm",
+          // mx-3 (12px) + pl-4 (16px) = 28px da borda do rail.
+          // 28px + 12px (metade do ícone de 24px) = 40px, que é o EXATO centro do rail de 80px!
+          "relative mx-3 flex h-12 items-center gap-4 rounded-[10px] pl-4 pr-4 text-sm",
           "transition-colors focus-visible:outline-none",
           "focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
           // Hover NEUTRO: o azul é o único sinal de "onde estou" (§6). Se o
           // hover também fosse azul, o rail perderia esse sinal.
           ativa
-            ? cn("bg-rail-ativo font-medium text-primary", GLOW_ATIVO)
-            : "text-rail-foreground hover:bg-rail-ativo hover:text-white",
+            ? cn("font-semibold text-white", GLOW_ATIVO)
+            : "text-rail-foreground hover:text-white",
         )}
       >
-        <Icon className="size-6 shrink-0" strokeWidth={TRACO} />
+        <Icon className={cn("size-6 shrink-0", ativa ? "text-primary" : "")} strokeWidth={TRACO} />
         <span className={ROTULO}>{secao.label}</span>
       </Link>
     </li>
   );
 }
 
-export function AppRail({ papel, onSignOut }: { papel?: string; onSignOut: () => void }) {
+export function AppRail({ papel }: { papel?: string }) {
   const { pathname } = useLocation();
   const secoes = secoesVisiveis(papel);
   const ativa = secaoAtiva(pathname, secoes);
@@ -119,12 +118,12 @@ export function AppRail({ papel, onSignOut }: { papel?: string; onSignOut: () =>
             ícone; expandida ele encolhe e o nome entra ao lado. */}
         <Link
           to="/inicio"
-          className="flex h-20 shrink-0 items-center pl-[26px] pr-4 font-display font-bold tracking-tight text-white"
+          className="flex h-20 shrink-0 items-center pl-[28px] pr-4 font-display font-bold tracking-tight text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
         >
           <span className="shrink-0 text-[28px] leading-none text-primary transition-[font-size] duration-300 group-hover:text-2xl group-focus-within:text-2xl motion-reduce:transition-none">
             #
           </span>
-          <span className={cn(ROTULO, "text-2xl leading-none")}>Jilson Santana</span>
+          <span className={cn(ROTULO, "ml-2 text-2xl leading-none")}>Jilson Santana</span>
         </Link>
 
         {/* Etiqueta de seção. Some junto com os rótulos: recolhida não caberia,
@@ -132,8 +131,8 @@ export function AppRail({ papel, onSignOut }: { papel?: string; onSignOut: () =>
         <span
           className={cn(
             ROTULO,
-            "mx-6 mb-4 inline-flex w-fit shrink-0 items-center gap-2 rounded-full",
-            "border border-white/10 px-3 py-1 font-mono text-[0.75rem] tracking-[0.1em]",
+            "mx-3 mb-4 flex shrink-0 items-center gap-2 rounded-full",
+            "border border-white/10 px-2.5 py-1.5 font-mono text-[0.6rem] tracking-[0.1em]",
           )}
         >
           <span
@@ -148,7 +147,7 @@ export function AppRail({ papel, onSignOut }: { papel?: string; onSignOut: () =>
               ativo, para o glow não parecer solto no escuro. Decorativa. */}
           <span
             aria-hidden="true"
-            className="pointer-events-none absolute bottom-0 left-[38px] top-0 w-px bg-gradient-to-b from-transparent via-white/5 to-transparent"
+            className="pointer-events-none absolute bottom-0 left-[14px] top-0 w-[2px] bg-gradient-to-b from-transparent via-white/5 to-transparent z-0"
           />
           {secoes.map((secao, i) => (
             // Fragment, não <div>: só <li> é filho válido de <ul>, e o
@@ -162,20 +161,6 @@ export function AppRail({ papel, onSignOut }: { papel?: string; onSignOut: () =>
           ))}
         </ul>
 
-        {/* Sair é AÇÃO, não navegação — por isso é botão e não vem do mapa, que
-            descreve rotas. */}
-        <button
-          type="button"
-          onClick={onSignOut}
-          className={cn(
-            "mx-3 mb-4 flex h-12 shrink-0 items-center gap-4 rounded-[10px] pl-[26px] pr-4 text-sm",
-            "text-rail-foreground transition-colors hover:bg-rail-ativo hover:text-white",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
-          )}
-        >
-          <LogOut className="size-6 shrink-0" strokeWidth={TRACO} />
-          <span className={ROTULO}>Sair</span>
-        </button>
       </nav>
     </div>
   );

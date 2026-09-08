@@ -1,15 +1,12 @@
-import type { LucideIcon } from "lucide-react";
 import {
   Award,
   BarChart3,
   Bot,
   GraduationCap,
-  Home,
-  Library,
   Route,
-  User,
   Users,
 } from "lucide-react";
+import { MockHome, MockGrid, MockMap, MockUser } from "@/components/nav/MockIcons";
 import { Role } from "@jilson/core";
 
 /**
@@ -37,7 +34,7 @@ export type ItemSecundario = {
 export type Secao = {
   label: string;
   to: string;
-  icon: LucideIcon;
+  icon: React.ElementType;
   /** Ausente = qualquer pessoa logada. Presente = só este papel. */
   papel?: Role;
   /**
@@ -55,11 +52,11 @@ export type Secao = {
 
 export const NAVEGACAO: Secao[] = [
   // ---------------------------------------------------------------- ALUNO
-  { label: "Início", to: "/inicio", icon: Home, estado: "ativo" },
+  { label: "Início", to: "/inicio", icon: MockHome, estado: "ativo" },
   {
     label: "Catálogo",
     to: "/cursos",
-    icon: Library,
+    icon: MockGrid,
     estado: "ativo",
     tambemAtivoEm: ["/curso/", "/trilha/"],
     abas: [
@@ -67,18 +64,22 @@ export const NAVEGACAO: Secao[] = [
       { label: "Trilhas", to: "/cursos/trilhas" },
     ],
   },
-  { label: "Minhas trilhas", to: "/minhas-trilhas", icon: Route, estado: "ativo" },
+  { label: "Minhas trilhas", to: "/minhas-trilhas", icon: MockMap, estado: "ativo" },
   { label: "JilsonAI", to: "/jilsonai", icon: Bot, estado: "planejado" }, // Fase 6
   { label: "Certificados", to: "/certificados", icon: Award, estado: "planejado" }, // Fase 6.5
   {
     label: "Minha conta",
     to: "/conta",
-    icon: User,
+    icon: MockUser,
     estado: "ativo",
-    // "Assinatura" e "Preferências" são Fase 4 / passada de conta. Com um item
-    // só a coluna secundária não aparece — uma coluna de um item é ruído, não
-    // navegação —, então hoje `/conta` renderiza sem nível 2, de propósito.
-    filhos: [{ label: "Seus dados", to: "/conta" }],
+    filhos: [
+      { label: "Seus dados", to: "/conta" },
+      { label: "Preferências", to: "/conta/preferencias" },
+      { label: "Senha e Acesso", to: "/conta/seguranca" },
+      { label: "Sessões ativas", to: "/conta/sessoes" },
+      { label: "Faturamento e Assinatura", to: "/conta/faturamento" },
+      { label: "Integrações", to: "/conta/integracoes" },
+    ],
   },
 
   // ---------------------------------------------------------------- ADMIN

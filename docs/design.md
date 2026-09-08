@@ -382,8 +382,18 @@ efeito de painel **sem** tirar o scroll natural do documento.
 ## 9. Piso de qualidade (não-negociável)
 
 - **Contraste AA** — números e regras em §3. O cinza da logomarca **reprova para texto**.
-- **Texto mínimo 0,75rem (12px)** — em etiqueta, badge, rodapé de card, em tudo. O público inclui
-  gente de mais idade em tela pequena, e "premium" nunca justificou texto que não se lê.
+- **Texto mínimo 0,75rem (12px) para tudo que CARREGA INFORMAÇÃO** — rótulo, legenda, meta, rodapé
+  de card. O público inclui gente de mais idade em tela pequena, e "premium" nunca justificou texto
+  que não se lê.
+  **EXCEÇÃO NOMEADA (operador, Set 2026): a etiqueta ornamental do rail ("PLATAFORMA") fica em
+  0,6rem.** Registrada como exceção com nome e não como afrouxamento da regra, para não virar
+  licença geral: ela é **decorativa** — não diz ao aluno nada que ele precise ler, e some junto com
+  os rótulos quando o rail está recolhido.
+  **E é honesto dizer de onde vinha o piso:** ele foi escrito por este agente como julgamento, não
+  copiado de norma — **o WCAG não exige tamanho mínimo de fonte**, exige que o texto sobreviva a
+  200% de ampliação, o que unidade relativa já garante. Por isso o operador podia mesmo decidir
+  diferente. *Gatilho: se aparecer texto pequeno que o aluno PRECISE ler, o piso volta a valer
+  inteiro — a exceção é para ornamento, não para conteúdo.*
 - **Foco de teclado visível** em tudo (`--ring`), e **toda** interação alcançável por teclado.
 - **Responsivo de 320px a 1920px** (testar 375 / 768 / 1024 / 1440).
 - **`prefers-reduced-motion`** respeitado.

@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { Home } from "lucide-react";
 import { Role } from "@jilson/core";
 import {
   NAVEGACAO,
@@ -6,6 +7,7 @@ import {
   itensSecundarios,
   secaoAtiva,
   secoesVisiveis,
+  type Secao,
 } from "./navigation";
 
 // O mapa decide o que CADA pessoa enxerga e o que cada tela monta. É lógica
@@ -107,9 +109,19 @@ describe("itensSecundarios — o nível 2 só aparece quando vale a pena", () =>
   });
 
   // Uma coluna de navegação com uma linha só é ruído visual, não navegação.
-  // Hoje é o caso de /conta, que só tem "Seus dados" até a Fase 4.
+  // No passado /conta só tinha 1 filho. Agora tem vários.
+  // Vamos criar um mock de seção com 1 filho só para testar a função.
   it("NÃO aparece com um filho só", () => {
-    expect(itensSecundarios("/conta", doAluno)).toEqual([]);
+    const secoesComUmFilho: Secao[] = [
+      {
+        label: "Um Filho",
+        to: "/um-filho",
+        icon: Home,
+        estado: "ativo",
+        filhos: [{ label: "Só este", to: "/um-filho" }],
+      },
+    ];
+    expect(itensSecundarios("/um-filho", secoesComUmFilho)).toEqual([]);
   });
 
   it("aparece a partir de dois filhos", () => {

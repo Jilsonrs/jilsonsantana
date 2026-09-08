@@ -3,6 +3,7 @@ import { useSession, signOut } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { AppRail } from "@/components/nav/AppRail";
 import { MobileNav } from "@/components/nav/MobileNav";
+import { SecondaryNav } from "@/components/nav/SecondaryNav";
 
 /**
  * O shell do app. DUAS gramáticas, escolhidas pela sessão:
@@ -50,7 +51,8 @@ export function Layout() {
 
   return (
     <div className="flex min-h-svh bg-background text-foreground">
-      <AppRail papel={session.user.role} onSignOut={handleSignOut} />
+      <AppRail papel={session.user.role} />
+      <SecondaryNav papel={session.user.role} usuario={session.user} onSignOut={handleSignOut} />
       <div className="flex min-w-0 flex-1 flex-col">
         <MobileNav papel={session.user.role} onSignOut={handleSignOut} />
         <main className="flex-1">

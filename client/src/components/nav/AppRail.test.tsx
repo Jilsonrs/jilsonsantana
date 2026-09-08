@@ -1,12 +1,12 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect } from "vitest";
 import { screen } from "@testing-library/react";
 import { renderWithProviders } from "@/test-utils";
 import { Role } from "@jilson/core";
 import { AppRail } from "./AppRail";
 
 function render(papel?: string, route = "/inicio") {
-  return renderWithProviders(<AppRail papel={papel} onSignOut={vi.fn()} />, {
+  return renderWithProviders(<AppRail papel={papel} />, {
     route,
     path: "*",
   });
@@ -20,7 +20,7 @@ describe("AppRail — quem vê o quê", () => {
     expect(screen.getByRole("link", { name: "Catálogo" })).toBeTruthy();
     expect(screen.getByRole("link", { name: "Minhas trilhas" })).toBeTruthy();
     expect(screen.getByRole("link", { name: "Minha conta" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Sair" })).toBeTruthy();
+
   });
 
   // Não é sobre acesso — o servidor barra de qualquer jeito. É sobre não

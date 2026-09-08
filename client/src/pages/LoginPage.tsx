@@ -96,7 +96,8 @@ export function LoginPage() {
                 {...register("email")}
               />
               {errors.email && (
-                <p id="email-error" className="text-sm text-destructive">
+                <p id="email-error" className="text-[13px] text-destructive/90 flex items-center gap-2 mt-1.5 font-medium">
+                  <span className="w-1.5 h-1.5 rounded-full bg-destructive shadow-[0_0_6px_hsl(var(--destructive))]"></span>
                   {errors.email.message}
                 </p>
               )}
@@ -123,7 +124,8 @@ export function LoginPage() {
                 {...register("password")}
               />
               {errors.password && (
-                <p id="password-error" className="text-sm text-destructive">
+                <p id="password-error" className="text-[13px] text-destructive/90 flex items-center gap-2 mt-1.5 font-medium">
+                  <span className="w-1.5 h-1.5 rounded-full bg-destructive shadow-[0_0_6px_hsl(var(--destructive))]"></span>
                   {errors.password.message}
                 </p>
               )}
@@ -132,11 +134,12 @@ export function LoginPage() {
                 ela aparece. Sem isso, quem não vê a tela só descobre que o login
                 falhou ao tentar de novo. */}
             {formError && (
-              <p id="form-error" role="alert" className="text-sm text-destructive">
-                {formError}
-              </p>
+              <div id="form-error" role="alert" className="flex items-center gap-2.5 mt-2 p-3 border border-destructive/20 rounded-lg bg-destructive/5 text-[13px] text-destructive/90 font-medium">
+                <span className="w-1.5 h-1.5 shrink-0 rounded-full bg-destructive shadow-[0_0_6px_hsl(var(--destructive))]"></span>
+                <span>{formError}</span>
+              </div>
             )}
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
+            <Button type="submit" className="w-full h-11 rounded-lg" disabled={isSubmitting}>
               {isSubmitting ? "Entrando…" : "Entrar"}
             </Button>
           </form>
