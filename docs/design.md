@@ -173,18 +173,22 @@ visual.
 ## 4. Tipografia — a alma da interface
 
 ```css
---font-display:  'Outfit', system-ui;           /* marca + H1/H2 — a fonte da logomarca */
+--font-brand:    'MuseoModerno', system-ui;     /* SÓ a marca (wordmark) — a fonte da logomarca */
+--font-display:  'Outfit', system-ui;           /* H1 e H2 */
 --font-body:     'Hanken Grotesk', system-ui;   /* corpo e UI */
 --font-mono:     'JetBrains Mono', monospace;   /* código, fórmulas, etiquetas */
 --font-emphasis: 'Playfair Display', serif;     /* itálico — UMA palavra por título */
 ```
 
-- **Outfit** (500/600/700) — a fonte da **marca, do H1 e do H2**. Escolhida por manter a
-  **geometria** e a **leveza** com um caráter **limpo e premium**, no espírito Apple: formas
-  precisas, sem ornamento, que dão seriedade profissional a uma escola de dados na era da IA. Com
-  **restrição**: wordmark, H1/H2, números grandes. Nunca em corpo. **H3 fica de FORA** — título de
-  card é Hanken Grotesk (decisão do operador, Set 2026, resolvendo a contradição que esta seção
-  tinha com a tabela de escala abaixo).
+- **MuseoModerno** (600/700) — **só a marca**: o wordmark da logomarca. Geométrica e arredondada,
+  carrega a personalidade do Jilson, e é justamente por isso que fica restrita à assinatura da
+  marca. **Nunca em título, nunca em corpo.**
+- **Outfit** (500/600/700) — **H1 e H2** (inclui o título de página da área logada). Escolhida
+  para os títulos por manter a **geometria** e a **leveza** com um caráter **limpo e premium**, no
+  espírito Apple: formas precisas, sem ornamento, que dão seriedade profissional a uma escola de
+  dados na era da IA. Nunca em corpo. **H3 fica de FORA** — título de card é Hanken Grotesk (decisão
+  do operador, Set 2026, resolvendo a contradição que esta seção tinha com a tabela de escala
+  abaixo).
 - **Hanken Grotesk** (400/500/600) — corpo, menus, botões. Quente sem ser fria, legível no longo.
 - **JetBrains Mono** — código, DAX/SQL, fórmulas e **micro-etiquetas** (`[ SKILLS • COWORK ]`),
   maiúsculas com `letter-spacing: 0.1em`. Escolha ancorada no assunto: o produto é dados.
@@ -488,13 +492,15 @@ lugares diverge, e aquele README agora só aponta para esta seção. **Gatilho d
 exceção da OG cai no dia em que WhatsApp e LinkedIn aceitarem WebP no card compartilhado — aí ela
 deixa de ser exceção e vira mais uma imagem. O resto é físico do formato e não tem gatilho.*
 
-*Atualizado Set 2026 — **fonte da marca, H1 e H2 passa a ser a OUTFIT. Decisão do operador com o
-diretor de arte (Gemini).** A MuseoModerno foi descontinuada: os terminais arredondados e o
-formato descontraído não entregavam o nível de profissionalismo exigido pela marca. A Outfit mantém
-a geometria e a leveza, com caráter limpo e premium. **O que NÃO mudou:** o H3 continua Hanken
-Grotesk, e a restrição de uso continua a mesma (wordmark, H1/H2, números grandes; nunca corpo).
-**Código alinhado na mesma sessão:** `client/src/fonts.css` declara a Outfit, hospedada localmente
-como as demais (regra de leveza). É fonte **variável**: dois arquivos (`latin` e `latin-ext`, 47 KB
-somados) cobrem os pesos 500/600/700, no lugar dos quatro arquivos da fonte anterior (110 KB).
-`tailwind.config.ts` aponta `font-display` para `'Outfit'`. **Sem gatilho de reabertura técnico:**
-fonte de marca é identidade, e só muda por nova decisão do operador com o diretor de arte.*
+*Atualizado Set 2026 — **H1 e H2 passam para a OUTFIT; a MARCA continua MuseoModerno. Decisão do
+operador com o diretor de arte (Gemini).** Nos títulos, a MuseoModerno não entregava o nível de
+profissionalismo exigido (terminais arredondados, formato descontraído demais); a Outfit mantém a
+geometria e a leveza, com caráter limpo e premium. **Na marca ela fica:** é a personalidade da
+logomarca. *(Correção na mesma sessão: a primeira versão desta entrada trocava também a marca para
+Outfit; o operador corrigiu antes do merge.)* **O que NÃO mudou:** o H3 continua Hanken Grotesk.
+**Código alinhado:** dois tokens de fonte em vez de um — `font-brand` (MuseoModerno, usado **só** no
+wordmark do `AppRail`) e `font-display` (Outfit, aplicado a `h1, h2` pela camada base do
+`index.css`). A Outfit é hospedada localmente como as demais (regra de leveza) e é fonte
+**variável**: dois arquivos (`latin` e `latin-ext`, 47 KB) cobrem 500/600/700. **Sem gatilho de
+reabertura técnico:** fonte é identidade, e só muda por nova decisão do operador com o diretor de
+arte.*

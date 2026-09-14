@@ -6,7 +6,7 @@
 ## Frontend
 
 - **React + TypeScript + Vite** — SPA
-- **Tailwind CSS + shadcn/ui** — UI; use shadcn semantic tokens (`bg-background`, `text-muted-foreground`), not hardcoded colors. **Aesthetic: Apple — light, airy, creative, beautiful imagery, light transitions.** Brand accent = blue **#238FE8** (`--primary`), with black text + gray #838383 secondary; **Outfit** for brand/H1/H2 (Sep 2026), neutral sans (Hanken Grotesk) for body and H3. See DESIGN.md.
+- **Tailwind CSS + shadcn/ui** — UI; use shadcn semantic tokens (`bg-background`, `text-muted-foreground`), not hardcoded colors. **Aesthetic: Apple — light, airy, creative, beautiful imagery, light transitions.** Brand accent = blue **#238FE8** (`--primary`), with black text + gray #838383 secondary; **MuseoModerno** for the brand wordmark only, **Outfit** for H1/H2 (Sep 2026), neutral sans (Hanken Grotesk) for body and H3. See DESIGN.md.
 - **React Router** — routing
 - **TanStack React Query** — server state (`useQuery` / `useMutation`), not `useEffect` + `useState`
 - **Axios** — HTTP client (not `fetch`)

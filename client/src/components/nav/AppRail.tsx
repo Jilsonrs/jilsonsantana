@@ -118,7 +118,7 @@ export function AppRail({ papel }: { papel?: string }) {
             ícone; expandida ele encolhe e o nome entra ao lado. */}
         <Link
           to="/inicio"
-          className="flex h-20 shrink-0 items-center pl-[28px] pr-4 font-display font-bold tracking-tight text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+          className="flex h-20 shrink-0 items-center pl-[28px] pr-4 font-brand font-bold tracking-tight text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
         >
           <span className="shrink-0 text-[28px] leading-none text-primary transition-[font-size] duration-300 group-hover:text-2xl group-focus-within:text-2xl motion-reduce:transition-none">
             #
