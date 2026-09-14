@@ -46,7 +46,7 @@ Base stays accessible; upper tiers carry the high ticket.
 
 ## Content Slate (first courses)
 
-First course at launch: **Excel + IA**, packaged inside **Trilha 1 — Comece por aqui (Fundamentos)**. Then: PL-300, Google Antigravity, SQL + Claude, AI + Claude, Data Modeling, Python + Claude, N8N — organized into a few curated **trilhas** (Fundamentos · Business Intelligence · Dados + Código · Automação & IA). Through-line: *data in the AI era* ("X + Claude").
+First course at launch: **Excel + IA**, packaged inside **Trilha 1 — Comece por aqui (Fundamentos)**. Then: PL-300, Antigravity, SQL + IA, Python + IA, Claude Code, N8N — organized into a few curated **trilhas** (Fundamentos · Business Intelligence · Dados + Código · Automação & IA). Through-line: *data in the AI era* ("X + Claude").
 
 ## Roles
 

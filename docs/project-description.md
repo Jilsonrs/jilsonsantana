@@ -207,7 +207,7 @@ PDF gerado no servidor ao concluir 100% de uma trilha (ou curso). Nome = nome da
 ## Conteúdo (slate)
 
 Primeiro curso no lançamento: **Excel + IA**, dentro da **Trilha 1 — Comece por aqui (Fundamentos)**.
-Depois: PL-300, Google Antigravity, SQL + Claude, AI + Claude, Data Modeling, Python + Claude, N8N —
+Depois: PL-300, Antigravity, SQL + IA, Python + IA, Claude Code, N8N —
 organizados em poucas **trilhas curadas** (Fundamentos · Business Intelligence · Dados + Código ·
 Automação & IA). Fio condutor: **dados na era da IA** ("X + Claude").
 

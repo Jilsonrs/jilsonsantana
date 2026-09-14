@@ -108,9 +108,9 @@ seu objetivo."
 
 **Estrutura inicial (RASCUNHO — refinar):**
 - **Trilha 1 — Comece por aqui:** Fundamentos (Excel + IA)
-- **Trilha 2 — Business Intelligence:** Power BI / PL-300 + Modelagem de Dados
+- **Trilha 2 — Business Intelligence:** Power BI + IA / PL-300
 - **Trilha 3 — Dados + Código:** SQL + Claude, Python + Claude
-- **Trilha 4 — Automação & IA Aplicada:** IA + Claude, N8N
+- **Trilha 4 — Automação & IA Aplicada:** Claude Code, N8N, Antigravity (vitrine)
 
 > Implicação de build: trilha é uma entidade **acima** do curso (Trilha -> Curso -> Módulo ->
 > Aula). Aditiva ao modelo atual, não reescreve. Ver implementation-plan/CLAUDE (Fase 2).
