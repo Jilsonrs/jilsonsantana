@@ -17,7 +17,8 @@ A subscription learning platform — a single, accessible membership that bundle
 ## Core Features (MVP — launch in 2–3 months)
 
 - Sign up / log in (email + password)
-- Single membership subscription via **Stripe Payments + Stripe Billing, with the Payment Element embedded in our own checkout page** — **Mensal R$99,90 (sem fidelidade) + Anual ~R$995 (~17% off); sem free trial; sem conteúdo grátis na escola.** Access gated by active subscription.
+- Single membership subscription via **Stripe Payments + Stripe Billing, with the Payment Element embedded in our own checkout page** — **Mensal R$99,90 (sem fidelidade) + Anual ~R$995 (~17% off); sem free trial; sem conteúdo grátis na escola.** **Outside Brazil: US$ 30/month + annual by the same math (~US$ 299, to confirm); currency follows the card's country, never the site language** (operator decision, Sep 2026). Access gated by active subscription.
+- **Bilingual platform (PT + EN) from launch** (operator decision, 14 Sep 2026 — spec in `idiomas.md`): the browser language routes the first visit; one URL per language (PT unprefixed, EN under `/en`); every course and trilha is created in one language, and a visitor in English sees only English courses — even while there are none. English courses are separate, re-recorded courses.
 - Course catalog → course → module → lesson structure; **lessons are first-class & searchable**
 - **Trilhas (curadas):** Jilson curates a few guided tracks (a `LearningPlan` = ordered mix of courses + standalone lessons). A member can save a curated trilha as their own; it tracks progress and issues a certificate on completion. (AI-assembled personalized plans = post-MVP / JilsonAI Fase 4–5.)
 - Gated video playback (member-only, protected URLs)
@@ -38,7 +39,7 @@ A subscription learning platform — a single, accessible membership that bundle
 
 ## Membership Tiers (value ladder)
 
-- **Tier 1 — Membership (base):** R$99,90/month (annual 12x + monthly). Courses + community + JilsonAI. Accessible to everyone — this is the mission.
+- **Tier 1 — Membership (base):** R$99,90/month (annual 12x + monthly) · outside Brazil US$ 30/month. Courses + community + JilsonAI. Accessible to everyone — this is the mission.
 - **Tier 2 — Live cohorts:** higher price, live classes (post-MVP).
 - **Tier 3 — Corporate (B2B):** high ticket (post-MVP).
 

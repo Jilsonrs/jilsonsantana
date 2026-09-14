@@ -21,6 +21,8 @@ na **nossa** categoria — atrasados por definição. Custo: zero (é copy).
 
 **Quem serve:** profissional/estudante BR que quer aprender dados de forma prática e aplicada
 (Excel, Power BI, SQL, Python, IA aplicada) — do iniciante ao que quer subir de nível. PT primeiro.
+**Desde Set 2026, também quem aprende em inglês** (escola bilíngue — §9); o posicionamento em
+inglês ainda está a definir.
 
 **Problema que resolve:** cursos avulsos não dão caminho, não tiram dúvida na hora, e ninguém
 aplica o que assistiu. A escola entrega **caminho (trilhas) + tutor 24/7 (JilsonAI) + sempre
@@ -84,6 +86,8 @@ tutor 24/7) + autoridade pessoal + simplicidade Apple — combinação que nenhu
 - **YouTube "Jilson Santana"** = **rebuild PT, compounding de médio/longo prazo** (1 vídeo/semana).
   Base pequena hoje → não é o motor no curto prazo; cresce alimentado pela própria campanha Udemy.
   AdSense **bônus** (RPM PT/BR baixo).
+- **YouTube em inglês (Set 2026)** = **canal separado, depois**, com os cursos regravados em inglês;
+  alimenta o lado EN da escola (§9).
 - **Site** = conversão (assinatura R$99,90) + entrega de valor recorrente.
 - **Ferramentas gratuitas — "comoditize o complemento" (pós-launch, 1 piloto):** [FATO] estratégia
   formalizada por Joel Spolsky (Strategy Letter V) e executada pelas big techs — Google deu o
@@ -103,6 +107,10 @@ tutor 24/7) + autoridade pessoal + simplicidade Apple — combinação que nenhu
 
 - **Mensal R$99,90 sem fidelidade** (motor de aquisição) + **anual ~R$995** (~17% off). Sem trial,
   sem grátis na escola, sem lock vitalício.
+- **Fora do Brasil (Set 2026): US$ 30/mês + anual pelo mesmo cálculo (~US$ 299, a confirmar).**
+  Moeda pelo **país do cartão**. ⚠️ **Toda a conta abaixo (ARPU, 363, 500) está só em reais.**
+  Cartão estrangeiro tem outra taxa na Stripe (a verificar na Fase 4), então o assinante em dólar
+  precisa de conta própria antes de entrar na meta.
 - *Validação (Gemini ~95% convergência):* mensal-sem-fidelidade ganha de anual-12x-travado em
   conversão × LTV; fidelidade carrega risco Procon/CDC/chargeback pra operador solo.
 - **META DE RECEITA (B2C-first, atualizada Jun 2026): US$ 6.000 líquidos/mês.** O motor é a
@@ -218,12 +226,25 @@ objetivo dele, não da técnica. ("Construa o dashboard que seu chefe vai amar" 
 
 ---
 
-## 9. EN & LinkedIn Learning (fora deste ciclo)
+## 9. EN — escola bilíngue desde o lançamento (Set 2026)
 
-- Escola + YouTube ficam **PT pra sempre**. Sem canal EN, sem conteúdo EN na escola.
-- Inglês só via **tentativa única no LinkedIn Learning** quando o Jilson chegar a **C1** (sem data
-  fixa; avaliado como renda complementar se aceito, sem perseguição se não). Não é canal core.
-- Seam `User.preferredLanguage="pt"` fica dormente (custo zero).
+> **REVERTIDO em 14/09/2026 `[decisão do operador]`.** O texto anterior dizia *"Escola + YouTube
+> ficam PT pra sempre. Sem canal EN, sem conteúdo EN na escola."* Especificação em
+> [`idiomas.md`](idiomas.md).
+
+- **A escola é bilíngue desde o primeiro dia**, como a Udemy: estrutura em português e inglês,
+  inglês **ligado no lançamento** mesmo sem curso em inglês, para o Google já indexar.
+- **Duas fontes de renda com um roteiro só:** cada curso PT pode ser **regravado em inglês**. Roteiro,
+  pesquisa e estrutura já existem; o custo é o tempo de regravar.
+- **YouTube: canal separado em inglês**, nunca misturado com o canal PT.
+- **Preço fora do Brasil: US$ 30/mês**, anual pelo mesmo cálculo; **moeda pelo país do cartão**.
+- **Ordem de mercado não mudou:** o português segue sendo o primeiro mercado (base Udemy + canal) e
+  é onde a meta de receita (§6) foi calculada. O inglês entra como **segunda frente**, sem conta de
+  receita própria até existir dado.
+- **Pendente:** posicionamento e nome de categoria em inglês (o §1 "AI-nativa do Brasil" é o lado
+  PT); imposto internacional (Fase 4, com contador — `idiomas.md` §5).
+- *LinkedIn Learning (tentativa única quando C1): **não foi rediscutido** em Set 2026. Segue como
+  projeto à parte até o operador dizer o contrário.*
 
 ---
 
@@ -261,3 +282,5 @@ fases novas.*
 *Atualização Ago 2026 — **custo Stripe corrigido** após adoção do Stripe Billing (decisão de tech-stack.md): Payments BR **3,99% + R$ 0,50** (a premissa anterior dizia R$ 0,39) **+ Billing 0,7%** = **~R$ 5,19 por assinante/mês** em R$99,90 → haircut de Stripe passa de ~4–5% para **~5,2%**. **Recálculo feito e fechado (pendência ⚠️ resolvida):** ARPU líquido **R$ 85,04** e alvo **363** — ambos confirmam os números que já estavam no doc (~R$85, ~365); o delta é de **3 assinantes**, dentro da faixa 350–420. A troca não muda a estratégia (a taxa é ~0,7 p.p. a mais). **O que mudou de verdade foi o método:** §6 agora registra a conta **por plano** em vez da banda percentual chapada — o R$ 0,50 é por transação (12x/ano no mensal, 1x no anual, efetivo ~4,38% vs ~4,03%) e o Simples incide sobre o bruto, não sobre o pós-Stripe. Os dois métodos **só coincidem no mix 75/25**: com mais anual, a banda chapada subestima o ganho. Fica marcada a premissa que de fato move o número — o **Simples ~6% (Anexo III) é NÃO CONFIRMADO**; em Anexo V (~15,5%) o ARPU cai pra ~R$76 e o alvo sobe pra ~407 (44 assinantes, contra 3 deste recálculo).*
 
 *Atualização Ago 2026 (2) — **a meta de assinantes passa a ser 500; o ~400 é reclassificado como PISO, não destino** `[decisão do operador]`. **O que NÃO mudou: a conta.** Os 363 continuam derivados da renda-objetivo (30.900 ÷ 85,04 de ARPU líquido) e o ~400 continua sendo essa conta mais a margem de câmbio, mix anual e churn — sobrescrever esses números destruiria a derivação que a §6 corrigiu em ago/2026. **O que mudou é a camada acima deles:** o piso vinha sendo lido como destino, e quem planeja para o break-even chega ao break-even e para. **500 = R$ 42.520/mês líquido, ≈ R$ 574k/ano bruto** — segue em território EPP, sem mudar enquadramento em relação ao que já estava previsto. **O achado que a trajetória revelou e que reforça a estratégia já escrita:** a 7% de churn e 40 vendas novas/mês o modelo **satura em 571**, então 500 chega em ~29 meses passando raspando; **baixar a churn para 5% economiza 10 meses sem vender um assinante a mais**. Isso move JilsonAI, trilhas e "sempre atualizado" do lugar de *diferencial de marketing* para o de **caminho crítico da meta**. **Gatilho de reabertura:** 12 meses de churn **medida** (a de 7% é premissa, não medição), ou câmbio/enquadramento movendo o ARPU líquido mais de ~10%.*
+
+*Atualização Set 2026 (14/09) — **ESCOLA BILÍNGUE** `[decisão do operador]`. §9 reescrita (era "EN & LinkedIn Learning — fora deste ciclo"; agora "EN — escola bilíngue desde o lançamento"). §1 amplia *Quem serve*; §5 ganha o canal do YouTube separado em inglês; §6 ganha o preço fora do Brasil (US$ 30/mês, moeda pelo país do cartão) **e um alerta**: ARPU, 363 e 500 seguem calculados só em reais, sem o assinante em dólar. **Nenhum número da derivação foi alterado.** Especificação e gatilho de reabertura: `idiomas.md`.*

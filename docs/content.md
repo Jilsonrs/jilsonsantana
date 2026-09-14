@@ -2,7 +2,9 @@
 
 > Texto, headlines, CTAs e direção de copy de cada seção da landing.
 > Fonte de estratégia/produto: **PROJECT_DESCRIPTION.md** · Estrutura: **implementation-plan.md** + **CLAUDE.md**.
-> Idioma: **PT-BR** (a escola é PT; não há copy em inglês).
+> Idioma: **PT-BR — a fonte.** Desde Set 2026 a escola é **bilíngue** (`idiomas.md`): a copy em
+> inglês é **tradução desta** (o agente traduz, o operador revisa antes de publicar) e **ainda não
+> foi escrita**. Tagline e nome de categoria em inglês: a definir pelo operador.
 >
 > **STATUS:** consolidado com as decisões deste ciclo (preço, pilares, suporte AI-nativo,
 > trilhas, certificado/comunidade no lançamento). **NÃO é a copy final de go-live** —
@@ -291,7 +293,8 @@ quiser trilha, tutor 24/7 e certificado, a escola te espera."
 ## Removido nesta versão (não reintroduzir)
 Consultoria (6 serviços/Service 6/$100hr/Process/Portfolio), ContactForm de consultoria,
 cursos a $119 avulsos, membership $29.99, free trial, conteúdo grátis na escola, fórum de
-pares, copy em inglês, "cursos escondidos até 10K subs", ataque direto à Udemy.
+pares, "cursos escondidos até 10K subs", ataque direto à Udemy.
+*(A "copy em inglês" saiu desta lista em Set 2026: a escola passou a ser bilíngue — `idiomas.md`.)*
 
 ---
 

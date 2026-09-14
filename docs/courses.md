@@ -7,7 +7,9 @@
 >
 > **Fonte de estratégia:** `project-description.md` · **Voz/concorrência:** `strategy.md` · **Copy:**
 > `content.md` · **Build do catálogo:** `implementation-plan.md` (Fase 2). **Edit owner:** Project.
-> **Idioma:** PT-BR.
+> **Idioma:** PT-BR — o slate abaixo é o português. Desde Set 2026 **todo curso nasce num idioma**
+> (campo na criação, `idiomas.md`); a versão em inglês de um curso é **outro curso, regravado**, e
+> entra no slate como tal.
 >
 > Disciplina de fonte: `[FATO]` documentado (docs / anexo Udemy / sua decisão) · `[INFER]` dedução minha
 > · `[ESPEC]` palpite a validar (quase sempre demanda — só o vidIQ confirma).
