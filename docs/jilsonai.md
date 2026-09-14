@@ -206,7 +206,11 @@ Internamente, sempre nesta ordem:
 - Sub-agentes atrás do mesmo gateway ("tutor de DAX", "tutor de Python"): roteamento por
   tema, cada um com providers/tools próprios — sem tocar o gateway.
 - Contexto corporativo (org-scoped) — casa com Corporate/B2B (Fase 12 do plano geral).
-- Reservado: voz, EN (caminho LinkedIn). Tudo encaixa nos mesmos registros.
+- Reservado: voz. Tudo encaixa nos mesmos registros.
+- **EN deixou de ser reservado (Set 2026 — escola bilíngue, `idiomas.md`).** Consequências a
+  detalhar quando cada fase abrir: o JilsonAI **responde no idioma do aluno** (Fase 0–1: persona e
+  prompt), e a base de conhecimento **busca no idioma do curso** (Fases 4–5: o `LessonChunk` herda o
+  idioma do curso, junto com modelo + dimensão do vetor).
 
 ---
 

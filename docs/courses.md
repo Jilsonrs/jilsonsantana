@@ -7,7 +7,9 @@
 >
 > **Fonte de estratégia:** `project-description.md` · **Voz/concorrência:** `strategy.md` · **Copy:**
 > `content.md` · **Build do catálogo:** `implementation-plan.md` (Fase 2). **Edit owner:** Project.
-> **Idioma:** PT-BR.
+> **Idioma:** PT-BR — o slate abaixo é o português. Desde Set 2026 **todo curso nasce num idioma**
+> (campo na criação, `idiomas.md`); a versão em inglês de um curso é **outro curso, regravado**, e
+> entra no slate como tal.
 >
 > Disciplina de fonte: `[FATO]` documentado (docs / anexo Udemy / sua decisão) · `[INFER]` dedução minha
 > · `[ESPEC]` palpite a validar (quase sempre demanda — só o vidIQ confirma).
@@ -16,15 +18,27 @@
 
 ## 0. Como usar este doc (3 princípios que regem tudo)
 
-1. **O catálogo tem TETO de 20 cursos, de 2h a 5h cada.** `[FATO, decisão do operador — Ago 2026]`
-   Substitui o princípio anterior ("número aberto"). É **teto, não meta** — existe pra dizer quando
-   **PARAR**, porque catálogo sem limite escrito vira esteira de manutenção que operador solo não
-   sustenta. Entrar exige **relevância estratégica + demanda real (vidIQ)** — nunca "porque está
-   gravado". Ver **D9 (catálogo rotativo)** em §1: com o teto cheio, um curso novo só entra quando
-   outro sai.
-   > **Validação externa `[FATO]`:** o `analystbuilder.com` (Alex The Analyst, 1,42M inscritos no
-   > YouTube) opera exatamente **20 cursos** de 1h a 12h. O número não é palpite — é o ponto de
-   > equilíbrio a que o principal player global do nicho chegou de forma independente. Ver §4.1.
+1. **O catálogo tem TETO de 15 cursos POR IDIOMA, de 2h a 5h cada — no máximo 2 idiomas (PT e EN).**
+   `[FATO, decisão do operador — Set 2026; "por idioma" em 14/09, com a escola bilíngue — idiomas.md]`
+   A versão em inglês de um curso ocupa vaga **no teto do inglês**; regra de entrada e rotação (D9)
+   valem para cada idioma separadamente. O slate abaixo é o do português.
+   Substitui o teto de 20 (Ago 2026), que substituíra "número aberto". É **teto, não meta** — existe
+   pra dizer quando **PARAR**, porque catálogo sem limite escrito vira esteira de manutenção que
+   operador solo não sustenta. **Slate comprometido: 12 cursos** (§6). **Folga: 3 slots.**
+   > **Por que 15 e não 20 `[FATO, Set 2026]`:** os 20 foram calibrados contra o `analystbuilder.com`
+   > (1,42M inscritos, 465 vídeos, ~4,5 anos de cadência ininterrupta). O catálogo dele é
+   > **CONSEQUÊNCIA** do funil, não causa (§4.1) — e o funil daqui é de outra ordem de grandeza
+   > (~1.580 inscritos, ~13 vídeos). Vinte era o teto de um operador **com** público; quinze é o de
+   > um operador solo **construindo** o dele.
+   > **Por que 15 e não 12 `[FATO, Set 2026]`:** teto sem folga transforma toda ideia futura em
+   > disputa por remoção. Os 3 slots são amortecedor de **rotação (D9)**, não convite a expandir.
+
+   **REGRA DE ENTRADA — nenhuma proposta de curso é válida sem nomear o que ela desloca.**
+   `[FATO, decisão — Set 2026]` Com folga, a proposta nomeia **qual slot** ocupa e **por que** ela
+   vale mais que os candidatos reservados (§8.1). Com o teto cheio, nomeia **quem sai** (D9).
+   Proposta sem uma das duas coisas é ideia, não decisão — e não entra no slate.
+   Entrar continua exigindo **relevância estratégica + demanda real (vidIQ)** — nunca "porque está
+   gravado".
 2. **Só se grava o que for relevante.** Cada aula nova (🎬) passa pelo filtro: *tem demanda (vidIQ) E/OU
    é estrategicamente necessária?* Se não tem nenhum dos dois → **não grava**. Isso protege seu tempo de
    operador solo: o ativo já gravado é reaproveitado de graça; o esforço novo só vai onde paga.
@@ -39,6 +53,36 @@
    > precisa de um público novo, fica fora. `[INFER]` Confirmado pelo padrão do concorrente: os 20
    > cursos do analystbuilder carregam o sufixo *for Data Professionals / for Data Analysis* no
    > título — o sufixo **é** a cerca.
+
+4. **AS 4 CAMADAS — onde cada curso mora.** `[FATO, decisão — Set 2026]` A Regra do Satélite (3)
+   diz quem **entra**. Esta diz o que cada curso **faz** — e, portanto, em que ordem ele sai na
+   rotação (D9). Um curso tem exatamente uma camada.
+
+   | Camada | Papel | Cursos (§6) |
+   |---|---|---|
+   | **NÚCLEO** | Ativo já gravado + maior funil + B2B. Paga a conta | Excel 1–5 · Power BI + IA · PL-300 |
+   | **EXTENSÃO** | O analista completo. Evergreen, gravação nova | SQL · Python |
+   | **SATÉLITE** | Entra pelo comprador, via sufixo (princípio 3) | *(vazia)* |
+   | **PRATELEIRA** | Vitrine e diferenciação, não receita. **Primeira fila da rotação D9** | Antigravity · Claude Code · N8N |
+
+   > ⚠️ **SQL e Python NÃO são satélites.** São a continuação da carreira do mesmo aluno que comprou
+   > Excel. `sql` = 42.436 buscas/mês BR é o maior motor de aquisição fora do Excel (§8.0) — tratá-lo
+   > como periferia inverte o funil.
+   >
+   > ⚠️ **A IA não é uma camada desta tabela — atravessa as quatro.** Ver o princípio 5.
+
+5. **IA COMO CAMADA × IA COMO ASSUNTO — a distinção que impede o catálogo de inflar.**
+   `[FATO, decisão — Set 2026]` Duas coisas diferentes usam a mesma palavra, e confundi-las é o erro
+   que este princípio existe para impedir.
+
+   | | O que é | Onde vive | Tamanho |
+   |---|---|---|---|
+   | **IA como CAMADA** | Camada IA exclusiva em cada curso + JilsonAI como tutor e suporte | Atravessa TODO o catálogo | **É a escola inteira** |
+   | **IA como ASSUNTO** | Cursos *sobre* IA (Antigravity, Claude Code, N8N) | Pilar 5 (§1.1) | **O menor pilar** |
+
+   > **"Excel + Power BI + IA no centro" está correto — para a IA-camada.** Para a IA-assunto está
+   > invertido: `content.md` §5 lista *"IA é mais um curso no catálogo"* como o comportamento da
+   > **escola medieval**. A IA aqui é a experiência, não uma prateleira de cursos.
 
 **Fluxo de cada curso:** régua (§3) → mapa de conteúdo (§7) → **vidIQ valida demanda e aulas** (§4) →
 abre o `.md` do curso → grava só o relevante.
@@ -56,8 +100,8 @@ abre o `.md` do curso → grava só o relevante.
 | D5 | **Pílulas B2B de 2,5h–4h**, não o monolito de 53h. `[FATO]` | Cursos digeríveis, vendáveis por competência. |
 | D6 | **Anti-defasagem da Camada IA:** ensinar **padrão de pensamento**, não a interface. `[FATO]` | A camada que envelhece rápido dura mais. |
 | D7 | A **Camada IA é o fosso** e **nunca** vai pra Udemy. `[INFER]` | O diferencial fica trancado na escola. |
-| D8 | **Ambiente prático padrão da escola = Databricks Free Edition.** `[FATO, Ago 2026]` | Um ambiente só pra SQL/Python/ETL, no lugar de Fabric + Azure + MySQL + Postgres. Ver §1.2. |
-| D9 | **Catálogo rotativo com teto de 20.** `[FATO, Ago 2026]` | Tecnologia menos relevante sai, outra entra. A escola se renova pra sempre; o assinante paga por 20 cursos focados + JilsonAI. Ver §1.3. |
+| ~~D8~~ | ~~Ambiente prático padrão = Databricks Free Edition~~ — **REVOGADO Set 2026** | Substituído por **runtime por pilar** (SQL = PostgreSQL + pgAdmin · Python = local + Jupyter). Ver §1.2. |
+| D9 | **Catálogo rotativo com teto de 15.** `[FATO, Set 2026 — era 20]` | Tecnologia menos relevante sai, outra entra. A escola se renova pra sempre; o assinante paga por um catálogo focado + JilsonAI. Ver §1.3. |
 | D10 | **Camada IA existe em DOIS MODOS: Pessoal e Empresa.** `[FATO, Ago 2026]` | Aluno cuja empresa bloqueia IA externa não perde o curso. Ver §1.4. |
 | D11 | **Lei anti-defasagem da Camada IA** (operacionaliza D6). `[FATO, Ago 2026]` | Grava-se o padrão, nunca a integração do momento. Ver §1.5. |
 | D12 | **Runtime nunca vira título nem SEO.** `[FATO, Ago 2026]` | O curso chama "SQL", não "Databricks". Ver §1.2. |
@@ -77,15 +121,28 @@ A regra: **Udemy fica com a base; escola fica com base + Camada IA + extras; a C
 
 ### 1.1 Os 5 pilares da escola `[FATO, decisão — Ago 2026]`
 
-O catálogo de 20 se organiza em **5 pilares**. Dados é o centro; tudo o mais é satélite (§0.3).
+O catálogo de 15 se organiza em **5 pilares**. Dados é o centro; tudo o mais é satélite (§0.3).
+Ocupação medida contra o slate final de 12 (§6).
 
-| Pilar | Slots | Racional da alocação |
-|-------|:-----:|----------------------|
-| **1 · Excel** | 5–6 | Maior ativo já gravado, maior topo de funil, maior demanda BR. Merece mais que 1/5. |
-| **2 · Power BI** | 4–5 | Núcleo BI. Absorve PL-300, Data Modeling, dashboards/storytelling. |
-| **3 · SQL** *(runtime: Databricks)* | 3 | Evergreen. `sql` = 42.436 buscas/mês BR (vidIQ, ago/26) — o maior motor de aquisição fora do Excel. |
-| **4 · Python** *(runtime: Databricks)* | 3 | Evergreen, dá teto de senioridade. |
-| **5 · IA aplicada a dados** | 3–4 | **Deliberadamente o MENOR.** Maior defasagem, menor durabilidade. É onde a rotação (D9) mais trabalha. |
+| Pilar | Slots | Ocup. | Racional da alocação |
+|-------|:-----:|:-----:|----------------------|
+| **1 · Excel** | 5 | 5 | Maior ativo já gravado, maior topo de funil, maior demanda BR. **Cheio.** |
+| **2 · Power BI** *(runtime: Power BI Desktop)* | 4 | 2 | Núcleo BI. Absorve PL-300, modelagem, dashboards/storytelling. |
+| **3 · SQL** *(runtime: PostgreSQL + pgAdmin)* | 2 | 1 | Evergreen. `sql` = 42.436 buscas/mês BR (vidIQ, ago/26) — o maior motor de aquisição fora do Excel. |
+| **4 · Python** *(runtime: Python local + Jupyter)* | 2 | 1 | Evergreen, dá teto de senioridade. |
+| **5 · IA aplicada a dados** | 2 | **3 ⚠️** | **Deliberadamente o MENOR.** Maior defasagem, menor durabilidade. É onde a rotação (D9) mais trabalha. |
+| | **15** | **12** | 3 slots livres |
+
+> 🔴 **DESALINHAMENTO REGISTRADO, NÃO RESOLVIDO `[FATO, Set 2026]`.** O pilar 5 está com **3 de 12
+> = 25% do slate**, acima do próprio teto (2) e **à frente do pilar 2 (Power BI, com 2)**. Isto
+> **inverte** a decisão (b) de Ago 2026. Não foi decidido — resultou de seis remoções seguidas que
+> pouparam o pilar 5.
+>
+> **Não corrigir removendo curso agora.** Corrigir pela camada: Antigravity, Claude Code e N8N são
+> **PRATELEIRA** (§0.4) e formam a **primeira fila da rotação D9**.
+>
+> **Gatilho de reabertura da alocação:** qualquer curso do pilar 5 exigindo regravação por defasagem
+> (D11), ou o N8N chegando à gravação sem a validação de demanda PT que a ficha dele exige (§6).
 
 > ⚠️ **Por que o pilar de IA é o menor e não o maior:** é o que mais dá vontade de inflar e o que
 > menos deveria. Ele carrega 100% do risco de regravação (D11) e ~0% do ativo já gravado. O teto
@@ -94,10 +151,51 @@ O catálogo de 20 se organiza em **5 pilares**. Dados é o centro; tudo o mais �
 > **Resolve a T-antiga sobre dashboards/modelagem `[FATO]`:** dashboards executivos, storytelling e
 > Data Modeling moram no **pilar 2 (Power BI)**. **Não existe 6º pilar.**
 
-### 1.2 D8/D12 — Databricks como ambiente, não como assunto `[FATO]`
+### 1.2 D8 REVOGADO — runtime por pilar, não ambiente único `[FATO, Set 2026]`
 
-**O que foi decidido:** a escola adota **um ambiente prático único** — Databricks Free Edition —
-para os pilares SQL e Python (e o que vier de ETL).
+> ⚠️ **D8 (Databricks Free Edition como ambiente único, Ago 2026) está REVOGADO.** Não foi revogado
+> nesta emenda — foi revogado por dois blueprints mais recentes que já decidiram diferente:
+>
+> | Doc | Data | Decisão |
+> |---|---|---|
+> | `SQL-Course-Blueprint v4.0` | 01/09/2026 | **D1 — PostgreSQL + pgAdmin.** "A escolha de runtime levou nove rodadas" |
+> | `python-blueprint v2.0` | 09/09/2026 | Python + pip local, Jupyter Notebook |
+>
+> Este parágrafo existia como fonte da verdade e esteve **errado por mais de uma semana**, e uma
+> sessão inteira argumentou a partir dele. **Regra nova, que é o que impede repetir:** blueprint que
+> decide runtime **emenda o `courses.md` na mesma sessão**. Decisão que vive em dois lugares com
+> valores diferentes é pior que decisão não registrada.
+
+**O que vale agora:** cada pilar tem seu runtime, decidido no blueprint do curso.
+
+| Pilar | Runtime | Fonte |
+|---|---|---|
+| SQL | PostgreSQL + pgAdmin · dataset como dump `.sql` | SQL v4.0, D1/D2 |
+| Python | Python local + pip + Jupyter | python-blueprint v2.0, §1 |
+| Power BI | Power BI Desktop | — |
+
+**D12 sobrevive intacto e agora vale em dobro:** *runtime nunca vira título nem SEO.* O curso chama
+"SQL", não "PostgreSQL" — o próprio SQL v4.0 registra isso como D7.
+
+**Custo aceito, registrado `[FATO, SQL v4.0 §7]`:** com Postgres local, a instalação vira **a aula
+de maior risco do curso e a maior fonte de Q&A permanente**. Era exatamente esse custo que o
+Databricks eliminava. Mitigação decidida: FAQ de instalação escrito + teste cronometrado numa
+máquina Windows.
+
+**Questão aberta `[ESPEC]`, não decisão — Postgres gerenciado com zero instalação.** Elimina o 🔴
+acima mantendo o dialeto de D1. `[FATO]` **A plataforma da escola já roda em Neon Free**
+(`CLAUDE.md` → infra, migração de Set 2026): já existe conta, já existe experiência com o tier
+grátis. Não é adotar fornecedor novo — é usar no curso o Postgres que já sustenta a escola. D1 diz
+"não reabrir sem dado novo"; verificar se zero-instalação entrou nas nove rodadas. Custo de avaliar:
+reescreve as aulas 5, 6 e 7 do SQL, exige internet em aula e cadastro, e pede conferência dos
+limites do tier free. **Avaliar antes de gravar a Seção 1, não depois.**
+
+---
+
+### 1.2-bis — o texto original de D8 (mantido como histórico)
+
+**O que foi decidido em Ago 2026:** a escola adota **um ambiente prático único** — Databricks Free
+Edition — para os pilares SQL e Python (e o que vier de ETL).
 
 **Por que (o argumento correto, registrado pra não ser trocado depois):**
 - **Zero instalação.** O maior ponto de abandono em curso de SQL pra iniciante não é o `JOIN` — é
@@ -404,10 +502,51 @@ Referência abreviada `S#` usada no mapa (§7):
 
 ---
 
-## 6. O Slate — fichas dos cursos (teto de 20, ver §0.1 · pilares em §1.1)
+## 6. O Slate — LISTA FINAL de 12 (teto 15, ver §0.1 · pilares em §1.1 · camadas em §0.4)
 
 > 🟢 reaproveitamento alto/esforço baixo · 🟡 misto · 🔴 do zero/risco de defasagem.
-> **P#** = pilar (§1.1). Os 10 abaixo ocupam metade do teto; os candidatos de §4.1 e §7.3 disputam o resto.
+> **P#** = pilar (§1.1) · **Cam.** = camada (§0.4). Numeração = a lista final do operador (Set 2026).
+> **Estado:** ✅ publicado · 📐 blueprint fechado · ⬜ sem blueprint.
+
+| # | Curso | Est. | P | Cam. | Tipo | Resumo estratégico |
+|---|-------|:--:|:--:|---|:--:|--------------------|
+| 1 | **Excel + IA — Lógica de Negócios & Fórmulas Dinâmicas** 🟢 | ⬜ | P1 | Núcleo | U+E | Remontagem do carro-chefe. Maior funil, B2B 5/5. §7.1 |
+| 2 | **Excel + IA — ETL e Automação com Power Query** 🟢 | ⬜ | P1 | Núcleo | U+E | Curadoria do `S15`. §7.1 |
+| 3 | **Excel + IA — Analytics & Tabelas Dinâmicas** 🟢 | ⬜ | P1 | Núcleo | U+E | §7.1 |
+| 4 | **Excel + IA — Dashboards Executivos & Storytelling** 🟢 | ⬜ | P1 | Núcleo | U+E | Abre pela IA. §7.1 |
+| 5 | **Excel + Claude IA** 🟢 | ✅ 11/07/26 | P1 | Núcleo | U+E | Publicado na Udemy |
+| 6 | **Power BI + IA** 🟡 | ⬜ | P2 | Núcleo | U+E | "Relatórios que se explicam sozinhos". Lacuna que a DataTraining deixa. §7.2 |
+| 7 | **PL-300** 🟡 | ✅ 14/08/26 | P2 | Núcleo | U+E | Certificação, intenção de compra alta. Absorve a modelagem em profundidade de prova |
+| 8 | **Antigravity** 🔴 | ✅ 18/09/26 | P5 | Prateleira | U+E | **Selo de vanguarda, não receita.** Publicar e congelar — não manter |
+| 9 | **SQL + IA — Análise de Dados e Negócios** 🟡 | 📐 v4.0 | P3 | Extensão | U+E | 42.436 buscas/mês BR — maior aquisição fora do Excel. Runtime: PostgreSQL |
+| 10 | **Python + IA para Analistas** 🟡 | 📐 v2.0 | P4 | Extensão | U+E | Recorte "para analistas" é o que o salva do tema concorrido. **Absorve o módulo Git** |
+| 11 | **Claude IA + Code para Dados e Negócios** 🔴 | ⬜ | P5 | Prateleira | E | Do zero, reaproveitamento zero. A cerca está no título |
+| 12 | **N8N + IA — Automação de Fluxos** 🔴 | ⬜ | P5 | Prateleira | E | ⚠️ Título **sem** a cerca do sufixo · **demanda PT nunca validada** · "n8n muda rápido" (manutenção). Primeiro da fila da rotação D9 |
+
+**Produção `[FATO, Set 2026]`:** 3 publicados · 2 com blueprint fechado · **7 sem blueprint.**
+Excel 1–4 são remontagem (o mais barato do catálogo); 11 e 12 são 🔴 do zero.
+
+**Cancelados nesta sessão — nenhum chegou a ser produzido, portanto não contam como remoção sob a
+regra de entrada (§0.1):**
+
+| Cancelado | Motivo |
+|---|---|
+| **Databricks conceitual** | Perdeu a âncora com a revogação de D8 (§1.2). Demanda medida: 2.975/mês BR |
+| **Git para Analistas** | Comprador fino (quem busca Git no YouTube BR é dev). **Virou módulo de ~15 min no curso 10**, §11 "Do script à ferramenta": por que versionar · init/add/commit · `.gitignore` (credenciais) · GitHub como portfólio |
+| **Projeto End-to-End: Agente Autônomo** | Comprador fora do funil (onda de "agentes" é automação, não analista). 🔴 do zero |
+| **Modelagem de Dados (Star Schema & Otimização)** | **Redundante:** `S26`/`S27` alimentam o 6, e modelagem é objetivo de prova do 7. A §1.1 já dizia que Data Modeling mora no pilar 2. **E o título arrastava para projeto de banco** (normalização, DDL, índices) = comprador de engenharia, que reprova na Regra do Satélite — a mesma cerca que corta procedures/índices no blueprint de SQL |
+
+> 📌 **Nota para o blueprint do curso 6 (ainda não gravado):** reservar ~20 min para *"o modelo
+> errado não dá erro, dá número"* — direção de filtro, granularidade, fan-out. Não é módulo de
+> modelagem; é diagnóstico de medida errada, dentro da promessa "relatórios que se explicam
+> sozinhos". Mesma família da aula 81 do SQL.
+
+---
+
+### 6.1 O slate antigo de 10 (Ago 2026 — histórico, numeração descontinuada)
+
+> ⚠️ Mantido só para rastrear as fichas originais. **A numeração NÃO corresponde à lista final
+> acima.** Ao citar um curso, usar a numeração de §6.
 
 | # | Curso | Tipo | Resumo estratégico | Mapa de conteúdo |
 |---|-------|------|--------------------|------------------|
@@ -483,7 +622,7 @@ não regravação. Bem menos esforço do que o rascunho sugeria.
 > `[INFER]` **Data Modeling não é do zero** (atualiza a ficha §6). **DAX (`S27`, 3h12)** pode virar
 > **curso/módulo próprio** se o vidIQ mostrar demanda — você já tem 3h gravadas.
 
-### 7.3 A sobra do Excel — candidatos a mais cursos (número aberto §0) `[INFER]`
+### 7.3 A sobra do Excel — candidatos aos 3 slots livres (teto 15, §0.1) `[INFER]`
 
 Os 4 minicursos não cobrem ~16h. Cada bloco órfão é um **candidato** — o vidIQ decide se vira curso:
 
@@ -548,22 +687,27 @@ concluir tendência, pode ser sazonalidade. **Não usar esse número em conteúd
 - **SQL (#4) sobe de `4?` para `5` em Demanda** — 42.436 buscas/mês BR, medido. É o maior motor de
   aquisição fora do Excel. A posição na fila continua atrás dos reaproveitáveis por causa do
   **esforço** (gravação nova), não da demanda.
-- **Novo curso — Databricks conceitual.** `[FATO, decisão]` Entra como curso próprio ("no que a
-  plataforma se propõe": lakehouse, por que separar armazenamento de processamento, o que Delta Lake
-  resolve, o que Unity Catalog governa). **É conceitual, e conceito não defasa** — é D6/D11 aplicado
-  à letra, o oposto de um tutorial de UI. **Demanda `2` (medida), Evergreen `5`, Diferenciação `5`.**
-  ⚠️ **Não é pré-requisito de nada:** o aluno de SQL entra pelo módulo 0 de setup (15–20 min) sem
-  passar por ele. Posição na fila: **depois de SQL** — não faz sentido um curso sobre a plataforma
-  onde o SQL roda antes de existir o curso de SQL.
-- **ORDEM DE GRAVAÇÃO — não começar pelo Databricks.** `[FATO, decisão]` A ordem continua
-  **Excel + IA primeiro** (máximo reaproveitamento, mínimo risco, maior funil). Registrado
-  explicitamente porque a sessão que produziu estas decisões criou *momentum* em cima de Databricks,
-  e momentum é como operador solo constrói a coisa certa **na ordem errada**.
+- ~~**Novo curso — Databricks conceitual.**~~ **CANCELADO `[FATO, Set 2026]`.** Entrou em Ago 2026
+  como curso próprio porque a plataforma era o ambiente de SQL e Python (D8). Com **D8 revogado**
+  (§1.2), perde a âncora: não é pré-requisito de nada, tem demanda medida de `2` (2.975/mês BR
+  contra 42.436 de `sql`) e não existe mais ambiente que o justifique. **Nunca foi produzido.**
+- **ORDEM DE GRAVAÇÃO — Excel + IA primeiro.** `[FATO, decisão]` Máximo reaproveitamento, mínimo
+  risco, maior funil. Registrado explicitamente porque a sessão de Ago criou *momentum* em cima do
+  Databricks, e momentum é como operador solo constrói a coisa certa **na ordem errada**. O
+  princípio sobrevive à revogação de D8 — só o objeto do momentum muda de sessão para sessão.
 
-**Reconciliação com o teto de 20 `[INFER]`:** os 10 do slate + Databricks conceitual = 11. Sobram
-~9 slots para: 5º minicurso Macros/VBA · Excel do Zero · DAX · e os 4 candidatos de §4.1
-(Git · Carreira · crash courses de entrevista · banco de questões). **O teto fecha com folga
-pequena** — cada entrada nova a partir daqui deve nomear qual candidato ela desloca.
+**Reconciliação com o teto de 15 `[FATO, Set 2026]`:** slate = **12 comprometidos** (§6) +
+**3 slots livres**.
+
+**Candidatos reservados para os 3 slots — nenhum iniciado, nenhum decidido:**
+
+| Candidato | Pilar | Por que é candidato | O que falta |
+|---|---|---|---|
+| **SQL nº 2 — crash de entrevista / prática** | P3 (1 de 2) | **Reempacotamento, não gravação nova:** dataset, runtime e as 87 aulas já vão existir. O mais barato do catálogo, no termo mais buscado | Nada além da decisão |
+| **Estatística Aplicada (Python)** | P4 (1 de 2) | Única lacuna de **competência** que sobrou da auditoria dos 12: os 12 ensinam ferramenta; nenhum ensina se o número significa alguma coisa. 100% Python, zero Excel (P1 está cheio) | Recorte de 2h–2h30, oito conceitos, sem prova matemática |
+| **DAX** | P2 (2 de 4) | A IA escreve DAX bem, mas DAX **erra em silêncio** (filter context, context transition) — mesma família da aula 81 do SQL | 🔴 **Duas medições:** `dax` no vidIQ (BR) + teste de canibalização — se não saírem 3 aulas que não cabem no 6 nem no 7, é módulo, não curso |
+| **Macros/VBA + Claude** · **Excel do Zero** | P1 **cheio** | §7.3 | Só entram deslocando um Excel existente |
+| **Carreira / portfólio** | — | Aquisição, não competência (T7) | Fora do centro de dados |
 
 ---
 
@@ -573,13 +717,19 @@ pequena** — cada entrada nova a partir daqui deve nomear qual candidato ela de
 tecnologia ocupa dentro do teto de 20. A **trilha** é eixo de *jornada do aluno* — atravessa
 pilares. Um curso tem **exatamente um pilar** e pode estar em **várias trilhas**. Não fundir os dois.
 
-| Trilha (`content.md` §4) | Cursos | Pilares atravessados |
+*(Atualizado Set 2026 — numeração de §6, slate de 12.)*
+
+| Trilha (`content.md` §4) | Cursos (§6) | Pilares |
 |--------------------------|--------|----------------------|
-| **1 · Comece por aqui (Fundamentos)** | Excel + IA (1) · *(candidato)* Excel do Zero · Eng. de Prompts (5) como intro | P1, P5 |
-| **2 · Business Intelligence** | Power BI + IA (2) · PL-300 (3) · **Data Modeling (9)** *(pré-req)* | P2 |
-| **3 · Dados + Código** | SQL + Claude (4) · Python + Claude (8) · *(novo)* Databricks conceitual | P3, P4 |
-| **4 · Automação & IA Aplicada** | AI + Claude (6) · N8N (7) · *(candidato)* Macros/VBA + Claude · Antigravity (10, vitrine) | P5, P1 |
-| **Transversal** | Eng. de Prompts p/ Dados (5) · *(candidatos §4.1)* Git · Carreira | P5 |
+| **1 · Comece por aqui (Fundamentos)** | Excel + IA 1–4 · Excel + Claude IA (5) | P1 |
+| **2 · Business Intelligence** | Power BI + IA (6) · PL-300 (7) | P2 |
+| **3 · Dados + Código** | SQL + IA (9) · Python + IA (10) | P3, P4 |
+| **4 · Automação & IA Aplicada** | Claude Code (11) · N8N (12) · Antigravity (8, vitrine) | P5 |
+| **Transversal** | *(vazia — Git virou módulo no curso 10)* | — |
+
+> ⚠️ **A Trilha 2 perdeu o pré-requisito de Data Modeling** (curso cancelado, §6). A modelagem em
+> profundidade de prova vive no PL-300; o diagnóstico de modelo errado entra como bloco no curso 6.
+> **Emendar `content.md` §4 linha da Trilha 2 junto com esta.**
 
 ---
 
@@ -643,6 +793,21 @@ matriz). Lacuna SQL/Python sinalizada. Cada curso terá seu próprio `.md` na pr
 T5 (sobra Excel), demanda via vidIQ.*
 
 *Atualizado: Jun 2026 — adicionada §2.1 (reconciliação produção↔schema/UI): enum `UNIVERSAL/MODERNO/IA` (agnóstico; "Excel 365" = exemplo só no Excel), selo opcional via `Course.camadas[]` (curso pode ter 1–3 camadas), %/“reaproveitado”/jargão ficam internos (não vão pra UI), textos+ícones globais (stack-2·bolt·sparkles, azul só na IA), override por curso é exceção. Coluna "Enum schema/UI" na tabela da §2. Ver CLAUDE.md (build) + content.md §15 (copy).*
+
+*Atualizado: Set 2026 — **CATÁLOGO FECHADO: teto 15, slate final de 12, D8 revogado.** §0 princípio
+1 reescrito (teto 20 → 15; slate 12; 3 slots de folga; **regra de entrada**: proposta nomeia o slot
+que ocupa ou quem sai). §0 ganha o **princípio 4 (as 4 camadas: Núcleo · Extensão · Satélite ·
+Prateleira)** e o **princípio 5 (IA como CAMADA × IA como ASSUNTO)** — a camada é a escola inteira,
+o assunto é o menor pilar. §1: **D8 REVOGADO** (já estava, pelos blueprints de SQL v4.0 e Python
+v2.0 — o `courses.md` serviu de fonte da verdade errada por mais de uma semana; regra nova: blueprint
+que decide runtime emenda este doc na mesma sessão), D9 passa a teto 15. §1.1: pilares recalibrados
+com ocupação medida e o **desalinhamento do pilar 5 registrado** (3 de 12 = 25%, à frente de Power
+BI). §1.2 reescrita: runtime por pilar (Postgres+pgAdmin · Python local+Jupyter) + a questão aberta
+do Postgres gerenciado, com o achado de que **a plataforma já roda em Neon Free**. §6 substituída
+pela **lista final de 12** com estado de produção e a tabela dos 4 cancelamentos (Databricks
+conceitual · Git→módulo no curso 10 · Agente Autônomo · Modelagem/Star Schema). §8.1: Databricks
+conceitual cancelado + os **3 candidatos reservados** (SQL nº 2 · Estatística · DAX, este pendente
+de duas medições). §9 trilhas remapeadas. Gatilhos em `decisions-archive.md` → Set 2026.*
 
 *Atualizado: Ago 2026 — **reestruturação estratégica do catálogo (5 pilares + teto de 20 + rotação).**
 §0 princípio 1 reescrito: número aberto → **TETO de 20 cursos, 2–5h** (validado externamente contra o

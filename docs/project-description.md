@@ -61,6 +61,7 @@ sobre crescimento rápido.
 
 - **Tagline oficial (guiada por identidade, não por preço):**
   - PT (primária): *"Torne-se um especialista em dados na era da IA."*
+  - EN: *"Become a data expert in the AI era."* (a escola é bilíngue desde Set 2026).
 - **Coerência de marca (ativo existente):** os cursos do Jilson na Udemy já são "**Formação
   Especialista**". A tagline nomeia e amplifica uma promessa que já existe no catálogo — Udemy,
   YouTube e site agora apontam pra mesma palavra: *especialista*. Reduz atrito no funil
@@ -83,7 +84,8 @@ sobre crescimento rápido.
 - Udemy Business: milhares de alunos corporativos
 - 12+ anos como analista de dados e desenvolvedor full-stack
 - YouTube "Jilson Santana" — canal de dados + IA aplicada, em **rebuild de inglês → português**
-  (~1.580 inscritos em jun/2026, base a reconstruir; o número "177K" era incorreto e foi descartado)
+  (~1.580 inscritos em jun/2026, base a reconstruir; o número "177K" era incorreto e foi descartado).
+  **Canal separado em inglês planejado** (Set 2026 — ver *Idioma & foco*)
 - Catálogo "Formação Especialista" na Udemy (marca estabelecida)
 - Certificação PL-300
 
@@ -98,7 +100,7 @@ sobre crescimento rápido.
 
 | Tier | O quê | Preço | Papel |
 |------|-------|-------|-------|
-| 1 — Assinatura (base) | Cursos + JilsonAI + sempre atualizado | **R$99,90/mês** ou **~R$995/ano** | Base & missão — acessível a todos |
+| 1 — Assinatura (base) | Cursos + JilsonAI + sempre atualizado | **R$99,90/mês** ou **~R$995/ano** · fora do Brasil **US$ 30/mês** | Base & missão — acessível a todos |
 | 2 — Cohorts ao vivo ("escola") | Aulas ao vivo (Zoom) p/ quem não quer gravado | Ticket maior (TBD) | Pós-MVP |
 | 3 — Corporativo (B2B) | Treinamento de equipes | Ticket alto | **Horizonte** (ver abaixo) |
 
@@ -106,6 +108,10 @@ sobre crescimento rápido.
 - **Mensal R$99,90/mês — sem fidelidade** (padrão, motor de aquisição).
 - **Anual ~R$995/ano** (~17% de desconto, cobrança única recorrente anual). Troca mensal↔anual
   usa **proração nativa do Stripe Billing**, previsualizada antes de o aluno confirmar.
+- **Fora do Brasil (Set 2026, `[decisão do operador]`): US$ 30/mês + anual com o mesmo cálculo**
+  (~17% de desconto → **US$ 299/ano**, confirmado em 14/09). **A moeda segue o país do
+  cartão, nunca o idioma do site**: senão, qualquer estrangeiro troca para português e paga em
+  real. Imposto internacional: decisão pendente da Fase 4 (`idiomas.md` §5).
 - **Sem free trial. Sem conteúdo grátis dentro da escola** (o grátis vive no YouTube).
 - **Sem lock de preço vitalício** pra fundadores. Founding member, se houver, é por bônus/condição
   temporária — nunca preço travado pra sempre.
@@ -207,7 +213,7 @@ PDF gerado no servidor ao concluir 100% de uma trilha (ou curso). Nome = nome da
 ## Conteúdo (slate)
 
 Primeiro curso no lançamento: **Excel + IA**, dentro da **Trilha 1 — Comece por aqui (Fundamentos)**.
-Depois: PL-300, Google Antigravity, SQL + Claude, AI + Claude, Data Modeling, Python + Claude, N8N —
+Depois: PL-300, Antigravity, SQL + IA, Python + IA, Claude Code, N8N —
 organizados em poucas **trilhas curadas** (Fundamentos · Business Intelligence · Dados + Código ·
 Automação & IA). Fio condutor: **dados na era da IA** ("X + Claude").
 
@@ -222,6 +228,9 @@ Automação & IA). Fio condutor: **dados na era da IA** ("X + Claude").
 - **YouTube "Jilson Santana" — em rebuild PT (~1.580 inscritos), compounding de médio/longo prazo.**
   Era inglês, está virando PT. 1 vídeo/semana. **Não é o motor no curto prazo** (base pequena, ainda
   a reconstruir) — vira motor à medida que cresce. AdSense é **bônus** (RPM PT/BR baixo).
+- **YouTube em inglês — canal SEPARADO, depois** (Set 2026, `[decisão do operador]`). Recebe os
+  cursos regravados em inglês e alimenta o lado EN da escola. Nunca misturar os dois idiomas no
+  mesmo canal.
 - **Táticas de captura aprovadas:** **campanha de e-mail pra base Udemy** (convite pro canal + site);
   lição "Próximos passos" no fim dos cursos; 1–2 e-mails educativos/mês; trailer do canal; CTA guiada
   por identidade (tagline oficial); escassez de founding member (sem lock vitalício) pros alunos Udemy.
@@ -230,11 +239,35 @@ Automação & IA). Fio condutor: **dados na era da IA** ("X + Claude").
 
 ## Idioma & foco
 
-- **PT primeiro** — maior mercado pro tema. A Hashtag expandiu pra espanhol, não inglês → a faixa
-  EN-tech fica aberta, mas **não é deste ciclo**.
-- **EN removido da escola.** Escola e YouTube ficam **PT pra sempre**. Inglês só via tentativa única
-  no LinkedIn Learning quando o Jilson chegar a C1 (sem data fixa; projeto à parte). O seam
-  `User.preferredLanguage="pt"` fica dormente (custo zero), sem expansão EN planejada pra escola.
+> **REVERTIDO em Set 2026 (14/09) `[decisão do operador]`: a escola é BILÍNGUE — português e
+> inglês — desde o lançamento.** Especificação completa em [`idiomas.md`](idiomas.md).
+
+- **Plataforma mundial, não mais só local.** Estrutura como a da Udemy: o site existe nos dois
+  idiomas desde o primeiro dia, mesmo sem nenhum curso em inglês no lançamento. O inglês fica
+  **ligado desde já**, para a escola nascer em inglês e o Google começar a indexar.
+- **Quem vê o quê:** o **idioma do navegador** leva o visitante ao português ou ao inglês. Quem entra
+  em inglês vê **só os cursos em inglês**, mesmo que sejam poucos no começo.
+- **Cada curso nasce num idioma** (campo Idioma na criação, como na Udemy). A versão em inglês de um
+  curso é **outro curso**, regravado. **A trilha segue o idioma.**
+- **Idioma é filtro, não portão** (como no LinkedIn Learning): **uma assinatura vale para os cursos
+  dos dois idiomas**. Quem assina em inglês vê os cursos em inglês; se trocar o idioma, vê e estuda
+  os do outro na mesma assinatura.
+- **Teto do catálogo: 15 cursos por idioma, no máximo 2 idiomas.** No lançamento, o lado inglês
+  nasce com **um ou dois cursos cadastrados, ainda sem aulas** (a página mostra "0 aulas"), e **o
+  botão de assinar em inglês só liga com a primeira aula em inglês**.
+- **Tagline EN:** *"Become a data expert in the AI era."*
+- **Sem data para reavaliar:** PT e EN são construídos em paralelo, como estrutura permanente.
+- **Preço pelo país do cartão:** cartão do Brasil paga em reais; cartão de fora paga **US$ 30/mês**,
+  com anual pelo mesmo cálculo do real. Detalhe em *Pricing da assinatura*.
+- **YouTube: dois canais separados.** O atual segue o rebuild em português; um **canal em inglês**
+  vem depois, recebendo os cursos regravados em inglês — *"dois trabalhos, mas duas fontes de
+  renda"*.
+- **Português segue sendo o primeiro mercado**: é onde está a base (Udemy, canal) e onde a meta de
+  receita foi calculada. **A meta abaixo está só em reais**; a receita em dólar ainda não entra
+  na conta.
+- *O que foi revertido (Jun 2026): "EN removido da escola, PT pra sempre; inglês só via LinkedIn
+  Learning quando C1". A tentativa no LinkedIn Learning **não foi rediscutida** em Set 2026 e segue
+  como projeto à parte até o operador dizer o contrário.*
 - LinkedIn (rede) deprioritizado.
 
 ---
@@ -332,7 +365,9 @@ GitHub Actions.**
 
 - **MVP = Fases 0 → 7.** **~70% do risco está nas Fases 3 (Bunny) e 4 (Stripe).**
 - **Pós-MVP:** Analytics · JilsonAI Fase 4–6 (RAG + `buildLearningPlan` + memória) · cohorts ao
-  vivo · **corporativo (Fase 12)**. **Removidos:** fórum de pares (JilsonAI absorve) e fase EN.
+  vivo · **corporativo (Fase 12)**. **Removido:** fórum de pares (JilsonAI absorve). *(A fase EN,
+  removida em Jun 2026, voltou em Set 2026 como estrutura bilíngue desde o lançamento — ver
+  Idioma & foco.)*
 
 ---
 
@@ -368,7 +403,8 @@ GitHub Actions.**
 - **PROJECT-SCOPE.md** — escopo MVP vs pós-MVP.
 - **CLAUDE.md / TECH-STACK.md** — convenções de repo + stack (engenharia).
 - **DESIGN.md** — direção visual & design system (a reescrever: Apple-claro + #238FE8).
-- **CONTENT.md** — copy da landing (PT-BR).
+- **CONTENT.md** — copy da landing (PT-BR; a versão em inglês ainda não existe).
+- **IDIOMAS.md** — a escola em dois idiomas: quem vê o quê, preço fora do Brasil, imposto.
 - **STRATEGY.md** (a criar) — concorrentes BR, voz, evergreen, ângulo corporativo. Depois disso,
   depreciar positioning.md / service_analysis.md / roadmap.md (antigos, modelo consultoria).
 
@@ -412,3 +448,5 @@ ferramenta"). Nada infla o MVP (0–7) — são lentes, filtros e seams, não fa
 *Atualizado Ago 2026 (2) — **pg-boss sai da stack** (auditoria de testes/stack). A tabela e o parágrafo de stack acima foram reconciliados: **não há fila no MVP** — o webhook da Stripe roda inline e a fila só volta com o JilsonAI Fases 4–5. Razão completa (e o gatilho de volta) em `tech-stack.md` → What We Do NOT Use e `CLAUDE.md` → Background Jobs; **não duplicada aqui**. A linha Deploy/CI também deixou de dizer "lint/test/build": [FATO] o CI hoje não roda nem teste nem lint — conserto promovido pro bloco **Gates** no topo da Fase 3 (`implementation-plan.md`). Nasce junto o critério que decidiu isso: **toda peça de stack precisa impedir uma falha descritível em uma frase; na dúvida, remove** (`CLAUDE.md` → Working Method).*
 
 *Atualizado Ago 2026 (3) — **meta de assinantes: 500** `[decisão do operador]`. A tabela de economia passa a distinguir três números que antes vinham colapsados em um: **363 = a conta** (derivada da renda-objetivo), **~400 = o piso** (a conta + margem de câmbio/mix/churn), **500 = a meta**. Nenhum número da derivação foi sobrescrito — a mudança é de *enquadramento*: o piso vinha sendo tratado como destino. Racional completo, trajetória e gatilho de reabertura em `strategy.md` §6.*
+
+*Atualizado Set 2026 (14/09) — **ESCOLA BILÍNGUE (PT + EN) desde o lançamento** `[decisão do operador]`, revertendo o "EN removido da escola, PT pra sempre" de Jun 2026. Reescritos: *Idioma & foco*; *Pricing* ganha o preço fora do Brasil (US$ 30/mês, anual pelo mesmo cálculo, **moeda pelo país do cartão**); *Canais* ganha o canal do YouTube separado em inglês; tagline EN fica a definir; o roadmap deixa de listar a "fase EN" como removida. **O que NÃO mudou:** a meta de receita e a derivação dela, que seguem só em reais — a receita em dólar ainda não tem conta. Especificação, pendências e gatilho de reabertura em `idiomas.md`.*

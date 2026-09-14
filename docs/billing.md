@@ -30,6 +30,50 @@
 - **Sem trava vitalícia de preço** para fundadores — condição de fundador é bônus
   temporário, nunca preço congelado para sempre.
 
+### Fora do Brasil — dólar, pelo país do CARTÃO *(decisão do operador, 14/09/2026)*
+
+A escola é bilíngue desde o lançamento (`idiomas.md`). **Cartão do Brasil paga em reais;
+cartão de qualquer outro país paga em dólar** — independente do idioma do site.
+
+| Cartão | Mensal | Anual |
+|---|---|---|
+| Brasil | R$ 99,90 | ~R$ 995 |
+| Outros países | **US$ 30** | **US$ 299** (mesmo cálculo: ~17%, ≈ 2 meses grátis — confirmado em 14/09) |
+
+- **Por que o cartão e não o idioma:** se a moeda seguisse o idioma, qualquer estrangeiro
+  trocaria o site para português e pagaria em real, bem menos que US$ 30.
+- **A forma na Stripe** (um `Price` com duas moedas ou `Price`s separados, e como detectar o
+  país do cartão antes de cobrar) **não foi verificada** → context7 `/websites/stripe` na
+  abertura da Fase 4.
+- **Em aberto — preço mostrado × cobrado:** a página pública é vista antes do cartão. Quando o
+  cartão levar a outra moeda, **a tela de pagamento mostra o valor final antes da confirmação**.
+  Cobrar de um estrangeiro mais do que a página mostrava é o pior caso.
+- **`temAcessoAtivo()` continua ignorando plano, moeda E idioma** *(decisão do operador,
+  14/09/2026 — modelo LinkedIn Learning)*: **uma assinatura dá acesso aos cursos dos dois
+  idiomas**. O idioma é só filtro do que aparece; quem troca de idioma estuda os cursos do outro na
+  mesma assinatura.
+- **Botão de assinar nas páginas em inglês só liga com pelo menos 1 aula publicada em inglês**
+  *(decisão do operador, 14/09/2026)*, para quem só lê inglês não pagar US$ 30 sem aula que entenda.
+  Condição derivada do banco (nunca interruptor manual). **É regra de exibição, não de checkout:**
+  como a assinatura não tem idioma, quem assina pela página em português está certo e não é
+  recusado. A aparência do botão desligado se decide na abertura da Fase 4.
+
+### Imposto internacional — decidir ANTES da primeira venda fora do Brasil
+
+`[FATO — docs da Stripe via context7 + guias de IVA europeu, 14/09/2026]` Detalhe completo em
+`idiomas.md` §5. Em uma linha cada:
+- **Stripe Tax** calcula e cobra, mas **registro e declaração no governo estrangeiro ficam com o
+  vendedor** (a Stripe indica parceiros para declarar).
+- **UE: vendedor de fora deve IVA desde a primeira venda**, sem mínimo — **já vale hoje para aluno
+  de Portugal**.
+- **Stripe Managed Payments** tira a papelada (a Stripe vira a vendedora), mas só funciona com a
+  **página de pagamento da Stripe** — colide com *Payment Element embutido, sem página hospedada*.
+  Aceitar empresa brasileira: **não verificado**.
+
+**A escolha é do operador, com o contador**, e reabre a decisão da página embutida **só se** o
+Managed Payments for o caminho — *dado novo* legítimo (imposto em 80+ países), não argumento
+repetido.
+
 ## Quem opera a recorrência: Stripe Billing
 
 *(Decisão REVISTA em Ago 2026 — a anterior era recorrência in-house "para evitar a
