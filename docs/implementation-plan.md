@@ -240,7 +240,7 @@ de uma sessão própria antes do launch):**
 - [ ] Fotos/imagens reais (thumbnails de curso, qualquer asset de marca) — hoje tudo usa
       placeholder (`BookOpen` icon quando `thumbnailUrl` é nulo).
 - [ ] A direção visual completa de `docs/design.md` (paleta off-white `--surface-alt`, fontes
-      MuseoModerno/Hanken Grotesk, o hero animado "trilha que se monta sozinha") ainda não foi
+      Outfit/Hanken Grotesk, o hero animado "trilha que se monta sozinha") ainda não foi
       implementada — o client hoje usa os tokens default do shadcn (`zinc`) só com `--primary`
       trocado pro azul da marca. Isto já está anotado no código
       (`client/src/index.css`: "the full design.md palette/fonts land in the later design pass") —

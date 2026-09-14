@@ -173,13 +173,15 @@ visual.
 ## 4. Tipografia — a alma da interface
 
 ```css
---font-display:  'MuseoModerno', system-ui;     /* marca + títulos — a fonte da logomarca */
+--font-display:  'Outfit', system-ui;           /* marca + H1/H2 — a fonte da logomarca */
 --font-body:     'Hanken Grotesk', system-ui;   /* corpo e UI */
 --font-mono:     'JetBrains Mono', monospace;   /* código, fórmulas, etiquetas */
 --font-emphasis: 'Playfair Display', serif;     /* itálico — UMA palavra por título */
 ```
 
-- **MuseoModerno** (600/700) — geométrica e arredondada, carrega a personalidade do Jilson. Com
+- **Outfit** (500/600/700) — a fonte da **marca, do H1 e do H2**. Escolhida por manter a
+  **geometria** e a **leveza** com um caráter **limpo e premium**, no espírito Apple: formas
+  precisas, sem ornamento, que dão seriedade profissional a uma escola de dados na era da IA. Com
   **restrição**: wordmark, H1/H2, números grandes. Nunca em corpo. **H3 fica de FORA** — título de
   card é Hanken Grotesk (decisão do operador, Set 2026, resolvendo a contradição que esta seção
   tinha com a tabela de escala abaixo).
@@ -187,7 +189,7 @@ visual.
 - **JetBrains Mono** — código, DAX/SQL, fórmulas e **micro-etiquetas** (`[ SKILLS • COWORK ]`),
   maiúsculas com `letter-spacing: 0.1em`. Escolha ancorada no assunto: o produto é dados.
 - **Playfair Display Itálico** (600) — **o charme editorial, e a regra é a restrição**: destaca
-  **UMA palavra** dentro de um título da MuseoModerno, em `--primary` (ex.: "Stack *moderno*"). É a
+  **UMA palavra** dentro de um título da Outfit, em `--primary` (ex.: "Stack *moderno*"). É a
   mistura de peso geométrico com serifa em itálico que faz o título parecer editorial em vez de
   genérico. **Nunca em frase inteira, nunca em corpo, no máximo um destaque por título** — usada em
   tudo, deixa de destacar e vira enfeite.
@@ -196,9 +198,9 @@ visual.
 
 | Papel | Tamanho | Peso | Fonte |
 |-------|---------|------|-------|
-| Hero H1 | `clamp(2.5rem, 6vw, 4.5rem)` | 600 | MuseoModerno |
-| Seção H2 | `clamp(1.75rem, 3vw, 2.5rem)` | 600 | MuseoModerno |
-| Título de página (logado) | 1,75rem | 600 | MuseoModerno |
+| Hero H1 | `clamp(2.5rem, 6vw, 4.5rem)` | 600 | Outfit |
+| Seção H2 | `clamp(1.75rem, 3vw, 2.5rem)` | 600 | Outfit |
+| Título de página (logado) | 1,75rem | 600 | Outfit |
 | Card H3 | 1,25rem | 600 | Hanken Grotesk |
 | Corpo | 1,0–1,125rem | 400 | Hanken Grotesk |
 | Legenda/meta | 0,875rem | 400 | Hanken Grotesk |
@@ -331,7 +333,7 @@ efeito de painel **sem** tirar o scroll natural do documento.
 
 **Públicos**
 - **HeroTrilhaDemo** — a assinatura (§2). Presets pré-computados, **sem** Claude API.
-- **PillarCard** (3) — ícone Lucide, título MuseoModerno, uma frase. O JilsonAI ganha destaque leve
+- **PillarCard** (3) — ícone Lucide, título Outfit, uma frase. O JilsonAI ganha destaque leve
   (tint azul), sem virar carnaval.
 - **PriceCard** — um card claro, sem tabela de comparação pesada. Mensal em destaque, anual como
   "economize ~17%". Nada de "de/por" agressivo.
@@ -485,3 +487,14 @@ logo e ícone, WebP para foto e ilustração, PNG/JPG 1200×630 para a OG. As re
 lugares diverge, e aquele README agora só aponta para esta seção. **Gatilho de reabertura:** a
 exceção da OG cai no dia em que WhatsApp e LinkedIn aceitarem WebP no card compartilhado — aí ela
 deixa de ser exceção e vira mais uma imagem. O resto é físico do formato e não tem gatilho.*
+
+*Atualizado Set 2026 — **fonte da marca, H1 e H2 passa a ser a OUTFIT. Decisão do operador com o
+diretor de arte (Gemini).** A MuseoModerno foi descontinuada: os terminais arredondados e o
+formato descontraído não entregavam o nível de profissionalismo exigido pela marca. A Outfit mantém
+a geometria e a leveza, com caráter limpo e premium. **O que NÃO mudou:** o H3 continua Hanken
+Grotesk, e a restrição de uso continua a mesma (wordmark, H1/H2, números grandes; nunca corpo).
+**Código alinhado na mesma sessão:** `client/src/fonts.css` declara a Outfit, hospedada localmente
+como as demais (regra de leveza). É fonte **variável**: dois arquivos (`latin` e `latin-ext`, 47 KB
+somados) cobrem os pesos 500/600/700, no lugar dos quatro arquivos da fonte anterior (110 KB).
+`tailwind.config.ts` aponta `font-display` para `'Outfit'`. **Sem gatilho de reabertura técnico:**
+fonte de marca é identidade, e só muda por nova decisão do operador com o diretor de arte.*

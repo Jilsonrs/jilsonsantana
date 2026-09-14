@@ -100,13 +100,13 @@
     @apply border-border;
   }
   body {
-    /* Hanken Grotesk é o padrão de tudo; a MuseoModerno entra por classe, com
+    /* Hanken Grotesk é o padrão de tudo; a Outfit entra por classe, com
        restrição (design.md §4) — nunca em corpo de texto. */
     @apply bg-background text-foreground font-body antialiased;
   }
   /* Títulos herdam a fonte da marca sem cada tela precisar lembrar. O H3 fica
      de FORA de propósito (design.md §4): título de card é Hanken Grotesk, e
-     herdar daqui daria MuseoModerno a todo card por omissão. */
+     herdar daqui daria Outfit a todo card por omissão. */
   h1,
   h2 {
     @apply font-display tracking-tight;

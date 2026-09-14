@@ -9,7 +9,7 @@ const config: Config = {
   		// restrição (títulos e números); `body` é o padrão de tudo; `emphasis` é
   		// o itálico serifado de UMA palavra por título, nunca de frase inteira.
   		fontFamily: {
-  			display: ['MuseoModerno', 'system-ui', 'sans-serif'],
+  			display: ['Outfit', 'system-ui', 'sans-serif'],
   			body: ['"Hanken Grotesk"', 'system-ui', 'sans-serif'],
   			mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
   			emphasis: ['"Playfair Display"', 'Georgia', 'serif']
