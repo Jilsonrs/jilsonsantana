@@ -4,7 +4,8 @@
 > Fonte de estratégia/produto: **PROJECT_DESCRIPTION.md** · Estrutura: **implementation-plan.md** + **CLAUDE.md**.
 > Idioma: **PT-BR — a fonte.** Desde Set 2026 a escola é **bilíngue** (`idiomas.md`): a copy em
 > inglês é **tradução desta** (o agente traduz, o operador revisa antes de publicar) e **ainda não
-> foi escrita**. Tagline e nome de categoria em inglês: a definir pelo operador.
+> foi escrita**. Tagline em inglês (operador, 14/09): *"Become a data expert in the AI era."* Nome
+> de categoria em inglês: a definir.
 >
 > **STATUS:** consolidado com as decisões deste ciclo (preço, pilares, suporte AI-nativo,
 > trilhas, certificado/comunidade no lançamento). **NÃO é a copy final de go-live** —

@@ -36,8 +36,9 @@ trabalhos, mas duas fontes de renda"*.
 | Moeda | **pelo país do cartão**: cartão do Brasil paga em R$, cartão de fora paga em US$ | operador, 14/09 |
 | Preço fora do Brasil | **US$ 30/mês** + **US$ 299/ano** (mesmo cálculo do anual em real) | operador, 14/09 |
 | Endereços em inglês | **`/en/courses`** — segmentos traduzidos para o inglês | operador, 14/09 (2ª rodada) |
-| Catálogo em inglês sem curso | mostra um **mock de curso de Excel em inglês, "Excel + AI"** | operador, 14/09 (2ª rodada) |
-| Acesso da assinatura | **só aos cursos do idioma do cadastro** — "quem acessa do Brasil não vai entender em inglês, e o inverso o mesmo" | operador, 14/09 (2ª rodada) |
+| Catálogo em inglês no lançamento | **sem mock**: o operador cadastra **um ou dois cursos em inglês, ainda sem aulas** *(substitui o mock da 2ª rodada)* | operador, 14/09 (3ª rodada) |
+| Acesso da assinatura | **os dois idiomas — IDIOMA É FILTRO**, como no LinkedIn Learning: assina em inglês e vê os cursos em inglês; troca o idioma e vê e estuda os cursos do outro, **na mesma assinatura** *(substitui "só o idioma do cadastro", da 2ª rodada)* | operador, 14/09 (3ª rodada) |
+| Tagline em inglês | ***"Become a data expert in the AI era."*** | operador, 14/09 (3ª rodada) |
 | Teto do catálogo | **15 cursos por idioma, no máximo 2 idiomas** | operador, 14/09 (2ª rodada) |
 | Reavaliação | **sem gatilho** — "vai sendo construído em paralelo" | operador, 14/09 (2ª rodada) |
 
@@ -117,34 +118,31 @@ no Passo 0 do Bloco I (Fase 3), com o parceiro de design.
   - a trilha clonada pelo aluno herda o idioma.
 - **Catálogo, busca, lista de trilhas e sitemap mostram só o idioma do endereço** `[operador,
   14/09]`. É o mesmo mecanismo do filtro por status que já existe.
-- **Cada assinatura dá acesso só aos cursos do idioma do cadastro** `[operador, 14/09 — 2ª
-  rodada]`. O motivo dele: *"quem acessa do Brasil não vai entender em inglês, e o inverso o
-  mesmo"*. **Moeda e idioma são independentes:** a moeda sai do cartão (§5), o idioma sai do
-  cadastro. Um estrangeiro pode assinar em português pagando em dólar.
-  O que isso muda no build (Fase 4, alto risco) `[convenção de engenharia]`:
-  - a `Subscription` passa a guardar o **idioma** — o acesso nunca mora no `User` (*Access
-    Architecture*);
-  - a checagem de idioma fica **dentro** de `temAcessoAtivo()`, que continua sendo a fonte única
-    do acesso. Nunca inline numa rota;
-  - a matriz de testes da Fase 4 ganha os casos de idioma: assinante PT → curso EN recusado, e o
-    inverso. **E o caso que dá o dia ruim: assinante recusado no curso do próprio idioma** — é o
-    "assinante pagante trancado para fora" com uma causa nova.
-  - `[PROPOSTO — confirmar]` "idioma do cadastro" = **o idioma do site no momento de assinar**.
-  - `[pendente — operador, Fase 4]` **o assinante pode trocar o idioma da assinatura depois?**
-    Exemplo: o brasileiro que quer praticar inglês. E o que ele vê ao abrir o catálogo do outro
-    idioma: cursos com cadeado, ou convite para assinar também?
+- **IDIOMA É FILTRO, NÃO PORTÃO** `[operador, 14/09 — 3ª rodada, como no LinkedIn Learning]`.
+  **Uma assinatura dá acesso aos cursos dos dois idiomas.** O idioma escolhido decide **o que
+  aparece** (catálogo, busca, trilhas); quem troca de idioma vê e estuda os cursos daquele idioma
+  **na mesma assinatura**. **Moeda e idioma são independentes:** a moeda sai do cartão (§5).
+  Consequências no build `[convenção de engenharia]`:
+  - `temAcessoAtivo()` **não lê idioma**, e a `Subscription` **não tem** coluna de idioma;
+  - a matriz de testes da Fase 4 ganha **um** caso: assinatura feita em português abre curso em
+    inglês. Ele existe para ninguém "proteger" o acesso por idioma no futuro e trancar quem pagou.
+  - *Histórico: na 2ª rodada (mesmo dia) a resposta foi "só o idioma do cadastro". O operador
+    trocou pelo modelo do LinkedIn na 3ª. As três perguntas que aquela versão abria (trocar o
+    idioma da assinatura, cadeado no outro catálogo, assinar sem curso) deixaram de existir.*
 - **Ligação entre a versão PT e a EN do mesmo curso: NÃO construir agora.** Ela serve para o
   `hreflang` entre páginas de curso e para o seletor cair na página equivalente. Entra, como adição,
   quando existir o primeiro curso em inglês que seja versão de um curso em português.
-- **Catálogo em inglês sem curso** `[operador, 14/09 — 2ª rodada]`: mostra um **mock de curso de
-  Excel em inglês, "Excel + AI"**. Na implementação `[convenção de engenharia]`:
-  - o mock **NÃO é uma linha de `Course` no banco**. É conteúdo fixo do template, que some quando o
-    primeiro curso em inglês for publicado;
-  - motivo: uma linha no banco entraria na busca, no sitemap e no JSON-LD `Course`, dizendo ao
-    Google e ao aluno que um curso inexistente está à venda;
-  - `[pendente — operador]` **o que o mock diz de si mesmo** (ex.: "coming soon") e **se o botão de
-    assinar em inglês fica ligado** enquanto não houver curso em inglês. Com a assinatura por idioma
-    (acima), assinar em inglês nesse período é **pagar por um catálogo vazio**.
+- **Catálogo em inglês no lançamento** `[operador, 14/09 — 3ª rodada]`: **sem mock**. O operador
+  cadastra **um ou dois cursos em inglês, ainda sem aulas**. São cursos de verdade, com o mesmo
+  fluxo do admin. Consequências `[convenção de engenharia]`:
+  - **curso publicado com zero aulas precisa de estado próprio** no catálogo e na página de curso.
+    Hoje nada impede publicar um curso vazio (conferido em 14/09), e a página mostraria
+    "0 módulos · 0 aulas". `[pendente — operador]` o que a página diz no lugar da lista de aulas;
+  - o catálogo em inglês **vazio** continua precisando de estado próprio (Definição de pronto),
+    mesmo que na prática ele nasça com um ou dois cursos.
+  - `[pendente — operador, Fase 4]` **assinar em inglês enquanto os cursos em inglês não têm
+    aula.** A assinatura dá acesso aos dois idiomas, mas quem só lê inglês pagaria US$ 30 sem aula
+    que entenda.
 
 ---
 
@@ -164,10 +162,9 @@ no Passo 0 do Bloco I (Fase 3), com o parceiro de design.
 - **Quem traduz:** o agente. **Quem aprova:** o operador revisa todo texto que o aluno lê, antes de
   publicar. Texto de interface é decisão dele (*DE QUEM É A DECISÃO*).
 - `content.md` continua sendo a **fonte em português**. A copy em inglês ainda não existe.
-  `[pendente — operador]` **a tagline em inglês** — a frase de marca que abre o site, hoje *"Torne-se
-  um especialista em dados na era da IA."*. `[PROPOSTO — confirmar]` tradução direta: ***"Become a
-  data expert in the AI era."*** O nome de categoria "a primeira escola de dados AI-nativa **do
-  Brasil**" é do lado PT; o equivalente em inglês fica junto com a tagline.
+  **Tagline em inglês** `[operador, 14/09 — 3ª rodada]`: ***"Become a data expert in the AI era."***
+  (PT: *"Torne-se um especialista em dados na era da IA."*). `[pendente — operador]` o equivalente em
+  inglês do nome de categoria "a primeira escola de dados AI-nativa **do Brasil**", que é do lado PT.
 
 ---
 
@@ -244,3 +241,10 @@ endereços **`/en/courses`**; catálogo EN sem curso mostra **mock "Excel + AI"*
 acesso aos dois idiomas; a checagem entra em `temAcessoAtivo()` na Fase 4); **teto de 15 cursos por
 idioma, no máximo 2 idiomas**; **sem gatilho de reabertura** ("construído em paralelo"). Novas
 pendências: troca do idioma da assinatura, assinar em inglês com catálogo vazio, tagline EN.*
+
+*Atualizado Set 2026 (14/09, 3ª rodada) — **o acesso volta a valer para os dois idiomas: IDIOMA É
+FILTRO**, como no LinkedIn Learning `[operador]`. Substitui o "só o idioma do cadastro" da 2ª
+rodada: `temAcessoAtivo()` não lê idioma, a `Subscription` não ganha coluna, e a Fase 4 ganha um
+caso de teste que prova o acesso cruzado. **O mock sai:** o operador cadastra um ou dois cursos em
+inglês ainda sem aulas, e a página de curso com zero aulas passa a precisar de estado próprio.
+**Tagline EN decidida:** "Become a data expert in the AI era."*

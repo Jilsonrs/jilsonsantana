@@ -61,7 +61,7 @@ sobre crescimento rápido.
 
 - **Tagline oficial (guiada por identidade, não por preço):**
   - PT (primária): *"Torne-se um especialista em dados na era da IA."*
-  - EN: *a definir pelo operador* (a escola é bilíngue desde Set 2026).
+  - EN: *"Become a data expert in the AI era."* (a escola é bilíngue desde Set 2026).
 - **Coerência de marca (ativo existente):** os cursos do Jilson na Udemy já são "**Formação
   Especialista**". A tagline nomeia e amplifica uma promessa que já existe no catálogo — Udemy,
   YouTube e site agora apontam pra mesma palavra: *especialista*. Reduz atrito no funil
@@ -249,10 +249,12 @@ Automação & IA). Fio condutor: **dados na era da IA** ("X + Claude").
   em inglês vê **só os cursos em inglês**, mesmo que sejam poucos no começo.
 - **Cada curso nasce num idioma** (campo Idioma na criação, como na Udemy). A versão em inglês de um
   curso é **outro curso**, regravado. **A trilha segue o idioma.**
-- **Cada assinatura dá acesso só aos cursos do idioma do cadastro** — *"quem acessa do Brasil não
-  vai entender em inglês, e o inverso o mesmo"*.
-- **Teto do catálogo: 15 cursos por idioma, no máximo 2 idiomas.** Enquanto não houver curso em
-  inglês, o catálogo em inglês mostra um **mock do "Excel + AI"**.
+- **Idioma é filtro, não portão** (como no LinkedIn Learning): **uma assinatura vale para os cursos
+  dos dois idiomas**. Quem assina em inglês vê os cursos em inglês; se trocar o idioma, vê e estuda
+  os do outro na mesma assinatura.
+- **Teto do catálogo: 15 cursos por idioma, no máximo 2 idiomas.** No lançamento, o lado inglês
+  nasce com **um ou dois cursos cadastrados, ainda sem aulas**.
+- **Tagline EN:** *"Become a data expert in the AI era."*
 - **Sem data para reavaliar:** PT e EN são construídos em paralelo, como estrutura permanente.
 - **Preço pelo país do cartão:** cartão do Brasil paga em reais; cartão de fora paga **US$ 30/mês**,
   com anual pelo mesmo cálculo do real. Detalhe em *Pricing da assinatura*.

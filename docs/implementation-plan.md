@@ -1076,8 +1076,7 @@ landmark. Corrigido junto.
 
 - [ ] **Passo 0 — a pendência de produto que muda o diff** (operador): **a posição do seletor
       PT | EN** na tela, com o parceiro de design (`design-lab/GEMINI.md`). Sem ela, o bloco não
-      começa. *(O catálogo em inglês vazio já foi decidido em 14/09: mock "Excel + AI" — item
-      abaixo.)*
+      começa.
 - [ ] **Migration:** enum `Language` + `Course.language` + `LearningPlan.language`, **obrigatórios**;
       linhas existentes = português. `Module` e `Lesson` **herdam** do curso, sem coluna. Sem tabela
       nova ⇒ sem RLS nova, mas a **consulta de RLS roda mesmo assim** (`CLAUDE.md` → Database &
@@ -1104,11 +1103,11 @@ landmark. Corrigido junto.
 - [ ] **Seletor PT | EN** grava a escolha (cookie para visitante; `User.preferredLanguage` para quem
       está logado), e a interface lê dali até o bloco seguinte trocar o visitante para o endereço.
       Estados de loading/erro + **teste de componente**.
-- [ ] **Catálogo em inglês sem curso = mock "Excel + AI"** *(operador, 14/09)*. **Conteúdo fixo, NÃO
-      linha de `Course`** — senão ele entra na busca, no sitemap e no JSON-LD como curso à venda. Some
-      sozinho quando o primeiro curso em inglês for publicado. **Antes de codar, o operador fecha:**
-      o que o mock diz de si mesmo (ex.: "coming soon"). **Teste de componente:** com zero cursos EN
-      aparece o mock; com um curso EN publicado, o mock some.
+- [ ] **Curso publicado com ZERO aulas** *(operador, 14/09: os primeiros cursos em inglês nascem
+      cadastrados e sem aulas — sem mock)*. Hoje nada impede publicar curso vazio (conferido em 14/09)
+      e a página mostraria "0 módulos · 0 aulas". Catálogo e página de curso ganham **estado
+      próprio** para esse caso; **o texto é do operador**, fechar antes de codar. Catálogo em inglês
+      vazio também tem estado próprio (Definição de pronto). **Teste de componente** dos dois estados.
 - [ ] **Passo 8 — mutação:** remover o filtro de idioma da leitura pública e remover a recusa de item
       de outro idioma na trilha → a suíte de servidor **tem que reprovar** nos dois casos; reverter.
 - **Done when:**
@@ -1360,22 +1359,18 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       MEI, faturamento já em território EPP, e **IVA europeu desde a 1ª venda, que já pega aluno de
       Portugal**. `[FATO — context7, 14/09/2026]` · aceite de empresa brasileira no Managed Payments:
       **não verificado**.
-- [ ] **ACESSO POR IDIOMA** *(decisão do operador, 14/09/2026 — `idiomas.md` §3)*: cada assinatura dá
-      acesso **só** aos cursos do idioma do cadastro. `Subscription` ganha o **idioma** (junto do
-      model, abaixo); a checagem mora **dentro** de `temAcessoAtivo()`, que passa a receber o
-      idioma do curso — nunca inline na rota (`CLAUDE.md` → Access Architecture). **Não altera a
-      regra do gate** (status vivo OU período pago). **Casos novos na matriz de testes** (lista
-      abaixo, 16–18). **Antes de codar, o operador fecha:** (a) o assinante pode trocar o idioma da
-      assinatura depois? (b) o que ele vê no catálogo do outro idioma? (c) **o botão de assinar em
-      inglês fica ligado enquanto não houver curso em inglês?** Com acesso por idioma, assinar nesse
-      período é pagar por um catálogo vazio.
+- [ ] **IDIOMA É FILTRO, NÃO PORTÃO** *(decisão do operador, 14/09/2026 — modelo LinkedIn Learning,
+      `idiomas.md` §3)*: uma assinatura dá acesso aos cursos **dos dois idiomas**. `temAcessoAtivo()`
+      **não lê idioma**; `Subscription` **não tem** idioma. Caso 16 da matriz abaixo prova isso.
+      **Antes de codar, o operador fecha:** o botão de assinar em inglês fica ligado enquanto os
+      cursos em inglês ainda não têm aula? Quem só lê inglês pagaria US$ 30 sem aula que entenda.
 - [ ] **Conta de receita em dólar** em `strategy.md` §6 (é doc, não código): taxa da Stripe para
       cartão estrangeiro (verificar no painel) e como o assinante em dólar entra na meta, que hoje
       está só em reais.
 - [ ] **Configurar Smart Retries + automações de recuperação** conforme a política de produto abaixo. Isto é **configuração, não código**.
 - [ ] **Política de dunning (decisão NOSSA, executada pela Stripe):** falha na renovação → retries automáticos → corte. **Acesso MANTIDO durante toda a janela de retry** (`past_due`) — churn involuntário é a maior alavanca (strategy.md §6). Corte no fim da janela → `unpaid`/`canceled` + `session.deleteMany`. Ajustar a janela é mudança de configuração. *Confirmar os intervalos exatos que a Stripe expõe na abertura da fase, via context7.*
 - [ ] **Checkout embutido (Payment Element).** Cria `Customer` + `Subscription` na Stripe e confirma o primeiro pagamento na própria página. O dado do cartão vai direto pro Stripe (não toca nosso servidor). **`requires_action`/3DS é tratado pelo Element no fluxo de assinatura.**
-- [ ] `Subscription` model = **espelho local** (o gate lê daqui) com growth seams: `ownerUserId?`, `organizationId?` (nullable), `seats` (default 1), `status`, `currentPeriodEnd`, `stripeCustomerId`, **`stripeSubscriptionId` (obrigatório — é a chave do objeto canônico)**, **`language` (idioma do cadastro — acesso por idioma, Set 2026)** (+ RLS); migration
+- [ ] `Subscription` model = **espelho local** (o gate lê daqui) com growth seams: `ownerUserId?`, `organizationId?` (nullable), `seats` (default 1), `status`, `currentPeriodEnd`, `stripeCustomerId`, **`stripeSubscriptionId` (obrigatório — é a chave do objeto canônico)** (+ RLS); migration — **sem coluna de idioma** (idioma é filtro, não acesso — Set 2026)
 - [ ] `temAcessoAtivo(userId)` lib — caminho individual (`assinaturaIndividualAtiva`); **fonte única de verdade do acesso para a aplicação**, lida do espelho local. *(A verdade canônica é a `Subscription` da Stripe; o espelho é o que o gate consulta em tempo de request.)*
 - [ ] **Webhook handler** dos eventos de assinatura (`customer.subscription.created/updated/deleted`, `invoice.paid`, `invoice.payment_failed`) — **TUDO INLINE, SEM FILA** (pg-boss removido do MVP em Ago 2026; ver CLAUDE.md → Background Jobs). A ordem é: **verifica assinatura do Stripe → grava o `event.id` → atualiza o espelho local → responde 200**, tudo na mesma request (milissegundos). CRIA user+subscription no primeiro pagamento (substitui o seed). **A confiabilidade vem da Stripe:** devolvemos 5xx e ela reentrega — era isso que a fila duplicava. E-mail (Resend) sai na mesma request, dentro de `try/catch`: falha de e-mail **nunca** derruba o 200 de um evento já processado.
 - [ ] **TRAVA de montagem (achado do `security-vulnerability-reviewer`, Ago 2026):** a rota do
@@ -1473,7 +1468,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       **A prova que fecha o item:** rodar `npm test` (que executa `migrate reset --force`) e
       confirmar em seguida, via MCP, que o banco de **dev** seguia com 2 cursos, 2 módulos, 3 aulas,
       1 trilha e 2 usuários — **intacto**. Era exatamente esse comando que destruía o trabalho.
-- [ ] **TESTES DE SERVIDOR (~18, supertest, sem browser) — escritos JUNTO com o handler acima, não
+- [ ] **TESTES DE SERVIDOR (~16, supertest, sem browser) — escritos JUNTO com o handler acima, não
       depois.** Este é o item que fecha a fase; não é polish de fim de ciclo. **Justificativa
       (Ago 2026):** 100% do risco catastrófico do projeto é servidor — *assinante pagante trancado
       pra fora* e *acesso liberado sem pagar* — e **nada disso é observável por browser: webhook não
@@ -1491,10 +1486,9 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       **Billing bypass** — (13) force-sync **sem auth → 401**; (14) force-sync como member comum →
       403.
       **Rate limit** — (15) o limite do Bloco 0 (Fase 3) **liga e bloqueia** de verdade.
-      **Idioma** *(Set 2026)* — (16) assinante PT ativo → curso EN **recusado**; (17) assinante EN
-      ativo → curso PT **recusado**; (18) **assinante ativo → curso do PRÓPRIO idioma liberado**,
-      inclusive a URL assinada de vídeo. O 18 é o que pega o dia ruim: a checagem nova trancando
-      quem pagou.
+      **Idioma** *(Set 2026)* — (16) assinatura feita em português → curso em **inglês liberado**,
+      inclusive a URL assinada de vídeo. Existe para ninguém "proteger" o acesso por idioma no futuro
+      e trancar quem pagou (idioma é filtro — `CLAUDE.md` → Idiomas).
       *Requer o banco de teste (projeto `mvaobzypsiuhqzipcelw` + trava por **REF** no `globalSetup`)
       — CLAUDE.md → Database & Migrations.*
 - [ ] `requireActiveMembership` middleware (wraps `temAcessoAtivo`) gating content + video URLs
@@ -1772,3 +1766,5 @@ MVP = **Phases 0 → 7** (incl. trilhas curadas na Phase 2, certificados na Phas
 *Atualizado: Set 2026 (11) — **escola bilíngue (PT + EN) entra no plano** (decisão do operador, 14/09/2026; raciocínio no changelog do `CLAUDE.md`, entrada **Set 2026 (16)** — não duplicado aqui). O que mudou neste plano: (1) **Fase 3 ganha o Bloco I** (idioma no conteúdo, dicionário único de textos, seletor), sequenciado **antes** da *Superfície pública*. A posição exata dentro da fase é do operador. (2) **O bloco Superfície pública ganha o item dos dois idiomas** (`/en`, redirecionamento só na raiz, `hreflang`, sitemap). Ele fica lá, e não no Bloco I, para os endereços nascerem nos templates do servidor em vez de no React. (3) **Fase 4 ganha preço em dólar pelo país do cartão, a questão preço mostrado × cobrado, a decisão de imposto internacional e a conta de receita em dólar.** (4) Fases 6, 6.5 e 7 ganham uma nota de idioma cada. (5) A costura de idioma da Fase 2 e a linha "EN removido" dos *Removidos do roadmap* foram riscadas, não apagadas. **Nada foi construído.** Pendências de produto marcadas no Passo 0 de cada bloco: o que o catálogo EN vazio mostra, onde fica o seletor, os caminhos sob `/en`, o valor do anual em dólar.*
 
 *Atualizado: Set 2026 (12) — **respostas do operador às pendências (14/09, 2ª rodada).** Registro da decisão: `CLAUDE.md` Set 2026 (16), item (h). Neste plano: (1) **Fase 2**: o "catálogo rotativo de até 20" estava defasado desde o Set 2026 (13) do `courses.md`; passa a **15 por idioma, no máximo 2 idiomas**. (2) **Bloco I**: o catálogo EN vazio vira item próprio — **mock "Excel + AI" fora do banco**; o Passo 0 fica só com a posição do seletor. (3) **Superfície pública**: endereços com **segmentos em inglês** (`/en/courses`); falta o segmento de trilha e de certificado. (4) **Fase 4**: anual **US$ 299** confirmado; entra **ACESSO POR IDIOMA** (`Subscription.language` + checagem dentro de `temAcessoAtivo()` + casos 16–18 na matriz, que vai a ~18). Três perguntas ficam para o operador antes de codar a fase: trocar o idioma da assinatura; o que o assinante vê no catálogo do outro idioma; se assinar em inglês fica ligado sem curso em inglês.*
+
+*Atualizado: Set 2026 (13) — **3ª rodada do operador, mesma data** (registro: `CLAUDE.md` Set 2026 (16), item (i)). **Idioma é filtro, não portão** (modelo LinkedIn Learning): a Fase 4 perde o item "acesso por idioma", a `Subscription` não ganha `language`, e os casos 16–18 viram **um** caso de acesso cruzado (matriz vai a ~16). Das três perguntas da entrada (12), sobra só a de assinar em inglês enquanto os cursos em inglês não têm aula. **Bloco I:** o mock "Excel + AI" sai. Entra o **curso publicado com zero aulas**, porque o operador cadastra um ou dois cursos em inglês ainda vazios.*
