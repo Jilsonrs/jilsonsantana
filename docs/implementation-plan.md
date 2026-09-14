@@ -1104,10 +1104,11 @@ landmark. Corrigido junto.
       está logado), e a interface lê dali até o bloco seguinte trocar o visitante para o endereço.
       Estados de loading/erro + **teste de componente**.
 - [ ] **Curso publicado com ZERO aulas** *(operador, 14/09: os primeiros cursos em inglês nascem
-      cadastrados e sem aulas — sem mock)*. Hoje nada impede publicar curso vazio (conferido em 14/09)
-      e a página mostraria "0 módulos · 0 aulas". Catálogo e página de curso ganham **estado
-      próprio** para esse caso; **o texto é do operador**, fechar antes de codar. Catálogo em inglês
-      vazio também tem estado próprio (Definição de pronto). **Teste de componente** dos dois estados.
+      cadastrados e sem aulas, sem mock)*. **A página mostra "0 aulas" normalmente**, sem estado
+      especial (decisão do operador). O que o bloco garante: catálogo e página de curso renderizam com
+      a lista de aulas vazia **sem quebrar**. Catálogo em inglês vazio tem estado próprio (Definição de
+      pronto). **Teste de componente:** curso com zero módulos renderiza e mostra "0 aulas"; catálogo
+      vazio mostra o estado vazio.
 - [ ] **Passo 8 — mutação:** remover o filtro de idioma da leitura pública e remover a recusa de item
       de outro idioma na trilha → a suíte de servidor **tem que reprovar** nos dois casos; reverter.
 - **Done when:**
@@ -1186,10 +1187,9 @@ landmark. Corrigido junto.
       `PUBLISHED`, certificados com `isPublic=true`. `DRAFT`/`ARCHIVED` **nunca** entram — o sitemap
       respeita o mesmo filtro das leituras públicas.
 - [ ] **Os dois idiomas na superfície pública** *(Set 2026 — depende do Bloco I; spec em
-      `idiomas.md` §2, trava em `CLAUDE.md` → Idiomas)*. Caminhos em inglês **decididos: segmentos em
-      inglês** (`/en/courses`, `/en/course/:slug` — operador, 14/09); **antes do código, fechar** o
-      segmento em inglês de trilha e de certificado (sai do nome em inglês desses termos, na revisão
-      dos textos do Bloco I). Então: cada rota pública também sob `/en`
+      `idiomas.md` §2, trava em `CLAUDE.md` → Idiomas)*. Caminhos em inglês **decididos** (operador, 14/09):
+      `/en/courses`, `/en/course/:slug`, `/en/learning-path/:slug`, `/en/certificate/:publicId`.
+      Então: cada rota pública também sob `/en`
       · redirecionamento **só na primeira visita à raiz**, pelo navegador (`pt*` fica, qualquer
       outro vai para `/en`), **nunca** em link direto nem sem `Accept-Language` · `<html lang>`,
       `og:locale` e `hreflang` recíproco quando houver par · `sitemap.xml` com os dois idiomas.
@@ -1362,8 +1362,13 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
 - [ ] **IDIOMA É FILTRO, NÃO PORTÃO** *(decisão do operador, 14/09/2026 — modelo LinkedIn Learning,
       `idiomas.md` §3)*: uma assinatura dá acesso aos cursos **dos dois idiomas**. `temAcessoAtivo()`
       **não lê idioma**; `Subscription` **não tem** idioma. Caso 16 da matriz abaixo prova isso.
-      **Antes de codar, o operador fecha:** o botão de assinar em inglês fica ligado enquanto os
-      cursos em inglês ainda não têm aula? Quem só lê inglês pagaria US$ 30 sem aula que entenda.
+- [ ] **Botão de assinar nas páginas em inglês só liga com ≥ 1 aula publicada em inglês**
+      *(operador, 14/09)*. Condição **derivada do banco pela cadeia inteira** (aula publicada → módulo
+      publicado → curso em inglês publicado), **nunca** interruptor manual. **Regra de exibição, não
+      de acesso:** o checkout não recusa ninguém por ela (a assinatura não tem idioma). **Antes de
+      codar, o operador fecha** a aparência do botão desligado. **Teste de servidor:** página em
+      inglês sem aula em inglês → sem botão ativo; publicar uma aula → botão ativo; aula publicada
+      dentro de **curso em rascunho** → continua sem botão (a cadeia).
 - [ ] **Conta de receita em dólar** em `strategy.md` §6 (é doc, não código): taxa da Stripe para
       cartão estrangeiro (verificar no painel) e como o assinante em dólar entra na meta, que hoje
       está só em reais.
@@ -1768,3 +1773,5 @@ MVP = **Phases 0 → 7** (incl. trilhas curadas na Phase 2, certificados na Phas
 *Atualizado: Set 2026 (12) — **respostas do operador às pendências (14/09, 2ª rodada).** Registro da decisão: `CLAUDE.md` Set 2026 (16), item (h). Neste plano: (1) **Fase 2**: o "catálogo rotativo de até 20" estava defasado desde o Set 2026 (13) do `courses.md`; passa a **15 por idioma, no máximo 2 idiomas**. (2) **Bloco I**: o catálogo EN vazio vira item próprio — **mock "Excel + AI" fora do banco**; o Passo 0 fica só com a posição do seletor. (3) **Superfície pública**: endereços com **segmentos em inglês** (`/en/courses`); falta o segmento de trilha e de certificado. (4) **Fase 4**: anual **US$ 299** confirmado; entra **ACESSO POR IDIOMA** (`Subscription.language` + checagem dentro de `temAcessoAtivo()` + casos 16–18 na matriz, que vai a ~18). Três perguntas ficam para o operador antes de codar a fase: trocar o idioma da assinatura; o que o assinante vê no catálogo do outro idioma; se assinar em inglês fica ligado sem curso em inglês.*
 
 *Atualizado: Set 2026 (13) — **3ª rodada do operador, mesma data** (registro: `CLAUDE.md` Set 2026 (16), item (i)). **Idioma é filtro, não portão** (modelo LinkedIn Learning): a Fase 4 perde o item "acesso por idioma", a `Subscription` não ganha `language`, e os casos 16–18 viram **um** caso de acesso cruzado (matriz vai a ~16). Das três perguntas da entrada (12), sobra só a de assinar em inglês enquanto os cursos em inglês não têm aula. **Bloco I:** o mock "Excel + AI" sai. Entra o **curso publicado com zero aulas**, porque o operador cadastra um ou dois cursos em inglês ainda vazios.*
+
+*Atualizado: Set 2026 (14) — **4ª rodada do operador, mesma data** (registro: `CLAUDE.md` Set 2026 (16), item (j)). Superfície pública: endereços **`/en/learning-path/:slug`** e **`/en/certificate/:publicId`** decididos. Bloco I: curso sem aulas mostra **"0 aulas"** normalmente, e o item garante só que a página não quebra. Fase 4: a pergunta da entrada (13) virou item — **o botão de assinar nas páginas em inglês liga com a 1ª aula publicada em inglês**, derivado do banco, regra de exibição e não de checkout, com teste de servidor pela cadeia de status.*

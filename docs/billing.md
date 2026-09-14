@@ -52,8 +52,11 @@ cartão de qualquer outro país paga em dólar** — independente do idioma do s
   14/09/2026 — modelo LinkedIn Learning)*: **uma assinatura dá acesso aos cursos dos dois
   idiomas**. O idioma é só filtro do que aparece; quem troca de idioma estuda os cursos do outro na
   mesma assinatura.
-  **Em aberto para a Fase 4:** o botão de assinar em inglês fica ligado enquanto os cursos em inglês
-  ainda não têm aula? Quem só lê inglês pagaria US$ 30 sem aula que entenda.
+- **Botão de assinar nas páginas em inglês só liga com pelo menos 1 aula publicada em inglês**
+  *(decisão do operador, 14/09/2026)*, para quem só lê inglês não pagar US$ 30 sem aula que entenda.
+  Condição derivada do banco (nunca interruptor manual). **É regra de exibição, não de checkout:**
+  como a assinatura não tem idioma, quem assina pela página em português está certo e não é
+  recusado. A aparência do botão desligado se decide na abertura da Fase 4.
 
 ### Imposto internacional — decidir ANTES da primeira venda fora do Brasil
 

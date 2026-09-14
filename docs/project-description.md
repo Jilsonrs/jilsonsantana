@@ -253,7 +253,8 @@ Automação & IA). Fio condutor: **dados na era da IA** ("X + Claude").
   dos dois idiomas**. Quem assina em inglês vê os cursos em inglês; se trocar o idioma, vê e estuda
   os do outro na mesma assinatura.
 - **Teto do catálogo: 15 cursos por idioma, no máximo 2 idiomas.** No lançamento, o lado inglês
-  nasce com **um ou dois cursos cadastrados, ainda sem aulas**.
+  nasce com **um ou dois cursos cadastrados, ainda sem aulas** (a página mostra "0 aulas"), e **o
+  botão de assinar em inglês só liga com a primeira aula em inglês**.
 - **Tagline EN:** *"Become a data expert in the AI era."*
 - **Sem data para reavaliar:** PT e EN são construídos em paralelo, como estrutura permanente.
 - **Preço pelo país do cartão:** cartão do Brasil paga em reais; cartão de fora paga **US$ 30/mês**,

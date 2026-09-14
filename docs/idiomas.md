@@ -39,6 +39,9 @@ trabalhos, mas duas fontes de renda"*.
 | Catálogo em inglês no lançamento | **sem mock**: o operador cadastra **um ou dois cursos em inglês, ainda sem aulas** *(substitui o mock da 2ª rodada)* | operador, 14/09 (3ª rodada) |
 | Acesso da assinatura | **os dois idiomas — IDIOMA É FILTRO**, como no LinkedIn Learning: assina em inglês e vê os cursos em inglês; troca o idioma e vê e estuda os cursos do outro, **na mesma assinatura** *(substitui "só o idioma do cadastro", da 2ª rodada)* | operador, 14/09 (3ª rodada) |
 | Tagline em inglês | ***"Become a data expert in the AI era."*** | operador, 14/09 (3ª rodada) |
+| Endereços de trilha e certificado em inglês | **`/en/learning-path/:slug`** e **`/en/certificate/:publicId`** — as trilhas em inglês já nascem com nome em inglês | operador, 14/09 (4ª rodada) |
+| Curso sem aulas | a página mostra **"0 aulas"** normalmente, sem mensagem especial | operador, 14/09 (4ª rodada) |
+| Botão de assinar nas páginas em inglês | **liga quando existir pelo menos 1 aula em inglês** | operador, 14/09 (4ª rodada) |
 | Teto do catálogo | **15 cursos por idioma, no máximo 2 idiomas** | operador, 14/09 (2ª rodada) |
 | Reavaliação | **sem gatilho** — "vai sendo construído em paralelo" | operador, 14/09 (2ª rodada) |
 
@@ -95,9 +98,9 @@ separadas com `hreflang`.
   pôr a Cloudflare na frente do site.
 
 **Endereços** `[operador, 14/09 — 2ª rodada]`: segmentos **em inglês** sob o prefixo —
-`/en/courses`, `/en/course/:slug`. O segmento da trilha e do certificado em inglês segue o **nome
-em inglês de "trilha"** e de "certificado", que sai da revisão dos textos (§4) — decidir antes do
-bloco *Superfície pública*.
+`/en/courses`, `/en/course/:slug`, **`/en/learning-path/:slug`** e **`/en/certificate/:publicId`**
+`[operador, 14/09 — 4ª rodada]`. "Learning path" é o nome que o LinkedIn Learning usa para trilha.
+A trilha em inglês já nasce com nome e slug em inglês.
 
 **Pendência:** `[pendente — operador]` **a posição do seletor PT | EN** na tela. O operador decide
 no Passo 0 do Bloco I (Fase 3), com o parceiro de design.
@@ -135,14 +138,21 @@ no Passo 0 do Bloco I (Fase 3), com o parceiro de design.
 - **Catálogo em inglês no lançamento** `[operador, 14/09 — 3ª rodada]`: **sem mock**. O operador
   cadastra **um ou dois cursos em inglês, ainda sem aulas**. São cursos de verdade, com o mesmo
   fluxo do admin. Consequências `[convenção de engenharia]`:
-  - **curso publicado com zero aulas precisa de estado próprio** no catálogo e na página de curso.
-    Hoje nada impede publicar um curso vazio (conferido em 14/09), e a página mostraria
-    "0 módulos · 0 aulas". `[pendente — operador]` o que a página diz no lugar da lista de aulas;
+  - **curso publicado com zero aulas mostra "0 aulas" normalmente** `[operador, 14/09 — 4ª
+    rodada]`. Hoje nada impede publicar curso vazio (conferido em 14/09). O que o build garante:
+    a página renderiza com a lista de aulas vazia sem quebrar;
   - o catálogo em inglês **vazio** continua precisando de estado próprio (Definição de pronto),
-    mesmo que na prática ele nasça com um ou dois cursos.
-  - `[pendente — operador, Fase 4]` **assinar em inglês enquanto os cursos em inglês não têm
-    aula.** A assinatura dá acesso aos dois idiomas, mas quem só lê inglês pagaria US$ 30 sem aula
-    que entenda.
+    mesmo que na prática ele nasça com um ou dois cursos;
+  - **o botão de assinar nas páginas em inglês só liga quando existir pelo menos 1 aula em
+    inglês** `[operador, 14/09 — 4ª rodada]`. Assim quem só lê inglês não paga US$ 30 sem aula que
+    entenda. Na implementação `[convenção de engenharia]`:
+    - a condição é **derivada do banco**: aula publicada, dentro de módulo publicado, dentro de
+      curso publicado em inglês (a cadeia inteira). **Nunca um interruptor manual**, que alguém
+      esquece de ligar;
+    - é **regra de exibição da página em inglês, não de acesso.** A assinatura não tem idioma,
+      então assinar pela página em português continua válido, e o checkout **não** recusa ninguém
+      por causa dela;
+    - `[pendente — Fase 4]` a aparência do botão desligado (escondido, desabilitado ou com aviso).
 
 ---
 
@@ -248,3 +258,9 @@ rodada: `temAcessoAtivo()` não lê idioma, a `Subscription` não ganha coluna, 
 caso de teste que prova o acesso cruzado. **O mock sai:** o operador cadastra um ou dois cursos em
 inglês ainda sem aulas, e a página de curso com zero aulas passa a precisar de estado próprio.
 **Tagline EN decidida:** "Become a data expert in the AI era."*
+
+*Atualizado Set 2026 (14/09, 4ª rodada) — endereços **`/en/learning-path/:slug`** e
+**`/en/certificate/:publicId`**; curso sem aulas mostra **"0 aulas"** (sem estado especial); o
+**botão de assinar nas páginas em inglês liga com a 1ª aula em inglês**, condição derivada do banco
+e regra de exibição, não de acesso. Todas as pendências das rodadas anteriores fechadas, exceto a
+posição do seletor, o nome de categoria em inglês e a aparência do botão desligado.*
