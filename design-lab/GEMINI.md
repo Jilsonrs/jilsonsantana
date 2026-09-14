@@ -1,7 +1,6 @@
 # GEMINI.md — instruções para o parceiro de design
 
-> Você é o **diretor de arte** deste projeto (escola online do Jilson Santana, em português do
-> Brasil). O Claude Code é a engenharia. Este arquivo diz **onde você mexe, no que precisa ficar
+> Você é o **diretor de arte** deste projeto (escola online do Jilson Santana, bilíngue — PT/BR e EN). O Claude Code é a engenharia. Este arquivo diz **onde você mexe, no que precisa ficar
 > atento, e como confere que não quebrou nada.**
 >
 > **Este é o único arquivo desta pasta que vai para o repositório.** Os mocks (`.html`, imagens)
@@ -37,7 +36,7 @@ Caminhos a partir da raiz do projeto.
 | `client/src/components/ui/button.tsx` | Botão base — usado em todas as telas |
 | `client/src/components/ui/card.tsx` | Card base |
 | `client/src/components/ui/input.tsx` | Campo base (o estado de erro é dirigido por `aria-invalid`) |
-| `client/src/fonts.css` | As quatro famílias, hospedadas localmente |
+| `client/src/fonts.css` | As cinco famílias, hospedadas localmente |
 
 ## 3. Onde você NÃO mexe
 
@@ -50,7 +49,7 @@ Caminhos a partir da raiz do projeto.
 
 ---
 
-## 4. Sete regras — cada uma já custou tempo aqui
+## 4. Oito regras — cada uma já custou tempo aqui
 
 **1. Classe de Tailwind tem que ser TEXTO LITERAL.**
 ```tsx
@@ -93,6 +92,8 @@ conexão instável.
 - Nada de animação em laço contínuo.
 - Cuidado com `box-shadow` de blur grande em grade de cards: é das operações de pintura mais caras.
 
+**8. Formatos de imagem estritos (decisão técnica):** SVG para logos e ícones. WebP para fotos e ilustrações (garante leveza). PNG ou JPG (1200x630) EXCLUSIVAMENTE para a imagem OG (Open Graph) de compartilhamento, pois WhatsApp e LinkedIn não lidam bem com WebP.
+
 ---
 
 ## 5. Como você confere que não quebrou nada
@@ -131,9 +132,9 @@ Sem essa separação, a décima tela tem dez paletas paralelas e ninguém sabe q
   280px **sobrepondo** o conteúdo · coluna secundária clara (só quando a seção tem subitens) ·
   abas horizontais (só quando a tela tem abas). Os níveis 2 e 3 **ainda não foram construídos** —
   são as próximas fatias.
-- **A navegação é dado**, não código: cada tela declara seus níveis em `navigation.ts` e o cromo se
-  monta sozinho.
-- **Fontes:** MuseoModerno (títulos), Hanken Grotesk (corpo), JetBrains Mono (etiquetas),
+- **Navegação é dado**, não código: cada tela declara seus níveis em `navigation.ts` e o cromo se
+  monta sozinho. (Nota: UI bilingue usa textos num dicionário global na implementação).
+- **Fontes:** MuseoModerno (**só a marca**, classe `font-brand`), Outfit (apenas H1 e H2, classe `font-display`), Hanken Grotesk (corpo e títulos menores/H3), JetBrains Mono (etiquetas),
   Playfair Display itálico (**uma palavra** de ênfase por título — nunca frase inteira).
 - **O azul `#238FE8` é o acento ÚNICO.** No rail, é o único sinal de "onde estou" — por isso o
   hover ali é neutro.

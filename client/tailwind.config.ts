@@ -5,11 +5,12 @@ const config: Config = {
   content: ["./index.html", "./src/**/*.{ts,tsx}"],
   theme: {
   	extend: {
-  		// design.md §4. `display` carrega a personalidade da marca e entra com
-  		// restrição (títulos e números); `body` é o padrão de tudo; `emphasis` é
-  		// o itálico serifado de UMA palavra por título, nunca de frase inteira.
+  		// design.md §4. `brand` é SÓ a marca (wordmark); `display` é H1/H2;
+  		// `body` é o padrão de tudo; `emphasis` é o itálico serifado de UMA
+  		// palavra por título, nunca de frase inteira.
   		fontFamily: {
-  			display: ['MuseoModerno', 'system-ui', 'sans-serif'],
+  			brand: ['MuseoModerno', 'system-ui', 'sans-serif'],
+  			display: ['Outfit', 'system-ui', 'sans-serif'],
   			body: ['"Hanken Grotesk"', 'system-ui', 'sans-serif'],
   			mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
   			emphasis: ['"Playfair Display"', 'Georgia', 'serif']

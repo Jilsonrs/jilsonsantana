@@ -303,7 +303,7 @@ sombras suaves, transições leves, imagens bonitas, ícones limpos. **Com a cor
 
 - **Azul #238FE8** (R35 G143 B232) — **único acento** (botões, links, brilho do JilsonAI).
 - **Preto** (texto/marca) · **cinza #838383** (RGB 131) (texto secundário).
-- **Fonte MuseoModerno SemiBold** pra títulos/marca; sans neutra pro corpo.
+- **Fonte MuseoModerno** só na marca; **Outfit** em H1 e H2 (Set 2026); sans neutra (Hanken Grotesk) pro corpo e H3.
 - Tokens semânticos do shadcn (`--primary` = o azul; resto neutro) — sem cores hardcoded.
 - Referência de UI pro medidor de consumo: a própria tela de "Usage" da Anthropic (barras calmas de
   %, créditos opt-in, teto ajustável). Detalhe completo em **DESIGN.md** (a reescrever).

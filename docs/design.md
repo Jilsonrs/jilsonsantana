@@ -173,21 +173,27 @@ visual.
 ## 4. Tipografia — a alma da interface
 
 ```css
---font-display:  'MuseoModerno', system-ui;     /* marca + títulos — a fonte da logomarca */
+--font-brand:    'MuseoModerno', system-ui;     /* SÓ a marca (wordmark) — a fonte da logomarca */
+--font-display:  'Outfit', system-ui;           /* H1 e H2 */
 --font-body:     'Hanken Grotesk', system-ui;   /* corpo e UI */
 --font-mono:     'JetBrains Mono', monospace;   /* código, fórmulas, etiquetas */
 --font-emphasis: 'Playfair Display', serif;     /* itálico — UMA palavra por título */
 ```
 
-- **MuseoModerno** (600/700) — geométrica e arredondada, carrega a personalidade do Jilson. Com
-  **restrição**: wordmark, H1/H2, números grandes. Nunca em corpo. **H3 fica de FORA** — título de
-  card é Hanken Grotesk (decisão do operador, Set 2026, resolvendo a contradição que esta seção
-  tinha com a tabela de escala abaixo).
+- **MuseoModerno** (600/700) — **só a marca**: o wordmark da logomarca. Geométrica e arredondada,
+  carrega a personalidade do Jilson, e é justamente por isso que fica restrita à assinatura da
+  marca. **Nunca em título, nunca em corpo.**
+- **Outfit** (500/600/700) — **H1 e H2** (inclui o título de página da área logada). Escolhida
+  para os títulos por manter a **geometria** e a **leveza** com um caráter **limpo e premium**, no
+  espírito Apple: formas precisas, sem ornamento, que dão seriedade profissional a uma escola de
+  dados na era da IA. Nunca em corpo. **H3 fica de FORA** — título de card é Hanken Grotesk (decisão
+  do operador, Set 2026, resolvendo a contradição que esta seção tinha com a tabela de escala
+  abaixo).
 - **Hanken Grotesk** (400/500/600) — corpo, menus, botões. Quente sem ser fria, legível no longo.
 - **JetBrains Mono** — código, DAX/SQL, fórmulas e **micro-etiquetas** (`[ SKILLS • COWORK ]`),
   maiúsculas com `letter-spacing: 0.1em`. Escolha ancorada no assunto: o produto é dados.
 - **Playfair Display Itálico** (600) — **o charme editorial, e a regra é a restrição**: destaca
-  **UMA palavra** dentro de um título da MuseoModerno, em `--primary` (ex.: "Stack *moderno*"). É a
+  **UMA palavra** dentro de um título da Outfit, em `--primary` (ex.: "Stack *moderno*"). É a
   mistura de peso geométrico com serifa em itálico que faz o título parecer editorial em vez de
   genérico. **Nunca em frase inteira, nunca em corpo, no máximo um destaque por título** — usada em
   tudo, deixa de destacar e vira enfeite.
@@ -196,9 +202,9 @@ visual.
 
 | Papel | Tamanho | Peso | Fonte |
 |-------|---------|------|-------|
-| Hero H1 | `clamp(2.5rem, 6vw, 4.5rem)` | 600 | MuseoModerno |
-| Seção H2 | `clamp(1.75rem, 3vw, 2.5rem)` | 600 | MuseoModerno |
-| Título de página (logado) | 1,75rem | 600 | MuseoModerno |
+| Hero H1 | `clamp(2.5rem, 6vw, 4.5rem)` | 600 | Outfit |
+| Seção H2 | `clamp(1.75rem, 3vw, 2.5rem)` | 600 | Outfit |
+| Título de página (logado) | 1,75rem | 600 | Outfit |
 | Card H3 | 1,25rem | 600 | Hanken Grotesk |
 | Corpo | 1,0–1,125rem | 400 | Hanken Grotesk |
 | Legenda/meta | 0,875rem | 400 | Hanken Grotesk |
@@ -331,7 +337,7 @@ efeito de painel **sem** tirar o scroll natural do documento.
 
 **Públicos**
 - **HeroTrilhaDemo** — a assinatura (§2). Presets pré-computados, **sem** Claude API.
-- **PillarCard** (3) — ícone Lucide, título MuseoModerno, uma frase. O JilsonAI ganha destaque leve
+- **PillarCard** (3) — ícone Lucide, título Outfit, uma frase. O JilsonAI ganha destaque leve
   (tint azul), sem virar carnaval.
 - **PriceCard** — um card claro, sem tabela de comparação pesada. Mensal em destaque, anual como
   "economize ~17%". Nada de "de/por" agressivo.
@@ -485,3 +491,16 @@ logo e ícone, WebP para foto e ilustração, PNG/JPG 1200×630 para a OG. As re
 lugares diverge, e aquele README agora só aponta para esta seção. **Gatilho de reabertura:** a
 exceção da OG cai no dia em que WhatsApp e LinkedIn aceitarem WebP no card compartilhado — aí ela
 deixa de ser exceção e vira mais uma imagem. O resto é físico do formato e não tem gatilho.*
+
+*Atualizado Set 2026 — **H1 e H2 passam para a OUTFIT; a MARCA continua MuseoModerno. Decisão do
+operador com o diretor de arte (Gemini).** Nos títulos, a MuseoModerno não entregava o nível de
+profissionalismo exigido (terminais arredondados, formato descontraído demais); a Outfit mantém a
+geometria e a leveza, com caráter limpo e premium. **Na marca ela fica:** é a personalidade da
+logomarca. *(Correção na mesma sessão: a primeira versão desta entrada trocava também a marca para
+Outfit; o operador corrigiu antes do merge.)* **O que NÃO mudou:** o H3 continua Hanken Grotesk.
+**Código alinhado:** dois tokens de fonte em vez de um — `font-brand` (MuseoModerno, usado **só** no
+wordmark do `AppRail`) e `font-display` (Outfit, aplicado a `h1, h2` pela camada base do
+`index.css`). A Outfit é hospedada localmente como as demais (regra de leveza) e é fonte
+**variável**: dois arquivos (`latin` e `latin-ext`, 47 KB) cobrem 500/600/700. **Sem gatilho de
+reabertura técnico:** fonte é identidade, e só muda por nova decisão do operador com o diretor de
+arte.*
