@@ -109,7 +109,7 @@ sobre crescimento rápido.
 - **Anual ~R$995/ano** (~17% de desconto, cobrança única recorrente anual). Troca mensal↔anual
   usa **proração nativa do Stripe Billing**, previsualizada antes de o aluno confirmar.
 - **Fora do Brasil (Set 2026, `[decisão do operador]`): US$ 30/mês + anual com o mesmo cálculo**
-  (~17% de desconto → **~US$ 299/ano, valor exato a confirmar**). **A moeda segue o país do
+  (~17% de desconto → **US$ 299/ano**, confirmado em 14/09). **A moeda segue o país do
   cartão, nunca o idioma do site**: senão, qualquer estrangeiro troca para português e paga em
   real. Imposto internacional: decisão pendente da Fase 4 (`idiomas.md` §5).
 - **Sem free trial. Sem conteúdo grátis dentro da escola** (o grátis vive no YouTube).
@@ -249,6 +249,11 @@ Automação & IA). Fio condutor: **dados na era da IA** ("X + Claude").
   em inglês vê **só os cursos em inglês**, mesmo que sejam poucos no começo.
 - **Cada curso nasce num idioma** (campo Idioma na criação, como na Udemy). A versão em inglês de um
   curso é **outro curso**, regravado. **A trilha segue o idioma.**
+- **Cada assinatura dá acesso só aos cursos do idioma do cadastro** — *"quem acessa do Brasil não
+  vai entender em inglês, e o inverso o mesmo"*.
+- **Teto do catálogo: 15 cursos por idioma, no máximo 2 idiomas.** Enquanto não houver curso em
+  inglês, o catálogo em inglês mostra um **mock do "Excel + AI"**.
+- **Sem data para reavaliar:** PT e EN são construídos em paralelo, como estrutura permanente.
 - **Preço pelo país do cartão:** cartão do Brasil paga em reais; cartão de fora paga **US$ 30/mês**,
   com anual pelo mesmo cálculo do real. Detalhe em *Pricing da assinatura*.
 - **YouTube: dois canais separados.** O atual segue o rebuild em português; um **canal em inglês**
@@ -260,7 +265,6 @@ Automação & IA). Fio condutor: **dados na era da IA** ("X + Claude").
 - *O que foi revertido (Jun 2026): "EN removido da escola, PT pra sempre; inglês só via LinkedIn
   Learning quando C1". A tentativa no LinkedIn Learning **não foi rediscutida** em Set 2026 e segue
   como projeto à parte até o operador dizer o contrário.*
-- *Gatilho de reabertura: ver `idiomas.md` §1.*
 - LinkedIn (rede) deprioritizado.
 
 ---

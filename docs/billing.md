@@ -38,7 +38,7 @@ cartão de qualquer outro país paga em dólar** — independente do idioma do s
 | Cartão | Mensal | Anual |
 |---|---|---|
 | Brasil | R$ 99,90 | ~R$ 995 |
-| Outros países | **US$ 30** | **~US$ 299** (mesmo cálculo: ~17%, ≈ 2 meses grátis — **valor exato a confirmar**) |
+| Outros países | **US$ 30** | **US$ 299** (mesmo cálculo: ~17%, ≈ 2 meses grátis — confirmado em 14/09) |
 
 - **Por que o cartão e não o idioma:** se a moeda seguisse o idioma, qualquer estrangeiro
   trocaria o site para português e pagaria em real, bem menos que US$ 30.
@@ -48,7 +48,15 @@ cartão de qualquer outro país paga em dólar** — independente do idioma do s
 - **Em aberto — preço mostrado × cobrado:** a página pública é vista antes do cartão. Quando o
   cartão levar a outra moeda, **a tela de pagamento mostra o valor final antes da confirmação**.
   Cobrar de um estrangeiro mais do que a página mostrava é o pior caso.
-- **`temAcessoAtivo()` continua ignorando plano — e moeda.**
+- **`temAcessoAtivo()` continua ignorando plano e moeda — mas passa a ler IDIOMA** *(decisão do
+  operador, 14/09/2026)*: **cada assinatura dá acesso só aos cursos do idioma do cadastro.** A
+  `Subscription` guarda o idioma e a checagem fica dentro da função única (`CLAUDE.md` → Access
+  Architecture). Moeda (do cartão) e idioma (do cadastro) são **independentes**.
+  **Em aberto para a Fase 4:**
+  - o assinante pode trocar o idioma da assinatura?
+  - o que ele vê no catálogo do outro idioma?
+  - **o botão de assinar em inglês fica ligado enquanto não houver curso em inglês?** Com o acesso
+    por idioma, assinar nesse período é pagar por um catálogo vazio.
 
 ### Imposto internacional — decidir ANTES da primeira venda fora do Brasil
 

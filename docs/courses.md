@@ -18,7 +18,10 @@
 
 ## 0. Como usar este doc (3 princípios que regem tudo)
 
-1. **O catálogo tem TETO de 15 cursos, de 2h a 5h cada.** `[FATO, decisão do operador — Set 2026]`
+1. **O catálogo tem TETO de 15 cursos POR IDIOMA, de 2h a 5h cada — no máximo 2 idiomas (PT e EN).**
+   `[FATO, decisão do operador — Set 2026; "por idioma" em 14/09, com a escola bilíngue — idiomas.md]`
+   A versão em inglês de um curso ocupa vaga **no teto do inglês**; regra de entrada e rotação (D9)
+   valem para cada idioma separadamente. O slate abaixo é o do português.
    Substitui o teto de 20 (Ago 2026), que substituíra "número aberto". É **teto, não meta** — existe
    pra dizer quando **PARAR**, porque catálogo sem limite escrito vira esteira de manutenção que
    operador solo não sustenta. **Slate comprometido: 12 cursos** (§6). **Folga: 3 slots.**

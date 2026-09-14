@@ -107,7 +107,7 @@ tutor 24/7) + autoridade pessoal + simplicidade Apple — combinação que nenhu
 
 - **Mensal R$99,90 sem fidelidade** (motor de aquisição) + **anual ~R$995** (~17% off). Sem trial,
   sem grátis na escola, sem lock vitalício.
-- **Fora do Brasil (Set 2026): US$ 30/mês + anual pelo mesmo cálculo (~US$ 299, a confirmar).**
+- **Fora do Brasil (Set 2026): US$ 30/mês + US$ 299/ano (mesmo cálculo do anual em real).**
   Moeda pelo **país do cartão**. ⚠️ **Toda a conta abaixo (ARPU, 363, 500) está só em reais.**
   Cartão estrangeiro tem outra taxa na Stripe (a verificar na Fase 4), então o assinante em dólar
   precisa de conta própria antes de entrar na meta.

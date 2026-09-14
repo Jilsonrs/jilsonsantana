@@ -107,7 +107,9 @@
 
 **Rotating catalog — `ARCHIVED` read semantics (Ago 2026 · `courses.md` D9 / §1.3):**
 
-The school runs a **rotating catalog capped at 20 courses**: a new course enters when another
+The school runs a **rotating catalog capped at 15 courses per language, 2 languages max** *(was
+"20" here — stale since `courses.md` Set 2026 (13) lowered it to 15; per-language cap is the
+operator's decision of 14/09/2026, see `idiomas.md`)*: a new course enters when another
 leaves. `Course.status` already carries `ARCHIVED` — the enum exists, **the read semantics do not**.
 No new model, no entitlement table: the operator chose the simple rule (access while the
 subscription is active), which the existing enum covers.
@@ -1072,10 +1074,10 @@ landmark. Corrigido junto.
 > em dólar (Fase 4); e-mail e páginas legais em inglês (Fase 7); ligação entre a versão PT e a EN
 > do mesmo curso (entra quando existir o primeiro par).
 
-- [ ] **Passo 0 — as duas pendências de produto que mudam o diff** (operador; marcadas em
-      `idiomas.md`): **o que o catálogo em inglês mostra enquanto está vazio**, e **onde fica o
-      seletor PT | EN** (com o parceiro de design — `design-lab/GEMINI.md`). Sem as duas, o bloco
-      não começa.
+- [ ] **Passo 0 — a pendência de produto que muda o diff** (operador): **a posição do seletor
+      PT | EN** na tela, com o parceiro de design (`design-lab/GEMINI.md`). Sem ela, o bloco não
+      começa. *(O catálogo em inglês vazio já foi decidido em 14/09: mock "Excel + AI" — item
+      abaixo.)*
 - [ ] **Migration:** enum `Language` + `Course.language` + `LearningPlan.language`, **obrigatórios**;
       linhas existentes = português. `Module` e `Lesson` **herdam** do curso, sem coluna. Sem tabela
       nova ⇒ sem RLS nova, mas a **consulta de RLS roda mesmo assim** (`CLAUDE.md` → Database &
@@ -1101,8 +1103,12 @@ landmark. Corrigido junto.
       interface é dele — *DE QUEM É A DECISÃO*).
 - [ ] **Seletor PT | EN** grava a escolha (cookie para visitante; `User.preferredLanguage` para quem
       está logado), e a interface lê dali até o bloco seguinte trocar o visitante para o endereço.
-      Estados de loading/erro + **teste de componente**; catálogo em inglês vazio com estado próprio
-      + teste.
+      Estados de loading/erro + **teste de componente**.
+- [ ] **Catálogo em inglês sem curso = mock "Excel + AI"** *(operador, 14/09)*. **Conteúdo fixo, NÃO
+      linha de `Course`** — senão ele entra na busca, no sitemap e no JSON-LD como curso à venda. Some
+      sozinho quando o primeiro curso em inglês for publicado. **Antes de codar, o operador fecha:**
+      o que o mock diz de si mesmo (ex.: "coming soon"). **Teste de componente:** com zero cursos EN
+      aparece o mock; com um curso EN publicado, o mock some.
 - [ ] **Passo 8 — mutação:** remover o filtro de idioma da leitura pública e remover a recusa de item
       de outro idioma na trilha → a suíte de servidor **tem que reprovar** nos dois casos; reverter.
 - **Done when:**
@@ -1181,8 +1187,10 @@ landmark. Corrigido junto.
       `PUBLISHED`, certificados com `isPublic=true`. `DRAFT`/`ARCHIVED` **nunca** entram — o sitemap
       respeita o mesmo filtro das leituras públicas.
 - [ ] **Os dois idiomas na superfície pública** *(Set 2026 — depende do Bloco I; spec em
-      `idiomas.md` §2, trava em `CLAUDE.md` → Idiomas)*. **Antes do código, o operador fecha:**
-      caminhos em inglês (`/en/courses` ou `/en/cursos`). Então: cada rota pública também sob `/en`
+      `idiomas.md` §2, trava em `CLAUDE.md` → Idiomas)*. Caminhos em inglês **decididos: segmentos em
+      inglês** (`/en/courses`, `/en/course/:slug` — operador, 14/09); **antes do código, fechar** o
+      segmento em inglês de trilha e de certificado (sai do nome em inglês desses termos, na revisão
+      dos textos do Bloco I). Então: cada rota pública também sob `/en`
       · redirecionamento **só na primeira visita à raiz**, pelo navegador (`pt*` fica, qualquer
       outro vai para `/en`), **nunca** em link direto nem sem `Accept-Language` · `<html lang>`,
       `og:locale` e `hreflang` recíproco quando houver par · `sitemap.xml` com os dois idiomas.
@@ -1337,8 +1345,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       *Sem gatilho de reabertura — arquitetural.*
 - [ ] **Setup no dashboard (sem código):** Payments Plano Padrão (conta MEI/CNPJ, payout Banco do Brasil) + **Stripe Billing ativado**. Produto **"Assinatura"** com **2 `Price`**: Mensal R$99,90 (sem fidelidade) / Anual ~R$995 (~17% off). Sem free trial, sem conteúdo grátis. **Sem Customer Portal.** *(Versão em dólar: próximo item.)*
 - [ ] **Preços em dólar, pelo país do CARTÃO** *(decisão do operador, 14/09/2026 — `billing.md`)*:
-      **US$ 30/mês** + anual pelo mesmo cálculo (**~US$ 299 — valor exato a confirmar** com o
-      operador antes de criar o `Price`). **context7 `/websites/stripe` primeiro:** moedas no mesmo
+      **US$ 30/mês** + **US$ 299/ano** (confirmado pelo operador em 14/09). **context7 `/websites/stripe` primeiro:** moedas no mesmo
       `Price` ou `Price`s separados, e como saber o país do cartão **antes** de confirmar a cobrança.
       **Trava:** a moeda nunca sai do idioma nem do prefixo `/en` (`CLAUDE.md` → Membership Gating).
       **Teste de servidor:** cartão do Brasil → preço em real; cartão estrangeiro → preço em dólar
@@ -1353,13 +1360,22 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       MEI, faturamento já em território EPP, e **IVA europeu desde a 1ª venda, que já pega aluno de
       Portugal**. `[FATO — context7, 14/09/2026]` · aceite de empresa brasileira no Managed Payments:
       **não verificado**.
+- [ ] **ACESSO POR IDIOMA** *(decisão do operador, 14/09/2026 — `idiomas.md` §3)*: cada assinatura dá
+      acesso **só** aos cursos do idioma do cadastro. `Subscription` ganha o **idioma** (junto do
+      model, abaixo); a checagem mora **dentro** de `temAcessoAtivo()`, que passa a receber o
+      idioma do curso — nunca inline na rota (`CLAUDE.md` → Access Architecture). **Não altera a
+      regra do gate** (status vivo OU período pago). **Casos novos na matriz de testes** (lista
+      abaixo, 16–18). **Antes de codar, o operador fecha:** (a) o assinante pode trocar o idioma da
+      assinatura depois? (b) o que ele vê no catálogo do outro idioma? (c) **o botão de assinar em
+      inglês fica ligado enquanto não houver curso em inglês?** Com acesso por idioma, assinar nesse
+      período é pagar por um catálogo vazio.
 - [ ] **Conta de receita em dólar** em `strategy.md` §6 (é doc, não código): taxa da Stripe para
       cartão estrangeiro (verificar no painel) e como o assinante em dólar entra na meta, que hoje
       está só em reais.
 - [ ] **Configurar Smart Retries + automações de recuperação** conforme a política de produto abaixo. Isto é **configuração, não código**.
 - [ ] **Política de dunning (decisão NOSSA, executada pela Stripe):** falha na renovação → retries automáticos → corte. **Acesso MANTIDO durante toda a janela de retry** (`past_due`) — churn involuntário é a maior alavanca (strategy.md §6). Corte no fim da janela → `unpaid`/`canceled` + `session.deleteMany`. Ajustar a janela é mudança de configuração. *Confirmar os intervalos exatos que a Stripe expõe na abertura da fase, via context7.*
 - [ ] **Checkout embutido (Payment Element).** Cria `Customer` + `Subscription` na Stripe e confirma o primeiro pagamento na própria página. O dado do cartão vai direto pro Stripe (não toca nosso servidor). **`requires_action`/3DS é tratado pelo Element no fluxo de assinatura.**
-- [ ] `Subscription` model = **espelho local** (o gate lê daqui) com growth seams: `ownerUserId?`, `organizationId?` (nullable), `seats` (default 1), `status`, `currentPeriodEnd`, `stripeCustomerId`, **`stripeSubscriptionId` (obrigatório — é a chave do objeto canônico)** (+ RLS); migration
+- [ ] `Subscription` model = **espelho local** (o gate lê daqui) com growth seams: `ownerUserId?`, `organizationId?` (nullable), `seats` (default 1), `status`, `currentPeriodEnd`, `stripeCustomerId`, **`stripeSubscriptionId` (obrigatório — é a chave do objeto canônico)**, **`language` (idioma do cadastro — acesso por idioma, Set 2026)** (+ RLS); migration
 - [ ] `temAcessoAtivo(userId)` lib — caminho individual (`assinaturaIndividualAtiva`); **fonte única de verdade do acesso para a aplicação**, lida do espelho local. *(A verdade canônica é a `Subscription` da Stripe; o espelho é o que o gate consulta em tempo de request.)*
 - [ ] **Webhook handler** dos eventos de assinatura (`customer.subscription.created/updated/deleted`, `invoice.paid`, `invoice.payment_failed`) — **TUDO INLINE, SEM FILA** (pg-boss removido do MVP em Ago 2026; ver CLAUDE.md → Background Jobs). A ordem é: **verifica assinatura do Stripe → grava o `event.id` → atualiza o espelho local → responde 200**, tudo na mesma request (milissegundos). CRIA user+subscription no primeiro pagamento (substitui o seed). **A confiabilidade vem da Stripe:** devolvemos 5xx e ela reentrega — era isso que a fila duplicava. E-mail (Resend) sai na mesma request, dentro de `try/catch`: falha de e-mail **nunca** derruba o 200 de um evento já processado.
 - [ ] **TRAVA de montagem (achado do `security-vulnerability-reviewer`, Ago 2026):** a rota do
@@ -1457,7 +1473,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       **A prova que fecha o item:** rodar `npm test` (que executa `migrate reset --force`) e
       confirmar em seguida, via MCP, que o banco de **dev** seguia com 2 cursos, 2 módulos, 3 aulas,
       1 trilha e 2 usuários — **intacto**. Era exatamente esse comando que destruía o trabalho.
-- [ ] **TESTES DE SERVIDOR (~15, supertest, sem browser) — escritos JUNTO com o handler acima, não
+- [ ] **TESTES DE SERVIDOR (~18, supertest, sem browser) — escritos JUNTO com o handler acima, não
       depois.** Este é o item que fecha a fase; não é polish de fim de ciclo. **Justificativa
       (Ago 2026):** 100% do risco catastrófico do projeto é servidor — *assinante pagante trancado
       pra fora* e *acesso liberado sem pagar* — e **nada disso é observável por browser: webhook não
@@ -1475,6 +1491,10 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       **Billing bypass** — (13) force-sync **sem auth → 401**; (14) force-sync como member comum →
       403.
       **Rate limit** — (15) o limite do Bloco 0 (Fase 3) **liga e bloqueia** de verdade.
+      **Idioma** *(Set 2026)* — (16) assinante PT ativo → curso EN **recusado**; (17) assinante EN
+      ativo → curso PT **recusado**; (18) **assinante ativo → curso do PRÓPRIO idioma liberado**,
+      inclusive a URL assinada de vídeo. O 18 é o que pega o dia ruim: a checagem nova trancando
+      quem pagou.
       *Requer o banco de teste (projeto `mvaobzypsiuhqzipcelw` + trava por **REF** no `globalSetup`)
       — CLAUDE.md → Database & Migrations.*
 - [ ] `requireActiveMembership` middleware (wraps `temAcessoAtivo`) gating content + video URLs
@@ -1750,3 +1770,5 @@ MVP = **Phases 0 → 7** (incl. trilhas curadas na Phase 2, certificados na Phas
 *Atualizado: Set 2026 (10) — **banco migrado do Supabase para o Neon: produção e dev, com o teste deliberadamente INALTERADO.** **(1) O que a migração exigiu, e o que ela não exigiu.** Foi Postgres→Postgres puro — `pg_dump --schema=public --no-owner --no-privileges` + `psql --single-transaction -v ON_ERROR_STOP=1` — porque a autenticação **já era nossa**: Better Auth guarda `user`/`session`/`account` no schema `public` via Prisma, então elas migraram como dados comuns e **zero linha de código de auth foi tocada**. Registrado porque é o argumento que torna a troca barata, e ele não existiria se o projeto usasse o auth do fornecedor. **(2) A verificação foi de SCHEMA, não só de contagem — e a distinção pagou.** As 11 tabelas / 19 linhas bateram, mas o diff de catálogo acusou **61 diferenças**, todas `NOT NULL` materializado em `pg_constraint`: **mudança do PG18** (o 17 guardava só em `pg_attribute.attnotnull`). Semântica idêntica, provado pelo `is_nullable` do `information_schema` batendo coluna a coluna. Conferidas à parte as **`last_value` das 6 sequences** (10, 8, 11, 13, 9, 9) — contagem de linhas não pega sequence dessincronizada, que é o erro clássico deste tipo de migração. **(3) [FATO que derruba a entrada (10) do changelog do `CLAUDE.md`] Prisma 5.22 funciona com PG18.** A premissa registrada era *"o 5.22 é anterior ao 18"*; medido contra o Neon 18.6, `migrate deploy`, `migrate status`, client gerado, transação e rollback passam. O banco de teste segue no 17 por o CI usar `postgres:17`, **não** mais por esse motivo — e a divergência prod-PG18 / teste-PG17 fica **registrada como aceita**, com gatilho. **(4) INCIDENTE DE CREDENCIAL.** `neon branches create` imprime a connection URI **com senha** por padrão, e **branch do Neon herda a senha da role do pai** — as duas juntas fizeram o vazamento de uma credencial de *dev* ser um vazamento de **produção**. Rotacionadas as duas e **verificado por teste** que a senha antiga falha em ambas. Virou regra no `CLAUDE.md`: rotacionar branch novo antes de usar, e redirecionar a saída de comando que possa emitir connection string. **(5) `DATABASE_URL` e `DIRECT_URL` mudam JUNTAS.** Trocada só a primeira, o app lê um banco e o `migrate deploy` do pre-deploy migra **outro** — e o deploy fica **verde**. Aconteceu aqui; dano zero só porque não havia migration pendente. **(6) O 2º ambiente virou BRANCH, não 2º projeto** — o que **derruba** o teto de US$ 35/mês da entrada (8) deste stream: aquele valor vinha do plano Supabase ser por organização com dois projetos (US$ 25 + US$ 10), e o item de US$ 10 deixou de existir. O checkbox de upgrade da Fase 7 foi reescrito: o que decide o plano passa a ser a **janela de retenção do PITR**, e ficou explícito que **PITR não é backup** (protege de erro seu na janela, não de perder a conta) — o checkbox de restore agora pede **dois** testes, PITR e `pg_dump` frio. **(7) Teste continua LOCAL, e isso é decisão reafirmada, não inércia.** Branch de nuvem é barato e instantâneo, o que torna tentador usá-lo como banco de teste — mas devolveria o `migrate reset --force` para um banco alcançável pela internet, exatamente o que a decisão de Ago 2026 evita. A trava de hostname disparou e confirmou `localhost` durante toda a sessão. **(8) Supabase intocado como rollback durante a migração e APAGADO pelo operador na mesma sessão**, depois de a validação fechar (somente leitura o tempo todo, verificado por comparação antes/depois). **Consequência que vira prioridade:** sem o Supabase de pé, a única rede de segurança do banco passa a ser a **janela curta de PITR do plano Free** — o que promove o checkbox de backup da Fase 7 de "antes do primeiro aluno pagante" para **o próximo item de infra a fechar**, já que o `pg_dump` frio é o que cobre "perdi a conta".*
 
 *Atualizado: Set 2026 (11) — **escola bilíngue (PT + EN) entra no plano** (decisão do operador, 14/09/2026; raciocínio no changelog do `CLAUDE.md`, entrada **Set 2026 (16)** — não duplicado aqui). O que mudou neste plano: (1) **Fase 3 ganha o Bloco I** (idioma no conteúdo, dicionário único de textos, seletor), sequenciado **antes** da *Superfície pública*. A posição exata dentro da fase é do operador. (2) **O bloco Superfície pública ganha o item dos dois idiomas** (`/en`, redirecionamento só na raiz, `hreflang`, sitemap). Ele fica lá, e não no Bloco I, para os endereços nascerem nos templates do servidor em vez de no React. (3) **Fase 4 ganha preço em dólar pelo país do cartão, a questão preço mostrado × cobrado, a decisão de imposto internacional e a conta de receita em dólar.** (4) Fases 6, 6.5 e 7 ganham uma nota de idioma cada. (5) A costura de idioma da Fase 2 e a linha "EN removido" dos *Removidos do roadmap* foram riscadas, não apagadas. **Nada foi construído.** Pendências de produto marcadas no Passo 0 de cada bloco: o que o catálogo EN vazio mostra, onde fica o seletor, os caminhos sob `/en`, o valor do anual em dólar.*
+
+*Atualizado: Set 2026 (12) — **respostas do operador às pendências (14/09, 2ª rodada).** Registro da decisão: `CLAUDE.md` Set 2026 (16), item (h). Neste plano: (1) **Fase 2**: o "catálogo rotativo de até 20" estava defasado desde o Set 2026 (13) do `courses.md`; passa a **15 por idioma, no máximo 2 idiomas**. (2) **Bloco I**: o catálogo EN vazio vira item próprio — **mock "Excel + AI" fora do banco**; o Passo 0 fica só com a posição do seletor. (3) **Superfície pública**: endereços com **segmentos em inglês** (`/en/courses`); falta o segmento de trilha e de certificado. (4) **Fase 4**: anual **US$ 299** confirmado; entra **ACESSO POR IDIOMA** (`Subscription.language` + checagem dentro de `temAcessoAtivo()` + casos 16–18 na matriz, que vai a ~18). Três perguntas ficam para o operador antes de codar a fase: trocar o idioma da assinatura; o que o assinante vê no catálogo do outro idioma; se assinar em inglês fica ligado sem curso em inglês.*

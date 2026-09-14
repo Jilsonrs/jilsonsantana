@@ -34,7 +34,12 @@ trabalhos, mas duas fontes de renda"*.
 | Como nasce um curso | com um **campo Idioma na criação**, como o da Udemy | operador, 14/09 |
 | Trilha | **segue o idioma**: trilha em inglês só leva conteúdo em inglês | operador, 14/09 |
 | Moeda | **pelo país do cartão**: cartão do Brasil paga em R$, cartão de fora paga em US$ | operador, 14/09 |
-| Preço fora do Brasil | **US$ 30/mês** + anual com o **mesmo cálculo** do anual em real | operador, 14/09 |
+| Preço fora do Brasil | **US$ 30/mês** + **US$ 299/ano** (mesmo cálculo do anual em real) | operador, 14/09 |
+| Endereços em inglês | **`/en/courses`** — segmentos traduzidos para o inglês | operador, 14/09 (2ª rodada) |
+| Catálogo em inglês sem curso | mostra um **mock de curso de Excel em inglês, "Excel + AI"** | operador, 14/09 (2ª rodada) |
+| Acesso da assinatura | **só aos cursos do idioma do cadastro** — "quem acessa do Brasil não vai entender em inglês, e o inverso o mesmo" | operador, 14/09 (2ª rodada) |
+| Teto do catálogo | **15 cursos por idioma, no máximo 2 idiomas** | operador, 14/09 (2ª rodada) |
+| Reavaliação | **sem gatilho** — "vai sendo construído em paralelo" | operador, 14/09 (2ª rodada) |
 
 **O que ela reverte:** `project-description.md` → *Idioma & foco* e `strategy.md` §9 (*"EN
 removido da escola. Escola e YouTube ficam PT pra sempre"*), e a linha do `CLAUDE.md` *"Do NOT
@@ -44,11 +49,17 @@ build any multi-language UI now"*.
 públicas no servidor, e a Fase 4 cria os preços. Se as duas nascerem bilíngues, o custo é um bloco.
 Se o idioma vier depois, as duas são refeitas.
 
-**GATILHO DE REABERTURA** `[PROPOSTO — confirmar]`: a decisão se reabre se **(a)** manter o inglês
-passar a atrasar o português de forma medida (um bloco de build ou um curso PT atrasado por causa
-de tradução), **ou (b)** 12 meses após o lançamento não houver nenhum curso em inglês publicado. No
-caso (b) a estrutura custa manutenção sem render nada. **Não é gatilho:** poucos alunos em inglês
-no começo, que o próprio operador já previu.
+**SEM GATILHO DE REABERTURA** `[operador, 14/09 — 2ª rodada]`: *"vai sendo construído em
+paralelo"*. Português e inglês são estrutura permanente da escola, não um experimento a avaliar.
+*(O agente havia proposto reavaliar se o inglês atrasasse o português ou se não houvesse curso em
+inglês em 12 meses; o operador recusou.)*
+
+**NO MÁXIMO 2 IDIOMAS** `[operador, 14/09 — 2ª rodada]`. Um terceiro idioma não é "mais um valor
+no enum": é decisão nova do operador, com o teto do catálogo recalculado.
+
+**TETO: 15 cursos POR IDIOMA** `[operador, 14/09 — 2ª rodada]`. Até 15 em português e até 15 em
+inglês; a versão em inglês de um curso ocupa vaga **no teto do inglês**. A regra de entrada e a
+rotação (D9) do `courses.md` valem para cada idioma separadamente.
 
 ---
 
@@ -82,11 +93,13 @@ separadas com `hreflang`.
 - `[FATO — docs do Railway]` o Railway **não informa** o país do visitante. Detectar país exigiria
   pôr a Cloudflare na frente do site.
 
-**Pendências:**
-- `[PROPOSTO — confirmar]` caminhos em inglês sob o prefixo: `/en/courses`, `/en/course/:slug`,
-  `/en/track/:slug`. A alternativa é manter os segmentos em português (`/en/cursos`).
-- `[pendente — operador + parceiro de design]` **onde fica o seletor PT | EN** e como ele aparece.
-  É algo que o aluno vê, então a decisão é do operador, com o parceiro de design.
+**Endereços** `[operador, 14/09 — 2ª rodada]`: segmentos **em inglês** sob o prefixo —
+`/en/courses`, `/en/course/:slug`. O segmento da trilha e do certificado em inglês segue o **nome
+em inglês de "trilha"** e de "certificado", que sai da revisão dos textos (§4) — decidir antes do
+bloco *Superfície pública*.
+
+**Pendência:** `[pendente — operador]` **a posição do seletor PT | EN** na tela. O operador decide
+no Passo 0 do Bloco I (Fase 3), com o parceiro de design.
 
 ---
 
@@ -104,15 +117,34 @@ separadas com `hreflang`.
   - a trilha clonada pelo aluno herda o idioma.
 - **Catálogo, busca, lista de trilhas e sitemap mostram só o idioma do endereço** `[operador,
   14/09]`. É o mesmo mecanismo do filtro por status que já existe.
-- `[PROPOSTO — confirmar]` **A assinatura dá acesso aos cursos dos dois idiomas.** Muda só o que
-  aparece primeiro. O gate de acesso (`temAcessoAtivo()`) não lê idioma.
+- **Cada assinatura dá acesso só aos cursos do idioma do cadastro** `[operador, 14/09 — 2ª
+  rodada]`. O motivo dele: *"quem acessa do Brasil não vai entender em inglês, e o inverso o
+  mesmo"*. **Moeda e idioma são independentes:** a moeda sai do cartão (§5), o idioma sai do
+  cadastro. Um estrangeiro pode assinar em português pagando em dólar.
+  O que isso muda no build (Fase 4, alto risco) `[convenção de engenharia]`:
+  - a `Subscription` passa a guardar o **idioma** — o acesso nunca mora no `User` (*Access
+    Architecture*);
+  - a checagem de idioma fica **dentro** de `temAcessoAtivo()`, que continua sendo a fonte única
+    do acesso. Nunca inline numa rota;
+  - a matriz de testes da Fase 4 ganha os casos de idioma: assinante PT → curso EN recusado, e o
+    inverso. **E o caso que dá o dia ruim: assinante recusado no curso do próprio idioma** — é o
+    "assinante pagante trancado para fora" com uma causa nova.
+  - `[PROPOSTO — confirmar]` "idioma do cadastro" = **o idioma do site no momento de assinar**.
+  - `[pendente — operador, Fase 4]` **o assinante pode trocar o idioma da assinatura depois?**
+    Exemplo: o brasileiro que quer praticar inglês. E o que ele vê ao abrir o catálogo do outro
+    idioma: cursos com cadeado, ou convite para assinar também?
 - **Ligação entre a versão PT e a EN do mesmo curso: NÃO construir agora.** Ela serve para o
   `hreflang` entre páginas de curso e para o seletor cair na página equivalente. Entra, como adição,
   quando existir o primeiro curso em inglês que seja versão de um curso em português.
-- **Catálogo em inglês vazio no lançamento** (consequência de "inglês ligado desde já"):
-  - precisa de um **estado próprio**, nunca uma tela em branco;
-  - `[pendente — operador]` **o que ele mostra**: por exemplo, "cursos em breve", com ou sem captura
-    de e-mail.
+- **Catálogo em inglês sem curso** `[operador, 14/09 — 2ª rodada]`: mostra um **mock de curso de
+  Excel em inglês, "Excel + AI"**. Na implementação `[convenção de engenharia]`:
+  - o mock **NÃO é uma linha de `Course` no banco**. É conteúdo fixo do template, que some quando o
+    primeiro curso em inglês for publicado;
+  - motivo: uma linha no banco entraria na busca, no sitemap e no JSON-LD `Course`, dizendo ao
+    Google e ao aluno que um curso inexistente está à venda;
+  - `[pendente — operador]` **o que o mock diz de si mesmo** (ex.: "coming soon") e **se o botão de
+    assinar em inglês fica ligado** enquanto não houver curso em inglês. Com a assinatura por idioma
+    (acima), assinar em inglês nesse período é **pagar por um catálogo vazio**.
 
 ---
 
@@ -132,8 +164,10 @@ separadas com `hreflang`.
 - **Quem traduz:** o agente. **Quem aprova:** o operador revisa todo texto que o aluno lê, antes de
   publicar. Texto de interface é decisão dele (*DE QUEM É A DECISÃO*).
 - `content.md` continua sendo a **fonte em português**. A copy em inglês ainda não existe.
-  `[pendente — operador]` **tagline e nome de categoria em inglês.** "A primeira escola de dados
-  AI-nativa **do Brasil**" é o posicionamento do lado PT.
+  `[pendente — operador]` **a tagline em inglês** — a frase de marca que abre o site, hoje *"Torne-se
+  um especialista em dados na era da IA."*. `[PROPOSTO — confirmar]` tradução direta: ***"Become a
+  data expert in the AI era."*** O nome de categoria "a primeira escola de dados AI-nativa **do
+  Brasil**" é do lado PT; o equivalente em inglês fica junto com a tagline.
 
 ---
 
@@ -144,7 +178,7 @@ separadas com `hreflang`.
 | Cartão | Mensal | Anual |
 |---|---|---|
 | Brasil | R$ 99,90 | ~R$ 995 |
-| Outros países | **US$ 30** | **~US$ 299** — mesmo cálculo do R$ 995 (~17% de desconto, ≈ 2 meses grátis). **Valor exato a confirmar pelo operador** |
+| Outros países | **US$ 30** | **US$ 299** — mesmo cálculo do R$ 995 (~17% de desconto, ≈ 2 meses grátis) `[operador, 14/09]` |
 
 **Por que o cartão e não o idioma:** se a moeda seguisse o idioma, qualquer estrangeiro trocaria o
 site para português e pagaria em real, bem menos que US$ 30.
@@ -203,3 +237,10 @@ depois e recebe os cursos regravados em inglês. O canal atual segue o rebuild e
 duas rodadas de perguntas, as correções às sugestões do Gemini (rotas no React; "Stripe Tax cuida
 de tudo") e os fatos verificados de imposto. Registro da decisão: `CLAUDE.md`, changelog Set 2026
 (16).*
+
+*Atualizado Set 2026 (14/09, 2ª rodada) — respostas do operador às pendências: anual **US$ 299**;
+endereços **`/en/courses`**; catálogo EN sem curso mostra **mock "Excel + AI"** (fora do banco);
+**assinatura dá acesso só aos cursos do idioma do cadastro** (substitui a proposta do agente de
+acesso aos dois idiomas; a checagem entra em `temAcessoAtivo()` na Fase 4); **teto de 15 cursos por
+idioma, no máximo 2 idiomas**; **sem gatilho de reabertura** ("construído em paralelo"). Novas
+pendências: troca do idioma da assinatura, assinar em inglês com catálogo vazio, tagline EN.*
