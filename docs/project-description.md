@@ -94,7 +94,7 @@ sobre crescimento rápido.
 ## Modelo, preço & esteira de valor
 
 > **B2C-first:** a base (assinatura) fica **acessível** E é o **motor de receita** — a meta de US$ 6k
-> vem da base de **pessoas físicas** (363 ativos fecham a conta; **a meta é 500**). Os tiers de cima (cohorts, B2B) são **bônus** que
+> vem da base de **pessoas físicas** (~378–469 ativos fecham a conta; **a meta é 500, o teto é 1.000**). Os tiers de cima (cohorts, B2B) são **bônus** que
 > dão folga e aceleram, **não a via principal**. A escala vem do **volume da base**, viabilizada pelo
 > JilsonAI (suporte não escala com horas) — não de precificar a base alto.
 
@@ -129,27 +129,52 @@ sobre crescimento rápido.
 |------|-------|------|
 | Câmbio de referência | R$ 5,15/US$ | spot 23/jun/2026 — *atualizar no dia* |
 | Meta líquida | **≈ R$ 30.900/mês** | US$ 6.000 × câmbio |
-| Haircut | ~11–12% | Stripe **~5,2%** (Payments 3,99% + R$0,50 + Billing 0,7% — verificado ago/2026) + imposto Simples ~6% — *confirmar c/ contador* |
-| ARPU líquido | **R$ 85,04**/assinante/mês | mix 75% mensal / 25% anual — conta por plano em `strategy.md` §6 |
-| Assinantes — **a conta** | **363** (faixa 350–420) | o que a renda-objetivo exige |
+| Receita pós-Stripe | **R$ 90,79**/assinante/mês | mix 75% mensal / 25% anual. Stripe **~5,2%** (Payments 3,99% + R$0,50 + Billing 0,7% — verificado ago/2026) — conta por plano em `strategy.md` §6 |
+| − Simples **progressivo** | **~9,5% a ~13%** conforme o faturamento | **não 6% fixo** — os 6% são a 1ª faixa (até R$ 180k/ano). *Corrigido Set 2026* |
+| − API do JilsonAI | **R$ 5–15**/aluno/mês | custo variável por assinante, **maior que a Stripe**. *Acrescentado Set 2026* |
+| **ARPU líquido** | **R$ 67–82**/assinante/mês | **faixa, não número único** — varia com a alíquota e o consumo de JilsonAI. *(Era R$ 85,04, que assumia 6% fixo e ignorava a API.)* |
+| Assinantes — **a conta** | **~378** sem a API · **~404–469** com ela | o que a renda-objetivo exige |
 | Assinantes — **o PISO** | **~400** | margem de câmbio + mix anual + churn. Abaixo disto o objetivo de renda não fecha |
-| Assinantes — **a META** | **500** `[decisão do operador, Ago 2026]` | R$ 42,5k/mês líquido · **≈ R$ 574k/ano** bruto |
-| Faturamento bruto implícito | R$ 38k/mês no piso · **R$ 48k/mês na meta** | **território EPP** — Simples acima do ME |
+| Assinantes — **a META** | **500** `[decisão do operador, Ago 2026]` | R$ 33–40k/mês líquido · **≈ R$ 574k/ano** bruto |
+| Assinantes — **o TETO** | **1.000 pagando MENSAL** `[decisão do operador, Set 2026]` | **R$ 99.900/mês · R$ 1,2M/ano** bruto · **R$ 72–82k/mês líquido ≈ US$ 14–16k** |
+| Faturamento bruto implícito | R$ 38k/mês no piso · R$ 48k/mês na meta · **R$ 100k/mês no teto** | **território EPP** em todos — Simples acima do ME, abaixo do teto de R$ 4,8M |
 
-> **Premissa dominante, não confirmada:** o Simples de **~6% (Anexo III)**. Em **Anexo V (~15,5%)** o
-> ARPU cai pra ~R$ 76 e o alvo sobe pra **~407** — 44 assinantes, ordem de grandeza acima do delta de 3
-> do recálculo de ago/2026. Segue dentro do "planejar p/ ~400", então não muda decisão agora; é o
-> número a fechar com o contador. *(Derivação completa em `strategy.md` §6.)*
+> **O teto de 1.000 é no plano MENSAL** `[decisão do operador, Set 2026]`, por isso a linha dele usa
+> R$ 99,90 cheios e não o mix 75/25 das linhas acima. **Mensal puro rende mais:** o anual dá 17% de
+> desconto, então 1.000 no mensal fatura **~R$ 51k/ano a mais** do que 1.000 no mix. E a conta dos
+> ~378 **sobrevive à troca** — sem o desconto do anual o assinante rende mais, mas a alíquota
+> progressiva come a diferença.
+
+> **Duas correções na derivação `[Set 2026]`. Nenhuma ameaça a meta — todas reduzem o que sobra.**
+> **(1) O Simples é PROGRESSIVO, não 6% fixo.** A alíquota efetiva sobe com o faturamento dos últimos
+> 12 meses: **~9,5% na conta · ~10,4% na meta de 500 · ~13% no teto de 1.000**. Custa **~R$ 2,3
+> mil/mês aos 500** e **~R$ 7 mil/mês (R$ 84k/ano) aos 1.000**. ⚠️ A *estrutura* progressiva é certa;
+> **os valores de faixa são [A CONFIRMAR COM O CONTADOR]** — e é esta a conversa a ter, junto com
+> Anexo III × Anexo V e com a comparação contra **Lucro Presumido** (a ~13% efetiva ele merece ser
+> comparado). *(O alerta anterior era só Anexo III × V; o problema acontece **mesmo ficando no III**.)*
+> **(2) Faltava o custo de API do JilsonAI.** É custo variável por assinante (R$ 5–9/mês leve, R$ 25–45
+> heavy — `jilsonai.md`), **maior que a taxa da Stripe**, e não estava descontado em lugar nenhum.
+> Incluindo-o, a conta sai de 363 e vai para **~404–469**: **o "piso" de ~400 vira a conta**, e a
+> margem que ele representava some. *Isso é argumento a favor de mirar mais alto, não contra.*
+> *(Derivação completa em `strategy.md` §6.)*
 
 **Aquisição (churn-adjusted):** a churn 7%, 365 ativos perdem ~26/mês → ~26 vendas novas/mês só pra
 **manter**. Trajetória 0 → 365: ~40 novas/mês ≈ 14 meses · ~50/mês ≈ 10 meses · ~60/mês ≈ 8 meses.
+**Reposição para manter o teto de 1.000:** ~70/mês a 7% de churn · ~50/mês a 5% · ~30/mês a 3%.
 **Churn é a maior alavanca** (7% → 5% derruba a reposição p/ ~18/mês). Funil: `vendas/mês = visitantes
 × conversão (3–5%)`. Inputs reais a preencher: views/mês YouTube, CTR→site, lista de e-mail. Detalhe
 completo em **STRATEGY.md §6**.
 
+> ⚠️ **A churn de 7% é HIPÓTESE, nunca foi medida** `[enquadramento do operador, Set 2026]` — pode ser
+> bem menor ou bem maior. Os números de reposição acima são **referência, não restrição à meta**: não
+> se usa um número inventado para decidir se 1.000 é alcançável. Recalibrar quando houver churn real
+> (o gatilho já está em `strategy.md` §6: **12 meses de churn medida**).
+
 > **Regime tributário:** a meta estoura MEI (R$ 81k/ano) e ME (R$ 360k/ano) → **EPP no Simples
-> Nacional**. Planejar desenquadramento + pró-labore/distribuição de lucros **com contador antes de
-> escalar** (não depois — desenquadramento por excesso é retroativo).
+> Nacional**. O teto de 1.000 (R$ 1,2M/ano) segue **dentro do EPP** — o limite do Simples é R$ 4,8M/ano,
+> então o teto **não muda enquadramento** em relação ao que já estava previsto. Planejar
+> desenquadramento + pró-labore/distribuição de lucros **com contador antes de escalar** (não depois —
+> desenquadramento por excesso é retroativo).
 
 ### Valor recorrente (o que a Udemy não dá)
 Conteúdo continuamente atualizado, JilsonAI 24/7, suporte direto, trilhas e certificados.
@@ -390,7 +415,7 @@ GitHub Actions.**
 ## Princípio-guia
 
 > Simples como a Apple, autoridade como o Mosh, **AI no DNA** como assinatura única —
-> base acessível **como motor de receita** (meta **US$ 6k líq ≈ ~365 assinantes**), cohorts/B2B/AdSense
+> base acessível **como motor de receita** (renda-objetivo **US$ 6k líq ≈ ~400 assinantes**; meta 500, teto 1.000), cohorts/B2B/AdSense
 > de bônus, escalável pelo JilsonAI. **A escola não ensina IA: a escola É IA.**
 
 ---
@@ -450,3 +475,5 @@ ferramenta"). Nada infla o MVP (0–7) — são lentes, filtros e seams, não fa
 *Atualizado Ago 2026 (3) — **meta de assinantes: 500** `[decisão do operador]`. A tabela de economia passa a distinguir três números que antes vinham colapsados em um: **363 = a conta** (derivada da renda-objetivo), **~400 = o piso** (a conta + margem de câmbio/mix/churn), **500 = a meta**. Nenhum número da derivação foi sobrescrito — a mudança é de *enquadramento*: o piso vinha sendo tratado como destino. Racional completo, trajetória e gatilho de reabertura em `strategy.md` §6.*
 
 *Atualizado Set 2026 (14/09) — **ESCOLA BILÍNGUE (PT + EN) desde o lançamento** `[decisão do operador]`, revertendo o "EN removido da escola, PT pra sempre" de Jun 2026. Reescritos: *Idioma & foco*; *Pricing* ganha o preço fora do Brasil (US$ 30/mês, anual pelo mesmo cálculo, **moeda pelo país do cartão**); *Canais* ganha o canal do YouTube separado em inglês; tagline EN fica a definir; o roadmap deixa de listar a "fase EN" como removida. **O que NÃO mudou:** a meta de receita e a derivação dela, que seguem só em reais — a receita em dólar ainda não tem conta. Especificação, pendências e gatilho de reabertura em `idiomas.md`.*
+
+*Atualizado Set 2026 (18/09) — **TETO DE 1.000 ASSINANTES PAGANDO MENSAL** `[decisão do operador]`, + **duas correções na derivação**. A escada de números passa de três para quatro: **~378–469 = a conta · ~400 = o piso · 500 = a meta · 1.000 = o TETO**. **O que o teto vale:** R$ 99.900/mês bruto, **R$ 1,2M/ano**, **R$ 72–82k/mês líquido ≈ US$ 14–16k** — **~2,3× a renda-objetivo de US$ 6k mesmo na conta mais pessimista**, e **dentro do EPP** (limite do Simples é R$ 4,8M/ano), então não muda enquadramento. **O teto é no plano MENSAL** `[decisão do operador]`, não no mix 75/25 das linhas acima: mensal puro fatura **~R$ 51k/ano a mais** que o mesmo número de assinantes no mix, porque o anual dá 17% de desconto — e a conta dos ~378 **sobrevive à troca**, porque a alíquota progressiva come a diferença. **CORREÇÃO 1 — o Simples é PROGRESSIVO, não 6% fixo:** os 6% são a alíquota de quem fatura até R$ 180k/ano; a efetiva sobe com o faturamento (**~9,5% na conta · ~10,4% aos 500 · ~13% aos 1.000**), custando **~R$ 2,3 mil/mês aos 500** e **~R$ 7 mil/mês (R$ 84k/ano) aos 1.000**. O alerta que existia aqui era só *Anexo III × Anexo V* — o problema acontece **mesmo ficando no Anexo III**. ⚠️ A estrutura progressiva é certa; **os valores de faixa são [A CONFIRMAR COM O CONTADOR]**, junto da comparação com **Lucro Presumido** (a ~13% efetiva ele merece ser comparado). **CORREÇÃO 2 — faltava o custo de API do JilsonAI no ARPU:** é custo variável por assinante (R$ 5–15/mês), **maior que a taxa da Stripe**, e não estava descontado em lugar nenhum; incluindo-o, **o "piso" de ~400 vira a conta**. Por isso o ARPU deixa de ser um número único (R$ 85,04) e vira **faixa: R$ 67–82**. **Sobre a churn:** os 7% são **hipótese, nunca medida** `[enquadramento do operador]` — números de reposição ficam como referência, **não como restrição à meta**. **GATILHO DE REABERTURA:** o teto se revisa se o contador fechar um enquadramento que mova o ARPU líquido em mais de ~10%, **ou** quando houver **12 meses de churn medida** (mesmo gatilho que já vale para a meta de 500). **Não é gatilho:** ritmo de crescimento abaixo do esperado no começo — teto é destino, não previsão. Análise completa e derivação em `strategy.md` §6.*

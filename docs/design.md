@@ -216,9 +216,10 @@ Corpo com `line-height` 1,6–1,8 e medida ~66ch. **Nada abaixo de 0,75rem (12px
 
 ## 5. Layout & espaçamento
 
-- **Respiro:** seções públicas `py-24`/`py-32`; conteúdo `max-w-6xl` (texto corrido `max-w-[1000px]`).
-  **Nunca espremer.** O conteúdo expande naturalmente até o limite estrutural, sem se sentir
-  confinado em caixas desnecessárias.
+- **Respiro:** seções públicas `py-24`/`py-32`.
+- **Grade Macro:** A largura máxima do conteúdo geral da tela é de **1680px**, projetada para monitores modernos amplos (estilo Apple).
+- **Zona de leitura e Heros:** O conteúdo textual longo é contido num bloco de **860px**, centralizado na página (`margin: 0 auto`). Dentro deste limite, os parágrafos são obrigatoriamente **alinhados à esquerda** para legibilidade impecável e descanso dos olhos (manchetes curtas e blocos soltos podem ser centralizados).
+- **Imagens (Mobile):** Fotos hero usam 100% da largura útil do seu container base (padding horizontal zero no mobile) para alinhamento milimétrico com a letra das caixas de texto e aproveitamento máximo da tela.
 - **Ritmo de fundo:** alterna `--background` e `--surface-alt` para separar seções **sem linha
   dura**.
 - **Cantos:** `--radius` (12px) em cards e superfícies; 16px em cards grandes; `rounded-full` em
@@ -438,6 +439,7 @@ local mais lento que o CDN — aí é dado novo.*
 ## 12. Iconografia, imagens, favicon e OG
 
 - **Ícones:** Lucide, traço fino, monocromáticos (herdam `currentColor`). Sem ícone colorido.
+- **Fotografia:** Estilo "High-End Lifestyle" (estética Apple). Premium, brilhante, otimista e iluminada (cenários luxuosos, Miami, varandas, praias ensolaradas, uso de MacBooks prateados). A ideia é materializar o desejo de liberdade geográfica e sucesso, distanciando-se do estereótipo "hacker no escuro".
 - **Favicon:** o "**#**" da logomarca em `--primary` sobre branco.
 - **OG image:** wordmark #Jilson Santana + a tagline sobre fundo claro com um respiro do azul.
   Limpo. **Toda rota pública precisa da sua** — sem OG, compartilhar gera card genérico.
@@ -504,3 +506,5 @@ wordmark do `AppRail`) e `font-display` (Outfit, aplicado a `h1, h2` pela camada
 **variável**: dois arquivos (`latin` e `latin-ext`, 47 KB) cobrem 500/600/700. **Sem gatilho de
 reabertura técnico:** fonte é identidade, e só muda por nova decisão do operador com o diretor de
 arte.*
+
+*Atualizado Set 2026 — **Layout Macro 1680px, Zona de Leitura 860px e Fotografia Lifestyle. Decisão do operador com o diretor de arte (Gemini).** Estabeleceu-se uma grade de 1680px para preencher monitores modernos. Textos longos e conteúdo principal hero ficam contidos em uma coluna central de 860px, com parágrafos obrigatoriamente **alinhados à esquerda** (para facilitar leitura), quebrando o paradigma de se centralizar tudo. No mobile, o preenchimento (padding) lateral de imagens zera para bater precisamente com a margem do texto, esticando a visualização. A direção fotográfica abandona abstrações 3D de banco de imagem e assume **"High-End Lifestyle"** (praias, varandas em Miami, liberdade geográfica e MacBooks) para comunicar a tese da escola.*

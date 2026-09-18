@@ -36,7 +36,7 @@ Caminhos a partir da raiz do projeto.
 | `client/src/components/ui/button.tsx` | Botão base — usado em todas as telas |
 | `client/src/components/ui/card.tsx` | Card base |
 | `client/src/components/ui/input.tsx` | Campo base (o estado de erro é dirigido por `aria-invalid`) |
-| `client/src/fonts.css` | As cinco famílias, hospedadas localmente |
+| `client/src/fonts.css` | As quatro famílias, hospedadas localmente |
 
 ## 3. Onde você NÃO mexe
 
@@ -134,8 +134,7 @@ Sem essa separação, a décima tela tem dez paletas paralelas e ninguém sabe q
   são as próximas fatias.
 - **Navegação é dado**, não código: cada tela declara seus níveis em `navigation.ts` e o cromo se
   monta sozinho. (Nota: UI bilingue usa textos num dicionário global na implementação).
-- **Fontes:** MuseoModerno (**só a marca**, classe `font-brand`), Outfit (apenas H1 e H2, classe `font-display`), Hanken Grotesk (corpo e títulos menores/H3), JetBrains Mono (etiquetas),
-  Playfair Display itálico (**uma palavra** de ênfase por título — nunca frase inteira).
+- **Fontes:** MuseoModerno (**só a marca**, classe `font-brand`), Outfit (apenas H1 e H2, classe `font-display`), Hanken Grotesk (corpo e títulos menores/H3), JetBrains Mono (etiquetas).
 - **O azul `#238FE8` é o acento ÚNICO.** No rail, é o único sinal de "onde estou" — por isso o
   hover ali é neutro.
 
