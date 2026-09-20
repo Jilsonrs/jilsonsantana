@@ -1121,13 +1121,21 @@ landmark. Corrigido junto.
 
 ### Bloco — Superfície pública indexável  *(Ago 2026 · política em `CLAUDE.md` → Rendering Boundary)*
 
+> **PARCIALMENTE CONSTRUÍDO FORA DE ORDEM (set/2026, decisão do operador).** A **home** (`/` e
+> `/en`) já está no ar em HTML montado no servidor, junto com `escapeHtml`/`jsonLd` e o dicionário
+> bilíngue do `core`. Foi feita antes do Bunny porque a home não usa `introVideoId` — a
+> dependência que justificava a ordem é da **página de curso**, que continua depois do Bunny.
+> **O que ficou pendente dentro deste bloco:** os 5 cursos da home vêm de uma constante em
+> `server/src/routes/home.ts` (falta a migration de `language` e o cadastro), o `en.ts` está com
+> as chaves vazias, e `robots.txt`/`sitemap.xml`/`noindex` continuam por fazer.
+
 > **SEQUENCIAMENTO DECIDIDO: este bloco vem DEPOIS do Bunny.** O `introVideoId` é ativo do Bunny
 > numa rota **pública** (o vídeo de apresentação toca para não-membro), e é o único ponto onde as
 > duas frentes se tocam. Construir a página pública antes de saber como o Bunny assina e embeda
 > significa construí-la duas vezes. A **fronteira** já está decidida, então o player nasce do lado
 > privado desde o dia um — só o payload de SEO espera.
 
-- [ ] **PRIMEIRO ITEM DO BLOCO — `server/src/lib/html.ts`: `escapeHtml()` + `jsonLd()`.** Vem antes
+- [x] **PRIMEIRO ITEM DO BLOCO — `server/src/lib/html.ts`: `escapeHtml()` + `jsonLd()`.** Vem antes
       do primeiro template, não depois: escape retrofitado é escape com furo, porque ninguém
       relê 6 arquivos procurando a interpolação que escapou. **São DUAS funções porque são dois
       problemas diferentes:** `escapeHtml` cobre texto e atributo (`&`, `<`, `>`, `"`, `'`);
@@ -1136,7 +1144,7 @@ landmark. Corrigido junto.
       inteiro existe para emitir) e o risco real é outro — fechar o `</script>` de dentro da
       string, o que se resolve com `JSON.stringify` + `<` → `<`. Usar um no lugar do outro
       falha nas duas direções.
-- [ ] **Teste unitário do helper** — é a **única unidade genuína de todo o plano**, e cabe aqui
+- [x] **Teste unitário do helper** — é a **única unidade genuína de todo o plano**, e cabe aqui
       porque a função é pura: sem I/O, sem banco, sem tela. Casos: `<script>` em texto · `"` em
       atributo (o que quebra `content="…"` das metas OG) · `</script>` dentro do JSON-LD · e o que
       passa despercebido em revisão de diff — **string já escapada não pode ser escapada duas

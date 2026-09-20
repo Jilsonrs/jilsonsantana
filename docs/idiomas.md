@@ -264,3 +264,15 @@ inglês ainda sem aulas, e a página de curso com zero aulas passa a precisar de
 **botão de assinar nas páginas em inglês liga com a 1ª aula em inglês**, condição derivada do banco
 e regra de exibição, não de acesso. Todas as pendências das rodadas anteriores fechadas, exceto a
 posição do seletor, o nome de categoria em inglês e a aparência do botão desligado.*
+
+---
+
+*Atualizado Set 2026 — **o dicionário de textos existe e a home já nasce nos dois idiomas.**
+Onde ele mora: **`core/src/i18n/pt.ts` e `core/src/i18n/en.ts`** — o workspace `core` é importado
+pelo servidor e pelo React, então é um dicionário só, como a spec exigia. A tipagem cumpre a
+trava "tradução faltando quebra a compilação": `pt.ts` exporta `type Dict = typeof pt` e o
+`en.ts` é declarado `const en: Dict`, então chave faltando é erro de tipo, não texto em branco em
+produção. **Endereços no ar:** `/` (pt-BR) e `/en`, cada um com `<html lang>`, `og:locale`,
+`canonical` e `hreflang` recíproco. **Pendência real:** as ~109 chaves do `en.ts` estão com string
+vazia — o inglês da home ainda não foi escrito, e é o próximo trabalho de conteúdo.*
+

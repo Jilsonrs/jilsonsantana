@@ -72,3 +72,7 @@ export const LAYER_CONFIG: Record<Layer, LayerConfig> = {
     accent: true,
   },
 };
+
+// Temporário: Slug do curso em destaque até existir a escolha no painel admin.
+export const FEATURED_COURSE_SLUG = "agentic-ai-na-pratica";
+

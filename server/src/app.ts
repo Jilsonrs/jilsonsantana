@@ -11,6 +11,7 @@ import modulesRouter from "./routes/modules.js";
 import trilhasRouter from "./routes/trilhas.js";
 import lessonsRouter from "./routes/lessons.js";
 import searchRouter from "./routes/search.js";
+import homeRouter from "./routes/home.js";
 
 // Monta o app e EXPORTA sem escutar porta. O `listen()` vive em `index.ts`.
 //
@@ -48,6 +49,12 @@ app.use("/api", modulesRouter);
 app.use("/api", trilhasRouter);
 app.use("/api", lessonsRouter);
 app.use("/api", searchRouter);
+
+// ── Home pública (SSR, sem React) ───────────────────────────────────────────
+// Registrada em TODOS os ambientes (em dev o operador abre localhost:3000).
+// Em produção ela fica DEPOIS do portão "Em breve", que é aplicado abaixo —
+// por isso o portão precisa continuar antes do express.static e do fallback.
+const registrarHome = () => app.use("/", homeRouter);
 
 // Serve client static files in production
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -104,10 +111,32 @@ if (process.env.NODE_ENV === "production") {
     return next();
   });
 
+  registrarHome();
+
   app.use(express.static(clientDist));
   // SPA fallback — must be after all API routes
   app.get("/*splat", (_req, res) => {
     res.sendFile(path.join(clientDist, "index.html"));
+  });
+}
+
+if (process.env.NODE_ENV !== "production") {
+  // Em desenvolvimento não há portão nem SPA servido pelo Express: a home
+  // pública responde direto em http://localhost:3000/. Os estáticos dela
+  // (CSS e imagens) vêm de client/public — em produção o build do Vite já
+  // copia essa pasta para dentro de server/public.
+  registrarHome();
+  app.use(express.static(path.join(__dirname, "../../client/public")));
+
+  // Conveniência de desenvolvimento: as páginas públicas são servidas aqui
+  // (3000), mas tudo que é do app React vive no Vite (5173). Sem isto, clicar
+  // em "Entrar" na home daria 404. Em produção nada disso existe — lá o mesmo
+  // Express entrega o React compilado.
+  const VITE = process.env.VITE_DEV_URL || "http://localhost:5173";
+  app.use((req, res, next) => {
+    if (req.method !== "GET") return next();
+    if (path.extname(req.path) !== "") return next(); // arquivo estático
+    return res.redirect(302, VITE + req.originalUrl);
   });
 }
 

@@ -831,3 +831,12 @@ pode estar em N trilhas. §10: **T2 resolvida na parte que travava** (ambiente d
 gravação nova conhecida), T6 parcialmente resolvida, e **T7 (ROI: curso amplo retém, curso buscado
 adquire)** e **T8 (concentração de fornecedor no ambiente)** adicionadas. §11 reordenada com as
 verificações de ambiente na frente. Gatilhos de reabertura em `decisions-archive.md` → Ago 2026 (8).*
+
+*Atualizado Set 2026 — **o lançamento é com 5 cursos** (decisão do operador): Agentic AI na
+Prática (o destaque da home) · Google Antigravity · Excel + Claude IA · Power BI + IA · PL-300.
+O teto de 15 por idioma continua valendo como **máximo**, não como meta de abertura. Duas
+consequências que a home já absorveu: **não há trilha em destaque** (o catálogo ainda não completa
+uma trilha inteira) e **a home não mostra contagem de cursos** — com cinco, o número trabalharia
+contra. Quem carrega o peso de mostrar volume é a página de cada curso, com carga horária e
+número de aulas.*
+

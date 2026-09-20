@@ -176,8 +176,9 @@ custa um curso avulso por mês."
 > só olha se a assinatura está ativa — não liga pra qual price. **Sem free trial. Sem conteúdo
 > grátis na escola** (o grátis vive no YouTube).
 
-### Founding Member *(tática aprovada — escassez pros primeiros, vindos de YouTube/Udemy)*
-"Os primeiros membros entram como **fundadores**: [condição — TBD: preço travado / bônus]. Vagas limitadas."
+### Founding Member — **NÃO VAI EXISTIR** *(decisão do operador, set/2026)*
+Não há oferta de fundador, nem "vagas limitadas". A regra de conteúdo da home passou a proibir
+escassez fabricada sem exceção. *Gatilho de reabertura: nenhum — se voltar à mesa, é decisão nova.*
 
 ---
 
@@ -311,3 +312,30 @@ problema primeiro", inversão "não prende" vs "não evapora". 1 TBD: condição
 adicionado em "A tese" (AI-nativa = posicionamento/SEO; copy do aluno inalterada); cadência ritual
 anotada no §3 (Pilar 3) + item de FAQ como rascunho TBD (dia fixo mensal, decidir no go-live —
 promessa mensal e humilde). Nenhuma seção nova na landing.*
+
+*Atualizado: Set 2026 — **a copy da HOME está fechada e saiu deste documento para o código.**
+O mock foi aprovado (`design-lab/home-lab.html`) e transposto para a home real, servida pelo
+Express. **O texto vivo da home mora em `core/src/i18n/pt.ts`** (o inglês espelha em `en.ts` e
+ainda está vazio); este documento continua sendo a direção de mensagem, não o texto literal.
+O que mudou em relação ao que estava escrito aqui:*
+*(a) **Hero sem botão de assinar** — decisão do operador: não vender de cara; o visitante clica
+no curso em destaque e assina na página do curso.*
+*(b) **Seção "Cursos"** ganhou título próprio ("Uma escola moderna com IA no DNA.") e a seção
+"Para quem é" foi reescrita ("A IA reescreveu as regras. Torne-se o profissional que dita o
+jogo.") com 3 pontos: Comece de onde estiver · Direto ao Ponto · Lifelong Learning.*
+*(c) **Trilhas:** 4 ideias (Trilhas prontas · Monte a sua · JilsonAI · Certificado), sem cards de
+trilha na home e sem trilha em destaque (o catálogo ainda não completa uma trilha inteira).*
+*(d) **JilsonAI:** entrou um exemplo de conversa fixo na página; saiu o medidor de uso do mês
+(é detalhe de quem já assinou). O `[ ]` do parágrafo saiu do texto visível.*
+*(e) **Prova social:** 4 depoimentos REAIS de alunos dos cursos, nome completo, sem foto, sem
+estrela. Regra: se a pessoa pedir, o depoimento sai na hora. **Proibido depoimento inventado.***
+*(f) **Assine:** UM cartão (Mensal R$ 99,90) com selo "17% de desconto no plano anual"; o anual
+é oferecido no checkout. Lista: Cursos e Trilhas · Certificado de Conclusão · Suporte com
+JilsonAI + Jilson · Conteúdo sempre atualizado · Pagamento no cartão ou no Pix.*
+*(g) **FAQ:** 16 perguntas COM respostas escritas, na ordem de quem decide (o que é → é para mim
+→ como funciona → assinatura).*
+*(h) **Regra de mensagem que passa a valer para tudo:** pode prometer o que o aprendizado
+entrega (trabalhar melhor, acelerar projetos, ganhar confiança); não pode prometer emprego,
+salário ou sucesso garantido. Nem tom de sonho, nem tom que desanima.*
+*(i) **Founding member removido** e **escassez fabricada proibida** (sem "vagas limitadas").*
+

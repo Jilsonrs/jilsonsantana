@@ -2,7 +2,7 @@ import type { Config } from "tailwindcss";
 
 const config: Config = {
   darkMode: ["class"],
-  content: ["./index.html", "./src/**/*.{ts,tsx}"],
+  content: ["./index.html", "./src/**/*.{ts,tsx}", "../server/src/views/**/*.ts"],
   theme: {
   	extend: {
   		// design.md §4. `brand` é SÓ a marca (wordmark); `display` é H1/H2;
