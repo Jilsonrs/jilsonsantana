@@ -34,6 +34,20 @@ describe("Home pública (SSR)", () => {
     }
   });
 
+  it("a imagem de cada curso se chama como o slug do curso", async () => {
+    // Convenção do operador (docs/idiomas.md): o arquivo leva o nome do curso, e
+    // é isso que faz a versão em inglês ter arquivo próprio sem convenção extra.
+    // Vale a pena testar porque o erro é INVISÍVEL: a página renderiza a imagem
+    // de outro curso e parece certa. Já aconteceu uma vez, em 22/09.
+    const res = await request(app).get("/");
+
+    const slugs = [...res.text.matchAll(/href="\/curso\/([^"]+)"/g)].map((m) => m[1]);
+    const imagens = [...res.text.matchAll(/src="\/img\/([^"]+)\.jpg"/g)].map((m) => m[1]);
+
+    expect(slugs.length).toBeGreaterThan(0);
+    expect(new Set(imagens)).toEqual(new Set(slugs));
+  });
+
   it("o seletor PT | EN leva ao endereço do outro idioma e marca o atual", async () => {
     const pt = await request(app).get("/");
     const en = await request(app).get("/en");

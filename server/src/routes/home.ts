@@ -35,7 +35,7 @@ const CURSOS_PT: HomeCourse[] = [
     slug: "power-bi-basico-avancado-formacao-especialista",
     title: "Power BI Básico Avançado - Formação Especialista + Dashboard",
     subtitle: "Aprenda Power BI de ponta a ponta e construa painéis gerenciais interativos e profissionais.",
-    thumbnailUrl: "/img/power-bi-chatgpt-dashboards-storytelling-e-ia.jpg",
+    thumbnailUrl: "/img/power-bi-basico-avancado-formacao-especialista.jpg",
     camadas: ["UNIVERSAL", "MODERNO", "IA"],
   },
   {
