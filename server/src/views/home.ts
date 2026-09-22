@@ -32,6 +32,15 @@ export function renderHome(
   const alternateUrl = isPt ? `${baseUrl}/en` : baseUrl;
   const title = `${dict.hero.titlePrefix} ${dict.hero.titleEmphasis} ${dict.hero.titleSuffix}`;
 
+  // Seletor PT | EN: dois links, um por endereço — sem cookie e sem negociação
+  // por cabeçalho ("UM ENDEREÇO POR IDIOMA", CLAUDE.md → Idiomas). O idioma
+  // atual leva `aria-current`; o outro fica em cinza, como no mock. Aparece no
+  // topo e no rodapé, por isso é função: só a indentação muda.
+  const seletorIdioma = (recuo: string) => `<div style="display: flex; gap: 16px; align-items: center;">
+${recuo}  <a href="/"${isPt ? ' aria-current="page"' : ' style="color: var(--text-muted);"'}>PT</a>
+${recuo}  <a href="/en"${isPt ? ' style="color: var(--text-muted);"' : ' aria-current="page"'}>EN</a>
+${recuo}</div>`;
+
   return `<!DOCTYPE html>
 <html lang="${isPt ? "pt-BR" : "en"}">
 <head>
@@ -77,10 +86,7 @@ export function renderHome(
         <a href="#assine">${escapeHtml(dict.nav.assine)}</a>
         <a href="#" class="btn-login">${escapeHtml(dict.nav.entrar)}</a>
         <span style="color: var(--border-color);">|</span>
-        <div style="display: flex; gap: 16px; align-items: center;">
-          <a href="#">PT</a>
-          <a href="#" style="color: var(--text-muted);">EN</a>
-        </div>
+        ${seletorIdioma("        ")}
       </div>
     </div>
   </nav>
@@ -648,10 +654,7 @@ ${dict.faq.list.map((item) => `        <details>
           <a href="#">${escapeHtml(dict.footer.links[6])}</a>
           <a href="#">${escapeHtml(dict.footer.links[7])}</a>
           <span style="color: var(--border-color);">|</span>
-          <div style="display: flex; gap: 16px; align-items: center;">
-            <a href="#">PT</a>
-            <a href="#" style="color: var(--text-muted);">EN</a>
-          </div>
+          ${seletorIdioma("          ")}
         </div>
       </div>
       <div class="footer-bottom">

@@ -276,3 +276,49 @@ produção. **Endereços no ar:** `/` (pt-BR) e `/en`, cada um com `<html lang>`
 `canonical` e `hreflang` recíproco. **Pendência real:** as ~109 chaves do `en.ts` estão com string
 vazia — o inglês da home ainda não foi escrito, e é o próximo trabalho de conteúdo.*
 
+
+---
+
+## Como o inglês é escrito *(Set 2026 — decisão do operador: "inglês simples e natural como o LinkedIn usa, que sirva para o mundo entender")*
+
+Isto é regra de **voz**, não de tradução literal. Vale para toda frase em inglês do produto —
+site, e-mail, certificado, JilsonAI.
+
+- **A voz é a do LinkedIn Learning**, não a de uma agência: frase curta, voz ativa, segunda
+  pessoa. Se dá para cortar palavra sem perder sentido, corta.
+- **Inglês internacional.** Sem gíria, sem expressão idiomática, sem referência cultural — quem lê
+  da Índia, da Alemanha ou do Brasil entende de primeira. **Ortografia americana** (`standardizing`),
+  que é a mais vista no mundo.
+- **Sem hype.** Nada de *unlock your potential*, *game-changing*, *master X in 30 days*. É a mesma
+  régua do português (`content.md`): promete o que o aprendizado entrega, nunca emprego ou salário.
+- **Expressão idiomática do português não se traduz, se substitui.** "Dita o jogo" virou *"sets the
+  pace"* — traduzir ao pé da letra produz frase que nenhum falante diria.
+- **Nunca se traduz:** `JilsonAI`, `Jilson Santana`, nomes de produto (`Power BI`, `Excel`,
+  `Claude`, `Pix`, `LinkedIn`) e **nome de pessoa em depoimento**.
+- **Conceito brasileiro exige cuidado, não tradução.** "Nota fiscal" e "garantia legal de
+  arrependimento" (CDC) não existem iguais fora do Brasil. Traduzir ao pé da letra vira **promessa
+  que não se pode cumprir** para quem está fora. *Pendência: a resposta de reembolso e a de nota
+  fiscal precisam de texto próprio em inglês, decidido junto com o imposto internacional na Fase 4.*
+
+### A trava é teste, porque o typecheck não alcança
+
+O `en.ts` é tipado como `Dict`, então **chave faltando** quebra a compilação. Mas **chave presente
+e vazia** compila — e foi esse o estado real por semanas: 143 de 150 em branco, a `/en` respondendo
+200, e ninguém percebendo. `server/src/test/i18n.test.ts` fecha o buraco com dois casos:
+
+1. toda chave com texto em português tem texto em inglês;
+2. nenhuma **frase** em inglês é idêntica ao português — copiar e colar é o jeito silencioso de
+   "ter tradução" sem ter. As exceções legítimas (nome de pessoa, valor em dinheiro) estão
+   declaradas no próprio teste **com o motivo**, e é isso que impede a lista de virar tapete.
+
+### O seletor PT | EN
+
+Dois links, um por endereço (`/` e `/en`) — **nunca** um botão que troca o idioma no mesmo
+endereço, pelo motivo já escrito na §2. O idioma atual leva `aria-current="page"`; o outro fica em
+cinza. No topo e no rodapé. Coberto por teste.
+
+*Atualizado Set 2026 — **o inglês da home foi escrito** (155 chaves) e o seletor está ligado. A
+pendência das "~109 chaves vazias" da nota acima está fechada. **O que continua aberto:** a revisão
+do operador (o roteiro de revisão fica em `design-lab/revisao-ingles.md`, que **não é versionado** —
+é artefato de uma rodada só), o preço em dólar na página em inglês (Fase 4 — a página em inglês
+mostra real hoje), e o texto próprio de reembolso e nota fiscal para quem está fora do Brasil.*

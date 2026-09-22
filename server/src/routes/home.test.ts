@@ -34,6 +34,18 @@ describe("Home pública (SSR)", () => {
     }
   });
 
+  it("o seletor PT | EN leva ao endereço do outro idioma e marca o atual", async () => {
+    const pt = await request(app).get("/");
+    const en = await request(app).get("/en");
+
+    // Um endereço por idioma: o seletor é dois links, nunca um botão que troca
+    // o idioma no mesmo endereço (CLAUDE.md → Idiomas).
+    expect(pt.text).toContain('<a href="/" aria-current="page">PT</a>');
+    expect(pt.text).toContain('<a href="/en" style="color: var(--text-muted);">EN</a>');
+    expect(en.text).toContain('<a href="/en" aria-current="page">EN</a>');
+    expect(en.text).toContain('<a href="/" style="color: var(--text-muted);">PT</a>');
+  });
+
   it("as duas versões declaram canonical e hreflang recíprocos", async () => {
     const pt = await request(app).get("/");
     const en = await request(app).get("/en");
