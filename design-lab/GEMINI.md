@@ -38,6 +38,21 @@ Caminhos a partir da raiz do projeto.
 | `client/src/components/ui/input.tsx` | Campo base (o estado de erro é dirigido por `aria-invalid`) |
 | `client/src/fonts.css` | As quatro famílias, hospedadas localmente |
 
+### A parte PÚBLICA saiu do React *(set/2026 — leia antes de abrir a home)*
+
+A home (`/` e `/en`) **não é mais React**. É HTML montado no servidor, sem hidratação, porque
+página de marketing é buscar do banco e desenhar — e assim ela carrega sem bundle de JS. O que
+isso muda para você:
+
+| Arquivo | O que é |
+|---|---|
+| `server/src/views/home.ts` | **A marcação da home pública.** É o seu mock transposto: mesma estrutura, mesmas classes. Você formata aqui. |
+| `client/src/public-input.css` | **O CSS da home pública** — o do mock, depois das diretivas do Tailwind. Você mexe aqui. |
+| `client/public/css/public.css` | **Saída compilada. Nunca edite à mão** — é gerada do arquivo acima (comando na §5). |
+
+O Tailwind já varre `server/src/views/**` (está no `content` do config), então classe usada lá
+gera CSS normalmente.
+
 ## 3. Onde você NÃO mexe
 
 | Arquivo | Por quê |
@@ -45,11 +60,12 @@ Caminhos a partir da raiz do projeto.
 | `client/src/lib/navigation.ts` | É o **mapa de navegação** — dado, não estilo. Ele decide o que aparece e para quem; você decide como aparece. |
 | Qualquer `*.test.tsx` / `*.test.ts` | Se um teste incomodar, **avise** — não edite. Um teste ajustado para passar deixa de proteger. |
 | `client/src/components/ui/sheet.tsx` | Vem da biblioteca (shadcn/Radix). |
-| `server/`, `core/`, `e2e/`, `prisma/` | Nada de front ali. |
+| `core/src/i18n/pt.ts` e `en.ts` | **É o texto do site** — conteúdo, não estilo, e o operador vai editá-lo pelo admin. Ver regra 9. |
+| `core/`, `e2e/`, `prisma/`, e o resto de `server/` | Nada de front ali. **A exceção é `server/src/views/`**, que é a marcação das páginas públicas (§2). |
 
 ---
 
-## 4. Oito regras — cada uma já custou tempo aqui
+## 4. Dez regras — cada uma já custou tempo aqui
 
 **1. Classe de Tailwind tem que ser TEXTO LITERAL.**
 ```tsx
@@ -94,17 +110,48 @@ conexão instável.
 
 **8. Formatos de imagem estritos (decisão técnica):** SVG para logos e ícones. WebP para fotos e ilustrações (garante leveza). PNG ou JPG (1200x630) EXCLUSIVAMENTE para a imagem OG (Open Graph) de compartilhamento, pois WhatsApp e LinkedIn não lidam bem com WebP.
 
+**9. Nas páginas públicas, NENHUM texto visível fica escrito no template.** Todo texto sai do
+dicionário (`core/src/i18n/`), **inclusive `aria-label`, `alt` e `title`**:
+
+```ts
+<p>Escolha um objetivo, siga uma trilha pronta.</p>        // ❌
+<p>${escapeHtml(dict.trilhas.subtitle)}</p>                // ✅
+```
+
+**Por quê:** o operador edita esses textos pelo painel, sem deploy — texto cravado no HTML ele
+não alcança. E a versão em inglês (`/en`) lê o mesmo dicionário: literal em português aparece
+**na página em inglês**. Em set/2026 havia 55 textos assim; hoje há zero, e **a suíte reprova se
+um voltar** (o teste compara `/` com `/en`).
+
+Corolários que já quebraram coisa aqui:
+- **Texto de dicionário nunca vira caminho de arquivo.** `src="/img/${dict...title}.png"`
+  funciona até o operador editar aquele rótulo — aí a imagem some, sem erro.
+- **Negrito no meio de um texto = dois campos** (`label` + `text`), nunca `<strong>` dentro da
+  string. O operador não digita HTML no painel.
+- Precisa de um texto que não existe no dicionário? **Peça a chave**, não escreva no template.
+
+**10. Mexeu no `public-input.css`, recompile.** A home pública lê `client/public/css/public.css`,
+que é **gerado**. Sem rodar o comando da §5, seu CSS não chega na tela — e não há erro nenhum
+avisando: você recarrega e simplesmente não mudou nada.
+
 ---
 
 ## 5. Como você confere que não quebrou nada
 
 ```bash
 npm run typecheck && npm --workspace client run test
+npm --workspace server run test     # se você tocou em server/src/views/
 ```
 
 **Isto é a rede de segurança de verdade.** Se você apagar sem querer a expansão por teclado, o
 `aria-current`, o rótulo do rail, a checagem de papel do admin ou o destino de um link, **a suíte
-reprova e diz exatamente qual**. Dentro disso, formate à vontade.
+reprova e diz exatamente qual**. A suíte do servidor cobre as páginas públicas: texto cravado no
+template, favicon, `canonical` e `hreflang`. Dentro disso, formate à vontade.
+
+**Se você mexeu no CSS da home pública**, recompile antes de olhar (regra 10):
+```bash
+cd client && npx tailwindcss -i ./src/public-input.css -o ./public/css/public.css
+```
 
 Se um teste reprovar e você achar que o teste é que está errado: **não edite o teste, avise.**
 
@@ -132,8 +179,15 @@ Sem essa separação, a décima tela tem dez paletas paralelas e ninguém sabe q
   280px **sobrepondo** o conteúdo · coluna secundária clara (só quando a seção tem subitens) ·
   abas horizontais (só quando a tela tem abas). Os níveis 2 e 3 **ainda não foram construídos** —
   são as próximas fatias.
+- **A home pública está no ar**, em HTML de servidor (`/` e `/en`), sem React e sem hidratação.
+  Ela é o mock `design-lab/home-lab.html` transposto. **Mock aprovado se TRANSPÕE, não se
+  reinterpreta:** a primeira tentativa reescreveu a marcação com classes inventadas e metade da
+  página ficou sem estilo — o typecheck e os testes passaram, porque nenhum dos dois olha CSS.
 - **Navegação é dado**, não código: cada tela declara seus níveis em `navigation.ts` e o cromo se
   monta sozinho. (Nota: UI bilingue usa textos num dicionário global na implementação).
+- **Texto vem do dicionário, e vai virar editável pelo painel.** O texto em `core/src/i18n/` é o
+  **valor de fábrica**; em breve o operador sobrescreve pelo `/admin` sem deploy. Por isso a
+  regra 9 não é preferência de organização — é o que faz o painel dele funcionar.
 - **Fontes:** MuseoModerno (**só a marca**, classe `font-brand`), Outfit (apenas H1 e H2, classe `font-display`), Hanken Grotesk (corpo e títulos menores/H3), JetBrains Mono (etiquetas).
 - **O azul `#238FE8` é o acento ÚNICO.** No rail, é o único sinal de "onde estou" — por isso o
   hover ali é neutro.
