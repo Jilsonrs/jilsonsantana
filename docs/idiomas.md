@@ -122,18 +122,26 @@ no Passo 0 do Bloco I (Fase 3), com o parceiro de design.
   recorte diferente — e **compartilhar um arquivo entre os dois cursos torna isso impossível sem
   mexer no que já está publicado.** Arquivo por curso custa um upload a mais hoje e não trava nada
   depois.
+- **O ARQUIVO SE CHAMA COMO O CURSO** `[operador, 22/09 — é o que ele já pratica]`. Não existe
+  sufixo de idioma: **o curso em inglês já tem slug próprio**, e o arquivo herda esse nome. Os dois
+  arquivos ficam diferentes **sozinhos**, sem convenção extra para ninguém lembrar.
+
+      /img/excel-claude-ia-inteligencia-artificial-e-analise-de-dados.jpg   ← curso PT
+      /img/<slug-do-curso-em-ingles>.jpg                                    ← curso EN
+
   Consequências no build `[convenção de engenharia]`:
   - **`Course.thumbnailUrl` é por curso, sempre** — nunca derivado do curso "equivalente" no outro
     idioma, e nunca uma referência compartilhada entre os dois registros;
-  - **sufixo `-en` no nome do arquivo em inglês.** Os nomes que já existem **não mudam** — a
-    versão em português mantém o nome atual, e a inglesa nasce com o sufixo;
+  - **o nome do arquivo acompanha o slug, e o slug é PERMANENTE** (`CLAUDE.md` → Slug de catálogo).
+    Então o nome do arquivo também não muda depois de publicado;
   - quando a subida de imagem pelo admin existir, ela é **por curso**, e reaproveitar a mesma foto
-    é uma cópia nova com nome novo — não um ponteiro para o mesmo objeto;
+    é uma cópia nova com o nome do outro curso — não um ponteiro para o mesmo objeto;
   - **o `alt` também é por idioma**, mas por outro motivo: ele é texto, sai do dicionário ou do
     título do curso. Arquivo e `alt` são independentes.
-  > *Correção registrada: em 22/09 este item foi escrito ao contrário pelo agente ("o arquivo não
-  > se duplica por idioma"), a partir de uma leitura errada do que o operador disse. A regra em
-  > vigor é a acima.*
+  > *Duas correções registradas, ambas de 22/09, ambas do agente lendo errado: primeiro escreveu-se
+  > que o arquivo **não** se duplica por idioma; depois, que a versão inglesa levaria sufixo `-en`.
+  > Nenhuma das duas é a prática do operador. A regra em vigor é a acima — **nome do arquivo = slug
+  > do curso**, e pronto.*
 - **Trilha segue o idioma** `[operador, 14/09]`:
   - a trilha curada nasce com `language`;
   - o **servidor recusa** item de outro idioma (não só a tela);
