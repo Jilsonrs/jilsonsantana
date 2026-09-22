@@ -115,6 +115,16 @@ no Passo 0 do Bloco I (Fase 3), com o parceiro de design.
   com vídeos, aulas e **slug próprios, no idioma dele**. Nunca é uma tradução do mesmo registro: o
   vídeo é gravado num idioma, e a versão em inglês pode ter outras aulas. A regra de slug permanente
   vale para cada curso separadamente.
+- **A IMAGEM É A MESMA nos dois idiomas** `[operador, 22/09]`. Cadastrar o curso duas vezes cria
+  dois registros, mas a thumbnail (e a imagem de compartilhamento) é **o mesmo arquivo**, apontado
+  pelos dois. Idioma é do **texto**, não do arquivo.
+  Três consequências no build `[convenção de engenharia]`:
+  - **o arquivo não se duplica por idioma** — nada de `curso-pt.jpg` / `curso-en.jpg`, e nada de
+    coluna de idioma no armazenamento de imagem;
+  - quando a subida de imagem pelo admin existir, **um arquivo serve os dois cursos** — o que se
+    escolhe por curso é a referência, que é texto como qualquer outra;
+  - **o `alt` da imagem NÃO é o mesmo**: ele é texto, sai do dicionário ou do título do curso, e
+    portanto muda com o idioma. É o ponto onde é fácil errar, porque o arquivo é um só.
 - **Trilha segue o idioma** `[operador, 14/09]`:
   - a trilha curada nasce com `language`;
   - o **servidor recusa** item de outro idioma (não só a tela);
