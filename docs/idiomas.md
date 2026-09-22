@@ -115,16 +115,25 @@ no Passo 0 do Bloco I (Fase 3), com o parceiro de design.
   com vídeos, aulas e **slug próprios, no idioma dele**. Nunca é uma tradução do mesmo registro: o
   vídeo é gravado num idioma, e a versão em inglês pode ter outras aulas. A regra de slug permanente
   vale para cada curso separadamente.
-- **A IMAGEM É A MESMA nos dois idiomas** `[operador, 22/09]`. Cadastrar o curso duas vezes cria
-  dois registros, mas a thumbnail (e a imagem de compartilhamento) é **o mesmo arquivo**, apontado
-  pelos dois. Idioma é do **texto**, não do arquivo.
-  Três consequências no build `[convenção de engenharia]`:
-  - **o arquivo não se duplica por idioma** — nada de `curso-pt.jpg` / `curso-en.jpg`, e nada de
-    coluna de idioma no armazenamento de imagem;
-  - quando a subida de imagem pelo admin existir, **um arquivo serve os dois cursos** — o que se
-    escolhe por curso é a referência, que é texto como qualquer outra;
-  - **o `alt` da imagem NÃO é o mesmo**: ele é texto, sai do dicionário ou do título do curso, e
-    portanto muda com o idioma. É o ponto onde é fácil errar, porque o arquivo é um só.
+- **CADA CURSO TEM O SEU PRÓPRIO ARQUIVO DE IMAGEM, mesmo quando a foto é a mesma**
+  `[operador, 22/09]`. A versão em inglês pode **mostrar** a mesma imagem da versão em português,
+  mas o arquivo é **duplicado, com nome próprio**: `nomex.jpg` e `nomex-en.jpg`.
+  **A razão é futura e é dele:** ele pode querer ajustar a imagem por idioma — texto sobre a foto,
+  recorte diferente — e **compartilhar um arquivo entre os dois cursos torna isso impossível sem
+  mexer no que já está publicado.** Arquivo por curso custa um upload a mais hoje e não trava nada
+  depois.
+  Consequências no build `[convenção de engenharia]`:
+  - **`Course.thumbnailUrl` é por curso, sempre** — nunca derivado do curso "equivalente" no outro
+    idioma, e nunca uma referência compartilhada entre os dois registros;
+  - **sufixo `-en` no nome do arquivo em inglês.** Os nomes que já existem **não mudam** — a
+    versão em português mantém o nome atual, e a inglesa nasce com o sufixo;
+  - quando a subida de imagem pelo admin existir, ela é **por curso**, e reaproveitar a mesma foto
+    é uma cópia nova com nome novo — não um ponteiro para o mesmo objeto;
+  - **o `alt` também é por idioma**, mas por outro motivo: ele é texto, sai do dicionário ou do
+    título do curso. Arquivo e `alt` são independentes.
+  > *Correção registrada: em 22/09 este item foi escrito ao contrário pelo agente ("o arquivo não
+  > se duplica por idioma"), a partir de uma leitura errada do que o operador disse. A regra em
+  > vigor é a acima.*
 - **Trilha segue o idioma** `[operador, 14/09]`:
   - a trilha curada nasce com `language`;
   - o **servidor recusa** item de outro idioma (não só a tela);
