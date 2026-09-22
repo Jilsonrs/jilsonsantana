@@ -25,6 +25,15 @@ describe("Home pública (SSR)", () => {
     expect(res.text).toContain('<html lang="en"');
   });
 
+  it("as duas versões declaram o favicon", async () => {
+    // O template do servidor não herda nada do index.html do React: o que não
+    // estiver escrito aqui simplesmente não existe na página pública.
+    for (const rota of ["/", "/en"]) {
+      const res = await request(app).get(rota);
+      expect(res.text, rota).toContain('<link rel="icon" type="image/svg+xml" href="/favicon.svg">');
+    }
+  });
+
   it("as duas versões declaram canonical e hreflang recíprocos", async () => {
     const pt = await request(app).get("/");
     const en = await request(app).get("/en");
