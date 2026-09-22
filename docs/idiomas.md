@@ -297,8 +297,35 @@ site, e-mail, certificado, JilsonAI.
   `Claude`, `Pix`, `LinkedIn`) e **nome de pessoa em depoimento**.
 - **Conceito brasileiro exige cuidado, não tradução.** "Nota fiscal" e "garantia legal de
   arrependimento" (CDC) não existem iguais fora do Brasil. Traduzir ao pé da letra vira **promessa
-  que não se pode cumprir** para quem está fora. *Pendência: a resposta de reembolso e a de nota
-  fiscal precisam de texto próprio em inglês, decidido junto com o imposto internacional na Fase 4.*
+  que não se pode cumprir** para quem está fora. Os dois casos conhecidos foram resolvidos na
+  revisão de 22/09: *invoice* (padrão B2B mundial) e **"7-day money-back guarantee"** — ver a
+  consequência comercial em [`billing.md`](billing.md) → *Reembolso*.
+
+### O CICLO DE REVISÃO — obrigatório para TODO texto novo *(decisão do operador, 22/09/2026)*
+
+> *"Eu vou precisar fazer esse revisto de todos os textos do site que criarmos."*
+
+Texto em inglês escrito por agente **não vai para produção sem passar por aqui**. Não é
+formalidade: a primeira rodada devolveu 32 correções em 155 frases — entre elas uma expressão
+idiomática que não atravessava (*"sets the pace"*), depoimentos que soavam a tradutor e não a
+pessoa, e uma resposta de reembolso vaga que virou promessa clara.
+
+| Passo | Quem | O quê |
+|---|---|---|
+| 1 | agente | Escreve o inglês no `en.ts`, junto com o português. Nunca deixa chave vazia. |
+| 2 | agente | `npm run revisao:ingles` → gera `design-lab/revisao-ingles.md` (as frases lado a lado + a régua de voz acima). |
+| 3 | agente | Entrega ao operador a lista dos **pontos de dúvida** — escolha de palavra, conceito brasileiro, promessa nova. Sem essa lista, o revisor não sabe onde olhar. |
+| 4 | operador | Manda o parceiro de design (Antigravity) ler o arquivo e devolver `chave → sugestão → por quê`. |
+| 5 | agente | Aplica, roda os gates, e **reporta o que NÃO aplicou, com o motivo**. |
+
+**O passo 5 não é opcional.** Na rodada de 22/09, uma sugestão foi recusada: trocar o rótulo de
+acessibilidade da seção hero para *"Main content"* criaria um segundo "conteúdo principal" dentro
+do `<main>`, confundindo o leitor de tela. Sugestão de acessibilidade que piora acessibilidade se
+**reporta**, não se aplica em silêncio — é a mesma trava do `design-lab/GEMINI.md`.
+
+**O arquivo gerado NÃO é versionado** (`design-lab/*` está no `.gitignore`). Isso é de propósito:
+o que fica no repo é o dicionário revisado, não o rascunho da revisão. Precisou de novo? Roda o
+comando.
 
 ### A trava é teste, porque o typecheck não alcança
 
@@ -317,8 +344,8 @@ Dois links, um por endereço (`/` e `/en`) — **nunca** um botão que troca o i
 endereço, pelo motivo já escrito na §2. O idioma atual leva `aria-current="page"`; o outro fica em
 cinza. No topo e no rodapé. Coberto por teste.
 
-*Atualizado Set 2026 — **o inglês da home foi escrito** (155 chaves) e o seletor está ligado. A
-pendência das "~109 chaves vazias" da nota acima está fechada. **O que continua aberto:** a revisão
-do operador (o roteiro de revisão fica em `design-lab/revisao-ingles.md`, que **não é versionado** —
-é artefato de uma rodada só), o preço em dólar na página em inglês (Fase 4 — a página em inglês
-mostra real hoje), e o texto próprio de reembolso e nota fiscal para quem está fora do Brasil.*
+*Atualizado Set 2026 — **o inglês da home foi escrito (155 chaves), revisado e o seletor está
+ligado.** A pendência das "~109 chaves vazias" está fechada, e as de reembolso e nota fiscal
+também (revisão de 22/09: *invoice* e *7-day money-back guarantee*). **O que continua aberto:**
+o preço em dólar na página em inglês — ela mostra real hoje, e trocar isso é a decisão "preço
+mostrado × cobrado" da Fase 4, não tradução.*

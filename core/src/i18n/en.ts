@@ -30,52 +30,52 @@ export const en: Dict = {
     titlePrefix: "A modern school with",
     titleEmphasis: "AI",
     titleSuffix: "in its DNA.",
-    subtitle: "AI is redefining the world of work. More than certificates, the market asks for skills you can prove. Explore a living catalog focused on Data, Automation and applied AI, built for the real problems companies face today.",
+    subtitle: "AI is redefining work. More than certificates, the market demands skills you can prove. Explore a dynamic catalog focused on Data, Automation, and applied AI, built for real business problems.",
     accessCourse: "View course",
     viewAll: "See all courses"
   },
   target: {
     titlePrefix: "AI rewrote the rules.<br>Become the professional who",
-    titleEmphasis: "sets the pace",
+    titleEmphasis: "leads the way",
     titleSuffix: ".",
-    subtitle: "Build the Data and AI skills companies are looking for.",
+    subtitle: "Build the Data and AI skills companies need.",
     steps: [
       {
         num: "01",
         title: "Start where you are",
-        desc: "From zero or with experience, there is always a next step."
+        desc: "Whether you are a beginner or have experience, there is always a next step."
       },
       {
         num: "02",
         title: "Straight to the point",
-        desc: "Learn the techniques and tools that make an immediate difference in your work, with no time wasted."
+        desc: "Learn techniques and tools that make an immediate impact on your work, without wasting time."
       },
       {
         num: "03",
         title: "Lifelong learning",
-        desc: "Keep up to date so you stay relevant and can lead the change in your projects or your business."
+        desc: "Stay updated to remain relevant and lead change in your projects or business."
       }
     ]
   },
   trilhas: {
-    title: "Guided or skill-based learning paths, all the way to the certificate.",
+    title: "Guided or skill-based learning paths, from start to certificate.",
     subtitle: "Pick a goal, follow a ready-made path, or build your own.",
     features: [
       {
         title: "Ready-made paths",
-        desc: "A defined route that fits your career."
+        desc: "A clear path that fits your career."
       },
       {
         title: "Build your own",
-        desc: "Take a ready-made path and shape it your way."
+        desc: "Take a ready-made path and customize it to your needs."
       },
       {
         title: "JilsonAI",
-        desc: "Not sure where to start? Tell it where you want to get to and it shows you the path."
+        desc: "Not sure where to start? Tell it your goal and it will show you the path."
       },
       {
         title: "Certificate",
-        desc: "One certificate for each path you finish, listing the skills you built."
+        desc: "Earn a certificate for each completed path, listing the skills you built."
       }
     ],
     viewAll: "See all learning paths",
@@ -94,19 +94,19 @@ export const en: Dict = {
     titlePrefix: "Always by your side.<br>Not a chatbot, a",
     titleEmphasis: "partner.",
     titleSuffix: "",
-    subtitle: "Trained on my method. It thinks alongside you, explains the reasoning, and tells you what it is assuming. And when it cannot solve it, I step in.",
+    subtitle: "Trained on my method. It thinks with you, explains its reasoning, and states its assumptions. And if it cannot solve a problem, I step in.",
     features: [
       {
         label: "Thinks with you:",
-        text: "it knows the course you are taking and asks when it needs to understand more."
+        text: "it knows the course you are taking and asks questions when it needs more context."
       },
       {
-        label: "Explains the why:",
-        text: "it does not just hand you the answer."
+        label: "Explains why:",
+        text: "it doesn't just give you the answer."
       },
       {
         label: "Never leaves you stuck:",
-        text: "when it cannot solve it, it calls Jilson."
+        text: "if it cannot find the solution, it calls Jilson."
       }
     ],
     chatMock: {
@@ -125,7 +125,7 @@ export const en: Dict = {
       "Data, BI & AI specialist",
       "12+ years as a data analyst and developer"
     ],
-    quote: "\"I'll guide you until you feel confident with data, AI and whatever comes next. If you are after practical skills you can apply in the real world without wasting time, you are in the right place.\"",
+    quote: "\"I'll guide you until you feel confident with data, AI, and whatever comes next. If you want practical skills you can apply in the real world without wasting time, you are in the right place.\"",
     stats: [
       { value: "107K+", label: "Students worldwide" },
       { value: "70+", label: "Countries" },
@@ -134,25 +134,25 @@ export const en: Dict = {
   },
   testimonials: {
     tag: "SUCCESS STORIES",
-    title: "What people who learned with me are saying.",
+    title: "What my students are saying.",
     list: [
       {
-        text: "This instructor is far beyond any expectation! A fully hands-on course, with things you can apply right away. In my 30 years of teaching, I have never seen such sharp instruction.",
+        text: "This instructor exceeded all expectations! A fully hands-on course, with skills you can apply right away. In my 30 years of teaching, I have never seen such excellent methodology.",
         initials: "EF",
         name: "Edson Garcia Fernandes"
       },
       {
-        text: "The instructor explains very well, step by step, so even someone who has never opened the program understands everything. I knew very little, almost nothing, and now I even understand a bit of programming!",
+        text: "The instructor explains step by step, so even a complete beginner can understand everything. I knew almost nothing, and now I even understand a bit of programming!",
         initials: "NM",
         name: "Nicole Silveira Manoel"
       },
       {
-        text: "Incredible! I have just finished this course and I am speechless. As an educator, I like to learn by doing, so I found the whole plan perfect. Thank you so much, teacher.",
+        text: "Incredible! I just finished this course and I am speechless. As an educator, I like to learn by doing, so I found the course structure perfect. Thank you so much!",
         initials: "BV",
         name: "Beatriz Veloso"
       },
       {
-        text: "It made a real difference in my day-to-day work. It also helped my team perform better, because every week I passed on what I had learned. That way we grew together.",
+        text: "It made a real difference in my daily work. It also helped my team perform better, because every week I shared what I learned. That way we grew together.",
         initials: "VQ",
         name: "Vinicius Dias de Queiroz"
       }
@@ -163,7 +163,7 @@ export const en: Dict = {
     titleEmphasis: "Everything included.",
     titleSuffix: "",
     monthlyTitle: "Monthly",
-    discountBadge: "17% OFF ON THE ANNUAL PLAN",
+    discountBadge: "17% OFF THE ANNUAL PLAN",
     // ATENÇÃO: hoje a página em inglês mostra o preço em real, porque o template
     // usa `pricePt` nos dois idiomas. `priceEn`/`priceEnAnnual` existem e NÃO são
     // usados. Trocar isso é a decisão "preço mostrado × preço cobrado" da Fase 4
@@ -176,10 +176,10 @@ export const en: Dict = {
     desc: "Billed every month. Cancel anytime.",
     btn: "Subscribe",
     features: [
-      "Access to every course and learning path",
+      "Access to all courses and learning paths",
       "Certificate of completion",
       "Support from JilsonAI + Jilson",
-      "Content kept up to date with the latest changes",
+      "Content always updated with the latest trends",
       "Pay by card or Pix"
     ],
     footer: "Full access from day one. No lock-in and no penalty: if you cancel and come back, you pick up where you left off."
@@ -209,7 +209,7 @@ export const en: Dict = {
       },
       {
         q: "How are the courses chosen?",
-        a: "A few courses, hand-picked, focused on the tools and methods you can apply at work tomorrow morning."
+        a: "We offer a few hand-picked courses, focused on tools and methods you can apply at work tomorrow morning."
       },
       {
         q: "How does support work? What is JilsonAI?",
@@ -217,15 +217,15 @@ export const en: Dict = {
       },
       {
         q: "Is there a certificate? Does it work on LinkedIn?",
-        a: "Yes. When you finish a path or a course, you get a valid certificate you can share straight to your LinkedIn profile."
+        a: "Yes. When you finish a path or a course, you get a valid certificate that you can share directly to your LinkedIn profile."
       },
       {
         q: "How is this different from free videos on YouTube?",
-        a: "Here you get a structured path with a beginning, a middle and an end, official support, exercises with real data, and a certificate."
+        a: "Here you get a structured path from start to finish, official support, exercises with real data, and a certificate."
       },
       {
         q: "Can I buy a single course?",
-        a: "No. The model is a subscription, monthly or annual, which gives you the whole catalog and constant updates."
+        a: "No. We work with a monthly or annual subscription, which gives you full access to the catalog and regular updates."
       },
       {
         q: "How and when am I charged?",
@@ -233,7 +233,7 @@ export const en: Dict = {
       },
       {
         q: "How do I cancel? Can I come back later?",
-        a: "Cancel with one click in your student dashboard, with no fee. Whenever you come back, your history and your certificates are waiting for you."
+        a: "Cancel with one click in your dashboard, with no fees. When you come back, your history and certificates will be waiting for you."
       },
       {
         q: "Does the subscription cover the courses in Portuguese?",
@@ -241,7 +241,7 @@ export const en: Dict = {
       },
       {
         q: "Is there a refund?",
-        a: "Yes, you have a legal right to change your mind."
+        a: "Yes, we offer a 7-day money-back guarantee."
       },
       {
         q: "Can companies subscribe? Do you issue invoices?",

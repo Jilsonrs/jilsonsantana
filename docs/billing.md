@@ -95,6 +95,16 @@ estabelecimento comercial), com devolução **imediata e corrigida** dos valores
 ordem pública — pode-se dar mais, nunca menos. Depois do prazo, o cancelamento não devolve dinheiro:
 o acesso vai até o fim do período já pago.
 
+**A página em inglês promete isso ao MUNDO, não só ao Brasil** *(22/09/2026 — o operador acatou a
+recomendação do parceiro de design)*. O texto é **"7-day money-back guarantee"**, porque
+"garantia legal de arrependimento" não significa nada para quem lê de fora e termo vago de lei
+gera desconfiança. **A consequência é comercial, não de tradução:** o CDC obriga no Brasil; fora
+dele, isto passa a ser uma **promessa nossa**, oferecida por escolha. Duas coisas decorrem:
+- **A Fase 4 tem que conseguir honrar reembolso de assinante internacional**, não só brasileiro.
+- **O texto em português está MAIS VAGO que o em inglês** — ele diz "garantia legal de
+  arrependimento", sem citar os 7 dias que esta seção manda dizer. *Alinhar é decisão do operador
+  (texto de interface é dele); fica aqui apontado, não corrigido.*
+
 ## O plano ANUAL não aparece na home *(decisão do operador, set/2026)*
 
 A home mostra **um cartão só** (Mensal R$ 99,90) com o selo "17% de desconto no plano anual". O
