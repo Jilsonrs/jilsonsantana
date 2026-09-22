@@ -339,3 +339,85 @@ entrega (trabalhar melhor, acelerar projetos, ganhar confiança); não pode prom
 salário ou sucesso garantido. Nem tom de sonho, nem tom que desanima.*
 *(i) **Founding member removido** e **escassez fabricada proibida** (sem "vagas limitadas").*
 
+---
+
+## 16. ONDE CADA CONTEÚDO MORA — o mapa das páginas públicas *(Set 2026)*
+
+> **DECISÃO DO OPERADOR (22/09/2026):** *"eu não gosto de ter que pedir a IA para alterar um
+> texto, eu queria poder abrir o adm e trocar os textos."* **Texto de página passa a ser editável
+> no admin, sem sessão de agente e sem deploy.**
+
+Esta seção existe porque a pergunta certa não é *"que tabela essa página precisa?"* — é *"que
+tipo de conteúdo é esse?"*. Modelar por **página** produz campo duplicado em três tabelas;
+modelar por **tipo** deixa a página ser só uma vista. É como as plataformas grandes fazem:
+dado de produto num lugar, texto de marketing em outro, e uma camada fina de curadoria
+decidindo o que aparece onde.
+
+### Os três baldes (aplicar ANTES de criar qualquer campo)
+
+| Balde | O que é | Onde mora | Quem edita |
+|---|---|---|---|
+| **Entidade** | o que a escola vende ou entrega, e que existe fora da página | banco (Prisma) | operador, no `/admin` |
+| **Texto de página** | título, parágrafo, rótulo, pergunta de FAQ — texto que *descreve*, não que *é* | dicionário (`core/src/i18n/`) + sobrescrita no banco | operador, no `/admin` |
+| **Derivado** | contagem de aulas, carga horária, agrupamento | calculado na leitura | ninguém — **nunca vira coluna** |
+
+### Como o texto de página funciona: valor de fábrica + sobrescrita
+
+O dicionário em código **não é "o texto do site"** — é o **valor de fábrica**: o que uma
+instalação nova mostra antes de alguém configurar. A sobrescrita no banco é o que está no ar.
+
+    texto exibido  =  sobrescrita do banco  ??  valor de fábrica do dicionário
+
+**Por que o híbrido e não o banco puro** *(a alternativa foi pesada, 22/09)*: banco puro ganha em
+uma coisa — editar na hora — e perde em quatro: banco fora do ar derruba o **texto** junto com o
+dado; tradução faltando chega em produção em vez de quebrar a compilação; seção nova nasce
+**vazia**; e não há histórico para desfazer. A diferença de custo entre as duas é **uma linha**
+(`??`), então o híbrido fica com a vantagem de cada lado.
+**Consequência aceita:** depois da primeira edição, o texto do código fica velho. Isso é esperado
+— **a verdade do que está no ar é o admin**, e a tela mostra o valor de fábrica ao lado para a
+diferença ficar visível.
+*Gatilho de reabertura: se um dia houver centenas de textos mudando toda semana, com várias
+pessoas editando, o valor de fábrica vira ruído e o banco puro passa a valer. Não é o caso de um
+operador com ~150 chaves.*
+
+### O mapa da home, seção por seção
+
+Estado em 22/09/2026, **medido** (não estimado):
+
+| Seção | Balde | Estado |
+|---|---|---|
+| Nav, Hero (textos) | texto | dicionário |
+| Curso em destaque + 4 cards | **entidade** (`Course`) | ainda constante no código — ver *pendências* |
+| Catálogo (título, parágrafo, "ver todos") | texto | dicionário |
+| Para quem é (3 passos) | texto | dicionário |
+| Trilhas (4 ideias + a ilustração de linha do tempo) | texto | dicionário — a ilustração é **mock**, não lê trilha real |
+| JilsonAI (texto + conversa de exemplo) | texto | dicionário; a conversa é **roteirizada**, nunca chama a API |
+| Autor (bio, citação, 3 números) | texto | dicionário |
+| **Depoimentos** | **entidade** *(decidido, ainda não construído)* | hoje no dicionário |
+| Preço (cartão, lista, rodapé) | texto | dicionário — o **valor** vira Stripe na Fase 4 |
+| **FAQ** | **entidade** *(decidido, ainda não construído)* | hoje no dicionário |
+| CTA, Rodapé | texto | dicionário |
+
+**Por que depoimentos e FAQ viram tabela e o resto não:** são as duas únicas listas da home que
+**crescem**. As outras têm tamanho fixo preso ao layout (3 passos, 4 ideias) — acrescentar item é
+mudança de desenho, não de conteúdo. E depoimento tem uma obrigação própria já escrita aqui
+(§ acima: *"se a pessoa pedir, o depoimento sai na hora"*) — isso não pode depender de deploy.
+
+### Regra que passa a valer para toda página pública
+
+**Nenhum texto visível fica literal no template.** Se está no HTML, o operador não consegue
+editar e o `/en` mostra português. A trava mecânica e o teste que a sustenta estão no
+`CLAUDE.md` → *Rendering Boundary*.
+
+### Pendências (nesta ordem)
+
+1. ~~Fiação: tirar do HTML os textos que já tinham chave.~~ **Feito em 22/09** — 55 literais
+   foram para o dicionário; sobraram só os rótulos das 3 camadas (entram com o selo).
+2. Mecanismo de sobrescrita + tela de admin.
+3. Depoimentos e FAQ viram tabela com CRUD no admin.
+4. Os 5 cursos saem da constante e passam a vir do banco (depende da migration de `language`).
+5. Escrever o inglês — hoje **143 das 150 chaves** estão vazias no `en.ts`.
+6. **Preço em dólar na página em inglês:** as chaves `priceEn` e `priceEnAnnual` existem e **não
+   são usadas** — a página em inglês mostra o preço em real. Isso é a questão *preço mostrado ×
+   preço cobrado*, que é **decisão da Fase 4** (`billing.md`), não de fiação.
+

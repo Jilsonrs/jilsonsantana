@@ -434,6 +434,32 @@ Texto que só aparece depois de um clique, um scroll ou um fetch é **invisível
 - **JSON-LD → `jsonLd()`, NUNCA `escapeHtml`.** São dois problemas diferentes: dentro de `<script type="application/ld+json">`, escapar HTML emite `&amp;` **visível para o crawler** e corrompe o dado estruturado que o bloco existe para entregar; o risco ali é outro — fechar o `</script>` de dentro da string —, e a solução é `JSON.stringify` + `<` → `<`. Trocar um pelo outro falha nas duas direções.
 - **A defesa fica na RENDERIZAÇÃO, não na escrita.** Sanitizar na gravação destrói o valor original (o admin não consegue mais escrever `R$ 99 < 199`) e não protege nenhuma das linhas já gravadas.
 
+### TRAVA — nenhum texto visível fica literal no template
+
+Todo texto que o visitante lê — **inclusive `aria-label`, `alt` e `title`** — sai do dicionário
+(`core/src/i18n/`). Literal no HTML falha **duas vezes em silêncio**: o operador não consegue
+editar pelo admin, e a página `/en` mostra português. Nenhum dos dois quebra teste, typecheck ou
+build. *(Medido em Set 2026: 55 textos estavam cravados no template da home **mesmo já tendo
+chave** no dicionário.)*
+
+- **O dicionário em código é VALOR DE FÁBRICA, não "o texto do site".** O que está no ar é
+  `sobrescrita do banco ?? valor de fábrica`. Depois da primeira edição no admin, o texto do
+  código fica velho — isso é esperado, não é divergência a "consertar".
+- **Texto do dicionário nunca vira caminho de arquivo nem identificador.** Já aconteceu:
+  `src="/img/${dict.trilhas.features[2].title}.png"`. Funciona até o operador editar aquele
+  rótulo no admin, e aí a imagem some sem erro nenhum.
+- **Negrito dentro de texto = DOIS campos (`label` + `text`), nunca `<strong>` na string.** O
+  operador não digita HTML no admin, e nada precisa escapar do `escapeHtml()`.
+- **Lista que cresce (depoimento, FAQ) é TABELA, não chave de dicionário.** Lista de tamanho fixo
+  presa ao layout (3 passos, 4 colunas) é dicionário: acrescentar item ali é mudança de desenho.
+- **O teste que sustenta isto** compara as duas páginas: um trecho em português por seção tem que
+  aparecer em `/` e **não** aparecer em `/en` (`server/src/routes/home.test.ts`). Cravar um
+  literal de volta reprova a suíte — verificado por mutação.
+
+O mapa por seção (o que é entidade, o que é texto, o que é derivado) mora em
+[`docs/content.md`](docs/content.md) § 16. **GATILHO (mecânico):** antes de escrever ou editar
+qualquer template em `server/src/views/**` → ler aquela seção.
+
 ### Indexação (a política; o checklist por rota é da Fase 3 no plano)
 
 - Toda rota pública emite, **no HTML da primeira resposta**: `<title>` e `description` próprios da página, Open Graph completo, `canonical` absoluto e os blocos JSON-LD. **É isso — e só isso — que o crawler do LinkedIn e do WhatsApp leem.**

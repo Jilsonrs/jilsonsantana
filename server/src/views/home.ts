@@ -67,7 +67,7 @@ export function renderHome(
 </head>
 <body>
 <!-- 0. Header / Nav -->
-  <nav class="navbar" aria-label="Navegação Principal">
+  <nav class="navbar" aria-label="${escapeHtml(dict.a11y.mainNav)}">
     <div class="nav-container container">
       <div class="nav-logo" aria-label="Jilson Santana"><span>#</span>Jilson Santana</div>
       <div class="nav-links">
@@ -87,7 +87,7 @@ export function renderHome(
   <main id="conteudo-principal">
 
     <!-- 1. Hero (inclui o curso em destaque) -->
-    <section class="hero container" aria-label="Destaque Principal">
+    <section class="hero container" aria-label="${escapeHtml(dict.a11y.hero)}">
       <h1>${escapeHtml(dict.hero.titlePrefix)} <span class="emphasis">${escapeHtml(dict.hero.titleEmphasis)}</span> ${escapeHtml(dict.hero.titleSuffix)}</h1>
       <p>${escapeHtml(dict.hero.subtitle)}</p>
 
@@ -95,7 +95,7 @@ export function renderHome(
       ${featuredCourse ? ((f) => `<div class="apple-card horizontal reveal-on-scroll" style="margin-top: 80px; margin-bottom: 0;">
         <div class="apple-card-content">
           <span class="tag tag-blue" style="margin-bottom: 16px;">${escapeHtml(dict.hero.featuredBadge)}</span>
-          <div class="course-badges" aria-label="Atributos do curso">
+          <div class="course-badges" aria-label="${escapeHtml(dict.a11y.courseBadges)}">
             <div class="badge-icon" title="Fundamentos Sólidos">
               <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -128,7 +128,7 @@ export function renderHome(
           </a>
         </div>
         <div class="card-img-container">
-          <a href="/curso/${escapeHtml(f.slug)}" aria-label="Detalhes do curso Agentic AI na Prática">
+          <a href="/curso/${escapeHtml(f.slug)}" aria-label="${escapeHtml(f.title)}">
             <img src="${escapeHtml(f.thumbnailUrl ?? "")}" alt="${escapeHtml(f.title)}"
               style="width: 650px; height: 400px; object-fit: cover; border-radius: 0; box-shadow: -10px 10px 40px rgba(0,0,0,0.15); transition: transform 0.3s;"
               onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
@@ -138,11 +138,10 @@ export function renderHome(
     `)(featuredCourse) : ""}</section>
 
     <!-- 2. ${escapeHtml(dict.nav.cursos)} -->
-    <section id="cursos" class="section container" aria-label="Catálogo de ${escapeHtml(dict.nav.cursos)}">
+    <section id="cursos" class="section container" aria-label="${escapeHtml(dict.a11y.catalog)}">
       <div class="section-header reveal-on-scroll">
-        <h2>${escapeHtml(dict.catalog.titlePrefix)} <span style="color: var(--brand-blue);">IA</span> ${escapeHtml(dict.catalog.titleSuffix)}</h2>
-        <p>A IA está redefinindo o mundo. Mais do que certificados, o mercado exige competências validadas. Explore um
-          catálogo dinâmico, focado em Dados, Automação e IA aplicada para os desafios reais das empresas de hoje.</p>
+        <h2>${escapeHtml(dict.catalog.titlePrefix)} <span style="color: var(--brand-blue);">${escapeHtml(dict.catalog.titleEmphasis)}</span> ${escapeHtml(dict.catalog.titleSuffix)}</h2>
+        <p>${escapeHtml(dict.catalog.subtitle)}</p>
       </div>
 
       <div class="apple-grid">
@@ -158,7 +157,7 @@ ${courses.map((c) => `
                 onmouseout="this.style.opacity='1'">
             </a>
             <div class="course-card-content">
-              <div class="course-badges" aria-label="Atributos do curso">
+              <div class="course-badges" aria-label="${escapeHtml(dict.a11y.courseBadges)}">
                 <div class="badge-icon" title="Fundamentos Sólidos"><svg aria-hidden="true" width="16" height="16"
                     viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polygon points="12 2 2 7 12 12 22 7 12 2" />
@@ -177,9 +176,9 @@ ${courses.map((c) => `
               </div>
               <h3>${escapeHtml(c.title)}</h3>
               <p>${escapeHtml(c.subtitle ?? "")}</p>
-              <a href="/curso/${escapeHtml(c.slug)}" aria-label="${escapeHtml(dict.hero.accessCourse)} detalhes do curso Google Antigravity"
+              <a href="/curso/${escapeHtml(c.slug)}" aria-label="${escapeHtml(dict.catalog.accessCourse)} ${escapeHtml(c.title)}"
                 style="color: var(--brand-blue); text-decoration: none; font-weight: 500; font-size: 1.05rem; display: inline-flex; align-items: center; gap: 4px; margin-top: 16px; transition: opacity 0.2s;"
-                onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'">${escapeHtml(dict.hero.accessCourse)}<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'">${escapeHtml(dict.catalog.accessCourse)}<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                   stroke-linecap="round" stroke-linejoin="round">
                   <polyline points="9 18 15 12 9 6"></polyline>
                 </svg>
@@ -190,8 +189,7 @@ ${courses.map((c) => `
 <!-- Link Ver Todos -->
         <div style="text-align: center; margin-top: 48px;" class="reveal-on-scroll">
           <a href="#" class="btn"
-            style="background-color: #0071e3; font-size: 1.15rem; padding: 14px 32px; text-decoration: none;">Ver todos
-            os cursos</a>
+            style="background-color: #0071e3; font-size: 1.15rem; padding: 14px 32px; text-decoration: none;">${escapeHtml(dict.catalog.viewAll)}</a>
         </div>
       </div>
     </section>
@@ -200,7 +198,7 @@ ${courses.map((c) => `
     <section class="section section-alt">
       <div class="container">
         <div class="section-header reveal-on-scroll">
-          <h2>${allowBr(dict.target.titlePrefix)} <span class="emphasis">${escapeHtml(dict.target.titleEmphasis)}</span>.</h2>
+          <h2>${allowBr(dict.target.titlePrefix)} <span class="emphasis">${escapeHtml(dict.target.titleEmphasis)}</span>${escapeHtml(dict.target.titleSuffix)}</h2>
           <p>${escapeHtml(dict.target.subtitle)}</p>
         </div>
 
@@ -214,7 +212,7 @@ ${courses.map((c) => `
               </svg>
             </div>
             <h3 style="display: flex; align-items: baseline; gap: 8px;">
-              <span class="step-num" style="margin-bottom: 0; font-size: 1.5rem; color: var(--text-muted);">01</span>
+              <span class="step-num" style="margin-bottom: 0; font-size: 1.5rem; color: var(--text-muted);">${escapeHtml(dict.target.steps[0].num)}</span>
               ${escapeHtml(dict.target.steps[0].title)}
             </h3>
             <p>${escapeHtml(dict.target.steps[0].desc)}</p>
@@ -229,7 +227,7 @@ ${courses.map((c) => `
               </svg>
             </div>
             <h3 style="display: flex; align-items: baseline; gap: 8px;">
-              <span class="step-num" style="margin-bottom: 0; font-size: 1.5rem; color: var(--text-muted);">02</span>
+              <span class="step-num" style="margin-bottom: 0; font-size: 1.5rem; color: var(--text-muted);">${escapeHtml(dict.target.steps[1].num)}</span>
               ${escapeHtml(dict.target.steps[1].title)}
             </h3>
             <p>${escapeHtml(dict.target.steps[1].desc)}
@@ -244,11 +242,10 @@ ${courses.map((c) => `
               </svg>
             </div>
             <h3 style="display: flex; align-items: baseline; gap: 8px;">
-              <span class="step-num" style="margin-bottom: 0; font-size: 1.5rem; color: var(--text-muted);">03</span>
+              <span class="step-num" style="margin-bottom: 0; font-size: 1.5rem; color: var(--text-muted);">${escapeHtml(dict.target.steps[2].num)}</span>
               ${escapeHtml(dict.target.steps[2].title)}
             </h3>
-            <p>Atualize-se continuamente para se manter relevante e conduzir a adaptação rápida dos seus projetos ou
-              negócios diante das mudanças.</p>
+            <p>${escapeHtml(dict.target.steps[2].desc)}</p>
           </div>
         </div>
       </div>
@@ -288,7 +285,7 @@ ${courses.map((c) => `
                     ${escapeHtml(dict.trilhas.mockUi.course1)}</div>
                   <h4
                     style="font-family: 'Outfit', sans-serif; font-size: 1rem; margin: 0 0 8px 0; color: var(--brand-black);">
-                    Excel + Claude IA: Análise de Dados</h4>
+                    ${escapeHtml(dict.trilhas.mockUi.course1Title)}</h4>
                   <div style="display: flex; align-items: center; gap: 8px;">
                     <div style="height: 4px; background: #E2E8F0; border-radius: 2px; flex-grow: 1;">
                       <div style="width: 100%; height: 100%; background: #10B981; border-radius: 2px;"></div>
@@ -314,14 +311,13 @@ ${courses.map((c) => `
                     ${escapeHtml(dict.trilhas.mockUi.course2)}</div>
                   <h4
                     style="font-family: 'Outfit', sans-serif; font-size: 1rem; margin: 0 0 8px 0; color: var(--brand-black);">
-                    Power BI + IA: do básico ao avançado</h4>
+                    ${escapeHtml(dict.trilhas.mockUi.course2Title)}</h4>
                   <div style="display: flex; align-items: center; gap: 8px;">
                     <div style="height: 4px; background: #E2E8F0; border-radius: 2px; flex-grow: 1;">
                       <div style="width: 30%; height: 100%; background: var(--brand-blue); border-radius: 2px;"></div>
                     </div>
                     <span
-                      style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--brand-gray);">faltam
-                      1h 45m</span>
+                      style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--brand-gray);">${escapeHtml(dict.trilhas.mockUi.remaining)}</span>
                   </div>
                 </div>
               </div>
@@ -352,10 +348,8 @@ ${courses.map((c) => `
 
           <!-- Right Side: Text -->
           <div style="display: flex; flex-direction: column; gap: 16px;">
-            <h2 style="font-size: 2.5rem; margin: 0; letter-spacing: -0.02em; line-height: 1.15;">${escapeHtml(dict.nav.trilhas)} guiadas ou por
-              competência, até o certificado.</h2>
-            <p style="color: var(--text-muted); font-size: 1.1rem; line-height: 1.6; margin: 0;">Escolha um objetivo,
-              siga uma trilha pronta ou monte a sua.</p>
+            <h2 style="font-size: 2.5rem; margin: 0; letter-spacing: -0.02em; line-height: 1.15;">${escapeHtml(dict.trilhas.title)}</h2>
+            <p style="color: var(--text-muted); font-size: 1.1rem; line-height: 1.6; margin: 0;">${escapeHtml(dict.trilhas.subtitle)}</p>
           </div>
 
         </div>
@@ -376,8 +370,7 @@ ${courses.map((c) => `
               </div>
               <h4 style="font-size: 1.2rem; margin: 0;">${escapeHtml(dict.trilhas.features[0].title)}</h4>
             </div>
-            <p style="color: var(--text-muted); font-size: 1rem; line-height: 1.5; margin: 0;">Um caminho definido que
-              combina com a sua carreira.</p>
+            <p style="color: var(--text-muted); font-size: 1rem; line-height: 1.5; margin: 0;">${escapeHtml(dict.trilhas.features[0].desc)}</p>
           </div>
 
           <!-- Item 2 -->
@@ -399,17 +392,15 @@ ${courses.map((c) => `
               </div>
               <h4 style="font-size: 1.2rem; margin: 0;">${escapeHtml(dict.trilhas.features[1].title)}</h4>
             </div>
-            <p style="color: var(--text-muted); font-size: 1rem; line-height: 1.5; margin: 0;">Pegue uma trilha pronta e
-              deixe do seu jeito.</p>
+            <p style="color: var(--text-muted); font-size: 1rem; line-height: 1.5; margin: 0;">${escapeHtml(dict.trilhas.features[1].desc)}</p>
           </div>
 
           <!-- Item 3 -->
           <div style="display: flex; flex-direction: column; gap: 20px;">
             <div style="display: flex; align-items: center; min-height: 28px;">
-              <img src="/img/${escapeHtml(dict.trilhas.features[2].title)}.png" alt="${escapeHtml(dict.trilhas.features[2].title)}" style="height: 22px; width: auto; object-fit: contain;">
+              <img src="/img/JilsonAI.png" alt="${escapeHtml(dict.trilhas.features[2].title)}" style="height: 22px; width: auto; object-fit: contain;">
             </div>
-            <p style="color: var(--text-muted); font-size: 1rem; line-height: 1.5; margin: 0;">Não sabe por onde
-              começar? Diga aonde quer chegar e ele mostra a trilha.</p>
+            <p style="color: var(--text-muted); font-size: 1rem; line-height: 1.5; margin: 0;">${escapeHtml(dict.trilhas.features[2].desc)}</p>
           </div>
 
           <!-- Item 4 -->
@@ -424,16 +415,14 @@ ${courses.map((c) => `
               </div>
               <h4 style="font-size: 1.2rem; margin: 0;">${escapeHtml(dict.trilhas.features[3].title)}</h4>
             </div>
-            <p style="color: var(--text-muted); font-size: 1rem; line-height: 1.5; margin: 0;">Um certificado por trilha
-              concluída, com as competências que você desenvolveu.</p>
+            <p style="color: var(--text-muted); font-size: 1rem; line-height: 1.5; margin: 0;">${escapeHtml(dict.trilhas.features[3].desc)}</p>
           </div>
 
         </div>
 
         <div style="display: flex; justify-content: center; margin-top: 16px;">
           <button ${canSubscribe ? "" : "disabled"} class="btn"
-            style="padding: 14px 32px; font-size: 1.05rem; border-radius: 40px; box-shadow: 0 4px 12px rgba(0, 113, 227, 0.3);">Ver
-            todas as ${escapeHtml(dict.nav.trilhas)}</button>
+            style="padding: 14px 32px; font-size: 1.05rem; border-radius: 40px; box-shadow: 0 4px 12px rgba(0, 113, 227, 0.3);">${escapeHtml(dict.trilhas.viewAll)}</button>
         </div>
       </div>
     </section>
@@ -448,35 +437,17 @@ ${courses.map((c) => `
             <span style="color: #fff;">Jilson</span><span style="color: var(--brand-blue);">AI</span>
           </div>
           <h2 style="font-size: clamp(2.5rem, 4vw, 3rem);">${allowBr(dict.ai.titlePrefix)} <span
-              class="emphasis">${escapeHtml(dict.ai.titleEmphasis)}</span></h2>
-          <p style="font-size: 1rem; margin-bottom: 40px; max-width: 600px;">Treinado no meu método. Ele pensa junto
-            com você, explica o porquê e diz o que está supondo. E, quando ele não resolve, eu entro.</p>
+              class="emphasis">${escapeHtml(dict.ai.titleEmphasis)}</span>${escapeHtml(dict.ai.titleSuffix)}</h2>
+          <p style="font-size: 1rem; margin-bottom: 40px; max-width: 600px;">${escapeHtml(dict.ai.subtitle)}</p>
 
           <ul class="ai-features-list">
-            <li>
+${dict.ai.features.map((f) => `            <li>
               <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2">
                 <polyline points="20 6 9 17 4 12"></polyline>
               </svg>
-              <div style="font-size: 0.95rem; color: #E4E4E7;"><strong>Pensa junto:</strong> conhece o curso que você
-                está fazendo e pergunta quando precisa entender melhor.</div>
-            </li>
-            <li>
-              <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                stroke-width="2">
-                <polyline points="20 6 9 17 4 12"></polyline>
-              </svg>
-              <div style="font-size: 0.95rem; color: #E4E4E7;"><strong>Explica o porquê:</strong> não entrega só a
-                resposta.</div>
-            </li>
-            <li>
-              <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                stroke-width="2">
-                <polyline points="20 6 9 17 4 12"></polyline>
-              </svg>
-              <div style="font-size: 0.95rem; color: #E4E4E7;"><strong>Não te deixa sozinho:</strong> quando não
-                resolve, chama ${escapeHtml(dict.author.titleEmphasis)}</div>
-            </li>
+              <div style="font-size: 0.95rem; color: #E4E4E7;"><strong>${escapeHtml(f.label)}</strong> ${escapeHtml(f.text)}</div>
+            </li>`).join("\n")}
           </ul>
         </div>
         <div class="ai-visual">
@@ -485,10 +456,10 @@ ${courses.map((c) => `
 
             <!-- Chat Header -->
             <div class="chat-header">
-              <img src="/img/Jilson-Santana.png" alt="Jilson Avatar"
+              <img src="/img/Jilson-Santana.png" alt="${escapeHtml(dict.a11y.chatAvatar)}"
                 style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover; object-position: center 2px; background: #fff; border: 1px solid rgba(35, 143, 232, 0.4); box-shadow: 0 0 12px rgba(35, 143, 232, 0.3);">
               <div class="chat-header-info">
-                <h4>${escapeHtml(dict.trilhas.features[2].title)}</h4>
+                <h4>JilsonAI</h4>
                 <span>${escapeHtml(dict.ai.chatMock.status)}</span>
               </div>
             </div>
@@ -500,8 +471,7 @@ ${courses.map((c) => `
               </div>
 
               <div class="chat-bubble ai">
-                Vamos por partes. Estou supondo que hoje você monta esse relatório à mão e envia por e-mail — é isso?
-                Se for, o primeiro passo não é o agente, é padronizar a base. Me conta de onde vêm os dados.
+                ${escapeHtml(dict.ai.chatMock.aiMsg)}
               </div>
 
               <!-- Typing Indicator (simulando que está pensando no próximo passo) -->
@@ -538,7 +508,7 @@ ${courses.map((c) => `
           <img src="/img/Jilson-Santana.png" alt="Jilson Santana" onerror="this.style.opacity='0'">
         </div>
         <div class="author-content">
-          <h2>${escapeHtml(dict.author.titlePrefix)} <span class="emphasis">${escapeHtml(dict.author.titleEmphasis)}</span></h2>
+          <h2>${escapeHtml(dict.author.titlePrefix)} <span class="emphasis">${escapeHtml(dict.author.titleEmphasis)}</span>${escapeHtml(dict.author.titleSuffix)}</h2>
           <p>${escapeHtml(dict.author.subtitle)}</p>
 
           <div class="author-credentials">
@@ -548,9 +518,7 @@ ${courses.map((c) => `
 
           <p
             style="font-size: 1.15rem; color: var(--text-main); font-weight: 500; line-height: 1.6; margin-bottom: 32px; font-style: italic;">
-            "Vou te guiar para que você se sinta confiante com dados, IA e o que vier depois. Se você busca habilidades
-            práticas e
-            aplicáveis ao mundo real sem perder tempo, você está no lugar certo."</p>
+            ${escapeHtml(dict.author.quote)}</p>
 
           <div class="stat-row">
             <div class="stat-item">
@@ -558,7 +526,7 @@ ${courses.map((c) => `
               <span>${escapeHtml(dict.author.stats[0].label)}</span>
             </div>
             <div class="stat-item">
-              <strong>70+</strong>
+              <strong>${escapeHtml(dict.author.stats[1].value)}</strong>
               <span>${escapeHtml(dict.author.stats[1].label)}</span>
             </div>
             <div class="stat-item">
@@ -578,61 +546,17 @@ ${courses.map((c) => `
       </div>
 
       <div class="testimonials-grid">
-        <!-- Depoimento 1 -->
-        <div class="test-card">
-          <p>O professor está muito acima de qualquer expectativa! Um curso 100% prático, com aplicações imediatas. Nos
-            meus 30 anos lecionando, nunca vi uma didática tão apurada.</p>
+${dict.testimonials.list.map((t) => `        <div class="test-card">
+          <p>${escapeHtml(t.text)}</p>
           <div class="test-author-box">
             <div class="test-avatar"
               style="background: #E8F1FB; color: var(--brand-blue); font-weight: 700; font-size: 0.95rem;"
-              aria-hidden="true">EF</div>
+              aria-hidden="true">${escapeHtml(t.initials)}</div>
             <div class="test-author">
-              <h4>${escapeHtml(dict.testimonials.list[0].name)}</h4>
+              <h4>${escapeHtml(t.name)}</h4>
             </div>
           </div>
-        </div>
-
-        <!-- Depoimento 2 -->
-        <div class="test-card">
-          <p>O professor explica muito bem, passo a passo, para até quem nunca mexeu no programa entender tudo. Eu sabia
-            pouco, quase nada, e agora já entendo até um pouquinho de programação!</p>
-          <div class="test-author-box">
-            <div class="test-avatar"
-              style="background: #E8F1FB; color: var(--brand-blue); font-weight: 700; font-size: 0.95rem;"
-              aria-hidden="true">NM</div>
-            <div class="test-author">
-              <h4>${escapeHtml(dict.testimonials.list[1].name)}</h4>
-            </div>
-          </div>
-        </div>
-
-        <!-- Depoimento 3 -->
-        <div class="test-card">
-          <p>Incrível! Acabei de finalizar esse curso e estou sem palavras. Como uma educadora, gosto de aprender com
-            práticas, por isso achei todo o cronograma perfeito. Muito obrigada professor, um forte abraço.</p>
-          <div class="test-author-box">
-            <div class="test-avatar"
-              style="background: #E8F1FB; color: var(--brand-blue); font-weight: 700; font-size: 0.95rem;"
-              aria-hidden="true">BV</div>
-            <div class="test-author">
-              <h4>${escapeHtml(dict.testimonials.list[2].name)}</h4>
-            </div>
-          </div>
-        </div>
-
-        <!-- Depoimento 4 -->
-        <div class="test-card">
-          <p>Realizou grandes avanços no meu dia a dia. Também ajudou a melhorar a performance da minha equipe, pois
-            repliquei toda semana os conhecimentos que aprendi. Assim crescemos juntos.</p>
-          <div class="test-author-box">
-            <div class="test-avatar"
-              style="background: #E8F1FB; color: var(--brand-blue); font-weight: 700; font-size: 0.95rem;"
-              aria-hidden="true">VQ</div>
-            <div class="test-author">
-              <h4>${escapeHtml(dict.testimonials.list[3].name)}</h4>
-            </div>
-          </div>
-        </div>
+        </div>`).join("\n")}
       </div>
     </section>
 
@@ -640,7 +564,7 @@ ${courses.map((c) => `
     <section id="assine" class="section section-alt">
       <div class="container">
         <div class="section-header">
-          <h2>${escapeHtml(dict.pricing.titlePrefix)} <span class="emphasis">${escapeHtml(dict.pricing.titleEmphasis)}</span></h2>
+          <h2>${escapeHtml(dict.pricing.titlePrefix)} <span class="emphasis">${escapeHtml(dict.pricing.titleEmphasis)}</span>${escapeHtml(dict.pricing.titleSuffix)}</h2>
         </div>
 
         <div class="pricing-grid" style="grid-template-columns: 1fr; max-width: 460px;">
@@ -672,8 +596,7 @@ ${courses.map((c) => `
           </div>
         </div>
 
-        <p style="text-align: center; color: var(--text-muted); margin-top: 48px; font-size: 1.1rem;">Acesso a tudo
-          desde o primeiro dia. Sem fidelidade e sem multa: se você cancelar e voltar, continua de onde parou.</p>
+        <p style="text-align: center; color: var(--text-muted); margin-top: 48px; font-size: 1.1rem;">${escapeHtml(dict.pricing.footer)}</p>
       </div>
     </section>
 
@@ -684,85 +607,17 @@ ${courses.map((c) => `
       </div>
 
       <div class="faq-list">
-        <details>
-          <summary>${escapeHtml(dict.faq.list[0].q)}</summary>
-          <p>Sim. A escola é projetada para profissionais de negócios. Você não precisa de experiência prévia. Ensinamos
-            passo a passo, do zero absoluto aos tópicos avançados.</p>
-        </details>
-        <details>
-          <summary>${escapeHtml(dict.faq.list[1].q)}</summary>
-          <p>Sim. Os dados estão em todo lugar: finanças, marketing, RH, logística. As ferramentas e os métodos
-            ensinados são universais e aplicáveis a qualquer setor do mercado.</p>
-        </details>
-        <details>
-          <summary>${escapeHtml(dict.faq.list[2].q)}</summary>
-          <p>${escapeHtml(dict.faq.list[2].a)}</p>
-        </details>
-        <details>
-          <summary>${escapeHtml(dict.faq.list[3].q)}</summary>
-          <p>Não. A grande maioria das ferramentas abordadas possui versões gratuitas completas suficientes para você
-            aplicar o conhecimento.</p>
-        </details>
-        <details>
-          <summary>${escapeHtml(dict.faq.list[4].q)}</summary>
-          <p>${escapeHtml(dict.faq.list[4].a)}
-          </p>
-        </details>
-        <details>
-          <summary>${escapeHtml(dict.faq.list[5].q)}</summary>
-          <p>Poucos cursos, escolhidos a dedo, focados nas ferramentas e métodos que você aplica no trabalho amanhã de
-            manhã.</p>
-        </details>
-        <details>
-          <summary>${escapeHtml(dict.faq.list[6].q)}</summary>
-          <p>O ${escapeHtml(dict.trilhas.features[2].title)} é um parceiro inteligente treinado na nossa metodologia para ajudar você imediatamente. Se ele
-            não resolver, o Jilson entra em ação.</p>
-        </details>
-        <details>
-          <summary>${escapeHtml(dict.faq.list[7].q)}</summary>
-          <p>Sim! Ao concluir as trilhas e cursos, você emite seu certificado válido que pode ser compartilhado
-            diretamente no seu perfil do LinkedIn.</p>
-        </details>
-        <details>
-          <summary>${escapeHtml(dict.faq.list[8].q)}</summary>
-          <p>Aqui você tem uma trilha com método estruturado, começo, meio e fim, suporte oficial, exercícios com dados
-            reais e emissão de certificado.</p>
-        </details>
-        <details>
-          <summary>${escapeHtml(dict.faq.list[9].q)}</summary>
-          <p>Não. O modelo é de assinatura (mensal ou anual), garantindo acesso a todo o catálogo e novas atualizações
-            constantes.</p>
-        </details>
-        <details>
-          <summary>${escapeHtml(dict.faq.list[10].q)}</summary>
-          <p>${escapeHtml(dict.faq.list[10].a)}
-          </p>
-        </details>
-        <details>
-          <summary>${escapeHtml(dict.faq.list[11].q)}</summary>
-          <p>Cancele com um clique no seu painel de aluno, sem nenhuma taxa. Quando quiser voltar, seu histórico e seus
-            certificados estarão guardados esperando por você.</p>
-        </details>
-        <details>
-          <summary>${escapeHtml(dict.faq.list[12].q)}</summary>
-          <p>${escapeHtml(dict.faq.list[12].a)}</p>
-        </details>
-        <details>
-          <summary>${escapeHtml(dict.faq.list[13].q)}</summary>
-          <p>${escapeHtml(dict.faq.list[13].a)}</p>
-        </details>
-        <details>
-          <summary>${escapeHtml(dict.faq.list[14].q)}</summary>
-          <p>Sim, emitimos nota fiscal para todos os pagamentos. Para planos corporativos ou múltiplos acessos, entre em
-            contato.</p>
-        </details>
+${dict.faq.list.map((item) => `        <details>
+          <summary>${escapeHtml(item.q)}</summary>
+          <p>${escapeHtml(item.a)}</p>
+        </details>`).join("\n")}
       </div>
     </section>
 
     <!-- Chamada final -->
     <section class="section container" style="text-align: center; padding-top: 0;">
       <h2 style="font-size: clamp(2.5rem, 4vw, 3.5rem); margin: 0 auto 48px; max-width: 800px; line-height: 1.1;">${escapeHtml(dict.cta.title)}</h2>
-      <button ${canSubscribe ? "" : "disabled"} class="btn" style="padding: 24px 64px; font-size: 1.35rem;">${escapeHtml(dict.pricing.btn)}</button>
+      <button ${canSubscribe ? "" : "disabled"} class="btn" style="padding: 24px 64px; font-size: 1.35rem;">${escapeHtml(dict.cta.btn)}</button>
     </section>
 
     <!-- Footer -->
@@ -773,10 +628,10 @@ ${courses.map((c) => `
       <div class="footer-top">
         <div class="nav-logo"><span>#</span>Jilson Santana</div>
         <div class="footer-links">
-          <a href="#">${escapeHtml(dict.nav.cursos)}</a>
-          <a href="#">${escapeHtml(dict.nav.trilhas)}</a>
-          <a href="#">${escapeHtml(dict.nav.assine)}</a>
-          <a href="#">FAQ</a>
+          <a href="#">${escapeHtml(dict.footer.links[0])}</a>
+          <a href="#">${escapeHtml(dict.footer.links[1])}</a>
+          <a href="#">${escapeHtml(dict.footer.links[2])}</a>
+          <a href="#">${escapeHtml(dict.footer.links[3])}</a>
           <a href="#">${escapeHtml(dict.footer.links[4])}</a>
           <a href="#">${escapeHtml(dict.footer.links[5])}</a>
           <a href="https://www.youtube.com/@JilsonSantanaBI/" target="_blank" rel="noopener noreferrer"
@@ -800,8 +655,7 @@ ${courses.map((c) => `
       </div>
       <div class="footer-bottom">
         <div>${escapeHtml(dict.footer.tagline)}</div>
-        <div>© 2026 Jilson Santana. Todos os direitos reservados. Reprodução total ou parcial é proibida sem autorização
-          por escrito.</div>
+        <div>${escapeHtml(dict.footer.copyright)}</div>
       </div>
     </div>
   </footer>

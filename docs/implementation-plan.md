@@ -1128,6 +1128,83 @@ landmark. Corrigido junto.
 > **O que ficou pendente dentro deste bloco:** os 5 cursos da home vêm de uma constante em
 > `server/src/routes/home.ts` (falta a migration de `language` e o cadastro), o `en.ts` está com
 > as chaves vazias, e `robots.txt`/`sitemap.xml`/`noindex` continuam por fazer.
+> **Desdobrado em 22/09/2026** nos quatro blocos de conteúdo logo abaixo (fiação → admin de texto
+> → depoimentos e FAQ → cursos do banco), na ordem decidida pelo operador.
+
+#### Bloco C1 — Fiação: nenhum texto visível literal no template ✅ DONE *(22/09/2026)*
+
+> **Por que este bloco vem ANTES do admin de texto, e não depois:** com texto cravado no HTML, o
+> operador abriria a tela, editaria um campo, salvaria — e o site não mudaria. Falha silenciosa.
+> Fiando primeiro, no dia em que a tela existe **todo campo dela funciona**.
+
+- [x] **Medir antes de mexer** — script que achata o dicionário e confere chave a chave contra o
+      template. Resultado: **55 de 145 chaves não eram usadas** (texto literal no HTML) e o `/en`
+      era uma mistura de campo vazio com português.
+- [x] Fiar as 12 seções da home. Listas (`ai.features`, `testimonials.list`, `faq.list`) passam a
+      renderizar por `.map()` — acrescentar item vira mudança de dado, não de marcação.
+- [x] **`aria-label`, `alt` e `title` também** — seção `a11y` nova no dicionário. Eram português
+      puro no `/en`, e leitor de tela lê.
+- [x] **Negrito vira dois campos** (`ai.features[i].label` + `.text`): o `<strong>` sai da string
+      para o operador nunca digitar HTML no admin.
+- [x] **Defeito corrigido junto** (mesma família, mesmo arquivo): `src="/img/${dict...title}.png"`
+      usava texto de dicionário como caminho de arquivo — a imagem sumiria na primeira edição.
+- [x] **Teste:** um trecho em português por seção tem que aparecer em `/` e **não** em `/en`.
+- [x] **Passo 8 — mutação:** literal cravado de volta → a suíte **reprovou** (`vazou em /en`).
+      Revertido.
+- **Done when:** medição acusa **0** chaves não usadas. *Restaram 3 de propósito — `pricePtAnnual`,
+  `priceEn`, `priceEnAnnual` não têm elemento na página; é a questão preço mostrado × cobrado, que
+  é decisão da Fase 4.* Os rótulos das 3 camadas continuam literais e entram com o selo.
+
+#### Bloco C2 — Texto de página editável no admin  *(decisão do operador, 22/09/2026)*
+
+> **O desenho:** `texto exibido = sobrescrita do banco ?? valor de fábrica do dicionário`.
+> Racional, alternativas pesadas e gatilho de reabertura em [`content.md`](content.md) § 16.
+> **O mecanismo não conhece a home** — ele conhece chaves. Página nova nasce com chaves no
+> dicionário e **já aparece no admin**, sem tabela nem tela nova. É isso que faz a coisa crescer
+> sem refazer.
+
+- [ ] **Passo 0 (operador):** confirmar quais seções aparecem na tela. Rótulo de botão do app
+      logado fica **fora** — é comportamento testado, não copy de venda.
+- [ ] **Migration:** enum Prisma `Language { PT EN }` (nasce aqui; o Bloco I depois pendura
+      `Course.language` nele) + tabela `SiteText` (`key`, `language`, `value`, `updatedAt`, único
+      por chave+idioma) + **RLS na mesma migration** + a consulta de verificação.
+- [ ] **Servidor:** `getDict(lang)` aplica as sobrescritas; cache em memória limpo ao salvar.
+      **Trava:** só aceita chave que existe no dicionário — chave inventada é 4xx, senão a tabela
+      vira lixeira. *(Limite conhecido: o cache é por instância. Gatilho — quando houver mais de
+      uma instância no Railway, a invalidação precisa cruzar instâncias.)*
+- [ ] **Rotas** `GET /api/admin/site-text` e `PUT /api/admin/site-text/:key`, atrás de `requireAdmin`.
+- [ ] **Tela:** lista agrupada por seção, PT e EN lado a lado, valor de fábrica visível ao lado do
+      seu. Loading / erro / vazio + teste de componente para cada.
+- [ ] **Testes de servidor:** sem sobrescrita sai o valor de fábrica · com sobrescrita sai o seu ·
+      editar EN não mexe no PT · sobrescrita vazia volta ao padrão · não-admin leva 401/403 · chave
+      inexistente é recusada.
+- [ ] **Passo 8 — mutação:** remover a consulta de sobrescrita → a suíte tem que reprovar.
+- **Done when:** o operador troca um texto no admin e ele muda no ar, nos dois idiomas, sem deploy.
+
+#### Bloco C3 — Depoimentos e FAQ viram tabela
+
+> São as duas únicas listas da home que **crescem**. O resto tem tamanho fixo preso ao layout.
+> Depoimento tem obrigação própria já escrita (`content.md`: *sai na hora se a pessoa pedir*) —
+> isso não pode depender de deploy.
+
+- [ ] Models `Testimonial` e `FaqItem`: texto, autor/iniciais (depoimento), pergunta/resposta
+      (FAQ), `language`, `displayOrder`, `status`, + RLS. Migration única.
+- [ ] Leitura pública filtra `PUBLISHED` + idioma, ordena por `displayOrder` (mesmo padrão de
+      `courses.ts`). CRUD no admin. As chaves correspondentes saem do dicionário.
+- [ ] **FAQ ganha JSON-LD `FAQPage`** — hoje o `<details>` já entrega o texto no HTML, mas sem o
+      dado estruturado que o buscador lê.
+- [ ] Testes de servidor (lista pública respeita status e idioma) + componente (estado vazio).
+- **Done when:** o operador publica um depoimento novo e remove outro pelo admin, sem deploy.
+
+#### Bloco C4 — Os 5 cursos da home vêm do banco
+
+- [ ] Depende da migration de `language` (Bloco I) e do cadastro dos 5 cursos.
+- [ ] **Bloqueio conhecido, resolver antes:** `thumbnailUrl` usa `z.string().url()`, que **recusa**
+      caminho relativo (`/img/curso.jpg`) — as imagens atuais não salvam pelo admin. Trocar pela
+      checagem explícita de esquema que o `CLAUDE.md` já exige (`core/` → a regra do `.url()`).
+- [ ] Destaque e cards derivados de `displayOrder` (decisão do operador pendente — ver o bloco
+      original acima).
+- **Done when:** o operador troca o curso em destaque pelo admin e a home muda.
 
 > **SEQUENCIAMENTO DECIDIDO: este bloco vem DEPOIS do Bunny.** O `introVideoId` é ativo do Bunny
 > numa rota **pública** (o vídeo de apresentação toca para não-membro), e é o único ponto onde as

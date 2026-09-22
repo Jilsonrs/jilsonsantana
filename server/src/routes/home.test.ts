@@ -41,3 +41,38 @@ describe("Home pública (SSR)", () => {
     expect(res.text).not.toContain("Agentic AI na Prática");
   });
 });
+
+// Um trecho por seção, tirado do dicionário em português. Se algum deles voltar
+// a ser literal no template, ele aparece na página /en — que é justamente o
+// defeito que este teste existe para pegar. Inclui um rótulo de acessibilidade,
+// que o olho não vê mas o leitor de tela lê.
+const TRECHOS_PT = [
+  "Navegação Principal",
+  "A IA está redefinindo o mundo",
+  "Atualize-se continuamente",
+  "Um certificado por trilha",
+  "conhece o curso que você está fazendo",
+  "Vou te guiar para que você",
+  "muito acima de qualquer expectativa",
+  "Sem fidelidade e sem multa",
+  "profissionais de negócios",
+  "Todos os direitos reservados",
+];
+
+describe("Home — nenhum texto fica cravado no template", () => {
+  it("a home em português mostra todos os trechos (o dicionário está ligado)", async () => {
+    const res = await request(app).get("/");
+
+    for (const trecho of TRECHOS_PT) {
+      expect(res.text, `faltou em /: ${trecho}`).toContain(trecho);
+    }
+  });
+
+  it("a home em inglês NÃO vaza nenhum deles", async () => {
+    const res = await request(app).get("/en");
+
+    for (const trecho of TRECHOS_PT) {
+      expect(res.text, `vazou em /en: ${trecho}`).not.toContain(trecho);
+    }
+  });
+});

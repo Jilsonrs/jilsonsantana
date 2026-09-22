@@ -1,4 +1,13 @@
 export const pt = {
+  // Rótulos que só o leitor de tela ouve. Ficam no dicionário pelo mesmo motivo
+  // que o texto visível: numa página /en eles sairiam em português.
+  a11y: {
+    mainNav: "Navegação Principal",
+    hero: "Destaque Principal",
+    catalog: "Catálogo de cursos",
+    courseBadges: "Atributos do curso",
+    chatAvatar: "Jilson Avatar"
+  },
   nav: {
     cursos: "Cursos",
     trilhas: "Trilhas",
@@ -68,8 +77,10 @@ export const pt = {
     viewAll: "Ver todas as Trilhas",
     mockUi: {
       course1: "CURSO 1",
+      course1Title: "Excel + Claude IA: Análise de Dados",
       completed: "Concluído",
       course2: "CURSO 2 (Atual)",
+      course2Title: "Power BI + IA: do básico ao avançado",
       remaining: "faltam 1h 45m",
       certificateTitle: "Certificado da trilha",
       certificateDesc: "Desbloqueado ao concluir a trilha."
@@ -80,10 +91,22 @@ export const pt = {
     titleEmphasis: "um parceiro.",
     titleSuffix: "",
     subtitle: "Treinado no meu método. Ele pensa junto com você, explica o porquê e diz o que está supondo. E, quando ele não resolve, eu entro.",
+    // `label` sai em negrito e `text` em seguida. São dois campos, e não uma
+    // string com <strong>, para que o operador nunca precise digitar HTML no
+    // admin — e para que nenhum texto vindo de fora precise escapar do escape.
     features: [
-      "<strong>Pensa junto:</strong> conhece o curso que você está fazendo e pergunta quando precisa entender melhor.",
-      "<strong>Explica o porquê:</strong> não entrega só a resposta.",
-      "<strong>Não te deixa sozinho:</strong> quando não resolve, chama o Jilson."
+      {
+        label: "Pensa junto:",
+        text: "conhece o curso que você está fazendo e pergunta quando precisa entender melhor."
+      },
+      {
+        label: "Explica o porquê:",
+        text: "não entrega só a resposta."
+      },
+      {
+        label: "Não te deixa sozinho:",
+        text: "quando não resolve, chama o Jilson."
+      }
     ],
     chatMock: {
       status: "Online e pronto",

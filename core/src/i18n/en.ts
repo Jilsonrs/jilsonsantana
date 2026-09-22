@@ -1,6 +1,13 @@
 import type { Dict } from "./pt.js";
 
 export const en: Dict = {
+  a11y: {
+    mainNav: "",
+    hero: "",
+    catalog: "",
+    courseBadges: "",
+    chatAvatar: ""
+  },
   nav: {
     cursos: "",
     trilhas: "",
@@ -46,8 +53,10 @@ export const en: Dict = {
     viewAll: "",
     mockUi: {
       course1: "",
+      course1Title: "",
       completed: "",
       course2: "",
+      course2Title: "",
       remaining: "",
       certificateTitle: "",
       certificateDesc: ""
@@ -59,9 +68,9 @@ export const en: Dict = {
     titleSuffix: "",
     subtitle: "",
     features: [
-      "",
-      "",
-      ""
+      { label: "", text: "" },
+      { label: "", text: "" },
+      { label: "", text: "" }
     ],
     chatMock: {
       status: "",
