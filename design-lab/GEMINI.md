@@ -115,7 +115,7 @@ dicionário (`core/src/i18n/`), **inclusive `aria-label`, `alt` e `title`**:
 
 ```ts
 <p>Escolha um objetivo, siga uma trilha pronta.</p>        // ❌
-<p>${escapeHtml(dict.trilhas.subtitle)}</p>                // ✅
+<p>${escapeHtml(dict.home.trilhas.subtitle)}</p>           // ✅
 ```
 
 **Por quê:** o operador edita esses textos pelo painel, sem deploy — texto cravado no HTML ele
@@ -129,6 +129,8 @@ Corolários que já quebraram coisa aqui:
 - **Negrito no meio de um texto = dois campos** (`label` + `text`), nunca `<strong>` dentro da
   string. O operador não digita HTML no painel.
 - Precisa de um texto que não existe no dicionário? **Peça a chave**, não escreva no template.
+- **A primeira parte da chave diz onde o texto aparece:** `common.*` sai em TODA página pública
+  (menu, rodapé), `home.*` só na home. Mexer num `common.*` muda todas as páginas de uma vez.
 
 **10. Mexeu no `public-input.css`, recompile.** A home pública lê `client/public/css/public.css`,
 que é **gerado**. Sem rodar o comando da §5, seu CSS não chega na tela — e não há erro nenhum

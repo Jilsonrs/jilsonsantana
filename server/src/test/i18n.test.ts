@@ -25,8 +25,8 @@ function achatar(valor: unknown, prefixo = ""): [string, string][] {
  * impede a lista de virar tapete para varrer tradução faltando.
  */
 const IGUAIS_DE_PROPOSITO = [
-  { padrao: /^testimonials\.list\[\d+\]\.name$/, porque: "nome de pessoa real" },
-  { padrao: /^pricing\.price[A-Za-z]*$/, porque: "valor monetário" },
+  { padrao: /^home\.testimonials\.list\[\d+\]\.name$/, porque: "nome de pessoa real" },
+  { padrao: /^home\.pricing\.price[A-Za-z]*$/, porque: "valor monetário" },
 ];
 
 describe("dicionário bilíngue", () => {

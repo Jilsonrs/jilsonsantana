@@ -446,7 +446,7 @@ chave** no dicionário.)*
   `sobrescrita do banco ?? valor de fábrica`. Depois da primeira edição no admin, o texto do
   código fica velho — isso é esperado, não é divergência a "consertar".
 - **Texto do dicionário nunca vira caminho de arquivo nem identificador.** Já aconteceu:
-  `src="/img/${dict.trilhas.features[2].title}.png"`. Funciona até o operador editar aquele
+  `src="/img/${dict.home.trilhas.features[2].title}.png"`. Funciona até o operador editar aquele
   rótulo no admin, e aí a imagem some sem erro nenhum.
 - **Negrito dentro de texto = DOIS campos (`label` + `text`), nunca `<strong>` na string.** O
   operador não digita HTML no admin, e nada precisa escapar do `escapeHtml()`.

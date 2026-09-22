@@ -8,20 +8,24 @@ import { writeFileSync, mkdirSync } from "node:fs";
 import { pt } from "../core/dist/i18n/pt.js";
 import { en } from "../core/dist/i18n/en.js";
 
+// Nome amigável de cada seção. A chave é "onde.seção" — `common.*` aparece em
+// toda página pública, `home.*` só na home. Página nova ganha as linhas dela
+// aqui; sem nome amigável o script cai na própria chave, que também funciona.
 const NOMES = {
-  a11y: "Acessibilidade (só leitor de tela ouve)",
-  nav: "Menu do topo",
-  hero: "Hero",
-  catalog: "Catálogo de cursos",
-  target: "Para quem é",
-  trilhas: "Trilhas",
-  ai: "JilsonAI",
-  author: "Autor",
-  testimonials: "Depoimentos",
-  pricing: "Preço",
-  faq: "FAQ",
-  cta: "Chamada final",
-  footer: "Rodapé",
+  "common.nav": "TODA PÁGINA · Menu do topo",
+  "common.a11y": "TODA PÁGINA · Acessibilidade (só leitor de tela ouve)",
+  "common.footer": "TODA PÁGINA · Rodapé",
+  "home.a11y": "Home · Acessibilidade (só leitor de tela ouve)",
+  "home.hero": "Home · Hero",
+  "home.catalog": "Home · Catálogo de cursos",
+  "home.target": "Home · Para quem é",
+  "home.trilhas": "Home · Trilhas",
+  "home.ai": "Home · JilsonAI",
+  "home.author": "Home · Autor",
+  "home.testimonials": "Home · Depoimentos",
+  "home.pricing": "Home · Preço",
+  "home.faq": "Home · FAQ",
+  "home.cta": "Home · Chamada final",
 };
 
 /** Achata { a: { b: [ { c: "x" } ] } } em [["a.b[0].c", "x"]]. */
@@ -35,7 +39,9 @@ function achatar(valor, prefixo = "") {
 const ingles = new Map(achatar(en));
 const porSecao = new Map();
 for (const [chave, valor] of achatar(pt)) {
-  const secao = chave.split(/[.[]/)[0];
+  // Agrupa por "onde.seção" (home.faq, common.nav) — a primeira parte sozinha
+  // jogaria a home inteira num balde só.
+  const secao = chave.split(/[.[]/).slice(0, 2).join(".");
   if (!porSecao.has(secao)) porSecao.set(secao, []);
   porSecao.get(secao).push([chave, valor, ingles.get(chave) ?? ""]);
 }

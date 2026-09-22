@@ -361,6 +361,26 @@ decidindo o que aparece onde.
 | **Texto de página** | título, parágrafo, rótulo, pergunta de FAQ — texto que *descreve*, não que *é* | dicionário (`core/src/i18n/`) + sobrescrita no banco | operador, no `/admin` |
 | **Derivado** | contagem de aulas, carga horária, agrupamento | calculado na leitura | ninguém — **nunca vira coluna** |
 
+### O NOME DA CHAVE diz onde o texto aparece *(22/09/2026 — "renomeia logo porque vai ter mais de uma página, aí não mistura")*
+
+A primeira parte da chave é o lugar, não a seção:
+
+| Prefixo | Onde aparece | Exemplo |
+|---|---|---|
+| `common.*` | **toda** página pública | `common.nav.cursos`, `common.footer.tagline` |
+| `home.*` | só na home | `home.target.steps[2].title`, `home.pricing.desc` |
+
+**Página nova = prefixo novo** (`curso.*`, `trilha.*`, `legal.*`) — e ela já aparece no admin
+sozinha, sem tabela nem tela nova. É isso que faz a plataforma crescer sem refazer.
+
+**A regra que evita a bagunça:** texto que aparece em **duas** páginas é `common`, nunca duplicado
+nas duas. Duplicar é como as duas versões passam a divergir sem ninguém ver.
+
+**Por que foi renomeado ANTES da tabela de sobrescrita existir:** a chave é a chave primária da
+linha no banco. Renomear depois significa que cada texto já editado pelo operador aponta para um
+nome que não existe mais — migração de dados, em vez de um `sed`. Feito em 22/09, com prova de que
+o HTML renderizado ficou **byte a byte idêntico** nos dois idiomas.
+
 ### Como o texto de página funciona: valor de fábrica + sobrescrita
 
 O dicionário em código **não é "o texto do site"** — é o **valor de fábrica**: o que uma
