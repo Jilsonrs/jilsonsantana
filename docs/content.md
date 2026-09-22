@@ -416,7 +416,9 @@ editar e o `/en` mostra português. A trava mecânica e o teste que a sustenta e
 2. Mecanismo de sobrescrita + tela de admin.
 3. Depoimentos e FAQ viram tabela com CRUD no admin.
 4. Os 5 cursos saem da constante e passam a vir do banco (depende da migration de `language`).
-5. Escrever o inglês — hoje **143 das 150 chaves** estão vazias no `en.ts`.
+5. ~~Escrever o inglês.~~ **Feito e revisado em 22/09** (155 chaves; ciclo de revisão em
+   `idiomas.md`). **Fica aberto:** o operador quer revisar **as 15 perguntas do FAQ uma a uma** —
+   o conteúdo delas, nos dois idiomas, não a tradução. Ele decide quando.
 6. **Preço em dólar na página em inglês:** as chaves `priceEn` e `priceEnAnnual` existem e **não
    são usadas** — a página em inglês mostra o preço em real. Isso é a questão *preço mostrado ×
    preço cobrado*, que é **decisão da Fase 4** (`billing.md`), não de fiação.
