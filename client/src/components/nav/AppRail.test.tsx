@@ -17,7 +17,7 @@ describe("AppRail — quem vê o quê", () => {
     render(Role.MEMBER);
 
     expect(screen.getByRole("link", { name: "Início" })).toBeTruthy();
-    expect(screen.getByRole("link", { name: "Catálogo" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Cursos" })).toBeTruthy();
     expect(screen.getByRole("link", { name: "Minhas trilhas" })).toBeTruthy();
     expect(screen.getByRole("link", { name: "Minha conta" })).toBeTruthy();
 
@@ -27,12 +27,15 @@ describe("AppRail — quem vê o quê", () => {
   // anunciar a existência de uma área que não é dele.
   it("o aluno NÃO vê seção de admin", () => {
     render(Role.MEMBER);
-    expect(screen.queryByRole("link", { name: "Cursos" })).toBeNull();
+    // "Cursos Admin" e não "Cursos": desde set/2026 o ALUNO tem um "Cursos"
+    // (o antigo Catálogo). Procurar por "Cursos" aqui passaria a achar o item
+    // do aluno e o teste deixaria de provar o que promete.
+    expect(screen.queryByRole("link", { name: "Cursos Admin" })).toBeNull();
   });
 
   it("o admin vê as dele e as do aluno", () => {
     render(Role.ADMIN);
-    expect(screen.getByRole("link", { name: "Cursos" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Cursos Admin" })).toBeTruthy();
     expect(screen.getByRole("link", { name: "Início" })).toBeTruthy();
   });
 
@@ -51,16 +54,16 @@ describe("AppRail — onde estou", () => {
     render(Role.MEMBER, "/inicio");
 
     expect(screen.getByRole("link", { name: "Início" }).getAttribute("aria-current")).toBe("page");
-    expect(screen.getByRole("link", { name: "Catálogo" }).getAttribute("aria-current")).toBeNull();
+    expect(screen.getByRole("link", { name: "Cursos" }).getAttribute("aria-current")).toBeNull();
   });
 
-  it("o Catálogo continua aceso dentro da página de um curso", () => {
+  it("Cursos continua aceso dentro da página de um curso", () => {
     render(Role.MEMBER, "/curso/excel-e-ia");
-    expect(screen.getByRole("link", { name: "Catálogo" }).getAttribute("aria-current")).toBe("page");
+    expect(screen.getByRole("link", { name: "Cursos" }).getAttribute("aria-current")).toBe("page");
   });
 
   // Se o casamento fosse por prefixo solto, "/admin/cursos" acenderia também o
-  // "Catálogo" do aluno e o rail mostraria DOIS itens ativos.
+  // "Cursos" do aluno e o rail mostraria DOIS itens ativos.
   it("um item ativo por vez, nunca dois", () => {
     render(Role.ADMIN, "/admin/cursos/12");
 
@@ -68,7 +71,7 @@ describe("AppRail — onde estou", () => {
       .getAllByRole("link")
       .filter((el) => el.getAttribute("aria-current") === "page");
     expect(ativos).toHaveLength(1);
-    expect(ativos[0].textContent).toContain("Cursos");
+    expect(ativos[0].textContent).toContain("Cursos Admin");
   });
 });
 
@@ -79,7 +82,7 @@ describe("AppRail — acessibilidade do estado recolhido", () => {
     // O rótulo está sempre no DOM: some por RECORTE (overflow), nunca por
     // `display:none`. Isto reprova se alguém apagar o <span> do rótulo e
     // deixar só o ícone.
-    for (const nome of ["Início", "Catálogo", "Minhas trilhas", "Cursos", "Minha conta"]) {
+    for (const nome of ["Início", "Cursos", "Minhas trilhas", "Minha conta", "Cursos Admin", "Site"]) {
       expect(screen.getByRole("link", { name: nome })).toBeTruthy();
     }
   });

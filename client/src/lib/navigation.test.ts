@@ -45,6 +45,14 @@ describe("secoesVisiveis — quem vê o quê", () => {
     const rotas = secoesVisiveis(Role.ADMIN).map((s) => s.to);
     expect(rotas.every((r) => r.startsWith("/"))).toBe(true);
     expect(new Set(rotas).size).toBe(rotas.length);
+
+    // Rótulo e ícone também são únicos. No rail RECOLHIDO só o ícone aparece —
+    // dois iguais viram dois itens indistinguíveis, que foi o que aconteceu
+    // quando "Site" nasceu com o ícone do "Catálogo" (set/2026).
+    const rotulos = NAVEGACAO.map((s) => s.label);
+    expect(new Set(rotulos).size).toBe(rotulos.length);
+    const icones = NAVEGACAO.map((s) => s.icon);
+    expect(new Set(icones).size).toBe(icones.length);
   });
 });
 
@@ -62,12 +70,12 @@ describe("secaoAtiva — onde estou", () => {
 
   // A página de um curso é `/curso/:slug`, não `/cursos` — sem isto o aluno
   // navega para dentro do catálogo e o rail apaga, deixando-o sem "onde estou".
-  it("o Catálogo continua aceso dentro da página de um curso", () => {
-    expect(secaoAtiva("/curso/excel-e-ia", doAluno)?.label).toBe("Catálogo");
+  it("Cursos continua aceso dentro da página de um curso", () => {
+    expect(secaoAtiva("/curso/excel-e-ia", doAluno)?.label).toBe("Cursos");
   });
 
   it("acende a seção de admin nas rotas dela", () => {
-    expect(secaoAtiva("/admin/cursos", doAdmin)?.label).toBe("Cursos");
+    expect(secaoAtiva("/admin/cursos", doAdmin)?.label).toBe("Cursos Admin");
     expect(secaoAtiva("/admin/cursos/12", doAdmin)?.to).toBe("/admin/cursos");
   });
 
@@ -135,12 +143,25 @@ describe("itensSecundarios — o nível 2 só aparece quando vale a pena", () =>
 
 describe("abasDaRota — o nível 3", () => {
   const doAluno = secoesVisiveis(Role.MEMBER);
+  const doAdmin = secoesVisiveis(Role.ADMIN);
 
   it("devolve as abas da seção atual", () => {
-    expect(abasDaRota("/cursos", doAluno).map((a) => a.label)).toEqual(["Cursos", "Trilhas"]);
+    expect(abasDaRota("/admin/cursos", doAdmin).map((a) => a.label)).toEqual([
+      "Publicados",
+      "Rascunhos",
+      "Arquivados",
+    ]);
   });
 
   it("vazio onde a seção não tem abas", () => {
     expect(abasDaRota("/inicio", doAluno)).toEqual([]);
+  });
+
+  // O catálogo do aluno TINHA abas (Cursos | Trilhas) e virou duas seções de
+  // primeiro nível em set/2026. O teste fica para a divisão não ser desfeita
+  // sem querer: aba de volta ali é esconder navegação dentro de navegação.
+  it("o catálogo do aluno não tem mais abas — Cursos e Trilhas são seções", () => {
+    expect(abasDaRota("/cursos", doAluno)).toEqual([]);
+    expect(doAluno.map((s) => s.label)).toContain("Cursos");
   });
 });

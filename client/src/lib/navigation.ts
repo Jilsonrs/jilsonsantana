@@ -5,6 +5,8 @@ import {
   Globe,
   GraduationCap,
   Route,
+  Signpost,
+  SlidersHorizontal,
   Users,
 } from "lucide-react";
 import { MockHome, MockGrid, MockMap, MockUser } from "@/components/nav/MockIcons";
@@ -54,16 +56,26 @@ export type Secao = {
 export const NAVEGACAO: Secao[] = [
   // ---------------------------------------------------------------- ALUNO
   { label: "Início", to: "/inicio", icon: MockHome, estado: "ativo" },
+  // "Catálogo" com abas virou DUAS seções de primeiro nível (operador, set/2026):
+  // "é mais fácil", e abre espaço para curso ao vivo e live session entrarem como
+  // seções próprias em vez de mais uma aba escondida.
   {
-    label: "Catálogo",
+    label: "Cursos",
     to: "/cursos",
     icon: MockGrid,
     estado: "ativo",
-    tambemAtivoEm: ["/curso/", "/trilha/"],
-    abas: [
-      { label: "Cursos", to: "/cursos" },
-      { label: "Trilhas", to: "/cursos/trilhas" },
-    ],
+    tambemAtivoEm: ["/curso/"],
+  },
+  {
+    label: "Trilhas",
+    to: "/trilhas",
+    icon: Route,
+    // PLANEJADA, e não ativa: a lista pública de trilhas NÃO EXISTE. Ela era a
+    // aba "Trilhas" do antigo Catálogo, apontando para /cursos/trilhas — uma
+    // rota que nunca foi montada. Escondida numa aba isso passava; no rail
+    // seria um link quebrado à vista. Vira "ativo" quando a tela nascer.
+    estado: "planejado",
+    tambemAtivoEm: ["/trilha/"],
   },
   { label: "Minhas trilhas", to: "/minhas-trilhas", icon: MockMap, estado: "ativo" },
   { label: "JilsonAI", to: "/jilsonai", icon: Bot, estado: "planejado" }, // Fase 6
@@ -85,7 +97,10 @@ export const NAVEGACAO: Secao[] = [
 
   // ---------------------------------------------------------------- ADMIN
   {
-    label: "Cursos",
+    // "Admin" no rótulo porque o aluno tem "Cursos" e "Trilhas" logo acima
+    // (operador, set/2026): dois itens com o mesmo nome no mesmo rail, e no
+    // modo recolhido só o ícone aparece.
+    label: "Cursos Admin",
     to: "/admin/cursos",
     icon: GraduationCap,
     papel: Role.ADMIN,
@@ -97,9 +112,9 @@ export const NAVEGACAO: Secao[] = [
     ],
   },
   {
-    label: "Trilhas",
+    label: "Trilhas Admin",
     to: "/admin/trilhas",
-    icon: Route,
+    icon: Signpost,
     papel: Role.ADMIN,
     estado: "planejado", // Bloco 6b
   },
@@ -121,9 +136,10 @@ export const NAVEGACAO: Secao[] = [
     estado: "planejado", // Fase 4
   },
   {
-    label: "JilsonAI",
+    // Mesmo caso de "Cursos Admin": o aluno também tem um "JilsonAI".
+    label: "JilsonAI Admin",
     to: "/admin/jilsonai",
-    icon: Bot,
+    icon: SlidersHorizontal,
     papel: Role.ADMIN,
     estado: "planejado", // Fase 6
     filhos: [
