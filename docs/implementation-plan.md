@@ -328,17 +328,22 @@ de uma sessão própria antes do launch):**
         IP: *"Rate limiting could not determine a client IP and is falling back to a single shared
         per-path bucket"*. A presença ou ausência dessa linha nos logs da Railway responde a mesma
         pergunta, **sem rota nova, sem deploy de diagnóstico e sem nada para remover depois**.
-  - [ ] **PASSO 1 (novo) — o operador procura essa linha nos logs da Railway** depois do primeiro
+  - [x] **PASSO 1 (novo) — o operador procura essa linha nos logs da Railway** ✅ *(23/09: a linha
+        APARECEU às 11:41 — balde compartilhado confirmado)* depois do primeiro
         deploy com a 1.7.5, tendo feito ao menos um login. **Aparece** ⇒ a borda anexa ao
         `x-forwarded-for`, o balde está compartilhado, e é preciso `advanced.ipAddress.trustedProxies`
         com as faixas da Railway (ou um header que ela garanta). **Não aparece** ⇒ o IP resolve, e
         só falta apertar `/sign-in/email`.
-  - [ ] ~~Três provas com header forjado~~ — **não são mais necessárias para saber se dá para
+  - [x] **Diagnóstico feito com rota temporária (23/09), já removida.** `x-real-ip` é sobrescrito
+        pela Railway e é o IP real (conferido contra serviço externo); `x-forwarded-for` chega com 2
+        elementos; nenhum IP é da Fastly (o alerta antigo do suporte não vale mais). **Correção:**
+        `ipAddressHeaders: ["x-real-ip"]`.
+  - [x] ~~Três provas com header forjado~~ — **não são mais necessárias para saber se dá para
         forjar**: medido na 1.7.5 que cadeia com mais de um elemento devolve `null`, então o
         atacante não escolhe mais o próprio balde. O que resta descobrir é outra coisa: **quais são
         as faixas de IP dos proxies da Railway**, para preencher `trustedProxies`. Isso se pergunta
         ao suporte deles ou se lê do próprio `x-forwarded-for` de um acesso conhecido.
-  - [ ] **Critério de aprovação:** o aviso do balde compartilhado **some** dos logs, e um login
+  - [ ] **Critério de aprovação (depende do deploy):** o aviso do balde compartilhado **some** dos logs, e um login
         continua funcionando. Só então apertar `/sign-in/email` com `customRules` (ex.: 3 em 10 s).
         **Nessa ordem, e a ordem inverteu com a 1.7.5:** apertar antes de o IP resolver transforma o
         limite na própria negação de serviço — três erros de qualquer pessoa trancariam o login de
@@ -1872,11 +1877,10 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       sempre com uma requisição a cada 3 segundos, trancando o admin junto.
       **Hoje o impacto é zero** (nenhum aluno, gate "Em breve" no ar), e é por isso que dá para
       fazer direito em vez de às pressas. **Mas o gate NÃO desce antes disto:**
-      - [ ] Confirmar pelo log da Railway se o IP resolve (Fase 3, Bloco 0 → Passo 1 novo).
-      - [ ] Se não resolver: configurar `advanced.ipAddress.trustedProxies` com as faixas reais dos
-            proxies da frente (ou um cabeçalho que a Railway garanta). Com isso cada pessoa volta a
-            ter o próprio balde, e o valor forjado pelo atacante fica à esquerda da cadeia — onde a
-            leitura da direita para a esquerda nunca chega.
+      - [x] Confirmar pelo log da Railway se o IP resolve — **não resolvia** (23/09, 11:41).
+      - [x] **Corrigido com o cabeçalho que a Railway garante:** `ipAddressHeaders: ["x-real-ip"]`,
+            escolhido por medição (forjado ignorado, igual ao IP real). `trustedProxies` não foi
+            preciso — o proxy interno muda de IP a cada requisição, o que o tornaria frágil.
       - [ ] **Prova antes de descer o gate:** dois logins de redes diferentes em sequência não
             compartilham limite — errar a senha 3 vezes numa rede não impede o login na outra.
 
