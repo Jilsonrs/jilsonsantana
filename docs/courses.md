@@ -840,3 +840,46 @@ uma trilha inteira) e **a home não mostra contagem de cursos** — com cinco, o
 contra. Quem carrega o peso de mostrar volume é a página de cada curso, com carga horária e
 número de aulas.*
 
+
+---
+
+## Etiqueta do curso — Novo · Destaque · Mais vendido *(decisão do operador, 22/09/2026)*
+
+Um campo só, **escolhido à mão** por curso, com três valores e a opção de nenhum.
+
+    CourseBadge = NOVO | DESTAQUE | MAIS_VENDIDO        Course.badge: CourseBadge?  (null = sem etiqueta)
+
+**CAMPO SEPARADO DO `status`, e isto é trava, não preferência.** `Course.status`
+(`DRAFT|PUBLISHED|ARCHIVED`) é o que decide **se o curso aparece no site** — a leitura pública
+filtra por `PUBLISHED`. Acrescentar "NOVO" àquele enum sumiria com o curso da home, do catálogo e
+do `sitemap.xml` de uma vez, **sem erro nenhum**. Estado editorial e etiqueta de venda são coisas
+diferentes.
+
+**UMA etiqueta por curso**, não lista: card com três adesivos não destaca nada.
+
+**`NOVO` EXPIRA SOZINHO EM 120 DIAS** *(decisão do operador: "sai sozinho 120 dias o status de novo
+e fica nenhum até eu tirar ele dali")*. Passados os 120 dias o servidor **deixa de exibir** a
+etiqueta e o curso fica sem nenhuma, até o operador escolher outra. **Por que é automático e não
+lembrete:** etiqueta manual envelhece — curso marcado "Novo" há um ano é pior que etiqueta nenhuma,
+e é justamente o tipo de coisa que ninguém revisa. Os outros dois valores **não expiram**: eles
+afirmam algo que continua verdade até o operador dizer o contrário.
+*Implementação: uma coluna de data gravada quando a etiqueta é definida — **não** o `createdAt`,
+que marca a criação da linha no banco e faria os cursos já existentes nascerem todos "novos".*
+
+**O RÓTULO SAI DO DICIONÁRIO, o valor fica no banco** — é a regra que já vale para `Level` e
+`Layer` (`idiomas.md`). As chaves são `common.badges.*` (e não `home.*`) porque a etiqueta aparece
+na home, no catálogo e na página do curso: texto que sai em mais de uma página é `common`
+(`content.md` § 16). Consequência prática: o operador troca "Mais vendido" por outra palavra no
+`/admin/site`, sem código, e o inglês sai junto.
+
+**O slot de destaque da home sempre tem um curso** *(operador)*. O fluxo dele: coloca o curso novo
+ali, e depois vai no anterior e troca a etiqueta para nenhum, "Mais vendido" ou o que couber.
+
+**"Mais vendido" é uma AFIRMAÇÃO do operador**, não um cálculo. Na Udemy é derivado de vendas; aqui
+é escolha. Registrado porque envelhece se ninguém revisar — e porque um dia, com dados de
+assinatura, pode virar derivado.
+
+**Quando construir:** **Bloco C4** (os cursos saindo da constante para o banco). Hoje o campo
+nasceria morto. A coluna entra na mesma migration, sem retrabalho.
+*Gatilho de reabertura: se aparecer um quarto valor, ou se "Mais vendido" passar a ser calculável
+com dado real de assinatura.*

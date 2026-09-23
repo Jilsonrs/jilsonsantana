@@ -1230,6 +1230,12 @@ landmark. Corrigido junto.
       checagem explícita de esquema que o `CLAUDE.md` já exige (`core/` → a regra do `.url()`).
 - [ ] Destaque e cards derivados de `displayOrder` (decisão do operador pendente — ver o bloco
       original acima).
+- [ ] **Etiqueta do curso** *(decidida em 22/09 — spec em `courses.md` → "Etiqueta do curso")*:
+      enum `CourseBadge { NOVO DESTAQUE MAIS_VENDIDO }` + `Course.badge?` + a data que faz `NOVO`
+      **expirar em 120 dias** · campo de seleção no formulário de curso · rótulos em
+      `common.badges.*` no dicionário (editáveis no `/admin/site`) · a home usa a etiqueta do curso
+      no lugar do texto fixo "CURSO EM DESTAQUE". **Trava:** é campo SEPARADO do `status` — pôr
+      "NOVO" naquele enum sumiria com o curso do site inteiro, sem erro.
 - **Done when:** o operador troca o curso em destaque pelo admin e a home muda.
 
 > **SEQUENCIAMENTO DECIDIDO: este bloco vem DEPOIS do Bunny.** O `introVideoId` é ativo do Bunny
