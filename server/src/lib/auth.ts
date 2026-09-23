@@ -75,6 +75,26 @@ export const auth = betterAuth({
   // Railway; variável de serviço sobrepõe o ENV da imagem.
   advanced: {
     useSecureCookies: process.env.NODE_ENV === "production",
+    // DE ONDE vem o IP que o rate-limit usa para separar uma pessoa da outra.
+    //
+    // `x-real-ip`, e SÓ ele. MEDIDO em produção (23/09/2026, rota temporária de
+    // diagnóstico): a borda da Railway SOBRESCREVE esse cabeçalho — um valor
+    // forjado pelo visitante foi ignorado — e o valor é o IP público real de
+    // quem acessa (conferido contra um serviço externo).
+    //
+    // Por que não o default (`x-forwarded-for`): na Railway ele chega com DOIS
+    // elementos (o cliente + um proxy interno que muda a cada requisição), e a
+    // 1.7.5 recusa cadeia com mais de um. Sem esta linha o IP não resolve e o
+    // login cai num BALDE ÚNICO: três tentativas de qualquer pessoa em 10
+    // segundos travam a escola inteira, o admin junto (implementation-plan →
+    // BLOQUEIO DO GO-LIVE). `fastly-client-ip`, `true-client-ip` e
+    // `cf-connecting-ip` repassam o que o visitante manda: NUNCA usar.
+    //
+    // Gatilho de reabertura: trocar de hospedagem, ou pôr uma CDN na frente da
+    // Railway — os dois mudam quem escreve este cabeçalho.
+    ipAddress: {
+      ipAddressHeaders: ["x-real-ip"],
+    },
   },
 
   // Sessões em banco. `httpOnly` e `sameSite: "lax"` são default hardcoded da
