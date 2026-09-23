@@ -23,7 +23,9 @@ Você tem liberdade total dentro da `design-lab/`. No código do app, valem as r
 
 ## 2. Onde você mexe
 
-Caminhos a partir da raiz do projeto.
+Caminhos a partir da raiz do projeto. A tabela abaixo é o **básico compartilhado** — o que muda o
+produto inteiro. **Cada tela em si está no MAPA DAS TELAS**, mais abaixo nesta seção: lá estão o
+endereço, o arquivo e o que vale (ou não vale) acabamento.
 
 | Arquivo | O que é |
 |---|---|
@@ -53,6 +55,60 @@ isso muda para você:
 O Tailwind já varre `server/src/views/**` (está no `content` do config), então classe usada lá
 gera CSS normalmente.
 
+### O MAPA DAS TELAS — o que existe, onde abrir, qual arquivo *(set/2026)*
+
+Toda tela do produto, para você não precisar procurar. **Abrir:** o operador sobe os dois
+servidores (§5); o React responde em `localhost:5173`, a home pública em `localhost:3000`.
+
+**Públicas — HTML de servidor, SEM React** *(porta 3000)*
+
+| Endereço | Arquivo |
+|---|---|
+| `/` · `/en` | `server/src/views/home.ts` + `client/src/public-input.css` |
+
+**Públicas — ainda em React** *(porta 5173)*
+
+| Endereço | Arquivo | Atenção |
+|---|---|---|
+| `/cursos` | `client/src/pages/CatalogPage.tsx` (`tipo="cursos"`) | ⚠️ vai virar template de servidor |
+| `/trilhas` | o MESMO arquivo (`tipo="trilhas"`) | ⚠️ idem |
+| `/curso/:slug` | `client/src/pages/CourseDetailPage.tsx` | ⚠️ idem |
+| `/trilha/:slug` | `client/src/pages/TrilhaDetailPage.tsx` | ⚠️ idem |
+| `/login` | `client/src/pages/LoginPage.tsx` | fica no React |
+| ~~`/` no React~~ | `client/src/pages/HomePage.tsx` | **MORTA — não mexa** |
+
+> **O ⚠️ é para poupar o seu trabalho, não para travá-lo.** Essas quatro páginas são públicas e,
+> pela *Rendering Boundary* do `CLAUDE.md`, vão ser reconstruídas como template de servidor (sem
+> React). **O que sobrevive à mudança são os TOKENS e o CSS**; marcação feita direto no `.tsx` é
+> refeita. Se for investir acabamento fino, prefira as telas de baixo — ou combine com o operador
+> antes.
+>
+> **`HomePage.tsx` está morta:** em produção o Express responde `/` com a home de servidor antes de
+> o React existir. Ela só aparece se você abrir `localhost:5173/` direto. Não vale acabamento.
+
+**Do aluno — exigem login** *(porta 5173)*
+
+| Endereço | Arquivo |
+|---|---|
+| `/inicio` | `client/src/pages/StudentHomePage.tsx` |
+| `/minhas-trilhas` | `client/src/pages/MyTrilhasPage.tsx` |
+| `/minhas-trilhas/:id` | `client/src/pages/MyTrilhaDetailPage.tsx` |
+| `/conta` | `client/src/pages/AccountPage.tsx` |
+
+**Do admin — exigem login como admin** *(porta 5173)*
+
+| Endereço | Arquivo |
+|---|---|
+| `/admin` | `client/src/pages/AdminPage.tsx` |
+| `/admin/cursos` | `client/src/pages/admin/AdminCoursesPage.tsx` |
+| `/admin/cursos/novo` · `/admin/cursos/:id` | `client/src/pages/admin/AdminCourseFormPage.tsx` |
+| `/admin/site` | `client/src/pages/admin/AdminSiteTextPage.tsx` + `client/src/components/admin/SiteTextField.tsx` |
+
+**PLANEJADAS — aparecem no rail em cinza, com a etiqueta EM BREVE, e NÃO têm tela**
+
+Trilhas Admin · Alunos · JilsonAI Admin · Dados · Certificados · JilsonAI (do aluno).
+Elas existem só no mapa de navegação. **Não procure o arquivo: não há.**
+
 ## 3. Onde você NÃO mexe
 
 | Arquivo | Por quê |
@@ -65,7 +121,7 @@ gera CSS normalmente.
 
 ---
 
-## 4. Dez regras — cada uma já custou tempo aqui
+## 4. Doze regras — cada uma já custou tempo aqui
 
 **1. Classe de Tailwind tem que ser TEXTO LITERAL.**
 ```tsx
@@ -136,6 +192,17 @@ Corolários que já quebraram coisa aqui:
 que é **gerado**. Sem rodar o comando da §5, seu CSS não chega na tela — e não há erro nenhum
 avisando: você recarrega e simplesmente não mudou nada.
 
+**11. No mapa de navegação, RÓTULO e ÍCONE são únicos.** Dois itens com o mesmo ícone viram dois
+itens indistinguíveis no rail **recolhido**, onde só o ícone aparece. Já aconteceu duas vezes em
+uma semana: "Site" nasceu com o ícone do "Catálogo", e "JilsonAI" existia duas vezes (aluno e
+admin) com o mesmo ícone e o mesmo nome. **Tem teste** — `navigation.test.ts` reprova rótulo ou
+ícone repetido em todo o mapa. Se precisar de um ícone novo, pegue no `lucide-react`.
+
+**12. Seção PLANEJADA é TEXTO, nunca `<a>`.** O rail mostra ao admin as telas que ainda não
+existem, em cinza e com a etiqueta EM BREVE, para o operador não esquecer o que falta. Elas **não
+podem virar link**: a rota não existe, e clique que leva a lugar nenhum é pior que item ausente.
+Vale no rail **e** na gaveta do celular — as duas precisam concordar. **Tem teste.**
+
 ---
 
 ## 5. Como você confere que não quebrou nada
@@ -159,9 +226,16 @@ Se um teste reprovar e você achar que o teste é que está errado: **não edite
 
 Para ver na tela (o operador roda nos terminais dele):
 ```bash
-npm run dev:server
-npm run dev:client      # http://localhost:5173
+npm run dev:server      # http://localhost:3000 — a home pública (HTML de servidor)
+npm run dev:client      # http://localhost:5173 — todo o resto (React)
 ```
+
+**Os dois precisam estar de pé**, mesmo para olhar só o React: as telas buscam dados do servidor,
+e sem ele você vê o estado de erro em vez da tela.
+
+**Para abrir as telas de aluno e de admin é preciso ENTRAR** — `localhost:5173/login`, com a conta
+de admin. **Peça as credenciais ao operador**; elas não ficam escritas em lugar nenhum do repo.
+Sem login, `/inicio`, `/conta`, `/admin/*` redirecionam para o login.
 
 ---
 
@@ -177,10 +251,17 @@ Sem essa separação, a décima tela tem dez paletas paralelas e ninguém sabe q
 
 ## 7. Contexto rápido do que já está construído
 
-- **Navegação em três níveis** (`docs/design.md` §6): rail escuro recolhido (80px) que expande para
-  280px **sobrepondo** o conteúdo · coluna secundária clara (só quando a seção tem subitens) ·
-  abas horizontais (só quando a tela tem abas). Os níveis 2 e 3 **ainda não foram construídos** —
-  são as próximas fatias.
+- **Navegação em três níveis** (`docs/design.md` §6), e o estado de cada um *(conferido set/2026)*:
+  - **Nível 1 — o rail escuro:** construído. Recolhido em 80px, expande para 280px **sobrepondo** o
+    conteúdo (`AppRail.tsx`).
+  - **Nível 2 — a coluna secundária clara:** **construído** (`SecondaryNav.tsx`, montado no
+    `Layout`). Aparece sozinha quando a seção declara `filhos` — hoje "Minha conta" tem 6, e
+    "JilsonAI Admin" já tem os dele declarados esperando a tela nascer.
+  - **Nível 3 — as abas horizontais:** **NÃO construído.** A função `abasDaRota` existe e tem
+    teste, mas **nenhum componente a renderiza ainda**. "Cursos Admin" já declara três abas
+    (Publicados · Rascunhos · Arquivados) que hoje não aparecem em lugar nenhum.
+    *(A linha anterior deste documento dizia que os níveis 2 e 3 não existiam — estava
+    desatualizada quanto ao nível 2.)*
 - **A home pública está no ar**, em HTML de servidor (`/` e `/en`), sem React e sem hidratação.
   Ela é o mock `design-lab/home-lab.html` transposto. **Mock aprovado se TRANSPÕE, não se
   reinterpreta:** a primeira tentativa reescreveu a marcação com classes inventadas e metade da
