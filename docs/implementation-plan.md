@@ -1220,8 +1220,9 @@ landmark. Corrigido junto.
       salvar e fazer "Voltar ao padrão" mandar o valor de fábrica em vez de vazio → **2 testes
       reprovaram**. Revertido nos dois.
 - **Done when:** ✅ o operador troca um texto no admin e ele muda no ar, nos dois idiomas, sem
-  deploy. *Provado pelos testes de servidor, que terminam lendo a home de verdade. **Falta a
-  conferência na tela pelo operador** — subir `dev:server` + `dev:client` e editar um campo.*
+  deploy. *Provado pelos testes de servidor (que terminam lendo a home de verdade) **e pelo
+  operador na tela**, em 23/09: ele editou `home.hero.featuredBadge` pelo `/admin/site` e a linha
+  está no banco de desenvolvimento. Caminho inteiro exercitado com banco real.*
 
 #### Bloco C5 — A vitrine sai do React  *(decisão do operador, set/2026)*
 
