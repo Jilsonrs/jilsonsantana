@@ -13,6 +13,8 @@ import lessonsRouter from "./routes/lessons.js";
 import searchRouter from "./routes/search.js";
 import homeRouter from "./routes/home.js";
 import adminSiteTextRouter from "./routes/admin-site-text.js";
+import adminTestimonialsRouter from "./routes/admin-testimonials.js";
+import adminFaqRouter from "./routes/admin-faq.js";
 
 // Monta o app e EXPORTA sem escutar porta. O `listen()` vive em `index.ts`.
 //
@@ -51,6 +53,8 @@ app.use("/api", trilhasRouter);
 app.use("/api", lessonsRouter);
 app.use("/api", searchRouter);
 app.use("/api", adminSiteTextRouter);
+app.use("/api", adminTestimonialsRouter);
+app.use("/api", adminFaqRouter);
 
 // ── Home pública (SSR, sem React) ───────────────────────────────────────────
 // Registrada em TODOS os ambientes (em dev o operador abre localhost:3000).

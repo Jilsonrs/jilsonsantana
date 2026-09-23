@@ -1296,8 +1296,17 @@ landmark. Corrigido junto.
       perguntas da página, e o que vem do banco nunca vira HTML (`<img onerror>` escapado,
       `</script>` não fecha o JSON-LD). **Mutação:** sem o filtro de publicado → 3 reprovam; seção
       sempre desenhada → 1 reprova. Revertido.
-- [ ] **CRUD no admin** — rotas `/api/admin/testimonials` e `/api/admin/faq` (atrás de
-      `requireAdmin`) + testes de servidor (401/403, validação, Excluir apaga).
+- [x] **CRUD no admin** — `GET/POST /api/admin/testimonials`, `PATCH/DELETE …/:id` (idem
+      `/api/admin/faq`), todas atrás de `requireAdmin`. A API fala `pt`/`en` como o resto; o banco,
+      `PT`/`EN` (conversão única em `server/src/lib/language.ts`). Schemas compartilhados em
+      `core/src/schemas/home-lists.ts` (`homeFaq*`, porque `faqItemSchema` já é a FAQ de cada
+      curso). **DELETE apaga a linha**; esconder é o `status`.
+      **Testes de servidor (12)** em `admin-home-lists.test.ts`: 401/403 nos quatro métodos das
+      duas rotas (e nada gravado pelo aluno), publicar aparece na home do idioma certo, rascunho só
+      no admin, arquivar tira da home sem apagar, **Excluir some com o nome do banco**, corpo
+      inválido = 400 (inclusive nome só de espaços e terceiro idioma), 404/400 de id, e o ciclo
+      criar → editar → excluir de uma pergunta conferido na home a cada passo.
+      **Mutação:** sem `requireAdmin` no POST + Excluir virando arquivar → 3 reprovam. Revertido.
 - [ ] **Telas** em `/admin/site/depoimentos` e `/admin/site/faq`, "Site" ganhando o 2º nível +
       testes de componente (carregando, erro, vazio, criar, editar, excluir).
 - **Done when:** o operador publica um depoimento novo e remove outro pelo admin, sem deploy.
