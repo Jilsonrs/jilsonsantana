@@ -2,6 +2,7 @@ import { describe, it, expect, afterEach } from "vitest";
 import request from "supertest";
 import app from "../app.js";
 import { prisma } from "../lib/prisma.js";
+import { isolarDepoimentos } from "./testimonial-pool.js";
 
 // Rotas de admin dos depoimentos e das perguntas frequentes (Bloco C3).
 //
@@ -12,9 +13,18 @@ import { prisma } from "../lib/prisma.js";
 
 const MARCA = "⟦c3-admin⟧";
 
+// A home SORTEIA 4 depoimentos: para conferir que UM depoimento aparece (ou
+// sumiu), o sorteio precisa ser isolado. Sem isso "sumiu da home" passaria de
+// graça sempre que o sorteio não o pegasse.
+const restauracoes: Array<() => Promise<void>> = [];
+const isolarPt = async () => {
+  restauracoes.push(await isolarDepoimentos("PT"));
+};
+
 afterEach(async () => {
   await prisma.testimonial.deleteMany({ where: { name: { contains: MARCA } } });
   await prisma.faqItem.deleteMany({ where: { question: { contains: MARCA } } });
+  for (const restaurar of restauracoes.splice(0).reverse()) await restaurar();
 });
 
 async function sessao(email?: string, senha?: string): Promise<string[]> {
@@ -74,6 +84,7 @@ describe("admin de depoimentos e perguntas — quem pode", () => {
 
 describe("admin de depoimentos — o caminho do operador", () => {
   it("publicar um depoimento novo faz ele aparecer na home do idioma dele", async () => {
+    await isolarPt();
     const cookies = await sessaoAdmin();
     const res = await request(app).post("/api/admin/testimonials").set("Cookie", cookies).send(novoDepoimento());
 
@@ -97,8 +108,10 @@ describe("admin de depoimentos — o caminho do operador", () => {
   });
 
   it("arquivar pelo PATCH tira da home sem apagar", async () => {
+    await isolarPt();
     const cookies = await sessaoAdmin();
     const criado = await request(app).post("/api/admin/testimonials").set("Cookie", cookies).send(novoDepoimento());
+    expect((await request(app).get("/")).text).toContain("Depoimento escrito pelo admin.");
 
     const res = await request(app)
       .patch(`/api/admin/testimonials/${criado.body.id}`)
@@ -111,8 +124,10 @@ describe("admin de depoimentos — o caminho do operador", () => {
   });
 
   it("Excluir APAGA a linha — o nome some do banco, não só da tela (LGPD)", async () => {
+    await isolarPt();
     const cookies = await sessaoAdmin();
     const criado = await request(app).post("/api/admin/testimonials").set("Cookie", cookies).send(novoDepoimento());
+    expect((await request(app).get("/")).text).toContain(`Aluna Real ${MARCA}`);
 
     const res = await request(app).delete(`/api/admin/testimonials/${criado.body.id}`).set("Cookie", cookies);
 

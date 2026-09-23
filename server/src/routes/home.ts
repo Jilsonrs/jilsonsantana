@@ -69,14 +69,24 @@ const CAN_SUBSCRIBE_EN = false;
 // Depoimentos e perguntas frequentes vêm do BANCO (Bloco C3): só PUBLICADOS e
 // só do idioma da página — mesmo filtro de toda leitura pública. Lista vazia
 // esconde a seção inteira (decisão do operador, 23/09/2026).
+//
+// DEPOIMENTOS: 4 SORTEADOS A CADA VISITA, sem ordem e sem carrossel (decisão do
+// operador, 23/09/2026 — "com milhares de depoimentos nunca vão ver igual").
+// Pesquisa que embasou: quase ninguém passa do 1º quadro de um carrossel
+// (Notre Dame / Nielsen Norman), então mostrar mais que 4 não rende — o sorteio
+// é que faz todos aparecerem ao longo das visitas. E sem script a página pública
+// segue sem JavaScript, inclusive em aparelho antigo.
+// SQL parametrizado (tagged template do Prisma): `ORDER BY random()` não existe
+// na API tipada. Perguntas frequentes continuam na ordem do operador.
+const DEPOIMENTOS_NA_HOME = 4;
 const byOrder = [{ displayOrder: "asc" as const }, { id: "asc" as const }];
 const listasDaHome = (language: Language) =>
   Promise.all([
-    prisma.testimonial.findMany({
-      where: { language, status: ContentStatus.PUBLISHED },
-      orderBy: byOrder,
-      select: { text: true, name: true },
-    }),
+    prisma.$queryRaw<{ text: string; name: string }[]>`
+      SELECT "text", "name" FROM "testimonial"
+      WHERE "language" = ${language}::"Language" AND "status" = 'PUBLISHED'::"ContentStatus"
+      ORDER BY random()
+      LIMIT ${DEPOIMENTOS_NA_HOME}`,
     prisma.faqItem.findMany({
       where: { language, status: ContentStatus.PUBLISHED },
       orderBy: byOrder,

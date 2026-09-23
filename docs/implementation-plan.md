@@ -1318,6 +1318,14 @@ landmark. Corrigido junto.
       no mapa de navegação (o 2º nível de Site; nenhum filho prefixo de outro).
       **Mutação:** Excluir sem confirmação + fiação da FAQ trocada + item novo nascendo publicado +
       Textos de volta em `/admin/site` → **6 reprovam**. Revertido.
+- [x] **Depoimentos: 4 SORTEADOS por visita, sem ordem** *(depois do teste do operador, 23/09 —
+      "com milhares de depoimentos nunca vão ver igual")*. A home usa `ORDER BY random() LIMIT 4`
+      (SQL parametrizado do Prisma); sem carrossel e sem script, porque quase ninguém passa do 1º
+      quadro (pesquisa em `content.md` § 16). O admin de depoimentos perdeu o campo Ordem
+      (`comOrdem` no editor comum) e lista do mais novo; a FAQ mantém a ordem. Testes que esperam
+      um depoimento específico isolam o sorteio (`server/src/test/testimonial-pool.ts`); novo teste
+      "no máximo 4, sorteados" (6 no pool → 4 na página; 15 visitas → mais de 4 nomes).
+      **Mutação:** sempre os 4 primeiros → 1 reprova; Ordem de volta nos depoimentos → 2 reprovam.
 - **Done when:** o operador publica um depoimento novo e remove outro pelo admin, sem deploy.
 
 #### Bloco C4 — Os 5 cursos da home vêm do banco
@@ -1328,6 +1336,9 @@ landmark. Corrigido junto.
       checagem explícita de esquema que o `CLAUDE.md` já exige (`core/` → a regra do `.url()`).
 - [ ] Destaque e cards derivados de `displayOrder` (decisão do operador pendente — ver o bloco
       original acima).
+- [ ] **Ordem por ARRASTAR** *(operador, 23/09)*: nos cursos, e **o mesmo componente** passa a
+      ordenar as perguntas frequentes (hoje, número de Ordem). A biblioteca de arrastar é
+      **dependência nova** — nomeá-la no plano deste bloco, com o ok do operador.
 - [ ] **Etiqueta do curso** *(decidida em 22/09 — spec em `courses.md` → "Etiqueta do curso")*:
       enum `CourseBadge { NOVO DESTAQUE MAIS_VENDIDO }` + `Course.badge?` + a data que faz `NOVO`
       **expirar em 120 dias** · campo de seleção no formulário de curso · rótulos em

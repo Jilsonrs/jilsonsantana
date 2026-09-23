@@ -28,6 +28,9 @@ export type ConfigDaLista<T extends ItemDaLista> = {
   descricao: string;
   rotuloNovo: string;
   vazio: string;
+  /** A lista tem ordem escolhida pelo operador? As perguntas têm; os depoimentos
+   *  não — a home sorteia 4 por visita (decisão do operador, 23/09/2026). */
+  comOrdem: boolean;
   principal: CampoDaLista;
   secundario: CampoDaLista;
   ler: (item: T) => { principal: string; secundario: string };

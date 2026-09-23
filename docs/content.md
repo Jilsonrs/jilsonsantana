@@ -433,6 +433,14 @@ mudança de desenho, não de conteúdo. E depoimento tem uma obrigação própri
   publicada não ficou um instante sem as seções. Daí em diante, a edição é no admin.
 - **Telas no admin: dentro de "Site"**, que ganha um segundo nível (Textos · Depoimentos ·
   Perguntas frequentes).
+- **Depoimentos: 4 SORTEADOS a cada visita**, sem ordem e sem carrossel (depois de testar o C3,
+  23/09/2026: *"com milhares de depoimentos nunca vão ver igual"*). A pesquisa que embasou: quase
+  ninguém passa do 1º quadro de um carrossel (Notre Dame / Nielsen Norman), e setas feitas só com
+  CSS funcionam apenas no Chrome/Edge — sem script, a página segue leve e funciona em aparelho
+  antigo. Por isso **depoimento não tem campo Ordem** no admin (a lista vem do mais novo). O inglês
+  começa com os 4 traduzidos; os novos em inglês entram no mesmo sorteio e se misturam a eles.
+  Perguntas frequentes **continuam na ordem do operador** — e passam a arrastar junto com os cursos
+  (C4).
 
 **Depoimento pedido ao aluno (decisão do operador, 23/09/2026 — construção na Fase 5):** quando o
 aluno conclui um curso, a escola pede **uma vez só** uma nota de 1 a 5 estrelas (**só para o

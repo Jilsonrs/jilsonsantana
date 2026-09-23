@@ -70,10 +70,12 @@ export function HomeListEditor<T extends ItemDaLista>({ config }: { config: Conf
               idBase="novo"
               principal={config.principal}
               secundario={config.secundario}
+              comOrdem={config.comOrdem}
               inicial={{
                 principal: "",
                 secundario: "",
-                displayOrder: proximaOrdem(doIdioma),
+                // Sem ordem (depoimentos), o valor nem é enviado — o banco usa o default.
+                displayOrder: config.comOrdem ? proximaOrdem(doIdioma) : 0,
                 // Nasce RASCUNHO: nada vai para a home por acidente — publicar é
                 // uma escolha, feita no próprio formulário.
                 status: ContentStatus.DRAFT,

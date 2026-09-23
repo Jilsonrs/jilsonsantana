@@ -37,6 +37,7 @@ export function HomeListItem<T extends ItemDaLista>({ item, config }: { item: T;
         idBase={`item-${item.id}`}
         principal={config.principal}
         secundario={config.secundario}
+        comOrdem={config.comOrdem}
         inicial={{ principal, secundario, displayOrder: item.displayOrder, status: item.status }}
         salvando={salvar.isPending}
         erro={salvar.isError}
@@ -50,7 +51,7 @@ export function HomeListItem<T extends ItemDaLista>({ item, config }: { item: T;
     <div className="space-y-3 rounded-lg border p-4">
       <div className="flex items-center gap-3 text-xs text-muted-foreground">
         <span className="rounded-full border px-2 py-0.5 font-medium">{ROTULO_STATUS[item.status]}</span>
-        <span>Ordem {item.displayOrder}</span>
+        {config.comOrdem && <span>Ordem {item.displayOrder}</span>}
       </div>
       <p className="whitespace-pre-line">{principal}</p>
       <p className="whitespace-pre-line text-sm text-muted-foreground">{secundario}</p>

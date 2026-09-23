@@ -12,7 +12,10 @@ const router = Router();
 // Leitura pública não passa por aqui: a home é SSR e lê direto do banco,
 // filtrando PUBLICADO + idioma (routes/home.ts).
 
-const byOrder = [{ language: "asc" as const }, { displayOrder: "asc" as const }, { id: "asc" as const }];
+// Mais NOVO primeiro: depoimento não tem ordem (a home sorteia — decisão do
+// operador, 23/09/2026), e o que o operador procura na lista é o que acabou de
+// chegar.
+const byOrder = [{ createdAt: "desc" as const }, { id: "desc" as const }];
 const saida = (t: Testimonial) => ({ ...t, language: doBanco(t.language) });
 
 // GET /api/admin/testimonials — todos, de qualquer status e dos dois idiomas.

@@ -13,6 +13,7 @@ const config: ConfigDaLista<AdminHomeFaq> = {
   descricao: "As perguntas da home. Só as publicadas vão para o site.",
   rotuloNovo: "Nova pergunta",
   vazio: "Nenhuma pergunta neste idioma ainda. Enquanto não houver uma publicada, a seção não aparece na home.",
+  comOrdem: true,
   principal: { rotulo: "Pergunta", linhas: 2, max: 300 },
   secundario: { rotulo: "Resposta", linhas: 4, max: 3000 },
   ler: (f) => ({ principal: f.question, secundario: f.answer }),

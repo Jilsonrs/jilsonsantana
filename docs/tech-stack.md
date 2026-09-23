@@ -116,3 +116,11 @@
 - **Teachable / course platforms** — building an owned asset.
 - **Next.js** — PROPOSTO e REJEITADO de novo em Ago 2026, com razão **nova**: a razão antiga ("o público vem do YouTube, SPA basta") ficou **FALSA** quando a página de curso virou vitrine indexável. A razão que vale: a superfície pública é pequena e read-only e é servida como **template no servidor** (ver `CLAUDE.md` → Rendering Boundary); Next.js reescreveria o app privado, que não ganha nada com SEO. *Gatilho de reabertura no `CLAUDE.md`.*
 - **Gamification** — deliberately excluded (solo maintainability).
+- **Editor rico de HTML (TinyMCE e similares)** — **não adotado** *(o operador perguntou em
+  23/09/2026; recomendação do agente aceita)*. Três razões: o admin **não recebe HTML digitado**
+  (`CLAUDE.md` → *negrito = dois campos*); HTML gravado no banco é a porta clássica de XSS numa
+  página que o React não protege (template de servidor); e a página de curso é **montada de
+  campos**, justamente para não virar texto livre curso a curso. *Gatilho de reabertura:* surgir
+  uma seção que precise de texto longo formatado (páginas legais, anúncios) — e aí o caminho é
+  **Markdown com HTML bruto desligado** (mesma dependência pendente do JilsonAI, acima), não um
+  editor de HTML.

@@ -43,6 +43,7 @@ export function HomeListItemForm({
   idBase,
   principal,
   secundario,
+  comOrdem,
   inicial,
   salvando,
   erro,
@@ -52,6 +53,7 @@ export function HomeListItemForm({
   idBase: string;
   principal: CampoDaLista;
   secundario: CampoDaLista;
+  comOrdem: boolean;
   inicial: ValoresDoItem;
   salvando: boolean;
   erro: boolean;
@@ -89,11 +91,13 @@ export function HomeListItemForm({
             ))}
           </select>
         </div>
-        <div className="space-y-1">
-          <Label htmlFor={`${idBase}-ordem`}>Ordem</Label>
-          <Input id={`${idBase}-ordem`} type="number" {...register("displayOrder")} />
-          {errors.displayOrder && <p className="text-sm text-destructive">{errors.displayOrder.message}</p>}
-        </div>
+        {comOrdem && (
+          <div className="space-y-1">
+            <Label htmlFor={`${idBase}-ordem`}>Ordem</Label>
+            <Input id={`${idBase}-ordem`} type="number" {...register("displayOrder")} />
+            {errors.displayOrder && <p className="text-sm text-destructive">{errors.displayOrder.message}</p>}
+          </div>
+        )}
       </div>
       {erro && (
         <p role="alert" className="text-sm text-destructive">

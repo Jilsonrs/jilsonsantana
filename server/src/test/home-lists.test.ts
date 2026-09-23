@@ -3,6 +3,8 @@ import request from "supertest";
 import { en } from "@jilson/core";
 import app from "../app.js";
 import { prisma } from "../lib/prisma.js";
+import { iniciais } from "../views/home.js";
+import { isolarDepoimentos } from "./testimonial-pool.js";
 
 // Depoimentos e perguntas frequentes da home vêm do BANCO (Bloco C3).
 //
@@ -13,9 +15,17 @@ import { prisma } from "../lib/prisma.js";
 
 const MARCA = "⟦c3-teste⟧";
 
+// Depoimentos são SORTEADOS (4 por visita). Os testes que precisam ver um
+// depoimento específico isolam o sorteio primeiro; o afterEach devolve tudo.
+const restauracoes: Array<() => Promise<void>> = [];
+const isolar = async (language: "PT" | "EN") => {
+  restauracoes.push(await isolarDepoimentos(language));
+};
+
 afterEach(async () => {
   await prisma.testimonial.deleteMany({ where: { name: { contains: MARCA } } });
   await prisma.faqItem.deleteMany({ where: { question: { contains: MARCA } } });
+  for (const restaurar of restauracoes.splice(0).reverse()) await restaurar();
 });
 
 const depoimento = (
@@ -42,6 +52,8 @@ function jsonLds(html: string): Array<Record<string, unknown>> {
 
 describe("home — depoimentos e perguntas vêm do banco", () => {
   it("mostra só o PUBLICADO do idioma da página", async () => {
+    await isolar("PT");
+    await isolar("EN");
     await depoimento("PT", "PUBLISHED", "Depoimento publicado em português.");
     await depoimento("PT", "DRAFT", "Depoimento ainda em rascunho.");
     await depoimento("PT", "ARCHIVED", "Depoimento arquivado.");
@@ -69,26 +81,38 @@ describe("home — depoimentos e perguntas vêm do banco", () => {
     expect(pt.text).not.toContain("Published question?");
   });
 
-  it("a ordem é a do campo Ordem, não a de criação", async () => {
-    // Criado PRIMEIRO, mas com ordem maior: tem que aparecer DEPOIS.
-    await depoimento("PT", "PUBLISHED", "Vem por último na página.", 999);
-    await depoimento("PT", "PUBLISHED", "Vem primeiro na página.", 1);
+  it("mostra no máximo 4, sorteados a cada visita", async () => {
+    // Decisão do operador (23/09/2026): 4 por visita, sem ordem — com muitos
+    // depoimentos, cada visitante vê um conjunto diferente.
+    await isolar("PT");
+    for (let n = 1; n <= 6; n++) {
+      await depoimento("PT", "PUBLISHED", `Depoimento número ${n}.`, 0, `Pessoa ${n} ${MARCA}`);
+    }
 
-    const res = await request(app).get("/");
-    const primeiro = res.text.indexOf("Vem primeiro na página.");
-    const ultimo = res.text.indexOf("Vem por último na página.");
-    expect(primeiro).toBeGreaterThan(-1);
-    expect(primeiro).toBeLessThan(ultimo);
+    const uma = await request(app).get("/");
+    expect([...uma.text.matchAll(/Depoimento número \d\./g)]).toHaveLength(4);
+
+    // Sempre os mesmos 4 seria "os primeiros", não sorteio. Em 15 visitas, a
+    // chance de repetir o mesmo conjunto em todas é (1/15)^14 — nula.
+    const vistos = new Set<string>();
+    for (let i = 0; i < 15; i++) {
+      const res = await request(app).get("/");
+      for (const m of res.text.matchAll(/Depoimento número (\d)\./g)) vistos.add(m[1]);
+    }
+    expect(vistos.size).toBeGreaterThan(4);
   });
 
   it("as iniciais do avatar saem do nome — primeiro e último", async () => {
-    await depoimento("PT", "PUBLISHED", "Texto qualquer.", 5, `Ana Maria de Souza ${MARCA}`);
+    expect(iniciais("Vinicius Dias de Queiroz")).toBe("VQ");
+    expect(iniciais("  Ana   Souza ")).toBe("AS");
+    expect(iniciais("Beatriz")).toBe("B");
 
+    // E chegam ao card de verdade. O último "nome" aqui é a marca do teste,
+    // que começa com "⟦".
+    await isolar("PT");
+    await depoimento("PT", "PUBLISHED", "Texto qualquer.", 5, `Ana Maria de Souza ${MARCA}`);
     const res = await request(app).get("/");
-    // O último "nome" aqui é a marca do teste, que começa com "⟦".
     expect(res.text).toContain('aria-hidden="true">A⟦</div>');
-    // E o seed real, que não tem marca: "Vinicius Dias de Queiroz" → "VQ".
-    expect(res.text).toContain('aria-hidden="true">VQ</div>');
   });
 
   it("sem nada publicado no idioma, as duas seções somem inteiras — título incluído", async () => {
@@ -142,6 +166,7 @@ describe("home — depoimentos e perguntas vêm do banco", () => {
 
 describe("home — o que vem do banco nunca vira HTML", () => {
   it("depoimento com marcação aparece como TEXTO", async () => {
+    await isolar("PT");
     await depoimento("PT", "PUBLISHED", '<img src=x onerror="alert(1)">');
 
     const res = await request(app).get("/");

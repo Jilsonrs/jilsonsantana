@@ -60,6 +60,8 @@ describe("Depoimentos — lista por idioma", () => {
     expect(within(ul).getByText("Publicado")).toBeTruthy();
     expect(within(ul).getByText("Rascunho")).toBeTruthy();
     expect(within(ul).queryByText("Great course, very hands-on.")).toBeNull();
+    // Depoimento não tem ordem: a home sorteia (decisão do operador, 23/09/2026).
+    expect(within(ul).queryByText(/^Ordem/)).toBeNull();
   });
 
   it("a aba Inglês troca para as linhas em inglês", async () => {
@@ -79,9 +81,10 @@ describe("Depoimentos — criar", () => {
     vi.mocked(api.adminGetTestimonials).mockResolvedValue(lista);
   });
 
-  it("cria no idioma da aba, no fim da lista, e manda os campos certos", async () => {
+  it("cria no idioma da aba e manda os campos certos — sem ordem", async () => {
     renderWithProviders(<AdminTestimonialsPage />);
     fireEvent.click(await screen.findByRole("button", { name: "Novo depoimento" }));
+    expect(screen.queryByLabelText("Ordem")).toBeNull();
 
     fireEvent.change(screen.getByLabelText("Depoimento"), { target: { value: "Aprendi muito." } });
     fireEvent.change(screen.getByLabelText("Nome completo"), { target: { value: "Maria da Silva" } });
@@ -93,7 +96,6 @@ describe("Depoimentos — criar", () => {
       language: "pt",
       text: "Aprendi muito.",
       name: "Maria da Silva",
-      displayOrder: 30, // maior ordem do português (20) + 10
       status: "PUBLISHED",
     });
   });
@@ -116,7 +118,7 @@ describe("Depoimentos — criar", () => {
     fireEvent.click(screen.getByRole("button", { name: "Salvar" }));
 
     await waitFor(() => expect(api.adminCreateTestimonial).toHaveBeenCalledTimes(1));
-    expect(vi.mocked(api.adminCreateTestimonial).mock.calls[0][0]).toMatchObject({ language: "en", displayOrder: 20 });
+    expect(vi.mocked(api.adminCreateTestimonial).mock.calls[0][0]).toMatchObject({ language: "en" });
   });
 
   it("campo vazio (ou só espaço) não é enviado e diz o que falta", async () => {
@@ -159,7 +161,7 @@ describe("Depoimentos — editar e excluir", () => {
     await waitFor(() => expect(api.adminUpdateTestimonial).toHaveBeenCalledTimes(1));
     expect(vi.mocked(api.adminUpdateTestimonial).mock.calls[0]).toEqual([
       1,
-      { text: "Curso excelente.", name: "Edson Garcia Fernandes", displayOrder: 10, status: "PUBLISHED" },
+      { text: "Curso excelente.", name: "Edson Garcia Fernandes", status: "PUBLISHED" },
     ]);
   });
 

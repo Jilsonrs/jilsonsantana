@@ -155,6 +155,10 @@ servidores (§5); o React responde em `localhost:5173`, a home pública em `loca
 > comportamento atual do componente; se quiser outro visual ali, é conversa com o operador.
 > **Na home**, as seções de depoimentos e de perguntas **somem inteiras** quando o idioma não tem
 > item publicado (decisão do operador). Ao formatar, não conte com elas sempre presentes.
+> **Depoimentos na home: no máximo 4 cards, sorteados a cada visita** (decisão do operador,
+> 23/09/2026) — pode haver 1, 2, 3 ou 4. **Sem carrossel e sem script.** No celular, deixar os 4
+> lado a lado deslizando com o dedo (CSS `scroll-snap`, sem JavaScript) é opção visual sua — fale
+> com o operador. **No admin, depoimento não tem campo Ordem**; pergunta frequente tem.
 
 **PLANEJADAS — aparecem no rail em cinza, com a etiqueta EM BREVE, e NÃO têm tela**
 
