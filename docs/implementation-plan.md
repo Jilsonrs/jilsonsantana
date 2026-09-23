@@ -235,6 +235,22 @@ fecham com ela.** Os dois furam a mesma convenção (CLAUDE.md → Server: "publ
 - [ ] Autoria real da **Trilha 1 — Fundamentos (Excel + IA)** pelo admin, pela UI (não é bloco de
       código — é o operador usando o Bloco 6a/6b prontos; o seed atual é só smoke descartável).
 
+**PENDENTE DO OPERADOR — o que cada seção PLANEJADA vai ter dentro** *(23/09/2026: "coloca como
+pendência definir o que vai ter porque não tive tempo de pensar em tudo ainda")*
+
+O rail já mostra ao admin as seções que faltam construir, em cinza. **Mas o segundo nível delas
+está quase todo vazio:** das cinco planejadas, só **JilsonAI Admin** tem subitens declarados
+(Escalações · Persona · Modelo · Quotas). Por isso "ligar o segundo nível" hoje mostraria quatro
+linhas e nada mais — não responde *"o que falta no admin"*, porque o que falta ainda não foi
+escrito em lugar nenhum.
+
+- [ ] **Operador define, uma frase por seção:** o que tem dentro de **Alunos**, de **Dados** (o
+      painel é uma tela só ou tem partes?), de **Trilhas Admin** e de **Certificados**.
+- [ ] Declarar no `client/src/lib/navigation.ts` (é dado, não código — cada seção declara os
+      níveis que usa), e só então ligar a exibição do 2º nível para seção planejada.
+- **Por que nesta ordem:** declarar primeiro é o que faz a visão "o sistema inteiro de uma olhada"
+  existir de verdade. Ligar antes entrega a moldura vazia.
+
 **Backlog de polish (sem dono de bloco ainda — não bloqueia o fechamento da Fase 2, mas precisa
 de uma sessão própria antes do launch):**
 - [ ] Fotos/imagens reais (thumbnails de curso, qualquer asset de marca) — hoje tudo usa

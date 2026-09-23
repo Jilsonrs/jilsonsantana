@@ -75,16 +75,13 @@ servidores (§5); o React responde em `localhost:5173`, a home pública em `loca
 | `/curso/:slug` | `client/src/pages/CourseDetailPage.tsx` | ⚠️ idem |
 | `/trilha/:slug` | `client/src/pages/TrilhaDetailPage.tsx` | ⚠️ idem |
 | `/login` | `client/src/pages/LoginPage.tsx` | fica no React |
-| ~~`/` no React~~ | `client/src/pages/HomePage.tsx` | **MORTA — não mexa** |
 
 > **O ⚠️ é para poupar o seu trabalho, não para travá-lo.** Essas quatro páginas são públicas e,
 > pela *Rendering Boundary* do `CLAUDE.md`, vão ser reconstruídas como template de servidor (sem
 > React). **O que sobrevive à mudança são os TOKENS e o CSS**; marcação feita direto no `.tsx` é
 > refeita. Se for investir acabamento fino, prefira as telas de baixo — ou combine com o operador
 > antes.
->
-> **`HomePage.tsx` está morta:** em produção o Express responde `/` com a home de servidor antes de
-> o React existir. Ela só aparece se você abrir `localhost:5173/` direto. Não vale acabamento.
+
 
 **Do aluno — exigem login** *(porta 5173)*
 
