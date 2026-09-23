@@ -1734,6 +1734,26 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       done (course-item = its lessons). Drives certificate eligibility (Phase 6.5).
 - [ ] `LessonEvent` table (event-sourced: type, position, ts) + RLS — **capture only, no analytics yet**
 - [ ] Client: fire PLAY/PAUSE/ENDED events from the player (cheap writes)
+- [ ] **Depoimento pedido ao aluno quando ele conclui um curso — UMA VEZ por aluno, nunca por
+      curso** *(decisão do operador, 23/09/2026: "não preciso de prova social por curso… pensei
+      num depoimento geral"; o oposto da disputa por estrelas da Udemy)*. Depende deste bloco:
+      "concluiu um curso" só existe com o `LessonProgress`.
+      - **O pedido:** nota de **1 a 5 estrelas** + **uma pergunta aberta, geral** — curso, escola,
+        experiência de ensino, o que o aluno quiser. **Sem escolha de tema** (proposta do agente
+        aceita pelo operador: separar por tema acrescenta uma escolha e um filtro que ninguém usa).
+        O texto exato da pergunta é do operador, na hora de construir.
+      - **As estrelas são só do operador:** nunca aparecem no site, em nenhum idioma. Teste de
+        servidor garante que a nota não sai na home.
+      - **Um por aluno, garantido pelo BANCO:** `Testimonial` ganha o aluno ligado a ele, **único**
+        e opcional (os depoimentos cadastrados à mão, como os 4 vindos da Udemy, não têm conta
+        aqui). O segundo envio do mesmo aluno é recusado pelo banco, não só pela tela.
+      - **Se o aluno pular:** o pedido volta no **próximo curso concluído**, até ele responder ou
+        clicar em **"Não, obrigado"**, que encerra de vez. Quem respondeu nunca mais é perguntado.
+        A recusa definitiva precisa ficar gravada — **sem** coluna nova no `User` (identidade enxuta).
+      - **Chega como Rascunho**, e o operador escolhe o que publicar no `/admin/site/depoimentos`.
+        O aluno marca se **autoriza aparecer com o nome completo**; **sem essa marcação o texto fica
+        só para o operador**, e o servidor recusa publicá-lo (LGPD — a tela esconder o botão não é
+        defesa).
 - **Done when:** "marquei como vista" works, trilha % completion shows, AND events are captured for future analytics.
 
 ## Phase 6 — JilsonAI (lean v1 + suporte)  *(medium risk)*  → ver **JILSONAI.md** (roadmap interno)

@@ -434,6 +434,13 @@ mudança de desenho, não de conteúdo. E depoimento tem uma obrigação própri
 - **Telas no admin: dentro de "Site"**, que ganha um segundo nível (Textos · Depoimentos ·
   Perguntas frequentes).
 
+**Depoimento pedido ao aluno (decisão do operador, 23/09/2026 — construção na Fase 5):** quando o
+aluno conclui um curso, a escola pede **uma vez só** uma nota de 1 a 5 estrelas (**só para o
+operador, nunca no site**) e um depoimento **geral** — sem tema, sem disputa por curso. *"Com mais
+de 107k alunos em todo o mundo não preciso de prova social por curso."* Pulou, o pedido volta no
+próximo curso concluído até ele responder ou dizer "Não, obrigado". Chega como Rascunho, e só vai
+para a home com a **autorização do aluno para o nome completo**. Detalhe no plano, Fase 5.
+
 ### Regra que passa a valer para toda página pública
 
 **Nenhum texto visível fica literal no template.** Se está no HTML, o operador não consegue
