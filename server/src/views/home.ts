@@ -35,6 +35,33 @@ export function renderHome(
   const alternateUrl = isPt ? `${baseUrl}/en` : baseUrl;
   const title = `${dict.home.hero.titlePrefix} ${dict.home.hero.titleEmphasis} ${dict.home.hero.titleSuffix}`;
 
+  // OS ENDEREÇOS DA VITRINE, por idioma. Um endereço por idioma, com segmentos
+  // em inglês sob /en (CLAUDE.md → Idiomas). Os links apontam para o DESTINO
+  // FINAL mesmo onde a página ainda não existe (decisão do operador, set/2026):
+  // é melhor o link já nascer no lugar certo do que virar `#` e alguém esquecer
+  // de trocar depois. FAQ é âncora na própria página — o conteúdo está no HTML.
+  const rotas = isPt
+    ? {
+        cursos: "/cursos",
+        trilhas: "/trilhas",
+        assinar: "/assinar",
+        faq: "#faq",
+        quemSomos: "/quem-somos",
+        contato: "/contato",
+        termos: "/termos",
+        privacidade: "/privacidade",
+      }
+    : {
+        cursos: "/en/courses",
+        trilhas: "/en/learning-paths",
+        assinar: "/en/pricing",
+        faq: "#faq",
+        quemSomos: "/en/about",
+        contato: "/en/contact",
+        termos: "/en/terms",
+        privacidade: "/en/privacy",
+      };
+
   // Seletor PT | EN: dois links, um por endereço — sem cookie e sem negociação
   // por cabeçalho ("UM ENDEREÇO POR IDIOMA", CLAUDE.md → Idiomas). O idioma
   // atual leva `aria-current`; o outro fica em cinza, como no mock. Aparece no
@@ -200,7 +227,7 @@ ${courses.map((c) => `
         </div>
 <!-- Link Ver Todos -->
         <div style="text-align: center; margin-top: 48px;" class="reveal-on-scroll">
-          <a href="#" class="btn"
+          <a href="${rotas.cursos}" class="btn"
             style="background-color: #0071e3; font-size: 1.15rem; padding: 14px 32px; text-decoration: none;">${escapeHtml(dict.home.catalog.viewAll)}</a>
         </div>
       </div>
@@ -640,12 +667,12 @@ ${dict.home.faq.list.map((item) => `        <details>
       <div class="footer-top">
         <div class="nav-logo"><span>#</span>Jilson Santana</div>
         <div class="footer-links">
-          <a href="#">${escapeHtml(dict.common.footer.links[0])}</a>
-          <a href="#">${escapeHtml(dict.common.footer.links[1])}</a>
-          <a href="#">${escapeHtml(dict.common.footer.links[2])}</a>
-          <a href="#">${escapeHtml(dict.common.footer.links[3])}</a>
-          <a href="#">${escapeHtml(dict.common.footer.links[4])}</a>
-          <a href="#">${escapeHtml(dict.common.footer.links[5])}</a>
+          <a href="${rotas.cursos}">${escapeHtml(dict.common.footer.links[0])}</a>
+          <a href="${rotas.trilhas}">${escapeHtml(dict.common.footer.links[1])}</a>
+          <a href="${rotas.assinar}">${escapeHtml(dict.common.footer.links[2])}</a>
+          <a href="${rotas.faq}">${escapeHtml(dict.common.footer.links[3])}</a>
+          <a href="${rotas.quemSomos}">${escapeHtml(dict.common.footer.links[4])}</a>
+          <a href="${rotas.contato}">${escapeHtml(dict.common.footer.links[5])}</a>
           <a href="https://www.youtube.com/@JilsonSantanaBI/" target="_blank" rel="noopener noreferrer"
             aria-label="YouTube">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
@@ -656,8 +683,8 @@ ${dict.home.faq.list.map((item) => `        <details>
               <path d="m10 15 5-3-5-3v6z" />
             </svg>
           </a>
-          <a href="#">${escapeHtml(dict.common.footer.links[6])}</a>
-          <a href="#">${escapeHtml(dict.common.footer.links[7])}</a>
+          <a href="${rotas.termos}">${escapeHtml(dict.common.footer.links[6])}</a>
+          <a href="${rotas.privacidade}">${escapeHtml(dict.common.footer.links[7])}</a>
           <span style="color: var(--border-color);">|</span>
           ${seletorIdioma("          ")}
         </div>

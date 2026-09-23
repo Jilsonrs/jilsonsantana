@@ -53,6 +53,32 @@ describe("Home pública (SSR)", () => {
     expect(res.text).not.toContain('href="/login"');
   });
 
+  it("não sobra NENHUM link morto na vitrine", async () => {
+    // `href="#"` não quebra build, teste nem typecheck — só decepciona quem
+    // clica, e foi assim que o "Entrar" passou semanas sem levar a lugar nenhum.
+    // Os destinos apontam para a página final mesmo onde ela ainda não existe
+    // (decisão do operador): link no lugar certo desde o começo.
+    for (const rota of ["/", "/en"]) {
+      const res = await request(app).get(rota);
+      expect(res.text, rota).not.toContain('href="#"');
+    }
+  });
+
+  it("cada idioma aponta para os endereços DELE", async () => {
+    const pt = await request(app).get("/");
+    const en = await request(app).get("/en");
+
+    expect(pt.text).toContain('href="/cursos"');
+    expect(pt.text).toContain('href="/quem-somos"');
+    expect(pt.text).not.toContain('href="/en/about"');
+
+    expect(en.text).toContain('href="/en/courses"');
+    expect(en.text).toContain('href="/en/about"');
+    // Um endereço por idioma: a página em inglês não empurra ninguém para o
+    // catálogo em português (CLAUDE.md → Idiomas).
+    expect(en.text).not.toContain('href="/cursos"');
+  });
+
   it("as duas versões declaram o favicon", async () => {
     // O template do servidor não herda nada do index.html do React: o que não
     // estiver escrito aqui simplesmente não existe na página pública.
