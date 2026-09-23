@@ -2,6 +2,7 @@ import {
   Award,
   BarChart3,
   Bot,
+  Globe,
   GraduationCap,
   Route,
   Users,
@@ -105,7 +106,10 @@ export const NAVEGACAO: Secao[] = [
   {
     label: "Site",
     to: "/admin/site",
-    icon: MockGrid,
+    // `Globe` e não `MockGrid`: este item nasceu com o MESMO ícone do "Catálogo"
+    // do aluno, e no rail RECOLHIDO só o ícone aparece — dois itens viravam
+    // indistinguíveis. Ícone repetido é defeito de navegação, não de estética.
+    icon: Globe,
     papel: Role.ADMIN,
     estado: "ativo",
   },
