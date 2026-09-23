@@ -14,6 +14,7 @@ import { MyTrilhasPage } from "@/pages/MyTrilhasPage";
 import { MyTrilhaDetailPage } from "@/pages/MyTrilhaDetailPage";
 import { AdminCoursesPage } from "@/pages/admin/AdminCoursesPage";
 import { AdminCourseFormPage } from "@/pages/admin/AdminCourseFormPage";
+import { AdminSiteTextPage } from "@/pages/admin/AdminSiteTextPage";
 
 export default function App() {
   return (
@@ -35,6 +36,7 @@ export default function App() {
           <Route path="/admin/cursos" element={<AdminCoursesPage />} />
           <Route path="/admin/cursos/novo" element={<AdminCourseFormPage />} />
           <Route path="/admin/cursos/:id" element={<AdminCourseFormPage />} />
+          <Route path="/admin/site" element={<AdminSiteTextPage />} />
         </Route>
       </Route>
     </Routes>

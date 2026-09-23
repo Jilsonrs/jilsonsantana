@@ -1187,14 +1187,25 @@ landmark. Corrigido junto.
       A lista sai do **dicionário**, não do banco: campo nunca editado também aparece, senão a tela
       só mostraria o que já foi mexido. **Valor vazio APAGA a sobrescrita** e volta ao valor de
       fábrica — sem isso, desfazer exigiria o operador redigitar o texto original.
-- [ ] **Tela:** lista agrupada por seção, PT e EN lado a lado, valor de fábrica visível ao lado do
-      seu. Loading / erro / vazio + teste de componente para cada.
+- [x] **Tela** (`/admin/site`, item de menu **"Site"** — nome decidido pelo operador; posicionado
+      depois de Cursos e Trilhas para manter as seções de conteúdo juntas): lista agrupada por
+      seção com busca **por texto ou por chave** (com 155 campos, rolar não é navegação), PT e EN
+      lado a lado, valor de fábrica visível **só quando há sobrescrita** — é quando a diferença
+      importa, porque é o que volta se o campo for limpo. **Cada campo salva sozinho.**
+      Loading / erro / vazio + **12 testes de componente**.
+      **Dependência nova NÃO adicionada:** `@testing-library/jest-dom` não existe no repo, e isso é
+      decisão de plano — as asserções seguem o estilo dos testes atuais (`toBeTruthy`, `toBeNull`,
+      `textContent`).
 - [x] **Testes de servidor (10):** os seis previstos + idioma inválido recusado + a lista de admin
       trazendo fábrica e sobrescrita separadas. **Quase todos terminam lendo a HOME de verdade** —
       gravar a linha não prova nada se ela não chegar na página.
-- [x] **Passo 8 — mutação (dois pontos):** ignorar a sobrescrita no `getDict` **e** remover a lista
-      branca de chaves → **3 testes reprovaram**. Revertido.
-- **Done when:** o operador troca um texto no admin e ele muda no ar, nos dois idiomas, sem deploy.
+- [x] **Passo 8 — mutação, nos dois lados.** Servidor: ignorar a sobrescrita no `getDict` **e**
+      remover a lista branca de chaves → **3 testes reprovaram**. Tela: apagar o aviso de falha ao
+      salvar e fazer "Voltar ao padrão" mandar o valor de fábrica em vez de vazio → **2 testes
+      reprovaram**. Revertido nos dois.
+- **Done when:** ✅ o operador troca um texto no admin e ele muda no ar, nos dois idiomas, sem
+  deploy. *Provado pelos testes de servidor, que terminam lendo a home de verdade. **Falta a
+  conferência na tela pelo operador** — subir `dev:server` + `dev:client` e editar um campo.*
 
 #### Bloco C3 — Depoimentos e FAQ viram tabela
 

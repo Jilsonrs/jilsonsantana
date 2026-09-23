@@ -103,6 +103,13 @@ export const NAVEGACAO: Secao[] = [
     estado: "planejado", // Bloco 6b
   },
   {
+    label: "Site",
+    to: "/admin/site",
+    icon: MockGrid,
+    papel: Role.ADMIN,
+    estado: "ativo",
+  },
+  {
     label: "Alunos",
     to: "/admin/alunos",
     icon: Users,

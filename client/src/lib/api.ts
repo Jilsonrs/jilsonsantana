@@ -10,6 +10,7 @@ import type {
   ModuleUpdateInput,
   LessonCreateInput,
   LessonUpdateInput,
+  LanguageCode,
 } from "@jilson/core";
 
 // Same-origin by design (mirrors auth-client.ts): in dev the Vite proxy
@@ -288,4 +289,30 @@ export async function search(q: string): Promise<SearchResult> {
 export async function saveTrilha(planId: number): Promise<{ id: number }> {
   const { data } = await client.post<{ id: number }>(`/trilhas/${planId}/save`);
   return data;
+}
+
+// ── Texto de página (admin) ─────────────────────────────────────────────────
+// A lista vem do DICIONÁRIO, não do banco: todo campo aparece, editado ou não.
+// `factory` é o valor de fábrica (o código); `override` é o que o operador
+// gravou, ou null. Ver docs/content.md § 16.
+
+export type SiteTextValue = { factory: string; override: string | null };
+export type SiteTextField = {
+  key: string;
+  section: string;
+  pt: SiteTextValue;
+  en: SiteTextValue;
+};
+
+export async function adminGetSiteText(): Promise<SiteTextField[]> {
+  const { data } = await client.get<{ campos: SiteTextField[] }>("/admin/site-text");
+  return data.campos;
+}
+
+export async function adminUpdateSiteText(input: {
+  key: string;
+  language: LanguageCode;
+  value: string;
+}): Promise<void> {
+  await client.put("/admin/site-text", input);
 }
