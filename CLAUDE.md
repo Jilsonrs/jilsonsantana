@@ -406,6 +406,37 @@ NEVER pass a secret as a CLI argument or read one back into the transcript. Comm
 - **A consistência visual mora no Tailwind, não nos componentes** — mesmo config, mesmos tokens, mesma marca. shadcn continua valendo do lado privado, onde há interação de verdade.
 - **NEXT.JS: PROPOSTO E REJEITADO (Ago 2026).** A superfície pública é pequena e read-only o bastante para ser template de servidor, e Next.js reescreveria o app privado, que não ganha nada com SEO. *Raciocínio completo e gatilho de reabertura: `decisions-archive.md`, Ago 2026 (12b).*
 
+### DUAS SUPERFÍCIES, NÃO UMA PÁGINA COM DOIS MODOS *(decisão do operador, set/2026)*
+
+> *"Tem duas coisas: página pública e página sistema aluno logado. O que o Google vê é a página
+> pública."* · *"as páginas que eu configuro vão ser Admin, então no sistema não mistura com as
+> dos alunos."*
+
+**Catálogo público e catálogo do aluno são TELAS DIFERENTES, com endereços diferentes.** A vitrine
+vende e é indexada; a do aluno mostra progresso e vive dentro do app, com o rail. Uma tela só
+faria as duas coisas mal — o visitante veria cromo de app, e o aluno não veria progresso.
+
+| Papel | Endereço | Como é desenhada |
+|---|---|---|
+| Vitrine | `/cursos` · `/trilhas` · `/curso/:slug` · `/trilha/:slug` (+ `/en/…`) | template de **servidor** |
+| Ferramenta do aluno | `/aluno/*` | **React**, dentro do shell |
+| Painel do operador | `/admin/*` | **React**, dentro do shell |
+
+**O endereço CURTO é da vitrine, não do aluno** — é ele que o Google indexa e que o aluno
+compartilha, e slug de catálogo é permanente (ver *Slug de catálogo é PERMANENTE*).
+
+**TRAVA — não "unifique" os dois catálogos.** Eles parecem duplicados e não são: mesma fonte de
+dados, propósitos opostos. Juntar devolve exatamente o problema que a separação resolve.
+
+**ESTADO ATUAL (set/2026), para ninguém se enganar com o que está no ar:** `/cursos` e `/trilhas`
+são hoje páginas **React provisórias** (`CatalogPage.tsx`), que fazem os dois papéis mal. Elas
+**serão substituídas** pelo template de servidor — decisão do operador de não construir duas
+vezes. Enquanto isso, **não investir acabamento nelas** (`design-lab/GEMINI.md` § 0).
+
+**PENDÊNCIA conhecida:** as telas de aluno de hoje (`/inicio`, `/conta`, `/minhas-trilhas`) **não**
+seguem o `/aluno/*`. Mover mexe em endereço já em uso, então é decisão do operador e não é urgente
+— mas telas novas do aluno nascem sob `/aluno/`.
+
 ### A home pública JÁ EXISTE — onde ela mora e como se mexe nela *(set/2026)*
 
 - **Template:** `server/src/views/home.ts` — é o mock aprovado **transposto**, com as mesmas

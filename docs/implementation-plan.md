@@ -1223,6 +1223,38 @@ landmark. Corrigido junto.
   deploy. *Provado pelos testes de servidor, que terminam lendo a home de verdade. **Falta a
   conferência na tela pelo operador** — subir `dev:server` + `dev:client` e editar um campo.*
 
+#### Bloco C5 — A vitrine sai do React  *(decisão do operador, set/2026)*
+
+> **Por que existe:** `/cursos` e `/trilhas` são hoje páginas React que fazem dois papéis mal — o
+> visitante vê cromo de app, o aluno não vê progresso. O operador separou as duas superfícies
+> (`CLAUDE.md` → *DUAS SUPERFÍCIES*) e pediu que o que for construído agora **seja a versão
+> final**: *"eu quero que seja a versão final que vamos utilizar"*. Sem construir duas vezes.
+>
+> **BLOQUEADO — e o bloqueio é do operador, não técnico.** O passo 1 do fluxo com o parceiro de
+> design é *"o operador e o Claude definem o que vai ter na tela"*, e ele adiou: *"depois
+> analisamos minuciosamente o que vai ter em cada página"*. Sem isso não há mock, e sem mock não há
+> transposição.
+
+- [ ] **Passo 0 (operador):** o que a vitrine mostra, e o que a tela do aluno mostra **a mais**.
+      Direção já dada por ele, a detalhar: progresso por curso · "continue de onde parou" no topo ·
+      o botão sendo **Continuar** em vez de **Assinar**.
+- [ ] **Mock na `design-lab/`** (parceiro de design) → **transposição** para template de servidor
+      (mesma marcação, mesmas classes) → **formatação** pelo parceiro. É o caminho que a home já
+      percorreu inteiro.
+- [ ] `/cursos` e `/trilhas` viram template de servidor, com o payload de indexação que a home já
+      tem (title, description, canonical, OG, `hreflang`, JSON-LD) e **os dois idiomas**.
+- [ ] Catálogo do aluno nasce em **`/aluno/cursos`** e **`/aluno/trilhas`** (React, dentro do
+      shell). `CatalogPage.tsx` é a base — o que muda é o que ele mostra a mais.
+- [ ] O rail do aluno passa a apontar para `/aluno/*`; a vitrine fica com o endereço curto.
+- [ ] Testes: servidor para a vitrine (responde, indexa, filtra por idioma e status) + componente
+      para a do aluno (os estados + o que ela tem a mais).
+- [ ] **Passo 8 — mutação:** remover o filtro de status da vitrine → a suíte de servidor reprova.
+- **Done when:** o visitante e o Google veem a mesma vitrine, sem barra; o aluno logado tem a
+  dele, com barra e progresso.
+- **DEPOIS deste bloco:** `/curso/:slug` e `/trilha/:slug` seguem o mesmo caminho. A página de
+  curso espera o **Bunny** (o `introVideoId` toca para não-membro nela) — é a dependência que já
+  justificava a ordem original.
+
 #### Bloco C3 — Depoimentos e FAQ viram tabela
 
 > São as duas únicas listas da home que **crescem**. O resto tem tamanho fixo preso ao layout.
