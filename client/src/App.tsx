@@ -22,7 +22,8 @@ export default function App() {
       <Route element={<Layout />}>
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/cursos" element={<CatalogPage />} />
+        <Route path="/cursos" element={<CatalogPage tipo="cursos" />} />
+        <Route path="/trilhas" element={<CatalogPage tipo="trilhas" />} />
         <Route path="/curso/:slug" element={<CourseDetailPage />} />
         <Route path="/trilha/:slug" element={<TrilhaDetailPage />} />
         <Route element={<ProtectedRoute />}>

@@ -70,11 +70,7 @@ export const NAVEGACAO: Secao[] = [
     label: "Trilhas",
     to: "/trilhas",
     icon: Route,
-    // PLANEJADA, e não ativa: a lista pública de trilhas NÃO EXISTE. Ela era a
-    // aba "Trilhas" do antigo Catálogo, apontando para /cursos/trilhas — uma
-    // rota que nunca foi montada. Escondida numa aba isso passava; no rail
-    // seria um link quebrado à vista. Vira "ativo" quando a tela nascer.
-    estado: "planejado",
+    estado: "ativo",
     tambemAtivoEm: ["/trilha/"],
   },
   { label: "Minhas trilhas", to: "/minhas-trilhas", icon: MockMap, estado: "ativo" },

@@ -82,7 +82,7 @@ describe("AppRail — acessibilidade do estado recolhido", () => {
     // O rótulo está sempre no DOM: some por RECORTE (overflow), nunca por
     // `display:none`. Isto reprova se alguém apagar o <span> do rótulo e
     // deixar só o ícone.
-    for (const nome of ["Início", "Cursos", "Minhas trilhas", "Minha conta", "Cursos Admin", "Site"]) {
+    for (const nome of ["Início", "Cursos", "Trilhas", "Minhas trilhas", "Minha conta", "Cursos Admin", "Site"]) {
       expect(screen.getByRole("link", { name: nome })).toBeTruthy();
     }
   });
