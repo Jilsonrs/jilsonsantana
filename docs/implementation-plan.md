@@ -1171,10 +1171,14 @@ landmark. Corrigido junto.
 - [x] **Migration** `20260922235628_site_text_and_language_enum`: enum `Language { PT EN }` + tabela
       `site_text` (único por chave+idioma) + **RLS na mesma migration**. Consulta de verificação
       rodada: **zero tabelas em `public` sem RLS**.
-      **ESCRITA À MÃO — e isso virou regra no `CLAUDE.md`:** `prisma migrate dev` falha com P1014
-      neste repo, porque valida o histórico num shadow database onde `_prisma_migrations` não
-      existe, e a migration de RLS de Ago 2026 faz `ALTER TABLE` nela. `migrate deploy` e
-      `migrate reset` não usam shadow e aplicam normalmente.
+      **ESCRITA À MÃO porque o `prisma migrate dev` estava quebrado** (P1014: valida o histórico
+      num shadow database onde `_prisma_migrations` não existe, e a migration de RLS de Ago 2026
+      fazia `ALTER TABLE` nela). **CONSERTADO na mesma sessão, a pedido do operador:** aquela
+      migration virou condicional (`IF EXISTS` num bloco `DO $$`). Provas: A/B no mesmo shell
+      (incondicional → P1014, condicional → passa) · banco limpo pelo `migrate reset` continua com
+      RLS em `_prisma_migrations` e **zero** tabelas sem RLS · `migrate status`, `migrate deploy` e
+      o diff de drift passam nos dois bancos **sem** `migrate resolve`, porque o Prisma 5.22 não
+      reprova checksum de migration já aplicada (medido). Regra nova no `CLAUDE.md` → Commands.
 - [x] **Servidor:** `server/src/lib/dict.ts` é a **única porta** para o texto — template nenhum
       importa `pt`/`en` direto, senão a edição do operador não aparece naquela tela. Cache em
       memória limpo ao salvar. *(Limite registrado no próprio arquivo: o cache é por instância.)*

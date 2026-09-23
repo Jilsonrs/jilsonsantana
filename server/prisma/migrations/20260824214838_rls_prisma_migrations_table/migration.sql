@@ -26,4 +26,20 @@
 -- funciona. RLS bloqueia a Data API do Supabase (anon/authenticated), que é
 -- exatamente o alvo da convenção.
 
-ALTER TABLE "public"."_prisma_migrations" ENABLE ROW LEVEL SECURITY;
+-- CONDICIONAL desde Set 2026, e a condição NÃO é preciosismo: o
+-- `prisma migrate dev` valida o histórico replicando-o num SHADOW DATABASE, e
+-- lá `_prisma_migrations` NÃO existe. Na forma incondicional esta linha fazia
+-- o `migrate dev` inteiro falhar com P1014 — ou seja, a migration que fecha um
+-- buraco de segurança impedia qualquer migration nova de ser criada.
+-- No banco real a tabela existe, então o efeito é idêntico ao de antes.
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM pg_class
+     WHERE relname = '_prisma_migrations'
+       AND relnamespace = 'public'::regnamespace
+  ) THEN
+    EXECUTE 'ALTER TABLE "public"."_prisma_migrations" ENABLE ROW LEVEL SECURITY';
+  END IF;
+END
+$$;
