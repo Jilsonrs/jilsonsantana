@@ -163,29 +163,7 @@ export const en: Dict = {
     },
     testimonials: {
       tag: "SUCCESS STORIES",
-      title: "What my students are saying.",
-      list: [
-        {
-          text: "This instructor exceeded all expectations! A fully hands-on course, with skills you can apply right away. In my 30 years of teaching, I have never seen such excellent methodology.",
-          initials: "EF",
-          name: "Edson Garcia Fernandes"
-        },
-        {
-          text: "The instructor explains step by step, so even a complete beginner can understand everything. I knew almost nothing, and now I even understand a bit of programming!",
-          initials: "NM",
-          name: "Nicole Silveira Manoel"
-        },
-        {
-          text: "Incredible! I just finished this course and I am speechless. As an educator, I like to learn by doing, so I found the course structure perfect. Thank you so much!",
-          initials: "BV",
-          name: "Beatriz Veloso"
-        },
-        {
-          text: "It made a real difference in my daily work. It also helped my team perform better, because every week I shared what I learned. That way we grew together.",
-          initials: "VQ",
-          name: "Vinicius Dias de Queiroz"
-        }
-      ]
+      title: "What my students are saying."
     },
     pricing: {
       titlePrefix: "One plan.",
@@ -210,69 +188,7 @@ export const en: Dict = {
       footer: "Full access from day one. No lock-in and no penalty: if you cancel and come back, you pick up where you left off."
     },
     faq: {
-      title: "Frequently asked questions",
-      list: [
-        {
-          q: "Is this for someone who has never worked with data? Do I need to know how to code or be good at math?",
-          a: "Yes, it is. The school is built for business professionals. You don't need previous experience. We teach step by step, from absolute zero to advanced topics."
-        },
-        {
-          q: "Does it work for my field?",
-          a: "Yes. Data is everywhere: finance, marketing, HR, logistics. The tools and methods we teach are universal and apply to any industry."
-        },
-        {
-          q: "Where do I start?",
-          a: "We offer ready-made learning paths, plus personalized suggestions from JilsonAI to guide your first step."
-        },
-        {
-          q: "Do I need to buy any tools?",
-          a: "No. Most of the tools we cover have complete free versions, enough for you to apply what you learn."
-        },
-        {
-          q: "Are the lessons recorded? What if I can't keep up?",
-          a: "Yes, every lesson is recorded and you learn at your own pace, rewatching as many times as you want."
-        },
-        {
-          q: "How are the courses chosen?",
-          a: "We offer a few hand-picked courses, focused on tools and methods you can apply at work tomorrow morning."
-        },
-        {
-          q: "How does support work? What is JilsonAI?",
-          a: "JilsonAI is a smart partner trained on our method to help you right away. If it cannot solve your problem, Jilson steps in."
-        },
-        {
-          q: "Is there a certificate? Does it work on LinkedIn?",
-          a: "Yes. When you finish a path or a course, you get a valid certificate that you can share directly to your LinkedIn profile."
-        },
-        {
-          q: "How is this different from free videos on YouTube?",
-          a: "Here you get a structured path from start to finish, official support, exercises with real data, and a certificate."
-        },
-        {
-          q: "Can I buy a single course?",
-          a: "No. We work with a monthly or annual subscription, which gives you full access to the catalog and regular updates."
-        },
-        {
-          q: "How and when am I charged?",
-          a: "You can pay R$ 99,90 every month, or R$ 995 once a year on the annual plan."
-        },
-        {
-          q: "How do I cancel? Can I come back later?",
-          a: "Cancel with one click in your dashboard, with no fees. When you come back, your history and certificates will be waiting for you."
-        },
-        {
-          q: "Does the subscription cover the courses in Portuguese?",
-          a: "Yes, the same subscription gives you access to all the content in both languages."
-        },
-        {
-          q: "Is there a refund?",
-          a: "Yes, we offer a 7-day money-back guarantee."
-        },
-        {
-          q: "Can companies subscribe? Do you issue invoices?",
-          a: "Yes, we issue an invoice for every payment. For corporate plans or multiple seats, get in touch."
-        }
-      ]
+      title: "Frequently asked questions"
     },
     cta: {
       title: "Ready to master data, AI and whatever comes next?",

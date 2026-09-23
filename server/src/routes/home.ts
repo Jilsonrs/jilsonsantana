@@ -1,4 +1,7 @@
 import { Router } from "express";
+import type { Language } from "@prisma/client";
+import { ContentStatus } from "@jilson/core";
+import { prisma } from "../lib/prisma.js";
 import { getDict } from "../lib/dict.js";
 import { loadSession } from "../middleware/auth.js";
 import { renderHome, type HomeCourse } from "../views/home.js";
@@ -63,6 +66,24 @@ const CURSOS_EN: HomeCourse[] = [];
 const DESTAQUE_EN: HomeCourse | null = null;
 const CAN_SUBSCRIBE_EN = false;
 
+// Depoimentos e perguntas frequentes vêm do BANCO (Bloco C3): só PUBLICADOS e
+// só do idioma da página — mesmo filtro de toda leitura pública. Lista vazia
+// esconde a seção inteira (decisão do operador, 23/09/2026).
+const byOrder = [{ displayOrder: "asc" as const }, { id: "asc" as const }];
+const listasDaHome = (language: Language) =>
+  Promise.all([
+    prisma.testimonial.findMany({
+      where: { language, status: ContentStatus.PUBLISHED },
+      orderBy: byOrder,
+      select: { text: true, name: true },
+    }),
+    prisma.faqItem.findMany({
+      where: { language, status: ContentStatus.PUBLISHED },
+      orderBy: byOrder,
+      select: { question: true, answer: true },
+    }),
+  ]);
+
 // O texto vem do `getDict`, NUNCA de um import de `pt`/`en`: é ele que aplica o
 // que o operador editou no /admin (server/src/lib/dict.ts).
 // A sessão é lida para UMA coisa só: trocar "Entrar" por "Meus estudos" no
@@ -72,14 +93,44 @@ const CAN_SUBSCRIBE_EN = false;
 // usuário com exclusão pedida, e duplicar essa checagem aqui seria a segunda
 // cópia que um dia diverge.
 router.get("/", async (req, res) => {
-  const [dict, sessao] = await Promise.all([getDict("pt"), loadSession(req)]);
-  res.send(renderHome(dict, "pt", CURSOS_PT, DESTAQUE_PT, true, BASE_URL, sessao !== null));
+  const [dict, sessao, [testimonials, faq]] = await Promise.all([
+    getDict("pt"),
+    loadSession(req),
+    listasDaHome("PT"),
+  ]);
+  res.send(
+    renderHome({
+      dict,
+      lang: "pt",
+      courses: CURSOS_PT,
+      featuredCourse: DESTAQUE_PT,
+      canSubscribe: true,
+      baseUrl: BASE_URL,
+      logado: sessao !== null,
+      testimonials,
+      faq,
+    }),
+  );
 });
 
 router.get("/en", async (req, res) => {
-  const [dict, sessao] = await Promise.all([getDict("en"), loadSession(req)]);
+  const [dict, sessao, [testimonials, faq]] = await Promise.all([
+    getDict("en"),
+    loadSession(req),
+    listasDaHome("EN"),
+  ]);
   res.send(
-    renderHome(dict, "en", CURSOS_EN, DESTAQUE_EN, CAN_SUBSCRIBE_EN, BASE_URL, sessao !== null),
+    renderHome({
+      dict,
+      lang: "en",
+      courses: CURSOS_EN,
+      featuredCourse: DESTAQUE_EN,
+      canSubscribe: CAN_SUBSCRIBE_EN,
+      baseUrl: BASE_URL,
+      logado: sessao !== null,
+      testimonials,
+      faq,
+    }),
   );
 });
 

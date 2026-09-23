@@ -5,7 +5,7 @@ import { pt, type Dict } from "./pt.js";
  *
  * O caminho é a CHAVE do texto em todo o resto do sistema: é o que a tabela
  * `SiteText` guarda, o que a tela de admin lista e o que o gerador de revisão
- * imprime. Formato: `home.hero.subtitle`, `home.faq.list[0].q`.
+ * imprime. Formato: `home.hero.subtitle`, `home.pricing.features[0]`.
  *
  * Vive no `core` porque servidor, teste e script precisam da MESMA função —
  * três cópias divergem, e a que diverge é a que ninguém está olhando.
@@ -31,7 +31,7 @@ export const DICT_KEYS: ReadonlySet<string> = new Set(flattenDict(pt).map(([k]) 
 
 /**
  * Escreve `valor` no caminho `chave` de um dicionário, no lugar. Entende índice
- * de array (`home.faq.list[0].q`), que é como as listas aparecem no caminho.
+ * de array (`home.pricing.features[0]`), que é como as listas aparecem no caminho.
  *
  * Silencioso por desenho: caminho que não existe **não cria** estrutura nova.
  * A validação de chave é da rota de escrita (`DICT_KEYS`); aqui, uma chave

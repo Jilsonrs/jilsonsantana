@@ -454,7 +454,9 @@ seguem o `/aluno/*`. Mover mexe em endereço já em uso, então é decisão do o
   do portão `COMING_SOON` e antes do `express.static`; em dev, o Express também serve
   `client/public` e **redireciona rota privada para o Vite** (5173), senão "Entrar" dá 404.
 - **Dados:** hoje os 5 cursos são constante em `server/src/routes/home.ts`, marcada como passo 1.
-  O passo 2 é ler do Prisma com `status: PUBLISHED` + idioma + `displayOrder`.
+  O passo 2 é ler do Prisma com `status: PUBLISHED` + idioma + `displayOrder`. **Depoimentos e FAQ
+  já vêm do banco** (`Testimonial`, `FaqItem` — Bloco C3), com esse mesmo filtro; lista vazia
+  **esconde a seção inteira** (decisão do operador). Não devolva essas listas ao dicionário.
 
 ### TRAVA — conteúdo NUNCA atrás de interação
 

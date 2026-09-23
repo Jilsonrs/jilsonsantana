@@ -1275,13 +1275,31 @@ landmark. Corrigido junto.
 > Depoimento tem obrigação própria já escrita (`content.md`: *sai na hora se a pessoa pedir*) —
 > isso não pode depender de deploy.
 
-- [ ] Models `Testimonial` e `FaqItem`: texto, autor/iniciais (depoimento), pergunta/resposta
-      (FAQ), `language`, `displayOrder`, `status`, + RLS. Migration única.
-- [ ] Leitura pública filtra `PUBLISHED` + idioma, ordena por `displayOrder` (mesmo padrão de
-      `courses.ts`). CRUD no admin. As chaves correspondentes saem do dicionário.
-- [ ] **FAQ ganha JSON-LD `FAQPage`** — hoje o `<details>` já entrega o texto no HTML, mas sem o
-      dado estruturado que o buscador lê.
-- [ ] Testes de servidor (lista pública respeita status e idioma) + componente (estado vazio).
+> **Decisões do operador (23/09, ao aprovar):** telas **dentro de "Site"** (2º nível: Textos ·
+> Depoimentos · Perguntas frequentes) · **lista vazia esconde a seção inteira** · **status para
+> esconder + Excluir que apaga de vez** (LGPD) · **conteúdo atual migra sozinho** na publicação.
+> Registradas em `content.md` § 16.
+
+- [x] Models `Testimonial` e `FaqItem` (`language`, `displayOrder`, `status`) + RLS, migration
+      única `20260923153515_testimonials_and_faq`. **As iniciais não são coluna** — saem do nome
+      na hora de desenhar. **A migration também semeia o que estava no ar** (4 depoimentos + 15
+      perguntas, PT e EN, publicados), com os INSERTs **gerados do dicionário** para o texto ficar
+      idêntico. Aplicada no dev: Passo 0 antes/depois (mesmos 2 usuários entrando, mesmo texto
+      editado, 2 cursos), zero tabela sem RLS, diff de drift *No difference detected*.
+- [x] Leitura pública (a própria rota da home, que é SSR — nenhuma API pública nova) filtra
+      `PUBLISHED` + idioma e ordena por `displayOrder`. As listas **saíram do dicionário**; ficam só
+      título e etiqueta das seções. `renderHome` passou a receber **um objeto** (seriam 9
+      parâmetros posicionais).
+- [x] **FAQ ganha JSON-LD `FAQPage`**, só quando há pergunta publicada.
+- [x] **Testes de servidor (8)** em `server/src/test/home-lists.test.ts`: status e idioma (nas duas
+      listas), ordem, iniciais, seção some inteira quando vazia, `FAQPage` com exatamente as
+      perguntas da página, e o que vem do banco nunca vira HTML (`<img onerror>` escapado,
+      `</script>` não fecha o JSON-LD). **Mutação:** sem o filtro de publicado → 3 reprovam; seção
+      sempre desenhada → 1 reprova. Revertido.
+- [ ] **CRUD no admin** — rotas `/api/admin/testimonials` e `/api/admin/faq` (atrás de
+      `requireAdmin`) + testes de servidor (401/403, validação, Excluir apaga).
+- [ ] **Telas** em `/admin/site/depoimentos` e `/admin/site/faq`, "Site" ganhando o 2º nível +
+      testes de componente (carregando, erro, vazio, criar, editar, excluir).
 - **Done when:** o operador publica um depoimento novo e remove outro pelo admin, sem deploy.
 
 #### Bloco C4 — Os 5 cursos da home vêm do banco

@@ -166,29 +166,7 @@ export const pt = {
     },
     testimonials: {
       tag: "HISTÓRIAS DE SUCESSO",
-      title: "Quem aprendeu comigo está dizendo.",
-      list: [
-        {
-          text: "O professor está muito acima de qualquer expectativa! Um curso 100% prático, com aplicações imediatas. Nos meus 30 anos lecionando, nunca vi uma didática tão apurada.",
-          initials: "EF",
-          name: "Edson Garcia Fernandes"
-        },
-        {
-          text: "O professor explica muito bem, passo a passo, para até quem nunca mexeu no programa entender tudo. Eu sabia pouco, quase nada, e agora já entendo até um pouquinho de programação!",
-          initials: "NM",
-          name: "Nicole Silveira Manoel"
-        },
-        {
-          text: "Incrível! Acabei de finalizar esse curso e estou sem palavras. Como uma educadora, gosto de aprender com práticas, por isso achei todo o cronograma perfeito. Muito obrigada professor, um forte abraço.",
-          initials: "BV",
-          name: "Beatriz Veloso"
-        },
-        {
-          text: "Realizou grandes avanços no meu dia a dia. Também ajudou a melhorar a performance da minha equipe, pois repliquei toda semana os conhecimentos que aprendi. Assim crescemos juntos.",
-          initials: "VQ",
-          name: "Vinicius Dias de Queiroz"
-        }
-      ]
+      title: "Quem aprendeu comigo está dizendo."
     },
     pricing: {
       titlePrefix: "Um plano.",
@@ -213,69 +191,7 @@ export const pt = {
       footer: "Acesso a tudo desde o primeiro dia. Sem fidelidade e sem multa: se você cancelar e voltar, continua de onde parou."
     },
     faq: {
-      title: "Perguntas frequentes",
-      list: [
-        {
-          q: "É para quem nunca mexeu com dados? Preciso saber programar, matemática ou inglês?",
-          a: "Sim. A escola é projetada para profissionais de negócios. Você não precisa de experiência prévia. Ensinamos passo a passo, do zero absoluto aos tópicos avançados."
-        },
-        {
-          q: "Serve para a minha área?",
-          a: "Sim. Os dados estão em todo lugar: finanças, marketing, RH, logística. As ferramentas e os métodos ensinados são universais e aplicáveis a qualquer setor do mercado."
-        },
-        {
-          q: "Por onde começo?",
-          a: "Nós oferecemos trilhas prontas e sugestões personalizadas pelo JilsonAI para guiar seu primeiro passo."
-        },
-        {
-          q: "Preciso comprar alguma ferramenta?",
-          a: "Não. A grande maioria das ferramentas abordadas possui versões gratuitas completas suficientes para você aplicar o conhecimento."
-        },
-        {
-          q: "As aulas são gravadas? E se eu não conseguir manter o ritmo?",
-          a: "Sim, todas as aulas ficam gravadas e você estuda no seu próprio ritmo, podendo rever quantas vezes quiser."
-        },
-        {
-          q: "Como os cursos são escolhidos?",
-          a: "Poucos cursos, escolhidos a dedo, focados nas ferramentas e métodos que você aplica no trabalho amanhã de manhã."
-        },
-        {
-          q: "Como funciona o suporte? O que é o JilsonAI?",
-          a: "O JilsonAI é um parceiro inteligente treinado na nossa metodologia para ajudar você imediatamente. Se ele não resolver, o Jilson entra em ação."
-        },
-        {
-          q: "Tem certificado? Serve para o LinkedIn?",
-          a: "Sim! Ao concluir as trilhas e cursos, você emite seu certificado válido que pode ser compartilhado diretamente no seu perfil do LinkedIn."
-        },
-        {
-          q: "Qual a diferença para os vídeos gratuitos do YouTube?",
-          a: "Aqui você tem uma trilha com método estruturado, começo, meio e fim, suporte oficial, exercícios com dados reais e emissão de certificado."
-        },
-        {
-          q: "Posso comprar só um curso?",
-          a: "Não. O modelo é de assinatura (mensal ou anual), garantindo acesso a todo o catálogo e novas atualizações constantes."
-        },
-        {
-          q: "Como e quando recebo a cobrança?",
-          a: "Você pode optar por pagar R$ 99,90 cobrados todo mês, ou R$ 995 cobrados de uma única vez no plano anual."
-        },
-        {
-          q: "Como cancelo? Posso voltar depois?",
-          a: "Cancele com um clique no seu painel de aluno, sem nenhuma taxa. Quando quiser voltar, seu histórico e seus certificados estarão guardados esperando por você."
-        },
-        {
-          q: "A assinatura vale para os cursos em inglês?",
-          a: "Sim, a mesma assinatura libera acesso a todo o conteúdo nos dois idiomas."
-        },
-        {
-          q: "Tem reembolso?",
-          a: "Sim, você possui garantia legal de arrependimento."
-        },
-        {
-          q: "Empresas podem assinar? Emitem nota fiscal?",
-          a: "Sim, emitimos nota fiscal para todos os pagamentos. Para planos corporativos ou múltiplos acessos, entre em contato."
-        }
-      ]
+      title: "Perguntas frequentes"
     },
     cta: {
       title: "Pronto para dominar dados, IA e o que vier depois?",
