@@ -26,6 +26,9 @@ export function renderHome(
   featuredCourse: HomeCourse | null,
   canSubscribe: boolean,
   baseUrl: string,
+  /** Há sessão válida? Muda SÓ o cabeçalho — o resto da vitrine é igual para
+   *  todo mundo, inclusive para o robô do Google, que nunca tem cookie. */
+  logado = false,
 ): string {
   const isPt = lang === "pt";
   const currentUrl = isPt ? baseUrl : `${baseUrl}/en`;
@@ -84,7 +87,9 @@ ${recuo}</div>`;
         <a href="#cursos">${escapeHtml(dict.common.nav.cursos)}</a>
         <a href="#trilhas">${escapeHtml(dict.common.nav.trilhas)}</a>
         <a href="#assine">${escapeHtml(dict.common.nav.assine)}</a>
-        <a href="/login" class="btn-login">${escapeHtml(dict.common.nav.entrar)}</a>
+        ${logado
+          ? `<a href="/inicio" class="btn-login">${escapeHtml(dict.common.nav.meusEstudos)}</a>`
+          : `<a href="/login" class="btn-login">${escapeHtml(dict.common.nav.entrar)}</a>`}
         <span style="color: var(--border-color);">|</span>
         ${seletorIdioma("        ")}
       </div>

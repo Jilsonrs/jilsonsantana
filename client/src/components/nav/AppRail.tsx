@@ -147,17 +147,27 @@ export function AppRail({ papel }: { papel?: string }) {
           "transition-[width] duration-300 ease-out motion-reduce:transition-none",
         )}
       >
-        {/* A marca. Recolhida é só o "#", grande e centrado, fazendo o papel de
-            ícone; expandida ele encolhe e o nome entra ao lado. */}
-        <Link
-          to="/inicio"
+        {/* A marca leva à HOME PÚBLICA (decisão do operador, set/2026): o app já
+            tem o item "Início" para a casa de dentro, então o logo é a saída
+            para a vitrine.
+
+            `<a>` e NÃO `<Link>`, e isto é o ponto: o `Link` do React Router
+            intercepta a navegação e NUNCA sai do app — a home pública é HTML de
+            servidor, e só uma navegação de verdade chega nela. Em dev o proxy do
+            Vite manda a raiz para o Express, então o comportamento é o mesmo nos
+            dois ambientes (`vite.config.ts`).
+
+            Recolhida é só o "#", grande e centrado, fazendo o papel de ícone;
+            expandida ele encolhe e o nome entra ao lado. */}
+        <a
+          href="/"
           className="flex h-20 shrink-0 items-center pl-[28px] pr-4 font-brand font-bold tracking-tight text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
         >
           <span className="shrink-0 text-[28px] leading-none text-primary transition-[font-size] duration-300 group-hover:text-2xl group-focus-within:text-2xl motion-reduce:transition-none">
             #
           </span>
           <span className={cn(ROTULO, "ml-2 text-2xl leading-none")}>Jilson Santana</span>
-        </Link>
+        </a>
 
         {/* Etiqueta de seção. Some junto com os rótulos: recolhida não caberia,
             e um fragmento cortado é pior que ausência. */}

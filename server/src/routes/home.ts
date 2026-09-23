@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { getDict } from "../lib/dict.js";
+import { loadSession } from "../middleware/auth.js";
 import { renderHome, type HomeCourse } from "../views/home.js";
 
 const router = Router();
@@ -64,14 +65,22 @@ const CAN_SUBSCRIBE_EN = false;
 
 // O texto vem do `getDict`, NUNCA de um import de `pt`/`en`: é ele que aplica o
 // que o operador editou no /admin (server/src/lib/dict.ts).
-router.get("/", async (_req, res) => {
-  const dict = await getDict("pt");
-  res.send(renderHome(dict, "pt", CURSOS_PT, DESTAQUE_PT, true, BASE_URL));
+// A sessão é lida para UMA coisa só: trocar "Entrar" por "Meus estudos" no
+// cabeçalho. Visitante anônimo não tem cookie, então nem chega ao banco — e o
+// robô do Google, que nunca tem cookie, vê exatamente a página do visitante.
+// `loadSession` é o mesmo helper do middleware de propósito: ele já recusa
+// usuário com exclusão pedida, e duplicar essa checagem aqui seria a segunda
+// cópia que um dia diverge.
+router.get("/", async (req, res) => {
+  const [dict, sessao] = await Promise.all([getDict("pt"), loadSession(req)]);
+  res.send(renderHome(dict, "pt", CURSOS_PT, DESTAQUE_PT, true, BASE_URL, sessao !== null));
 });
 
-router.get("/en", async (_req, res) => {
-  const dict = await getDict("en");
-  res.send(renderHome(dict, "en", CURSOS_EN, DESTAQUE_EN, CAN_SUBSCRIBE_EN, BASE_URL));
+router.get("/en", async (req, res) => {
+  const [dict, sessao] = await Promise.all([getDict("en"), loadSession(req)]);
+  res.send(
+    renderHome(dict, "en", CURSOS_EN, DESTAQUE_EN, CAN_SUBSCRIBE_EN, BASE_URL, sessao !== null),
+  );
 });
 
 export default router;

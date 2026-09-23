@@ -57,10 +57,16 @@ describe("Layout — quem entrou", () => {
     expect(screen.queryByRole("link", { name: "Entrar" })).toBeNull();
   });
 
-  // Mandar quem já assina para a página que tenta convencê-lo a assinar.
-  it("a marca leva para a home do aluno, não para a landing", () => {
+  // REVERTIDO em set/2026, por decisão do operador. Este teste guardava o
+  // oposto — "a marca leva para a home do aluno, não para a landing" —, com o
+  // argumento de não mandar quem já assina para a página que tenta convencê-lo
+  // a assinar. O operador decidiu que o logo é a SAÍDA para a vitrine, porque o
+  // app já tem o item "Início" para a casa de dentro. E a vitrine deixou de ser
+  // uma página de venda pura: quem está logado vê "Meus estudos" no cabeçalho,
+  // não "Entrar" — então o argumento antigo perdeu o alvo.
+  it("a marca leva para a home PÚBLICA", () => {
     renderWithProviders(<Layout />);
-    expect(marca().getAttribute("href")).toBe("/inicio");
+    expect(marca().getAttribute("href")).toBe("/");
   });
 
   // O rail é `md:block`: abaixo disso a gaveta é a ÚNICA navegação que existe,

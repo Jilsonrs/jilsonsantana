@@ -25,13 +25,32 @@ describe("Home pública (SSR)", () => {
     expect(res.text).toContain('<html lang="en"');
   });
 
-  it("o botão Entrar leva ao login, nos dois idiomas", async () => {
+  it("sem sessão, o botão leva ao login — nos dois idiomas", async () => {
     // Nasceu com href="#" e ficou assim até o operador clicar. Link morto não
     // quebra teste, typecheck nem build — só decepciona quem clica.
     for (const rota of ["/", "/en"]) {
       const res = await request(app).get(rota);
       expect(res.text, rota).toContain('<a href="/login" class="btn-login">');
+      expect(res.text, rota).not.toContain('href="/inicio"');
     }
+  });
+
+  it("COM sessão, o botão vira Meus estudos e leva ao app", async () => {
+    // O visitante logado não deve ser convidado a "Entrar" de novo. É a ÚNICA
+    // coisa que a sessão muda na vitrine — o resto é igual para todo mundo,
+    // inclusive para o robô do Google, que nunca tem cookie.
+    const login = await request(app).post("/api/auth/sign-in/email").send({
+      email: process.env.SEED_MEMBER_EMAIL,
+      password: process.env.SEED_MEMBER_PASSWORD,
+    });
+    const cookies = (login.headers["set-cookie"] as unknown as string[] | undefined) ?? [];
+    expect(cookies.length).toBeGreaterThan(0);
+
+    const res = await request(app).get("/").set("Cookie", cookies);
+
+    expect(res.text).toContain('<a href="/inicio" class="btn-login">');
+    expect(res.text).toContain("Meus estudos");
+    expect(res.text).not.toContain('href="/login"');
   });
 
   it("as duas versões declaram o favicon", async () => {

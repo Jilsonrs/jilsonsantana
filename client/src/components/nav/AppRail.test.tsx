@@ -85,6 +85,20 @@ describe("AppRail — onde estou", () => {
   });
 });
 
+describe("AppRail — o logo é a saída para a vitrine", () => {
+  // Decisão do operador (set/2026): o app já tem "Início" para a casa de
+  // dentro, então o logo leva à home PÚBLICA.
+  it("o logo aponta para a raiz, e como link de verdade", () => {
+    render(Role.MEMBER);
+    const logo = screen.getByRole("link", { name: /Jilson Santana/ });
+
+    expect(logo.getAttribute("href")).toBe("/");
+    // `<a>` e não `<Link>`: o Link do React Router intercepta a navegação e
+    // nunca sairia do app — e a home pública é HTML de servidor.
+    expect(logo.getAttribute("href")).not.toMatch(/^\/inicio/);
+  });
+});
+
 describe("AppRail — acessibilidade do estado recolhido", () => {
   it("todo item tem nome acessível, mesmo recolhido", () => {
     render(Role.ADMIN);
