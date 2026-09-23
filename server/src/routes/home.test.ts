@@ -25,6 +25,15 @@ describe("Home pública (SSR)", () => {
     expect(res.text).toContain('<html lang="en"');
   });
 
+  it("o botão Entrar leva ao login, nos dois idiomas", async () => {
+    // Nasceu com href="#" e ficou assim até o operador clicar. Link morto não
+    // quebra teste, typecheck nem build — só decepciona quem clica.
+    for (const rota of ["/", "/en"]) {
+      const res = await request(app).get(rota);
+      expect(res.text, rota).toContain('<a href="/login" class="btn-login">');
+    }
+  });
+
   it("as duas versões declaram o favicon", async () => {
     // O template do servidor não herda nada do index.html do React: o que não
     // estiver escrito aqui simplesmente não existe na página pública.

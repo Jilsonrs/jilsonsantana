@@ -84,7 +84,7 @@ ${recuo}</div>`;
         <a href="#cursos">${escapeHtml(dict.common.nav.cursos)}</a>
         <a href="#trilhas">${escapeHtml(dict.common.nav.trilhas)}</a>
         <a href="#assine">${escapeHtml(dict.common.nav.assine)}</a>
-        <a href="#" class="btn-login">${escapeHtml(dict.common.nav.entrar)}</a>
+        <a href="/login" class="btn-login">${escapeHtml(dict.common.nav.entrar)}</a>
         <span style="color: var(--border-color);">|</span>
         ${seletorIdioma("        ")}
       </div>
