@@ -13,6 +13,8 @@ import lessonsRouter from "./routes/lessons.js";
 import searchRouter from "./routes/search.js";
 import homeRouter from "./routes/home.js";
 import adminSiteTextRouter from "./routes/admin-site-text.js";
+// ⚠️ TEMPORÁRIO — diagnóstico do IP para o rate-limit. Apagar no bloco seguinte.
+import diagIpRouter from "./routes/diag-ip.js";
 
 // Monta o app e EXPORTA sem escutar porta. O `listen()` vive em `index.ts`.
 //
@@ -51,6 +53,7 @@ app.use("/api", trilhasRouter);
 app.use("/api", lessonsRouter);
 app.use("/api", searchRouter);
 app.use("/api", adminSiteTextRouter);
+app.use("/api", diagIpRouter); // ⚠️ TEMPORÁRIO
 
 // ── Home pública (SSR, sem React) ───────────────────────────────────────────
 // Registrada em TODOS os ambientes (em dev o operador abre localhost:3000).
