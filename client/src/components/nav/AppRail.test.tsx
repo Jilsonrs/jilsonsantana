@@ -40,12 +40,22 @@ describe("AppRail — quem vê o quê", () => {
   });
 
   // O mapa tem seções "planejadas" (JilsonAI, Certificados, Alunos…) que
-  // descrevem telas ainda não construídas. Renderizá-las seria enviar o aluno
-  // para um link quebrado.
-  it("seção PLANEJADA não vira link", () => {
+  // descrevem telas ainda não construídas. Desde set/2026 o ADMIN as vê — ele
+  // quer o mapa inteiro para não esquecer o que falta —, mas elas NÃO são link:
+  // rota inexistente clicável é pior que item ausente.
+  it("seção PLANEJADA aparece para o admin, e NUNCA como link", () => {
     render(Role.ADMIN);
-    expect(screen.queryByRole("link", { name: "Certificados" })).toBeNull();
+
+    expect(screen.getByText("Trilhas Admin")).toBeTruthy();
+    expect(screen.getByText("Alunos")).toBeTruthy();
+    expect(screen.queryByRole("link", { name: "Trilhas Admin" })).toBeNull();
     expect(screen.queryByRole("link", { name: "Alunos" })).toBeNull();
+  });
+
+  it("o aluno NÃO vê seção planejada — nem as que um dia serão dele", () => {
+    render(Role.MEMBER);
+    expect(screen.queryByText("Certificados")).toBeNull();
+    expect(screen.queryByText("JilsonAI")).toBeNull();
   });
 });
 

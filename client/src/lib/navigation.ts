@@ -157,15 +157,23 @@ export const NAVEGACAO: Secao[] = [
 /**
  * As seções que ESTA pessoa vê. Dois filtros, e os dois importam:
  *
- * - `estado` — "planejado" nunca renderiza, senão o rascunho do mapa viraria
- *   um menu cheio de link quebrado.
  * - `papel` — o aluno não vê as seções de admin. Não é sobre acesso (o servidor
  *   barra de qualquer jeito): é sobre não anunciar a existência de uma área que
  *   não é dele.
+ * - `estado` — **"planejado" aparece só para o ADMIN** *(decisão do operador,
+ *   set/2026: "deixa os itens no menu mesmo que não funcione... vendo eu não
+ *   esqueço")*. Ele quer o mapa inteiro à vista enquanto constrói.
+ *   **Para o aluno continua escondido**, e o motivo não é o mesmo de antes:
+ *   entre as planejadas há seções DELE (JilsonAI, Certificados) — mostrá-las
+ *   seria anunciar produto que não existe.
+ *   **Quem impede o link quebrado agora é o rail**, que renderiza planejada
+ *   como texto e não como `<a>`. A trava mudou de lugar, não sumiu.
  */
 export function secoesVisiveis(papel: string | undefined): Secao[] {
   return NAVEGACAO.filter(
-    (s) => s.estado === "ativo" && (s.papel === undefined || s.papel === papel),
+    (s) =>
+      (s.papel === undefined || s.papel === papel) &&
+      (s.estado === "ativo" || papel === Role.ADMIN),
   );
 }
 

@@ -29,13 +29,17 @@ describe("secoesVisiveis — quem vê o quê", () => {
     expect(vistas.some((s) => s.to === "/inicio")).toBe(true);
   });
 
-  // Sem este filtro o rascunho do mapa viraria um menu cheio de link quebrado —
-  // é ele que permite descrever o sistema inteiro antes de as telas existirem.
-  it("seção PLANEJADA nunca aparece, para nenhum papel", () => {
+  // Planejada = tela que ainda não existe. O operador quer ver o mapa inteiro
+  // enquanto constrói (set/2026); o aluno, não — entre as planejadas há seções
+  // DELE (JilsonAI, Certificados), e mostrá-las anunciaria produto inexistente.
+  it("seção PLANEJADA aparece para o admin e NÃO para o aluno", () => {
     const planejadas = NAVEGACAO.filter((s) => s.estado === "planejado");
     expect(planejadas.length).toBeGreaterThan(0); // o rascunho existe mesmo
 
-    for (const papel of [Role.MEMBER, Role.ADMIN, undefined]) {
+    const doAdmin = secoesVisiveis(Role.ADMIN).map((s) => s.to);
+    for (const p of planejadas) expect(doAdmin).toContain(p.to);
+
+    for (const papel of [Role.MEMBER, undefined]) {
       const rotas = secoesVisiveis(papel).map((s) => s.to);
       for (const p of planejadas) expect(rotas).not.toContain(p.to);
     }

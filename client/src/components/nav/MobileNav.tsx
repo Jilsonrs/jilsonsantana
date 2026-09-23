@@ -50,6 +50,24 @@ export function MobileNav({ papel, onSignOut }: { papel?: string; onSignOut: () 
             {secoes.map((secao) => {
               const Icon = secao.icon;
               const estaAtiva = secao.to === ativa?.to;
+              // Planejada = a tela não existe: sai como TEXTO, nunca como link.
+              // Mesma trava do rail (AppRail → ItemPlanejado); se um dos dois
+              // virasse link, a gaveta do celular mandaria para rota inexistente.
+              if (secao.estado === "planejado") {
+                return (
+                  <div
+                    key={secao.to}
+                    aria-disabled="true"
+                    className="flex h-12 items-center gap-3 border-l-2 border-transparent pl-[18px] pr-4 text-sm text-rail-foreground/40"
+                  >
+                    <Icon className="size-5 shrink-0" />
+                    <span>{secao.label}</span>
+                    <span className="rounded-full border border-white/10 px-1.5 py-0.5 font-mono text-[0.55rem] tracking-[0.08em]">
+                      EM BREVE
+                    </span>
+                  </div>
+                );
+              }
               return (
                 <Link
                   key={secao.to}
