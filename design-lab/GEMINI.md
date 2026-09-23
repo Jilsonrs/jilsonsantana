@@ -80,10 +80,19 @@ isso muda para você:
 |---|---|
 | `server/src/views/home.ts` | **A marcação da home pública.** É o seu mock transposto: mesma estrutura, mesmas classes. Você formata aqui. |
 | `client/src/public-input.css` | **O CSS da home pública** — o do mock, depois das diretivas do Tailwind. Você mexe aqui. |
-| `client/public/css/public.css` | **Saída compilada. Nunca edite à mão** — é gerada do arquivo acima (comando na §5). |
+| `client/tailwind.public.config.ts` | O Tailwind **da vitrine**, separado do app. Herda tema, fontes e cores do config base; muda só o que ele varre. |
+| `client/public/css/public.css` | **Saída compilada. Nunca edite à mão** — é gerada pelo comando da §5. |
 
-O Tailwind já varre `server/src/views/**` (está no `content` do config), então classe usada lá
-gera CSS normalmente.
+**São DOIS Tailwind, e a separação tem motivo** *(set/2026)*: o config do app varre
+`client/src/**`, e compilar a vitrine com ele fazia a página pública carregar as classes de **toda
+tela do React** — 50 KB viraram 68 KB só com uma tela nova de admin, e cresceria a cada tela.
+Justamente na página que existe para carregar leve, sem bundle de JS. O config da vitrine varre
+**só `server/src/views/**`**, e o CSS voltou para 38 KB.
+
+**O que isso muda para você, na prática:** classe utilitária do Tailwind que você escrever **no
+template do servidor** gera CSS normalmente. O que NÃO vale é contar com uma classe só porque ela
+existe em alguma tela do React — a vitrine não a enxerga mais. Se precisar, escreva a regra no
+`public-input.css`, que é onde o CSS do mock já mora.
 
 ### O MAPA DAS TELAS — o que existe, onde abrir, qual arquivo *(set/2026)*
 
@@ -215,9 +224,10 @@ Corolários que já quebraram coisa aqui:
 - **A primeira parte da chave diz onde o texto aparece:** `common.*` sai em TODA página pública
   (menu, rodapé), `home.*` só na home. Mexer num `common.*` muda todas as páginas de uma vez.
 
-**10. Mexeu no `public-input.css`, recompile.** A home pública lê `client/public/css/public.css`,
-que é **gerado**. Sem rodar o comando da §5, seu CSS não chega na tela — e não há erro nenhum
-avisando: você recarrega e simplesmente não mudou nada.
+**10. Mexeu no `public-input.css`, recompile:** `npm run css:publico`. A vitrine lê
+`client/public/css/public.css`, que é **gerado**. Sem rodar o comando, seu CSS não chega na tela —
+e não há erro nenhum avisando: você recarrega e simplesmente não mudou nada. **O arquivo gerado é
+versionado**, então ele entra no commit junto com a sua mudança.
 
 **11. No mapa de navegação, RÓTULO e ÍCONE são únicos.** Dois itens com o mesmo ícone viram dois
 itens indistinguíveis no rail **recolhido**, onde só o ícone aparece. Já aconteceu duas vezes em
@@ -244,10 +254,12 @@ npm --workspace server run test     # se você tocou em server/src/views/
 reprova e diz exatamente qual**. A suíte do servidor cobre as páginas públicas: texto cravado no
 template, favicon, `canonical` e `hreflang`. Dentro disso, formate à vontade.
 
-**Se você mexeu no CSS da home pública**, recompile antes de olhar (regra 10):
+**Se você mexeu no CSS da vitrine**, recompile antes de olhar (regra 10):
 ```bash
-cd client && npx tailwindcss -i ./src/public-input.css -o ./public/css/public.css
+npm run css:publico
 ```
+*(Era um comando longo e fácil de digitar errado; virou script em set/2026. Ele usa o config
+próprio da vitrine — ver §2.)*
 
 Se um teste reprovar e você achar que o teste é que está errado: **não edite o teste, avise.**
 

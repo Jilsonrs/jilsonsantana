@@ -26,6 +26,9 @@ export function renderHome(
   featuredCourse: HomeCourse | null,
   canSubscribe: boolean,
   baseUrl: string,
+  /** Há sessão válida? Muda SÓ o cabeçalho — o resto da vitrine é igual para
+   *  todo mundo, inclusive para o robô do Google, que nunca tem cookie. */
+  logado = false,
 ): string {
   const isPt = lang === "pt";
   const currentUrl = isPt ? baseUrl : `${baseUrl}/en`;
@@ -37,8 +40,8 @@ export function renderHome(
   // atual leva `aria-current`; o outro fica em cinza, como no mock. Aparece no
   // topo e no rodapé, por isso é função: só a indentação muda.
   const seletorIdioma = (recuo: string) => `<div style="display: flex; gap: 16px; align-items: center;">
-${recuo}  <a href="/"${isPt ? ' aria-current="page"' : ' style="color: var(--text-muted);"'}>PT</a>
-${recuo}  <a href="/en"${isPt ? ' style="color: var(--text-muted);"' : ' aria-current="page"'}>EN</a>
+${recuo}  <a href="/"${isPt ? ' aria-current="page" class="lang-atual"' : ""}>PT</a>
+${recuo}  <a href="/en"${isPt ? "" : ' aria-current="page" class="lang-atual"'}>EN</a>
 ${recuo}</div>`;
 
   return `<!DOCTYPE html>
@@ -84,7 +87,9 @@ ${recuo}</div>`;
         <a href="#cursos">${escapeHtml(dict.common.nav.cursos)}</a>
         <a href="#trilhas">${escapeHtml(dict.common.nav.trilhas)}</a>
         <a href="#assine">${escapeHtml(dict.common.nav.assine)}</a>
-        <a href="/login" class="btn-login">${escapeHtml(dict.common.nav.entrar)}</a>
+        ${logado
+          ? `<a href="/inicio" class="btn-login">${escapeHtml(dict.common.nav.meusEstudos)}</a>`
+          : `<a href="/login" class="btn-login">${escapeHtml(dict.common.nav.entrar)}</a>`}
         <span style="color: var(--border-color);">|</span>
         ${seletorIdioma("        ")}
       </div>

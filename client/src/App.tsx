@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import { Layout } from "@/components/Layout";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { AdminRoute } from "@/components/auth/AdminRoute";
@@ -19,13 +19,11 @@ export default function App() {
   return (
     <Routes>
       <Route element={<Layout />}>
-        {/* A home pública é HTML de servidor (server/src/views/home.ts) — em
-            produção o Express responde "/" antes de o React existir, então esta
-            rota NUNCA é alcançada lá. Ela sobrevive só para o desenvolvimento:
-            quem abre localhost:5173/ cai no app em vez de numa tela em branco.
-            A antiga HomePage.tsx (landing mínima em React) foi apagada em
-            set/2026 — estava morta desde que a home de servidor entrou no ar. */}
-        <Route path="/" element={<Navigate to="/inicio" replace />} />
+        {/* NÃO existe rota "/" aqui, e é de propósito: a raiz é a home PÚBLICA,
+            servida pelo Express. Em produção ele responde antes de o React
+            existir; em dev o proxy do Vite manda a raiz para ele (vite.config.ts).
+            Declarar "/" no React criaria uma segunda home que ninguém alcança —
+            foi o que aconteceu com a antiga HomePage.tsx, apagada em set/2026. */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/cursos" element={<CatalogPage tipo="cursos" />} />
         <Route path="/trilhas" element={<CatalogPage tipo="trilhas" />} />

@@ -24,7 +24,7 @@ declare global {
 // Soft-deleted users are treated as unauthenticated even if their cookie is
 // still technically valid (CLAUDE.md: requireAuth rejects soft-deleted users).
 // Centralizing it here makes both requireAuth and requireAdmin reject them.
-async function loadSession(req: Request) {
+export async function loadSession(req: Request) {
   const result = await auth.api.getSession({
     headers: fromNodeHeaders(req.headers),
   });

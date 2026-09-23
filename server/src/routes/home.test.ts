@@ -25,13 +25,32 @@ describe("Home pública (SSR)", () => {
     expect(res.text).toContain('<html lang="en"');
   });
 
-  it("o botão Entrar leva ao login, nos dois idiomas", async () => {
+  it("sem sessão, o botão leva ao login — nos dois idiomas", async () => {
     // Nasceu com href="#" e ficou assim até o operador clicar. Link morto não
     // quebra teste, typecheck nem build — só decepciona quem clica.
     for (const rota of ["/", "/en"]) {
       const res = await request(app).get(rota);
       expect(res.text, rota).toContain('<a href="/login" class="btn-login">');
+      expect(res.text, rota).not.toContain('href="/inicio"');
     }
+  });
+
+  it("COM sessão, o botão vira Meus estudos e leva ao app", async () => {
+    // O visitante logado não deve ser convidado a "Entrar" de novo. É a ÚNICA
+    // coisa que a sessão muda na vitrine — o resto é igual para todo mundo,
+    // inclusive para o robô do Google, que nunca tem cookie.
+    const login = await request(app).post("/api/auth/sign-in/email").send({
+      email: process.env.SEED_MEMBER_EMAIL,
+      password: process.env.SEED_MEMBER_PASSWORD,
+    });
+    const cookies = (login.headers["set-cookie"] as unknown as string[] | undefined) ?? [];
+    expect(cookies.length).toBeGreaterThan(0);
+
+    const res = await request(app).get("/").set("Cookie", cookies);
+
+    expect(res.text).toContain('<a href="/inicio" class="btn-login">');
+    expect(res.text).toContain("Meus estudos");
+    expect(res.text).not.toContain('href="/login"');
   });
 
   it("as duas versões declaram o favicon", async () => {
@@ -63,10 +82,16 @@ describe("Home pública (SSR)", () => {
 
     // Um endereço por idioma: o seletor é dois links, nunca um botão que troca
     // o idioma no mesmo endereço (CLAUDE.md → Idiomas).
-    expect(pt.text).toContain('<a href="/" aria-current="page">PT</a>');
-    expect(pt.text).toContain('<a href="/en" style="color: var(--text-muted);">EN</a>');
-    expect(en.text).toContain('<a href="/en" aria-current="page">EN</a>');
-    expect(en.text).toContain('<a href="/" style="color: var(--text-muted);">PT</a>');
+    // O idioma atual é marcado por `aria-current` (leitor de tela) + a classe
+    // do traço (visual). O outro fica na cor NORMAL, não apagada: cinza lia
+    // como "indisponível" justamente no link para onde a pessoa quer ir
+    // (decisão do operador, set/2026).
+    expect(pt.text).toContain('<a href="/" aria-current="page" class="lang-atual">PT</a>');
+    expect(pt.text).toContain('<a href="/en">EN</a>');
+    expect(en.text).toContain('<a href="/en" aria-current="page" class="lang-atual">EN</a>');
+    expect(en.text).toContain('<a href="/">PT</a>');
+    // Nenhum dos dois pode voltar a ser apagado.
+    expect(pt.text + en.text).not.toContain('style="color: var(--text-muted);">EN');
   });
 
   it("as duas versões declaram canonical e hreflang recíprocos", async () => {

@@ -214,8 +214,17 @@
       color: var(--brand-blue);
     }
 
-    .btn-login {
-      color: var(--text-muted);
+    /* "Entrar" / "Meus estudos" na MESMA cor dos outros itens do menu
+       (decisão do operador, set/2026). Era cinza-apagado, e cinza lê como
+       "desativado" num link que existe justamente para ser clicado. */
+
+    /* Seletor de idioma: os dois na cor normal, e o atual marcado por um TRAÇO
+       embaixo (decisão do operador). A cor apagada dizia "indisponível" no
+       idioma para o qual se quer ir. O `aria-current` continua sendo o que o
+       leitor de tela usa — o traço é só a versão visual da mesma informação. */
+    .lang-atual {
+      border-bottom: 2px solid var(--brand-blue);
+      padding-bottom: 2px;
     }
 
     /* Botões */

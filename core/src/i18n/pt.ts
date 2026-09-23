@@ -13,7 +13,8 @@ export const pt = {
       cursos: "Cursos",
       trilhas: "Trilhas",
       assine: "Assine",
-      entrar: "Entrar"
+      entrar: "Entrar",
+      meusEstudos: "Meus estudos"
     },
     a11y: {
       mainNav: "Navegação Principal"

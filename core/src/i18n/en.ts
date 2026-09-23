@@ -10,7 +10,8 @@ export const en: Dict = {
       cursos: "Courses",
       trilhas: "Learning paths",
       assine: "Pricing",
-      entrar: "Sign in"
+      entrar: "Sign in",
+      meusEstudos: "My learning"
     },
     a11y: {
       mainNav: "Main navigation"
