@@ -78,7 +78,7 @@ export const auth = betterAuth({
   },
 
   // Sessões em banco. `httpOnly` e `sameSite: "lax"` são default hardcoded da
-  // versão instalada [dist/cookies/index.mjs:33,35] — não os afrouxamos.
+  // versão instalada [dist/cookies/index.mjs:35,37 na 1.7.5] — não os afrouxamos.
   session: {
     expiresIn: 60 * 60 * 24 * 7, // 7 days
     updateAge: 60 * 60 * 24, // refresh the expiry at most once per day

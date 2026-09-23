@@ -323,21 +323,29 @@ de uma sessão própria antes do launch):**
       frente de `app.all("/api/auth/{*any}")` com `app.set('trust proxy', <hops>)`.
       **As duas armadilhas** (`trust proxy` não configura o Better Auth; a premissa do XFF pode
       estar defasada) estão em `CLAUDE.md` → Quality Gates — **não duplicar aqui**.
-  - [ ] **PASSO 1 — provar qual header é confiável. Não toca em auth, não escreve rate-limit.**
-        Rota **temporária** `GET /api/__whoami` devolvendo **apenas os headers do próprio
-        chamador**: `x-forwarded-for`, `x-real-ip`, `x-envoy-external-address` e
-        `req.socket.remoteAddress`. Não vaza nada — o chamador já conhece o próprio IP.
-  - [ ] Três provas, nesta ordem: **(1)** do celular no 4G, anotar os quatro valores;
-        **(2)** `curl -H "X-Forwarded-For: 1.2.3.4" https://www.jilsonsantana.com/api/__whoami`
-        — **é este teste que decide**: se `1.2.3.4` aparecer em **qualquer** posição, aquele header
-        não serve para segurança; **(3)** do Mac, confirmar que o valor muda com a rede.
-  - [ ] **Critério de aprovação:** o header escolhido contém o IP real **e** ignora o falso do
-        teste 2. **Hipótese de partida** `[FATO — suporte Railway, mar/jun 2026]`: a aposta é
-        **`x-forwarded-for[0]`, NÃO `x-real-ip`** (que está quebrado com a CDN ativa, devolvendo IP
-        da Fastly) — contraintuitivo em relação ao conselho genérico de segurança, e é por isso que
-        o teste 2 é obrigatório em vez de opcional.
-  - [ ] **Remover a rota `/api/__whoami` no MESMO bloco.** Rota de diagnóstico que sobrevive ao
-        diagnóstico é superfície que ninguém revisa depois.
+  - [x] ~~**PASSO 1 — rota temporária `/api/__whoami`**~~ **DISPENSADO pela atualização para a
+        1.7.5** (Set 2026). A versão nova **avisa no log**, uma vez, quando não consegue resolver o
+        IP: *"Rate limiting could not determine a client IP and is falling back to a single shared
+        per-path bucket"*. A presença ou ausência dessa linha nos logs da Railway responde a mesma
+        pergunta, **sem rota nova, sem deploy de diagnóstico e sem nada para remover depois**.
+  - [ ] **PASSO 1 (novo) — o operador procura essa linha nos logs da Railway** depois do primeiro
+        deploy com a 1.7.5, tendo feito ao menos um login. **Aparece** ⇒ a borda anexa ao
+        `x-forwarded-for`, o balde está compartilhado, e é preciso `advanced.ipAddress.trustedProxies`
+        com as faixas da Railway (ou um header que ela garanta). **Não aparece** ⇒ o IP resolve, e
+        só falta apertar `/sign-in/email`.
+  - [ ] ~~Três provas com header forjado~~ — **não são mais necessárias para saber se dá para
+        forjar**: medido na 1.7.5 que cadeia com mais de um elemento devolve `null`, então o
+        atacante não escolhe mais o próprio balde. O que resta descobrir é outra coisa: **quais são
+        as faixas de IP dos proxies da Railway**, para preencher `trustedProxies`. Isso se pergunta
+        ao suporte deles ou se lê do próprio `x-forwarded-for` de um acesso conhecido.
+  - [ ] **Critério de aprovação:** o aviso do balde compartilhado **some** dos logs, e um login
+        continua funcionando. Só então apertar `/sign-in/email` com `customRules` (ex.: 3 em 10 s).
+        **Nessa ordem, e a ordem inverteu com a 1.7.5:** apertar antes de o IP resolver transforma o
+        limite na própria negação de serviço — três erros de qualquer pessoa trancariam o login de
+        todos, inclusive o do único admin.
+  - [x] ~~**Remover a rota `/api/__whoami`**~~ — não existe mais rota para remover, porque a
+        1.7.5 dispensou a rota. *(A regra que a motivava continua valendo: rota de diagnóstico que
+        sobrevive ao diagnóstico é superfície que ninguém revisa depois.)*
 - [x] **(NÃO-BLOQUEANTE — adicionado Ago 2026, não veio da Fase 7) `npm audit --audit-level=high`
       no `ci.yml`.** ✅ *(Ago 2026 — step com `continue-on-error: true`. **Nasce falho-porém-tolerado
       e isso é o esperado, não regressão:** medido na hora da implementação, o comando já sai com
