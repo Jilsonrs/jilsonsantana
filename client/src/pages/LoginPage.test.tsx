@@ -81,7 +81,7 @@ describe("LoginPage — ramos da tela", () => {
     enviar();
 
     expect(
-      await screen.findByText("Não foi possível entrar agora. Tente novamente."),
+      await screen.findByText("Não foi possível entrar agora. Tente novamente em alguns minutos."),
     ).toBeTruthy();
     expect(screen.queryByText("E-mail ou senha incorretos.")).toBeNull();
   });
@@ -280,7 +280,7 @@ describe("LoginPage — erros clássicos", () => {
     // pode REJEITAR. Sem tratamento, a rejeição escapa do handler, a tela fica
     // muda e o botão preso em "Entrando…" — a pessoa não sabe o que aconteceu.
     expect(
-      await screen.findByText("Não foi possível entrar agora. Tente novamente."),
+      await screen.findByText("Não foi possível entrar agora. Tente novamente em alguns minutos."),
     ).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Entrando…" })).toBeNull();
   });

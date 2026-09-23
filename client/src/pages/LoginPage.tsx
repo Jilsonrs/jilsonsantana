@@ -43,7 +43,7 @@ export function LoginPage() {
           setFormError("E-mail ou senha incorretos.");
         } else {
           console.error("Falha no login:", error);
-          setFormError("Não foi possível entrar agora. Tente novamente.");
+          setFormError("Não foi possível entrar agora. Tente novamente em alguns minutos.");
         }
         return;
       }
@@ -53,7 +53,7 @@ export function LoginPage() {
       // nenhuma mensagem aparecia e o botão ficava preso em "Entrando…", sem a
       // pessoa saber o que houve. Achado por teste, não por leitura.
       console.error("Falha no login:", err);
-      setFormError("Não foi possível entrar agora. Tente novamente.");
+      setFormError("Não foi possível entrar agora. Tente novamente em alguns minutos.");
       return;
     }
     navigate(POS_LOGIN, { replace: true });
