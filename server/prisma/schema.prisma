@@ -54,7 +54,7 @@ enum Language {
 // nasce vazia (docs/content.md § 16).
 //
 // A `key` é o caminho no dicionário (`home.hero.subtitle`,
-// `home.faq.list[0].q`), e o servidor SÓ aceita chave que exista lá — senão a
+// `home.pricing.features[0]`), e o servidor SÓ aceita chave que exista lá — senão a
 // tabela vira lixeira. O prefixo diz a página: `common.*` sai em toda página.
 model SiteText {
   id        Int      @id @default(autoincrement())
@@ -65,6 +65,43 @@ model SiteText {
 
   @@unique([key, language])
   @@map("site_text")
+}
+
+// Depoimentos e perguntas frequentes da home são TABELA, não chave de
+// dicionário: são as duas listas que CRESCEM (CLAUDE.md → "Lista que cresce é
+// TABELA"), e depoimento sai na hora se a pessoa pedir (docs/content.md) — isso
+// não pode esperar deploy.
+//
+// Cada idioma tem as SUAS linhas: o depoimento em inglês é outra linha, não
+// uma tradução pendurada nesta. `status` esconde; tirar de vez (pedido do
+// titular, LGPD) é APAGAR a linha — o nome não pode ficar guardado.
+// As iniciais do avatar não são coluna: saem do nome na hora de desenhar.
+model Testimonial {
+  id           Int           @id @default(autoincrement())
+  language     Language
+  text         String
+  name         String
+  displayOrder Int           @default(0)
+  status       ContentStatus @default(DRAFT)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@index([language, status, displayOrder])
+  @@map("testimonial")
+}
+
+model FaqItem {
+  id           Int           @id @default(autoincrement())
+  language     Language
+  question     String
+  answer       String
+  displayOrder Int           @default(0)
+  status       ContentStatus @default(DRAFT)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@index([language, status, displayOrder])
+  @@map("faq_item")
 }
 
 // Phase 1: Better Auth tables (user, session, account, verification).

@@ -19,17 +19,56 @@ export interface HomeCourse {
 /** Escapa tudo, menos a quebra de linha intencional que vem do dicionário. */
 const allowBr = (s: string): string => escapeHtml(s).replace(/&lt;br\s*\/?&gt;/g, "<br>");
 
-export function renderHome(
-  dict: Dict,
-  lang: "pt" | "en",
-  courses: HomeCourse[],
-  featuredCourse: HomeCourse | null,
-  canSubscribe: boolean,
-  baseUrl: string,
+export interface HomeTestimonial {
+  text: string;
+  name: string;
+}
+
+export interface HomeFaqItem {
+  question: string;
+  answer: string;
+}
+
+// Objeto, não parâmetros posicionais: com as duas listas do C3 seriam nove
+// posições, e trocar duas do mesmo tipo de lugar passaria no typecheck.
+export interface HomeView {
+  dict: Dict;
+  lang: "pt" | "en";
+  courses: HomeCourse[];
+  featuredCourse: HomeCourse | null;
+  canSubscribe: boolean;
+  baseUrl: string;
   /** Há sessão válida? Muda SÓ o cabeçalho — o resto da vitrine é igual para
    *  todo mundo, inclusive para o robô do Google, que nunca tem cookie. */
-  logado = false,
-): string {
+  logado: boolean;
+  /** Só os PUBLICADOS do idioma da página. Vazia = a seção não aparece. */
+  testimonials: HomeTestimonial[];
+  /** Só os PUBLICADOS do idioma da página. Vazia = a seção não aparece. */
+  faq: HomeFaqItem[];
+}
+
+/** Iniciais do avatar: primeira letra do primeiro e do último nome
+ *  ("Vinicius Dias de Queiroz" → "VQ"). Derivadas, nunca coluna: o operador
+ *  digita só o nome, e as duas coisas nunca discordam. */
+export const iniciais = (nome: string): string => {
+  const partes = nome.trim().split(/\s+/).filter(Boolean);
+  if (partes.length === 0) return "";
+  const primeira = partes[0][0];
+  const ultima = partes.length > 1 ? partes[partes.length - 1][0] : "";
+  return (primeira + ultima).toUpperCase();
+};
+
+export function renderHome({
+  dict,
+  lang,
+  courses,
+  featuredCourse,
+  canSubscribe,
+  baseUrl,
+  logado,
+  testimonials,
+  faq,
+}: HomeView): string {
   const isPt = lang === "pt";
   const currentUrl = isPt ? baseUrl : `${baseUrl}/en`;
   const alternateUrl = isPt ? `${baseUrl}/en` : baseUrl;
@@ -103,7 +142,16 @@ ${recuo}</div>`;
     name: "Jilson Santana",
     url: currentUrl,
     description: dict.home.hero.subtitle,
-  })}</script>
+  })}</script>${faq.length > 0 ? `
+  <script type="application/ld+json">${jsonLd({
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faq.map((item) => ({
+      "@type": "Question",
+      name: item.question,
+      acceptedAnswer: { "@type": "Answer", text: item.answer },
+    })),
+  })}</script>` : ""}
 </head>
 <body>
 <!-- 0. Header / Nav -->
@@ -577,20 +625,20 @@ ${dict.home.ai.features.map((f) => `            <li>
       </div>
     </section>
 
-    <!-- 7. Prova Social -->
-    <section class="section container">
+    <!-- 7. Prova Social (some inteira se o idioma não tiver depoimento publicado) -->
+${testimonials.length > 0 ? `    <section class="section container">
       <div class="section-header">
         <span class="tag tag-box" style="margin-bottom: 16px;">${escapeHtml(dict.home.testimonials.tag)}</span>
         <h2>${escapeHtml(dict.home.testimonials.title)}</h2>
       </div>
 
       <div class="testimonials-grid">
-${dict.home.testimonials.list.map((t) => `        <div class="test-card">
+${testimonials.map((t) => `        <div class="test-card">
           <p>${escapeHtml(t.text)}</p>
           <div class="test-author-box">
             <div class="test-avatar"
               style="background: #E8F1FB; color: var(--brand-blue); font-weight: 700; font-size: 0.95rem;"
-              aria-hidden="true">${escapeHtml(t.initials)}</div>
+              aria-hidden="true">${escapeHtml(iniciais(t.name))}</div>
             <div class="test-author">
               <h4>${escapeHtml(t.name)}</h4>
             </div>
@@ -598,7 +646,7 @@ ${dict.home.testimonials.list.map((t) => `        <div class="test-card">
         </div>`).join("\n")}
       </div>
     </section>
-
+` : ""}
     <!-- 8. ${escapeHtml(dict.common.nav.assine)} -->
     <section id="assine" class="section section-alt">
       <div class="container">
@@ -639,20 +687,20 @@ ${dict.home.testimonials.list.map((t) => `        <div class="test-card">
       </div>
     </section>
 
-    <!-- 9. FAQ -->
-    <section id="faq" class="section container">
+    <!-- 9. FAQ (some inteira se o idioma não tiver pergunta publicada) -->
+${faq.length > 0 ? `    <section id="faq" class="section container">
       <div class="section-header">
         <h2>${escapeHtml(dict.home.faq.title)}</h2>
       </div>
 
       <div class="faq-list">
-${dict.home.faq.list.map((item) => `        <details>
-          <summary>${escapeHtml(item.q)}</summary>
-          <p>${escapeHtml(item.a)}</p>
+${faq.map((item) => `        <details>
+          <summary>${escapeHtml(item.question)}</summary>
+          <p>${escapeHtml(item.answer)}</p>
         </details>`).join("\n")}
       </div>
     </section>
-
+` : ""}
     <!-- Chamada final -->
     <section class="section container" style="text-align: center; padding-top: 0;">
       <h2 style="font-size: clamp(2.5rem, 4vw, 3.5rem); margin: 0 auto 48px; max-width: 800px; line-height: 1.1;">${escapeHtml(dict.home.cta.title)}</h2>

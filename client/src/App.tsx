@@ -1,4 +1,4 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { Layout } from "@/components/Layout";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { AdminRoute } from "@/components/auth/AdminRoute";
@@ -14,6 +14,8 @@ import { MyTrilhaDetailPage } from "@/pages/MyTrilhaDetailPage";
 import { AdminCoursesPage } from "@/pages/admin/AdminCoursesPage";
 import { AdminCourseFormPage } from "@/pages/admin/AdminCourseFormPage";
 import { AdminSiteTextPage } from "@/pages/admin/AdminSiteTextPage";
+import { AdminTestimonialsPage } from "@/pages/admin/AdminTestimonialsPage";
+import { AdminFaqPage } from "@/pages/admin/AdminFaqPage";
 
 export default function App() {
   return (
@@ -40,7 +42,15 @@ export default function App() {
           <Route path="/admin/cursos" element={<AdminCoursesPage />} />
           <Route path="/admin/cursos/novo" element={<AdminCourseFormPage />} />
           <Route path="/admin/cursos/:id" element={<AdminCourseFormPage />} />
-          <Route path="/admin/site" element={<AdminSiteTextPage />} />
+          {/* "Site" tem 2º nível (Textos · Depoimentos · Perguntas frequentes). O
+              link do menu continua sendo /admin/site, que leva a Textos. Textos
+              ganhou endereço PRÓPRIO porque a coluna secundária acende um item
+              também nas sub-rotas dele: em /admin/site ele ficaria aceso junto
+              com Depoimentos. */}
+          <Route path="/admin/site" element={<Navigate to="/admin/site/textos" replace />} />
+          <Route path="/admin/site/textos" element={<AdminSiteTextPage />} />
+          <Route path="/admin/site/depoimentos" element={<AdminTestimonialsPage />} />
+          <Route path="/admin/site/faq" element={<AdminFaqPage />} />
         </Route>
       </Route>
     </Routes>

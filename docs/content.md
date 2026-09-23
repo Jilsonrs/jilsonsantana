@@ -358,7 +358,7 @@ decidindo o que aparece onde.
 | Balde | O que é | Onde mora | Quem edita |
 |---|---|---|---|
 | **Entidade** | o que a escola vende ou entrega, e que existe fora da página | banco (Prisma) | operador, no `/admin` |
-| **Texto de página** | título, parágrafo, rótulo, pergunta de FAQ — texto que *descreve*, não que *é* | dicionário (`core/src/i18n/`) + sobrescrita no banco | operador, no `/admin` |
+| **Texto de página** | título, parágrafo, rótulo de botão — texto que *descreve*, não que *é* | dicionário (`core/src/i18n/`) + sobrescrita no banco | operador, no `/admin` |
 | **Derivado** | contagem de aulas, carga horária, agrupamento | calculado na leitura | ninguém — **nunca vira coluna** |
 
 ### O NOME DA CHAVE diz onde o texto aparece *(22/09/2026 — "renomeia logo porque vai ter mais de uma página, aí não mistura")*
@@ -402,7 +402,7 @@ operador com ~150 chaves.*
 
 ### O mapa da home, seção por seção
 
-Estado em 22/09/2026, **medido** (não estimado):
+Estado em 22/09/2026, **medido** (não estimado); depoimentos e FAQ atualizados em 23/09 (Bloco C3):
 
 | Seção | Balde | Estado |
 |---|---|---|
@@ -413,15 +413,41 @@ Estado em 22/09/2026, **medido** (não estimado):
 | Trilhas (4 ideias + a ilustração de linha do tempo) | texto | dicionário — a ilustração é **mock**, não lê trilha real |
 | JilsonAI (texto + conversa de exemplo) | texto | dicionário; a conversa é **roteirizada**, nunca chama a API |
 | Autor (bio, citação, 3 números) | texto | dicionário |
-| **Depoimentos** | **entidade** *(decidido, ainda não construído)* | hoje no dicionário |
+| **Depoimentos** | **entidade** (`Testimonial`) | **banco** desde 23/09 — só o título e a etiqueta da seção ficam no dicionário |
 | Preço (cartão, lista, rodapé) | texto | dicionário — o **valor** vira Stripe na Fase 4 |
-| **FAQ** | **entidade** *(decidido, ainda não construído)* | hoje no dicionário |
+| **FAQ** | **entidade** (`FaqItem`) | **banco** desde 23/09, com JSON-LD `FAQPage` — só o título fica no dicionário |
 | CTA, Rodapé | texto | dicionário |
 
 **Por que depoimentos e FAQ viram tabela e o resto não:** são as duas únicas listas da home que
 **crescem**. As outras têm tamanho fixo preso ao layout (3 passos, 4 ideias) — acrescentar item é
 mudança de desenho, não de conteúdo. E depoimento tem uma obrigação própria já escrita aqui
 (§ acima: *"se a pessoa pedir, o depoimento sai na hora"*) — isso não pode depender de deploy.
+
+**Decisões do operador sobre as duas listas (23/09/2026, ao aprovar o Bloco C3):**
+- **Lista vazia esconde a seção inteira**, título incluído — num idioma sem depoimento publicado,
+  a página não mostra um título com espaço vazio embaixo.
+- **Tirar do ar tem dois jeitos:** o status (rascunho / publicado / arquivado) esconde, e o botão
+  **Excluir apaga de vez**. É o Excluir que cumpre o *"sai na hora se a pessoa pedir"*: pelo LGPD o
+  nome precisa sumir do banco, não só da tela. Vale igual para depoimento e pergunta.
+- **O conteúdo que estava no ar foi para o banco sozinho**, na própria migration — a home
+  publicada não ficou um instante sem as seções. Daí em diante, a edição é no admin.
+- **Telas no admin: dentro de "Site"**, que ganha um segundo nível (Textos · Depoimentos ·
+  Perguntas frequentes).
+- **Depoimentos: 4 SORTEADOS a cada visita**, sem ordem e sem carrossel (depois de testar o C3,
+  23/09/2026: *"com milhares de depoimentos nunca vão ver igual"*). A pesquisa que embasou: quase
+  ninguém passa do 1º quadro de um carrossel (Notre Dame / Nielsen Norman), e setas feitas só com
+  CSS funcionam apenas no Chrome/Edge — sem script, a página segue leve e funciona em aparelho
+  antigo. Por isso **depoimento não tem campo Ordem** no admin (a lista vem do mais novo). O inglês
+  começa com os 4 traduzidos; os novos em inglês entram no mesmo sorteio e se misturam a eles.
+  Perguntas frequentes **continuam na ordem do operador** — e passam a arrastar junto com os cursos
+  (C4).
+
+**Depoimento pedido ao aluno (decisão do operador, 23/09/2026 — construção na Fase 5):** quando o
+aluno conclui um curso, a escola pede **uma vez só** uma nota de 1 a 5 estrelas (**só para o
+operador, nunca no site**) e um depoimento **geral** — sem tema, sem disputa por curso. *"Com mais
+de 107k alunos em todo o mundo não preciso de prova social por curso."* Pulou, o pedido volta no
+próximo curso concluído até ele responder ou dizer "Não, obrigado". Chega como Rascunho, e só vai
+para a home com a **autorização do aluno para o nome completo**. Detalhe no plano, Fase 5.
 
 ### Regra que passa a valer para toda página pública
 
@@ -433,12 +459,14 @@ editar e o `/en` mostra português. A trava mecânica e o teste que a sustenta e
 
 1. ~~Fiação: tirar do HTML os textos que já tinham chave.~~ **Feito em 22/09** — 55 literais
    foram para o dicionário; sobraram só os rótulos das 3 camadas (entram com o selo).
-2. Mecanismo de sobrescrita + tela de admin.
-3. Depoimentos e FAQ viram tabela com CRUD no admin.
+2. ~~Mecanismo de sobrescrita + tela de admin.~~ **Feito em 23/09** (Bloco C2, `/admin/site`).
+3. ~~Depoimentos e FAQ viram tabela com CRUD no admin.~~ **Feito em 23/09** (Bloco C3):
+   `/admin/site/depoimentos` e `/admin/site/faq`.
 4. Os 5 cursos saem da constante e passam a vir do banco (depende da migration de `language`).
 5. ~~Escrever o inglês.~~ **Feito e revisado em 22/09** (155 chaves; ciclo de revisão em
    `idiomas.md`). **Fica aberto:** o operador quer revisar **as 15 perguntas do FAQ uma a uma** —
-   o conteúdo delas, nos dois idiomas, não a tradução. Ele decide quando.
+   o conteúdo delas, nos dois idiomas, não a tradução. Ele decide quando. Desde o C3 a revisão é
+   feita **direto no admin**, sem passar pelo código.
 6. **Preço em dólar na página em inglês:** as chaves `priceEn` e `priceEnAnnual` existem e **não
    são usadas** — a página em inglês mostra o preço em real. Isso é a questão *preço mostrado ×
    preço cobrado*, que é **decisão da Fase 4** (`billing.md`), não de fiação.

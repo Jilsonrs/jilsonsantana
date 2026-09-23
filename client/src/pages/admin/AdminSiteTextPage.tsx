@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import * as api from "@/lib/api";
 import type { SiteTextField as Campo } from "@/lib/api";
 import { SiteTextField } from "@/components/admin/SiteTextField";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -30,6 +31,18 @@ const NOMES: Record<string, string> = {
   "home.cta": "Home · Chamada final",
 };
 
+// UMA ABA POR PÁGINA (decisão do operador, 23/09/2026). A página é o 1º pedaço
+// da chave (`home.hero.title` → `home`): página nova ganha aba sozinha, sem mexer
+// aqui. As conhecidas vêm primeiro, nesta ordem.
+const PAGINAS: Record<string, string> = { common: "Toda página", home: "Home" };
+const ORDEM_PAGINAS = Object.keys(PAGINAS);
+const paginaDe = (secao: string) => secao.split(".")[0];
+const nomeCompleto = (secao: string) => NOMES[secao] ?? secao;
+/** Dentro da aba, "Home · Topo" vira "Topo" — o nome da página já está na aba. */
+const nomeCurto = (secao: string) => NOMES[secao]?.split(" · ")[1] ?? secao;
+
+/** Seções na ordem do dicionário (a ordem da página), com "Leitor de tela" por
+ *  ÚLTIMO: é texto que ninguém vê, e abrir a aba por ele escondia o que importa. */
 function agrupar(campos: Campo[]): [string, Campo[]][] {
   const grupos = new Map<string, Campo[]>();
   for (const campo of campos) {
@@ -37,19 +50,33 @@ function agrupar(campos: Campo[]): [string, Campo[]][] {
     if (atual) atual.push(campo);
     else grupos.set(campo.section, [campo]);
   }
-  return [...grupos];
+  const leitorDeTela = (secao: string) => (secao.endsWith(".a11y") ? 1 : 0);
+  return [...grupos].sort(([a], [b]) => leitorDeTela(a) - leitorDeTela(b));
+}
+
+function paginasDe(campos: Campo[]): string[] {
+  const presentes = [...new Set(campos.map((c) => paginaDe(c.section)))];
+  const posicao = (p: string) => (ORDEM_PAGINAS.includes(p) ? ORDEM_PAGINAS.indexOf(p) : ORDEM_PAGINAS.length);
+  return presentes.sort((a, b) => posicao(a) - posicao(b));
 }
 
 export function AdminSiteTextPage() {
   const [busca, setBusca] = useState("");
+  const [abaEscolhida, setAbaEscolhida] = useState<string | null>(null);
   const { data, isLoading, isError } = useQuery({
     queryKey: ["admin-site-text"],
     queryFn: api.adminGetSiteText,
   });
 
+  const termo = busca.trim().toLowerCase();
+  const paginas = useMemo(() => paginasDe(data ?? []), [data]);
+  // Derivada, não sincronizada: a aba escolhida só vale se ainda existir nos dados.
+  const aba = abaEscolhida && paginas.includes(abaEscolhida) ? abaEscolhida : paginas[0];
+
+  // A BUSCA ATRAVESSA AS ABAS: procurar só na aba aberta esconderia o texto que
+  // está em outra página, e o operador concluiria que ele não existe.
   const grupos = useMemo(() => {
     if (!data) return [];
-    const termo = busca.trim().toLowerCase();
     const filtrados = termo
       ? data.filter(
           (c) =>
@@ -57,9 +84,9 @@ export function AdminSiteTextPage() {
             (c.pt.override ?? c.pt.factory).toLowerCase().includes(termo) ||
             (c.en.override ?? c.en.factory).toLowerCase().includes(termo),
         )
-      : data;
+      : data.filter((c) => paginaDe(c.section) === aba);
     return agrupar(filtrados);
-  }, [data, busca]);
+  }, [data, termo, aba]);
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 px-6 py-16">
@@ -90,6 +117,22 @@ export function AdminSiteTextPage() {
             />
           </div>
 
+          {!termo && paginas.length > 0 && (
+            <div className="flex flex-wrap gap-2" role="group" aria-label="Página">
+              {paginas.map((p) => (
+                <Button
+                  key={p}
+                  size="sm"
+                  variant={p === aba ? "default" : "outline"}
+                  aria-pressed={p === aba}
+                  onClick={() => setAbaEscolhida(p)}
+                >
+                  {PAGINAS[p] ?? p}
+                </Button>
+              ))}
+            </div>
+          )}
+
           {grupos.length === 0 ? (
             <p className="text-muted-foreground">
               {busca.trim()
@@ -100,7 +143,7 @@ export function AdminSiteTextPage() {
             grupos.map(([secao, campos]) => (
               <details key={secao} className="rounded-lg border px-4 py-3">
                 <summary className="cursor-pointer font-medium">
-                  {NOMES[secao] ?? secao}{" "}
+                  {termo ? nomeCompleto(secao) : nomeCurto(secao)}{" "}
                   <span className="text-sm font-normal text-muted-foreground">
                     ({campos.length})
                   </span>

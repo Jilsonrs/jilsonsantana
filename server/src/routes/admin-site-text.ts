@@ -23,7 +23,7 @@ router.get("/admin/site-text", requireAdmin, async (_req, res) => {
   const fabricaEn = new Map(flattenDict(en));
   const campos = flattenDict(pt).map(([key, valorPt]) => ({
     key,
-    // A seção é derivada do caminho ("home.faq.list[0].q" → "home.faq"), nunca
+    // A seção é derivada do caminho ("home.pricing.features[0]" → "home.pricing"), nunca
     // uma coluna: um agrupamento gravado envelhece quando a chave se move.
     section: key.split(/[.[]/).slice(0, 2).join("."),
     pt: { factory: valorPt, override: porChave.get(`${key}|PT`) ?? null },

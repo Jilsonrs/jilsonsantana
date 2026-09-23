@@ -143,6 +143,29 @@ describe("itensSecundarios — o nível 2 só aparece quando vale a pena", () =>
     ];
     expect(itensSecundarios("/x", secoes)).toHaveLength(2);
   });
+
+  it("Site mostra Textos · Depoimentos · Perguntas frequentes em qualquer tela dele", () => {
+    // 2º nível decidido pelo operador ao aprovar o C3 (23/09/2026).
+    const doAdmin = secoesVisiveis(Role.ADMIN);
+    for (const rota of ["/admin/site/textos", "/admin/site/depoimentos", "/admin/site/faq"]) {
+      expect(itensSecundarios(rota, doAdmin).map((i) => i.label), rota).toEqual([
+        "Textos",
+        "Depoimentos",
+        "Perguntas frequentes",
+      ]);
+    }
+  });
+
+  it("nenhum filho de Site é prefixo de outro — senão dois acendem juntos", () => {
+    // A coluna secundária acende um item também nas sub-rotas dele. Se Textos
+    // voltasse para /admin/site, ficaria aceso em /admin/site/depoimentos.
+    const filhos = NAVEGACAO.find((s) => s.label === "Site")?.filhos ?? [];
+    for (const a of filhos) {
+      for (const b of filhos) {
+        if (a !== b) expect(b.to.startsWith(`${a.to}/`), `${a.to} × ${b.to}`).toBe(false);
+      }
+    }
+  });
 });
 
 describe("abasDaRota — o nível 3", () => {

@@ -9,6 +9,13 @@ import * as api from "@/lib/api";
 vi.mock("@/lib/api");
 
 const campos: api.SiteTextField[] = [
+  // Primeiro, como no dicionário real — é isto que prova que ele vai para o fim.
+  {
+    key: "home.a11y.hero",
+    section: "home.a11y",
+    pt: { factory: "Apresentação da escola", override: null },
+    en: { factory: "School introduction", override: null },
+  },
   {
     key: "home.hero.subtitle",
     section: "home.hero",
@@ -68,11 +75,11 @@ describe("AdminSiteTextPage — o que a tela precisa mostrar", () => {
     vi.mocked(api.adminGetSiteText).mockResolvedValue(campos);
   });
 
-  it("agrupa por seção, com o nome amigável e a contagem", async () => {
+  it("agrupa por seção, com o nome curto — a página já está na aba", async () => {
     renderWithProviders(<AdminSiteTextPage />);
 
-    expect(await screen.findByText("Home · Topo")).toBeTruthy();
-    expect(screen.getByText("Home · Chamada final")).toBeTruthy();
+    expect(await screen.findByText("Topo")).toBeTruthy();
+    expect(screen.getByText("Chamada final")).toBeTruthy();
   });
 
   it("campo NUNCA editado aparece na lista — a tela serve para a primeira edição", async () => {
@@ -91,9 +98,9 @@ describe("AdminSiteTextPage — o que a tela precisa mostrar", () => {
     expect(screen.getByText("Pronto para começar?")).toBeTruthy();
   });
 
-  it("a busca filtra pelo texto, não só pela chave", async () => {
+  it("a busca filtra pelo texto, não só pela chave — e mostra o nome completo", async () => {
     renderWithProviders(<AdminSiteTextPage />);
-    await screen.findByText("Home · Topo");
+    await screen.findByText("Topo");
 
     fireEvent.change(screen.getByLabelText("Buscar"), { target: { value: "Bora" } });
 
@@ -158,5 +165,61 @@ describe("AdminSiteTextPage — salvar", () => {
     fireEvent.click(screen.getByRole("button", { name: "Salvar" }));
 
     expect((await screen.findByRole("alert")).textContent).toMatch(/não foi possível salvar/i);
+  });
+});
+
+// Uma aba por página (decisão do operador, 23/09/2026).
+describe("AdminSiteTextPage — uma aba por página", () => {
+  const menu: api.SiteTextField = {
+    key: "common.nav.cursos",
+    section: "common.nav",
+    pt: { factory: "Cursos", override: null },
+    en: { factory: "Courses", override: null },
+  };
+
+  beforeEach(() => {
+    // "Toda página" vem DEPOIS no array de propósito: a ordem das abas é a das
+    // páginas, não a de chegada dos dados.
+    vi.mocked(api.adminGetSiteText).mockResolvedValue([...campos, menu]);
+  });
+
+  it("abre em Toda página, com a aba marcada, e só as seções dela", async () => {
+    renderWithProviders(<AdminSiteTextPage />);
+
+    expect(await screen.findByText("Menu do topo")).toBeTruthy();
+    const todaPagina = screen.getByRole("button", { name: "Toda página" });
+    expect(todaPagina.getAttribute("aria-pressed")).toBe("true");
+    expect(screen.getByRole("button", { name: "Home" }).getAttribute("aria-pressed")).toBe("false");
+    expect(screen.queryByText("Topo")).toBeNull();
+  });
+
+  it("clicar em Home troca o conteúdo", async () => {
+    renderWithProviders(<AdminSiteTextPage />);
+    await screen.findByText("Menu do topo");
+
+    fireEvent.click(screen.getByRole("button", { name: "Home" }));
+
+    expect(screen.getByText("Topo")).toBeTruthy();
+    expect(screen.queryByText("Menu do topo")).toBeNull();
+  });
+
+  it("dentro da aba, Leitor de tela vem por último", async () => {
+    renderWithProviders(<AdminSiteTextPage />);
+    await screen.findByText("Menu do topo");
+    fireEvent.click(screen.getByRole("button", { name: "Home" }));
+
+    const titulos = [...document.querySelectorAll("summary")].map((s) => s.firstChild?.textContent?.trim());
+    expect(titulos).toEqual(["Topo", "Chamada final", "Leitor de tela"]);
+  });
+
+  it("a busca atravessa as abas — acha texto da Home estando em Toda página", async () => {
+    renderWithProviders(<AdminSiteTextPage />);
+    await screen.findByText("Menu do topo");
+
+    fireEvent.change(screen.getByLabelText("Buscar"), { target: { value: "Bora" } });
+
+    expect(screen.getByText("Home · Chamada final")).toBeTruthy();
+    // Com busca, as abas saem da frente: o resultado vem de todas as páginas.
+    expect(screen.queryByRole("button", { name: "Home" })).toBeNull();
   });
 });

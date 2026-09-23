@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 // campo salva SOZINHO: um formulário único com 155 campos e um botão no fim
 // obrigaria a reenviar tudo para corrigir uma vírgula.
 
-/** "home.faq.list[0].q" → "list[0].q" — a seção já é o título do grupo. */
+/** "home.pricing.features[0]" → "features[0]" — a seção já é o título do grupo. */
 function rotulo(key: string): string {
   return key.split(".").slice(2).join(".") || key;
 }

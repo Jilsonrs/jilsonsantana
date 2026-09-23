@@ -1275,13 +1275,63 @@ landmark. Corrigido junto.
 > Depoimento tem obrigação própria já escrita (`content.md`: *sai na hora se a pessoa pedir*) —
 > isso não pode depender de deploy.
 
-- [ ] Models `Testimonial` e `FaqItem`: texto, autor/iniciais (depoimento), pergunta/resposta
-      (FAQ), `language`, `displayOrder`, `status`, + RLS. Migration única.
-- [ ] Leitura pública filtra `PUBLISHED` + idioma, ordena por `displayOrder` (mesmo padrão de
-      `courses.ts`). CRUD no admin. As chaves correspondentes saem do dicionário.
-- [ ] **FAQ ganha JSON-LD `FAQPage`** — hoje o `<details>` já entrega o texto no HTML, mas sem o
-      dado estruturado que o buscador lê.
-- [ ] Testes de servidor (lista pública respeita status e idioma) + componente (estado vazio).
+> **Decisões do operador (23/09, ao aprovar):** telas **dentro de "Site"** (2º nível: Textos ·
+> Depoimentos · Perguntas frequentes) · **lista vazia esconde a seção inteira** · **status para
+> esconder + Excluir que apaga de vez** (LGPD) · **conteúdo atual migra sozinho** na publicação.
+> Registradas em `content.md` § 16.
+
+- [x] Models `Testimonial` e `FaqItem` (`language`, `displayOrder`, `status`) + RLS, migration
+      única `20260923153515_testimonials_and_faq`. **As iniciais não são coluna** — saem do nome
+      na hora de desenhar. **A migration também semeia o que estava no ar** (4 depoimentos + 15
+      perguntas, PT e EN, publicados), com os INSERTs **gerados do dicionário** para o texto ficar
+      idêntico. Aplicada no dev: Passo 0 antes/depois (mesmos 2 usuários entrando, mesmo texto
+      editado, 2 cursos), zero tabela sem RLS, diff de drift *No difference detected*.
+- [x] Leitura pública (a própria rota da home, que é SSR — nenhuma API pública nova) filtra
+      `PUBLISHED` + idioma e ordena por `displayOrder`. As listas **saíram do dicionário**; ficam só
+      título e etiqueta das seções. `renderHome` passou a receber **um objeto** (seriam 9
+      parâmetros posicionais).
+- [x] **FAQ ganha JSON-LD `FAQPage`**, só quando há pergunta publicada.
+- [x] **Testes de servidor (8)** em `server/src/test/home-lists.test.ts`: status e idioma (nas duas
+      listas), ordem, iniciais, seção some inteira quando vazia, `FAQPage` com exatamente as
+      perguntas da página, e o que vem do banco nunca vira HTML (`<img onerror>` escapado,
+      `</script>` não fecha o JSON-LD). **Mutação:** sem o filtro de publicado → 3 reprovam; seção
+      sempre desenhada → 1 reprova. Revertido.
+- [x] **CRUD no admin** — `GET/POST /api/admin/testimonials`, `PATCH/DELETE …/:id` (idem
+      `/api/admin/faq`), todas atrás de `requireAdmin`. A API fala `pt`/`en` como o resto; o banco,
+      `PT`/`EN` (conversão única em `server/src/lib/language.ts`). Schemas compartilhados em
+      `core/src/schemas/home-lists.ts` (`homeFaq*`, porque `faqItemSchema` já é a FAQ de cada
+      curso). **DELETE apaga a linha**; esconder é o `status`.
+      **Testes de servidor (12)** em `admin-home-lists.test.ts`: 401/403 nos quatro métodos das
+      duas rotas (e nada gravado pelo aluno), publicar aparece na home do idioma certo, rascunho só
+      no admin, arquivar tira da home sem apagar, **Excluir some com o nome do banco**, corpo
+      inválido = 400 (inclusive nome só de espaços e terceiro idioma), 404/400 de id, e o ciclo
+      criar → editar → excluir de uma pergunta conferido na home a cada passo.
+      **Mutação:** sem `requireAdmin` no POST + Excluir virando arquivar → 3 reprovam. Revertido.
+- [x] **Telas** em `/admin/site/depoimentos` e `/admin/site/faq`; **Textos mudou para
+      `/admin/site/textos`** (e `/admin/site` redireciona para lá), porque a coluna secundária acende
+      um item também nas sub-rotas dele — em `/admin/site` ele ficaria aceso junto com os outros.
+      As duas telas são **um editor só** (`HomeListEditor` + `HomeListItem` + `HomeListItemForm`),
+      configurado por página. Abas de idioma, item novo **nasce Rascunho** e no **fim** da lista
+      (maior ordem + 10), **Excluir em dois cliques**, status em palavras (Rascunho/Publicado/
+      Arquivado). **17 testes de componente** (estados carregando/erro/vazio, lista por idioma,
+      criar no idioma da aba, validação, editar, excluir com confirmação, falhas visíveis) + **2**
+      no mapa de navegação (o 2º nível de Site; nenhum filho prefixo de outro).
+      **Mutação:** Excluir sem confirmação + fiação da FAQ trocada + item novo nascendo publicado +
+      Textos de volta em `/admin/site` → **6 reprovam**. Revertido.
+- [x] **Depoimentos: 4 SORTEADOS por visita, sem ordem** *(depois do teste do operador, 23/09 —
+      "com milhares de depoimentos nunca vão ver igual")*. A home usa `ORDER BY random() LIMIT 4`
+      (SQL parametrizado do Prisma); sem carrossel e sem script, porque quase ninguém passa do 1º
+      quadro (pesquisa em `content.md` § 16). O admin de depoimentos perdeu o campo Ordem
+      (`comOrdem` no editor comum) e lista do mais novo; a FAQ mantém a ordem. Testes que esperam
+      um depoimento específico isolam o sorteio (`server/src/test/testimonial-pool.ts`); novo teste
+      "no máximo 4, sorteados" (6 no pool → 4 na página; 15 visitas → mais de 4 nomes).
+      **Mutação:** sempre os 4 primeiros → 1 reprova; Ordem de volta nos depoimentos → 2 reprovam.
+- [x] **Textos com uma aba por página** *(operador, 23/09)*: "Toda página" e "Home" (a página é o
+      1º pedaço da chave — página nova ganha aba sozinha), seções na ordem do dicionário com
+      **"Leitor de tela" por último**, nome curto dentro da aba. **A busca atravessa as abas** (com
+      termo, as abas somem e vêm resultados de todas as páginas, com o nome completo). **4 testes
+      novos** + 2 ajustados. **Mutação:** sem "Leitor de tela por último" e busca presa à aba →
+      2 reprovam. Revertido.
 - **Done when:** o operador publica um depoimento novo e remove outro pelo admin, sem deploy.
 
 #### Bloco C4 — Os 5 cursos da home vêm do banco
@@ -1292,6 +1342,9 @@ landmark. Corrigido junto.
       checagem explícita de esquema que o `CLAUDE.md` já exige (`core/` → a regra do `.url()`).
 - [ ] Destaque e cards derivados de `displayOrder` (decisão do operador pendente — ver o bloco
       original acima).
+- [ ] **Ordem por ARRASTAR** *(operador, 23/09)*: nos cursos, e **o mesmo componente** passa a
+      ordenar as perguntas frequentes (hoje, número de Ordem). A biblioteca de arrastar é
+      **dependência nova** — nomeá-la no plano deste bloco, com o ok do operador.
 - [ ] **Etiqueta do curso** *(decidida em 22/09 — spec em `courses.md` → "Etiqueta do curso")*:
       enum `CourseBadge { NOVO DESTAQUE MAIS_VENDIDO }` + `Course.badge?` + a data que faz `NOVO`
       **expirar em 120 dias** · campo de seleção no formulário de curso · rótulos em
@@ -1698,6 +1751,26 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       done (course-item = its lessons). Drives certificate eligibility (Phase 6.5).
 - [ ] `LessonEvent` table (event-sourced: type, position, ts) + RLS — **capture only, no analytics yet**
 - [ ] Client: fire PLAY/PAUSE/ENDED events from the player (cheap writes)
+- [ ] **Depoimento pedido ao aluno quando ele conclui um curso — UMA VEZ por aluno, nunca por
+      curso** *(decisão do operador, 23/09/2026: "não preciso de prova social por curso… pensei
+      num depoimento geral"; o oposto da disputa por estrelas da Udemy)*. Depende deste bloco:
+      "concluiu um curso" só existe com o `LessonProgress`.
+      - **O pedido:** nota de **1 a 5 estrelas** + **uma pergunta aberta, geral** — curso, escola,
+        experiência de ensino, o que o aluno quiser. **Sem escolha de tema** (proposta do agente
+        aceita pelo operador: separar por tema acrescenta uma escolha e um filtro que ninguém usa).
+        O texto exato da pergunta é do operador, na hora de construir.
+      - **As estrelas são só do operador:** nunca aparecem no site, em nenhum idioma. Teste de
+        servidor garante que a nota não sai na home.
+      - **Um por aluno, garantido pelo BANCO:** `Testimonial` ganha o aluno ligado a ele, **único**
+        e opcional (os depoimentos cadastrados à mão, como os 4 vindos da Udemy, não têm conta
+        aqui). O segundo envio do mesmo aluno é recusado pelo banco, não só pela tela.
+      - **Se o aluno pular:** o pedido volta no **próximo curso concluído**, até ele responder ou
+        clicar em **"Não, obrigado"**, que encerra de vez. Quem respondeu nunca mais é perguntado.
+        A recusa definitiva precisa ficar gravada — **sem** coluna nova no `User` (identidade enxuta).
+      - **Chega como Rascunho**, e o operador escolhe o que publicar no `/admin/site/depoimentos`.
+        O aluno marca se **autoriza aparecer com o nome completo**; **sem essa marcação o texto fica
+        só para o operador**, e o servidor recusa publicá-lo (LGPD — a tela esconder o botão não é
+        defesa).
 - **Done when:** "marquei como vista" works, trilha % completion shows, AND events are captured for future analytics.
 
 ## Phase 6 — JilsonAI (lean v1 + suporte)  *(medium risk)*  → ver **JILSONAI.md** (roadmap interno)
