@@ -223,7 +223,7 @@
        idioma para o qual se quer ir. O `aria-current` continua sendo o que o
        leitor de tela usa — o traço é só a versão visual da mesma informação. */
     .lang-atual {
-      border-bottom: 2px solid currentColor;
+      border-bottom: 2px solid var(--brand-blue);
       padding-bottom: 2px;
     }
 
