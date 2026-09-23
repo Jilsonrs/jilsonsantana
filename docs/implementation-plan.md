@@ -1163,22 +1163,33 @@ landmark. Corrigido junto.
 > dicionário e **já aparece no admin**, sem tabela nem tela nova. É isso que faz a coisa crescer
 > sem refazer.
 
-- [ ] **Passo 0 (operador):** confirmar quais seções aparecem na tela. Rótulo de botão do app
-      logado fica **fora** — é comportamento testado, não copy de venda.
-- [ ] **Migration:** enum Prisma `Language { PT EN }` (nasce aqui; o Bloco I depois pendura
-      `Course.language` nele) + tabela `SiteText` (`key`, `language`, `value`, `updatedAt`, único
-      por chave+idioma) + **RLS na mesma migration** + a consulta de verificação.
-- [ ] **Servidor:** `getDict(lang)` aplica as sobrescritas; cache em memória limpo ao salvar.
-      **Trava:** só aceita chave que existe no dicionário — chave inventada é 4xx, senão a tabela
-      vira lixeira. *(Limite conhecido: o cache é por instância. Gatilho — quando houver mais de
-      uma instância no Railway, a invalidação precisa cruzar instâncias.)*
-- [ ] **Rotas** `GET /api/admin/site-text` e `PUT /api/admin/site-text/:key`, atrás de `requireAdmin`.
+- [x] **Passo 0 — resolvido sem pergunta:** o dicionário hoje contém **só** copy de página pública
+      (`common.*` + `home.*`), então tudo nele é editável e nada de rótulo do app logado entrou.
+      Quando o React passar a usar o dicionário, a tela precisa filtrar — fica anotado aqui.
+      **Pré-flight feito:** banco `dev` (`ep-lingering-morning`), 2 usuários, login de admin e de
+      membro OK antes E depois da migration; contagens idênticas; zero drift.
+- [x] **Migration** `20260922235628_site_text_and_language_enum`: enum `Language { PT EN }` + tabela
+      `site_text` (único por chave+idioma) + **RLS na mesma migration**. Consulta de verificação
+      rodada: **zero tabelas em `public` sem RLS**.
+      **ESCRITA À MÃO — e isso virou regra no `CLAUDE.md`:** `prisma migrate dev` falha com P1014
+      neste repo, porque valida o histórico num shadow database onde `_prisma_migrations` não
+      existe, e a migration de RLS de Ago 2026 faz `ALTER TABLE` nela. `migrate deploy` e
+      `migrate reset` não usam shadow e aplicam normalmente.
+- [x] **Servidor:** `server/src/lib/dict.ts` é a **única porta** para o texto — template nenhum
+      importa `pt`/`en` direto, senão a edição do operador não aparece naquela tela. Cache em
+      memória limpo ao salvar. *(Limite registrado no próprio arquivo: o cache é por instância.)*
+      A lista branca de chaves (`DICT_KEYS`) vive no `core` e é usada pelo schema Zod.
+- [x] **Rotas** `GET /api/admin/site-text` e `PUT /api/admin/site-text`, atrás de `requireAdmin`.
+      A lista sai do **dicionário**, não do banco: campo nunca editado também aparece, senão a tela
+      só mostraria o que já foi mexido. **Valor vazio APAGA a sobrescrita** e volta ao valor de
+      fábrica — sem isso, desfazer exigiria o operador redigitar o texto original.
 - [ ] **Tela:** lista agrupada por seção, PT e EN lado a lado, valor de fábrica visível ao lado do
       seu. Loading / erro / vazio + teste de componente para cada.
-- [ ] **Testes de servidor:** sem sobrescrita sai o valor de fábrica · com sobrescrita sai o seu ·
-      editar EN não mexe no PT · sobrescrita vazia volta ao padrão · não-admin leva 401/403 · chave
-      inexistente é recusada.
-- [ ] **Passo 8 — mutação:** remover a consulta de sobrescrita → a suíte tem que reprovar.
+- [x] **Testes de servidor (10):** os seis previstos + idioma inválido recusado + a lista de admin
+      trazendo fábrica e sobrescrita separadas. **Quase todos terminam lendo a HOME de verdade** —
+      gravar a linha não prova nada se ela não chegar na página.
+- [x] **Passo 8 — mutação (dois pontos):** ignorar a sobrescrita no `getDict` **e** remover a lista
+      branca de chaves → **3 testes reprovaram**. Revertido.
 - **Done when:** o operador troca um texto no admin e ele muda no ar, nos dois idiomas, sem deploy.
 
 #### Bloco C3 — Depoimentos e FAQ viram tabela

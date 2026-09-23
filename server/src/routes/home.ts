@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { pt, en } from "@jilson/core";
+import { getDict } from "../lib/dict.js";
 import { renderHome, type HomeCourse } from "../views/home.js";
 
 const router = Router();
@@ -62,12 +62,16 @@ const CURSOS_EN: HomeCourse[] = [];
 const DESTAQUE_EN: HomeCourse | null = null;
 const CAN_SUBSCRIBE_EN = false;
 
-router.get("/", (_req, res) => {
-  res.send(renderHome(pt, "pt", CURSOS_PT, DESTAQUE_PT, true, BASE_URL));
+// O texto vem do `getDict`, NUNCA de um import de `pt`/`en`: é ele que aplica o
+// que o operador editou no /admin (server/src/lib/dict.ts).
+router.get("/", async (_req, res) => {
+  const dict = await getDict("pt");
+  res.send(renderHome(dict, "pt", CURSOS_PT, DESTAQUE_PT, true, BASE_URL));
 });
 
-router.get("/en", (_req, res) => {
-  res.send(renderHome(en, "en", CURSOS_EN, DESTAQUE_EN, CAN_SUBSCRIBE_EN, BASE_URL));
+router.get("/en", async (_req, res) => {
+  const dict = await getDict("en");
+  res.send(renderHome(dict, "en", CURSOS_EN, DESTAQUE_EN, CAN_SUBSCRIBE_EN, BASE_URL));
 });
 
 export default router;

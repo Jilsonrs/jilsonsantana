@@ -12,6 +12,7 @@ import trilhasRouter from "./routes/trilhas.js";
 import lessonsRouter from "./routes/lessons.js";
 import searchRouter from "./routes/search.js";
 import homeRouter from "./routes/home.js";
+import adminSiteTextRouter from "./routes/admin-site-text.js";
 
 // Monta o app e EXPORTA sem escutar porta. O `listen()` vive em `index.ts`.
 //
@@ -49,6 +50,7 @@ app.use("/api", modulesRouter);
 app.use("/api", trilhasRouter);
 app.use("/api", lessonsRouter);
 app.use("/api", searchRouter);
+app.use("/api", adminSiteTextRouter);
 
 // ── Home pública (SSR, sem React) ───────────────────────────────────────────
 // Registrada em TODOS os ambientes (em dev o operador abre localhost:3000).
