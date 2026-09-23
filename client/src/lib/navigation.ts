@@ -123,6 +123,15 @@ export const NAVEGACAO: Secao[] = [
     icon: Globe,
     papel: Role.ADMIN,
     estado: "ativo",
+    // 2º nível decidido pelo operador ao aprovar o C3 (23/09/2026). Textos tem
+    // endereço próprio (/admin/site/textos): a coluna secundária acende um item
+    // também nas sub-rotas dele, então em /admin/site ele ficaria aceso junto
+    // com os outros dois.
+    filhos: [
+      { label: "Textos", to: "/admin/site/textos" },
+      { label: "Depoimentos", to: "/admin/site/depoimentos" },
+      { label: "Perguntas frequentes", to: "/admin/site/faq" },
+    ],
   },
   {
     label: "Alunos",

@@ -445,8 +445,8 @@ editar e o `/en` mostra português. A trava mecânica e o teste que a sustenta e
 1. ~~Fiação: tirar do HTML os textos que já tinham chave.~~ **Feito em 22/09** — 55 literais
    foram para o dicionário; sobraram só os rótulos das 3 camadas (entram com o selo).
 2. ~~Mecanismo de sobrescrita + tela de admin.~~ **Feito em 23/09** (Bloco C2, `/admin/site`).
-3. Depoimentos e FAQ viram tabela com CRUD no admin. **Tabela e leitura na home feitas em
-   23/09**; as telas do admin estão em construção (Bloco C3).
+3. ~~Depoimentos e FAQ viram tabela com CRUD no admin.~~ **Feito em 23/09** (Bloco C3):
+   `/admin/site/depoimentos` e `/admin/site/faq`.
 4. Os 5 cursos saem da constante e passam a vir do banco (depende da migration de `language`).
 5. ~~Escrever o inglês.~~ **Feito e revisado em 22/09** (155 chaves; ciclo de revisão em
    `idiomas.md`). **Fica aberto:** o operador quer revisar **as 15 perguntas do FAQ uma a uma** —

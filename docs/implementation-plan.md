@@ -1307,8 +1307,17 @@ landmark. Corrigido junto.
       inválido = 400 (inclusive nome só de espaços e terceiro idioma), 404/400 de id, e o ciclo
       criar → editar → excluir de uma pergunta conferido na home a cada passo.
       **Mutação:** sem `requireAdmin` no POST + Excluir virando arquivar → 3 reprovam. Revertido.
-- [ ] **Telas** em `/admin/site/depoimentos` e `/admin/site/faq`, "Site" ganhando o 2º nível +
-      testes de componente (carregando, erro, vazio, criar, editar, excluir).
+- [x] **Telas** em `/admin/site/depoimentos` e `/admin/site/faq`; **Textos mudou para
+      `/admin/site/textos`** (e `/admin/site` redireciona para lá), porque a coluna secundária acende
+      um item também nas sub-rotas dele — em `/admin/site` ele ficaria aceso junto com os outros.
+      As duas telas são **um editor só** (`HomeListEditor` + `HomeListItem` + `HomeListItemForm`),
+      configurado por página. Abas de idioma, item novo **nasce Rascunho** e no **fim** da lista
+      (maior ordem + 10), **Excluir em dois cliques**, status em palavras (Rascunho/Publicado/
+      Arquivado). **17 testes de componente** (estados carregando/erro/vazio, lista por idioma,
+      criar no idioma da aba, validação, editar, excluir com confirmação, falhas visíveis) + **2**
+      no mapa de navegação (o 2º nível de Site; nenhum filho prefixo de outro).
+      **Mutação:** Excluir sem confirmação + fiação da FAQ trocada + item novo nascendo publicado +
+      Textos de volta em `/admin/site` → **6 reprovam**. Revertido.
 - **Done when:** o operador publica um depoimento novo e remove outro pelo admin, sem deploy.
 
 #### Bloco C4 — Os 5 cursos da home vêm do banco

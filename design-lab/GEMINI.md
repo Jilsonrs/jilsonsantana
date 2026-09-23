@@ -138,7 +138,23 @@ servidores (§5); o React responde em `localhost:5173`, a home pública em `loca
 | `/admin` | `client/src/pages/AdminPage.tsx` |
 | `/admin/cursos` | `client/src/pages/admin/AdminCoursesPage.tsx` |
 | `/admin/cursos/novo` · `/admin/cursos/:id` | `client/src/pages/admin/AdminCourseFormPage.tsx` |
-| `/admin/site` | `client/src/pages/admin/AdminSiteTextPage.tsx` + `client/src/components/admin/SiteTextField.tsx` |
+| `/admin/site` → leva a `/admin/site/textos` | (só redireciona) |
+| `/admin/site/textos` | `client/src/pages/admin/AdminSiteTextPage.tsx` + `client/src/components/admin/SiteTextField.tsx` |
+| `/admin/site/depoimentos` | `client/src/pages/admin/AdminTestimonialsPage.tsx` |
+| `/admin/site/faq` | `client/src/pages/admin/AdminFaqPage.tsx` |
+
+> **Depoimentos e Perguntas frequentes são a MESMA tela** com nomes diferentes *(Bloco C3,
+> 23/09/2026)*. A marcação mora em três componentes compartilhados — formatar um formata os dois:
+> `client/src/components/admin/HomeListEditor.tsx` (abas de idioma, botão de novo, lista),
+> `HomeListItem.tsx` (o cartão de cada item, com Editar e Excluir) e `HomeListItemForm.tsx` (o
+> formulário). As duas páginas só dizem os nomes dos campos.
+> **Não mexa sem falar com o operador:** o **Excluir em dois cliques** (ele apaga de vez — é o
+> caminho do pedido de remoção por LGPD) e as abas de idioma com `aria-pressed`. Os dois têm teste.
+> **"Site" ganhou 2º nível** (Textos · Depoimentos · Perguntas frequentes) na coluna secundária
+> (`SecondaryNav.tsx`). Como os itens não têm `grupo`, a coluna mostra o título **"Geral"** — é o
+> comportamento atual do componente; se quiser outro visual ali, é conversa com o operador.
+> **Na home**, as seções de depoimentos e de perguntas **somem inteiras** quando o idioma não tem
+> item publicado (decisão do operador). Ao formatar, não conte com elas sempre presentes.
 
 **PLANEJADAS — aparecem no rail em cinza, com a etiqueta EM BREVE, e NÃO têm tela**
 

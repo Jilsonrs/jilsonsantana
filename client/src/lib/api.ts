@@ -11,6 +11,10 @@ import type {
   LessonCreateInput,
   LessonUpdateInput,
   LanguageCode,
+  TestimonialCreateInput,
+  TestimonialUpdateInput,
+  HomeFaqCreateInput,
+  HomeFaqUpdateInput,
 } from "@jilson/core";
 
 // Same-origin by design (mirrors auth-client.ts): in dev the Vite proxy
@@ -315,4 +319,55 @@ export async function adminUpdateSiteText(input: {
   value: string;
 }): Promise<void> {
   await client.put("/admin/site-text", input);
+}
+
+// ---------------------------------------------------------------------------
+// Depoimentos e perguntas frequentes da home (Bloco C3) — admin-only.
+// A lista traz os DOIS idiomas e TODOS os status; a tela filtra o idioma.
+// Excluir apaga a linha de vez (LGPD); esconder é mudar o status.
+
+type ItemDaHome = {
+  id: number;
+  language: LanguageCode;
+  displayOrder: number;
+  status: ContentStatus;
+  createdAt: string;
+  updatedAt: string;
+};
+export type AdminTestimonial = ItemDaHome & { text: string; name: string };
+export type AdminHomeFaq = ItemDaHome & { question: string; answer: string };
+
+export async function adminGetTestimonials(): Promise<AdminTestimonial[]> {
+  const { data } = await client.get<AdminTestimonial[]>("/admin/testimonials");
+  return data;
+}
+export async function adminCreateTestimonial(input: TestimonialCreateInput): Promise<AdminTestimonial> {
+  const { data } = await client.post<AdminTestimonial>("/admin/testimonials", input);
+  return data;
+}
+export async function adminUpdateTestimonial(
+  id: number,
+  input: TestimonialUpdateInput,
+): Promise<AdminTestimonial> {
+  const { data } = await client.patch<AdminTestimonial>(`/admin/testimonials/${id}`, input);
+  return data;
+}
+export async function adminDeleteTestimonial(id: number): Promise<void> {
+  await client.delete(`/admin/testimonials/${id}`);
+}
+
+export async function adminGetHomeFaq(): Promise<AdminHomeFaq[]> {
+  const { data } = await client.get<AdminHomeFaq[]>("/admin/faq");
+  return data;
+}
+export async function adminCreateHomeFaq(input: HomeFaqCreateInput): Promise<AdminHomeFaq> {
+  const { data } = await client.post<AdminHomeFaq>("/admin/faq", input);
+  return data;
+}
+export async function adminUpdateHomeFaq(id: number, input: HomeFaqUpdateInput): Promise<AdminHomeFaq> {
+  const { data } = await client.patch<AdminHomeFaq>(`/admin/faq/${id}`, input);
+  return data;
+}
+export async function adminDeleteHomeFaq(id: number): Promise<void> {
+  await client.delete(`/admin/faq/${id}`);
 }
