@@ -1868,7 +1868,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       mesmo projeto, então aquele item de US$ 10 simplesmente deixou de existir.
       **Teto de infra sobe de ~US$ 30 para ~US$ 35/mês.** *Sem gatilho de reabertura — decisão de
       conforto operacional, deliberada.*
-- [ ] **🔒 BLOQUEIO DO GO-LIVE — o login não pode travar a escola inteira** *(operador, 23/09/2026:
+- [x] **🔒 BLOQUEIO DO GO-LIVE — o login não pode travar a escola inteira** *(operador, 23/09/2026:
       "não podemos depender de um aluno burro tentando entrar e travar a escola toda")*.
       **O risco, medido na 1.7.5:** o login tem regra padrão de **3 tentativas a cada 10 segundos**
       (`dist/api/rate-limiter/index.mjs:302-308`), e ela conta **toda** tentativa, certa ou errada.
@@ -1881,8 +1881,12 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       - [x] **Corrigido com o cabeçalho que a Railway garante:** `ipAddressHeaders: ["x-real-ip"]`,
             escolhido por medição (forjado ignorado, igual ao IP real). `trustedProxies` não foi
             preciso — o proxy interno muda de IP a cada requisição, o que o tornaria frágil.
-      - [ ] **Prova antes de descer o gate:** dois logins de redes diferentes em sequência não
+      - [x] **Prova antes de descer o gate:** dois logins de redes diferentes em sequência não
             compartilham limite — errar a senha 3 vezes numa rede não impede o login na outra.
+            **Provado em produção pelo operador (23/09, 14:55):** 4 tentativas no Mac → a 4ª
+            bloqueada, inclusive com a senha certa; no mesmo intervalo o celular no 4G entrou
+            normalmente; o Mac voltou a entrar sozinho depois de ~15 s. O log da implantação
+            nova mostra só os `Invalid password` — a linha do balde compartilhado não voltou.
 
 - [ ] **🚀 GO-LIVE — desligar o gate "Em breve" (ÚLTIMA AÇÃO, sem deploy de código).** O site ao vivo está atrás de um gate pré-lançamento (público vê "Em breve"; operador acessa via `/__preview?token=<PREVIEW_TOKEN>`). Para abrir ao público: no Railway (projeto `jilsonsantana` → env `production` → service `jilsonsantana`), setar **`COMING_SOON=false`** (ou apagar a variável) → o serviço reinicia → público passa a ver o app real. Nenhum merge/código necessário. *(Mecanismo em [server/src/index.ts](../server/src/index.ts) + [client/public/coming-soon.html](../client/public/coming-soon.html); detalhe operacional na memória `coming-soon-gate`.)* **Fazer só quando o "Done when" abaixo estiver verde.**
 ### Continuidade do operador (pré-primeiro aluno pagante)

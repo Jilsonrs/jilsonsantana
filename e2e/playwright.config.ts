@@ -55,7 +55,14 @@ export default defineConfig({
     {
       command: "npm run dev:client",
       cwd: REPO_ROOT,
-      url: "http://localhost:5173",
+      // `/login`, NUNCA a raiz: a raiz é HOME DE SERVIDOR, repassada pelo proxy
+      // do Vite, e ela lê o banco. O Playwright sobe os servidores ANTES do
+      // globalSetup criar as tabelas, então no banco vazio do CI a raiz dá 500
+      // e o Playwright espera até estourar os 120 s. Deixou o CI vermelho de
+      // 23/09 (8e0e760) até a correção; aqui passava porque o banco local já
+      // tinha as tabelas de rodadas anteriores. `/login` é do React: prova que
+      // o Vite está de pé sem depender de banco nenhum.
+      url: "http://localhost:5173/login",
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,
     },
