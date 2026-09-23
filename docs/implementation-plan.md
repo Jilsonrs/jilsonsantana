@@ -1863,6 +1863,23 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       mesmo projeto, então aquele item de US$ 10 simplesmente deixou de existir.
       **Teto de infra sobe de ~US$ 30 para ~US$ 35/mês.** *Sem gatilho de reabertura — decisão de
       conforto operacional, deliberada.*
+- [ ] **🔒 BLOQUEIO DO GO-LIVE — o login não pode travar a escola inteira** *(operador, 23/09/2026:
+      "não podemos depender de um aluno burro tentando entrar e travar a escola toda")*.
+      **O risco, medido na 1.7.5:** o login tem regra padrão de **3 tentativas a cada 10 segundos**
+      (`dist/api/rate-limiter/index.mjs:302-308`), e ela conta **toda** tentativa, certa ou errada.
+      Se o IP do visitante não resolver, todo mundo cai no **mesmo balde** — então a 4ª pessoa a
+      tentar entrar em 10 segundos, qualquer uma, espera; e um atacante segura o balde cheio para
+      sempre com uma requisição a cada 3 segundos, trancando o admin junto.
+      **Hoje o impacto é zero** (nenhum aluno, gate "Em breve" no ar), e é por isso que dá para
+      fazer direito em vez de às pressas. **Mas o gate NÃO desce antes disto:**
+      - [ ] Confirmar pelo log da Railway se o IP resolve (Fase 3, Bloco 0 → Passo 1 novo).
+      - [ ] Se não resolver: configurar `advanced.ipAddress.trustedProxies` com as faixas reais dos
+            proxies da frente (ou um cabeçalho que a Railway garanta). Com isso cada pessoa volta a
+            ter o próprio balde, e o valor forjado pelo atacante fica à esquerda da cadeia — onde a
+            leitura da direita para a esquerda nunca chega.
+      - [ ] **Prova antes de descer o gate:** dois logins de redes diferentes em sequência não
+            compartilham limite — errar a senha 3 vezes numa rede não impede o login na outra.
+
 - [ ] **🚀 GO-LIVE — desligar o gate "Em breve" (ÚLTIMA AÇÃO, sem deploy de código).** O site ao vivo está atrás de um gate pré-lançamento (público vê "Em breve"; operador acessa via `/__preview?token=<PREVIEW_TOKEN>`). Para abrir ao público: no Railway (projeto `jilsonsantana` → env `production` → service `jilsonsantana`), setar **`COMING_SOON=false`** (ou apagar a variável) → o serviço reinicia → público passa a ver o app real. Nenhum merge/código necessário. *(Mecanismo em [server/src/index.ts](../server/src/index.ts) + [client/public/coming-soon.html](../client/public/coming-soon.html); detalhe operacional na memória `coming-soon-gate`.)* **Fazer só quando o "Done when" abaixo estiver verde.**
 ### Continuidade do operador (pré-primeiro aluno pagante)
 
