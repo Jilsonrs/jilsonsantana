@@ -139,7 +139,7 @@ servidores (§5); o React responde em `localhost:5173`, a home pública em `loca
 | `/admin/cursos` | `client/src/pages/admin/AdminCoursesPage.tsx` |
 | `/admin/cursos/novo` · `/admin/cursos/:id` | `client/src/pages/admin/AdminCourseFormPage.tsx` |
 | `/admin/site` → leva a `/admin/site/textos` | (só redireciona) |
-| `/admin/site/textos` | `client/src/pages/admin/AdminSiteTextPage.tsx` + `client/src/components/admin/SiteTextField.tsx` |
+| `/admin/site/textos` | `client/src/pages/admin/AdminSiteTextPage.tsx` + `client/src/components/admin/SiteTextField.tsx` — **uma aba por página** ("Toda página", "Home"; página nova ganha aba sozinha). Com busca, as abas somem e o resultado vem de todas as páginas. As abas têm `aria-pressed` e teste. |
 | `/admin/site/depoimentos` | `client/src/pages/admin/AdminTestimonialsPage.tsx` |
 | `/admin/site/faq` | `client/src/pages/admin/AdminFaqPage.tsx` |
 

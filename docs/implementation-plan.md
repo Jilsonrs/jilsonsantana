@@ -1326,6 +1326,12 @@ landmark. Corrigido junto.
       um depoimento específico isolam o sorteio (`server/src/test/testimonial-pool.ts`); novo teste
       "no máximo 4, sorteados" (6 no pool → 4 na página; 15 visitas → mais de 4 nomes).
       **Mutação:** sempre os 4 primeiros → 1 reprova; Ordem de volta nos depoimentos → 2 reprovam.
+- [x] **Textos com uma aba por página** *(operador, 23/09)*: "Toda página" e "Home" (a página é o
+      1º pedaço da chave — página nova ganha aba sozinha), seções na ordem do dicionário com
+      **"Leitor de tela" por último**, nome curto dentro da aba. **A busca atravessa as abas** (com
+      termo, as abas somem e vêm resultados de todas as páginas, com o nome completo). **4 testes
+      novos** + 2 ajustados. **Mutação:** sem "Leitor de tela por último" e busca presa à aba →
+      2 reprovam. Revertido.
 - **Done when:** o operador publica um depoimento novo e remove outro pelo admin, sem deploy.
 
 #### Bloco C4 — Os 5 cursos da home vêm do banco
