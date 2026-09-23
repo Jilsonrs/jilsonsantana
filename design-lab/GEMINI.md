@@ -9,13 +9,43 @@
 
 ---
 
+## 0. DUAS SUPERFÍCIES — leia antes de tudo *(decisão do operador, set/2026)*
+
+O produto tem **duas famílias de tela, e elas não são a mesma coisa com roupa diferente**:
+
+| | **PÁGINA PÚBLICA** | **PÁGINA DE SISTEMA** |
+|---|---|---|
+| Quem vê | visitante e **Google** | aluno **logado** |
+| Para quê | vender, ser encontrada | estudar, acompanhar progresso |
+| Tem a barra escura? | **não** | **sim** |
+| Como é desenhada | HTML montado no **servidor**, sem React | **React** |
+| Onde mora | `server/src/views/**` + `client/src/public-input.css` | `client/src/pages/**` |
+
+**Você trabalha nas DUAS** — muda o caminho até o seu trabalho:
+
+- **Pública:** o operador e o Claude definem o conteúdo → **você faz o mock** na `design-lab/` →
+  **o Claude transpõe** para o template de servidor → **você formata o template**. A home (`/`)
+  já passou por esse caminho inteiro; é o modelo.
+- **De sistema:** o Claude constrói em React com testes → **você formata o `.tsx`** direto.
+
+**Por que a separação existe:** o Google não executa o app do aluno, e o aluno não precisa de
+página de venda. Uma tela só faria os dois mal.
+
+---
+
 ## 1. O fluxo combinado
 
 1. O operador e o Claude definem **o que vai ter** na tela.
 2. Você gera o **mock** em HTML/CSS aqui na `design-lab/`.
-3. O Claude **constrói** em React + Tailwind, com testes.
+3. O Claude **constrói**: template de servidor se a página for pública, React + Tailwind se for de
+   sistema (§0). Nos dois casos, com testes.
 4. **Você formata o resultado direto no código** — é este passo que faz o acabamento chegar
    inteiro, em vez de se perder na tradução do mock.
+
+**O passo 3 não é uma reinterpretação do seu mock, é uma TRANSPOSIÇÃO:** mesma marcação, mesmas
+classes, só os dados entrando. A primeira tentativa na home foi reescrita com classes inventadas e
+metade da página ficou sem estilo — e nem o typecheck nem os testes viram, porque nenhum dos dois
+olha CSS. Se você receber um template que não parece o seu mock, **avise**.
 
 Você tem liberdade total dentro da `design-lab/`. No código do app, valem as regras abaixo.
 
@@ -66,21 +96,21 @@ servidores (§5); o React responde em `localhost:5173`, a home pública em `loca
 |---|---|
 | `/` · `/en` | `server/src/views/home.ts` + `client/src/public-input.css` |
 
-**Públicas — ainda em React** *(porta 5173)*
+**Públicas — hoje em React, mas PROVISÓRIAS** *(porta 5173)*
 
 | Endereço | Arquivo | Atenção |
 |---|---|---|
-| `/cursos` | `client/src/pages/CatalogPage.tsx` (`tipo="cursos"`) | ⚠️ vai virar template de servidor |
-| `/trilhas` | o MESMO arquivo (`tipo="trilhas"`) | ⚠️ idem |
-| `/curso/:slug` | `client/src/pages/CourseDetailPage.tsx` | ⚠️ idem |
-| `/trilha/:slug` | `client/src/pages/TrilhaDetailPage.tsx` | ⚠️ idem |
+| `/cursos` | `client/src/pages/CatalogPage.tsx` (`tipo="cursos"`) | ⛔ será substituída |
+| `/trilhas` | o MESMO arquivo (`tipo="trilhas"`) | ⛔ idem |
+| `/curso/:slug` | `client/src/pages/CourseDetailPage.tsx` | ⛔ idem |
+| `/trilha/:slug` | `client/src/pages/TrilhaDetailPage.tsx` | ⛔ idem |
 | `/login` | `client/src/pages/LoginPage.tsx` | fica no React |
 
-> **O ⚠️ é para poupar o seu trabalho, não para travá-lo.** Essas quatro páginas são públicas e,
-> pela *Rendering Boundary* do `CLAUDE.md`, vão ser reconstruídas como template de servidor (sem
-> React). **O que sobrevive à mudança são os TOKENS e o CSS**; marcação feita direto no `.tsx` é
-> refeita. Se for investir acabamento fino, prefira as telas de baixo — ou combine com o operador
-> antes.
+> **⛔ NÃO invista acabamento nessas quatro.** Elas vão ser **substituídas** por templates de
+> servidor, como a home já é (decisão do operador, set/2026: *"eu quero que seja a versão final que
+> vamos utilizar"* — sem construir duas vezes). Quando a substituta existir, **você trabalha nela**;
+> o que você fizer no `.tsx` de hoje é jogado fora junto com o arquivo. Tokens e CSS sobrevivem,
+> marcação não.
 
 
 **Do aluno — exigem login** *(porta 5173)*
