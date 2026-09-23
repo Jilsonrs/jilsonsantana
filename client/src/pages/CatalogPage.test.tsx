@@ -43,36 +43,102 @@ beforeEach(() => {
   search.mockReset();
 });
 
-describe("CatalogPage", () => {
-  it("renders the default catalog with trilha and course cards", async () => {
-    renderWithProviders(<CatalogPage />);
+describe("CatalogPage — /cursos e /trilhas são telas SEPARADAS", () => {
+  // A regra que estes testes seguram (operador, set/2026): "se clicou em cursos
+  // aparece só cursos, o mesmo com trilhas". Antes era uma tela só, "Catálogo",
+  // com as duas listas empilhadas.
+  it("a tela de cursos mostra curso e NÃO mostra trilha", async () => {
+    renderWithProviders(<CatalogPage tipo="cursos" />);
 
-    expect(await screen.findByText("Exemplo — Trilha Fundamentos")).toBeTruthy();
-    expect(screen.getByText("Exemplo — Fundamentos de Excel + IA")).toBeTruthy();
+    expect(await screen.findByText("Exemplo — Fundamentos de Excel + IA")).toBeTruthy();
+    expect(screen.queryByText("Exemplo — Trilha Fundamentos")).toBeNull();
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Cursos");
   });
 
-  it("swaps to search results once 2+ chars are typed", async () => {
-    const result: SearchResult = {
-      query: "procv",
-      trilhas: [],
-      courses: [],
-      lessons: [
-        {
-          id: 100,
-          title: "PROCV e ÍNDICE+CORRESP",
-          tags: ["procv"],
-          module: { title: "Base Lógica", course: { slug: "exemplo-fundamentos-excel-ia", title: "Exemplo" } },
+  it("a tela de trilhas mostra trilha e NÃO mostra curso", async () => {
+    renderWithProviders(<CatalogPage tipo="trilhas" />);
+
+    expect(await screen.findByText("Exemplo — Trilha Fundamentos")).toBeTruthy();
+    expect(screen.queryByText("Exemplo — Fundamentos de Excel + IA")).toBeNull();
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Trilhas");
+  });
+
+  it("cada tela busca SÓ o que mostra", async () => {
+    renderWithProviders(<CatalogPage tipo="cursos" />);
+    await screen.findByText("Exemplo — Fundamentos de Excel + IA");
+
+    // Estando em /cursos não há por que pedir trilhas ao servidor.
+    expect(getCourses).toHaveBeenCalled();
+    expect(getTrilhas).not.toHaveBeenCalled();
+  });
+
+  it("lista vazia tem estado próprio em cada tela", async () => {
+    getCourses.mockResolvedValue([]);
+    renderWithProviders(<CatalogPage tipo="cursos" />);
+
+    expect(await screen.findByText("Nenhum curso publicado ainda.")).toBeTruthy();
+  });
+
+  it("quando a lista falha, a tela diz qual lista falhou", async () => {
+    getTrilhas.mockRejectedValue(new Error("500"));
+    renderWithProviders(<CatalogPage tipo="trilhas" />);
+
+    expect(await screen.findByText("Não foi possível carregar as trilhas.")).toBeTruthy();
+  });
+});
+
+describe("CatalogPage — busca", () => {
+  const resultado: SearchResult = {
+    query: "procv",
+    trilhas: [trilha],
+    courses: [course],
+    lessons: [
+      {
+        id: 100,
+        title: "PROCV e ÍNDICE+CORRESP",
+        tags: ["procv"],
+        module: {
+          title: "Base Lógica",
+          course: { slug: "exemplo-fundamentos-excel-ia", title: "Exemplo" },
         },
-      ],
-    };
-    search.mockResolvedValue(result);
-    renderWithProviders(<CatalogPage />);
+      },
+    ],
+  };
+
+  it("em /cursos, a busca traz cursos e AULAS, nunca trilhas", async () => {
+    search.mockResolvedValue(resultado);
+    renderWithProviders(<CatalogPage tipo="cursos" />);
+    await screen.findByText("Exemplo — Fundamentos de Excel + IA");
+
+    fireEvent.change(screen.getByLabelText("Buscar"), { target: { value: "procv" } });
+
+    await waitFor(() => expect(search).toHaveBeenCalledWith("procv"));
+    // Aula aparece com o curso porque é dentro de um curso que o clique leva.
+    expect(await screen.findByText("PROCV e ÍNDICE+CORRESP")).toBeTruthy();
+    expect(screen.queryByText("Exemplo — Trilha Fundamentos")).toBeNull();
+  });
+
+  it("em /trilhas, a busca traz só trilhas", async () => {
+    search.mockResolvedValue(resultado);
+    renderWithProviders(<CatalogPage tipo="trilhas" />);
     await screen.findByText("Exemplo — Trilha Fundamentos");
 
     fireEvent.change(screen.getByLabelText("Buscar"), { target: { value: "procv" } });
 
     await waitFor(() => expect(search).toHaveBeenCalledWith("procv"));
-    expect(await screen.findByText("PROCV e ÍNDICE+CORRESP")).toBeTruthy();
+    expect(screen.queryByText("PROCV e ÍNDICE+CORRESP")).toBeNull();
     expect(screen.queryByText("Exemplo — Fundamentos de Excel + IA")).toBeNull();
+  });
+
+  it("busca sem resultado do tipo da tela avisa, mesmo achando do outro tipo", async () => {
+    search.mockResolvedValue({ ...resultado, courses: [], lessons: [] });
+    renderWithProviders(<CatalogPage tipo="cursos" />);
+    await screen.findByText("Exemplo — Fundamentos de Excel + IA");
+
+    fireEvent.change(screen.getByLabelText("Buscar"), { target: { value: "procv" } });
+
+    // O servidor achou uma TRILHA, mas esta tela é de cursos: para quem está
+    // aqui, não há resultado. Dizer "achamos" e não mostrar nada seria pior.
+    expect(await screen.findByText('Nada encontrado para "procv".')).toBeTruthy();
   });
 });

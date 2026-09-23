@@ -27,8 +27,8 @@
 - Troca mensal↔anual = `subscriptions.update`; **a proração é da Stripe**, e é
   previsualizável antes de mostrar o número ao aluno.
 - `temAcessoAtivo()` **ignora qual plano** o membro tem.
-- **Sem trava vitalícia de preço** para fundadores — condição de fundador é bônus
-  temporário, nunca preço congelado para sempre.
+- **Não existe oferta de fundador** *(decisão do operador, set/2026)* — nem bônus temporário,
+  nem preço travado. A home não usa escassez fabricada.
 
 ### Fora do Brasil — dólar, pelo país do CARTÃO *(decisão do operador, 14/09/2026)*
 
@@ -73,6 +73,45 @@ cartão de qualquer outro país paga em dólar** — independente do idioma do s
 **A escolha é do operador, com o contador**, e reabre a decisão da página embutida **só se** o
 Managed Payments for o caminho — *dado novo* legítimo (imposto em 80+ países), não argumento
 repetido.
+
+## Formas de pagamento: cartão E Pix *(decisão do operador, set/2026)*
+
+A escola aceita **cartão e Pix**, e o Pix é **recorrente**: o aluno autoriza uma vez no
+aplicativo do banco (Pix Automático) e a Stripe cobra sozinha a cada período.
+`[FATO — documentação da Stripe consultada em set/2026: "You can now create subscriptions that
+use Pix as the payment method for recurring billing for customers in Brazil", via mandate options
+no PaymentIntent/SetupIntent/Checkout Session; suporte anunciado em 22/abr/2026.]`
+
+**O que isso acrescenta à Fase 4:** o Payment Element precisa das opções de mandato, e a régua de
+inadimplência ganha um caminho próprio — **falha de Pix não se retenta como cartão** (não existe
+"tentar o mesmo cartão de novo"). *Gatilho de reabertura: se o Pix recorrente exigir mais
+manutenção do que traz em conversão, ele sai e fica só o cartão.*
+
+## Reembolso: 7 dias, por lei *(set/2026)*
+
+A home responde "Tem reembolso?" com **7 dias a contar da assinatura**, valendo igual para mensal
+e anual. Não é liberalidade: é o **direito de arrependimento do CDC, art. 49** (compra fora de
+estabelecimento comercial), com devolução **imediata e corrigida** dos valores pagos. É norma de
+ordem pública — pode-se dar mais, nunca menos. Depois do prazo, o cancelamento não devolve dinheiro:
+o acesso vai até o fim do período já pago.
+
+**A página em inglês promete isso ao MUNDO, não só ao Brasil** *(22/09/2026 — o operador acatou a
+recomendação do parceiro de design)*. O texto é **"7-day money-back guarantee"**, porque
+"garantia legal de arrependimento" não significa nada para quem lê de fora e termo vago de lei
+gera desconfiança. **A consequência é comercial, não de tradução:** o CDC obriga no Brasil; fora
+dele, isto passa a ser uma **promessa nossa**, oferecida por escolha. Duas coisas decorrem:
+- **A Fase 4 tem que conseguir honrar reembolso de assinante internacional**, não só brasileiro.
+- **O texto em português está MAIS VAGO que o em inglês** — ele diz "garantia legal de
+  arrependimento", sem citar os 7 dias que esta seção manda dizer. *Alinhar é decisão do operador
+  (texto de interface é dele); fica aqui apontado, não corrigido.*
+
+## O plano ANUAL não aparece na home *(decisão do operador, set/2026)*
+
+A home mostra **um cartão só** (Mensal R$ 99,90) com o selo "17% de desconto no plano anual". O
+anual (R$ 995/ano, ≈ R$ 82,92/mês) é oferecido **na hora de assinar**.
+**TRAVA para a Fase 4:** a tela de pagamento **tem** que oferecer a escolha mensal/anual — senão a
+home anuncia um desconto sem caminho, que é exatamente o tipo de promessa vazia que a régua de
+conteúdo proíbe.
 
 ## Quem opera a recorrência: Stripe Billing
 

@@ -113,8 +113,8 @@ sobre crescimento rápido.
   cartão, nunca o idioma do site**: senão, qualquer estrangeiro troca para português e paga em
   real. Imposto internacional: decisão pendente da Fase 4 (`idiomas.md` §5).
 - **Sem free trial. Sem conteúdo grátis dentro da escola** (o grátis vive no YouTube).
-- **Sem lock de preço vitalício** pra fundadores. Founding member, se houver, é por bônus/condição
-  temporária — nunca preço travado pra sempre.
+- **Sem oferta de fundador** *(decisão do operador, set/2026)*: não haverá founding member, em
+  nenhuma forma — nem preço travado, nem bônus temporário.
 - Build = **2 objetos `Price` da Stripe num produto "Assinatura"**; `temAcessoAtivo()` ignora qual price o aluno tem.
 - *Validação (Gemini, convergência ~95%):* mensal-sem-fidelidade ganha de anual-12x-travado em
   conversão × LTV; fidelidade 12x carrega risco de Procon/CDC/chargeback pra operador solo.

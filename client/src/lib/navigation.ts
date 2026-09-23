@@ -2,8 +2,11 @@ import {
   Award,
   BarChart3,
   Bot,
+  Globe,
   GraduationCap,
   Route,
+  Signpost,
+  SlidersHorizontal,
   Users,
 } from "lucide-react";
 import { MockHome, MockGrid, MockMap, MockUser } from "@/components/nav/MockIcons";
@@ -53,16 +56,22 @@ export type Secao = {
 export const NAVEGACAO: Secao[] = [
   // ---------------------------------------------------------------- ALUNO
   { label: "Início", to: "/inicio", icon: MockHome, estado: "ativo" },
+  // "Catálogo" com abas virou DUAS seções de primeiro nível (operador, set/2026):
+  // "é mais fácil", e abre espaço para curso ao vivo e live session entrarem como
+  // seções próprias em vez de mais uma aba escondida.
   {
-    label: "Catálogo",
+    label: "Cursos",
     to: "/cursos",
     icon: MockGrid,
     estado: "ativo",
-    tambemAtivoEm: ["/curso/", "/trilha/"],
-    abas: [
-      { label: "Cursos", to: "/cursos" },
-      { label: "Trilhas", to: "/cursos/trilhas" },
-    ],
+    tambemAtivoEm: ["/curso/"],
+  },
+  {
+    label: "Trilhas",
+    to: "/trilhas",
+    icon: Route,
+    estado: "ativo",
+    tambemAtivoEm: ["/trilha/"],
   },
   { label: "Minhas trilhas", to: "/minhas-trilhas", icon: MockMap, estado: "ativo" },
   { label: "JilsonAI", to: "/jilsonai", icon: Bot, estado: "planejado" }, // Fase 6
@@ -84,7 +93,10 @@ export const NAVEGACAO: Secao[] = [
 
   // ---------------------------------------------------------------- ADMIN
   {
-    label: "Cursos",
+    // "Admin" no rótulo porque o aluno tem "Cursos" e "Trilhas" logo acima
+    // (operador, set/2026): dois itens com o mesmo nome no mesmo rail, e no
+    // modo recolhido só o ícone aparece.
+    label: "Cursos Admin",
     to: "/admin/cursos",
     icon: GraduationCap,
     papel: Role.ADMIN,
@@ -96,11 +108,21 @@ export const NAVEGACAO: Secao[] = [
     ],
   },
   {
-    label: "Trilhas",
+    label: "Trilhas Admin",
     to: "/admin/trilhas",
-    icon: Route,
+    icon: Signpost,
     papel: Role.ADMIN,
     estado: "planejado", // Bloco 6b
+  },
+  {
+    label: "Site",
+    to: "/admin/site",
+    // `Globe` e não `MockGrid`: este item nasceu com o MESMO ícone do "Catálogo"
+    // do aluno, e no rail RECOLHIDO só o ícone aparece — dois itens viravam
+    // indistinguíveis. Ícone repetido é defeito de navegação, não de estética.
+    icon: Globe,
+    papel: Role.ADMIN,
+    estado: "ativo",
   },
   {
     label: "Alunos",
@@ -110,9 +132,10 @@ export const NAVEGACAO: Secao[] = [
     estado: "planejado", // Fase 4
   },
   {
-    label: "JilsonAI",
+    // Mesmo caso de "Cursos Admin": o aluno também tem um "JilsonAI".
+    label: "JilsonAI Admin",
     to: "/admin/jilsonai",
-    icon: Bot,
+    icon: SlidersHorizontal,
     papel: Role.ADMIN,
     estado: "planejado", // Fase 6
     filhos: [
@@ -134,15 +157,23 @@ export const NAVEGACAO: Secao[] = [
 /**
  * As seções que ESTA pessoa vê. Dois filtros, e os dois importam:
  *
- * - `estado` — "planejado" nunca renderiza, senão o rascunho do mapa viraria
- *   um menu cheio de link quebrado.
  * - `papel` — o aluno não vê as seções de admin. Não é sobre acesso (o servidor
  *   barra de qualquer jeito): é sobre não anunciar a existência de uma área que
  *   não é dele.
+ * - `estado` — **"planejado" aparece só para o ADMIN** *(decisão do operador,
+ *   set/2026: "deixa os itens no menu mesmo que não funcione... vendo eu não
+ *   esqueço")*. Ele quer o mapa inteiro à vista enquanto constrói.
+ *   **Para o aluno continua escondido**, e o motivo não é o mesmo de antes:
+ *   entre as planejadas há seções DELE (JilsonAI, Certificados) — mostrá-las
+ *   seria anunciar produto que não existe.
+ *   **Quem impede o link quebrado agora é o rail**, que renderiza planejada
+ *   como texto e não como `<a>`. A trava mudou de lugar, não sumiu.
  */
 export function secoesVisiveis(papel: string | undefined): Secao[] {
   return NAVEGACAO.filter(
-    (s) => s.estado === "ativo" && (s.papel === undefined || s.papel === papel),
+    (s) =>
+      (s.papel === undefined || s.papel === papel) &&
+      (s.estado === "ativo" || papel === Role.ADMIN),
   );
 }
 

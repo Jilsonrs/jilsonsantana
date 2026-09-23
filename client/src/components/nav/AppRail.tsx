@@ -61,6 +61,39 @@ const GLOW_ATIVO = cn(
   "after:bg-gradient-to-b after:from-primary after:to-transparent",
 );
 
+/**
+ * Seção PLANEJADA: a tela ainda não existe (decisão do operador, set/2026 —
+ * ele quer o mapa inteiro à vista para não esquecer o que falta).
+ *
+ * Renderiza como TEXTO, nunca como `<a>`. É aqui que mora a trava que antes
+ * vivia no filtro: item de menu que leva a rota inexistente é link quebrado, e
+ * link quebrado no rail é pior que item ausente. `aria-disabled` para quem usa
+ * leitor de tela ouvir que aquilo não é acionável, e a etiqueta "em breve" para
+ * quem enxerga não achar que o clique falhou.
+ */
+function ItemPlanejado({ secao }: { secao: Secao }) {
+  const Icon = secao.icon;
+  return (
+    <li>
+      <div
+        aria-disabled="true"
+        className={cn(
+          "relative mx-3 flex h-12 items-center gap-4 rounded-[10px] pl-4 pr-4 text-sm",
+          "text-rail-foreground/40",
+        )}
+      >
+        <Icon className="size-6 shrink-0" strokeWidth={TRACO} />
+        <span className={cn(ROTULO, "flex items-center gap-2")}>
+          {secao.label}
+          <span className="rounded-full border border-white/10 px-1.5 py-0.5 font-mono text-[0.55rem] tracking-[0.08em]">
+            EM BREVE
+          </span>
+        </span>
+      </div>
+    </li>
+  );
+}
+
 function ItemRail({ secao, ativa }: { secao: Secao; ativa: boolean }) {
   const Icon = secao.icon;
   return (
@@ -156,7 +189,11 @@ export function AppRail({ papel }: { papel?: string }) {
               {i === primeiraAdmin && i > 0 && (
                 <li className="mx-6 my-3 border-t border-white/10" aria-hidden="true" />
               )}
-              <ItemRail secao={secao} ativa={secao.to === ativa?.to} />
+              {secao.estado === "planejado" ? (
+                <ItemPlanejado secao={secao} />
+              ) : (
+                <ItemRail secao={secao} ativa={secao.to === ativa?.to} />
+              )}
             </Fragment>
           ))}
         </ul>

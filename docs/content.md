@@ -176,8 +176,9 @@ custa um curso avulso por mês."
 > só olha se a assinatura está ativa — não liga pra qual price. **Sem free trial. Sem conteúdo
 > grátis na escola** (o grátis vive no YouTube).
 
-### Founding Member *(tática aprovada — escassez pros primeiros, vindos de YouTube/Udemy)*
-"Os primeiros membros entram como **fundadores**: [condição — TBD: preço travado / bônus]. Vagas limitadas."
+### Founding Member — **NÃO VAI EXISTIR** *(decisão do operador, set/2026)*
+Não há oferta de fundador, nem "vagas limitadas". A regra de conteúdo da home passou a proibir
+escassez fabricada sem exceção. *Gatilho de reabertura: nenhum — se voltar à mesa, é decisão nova.*
 
 ---
 
@@ -311,3 +312,134 @@ problema primeiro", inversão "não prende" vs "não evapora". 1 TBD: condição
 adicionado em "A tese" (AI-nativa = posicionamento/SEO; copy do aluno inalterada); cadência ritual
 anotada no §3 (Pilar 3) + item de FAQ como rascunho TBD (dia fixo mensal, decidir no go-live —
 promessa mensal e humilde). Nenhuma seção nova na landing.*
+
+*Atualizado: Set 2026 — **a copy da HOME está fechada e saiu deste documento para o código.**
+O mock foi aprovado (`design-lab/home-lab.html`) e transposto para a home real, servida pelo
+Express. **O texto vivo da home mora em `core/src/i18n/pt.ts`** (o inglês espelha em `en.ts` e
+ainda está vazio); este documento continua sendo a direção de mensagem, não o texto literal.
+O que mudou em relação ao que estava escrito aqui:*
+*(a) **Hero sem botão de assinar** — decisão do operador: não vender de cara; o visitante clica
+no curso em destaque e assina na página do curso.*
+*(b) **Seção "Cursos"** ganhou título próprio ("Uma escola moderna com IA no DNA.") e a seção
+"Para quem é" foi reescrita ("A IA reescreveu as regras. Torne-se o profissional que dita o
+jogo.") com 3 pontos: Comece de onde estiver · Direto ao Ponto · Lifelong Learning.*
+*(c) **Trilhas:** 4 ideias (Trilhas prontas · Monte a sua · JilsonAI · Certificado), sem cards de
+trilha na home e sem trilha em destaque (o catálogo ainda não completa uma trilha inteira).*
+*(d) **JilsonAI:** entrou um exemplo de conversa fixo na página; saiu o medidor de uso do mês
+(é detalhe de quem já assinou). O `[ ]` do parágrafo saiu do texto visível.*
+*(e) **Prova social:** 4 depoimentos REAIS de alunos dos cursos, nome completo, sem foto, sem
+estrela. Regra: se a pessoa pedir, o depoimento sai na hora. **Proibido depoimento inventado.***
+*(f) **Assine:** UM cartão (Mensal R$ 99,90) com selo "17% de desconto no plano anual"; o anual
+é oferecido no checkout. Lista: Cursos e Trilhas · Certificado de Conclusão · Suporte com
+JilsonAI + Jilson · Conteúdo sempre atualizado · Pagamento no cartão ou no Pix.*
+*(g) **FAQ:** 16 perguntas COM respostas escritas, na ordem de quem decide (o que é → é para mim
+→ como funciona → assinatura).*
+*(h) **Regra de mensagem que passa a valer para tudo:** pode prometer o que o aprendizado
+entrega (trabalhar melhor, acelerar projetos, ganhar confiança); não pode prometer emprego,
+salário ou sucesso garantido. Nem tom de sonho, nem tom que desanima.*
+*(i) **Founding member removido** e **escassez fabricada proibida** (sem "vagas limitadas").*
+
+---
+
+## 16. ONDE CADA CONTEÚDO MORA — o mapa das páginas públicas *(Set 2026)*
+
+> **DECISÃO DO OPERADOR (22/09/2026):** *"eu não gosto de ter que pedir a IA para alterar um
+> texto, eu queria poder abrir o adm e trocar os textos."* **Texto de página passa a ser editável
+> no admin, sem sessão de agente e sem deploy.**
+
+Esta seção existe porque a pergunta certa não é *"que tabela essa página precisa?"* — é *"que
+tipo de conteúdo é esse?"*. Modelar por **página** produz campo duplicado em três tabelas;
+modelar por **tipo** deixa a página ser só uma vista. É como as plataformas grandes fazem:
+dado de produto num lugar, texto de marketing em outro, e uma camada fina de curadoria
+decidindo o que aparece onde.
+
+### Os três baldes (aplicar ANTES de criar qualquer campo)
+
+| Balde | O que é | Onde mora | Quem edita |
+|---|---|---|---|
+| **Entidade** | o que a escola vende ou entrega, e que existe fora da página | banco (Prisma) | operador, no `/admin` |
+| **Texto de página** | título, parágrafo, rótulo, pergunta de FAQ — texto que *descreve*, não que *é* | dicionário (`core/src/i18n/`) + sobrescrita no banco | operador, no `/admin` |
+| **Derivado** | contagem de aulas, carga horária, agrupamento | calculado na leitura | ninguém — **nunca vira coluna** |
+
+### O NOME DA CHAVE diz onde o texto aparece *(22/09/2026 — "renomeia logo porque vai ter mais de uma página, aí não mistura")*
+
+A primeira parte da chave é o lugar, não a seção:
+
+| Prefixo | Onde aparece | Exemplo |
+|---|---|---|
+| `common.*` | **toda** página pública | `common.nav.cursos`, `common.footer.tagline` |
+| `home.*` | só na home | `home.target.steps[2].title`, `home.pricing.desc` |
+
+**Página nova = prefixo novo** (`curso.*`, `trilha.*`, `legal.*`) — e ela já aparece no admin
+sozinha, sem tabela nem tela nova. É isso que faz a plataforma crescer sem refazer.
+
+**A regra que evita a bagunça:** texto que aparece em **duas** páginas é `common`, nunca duplicado
+nas duas. Duplicar é como as duas versões passam a divergir sem ninguém ver.
+
+**Por que foi renomeado ANTES da tabela de sobrescrita existir:** a chave é a chave primária da
+linha no banco. Renomear depois significa que cada texto já editado pelo operador aponta para um
+nome que não existe mais — migração de dados, em vez de um `sed`. Feito em 22/09, com prova de que
+o HTML renderizado ficou **byte a byte idêntico** nos dois idiomas.
+
+### Como o texto de página funciona: valor de fábrica + sobrescrita
+
+O dicionário em código **não é "o texto do site"** — é o **valor de fábrica**: o que uma
+instalação nova mostra antes de alguém configurar. A sobrescrita no banco é o que está no ar.
+
+    texto exibido  =  sobrescrita do banco  ??  valor de fábrica do dicionário
+
+**Por que o híbrido e não o banco puro** *(a alternativa foi pesada, 22/09)*: banco puro ganha em
+uma coisa — editar na hora — e perde em quatro: banco fora do ar derruba o **texto** junto com o
+dado; tradução faltando chega em produção em vez de quebrar a compilação; seção nova nasce
+**vazia**; e não há histórico para desfazer. A diferença de custo entre as duas é **uma linha**
+(`??`), então o híbrido fica com a vantagem de cada lado.
+**Consequência aceita:** depois da primeira edição, o texto do código fica velho. Isso é esperado
+— **a verdade do que está no ar é o admin**, e a tela mostra o valor de fábrica ao lado para a
+diferença ficar visível.
+*Gatilho de reabertura: se um dia houver centenas de textos mudando toda semana, com várias
+pessoas editando, o valor de fábrica vira ruído e o banco puro passa a valer. Não é o caso de um
+operador com ~150 chaves.*
+
+### O mapa da home, seção por seção
+
+Estado em 22/09/2026, **medido** (não estimado):
+
+| Seção | Balde | Estado |
+|---|---|---|
+| Nav, Hero (textos) | texto | dicionário |
+| Curso em destaque + 4 cards | **entidade** (`Course`) | ainda constante no código — ver *pendências* |
+| Catálogo (título, parágrafo, "ver todos") | texto | dicionário |
+| Para quem é (3 passos) | texto | dicionário |
+| Trilhas (4 ideias + a ilustração de linha do tempo) | texto | dicionário — a ilustração é **mock**, não lê trilha real |
+| JilsonAI (texto + conversa de exemplo) | texto | dicionário; a conversa é **roteirizada**, nunca chama a API |
+| Autor (bio, citação, 3 números) | texto | dicionário |
+| **Depoimentos** | **entidade** *(decidido, ainda não construído)* | hoje no dicionário |
+| Preço (cartão, lista, rodapé) | texto | dicionário — o **valor** vira Stripe na Fase 4 |
+| **FAQ** | **entidade** *(decidido, ainda não construído)* | hoje no dicionário |
+| CTA, Rodapé | texto | dicionário |
+
+**Por que depoimentos e FAQ viram tabela e o resto não:** são as duas únicas listas da home que
+**crescem**. As outras têm tamanho fixo preso ao layout (3 passos, 4 ideias) — acrescentar item é
+mudança de desenho, não de conteúdo. E depoimento tem uma obrigação própria já escrita aqui
+(§ acima: *"se a pessoa pedir, o depoimento sai na hora"*) — isso não pode depender de deploy.
+
+### Regra que passa a valer para toda página pública
+
+**Nenhum texto visível fica literal no template.** Se está no HTML, o operador não consegue
+editar e o `/en` mostra português. A trava mecânica e o teste que a sustenta estão no
+`CLAUDE.md` → *Rendering Boundary*.
+
+### Pendências (nesta ordem)
+
+1. ~~Fiação: tirar do HTML os textos que já tinham chave.~~ **Feito em 22/09** — 55 literais
+   foram para o dicionário; sobraram só os rótulos das 3 camadas (entram com o selo).
+2. Mecanismo de sobrescrita + tela de admin.
+3. Depoimentos e FAQ viram tabela com CRUD no admin.
+4. Os 5 cursos saem da constante e passam a vir do banco (depende da migration de `language`).
+5. ~~Escrever o inglês.~~ **Feito e revisado em 22/09** (155 chaves; ciclo de revisão em
+   `idiomas.md`). **Fica aberto:** o operador quer revisar **as 15 perguntas do FAQ uma a uma** —
+   o conteúdo delas, nos dois idiomas, não a tradução. Ele decide quando.
+6. **Preço em dólar na página em inglês:** as chaves `priceEn` e `priceEnAnnual` existem e **não
+   são usadas** — a página em inglês mostra o preço em real. Isso é a questão *preço mostrado ×
+   preço cobrado*, que é **decisão da Fase 4** (`billing.md`), não de fiação.
+

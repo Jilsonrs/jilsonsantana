@@ -44,6 +44,21 @@ exploração descartável, e o que importa deles já está aqui. **Consequência
 novo a pasta chega só com o `GEMINI.md` — se você procurar um mock citado num commit antigo e não
 achar, não é defeito, é o desenho.
 
+### A home pública mudou de lugar *(Set 2026)*
+
+A home deixou de ser React e passou a ser **HTML montado no servidor**. Para o parceiro de design,
+isso muda ONDE ele trabalha — o que ele faz continua igual:
+
+| O que ele mexe | Arquivo |
+|---|---|
+| Espaçamento, cor, tipografia, sombra, animação | `client/src/public-input.css` (é o CSS do mock, copiado verbatim) |
+| Marcação e classes da home | `server/src/views/home.ts` |
+| Depois de mexer no CSS | roda `npx tailwindcss -i src/public-input.css -o public/css/public.css --minify` dentro de `client/` |
+
+**O `design-lab/home-lab.html` está aposentado como fonte:** virou referência histórica da home.
+Mexer nele não muda mais o site. O estúdio continua valendo para as **outras** páginas (curso,
+trilhas, Quem somos, Contato), que ainda não existem.
+
 **A rede de segurança que torna isso seguro são os TESTES.** O parceiro edita `.tsx` de verdade, e
 o que o impede de apagar acessibilidade sem querer não é a boa vontade dele: é a suíte reprovar.
 Expansão por teclado, `aria-current`, rótulo do rail recolhido, visibilidade por papel e destino de
@@ -508,3 +523,13 @@ reabertura técnico:** fonte é identidade, e só muda por nova decisão do oper
 arte.*
 
 *Atualizado Set 2026 — **Layout Macro 1680px, Zona de Leitura 860px e Fotografia Lifestyle. Decisão do operador com o diretor de arte (Gemini).** Estabeleceu-se uma grade de 1680px para preencher monitores modernos. Textos longos e conteúdo principal hero ficam contidos em uma coluna central de 860px, com parágrafos obrigatoriamente **alinhados à esquerda** (para facilitar leitura), quebrando o paradigma de se centralizar tudo. No mobile, o preenchimento (padding) lateral de imagens zera para bater precisamente com a margem do texto, esticando a visualização. A direção fotográfica abandona abstrações 3D de banco de imagem e assume **"High-End Lifestyle"** (praias, varandas em Miami, liberdade geográfica e MacBooks) para comunicar a tese da escola.*
+
+*Atualizado Set 2026 — **a home pública virou HTML no servidor, e o mock saiu de cena.** O
+`home-lab.html` aprovado foi transposto mecanicamente para `server/src/views/home.ts` (mesma
+marcação, mesmas classes) e o CSS dele virou `client/src/public-input.css`, compilado para
+`/css/public.css` pelo Tailwind CLI. **Por que a transposição foi mecânica e não uma releitura:**
+a primeira tentativa reescreveu a marcação com classes inventadas, e metade da página perdeu o
+estilo — o HTML apontava para classes que não existiam em lugar nenhum. **Regra que fica:** quando
+um mock for aprovado, transponha, não reinterprete. **Onde o parceiro de design trabalha agora:
+§0.** *Sem gatilho de reabertura — é a fronteira de renderização já decidida no `CLAUDE.md`.*
+

@@ -235,6 +235,22 @@ fecham com ela.** Os dois furam a mesma convenção (CLAUDE.md → Server: "publ
 - [ ] Autoria real da **Trilha 1 — Fundamentos (Excel + IA)** pelo admin, pela UI (não é bloco de
       código — é o operador usando o Bloco 6a/6b prontos; o seed atual é só smoke descartável).
 
+**PENDENTE DO OPERADOR — o que cada seção PLANEJADA vai ter dentro** *(23/09/2026: "coloca como
+pendência definir o que vai ter porque não tive tempo de pensar em tudo ainda")*
+
+O rail já mostra ao admin as seções que faltam construir, em cinza. **Mas o segundo nível delas
+está quase todo vazio:** das cinco planejadas, só **JilsonAI Admin** tem subitens declarados
+(Escalações · Persona · Modelo · Quotas). Por isso "ligar o segundo nível" hoje mostraria quatro
+linhas e nada mais — não responde *"o que falta no admin"*, porque o que falta ainda não foi
+escrito em lugar nenhum.
+
+- [ ] **Operador define, uma frase por seção:** o que tem dentro de **Alunos**, de **Dados** (o
+      painel é uma tela só ou tem partes?), de **Trilhas Admin** e de **Certificados**.
+- [ ] Declarar no `client/src/lib/navigation.ts` (é dado, não código — cada seção declara os
+      níveis que usa), e só então ligar a exibição do 2º nível para seção planejada.
+- **Por que nesta ordem:** declarar primeiro é o que faz a visão "o sistema inteiro de uma olhada"
+  existir de verdade. Ligar antes entrega a moldura vazia.
+
 **Backlog de polish (sem dono de bloco ainda — não bloqueia o fechamento da Fase 2, mas precisa
 de uma sessão própria antes do launch):**
 - [ ] Fotos/imagens reais (thumbnails de curso, qualquer asset de marca) — hoje tudo usa
@@ -1121,13 +1137,162 @@ landmark. Corrigido junto.
 
 ### Bloco — Superfície pública indexável  *(Ago 2026 · política em `CLAUDE.md` → Rendering Boundary)*
 
+> **PARCIALMENTE CONSTRUÍDO FORA DE ORDEM (set/2026, decisão do operador).** A **home** (`/` e
+> `/en`) já está no ar em HTML montado no servidor, junto com `escapeHtml`/`jsonLd` e o dicionário
+> bilíngue do `core`. Foi feita antes do Bunny porque a home não usa `introVideoId` — a
+> dependência que justificava a ordem é da **página de curso**, que continua depois do Bunny.
+> **O que ficou pendente dentro deste bloco:** os 5 cursos da home vêm de uma constante em
+> `server/src/routes/home.ts` (falta a migration de `language` e o cadastro), o `en.ts` está com
+> as chaves vazias, e `robots.txt`/`sitemap.xml`/`noindex` continuam por fazer.
+> **Desdobrado em 22/09/2026** nos quatro blocos de conteúdo logo abaixo (fiação → admin de texto
+> → depoimentos e FAQ → cursos do banco), na ordem decidida pelo operador.
+
+#### Bloco C1 — Fiação: nenhum texto visível literal no template ✅ DONE *(22/09/2026)*
+
+> **Por que este bloco vem ANTES do admin de texto, e não depois:** com texto cravado no HTML, o
+> operador abriria a tela, editaria um campo, salvaria — e o site não mudaria. Falha silenciosa.
+> Fiando primeiro, no dia em que a tela existe **todo campo dela funciona**.
+
+- [x] **Medir antes de mexer** — script que achata o dicionário e confere chave a chave contra o
+      template. Resultado: **55 de 145 chaves não eram usadas** (texto literal no HTML) e o `/en`
+      era uma mistura de campo vazio com português.
+- [x] Fiar as 12 seções da home. Listas (`ai.features`, `testimonials.list`, `faq.list`) passam a
+      renderizar por `.map()` — acrescentar item vira mudança de dado, não de marcação.
+- [x] **`aria-label`, `alt` e `title` também** — seção `a11y` nova no dicionário. Eram português
+      puro no `/en`, e leitor de tela lê.
+- [x] **Negrito vira dois campos** (`ai.features[i].label` + `.text`): o `<strong>` sai da string
+      para o operador nunca digitar HTML no admin.
+- [x] **Defeito corrigido junto** (mesma família, mesmo arquivo): `src="/img/${dict...title}.png"`
+      usava texto de dicionário como caminho de arquivo — a imagem sumiria na primeira edição.
+- [x] **Teste:** um trecho em português por seção tem que aparecer em `/` e **não** em `/en`.
+- [x] **Passo 8 — mutação:** literal cravado de volta → a suíte **reprovou** (`vazou em /en`).
+      Revertido.
+- **Done when:** medição acusa **0** chaves não usadas. *Restaram 3 de propósito — `pricePtAnnual`,
+  `priceEn`, `priceEnAnnual` não têm elemento na página; é a questão preço mostrado × cobrado, que
+  é decisão da Fase 4.* Os rótulos das 3 camadas continuam literais e entram com o selo.
+
+#### Bloco C2 — Texto de página editável no admin  *(decisão do operador, 22/09/2026)*
+
+> **O desenho:** `texto exibido = sobrescrita do banco ?? valor de fábrica do dicionário`.
+> Racional, alternativas pesadas e gatilho de reabertura em [`content.md`](content.md) § 16.
+> **O mecanismo não conhece a home** — ele conhece chaves. Página nova nasce com chaves no
+> dicionário e **já aparece no admin**, sem tabela nem tela nova. É isso que faz a coisa crescer
+> sem refazer.
+
+- [x] **Passo 0 — resolvido sem pergunta:** o dicionário hoje contém **só** copy de página pública
+      (`common.*` + `home.*`), então tudo nele é editável e nada de rótulo do app logado entrou.
+      Quando o React passar a usar o dicionário, a tela precisa filtrar — fica anotado aqui.
+      **Pré-flight feito:** banco `dev` (`ep-lingering-morning`), 2 usuários, login de admin e de
+      membro OK antes E depois da migration; contagens idênticas; zero drift.
+- [x] **Migration** `20260922235628_site_text_and_language_enum`: enum `Language { PT EN }` + tabela
+      `site_text` (único por chave+idioma) + **RLS na mesma migration**. Consulta de verificação
+      rodada: **zero tabelas em `public` sem RLS**.
+      **ESCRITA À MÃO porque o `prisma migrate dev` estava quebrado** (P1014: valida o histórico
+      num shadow database onde `_prisma_migrations` não existe, e a migration de RLS de Ago 2026
+      fazia `ALTER TABLE` nela). **CONSERTADO na mesma sessão, a pedido do operador:** aquela
+      migration virou condicional (`IF EXISTS` num bloco `DO $$`). Provas: A/B no mesmo shell
+      (incondicional → P1014, condicional → passa) · banco limpo pelo `migrate reset` continua com
+      RLS em `_prisma_migrations` e **zero** tabelas sem RLS · `migrate status`, `migrate deploy` e
+      o diff de drift passam nos dois bancos **sem** `migrate resolve`, porque o Prisma 5.22 não
+      reprova checksum de migration já aplicada (medido). Regra nova no `CLAUDE.md` → Commands.
+- [x] **Servidor:** `server/src/lib/dict.ts` é a **única porta** para o texto — template nenhum
+      importa `pt`/`en` direto, senão a edição do operador não aparece naquela tela. Cache em
+      memória limpo ao salvar. *(Limite registrado no próprio arquivo: o cache é por instância.)*
+      A lista branca de chaves (`DICT_KEYS`) vive no `core` e é usada pelo schema Zod.
+- [x] **Rotas** `GET /api/admin/site-text` e `PUT /api/admin/site-text`, atrás de `requireAdmin`.
+      A lista sai do **dicionário**, não do banco: campo nunca editado também aparece, senão a tela
+      só mostraria o que já foi mexido. **Valor vazio APAGA a sobrescrita** e volta ao valor de
+      fábrica — sem isso, desfazer exigiria o operador redigitar o texto original.
+- [x] **Tela** (`/admin/site`, item de menu **"Site"** — nome decidido pelo operador; posicionado
+      depois de Cursos e Trilhas para manter as seções de conteúdo juntas): lista agrupada por
+      seção com busca **por texto ou por chave** (com 155 campos, rolar não é navegação), PT e EN
+      lado a lado, valor de fábrica visível **só quando há sobrescrita** — é quando a diferença
+      importa, porque é o que volta se o campo for limpo. **Cada campo salva sozinho.**
+      Loading / erro / vazio + **12 testes de componente**.
+      **Dependência nova NÃO adicionada:** `@testing-library/jest-dom` não existe no repo, e isso é
+      decisão de plano — as asserções seguem o estilo dos testes atuais (`toBeTruthy`, `toBeNull`,
+      `textContent`).
+- [x] **Testes de servidor (10):** os seis previstos + idioma inválido recusado + a lista de admin
+      trazendo fábrica e sobrescrita separadas. **Quase todos terminam lendo a HOME de verdade** —
+      gravar a linha não prova nada se ela não chegar na página.
+- [x] **Passo 8 — mutação, nos dois lados.** Servidor: ignorar a sobrescrita no `getDict` **e**
+      remover a lista branca de chaves → **3 testes reprovaram**. Tela: apagar o aviso de falha ao
+      salvar e fazer "Voltar ao padrão" mandar o valor de fábrica em vez de vazio → **2 testes
+      reprovaram**. Revertido nos dois.
+- **Done when:** ✅ o operador troca um texto no admin e ele muda no ar, nos dois idiomas, sem
+  deploy. *Provado pelos testes de servidor, que terminam lendo a home de verdade. **Falta a
+  conferência na tela pelo operador** — subir `dev:server` + `dev:client` e editar um campo.*
+
+#### Bloco C5 — A vitrine sai do React  *(decisão do operador, set/2026)*
+
+> **Por que existe:** `/cursos` e `/trilhas` são hoje páginas React que fazem dois papéis mal — o
+> visitante vê cromo de app, o aluno não vê progresso. O operador separou as duas superfícies
+> (`CLAUDE.md` → *DUAS SUPERFÍCIES*) e pediu que o que for construído agora **seja a versão
+> final**: *"eu quero que seja a versão final que vamos utilizar"*. Sem construir duas vezes.
+>
+> **BLOQUEADO — e o bloqueio é do operador, não técnico.** O passo 1 do fluxo com o parceiro de
+> design é *"o operador e o Claude definem o que vai ter na tela"*, e ele adiou: *"depois
+> analisamos minuciosamente o que vai ter em cada página"*. Sem isso não há mock, e sem mock não há
+> transposição.
+
+- [ ] **Passo 0 (operador):** o que a vitrine mostra, e o que a tela do aluno mostra **a mais**.
+      Direção já dada por ele, a detalhar: progresso por curso · "continue de onde parou" no topo ·
+      o botão sendo **Continuar** em vez de **Assinar**.
+- [ ] **Mock na `design-lab/`** (parceiro de design) → **transposição** para template de servidor
+      (mesma marcação, mesmas classes) → **formatação** pelo parceiro. É o caminho que a home já
+      percorreu inteiro.
+- [ ] `/cursos` e `/trilhas` viram template de servidor, com o payload de indexação que a home já
+      tem (title, description, canonical, OG, `hreflang`, JSON-LD) e **os dois idiomas**.
+- [ ] Catálogo do aluno nasce em **`/aluno/cursos`** e **`/aluno/trilhas`** (React, dentro do
+      shell). `CatalogPage.tsx` é a base — o que muda é o que ele mostra a mais.
+- [ ] O rail do aluno passa a apontar para `/aluno/*`; a vitrine fica com o endereço curto.
+- [ ] Testes: servidor para a vitrine (responde, indexa, filtra por idioma e status) + componente
+      para a do aluno (os estados + o que ela tem a mais).
+- [ ] **Passo 8 — mutação:** remover o filtro de status da vitrine → a suíte de servidor reprova.
+- **Done when:** o visitante e o Google veem a mesma vitrine, sem barra; o aluno logado tem a
+  dele, com barra e progresso.
+- **DEPOIS deste bloco:** `/curso/:slug` e `/trilha/:slug` seguem o mesmo caminho. A página de
+  curso espera o **Bunny** (o `introVideoId` toca para não-membro nela) — é a dependência que já
+  justificava a ordem original.
+
+#### Bloco C3 — Depoimentos e FAQ viram tabela
+
+> São as duas únicas listas da home que **crescem**. O resto tem tamanho fixo preso ao layout.
+> Depoimento tem obrigação própria já escrita (`content.md`: *sai na hora se a pessoa pedir*) —
+> isso não pode depender de deploy.
+
+- [ ] Models `Testimonial` e `FaqItem`: texto, autor/iniciais (depoimento), pergunta/resposta
+      (FAQ), `language`, `displayOrder`, `status`, + RLS. Migration única.
+- [ ] Leitura pública filtra `PUBLISHED` + idioma, ordena por `displayOrder` (mesmo padrão de
+      `courses.ts`). CRUD no admin. As chaves correspondentes saem do dicionário.
+- [ ] **FAQ ganha JSON-LD `FAQPage`** — hoje o `<details>` já entrega o texto no HTML, mas sem o
+      dado estruturado que o buscador lê.
+- [ ] Testes de servidor (lista pública respeita status e idioma) + componente (estado vazio).
+- **Done when:** o operador publica um depoimento novo e remove outro pelo admin, sem deploy.
+
+#### Bloco C4 — Os 5 cursos da home vêm do banco
+
+- [ ] Depende da migration de `language` (Bloco I) e do cadastro dos 5 cursos.
+- [ ] **Bloqueio conhecido, resolver antes:** `thumbnailUrl` usa `z.string().url()`, que **recusa**
+      caminho relativo (`/img/curso.jpg`) — as imagens atuais não salvam pelo admin. Trocar pela
+      checagem explícita de esquema que o `CLAUDE.md` já exige (`core/` → a regra do `.url()`).
+- [ ] Destaque e cards derivados de `displayOrder` (decisão do operador pendente — ver o bloco
+      original acima).
+- [ ] **Etiqueta do curso** *(decidida em 22/09 — spec em `courses.md` → "Etiqueta do curso")*:
+      enum `CourseBadge { NOVO DESTAQUE MAIS_VENDIDO }` + `Course.badge?` + a data que faz `NOVO`
+      **expirar em 120 dias** · campo de seleção no formulário de curso · rótulos em
+      `common.badges.*` no dicionário (editáveis no `/admin/site`) · a home usa a etiqueta do curso
+      no lugar do texto fixo "CURSO EM DESTAQUE". **Trava:** é campo SEPARADO do `status` — pôr
+      "NOVO" naquele enum sumiria com o curso do site inteiro, sem erro.
+- **Done when:** o operador troca o curso em destaque pelo admin e a home muda.
+
 > **SEQUENCIAMENTO DECIDIDO: este bloco vem DEPOIS do Bunny.** O `introVideoId` é ativo do Bunny
 > numa rota **pública** (o vídeo de apresentação toca para não-membro), e é o único ponto onde as
 > duas frentes se tocam. Construir a página pública antes de saber como o Bunny assina e embeda
 > significa construí-la duas vezes. A **fronteira** já está decidida, então o player nasce do lado
 > privado desde o dia um — só o payload de SEO espera.
 
-- [ ] **PRIMEIRO ITEM DO BLOCO — `server/src/lib/html.ts`: `escapeHtml()` + `jsonLd()`.** Vem antes
+- [x] **PRIMEIRO ITEM DO BLOCO — `server/src/lib/html.ts`: `escapeHtml()` + `jsonLd()`.** Vem antes
       do primeiro template, não depois: escape retrofitado é escape com furo, porque ninguém
       relê 6 arquivos procurando a interpolação que escapou. **São DUAS funções porque são dois
       problemas diferentes:** `escapeHtml` cobre texto e atributo (`&`, `<`, `>`, `"`, `'`);
@@ -1136,7 +1301,7 @@ landmark. Corrigido junto.
       inteiro existe para emitir) e o risco real é outro — fechar o `</script>` de dentro da
       string, o que se resolve com `JSON.stringify` + `<` → `<`. Usar um no lugar do outro
       falha nas duas direções.
-- [ ] **Teste unitário do helper** — é a **única unidade genuína de todo o plano**, e cabe aqui
+- [x] **Teste unitário do helper** — é a **única unidade genuína de todo o plano**, e cabe aqui
       porque a função é pura: sem I/O, sem banco, sem tela. Casos: `<script>` em texto · `"` em
       atributo (o que quebra `content="…"` das metas OG) · `</script>` dentro do JSON-LD · e o que
       passa despercebido em revisão de diff — **string já escapada não pode ser escapada duas

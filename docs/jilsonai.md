@@ -695,3 +695,14 @@ depender da fila que **nasce na Fase 4**. **Gatilho de volta registrado nas Fase
 da KB e o pipeline transcrição→chunk→embedding são o caso de uso legítimo (lote, demorado,
 retentável) e são código que ainda não existe, logo adicionar a fila lá não refatora nada. No MVP
 (Fases 0–3) o chat é **síncrono com streaming**: fila pioraria o produto. Roadmap inalterado.*
+
+---
+
+*Atualizado Set 2026 — **duas decisões do operador vindas do mock da home.** (1) **O convite
+"traga o problema do seu trabalho" está CANCELADO** — motivo: privacidade, o problema do trabalho
+carrega dado da empresa e de terceiros. Ele estava previsto como reforço pós-lançamento; não
+entra. (2) **A home mostra um exemplo de conversa fixo** (pergunta de aluno + resposta do
+JilsonAI, escritos à mão, sem chamada de API), e **não mostra o medidor de uso do mês** — o
+medidor vive na área do aluno, porque na página de venda só atrapalharia. O limite mensal continua
+existindo; muda só onde ele é explicado.*
+

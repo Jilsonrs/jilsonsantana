@@ -115,6 +115,33 @@ no Passo 0 do Bloco I (Fase 3), com o parceiro de design.
   com vídeos, aulas e **slug próprios, no idioma dele**. Nunca é uma tradução do mesmo registro: o
   vídeo é gravado num idioma, e a versão em inglês pode ter outras aulas. A regra de slug permanente
   vale para cada curso separadamente.
+- **CADA CURSO TEM O SEU PRÓPRIO ARQUIVO DE IMAGEM, mesmo quando a foto é a mesma**
+  `[operador, 22/09]`. A versão em inglês pode **mostrar** a mesma imagem da versão em português,
+  mas o arquivo é **duplicado, com nome próprio**: `nomex.jpg` e `nomex-en.jpg`.
+  **A razão é futura e é dele:** ele pode querer ajustar a imagem por idioma — texto sobre a foto,
+  recorte diferente — e **compartilhar um arquivo entre os dois cursos torna isso impossível sem
+  mexer no que já está publicado.** Arquivo por curso custa um upload a mais hoje e não trava nada
+  depois.
+- **O ARQUIVO SE CHAMA COMO O CURSO** `[operador, 22/09 — é o que ele já pratica]`. Não existe
+  sufixo de idioma: **o curso em inglês já tem slug próprio**, e o arquivo herda esse nome. Os dois
+  arquivos ficam diferentes **sozinhos**, sem convenção extra para ninguém lembrar.
+
+      /img/excel-claude-ia-inteligencia-artificial-e-analise-de-dados.jpg   ← curso PT
+      /img/<slug-do-curso-em-ingles>.jpg                                    ← curso EN
+
+  Consequências no build `[convenção de engenharia]`:
+  - **`Course.thumbnailUrl` é por curso, sempre** — nunca derivado do curso "equivalente" no outro
+    idioma, e nunca uma referência compartilhada entre os dois registros;
+  - **o nome do arquivo acompanha o slug, e o slug é PERMANENTE** (`CLAUDE.md` → Slug de catálogo).
+    Então o nome do arquivo também não muda depois de publicado;
+  - quando a subida de imagem pelo admin existir, ela é **por curso**, e reaproveitar a mesma foto
+    é uma cópia nova com o nome do outro curso — não um ponteiro para o mesmo objeto;
+  - **o `alt` também é por idioma**, mas por outro motivo: ele é texto, sai do dicionário ou do
+    título do curso. Arquivo e `alt` são independentes.
+  > *Duas correções registradas, ambas de 22/09, ambas do agente lendo errado: primeiro escreveu-se
+  > que o arquivo **não** se duplica por idioma; depois, que a versão inglesa levaria sufixo `-en`.
+  > Nenhuma das duas é a prática do operador. A regra em vigor é a acima — **nome do arquivo = slug
+  > do curso**, e pronto.*
 - **Trilha segue o idioma** `[operador, 14/09]`:
   - a trilha curada nasce com `language`;
   - o **servidor recusa** item de outro idioma (não só a tela);
@@ -264,3 +291,88 @@ inglês ainda sem aulas, e a página de curso com zero aulas passa a precisar de
 **botão de assinar nas páginas em inglês liga com a 1ª aula em inglês**, condição derivada do banco
 e regra de exibição, não de acesso. Todas as pendências das rodadas anteriores fechadas, exceto a
 posição do seletor, o nome de categoria em inglês e a aparência do botão desligado.*
+
+---
+
+*Atualizado Set 2026 — **o dicionário de textos existe e a home já nasce nos dois idiomas.**
+Onde ele mora: **`core/src/i18n/pt.ts` e `core/src/i18n/en.ts`** — o workspace `core` é importado
+pelo servidor e pelo React, então é um dicionário só, como a spec exigia. A tipagem cumpre a
+trava "tradução faltando quebra a compilação": `pt.ts` exporta `type Dict = typeof pt` e o
+`en.ts` é declarado `const en: Dict`, então chave faltando é erro de tipo, não texto em branco em
+produção. **Endereços no ar:** `/` (pt-BR) e `/en`, cada um com `<html lang>`, `og:locale`,
+`canonical` e `hreflang` recíproco. **Pendência real:** as ~109 chaves do `en.ts` estão com string
+vazia — o inglês da home ainda não foi escrito, e é o próximo trabalho de conteúdo.*
+
+
+---
+
+## Como o inglês é escrito *(Set 2026 — decisão do operador: "inglês simples e natural como o LinkedIn usa, que sirva para o mundo entender")*
+
+Isto é regra de **voz**, não de tradução literal. Vale para toda frase em inglês do produto —
+site, e-mail, certificado, JilsonAI.
+
+- **A voz é a do LinkedIn Learning**, não a de uma agência: frase curta, voz ativa, segunda
+  pessoa. Se dá para cortar palavra sem perder sentido, corta.
+- **Inglês internacional.** Sem gíria, sem expressão idiomática, sem referência cultural — quem lê
+  da Índia, da Alemanha ou do Brasil entende de primeira. **Ortografia americana** (`standardizing`),
+  que é a mais vista no mundo.
+- **Sem hype.** Nada de *unlock your potential*, *game-changing*, *master X in 30 days*. É a mesma
+  régua do português (`content.md`): promete o que o aprendizado entrega, nunca emprego ou salário.
+- **Expressão idiomática do português não se traduz, se substitui.** "Dita o jogo" virou *"sets the
+  pace"* — traduzir ao pé da letra produz frase que nenhum falante diria.
+- **Nunca se traduz:** `JilsonAI`, `Jilson Santana`, nomes de produto (`Power BI`, `Excel`,
+  `Claude`, `Pix`, `LinkedIn`) e **nome de pessoa em depoimento**.
+- **Conceito brasileiro exige cuidado, não tradução.** "Nota fiscal" e "garantia legal de
+  arrependimento" (CDC) não existem iguais fora do Brasil. Traduzir ao pé da letra vira **promessa
+  que não se pode cumprir** para quem está fora. Os dois casos conhecidos foram resolvidos na
+  revisão de 22/09: *invoice* (padrão B2B mundial) e **"7-day money-back guarantee"** — ver a
+  consequência comercial em [`billing.md`](billing.md) → *Reembolso*.
+
+### O CICLO DE REVISÃO — obrigatório para TODO texto novo *(decisão do operador, 22/09/2026)*
+
+> *"Eu vou precisar fazer esse revisto de todos os textos do site que criarmos."*
+
+Texto em inglês escrito por agente **não vai para produção sem passar por aqui**. Não é
+formalidade: a primeira rodada devolveu 32 correções em 155 frases — entre elas uma expressão
+idiomática que não atravessava (*"sets the pace"*), depoimentos que soavam a tradutor e não a
+pessoa, e uma resposta de reembolso vaga que virou promessa clara.
+
+| Passo | Quem | O quê |
+|---|---|---|
+| 1 | agente | Escreve o inglês no `en.ts`, junto com o português. Nunca deixa chave vazia. |
+| 2 | agente | `npm run revisao:ingles` → gera `design-lab/revisao-ingles.md` (as frases lado a lado + a régua de voz acima). |
+| 3 | agente | Entrega ao operador a lista dos **pontos de dúvida** — escolha de palavra, conceito brasileiro, promessa nova. Sem essa lista, o revisor não sabe onde olhar. |
+| 4 | operador | Manda o parceiro de design (Antigravity) ler o arquivo e devolver `chave → sugestão → por quê`. |
+| 5 | agente | Aplica, roda os gates, e **reporta o que NÃO aplicou, com o motivo**. |
+
+**O passo 5 não é opcional.** Na rodada de 22/09, uma sugestão foi recusada: trocar o rótulo de
+acessibilidade da seção hero para *"Main content"* criaria um segundo "conteúdo principal" dentro
+do `<main>`, confundindo o leitor de tela. Sugestão de acessibilidade que piora acessibilidade se
+**reporta**, não se aplica em silêncio — é a mesma trava do `design-lab/GEMINI.md`.
+
+**O arquivo gerado NÃO é versionado** (`design-lab/*` está no `.gitignore`). Isso é de propósito:
+o que fica no repo é o dicionário revisado, não o rascunho da revisão. Precisou de novo? Roda o
+comando.
+
+### A trava é teste, porque o typecheck não alcança
+
+O `en.ts` é tipado como `Dict`, então **chave faltando** quebra a compilação. Mas **chave presente
+e vazia** compila — e foi esse o estado real por semanas: 143 de 150 em branco, a `/en` respondendo
+200, e ninguém percebendo. `server/src/test/i18n.test.ts` fecha o buraco com dois casos:
+
+1. toda chave com texto em português tem texto em inglês;
+2. nenhuma **frase** em inglês é idêntica ao português — copiar e colar é o jeito silencioso de
+   "ter tradução" sem ter. As exceções legítimas (nome de pessoa, valor em dinheiro) estão
+   declaradas no próprio teste **com o motivo**, e é isso que impede a lista de virar tapete.
+
+### O seletor PT | EN
+
+Dois links, um por endereço (`/` e `/en`) — **nunca** um botão que troca o idioma no mesmo
+endereço, pelo motivo já escrito na §2. O idioma atual leva `aria-current="page"`; o outro fica em
+cinza. No topo e no rodapé. Coberto por teste.
+
+*Atualizado Set 2026 — **o inglês da home foi escrito (155 chaves), revisado e o seletor está
+ligado.** A pendência das "~109 chaves vazias" está fechada, e as de reembolso e nota fiscal
+também (revisão de 22/09: *invoice* e *7-day money-back guarantee*). **O que continua aberto:**
+o preço em dólar na página em inglês — ela mostra real hoje, e trocar isso é a decisão "preço
+mostrado × cobrado" da Fase 4, não tradução.*
