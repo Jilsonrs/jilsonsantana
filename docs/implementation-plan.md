@@ -1288,8 +1288,14 @@ landmark. Corrigido junto.
 >       UNIVERSAL ("— apply it with…") e IA ("fix errors, and save time"). **Aplicada em parte:**
 >       MODERNO — tirei a vírgula, mas mantive o segundo "that" ("…speed up your work and that few
 >       people master"): sem ele a frase lê "your work and few people" como um bloco antes de
->       chegar ao verbo. Os outros 9 pontos de dúvida: manter. **Falta só publicar** (o `publica`
->       do operador).
+>       chegar ao verbo. Os outros 9 pontos de dúvida: manter.
+>       **2ª rodada (24/09), revisão completa linha por linha pelo Antigravity, a pedido do
+>       operador:** das 10 sugestões do Claude, 9 aceitas; a da camada MODERNO ganhou a versão dele
+>       ("The latest features that speed up your work, mastered by few."), que mantém o formato de
+>       fragmento das outras duas camadas. Nenhuma outra linha mudou. *Registro:* na 1ª tentativa
+>       desta rodada o Antigravity regerou o arquivo com um prompt próprio (as 10 sugestões não
+>       chegaram a ele) e editou uma frase do `en.ts`, que entrou sem ser notada no commit do menu
+>       de conta — substituída agora. **Falta só publicar** (o `publica` do operador).
 
 > **SEQUENCIAMENTO:** fecha **antes** do bloco *Superfície pública indexável*. Se as páginas
 > públicas forem montadas antes, nascem só em português e são refeitas. Não depende do Bunny;

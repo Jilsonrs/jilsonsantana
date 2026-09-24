@@ -194,7 +194,7 @@ describe("CatalogPage — idioma do app", () => {
     getCourses.mockResolvedValue([]);
     emIngles("cursos");
 
-    expect(await screen.findByText("No courses published yet.")).toBeTruthy();
+    expect(await screen.findByText("No courses available yet.")).toBeTruthy();
   });
 
   it("a busca em inglês procura em inglês", async () => {
@@ -205,7 +205,7 @@ describe("CatalogPage — idioma do app", () => {
     fireEvent.change(screen.getByLabelText("Search"), { target: { value: "procv" } });
 
     await waitFor(() => expect(search).toHaveBeenCalledWith("procv", "en"));
-    expect(await screen.findByText(/Nothing found for "procv"/)).toBeTruthy();
+    expect(await screen.findByText(/No results for "procv"/)).toBeTruthy();
   });
 });
 

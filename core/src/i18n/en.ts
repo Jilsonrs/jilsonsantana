@@ -33,15 +33,15 @@ export const en: Dict = {
     camadas: {
       UNIVERSAL: {
         nome: "Solid foundations",
-        texto: "The groundwork that works in any version — apply it with what you already have."
+        texto: "Core skills that work in any version — apply them with what you already have."
       },
       MODERNO: {
         nome: "Modern features",
-        texto: "The newest features that speed up your work and few people master."
+        texto: "The latest features that speed up your work, mastered by few."
       },
       IA: {
         nome: "AI on your side",
-        texto: "AI as a copilot to generate logic, fix errors, and save time."
+        texto: "AI as your copilot to generate logic, fix errors, and save time."
       }
     }
   },
@@ -248,7 +248,7 @@ export const en: Dict = {
       entrando: "Signing in…",
       email: "Email",
       senha: "Password",
-      emailInvalido: "Enter a valid email.",
+      emailInvalido: "Enter a valid email address.",
       senhaObrigatoria: "Enter your password.",
       credenciaisIncorretas: "Incorrect email or password.",
       falha: "We couldn't sign you in right now. Please try again in a few minutes."
@@ -261,9 +261,9 @@ export const en: Dict = {
     },
     inicio: {
       ola: "Hi",
-      intro: "This is your starting point. Whatever you start studying shows up here, so you can pick up where you left off.",
+      intro: "This is your starting point. The courses you begin show up here, so you can pick up where you left off.",
       continueTitulo: "Keep learning",
-      continueVazio: "Lessons in progress show up here once you start a course. Pick one from the catalog, and your progress will be waiting for you here.",
+      continueVazio: "Lessons in progress show up here once you start a course. Pick one from the catalog, and your progress will be waiting for you.",
       verCatalogo: "Browse the catalog",
       porOndeComecar: "Where to start",
       portaCatalogo: "Catalog",
@@ -297,14 +297,14 @@ export const en: Dict = {
       catalogoCursos: "Course catalog",
       catalogoTrilhas: "Learning path catalog",
       aulas: "Lessons",
-      vazioCursos: "No courses published yet.",
-      vazioTrilhas: "No learning paths published yet.",
+      vazioCursos: "No courses available yet.",
+      vazioTrilhas: "No learning paths available yet.",
       erroCursos: "We couldn't load the courses.",
       erroTrilhas: "We couldn't load the learning paths.",
-      nadaEncontrado: "Nothing found for"
+      nadaEncontrado: "No results for"
     },
     busca: {
-      placeholder: "Search learning paths, courses and lessons…",
+      placeholder: "Search learning paths, courses, and lessons…",
       rotulo: "Search"
     },
     niveis: {
@@ -331,7 +331,7 @@ export const en: Dict = {
       salva: "Learning path saved ✓",
       salvando: "Saving…",
       salvar: "Save learning path",
-      erroSalvar: "We couldn't save it. Please try again."
+      erroSalvar: "We couldn't save this learning path. Please try again."
     }
   }
 };

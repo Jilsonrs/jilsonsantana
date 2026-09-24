@@ -329,7 +329,7 @@ describe("LoginPage — em inglês", () => {
     loginEmIngles();
     fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
 
-    expect(await screen.findByText("Enter a valid email.")).toBeTruthy();
+    expect(await screen.findByText("Enter a valid email address.")).toBeTruthy();
     expect(await screen.findByText("Enter your password.")).toBeTruthy();
   });
 
