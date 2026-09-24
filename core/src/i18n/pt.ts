@@ -198,6 +198,55 @@ export const pt = {
       title: "Pronto para dominar dados, IA e o que vier depois?",
       btn: "Assinar"
     }
+  },
+
+  // O APP DO ALUNO (telas depois do login + a tela de login). NÃO aparece em
+  // Admin → Textos (decisão do operador, 23/09/2026): muda por código. O Admin
+  // não está aqui — fica em português, escrito na própria tela.
+  app: {
+    header: {
+      catalogo: "Catálogo",
+      entrar: "Entrar"
+    },
+    nav: {
+      principal: "Principal",
+      menuDaSecao: "Menu da seção",
+      abrirMenu: "Abrir o menu",
+      menu: "Menu",
+      navegacao: "Navegação",
+      geral: "Geral",
+      contaPessoal: "Conta Pessoal",
+      sair: "Sair",
+      inicio: "Início",
+      cursos: "Cursos",
+      trilhas: "Trilhas",
+      minhasTrilhas: "Minhas trilhas",
+      jilsonai: "JilsonAI",
+      certificados: "Certificados",
+      minhaConta: "Minha conta",
+      seusDados: "Seus dados",
+      preferencias: "Preferências",
+      senhaEAcesso: "Senha e Acesso",
+      sessoesAtivas: "Sessões ativas",
+      faturamento: "Faturamento e Assinatura",
+      integracoes: "Integrações"
+    },
+    login: {
+      tituloPrefixo: "Acesso",
+      tituloEnfase: "Seguro",
+      area: "[ Área do Aluno ]",
+      entrar: "Entrar",
+      entrando: "Entrando…",
+      email: "E-mail",
+      senha: "Senha",
+      emailInvalido: "Informe um e-mail válido.",
+      senhaObrigatoria: "Informe sua senha.",
+      credenciaisIncorretas: "E-mail ou senha incorretos.",
+      falha: "Não foi possível entrar agora. Tente novamente em alguns minutos."
+    },
+    footer: {
+      erroIdioma: "Não foi possível trocar o idioma. Tente de novo."
+    }
   }
 };
 

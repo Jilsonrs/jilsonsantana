@@ -195,6 +195,11 @@ o idioma na home e **entra já em inglês**.
   - **a biblioteca, se houver, é decidida no plano do bloco** (dependência nova precisa do OK do
     operador). O `react-i18next`, sugerido pelo Gemini em 14/09, serve só o React, e as páginas
     públicas saem do React na Fase 3.
+  - **Resolvido em 24/09, sem biblioteca:** o texto do app mora na parte `app` do mesmo
+    dicionário (`core/src/i18n/`) e o React o lê por `useT()` (`client/src/lib/language.tsx`).
+    **`app.*` não aparece em *Admin → Textos*** `[operador, 23/09]` e o servidor recusa gravá-lo; o
+    rodapé do app é a exceção, porque usa os textos comuns da home. O Admin fica fora do
+    dicionário, em português.
 - **Valor de enum continua código** (`Level`, `Layer`, `ContentStatus`); o **rótulo** vem do
   dicionário. Os textos globais das 3 camadas passam a existir nos dois idiomas.
 - **Conteúdo de curso não passa pelo dicionário:** título, descrição e FAQ são escritos no idioma do

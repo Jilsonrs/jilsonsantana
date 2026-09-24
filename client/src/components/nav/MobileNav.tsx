@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { LogOut, Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { secaoAtiva, secoesVisiveis } from "@/lib/navigation";
+import { useT } from "@/lib/language";
 import {
   Sheet,
   SheetContent,
@@ -23,7 +24,8 @@ import {
 export function MobileNav({ papel, onSignOut }: { papel?: string; onSignOut: () => void }) {
   const [aberta, setAberta] = useState(false);
   const { pathname } = useLocation();
-  const secoes = secoesVisiveis(papel);
+  const t = useT();
+  const secoes = secoesVisiveis(papel, t);
   const ativa = secaoAtiva(pathname, secoes);
 
   return (
@@ -31,14 +33,14 @@ export function MobileNav({ papel, onSignOut }: { papel?: string; onSignOut: () 
       <Sheet open={aberta} onOpenChange={setAberta}>
         <SheetTrigger
           className="flex size-9 items-center justify-center rounded-md hover:bg-muted"
-          aria-label="Abrir o menu"
+          aria-label={t.nav.abrirMenu}
         >
           <Menu className="size-5" />
         </SheetTrigger>
         <SheetContent side="left" className="w-72 bg-rail p-0 text-rail-foreground">
           {/* O Radix exige título e descrição no diálogo; ficam só para leitor
               de tela, porque na tela a marca logo abaixo já cumpre o papel. */}
-          <SheetTitle className="sr-only">Menu</SheetTitle>
+          <SheetTitle className="sr-only">{t.nav.menu}</SheetTitle>
           <SheetDescription className="sr-only">Navegação principal do site.</SheetDescription>
 
           {/* A marca leva à HOME PÚBLICA, como no rail (AppRail) — e pelo mesmo
@@ -52,7 +54,7 @@ export function MobileNav({ papel, onSignOut }: { papel?: string; onSignOut: () 
             <span>Jilson Santana</span>
           </a>
 
-          <nav aria-label="Principal" className="flex flex-col py-2">
+          <nav aria-label={t.nav.principal} className="flex flex-col py-2">
             {secoes.map((secao) => {
               const Icon = secao.icon;
               const estaAtiva = secao.to === ativa?.to;
@@ -99,7 +101,7 @@ export function MobileNav({ papel, onSignOut }: { papel?: string; onSignOut: () 
               className="flex h-12 items-center gap-3 border-l-2 border-transparent pl-[18px] pr-4 text-sm"
             >
               <LogOut className="size-5 shrink-0" />
-              <span>Sair</span>
+              <span>{t.nav.sair}</span>
             </button>
           </nav>
         </SheetContent>

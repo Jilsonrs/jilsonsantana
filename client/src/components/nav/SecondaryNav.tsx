@@ -1,7 +1,9 @@
 import { Link, useLocation } from "react-router-dom";
 import { LogOut, Plus, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Role } from "@jilson/core";
 import { secoesVisiveis, secaoAtiva, itensSecundarios, type ItemSecundario } from "@/lib/navigation";
+import { useT } from "@/lib/language";
 
 /**
  * As iniciais do aluno, para o avatar de quem ainda não subiu foto.
@@ -34,7 +36,8 @@ export function SecondaryNav({
   onSignOut: () => void
 }) {
   const { pathname } = useLocation();
-  const secoes = secoesVisiveis(papel);
+  const t = useT();
+  const secoes = secoesVisiveis(papel, t);
   const ativa = secaoAtiva(pathname, secoes);
   const itens = itensSecundarios(pathname, secoes);
 
@@ -42,7 +45,8 @@ export function SecondaryNav({
 
   // Group items by `grupo` property
   const grouped = itens.reduce((acc, item) => {
-    const groupName = item.grupo || "Geral";
+    // Seção de admin fica em português (decisão do operador): o "Geral" dela também.
+    const groupName = item.grupo || (ativa?.papel === Role.ADMIN ? "Geral" : t.nav.geral);
     if (!acc[groupName]) acc[groupName] = [];
     acc[groupName].push(item);
     return acc;
@@ -52,7 +56,7 @@ export function SecondaryNav({
 
   return (
     <aside
-      aria-label="Menu da seção"
+      aria-label={t.nav.menuDaSecao}
       className={cn(
         "hidden md:flex flex-col shrink-0 w-[280px] bg-surface-alt",
         "border-r border-border py-8 px-6",
@@ -81,14 +85,14 @@ export function SecondaryNav({
               {usuario.name}
             </span>
             <span className="text-sm text-muted-foreground mt-0.5">
-              {usuario.role === "admin" ? "Administrador" : "Conta Pessoal"}
+              {usuario.role === Role.ADMIN ? "Administrador" : t.nav.contaPessoal}
             </span>
           </div>
         </div>
       ) : (
         <div className="mb-8 px-2 border-b border-border/50 pb-4">
           <h2 className="text-2xl font-display font-semibold tracking-tight text-foreground">
-            {ativa?.label || "Navegação"}
+            {ativa?.label || t.nav.navegacao}
           </h2>
         </div>
       )}
@@ -127,7 +131,7 @@ export function SecondaryNav({
                 )}
               >
                 <LogOut className="size-5 shrink-0" strokeWidth={1.5} />
-                Sair
+                {t.nav.sair}
               </button>
             </div>
           </>

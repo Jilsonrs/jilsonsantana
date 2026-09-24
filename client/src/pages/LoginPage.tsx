@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Navigate, useNavigate } from "react-router-dom";
-import { loginSchema, type LoginInput } from "@jilson/core";
+import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
+import { LANGUAGES, loginSchema, type LanguageCode, type LoginInput } from "@jilson/core";
 import { signIn, useSession } from "@/lib/auth-client";
+import { useT, useTrocarIdioma } from "@/lib/language";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,10 +15,20 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 // painel de estudo; este é o único lugar que aponta para ela.
 const POS_LOGIN = "/inicio";
 
+// O idioma que veio no ENDEREÇO (`/login?lang=en`, o "Entrar" da home em
+// inglês). Só ele muda a conta: quem entra pelo /login normal não muda de idioma.
+function idiomaDoEndereco(valor: string | null): LanguageCode | null {
+  return (LANGUAGES as readonly string[]).includes(valor ?? "") ? (valor as LanguageCode) : null;
+}
+
 export function LoginPage() {
   const navigate = useNavigate();
+  const t = useT();
+  const [params] = useSearchParams();
+  const { trocarIdiomaAntes } = useTrocarIdioma();
   const { data: session, isPending } = useSession();
-  const [formError, setFormError] = useState<string | null>(null);
+  // O TIPO da falha, não a frase: a frase sai do dicionário no idioma da tela.
+  const [formError, setFormError] = useState<"credenciais" | "falha" | null>(null);
   const {
     register,
     handleSubmit,
@@ -40,10 +51,10 @@ export function LoginPage() {
         // 401 = bad credentials. Anything else (origin/CSRF, network, server) is
         // a different failure and must not be reported as "wrong password".
         if (error.status === 401) {
-          setFormError("E-mail ou senha incorretos.");
+          setFormError("credenciais");
         } else {
           console.error("Falha no login:", error);
-          setFormError("Não foi possível entrar agora. Tente novamente em alguns minutos.");
+          setFormError("falha");
         }
         return;
       }
@@ -53,8 +64,20 @@ export function LoginPage() {
       // nenhuma mensagem aparecia e o botão ficava preso em "Entrando…", sem a
       // pessoa saber o que houve. Achado por teste, não por leitura.
       console.error("Falha no login:", err);
-      setFormError("Não foi possível entrar agora. Tente novamente em alguns minutos.");
+      setFormError("falha");
       return;
+    }
+    // Veio da home em inglês → a conta passa a ser inglês ANTES de abrir o app
+    // (decisão do operador, 24/09/2026: o estrangeiro "já entra em inglês").
+    // Se isso falhar, entra mesmo assim: o idioma se troca depois no rodapé, e
+    // barrar o login por causa dele seria pior.
+    const idioma = idiomaDoEndereco(params.get("lang"));
+    if (idioma) {
+      try {
+        await trocarIdiomaAntes(idioma);
+      } catch (err) {
+        console.error("Falha ao gravar o idioma no login:", err);
+      }
     }
     navigate(POS_LOGIN, { replace: true });
   }
@@ -77,10 +100,10 @@ export function LoginPage() {
       <div className="relative z-10 mx-auto w-full max-w-[440px] px-6 py-16">
         <div className="mb-10 flex flex-col items-center text-center">
           <h1 className="text-[2.5rem] font-semibold leading-none tracking-tight">
-            Acesso <span className="font-emphasis italic text-primary">Seguro</span>.
+            {t.login.tituloPrefixo} <span className="font-emphasis italic text-primary">{t.login.tituloEnfase}</span>.
           </h1>
           <p className="mt-4 font-mono text-[0.75rem] tracking-[0.1em] text-muted-foreground uppercase">
-            [ Área do Aluno ]
+            {t.login.area}
           </p>
         </div>
 
@@ -89,7 +112,7 @@ export function LoginPage() {
           <div className="absolute left-0 top-0 h-[2px] w-full bg-gradient-to-r from-primary to-transparent" />
           
           <CardHeader className="pt-8 pb-4">
-            <CardTitle className="sr-only">Entrar</CardTitle>
+            <CardTitle className="sr-only">{t.login.entrar}</CardTitle>
           </CardHeader>
         <CardContent>
           <form
@@ -102,7 +125,7 @@ export function LoginPage() {
                 htmlFor="email"
                 className={emailInvalid ? "text-destructive" : undefined}
               >
-                E-mail
+                {t.login.email}
               </Label>
               <Input
                 id="email"
@@ -117,7 +140,7 @@ export function LoginPage() {
               {errors.email && (
                 <p id="email-error" className="text-[13px] text-destructive/90 flex items-center gap-2 mt-1.5 font-medium">
                   <span className="w-1.5 h-1.5 rounded-full bg-destructive shadow-[0_0_6px_hsl(var(--destructive))]"></span>
-                  {errors.email.message}
+                  {t.login.emailInvalido}
                 </p>
               )}
             </div>
@@ -126,7 +149,7 @@ export function LoginPage() {
                 htmlFor="password"
                 className={passwordInvalid ? "text-destructive" : undefined}
               >
-                Senha
+                {t.login.senha}
               </Label>
               <Input
                 id="password"
@@ -145,7 +168,7 @@ export function LoginPage() {
               {errors.password && (
                 <p id="password-error" className="text-[13px] text-destructive/90 flex items-center gap-2 mt-1.5 font-medium">
                   <span className="w-1.5 h-1.5 rounded-full bg-destructive shadow-[0_0_6px_hsl(var(--destructive))]"></span>
-                  {errors.password.message}
+                  {t.login.senhaObrigatoria}
                 </p>
               )}
             </div>
@@ -155,11 +178,11 @@ export function LoginPage() {
             {formError && (
               <div id="form-error" role="alert" className="flex items-center gap-2.5 mt-2 p-3 border border-destructive/20 rounded-lg bg-destructive/5 text-[13px] text-destructive/90 font-medium">
                 <span className="w-1.5 h-1.5 shrink-0 rounded-full bg-destructive shadow-[0_0_6px_hsl(var(--destructive))]"></span>
-                <span>{formError}</span>
+                <span>{formError === "credenciais" ? t.login.credenciaisIncorretas : t.login.falha}</span>
               </div>
             )}
             <Button type="submit" className="w-full h-11 rounded-lg" disabled={isSubmitting}>
-              {isSubmitting ? "Entrando…" : "Entrar"}
+              {isSubmitting ? t.login.entrando : t.login.entrar}
             </Button>
           </form>
         </CardContent>

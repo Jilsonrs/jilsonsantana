@@ -267,6 +267,10 @@ Corolários que já quebraram coisa aqui:
 - **Negrito no meio de um texto = dois campos** (`label` + `text`), nunca `<strong>` dentro da
   string. O operador não digita HTML no painel.
 - Precisa de um texto que não existe no dicionário? **Peça a chave**, não escreva no template.
+- **Vale também para as telas do ALUNO no React** *(desde 24/09 — o app do aluno existe em
+  inglês)*: o texto delas vem de `useT()` (parte `app` do dicionário). Texto escrito direto no
+  `.tsx` de uma tela do aluno aparece em português para o aluno estrangeiro. **O Admin é a
+  exceção**: fica em português, com o texto na própria tela.
 - **A primeira parte da chave diz onde o texto aparece:** `common.*` sai em TODA página pública
   (menu, rodapé) **e no rodapé do app logado**, `home.*` só na home. Mexer num `common.*` muda
   todas as páginas de uma vez.

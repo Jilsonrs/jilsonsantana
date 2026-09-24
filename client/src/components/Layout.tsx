@@ -5,6 +5,8 @@ import { AppRail } from "@/components/nav/AppRail";
 import { MobileNav } from "@/components/nav/MobileNav";
 import { SecondaryNav } from "@/components/nav/SecondaryNav";
 import { AppFooter } from "@/components/layout/AppFooter";
+import { ROTAS_PUBLICAS } from "@jilson/core";
+import { IdiomaProvider, useIdioma, useIdiomaDoShell, useT } from "@/lib/language";
 
 /**
  * O shell do app. DUAS gramáticas, escolhidas pela sessão:
@@ -17,10 +19,24 @@ import { AppFooter } from "@/components/layout/AppFooter";
  *
  * O cromo segue a PESSOA, não a rota: o aluno logado que abre o catálogo — que
  * é rota pública — continua com o rail.
+ *
+ * É AQUI que se decide o idioma do app, uma vez só (`useIdiomaDoShell`): todas
+ * as telas abaixo leem o mesmo valor pelo `IdiomaProvider`.
  */
 export function Layout() {
+  const idioma = useIdiomaDoShell();
+  return (
+    <IdiomaProvider idioma={idioma}>
+      <Shell />
+    </IdiomaProvider>
+  );
+}
+
+function Shell() {
   const { data: session } = useSession();
   const navigate = useNavigate();
+  const idioma = useIdioma();
+  const t = useT();
 
   async function handleSignOut() {
     await signOut();
@@ -31,15 +47,18 @@ export function Layout() {
     return (
       <div className="flex min-h-svh flex-col bg-background text-foreground">
         <header className="flex items-center justify-between border-b border-border px-6 py-4">
-          <Link to="/" className="font-semibold tracking-tight">
+          {/* Link de verdade, não <Link>: a home é página do servidor. Vai para a
+              home do idioma de quem está no login. */}
+          <a href={ROTAS_PUBLICAS[idioma].home} className="font-semibold tracking-tight">
             <span className="text-primary">#</span>Jilson Santana
-          </Link>
+          </a>
           <nav className="flex items-center gap-2">
             <Button asChild variant="ghost" size="sm">
-              <Link to="/cursos">Catálogo</Link>
+              <Link to="/cursos">{t.header.catalogo}</Link>
             </Button>
             <Button asChild variant="ghost" size="sm">
-              <Link to="/login">Entrar</Link>
+              {/* O login continua no idioma de quem chegou em inglês. */}
+              <Link to={idioma === "en" ? "/login?lang=en" : "/login"}>{t.header.entrar}</Link>
             </Button>
           </nav>
         </header>

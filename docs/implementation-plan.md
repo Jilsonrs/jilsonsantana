@@ -1187,7 +1187,18 @@ landmark. Corrigido junto.
 >       dicionário do app); hoje o idioma simplesmente não muda.
 > - [ ] **Etapa 2 — telas do aluno em inglês:** parte `app` no dicionário (fora de Textos), menu,
 >       início, conta, minhas trilhas e login (quem vem de `/en` vê o login em inglês e a conta
->       passa a ser inglês).
+>       passa a ser inglês). Em dois commits:
+>   - [x] **2a — a base, o menu e o login** *(24/09)*. Parte `app` em `core/src/i18n/` (tipada:
+>         frase faltando no inglês quebra a compilação); `ehTextoEditavel()` tira `app.*` da tela
+>         de Textos **e** da gravação (`DICT_KEYS`). O idioma é decidido UMA vez, no shell
+>         (`useIdiomaDoShell`: logado → conta; sem login → `?lang=`), e desce por contexto
+>         (`useIdioma`, `useT` em `client/src/lib/language.tsx`). Menu: `navegacao(t)` — rótulo do
+>         aluno do dicionário, de admin escrito em português. Login em inglês; o "Entrar" de `/en`
+>         leva a `/login?lang=en`, e entrar por ali grava o idioma na conta **antes** de abrir o
+>         app (falhar não barra o login). Aviso no rodapé se a troca falhar. Testes: 3 de
+>         servidor novos/ajustados, 7 no login, 3 no shell, 1 no mapa, 1 no rodapé. **Mutação:**
+>         trava de `app.*` aberta, idioma fixo em PT e login sem gravar → 7 reprovaram. Revertido.
+>   - [ ] **2b — início, minha conta e minhas trilhas**, e a regra no `CLAUDE.md`.
 > - [ ] **Etapa 3 — cursos e trilhas ganham idioma:** a antiga etapa 2 do C4 + a parte de dados
 >       deste bloco (migration, campo Idioma e etiqueta "EN" no admin, filtro nas listas, recusa
 >       de item de outro idioma na trilha). Antes: dividir o formulário de curso.

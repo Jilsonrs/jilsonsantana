@@ -3,7 +3,7 @@ import { Youtube } from "lucide-react";
 import { pt, en, LANGUAGES } from "@jilson/core";
 import { getCommonTexts, COMMON_TEXTS_QUERY } from "@/lib/api";
 import { itensDoRodape } from "@/lib/footer";
-import { useAppLanguage } from "@/lib/language";
+import { useIdioma, useT, useTrocarIdioma } from "@/lib/language";
 
 // O texto de FÁBRICA de cada idioma — vale enquanto a busca não volta ou se ela
 // falhar, para o rodapé nunca sumir nem ficar em branco.
@@ -17,14 +17,16 @@ const FABRICA = { pt: pt.common, en: en.common };
  * não volta, ou se ela falhar, vale o texto de FÁBRICA do dicionário: o rodapé
  * nunca some nem fica em branco.
  *
- * Segue o IDIOMA DO APP (`useAppLanguage`, gravado na conta): textos, destinos
- * dos links e canal do YouTube mudam juntos quando o aluno troca no seletor.
+ * Segue o IDIOMA DO APP (`useIdioma`, gravado na conta): textos, destinos dos
+ * links e canal do YouTube mudam juntos quando o aluno troca no seletor.
  *
  * Os links são `<a href>`, não `<Link>`: o destino é página do servidor, e o
  * roteador do React não a conhece.
  */
 export function AppFooter() {
-  const { idioma, trocarIdioma, trocando } = useAppLanguage();
+  const idioma = useIdioma();
+  const t = useT();
+  const { trocarIdioma, trocando, falhou } = useTrocarIdioma();
   const { data } = useQuery({
     queryKey: [COMMON_TEXTS_QUERY, idioma],
     queryFn: () => getCommonTexts(idioma),
@@ -89,6 +91,13 @@ export function AppFooter() {
             </li>
           </ul>
         </div>
+        {/* A troca de idioma falhou: o idioma não muda, e a pessoa precisa saber
+            por quê — senão parece que o botão não funciona. */}
+        {falhou && (
+          <p role="alert" className="px-4 text-sm text-destructive md:pl-[50px]">
+            {t.footer.erroIdioma}
+          </p>
+        )}
         <div className="flex flex-col gap-2 px-4 text-[0.85rem] text-muted-foreground md:flex-row md:items-center md:justify-between md:gap-4 md:pl-[50px] md:pr-0">
           <p>{textos.footer.tagline}</p>
           <p>{textos.footer.copyright}</p>

@@ -141,7 +141,7 @@ ${recuo}</div>`;
         <a href="#assine">${escapeHtml(dict.common.nav.assine)}</a>
         ${logado
           ? `<a href="/inicio" class="btn-login">${escapeHtml(dict.common.nav.meusEstudos)}</a>`
-          : `<a href="/login" class="btn-login">${escapeHtml(dict.common.nav.entrar)}</a>`}
+          : `<a href="${isPt ? "/login" : "/login?lang=en"}" class="btn-login">${escapeHtml(dict.common.nav.entrar)}</a>`}
         <span style="color: var(--border-color);">|</span>
         ${seletorIdioma("        ")}
       </div>

@@ -183,3 +183,26 @@ describe("texto do site — os textos comuns, lidos pelo rodapé do app", () => 
     expect((await request(app).get("/api/site-text/common/es")).status).toBe(400);
   });
 });
+
+// O texto do APP (`app.*`) muda por código, não pelo admin (decisão do
+// operador, 23/09/2026). Esconder da tela não basta: o servidor também recusa.
+describe("texto do site — o texto do app fica FORA de Textos", () => {
+  it("a lista de Textos não traz nenhuma chave do app", async () => {
+    const cookies = await sessaoAdmin();
+    const res = await request(app).get("/api/admin/site-text").set("Cookie", cookies);
+
+    expect(res.status).toBe(200);
+    const doApp = res.body.campos.filter((c: { key: string }) => c.key.startsWith("app."));
+    expect(doApp).toEqual([]);
+    // E o resto continua lá: o filtro não pode esvaziar a tela.
+    expect(res.body.campos.some((c: { key: string }) => c.key === CHAVE)).toBe(true);
+  });
+
+  it("gravar uma chave do app é recusado, mesmo pelo admin", async () => {
+    const cookies = await sessaoAdmin();
+    const res = await editar(cookies, { key: "app.login.entrar", language: "pt", value: "Entre aqui" });
+
+    expect(res.status).toBe(400);
+    expect(await prisma.siteText.count()).toBe(0);
+  });
+});

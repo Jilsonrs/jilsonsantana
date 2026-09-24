@@ -194,5 +194,51 @@ export const en: Dict = {
       title: "Ready to master data, AI and whatever comes next?",
       btn: "Subscribe"
     }
+  },
+
+  app: {
+    header: {
+      catalogo: "Catalog",
+      entrar: "Sign in"
+    },
+    nav: {
+      principal: "Main",
+      menuDaSecao: "Section menu",
+      abrirMenu: "Open menu",
+      menu: "Menu",
+      navegacao: "Navigation",
+      geral: "General",
+      contaPessoal: "Personal account",
+      sair: "Sign out",
+      inicio: "Home",
+      cursos: "Courses",
+      trilhas: "Learning paths",
+      minhasTrilhas: "My learning paths",
+      jilsonai: "JilsonAI",
+      certificados: "Certificates",
+      minhaConta: "My account",
+      seusDados: "Your details",
+      preferencias: "Preferences",
+      senhaEAcesso: "Password and access",
+      sessoesAtivas: "Active sessions",
+      faturamento: "Billing and subscription",
+      integracoes: "Integrations"
+    },
+    login: {
+      tituloPrefixo: "Secure",
+      tituloEnfase: "Access",
+      area: "[ Student Area ]",
+      entrar: "Sign in",
+      entrando: "Signing in…",
+      email: "Email",
+      senha: "Password",
+      emailInvalido: "Enter a valid email.",
+      senhaObrigatoria: "Enter your password.",
+      credenciaisIncorretas: "Incorrect email or password.",
+      falha: "We couldn't sign you in right now. Please try again in a few minutes."
+    },
+    footer: {
+      erroIdioma: "We couldn't change the language. Please try again."
+    }
   }
 };

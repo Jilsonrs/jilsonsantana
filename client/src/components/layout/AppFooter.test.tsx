@@ -4,19 +4,24 @@ import { screen, waitFor, fireEvent } from "@testing-library/react";
 import { pt, en } from "@jilson/core";
 import { renderWithProviders } from "@/test-utils";
 import * as api from "@/lib/api";
+import { IdiomaProvider } from "@/lib/language";
 import { AppFooter } from "./AppFooter";
 
 vi.mock("@/lib/api");
 
-// O idioma do app vem da CONTA, pela sessão (useAppLanguage).
-const useSession = vi.fn();
+// O idioma do app chega pelo shell (IdiomaProvider); a sessão só entra para
+// ser atualizada depois de uma troca (refetch).
 const refetch = vi.fn();
 vi.mock("@/lib/auth-client", () => ({
-  useSession: () => useSession(),
+  useSession: () => ({ data: { user: {} }, refetch }),
 }));
 
-function contaEm(preferredLanguage: string) {
-  useSession.mockReturnValue({ data: { user: { preferredLanguage } }, refetch });
+function emIngles() {
+  return renderWithProviders(
+    <IdiomaProvider idioma="en">
+      <AppFooter />
+    </IdiomaProvider>,
+  );
 }
 
 // O texto de "Contato" como o operador o editou em Admin → Textos. É diferente
@@ -33,7 +38,6 @@ function link(nome: string) {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  contaEm("pt");
   refetch.mockResolvedValue(undefined);
   vi.mocked(api.updateMyLanguage).mockResolvedValue(undefined);
 });
@@ -123,10 +127,9 @@ describe("AppFooter — seletor de idioma", () => {
     expect(screen.queryByRole("link", { name: "PT" })).toBeNull();
   });
 
-  it("conta em inglês: textos, destinos e canal do YouTube em inglês", async () => {
-    contaEm("en");
+  it("app em inglês: textos, destinos e canal do YouTube em inglês", async () => {
     vi.mocked(api.getCommonTexts).mockResolvedValue(en.common);
-    renderWithProviders(<AppFooter />);
+    emIngles();
 
     await waitFor(() => expect(api.getCommonTexts).toHaveBeenCalledWith("en"));
     expect(link(en.common.footer.links[5]).getAttribute("href")).toBe("/en/contact");
@@ -137,9 +140,8 @@ describe("AppFooter — seletor de idioma", () => {
   });
 
   it("enquanto a busca em inglês não volta, o texto de fábrica é o INGLÊS", () => {
-    contaEm("en");
     vi.mocked(api.getCommonTexts).mockReturnValue(new Promise(() => {}));
-    renderWithProviders(<AppFooter />);
+    emIngles();
 
     expect(link(en.common.footer.links[5])).toBeTruthy();
     expect(screen.queryByRole("link", { name: pt.common.footer.links[5] })).toBeNull();
@@ -154,6 +156,17 @@ describe("AppFooter — seletor de idioma", () => {
     await waitFor(() => expect(api.updateMyLanguage).toHaveBeenCalled());
     expect(vi.mocked(api.updateMyLanguage).mock.calls[0][0]).toBe("en");
     await waitFor(() => expect(refetch).toHaveBeenCalled());
+  });
+
+  it("se a troca falhar, avisa — o idioma não muda sem explicação", async () => {
+    vi.mocked(api.getCommonTexts).mockResolvedValue(pt.common);
+    vi.mocked(api.updateMyLanguage).mockRejectedValue(new Error("rede"));
+    renderWithProviders(<AppFooter />);
+
+    fireEvent.click(screen.getByRole("button", { name: "EN" }));
+
+    expect((await screen.findByRole("alert")).textContent).toBe(pt.app.footer.erroIdioma);
+    expect(refetch).not.toHaveBeenCalled();
   });
 
   it("clicar no idioma que já está escolhido não grava nada", () => {

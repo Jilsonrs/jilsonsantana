@@ -1,8 +1,9 @@
 import { describe, it, expect } from "vitest";
 import { Home } from "lucide-react";
-import { Role } from "@jilson/core";
+import { Role, en } from "@jilson/core";
 import {
   NAVEGACAO,
+  navegacao,
   abasDaRota,
   itensSecundarios,
   secaoAtiva,
@@ -57,6 +58,20 @@ describe("secoesVisiveis — quem vê o quê", () => {
     expect(new Set(rotulos).size).toBe(rotulos.length);
     const icones = NAVEGACAO.map((s) => s.icon);
     expect(new Set(icones).size).toBe(icones.length);
+
+    // E em inglês também: a tradução não pode criar dois itens com o mesmo nome.
+    const emIngles = navegacao(en.app).map((s) => s.label);
+    expect(new Set(emIngles).size).toBe(emIngles.length);
+  });
+
+  it("em inglês, só os rótulos do ALUNO mudam — os de admin ficam em português", () => {
+    const emIngles = navegacao(en.app);
+    const deAdmin = (m: Secao[]) => m.filter((s) => s.papel === Role.ADMIN).map((s) => s.label);
+    expect(deAdmin(emIngles)).toEqual(deAdmin(NAVEGACAO));
+
+    const doAluno = (m: Secao[]) => m.filter((s) => s.papel === undefined).map((s) => s.label);
+    expect(doAluno(emIngles)).toContain("My learning paths");
+    expect(doAluno(emIngles)).not.toContain("Minhas trilhas");
   });
 });
 

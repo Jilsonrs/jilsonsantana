@@ -2,6 +2,7 @@ import { Fragment } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { secaoAtiva, secoesVisiveis, type Secao } from "@/lib/navigation";
+import { useT } from "@/lib/language";
 
 /**
  * NÍVEL 1 — o rail escuro (design.md §6).
@@ -123,7 +124,8 @@ function ItemRail({ secao, ativa }: { secao: Secao; ativa: boolean }) {
 
 export function AppRail({ papel }: { papel?: string }) {
   const { pathname } = useLocation();
-  const secoes = secoesVisiveis(papel);
+  const t = useT();
+  const secoes = secoesVisiveis(papel, t);
   const ativa = secaoAtiva(pathname, secoes);
 
   // Onde o bloco do admin começa — separa visualmente as duas áreas sem
@@ -135,7 +137,7 @@ export function AppRail({ papel }: { papel?: string }) {
     // de empurrar — sem isto, expandir mexeria o conteúdo inteiro para o lado.
     <div className={cn("hidden shrink-0 md:block", LARGURA_RECOLHIDO)}>
       <nav
-        aria-label="Principal"
+        aria-label={t.nav.principal}
         className={cn(
           "group fixed inset-y-0 left-0 z-40 flex flex-col overflow-hidden",
           "border-r border-white/5 bg-rail text-rail-foreground",
