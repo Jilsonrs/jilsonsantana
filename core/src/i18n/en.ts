@@ -37,7 +37,7 @@ export const en: Dict = {
       },
       MODERNO: {
         nome: "Modern features",
-        texto: "The newest features that speed up your work and that few people master."
+        texto: "The newest features that speed up your work and few people master."
       },
       IA: {
         nome: "AI on your side",
@@ -219,7 +219,9 @@ export const en: Dict = {
       principal: "Main",
       menuDaSecao: "Section menu",
       abrirMenu: "Open menu",
+      abrirMenuConta: "Open account menu",
       menu: "Menu",
+      descricaoMenu: "Main site navigation.",
       navegacao: "Navigation",
       geral: "General",
       contaPessoal: "Personal account",

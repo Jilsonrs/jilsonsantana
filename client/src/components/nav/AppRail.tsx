@@ -125,7 +125,8 @@ function ItemRail({ secao, ativa }: { secao: Secao; ativa: boolean }) {
 export function AppRail({ papel }: { papel?: string }) {
   const { pathname } = useLocation();
   const t = useT();
-  const secoes = secoesVisiveis(papel, t);
+  // "Minha conta" mora no menu da foto, não no rail (decisão do operador, 24/09/2026).
+  const secoes = secoesVisiveis(papel, t).filter((s) => !s.foraDoMenuLateral);
   const ativa = secaoAtiva(pathname, secoes);
 
   // Onde o bloco do admin começa — separa visualmente as duas áreas sem

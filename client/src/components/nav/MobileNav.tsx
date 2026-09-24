@@ -25,14 +25,16 @@ export function MobileNav({ papel, onSignOut }: { papel?: string; onSignOut: () 
   const [aberta, setAberta] = useState(false);
   const { pathname } = useLocation();
   const t = useT();
-  const secoes = secoesVisiveis(papel, t);
+  // "Minha conta" mora no menu da foto, não aqui (decisão do operador, 24/09/2026).
+  const secoes = secoesVisiveis(papel, t).filter((s) => !s.foraDoMenuLateral);
   const ativa = secaoAtiva(pathname, secoes);
 
+  // Sem cabeçalho próprio desde 24/09: a gaveta mora na faixa do topo do shell
+  // (Layout), ao lado do menu da conta. O botão só aparece no celular.
   return (
-    <header className="flex h-14 items-center gap-2 border-b border-border px-4 md:hidden">
       <Sheet open={aberta} onOpenChange={setAberta}>
         <SheetTrigger
-          className="flex size-9 items-center justify-center rounded-md hover:bg-muted"
+          className="flex size-9 items-center justify-center rounded-md hover:bg-muted md:hidden"
           aria-label={t.nav.abrirMenu}
         >
           <Menu className="size-5" />
@@ -41,7 +43,7 @@ export function MobileNav({ papel, onSignOut }: { papel?: string; onSignOut: () 
           {/* O Radix exige título e descrição no diálogo; ficam só para leitor
               de tela, porque na tela a marca logo abaixo já cumpre o papel. */}
           <SheetTitle className="sr-only">{t.nav.menu}</SheetTitle>
-          <SheetDescription className="sr-only">Navegação principal do site.</SheetDescription>
+          <SheetDescription className="sr-only">{t.nav.descricaoMenu}</SheetDescription>
 
           {/* A marca leva à HOME PÚBLICA, como no rail (AppRail) — e pelo mesmo
               motivo é `<a>` e não `<Link>`: a home é HTML de servidor, e o Link
@@ -106,6 +108,5 @@ export function MobileNav({ papel, onSignOut }: { papel?: string; onSignOut: () 
           </nav>
         </SheetContent>
       </Sheet>
-    </header>
   );
 }

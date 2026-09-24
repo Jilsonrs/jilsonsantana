@@ -344,6 +344,11 @@ não código espalhado: uma tela nova declara seus níveis e o cromo se monta so
 
   Regras de uso e exemplo: [`.agents/rules/page_layout.md`](../.agents/rules/page_layout.md).
   **Não vale para a superfície pública** (home e vitrine), que tem padrão próprio.
+- **Menu de conta no canto superior direito** *(decisão do operador, 24/09/2026, a partir da
+  Udemy, da Amazon, do LinkedIn e da Mosh)*: a foto (ou as iniciais) abre um painel com nome,
+  e-mail, Minha conta, Faturamento e assinatura e **Sair**. "Minha conta" **não** fica no menu
+  lateral. É o único "Sair" global do app, e isso muda a regra de set/2026, quando não havia
+  nenhum. Incluir ou trocar a foto é pendência registrada no plano.
 - **Rodapé do app** *(decisão do operador, 24/09/2026, comparando com o LinkedIn Learning)*: em
   toda tela depois do login, **do aluno e do admin**. Marca + © · FAQ · Quem somos · Contato ·
   YouTube · Termos · Privacidade. Fica de fora o que o menu lateral já leva (Cursos, Trilhas,

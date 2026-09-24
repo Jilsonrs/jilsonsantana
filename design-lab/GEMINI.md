@@ -196,6 +196,12 @@ exceto o item 4, que é página pública.
    o visual, não o texto (é do operador). Também a etiqueta **"EN"** na lista de cursos
    (`AdminCoursesPage.tsx`) e o **aviso de erro ao salvar**, logo acima do botão "Salvar dados do
    curso" (cru: uma linha vermelha).
+7. **Menu de conta** (`client/src/components/layout/AccountMenu.tsx`) e a **faixa do topo** que o
+   carrega (`client/src/components/Layout.tsx`) — novos em 24/09, em toda tela depois do login.
+   Estrutura crua: botão redondo com a foto ou as iniciais, e um painel com nome, e-mail, Minha
+   conta, Faturamento e assinatura e Sair. No celular, a mesma faixa tem o botão da gaveta à
+   esquerda. **Não troque o painel por `role="menu"`** sem a navegação por setas que ele promete, e
+   mantenha o fechamento por Esc e por clique fora: **têm teste**.
 
 ## 3. Onde você NÃO mexe
 

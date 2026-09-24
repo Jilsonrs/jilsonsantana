@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { screen } from "@testing-library/react";
+import { screen, fireEvent, within } from "@testing-library/react";
 import { renderWithProviders } from "@/test-utils";
 import { Role } from "@jilson/core";
 
@@ -111,8 +111,10 @@ describe("Layout — em inglês", () => {
 
     expect(screen.getByRole("navigation", { name: "Main" })).toBeTruthy();
     expect(screen.getByRole("link", { name: "Home" })).toBeTruthy();
-    expect(screen.getByRole("link", { name: "My account" })).toBeTruthy();
     expect(screen.queryByRole("link", { name: "Início" })).toBeNull();
+    // A conta mora no menu da foto — em inglês também.
+    fireEvent.click(screen.getByRole("button", { name: "Open account menu" }));
+    expect(screen.getByRole("link", { name: "My account" })).toBeTruthy();
   });
 
   it("admin com a conta em inglês: os itens de ADMIN continuam em português", () => {
@@ -131,5 +133,37 @@ describe("Layout — em inglês", () => {
     expect(screen.getByRole("link", { name: "Catalog" })).toBeTruthy();
     expect(marca().getAttribute("href")).toBe("/en");
     expect(screen.queryByRole("link", { name: "Entrar" })).toBeNull();
+  });
+});
+
+// "Minha conta" saiu do menu lateral e mora no menu da foto (decisão do
+// operador, 24/09/2026) — mas a coluna da conta continua em /conta.
+describe("Layout — o menu da conta", () => {
+  beforeEach(() => {
+    useSession.mockReturnValue({ data: { user: { role: Role.MEMBER, name: "Ana Souza", email: "ana@exemplo.com" } } });
+  });
+
+  it("o botão da foto está no topo, e Minha conta não está no menu lateral", () => {
+    renderWithProviders(<Layout />);
+
+    expect(screen.getByRole("button", { name: "Abrir o menu da conta" })).toBeTruthy();
+    expect(screen.queryByRole("link", { name: "Minha conta" })).toBeNull();
+  });
+
+  it("nem na gaveta do celular", async () => {
+    renderWithProviders(<Layout />);
+    fireEvent.click(screen.getByRole("button", { name: "Abrir o menu" }));
+
+    // Olha DENTRO da gaveta: fora dela o rail também tem "Início", e o teste
+    // passaria mesmo com a gaveta fechada.
+    const gaveta = await screen.findByRole("dialog");
+    expect(within(gaveta).getByRole("link", { name: "Início" })).toBeTruthy();
+    expect(within(gaveta).queryByRole("link", { name: "Minha conta" })).toBeNull();
+  });
+
+  it("em /conta, a coluna da conta continua aparecendo", () => {
+    renderWithProviders(<Layout />, { route: "/conta" });
+
+    expect(screen.getByRole("link", { name: "Seus dados" })).toBeTruthy();
   });
 });

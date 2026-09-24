@@ -1047,6 +1047,26 @@ sistema administrativo inteiro ainda está por construir (Bloco 6b, Fase 4, Fase
       Testes: 5 de servidor, 7 do rodapé, 3 no shell, 1 na tela de Textos. **Mutação:** rota
       ignorando as edições, rodapé ignorando o servidor, rodapé fora do shell e salvar sem avisar o
       rodapé → reprovam. Revertido.
+- [x] **Menu de conta no canto superior direito** *(decisão do operador, 24/09/2026 — a partir da
+      Udemy, da Amazon, do LinkedIn e da Mosh)*: em toda tela depois do login, aluno e admin, uma
+      faixa no topo da área de conteúdo com a **foto** (ou as iniciais) à direita; no celular, a
+      mesma faixa leva também o botão da gaveta. O painel: foto, nome, e-mail · **Minha conta** ·
+      **Faturamento e assinatura** (`/conta/faturamento`, sem página até a Fase 4 — decisão dele) ·
+      **Sair**. **"Minha conta" saiu do menu lateral e da gaveta** (`foraDoMenuLateral` no mapa); a
+      coluna da conta segue em `/conta`. **Muda a regra de set/2026** ("não há botão global de
+      Sair"): agora o Sair global mora no menu da foto. Disclosure, não `role="menu"`; sem
+      biblioteca e sem Popover API (aparelho antigo — guia modern-web-guidance). Textos em `app.nav`.
+      Junto: o texto de leitor de tela da gaveta ("Navegação principal do site.") foi para o
+      dicionário, achado da etapa 2. Testes: 9 do menu, 3 no shell, 3 ajustados à decisão nova; E2E
+      abre a conta e sai pelo menu da foto. **Mutação:** sem Sair e "Minha conta" de volta ao rail
+      → 6 reprovaram. Revertido.
+- [ ] **Incluir ou trocar a foto do aluno** *(decisão do operador, 24/09/2026 — pendente, não
+      construído)*. Onde: Minha conta → Seus dados; a foto do menu da conta passa a mostrar a nova.
+      O campo já existe (`User.image`, do Better Auth); falta o envio do arquivo. **Decisão do
+      operador pendente:** onde a foto fica guardada (serviço de armazenamento = peça nova de stack,
+      precisa do ok dele). Regras que já valem: formato WebP (regra de imagem do design), tamanho
+      máximo, e a foto é dado pessoal — some junto quando a conta é excluída (LGPD). Até lá, sem
+      foto, o menu mostra as iniciais.
 - **Done when:** uma tela nova entra no sistema **declarando** seus níveis no mapa, sem escrever
   componente de navegação nenhum — e os três níveis somem sozinhos onde não há dado.
 

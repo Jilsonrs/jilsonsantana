@@ -54,6 +54,12 @@ export type Secao = {
   abas?: Aba[];
   /** Rotas que também acendem esta seção (ex.: a página de um curso acende o Catálogo). */
   tambemAtivoEm?: string[];
+  /**
+   * Não aparece no menu lateral nem na gaveta do celular — mas CONTINUA no mapa,
+   * para a coluna secundária dela funcionar. É o caso de "Minha conta", que mora
+   * no menu da foto (decisão do operador, 24/09/2026).
+   */
+  foraDoMenuLateral?: true;
 };
 
 /**
@@ -92,6 +98,7 @@ export function navegacao(t: AppTexts): Secao[] {
       to: "/conta",
       icon: MockUser,
       estado: "ativo",
+      foraDoMenuLateral: true,
       filhos: [
         { label: t.nav.seusDados, to: "/conta" },
         { label: t.nav.preferencias, to: "/conta/preferencias" },

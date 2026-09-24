@@ -5,6 +5,7 @@ import { AppRail } from "@/components/nav/AppRail";
 import { MobileNav } from "@/components/nav/MobileNav";
 import { SecondaryNav } from "@/components/nav/SecondaryNav";
 import { AppFooter } from "@/components/layout/AppFooter";
+import { AccountMenu } from "@/components/layout/AccountMenu";
 import { ROTAS_PUBLICAS } from "@jilson/core";
 import { IdiomaProvider, useIdioma, useIdiomaDoShell, useT } from "@/lib/language";
 
@@ -74,7 +75,14 @@ function Shell() {
       <AppRail papel={session.user.role} />
       <SecondaryNav papel={session.user.role} usuario={session.user} onSignOut={handleSignOut} />
       <div className="flex min-w-0 flex-1 flex-col">
-        <MobileNav papel={session.user.role} onSignOut={handleSignOut} />
+        {/* Faixa do topo: a gaveta (só no celular) à esquerda e o menu da conta
+            no canto superior direito, em toda tela (decisão do operador, 24/09). */}
+        <header className="flex h-14 items-center gap-2 border-b border-border px-4 md:px-[50px]">
+          <MobileNav papel={session.user.role} onSignOut={handleSignOut} />
+          <div className="ml-auto">
+            <AccountMenu usuario={session.user} onSignOut={handleSignOut} />
+          </div>
+        </header>
         <main className="flex-1">
           <Outlet />
         </main>

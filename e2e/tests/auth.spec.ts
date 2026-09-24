@@ -30,8 +30,10 @@ test("unauthenticated visit to /admin redirects to /login", async ({ page }) => 
 test("member reaches /conta but is blocked from /admin", async ({ page }) => {
   await login(page, MEMBER);
 
-  // Chega ao catálogo e alcança a conta PELO LINK do cabeçalho — não pela URL.
-  // É o caminho que o aluno realmente percorre; se o link sumir, este teste cai.
+  // Alcança a conta pelo MENU DA FOTO, no canto superior direito — não pela URL.
+  // É o caminho que o aluno realmente percorre (decisão do operador, 24/09/2026:
+  // "Minha conta" saiu do menu lateral); se o menu sumir, este teste cai.
+  await page.getByRole("button", { name: "Abrir o menu da conta" }).click();
   await page.getByRole("link", { name: "Minha conta" }).click();
   await expect(page).toHaveURL(/\/conta$/);
   // `heading` desambigua do link do cabeçalho, que tem o mesmo texto.
@@ -74,26 +76,22 @@ test("session survives a page reload", async ({ page }) => {
 
   await page.reload();
 
-  // Segue logado: continua no catálogo (não foi jogado para /login) e o link de
+  // Segue logado: continua no início (não foi jogado para /login) e o menu da
   // conta — que só aparece para quem tem sessão — continua lá.
   await expect(page).toHaveURL(/\/inicio$/);
-  await expect(page.getByRole("link", { name: "Minha conta" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Abrir o menu da conta" })).toBeVisible();
 });
 
-// O "Sair" mora DENTRO de "Minha conta" desde que a barra lateral substituiu o
-// cabeçalho — não existe mais botão global, e é assim de propósito (decisão do
-// operador, Set 2026). Por isso o teste percorre o caminho real do aluno: entra,
-// abre a conta pelo link, e só então sai.
+// O "Sair" GLOBAL mora no menu da foto, no canto superior direito (decisão do
+// operador, 24/09/2026, a partir da Udemy, Amazon, LinkedIn e Mosh). Isso MUDA a
+// regra de set/2026, quando não havia botão global e o Sair ficava dentro de
+// "Minha conta". O teste percorre o caminho real: abre o menu da foto e sai.
 test("logout returns to /login", async ({ page }) => {
   await login(page, MEMBER);
 
-  await page.getByRole("link", { name: "Minha conta" }).click();
-  await expect(page).toHaveURL(/\/conta$/);
-
-  // Escopado ao `main` porque há DOIS "Sair" nesta tela — o da coluna lateral e
-  // o do card da conta. `.first()` faria o teste passar sem dizer qual dos dois
-  // foi exercido, o mesmo defeito apontado no teste do admin acima.
-  await page.getByRole("main").getByRole("button", { name: "Sair" }).click();
+  await page.getByRole("button", { name: "Abrir o menu da conta" }).click();
+  // `exact`: sem ele, "Sair" também casaria com "Sair da plataforma" em /conta.
+  await page.getByRole("button", { name: "Sair", exact: true }).click();
   await expect(page).toHaveURL(/\/login$/);
 });
 
