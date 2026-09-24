@@ -27,6 +27,7 @@ beforeAll(async () => {
   const arquivado = await prisma.course.create({
     data: {
       slug: `arquivado${SUFIXO}`,
+      language: "PT",
       title: "Curso arquivado",
       status: "ARCHIVED",
       modules: {
@@ -46,13 +47,14 @@ beforeAll(async () => {
   aulaOrfaId = arquivado.modules[0].lessons[0].id;
 
   const draft = await prisma.course.create({
-    data: { slug: `draft${SUFIXO}`, title: "Curso não lançado", status: "DRAFT" },
+    data: { slug: `draft${SUFIXO}`, language: "PT", title: "Curso não lançado", status: "DRAFT" },
   });
   cursoDraftId = draft.id;
 
   const trilha = await prisma.learningPlan.create({
     data: {
       slug: `trilha-draft${SUFIXO}`,
+      language: "PT",
       name: "Trilha em construção",
       isTemplate: true,
       status: "DRAFT",
@@ -66,6 +68,7 @@ beforeAll(async () => {
   const publicada = await prisma.learningPlan.create({
     data: {
       slug: `trilha-ok${SUFIXO}`,
+      language: "PT",
       name: "Trilha publicada",
       isTemplate: true,
       status: "PUBLISHED",

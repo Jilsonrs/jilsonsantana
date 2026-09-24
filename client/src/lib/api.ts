@@ -153,6 +153,7 @@ export type AdminCourseCard = {
   slug: string;
   title: string;
   status: ContentStatus;
+  language: LanguageCode;
   displayOrder: number;
   moduleCount: number;
   lessonCount: number;
@@ -194,6 +195,7 @@ export type AdminCourseDetail = {
   introVideoId: string | null;
   displayOrder: number;
   status: ContentStatus;
+  language: LanguageCode;
   modules: AdminModule[];
 };
 

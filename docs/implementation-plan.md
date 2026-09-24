@@ -1214,7 +1214,16 @@ landmark. Corrigido junto.
 >   - [x] **3a — formulário de curso dividido** *(24/09)*: 375 → 129 linhas. Lógica em
 >         `client/src/lib/course-form.ts`; seções em `client/src/components/admin/course-form/`.
 >         Mesmas classes, mesma tela: os testes passaram sem mexer.
->   - [ ] **3b — banco e servidor.**
+>   - [x] **3b — banco e servidor** *(24/09)*. Migration `20260924150000_course_and_plan_language`
+>         (as linhas existentes viram PT e o DEFAULT sai: o banco recusa curso ou trilha sem
+>         idioma). Passo 0 no dev antes/depois: 2 cursos, 1 trilha, 2 módulos, 3 aulas, 2 usuários,
+>         logins de admin e membro OK nas duas vezes; `migrate diff` *No difference*; zero tabela
+>         sem RLS. **Aplicada no dev; em produção roda no pre-deploy do próximo publish.**
+>         `?lang=pt|en` em catálogo, trilhas e busca (`idiomaDaLista`); link direto e "minhas
+>         trilhas" não filtram; `LanguageMismatch` na trilha; `LanguageLocked`/`LanguageInUse` na
+>         troca; a cópia herda o idioma da trilha. A API fala `pt`/`en` (`comIdioma`). 14 testes
+>         novos (`content-language.test.ts`). **Mutação:** sem filtro, sem trava, sem recusa e
+>         "minhas trilhas" filtrando → 4 reprovaram. Revertido.
 >   - [ ] **3c — campo Idioma e etiqueta "EN" no admin.**
 > - [ ] **Etapa 4 — catálogo e cursos no idioma escolhido:** catálogo, busca, páginas de curso e
 >       trilha; nível e textos das 3 camadas nos dois idiomas; catálogo EN vazio; curso com 0 aulas.

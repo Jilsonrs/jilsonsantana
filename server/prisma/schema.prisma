@@ -39,8 +39,8 @@ enum PlanItemType {
 }
 
 // Os dois idiomas da escola. TETO DE DOIS — um terceiro é decisão do operador,
-// não "mais um valor" (docs/idiomas.md). Nasce aqui com SiteText; Course.language
-// e LearningPlan.language penduram neste mesmo enum quando o Bloco I chegar.
+// não "mais um valor" (docs/idiomas.md). Usado por SiteText, Testimonial,
+// FaqItem, Course e LearningPlan.
 enum Language {
   PT
   EN
@@ -216,6 +216,10 @@ model Course {
   introVideoId   String? // presentation video (Bunny); non-gated wiring is Phase 3
   displayOrder   Int           @default(0)
   status         ContentStatus @default(DRAFT)
+  // O idioma do curso (decisão do operador, 14/09/2026). Obrigatório e SEM
+  // default: o banco recusa curso sem idioma. Módulo e aula herdam daqui.
+  // Troca só enquanto rascunho (operador, 24/09) — regra no servidor.
+  language       Language
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
   modules        Module[]
@@ -273,6 +277,9 @@ model LearningPlan {
   clones        LearningPlan[] @relation("PlanClone")
   displayOrder  Int            @default(0)
   status        ContentStatus  @default(DRAFT)
+  // A trilha segue o idioma (operador, 14/09): o servidor recusa item de outro
+  // idioma. Obrigatório e sem default, como no curso.
+  language      Language
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   planModules   PlanModule[]

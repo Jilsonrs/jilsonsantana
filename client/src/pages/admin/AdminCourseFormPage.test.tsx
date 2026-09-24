@@ -34,6 +34,7 @@ const existingCourse: AdminCourseDetail = {
   introVideoId: null,
   displayOrder: 0,
   status: "DRAFT",
+  language: "pt",
   modules: [],
 };
 

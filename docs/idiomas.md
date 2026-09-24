@@ -151,6 +151,13 @@ o idioma na home e **entra já em inglês**.
   - a trilha clonada pelo aluno herda o idioma.
 - **Catálogo, busca, lista de trilhas e sitemap mostram só o idioma do endereço** `[operador,
   14/09]`. É o mesmo mecanismo do filtro por status que já existe.
+- **Só as listas de DESCOBERTA filtram** `[operador, 24/09 — "como no LinkedIn"]`. O que é do
+  aluno — trilhas salvas, cursos iniciados, o "continue estudando" — aparece **nos dois
+  idiomas**; quem sabe as duas línguas salva, começa e estuda cursos e trilhas das duas. Salvar
+  ou copiar trilha do outro idioma é permitido, e a cópia **herda o idioma da trilha**, não o da
+  conta. A única recusa é misturar idiomas **dentro** de uma trilha.
+- **O idioma do curso e da trilha só troca enquanto é rascunho** `[operador, 24/09]`; publicado,
+  trava.
 - **IDIOMA É FILTRO, NÃO PORTÃO** `[operador, 14/09 — 3ª rodada, como no LinkedIn Learning]`.
   **Uma assinatura dá acesso aos cursos dos dois idiomas.** O idioma escolhido decide **o que
   aparece** (catálogo, busca, trilhas); quem troca de idioma vê e estuda os cursos daquele idioma

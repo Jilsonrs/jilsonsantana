@@ -7,6 +7,7 @@ import {
   layerSchema,
   highlightSchema,
   faqItemSchema,
+  contentLanguageSchema,
   type CourseCreateInput,
 } from "@jilson/core";
 import type { AdminCourseDetail } from "@/lib/api";
@@ -19,6 +20,7 @@ import { fromLines, toLines } from "@/lib/array-field";
 
 export const courseFormSchema = z.object({
   slug: slugSchema,
+  language: contentLanguageSchema,
   title: z.string().min(1, "Obrigatório"),
   subtitle: z.string(),
   description: z.string(),
@@ -39,6 +41,9 @@ export type CourseFormValues = z.infer<typeof courseFormSchema>;
 
 export const blankValues: CourseFormValues = {
   slug: "",
+  // Curso novo nasce em português — a escola nasceu em PT. O operador troca no
+  // campo Idioma enquanto o curso é rascunho.
+  language: "pt",
   title: "",
   subtitle: "",
   description: "",
@@ -58,6 +63,7 @@ export const blankValues: CourseFormValues = {
 export function toFormValues(course: AdminCourseDetail): CourseFormValues {
   return {
     slug: course.slug,
+    language: course.language,
     title: course.title,
     subtitle: course.subtitle ?? "",
     description: course.description ?? "",
@@ -82,6 +88,7 @@ export function toFormValues(course: AdminCourseDetail): CourseFormValues {
 export function toPayload(values: CourseFormValues): CourseCreateInput {
   return {
     slug: values.slug,
+    language: values.language,
     title: values.title,
     subtitle: values.subtitle.trim() || undefined,
     description: values.description.trim() || undefined,

@@ -18,6 +18,7 @@ const course: AdminCourseCard = {
   slug: "exemplo-fundamentos-excel-ia",
   title: "Exemplo — Fundamentos de Excel + IA",
   status: "DRAFT",
+  language: "pt",
   displayOrder: 0,
   moduleCount: 2,
   lessonCount: 3,
