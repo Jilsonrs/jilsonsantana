@@ -11,6 +11,12 @@ vi.mock("@/lib/auth-client", () => ({
   signOut: () => signOut(),
 }));
 
+// O rodapé do app busca os textos comuns; aqui só importa SE ele aparece.
+vi.mock("@/lib/api", () => ({
+  COMMON_TEXTS_QUERY: "site-text-common",
+  getCommonTexts: () => new Promise(() => {}),
+}));
+
 import { Layout } from "./Layout";
 
 function marca() {
@@ -34,6 +40,11 @@ describe("Layout — visitante sem sessão", () => {
     expect(screen.queryByRole("link", { name: "Início" })).toBeNull();
     expect(screen.queryByRole("link", { name: "Minha conta" })).toBeNull();
     expect(screen.queryByRole("navigation", { name: "Principal" })).toBeNull();
+  });
+
+  it("não recebe o rodapé do app — a superfície pública tem o dela, no servidor", () => {
+    renderWithProviders(<Layout />);
+    expect(screen.queryByRole("contentinfo")).toBeNull();
   });
 
   it("a marca leva para a landing pública", () => {
@@ -74,5 +85,18 @@ describe("Layout — quem entrou", () => {
   it("oferece o botão do menu no celular", () => {
     renderWithProviders(<Layout />);
     expect(screen.getByRole("button", { name: "Abrir o menu" })).toBeTruthy();
+  });
+
+  // Decisão do operador (24/09/2026): rodapé em TODA tela depois do login,
+  // do aluno e do admin.
+  it("o aluno tem o rodapé do app", () => {
+    renderWithProviders(<Layout />);
+    expect(screen.getByRole("contentinfo")).toBeTruthy();
+  });
+
+  it("o admin também tem o rodapé do app", () => {
+    useSession.mockReturnValue({ data: { user: { role: Role.ADMIN } } });
+    renderWithProviders(<Layout />);
+    expect(screen.getByRole("contentinfo")).toBeTruthy();
   });
 });

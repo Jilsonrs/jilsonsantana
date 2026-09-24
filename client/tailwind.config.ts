@@ -30,6 +30,8 @@ const config: Config = {
   			},
   			// Fundo do shell da área logada (design.md §13).
   			'surface-alt': 'hsl(var(--surface-alt))',
+  			// O tom da vitrine (#F5F5F7), para o rodapé do app ecoar o menu da home.
+  			'surface-vitrine': 'hsl(var(--surface-vitrine))',
   			// Rail escuro — nível 1 da navegação (design.md §13).
   			rail: {
   				DEFAULT: 'hsl(var(--rail))',

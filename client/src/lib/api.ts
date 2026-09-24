@@ -11,6 +11,7 @@ import type {
   LessonCreateInput,
   LessonUpdateInput,
   LanguageCode,
+  Dict,
   TestimonialCreateInput,
   TestimonialUpdateInput,
   HomeFaqCreateInput,
@@ -319,6 +320,18 @@ export async function adminUpdateSiteText(input: {
   value: string;
 }): Promise<void> {
   await client.put("/admin/site-text", input);
+}
+
+// Os textos COMUNS (menu e rodapé) já com as edições do operador — leitura
+// pública. É por aqui que o rodapé do app mostra o MESMO texto do rodapé da
+// home. Quem salva em Admin → Textos invalida esta chave, para o rodapé do
+// próprio operador mudar na hora.
+export type CommonTexts = Dict["common"];
+export const COMMON_TEXTS_QUERY = "site-text-common";
+
+export async function getCommonTexts(lang: LanguageCode): Promise<CommonTexts> {
+  const { data } = await client.get<CommonTexts>(`/site-text/common/${lang}`);
+  return data;
 }
 
 // ---------------------------------------------------------------------------

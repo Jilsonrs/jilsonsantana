@@ -36,6 +36,9 @@
     --radius: 0.75rem; /* 12px */
 
     --surface-alt: 210 40% 98%; /* #F8FAFC — quebra de seção e coluna secundária */
+    /* #F5F5F7 — o --surface-alt da VITRINE (public-input.css), que é outro tom.
+       Existe para a barra do rodapé do app ecoar o menu da home (24/09). */
+    --surface-vitrine: 240 11% 96.5%;
     /* Azul ESCURECIDO para superfície CLARA: o #238FE8 sobre o tint dá 2,96:1 e
        reprova. Este dá 4,6:1. No rail escuro o azul passa sozinho (5,81:1) e
        não precisa disto — não copie um tratamento para o outro. */
@@ -81,6 +84,7 @@
        um tema de verdade — é só coerência: os mesmos nomes, apontando para os
        mesmos lugares, para não nascer uma segunda paleta que ninguém mantém. */
     --surface-alt: 240 5.9% 10%;
+    --surface-vitrine: 240 5.9% 10%;
     --primary-tint: 207 40% 20%;
     --primary-tint-foreground: 207 81% 78%;
     --primary-hover: 207 81% 62%;

@@ -13,6 +13,7 @@ import lessonsRouter from "./routes/lessons.js";
 import searchRouter from "./routes/search.js";
 import homeRouter from "./routes/home.js";
 import adminSiteTextRouter from "./routes/admin-site-text.js";
+import siteTextRouter from "./routes/site-text.js";
 import adminTestimonialsRouter from "./routes/admin-testimonials.js";
 import adminFaqRouter from "./routes/admin-faq.js";
 
@@ -52,6 +53,7 @@ app.use("/api", modulesRouter);
 app.use("/api", trilhasRouter);
 app.use("/api", lessonsRouter);
 app.use("/api", searchRouter);
+app.use("/api", siteTextRouter);
 app.use("/api", adminSiteTextRouter);
 app.use("/api", adminTestimonialsRouter);
 app.use("/api", adminFaqRouter);
