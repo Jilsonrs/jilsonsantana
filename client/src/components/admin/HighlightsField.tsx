@@ -3,7 +3,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import type { CourseFormValues } from "@/pages/admin/AdminCourseFormPage";
+import type { CourseFormValues } from "@/lib/course-form";
 
 // "Diferenciais do curso" icon cards (Course.highlights[]) — the only array-
 // of-OBJECT course field, so unlike learnTags/requirements/personas (plain

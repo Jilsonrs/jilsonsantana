@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import type { CourseFormValues } from "@/pages/admin/AdminCourseFormPage";
+import type { CourseFormValues } from "@/lib/course-form";
 
 // Per-course FAQ (Course.faq[]) — optional, renders only if filled
 // (CLAUDE.md: fill 2-3 entries only where a recurring real doubt exists).

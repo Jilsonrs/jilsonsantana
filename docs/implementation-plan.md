@@ -1208,6 +1208,14 @@ landmark. Corrigido junto.
 > - [ ] **Etapa 3 — cursos e trilhas ganham idioma:** a antiga etapa 2 do C4 + a parte de dados
 >       deste bloco (migration, campo Idioma e etiqueta "EN" no admin, filtro nas listas, recusa
 >       de item de outro idioma na trilha). Antes: dividir o formulário de curso.
+>       **Decisões do operador (24/09, ao aprovar):** idioma trocável **enquanto rascunho**, trava
+>       depois de publicado · **idioma é filtro, não portão** — só as listas de descoberta filtram;
+>       o que é do aluno (trilhas salvas, cursos iniciados) aparece nos dois idiomas.
+>   - [x] **3a — formulário de curso dividido** *(24/09)*: 375 → 129 linhas. Lógica em
+>         `client/src/lib/course-form.ts`; seções em `client/src/components/admin/course-form/`.
+>         Mesmas classes, mesma tela: os testes passaram sem mexer.
+>   - [ ] **3b — banco e servidor.**
+>   - [ ] **3c — campo Idioma e etiqueta "EN" no admin.**
 > - [ ] **Etapa 4 — catálogo e cursos no idioma escolhido:** catálogo, busca, páginas de curso e
 >       trilha; nível e textos das 3 camadas nos dois idiomas; catálogo EN vazio; curso com 0 aulas.
 > - [ ] **Etapa 5 — revisão do inglês** pelo operador com o Antigravity, e publicação.
