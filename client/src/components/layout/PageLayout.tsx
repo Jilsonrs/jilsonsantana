@@ -39,11 +39,11 @@ export function PageHeader({
 }
 
 /**
- * Padrão Split-Panel (Estilo Vercel/Stripe).
- * Lado esquerdo (1/3): Título e descrição da seção.
- * Lado direito (2/3): Conteúdo (geralmente um Card com os formulários).
+ * Seção de Página (Layout Empilhado).
+ * Título e descrição no topo, conteúdo logo abaixo. Escala perfeitamente
+ * para qualquer resolução.
  */
-export function SplitSection({
+export function PageSection({
   title,
   description,
   children,
@@ -55,12 +55,12 @@ export function SplitSection({
   className?: string;
 }) {
   return (
-    <div className={cn("grid grid-cols-1 gap-x-8 gap-y-6 pt-8 sm:gap-y-8 sm:pt-10 md:grid-cols-3", className)}>
+    <div className={cn("flex flex-col gap-y-4 pt-8 sm:pt-10", className)}>
       <div>
-        <h2 className="text-base font-semibold leading-7">{title}</h2>
-        {description && <p className="mt-1 text-sm leading-6 text-muted-foreground">{description}</p>}
+        <h2 className="text-lg font-semibold leading-7 text-foreground">{title}</h2>
+        {description && <p className="mt-1 text-sm leading-6 text-muted-foreground max-w-[80ch]">{description}</p>}
       </div>
-      <div className="md:col-span-2">
+      <div>
         {children}
       </div>
     </div>

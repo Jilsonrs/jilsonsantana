@@ -22,7 +22,7 @@ export function MyTrilhaDetailPage() {
       </PageContainer>
     );
   }
-  
+
   if (isError || !trilha) {
     return (
       <PageContainer>

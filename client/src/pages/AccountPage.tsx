@@ -2,13 +2,13 @@ import { useNavigate } from "react-router-dom";
 import { useSession, signOut } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { PageContainer, PageHeader, SplitSection } from "@/components/layout/PageLayout";
+import { PageContainer, PageHeader, PageSection } from "@/components/layout/PageLayout";
 
 function Field({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between gap-4 py-2">
-      <span className="text-sm font-medium text-muted-foreground">{label}</span>
-      <span className="text-sm font-semibold">{value}</span>
+    <div className="grid grid-cols-[auto_1fr] items-center gap-2.5 py-2">
+      <span className="text-sm font-medium text-muted-foreground w-12">{label}</span>
+      <span className="text-sm font-semibold text-foreground">{value}</span>
     </div>
   );
 }
@@ -31,11 +31,11 @@ export function AccountPage() {
       />
 
       <div className="space-y-12">
-        <SplitSection
+        <PageSection
           title="Seus Dados"
           description="Informações básicas da sua conta na plataforma."
         >
-          <Card>
+          <Card className="max-w-3xl">
             <CardContent className="space-y-2 pt-6">
               <Field label="Nome" value={user?.name ?? "—"} />
               <div className="h-px w-full bg-border/40" />
@@ -44,9 +44,9 @@ export function AccountPage() {
               <Field label="Papel" value={user?.role ?? "—"} />
             </CardContent>
           </Card>
-        </SplitSection>
+        </PageSection>
 
-        <div className="flex justify-end border-t border-border/40 pt-8">
+        <div className="flex justify-start border-t border-border/40 pt-8">
           <Button
             variant="outline"
             onClick={handleSignOut}

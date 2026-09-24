@@ -6,7 +6,7 @@ import { ROTULO_IDIOMA, proximaOrdem } from "@/lib/home-lists";
 import { HomeListItem } from "@/components/admin/HomeListItem";
 import { HomeListItemForm } from "@/components/admin/HomeListItemForm";
 import { Button } from "@/components/ui/button";
-import { PageContainer, PageHeader, SplitSection } from "@/components/layout/PageLayout";
+import { PageContainer, PageHeader, PageSection } from "@/components/layout/PageLayout";
 
 // A tela de uma lista da home (depoimentos ou perguntas frequentes), inteira:
 // idioma, lista, item novo. A página só diz QUAL lista é (ConfigDaLista).
@@ -49,7 +49,7 @@ export function HomeListEditor<T extends ItemDaLista>({ config }: { config: Conf
 
       {data && (
         <div className="space-y-12">
-          <SplitSection
+          <PageSection
             title="Idioma e Cadastro"
             description="Escolha o idioma para visualizar ou cadastrar itens."
           >
@@ -94,9 +94,9 @@ export function HomeListEditor<T extends ItemDaLista>({ config }: { config: Conf
                 <Button onClick={() => setCriando(true)}>{config.rotuloNovo}</Button>
               )}
             </div>
-          </SplitSection>
+          </PageSection>
 
-          <SplitSection
+          <PageSection
             title="Itens Cadastrados"
             description={`Lista de itens em ${ROTULO_IDIOMA[idioma].toLowerCase()}`}
             className="border-t border-border/40 pt-12"
@@ -112,7 +112,7 @@ export function HomeListEditor<T extends ItemDaLista>({ config }: { config: Conf
                 ))}
               </ul>
             )}
-          </SplitSection>
+          </PageSection>
         </div>
       )}
     </PageContainer>
