@@ -360,7 +360,7 @@ pessoa, e uma resposta de reembolso vaga que virou promessa clara.
 | Passo | Quem | O quê |
 |---|---|---|
 | 1 | agente | Escreve o inglês no `en.ts`, junto com o português. Nunca deixa chave vazia. |
-| 2 | agente | `npm run revisao:ingles` → gera `design-lab/revisao-ingles.md` (as frases lado a lado + a régua de voz acima). |
+| 2 | agente | `npm run revisao:ingles` → gera `design-lab/revisao-ingles.md` (as frases lado a lado + a régua de voz acima). Rodada só de texto novo: `-- --so app,common.camadas` (recorta por prefixo de chave) e `--duvidas <arquivo.md>` (põe a lista do passo 3 no topo do arquivo). |
 | 3 | agente | Entrega ao operador a lista dos **pontos de dúvida** — escolha de palavra, conceito brasileiro, promessa nova. Sem essa lista, o revisor não sabe onde olhar. |
 | 4 | operador | Manda o parceiro de design (Antigravity) ler o arquivo e devolver `chave → sugestão → por quê`. |
 | 5 | agente | Aplica, roda os gates, e **reporta o que NÃO aplicou, com o motivo**. |

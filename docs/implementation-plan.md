@@ -1260,6 +1260,9 @@ landmark. Corrigido junto.
 >         `lib/course-form.ts` (`mensagemDeErroAoSalvar`). **Mutação:** todas as falhas com a mesma
 >         frase → 3 reprovaram; aviso removido → 6 reprovaram. Revertido.
 > - [ ] **Etapa 5 — revisão do inglês** pelo operador com o Antigravity, e publicação.
+>       *24/09:* arquivo gerado (`design-lab/revisao-ingles.md`, só o texto novo: 98 frases de
+>       `app.*` e `common.camadas`) com 11 pontos de dúvida no topo. **Aguardando a revisão do
+>       operador com o Antigravity**; depois, aplicar e reportar o que não foi aplicado (passo 5).
 
 > **SEQUENCIAMENTO:** fecha **antes** do bloco *Superfície pública indexável*. Se as páginas
 > públicas forem montadas antes, nascem só em português e são refeitas. Não depende do Bunny;
