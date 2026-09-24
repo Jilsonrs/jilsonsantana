@@ -79,6 +79,18 @@ describe("Home pública (SSR)", () => {
     expect(en.text).not.toContain('href="/cursos"');
   });
 
+  // Um canal por idioma (decisão do operador, 24/09/2026): o visitante em
+  // inglês não cai no canal em português.
+  it("o YouTube leva ao canal do idioma da página", async () => {
+    const pt = await request(app).get("/");
+    const en = await request(app).get("/en");
+
+    expect(pt.text).toContain('href="https://www.youtube.com/@JilsonSantanaBI/"');
+    expect(pt.text).not.toContain("@jilsonen");
+    expect(en.text).toContain('href="https://www.youtube.com/@jilsonen"');
+    expect(en.text).not.toContain("@JilsonSantanaBI");
+  });
+
   it("as duas versões declaram o favicon", async () => {
     // O template do servidor não herda nada do index.html do React: o que não
     // estiver escrito aqui simplesmente não existe na página pública.

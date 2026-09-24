@@ -1,5 +1,5 @@
 import { escapeHtml, jsonLd } from "../lib/html.js";
-import type { Dict } from "@jilson/core";
+import { ROTAS_PUBLICAS, type Dict } from "@jilson/core";
 
 export interface HomeCourse {
   slug: string;
@@ -74,32 +74,9 @@ export function renderHome({
   const alternateUrl = isPt ? `${baseUrl}/en` : baseUrl;
   const title = `${dict.home.hero.titlePrefix} ${dict.home.hero.titleEmphasis} ${dict.home.hero.titleSuffix}`;
 
-  // OS ENDEREÇOS DA VITRINE, por idioma. Um endereço por idioma, com segmentos
-  // em inglês sob /en (CLAUDE.md → Idiomas). Os links apontam para o DESTINO
-  // FINAL mesmo onde a página ainda não existe (decisão do operador, set/2026):
-  // é melhor o link já nascer no lugar certo do que virar `#` e alguém esquecer
-  // de trocar depois. FAQ é âncora na própria página — o conteúdo está no HTML.
-  const rotas = isPt
-    ? {
-        cursos: "/cursos",
-        trilhas: "/trilhas",
-        assinar: "/assinar",
-        faq: "#faq",
-        quemSomos: "/quem-somos",
-        contato: "/contato",
-        termos: "/termos",
-        privacidade: "/privacidade",
-      }
-    : {
-        cursos: "/en/courses",
-        trilhas: "/en/learning-paths",
-        assinar: "/en/pricing",
-        faq: "#faq",
-        quemSomos: "/en/about",
-        contato: "/en/contact",
-        termos: "/en/terms",
-        privacidade: "/en/privacy",
-      };
+  // Os endereços da vitrine, por idioma — compartilhados com o rodapé do app
+  // (`core/src/constants/site.ts`, onde está o porquê).
+  const rotas = ROTAS_PUBLICAS[lang];
 
   // Seletor PT | EN: dois links, um por endereço — sem cookie e sem negociação
   // por cabeçalho ("UM ENDEREÇO POR IDIOMA", CLAUDE.md → Idiomas). O idioma
@@ -721,7 +698,7 @@ ${faq.map((item) => `        <details>
           <a href="${rotas.faq}">${escapeHtml(dict.common.footer.links[3])}</a>
           <a href="${rotas.quemSomos}">${escapeHtml(dict.common.footer.links[4])}</a>
           <a href="${rotas.contato}">${escapeHtml(dict.common.footer.links[5])}</a>
-          <a href="https://www.youtube.com/@JilsonSantanaBI/" target="_blank" rel="noopener noreferrer"
+          <a href="${rotas.youtube}" target="_blank" rel="noopener noreferrer"
             aria-label="YouTube">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"

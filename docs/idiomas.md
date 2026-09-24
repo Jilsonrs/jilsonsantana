@@ -102,8 +102,11 @@ separadas com `hreflang`.
 `[operador, 14/09 — 4ª rodada]`. "Learning path" é o nome que o LinkedIn Learning usa para trilha.
 A trilha em inglês já nasce com nome e slug em inglês.
 
-**Pendência:** `[pendente — operador]` **a posição do seletor PT | EN** na tela. O operador decide
-no Passo 0 do Bloco I (Fase 3), com o parceiro de design.
+**O seletor PT | EN** `[operador, 23–24/09]`: na home, no topo e no rodapé (dois links, um por
+endereço); no app logado, **no rodapé**, como botão que troca o idioma do próprio app e grava na
+conta (`User.preferredLanguage`). **Tudo depois do login existe em inglês** `[operador, 24/09 — "por
+causa dos alunos internacionais"]`, **menos o Admin**, que fica em português. O estrangeiro escolhe
+o idioma na home e **entra já em inglês**.
 
 ---
 
@@ -264,6 +267,8 @@ site para português e pagaria em real, bem menos que US$ 30.
 
 `[operador, 14/09]` **Dois canais separados**, PT e EN, nunca misturados. O canal em inglês vem
 depois e recebe os cursos regravados em inglês. O canal atual segue o rebuild em português.
+`[operador, 24/09]` O canal em inglês é **`https://www.youtube.com/@jilsonen`**, e o site leva cada
+idioma ao seu canal (home e rodapé do app). Os dois endereços moram em `core/src/constants/site.ts`.
 
 ---
 

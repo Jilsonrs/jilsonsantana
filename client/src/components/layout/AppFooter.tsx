@@ -1,8 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { Youtube } from "lucide-react";
-import { pt } from "@jilson/core";
+import { pt, en, LANGUAGES } from "@jilson/core";
 import { getCommonTexts, COMMON_TEXTS_QUERY } from "@/lib/api";
-import { ITENS_DO_RODAPE } from "@/lib/footer";
+import { itensDoRodape } from "@/lib/footer";
+import { useAppLanguage } from "@/lib/language";
+
+// O texto de FÁBRICA de cada idioma — vale enquanto a busca não volta ou se ela
+// falhar, para o rodapé nunca sumir nem ficar em branco.
+const FABRICA = { pt: pt.common, en: en.common };
 
 /**
  * Rodapé do app logado — aluno e admin (decisão do operador, 24/09/2026).
@@ -12,18 +17,19 @@ import { ITENS_DO_RODAPE } from "@/lib/footer";
  * não volta, ou se ela falhar, vale o texto de FÁBRICA do dicionário: o rodapé
  * nunca some nem fica em branco.
  *
- * Hoje só em português — o app do aluno em inglês é bloco próprio
- * (implementation-plan → Bloco I, decisões de 23/09).
+ * Segue o IDIOMA DO APP (`useAppLanguage`, gravado na conta): textos, destinos
+ * dos links e canal do YouTube mudam juntos quando o aluno troca no seletor.
  *
  * Os links são `<a href>`, não `<Link>`: o destino é página do servidor, e o
  * roteador do React não a conhece.
  */
 export function AppFooter() {
+  const { idioma, trocarIdioma, trocando } = useAppLanguage();
   const { data } = useQuery({
-    queryKey: [COMMON_TEXTS_QUERY, "pt"],
-    queryFn: () => getCommonTexts("pt"),
+    queryKey: [COMMON_TEXTS_QUERY, idioma],
+    queryFn: () => getCommonTexts(idioma),
   });
-  const textos = data ?? pt.common;
+  const textos = data ?? FABRICA[idioma];
 
   return (
     <footer className="mt-auto pb-10">
@@ -35,7 +41,7 @@ export function AppFooter() {
             <span className="text-primary">#</span>Jilson Santana
           </p>
           <ul className="flex flex-wrap items-center gap-x-8 gap-y-2 text-[15px] font-medium text-foreground">
-            {ITENS_DO_RODAPE.map((item) => (
+            {itensDoRodape(idioma).map((item) => (
               <li key={item.href}>
                 {item.tipo === "youtube" ? (
                   <a
@@ -58,25 +64,28 @@ export function AppFooter() {
               </li>
             ))}
             <li className="text-border" aria-hidden="true">|</li>
-            {/* Seletor PT | EN (decisão do operador, 24/09/2026). PROVISÓRIO: hoje
-                leva à home pública em cada idioma. O bloco "app do aluno em
-                inglês" (antes do C4) o faz trocar o idioma do PRÓPRIO app.
-                `aria-current="true"` e não "page": marca o idioma atual do app
-                (hoje sempre PT); "page" anunciaria o link como a página aberta. */}
+            {/* Seletor PT | EN (decisão do operador, 24/09/2026): troca o idioma do
+                PRÓPRIO app, sem sair da tela, e grava na conta. São BOTÕES, não
+                links: nada navega. `aria-pressed` diz qual é o idioma atual. */}
             <li className="flex items-center gap-4">
-              <a
-                href="/"
-                aria-current="true"
-                className="border-b-2 border-primary pb-[2px] transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                PT
-              </a>
-              <a
-                href="/en"
-                className="border-b-2 border-transparent pb-[2px] transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                EN
-              </a>
+              {LANGUAGES.map((l) => (
+                <button
+                  key={l}
+                  type="button"
+                  aria-pressed={idioma === l}
+                  disabled={trocando}
+                  onClick={() => {
+                    if (l !== idioma) trocarIdioma(l);
+                  }}
+                  className={
+                    idioma === l
+                      ? "border-b-2 border-primary pb-[2px] transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+                      : "border-b-2 border-transparent pb-[2px] transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+                  }
+                >
+                  {l.toUpperCase()}
+                </button>
+              ))}
             </li>
           </ul>
         </div>

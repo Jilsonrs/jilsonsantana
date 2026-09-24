@@ -334,6 +334,11 @@ export async function getCommonTexts(lang: LanguageCode): Promise<CommonTexts> {
   return data;
 }
 
+// O idioma do app, gravado na CONTA de quem está logado.
+export async function updateMyLanguage(language: LanguageCode): Promise<void> {
+  await client.patch("/me/language", { language });
+}
+
 // ---------------------------------------------------------------------------
 // Depoimentos e perguntas frequentes da home (Bloco C3) — admin-only.
 // A lista traz os DOIS idiomas e TODOS os status; a tela filtra o idioma.

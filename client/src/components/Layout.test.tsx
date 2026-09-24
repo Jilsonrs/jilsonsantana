@@ -15,6 +15,7 @@ vi.mock("@/lib/auth-client", () => ({
 vi.mock("@/lib/api", () => ({
   COMMON_TEXTS_QUERY: "site-text-common",
   getCommonTexts: () => new Promise(() => {}),
+  updateMyLanguage: () => Promise.resolve(),
 }));
 
 import { Layout } from "./Layout";

@@ -186,7 +186,9 @@ exceto o item 4, que é página pública.
    `npm run css:publico` (regra 10).
 5. ~~**Rodapé do app**~~ — **feito em 24/09 e publicado.** Na revisão, a cor `#F5F5F7` escrita
    no componente virou o token `--surface-vitrine` (regra 2), mesma cor. O seletor PT | EN que
-   você desenhou fica; o Claude o liga ao idioma do app no bloco "app do aluno em inglês".
+   você desenhou fica. **Em 24/09 o Claude o ligou ao idioma do app:** virou botão (troca o
+   idioma sem sair da tela), com `aria-pressed` no idioma atual. As classes que você escreveu
+   continuam as mesmas.
 
 ## 3. Onde você NÃO mexe
 

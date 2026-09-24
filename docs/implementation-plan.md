@@ -100,8 +100,9 @@
 > regra no `CLAUDE.md` → Client, em `design.md` §6 e em `.agents/rules/page_layout.md`.
 > **Rodapé do app (24/09, publicado):** toda tela depois do login ganhou rodapé, com os mesmos
 > textos editáveis do rodapé da home, e o seletor PT | EN (provisório). Ver Bloco S.
-> **Próximo, decidido pelo operador em 24/09: o bloco "app do aluno em inglês", ANTES do C4.** Ver
-> Bloco I → decisões.
+> **Próximo, decidido pelo operador em 24/09: o bloco "app do aluno em inglês", ANTES do C4.** Em 5
+> etapas (Bloco I). **Etapa 1 feita (24/09, no `dev`):** o seletor do rodapé troca o idioma do app e
+> grava na conta.
 >
 > **Próximo passo — decidido pelo operador em 23/09: o C4, em 5 etapas, uma por vez.** A **etapa 1**
 > (campo de imagem aceitar `/img/curso.jpg`) tem plano aprovado. Detalhe no bloco C4. Continuam na
@@ -1167,6 +1168,33 @@ landmark. Corrigido junto.
 >   trilha, clone herdando) continua neste bloco. O campo Idioma no formulário de **trilha** espera
 >   o Bloco 6b, porque esse formulário ainda não existe.
 
+> **APP DO ALUNO EM INGLÊS — 5 ETAPAS, uma por vez** *(plano aprovado pelo operador em 24/09/2026;
+> vem ANTES do C4)*. Cada etapa é discutida, aprovada e vira um commit. Decisões dele que o bloco
+> segue: Admin em português · o estrangeiro escolhe o idioma na home e **entra já em inglês** ·
+> **um canal do YouTube por idioma** (`@jilsonen` para o inglês) · catálogo e páginas de curso e
+> trilha entram, mesmo provisórias · textos do app fora de *Admin → Textos* (o rodapé é a exceção).
+>
+> - [x] **Etapa 1 — o seletor funciona** *(24/09)*. `PATCH /api/me/language` grava
+>       `User.preferredLanguage` na conta **da sessão** (só `pt`/`en`); o React lê o idioma da
+>       sessão (`client/src/lib/language.ts`, `useAppLanguage`) e, ao trocar, espera o `refetch()`
+>       da sessão — tudo muda junto, sem recarregar. O seletor do rodapé virou **botão**
+>       (`aria-pressed`), e o rodapé segue o idioma: textos, destinos em inglês e canal do YouTube.
+>       Os endereços públicos e os dois canais moram em `core/src/constants/site.ts`
+>       (`ROTAS_PUBLICAS`), usados pela home e pelo rodapé — a home `/en` passou a levar ao canal
+>       em inglês. Testes: 5 de servidor + 1 na home; 9 no rodapé. **Mutação:** rota sem gravar,
+>       home com o canal fixo, idioma fixo em PT e troca sem atualizar a sessão → 6 reprovaram.
+>       *Pendente para a etapa 2:* aviso na tela se a troca falhar (é texto novo, entra com o
+>       dicionário do app); hoje o idioma simplesmente não muda.
+> - [ ] **Etapa 2 — telas do aluno em inglês:** parte `app` no dicionário (fora de Textos), menu,
+>       início, conta, minhas trilhas e login (quem vem de `/en` vê o login em inglês e a conta
+>       passa a ser inglês).
+> - [ ] **Etapa 3 — cursos e trilhas ganham idioma:** a antiga etapa 2 do C4 + a parte de dados
+>       deste bloco (migration, campo Idioma e etiqueta "EN" no admin, filtro nas listas, recusa
+>       de item de outro idioma na trilha). Antes: dividir o formulário de curso.
+> - [ ] **Etapa 4 — catálogo e cursos no idioma escolhido:** catálogo, busca, páginas de curso e
+>       trilha; nível e textos das 3 camadas nos dois idiomas; catálogo EN vazio; curso com 0 aulas.
+> - [ ] **Etapa 5 — revisão do inglês** pelo operador com o Antigravity, e publicação.
+
 > **SEQUENCIAMENTO:** fecha **antes** do bloco *Superfície pública indexável*. Se as páginas
 > públicas forem montadas antes, nascem só em português e são refeitas. Não depende do Bunny;
 > **a posição exata dentro da Fase 3 é decisão do operador.** Risco baixo–médio (uma migration +
@@ -1424,7 +1452,9 @@ landmark. Corrigido junto.
       o `CLAUDE.md` já exige (`core/` → a regra do `.url()`): aceita `https?://…` ou caminho do
       próprio site começando com `/`; recusa `javascript:`, `data:` e `//outro-site`. Teste de
       servidor + de componente + mutação.
-- [ ] **Etapa 2 — idioma no curso** (a parte de dados do Bloco I que o C4 exige):
+- [ ] **Etapa 2 — idioma no curso** (a parte de dados do Bloco I que o C4 exige). *MOVIDA em
+      24/09 para a etapa 3 do "app do aluno em inglês" (Bloco I), que vem antes do C4 — quando ela
+      fechar, esta fecha junto:*
       `Course.language` obrigatório + campo **Idioma** no formulário de curso + etiqueta "EN" na
       lista do admin; os cursos que já existem viram PT. *A confirmar na discussão da etapa:* o
       idioma fica travado depois de criado (como o slug). **Antes desta etapa:** dividir o
