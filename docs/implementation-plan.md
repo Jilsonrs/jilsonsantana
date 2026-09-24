@@ -101,8 +101,9 @@
 > **Rodapé do app (24/09, publicado):** toda tela depois do login ganhou rodapé, com os mesmos
 > textos editáveis do rodapé da home, e o seletor PT | EN (provisório). Ver Bloco S.
 > **Próximo, decidido pelo operador em 24/09: o bloco "app do aluno em inglês", ANTES do C4.** Em 5
-> etapas (Bloco I). **Etapa 1 feita (24/09, no `dev`):** o seletor do rodapé troca o idioma do app e
-> grava na conta.
+> etapas (Bloco I). **Etapas 1 e 2 feitas (24/09, no `dev`):** o seletor do rodapé troca o idioma do
+> app e grava na conta; menu, login, início, minha conta e minhas trilhas existem em inglês. Falta:
+> idioma dos cursos (3), catálogo e cursos (4), revisão do inglês (5).
 >
 > **Próximo passo — decidido pelo operador em 23/09: o C4, em 5 etapas, uma por vez.** A **etapa 1**
 > (campo de imagem aceitar `/img/curso.jpg`) tem plano aprovado. Detalhe no bloco C4. Continuam na
@@ -1185,7 +1186,7 @@ landmark. Corrigido junto.
 >       home com o canal fixo, idioma fixo em PT e troca sem atualizar a sessão → 6 reprovaram.
 >       *Pendente para a etapa 2:* aviso na tela se a troca falhar (é texto novo, entra com o
 >       dicionário do app); hoje o idioma simplesmente não muda.
-> - [ ] **Etapa 2 — telas do aluno em inglês:** parte `app` no dicionário (fora de Textos), menu,
+> - [x] **Etapa 2 — telas do aluno em inglês:** parte `app` no dicionário (fora de Textos), menu,
 >       início, conta, minhas trilhas e login (quem vem de `/en` vê o login em inglês e a conta
 >       passa a ser inglês). Em dois commits:
 >   - [x] **2a — a base, o menu e o login** *(24/09)*. Parte `app` em `core/src/i18n/` (tipada:
@@ -1198,7 +1199,12 @@ landmark. Corrigido junto.
 >         app (falhar não barra o login). Aviso no rodapé se a troca falhar. Testes: 3 de
 >         servidor novos/ajustados, 7 no login, 3 no shell, 1 no mapa, 1 no rodapé. **Mutação:**
 >         trava de `app.*` aberta, idioma fixo em PT e login sem gravar → 7 reprovaram. Revertido.
->   - [ ] **2b — início, minha conta e minhas trilhas**, e a regra no `CLAUDE.md`.
+>   - [x] **2b — início, minha conta e minhas trilhas** *(24/09)*, e a regra no `CLAUDE.md` →
+>         Client (*texto de tela do aluno sai de `useT()`*). Início, Minha conta, Minhas trilhas
+>         (lista e detalhe) e o vazio da árvore de trilha nos dois idiomas; o português ficou
+>         idêntico (os testes antigos passaram sem mexer). Minha conta ganhou o primeiro arquivo
+>         de teste dela. **Mutação:** textos fixos em português → 11 reprovaram; um rótulo escrito
+>         à mão → 1 reprovou. Revertido.
 > - [ ] **Etapa 3 — cursos e trilhas ganham idioma:** a antiga etapa 2 do C4 + a parte de dados
 >       deste bloco (migration, campo Idioma e etiqueta "EN" no admin, filtro nas listas, recusa
 >       de item de outro idioma na trilha). Antes: dividir o formulário de curso.

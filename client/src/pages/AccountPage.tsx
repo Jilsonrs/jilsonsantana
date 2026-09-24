@@ -3,6 +3,7 @@ import { useSession, signOut } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageContainer, PageHeader, PageSection } from "@/components/layout/PageLayout";
+import { useT } from "@/lib/language";
 
 function Field({ label, value }: { label: string; value: string }) {
   return (
@@ -14,6 +15,7 @@ function Field({ label, value }: { label: string; value: string }) {
 }
 
 export function AccountPage() {
+  const t = useT();
   const { data: session } = useSession();
   const navigate = useNavigate();
   const user = session?.user;
@@ -26,22 +28,22 @@ export function AccountPage() {
   return (
     <PageContainer>
       <PageHeader 
-        title="Minha conta" 
-        description="Gerencie suas informações de acesso."
+        title={t.conta.titulo}
+        description={t.conta.descricao}
       />
 
       <div className="space-y-12">
         <PageSection
-          title="Seus Dados"
-          description="Informações básicas da sua conta na plataforma."
+          title={t.conta.seusDados}
+          description={t.conta.seusDadosDescricao}
         >
           <Card className="max-w-3xl">
             <CardContent className="space-y-2 pt-6">
-              <Field label="Nome" value={user?.name ?? "—"} />
+              <Field label={t.conta.nome} value={user?.name ?? "—"} />
               <div className="h-px w-full bg-border/40" />
-              <Field label="E-mail" value={user?.email ?? "—"} />
+              <Field label={t.conta.email} value={user?.email ?? "—"} />
               <div className="h-px w-full bg-border/40" />
-              <Field label="Papel" value={user?.role ?? "—"} />
+              <Field label={t.conta.papel} value={user?.role ?? "—"} />
             </CardContent>
           </Card>
         </PageSection>
@@ -52,7 +54,7 @@ export function AccountPage() {
             onClick={handleSignOut}
             className="w-full sm:w-auto text-destructive hover:bg-destructive/10 hover:text-destructive"
           >
-            Sair da plataforma
+            {t.conta.sair}
           </Button>
         </div>
       </div>

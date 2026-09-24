@@ -8,6 +8,7 @@ const getMyTrilhas = vi.fn();
 vi.mock("@/lib/api", () => ({ getMyTrilhas: () => getMyTrilhas() }));
 
 import { MyTrilhasPage } from "./MyTrilhasPage";
+import { IdiomaProvider } from "@/lib/language";
 
 const trilhaSalva: MyTrilhaSummary = {
   id: 7,
@@ -56,5 +57,32 @@ describe("MyTrilhasPage", () => {
     expect(screen.getByText("Minha cópia da trilha de fundamentos.")).toBeTruthy();
     expect(screen.getByText("IA aplicada")).toBeTruthy();
     expect(screen.queryByText("Você ainda não salvou nenhuma trilha.")).toBeNull();
+  });
+});
+
+// O app do aluno existe em inglês (decisão do operador, 24/09/2026).
+describe("MyTrilhasPage — em inglês", () => {
+  it("o vazio e a saída para o catálogo em inglês", async () => {
+    getMyTrilhas.mockResolvedValue([]);
+    renderWithProviders(
+      <IdiomaProvider idioma="en">
+        <MyTrilhasPage />
+      </IdiomaProvider>,
+    );
+
+    expect(await screen.findByText("You haven't saved any learning paths yet.")).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Browse learning paths" })).toBeTruthy();
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("My learning paths");
+  });
+
+  it("o erro em inglês", async () => {
+    getMyTrilhas.mockRejectedValue(new Error("500"));
+    renderWithProviders(
+      <IdiomaProvider idioma="en">
+        <MyTrilhasPage />
+      </IdiomaProvider>,
+    );
+
+    expect(await screen.findByText("We couldn't load your learning paths.")).toBeTruthy();
   });
 });

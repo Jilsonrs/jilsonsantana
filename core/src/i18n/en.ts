@@ -239,6 +239,41 @@ export const en: Dict = {
     },
     footer: {
       erroIdioma: "We couldn't change the language. Please try again."
+    },
+    comum: {
+      carregando: "Loading…"
+    },
+    inicio: {
+      ola: "Hi",
+      intro: "This is your starting point. Whatever you start studying shows up here, so you can pick up where you left off.",
+      continueTitulo: "Keep learning",
+      continueVazio: "Your lessons in progress show up here as soon as you start a course. Pick one from the catalog, and your progress will be waiting for you here.",
+      verCatalogo: "Browse the catalog",
+      porOndeComecar: "Where to start",
+      portaCatalogo: "Catalog",
+      portaCatalogoLegenda: "COURSES AND LEARNING PATHS",
+      portaMinhasTrilhas: "My learning paths",
+      portaMinhasTrilhasLegenda: "WHAT YOU SAVED"
+    },
+    conta: {
+      titulo: "My account",
+      descricao: "Manage your sign-in details.",
+      seusDados: "Your details",
+      seusDadosDescricao: "The basic information of your account.",
+      nome: "Name",
+      email: "Email",
+      papel: "Role",
+      sair: "Sign out"
+    },
+    minhasTrilhas: {
+      titulo: "My learning paths",
+      descricao: "Learning paths and selections you saved to study.",
+      erro: "We couldn't load your learning paths.",
+      vazio: "You haven't saved any learning paths yet.",
+      verCatalogo: "Browse learning paths",
+      voltar: "← Back to My learning paths",
+      erroDetalhe: "We couldn't load this learning path.",
+      semConteudo: "This learning path has no content yet."
     }
   }
 };

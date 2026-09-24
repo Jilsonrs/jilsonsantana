@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import type { PlanModuleDetail, PlanItemDetail } from "@/lib/api";
+import { useT } from "@/lib/language";
 
 // Árvore PlanModule → PlanItem, compartilhada pela trilha CURADA (pública, por
 // slug) e pela trilha SALVA do aluno (por id). São a MESMA entidade — só o dono
@@ -10,11 +11,12 @@ import type { PlanModuleDetail, PlanItemDetail } from "@/lib/api";
 // O heading da seção fica com a PÁGINA, não aqui: páginas compõem seções, e as
 // duas telas dão nomes diferentes ao mesmo bloco.
 export function PlanModuleAccordion({ planModules }: { planModules: PlanModuleDetail[] }) {
+  const t = useT();
   // Vazio é estado real, não defeito: um módulo cujos itens todos apontam para
   // curso não publicado chega aqui sem itens (o filtro `publicadoNaCadeia` do
   // servidor), e uma trilha recém-criada no admin ainda não tem módulo nenhum.
   if (planModules.length === 0) {
-    return <p className="text-sm text-muted-foreground">Esta trilha ainda não tem conteúdo.</p>;
+    return <p className="text-sm text-muted-foreground">{t.minhasTrilhas.semConteudo}</p>;
   }
 
   return (

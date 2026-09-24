@@ -246,6 +246,41 @@ export const pt = {
     },
     footer: {
       erroIdioma: "Não foi possível trocar o idioma. Tente de novo."
+    },
+    comum: {
+      carregando: "Carregando…"
+    },
+    inicio: {
+      ola: "Olá",
+      intro: "Aqui é o seu ponto de partida. O que você começar a estudar aparece nesta tela, para você continuar de onde parou.",
+      continueTitulo: "Continue estudando",
+      continueVazio: "Suas aulas em andamento aparecem aqui assim que você começar um curso. Escolha um no catálogo e o progresso passa a te esperar nesta tela.",
+      verCatalogo: "Ver catálogo",
+      porOndeComecar: "Por onde começar",
+      portaCatalogo: "Catálogo",
+      portaCatalogoLegenda: "CURSOS E TRILHAS",
+      portaMinhasTrilhas: "Minhas trilhas",
+      portaMinhasTrilhasLegenda: "O QUE VOCÊ SALVOU"
+    },
+    conta: {
+      titulo: "Minha conta",
+      descricao: "Gerencie suas informações de acesso.",
+      seusDados: "Seus Dados",
+      seusDadosDescricao: "Informações básicas da sua conta na plataforma.",
+      nome: "Nome",
+      email: "E-mail",
+      papel: "Papel",
+      sair: "Sair da plataforma"
+    },
+    minhasTrilhas: {
+      titulo: "Minhas trilhas",
+      descricao: "Trilhas e seleções que você salvou para estudar.",
+      erro: "Não foi possível carregar suas trilhas.",
+      vazio: "Você ainda não salvou nenhuma trilha.",
+      verCatalogo: "Ver trilhas do catálogo",
+      voltar: "← Voltar para Minhas Trilhas",
+      erroDetalhe: "Não foi possível carregar esta trilha.",
+      semConteudo: "Esta trilha ainda não tem conteúdo."
     }
   }
 };

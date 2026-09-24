@@ -7,6 +7,7 @@ const useSession = vi.fn();
 vi.mock("@/lib/auth-client", () => ({ useSession: () => useSession() }));
 
 import { StudentHomePage } from "./StudentHomePage";
+import { IdiomaProvider } from "@/lib/language";
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -60,5 +61,23 @@ describe("StudentHomePage", () => {
         "/minhas-trilhas",
       );
     });
+  });
+});
+
+// O app do aluno existe em inglês (decisão do operador, 24/09/2026).
+describe("StudentHomePage — em inglês", () => {
+  it("a home do aluno fala inglês, sem sobra de português", () => {
+    useSession.mockReturnValue({ data: { user: { name: "Ana Souza" } }, isPending: false });
+    renderWithProviders(
+      <IdiomaProvider idioma="en">
+        <StudentHomePage />
+      </IdiomaProvider>,
+    );
+
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Hi, Ana");
+    expect(screen.getByRole("heading", { name: "Keep learning" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Browse the catalog" }).getAttribute("href")).toBe("/cursos");
+    expect(screen.queryByText("Continue estudando")).toBeNull();
+    expect(screen.queryByText("Por onde começar")).toBeNull();
   });
 });
