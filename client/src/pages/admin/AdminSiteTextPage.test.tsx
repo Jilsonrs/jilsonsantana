@@ -3,6 +3,8 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { screen, fireEvent, waitFor } from "@testing-library/react";
 import { renderWithProviders } from "@/test-utils";
 import { AdminSiteTextPage } from "./AdminSiteTextPage";
+import { AppFooter } from "@/components/layout/AppFooter";
+import { pt } from "@jilson/core";
 import * as api from "@/lib/api";
 
 // Mock na NOSSA fronteira (@/lib/api), nunca no axios — CLAUDE.md → Testing.
@@ -122,6 +124,26 @@ describe("AdminSiteTextPage — salvar", () => {
     fireEvent.change(campo, { target: { value: "Texto novo" } });
 
     expect(screen.getByRole("button", { name: "Salvar" })).toBeTruthy();
+  });
+
+  // O rodapé do app mostra os textos comuns (decisão do operador, 24/09/2026).
+  // Ele fica montado enquanto o operador edita: sem o aviso, o rodapé da
+  // própria tela continuaria com o texto velho até recarregar a página.
+  it("salvar faz o rodapé do app buscar o texto de novo", async () => {
+    vi.mocked(api.getCommonTexts).mockResolvedValue(pt.common);
+    renderWithProviders(
+      <>
+        <AdminSiteTextPage />
+        <AppFooter />
+      </>,
+    );
+    const campo = await screen.findByDisplayValue("Texto de fábrica em português.");
+    await waitFor(() => expect(api.getCommonTexts).toHaveBeenCalledTimes(1));
+
+    fireEvent.change(campo, { target: { value: "Texto novo" } });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar" }));
+
+    await waitFor(() => expect(api.getCommonTexts).toHaveBeenCalledTimes(2));
   });
 
   it("salvar manda a chave, o idioma e o valor", async () => {

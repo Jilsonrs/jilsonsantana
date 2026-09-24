@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { AppRail } from "@/components/nav/AppRail";
 import { MobileNav } from "@/components/nav/MobileNav";
 import { SecondaryNav } from "@/components/nav/SecondaryNav";
+import { AppFooter } from "@/components/layout/AppFooter";
 
 /**
  * O shell do app. DUAS gramáticas, escolhidas pela sessão:
@@ -58,6 +59,9 @@ export function Layout() {
         <main className="flex-1">
           <Outlet />
         </main>
+        {/* Só com sessão (aluno e admin): o visitante está na superfície
+            pública, que tem o rodapé dela no servidor. */}
+        <AppFooter />
       </div>
     </div>
   );

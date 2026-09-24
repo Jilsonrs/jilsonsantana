@@ -138,3 +138,48 @@ describe("texto do site — a lista que a tela de admin consome", () => {
     expect(nuncaEditado.pt.factory).toBe(pt.home.cta.title);
   });
 });
+
+// O rodapé do app logado mostra os MESMOS textos do rodapé da home (decisão do
+// operador, 24/09/2026). Ele os lê por esta rota pública — então ela tem que
+// entregar a edição do operador, não o valor de fábrica.
+describe("texto do site — os textos comuns, lidos pelo rodapé do app", () => {
+  const CHAVE_CONTATO = "common.footer.links[5]";
+  const FABRICA_CONTATO = pt.common.footer.links[5];
+
+  it("sem edição, devolve o texto de fábrica — sem sessão, porque é texto público", async () => {
+    const res = await request(app).get("/api/site-text/common/pt");
+
+    expect(res.status).toBe(200);
+    expect(res.body.footer.links[5]).toBe(FABRICA_CONTATO);
+    expect(res.body.footer.copyright).toBe(pt.common.footer.copyright);
+  });
+
+  it("depois de o operador editar, devolve o texto EDITADO", async () => {
+    const cookies = await sessaoAdmin();
+    await editar(cookies, { key: CHAVE_CONTATO, language: "pt", value: "Fale comigo" });
+
+    const res = await request(app).get("/api/site-text/common/pt");
+    expect(res.body.footer.links[5]).toBe("Fale comigo");
+  });
+
+  it("a edição do português não chega no inglês", async () => {
+    const cookies = await sessaoAdmin();
+    await editar(cookies, { key: CHAVE_CONTATO, language: "pt", value: "Fale comigo" });
+
+    const res = await request(app).get("/api/site-text/common/en");
+    expect(res.status).toBe(200);
+    expect(res.body.footer.links[5]).not.toBe("Fale comigo");
+  });
+
+  it("só os textos comuns: os de cada página (home.*) não saem por aqui", async () => {
+    const res = await request(app).get("/api/site-text/common/pt");
+
+    expect(res.body.footer).toBeDefined();
+    expect(res.body.hero).toBeUndefined();
+    expect(JSON.stringify(res.body)).not.toContain(pt.home.hero.subtitle);
+  });
+
+  it("idioma fora dos dois da escola é recusado", async () => {
+    expect((await request(app).get("/api/site-text/common/es")).status).toBe(400);
+  });
+});

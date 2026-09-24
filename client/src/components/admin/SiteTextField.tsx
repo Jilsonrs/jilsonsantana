@@ -81,7 +81,12 @@ export function SiteTextField({ campo }: { campo: Campo }) {
   const queryClient = useQueryClient();
   const salvar = useMutation({
     mutationFn: api.adminUpdateSiteText,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-site-text"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-site-text"] });
+      // O rodapé do app lê os textos comuns: sem isto, o operador editaria e o
+      // rodapé da própria tela só mudaria ao recarregar a página.
+      queryClient.invalidateQueries({ queryKey: [api.COMMON_TEXTS_QUERY] });
+    },
   });
 
   return (

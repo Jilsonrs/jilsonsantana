@@ -2,7 +2,8 @@
 // mostra antes de o operador editar qualquer coisa pelo /admin (docs/content.md § 16).
 //
 // A primeira chave diz ONDE o texto aparece:
-//   common.*  — em TODA página pública (menu, rodapé)
+//   common.*  — em TODA página pública (menu, rodapé) e no rodapé do app logado,
+//               que lê `common.footer` por GET /api/site-text/common/:lang
 //   home.*    — só na home
 // Página nova entra como uma chave nova aqui (`curso`, `trilha`, `legal`…) e
 // já aparece no admin sozinha. Não misture: se o texto aparece em duas páginas,

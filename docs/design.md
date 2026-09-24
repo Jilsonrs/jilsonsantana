@@ -343,6 +343,12 @@ não código espalhado: uma tela nova declara seus níveis e o cromo se monta so
 
   Regras de uso e exemplo: [`.agents/rules/page_layout.md`](../.agents/rules/page_layout.md).
   **Não vale para a superfície pública** (home e vitrine), que tem padrão próprio.
+- **Rodapé do app** *(decisão do operador, 24/09/2026, comparando com o LinkedIn Learning)*: em
+  toda tela depois do login, **do aluno e do admin**. Marca + © · FAQ · Quem somos · Contato ·
+  YouTube · Termos · Privacidade. Fica de fora o que o menu lateral já leva (Cursos, Trilhas,
+  Assine). **Os textos são os mesmos do rodapé da home** e se editam juntos em *Admin → Textos*.
+  **Links para páginas que ainda não existem entram assim mesmo**, por decisão dele — não é
+  descuido, e não se "conserta" com a regra 12 do `GEMINI.md` (que vale para o menu).
 
 ### Mobile (< 768px)
 

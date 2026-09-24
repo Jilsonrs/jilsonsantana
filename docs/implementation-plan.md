@@ -98,6 +98,8 @@
 > **Ajustes finos em 24/09:** as seções passaram a ser **empilhadas** (`PageSection`: título em
 > cima, conteúdo embaixo, no lugar do painel dividido). **É a base de toda tela nova do app** —
 > regra no `CLAUDE.md` → Client, em `design.md` §6 e em `.agents/rules/page_layout.md`.
+> **Rodapé do app (24/09, no `dev`, esperando o acabamento do Antigravity):** toda tela depois do
+> login ganhou rodapé, com os mesmos textos editáveis do rodapé da home. Ver Bloco S.
 >
 > **Próximo passo — decidido pelo operador em 23/09: o C4, em 5 etapas, uma por vez.** A **etapa 1**
 > (campo de imagem aceitar `/img/curso.jpg`) tem plano aprovado. Detalhe no bloco C4. Continuam na
@@ -1023,6 +1025,18 @@ sistema administrativo inteiro ainda está por construir (Bloco 6b, Fase 4, Fase
 - [ ] **Nível 2** — coluna secundária, grupos retráteis, só quando a seção tem subitens.
 - [ ] **Nível 3** — abas horizontais, só quando a tela tem abas.
 - [ ] **Mobile** — gaveta com navegação em profundidade (ida e volta entre níveis).
+- [x] **Rodapé do app** *(decisão do operador, 24/09/2026 — comparou com o LinkedIn Learning)*:
+      em **toda tela depois do login, do aluno e do admin**; o visitante sem login não o vê.
+      Itens: marca + © · FAQ · Quem somos · Contato · YouTube · Termos · Privacidade (os mesmos da
+      home, menos Cursos/Trilhas/Assine, que o menu lateral já cobre). **Os textos são os MESMOS do
+      rodapé da home** (`common.footer`), lidos por `GET /api/site-text/common/:lang` com as
+      edições do operador: editou em *Admin → Textos*, muda nos dois. Salvar em Textos atualiza o
+      rodapé na hora. **Links sem página entram assim mesmo** (Quem somos, Contato, Termos,
+      Privacidade dão tela vazia até existirem) — decisão dele. Estrutura em
+      `components/layout/AppFooter.tsx` + `lib/footer.ts` (dado); acabamento com o Antigravity.
+      Testes: 5 de servidor, 6 do rodapé, 3 no shell, 1 na tela de Textos. **Mutação:** rota
+      ignorando as edições, rodapé ignorando o servidor, rodapé fora do shell e salvar sem avisar o
+      rodapé → reprovam. Revertido.
 - **Done when:** uma tela nova entra no sistema **declarando** seus níveis no mapa, sem escrever
   componente de navegação nenhum — e os três níveis somem sozinhos onde não há dado.
 
@@ -1129,6 +1143,8 @@ landmark. Corrigido junto.
 > - O **admin fica em português** — não ganha versão em inglês.
 > - Os textos do app do aluno **não** entram em *Admin → Site → Textos*: lá ficam só as páginas
 >   públicas. (Quando o React usar o dicionário, a tela de Textos filtra — ver C2, Passo 0.)
+>   **Exceção, 24/09:** o rodapé do app usa os textos do rodapé da home (`common.footer`), então
+>   ele se edita em Textos junto com a home — ver Bloco S → *Rodapé do app*.
 > - **O seletor PT | EN da home basta por agora.** Traduzir o app do aluno (dicionário no React,
 >   seletor dentro do app, `User.preferredLanguage`) vira **bloco próprio, depois** — os itens
 >   *Dicionário*, *Migrar os textos* e *Seletor* abaixo, e os itens 3 e 4 do *Done when*, esperam

@@ -184,12 +184,17 @@ exceto o item 4, que é página pública.
    visita. O desenho precisa ficar bom com qualquer quantidade nesse intervalo. Deslizar com o dedo
    no celular (CSS `scroll-snap`, sem JavaScript) é opção sua, com o ok do operador. Mexeu no CSS?
    `npm run css:publico` (regra 10).
+5. **Rodapé do app** (`client/src/components/layout/AppFooter.tsx`) — novo em 24/09, em toda
+   tela depois do login (aluno e admin). Hoje é estrutura crua: marca, links, ícone do YouTube e
+   ©. Os textos vêm do dicionário (os mesmos do rodapé da home), então **não escreva texto no
+   componente**. Os itens e destinos moram em `lib/footer.ts`, que você não mexe.
 
 ## 3. Onde você NÃO mexe
 
 | Arquivo | Por quê |
 |---|---|
 | `client/src/lib/navigation.ts` | É o **mapa de navegação** — dado, não estilo. Ele decide o que aparece e para quem; você decide como aparece. |
+| `client/src/lib/footer.ts` | Os **itens do rodapé do app** e para onde levam — dado, igual ao mapa de navegação. O visual fica em `components/layout/AppFooter.tsx`. |
 | Qualquer `*.test.tsx` / `*.test.ts` | Se um teste incomodar, **avise** — não edite. Um teste ajustado para passar deixa de proteger. |
 | `client/src/components/ui/sheet.tsx` | Vem da biblioteca (shadcn/Radix). |
 | `core/src/i18n/pt.ts` e `en.ts` | **É o texto do site** — conteúdo, não estilo, e o operador vai editá-lo pelo admin. Ver regra 9. |
@@ -262,7 +267,8 @@ Corolários que já quebraram coisa aqui:
   string. O operador não digita HTML no painel.
 - Precisa de um texto que não existe no dicionário? **Peça a chave**, não escreva no template.
 - **A primeira parte da chave diz onde o texto aparece:** `common.*` sai em TODA página pública
-  (menu, rodapé), `home.*` só na home. Mexer num `common.*` muda todas as páginas de uma vez.
+  (menu, rodapé) **e no rodapé do app logado**, `home.*` só na home. Mexer num `common.*` muda
+  todas as páginas de uma vez.
 
 **10. Mexeu no `public-input.css`, recompile:** `npm run css:publico`. A vitrine lê
 `client/public/css/public.css`, que é **gerado**. Sem rodar o comando, seu CSS não chega na tela —
