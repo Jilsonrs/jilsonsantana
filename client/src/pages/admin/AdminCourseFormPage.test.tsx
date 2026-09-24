@@ -162,3 +162,48 @@ describe("AdminCourseFormPage — idioma", () => {
     expect(updateCourse.mock.calls[0][1]).toMatchObject({ language: "en" });
   });
 });
+
+// Antes a tela não dizia nada quando o salvamento falhava (achado da etapa 3c,
+// consertado a pedido do operador em 24/09/2026).
+describe("AdminCourseFormPage — quando salvar falha", () => {
+  function recusa(codigo?: string) {
+    return { response: { status: 409, data: codigo ? { error: codigo } : {} } };
+  }
+
+  async function salvarEdicao() {
+    adminGetCourse.mockResolvedValue(existingCourse);
+    renderWithProviders(<AdminCourseFormPage />, { route: "/admin/cursos/1", path: "/admin/cursos/:id" });
+    const titulo = (await screen.findByLabelText("Título")) as HTMLInputElement;
+    await waitFor(() => expect(titulo.value).toBe(existingCourse.title));
+    fireEvent.click(screen.getByRole("button", { name: "Salvar dados do curso" }));
+  }
+
+  it.each([
+    ["SlugTaken", "Este slug já está em uso por outro curso."],
+    ["LanguageLocked", "O idioma trava depois que o curso é publicado."],
+    ["LanguageInUse", "Este curso está numa trilha de outro idioma. Tire-o da trilha antes de trocar o idioma."],
+    [undefined, "Não foi possível salvar o curso. Tente de novo."],
+  ])("recusa %s mostra a frase certa", async (codigo, frase) => {
+    updateCourse.mockRejectedValue(recusa(codigo));
+    await salvarEdicao();
+
+    expect((await screen.findByRole("alert")).textContent).toBe(frase);
+  });
+
+  it("queda de rede (sem resposta do servidor) também avisa", async () => {
+    updateCourse.mockRejectedValue(new Error("Network Error"));
+    await salvarEdicao();
+
+    expect((await screen.findByRole("alert")).textContent).toBe("Não foi possível salvar o curso. Tente de novo.");
+  });
+
+  it("o aviso some quando o salvamento seguinte dá certo", async () => {
+    updateCourse.mockRejectedValueOnce(recusa("SlugTaken")).mockResolvedValue(existingCourse);
+    await salvarEdicao();
+    await screen.findByRole("alert");
+
+    fireEvent.click(screen.getByRole("button", { name: "Salvar dados do curso" }));
+    await waitFor(() => expect(updateCourse).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(screen.queryByRole("alert")).toBeNull());
+  });
+});

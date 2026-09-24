@@ -105,3 +105,32 @@ export function toPayload(values: CourseFormValues): CourseCreateInput {
     status: values.status,
   };
 }
+
+/**
+ * O código de erro que o servidor devolve (`{ error: "SlugTaken" }`), lido do
+ * erro do Axios sem depender do Axios aqui: basta a forma `response.data.error`.
+ */
+export function codigoDoErro(erro: unknown): string | undefined {
+  if (typeof erro !== "object" || erro === null || !("response" in erro)) return undefined;
+  // Seguro: a linha acima provou que é um objeto com `response`; o resto é opcional.
+  const codigo = (erro as { response?: { data?: { error?: unknown } } }).response?.data?.error;
+  return typeof codigo === "string" ? codigo : undefined;
+}
+
+/**
+ * A frase que o formulário mostra quando o salvamento falha. Antes a tela não
+ * dizia nada, e a falha passava despercebida (achado da etapa 3c, 24/09/2026).
+ * Admin fica em português, com o texto aqui (decisão do operador, 23/09).
+ */
+export function mensagemDeErroAoSalvar(erro: unknown): string {
+  switch (codigoDoErro(erro)) {
+    case "SlugTaken":
+      return "Este slug já está em uso por outro curso.";
+    case "LanguageLocked":
+      return "O idioma trava depois que o curso é publicado.";
+    case "LanguageInUse":
+      return "Este curso está numa trilha de outro idioma. Tire-o da trilha antes de trocar o idioma.";
+    default:
+      return "Não foi possível salvar o curso. Tente de novo.";
+  }
+}

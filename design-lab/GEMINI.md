@@ -194,7 +194,8 @@ exceto o item 4, que é página pública.
    tem 4 itens, então o quarto desce de linha: o arranjo é seu. Travado (curso publicado), o
    idioma aparece como texto com o aviso "O idioma trava depois que o curso é publicado." — mude
    o visual, não o texto (é do operador). Também a etiqueta **"EN"** na lista de cursos
-   (`AdminCoursesPage.tsx`).
+   (`AdminCoursesPage.tsx`) e o **aviso de erro ao salvar**, logo acima do botão "Salvar dados do
+   curso" (cru: uma linha vermelha).
 
 ## 3. Onde você NÃO mexe
 

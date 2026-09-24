@@ -9,6 +9,7 @@ import {
   blankValues,
   toFormValues,
   toPayload,
+  mensagemDeErroAoSalvar,
   type CourseFormValues,
 } from "@/lib/course-form";
 import { Button } from "@/components/ui/button";
@@ -106,6 +107,13 @@ export function AdminCourseFormPage() {
             </Card>
           </PageSection>
 
+          {/* Falhou ao salvar: diz o porquê. `role="alert"` faz o leitor de tela
+              anunciar; a mensagem some sozinha quando o próximo envio começa. */}
+          {save.isError && (
+            <p role="alert" className="text-sm font-medium text-destructive">
+              {mensagemDeErroAoSalvar(save.error)}
+            </p>
+          )}
           <div className="flex justify-end border-t border-border/40 pt-8">
             <Button type="submit" size="lg" disabled={save.isPending}>
               {save.isPending ? "Salvando…" : "Salvar dados do curso"}
