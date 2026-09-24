@@ -101,9 +101,11 @@
 > **Rodapé do app (24/09, publicado):** toda tela depois do login ganhou rodapé, com os mesmos
 > textos editáveis do rodapé da home, e o seletor PT | EN (provisório). Ver Bloco S.
 > **Próximo, decidido pelo operador em 24/09: o bloco "app do aluno em inglês", ANTES do C4.** Em 5
-> etapas (Bloco I). **Etapas 1 e 2 feitas (24/09, no `dev`):** o seletor do rodapé troca o idioma do
-> app e grava na conta; menu, login, início, minha conta e minhas trilhas existem em inglês. Falta:
-> idioma dos cursos (3), catálogo e cursos (4), revisão do inglês (5).
+> etapas (Bloco I). **Etapas 1, 2 e 3 feitas (24/09, no `dev`):** o seletor do rodapé troca o
+> idioma do app e grava na conta; menu, login, início, minha conta e minhas trilhas existem em
+> inglês; cursos e trilhas têm idioma (migration aplicada no dev, produção aplica no próximo
+> publish) e o campo Idioma está no admin. Falta: catálogo e cursos no idioma do app (4) e revisão
+> do inglês (5).
 >
 > **Próximo passo — decidido pelo operador em 23/09: o C4, em 5 etapas, uma por vez.** A **etapa 1**
 > (campo de imagem aceitar `/img/curso.jpg`) tem plano aprovado. Detalhe no bloco C4. Continuam na
@@ -1205,7 +1207,7 @@ landmark. Corrigido junto.
 >         idêntico (os testes antigos passaram sem mexer). Minha conta ganhou o primeiro arquivo
 >         de teste dela. **Mutação:** textos fixos em português → 11 reprovaram; um rótulo escrito
 >         à mão → 1 reprovou. Revertido.
-> - [ ] **Etapa 3 — cursos e trilhas ganham idioma:** a antiga etapa 2 do C4 + a parte de dados
+> - [x] **Etapa 3 — cursos e trilhas ganham idioma:** a antiga etapa 2 do C4 + a parte de dados
 >       deste bloco (migration, campo Idioma e etiqueta "EN" no admin, filtro nas listas, recusa
 >       de item de outro idioma na trilha). Antes: dividir o formulário de curso.
 >       **Decisões do operador (24/09, ao aprovar):** idioma trocável **enquanto rascunho**, trava
@@ -1224,7 +1226,12 @@ landmark. Corrigido junto.
 >         troca; a cópia herda o idioma da trilha. A API fala `pt`/`en` (`comIdioma`). 14 testes
 >         novos (`content-language.test.ts`). **Mutação:** sem filtro, sem trava, sem recusa e
 >         "minhas trilhas" filtrando → 4 reprovaram. Revertido.
->   - [ ] **3c — campo Idioma e etiqueta "EN" no admin.**
+>   - [x] **3c — campo Idioma e etiqueta "EN" no admin** *(24/09)*. Campo **Idioma** (Português /
+>         English) na seção Organização; curso novo nasce Português. Curso GRAVADO fora de rascunho
+>         mostra o idioma como texto, com "O idioma trava depois que o curso é publicado." (texto
+>         aprovado pelo operador no plano) — texto e não campo desabilitado, porque campo
+>         desabilitado sai do envio do formulário. Etiqueta "EN" na lista. **Mutação:** trava
+>         desligada, idioma fixo no envio e etiqueta removida → 4 reprovaram. Revertido.
 > - [ ] **Etapa 4 — catálogo e cursos no idioma escolhido:** catálogo, busca, páginas de curso e
 >       trilha; nível e textos das 3 camadas nos dois idiomas; catálogo EN vazio; curso com 0 aulas.
 > - [ ] **Etapa 5 — revisão do inglês** pelo operador com o Antigravity, e publicação.
@@ -1486,7 +1493,8 @@ landmark. Corrigido junto.
       o `CLAUDE.md` já exige (`core/` → a regra do `.url()`): aceita `https?://…` ou caminho do
       próprio site começando com `/`; recusa `javascript:`, `data:` e `//outro-site`. Teste de
       servidor + de componente + mutação.
-- [ ] **Etapa 2 — idioma no curso** (a parte de dados do Bloco I que o C4 exige). *MOVIDA em
+- [x] **Etapa 2 — idioma no curso** (a parte de dados do Bloco I que o C4 exige). *Feita em 24/09
+      como etapa 3 do "app do aluno em inglês" (Bloco I).* *MOVIDA em
       24/09 para a etapa 3 do "app do aluno em inglês" (Bloco I), que vem antes do C4 — quando ela
       fechar, esta fecha junto:*
       `Course.language` obrigatório + campo **Idioma** no formulário de curso + etiqueta "EN" na

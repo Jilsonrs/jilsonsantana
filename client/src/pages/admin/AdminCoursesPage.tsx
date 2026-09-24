@@ -42,6 +42,8 @@ export function AdminCoursesPage() {
                 </p>
               </div>
               <div className="flex items-center gap-3">
+                {/* Curso em inglês ganha etiqueta, para o operador ver qual é qual (24/09). */}
+                {course.language === "en" && <Badge variant="outline">EN</Badge>}
                 <Badge variant="secondary">{course.status}</Badge>
                 <Button asChild variant="outline" size="sm">
                   <Link to={`/admin/cursos/${course.id}`}>Editar</Link>

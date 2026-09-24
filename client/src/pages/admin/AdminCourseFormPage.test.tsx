@@ -113,3 +113,52 @@ describe("AdminCourseFormPage", () => {
     );
   });
 });
+
+// Idioma do curso (decisões do operador: campo na criação, 14/09; troca só
+// enquanto rascunho, 24/09/2026).
+describe("AdminCourseFormPage — idioma", () => {
+  it("criar: nasce em Português e pode virar English", async () => {
+    createCourse.mockResolvedValue({ ...existingCourse, id: 2 });
+    renderWithProviders(<AdminCourseFormPage />, { route: "/admin/cursos/novo" });
+
+    const idioma = screen.getByLabelText("Idioma") as HTMLSelectElement;
+    expect(idioma.value).toBe("pt");
+
+    fireEvent.change(screen.getByLabelText("Slug"), { target: { value: "curso-en" } });
+    fireEvent.change(screen.getByLabelText("Título"), { target: { value: "English course" } });
+    fireEvent.change(idioma, { target: { value: "en" } });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar dados do curso" }));
+
+    await waitFor(() => expect(createCourse).toHaveBeenCalled());
+    expect(createCourse.mock.calls[0][0]).toMatchObject({ slug: "curso-en", language: "en" });
+  });
+
+  it("rascunho: o idioma troca", async () => {
+    adminGetCourse.mockResolvedValue(existingCourse);
+    updateCourse.mockResolvedValue(existingCourse);
+    renderWithProviders(<AdminCourseFormPage />, { route: "/admin/cursos/1", path: "/admin/cursos/:id" });
+
+    const idioma = (await screen.findByLabelText("Idioma")) as HTMLSelectElement;
+    await waitFor(() => expect(idioma.value).toBe("pt"));
+    fireEvent.change(idioma, { target: { value: "en" } });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar dados do curso" }));
+
+    await waitFor(() => expect(updateCourse).toHaveBeenCalled());
+    expect(updateCourse.mock.calls[0][1]).toMatchObject({ language: "en" });
+  });
+
+  it("publicado: o idioma aparece travado, com o motivo, e vai o mesmo no envio", async () => {
+    const publicado = { ...existingCourse, status: "PUBLISHED" as const, language: "en" as const };
+    adminGetCourse.mockResolvedValue(publicado);
+    updateCourse.mockResolvedValue(publicado);
+    renderWithProviders(<AdminCourseFormPage />, { route: "/admin/cursos/1", path: "/admin/cursos/:id" });
+
+    expect(await screen.findByText("O idioma trava depois que o curso é publicado.")).toBeTruthy();
+    expect(screen.getByText("English")).toBeTruthy();
+    expect(screen.queryByLabelText("Idioma")).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Salvar dados do curso" }));
+    await waitFor(() => expect(updateCourse).toHaveBeenCalled());
+    expect(updateCourse.mock.calls[0][1]).toMatchObject({ language: "en" });
+  });
+});

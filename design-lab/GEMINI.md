@@ -189,6 +189,12 @@ exceto o item 4, que é página pública.
    você desenhou fica. **Em 24/09 o Claude o ligou ao idioma do app:** virou botão (troca o
    idioma sem sair da tela), com `aria-pressed` no idioma atual. As classes que você escreveu
    continuam as mesmas.
+6. **Campo Idioma no formulário de curso** (`client/src/components/admin/course-form/CourseOrganizationSection.tsx`)
+   — novo em 24/09, na seção Organização. A grade tinha 3 colunas (Nível, Status, Ordem) e agora
+   tem 4 itens, então o quarto desce de linha: o arranjo é seu. Travado (curso publicado), o
+   idioma aparece como texto com o aviso "O idioma trava depois que o curso é publicado." — mude
+   o visual, não o texto (é do operador). Também a etiqueta **"EN"** na lista de cursos
+   (`AdminCoursesPage.tsx`).
 
 ## 3. Onde você NÃO mexe
 

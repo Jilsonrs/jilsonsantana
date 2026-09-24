@@ -53,3 +53,16 @@ describe("AdminCoursesPage", () => {
     await waitFor(() => expect(deleteCourse.mock.calls[0]?.[0]).toBe(1));
   });
 });
+
+describe("AdminCoursesPage — idioma", () => {
+  it("curso em inglês ganha a etiqueta EN; em português, não", async () => {
+    adminGetCourses.mockResolvedValue([
+      course,
+      { ...course, id: 2, slug: "curso-en", title: "English course", language: "en" },
+    ]);
+    renderWithProviders(<AdminCoursesPage />);
+
+    await screen.findByText("English course");
+    expect(screen.getAllByText("EN")).toHaveLength(1);
+  });
+});
