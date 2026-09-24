@@ -92,15 +92,19 @@
 >
 > **Rate-limit de login: RESOLVIDO em 23/09** (era o "próximo bloqueio" e o bloqueio do go-live).
 >
-> **Próximo passo — decisão do operador, sem ordem fixada ainda.** Os candidatos, com o que cada
-> um espera: **Bloco I** (idioma nos cursos e trilhas — destrava o C4) · **C4** (os 5 cursos da
-> home do banco + etiqueta Novo/Destaque/Mais vendido + ordenar por arrastar, que a FAQ reaproveita)
-> · **C5** (vitrine fora do React — **bloqueado** até o operador definir o conteúdo das telas) ·
-> **o corpo da Fase 3** (Bunny, HIGH RISK) · os itens de **continuidade do operador** antes do
-> go-live (2FA, backup frio).
+> **Formatação do Antigravity publicada (23/09):** layout padrão (`PageLayout`) em 13 telas do app
+> e do admin, revisado antes do merge (duas frases falsas corrigidas, 4 testes atualizados para os
+> textos que o operador aprovou). A tela de Textos passou a se chamar **"Textos do Site"**.
+>
+> **Próximo passo — decidido pelo operador em 23/09: o C4, em 5 etapas, uma por vez.** A **etapa 1**
+> (campo de imagem aceitar `/img/curso.jpg`) tem plano aprovado. Detalhe no bloco C4. Continuam na
+> fila, sem ordem: o resto do **Bloco I** (agora menor — ver as decisões de 23/09 no bloco) · **C5**
+> (vitrine fora do React — **bloqueado** até o operador definir o conteúdo das telas) · **o corpo
+> da Fase 3** (Bunny, HIGH RISK) · os itens de **continuidade do operador** antes do go-live (2FA,
+> backup frio).
 > **Pendências do operador, abertas:** revisar as 15 perguntas da FAQ (agora no admin) · o conteúdo
 > do 2º nível das seções planejadas do menu · confirmar os slugs em inglês · mover `/inicio`,
-> `/conta`, `/minhas-trilhas` para `/aluno/*` · o título "Site" da tela de Textos (virar "Textos"?).
+> `/conta`, `/minhas-trilhas` para `/aluno/*` · cadastrar os 5 cursos da home (C4).
 
 ---
 
@@ -1118,6 +1122,21 @@ landmark. Corrigido junto.
 > dicionário e o seletor para quem está logado. O seletor PT | EN da vitrine **já existe** (dois
 > links, um por endereço) — o "Passo 0" abaixo passa a ser só o do app logado.
 
+> **DECISÕES DO OPERADOR EM 23/09/2026 (mudam o tamanho deste bloco):**
+> - O **admin fica em português** — não ganha versão em inglês.
+> - Os textos do app do aluno **não** entram em *Admin → Site → Textos*: lá ficam só as páginas
+>   públicas. (Quando o React usar o dicionário, a tela de Textos filtra — ver C2, Passo 0.)
+> - **O seletor PT | EN da home basta por agora.** Traduzir o app do aluno (dicionário no React,
+>   seletor dentro do app, `User.preferredLanguage`) vira **bloco próprio, depois** — os itens
+>   *Dicionário*, *Migrar os textos* e *Seletor* abaixo, e os itens 3 e 4 do *Done when*, esperam
+>   esse bloco. O Passo 0 (posição do seletor) fica resolvido por isso.
+> - As páginas provisórias (`/cursos`, `/trilhas`, `/curso/…`, `/trilha/…`): **não mexer** — ele
+>   ainda vai pensar nelas; foco na home.
+> - `Course.language` entra pela **etapa 2 do C4**, que precisa dele. O resto da parte de dados
+>   (`LearningPlan.language`, filtro nas listas e na busca, recusa de item de outro idioma na
+>   trilha, clone herdando) continua neste bloco. O campo Idioma no formulário de **trilha** espera
+>   o Bloco 6b, porque esse formulário ainda não existe.
+
 > **SEQUENCIAMENTO:** fecha **antes** do bloco *Superfície pública indexável*. Se as páginas
 > públicas forem montadas antes, nascem só em português e são refeitas. Não depende do Bunny;
 > **a posição exata dentro da Fase 3 é decisão do operador.** Risco baixo–médio (uma migration +
@@ -1364,21 +1383,40 @@ landmark. Corrigido junto.
 
 #### Bloco C4 — Os 5 cursos da home vêm do banco
 
-- [ ] Depende da migration de `language` (Bloco I) e do cadastro dos 5 cursos.
-- [ ] **Bloqueio conhecido, resolver antes:** `thumbnailUrl` usa `z.string().url()`, que **recusa**
-      caminho relativo (`/img/curso.jpg`) — as imagens atuais não salvam pelo admin. Trocar pela
-      checagem explícita de esquema que o `CLAUDE.md` já exige (`core/` → a regra do `.url()`).
-- [ ] Destaque e cards derivados de `displayOrder` (decisão do operador pendente — ver o bloco
-      original acima).
-- [ ] **Ordem por ARRASTAR** *(operador, 23/09)*: nos cursos, e **o mesmo componente** passa a
-      ordenar as perguntas frequentes (hoje, número de Ordem). A biblioteca de arrastar é
-      **dependência nova** — nomeá-la no plano deste bloco, com o ok do operador.
-- [ ] **Etiqueta do curso** *(decidida em 22/09 — spec em `courses.md` → "Etiqueta do curso")*:
-      enum `CourseBadge { NOVO DESTAQUE MAIS_VENDIDO }` + `Course.badge?` + a data que faz `NOVO`
-      **expirar em 120 dias** · campo de seleção no formulário de curso · rótulos em
+> **EM 5 ETAPAS, uma por vez** *(operador, 23/09/2026: "divida em etapas, discutimos cada etapa e
+> implementamos 1 a 1")*. Cada etapa é discutida antes, aprovada por ele, e vira **um commit**.
+> A etapa 1 vem primeiro porque é pequena e destrava o cadastro: com ela pronta, o operador já
+> cadastra os cursos, e a etapa 2 marca como PT tudo o que existir.
+
+- [ ] **Etapa 1 — campo de imagem aceita `/img/curso.jpg`** *(plano aprovado em 23/09)*.
+      `thumbnailUrl` usa `z.string().url()`, que **recusa** caminho relativo (as imagens atuais não
+      salvam pelo admin) e **aceita** `javascript:`. Trocar pela checagem explícita de esquema que
+      o `CLAUDE.md` já exige (`core/` → a regra do `.url()`): aceita `https?://…` ou caminho do
+      próprio site começando com `/`; recusa `javascript:`, `data:` e `//outro-site`. Teste de
+      servidor + de componente + mutação.
+- [ ] **Etapa 2 — idioma no curso** (a parte de dados do Bloco I que o C4 exige):
+      `Course.language` obrigatório + campo **Idioma** no formulário de curso + etiqueta "EN" na
+      lista do admin; os cursos que já existem viram PT. *A confirmar na discussão da etapa:* o
+      idioma fica travado depois de criado (como o slug). **Antes desta etapa:** dividir o
+      `AdminCourseFormPage.tsx`, que passou de ~280 para ~370 linhas na formatação de 23/09 (teto
+      ~200) — é nele que o campo entra.
+- [ ] *(operador)* **Cadastrar os 5 cursos da home** no admin.
+- [ ] **Etapa 3 — a home lê os cursos do banco** (`server/src/routes/home.ts`, que hoje usa uma
+      constante): `PUBLISHED` + idioma da página + `displayOrder`. O botão de assinar das páginas
+      em inglês passa a ser **derivado do banco** (≥ 1 aula publicada em inglês, pela cadeia
+      inteira — `CLAUDE.md` → *Idiomas*). *A decidir na etapa:* **qual curso é o destaque** (o
+      primeiro da ordem, ou o que tiver a etiqueta Destaque — nesse caso a etapa 4 vem antes) e o
+      que fazer com os 2 cursos `exemplo-*`, que estão **publicados em produção** e apareceriam na
+      home.
+- [ ] **Etapa 4 — etiqueta do curso** *(decidida em 22/09 — spec em `courses.md` → "Etiqueta do
+      curso")*: enum `CourseBadge { NOVO DESTAQUE MAIS_VENDIDO }` + `Course.badge?` + a data que
+      faz `NOVO` **expirar em 120 dias** · campo de seleção no formulário de curso · rótulos em
       `common.badges.*` no dicionário (editáveis no `/admin/site`) · a home usa a etiqueta do curso
       no lugar do texto fixo "CURSO EM DESTAQUE". **Trava:** é campo SEPARADO do `status` — pôr
       "NOVO" naquele enum sumiria com o curso do site inteiro, sem erro.
+- [ ] **Etapa 5 — ordem por ARRASTAR** *(operador, 23/09)*: nos cursos, e **o mesmo componente**
+      passa a ordenar as perguntas frequentes (hoje, número de Ordem). A biblioteca de arrastar é
+      **dependência nova** — nomeá-la no plano da etapa, com o ok do operador.
 - **Done when:** o operador troca o curso em destaque pelo admin e a home muda.
 
 > **SEQUENCIAMENTO DECIDIDO: este bloco vem DEPOIS do Bunny.** O `introVideoId` é ativo do Bunny

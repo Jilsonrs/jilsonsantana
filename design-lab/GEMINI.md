@@ -170,12 +170,11 @@ Elas existem só no mapa de navegação. **Não procure o arquivo: não há.**
 Tudo abaixo funciona e tem teste; falta só o visual. Trabalhe direto no código (é tela de sistema),
 exceto o item 4, que é página pública.
 
-1. **Depoimentos e Perguntas frequentes** (`/admin/site/depoimentos`, `/admin/site/faq`) — os três
-   componentes compartilhados `client/src/components/admin/HomeListEditor.tsx`, `HomeListItem.tsx`
-   e `HomeListItemForm.tsx`. Hoje é estrutura crua: abas de idioma, botão de novo, cartão por item
-   com status em palavras, formulário. Formatar um formata os dois.
-2. **Textos** (`/admin/site/textos`) — as abas por página em `AdminSiteTextPage.tsx` e os campos em
-   `SiteTextField.tsx`.
+> **Feitos em 23/09 e publicados:** os antigos itens 1 (Depoimentos e Perguntas frequentes) e 2
+> (Textos), junto com o layout padrão `PageLayout` nas telas do app e do admin. Na revisão, o
+> operador mandou corrigir duas frases que descreviam o que o sistema ainda não faz ("Salva
+> automaticamente": cada campo tem o botão Salvar; "upload das videoaulas": não existe upload).
+
 3. **A coluna secundária de "Site"** mostra o título **"Geral"** acima dos três itens (é o que o
    `SecondaryNav.tsx` faz com itens sem `grupo`). Se quiser outro visual, combine com o operador —
    mudar o texto é decisão dele.
