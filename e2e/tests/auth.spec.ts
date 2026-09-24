@@ -90,7 +90,7 @@ test("logout returns to /login", async ({ page }) => {
   await login(page, MEMBER);
 
   await page.getByRole("button", { name: "Abrir o menu da conta" }).click();
-  // `exact`: sem ele, "Sair" também casaria com "Sair da plataforma" em /conta.
+  // `exact`: o nome inteiro, para não casar com outro botão que contenha "Sair".
   await page.getByRole("button", { name: "Sair", exact: true }).click();
   await expect(page).toHaveURL(/\/login$/);
 });

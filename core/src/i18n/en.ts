@@ -278,8 +278,7 @@ export const en: Dict = {
       seusDadosDescricao: "Your basic account information.",
       nome: "Name",
       email: "Email",
-      papel: "Role",
-      sair: "Sign out"
+      papel: "Role"
     },
     minhasTrilhas: {
       titulo: "My learning paths",

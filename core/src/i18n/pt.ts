@@ -288,8 +288,7 @@ export const pt = {
       seusDadosDescricao: "Informações básicas da sua conta na plataforma.",
       nome: "Nome",
       email: "E-mail",
-      papel: "Papel",
-      sair: "Sair da plataforma"
+      papel: "Papel"
     },
     minhasTrilhas: {
       titulo: "Minhas trilhas",

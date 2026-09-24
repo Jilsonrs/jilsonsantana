@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { screen, fireEvent } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import { renderWithProviders } from "@/test-utils";
 
 const useSession = vi.fn();
@@ -48,12 +48,11 @@ describe("AccountPage", () => {
     expect(screen.getAllByText("—")).toHaveLength(1);
   });
 
-  it("sair encerra a sessão e leva ao login", async () => {
+  // Em Minha conta o "Sair" fica SÓ na coluna lateral (decisão do operador,
+  // 24/09/2026) — a coluna é do shell, não desta tela.
+  it("a tela não tem botão de sair próprio", () => {
     renderConta();
-    fireEvent.click(screen.getByRole("button", { name: "Sair da plataforma" }));
-
-    expect(await screen.findByText("TELA DE LOGIN")).toBeTruthy();
-    expect(signOut).toHaveBeenCalled();
+    expect(screen.queryByRole("button", { name: /sair/i })).toBeNull();
   });
 
   // O app do aluno existe em inglês (decisão do operador, 24/09/2026).
@@ -66,7 +65,6 @@ describe("AccountPage", () => {
 
     expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("My account");
     expect(screen.getByText("Name")).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Sign out" })).toBeTruthy();
     expect(screen.queryByText("Nome")).toBeNull();
   });
 });

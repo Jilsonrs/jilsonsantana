@@ -349,6 +349,8 @@ não código espalhado: uma tela nova declara seus níveis e o cromo se monta so
   e-mail, Minha conta, Faturamento e assinatura e **Sair**. "Minha conta" **não** fica no menu
   lateral. É o único "Sair" global do app, e isso muda a regra de set/2026, quando não havia
   nenhum. Incluir ou trocar a foto é pendência registrada no plano.
+  **Em Minha conta, o "Sair" fica só na coluna lateral** *(decisão do operador, 24/09/2026)*: a
+  tela não tem botão próprio de sair (o "Sair da plataforma" saiu).
 - **Rodapé do app** *(decisão do operador, 24/09/2026, comparando com o LinkedIn Learning)*: em
   toda tela depois do login, **do aluno e do admin**. Marca + © · FAQ · Quem somos · Contato ·
   YouTube · Termos · Privacidade. Fica de fora o que o menu lateral já leva (Cursos, Trilhas,

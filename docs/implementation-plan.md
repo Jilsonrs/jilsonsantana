@@ -1060,6 +1060,9 @@ sistema administrativo inteiro ainda está por construir (Bloco 6b, Fase 4, Fase
       dicionário, achado da etapa 2. Testes: 9 do menu, 3 no shell, 3 ajustados à decisão nova; E2E
       abre a conta e sai pelo menu da foto. **Mutação:** sem Sair e "Minha conta" de volta ao rail
       → 6 reprovaram. Revertido.
+      **Ajuste do operador (24/09):** em Minha conta o "Sair" fica **só na coluna lateral** — saiu o
+      botão "Sair da plataforma" da tela (e a frase `app.conta.sair`). Teste: a tela não tem botão
+      de sair próprio (mutação: devolver o botão → reprova).
 - [ ] **Incluir ou trocar a foto do aluno** *(decisão do operador, 24/09/2026 — pendente, não
       construído)*. Onde: Minha conta → Seus dados; a foto do menu da conta passa a mostrar a nova.
       O campo já existe (`User.image`, do Better Auth); falta o envio do arquivo. **Decisão do
