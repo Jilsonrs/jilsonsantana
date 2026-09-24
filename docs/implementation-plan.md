@@ -1234,6 +1234,19 @@ landmark. Corrigido junto.
 >         desligada, idioma fixo no envio e etiqueta removida → 4 reprovaram. Revertido.
 > - [ ] **Etapa 4 — catálogo e cursos no idioma escolhido:** catálogo, busca, páginas de curso e
 >       trilha; nível e textos das 3 camadas nos dois idiomas; catálogo EN vazio; curso com 0 aulas.
+>       **Decisões do operador (24/09):** o nível aparece pelo NOME ("Intermediário" /
+>       "Intermediate"), não pelo valor cru — o Admin segue com o cru · os textos das 3 camadas
+>       ficam **editáveis em Textos** · junto, o conserto do achado da 3c (formulário de curso sem
+>       aviso quando o salvamento falha).
+>   - [x] **4a — catálogo e busca** *(24/09)*. `/cursos`, `/trilhas` e a busca pedem a lista no
+>         idioma do app (`?lang=`); o idioma está na chave da consulta, então trocar no rodapé refaz
+>         a lista. Textos da tela, da busca e do cartão (contagem e nível) no dicionário. Vazio em
+>         inglês próprio; curso com 0 aulas mostra "0 aulas". **Mutação:** lista ignorando o idioma
+>         e nível cru → 4 reprovaram. Revertido.
+>         *Para a revisão do inglês (etapa 5):* a contagem não tem singular — "1 módulos" em PT
+>         (já era assim) e "1 modules" em EN.
+>   - [ ] **4b — páginas de curso e trilha**, com as 3 camadas editáveis em Textos.
+>   - [ ] **4c — aviso de erro ao salvar o curso** no admin.
 > - [ ] **Etapa 5 — revisão do inglês** pelo operador com o Antigravity, e publicação.
 
 > **SEQUENCIAMENTO:** fecha **antes** do bloco *Superfície pública indexável*. Se as páginas

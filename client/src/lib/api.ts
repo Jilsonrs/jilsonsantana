@@ -253,8 +253,10 @@ export async function deleteLesson(id: number): Promise<void> {
 
 // ── Calls ─────────────────────────────────────────────────────────────────────
 
-export async function getCourses(): Promise<CourseCard[]> {
-  const { data } = await client.get<CourseCard[]>("/courses");
+// As listas de DESCOBERTA pedem o idioma do app (`?lang=`); sem ele o servidor
+// devolve português. O link direto (por slug) não leva idioma: abre sempre.
+export async function getCourses(lang: LanguageCode = "pt"): Promise<CourseCard[]> {
+  const { data } = await client.get<CourseCard[]>("/courses", { params: { lang } });
   return data;
 }
 
@@ -263,8 +265,8 @@ export async function getCourseBySlug(slug: string): Promise<CourseDetail> {
   return data;
 }
 
-export async function getTrilhas(): Promise<TrilhaCard[]> {
-  const { data } = await client.get<TrilhaCard[]>("/trilhas");
+export async function getTrilhas(lang: LanguageCode = "pt"): Promise<TrilhaCard[]> {
+  const { data } = await client.get<TrilhaCard[]>("/trilhas", { params: { lang } });
   return data;
 }
 
@@ -288,8 +290,8 @@ export async function getMyTrilha(id: number): Promise<TrilhaDetail> {
   return data;
 }
 
-export async function search(q: string): Promise<SearchResult> {
-  const { data } = await client.get<SearchResult>("/search", { params: { q } });
+export async function search(q: string, lang: LanguageCode = "pt"): Promise<SearchResult> {
+  const { data } = await client.get<SearchResult>("/search", { params: { q, lang } });
   return data;
 }
 

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { useT } from "@/lib/language";
 
 const DEBOUNCE_MS = 300;
 const MIN_CHARS = 2;
@@ -11,6 +12,7 @@ const MIN_CHARS = 2;
 // An empty/too-short value calls onSearch("") so the caller can fall back to
 // the default catalog view.
 export function SearchBar({ onSearch }: { onSearch: (q: string) => void }) {
+  const t = useT();
   const [value, setValue] = useState("");
 
   useEffect(() => {
@@ -27,9 +29,9 @@ export function SearchBar({ onSearch }: { onSearch: (q: string) => void }) {
       <Input
         value={value}
         onChange={(e) => setValue(e.target.value)}
-        placeholder="Buscar trilhas, cursos e aulas…"
+        placeholder={t.busca.placeholder}
         className="pl-9"
-        aria-label="Buscar"
+        aria-label={t.busca.rotulo}
       />
     </div>
   );

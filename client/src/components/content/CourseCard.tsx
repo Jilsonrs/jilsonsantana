@@ -3,6 +3,7 @@ import { BookOpen } from "lucide-react";
 import type { Level, Layer } from "@jilson/core";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useT } from "@/lib/language";
 
 // Only the fields actually rendered — shared by the full catalog card (which
 // has moduleCount/lessonCount) and search results (which don't), so callers
@@ -19,6 +20,7 @@ export type CourseCardProps = {
 };
 
 export function CourseCard(course: CourseCardProps) {
+  const t = useT();
   return (
     <Link to={`/curso/${course.slug}`} className="block">
       <Card className="h-full transition-colors hover:border-primary">
@@ -38,10 +40,11 @@ export function CourseCard(course: CourseCardProps) {
           {course.subtitle && <p className="text-sm text-muted-foreground">{course.subtitle}</p>}
         </CardHeader>
         <CardContent className="flex flex-wrap items-center gap-2">
-          {course.level && <Badge variant="secondary">{course.level}</Badge>}
+          {/* O NOME do nível, não o valor cru (operador, 24/09/2026). */}
+          {course.level && <Badge variant="secondary">{t.niveis[course.level]}</Badge>}
           {course.moduleCount !== undefined && course.lessonCount !== undefined && (
             <span className="text-xs text-muted-foreground">
-              {course.moduleCount} módulos · {course.lessonCount} aulas
+              {course.moduleCount} {t.curso.modulos} · {course.lessonCount} {t.curso.aulas}
             </span>
           )}
         </CardContent>

@@ -6,6 +6,7 @@ import { SearchBar } from "@/components/content/SearchBar";
 import { TrilhaCard } from "@/components/content/TrilhaCard";
 import { CourseCard } from "@/components/content/CourseCard";
 import { PageContainer, PageHeader } from "@/components/layout/PageLayout";
+import { useIdioma, useT } from "@/lib/language";
 
 // Catálogo, navegável por qualquer pessoa ("onboarding aberto e livre" —
 // CLAUDE.md). São DUAS telas, `/cursos` e `/trilhas` (operador, set/2026:
@@ -14,15 +15,16 @@ import { PageContainer, PageHeader } from "@/components/layout/PageLayout";
 // Um componente com `tipo` e não dois arquivos: o que difere entre as duas é a
 // lista e o título; busca, estados e layout são os mesmos, e duplicá-los faria
 // as duas telas divergirem na primeira correção feita em só uma.
+//
+// As listas e a busca seguem o IDIOMA DO APP (decisão do operador, 24/09/2026):
+// são listas de descoberta. O idioma entra na chave da consulta, então trocar o
+// idioma no rodapé refaz a busca sozinho.
 
 type Tipo = "cursos" | "trilhas";
 
-const TEXTOS: Record<Tipo, { titulo: string; vazio: string }> = {
-  cursos: { titulo: "Cursos", vazio: "Nenhum curso publicado ainda." },
-  trilhas: { titulo: "Trilhas", vazio: "Nenhuma trilha publicada ainda." },
-};
-
 export function CatalogPage({ tipo }: { tipo: Tipo }) {
+  const idioma = useIdioma();
+  const t = useT();
   const [query, setQuery] = useState("");
   const onSearch = useCallback((q: string) => setQuery(q), []);
   const buscando = query !== "";
@@ -30,25 +32,26 @@ export function CatalogPage({ tipo }: { tipo: Tipo }) {
   // Duas consultas em vez de uma que devolve os dois: estando em /cursos, não
   // há por que buscar trilhas que ninguém vai ver.
   const cursos = useQuery({
-    queryKey: ["catalogo", "cursos"],
-    queryFn: api.getCourses,
+    queryKey: ["catalogo", "cursos", idioma],
+    queryFn: () => api.getCourses(idioma),
     enabled: !buscando && tipo === "cursos",
   });
   const trilhas = useQuery({
-    queryKey: ["catalogo", "trilhas"],
-    queryFn: api.getTrilhas,
+    queryKey: ["catalogo", "trilhas", idioma],
+    queryFn: () => api.getTrilhas(idioma),
     enabled: !buscando && tipo === "trilhas",
   });
   const busca = useQuery({
-    queryKey: ["search", query],
-    queryFn: () => api.search(query),
+    queryKey: ["search", query, idioma],
+    queryFn: () => api.search(query, idioma),
     enabled: buscando,
   });
 
   const lista = tipo === "cursos" ? cursos : trilhas;
   const isLoading = buscando ? busca.isLoading : lista.isLoading;
   const isError = buscando ? busca.isError : lista.isError;
-  const { titulo, vazio } = TEXTOS[tipo];
+  const titulo = tipo === "cursos" ? t.catalogo.cursos : t.catalogo.trilhas;
+  const vazio = tipo === "cursos" ? t.catalogo.vazioCursos : t.catalogo.vazioTrilhas;
 
   // Na busca, cada tela mostra só o que é dela — e AULA conta como curso,
   // porque é dentro de um curso que o aluno vai parar ao clicar nela.
@@ -67,30 +70,30 @@ export function CatalogPage({ tipo }: { tipo: Tipo }) {
         <SearchBar onSearch={onSearch} />
       </div>
 
-      {isLoading && <p className="mt-8 text-muted-foreground">Carregando…</p>}
+      {isLoading && <p className="mt-8 text-muted-foreground">{t.comum.carregando}</p>}
       {isError && (
         <p className="mt-8 text-sm text-destructive">
-          Não foi possível carregar {tipo === "cursos" ? "os cursos" : "as trilhas"}.
+          {tipo === "cursos" ? t.catalogo.erroCursos : t.catalogo.erroTrilhas}
         </p>
       )}
 
       {!isLoading && !isError && buscando && resultados && (
         <div className="mt-12 space-y-12">
           {tipo === "trilhas" && (
-            <Section title="Trilhas">
-              {resultados.trilhas.map((t) => (
-                <TrilhaCard key={t.id} {...t} />
+            <Section title={t.catalogo.trilhas}>
+              {resultados.trilhas.map((trilha) => (
+                <TrilhaCard key={trilha.id} {...trilha} />
               ))}
             </Section>
           )}
           {tipo === "cursos" && (
             <div className="space-y-12">
-              <Section title="Cursos">
+              <Section title={t.catalogo.cursos}>
                 {resultados.courses.map((c) => (
                   <CourseCard key={c.id} {...c} />
                 ))}
               </Section>
-              <Section title="Aulas">
+              <Section title={t.catalogo.aulas}>
                 {resultados.lessons.map((l) => (
                   <Link
                     key={l.id}
@@ -107,7 +110,9 @@ export function CatalogPage({ tipo }: { tipo: Tipo }) {
             </div>
           )}
           {buscaVazia && (
-            <p className="text-muted-foreground text-lg">Nada encontrado para "{resultados.query}".</p>
+            <p className="text-muted-foreground text-lg">
+              {t.catalogo.nadaEncontrado} "{resultados.query}".
+            </p>
           )}
         </div>
       )}
@@ -115,16 +120,16 @@ export function CatalogPage({ tipo }: { tipo: Tipo }) {
       {!isLoading && !isError && !buscando && (
         <div className="mt-12 space-y-12">
           {tipo === "cursos" && cursos.data && (
-            <Section title="Catálogo de Cursos">
+            <Section title={t.catalogo.catalogoCursos}>
               {cursos.data.map((c) => (
                 <CourseCard key={c.id} {...c} />
               ))}
             </Section>
           )}
           {tipo === "trilhas" && trilhas.data && (
-            <Section title="Catálogo de Trilhas">
-              {trilhas.data.map((t) => (
-                <TrilhaCard key={t.id} {...t} />
+            <Section title={t.catalogo.catalogoTrilhas}>
+              {trilhas.data.map((trilha) => (
+                <TrilhaCard key={trilha.id} {...trilha} />
               ))}
             </Section>
           )}

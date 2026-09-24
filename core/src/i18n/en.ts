@@ -274,6 +274,31 @@ export const en: Dict = {
       voltar: "← Back to My learning paths",
       erroDetalhe: "We couldn't load this learning path.",
       semConteudo: "This learning path has no content yet."
+    },
+    catalogo: {
+      cursos: "Courses",
+      trilhas: "Learning paths",
+      catalogoCursos: "Course catalog",
+      catalogoTrilhas: "Learning path catalog",
+      aulas: "Lessons",
+      vazioCursos: "No courses published yet.",
+      vazioTrilhas: "No learning paths published yet.",
+      erroCursos: "We couldn't load the courses.",
+      erroTrilhas: "We couldn't load the learning paths.",
+      nadaEncontrado: "Nothing found for"
+    },
+    busca: {
+      placeholder: "Search learning paths, courses and lessons…",
+      rotulo: "Search"
+    },
+    niveis: {
+      INICIANTE: "Beginner",
+      INTERMEDIARIO: "Intermediate",
+      AVANCADO: "Advanced"
+    },
+    curso: {
+      modulos: "modules",
+      aulas: "lessons"
     }
   }
 };

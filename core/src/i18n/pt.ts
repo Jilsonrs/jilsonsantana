@@ -281,6 +281,33 @@ export const pt = {
       voltar: "← Voltar para Minhas Trilhas",
       erroDetalhe: "Não foi possível carregar esta trilha.",
       semConteudo: "Esta trilha ainda não tem conteúdo."
+    },
+    catalogo: {
+      cursos: "Cursos",
+      trilhas: "Trilhas",
+      catalogoCursos: "Catálogo de Cursos",
+      catalogoTrilhas: "Catálogo de Trilhas",
+      aulas: "Aulas",
+      vazioCursos: "Nenhum curso publicado ainda.",
+      vazioTrilhas: "Nenhuma trilha publicada ainda.",
+      erroCursos: "Não foi possível carregar os cursos.",
+      erroTrilhas: "Não foi possível carregar as trilhas.",
+      nadaEncontrado: "Nada encontrado para"
+    },
+    busca: {
+      placeholder: "Buscar trilhas, cursos e aulas…",
+      rotulo: "Buscar"
+    },
+    // O NOME do nível para o aluno (operador, 24/09/2026). O valor (INICIANTE…)
+    // continua código; o Admin segue mostrando o valor cru.
+    niveis: {
+      INICIANTE: "Iniciante",
+      INTERMEDIARIO: "Intermediário",
+      AVANCADO: "Avançado"
+    },
+    curso: {
+      modulos: "módulos",
+      aulas: "aulas"
     }
   }
 };
