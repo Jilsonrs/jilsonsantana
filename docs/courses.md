@@ -351,8 +351,12 @@ as camadas viram um **selo na página de curso** com regras próprias:
 
 ### 2.2 Textos e ícones globais do selo `[FATO, aprovados Jun 2026]`
 
-Escritos **UMA vez**, vivem em `core/src/constants/` e valem para todo curso. Por curso o operador
-só **escolhe quais camadas** aparecem — nunca reescreve o texto.
+Escritos **UMA vez** e valem para todo curso. Por curso o operador só **escolhe quais camadas**
+aparecem — nunca reescreve o texto.
+**Onde moram (24/09/2026, decisão do operador):** os **textos** estão no dicionário, em
+`common.camadas` (`core/src/i18n/`), **nos dois idiomas e editáveis em Admin → Textos** (aba "Toda
+página", seção "3 camadas"). O **ícone** e a **cor** continuam em `core/src/constants/`
+(`LAYER_CONFIG`). A tabela abaixo é o valor de fábrica em português; o inglês está no `en.ts`.
 
 | Enum | Ícone | Nome (o aluno vê) | Blurb |
 |---|---|---|---|

@@ -1,13 +1,8 @@
-import { useQuery } from "@tanstack/react-query";
 import { Youtube } from "lucide-react";
-import { pt, en, LANGUAGES } from "@jilson/core";
-import { getCommonTexts, COMMON_TEXTS_QUERY } from "@/lib/api";
+import { LANGUAGES } from "@jilson/core";
 import { itensDoRodape } from "@/lib/footer";
 import { useIdioma, useT, useTrocarIdioma } from "@/lib/language";
-
-// O texto de FÁBRICA de cada idioma — vale enquanto a busca não volta ou se ela
-// falhar, para o rodapé nunca sumir nem ficar em branco.
-const FABRICA = { pt: pt.common, en: en.common };
+import { useTextosComuns } from "@/lib/common-texts";
 
 /**
  * Rodapé do app logado — aluno e admin (decisão do operador, 24/09/2026).
@@ -27,11 +22,7 @@ export function AppFooter() {
   const idioma = useIdioma();
   const t = useT();
   const { trocarIdioma, trocando, falhou } = useTrocarIdioma();
-  const { data } = useQuery({
-    queryKey: [COMMON_TEXTS_QUERY, idioma],
-    queryFn: () => getCommonTexts(idioma),
-  });
-  const textos = data ?? FABRICA[idioma];
+  const textos = useTextosComuns();
 
   return (
     <footer className="mt-auto pb-10">

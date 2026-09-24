@@ -33,6 +33,23 @@ export const pt = {
       ],
       tagline: "Dados e IA, sem complicação.",
       copyright: "© 2026 Jilson Santana. Todos os direitos reservados. Reprodução total ou parcial é proibida sem autorização por escrito."
+    },
+    // O selo "3 camadas" — os textos GLOBAIS, escritos uma vez para todo curso
+    // (courses.md §2.2). Editáveis em Admin → Textos (decisão do operador,
+    // 24/09/2026). O ícone e a cor continuam no código (LAYER_CONFIG).
+    camadas: {
+      UNIVERSAL: {
+        nome: "Fundamentos sólidos",
+        texto: "A base que funciona em qualquer versão — você aplica com o que já tem."
+      },
+      MODERNO: {
+        nome: "Recursos modernos",
+        texto: "Os recursos mais atuais que aceleram seu trabalho e poucos dominam."
+      },
+      IA: {
+        nome: "Com IA do seu lado",
+        texto: "A IA como copiloto pra gerar lógica, destravar erros e ganhar tempo."
+      }
     }
   },
   home: {
@@ -307,7 +324,22 @@ export const pt = {
     },
     curso: {
       modulos: "módulos",
-      aulas: "aulas"
+      aulas: "aulas",
+      naoEncontrado: "Curso não encontrado.",
+      conteudo: "Conteúdo do curso",
+      faq: "Perguntas frequentes",
+      aprender: "O que você vai aprender",
+      requisitos: "Pré-requisitos",
+      paraQuem: "Pra quem é"
+    },
+    trilha: {
+      naoEncontrada: "Trilha não encontrada.",
+      conteudo: "Conteúdo da trilha",
+      entrarParaSalvar: "Entrar para salvar",
+      salva: "Trilha salva ✓",
+      salvando: "Salvando…",
+      salvar: "Salvar trilha",
+      erroSalvar: "Não foi possível salvar. Tente de novo."
     }
   }
 };

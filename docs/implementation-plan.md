@@ -1245,7 +1245,13 @@ landmark. Corrigido junto.
 >         e nível cru → 4 reprovaram. Revertido.
 >         *Para a revisão do inglês (etapa 5):* a contagem não tem singular — "1 módulos" em PT
 >         (já era assim) e "1 modules" em EN.
->   - [ ] **4b — páginas de curso e trilha**, com as 3 camadas editáveis em Textos.
+>   - [x] **4b — páginas de curso e trilha** *(24/09)*, com as 3 camadas editáveis em Textos. Texto da
+>         tela no idioma do app; o conteúdo do curso (título, aulas, FAQ) fica como foi escrito.
+>         Nome e frase das camadas saíram de `LAYER_CONFIG` (que ficou só com ícone e cor) para
+>         `common.camadas`, lidos já com as edições por `useTextosComuns()` — o mesmo hook do rodapé.
+>         Em Textos: aba "Toda página", seção "3 camadas". "Entrar para salvar" leva ao login no
+>         idioma da tela. `CLAUDE.md`, `courses.md` e `idiomas.md` reconciliados. **Mutação:** selo
+>         ignorando as edições e título escrito à mão → 2 reprovaram. Revertido.
 >   - [ ] **4c — aviso de erro ao salvar o curso** no admin.
 > - [ ] **Etapa 5 — revisão do inglês** pelo operador com o Antigravity, e publicação.
 

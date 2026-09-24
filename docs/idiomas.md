@@ -209,6 +209,9 @@ o idioma na home e **entra já em inglês**.
     dicionário, em português.
 - **Valor de enum continua código** (`Level`, `Layer`, `ContentStatus`); o **rótulo** vem do
   dicionário. Os textos globais das 3 camadas passam a existir nos dois idiomas.
+  **Feito em 24/09** `[operador]`: o nível aparece para o aluno pelo **nome** (`app.niveis`:
+  "Intermediário" / "Intermediate") — o Admin segue com o valor cru; os textos das 3 camadas
+  moram em `common.camadas` e são **editáveis em Admin → Textos**.
 - **Conteúdo de curso não passa pelo dicionário:** título, descrição e FAQ são escritos no idioma do
   curso, porque é outro curso.
 - **Quem traduz:** o agente. **Quem aprova:** o operador revisa todo texto que o aluno lê, antes de

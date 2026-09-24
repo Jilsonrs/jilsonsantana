@@ -29,6 +29,20 @@ export const en: Dict = {
       ],
       tagline: "Data and AI, made simple.",
       copyright: "© 2026 Jilson Santana. All rights reserved. Reproduction in whole or in part is prohibited without written permission."
+    },
+    camadas: {
+      UNIVERSAL: {
+        nome: "Solid foundations",
+        texto: "The groundwork that works in any version — you apply it with what you already have."
+      },
+      MODERNO: {
+        nome: "Modern features",
+        texto: "The newest features that speed up your work, and that few people master."
+      },
+      IA: {
+        nome: "AI on your side",
+        texto: "AI as a copilot to generate logic, get past errors and save time."
+      }
     }
   },
   home: {
@@ -298,7 +312,22 @@ export const en: Dict = {
     },
     curso: {
       modulos: "modules",
-      aulas: "lessons"
+      aulas: "lessons",
+      naoEncontrado: "Course not found.",
+      conteudo: "Course content",
+      faq: "Frequently asked questions",
+      aprender: "What you'll learn",
+      requisitos: "Requirements",
+      paraQuem: "Who this course is for"
+    },
+    trilha: {
+      naoEncontrada: "Learning path not found.",
+      conteudo: "Learning path content",
+      entrarParaSalvar: "Sign in to save",
+      salva: "Learning path saved ✓",
+      salvando: "Saving…",
+      salvar: "Save learning path",
+      erroSalvar: "We couldn't save it. Please try again."
     }
   }
 };
