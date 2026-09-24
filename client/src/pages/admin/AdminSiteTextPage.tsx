@@ -6,7 +6,7 @@ import { SiteTextField } from "@/components/admin/SiteTextField";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { PageContainer, PageHeader, SplitSection } from "@/components/layout/PageLayout";
+import { PageContainer, PageHeader, PageSection } from "@/components/layout/PageLayout";
 import { Card, CardContent } from "@/components/ui/card";
 
 // Texto das páginas públicas, editável sem deploy (docs/content.md § 16).
@@ -107,8 +107,8 @@ export function AdminSiteTextPage() {
 
       {data && (
         <div className="space-y-12">
-          {/* Controle de Busca e Abas no estilo Split-Panel */}
-          <SplitSection
+          {/* Busca e abas: a primeira seção da página */}
+          <PageSection
             title="Navegação e Busca"
             description="Escolha a página que deseja editar ou busque por um termo específico em todo o site."
           >
@@ -143,7 +143,7 @@ export function AdminSiteTextPage() {
                 )}
               </CardContent>
             </Card>
-          </SplitSection>
+          </PageSection>
 
           {grupos.length === 0 ? (
             <p className="text-muted-foreground">
@@ -154,7 +154,7 @@ export function AdminSiteTextPage() {
           ) : (
             <div className="space-y-8">
               {grupos.map(([secao, campos]) => (
-                <SplitSection
+                <PageSection
                   key={secao}
                   title={termo ? nomeCompleto(secao) : nomeCurto(secao)}
                   description={`${campos.length} ${campos.length === 1 ? 'campo' : 'campos'}`}
@@ -167,7 +167,7 @@ export function AdminSiteTextPage() {
                       ))}
                     </CardContent>
                   </Card>
-                </SplitSection>
+                </PageSection>
               ))}
             </div>
           )}

@@ -50,8 +50,8 @@ export function StudentHomePage() {
         className="pointer-events-none absolute -right-40 -top-40 size-[600px] bg-[radial-gradient(circle,hsl(var(--primary)/0.06)_0%,transparent_70%)]"
       />
 
-      {/* Densidade da área logada (§5): usa o PageContainer padronizado (max-w-6xl)
-          para alinhar com o restante do App e Admin. */}
+      {/* Densidade da área logada (§5): usa o PageContainer padronizado (o mesmo
+          de todas as telas do app e do admin). */}
       <PageContainer className="relative py-12">
         {/* A ênfase serifada (§4) cai no NOME — é a palavra que importa aqui, e
             a regra é uma por título. A copy não mudou: só ganhou o destaque. */}

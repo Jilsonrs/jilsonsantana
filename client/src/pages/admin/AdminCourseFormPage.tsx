@@ -30,7 +30,7 @@ import { ModuleLessonTree } from "@/components/admin/ModuleLessonTree";
 import {
   PageContainer,
   PageHeader,
-  SplitSection,
+  PageSection,
 } from "@/components/layout/PageLayout";
 
 const courseFormSchema = z.object({
@@ -166,7 +166,7 @@ export function AdminCourseFormPage() {
           className="space-y-12"
           noValidate
         >
-          <SplitSection
+          <PageSection
             title="Informações básicas"
             description="O título, subtítulo e a URL amigável do seu curso. Capriche no título para atrair alunos e ser facilmente encontrado."
           >
@@ -186,9 +186,9 @@ export function AdminCourseFormPage() {
                 </Field>
               </CardContent>
             </Card>
-          </SplitSection>
+          </PageSection>
 
-          <SplitSection
+          <PageSection
             title="Mídia e Apresentação"
             description="A imagem de capa e o vídeo promocional. A imagem deve estar em proporção 16:9 para encaixar perfeitamente nos cards."
           >
@@ -229,9 +229,9 @@ export function AdminCourseFormPage() {
                 </div>
               </CardContent>
             </Card>
-          </SplitSection>
+          </PageSection>
 
-          <SplitSection
+          <PageSection
             title="Organização"
             description="Nível de dificuldade, visibilidade na vitrine e as camadas metodológicas em que o curso se encaixa."
           >
@@ -286,9 +286,9 @@ export function AdminCourseFormPage() {
                 </Field>
               </CardContent>
             </Card>
-          </SplitSection>
+          </PageSection>
 
-          <SplitSection
+          <PageSection
             title="Listas e Detalhes"
             description="Estes campos alimentam as seções detalhadas da página de vendas do curso. Digite um item por linha."
           >
@@ -305,9 +305,9 @@ export function AdminCourseFormPage() {
                 </Field>
               </CardContent>
             </Card>
-          </SplitSection>
+          </PageSection>
 
-          <SplitSection
+          <PageSection
             title="Destaques (Highlights)"
             description="Os 3 pilares principais exibidos em destaque no topo da página do curso."
           >
@@ -316,9 +316,9 @@ export function AdminCourseFormPage() {
                 <HighlightsField />
               </CardContent>
             </Card>
-          </SplitSection>
+          </PageSection>
 
-          <SplitSection
+          <PageSection
             title="Perguntas Frequentes (FAQ)"
             description="Dúvidas comuns e específicas apenas para este curso."
           >
@@ -327,7 +327,7 @@ export function AdminCourseFormPage() {
                 <FaqField />
               </CardContent>
             </Card>
-          </SplitSection>
+          </PageSection>
 
           <div className="flex justify-end border-t border-border/40 pt-8">
             <Button type="submit" size="lg" disabled={save.isPending}>
@@ -338,7 +338,7 @@ export function AdminCourseFormPage() {
       </FormProvider>
 
       {isEdit && (
-        <SplitSection
+        <PageSection
           title="Módulos e Aulas"
           description="Gerencie a estrutura do curso. Adicione os módulos e as aulas do curso."
           className="mt-12 border-t border-border/40"
@@ -346,7 +346,7 @@ export function AdminCourseFormPage() {
           <div className="space-y-4">
             <ModuleLessonTree courseId={courseId!} />
           </div>
-        </SplitSection>
+        </PageSection>
       )}
     </PageContainer>
   );

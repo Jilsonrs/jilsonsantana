@@ -95,6 +95,9 @@
 > **Formatação do Antigravity publicada (23/09):** layout padrão (`PageLayout`) em 13 telas do app
 > e do admin, revisado antes do merge (duas frases falsas corrigidas, 4 testes atualizados para os
 > textos que o operador aprovou). A tela de Textos passou a se chamar **"Textos do Site"**.
+> **Ajustes finos em 24/09:** as seções passaram a ser **empilhadas** (`PageSection`: título em
+> cima, conteúdo embaixo, no lugar do painel dividido). **É a base de toda tela nova do app** —
+> regra no `CLAUDE.md` → Client, em `design.md` §6 e em `.agents/rules/page_layout.md`.
 >
 > **Próximo passo — decidido pelo operador em 23/09: o C4, em 5 etapas, uma por vez.** A **etapa 1**
 > (campo de imagem aceitar `/img/curso.jpg`) tem plano aprovado. Detalhe no bloco C4. Continuam na

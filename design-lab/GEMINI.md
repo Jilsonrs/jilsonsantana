@@ -68,6 +68,8 @@ endereço, o arquivo e o que vale (ou não vale) acabamento.
 | `client/src/components/ui/button.tsx` | Botão base — usado em todas as telas |
 | `client/src/components/ui/card.tsx` | Card base |
 | `client/src/components/ui/input.tsx` | Campo base (o estado de erro é dirigido por `aria-invalid`) |
+| `client/src/components/layout/PageLayout.tsx` | **O layout padrão de toda tela do app e do admin**: `PageContainer`, `PageHeader`, `PageSection`. Tela nova do app nasce com ele: o Claude monta a estrutura e você faz o acabamento. |
+| `.agents/rules/page_layout.md` | A sua regra desse layout, com exemplo. É versionada: se mudar o padrão, atualize aqui junto. |
 | `client/src/fonts.css` | As quatro famílias, hospedadas localmente |
 
 ### A parte PÚBLICA saiu do React *(set/2026 — leia antes de abrir a home)*

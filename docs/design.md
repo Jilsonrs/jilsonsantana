@@ -332,6 +332,17 @@ não código espalhado: uma tela nova declara seus níveis e o cromo se monta so
 
 - Fundo branco. **"Luz de IA":** um `radial-gradient` azul quase invisível (~3% de opacidade) no
   canto superior, dando volume e assinatura sem custar leitura.
+- **Layout padrão de toda tela do app e do admin** *(decisão do operador, 23–24/09/2026, desenhado
+  com o Antigravity)*. São três peças, em `client/src/components/layout/PageLayout.tsx`:
+  - `PageContainer`: conteúdo alinhado à esquerda, a 50px do menu no computador e com margem
+    curta no celular;
+  - `PageHeader`: título da página (e ações, se houver), fixo no topo ao rolar;
+  - `PageSection`: seção **empilhada**, com título e descrição em cima e o conteúdo (cartão,
+    formulário, lista) ocupando a largura toda embaixo. Substituiu o painel dividido (título à
+    esquerda, conteúdo à direita), que espremia os campos.
+
+  Regras de uso e exemplo: [`.agents/rules/page_layout.md`](../.agents/rules/page_layout.md).
+  **Não vale para a superfície pública** (home e vitrine), que tem padrão próprio.
 
 ### Mobile (< 768px)
 
