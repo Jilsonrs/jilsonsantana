@@ -4,6 +4,7 @@ import * as api from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
 import { PlanModuleAccordion } from "@/components/content/PlanModuleAccordion";
 import { SaveTrilhaButton } from "@/components/content/SaveTrilhaButton";
+import { PageContainer } from "@/components/layout/PageLayout";
 
 export function TrilhaDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -13,32 +14,47 @@ export function TrilhaDetailPage() {
     enabled: !!slug,
   });
 
-  if (isLoading) return <p className="mx-auto max-w-3xl px-6 py-16 text-muted-foreground">Carregando…</p>;
+  if (isLoading) {
+    return (
+      <PageContainer>
+        <p className="text-muted-foreground mt-8">Carregando…</p>
+      </PageContainer>
+    );
+  }
+  
   if (isError || !trilha) {
-    return <p className="mx-auto max-w-3xl px-6 py-16 text-muted-foreground">Trilha não encontrada.</p>;
+    return (
+      <PageContainer>
+        <p className="mt-8 text-sm text-destructive">Trilha não encontrada.</p>
+      </PageContainer>
+    );
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-10 px-6 py-16">
-      <header className="space-y-3">
-        <h1 className="text-3xl font-semibold tracking-tight">{trilha.name}</h1>
-        {trilha.description && <p className="text-lg text-muted-foreground">{trilha.description}</p>}
-        <div className="flex flex-wrap gap-2">
-          {trilha.skillsCovered.map((skill) => (
-            <Badge key={skill} variant="secondary">
-              {skill}
-            </Badge>
-          ))}
-        </div>
-        <SaveTrilhaButton planId={trilha.id} />
-      </header>
+    <PageContainer>
+      <div className="space-y-12">
+        <header className="space-y-4 border-b border-border/40 pb-8">
+          <h1 className="text-4xl font-bold tracking-tight text-foreground">{trilha.name}</h1>
+          {trilha.description && <p className="text-xl text-muted-foreground max-w-[80ch]">{trilha.description}</p>}
+          <div className="flex flex-wrap items-center gap-4 pt-2">
+            <div className="flex flex-wrap gap-2">
+              {trilha.skillsCovered.map((skill) => (
+                <Badge key={skill} variant="secondary" className="px-3 py-1">
+                  {skill}
+                </Badge>
+              ))}
+            </div>
+            <SaveTrilhaButton planId={trilha.id} />
+          </div>
+        </header>
 
-      <section>
-        <h2 className="text-lg font-medium">Conteúdo da trilha</h2>
-        <div className="mt-3">
-          <PlanModuleAccordion planModules={trilha.planModules} />
-        </div>
-      </section>
-    </div>
+        <section>
+          <h2 className="text-2xl font-semibold">Conteúdo da trilha</h2>
+          <div className="mt-6">
+            <PlanModuleAccordion planModules={trilha.planModules} />
+          </div>
+        </section>
+      </div>
+    </PageContainer>
   );
 }

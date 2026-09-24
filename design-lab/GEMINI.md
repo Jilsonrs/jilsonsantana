@@ -165,6 +165,24 @@ servidores (§5); o React responde em `localhost:5173`, a home pública em `loca
 Trilhas Admin · Alunos · JilsonAI Admin · Dados · Certificados · JilsonAI (do aluno).
 Elas existem só no mapa de navegação. **Não procure o arquivo: não há.**
 
+### FILA DE FORMATAÇÃO — o que está pronto em estrutura e esperando o seu acabamento *(23/09/2026)*
+
+Tudo abaixo funciona e tem teste; falta só o visual. Trabalhe direto no código (é tela de sistema),
+exceto o item 4, que é página pública.
+
+> **Feitos em 23/09 e publicados:** os antigos itens 1 (Depoimentos e Perguntas frequentes) e 2
+> (Textos), junto com o layout padrão `PageLayout` nas telas do app e do admin. Na revisão, o
+> operador mandou corrigir duas frases que descreviam o que o sistema ainda não faz ("Salva
+> automaticamente": cada campo tem o botão Salvar; "upload das videoaulas": não existe upload).
+
+3. **A coluna secundária de "Site"** mostra o título **"Geral"** acima dos três itens (é o que o
+   `SecondaryNav.tsx` faz com itens sem `grupo`). Se quiser outro visual, combine com o operador —
+   mudar o texto é decisão dele.
+4. **Depoimentos na home** (`server/src/views/home.ts`, seção 7) — de **1 a 4** cards sorteados por
+   visita. O desenho precisa ficar bom com qualquer quantidade nesse intervalo. Deslizar com o dedo
+   no celular (CSS `scroll-snap`, sem JavaScript) é opção sua, com o ok do operador. Mexeu no CSS?
+   `npm run css:publico` (regra 10).
+
 ## 3. Onde você NÃO mexe
 
 | Arquivo | Por quê |
@@ -272,7 +290,8 @@ npm --workspace server run test     # se você tocou em server/src/views/
 **Isto é a rede de segurança de verdade.** Se você apagar sem querer a expansão por teclado, o
 `aria-current`, o rótulo do rail, a checagem de papel do admin ou o destino de um link, **a suíte
 reprova e diz exatamente qual**. A suíte do servidor cobre as páginas públicas: texto cravado no
-template, favicon, `canonical` e `hreflang`. Dentro disso, formate à vontade.
+template, favicon, `canonical`, `hreflang` e as seções de depoimentos e perguntas (só as
+publicadas, no máximo 4 depoimentos, seção some quando vazia). Dentro disso, formate à vontade.
 
 **Se você mexeu no CSS da vitrine**, recompile antes de olhar (regra 10):
 ```bash
@@ -314,8 +333,9 @@ Sem essa separação, a décima tela tem dez paletas paralelas e ninguém sabe q
   - **Nível 1 — o rail escuro:** construído. Recolhido em 80px, expande para 280px **sobrepondo** o
     conteúdo (`AppRail.tsx`).
   - **Nível 2 — a coluna secundária clara:** **construído** (`SecondaryNav.tsx`, montado no
-    `Layout`). Aparece sozinha quando a seção declara `filhos` — hoje "Minha conta" tem 6, e
-    "JilsonAI Admin" já tem os dele declarados esperando a tela nascer.
+    `Layout`). Aparece sozinha quando a seção declara `filhos` — hoje "Minha conta" tem 6, **"Site"
+    tem 3** (Textos · Depoimentos · Perguntas frequentes), e "JilsonAI Admin" já tem os dele
+    declarados esperando a tela nascer.
   - **Nível 3 — as abas horizontais:** **NÃO construído.** A função `abasDaRota` existe e tem
     teste, mas **nenhum componente a renderiza ainda**. "Cursos Admin" já declara três abas
     (Publicados · Rascunhos · Arquivados) que hoje não aparecem em lugar nenhum.
@@ -327,9 +347,11 @@ Sem essa separação, a décima tela tem dez paletas paralelas e ninguém sabe q
   página ficou sem estilo — o typecheck e os testes passaram, porque nenhum dos dois olha CSS.
 - **Navegação é dado**, não código: cada tela declara seus níveis em `navigation.ts` e o cromo se
   monta sozinho. (Nota: UI bilingue usa textos num dicionário global na implementação).
-- **Texto vem do dicionário, e vai virar editável pelo painel.** O texto em `core/src/i18n/` é o
-  **valor de fábrica**; em breve o operador sobrescreve pelo `/admin` sem deploy. Por isso a
-  regra 9 não é preferência de organização — é o que faz o painel dele funcionar.
+- **Texto vem do dicionário e JÁ é editável pelo painel** *(desde 23/09)*. O texto em
+  `core/src/i18n/` é o **valor de fábrica**; o operador sobrescreve em `/admin/site/textos` sem
+  deploy. Por isso a regra 9 não é preferência de organização — é o que faz o painel dele
+  funcionar. **Depoimentos e perguntas frequentes não estão no dicionário:** moram no banco e são
+  editados nas telas deles.
 - **Fontes:** MuseoModerno (**só a marca**, classe `font-brand`), Outfit (apenas H1 e H2, classe `font-display`), Hanken Grotesk (corpo e títulos menores/H3), JetBrains Mono (etiquetas).
 - **O azul `#238FE8` é o acento ÚNICO.** No rail, é o único sinal de "onde estou" — por isso o
   hover ali é neutro.

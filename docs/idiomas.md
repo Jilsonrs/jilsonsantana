@@ -354,6 +354,13 @@ do `<main>`, confundindo o leitor de tela. Sugestão de acessibilidade que piora
 o que fica no repo é o dicionário revisado, não o rascunho da revisão. Precisou de novo? Roda o
 comando.
 
+**Depoimentos e perguntas frequentes NÃO passam por este arquivo** *(desde o Bloco C3, 23/09/2026)*.
+Eles saíram do dicionário e moram no **banco**, com linhas próprias em cada idioma — então o
+`revisao:ingles` não os enxerga, e o teste de frase idêntica (abaixo) também não. A revisão deles é
+**na tela do admin**: *Site → Depoimentos* ou *Perguntas frequentes*, aba **Inglês**. Pergunta nova
+em inglês escrita por agente segue o mesmo princípio do passo 3: chega com a lista de pontos de
+dúvida, e só é publicada depois que o operador olhar.
+
 ### A trava é teste, porque o typecheck não alcança
 
 O `en.ts` é tipado como `Dict`, então **chave faltando** quebra a compilação. Mas **chave presente

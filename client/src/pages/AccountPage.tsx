@@ -1,13 +1,14 @@
 import { useNavigate } from "react-router-dom";
 import { useSession, signOut } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import { PageContainer, PageHeader, SplitSection } from "@/components/layout/PageLayout";
 
 function Field({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between gap-4">
-      <span className="text-sm text-muted-foreground">{label}</span>
-      <span className="text-sm font-medium">{value}</span>
+    <div className="flex items-center justify-between gap-4 py-2">
+      <span className="text-sm font-medium text-muted-foreground">{label}</span>
+      <span className="text-sm font-semibold">{value}</span>
     </div>
   );
 }
@@ -23,27 +24,38 @@ export function AccountPage() {
   }
 
   return (
-    <div className="mx-auto max-w-md space-y-4 px-6 py-16">
-      {/* `CardTitle` renderiza uma `div`, não um cabeçalho — quem usa leitor de
-          tela não conseguia navegar por títulos aqui. Achado pelo E2E. */}
-      <h1 className="text-2xl font-semibold tracking-tight">Minha conta</h1>
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Seus dados</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <Field label="Nome" value={user?.name ?? "—"} />
-          <Field label="E-mail" value={user?.email ?? "—"} />
-          <Field label="Papel" value={user?.role ?? "—"} />
+    <PageContainer>
+      <PageHeader 
+        title="Minha conta" 
+        description="Gerencie suas informações de acesso."
+      />
+
+      <div className="space-y-12">
+        <SplitSection
+          title="Seus Dados"
+          description="Informações básicas da sua conta na plataforma."
+        >
+          <Card>
+            <CardContent className="space-y-2 pt-6">
+              <Field label="Nome" value={user?.name ?? "—"} />
+              <div className="h-px w-full bg-border/40" />
+              <Field label="E-mail" value={user?.email ?? "—"} />
+              <div className="h-px w-full bg-border/40" />
+              <Field label="Papel" value={user?.role ?? "—"} />
+            </CardContent>
+          </Card>
+        </SplitSection>
+
+        <div className="flex justify-end border-t border-border/40 pt-8">
           <Button
             variant="outline"
             onClick={handleSignOut}
-            className="mt-4 w-full"
+            className="w-full sm:w-auto text-destructive hover:bg-destructive/10 hover:text-destructive"
           >
-            Sair
+            Sair da plataforma
           </Button>
-        </CardContent>
-      </Card>
-    </div>
+        </div>
+      </div>
+    </PageContainer>
   );
 }

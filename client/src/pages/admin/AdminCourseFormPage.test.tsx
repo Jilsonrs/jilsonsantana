@@ -54,7 +54,7 @@ describe("AdminCourseFormPage", () => {
     fireEvent.change(screen.getByLabelText(/learnTags/), {
       target: { value: "Fórmulas\nPROCX" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Salvar curso" }));
+    fireEvent.click(screen.getByRole("button", { name: "Salvar dados do curso" }));
 
     await waitFor(() =>
       expect(createCourse).toHaveBeenCalledWith(
@@ -81,7 +81,7 @@ describe("AdminCourseFormPage", () => {
     );
 
     fireEvent.change(titleInput, { target: { value: "Título Editado" } });
-    fireEvent.click(screen.getByRole("button", { name: "Salvar curso" }));
+    fireEvent.click(screen.getByRole("button", { name: "Salvar dados do curso" }));
 
     await waitFor(() =>
       expect(updateCourse).toHaveBeenCalledWith(

@@ -208,7 +208,11 @@ describe("AdminSiteTextPage — uma aba por página", () => {
     await screen.findByText("Menu do topo");
     fireEvent.click(screen.getByRole("button", { name: "Home" }));
 
-    const titulos = [...document.querySelectorAll("summary")].map((s) => s.firstChild?.textContent?.trim());
+    // Cada seção é um título de nível 2; o primeiro é o bloco de busca e abas.
+    const titulos = screen
+      .getAllByRole("heading", { level: 2 })
+      .map((h) => h.textContent?.trim())
+      .filter((t) => t !== "Navegação e Busca");
     expect(titulos).toEqual(["Topo", "Chamada final", "Leitor de tela"]);
   });
 

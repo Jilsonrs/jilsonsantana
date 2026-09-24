@@ -32,12 +32,21 @@
 > **Pendência de véspera de lançamento:** os dois cursos `exemplo-*` do seed estão **PUBLISHED em
 > produção**. Invisíveis hoje; aparecem no dia em que a coming-soon for desligada.
 >
-> **🌍 ESCOLA BILÍNGUE (PT + EN) — decisão do operador em 14/09/2026, NADA construído ainda.** A escola
-> nasce em português e inglês, com o inglês ligado no lançamento mesmo sem curso em inglês
-> (spec: [`idiomas.md`](idiomas.md); travas: `CLAUDE.md` → *Idiomas*). O que isso acrescenta ao
-> plano: **Bloco I** na Fase 3 (idioma no conteúdo + dicionário de textos), **antes** do bloco
-> *Superfície pública*; um item de idiomas nesse bloco; preço em dólar e **decisão de imposto
-> internacional** na Fase 4; notas nas Fases 6, 6.5 e 7.
+> **🟢 NO AR EM PRODUÇÃO (23/09/2026, `main` = `b38b0f5`) — atrás do portão "Em breve":**
+> home pública `/` e `/en` em HTML de servidor, bilíngue, com depoimentos (**4 sorteados por
+> visita**) e perguntas frequentes vindos do banco · admin **Site** com 2º nível: **Textos** (uma
+> aba por página, texto editável sem deploy), **Depoimentos** e **Perguntas frequentes** · login com
+> **limite de tentativas por pessoa** (Better Auth 1.7.5 lendo o IP do `x-real-ip`; provado em
+> produção pelo operador em duas redes) · CI verde nos dois jobs (testes e E2E).
+> **O público segue vendo a coming-soon** (`COMING_SOON=true`).
+>
+> **🌍 ESCOLA BILÍNGUE (PT + EN) — decisão do operador em 14/09/2026, PARCIALMENTE construída.** A
+> escola nasce em português e inglês, com o inglês ligado no lançamento mesmo sem curso em inglês
+> (spec: [`idiomas.md`](idiomas.md); travas: `CLAUDE.md` → *Idiomas*). **Já existe:** a home nos
+> dois idiomas, o dicionário tipado em `core/src/i18n/` (inglês escrito e revisado em 22/09), o
+> enum `Language` no banco (nasceu com `SiteText`) e depoimentos/FAQ por idioma. **Falta (Bloco I):**
+> `Course.language` e `LearningPlan.language`, o filtro por idioma nas leituras de catálogo, e as
+> telas React no dicionário. Preço em dólar e **decisão de imposto internacional** na Fase 4.
 >
 > **Infra de banco (atualizado Set 2026 — MIGRADA DO SUPABASE PARA O NEON) — TRÊS ambientes, um por
 > papel, agora com DOIS deles no MESMO projeto:**
@@ -61,13 +70,13 @@
 > (janela do plano Free, curta) mais o `pg_dump` frio, que é o checkbox de backup da Fase 7 e segue
 > **em aberto**. Enquanto ele estiver aberto, a rede de segurança do banco é **só** a janela do Free.
 >
-> **Cobertura de teste — o que EXISTE hoje (medido em Set 2026, não estimado):** cliente **15
-> arquivos / 73 testes** (Vitest + RTL) ✅ no CI — a tela de **login** fechada pelos 8 critérios e
-> a **barra lateral** com 6 mutações provadas · servidor **3 arquivos / 19 testes**
-> (supertest, Postgres local) ✅ no CI — fumaça, login e leituras públicas · E2E **1 arquivo / 7
-> testes** ✅ **no CI, em job próprio, com trava de host local e prova por mutação** *(T1 fechado —
-> antes rodava contra o banco de produção, sem `globalSetup`)*. As três camadas rodam e podem
-> falhar.
+> **Cobertura de teste — o que EXISTE hoje (medido em 23/09/2026, não estimado):** cliente **20
+> arquivos / 143 testes** (Vitest + RTL) ✅ no CI · servidor **10 arquivos / 70 testes**
+> (supertest, Postgres local) ✅ no CI — fumaça, login, leituras públicas, home, texto do site,
+> depoimentos/FAQ (acesso 401/403 incluído), i18n e a trava do IP · E2E **1 arquivo / 7 testes** ✅
+> **no CI, em job próprio**. As três camadas rodam e podem falhar. *(O E2E ficou vermelho de 23/09
+> manhã até a correção do mesmo dia: o Playwright conferia o Vite na raiz, que virou home de
+> servidor — hoje confere em `/login`.)*
 > Não há teste de servidor
 > de **negócio** (a matriz de acesso e os casos de webhook são a Fase 4) e não há suíte nenhuma de
 > Bunny ou Stripe, porque esse código não existe. Plano de cobertura: **Fase 3 → Bloco T**.
@@ -75,15 +84,27 @@
 > **⚠️ GATILHO DISPARADO (registrado, não resolvido) — `CLAUDE.md` passou de ~85 KB.** A entrada
 > (11c) do próprio changelog escreveu: *"se o arquivo passar de ~85 KB com o critério em vigor, o
 > problema é ESCOPO, não redação."* Medido em Ago 2026: **já estava em 91,8 KB antes desta sessão**
-> e foi a **101,1 KB** depois (+9,3 KB de convenções de teste/XSS/segurança). O gatilho não pede
+> e foi a **101,1 KB** depois (+9,3 KB de convenções de teste/XSS/segurança). **Em 23/09/2026:
+> 124,9 KB.** O gatilho não pede
 > reescrita — pede **decisão do operador sobre escopo**: quais seções ainda passam no critério de
 > entrada (*"um agente prestes a escrever código produziria um diff ERRADO sem esta linha?"*).
 > **Não tratar como tarefa de redação**, que é exatamente o erro que o gatilho existe para evitar.
 >
-> **Próximo bloqueio:** rate-limit de login — único item que segura o `Done when` do Bloco 0
-> (Fase 3). Toca auth ⇒ dispara o gate obrigatório do context7. **Agora acompanhado**: o fix do
-> `secure` do cookie (P1-d do Bloco T) toca o MESMO arquivo e pode sair na mesma chamada de
-> context7 — o gate custa uma chamada, não duas.
+> **Rate-limit de login: RESOLVIDO em 23/09** (era o "próximo bloqueio" e o bloqueio do go-live).
+>
+> **Formatação do Antigravity publicada (23/09):** layout padrão (`PageLayout`) em 13 telas do app
+> e do admin, revisado antes do merge (duas frases falsas corrigidas, 4 testes atualizados para os
+> textos que o operador aprovou). A tela de Textos passou a se chamar **"Textos do Site"**.
+>
+> **Próximo passo — decidido pelo operador em 23/09: o C4, em 5 etapas, uma por vez.** A **etapa 1**
+> (campo de imagem aceitar `/img/curso.jpg`) tem plano aprovado. Detalhe no bloco C4. Continuam na
+> fila, sem ordem: o resto do **Bloco I** (agora menor — ver as decisões de 23/09 no bloco) · **C5**
+> (vitrine fora do React — **bloqueado** até o operador definir o conteúdo das telas) · **o corpo
+> da Fase 3** (Bunny, HIGH RISK) · os itens de **continuidade do operador** antes do go-live (2FA,
+> backup frio).
+> **Pendências do operador, abertas:** revisar as 15 perguntas da FAQ (agora no admin) · o conteúdo
+> do 2º nível das seções planejadas do menu · confirmar os slugs em inglês · mover `/inicio`,
+> `/conta`, `/minhas-trilhas` para `/aluno/*` · cadastrar os 5 cursos da home (C4).
 
 ---
 
@@ -1093,6 +1114,29 @@ landmark. Corrigido junto.
 
 ### Bloco I — Escola bilíngue: idioma no conteúdo + dicionário de textos  *(Set 2026 · decisão do operador · spec em `idiomas.md`)*
 
+> **ESTADO EM 23/09/2026 — parte adiantada por outros blocos, checkboxes abaixo seguem valendo:**
+> o enum `Language` **já existe** no banco (nasceu com `SiteText`, C2), e o dicionário **já serve os
+> templates do servidor** (`core/src/i18n/`, tipado, com o teste de chave vazia/idêntica). **Ainda
+> falta tudo o que é deste bloco de fato:** `Course.language` e `LearningPlan.language`, o filtro por
+> idioma nas leituras de catálogo/busca/trilha, a recusa de item de outro idioma, as telas React no
+> dicionário e o seletor para quem está logado. O seletor PT | EN da vitrine **já existe** (dois
+> links, um por endereço) — o "Passo 0" abaixo passa a ser só o do app logado.
+
+> **DECISÕES DO OPERADOR EM 23/09/2026 (mudam o tamanho deste bloco):**
+> - O **admin fica em português** — não ganha versão em inglês.
+> - Os textos do app do aluno **não** entram em *Admin → Site → Textos*: lá ficam só as páginas
+>   públicas. (Quando o React usar o dicionário, a tela de Textos filtra — ver C2, Passo 0.)
+> - **O seletor PT | EN da home basta por agora.** Traduzir o app do aluno (dicionário no React,
+>   seletor dentro do app, `User.preferredLanguage`) vira **bloco próprio, depois** — os itens
+>   *Dicionário*, *Migrar os textos* e *Seletor* abaixo, e os itens 3 e 4 do *Done when*, esperam
+>   esse bloco. O Passo 0 (posição do seletor) fica resolvido por isso.
+> - As páginas provisórias (`/cursos`, `/trilhas`, `/curso/…`, `/trilha/…`): **não mexer** — ele
+>   ainda vai pensar nelas; foco na home.
+> - `Course.language` entra pela **etapa 2 do C4**, que precisa dele. O resto da parte de dados
+>   (`LearningPlan.language`, filtro nas listas e na busca, recusa de item de outro idioma na
+>   trilha, clone herdando) continua neste bloco. O campo Idioma no formulário de **trilha** espera
+>   o Bloco 6b, porque esse formulário ainda não existe.
+
 > **SEQUENCIAMENTO:** fecha **antes** do bloco *Superfície pública indexável*. Se as páginas
 > públicas forem montadas antes, nascem só em português e são refeitas. Não depende do Bunny;
 > **a posição exata dentro da Fase 3 é decisão do operador.** Risco baixo–médio (uma migration +
@@ -1155,8 +1199,9 @@ landmark. Corrigido junto.
 > bilíngue do `core`. Foi feita antes do Bunny porque a home não usa `introVideoId` — a
 > dependência que justificava a ordem é da **página de curso**, que continua depois do Bunny.
 > **O que ficou pendente dentro deste bloco:** os 5 cursos da home vêm de uma constante em
-> `server/src/routes/home.ts` (falta a migration de `language` e o cadastro), o `en.ts` está com
-> as chaves vazias, e `robots.txt`/`sitemap.xml`/`noindex` continuam por fazer.
+> `server/src/routes/home.ts` (falta a migration de `language` e o cadastro) e
+> `robots.txt`/`sitemap.xml`/`noindex` continuam por fazer. *(O `en.ts` foi escrito e revisado em
+> 22/09; depoimentos e FAQ saíram do dicionário para o banco no C3.)*
 > **Desdobrado em 22/09/2026** nos quatro blocos de conteúdo logo abaixo (fiação → admin de texto
 > → depoimentos e FAQ → cursos do banco), na ordem decidida pelo operador.
 
@@ -1269,7 +1314,7 @@ landmark. Corrigido junto.
   curso espera o **Bunny** (o `introVideoId` toca para não-membro nela) — é a dependência que já
   justificava a ordem original.
 
-#### Bloco C3 — Depoimentos e FAQ viram tabela
+#### Bloco C3 — Depoimentos e FAQ viram tabela ✅ DONE *(23/09/2026, no ar em produção)*
 
 > São as duas únicas listas da home que **crescem**. O resto tem tamanho fixo preso ao layout.
 > Depoimento tem obrigação própria já escrita (`content.md`: *sai na hora se a pessoa pedir*) —
@@ -1332,25 +1377,46 @@ landmark. Corrigido junto.
       termo, as abas somem e vêm resultados de todas as páginas, com o nome completo). **4 testes
       novos** + 2 ajustados. **Mutação:** sem "Leitor de tela por último" e busca presa à aba →
       2 reprovam. Revertido.
-- **Done when:** o operador publica um depoimento novo e remove outro pelo admin, sem deploy.
+- **Done when:** ✅ o operador publica um depoimento novo e remove outro pelo admin, sem deploy.
+  *Provado pelo operador no dev em 23/09 (publicou um depoimento pelo admin e ele apareceu na home —
+  "Funcionou") e pelos testes de servidor, que publicam, arquivam e excluem terminando na home.*
 
 #### Bloco C4 — Os 5 cursos da home vêm do banco
 
-- [ ] Depende da migration de `language` (Bloco I) e do cadastro dos 5 cursos.
-- [ ] **Bloqueio conhecido, resolver antes:** `thumbnailUrl` usa `z.string().url()`, que **recusa**
-      caminho relativo (`/img/curso.jpg`) — as imagens atuais não salvam pelo admin. Trocar pela
-      checagem explícita de esquema que o `CLAUDE.md` já exige (`core/` → a regra do `.url()`).
-- [ ] Destaque e cards derivados de `displayOrder` (decisão do operador pendente — ver o bloco
-      original acima).
-- [ ] **Ordem por ARRASTAR** *(operador, 23/09)*: nos cursos, e **o mesmo componente** passa a
-      ordenar as perguntas frequentes (hoje, número de Ordem). A biblioteca de arrastar é
-      **dependência nova** — nomeá-la no plano deste bloco, com o ok do operador.
-- [ ] **Etiqueta do curso** *(decidida em 22/09 — spec em `courses.md` → "Etiqueta do curso")*:
-      enum `CourseBadge { NOVO DESTAQUE MAIS_VENDIDO }` + `Course.badge?` + a data que faz `NOVO`
-      **expirar em 120 dias** · campo de seleção no formulário de curso · rótulos em
+> **EM 5 ETAPAS, uma por vez** *(operador, 23/09/2026: "divida em etapas, discutimos cada etapa e
+> implementamos 1 a 1")*. Cada etapa é discutida antes, aprovada por ele, e vira **um commit**.
+> A etapa 1 vem primeiro porque é pequena e destrava o cadastro: com ela pronta, o operador já
+> cadastra os cursos, e a etapa 2 marca como PT tudo o que existir.
+
+- [ ] **Etapa 1 — campo de imagem aceita `/img/curso.jpg`** *(plano aprovado em 23/09)*.
+      `thumbnailUrl` usa `z.string().url()`, que **recusa** caminho relativo (as imagens atuais não
+      salvam pelo admin) e **aceita** `javascript:`. Trocar pela checagem explícita de esquema que
+      o `CLAUDE.md` já exige (`core/` → a regra do `.url()`): aceita `https?://…` ou caminho do
+      próprio site começando com `/`; recusa `javascript:`, `data:` e `//outro-site`. Teste de
+      servidor + de componente + mutação.
+- [ ] **Etapa 2 — idioma no curso** (a parte de dados do Bloco I que o C4 exige):
+      `Course.language` obrigatório + campo **Idioma** no formulário de curso + etiqueta "EN" na
+      lista do admin; os cursos que já existem viram PT. *A confirmar na discussão da etapa:* o
+      idioma fica travado depois de criado (como o slug). **Antes desta etapa:** dividir o
+      `AdminCourseFormPage.tsx`, que passou de ~280 para ~370 linhas na formatação de 23/09 (teto
+      ~200) — é nele que o campo entra.
+- [ ] *(operador)* **Cadastrar os 5 cursos da home** no admin.
+- [ ] **Etapa 3 — a home lê os cursos do banco** (`server/src/routes/home.ts`, que hoje usa uma
+      constante): `PUBLISHED` + idioma da página + `displayOrder`. O botão de assinar das páginas
+      em inglês passa a ser **derivado do banco** (≥ 1 aula publicada em inglês, pela cadeia
+      inteira — `CLAUDE.md` → *Idiomas*). *A decidir na etapa:* **qual curso é o destaque** (o
+      primeiro da ordem, ou o que tiver a etiqueta Destaque — nesse caso a etapa 4 vem antes) e o
+      que fazer com os 2 cursos `exemplo-*`, que estão **publicados em produção** e apareceriam na
+      home.
+- [ ] **Etapa 4 — etiqueta do curso** *(decidida em 22/09 — spec em `courses.md` → "Etiqueta do
+      curso")*: enum `CourseBadge { NOVO DESTAQUE MAIS_VENDIDO }` + `Course.badge?` + a data que
+      faz `NOVO` **expirar em 120 dias** · campo de seleção no formulário de curso · rótulos em
       `common.badges.*` no dicionário (editáveis no `/admin/site`) · a home usa a etiqueta do curso
       no lugar do texto fixo "CURSO EM DESTAQUE". **Trava:** é campo SEPARADO do `status` — pôr
       "NOVO" naquele enum sumiria com o curso do site inteiro, sem erro.
+- [ ] **Etapa 5 — ordem por ARRASTAR** *(operador, 23/09)*: nos cursos, e **o mesmo componente**
+      passa a ordenar as perguntas frequentes (hoje, número de Ordem). A biblioteca de arrastar é
+      **dependência nova** — nomeá-la no plano da etapa, com o ok do operador.
 - **Done when:** o operador troca o curso em destaque pelo admin e a home muda.
 
 > **SEQUENCIAMENTO DECIDIDO: este bloco vem DEPOIS do Bunny.** O `introVideoId` é ativo do Bunny
