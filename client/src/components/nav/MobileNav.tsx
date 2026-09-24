@@ -41,10 +41,16 @@ export function MobileNav({ papel, onSignOut }: { papel?: string; onSignOut: () 
           <SheetTitle className="sr-only">Menu</SheetTitle>
           <SheetDescription className="sr-only">Navegação principal do site.</SheetDescription>
 
-          <div className="flex h-14 items-center gap-1 px-5 font-semibold tracking-tight text-white">
+          {/* A marca leva à HOME PÚBLICA, como no rail (AppRail) — e pelo mesmo
+              motivo é `<a>` e não `<Link>`: a home é HTML de servidor, e o Link
+              do React Router nunca sairia do app. */}
+          <a
+            href="/"
+            className="flex h-14 items-center gap-1 px-5 font-semibold tracking-tight text-white"
+          >
             <span className="text-primary text-lg">#</span>
             <span>Jilson Santana</span>
-          </div>
+          </a>
 
           <nav aria-label="Principal" className="flex flex-col py-2">
             {secoes.map((secao) => {
