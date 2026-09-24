@@ -26,37 +26,65 @@ export function AppFooter() {
   const textos = data ?? pt.common;
 
   return (
-    <footer className="border-t border-border px-4 py-6 sm:px-6 md:px-[50px]">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <p className="font-semibold tracking-tight">
-          <span className="text-primary">#</span>Jilson Santana
-        </p>
-        <ul className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
-          {ITENS_DO_RODAPE.map((item) => (
-            <li key={item.href}>
-              {item.tipo === "youtube" ? (
-                <a
-                  href={item.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="YouTube"
-                  className="block rounded-sm text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  <Youtube className="size-5" aria-hidden="true" />
-                </a>
-              ) : (
-                <a
-                  href={item.href}
-                  className="rounded-sm text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  {item.texto(textos)}
-                </a>
-              )}
+    <footer className="mt-auto pb-10">
+      <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-6 md:pr-[50px]">
+        
+        {/* Barra estilo "Menu da Home" (footer-top) */}
+        <div className="flex flex-col gap-4 bg-gradient-to-r from-background/95 to-surface-vitrine/95 px-4 py-4 backdrop-blur-xl md:h-[55px] md:flex-row md:items-center md:justify-between md:rounded-r-[24px] md:py-0 md:pl-[50px] md:pr-6">
+          <p className="font-brand text-2xl font-bold tracking-tighter">
+            <span className="text-primary">#</span>Jilson Santana
+          </p>
+          <ul className="flex flex-wrap items-center gap-x-8 gap-y-2 text-[15px] font-medium text-foreground">
+            {ITENS_DO_RODAPE.map((item) => (
+              <li key={item.href}>
+                {item.tipo === "youtube" ? (
+                  <a
+                    href={item.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="YouTube"
+                    className="block rounded-sm transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <Youtube className="size-5" aria-hidden="true" />
+                  </a>
+                ) : (
+                  <a
+                    href={item.href}
+                    className="rounded-sm transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    {item.texto(textos)}
+                  </a>
+                )}
+              </li>
+            ))}
+            <li className="text-border" aria-hidden="true">|</li>
+            {/* Seletor PT | EN (decisão do operador, 24/09/2026). PROVISÓRIO: hoje
+                leva à home pública em cada idioma. O bloco "app do aluno em
+                inglês" (antes do C4) o faz trocar o idioma do PRÓPRIO app.
+                `aria-current="true"` e não "page": marca o idioma atual do app
+                (hoje sempre PT); "page" anunciaria o link como a página aberta. */}
+            <li className="flex items-center gap-4">
+              <a
+                href="/"
+                aria-current="true"
+                className="border-b-2 border-primary pb-[2px] transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                PT
+              </a>
+              <a
+                href="/en"
+                className="border-b-2 border-transparent pb-[2px] transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                EN
+              </a>
             </li>
-          ))}
-        </ul>
+          </ul>
+        </div>
+        <div className="flex flex-col gap-2 px-4 text-[0.85rem] text-muted-foreground md:flex-row md:items-center md:justify-between md:gap-4 md:pl-[50px] md:pr-0">
+          <p>{textos.footer.tagline}</p>
+          <p>{textos.footer.copyright}</p>
+        </div>
       </div>
-      <p className="mt-4 text-xs text-muted-foreground">{textos.footer.copyright}</p>
     </footer>
   );
 }

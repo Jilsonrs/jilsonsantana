@@ -89,3 +89,19 @@ describe("AppFooter — para onde cada link leva", () => {
     expect(youtube.getAttribute("rel")).toContain("noreferrer");
   });
 });
+
+// PROVISÓRIO até o bloco "app do aluno em inglês": o seletor leva à home
+// pública em cada idioma, e o app só existe em português.
+describe("AppFooter — seletor de idioma", () => {
+  beforeEach(() => {
+    vi.mocked(api.getCommonTexts).mockResolvedValue(pt.common);
+  });
+
+  it("marca o português como idioma atual e oferece o inglês", () => {
+    renderWithProviders(<AppFooter />);
+
+    expect(link("PT").getAttribute("aria-current")).toBe("true");
+    expect(link("EN").getAttribute("aria-current")).toBeNull();
+    expect(link("EN").getAttribute("href")).toBe("/en");
+  });
+});

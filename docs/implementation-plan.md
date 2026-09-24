@@ -98,8 +98,10 @@
 > **Ajustes finos em 24/09:** as seções passaram a ser **empilhadas** (`PageSection`: título em
 > cima, conteúdo embaixo, no lugar do painel dividido). **É a base de toda tela nova do app** —
 > regra no `CLAUDE.md` → Client, em `design.md` §6 e em `.agents/rules/page_layout.md`.
-> **Rodapé do app (24/09, no `dev`, esperando o acabamento do Antigravity):** toda tela depois do
-> login ganhou rodapé, com os mesmos textos editáveis do rodapé da home. Ver Bloco S.
+> **Rodapé do app (24/09, publicado):** toda tela depois do login ganhou rodapé, com os mesmos
+> textos editáveis do rodapé da home, e o seletor PT | EN (provisório). Ver Bloco S.
+> **Próximo, decidido pelo operador em 24/09: o bloco "app do aluno em inglês", ANTES do C4.** Ver
+> Bloco I → decisões.
 >
 > **Próximo passo — decidido pelo operador em 23/09: o C4, em 5 etapas, uma por vez.** A **etapa 1**
 > (campo de imagem aceitar `/img/curso.jpg`) tem plano aprovado. Detalhe no bloco C4. Continuam na
@@ -1034,7 +1036,10 @@ sistema administrativo inteiro ainda está por construir (Bloco 6b, Fase 4, Fase
       rodapé na hora. **Links sem página entram assim mesmo** (Quem somos, Contato, Termos,
       Privacidade dão tela vazia até existirem) — decisão dele. Estrutura em
       `components/layout/AppFooter.tsx` + `lib/footer.ts` (dado); acabamento com o Antigravity.
-      Testes: 5 de servidor, 6 do rodapé, 3 no shell, 1 na tela de Textos. **Mutação:** rota
+      **Acabamento do Antigravity (24/09), aprovado pelo operador:** barra no tom do menu da home
+      (token `--surface-vitrine`), a frase `common.footer.tagline` e o **seletor PT | EN** —
+      provisório, leva à home pública até o bloco "app do aluno em inglês" (ver Bloco I).
+      Testes: 5 de servidor, 7 do rodapé, 3 no shell, 1 na tela de Textos. **Mutação:** rota
       ignorando as edições, rodapé ignorando o servidor, rodapé fora do shell e salvar sem avisar o
       rodapé → reprovam. Revertido.
 - **Done when:** uma tela nova entra no sistema **declarando** seus níveis no mapa, sem escrever
@@ -1149,6 +1154,12 @@ landmark. Corrigido junto.
 >   seletor dentro do app, `User.preferredLanguage`) vira **bloco próprio, depois** — os itens
 >   *Dicionário*, *Migrar os textos* e *Seletor* abaixo, e os itens 3 e 4 do *Done when*, esperam
 >   esse bloco. O Passo 0 (posição do seletor) fica resolvido por isso.
+>   **ATUALIZADO em 24/09 (operador):** *"toda [tela] depois do login vai precisar ficar em inglês
+>   também, por causa dos alunos internacionais"* — o seletor vai trocar o sistema todo, catálogo
+>   incluído. O bloco **"app do aluno em inglês" vem ANTES do C4**. O seletor já existe, no
+>   **rodapé do app** (desenho do Antigravity), hoje provisório: leva à home pública PT/EN até o
+>   bloco fazê-lo trocar o idioma do próprio app. **O Admin continua em português** (os alunos
+>   internacionais não o usam).
 > - As páginas provisórias (`/cursos`, `/trilhas`, `/curso/…`, `/trilha/…`): **não mexer** — ele
 >   ainda vai pensar nelas; foco na home.
 > - `Course.language` entra pela **etapa 2 do C4**, que precisa dele. O resto da parte de dados

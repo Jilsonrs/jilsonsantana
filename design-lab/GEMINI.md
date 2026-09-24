@@ -184,10 +184,9 @@ exceto o item 4, que é página pública.
    visita. O desenho precisa ficar bom com qualquer quantidade nesse intervalo. Deslizar com o dedo
    no celular (CSS `scroll-snap`, sem JavaScript) é opção sua, com o ok do operador. Mexeu no CSS?
    `npm run css:publico` (regra 10).
-5. **Rodapé do app** (`client/src/components/layout/AppFooter.tsx`) — novo em 24/09, em toda
-   tela depois do login (aluno e admin). Hoje é estrutura crua: marca, links, ícone do YouTube e
-   ©. Os textos vêm do dicionário (os mesmos do rodapé da home), então **não escreva texto no
-   componente**. Os itens e destinos moram em `lib/footer.ts`, que você não mexe.
+5. ~~**Rodapé do app**~~ — **feito em 24/09 e publicado.** Na revisão, a cor `#F5F5F7` escrita
+   no componente virou o token `--surface-vitrine` (regra 2), mesma cor. O seletor PT | EN que
+   você desenhou fica; o Claude o liga ao idioma do app no bloco "app do aluno em inglês".
 
 ## 3. Onde você NÃO mexe
 

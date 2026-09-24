@@ -122,6 +122,7 @@ marcador de item. Com parcimônia.
   /* Superfícies claras — o produto */
   --background:        #FFFFFF;   /* fundo do conteúdo */
   --surface-alt:       #F8FAFC;   /* quebra de seção / coluna secundária */
+  --surface-vitrine:   #F5F5F7;   /* o surface-alt da VITRINE; no app, só a barra do rodapé (24/09) */
   --card:              #FFFFFF;
 
   /* Texto */
@@ -347,6 +348,8 @@ não código espalhado: uma tela nova declara seus níveis e o cromo se monta so
   toda tela depois do login, **do aluno e do admin**. Marca + © · FAQ · Quem somos · Contato ·
   YouTube · Termos · Privacidade. Fica de fora o que o menu lateral já leva (Cursos, Trilhas,
   Assine). **Os textos são os mesmos do rodapé da home** e se editam juntos em *Admin → Textos*.
+  Também leva a frase da marca e o **seletor PT | EN** (24/09): provisório até o app do aluno ter
+  inglês, quando passa a trocar o idioma do próprio app.
   **Links para páginas que ainda não existem entram assim mesmo**, por decisão dele — não é
   descuido, e não se "conserta" com a regra 12 do `GEMINI.md` (que vale para o menu).
 
