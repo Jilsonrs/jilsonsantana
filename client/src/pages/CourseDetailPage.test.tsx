@@ -104,7 +104,7 @@ describe("CourseDetailPage — idioma e textos", () => {
     expect(screen.getByRole("heading", { name: "Course content" })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "What you'll learn" })).toBeTruthy();
     expect(screen.getByText("Intermediate")).toBeTruthy();
-    expect(screen.getByText("1 modules · 2 lessons")).toBeTruthy();
+    expect(screen.getByText("1 module · 2 lessons")).toBeTruthy();
     expect(screen.getByText("Solid foundations")).toBeTruthy();
     // Conteúdo não é traduzido: o módulo e a tag saem como foram escritos.
     expect(screen.getByText("Base Lógica Inquebrável")).toBeTruthy();

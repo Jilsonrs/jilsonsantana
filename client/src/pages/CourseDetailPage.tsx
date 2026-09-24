@@ -7,6 +7,7 @@ import { LayerSelo } from "@/components/content/LayerSelo";
 import { HighlightCard } from "@/components/content/HighlightCard";
 import { PageContainer } from "@/components/layout/PageLayout";
 import { useT } from "@/lib/language";
+import { contagem } from "@/lib/contagem";
 
 // O TEXTO DA TELA segue o idioma do app; o CONTEÚDO do curso (título, descrição,
 // aulas, FAQ) sai como o operador escreveu, no idioma do próprio curso. O link
@@ -44,7 +45,8 @@ export function CourseDetailPage() {
           <h1 className="text-4xl font-bold tracking-tight text-foreground">{course.title}</h1>
           {course.subtitle && <p className="text-xl text-muted-foreground max-w-[80ch]">{course.subtitle}</p>}
           <p className="text-sm font-medium text-muted-foreground pt-2">
-            {course.moduleCount} {t.curso.modulos} · {course.lessonCount} {t.curso.aulas}
+            {contagem(course.moduleCount, t.curso.modulo, t.curso.modulos)} ·{" "}
+              {contagem(course.lessonCount, t.curso.aula, t.curso.aulas)}
           </p>
         </header>
 

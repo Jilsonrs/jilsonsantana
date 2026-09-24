@@ -221,7 +221,15 @@ describe("CatalogPage — cartão do curso", () => {
     emIngles("cursos");
 
     expect(await screen.findByText("Intermediate")).toBeTruthy();
-    expect(screen.getByText("1 modules · 2 lessons")).toBeTruthy();
+    expect(screen.getByText("1 module · 2 lessons")).toBeTruthy();
+  });
+
+  // Revisão do inglês (24/09): singular só no 1, nos dois idiomas; zero é plural.
+  it("1 módulo e 1 aula no singular", async () => {
+    getCourses.mockResolvedValue([{ ...course, moduleCount: 1, lessonCount: 1 }]);
+    renderWithProviders(<CatalogPage tipo="cursos" />);
+
+    expect(await screen.findByText("1 módulo · 1 aula")).toBeTruthy();
   });
 
   it("curso publicado com 0 aulas aparece com 0 aulas, sem quebrar", async () => {

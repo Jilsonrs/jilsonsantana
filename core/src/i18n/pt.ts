@@ -322,8 +322,11 @@ export const pt = {
       INTERMEDIARIO: "Intermediário",
       AVANCADO: "Avançado"
     },
+    // Singular e plural (revisão de 24/09): "1 módulo", "2 módulos"; zero é plural.
     curso: {
+      modulo: "módulo",
       modulos: "módulos",
+      aula: "aula",
       aulas: "aulas",
       naoEncontrado: "Curso não encontrado.",
       conteudo: "Conteúdo do curso",

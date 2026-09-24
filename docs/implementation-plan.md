@@ -1261,8 +1261,15 @@ landmark. Corrigido junto.
 >         frase → 3 reprovaram; aviso removido → 6 reprovaram. Revertido.
 > - [ ] **Etapa 5 — revisão do inglês** pelo operador com o Antigravity, e publicação.
 >       *24/09:* arquivo gerado (`design-lab/revisao-ingles.md`, só o texto novo: 98 frases de
->       `app.*` e `common.camadas`) com 11 pontos de dúvida no topo. **Aguardando a revisão do
->       operador com o Antigravity**; depois, aplicar e reportar o que não foi aplicado (passo 5).
+>       `app.*` e `common.camadas`) com 11 pontos de dúvida no topo.
+>       **Revisão do Antigravity aplicada (24/09):** contagem com singular nos dois idiomas
+>       ("1 módulo · 1 aula", "1 module · 2 lessons"; zero segue plural) · "Prerequisites" ·
+>       "Your basic account information." · "Lessons in progress show up here once…" · camadas
+>       UNIVERSAL ("— apply it with…") e IA ("fix errors, and save time"). **Aplicada em parte:**
+>       MODERNO — tirei a vírgula, mas mantive o segundo "that" ("…speed up your work and that few
+>       people master"): sem ele a frase lê "your work and few people" como um bloco antes de
+>       chegar ao verbo. Os outros 9 pontos de dúvida: manter. **Falta só publicar** (o `publica`
+>       do operador).
 
 > **SEQUENCIAMENTO:** fecha **antes** do bloco *Superfície pública indexável*. Se as páginas
 > públicas forem montadas antes, nascem só em português e são refeitas. Não depende do Bunny;

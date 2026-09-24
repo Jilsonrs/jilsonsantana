@@ -4,6 +4,7 @@ import type { Level, Layer } from "@jilson/core";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useT } from "@/lib/language";
+import { contagem } from "@/lib/contagem";
 
 // Only the fields actually rendered — shared by the full catalog card (which
 // has moduleCount/lessonCount) and search results (which don't), so callers
@@ -44,7 +45,8 @@ export function CourseCard(course: CourseCardProps) {
           {course.level && <Badge variant="secondary">{t.niveis[course.level]}</Badge>}
           {course.moduleCount !== undefined && course.lessonCount !== undefined && (
             <span className="text-xs text-muted-foreground">
-              {course.moduleCount} {t.curso.modulos} · {course.lessonCount} {t.curso.aulas}
+              {contagem(course.moduleCount, t.curso.modulo, t.curso.modulos)} ·{" "}
+              {contagem(course.lessonCount, t.curso.aula, t.curso.aulas)}
             </span>
           )}
         </CardContent>

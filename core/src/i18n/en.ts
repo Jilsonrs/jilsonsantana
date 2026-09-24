@@ -33,15 +33,15 @@ export const en: Dict = {
     camadas: {
       UNIVERSAL: {
         nome: "Solid foundations",
-        texto: "The groundwork that works in any version — you apply it with what you already have."
+        texto: "The groundwork that works in any version — apply it with what you already have."
       },
       MODERNO: {
         nome: "Modern features",
-        texto: "The newest features that speed up your work, and that few people master."
+        texto: "The newest features that speed up your work and that few people master."
       },
       IA: {
         nome: "AI on your side",
-        texto: "AI as a copilot to generate logic, get past errors and save time."
+        texto: "AI as a copilot to generate logic, fix errors, and save time."
       }
     }
   },
@@ -261,7 +261,7 @@ export const en: Dict = {
       ola: "Hi",
       intro: "This is your starting point. Whatever you start studying shows up here, so you can pick up where you left off.",
       continueTitulo: "Keep learning",
-      continueVazio: "Your lessons in progress show up here as soon as you start a course. Pick one from the catalog, and your progress will be waiting for you here.",
+      continueVazio: "Lessons in progress show up here once you start a course. Pick one from the catalog, and your progress will be waiting for you here.",
       verCatalogo: "Browse the catalog",
       porOndeComecar: "Where to start",
       portaCatalogo: "Catalog",
@@ -273,7 +273,7 @@ export const en: Dict = {
       titulo: "My account",
       descricao: "Manage your sign-in details.",
       seusDados: "Your details",
-      seusDadosDescricao: "The basic information of your account.",
+      seusDadosDescricao: "Your basic account information.",
       nome: "Name",
       email: "Email",
       papel: "Role",
@@ -311,13 +311,15 @@ export const en: Dict = {
       AVANCADO: "Advanced"
     },
     curso: {
+      modulo: "module",
       modulos: "modules",
+      aula: "lesson",
       aulas: "lessons",
       naoEncontrado: "Course not found.",
       conteudo: "Course content",
       faq: "Frequently asked questions",
       aprender: "What you'll learn",
-      requisitos: "Requirements",
+      requisitos: "Prerequisites",
       paraQuem: "Who this course is for"
     },
     trilha: {
