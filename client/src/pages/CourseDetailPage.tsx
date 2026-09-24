@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { LayerSelo } from "@/components/content/LayerSelo";
 import { HighlightCard } from "@/components/content/HighlightCard";
+import { PageContainer } from "@/components/layout/PageLayout";
 
 export function CourseDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -14,100 +15,126 @@ export function CourseDetailPage() {
     enabled: !!slug,
   });
 
-  if (isLoading) return <p className="mx-auto max-w-3xl px-6 py-16 text-muted-foreground">Carregando…</p>;
+  if (isLoading) {
+    return (
+      <PageContainer>
+        <p className="text-muted-foreground mt-8">Carregando…</p>
+      </PageContainer>
+    );
+  }
+
   if (isError || !course) {
-    return <p className="mx-auto max-w-3xl px-6 py-16 text-muted-foreground">Curso não encontrado.</p>;
+    return (
+      <PageContainer>
+        <p className="mt-8 text-sm text-destructive">Curso não encontrado.</p>
+      </PageContainer>
+    );
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-12 px-6 py-16">
-      <header className="space-y-3">
-        {course.level && <Badge variant="secondary">{course.level}</Badge>}
-        <h1 className="text-3xl font-semibold tracking-tight">{course.title}</h1>
-        {course.subtitle && <p className="text-lg text-muted-foreground">{course.subtitle}</p>}
-        <p className="text-sm text-muted-foreground">
-          {course.moduleCount} módulos · {course.lessonCount} aulas
-        </p>
-      </header>
+    <PageContainer>
+      <div className="space-y-12">
+        <header className="space-y-4 border-b border-border/40 pb-8">
+          {course.level && <Badge variant="secondary" className="px-3 py-1">{course.level}</Badge>}
+          <h1 className="text-4xl font-bold tracking-tight text-foreground">{course.title}</h1>
+          {course.subtitle && <p className="text-xl text-muted-foreground max-w-[80ch]">{course.subtitle}</p>}
+          <p className="text-sm font-medium text-muted-foreground pt-2">
+            {course.moduleCount} módulos · {course.lessonCount} aulas
+          </p>
+        </header>
 
-      <LayerSelo camadas={course.camadas} />
+        <div className="grid gap-12 md:grid-cols-[1fr_300px]">
+          <div className="space-y-12">
+            <LayerSelo camadas={course.camadas} />
 
-      {course.highlights && course.highlights.length > 0 && (
-        <div className="grid gap-4 sm:grid-cols-3">
-          {course.highlights.map((h, i) => (
-            <HighlightCard key={i} {...h} />
-          ))}
-        </div>
-      )}
+            {course.highlights && course.highlights.length > 0 && (
+              <div className="grid gap-6 sm:grid-cols-3">
+                {course.highlights.map((h, i) => (
+                  <HighlightCard key={i} {...h} />
+                ))}
+              </div>
+            )}
 
-      {course.learnTags.length > 0 && (
-        <section>
-          <h2 className="text-lg font-medium">O que você vai aprender</h2>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {course.learnTags.map((tag) => (
-              <Badge key={tag} variant="secondary">
-                {tag}
-              </Badge>
-            ))}
+            <section>
+              <h2 className="text-2xl font-semibold">Conteúdo do curso</h2>
+              <Accordion type="multiple" className="mt-6">
+                {course.modules.map((mod) => (
+                  <AccordionItem key={mod.id} value={String(mod.id)}>
+                    <AccordionTrigger className="text-lg font-medium">{mod.title}</AccordionTrigger>
+                    <AccordionContent>
+                      <ul className="space-y-3 pt-2">
+                        {mod.lessons.map((lesson) => (
+                          <li key={lesson.id} className="text-base text-muted-foreground flex items-center gap-2">
+                            <span className="h-1.5 w-1.5 rounded-full bg-primary/40"></span>
+                            {lesson.title}
+                          </li>
+                        ))}
+                      </ul>
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+            </section>
+
+            {course.faq && course.faq.length > 0 && (
+              <section>
+                <h2 className="text-2xl font-semibold">Perguntas frequentes</h2>
+                <Accordion type="multiple" className="mt-6">
+                  {course.faq.map((item, i) => (
+                    <AccordionItem key={i} value={String(i)}>
+                      <AccordionTrigger className="text-lg font-medium text-left">{item.pergunta}</AccordionTrigger>
+                      <AccordionContent className="text-base text-muted-foreground leading-relaxed">{item.resposta}</AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+              </section>
+            )}
           </div>
-        </section>
-      )}
 
-      {course.requirements.length > 0 && (
-        <section>
-          <h2 className="text-lg font-medium">Pré-requisitos</h2>
-          <ul className="mt-3 list-inside list-disc text-sm text-muted-foreground">
-            {course.requirements.map((req) => (
-              <li key={req}>{req}</li>
-            ))}
-          </ul>
-        </section>
-      )}
+          <aside className="space-y-10">
+            {course.learnTags.length > 0 && (
+              <section className="rounded-2xl border border-border/40 bg-card p-6 shadow-sm">
+                <h2 className="text-lg font-semibold">O que você vai aprender</h2>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {course.learnTags.map((tag) => (
+                    <Badge key={tag} variant="secondary">
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
+              </section>
+            )}
 
-      {course.personas.length > 0 && (
-        <section>
-          <h2 className="text-lg font-medium">Pra quem é</h2>
-          <ul className="mt-3 list-inside list-disc text-sm text-muted-foreground">
-            {course.personas.map((p) => (
-              <li key={p}>{p}</li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      <section>
-        <h2 className="text-lg font-medium">Conteúdo do curso</h2>
-        <Accordion type="multiple" className="mt-3">
-          {course.modules.map((mod) => (
-            <AccordionItem key={mod.id} value={String(mod.id)}>
-              <AccordionTrigger>{mod.title}</AccordionTrigger>
-              <AccordionContent>
-                <ul className="space-y-2">
-                  {mod.lessons.map((lesson) => (
-                    <li key={lesson.id} className="text-sm text-muted-foreground">
-                      {lesson.title}
+            {course.requirements.length > 0 && (
+              <section className="rounded-2xl border border-border/40 bg-card p-6 shadow-sm">
+                <h2 className="text-lg font-semibold">Pré-requisitos</h2>
+                <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
+                  {course.requirements.map((req) => (
+                    <li key={req} className="flex items-start gap-2">
+                      <span className="text-primary mt-0.5">•</span>
+                      <span>{req}</span>
                     </li>
                   ))}
                 </ul>
-              </AccordionContent>
-            </AccordionItem>
-          ))}
-        </Accordion>
-      </section>
+              </section>
+            )}
 
-      {course.faq && course.faq.length > 0 && (
-        <section>
-          <h2 className="text-lg font-medium">Perguntas frequentes</h2>
-          <Accordion type="multiple" className="mt-3">
-            {course.faq.map((item, i) => (
-              <AccordionItem key={i} value={String(i)}>
-                <AccordionTrigger>{item.pergunta}</AccordionTrigger>
-                <AccordionContent className="text-muted-foreground">{item.resposta}</AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
-        </section>
-      )}
-    </div>
+            {course.personas.length > 0 && (
+              <section className="rounded-2xl border border-border/40 bg-card p-6 shadow-sm">
+                <h2 className="text-lg font-semibold">Pra quem é</h2>
+                <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
+                  {course.personas.map((p) => (
+                    <li key={p} className="flex items-start gap-2">
+                      <span className="text-primary mt-0.5">•</span>
+                      <span>{p}</span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+          </aside>
+        </div>
+      </div>
+    </PageContainer>
   );
 }

@@ -5,6 +5,7 @@ import * as api from "@/lib/api";
 import { SearchBar } from "@/components/content/SearchBar";
 import { TrilhaCard } from "@/components/content/TrilhaCard";
 import { CourseCard } from "@/components/content/CourseCard";
+import { PageContainer, PageHeader } from "@/components/layout/PageLayout";
 
 // Catálogo, navegável por qualquer pessoa ("onboarding aberto e livre" —
 // CLAUDE.md). São DUAS telas, `/cursos` e `/trilhas` (operador, set/2026:
@@ -59,9 +60,10 @@ export function CatalogPage({ tipo }: { tipo: Tipo }) {
       : resultados.trilhas.length === 0);
 
   return (
-    <div className="mx-auto max-w-5xl px-6 py-16">
-      <h1 className="text-3xl font-semibold tracking-tight">{titulo}</h1>
-      <div className="mt-6 max-w-md">
+    <PageContainer>
+      <PageHeader title={titulo} />
+      
+      <div className="mt-2 max-w-md">
         <SearchBar onSearch={onSearch} />
       </div>
 
@@ -73,7 +75,7 @@ export function CatalogPage({ tipo }: { tipo: Tipo }) {
       )}
 
       {!isLoading && !isError && buscando && resultados && (
-        <div className="mt-10 space-y-10">
+        <div className="mt-12 space-y-12">
           {tipo === "trilhas" && (
             <Section title="Trilhas">
               {resultados.trilhas.map((t) => (
@@ -82,7 +84,7 @@ export function CatalogPage({ tipo }: { tipo: Tipo }) {
             </Section>
           )}
           {tipo === "cursos" && (
-            <>
+            <div className="space-y-12">
               <Section title="Cursos">
                 {resultados.courses.map((c) => (
                   <CourseCard key={c.id} {...c} />
@@ -93,43 +95,43 @@ export function CatalogPage({ tipo }: { tipo: Tipo }) {
                   <Link
                     key={l.id}
                     to={`/curso/${l.module.course.slug}`}
-                    className="block rounded-lg border border-border p-4 hover:border-primary"
+                    className="block rounded-xl border border-border/60 bg-card p-6 shadow-sm transition-all hover:-translate-y-1 hover:border-primary/30 hover:shadow-md"
                   >
-                    <p className="text-sm font-medium">{l.title}</p>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-base font-semibold text-foreground">{l.title}</p>
+                    <p className="text-sm text-muted-foreground mt-2">
                       {l.module.course.title} · {l.module.title}
                     </p>
                   </Link>
                 ))}
               </Section>
-            </>
+            </div>
           )}
           {buscaVazia && (
-            <p className="text-muted-foreground">Nada encontrado para "{resultados.query}".</p>
+            <p className="text-muted-foreground text-lg">Nada encontrado para "{resultados.query}".</p>
           )}
         </div>
       )}
 
       {!isLoading && !isError && !buscando && (
-        <div className="mt-10 space-y-10">
+        <div className="mt-12 space-y-12">
           {tipo === "cursos" && cursos.data && (
-            <Section title="Cursos">
+            <Section title="Catálogo de Cursos">
               {cursos.data.map((c) => (
                 <CourseCard key={c.id} {...c} />
               ))}
             </Section>
           )}
           {tipo === "trilhas" && trilhas.data && (
-            <Section title="Trilhas">
+            <Section title="Catálogo de Trilhas">
               {trilhas.data.map((t) => (
                 <TrilhaCard key={t.id} {...t} />
               ))}
             </Section>
           )}
-          {lista.data?.length === 0 && <p className="text-muted-foreground">{vazio}</p>}
+          {lista.data?.length === 0 && <p className="text-muted-foreground text-lg">{vazio}</p>}
         </div>
       )}
-    </div>
+    </PageContainer>
   );
 }
 
@@ -138,8 +140,8 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   if (items.length === 0 || items.every((c) => c === null || c === undefined)) return null;
   return (
     <section>
-      <h2 className="text-lg font-medium">{title}</h2>
-      <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{children}</div>
+      <h2 className="text-xl font-semibold">{title}</h2>
+      <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{children}</div>
     </section>
   );
 }

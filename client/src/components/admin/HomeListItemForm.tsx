@@ -82,7 +82,7 @@ export function HomeListItemForm({
           <select
             id={`${idBase}-status`}
             {...register("status")}
-            className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+            className="flex h-[56px] w-full rounded-xl border border-border/60 bg-background px-6 py-4 text-[1.05rem] shadow-[0_10px_40px_rgba(0,0,0,0.03),0_2px_10px_rgba(35,143,232,0.05)] focus-visible:outline-none focus-visible:border-primary focus-visible:shadow-[0_10px_40px_rgba(35,143,232,0.12)] disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-300"
           >
             {Object.values(ContentStatus).map((s) => (
               <option key={s} value={s}>

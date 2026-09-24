@@ -77,7 +77,7 @@ describe("MyTrilhaDetailPage", () => {
     expect(await screen.findByRole("heading", { name: "Fundamentos de Excel + IA" })).toBeTruthy();
     expect(screen.getByText("IA aplicada")).toBeTruthy();
 
-    const volta = screen.getByRole("link", { name: "← Minhas trilhas" });
+    const volta = screen.getByRole("link", { name: "← Voltar para Minhas Trilhas" });
     expect(volta.getAttribute("href")).toBe("/minhas-trilhas");
 
     screen.getByText("Comece por aqui").click();

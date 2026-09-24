@@ -6,6 +6,8 @@ import { SiteTextField } from "@/components/admin/SiteTextField";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PageContainer, PageHeader, SplitSection } from "@/components/layout/PageLayout";
+import { Card, CardContent } from "@/components/ui/card";
 
 // Texto das páginas públicas, editável sem deploy (docs/content.md § 16).
 //
@@ -89,13 +91,11 @@ export function AdminSiteTextPage() {
   }, [data, termo, aba]);
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6 px-6 py-16">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Site</h1>
-        <p className="text-sm text-muted-foreground">
-          O texto das páginas públicas. O que você deixar em branco volta ao padrão.
-        </p>
-      </div>
+    <PageContainer>
+      <PageHeader
+        title="Textos do Site"
+        description="O texto das páginas públicas. O que você deixar em branco volta ao padrão."
+      />
 
       {isLoading && <p className="text-muted-foreground">Carregando…</p>}
 
@@ -106,32 +106,44 @@ export function AdminSiteTextPage() {
       )}
 
       {data && (
-        <>
-          <div className="space-y-1">
-            <Label htmlFor="busca">Buscar</Label>
-            <Input
-              id="busca"
-              value={busca}
-              onChange={(e) => setBusca(e.target.value)}
-              placeholder="Parte do texto ou da chave"
-            />
-          </div>
-
-          {!termo && paginas.length > 0 && (
-            <div className="flex flex-wrap gap-2" role="group" aria-label="Página">
-              {paginas.map((p) => (
-                <Button
-                  key={p}
-                  size="sm"
-                  variant={p === aba ? "default" : "outline"}
-                  aria-pressed={p === aba}
-                  onClick={() => setAbaEscolhida(p)}
-                >
-                  {PAGINAS[p] ?? p}
-                </Button>
-              ))}
-            </div>
-          )}
+        <div className="space-y-12">
+          {/* Controle de Busca e Abas no estilo Split-Panel */}
+          <SplitSection
+            title="Navegação e Busca"
+            description="Escolha a página que deseja editar ou busque por um termo específico em todo o site."
+          >
+            <Card>
+              <CardContent className="space-y-6 pt-6">
+                <div className="space-y-2">
+                  <Label htmlFor="busca">Buscar</Label>
+                  <Input
+                    id="busca"
+                    value={busca}
+                    onChange={(e) => setBusca(e.target.value)}
+                    placeholder="Parte do texto ou da chave"
+                  />
+                </div>
+                {!termo && paginas.length > 0 && (
+                  <div className="space-y-2">
+                    <Label>Página</Label>
+                    <div className="flex flex-wrap gap-2" role="group" aria-label="Página">
+                      {paginas.map((p) => (
+                        <Button
+                          key={p}
+                          size="sm"
+                          variant={p === aba ? "default" : "outline"}
+                          aria-pressed={p === aba}
+                          onClick={() => setAbaEscolhida(p)}
+                        >
+                          {PAGINAS[p] ?? p}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </SplitSection>
 
           {grupos.length === 0 ? (
             <p className="text-muted-foreground">
@@ -140,22 +152,27 @@ export function AdminSiteTextPage() {
                 : "Nenhum texto cadastrado."}
             </p>
           ) : (
-            grupos.map(([secao, campos]) => (
-              <details key={secao} className="rounded-lg border px-4 py-3">
-                <summary className="cursor-pointer font-medium">
-                  {termo ? nomeCompleto(secao) : nomeCurto(secao)}{" "}
-                  <span className="text-sm font-normal text-muted-foreground">
-                    ({campos.length})
-                  </span>
-                </summary>
-                {campos.map((campo) => (
-                  <SiteTextField key={campo.key} campo={campo} />
-                ))}
-              </details>
-            ))
+            <div className="space-y-8">
+              {grupos.map(([secao, campos]) => (
+                <SplitSection
+                  key={secao}
+                  title={termo ? nomeCompleto(secao) : nomeCurto(secao)}
+                  description={`${campos.length} ${campos.length === 1 ? 'campo' : 'campos'}`}
+                  className="border-t border-border/40 pt-12"
+                >
+                  <Card>
+                    <CardContent className="space-y-8 pt-8">
+                      {campos.map((campo) => (
+                        <SiteTextField key={campo.key} campo={campo} />
+                      ))}
+                    </CardContent>
+                  </Card>
+                </SplitSection>
+              ))}
+            </div>
           )}
-        </>
+        </div>
       )}
-    </div>
+    </PageContainer>
   );
 }

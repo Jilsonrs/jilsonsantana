@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { BookOpen, Compass, Sparkles } from "lucide-react";
 import { useSession } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
+import { PageContainer } from "@/components/layout/PageLayout";
 
 /**
  * Home do aluno — o destino de quem acaba de entrar.
@@ -49,9 +50,9 @@ export function StudentHomePage() {
         className="pointer-events-none absolute -right-40 -top-40 size-[600px] bg-[radial-gradient(circle,hsl(var(--primary)/0.06)_0%,transparent_70%)]"
       />
 
-      {/* Densidade da área logada (§5): py-12, não o py-24 da landing — o aluno
-          volta aqui todo dia, então o painel trabalha em vez de impressionar. */}
-      <div className="relative mx-auto max-w-[1000px] px-8 py-12">
+      {/* Densidade da área logada (§5): usa o PageContainer padronizado (max-w-6xl)
+          para alinhar com o restante do App e Admin. */}
+      <PageContainer className="relative py-12">
         {/* A ênfase serifada (§4) cai no NOME — é a palavra que importa aqui, e
             a regra é uma por título. A copy não mudou: só ganhou o destaque. */}
         <h1 className="text-[2.5rem] font-semibold leading-tight">
@@ -122,7 +123,7 @@ export function StudentHomePage() {
             ))}
           </div>
         </section>
-      </div>
+      </PageContainer>
     </div>
   );
 }
