@@ -101,12 +101,14 @@
 > **Rodapé do app (24/09, publicado):** toda tela depois do login ganhou rodapé, com os mesmos
 > textos editáveis do rodapé da home, e o seletor PT | EN (provisório). Ver Bloco S.
 > **Próximo, decidido pelo operador em 24/09: o bloco "app do aluno em inglês", ANTES do C4.** Em 5
-> etapas (Bloco I). **Etapas 1 a 4 feitas (24/09, no `dev`, NÃO publicadas):** o seletor do rodapé
+> etapas (Bloco I). **As 5 etapas feitas e PUBLICADAS em 24/09** (`main` = `81a1ae5`), junto com o
+> menu de conta no topo. Antes, no `dev`: o seletor do rodapé
 > troca o idioma do app e grava na conta; menu, login, início, minha conta, minhas trilhas,
 > catálogo, busca e páginas de curso e trilha existem em inglês; cursos e trilhas têm idioma
 > (migration aplicada no dev, produção aplica no próximo publish); campo Idioma no admin; as 3
 > camadas editáveis em Textos; o formulário de curso avisa quando salvar falha. **Falta a etapa 5:
-> a revisão do inglês pelo operador, antes de publicar.**
+> a revisão do inglês pelo operador, antes de publicar.** *(Feita e publicada — ver Bloco I.)*
+> **Próximo:** o Antigravity formata o menu de conta (fila item 7); depois, o C4.
 >
 > **Próximo passo — decidido pelo operador em 23/09: o C4, em 5 etapas, uma por vez.** A **etapa 1**
 > (campo de imagem aceitar `/img/curso.jpg`) tem plano aprovado. Detalhe no bloco C4. Continuam na
@@ -1282,7 +1284,10 @@ landmark. Corrigido junto.
 >         queda de rede). O aviso some quando o próximo salvamento dá certo. Lógica em
 >         `lib/course-form.ts` (`mensagemDeErroAoSalvar`). **Mutação:** todas as falhas com a mesma
 >         frase → 3 reprovaram; aviso removido → 6 reprovaram. Revertido.
-> - [ ] **Etapa 5 — revisão do inglês** pelo operador com o Antigravity, e publicação.
+> - [x] **Etapa 5 — revisão do inglês** pelo operador com o Antigravity, e publicação.
+>       **Publicado em 24/09** (`main` = `81a1ae5`, CI verde nos dois jobs). Prova em produção, sem
+>       tocar no banco: `/api/courses?lang=es` → 400; `?lang=pt` → o curso de exemplo (PT pela
+>       migration); `?lang=en` → vazio. O filtro só responde com a coluna de idioma existindo.
 >       *24/09:* arquivo gerado (`design-lab/revisao-ingles.md`, só o texto novo: 98 frases de
 >       `app.*` e `common.camadas`) com 11 pontos de dúvida no topo.
 >       **Revisão do Antigravity aplicada (24/09):** contagem com singular nos dois idiomas
