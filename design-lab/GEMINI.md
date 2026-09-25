@@ -196,7 +196,12 @@ exceto o item 4, que é página pública.
    o visual, não o texto (é do operador). Também a etiqueta **"EN"** na lista de cursos
    (`AdminCoursesPage.tsx`) e o **aviso de erro ao salvar**, logo acima do botão "Salvar dados do
    curso" (cru: uma linha vermelha).
-7. **Menu de conta** (`client/src/components/layout/AccountMenu.tsx`) e a **faixa do topo** que o
+7. ~~**Menu de conta**~~ — **acabamento feito em 24/09.** Na revisão, o "abrir ao passar o mouse"
+   que você pôs ficou, mas **só para mouse**: no celular o toque dispara "entrar" e "clicar" em
+   sequência, e o painel abria e fechava na hora; no computador, passar e clicar também fechava.
+   O Claude consertou (`pointerType === "mouse"`) e **há teste para os dois casos** — não volte
+   para `onMouseEnter`. Texto original do item, para referência:
+   **Menu de conta** (`client/src/components/layout/AccountMenu.tsx`) e a **faixa do topo** que o
    carrega (`client/src/components/Layout.tsx`) — novos em 24/09, em toda tela depois do login.
    Estrutura crua: botão redondo com a foto ou as iniciais, e um painel com nome, e-mail, Minha
    conta, Faturamento e assinatura e Sair. No celular, a mesma faixa tem o botão da gaveta à

@@ -74,12 +74,15 @@ function Shell() {
     <div className="flex min-h-svh bg-background text-foreground">
       <AppRail papel={session.user.role} />
       <SecondaryNav papel={session.user.role} usuario={session.user} onSignOut={handleSignOut} />
-      <div className="flex min-w-0 flex-1 flex-col">
-        {/* Faixa do topo: a gaveta (só no celular) à esquerda e o menu da conta
-            no canto superior direito, em toda tela (decisão do operador, 24/09). */}
-        <header className="flex h-14 items-center gap-2 border-b border-border px-4 md:px-[50px]">
-          <MobileNav papel={session.user.role} onSignOut={handleSignOut} />
-          <div className="ml-auto">
+      <div className="flex min-w-0 flex-1 flex-col relative">
+        {/* No celular, é um cabeçalho real que empurra o conteúdo (como na home pública).
+            No desktop (md:), vira invisível estruturalmente (absolute) para não roubar espaço do layout,
+            deixando apenas o menu da conta flutuando. */}
+        <header className="flex items-center justify-between border-b border-border px-4 py-3 md:absolute md:border-none md:left-0 md:right-0 md:top-0 md:z-50 md:p-0 md:px-[50px] md:py-6 md:pointer-events-none">
+          <div className="md:hidden pointer-events-auto">
+            <MobileNav papel={session.user.role} onSignOut={handleSignOut} />
+          </div>
+          <div className="ml-auto pointer-events-auto">
             <AccountMenu usuario={session.user} onSignOut={handleSignOut} />
           </div>
         </header>

@@ -53,7 +53,7 @@ export function StudentHomePage() {
 
       {/* Densidade da área logada (§5): usa o PageContainer padronizado (o mesmo
           de todas as telas do app e do admin). */}
-      <PageContainer className="relative py-12">
+      <PageContainer className="relative pt-10 pb-12 sm:pt-14 md:pt-16">
         {/* A ênfase serifada (§4) cai no NOME — é a palavra que importa aqui, e
             a regra é uma por título. A copy não mudou: só ganhou o destaque. */}
         <h1 className="text-[2.5rem] font-semibold leading-tight">

@@ -3,7 +3,7 @@ import {
   BarChart3,
   Bot,
   Globe,
-  GraduationCap,
+  Library,
   Route,
   Signpost,
   SlidersHorizontal,
@@ -116,7 +116,7 @@ export function navegacao(t: AppTexts): Secao[] {
       // modo recolhido só o ícone aparece.
       label: "Cursos Admin",
       to: "/admin/cursos",
-      icon: GraduationCap,
+      icon: Library,
       papel: Role.ADMIN,
       estado: "ativo",
       abas: [
