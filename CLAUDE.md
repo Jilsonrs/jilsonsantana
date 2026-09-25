@@ -34,6 +34,7 @@ The docs and what they hold (no edit-owner anymore — all follow git-wins):
 - **`docs/content.md`** — landing copy + course-page copy / message direction.
 - **`docs/courses.md`** — course engineering, slate, content map (3-camadas methodology, Udemy×Escola).
 - **`docs/idiomas.md`** — a escola bilíngue (PT + EN): quem vê o quê, preço fora do Brasil, imposto internacional, o que ainda nasce com idioma. Consulta por gatilho (ver *Idiomas*).
+- **`docs/bunny.md`** — o que contratar e configurar no Bunny (bibliotecas do Stream, segurança, chaves, o que fica de fora) e onde guardar arquivo enviado pelo site. Consulta por gatilho (ver *Video*).
 - **`docs/decisions-archive.md`** — **o PORQUÊ**: changelog histórico deste arquivo. **NÃO lido por sessão** — consulta por GATILHO (ver *Arquivos de memória*): antes de propor mexer no stack, ou de reabrir decisão fechada.
 - **`docs/build-history.md`** — **o QUÊ**: fases já concluídas (0, 1) com checkboxes intactos + changelog histórico do plano. **NÃO lido por sessão** — consulta por GATILHO: antes de afirmar que algo "não existe" ou "não foi feito".
 > Os dois acima são **memória, não gaveta**: têm gatilho de consulta e regra de rotação (`CLAUDE.md` → *Arquivos de memória*). O par vivo (`CLAUDE.md` + `implementation-plan.md`) guarda **o que está em vigor e o que falta**; o par histórico guarda **como chegamos aqui**. Mesma disciplina git-wins de todos.
@@ -569,6 +570,10 @@ qualquer template em `server/src/views/**` → ler aquela seção.
 
 ## Video (Bunny Stream)
 
+> **O guia do fornecedor (quais produtos, as bibliotecas e a segurança de cada uma, as chaves, o que fica de fora) mora em [`docs/bunny.md`](docs/bunny.md).**
+> **GATILHO (mecânico):** o MESMO da superfície Bunny na tabela de context7 abaixo, **e também** antes do primeiro código que **envie arquivo** pelo site (foto do aluno): → **ler `bunny.md`**.
+> **TRAVA — arquivo enviado pelo site NUNCA fica no disco do container:** a Railway zera o disco a cada publicação, então o arquivo some sem erro nenhum. O banco guarda só o **caminho**; onde o arquivo mora é decisão pendente do operador (`bunny.md` §4).
+
 - Never expose raw Bunny URLs. The server issues short-lived signed URLs, only to members with an active subscription. **Elastic window (~6–12h) and NO IP-lock** — don't break playback when a student switches Wi-Fi↔4G mid-lesson. Trade-off accepted: short window + DRM + per-user signing over marginal anti-piracy (solo-operator UX call).
 - Store Bunny video IDs on the `Lesson` model.
 
@@ -671,7 +676,7 @@ Before the FIRST write or edit **in this session** that touches a SURFACE below,
 | Better Auth  | any import from `better-auth*`; any file under `server/auth/**`; session, cookie or auth-middleware code |
 | Stripe       | any import from `stripe` or `@stripe/*`; any file under `server/billing/**`; any webhook handler; anything touching PaymentIntent, off-session, 3DS/SCA, dunning or retries — **e este mesmo gatilho manda ler [`docs/billing.md`](docs/billing.md)** (a spec de preço/recorrência/cancelamento) |
 | pg-boss *(dormente — sem superfície no MVP)* | any import from `pg-boss`; any file under `server/jobs/**`; queue, schedule or retry definitions |
-| Bunny Stream | any code building a Bunny URL, token or signature; any file under `server/video/**` |
+| Bunny Stream | any code building a Bunny URL, token or signature; any file under `server/video/**` — **e este mesmo gatilho manda ler [`docs/bunny.md`](docs/bunny.md)** (o guia de contratação e configuração) |
 
 If a path above does not exist in the repo yet, the import / subject-matter half of the trigger still applies.
 

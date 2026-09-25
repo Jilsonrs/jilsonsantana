@@ -1075,7 +1075,9 @@ sistema administrativo inteiro ainda está por construir (Bloco 6b, Fase 4, Fase
       construído)*. Onde: Minha conta → Seus dados; a foto do menu da conta passa a mostrar a nova.
       O campo já existe (`User.image`, do Better Auth); falta o envio do arquivo. **Decisão do
       operador pendente:** onde a foto fica guardada (serviço de armazenamento = peça nova de stack,
-      precisa do ok dele). Regras que já valem: formato WebP (regra de imagem do design), tamanho
+      precisa do ok dele). As opções, a recomendação do agente (Bunny Storage) e a configuração
+      estão em [`docs/bunny.md`](bunny.md) §4. **Nunca na Railway**, porque o disco do servidor é
+      zerado a cada publicação. Regras que já valem: formato WebP (regra de imagem do design), tamanho
       máximo, e a foto é dado pessoal — some junto quando a conta é excluída (LGPD). Até lá, sem
       foto, o menu mostra as iniciais.
 - **Done when:** uma tela nova entra no sistema **declarando** seus níveis no mapa, sem escrever
@@ -1113,6 +1115,11 @@ landmark. Corrigido junto.
       service settings) — roda 1× por deploy, antes da instância nova subir. NUNCA no
       entrypoint do Docker (re-executaria a cada restart) e nunca `migrate dev` contra prod.
       Validar com a primeira migration desta fase. (Convenção no CLAUDE.md → Database & Migrations.)
+- [ ] *(operador)* **Contratar e configurar o Bunny pelo guia [`docs/bunny.md`](bunny.md)**: a conta
+      com 2FA (§2), as três bibliotecas do Stream e a segurança delas (§3) e as chaves (§5), que
+      nunca passam pelo chat. As decisões dele que o guia lista (§6) vêm antes do bloco de vídeo.
+      *(Guia escrito em 25/09/2026, a pedido do operador, a partir da doc oficial do Bunny via
+      context7.)*
 - [ ] Bunny account + library; store video IDs on `Lesson`
 - [ ] **TRAVA (achado do `security-vulnerability-reviewer`, Ago 2026):** o campo de vídeo de
       **membro** nasce em **coluna PRÓPRIA** — **nunca** reaproveitar `Course.introVideoId`.
@@ -1147,9 +1154,10 @@ landmark. Corrigido junto.
       Wi-Fi↔4G) **continua válida**. As linhas de `CLAUDE.md` → Video e `tech-stack.md` → Video
       seguem valendo sem alteração — a razão mora **aqui**, não duplicar lá.
 - [ ] **Restrição de domínio/referrer no Bunny** — vídeo servido **apenas** para requisições vindas
-      do domínio da plataforma. [PENDENTE DE VERIFICAÇÃO: se o Bunny Stream oferece essa restrição
-      e sob qual nome — conferir no painel ou via context7 (`/bunnyway/documentation`, query
-      dizendo "Stream") **antes de tratar como fato**.] **Razão:** é a alavanca **certa** para o
+      do domínio da plataforma. **[VERIFICADO em 25/09/2026, doc oficial via context7:]** a restrição
+      existe e se chama **Allowed domains**. Ao lado dela há **Block Direct URL File Access**, que
+      bloqueia baixar o arquivo pelo endereço direto. A configuração está em `docs/bunny.md` §3.2.
+      **Razão:** é a alavanca **certa** para o
       mesmo risco que o TTL curto tentava cobrir — **mata o compartilhamento casual de URL** (link
       colado num grupo e aberto fora do site) **sem tocar no playback e sem escrever código nosso**:
       é configuração no fornecedor, não mecanismo que a gente passa a manter e depurar.
