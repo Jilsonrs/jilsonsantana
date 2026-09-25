@@ -1,3 +1,4 @@
+import { ROTAS_PUBLICAS, type LanguageCode } from "@jilson/core";
 import type { CommonTexts } from "@/lib/api";
 
 // O rodapé do app logado, no aluno e no admin (decisão do operador, 24/09/2026).
@@ -9,21 +10,28 @@ import type { CommonTexts } from "@/lib/api";
 // nos dois lugares. O número é a posição na lista `common.footer.links` do
 // dicionário — a mesma que `server/src/views/home.ts` usa.
 //
-// Os destinos são páginas PÚBLICAS do servidor, não telas do app. Quem somos,
-// Contato, Termos e Privacidade ainda não existem e dão tela vazia até
-// existirem: o operador decidiu (24/09) que o link entra antes da página. Não
-// "conserte" isso com a regra 12 do design-lab/GEMINI.md (item planejado não
-// vira link) — aquela regra é do menu, e aqui a decisão foi explícita.
+// OS DESTINOS seguem o idioma do app e vêm de `ROTAS_PUBLICAS` (core), a mesma
+// lista da home: em inglês, o aluno vai para os endereços em inglês e para o
+// canal do YouTube em inglês.
+//
+// Várias páginas ainda não existem (Quem somos, Contato, Termos, Privacidade) e
+// dão tela vazia até existirem: o operador decidiu (24/09) que o link entra
+// antes da página. Não "conserte" isso com a regra 12 do design-lab/GEMINI.md
+// (item planejado não vira link) — aquela regra é do menu, e aqui a decisão foi
+// explícita.
 
 export type ItemDoRodape =
   | { tipo: "pagina"; href: string; texto: (t: CommonTexts) => string }
   | { tipo: "youtube"; href: string };
 
-export const ITENS_DO_RODAPE: ItemDoRodape[] = [
-  { tipo: "pagina", href: "/#faq", texto: (t) => t.footer.links[3] },
-  { tipo: "pagina", href: "/quem-somos", texto: (t) => t.footer.links[4] },
-  { tipo: "pagina", href: "/contato", texto: (t) => t.footer.links[5] },
-  { tipo: "youtube", href: "https://www.youtube.com/@JilsonSantanaBI/" },
-  { tipo: "pagina", href: "/termos", texto: (t) => t.footer.links[6] },
-  { tipo: "pagina", href: "/privacidade", texto: (t) => t.footer.links[7] },
-];
+export function itensDoRodape(idioma: LanguageCode): ItemDoRodape[] {
+  const r = ROTAS_PUBLICAS[idioma];
+  return [
+    { tipo: "pagina", href: r.faq, texto: (t) => t.footer.links[3] },
+    { tipo: "pagina", href: r.quemSomos, texto: (t) => t.footer.links[4] },
+    { tipo: "pagina", href: r.contato, texto: (t) => t.footer.links[5] },
+    { tipo: "youtube", href: r.youtube },
+    { tipo: "pagina", href: r.termos, texto: (t) => t.footer.links[6] },
+    { tipo: "pagina", href: r.privacidade, texto: (t) => t.footer.links[7] },
+  ];
+}

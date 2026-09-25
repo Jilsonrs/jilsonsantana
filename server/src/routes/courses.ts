@@ -4,6 +4,7 @@ import { ContentStatus, courseCreateSchema, courseUpdateSchema } from "@jilson/c
 import { prisma } from "../lib/prisma.js";
 import { requireAdmin } from "../middleware/auth.js";
 import { validate, parseId } from "../lib/http.js";
+import { paraBanco, doBanco, comIdioma, idiomaDaLista } from "../lib/language.js";
 
 const router = Router();
 const PUBLISHED = ContentStatus.PUBLISHED;
@@ -16,11 +17,14 @@ const PUBLISHED = ContentStatus.PUBLISHED;
 // tiebreaker.
 const byOrder = [{ displayOrder: "asc" as const }, { id: "asc" as const }];
 
-// GET /api/courses — catalog cards. lessonCount is DERIVED (Σ published lessons
-// across published modules), never a stored column.
-router.get("/courses", async (_req, res) => {
+// GET /api/courses?lang=pt|en — catalog cards. lessonCount is DERIVED (Σ
+// published lessons across published modules), never a stored column. Lista de
+// DESCOBERTA: filtra pelo idioma, como filtra pelo status (CLAUDE.md → Idiomas).
+router.get("/courses", async (req, res) => {
+  const language = idiomaDaLista(req.query.lang, res);
+  if (language === null) return;
   const courses = await prisma.course.findMany({
-    where: { status: PUBLISHED },
+    where: { status: PUBLISHED, language },
     orderBy: byOrder,
     select: {
       id: true,
@@ -47,7 +51,8 @@ router.get("/courses", async (_req, res) => {
 });
 
 // GET /api/courses/:slug — full detail tree for the course page (by slug, which
-// is the public URL). 404 if missing or not published.
+// is the public URL). 404 if missing or not published. NÃO filtra por idioma:
+// link direto nunca é barrado, e a assinatura vale nos dois idiomas.
 router.get("/courses/:slug", async (req, res) => {
   const course = await prisma.course.findFirst({
     where: { slug: req.params.slug, status: PUBLISHED },
@@ -72,7 +77,7 @@ router.get("/courses/:slug", async (req, res) => {
   }
 
   const lessonCount = course.modules.reduce((sum, m) => sum + m.lessons.length, 0);
-  res.json({ ...course, moduleCount: course.modules.length, lessonCount });
+  res.json({ ...comIdioma(course), moduleCount: course.modules.length, lessonCount });
 });
 
 // ── Admin reads (any status) ─────────────────────────────────────────────────
@@ -90,12 +95,13 @@ router.get("/admin/courses", requireAdmin, async (_req, res) => {
       slug: true,
       title: true,
       status: true,
+      language: true,
       displayOrder: true,
       modules: { select: { _count: { select: { lessons: true } } } },
     },
   });
   const cards = courses.map(({ modules, ...course }) => ({
-    ...course,
+    ...comIdioma(course),
     moduleCount: modules.length,
     lessonCount: modules.reduce((sum, m) => sum + m._count.lessons, 0),
   }));
@@ -119,7 +125,7 @@ router.get("/admin/courses/:id", requireAdmin, async (req, res) => {
     res.status(404).json({ error: "NotFound" });
     return;
   }
-  res.json(course);
+  res.json(comIdioma(course));
 });
 
 // ── Writes (admin only) ──────────────────────────────────────────────────────
@@ -142,19 +148,47 @@ router.post("/courses", requireAdmin, async (req, res) => {
     res.status(409).json({ error: "SlugTaken" });
     return;
   }
-  const course = await prisma.course.create({ data: { ...data, ...jsonFields(data) } });
-  res.status(201).json(course);
+  const { language, ...campos } = data;
+  const course = await prisma.course.create({
+    data: { ...campos, language: paraBanco(language), ...jsonFields(data) },
+  });
+  res.status(201).json(comIdioma(course));
 });
 
 // PATCH /api/courses/:id — update (404 if missing; 409 if slug taken by another).
+//
+// TROCAR O IDIOMA (decisão do operador, 24/09/2026): só enquanto o curso é
+// RASCUNHO — publicado, trava (409 LanguageLocked). E nem em rascunho se ele já
+// está numa trilha do outro idioma (409 LanguageInUse): é o curso que foi
+// publicado, entrou numa trilha e voltou a rascunho — trocar quebraria a regra
+// "trilha não mistura idiomas".
 router.patch("/courses/:id", requireAdmin, async (req, res) => {
   const id = parseId(req.params.id, res);
   if (id === null) return;
   const data = validate(courseUpdateSchema, req.body, res);
   if (data === null) return;
-  if (!(await prisma.course.findUnique({ where: { id } }))) {
+  const atual = await prisma.course.findUnique({ where: { id } });
+  if (!atual) {
     res.status(404).json({ error: "NotFound" });
     return;
+  }
+  const { language, ...campos } = data;
+  const novoIdioma = language ? paraBanco(language) : undefined;
+  if (novoIdioma && novoIdioma !== atual.language) {
+    if (atual.status !== ContentStatus.DRAFT) {
+      res.status(409).json({ error: "LanguageLocked" });
+      return;
+    }
+    const emTrilhaDeOutroIdioma = await prisma.planItem.findFirst({
+      where: {
+        OR: [{ courseId: id }, { lesson: { module: { courseId: id } } }],
+        planModule: { plan: { language: { not: novoIdioma } } },
+      },
+    });
+    if (emTrilhaDeOutroIdioma) {
+      res.status(409).json({ error: "LanguageInUse" });
+      return;
+    }
   }
   if (data.slug) {
     const bySlug = await prisma.course.findUnique({ where: { slug: data.slug } });
@@ -163,8 +197,11 @@ router.patch("/courses/:id", requireAdmin, async (req, res) => {
       return;
     }
   }
-  const course = await prisma.course.update({ where: { id }, data: { ...data, ...jsonFields(data) } });
-  res.json(course);
+  const course = await prisma.course.update({
+    where: { id },
+    data: { ...campos, language: novoIdioma, ...jsonFields(data) },
+  });
+  res.json(comIdioma(course));
 });
 
 // DELETE /api/courses/:id — hard delete (cascades modules/lessons + plan_items).

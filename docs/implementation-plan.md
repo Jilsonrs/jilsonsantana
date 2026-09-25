@@ -100,8 +100,13 @@
 > regra no `CLAUDE.md` → Client, em `design.md` §6 e em `.agents/rules/page_layout.md`.
 > **Rodapé do app (24/09, publicado):** toda tela depois do login ganhou rodapé, com os mesmos
 > textos editáveis do rodapé da home, e o seletor PT | EN (provisório). Ver Bloco S.
-> **Próximo, decidido pelo operador em 24/09: o bloco "app do aluno em inglês", ANTES do C4.** Ver
-> Bloco I → decisões.
+> **Próximo, decidido pelo operador em 24/09: o bloco "app do aluno em inglês", ANTES do C4.** Em 5
+> etapas (Bloco I). **Etapas 1 a 4 feitas (24/09, no `dev`, NÃO publicadas):** o seletor do rodapé
+> troca o idioma do app e grava na conta; menu, login, início, minha conta, minhas trilhas,
+> catálogo, busca e páginas de curso e trilha existem em inglês; cursos e trilhas têm idioma
+> (migration aplicada no dev, produção aplica no próximo publish); campo Idioma no admin; as 3
+> camadas editáveis em Textos; o formulário de curso avisa quando salvar falha. **Falta a etapa 5:
+> a revisão do inglês pelo operador, antes de publicar.**
 >
 > **Próximo passo — decidido pelo operador em 23/09: o C4, em 5 etapas, uma por vez.** A **etapa 1**
 > (campo de imagem aceitar `/img/curso.jpg`) tem plano aprovado. Detalhe no bloco C4. Continuam na
@@ -1042,6 +1047,29 @@ sistema administrativo inteiro ainda está por construir (Bloco 6b, Fase 4, Fase
       Testes: 5 de servidor, 7 do rodapé, 3 no shell, 1 na tela de Textos. **Mutação:** rota
       ignorando as edições, rodapé ignorando o servidor, rodapé fora do shell e salvar sem avisar o
       rodapé → reprovam. Revertido.
+- [x] **Menu de conta no canto superior direito** *(decisão do operador, 24/09/2026 — a partir da
+      Udemy, da Amazon, do LinkedIn e da Mosh)*: em toda tela depois do login, aluno e admin, uma
+      faixa no topo da área de conteúdo com a **foto** (ou as iniciais) à direita; no celular, a
+      mesma faixa leva também o botão da gaveta. O painel: foto, nome, e-mail · **Minha conta** ·
+      **Faturamento e assinatura** (`/conta/faturamento`, sem página até a Fase 4 — decisão dele) ·
+      **Sair**. **"Minha conta" saiu do menu lateral e da gaveta** (`foraDoMenuLateral` no mapa); a
+      coluna da conta segue em `/conta`. **Muda a regra de set/2026** ("não há botão global de
+      Sair"): agora o Sair global mora no menu da foto. Disclosure, não `role="menu"`; sem
+      biblioteca e sem Popover API (aparelho antigo — guia modern-web-guidance). Textos em `app.nav`.
+      Junto: o texto de leitor de tela da gaveta ("Navegação principal do site.") foi para o
+      dicionário, achado da etapa 2. Testes: 9 do menu, 3 no shell, 3 ajustados à decisão nova; E2E
+      abre a conta e sai pelo menu da foto. **Mutação:** sem Sair e "Minha conta" de volta ao rail
+      → 6 reprovaram. Revertido.
+      **Ajuste do operador (24/09):** em Minha conta o "Sair" fica **só na coluna lateral** — saiu o
+      botão "Sair da plataforma" da tela (e a frase `app.conta.sair`). Teste: a tela não tem botão
+      de sair próprio (mutação: devolver o botão → reprova).
+- [ ] **Incluir ou trocar a foto do aluno** *(decisão do operador, 24/09/2026 — pendente, não
+      construído)*. Onde: Minha conta → Seus dados; a foto do menu da conta passa a mostrar a nova.
+      O campo já existe (`User.image`, do Better Auth); falta o envio do arquivo. **Decisão do
+      operador pendente:** onde a foto fica guardada (serviço de armazenamento = peça nova de stack,
+      precisa do ok dele). Regras que já valem: formato WebP (regra de imagem do design), tamanho
+      máximo, e a foto é dado pessoal — some junto quando a conta é excluída (LGPD). Até lá, sem
+      foto, o menu mostra as iniciais.
 - **Done when:** uma tela nova entra no sistema **declarando** seus níveis no mapa, sem escrever
   componente de navegação nenhum — e os três níveis somem sozinhos onde não há dado.
 
@@ -1166,6 +1194,111 @@ landmark. Corrigido junto.
 >   (`LearningPlan.language`, filtro nas listas e na busca, recusa de item de outro idioma na
 >   trilha, clone herdando) continua neste bloco. O campo Idioma no formulário de **trilha** espera
 >   o Bloco 6b, porque esse formulário ainda não existe.
+
+> **APP DO ALUNO EM INGLÊS — 5 ETAPAS, uma por vez** *(plano aprovado pelo operador em 24/09/2026;
+> vem ANTES do C4)*. Cada etapa é discutida, aprovada e vira um commit. Decisões dele que o bloco
+> segue: Admin em português · o estrangeiro escolhe o idioma na home e **entra já em inglês** ·
+> **um canal do YouTube por idioma** (`@jilsonen` para o inglês) · catálogo e páginas de curso e
+> trilha entram, mesmo provisórias · textos do app fora de *Admin → Textos* (o rodapé é a exceção).
+>
+> - [x] **Etapa 1 — o seletor funciona** *(24/09)*. `PATCH /api/me/language` grava
+>       `User.preferredLanguage` na conta **da sessão** (só `pt`/`en`); o React lê o idioma da
+>       sessão (`client/src/lib/language.ts`, `useAppLanguage`) e, ao trocar, espera o `refetch()`
+>       da sessão — tudo muda junto, sem recarregar. O seletor do rodapé virou **botão**
+>       (`aria-pressed`), e o rodapé segue o idioma: textos, destinos em inglês e canal do YouTube.
+>       Os endereços públicos e os dois canais moram em `core/src/constants/site.ts`
+>       (`ROTAS_PUBLICAS`), usados pela home e pelo rodapé — a home `/en` passou a levar ao canal
+>       em inglês. Testes: 5 de servidor + 1 na home; 9 no rodapé. **Mutação:** rota sem gravar,
+>       home com o canal fixo, idioma fixo em PT e troca sem atualizar a sessão → 6 reprovaram.
+>       *Pendente para a etapa 2:* aviso na tela se a troca falhar (é texto novo, entra com o
+>       dicionário do app); hoje o idioma simplesmente não muda.
+> - [x] **Etapa 2 — telas do aluno em inglês:** parte `app` no dicionário (fora de Textos), menu,
+>       início, conta, minhas trilhas e login (quem vem de `/en` vê o login em inglês e a conta
+>       passa a ser inglês). Em dois commits:
+>   - [x] **2a — a base, o menu e o login** *(24/09)*. Parte `app` em `core/src/i18n/` (tipada:
+>         frase faltando no inglês quebra a compilação); `ehTextoEditavel()` tira `app.*` da tela
+>         de Textos **e** da gravação (`DICT_KEYS`). O idioma é decidido UMA vez, no shell
+>         (`useIdiomaDoShell`: logado → conta; sem login → `?lang=`), e desce por contexto
+>         (`useIdioma`, `useT` em `client/src/lib/language.tsx`). Menu: `navegacao(t)` — rótulo do
+>         aluno do dicionário, de admin escrito em português. Login em inglês; o "Entrar" de `/en`
+>         leva a `/login?lang=en`, e entrar por ali grava o idioma na conta **antes** de abrir o
+>         app (falhar não barra o login). Aviso no rodapé se a troca falhar. Testes: 3 de
+>         servidor novos/ajustados, 7 no login, 3 no shell, 1 no mapa, 1 no rodapé. **Mutação:**
+>         trava de `app.*` aberta, idioma fixo em PT e login sem gravar → 7 reprovaram. Revertido.
+>   - [x] **2b — início, minha conta e minhas trilhas** *(24/09)*, e a regra no `CLAUDE.md` →
+>         Client (*texto de tela do aluno sai de `useT()`*). Início, Minha conta, Minhas trilhas
+>         (lista e detalhe) e o vazio da árvore de trilha nos dois idiomas; o português ficou
+>         idêntico (os testes antigos passaram sem mexer). Minha conta ganhou o primeiro arquivo
+>         de teste dela. **Mutação:** textos fixos em português → 11 reprovaram; um rótulo escrito
+>         à mão → 1 reprovou. Revertido.
+> - [x] **Etapa 3 — cursos e trilhas ganham idioma:** a antiga etapa 2 do C4 + a parte de dados
+>       deste bloco (migration, campo Idioma e etiqueta "EN" no admin, filtro nas listas, recusa
+>       de item de outro idioma na trilha). Antes: dividir o formulário de curso.
+>       **Decisões do operador (24/09, ao aprovar):** idioma trocável **enquanto rascunho**, trava
+>       depois de publicado · **idioma é filtro, não portão** — só as listas de descoberta filtram;
+>       o que é do aluno (trilhas salvas, cursos iniciados) aparece nos dois idiomas.
+>   - [x] **3a — formulário de curso dividido** *(24/09)*: 375 → 129 linhas. Lógica em
+>         `client/src/lib/course-form.ts`; seções em `client/src/components/admin/course-form/`.
+>         Mesmas classes, mesma tela: os testes passaram sem mexer.
+>   - [x] **3b — banco e servidor** *(24/09)*. Migration `20260924150000_course_and_plan_language`
+>         (as linhas existentes viram PT e o DEFAULT sai: o banco recusa curso ou trilha sem
+>         idioma). Passo 0 no dev antes/depois: 2 cursos, 1 trilha, 2 módulos, 3 aulas, 2 usuários,
+>         logins de admin e membro OK nas duas vezes; `migrate diff` *No difference*; zero tabela
+>         sem RLS. **Aplicada no dev; em produção roda no pre-deploy do próximo publish.**
+>         `?lang=pt|en` em catálogo, trilhas e busca (`idiomaDaLista`); link direto e "minhas
+>         trilhas" não filtram; `LanguageMismatch` na trilha; `LanguageLocked`/`LanguageInUse` na
+>         troca; a cópia herda o idioma da trilha. A API fala `pt`/`en` (`comIdioma`). 14 testes
+>         novos (`content-language.test.ts`). **Mutação:** sem filtro, sem trava, sem recusa e
+>         "minhas trilhas" filtrando → 4 reprovaram. Revertido.
+>   - [x] **3c — campo Idioma e etiqueta "EN" no admin** *(24/09)*. Campo **Idioma** (Português /
+>         English) na seção Organização; curso novo nasce Português. Curso GRAVADO fora de rascunho
+>         mostra o idioma como texto, com "O idioma trava depois que o curso é publicado." (texto
+>         aprovado pelo operador no plano) — texto e não campo desabilitado, porque campo
+>         desabilitado sai do envio do formulário. Etiqueta "EN" na lista. **Mutação:** trava
+>         desligada, idioma fixo no envio e etiqueta removida → 4 reprovaram. Revertido.
+> - [x] **Etapa 4 — catálogo e cursos no idioma escolhido:** catálogo, busca, páginas de curso e
+>       trilha; nível e textos das 3 camadas nos dois idiomas; catálogo EN vazio; curso com 0 aulas.
+>       **Decisões do operador (24/09):** o nível aparece pelo NOME ("Intermediário" /
+>       "Intermediate"), não pelo valor cru — o Admin segue com o cru · os textos das 3 camadas
+>       ficam **editáveis em Textos** · junto, o conserto do achado da 3c (formulário de curso sem
+>       aviso quando o salvamento falha).
+>   - [x] **4a — catálogo e busca** *(24/09)*. `/cursos`, `/trilhas` e a busca pedem a lista no
+>         idioma do app (`?lang=`); o idioma está na chave da consulta, então trocar no rodapé refaz
+>         a lista. Textos da tela, da busca e do cartão (contagem e nível) no dicionário. Vazio em
+>         inglês próprio; curso com 0 aulas mostra "0 aulas". **Mutação:** lista ignorando o idioma
+>         e nível cru → 4 reprovaram. Revertido.
+>         *Para a revisão do inglês (etapa 5):* a contagem não tem singular — "1 módulos" em PT
+>         (já era assim) e "1 modules" em EN.
+>   - [x] **4b — páginas de curso e trilha** *(24/09)*, com as 3 camadas editáveis em Textos. Texto da
+>         tela no idioma do app; o conteúdo do curso (título, aulas, FAQ) fica como foi escrito.
+>         Nome e frase das camadas saíram de `LAYER_CONFIG` (que ficou só com ícone e cor) para
+>         `common.camadas`, lidos já com as edições por `useTextosComuns()` — o mesmo hook do rodapé.
+>         Em Textos: aba "Toda página", seção "3 camadas". "Entrar para salvar" leva ao login no
+>         idioma da tela. `CLAUDE.md`, `courses.md` e `idiomas.md` reconciliados. **Mutação:** selo
+>         ignorando as edições e título escrito à mão → 2 reprovaram. Revertido.
+>   - [x] **4c — aviso de erro ao salvar o curso** no admin *(24/09 — o achado da 3c, consertado a
+>         pedido do operador)*. O formulário mostra, com `role="alert"`, a frase de cada recusa: slug
+>         repetido, idioma travado, curso numa trilha de outro idioma e falha genérica (inclusive
+>         queda de rede). O aviso some quando o próximo salvamento dá certo. Lógica em
+>         `lib/course-form.ts` (`mensagemDeErroAoSalvar`). **Mutação:** todas as falhas com a mesma
+>         frase → 3 reprovaram; aviso removido → 6 reprovaram. Revertido.
+> - [ ] **Etapa 5 — revisão do inglês** pelo operador com o Antigravity, e publicação.
+>       *24/09:* arquivo gerado (`design-lab/revisao-ingles.md`, só o texto novo: 98 frases de
+>       `app.*` e `common.camadas`) com 11 pontos de dúvida no topo.
+>       **Revisão do Antigravity aplicada (24/09):** contagem com singular nos dois idiomas
+>       ("1 módulo · 1 aula", "1 module · 2 lessons"; zero segue plural) · "Prerequisites" ·
+>       "Your basic account information." · "Lessons in progress show up here once…" · camadas
+>       UNIVERSAL ("— apply it with…") e IA ("fix errors, and save time"). **Aplicada em parte:**
+>       MODERNO — tirei a vírgula, mas mantive o segundo "that" ("…speed up your work and that few
+>       people master"): sem ele a frase lê "your work and few people" como um bloco antes de
+>       chegar ao verbo. Os outros 9 pontos de dúvida: manter.
+>       **2ª rodada (24/09), revisão completa linha por linha pelo Antigravity, a pedido do
+>       operador:** das 10 sugestões do Claude, 9 aceitas; a da camada MODERNO ganhou a versão dele
+>       ("The latest features that speed up your work, mastered by few."), que mantém o formato de
+>       fragmento das outras duas camadas. Nenhuma outra linha mudou. *Registro:* na 1ª tentativa
+>       desta rodada o Antigravity regerou o arquivo com um prompt próprio (as 10 sugestões não
+>       chegaram a ele) e editou uma frase do `en.ts`, que entrou sem ser notada no commit do menu
+>       de conta — substituída agora. **Falta só publicar** (o `publica` do operador).
 
 > **SEQUENCIAMENTO:** fecha **antes** do bloco *Superfície pública indexável*. Se as páginas
 > públicas forem montadas antes, nascem só em português e são refeitas. Não depende do Bunny;
@@ -1424,7 +1557,10 @@ landmark. Corrigido junto.
       o `CLAUDE.md` já exige (`core/` → a regra do `.url()`): aceita `https?://…` ou caminho do
       próprio site começando com `/`; recusa `javascript:`, `data:` e `//outro-site`. Teste de
       servidor + de componente + mutação.
-- [ ] **Etapa 2 — idioma no curso** (a parte de dados do Bloco I que o C4 exige):
+- [x] **Etapa 2 — idioma no curso** (a parte de dados do Bloco I que o C4 exige). *Feita em 24/09
+      como etapa 3 do "app do aluno em inglês" (Bloco I).* *MOVIDA em
+      24/09 para a etapa 3 do "app do aluno em inglês" (Bloco I), que vem antes do C4 — quando ela
+      fechar, esta fecha junto:*
       `Course.language` obrigatório + campo **Idioma** no formulário de curso + etiqueta "EN" na
       lista do admin; os cursos que já existem viram PT. *A confirmar na discussão da etapa:* o
       idioma fica travado depois de criado (como o slug). **Antes desta etapa:** dividir o

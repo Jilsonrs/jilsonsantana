@@ -33,6 +33,23 @@ export const pt = {
       ],
       tagline: "Dados e IA, sem complicação.",
       copyright: "© 2026 Jilson Santana. Todos os direitos reservados. Reprodução total ou parcial é proibida sem autorização por escrito."
+    },
+    // O selo "3 camadas" — os textos GLOBAIS, escritos uma vez para todo curso
+    // (courses.md §2.2). Editáveis em Admin → Textos (decisão do operador,
+    // 24/09/2026). O ícone e a cor continuam no código (LAYER_CONFIG).
+    camadas: {
+      UNIVERSAL: {
+        nome: "Fundamentos sólidos",
+        texto: "A base que funciona em qualquer versão — você aplica com o que já tem."
+      },
+      MODERNO: {
+        nome: "Recursos modernos",
+        texto: "Os recursos mais atuais que aceleram seu trabalho e poucos dominam."
+      },
+      IA: {
+        nome: "Com IA do seu lado",
+        texto: "A IA como copiloto pra gerar lógica, destravar erros e ganhar tempo."
+      }
     }
   },
   home: {
@@ -197,6 +214,136 @@ export const pt = {
     cta: {
       title: "Pronto para dominar dados, IA e o que vier depois?",
       btn: "Assinar"
+    }
+  },
+
+  // O APP DO ALUNO (telas depois do login + a tela de login). NÃO aparece em
+  // Admin → Textos (decisão do operador, 23/09/2026): muda por código. O Admin
+  // não está aqui — fica em português, escrito na própria tela.
+  app: {
+    header: {
+      catalogo: "Catálogo",
+      entrar: "Entrar"
+    },
+    nav: {
+      principal: "Principal",
+      menuDaSecao: "Menu da seção",
+      abrirMenu: "Abrir o menu",
+      abrirMenuConta: "Abrir o menu da conta",
+      menu: "Menu",
+      descricaoMenu: "Navegação principal do site.",
+      navegacao: "Navegação",
+      geral: "Geral",
+      contaPessoal: "Conta Pessoal",
+      sair: "Sair",
+      inicio: "Início",
+      cursos: "Cursos",
+      trilhas: "Trilhas",
+      minhasTrilhas: "Minhas trilhas",
+      jilsonai: "JilsonAI",
+      certificados: "Certificados",
+      minhaConta: "Minha conta",
+      seusDados: "Seus dados",
+      preferencias: "Preferências",
+      senhaEAcesso: "Senha e Acesso",
+      sessoesAtivas: "Sessões ativas",
+      faturamento: "Faturamento e Assinatura",
+      integracoes: "Integrações"
+    },
+    login: {
+      tituloPrefixo: "Acesso",
+      tituloEnfase: "Seguro",
+      area: "[ Área do Aluno ]",
+      entrar: "Entrar",
+      entrando: "Entrando…",
+      email: "E-mail",
+      senha: "Senha",
+      emailInvalido: "Informe um e-mail válido.",
+      senhaObrigatoria: "Informe sua senha.",
+      credenciaisIncorretas: "E-mail ou senha incorretos.",
+      falha: "Não foi possível entrar agora. Tente novamente em alguns minutos."
+    },
+    footer: {
+      erroIdioma: "Não foi possível trocar o idioma. Tente de novo."
+    },
+    comum: {
+      carregando: "Carregando…"
+    },
+    inicio: {
+      ola: "Olá",
+      intro: "Aqui é o seu ponto de partida. O que você começar a estudar aparece nesta tela, para você continuar de onde parou.",
+      continueTitulo: "Continue estudando",
+      continueVazio: "Suas aulas em andamento aparecem aqui assim que você começar um curso. Escolha um no catálogo e o progresso passa a te esperar nesta tela.",
+      verCatalogo: "Ver catálogo",
+      porOndeComecar: "Por onde começar",
+      portaCatalogo: "Catálogo",
+      portaCatalogoLegenda: "CURSOS E TRILHAS",
+      portaMinhasTrilhas: "Minhas trilhas",
+      portaMinhasTrilhasLegenda: "O QUE VOCÊ SALVOU"
+    },
+    conta: {
+      titulo: "Minha conta",
+      descricao: "Gerencie suas informações de acesso.",
+      seusDados: "Seus Dados",
+      seusDadosDescricao: "Informações básicas da sua conta na plataforma.",
+      nome: "Nome",
+      email: "E-mail",
+      papel: "Papel"
+    },
+    minhasTrilhas: {
+      titulo: "Minhas trilhas",
+      descricao: "Trilhas e seleções que você salvou para estudar.",
+      erro: "Não foi possível carregar suas trilhas.",
+      vazio: "Você ainda não salvou nenhuma trilha.",
+      verCatalogo: "Ver trilhas do catálogo",
+      voltar: "← Voltar para Minhas Trilhas",
+      erroDetalhe: "Não foi possível carregar esta trilha.",
+      semConteudo: "Esta trilha ainda não tem conteúdo."
+    },
+    catalogo: {
+      cursos: "Cursos",
+      trilhas: "Trilhas",
+      catalogoCursos: "Catálogo de Cursos",
+      catalogoTrilhas: "Catálogo de Trilhas",
+      aulas: "Aulas",
+      vazioCursos: "Nenhum curso publicado ainda.",
+      vazioTrilhas: "Nenhuma trilha publicada ainda.",
+      erroCursos: "Não foi possível carregar os cursos.",
+      erroTrilhas: "Não foi possível carregar as trilhas.",
+      nadaEncontrado: "Nada encontrado para"
+    },
+    busca: {
+      placeholder: "Buscar trilhas, cursos e aulas…",
+      rotulo: "Buscar"
+    },
+    // O NOME do nível para o aluno (operador, 24/09/2026). O valor (INICIANTE…)
+    // continua código; o Admin segue mostrando o valor cru.
+    niveis: {
+      INICIANTE: "Iniciante",
+      INTERMEDIARIO: "Intermediário",
+      AVANCADO: "Avançado"
+    },
+    // Singular e plural (revisão de 24/09): "1 módulo", "2 módulos"; zero é plural.
+    curso: {
+      modulo: "módulo",
+      modulos: "módulos",
+      aula: "aula",
+      aulas: "aulas",
+      naoEncontrado: "Curso não encontrado.",
+      conteudo: "Conteúdo do curso",
+      faq: "Perguntas frequentes",
+      aprender: "O que você vai aprender",
+      requisitos: "Pré-requisitos",
+      paraQuem: "Pra quem é"
+    },
+    trilha: {
+      naoEncontrada: "Trilha não encontrada.",
+      conteudo: "Conteúdo da trilha",
+      entrarParaSalvar: "Entrar para salvar",
+      salva: "Trilha salva ✓",
+      salvando: "Salvando…",
+      salvar: "Salvar trilha",
+      erroSalvar: "Não foi possível salvar. Tente de novo."
     }
   }
 };

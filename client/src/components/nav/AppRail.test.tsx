@@ -19,8 +19,9 @@ describe("AppRail — quem vê o quê", () => {
     expect(screen.getByRole("link", { name: "Início" })).toBeTruthy();
     expect(screen.getByRole("link", { name: "Cursos" })).toBeTruthy();
     expect(screen.getByRole("link", { name: "Minhas trilhas" })).toBeTruthy();
-    expect(screen.getByRole("link", { name: "Minha conta" })).toBeTruthy();
-
+    // "Minha conta" mora no menu da foto, no canto superior direito (decisão do
+    // operador, 24/09/2026) — não no rail.
+    expect(screen.queryByRole("link", { name: "Minha conta" })).toBeNull();
   });
 
   // Não é sobre acesso — o servidor barra de qualquer jeito. É sobre não
@@ -106,7 +107,7 @@ describe("AppRail — acessibilidade do estado recolhido", () => {
     // O rótulo está sempre no DOM: some por RECORTE (overflow), nunca por
     // `display:none`. Isto reprova se alguém apagar o <span> do rótulo e
     // deixar só o ícone.
-    for (const nome of ["Início", "Cursos", "Trilhas", "Minhas trilhas", "Minha conta", "Cursos Admin", "Site"]) {
+    for (const nome of ["Início", "Cursos", "Trilhas", "Minhas trilhas", "Cursos Admin", "Site"]) {
       expect(screen.getByRole("link", { name: nome })).toBeTruthy();
     }
   });

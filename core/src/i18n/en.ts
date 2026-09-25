@@ -29,6 +29,20 @@ export const en: Dict = {
       ],
       tagline: "Data and AI, made simple.",
       copyright: "© 2026 Jilson Santana. All rights reserved. Reproduction in whole or in part is prohibited without written permission."
+    },
+    camadas: {
+      UNIVERSAL: {
+        nome: "Solid foundations",
+        texto: "Core skills that work in any version — apply them with what you already have."
+      },
+      MODERNO: {
+        nome: "Modern features",
+        texto: "The latest features that speed up your work, mastered by few."
+      },
+      IA: {
+        nome: "AI on your side",
+        texto: "AI as your copilot to generate logic, fix errors, and save time."
+      }
     }
   },
   home: {
@@ -193,6 +207,130 @@ export const en: Dict = {
     cta: {
       title: "Ready to master data, AI and whatever comes next?",
       btn: "Subscribe"
+    }
+  },
+
+  app: {
+    header: {
+      catalogo: "Catalog",
+      entrar: "Sign in"
+    },
+    nav: {
+      principal: "Main",
+      menuDaSecao: "Section menu",
+      abrirMenu: "Open menu",
+      abrirMenuConta: "Open account menu",
+      menu: "Menu",
+      descricaoMenu: "Main site navigation.",
+      navegacao: "Navigation",
+      geral: "General",
+      contaPessoal: "Personal account",
+      sair: "Sign out",
+      inicio: "Home",
+      cursos: "Courses",
+      trilhas: "Learning paths",
+      minhasTrilhas: "My learning paths",
+      jilsonai: "JilsonAI",
+      certificados: "Certificates",
+      minhaConta: "My account",
+      seusDados: "Your details",
+      preferencias: "Preferences",
+      senhaEAcesso: "Password and access",
+      sessoesAtivas: "Active sessions",
+      faturamento: "Billing and subscription",
+      integracoes: "Integrations"
+    },
+    login: {
+      tituloPrefixo: "Secure",
+      tituloEnfase: "Access",
+      area: "[ Student Area ]",
+      entrar: "Sign in",
+      entrando: "Signing in…",
+      email: "Email",
+      senha: "Password",
+      emailInvalido: "Enter a valid email address.",
+      senhaObrigatoria: "Enter your password.",
+      credenciaisIncorretas: "Incorrect email or password.",
+      falha: "We couldn't sign you in right now. Please try again in a few minutes."
+    },
+    footer: {
+      erroIdioma: "We couldn't change the language. Please try again."
+    },
+    comum: {
+      carregando: "Loading…"
+    },
+    inicio: {
+      ola: "Hi",
+      intro: "This is your starting point. The courses you begin show up here, so you can pick up where you left off.",
+      continueTitulo: "Keep learning",
+      continueVazio: "Lessons in progress show up here once you start a course. Pick one from the catalog, and your progress will be waiting for you.",
+      verCatalogo: "Browse the catalog",
+      porOndeComecar: "Where to start",
+      portaCatalogo: "Catalog",
+      portaCatalogoLegenda: "COURSES AND LEARNING PATHS",
+      portaMinhasTrilhas: "My learning paths",
+      portaMinhasTrilhasLegenda: "WHAT YOU SAVED"
+    },
+    conta: {
+      titulo: "My account",
+      descricao: "Manage your sign-in details.",
+      seusDados: "Your details",
+      seusDadosDescricao: "Your basic account information.",
+      nome: "Name",
+      email: "Email",
+      papel: "Role"
+    },
+    minhasTrilhas: {
+      titulo: "My learning paths",
+      descricao: "Learning paths and selections you saved to study.",
+      erro: "We couldn't load your learning paths.",
+      vazio: "You haven't saved any learning paths yet.",
+      verCatalogo: "Browse learning paths",
+      voltar: "← Back to My learning paths",
+      erroDetalhe: "We couldn't load this learning path.",
+      semConteudo: "This learning path has no content yet."
+    },
+    catalogo: {
+      cursos: "Courses",
+      trilhas: "Learning paths",
+      catalogoCursos: "Course catalog",
+      catalogoTrilhas: "Learning path catalog",
+      aulas: "Lessons",
+      vazioCursos: "No courses available yet.",
+      vazioTrilhas: "No learning paths available yet.",
+      erroCursos: "We couldn't load the courses.",
+      erroTrilhas: "We couldn't load the learning paths.",
+      nadaEncontrado: "No results for"
+    },
+    busca: {
+      placeholder: "Search learning paths, courses, and lessons…",
+      rotulo: "Search"
+    },
+    niveis: {
+      INICIANTE: "Beginner",
+      INTERMEDIARIO: "Intermediate",
+      AVANCADO: "Advanced"
+    },
+    curso: {
+      modulo: "module",
+      modulos: "modules",
+      aula: "lesson",
+      aulas: "lessons",
+      naoEncontrado: "Course not found.",
+      conteudo: "Course content",
+      faq: "Frequently asked questions",
+      aprender: "What you'll learn",
+      requisitos: "Prerequisites",
+      paraQuem: "Who this course is for"
+    },
+    trilha: {
+      naoEncontrada: "Learning path not found.",
+      conteudo: "Learning path content",
+      entrarParaSalvar: "Sign in to save",
+      salva: "Learning path saved ✓",
+      salvando: "Saving…",
+      salvar: "Save learning path",
+      erroSalvar: "We couldn't save this learning path. Please try again."
     }
   }
 };

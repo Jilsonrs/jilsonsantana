@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { Level, ContentStatus, Layer, PlanItemType } from "../constants/content.js";
+import { LANGUAGES } from "./site-text.js";
 
 // Shared content contracts (Phase 2). Consumed by the server (request validation
 // in Block 3) AND the client (RHF zodResolver in Block 6) — the single source of
@@ -52,9 +53,17 @@ export const camadaOverrideSchema = z.record(
 );
 export type CamadaOverride = z.infer<typeof camadaOverrideSchema>;
 
+// O idioma do conteúdo: a API fala `pt`/`en` (o código do endereço e do
+// dicionário); o banco guarda o enum `Language` (PT/EN).
+export const contentLanguageSchema = z.enum(LANGUAGES);
+
 // ── Course ───────────────────────────────────────────────────────────────────
+// `language` é OBRIGATÓRIO na criação (operador, 14/09/2026). Na edição ele pode
+// vir (é `.partial()`), mas o SERVIDOR só aceita trocar enquanto o curso for
+// rascunho (operador, 24/09/2026).
 export const courseCreateSchema = z.object({
   slug: slugSchema,
+  language: contentLanguageSchema,
   title: z.string().min(1),
   subtitle: z.string().optional(),
   description: z.string().optional(),
@@ -103,8 +112,11 @@ export type LessonUpdateInput = z.infer<typeof lessonUpdateSchema>;
 // ── LearningPlan (trilha) ──────────────────────────────────────────────────--
 // isTemplate / ownerUserId are NOT client-settable: the server sets them (admin
 // curated => isTemplate true, owner null; member save/clone => owner = the user).
+// `language` obrigatório na criação; trocar depois segue a mesma regra do curso
+// (só enquanto rascunho, e sem itens do outro idioma).
 export const planCreateSchema = z.object({
   slug: slugSchema.optional(),
+  language: contentLanguageSchema,
   name: z.string().min(1),
   description: z.string().optional(),
   skillsCovered: z.array(z.string().min(1)).optional(),

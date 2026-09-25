@@ -15,6 +15,7 @@ const useSession = vi.fn();
 vi.mock("@/lib/auth-client", () => ({ useSession: () => useSession() }));
 
 import { TrilhaDetailPage } from "./TrilhaDetailPage";
+import { IdiomaProvider } from "@/lib/language";
 
 const baseTrilha: TrilhaDetail = {
   id: 2,
@@ -94,5 +95,36 @@ describe("TrilhaDetailPage", () => {
     renderWithProviders(<TrilhaDetailPage />, { route: "/trilha/inexistente", path: "/trilha/:slug" });
 
     expect(await screen.findByText("Trilha não encontrada.")).toBeTruthy();
+  });
+});
+
+// O texto da tela segue o idioma do app (decisão do operador, 24/09/2026).
+describe("TrilhaDetailPage — em inglês", () => {
+  function emIngles() {
+    return renderWithProviders(
+      <IdiomaProvider idioma="en">
+        <TrilhaDetailPage />
+      </IdiomaProvider>,
+      { route: "/trilha/exemplo-fundamentos", path: "/trilha/:slug" },
+    );
+  }
+
+  it("aluno logado: título da seção e botão de salvar em inglês", async () => {
+    getTrilhaBySlug.mockResolvedValue(baseTrilha);
+    useSession.mockReturnValue({ data: { user: { id: "u1" } }, isPending: false });
+    emIngles();
+
+    expect(await screen.findByRole("heading", { name: "Learning path content" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Save learning path" })).toBeTruthy();
+    expect(screen.queryByText("Salvar trilha")).toBeNull();
+  });
+
+  it("visitante: o convite para entrar leva ao login em inglês", async () => {
+    getTrilhaBySlug.mockResolvedValue(baseTrilha);
+    useSession.mockReturnValue({ data: null, isPending: false });
+    emIngles();
+
+    const entrar = await screen.findByRole("link", { name: "Sign in to save" });
+    expect(entrar.getAttribute("href")).toBe("/login?lang=en");
   });
 });

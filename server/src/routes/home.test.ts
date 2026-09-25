@@ -28,9 +28,10 @@ describe("Home pública (SSR)", () => {
   it("sem sessão, o botão leva ao login — nos dois idiomas", async () => {
     // Nasceu com href="#" e ficou assim até o operador clicar. Link morto não
     // quebra teste, typecheck nem build — só decepciona quem clica.
-    for (const rota of ["/", "/en"]) {
+    // Cada idioma leva ao login no SEU idioma (decisão do operador, 24/09/2026).
+    for (const [rota, login] of [["/", "/login"], ["/en", "/login?lang=en"]]) {
       const res = await request(app).get(rota);
-      expect(res.text, rota).toContain('<a href="/login" class="btn-login">');
+      expect(res.text, rota).toContain(`<a href="${login}" class="btn-login">`);
       expect(res.text, rota).not.toContain('href="/inicio"');
     }
   });
@@ -77,6 +78,29 @@ describe("Home pública (SSR)", () => {
     // Um endereço por idioma: a página em inglês não empurra ninguém para o
     // catálogo em português (CLAUDE.md → Idiomas).
     expect(en.text).not.toContain('href="/cursos"');
+  });
+
+  // O estrangeiro escolhe o idioma na home e ENTRA já em inglês (decisão do
+  // operador, 24/09/2026): o "Entrar" de /en leva o idioma para o login.
+  it("o Entrar leva o idioma da página para o login", async () => {
+    const pt = await request(app).get("/");
+    const en = await request(app).get("/en");
+
+    expect(pt.text).toContain('href="/login"');
+    expect(pt.text).not.toContain("/login?lang=en");
+    expect(en.text).toContain('href="/login?lang=en"');
+  });
+
+  // Um canal por idioma (decisão do operador, 24/09/2026): o visitante em
+  // inglês não cai no canal em português.
+  it("o YouTube leva ao canal do idioma da página", async () => {
+    const pt = await request(app).get("/");
+    const en = await request(app).get("/en");
+
+    expect(pt.text).toContain('href="https://www.youtube.com/@JilsonSantanaBI/"');
+    expect(pt.text).not.toContain("@jilsonen");
+    expect(en.text).toContain('href="https://www.youtube.com/@jilsonen"');
+    expect(en.text).not.toContain("@JilsonSantanaBI");
   });
 
   it("as duas versões declaram o favicon", async () => {

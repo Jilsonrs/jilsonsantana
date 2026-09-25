@@ -11,6 +11,9 @@ export const authClient = createAuthClient({
     inferAdditionalFields({
       user: {
         role: { type: "string" },
+        // O idioma do app (decisão do operador, 24/09/2026) — gravado por
+        // PATCH /api/me/language, lido daqui por `useAppLanguage()`.
+        preferredLanguage: { type: "string" },
       },
     }),
   ],

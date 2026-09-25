@@ -34,6 +34,7 @@ const existingCourse: AdminCourseDetail = {
   introVideoId: null,
   displayOrder: 0,
   status: "DRAFT",
+  language: "pt",
   modules: [],
 };
 
@@ -110,5 +111,99 @@ describe("AdminCourseFormPage", () => {
         displayOrder: 0,
       }),
     );
+  });
+});
+
+// Idioma do curso (decisões do operador: campo na criação, 14/09; troca só
+// enquanto rascunho, 24/09/2026).
+describe("AdminCourseFormPage — idioma", () => {
+  it("criar: nasce em Português e pode virar English", async () => {
+    createCourse.mockResolvedValue({ ...existingCourse, id: 2 });
+    renderWithProviders(<AdminCourseFormPage />, { route: "/admin/cursos/novo" });
+
+    const idioma = screen.getByLabelText("Idioma") as HTMLSelectElement;
+    expect(idioma.value).toBe("pt");
+
+    fireEvent.change(screen.getByLabelText("Slug"), { target: { value: "curso-en" } });
+    fireEvent.change(screen.getByLabelText("Título"), { target: { value: "English course" } });
+    fireEvent.change(idioma, { target: { value: "en" } });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar dados do curso" }));
+
+    await waitFor(() => expect(createCourse).toHaveBeenCalled());
+    expect(createCourse.mock.calls[0][0]).toMatchObject({ slug: "curso-en", language: "en" });
+  });
+
+  it("rascunho: o idioma troca", async () => {
+    adminGetCourse.mockResolvedValue(existingCourse);
+    updateCourse.mockResolvedValue(existingCourse);
+    renderWithProviders(<AdminCourseFormPage />, { route: "/admin/cursos/1", path: "/admin/cursos/:id" });
+
+    const idioma = (await screen.findByLabelText("Idioma")) as HTMLSelectElement;
+    await waitFor(() => expect(idioma.value).toBe("pt"));
+    fireEvent.change(idioma, { target: { value: "en" } });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar dados do curso" }));
+
+    await waitFor(() => expect(updateCourse).toHaveBeenCalled());
+    expect(updateCourse.mock.calls[0][1]).toMatchObject({ language: "en" });
+  });
+
+  it("publicado: o idioma aparece travado, com o motivo, e vai o mesmo no envio", async () => {
+    const publicado = { ...existingCourse, status: "PUBLISHED" as const, language: "en" as const };
+    adminGetCourse.mockResolvedValue(publicado);
+    updateCourse.mockResolvedValue(publicado);
+    renderWithProviders(<AdminCourseFormPage />, { route: "/admin/cursos/1", path: "/admin/cursos/:id" });
+
+    expect(await screen.findByText("O idioma trava depois que o curso é publicado.")).toBeTruthy();
+    expect(screen.getByText("English")).toBeTruthy();
+    expect(screen.queryByLabelText("Idioma")).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Salvar dados do curso" }));
+    await waitFor(() => expect(updateCourse).toHaveBeenCalled());
+    expect(updateCourse.mock.calls[0][1]).toMatchObject({ language: "en" });
+  });
+});
+
+// Antes a tela não dizia nada quando o salvamento falhava (achado da etapa 3c,
+// consertado a pedido do operador em 24/09/2026).
+describe("AdminCourseFormPage — quando salvar falha", () => {
+  function recusa(codigo?: string) {
+    return { response: { status: 409, data: codigo ? { error: codigo } : {} } };
+  }
+
+  async function salvarEdicao() {
+    adminGetCourse.mockResolvedValue(existingCourse);
+    renderWithProviders(<AdminCourseFormPage />, { route: "/admin/cursos/1", path: "/admin/cursos/:id" });
+    const titulo = (await screen.findByLabelText("Título")) as HTMLInputElement;
+    await waitFor(() => expect(titulo.value).toBe(existingCourse.title));
+    fireEvent.click(screen.getByRole("button", { name: "Salvar dados do curso" }));
+  }
+
+  it.each([
+    ["SlugTaken", "Este slug já está em uso por outro curso."],
+    ["LanguageLocked", "O idioma trava depois que o curso é publicado."],
+    ["LanguageInUse", "Este curso está numa trilha de outro idioma. Tire-o da trilha antes de trocar o idioma."],
+    [undefined, "Não foi possível salvar o curso. Tente de novo."],
+  ])("recusa %s mostra a frase certa", async (codigo, frase) => {
+    updateCourse.mockRejectedValue(recusa(codigo));
+    await salvarEdicao();
+
+    expect((await screen.findByRole("alert")).textContent).toBe(frase);
+  });
+
+  it("queda de rede (sem resposta do servidor) também avisa", async () => {
+    updateCourse.mockRejectedValue(new Error("Network Error"));
+    await salvarEdicao();
+
+    expect((await screen.findByRole("alert")).textContent).toBe("Não foi possível salvar o curso. Tente de novo.");
+  });
+
+  it("o aviso some quando o salvamento seguinte dá certo", async () => {
+    updateCourse.mockRejectedValueOnce(recusa("SlugTaken")).mockResolvedValue(existingCourse);
+    await salvarEdicao();
+    await screen.findByRole("alert");
+
+    fireEvent.click(screen.getByRole("button", { name: "Salvar dados do curso" }));
+    await waitFor(() => expect(updateCourse).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(screen.queryByRole("alert")).toBeNull());
   });
 });

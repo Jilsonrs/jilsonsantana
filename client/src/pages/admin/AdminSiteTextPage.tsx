@@ -20,6 +20,7 @@ const NOMES: Record<string, string> = {
   "common.nav": "Toda página · Menu do topo",
   "common.a11y": "Toda página · Leitor de tela",
   "common.footer": "Toda página · Rodapé",
+  "common.camadas": "Toda página · 3 camadas",
   "home.a11y": "Home · Leitor de tela",
   "home.hero": "Home · Topo",
   "home.catalog": "Home · Catálogo de cursos",

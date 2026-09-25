@@ -3,6 +3,7 @@ import { BookOpen, Compass, Sparkles } from "lucide-react";
 import { useSession } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { PageContainer } from "@/components/layout/PageLayout";
+import { useT } from "@/lib/language";
 
 /**
  * Home do aluno — o destino de quem acaba de entrar.
@@ -21,23 +22,23 @@ import { PageContainer } from "@/components/layout/PageLayout";
  * passar a buscar, os três entram junto com os testes deles.
  */
 
-const PORTAS = [
-  {
-    to: "/cursos",
-    icon: Compass,
-    titulo: "Catálogo",
-    legenda: "CURSOS E TRILHAS",
-  },
-  {
-    to: "/minhas-trilhas",
-    icon: BookOpen,
-    titulo: "Minhas trilhas",
-    legenda: "O QUE VOCÊ SALVOU",
-  },
-];
-
 export function StudentHomePage() {
+  const t = useT();
   const { data: session } = useSession();
+  const portas = [
+    {
+      to: "/cursos",
+      icon: Compass,
+      titulo: t.inicio.portaCatalogo,
+      legenda: t.inicio.portaCatalogoLegenda,
+    },
+    {
+      to: "/minhas-trilhas",
+      icon: BookOpen,
+      titulo: t.inicio.portaMinhasTrilhas,
+      legenda: t.inicio.portaMinhasTrilhasLegenda,
+    },
+  ];
   const primeiroNome = session?.user.name?.split(" ")[0];
 
   return (
@@ -58,21 +59,20 @@ export function StudentHomePage() {
         <h1 className="text-[2.5rem] font-semibold leading-tight">
           {primeiroNome ? (
             <>
-              Olá, <span className="font-emphasis italic text-primary">{primeiroNome}</span>
+              {t.inicio.ola}, <span className="font-emphasis italic text-primary">{primeiroNome}</span>
             </>
           ) : (
-            "Olá"
+            t.inicio.ola
           )}
         </h1>
 
         <p className="mt-4 max-w-[60ch] text-lg leading-relaxed text-muted-foreground">
-          Aqui é o seu ponto de partida. O que você começar a estudar aparece
-          nesta tela, para você continuar de onde parou.
+          {t.inicio.intro}
         </p>
 
         <section aria-labelledby="continue" className="mt-12">
           <h2 id="continue" className="text-xl font-semibold">
-            Continue estudando
+            {t.inicio.continueTitulo}
           </h2>
 
           {/* Estado vazio HONESTO: diz o que vai aparecer e o que fazer agora,
@@ -83,23 +83,21 @@ export function StudentHomePage() {
               <Sparkles className="size-5 text-primary" strokeWidth={1.5} />
             </div>
             <p className="mt-6 max-w-[52ch] leading-relaxed text-muted-foreground">
-              Suas aulas em andamento aparecem aqui assim que você começar um
-              curso. Escolha um no catálogo e o progresso passa a te esperar
-              nesta tela.
+              {t.inicio.continueVazio}
             </p>
             <Button asChild className="mt-8 rounded-full">
-              <Link to="/cursos">Ver catálogo</Link>
+              <Link to="/cursos">{t.inicio.verCatalogo}</Link>
             </Button>
           </div>
         </section>
 
         <section aria-labelledby="portas" className="mt-14">
           <h2 id="portas" className="text-xl font-semibold">
-            Por onde começar
+            {t.inicio.porOndeComecar}
           </h2>
 
           <div className="mt-6 grid gap-6 sm:grid-cols-2">
-            {PORTAS.map(({ to, icon: Icon, titulo, legenda }) => (
+            {portas.map(({ to, icon: Icon, titulo, legenda }) => (
               <Link
                 key={to}
                 to={to}

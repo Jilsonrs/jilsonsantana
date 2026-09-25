@@ -1,12 +1,28 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { screen, waitFor } from "@testing-library/react";
-import { pt } from "@jilson/core";
+import { screen, waitFor, fireEvent } from "@testing-library/react";
+import { pt, en } from "@jilson/core";
 import { renderWithProviders } from "@/test-utils";
 import * as api from "@/lib/api";
+import { IdiomaProvider } from "@/lib/language";
 import { AppFooter } from "./AppFooter";
 
 vi.mock("@/lib/api");
+
+// O idioma do app chega pelo shell (IdiomaProvider); a sessão só entra para
+// ser atualizada depois de uma troca (refetch).
+const refetch = vi.fn();
+vi.mock("@/lib/auth-client", () => ({
+  useSession: () => ({ data: { user: {} }, refetch }),
+}));
+
+function emIngles() {
+  return renderWithProviders(
+    <IdiomaProvider idioma="en">
+      <AppFooter />
+    </IdiomaProvider>,
+  );
+}
 
 // O texto de "Contato" como o operador o editou em Admin → Textos. É diferente
 // do de fábrica de propósito: é o que prova que o rodapé lê o servidor.
@@ -22,6 +38,8 @@ function link(nome: string) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  refetch.mockResolvedValue(undefined);
+  vi.mocked(api.updateMyLanguage).mockResolvedValue(undefined);
 });
 
 describe("AppFooter — de onde vem o texto", () => {
@@ -90,18 +108,72 @@ describe("AppFooter — para onde cada link leva", () => {
   });
 });
 
-// PROVISÓRIO até o bloco "app do aluno em inglês": o seletor leva à home
-// pública em cada idioma, e o app só existe em português.
+// Decisão do operador (24/09/2026): o seletor troca o idioma do PRÓPRIO app,
+// sem sair da tela, e a escolha fica na conta.
 describe("AppFooter — seletor de idioma", () => {
-  beforeEach(() => {
+  it("marca o idioma da conta", () => {
     vi.mocked(api.getCommonTexts).mockResolvedValue(pt.common);
-  });
-
-  it("marca o português como idioma atual e oferece o inglês", () => {
     renderWithProviders(<AppFooter />);
 
-    expect(link("PT").getAttribute("aria-current")).toBe("true");
-    expect(link("EN").getAttribute("aria-current")).toBeNull();
-    expect(link("EN").getAttribute("href")).toBe("/en");
+    expect(screen.getByRole("button", { name: "PT" }).getAttribute("aria-pressed")).toBe("true");
+    expect(screen.getByRole("button", { name: "EN" }).getAttribute("aria-pressed")).toBe("false");
+  });
+
+  it("não é link: trocar o idioma não tira ninguém da tela", () => {
+    vi.mocked(api.getCommonTexts).mockResolvedValue(pt.common);
+    renderWithProviders(<AppFooter />);
+
+    expect(screen.queryByRole("link", { name: "EN" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "PT" })).toBeNull();
+  });
+
+  it("app em inglês: textos, destinos e canal do YouTube em inglês", async () => {
+    vi.mocked(api.getCommonTexts).mockResolvedValue(en.common);
+    emIngles();
+
+    await waitFor(() => expect(api.getCommonTexts).toHaveBeenCalledWith("en"));
+    expect(link(en.common.footer.links[5]).getAttribute("href")).toBe("/en/contact");
+    expect(link(en.common.footer.links[3]).getAttribute("href")).toBe("/en#faq");
+    expect(link("YouTube").getAttribute("href")).toBe("https://www.youtube.com/@jilsonen");
+    expect(screen.getByText(en.common.footer.copyright)).toBeTruthy();
+    expect(screen.getByRole("button", { name: "EN" }).getAttribute("aria-pressed")).toBe("true");
+  });
+
+  it("enquanto a busca em inglês não volta, o texto de fábrica é o INGLÊS", () => {
+    vi.mocked(api.getCommonTexts).mockReturnValue(new Promise(() => {}));
+    emIngles();
+
+    expect(link(en.common.footer.links[5])).toBeTruthy();
+    expect(screen.queryByRole("link", { name: pt.common.footer.links[5] })).toBeNull();
+  });
+
+  it("escolher EN grava na conta e atualiza a sessão", async () => {
+    vi.mocked(api.getCommonTexts).mockResolvedValue(pt.common);
+    renderWithProviders(<AppFooter />);
+
+    fireEvent.click(screen.getByRole("button", { name: "EN" }));
+
+    await waitFor(() => expect(api.updateMyLanguage).toHaveBeenCalled());
+    expect(vi.mocked(api.updateMyLanguage).mock.calls[0][0]).toBe("en");
+    await waitFor(() => expect(refetch).toHaveBeenCalled());
+  });
+
+  it("se a troca falhar, avisa — o idioma não muda sem explicação", async () => {
+    vi.mocked(api.getCommonTexts).mockResolvedValue(pt.common);
+    vi.mocked(api.updateMyLanguage).mockRejectedValue(new Error("rede"));
+    renderWithProviders(<AppFooter />);
+
+    fireEvent.click(screen.getByRole("button", { name: "EN" }));
+
+    expect((await screen.findByRole("alert")).textContent).toBe(pt.app.footer.erroIdioma);
+    expect(refetch).not.toHaveBeenCalled();
+  });
+
+  it("clicar no idioma que já está escolhido não grava nada", () => {
+    vi.mocked(api.getCommonTexts).mockResolvedValue(pt.common);
+    renderWithProviders(<AppFooter />);
+
+    fireEvent.click(screen.getByRole("button", { name: "PT" }));
+    expect(api.updateMyLanguage).not.toHaveBeenCalled();
   });
 });

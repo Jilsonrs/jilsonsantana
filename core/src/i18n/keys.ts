@@ -23,11 +23,25 @@ export function flattenDict(valor: unknown, prefixo = ""): [string, string][] {
 }
 
 /**
- * Toda chave que existe no dicionário. É a LISTA BRANCA das sobrescritas: o
- * servidor recusa gravar chave que não esteja aqui, senão a tabela vira
- * lixeira e ninguém descobre — a tela simplesmente ignora a linha órfã.
+ * O texto do APP (`app.*`) não é editável pelo operador: muda por código
+ * (decisão dele, 23/09/2026). Só o que aparece nas páginas públicas — `common.*`
+ * e cada página — entra em Admin → Textos.
  */
-export const DICT_KEYS: ReadonlySet<string> = new Set(flattenDict(pt).map(([k]) => k));
+export function ehTextoEditavel(chave: string): boolean {
+  return !chave.startsWith("app.");
+}
+
+/**
+ * Toda chave EDITÁVEL do dicionário. É a LISTA BRANCA das sobrescritas: o
+ * servidor recusa gravar chave que não esteja aqui, senão a tabela vira
+ * lixeira e ninguém descobre — a tela simplesmente ignora a linha órfã. É
+ * também o que tira `app.*` do alcance da tela de Textos, inclusive por fora.
+ */
+export const DICT_KEYS: ReadonlySet<string> = new Set(
+  flattenDict(pt)
+    .map(([k]) => k)
+    .filter(ehTextoEditavel),
+);
 
 /**
  * Escreve `valor` no caminho `chave` de um dicionário, no lugar. Entende índice

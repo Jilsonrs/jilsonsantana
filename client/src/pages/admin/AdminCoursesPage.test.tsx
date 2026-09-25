@@ -18,6 +18,7 @@ const course: AdminCourseCard = {
   slug: "exemplo-fundamentos-excel-ia",
   title: "Exemplo — Fundamentos de Excel + IA",
   status: "DRAFT",
+  language: "pt",
   displayOrder: 0,
   moduleCount: 2,
   lessonCount: 3,
@@ -50,5 +51,18 @@ describe("AdminCoursesPage", () => {
     // context argument — assert on the actual variable passed, not an exact
     // arg-count match.
     await waitFor(() => expect(deleteCourse.mock.calls[0]?.[0]).toBe(1));
+  });
+});
+
+describe("AdminCoursesPage — idioma", () => {
+  it("curso em inglês ganha a etiqueta EN; em português, não", async () => {
+    adminGetCourses.mockResolvedValue([
+      course,
+      { ...course, id: 2, slug: "curso-en", title: "English course", language: "en" },
+    ]);
+    renderWithProviders(<AdminCoursesPage />);
+
+    await screen.findByText("English course");
+    expect(screen.getAllByText("EN")).toHaveLength(1);
   });
 });

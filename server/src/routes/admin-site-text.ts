@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { flattenDict, pt, en, siteTextUpdateSchema } from "@jilson/core";
+import { flattenDict, pt, en, siteTextUpdateSchema, DICT_KEYS } from "@jilson/core";
 import { prisma } from "../lib/prisma.js";
 import { requireAdmin } from "../middleware/auth.js";
 import { validate } from "../lib/http.js";
@@ -21,14 +21,17 @@ router.get("/admin/site-text", requireAdmin, async (_req, res) => {
   const porChave = new Map(sobrescritas.map((s) => [`${s.key}|${s.language}`, s.value]));
 
   const fabricaEn = new Map(flattenDict(en));
-  const campos = flattenDict(pt).map(([key, valorPt]) => ({
-    key,
-    // A seção é derivada do caminho ("home.pricing.features[0]" → "home.pricing"), nunca
-    // uma coluna: um agrupamento gravado envelhece quando a chave se move.
-    section: key.split(/[.[]/).slice(0, 2).join("."),
-    pt: { factory: valorPt, override: porChave.get(`${key}|PT`) ?? null },
-    en: { factory: fabricaEn.get(key) ?? "", override: porChave.get(`${key}|EN`) ?? null },
-  }));
+  // Só o editável: o texto do app (`app.*`) não aparece aqui (DICT_KEYS).
+  const campos = flattenDict(pt)
+    .filter(([key]) => DICT_KEYS.has(key))
+    .map(([key, valorPt]) => ({
+      key,
+      // A seção é derivada do caminho ("home.pricing.features[0]" → "home.pricing"), nunca
+      // uma coluna: um agrupamento gravado envelhece quando a chave se move.
+      section: key.split(/[.[]/).slice(0, 2).join("."),
+      pt: { factory: valorPt, override: porChave.get(`${key}|PT`) ?? null },
+      en: { factory: fabricaEn.get(key) ?? "", override: porChave.get(`${key}|EN`) ?? null },
+    }));
 
   res.json({ campos });
 });

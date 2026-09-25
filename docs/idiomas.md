@@ -102,8 +102,11 @@ separadas com `hreflang`.
 `[operador, 14/09 — 4ª rodada]`. "Learning path" é o nome que o LinkedIn Learning usa para trilha.
 A trilha em inglês já nasce com nome e slug em inglês.
 
-**Pendência:** `[pendente — operador]` **a posição do seletor PT | EN** na tela. O operador decide
-no Passo 0 do Bloco I (Fase 3), com o parceiro de design.
+**O seletor PT | EN** `[operador, 23–24/09]`: na home, no topo e no rodapé (dois links, um por
+endereço); no app logado, **no rodapé**, como botão que troca o idioma do próprio app e grava na
+conta (`User.preferredLanguage`). **Tudo depois do login existe em inglês** `[operador, 24/09 — "por
+causa dos alunos internacionais"]`, **menos o Admin**, que fica em português. O estrangeiro escolhe
+o idioma na home e **entra já em inglês**.
 
 ---
 
@@ -148,6 +151,13 @@ no Passo 0 do Bloco I (Fase 3), com o parceiro de design.
   - a trilha clonada pelo aluno herda o idioma.
 - **Catálogo, busca, lista de trilhas e sitemap mostram só o idioma do endereço** `[operador,
   14/09]`. É o mesmo mecanismo do filtro por status que já existe.
+- **Só as listas de DESCOBERTA filtram** `[operador, 24/09 — "como no LinkedIn"]`. O que é do
+  aluno — trilhas salvas, cursos iniciados, o "continue estudando" — aparece **nos dois
+  idiomas**; quem sabe as duas línguas salva, começa e estuda cursos e trilhas das duas. Salvar
+  ou copiar trilha do outro idioma é permitido, e a cópia **herda o idioma da trilha**, não o da
+  conta. A única recusa é misturar idiomas **dentro** de uma trilha.
+- **O idioma do curso e da trilha só troca enquanto é rascunho** `[operador, 24/09]`; publicado,
+  trava.
 - **IDIOMA É FILTRO, NÃO PORTÃO** `[operador, 14/09 — 3ª rodada, como no LinkedIn Learning]`.
   **Uma assinatura dá acesso aos cursos dos dois idiomas.** O idioma escolhido decide **o que
   aparece** (catálogo, busca, trilhas); quem troca de idioma vê e estuda os cursos daquele idioma
@@ -192,8 +202,16 @@ no Passo 0 do Bloco I (Fase 3), com o parceiro de design.
   - **a biblioteca, se houver, é decidida no plano do bloco** (dependência nova precisa do OK do
     operador). O `react-i18next`, sugerido pelo Gemini em 14/09, serve só o React, e as páginas
     públicas saem do React na Fase 3.
+  - **Resolvido em 24/09, sem biblioteca:** o texto do app mora na parte `app` do mesmo
+    dicionário (`core/src/i18n/`) e o React o lê por `useT()` (`client/src/lib/language.tsx`).
+    **`app.*` não aparece em *Admin → Textos*** `[operador, 23/09]` e o servidor recusa gravá-lo; o
+    rodapé do app é a exceção, porque usa os textos comuns da home. O Admin fica fora do
+    dicionário, em português.
 - **Valor de enum continua código** (`Level`, `Layer`, `ContentStatus`); o **rótulo** vem do
   dicionário. Os textos globais das 3 camadas passam a existir nos dois idiomas.
+  **Feito em 24/09** `[operador]`: o nível aparece para o aluno pelo **nome** (`app.niveis`:
+  "Intermediário" / "Intermediate") — o Admin segue com o valor cru; os textos das 3 camadas
+  moram em `common.camadas` e são **editáveis em Admin → Textos**.
 - **Conteúdo de curso não passa pelo dicionário:** título, descrição e FAQ são escritos no idioma do
   curso, porque é outro curso.
 - **Quem traduz:** o agente. **Quem aprova:** o operador revisa todo texto que o aluno lê, antes de
@@ -264,6 +282,8 @@ site para português e pagaria em real, bem menos que US$ 30.
 
 `[operador, 14/09]` **Dois canais separados**, PT e EN, nunca misturados. O canal em inglês vem
 depois e recebe os cursos regravados em inglês. O canal atual segue o rebuild em português.
+`[operador, 24/09]` O canal em inglês é **`https://www.youtube.com/@jilsonen`**, e o site leva cada
+idioma ao seu canal (home e rodapé do app). Os dois endereços moram em `core/src/constants/site.ts`.
 
 ---
 
@@ -340,7 +360,7 @@ pessoa, e uma resposta de reembolso vaga que virou promessa clara.
 | Passo | Quem | O quê |
 |---|---|---|
 | 1 | agente | Escreve o inglês no `en.ts`, junto com o português. Nunca deixa chave vazia. |
-| 2 | agente | `npm run revisao:ingles` → gera `design-lab/revisao-ingles.md` (as frases lado a lado + a régua de voz acima). |
+| 2 | agente | `npm run revisao:ingles` → gera `design-lab/revisao-ingles.md` (as frases lado a lado + a régua de voz acima). Rodada só de texto novo: `-- --so app,common.camadas` (recorta por prefixo de chave) e `--duvidas <arquivo.md>` (põe a lista do passo 3 no topo do arquivo). |
 | 3 | agente | Entrega ao operador a lista dos **pontos de dúvida** — escolha de palavra, conceito brasileiro, promessa nova. Sem essa lista, o revisor não sabe onde olhar. |
 | 4 | operador | Manda o parceiro de design (Antigravity) ler o arquivo e devolver `chave → sugestão → por quê`. |
 | 5 | agente | Aplica, roda os gates, e **reporta o que NÃO aplicou, com o motivo**. |

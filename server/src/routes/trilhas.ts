@@ -14,6 +14,7 @@ import {
 import { prisma } from "../lib/prisma.js";
 import { requireAuth, requireAdmin } from "../middleware/auth.js";
 import { validate, parseId } from "../lib/http.js";
+import { paraBanco, comIdioma, idiomaDaLista } from "../lib/language.js";
 
 const router = Router();
 const PUBLISHED = ContentStatus.PUBLISHED;
@@ -78,10 +79,13 @@ async function loadEditablePlan(
 
 // ── Public reads (curated templates only) ────────────────────────────────────
 
-// GET /api/trilhas — curated catalog.
-router.get("/trilhas", async (_req, res) => {
+// GET /api/trilhas?lang=pt|en — curated catalog. Lista de DESCOBERTA: filtra
+// pelo idioma, como filtra pelo status (CLAUDE.md → Idiomas).
+router.get("/trilhas", async (req, res) => {
+  const language = idiomaDaLista(req.query.lang, res);
+  if (language === null) return;
   const trilhas = await prisma.learningPlan.findMany({
-    where: { status: PUBLISHED, isTemplate: true },
+    where: { status: PUBLISHED, isTemplate: true, language },
     orderBy: byOrder,
     select: {
       id: true,
@@ -100,6 +104,11 @@ router.get("/trilhas", async (_req, res) => {
 // "mine") ────────────────────────────────────────────────────────────────────
 
 // GET /api/trilhas/mine — the requester's saved/cloned trilhas.
+//
+// NÃO FILTRA POR IDIOMA, e é de propósito (decisão do operador, 24/09/2026 —
+// como no LinkedIn Learning): o que é DO ALUNO aparece nos dois idiomas. Quem
+// sabe as duas línguas salva trilhas das duas, e trocar o idioma do app não pode
+// esconder o que ele já salvou. Idioma é filtro de DESCOBERTA, não portão.
 router.get("/trilhas/mine", requireAuth, async (req, res) => {
   const user = req.user;
   if (!user) {
@@ -115,11 +124,12 @@ router.get("/trilhas/mine", requireAuth, async (req, res) => {
       description: true,
       skillsCovered: true,
       sourcePlanId: true,
+      language: true,
       displayOrder: true,
       _count: { select: { planModules: true } },
     },
   });
-  res.json(trilhas);
+  res.json(trilhas.map(comIdioma));
 });
 
 // GET /api/trilhas/mine/:id — one owned trilha (full tree); 404 if not the owner's.
@@ -139,7 +149,7 @@ router.get("/trilhas/mine/:id", requireAuth, async (req, res) => {
     res.status(404).json({ error: "NotFound" });
     return;
   }
-  res.json(trilha);
+  res.json(comIdioma(trilha));
 });
 
 // GET /api/trilhas/:slug — full tree of a curated trilha (after /mine routes).
@@ -152,7 +162,7 @@ router.get("/trilhas/:slug", async (req, res) => {
     res.status(404).json({ error: "NotFound" });
     return;
   }
-  res.json(trilha);
+  res.json(comIdioma(trilha));
 });
 
 // ── Curated trilha writes ────────────────────────────────────────────────────
@@ -167,10 +177,11 @@ router.post("/trilhas", requireAdmin, async (req, res) => {
     res.status(409).json({ error: "SlugTaken" });
     return;
   }
+  const { language, ...campos } = data;
   const plan = await prisma.learningPlan.create({
-    data: { ...data, isTemplate: true, ownerUserId: null },
+    data: { ...campos, language: paraBanco(language), isTemplate: true, ownerUserId: null },
   });
-  res.status(201).json(plan);
+  res.status(201).json(comIdioma(plan));
 });
 
 // PATCH /api/trilhas/:id — admin edits a curated trilha; a member edits their own.
@@ -197,8 +208,31 @@ router.patch("/trilhas/:id", requireAuth, async (req, res) => {
       return;
     }
   }
-  const updated = await prisma.learningPlan.update({ where: { id }, data });
-  res.json(updated);
+  // Trocar o idioma: mesma regra do curso — só em RASCUNHO, e só se nenhum item
+  // for do outro idioma (a trilha não mistura idiomas).
+  const { language, ...campos } = data;
+  const novoIdioma = language ? paraBanco(language) : undefined;
+  if (novoIdioma && novoIdioma !== plan.language) {
+    if (plan.status !== ContentStatus.DRAFT) {
+      res.status(409).json({ error: "LanguageLocked" });
+      return;
+    }
+    const itemDeOutroIdioma = await prisma.planItem.findFirst({
+      where: {
+        planModule: { planId: id },
+        OR: [
+          { course: { language: { not: novoIdioma } } },
+          { lesson: { module: { course: { language: { not: novoIdioma } } } } },
+        ],
+      },
+    });
+    if (itemDeOutroIdioma) {
+      res.status(409).json({ error: "LanguageInUse" });
+      return;
+    }
+  }
+  const updated = await prisma.learningPlan.update({ where: { id }, data: { ...campos, language: novoIdioma } });
+  res.json(comIdioma(updated));
 });
 
 // DELETE /api/trilhas/:id — admin (curated) or owner (own). Cascades modules/items.
@@ -246,7 +280,7 @@ router.post("/trilhas/:id/save", requireAuth, async (req, res) => {
     where: { ownerUserId: user.id, sourcePlanId: template.id },
   });
   if (existing) {
-    res.status(200).json(existing);
+    res.status(200).json(comIdioma(existing));
     return;
   }
 
@@ -256,6 +290,9 @@ router.post("/trilhas/:id/save", requireAuth, async (req, res) => {
         name: template.name,
         description: template.description,
         skillsCovered: template.skillsCovered,
+        // A cópia HERDA o idioma da trilha — nunca o da conta de quem salva:
+        // salvar trilha do outro idioma é permitido (idioma é filtro, não portão).
+        language: template.language,
         ownerUserId: user.id,
         isTemplate: false,
         sourcePlanId: template.id,
@@ -280,7 +317,7 @@ router.post("/trilhas/:id/save", requireAuth, async (req, res) => {
     }
     return newPlan;
   });
-  res.status(201).json(clone);
+  res.status(201).json(comIdioma(clone));
 });
 
 // ── PlanModule writes (parent-plan authorization) ────────────────────────────
@@ -352,7 +389,8 @@ router.post("/plan-items", requireAuth, async (req, res) => {
     res.status(404).json({ error: "PlanModuleNotFound" });
     return;
   }
-  if (!(await loadEditablePlan(mod.planId, user, res))) return;
+  const plan = await loadEditablePlan(mod.planId, user, res);
+  if (!plan) return;
   // O alvo tem que estar PUBLICADO, não só existir.
   //
   // Provar só a existência transformava esta rota em ORÁCULO DE ENUMERAÇÃO do
@@ -368,6 +406,12 @@ router.post("/plan-items", requireAuth, async (req, res) => {
       res.status(404).json({ error: "CourseNotFound" });
       return;
     }
+    // A trilha não mistura idiomas (decisão do operador, 14/09/2026). Quem
+    // recusa é o SERVIDOR: a tela esconder a opção não é defesa.
+    if (curso.language !== plan.language) {
+      res.status(400).json({ error: "LanguageMismatch" });
+      return;
+    }
   } else {
     const aula = await prisma.lesson.findFirst({
       where: {
@@ -375,9 +419,15 @@ router.post("/plan-items", requireAuth, async (req, res) => {
         status: PUBLISHED,
         module: { status: PUBLISHED, course: { status: PUBLISHED } },
       },
+      // A aula herda o idioma do curso dela — é de lá que ele vem.
+      select: { module: { select: { course: { select: { language: true } } } } },
     });
     if (!aula) {
       res.status(404).json({ error: "LessonNotFound" });
+      return;
+    }
+    if (aula.module.course.language !== plan.language) {
+      res.status(400).json({ error: "LanguageMismatch" });
       return;
     }
   }

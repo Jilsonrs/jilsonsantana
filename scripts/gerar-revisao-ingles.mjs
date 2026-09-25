@@ -4,7 +4,13 @@
 //
 // O arquivo gerado NÃO é versionado (design-lab/* está no .gitignore): ele é
 // artefato de uma rodada de revisão, e o que fica no repo é o dicionário revisado.
-import { writeFileSync, mkdirSync } from "node:fs";
+//
+// Duas opções, para uma rodada que só tem texto NOVO (o resto já foi revisado):
+//   --so app,common.camadas   só as seções cujas chaves começam por esses prefixos
+//   --duvidas <arquivo.md>    põe no topo a lista de pontos de dúvida da rodada
+//                             (passo 3 do ciclo: sem ela o revisor não sabe onde olhar)
+// Ex.: npm run revisao:ingles -- --so app,common.camadas --duvidas caminho/duvidas.md
+import { writeFileSync, mkdirSync, readFileSync } from "node:fs";
 import { pt } from "../core/dist/i18n/pt.js";
 import { en } from "../core/dist/i18n/en.js";
 
@@ -26,7 +32,29 @@ const NOMES = {
   "home.pricing": "Home · Preço",
   "home.faq": "Home · FAQ",
   "home.cta": "Home · Chamada final",
+  "common.camadas": "TODA PÁGINA · As 3 camadas (selo do curso)",
+  "app.header": "APP · Cabeçalho da tela de login",
+  "app.nav": "APP · Menu (barra lateral, coluna, celular)",
+  "app.login": "APP · Tela de login",
+  "app.footer": "APP · Rodapé",
+  "app.comum": "APP · Comum",
+  "app.inicio": "APP · Início do aluno",
+  "app.conta": "APP · Minha conta",
+  "app.minhasTrilhas": "APP · Minhas trilhas",
+  "app.catalogo": "APP · Catálogo de cursos e trilhas",
+  "app.busca": "APP · Busca",
+  "app.niveis": "APP · Nível do curso",
+  "app.curso": "APP · Página do curso",
+  "app.trilha": "APP · Página da trilha",
 };
+
+function argumento(nome) {
+  const i = process.argv.indexOf(nome);
+  return i === -1 ? undefined : process.argv[i + 1];
+}
+const prefixos = argumento("--so")?.split(",").map((p) => p.trim()).filter(Boolean);
+const arquivoDuvidas = argumento("--duvidas");
+const entra = (chave) => !prefixos || prefixos.some((p) => chave === p || chave.startsWith(`${p}.`) || chave.startsWith(`${p}[`));
 
 /** Achata { a: { b: [ { c: "x" } ] } } em [["a.b[0].c", "x"]]. */
 function achatar(valor, prefixo = "") {
@@ -38,7 +66,7 @@ function achatar(valor, prefixo = "") {
 
 const ingles = new Map(achatar(en));
 const porSecao = new Map();
-for (const [chave, valor] of achatar(pt)) {
+for (const [chave, valor] of achatar(pt).filter(([c]) => entra(c))) {
   // Agrupa por "onde.seção" (home.faq, common.nav) — a primeira parte sozinha
   // jogaria a home inteira num balde só.
   const secao = chave.split(/[.[]/).slice(0, 2).join(".");
@@ -47,15 +75,20 @@ for (const [chave, valor] of achatar(pt)) {
 }
 
 const esc = (s) => s.replace(/\|/g, "\\|").replace(/\n/g, " ");
-const total = achatar(pt).length;
+const total = achatar(pt).filter(([c]) => entra(c)).length;
+const recorte = prefixos
+  ? `\n> **Esta rodada revisa SÓ o texto novo:** ${prefixos.map((p) => `\`${p}\``).join(", ")}. O resto do\n> site já foi revisado e não está aqui.\n`
+  : "";
+const duvidas = arquivoDuvidas ? `\n---\n\n${readFileSync(arquivoDuvidas, "utf-8").trim()}\n` : "";
 
 const cabecalho = `# Revisão do inglês — para o Antigravity
 
 > **Arquivo GERADO.** Não edite aqui: rode \`npm run revisao:ingles\` para refazer a partir do
 > dicionário. Ele não é versionado — é artefato de uma rodada de revisão.
 
-**O que é:** as ${total} frases do site, em português e inglês, lado a lado. **Revise o INGLÊS**,
+**O que é:** ${total} frases do site, em português e inglês, lado a lado. **Revise o INGLÊS**,
 não o português.
+${recorte}
 
 **Como responder:** devolva **só as linhas que você mudaria**, no formato
 \`chave → sugestão → por quê (uma linha)\`. Não devolva o arquivo inteiro e não edite código.
@@ -86,6 +119,7 @@ idêntica, é intencional.
 existem iguais lá fora: traduzir ao pé da letra vira promessa que não se pode cumprir. Quando
 encontrar um, **aponte** em vez de traduzir.
 
+${duvidas}
 ---
 
 ## As frases, seção por seção
@@ -102,4 +136,4 @@ for (const [secao, linhas] of porSecao) {
 
 mkdirSync(new URL("../design-lab/", import.meta.url), { recursive: true });
 writeFileSync(new URL("../design-lab/revisao-ingles.md", import.meta.url), cabecalho + corpo);
-console.log(`design-lab/revisao-ingles.md — ${total} chaves em ${porSecao.size} seções`);
+console.log(`design-lab/revisao-ingles.md — ${total} chaves em ${porSecao.size} seções${prefixos ? ` (só ${prefixos.join(", ")})` : ""}`);

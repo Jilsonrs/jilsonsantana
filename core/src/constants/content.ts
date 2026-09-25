@@ -36,41 +36,28 @@ export const PlanItemType = {
 } as const;
 export type PlanItemType = (typeof PlanItemType)[keyof typeof PlanItemType];
 
-// Global "selo 3 camadas" text — written ONCE here, NEVER per course (per course
-// the operator only PICKS which layers via Course.camadas[]). This is what keeps
-// it premium without recurring per-course copy (the Xperiun trap). A course whose
-// story the global text doesn't fit uses Course.camadaOverride? (the exception).
+// Global "selo 3 camadas" — one icon + color per layer, NEVER per course (per
+// course the operator only PICKS which layers via Course.camadas[]). This is what
+// keeps it premium without recurring per-course copy (the Xperiun trap). A course
+// whose story the global text doesn't fit uses Course.camadaOverride? (the exception).
 //
 // `icon` is a stable token mapped to a Lucide component in the client (Block 5):
 // stack-2→Layers, bolt→Zap, sparkles→Sparkles. Stored as a string so core/ stays
 // free of any UI dependency. `accent` (the blue --primary "brilho do JilsonAI")
 // is true ONLY for the IA layer — the single colored one.
+//
+// OS TEXTOS (nome e frase de cada camada) NÃO moram mais aqui: estão no
+// dicionário, em `common.camadas`, nos dois idiomas e editáveis em Admin →
+// Textos (decisão do operador, 24/09/2026). Aqui ficam só o ícone e a cor.
 export type LayerConfig = {
   icon: string;
-  name: string;
-  blurb: string;
   accent: boolean;
 };
 
 export const LAYER_CONFIG: Record<Layer, LayerConfig> = {
-  UNIVERSAL: {
-    icon: "stack-2",
-    name: "Fundamentos sólidos",
-    blurb: "A base que funciona em qualquer versão — você aplica com o que já tem.",
-    accent: false,
-  },
-  MODERNO: {
-    icon: "bolt",
-    name: "Recursos modernos",
-    blurb: "Os recursos mais atuais que aceleram seu trabalho e poucos dominam.",
-    accent: false,
-  },
-  IA: {
-    icon: "sparkles",
-    name: "Com IA do seu lado",
-    blurb: "A IA como copiloto pra gerar lógica, destravar erros e ganhar tempo.",
-    accent: true,
-  },
+  UNIVERSAL: { icon: "stack-2", accent: false },
+  MODERNO: { icon: "bolt", accent: false },
+  IA: { icon: "sparkles", accent: true },
 };
 
 // Temporário: Slug do curso em destaque até existir a escolha no painel admin.

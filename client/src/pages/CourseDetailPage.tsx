@@ -6,8 +6,14 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { LayerSelo } from "@/components/content/LayerSelo";
 import { HighlightCard } from "@/components/content/HighlightCard";
 import { PageContainer } from "@/components/layout/PageLayout";
+import { useT } from "@/lib/language";
+import { contagem } from "@/lib/contagem";
 
+// O TEXTO DA TELA segue o idioma do app; o CONTEÚDO do curso (título, descrição,
+// aulas, FAQ) sai como o operador escreveu, no idioma do próprio curso. O link
+// direto não filtra por idioma: abre em qualquer um (decisão do operador, 24/09).
 export function CourseDetailPage() {
+  const t = useT();
   const { slug } = useParams<{ slug: string }>();
   const { data: course, isLoading, isError } = useQuery({
     queryKey: ["course", slug],
@@ -18,7 +24,7 @@ export function CourseDetailPage() {
   if (isLoading) {
     return (
       <PageContainer>
-        <p className="text-muted-foreground mt-8">Carregando…</p>
+        <p className="text-muted-foreground mt-8">{t.comum.carregando}</p>
       </PageContainer>
     );
   }
@@ -26,7 +32,7 @@ export function CourseDetailPage() {
   if (isError || !course) {
     return (
       <PageContainer>
-        <p className="mt-8 text-sm text-destructive">Curso não encontrado.</p>
+        <p className="mt-8 text-sm text-destructive">{t.curso.naoEncontrado}</p>
       </PageContainer>
     );
   }
@@ -35,11 +41,12 @@ export function CourseDetailPage() {
     <PageContainer>
       <div className="space-y-12">
         <header className="space-y-4 border-b border-border/40 pb-8">
-          {course.level && <Badge variant="secondary" className="px-3 py-1">{course.level}</Badge>}
+          {course.level && <Badge variant="secondary" className="px-3 py-1">{t.niveis[course.level]}</Badge>}
           <h1 className="text-4xl font-bold tracking-tight text-foreground">{course.title}</h1>
           {course.subtitle && <p className="text-xl text-muted-foreground max-w-[80ch]">{course.subtitle}</p>}
           <p className="text-sm font-medium text-muted-foreground pt-2">
-            {course.moduleCount} módulos · {course.lessonCount} aulas
+            {contagem(course.moduleCount, t.curso.modulo, t.curso.modulos)} ·{" "}
+              {contagem(course.lessonCount, t.curso.aula, t.curso.aulas)}
           </p>
         </header>
 
@@ -56,7 +63,7 @@ export function CourseDetailPage() {
             )}
 
             <section>
-              <h2 className="text-2xl font-semibold">Conteúdo do curso</h2>
+              <h2 className="text-2xl font-semibold">{t.curso.conteudo}</h2>
               <Accordion type="multiple" className="mt-6">
                 {course.modules.map((mod) => (
                   <AccordionItem key={mod.id} value={String(mod.id)}>
@@ -78,7 +85,7 @@ export function CourseDetailPage() {
 
             {course.faq && course.faq.length > 0 && (
               <section>
-                <h2 className="text-2xl font-semibold">Perguntas frequentes</h2>
+                <h2 className="text-2xl font-semibold">{t.curso.faq}</h2>
                 <Accordion type="multiple" className="mt-6">
                   {course.faq.map((item, i) => (
                     <AccordionItem key={i} value={String(i)}>
@@ -94,7 +101,7 @@ export function CourseDetailPage() {
           <aside className="space-y-10">
             {course.learnTags.length > 0 && (
               <section className="rounded-2xl border border-border/40 bg-card p-6 shadow-sm">
-                <h2 className="text-lg font-semibold">O que você vai aprender</h2>
+                <h2 className="text-lg font-semibold">{t.curso.aprender}</h2>
                 <div className="mt-4 flex flex-wrap gap-2">
                   {course.learnTags.map((tag) => (
                     <Badge key={tag} variant="secondary">
@@ -107,7 +114,7 @@ export function CourseDetailPage() {
 
             {course.requirements.length > 0 && (
               <section className="rounded-2xl border border-border/40 bg-card p-6 shadow-sm">
-                <h2 className="text-lg font-semibold">Pré-requisitos</h2>
+                <h2 className="text-lg font-semibold">{t.curso.requisitos}</h2>
                 <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
                   {course.requirements.map((req) => (
                     <li key={req} className="flex items-start gap-2">
@@ -121,7 +128,7 @@ export function CourseDetailPage() {
 
             {course.personas.length > 0 && (
               <section className="rounded-2xl border border-border/40 bg-card p-6 shadow-sm">
-                <h2 className="text-lg font-semibold">Pra quem é</h2>
+                <h2 className="text-lg font-semibold">{t.curso.paraQuem}</h2>
                 <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
                   {course.personas.map((p) => (
                     <li key={p} className="flex items-start gap-2">

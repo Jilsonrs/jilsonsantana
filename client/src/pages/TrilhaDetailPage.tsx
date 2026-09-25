@@ -5,8 +5,12 @@ import { Badge } from "@/components/ui/badge";
 import { PlanModuleAccordion } from "@/components/content/PlanModuleAccordion";
 import { SaveTrilhaButton } from "@/components/content/SaveTrilhaButton";
 import { PageContainer } from "@/components/layout/PageLayout";
+import { useT } from "@/lib/language";
 
+// O texto da tela segue o idioma do app; nome, descrição e itens da trilha são
+// conteúdo, no idioma da própria trilha.
 export function TrilhaDetailPage() {
+  const t = useT();
   const { slug } = useParams<{ slug: string }>();
   const { data: trilha, isLoading, isError } = useQuery({
     queryKey: ["trilha", slug],
@@ -17,7 +21,7 @@ export function TrilhaDetailPage() {
   if (isLoading) {
     return (
       <PageContainer>
-        <p className="text-muted-foreground mt-8">Carregando…</p>
+        <p className="text-muted-foreground mt-8">{t.comum.carregando}</p>
       </PageContainer>
     );
   }
@@ -25,7 +29,7 @@ export function TrilhaDetailPage() {
   if (isError || !trilha) {
     return (
       <PageContainer>
-        <p className="mt-8 text-sm text-destructive">Trilha não encontrada.</p>
+        <p className="mt-8 text-sm text-destructive">{t.trilha.naoEncontrada}</p>
       </PageContainer>
     );
   }
@@ -49,7 +53,7 @@ export function TrilhaDetailPage() {
         </header>
 
         <section>
-          <h2 className="text-2xl font-semibold">Conteúdo da trilha</h2>
+          <h2 className="text-2xl font-semibold">{t.trilha.conteudo}</h2>
           <div className="mt-6">
             <PlanModuleAccordion planModules={trilha.planModules} />
           </div>

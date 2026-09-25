@@ -139,7 +139,7 @@ servidores (§5); o React responde em `localhost:5173`, a home pública em `loca
 |---|---|
 | `/admin` | `client/src/pages/AdminPage.tsx` |
 | `/admin/cursos` | `client/src/pages/admin/AdminCoursesPage.tsx` |
-| `/admin/cursos/novo` · `/admin/cursos/:id` | `client/src/pages/admin/AdminCourseFormPage.tsx` |
+| `/admin/cursos/novo` · `/admin/cursos/:id` | `client/src/pages/admin/AdminCourseFormPage.tsx` + as seções em `client/src/components/admin/course-form/` (divididas em 24/09, com as suas classes) |
 | `/admin/site` → leva a `/admin/site/textos` | (só redireciona) |
 | `/admin/site/textos` | `client/src/pages/admin/AdminSiteTextPage.tsx` + `client/src/components/admin/SiteTextField.tsx` — **uma aba por página** ("Toda página", "Home"; página nova ganha aba sozinha). Com busca, as abas somem e o resultado vem de todas as páginas. As abas têm `aria-pressed` e teste. |
 | `/admin/site/depoimentos` | `client/src/pages/admin/AdminTestimonialsPage.tsx` |
@@ -186,7 +186,22 @@ exceto o item 4, que é página pública.
    `npm run css:publico` (regra 10).
 5. ~~**Rodapé do app**~~ — **feito em 24/09 e publicado.** Na revisão, a cor `#F5F5F7` escrita
    no componente virou o token `--surface-vitrine` (regra 2), mesma cor. O seletor PT | EN que
-   você desenhou fica; o Claude o liga ao idioma do app no bloco "app do aluno em inglês".
+   você desenhou fica. **Em 24/09 o Claude o ligou ao idioma do app:** virou botão (troca o
+   idioma sem sair da tela), com `aria-pressed` no idioma atual. As classes que você escreveu
+   continuam as mesmas.
+6. **Campo Idioma no formulário de curso** (`client/src/components/admin/course-form/CourseOrganizationSection.tsx`)
+   — novo em 24/09, na seção Organização. A grade tinha 3 colunas (Nível, Status, Ordem) e agora
+   tem 4 itens, então o quarto desce de linha: o arranjo é seu. Travado (curso publicado), o
+   idioma aparece como texto com o aviso "O idioma trava depois que o curso é publicado." — mude
+   o visual, não o texto (é do operador). Também a etiqueta **"EN"** na lista de cursos
+   (`AdminCoursesPage.tsx`) e o **aviso de erro ao salvar**, logo acima do botão "Salvar dados do
+   curso" (cru: uma linha vermelha).
+7. **Menu de conta** (`client/src/components/layout/AccountMenu.tsx`) e a **faixa do topo** que o
+   carrega (`client/src/components/Layout.tsx`) — novos em 24/09, em toda tela depois do login.
+   Estrutura crua: botão redondo com a foto ou as iniciais, e um painel com nome, e-mail, Minha
+   conta, Faturamento e assinatura e Sair. No celular, a mesma faixa tem o botão da gaveta à
+   esquerda. **Não troque o painel por `role="menu"`** sem a navegação por setas que ele promete, e
+   mantenha o fechamento por Esc e por clique fora: **têm teste**.
 
 ## 3. Onde você NÃO mexe
 
@@ -265,6 +280,10 @@ Corolários que já quebraram coisa aqui:
 - **Negrito no meio de um texto = dois campos** (`label` + `text`), nunca `<strong>` dentro da
   string. O operador não digita HTML no painel.
 - Precisa de um texto que não existe no dicionário? **Peça a chave**, não escreva no template.
+- **Vale também para as telas do ALUNO no React** *(desde 24/09 — o app do aluno existe em
+  inglês)*: o texto delas vem de `useT()` (parte `app` do dicionário). Texto escrito direto no
+  `.tsx` de uma tela do aluno aparece em português para o aluno estrangeiro. **O Admin é a
+  exceção**: fica em português, com o texto na própria tela.
 - **A primeira parte da chave diz onde o texto aparece:** `common.*` sai em TODA página pública
   (menu, rodapé) **e no rodapé do app logado**, `home.*` só na home. Mexer num `common.*` muda
   todas as páginas de uma vez.
