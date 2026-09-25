@@ -1073,10 +1073,9 @@ sistema administrativo inteiro ainda está por construir (Bloco 6b, Fase 4, Fase
       de sair próprio (mutação: devolver o botão → reprova).
 - [ ] **Incluir ou trocar a foto do aluno** *(decisão do operador, 24/09/2026 — pendente, não
       construído)*. Onde: Minha conta → Seus dados; a foto do menu da conta passa a mostrar a nova.
-      O campo já existe (`User.image`, do Better Auth); falta o envio do arquivo. **Decisão do
-      operador pendente:** onde a foto fica guardada (serviço de armazenamento = peça nova de stack,
-      precisa do ok dele). As opções, a recomendação do agente (Bunny Storage) e a configuração
-      estão em [`docs/bunny.md`](bunny.md) §4. **Nunca na Railway**, porque o disco do servidor é
+      O campo já existe (`User.image`, do Better Auth); falta o envio do arquivo. **Onde a foto
+      fica guardada: Bunny Storage** *(decisão do operador, 25/09/2026)*, servida em
+      `img.jilsonsantana.com`; configuração em [`docs/bunny.md`](bunny.md) §4. **Nunca na Railway**, porque o disco do servidor é
       zerado a cada publicação. Regras que já valem: formato WebP (regra de imagem do design), tamanho
       máximo, e a foto é dado pessoal — some junto quando a conta é excluída (LGPD). Até lá, sem
       foto, o menu mostra as iniciais.
