@@ -27,6 +27,9 @@ export function AccountMenu({ usuario, onSignOut }: { usuario?: Usuario; onSignO
   const raiz = useRef<HTMLDivElement>(null);
   const botao = useRef<HTMLButtonElement>(null);
   const idPainel = useId();
+  // O painel foi aberto por PASSAR O MOUSE (não por clique)? Aí o clique que vem
+  // em seguida não pode fechar o que acabou de abrir.
+  const abertoPeloMouse = useRef(false);
 
   // Efeito, e não estado derivado: clique fora e Esc são eventos do DOCUMENTO,
   // fora da árvore do React — e só precisam existir enquanto o painel está aberto.
@@ -52,14 +55,39 @@ export function AccountMenu({ usuario, onSignOut }: { usuario?: Usuario; onSignO
   const fechar = () => setAberto(false);
 
   return (
-    <div ref={raiz} className="relative">
+    <div
+      ref={raiz}
+      className="relative"
+      // Abrir ao passar o mouse (acabamento do Antigravity, 24/09) vale SÓ para
+      // mouse. No celular, o toque dispara "entrar" e logo "clicar": contar o
+      // toque como hover abria e fechava o painel no mesmo instante.
+      onPointerEnter={(e) => {
+        if (e.pointerType !== "mouse") return;
+        abertoPeloMouse.current = true;
+        setAberto(true);
+      }}
+      onPointerLeave={(e) => {
+        if (e.pointerType !== "mouse") return;
+        abertoPeloMouse.current = false;
+        setAberto(false);
+      }}
+    >
       <button
         ref={botao}
         type="button"
         aria-label={t.nav.abrirMenuConta}
         aria-expanded={aberto}
         aria-controls={idPainel}
-        onClick={() => setAberto((v) => !v)}
+        onClick={() => {
+          // Aberto pelo mouse: o clique confirma, não fecha. Senão (teclado,
+          // toque), o clique abre e fecha.
+          if (abertoPeloMouse.current) {
+            abertoPeloMouse.current = false;
+            setAberto(true);
+            return;
+          }
+          setAberto((v) => !v);
+        }}
         className="flex size-10 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <Avatar usuario={usuario} tamanho="size-9" />
@@ -68,9 +96,10 @@ export function AccountMenu({ usuario, onSignOut }: { usuario?: Usuario; onSignO
       {aberto && (
         <div
           id={idPainel}
-          className="absolute right-0 top-full z-50 mt-2 w-72 rounded-2xl border border-border bg-card py-2 shadow-lg"
+          className="absolute right-0 top-full z-50 pt-2"
         >
-          <div className="flex items-center gap-3 border-b border-border px-4 pb-3 pt-2">
+          <div className="w-72 rounded-2xl border border-border bg-card py-2 shadow-lg">
+            <div className="flex items-center gap-3 border-b border-border px-4 pb-3 pt-2">
             <Avatar usuario={usuario} tamanho="size-12" />
             <div className="min-w-0">
               {usuario?.name && <p className="truncate font-semibold text-foreground">{usuario.name}</p>}
@@ -101,6 +130,7 @@ export function AccountMenu({ usuario, onSignOut }: { usuario?: Usuario; onSignO
               <LogOut className="size-4" aria-hidden="true" />
               {t.nav.sair}
             </button>
+          </div>
           </div>
         </div>
       )}

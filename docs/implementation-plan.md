@@ -1062,6 +1062,12 @@ sistema administrativo inteiro ainda está por construir (Bloco 6b, Fase 4, Fase
       dicionário, achado da etapa 2. Testes: 9 do menu, 3 no shell, 3 ajustados à decisão nova; E2E
       abre a conta e sai pelo menu da foto. **Mutação:** sem Sair e "Minha conta" de volta ao rail
       → 6 reprovaram. Revertido.
+      **Acabamento do Antigravity (24/09):** no computador a faixa do topo flutua sobre o
+      conteúdo, e o painel abre ao passar o mouse. **Conserto na revisão:** o hover passou a valer
+      SÓ para mouse (`pointerType`), e o clique não fecha o que o hover abriu. Antes disso, no
+      celular o toque abria e fechava o painel na hora. Testes novos para mouse e toque, e um
+      `PointerEvent` mínimo no `test-setup.ts` (o jsdom 24 não tem). **Mutação:** voltar ao
+      hover para todos → 2 reprovaram. Revertido.
       **Ajuste do operador (24/09):** em Minha conta o "Sair" fica **só na coluna lateral** — saiu o
       botão "Sair da plataforma" da tela (e a frase `app.conta.sair`). Teste: a tela não tem botão
       de sair próprio (mutação: devolver o botão → reprova).

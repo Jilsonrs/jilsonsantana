@@ -96,3 +96,41 @@ describe("AccountMenu", () => {
     expect(screen.getByRole("button", { name: "Sign out" })).toBeTruthy();
   });
 });
+
+// Abrir ao passar o mouse (acabamento do Antigravity, 24/09) vale só para MOUSE.
+// O navegador dispara "entrar" + "clicar" tanto no mouse que passa e clica quanto
+// no TOQUE do celular — e antes do conserto isso fechava o painel na hora.
+describe("AccountMenu — passar o mouse", () => {
+  function montar() {
+    renderWithProviders(<AccountMenu usuario={ana} onSignOut={onSignOut} />);
+    const botao = screen.getByRole("button", { name: "Abrir o menu da conta" });
+    return { botao, area: botao.parentElement! };
+  }
+  const aberto = () => screen.queryByRole("link", { name: "Minha conta" }) !== null;
+
+  it("com mouse: passar abre, sair fecha", () => {
+    const { area } = montar();
+    fireEvent.pointerEnter(area, { pointerType: "mouse" });
+    expect(aberto()).toBe(true);
+
+    fireEvent.pointerLeave(area, { pointerType: "mouse" });
+    expect(aberto()).toBe(false);
+  });
+
+  it("com mouse: passar e clicar deixa ABERTO", () => {
+    const { botao, area } = montar();
+    fireEvent.pointerEnter(area, { pointerType: "mouse" });
+    fireEvent.click(botao);
+
+    expect(aberto()).toBe(true);
+  });
+
+  it("no celular: o toque abre (e não conta como passar o mouse)", () => {
+    const { botao, area } = montar();
+    fireEvent.pointerEnter(area, { pointerType: "touch" });
+    expect(aberto()).toBe(false);
+
+    fireEvent.click(botao);
+    expect(aberto()).toBe(true);
+  });
+});

@@ -33,3 +33,20 @@ if (typeof window !== "undefined" && !window.matchMedia) {
       dispatchEvent: () => false,
     }) as MediaQueryList;
 }
+
+// O jsdom (24) não implementa `PointerEvent`. Sem ele, `fireEvent.pointerEnter`
+// cria um Event comum SEM `pointerType`, e nenhum teste consegue dizer "isto é
+// mouse" ou "isto é toque" — justamente a diferença que o menu da conta precisa
+// provar (abrir ao passar o mouse vale só para mouse). Substituto mínimo:
+// um MouseEvent que carrega `pointerType`.
+if (typeof window !== "undefined" && !window.PointerEvent) {
+  class PointerEventDeTeste extends MouseEvent {
+    pointerType: string;
+    constructor(tipo: string, init: PointerEventInit = {}) {
+      super(tipo, init);
+      this.pointerType = init.pointerType ?? "";
+    }
+  }
+  // Seguro: só preenche a lacuna do ambiente de teste; o navegador real tem o seu.
+  window.PointerEvent = PointerEventDeTeste as unknown as typeof PointerEvent;
+}
