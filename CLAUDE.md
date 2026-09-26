@@ -34,6 +34,7 @@ The docs and what they hold (no edit-owner anymore — all follow git-wins):
 - **`docs/content.md`** — landing copy + course-page copy / message direction.
 - **`docs/courses.md`** — course engineering, slate, content map (3-camadas methodology, Udemy×Escola).
 - **`docs/idiomas.md`** — a escola bilíngue (PT + EN): quem vê o quê, preço fora do Brasil, imposto internacional, o que ainda nasce com idioma. Consulta por gatilho (ver *Idiomas*).
+- **`docs/pendencias.md`** — a lista única do que **espera o operador** (resposta, confirmação, conteúdo, tarefa em painel de fornecedor), numerada (P1, P2…) e na ordem de resolução. **Item resolvido sai da lista no MESMO commit** em que a resposta é registrada no documento de destino. Tarefa de código não entra: é checkbox no plano.
 - **`docs/bunny.md`** — o que contratar e configurar no Bunny (bibliotecas do Stream, segurança, chaves, o que fica de fora) e onde guardar arquivo enviado pelo site. Consulta por gatilho (ver *Video*).
 - **`docs/decisions-archive.md`** — **o PORQUÊ**: changelog histórico deste arquivo. **NÃO lido por sessão** — consulta por GATILHO (ver *Arquivos de memória*): antes de propor mexer no stack, ou de reabrir decisão fechada.
 - **`docs/build-history.md`** — **o QUÊ**: fases já concluídas (0, 1) com checkboxes intactos + changelog histórico do plano. **NÃO lido por sessão** — consulta por GATILHO: antes de afirmar que algo "não existe" ou "não foi feito".

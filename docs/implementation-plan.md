@@ -116,9 +116,9 @@
 > (vitrine fora do React — **bloqueado** até o operador definir o conteúdo das telas) · **o corpo
 > da Fase 3** (Bunny, HIGH RISK) · os itens de **continuidade do operador** antes do go-live (2FA,
 > backup frio).
-> **Pendências do operador, abertas:** revisar as 15 perguntas da FAQ (agora no admin) · o conteúdo
-> do 2º nível das seções planejadas do menu · confirmar os slugs em inglês · mover `/inicio`,
-> `/conta`, `/minhas-trilhas` para `/aluno/*` · cadastrar os 5 cursos da home (C4).
+> **Pendências do operador: a lista única está em [`docs/pendencias.md`](pendencias.md)** *(desde
+> 25/09/2026, a pedido do operador)*. As que moravam aqui foram para lá (P12–P16). Item resolvido
+> sai daquela lista no mesmo commit em que a resposta é registrada no destino.
 
 ---
 
