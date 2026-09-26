@@ -27,16 +27,17 @@
 | Storage Zone de produção | **criada**: `jilsonsantana-storage` (§4.1) |
 | Storage Zone de dev | **não criada** (§4.1) |
 | Pull Zone das imagens | **criada e testada**: `img.jilsonsantana.com` (§4.2) |
-| Stream (bibliotecas de vídeo) | **nada criado** (§3) |
+| Stream: biblioteca de aulas | **criada e testada**: `jilsonsantana-stream` (§3.2) |
+| Stream: bibliotecas de apresentação e de dev | **não criadas** (§3.3) |
 | Código do site usando o Bunny | **nenhum**. Nenhuma variável de ambiente foi criada |
 
 ## 1. Resumo: o que entra e o que fica de fora
 
 | Produto do Bunny | Para que serve aqui | Contratar? |
 |---|---|---|
-| **Stream** (bibliotecas de vídeo) | aulas + vídeo de apresentação de cada curso | **Sim**: é a Fase 3 |
+| **Stream** (bibliotecas de vídeo) | aulas + vídeo de apresentação de cada curso | **Sim**: a biblioteca de aulas foi criada em 25/09 (§3). O site ainda não toca vídeo nenhum |
 | **Storage + CDN** (*Storage Zone* + *Pull Zone*) | imagens **enviadas pelo site**: foto do aluno e imagem de curso pelo admin | **Criados pelo operador em 25/09** (§4). O site ainda não envia arquivo nenhum |
-| **MediaCage Enterprise DRM** | proteção máxima contra cópia do vídeo | **Não no lançamento.** Custa **US$ 99/mês fixos por biblioteca**, mais as licenças, mesmo sem uso *(doc do Bunny, 25/09/2026)* |
+| **MediaCage Enterprise DRM** | proteção máxima contra cópia do vídeo | **Não** (decisão 5, fechada em 25/09). Custa **US$ 99/mês fixos por biblioteca**, mais as licenças, mesmo sem uso, e só se desliga pelo suporte *(doc do Bunny)*. No lugar, **MediaCage Basic (grátis) ligado** |
 | Optimizer, Shield/WAF, DNS, Edge Scripting, Magic Containers, Database, Fonts | — | **Não.** Nenhum deles impede uma falha nossa hoje (critério de stack do `CLAUDE.md`). Optimizer e Shield estão **desligados** na Pull Zone (§4.2) |
 
 ## 2. A conta *(configurada pelo operador em 25/09/2026)*
@@ -62,15 +63,18 @@
   meses". **Tratar o pior caso:** é a recarga automática que impede isso, e os e-mails de
   notificação precisam continuar ligados.
 
-## 3. Stream — os vídeos *(nada criado ainda)*
+## 3. Stream — os vídeos *(biblioteca de aulas criada pelo operador em 25/09/2026)*
 
-### 3.1 Três bibliotecas, uma por papel *(recomendação do agente, a confirmar no build)*
+### 3.1 Três bibliotecas, uma por papel *(nomes e regiões: decisão do operador, 25/09/2026)*
 
-| Biblioteca | Ambiente | O que guarda | Token |
-|---|---|---|---|
-| `jilson-aulas` | produção | as aulas: só para quem tem assinatura ativa | **ligado** |
-| `jilson-apresentacao` | produção | o vídeo de apresentação dos cursos, que toca para quem **não** é assinante (é ativo de venda) | desligado |
-| `jilson-dev` | desenvolvimento | 2 ou 3 vídeos de teste | ligado, igual à de aulas |
+| Biblioteca | Ambiente | O que guarda | Token | Regiões | Estado |
+|---|---|---|---|---|---|
+| `jilsonsantana-stream` (library ID 762605) | produção | as aulas: só para quem tem assinatura ativa | **ligado** | Frankfurt + São Paulo | **criada e testada em 25/09** |
+| `jilsonsantana-stream-apresentacao` | produção | o vídeo de apresentação dos cursos, que toca para quem **não** é assinante (é ativo de venda) | desligado | Frankfurt + São Paulo | não criada |
+| `jilsonsantana-stream-dev` | desenvolvimento | 2 ou 3 vídeos de teste | ligado, igual à de aulas | só Frankfurt | não criada |
+
+- **Regiões:** no Stream, **Frankfurt é a principal e não se escolhe**; São Paulo foi
+  acrescentada. **Irreversível:** réplica só se acrescenta, nunca se remove.
 
 **Por que separar a apresentação das aulas:** o token vale para a **biblioteca inteira**. Se o
 vídeo de venda morasse junto com as aulas, a página pública também precisaria de token. Uma
@@ -83,45 +87,93 @@ porque ele é cobrado por biblioteca.
 um vazamento de produção.
 
 **Idioma não pede biblioteca própria:** curso em inglês é outro curso, com os seus próprios
-vídeos (`CLAUDE.md` → *Idiomas*). Os vídeos dele ficam na mesma `jilson-aulas`.
+vídeos (`CLAUDE.md` → *Idiomas*). Os vídeos dele ficam na mesma `jilsonsantana-stream`.
 
-### 3.2 Segurança da `jilson-aulas` (painel → Security)
+### 3.2 `jilsonsantana-stream` — como está *(configurada pelo operador em 25/09/2026)*
 
-Tudo abaixo **existe no Stream**, conforme a documentação consultada:
+**Encoding:**
 
-- [ ] **Embed view token authentication → LIGAR.** Sem o token, o player recusa (403). Quem gera
-      o token é o **nosso servidor**, e só para quem tem assinatura ativa. A validade é de **6 a
-      12 h**, por decisão de Ago 2026 (não encurtar; a razão está no plano, Fase 3).
-- [ ] **Allowed domains → `jilsonsantana.com`** (mais `www.jilsonsantana.com`, se esse endereço
-      for usado). Com isso, o vídeo só toca dentro do site. **Isto fecha o item
+| Item | Valor |
+|---|---|
+| Tier de encoding | **Free** |
+| Codec | H.264 |
+| Resoluções | 480 · 720 · 1080 · 1440 |
+| Keep Original | **desligado** |
+| MP4 Fallback | desligado |
+| Early-Play | desligado |
+| JIT | desligado |
+| Multi-audio | **ligado** |
+| Content tagging | desligado |
+| Marca d'água | nenhuma |
+
+- **Keep Original desligado, e por quê** *(operador)*: para recodificar, o vídeo é **reenviado a
+  partir das cópias do operador** (HD externo + Descript), com internet de 1 Gb. **Consequência:**
+  o arquivo original **não fica no Bunny**. A cópia de segurança dos vídeos é a do operador.
+- **⚠️ Reportado em 25/09, não resolvido:** multi-audio permite mais de uma faixa de áudio no
+  mesmo vídeo. Se a ideia for dublar a mesma aula em inglês, isso contraria o `CLAUDE.md` →
+  *Idiomas*: *"Curso em inglês é OUTRO curso (vídeos e slug próprios), nunca uma tradução do mesmo
+  registro"*. A intenção do operador ao ligar não está registrada.
+
+**Segurança (painel → Security):**
+- [x] **Enable direct play:** desligado.
+- [x] **Allowed domains:** `jilsonsantana.com` e `*.jilsonsantana.com`. **Isto fecha o item
       *[PENDENTE DE VERIFICAÇÃO]* da Fase 3:** a restrição de domínio existe e se chama *Allowed
       domains*.
-- [ ] **Block Direct URL File Access → LIGAR.** Impede baixar o arquivo pelo endereço direto.
-- [ ] **Sem trava por IP.** É decisão de Ago 2026: o vídeo não pode parar quando o aluno troca o
+- [x] **Block Direct URL File Access:** ligado. Impede baixar o arquivo pelo endereço direto.
+- [x] **Embed view token authentication:** ligado. Sem o token, o player recusa (403). Quem gera
+      o token é o **nosso servidor**, e só para quem tem assinatura ativa. A validade é de **6 a
+      12 h**, por decisão de Ago 2026 (não encurtar; a razão está no plano, Fase 3).
+- [x] **CDN token authentication:** ligado. *Fato da tela, registrado pelo operador:* o player
+      embutido assina sozinho. *(⚠️ ver a divergência no §7.)*
+- [x] **Sem trava por IP.** É decisão de Ago 2026: o vídeo não pode parar quando o aluno troca o
       Wi-Fi pelo 4G.
-- [ ] **DRM:** o Enterprise fica fora (§1). Se o painel oferecer uma proteção básica **sem
-      custo**, ligar. **[A VERIFICAR NO PAINEL]**
-- **Aula na TV (Chromecast) é decisão do operador** (§6). Se for sim, é preciso acrescentar
-  `*.gstatic.com` aos *Allowed domains*, senão o vídeo toca no navegador e não toca na TV.
+- [x] **DRM:** **MediaCage Basic (grátis) ligado.** Enterprise **não** (decisão 5, §6).
+- **Chromecast:** configurado **sem** (`*.gstatic.com` fora dos *Allowed domains*). **Decisão 2
+  a confirmar pelo operador** (§6). Se um dia for sim, é preciso acrescentar `*.gstatic.com`,
+  senão o vídeo toca no navegador e não toca na TV.
+- **Teste do operador:** toca no painel; é **bloqueado numa aba anônima**.
 
-Na `jilson-dev`, a mesma configuração, com **`localhost`** nos *Allowed domains*.
+**Entrega:** tier **High Volume**, sem filtros de roteamento.
 
-### 3.3 Segurança da `jilson-apresentacao`
+**Vídeo de teste:** "Apresentação" (`apresentacao.mp4`) está nesta biblioteca. **Mover** para a
+`jilsonsantana-stream-apresentacao` quando ela existir.
 
+### 3.3 As duas bibliotecas que faltam *(a criar)*
+
+**`jilsonsantana-stream-apresentacao`** (Frankfurt + São Paulo):
 - [ ] Token **desligado**: ela precisa tocar para qualquer visitante.
 - [ ] **Allowed domains → `jilsonsantana.com`**: sem isso, qualquer site poderia exibir os seus
       vídeos de venda.
 - [ ] **Block Direct URL File Access → LIGAR.**
 
-### 3.4 Como os vídeos entram *(decisão do operador, §6)*
+**`jilsonsantana-stream-dev`** (só Frankfurt): a mesma configuração da de aulas, com
+**`localhost`** nos *Allowed domains*.
 
-- **Opção A (recomendada para o lançamento):** você envia o vídeo pelo painel do Bunny, copia o
-  **ID do vídeo** e cola na aula, no admin da escola. Não tem código a mais nem nada para
-  manter.
-- **Opção B:** o envio acontece pelo admin da escola. É mais cômodo, mas é código novo numa fase
-  de alto risco.
+### 3.4 Como os vídeos entram — decisão 3 FECHADA *(operador, 25/09/2026)*
 
-O plano já prevê as duas (Fase 3 → *admin upload flow, or direct-to-Bunny + store reference*).
+- **Upload pelo admin da escola.** O operador chamou esta opção de **"C"**. No guia, as opções
+  eram **A** (painel do Bunny + colar o ID) e **B** (envio pelo admin), e "upload pelo admin"
+  corresponde à **B**. *(⚠️ Divergência de rótulo, reportada em 25/09.)*
+- **As coleções do Stream são criadas pelo admin da escola, NÃO à mão no painel.**
+- **Consequência que já estava registrada:** é código novo na Fase 3, que é de alto risco. As
+  regras do §7 valem para ele.
+
+### 3.5 Custos do Stream — fatos da doc
+
+*Fonte trazida pelo operador: `bunny.net/docs/stream/pricing`, página de 24/08/2026.*
+
+- **Encoding padrão: grátis.** Resolução a mais só soma **armazenamento**: o 1440p **não** é
+  cobrado como encoding. **Só o encoding Premium é cobrado** (US$ 0,025 · 0,05 · 0,15 por minuto,
+  conforme o codec).
+- **Armazenamento conta:** cada resolução + legendas + miniaturas + prévias, e também o MP4
+  fallback e os originais, quando ligados.
+- **Mudar o encoding vale só para vídeos novos.** Existe limpeza das resoluções desligadas.
+- **Entrega:** Volume a **US$ 0,005/GB** (de 0 a 500 TB); Standard na América do Sul a
+  **US$ 0,045/GB**.
+- **Transcrição: US$ 0,10 por minuto, por idioma.** **Pedir a transcrição de um vídeo (pelo botão
+  ou pela API) COBRA mesmo com a transcrição desligada na biblioteca.**
+- **Enterprise DRM: US$ 99/mês por biblioteca**, e **para desligar é preciso falar com o
+  suporte**.
 
 ## 4. Storage + CDN — as imagens enviadas pelo site
 
@@ -235,11 +287,20 @@ desligado** (é pago).
 
 O Bunny gera estes tipos de chave:
 
-1. **API key de cada biblioteca do Stream:** assina o token do vídeo. Vai para o **servidor**.
-2. **Senha de cada Storage Zone:** envia e apaga arquivos. Vai para o **servidor**.
-3. **Senha só de leitura da Storage Zone:** lê e baixa. É a da **cópia fria** (Fase 7); não vai
+1. **API key de cada biblioteca do Stream:** usada para enviar e gerenciar vídeos (o upload
+   pelo admin, decisão 3). Vai para o **servidor**.
+2. **Token authentication key de cada biblioteca** (painel → Security): é a chave dos tokens de
+   segurança. Vai para o **servidor**. *Qual das duas chaves (esta ou a API key) entra no cálculo
+   do token do embed é confirmação do build: a doc consultada em 25/09 mostra a API key num
+   exemplo (§7).*
+   **Regra do operador (25/09/2026):** *"API key da biblioteca e token authentication key: só no
+   Railway, nunca no chat nem no navegador."* *(⚠️ Divergência reportada em 25/09: a linha
+   **Dev**, logo abaixo, manda as chaves da biblioteca de dev para o `server/.env`. A regra do
+   operador fala em "só no Railway", sem dizer se vale só para a biblioteca de produção.)*
+3. **Senha de cada Storage Zone:** envia e apaga arquivos. Vai para o **servidor**.
+4. **Senha só de leitura da Storage Zone:** lê e baixa. É a da **cópia fria** (Fase 7); não vai
    para o site.
-4. **API key da conta:** dá acesso total à conta. **Não vai para lugar nenhum**, porque o site
+5. **API key da conta:** dá acesso total à conta. **Não vai para lugar nenhum**, porque o site
    não precisa dela. *(⚠️ ver a divergência em §4.4: a purga da CDN depende dela.)*
 
 - **NUNCA cole uma chave no chat**: nem no Claude do projeto, nem no Claude Code, nem em
@@ -247,7 +308,7 @@ O Bunny gera estes tipos de chave:
   hora.**
 - **Produção:** a chave vai direto do painel do Bunny para as *Variables* do Railway, sem passar
   por nenhum outro lugar.
-- **Dev:** as chaves da `jilson-dev` e da `jilsonsantana-storage-dev` vão no `server/.env`, com o
+- **Dev:** as chaves da `jilsonsantana-stream-dev` e da `jilsonsantana-storage-dev` vão no `server/.env`, com o
   arquivo **fechado no editor** antes de salvar.
 - **Não crie as variáveis antes da hora.** Os nomes delas são definidos no build. Por enquanto,
   as chaves ficam só no painel. **Estado em 25/09: nenhuma variável criada.**
@@ -257,10 +318,10 @@ O Bunny gera estes tipos de chave:
 | # | Decisão | Opções | Estado |
 |---|---|---|---|
 | 1 | Onde guardar as imagens enviadas pelo site | Bunny Storage · Railway Volume | **FECHADA em 25/09/2026** (operador): **Bunny Storage** |
-| 2 | O aluno pode mandar a aula para a TV (Chromecast)? | sim · não | pendente: antes de configurar os *Allowed domains* do Stream |
-| 3 | Como os vídeos entram | painel do Bunny + colar o ID *(recomendado)* · envio pelo admin | pendente: antes do bloco de vídeo da Fase 3 |
+| 2 | O aluno pode mandar a aula para a TV (Chromecast)? | sim · não | **configurado SEM Chromecast em 25/09** (`*.gstatic.com` fora); a confirmar pelo operador |
+| 3 | Como os vídeos entram | painel do Bunny + colar o ID · envio pelo admin | **FECHADA em 25/09/2026** (operador): **upload pelo admin**, com as coleções criadas pelo admin (§3.4) |
 | 4 | Endereço das imagens | `img.jilsonsantana.com` | **FECHADA em 25/09/2026** (operador): no ar, com SSL |
-| 5 | Enterprise DRM | não no lançamento *(recomendado)* · sim | pendente: antes da Fase 3 |
+| 5 | Enterprise DRM | não no lançamento · sim | **FECHADA em 25/09/2026** (operador): **sem Enterprise**; **MediaCage Basic (grátis) ligado** |
 | 6 | Purga da CDN na exclusão de conta | chave da conta · cache curto na pasta de fotos · aceitar até 1 mês | pendente: antes do envio da foto do aluno (§4.4) |
 | 7 | Gatilho da recarga automática | US$ 2 (atual) · US$ 5 (recomendado) | a confirmar pelo operador (§2) |
 
@@ -278,6 +339,10 @@ O Bunny gera estes tipos de chave:
   estrita no site faz o Bunny tratar o acesso como direto e recusar o vídeo.
 - **CDN token authentication** (na Pull Zone) serve para player próprio ou URL direta. Com o
   player do Bunny em iframe, **não é necessário**.
+  **⚠️ Divergência reportada em 25/09, não resolvida:** o operador **ligou** o CDN token na
+  `jilsonsantana-stream`. A tela do painel diz que o player embutido assina sozinho, e o vídeo tocou
+  no painel. **Falta provar no build** que o iframe no **nosso site**, com o token do embed, continua
+  tocando com o CDN token ligado.
 - **ACHADO, reportado e não corrigido (25/09):** o token do embed é **por vídeo e por
   validade**. Ele **não carrega a identidade do aluno**. O `CLAUDE.md` → *Video* e o
   `tech-stack.md` citam *"per-user signing"* entre as proteções. Na prática, isso só pode
@@ -285,3 +350,20 @@ O Bunny gera estes tipos de chave:
   for isso, ajustar a frase nos dois docs com o ok do operador.
 - **CSP:** quando o bloco do `helmet` entrar (backlog P2), o `frame-src` precisa de
   `iframe.mediadelivery.net`, e o `img-src` precisa de `img.jilsonsantana.com`.
+
+### 7.1 Regras do operador para o build da Fase 3 *(25/09/2026: registradas, NÃO implementadas)*
+
+- **O upload envia o arquivo original byte a byte**, sem recompressão no navegador, e é
+  **retomável** (se a conexão cair, continua de onde parou).
+- **"Trocar o vídeo da aula" substitui o vídeo sem recriar a aula.** O progresso do aluno fica
+  ligado à **AULA**, nunca ao ID do vídeo.
+- **O código NUNCA chama transcrição nem liga o Enterprise DRM.** Os dois cobram: a transcrição
+  cobra mesmo com a opção desligada na biblioteca (§3.5), e o DRM só se desliga pelo suporte.
+  *(Nota: o `jilsonai.md` → Fase 5 cita "legendas do Bunny ou transcrição" como fonte do RAG.
+  As legendas `.vtt` enviadas pelo operador são compatíveis com esta regra; a transcrição paga do
+  Bunny não é. A escolha da fonte continua sendo da Fase 5.)*
+- **Legendas `.vtt` casadas pelo nome do arquivo** com o `.mp4`.
+- **O preload do embed gasta banda:** decidir o comportamento junto com o `design.md`.
+- **A API key e a token authentication key da biblioteca ficam só no Railway**, nunca no chat
+  nem no navegador (§5). **Gate do context7 obrigatório**, com a consulta dizendo **"Stream"**.
+- **Teste pendente:** reprodução no **celular com 4G**, quando o site já tocar vídeo.
