@@ -48,6 +48,8 @@ const montarEndereco = (libraryId: string, videoId: string) =>
 
 export type CredenciaisDeEnvio = {
   videoId: string;
+  /** O nome do vídeo no Bunny. Vai também no envio, para o nome do arquivo não sobrescrevê-lo. */
+  titulo: string;
   libraryId: string;
   expirationTime: number;
   signature: string;
@@ -87,6 +89,7 @@ export async function iniciarEnvio(biblioteca: Biblioteca, titulo: string): Prom
     ok: true,
     credenciais: {
       videoId: guid,
+      titulo,
       libraryId: c.id,
       expirationTime,
       signature: assinaturaDeEnvio(c.id, c.chave, expirationTime, guid),

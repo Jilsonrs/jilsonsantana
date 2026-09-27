@@ -119,6 +119,8 @@
 > **E a etapa 2 também, em 27/09:** o vídeo de apresentação enviado pelo admin, tocando no
 > formulário e na página do curso, com a limpeza automática no Bunny. A migration
 > `20260927120000_course_intro_video_pending` entra em produção pelo pre-deploy.
+> **Depois, no mesmo dia:** a prévia do admin que se atualiza sozinha quando o Bunny termina, e o
+> nome do vídeo no Bunny = o título do curso (sem slug), decisão do operador.
 > **Próximo passo — decidido pelo operador em 23/09: o C4, em 5 etapas, uma por vez.** A etapa 1
 > está feita e publicada; a próxima é a **etapa 3**, que depende das decisões P17 e P18
 > (`pendencias.md`). Detalhe no bloco C4. Continuam na

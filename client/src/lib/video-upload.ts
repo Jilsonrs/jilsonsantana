@@ -11,6 +11,7 @@ import * as tus from "tus-js-client";
 
 export type CredenciaisDeEnvio = {
   videoId: string;
+  titulo: string;
   libraryId: string;
   expirationTime: number;
   signature: string;
@@ -42,7 +43,9 @@ export function enviarVideo(
         VideoId: credenciais.videoId,
         LibraryId: credenciais.libraryId,
       },
-      metadata: { filetype: arquivo.type, title: arquivo.name },
+      // O nome é o que o servidor escolheu (o título do curso ou da aula), nunca o
+      // nome do arquivo no computador do operador, que sobrescreveria o do Bunny.
+      metadata: { filetype: arquivo.type, title: credenciais.titulo },
       onProgress: (enviados, total) => aoProgredir(total > 0 ? Math.round((enviados / total) * 100) : 0),
       onSuccess: () => resolver(),
       onError: (erro) => rejeitar(erro),

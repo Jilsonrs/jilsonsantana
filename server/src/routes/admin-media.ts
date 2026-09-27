@@ -66,15 +66,16 @@ router.post("/admin/courses/:id/intro-video", requireAdmin, async (req, res) => 
 
   const course = await prisma.course.findUnique({
     where: { id },
-    select: { slug: true, introVideoId: true, introVideoPendingId: true },
+    select: { title: true, introVideoId: true, introVideoPendingId: true },
   });
   if (!course) {
     res.status(404).json({ error: "NotFound" });
     return;
   }
 
-  // O título no painel do Bunny é o slug: é por ele que o operador acha o vídeo lá.
-  const inicio = await iniciarEnvio("apresentacao", `${course.slug} — apresentação`);
+  // O nome do vídeo no Bunny é o TÍTULO DO CURSO, sem slug (operador, 27/09/2026:
+  // ele gerencia os vídeos pelo admin, não pelo painel do Bunny).
+  const inicio = await iniciarEnvio("apresentacao", course.title);
   if (!inicio.ok) {
     res.status(inicio.motivo === "NaoConfigurado" ? 503 : 502).json({ error: `Stream${inicio.motivo}` });
     return;

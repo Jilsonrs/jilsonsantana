@@ -64,6 +64,7 @@ const credenciais = (videoId: string) => ({
   ok: true,
   credenciais: {
     videoId,
+    titulo: "Curso com apresentação",
     libraryId: "999",
     expirationTime: 1790000000,
     signature: "assinatura",
@@ -103,12 +104,13 @@ describe("vídeo de apresentação — quem pode enviar", () => {
 });
 
 describe("vídeo de apresentação — o envio", () => {
-  it("começar: 200 com a assinatura, o vídeo nomeado pelo slug, e a chave nunca na resposta", async () => {
+  it("começar: 200 com a assinatura, o vídeo nomeado pelo título do curso, e a chave nunca na resposta", async () => {
     const res = await iniciar(admin);
 
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({ videoId: A, libraryId: "999", signature: "assinatura" });
-    expect(iniciarEnvio).toHaveBeenCalledWith("apresentacao", `${SLUG} — apresentação`);
+    // O nome no Bunny é o título do curso, sem slug (operador, 27/09/2026).
+    expect(iniciarEnvio).toHaveBeenCalledWith("apresentacao", "Curso com apresentação");
     expect(JSON.stringify(res.body)).not.toContain("chave-que-nunca-sai");
   });
 

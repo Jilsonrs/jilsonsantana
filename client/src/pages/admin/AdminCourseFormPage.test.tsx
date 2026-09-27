@@ -335,7 +335,7 @@ describe("AdminCourseFormPage — enviar a capa", () => {
 describe("AdminCourseFormPage — vídeo de apresentação", () => {
   const GUID = "eb1c4f77-0cda-46be-b47d-1118ad7c2ffe";
   const EMBED = `https://iframe.mediadelivery.net/embed/999/${GUID}`;
-  const credenciais = { videoId: GUID, libraryId: "999", expirationTime: 1, signature: "s", embedUrl: EMBED };
+  const credenciais = { videoId: GUID, titulo: "Curso", libraryId: "999", expirationTime: 1, signature: "s", embedUrl: EMBED };
 
   async function abrirEdicao(curso = existingCourse) {
     adminGetCourse.mockResolvedValue(curso);
