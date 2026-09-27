@@ -29,7 +29,7 @@
 | Pull Zone das imagens | **criada e testada**: `img.jilsonsantana.com` (§4.2) |
 | Stream: biblioteca de aulas | **criada e testada**: `jilsonsantana-stream` (§3.2) |
 | Stream: bibliotecas de apresentação e de dev | **não criadas** (§3.3) |
-| Código do site usando o Bunny | **envio da capa do curso pelo admin**: pronto em 27/09 (Bloco U, etapa 1) e **testado no site no ar** (sem Storage de dev, por decisão do operador); funciona quando as 4 variáveis da etapa 1 (§5) estiverem no Railway |
+| Código do site usando o Bunny | **envio da capa do curso pelo admin**: **no ar e provado em 27/09** (Bloco U, etapa 1): o operador enviou uma capa pelo admin, e ela saiu por `img.jilsonsantana.com/cursos/…`. Sem Storage de dev, por decisão dele |
 
 ## 1. Resumo: o que entra e o que fica de fora
 
@@ -343,7 +343,8 @@ O Bunny gera estes tipos de chave:
   | 3 | `BUNNY_STREAM_LESSONS_API_KEY` | API key da biblioteca de aulas | **sim** |
   | 3 | `BUNNY_STREAM_LESSONS_TOKEN_KEY` | token authentication key da biblioteca de aulas | **sim** |
 
-  **Estado em 27/09: nenhuma variável criada.** Sem as da etapa 1, o envio da capa responde que
+  **Estado em 27/09: as 4 da etapa 1 estão no Railway** (o envio foi provado no ar). As das etapas
+  2 e 3 ainda não existem. Sem as da etapa 1, o envio da capa responderia que
   o Storage não está configurado, e nada quebra. **As 4 da etapa 1 vão só no Railway**, com os
   valores de produção (`jilsonsantana-storage`, `https://img.jilsonsantana.com`), porque não
   existe Storage de dev (§4.1, decisão de 27/09).

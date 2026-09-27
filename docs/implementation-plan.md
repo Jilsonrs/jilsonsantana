@@ -1214,8 +1214,9 @@ landmark. Corrigido junto.
       um dublê no **nosso** módulo, e 4 de tela (sem botão em curso novo · enviando · recusado ·
       GIF e arquivo grande nem saem da tela). Mutação: tipo sempre aceito ⇒ 3 reprovam; sem
       `requireAdmin` ⇒ 2 reprovam; tela sem conferir o tipo e sem pôr no campo ⇒ 2 reprovam.
-      **Falta a prova com o Bunny de verdade, NO SITE NO AR** *(decisão do operador, 27/09: sem
-      Storage de dev; as 4 variáveis vão só no Railway — `bunny.md` §4.1 e §5)*.
+      **PROVADO no site no ar em 27/09** *(sem Storage de dev, decisão do operador; as 4 variáveis
+      estão só no Railway — `bunny.md` §4.1 e §5)*: o operador enviou uma capa PNG pelo admin, e
+      ela apareceu na prévia servida por `img.jilsonsantana.com/cursos/exemplo-fundamentos-excel-ia-bfa5e6cf13ce.png`.
 - [ ] **Etapa 2 — vídeo de apresentação:** envio retomável (TUS) pelo admin para a biblioteca de
       apresentação, "processando" até o Bunny terminar, e o vídeo tocando no formulário e na página
       do curso, sem token. `introVideoId` passa a exigir o formato GUID (fecha o item do backlog P2).
