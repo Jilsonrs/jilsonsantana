@@ -8,7 +8,9 @@ const adminGetCourse = vi.fn();
 const createCourse = vi.fn();
 const updateCourse = vi.fn();
 const createModule = vi.fn();
+const uploadCourseThumbnail = vi.fn();
 vi.mock("@/lib/api", () => ({
+  uploadCourseThumbnail: (...args: unknown[]) => uploadCourseThumbnail(...args),
   adminGetCourse: (...args: unknown[]) => adminGetCourse(...args),
   createCourse: (...args: unknown[]) => createCourse(...args),
   updateCourse: (...args: unknown[]) => updateCourse(...args),
@@ -43,6 +45,7 @@ beforeEach(() => {
   createCourse.mockReset();
   updateCourse.mockReset();
   createModule.mockReset();
+  uploadCourseThumbnail.mockReset();
 });
 
 describe("AdminCourseFormPage", () => {
@@ -243,4 +246,70 @@ describe("AdminCourseFormPage — imagem do curso", () => {
       expect(createCourse).not.toHaveBeenCalled();
     },
   );
+});
+
+// Capa enviada pelo admin para o Bunny (bloco de envio, etapa 1 — plano aprovado
+// pelo operador em 27/09/2026).
+describe("AdminCourseFormPage — enviar a capa", () => {
+  const ERRO = "Não foi possível enviar a imagem. Use WebP, JPG ou PNG de até 5 MB.";
+  const ENDERECO = "https://img.jilsonsantana.com/cursos/exemplo-fundamentos-excel-ia-3f9a1c2b7d4e.webp";
+
+  async function abrirEdicao() {
+    adminGetCourse.mockResolvedValue(existingCourse);
+    renderWithProviders(<AdminCourseFormPage />, { route: "/admin/cursos/1", path: "/admin/cursos/:id" });
+    await screen.findByRole("button", { name: "Enviar imagem" });
+  }
+
+  const escolher = (arquivo: File) =>
+    fireEvent.change(screen.getByTestId("thumbnail-file"), { target: { files: [arquivo] } });
+
+  const webp = () => new File(["RIFF....WEBP"], "capa.webp", { type: "image/webp" });
+
+  it("curso novo, ainda sem salvar: não há botão de enviar", () => {
+    renderWithProviders(<AdminCourseFormPage />, { route: "/admin/cursos/novo" });
+    expect(screen.queryByRole("button", { name: "Enviar imagem" })).toBeNull();
+  });
+
+  it("enviando: o botão avisa e trava; no fim, o endereço vai para o campo e para a prévia", async () => {
+    let terminar: (v: { thumbnailUrl: string }) => void = () => {};
+    uploadCourseThumbnail.mockReturnValue(new Promise((r) => (terminar = r)));
+    await abrirEdicao();
+
+    const arquivo = webp();
+    escolher(arquivo);
+
+    const botao = await screen.findByRole("button", { name: "Enviando…" });
+    expect((botao as HTMLButtonElement).disabled).toBe(true);
+    expect(uploadCourseThumbnail).toHaveBeenCalledWith(1, arquivo);
+
+    terminar({ thumbnailUrl: ENDERECO });
+    await waitFor(() =>
+      expect((screen.getByLabelText("URL da thumbnail") as HTMLInputElement).value).toBe(ENDERECO),
+    );
+    expect(screen.getByAltText("Thumbnail preview").getAttribute("src")).toBe(ENDERECO);
+    expect(screen.queryByText(ERRO)).toBeNull();
+  });
+
+  it("o servidor recusou: aparece o aviso, e o campo não muda", async () => {
+    uploadCourseThumbnail.mockRejectedValue(new Error("400"));
+    await abrirEdicao();
+
+    escolher(webp());
+
+    expect((await screen.findByRole("alert")).textContent).toBe(ERRO);
+    expect((screen.getByLabelText("URL da thumbnail") as HTMLInputElement).value).toBe("");
+  });
+
+  it("GIF ou arquivo grande demais nem sai da tela", async () => {
+    await abrirEdicao();
+
+    escolher(new File(["GIF89a"], "capa.gif", { type: "image/gif" }));
+    expect((await screen.findByRole("alert")).textContent).toBe(ERRO);
+
+    const grande = new File([new Uint8Array(5 * 1024 * 1024 + 1)], "capa.webp", { type: "image/webp" });
+    escolher(grande);
+    await screen.findByRole("alert");
+
+    expect(uploadCourseThumbnail).not.toHaveBeenCalled();
+  });
 });

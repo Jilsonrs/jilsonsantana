@@ -29,7 +29,7 @@
 | Pull Zone das imagens | **criada e testada**: `img.jilsonsantana.com` (§4.2) |
 | Stream: biblioteca de aulas | **criada e testada**: `jilsonsantana-stream` (§3.2) |
 | Stream: bibliotecas de apresentação e de dev | **não criadas** (§3.3) |
-| Código do site usando o Bunny | **nenhum**. Nenhuma variável de ambiente foi criada |
+| Código do site usando o Bunny | **envio da capa do curso pelo admin**: pronto no `dev` em 27/09 (Bloco U, etapa 1), **não publicado**; depende da Storage de dev e das variáveis do §5 para funcionar no computador do operador |
 
 ## 1. Resumo: o que entra e o que fica de fora
 
@@ -218,11 +218,15 @@ entram inteiras em cada publicação.
 - **Senhas:** existe também uma **senha só de leitura**, que é a de usar na cópia fria da Fase 7.
   **As senhas não estão em lugar nenhum fora do painel.**
 - **Arquivo em produção hoje:** `Jilson-Santana.png` na raiz, a foto do instrutor, subida como
-  teste. **Pendente:** definir a estrutura de pastas e converter para WebP (`design.md` §12)
-  antes de usar no site.
+  teste. Pode ser usada como está: PNG é aceito (`design.md` §12, decisão de 27/09).
+- **Pastas** *(decisão do operador, 27/09/2026, era a P21)*: capa do curso em
+  **`cursos/<slug>-<código>.<ext>`**; depois, foto do aluno em **`alunos/<código>.<ext>`**. O código
+  é aleatório e muda a cada envio, por causa do cache de 1 mês da CDN (§4.4).
 
 **Dev: `jilsonsantana-storage-dev`, NÃO criada.** Quando for criada: Standard, São Paulo, **sem
-réplica**, S3 desligado.
+réplica**, S3 desligado. **E com uma Pull Zone de dev ligada a ela**, com `localhost` nos *Allowed
+referrers* *(plano aprovado em 27/09)*. Sem essa Pull Zone, a imagem enviada no computador do
+operador não aparece, pela mesma trava de referrer que vale para `img.jilsonsantana.com`.
 
 ### 4.2 Pull Zone das imagens *(decisões do operador, 25/09/2026)*
 
@@ -258,9 +262,10 @@ desligado** (é pago).
 
 ### 4.3 Regras de build que já valem
 
-- O banco guarda **só o caminho** (`alunos/…webp`). O começo do endereço fica numa única
-  configuração do servidor. Trocar de fornecedor é copiar os arquivos e mudar essa
-  configuração, sem nenhuma linha do banco.
+- **O banco guarda o endereço COMPLETO em `img.jilsonsantana.com`** *(convenção de engenharia,
+  27/09/2026, no plano aprovado pelo operador; substitui "o banco guarda só o caminho")*. O domínio é
+  da escola: trocar de fornecedor é copiar os arquivos e **reapontar o CNAME `img`**, e o endereço
+  gravado continua valendo. O começo do endereço vem de `BUNNY_IMG_BASE_URL` no momento do envio.
 - **O nome do arquivo é imprevisível**, nunca o número do aluno: ninguém deve adivinhar o
   endereço da foto de outra pessoa.
 - **A foto é dado pessoal:** ela some junto quando a conta é excluída (LGPD). Formato **WebP**
@@ -284,7 +289,7 @@ desligado** (é pago).
     aluno · aceitar até 1 mês.
     **⚠️ DIVERGÊNCIA reportada em 25/09:** a primeira opção contradiz o §5, que diz que a chave da
     conta "não vai para lugar nenhum, porque o site não precisa dela".
-- **Estrutura de pastas no Storage:** pendente.
+- **Estrutura de pastas no Storage:** decidida em 27/09 (§4.1).
 - **Site aberto por outro endereço** (por exemplo `.up.railway.app`) **não mostra as imagens**,
   por causa dos *Allowed referrers*.
 - **Regra do context7 para o Storage: APLICADA** *(aceita pelo operador, 27/09/2026)*. A consulta
@@ -318,8 +323,23 @@ O Bunny gera estes tipos de chave:
   por nenhum outro lugar.
 - **Dev:** as chaves da `jilsonsantana-stream-dev` e da `jilsonsantana-storage-dev` vão no `server/.env`, com o
   arquivo **fechado no editor** antes de salvar.
-- **Não crie as variáveis antes da hora.** Os nomes delas são definidos no build. Por enquanto,
-  as chaves ficam só no painel. **Estado em 25/09: nenhuma variável criada.**
+- **Os nomes das variáveis** *(definidos no plano do Bloco U, 27/09/2026)*. Crie cada grupo só
+  antes da etapa que usa:
+
+  | Etapa | Variável | O que é | Segredo? |
+  |---|---|---|---|
+  | 1 | `BUNNY_STORAGE_ZONE` | nome da Storage Zone (`jilsonsantana-storage` no ar, a de dev no computador) | não |
+  | 1 | `BUNNY_STORAGE_HOST` | `br.storage.bunnycdn.com` | não |
+  | 1 | `BUNNY_STORAGE_PASSWORD` | a senha da Storage Zone (a de escrita, não a só de leitura) | **sim** |
+  | 1 | `BUNNY_IMG_BASE_URL` | `https://img.jilsonsantana.com` no ar; o endereço da Pull Zone de dev no computador | não |
+  | 2 | `BUNNY_STREAM_INTRO_LIBRARY_ID` | ID da biblioteca de apresentação | não |
+  | 2 | `BUNNY_STREAM_INTRO_API_KEY` | API key da biblioteca de apresentação | **sim** |
+  | 3 | `BUNNY_STREAM_LESSONS_LIBRARY_ID` | ID da biblioteca de aulas | não |
+  | 3 | `BUNNY_STREAM_LESSONS_API_KEY` | API key da biblioteca de aulas | **sim** |
+  | 3 | `BUNNY_STREAM_LESSONS_TOKEN_KEY` | token authentication key da biblioteca de aulas | **sim** |
+
+  **Estado em 27/09: nenhuma variável criada.** Sem as da etapa 1, o envio da capa responde que
+  o Storage não está configurado, e nada quebra.
 
 ## 6. Decisões do operador
 

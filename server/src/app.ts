@@ -16,6 +16,7 @@ import adminSiteTextRouter from "./routes/admin-site-text.js";
 import siteTextRouter from "./routes/site-text.js";
 import adminTestimonialsRouter from "./routes/admin-testimonials.js";
 import adminFaqRouter from "./routes/admin-faq.js";
+import adminMediaRouter from "./routes/admin-media.js";
 
 // Monta o app e EXPORTA sem escutar porta. O `listen()` vive em `index.ts`.
 //
@@ -57,6 +58,10 @@ app.use("/api", siteTextRouter);
 app.use("/api", adminSiteTextRouter);
 app.use("/api", adminTestimonialsRouter);
 app.use("/api", adminFaqRouter);
+// Envio de arquivo pelo admin (capa de curso → Bunny Storage). O corpo cru é
+// lido só dentro da rota, com `express.raw` — o `express.json()` acima ignora
+// `image/*`, então não há conflito.
+app.use("/api", adminMediaRouter);
 
 // ── Home pública (SSR, sem React) ───────────────────────────────────────────
 // Registrada em TODOS os ambientes (em dev o operador abre localhost:3000).

@@ -1189,6 +1189,48 @@ landmark. Corrigido junto.
 - [ ] E2E: non-member cannot get a playable URL
 - **Done when:** a member plays a lesson; a non-member is blocked. *Test the gate hard.*
 
+### Bloco U — Envio de imagem e de vídeo pelo admin, e os vídeos tocando  *(27/09/2026 · pedido do operador · HIGH RISK nas etapas 3 e 4)*
+
+> **Por que agora e nesta ordem** *(operador, 27/09)*: ele vai fazer muitas mudanças na página do
+> curso e quer, antes, o envio funcionando e o vídeo tocando. **Quatro etapas, uma por commit**; o
+> operador revisa cada uma antes da seguinte, e publicar é só com o "publica". Plano aprovado em
+> 27/09. Decisões dele: capa em **WebP, JPG ou PNG sem conversão** (`design.md` §12) · pastas
+> `cursos/<slug>-<código>.<ext>` (era a P21) · peça nova **`tus-js-client`** para o envio de vídeo
+> retomável · para testar como aluno, **assinatura de teste só no dev** (a trava de acesso vem
+> adiantada da Fase 4, sem Stripe; em produção o `member@` continua dependendo do cupom de 100%).
+> **Antes de cada etapa, o operador cria algo no painel do Bunny** (`pendencias.md` → P19; nomes das
+> variáveis em `bunny.md` §5).
+
+- [x] **Etapa 1 — capa do curso enviada pelo admin** *(27/09, no `dev`, não publicada)*.
+      `server/src/lib/bunny-storage.ts` (PUT no Storage, senha só no servidor; sem as variáveis,
+      responde "não configurado" e nada quebra) + `server/src/lib/image-type.ts` (o tipo pelo
+      **conteúdo** do arquivo) + `POST /api/admin/courses/:id/thumbnail` (`requireAdmin`,
+      `express.raw` só nela, até 5 MB, nome novo a cada envio, grava o endereço completo em
+      `img.jilsonsantana.com` — `bunny.md` §4.3). Admin: o botão **"Enviar imagem"** em curso já
+      salvo (`ThumbnailUpload.tsx`). Testes: 12 de servidor (401 · 403 · 404 · WebP/JPG/PNG · nome
+      que não se repete · arquivo disfarçado · GIF/SVG · 413 · 503 · 502), com o Bunny trocado por
+      um dublê no **nosso** módulo, e 4 de tela (sem botão em curso novo · enviando · recusado ·
+      GIF e arquivo grande nem saem da tela). Mutação: tipo sempre aceito ⇒ 3 reprovam; sem
+      `requireAdmin` ⇒ 2 reprovam; tela sem conferir o tipo e sem pôr no campo ⇒ 2 reprovam.
+      **Falta a prova com o Bunny de verdade**, quando o operador criar a Storage de dev e puser as
+      chaves (P19).
+- [ ] **Etapa 2 — vídeo de apresentação:** envio retomável (TUS) pelo admin para a biblioteca de
+      apresentação, "processando" até o Bunny terminar, e o vídeo tocando no formulário e na página
+      do curso, sem token. `introVideoId` passa a exigir o formato GUID (fecha o item do backlog P2).
+- [ ] **Etapa 3 — vídeo das aulas:** primeiro o `include` → `select` das rotas públicas de detalhe
+      (a trava acima); depois `Lesson.bunnyVideoId` + `Course.bunnyCollectionId`, a coleção criada
+      pelo admin, o envio e a **prévia do admin com token**. `LessonRow.tsx` sai do
+      `ModuleLessonTree.tsx` (328 linhas) antes. Nenhuma rota pública devolve `bunnyVideoId`,
+      provado por teste. `security-vulnerability-reviewer` no fim.
+- [ ] **Etapa 4 — a trava de acesso e a aula tocando para o aluno:** adianta da Fase 4 o model
+      `Subscription`, o `temAcessoAtivo()` e o `requireActiveMembership`, **sem Stripe**; rota
+      `GET /api/lessons/:id/player`; assinatura de teste do `member@` **só fora de produção** (o
+      seed para com erro em produção); a matriz da trava em teste de servidor.
+      `security-vulnerability-reviewer` e revisão do operador antes do "publica".
+- **Done when:** no computador do operador, a capa enviada aparece no admin; o vídeo de
+  apresentação toca no admin e na página; o vídeo da aula toca na prévia do admin; o `member@`
+  assiste à aula e um aluno sem assinatura vê "Esta aula é para assinantes."
+
 ### Bloco I — Escola bilíngue: idioma no conteúdo + dicionário de textos  *(Set 2026 · decisão do operador · spec em `idiomas.md`)*
 
 > **ESTADO EM 23/09/2026 — parte adiantada por outros blocos, checkboxes abaixo seguem valendo:**
