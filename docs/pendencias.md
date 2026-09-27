@@ -23,9 +23,6 @@
 | # | O que falta | Opções | Onde registrar |
 |---|---|---|---|
 | P5 | **Aula na TV (Chromecast):** confirmar que fica **sem** | sem (como está) · com | `bunny.md` §3.2 e §6 (decisão 2) |
-| P6 | **Multi-audio ligado** na biblioteca de aulas: para quê? Se for dublar a mesma aula em inglês, contraria *"curso em inglês é OUTRO curso"* (`CLAUDE.md` → *Idiomas*) | manter, com o motivo · desligar | `bunny.md` §3.2 |
-| P7 | **Chaves da biblioteca "só no Railway":** vale só para a biblioteca de **produção**? O `bunny.md` §5 manda as chaves da biblioteca de **dev** para o `server/.env` | só produção · as duas | `bunny.md` §5 |
-| P8 | O **"C"** (upload pelo admin) é a **Opção B** do guia? | sim · não, explicar | `bunny.md` §3.4 |
 | P9 | **Dois gatilhos de reabertura propostos pelo agente:** Enterprise DRM *"se houver vazamento de aula medido e receita que pague a mensalidade"* · Keep Original *"se as cópias do operador deixarem de existir fora do Bunny"* | aceitar · trocar | `CLAUDE.md` → changelog (19)(f) |
 | P10 | **Atualizar o item do plano** que ainda diz *"admin upload flow (or direct-to-Bunny + store reference)"*, agora que a decisão 3 fechou em upload pelo admin | autorizar · deixar | `implementation-plan.md` → Fase 3 |
 | P11 | **Regra do context7 para o Storage:** hoje a lei manda dizer "Stream" em toda consulta ao Bunny, e isso não cobre o Storage. Proposta: consulta de Storage diz "Storage" | aceitar · recusar | `CLAUDE.md` → *Context7* → *Bunny caveat* |
@@ -46,7 +43,7 @@
 |---|---|---|---|
 | P17 | **Qual curso é o destaque** da home (o primeiro da ordem, ou o marcado com a etiqueta "Destaque") | etapa 3 do C4 | `implementation-plan.md` → Bloco C4 |
 | P18 | O que fazer com os **2 cursos `exemplo-*`, publicados em produção**, que apareceriam na home | etapa 3 do C4 | `implementation-plan.md` → Bloco C4 |
-| P19 | **Criar no painel do Bunny:** `jilsonsantana-stream-apresentacao`, `jilsonsantana-stream-dev` e `jilsonsantana-storage-dev`; **mover** o vídeo de teste "Apresentação" | antes do bloco de vídeo da Fase 3 | `bunny.md` §0, §3.3 e §4.1 |
+| P19 | **Criar no painel do Bunny:** `jilsonsantana-stream-apresentacao`, `jilsonsantana-stream-dev` e `jilsonsantana-storage-dev`; **mover** o vídeo de teste "Apresentação"; **desligar o multi-audio** na `jilsonsantana-stream` (decidido em 27/09, era a P6) | antes do bloco de vídeo da Fase 3 | `bunny.md` §0, §3.3 e §4.1 |
 | P20 | **Limpar a foto da CDN quando a conta é excluída (LGPD)** — decisão 6: com a chave da conta · cache curto só na pasta de fotos · aceitar até 1 mês | bloco de envio de arquivo | `bunny.md` §4.4 e §6 |
 | P21 | **Estrutura de pastas** no Storage, e converter `Jilson-Santana.png` para WebP antes de usar no site | bloco de envio de arquivo | `bunny.md` §4.1 e §4.4 |
 | P22 | **Imposto de venda fora do Brasil:** Stripe Tax com o contador · Stripe Managed Payments | Fase 4, antes da primeira venda fora do Brasil | `idiomas.md` §5 e `billing.md` |

@@ -106,17 +106,16 @@ vídeos (`CLAUDE.md` → *Idiomas*). Os vídeos dele ficam na mesma `jilsonsanta
 | MP4 Fallback | desligado |
 | Early-Play | desligado |
 | JIT | desligado |
-| Multi-audio | **ligado** |
+| Multi-audio | ligado hoje · **a DESLIGAR** (decisão do operador, 27/09/2026) |
 | Content tagging | desligado |
 | Marca d'água | nenhuma |
 
 - **Keep Original desligado, e por quê** *(operador)*: para recodificar, o vídeo é **reenviado a
   partir das cópias do operador** (HD externo + Descript), com internet de 1 Gb. **Consequência:**
   o arquivo original **não fica no Bunny**. A cópia de segurança dos vídeos é a do operador.
-- **⚠️ Reportado em 25/09, não resolvido:** multi-audio permite mais de uma faixa de áudio no
-  mesmo vídeo. Se a ideia for dublar a mesma aula em inglês, isso contraria o `CLAUDE.md` →
-  *Idiomas*: *"Curso em inglês é OUTRO curso (vídeos e slug próprios), nunca uma tradução do mesmo
-  registro"*. A intenção do operador ao ligar não está registrada.
+- **Multi-audio: desligar** *(decisão do operador, 27/09/2026)*. Ele permite mais de uma faixa de
+  áudio no mesmo vídeo, e a escola não usa isso: curso em inglês é **outro curso**, com vídeos
+  próprios (`CLAUDE.md` → *Idiomas*). **Falta desligar no painel** (`pendencias.md`, P19).
 
 **Segurança (painel → Security):**
 - [x] **Enable direct play:** desligado.
@@ -157,7 +156,7 @@ vídeos (`CLAUDE.md` → *Idiomas*). Os vídeos dele ficam na mesma `jilsonsanta
 
 - **Upload pelo admin da escola.** O operador chamou esta opção de **"C"**. No guia, as opções
   eram **A** (painel do Bunny + colar o ID) e **B** (envio pelo admin), e "upload pelo admin"
-  corresponde à **B**. *(⚠️ Divergência de rótulo, reportada em 25/09.)*
+  corresponde à **B** *(confirmado pelo operador, 27/09/2026)*.
 - **As coleções do Stream são criadas pelo admin da escola, NÃO à mão no painel.**
 - **Consequência que já estava registrada:** é código novo na Fase 3, que é de alto risco. As
   regras do §7 valem para ele.
@@ -298,9 +297,9 @@ O Bunny gera estes tipos de chave:
    do token do embed é confirmação do build: a doc consultada em 25/09 mostra a API key num
    exemplo (§7).*
    **Regra do operador (25/09/2026):** *"API key da biblioteca e token authentication key: só no
-   Railway, nunca no chat nem no navegador."* *(⚠️ Divergência reportada em 25/09: a linha
-   **Dev**, logo abaixo, manda as chaves da biblioteca de dev para o `server/.env`. A regra do
-   operador fala em "só no Railway", sem dizer se vale só para a biblioteca de produção.)*
+   Railway, nunca no chat nem no navegador."* **Vale para a biblioteca de PRODUÇÃO** *(esclarecido
+   pelo operador, 27/09/2026)*. As chaves da biblioteca de dev vão no `server/.env` (linha **Dev**,
+   abaixo), para o vídeo tocar quando o site roda no computador dele.
 3. **Senha de cada Storage Zone:** envia e apaga arquivos. Vai para o **servidor**.
 4. **Senha só de leitura da Storage Zone:** lê e baixa. É a da **cópia fria** (Fase 7); não vai
    para o site.
@@ -368,6 +367,6 @@ O Bunny gera estes tipos de chave:
   Bunny não é. A escolha da fonte continua sendo da Fase 5.)*
 - **Legendas `.vtt` casadas pelo nome do arquivo** com o `.mp4`.
 - **O preload do embed gasta banda:** decidir o comportamento junto com o `design.md`.
-- **A API key e a token authentication key da biblioteca ficam só no Railway**, nunca no chat
-  nem no navegador (§5). **Gate do context7 obrigatório**, com a consulta dizendo **"Stream"**.
+- **A API key e a token authentication key da biblioteca de produção ficam só no Railway**, nunca
+  no chat nem no navegador. As da biblioteca de dev vão no `server/.env` (§5). **Gate do context7 obrigatório**, com a consulta dizendo **"Stream"**.
 - **Teste pendente:** reprodução no **celular com 4G**, quando o site já tocar vídeo.
