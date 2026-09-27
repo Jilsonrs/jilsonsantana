@@ -131,9 +131,13 @@ vídeos (`CLAUDE.md` → *Idiomas*). Os vídeos dele ficam na mesma `jilsonsanta
 - [x] **Sem trava por IP.** É decisão de Ago 2026: o vídeo não pode parar quando o aluno troca o
       Wi-Fi pelo 4G.
 - [x] **DRM:** **MediaCage Basic (grátis) ligado.** Enterprise **não** (decisão 5, §6).
-- **Chromecast:** configurado **sem** (`*.gstatic.com` fora dos *Allowed domains*). **Decisão 2
-  a confirmar pelo operador** (§6). Se um dia for sim, é preciso acrescentar `*.gstatic.com`,
-  senão o vídeo toca no navegador e não toca na TV.
+- **Chromecast:** configurado **sem** (`*.gstatic.com` fora dos *Allowed domains*). **A decisão
+  fica para o bloco de vídeo da Fase 3** *(operador, 27/09/2026)*, com um teste numa TV com o site
+  já tocando vídeo. **O controle de acesso continua com a TV:** só quem recebeu o token do nosso
+  servidor abre o player, e é do player que a aula vai para a TV. **O que a doc não responde:** se
+  a TV toca com o CDN token e o MediaCage Basic ligados. Para ligar: acrescentar `*.gstatic.com`
+  aos *Allowed domains* (fato da doc) e ativar a transmissão nas configurações do player da
+  biblioteca **[A VERIFICAR NO PAINEL: o nome exato da opção]**.
 - **Teste do operador:** toca no painel; é **bloqueado numa aba anônima**.
 
 **Entrega:** tier **High Volume**, sem filtros de roteamento.
@@ -321,7 +325,7 @@ O Bunny gera estes tipos de chave:
 | # | Decisão | Opções | Estado |
 |---|---|---|---|
 | 1 | Onde guardar as imagens enviadas pelo site | Bunny Storage · Railway Volume | **FECHADA em 25/09/2026** (operador): **Bunny Storage** |
-| 2 | O aluno pode mandar a aula para a TV (Chromecast)? | sim · não | **configurado SEM Chromecast em 25/09** (`*.gstatic.com` fora); a confirmar pelo operador |
+| 2 | O aluno pode mandar a aula para a TV (Chromecast)? | sim · não | **ADIADA pelo operador em 27/09:** fica sem até o bloco de vídeo da Fase 3, quando se testa numa TV (§3.2; `pendencias.md` P5) |
 | 3 | Como os vídeos entram | painel do Bunny + colar o ID · envio pelo admin | **FECHADA em 25/09/2026** (operador): **upload pelo admin**, com as coleções criadas pelo admin (§3.4) |
 | 4 | Endereço das imagens | `img.jilsonsantana.com` | **FECHADA em 25/09/2026** (operador): no ar, com SSL |
 | 5 | Enterprise DRM | não no lançamento · sim | **FECHADA em 25/09/2026** (operador): **sem Enterprise**; **MediaCage Basic (grátis) ligado** |
@@ -351,8 +355,14 @@ O Bunny gera estes tipos de chave:
   `tech-stack.md` citam *"per-user signing"* entre as proteções. Na prática, isso só pode
   significar que o servidor emite o token apenas para quem tem acesso. Confirmar no build e, se
   for isso, ajustar a frase nos dois docs com o ok do operador.
-- **CSP:** quando o bloco do `helmet` entrar (backlog P2), o `frame-src` precisa de
-  `iframe.mediadelivery.net`, e o `img-src` precisa de `img.jilsonsantana.com`.
+- **Endereço do player a conferir (achado de 27/09, anotado a pedido do operador):** a doc do
+  Bunny mostra que o **player novo** usa `player.mediadelivery.net/embed/` (com a opção *Enable
+  legacy player* desligada em *Player Settings*). Este guia cita o endereço antigo,
+  `iframe.mediadelivery.net`. **Confirmar no build qual vale** para a `jilsonsantana-stream`, e usar
+  o mesmo no iframe e na CSP.
+- **CSP:** quando o bloco do `helmet` entrar (backlog P2), o `frame-src` precisa do endereço do
+  player (acima: `iframe.mediadelivery.net` ou `player.mediadelivery.net`), e o `img-src` precisa
+  de `img.jilsonsantana.com`.
 
 ### 7.1 Regras do operador para o build da Fase 3 *(25/09/2026: registradas, NÃO implementadas)*
 

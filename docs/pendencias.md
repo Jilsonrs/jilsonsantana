@@ -22,7 +22,6 @@
 
 | # | O que falta | Opções | Onde registrar |
 |---|---|---|---|
-| P5 | **Aula na TV (Chromecast):** confirmar que fica **sem** | sem (como está) · com | `bunny.md` §3.2 e §6 (decisão 2) |
 | P9 | **Dois gatilhos de reabertura propostos pelo agente:** Enterprise DRM *"se houver vazamento de aula medido e receita que pague a mensalidade"* · Keep Original *"se as cópias do operador deixarem de existir fora do Bunny"* | aceitar · trocar | `CLAUDE.md` → changelog (19)(f) |
 | P10 | **Atualizar o item do plano** que ainda diz *"admin upload flow (or direct-to-Bunny + store reference)"*, agora que a decisão 3 fechou em upload pelo admin | autorizar · deixar | `implementation-plan.md` → Fase 3 |
 | P11 | **Regra do context7 para o Storage:** hoje a lei manda dizer "Stream" em toda consulta ao Bunny, e isso não cobre o Storage. Proposta: consulta de Storage diz "Storage" | aceitar · recusar | `CLAUDE.md` → *Context7* → *Bunny caveat* |
@@ -41,6 +40,7 @@
 
 | # | O que falta | Quando | Onde registrar |
 |---|---|---|---|
+| P5 | **Aula na TV (Chromecast):** com ou sem? Até lá fica **sem**. O controle de acesso continua (só quem recebeu o token do nosso servidor abre o player). A doc não diz se a TV toca com o CDN token e o MediaCage Basic ligados: **testar numa TV com Chromecast** | bloco de vídeo da Fase 3, com o site já tocando vídeo *(adiada pelo operador em 27/09)* | `bunny.md` §3.2 e §6 (decisão 2) |
 | P17 | **Qual curso é o destaque** da home (o primeiro da ordem, ou o marcado com a etiqueta "Destaque") | etapa 3 do C4 | `implementation-plan.md` → Bloco C4 |
 | P18 | O que fazer com os **2 cursos `exemplo-*`, publicados em produção**, que apareceriam na home | etapa 3 do C4 | `implementation-plan.md` → Bloco C4 |
 | P19 | **Criar no painel do Bunny:** `jilsonsantana-stream-apresentacao`, `jilsonsantana-stream-dev` e `jilsonsantana-storage-dev`; **mover** o vídeo de teste "Apresentação"; **desligar o multi-audio** na `jilsonsantana-stream` (decidido em 27/09, era a P6) | antes do bloco de vídeo da Fase 3 | `bunny.md` §0, §3.3 e §4.1 |
