@@ -28,8 +28,9 @@
 | Storage Zone de dev | **não criada** (§4.1) |
 | Pull Zone das imagens | **criada e testada**: `img.jilsonsantana.com` (§4.2) |
 | Stream: biblioteca de aulas | **criada e testada**: `jilsonsantana-stream` (§3.2) |
-| Stream: bibliotecas de apresentação e de dev | **não criadas** (§3.3) |
-| Código do site usando o Bunny | **envio da capa do curso pelo admin**: pronto em 27/09 (Bloco U, etapa 1) e **testado no site no ar** (sem Storage de dev, por decisão do operador); funciona quando as 4 variáveis da etapa 1 (§5) estiverem no Railway |
+| Stream: biblioteca de apresentação | **não criada**; o código do envio está pronto no `dev` (Bloco U, etapa 2, 27/09) |
+| Stream: bibliotecas de dev | **não serão criadas por enquanto**: o operador testa o envio direto no ar (decisão de 27/09, §4.1) |
+| Código do site usando o Bunny | **envio da capa do curso pelo admin**: **no ar e provado em 27/09** (Bloco U, etapa 1): o operador enviou uma capa pelo admin, e ela saiu por `img.jilsonsantana.com/cursos/…`. Sem Storage de dev, por decisão dele |
 
 ## 1. Resumo: o que entra e o que fica de fora
 
@@ -75,7 +76,7 @@
 |---|---|---|---|---|---|
 | `jilsonsantana-stream` (library ID 762605) | produção | as aulas: só para quem tem assinatura ativa | **ligado** | Frankfurt + São Paulo | **criada e testada em 25/09** |
 | `jilsonsantana-stream-apresentacao` | produção | o vídeo de apresentação dos cursos, que toca para quem **não** é assinante (é ativo de venda) | desligado | Frankfurt + São Paulo | não criada |
-| `jilsonsantana-stream-dev` | desenvolvimento | 2 ou 3 vídeos de teste | ligado, igual à de aulas | só Frankfurt | não criada |
+| `jilsonsantana-stream-dev` | desenvolvimento | 2 ou 3 vídeos de teste | ligado, igual à de aulas | só Frankfurt | **não será criada por enquanto** (testa no ar, decisão de 27/09) |
 
 - **Regiões:** no Stream, **Frankfurt é a principal e não se escolhe**; São Paulo foi
   acrescentada. **Irreversível:** réplica só se acrescenta, nunca se remove.
@@ -156,7 +157,8 @@ vídeos (`CLAUDE.md` → *Idiomas*). Os vídeos dele ficam na mesma `jilsonsanta
 - [ ] **Block Direct URL File Access → LIGAR.**
 
 **`jilsonsantana-stream-dev`** (só Frankfurt): a mesma configuração da de aulas, com
-**`localhost`** nos *Allowed domains*.
+**`localhost`** nos *Allowed domains*. *(Não será criada por enquanto: o operador testa direto no
+ar, decisão de 27/09. O mesmo vale para uma biblioteca de apresentação de dev.)*
 
 ### 3.4 Como os vídeos entram — decisão 3 FECHADA *(operador, 25/09/2026)*
 
@@ -166,6 +168,20 @@ vídeos (`CLAUDE.md` → *Idiomas*). Os vídeos dele ficam na mesma `jilsonsanta
 - **As coleções do Stream são criadas pelo admin da escola, NÃO à mão no painel.**
 - **Consequência que já estava registrada:** é código novo na Fase 3, que é de alto risco. As
   regras do §7 valem para ele.
+- **Limpeza automática ao reenviar** *(decisão do operador, 27/09/2026: "o incompleto e o
+  antigo")*:
+  - reenviar o vídeo da mesma aula ou da mesma apresentação **apaga no Bunny o envio que ficou
+    pela metade**;
+  - quando o envio novo termina, **o vídeo substituído também é apagado**;
+  - **nunca o vídeo em uso**;
+  - se o Bunny recusar apagar, o envio continua valendo, e o que sobrar se apaga no painel.
+
+  Na apresentação, isso já está no código (Bloco U, etapa 2); nas aulas, entra na etapa 3.
+  *Não confundir com apagar vídeo de curso arquivado, que continua fora (Ago 2026).*
+- **Prévia grátis** *(decisão do operador, 27/09/2026, "como na Udemy")*: o operador liga e desliga
+  por aula quais aulas tocam para **qualquer visitante, sem login e sem assinatura**; ele pensa em
+  2, 3 ou 5 aulas de uns 10 minutos por curso. Elas continuam na biblioteca de aulas, com token, e
+  quem entrega o token para a prévia é o nosso servidor. Entra nas etapas 3 e 4 do Bloco U.
 
 ### 3.5 Custos do Stream — fatos da doc
 
@@ -343,7 +359,8 @@ O Bunny gera estes tipos de chave:
   | 3 | `BUNNY_STREAM_LESSONS_API_KEY` | API key da biblioteca de aulas | **sim** |
   | 3 | `BUNNY_STREAM_LESSONS_TOKEN_KEY` | token authentication key da biblioteca de aulas | **sim** |
 
-  **Estado em 27/09: nenhuma variável criada.** Sem as da etapa 1, o envio da capa responde que
+  **Estado em 27/09: as 4 da etapa 1 estão no Railway** (o envio foi provado no ar). As das etapas
+  2 e 3 ainda não existem. Sem as da etapa 1, o envio da capa responderia que
   o Storage não está configurado, e nada quebra. **As 4 da etapa 1 vão só no Railway**, com os
   valores de produção (`jilsonsantana-storage`, `https://img.jilsonsantana.com`), porque não
   existe Storage de dev (§4.1, decisão de 27/09).
@@ -383,6 +400,14 @@ O Bunny gera estes tipos de chave:
   `tech-stack.md` citam *"per-user signing"* entre as proteções. Na prática, isso só pode
   significar que o servidor emite o token apenas para quem tem acesso. Confirmar no build e, se
   for isso, ajustar a frase nos dois docs com o ok do operador.
+- **Confirmado na doc em 27/09, e já em uso no código (Bloco U, etapa 2):** criar o vídeo devolve
+  o id em **`guid`** · o envio retomável usa `https://video.bunnycdn.com/tusupload` com os
+  cabeçalhos `AuthorizationSignature`, `AuthorizationExpire`, `VideoId` e `LibraryId` · a
+  assinatura é SHA-256 (hex) de biblioteca + chave + validade + id · o player é
+  `iframe.mediadelivery.net/embed/<biblioteca>/<id>`, o dos exemplos oficiais.
+  **Não confirmado, e por isso não usado:** o significado dos números de `status` na leitura do
+  vídeo. A doc lista os do webhook, e eles podem não ser os mesmos. O próprio player mostra
+  "processando".
 - **Endereço do player a conferir (achado de 27/09, anotado a pedido do operador):** a doc do
   Bunny mostra que o **player novo** usa `player.mediadelivery.net/embed/` (com a opção *Enable
   legacy player* desligada em *Player Settings*). Este guia cita o endereço antigo,

@@ -116,6 +116,9 @@
 > e biblioteca de aulas). **Também publicada em 27/09: a etapa 1 do Bloco U** (a capa enviada pelo
 > admin vai para o Bunny Storage). Ela passa a funcionar quando as 4 variáveis do Storage estiverem
 > no Railway, e é testada no site no ar, porque não existe Storage de dev (decisão do operador).
+> **E a etapa 2 também, em 27/09:** o vídeo de apresentação enviado pelo admin, tocando no
+> formulário e na página do curso, com a limpeza automática no Bunny. A migration
+> `20260927120000_course_intro_video_pending` entra em produção pelo pre-deploy.
 > **Próximo passo — decidido pelo operador em 23/09: o C4, em 5 etapas, uma por vez.** A etapa 1
 > está feita e publicada; a próxima é a **etapa 3**, que depende das decisões P17 e P18
 > (`pendencias.md`). Detalhe no bloco C4. Continuam na
@@ -910,7 +913,8 @@ tornada executável — não uma lista nova):
       metade FEITA em 27/09, na etapa 1 do C4; falta só o `.max()`)* — ver a
       convenção nova em `CLAUDE.md` → Shared `core/` package (o `.url()` aceita `javascript:` e
       `data:text/html`, **medido neste repo**, não suposto).
-- [ ] **`introVideoId` sem formato** (`content.ts:70`) — hoje inerte, mas na Fase 3 esse valor vai
+- [x] *(Feito em 27/09, no Bloco U, etapa 2: `bunnyVideoIdSchema` em `core/src/schemas/content.ts`.)*
+      **`introVideoId` sem formato** (`content.ts:70`) — hoje inerte, mas na Fase 3 esse valor vai
       ser interpolado numa URL/iframe do Bunny **numa rota de HTML de servidor sem escape
       automático**. Restringir ao GUID do Bunny Stream; **confirmar o formato exato via context7
       `/bunnyway/documentation`** (query dizendo "Stream") na MESMA chamada que a fase já exige.
@@ -1134,7 +1138,9 @@ landmark. Corrigido junto.
       **correto** (vídeo de intro é ativo de venda, não-gated — TRAVA do CLAUDE.md → Course page
       fields). Justamente por isso, pendurar vídeo gated na mesma coluna = vazamento silencioso:
       a rota pública continua servindo o id sem nenhum erro aparecer.
-- [ ] **PRÉ-REQUISITO desta fase — `include` → `select` nas rotas públicas de detalhe** (movido do
+- [ ] *(Metade feita em 27/09, no Bloco U, etapa 2: `GET /api/courses/:slug` já usa `select`. Falta
+      `GET /api/trilhas/:slug`, na etapa 3.)*
+      **PRÉ-REQUISITO desta fase — `include` → `select` nas rotas públicas de detalhe** (movido do
       backlog P2 da Fase 7; achado do `security-vulnerability-reviewer`, Ago 2026). `GET
       /api/courses/:slug` (`server/src/routes/courses.ts:54`) e `GET /api/trilhas/:slug`
       (`server/src/routes/trilhas.ts:126`) usam `include:`, então devolvem **todas** as colunas
@@ -1214,20 +1220,67 @@ landmark. Corrigido junto.
       um dublê no **nosso** módulo, e 4 de tela (sem botão em curso novo · enviando · recusado ·
       GIF e arquivo grande nem saem da tela). Mutação: tipo sempre aceito ⇒ 3 reprovam; sem
       `requireAdmin` ⇒ 2 reprovam; tela sem conferir o tipo e sem pôr no campo ⇒ 2 reprovam.
-      **Falta a prova com o Bunny de verdade, NO SITE NO AR** *(decisão do operador, 27/09: sem
-      Storage de dev; as 4 variáveis vão só no Railway — `bunny.md` §4.1 e §5)*.
-- [ ] **Etapa 2 — vídeo de apresentação:** envio retomável (TUS) pelo admin para a biblioteca de
-      apresentação, "processando" até o Bunny terminar, e o vídeo tocando no formulário e na página
-      do curso, sem token. `introVideoId` passa a exigir o formato GUID (fecha o item do backlog P2).
-- [ ] **Etapa 3 — vídeo das aulas:** primeiro o `include` → `select` das rotas públicas de detalhe
-      (a trava acima); depois `Lesson.bunnyVideoId` + `Course.bunnyCollectionId`, a coleção criada
-      pelo admin, o envio e a **prévia do admin com token**. `LessonRow.tsx` sai do
+      **PROVADO no site no ar em 27/09** *(sem Storage de dev, decisão do operador; as 4 variáveis
+      estão só no Railway — `bunny.md` §4.1 e §5)*: o operador enviou uma capa PNG pelo admin, e
+      ela apareceu na prévia servida por `img.jilsonsantana.com/cursos/exemplo-fundamentos-excel-ia-bfa5e6cf13ce.png`.
+- [x] **Etapa 2 — vídeo de apresentação** *(27/09, no `dev`; sem biblioteca de dev, decisão do
+      operador: testa no ar como a capa)*. Servidor: `server/src/lib/bunny-stream.ts` (cria o vídeo;
+      o id volta em `guid`; assinatura SHA-256 do envio; endereço do player derivado, `null` sem a
+      biblioteca configurada) + `POST /api/admin/courses/:id/intro-video` (`requireAdmin`; devolve a
+      assinatura, nunca a chave; **não** grava o vídeo no curso) + `introVideoEmbedUrl` derivado nas
+      respostas do curso (público e admin). `introVideoId` só aceita o GUID do Bunny. Admin:
+      `IntroVideoUpload.tsx` (o botão **"Enviar vídeo"**, com a porcentagem; grava o id **só quando
+      o envio termina**) + `client/src/lib/video-upload.ts` (o único lugar com o `tus-js-client`) +
+      `BunnyPlayer.tsx` (o player, com a política de referrer que o Bunny exige), no formulário e na
+      página do curso. **Duas mudanças em relação ao plano, e o porquê:**
+      - **sem consulta de "processando":** a doc não deixa claro como ler se o vídeo terminou de
+        processar, e o próprio player do Bunny já mostra "processando";
+      - **o envio retoma na mesma sessão**, por uns 5 minutos de tentativas. Retomar de OUTRA sessão
+        mandaria o arquivo para o vídeo antigo enquanto o curso gravaria o novo. Se cair de vez, o
+        operador envia de novo.
+
+      **LIMPEZA AUTOMÁTICA no Bunny** *(decisão do operador, 27/09/2026: "o incompleto e o
+      antigo")*. O curso guarda o **envio em andamento** (`Course.introVideoPendingId`, migration
+      `20260927120000_course_intro_video_pending`). **Reenviar** apaga no Bunny o envio que ficou
+      pela metade; **terminar** (`POST /api/admin/courses/:id/intro-video/complete`, que só aceita o
+      envio em andamento DESTE curso, senão 409) troca o vídeo do curso e apaga o **substituído**.
+      **Nunca apaga o vídeo em uso.** Se o Bunny recusar apagar, o envio continua valendo: a
+      limpeza é arrumação. *Não confundir com a "deleção de vídeo" PROPOSTA e REJEITADA em Ago 2026:
+      aquela era para curso ARQUIVADO e continua fora; esta é a limpeza do próprio envio.*
+      **Junto, e antes da coluna nova** (a trava da Fase 3): `GET /api/courses/:slug` trocou
+      `include` por `select` explícito. A outra rota da trava, `GET /api/trilhas/:slug`, fica para a
+      etapa 3. Passo 0 no banco de dev: as mesmas contagens antes e depois, 0 tabelas sem RLS e
+      "No difference detected".
+
+      Testes: 4 de unidade (a assinatura presa a um valor conhecido; o endereço do player) + 17 de
+      servidor (401 e 403 nas duas rotas · 404 · 200 sem a chave · começar deixa **em andamento** ·
+      terminar troca · 409 · GUID inválido 400 · 503/502 · **reenviar apaga o incompleto** ·
+      **terminar apaga o substituído, e começar não apaga o vídeo em uso** · Bunny recusando apagar
+      não derruba · **o player sai para visitante sem login** · **o envio em andamento nunca sai na
+      resposta pública**) + 8 de tela. Mutação: a ordem da assinatura, a exceção do vídeo de venda,
+      a trava de admin, gravar antes do fim, o formato do id, tirar a limpeza, apagar o vídeo em
+      uso, não conferir o envio em andamento, e pôr a coluna nova no `select` público — todas
+      reprovam. **Falta a prova no ar:** o operador cria a `jilsonsantana-stream-apresentacao`, põe as
+      2 variáveis no Railway e envia um vídeo. A rota de apagar é a mesma forma da doc
+      (`DELETE /library/:id/videos/:id`), e confirmar que ela apaga é parte dessa prova: o vídeo
+      substituído tem que sumir do painel.
+- [ ] **Etapa 3 — vídeo das aulas:** primeiro o `include` → `select` de `GET /api/trilhas/:slug` (o
+      de `/courses/:slug` já foi feito na etapa 2); depois `Lesson.bunnyVideoId` +
+      `Lesson.bunnyVideoPendingId` + `Course.bunnyCollectionId`, a coleção criada pelo admin, o envio
+      **com a mesma limpeza da etapa 2** (reenviar apaga o incompleto; terminar apaga o substituído)
+      e a **prévia do admin com token**. **Prévia grátis** *(decisão do operador, 27/09/2026, "como
+      na Udemy")*: `Lesson.isFreePreview`, que o operador liga e desliga por aula no admin; ele
+      pensa em 2, 3 ou 5 aulas de uns 10 minutos por curso. `LessonRow.tsx` sai do
       `ModuleLessonTree.tsx` (328 linhas) antes. Nenhuma rota pública devolve `bunnyVideoId`,
       provado por teste. `security-vulnerability-reviewer` no fim.
 - [ ] **Etapa 4 — a trava de acesso e a aula tocando para o aluno:** adianta da Fase 4 o model
       `Subscription`, o `temAcessoAtivo()` e o `requireActiveMembership`, **sem Stripe**; rota
       `GET /api/lessons/:id/player`; assinatura de teste do `member@` **só fora de produção** (o
-      seed para com erro em produção); a matriz da trava em teste de servidor.
+      seed para com erro em produção); a matriz da trava em teste de servidor. **A aula com prévia
+      grátis toca para QUALQUER visitante, sem login e sem assinatura** *(decisão do operador,
+      27/09/2026)*: vira a **segunda exceção** ao portão de vídeo, ao lado do vídeo de apresentação.
+      A trava do `CLAUDE.md` → Access Architecture é reescrita junto, no mesmo commit, com teste
+      provando que **desligar a prévia volta a trancar a aula**.
       `security-vulnerability-reviewer` e revisão do operador antes do "publica".
 - **Done when:** no computador do operador, a capa enviada aparece no admin; o vídeo de
   apresentação toca no admin e na página; o vídeo da aula toca na prévia do admin; o `member@`

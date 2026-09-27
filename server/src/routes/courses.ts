@@ -5,6 +5,7 @@ import { prisma } from "../lib/prisma.js";
 import { requireAdmin } from "../middleware/auth.js";
 import { validate, parseId } from "../lib/http.js";
 import { paraBanco, doBanco, comIdioma, idiomaDaLista } from "../lib/language.js";
+import { enderecoDoPlayer } from "../lib/bunny-stream.js";
 
 const router = Router();
 const PUBLISHED = ContentStatus.PUBLISHED;
@@ -56,11 +57,35 @@ router.get("/courses", async (req, res) => {
 router.get("/courses/:slug", async (req, res) => {
   const course = await prisma.course.findFirst({
     where: { slug: req.params.slug, status: PUBLISHED },
-    include: {
+    // `select` EXPLÍCITO, nunca `include` (trava da Fase 3, feita no Bloco U,
+    // etapa 2): com `include`, toda coluna nova do curso sai nesta resposta
+    // pública sem ninguém decidir — e as colunas de vídeo (o envio em andamento,
+    // o vídeo das aulas) não podem sair. Só o que `CourseDetail` (client) usa.
+    select: {
+      id: true,
+      slug: true,
+      title: true,
+      subtitle: true,
+      description: true,
+      level: true,
+      learnTags: true,
+      requirements: true,
+      personas: true,
+      highlights: true,
+      faq: true,
+      camadas: true,
+      thumbnailUrl: true,
+      introVideoId: true,
+      language: true,
       modules: {
         where: { status: PUBLISHED },
         orderBy: byOrder,
-        include: {
+        select: {
+          id: true,
+          title: true,
+          layer: true,
+          displayOrder: true,
+          status: true,
           lessons: {
             where: { status: PUBLISHED },
             orderBy: byOrder,
@@ -77,7 +102,15 @@ router.get("/courses/:slug", async (req, res) => {
   }
 
   const lessonCount = course.modules.reduce((sum, m) => sum + m.lessons.length, 0);
-  res.json({ ...comIdioma(course), moduleCount: course.modules.length, lessonCount });
+  // O vídeo de APRESENTAÇÃO sai para qualquer visitante, sem login e sem token:
+  // é ativo de venda, a única exceção ao portão de vídeo (CLAUDE.md → Access
+  // Architecture). O endereço é derivado aqui, nunca coluna.
+  res.json({
+    ...comIdioma(course),
+    introVideoEmbedUrl: enderecoDoPlayer("apresentacao", course.introVideoId),
+    moduleCount: course.modules.length,
+    lessonCount,
+  });
 });
 
 // ── Admin reads (any status) ─────────────────────────────────────────────────
@@ -125,7 +158,7 @@ router.get("/admin/courses/:id", requireAdmin, async (req, res) => {
     res.status(404).json({ error: "NotFound" });
     return;
   }
-  res.json(comIdioma(course));
+  res.json({ ...comIdioma(course), introVideoEmbedUrl: enderecoDoPlayer("apresentacao", course.introVideoId) });
 });
 
 // ── Writes (admin only) ──────────────────────────────────────────────────────

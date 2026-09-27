@@ -80,7 +80,10 @@ export function AdminCourseFormPage() {
           noValidate
         >
           <CourseBasicsSection />
-          <CourseMediaSection courseId={courseId} />
+          <CourseMediaSection
+            courseId={courseId}
+            videoSalvo={course ? { id: course.introVideoId, embedUrl: course.introVideoEmbedUrl } : undefined}
+          />
           {/* Trava pelo status GRAVADO, não pelo do formulário: é ele que o servidor confere. */}
           <CourseOrganizationSection idiomaTravado={isEdit && course !== undefined && course.status !== "DRAFT"} />
           <CourseListsSection />

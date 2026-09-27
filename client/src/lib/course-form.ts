@@ -9,6 +9,7 @@ import {
   faqItemSchema,
   contentLanguageSchema,
   enderecoDeImagemValido,
+  bunnyVideoIdSchema,
   type CourseCreateInput,
 } from "@jilson/core";
 import type { AdminCourseDetail } from "@/lib/api";
@@ -40,7 +41,14 @@ export const courseFormSchema = z.object({
       (v) => v.trim() === "" || enderecoDeImagemValido(v.trim()),
       "Use um caminho do site que comece com / (ex.: /img/curso.jpg) ou um endereço que comece com https://",
     ),
-  introVideoId: z.string(),
+  // O id do vídeo no Bunny (o envio preenche sozinho). Colado à mão, precisa ter
+  // o formato do Bunny, a mesma regra do servidor.
+  introVideoId: z
+    .string()
+    .refine(
+      (v) => v.trim() === "" || bunnyVideoIdSchema.safeParse(v.trim()).success,
+      "Cole o ID do vídeo como aparece no Bunny (ex.: eb1c4f77-0cda-46be-b47d-1118ad7c2ffe)",
+    ),
   displayOrder: z.coerce.number().int(),
   status: contentStatusSchema,
 });

@@ -321,7 +321,8 @@ export const en: Dict = {
       faq: "Frequently asked questions",
       aprender: "What you'll learn",
       requisitos: "Prerequisites",
-      paraQuem: "Who this course is for"
+      paraQuem: "Who this course is for",
+      videoApresentacao: "Course introduction video"
     },
     trilha: {
       naoEncontrada: "Learning path not found.",

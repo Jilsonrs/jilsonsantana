@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { LayerSelo } from "@/components/content/LayerSelo";
 import { HighlightCard } from "@/components/content/HighlightCard";
+import { BunnyPlayer } from "@/components/content/BunnyPlayer";
 import { PageContainer } from "@/components/layout/PageLayout";
 import { useT } from "@/lib/language";
 import { contagem } from "@/lib/contagem";
@@ -52,6 +53,11 @@ export function CourseDetailPage() {
 
         <div className="grid gap-12 md:grid-cols-[1fr_300px]">
           <div className="space-y-12">
+            {/* O vídeo de apresentação toca para QUALQUER visitante: é ativo de venda,
+                a única exceção ao portão de vídeo (CLAUDE.md → Access Architecture). */}
+            {course.introVideoEmbedUrl && (
+              <BunnyPlayer src={course.introVideoEmbedUrl} title={t.curso.videoApresentacao} />
+            )}
             <LayerSelo camadas={course.camadas} />
 
             {course.highlights && course.highlights.length > 0 && (
