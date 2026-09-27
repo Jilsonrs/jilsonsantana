@@ -10,7 +10,8 @@ import { Button } from "@/components/ui/button";
  * O botão "Enviar vídeo" da apresentação do curso (Bloco U, etapa 2). O arquivo
  * vai inteiro, sem recompressão, direto para o Bunny, e retoma se a conexão cair.
  * Só DEPOIS que o envio termina o id entra no curso: um envio abandonado no meio
- * não deixa o curso apontando para um vídeo vazio.
+ * não deixa o curso apontando para um vídeo vazio. Ao reenviar, o servidor apaga
+ * no Bunny o envio incompleto e, no fim, o vídeo substituído (operador, 27/09).
  */
 export function IntroVideoUpload({
   courseId,
@@ -28,8 +29,8 @@ export function IntroVideoUpload({
       setPorcentagem(0);
       const credenciais = await api.startIntroVideoUpload(courseId);
       await enviarVideo(arquivo, credenciais, setPorcentagem).concluido;
-      await api.updateCourse(courseId, { introVideoId: credenciais.videoId });
-      return credenciais;
+      const concluido = await api.completeIntroVideoUpload(courseId, credenciais.videoId);
+      return { videoId: concluido.introVideoId, embedUrl: concluido.introVideoEmbedUrl ?? credenciais.embedUrl };
     },
     onSuccess: ({ videoId, embedUrl }) => {
       setValue("introVideoId", videoId, { shouldDirty: true });

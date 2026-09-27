@@ -86,6 +86,10 @@ export const bunnyVideoIdSchema = z
   .string()
   .regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i, "ID de vídeo do Bunny inválido");
 
+// O fim de um envio de vídeo pelo admin: o id que o Bunny criou no começo.
+export const videoUploadCompleteSchema = z.object({ videoId: bunnyVideoIdSchema });
+export type VideoUploadCompleteInput = z.infer<typeof videoUploadCompleteSchema>;
+
 // O idioma do conteúdo: a API fala `pt`/`en` (o código do endereço e do
 // dicionário); o banco guarda o enum `Language` (PT/EN).
 export const contentLanguageSchema = z.enum(LANGUAGES);

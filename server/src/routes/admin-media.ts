@@ -2,10 +2,11 @@ import { randomBytes } from "node:crypto";
 import express, { Router } from "express";
 import { prisma } from "../lib/prisma.js";
 import { requireAdmin } from "../middleware/auth.js";
-import { parseId } from "../lib/http.js";
+import { parseId, validate } from "../lib/http.js";
 import { tipoDaImagem } from "../lib/image-type.js";
 import { enviarParaOStorage } from "../lib/bunny-storage.js";
-import { iniciarEnvio } from "../lib/bunny-stream.js";
+import { videoUploadCompleteSchema } from "@jilson/core";
+import { iniciarEnvio, apagarVideo, enderecoDoPlayer } from "../lib/bunny-stream.js";
 
 const router = Router();
 
@@ -55,14 +56,18 @@ router.post("/admin/courses/:id/thumbnail", requireAdmin, corpoDeImagem, async (
 // partes, e retoma se a internet cair (regra do operador, 25/09). A chave da
 // biblioteca nunca sai daqui.
 //
-// O `introVideoId` NÃO é gravado aqui: só depois que o envio termina, pelo
-// PATCH do curso. Gravar antes deixaria o curso apontando para um vídeo vazio se
-// o envio fosse abandonado no meio.
+// O vídeo novo fica como ENVIO EM ANDAMENTO (`introVideoPendingId`), não como o
+// vídeo do curso: ele só vira o vídeo do curso quando o envio termina (rota
+// `/complete`, abaixo). Assim um envio abandonado nunca deixa o curso apontando
+// para um vídeo vazio.
 router.post("/admin/courses/:id/intro-video", requireAdmin, async (req, res) => {
   const id = parseId(req.params.id, res);
   if (id === null) return;
 
-  const course = await prisma.course.findUnique({ where: { id }, select: { slug: true } });
+  const course = await prisma.course.findUnique({
+    where: { id },
+    select: { slug: true, introVideoId: true, introVideoPendingId: true },
+  });
   if (!course) {
     res.status(404).json({ error: "NotFound" });
     return;
@@ -74,7 +79,48 @@ router.post("/admin/courses/:id/intro-video", requireAdmin, async (req, res) => 
     res.status(inicio.motivo === "NaoConfigurado" ? 503 : 502).json({ error: `Stream${inicio.motivo}` });
     return;
   }
+
+  await prisma.course.update({ where: { id }, data: { introVideoPendingId: inicio.credenciais.videoId } });
+
+  // LIMPEZA (operador, 27/09): o envio anterior que ficou pela metade é apagado
+  // no Bunny. Nunca o vídeo em uso — um envio concluído já saiu do "em andamento".
+  const anterior = course.introVideoPendingId;
+  if (anterior && anterior !== course.introVideoId) await apagarVideo("apresentacao", anterior);
+
   res.json(inicio.credenciais);
+});
+
+// POST /api/admin/courses/:id/intro-video/complete — o envio terminou. O vídeo
+// em andamento vira o vídeo do curso, e o vídeo que ele substituiu é apagado no
+// Bunny (decisão do operador, 27/09/2026: "o incompleto e o antigo").
+router.post("/admin/courses/:id/intro-video/complete", requireAdmin, async (req, res) => {
+  const id = parseId(req.params.id, res);
+  if (id === null) return;
+  const body = validate(videoUploadCompleteSchema, req.body, res);
+  if (body === null) return;
+  const { videoId } = body;
+
+  const course = await prisma.course.findUnique({
+    where: { id },
+    select: { introVideoId: true, introVideoPendingId: true },
+  });
+  if (!course) {
+    res.status(404).json({ error: "NotFound" });
+    return;
+  }
+  // Só o envio em andamento DESTE curso vira o vídeo dele. Um id qualquer, ou um
+  // envio que já foi trocado por outro mais novo, é recusado.
+  if (course.introVideoPendingId !== videoId) {
+    res.status(409).json({ error: "NotPending" });
+    return;
+  }
+
+  await prisma.course.update({ where: { id }, data: { introVideoId: videoId, introVideoPendingId: null } });
+
+  const substituido = course.introVideoId;
+  if (substituido && substituido !== videoId) await apagarVideo("apresentacao", substituido);
+
+  res.json({ introVideoId: videoId, introVideoEmbedUrl: enderecoDoPlayer("apresentacao", videoId) });
 });
 
 export default router;

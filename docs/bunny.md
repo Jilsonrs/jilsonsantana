@@ -168,6 +168,20 @@ ar, decisão de 27/09. O mesmo vale para uma biblioteca de apresentação de dev
 - **As coleções do Stream são criadas pelo admin da escola, NÃO à mão no painel.**
 - **Consequência que já estava registrada:** é código novo na Fase 3, que é de alto risco. As
   regras do §7 valem para ele.
+- **Limpeza automática ao reenviar** *(decisão do operador, 27/09/2026: "o incompleto e o
+  antigo")*:
+  - reenviar o vídeo da mesma aula ou da mesma apresentação **apaga no Bunny o envio que ficou
+    pela metade**;
+  - quando o envio novo termina, **o vídeo substituído também é apagado**;
+  - **nunca o vídeo em uso**;
+  - se o Bunny recusar apagar, o envio continua valendo, e o que sobrar se apaga no painel.
+
+  Na apresentação, isso já está no código (Bloco U, etapa 2); nas aulas, entra na etapa 3.
+  *Não confundir com apagar vídeo de curso arquivado, que continua fora (Ago 2026).*
+- **Prévia grátis** *(decisão do operador, 27/09/2026, "como na Udemy")*: o operador liga e desliga
+  por aula quais aulas tocam para **qualquer visitante, sem login e sem assinatura**; ele pensa em
+  2, 3 ou 5 aulas de uns 10 minutos por curso. Elas continuam na biblioteca de aulas, com token, e
+  quem entrega o token para a prévia é o nosso servidor. Entra nas etapas 3 e 4 do Bloco U.
 
 ### 3.5 Custos do Stream — fatos da doc
 

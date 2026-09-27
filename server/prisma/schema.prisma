@@ -214,6 +214,11 @@ model Course {
   camadaOverride Json? // per-course layer text override (exception, e.g. N8N)
   thumbnailUrl   String? // catalog/list image
   introVideoId   String? // presentation video (Bunny); non-gated wiring is Phase 3
+  // O envio de apresentação EM ANDAMENTO (Bloco U, etapa 2). Existe para a
+  // limpeza que o operador pediu em 27/09/2026: reenviar apaga no Bunny o envio
+  // que ficou pela metade, e ao terminar apaga o vídeo substituído. Nunca sai
+  // numa rota pública.
+  introVideoPendingId String?
   displayOrder   Int           @default(0)
   status         ContentStatus @default(DRAFT)
   // O idioma do curso (decisão do operador, 14/09/2026). Obrigatório e SEM

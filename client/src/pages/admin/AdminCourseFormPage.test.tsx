@@ -10,12 +10,14 @@ const updateCourse = vi.fn();
 const createModule = vi.fn();
 const uploadCourseThumbnail = vi.fn();
 const startIntroVideoUpload = vi.fn();
+const completeIntroVideoUpload = vi.fn();
 const enviarVideo = vi.fn();
 vi.mock("@/lib/video-upload", () => ({
   enviarVideo: (...args: unknown[]) => enviarVideo(...args),
 }));
 vi.mock("@/lib/api", () => ({
   startIntroVideoUpload: (...args: unknown[]) => startIntroVideoUpload(...args),
+  completeIntroVideoUpload: (...args: unknown[]) => completeIntroVideoUpload(...args),
   uploadCourseThumbnail: (...args: unknown[]) => uploadCourseThumbnail(...args),
   adminGetCourse: (...args: unknown[]) => adminGetCourse(...args),
   createCourse: (...args: unknown[]) => createCourse(...args),
@@ -54,6 +56,7 @@ beforeEach(() => {
   createModule.mockReset();
   uploadCourseThumbnail.mockReset();
   startIntroVideoUpload.mockReset();
+  completeIntroVideoUpload.mockReset();
   enviarVideo.mockReset();
 });
 
@@ -358,7 +361,7 @@ describe("AdminCourseFormPage — vídeo de apresentação", () => {
       progredir = aoProgredir;
       return { concluido: new Promise<void>((r) => (terminar = r)), cancelar: () => {} };
     });
-    updateCourse.mockResolvedValue(existingCourse);
+    completeIntroVideoUpload.mockResolvedValue({ introVideoId: GUID, introVideoEmbedUrl: EMBED });
     await abrirEdicao();
 
     escolher();
@@ -369,10 +372,10 @@ describe("AdminCourseFormPage — vídeo de apresentação", () => {
     act(() => progredir(42));
     expect(await screen.findByRole("button", { name: "Enviando… 42%" })).toBeTruthy();
     // Antes de terminar, o curso ainda não aponta para o vídeo novo.
-    expect(updateCourse).not.toHaveBeenCalled();
+    expect(completeIntroVideoUpload).not.toHaveBeenCalled();
 
     act(() => terminar());
-    await waitFor(() => expect(updateCourse).toHaveBeenCalledWith(1, { introVideoId: GUID }));
+    await waitFor(() => expect(completeIntroVideoUpload).toHaveBeenCalledWith(1, GUID));
     const player = await screen.findByTitle("Prévia do vídeo de apresentação");
     expect(player.getAttribute("src")).toBe(EMBED);
     expect((screen.getByLabelText("ID do vídeo (Bunny)") as HTMLInputElement).value).toBe(GUID);
@@ -386,7 +389,7 @@ describe("AdminCourseFormPage — vídeo de apresentação", () => {
     escolher();
 
     expect((await screen.findByRole("alert")).textContent).toBe("Não foi possível enviar o vídeo. Tente de novo.");
-    expect(updateCourse).not.toHaveBeenCalled();
+    expect(completeIntroVideoUpload).not.toHaveBeenCalled();
     expect(screen.queryByTitle("Prévia do vídeo de apresentação")).toBeNull();
   });
 

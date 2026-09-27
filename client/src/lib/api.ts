@@ -238,6 +238,19 @@ export async function startIntroVideoUpload(id: number): Promise<CredenciaisDeEn
   return data;
 }
 
+// O envio terminou: o vídeo em andamento vira o vídeo do curso, e o servidor
+// apaga no Bunny o vídeo que ele substituiu (decisão do operador, 27/09/2026).
+export async function completeIntroVideoUpload(
+  id: number,
+  videoId: string,
+): Promise<{ introVideoId: string; introVideoEmbedUrl: string | null }> {
+  const { data } = await client.post<{ introVideoId: string; introVideoEmbedUrl: string | null }>(
+    `/admin/courses/${id}/intro-video/complete`,
+    { videoId },
+  );
+  return data;
+}
+
 // A capa vai CRUA no corpo, com o tipo do arquivo no cabeçalho; o servidor
 // confere o conteúdo, manda para o Bunny Storage e grava o endereço no curso.
 export async function uploadCourseThumbnail(id: number, file: File): Promise<{ thumbnailUrl: string }> {

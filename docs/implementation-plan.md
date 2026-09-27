@@ -1135,7 +1135,9 @@ landmark. Corrigido junto.
       **correto** (vídeo de intro é ativo de venda, não-gated — TRAVA do CLAUDE.md → Course page
       fields). Justamente por isso, pendurar vídeo gated na mesma coluna = vazamento silencioso:
       a rota pública continua servindo o id sem nenhum erro aparecer.
-- [ ] **PRÉ-REQUISITO desta fase — `include` → `select` nas rotas públicas de detalhe** (movido do
+- [ ] *(Metade feita em 27/09, no Bloco U, etapa 2: `GET /api/courses/:slug` já usa `select`. Falta
+      `GET /api/trilhas/:slug`, na etapa 3.)*
+      **PRÉ-REQUISITO desta fase — `include` → `select` nas rotas públicas de detalhe** (movido do
       backlog P2 da Fase 7; achado do `security-vulnerability-reviewer`, Ago 2026). `GET
       /api/courses/:slug` (`server/src/routes/courses.ts:54`) e `GET /api/trilhas/:slug`
       (`server/src/routes/trilhas.ts:126`) usam `include:`, então devolvem **todas** as colunas
@@ -1232,23 +1234,50 @@ landmark. Corrigido junto.
         processar, e o próprio player do Bunny já mostra "processando";
       - **o envio retoma na mesma sessão**, por uns 5 minutos de tentativas. Retomar de OUTRA sessão
         mandaria o arquivo para o vídeo antigo enquanto o curso gravaria o novo. Se cair de vez, o
-        operador envia de novo, e o vídeo vazio fica no Bunny (apagar no painel).
+        operador envia de novo.
 
-      Testes: 4 de unidade (a assinatura presa a um valor conhecido; o endereço do player) + 10 de
-      servidor (401 · 403 · 404 · 200 sem a chave · não grava no início · 503/502 · GUID inválido
-      400 · GUID gravado · **o player sai para visitante sem login** · sem vídeo, sem player) + 8 de
-      tela. Mutação: a ordem da assinatura, a exceção do vídeo de venda, a trava de admin, gravar
-      antes do fim e o formato do id — todas reprovam. **Falta a prova no ar:** o operador cria a
-      `jilsonsantana-stream-apresentacao`, põe as 2 variáveis no Railway e envia um vídeo.
-- [ ] **Etapa 3 — vídeo das aulas:** primeiro o `include` → `select` das rotas públicas de detalhe
-      (a trava acima); depois `Lesson.bunnyVideoId` + `Course.bunnyCollectionId`, a coleção criada
-      pelo admin, o envio e a **prévia do admin com token**. `LessonRow.tsx` sai do
+      **LIMPEZA AUTOMÁTICA no Bunny** *(decisão do operador, 27/09/2026: "o incompleto e o
+      antigo")*. O curso guarda o **envio em andamento** (`Course.introVideoPendingId`, migration
+      `20260927120000_course_intro_video_pending`). **Reenviar** apaga no Bunny o envio que ficou
+      pela metade; **terminar** (`POST /api/admin/courses/:id/intro-video/complete`, que só aceita o
+      envio em andamento DESTE curso, senão 409) troca o vídeo do curso e apaga o **substituído**.
+      **Nunca apaga o vídeo em uso.** Se o Bunny recusar apagar, o envio continua valendo: a
+      limpeza é arrumação. *Não confundir com a "deleção de vídeo" PROPOSTA e REJEITADA em Ago 2026:
+      aquela era para curso ARQUIVADO e continua fora; esta é a limpeza do próprio envio.*
+      **Junto, e antes da coluna nova** (a trava da Fase 3): `GET /api/courses/:slug` trocou
+      `include` por `select` explícito. A outra rota da trava, `GET /api/trilhas/:slug`, fica para a
+      etapa 3. Passo 0 no banco de dev: as mesmas contagens antes e depois, 0 tabelas sem RLS e
+      "No difference detected".
+
+      Testes: 4 de unidade (a assinatura presa a um valor conhecido; o endereço do player) + 17 de
+      servidor (401 e 403 nas duas rotas · 404 · 200 sem a chave · começar deixa **em andamento** ·
+      terminar troca · 409 · GUID inválido 400 · 503/502 · **reenviar apaga o incompleto** ·
+      **terminar apaga o substituído, e começar não apaga o vídeo em uso** · Bunny recusando apagar
+      não derruba · **o player sai para visitante sem login** · **o envio em andamento nunca sai na
+      resposta pública**) + 8 de tela. Mutação: a ordem da assinatura, a exceção do vídeo de venda,
+      a trava de admin, gravar antes do fim, o formato do id, tirar a limpeza, apagar o vídeo em
+      uso, não conferir o envio em andamento, e pôr a coluna nova no `select` público — todas
+      reprovam. **Falta a prova no ar:** o operador cria a `jilsonsantana-stream-apresentacao`, põe as
+      2 variáveis no Railway e envia um vídeo. A rota de apagar é a mesma forma da doc
+      (`DELETE /library/:id/videos/:id`), e confirmar que ela apaga é parte dessa prova: o vídeo
+      substituído tem que sumir do painel.
+- [ ] **Etapa 3 — vídeo das aulas:** primeiro o `include` → `select` de `GET /api/trilhas/:slug` (o
+      de `/courses/:slug` já foi feito na etapa 2); depois `Lesson.bunnyVideoId` +
+      `Lesson.bunnyVideoPendingId` + `Course.bunnyCollectionId`, a coleção criada pelo admin, o envio
+      **com a mesma limpeza da etapa 2** (reenviar apaga o incompleto; terminar apaga o substituído)
+      e a **prévia do admin com token**. **Prévia grátis** *(decisão do operador, 27/09/2026, "como
+      na Udemy")*: `Lesson.isFreePreview`, que o operador liga e desliga por aula no admin; ele
+      pensa em 2, 3 ou 5 aulas de uns 10 minutos por curso. `LessonRow.tsx` sai do
       `ModuleLessonTree.tsx` (328 linhas) antes. Nenhuma rota pública devolve `bunnyVideoId`,
       provado por teste. `security-vulnerability-reviewer` no fim.
 - [ ] **Etapa 4 — a trava de acesso e a aula tocando para o aluno:** adianta da Fase 4 o model
       `Subscription`, o `temAcessoAtivo()` e o `requireActiveMembership`, **sem Stripe**; rota
       `GET /api/lessons/:id/player`; assinatura de teste do `member@` **só fora de produção** (o
-      seed para com erro em produção); a matriz da trava em teste de servidor.
+      seed para com erro em produção); a matriz da trava em teste de servidor. **A aula com prévia
+      grátis toca para QUALQUER visitante, sem login e sem assinatura** *(decisão do operador,
+      27/09/2026)*: vira a **segunda exceção** ao portão de vídeo, ao lado do vídeo de apresentação.
+      A trava do `CLAUDE.md` → Access Architecture é reescrita junto, no mesmo commit, com teste
+      provando que **desligar a prévia volta a trancar a aula**.
       `security-vulnerability-reviewer` e revisão do operador antes do "publica".
 - **Done when:** no computador do operador, a capa enviada aparece no admin; o vídeo de
   apresentação toca no admin e na página; o vídeo da aula toca na prévia do admin; o `member@`

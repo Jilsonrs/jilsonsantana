@@ -94,3 +94,23 @@ export async function iniciarEnvio(biblioteca: Biblioteca, titulo: string): Prom
     },
   };
 }
+
+/**
+ * Apaga um vídeo no Bunny. Só é chamada pela limpeza do envio (decisão do
+ * operador, 27/09/2026): o envio que ficou pela metade quando se reenvia, e o
+ * vídeo substituído depois que o novo termina. Nunca para o vídeo em uso.
+ *
+ * Devolve `false` sem derrubar nada: a limpeza é arrumação, e um vídeo que
+ * sobrar no Bunny se apaga no painel. 404 conta como apagado (já não existe).
+ */
+export async function apagarVideo(biblioteca: Biblioteca, videoId: string): Promise<boolean> {
+  const c = config(biblioteca);
+  if (!c) return false;
+  const resposta = await fetch(`https://video.bunnycdn.com/library/${c.id}/videos/${videoId}`, {
+    method: "DELETE",
+    headers: { Accept: "application/json", AccessKey: c.chave },
+  });
+  if (resposta.ok || resposta.status === 404) return true;
+  console.error(`[bunny-stream] apagar vídeo recusado: ${resposta.status}`);
+  return false;
+}
