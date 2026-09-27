@@ -16,16 +16,12 @@
 > 5. **Item novo ganha o próximo número livre.** Número nunca se reutiliza, para que "P7" queira
 >    dizer sempre a mesma coisa em qualquer conversa.
 >
-> **Próximo número livre: P27** · Atualizada em 25/09/2026
+> **Próximo número livre: P27** · Atualizada em 27/09/2026
 
 ## A. Agora, em sequência *(nascidas da configuração do Bunny, 25/09/2026)*
 
 | # | O que falta | Opções | Onde registrar |
 |---|---|---|---|
-| P1 | Os **códigos de recuperação do 2FA do Bunny** estão guardados fora do Mac? | sim · ainda não | `bunny.md` §2 |
-| P2 | **Gatilho da recarga automática** do Bunny | US$ 2 (atual) · US$ 5 (recomendado) | `bunny.md` §2 e §6 (decisão 7) |
-| P3 | **E-mail para denúncia de abuso** na conta do Bunny | qual e-mail · deixar vazio | `bunny.md` §2 |
-| P4 | O **contrato de tratamento de dados (DPA, GDPR)** do Bunny foi aceito? | sim · não | `bunny.md` §2 |
 | P5 | **Aula na TV (Chromecast):** confirmar que fica **sem** | sem (como está) · com | `bunny.md` §3.2 e §6 (decisão 2) |
 | P6 | **Multi-audio ligado** na biblioteca de aulas: para quê? Se for dublar a mesma aula em inglês, contraria *"curso em inglês é OUTRO curso"* (`CLAUDE.md` → *Idiomas*) | manter, com o motivo · desligar | `bunny.md` §3.2 |
 | P7 | **Chaves da biblioteca "só no Railway":** vale só para a biblioteca de **produção**? O `bunny.md` §5 manda as chaves da biblioteca de **dev** para o `server/.env` | só produção · as duas | `bunny.md` §5 |

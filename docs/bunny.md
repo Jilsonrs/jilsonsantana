@@ -44,20 +44,24 @@
 
 - [x] Criada com o **e-mail do admin** (`jilson@jilsonsantana.com`).
 - [x] **2FA por aplicativo autenticador ativo.**
-- [ ] Códigos de recuperação do 2FA guardados **fora do Mac**. **A confirmar pelo operador.**
+- [x] Códigos de recuperação do 2FA guardados **fora do Mac** *(confirmado pelo operador,
+      27/09/2026)*.
 - **Nome da empresa na conta:** "Jilson Santana" (pessoa física, sem CNPJ). **Trocar quando a
   empresa for aberta.**
 - **E-mail de cobrança vazio de propósito:** as faturas vão para o e-mail principal.
-- **E-mail para denúncia de abuso:** a confirmar pelo operador.
+- **E-mail para denúncia de abuso:** `jilson@jilsonsantana.com` *(decisão do operador,
+  27/09/2026)*.
 - **E-mails:** promocionais **desligados** (recomendado); de notificação **ligados**, porque são
   eles que avisam do saldo.
 - **Cobrança pré-paga:** US$ 10 pagos em 25/09, com **recarga automática** de US$ 10 quando o
-  saldo chega a US$ 2. *Subir o gatilho da recarga para US$ 5 foi recomendado; a confirmar pelo
-  operador.* Se existe mínimo mensal: **[A VERIFICAR NO PAINEL]**.
+  saldo chega a US$ 2. **O gatilho fica em US$ 2** *(decisão do operador, 27/09/2026; a
+  recomendação de subir para US$ 5 não foi adotada)*. Se existe mínimo mensal: **[A VERIFICAR NO
+  PAINEL]**.
 - **Teste grátis:** US$ 50 de crédito, que **expira por volta de 09/10/2026**. O crédito que
   sobrar some no fim do teste.
-- **Contrato de tratamento de dados (DPA, GDPR):** a confirmar pelo operador se foi aceito. A
-  questão de **transferência internacional de dados pela LGPD** é pergunta para advogado.
+- **Contrato de tratamento de dados (DPA, GDPR):** **aceito** no painel *(confirmado pelo
+  operador, 27/09/2026)*. A questão de **transferência internacional de dados pela LGPD** continua
+  sendo pergunta para advogado (`pendencias.md`, P23).
 - **Fato da doc (o dia ruim desta seção):** com o saldo zerado, a conta é **suspensa**, e os dados
   do Storage **podem ser apagados**. A documentação diverge no prazo, entre "alguns dias" e "2
   meses". **Tratar o pior caso:** é a recarga automática que impede isso, e os e-mails de
@@ -323,7 +327,7 @@ O Bunny gera estes tipos de chave:
 | 4 | Endereço das imagens | `img.jilsonsantana.com` | **FECHADA em 25/09/2026** (operador): no ar, com SSL |
 | 5 | Enterprise DRM | não no lançamento · sim | **FECHADA em 25/09/2026** (operador): **sem Enterprise**; **MediaCage Basic (grátis) ligado** |
 | 6 | Purga da CDN na exclusão de conta | chave da conta · cache curto na pasta de fotos · aceitar até 1 mês | pendente: antes do envio da foto do aluno (§4.4) |
-| 7 | Gatilho da recarga automática | US$ 2 (atual) · US$ 5 (recomendado) | a confirmar pelo operador (§2) |
+| 7 | Gatilho da recarga automática | US$ 2 · US$ 5 | **FECHADA em 27/09/2026** (operador): **fica em US$ 2** (§2) |
 
 ## 7. Para o agente de build (Fase 3)
 
