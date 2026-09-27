@@ -5,8 +5,8 @@ import { requireAdmin } from "../middleware/auth.js";
 import { parseId, validate } from "../lib/http.js";
 import { tipoDaImagem } from "../lib/image-type.js";
 import { enviarParaOStorage } from "../lib/bunny-storage.js";
-import { videoUploadCompleteSchema } from "@jilson/core";
-import { iniciarEnvio, apagarVideo, enderecoDoPlayer } from "../lib/bunny-stream.js";
+import { videoUploadCompleteSchema, bunnyVideoIdSchema } from "@jilson/core";
+import { iniciarEnvio, apagarVideo, enderecoDoPlayer, estadoDoVideo } from "../lib/bunny-stream.js";
 
 const router = Router();
 
@@ -121,6 +121,21 @@ router.post("/admin/courses/:id/intro-video/complete", requireAdmin, async (req,
   if (substituido && substituido !== videoId) await apagarVideo("apresentacao", substituido);
 
   res.json({ introVideoId: videoId, introVideoEmbedUrl: enderecoDoPlayer("apresentacao", videoId) });
+});
+
+// GET /api/admin/intro-video/:videoId/status — o Bunny já terminou de processar?
+// A prévia do admin pergunta a cada 15 s e troca o quadro "Processing" pelo vídeo
+// quando ele fica pronto (pedido do operador, 27/09/2026). Admin só: a leitura
+// usa a chave da biblioteca.
+router.get("/admin/intro-video/:videoId/status", requireAdmin, async (req, res) => {
+  const videoId = validate(bunnyVideoIdSchema, req.params.videoId, res);
+  if (videoId === null) return;
+  const estado = await estadoDoVideo("apresentacao", videoId);
+  if (!estado) {
+    res.status(502).json({ error: "StreamFalhou" });
+    return;
+  }
+  res.json(estado);
 });
 
 export default router;

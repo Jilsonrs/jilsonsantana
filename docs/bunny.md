@@ -405,9 +405,11 @@ O Bunny gera estes tipos de chave:
   cabeçalhos `AuthorizationSignature`, `AuthorizationExpire`, `VideoId` e `LibraryId` · a
   assinatura é SHA-256 (hex) de biblioteca + chave + validade + id · o player é
   `iframe.mediadelivery.net/embed/<biblioteca>/<id>`, o dos exemplos oficiais.
-  **Não confirmado, e por isso não usado:** o significado dos números de `status` na leitura do
-  vídeo. A doc lista os do webhook, e eles podem não ser os mesmos. O próprio player mostra
-  "processando".
+  **Não confirmado:** o significado dos números de `status` na leitura do vídeo. A doc só lista os
+  do webhook (3 = terminado; 4 = a primeira resolução ficou pronta e o vídeo já toca; 5 = falhou).
+  Por isso a prévia do admin, que se atualiza sozinha, trata como **pronto** o status 4 **ou** o
+  `encodeProgress` 100 (`interpretarEstado` em `server/src/lib/bunny-stream.ts`). Se um envio no
+  ar ficar "processando" para sempre, é aqui que se ajusta.
 - **Endereço do player a conferir (achado de 27/09, anotado a pedido do operador):** a doc do
   Bunny mostra que o **player novo** usa `player.mediadelivery.net/embed/` (com a opção *Enable
   legacy player* desligada em *Player Settings*). Este guia cita o endereço antigo,

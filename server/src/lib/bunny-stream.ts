@@ -114,3 +114,34 @@ export async function apagarVideo(biblioteca: Biblioteca, videoId: string): Prom
   console.error(`[bunny-stream] apagar vídeo recusado: ${resposta.status}`);
   return false;
 }
+
+export type EstadoDoVideo = { pronto: boolean; falhou: boolean };
+
+/**
+ * Lê o estado do vídeo que o Bunny devolve. Função pura, com teste de unidade.
+ *
+ * A doc consultada em 27/09/2026 lista os números do WEBHOOK (3 = terminado,
+ * 4 = a primeira resolução ficou pronta e o vídeo já toca, 5 = falhou) e não
+ * confirma se a leitura do vídeo usa os mesmos. Por isso "pronto" aceita dois
+ * sinais, e qualquer um basta: status 4 (tocável nas duas leituras possíveis) ou
+ * `encodeProgress` 100. Falha: 5, ou os números de envio que falhou.
+ */
+export function interpretarEstado(video: { status?: unknown; encodeProgress?: unknown }): EstadoDoVideo {
+  const status = typeof video.status === "number" ? video.status : -1;
+  const progresso = typeof video.encodeProgress === "number" ? video.encodeProgress : -1;
+  return { pronto: status === 4 || progresso >= 100, falhou: status === 5 || status === 8 };
+}
+
+/** O estado de um vídeo no Bunny, para a prévia do admin atualizar sozinha. */
+export async function estadoDoVideo(biblioteca: Biblioteca, videoId: string): Promise<EstadoDoVideo | null> {
+  const c = config(biblioteca);
+  if (!c) return null;
+  const resposta = await fetch(`https://video.bunnycdn.com/library/${c.id}/videos/${videoId}`, {
+    headers: { Accept: "application/json", AccessKey: c.chave },
+  });
+  if (!resposta.ok) {
+    console.error(`[bunny-stream] ler vídeo recusado: ${resposta.status}`);
+    return null;
+  }
+  return interpretarEstado((await resposta.json()) as { status?: unknown; encodeProgress?: unknown });
+}

@@ -4,10 +4,10 @@ import type { CourseFormValues } from "@/lib/course-form";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageSection } from "@/components/layout/PageLayout";
-import { BunnyPlayer } from "@/components/content/BunnyPlayer";
 import { Field } from "./Field";
 import { ThumbnailUpload } from "./ThumbnailUpload";
 import { IntroVideoUpload } from "./IntroVideoUpload";
+import { IntroVideoPreview } from "./IntroVideoPreview";
 
 // `courseId` só existe depois que o curso é salvo: o envio grava a capa e o
 // vídeo num curso que já existe (o nome do arquivo leva o slug dele).
@@ -23,13 +23,16 @@ export function CourseMediaSection({
   const { register, watch, formState } = useFormContext<CourseFormValues>();
   const thumbnailUrl = watch("thumbnailUrl");
   const introVideoId = watch("introVideoId");
-  const [embedEnviado, setEmbedEnviado] = useState<string | null>(null);
+  const [enviado, setEnviado] = useState<{ videoId: string; embedUrl: string } | null>(null);
 
   // O player só aparece para um vídeo que o SERVIDOR confirmou: o que acabou de
   // ser enviado, ou o que já estava gravado. Um id digitado à mão e ainda não
   // salvo não tem player.
-  const embedUrl =
-    embedEnviado ?? (introVideoId && introVideoId === videoSalvo?.id ? videoSalvo.embedUrl : null);
+  const salvo =
+    introVideoId && introVideoId === videoSalvo?.id && videoSalvo.embedUrl
+      ? { videoId: introVideoId, embedUrl: videoSalvo.embedUrl }
+      : null;
+  const video = enviado ?? salvo;
 
   return (
     <PageSection
@@ -56,9 +59,9 @@ export function CourseMediaSection({
               <Field id="introVideoId" label="ID do vídeo (Bunny)" error={formState.errors.introVideoId?.message}>
                 <Input id="introVideoId" {...register("introVideoId")} />
               </Field>
-              {courseId !== undefined && <IntroVideoUpload courseId={courseId} aoEnviar={setEmbedEnviado} />}
-              {embedUrl ? (
-                <BunnyPlayer src={embedUrl} title="Prévia do vídeo de apresentação" />
+              {courseId !== undefined && <IntroVideoUpload courseId={courseId} aoEnviar={setEnviado} />}
+              {video ? (
+                <IntroVideoPreview videoId={video.videoId} embedUrl={video.embedUrl} />
               ) : (
                 <div className="aspect-video w-full overflow-hidden rounded-2xl border border-border/60 bg-muted flex flex-col items-center justify-center gap-3">
                   {introVideoId ? (

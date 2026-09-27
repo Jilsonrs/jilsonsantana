@@ -6,10 +6,12 @@ import request from "supertest";
 // o de verdade.
 const iniciarEnvio = vi.fn();
 const apagarVideo = vi.fn();
+const estadoDoVideo = vi.fn();
 vi.mock("../lib/bunny-stream.js", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../lib/bunny-stream.js")>()),
   iniciarEnvio: (...args: unknown[]) => iniciarEnvio(...args),
   apagarVideo: (...args: unknown[]) => apagarVideo(...args),
+  estadoDoVideo: (...args: unknown[]) => estadoDoVideo(...args),
 }));
 
 import app from "../app.js";
@@ -216,5 +218,37 @@ describe("vídeo de apresentação — na página pública", () => {
   it("id colado à mão fora do formato do Bunny é recusado pelo PATCH do curso", async () => {
     const res = await request(app).patch(`/api/courses/${cursoId}`).set("Cookie", admin).send({ introVideoId: "meu-video" });
     expect(res.status).toBe(400);
+  });
+});
+
+describe("vídeo de apresentação — o admin pergunta se o Bunny terminou", () => {
+  const estado = (cookies: string[], videoId: string) =>
+    request(app).get(`/api/admin/intro-video/${videoId}/status`).set("Cookie", cookies);
+
+  beforeEach(() => estadoDoVideo.mockReset().mockResolvedValue({ pronto: true, falhou: false }));
+
+  it("sem login 401, aluno 403 — e o Bunny nem é consultado", async () => {
+    expect((await request(app).get(`/api/admin/intro-video/${A}/status`)).status).toBe(401);
+    expect((await estado(member, A)).status).toBe(403);
+    expect(estadoDoVideo).not.toHaveBeenCalled();
+  });
+
+  it("id fora do formato do Bunny: 400", async () => {
+    expect((await estado(admin, "qualquer-coisa")).status).toBe(400);
+    expect(estadoDoVideo).not.toHaveBeenCalled();
+  });
+
+  it("admin: devolve o estado lido do Bunny, na biblioteca de apresentação", async () => {
+    estadoDoVideo.mockResolvedValueOnce({ pronto: false, falhou: false });
+    const res = await estado(admin, A);
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ pronto: false, falhou: false });
+    expect(estadoDoVideo).toHaveBeenCalledWith("apresentacao", A);
+  });
+
+  it("o Bunny não respondeu: 502", async () => {
+    estadoDoVideo.mockResolvedValueOnce(null);
+    expect((await estado(admin, A)).status).toBe(502);
   });
 });

@@ -11,6 +11,7 @@ const createModule = vi.fn();
 const uploadCourseThumbnail = vi.fn();
 const startIntroVideoUpload = vi.fn();
 const completeIntroVideoUpload = vi.fn();
+const getIntroVideoStatus = vi.fn();
 const enviarVideo = vi.fn();
 vi.mock("@/lib/video-upload", () => ({
   enviarVideo: (...args: unknown[]) => enviarVideo(...args),
@@ -18,6 +19,7 @@ vi.mock("@/lib/video-upload", () => ({
 vi.mock("@/lib/api", () => ({
   startIntroVideoUpload: (...args: unknown[]) => startIntroVideoUpload(...args),
   completeIntroVideoUpload: (...args: unknown[]) => completeIntroVideoUpload(...args),
+  getIntroVideoStatus: (...args: unknown[]) => getIntroVideoStatus(...args),
   uploadCourseThumbnail: (...args: unknown[]) => uploadCourseThumbnail(...args),
   adminGetCourse: (...args: unknown[]) => adminGetCourse(...args),
   createCourse: (...args: unknown[]) => createCourse(...args),
@@ -57,6 +59,7 @@ beforeEach(() => {
   uploadCourseThumbnail.mockReset();
   startIntroVideoUpload.mockReset();
   completeIntroVideoUpload.mockReset();
+  getIntroVideoStatus.mockReset().mockResolvedValue({ pronto: true, falhou: false });
   enviarVideo.mockReset();
 });
 

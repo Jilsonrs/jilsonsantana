@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from "vitest";
-import { assinaturaDeEnvio, enderecoDoPlayer } from "../lib/bunny-stream.js";
+import { assinaturaDeEnvio, enderecoDoPlayer, interpretarEstado } from "../lib/bunny-stream.js";
 
 // Unidade GENUÍNA (função pura, sem rede): a exceção que o CLAUDE.md → Testing
 // permite. A assinatura errada não dá erro nenhum no nosso lado — o Bunny só
@@ -40,5 +40,27 @@ describe("endereço do player da apresentação", () => {
       "https://iframe.mediadelivery.net/embed/999/eb1c4f77-0cda-46be-b47d-1118ad7c2ffe",
     );
     expect(enderecoDoPlayer("apresentacao", null)).toBeNull();
+  });
+});
+
+describe("estado do vídeo no Bunny (a prévia do admin atualiza sozinha)", () => {
+  it("pronto: status 4, ou processamento em 100%", () => {
+    expect(interpretarEstado({ status: 4 })).toEqual({ pronto: true, falhou: false });
+    expect(interpretarEstado({ status: 3, encodeProgress: 100 })).toEqual({ pronto: true, falhou: false });
+  });
+
+  it("ainda processando: nem 4 nem 100%", () => {
+    expect(interpretarEstado({ status: 2, encodeProgress: 40 })).toEqual({ pronto: false, falhou: false });
+    expect(interpretarEstado({ status: 1 })).toEqual({ pronto: false, falhou: false });
+  });
+
+  it("falhou: 5 ou envio que falhou (8)", () => {
+    expect(interpretarEstado({ status: 5 }).falhou).toBe(true);
+    expect(interpretarEstado({ status: 8 }).falhou).toBe(true);
+  });
+
+  it("resposta estranha (sem números) nunca vira pronto", () => {
+    expect(interpretarEstado({ status: "4", encodeProgress: "100" })).toEqual({ pronto: false, falhou: false });
+    expect(interpretarEstado({})).toEqual({ pronto: false, falhou: false });
   });
 });

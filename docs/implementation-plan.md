@@ -1233,8 +1233,14 @@ landmark. Corrigido junto.
       o envio termina**) + `client/src/lib/video-upload.ts` (o único lugar com o `tus-js-client`) +
       `BunnyPlayer.tsx` (o player, com a política de referrer que o Bunny exige), no formulário e na
       página do curso. **Duas mudanças em relação ao plano, e o porquê:**
-      - **sem consulta de "processando":** a doc não deixa claro como ler se o vídeo terminou de
-        processar, e o próprio player do Bunny já mostra "processando";
+      - ~~sem consulta de "processando"~~ **REVISTO no mesmo dia, a pedido do operador:** no ar, o
+        quadro ficava em "Processing video" até recarregar a página, porque o player do Bunny não
+        se atualiza sozinho. Agora a prévia do admin (`IntroVideoPreview.tsx`) pergunta a cada 15 s
+        (`GET /api/admin/intro-video/:videoId/status`, `requireAdmin`) e **recarrega o quadro**
+        quando o Bunny termina; desiste depois de 20 min. Como a doc não confirma os números da
+        leitura do vídeo, "pronto" aceita dois sinais, e qualquer um basta: status 4 ou
+        `encodeProgress` 100 (`interpretarEstado`, função pura com teste). **A prova é o próximo
+        envio no ar.**
       - **o envio retoma na mesma sessão**, por uns 5 minutos de tentativas. Retomar de OUTRA sessão
         mandaria o arquivo para o vídeo antigo enquanto o curso gravaria o novo. Se cair de vez, o
         operador envia de novo.
