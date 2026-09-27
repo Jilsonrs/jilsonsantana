@@ -110,8 +110,13 @@
 > a revisão do inglês pelo operador, antes de publicar.** *(Feita e publicada — ver Bloco I.)*
 > **Próximo:** o Antigravity formata o menu de conta (fila item 7); depois, o C4.
 >
-> **Próximo passo — decidido pelo operador em 23/09: o C4, em 5 etapas, uma por vez.** A **etapa 1**
-> (campo de imagem aceitar `/img/curso.jpg`) tem plano aprovado. Detalhe no bloco C4. Continuam na
+> **Publicado em 27/09, a pedido do operador:** a **etapa 1 do C4** (o campo de imagem do curso aceita
+> `/img/…` e `https://`, e recusa o perigoso), junto com os docs do Bunny (`bunny.md`) e a lista
+> única de pendências. O Bunny já está contratado e configurado no painel (Storage, CDN das imagens
+> e biblioteca de aulas), mas **nenhum código usa o Bunny ainda**.
+> **Próximo passo — decidido pelo operador em 23/09: o C4, em 5 etapas, uma por vez.** A etapa 1
+> está feita e publicada; a próxima é a **etapa 3**, que depende das decisões P17 e P18
+> (`pendencias.md`). Detalhe no bloco C4. Continuam na
 > fila, sem ordem: o resto do **Bloco I** (agora menor — ver as decisões de 23/09 no bloco) · **C5**
 > (vitrine fora do React — **bloqueado** até o operador definir o conteúdo das telas) · **o corpo
 > da Fase 3** (Bunny, HIGH RISK) · os itens de **continuidade do operador** antes do go-live (2FA,
