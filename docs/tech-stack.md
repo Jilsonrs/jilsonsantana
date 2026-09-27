@@ -53,6 +53,11 @@
 ## Video
 
 - **Bunny Stream** — video hosting + DRM + signed URLs. Playback gated to active members via short-lived signed URLs issued by the server, with an **elastic window (~6–12h) and no IP-lock** (don't break playback on Wi-Fi↔4G switches). (Panda Video = fallback.)
+- **`tus-js-client`** (client) — o envio de vídeo em partes, que **retoma** quando a conexão cai
+  (regra do operador de 25/09; peça aprovada por ele em 27/09). É a biblioteca dos exemplos
+  oficiais do Bunny. Isolada em `client/src/lib/video-upload.ts`, o único arquivo que a importa:
+  trocar de peça custa um arquivo. O arquivo vai do navegador direto para o Bunny, e a chave fica
+  no servidor, que só entrega a assinatura.
 - **O que contratar e configurar no Bunny** (bibliotecas, segurança, chaves, o que fica de fora):
   [`docs/bunny.md`](bunny.md). **Enterprise DRM fica fora do lançamento**: são US$ 99/mês fixos
   por biblioteca *(doc do Bunny, 25/09/2026)*.

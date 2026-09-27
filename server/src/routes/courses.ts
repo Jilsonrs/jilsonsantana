@@ -5,6 +5,7 @@ import { prisma } from "../lib/prisma.js";
 import { requireAdmin } from "../middleware/auth.js";
 import { validate, parseId } from "../lib/http.js";
 import { paraBanco, doBanco, comIdioma, idiomaDaLista } from "../lib/language.js";
+import { enderecoDoPlayer } from "../lib/bunny-stream.js";
 
 const router = Router();
 const PUBLISHED = ContentStatus.PUBLISHED;
@@ -77,7 +78,15 @@ router.get("/courses/:slug", async (req, res) => {
   }
 
   const lessonCount = course.modules.reduce((sum, m) => sum + m.lessons.length, 0);
-  res.json({ ...comIdioma(course), moduleCount: course.modules.length, lessonCount });
+  // O vídeo de APRESENTAÇÃO sai para qualquer visitante, sem login e sem token:
+  // é ativo de venda, a única exceção ao portão de vídeo (CLAUDE.md → Access
+  // Architecture). O endereço é derivado aqui, nunca coluna.
+  res.json({
+    ...comIdioma(course),
+    introVideoEmbedUrl: enderecoDoPlayer("apresentacao", course.introVideoId),
+    moduleCount: course.modules.length,
+    lessonCount,
+  });
 });
 
 // ── Admin reads (any status) ─────────────────────────────────────────────────
@@ -125,7 +134,7 @@ router.get("/admin/courses/:id", requireAdmin, async (req, res) => {
     res.status(404).json({ error: "NotFound" });
     return;
   }
-  res.json(comIdioma(course));
+  res.json({ ...comIdioma(course), introVideoEmbedUrl: enderecoDoPlayer("apresentacao", course.introVideoId) });
 });
 
 // ── Writes (admin only) ──────────────────────────────────────────────────────

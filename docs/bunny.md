@@ -28,7 +28,8 @@
 | Storage Zone de dev | **não criada** (§4.1) |
 | Pull Zone das imagens | **criada e testada**: `img.jilsonsantana.com` (§4.2) |
 | Stream: biblioteca de aulas | **criada e testada**: `jilsonsantana-stream` (§3.2) |
-| Stream: bibliotecas de apresentação e de dev | **não criadas** (§3.3) |
+| Stream: biblioteca de apresentação | **não criada**; o código do envio está pronto no `dev` (Bloco U, etapa 2, 27/09) |
+| Stream: bibliotecas de dev | **não serão criadas por enquanto**: o operador testa o envio direto no ar (decisão de 27/09, §4.1) |
 | Código do site usando o Bunny | **envio da capa do curso pelo admin**: **no ar e provado em 27/09** (Bloco U, etapa 1): o operador enviou uma capa pelo admin, e ela saiu por `img.jilsonsantana.com/cursos/…`. Sem Storage de dev, por decisão dele |
 
 ## 1. Resumo: o que entra e o que fica de fora
@@ -75,7 +76,7 @@
 |---|---|---|---|---|---|
 | `jilsonsantana-stream` (library ID 762605) | produção | as aulas: só para quem tem assinatura ativa | **ligado** | Frankfurt + São Paulo | **criada e testada em 25/09** |
 | `jilsonsantana-stream-apresentacao` | produção | o vídeo de apresentação dos cursos, que toca para quem **não** é assinante (é ativo de venda) | desligado | Frankfurt + São Paulo | não criada |
-| `jilsonsantana-stream-dev` | desenvolvimento | 2 ou 3 vídeos de teste | ligado, igual à de aulas | só Frankfurt | não criada |
+| `jilsonsantana-stream-dev` | desenvolvimento | 2 ou 3 vídeos de teste | ligado, igual à de aulas | só Frankfurt | **não será criada por enquanto** (testa no ar, decisão de 27/09) |
 
 - **Regiões:** no Stream, **Frankfurt é a principal e não se escolhe**; São Paulo foi
   acrescentada. **Irreversível:** réplica só se acrescenta, nunca se remove.
@@ -156,7 +157,8 @@ vídeos (`CLAUDE.md` → *Idiomas*). Os vídeos dele ficam na mesma `jilsonsanta
 - [ ] **Block Direct URL File Access → LIGAR.**
 
 **`jilsonsantana-stream-dev`** (só Frankfurt): a mesma configuração da de aulas, com
-**`localhost`** nos *Allowed domains*.
+**`localhost`** nos *Allowed domains*. *(Não será criada por enquanto: o operador testa direto no
+ar, decisão de 27/09. O mesmo vale para uma biblioteca de apresentação de dev.)*
 
 ### 3.4 Como os vídeos entram — decisão 3 FECHADA *(operador, 25/09/2026)*
 
@@ -384,6 +386,14 @@ O Bunny gera estes tipos de chave:
   `tech-stack.md` citam *"per-user signing"* entre as proteções. Na prática, isso só pode
   significar que o servidor emite o token apenas para quem tem acesso. Confirmar no build e, se
   for isso, ajustar a frase nos dois docs com o ok do operador.
+- **Confirmado na doc em 27/09, e já em uso no código (Bloco U, etapa 2):** criar o vídeo devolve
+  o id em **`guid`** · o envio retomável usa `https://video.bunnycdn.com/tusupload` com os
+  cabeçalhos `AuthorizationSignature`, `AuthorizationExpire`, `VideoId` e `LibraryId` · a
+  assinatura é SHA-256 (hex) de biblioteca + chave + validade + id · o player é
+  `iframe.mediadelivery.net/embed/<biblioteca>/<id>`, o dos exemplos oficiais.
+  **Não confirmado, e por isso não usado:** o significado dos números de `status` na leitura do
+  vídeo. A doc lista os do webhook, e eles podem não ser os mesmos. O próprio player mostra
+  "processando".
 - **Endereço do player a conferir (achado de 27/09, anotado a pedido do operador):** a doc do
   Bunny mostra que o **player novo** usa `player.mediadelivery.net/embed/` (com a opção *Enable
   legacy player* desligada em *Player Settings*). Este guia cita o endereço antigo,

@@ -334,7 +334,8 @@ export const pt = {
       faq: "Perguntas frequentes",
       aprender: "O que você vai aprender",
       requisitos: "Pré-requisitos",
-      paraQuem: "Pra quem é"
+      paraQuem: "Pra quem é",
+      videoApresentacao: "Vídeo de apresentação do curso"
     },
     trilha: {
       naoEncontrada: "Trilha não encontrada.",

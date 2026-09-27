@@ -35,6 +35,7 @@ const baseCourse: CourseDetail = {
   camadas: ["UNIVERSAL", "IA"],
   thumbnailUrl: null,
   introVideoId: null,
+  introVideoEmbedUrl: null,
   moduleCount: 1,
   lessonCount: 2,
   modules: [
@@ -136,5 +137,40 @@ describe("CourseDetailPage — idioma e textos", () => {
     renderWithProviders(<CourseDetailPage />, rota);
 
     expect(await screen.findByText("0 módulos · 0 aulas")).toBeTruthy();
+  });
+});
+
+// Vídeo de apresentação na página do curso (Bloco U, etapa 2 — plano aprovado
+// pelo operador em 27/09/2026). É ativo de venda: toca para qualquer visitante.
+describe("CourseDetailPage — vídeo de apresentação", () => {
+  const EMBED = "https://iframe.mediadelivery.net/embed/999/eb1c4f77-0cda-46be-b47d-1118ad7c2ffe";
+
+  it("com vídeo: o player do Bunny, com o nome para leitor de tela e a política de referrer que o Bunny exige", async () => {
+    getCourseBySlug.mockResolvedValue({ ...baseCourse, introVideoEmbedUrl: EMBED });
+    renderWithProviders(<CourseDetailPage />, rota);
+
+    const player = await screen.findByTitle("Vídeo de apresentação do curso");
+    expect(player.getAttribute("src")).toBe(EMBED);
+    expect(player.getAttribute("referrerpolicy")).toBe("strict-origin-when-cross-origin");
+  });
+
+  it("sem vídeo: nenhum player", async () => {
+    getCourseBySlug.mockResolvedValue(baseCourse);
+    renderWithProviders(<CourseDetailPage />, rota);
+
+    await screen.findByText("Exemplo — Fundamentos de Excel + IA");
+    expect(screen.queryByTitle("Vídeo de apresentação do curso")).toBeNull();
+  });
+
+  it("em inglês: o nome do player sai do dicionário", async () => {
+    getCourseBySlug.mockResolvedValue({ ...baseCourse, introVideoEmbedUrl: EMBED });
+    renderWithProviders(
+      <IdiomaProvider idioma="en">
+        <CourseDetailPage />
+      </IdiomaProvider>,
+      rota,
+    );
+
+    expect(await screen.findByTitle("Course introduction video")).toBeTruthy();
   });
 });

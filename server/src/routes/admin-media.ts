@@ -5,6 +5,7 @@ import { requireAdmin } from "../middleware/auth.js";
 import { parseId } from "../lib/http.js";
 import { tipoDaImagem } from "../lib/image-type.js";
 import { enviarParaOStorage } from "../lib/bunny-storage.js";
+import { iniciarEnvio } from "../lib/bunny-stream.js";
 
 const router = Router();
 
@@ -46,6 +47,34 @@ router.post("/admin/courses/:id/thumbnail", requireAdmin, corpoDeImagem, async (
   // (fora do escopo por decisão do plano de 27/09).
   await prisma.course.update({ where: { id }, data: { thumbnailUrl: envio.endereco } });
   res.json({ thumbnailUrl: envio.endereco });
+});
+
+// POST /api/admin/courses/:id/intro-video — começa o envio do vídeo de
+// APRESENTAÇÃO do curso (Bloco U, etapa 2). O servidor cria o vídeo no Bunny e
+// devolve só a assinatura: o arquivo vai do navegador direto para o Bunny, em
+// partes, e retoma se a internet cair (regra do operador, 25/09). A chave da
+// biblioteca nunca sai daqui.
+//
+// O `introVideoId` NÃO é gravado aqui: só depois que o envio termina, pelo
+// PATCH do curso. Gravar antes deixaria o curso apontando para um vídeo vazio se
+// o envio fosse abandonado no meio.
+router.post("/admin/courses/:id/intro-video", requireAdmin, async (req, res) => {
+  const id = parseId(req.params.id, res);
+  if (id === null) return;
+
+  const course = await prisma.course.findUnique({ where: { id }, select: { slug: true } });
+  if (!course) {
+    res.status(404).json({ error: "NotFound" });
+    return;
+  }
+
+  // O título no painel do Bunny é o slug: é por ele que o operador acha o vídeo lá.
+  const inicio = await iniciarEnvio("apresentacao", `${course.slug} — apresentação`);
+  if (!inicio.ok) {
+    res.status(inicio.motivo === "NaoConfigurado" ? 503 : 502).json({ error: `Stream${inicio.motivo}` });
+    return;
+  }
+  res.json(inicio.credenciais);
 });
 
 export default router;

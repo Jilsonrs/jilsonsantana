@@ -910,7 +910,8 @@ tornada executável — não uma lista nova):
       metade FEITA em 27/09, na etapa 1 do C4; falta só o `.max()`)* — ver a
       convenção nova em `CLAUDE.md` → Shared `core/` package (o `.url()` aceita `javascript:` e
       `data:text/html`, **medido neste repo**, não suposto).
-- [ ] **`introVideoId` sem formato** (`content.ts:70`) — hoje inerte, mas na Fase 3 esse valor vai
+- [x] *(Feito em 27/09, no Bloco U, etapa 2: `bunnyVideoIdSchema` em `core/src/schemas/content.ts`.)*
+      **`introVideoId` sem formato** (`content.ts:70`) — hoje inerte, mas na Fase 3 esse valor vai
       ser interpolado numa URL/iframe do Bunny **numa rota de HTML de servidor sem escape
       automático**. Restringir ao GUID do Bunny Stream; **confirmar o formato exato via context7
       `/bunnyway/documentation`** (query dizendo "Stream") na MESMA chamada que a fase já exige.
@@ -1217,9 +1218,28 @@ landmark. Corrigido junto.
       **PROVADO no site no ar em 27/09** *(sem Storage de dev, decisão do operador; as 4 variáveis
       estão só no Railway — `bunny.md` §4.1 e §5)*: o operador enviou uma capa PNG pelo admin, e
       ela apareceu na prévia servida por `img.jilsonsantana.com/cursos/exemplo-fundamentos-excel-ia-bfa5e6cf13ce.png`.
-- [ ] **Etapa 2 — vídeo de apresentação:** envio retomável (TUS) pelo admin para a biblioteca de
-      apresentação, "processando" até o Bunny terminar, e o vídeo tocando no formulário e na página
-      do curso, sem token. `introVideoId` passa a exigir o formato GUID (fecha o item do backlog P2).
+- [x] **Etapa 2 — vídeo de apresentação** *(27/09, no `dev`; sem biblioteca de dev, decisão do
+      operador: testa no ar como a capa)*. Servidor: `server/src/lib/bunny-stream.ts` (cria o vídeo;
+      o id volta em `guid`; assinatura SHA-256 do envio; endereço do player derivado, `null` sem a
+      biblioteca configurada) + `POST /api/admin/courses/:id/intro-video` (`requireAdmin`; devolve a
+      assinatura, nunca a chave; **não** grava o vídeo no curso) + `introVideoEmbedUrl` derivado nas
+      respostas do curso (público e admin). `introVideoId` só aceita o GUID do Bunny. Admin:
+      `IntroVideoUpload.tsx` (o botão **"Enviar vídeo"**, com a porcentagem; grava o id **só quando
+      o envio termina**) + `client/src/lib/video-upload.ts` (o único lugar com o `tus-js-client`) +
+      `BunnyPlayer.tsx` (o player, com a política de referrer que o Bunny exige), no formulário e na
+      página do curso. **Duas mudanças em relação ao plano, e o porquê:**
+      - **sem consulta de "processando":** a doc não deixa claro como ler se o vídeo terminou de
+        processar, e o próprio player do Bunny já mostra "processando";
+      - **o envio retoma na mesma sessão**, por uns 5 minutos de tentativas. Retomar de OUTRA sessão
+        mandaria o arquivo para o vídeo antigo enquanto o curso gravaria o novo. Se cair de vez, o
+        operador envia de novo, e o vídeo vazio fica no Bunny (apagar no painel).
+
+      Testes: 4 de unidade (a assinatura presa a um valor conhecido; o endereço do player) + 10 de
+      servidor (401 · 403 · 404 · 200 sem a chave · não grava no início · 503/502 · GUID inválido
+      400 · GUID gravado · **o player sai para visitante sem login** · sem vídeo, sem player) + 8 de
+      tela. Mutação: a ordem da assinatura, a exceção do vídeo de venda, a trava de admin, gravar
+      antes do fim e o formato do id — todas reprovam. **Falta a prova no ar:** o operador cria a
+      `jilsonsantana-stream-apresentacao`, põe as 2 variáveis no Railway e envia um vídeo.
 - [ ] **Etapa 3 — vídeo das aulas:** primeiro o `include` → `select` das rotas públicas de detalhe
       (a trava acima); depois `Lesson.bunnyVideoId` + `Course.bunnyCollectionId`, a coleção criada
       pelo admin, o envio e a **prévia do admin com token**. `LessonRow.tsx` sai do

@@ -78,6 +78,14 @@ export const imageUrlSchema = z
   .string()
   .refine(enderecoDeImagemValido, "endereço de imagem inválido: use /caminho ou https://");
 
+// ID de vídeo do Bunny Stream: o GUID que o Bunny devolve ao criar o vídeo
+// (`eb1c4f77-0cda-46be-b47d-1118ad7c2ffe`). Restrito ao formato porque ele vai
+// para dentro de um endereço de player numa página — texto livre ali seria um
+// jeito de montar outro endereço (backlog P2 da Fase 3, fechado no Bloco U).
+export const bunnyVideoIdSchema = z
+  .string()
+  .regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i, "ID de vídeo do Bunny inválido");
+
 // O idioma do conteúdo: a API fala `pt`/`en` (o código do endereço e do
 // dicionário); o banco guarda o enum `Language` (PT/EN).
 export const contentLanguageSchema = z.enum(LANGUAGES);
@@ -101,7 +109,7 @@ export const courseCreateSchema = z.object({
   camadas: z.array(layerSchema).optional(),
   camadaOverride: camadaOverrideSchema.optional(),
   thumbnailUrl: imageUrlSchema.optional(),
-  introVideoId: z.string().optional(),
+  introVideoId: bunnyVideoIdSchema.optional(),
   displayOrder: z.number().int().optional(),
   status: contentStatusSchema.optional(),
 });
