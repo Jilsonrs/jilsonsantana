@@ -53,6 +53,12 @@
 ## Video
 
 - **Bunny Stream** — video hosting + DRM + signed URLs. Playback gated to active members via short-lived signed URLs issued by the server, with an **elastic window (~6–12h) and no IP-lock** (don't break playback on Wi-Fi↔4G switches). (Panda Video = fallback.)
+- **O que contratar e configurar no Bunny** (bibliotecas, segurança, chaves, o que fica de fora):
+  [`docs/bunny.md`](bunny.md). **Enterprise DRM fica fora do lançamento**: são US$ 99/mês fixos
+  por biblioteca *(doc do Bunny, 25/09/2026)*.
+- **Arquivos enviados pelo site (foto do aluno etc.): Bunny Storage + Pull Zone** *(decisão do
+  operador, 25/09/2026)*, servidos em `img.jilsonsantana.com`. Nunca no disco do container da
+  Railway, que é zerado a cada publicação. Configuração e estado: `bunny.md` §4.
 
 ## AI (JilsonAI)
 

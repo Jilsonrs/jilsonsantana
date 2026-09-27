@@ -53,6 +53,31 @@ export const camadaOverrideSchema = z.record(
 );
 export type CamadaOverride = z.infer<typeof camadaOverrideSchema>;
 
+// Endereço de imagem (C4, etapa 1 — plano aprovado pelo operador em 23/09/2026).
+// `z.string().url()` RECUSAVA o caminho do próprio site (`/img/curso.jpg`) e
+// ACEITAVA `javascript:` e `data:` (medido — CLAUDE.md → Shared `core/`). Vale só:
+//   - caminho do próprio site, começando com UMA barra: `//outro-site` o navegador
+//     lê como outro endereço;
+//   - endereço completo `http://` ou `https://` (é o caso do Bunny,
+//     `img.jilsonsantana.com`).
+// Espaço, tabulação, quebra de linha e `\` são recusados em qualquer posição: o
+// navegador apaga tabulação e quebra de linha de dentro do endereço e troca `\`
+// por `/`, então `/<TAB>/outro-site` e `/\outro-site` viram `//outro-site`.
+export function enderecoDeImagemValido(valor: string): boolean {
+  if (/[\s\\\u0000-\u001f\u007f]/.test(valor)) return false;
+  if (valor.startsWith("/")) return !valor.startsWith("//");
+  try {
+    const { protocol } = new URL(valor);
+    return protocol === "https:" || protocol === "http:";
+  } catch {
+    return false;
+  }
+}
+
+export const imageUrlSchema = z
+  .string()
+  .refine(enderecoDeImagemValido, "endereço de imagem inválido: use /caminho ou https://");
+
 // O idioma do conteúdo: a API fala `pt`/`en` (o código do endereço e do
 // dicionário); o banco guarda o enum `Language` (PT/EN).
 export const contentLanguageSchema = z.enum(LANGUAGES);
@@ -75,7 +100,7 @@ export const courseCreateSchema = z.object({
   faq: z.array(faqItemSchema).optional(),
   camadas: z.array(layerSchema).optional(),
   camadaOverride: camadaOverrideSchema.optional(),
-  thumbnailUrl: z.string().url().optional(),
+  thumbnailUrl: imageUrlSchema.optional(),
   introVideoId: z.string().optional(),
   displayOrder: z.number().int().optional(),
   status: contentStatusSchema.optional(),

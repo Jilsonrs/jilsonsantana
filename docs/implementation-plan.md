@@ -110,15 +110,20 @@
 > a revisão do inglês pelo operador, antes de publicar.** *(Feita e publicada — ver Bloco I.)*
 > **Próximo:** o Antigravity formata o menu de conta (fila item 7); depois, o C4.
 >
-> **Próximo passo — decidido pelo operador em 23/09: o C4, em 5 etapas, uma por vez.** A **etapa 1**
-> (campo de imagem aceitar `/img/curso.jpg`) tem plano aprovado. Detalhe no bloco C4. Continuam na
+> **Publicado em 27/09, a pedido do operador:** a **etapa 1 do C4** (o campo de imagem do curso aceita
+> `/img/…` e `https://`, e recusa o perigoso), junto com os docs do Bunny (`bunny.md`) e a lista
+> única de pendências. O Bunny já está contratado e configurado no painel (Storage, CDN das imagens
+> e biblioteca de aulas), mas **nenhum código usa o Bunny ainda**.
+> **Próximo passo — decidido pelo operador em 23/09: o C4, em 5 etapas, uma por vez.** A etapa 1
+> está feita e publicada; a próxima é a **etapa 3**, que depende das decisões P17 e P18
+> (`pendencias.md`). Detalhe no bloco C4. Continuam na
 > fila, sem ordem: o resto do **Bloco I** (agora menor — ver as decisões de 23/09 no bloco) · **C5**
 > (vitrine fora do React — **bloqueado** até o operador definir o conteúdo das telas) · **o corpo
 > da Fase 3** (Bunny, HIGH RISK) · os itens de **continuidade do operador** antes do go-live (2FA,
 > backup frio).
-> **Pendências do operador, abertas:** revisar as 15 perguntas da FAQ (agora no admin) · o conteúdo
-> do 2º nível das seções planejadas do menu · confirmar os slugs em inglês · mover `/inicio`,
-> `/conta`, `/minhas-trilhas` para `/aluno/*` · cadastrar os 5 cursos da home (C4).
+> **Pendências do operador: a lista única está em [`docs/pendencias.md`](pendencias.md)** *(desde
+> 25/09/2026, a pedido do operador)*. As que moravam aqui foram para lá (P12–P16). Item resolvido
+> sai daquela lista no mesmo commit em que a resposta é registrada no destino.
 
 ---
 
@@ -899,7 +904,8 @@ tornada executável — não uma lista nova):
       payload inteiro para o log do Railway. Handler terminal logando
       `{ method, path, status, errorName, message }` — **nunca `err.stack` verbatim**.
 - [ ] **`.max()` nos campos de texto autorados** (`core/src/schemas/content.ts:29-41,56-73`) e
-      **trocar `z.string().url()` por checagem explícita de esquema** em `thumbnailUrl` — ver a
+      ~~**trocar `z.string().url()` por checagem explícita de esquema** em `thumbnailUrl`~~ *(esta
+      metade FEITA em 27/09, na etapa 1 do C4; falta só o `.max()`)* — ver a
       convenção nova em `CLAUDE.md` → Shared `core/` package (o `.url()` aceita `javascript:` e
       `data:text/html`, **medido neste repo**, não suposto).
 - [ ] **`introVideoId` sem formato** (`content.ts:70`) — hoje inerte, mas na Fase 3 esse valor vai
@@ -1073,9 +1079,10 @@ sistema administrativo inteiro ainda está por construir (Bloco 6b, Fase 4, Fase
       de sair próprio (mutação: devolver o botão → reprova).
 - [ ] **Incluir ou trocar a foto do aluno** *(decisão do operador, 24/09/2026 — pendente, não
       construído)*. Onde: Minha conta → Seus dados; a foto do menu da conta passa a mostrar a nova.
-      O campo já existe (`User.image`, do Better Auth); falta o envio do arquivo. **Decisão do
-      operador pendente:** onde a foto fica guardada (serviço de armazenamento = peça nova de stack,
-      precisa do ok dele). Regras que já valem: formato WebP (regra de imagem do design), tamanho
+      O campo já existe (`User.image`, do Better Auth); falta o envio do arquivo. **Onde a foto
+      fica guardada: Bunny Storage** *(decisão do operador, 25/09/2026)*, servida em
+      `img.jilsonsantana.com`; configuração em [`docs/bunny.md`](bunny.md) §4. **Nunca na Railway**, porque o disco do servidor é
+      zerado a cada publicação. Regras que já valem: formato WebP (regra de imagem do design), tamanho
       máximo, e a foto é dado pessoal — some junto quando a conta é excluída (LGPD). Até lá, sem
       foto, o menu mostra as iniciais.
 - **Done when:** uma tela nova entra no sistema **declarando** seus níveis no mapa, sem escrever
@@ -1113,6 +1120,11 @@ landmark. Corrigido junto.
       service settings) — roda 1× por deploy, antes da instância nova subir. NUNCA no
       entrypoint do Docker (re-executaria a cada restart) e nunca `migrate dev` contra prod.
       Validar com a primeira migration desta fase. (Convenção no CLAUDE.md → Database & Migrations.)
+- [ ] *(operador)* **Contratar e configurar o Bunny pelo guia [`docs/bunny.md`](bunny.md)**: a conta
+      com 2FA (§2), as três bibliotecas do Stream e a segurança delas (§3) e as chaves (§5), que
+      nunca passam pelo chat. As decisões dele que o guia lista (§6) vêm antes do bloco de vídeo.
+      *(Guia escrito em 25/09/2026, a pedido do operador, a partir da doc oficial do Bunny via
+      context7.)*
 - [ ] Bunny account + library; store video IDs on `Lesson`
 - [ ] **TRAVA (achado do `security-vulnerability-reviewer`, Ago 2026):** o campo de vídeo de
       **membro** nasce em **coluna PRÓPRIA** — **nunca** reaproveitar `Course.introVideoId`.
@@ -1147,16 +1159,23 @@ landmark. Corrigido junto.
       Wi-Fi↔4G) **continua válida**. As linhas de `CLAUDE.md` → Video e `tech-stack.md` → Video
       seguem valendo sem alteração — a razão mora **aqui**, não duplicar lá.
 - [ ] **Restrição de domínio/referrer no Bunny** — vídeo servido **apenas** para requisições vindas
-      do domínio da plataforma. [PENDENTE DE VERIFICAÇÃO: se o Bunny Stream oferece essa restrição
-      e sob qual nome — conferir no painel ou via context7 (`/bunnyway/documentation`, query
-      dizendo "Stream") **antes de tratar como fato**.] **Razão:** é a alavanca **certa** para o
+      do domínio da plataforma. **[VERIFICADO em 25/09/2026, doc oficial via context7:]** a restrição
+      existe e se chama **Allowed domains**. Ao lado dela há **Block Direct URL File Access**, que
+      bloqueia baixar o arquivo pelo endereço direto. A configuração está em `docs/bunny.md` §3.2.
+      **Razão:** é a alavanca **certa** para o
       mesmo risco que o TTL curto tentava cobrir — **mata o compartilhamento casual de URL** (link
       colado num grupo e aberto fora do site) **sem tocar no playback e sem escrever código nosso**:
       é configuração no fornecedor, não mecanismo que a gente passa a manter e depurar.
       *Registrado como decisão de produto, fora do MVP:* **marca d'água com identificação do aluno é
       a única defesa real contra re-upload** — entra **quando houver receita**, não antes (critério
       de decisão de stack, CLAUDE.md → Working Method).
-- [ ] Server: admin upload flow (or direct-to-Bunny + store reference)
+- [ ] **Upload de vídeo pelo admin** *(decisão do operador, 25/09/2026, substitui o antigo "admin
+      upload flow, or direct-to-Bunny + store reference"; detalhe em `docs/bunny.md` §3.4 e §7.1)*.
+      As regras dele: o arquivo original vai **byte a byte**, sem recompressão no navegador, e o
+      envio é **retomável** · as **coleções** do Stream são criadas pelo admin, nunca à mão no
+      painel · **trocar o vídeo da aula** substitui o vídeo sem recriar a aula · o progresso do
+      aluno fica preso à **AULA**, nunca ao ID do vídeo · legenda `.vtt` casada pelo nome do
+      arquivo · o código **nunca** pede transcrição nem liga o Enterprise DRM (os dois cobram).
 - [ ] Client: gated player on the lesson page
 - [ ] **TESTES DE SERVIDOR do gate de vídeo — escritos JUNTO com a rota que assina a URL, não
       depois** (mesma disciplina da Fase 4; a rota é fronteira de acesso e **não tem tela**, então
@@ -1562,7 +1581,12 @@ landmark. Corrigido junto.
 > A etapa 1 vem primeiro porque é pequena e destrava o cadastro: com ela pronta, o operador já
 > cadastra os cursos, e a etapa 2 marca como PT tudo o que existir.
 
-- [ ] **Etapa 1 — campo de imagem aceita `/img/curso.jpg`** *(plano aprovado em 23/09)*.
+- [x] **Etapa 1 — campo de imagem aceita `/img/curso.jpg`** *(plano aprovado em 23/09; feita em
+      27/09 no `dev`: `enderecoDeImagemValido` + `imageUrlSchema` em `core/src/schemas/content.ts`,
+      a mesma regra no formulário, com o aviso embaixo do campo · `server/src/test/course-image.test.ts`
+      (11 casos, incluindo `/\`, tabulação e espaço na frente) + 5 casos no teste do formulário ·
+      mutação: com a regra desligada, 9 testes de servidor e 3 de tela reprovam; sem a checagem de
+      espaço e `\`, reprovam os 2 casos deles)*.
       `thumbnailUrl` usa `z.string().url()`, que **recusa** caminho relativo (as imagens atuais não
       salvam pelo admin) e **aceita** `javascript:`. Trocar pela checagem explícita de esquema que
       o `CLAUDE.md` já exige (`core/` → a regra do `.url()`): aceita `https?://…` ou caminho do

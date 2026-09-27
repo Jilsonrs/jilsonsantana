@@ -6,7 +6,7 @@ import { PageSection } from "@/components/layout/PageLayout";
 import { Field } from "./Field";
 
 export function CourseMediaSection() {
-  const { register, watch } = useFormContext<CourseFormValues>();
+  const { register, watch, formState } = useFormContext<CourseFormValues>();
   const thumbnailUrl = watch("thumbnailUrl");
   const introVideoId = watch("introVideoId");
 
@@ -19,7 +19,7 @@ export function CourseMediaSection() {
         <CardContent className="space-y-8 pt-6">
           <div className="grid gap-8 sm:grid-cols-2">
             <div className="space-y-4">
-              <Field id="thumbnailUrl" label="URL da thumbnail">
+              <Field id="thumbnailUrl" label="URL da thumbnail" error={formState.errors.thumbnailUrl?.message}>
                 <Input id="thumbnailUrl" {...register("thumbnailUrl")} />
               </Field>
               <div className="aspect-video w-full overflow-hidden rounded-2xl border border-border/60 bg-muted flex items-center justify-center">

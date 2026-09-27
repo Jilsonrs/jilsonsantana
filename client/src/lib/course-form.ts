@@ -8,6 +8,7 @@ import {
   highlightSchema,
   faqItemSchema,
   contentLanguageSchema,
+  enderecoDeImagemValido,
   type CourseCreateInput,
 } from "@jilson/core";
 import type { AdminCourseDetail } from "@/lib/api";
@@ -31,7 +32,14 @@ export const courseFormSchema = z.object({
   highlights: z.array(highlightSchema),
   faq: z.array(faqItemSchema),
   camadas: z.array(layerSchema),
-  thumbnailUrl: z.string(),
+  // Mesma regra do servidor (`core`), conferida antes de enviar para o erro
+  // aparecer embaixo do campo. Vazio = sem imagem.
+  thumbnailUrl: z
+    .string()
+    .refine(
+      (v) => v.trim() === "" || enderecoDeImagemValido(v.trim()),
+      "Use um caminho do site que comece com / (ex.: /img/curso.jpg) ou um endereço que comece com https://",
+    ),
   introVideoId: z.string(),
   displayOrder: z.coerce.number().int(),
   status: contentStatusSchema,
