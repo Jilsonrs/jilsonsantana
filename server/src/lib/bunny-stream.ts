@@ -48,7 +48,7 @@ const montarEndereco = (libraryId: string, videoId: string) =>
 
 export type CredenciaisDeEnvio = {
   videoId: string;
-  /** O nome do vídeo no Bunny. Vai também no envio, para o nome do arquivo não sobrescrevê-lo. */
+  /** O nome do vídeo no Bunny (o nome do arquivo enviado). Vai também no envio, para os dois baterem. */
   titulo: string;
   libraryId: string;
   expirationTime: number;

@@ -5,7 +5,7 @@ import { requireAdmin } from "../middleware/auth.js";
 import { parseId, validate } from "../lib/http.js";
 import { tipoDaImagem } from "../lib/image-type.js";
 import { enviarParaOStorage } from "../lib/bunny-storage.js";
-import { videoUploadCompleteSchema, bunnyVideoIdSchema } from "@jilson/core";
+import { videoUploadCompleteSchema, videoUploadStartSchema, bunnyVideoIdSchema } from "@jilson/core";
 import { iniciarEnvio, apagarVideo, enderecoDoPlayer, estadoDoVideo } from "../lib/bunny-stream.js";
 
 const router = Router();
@@ -63,19 +63,22 @@ router.post("/admin/courses/:id/thumbnail", requireAdmin, corpoDeImagem, async (
 router.post("/admin/courses/:id/intro-video", requireAdmin, async (req, res) => {
   const id = parseId(req.params.id, res);
   if (id === null) return;
+  const body = validate(videoUploadStartSchema, req.body, res);
+  if (body === null) return;
 
   const course = await prisma.course.findUnique({
     where: { id },
-    select: { title: true, introVideoId: true, introVideoPendingId: true },
+    select: { introVideoId: true, introVideoPendingId: true },
   });
   if (!course) {
     res.status(404).json({ error: "NotFound" });
     return;
   }
 
-  // O nome do vídeo no Bunny é o TÍTULO DO CURSO, sem slug (operador, 27/09/2026:
-  // ele gerencia os vídeos pelo admin, não pelo painel do Bunny).
-  const inicio = await iniciarEnvio("apresentacao", course.title);
+  // O nome do vídeo no Bunny é o NOME DO ARQUIVO que o operador enviou (decisão
+  // dele, 27/09/2026: "o que eu envio + o ID que o Bunny cola"; o ID o Bunny já
+  // mostra ao lado).
+  const inicio = await iniciarEnvio("apresentacao", body.titulo);
   if (!inicio.ok) {
     res.status(inicio.motivo === "NaoConfigurado" ? 503 : 502).json({ error: `Stream${inicio.motivo}` });
     return;

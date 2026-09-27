@@ -78,8 +78,9 @@ beforeEach(async () => {
   await prisma.course.update({ where: { id: cursoId }, data: { introVideoId: null, introVideoPendingId: null } });
 });
 
-const iniciar = (cookies: string[], id = cursoId) =>
-  request(app).post(`/api/admin/courses/${id}/intro-video`).set("Cookie", cookies);
+const ARQUIVO = "apresentacao-power-bi.mp4";
+const iniciar = (cookies: string[], id = cursoId, corpo: object = { titulo: ARQUIVO }) =>
+  request(app).post(`/api/admin/courses/${id}/intro-video`).set("Cookie", cookies).send(corpo);
 const concluir = (cookies: string[], videoId: unknown, id = cursoId) =>
   request(app).post(`/api/admin/courses/${id}/intro-video/complete`).set("Cookie", cookies).send({ videoId });
 const curso = () => prisma.course.findUniqueOrThrow({ where: { id: cursoId } });
@@ -104,14 +105,20 @@ describe("vídeo de apresentação — quem pode enviar", () => {
 });
 
 describe("vídeo de apresentação — o envio", () => {
-  it("começar: 200 com a assinatura, o vídeo nomeado pelo título do curso, e a chave nunca na resposta", async () => {
+  it("começar: 200 com a assinatura, o vídeo com o NOME DO ARQUIVO, e a chave nunca na resposta", async () => {
     const res = await iniciar(admin);
 
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({ videoId: A, libraryId: "999", signature: "assinatura" });
-    // O nome no Bunny é o título do curso, sem slug (operador, 27/09/2026).
-    expect(iniciarEnvio).toHaveBeenCalledWith("apresentacao", "Curso com apresentação");
+    // O nome no Bunny é o nome do arquivo enviado (operador, 27/09/2026).
+    expect(iniciarEnvio).toHaveBeenCalledWith("apresentacao", ARQUIVO);
     expect(JSON.stringify(res.body)).not.toContain("chave-que-nunca-sai");
+  });
+
+  it("sem nome de arquivo (ou só espaços): 400, e nada é criado no Bunny", async () => {
+    expect((await iniciar(admin, cursoId, {})).status).toBe(400);
+    expect((await iniciar(admin, cursoId, { titulo: "   " })).status).toBe(400);
+    expect(iniciarEnvio).not.toHaveBeenCalled();
   });
 
   it("começar deixa o vídeo EM ANDAMENTO, não como o vídeo do curso", async () => {

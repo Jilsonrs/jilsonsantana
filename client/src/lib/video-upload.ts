@@ -43,8 +43,7 @@ export function enviarVideo(
         VideoId: credenciais.videoId,
         LibraryId: credenciais.libraryId,
       },
-      // O nome é o que o servidor escolheu (o título do curso ou da aula), nunca o
-      // nome do arquivo no computador do operador, que sobrescreveria o do Bunny.
+      // O mesmo nome com que o servidor criou o vídeo (o nome do arquivo enviado).
       metadata: { filetype: arquivo.type, title: credenciais.titulo },
       onProgress: (enviados, total) => aoProgredir(total > 0 ? Math.round((enviados / total) * 100) : 0),
       onSuccess: () => resolver(),

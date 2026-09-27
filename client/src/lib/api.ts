@@ -233,8 +233,8 @@ export async function deleteCourse(id: number): Promise<void> {
 // O envio do vídeo de apresentação começa no servidor, que cria o vídeo no
 // Bunny e devolve só a assinatura; o arquivo vai direto para o Bunny
 // (`lib/video-upload.ts`).
-export async function startIntroVideoUpload(id: number): Promise<CredenciaisDeEnvio> {
-  const { data } = await client.post<CredenciaisDeEnvio>(`/admin/courses/${id}/intro-video`);
+export async function startIntroVideoUpload(id: number, titulo: string): Promise<CredenciaisDeEnvio> {
+  const { data } = await client.post<CredenciaisDeEnvio>(`/admin/courses/${id}/intro-video`, { titulo });
   return data;
 }
 

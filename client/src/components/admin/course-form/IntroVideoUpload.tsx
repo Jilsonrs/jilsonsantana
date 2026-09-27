@@ -27,7 +27,8 @@ export function IntroVideoUpload({
   const envio = useMutation({
     mutationFn: async (arquivo: File) => {
       setPorcentagem(0);
-      const credenciais = await api.startIntroVideoUpload(courseId);
+      // O nome do arquivo vira o nome do vídeo no Bunny (operador, 27/09/2026).
+      const credenciais = await api.startIntroVideoUpload(courseId, arquivo.name);
       await enviarVideo(arquivo, credenciais, setPorcentagem).concluido;
       const concluido = await api.completeIntroVideoUpload(courseId, credenciais.videoId);
       return { videoId: concluido.introVideoId, embedUrl: concluido.introVideoEmbedUrl ?? credenciais.embedUrl };
