@@ -1180,8 +1180,8 @@ landmark. Corrigido junto.
 - [ ] **Upload de vídeo pelo admin** *(decisão do operador, 25/09/2026, substitui o antigo "admin
       upload flow, or direct-to-Bunny + store reference"; detalhe em `docs/bunny.md` §3.4 e §7.1)*.
       As regras dele: o arquivo original vai **byte a byte**, sem recompressão no navegador, e o
-      envio é **retomável** · **sem coleções** no Bunny (revisto pelo operador em 27/09: o título
-      do vídeo leva o slug do curso) · **trocar o vídeo da aula** substitui o vídeo sem recriar a aula · o progresso do
+      envio é **retomável** · **sem coleções** no Bunny, e o título do vídeo é **só o título da
+      aula** (operador, 27/09: ele gerencia os vídeos pelo admin, não pelo painel) · **trocar o vídeo da aula** substitui o vídeo sem recriar a aula · o progresso do
       aluno fica preso à **AULA**, nunca ao ID do vídeo · legenda `.vtt` casada pelo nome do
       arquivo · o código **nunca** pede transcrição nem liga o Enterprise DRM (os dois cobram).
 - [ ] Client: gated player on the lesson page
@@ -1272,8 +1272,8 @@ landmark. Corrigido junto.
       substituído tem que sumir do painel.
 - [ ] **Etapa 3 — vídeo das aulas:** primeiro o `include` → `select` de `GET /api/trilhas/:slug` (o
       de `/courses/:slug` já foi feito na etapa 2); depois `Lesson.bunnyVideoId` +
-      `Lesson.bunnyVideoPendingId` (**sem coleção**: decisão do operador de 27/09, o título do vídeo
-      leva o slug do curso, `<slug> — <título da aula>`), o envio
+      `Lesson.bunnyVideoPendingId` (**sem coleção**, e o título do vídeo no Bunny é **só o título da
+      aula** — decisões do operador de 27/09), o envio
       **com a mesma limpeza da etapa 2** (reenviar apaga o incompleto; terminar apaga o substituído)
       e a **prévia do admin com token**. **Prévia grátis** *(decisão do operador, 27/09/2026, "como
       na Udemy")*: `Lesson.isFreePreview`, que o operador liga e desliga por aula no admin; ele

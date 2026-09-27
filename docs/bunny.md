@@ -167,11 +167,13 @@ ar, decisão de 27/09. O mesmo vale para uma biblioteca de apresentação de dev
   corresponde à **B** *(confirmado pelo operador, 27/09/2026)*.
 - ~~As coleções do Stream são criadas pelo admin da escola~~ **SEM COLEÇÕES** *(decisão do
   operador, 27/09/2026, revendo a de 25/09: "sem pasta fica mais flexível")*. O site liga cada
-  aula ao **código único** do vídeo, e a pasta só serviria para navegar no painel. O **título** de
-  cada vídeo leva o slug do curso (`<slug> — <título da aula>`), e buscar pelo slug no painel acha
-  os vídeos de um curso. Como o slug é permanente, o título continua valendo. *Gatilho de
-  reabertura:* o painel ficar difícil de navegar (centenas de aulas) ou surgir necessidade de
-  estatística por curso dentro do Bunny. Aí as coleções entram sem mexer no que já existe no site.
+  aula ao **código único** do vídeo, e a pasta só serviria para navegar no painel.
+  **Título do vídeo no Bunny = só o título da aula**, sem o slug do curso *(operador, 27/09/2026:
+  "não vou gerenciar esses vídeos pelo Bunny, só pelo admin", e os nomes ficariam grandes demais)*.
+  **O vídeo de apresentação continua `<slug> — apresentação`**: sem o slug, todos se chamariam
+  igual. *Gatilho de reabertura:* o operador passar a gerenciar vídeos pelo painel do Bunny, ou
+  precisar de estatística por curso lá dentro. Aí título e coleções mudam sem mexer no que já
+  existe no site.
 - **Consequência que já estava registrada:** é código novo na Fase 3, que é de alto risco. As
   regras do §7 valem para ele.
 - **Limpeza automática ao reenviar** *(decisão do operador, 27/09/2026: "o incompleto e o
