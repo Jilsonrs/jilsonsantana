@@ -1163,7 +1163,13 @@ landmark. Corrigido junto.
       *Registrado como decisão de produto, fora do MVP:* **marca d'água com identificação do aluno é
       a única defesa real contra re-upload** — entra **quando houver receita**, não antes (critério
       de decisão de stack, CLAUDE.md → Working Method).
-- [ ] Server: admin upload flow (or direct-to-Bunny + store reference)
+- [ ] **Upload de vídeo pelo admin** *(decisão do operador, 25/09/2026, substitui o antigo "admin
+      upload flow, or direct-to-Bunny + store reference"; detalhe em `docs/bunny.md` §3.4 e §7.1)*.
+      As regras dele: o arquivo original vai **byte a byte**, sem recompressão no navegador, e o
+      envio é **retomável** · as **coleções** do Stream são criadas pelo admin, nunca à mão no
+      painel · **trocar o vídeo da aula** substitui o vídeo sem recriar a aula · o progresso do
+      aluno fica preso à **AULA**, nunca ao ID do vídeo · legenda `.vtt` casada pelo nome do
+      arquivo · o código **nunca** pede transcrição nem liga o Enterprise DRM (os dois cobram).
 - [ ] Client: gated player on the lesson page
 - [ ] **TESTES DE SERVIDOR do gate de vídeo — escritos JUNTO com a rota que assina a URL, não
       depois** (mesma disciplina da Fase 4; a rota é fronteira de acesso e **não tem tela**, então
