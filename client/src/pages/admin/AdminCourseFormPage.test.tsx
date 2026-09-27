@@ -11,6 +11,7 @@ const createModule = vi.fn();
 const uploadCourseThumbnail = vi.fn();
 const startIntroVideoUpload = vi.fn();
 const completeIntroVideoUpload = vi.fn();
+const getIntroVideoStatus = vi.fn();
 const enviarVideo = vi.fn();
 vi.mock("@/lib/video-upload", () => ({
   enviarVideo: (...args: unknown[]) => enviarVideo(...args),
@@ -18,6 +19,7 @@ vi.mock("@/lib/video-upload", () => ({
 vi.mock("@/lib/api", () => ({
   startIntroVideoUpload: (...args: unknown[]) => startIntroVideoUpload(...args),
   completeIntroVideoUpload: (...args: unknown[]) => completeIntroVideoUpload(...args),
+  getIntroVideoStatus: (...args: unknown[]) => getIntroVideoStatus(...args),
   uploadCourseThumbnail: (...args: unknown[]) => uploadCourseThumbnail(...args),
   adminGetCourse: (...args: unknown[]) => adminGetCourse(...args),
   createCourse: (...args: unknown[]) => createCourse(...args),
@@ -57,6 +59,7 @@ beforeEach(() => {
   uploadCourseThumbnail.mockReset();
   startIntroVideoUpload.mockReset();
   completeIntroVideoUpload.mockReset();
+  getIntroVideoStatus.mockReset().mockResolvedValue({ pronto: true, falhou: false });
   enviarVideo.mockReset();
 });
 
@@ -332,7 +335,7 @@ describe("AdminCourseFormPage — enviar a capa", () => {
 describe("AdminCourseFormPage — vídeo de apresentação", () => {
   const GUID = "eb1c4f77-0cda-46be-b47d-1118ad7c2ffe";
   const EMBED = `https://iframe.mediadelivery.net/embed/999/${GUID}`;
-  const credenciais = { videoId: GUID, libraryId: "999", expirationTime: 1, signature: "s", embedUrl: EMBED };
+  const credenciais = { videoId: GUID, titulo: "Curso", libraryId: "999", expirationTime: 1, signature: "s", embedUrl: EMBED };
 
   async function abrirEdicao(curso = existingCourse) {
     adminGetCourse.mockResolvedValue(curso);

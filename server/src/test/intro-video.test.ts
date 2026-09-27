@@ -6,10 +6,12 @@ import request from "supertest";
 // o de verdade.
 const iniciarEnvio = vi.fn();
 const apagarVideo = vi.fn();
+const estadoDoVideo = vi.fn();
 vi.mock("../lib/bunny-stream.js", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../lib/bunny-stream.js")>()),
   iniciarEnvio: (...args: unknown[]) => iniciarEnvio(...args),
   apagarVideo: (...args: unknown[]) => apagarVideo(...args),
+  estadoDoVideo: (...args: unknown[]) => estadoDoVideo(...args),
 }));
 
 import app from "../app.js";
@@ -62,6 +64,7 @@ const credenciais = (videoId: string) => ({
   ok: true,
   credenciais: {
     videoId,
+    titulo: "Curso com apresentação",
     libraryId: "999",
     expirationTime: 1790000000,
     signature: "assinatura",
@@ -101,12 +104,13 @@ describe("vídeo de apresentação — quem pode enviar", () => {
 });
 
 describe("vídeo de apresentação — o envio", () => {
-  it("começar: 200 com a assinatura, o vídeo nomeado pelo slug, e a chave nunca na resposta", async () => {
+  it("começar: 200 com a assinatura, o vídeo nomeado pelo título do curso, e a chave nunca na resposta", async () => {
     const res = await iniciar(admin);
 
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({ videoId: A, libraryId: "999", signature: "assinatura" });
-    expect(iniciarEnvio).toHaveBeenCalledWith("apresentacao", `${SLUG} — apresentação`);
+    // O nome no Bunny é o título do curso, sem slug (operador, 27/09/2026).
+    expect(iniciarEnvio).toHaveBeenCalledWith("apresentacao", "Curso com apresentação");
     expect(JSON.stringify(res.body)).not.toContain("chave-que-nunca-sai");
   });
 
@@ -216,5 +220,37 @@ describe("vídeo de apresentação — na página pública", () => {
   it("id colado à mão fora do formato do Bunny é recusado pelo PATCH do curso", async () => {
     const res = await request(app).patch(`/api/courses/${cursoId}`).set("Cookie", admin).send({ introVideoId: "meu-video" });
     expect(res.status).toBe(400);
+  });
+});
+
+describe("vídeo de apresentação — o admin pergunta se o Bunny terminou", () => {
+  const estado = (cookies: string[], videoId: string) =>
+    request(app).get(`/api/admin/intro-video/${videoId}/status`).set("Cookie", cookies);
+
+  beforeEach(() => estadoDoVideo.mockReset().mockResolvedValue({ pronto: true, falhou: false }));
+
+  it("sem login 401, aluno 403 — e o Bunny nem é consultado", async () => {
+    expect((await request(app).get(`/api/admin/intro-video/${A}/status`)).status).toBe(401);
+    expect((await estado(member, A)).status).toBe(403);
+    expect(estadoDoVideo).not.toHaveBeenCalled();
+  });
+
+  it("id fora do formato do Bunny: 400", async () => {
+    expect((await estado(admin, "qualquer-coisa")).status).toBe(400);
+    expect(estadoDoVideo).not.toHaveBeenCalled();
+  });
+
+  it("admin: devolve o estado lido do Bunny, na biblioteca de apresentação", async () => {
+    estadoDoVideo.mockResolvedValueOnce({ pronto: false, falhou: false });
+    const res = await estado(admin, A);
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ pronto: false, falhou: false });
+    expect(estadoDoVideo).toHaveBeenCalledWith("apresentacao", A);
+  });
+
+  it("o Bunny não respondeu: 502", async () => {
+    estadoDoVideo.mockResolvedValueOnce(null);
+    expect((await estado(admin, A)).status).toBe(502);
   });
 });

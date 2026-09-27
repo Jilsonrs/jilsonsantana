@@ -119,6 +119,8 @@
 > **E a etapa 2 também, em 27/09:** o vídeo de apresentação enviado pelo admin, tocando no
 > formulário e na página do curso, com a limpeza automática no Bunny. A migration
 > `20260927120000_course_intro_video_pending` entra em produção pelo pre-deploy.
+> **Depois, no mesmo dia:** a prévia do admin que se atualiza sozinha quando o Bunny termina, e o
+> nome do vídeo no Bunny = o título do curso (sem slug), decisão do operador.
 > **Próximo passo — decidido pelo operador em 23/09: o C4, em 5 etapas, uma por vez.** A etapa 1
 > está feita e publicada; a próxima é a **etapa 3**, que depende das decisões P17 e P18
 > (`pendencias.md`). Detalhe no bloco C4. Continuam na
@@ -1180,8 +1182,8 @@ landmark. Corrigido junto.
 - [ ] **Upload de vídeo pelo admin** *(decisão do operador, 25/09/2026, substitui o antigo "admin
       upload flow, or direct-to-Bunny + store reference"; detalhe em `docs/bunny.md` §3.4 e §7.1)*.
       As regras dele: o arquivo original vai **byte a byte**, sem recompressão no navegador, e o
-      envio é **retomável** · as **coleções** do Stream são criadas pelo admin, nunca à mão no
-      painel · **trocar o vídeo da aula** substitui o vídeo sem recriar a aula · o progresso do
+      envio é **retomável** · **sem coleções** no Bunny, e o título do vídeo é **só o título da
+      aula** (operador, 27/09: ele gerencia os vídeos pelo admin, não pelo painel) · **trocar o vídeo da aula** substitui o vídeo sem recriar a aula · o progresso do
       aluno fica preso à **AULA**, nunca ao ID do vídeo · legenda `.vtt` casada pelo nome do
       arquivo · o código **nunca** pede transcrição nem liga o Enterprise DRM (os dois cobram).
 - [ ] Client: gated player on the lesson page
@@ -1233,8 +1235,14 @@ landmark. Corrigido junto.
       o envio termina**) + `client/src/lib/video-upload.ts` (o único lugar com o `tus-js-client`) +
       `BunnyPlayer.tsx` (o player, com a política de referrer que o Bunny exige), no formulário e na
       página do curso. **Duas mudanças em relação ao plano, e o porquê:**
-      - **sem consulta de "processando":** a doc não deixa claro como ler se o vídeo terminou de
-        processar, e o próprio player do Bunny já mostra "processando";
+      - ~~sem consulta de "processando"~~ **REVISTO no mesmo dia, a pedido do operador:** no ar, o
+        quadro ficava em "Processing video" até recarregar a página, porque o player do Bunny não
+        se atualiza sozinho. Agora a prévia do admin (`IntroVideoPreview.tsx`) pergunta a cada 15 s
+        (`GET /api/admin/intro-video/:videoId/status`, `requireAdmin`) e **recarrega o quadro**
+        quando o Bunny termina; desiste depois de 20 min. Como a doc não confirma os números da
+        leitura do vídeo, "pronto" aceita dois sinais, e qualquer um basta: status 4 ou
+        `encodeProgress` 100 (`interpretarEstado`, função pura com teste). **A prova é o próximo
+        envio no ar.**
       - **o envio retoma na mesma sessão**, por uns 5 minutos de tentativas. Retomar de OUTRA sessão
         mandaria o arquivo para o vídeo antigo enquanto o curso gravaria o novo. Se cair de vez, o
         operador envia de novo.
@@ -1266,7 +1274,8 @@ landmark. Corrigido junto.
       substituído tem que sumir do painel.
 - [ ] **Etapa 3 — vídeo das aulas:** primeiro o `include` → `select` de `GET /api/trilhas/:slug` (o
       de `/courses/:slug` já foi feito na etapa 2); depois `Lesson.bunnyVideoId` +
-      `Lesson.bunnyVideoPendingId` + `Course.bunnyCollectionId`, a coleção criada pelo admin, o envio
+      `Lesson.bunnyVideoPendingId` (**sem coleção**, e o título do vídeo no Bunny é **só o título da
+      aula** — decisões do operador de 27/09), o envio
       **com a mesma limpeza da etapa 2** (reenviar apaga o incompleto; terminar apaga o substituído)
       e a **prévia do admin com token**. **Prévia grátis** *(decisão do operador, 27/09/2026, "como
       na Udemy")*: `Lesson.isFreePreview`, que o operador liga e desliga por aula no admin; ele

@@ -18,7 +18,7 @@ export function IntroVideoUpload({
   aoEnviar,
 }: {
   courseId: number;
-  aoEnviar: (embedUrl: string) => void;
+  aoEnviar: (video: { videoId: string; embedUrl: string }) => void;
 }) {
   const { setValue } = useFormContext<CourseFormValues>();
   const entrada = useRef<HTMLInputElement>(null);
@@ -32,9 +32,9 @@ export function IntroVideoUpload({
       const concluido = await api.completeIntroVideoUpload(courseId, credenciais.videoId);
       return { videoId: concluido.introVideoId, embedUrl: concluido.introVideoEmbedUrl ?? credenciais.embedUrl };
     },
-    onSuccess: ({ videoId, embedUrl }) => {
-      setValue("introVideoId", videoId, { shouldDirty: true });
-      aoEnviar(embedUrl);
+    onSuccess: (video) => {
+      setValue("introVideoId", video.videoId, { shouldDirty: true });
+      aoEnviar(video);
     },
   });
 
@@ -58,11 +58,6 @@ export function IntroVideoUpload({
       {envio.isError && (
         <p role="alert" className="text-sm font-medium text-destructive">
           Não foi possível enviar o vídeo. Tente de novo.
-        </p>
-      )}
-      {envio.isSuccess && (
-        <p className="text-sm text-muted-foreground">
-          Vídeo enviado. O Bunny pode levar alguns minutos para processar.
         </p>
       )}
     </div>

@@ -251,6 +251,12 @@ export async function completeIntroVideoUpload(
   return data;
 }
 
+// O Bunny já terminou de processar o vídeo? A prévia do admin pergunta até ficar pronto.
+export async function getIntroVideoStatus(videoId: string): Promise<{ pronto: boolean; falhou: boolean }> {
+  const { data } = await client.get<{ pronto: boolean; falhou: boolean }>(`/admin/intro-video/${videoId}/status`);
+  return data;
+}
+
 // A capa vai CRUA no corpo, com o tipo do arquivo no cabeçalho; o servidor
 // confere o conteúdo, manda para o Bunny Storage e grava o endereço no curso.
 export async function uploadCourseThumbnail(id: number, file: File): Promise<{ thumbnailUrl: string }> {

@@ -165,7 +165,16 @@ ar, decisão de 27/09. O mesmo vale para uma biblioteca de apresentação de dev
 - **Upload pelo admin da escola.** O operador chamou esta opção de **"C"**. No guia, as opções
   eram **A** (painel do Bunny + colar o ID) e **B** (envio pelo admin), e "upload pelo admin"
   corresponde à **B** *(confirmado pelo operador, 27/09/2026)*.
-- **As coleções do Stream são criadas pelo admin da escola, NÃO à mão no painel.**
+- ~~As coleções do Stream são criadas pelo admin da escola~~ **SEM COLEÇÕES** *(decisão do
+  operador, 27/09/2026, revendo a de 25/09: "sem pasta fica mais flexível")*. O site liga cada
+  aula ao **código único** do vídeo, e a pasta só serviria para navegar no painel.
+  **Título do vídeo no Bunny = só o título da aula**, sem o slug do curso *(operador, 27/09/2026:
+  "não vou gerenciar esses vídeos pelo Bunny, só pelo admin", e os nomes ficariam grandes demais)*.
+  **O vídeo de apresentação leva o título do curso**, também sem slug *(operador, 27/09/2026:
+  "daqui para a frente mesmo para a apresentação")*. O nome vai também no envio, para o nome do
+  arquivo no computador do operador não sobrescrevê-lo. *Gatilho de reabertura:* o operador passar a gerenciar vídeos pelo painel do Bunny, ou
+  precisar de estatística por curso lá dentro. Aí título e coleções mudam sem mexer no que já
+  existe no site.
 - **Consequência que já estava registrada:** é código novo na Fase 3, que é de alto risco. As
   regras do §7 valem para ele.
 - **Limpeza automática ao reenviar** *(decisão do operador, 27/09/2026: "o incompleto e o
@@ -371,7 +380,7 @@ O Bunny gera estes tipos de chave:
 |---|---|---|---|
 | 1 | Onde guardar as imagens enviadas pelo site | Bunny Storage · Railway Volume | **FECHADA em 25/09/2026** (operador): **Bunny Storage** |
 | 2 | O aluno pode mandar a aula para a TV (Chromecast)? | sim · não | **ADIADA pelo operador em 27/09:** fica sem até o bloco de vídeo da Fase 3, quando se testa numa TV (§3.2; `pendencias.md` P5) |
-| 3 | Como os vídeos entram | painel do Bunny + colar o ID · envio pelo admin | **FECHADA em 25/09/2026** (operador): **upload pelo admin**, com as coleções criadas pelo admin (§3.4) |
+| 3 | Como os vídeos entram | painel do Bunny + colar o ID · envio pelo admin | **FECHADA em 25/09/2026** (operador): **upload pelo admin**, **sem coleções** (revisto em 27/09, §3.4) |
 | 4 | Endereço das imagens | `img.jilsonsantana.com` | **FECHADA em 25/09/2026** (operador): no ar, com SSL |
 | 5 | Enterprise DRM | não no lançamento · sim | **FECHADA em 25/09/2026** (operador): **sem Enterprise**; **MediaCage Basic (grátis) ligado** |
 | 6 | Purga da CDN na exclusão de conta | chave da conta · cache curto na pasta de fotos · aceitar até 1 mês | pendente: antes do envio da foto do aluno (§4.4) |
@@ -405,9 +414,11 @@ O Bunny gera estes tipos de chave:
   cabeçalhos `AuthorizationSignature`, `AuthorizationExpire`, `VideoId` e `LibraryId` · a
   assinatura é SHA-256 (hex) de biblioteca + chave + validade + id · o player é
   `iframe.mediadelivery.net/embed/<biblioteca>/<id>`, o dos exemplos oficiais.
-  **Não confirmado, e por isso não usado:** o significado dos números de `status` na leitura do
-  vídeo. A doc lista os do webhook, e eles podem não ser os mesmos. O próprio player mostra
-  "processando".
+  **Não confirmado:** o significado dos números de `status` na leitura do vídeo. A doc só lista os
+  do webhook (3 = terminado; 4 = a primeira resolução ficou pronta e o vídeo já toca; 5 = falhou).
+  Por isso a prévia do admin, que se atualiza sozinha, trata como **pronto** o status 4 **ou** o
+  `encodeProgress` 100 (`interpretarEstado` em `server/src/lib/bunny-stream.ts`). Se um envio no
+  ar ficar "processando" para sempre, é aqui que se ajusta.
 - **Endereço do player a conferir (achado de 27/09, anotado a pedido do operador):** a doc do
   Bunny mostra que o **player novo** usa `player.mediadelivery.net/embed/` (com a opção *Enable
   legacy player* desligada em *Player Settings*). Este guia cita o endereço antigo,
