@@ -120,7 +120,7 @@
 > formulário e na página do curso, com a limpeza automática no Bunny. A migration
 > `20260927120000_course_intro_video_pending` entra em produção pelo pre-deploy.
 > **Depois, no mesmo dia:** a prévia do admin que se atualiza sozinha quando o Bunny termina, e o
-> nome do vídeo no Bunny = o título do curso (sem slug), decisão do operador.
+> nome do vídeo no Bunny = o nome do arquivo enviado, decisão do operador.
 > **Próximo passo — decidido pelo operador em 23/09: o C4, em 5 etapas, uma por vez.** A etapa 1
 > está feita e publicada; a próxima é a **etapa 3**, que depende das decisões P17 e P18
 > (`pendencias.md`). Detalhe no bloco C4. Continuam na
@@ -1182,8 +1182,8 @@ landmark. Corrigido junto.
 - [ ] **Upload de vídeo pelo admin** *(decisão do operador, 25/09/2026, substitui o antigo "admin
       upload flow, or direct-to-Bunny + store reference"; detalhe em `docs/bunny.md` §3.4 e §7.1)*.
       As regras dele: o arquivo original vai **byte a byte**, sem recompressão no navegador, e o
-      envio é **retomável** · **sem coleções** no Bunny, e o título do vídeo é **só o título da
-      aula** (operador, 27/09: ele gerencia os vídeos pelo admin, não pelo painel) · **trocar o vídeo da aula** substitui o vídeo sem recriar a aula · o progresso do
+      envio é **retomável** · **sem coleções** no Bunny, e o nome do vídeo lá é **o nome do arquivo
+      enviado** (operador, 27/09: ele gerencia os vídeos pelo admin, não pelo painel) · **trocar o vídeo da aula** substitui o vídeo sem recriar a aula · o progresso do
       aluno fica preso à **AULA**, nunca ao ID do vídeo · legenda `.vtt` casada pelo nome do
       arquivo · o código **nunca** pede transcrição nem liga o Enterprise DRM (os dois cobram).
 - [ ] Client: gated player on the lesson page
@@ -1274,8 +1274,8 @@ landmark. Corrigido junto.
       substituído tem que sumir do painel.
 - [ ] **Etapa 3 — vídeo das aulas:** primeiro o `include` → `select` de `GET /api/trilhas/:slug` (o
       de `/courses/:slug` já foi feito na etapa 2); depois `Lesson.bunnyVideoId` +
-      `Lesson.bunnyVideoPendingId` (**sem coleção**, e o título do vídeo no Bunny é **só o título da
-      aula** — decisões do operador de 27/09), o envio
+      `Lesson.bunnyVideoPendingId` (**sem coleção**, e o nome do vídeo no Bunny é **o nome do
+      arquivo enviado** — decisões do operador de 27/09), o envio
       **com a mesma limpeza da etapa 2** (reenviar apaga o incompleto; terminar apaga o substituído)
       e a **prévia do admin com token**. **Prévia grátis** *(decisão do operador, 27/09/2026, "como
       na Udemy")*: `Lesson.isFreePreview`, que o operador liga e desliga por aula no admin; ele

@@ -369,7 +369,8 @@ describe("AdminCourseFormPage — vídeo de apresentação", () => {
 
     escolher();
     await waitFor(() => expect(enviarVideo).toHaveBeenCalled());
-    expect(startIntroVideoUpload).toHaveBeenCalledWith(1);
+    // O nome do arquivo escolhido vira o nome do vídeo no Bunny.
+    expect(startIntroVideoUpload).toHaveBeenCalledWith(1, "apresentacao.mp4");
     expect(enviarVideo.mock.calls[0][1]).toBe(credenciais);
 
     act(() => progredir(42));

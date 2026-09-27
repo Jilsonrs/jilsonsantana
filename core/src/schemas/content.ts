@@ -88,6 +88,12 @@ export const bunnyVideoIdSchema = z
 
 // O fim de um envio de vídeo pelo admin: o id que o Bunny criou no começo.
 export const videoUploadCompleteSchema = z.object({ videoId: bunnyVideoIdSchema });
+
+// O começo de um envio de vídeo pelo admin: o NOME DO ARQUIVO que o operador
+// escolheu vira o nome do vídeo no Bunny (decisão do operador, 27/09/2026 — o
+// Bunny já mostra o ID de cada vídeo ao lado).
+export const videoUploadStartSchema = z.object({ titulo: z.string().trim().min(1).max(200) });
+export type VideoUploadStartInput = z.infer<typeof videoUploadStartSchema>;
 export type VideoUploadCompleteInput = z.infer<typeof videoUploadCompleteSchema>;
 
 // O idioma do conteúdo: a API fala `pt`/`en` (o código do endereço e do
