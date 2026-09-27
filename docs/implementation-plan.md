@@ -113,7 +113,9 @@
 > **Publicado em 27/09, a pedido do operador:** a **etapa 1 do C4** (o campo de imagem do curso aceita
 > `/img/…` e `https://`, e recusa o perigoso), junto com os docs do Bunny (`bunny.md`) e a lista
 > única de pendências. O Bunny já está contratado e configurado no painel (Storage, CDN das imagens
-> e biblioteca de aulas), mas **nenhum código usa o Bunny ainda**.
+> e biblioteca de aulas). **Também publicada em 27/09: a etapa 1 do Bloco U** (a capa enviada pelo
+> admin vai para o Bunny Storage). Ela passa a funcionar quando as 4 variáveis do Storage estiverem
+> no Railway, e é testada no site no ar, porque não existe Storage de dev (decisão do operador).
 > **Próximo passo — decidido pelo operador em 23/09: o C4, em 5 etapas, uma por vez.** A etapa 1
 > está feita e publicada; a próxima é a **etapa 3**, que depende das decisões P17 e P18
 > (`pendencias.md`). Detalhe no bloco C4. Continuam na
@@ -1212,8 +1214,8 @@ landmark. Corrigido junto.
       um dublê no **nosso** módulo, e 4 de tela (sem botão em curso novo · enviando · recusado ·
       GIF e arquivo grande nem saem da tela). Mutação: tipo sempre aceito ⇒ 3 reprovam; sem
       `requireAdmin` ⇒ 2 reprovam; tela sem conferir o tipo e sem pôr no campo ⇒ 2 reprovam.
-      **Falta a prova com o Bunny de verdade**, quando o operador criar a Storage de dev e puser as
-      chaves (P19).
+      **Falta a prova com o Bunny de verdade, NO SITE NO AR** *(decisão do operador, 27/09: sem
+      Storage de dev; as 4 variáveis vão só no Railway — `bunny.md` §4.1 e §5)*.
 - [ ] **Etapa 2 — vídeo de apresentação:** envio retomável (TUS) pelo admin para a biblioteca de
       apresentação, "processando" até o Bunny terminar, e o vídeo tocando no formulário e na página
       do curso, sem token. `introVideoId` passa a exigir o formato GUID (fecha o item do backlog P2).

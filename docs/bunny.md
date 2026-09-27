@@ -29,7 +29,7 @@
 | Pull Zone das imagens | **criada e testada**: `img.jilsonsantana.com` (§4.2) |
 | Stream: biblioteca de aulas | **criada e testada**: `jilsonsantana-stream` (§3.2) |
 | Stream: bibliotecas de apresentação e de dev | **não criadas** (§3.3) |
-| Código do site usando o Bunny | **envio da capa do curso pelo admin**: pronto no `dev` em 27/09 (Bloco U, etapa 1), **não publicado**; depende da Storage de dev e das variáveis do §5 para funcionar no computador do operador |
+| Código do site usando o Bunny | **envio da capa do curso pelo admin**: pronto em 27/09 (Bloco U, etapa 1) e **testado no site no ar** (sem Storage de dev, por decisão do operador); funciona quando as 4 variáveis da etapa 1 (§5) estiverem no Railway |
 
 ## 1. Resumo: o que entra e o que fica de fora
 
@@ -223,10 +223,15 @@ entram inteiras em cada publicação.
   **`cursos/<slug>-<código>.<ext>`**; depois, foto do aluno em **`alunos/<código>.<ext>`**. O código
   é aleatório e muda a cada envio, por causa do cache de 1 mês da CDN (§4.4).
 
-**Dev: `jilsonsantana-storage-dev`, NÃO criada.** Quando for criada: Standard, São Paulo, **sem
-réplica**, S3 desligado. **E com uma Pull Zone de dev ligada a ela**, com `localhost` nos *Allowed
-referrers* *(plano aprovado em 27/09)*. Sem essa Pull Zone, a imagem enviada no computador do
-operador não aparece, pela mesma trava de referrer que vale para `img.jilsonsantana.com`.
+**Dev: `jilsonsantana-storage-dev`, NÃO criada, por decisão do operador (27/09/2026):** o envio
+de imagem é testado **direto no site no ar**. A senha da Storage de produção fica **só no
+Railway**, nunca no computador dele. Usar a de produção no computador foi recusado, porque contraria
+a regra de senha por ambiente e exigiria liberar `localhost` na CDN de produção. **No computador
+do operador, "Enviar imagem" responde que o Storage não está configurado**, e isso é o esperado.
+*Gatilho de reabertura:* se testar no ar passar a atrapalhar, por exemplo arquivos de teste
+misturados às capas de verdade ou um erro que só dá para investigar localmente. Aí se cria a de dev
+(Standard, São Paulo, sem réplica, S3 desligado) **com uma Pull Zone de dev** que tenha `localhost`
+nos *Allowed referrers*, senão a imagem não aparece no computador.
 
 ### 4.2 Pull Zone das imagens *(decisões do operador, 25/09/2026)*
 
@@ -339,7 +344,9 @@ O Bunny gera estes tipos de chave:
   | 3 | `BUNNY_STREAM_LESSONS_TOKEN_KEY` | token authentication key da biblioteca de aulas | **sim** |
 
   **Estado em 27/09: nenhuma variável criada.** Sem as da etapa 1, o envio da capa responde que
-  o Storage não está configurado, e nada quebra.
+  o Storage não está configurado, e nada quebra. **As 4 da etapa 1 vão só no Railway**, com os
+  valores de produção (`jilsonsantana-storage`, `https://img.jilsonsantana.com`), porque não
+  existe Storage de dev (§4.1, decisão de 27/09).
 
 ## 6. Decisões do operador
 
