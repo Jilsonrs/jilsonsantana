@@ -207,3 +207,40 @@ describe("AdminCourseFormPage — quando salvar falha", () => {
     await waitFor(() => expect(screen.queryByRole("alert")).toBeNull());
   });
 });
+
+// Imagem do curso (C4, etapa 1 — plano aprovado pelo operador em 23/09/2026):
+// o formato das imagens da home (`/img/curso.jpg`) tem que salvar, e o que o
+// navegador leria como código ou como outro site nem sai da tela.
+describe("AdminCourseFormPage — imagem do curso", () => {
+  const AVISO = "Use um caminho do site que comece com / (ex.: /img/curso.jpg) ou um endereço que comece com https://";
+
+  function preencher(imagem: string) {
+    renderWithProviders(<AdminCourseFormPage />, { route: "/admin/cursos/novo" });
+    fireEvent.change(screen.getByLabelText("Slug"), { target: { value: "curso-imagem" } });
+    fireEvent.change(screen.getByLabelText("Título"), { target: { value: "Curso com imagem" } });
+    fireEvent.change(screen.getByLabelText("URL da thumbnail"), { target: { value: imagem } });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar dados do curso" }));
+  }
+
+  it.each(["/img/curso.jpg", "https://img.jilsonsantana.com/cursos/curso.webp"])(
+    "aceita %s e envia",
+    async (imagem) => {
+      createCourse.mockResolvedValue({ ...existingCourse, id: 2 });
+      preencher(imagem);
+
+      await waitFor(() => expect(createCourse).toHaveBeenCalled());
+      expect(createCourse.mock.calls[0][0]).toMatchObject({ thumbnailUrl: imagem });
+      expect(screen.queryByText(AVISO)).toBeNull();
+    },
+  );
+
+  it.each(["javascript:alert(1)", "//outro-site.com/x.jpg", "img/curso.jpg"])(
+    "recusa %s: mostra o aviso e não envia",
+    async (imagem) => {
+      preencher(imagem);
+
+      expect(await screen.findByText(AVISO)).toBeTruthy();
+      expect(createCourse).not.toHaveBeenCalled();
+    },
+  );
+});

@@ -899,7 +899,8 @@ tornada executável — não uma lista nova):
       payload inteiro para o log do Railway. Handler terminal logando
       `{ method, path, status, errorName, message }` — **nunca `err.stack` verbatim**.
 - [ ] **`.max()` nos campos de texto autorados** (`core/src/schemas/content.ts:29-41,56-73`) e
-      **trocar `z.string().url()` por checagem explícita de esquema** em `thumbnailUrl` — ver a
+      ~~**trocar `z.string().url()` por checagem explícita de esquema** em `thumbnailUrl`~~ *(esta
+      metade FEITA em 27/09, na etapa 1 do C4; falta só o `.max()`)* — ver a
       convenção nova em `CLAUDE.md` → Shared `core/` package (o `.url()` aceita `javascript:` e
       `data:text/html`, **medido neste repo**, não suposto).
 - [ ] **`introVideoId` sem formato** (`content.ts:70`) — hoje inerte, mas na Fase 3 esse valor vai
@@ -1575,7 +1576,12 @@ landmark. Corrigido junto.
 > A etapa 1 vem primeiro porque é pequena e destrava o cadastro: com ela pronta, o operador já
 > cadastra os cursos, e a etapa 2 marca como PT tudo o que existir.
 
-- [ ] **Etapa 1 — campo de imagem aceita `/img/curso.jpg`** *(plano aprovado em 23/09)*.
+- [x] **Etapa 1 — campo de imagem aceita `/img/curso.jpg`** *(plano aprovado em 23/09; feita em
+      27/09 no `dev`: `enderecoDeImagemValido` + `imageUrlSchema` em `core/src/schemas/content.ts`,
+      a mesma regra no formulário, com o aviso embaixo do campo · `server/src/test/course-image.test.ts`
+      (11 casos, incluindo `/\`, tabulação e espaço na frente) + 5 casos no teste do formulário ·
+      mutação: com a regra desligada, 9 testes de servidor e 3 de tela reprovam; sem a checagem de
+      espaço e `\`, reprovam os 2 casos deles)*.
       `thumbnailUrl` usa `z.string().url()`, que **recusa** caminho relativo (as imagens atuais não
       salvam pelo admin) e **aceita** `javascript:`. Trocar pela checagem explícita de esquema que
       o `CLAUDE.md` já exige (`core/` → a regra do `.url()`): aceita `https?://…` ou caminho do
