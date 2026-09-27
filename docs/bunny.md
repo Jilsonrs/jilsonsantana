@@ -113,6 +113,8 @@ vídeos (`CLAUDE.md` → *Idiomas*). Os vídeos dele ficam na mesma `jilsonsanta
 - **Keep Original desligado, e por quê** *(operador)*: para recodificar, o vídeo é **reenviado a
   partir das cópias do operador** (HD externo + Descript), com internet de 1 Gb. **Consequência:**
   o arquivo original **não fica no Bunny**. A cópia de segurança dos vídeos é a do operador.
+  **Compromisso do operador (27/09/2026):** manter as cópias originais dos vídeos no **Descript** e
+  no **HD externo**.
 - **Multi-audio: desligar** *(decisão do operador, 27/09/2026)*. Ele permite mais de uma faixa de
   áudio no mesmo vídeo, e a escola não usa isso: curso em inglês é **outro curso**, com vídeos
   próprios (`CLAUDE.md` → *Idiomas*). **Falta desligar no painel** (`pendencias.md`, P19).
@@ -285,10 +287,9 @@ desligado** (é pago).
 - **Estrutura de pastas no Storage:** pendente.
 - **Site aberto por outro endereço** (por exemplo `.up.railway.app`) **não mostra as imagens**,
   por causa dos *Allowed referrers*.
-- **Proposta de mudança na lei de build (NÃO aplicada):** o `CLAUDE.md` → Context7 manda dizer
-  **"Stream"** na consulta ao ID do Bunny, senão a resposta desvia para a CDN. Para o Storage, a
-  consulta precisa dizer **"Storage"**. A regra atual não cobre esse caso; mudar é decisão do
-  operador.
+- **Regra do context7 para o Storage: APLICADA** *(aceita pelo operador, 27/09/2026)*. A consulta
+  ao ID do Bunny diz o nome do produto perguntado: **"Stream"**, **"Storage"** ou **"CDN"**
+  (`CLAUDE.md` → Context7 → *Bunny caveat*).
 
 ## 5. Chaves e senhas — leia antes do passo a passo
 

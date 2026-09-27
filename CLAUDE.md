@@ -681,7 +681,7 @@ Before the FIRST write or edit **in this session** that touches a SURFACE below,
 
 If a path above does not exist in the repo yet, the import / subject-matter half of the trigger still applies.
 
-**Bunny caveat:** `/bunnyway/documentation` covers ALL of bunny.net (cdn=18 vs stream=19 on a signed-URL query), so a query MUST say "Stream" explicitly or it drifts into CDN docs. Documented fallback: `/llmstxt/bunny_net_llms_txt` — it surfaced Edge Script token generation and secure-embed content the primary didn't.
+**Bunny caveat:** `/bunnyway/documentation` covers ALL of bunny.net (cdn=18 vs stream=19 on a signed-URL query), so a query MUST name the product it is about — **"Stream"**, **"Storage"** or **"CDN"** — or it drifts into another product's docs. *("Storage" added by operator decision, 27/09/2026: a Storage question phrased with "Stream" returns video docs.)* Documented fallback: `/llmstxt/bunny_net_llms_txt` — it surfaced Edge Script token generation and secure-embed content the primary didn't.
 
 #### DECLARE IT (makes skipping visible)
 

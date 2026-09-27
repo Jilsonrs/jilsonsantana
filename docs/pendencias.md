@@ -23,7 +23,6 @@
 | # | O que falta | Opções | Onde registrar |
 |---|---|---|---|
 | P9 | **Dois gatilhos de reabertura propostos pelo agente:** Enterprise DRM *"se houver vazamento de aula medido e receita que pague a mensalidade"* · Keep Original *"se as cópias do operador deixarem de existir fora do Bunny"* | aceitar · trocar | `CLAUDE.md` → changelog (19)(f) |
-| P11 | **Regra do context7 para o Storage:** hoje a lei manda dizer "Stream" em toda consulta ao Bunny, e isso não cobre o Storage. Proposta: consulta de Storage diz "Storage" | aceitar · recusar | `CLAUDE.md` → *Context7* → *Bunny caveat* |
 
 ## B. Conteúdo e cadastro *(tarefas suas, sem ordem fixa)*
 
