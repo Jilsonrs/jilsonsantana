@@ -29,7 +29,6 @@ resposta rápida entra aqui, com o próximo número livre.*
 |---|---|---|
 | P12 | Revisar as **15 perguntas da FAQ**, que já estão no admin | no próprio admin |
 | P13 | Dizer, em **uma frase por seção**, o que vai dentro das seções **planejadas** do menu do admin (Alunos, Dados…) | `implementation-plan.md` → *PENDENTE DO OPERADOR — o que cada seção PLANEJADA vai ter dentro* |
-| P14 | Confirmar os **slugs em inglês**. *Item herdado do plano, sem detalhe: os endereços `/en/courses`, `/en/course/:slug`, `/en/learning-path/:slug` e `/en/certificate/:publicId` já foram decididos em 14/09. Perguntar ao operador quais ainda faltam confirmar.* | `idiomas.md` §2 |
 | P15 | Decidir se **`/inicio`, `/conta` e `/minhas-trilhas` mudam para `/aluno/*`** (mexe em endereço já em uso; não é urgente) | `CLAUDE.md` → *DUAS SUPERFÍCIES* → *PENDÊNCIA conhecida* |
 | P16 | **Cadastrar os 5 cursos da home** no admin. **Depende da etapa 1 do C4** (o campo de imagem) | `implementation-plan.md` → Bloco C4 |
 
@@ -37,6 +36,7 @@ resposta rápida entra aqui, com o próximo número livre.*
 
 | # | O que falta | Quando | Onde registrar |
 |---|---|---|---|
+| P14 | Confirmar os **slugs em inglês** que ainda faltarem. Os endereços `/en/courses`, `/en/course/:slug`, `/en/learning-path/:slug` e `/en/certificate/:publicId` já foram decididos em 14/09 | quando as páginas públicas em inglês forem construídas *(operador, 27/09: "vamos vendo no desenvolvimento")* | `idiomas.md` §2 |
 | P5 | **Aula na TV (Chromecast):** com ou sem? Até lá fica **sem**. O controle de acesso continua (só quem recebeu o token do nosso servidor abre o player). A doc não diz se a TV toca com o CDN token e o MediaCage Basic ligados: **testar numa TV com Chromecast** | bloco de vídeo da Fase 3, com o site já tocando vídeo *(adiada pelo operador em 27/09)* | `bunny.md` §3.2 e §6 (decisão 2) |
 | P17 | **Qual curso é o destaque** da home (o primeiro da ordem, ou o marcado com a etiqueta "Destaque") | etapa 3 do C4 | `implementation-plan.md` → Bloco C4 |
 | P18 | O que fazer com os **2 cursos `exemplo-*`, publicados em produção**, que apareceriam na home | etapa 3 do C4 | `implementation-plan.md` → Bloco C4 |
