@@ -165,7 +165,13 @@ ar, decisão de 27/09. O mesmo vale para uma biblioteca de apresentação de dev
 - **Upload pelo admin da escola.** O operador chamou esta opção de **"C"**. No guia, as opções
   eram **A** (painel do Bunny + colar o ID) e **B** (envio pelo admin), e "upload pelo admin"
   corresponde à **B** *(confirmado pelo operador, 27/09/2026)*.
-- **As coleções do Stream são criadas pelo admin da escola, NÃO à mão no painel.**
+- ~~As coleções do Stream são criadas pelo admin da escola~~ **SEM COLEÇÕES** *(decisão do
+  operador, 27/09/2026, revendo a de 25/09: "sem pasta fica mais flexível")*. O site liga cada
+  aula ao **código único** do vídeo, e a pasta só serviria para navegar no painel. O **título** de
+  cada vídeo leva o slug do curso (`<slug> — <título da aula>`), e buscar pelo slug no painel acha
+  os vídeos de um curso. Como o slug é permanente, o título continua valendo. *Gatilho de
+  reabertura:* o painel ficar difícil de navegar (centenas de aulas) ou surgir necessidade de
+  estatística por curso dentro do Bunny. Aí as coleções entram sem mexer no que já existe no site.
 - **Consequência que já estava registrada:** é código novo na Fase 3, que é de alto risco. As
   regras do §7 valem para ele.
 - **Limpeza automática ao reenviar** *(decisão do operador, 27/09/2026: "o incompleto e o
@@ -371,7 +377,7 @@ O Bunny gera estes tipos de chave:
 |---|---|---|---|
 | 1 | Onde guardar as imagens enviadas pelo site | Bunny Storage · Railway Volume | **FECHADA em 25/09/2026** (operador): **Bunny Storage** |
 | 2 | O aluno pode mandar a aula para a TV (Chromecast)? | sim · não | **ADIADA pelo operador em 27/09:** fica sem até o bloco de vídeo da Fase 3, quando se testa numa TV (§3.2; `pendencias.md` P5) |
-| 3 | Como os vídeos entram | painel do Bunny + colar o ID · envio pelo admin | **FECHADA em 25/09/2026** (operador): **upload pelo admin**, com as coleções criadas pelo admin (§3.4) |
+| 3 | Como os vídeos entram | painel do Bunny + colar o ID · envio pelo admin | **FECHADA em 25/09/2026** (operador): **upload pelo admin**, **sem coleções** (revisto em 27/09, §3.4) |
 | 4 | Endereço das imagens | `img.jilsonsantana.com` | **FECHADA em 25/09/2026** (operador): no ar, com SSL |
 | 5 | Enterprise DRM | não no lançamento · sim | **FECHADA em 25/09/2026** (operador): **sem Enterprise**; **MediaCage Basic (grátis) ligado** |
 | 6 | Purga da CDN na exclusão de conta | chave da conta · cache curto na pasta de fotos · aceitar até 1 mês | pendente: antes do envio da foto do aluno (§4.4) |
