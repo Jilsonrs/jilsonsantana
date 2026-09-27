@@ -20,9 +20,8 @@
 
 ## A. Agora, em sequência *(nascidas da configuração do Bunny, 25/09/2026)*
 
-| # | O que falta | Opções | Onde registrar |
-|---|---|---|---|
-| P9 | **Dois gatilhos de reabertura propostos pelo agente:** Enterprise DRM *"se houver vazamento de aula medido e receita que pague a mensalidade"* · Keep Original *"se as cópias do operador deixarem de existir fora do Bunny"* | aceitar · trocar | `CLAUDE.md` → changelog (19)(f) |
+*Vazia desde 27/09/2026: P1 a P11 resolvidas; a P5 foi para a seção C. Item novo que precise de
+resposta rápida entra aqui, com o próximo número livre.*
 
 ## B. Conteúdo e cadastro *(tarefas suas, sem ordem fixa)*
 
