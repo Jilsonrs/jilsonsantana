@@ -492,6 +492,11 @@ local mais lento que o CDN — aí é dado novo.*
 - **Foto e ilustração → WebP.** É aplicação da trava de leveza do §1, não preferência: parte do
   público acessa de aparelho antigo e conexão instável, e o mesmo arquivo em WebP costuma pesar
   bem menos que em PNG/JPG.
+  **No envio pelo site, WebP é o PADRÃO, mas JPG e PNG também entram, sem conversão** *(decisão do
+  operador, 27/09/2026: "o servidor carrega o que enviar… principalmente quando os alunos enviarem
+  suas fotos")*. Isso vale para a capa do curso enviada pelo admin e, depois, para a foto do aluno.
+  Nada é recusado por ser JPG ou PNG. O servidor só recusa o que não é imagem desses três tipos,
+  conferindo o conteúdo do arquivo.
 - **OG image → PNG ou JPG, 1200×630.** **A exceção ao WebP, e o porquê é o que impede alguém de
   "corrigir" a inconsistência:** quem lê essa imagem não é o aluno, é o robô do WhatsApp e do
   LinkedIn — e nem todos aceitam WebP. Servida em WebP, o card compartilhado sai sem imagem.

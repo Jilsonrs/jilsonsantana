@@ -4,8 +4,11 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageSection } from "@/components/layout/PageLayout";
 import { Field } from "./Field";
+import { ThumbnailUpload } from "./ThumbnailUpload";
 
-export function CourseMediaSection() {
+// `courseId` só existe depois que o curso é salvo: o envio grava a capa num
+// curso que já existe (o nome do arquivo leva o slug dele).
+export function CourseMediaSection({ courseId }: { courseId?: number }) {
   const { register, watch, formState } = useFormContext<CourseFormValues>();
   const thumbnailUrl = watch("thumbnailUrl");
   const introVideoId = watch("introVideoId");
@@ -22,6 +25,7 @@ export function CourseMediaSection() {
               <Field id="thumbnailUrl" label="URL da thumbnail" error={formState.errors.thumbnailUrl?.message}>
                 <Input id="thumbnailUrl" {...register("thumbnailUrl")} />
               </Field>
+              {courseId !== undefined && <ThumbnailUpload courseId={courseId} />}
               <div className="aspect-video w-full overflow-hidden rounded-2xl border border-border/60 bg-muted flex items-center justify-center">
                 {thumbnailUrl ? (
                   <img src={thumbnailUrl} alt="Thumbnail preview" className="h-full w-full object-cover" />

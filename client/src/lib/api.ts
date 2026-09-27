@@ -223,6 +223,15 @@ export async function deleteCourse(id: number): Promise<void> {
   await client.delete(`/courses/${id}`);
 }
 
+// A capa vai CRUA no corpo, com o tipo do arquivo no cabeçalho; o servidor
+// confere o conteúdo, manda para o Bunny Storage e grava o endereço no curso.
+export async function uploadCourseThumbnail(id: number, file: File): Promise<{ thumbnailUrl: string }> {
+  const { data } = await client.post<{ thumbnailUrl: string }>(`/admin/courses/${id}/thumbnail`, file, {
+    headers: { "Content-Type": file.type },
+  });
+  return data;
+}
+
 export async function createModule(input: ModuleCreateInput): Promise<AdminModule> {
   const { data } = await client.post<AdminModule>("/modules", input);
   return data;
