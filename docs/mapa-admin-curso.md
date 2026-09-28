@@ -12,8 +12,9 @@
 > **Legenda:** ✅ já existe · 🔜 já planejado (diz onde) · ❓ pergunta para o operador ·
 > ✖ proposta: não entra
 >
-> **Estado:** lotes 1 e 2 de 4 mapeados (Página inicial do curso, Alunos pretendidos, Grade
-> curricular, Legendas, Acessibilidade, Feedback da Udemy).
+> **Estado:** lotes 1 a 3 de 4 mapeados (Página inicial do curso, Alunos pretendidos, Grade
+> curricular, Legendas, Acessibilidade, Feedback, Preço, Promoções, Mensagens do curso,
+> Disponibilidade, Alunos, a caixa de mensagens e a página do curso vista pelo aluno).
 > As perguntas ficam na seção final e são respondidas **juntas**, depois do último lote.
 
 ## 0. Como a Udemy organiza
@@ -108,13 +109,78 @@ item que mais pesa**, e ela já está na seção 4.
 |---|---|---|
 | "Seu curso está disponível" + **Melhorias recomendadas** (revisão automática da qualidade) | ✅ na **lista** de cursos: a barra de **Preenchimento** com o que falta (Bloco A, 27/09) | ❓ Q22 |
 
-## 7. O que a escola tem e a Udemy não
+## 7. Preço
+
+| Na Udemy | Na escola hoje | Proposta |
+|---|---|---|
+| Preço **por curso**, moeda, faixa de preço, "Programa de Ofertas" | a escola é **por assinatura**: um preço só, em R$ ou US$ pelo país do cartão (`billing.md`) | ✖ não há preço por curso (confirmado no Bloco A, 27/09) |
+
+## 8. Promoções
+
+| Na Udemy | Na escola hoje | Proposta |
+|---|---|---|
+| **Indicar alunos**: um link que credita a venda a você | 🔜 o cadastro guarda **de onde o aluno veio** (`acquisitionSource` / `acquisitionCampaign`, das marcas UTM do link). Tem que estar no ar antes de o canal mandar gente | ❓ Q23 |
+| **Cupons** por curso: desconto, validade, quantos usaram, link, liga/desliga, criar vários | não existe | ❓ Q24 |
+
+## 9. Mensagens do curso
+
+| Na Udemy | Na escola hoje | Proposta |
+|---|---|---|
+| **Boas-vindas** automática quando o aluno se inscreve, com editor (negrito, listas, imagem, código) | não existe | ❓ Q25 |
+| **Parabéns** automático quando o aluno conclui | não existe | ❓ Q25 |
+
+## 10. Disponibilidade
+
+| Na Udemy | Na escola hoje | Proposta |
+|---|---|---|
+| "Respondo em até X" · "ausente, volto em DD/MM" · sem status · aplicar a todos os cursos | não existe. Na escola **não há fórum**: a dúvida vai ao JilsonAI e, se ele não resolver, **sobe para a fila do Jilson** (`jilsonai.md`, Fase 2) | ❓ Q26 |
+
+## 11. Alunos (do curso)
+
+| Na Udemy | Na escola hoje | Proposta |
+|---|---|---|
+| Lista: nome, data de inscrição, última visita, **progresso %**, busca | não existe. Os dados nascem na **Fase 5** (progresso por aula e os eventos do player) | ❓ Q27 |
+| Colunas "perguntas feitas" e "respostas dadas" no fórum | não há fórum | trocar por **perguntas ao JilsonAI** e **dúvidas que subiram para você** (Q27) |
+| Botão **Mensagem** para o aluno | não existe | ❓ Q27 |
+| **Exportar para CSV** | não existe | ✖ Q27: é dado pessoal saindo do sistema (LGPD) |
+| Etiqueta "Udemy Business" (aluno de empresa) | 🔜 a assinatura já nasce pronta para empresa (`organizationId`), pós-lançamento | — |
+
+## 12. Caixa de mensagens do instrutor *(fora do curso, no menu geral da Udemy)*
+
+| Na Udemy | Na escola hoje | Proposta |
+|---|---|---|
+| **Perguntas e respostas** + **Mensagens** (filtros: não lida, importante, sem resposta; busca; responder; Compor) | 🔜 a **fila do Jilson**: a conversa inteira do aluno com o JilsonAI, e você responde uma vez (`jilsonai.md`, Fase 2) | ❓ Q28 |
+| **Perguntas em destaque** | 🔜 a sua resposta **vira base de conhecimento** do JilsonAI (`promotedToKb`) | — |
+| **Insights do AI Assistant** (novo) | 🔜 os registros do JilsonAI (`AiEvent`) já guardam o que os alunos perguntam | ❓ Q28 |
+| **Anúncios** (mensagem para todos) | 🔜 já é um dos pilares: "comunidade" = JilsonAI + canal com você + **anúncios** | — |
+| **Tarefas** | não existe | ✖ Q28 |
+
+## 13. A página do curso vista pelo aluno
+
+É a **vitrine**, que será refeita como página de servidor (plano, depois do C5). O que a Udemy
+mostra, cruzado com a escola:
+
+| Na Udemy | Na escola | Proposta |
+|---|---|---|
+| Caminho de categorias no topo ("TI e software › IA generativa") | não existe | ✖ Q4 |
+| Título e subtítulo | ✅ | — |
+| Etiqueta **"Novo"**, **nota 4,9 (5 avaliações)**, **"21 alunos"** | a nota é **só para você**, nunca no site (decisão de 27/09, Bloco A) | ❓ Q29 (etiqueta "Novo" e número de alunos) |
+| "Criado por Jilson Santana · 100.000+ alunos" | não existe | ❓ Q5 |
+| **"Última atualização em 09/2026"** | não existe | ❓ Q30 |
+| Idioma do curso e **idioma da legenda** | ✅ idioma · a legenda depende da Q19 | — |
+| "O que você aprenderá" em **duas colunas com ✓**, em frases | hoje planejado como **etiquetas** | ❓ Q7 (o print mostra o jeito da Udemy) |
+| "Explorar temas relacionados" | não existe | ✖ Q4 (o equivalente na escola seria **"este curso está nas trilhas…"**) |
+| Cartão ao lado: **prévia do vídeo**, preço da assinatura, "obtenha este curso ao assinar", "cancele quando quiser", botão **Iniciar assinatura** | ✅ decidido: a página tem a **opção de assinar ao lado** (`CLAUDE.md` → página de curso é vitrine) | o texto do cartão é seu, na hora do mock |
+| **Comprar curso individual** | não há | ✖ só assinatura |
+| Ícones **presente** e **compartilhar** | compartilhar: 🔜 depende das metas de indicação da página (`CLAUDE.md` → Indexação) | ❓ Q31 (presente) |
+
+## 14. O que a escola tem e a Udemy não
 
 Slug · Camadas (metodologia 3 camadas) · Destaques · Perguntas frequentes do curso · Ordem no
 catálogo · a trava do idioma depois de publicado · a barra de **Preenchimento** na lista de cursos.
 Na reorganização, cada um precisa de uma área.
 
-## 8. Perguntas para o operador *(responder juntas, depois do último lote)*
+## 15. Perguntas para o operador *(responder juntas, depois do último lote)*
 
 - **Q1.** Pôr uma **dica curta embaixo de cada campo**, como a Udemy faz? (O texto das dicas é seu;
   eu proponho um rascunho.)
@@ -158,3 +224,24 @@ Na reorganização, cada um precisa de uma área.
 - **Q22.** "Feedback" dentro do editor: **mostrar a mesma barra de Preenchimento e o que falta no
   topo do editor**, além da lista? E, mais adiante, o **JilsonAI revisando a página do curso** e
   sugerindo melhorias (é o tipo de coisa que passa no filtro "IA no DNA")?
+- **Q23.** No admin, um botão **"copiar link do curso para divulgar"**, já com a marca da campanha
+  (ex.: o vídeo do YouTube de onde o link vai sair)? É o que mede qual vídeo traz aluno.
+- **Q24.** **Cupom de desconto da assinatura**? A Stripe já faz isso pronto (cupom e código). Lembrete
+  do que já está decidido: **sem oferta de fundador e sem escassez fabricada** (`content.md`). E
+  cupom é da assinatura inteira, nunca de um curso.
+- **Q25.** Mensagens automáticas de **boas-vindas** (quando o aluno abre a primeira aula do curso) e
+  de **parabéns** (quando conclui), escritas por você em cada curso? Por **e-mail**, dentro do
+  **site**, ou as duas?
+- **Q26.** Um aviso **único para a escola inteira** (não por curso), mostrado quando a dúvida sobe
+  para você: "o Jilson costuma responder em até X dias" ou "de volta em DD/MM"? Ajuda a proteger o
+  seu tempo.
+- **Q27.** Uma aba **Alunos dentro de cada curso** (nome, quando começou, última visita,
+  progresso, dúvidas)? E o botão **Mensagem**? Proposta: **sem exportar planilha**.
+- **Q28.** A caixa de mensagens **não fica no curso**: fica numa área própria do admin
+  (**Comunicação**, que o plano de navegação já prevê), com a fila de dúvidas, os anúncios e, mais
+  adiante, o **resumo do que os alunos mais perguntam ao JilsonAI**. Concorda? E "Tarefas" fica de
+  fora?
+- **Q29.** Na página do curso: mostrar a etiqueta **"Novo"**? E o **número de alunos** do curso?
+- **Q30.** Mostrar **"Atualizado em MM/AAAA"**? Numa escola que promete conteúdo **sempre
+  atualizado**, isso vende. A data sairia sozinha da última mudança nas aulas.
+- **Q31.** **Dar a assinatura de presente**? Proposta: não no lançamento.
