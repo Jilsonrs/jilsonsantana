@@ -360,3 +360,15 @@ vão para os documentos de destino (plano, `courses.md`, `design.md`) e viram um
 | Q14 | **Sim: arrastar para reorganizar aulas e seções**, com as setas continuando para o teclado. |
 | Q15 | **Sim: botão Visualizar**, que mostra a página do curso como o aluno vê, inclusive em rascunho (só para o admin). |
 | Q16 | **Sim: o "+" entre dois itens** (aulas e seções), também pelo teclado. |
+| Q17 | **Não:** cada aula tem o seu vídeo; a limpeza automática continua como está. |
+| Q18 | **Sem limite** de resolução ou tamanho no site: aceita o que o Bunny aceitar. |
+| Q19 | **Sim: tela própria de Legendas** no curso ("x de y aulas com legenda"; enviar, baixar e excluir o `.vtt` por vídeo). |
+| Q20 | **Não por enquanto:** legenda só no idioma do curso. |
+| Q21 | **Sem tela de Acessibilidade.** |
+| Q22 | **Os dois:** a barra de Preenchimento com o que falta também no topo do editor; a revisão da página pelo JilsonAI quando ele existir. |
+| Q23 | **Só um lugar para copiar o link do curso.** A marca de campanha o operador monta por fora. |
+| Q24 | **Sim: cupom da assinatura, criado no painel da Stripe.** O site só tem o campo "tenho um cupom" na tela de assinar. Sem tela de cupom no admin. |
+| Q25 | **Sim, dentro do site, por um SINO ao lado da foto, no topo:** uma área de avisos e alertas onde o aluno vê as mensagens de boas-vindas e de parabéns do curso e **outras comunicações do operador ou do JilsonAI**. Sem e-mail. |
+| Q26 | **Um aviso só, sem prazo nem data**, quando a dúvida sobe do JilsonAI para o operador. Direção do texto, nas palavras dele: *"Sua dúvida já está com o Jilson… ele vai te responder o quanto antes possível."* |
+| Q27 | **Sim: área Alunos em cada curso**, com busca e o botão Mensagem, **sem exportar planilha**. Os números chegam na Fase 5. |
+| Q28 | **Sim: "Comunicação" é área própria do admin** (fila de dúvidas, anúncios e, depois, o resumo do que os alunos perguntam ao JilsonAI). **Tarefas fica fora.** |
