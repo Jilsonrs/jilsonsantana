@@ -1641,6 +1641,21 @@ própria**.*
       acima)*. O registro some pela cascata do banco; o arquivo
       fica na zona, que não é pública, então não vaza — mas ocupa espaço (US$ 0,02/GB/mês). Fazer
       junto com a entrega ao aluno (etapa 4 do Bloco U), ou antes, se o operador pedir.
+- [x] **Editar e adicionar como na Udemy** *(decisões do operador, 28/09/2026, a partir dos prints
+      dele: "tem um monte de salvar")*. **Nenhum Salvar solto na tela:** a linha do módulo e a da
+      aula mostram só o texto (título, tipo, camada, status em português, "Prévia grátis"); o
+      **lápis** abre a edição daquele item, com **Cancelar** e **Salvar** (`ModuleHeader.tsx`,
+      `LessonEditForm.tsx`). **Adicionar já grava:** os campos fixos "Título da nova aula" e
+      "Título do novo módulo" viraram os botões **"+ Aula"** e **"+ Módulo"**, que abrem o mesmo
+      formulário do "+" entre itens; o botão que grava diz **"Adicionar aula"** / **"Adicionar
+      módulo"** (era "Criar"). O "+" discreto depois do último item saiu (o botão fixo faz esse
+      papel), e o "+" fica no começo da linha, não no centro (pedido dele, no mesmo dia). O botão
+      do conteúdo da aula de texto passou a "Texto da aula", par de "Vídeo da aula". *O "objetivo
+      do módulo" que a Udemy pede ao criar a seção continua fora (decisão de 27–28/09).* O cartão
+      do módulo se dividiu (`ModuleCard`, `ModuleHeader`, `LessonList`); opções e estilos
+      compartilhados em `course-content/opcoes.ts`. Testes: 6 novos, 8 ajustados. **Mutação:** a
+      linha nascendo em edição (aula e módulo), Cancelar gravando, Salvar sem fechar e os botões
+      fixos na posição errada → todas reprovam. Revertido.
 - [x] **2d** — Vídeo **sem limite** de tamanho ou resolução no site; **um por vez**; **sem reuso**
       entre aulas *(28/09, no `dev`: é o vídeo das aulas, Bloco U etapa 3 — detalhe lá)*.
 - [ ] **Quiz escrito pelo operador** — **etapa própria** *(decisão do operador, 28/09/2026: tem

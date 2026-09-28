@@ -12,7 +12,9 @@ const insertModule = vi.fn();
 const updateLesson = vi.fn();
 const deleteLesson = vi.fn();
 const deleteModule = vi.fn();
+const updateModule = vi.fn();
 vi.mock("@/lib/api", () => ({
+  updateModule: (...args: unknown[]) => updateModule(...args),
   deleteLesson: (...args: unknown[]) => deleteLesson(...args),
   deleteModule: (...args: unknown[]) => deleteModule(...args),
   adminGetCourse: (...args: unknown[]) => adminGetCourse(...args),
@@ -109,12 +111,14 @@ describe("Conteúdo — as setas mandam a ordem inteira", () => {
     expect((await screen.findByRole("alert")).textContent).toBe("Não foi possível mudar a ordem. Tente de novo.");
   });
 
-  // O valor do banco (DRAFT) nunca aparece na tela.
+  // O valor do banco (DRAFT) nunca aparece na tela, nem na linha nem na edição.
   it("o status do módulo e da aula aparece em português", async () => {
     await abrir();
-    const status = screen.getAllByLabelText("Status do módulo")[0] as HTMLSelectElement;
-    expect([...status.options].map((o) => o.textContent)).toEqual(["Rascunho", "Publicado", "Arquivado"]);
+    expect(screen.getAllByText("Rascunho").length).toBeGreaterThan(0);
     expect(screen.queryByText("DRAFT")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Editar o módulo Fundamentos" }));
+    const status = screen.getByLabelText("Status do módulo") as HTMLSelectElement;
+    expect([...status.options].map((o) => o.textContent)).toEqual(["Rascunho", "Publicado", "Arquivado"]);
   });
 });
 
@@ -134,7 +138,7 @@ describe("Conteúdo — o \"+\" entre dois itens", () => {
     fireEvent.click(screen.getByRole("button", { name: "Inserir depois de Abertura" }));
     fireEvent.click(screen.getByRole("button", { name: "Aula de texto" }));
     fireEvent.change(screen.getByLabelText("Título: Aula de texto"), { target: { value: "Leitura" } });
-    fireEvent.click(screen.getByRole("button", { name: "Criar" }));
+    fireEvent.click(screen.getByRole("button", { name: "Adicionar aula" }));
 
     await waitFor(() => expect(insertLesson).toHaveBeenCalledWith(1, { title: "Leitura", kind: "TEXT", posicao: 1 }));
   });
@@ -144,7 +148,7 @@ describe("Conteúdo — o \"+\" entre dois itens", () => {
     fireEvent.click(screen.getAllByRole("button", { name: "Inserir no começo do módulo" })[1]);
     fireEvent.click(screen.getByRole("button", { name: "Aula de vídeo" }));
     fireEvent.change(screen.getByLabelText("Título: Aula de vídeo"), { target: { value: "Intro" } });
-    fireEvent.click(screen.getByRole("button", { name: "Criar" }));
+    fireEvent.click(screen.getByRole("button", { name: "Adicionar aula" }));
 
     await waitFor(() => expect(insertLesson).toHaveBeenCalledWith(2, { title: "Intro", kind: "VIDEO", posicao: 0 }));
   });
@@ -161,7 +165,7 @@ describe("Conteúdo — o \"+\" entre dois itens", () => {
     await abrir();
     fireEvent.click(screen.getByRole("button", { name: "Inserir módulo depois de Fundamentos" }));
     fireEvent.change(screen.getByLabelText("Título: Módulo"), { target: { value: "Revisão" } });
-    fireEvent.click(screen.getByRole("button", { name: "Criar" }));
+    fireEvent.click(screen.getByRole("button", { name: "Adicionar módulo" }));
 
     await waitFor(() => expect(insertModule).toHaveBeenCalledWith(1, { title: "Revisão", posicao: 1 }));
   });
@@ -172,7 +176,7 @@ describe("Conteúdo — o \"+\" entre dois itens", () => {
     fireEvent.click(screen.getByRole("button", { name: "Inserir depois de Abertura" }));
     fireEvent.click(screen.getByRole("button", { name: "Aula de vídeo" }));
     fireEvent.change(screen.getByLabelText("Título: Aula de vídeo"), { target: { value: "X" } });
-    fireEvent.click(screen.getByRole("button", { name: "Criar" }));
+    fireEvent.click(screen.getByRole("button", { name: "Adicionar aula" }));
 
     expect((await screen.findByRole("alert")).textContent).toBe("Não foi possível inserir. Tente de novo.");
     expect((screen.getByLabelText("Título: Aula de vídeo") as HTMLInputElement).value).toBe("X");
@@ -198,7 +202,7 @@ describe("Conteúdo — o texto da aula", () => {
   it("aula de texto: abre o texto, edita e salva só o texto", async () => {
     adminGetCourse.mockResolvedValue(COM_AULA_DE_TEXTO);
     await abrir();
-    fireEvent.click(screen.getByRole("button", { name: "Editar texto" }));
+    fireEvent.click(screen.getByRole("button", { name: "Texto da aula" }));
     const campo = screen.getByRole("textbox", { name: "Texto da aula" }) as HTMLTextAreaElement;
     expect(campo.value).toBe("Texto antigo");
 
@@ -210,7 +214,7 @@ describe("Conteúdo — o texto da aula", () => {
 
   it("aula de vídeo não tem texto", async () => {
     await abrir();
-    expect(screen.queryByRole("button", { name: "Editar texto" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Texto da aula" })).toBeNull();
     expect(screen.getAllByText("Vídeo").length).toBe(3);
   });
 });
@@ -328,5 +332,73 @@ describe("Conteúdo — quando excluir falha", () => {
     fireEvent.click(screen.getByRole("button", { name: "Excluir o módulo Automação" }));
 
     expect((await screen.findByRole("alert")).textContent).toBe(FRASE);
+  });
+});
+
+// COMO NA UDEMY (operador, 28/09/2026): a linha mostra o texto, o lápis abre a
+// edição com Cancelar e Salvar, e adicionar já grava. Nenhum Salvar solto na tela.
+describe("Conteúdo — editar e adicionar como na Udemy", () => {
+  beforeEach(() => {
+    updateLesson.mockReset().mockResolvedValue({ id: 11 });
+    updateModule.mockReset().mockResolvedValue({ id: 1 });
+  });
+
+  it("fora da edição, não há nenhum Salvar nem campo aberto na tela", async () => {
+    await abrir();
+    expect(screen.queryAllByRole("button", { name: "Salvar" })).toHaveLength(0);
+    expect(screen.queryByLabelText("Título da aula")).toBeNull();
+    expect(screen.queryByPlaceholderText("Título da nova aula")).toBeNull();
+    expect(screen.queryByPlaceholderText("Título do novo módulo")).toBeNull();
+    expect(screen.getByText("Abertura")).toBeTruthy();
+  });
+
+  it("o lápis da aula abre a edição; Salvar grava e fecha", async () => {
+    await abrir();
+    fireEvent.click(screen.getByRole("button", { name: "Editar a aula Abertura" }));
+    const titulo = screen.getByLabelText("Título da aula") as HTMLInputElement;
+    expect(titulo.value).toBe("Abertura");
+    fireEvent.change(titulo, { target: { value: "Boas-vindas" } });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar" }));
+
+    await waitFor(() => expect(updateLesson).toHaveBeenCalledWith(11, { title: "Boas-vindas", tags: [], status: "DRAFT" }));
+    await waitFor(() => expect(screen.queryByLabelText("Título da aula")).toBeNull());
+  });
+
+  it("Cancelar fecha sem gravar", async () => {
+    await abrir();
+    fireEvent.click(screen.getByRole("button", { name: "Editar a aula Abertura" }));
+    fireEvent.change(screen.getByLabelText("Título da aula"), { target: { value: "Descartado" } });
+    fireEvent.click(screen.getByRole("button", { name: "Cancelar" }));
+
+    expect(screen.queryByLabelText("Título da aula")).toBeNull();
+    expect(updateLesson).not.toHaveBeenCalled();
+  });
+
+  it("o lápis do módulo abre a edição dele; Salvar grava", async () => {
+    await abrir();
+    fireEvent.click(screen.getByRole("button", { name: "Editar o módulo Automação" }));
+    fireEvent.change(screen.getByLabelText("Título do módulo"), { target: { value: "Automação com IA" } });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar" }));
+
+    await waitFor(() => expect(updateModule).toHaveBeenCalledWith(2, { title: "Automação com IA", layer: undefined, status: "DRAFT" }));
+  });
+
+  it("\"+ Aula\" no fim do módulo: a aula nasce depois da última, e o botão já grava", async () => {
+    await abrir();
+    fireEvent.click(screen.getAllByRole("button", { name: "Adicionar aula no fim do módulo" })[0]);
+    fireEvent.click(screen.getByRole("button", { name: "Aula de vídeo" }));
+    fireEvent.change(screen.getByLabelText("Título: Aula de vídeo"), { target: { value: "Encerramento" } });
+    fireEvent.click(screen.getByRole("button", { name: "Adicionar aula" }));
+
+    await waitFor(() => expect(insertLesson).toHaveBeenCalledWith(1, { title: "Encerramento", kind: "VIDEO", posicao: 2 }));
+  });
+
+  it("\"+ Módulo\" no fim: o módulo nasce depois do último", async () => {
+    await abrir();
+    fireEvent.click(screen.getByRole("button", { name: "Adicionar módulo no fim do curso" }));
+    fireEvent.change(screen.getByLabelText("Título: Módulo"), { target: { value: "Projeto final" } });
+    fireEvent.click(screen.getByRole("button", { name: "Adicionar módulo" }));
+
+    await waitFor(() => expect(insertModule).toHaveBeenCalledWith(1, { title: "Projeto final", posicao: 2 }));
   });
 });

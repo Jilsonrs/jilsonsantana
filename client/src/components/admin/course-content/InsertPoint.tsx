@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input";
 export type OpcaoDeInsercao = {
   valor: string;
   rotulo: string;
+  /** O texto do botão que grava ("Adicionar aula"). */
+  adicionar?: string;
   /** Ainda não existe (o quiz): aparece como texto EM BREVE, sem ação. */
   emBreve?: true;
 };
@@ -25,11 +27,18 @@ export function InsertPoint({
   rotulo,
   opcoes,
   aoInserir,
+  fixo,
 }: {
   /** O nome do botão para o leitor de tela, com o lugar ("Inserir depois de Fórmulas"). */
   rotulo: string;
   opcoes: OpcaoDeInsercao[];
   aoInserir: (valor: string, titulo: string) => Promise<unknown>;
+  /**
+   * Botão SEMPRE VISÍVEL no fim da lista ("+ Aula", "+ Módulo"), no lugar dos
+   * campos fixos de antes — como na Udemy (operador, 28/09/2026). Sem isto, é
+   * o "+" discreto entre dois itens.
+   */
+  fixo?: string;
 }) {
   const [escolhida, setEscolhida] = useState<OpcaoDeInsercao | null>(null);
   const [aberto, setAberto] = useState(false);
@@ -55,6 +64,14 @@ export function InsertPoint({
   function enviar(evento: FormEvent) {
     evento.preventDefault();
     if (escolhida && titulo.trim()) inserir.mutate({ valor: escolhida.valor, texto: titulo.trim() });
+  }
+
+  if (!aberto && fixo) {
+    return (
+      <Button type="button" variant="outline" size="sm" aria-label={rotulo} onClick={abrir}>
+        <Plus className="mr-1 size-4" aria-hidden="true" /> {fixo}
+      </Button>
+    );
   }
 
   if (!aberto) {
@@ -110,7 +127,7 @@ export function InsertPoint({
             className="max-w-sm"
           />
           <Button type="submit" size="sm" disabled={!titulo.trim() || inserir.isPending}>
-            Criar
+            {escolhida.adicionar ?? "Adicionar"}
           </Button>
           <Button type="button" variant="ghost" size="sm" onClick={fechar}>
             Cancelar

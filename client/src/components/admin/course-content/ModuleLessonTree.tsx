@@ -1,6 +1,4 @@
-import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus } from "lucide-react";
 import * as api from "@/lib/api";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import {
@@ -12,14 +10,11 @@ import {
   type Estrutura,
   type ItemArrastavel,
 } from "@/lib/course-structure";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { ModuleCard } from "./ModuleCard";
 import { InsertPoint } from "./InsertPoint";
+import { MODULO } from "./opcoes";
 import { ArrasteDoCurso } from "./arrastar";
 
-const MODULO = [{ valor: "MODULO", rotulo: "Módulo" }];
 
 /**
  * O CONTEÚDO do curso: módulos e aulas, no passo Conteúdo do editor. Módulo e
@@ -63,22 +58,6 @@ export function ModuleLessonTree({ courseId }: { courseId: number }) {
   const inserirModulo = (posicao: number) => (_tipo: string, titulo: string) =>
     api.insertModule(courseId, { title: titulo, posicao }).then(invalidate);
 
-  const [newModuleTitle, setNewModuleTitle] = useState("");
-  const addModule = useMutation({
-    // Sem displayOrder explícito todo módulo novo nasceria em 0 (o padrão do
-    // Prisma) e empataria com os outros. Entra no fim.
-    mutationFn: () =>
-      api.createModule({
-        courseId,
-        title: newModuleTitle,
-        displayOrder: modules.length === 0 ? 0 : Math.max(...modules.map((m) => m.displayOrder)) + 1,
-      }),
-    onSuccess: () => {
-      setNewModuleTitle("");
-      invalidate();
-    },
-  });
-
   return (
     <div className="space-y-4">
       {reordenar.isError && (
@@ -100,28 +79,18 @@ export function ModuleLessonTree({ courseId }: { courseId: number }) {
                 onMoverAula={(indice, passo) => reordenar.mutate(moverAula(estrutura, mod.id, indice, passo))}
                 onChanged={invalidate}
               />
-              <InsertPoint rotulo={`Inserir módulo depois de ${mod.title}`} opcoes={MODULO} aoInserir={inserirModulo(index + 1)} />
+              {/* Depois do último módulo, quem insere é o "+ Módulo", logo abaixo. */}
+              {index < modules.length - 1 && (
+                <InsertPoint rotulo={`Inserir módulo depois de ${mod.title}`} opcoes={MODULO} aoInserir={inserirModulo(index + 1)} />
+              )}
             </div>
           ))}
         </SortableContext>
       </ArrasteDoCurso>
 
-      <Card>
-        <CardContent className="flex gap-2 pt-6">
-          <Input
-            placeholder="Título do novo módulo"
-            value={newModuleTitle}
-            onChange={(e) => setNewModuleTitle(e.target.value)}
-          />
-          <Button
-            type="button"
-            onClick={() => addModule.mutate()}
-            disabled={!newModuleTitle.trim() || addModule.isPending}
-          >
-            <Plus className="mr-1 h-4 w-4" /> Adicionar módulo
-          </Button>
-        </CardContent>
-      </Card>
+      {/* Como na Udemy (operador, 28/09/2026): o botão abre o título, e "Adicionar
+          módulo" já grava — sem campo fixo nem Salvar. */}
+      <InsertPoint rotulo="Adicionar módulo no fim do curso" fixo="Módulo" opcoes={MODULO} aoInserir={inserirModulo(modules.length)} />
     </div>
   );
 }

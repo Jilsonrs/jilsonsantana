@@ -174,7 +174,7 @@ describe("vídeo da aula — prévia grátis", () => {
   it("aula de texto não tem o painel de vídeo", async () => {
     adminGetCourse.mockResolvedValue(comAula({ kind: "TEXT" }));
     renderWithProviders(<CourseEditorLayout />, { route: "/admin/cursos/1/conteudo", path: "/admin/cursos/:id", filhas: ROTAS_DO_EDITOR });
-    await screen.findByRole("button", { name: "Editar texto" });
+    await screen.findByRole("button", { name: "Texto da aula" });
     expect(screen.queryByRole("button", { name: "Vídeo da aula" })).toBeNull();
   });
 });
