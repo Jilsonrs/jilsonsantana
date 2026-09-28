@@ -16,7 +16,7 @@
 > 5. **Item novo ganha o próximo número livre.** Número nunca se reutiliza, para que "P7" queira
 >    dizer sempre a mesma coisa em qualquer conversa.
 >
-> **Próximo número livre: P29** · Atualizada em 28/09/2026
+> **Próximo número livre: P33** · Atualizada em 28/09/2026
 
 ## A. Agora, em sequência *(nascidas da configuração do Bunny, 25/09/2026)*
 
@@ -29,6 +29,7 @@ rápida entra aqui, com o próximo número livre.*
 |---|---|---|
 | P12 | Revisar as **15 perguntas da FAQ**, que já estão no admin | no próprio admin |
 | P16 | **Cadastrar os 5 cursos da home** no admin. Tudo o que o cadastro precisa **já está no ar**: o envio da capa e do vídeo promocional, a descrição com negrito e listas, e os limites de caracteres | `implementation-plan.md` → Bloco C4 |
+| P32 | **Confirmar o número de alunos corporativos (4.150+)** que está na home, no bloco do autor (os 107 mil+ e os 70 países já foram confirmados na sessão da home) | no próprio admin, em Textos → Home |
 
 ## C. Com hora marcada *(resolver quando o bloco abrir, não antes)*
 
@@ -45,6 +46,9 @@ rápida entra aqui, com o próximo número livre.*
 | P23 | **Transferência internacional de dados (LGPD)** para os fornecedores de fora do Brasil: pergunta para advogado | antes do lançamento | `bunny.md` §2 |
 | P25 | **Qual serviço de alerta de erro** em produção (tipo Sentry) | Fase 7, antes do primeiro aluno pagante | `implementation-plan.md` → Fase 7 e `tech-stack.md` |
 | P26 | Com o build da Fase 3 confirmando que o token do Bunny não carrega a identidade do aluno, **autorizar o ajuste da frase *"per-user signing"*** no `CLAUDE.md` → *Video* e no `tech-stack.md` | depois do bloco de vídeo da Fase 3 | `CLAUDE.md` e `tech-stack.md` |
+| P29 | **Página para baixar material:** como ela funciona (você ia ver como outras escolas fazem) e **se o aluno segue a mesma regra de e-mail** — o inscrito da página recebe novidades até se descadastrar, mas o `marketingConsent` do aluno hoje começa **desligado** | quando a página for construída | `implementation-plan.md` → *Páginas públicas que faltam* |
+| P30 | **Quem somos e Contato:** o conteúdo das duas páginas e **onde ficam os dados da empresa** (rodapé ou Contato) | quando as páginas forem construídas | `implementation-plan.md` → *Páginas públicas que faltam* |
+| P31 | **Mostrar curso "em breve"** (ainda não publicado) na vitrine? Hoje só aparece curso publicado, e mostrar "em breve" seria regra nova | quando a vitrine de cursos for desenhada (C5) | `implementation-plan.md` → Bloco C5 |
 
 ## Fora desta lista, de propósito
 
