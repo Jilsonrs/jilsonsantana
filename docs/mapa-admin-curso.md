@@ -12,10 +12,9 @@
 > **Legenda:** ✅ já existe · 🔜 já planejado (diz onde) · ❓ pergunta para o operador ·
 > ✖ proposta: não entra
 >
-> **Estado:** lotes 1 a 3 de 4 mapeados (Página inicial do curso, Alunos pretendidos, Grade
-> curricular, Legendas, Acessibilidade, Feedback, Preço, Promoções, Mensagens do curso,
-> Disponibilidade, Alunos, a caixa de mensagens e a página do curso vista pelo aluno).
-> As perguntas ficam na seção final e são respondidas **juntas**, depois do último lote.
+> **Estado:** **os 4 lotes mapeados** (29 prints, 27/09/2026) + a pesquisa de como outras cinco
+> plataformas organizam (§14) + a proposta de organização (§15), que é do agente e espera o operador.
+> As perguntas estão na seção final (§17) e podem ser respondidas por número, em partes.
 
 ## 0. Como a Udemy organiza
 
@@ -173,14 +172,85 @@ mostra, cruzado com a escola:
 | Cartão ao lado: **prévia do vídeo**, preço da assinatura, "obtenha este curso ao assinar", "cancele quando quiser", botão **Iniciar assinatura** | ✅ decidido: a página tem a **opção de assinar ao lado** (`CLAUDE.md` → página de curso é vitrine) | o texto do cartão é seu, na hora do mock |
 | **Comprar curso individual** | não há | ✖ só assinatura |
 | Ícones **presente** e **compartilhar** | compartilhar: 🔜 depende das metas de indicação da página (`CLAUDE.md` → Indexação) | ❓ Q31 (presente) |
+| **"Este curso inclui":** horas de vídeo, artigos, recursos para baixar, celular e TV, legendas | 🔜 é a *faixa de números* do curso, **sempre calculada**, nunca digitada (`CLAUDE.md` → Derivados) | sai da soma das aulas; a TV depende da P5 (Chromecast) |
+| "Este curso inclui": **"Acesso total vitalício"** | **não vale para a escola**: o acesso dura enquanto a assinatura estiver ativa | ✖ nunca prometer |
+| "Este curso inclui": **"Certificado de conclusão"** | 🔜 o certificado da escola é **da trilha**, ao chegar a 100%, com as competências (Fase 6.5) | ❓ Q32 |
+| **Conteúdo do curso:** "7 seções · 45 aulas · 2h35m", expandir todas, cada módulo com aulas e minutos, cada aula com o tipo, a duração e **Visualizar** nas aulas grátis | 🔜 a lista de módulos da página do curso; a duração depende de guardar a do Bunny (seção 3) | — |
+| Descrição longa com **"Mostrar menos"** | ✅ a descrição com formatação | recolher só na tela, com o texto inteiro já na página (trava de SEO: *conteúdo nunca atrás de clique*) |
+| **"Os alunos também compraram"**: cartões com nota, alunos, horas, "Atualizado em", preço | não existe | ❓ Q33 |
+| **"Frequentemente comprados juntos"** + carrinho | não se aplica: a assinatura já dá todos os cursos | ✖ |
+| Barra fixa no topo ao rolar (título, nota, alunos) e cartão de assinar que acompanha a rolagem | — | é desenho da página: entra no mock, com o Antigravity |
+| Seção **Instrutor** | não existe | ❓ Q5 |
 
-## 14. O que a escola tem e a Udemy não
+## 14. Como outras plataformas organizam *(pesquisa do agente, 27/09/2026)*
+
+O operador pediu para pesquisar antes de reinventar. O context7 não tem a documentação dessas
+plataformas (buscou-se Teachable e Thinkific: nada útil), então a fonte são as **centrais de ajuda
+oficiais** de cada uma:
+
+| Plataforma | As áreas de um curso, como elas chamam |
+|---|---|
+| **Udemy** | Alunos pretendidos · Grade curricular · Página inicial · Legendas · Acessibilidade · Feedback — Preço · Promoções · Mensagens · Disponibilidade · Alunos |
+| **Teachable** | Information · Pages (página de venda, checkout, obrigado) · Curriculum · Design Templates · Pricing · Order Bumps · Comments · Coupons · Students · Bundle Contents · Reports · Certificates ([ajuda](https://support.teachable.com/en/articles/11682404-courses)) |
+| **Thinkific** | Curriculum · Settings (endereço da página, imagem, SEO, oculto/privado) · Drip (liberação programada) · Pricing · Publish ([ajuda](https://support.thinkific.com/hc/en-us/articles/360030371754-The-Thinkific-Course-Builder)) |
+| **LearnWorlds** | Layout (página) · Contents · Access & Settings (acesso, liberação programada) · Video Library · Dashboard (números) ([ajuda](https://support.learnworlds.com/support/solutions/articles/12000079954-general-overview-creating-courses)) |
+| **Kajabi** | Outline (módulos e aulas) · Customers · Offers · Certificates · Customize (página) · Settings ([ajuda](https://help.kajabi.com/en/articles/12695120-customize-your-cohort-based-course)) |
+| **Hotmart** | Conteúdo (módulos, aulas, materiais) · Configurações · Certificado · Comentários · Compradores ([ajuda](https://help.hotmart.com/pt-br/article/360037537591/curso-online-tudo-o-que-voce-precisa-saber-para-cadastrar-e-configurar-seu-produto)) |
+
+**O que se repete em todas, e é o que vale copiar:**
+
+1. **Conteúdo** (módulos e aulas) é sempre uma área **própria**, nunca misturada com a página de
+   venda.
+2. **Página do curso** (o que o visitante lê) é outra área.
+3. **Configurações** juntam o que não é conteúdo nem página: endereço, status, publicar, SEO.
+4. **Preço/ofertas**, **alunos/números** e **certificado** aparecem em quase todas.
+5. **Liberação programada** (*drip*: a aula abre só depois de X dias) aparece em quatro delas.
+
+**O que não se aplica à escola:** preço, cupom e pacote **por curso** (a escola é assinatura),
+carrinho, página de checkout por curso, e comentários ou fórum (a escola responde pelo JilsonAI).
+**Liberação programada:** a decisão de agosto diz *"a entrada é aberta e livre: o aluno clica e
+assiste o que quiser"* (`CLAUDE.md` → Content Model), então ela não entra, a menos que o operador
+mude isso.
+
+## 15. Proposta de organização do editor do curso *(do agente — espera o operador)*
+
+Um menu à esquerda dentro do curso, como na Udemy (é o **nível 2** que o plano de navegação já
+prevê, Bloco S2), com os nomes que o operador já conhece onde eles servem:
+
+**Edição do curso**
+
+| Área | O que vai nela (campos que já existem + o que depender das perguntas) |
+|---|---|
+| **Para quem é** | O que vai aprender · Pré-requisitos · Pra quem é *(forma: Q6, Q7)* |
+| **Conteúdo** | Módulos e aulas · vídeo de cada aula · prévia gratuita *(e o que as Q9–Q18 aprovarem)* |
+| **Página do curso** | Título · Subtítulo · Descrição · Idioma · Nível · Imagem · Vídeo promocional · Camadas · Destaques · Perguntas frequentes |
+| **Legendas** | só se a Q19 for sim |
+
+**Gerenciamento do curso**
+
+| Área | O que vai nela |
+|---|---|
+| **Publicação** | Status · Slug · Ordem no catálogo · o que falta para publicar (Q22) |
+| **Alunos** | Q27, com os números da Fase 5 |
+| **Mensagens do curso** | só se a Q25 for sim |
+
+**No topo de todas:** voltar para os cursos · título · status · duração publicada · **Visualizar**
+(Q15).
+
+**Fora do curso**, em áreas próprias do admin: **Comunicação** (fila de dúvidas, anúncios,
+disponibilidade: Q26, Q28) e **Assinatura** (preço e cupom: Q24, na Fase 4).
+
+**Consequência técnica, para o operador saber:** hoje o curso inteiro se salva num botão só. Com
+áreas separadas, **cada área salva a sua parte**, como na Udemy. Isso é trabalho de código (meu),
+não muda nada do que você decide.
+
+## 16. O que a escola tem e a Udemy não
 
 Slug · Camadas (metodologia 3 camadas) · Destaques · Perguntas frequentes do curso · Ordem no
 catálogo · a trava do idioma depois de publicado · a barra de **Preenchimento** na lista de cursos.
 Na reorganização, cada um precisa de uma área.
 
-## 15. Perguntas para o operador *(responder juntas, depois do último lote)*
+## 17. Perguntas para o operador *(responder juntas, depois do último lote)*
 
 - **Q1.** Pôr uma **dica curta embaixo de cada campo**, como a Udemy faz? (O texto das dicas é seu;
   eu proponho um rascunho.)
@@ -245,3 +315,8 @@ Na reorganização, cada um precisa de uma área.
 - **Q30.** Mostrar **"Atualizado em MM/AAAA"**? Numa escola que promete conteúdo **sempre
   atualizado**, isso vende. A data sairia sozinha da última mudança nas aulas.
 - **Q31.** **Dar a assinatura de presente**? Proposta: não no lançamento.
+- **Q32.** **Certificado por curso**, além do certificado da trilha? Hoje só a trilha dá certificado,
+  e o diferencial escrito em `courses.md` é o certificado **por competências**.
+- **Q33.** No lugar de "Os alunos também compraram": **"Este curso faz parte das trilhas…"** e/ou
+  **outros cursos da escola**? Sem nota e sem preço nos cartões.
+- **Q34.** A **organização da §15**: aprovada como está, ou quer mudar nomes ou a ordem?

@@ -22,7 +22,7 @@
 
 | # | O que falta | Onde registrar |
 |---|---|---|
-| P28 | **Responder as perguntas do mapa Udemy × escola** (Q1, Q2…), **depois do último lote de prints**. Elas decidem como o formulário do curso é reorganizado em áreas | `docs/mapa-admin-curso.md` §5, e dali para o plano |
+| P28 | **Responder as perguntas do mapa Udemy × escola** (Q1 a Q34, por número, pode ser em partes). A Q34 é a proposta de organização do editor do curso em áreas (§15) | `docs/mapa-admin-curso.md` §17, e dali para o plano |
 
 ## B. Conteúdo e cadastro *(tarefas suas, sem ordem fixa)*
 
