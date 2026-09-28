@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { screen, fireEvent, waitFor } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { screen, fireEvent, waitFor, act } from "@testing-library/react";
 import { renderWithProviders } from "@/test-utils";
 import type { AdminCourseDetail, AdminModule } from "@/lib/api";
 import { CURSO_DE_TESTE } from "./curso-de-teste";
@@ -208,5 +208,93 @@ describe("Conteúdo — o texto da aula", () => {
     await abrir();
     expect(screen.queryByRole("button", { name: "Editar texto" })).toBeNull();
     expect(screen.getAllByText("Vídeo").length).toBe(3);
+  });
+});
+
+// ARRASTAR (dnd-kit, liberado pelo operador em 28/09/2026). O jsdom não calcula
+// posição na tela: cada elemento ganha aqui uma posição falsa, na ordem em que
+// aparece na página, para o teclado ter "o de baixo" para onde ir.
+describe("Conteúdo — arrastar", () => {
+  const original = Element.prototype.getBoundingClientRect;
+  beforeEach(() => {
+    Element.prototype.getBoundingClientRect = function (this: Element) {
+      const ordem = [...document.querySelectorAll("*")].indexOf(this);
+      const top = ordem * 10;
+      return { x: 0, y: top, top, left: 0, right: 100, bottom: top + 10, width: 100, height: 10, toJSON: () => ({}) } as DOMRect;
+    };
+  });
+  afterEach(() => {
+    Element.prototype.getBoundingClientRect = original;
+  });
+
+  // O dnd-kit mede as posições no quadro seguinte da tela: sem a espera entre as
+  // teclas, a seta chega antes da medida e o item "cai" sobre si mesmo.
+  const quadro = () => act(() => new Promise((r) => setTimeout(r, 50)));
+
+  async function arrastarPeloTeclado(alca: HTMLElement) {
+    alca.focus();
+    await act(async () => void fireEvent.keyDown(alca, { key: " ", code: "Space" }));
+    await quadro();
+    await act(async () => void fireEvent.keyDown(document, { key: "ArrowDown", code: "ArrowDown" }));
+    await quadro();
+    await act(async () => void fireEvent.keyDown(document, { key: " ", code: "Space" }));
+  }
+
+  it("a alça é um botão com nome, e as instruções saem em português", async () => {
+    await abrir();
+    const alca = screen.getByRole("button", { name: "Arrastar o módulo Fundamentos" });
+    expect(screen.getByRole("button", { name: "Arrastar a aula Abertura" })).toBeTruthy();
+    const instrucoes = document.getElementById(alca.getAttribute("aria-describedby") ?? "");
+    expect(instrucoes?.textContent).toMatch(/^Para arrastar, aperte espaço/);
+  });
+
+  it("pelo teclado: o módulo desce, e a ordem inteira vai numa gravação só", async () => {
+    await abrir();
+    await arrastarPeloTeclado(screen.getByRole("button", { name: "Arrastar o módulo Fundamentos" }));
+
+    await waitFor(() => expect(updateCourseStructure).toHaveBeenCalled());
+    expect(updateCourseStructure.mock.calls[0][1]).toEqual({
+      modulos: [
+        { id: 2, aulas: [21] },
+        { id: 1, aulas: [11, 12] },
+      ],
+    });
+  });
+
+  it("pelo teclado: a aula desce dentro do módulo", async () => {
+    await abrir();
+    await arrastarPeloTeclado(screen.getByRole("button", { name: "Arrastar a aula Abertura" }));
+
+    await waitFor(() => expect(updateCourseStructure).toHaveBeenCalled());
+    expect(updateCourseStructure.mock.calls[0][1].modulos[0]).toEqual({ id: 1, aulas: [12, 11] });
+  });
+
+  // A aula pode mudar de módulo DENTRO do curso (a rota confere no servidor).
+  it("pelo teclado: a última aula de um módulo desce para o módulo seguinte", async () => {
+    await abrir();
+    await arrastarPeloTeclado(screen.getByRole("button", { name: "Arrastar a aula Fórmulas" }));
+
+    await waitFor(() => expect(updateCourseStructure).toHaveBeenCalled());
+    expect(updateCourseStructure.mock.calls[0][1]).toEqual({
+      modulos: [
+        { id: 1, aulas: [11] },
+        { id: 2, aulas: [12, 21] },
+      ],
+    });
+  });
+
+  it("pegar e soltar no mesmo lugar não grava nada", async () => {
+    await abrir();
+    const alca = screen.getByRole("button", { name: "Arrastar o módulo Automação" });
+    alca.focus();
+    await act(async () => void fireEvent.keyDown(alca, { key: " ", code: "Space" }));
+    await quadro();
+    // A prova de que o arraste aconteceu (e caiu sobre ele mesmo): sem isto, o
+    // teste passaria mesmo gravando, porque soltar antes da medida não tem alvo.
+    expect(document.body.textContent).toContain("o módulo Automação está sobre o módulo Automação.");
+    await act(async () => void fireEvent.keyDown(document, { key: " ", code: "Space" }));
+    await quadro();
+
+    expect(updateCourseStructure).not.toHaveBeenCalled();
   });
 });

@@ -20,6 +20,17 @@
   compactados se importado direto). O JilsonAI (Fase 6) usa a mesma peça, com a lista dele.
   *Esta decisão se reabre se o JilsonAI precisar de algo que ela não faz com plugin oficial
   (bloco de código com cor, fórmula).*
+- **`@dnd-kit/core` + `@dnd-kit/sortable` + `@dnd-kit/utilities`** (client) — **arrastar**
+  módulos e aulas no passo Conteúdo do editor do curso *(liberado pelo operador em 28/09/2026,
+  Bloco E etapa 2)*. O dia ruim que evita: reorganizar um curso de 40 aulas clicando em seta, uma
+  posição por vez. Funciona pelo teclado (espaço pega, setas movem, espaço solta), com as
+  instruções e os avisos ao leitor de tela **em português** (o padrão é inglês). **Um lugar só:**
+  `client/src/components/admin/course-content/arrastar.tsx`, e só carrega no passo Conteúdo (o
+  passo é `lazy()`): o pacote que todo aluno baixa não tem nada dele (conferido no build de
+  28/09: 19,6 KB compactados no pedaço do Conteúdo, zero no principal). As setas continuam.
+  **A mesma peça serve à ordem dos cursos e das perguntas frequentes** (C4, etapa 5). *Esta
+  decisão se reabre se a peça parar de ser mantida, ou se um dia o arrastar entrar numa tela do
+  aluno (aí o peso volta a contar).*
 
 ## Backend
 

@@ -175,6 +175,8 @@ servidores (§5); o React responde em `localhost:5173`, a home pública em `loca
 > **O "+" entre dois itens** (`InsertPoint.tsx`) fica escondido por **opacidade** até o mouse ou
 > o foco do teclado chegar: **não troque por `hidden`**, senão o teclado não o alcança (tem
 > teste). O texto da aula de texto usa o mesmo `MarkdownField` da descrição.
+> **Arrastar** (`arrastar.tsx`): a alça com os pontinhos é um **botão** com nome ("Arrastar a
+> aula Fórmulas"), e as instruções de teclado saem em português. Os dois têm teste.
 >
 > **As dicas embaixo dos campos** (28/09) saem do `Field.tsx` (a propriedade `dica`); o texto de
 > todas mora em `client/src/lib/course-hints.ts` e é do operador. Cada campo aponta para a dica e

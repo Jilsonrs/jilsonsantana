@@ -2,12 +2,22 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import * as api from "@/lib/api";
-import { estruturaDe, moverAula, moverModulo, type Estrutura } from "@/lib/course-structure";
+import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import {
+  aplicarArraste,
+  estruturaDe,
+  idDoArraste,
+  moverAula,
+  moverModulo,
+  type Estrutura,
+  type ItemArrastavel,
+} from "@/lib/course-structure";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ModuleCard } from "./ModuleCard";
 import { InsertPoint } from "./InsertPoint";
+import { ArrasteDoCurso } from "./arrastar";
 
 const MODULO = [{ valor: "MODULO", rotulo: "Módulo" }];
 
@@ -29,11 +39,25 @@ export function ModuleLessonTree({ courseId }: { courseId: number }) {
 
   const modules = course?.modules ?? [];
   const estrutura = estruturaDe(modules);
+  // O título de cada item arrastável, para os avisos ao leitor de tela.
+  const nomes = new Map<string, string>(
+    modules.flatMap((m) => [
+      [idDoArraste({ tipo: "modulo", id: m.id }), `o módulo ${m.title}`] as const,
+      ...m.lessons.map((l) => [idDoArraste({ tipo: "aula", id: l.id }), `a aula ${l.title}`] as const),
+    ]),
+  );
 
   const reordenar = useMutation({
     mutationFn: (nova: Estrutura) => api.updateCourseStructure(courseId, { modulos: nova }),
     onSettled: invalidate,
   });
+
+  // Soltou o que arrastava: grava só se a ordem mudou (soltar no mesmo lugar não
+  // é uma edição).
+  function soltar(ativo: ItemArrastavel, alvo: ItemArrastavel) {
+    const nova = aplicarArraste(estrutura, ativo, alvo);
+    if (JSON.stringify(nova) !== JSON.stringify(estrutura)) reordenar.mutate(nova);
+  }
 
   // O "+" entre dois módulos: o módulo nasce naquela posição (Bloco E, etapa 2).
   const inserirModulo = (posicao: number) => (_tipo: string, titulo: string) =>
@@ -63,20 +87,24 @@ export function ModuleLessonTree({ courseId }: { courseId: number }) {
         </p>
       )}
       <InsertPoint rotulo="Inserir módulo no começo" opcoes={MODULO} aoInserir={inserirModulo(0)} />
-      {modules.map((mod, index) => (
-        <div key={mod.id} className="space-y-4">
-          <ModuleCard
-            module={mod}
-            isFirst={index === 0}
-            isLast={index === modules.length - 1}
-            ocupado={reordenar.isPending}
-            onMover={(passo) => reordenar.mutate(moverModulo(estrutura, index, passo))}
-            onMoverAula={(indice, passo) => reordenar.mutate(moverAula(estrutura, mod.id, indice, passo))}
-            onChanged={invalidate}
-          />
-          <InsertPoint rotulo={`Inserir módulo depois de ${mod.title}`} opcoes={MODULO} aoInserir={inserirModulo(index + 1)} />
-        </div>
-      ))}
+      <ArrasteDoCurso nomes={nomes} aoSoltar={soltar}>
+        <SortableContext items={modules.map((m) => idDoArraste({ tipo: "modulo", id: m.id }))} strategy={verticalListSortingStrategy}>
+          {modules.map((mod, index) => (
+            <div key={mod.id} className="space-y-4">
+              <ModuleCard
+                module={mod}
+                isFirst={index === 0}
+                isLast={index === modules.length - 1}
+                ocupado={reordenar.isPending}
+                onMover={(passo) => reordenar.mutate(moverModulo(estrutura, index, passo))}
+                onMoverAula={(indice, passo) => reordenar.mutate(moverAula(estrutura, mod.id, indice, passo))}
+                onChanged={invalidate}
+              />
+              <InsertPoint rotulo={`Inserir módulo depois de ${mod.title}`} opcoes={MODULO} aoInserir={inserirModulo(index + 1)} />
+            </div>
+          ))}
+        </SortableContext>
+      </ArrasteDoCurso>
 
       <Card>
         <CardContent className="flex gap-2 pt-6">

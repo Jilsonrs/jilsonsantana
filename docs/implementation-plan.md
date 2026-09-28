@@ -1534,9 +1534,21 @@ própria**.*
       servidor, 8 de tela. **Mutação:** posição ignorada, texto aceito em aula de vídeo, texto
       saindo na aula pública, posição errada na tela, "+" com `hidden` e o quiz virando botão →
       todas reprovam. Revertido.
-- [ ] **Arrastar para reorganizar** aulas e módulos, **mantendo as setas** para o teclado.
-      Peça nova: proposta no plano da etapa, com o ok do operador — **a mesma do C4 etapa 5**
-      (ordem dos cursos e das perguntas frequentes): uma peça de arrastar para o admin inteiro.
+- [x] **2c — Arrastar para reorganizar** aulas e módulos, **mantendo as setas** para o teclado
+      *(28/09, no `dev`)*. Peça nova **dnd-kit, liberada pelo operador em 28/09** (registro e
+      gatilho em `tech-stack.md`) — **a mesma do C4 etapa 5** (ordem dos cursos e das perguntas
+      frequentes). `course-content/arrastar.tsx`: alça de arrastar (botão com nome) em cada módulo e
+      aula; **a aula pode ir para outro módulo do curso**; a ordem nova sai de `aplicarArraste`
+      (função pura) e vai pela rota única da 2a; soltar no mesmo lugar não grava. Pelo teclado:
+      espaço pega, setas movem, espaço solta, com instruções e avisos **em português**. **Achado
+      do teste, corrigido na mesma parte:** a seta para baixo, partindo de um módulo, parava na
+      primeira aula dele e o módulo não saía do lugar; agora a seta só procura item do mesmo tipo.
+      O passo Conteúdo carrega sob demanda: **o dnd-kit não está no pacote do aluno** (build
+      conferido). Testes: 9 da função, 5 de tela (o jsdom não mede a tela: o teste dá a cada
+      elemento uma posição falsa, na ordem da página). **O arraste com o mouse o operador confere
+      na tela.** **Mutação:** a seta sem filtrar o tipo, a aula indo para o fim, soltar no mesmo
+      lugar gravando, a aula sumindo e as instruções em inglês → todas reprovam (a terceira só
+      depois de corrigir o teste, que soltava antes da medida e não podia falhar). Revertido.
 - [x] **Tipos de item no "+":** Aula (vídeo **ou** texto) e Quiz. Aula de texto tem o seu
       texto, com negrito e listas; **aula de vídeo não tem descrição** (confirmado em 28/09).
       *Feito na 2b; o Quiz aparece como EM BREVE até a etapa própria dele.*

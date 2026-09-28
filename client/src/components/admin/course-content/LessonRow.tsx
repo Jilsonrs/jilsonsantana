@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { CLASSE_DO_SELECT_PEQUENO } from "./ModuleCard";
 import { LessonTextPanel } from "./LessonTextPanel";
+import { AlcaDeArraste, useArrastavel } from "./arrastar";
 
 const ROTULO_DO_TIPO: Record<LessonKind, string> = { VIDEO: "Vídeo", TEXT: "Texto" };
 
@@ -50,10 +51,12 @@ export function LessonRow({
     mutationFn: () => api.deleteLesson(lesson.id),
     onSuccess: onChanged,
   });
+  const { setNodeRef, estilo, alca } = useArrastavel({ tipo: "aula", id: lesson.id });
 
   return (
-    <div className="space-y-2">
+    <div ref={setNodeRef} style={estilo} className="space-y-2">
       <div className="flex flex-wrap items-center gap-2 border-l border-border pl-3">
+        <AlcaDeArraste rotulo={`Arrastar a aula ${lesson.title}`} alca={alca} />
         <span className="rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground">
           {ROTULO_DO_TIPO[lesson.kind]}
         </span>

@@ -10,6 +10,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { LessonRow } from "./LessonRow";
 import { InsertPoint, type OpcaoDeInsercao } from "./InsertPoint";
+import { AlcaDeArraste, useArrastavel } from "./arrastar";
+import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { idDoArraste } from "@/lib/course-structure";
 
 // O que o "+" entre duas aulas oferece (operador, 27–28/09/2026). O quiz tem
 // etapa própria: por enquanto, EM BREVE.
@@ -60,10 +63,12 @@ export function ModuleCard({
     mutationFn: () => api.deleteModule(module.id),
     onSuccess: onChanged,
   });
+  const { setNodeRef, estilo, alca } = useArrastavel({ tipo: "modulo", id: module.id });
 
   return (
-    <Card>
+    <Card ref={setNodeRef} style={estilo}>
       <CardHeader className="flex flex-row items-center gap-2 space-y-0">
+        <AlcaDeArraste rotulo={`Arrastar o módulo ${module.title}`} alca={alca} />
         <div className="flex flex-1 flex-wrap items-center gap-2">
           <Input value={title} onChange={(e) => setTitle(e.target.value)} className="max-w-xs" aria-label="Título do módulo" />
           <select value={layer} onChange={(e) => setLayer(e.target.value)} className={CLASSE_DO_SELECT_PEQUENO} aria-label="Camada do módulo">
@@ -146,19 +151,21 @@ function LessonList({
   return (
     <div className="space-y-1 pl-4">
       <InsertPoint rotulo="Inserir no começo do módulo" opcoes={TIPOS_DE_AULA} aoInserir={inserirAqui(0)} />
-      {lessons.map((lesson, index) => (
-        <div key={lesson.id} className="space-y-1">
-          <LessonRow
-            lesson={lesson}
-            isFirst={index === 0}
-            isLast={index === lessons.length - 1}
-            ocupado={ocupado}
-            onMover={(passo) => onMoverAula(index, passo)}
-            onChanged={onChanged}
-          />
-          <InsertPoint rotulo={`Inserir depois de ${lesson.title}`} opcoes={TIPOS_DE_AULA} aoInserir={inserirAqui(index + 1)} />
-        </div>
-      ))}
+      <SortableContext items={lessons.map((l) => idDoArraste({ tipo: "aula", id: l.id }))} strategy={verticalListSortingStrategy}>
+        {lessons.map((lesson, index) => (
+          <div key={lesson.id} className="space-y-1">
+            <LessonRow
+              lesson={lesson}
+              isFirst={index === 0}
+              isLast={index === lessons.length - 1}
+              ocupado={ocupado}
+              onMover={(passo) => onMoverAula(index, passo)}
+              onChanged={onChanged}
+            />
+            <InsertPoint rotulo={`Inserir depois de ${lesson.title}`} opcoes={TIPOS_DE_AULA} aoInserir={inserirAqui(index + 1)} />
+          </div>
+        ))}
+      </SortableContext>
       <div className="flex gap-2">
         <Input placeholder="Título da nova aula" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} />
         <Button
