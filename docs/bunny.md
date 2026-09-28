@@ -409,6 +409,9 @@ O Bunny gera estes tipos de chave:
   `tech-stack.md` citam *"per-user signing"* entre as proteções. Na prática, isso só pode
   significar que o servidor emite o token apenas para quem tem acesso. Confirmar no build e, se
   for isso, ajustar a frase nos dois docs com o ok do operador.
+- **Confirmado NO AR em 27/09 (Bloco U, etapa 2):** apagar um vídeo com
+  `DELETE https://video.bunnycdn.com/library/:id/videos/:id` funciona (o operador viu o vídeo
+  substituído sumir do painel), e o nome do vídeo é o que vai na criação e no envio (TUS).
 - **Confirmado na doc em 27/09, e já em uso no código (Bloco U, etapa 2):** criar o vídeo devolve
   o id em **`guid`** · o envio retomável usa `https://video.bunnycdn.com/tusupload` com os
   cabeçalhos `AuthorizationSignature`, `AuthorizationExpire`, `VideoId` e `LibraryId` · a

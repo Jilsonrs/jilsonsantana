@@ -1270,8 +1270,9 @@ landmark. Corrigido junto.
       uso, não conferir o envio em andamento, e pôr a coluna nova no `select` público — todas
       reprovam. **PROVADO no ar em 27/09:** o operador enviou o vídeo pelo admin, e ele tocou na
       prévia do Editar curso ("funcionou"). A rota de apagar é a mesma forma da doc
-      (`DELETE /library/:id/videos/:id`); **falta o operador confirmar no painel** que o vídeo
-      substituído sumiu e que o novo tem o nome do arquivo.
+      (`DELETE /library/:id/videos/:id`), e **o operador confirmou no painel, no mesmo dia**: o vídeo
+      substituído sumiu (a biblioteca ficou com 1 vídeo) e o novo tem o nome do arquivo enviado
+      (`analise-de-cohort-e-retencao.mp4`).
       **Ajuste pedido pelo operador no mesmo dia:** na seção de mídia, primeiro a imagem/o vídeo,
       depois o campo, depois o botão de enviar; os rótulos "URL da thumbnail" e "ID do vídeo
       (Bunny)" passaram a ser **"Imagem do curso"** e **"Vídeo promocional"**.
