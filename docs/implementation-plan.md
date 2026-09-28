@@ -1605,6 +1605,28 @@ própria**.*
       o envio sem `requireAdmin` e a tela sem conferir o tipo → todas reprovam. Revertido.
       **A entrega ao aluno** (só assinante, sempre como download) **entra com a trava de acesso,
       na etapa 4 do Bloco U**: hoje nenhuma rota entrega o arquivo.
+- **Revisão de segurança (`security-vulnerability-reviewer`) das partes 2d e 2e, 28/09/2026:
+  nenhum P0 nem P1.** Conferiu: só admin nas rotas novas; chave e token key nunca em resposta nem
+  em log; token no formato da doc, 6 h; nenhuma leitura pública devolve vídeo, envio em andamento,
+  texto da aula nem endereço assinado; o `PATCH` da aula descarta `bunnyVideoId`; a trava do
+  caminho impede apagar pasta. **Quatro P2 (baixo), registrados e NÃO corrigidos** (decisão de
+  quando é do operador):
+  - [ ] **Corrida na troca de vídeo** (`admin-lesson-video.ts`): o `complete` lê e depois grava sem
+        condição; com **duas abas do admin** trocando o vídeo da mesma aula ao mesmo tempo, a
+        limpeza pode apagar o vídeo em uso. Correção proposta: `updateMany` condicional
+        (`where: { id, bunnyVideoPendingId }`) e apagar só se `count === 1`, com teste que
+        intercala os dois pedidos. *O vídeo de apresentação (`admin-media.ts`) tem a mesma forma.*
+  - [ ] **Excluir aula, módulo ou curso não apaga no Bunny** o vídeo, o envio pendente e os
+        arquivos (a cascata do banco perde o caminho). Não há exposição (zona sem CDN, biblioteca
+        com token), mas o pago fica guardado sem como limpar. Opções para o operador: recusar
+        (409) enquanto houver vídeo/arquivo, ou apagar no Bunny antes do registro. *(É o achado
+        da 2e, abaixo, estendido ao vídeo.)*
+  - [ ] **Testes de "não vaza" sem as trilhas do aluno:** o do texto da aula não consulta
+        `/api/trilhas/:slug` nem `/mine/:id`, e o do vídeo não consulta `/mine/:id`. O código
+        protege (`select` explícito), mas nenhum teste reprova se voltar o `include`.
+  - [ ] **Nome do arquivo para o download** (etapa 4): na rota de entrega, usar
+        `res.attachment()`/`res.download()` (nunca interpolar no `Content-Disposition`) e tirar do
+        nome os caracteres de direção de texto (U+202E e parecidos), que disfarçam a extensão.
 - [ ] **Excluir a aula (ou o curso) não apaga os arquivos dela no Bunny** *(achado da 2e,
       registrado e não feito: fora do plano)*. O registro some pela cascata do banco; o arquivo
       fica na zona, que não é pública, então não vaza — mas ocupa espaço (US$ 0,02/GB/mês). Fazer
