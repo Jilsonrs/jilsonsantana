@@ -125,7 +125,10 @@
 > do admin, com capa, status em português e a barra de Preenchimento) e o **Bloco B** (limite de
 > caracteres com contador nos campos do curso, e a descrição com negrito, itálico e listas, pelo
 > `react-markdown`). **Publicado em 28/09 (`main` = `e42b152`):** os documentos do Bloco E.
-> **No `dev`, ainda não publicado (28/09): o Bloco E, etapa 2 INTEIRA (partes 2a a 2e)** — a
+> **PUBLICADO em 28/09 (`main` = `5a60fa1`, CI verde): o Bloco E, etapa 2 INTEIRA (partes 2a a 2e)**,
+> mais a edição como na Udemy e a limpeza no Bunny ao excluir. *(A primeira publicação do dia,
+> `d342000`, pegou CI vermelho por um teste do arrastar que dependia de tempo — não do site; o
+> teste foi corrigido e republicado na mesma hora.)* O texto abaixo descreve o que entrou — a
 > ordem do curso numa gravação só, o "+" entre itens e a aula de texto, arrastar (dnd-kit), o
 > **vídeo de cada aula** (Bloco U etapa 3, alto risco) e os **arquivos para baixar** (o envio).
 > Quatro migrations novas (`lesson_kind_content`, `lesson_video`, `lesson_file`, e a
