@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { CLASSE_DO_SELECT_PEQUENO } from "./ModuleCard";
 import { LessonTextPanel } from "./LessonTextPanel";
+import { LessonVideoPanel } from "./LessonVideoPanel";
 import { AlcaDeArraste, useArrastavel } from "./arrastar";
 
 const ROTULO_DO_TIPO: Record<LessonKind, string> = { VIDEO: "Vídeo", TEXT: "Texto" };
@@ -95,13 +96,25 @@ export function LessonRow({
         >
           <Trash2 className="h-4 w-4" />
         </Button>
-        {lesson.kind === LessonKind.TEXT && (
+        {lesson.kind === LessonKind.TEXT ? (
           <Button type="button" variant="outline" size="sm" aria-expanded={aberta} onClick={() => setAberta(!aberta)}>
             {aberta ? "Fechar texto" : "Editar texto"}
           </Button>
+        ) : (
+          <Button type="button" variant="outline" size="sm" aria-expanded={aberta} onClick={() => setAberta(!aberta)}>
+            {aberta ? "Fechar vídeo" : "Vídeo da aula"}
+          </Button>
+        )}
+        {lesson.isFreePreview && (
+          <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">Prévia grátis</span>
         )}
       </div>
-      {aberta && lesson.kind === LessonKind.TEXT && <LessonTextPanel lesson={lesson} onChanged={onChanged} />}
+      {aberta &&
+        (lesson.kind === LessonKind.TEXT ? (
+          <LessonTextPanel lesson={lesson} onChanged={onChanged} />
+        ) : (
+          <LessonVideoPanel lesson={lesson} onChanged={onChanged} />
+        ))}
     </div>
   );
 }

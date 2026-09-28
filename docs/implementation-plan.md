@@ -1340,6 +1340,29 @@ landmark. Corrigido junto.
       pensa em 2, 3 ou 5 aulas de uns 10 minutos por curso. `LessonRow.tsx` sai do
       `ModuleLessonTree.tsx` (328 linhas) antes. Nenhuma rota pública devolve `bunnyVideoId`,
       provado por teste. `security-vulnerability-reviewer` no fim.
+      **✅ CONSTRUÍDA em 28/09, no `dev`, como Bloco E etapa 2 parte 2d (não publicada; o teste de
+      verdade é no ar, decisão do operador de 28/09).** Migration `20260928160000_lesson_video`
+      (`bunnyVideoId`, `bunnyVideoPendingId`, `isFreePreview` padrão desligado). `bunny-stream.ts`
+      atende a biblioteca de **aulas** e ganhou `tokenDoPlayer` + `enderecoAssinado` — formato
+      **confirmado na doc via context7 em 28/09**: `SHA256_hex(token key + id do vídeo + expires)`,
+      com a **token key** (não a API key), validade de **6 h**. Rotas só de admin em
+      `routes/admin-lesson-video.ts`: começar o envio (devolve a assinatura, **sem** endereço de
+      player sem token), terminar (só o envio em andamento **desta** aula → é o que impede reusar
+      vídeo de outra aula; 409 no resto), a prévia assinada e o estado; aula de texto não recebe
+      vídeo (400). Sem as variáveis, 503 — "A biblioteca de aulas não está configurada neste
+      ambiente." O vídeo **só entra pelo envio**: a edição da aula ignora `bunnyVideoId`. Tela:
+      "Vídeo da aula" em cada aula de vídeo (`LessonVideoPanel.tsx`), com a prévia que se
+      atualiza sozinha (a da apresentação, generalizada), o envio com porcentagem e a chave
+      **Prévia grátis**. **Provado por teste que o vídeo não sai** na página do curso, na aula
+      pública, na busca e na trilha. Passo 0 no dev: mesmas contagens (só `_prisma_migrations`
+      10→11), 0 sem RLS, login 200, "No difference detected". Testes: 17 de servidor + 4 de
+      assinatura (valor calculado fora do código, com o Python), 9 de tela. **Mutação:** token com
+      a ordem trocada, token com a API key, terminar sem conferir o envio em andamento, apagar o
+      vídeo em uso (ao terminar e ao começar), vídeo saindo na aula pública e na página do curso,
+      aula de texto recebendo vídeo, a prévia sem `requireAdmin` e a tela gravando antes do fim →
+      todas reprovam. Revertido. **O que falta provar no ar** (bunny.md §7): o iframe tocando no
+      nosso site com o token do embed **e** o CDN token ligados, e o endereço do player
+      (`iframe.` ou `player.mediadelivery.net`).
 - [ ] **Etapa 4 — a trava de acesso e a aula tocando para o aluno:** adianta da Fase 4 o model
       `Subscription`, o `temAcessoAtivo()` e o `requireActiveMembership`, **sem Stripe**; rota
       `GET /api/lessons/:id/player`; assinatura de teste do `member@` **só fora de produção** (o
@@ -1386,7 +1409,11 @@ landmark. Corrigido junto.
       apresentação, descrição, aula publicada. Estados de carregando, erro e vazio. Testes: 3 de
       servidor + 10 de tela; mutações (a conta do preenchimento, o status em inglês, a cadeia das
       aulas publicadas) reprovam. Textos aprovados pelo operador em 28/09/2026.
-- [ ] **Quinto item do preenchimento: o vídeo de cada aula** — entra com a etapa 3 do Bloco U.
+- [x] **Quinto item do preenchimento: o vídeo de cada aula** — entra com a etapa 3 do Bloco U.
+      *(28/09, no `dev`)* "N aulas sem vídeo": aulas de **vídeo** publicadas na cadeia ainda sem o
+      vídeo (a de texto não conta); a lista do admin devolve `lessonsWithoutVideo`. **Curso sem aula
+      publicada não ganha o item de graça** (sairia com 20% sem nada) e não repete o aviso: o que
+      falta ali já é "Nenhuma aula publicada". Com cinco itens, cada um vale 20%.
 - [ ] **Horas assistidas** e **Alunos** viram número — na Fase 5 (checkboxes lá).
 - [ ] **Avaliação** vira número — na Fase 5; antes, decidir a P27 (`pendencias.md`).
 - **Fora, e não pedido:** busca, ordenação e troca de visualização que a Udemy tem no topo da lista.
@@ -1554,8 +1581,8 @@ própria**.*
       *Feito na 2b; o Quiz aparece como EM BREVE até a etapa própria dele.*
 - [ ] **Arquivos para baixar por aula, só para assinantes**, guardados de forma protegida.
       Exige decidir no plano onde e como (as capas são públicas; estes não podem ser).
-- [ ] Vídeo **sem limite** de tamanho ou resolução no site; **um por vez**; **sem reuso** entre
-      aulas.
+- [x] **2d** — Vídeo **sem limite** de tamanho ou resolução no site; **um por vez**; **sem reuso**
+      entre aulas *(28/09, no `dev`: é o vídeo das aulas, Bloco U etapa 3 — detalhe lá)*.
 - [ ] **Quiz escrito pelo operador** — **etapa própria** *(decisão do operador, 28/09/2026: tem
       decisões dele — uma ou várias respostas certas, explicação, nota mínima, o que o aluno vê)*.
       No "+", aparece como EM BREVE.

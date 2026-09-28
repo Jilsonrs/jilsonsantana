@@ -267,6 +267,15 @@ model Lesson {
   // O texto da aula de TEXTO, em Markdown (negrito, itálico e listas). Conteúdo
   // pago: nenhuma rota pública o devolve.
   content      String?
+  // O vídeo da aula no Bunny (biblioteca de aulas, com token) e o envio EM
+  // ANDAMENTO — a mesma limpeza da apresentação (Bloco U, etapa 3). Nenhuma rota
+  // pública devolve os dois: o aluno recebe só o player assinado, na etapa 4.
+  // O progresso do aluno fica preso à AULA, nunca a este id (bunny.md §7.1).
+  bunnyVideoId        String?
+  bunnyVideoPendingId String?
+  // Prévia grátis (operador, 27/09/2026, "como na Udemy"): a aula toca para
+  // qualquer visitante. Só é gravada aqui; tocar para visitante é a etapa 4.
+  isFreePreview       Boolean  @default(false)
   tags         String[]      @default([])
   displayOrder Int           @default(0)
   status       ContentStatus @default(DRAFT)

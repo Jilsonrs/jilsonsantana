@@ -13,11 +13,23 @@ const LIMITE = 20 * 60_000;
  * player carregado durante o processamento ficava em "Processing video" até
  * recarregar a página: o player do Bunny não se atualiza por conta própria.
  */
-export function IntroVideoPreview({ videoId, embedUrl }: { videoId: string; embedUrl: string }) {
+export function IntroVideoPreview({
+  videoId,
+  embedUrl,
+  titulo = "Prévia do vídeo de apresentação",
+  consultarEstado = api.getIntroVideoStatus,
+}: {
+  videoId: string;
+  embedUrl: string;
+  /** O nome do quadro para o leitor de tela. */
+  titulo?: string;
+  /** De onde vem o estado: a apresentação ou a aula (Bloco U, etapa 3). */
+  consultarEstado?: (videoId: string) => Promise<{ pronto: boolean; falhou: boolean }>;
+}) {
   const [inicio] = useState(() => Date.now());
   const estado = useQuery({
-    queryKey: ["intro-video-status", videoId],
-    queryFn: () => api.getIntroVideoStatus(videoId),
+    queryKey: ["video-status", titulo, videoId],
+    queryFn: () => consultarEstado(videoId),
     refetchInterval: (query) => {
       const dados = query.state.data;
       if (dados?.pronto || dados?.falhou || Date.now() - inicio > LIMITE) return false;
@@ -33,7 +45,7 @@ export function IntroVideoPreview({ videoId, embedUrl }: { videoId: string; embe
     <div className="space-y-2">
       {/* A `key` muda quando o vídeo fica pronto: o quadro é recarregado, e o
           player do Bunny sai do "Processing video" para o vídeo. */}
-      <BunnyPlayer key={`${videoId}-${pronto || desistiu ? "pronto" : "processando"}`} src={embedUrl} title="Prévia do vídeo de apresentação" />
+      <BunnyPlayer key={`${videoId}-${pronto || desistiu ? "pronto" : "processando"}`} src={embedUrl} title={titulo} />
       {falhou ? (
         <p role="alert" className="text-sm font-medium text-destructive">
           O Bunny não conseguiu processar este vídeo. Envie de novo.

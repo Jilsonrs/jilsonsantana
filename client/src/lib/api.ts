@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { CredenciaisDeEnvio } from "@/lib/video-upload";
+import type { CredenciaisDeEnvio, DadosDoEnvio } from "@/lib/video-upload";
 import type {
   Level,
   Layer,
@@ -172,6 +172,8 @@ export type AdminCourseCard = {
   hasIntroVideo: boolean;
   descriptionWordCount: number;
   publishedLessonCount: number;
+  /** Aulas de VÍDEO publicadas na cadeia ainda sem vídeo (o quinto item, 28/09). */
+  lessonsWithoutVideo: number;
 };
 
 export type AdminLesson = {
@@ -181,6 +183,11 @@ export type AdminLesson = {
   kind: LessonKind;
   /** O texto da aula de texto (Markdown); null na aula de vídeo. */
   content: string | null;
+  /** O vídeo da aula no Bunny (só o admin vê) e o envio em andamento. */
+  bunnyVideoId: string | null;
+  bunnyVideoPendingId: string | null;
+  /** Prévia grátis: a aula toca para qualquer visitante (etapa 4 do Bloco U). */
+  isFreePreview: boolean;
   tags: string[];
   displayOrder: number;
   status: ContentStatus;
@@ -278,6 +285,34 @@ export async function completeIntroVideoUpload(
     `/admin/courses/${id}/intro-video/complete`,
     { videoId },
   );
+  return data;
+}
+
+// O VÍDEO DE CADA AULA (Bloco U, etapa 3): a mesma forma da apresentação, mas a
+// prévia vem sempre ASSINADA do servidor (a biblioteca de aulas tem token).
+export async function startLessonVideoUpload(lessonId: number, titulo: string): Promise<DadosDoEnvio> {
+  const { data } = await client.post<DadosDoEnvio>(`/admin/lessons/${lessonId}/video`, { titulo });
+  return data;
+}
+
+export async function completeLessonVideoUpload(
+  lessonId: number,
+  videoId: string,
+): Promise<{ bunnyVideoId: string; playerUrl: string | null }> {
+  const { data } = await client.post<{ bunnyVideoId: string; playerUrl: string | null }>(
+    `/admin/lessons/${lessonId}/video/complete`,
+    { videoId },
+  );
+  return data;
+}
+
+export async function getLessonPlayer(lessonId: number): Promise<{ playerUrl: string | null }> {
+  const { data } = await client.get<{ playerUrl: string | null }>(`/admin/lessons/${lessonId}/player`);
+  return data;
+}
+
+export async function getLessonVideoStatus(videoId: string): Promise<{ pronto: boolean; falhou: boolean }> {
+  const { data } = await client.get<{ pronto: boolean; falhou: boolean }>(`/admin/lesson-video/${videoId}/status`);
   return data;
 }
 

@@ -333,9 +333,8 @@ O Bunny gera estes tipos de chave:
 1. **API key de cada biblioteca do Stream:** usada para enviar e gerenciar vídeos (o upload
    pelo admin, decisão 3). Vai para o **servidor**.
 2. **Token authentication key de cada biblioteca** (painel → Security): é a chave dos tokens de
-   segurança. Vai para o **servidor**. *Qual das duas chaves (esta ou a API key) entra no cálculo
-   do token do embed é confirmação do build: a doc consultada em 25/09 mostra a API key num
-   exemplo (§7).*
+   segurança. Vai para o **servidor**. **É ESTA que entra no token do embed, não a API key**
+   *(confirmado na doc via context7 em 28/09/2026, no build do vídeo das aulas — §7)*.
    **Regra do operador (25/09/2026):** *"API key da biblioteca e token authentication key: só no
    Railway, nunca no chat nem no navegador."* **Vale para a biblioteca de PRODUÇÃO** *(esclarecido
    pelo operador, 27/09/2026)*. As chaves da biblioteca de dev vão no `server/.env` (linha **Dev**,
@@ -369,7 +368,9 @@ O Bunny gera estes tipos de chave:
   | 3 | `BUNNY_STREAM_LESSONS_TOKEN_KEY` | token authentication key da biblioteca de aulas | **sim** |
 
   **Estado em 27/09: as 4 da etapa 1 estão no Railway** (o envio foi provado no ar). As das etapas
-  2 e 3 ainda não existem. Sem as da etapa 1, o envio da capa responderia que
+  2 e 3 ainda não existem. **Em 28/09 o código da etapa 3 ficou pronto no `dev`** (o vídeo das
+  aulas): sem as 3 variáveis dela, o envio responde "não configurado" e nada quebra. O teste é
+  no ar, como nas etapas 1 e 2 (decisão do operador de 28/09): elas vão **só no Railway**. Sem as da etapa 1, o envio da capa responderia que
   o Storage não está configurado, e nada quebra. **As 4 da etapa 1 vão só no Railway**, com os
   valores de produção (`jilsonsantana-storage`, `https://img.jilsonsantana.com`), porque não
   existe Storage de dev (§4.1, decisão de 27/09).
@@ -391,10 +392,12 @@ O Bunny gera estes tipos de chave:
 - **O gate do context7 continua obrigatório.** Este guia **não substitui** a consulta de
   `/bunnyway/documentation` no primeiro código que monte token ou URL do Bunny. Os detalhes
   abaixo foram lidos em 25/09 e precisam ser confirmados no build.
-- **Token do embed:** HMAC-SHA256 com a chave da biblioteca sobre *chave + videoId + expires*,
-  entregue como `?token=…&expires=…` no iframe `iframe.mediadelivery.net/embed/<biblioteca>/<id>`.
-  A documentação consultada mostra **duas formas de montar** o token (um exemplo em hex e um em
-  Base64 de `assinatura:expires`). **Confirmar qual vale** antes de escrever o código.
+- **Token do embed: CONFIRMADO em 28/09/2026 (context7) e em uso no código** (`tokenDoPlayer`
+  e `enderecoAssinado` em `server/src/lib/bunny-stream.ts`): **`SHA256_hex(token_security_key +
+  video_id + expires)`**, com `expires` em **segundos**, entregue como `?token=…&expires=…` no
+  iframe `iframe.mediadelivery.net/embed/<biblioteca>/<id>`. A chave é a **token key** da
+  biblioteca, não a API key. *(A forma em Base64 que a leitura de 25/09 citava é de outro produto
+  — o token da CDN —, não do embed.)* Validade de 6 h, dentro da janela de 6–12 h.
 - **Com *Block Direct URL File Access* ligado, o iframe precisa de
   `referrerpolicy="strict-origin-when-cross-origin"`.** Sem isso, uma política de referrer mais
   estrita no site faz o Bunny tratar o acesso como direto e recusar o vídeo.

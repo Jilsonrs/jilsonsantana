@@ -20,9 +20,12 @@ export type CredenciaisDeEnvio = {
 
 export type EnvioDeVideo = { concluido: Promise<void>; cancelar: () => void };
 
+/** O que o envio precisa: o endereço do player não entra (a aula não recebe um sem token). */
+export type DadosDoEnvio = Omit<CredenciaisDeEnvio, "embedUrl">;
+
 export function enviarVideo(
   arquivo: File,
-  credenciais: CredenciaisDeEnvio,
+  credenciais: DadosDoEnvio,
   aoProgredir: (porcentagem: number) => void,
 ): EnvioDeVideo {
   let upload: tus.Upload | undefined;

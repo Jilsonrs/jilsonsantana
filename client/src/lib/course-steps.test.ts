@@ -38,7 +38,7 @@ function modulo(status: AdminModule["status"], aulas: AdminModule["status"][]): 
     layer: null,
     displayOrder: 0,
     status,
-    lessons: aulas.map((s, i) => ({ id: i, moduleId: 1, title: "A", kind: "VIDEO", content: null, tags: [], displayOrder: i, status: s })),
+    lessons: aulas.map((s, i) => ({ id: i, moduleId: 1, title: "A", kind: "VIDEO", content: null, bunnyVideoId: null, bunnyVideoPendingId: null, isFreePreview: false, tags: [], displayOrder: i, status: s })),
   };
 }
 

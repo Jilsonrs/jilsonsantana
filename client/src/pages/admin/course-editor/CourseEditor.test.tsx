@@ -246,7 +246,7 @@ describe("Editor do curso — Publicar", () => {
     abrir("/admin/cursos/1/publicar", { ...CURSO_DE_TESTE, thumbnailUrl: "/img/c.jpg", description: "Curta demais." });
     const barra = await screen.findByRole("progressbar", { name: `Preenchimento de ${CURSO_DE_TESTE.title}` });
 
-    expect(barra.getAttribute("aria-valuenow")).toBe("25");
+    expect(barra.getAttribute("aria-valuenow")).toBe("20");
     expect(screen.getByText("Descrição curta (menos de 200 palavras)")).toBeTruthy();
     expect(screen.getByText("Falta o vídeo de apresentação")).toBeTruthy();
     expect(screen.queryByText("Falta a capa")).toBeNull();

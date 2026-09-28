@@ -195,6 +195,10 @@ export const lessonCreateSchema = z.object({
   tags: z.array(z.string().min(1)).optional(),
   displayOrder: z.number().int().optional(),
   status: contentStatusSchema.optional(),
+  // Prévia grátis: a aula toca para qualquer visitante (operador, 27/09/2026).
+  // O vídeo em si NÃO entra por aqui: só pelo envio, que confere o envio em
+  // andamento desta aula — é isso que impede reusar o vídeo de outra aula.
+  isFreePreview: z.boolean().optional(),
 });
 // O tipo não muda depois de criada: uma aula de vídeo que virasse texto deixaria
 // o vídeo dela órfão no Bunny.
