@@ -63,3 +63,15 @@ export const LAYER_CONFIG: Record<Layer, LayerConfig> = {
 // Temporário: Slug do curso em destaque até existir a escolha no painel admin.
 export const FEATURED_COURSE_SLUG = "agentic-ai-na-pratica";
 
+
+// Quantos caracteres cabe em cada campo das informações básicas do curso
+// (decisão do operador, 27/09/2026). 60 e 120 são os limites da Udemy; 60 é
+// também o que o Google mostra do título no resultado da busca. Um lugar só:
+// o servidor recusa acima disto e a tela mostra o contador com os mesmos números.
+export const LIMITE_DO_SLUG = 80;
+export const LIMITES_DO_CURSO = {
+  title: 60,
+  subtitle: 120,
+  slug: LIMITE_DO_SLUG,
+  description: 5000,
+} as const;

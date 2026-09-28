@@ -10,6 +10,7 @@ import {
   contentLanguageSchema,
   enderecoDeImagemValido,
   bunnyVideoIdSchema,
+  LIMITES_DO_CURSO,
   type CourseCreateInput,
 } from "@jilson/core";
 import type { AdminCourseDetail } from "@/lib/api";
@@ -20,12 +21,23 @@ import { fromLines, toLines } from "@/lib/array-field";
 // da página para ela ficar só compondo as seções (CLAUDE.md → Component
 // discipline).
 
+function acimaDoLimite(limite: number): string {
+  return `Use no máximo ${limite.toLocaleString("pt-BR")} caracteres.`;
+}
+
 export const courseFormSchema = z.object({
   slug: slugSchema,
   language: contentLanguageSchema,
-  title: z.string().min(1, "Obrigatório"),
-  subtitle: z.string(),
-  description: z.string(),
+  // Os limites são os do servidor (`core`); a tela já trava no número, e o aviso
+  // aparece se algo chegar acima (um curso antigo, por exemplo).
+  title: z
+    .string()
+    .min(1, "Obrigatório")
+    .max(LIMITES_DO_CURSO.title, acimaDoLimite(LIMITES_DO_CURSO.title)),
+  subtitle: z.string().max(LIMITES_DO_CURSO.subtitle, acimaDoLimite(LIMITES_DO_CURSO.subtitle)),
+  description: z
+    .string()
+    .max(LIMITES_DO_CURSO.description, acimaDoLimite(LIMITES_DO_CURSO.description)),
   level: z.union([levelSchema, z.literal("")]),
   learnTagsText: z.string(),
   requirementsText: z.string(),
