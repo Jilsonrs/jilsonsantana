@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Navigate, Route } from "react-router-dom";
 import { ContentStatus } from "@jilson/core";
 import { Card, CardContent } from "@/components/ui/card";
@@ -12,7 +13,6 @@ import { CompletenessBar } from "@/components/admin/CompletenessBar";
 import { camposDoCurso, preenchimentoDoCurso } from "@/lib/course-completeness";
 import { HighlightsField } from "@/components/admin/HighlightsField";
 import { FaqField } from "@/components/admin/FaqField";
-import { ModuleLessonTree } from "@/components/admin/ModuleLessonTree";
 import { useCursoDoEditor } from "./CourseEditorLayout";
 import { StepForm } from "./StepForm";
 
@@ -37,6 +37,12 @@ function PassoParaQuemE() {
   );
 }
 
+// O Conteúdo carrega SOB DEMANDA: é ele que traz a peça de arrastar (dnd-kit), e
+// assim ela não entra no pacote que todo aluno baixa (plano de 28/09/2026).
+const ModuleLessonTree = lazy(() =>
+  import("@/components/admin/course-content/ModuleLessonTree").then((m) => ({ default: m.ModuleLessonTree })),
+);
+
 // Módulos e aulas se salvam item a item: este passo não tem o Salvar do passo.
 function PassoConteudo() {
   const { curso } = useCursoDoEditor();
@@ -45,7 +51,9 @@ function PassoConteudo() {
       title="Módulos e Aulas"
       description="Gerencie a estrutura do curso. Adicione os módulos e as aulas do curso."
     >
-      <ModuleLessonTree courseId={curso.id} />
+      <Suspense fallback={<p className="text-muted-foreground">Carregando…</p>}>
+        <ModuleLessonTree courseId={curso.id} />
+      </Suspense>
     </PageSection>
   );
 }

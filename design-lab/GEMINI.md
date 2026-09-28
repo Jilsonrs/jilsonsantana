@@ -169,6 +169,23 @@ servidores (§5); o React responde em `localhost:5173`, a home pública em `loca
 > lixeira, em `course-form/ListItemsField.tsx`. As setas e a lixeira são só ícone: o nome delas
 > ("Subir o item 2") está no `aria-label`, que **tem teste**. Não o tire.
 >
+> **O passo Conteúdo** (28/09) mora em `client/src/components/admin/course-content/`
+> (`ModuleLessonTree.tsx`, `ModuleCard.tsx`, `LessonRow.tsx`). As setas e lixeiras são só ícone:
+> o nome delas ("Descer a aula Fórmulas") está no `aria-label`, que **tem teste**.
+> **O "+" entre dois itens** (`InsertPoint.tsx`) fica escondido por **opacidade** até o mouse ou
+> o foco do teclado chegar: **não troque por `hidden`**, senão o teclado não o alcança (tem
+> teste). O texto da aula de texto usa o mesmo `MarkdownField` da descrição.
+> **Como na Udemy** (operador, 28/09): a linha do módulo e a da aula mostram só o texto; o
+> **lápis** abre a edição com Cancelar e Salvar. **Não volte a deixar os campos abertos na linha**
+> (tem teste: nenhum "Salvar" na tela fora da edição). "+ Aula" e "+ Módulo" ficam no fim de cada
+> lista, e o "+" entre itens fica no começo da linha.
+> **Cada aula** tem dois painéis, um aberto por vez: o conteúdo ("Editar texto" na aula de texto,
+> "Vídeo da aula" na de vídeo — `LessonTextPanel.tsx`, `LessonVideoPanel.tsx`) e os
+> "Arquivos" (`LessonFilesPanel.tsx`). A prévia do vídeo da aula vem **assinada** do servidor:
+> não monte endereço de player na tela.
+> **Arrastar** (`arrastar.tsx`): a alça com os pontinhos é um **botão** com nome ("Arrastar a
+> aula Fórmulas"), e as instruções de teclado saem em português. Os dois têm teste.
+>
 > **As dicas embaixo dos campos** (28/09) saem do `Field.tsx` (a propriedade `dica`); o texto de
 > todas mora em `client/src/lib/course-hints.ts` e é do operador. Cada campo aponta para a dica e
 > para o contador no `aria-describedby`: **não tire o `id` da dica**, é por ele que o leitor de

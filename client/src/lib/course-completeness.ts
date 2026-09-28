@@ -1,4 +1,4 @@
-import { ContentStatus, contarPalavras, MINIMO_DE_PALAVRAS_DA_DESCRICAO } from "@jilson/core";
+import { ContentStatus, LessonKind, contarPalavras, MINIMO_DE_PALAVRAS_DA_DESCRICAO } from "@jilson/core";
 import type { AdminCourseCard, AdminCourseDetail, AdminModule } from "@/lib/api";
 
 // O PREENCHIMENTO do curso: no cartão da lista do admin (plano aprovado pelo
@@ -9,7 +9,7 @@ import type { AdminCourseCard, AdminCourseDetail, AdminModule } from "@/lib/api"
 
 type CamposDoPreenchimento = Pick<
   AdminCourseCard,
-  "thumbnailUrl" | "hasIntroVideo" | "descriptionWordCount" | "publishedLessonCount"
+  "thumbnailUrl" | "hasIntroVideo" | "descriptionWordCount" | "publishedLessonCount" | "lessonsWithoutVideo"
 >;
 
 /** Aulas publicadas NA CADEIA: aula publicada dentro de módulo publicado. */
@@ -26,7 +26,20 @@ export function camposDoCurso(curso: AdminCourseDetail): CamposDoPreenchimento {
     hasIntroVideo: curso.introVideoId !== null,
     descriptionWordCount: contarPalavras(curso.description),
     publishedLessonCount: contarAulasPublicadas(curso.modules),
+    lessonsWithoutVideo: curso.modules
+      .filter((m) => m.status === ContentStatus.PUBLISHED)
+      .flatMap((m) => m.lessons)
+      .filter((l) => l.status === ContentStatus.PUBLISHED && l.kind === LessonKind.VIDEO && !l.bunnyVideoId).length,
   };
+}
+
+// O quinto item (Bloco A, entra com o vídeo das aulas — 28/09/2026): aula de
+// VÍDEO publicada sem o vídeo. Aula de texto não conta. Curso sem aula publicada
+// NÃO ganha este item de graça (sairia com 20% sem nada preenchido), e o que
+// falta ali já é "Nenhuma aula publicada": sem mensagem repetida.
+function faltaNosVideos(quantas: number): string | null {
+  if (quantas === 0) return null;
+  return quantas === 1 ? "1 aula sem vídeo" : `${quantas} aulas sem vídeo`;
 }
 
 // Descrição com menos de 200 palavras conta como FALTA, sem impedir o salvar
@@ -44,11 +57,15 @@ export function preenchimentoDoCurso(curso: CamposDoPreenchimento): { porcentage
       falta: faltaNaDescricao(curso.descriptionWordCount),
     },
     { ok: curso.publishedLessonCount > 0, falta: "Nenhuma aula publicada" },
+    {
+      ok: curso.publishedLessonCount > 0 && curso.lessonsWithoutVideo === 0,
+      falta: faltaNosVideos(curso.lessonsWithoutVideo),
+    },
   ];
   const feitos = itens.filter((item) => item.ok).length;
   return {
     porcentagem: Math.round((feitos / itens.length) * 100),
-    faltando: itens.filter((item) => !item.ok).map((item) => item.falta),
+    faltando: itens.filter((item) => !item.ok).flatMap((item) => (item.falta ? [item.falta] : [])),
   };
 }
 

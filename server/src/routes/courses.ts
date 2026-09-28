@@ -1,11 +1,12 @@
 import { Router } from "express";
 import { Prisma } from "@prisma/client";
-import { ContentStatus, contarPalavras, courseCreateSchema, courseUpdateSchema } from "@jilson/core";
+import { ContentStatus, LessonKind, contarPalavras, courseCreateSchema, courseUpdateSchema } from "@jilson/core";
 import { prisma } from "../lib/prisma.js";
 import { requireAdmin } from "../middleware/auth.js";
 import { validate, parseId } from "../lib/http.js";
 import { paraBanco, doBanco, comIdioma, idiomaDaLista } from "../lib/language.js";
 import { enderecoDoPlayer } from "../lib/bunny-stream.js";
+import { limparCursoNoBunny } from "../lib/limpeza-no-bunny.js";
 
 const router = Router();
 const PUBLISHED = ContentStatus.PUBLISHED;
@@ -133,7 +134,7 @@ router.get("/admin/courses", requireAdmin, async (_req, res) => {
       thumbnailUrl: true,
       introVideoId: true,
       description: true,
-      modules: { select: { status: true, lessons: { select: { status: true } } } },
+      modules: { select: { status: true, lessons: { select: { status: true, kind: true, bunnyVideoId: true } } } },
     },
   });
   // O cartão do admin (lista de cursos, 27/09/2026) mostra o PREENCHIMENTO do
@@ -148,6 +149,15 @@ router.get("/admin/courses", requireAdmin, async (_req, res) => {
     publishedLessonCount: modules
       .filter((m) => m.status === PUBLISHED)
       .reduce((sum, m) => sum + m.lessons.filter((l) => l.status === PUBLISHED).length, 0),
+    // O quinto item do Preenchimento (Bloco A, entra com o vídeo das aulas —
+    // 28/09/2026): aulas de VÍDEO publicadas na cadeia que ainda não têm vídeo.
+    lessonsWithoutVideo: modules
+      .filter((m) => m.status === PUBLISHED)
+      .reduce(
+        (sum, m) =>
+          sum + m.lessons.filter((l) => l.status === PUBLISHED && l.kind === LessonKind.VIDEO && !l.bunnyVideoId).length,
+        0,
+      ),
     hasIntroVideo: introVideoId !== null,
     descriptionWordCount: contarPalavras(description),
   }));
@@ -256,6 +266,11 @@ router.delete("/courses/:id", requireAdmin, async (req, res) => {
   if (id === null) return;
   if (!(await prisma.course.findUnique({ where: { id } }))) {
     res.status(404).json({ error: "NotFound" });
+    return;
+  }
+  // O Bunny primeiro: o que existe lá não pode ficar perdido (operador, 28/09/2026).
+  if (!(await limparCursoNoBunny(id))) {
+    res.status(502).json({ error: "BunnyNaoApagou" });
     return;
   }
   await prisma.course.delete({ where: { id } });

@@ -183,3 +183,14 @@ export function mensagemDeErroAoSalvar(erro: unknown): string {
       return "Não foi possível salvar o curso. Tente de novo.";
   }
 }
+
+/**
+ * A frase quando excluir falha. Excluir aula, módulo ou curso apaga no Bunny
+ * antes (decisão do operador, 28/09/2026); se o Bunny recusar, nada é excluído
+ * e o operador tenta de novo — o que já foi apagado lá não se repete.
+ */
+export function mensagemAoExcluir(erro: unknown): string {
+  return codigoDoErro(erro) === "BunnyNaoApagou"
+    ? "Não foi possível excluir: o Bunny não apagou o vídeo ou os arquivos. Tente de novo."
+    : "Não foi possível excluir. Tente de novo.";
+}

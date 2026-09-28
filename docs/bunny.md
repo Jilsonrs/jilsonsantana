@@ -27,6 +27,7 @@
 | Storage Zone de produção | **criada**: `jilsonsantana-storage` (§4.1) |
 | Storage Zone de dev | **não criada** (§4.1) |
 | Pull Zone das imagens | **criada e testada**: `img.jilsonsantana.com` (§4.2) |
+| Storage Zone dos ARQUIVOS PARA BAIXAR | **a criar pelo operador** (`pendencias.md`, P33): zona própria, **sem Pull Zone** (§4.5). O código do envio está pronto no `dev` (28/09) |
 | Stream: biblioteca de aulas | **criada e testada**: `jilsonsantana-stream` (§3.2) |
 | Stream: biblioteca de apresentação | **não criada**; o código do envio está pronto no `dev` (Bloco U, etapa 2, 27/09) |
 | Stream: bibliotecas de dev | **não serão criadas por enquanto**: o operador testa o envio direto no ar (decisão de 27/09, §4.1) |
@@ -187,6 +188,11 @@ ar, decisão de 27/09. O mesmo vale para uma biblioteca de apresentação de dev
 
   Na apresentação, isso já está no código (Bloco U, etapa 2); nas aulas, entra na etapa 3.
   *Não confundir com apagar vídeo de curso arquivado, que continua fora (Ago 2026).*
+- **EXCLUIR apaga no Bunny também** *(decisão do operador, 28/09/2026: "deveria excluir o vídeo,
+  já que ele ficaria perdido no Bunny")*: excluir aula, módulo ou curso apaga lá o vídeo da aula,
+  o envio pela metade e os arquivos para baixar; o curso, também o vídeo de apresentação. O Bunny
+  primeiro: se ele recusar, nada é excluído, e o operador tenta de novo. **Arquivar** continua não
+  apagando nada (é a decisão de Ago 2026, acima).
 - **Prévia grátis** *(decisão do operador, 27/09/2026, "como na Udemy")*: o operador liga e desliga
   por aula quais aulas tocam para **qualquer visitante, sem login e sem assinatura**; ele pensa em
   2, 3 ou 5 aulas de uns 10 minutos por curso. Elas continuam na biblioteca de aulas, com token, e
@@ -326,6 +332,22 @@ desligado** (é pago).
   ao ID do Bunny diz o nome do produto perguntado: **"Stream"**, **"Storage"** ou **"CDN"**
   (`CLAUDE.md` → Context7 → *Bunny caveat*).
 
+### 4.5 A zona dos ARQUIVOS PARA BAIXAR *(decisão do operador, 28/09/2026)*
+
+- **Uma Storage Zone PRÓPRIA, sem Pull Zone.** Os arquivos das aulas (planilhas, PDFs,
+  `.pbix`) são material pago: **nada lá tem endereço público**, e quem entrega ao aluno é o
+  nosso servidor, só para assinante e sempre como download (etapa 4 do Bloco U). Com Pull Zone,
+  qualquer um que visse o endereço baixaria.
+- **Tier e réplica são IRREVERSÍVEIS** (§4.1): a escolha é do operador. Recomendação do agente:
+  **Standard (HDD), São Paulo, sem réplica** — réplica só se acrescenta, e os arquivos saem pelo
+  nosso servidor (na Railway), então a réplica não aproxima nada do aluno.
+- **Nome:** sugestão `jilsonsantana-arquivos`. **Sem zona de dev** (o teste é no ar, como nas
+  imagens).
+- **Regras de build que já valem** *(código em `server/src/lib/bunny-storage.ts`)*: nome
+  aleatório no Storage (`aulas/<aula>/<24 caracteres>.<ext>`); o nome original fica só no banco;
+  **apagar só aceita caminho de arquivo nesse formato**, porque, pela doc (context7, 28/09),
+  **apagar uma PASTA apaga tudo dentro dela, sem aviso**.
+
 ## 5. Chaves e senhas — leia antes do passo a passo
 
 O Bunny gera estes tipos de chave:
@@ -333,9 +355,8 @@ O Bunny gera estes tipos de chave:
 1. **API key de cada biblioteca do Stream:** usada para enviar e gerenciar vídeos (o upload
    pelo admin, decisão 3). Vai para o **servidor**.
 2. **Token authentication key de cada biblioteca** (painel → Security): é a chave dos tokens de
-   segurança. Vai para o **servidor**. *Qual das duas chaves (esta ou a API key) entra no cálculo
-   do token do embed é confirmação do build: a doc consultada em 25/09 mostra a API key num
-   exemplo (§7).*
+   segurança. Vai para o **servidor**. **É ESTA que entra no token do embed, não a API key**
+   *(confirmado na doc via context7 em 28/09/2026, no build do vídeo das aulas — §7)*.
    **Regra do operador (25/09/2026):** *"API key da biblioteca e token authentication key: só no
    Railway, nunca no chat nem no navegador."* **Vale para a biblioteca de PRODUÇÃO** *(esclarecido
    pelo operador, 27/09/2026)*. As chaves da biblioteca de dev vão no `server/.env` (linha **Dev**,
@@ -367,9 +388,14 @@ O Bunny gera estes tipos de chave:
   | 3 | `BUNNY_STREAM_LESSONS_LIBRARY_ID` | ID da biblioteca de aulas | não |
   | 3 | `BUNNY_STREAM_LESSONS_API_KEY` | API key da biblioteca de aulas | **sim** |
   | 3 | `BUNNY_STREAM_LESSONS_TOKEN_KEY` | token authentication key da biblioteca de aulas | **sim** |
+  | arquivos | `BUNNY_FILES_STORAGE_ZONE` | nome da Storage Zone dos arquivos (§4.5) | não |
+  | arquivos | `BUNNY_FILES_STORAGE_HOST` | o endpoint da zona (ex.: `br.storage.bunnycdn.com`) | não |
+  | arquivos | `BUNNY_FILES_STORAGE_PASSWORD` | a senha da zona dos arquivos (a de escrita) | **sim** |
 
   **Estado em 27/09: as 4 da etapa 1 estão no Railway** (o envio foi provado no ar). As das etapas
-  2 e 3 ainda não existem. Sem as da etapa 1, o envio da capa responderia que
+  2 e 3 ainda não existem. **Em 28/09 o código da etapa 3 ficou pronto no `dev`** (o vídeo das
+  aulas): sem as 3 variáveis dela, o envio responde "não configurado" e nada quebra. O teste é
+  no ar, como nas etapas 1 e 2 (decisão do operador de 28/09): elas vão **só no Railway**. Sem as da etapa 1, o envio da capa responderia que
   o Storage não está configurado, e nada quebra. **As 4 da etapa 1 vão só no Railway**, com os
   valores de produção (`jilsonsantana-storage`, `https://img.jilsonsantana.com`), porque não
   existe Storage de dev (§4.1, decisão de 27/09).
@@ -391,10 +417,12 @@ O Bunny gera estes tipos de chave:
 - **O gate do context7 continua obrigatório.** Este guia **não substitui** a consulta de
   `/bunnyway/documentation` no primeiro código que monte token ou URL do Bunny. Os detalhes
   abaixo foram lidos em 25/09 e precisam ser confirmados no build.
-- **Token do embed:** HMAC-SHA256 com a chave da biblioteca sobre *chave + videoId + expires*,
-  entregue como `?token=…&expires=…` no iframe `iframe.mediadelivery.net/embed/<biblioteca>/<id>`.
-  A documentação consultada mostra **duas formas de montar** o token (um exemplo em hex e um em
-  Base64 de `assinatura:expires`). **Confirmar qual vale** antes de escrever o código.
+- **Token do embed: CONFIRMADO em 28/09/2026 (context7) e em uso no código** (`tokenDoPlayer`
+  e `enderecoAssinado` em `server/src/lib/bunny-stream.ts`): **`SHA256_hex(token_security_key +
+  video_id + expires)`**, com `expires` em **segundos**, entregue como `?token=…&expires=…` no
+  iframe `iframe.mediadelivery.net/embed/<biblioteca>/<id>`. A chave é a **token key** da
+  biblioteca, não a API key. *(A forma em Base64 que a leitura de 25/09 citava é de outro produto
+  — o token da CDN —, não do embed.)* Validade de 6 h, dentro da janela de 6–12 h.
 - **Com *Block Direct URL File Access* ligado, o iframe precisa de
   `referrerpolicy="strict-origin-when-cross-origin"`.** Sem isso, uma política de referrer mais
   estrita no site faz o Bunny tratar o acesso como direto e recusar o vídeo.

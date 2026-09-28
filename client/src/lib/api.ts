@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { CredenciaisDeEnvio } from "@/lib/video-upload";
+import type { CredenciaisDeEnvio, DadosDoEnvio } from "@/lib/video-upload";
 import type {
   Level,
   Layer,
@@ -7,6 +7,10 @@ import type {
   PlanItemType,
   CourseCreateInput,
   CourseUpdateInput,
+  CourseStructureInput,
+  LessonInsertInput,
+  ModuleInsertInput,
+  LessonKind,
   ModuleCreateInput,
   ModuleUpdateInput,
   LessonCreateInput,
@@ -168,12 +172,22 @@ export type AdminCourseCard = {
   hasIntroVideo: boolean;
   descriptionWordCount: number;
   publishedLessonCount: number;
+  /** Aulas de VÍDEO publicadas na cadeia ainda sem vídeo (o quinto item, 28/09). */
+  lessonsWithoutVideo: number;
 };
 
 export type AdminLesson = {
   id: number;
   moduleId: number;
   title: string;
+  kind: LessonKind;
+  /** O texto da aula de texto (Markdown); null na aula de vídeo. */
+  content: string | null;
+  /** O vídeo da aula no Bunny (só o admin vê) e o envio em andamento. */
+  bunnyVideoId: string | null;
+  bunnyVideoPendingId: string | null;
+  /** Prévia grátis: a aula toca para qualquer visitante (etapa 4 do Bloco U). */
+  isFreePreview: boolean;
   tags: string[];
   displayOrder: number;
   status: ContentStatus;
@@ -237,6 +251,22 @@ export async function deleteCourse(id: number): Promise<void> {
   await client.delete(`/courses/${id}`);
 }
 
+// O "+" entre dois itens (Bloco E, etapa 2): a aula ou o módulo nasce NA POSIÇÃO.
+export async function insertLesson(moduleId: number, input: LessonInsertInput): Promise<AdminLesson> {
+  const { data } = await client.post<AdminLesson>(`/admin/modules/${moduleId}/lessons`, input);
+  return data;
+}
+
+export async function insertModule(courseId: number, input: ModuleInsertInput): Promise<AdminModule> {
+  const { data } = await client.post<AdminModule>(`/admin/courses/${courseId}/modules`, input);
+  return data;
+}
+
+// A ORDEM INTEIRA de módulos e aulas do curso, numa gravação só (Bloco E, etapa 2).
+export async function updateCourseStructure(id: number, input: CourseStructureInput): Promise<void> {
+  await client.put(`/admin/courses/${id}/estrutura`, input);
+}
+
 // O envio do vídeo de apresentação começa no servidor, que cria o vídeo no
 // Bunny e devolve só a assinatura; o arquivo vai direto para o Bunny
 // (`lib/video-upload.ts`).
@@ -256,6 +286,54 @@ export async function completeIntroVideoUpload(
     { videoId },
   );
   return data;
+}
+
+// O VÍDEO DE CADA AULA (Bloco U, etapa 3): a mesma forma da apresentação, mas a
+// prévia vem sempre ASSINADA do servidor (a biblioteca de aulas tem token).
+export async function startLessonVideoUpload(lessonId: number, titulo: string): Promise<DadosDoEnvio> {
+  const { data } = await client.post<DadosDoEnvio>(`/admin/lessons/${lessonId}/video`, { titulo });
+  return data;
+}
+
+export async function completeLessonVideoUpload(
+  lessonId: number,
+  videoId: string,
+): Promise<{ bunnyVideoId: string; playerUrl: string | null }> {
+  const { data } = await client.post<{ bunnyVideoId: string; playerUrl: string | null }>(
+    `/admin/lessons/${lessonId}/video/complete`,
+    { videoId },
+  );
+  return data;
+}
+
+export async function getLessonPlayer(lessonId: number): Promise<{ playerUrl: string | null }> {
+  const { data } = await client.get<{ playerUrl: string | null }>(`/admin/lessons/${lessonId}/player`);
+  return data;
+}
+
+export async function getLessonVideoStatus(videoId: string): Promise<{ pronto: boolean; falhou: boolean }> {
+  const { data } = await client.get<{ pronto: boolean; falhou: boolean }>(`/admin/lesson-video/${videoId}/status`);
+  return data;
+}
+
+// OS ARQUIVOS PARA BAIXAR de cada aula (Bloco E, etapa 2, parte 2e): o admin
+// envia e exclui. O arquivo vai CRU no corpo, e o nome original no cabeçalho.
+export type AdminLessonFile = { id: number; originalName: string; sizeBytes: number; createdAt: string };
+
+export async function listLessonFiles(lessonId: number): Promise<AdminLessonFile[]> {
+  const { data } = await client.get<AdminLessonFile[]>(`/admin/lessons/${lessonId}/files`);
+  return data;
+}
+
+export async function uploadLessonFile(lessonId: number, arquivo: File): Promise<AdminLessonFile> {
+  const { data } = await client.post<AdminLessonFile>(`/admin/lessons/${lessonId}/files`, arquivo, {
+    headers: { "Content-Type": "application/octet-stream", "X-Nome-Do-Arquivo": encodeURIComponent(arquivo.name) },
+  });
+  return data;
+}
+
+export async function deleteLessonFile(fileId: number): Promise<void> {
+  await client.delete(`/admin/lesson-files/${fileId}`);
 }
 
 // O Bunny já terminou de processar o vídeo? A prévia do admin pergunta até ficar pronto.

@@ -9,11 +9,11 @@ import { CURSO_DE_TESTE } from "./curso-de-teste";
 
 const adminGetCourse = vi.fn();
 const updateCourse = vi.fn();
-const createModule = vi.fn();
+const insertModule = vi.fn();
 vi.mock("@/lib/api", () => ({
   adminGetCourse: (...args: unknown[]) => adminGetCourse(...args),
   updateCourse: (...args: unknown[]) => updateCourse(...args),
-  createModule: (...args: unknown[]) => createModule(...args),
+  insertModule: (...args: unknown[]) => insertModule(...args),
 }));
 
 import { CourseEditorLayout } from "./CourseEditorLayout";
@@ -22,7 +22,7 @@ import { ROTAS_DO_EDITOR } from "./steps";
 beforeEach(() => {
   adminGetCourse.mockReset();
   updateCourse.mockReset();
-  createModule.mockReset();
+  insertModule.mockReset();
 });
 
 /**
@@ -214,16 +214,14 @@ describe("Editor do curso — cada passo salva só a parte dele", () => {
   });
 
   it("Conteúdo: adicionar módulo grava no curso certo", async () => {
-    createModule.mockResolvedValue({ id: 10 });
+    insertModule.mockResolvedValue({ id: 10 });
     abrir("/admin/cursos/1/conteudo");
 
-    const input = await screen.findByPlaceholderText("Título do novo módulo");
-    fireEvent.change(input, { target: { value: "Módulo Novo" } });
-    fireEvent.click(screen.getByRole("button", { name: /Adicionar módulo/ }));
+    fireEvent.click(await screen.findByRole("button", { name: "Adicionar módulo no fim do curso" }));
+    fireEvent.change(screen.getByLabelText("Título: Módulo"), { target: { value: "Módulo Novo" } });
+    fireEvent.click(screen.getByRole("button", { name: "Adicionar módulo" }));
 
-    await waitFor(() =>
-      expect(createModule).toHaveBeenCalledWith({ courseId: 1, title: "Módulo Novo", displayOrder: 0 }),
-    );
+    await waitFor(() => expect(insertModule).toHaveBeenCalledWith(1, { title: "Módulo Novo", posicao: 0 }));
     // O Conteúdo se salva item a item: não tem o Salvar do passo.
     expect(screen.queryByRole("button", { name: "Salvar" })).toBeNull();
   });
@@ -246,7 +244,7 @@ describe("Editor do curso — Publicar", () => {
     abrir("/admin/cursos/1/publicar", { ...CURSO_DE_TESTE, thumbnailUrl: "/img/c.jpg", description: "Curta demais." });
     const barra = await screen.findByRole("progressbar", { name: `Preenchimento de ${CURSO_DE_TESTE.title}` });
 
-    expect(barra.getAttribute("aria-valuenow")).toBe("25");
+    expect(barra.getAttribute("aria-valuenow")).toBe("20");
     expect(screen.getByText("Descrição curta (menos de 200 palavras)")).toBeTruthy();
     expect(screen.getByText("Falta o vídeo de apresentação")).toBeTruthy();
     expect(screen.queryByText("Falta a capa")).toBeNull();

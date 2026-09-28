@@ -1,8 +1,9 @@
 import { Router } from "express";
-import { ContentStatus, lessonCreateSchema, lessonUpdateSchema } from "@jilson/core";
+import { ContentStatus, LessonKind, lessonCreateSchema, lessonUpdateSchema } from "@jilson/core";
 import { prisma } from "../lib/prisma.js";
 import { requireAdmin } from "../middleware/auth.js";
 import { validate, parseId } from "../lib/http.js";
+import { limparAulaNoBunny } from "../lib/limpeza-no-bunny.js";
 
 const router = Router();
 const PUBLISHED = ContentStatus.PUBLISHED;
@@ -44,10 +45,20 @@ router.get("/lessons/:id", async (req, res) => {
 
 // ── Writes (admin only) ──────────────────────────────────────────────────────
 
+// Aula de VÍDEO não tem texto (decisão do operador, 28/09/2026): o texto é só
+// da aula de texto. Quem garante é o servidor, não a tela.
+function textoEmAulaDeVideo(kind: string | undefined, content: string | undefined): boolean {
+  return content !== undefined && kind !== LessonKind.TEXT;
+}
+
 // POST /api/lessons — moduleId in body. Pre-check the module for a friendly 404.
 router.post("/lessons", requireAdmin, async (req, res) => {
   const data = validate(lessonCreateSchema, req.body, res);
   if (data === null) return;
+  if (textoEmAulaDeVideo(data.kind ?? LessonKind.VIDEO, data.content)) {
+    res.status(400).json({ error: "TextoSoEmAulaDeTexto" });
+    return;
+  }
   if (!(await prisma.module.findUnique({ where: { id: data.moduleId } }))) {
     res.status(404).json({ error: "ModuleNotFound" });
     return;
@@ -61,8 +72,13 @@ router.patch("/lessons/:id", requireAdmin, async (req, res) => {
   if (id === null) return;
   const data = validate(lessonUpdateSchema, req.body, res);
   if (data === null) return;
-  if (!(await prisma.lesson.findUnique({ where: { id } }))) {
+  const atual = await prisma.lesson.findUnique({ where: { id }, select: { kind: true } });
+  if (!atual) {
     res.status(404).json({ error: "NotFound" });
+    return;
+  }
+  if (textoEmAulaDeVideo(atual.kind, data.content)) {
+    res.status(400).json({ error: "TextoSoEmAulaDeTexto" });
     return;
   }
   const updated = await prisma.lesson.update({ where: { id }, data });
@@ -75,6 +91,11 @@ router.delete("/lessons/:id", requireAdmin, async (req, res) => {
   if (id === null) return;
   if (!(await prisma.lesson.findUnique({ where: { id } }))) {
     res.status(404).json({ error: "NotFound" });
+    return;
+  }
+  // O Bunny primeiro: o que existe lá não pode ficar perdido (operador, 28/09/2026).
+  if (!(await limparAulaNoBunny(id))) {
+    res.status(502).json({ error: "BunnyNaoApagou" });
     return;
   }
   await prisma.lesson.delete({ where: { id } });

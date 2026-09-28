@@ -125,7 +125,13 @@
 > do admin, com capa, status em português e a barra de Preenchimento) e o **Bloco B** (limite de
 > caracteres com contador nos campos do curso, e a descrição com negrito, itálico e listas, pelo
 > `react-markdown`). **Publicado em 28/09 (`main` = `e42b152`):** os documentos do Bloco E.
-> **No `dev`, ainda não publicado (28/09): o Bloco E, etapa 1 INTEIRA (partes 1a a 1e)** — o editor
+> **No `dev`, ainda não publicado (28/09): o Bloco E, etapa 2 INTEIRA (partes 2a a 2e)** — a
+> ordem do curso numa gravação só, o "+" entre itens e a aula de texto, arrastar (dnd-kit), o
+> **vídeo de cada aula** (Bloco U etapa 3, alto risco) e os **arquivos para baixar** (o envio).
+> Quatro migrations novas (`lesson_kind_content`, `lesson_video`, `lesson_file`, e a
+> `level_todos_os_niveis` já publicada), todas aplicadas no dev; produção aplica no publish. Para
+> testar no ar: a P19 (vídeo das aulas) e a P33 (zona dos arquivos), em `pendencias.md`.
+> **Publicado em 28/09 (`main` = `4bd36da`): o Bloco E, etapa 1 INTEIRA (partes 1a a 1e)** — o editor
 > do curso em 7 passos no nível 2, o passo Publicar com o que falta e o link, as três listas com um
 > campo por item, "Todos os níveis" (com a migration `20260928120000_level_todos_os_niveis`, já
 > aplicada no dev; produção aplica no próximo publish) e as dicas embaixo dos campos.
@@ -1330,7 +1336,8 @@ landmark. Corrigido junto.
       depois o campo, depois o botão de enviar; os rótulos "URL da thumbnail" e "ID do vídeo
       (Bunny)" passaram a ser **"Imagem do curso"** e **"Vídeo promocional"**.
 - [ ] **Etapa 3 — vídeo das aulas:** primeiro o `include` → `select` de `GET /api/trilhas/:slug` (o
-      de `/courses/:slug` já foi feito na etapa 2); depois `Lesson.bunnyVideoId` +
+      de `/courses/:slug` já foi feito na etapa 2) *(✅ feito em 28/09, no Bloco E etapa 2, parte
+      2a)*; depois `Lesson.bunnyVideoId` +
       `Lesson.bunnyVideoPendingId` (**sem coleção**, e o nome do vídeo no Bunny é **o nome do
       arquivo enviado** — decisões do operador de 27/09), o envio
       **com a mesma limpeza da etapa 2** (reenviar apaga o incompleto; terminar apaga o substituído)
@@ -1339,6 +1346,29 @@ landmark. Corrigido junto.
       pensa em 2, 3 ou 5 aulas de uns 10 minutos por curso. `LessonRow.tsx` sai do
       `ModuleLessonTree.tsx` (328 linhas) antes. Nenhuma rota pública devolve `bunnyVideoId`,
       provado por teste. `security-vulnerability-reviewer` no fim.
+      **✅ CONSTRUÍDA em 28/09, no `dev`, como Bloco E etapa 2 parte 2d (não publicada; o teste de
+      verdade é no ar, decisão do operador de 28/09).** Migration `20260928160000_lesson_video`
+      (`bunnyVideoId`, `bunnyVideoPendingId`, `isFreePreview` padrão desligado). `bunny-stream.ts`
+      atende a biblioteca de **aulas** e ganhou `tokenDoPlayer` + `enderecoAssinado` — formato
+      **confirmado na doc via context7 em 28/09**: `SHA256_hex(token key + id do vídeo + expires)`,
+      com a **token key** (não a API key), validade de **6 h**. Rotas só de admin em
+      `routes/admin-lesson-video.ts`: começar o envio (devolve a assinatura, **sem** endereço de
+      player sem token), terminar (só o envio em andamento **desta** aula → é o que impede reusar
+      vídeo de outra aula; 409 no resto), a prévia assinada e o estado; aula de texto não recebe
+      vídeo (400). Sem as variáveis, 503 — "A biblioteca de aulas não está configurada neste
+      ambiente." O vídeo **só entra pelo envio**: a edição da aula ignora `bunnyVideoId`. Tela:
+      "Vídeo da aula" em cada aula de vídeo (`LessonVideoPanel.tsx`), com a prévia que se
+      atualiza sozinha (a da apresentação, generalizada), o envio com porcentagem e a chave
+      **Prévia grátis**. **Provado por teste que o vídeo não sai** na página do curso, na aula
+      pública, na busca e na trilha. Passo 0 no dev: mesmas contagens (só `_prisma_migrations`
+      10→11), 0 sem RLS, login 200, "No difference detected". Testes: 17 de servidor + 4 de
+      assinatura (valor calculado fora do código, com o Python), 9 de tela. **Mutação:** token com
+      a ordem trocada, token com a API key, terminar sem conferir o envio em andamento, apagar o
+      vídeo em uso (ao terminar e ao começar), vídeo saindo na aula pública e na página do curso,
+      aula de texto recebendo vídeo, a prévia sem `requireAdmin` e a tela gravando antes do fim →
+      todas reprovam. Revertido. **O que falta provar no ar** (bunny.md §7): o iframe tocando no
+      nosso site com o token do embed **e** o CDN token ligados, e o endereço do player
+      (`iframe.` ou `player.mediadelivery.net`).
 - [ ] **Etapa 4 — a trava de acesso e a aula tocando para o aluno:** adianta da Fase 4 o model
       `Subscription`, o `temAcessoAtivo()` e o `requireActiveMembership`, **sem Stripe**; rota
       `GET /api/lessons/:id/player`; assinatura de teste do `member@` **só fora de produção** (o
@@ -1385,7 +1415,11 @@ landmark. Corrigido junto.
       apresentação, descrição, aula publicada. Estados de carregando, erro e vazio. Testes: 3 de
       servidor + 10 de tela; mutações (a conta do preenchimento, o status em inglês, a cadeia das
       aulas publicadas) reprovam. Textos aprovados pelo operador em 28/09/2026.
-- [ ] **Quinto item do preenchimento: o vídeo de cada aula** — entra com a etapa 3 do Bloco U.
+- [x] **Quinto item do preenchimento: o vídeo de cada aula** — entra com a etapa 3 do Bloco U.
+      *(28/09, no `dev`)* "N aulas sem vídeo": aulas de **vídeo** publicadas na cadeia ainda sem o
+      vídeo (a de texto não conta); a lista do admin devolve `lessonsWithoutVideo`. **Curso sem aula
+      publicada não ganha o item de graça** (sairia com 20% sem nada) e não repete o aviso: o que
+      falta ali já é "Nenhuma aula publicada". Com cinco itens, cada um vale 20%.
 - [ ] **Horas assistidas** e **Alunos** viram número — na Fase 5 (checkboxes lá).
 - [ ] **Avaliação** vira número — na Fase 5; antes, decidir a P27 (`pendencias.md`).
 - **Fora, e não pedido:** busca, ordenação e troca de visualização que a Udemy tem no topo da lista.
@@ -1498,19 +1532,135 @@ cada campo, a regra do ✓, 160 caracteres nas três listas e o Visualizar esper
       `descriptionWordCount` (no lugar do sim/não), contado pelo `contarPalavras` do `core` — o
       mesmo do ✓ —, e o que falta diz "Descrição curta (menos de 200 palavras)".
 
-**Etapa 2 — o Conteúdo (junto com a etapa 3 do Bloco U, o vídeo das aulas):**
-- [ ] **"+" entre dois itens** (passar o mouse entre eles mostra o "+") para inserir aula ou
-      módulo ali, também pelo teclado.
-- [ ] **Arrastar para reorganizar** aulas e módulos, **mantendo as setas** para o teclado.
-      Peça nova: proposta no plano da etapa, com o ok do operador — **a mesma do C4 etapa 5**
-      (ordem dos cursos e das perguntas frequentes): uma peça de arrastar para o admin inteiro.
-- [ ] **Tipos de item no "+":** Aula (vídeo **ou** texto) e Quiz. Aula de texto tem o seu
+**Etapa 2 — o Conteúdo (junto com a etapa 3 do Bloco U, o vídeo das aulas):** *plano aprovado em
+28/09/2026, em 5 partes (2a–2e), um commit cada; o operador pediu para fazer tudo e revisar no
+fim. Respostas dele no mesmo dia: **dnd-kit liberado** · vídeo das aulas **testado no ar** ·
+arquivos numa **Storage Zone própria, sem CDN**, entregues só pelo servidor · **quiz em etapa
+própria**.*
+- [x] **2a — preparação** *(28/09, no `dev`)*. A lista de aulas (328 linhas) virou três arquivos em
+      `components/admin/course-content/` (`ModuleLessonTree`, `ModuleCard`, `LessonRow`). **Uma
+      rota só para a ordem:** `PUT /api/admin/courses/:id/estrutura` recebe a lista inteira
+      (`{ modulos: [{ id, aulas }] }`) e grava numa transação; a aula pode mudar de módulo **dentro
+      do curso**, e a lista tem que ser exatamente a do curso (aula ou módulo de outro curso,
+      faltando ou repetido → 400, nada muda). As setas passaram a usar essa rota: antes trocavam
+      dois números em duas gravações, e itens empatados no 0 não saíam do lugar. A ordem nova sai
+      de `lib/course-structure.ts` (função pura). Setas e lixeiras ganharam nome para leitor de
+      tela, e o status de módulo e aula aparece em português. **Trava da Fase 3:** a árvore da
+      trilha (`/trilhas/:slug` e `/mine/:id`) trocou `include` por `select` explícito, com teste
+      dos campos. Testes: 9 de servidor (ordem) + 1 (campos da trilha), 6 da função, 5 de tela.
+      **Mutação:** aula de outro curso aceita, repetição aceita, trilha de volta ao `include`,
+      a direção ignorada e a seta mandando lista parcial → todas reprovam. Revertido.
+- [x] **2b — "+" entre dois itens** (passar o mouse entre eles mostra o "+") para inserir aula ou
+      módulo ali, também pelo teclado *(28/09, no `dev`)*. `course-content/InsertPoint.tsx`:
+      escondido por **opacidade** (nunca `hidden`), então o Tab o alcança; entre aulas oferece
+      **Aula de vídeo · Aula de texto · Quiz (EM BREVE, sem ação)**; entre módulos, **Módulo**
+      (vai direto ao título). A aula ou o módulo nasce **na posição**: `POST
+      /api/admin/modules/:id/lessons` e `POST /api/admin/courses/:id/modules` com `posicao`, e
+      o servidor reescreve a ordem numa transação (desempata itens no 0). **Aula de texto:**
+      migration `20260928140000_lesson_kind_content` (enum `LessonKind` VIDEO|TEXT, as aulas
+      antigas viram VIDEO; `Lesson.content`), painel "Editar texto" com o mesmo `MarkdownField`
+      da descrição (generalizado), até **20.000 caracteres** *(proposta do agente no plano
+      aprovado)*. **O servidor recusa texto em aula de vídeo** (400 `TextoSoEmAulaDeTexto`), e o
+      tipo não muda depois de criada. **O texto é conteúdo pago: provado por teste que não sai**
+      na página do curso, na aula pública nem na busca. Passo 0 no dev: mesmas contagens (só
+      `_prisma_migrations` 9→10), 0 sem RLS, login 200, "No difference detected". Testes: 10 de
+      servidor, 8 de tela. **Mutação:** posição ignorada, texto aceito em aula de vídeo, texto
+      saindo na aula pública, posição errada na tela, "+" com `hidden` e o quiz virando botão →
+      todas reprovam. Revertido.
+- [x] **2c — Arrastar para reorganizar** aulas e módulos, **mantendo as setas** para o teclado
+      *(28/09, no `dev`)*. Peça nova **dnd-kit, liberada pelo operador em 28/09** (registro e
+      gatilho em `tech-stack.md`) — **a mesma do C4 etapa 5** (ordem dos cursos e das perguntas
+      frequentes). `course-content/arrastar.tsx`: alça de arrastar (botão com nome) em cada módulo e
+      aula; **a aula pode ir para outro módulo do curso**; a ordem nova sai de `aplicarArraste`
+      (função pura) e vai pela rota única da 2a; soltar no mesmo lugar não grava. Pelo teclado:
+      espaço pega, setas movem, espaço solta, com instruções e avisos **em português**. **Achado
+      do teste, corrigido na mesma parte:** a seta para baixo, partindo de um módulo, parava na
+      primeira aula dele e o módulo não saía do lugar; agora a seta só procura item do mesmo tipo.
+      O passo Conteúdo carrega sob demanda: **o dnd-kit não está no pacote do aluno** (build
+      conferido). Testes: 9 da função, 5 de tela (o jsdom não mede a tela: o teste dá a cada
+      elemento uma posição falsa, na ordem da página). **O arraste com o mouse o operador confere
+      na tela.** **Mutação:** a seta sem filtrar o tipo, a aula indo para o fim, soltar no mesmo
+      lugar gravando, a aula sumindo e as instruções em inglês → todas reprovam (a terceira só
+      depois de corrigir o teste, que soltava antes da medida e não podia falhar). Revertido.
+- [x] **Tipos de item no "+":** Aula (vídeo **ou** texto) e Quiz. Aula de texto tem o seu
       texto, com negrito e listas; **aula de vídeo não tem descrição** (confirmado em 28/09).
-- [ ] **Arquivos para baixar por aula, só para assinantes**, guardados de forma protegida.
-      Exige decidir no plano onde e como (as capas são públicas; estes não podem ser).
-- [ ] Vídeo **sem limite** de tamanho ou resolução no site; **um por vez**; **sem reuso** entre
-      aulas.
-- [ ] **Quiz escrito pelo operador** — pode virar etapa própria, se ficar grande.
+      *Feito na 2b; o Quiz aparece como EM BREVE até a etapa própria dele.*
+- [x] **2e — Arquivos para baixar por aula, só para assinantes**, guardados de forma protegida
+      *(28/09, no `dev`: o ENVIO pelo admin)*. **Onde, decisão do operador de 28/09:** uma
+      **Storage Zone própria do Bunny, sem Pull Zone** (nada lá tem endereço público; só o nosso
+      servidor entrega). Tabela `lesson_file` (migration `20260928180000_lesson_file`, com RLS):
+      aula, nome original, caminho, tamanho. O arquivo chega cru (como a capa), com o nome no
+      cabeçalho; **no Storage o nome é aleatório** (`aulas/<aula>/<24 caracteres>.<ext>`), o do
+      operador fica só no banco, e a tela **nunca** recebe o caminho. Limite de **50 MB** e as
+      extensões **pdf, xlsx, xlsm, xls, csv, docx, pptx, pbix, zip, txt, sql, py, ipynb, json**
+      *(propostas do agente no plano aprovado)*, conferidos na tela e no servidor. **Trava contra
+      o apagar recursivo** (fato da doc, via context7 em 28/09: apagar pasta no Bunny apaga tudo
+      dentro): apagar só aceita caminho de arquivo nesse formato exato. Se o Bunny recusar
+      apagar, o registro fica (502). Sem as variáveis, 503 — "O armazenamento de arquivos não está
+      configurado neste ambiente." Tela: botão **Arquivos** em cada aula (`LessonFilesPanel.tsx`),
+      um painel aberto por vez. Passo 0 no dev: tabela nova vazia **com RLS**, as outras contagens
+      iguais, login 200, "No difference detected". Testes: 24 de servidor (com a trava do caminho,
+      função pura), 7 de tela. **Mutação:** a trava aceitando pasta, qualquer extensão, o nome do
+      operador no Storage, o caminho saindo para a tela, apagar o registro com o Bunny recusando,
+      o envio sem `requireAdmin` e a tela sem conferir o tipo → todas reprovam. Revertido.
+      **A entrega ao aluno** (só assinante, sempre como download) **entra com a trava de acesso,
+      na etapa 4 do Bloco U**: hoje nenhuma rota entrega o arquivo.
+- **Revisão de segurança (`security-vulnerability-reviewer`) das partes 2d e 2e, 28/09/2026:
+  nenhum P0 nem P1.** Conferiu: só admin nas rotas novas; chave e token key nunca em resposta nem
+  em log; token no formato da doc, 6 h; nenhuma leitura pública devolve vídeo, envio em andamento,
+  texto da aula nem endereço assinado; o `PATCH` da aula descarta `bunnyVideoId`; a trava do
+  caminho impede apagar pasta. **Quatro P2 (baixo), registrados e NÃO corrigidos** (decisão de
+  quando é do operador):
+  - [ ] **Corrida na troca de vídeo** (`admin-lesson-video.ts`): o `complete` lê e depois grava sem
+        condição; com **duas abas do admin** trocando o vídeo da mesma aula ao mesmo tempo, a
+        limpeza pode apagar o vídeo em uso. Correção proposta: `updateMany` condicional
+        (`where: { id, bunnyVideoPendingId }`) e apagar só se `count === 1`, com teste que
+        intercala os dois pedidos. *O vídeo de apresentação (`admin-media.ts`) tem a mesma forma.*
+  - [x] **Excluir aula, módulo ou curso não apaga no Bunny** o vídeo, o envio pendente e os
+        arquivos (a cascata do banco perde o caminho). **FEITO em 28/09 — decisão do operador:**
+        *"deveria excluir o vídeo, já que ele ficaria perdido no Bunny"*. `server/src/lib/
+        limpeza-no-bunny.ts`: excluir **aula** apaga no Bunny os arquivos, o envio pela metade e o
+        vídeo; **módulo** faz isso em cada aula; **curso** também, e mais o vídeo de apresentação
+        (e o envio pela metade dele). **O Bunny primeiro, o registro depois:** se o Bunny recusar,
+        a exclusão para (502 `BunnyNaoApagou`) e a tela avisa; cada coisa apagada lá sai do banco
+        na hora, então tentar de novo continua de onde parou. Sem o Bunny configurado, aula com
+        vídeo ou arquivo não se exclui (não há como apagar lá). *Não confundir com a deleção de
+        vídeo de curso ARQUIVADO, proposta e rejeitada em Ago 2026: arquivar continua não apagando
+        nada; isto é só a EXCLUSÃO.* Testes: 9 de servidor, 4 de tela. **Mutação:** excluir sem
+        limpar (aula e módulo), excluir com o Bunny recusando, esquecer o envio pela metade, não
+        tirar do banco o que já foi apagado, esquecer a apresentação e a tela sem aviso → todas
+        reprovam. Revertido.
+  - [ ] **Testes de "não vaza" sem as trilhas do aluno:** o do texto da aula não consulta
+        `/api/trilhas/:slug` nem `/mine/:id`, e o do vídeo não consulta `/mine/:id`. O código
+        protege (`select` explícito), mas nenhum teste reprova se voltar o `include`.
+  - [ ] **Nome do arquivo para o download** (etapa 4): na rota de entrega, usar
+        `res.attachment()`/`res.download()` (nunca interpolar no `Content-Disposition`) e tirar do
+        nome os caracteres de direção de texto (U+202E e parecidos), que disfarçam a extensão.
+- [x] **Excluir a aula (ou o curso) não apaga os arquivos dela no Bunny** *(achado da 2e;
+      **feito em 28/09** junto com o vídeo, decisão do operador — ver a revisão de segurança,
+      acima)*. O registro some pela cascata do banco; o arquivo
+      fica na zona, que não é pública, então não vaza — mas ocupa espaço (US$ 0,02/GB/mês). Fazer
+      junto com a entrega ao aluno (etapa 4 do Bloco U), ou antes, se o operador pedir.
+- [x] **Editar e adicionar como na Udemy** *(decisões do operador, 28/09/2026, a partir dos prints
+      dele: "tem um monte de salvar")*. **Nenhum Salvar solto na tela:** a linha do módulo e a da
+      aula mostram só o texto (título, tipo, camada, status em português, "Prévia grátis"); o
+      **lápis** abre a edição daquele item, com **Cancelar** e **Salvar** (`ModuleHeader.tsx`,
+      `LessonEditForm.tsx`). **Adicionar já grava:** os campos fixos "Título da nova aula" e
+      "Título do novo módulo" viraram os botões **"+ Aula"** e **"+ Módulo"**, que abrem o mesmo
+      formulário do "+" entre itens; o botão que grava diz **"Adicionar aula"** / **"Adicionar
+      módulo"** (era "Criar"). O "+" discreto depois do último item saiu (o botão fixo faz esse
+      papel), e o "+" fica no começo da linha, não no centro (pedido dele, no mesmo dia). O botão
+      do conteúdo da aula de texto passou a "Texto da aula", par de "Vídeo da aula". *O "objetivo
+      do módulo" que a Udemy pede ao criar a seção continua fora (decisão de 27–28/09).* O cartão
+      do módulo se dividiu (`ModuleCard`, `ModuleHeader`, `LessonList`); opções e estilos
+      compartilhados em `course-content/opcoes.ts`. Testes: 6 novos, 8 ajustados. **Mutação:** a
+      linha nascendo em edição (aula e módulo), Cancelar gravando, Salvar sem fechar e os botões
+      fixos na posição errada → todas reprovam. Revertido.
+- [x] **2d** — Vídeo **sem limite** de tamanho ou resolução no site; **um por vez**; **sem reuso**
+      entre aulas *(28/09, no `dev`: é o vídeo das aulas, Bloco U etapa 3 — detalhe lá)*.
+- [ ] **Quiz escrito pelo operador** — **etapa própria** *(decisão do operador, 28/09/2026: tem
+      decisões dele — uma ou várias respostas certas, explicação, nota mínima, o que o aluno vê)*.
+      No "+", aparece como EM BREVE.
 
 **Etapa 3 — Legendas:**
 - [ ] **Tela própria** no passo 4: "x de y aulas com legenda"; enviar, baixar e excluir o `.vtt`

@@ -93,6 +93,26 @@ async function sessaoMember(): Promise<string[]> {
   return (res.headers["set-cookie"] as unknown as string[] | undefined) ?? [];
 }
 
+// `select` EXPLÍCITO na árvore da trilha (trava da Fase 3, Bloco E etapa 2,
+// 28/09/2026): coluna nova da trilha não sai na resposta pública sem alguém
+// decidir. Voltar ao `include` faz dono, status e `isTemplate` aparecerem aqui.
+describe("a trilha pública só devolve os campos escolhidos", () => {
+  it("GET /api/trilhas/:slug", async () => {
+    const res = await request(app).get(`/api/trilhas/trilha-ok${SUFIXO}`);
+    expect(res.status).toBe(200);
+    expect(Object.keys(res.body).sort()).toEqual([
+      "description",
+      "id",
+      "language",
+      "name",
+      "planModules",
+      "skillsCovered",
+      "slug",
+    ]);
+    expect(Object.keys(res.body.planModules[0]).sort()).toEqual(["displayOrder", "id", "items", "title"]);
+  });
+});
+
 describe("P1-a — aula publicada em curso arquivado não vaza", () => {
   it("GET /api/lessons/:id devolve 404, não os dados do curso fora do ar", async () => {
     const res = await request(app).get(`/api/lessons/${aulaOrfaId}`);

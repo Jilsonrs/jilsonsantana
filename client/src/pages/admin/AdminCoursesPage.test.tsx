@@ -27,6 +27,7 @@ const course: AdminCourseCard = {
   hasIntroVideo: false,
   descriptionWordCount: 0,
   publishedLessonCount: 0,
+  lessonsWithoutVideo: 0,
 };
 
 const completo: AdminCourseCard = {
@@ -67,6 +68,28 @@ describe("AdminCoursesPage", () => {
     // context argument — assert on the actual variable passed, not an exact
     // arg-count match.
     await waitFor(() => expect(deleteCourse.mock.calls[0]?.[0]).toBe(1));
+  });
+});
+
+// Excluir apaga no Bunny antes (decisão do operador, 28/09/2026): se o Bunny
+// recusar, o curso fica, e a tela diz o porquê.
+describe("AdminCoursesPage — quando excluir falha", () => {
+  it("o Bunny recusou: diz que o vídeo ou os arquivos não foram apagados", async () => {
+    deleteCourse.mockRejectedValue({ response: { status: 502, data: { error: "BunnyNaoApagou" } } });
+    renderWithProviders(<AdminCoursesPage />);
+    fireEvent.click(await screen.findByRole("button", { name: "Excluir" }));
+
+    expect((await screen.findByRole("alert")).textContent).toBe(
+      "Não foi possível excluir: o Bunny não apagou o vídeo ou os arquivos. Tente de novo.",
+    );
+  });
+
+  it("outra falha: aviso geral", async () => {
+    deleteCourse.mockRejectedValue(new Error("rede"));
+    renderWithProviders(<AdminCoursesPage />);
+    fireEvent.click(await screen.findByRole("button", { name: "Excluir" }));
+
+    expect((await screen.findByRole("alert")).textContent).toBe("Não foi possível excluir. Tente de novo.");
   });
 });
 
@@ -146,12 +169,13 @@ describe("AdminCoursesPage — o cartão do curso", () => {
     expect(c.queryByText("Nenhuma aula publicada")).toBeNull();
   });
 
-  it("preenchimento pela metade: 50%, e só o que falta aparece", async () => {
+  // Cinco itens desde o vídeo das aulas (28/09/2026): cada um vale 20%.
+  it("preenchimento pela metade: 60%, e só o que falta aparece", async () => {
     adminGetCourses.mockResolvedValue([{ ...course, thumbnailUrl: "/img/x.jpg", publishedLessonCount: 1 }]);
     renderWithProviders(<AdminCoursesPage />);
     const c = within(await cartao(course.title));
 
-    expect(c.getByText("50%")).toBeTruthy();
+    expect(c.getByText("60%")).toBeTruthy();
     expect(c.queryByText("Falta a capa")).toBeNull();
     expect(c.queryByText("Nenhuma aula publicada")).toBeNull();
     expect(c.getByText("Falta o vídeo de apresentação")).toBeTruthy();
@@ -169,7 +193,7 @@ describe("AdminCoursesPage — descrição curta", () => {
     renderWithProviders(<AdminCoursesPage />);
     const c = within(await cartao(completo.title));
 
-    expect(c.getByText("75%")).toBeTruthy();
+    expect(c.getByText("80%")).toBeTruthy();
     expect(c.getByText("Descrição curta (menos de 200 palavras)")).toBeTruthy();
     expect(c.queryByText("Falta a descrição")).toBeNull();
   });
@@ -181,6 +205,30 @@ describe("AdminCoursesPage — descrição curta", () => {
 
     expect(c.getByText("100%")).toBeTruthy();
     expect(c.queryByText(/Descrição curta/)).toBeNull();
+  });
+});
+
+// O QUINTO ITEM: aula de vídeo publicada sem o vídeo (Bloco U, etapa 3 — 28/09/2026).
+describe("AdminCoursesPage — aulas sem vídeo", () => {
+  const cartao = (titulo: string) => screen.findByRole("article", { name: titulo });
+
+  it.each([
+    [1, "1 aula sem vídeo"],
+    [3, "3 aulas sem vídeo"],
+  ])("%i aula(s) de vídeo sem o vídeo: não conta, e diz quantas", async (quantas, texto) => {
+    adminGetCourses.mockResolvedValue([{ ...completo, lessonsWithoutVideo: quantas }]);
+    renderWithProviders(<AdminCoursesPage />);
+    const c = within(await cartao(completo.title));
+    expect(c.getByText("80%")).toBeTruthy();
+    expect(c.getByText(texto)).toBeTruthy();
+  });
+
+  // Curso sem aula nenhuma não ganha o item de graça, e não repete o aviso.
+  it("curso sem aula publicada: o item não conta, e não aparece \"0 aulas sem vídeo\"", async () => {
+    renderWithProviders(<AdminCoursesPage />);
+    const c = within(await cartao(course.title));
+    expect(c.getByText("0%")).toBeTruthy();
+    expect(c.queryByText(/sem vídeo/)).toBeNull();
   });
 });
 

@@ -9,12 +9,17 @@ import { createHash } from "node:crypto";
 // `POST /library/:id/videos` (o id volta em `guid`), e o envio retomável (TUS)
 // vai direto do navegador para o Bunny com uma assinatura SHA-256.
 
-/** As bibliotecas que o site usa. A de aulas entra na etapa 3 do Bloco U. */
-export type Biblioteca = "apresentacao";
+/**
+ * As bibliotecas que o site usa (bunny.md §3.1): a de APRESENTAÇÃO (sem token:
+ * toca para qualquer visitante) e a de AULAS (com token: o player só abre com o
+ * endereço assinado pelo nosso servidor — Bloco U, etapa 3).
+ */
+export type Biblioteca = "apresentacao" | "aulas";
 
 function config(biblioteca: Biblioteca) {
   const vars = {
     apresentacao: { id: process.env.BUNNY_STREAM_INTRO_LIBRARY_ID, chave: process.env.BUNNY_STREAM_INTRO_API_KEY },
+    aulas: { id: process.env.BUNNY_STREAM_LESSONS_LIBRARY_ID, chave: process.env.BUNNY_STREAM_LESSONS_API_KEY },
   }[biblioteca];
   return vars.id && vars.chave ? { id: vars.id, chave: vars.chave } : null;
 }
@@ -45,6 +50,34 @@ export function enderecoDoPlayer(biblioteca: Biblioteca, videoId: string | null)
 
 const montarEndereco = (libraryId: string, videoId: string) =>
   `https://iframe.mediadelivery.net/embed/${libraryId}/${videoId}`;
+
+/**
+ * O token do player com token (Embed view token authentication). Função pura.
+ * Formato CONFIRMADO na doc oficial via context7 em 28/09/2026:
+ * `SHA256_HEX(token_security_key + video_id + expires)`, com `expires` em
+ * SEGUNDOS, e a chave é a TOKEN KEY da biblioteca (Security), não a API key.
+ */
+export function tokenDoPlayer(chaveDoToken: string, videoId: string, expira: number): string {
+  return createHash("sha256").update(`${chaveDoToken}${videoId}${expira}`).digest("hex");
+}
+
+// 6 h: dentro da janela de 6–12 h decidida em Ago 2026 (sem trava por IP, para o
+// vídeo não parar quando o aluno troca o Wi-Fi pelo 4G). Não encurtar.
+export const VALIDADE_DO_PLAYER = 6 * 60 * 60;
+
+/**
+ * O endereço ASSINADO do player de uma aula (`?token=…&expires=…`). `null` sem a
+ * biblioteca de aulas ou sem a token key neste ambiente (o computador do
+ * operador — bunny.md §5). Quem chama decide a quem entregar: hoje só o admin
+ * (a prévia do editor); o aluno, na etapa 4, depois da trava de acesso.
+ */
+export function enderecoAssinado(videoId: string | null, agora = Date.now()): string | null {
+  const c = config("aulas");
+  const chaveDoToken = process.env.BUNNY_STREAM_LESSONS_TOKEN_KEY;
+  if (!videoId || !c || !chaveDoToken) return null;
+  const expira = Math.floor(agora / 1000) + VALIDADE_DO_PLAYER;
+  return `${montarEndereco(c.id, videoId)}?token=${tokenDoPlayer(chaveDoToken, videoId, expira)}&expires=${expira}`;
+}
 
 export type CredenciaisDeEnvio = {
   videoId: string;

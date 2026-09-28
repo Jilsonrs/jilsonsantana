@@ -47,11 +47,28 @@ const publicadoNaCadeia = {
     },
   ],
 };
-const planTreeInclude = {
+// A árvore da trilha, com `select` EXPLÍCITO em todo nível (trava da Fase 3, feita
+// no Bloco E, etapa 2 — 28/09/2026): com `include`, toda coluna nova da trilha ou
+// do módulo sairia nas respostas sem ninguém decidir. Só o que `TrilhaDetail`
+// (client) usa, mais o idioma que `comIdioma` converte.
+const planTreeSelect = {
+  id: true,
+  slug: true,
+  name: true,
+  description: true,
+  skillsCovered: true,
+  language: true,
   planModules: {
     orderBy: byOrder,
-    include: {
-      items: { where: publicadoNaCadeia, orderBy: byOrder, include: itemInclude },
+    select: {
+      id: true,
+      title: true,
+      displayOrder: true,
+      items: {
+        where: publicadoNaCadeia,
+        orderBy: byOrder,
+        select: { id: true, itemType: true, displayOrder: true, ...itemInclude },
+      },
     },
   },
 };
@@ -143,7 +160,7 @@ router.get("/trilhas/mine/:id", requireAuth, async (req, res) => {
   if (id === null) return;
   const trilha = await prisma.learningPlan.findFirst({
     where: { id, ownerUserId: user.id },
-    include: planTreeInclude,
+    select: planTreeSelect,
   });
   if (!trilha) {
     res.status(404).json({ error: "NotFound" });
@@ -156,7 +173,7 @@ router.get("/trilhas/mine/:id", requireAuth, async (req, res) => {
 router.get("/trilhas/:slug", async (req, res) => {
   const trilha = await prisma.learningPlan.findFirst({
     where: { slug: req.params.slug, status: PUBLISHED, isTemplate: true },
-    include: planTreeInclude,
+    select: planTreeSelect,
   });
   if (!trilha) {
     res.status(404).json({ error: "NotFound" });
