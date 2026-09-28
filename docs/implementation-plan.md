@@ -121,13 +121,31 @@
 > `20260927120000_course_intro_video_pending` entra em produção pelo pre-deploy.
 > **Depois, no mesmo dia:** a prévia do admin que se atualiza sozinha quando o Bunny termina, e o
 > nome do vídeo no Bunny = o nome do arquivo enviado, decisão do operador.
-> **Próximo passo — decidido pelo operador em 23/09: o C4, em 5 etapas, uma por vez.** A etapa 1
-> está feita e publicada; a próxima é a **etapa 3**, que depende das decisões P17 e P18
-> (`pendencias.md`). Detalhe no bloco C4. Continuam na
-> fila, sem ordem: o resto do **Bloco I** (agora menor — ver as decisões de 23/09 no bloco) · **C5**
-> (vitrine fora do React — **bloqueado** até o operador definir o conteúdo das telas) · **o corpo
-> da Fase 3** (Bunny, HIGH RISK) · os itens de **continuidade do operador** antes do go-live (2FA,
-> backup frio).
+> **Publicado em 27/09, à noite (`main` = `dbb4c5e`):** o **Bloco A** (o cartão do curso na lista
+> do admin, com capa, status em português e a barra de Preenchimento) e o **Bloco B** (limite de
+> caracteres com contador nos campos do curso, e a descrição com negrito, itálico e listas, pelo
+> `react-markdown`). **No `dev`, ainda não publicado (28/09):** só documentos e o texto do
+> `server/.env.example` — nada que mude o site.
+> **Decidido em 27–28/09, ainda não construído:** o **Bloco E** (o editor do curso em 7 passos, a
+> partir dos prints da Udemy e de 5 plataformas pesquisadas), a mudança das telas do aluno para
+> `/aluno/*`, o conteúdo de cada seção planejada do admin (e a nova **Comunicação**) e as páginas
+> públicas que faltam. Tudo no corpo deste plano.
+>
+> **PRÓXIMO PASSO: implementação, e QUAL BLOCO é decisão do operador.** Candidatos, com o que cada
+> um precisa:
+> - **Bloco U, etapa 3** (o vídeo de cada aula, com prévia no admin e prévia grátis) — precisa das
+>   tarefas dele no painel do Bunny (P19: desligar o multi-audio; as 3 variáveis da biblioteca de
+>   aulas no Railway). Anda **junto com a etapa 2 do Bloco E** (o Conteúdo). É o que ele disse que
+>   queria antes das mudanças na página do curso (27/09).
+> - **Bloco E, etapa 1** (o menu do curso em passos) — não depende de nada externo.
+> - **Telas do aluno para `/aluno/*`** — pequena, e mais barata antes de haver aluno real.
+> - **C4, etapa 3** (a home lendo os cursos do banco) — depende da P17, da P18 e do cadastro dos
+>   cursos (P16).
+> Fora da escolha e em paralelo: o **Bloco I** restante, o **C5** (bloqueado até o conteúdo das
+> telas), o corpo da Fase 3 (HIGH RISK) e a continuidade do operador (2FA, backup frio).
+>
+> **Cobertura de teste medida em 27/09/2026:** cliente **27 arquivos / 263 testes** · servidor
+> **18 arquivos / 162 testes** · E2E em job próprio. As três rodam no CI.
 > **Pendências do operador: a lista única está em [`docs/pendencias.md`](pendencias.md)** *(desde
 > 25/09/2026, a pedido do operador)*. As que moravam aqui foram para lá (P12–P16). Item resolvido
 > sai daquela lista no mesmo commit em que a resposta é registrada no destino.
@@ -291,10 +309,29 @@ está quase todo vazio:** das cinco planejadas, só **JilsonAI Admin** tem subit
 linhas e nada mais — não responde *"o que falta no admin"*, porque o que falta ainda não foi
 escrito em lugar nenhum.
 
-- [ ] **Operador define, uma frase por seção:** o que tem dentro de **Alunos**, de **Dados** (o
-      painel é uma tela só ou tem partes?), de **Trilhas Admin** e de **Certificados**.
+- [x] **Operador define, uma frase por seção** *(respondido em 28/09/2026)*:
+      - **Alunos:** lista de todos os alunos, com busca; em cada um, os dados do cadastro, a
+        assinatura (situação, desde quando, próxima cobrança), o progresso nos cursos, o botão
+        **Mensagem**, **sincronizar com a Stripe** (destravar quem pagou e ficou sem acesso) e a
+        **exclusão a pedido** (LGPD).
+      - **Dados:** **uma tela só, em blocos**: assinantes (ativos, novos e cancelados no mês),
+        aprendizado (horas assistidas, cursos mais vistos, conclusões), de onde vieram os alunos
+        (campanha do link) e uso do JilsonAI. Se crescer, vira partes depois.
+      - **Trilhas Admin:** a lista das trilhas curadas e um editor **no mesmo jeito do curso**
+        (passos em ordem de preenchimento): nome, idioma, descrição, **imagem da trilha** (campo
+        novo), módulos por competência (cada um com o seu **"Ao terminar, você sabe…"**, visto
+        só por quem está logado), itens, competências cobertas (vão no certificado),
+        publicar. **Trilha pronta leva só cursos inteiros, sem aula avulsa** (decisão da sessão da
+        home, set/2026 — `CLAUDE.md` → Content Model).
+      - **Certificados** (de curso e de trilha): a lista dos emitidos (aluno, curso ou trilha,
+        data, se o aluno deixou público, link de verificação) + **um modelo visual único**
+        (texto e assinatura).
+      - **Comunicação** *(seção nova, Bloco E)*: a fila de dúvidas que sobem do JilsonAI, os
+        anúncios e, depois, o resumo do que os alunos perguntam. **JilsonAI Admin perde
+        "Escalações"** e fica com Persona, Modelo e Quotas.
 - [ ] Declarar no `client/src/lib/navigation.ts` (é dado, não código — cada seção declara os
-      níveis que usa), e só então ligar a exibição do 2º nível para seção planejada.
+      níveis que usa), **incluindo Comunicação e a saída de Escalações do JilsonAI Admin**, e só
+      então ligar a exibição do 2º nível para seção planejada.
 - **Por que nesta ordem:** declarar primeiro é o que faz a visão "o sistema inteiro de uma olhada"
   existir de verdade. Ligar antes entrega a moldura vazia.
 
@@ -1007,6 +1044,14 @@ tornada executável — não uma lista nova):
       ninguém notar, porque a tela fica idêntica; o teste da barra recolhida existe para reprovar
       quem tentar.
 - [ ] **Painel do aluno** como destino pós-login: progresso, próxima aula, trilhas em andamento.
+      **Direção do operador (28/09/2026):** a tela de **Início é o painel do aluno, rica**, com o
+      que ele tem disponível **a um clique**; o menu continua na barra lateral, e o painel nasce
+      preparado para **ganhar itens no futuro**.
+- [ ] **As telas do aluno passam para `/aluno/*`** *(decisão do operador, 28/09/2026, era a P15)*:
+      `/inicio` → `/aluno/inicio`, `/conta` → `/aluno/conta` (com as subpáginas),
+      `/minhas-trilhas` → `/aluno/minhas-trilhas`. Os endereços antigos **redirecionam** para os
+      novos. Mudar agora porque só o operador e a conta de teste usam: com aluno real, quebraria
+      link. Mexe no mapa de navegação, no destino pós-login (`POS_LOGIN`), nos testes e no E2E.
       **Depende da Fase 5** (captura de progresso) — sem `LessonProgress` não há o que mostrar, e
       construir a casca antes deixa uma tela vazia que ninguém sabe se está quebrada.
       **NOTA (Set 2026): a dependência encolheu.** "Trilhas em andamento" já tem dado real desde
@@ -1296,6 +1341,9 @@ landmark. Corrigido junto.
       27/09/2026)*: vira a **segunda exceção** ao portão de vídeo, ao lado do vídeo de apresentação.
       A trava do `CLAUDE.md` → Access Architecture é reescrita junto, no mesmo commit, com teste
       provando que **desligar a prévia volta a trancar a aula**.
+      **Na tela da aula, a lista de módulos e aulas do curso fica no NÍVEL 2 da navegação** (a
+      coluna do meio, colada ao menu lateral, `design.md` §13), e o vídeo ao lado dela *(decisão do
+      operador, 28/09/2026)*.
       `security-vulnerability-reviewer` e revisão do operador antes do "publica".
 - **Done when:** no computador do operador, a capa enviada aparece no admin; o vídeo de
   apresentação toca no admin e na página; o vídeo da aula toca na prévia do admin; o `member@`
@@ -1330,7 +1378,7 @@ landmark. Corrigido junto.
       de **Preenchimento** (`client/src/lib/course-completeness.ts`) com o que falta: capa, vídeo de
       apresentação, descrição, aula publicada. Estados de carregando, erro e vazio. Testes: 3 de
       servidor + 10 de tela; mutações (a conta do preenchimento, o status em inglês, a cadeia das
-      aulas publicadas) reprovam. Os textos são propostas do agente, para o operador aprovar.
+      aulas publicadas) reprovam. Textos aprovados pelo operador em 28/09/2026.
 - [ ] **Quinto item do preenchimento: o vídeo de cada aula** — entra com a etapa 3 do Bloco U.
 - [ ] **Horas assistidas** e **Alunos** viram número — na Fase 5 (checkboxes lá).
 - [ ] **Avaliação** vira número — na Fase 5; antes, decidir a P27 (`pendencias.md`).
@@ -1352,10 +1400,82 @@ landmark. Corrigido junto.
       `MarkdownText.tsx`, o único lugar que mostra Markdown no React (`react-markdown`, com a lista
       do que vale; HTML digitado vira texto; link e imagem não saem). A prévia baixa só quando
       aberta. Testes: 6 de servidor + 13 de tela; mutações (tirar o limite do servidor, trocar por
-      HTML cru, tirar a lista do que vale, o botão não marcar) reprovam. Os textos da tela são
-      propostas do agente, para o operador aprovar.
+      HTML cru, tirar a lista do que vale, o botão não marcar) reprovam. Textos aprovados pelo
+      operador em 28/09/2026.
 - **Fora:** limite nos outros campos de texto (backlog do P2, abaixo) · mostrar a descrição ao aluno
   (a página de curso de hoje não mostra; ver o *DEPOIS* do C5).
+
+### Bloco E — O editor do curso em passos  *(decisões do operador, 27–28/09/2026)*
+
+> O operador mandou os 29 prints do admin de curso da Udemy; o agente cruzou com a escola e
+> pesquisou cinco plataformas, e o operador respondeu item a item. **Cada linha abaixo é decisão
+> dele.** O porquê da organização e o que ficou fora estão em `courses.md` → *O admin do curso*.
+> Nada aqui foi construído ainda. **Cada etapa passa por plano aprovado antes do código.**
+
+**Etapa 1 — o menu do curso em passos (agora, sem depender de nada):**
+- [ ] O formulário único vira **um menu no nível 2** (coluna do meio) com **7 passos em
+      ordem de preenchimento**, cada um com ✓ quando completo: Informações básicas · Para
+      quem é · Conteúdo · Legendas · Página do curso · Mensagens · Publicar. **Cada passo salva a
+      sua parte.** Topo: voltar, título, status, duração publicada, **Visualizar**.
+      *Depende do nível 2 existir (Bloco S2); se ainda não existir, esta etapa o constrói.*
+- [ ] **Publicar** reúne o que falta (a barra de Preenchimento, agora também no editor),
+      status, ordem no catálogo e **um lugar para copiar o link do curso**.
+- [ ] **Visualizar** mostra a página do curso como o aluno vê, **inclusive em rascunho, só para o
+      admin** — a rota pública continua devolvendo só o publicado.
+- [ ] **Dicas embaixo dos campos**: o agente escreve o rascunho, o operador aprova.
+- [ ] **"Todos os níveis"** no Nível: valor novo no enum `Level`, com migration.
+- [ ] **As três listas viram um campo por item**, com contador, lixeira e ordem; **"O que vai
+      aprender" com até 160 caracteres por item**.
+- [ ] Descrição curta conta como **"falta"** no Preenchimento, sem travar.
+
+**Etapa 2 — o Conteúdo (junto com a etapa 3 do Bloco U, o vídeo das aulas):**
+- [ ] **"+" entre dois itens** (passar o mouse entre eles mostra o "+") para inserir aula ou
+      módulo ali, também pelo teclado.
+- [ ] **Arrastar para reorganizar** aulas e módulos, **mantendo as setas** para o teclado.
+      Peça nova: proposta no plano da etapa, com o ok do operador — **a mesma do C4 etapa 5**
+      (ordem dos cursos e das perguntas frequentes): uma peça de arrastar para o admin inteiro.
+- [ ] **Tipos de item no "+":** Aula (vídeo **ou** texto) e Quiz. Aula de texto tem o seu
+      texto, com negrito e listas; **aula de vídeo não tem descrição** (confirmado em 28/09).
+- [ ] **Arquivos para baixar por aula, só para assinantes**, guardados de forma protegida.
+      Exige decidir no plano onde e como (as capas são públicas; estes não podem ser).
+- [ ] Vídeo **sem limite** de tamanho ou resolução no site; **um por vez**; **sem reuso** entre
+      aulas.
+- [ ] **Quiz escrito pelo operador** — pode virar etapa própria, se ficar grande.
+
+**Etapa 3 — Legendas:**
+- [ ] **Tela própria** no passo 4: "x de y aulas com legenda"; enviar, baixar e excluir o `.vtt`
+      por vídeo. Legenda só no idioma do curso. A regra do nome do arquivo (`bunny.md` §7.1)
+      continua valendo.
+
+**Etapa 4 — Mensagens e o sino:**
+- [ ] **O sino ao lado da foto, no topo**: área de avisos do aluno, com as mensagens de
+      **boas-vindas** (ao abrir a primeira aula do curso) e de **parabéns** (ao concluir), e outras
+      comunicações do operador ou do JilsonAI. **Sem e-mail.** O passo 6 do editor é onde ele
+      escreve as duas mensagens do curso.
+
+**Vai para outros blocos (anotado lá quando eles abrirem):**
+- **Página do curso (vitrine, depois do C5):** a seção do autor é **a mesma da home**
+  (`home.author`, uma edição serve às duas) · frases com ✓ em duas colunas · **ferramentas do
+  curso** (campo novo, ex.: Excel 365, Power BI; decisão da sessão da home, set/2026) · etiqueta
+  **"Novo"** (a do C4 etapa 4, que expira em 120 dias),
+  **sem** número de alunos e **sem** "Atualizado em" · no lugar de temas, **as trilhas do curso**
+  · no fim, **outros cursos da escola**, sem nota e sem preço · nunca prometer "acesso vitalício"
+  (o acesso dura enquanto a assinatura estiver ativa).
+- **Fase 4 (assinatura):** campo **"tenho um cupom"** na tela de assinar; o cupom é criado no
+  painel da Stripe. Sem assinatura de presente no lançamento.
+- **Fase 5:** área **Alunos** em cada curso, com busca e botão Mensagem, **sem exportar
+  planilha**.
+- **Fase 6 (JilsonAI):** o aviso da dúvida que sobe para o operador, **sem prazo nem data**, na
+  direção do texto dele: *"Sua dúvida já está com o Jilson… ele vai te responder o quanto antes
+  possível"* · a área **Comunicação** do admin (fila, anúncios, resumo do que os alunos
+  perguntam; sem Tarefas). **A fila de dúvidas mora em Comunicação, não em "JilsonAI Admin ›
+  Escalações"** (operador, 28/09): o JilsonAI Admin fica só com a configuração da IA (Persona,
+  Modelo, Quotas). Corrigir o `navigation.ts` quando a P13 for declarada lá · o JilsonAI **revisando a página do curso** e **fazendo perguntas**
+  sobre a aula · **Role play** com o JilsonAI.
+- **Fase 6.5 (certificados):** **o curso também dá certificado** ao ser concluído; o da trilha
+  continua o de competências.
+- **Fora, por decisão:** a lista, com o porquê de cada item, está em `courses.md` → *O admin do
+  curso*.
 
 ### Bloco I — Escola bilíngue: idioma no conteúdo + dicionário de textos  *(Set 2026 · decisão do operador · spec em `idiomas.md`)*
 
@@ -1674,6 +1794,29 @@ landmark. Corrigido junto.
 - **DEPOIS deste bloco:** `/curso/:slug` e `/trilha/:slug` seguem o mesmo caminho. A página de
   curso espera o **Bunny** (o `introVideoId` toca para não-membro nela) — é a dependência que já
   justificava a ordem original.
+  **A página pública da TRILHA é CURTA** *(decisão do operador na sessão da home, set/2026; trazida
+  do `design-lab` em 28/09)*: nome, frase, os cursos que ela inclui e o botão de assinar — **sem**
+  etapas, aulas nem "ao terminar, você sabe", que só aparecem depois de logar. Motivo dele:
+  simplicidade e não entregar a estrutura aos concorrentes. **Na lista de trilhas**, quem não está
+  logado vai para a página curta; quem está logado vai para a trilha. *A definir na construção:* o
+  que vê quem está logado com a assinatura cancelada.
+  **Curso apagado que foi substituído por outro** (ex.: o temporário em inglês) leva o endereço
+  antigo para o novo, para não virar link quebrado (mesma família do *slug permanente*).
+
+#### Páginas públicas que faltam *(decididas na sessão da home, set/2026; trazidas do `design-lab` em 28/09)*
+
+Mesmo caminho da home: conteúdo definido → mock na `design-lab/` → transposição para template de
+servidor → acabamento. Cada uma em PT e EN.
+
+- [ ] **Quem somos** — explica a escola (que é uma escola, que tem certificado…). Conteúdo: P30.
+- [ ] **Contato** — página própria. Conteúdo e onde ficam os dados da empresa: P30.
+- [ ] **Página para baixar material** — uma página só, para quem chega de fora (ex.: do YouTube)
+      baixar planilha ou arquivo; pede **nome e e-mail**, e a pessoa entra na base de contatos.
+      **Todo inscrito recebe novidades até se descadastrar** (motivo dele: se dependesse de marcar,
+      quase ninguém marcaria). Para valer pela LGPD: a página **avisa na hora** que a pessoa vai
+      receber e-mails, e **todo e-mail tem o link para se descadastrar**. *Em aberto:* como
+      funciona (ele vai ver como outras escolas fazem) e se o aluno segue a mesma regra, porque hoje
+      o `marketingConsent` do aluno começa desligado: P29.
   **A `description` do curso é Markdown** desde 27/09 (Bloco B): quando a página de curso virar
   template de servidor, ela precisa de um renderizador **no servidor**, com HTML cru desligado por
   configuração e a mesma lista do que vale (negrito, itálico, listas). É dependência nova do
@@ -1791,6 +1934,11 @@ landmark. Corrigido junto.
 - [ ] **Etapa 5 — ordem por ARRASTAR** *(operador, 23/09)*: nos cursos, e **o mesmo componente**
       passa a ordenar as perguntas frequentes (hoje, número de Ordem). A biblioteca de arrastar é
       **dependência nova** — nomeá-la no plano da etapa, com o ok do operador.
+      **Com um interruptor: ordem AUTOMÁTICA (mais novo primeiro) ou MANUAL (arrastar)**, e o
+      catálogo **começa na automática** *(decisão do operador na sessão da home, set/2026; trazida
+      do `design-lab` em 28/09)*.
+- [ ] **O curso em destaque ganha uma imagem grande própria** (a do catálogo pode ser pequena
+      demais para o topo da home) — decidir junto com a P17 *(sessão da home, set/2026)*.
 - **Done when:** o operador troca o curso em destaque pelo admin e a home muda.
 
 > **SEQUENCIAMENTO DECIDIDO: este bloco vem DEPOIS do Bunny.** O `introVideoId` é ativo do Bunny

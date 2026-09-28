@@ -126,6 +126,11 @@ servidores (§5); o React responde em `localhost:5173`, a home pública em `loca
 
 **Do aluno — exigem login** *(porta 5173)*
 
+> **Os endereços vão mudar** *(decisão do operador, 28/09/2026)*: `/inicio`, `/conta` e
+> `/minhas-trilhas` passam para **`/aluno/inicio`**, **`/aluno/conta`** e
+> **`/aluno/minhas-trilhas`**, e os antigos redirecionam. Os **arquivos** continuam os mesmos.
+> E o **Início vira o painel do aluno**, rico, com o que ele tem a um clique — vai precisar de mock.
+
 | Endereço | Arquivo |
 |---|---|
 | `/inicio` | `client/src/pages/StudentHomePage.tsx` |
@@ -138,8 +143,14 @@ servidores (§5); o React responde em `localhost:5173`, a home pública em `loca
 | Endereço | Arquivo |
 |---|---|
 | `/admin` | `client/src/pages/AdminPage.tsx` |
-| `/admin/cursos` | `client/src/pages/admin/AdminCoursesPage.tsx` |
-| `/admin/cursos/novo` · `/admin/cursos/:id` | `client/src/pages/admin/AdminCourseFormPage.tsx` + as seções em `client/src/components/admin/course-form/` (divididas em 24/09, com as suas classes) |
+| `/admin/cursos` | `client/src/pages/admin/AdminCoursesPage.tsx` + **o cartão de cada curso**, `client/src/components/admin/AdminCourseCard.tsx` (27/09) |
+| `/admin/cursos/novo` · `/admin/cursos/:id` | `client/src/pages/admin/AdminCourseFormPage.tsx` + as seções em `client/src/components/admin/course-form/` (divididas em 24/09, com as suas classes). **Novos em 27/09:** `CourseMediaSection.tsx` com `ThumbnailUpload.tsx`, `IntroVideoUpload.tsx` e `IntroVideoPreview.tsx`; `MarkdownField.tsx` (a descrição com abas e botões); `Field.tsx` ganhou o contador. |
+
+> **⚠️ O formulário de curso vai virar 7 PASSOS** *(decisão do operador, 28/09/2026 — plano,
+> Fase 3, **Bloco E**)*: um menu no **nível 2** (Informações básicas · Para quem é · Conteúdo ·
+> Legendas · Página do curso · Mensagens · Publicar), cada passo com ✓ quando completo. **As
+> seções de `course-form/` sobrevivem** (viram o conteúdo de cada passo); **a página comprida que
+> as empilha, não**. Formate as seções à vontade; **não invista no arranjo da página inteira**.
 | `/admin/site` → leva a `/admin/site/textos` | (só redireciona) |
 | `/admin/site/textos` | `client/src/pages/admin/AdminSiteTextPage.tsx` + `client/src/components/admin/SiteTextField.tsx` — **uma aba por página** ("Toda página", "Home"; página nova ganha aba sozinha). Com busca, as abas somem e o resultado vem de todas as páginas. As abas têm `aria-pressed` e teste. |
 | `/admin/site/depoimentos` | `client/src/pages/admin/AdminTestimonialsPage.tsx` |
@@ -166,6 +177,9 @@ servidores (§5); o React responde em `localhost:5173`, a home pública em `loca
 
 Trilhas Admin · Alunos · JilsonAI Admin · Dados · Certificados · JilsonAI (do aluno).
 Elas existem só no mapa de navegação. **Não procure o arquivo: não há.**
+*(28/09/2026: o operador decidiu o que cada uma tem dentro — plano, Fase 2, "o que cada seção
+PLANEJADA vai ter dentro" — e criou uma nova, **Comunicação** (fila de dúvidas, anúncios). Ela
+entra no mapa de navegação numa etapa próxima; "Escalações" sai do JilsonAI Admin e vai para lá.)*
 
 ### FILA DE FORMATAÇÃO — o que está pronto em estrutura e esperando o seu acabamento *(23/09/2026)*
 
@@ -207,6 +221,26 @@ exceto o item 4, que é página pública.
    conta, Faturamento e assinatura e Sair. No celular, a mesma faixa tem o botão da gaveta à
    esquerda. **Não troque o painel por `role="menu"`** sem a navegação por setas que ele promete, e
    mantenha o fechamento por Esc e por clique fora: **têm teste**.
+
+8. **Cartão do curso na lista do admin** (`AdminCourseCard.tsx`, 27/09) — capa 16:9 (sem capa,
+   "Sem imagem"), status em português, "EN", módulos e aulas, três números como **"—" / "em
+   breve"** e a barra de **Preenchimento** com o que falta. Os textos foram **aprovados pelo
+   operador**: mude o visual, não o texto. O cartão tem `role="article"` com o título como nome, e
+   a barra é um `progressbar` com valor: **têm teste**.
+9. **Mídia do curso** (`CourseMediaSection.tsx` e os três componentes de envio, 27/09) — **a ordem
+   foi pedida pelo operador: a mídia em cima, o campo embaixo, o botão por último**; mantenha. No
+   player (`components/content/BunnyPlayer.tsx`, que a prévia usa), **não tire o
+   `referrerPolicy`** do iframe: é ele que deixa o Bunny reconhecer o domínio da escola, e sem ele o
+   vídeo não toca.
+10. **Informações básicas** (`CourseBasicsSection.tsx`, `Field.tsx`, `MarkdownField.tsx`, 27/09) —
+   contador "42/60" embaixo de cada campo e a descrição com as abas **Escrever / Visualizar** e os
+   botões Negrito, Itálico, Lista, Lista numerada. Os textos foram **aprovados**. As abas são
+   `role="tab"` com troca pelas setas do teclado: mantenha. **O painel da aba inativa usa `hidden`
+   de propósito** — é o padrão de abas acessíveis, e não contradiz a regra 3, que é sobre rótulos.
+   A aparência do texto formatado (listas, negrito) mora em
+   `client/src/components/content/MarkdownText.tsx`, **compartilhado**: formatar ali muda todo lugar
+   que mostra Markdown (hoje, a prévia da descrição; depois, telas do aluno e o chat do JilsonAI).
+   Ele é carregado só quando alguém abre Visualizar: não troque o `lazy()` por import direto.
 
 ## 3. Onde você NÃO mexe
 
@@ -366,7 +400,8 @@ Sem essa separação, a décima tela tem dez paletas paralelas e ninguém sabe q
   - **Nível 2 — a coluna secundária clara:** **construído** (`SecondaryNav.tsx`, montado no
     `Layout`). Aparece sozinha quando a seção declara `filhos` — hoje "Minha conta" tem 6, **"Site"
     tem 3** (Textos · Depoimentos · Perguntas frequentes), e "JilsonAI Admin" já tem os dele
-    declarados esperando a tela nascer.
+    declarados esperando a tela nascer. **Vai ser usado pelo editor do curso (Bloco E) e pela tela
+    da aula**, onde a lista de módulos e aulas fica no nível 2 (decisão do operador, 28/09).
   - **Nível 3 — as abas horizontais:** **NÃO construído.** A função `abasDaRota` existe e tem
     teste, mas **nenhum componente a renderiza ainda**. "Cursos Admin" já declara três abas
     (Publicados · Rascunhos · Arquivados) que hoje não aparecem em lugar nenhum.
@@ -386,6 +421,15 @@ Sem essa separação, a décima tela tem dez paletas paralelas e ninguém sabe q
 - **Fontes:** MuseoModerno (**só a marca**, classe `font-brand`), Outfit (apenas H1 e H2, classe `font-display`), Hanken Grotesk (corpo e títulos menores/H3), JetBrains Mono (etiquetas).
 - **O azul `#238FE8` é o acento ÚNICO.** No rail, é o único sinal de "onde estou" — por isso o
   hover ali é neutro.
+
+- **Vem aí, e vai precisar de você** *(decidido pelo operador em 27–28/09, ainda não
+  construído; detalhe no plano)*: o **editor do curso em 7 passos** no nível 2 (Bloco E) · o
+  **"+" entre aulas** e **arrastar para reorganizar** (uma peça de arrastar só, também para a
+  ordem dos cursos e das perguntas) · o **sino** ao lado da foto, no topo, com os avisos do aluno ·
+  o **painel do aluno** no Início · a tela da **aula** (vídeo + lista no nível 2) · e, do lado
+  público, a **página do curso**, a **página curta da trilha**, **Quem somos**, **Contato** e a
+  **página de baixar material** (plano → *Páginas públicas que faltam*). As públicas seguem o
+  caminho da home: mock aqui, transposição, acabamento.
 
 **A lei visual completa é `docs/design.md`.** Ela é viva: se você tiver algo melhor, proponha e a
 gente reescreve. O que não muda sem conversa são as travas de **acessibilidade** — elas não

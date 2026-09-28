@@ -382,7 +382,7 @@ digitados) e **manuais**. Manter os manuais poucos é o que sustenta o operador 
 `Course` carrega:
 - `title` · `subtitle?` (uma frase enquadrada em **resultado**) · `description?` (longa) ·
   `level?` (`INICIANTE|INTERMEDIARIO|AVANCADO`).
-- `learnTags[]` — "o que você vai aprender", renderizado como **pills clicáveis**.
+- `learnTags[]` — "o que você vai aprender", em **frases de até 160 caracteres, em duas colunas com ✓** *(decisão do operador, 28/09/2026; substitui as "pills clicáveis")*.
 - `requirements[]` — pré-requisitos **mostrados abertamente.** Vantagem competitiva: os concorrentes
   escondem; **numa assinatura, mostrar não custa venda e corta reembolso e suporte.**
 - `personas[]` — "pra quem é".
@@ -404,6 +404,38 @@ digitados) e **manuais**. Manter os manuais poucos é o que sustenta o operador 
 
 **Derivados, nunca coluna:** carga horária e número de aulas (Σ das aulas), o agrupamento por
 camada (vem das camadas marcadas), a metadata strip.
+
+**Decisões de 28/09/2026 sobre a página e o certificado** (operador): a seção do autor é **a mesma
+da home** (`home.author`, uma edição serve às duas) · etiqueta **"Novo"**, **sem** número de alunos
+e **sem** "Atualizado em" · as **trilhas do curso** no lugar de categorias, e **outros cursos da
+escola** no fim · **nunca** prometer "acesso vitalício" · **o curso também dá certificado** ao ser
+concluído, além do certificado de competências da trilha.
+
+### O admin do curso — por que é organizado assim *(27–28/09/2026)*
+
+O operador mandou os 29 prints do admin de curso da Udemy (a organização que ele conhece) e pediu
+para pesquisar antes de reinventar. As **centrais de ajuda** de Teachable, Thinkific, LearnWorlds,
+Kajabi e Hotmart (o context7 não tem essas plataformas) mostraram o mesmo padrão em todas:
+**conteúdo** numa área própria, **página do curso** em outra, **configurações/publicar** em outra,
+e quase sempre **preço, alunos e certificado**. A escola seguiu o padrão, mas o operador pediu a
+ordem **de preenchimento**: *"ir completando; quando chegar no final está pronto para publicar"*.
+Daí os 7 passos do *Bloco E* do plano, no nível 2 da navegação.
+
+**O que ficou fora, e por quê** (para ninguém propor de volta sem motivo novo):
+- **Preço, cupom, pacote e carrinho por curso:** a escola é assinatura. Cupom existe, mas é **da
+  assinatura**, criado no painel da Stripe.
+- **Categoria e temas:** servem para separar 200 mil cursos; aqui as trilhas fazem o papel.
+- **Baixar o vídeo:** fura a proteção configurada no Bunny.
+- **Descrição na aula de vídeo** e **objetivo do módulo:** o operador não quis; a aula de **texto**
+  existe e tem o seu texto.
+- **Envio de vários vídeos de uma vez** e **reusar vídeo entre aulas:** um vídeo por vez, cada
+  aula com o seu (a limpeza automática do Bunny continua simples).
+- **Legenda em outro idioma:** curso em inglês é outro curso; reabre se aluno estrangeiro pedir.
+- **Tela de Acessibilidade:** a da Udemy é só caixas de marcar; a acessibilidade do site já é regra
+  em cada tela, e a legenda cobre o principal.
+- **Liberação programada** (aula que abre depois de X dias): contraria a entrada aberta e livre.
+- **Tarefas, simulado, exercício de código, laboratório, assinatura de presente, número de alunos
+  e "Atualizado em" na página:** o operador disse não.
 
 ---
 

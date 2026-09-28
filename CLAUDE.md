@@ -365,6 +365,7 @@ NEVER pass a secret as a CLI argument or read one back into the transcript. Comm
   - `LearningPlan` — `ownerUserId?` (null = curated template), `isTemplate`, `skillsCovered[]` (snapshot for the certificate).
   - `PlanModule` — grouping by competency (`title`, `order`).
   - `PlanItem` — `itemType[COURSE|LESSON]` + `courseId?`/`lessonId?`. This is what gives the **free mix** of whole courses + standalone lessons (only lessons, only courses, or any combination).
+- **A trilha PRONTA (curada) leva só cursos inteiros; a aula avulsa é da trilha do ALUNO** *(decisão do operador na sessão da home, set/2026; trazida para cá em 28/09)*. O modelo continua aceitando os dois tipos de item — quem restringe é o editor da trilha pronta no admin e o servidor, na escrita. A estrutura da trilha (etapas, aulas) só aparece **depois de logar**; a página pública da trilha é curta (plano → C5).
 - **Curated and personalized trilhas are the SAME entity** — only `ownerUserId`/`isTemplate` differ. Launch ships **curated** trilhas (Jilson hand-builds them; he is the "AI v0"). AI-assembled personalized plans (`buildLearningPlan`) land in JilsonAI Fase 4–5 — no rewrite.
 - A member can **save/clone** a curated trilha (becomes theirs, own progress), **edit** it (add/remove courses, lessons, modules), and earns a **certificate at 100%** (name = trilha name; lists `skillsCovered`). The certificate has an **opt-in public verifiable URL** (`/certificado/:publicId`, `isPublic` default false, OG-optimized for LinkedIn) — public only if the student allows it (LGPD).
 - **Onboarding is open and free:** trilhas + courses are browsable; the student clicks and watches whatever they want. `recommendTrilha` is **optional help, never a gate.** (Home section order = a build-time decision.)
@@ -439,9 +440,10 @@ são hoje páginas **React provisórias** (`CatalogPage.tsx`), que fazem os dois
 **serão substituídas** pelo template de servidor — decisão do operador de não construir duas
 vezes. Enquanto isso, **não investir acabamento nelas** (`design-lab/GEMINI.md` § 0).
 
-**PENDÊNCIA conhecida:** as telas de aluno de hoje (`/inicio`, `/conta`, `/minhas-trilhas`) **não**
-seguem o `/aluno/*`. Mover mexe em endereço já em uso, então é decisão do operador e não é urgente
-— mas telas novas do aluno nascem sob `/aluno/`.
+**DECIDIDO (operador, 28/09/2026):** as telas de aluno de hoje (`/inicio`, `/conta`,
+`/minhas-trilhas`) **passam para `/aluno/*`**, com redirecionamento dos endereços antigos. A
+mudança é tarefa do plano (Fase 2 → navegação do aluno); até ela acontecer, os endereços antigos
+seguem valendo — e telas novas do aluno já nascem sob `/aluno/`.
 
 ### A home pública JÁ EXISTE — onde ela mora e como se mexe nela *(set/2026)*
 
