@@ -216,8 +216,11 @@ mude isso.
 
 ## 15. Proposta de organização do editor do curso *(do agente — espera o operador)*
 
-Um menu à esquerda dentro do curso, como na Udemy (é o **nível 2** que o plano de navegação já
-prevê, Bloco S2), com os nomes que o operador já conhece onde eles servem:
+Um menu dentro do curso, como na Udemy, com os nomes que o operador já conhece onde eles servem.
+**O menu é o NÍVEL 2 da navegação, na coluna do meio, colada ao menu lateral, como o `design.md`
+§13 já desenha** *(decisão do operador, 28/09/2026; ele chegou a pedir o menu à direita e voltou
+atrás ao lembrar que o nível 2 existe)*. **A tela onde o aluno assiste à aula segue a mesma regra:**
+a lista de módulos e aulas fica no nível 2, no meio.
 
 **Edição do curso**
 
@@ -327,6 +330,8 @@ Na reorganização, cada um precisa de uma área.
 - **Q35.** Cada módulo ganha o **objetivo de aprendizado** ("o que o aluno consegue fazer ao fim
   deste módulo", até 200 caracteres), como a seção da Udemy? Ele pode aparecer na página do curso e
   também dar contexto ao JilsonAI. E o título do módulo com limite de **80**, como lá?
+- ~~**Q37.** Menu do editor à direita ou no nível 2?~~ **Respondida (28/09/2026): nível 2, no
+  meio, como no `design.md`, no editor do curso e na tela da aula.**
 - **Q36.** Que **tipos de item** a escola terá no "+"? Proposta: **Aula (vídeo ou texto)** no
   lançamento; o **teste** conforme a Q12; e, mais adiante, o **role play com o JilsonAI** (o aluno
   pratica uma conversa, ex.: apresentar um dashboard a um gerente). É exatamente o tipo de coisa

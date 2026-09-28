@@ -1296,6 +1296,9 @@ landmark. Corrigido junto.
       27/09/2026)*: vira a **segunda exceção** ao portão de vídeo, ao lado do vídeo de apresentação.
       A trava do `CLAUDE.md` → Access Architecture é reescrita junto, no mesmo commit, com teste
       provando que **desligar a prévia volta a trancar a aula**.
+      **Na tela da aula, a lista de módulos e aulas do curso fica no NÍVEL 2 da navegação** (a
+      coluna do meio, colada ao menu lateral, `design.md` §13), e o vídeo ao lado dela *(decisão do
+      operador, 28/09/2026)*.
       `security-vulnerability-reviewer` e revisão do operador antes do "publica".
 - **Done when:** no computador do operador, a capa enviada aparece no admin; o vídeo de
   apresentação toca no admin e na página; o vídeo da aula toca na prévia do admin; o `member@`
