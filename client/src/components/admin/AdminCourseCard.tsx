@@ -4,6 +4,7 @@ import { preenchimentoDoCurso, ROTULO_DO_STATUS } from "@/lib/course-completenes
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { CompletenessBar } from "./CompletenessBar";
 
 // Os números que ainda não existem (plano de 27/09/2026): aparecem como "—" com
 // "em breve" e viram número real na Fase 5 — horas assistidas (eventos do
@@ -68,29 +69,7 @@ export function AdminCourseCard({ curso, aoExcluir }: { curso: Curso; aoExcluir:
             ))}
           </dl>
 
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Preenchimento</span>
-              <span className="font-medium">{porcentagem}%</span>
-            </div>
-            <div
-              role="progressbar"
-              aria-label={`Preenchimento de ${curso.title}`}
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-valuenow={porcentagem}
-              className="h-2 w-full overflow-hidden rounded-full bg-muted"
-            >
-              <div className="h-full rounded-full bg-primary" style={{ width: `${porcentagem}%` }} />
-            </div>
-            {faltando.length > 0 && (
-              <ul className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                {faltando.map((item) => (
-                  <li key={item}>{item}</li>
-                ))}
-              </ul>
-            )}
-          </div>
+          <CompletenessBar titulo={curso.title} porcentagem={porcentagem} faltando={faltando} />
         </div>
       </CardContent>
     </Card>

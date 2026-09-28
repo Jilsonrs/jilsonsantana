@@ -5,6 +5,7 @@ import {
   NAVEGACAO,
   navegacao,
   abasDaRota,
+  casaRota,
   itensSecundarios,
   secaoAtiva,
   secoesVisiveis,
@@ -95,7 +96,18 @@ describe("secaoAtiva — onde estou", () => {
 
   it("acende a seção de admin nas rotas dela", () => {
     expect(secaoAtiva("/admin/cursos", doAdmin)?.label).toBe("Cursos Admin");
-    expect(secaoAtiva("/admin/cursos/12", doAdmin)?.to).toBe("/admin/cursos");
+    expect(secaoAtiva("/admin/cursos/novo", doAdmin)?.to).toBe("/admin/cursos");
+  });
+
+  // O editor de um curso (Bloco E, 28/09/2026) é uma seção FORA do menu lateral:
+  // no mapa inteiro ele é quem acende (e monta o nível 2); no rail, que não o
+  // mostra, continua aceso "Cursos Admin".
+  it("dentro de um curso, o editor acende no mapa e Cursos Admin no rail", () => {
+    const doRail = doAdmin.filter((s) => !s.foraDoMenuLateral);
+    for (const rota of ["/admin/cursos/12", "/admin/cursos/12/publicar"]) {
+      expect(secaoAtiva(rota, doAdmin)?.label, rota).toBe("Editar curso");
+      expect(secaoAtiva(rota, doRail)?.label, rota).toBe("Cursos Admin");
+    }
   });
 
   /**
@@ -125,6 +137,22 @@ describe("secaoAtiva — onde estou", () => {
 
   it("rota fora do mapa não acende nada", () => {
     expect(secaoAtiva("/login", doAluno)).toBeUndefined();
+  });
+});
+
+describe("casaRota — parâmetro só casa com número", () => {
+  it("devolve o id do curso", () => {
+    expect(casaRota("/admin/cursos/12/basico", "/admin/cursos/:id")).toEqual({ id: "12" });
+  });
+
+  // Sem isto, "Novo curso" abriria o editor de um curso chamado "novo".
+  it("não casa com texto no lugar do id", () => {
+    expect(casaRota("/admin/cursos/novo", "/admin/cursos/:id")).toBeNull();
+  });
+
+  it("não casa com rota que só começa igual", () => {
+    expect(casaRota("/iniciox", "/inicio")).toBeNull();
+    expect(casaRota("/inicio/7", "/inicio")).toEqual({});
   });
 });
 
@@ -169,6 +197,23 @@ describe("itensSecundarios — o nível 2 só aparece quando vale a pena", () =>
         "Perguntas frequentes",
       ]);
     }
+  });
+
+  // Os 7 passos, em ordem de preenchimento (operador, 27–28/09/2026), com o id
+  // do curso já no endereço. Legendas e Mensagens ainda não têm tela.
+  it("o editor do curso mostra os 7 passos, com o id no endereço", () => {
+    const itens = itensSecundarios("/admin/cursos/12/pagina", secoesVisiveis(Role.ADMIN));
+    expect(itens.map((i) => i.label)).toEqual([
+      "Informações básicas",
+      "Para quem é",
+      "Conteúdo",
+      "Legendas",
+      "Página do curso",
+      "Mensagens",
+      "Publicar",
+    ]);
+    expect(itens[0].to).toBe("/admin/cursos/12/basico");
+    expect(itens.filter((i) => i.estado === "planejado").map((i) => i.label)).toEqual(["Legendas", "Mensagens"]);
   });
 
   it("nenhum filho de Site é prefixo de outro — senão dois acendem juntos", () => {

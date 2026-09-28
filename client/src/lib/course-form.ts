@@ -14,7 +14,6 @@ import {
   type CourseCreateInput,
 } from "@jilson/core";
 import type { AdminCourseDetail } from "@/lib/api";
-import { fromLines, toLines } from "@/lib/array-field";
 
 // A LÓGICA do formulário de curso do admin: o schema da tela, os valores em
 // branco e as duas conversões (curso → formulário, formulário → API). Separada
@@ -24,6 +23,12 @@ import { fromLines, toLines } from "@/lib/array-field";
 function acimaDoLimite(limite: number): string {
   return `Use no máximo ${limite.toLocaleString("pt-BR")} caracteres.`;
 }
+
+const itemDaListaDoFormulario = z.object({
+  valor: z
+    .string()
+    .max(LIMITES_DO_CURSO.itemDaLista, acimaDoLimite(LIMITES_DO_CURSO.itemDaLista)),
+});
 
 export const courseFormSchema = z.object({
   slug: slugSchema,
@@ -39,9 +44,12 @@ export const courseFormSchema = z.object({
     .string()
     .max(LIMITES_DO_CURSO.description, acimaDoLimite(LIMITES_DO_CURSO.description)),
   level: z.union([levelSchema, z.literal("")]),
-  learnTagsText: z.string(),
-  requirementsText: z.string(),
-  personasText: z.string(),
+  // As três listas: um campo por item, até 160 caracteres cada (operador,
+  // 28/09/2026). Objeto `{ valor }` porque o `useFieldArray` do react-hook-form
+  // precisa de um objeto por item para dar a cada um uma identidade estável.
+  learnTags: z.array(itemDaListaDoFormulario),
+  requirements: z.array(itemDaListaDoFormulario),
+  personas: z.array(itemDaListaDoFormulario),
   highlights: z.array(highlightSchema),
   faq: z.array(faqItemSchema),
   camadas: z.array(layerSchema),
@@ -76,9 +84,9 @@ export const blankValues: CourseFormValues = {
   subtitle: "",
   description: "",
   level: "",
-  learnTagsText: "",
-  requirementsText: "",
-  personasText: "",
+  learnTags: [],
+  requirements: [],
+  personas: [],
   highlights: [],
   faq: [],
   camadas: [],
@@ -88,6 +96,19 @@ export const blankValues: CourseFormValues = {
   status: ContentStatus.DRAFT,
 };
 
+type ItemDaLista = { valor: string };
+
+// Lista vazia abre com UM campo em branco: o operador começa digitando, sem
+// precisar achar o "Adicionar item" primeiro. O campo vazio não vai no envio.
+function paraItens(lista: string[]): ItemDaLista[] {
+  return lista.length > 0 ? lista.map((valor) => ({ valor })) : [{ valor: "" }];
+}
+
+/** Os itens na ordem da tela, sem os campos deixados em branco. */
+function deItens(itens: ItemDaLista[]): string[] {
+  return itens.map((item) => item.valor.trim()).filter(Boolean);
+}
+
 export function toFormValues(course: AdminCourseDetail): CourseFormValues {
   return {
     slug: course.slug,
@@ -96,9 +117,9 @@ export function toFormValues(course: AdminCourseDetail): CourseFormValues {
     subtitle: course.subtitle ?? "",
     description: course.description ?? "",
     level: course.level ?? "",
-    learnTagsText: toLines(course.learnTags),
-    requirementsText: toLines(course.requirements),
-    personasText: toLines(course.personas),
+    learnTags: paraItens(course.learnTags),
+    requirements: paraItens(course.requirements),
+    personas: paraItens(course.personas),
     highlights: course.highlights ?? [],
     faq: course.faq ?? [],
     camadas: course.camadas,
@@ -121,9 +142,9 @@ export function toPayload(values: CourseFormValues): CourseCreateInput {
     subtitle: values.subtitle.trim() || undefined,
     description: values.description.trim() || undefined,
     level: values.level === "" ? undefined : values.level,
-    learnTags: fromLines(values.learnTagsText),
-    requirements: fromLines(values.requirementsText),
-    personas: fromLines(values.personasText),
+    learnTags: deItens(values.learnTags),
+    requirements: deItens(values.requirements),
+    personas: deItens(values.personas),
     highlights: values.highlights.filter((h) => h.icon.trim() && h.title.trim() && h.text.trim()),
     faq: values.faq.filter((f) => f.pergunta.trim() && f.resposta.trim()),
     camadas: values.camadas,

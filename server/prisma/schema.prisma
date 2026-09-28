@@ -19,6 +19,7 @@ enum Level {
   INICIANTE
   INTERMEDIARIO
   AVANCADO
+  TODOS_OS_NIVEIS // "Todos os níveis" (operador, 28/09/2026)
 }
 
 enum ContentStatus {

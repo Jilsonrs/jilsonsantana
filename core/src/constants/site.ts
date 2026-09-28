@@ -53,3 +53,13 @@ export const ROTAS_PUBLICAS: Record<
     youtube: "https://www.youtube.com/@jilsonen",
   },
 };
+
+/**
+ * O endereço público de UM curso, no idioma dele (decisão do operador, 14/09/2026:
+ * `/curso/:slug` em português, `/en/course/:slug` em inglês). Aponta para o
+ * destino final mesmo antes de a página em inglês existir — mesma regra dos
+ * links acima.
+ */
+export function enderecoDoCurso(idioma: LanguageCode, slug: string): string {
+  return idioma === "en" ? `/en/course/${slug}` : `/curso/${slug}`;
+}

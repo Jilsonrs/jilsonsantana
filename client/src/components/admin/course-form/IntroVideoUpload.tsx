@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useFormContext } from "react-hook-form";
 import * as api from "@/lib/api";
 import { enviarVideo } from "@/lib/video-upload";
@@ -21,6 +21,7 @@ export function IntroVideoUpload({
   aoEnviar: (video: { videoId: string; embedUrl: string }) => void;
 }) {
   const { setValue } = useFormContext<CourseFormValues>();
+  const queryClient = useQueryClient();
   const entrada = useRef<HTMLInputElement>(null);
   const [porcentagem, setPorcentagem] = useState(0);
 
@@ -33,9 +34,12 @@ export function IntroVideoUpload({
       const concluido = await api.completeIntroVideoUpload(courseId, credenciais.videoId);
       return { videoId: concluido.introVideoId, embedUrl: concluido.introVideoEmbedUrl ?? credenciais.embedUrl };
     },
+    // O servidor já gravou o vídeo no curso: o curso recarrega para o ✓ do passo
+    // (sem reiniciar o formulário do editor).
     onSuccess: (video) => {
       setValue("introVideoId", video.videoId, { shouldDirty: true });
       aoEnviar(video);
+      queryClient.invalidateQueries({ queryKey: ["admin-course", courseId] });
     },
   });
 

@@ -14,6 +14,7 @@ export function renderWithProviders(
     route = "/",
     path = "*",
     extraRoutes = [],
+    filhas,
   }: {
     route?: string;
     path?: string;
@@ -27,6 +28,11 @@ export function renderWithProviders(
      * comportamento OBSERVÁVEL: a pessoa chegou na outra tela.
      */
     extraRoutes?: { path: string; element: ReactElement }[];
+    /**
+     * Rotas FILHAS da rota principal, para componente que renderiza `<Outlet />`
+     * (o editor do curso). O teste usa as MESMAS rotas que o app, não uma cópia.
+     */
+    filhas?: ReactElement;
   } = {},
 ) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -34,7 +40,9 @@ export function renderWithProviders(
     <QueryClientProvider client={queryClient}>
       <MemoryRouter initialEntries={[route]}>
         <Routes>
-          <Route path={path} element={ui} />
+          <Route path={path} element={ui}>
+            {filhas}
+          </Route>
           {extraRoutes.map((r) => (
             <Route key={r.path} path={r.path} element={r.element} />
           ))}

@@ -12,7 +12,9 @@ import { TrilhaDetailPage } from "@/pages/TrilhaDetailPage";
 import { MyTrilhasPage } from "@/pages/MyTrilhasPage";
 import { MyTrilhaDetailPage } from "@/pages/MyTrilhaDetailPage";
 import { AdminCoursesPage } from "@/pages/admin/AdminCoursesPage";
-import { AdminCourseFormPage } from "@/pages/admin/AdminCourseFormPage";
+import { NewCoursePage } from "@/pages/admin/course-editor/NewCoursePage";
+import { CourseEditorLayout } from "@/pages/admin/course-editor/CourseEditorLayout";
+import { ROTAS_DO_EDITOR } from "@/pages/admin/course-editor/steps";
 import { AdminSiteTextPage } from "@/pages/admin/AdminSiteTextPage";
 import { AdminTestimonialsPage } from "@/pages/admin/AdminTestimonialsPage";
 import { AdminFaqPage } from "@/pages/admin/AdminFaqPage";
@@ -40,8 +42,12 @@ export default function App() {
         <Route element={<AdminRoute />}>
           <Route path="/admin" element={<AdminPage />} />
           <Route path="/admin/cursos" element={<AdminCoursesPage />} />
-          <Route path="/admin/cursos/novo" element={<AdminCourseFormPage />} />
-          <Route path="/admin/cursos/:id" element={<AdminCourseFormPage />} />
+          <Route path="/admin/cursos/novo" element={<NewCoursePage />} />
+          {/* O editor em 7 passos (Bloco E, 28/09/2026): cada passo é uma rota
+              filha, e o nível 2 da navegação os lista (lib/navigation.ts). */}
+          <Route path="/admin/cursos/:id" element={<CourseEditorLayout />}>
+            {ROTAS_DO_EDITOR}
+          </Route>
           {/* "Site" tem 2º nível (Textos · Depoimentos · Perguntas frequentes). O
               link do menu continua sendo /admin/site, que leva a Textos. Textos
               ganhou endereço PRÓPRIO porque a coluna secundária acende um item

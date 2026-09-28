@@ -3,7 +3,9 @@ import { LogOut, Plus, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Role } from "@jilson/core";
 import { secoesVisiveis, secaoAtiva, itensSecundarios, type ItemSecundario } from "@/lib/navigation";
+import { useItensConcluidos } from "@/lib/nav-marks";
 import { useT } from "@/lib/language";
+import { ItemDoGrupo } from "./SecondaryNavItem";
 
 /**
  * As iniciais do aluno, para o avatar de quem ainda não subiu foto.
@@ -40,6 +42,7 @@ export function SecondaryNav({
   const secoes = secoesVisiveis(papel, t);
   const ativa = secaoAtiva(pathname, secoes);
   const itens = itensSecundarios(pathname, secoes);
+  const concluidos = useItensConcluidos(pathname, ativa);
 
   if (itens.length === 0) return null;
 
@@ -153,25 +156,15 @@ export function SecondaryNav({
               </summary>
               
               <ul className="flex flex-col pb-2">
-                {grouped[grupo].map((item) => {
-                  const isItemActive = pathname === item.to || pathname.startsWith(`${item.to}/`);
-                  return (
-                    <li key={item.to}>
-                      <Link
-                        to={item.to}
-                        className={cn(
-                          "flex items-center px-4 py-3 ml-2 text-[0.95rem] transition-all",
-                          "border-l border-border/50",
-                          isItemActive
-                            ? "font-semibold text-primary border-l-2 border-primary -ml-[1px]" // O ml compensa a borda pra ficar alinhado
-                            : "text-muted-foreground hover:text-foreground hover:border-black/20 focus-visible:text-foreground focus-visible:border-black/20"
-                        )}
-                      >
-                        {item.label}
-                      </Link>
-                    </li>
-                  );
-                })}
+                {grouped[grupo].map((item) => (
+                  <li key={item.to}>
+                    <ItemDoGrupo
+                      item={item}
+                      ativo={pathname === item.to || pathname.startsWith(`${item.to}/`)}
+                      concluido={item.chave !== undefined && concluidos.has(item.chave)}
+                    />
+                  </li>
+                ))}
               </ul>
             </details>
           ))

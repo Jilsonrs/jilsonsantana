@@ -7,10 +7,12 @@ import {
   Route,
   Signpost,
   SlidersHorizontal,
+  SquarePen,
   Users,
 } from "lucide-react";
 import { MockHome, MockGrid, MockMap, MockUser } from "@/components/nav/MockIcons";
 import { Role, pt, type Dict } from "@jilson/core";
+import { PASSOS_DO_CURSO } from "@/lib/course-steps";
 
 /** Os textos do app (a parte `app` do dicionário) — de onde vêm os rótulos do aluno. */
 type AppTexts = Dict["app"];
@@ -35,6 +37,10 @@ export type ItemSecundario = {
   to: string;
   /** Agrupa itens sob um título retrátil na coluna secundária (ex.: "Engajamento"). */
   grupo?: string;
+  /** Tela que ainda não existe: sai como TEXTO, nunca link (mesma trava do rail). */
+  estado?: "planejado";
+  /** Identifica o item para a marca de "completo" (ex.: o passo do editor do curso). */
+  chave?: string;
 };
 
 export type Secao = {
@@ -60,6 +66,11 @@ export type Secao = {
    * no menu da foto (decisão do operador, 24/09/2026).
    */
   foraDoMenuLateral?: true;
+  /**
+   * De onde vem o ✓ de "completo" dos itens do nível 2. Hoje só existe um caso:
+   * os passos do editor do curso, lidos do curso gravado (`lib/nav-marks.ts`).
+   */
+  marcas?: "passos-do-curso";
 };
 
 /**
@@ -124,6 +135,25 @@ export function navegacao(t: AppTexts): Secao[] {
         { label: "Rascunhos", to: "/admin/cursos/rascunhos" },
         { label: "Arquivados", to: "/admin/cursos/arquivados" },
       ],
+    },
+    {
+      // O EDITOR de um curso (Bloco E, etapa 1 — operador, 27–28/09/2026): os 7
+      // passos no nível 2, em ordem de preenchimento. Fora do menu lateral, como
+      // "Minha conta": no rail continua aceso "Cursos Admin". `:id` só casa com
+      // número, então `/admin/cursos/novo` não abre o editor.
+      label: "Editar curso",
+      to: "/admin/cursos/:id",
+      icon: SquarePen,
+      papel: Role.ADMIN,
+      estado: "ativo",
+      foraDoMenuLateral: true,
+      marcas: "passos-do-curso",
+      filhos: PASSOS_DO_CURSO.map((p) => ({
+        label: p.label,
+        to: `/admin/cursos/:id/${p.slug}`,
+        chave: p.slug,
+        ...(p.planejado ? { estado: "planejado" as const } : {}),
+      })),
     },
     {
       label: "Trilhas Admin",
@@ -209,6 +239,30 @@ export function secoesVisiveis(papel: string | undefined, t: AppTexts = pt.app):
 }
 
 /**
+ * A rota casa com o endereço da seção (ela mesma ou uma sub-rota)? Devolve os
+ * parâmetros (`{ id: "12" }`), ou `null` se não casa.
+ *
+ * Um segmento `:nome` casa só com NÚMERO: todo parâmetro do mapa é um id do
+ * banco, e é isto que impede `/admin/cursos/novo` de casar com
+ * `/admin/cursos/:id` e abrir o editor de um curso chamado "novo".
+ */
+export function casaRota(pathname: string, padrao: string): Record<string, string> | null {
+  const partes = pathname.split("/");
+  const esperado = padrao.split("/");
+  if (partes.length < esperado.length) return null;
+  const params: Record<string, string> = {};
+  for (let i = 0; i < esperado.length; i++) {
+    if (esperado[i].startsWith(":")) {
+      if (!/^\d+$/.test(partes[i])) return null;
+      params[esperado[i].slice(1)] = partes[i];
+    } else if (esperado[i] !== partes[i]) {
+      return null;
+    }
+  }
+  return params;
+}
+
+/**
  * Qual seção a rota atual acende. A mais ESPECÍFICA vence: sem isso
  * `/admin/cursos` acenderia também o "Catálogo" do aluno se o casamento fosse
  * por prefixo solto, e o rail mostraria dois itens ativos.
@@ -216,8 +270,7 @@ export function secoesVisiveis(papel: string | undefined, t: AppTexts = pt.app):
 export function secaoAtiva(pathname: string, secoes: Secao[]): Secao | undefined {
   const candidatas = secoes.filter(
     (s) =>
-      pathname === s.to ||
-      pathname.startsWith(`${s.to}/`) ||
+      casaRota(pathname, s.to) !== null ||
       (s.tambemAtivoEm ?? []).some((p) => pathname.startsWith(p)),
   );
   return candidatas.sort((a, b) => b.to.length - a.to.length)[0];
@@ -226,11 +279,17 @@ export function secaoAtiva(pathname: string, secoes: Secao[]): Secao | undefined
 /**
  * Os itens do nível 2 para a rota atual — vazio quando a coluna não deve
  * aparecer. **Um item só conta como vazio**: uma coluna com uma linha é ruído
- * visual, não navegação.
+ * visual, não navegação. Os parâmetros da rota (`:id`) já saem preenchidos.
  */
 export function itensSecundarios(pathname: string, secoes: Secao[]): ItemSecundario[] {
-  const filhos = secaoAtiva(pathname, secoes)?.filhos ?? [];
-  return filhos.length > 1 ? filhos : [];
+  const ativa = secaoAtiva(pathname, secoes);
+  if (!ativa?.filhos || ativa.filhos.length <= 1) return [];
+  const { filhos } = ativa;
+  const params = casaRota(pathname, ativa.to) ?? {};
+  return filhos.map((f) => ({
+    ...f,
+    to: f.to.replace(/:(\w+)/g, (_, nome: string) => params[nome] ?? `:${nome}`),
+  }));
 }
 
 /** As abas do nível 3 para a rota atual — vazio quando não há abas. */

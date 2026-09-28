@@ -8,6 +8,8 @@ export const Level = {
   INICIANTE: "INICIANTE",
   INTERMEDIARIO: "INTERMEDIARIO",
   AVANCADO: "AVANCADO",
+  // "Todos os níveis" (decisão do operador, 28/09/2026 — como na Udemy).
+  TODOS_OS_NIVEIS: "TODOS_OS_NIVEIS",
 } as const;
 export type Level = (typeof Level)[keyof typeof Level];
 
@@ -74,4 +76,20 @@ export const LIMITES_DO_CURSO = {
   subtitle: 120,
   slug: LIMITE_DO_SLUG,
   description: 5000,
+  // Cada item das três listas (o que vai aprender, pré-requisitos, para quem é):
+  // 160, como na Udemy (decisão do operador, 28/09/2026).
+  itemDaLista: 160,
 } as const;
+
+// Abaixo disto a descrição conta como "curta" no que falta do curso, SEM impedir
+// o salvar (decisão do operador, 28/09/2026 — 200 é o mínimo da Udemy).
+export const MINIMO_DE_PALAVRAS_DA_DESCRICAO = 200;
+
+/**
+ * Quantas palavras tem um texto. A descrição é Markdown: os marcadores (`-`,
+ * `**`, `1.`) não contam, porque só conta o pedaço que tem pelo menos uma letra.
+ * Um lugar só: o servidor (cartão da lista) e a tela (o ✓ do editor) contam igual.
+ */
+export function contarPalavras(texto: string | null | undefined): number {
+  return (texto ?? "").split(/\s+/).filter((pedaco) => /\p{L}/u.test(pedaco)).length;
+}

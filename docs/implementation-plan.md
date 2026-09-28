@@ -124,8 +124,14 @@
 > **Publicado em 27/09, à noite (`main` = `dbb4c5e`):** o **Bloco A** (o cartão do curso na lista
 > do admin, com capa, status em português e a barra de Preenchimento) e o **Bloco B** (limite de
 > caracteres com contador nos campos do curso, e a descrição com negrito, itálico e listas, pelo
-> `react-markdown`). **No `dev`, ainda não publicado (28/09):** só documentos e o texto do
-> `server/.env.example` — nada que mude o site.
+> `react-markdown`). **Publicado em 28/09 (`main` = `e42b152`):** os documentos do Bloco E.
+> **No `dev`, ainda não publicado (28/09): o Bloco E, etapa 1 INTEIRA (partes 1a a 1e)** — o editor
+> do curso em 7 passos no nível 2, o passo Publicar com o que falta e o link, as três listas com um
+> campo por item, "Todos os níveis" (com a migration `20260928120000_level_todos_os_niveis`, já
+> aplicada no dev; produção aplica no próximo publish) e as dicas embaixo dos campos.
+> **Revisão do operador pendente** (ele pediu para implementar tudo e ajustar depois): os textos
+> novos das partes 1b e 1c e as dicas (`client/src/lib/course-hints.ts`). O Visualizar e a
+> duração publicada no topo ficaram para depois, com motivo (ver Bloco E).
 > **Decidido em 27–28/09, ainda não construído:** o **Bloco E** (o editor do curso em 7 passos, a
 > partir dos prints da Udemy e de 5 plataformas pesquisadas), a mudança das telas do aluno para
 > `/aluno/*`, o conteúdo de cada seção planejada do admin (e a nova **Comunicação**) e as páginas
@@ -137,7 +143,7 @@
 >   tarefas dele no painel do Bunny (P19: desligar o multi-audio; as 3 variáveis da biblioteca de
 >   aulas no Railway). Anda **junto com a etapa 2 do Bloco E** (o Conteúdo). É o que ele disse que
 >   queria antes das mudanças na página do curso (27/09).
-> - **Bloco E, etapa 1** (o menu do curso em passos) — não depende de nada externo.
+> - ~~**Bloco E, etapa 1**~~ — **feita em 28/09**, no `dev` (ver acima).
 > - **Telas do aluno para `/aluno/*`** — pequena, e mais barata antes de haver aluno real.
 > - **C4, etapa 3** (a home lendo os cursos do banco) — depende da P17, da P18 e do cadastro dos
 >   cursos (P16).
@@ -1410,23 +1416,87 @@ landmark. Corrigido junto.
 > O operador mandou os 29 prints do admin de curso da Udemy; o agente cruzou com a escola e
 > pesquisou cinco plataformas, e o operador respondeu item a item. **Cada linha abaixo é decisão
 > dele.** O porquê da organização e o que ficou fora estão em `courses.md` → *O admin do curso*.
-> Nada aqui foi construído ainda. **Cada etapa passa por plano aprovado antes do código.**
+> **Cada etapa passa por plano aprovado antes do código.**
 
-**Etapa 1 — o menu do curso em passos (agora, sem depender de nada):**
-- [ ] O formulário único vira **um menu no nível 2** (coluna do meio) com **7 passos em
-      ordem de preenchimento**, cada um com ✓ quando completo: Informações básicas · Para
-      quem é · Conteúdo · Legendas · Página do curso · Mensagens · Publicar. **Cada passo salva a
-      sua parte.** Topo: voltar, título, status, duração publicada, **Visualizar**.
-      *Depende do nível 2 existir (Bloco S2); se ainda não existir, esta etapa o constrói.*
-- [ ] **Publicar** reúne o que falta (a barra de Preenchimento, agora também no editor),
-      status, ordem no catálogo e **um lugar para copiar o link do curso**.
+**Etapa 1 — o menu do curso em passos (agora, sem depender de nada):** *plano aprovado em
+28/09/2026, em 5 partes (1a–1e), um commit cada. Respostas do operador no mesmo dia: onde fica
+cada campo, a regra do ✓, 160 caracteres nas três listas e o Visualizar esperando o C5 — em
+`courses.md` → O admin do curso.*
+- [x] **1a — os passos existem** *(28/09, no `dev`)*. O formulário único virou **um menu no nível
+      2** com **7 passos em ordem de preenchimento**, cada um com ✓ quando completo: Informações
+      básicas · Para quem é · Conteúdo · Legendas · Página do curso · Mensagens · Publicar.
+      **Cada passo salva a sua parte.** Topo: voltar, título e status em português.
+      Endereços: `/admin/cursos/novo` (só o passo 1; "Criar curso" grava e abre o editor) e
+      `/admin/cursos/:id/{basico,para-quem-e,conteudo,pagina,publicar}`; `/admin/cursos/:id`
+      leva ao passo 1. Legendas e Mensagens são texto **EM BREVE** (etapas 3 e 4).
+      Como funciona: o mapa de navegação ganhou a seção "Editar curso" (`/admin/cursos/:id`,
+      fora do menu lateral; o `:id` só casa com número), e o nível 2 ganhou item planejado e
+      o ✓. Os passos, os campos de cada um e a regra do ✓ moram em
+      `client/src/lib/course-steps.ts`; o ✓ lê o curso **gravado**, na mesma consulta do
+      editor (`lib/nav-marks.ts`). O formulário nasce uma vez por curso: o que foi digitado e
+      não salvo continua ao trocar de passo, e salvar um passo manda só os campos dele. A seção
+      "Organização" se dividiu (idioma e nível → Básicas; camadas → Página; status e ordem →
+      Publicar), e o status aparece em português. `AdminCourseFormPage` saiu; os testes dele
+      foram para `pages/admin/course-editor/` sem perder caso. Testes: 22 do editor, 12 de
+      mídia, 5 de Novo curso, 10 da regra do ✓, 4 do mapa. **Mutação:** passo mandando campo
+      de outro, salvar sem recarregar o curso, Legendas virando link, `:id` aceitando texto, as
+      200 palavras, o módulo em rascunho, a capa sem recarregar, o idioma sem trava e o
+      formulário se reiniciando a cada recarga → todas reprovam. Revertido. Textos aprovados pelo
+      operador em 28/09/2026.
+      **Ficam para depois:** a **duração publicada** no topo (entra com o vídeo das aulas, Bloco
+      U etapa 3: hoje a aula não tem duração) e o **Visualizar** (espera o C5, abaixo).
+- [x] **1b — Publicar** *(28/09, no `dev`)* reúne o que falta (a barra de Preenchimento, agora
+      também no editor — `components/admin/CompletenessBar.tsx`, a mesma do cartão), status em
+      português, ordem no catálogo e **o link do curso com o botão de copiar**
+      (`course-form/CourseLinkField.tsx`). O link sai do slug e do idioma **gravados**, pelo
+      `enderecoDoCurso` do `core` (`/curso/:slug`; `/en/course/:slug`, com o aviso de que a página
+      em inglês ainda não existe). O link fica sempre num campo só de leitura: sem área de
+      transferência (ou com a permissão negada), a tela diz para copiar à mão. *O guia
+      modern-web-guidance não tem receita de área de transferência (consultado): padrão comum,
+      com checagem do recurso e o aviso numa região `role="status"`.* Testes: 6 do Publicar, 2 da
+      descrição curta no cartão, 1 de servidor ajustado. **Mutação:** descrição curta contando
+      como feita, o aviso sem dizer "curta", o copiar salvando o passo, o link ignorando o idioma,
+      o erro de cópia virando sucesso e o servidor contando marcador de Markdown como palavra →
+      todas reprovam. Revertido.
 - [ ] **Visualizar** mostra a página do curso como o aluno vê, **inclusive em rascunho, só para o
-      admin** — a rota pública continua devolvendo só o publicado.
-- [ ] **Dicas embaixo dos campos**: o agente escreve o rascunho, o operador aprova.
-- [ ] **"Todos os níveis"** no Nível: valor novo no enum `Level`, com migration.
-- [ ] **As três listas viram um campo por item**, com contador, lixeira e ordem; **"O que vai
-      aprender" com até 160 caracteres por item**.
-- [ ] Descrição curta conta como **"falta"** no Preenchimento, sem travar.
+      admin** — a rota pública continua devolvendo só o publicado. **Espera o C5** *(operador,
+      28/09/2026)*: a página de curso de hoje é provisória e nem mostra a descrição, então a
+      prévia mostraria outra página e seria jogada fora.
+- [x] **1e — Dicas embaixo dos campos** *(28/09, no `dev`)*: o agente escreveu o rascunho, **todas
+      num arquivo só, `client/src/lib/course-hints.ts`, para a revisão do operador ser de uma vez**
+      (ele pediu para seguir e revisar depois — 28/09). Cada dica diz só o que já é regra ou fato
+      do sistema (limites, slug permanente, o que o aluno vê), nenhuma inventa regra de produto.
+      O `Field` ganhou `dica` e `descritoPor()`: o campo aponta para a dica **e** para o contador
+      no `aria-describedby`, então o leitor de tela lê os dois. Nas três listas, a dica fica sob o
+      título da lista e todo item aponta para ela. Testes: 14 (um por campo, e o contador junto).
+      **Mutação:** a ligação ignorando a dica, a dica sem id e os itens sem a dica → reprovam.
+      Revertido.
+- [x] **1d — "Todos os níveis"** no Nível *(28/09, no `dev`)*: valor novo no enum `Level`, com a
+      migration `20260928120000_level_todos_os_niveis` (só `ALTER TYPE … ADD VALUE`, escrita à mão:
+      o `migrate dev` não roda no terminal do agente). Rótulo no dicionário ("Todos os níveis" /
+      "All levels"), e o Nível do admin passou a mostrar os nomes em português no lugar do código
+      do banco. **Passo 0 no banco de dev**, antes e depois: as mesmas contagens em todas as
+      tabelas (só mudaram `_prisma_migrations` 8→9 e uma sessão, a do login de conferência), 0
+      tabelas sem RLS, login do admin 200 e "No difference detected". A suíte do servidor recria
+      o banco do zero, então prova que a migration replica. **Produção recebe a migration pelo
+      pre-deploy no próximo publish.** Testes: 2 de servidor, 1 de tela. **Mutação:** sem a
+      migration → o servidor reprova ao gravar; o Nível mostrando o código → a tela reprova.
+      Revertido.
+- [x] **1c — As três listas viram um campo por item** *(28/09, no `dev`)*, com contador, lixeira e
+      ordem; **as três com até 160 caracteres por item** *(era só "O que vai aprender"; os outros
+      dois, operador em 28/09/2026)*. `course-form/ListItemsField.tsx` (o `useFieldArray` do
+      react-hook-form; cada item `{ valor }`); as setas são botões, então funcionam pelo teclado,
+      e o primeiro não sobe nem o último desce. Lista vazia abre com um campo em branco, que não
+      vai no envio. O limite mora em `LIMITES_DO_CURSO.itemDaLista` (`core`), e o servidor recusa
+      item de 161 (400, a lista antiga fica); curso antigo acima do limite mostra o aviso no
+      próprio item e não salva. `lib/array-field.ts` (o "um item por linha") saiu: só o
+      formulário de curso o usava. Testes: 8 das listas, 4 de servidor. **Mutação:** servidor
+      sem o limite, tela sem o limite, "descer" sem mudar a ordem, campo em branco indo no envio
+      e o campo sem trava → todas reprovam. Revertido.
+- [x] Descrição curta conta como **"falta"** no Preenchimento, sem travar. **Curta = menos de 200
+      palavras** *(operador, 28/09/2026)*. Feito na 1b: a lista do admin devolve
+      `descriptionWordCount` (no lugar do sim/não), contado pelo `contarPalavras` do `core` — o
+      mesmo do ✓ —, e o que falta diz "Descrição curta (menos de 200 palavras)".
 
 **Etapa 2 — o Conteúdo (junto com a etapa 3 do Bloco U, o vídeo das aulas):**
 - [ ] **"+" entre dois itens** (passar o mouse entre eles mostra o "+") para inserir aula ou
@@ -1802,6 +1872,9 @@ landmark. Corrigido junto.
   que vê quem está logado com a assinatura cancelada.
   **Curso apagado que foi substituído por outro** (ex.: o temporário em inglês) leva o endereço
   antigo para o novo, para não virar link quebrado (mesma família do *slug permanente*).
+  **Junto com a página de curso nova entra o Visualizar do editor do curso** (Bloco E, etapa 1):
+  a página como o aluno vê, **inclusive em rascunho, só para o admin**, sem abrir a rota pública
+  para o que não está publicado *(operador, 28/09/2026: esperar a página definitiva)*.
 
 #### Páginas públicas que faltam *(decididas na sessão da home, set/2026; trazidas do `design-lab` em 28/09)*
 
