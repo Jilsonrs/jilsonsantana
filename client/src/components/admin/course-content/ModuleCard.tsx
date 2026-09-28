@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
-import { Layer, ContentStatus } from "@jilson/core";
+import { Layer, ContentStatus, LessonKind } from "@jilson/core";
 import * as api from "@/lib/api";
 import type { AdminLesson, AdminModule } from "@/lib/api";
 import { ROTULO_DO_STATUS } from "@/lib/course-completeness";
@@ -9,6 +9,15 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { LessonRow } from "./LessonRow";
+import { InsertPoint, type OpcaoDeInsercao } from "./InsertPoint";
+
+// O que o "+" entre duas aulas oferece (operador, 27–28/09/2026). O quiz tem
+// etapa própria: por enquanto, EM BREVE.
+const TIPOS_DE_AULA: OpcaoDeInsercao[] = [
+  { valor: LessonKind.VIDEO, rotulo: "Aula de vídeo" },
+  { valor: LessonKind.TEXT, rotulo: "Aula de texto" },
+  { valor: "QUIZ", rotulo: "Quiz", emBreve: true },
+];
 
 // A classe inteira escrita aqui, como texto (GEMINI.md, regra 1).
 export const CLASSE_DO_SELECT_PEQUENO =
@@ -129,18 +138,26 @@ function LessonList({
     },
   });
 
+  // O "+" na posição `posicao`: a aula nasce ali (Bloco E, etapa 2).
+  const inserirAqui = (posicao: number) => (tipo: string, titulo: string) =>
+    // Seguro: o "+" só oferece os tipos de TIPOS_DE_AULA que não são "em breve".
+    api.insertLesson(moduleId, { title: titulo, kind: tipo as LessonKind, posicao }).then(onChanged);
+
   return (
-    <div className="space-y-2 pl-4">
+    <div className="space-y-1 pl-4">
+      <InsertPoint rotulo="Inserir no começo do módulo" opcoes={TIPOS_DE_AULA} aoInserir={inserirAqui(0)} />
       {lessons.map((lesson, index) => (
-        <LessonRow
-          key={lesson.id}
-          lesson={lesson}
-          isFirst={index === 0}
-          isLast={index === lessons.length - 1}
-          ocupado={ocupado}
-          onMover={(passo) => onMoverAula(index, passo)}
-          onChanged={onChanged}
-        />
+        <div key={lesson.id} className="space-y-1">
+          <LessonRow
+            lesson={lesson}
+            isFirst={index === 0}
+            isLast={index === lessons.length - 1}
+            ocupado={ocupado}
+            onMover={(passo) => onMoverAula(index, passo)}
+            onChanged={onChanged}
+          />
+          <InsertPoint rotulo={`Inserir depois de ${lesson.title}`} opcoes={TIPOS_DE_AULA} aoInserir={inserirAqui(index + 1)} />
+        </div>
       ))}
       <div className="flex gap-2">
         <Input placeholder="Título da nova aula" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} />

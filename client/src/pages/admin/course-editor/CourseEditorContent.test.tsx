@@ -7,9 +7,15 @@ import { CURSO_DE_TESTE } from "./curso-de-teste";
 
 const adminGetCourse = vi.fn();
 const updateCourseStructure = vi.fn();
+const insertLesson = vi.fn();
+const insertModule = vi.fn();
+const updateLesson = vi.fn();
 vi.mock("@/lib/api", () => ({
   adminGetCourse: (...args: unknown[]) => adminGetCourse(...args),
   updateCourseStructure: (...args: unknown[]) => updateCourseStructure(...args),
+  insertLesson: (...args: unknown[]) => insertLesson(...args),
+  insertModule: (...args: unknown[]) => insertModule(...args),
+  updateLesson: (...args: unknown[]) => updateLesson(...args),
 }));
 
 import { CourseEditorLayout } from "./CourseEditorLayout";
@@ -26,7 +32,7 @@ function modulo(id: number, titulo: string, aulas: [number, string][]): AdminMod
     layer: null,
     displayOrder: 0,
     status: "DRAFT",
-    lessons: aulas.map(([aulaId, t]) => ({ id: aulaId, moduleId: id, title: t, tags: [], displayOrder: 0, status: "DRAFT" })),
+    lessons: aulas.map(([aulaId, t]) => ({ id: aulaId, moduleId: id, title: t, kind: "VIDEO", content: null, tags: [], displayOrder: 0, status: "DRAFT" })),
   };
 }
 
@@ -41,6 +47,9 @@ const COM_CONTEUDO: AdminCourseDetail = {
 beforeEach(() => {
   adminGetCourse.mockReset().mockResolvedValue(COM_CONTEUDO);
   updateCourseStructure.mockReset().mockResolvedValue(undefined);
+  insertLesson.mockReset().mockResolvedValue({ id: 99 });
+  insertModule.mockReset().mockResolvedValue({ id: 98 });
+  updateLesson.mockReset().mockResolvedValue({ id: 12 });
 });
 
 async function abrir() {
@@ -102,5 +111,102 @@ describe("Conteúdo — as setas mandam a ordem inteira", () => {
     const status = screen.getAllByLabelText("Status do módulo")[0] as HTMLSelectElement;
     expect([...status.options].map((o) => o.textContent)).toEqual(["Rascunho", "Publicado", "Arquivado"]);
     expect(screen.queryByText("DRAFT")).toBeNull();
+  });
+});
+
+// O "+" ENTRE DOIS ITENS (Bloco E, etapa 2 — decisão do operador, 27/09/2026).
+describe("Conteúdo — o \"+\" entre dois itens", () => {
+  // Escondido por opacidade, nunca por `hidden`: é assim que o teclado o alcança.
+  it("o \"+\" existe entre as aulas e é alcançável pelo teclado", async () => {
+    await abrir();
+    const mais = screen.getByRole("button", { name: "Inserir depois de Abertura" });
+    expect(mais.hasAttribute("hidden")).toBe(false);
+    expect(mais.className).not.toMatch(/(^|\s)hidden(\s|$)/);
+    expect(mais.className).toContain("focus-visible:opacity-100");
+  });
+
+  it("aula de texto entre Abertura e Fórmulas nasce na posição 1", async () => {
+    await abrir();
+    fireEvent.click(screen.getByRole("button", { name: "Inserir depois de Abertura" }));
+    fireEvent.click(screen.getByRole("button", { name: "Aula de texto" }));
+    fireEvent.change(screen.getByLabelText("Título: Aula de texto"), { target: { value: "Leitura" } });
+    fireEvent.click(screen.getByRole("button", { name: "Criar" }));
+
+    await waitFor(() => expect(insertLesson).toHaveBeenCalledWith(1, { title: "Leitura", kind: "TEXT", posicao: 1 }));
+  });
+
+  it("no começo do módulo, a posição é 0", async () => {
+    await abrir();
+    fireEvent.click(screen.getAllByRole("button", { name: "Inserir no começo do módulo" })[1]);
+    fireEvent.click(screen.getByRole("button", { name: "Aula de vídeo" }));
+    fireEvent.change(screen.getByLabelText("Título: Aula de vídeo"), { target: { value: "Intro" } });
+    fireEvent.click(screen.getByRole("button", { name: "Criar" }));
+
+    await waitFor(() => expect(insertLesson).toHaveBeenCalledWith(2, { title: "Intro", kind: "VIDEO", posicao: 0 }));
+  });
+
+  // O quiz tem etapa própria: aparece, mas não faz nada.
+  it("Quiz aparece como EM BREVE, sem botão", async () => {
+    await abrir();
+    fireEvent.click(screen.getByRole("button", { name: "Inserir depois de Abertura" }));
+    expect(screen.queryByRole("button", { name: /Quiz/ })).toBeNull();
+    expect(screen.getByText("EM BREVE")).toBeTruthy();
+  });
+
+  it("entre dois módulos, o \"+\" pede só o título do módulo", async () => {
+    await abrir();
+    fireEvent.click(screen.getByRole("button", { name: "Inserir módulo depois de Fundamentos" }));
+    fireEvent.change(screen.getByLabelText("Título: Módulo"), { target: { value: "Revisão" } });
+    fireEvent.click(screen.getByRole("button", { name: "Criar" }));
+
+    await waitFor(() => expect(insertModule).toHaveBeenCalledWith(1, { title: "Revisão", posicao: 1 }));
+  });
+
+  it("falhou ao inserir: avisa, e o que foi digitado fica", async () => {
+    insertLesson.mockRejectedValue(new Error("500"));
+    await abrir();
+    fireEvent.click(screen.getByRole("button", { name: "Inserir depois de Abertura" }));
+    fireEvent.click(screen.getByRole("button", { name: "Aula de vídeo" }));
+    fireEvent.change(screen.getByLabelText("Título: Aula de vídeo"), { target: { value: "X" } });
+    fireEvent.click(screen.getByRole("button", { name: "Criar" }));
+
+    expect((await screen.findByRole("alert")).textContent).toBe("Não foi possível inserir. Tente de novo.");
+    expect((screen.getByLabelText("Título: Aula de vídeo") as HTMLInputElement).value).toBe("X");
+  });
+});
+
+// A AULA DE TEXTO tem o seu texto; a de vídeo, não (operador, 28/09/2026).
+describe("Conteúdo — o texto da aula", () => {
+  const COM_AULA_DE_TEXTO: AdminCourseDetail = {
+    ...COM_CONTEUDO,
+    modules: [
+      {
+        ...COM_CONTEUDO.modules[0],
+        lessons: [
+          { ...COM_CONTEUDO.modules[0].lessons[0] },
+          { ...COM_CONTEUDO.modules[0].lessons[1], kind: "TEXT", content: "Texto antigo" },
+        ],
+      },
+      COM_CONTEUDO.modules[1],
+    ],
+  };
+
+  it("aula de texto: abre o texto, edita e salva só o texto", async () => {
+    adminGetCourse.mockResolvedValue(COM_AULA_DE_TEXTO);
+    await abrir();
+    fireEvent.click(screen.getByRole("button", { name: "Editar texto" }));
+    const campo = screen.getByRole("textbox", { name: "Texto da aula" }) as HTMLTextAreaElement;
+    expect(campo.value).toBe("Texto antigo");
+
+    fireEvent.change(campo, { target: { value: "**Texto novo**" } });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar texto" }));
+
+    await waitFor(() => expect(updateLesson).toHaveBeenCalledWith(12, { content: "**Texto novo**" }));
+  });
+
+  it("aula de vídeo não tem texto", async () => {
+    await abrir();
+    expect(screen.queryByRole("button", { name: "Editar texto" })).toBeNull();
+    expect(screen.getAllByText("Vídeo").length).toBe(3);
   });
 });

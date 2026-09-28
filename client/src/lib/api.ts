@@ -8,6 +8,9 @@ import type {
   CourseCreateInput,
   CourseUpdateInput,
   CourseStructureInput,
+  LessonInsertInput,
+  ModuleInsertInput,
+  LessonKind,
   ModuleCreateInput,
   ModuleUpdateInput,
   LessonCreateInput,
@@ -175,6 +178,9 @@ export type AdminLesson = {
   id: number;
   moduleId: number;
   title: string;
+  kind: LessonKind;
+  /** O texto da aula de texto (Markdown); null na aula de vídeo. */
+  content: string | null;
   tags: string[];
   displayOrder: number;
   status: ContentStatus;
@@ -236,6 +242,17 @@ export async function updateCourse(id: number, input: CourseUpdateInput): Promis
 
 export async function deleteCourse(id: number): Promise<void> {
   await client.delete(`/courses/${id}`);
+}
+
+// O "+" entre dois itens (Bloco E, etapa 2): a aula ou o módulo nasce NA POSIÇÃO.
+export async function insertLesson(moduleId: number, input: LessonInsertInput): Promise<AdminLesson> {
+  const { data } = await client.post<AdminLesson>(`/admin/modules/${moduleId}/lessons`, input);
+  return data;
+}
+
+export async function insertModule(courseId: number, input: ModuleInsertInput): Promise<AdminModule> {
+  const { data } = await client.post<AdminModule>(`/admin/courses/${courseId}/modules`, input);
+  return data;
 }
 
 // A ORDEM INTEIRA de módulos e aulas do curso, numa gravação só (Bloco E, etapa 2).

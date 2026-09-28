@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { courseStructureSchema } from "@jilson/core";
+import { courseStructureSchema, lessonInsertSchema, moduleInsertSchema } from "@jilson/core";
 import { prisma } from "../lib/prisma.js";
 import { requireAdmin } from "../middleware/auth.js";
 import { validate, parseId } from "../lib/http.js";
@@ -61,6 +61,72 @@ router.put("/admin/courses/:id/estrutura", requireAdmin, async (req, res) => {
     ),
   ]);
   res.status(204).end();
+});
+
+// Ordem das listas: o número gravado, e o id para desempatar (o mesmo das leituras).
+const porOrdem = [{ displayOrder: "asc" as const }, { id: "asc" as const }];
+
+/** A lista com o id novo na posição pedida (além do fim, vai para o fim). */
+function comNovoNaPosicao(ids: number[], novo: number, posicao: number): number[] {
+  const lugar = Math.min(posicao, ids.length);
+  return [...ids.slice(0, lugar), novo, ...ids.slice(lugar)];
+}
+
+// POST /api/admin/modules/:id/lessons — o "+" entre duas aulas (Bloco E, etapa 2):
+// a aula nasce NAQUELA posição, e a ordem do módulo é reescrita de 0 em diante na
+// mesma transação.
+router.post("/admin/modules/:id/lessons", requireAdmin, async (req, res) => {
+  const id = parseId(req.params.id, res);
+  if (id === null) return;
+  const body = validate(lessonInsertSchema, req.body, res);
+  if (body === null) return;
+
+  const modulo = await prisma.module.findUnique({
+    where: { id },
+    select: { lessons: { orderBy: porOrdem, select: { id: true } } },
+  });
+  if (!modulo) {
+    res.status(404).json({ error: "NotFound" });
+    return;
+  }
+
+  const criada = await prisma.$transaction(async (tx) => {
+    const nova = await tx.lesson.create({ data: { moduleId: id, title: body.title, kind: body.kind } });
+    const ordem = comNovoNaPosicao(modulo.lessons.map((l) => l.id), nova.id, body.posicao);
+    for (const [ordemNova, aulaId] of ordem.entries()) {
+      await tx.lesson.update({ where: { id: aulaId }, data: { displayOrder: ordemNova } });
+    }
+    return tx.lesson.findUniqueOrThrow({ where: { id: nova.id } });
+  });
+  res.status(201).json(criada);
+});
+
+// POST /api/admin/courses/:id/modules — o "+" entre dois módulos: o módulo nasce
+// naquela posição.
+router.post("/admin/courses/:id/modules", requireAdmin, async (req, res) => {
+  const id = parseId(req.params.id, res);
+  if (id === null) return;
+  const body = validate(moduleInsertSchema, req.body, res);
+  if (body === null) return;
+
+  const curso = await prisma.course.findUnique({
+    where: { id },
+    select: { modules: { orderBy: porOrdem, select: { id: true } } },
+  });
+  if (!curso) {
+    res.status(404).json({ error: "NotFound" });
+    return;
+  }
+
+  const criado = await prisma.$transaction(async (tx) => {
+    const novo = await tx.module.create({ data: { courseId: id, title: body.title } });
+    const ordem = comNovoNaPosicao(curso.modules.map((m) => m.id), novo.id, body.posicao);
+    for (const [ordemNova, moduloId] of ordem.entries()) {
+      await tx.module.update({ where: { id: moduloId }, data: { displayOrder: ordemNova } });
+    }
+    return tx.module.findUniqueOrThrow({ where: { id: novo.id } });
+  });
+  res.status(201).json(criado);
 });
 
 export default router;

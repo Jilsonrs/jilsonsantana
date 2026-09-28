@@ -13,6 +13,18 @@ export const Level = {
 } as const;
 export type Level = (typeof Level)[keyof typeof Level];
 
+// O tipo da aula (Bloco E, etapa 2 — operador, 28/09/2026). O quiz entra numa
+// etapa própria. Aula de vídeo não tem texto; aula de texto não tem vídeo.
+export const LessonKind = {
+  VIDEO: "VIDEO",
+  TEXT: "TEXT",
+} as const;
+export type LessonKind = (typeof LessonKind)[keyof typeof LessonKind];
+
+// Quantos caracteres cabe no texto de uma aula de texto. Proposta do agente no
+// plano de 28/09/2026, aprovado pelo operador; muda nesta linha.
+export const LIMITE_DO_TEXTO_DA_AULA = 20000;
+
 // One status set shared by Course, Module and Lesson.
 export const ContentStatus = {
   DRAFT: "DRAFT",

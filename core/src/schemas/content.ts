@@ -6,6 +6,8 @@ import {
   PlanItemType,
   LIMITE_DO_SLUG,
   LIMITES_DO_CURSO,
+  LessonKind,
+  LIMITE_DO_TEXTO_DA_AULA,
 } from "../constants/content.js";
 import { LANGUAGES } from "./site-text.js";
 
@@ -26,6 +28,7 @@ export const levelSchema = enumFrom(Level);
 export const contentStatusSchema = enumFrom(ContentStatus);
 export const layerSchema = enumFrom(Layer);
 export const planItemTypeSchema = enumFrom(PlanItemType);
+export const lessonKindSchema = enumFrom(LessonKind);
 
 // kebab-case slug (matches the public /curso/:slug, /trilha/:slug routes).
 export const slugSchema = z
@@ -159,6 +162,16 @@ export type ModuleUpdateInput = z.infer<typeof moduleUpdateSchema>;
 // A ORDEM INTEIRA de módulos e aulas de um curso, numa gravação só: é o que as
 // setas, o "+" e o arrastar mandam. A aula pode mudar de módulo, mas só dentro do
 // mesmo curso — quem confere é o servidor.
+// Inserir módulo ou aula NUMA POSIÇÃO (o "+" entre dois itens, Bloco E etapa 2):
+// `posicao` é o lugar na lista (0 = primeiro). Além do fim, vai para o fim.
+export const moduleInsertSchema = z.object({
+  title: z.string().trim().min(1),
+  posicao: z.number().int().min(0),
+});
+export const lessonInsertSchema = moduleInsertSchema.extend({ kind: lessonKindSchema });
+export type ModuleInsertInput = z.infer<typeof moduleInsertSchema>;
+export type LessonInsertInput = z.infer<typeof lessonInsertSchema>;
+
 export const courseStructureSchema = z.object({
   modulos: z.array(
     z.object({
@@ -173,11 +186,19 @@ export type CourseStructureInput = z.infer<typeof courseStructureSchema>;
 export const lessonCreateSchema = z.object({
   moduleId: z.number().int().positive(),
   title: z.string().min(1),
+  kind: lessonKindSchema.optional(),
+  // O texto da aula de TEXTO (Markdown). O servidor recusa em aula de vídeo.
+  content: z
+    .string()
+    .max(LIMITE_DO_TEXTO_DA_AULA, `Use no máximo ${LIMITE_DO_TEXTO_DA_AULA.toLocaleString("pt-BR")} caracteres.`)
+    .optional(),
   tags: z.array(z.string().min(1)).optional(),
   displayOrder: z.number().int().optional(),
   status: contentStatusSchema.optional(),
 });
-export const lessonUpdateSchema = lessonCreateSchema.partial().omit({ moduleId: true });
+// O tipo não muda depois de criada: uma aula de vídeo que virasse texto deixaria
+// o vídeo dela órfão no Bunny.
+export const lessonUpdateSchema = lessonCreateSchema.partial().omit({ moduleId: true, kind: true });
 export type LessonCreateInput = z.infer<typeof lessonCreateSchema>;
 export type LessonUpdateInput = z.infer<typeof lessonUpdateSchema>;
 

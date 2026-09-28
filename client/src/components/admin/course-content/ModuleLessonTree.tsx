@@ -7,6 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ModuleCard } from "./ModuleCard";
+import { InsertPoint } from "./InsertPoint";
+
+const MODULO = [{ valor: "MODULO", rotulo: "Módulo" }];
 
 /**
  * O CONTEÚDO do curso: módulos e aulas, no passo Conteúdo do editor. Módulo e
@@ -32,6 +35,10 @@ export function ModuleLessonTree({ courseId }: { courseId: number }) {
     onSettled: invalidate,
   });
 
+  // O "+" entre dois módulos: o módulo nasce naquela posição (Bloco E, etapa 2).
+  const inserirModulo = (posicao: number) => (_tipo: string, titulo: string) =>
+    api.insertModule(courseId, { title: titulo, posicao }).then(invalidate);
+
   const [newModuleTitle, setNewModuleTitle] = useState("");
   const addModule = useMutation({
     // Sem displayOrder explícito todo módulo novo nasceria em 0 (o padrão do
@@ -55,17 +62,20 @@ export function ModuleLessonTree({ courseId }: { courseId: number }) {
           Não foi possível mudar a ordem. Tente de novo.
         </p>
       )}
+      <InsertPoint rotulo="Inserir módulo no começo" opcoes={MODULO} aoInserir={inserirModulo(0)} />
       {modules.map((mod, index) => (
-        <ModuleCard
-          key={mod.id}
-          module={mod}
-          isFirst={index === 0}
-          isLast={index === modules.length - 1}
-          ocupado={reordenar.isPending}
-          onMover={(passo) => reordenar.mutate(moverModulo(estrutura, index, passo))}
-          onMoverAula={(indice, passo) => reordenar.mutate(moverAula(estrutura, mod.id, indice, passo))}
-          onChanged={invalidate}
-        />
+        <div key={mod.id} className="space-y-4">
+          <ModuleCard
+            module={mod}
+            isFirst={index === 0}
+            isLast={index === modules.length - 1}
+            ocupado={reordenar.isPending}
+            onMover={(passo) => reordenar.mutate(moverModulo(estrutura, index, passo))}
+            onMoverAula={(indice, passo) => reordenar.mutate(moverAula(estrutura, mod.id, indice, passo))}
+            onChanged={invalidate}
+          />
+          <InsertPoint rotulo={`Inserir módulo depois de ${mod.title}`} opcoes={MODULO} aoInserir={inserirModulo(index + 1)} />
+        </div>
       ))}
 
       <Card>

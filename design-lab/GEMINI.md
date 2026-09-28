@@ -172,6 +172,9 @@ servidores (§5); o React responde em `localhost:5173`, a home pública em `loca
 > **O passo Conteúdo** (28/09) mora em `client/src/components/admin/course-content/`
 > (`ModuleLessonTree.tsx`, `ModuleCard.tsx`, `LessonRow.tsx`). As setas e lixeiras são só ícone:
 > o nome delas ("Descer a aula Fórmulas") está no `aria-label`, que **tem teste**.
+> **O "+" entre dois itens** (`InsertPoint.tsx`) fica escondido por **opacidade** até o mouse ou
+> o foco do teclado chegar: **não troque por `hidden`**, senão o teclado não o alcança (tem
+> teste). O texto da aula de texto usa o mesmo `MarkdownField` da descrição.
 >
 > **As dicas embaixo dos campos** (28/09) saem do `Field.tsx` (a propriedade `dica`); o texto de
 > todas mora em `client/src/lib/course-hints.ts` e é do operador. Cada campo aponta para a dica e

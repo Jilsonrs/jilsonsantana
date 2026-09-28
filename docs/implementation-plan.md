@@ -1517,18 +1517,36 @@ própria**.*
       dos campos. Testes: 9 de servidor (ordem) + 1 (campos da trilha), 6 da função, 5 de tela.
       **Mutação:** aula de outro curso aceita, repetição aceita, trilha de volta ao `include`,
       a direção ignorada e a seta mandando lista parcial → todas reprovam. Revertido.
-- [ ] **"+" entre dois itens** (passar o mouse entre eles mostra o "+") para inserir aula ou
-      módulo ali, também pelo teclado.
+- [x] **2b — "+" entre dois itens** (passar o mouse entre eles mostra o "+") para inserir aula ou
+      módulo ali, também pelo teclado *(28/09, no `dev`)*. `course-content/InsertPoint.tsx`:
+      escondido por **opacidade** (nunca `hidden`), então o Tab o alcança; entre aulas oferece
+      **Aula de vídeo · Aula de texto · Quiz (EM BREVE, sem ação)**; entre módulos, **Módulo**
+      (vai direto ao título). A aula ou o módulo nasce **na posição**: `POST
+      /api/admin/modules/:id/lessons` e `POST /api/admin/courses/:id/modules` com `posicao`, e
+      o servidor reescreve a ordem numa transação (desempata itens no 0). **Aula de texto:**
+      migration `20260928140000_lesson_kind_content` (enum `LessonKind` VIDEO|TEXT, as aulas
+      antigas viram VIDEO; `Lesson.content`), painel "Editar texto" com o mesmo `MarkdownField`
+      da descrição (generalizado), até **20.000 caracteres** *(proposta do agente no plano
+      aprovado)*. **O servidor recusa texto em aula de vídeo** (400 `TextoSoEmAulaDeTexto`), e o
+      tipo não muda depois de criada. **O texto é conteúdo pago: provado por teste que não sai**
+      na página do curso, na aula pública nem na busca. Passo 0 no dev: mesmas contagens (só
+      `_prisma_migrations` 9→10), 0 sem RLS, login 200, "No difference detected". Testes: 10 de
+      servidor, 8 de tela. **Mutação:** posição ignorada, texto aceito em aula de vídeo, texto
+      saindo na aula pública, posição errada na tela, "+" com `hidden` e o quiz virando botão →
+      todas reprovam. Revertido.
 - [ ] **Arrastar para reorganizar** aulas e módulos, **mantendo as setas** para o teclado.
       Peça nova: proposta no plano da etapa, com o ok do operador — **a mesma do C4 etapa 5**
       (ordem dos cursos e das perguntas frequentes): uma peça de arrastar para o admin inteiro.
-- [ ] **Tipos de item no "+":** Aula (vídeo **ou** texto) e Quiz. Aula de texto tem o seu
+- [x] **Tipos de item no "+":** Aula (vídeo **ou** texto) e Quiz. Aula de texto tem o seu
       texto, com negrito e listas; **aula de vídeo não tem descrição** (confirmado em 28/09).
+      *Feito na 2b; o Quiz aparece como EM BREVE até a etapa própria dele.*
 - [ ] **Arquivos para baixar por aula, só para assinantes**, guardados de forma protegida.
       Exige decidir no plano onde e como (as capas são públicas; estes não podem ser).
 - [ ] Vídeo **sem limite** de tamanho ou resolução no site; **um por vez**; **sem reuso** entre
       aulas.
-- [ ] **Quiz escrito pelo operador** — pode virar etapa própria, se ficar grande.
+- [ ] **Quiz escrito pelo operador** — **etapa própria** *(decisão do operador, 28/09/2026: tem
+      decisões dele — uma ou várias respostas certas, explicação, nota mínima, o que o aluno vê)*.
+      No "+", aparece como EM BREVE.
 
 **Etapa 3 — Legendas:**
 - [ ] **Tela própria** no passo 4: "x de y aulas com legenda"; enviar, baixar e excluir o `.vtt`

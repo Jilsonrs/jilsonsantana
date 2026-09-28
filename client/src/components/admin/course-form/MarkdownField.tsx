@@ -1,14 +1,16 @@
 import { lazy, Suspense, useRef, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { Bold, Italic, List, ListOrdered, type LucideIcon } from "lucide-react";
-import type { CourseFormValues } from "@/lib/course-form";
 import { envolver, prefixarLinhas, type Edicao } from "@/lib/markdown-toolbar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
-// A descrição do curso em Markdown, como o GitHub: botões em cima do campo e a
-// aba Visualizar (decisão do operador, 27/09/2026). O texto é guardado como está.
+// Texto em Markdown, como o GitHub: botões em cima do campo e a aba Visualizar
+// (decisão do operador, 27/09/2026). O texto é guardado como está. Serve à
+// descrição do curso e ao texto da aula de texto (Bloco E, etapa 2): os dois
+// formulários têm um campo de texto com um desses nomes.
+type CamposDeTexto = Record<"description" | "content", string>;
 
 // A peça que desenha o Markdown (~37 KB compactados) só baixa quando alguém abre
 // Visualizar. Importada direto, entraria no pacote que TODO aluno baixa, por uma
@@ -41,13 +43,17 @@ export function MarkdownField({
   name,
   maxLength,
   describedBy,
+  rotuloDoModo = "Modo de edição da descrição",
 }: {
   id: string;
-  name: "description";
+  name: "description" | "content";
   maxLength: number;
   describedBy?: string;
+  /** O nome das abas Escrever/Visualizar para o leitor de tela. */
+  rotuloDoModo?: string;
 }) {
-  const { register, setValue, control } = useFormContext<CourseFormValues>();
+  // O formulário de quem usa tem o campo `name`; o tipo aqui só precisa dele.
+  const { register, setValue, control } = useFormContext<CamposDeTexto>();
   const valor = useWatch({ control, name });
   const [aba, setAba] = useState<Aba>("escrever");
   const campo = useRef<HTMLTextAreaElement | null>(null);
@@ -74,7 +80,7 @@ export function MarkdownField({
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-input px-2 py-1">
         <div
           role="tablist"
-          aria-label="Modo de edição da descrição"
+          aria-label={rotuloDoModo}
           className="flex gap-1"
           onKeyDown={mudarAbaPeloTeclado}
         >

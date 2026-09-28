@@ -1,15 +1,21 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { ArrowDown, ArrowUp, Trash2 } from "lucide-react";
-import { ContentStatus } from "@jilson/core";
+import { ContentStatus, LessonKind } from "@jilson/core";
 import * as api from "@/lib/api";
 import type { AdminLesson } from "@/lib/api";
 import { ROTULO_DO_STATUS } from "@/lib/course-completeness";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { CLASSE_DO_SELECT_PEQUENO } from "./ModuleCard";
+import { LessonTextPanel } from "./LessonTextPanel";
 
-/** Uma aula: título, palavras-chave, status, a ordem e excluir. */
+const ROTULO_DO_TIPO: Record<LessonKind, string> = { VIDEO: "Vídeo", TEXT: "Texto" };
+
+/**
+ * Uma aula: o tipo, título, palavras-chave, status, a ordem e excluir. A aula de
+ * TEXTO abre o painel do texto; a de vídeo não tem texto (operador, 28/09/2026).
+ */
 export function LessonRow({
   lesson,
   isFirst,
@@ -28,6 +34,7 @@ export function LessonRow({
   const [title, setTitle] = useState(lesson.title);
   const [tagsText, setTagsText] = useState(lesson.tags.join(", "));
   const [status, setStatus] = useState<string>(lesson.status);
+  const [aberta, setAberta] = useState(false);
 
   const save = useMutation({
     mutationFn: () =>
@@ -45,42 +52,53 @@ export function LessonRow({
   });
 
   return (
-    <div className="flex flex-wrap items-center gap-2 border-l border-border pl-3">
-      <Input value={title} onChange={(e) => setTitle(e.target.value)} className="max-w-xs" aria-label="Título da aula" />
-      <Input
-        placeholder="tags, separadas, por vírgula"
-        value={tagsText}
-        onChange={(e) => setTagsText(e.target.value)}
-        className="max-w-xs"
-        aria-label="Palavras-chave da aula"
-      />
-      <select value={status} onChange={(e) => setStatus(e.target.value)} className={CLASSE_DO_SELECT_PEQUENO} aria-label="Status da aula">
-        {Object.values(ContentStatus).map((s) => (
-          <option key={s} value={s}>
-            {ROTULO_DO_STATUS[s]}
-          </option>
-        ))}
-      </select>
-      <Button type="button" size="sm" onClick={() => save.mutate()} disabled={save.isPending}>
-        Salvar
-      </Button>
-      <Button type="button" variant="ghost" size="icon" aria-label={`Subir a aula ${lesson.title}`} onClick={() => onMover(-1)} disabled={isFirst || ocupado}>
-        <ArrowUp className="h-4 w-4" />
-      </Button>
-      <Button type="button" variant="ghost" size="icon" aria-label={`Descer a aula ${lesson.title}`} onClick={() => onMover(1)} disabled={isLast || ocupado}>
-        <ArrowDown className="h-4 w-4" />
-      </Button>
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        aria-label={`Excluir a aula ${lesson.title}`}
-        onClick={() => {
-          if (confirm(`Excluir a aula "${lesson.title}"?`)) del.mutate();
-        }}
-      >
-        <Trash2 className="h-4 w-4" />
-      </Button>
+    <div className="space-y-2">
+      <div className="flex flex-wrap items-center gap-2 border-l border-border pl-3">
+        <span className="rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground">
+          {ROTULO_DO_TIPO[lesson.kind]}
+        </span>
+        <Input value={title} onChange={(e) => setTitle(e.target.value)} className="max-w-xs" aria-label="Título da aula" />
+        <Input
+          placeholder="tags, separadas, por vírgula"
+          value={tagsText}
+          onChange={(e) => setTagsText(e.target.value)}
+          className="max-w-xs"
+          aria-label="Palavras-chave da aula"
+        />
+        <select value={status} onChange={(e) => setStatus(e.target.value)} className={CLASSE_DO_SELECT_PEQUENO} aria-label="Status da aula">
+          {Object.values(ContentStatus).map((s) => (
+            <option key={s} value={s}>
+              {ROTULO_DO_STATUS[s]}
+            </option>
+          ))}
+        </select>
+        <Button type="button" size="sm" onClick={() => save.mutate()} disabled={save.isPending}>
+          Salvar
+        </Button>
+        <Button type="button" variant="ghost" size="icon" aria-label={`Subir a aula ${lesson.title}`} onClick={() => onMover(-1)} disabled={isFirst || ocupado}>
+          <ArrowUp className="h-4 w-4" />
+        </Button>
+        <Button type="button" variant="ghost" size="icon" aria-label={`Descer a aula ${lesson.title}`} onClick={() => onMover(1)} disabled={isLast || ocupado}>
+          <ArrowDown className="h-4 w-4" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          aria-label={`Excluir a aula ${lesson.title}`}
+          onClick={() => {
+            if (confirm(`Excluir a aula "${lesson.title}"?`)) del.mutate();
+          }}
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+        {lesson.kind === LessonKind.TEXT && (
+          <Button type="button" variant="outline" size="sm" aria-expanded={aberta} onClick={() => setAberta(!aberta)}>
+            {aberta ? "Fechar texto" : "Editar texto"}
+          </Button>
+        )}
+      </div>
+      {aberta && lesson.kind === LessonKind.TEXT && <LessonTextPanel lesson={lesson} onChanged={onChanged} />}
     </div>
   );
 }

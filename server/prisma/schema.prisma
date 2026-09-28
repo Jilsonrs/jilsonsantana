@@ -251,11 +251,22 @@ model Module {
 // First-class & searchable: a lesson has its own title + tags and can surface in
 // search results or sit inside a trilha on its own, not only nested in a course.
 // Progress counts per lesson (Phase 5). bunnyVideoId is added in Phase 3.
+// O tipo da aula (Bloco E, etapa 2 — operador, 28/09/2026): vídeo ou texto. O
+// quiz entra numa etapa própria, como valor novo. Aula de vídeo não tem texto.
+enum LessonKind {
+  VIDEO
+  TEXT
+}
+
 model Lesson {
   id           Int           @id @default(autoincrement())
   moduleId     Int
   module       Module        @relation(fields: [moduleId], references: [id], onDelete: Cascade)
   title        String
+  kind         LessonKind    @default(VIDEO)
+  // O texto da aula de TEXTO, em Markdown (negrito, itálico e listas). Conteúdo
+  // pago: nenhuma rota pública o devolve.
+  content      String?
   tags         String[]      @default([])
   displayOrder Int           @default(0)
   status       ContentStatus @default(DRAFT)
