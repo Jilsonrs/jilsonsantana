@@ -291,10 +291,26 @@ está quase todo vazio:** das cinco planejadas, só **JilsonAI Admin** tem subit
 linhas e nada mais — não responde *"o que falta no admin"*, porque o que falta ainda não foi
 escrito em lugar nenhum.
 
-- [ ] **Operador define, uma frase por seção:** o que tem dentro de **Alunos**, de **Dados** (o
-      painel é uma tela só ou tem partes?), de **Trilhas Admin** e de **Certificados**.
+- [x] **Operador define, uma frase por seção** *(respondido em 28/09/2026)*:
+      - **Alunos:** lista de todos os alunos, com busca; em cada um, os dados do cadastro, a
+        assinatura (situação, desde quando, próxima cobrança), o progresso nos cursos, o botão
+        **Mensagem**, **sincronizar com a Stripe** (destravar quem pagou e ficou sem acesso) e a
+        **exclusão a pedido** (LGPD).
+      - **Dados:** **uma tela só, em blocos**: assinantes (ativos, novos e cancelados no mês),
+        aprendizado (horas assistidas, cursos mais vistos, conclusões), de onde vieram os alunos
+        (campanha do link) e uso do JilsonAI. Se crescer, vira partes depois.
+      - **Trilhas Admin:** a lista das trilhas curadas e um editor **no mesmo jeito do curso**
+        (passos em ordem de preenchimento): nome, idioma, descrição, módulos por competência,
+        itens (curso inteiro ou aula solta), competências cobertas (vão no certificado), publicar.
+      - **Certificados** (de curso e de trilha): a lista dos emitidos (aluno, curso ou trilha,
+        data, se o aluno deixou público, link de verificação) + **um modelo visual único**
+        (texto e assinatura).
+      - **Comunicação** *(seção nova, Bloco E)*: a fila de dúvidas que sobem do JilsonAI, os
+        anúncios e, depois, o resumo do que os alunos perguntam. **JilsonAI Admin perde
+        "Escalações"** e fica com Persona, Modelo e Quotas.
 - [ ] Declarar no `client/src/lib/navigation.ts` (é dado, não código — cada seção declara os
-      níveis que usa), e só então ligar a exibição do 2º nível para seção planejada.
+      níveis que usa), **incluindo Comunicação e a saída de Escalações do JilsonAI Admin**, e só
+      então ligar a exibição do 2º nível para seção planejada.
 - **Por que nesta ordem:** declarar primeiro é o que faz a visão "o sistema inteiro de uma olhada"
   existir de verdade. Ligar antes entrega a moldura vazia.
 
@@ -1010,6 +1026,11 @@ tornada executável — não uma lista nova):
       **Direção do operador (28/09/2026):** a tela de **Início é o painel do aluno, rica**, com o
       que ele tem disponível **a um clique**; o menu continua na barra lateral, e o painel nasce
       preparado para **ganhar itens no futuro**.
+- [ ] **As telas do aluno passam para `/aluno/*`** *(decisão do operador, 28/09/2026, era a P15)*:
+      `/inicio` → `/aluno/inicio`, `/conta` → `/aluno/conta` (com as subpáginas),
+      `/minhas-trilhas` → `/aluno/minhas-trilhas`. Os endereços antigos **redirecionam** para os
+      novos. Mudar agora porque só o operador e a conta de teste usam: com aluno real, quebraria
+      link. Mexe no mapa de navegação, no destino pós-login (`POS_LOGIN`), nos testes e no E2E.
       **Depende da Fase 5** (captura de progresso) — sem `LessonProgress` não há o que mostrar, e
       construir a casca antes deixa uma tela vazia que ninguém sabe se está quebrada.
       **NOTA (Set 2026): a dependência encolheu.** "Trilhas em andamento" já tem dado real desde

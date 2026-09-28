@@ -28,8 +28,6 @@ rápida entra aqui, com o próximo número livre.*
 | # | O que falta | Onde registrar |
 |---|---|---|
 | P12 | Revisar as **15 perguntas da FAQ**, que já estão no admin | no próprio admin |
-| P13 | Dizer, em **uma frase por seção**, o que vai dentro das seções **planejadas** do menu do admin (Alunos, Dados…) | `implementation-plan.md` → *PENDENTE DO OPERADOR — o que cada seção PLANEJADA vai ter dentro* |
-| P15 | Decidir se **`/inicio`, `/conta` e `/minhas-trilhas` mudam para `/aluno/*`** (mexe em endereço já em uso; não é urgente) | `CLAUDE.md` → *DUAS SUPERFÍCIES* → *PENDÊNCIA conhecida* |
 | P16 | **Cadastrar os 5 cursos da home** no admin. A etapa 1 do C4 (o campo de imagem) ficou pronta no `dev` em 27/09; **no site no ar, o campo só aceita `/img/…` depois de publicada** | `implementation-plan.md` → Bloco C4 |
 
 ## C. Com hora marcada *(resolver quando o bloco abrir, não antes)*
