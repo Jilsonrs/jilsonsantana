@@ -1,5 +1,5 @@
 import { useFormContext } from "react-hook-form";
-import { Level, LANGUAGES } from "@jilson/core";
+import { Level, LANGUAGES, pt } from "@jilson/core";
 import type { CourseFormValues } from "@/lib/course-form";
 import { Field } from "./Field";
 
@@ -46,9 +46,11 @@ export function CourseLanguageLevelFields({ idiomaTravado = false }: { idiomaTra
       <Field id="level" label="Nível">
         <select id="level" {...register("level")} className={CLASSE_DO_SELECT}>
           <option value="">—</option>
+          {/* O rótulo em português, o mesmo que o aluno lê (o dicionário); o código
+              do banco (INICIANTE) nunca aparece na tela. Admin fica em português. */}
           {Object.values(Level).map((l) => (
             <option key={l} value={l}>
-              {l}
+              {pt.app.niveis[l]}
             </option>
           ))}
         </select>

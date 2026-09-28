@@ -321,7 +321,8 @@ export const pt = {
     niveis: {
       INICIANTE: "Iniciante",
       INTERMEDIARIO: "Intermediário",
-      AVANCADO: "Avançado"
+      AVANCADO: "Avançado",
+      TODOS_OS_NIVEIS: "Todos os níveis"
     },
     // Singular e plural (revisão de 24/09): "1 módulo", "2 módulos"; zero é plural.
     curso: {

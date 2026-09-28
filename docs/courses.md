@@ -381,7 +381,8 @@ digitados) e **manuais**. Manter os manuais poucos é o que sustenta o operador 
 
 `Course` carrega:
 - `title` · `subtitle?` (uma frase enquadrada em **resultado**) · `description?` (longa) ·
-  `level?` (`INICIANTE|INTERMEDIARIO|AVANCADO`).
+  `level?` (`INICIANTE|INTERMEDIARIO|AVANCADO|TODOS_OS_NIVEIS` — "Todos os níveis" entrou por
+  decisão do operador em 28/09/2026).
 - `learnTags[]` — "o que você vai aprender", em **frases de até 160 caracteres, em duas colunas com ✓** *(decisão do operador, 28/09/2026; substitui as "pills clicáveis")*.
 - `requirements[]` — pré-requisitos **mostrados abertamente.** Vantagem competitiva: os concorrentes
   escondem; **numa assinatura, mostrar não custa venda e corta reembolso e suporte.**

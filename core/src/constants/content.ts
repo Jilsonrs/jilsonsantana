@@ -8,6 +8,8 @@ export const Level = {
   INICIANTE: "INICIANTE",
   INTERMEDIARIO: "INTERMEDIARIO",
   AVANCADO: "AVANCADO",
+  // "Todos os níveis" (decisão do operador, 28/09/2026 — como na Udemy).
+  TODOS_OS_NIVEIS: "TODOS_OS_NIVEIS",
 } as const;
 export type Level = (typeof Level)[keyof typeof Level];
 

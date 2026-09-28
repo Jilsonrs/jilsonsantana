@@ -125,9 +125,10 @@
 > do admin, com capa, status em português e a barra de Preenchimento) e o **Bloco B** (limite de
 > caracteres com contador nos campos do curso, e a descrição com negrito, itálico e listas, pelo
 > `react-markdown`). **Publicado em 28/09 (`main` = `e42b152`):** os documentos do Bloco E.
-> **No `dev`, ainda não publicado (28/09):** o **Bloco E, etapa 1, partes 1a a 1c** — o editor do
-> curso em 7 passos no nível 2, o passo Publicar com o que falta e o link, e as três listas com
-> um campo por item (ver Bloco E).
+> **No `dev`, ainda não publicado (28/09):** o **Bloco E, etapa 1, partes 1a a 1d** — o editor do
+> curso em 7 passos no nível 2, o passo Publicar com o que falta e o link, as três listas com um
+> campo por item, e "Todos os níveis" (com a migration `20260928120000_level_todos_os_niveis`,
+> já aplicada no dev; produção aplica no próximo publish).
 > **Decidido em 27–28/09, ainda não construído:** o **Bloco E** (o editor do curso em 7 passos, a
 > partir dos prints da Udemy e de 5 plataformas pesquisadas), a mudança das telas do aluno para
 > `/aluno/*`, o conteúdo de cada seção planejada do admin (e a nova **Comunicação**) e as páginas
@@ -1459,7 +1460,17 @@ cada campo, a regra do ✓, 160 caracteres nas três listas e o Visualizar esper
       28/09/2026)*: a página de curso de hoje é provisória e nem mostra a descrição, então a
       prévia mostraria outra página e seria jogada fora.
 - [ ] **Dicas embaixo dos campos**: o agente escreve o rascunho, o operador aprova.
-- [ ] **"Todos os níveis"** no Nível: valor novo no enum `Level`, com migration.
+- [x] **1d — "Todos os níveis"** no Nível *(28/09, no `dev`)*: valor novo no enum `Level`, com a
+      migration `20260928120000_level_todos_os_niveis` (só `ALTER TYPE … ADD VALUE`, escrita à mão:
+      o `migrate dev` não roda no terminal do agente). Rótulo no dicionário ("Todos os níveis" /
+      "All levels"), e o Nível do admin passou a mostrar os nomes em português no lugar do código
+      do banco. **Passo 0 no banco de dev**, antes e depois: as mesmas contagens em todas as
+      tabelas (só mudaram `_prisma_migrations` 8→9 e uma sessão, a do login de conferência), 0
+      tabelas sem RLS, login do admin 200 e "No difference detected". A suíte do servidor recria
+      o banco do zero, então prova que a migration replica. **Produção recebe a migration pelo
+      pre-deploy no próximo publish.** Testes: 2 de servidor, 1 de tela. **Mutação:** sem a
+      migration → o servidor reprova ao gravar; o Nível mostrando o código → a tela reprova.
+      Revertido.
 - [x] **1c — As três listas viram um campo por item** *(28/09, no `dev`)*, com contador, lixeira e
       ordem; **as três com até 160 caracteres por item** *(era só "O que vai aprender"; os outros
       dois, operador em 28/09/2026)*. `course-form/ListItemsField.tsx` (o `useFieldArray` do

@@ -136,6 +136,27 @@ describe("Editor do curso — cada passo salva só a parte dele", () => {
     expect(chavesEnviadas()).toEqual(["description", "language", "level", "slug", "subtitle", "title"]);
   });
 
+  // "Todos os níveis" (operador, 28/09/2026) e o nível em português: o código do
+  // banco (INICIANTE) nunca aparece na tela.
+  it("o Nível mostra os nomes em português, e Todos os níveis vai no envio", async () => {
+    updateCourse.mockResolvedValue(CURSO_DE_TESTE);
+    abrir("/admin/cursos/1/basico");
+    await esperarTitulo();
+    const nivel = screen.getByLabelText("Nível") as HTMLSelectElement;
+    expect([...nivel.options].map((o) => o.textContent)).toEqual([
+      "—",
+      "Iniciante",
+      "Intermediário",
+      "Avançado",
+      "Todos os níveis",
+    ]);
+
+    fireEvent.change(nivel, { target: { value: "TODOS_OS_NIVEIS" } });
+    salvar();
+    await waitFor(() => expect(updateCourse).toHaveBeenCalled());
+    expect(updateCourse.mock.calls[0][1]).toMatchObject({ level: "TODOS_OS_NIVEIS" });
+  });
+
   it("Para quem é envia só as três listas", async () => {
     updateCourse.mockResolvedValue(CURSO_DE_TESTE);
     abrir("/admin/cursos/1/para-quem-e");

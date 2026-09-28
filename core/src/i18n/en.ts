@@ -309,7 +309,8 @@ export const en: Dict = {
     niveis: {
       INICIANTE: "Beginner",
       INTERMEDIARIO: "Intermediate",
-      AVANCADO: "Advanced"
+      AVANCADO: "Advanced",
+      TODOS_OS_NIVEIS: "All levels"
     },
     curso: {
       modulo: "module",
