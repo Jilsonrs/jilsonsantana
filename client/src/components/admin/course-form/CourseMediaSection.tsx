@@ -42,11 +42,9 @@ export function CourseMediaSection({
       <Card>
         <CardContent className="space-y-8 pt-6">
           <div className="grid gap-8 sm:grid-cols-2">
+            {/* Ordem pedida pelo operador (27/09/2026): primeiro a mídia, depois o
+                campo, depois o botão de enviar — nas duas colunas. */}
             <div className="space-y-4">
-              <Field id="thumbnailUrl" label="URL da thumbnail" error={formState.errors.thumbnailUrl?.message}>
-                <Input id="thumbnailUrl" {...register("thumbnailUrl")} />
-              </Field>
-              {courseId !== undefined && <ThumbnailUpload courseId={courseId} />}
               <div className="aspect-video w-full overflow-hidden rounded-2xl border border-border/60 bg-muted flex items-center justify-center">
                 {thumbnailUrl ? (
                   <img src={thumbnailUrl} alt="Thumbnail preview" className="h-full w-full object-cover" />
@@ -54,12 +52,12 @@ export function CourseMediaSection({
                   <span className="text-sm text-muted-foreground">Sem imagem</span>
                 )}
               </div>
+              <Field id="thumbnailUrl" label="Imagem do curso" error={formState.errors.thumbnailUrl?.message}>
+                <Input id="thumbnailUrl" {...register("thumbnailUrl")} />
+              </Field>
+              {courseId !== undefined && <ThumbnailUpload courseId={courseId} />}
             </div>
             <div className="space-y-4">
-              <Field id="introVideoId" label="ID do vídeo (Bunny)" error={formState.errors.introVideoId?.message}>
-                <Input id="introVideoId" {...register("introVideoId")} />
-              </Field>
-              {courseId !== undefined && <IntroVideoUpload courseId={courseId} aoEnviar={setEnviado} />}
               {video ? (
                 <IntroVideoPreview videoId={video.videoId} embedUrl={video.embedUrl} />
               ) : (
@@ -78,6 +76,10 @@ export function CourseMediaSection({
                   )}
                 </div>
               )}
+              <Field id="introVideoId" label="Vídeo promocional" error={formState.errors.introVideoId?.message}>
+                <Input id="introVideoId" {...register("introVideoId")} />
+              </Field>
+              {courseId !== undefined && <IntroVideoUpload courseId={courseId} aoEnviar={setEnviado} />}
             </div>
           </div>
         </CardContent>
