@@ -11,6 +11,15 @@
 - **TanStack React Query** — server state (`useQuery` / `useMutation`), not `useEffect` + `useState`
 - **Axios** — HTTP client (not `fetch`)
 - **React Hook Form + Zod resolver** — form validation
+- **`react-markdown`** (client) — mostra Markdown **sem HTML cru**: HTML digitado aparece como
+  texto (padrão da biblioteca, conferido no context7 em 27/09/2026), e `allowedElements` diz
+  exatamente o que vale. Entrou para a **descrição do curso** (negrito, itálico e listas, decisão
+  do operador de 27/09/2026), cumprindo o gatilho de reabertura do editor rico de 23/09 (abaixo,
+  em *What We Do NOT Use*). **Um lugar só:** `client/src/components/content/MarkdownText.tsx`,
+  e é carregado **só quando usado** (fica fora do pacote que todo aluno baixa: medido, +37 KB
+  compactados se importado direto). O JilsonAI (Fase 6) usa a mesma peça, com a lista dele.
+  *Esta decisão se reabre se o JilsonAI precisar de algo que ela não faz com plugin oficial
+  (bloco de código com cor, fórmula).*
 
 ## Backend
 
@@ -91,7 +100,11 @@
 - **Vitest + supertest** — **testes de servidor, sem browser** (o único lugar onde mora o risco catastrófico: assinante pagante trancado fora / acesso liberado sem pagar). Nascem **dentro da Fase 4**, colados ao handler de webhook. Lista dos casos: `implementation-plan.md` → Fase 4.
 - **Playwright** — E2E only for what needs a real browser + server (auth redirects, navigation, full-stack flows like webhook → DB → UI). **Permanece na stack:** o E2E de hoje só assere redirect do React Router porque falta o `globalSetup` com banco de teste — não é escolha errada de ferramenta. Alvo: 6–8 testes full-stack, **depois** dos testes de servidor. **O `globalSetup` deixou de ser pendência vaga e virou trabalho datado:** `implementation-plan.md` → Fase 3, **Bloco T**.
 - **Teste unitário: NÃO é uma camada aqui** — só função pura, sem I/O (hoje: um caso, o `escapeHtml`/`jsonLd`). Rota se testa por supertest contra o app real; tela, por component test. Convenção em `CLAUDE.md` → Testing.
-- **Renderer de Markdown do JilsonAI: PENDENTE — não há biblioteca escolhida nem instalada** (conferido Ago 2026: sem `react-markdown`, `marked` ou `dompurify` em nenhum `package.json`). O `CLAUDE.md` já **proíbe** `dangerouslySetInnerHTML` e exige HTML bruto desabilitado ou sanitizado, mas a regra não tem implementação porque a superfície ainda não existe. É **dependência nova ⇒ decisão de nível de plano**, com um requisito que já decide a escolha: desabilitar HTML bruto por **configuração**, não por sanitização posterior. Cai na Fase 6.
+- **Renderer de Markdown do JilsonAI: ESCOLHIDO em 27/09/2026 — `react-markdown`** (ver
+  *Frontend*). Entrou pela descrição do curso e atende o requisito que já estava escrito aqui:
+  HTML cru desligado por **configuração** (é o padrão dela), não por sanitização posterior. O que
+  fica para a Fase 6 é só **o que o chat aceita** (a lista de `permitidos` do `MarkdownText`, e
+  se entra algum plugin para bloco de código).
 - **Banco de teste = PostgreSQL 17 LOCAL** (`localhost:5432/jilsonsantana_test`), instalado pelo instalador oficial EDB. **Decisão REVISTA em Ago 2026:** a anterior ("um segundo projeto Supabase, não Postgres local — menos infra pro operador solo") caiu quando o mesmo projeto passou a servir **dev E teste** e o `migrate reset --force` da suíte começou a apagar o trabalho de desenvolvimento. **Martelo só é problema quando o que está embaixo tem valor:** com o banco de teste local e descartável, o reset volta a ser inofensivo, e a separação é **estrutural, não disciplinar**. Custo US$ 0. **Decisão REAFIRMADA na migração para o Neon (Set 2026):** branch de nuvem é barato e instantâneo, o que torna tentador usar um como banco de teste — mas isso devolve o `migrate reset --force` para um banco alcançável pela internet, que é exatamente o que a decisão evita. A trava do setup verifica **hostname parseado** contra uma lista de hosts locais (terceira forma da trava; as duas anteriores comparavam texto). Código, histórico e gatilho de reabertura: `CLAUDE.md` → Database & Migrations.
 - **Major 17, com divergência conhecida:** produção é **PG18** desde a migração; teste e CI seguem no **17**. A razão original do 17 (*"o Prisma 5.22 é anterior ao 18"*) foi **medida e é falsa** — `migrate deploy`, `migrate status`, client, transação e rollback rodam contra o Neon 18.6. O 17 fica por inércia útil (o CI usa `postgres:17`). *Gatilho: alinhar quando algum código depender de comportamento específico do 18.*
 - **O branch `dev` da Neon é a testemunha de reprodutibilidade contra produção** — mesmo papel que o 2º projeto Supabase tinha, agora sem custo. A comparação é por **SQL de catálogo** (colunas, constraints, índices, `relrowsecurity`), não por `get_advisors`.
@@ -135,3 +148,5 @@
   uma seção que precise de texto longo formatado (páginas legais, anúncios) — e aí o caminho é
   **Markdown com HTML bruto desligado** (mesma dependência pendente do JilsonAI, acima), não um
   editor de HTML.
+  **Gatilho cumprido em 27/09/2026:** a descrição do curso pediu negrito e listas, e o caminho
+  seguido foi exatamente esse (`react-markdown`, em *Frontend*). O editor de HTML continua fora.

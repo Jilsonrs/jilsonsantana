@@ -912,7 +912,9 @@ tornada executável — não uma lista nova):
       `{ method, path, status, errorName, message }` — **nunca `err.stack` verbatim**.
 - [ ] **`.max()` nos campos de texto autorados** (`core/src/schemas/content.ts:29-41,56-73`) e
       ~~**trocar `z.string().url()` por checagem explícita de esquema** em `thumbnailUrl`~~ *(esta
-      metade FEITA em 27/09, na etapa 1 do C4; falta só o `.max()`)* — ver a
+      metade FEITA em 27/09, na etapa 1 do C4)*. **`.max()` FEITO em 27/09 para título, subtítulo,
+      slug e descrição do curso** (Bloco B); falta nos demais: listas do curso, destaques, FAQ,
+      títulos de módulo e aula, e nome e descrição da trilha — ver a
       convenção nova em `CLAUDE.md` → Shared `core/` package (o `.url()` aceita `javascript:` e
       `data:text/html`, **medido neste repo**, não suposto).
 - [x] *(Feito em 27/09, no Bloco U, etapa 2: `bunnyVideoIdSchema` em `core/src/schemas/content.ts`.)*
@@ -1334,6 +1336,27 @@ landmark. Corrigido junto.
 - [ ] **Avaliação** vira número — na Fase 5; antes, decidir a P27 (`pendencias.md`).
 - **Fora, e não pedido:** busca, ordenação e troca de visualização que a Udemy tem no topo da lista.
 
+### Bloco B — Informações básicas do curso: limites e descrição formatada  *(27/09/2026 · pedido do operador)*
+
+> O operador não sabia quantos caracteres cabiam nos campos, e a descrição não tinha negrito. Pediu
+> o que os grandes fazem. **Decisões dele (27/09):** Título **60** · Subtítulo **120** · Slug **80**
+> · Descrição **5.000** · a descrição aceita **negrito, itálico e listas**, sem link · **botões +
+> aba Visualizar**, como no GitHub. O editor de HTML segue recusado (23/09).
+
+- [x] **Limites nos dois lados** *(27/09, no `dev`)*. `LIMITES_DO_CURSO` em
+      `core/src/constants/content.ts`; o `courseCreateSchema` e o `slugSchema` recusam acima (vale
+      também para o slug da trilha). Cada campo mostra **"usados/limite"** e trava no número; curso
+      antigo acima do limite mostra o aviso e não salva.
+- [x] **Descrição em Markdown** *(27/09, no `dev`)*. `MarkdownField.tsx` (abas Escrever e
+      Visualizar; botões Negrito, Itálico, Lista, Lista numerada, que desfazem no segundo clique) +
+      `MarkdownText.tsx`, o único lugar que mostra Markdown no React (`react-markdown`, com a lista
+      do que vale; HTML digitado vira texto; link e imagem não saem). A prévia baixa só quando
+      aberta. Testes: 6 de servidor + 13 de tela; mutações (tirar o limite do servidor, trocar por
+      HTML cru, tirar a lista do que vale, o botão não marcar) reprovam. Os textos da tela são
+      propostas do agente, para o operador aprovar.
+- **Fora:** limite nos outros campos de texto (backlog do P2, abaixo) · mostrar a descrição ao aluno
+  (a página de curso de hoje não mostra; ver o *DEPOIS* do C5).
+
 ### Bloco I — Escola bilíngue: idioma no conteúdo + dicionário de textos  *(Set 2026 · decisão do operador · spec em `idiomas.md`)*
 
 > **ESTADO EM 23/09/2026 — parte adiantada por outros blocos, checkboxes abaixo seguem valendo:**
@@ -1651,6 +1674,11 @@ landmark. Corrigido junto.
 - **DEPOIS deste bloco:** `/curso/:slug` e `/trilha/:slug` seguem o mesmo caminho. A página de
   curso espera o **Bunny** (o `introVideoId` toca para não-membro nela) — é a dependência que já
   justificava a ordem original.
+  **A `description` do curso é Markdown** desde 27/09 (Bloco B): quando a página de curso virar
+  template de servidor, ela precisa de um renderizador **no servidor**, com HTML cru desligado por
+  configuração e a mesma lista do que vale (negrito, itálico, listas). É dependência nova do
+  `server` ⇒ decidir no plano daquele bloco, com consulta ao context7. **Nunca** `escapeHtml` no
+  texto inteiro (mostraria os asteriscos) nem HTML montado à mão.
 
 #### Bloco C3 — Depoimentos e FAQ viram tabela ✅ DONE *(23/09/2026, no ar em produção)*
 
@@ -2216,7 +2244,10 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
 - [ ] **O JilsonAI responde no idioma do aluno** (escola bilíngue, Set 2026 — `idiomas.md` §6):
       persona e prompt preparados para PT e EN; o contexto de curso vem do idioma do curso. O
       desenho (uma persona com instrução de idioma × duas personas) se decide na abertura da fase.
-- [ ] **DECISÃO PENDENTE — qual renderer de Markdown.** O `CLAUDE.md` já **proíbe**
+- [x] *(Resolvido em 27/09/2026: `react-markdown`, que entrou pela descrição do curso — Bloco B
+      da Fase 3 e `tech-stack.md`. Fica para esta fase só **o que o chat aceita**: a lista de
+      `permitidos` do `MarkdownText` e se entra plugin para bloco de código.)*
+      **DECISÃO PENDENTE — qual renderer de Markdown.** O `CLAUDE.md` já **proíbe**
       `dangerouslySetInnerHTML` e manda renderizar "com HTML bruto desabilitado ou sanitizado",
       mas **a biblioteca nunca foi escolhida nem instalada** (conferido em Ago 2026: não há
       `react-markdown`, `marked` nem `dompurify` em nenhum `package.json`). É dependência nova ⇒

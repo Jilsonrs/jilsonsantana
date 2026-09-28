@@ -1,5 +1,12 @@
 import { z } from "zod";
-import { Level, ContentStatus, Layer, PlanItemType } from "../constants/content.js";
+import {
+  Level,
+  ContentStatus,
+  Layer,
+  PlanItemType,
+  LIMITE_DO_SLUG,
+  LIMITES_DO_CURSO,
+} from "../constants/content.js";
 import { LANGUAGES } from "./site-text.js";
 
 // Shared content contracts (Phase 2). Consumed by the server (request validation
@@ -24,6 +31,7 @@ export const planItemTypeSchema = enumFrom(PlanItemType);
 export const slugSchema = z
   .string()
   .min(1)
+  .max(LIMITE_DO_SLUG, `Use no máximo ${LIMITE_DO_SLUG} caracteres.`)
   .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "slug deve ser kebab-case (a-z, 0-9, hífens)");
 
 // "diferenciais do curso" icon cards — icon is a Lucide token (see design.md).
@@ -107,9 +115,10 @@ export const contentLanguageSchema = z.enum(LANGUAGES);
 export const courseCreateSchema = z.object({
   slug: slugSchema,
   language: contentLanguageSchema,
-  title: z.string().min(1),
-  subtitle: z.string().optional(),
-  description: z.string().optional(),
+  title: z.string().min(1).max(LIMITES_DO_CURSO.title),
+  subtitle: z.string().max(LIMITES_DO_CURSO.subtitle).optional(),
+  // Markdown (negrito, itálico e listas), guardado como o operador escreveu.
+  description: z.string().max(LIMITES_DO_CURSO.description).optional(),
   level: levelSchema.optional(),
   learnTags: z.array(z.string().min(1)).optional(),
   requirements: z.array(z.string().min(1)).optional(),
