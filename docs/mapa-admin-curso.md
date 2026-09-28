@@ -12,7 +12,8 @@
 > **Legenda:** ✅ já existe · 🔜 já planejado (diz onde) · ❓ pergunta para o operador ·
 > ✖ proposta: não entra
 >
-> **Estado:** lote 1 de 4 mapeado (Página inicial do curso, Alunos pretendidos, Grade curricular).
+> **Estado:** lotes 1 e 2 de 4 mapeados (Página inicial do curso, Alunos pretendidos, Grade
+> curricular, Legendas, Acessibilidade, Feedback da Udemy).
 > As perguntas ficam na seção final e são respondidas **juntas**, depois do último lote.
 
 ## 0. Como a Udemy organiza
@@ -75,14 +76,45 @@ pode ser a primeira tela a usá-lo.
 | Reordenar **arrastando** (≡), editar (lápis), excluir (lixeira) | ✅ setas ↑↓ e lixeira | ❓ Q14 |
 | Topo: **duração total do conteúdo publicado** | não existe | 🔜 sai da soma das durações (Q da linha do vídeo), nunca uma coluna |
 | Topo: botão **Visualizar** a página do curso | não existe | ❓ Q15 |
+| **"+" entre dois itens** (inserir aula ou seção naquele ponto) | adiciona só no fim, e reordena pelas setas | ❓ Q16 |
+| Adicionar vídeo em **duas abas: "Fazer upload" · "Adicionar da biblioteca"** (reusar um vídeo já enviado) | 🔜 só o envio (Bloco U, etapa 3) | ❓ Q17 |
+| Aviso do arquivo: **pelo menos 720p e menos de 4 GB** | não há limite definido para vídeo de aula | ❓ Q18 |
 
-## 4. O que a escola tem e a Udemy não
+## 4. Legendas
+
+| Na Udemy | Na escola hoje | Proposta |
+|---|---|---|
+| Tela própria, com o idioma e a contagem **"44/44 aulas publicadas legendadas"** | não existe | ❓ Q19 |
+| Uma linha por vídeo (o promocional e cada aula): situação, data, **Editar** e o menu **Fazer upload · Baixar · Excluir** | 🔜 decidido em 25/09: legenda `.vtt` **casada pelo nome do arquivo** do vídeo (`bunny.md` §7.1) | a tela de legendas é onde isso aparece |
+| Aviso "todas as aulas legendadas: os alunos verão o ícone **CC**" | não existe | entra junto, se a Q19 for sim |
+| **Editar** a legenda na própria tela (corrigir palavra) | não existe | ✖ corrigir no Descript e reenviar o `.vtt` |
+| Legenda **gerada sozinha** pela Udemy | não existe | ✖ **trava de custo** (25/09): o código nunca pede transcrição ao Bunny, porque cobra por minuto. A legenda vem do Descript |
+| Legenda em **outro idioma** (ex.: inglês num curso em português) | não existe | ❓ Q20 |
+
+## 5. Acessibilidade *(o operador nunca usou)*
+
+| Na Udemy | Na escola hoje | Proposta |
+|---|---|---|
+| Texto explicativo + **três listas de conferência** (legendas · áudio · materiais), cada uma com uma caixa "atende às diretrizes" | não existe | ✖ Q21 |
+| Links para guias da Udemy · "Marcar seu curso como acessível" | não existe | ✖ Q21 |
+
+A acessibilidade que importa aqui é **do site** (teclado, leitor de tela, contraste), e ela já é
+regra de engenharia (`design.md` §6), testada em cada tela. Do lado do conteúdo, **a legenda é o
+item que mais pesa**, e ela já está na seção 4.
+
+## 6. Feedback da Udemy
+
+| Na Udemy | Na escola hoje | Proposta |
+|---|---|---|
+| "Seu curso está disponível" + **Melhorias recomendadas** (revisão automática da qualidade) | ✅ na **lista** de cursos: a barra de **Preenchimento** com o que falta (Bloco A, 27/09) | ❓ Q22 |
+
+## 7. O que a escola tem e a Udemy não
 
 Slug · Camadas (metodologia 3 camadas) · Destaques · Perguntas frequentes do curso · Ordem no
 catálogo · a trava do idioma depois de publicado · a barra de **Preenchimento** na lista de cursos.
 Na reorganização, cada um precisa de uma área.
 
-## 5. Perguntas para o operador *(responder juntas, depois do último lote)*
+## 8. Perguntas para o operador *(responder juntas, depois do último lote)*
 
 - **Q1.** Pôr uma **dica curta embaixo de cada campo**, como a Udemy faz? (O texto das dicas é seu;
   eu proponho um rascunho.)
@@ -111,3 +143,18 @@ Na reorganização, cada um precisa de uma área.
 - **Q14.** Reordenar **arrastando**, em vez das setas? (Seria uma peça nova no site.)
 - **Q15.** Botão **Visualizar** no topo, para ver a página do curso como o aluno vê, **inclusive em
   rascunho**?
+- **Q16.** Botão **"+" entre as aulas** para inserir no meio, ou basta adicionar no fim e mover?
+- **Q17.** **Reusar um vídeo já enviado** em outra aula ("Adicionar da biblioteca")? Atenção: hoje
+  o vídeo substituído **é apagado sozinho** do Bunny (decisão de 27/09). Se o mesmo vídeo puder
+  estar em duas aulas, essa limpeza precisa conferir se ele ainda é usado antes de apagar.
+- **Q18.** Limite do vídeo de aula: copiar a Udemy (**720p no mínimo, até 4 GB**) ou outro número?
+- **Q19.** **Tela de Legendas** própria, com "x de y aulas com legenda" e enviar, baixar e excluir
+  por vídeo?
+- **Q20.** **Legenda em outro idioma** no mesmo vídeo (ex.: legenda em inglês num curso em
+  português)? Lembrete: a escola já decidiu que curso em inglês é **outro curso**, com vídeos
+  próprios (`idiomas.md`); a legenda seria só uma ajuda a mais.
+- **Q21.** Acessibilidade: proposta é **não ter tela**, porque as listas da Udemy são só caixas que
+  o instrutor marca, e a legenda (Q19) cobre o principal. Concorda?
+- **Q22.** "Feedback" dentro do editor: **mostrar a mesma barra de Preenchimento e o que falta no
+  topo do editor**, além da lista? E, mais adiante, o **JilsonAI revisando a página do curso** e
+  sugerindo melhorias (é o tipo de coisa que passa no filtro "IA no DNA")?
