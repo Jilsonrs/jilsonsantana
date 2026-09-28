@@ -276,6 +276,7 @@ model Lesson {
   // Prévia grátis (operador, 27/09/2026, "como na Udemy"): a aula toca para
   // qualquer visitante. Só é gravada aqui; tocar para visitante é a etapa 4.
   isFreePreview       Boolean  @default(false)
+  files               LessonFile[]
   tags         String[]      @default([])
   displayOrder Int           @default(0)
   status       ContentStatus @default(DRAFT)
@@ -344,4 +345,22 @@ model PlanItem {
   @@index([courseId])
   @@index([lessonId])
   @@map("plan_item")
+}
+
+// ARQUIVO PARA BAIXAR de uma aula (Bloco E, etapa 2, parte 2e — decisão do
+// operador, 28/09/2026). O arquivo mora numa Storage Zone PRÓPRIA do Bunny, sem
+// CDN: nada lá é público, e só o nosso servidor entrega — para o assinante, na
+// etapa 4 do Bloco U. O caminho tem nome aleatório (`aulas/<aula>/<código>.<ext>`).
+model LessonFile {
+  id           Int      @id @default(autoincrement())
+  lessonId     Int
+  lesson       Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  // O nome com que o operador enviou (o aluno baixa com este nome).
+  originalName String
+  storagePath  String   @unique
+  sizeBytes    Int
+  createdAt    DateTime @default(now())
+
+  @@index([lessonId])
+  @@map("lesson_file")
 }

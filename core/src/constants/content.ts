@@ -25,6 +25,27 @@ export type LessonKind = (typeof LessonKind)[keyof typeof LessonKind];
 // plano de 28/09/2026, aprovado pelo operador; muda nesta linha.
 export const LIMITE_DO_TEXTO_DA_AULA = 20000;
 
+// ARQUIVOS PARA BAIXAR de cada aula, só para assinantes (Bloco E, etapa 2, parte
+// 2e — propostas do agente no plano de 28/09/2026, aprovado pelo operador). O
+// servidor recusa o que passar disto; a tela confere antes, para poupar o envio.
+export const LIMITE_DO_ARQUIVO_DA_AULA_MB = 50;
+export const EXTENSOES_DOS_ARQUIVOS_DA_AULA = [
+  "pdf",
+  "xlsx",
+  "xlsm",
+  "xls",
+  "csv",
+  "docx",
+  "pptx",
+  "pbix",
+  "zip",
+  "txt",
+  "sql",
+  "py",
+  "ipynb",
+  "json",
+] as const;
+
 // One status set shared by Course, Module and Lesson.
 export const ContentStatus = {
   DRAFT: "DRAFT",

@@ -27,6 +27,7 @@
 | Storage Zone de produção | **criada**: `jilsonsantana-storage` (§4.1) |
 | Storage Zone de dev | **não criada** (§4.1) |
 | Pull Zone das imagens | **criada e testada**: `img.jilsonsantana.com` (§4.2) |
+| Storage Zone dos ARQUIVOS PARA BAIXAR | **a criar pelo operador** (`pendencias.md`, P33): zona própria, **sem Pull Zone** (§4.5). O código do envio está pronto no `dev` (28/09) |
 | Stream: biblioteca de aulas | **criada e testada**: `jilsonsantana-stream` (§3.2) |
 | Stream: biblioteca de apresentação | **não criada**; o código do envio está pronto no `dev` (Bloco U, etapa 2, 27/09) |
 | Stream: bibliotecas de dev | **não serão criadas por enquanto**: o operador testa o envio direto no ar (decisão de 27/09, §4.1) |
@@ -326,6 +327,22 @@ desligado** (é pago).
   ao ID do Bunny diz o nome do produto perguntado: **"Stream"**, **"Storage"** ou **"CDN"**
   (`CLAUDE.md` → Context7 → *Bunny caveat*).
 
+### 4.5 A zona dos ARQUIVOS PARA BAIXAR *(decisão do operador, 28/09/2026)*
+
+- **Uma Storage Zone PRÓPRIA, sem Pull Zone.** Os arquivos das aulas (planilhas, PDFs,
+  `.pbix`) são material pago: **nada lá tem endereço público**, e quem entrega ao aluno é o
+  nosso servidor, só para assinante e sempre como download (etapa 4 do Bloco U). Com Pull Zone,
+  qualquer um que visse o endereço baixaria.
+- **Tier e réplica são IRREVERSÍVEIS** (§4.1): a escolha é do operador. Recomendação do agente:
+  **Standard (HDD), São Paulo, sem réplica** — réplica só se acrescenta, e os arquivos saem pelo
+  nosso servidor (na Railway), então a réplica não aproxima nada do aluno.
+- **Nome:** sugestão `jilsonsantana-arquivos`. **Sem zona de dev** (o teste é no ar, como nas
+  imagens).
+- **Regras de build que já valem** *(código em `server/src/lib/bunny-storage.ts`)*: nome
+  aleatório no Storage (`aulas/<aula>/<24 caracteres>.<ext>`); o nome original fica só no banco;
+  **apagar só aceita caminho de arquivo nesse formato**, porque, pela doc (context7, 28/09),
+  **apagar uma PASTA apaga tudo dentro dela, sem aviso**.
+
 ## 5. Chaves e senhas — leia antes do passo a passo
 
 O Bunny gera estes tipos de chave:
@@ -366,6 +383,9 @@ O Bunny gera estes tipos de chave:
   | 3 | `BUNNY_STREAM_LESSONS_LIBRARY_ID` | ID da biblioteca de aulas | não |
   | 3 | `BUNNY_STREAM_LESSONS_API_KEY` | API key da biblioteca de aulas | **sim** |
   | 3 | `BUNNY_STREAM_LESSONS_TOKEN_KEY` | token authentication key da biblioteca de aulas | **sim** |
+  | arquivos | `BUNNY_FILES_STORAGE_ZONE` | nome da Storage Zone dos arquivos (§4.5) | não |
+  | arquivos | `BUNNY_FILES_STORAGE_HOST` | o endpoint da zona (ex.: `br.storage.bunnycdn.com`) | não |
+  | arquivos | `BUNNY_FILES_STORAGE_PASSWORD` | a senha da zona dos arquivos (a de escrita) | **sim** |
 
   **Estado em 27/09: as 4 da etapa 1 estão no Railway** (o envio foi provado no ar). As das etapas
   2 e 3 ainda não existem. **Em 28/09 o código da etapa 3 ficou pronto no `dev`** (o vídeo das

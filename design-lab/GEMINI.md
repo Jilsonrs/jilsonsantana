@@ -175,6 +175,10 @@ servidores (§5); o React responde em `localhost:5173`, a home pública em `loca
 > **O "+" entre dois itens** (`InsertPoint.tsx`) fica escondido por **opacidade** até o mouse ou
 > o foco do teclado chegar: **não troque por `hidden`**, senão o teclado não o alcança (tem
 > teste). O texto da aula de texto usa o mesmo `MarkdownField` da descrição.
+> **Cada aula** tem dois painéis, um aberto por vez: o conteúdo ("Editar texto" na aula de texto,
+> "Vídeo da aula" na de vídeo — `LessonTextPanel.tsx`, `LessonVideoPanel.tsx`) e os
+> "Arquivos" (`LessonFilesPanel.tsx`). A prévia do vídeo da aula vem **assinada** do servidor:
+> não monte endereço de player na tela.
 > **Arrastar** (`arrastar.tsx`): a alça com os pontinhos é um **botão** com nome ("Arrastar a
 > aula Fórmulas"), e as instruções de teclado saem em português. Os dois têm teste.
 >

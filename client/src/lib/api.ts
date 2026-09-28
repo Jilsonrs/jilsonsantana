@@ -316,6 +316,26 @@ export async function getLessonVideoStatus(videoId: string): Promise<{ pronto: b
   return data;
 }
 
+// OS ARQUIVOS PARA BAIXAR de cada aula (Bloco E, etapa 2, parte 2e): o admin
+// envia e exclui. O arquivo vai CRU no corpo, e o nome original no cabeçalho.
+export type AdminLessonFile = { id: number; originalName: string; sizeBytes: number; createdAt: string };
+
+export async function listLessonFiles(lessonId: number): Promise<AdminLessonFile[]> {
+  const { data } = await client.get<AdminLessonFile[]>(`/admin/lessons/${lessonId}/files`);
+  return data;
+}
+
+export async function uploadLessonFile(lessonId: number, arquivo: File): Promise<AdminLessonFile> {
+  const { data } = await client.post<AdminLessonFile>(`/admin/lessons/${lessonId}/files`, arquivo, {
+    headers: { "Content-Type": "application/octet-stream", "X-Nome-Do-Arquivo": encodeURIComponent(arquivo.name) },
+  });
+  return data;
+}
+
+export async function deleteLessonFile(fileId: number): Promise<void> {
+  await client.delete(`/admin/lesson-files/${fileId}`);
+}
+
 // O Bunny já terminou de processar o vídeo? A prévia do admin pergunta até ficar pronto.
 export async function getIntroVideoStatus(videoId: string): Promise<{ pronto: boolean; falhou: boolean }> {
   const { data } = await client.get<{ pronto: boolean; falhou: boolean }>(`/admin/intro-video/${videoId}/status`);

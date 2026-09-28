@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { CLASSE_DO_SELECT_PEQUENO } from "./ModuleCard";
 import { LessonTextPanel } from "./LessonTextPanel";
 import { LessonVideoPanel } from "./LessonVideoPanel";
+import { LessonFilesPanel } from "./LessonFilesPanel";
 import { AlcaDeArraste, useArrastavel } from "./arrastar";
 
 const ROTULO_DO_TIPO: Record<LessonKind, string> = { VIDEO: "Vídeo", TEXT: "Texto" };
@@ -36,7 +37,9 @@ export function LessonRow({
   const [title, setTitle] = useState(lesson.title);
   const [tagsText, setTagsText] = useState(lesson.tags.join(", "));
   const [status, setStatus] = useState<string>(lesson.status);
-  const [aberta, setAberta] = useState(false);
+  // Um painel aberto por vez: o conteúdo (texto ou vídeo) ou os arquivos.
+  const [aberto, setAberto] = useState<"conteudo" | "arquivos" | null>(null);
+  const alternar = (painel: "conteudo" | "arquivos") => setAberto(aberto === painel ? null : painel);
 
   const save = useMutation({
     mutationFn: () =>
@@ -96,25 +99,25 @@ export function LessonRow({
         >
           <Trash2 className="h-4 w-4" />
         </Button>
-        {lesson.kind === LessonKind.TEXT ? (
-          <Button type="button" variant="outline" size="sm" aria-expanded={aberta} onClick={() => setAberta(!aberta)}>
-            {aberta ? "Fechar texto" : "Editar texto"}
-          </Button>
-        ) : (
-          <Button type="button" variant="outline" size="sm" aria-expanded={aberta} onClick={() => setAberta(!aberta)}>
-            {aberta ? "Fechar vídeo" : "Vídeo da aula"}
-          </Button>
-        )}
+        <Button type="button" variant="outline" size="sm" aria-expanded={aberto === "conteudo"} onClick={() => alternar("conteudo")}>
+          {lesson.kind === LessonKind.TEXT
+            ? aberto === "conteudo" ? "Fechar texto" : "Editar texto"
+            : aberto === "conteudo" ? "Fechar vídeo" : "Vídeo da aula"}
+        </Button>
+        <Button type="button" variant="outline" size="sm" aria-expanded={aberto === "arquivos"} onClick={() => alternar("arquivos")}>
+          {aberto === "arquivos" ? "Fechar arquivos" : "Arquivos"}
+        </Button>
         {lesson.isFreePreview && (
           <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">Prévia grátis</span>
         )}
       </div>
-      {aberta &&
+      {aberto === "conteudo" &&
         (lesson.kind === LessonKind.TEXT ? (
           <LessonTextPanel lesson={lesson} onChanged={onChanged} />
         ) : (
           <LessonVideoPanel lesson={lesson} onChanged={onChanged} />
         ))}
+      {aberto === "arquivos" && <LessonFilesPanel lesson={lesson} />}
     </div>
   );
 }

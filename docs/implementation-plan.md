@@ -125,7 +125,13 @@
 > do admin, com capa, status em português e a barra de Preenchimento) e o **Bloco B** (limite de
 > caracteres com contador nos campos do curso, e a descrição com negrito, itálico e listas, pelo
 > `react-markdown`). **Publicado em 28/09 (`main` = `e42b152`):** os documentos do Bloco E.
-> **No `dev`, ainda não publicado (28/09): o Bloco E, etapa 1 INTEIRA (partes 1a a 1e)** — o editor
+> **No `dev`, ainda não publicado (28/09): o Bloco E, etapa 2 INTEIRA (partes 2a a 2e)** — a
+> ordem do curso numa gravação só, o "+" entre itens e a aula de texto, arrastar (dnd-kit), o
+> **vídeo de cada aula** (Bloco U etapa 3, alto risco) e os **arquivos para baixar** (o envio).
+> Quatro migrations novas (`lesson_kind_content`, `lesson_video`, `lesson_file`, e a
+> `level_todos_os_niveis` já publicada), todas aplicadas no dev; produção aplica no publish. Para
+> testar no ar: a P19 (vídeo das aulas) e a P33 (zona dos arquivos), em `pendencias.md`.
+> **Publicado em 28/09 (`main` = `4bd36da`): o Bloco E, etapa 1 INTEIRA (partes 1a a 1e)** — o editor
 > do curso em 7 passos no nível 2, o passo Publicar com o que falta e o link, as três listas com um
 > campo por item, "Todos os níveis" (com a migration `20260928120000_level_todos_os_niveis`, já
 > aplicada no dev; produção aplica no próximo publish) e as dicas embaixo dos campos.
@@ -1579,8 +1585,30 @@ própria**.*
 - [x] **Tipos de item no "+":** Aula (vídeo **ou** texto) e Quiz. Aula de texto tem o seu
       texto, com negrito e listas; **aula de vídeo não tem descrição** (confirmado em 28/09).
       *Feito na 2b; o Quiz aparece como EM BREVE até a etapa própria dele.*
-- [ ] **Arquivos para baixar por aula, só para assinantes**, guardados de forma protegida.
-      Exige decidir no plano onde e como (as capas são públicas; estes não podem ser).
+- [x] **2e — Arquivos para baixar por aula, só para assinantes**, guardados de forma protegida
+      *(28/09, no `dev`: o ENVIO pelo admin)*. **Onde, decisão do operador de 28/09:** uma
+      **Storage Zone própria do Bunny, sem Pull Zone** (nada lá tem endereço público; só o nosso
+      servidor entrega). Tabela `lesson_file` (migration `20260928180000_lesson_file`, com RLS):
+      aula, nome original, caminho, tamanho. O arquivo chega cru (como a capa), com o nome no
+      cabeçalho; **no Storage o nome é aleatório** (`aulas/<aula>/<24 caracteres>.<ext>`), o do
+      operador fica só no banco, e a tela **nunca** recebe o caminho. Limite de **50 MB** e as
+      extensões **pdf, xlsx, xlsm, xls, csv, docx, pptx, pbix, zip, txt, sql, py, ipynb, json**
+      *(propostas do agente no plano aprovado)*, conferidos na tela e no servidor. **Trava contra
+      o apagar recursivo** (fato da doc, via context7 em 28/09: apagar pasta no Bunny apaga tudo
+      dentro): apagar só aceita caminho de arquivo nesse formato exato. Se o Bunny recusar
+      apagar, o registro fica (502). Sem as variáveis, 503 — "O armazenamento de arquivos não está
+      configurado neste ambiente." Tela: botão **Arquivos** em cada aula (`LessonFilesPanel.tsx`),
+      um painel aberto por vez. Passo 0 no dev: tabela nova vazia **com RLS**, as outras contagens
+      iguais, login 200, "No difference detected". Testes: 24 de servidor (com a trava do caminho,
+      função pura), 7 de tela. **Mutação:** a trava aceitando pasta, qualquer extensão, o nome do
+      operador no Storage, o caminho saindo para a tela, apagar o registro com o Bunny recusando,
+      o envio sem `requireAdmin` e a tela sem conferir o tipo → todas reprovam. Revertido.
+      **A entrega ao aluno** (só assinante, sempre como download) **entra com a trava de acesso,
+      na etapa 4 do Bloco U**: hoje nenhuma rota entrega o arquivo.
+- [ ] **Excluir a aula (ou o curso) não apaga os arquivos dela no Bunny** *(achado da 2e,
+      registrado e não feito: fora do plano)*. O registro some pela cascata do banco; o arquivo
+      fica na zona, que não é pública, então não vaza — mas ocupa espaço (US$ 0,02/GB/mês). Fazer
+      junto com a entrega ao aluno (etapa 4 do Bloco U), ou antes, se o operador pedir.
 - [x] **2d** — Vídeo **sem limite** de tamanho ou resolução no site; **um por vez**; **sem reuso**
       entre aulas *(28/09, no `dev`: é o vídeo das aulas, Bloco U etapa 3 — detalhe lá)*.
 - [ ] **Quiz escrito pelo operador** — **etapa própria** *(decisão do operador, 28/09/2026: tem
