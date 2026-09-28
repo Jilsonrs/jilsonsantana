@@ -73,10 +73,12 @@ pode ser a primeira tela a usá-lo.
 | Aula do tipo **artigo** (texto, sem vídeo) | não existe | ❓ Q11 |
 | **Teste / Quiz** | não existe | ❓ Q12 |
 | **Upload em massa** (vários vídeos de uma vez, cada um vira aula) | não existe | ❓ Q13 |
-| Reordenar **arrastando** (≡), editar (lápis), excluir (lixeira) | ✅ setas ↑↓ e lixeira | ❓ Q14 |
+| Reordenar **arrastando** (≡), editar (lápis), excluir (lixeira). *O operador (27/09): "clicar, manter o mouse pressionado e arrastar para reorganizar aulas e seções"* | ✅ setas ↑↓ e lixeira | ❓ Q14 |
 | Topo: **duração total do conteúdo publicado** | não existe | 🔜 sai da soma das durações (Q da linha do vídeo), nunca uma coluna |
 | Topo: botão **Visualizar** a página do curso | não existe | ❓ Q15 |
-| **"+" entre dois itens** (inserir aula ou seção naquele ponto) | adiciona só no fim, e reordena pelas setas | ❓ Q16 |
+| **"+" entre dois itens** (inserir aula ou seção naquele ponto). *Como o operador descreveu (27/09): "coloca o mouse entre uma e outra, o ícone muda, você clica e cria"; vale para aulas e para seções* | adiciona só no fim, e reordena pelas setas | ❓ Q16 |
+| O "+" abre um **menu de tipos**: *Assistir ou ler* (aula em vídeo ou texto) · *Role play* (conversa com IA para praticar, sem nota) · *Programação e laboratórios* (exercício de código, laboratório prático, laboratório corrigido) · *Verificações de conhecimento* (teste, simulado cronometrado, tarefa para enviar) | só existe aula | ❓ Q36 |
+| **Nova seção:** título (**80** caracteres) + **"O que os alunos poderão fazer ao final desta seção?"** (objetivo de aprendizado, **200**) | módulo tem só o título, sem limite | ❓ Q35 |
 | Adicionar vídeo em **duas abas: "Fazer upload" · "Adicionar da biblioteca"** (reusar um vídeo já enviado) | 🔜 só o envio (Bloco U, etapa 3) | ❓ Q17 |
 | Aviso do arquivo: **pelo menos 720p e menos de 4 GB** | não há limite definido para vídeo de aula | ❓ Q18 |
 
@@ -276,7 +278,9 @@ Na reorganização, cada um precisa de uma área.
 - **Q12.** **Quiz**: como na Udemy (perguntas que você escreve) ou, pela regra da escola de
   "IA no DNA", o **JilsonAI fazendo as perguntas** sobre a aula (Fase 6 em diante)?
 - **Q13.** **Enviar vários vídeos de uma vez**, cada um virando uma aula com o nome do arquivo?
-- **Q14.** Reordenar **arrastando**, em vez das setas? (Seria uma peça nova no site.)
+- **Q14.** Reordenar **arrastando** aulas e seções, como você descreveu? Seria uma peça nova no site
+  (o agente propõe qual no plano). **As setas continuam existindo** para quem usa o teclado: arrastar
+  sem alternativa tranca fora quem não usa mouse (regra de acessibilidade, `design.md` §6).
 - **Q15.** Botão **Visualizar** no topo, para ver a página do curso como o aluno vê, **inclusive em
   rascunho**?
 - **Q16.** Botão **"+" entre as aulas** para inserir no meio, ou basta adicionar no fim e mover?
@@ -320,3 +324,10 @@ Na reorganização, cada um precisa de uma área.
 - **Q33.** No lugar de "Os alunos também compraram": **"Este curso faz parte das trilhas…"** e/ou
   **outros cursos da escola**? Sem nota e sem preço nos cartões.
 - **Q34.** A **organização da §15**: aprovada como está, ou quer mudar nomes ou a ordem?
+- **Q35.** Cada módulo ganha o **objetivo de aprendizado** ("o que o aluno consegue fazer ao fim
+  deste módulo", até 200 caracteres), como a seção da Udemy? Ele pode aparecer na página do curso e
+  também dar contexto ao JilsonAI. E o título do módulo com limite de **80**, como lá?
+- **Q36.** Que **tipos de item** a escola terá no "+"? Proposta: **Aula (vídeo ou texto)** no
+  lançamento; o **teste** conforme a Q12; e, mais adiante, o **role play com o JilsonAI** (o aluno
+  pratica uma conversa, ex.: apresentar um dashboard a um gerente). É exatamente o tipo de coisa
+  que passa no filtro "IA no DNA". Exercício de código, laboratório, simulado e tarefa: **fora**.
