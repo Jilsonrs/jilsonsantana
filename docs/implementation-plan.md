@@ -1268,10 +1268,14 @@ landmark. Corrigido junto.
       resposta pública**) + 8 de tela. Mutação: a ordem da assinatura, a exceção do vídeo de venda,
       a trava de admin, gravar antes do fim, o formato do id, tirar a limpeza, apagar o vídeo em
       uso, não conferir o envio em andamento, e pôr a coluna nova no `select` público — todas
-      reprovam. **Falta a prova no ar:** o operador cria a `jilsonsantana-stream-apresentacao`, põe as
-      2 variáveis no Railway e envia um vídeo. A rota de apagar é a mesma forma da doc
-      (`DELETE /library/:id/videos/:id`), e confirmar que ela apaga é parte dessa prova: o vídeo
-      substituído tem que sumir do painel.
+      reprovam. **PROVADO no ar em 27/09:** o operador enviou o vídeo pelo admin, e ele tocou na
+      prévia do Editar curso ("funcionou"). A rota de apagar é a mesma forma da doc
+      (`DELETE /library/:id/videos/:id`), e **o operador confirmou no painel, no mesmo dia**: o vídeo
+      substituído sumiu (a biblioteca ficou com 1 vídeo) e o novo tem o nome do arquivo enviado
+      (`analise-de-cohort-e-retencao.mp4`).
+      **Ajuste pedido pelo operador no mesmo dia:** na seção de mídia, primeiro a imagem/o vídeo,
+      depois o campo, depois o botão de enviar; os rótulos "URL da thumbnail" e "ID do vídeo
+      (Bunny)" passaram a ser **"Imagem do curso"** e **"Vídeo promocional"**.
 - [ ] **Etapa 3 — vídeo das aulas:** primeiro o `include` → `select` de `GET /api/trilhas/:slug` (o
       de `/courses/:slug` já foi feito na etapa 2); depois `Lesson.bunnyVideoId` +
       `Lesson.bunnyVideoPendingId` (**sem coleção**, e o nome do vídeo no Bunny é **o nome do

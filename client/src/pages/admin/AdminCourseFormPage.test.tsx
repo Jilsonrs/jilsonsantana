@@ -236,7 +236,7 @@ describe("AdminCourseFormPage — imagem do curso", () => {
     renderWithProviders(<AdminCourseFormPage />, { route: "/admin/cursos/novo" });
     fireEvent.change(screen.getByLabelText("Slug"), { target: { value: "curso-imagem" } });
     fireEvent.change(screen.getByLabelText("Título"), { target: { value: "Curso com imagem" } });
-    fireEvent.change(screen.getByLabelText("URL da thumbnail"), { target: { value: imagem } });
+    fireEvent.change(screen.getByLabelText("Imagem do curso"), { target: { value: imagem } });
     fireEvent.click(screen.getByRole("button", { name: "Salvar dados do curso" }));
   }
 
@@ -299,7 +299,7 @@ describe("AdminCourseFormPage — enviar a capa", () => {
 
     terminar({ thumbnailUrl: ENDERECO });
     await waitFor(() =>
-      expect((screen.getByLabelText("URL da thumbnail") as HTMLInputElement).value).toBe(ENDERECO),
+      expect((screen.getByLabelText("Imagem do curso") as HTMLInputElement).value).toBe(ENDERECO),
     );
     expect(screen.getByAltText("Thumbnail preview").getAttribute("src")).toBe(ENDERECO);
     expect(screen.queryByText(ERRO)).toBeNull();
@@ -312,7 +312,7 @@ describe("AdminCourseFormPage — enviar a capa", () => {
     escolher(webp());
 
     expect((await screen.findByRole("alert")).textContent).toBe(ERRO);
-    expect((screen.getByLabelText("URL da thumbnail") as HTMLInputElement).value).toBe("");
+    expect((screen.getByLabelText("Imagem do curso") as HTMLInputElement).value).toBe("");
   });
 
   it("GIF ou arquivo grande demais nem sai da tela", async () => {
@@ -382,7 +382,7 @@ describe("AdminCourseFormPage — vídeo de apresentação", () => {
     await waitFor(() => expect(completeIntroVideoUpload).toHaveBeenCalledWith(1, GUID));
     const player = await screen.findByTitle("Prévia do vídeo de apresentação");
     expect(player.getAttribute("src")).toBe(EMBED);
-    expect((screen.getByLabelText("ID do vídeo (Bunny)") as HTMLInputElement).value).toBe(GUID);
+    expect((screen.getByLabelText("Vídeo promocional") as HTMLInputElement).value).toBe(GUID);
   });
 
   it("o envio caiu de vez: aparece o aviso, e o curso NÃO grava o vídeo", async () => {
@@ -407,7 +407,7 @@ describe("AdminCourseFormPage — vídeo de apresentação", () => {
   it("id colado fora do formato do Bunny: aviso no campo, e nada é salvo", async () => {
     await abrirEdicao();
 
-    fireEvent.change(screen.getByLabelText("ID do vídeo (Bunny)"), { target: { value: "meu-video" } });
+    fireEvent.change(screen.getByLabelText("Vídeo promocional"), { target: { value: "meu-video" } });
     fireEvent.click(screen.getByRole("button", { name: "Salvar dados do curso" }));
 
     expect(await screen.findByText(/Cole o ID do vídeo como aparece no Bunny/)).toBeTruthy();
