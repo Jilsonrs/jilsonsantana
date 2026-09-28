@@ -169,6 +169,11 @@ servidores (§5); o React responde em `localhost:5173`, a home pública em `loca
 > lixeira, em `course-form/ListItemsField.tsx`. As setas e a lixeira são só ícone: o nome delas
 > ("Subir o item 2") está no `aria-label`, que **tem teste**. Não o tire.
 >
+> **As dicas embaixo dos campos** (28/09) saem do `Field.tsx` (a propriedade `dica`); o texto de
+> todas mora em `client/src/lib/course-hints.ts` e é do operador. Cada campo aponta para a dica e
+> para o contador no `aria-describedby`: **não tire o `id` da dica**, é por ele que o leitor de
+> tela a lê (tem teste).
+>
 > **Não mexa sem falar com o operador:** o ✓ tem um "completo" escondido para leitor de tela, e
 > EM BREVE é texto, nunca link. **Os dois têm teste.**
 

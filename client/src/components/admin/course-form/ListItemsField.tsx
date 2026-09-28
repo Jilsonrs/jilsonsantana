@@ -2,6 +2,7 @@ import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 import { LIMITES_DO_CURSO } from "@jilson/core";
 import type { CourseFormValues } from "@/lib/course-form";
+import { DICAS_DO_CURSO } from "@/lib/course-hints";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -19,6 +20,7 @@ const LIMITE = LIMITES_DO_CURSO.itemDaLista;
  * e cada botão diz de qual item é.
  */
 export function ListItemsField({ nome, rotulo }: { nome: NomeDaLista; rotulo: string }) {
+  const dica = DICAS_DO_CURSO[nome];
   const { control, register, formState } = useFormContext<CourseFormValues>();
   const { fields, append, remove, move } = useFieldArray({ control, name: nome });
   const valores = useWatch({ control, name: nome });
@@ -27,6 +29,9 @@ export function ListItemsField({ nome, rotulo }: { nome: NomeDaLista; rotulo: st
   return (
     <fieldset className="space-y-3">
       <legend className="mb-2 text-sm font-medium text-foreground">{rotulo}</legend>
+      <p id={`${nome}-dica`} className="text-sm text-muted-foreground">
+        {dica}
+      </p>
       {fields.map((campo, i) => {
         const id = `${nome}-${i}`;
         const numero = i + 1;
@@ -37,7 +42,7 @@ export function ListItemsField({ nome, rotulo }: { nome: NomeDaLista; rotulo: st
               <Input
                 id={id}
                 aria-label={`${rotulo}, item ${numero}`}
-                aria-describedby={`${id}-contador`}
+                aria-describedby={`${nome}-dica ${id}-contador`}
                 aria-invalid={erro ? true : undefined}
                 maxLength={LIMITE}
                 {...register(`${nome}.${i}.valor`)}

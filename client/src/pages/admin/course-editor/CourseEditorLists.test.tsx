@@ -94,8 +94,8 @@ describe("Para quem é — 160 caracteres por item", () => {
 
     fireEvent.change(item(APRENDER, 1), { target: { value: "PROCX e XLOOKUP" } });
     expect(screen.getByText("15/160")).toBeTruthy();
-    // O contador é a descrição do campo: o leitor de tela ouve os números.
-    expect(item(APRENDER, 1).getAttribute("aria-describedby")).toBe("learnTags-0-contador");
+    // O contador faz parte da descrição do campo: o leitor de tela ouve os números.
+    expect(item(APRENDER, 1).getAttribute("aria-describedby")?.split(" ")).toContain("learnTags-0-contador");
   });
 
   // Curso gravado antes do limite: o aviso aparece no próprio item, e nada sai.

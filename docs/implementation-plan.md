@@ -125,10 +125,13 @@
 > do admin, com capa, status em português e a barra de Preenchimento) e o **Bloco B** (limite de
 > caracteres com contador nos campos do curso, e a descrição com negrito, itálico e listas, pelo
 > `react-markdown`). **Publicado em 28/09 (`main` = `e42b152`):** os documentos do Bloco E.
-> **No `dev`, ainda não publicado (28/09):** o **Bloco E, etapa 1, partes 1a a 1d** — o editor do
-> curso em 7 passos no nível 2, o passo Publicar com o que falta e o link, as três listas com um
-> campo por item, e "Todos os níveis" (com a migration `20260928120000_level_todos_os_niveis`,
-> já aplicada no dev; produção aplica no próximo publish).
+> **No `dev`, ainda não publicado (28/09): o Bloco E, etapa 1 INTEIRA (partes 1a a 1e)** — o editor
+> do curso em 7 passos no nível 2, o passo Publicar com o que falta e o link, as três listas com um
+> campo por item, "Todos os níveis" (com a migration `20260928120000_level_todos_os_niveis`, já
+> aplicada no dev; produção aplica no próximo publish) e as dicas embaixo dos campos.
+> **Revisão do operador pendente** (ele pediu para implementar tudo e ajustar depois): os textos
+> novos das partes 1b e 1c e as dicas (`client/src/lib/course-hints.ts`). O Visualizar e a
+> duração publicada no topo ficaram para depois, com motivo (ver Bloco E).
 > **Decidido em 27–28/09, ainda não construído:** o **Bloco E** (o editor do curso em 7 passos, a
 > partir dos prints da Udemy e de 5 plataformas pesquisadas), a mudança das telas do aluno para
 > `/aluno/*`, o conteúdo de cada seção planejada do admin (e a nova **Comunicação**) e as páginas
@@ -140,7 +143,7 @@
 >   tarefas dele no painel do Bunny (P19: desligar o multi-audio; as 3 variáveis da biblioteca de
 >   aulas no Railway). Anda **junto com a etapa 2 do Bloco E** (o Conteúdo). É o que ele disse que
 >   queria antes das mudanças na página do curso (27/09).
-> - **Bloco E, etapa 1** (o menu do curso em passos) — não depende de nada externo.
+> - ~~**Bloco E, etapa 1**~~ — **feita em 28/09**, no `dev` (ver acima).
 > - **Telas do aluno para `/aluno/*`** — pequena, e mais barata antes de haver aluno real.
 > - **C4, etapa 3** (a home lendo os cursos do banco) — depende da P17, da P18 e do cadastro dos
 >   cursos (P16).
@@ -1459,7 +1462,15 @@ cada campo, a regra do ✓, 160 caracteres nas três listas e o Visualizar esper
       admin** — a rota pública continua devolvendo só o publicado. **Espera o C5** *(operador,
       28/09/2026)*: a página de curso de hoje é provisória e nem mostra a descrição, então a
       prévia mostraria outra página e seria jogada fora.
-- [ ] **Dicas embaixo dos campos**: o agente escreve o rascunho, o operador aprova.
+- [x] **1e — Dicas embaixo dos campos** *(28/09, no `dev`)*: o agente escreveu o rascunho, **todas
+      num arquivo só, `client/src/lib/course-hints.ts`, para a revisão do operador ser de uma vez**
+      (ele pediu para seguir e revisar depois — 28/09). Cada dica diz só o que já é regra ou fato
+      do sistema (limites, slug permanente, o que o aluno vê), nenhuma inventa regra de produto.
+      O `Field` ganhou `dica` e `descritoPor()`: o campo aponta para a dica **e** para o contador
+      no `aria-describedby`, então o leitor de tela lê os dois. Nas três listas, a dica fica sob o
+      título da lista e todo item aponta para ela. Testes: 14 (um por campo, e o contador junto).
+      **Mutação:** a ligação ignorando a dica, a dica sem id e os itens sem a dica → reprovam.
+      Revertido.
 - [x] **1d — "Todos os níveis"** no Nível *(28/09, no `dev`)*: valor novo no enum `Level`, com a
       migration `20260928120000_level_todos_os_niveis` (só `ALTER TYPE … ADD VALUE`, escrita à mão:
       o `migrate dev` não roda no terminal do agente). Rótulo no dicionário ("Todos os níveis" /

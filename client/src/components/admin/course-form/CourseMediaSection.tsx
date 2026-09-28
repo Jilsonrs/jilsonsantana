@@ -4,7 +4,8 @@ import type { CourseFormValues } from "@/lib/course-form";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageSection } from "@/components/layout/PageLayout";
-import { Field } from "./Field";
+import { Field, descritoPor } from "./Field";
+import { DICAS_DO_CURSO } from "@/lib/course-hints";
 import { ThumbnailUpload } from "./ThumbnailUpload";
 import { IntroVideoUpload } from "./IntroVideoUpload";
 import { IntroVideoPreview } from "./IntroVideoPreview";
@@ -52,8 +53,13 @@ export function CourseMediaSection({
                   <span className="text-sm text-muted-foreground">Sem imagem</span>
                 )}
               </div>
-              <Field id="thumbnailUrl" label="Imagem do curso" error={formState.errors.thumbnailUrl?.message}>
-                <Input id="thumbnailUrl" {...register("thumbnailUrl")} />
+              <Field
+                id="thumbnailUrl"
+                label="Imagem do curso"
+                error={formState.errors.thumbnailUrl?.message}
+                dica={DICAS_DO_CURSO.thumbnailUrl}
+              >
+                <Input id="thumbnailUrl" aria-describedby={descritoPor("thumbnailUrl", { dica: true })} {...register("thumbnailUrl")} />
               </Field>
               {courseId !== undefined && <ThumbnailUpload courseId={courseId} />}
             </div>
@@ -76,8 +82,13 @@ export function CourseMediaSection({
                   )}
                 </div>
               )}
-              <Field id="introVideoId" label="Vídeo promocional" error={formState.errors.introVideoId?.message}>
-                <Input id="introVideoId" {...register("introVideoId")} />
+              <Field
+                id="introVideoId"
+                label="Vídeo promocional"
+                error={formState.errors.introVideoId?.message}
+                dica={DICAS_DO_CURSO.introVideoId}
+              >
+                <Input id="introVideoId" aria-describedby={descritoPor("introVideoId", { dica: true })} {...register("introVideoId")} />
               </Field>
               {courseId !== undefined && <IntroVideoUpload courseId={courseId} aoEnviar={setEnviado} />}
             </div>

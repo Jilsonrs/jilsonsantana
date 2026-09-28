@@ -1,7 +1,8 @@
 import { useFormContext } from "react-hook-form";
 import { Level, LANGUAGES, pt } from "@jilson/core";
 import type { CourseFormValues } from "@/lib/course-form";
-import { Field } from "./Field";
+import { Field, descritoPor } from "./Field";
+import { DICAS_DO_CURSO } from "@/lib/course-hints";
 
 const NOME_DO_IDIOMA = { pt: "Português", en: "English" } as const;
 
@@ -33,8 +34,8 @@ export function CourseLanguageLevelFields({ idiomaTravado = false }: { idiomaTra
           <p className="text-sm text-muted-foreground">O idioma trava depois que o curso é publicado.</p>
         </div>
       ) : (
-        <Field id="language" label="Idioma">
-          <select id="language" {...register("language")} className={CLASSE_DO_SELECT}>
+        <Field id="language" label="Idioma" dica={DICAS_DO_CURSO.language}>
+          <select id="language" aria-describedby={descritoPor("language", { dica: true })} {...register("language")} className={CLASSE_DO_SELECT}>
             {LANGUAGES.map((l) => (
               <option key={l} value={l}>
                 {NOME_DO_IDIOMA[l]}
@@ -43,8 +44,8 @@ export function CourseLanguageLevelFields({ idiomaTravado = false }: { idiomaTra
           </select>
         </Field>
       )}
-      <Field id="level" label="Nível">
-        <select id="level" {...register("level")} className={CLASSE_DO_SELECT}>
+      <Field id="level" label="Nível" dica={DICAS_DO_CURSO.level}>
+        <select id="level" aria-describedby={descritoPor("level", { dica: true })} {...register("level")} className={CLASSE_DO_SELECT}>
           <option value="">—</option>
           {/* O rótulo em português, o mesmo que o aluno lê (o dicionário); o código
               do banco (INICIANTE) nunca aparece na tela. Admin fica em português. */}
