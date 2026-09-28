@@ -12,9 +12,9 @@
 > **Legenda:** ✅ já existe · 🔜 já planejado (diz onde) · ❓ pergunta para o operador ·
 > ✖ proposta: não entra
 >
-> **Estado:** **os 4 lotes mapeados** (29 prints, 27/09/2026) + a pesquisa de como outras cinco
-> plataformas organizam (§14) + a proposta de organização (§15), que é do agente e espera o operador.
-> As perguntas estão na seção final (§17) e podem ser respondidas por número, em partes.
+> **Estado:** **concluído em 28/09/2026.** Os 29 prints mapeados, a pesquisa de cinco plataformas
+> (§14) e **todas as perguntas respondidas** pelo operador (§18). O trabalho que elas geram está no
+> plano, Fase 3, *Bloco E*.
 
 ## 0. Como a Udemy organiza
 
@@ -214,36 +214,23 @@ carrinho, página de checkout por curso, e comentários ou fórum (a escola resp
 assiste o que quiser"* (`CLAUDE.md` → Content Model), então ela não entra, a menos que o operador
 mude isso.
 
-## 15. Proposta de organização do editor do curso *(do agente — espera o operador)*
+## 15. Organização do editor do curso *(aprovada pelo operador em 28/09/2026)*
 
-Um menu dentro do curso, como na Udemy, com os nomes que o operador já conhece onde eles servem.
+Um menu dentro do curso, **em sequência de preenchimento**: chegar ao último passo é estar pronto
+para publicar.
 **O menu é o NÍVEL 2 da navegação, na coluna do meio, colada ao menu lateral, como o `design.md`
 §13 já desenha** *(decisão do operador, 28/09/2026; ele chegou a pedir o menu à direita e voltou
 atrás ao lembrar que o nível 2 existe)*. **A tela onde o aluno assiste à aula segue a mesma regra:**
 a lista de módulos e aulas fica no nível 2, no meio.
 
-**Edição do curso**
-
-| Área | O que vai nela (campos que já existem + o que depender das perguntas) |
-|---|---|
-| **Para quem é** | O que vai aprender · Pré-requisitos · Pra quem é *(forma: Q6, Q7)* |
-| **Conteúdo** | Módulos e aulas · vídeo de cada aula · prévia gratuita *(e o que as Q9–Q18 aprovarem)* |
-| **Página do curso** | Título · Subtítulo · Descrição · Idioma · Nível · Imagem · Vídeo promocional · Camadas · Destaques · Perguntas frequentes |
-| **Legendas** | só se a Q19 for sim |
-
-**Gerenciamento do curso**
-
-| Área | O que vai nela |
-|---|---|
-| **Publicação** | Status · Slug · Ordem no catálogo · o que falta para publicar (Q22) |
-| **Alunos** | Q27, com os números da Fase 5 |
-| **Mensagens do curso** | só se a Q25 for sim |
+**APROVADA em 28/09/2026 (Q34), em sequência de preenchimento** — a tabela da §18 é a versão que
+vale. A proposta anterior, agrupada como a da Udemy, foi trocada por ela a pedido do operador.
 
 **No topo de todas:** voltar para os cursos · título · status · duração publicada · **Visualizar**
 (Q15).
 
-**Fora do curso**, em áreas próprias do admin: **Comunicação** (fila de dúvidas, anúncios,
-disponibilidade: Q26, Q28) e **Assinatura** (preço e cupom: Q24, na Fase 4).
+**Fora do curso**, em área própria do admin: **Comunicação** (fila de dúvidas e anúncios: Q26,
+Q28). O cupom da assinatura é criado **no painel da Stripe**, sem tela no admin (Q24).
 
 **Consequência técnica, para o operador saber:** hoje o curso inteiro se salva num botão só. Com
 áreas separadas, **cada área salva a sua parte**, como na Udemy. Isso é trabalho de código (meu),
@@ -372,3 +359,15 @@ vão para os documentos de destino (plano, `courses.md`, `design.md`) e viram um
 | Q26 | **Um aviso só, sem prazo nem data**, quando a dúvida sobe do JilsonAI para o operador. Direção do texto, nas palavras dele: *"Sua dúvida já está com o Jilson… ele vai te responder o quanto antes possível."* |
 | Q27 | **Sim: área Alunos em cada curso**, com busca e o botão Mensagem, **sem exportar planilha**. Os números chegam na Fase 5. |
 | Q28 | **Sim: "Comunicação" é área própria do admin** (fila de dúvidas, anúncios e, depois, o resumo do que os alunos perguntam ao JilsonAI). **Tarefas fica fora.** |
+| Q29 | **Etiqueta "Novo"** na página do curso (o prazo se propõe no plano). **Sem número de alunos.** |
+| Q30 | **Não:** sem "Atualizado em" na página. |
+| Q31 | **Não no lançamento:** sem assinatura de presente. |
+| Q32 | **Sim: o curso também dá certificado** ao ser concluído. O da trilha continua sendo o de competências. |
+| Q33 | **Sim: outros cursos da escola** no fim da página (mesmo idioma, capa, título, duração; sem nota e sem preço), além das trilhas do curso (Q4). |
+| Q34 | **Aprovada, em sequência de preenchimento** (pedido dele: "ir completando; quando chegar no final está pronto para publicar"): **1. Informações básicas** (título, subtítulo, slug, idioma, nível) → **2. Para quem é** (o que vai aprender, pré-requisitos, pra quem é) → **3. Conteúdo** (módulos, aulas, vídeos, textos, arquivos, quiz) → **4. Legendas** → **5. Página do curso** (descrição, imagem, vídeo promocional, camadas, destaques, perguntas frequentes) → **6. Mensagens** (boas-vindas e parabéns) → **7. Publicar** (o que falta, status, ordem no catálogo, link do curso). Cada passo ganha um ✓ quando completo, e a barra de Preenchimento acompanha. **Depois de publicado**, um grupo separado: **Alunos**. Menu no nível 2 (Q37). |
+| Q35 | **Nenhum:** módulo continua só com o título, sem objetivo e sem limite novo. |
+| Q36 | **Como proposto:** Aula (vídeo ou texto) e Quiz escrito pelo operador; **Role play com o JilsonAI** mais adiante; exercício de código, laboratório, simulado e tarefa **fora**. |
+| Q37 | **Nível 2, no meio**, no editor do curso e na tela da aula (ver §15). |
+
+**Todas as perguntas respondidas em 28/09/2026.** O trabalho que elas geram está no
+`implementation-plan.md` → Fase 3 → *Bloco E*.

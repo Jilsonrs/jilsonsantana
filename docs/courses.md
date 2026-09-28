@@ -382,7 +382,7 @@ digitados) e **manuais**. Manter os manuais poucos é o que sustenta o operador 
 `Course` carrega:
 - `title` · `subtitle?` (uma frase enquadrada em **resultado**) · `description?` (longa) ·
   `level?` (`INICIANTE|INTERMEDIARIO|AVANCADO`).
-- `learnTags[]` — "o que você vai aprender", renderizado como **pills clicáveis**.
+- `learnTags[]` — "o que você vai aprender", em **frases de até 160 caracteres, em duas colunas com ✓** *(decisão do operador, 28/09/2026, Q7 de `mapa-admin-curso.md`; substitui as "pills clicáveis")*.
 - `requirements[]` — pré-requisitos **mostrados abertamente.** Vantagem competitiva: os concorrentes
   escondem; **numa assinatura, mostrar não custa venda e corta reembolso e suporte.**
 - `personas[]` — "pra quem é".
@@ -404,6 +404,12 @@ digitados) e **manuais**. Manter os manuais poucos é o que sustenta o operador 
 
 **Derivados, nunca coluna:** carga horária e número de aulas (Σ das aulas), o agrupamento por
 camada (vem das camadas marcadas), a metadata strip.
+
+**Decisões de 28/09/2026 sobre a página e o certificado** (operador; mapa completo em
+`mapa-admin-curso.md` §18): a seção do autor é **a mesma da home** (Q5) · etiqueta **"Novo"**, sem
+número de alunos e sem "Atualizado em" (Q29, Q30) · as **trilhas do curso** no lugar de categorias
+(Q4) e **outros cursos da escola** no fim (Q33) · **o curso também dá certificado** ao ser concluído,
+além do certificado de competências da trilha (Q32).
 
 ---
 

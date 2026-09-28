@@ -1360,6 +1360,72 @@ landmark. Corrigido junto.
 - **Fora:** limite nos outros campos de texto (backlog do P2, abaixo) · mostrar a descrição ao aluno
   (a página de curso de hoje não mostra; ver o *DEPOIS* do C5).
 
+### Bloco E — O editor do curso em passos  *(decisões do operador, 27–28/09/2026 · mapa em `mapa-admin-curso.md`)*
+
+> O operador mandou os 29 prints do admin de curso da Udemy; o agente cruzou com a escola e
+> pesquisou cinco plataformas. **Todas as 37 respostas estão em `docs/mapa-admin-curso.md` §18** —
+> é a fonte de cada item abaixo (o número Q entre parênteses). Nada aqui foi construído ainda.
+> **Cada etapa passa por plano aprovado antes do código**, como todo bloco.
+
+**Etapa 1 — o menu do curso em passos (agora, sem depender de nada):**
+- [ ] O formulário único vira **um menu no nível 2** (coluna do meio, Q37) com **7 passos em
+      ordem de preenchimento**, cada um com ✓ quando completo (Q34): Informações básicas · Para
+      quem é · Conteúdo · Legendas · Página do curso · Mensagens · Publicar. **Cada passo salva a
+      sua parte.** Topo: voltar, título, status, duração publicada, **Visualizar** (Q15).
+      *Depende do nível 2 existir (Bloco S2); se ainda não existir, esta etapa o constrói.*
+- [ ] **Publicar** reúne o que falta (a barra de Preenchimento, agora também no editor, Q22),
+      status, ordem no catálogo e **um lugar para copiar o link do curso** (Q23).
+- [ ] **Visualizar** mostra a página do curso como o aluno vê, **inclusive em rascunho, só para o
+      admin** (Q15) — a rota pública continua devolvendo só o publicado.
+- [ ] **Dicas embaixo dos campos** (Q1): o agente escreve o rascunho, o operador aprova.
+- [ ] **"Todos os níveis"** no Nível (Q3): valor novo no enum `Level`, com migration.
+- [ ] **As três listas viram um campo por item** (Q6), com contador, lixeira e ordem; **"O que vai
+      aprender" com até 160 caracteres por item** (Q7).
+- [ ] Descrição curta conta como **"falta"** no Preenchimento, sem travar (Q2).
+
+**Etapa 2 — o Conteúdo (junto com a etapa 3 do Bloco U, o vídeo das aulas):**
+- [ ] **"+" entre dois itens** para inserir aula ou módulo ali, também pelo teclado (Q16).
+- [ ] **Arrastar para reorganizar** aulas e módulos, **mantendo as setas** para o teclado (Q14).
+      Peça nova: proposta no plano da etapa, com o ok do operador.
+- [ ] **Tipos de item no "+":** Aula (vídeo **ou** texto) e Quiz (Q36). Aula de texto tem o seu
+      texto, com negrito e listas; **aula de vídeo não tem descrição** (Q9, Q11).
+- [ ] **Arquivos para baixar por aula, só para assinantes**, guardados de forma protegida (Q10).
+      Exige decidir no plano onde e como (as capas são públicas; estes não podem ser).
+- [ ] Vídeo **sem limite** de tamanho ou resolução no site (Q18); **um por vez** (Q13); **sem
+      reuso** entre aulas (Q17).
+- [ ] **Quiz escrito pelo operador** (Q12) — pode virar etapa própria, se ficar grande.
+
+**Etapa 3 — Legendas:**
+- [ ] **Tela própria** no passo 4: "x de y aulas com legenda"; enviar, baixar e excluir o `.vtt`
+      por vídeo (Q19). Legenda só no idioma do curso (Q20). A regra do nome do arquivo (`bunny.md`
+      §7.1) continua valendo.
+
+**Etapa 4 — Mensagens e o sino:**
+- [ ] **O sino ao lado da foto, no topo** (Q25): área de avisos do aluno, com as mensagens de
+      **boas-vindas** (ao abrir a primeira aula do curso) e de **parabéns** (ao concluir), e outras
+      comunicações do operador ou do JilsonAI. **Sem e-mail.** O passo 6 do editor é onde ele
+      escreve as duas mensagens do curso.
+
+**Vai para outros blocos (anotado lá quando eles abrirem):**
+- **Página do curso (vitrine, depois do C5):** a seção do autor é **a mesma da home**
+  (`home.author`, uma edição serve às duas, Q5) · frases com ✓ em duas colunas (Q7) · etiqueta
+  **"Novo"** (Q29), **sem** número de alunos (Q29) e **sem** "Atualizado em" (Q30) · no lugar de
+  temas, **as trilhas do curso** (Q4) · no fim, **outros cursos da escola**, sem nota e sem preço
+  (Q33) · nunca prometer "acesso vitalício" (§13 do mapa).
+- **Fase 4 (assinatura):** campo **"tenho um cupom"** na tela de assinar; o cupom é criado no
+  painel da Stripe (Q24). Sem assinatura de presente no lançamento (Q31).
+- **Fase 5:** área **Alunos** em cada curso, com busca e botão Mensagem, **sem exportar
+  planilha** (Q27).
+- **Fase 6 (JilsonAI):** o aviso da dúvida que sobe para o operador, **sem prazo nem data** (Q26) ·
+  a área **Comunicação** do admin (fila, anúncios, resumo do que os alunos perguntam; sem Tarefas,
+  Q28) · o JilsonAI **revisando a página do curso** (Q22) e **fazendo perguntas** sobre a aula
+  (Q12) · **Role play** com o JilsonAI (Q36).
+- **Fase 6.5 (certificados):** **o curso também dá certificado** ao ser concluído; o da trilha
+  continua o de competências (Q32).
+- **Fora, por decisão:** categoria e temas (Q4), baixar o vídeo (Q8), legenda em outro idioma
+  (Q20), tela de Acessibilidade (Q21), objetivo do módulo (Q35), exercício de código,
+  laboratório, simulado e tarefa (Q36).
+
 ### Bloco I — Escola bilíngue: idioma no conteúdo + dicionário de textos  *(Set 2026 · decisão do operador · spec em `idiomas.md`)*
 
 > **ESTADO EM 23/09/2026 — parte adiantada por outros blocos, checkboxes abaixo seguem valendo:**
