@@ -125,6 +125,12 @@
 > do admin, com capa, status em português e a barra de Preenchimento) e o **Bloco B** (limite de
 > caracteres com contador nos campos do curso, e a descrição com negrito, itálico e listas, pelo
 > `react-markdown`). **Publicado em 28/09 (`main` = `e42b152`):** os documentos do Bloco E.
+> **PUBLICADO em 28/09, à noite (`main` = `a042393`, CI verde nos dois jobs): uma biblioteca só, com
+> token.** Aulas e apresentação moram na `jilsonsantana-stream`; o vídeo de apresentação sai
+> **assinado** para qualquer visitante, e a assinatura vale **24 h para todo vídeo** (decisões do
+> operador, `bunny.md` §3.1). Antes de publicar, o operador desligou o multi-audio e criou as 3
+> variáveis `BUNNY_STREAM_LESSONS_*` no Railway. **Falta a prova no ar** (P19): a apresentação
+> tocando na página do curso e o vídeo de uma aula enviado pelo admin tocando na prévia.
 > **PUBLICADO em 28/09 (`main` = `5a60fa1`, CI verde): o Bloco E, etapa 2 INTEIRA (partes 2a a 2e)**,
 > mais a edição como na Udemy e a limpeza no Bunny ao excluir. *(A primeira publicação do dia,
 > `d342000`, pegou CI vermelho por um teste do arrastar que dependia de tempo — não do site; o
@@ -148,10 +154,7 @@
 >
 > **PRÓXIMO PASSO: implementação, e QUAL BLOCO é decisão do operador.** Candidatos, com o que cada
 > um precisa:
-> - **Bloco U, etapa 3** (o vídeo de cada aula, com prévia no admin e prévia grátis) — precisa das
->   tarefas dele no painel do Bunny (P19: desligar o multi-audio; as 3 variáveis da biblioteca de
->   aulas no Railway). Anda **junto com a etapa 2 do Bloco E** (o Conteúdo). É o que ele disse que
->   queria antes das mudanças na página do curso (27/09).
+> - ~~**Bloco U, etapa 3**~~ — **publicada em 28/09** (ver acima); falta só a prova no ar (P19).
 > - ~~**Bloco E, etapa 1**~~ — **feita em 28/09**, no `dev` (ver acima).
 > - **Telas do aluno para `/aluno/*`** — pequena, e mais barata antes de haver aluno real.
 > - **C4, etapa 3** (a home lendo os cursos do banco) — depende da P17, da P18 e do cadastro dos

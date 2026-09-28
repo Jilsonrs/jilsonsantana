@@ -128,7 +128,7 @@ vídeos (`CLAUDE.md` → *Idiomas*). Os vídeos dele ficam na mesma `jilsonsanta
 | MP4 Fallback | desligado |
 | Early-Play | desligado |
 | JIT | desligado |
-| Multi-audio | ligado hoje · **a DESLIGAR** (decisão do operador, 27/09/2026) |
+| Multi-audio | **desligado** (decisão do operador, 27/09/2026; desligado por ele em 28/09) |
 | Content tagging | desligado |
 | Marca d'água | nenhuma |
 
@@ -139,7 +139,7 @@ vídeos (`CLAUDE.md` → *Idiomas*). Os vídeos dele ficam na mesma `jilsonsanta
   no **HD externo**.
 - **Multi-audio: desligar** *(decisão do operador, 27/09/2026)*. Ele permite mais de uma faixa de
   áudio no mesmo vídeo, e a escola não usa isso: curso em inglês é **outro curso**, com vídeos
-  próprios (`CLAUDE.md` → *Idiomas*). **Falta desligar no painel** (`pendencias.md`, P19).
+  próprios (`CLAUDE.md` → *Idiomas*). **Desligado no painel pelo operador em 28/09/2026.**
 
 **Segurança (painel → Security):**
 - [x] **Enable direct play:** desligado.
@@ -403,7 +403,7 @@ O Bunny gera estes tipos de chave:
   | 1 | `BUNNY_STORAGE_HOST` | `br.storage.bunnycdn.com` | não |
   | 1 | `BUNNY_STORAGE_PASSWORD` | a senha da Storage Zone (a de escrita, não a só de leitura) | **sim** |
   | 1 | `BUNNY_IMG_BASE_URL` | `https://img.jilsonsantana.com` no ar; o endereço da Pull Zone de dev no computador | não |
-  | ~~2~~ | ~~`BUNNY_STREAM_INTRO_LIBRARY_ID`~~ | **não é mais usada** (28/09: uma biblioteca só, §3.1). Pode sair do Railway depois que a versão nova estiver no ar | não |
+  | ~~2~~ | ~~`BUNNY_STREAM_INTRO_LIBRARY_ID`~~ | **não é mais usada** (28/09: uma biblioteca só, §3.1). A versão nova está no ar desde 28/09 (`main` = `a042393`): pode sair do Railway depois que a apresentação tocar na página do curso (P19) | não |
   | ~~2~~ | ~~`BUNNY_STREAM_INTRO_API_KEY`~~ | **não é mais usada** — idem | **sim** |
   | 3 | `BUNNY_STREAM_LESSONS_LIBRARY_ID` | ID da biblioteca (762605, a `jilsonsantana-stream`) — aulas **e** apresentação desde 28/09 | não |
   | 3 | `BUNNY_STREAM_LESSONS_API_KEY` | API key da biblioteca de aulas | **sim** |
