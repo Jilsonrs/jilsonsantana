@@ -59,7 +59,8 @@ export function InsertPoint({
 
   if (!aberto) {
     return (
-      <div className="group relative flex h-6 items-center justify-center">
+      // O "+" fica no COMEÇO da linha, não no centro (pedido do operador, 28/09/2026).
+      <div className="group relative flex h-6 items-center justify-start">
         <span
           aria-hidden="true"
           className="absolute inset-x-0 top-1/2 h-px bg-border opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 motion-reduce:transition-none"
