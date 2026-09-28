@@ -93,7 +93,6 @@ function credenciais(videoId: string) {
       libraryId: "762605",
       expirationTime: 1,
       signature: "assinatura",
-      embedUrl: `https://iframe.mediadelivery.net/embed/762605/${videoId}`,
     },
   };
 }
@@ -124,7 +123,7 @@ describe("quem pode", () => {
 });
 
 describe("começar o envio", () => {
-  it("devolve a assinatura, nunca a chave nem um endereço sem token; o vídeo fica EM ANDAMENTO", async () => {
+  it("devolve a assinatura, nunca a chave; o vídeo fica EM ANDAMENTO", async () => {
     iniciarEnvio.mockResolvedValue(credenciais(A));
     const aula = await novaAula({ bunnyVideoId: EM_USO });
 
@@ -133,7 +132,6 @@ describe("começar o envio", () => {
     expect(res.status).toBe(200);
     expect(iniciarEnvio).toHaveBeenCalledWith("aulas", "aula.mp4");
     expect(res.body.signature).toBe("assinatura");
-    expect(res.body).not.toHaveProperty("embedUrl");
     expect(JSON.stringify(res.body)).not.toContain("api-de-teste");
     expect(JSON.stringify(res.body)).not.toContain("token-de-teste");
     const depois = await prisma.lesson.findUnique({ where: { id: aula.id } });

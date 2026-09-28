@@ -15,7 +15,7 @@
 > e nome de tela mudam:** confira no painel antes de contratar. O que está marcado **[A VERIFICAR
 > NO PAINEL]** não apareceu na documentação consultada.
 >
-> **O que NÃO está aqui:** as travas de código, como a janela de 6–12 h, a falta de trava por IP
+> **O que NÃO está aqui:** as travas de código, como a validade de 24 h, a falta de trava por IP
 > e o vídeo de apresentação fora do portão. Elas ficam no `CLAUDE.md` → *Video* e *Access
 > Architecture*, porque um agente prestes a escrever código erra sem elas.
 
@@ -71,12 +71,32 @@
 
 ## 3. Stream — os vídeos *(biblioteca de aulas criada pelo operador em 25/09/2026)*
 
-### 3.1 Três bibliotecas, uma por papel *(nomes e regiões: decisão do operador, 25/09/2026)*
+### 3.1 UMA biblioteca só, com token *(decisão do operador, 28/09/2026 — revê a de 25/09, abaixo)*
+
+**A `jilsonsantana-stream` (762605), com o token LIGADO, guarda as aulas E os vídeos de
+apresentação.** Motivo do operador: já era onde a apresentação estava, e é mais simples no
+painel. O que isso muda, e já está no código (28/09):
+- **todo player sai assinado pelo nosso servidor**, inclusive o da apresentação, que continua
+  tocando para qualquer visitante (é vídeo de venda: o servidor assina sem conferir acesso);
+- **a assinatura vale 24 h para todo vídeo** — apresentação, prévia grátis e aula paga
+  *(operador, 28/09/2026, depois de comparar: Bunny recomenda token curto só quando ele é gerado
+  na hora do play; Mux usa 7 dias por padrão e "horas a dias" para assinatura; Cloudflare, 1 h
+  por padrão e 24 h no máximo; plataformas de curso, 4 a 8 h)*. A aula paga continua **só para
+  quem está logado com assinatura ativa** (a trava da etapa 4): é ela, e não a validade, que
+  protege a aula;
+- **as variáveis são só as das aulas** (`BUNNY_STREAM_LESSONS_*`, §5); as `BUNNY_STREAM_INTRO_*`
+  deixaram de ser usadas;
+- **página pública com player não pode ficar em cache mais de 24 h**, senão a assinatura vence.
+*O argumento de 25/09 para separar era esse cache; hoje a página pública é montada a cada pedido.
+Gatilho de reabertura: se uma página pública passar a ficar em cache por mais de 24 h (uma CDN na
+frente do site, por exemplo), ou se o Enterprise DRM entrar só para as aulas.*
+
+### 3.1-bis O desenho de 25/09 (histórico, substituído em 28/09)
 
 | Biblioteca | Ambiente | O que guarda | Token | Regiões | Estado |
 |---|---|---|---|---|---|
 | `jilsonsantana-stream` (library ID 762605) | produção | as aulas: só para quem tem assinatura ativa | **ligado** | Frankfurt + São Paulo | **criada e testada em 25/09** |
-| `jilsonsantana-stream-apresentacao` | produção | o vídeo de apresentação dos cursos, que toca para quem **não** é assinante (é ativo de venda) | desligado | Frankfurt + São Paulo | não criada |
+| `jilsonsantana-stream-apresentacao` | produção | o vídeo de apresentação dos cursos, que toca para quem **não** é assinante (é ativo de venda) | desligado | Frankfurt + São Paulo | **não será criada** (28/09: tudo na `jilsonsantana-stream`, §3.1) |
 | `jilsonsantana-stream-dev` | desenvolvimento | 2 ou 3 vídeos de teste | ligado, igual à de aulas | só Frankfurt | **não será criada por enquanto** (testa no ar, decisão de 27/09) |
 
 - **Regiões:** no Stream, **Frankfurt é a principal e não se escolhe**; São Paulo foi
@@ -383,9 +403,9 @@ O Bunny gera estes tipos de chave:
   | 1 | `BUNNY_STORAGE_HOST` | `br.storage.bunnycdn.com` | não |
   | 1 | `BUNNY_STORAGE_PASSWORD` | a senha da Storage Zone (a de escrita, não a só de leitura) | **sim** |
   | 1 | `BUNNY_IMG_BASE_URL` | `https://img.jilsonsantana.com` no ar; o endereço da Pull Zone de dev no computador | não |
-  | 2 | `BUNNY_STREAM_INTRO_LIBRARY_ID` | ID da biblioteca de apresentação | não |
-  | 2 | `BUNNY_STREAM_INTRO_API_KEY` | API key da biblioteca de apresentação | **sim** |
-  | 3 | `BUNNY_STREAM_LESSONS_LIBRARY_ID` | ID da biblioteca de aulas | não |
+  | ~~2~~ | ~~`BUNNY_STREAM_INTRO_LIBRARY_ID`~~ | **não é mais usada** (28/09: uma biblioteca só, §3.1). Pode sair do Railway depois que a versão nova estiver no ar | não |
+  | ~~2~~ | ~~`BUNNY_STREAM_INTRO_API_KEY`~~ | **não é mais usada** — idem | **sim** |
+  | 3 | `BUNNY_STREAM_LESSONS_LIBRARY_ID` | ID da biblioteca (762605, a `jilsonsantana-stream`) — aulas **e** apresentação desde 28/09 | não |
   | 3 | `BUNNY_STREAM_LESSONS_API_KEY` | API key da biblioteca de aulas | **sim** |
   | 3 | `BUNNY_STREAM_LESSONS_TOKEN_KEY` | token authentication key da biblioteca de aulas | **sim** |
   | arquivos | `BUNNY_FILES_STORAGE_ZONE` | nome da Storage Zone dos arquivos (§4.5) | não |
@@ -422,7 +442,7 @@ O Bunny gera estes tipos de chave:
   video_id + expires)`**, com `expires` em **segundos**, entregue como `?token=…&expires=…` no
   iframe `iframe.mediadelivery.net/embed/<biblioteca>/<id>`. A chave é a **token key** da
   biblioteca, não a API key. *(A forma em Base64 que a leitura de 25/09 citava é de outro produto
-  — o token da CDN —, não do embed.)* Validade de 6 h, dentro da janela de 6–12 h.
+  — o token da CDN —, não do embed.)* Validade: **24 h** para todo vídeo (§3.1, 28/09).
 - **Com *Block Direct URL File Access* ligado, o iframe precisa de
   `referrerpolicy="strict-origin-when-cross-origin"`.** Sem isso, uma política de referrer mais
   estrita no site faz o Bunny tratar o acesso como direto e recusar o vídeo.

@@ -72,7 +72,7 @@
 
 ## Video
 
-- **Bunny Stream** — video hosting + DRM + signed URLs. Playback gated to active members via short-lived signed URLs issued by the server, with an **elastic window (~6–12h) and no IP-lock** (don't break playback on Wi-Fi↔4G switches). (Panda Video = fallback.)
+- **Bunny Stream** — video hosting + DRM + signed URLs. Playback gated to active members via signed URLs issued by the server, **24 h for every video and no IP-lock** (don't break playback on Wi-Fi↔4G switches) — *operador, 28/09/2026: uma biblioteca só (`jilsonsantana-stream`, com token), a apresentação também assinada; substitui a janela de 6–12 h de Ago 2026 (`bunny.md` §3.1).* (Panda Video = fallback.)
 - **`tus-js-client`** (client) — o envio de vídeo em partes, que **retoma** quando a conexão cai
   (regra do operador de 25/09; peça aprovada por ele em 27/09). É a biblioteca dos exemplos
   oficiais do Bunny. Isolada em `client/src/lib/video-upload.ts`, o único arquivo que a importa:

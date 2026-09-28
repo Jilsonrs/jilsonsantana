@@ -10,18 +10,21 @@ import { createHash } from "node:crypto";
 // vai direto do navegador para o Bunny com uma assinatura SHA-256.
 
 /**
- * As bibliotecas que o site usa (bunny.md §3.1): a de APRESENTAÇÃO (sem token:
- * toca para qualquer visitante) e a de AULAS (com token: o player só abre com o
- * endereço assinado pelo nosso servidor — Bloco U, etapa 3).
+ * UMA BIBLIOTECA SÓ: a `jilsonsantana-stream`, COM TOKEN (decisão do operador,
+ * 28/09/2026 — revê a de 25/09, que separava a apresentação numa biblioteca sem
+ * token). Aulas e vídeos de apresentação moram nela, e o player só abre com o
+ * endereço ASSINADO pelo nosso servidor (`enderecoAssinado`). A apresentação
+ * continua tocando para qualquer visitante: o servidor assina sem conferir
+ * assinatura do aluno, porque ela é vídeo de venda (CLAUDE.md → Access
+ * Architecture). O nome fica como parâmetro para a leitura das rotas dizer de
+ * qual biblioteca fala, se um dia houver outra.
  */
-export type Biblioteca = "apresentacao" | "aulas";
+export type Biblioteca = "aulas";
 
-function config(biblioteca: Biblioteca) {
-  const vars = {
-    apresentacao: { id: process.env.BUNNY_STREAM_INTRO_LIBRARY_ID, chave: process.env.BUNNY_STREAM_INTRO_API_KEY },
-    aulas: { id: process.env.BUNNY_STREAM_LESSONS_LIBRARY_ID, chave: process.env.BUNNY_STREAM_LESSONS_API_KEY },
-  }[biblioteca];
-  return vars.id && vars.chave ? { id: vars.id, chave: vars.chave } : null;
+function config(_biblioteca: Biblioteca) {
+  const id = process.env.BUNNY_STREAM_LESSONS_LIBRARY_ID;
+  const chave = process.env.BUNNY_STREAM_LESSONS_API_KEY;
+  return id && chave ? { id, chave } : null;
 }
 
 /**
@@ -31,21 +34,6 @@ function config(biblioteca: Biblioteca) {
  */
 export function assinaturaDeEnvio(libraryId: string, chave: string, expira: number, videoId: string): string {
   return createHash("sha256").update(`${libraryId}${chave}${expira}${videoId}`).digest("hex");
-}
-
-/**
- * O endereço do player do Bunny para um vídeo. Derivado, nunca coluna. `null`
- * quando a biblioteca não está configurada neste ambiente (o computador do
- * operador não tem as chaves de propósito — bunny.md §5).
- *
- * `iframe.mediadelivery.net` é o endereço dos exemplos oficiais. A doc também
- * cita `player.mediadelivery.net` para o player novo: se um dia só esse tocar,
- * a troca é nesta linha (bunny.md §7).
- */
-export function enderecoDoPlayer(biblioteca: Biblioteca, videoId: string | null): string | null {
-  const c = config(biblioteca);
-  if (!videoId || !c) return null;
-  return montarEndereco(c.id, videoId);
 }
 
 const montarEndereco = (libraryId: string, videoId: string) =>
@@ -61,15 +49,21 @@ export function tokenDoPlayer(chaveDoToken: string, videoId: string, expira: num
   return createHash("sha256").update(`${chaveDoToken}${videoId}${expira}`).digest("hex");
 }
 
-// 6 h: dentro da janela de 6–12 h decidida em Ago 2026 (sem trava por IP, para o
-// vídeo não parar quando o aluno troca o Wi-Fi pelo 4G). Não encurtar.
-export const VALIDADE_DO_PLAYER = 6 * 60 * 60;
+// QUANTO TEMPO a assinatura do player vale depois de emitida: 24 h, para TODO
+// vídeo — apresentação, prévia grátis e aula paga (decisões do operador,
+// 28/09/2026, depois de comparar Bunny, Mux, Cloudflare e plataformas de curso;
+// substitui a janela de 6–12 h de Ago 2026). QUEM recebe a assinatura é decidido
+// pelo servidor (a aula paga, só para quem tem assinatura ativa — etapa 4); o
+// player só abre no domínio da escola. Sem trava por IP: o vídeo não pode parar
+// quando o aluno troca o Wi-Fi pelo 4G.
+export const VALIDADE_DO_PLAYER = 24 * 60 * 60;
 
 /**
- * O endereço ASSINADO do player de uma aula (`?token=…&expires=…`). `null` sem a
- * biblioteca de aulas ou sem a token key neste ambiente (o computador do
- * operador — bunny.md §5). Quem chama decide a quem entregar: hoje só o admin
- * (a prévia do editor); o aluno, na etapa 4, depois da trava de acesso.
+ * O endereço ASSINADO do player (`?token=…&expires=…`), de aula ou de apresentação.
+ * `null` sem vídeo, ou sem a biblioteca ou a token key neste ambiente (o
+ * computador do operador — bunny.md §5). Quem chama decide a quem entregar: a
+ * apresentação, a qualquer visitante; a aula, ao admin (prévia) e, na etapa 4,
+ * ao aluno com acesso.
  */
 export function enderecoAssinado(videoId: string | null, agora = Date.now()): string | null {
   const c = config("aulas");
@@ -86,7 +80,6 @@ export type CredenciaisDeEnvio = {
   libraryId: string;
   expirationTime: number;
   signature: string;
-  embedUrl: string;
 };
 
 export type ResultadoDoInicio =
@@ -126,7 +119,6 @@ export async function iniciarEnvio(biblioteca: Biblioteca, titulo: string): Prom
       libraryId: c.id,
       expirationTime,
       signature: assinaturaDeEnvio(c.id, c.chave, expirationTime, guid),
-      embedUrl: montarEndereco(c.id, guid),
     },
   };
 }

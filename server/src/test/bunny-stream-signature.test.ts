@@ -1,5 +1,11 @@
 import { describe, it, expect, afterEach } from "vitest";
-import { assinaturaDeEnvio, enderecoAssinado, enderecoDoPlayer, interpretarEstado, tokenDoPlayer, VALIDADE_DO_PLAYER } from "../lib/bunny-stream.js";
+import {
+  assinaturaDeEnvio,
+  enderecoAssinado,
+  interpretarEstado,
+  tokenDoPlayer,
+  VALIDADE_DO_PLAYER,
+} from "../lib/bunny-stream.js";
 
 // Unidade GENUÍNA (função pura, sem rede): a exceção que o CLAUDE.md → Testing
 // permite. A assinatura errada não dá erro nenhum no nosso lado — o Bunny só
@@ -17,29 +23,6 @@ describe("assinatura do envio retomável", () => {
     const a = assinaturaDeEnvio("762605", "k", 1, "eb1c4f77-0cda-46be-b47d-1118ad7c2ffe");
     const b = assinaturaDeEnvio("762605", "k", 1, "00000000-0000-0000-0000-000000000000");
     expect(a).not.toBe(b);
-  });
-});
-
-describe("endereço do player da apresentação", () => {
-  const antes = { id: process.env.BUNNY_STREAM_INTRO_LIBRARY_ID, chave: process.env.BUNNY_STREAM_INTRO_API_KEY };
-  afterEach(() => {
-    process.env.BUNNY_STREAM_INTRO_LIBRARY_ID = antes.id;
-    process.env.BUNNY_STREAM_INTRO_API_KEY = antes.chave;
-  });
-
-  it("sem a biblioteca configurada (o computador do operador): nenhum endereço", () => {
-    delete process.env.BUNNY_STREAM_INTRO_LIBRARY_ID;
-    delete process.env.BUNNY_STREAM_INTRO_API_KEY;
-    expect(enderecoDoPlayer("apresentacao", "eb1c4f77-0cda-46be-b47d-1118ad7c2ffe")).toBeNull();
-  });
-
-  it("configurada: o player do Bunny com a biblioteca e o vídeo", () => {
-    process.env.BUNNY_STREAM_INTRO_LIBRARY_ID = "999";
-    process.env.BUNNY_STREAM_INTRO_API_KEY = "k";
-    expect(enderecoDoPlayer("apresentacao", "eb1c4f77-0cda-46be-b47d-1118ad7c2ffe")).toBe(
-      "https://iframe.mediadelivery.net/embed/999/eb1c4f77-0cda-46be-b47d-1118ad7c2ffe",
-    );
-    expect(enderecoDoPlayer("apresentacao", null)).toBeNull();
   });
 });
 
@@ -65,7 +48,8 @@ describe("estado do vídeo no Bunny (a prévia do admin atualiza sozinha)", () =
   });
 });
 
-// O TOKEN DO PLAYER das aulas (Bloco U, etapa 3). Formato confirmado na doc via
+// O TOKEN DO PLAYER (Bloco U, etapa 3) — de aula e de apresentação, que desde
+// 28/09/2026 moram na MESMA biblioteca, com token (decisão do operador). Formato confirmado na doc via
 // context7 em 28/09/2026: SHA256_HEX(token key + id do vídeo + expires). O valor
 // esperado foi calculado FORA do nosso código (hashlib do Python), com a fórmula
 // da doc — o teste não compara a função com ela mesma.
@@ -91,10 +75,14 @@ describe("token do player das aulas", () => {
     restaurar("BUNNY_STREAM_LESSONS_TOKEN_KEY", antes.token);
   });
 
-  it("o endereço assinado leva o token e a validade de 6 h", () => {
+  const configurar = () => {
     process.env.BUNNY_STREAM_LESSONS_LIBRARY_ID = "762605";
     process.env.BUNNY_STREAM_LESSONS_API_KEY = "api";
     process.env.BUNNY_STREAM_LESSONS_TOKEN_KEY = "chave-de-token";
+  };
+
+  it("o endereço assinado leva o token e a validade", () => {
+    configurar();
     const agora = (1790000000 - VALIDADE_DO_PLAYER) * 1000;
 
     expect(enderecoAssinado("eb1c4f77-0cda-46be-b47d-1118ad7c2ffe", agora)).toBe(
@@ -103,10 +91,11 @@ describe("token do player das aulas", () => {
     );
   });
 
-  // A janela é de 6 a 12 h (Ago 2026): encurtar faz o vídeo parar no meio da aula.
-  it("a validade fica dentro da janela decidida", () => {
-    expect(VALIDADE_DO_PLAYER).toBeGreaterThanOrEqual(6 * 3600);
-    expect(VALIDADE_DO_PLAYER).toBeLessThanOrEqual(12 * 3600);
+  // 24 h para todo vídeo (operador, 28/09/2026, depois de comparar Bunny, Mux,
+  // Cloudflare e plataformas de curso). Encurtar faz o aluno recarregar a página
+  // depois de uma pausa longa; a proteção da aula é a trava de acesso.
+  it("a validade é de 24 h", () => {
+    expect(VALIDADE_DO_PLAYER).toBe(24 * 3600);
   });
 
   it("sem a token key (ou sem a biblioteca): nenhum endereço", () => {

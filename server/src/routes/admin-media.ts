@@ -6,7 +6,7 @@ import { parseId, validate } from "../lib/http.js";
 import { tipoDaImagem } from "../lib/image-type.js";
 import { enviarParaOStorage } from "../lib/bunny-storage.js";
 import { videoUploadCompleteSchema, videoUploadStartSchema, bunnyVideoIdSchema } from "@jilson/core";
-import { iniciarEnvio, apagarVideo, enderecoDoPlayer, estadoDoVideo } from "../lib/bunny-stream.js";
+import { iniciarEnvio, apagarVideo, enderecoAssinado, estadoDoVideo } from "../lib/bunny-stream.js";
 
 const router = Router();
 
@@ -78,7 +78,7 @@ router.post("/admin/courses/:id/intro-video", requireAdmin, async (req, res) => 
   // O nome do vídeo no Bunny é o NOME DO ARQUIVO que o operador enviou (decisão
   // dele, 27/09/2026: "o que eu envio + o ID que o Bunny cola"; o ID o Bunny já
   // mostra ao lado).
-  const inicio = await iniciarEnvio("apresentacao", body.titulo);
+  const inicio = await iniciarEnvio("aulas", body.titulo);
   if (!inicio.ok) {
     res.status(inicio.motivo === "NaoConfigurado" ? 503 : 502).json({ error: `Stream${inicio.motivo}` });
     return;
@@ -89,7 +89,7 @@ router.post("/admin/courses/:id/intro-video", requireAdmin, async (req, res) => 
   // LIMPEZA (operador, 27/09): o envio anterior que ficou pela metade é apagado
   // no Bunny. Nunca o vídeo em uso — um envio concluído já saiu do "em andamento".
   const anterior = course.introVideoPendingId;
-  if (anterior && anterior !== course.introVideoId) await apagarVideo("apresentacao", anterior);
+  if (anterior && anterior !== course.introVideoId) await apagarVideo("aulas", anterior);
 
   res.json(inicio.credenciais);
 });
@@ -122,9 +122,9 @@ router.post("/admin/courses/:id/intro-video/complete", requireAdmin, async (req,
   await prisma.course.update({ where: { id }, data: { introVideoId: videoId, introVideoPendingId: null } });
 
   const substituido = course.introVideoId;
-  if (substituido && substituido !== videoId) await apagarVideo("apresentacao", substituido);
+  if (substituido && substituido !== videoId) await apagarVideo("aulas", substituido);
 
-  res.json({ introVideoId: videoId, introVideoEmbedUrl: enderecoDoPlayer("apresentacao", videoId) });
+  res.json({ introVideoId: videoId, introVideoEmbedUrl: enderecoAssinado(videoId) });
 });
 
 // GET /api/admin/intro-video/:videoId/status — o Bunny já terminou de processar?
@@ -134,7 +134,7 @@ router.post("/admin/courses/:id/intro-video/complete", requireAdmin, async (req,
 router.get("/admin/intro-video/:videoId/status", requireAdmin, async (req, res) => {
   const videoId = validate(bunnyVideoIdSchema, req.params.videoId, res);
   if (videoId === null) return;
-  const estado = await estadoDoVideo("apresentacao", videoId);
+  const estado = await estadoDoVideo("aulas", videoId);
   if (!estado) {
     res.status(502).json({ error: "StreamFalhou" });
     return;

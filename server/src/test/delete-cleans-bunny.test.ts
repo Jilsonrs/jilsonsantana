@@ -154,14 +154,14 @@ describe("excluir módulo e curso", () => {
 
     expect((await excluir(`/api/courses/${cursoId}`)).status).toBe(204);
     expect(apagarVideo).toHaveBeenCalledWith("aulas", VIDEO);
-    expect(apagarVideo).toHaveBeenCalledWith("apresentacao", APRESENTACAO);
-    expect(apagarVideo).toHaveBeenCalledWith("apresentacao", APRESENTACAO_PENDENTE);
+    expect(apagarVideo).toHaveBeenCalledWith("aulas", APRESENTACAO);
+    expect(apagarVideo).toHaveBeenCalledWith("aulas", APRESENTACAO_PENDENTE);
     expect(await prisma.course.findUnique({ where: { id: cursoId } })).toBeNull();
   });
 
   it("o curso fica se o Bunny recusar a apresentação", async () => {
     const { cursoId } = await cursoCompleto(true);
-    apagarVideo.mockImplementation(async (b: string) => b !== "apresentacao");
+    apagarVideo.mockImplementation(async (_b: string, id: string) => id !== APRESENTACAO);
     expect((await excluir(`/api/courses/${cursoId}`)).status).toBe(502);
     expect(await prisma.course.findUnique({ where: { id: cursoId } })).not.toBeNull();
   });

@@ -15,13 +15,15 @@ export type CredenciaisDeEnvio = {
   libraryId: string;
   expirationTime: number;
   signature: string;
-  embedUrl: string;
 };
 
 export type EnvioDeVideo = { concluido: Promise<void>; cancelar: () => void };
 
-/** O que o envio precisa: o endereço do player não entra (a aula não recebe um sem token). */
-export type DadosDoEnvio = Omit<CredenciaisDeEnvio, "embedUrl">;
+/**
+ * O que o envio precisa. Não há endereço de player aqui: a biblioteca tem token
+ * (operador, 28/09/2026), e a prévia vem sempre assinada do servidor.
+ */
+export type DadosDoEnvio = CredenciaisDeEnvio;
 
 export function enviarVideo(
   arquivo: File,

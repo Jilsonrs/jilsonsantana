@@ -57,10 +57,9 @@ router.post("/admin/lessons/:id/video", requireAdmin, async (req, res) => {
   const anterior = aula.bunnyVideoPendingId;
   if (anterior && anterior !== aula.bunnyVideoId) await apagarVideo("aulas", anterior);
 
-  // Sem o endereço do player: sem token, ele não abre numa biblioteca com token.
-  // A prévia vem do `complete` ou do `/player`, sempre assinada.
-  const { embedUrl: _semToken, ...credenciais } = inicio.credenciais;
-  res.json(credenciais);
+  // Só a assinatura do envio: a prévia vem do `complete` ou do `/player`, sempre
+  // assinada.
+  res.json(inicio.credenciais);
 });
 
 // POST /api/admin/lessons/:id/video/complete — o envio terminou: o vídeo em
