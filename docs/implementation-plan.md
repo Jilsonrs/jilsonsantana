@@ -1007,6 +1007,9 @@ tornada executável — não uma lista nova):
       ninguém notar, porque a tela fica idêntica; o teste da barra recolhida existe para reprovar
       quem tentar.
 - [ ] **Painel do aluno** como destino pós-login: progresso, próxima aula, trilhas em andamento.
+      **Direção do operador (28/09/2026):** a tela de **Início é o painel do aluno, rica**, com o
+      que ele tem disponível **a um clique**; o menu continua na barra lateral, e o painel nasce
+      preparado para **ganhar itens no futuro**.
       **Depende da Fase 5** (captura de progresso) — sem `LessonProgress` não há o que mostrar, e
       construir a casca antes deixa uma tela vazia que ninguém sabe se está quebrada.
       **NOTA (Set 2026): a dependência encolheu.** "Trilhas em andamento" já tem dado real desde
@@ -1333,7 +1336,7 @@ landmark. Corrigido junto.
       de **Preenchimento** (`client/src/lib/course-completeness.ts`) com o que falta: capa, vídeo de
       apresentação, descrição, aula publicada. Estados de carregando, erro e vazio. Testes: 3 de
       servidor + 10 de tela; mutações (a conta do preenchimento, o status em inglês, a cadeia das
-      aulas publicadas) reprovam. Os textos são propostas do agente, para o operador aprovar.
+      aulas publicadas) reprovam. Textos aprovados pelo operador em 28/09/2026.
 - [ ] **Quinto item do preenchimento: o vídeo de cada aula** — entra com a etapa 3 do Bloco U.
 - [ ] **Horas assistidas** e **Alunos** viram número — na Fase 5 (checkboxes lá).
 - [ ] **Avaliação** vira número — na Fase 5; antes, decidir a P27 (`pendencias.md`).
@@ -1355,8 +1358,8 @@ landmark. Corrigido junto.
       `MarkdownText.tsx`, o único lugar que mostra Markdown no React (`react-markdown`, com a lista
       do que vale; HTML digitado vira texto; link e imagem não saem). A prévia baixa só quando
       aberta. Testes: 6 de servidor + 13 de tela; mutações (tirar o limite do servidor, trocar por
-      HTML cru, tirar a lista do que vale, o botão não marcar) reprovam. Os textos da tela são
-      propostas do agente, para o operador aprovar.
+      HTML cru, tirar a lista do que vale, o botão não marcar) reprovam. Textos aprovados pelo
+      operador em 28/09/2026.
 - **Fora:** limite nos outros campos de texto (backlog do P2, abaixo) · mostrar a descrição ao aluno
   (a página de curso de hoje não mostra; ver o *DEPOIS* do C5).
 
@@ -1389,7 +1392,7 @@ landmark. Corrigido junto.
 - [ ] **Arrastar para reorganizar** aulas e módulos, **mantendo as setas** para o teclado.
       Peça nova: proposta no plano da etapa, com o ok do operador.
 - [ ] **Tipos de item no "+":** Aula (vídeo **ou** texto) e Quiz. Aula de texto tem o seu
-      texto, com negrito e listas; **aula de vídeo não tem descrição**.
+      texto, com negrito e listas; **aula de vídeo não tem descrição** (confirmado em 28/09).
 - [ ] **Arquivos para baixar por aula, só para assinantes**, guardados de forma protegida.
       Exige decidir no plano onde e como (as capas são públicas; estes não podem ser).
 - [ ] Vídeo **sem limite** de tamanho ou resolução no site; **um por vez**; **sem reuso** entre
@@ -1420,7 +1423,9 @@ landmark. Corrigido junto.
 - **Fase 6 (JilsonAI):** o aviso da dúvida que sobe para o operador, **sem prazo nem data**, na
   direção do texto dele: *"Sua dúvida já está com o Jilson… ele vai te responder o quanto antes
   possível"* · a área **Comunicação** do admin (fila, anúncios, resumo do que os alunos
-  perguntam; sem Tarefas) · o JilsonAI **revisando a página do curso** e **fazendo perguntas**
+  perguntam; sem Tarefas). **A fila de dúvidas mora em Comunicação, não em "JilsonAI Admin ›
+  Escalações"** (operador, 28/09): o JilsonAI Admin fica só com a configuração da IA (Persona,
+  Modelo, Quotas). Corrigir o `navigation.ts` quando a P13 for declarada lá · o JilsonAI **revisando a página do curso** e **fazendo perguntas**
   sobre a aula · **Role play** com o JilsonAI.
 - **Fase 6.5 (certificados):** **o curso também dá certificado** ao ser concluído; o da trilha
   continua o de competências.
