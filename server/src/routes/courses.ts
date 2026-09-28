@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { Prisma } from "@prisma/client";
-import { ContentStatus, courseCreateSchema, courseUpdateSchema } from "@jilson/core";
+import { ContentStatus, contarPalavras, courseCreateSchema, courseUpdateSchema } from "@jilson/core";
 import { prisma } from "../lib/prisma.js";
 import { requireAdmin } from "../middleware/auth.js";
 import { validate, parseId } from "../lib/http.js";
@@ -137,8 +137,9 @@ router.get("/admin/courses", requireAdmin, async (_req, res) => {
     },
   });
   // O cartão do admin (lista de cursos, 27/09/2026) mostra o PREENCHIMENTO do
-  // curso: capa, vídeo de apresentação, descrição e aulas publicadas. Descrição e
-  // vídeo saem como sim/não — a lista não precisa do texto inteiro.
+  // curso: capa, vídeo de apresentação, descrição e aulas publicadas. O vídeo sai
+  // como sim/não e a descrição como NÚMERO DE PALAVRAS (abaixo de 200 ela é
+  // "curta" — operador, 28/09/2026): a lista não precisa do texto inteiro.
   const cards = courses.map(({ modules, introVideoId, description, ...course }) => ({
     ...comIdioma(course),
     moduleCount: modules.length,
@@ -148,7 +149,7 @@ router.get("/admin/courses", requireAdmin, async (_req, res) => {
       .filter((m) => m.status === PUBLISHED)
       .reduce((sum, m) => sum + m.lessons.filter((l) => l.status === PUBLISHED).length, 0),
     hasIntroVideo: introVideoId !== null,
-    hasDescription: (description ?? "").trim() !== "",
+    descriptionWordCount: contarPalavras(description),
   }));
   res.json(cards);
 });

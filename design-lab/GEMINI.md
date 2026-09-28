@@ -159,6 +159,12 @@ servidores (§5); o React responde em `localhost:5173`, a home pública em `loca
 > - as camadas foram para `CourseLayersSection.tsx`, no passo Página do curso;
 > - status e ordem foram para `CoursePublishSection.tsx`, no passo Publicar.
 >
+> **O passo Publicar** (28/09) também mostra a barra de Preenchimento, a mesma do cartão da lista:
+> ela mora em `client/src/components/admin/CompletenessBar.tsx`, e formatar ali muda os dois
+> lugares. O link com o botão de copiar fica em `course-form/CourseLinkField.tsx`. O aviso "Link
+> copiado." sai numa região `role="status"`: **mantenha a região sempre na página, mesmo vazia**,
+> porque é assim que o leitor de tela anuncia a mudança.
+>
 > **Não mexa sem falar com o operador:** o ✓ tem um "completo" escondido para leitor de tela, e
 > EM BREVE é texto, nunca link. **Os dois têm teste.**
 

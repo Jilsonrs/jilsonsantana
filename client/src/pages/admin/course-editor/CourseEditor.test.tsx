@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { screen, fireEvent, waitFor, within } from "@testing-library/react";
 import { Role } from "@jilson/core";
 import { renderWithProviders } from "@/test-utils";
@@ -205,6 +205,74 @@ describe("Editor do curso — cada passo salva só a parte dele", () => {
     );
     // O Conteúdo se salva item a item: não tem o Salvar do passo.
     expect(screen.queryByRole("button", { name: "Salvar" })).toBeNull();
+  });
+});
+
+// O passo Publicar reúne o que falta, o status, a ordem e o link (operador,
+// 27–28/09/2026). O que falta e o link leem o curso GRAVADO.
+describe("Editor do curso — Publicar", () => {
+  afterEach(() => {
+    Reflect.deleteProperty(navigator, "clipboard");
+  });
+
+  function areaDeTransferencia(writeText: (texto: string) => Promise<void>) {
+    Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
+  }
+
+  const linkDoCurso = async () => ((await screen.findByLabelText("Link")) as HTMLInputElement).value;
+
+  it("mostra o que falta do curso, com a barra de preenchimento", async () => {
+    abrir("/admin/cursos/1/publicar", { ...CURSO_DE_TESTE, thumbnailUrl: "/img/c.jpg", description: "Curta demais." });
+    const barra = await screen.findByRole("progressbar", { name: `Preenchimento de ${CURSO_DE_TESTE.title}` });
+
+    expect(barra.getAttribute("aria-valuenow")).toBe("25");
+    expect(screen.getByText("Descrição curta (menos de 200 palavras)")).toBeTruthy();
+    expect(screen.getByText("Falta o vídeo de apresentação")).toBeTruthy();
+    expect(screen.queryByText("Falta a capa")).toBeNull();
+  });
+
+  it("o link é o endereço público do curso, no idioma dele", async () => {
+    abrir("/admin/cursos/1/publicar");
+    expect(await linkDoCurso()).toBe(`${window.location.origin}/curso/exemplo-fundamentos-excel-ia`);
+    expect(screen.queryByText(/página dos cursos em inglês/)).toBeNull();
+  });
+
+  it("curso em inglês: link em /en/course, com o aviso de que a página ainda não existe", async () => {
+    abrir("/admin/cursos/1/publicar", { ...CURSO_DE_TESTE, language: "en", slug: "excel-and-ai" });
+    expect(await linkDoCurso()).toBe(`${window.location.origin}/en/course/excel-and-ai`);
+    expect(screen.getByText(/página dos cursos em inglês ainda não existe/)).toBeTruthy();
+  });
+
+  it("copiar põe o link na área de transferência, avisa, e não salva nada", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    areaDeTransferencia(writeText);
+    abrir("/admin/cursos/1/publicar");
+    const link = await linkDoCurso();
+
+    fireEvent.click(screen.getByRole("button", { name: "Copiar link" }));
+
+    await waitFor(() => expect(screen.getByRole("status").textContent).toBe("Link copiado."));
+    expect(writeText).toHaveBeenCalledWith(link);
+    expect(updateCourse).not.toHaveBeenCalled();
+  });
+
+  it("sem área de transferência no navegador: diz para copiar à mão", async () => {
+    abrir("/admin/cursos/1/publicar");
+    await linkDoCurso();
+
+    fireEvent.click(screen.getByRole("button", { name: "Copiar link" }));
+    expect(screen.getByRole("status").textContent).toBe("Não foi possível copiar. Selecione o link e copie.");
+  });
+
+  it("permissão negada: diz para copiar à mão", async () => {
+    areaDeTransferencia(() => Promise.reject(new Error("NotAllowedError")));
+    abrir("/admin/cursos/1/publicar");
+    await linkDoCurso();
+
+    fireEvent.click(screen.getByRole("button", { name: "Copiar link" }));
+    await waitFor(() =>
+      expect(screen.getByRole("status").textContent).toBe("Não foi possível copiar. Selecione o link e copie."),
+    );
   });
 });
 

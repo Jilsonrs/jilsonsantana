@@ -7,7 +7,8 @@ import { prisma } from "../lib/prisma.js";
 // mostra a capa e o PREENCHIMENTO do curso. O que estes testes protegem: só o
 // admin lê a lista, e os campos do preenchimento saem certos — em especial a
 // contagem de aulas PUBLICADAS, que é a cadeia (aula publicada em módulo
-// publicado), e descrição/vídeo como sim/não, sem o texto inteiro.
+// publicado), o vídeo como sim/não e a descrição como número de palavras, sem
+// o texto inteiro.
 
 const S = `-lista-${Date.now()}`;
 let admin: string[] = [];
@@ -29,7 +30,8 @@ beforeAll(async () => {
       language: "PT",
       thumbnailUrl: "https://img.jilsonsantana.com/cursos/completo.webp",
       introVideoId: "eb1c4f77-0cda-46be-b47d-1118ad7c2ffe",
-      description: "Um curso inteiro.",
+      // Markdown: o marcador de lista e o de negrito não contam como palavra.
+      description: "Um **curso** inteiro.\n- com lista",
       modules: {
         create: [
           {
@@ -60,19 +62,19 @@ describe("lista de cursos do admin", () => {
     expect((await lista(member)).status).toBe(403);
   });
 
-  it("curso completo: capa, vídeo, descrição e só as aulas publicadas NA CADEIA", async () => {
+  it("curso completo: capa, vídeo, palavras da descrição e só as aulas publicadas NA CADEIA", async () => {
     const res = await lista(admin);
     const curso = res.body.find((c: { slug: string }) => c.slug === `completo${S}`);
 
     expect(curso).toMatchObject({
       thumbnailUrl: "https://img.jilsonsantana.com/cursos/completo.webp",
       hasIntroVideo: true,
-      hasDescription: true,
+      descriptionWordCount: 5,
       moduleCount: 2,
       lessonCount: 3,
       publishedLessonCount: 1,
     });
-    // Sim/não, nunca o conteúdo: a lista não carrega a descrição nem o id do vídeo.
+    // Nunca o conteúdo: a lista não carrega a descrição nem o id do vídeo.
     expect(curso).not.toHaveProperty("description");
     expect(curso).not.toHaveProperty("introVideoId");
   });
@@ -84,7 +86,7 @@ describe("lista de cursos do admin", () => {
     expect(curso).toMatchObject({
       thumbnailUrl: null,
       hasIntroVideo: false,
-      hasDescription: false,
+      descriptionWordCount: 0,
       publishedLessonCount: 0,
     });
   });

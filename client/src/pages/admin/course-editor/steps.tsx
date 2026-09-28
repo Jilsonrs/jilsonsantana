@@ -7,6 +7,9 @@ import { CourseListsSection } from "@/components/admin/course-form/CourseListsSe
 import { CourseMediaSection } from "@/components/admin/course-form/CourseMediaSection";
 import { CourseLayersSection } from "@/components/admin/course-form/CourseLayersSection";
 import { CoursePublishSection } from "@/components/admin/course-form/CoursePublishSection";
+import { CourseLinkField } from "@/components/admin/course-form/CourseLinkField";
+import { CompletenessBar } from "@/components/admin/CompletenessBar";
+import { camposDoCurso, preenchimentoDoCurso } from "@/lib/course-completeness";
 import { HighlightsField } from "@/components/admin/HighlightsField";
 import { FaqField } from "@/components/admin/FaqField";
 import { ModuleLessonTree } from "@/components/admin/ModuleLessonTree";
@@ -80,10 +83,22 @@ function PassoPagina() {
   );
 }
 
+// O que falta, o status, a ordem no catálogo e o link (operador, 27–28/09/2026).
+// O que falta e o link leem o curso GRAVADO, como o ✓.
 function PassoPublicar() {
+  const { curso } = useCursoDoEditor();
+  const { porcentagem, faltando } = preenchimentoDoCurso(camposDoCurso(curso));
   return (
     <StepForm passo="publicar">
+      <PageSection title="O que falta" description="O que ainda falta preencher. Nada aqui impede de publicar.">
+        <Card>
+          <CardContent className="pt-6">
+            <CompletenessBar titulo={curso.title} porcentagem={porcentagem} faltando={faltando} />
+          </CardContent>
+        </Card>
+      </PageSection>
       <CoursePublishSection />
+      <CourseLinkField slug={curso.slug} idioma={curso.language} />
     </StepForm>
   );
 }

@@ -2,6 +2,7 @@ import { ContentStatus, contarPalavras, MINIMO_DE_PALAVRAS_DA_DESCRICAO } from "
 import type { CourseUpdateInput } from "@jilson/core";
 import type { AdminCourseDetail } from "@/lib/api";
 import { toPayload, type CourseFormValues } from "@/lib/course-form";
+import { contarAulasPublicadas } from "@/lib/course-completeness";
 
 // OS PASSOS DO EDITOR DO CURSO (Bloco E, etapa 1 — decisões do operador, 27–28/09/2026):
 // a ordem é a de PREENCHIMENTO ("ir completando; quando chegar no final está
@@ -78,13 +79,6 @@ export function payloadDoPasso(values: CourseFormValues, slug: PassoDoCurso): Co
   return payload;
 }
 
-/** Aula publicada DENTRO de módulo publicado — a mesma cadeia do cartão da lista. */
-function temAulaPublicada(curso: AdminCourseDetail): boolean {
-  return curso.modules.some(
-    (m) => m.status === ContentStatus.PUBLISHED && m.lessons.some((l) => l.status === ContentStatus.PUBLISHED),
-  );
-}
-
 /**
  * Os passos COMPLETOS, lidos do curso GRAVADO — nunca do formulário: o ✓ diz o
  * que está salvo. As regras são do operador (28/09/2026).
@@ -97,7 +91,8 @@ export function passosConcluidos(curso: AdminCourseDetail): Set<PassoDoCurso> {
       curso.level !== null &&
       contarPalavras(curso.description) >= MINIMO_DE_PALAVRAS_DA_DESCRICAO,
     "para-quem-e": curso.learnTags.length > 0 && curso.requirements.length > 0 && curso.personas.length > 0,
-    conteudo: temAulaPublicada(curso),
+    // A mesma cadeia do cartão da lista: aula publicada DENTRO de módulo publicado.
+    conteudo: contarAulasPublicadas(curso.modules) > 0,
     pagina: Boolean(curso.thumbnailUrl) && Boolean(curso.introVideoId),
     publicar: curso.status === ContentStatus.PUBLISHED,
   };

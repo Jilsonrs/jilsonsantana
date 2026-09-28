@@ -1,21 +1,48 @@
-import type { AdminCourseCard } from "@/lib/api";
-import type { ContentStatus } from "@jilson/core";
+import { ContentStatus, contarPalavras, MINIMO_DE_PALAVRAS_DA_DESCRICAO } from "@jilson/core";
+import type { AdminCourseCard, AdminCourseDetail, AdminModule } from "@/lib/api";
 
-// O PREENCHIMENTO do curso, no cartão da lista do admin (plano aprovado pelo
-// operador em 27/09/2026 — no lugar do "Concluir seu curso" da Udemy). Calculado
-// dos campos que o curso já tem; o vídeo de cada aula entra como quinto item na
-// etapa 3 do Bloco U. Admin fica em português, com o texto aqui (decisão de 23/09).
+// O PREENCHIMENTO do curso: no cartão da lista do admin (plano aprovado pelo
+// operador em 27/09/2026 — no lugar do "Concluir seu curso" da Udemy) e no passo
+// Publicar do editor (28/09). Calculado dos campos que o curso já tem; o vídeo de
+// cada aula entra como quinto item na etapa 3 do Bloco U. Admin fica em
+// português, com o texto aqui (decisão de 23/09).
 
 type CamposDoPreenchimento = Pick<
   AdminCourseCard,
-  "thumbnailUrl" | "hasIntroVideo" | "hasDescription" | "publishedLessonCount"
+  "thumbnailUrl" | "hasIntroVideo" | "descriptionWordCount" | "publishedLessonCount"
 >;
+
+/** Aulas publicadas NA CADEIA: aula publicada dentro de módulo publicado. */
+export function contarAulasPublicadas(modulos: AdminModule[]): number {
+  return modulos
+    .filter((m) => m.status === ContentStatus.PUBLISHED)
+    .reduce((soma, m) => soma + m.lessons.filter((l) => l.status === ContentStatus.PUBLISHED).length, 0);
+}
+
+/** Os mesmos campos do cartão, montados do curso inteiro (o editor tem o curso, não o cartão). */
+export function camposDoCurso(curso: AdminCourseDetail): CamposDoPreenchimento {
+  return {
+    thumbnailUrl: curso.thumbnailUrl,
+    hasIntroVideo: curso.introVideoId !== null,
+    descriptionWordCount: contarPalavras(curso.description),
+    publishedLessonCount: contarAulasPublicadas(curso.modules),
+  };
+}
+
+// Descrição com menos de 200 palavras conta como FALTA, sem impedir o salvar
+// (decisão do operador, 28/09/2026).
+function faltaNaDescricao(palavras: number): string {
+  return palavras === 0 ? "Falta a descrição" : `Descrição curta (menos de ${MINIMO_DE_PALAVRAS_DA_DESCRICAO} palavras)`;
+}
 
 export function preenchimentoDoCurso(curso: CamposDoPreenchimento): { porcentagem: number; faltando: string[] } {
   const itens = [
     { ok: Boolean(curso.thumbnailUrl), falta: "Falta a capa" },
     { ok: curso.hasIntroVideo, falta: "Falta o vídeo de apresentação" },
-    { ok: curso.hasDescription, falta: "Falta a descrição" },
+    {
+      ok: curso.descriptionWordCount >= MINIMO_DE_PALAVRAS_DA_DESCRICAO,
+      falta: faltaNaDescricao(curso.descriptionWordCount),
+    },
     { ok: curso.publishedLessonCount > 0, falta: "Nenhuma aula publicada" },
   ];
   const feitos = itens.filter((item) => item.ok).length;

@@ -125,8 +125,8 @@
 > do admin, com capa, status em português e a barra de Preenchimento) e o **Bloco B** (limite de
 > caracteres com contador nos campos do curso, e a descrição com negrito, itálico e listas, pelo
 > `react-markdown`). **Publicado em 28/09 (`main` = `e42b152`):** os documentos do Bloco E.
-> **No `dev`, ainda não publicado (28/09):** o **Bloco E, etapa 1, parte 1a** — o editor do curso
-> em 7 passos no nível 2 (ver Bloco E).
+> **No `dev`, ainda não publicado (28/09):** o **Bloco E, etapa 1, partes 1a e 1b** — o editor do
+> curso em 7 passos no nível 2, e o passo Publicar com o que falta e o link (ver Bloco E).
 > **Decidido em 27–28/09, ainda não construído:** o **Bloco E** (o editor do curso em 7 passos, a
 > partir dos prints da Udemy e de 5 plataformas pesquisadas), a mudança das telas do aluno para
 > `/aluno/*`, o conteúdo de cada seção planejada do admin (e a nova **Comunicação**) e as páginas
@@ -1440,8 +1440,19 @@ cada campo, a regra do ✓, 160 caracteres nas três listas e o Visualizar esper
       operador em 28/09/2026.
       **Ficam para depois:** a **duração publicada** no topo (entra com o vídeo das aulas, Bloco
       U etapa 3: hoje a aula não tem duração) e o **Visualizar** (espera o C5, abaixo).
-- [ ] **Publicar** reúne o que falta (a barra de Preenchimento, agora também no editor),
-      status, ordem no catálogo e **um lugar para copiar o link do curso**.
+- [x] **1b — Publicar** *(28/09, no `dev`)* reúne o que falta (a barra de Preenchimento, agora
+      também no editor — `components/admin/CompletenessBar.tsx`, a mesma do cartão), status em
+      português, ordem no catálogo e **o link do curso com o botão de copiar**
+      (`course-form/CourseLinkField.tsx`). O link sai do slug e do idioma **gravados**, pelo
+      `enderecoDoCurso` do `core` (`/curso/:slug`; `/en/course/:slug`, com o aviso de que a página
+      em inglês ainda não existe). O link fica sempre num campo só de leitura: sem área de
+      transferência (ou com a permissão negada), a tela diz para copiar à mão. *O guia
+      modern-web-guidance não tem receita de área de transferência (consultado): padrão comum,
+      com checagem do recurso e o aviso numa região `role="status"`.* Testes: 6 do Publicar, 2 da
+      descrição curta no cartão, 1 de servidor ajustado. **Mutação:** descrição curta contando
+      como feita, o aviso sem dizer "curta", o copiar salvando o passo, o link ignorando o idioma,
+      o erro de cópia virando sucesso e o servidor contando marcador de Markdown como palavra →
+      todas reprovam. Revertido.
 - [ ] **Visualizar** mostra a página do curso como o aluno vê, **inclusive em rascunho, só para o
       admin** — a rota pública continua devolvendo só o publicado. **Espera o C5** *(operador,
       28/09/2026)*: a página de curso de hoje é provisória e nem mostra a descrição, então a
@@ -1451,8 +1462,10 @@ cada campo, a regra do ✓, 160 caracteres nas três listas e o Visualizar esper
 - [ ] **As três listas viram um campo por item**, com contador, lixeira e ordem; **as três com
       até 160 caracteres por item** *(era só "O que vai aprender"; os outros dois, operador em
       28/09/2026)*.
-- [ ] Descrição curta conta como **"falta"** no Preenchimento, sem travar. **Curta = menos de 200
-      palavras** *(operador, 28/09/2026)*; a contagem já existe (`contarPalavras`, em `core/`).
+- [x] Descrição curta conta como **"falta"** no Preenchimento, sem travar. **Curta = menos de 200
+      palavras** *(operador, 28/09/2026)*. Feito na 1b: a lista do admin devolve
+      `descriptionWordCount` (no lugar do sim/não), contado pelo `contarPalavras` do `core` — o
+      mesmo do ✓ —, e o que falta diz "Descrição curta (menos de 200 palavras)".
 
 **Etapa 2 — o Conteúdo (junto com a etapa 3 do Bloco U, o vídeo das aulas):**
 - [ ] **"+" entre dois itens** (passar o mouse entre eles mostra o "+") para inserir aula ou

@@ -25,7 +25,7 @@ const course: AdminCourseCard = {
   lessonCount: 3,
   thumbnailUrl: null,
   hasIntroVideo: false,
-  hasDescription: false,
+  descriptionWordCount: 0,
   publishedLessonCount: 0,
 };
 
@@ -37,7 +37,7 @@ const completo: AdminCourseCard = {
   status: "PUBLISHED",
   thumbnailUrl: "https://img.jilsonsantana.com/cursos/completo.webp",
   hasIntroVideo: true,
-  hasDescription: true,
+  descriptionWordCount: 250,
   publishedLessonCount: 3,
 };
 
@@ -156,6 +156,31 @@ describe("AdminCoursesPage — o cartão do curso", () => {
     expect(c.queryByText("Nenhuma aula publicada")).toBeNull();
     expect(c.getByText("Falta o vídeo de apresentação")).toBeTruthy();
     expect(c.getByText("Falta a descrição")).toBeTruthy();
+  });
+});
+
+// Descrição com menos de 200 palavras conta como falta, sem impedir o salvar
+// (decisão do operador, 28/09/2026).
+describe("AdminCoursesPage — descrição curta", () => {
+  const cartao = (titulo: string) => screen.findByRole("article", { name: titulo });
+
+  it("com 199 palavras: não conta, e o que falta diz que está curta", async () => {
+    adminGetCourses.mockResolvedValue([{ ...completo, descriptionWordCount: 199 }]);
+    renderWithProviders(<AdminCoursesPage />);
+    const c = within(await cartao(completo.title));
+
+    expect(c.getByText("75%")).toBeTruthy();
+    expect(c.getByText("Descrição curta (menos de 200 palavras)")).toBeTruthy();
+    expect(c.queryByText("Falta a descrição")).toBeNull();
+  });
+
+  it("com 200 palavras: conta", async () => {
+    adminGetCourses.mockResolvedValue([{ ...completo, descriptionWordCount: 200 }]);
+    renderWithProviders(<AdminCoursesPage />);
+    const c = within(await cartao(completo.title));
+
+    expect(c.getByText("100%")).toBeTruthy();
+    expect(c.queryByText(/Descrição curta/)).toBeNull();
   });
 });
 
