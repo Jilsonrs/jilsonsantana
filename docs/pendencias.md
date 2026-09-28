@@ -16,7 +16,7 @@
 > 5. **Item novo ganha o próximo número livre.** Número nunca se reutiliza, para que "P7" queira
 >    dizer sempre a mesma coisa em qualquer conversa.
 >
-> **Próximo número livre: P27** · Atualizada em 27/09/2026
+> **Próximo número livre: P28** · Atualizada em 27/09/2026
 
 ## A. Agora, em sequência *(nascidas da configuração do Bunny, 25/09/2026)*
 
@@ -37,6 +37,7 @@ resposta rápida entra aqui, com o próximo número livre.*
 | # | O que falta | Quando | Onde registrar |
 |---|---|---|---|
 | P14 | Confirmar os **slugs em inglês** que ainda faltarem. Os endereços `/en/courses`, `/en/course/:slug`, `/en/learning-path/:slug` e `/en/certificate/:publicId` já foram decididos em 14/09 | quando as páginas públicas em inglês forem construídas *(operador, 27/09: "vamos vendo no desenvolvimento")* | `idiomas.md` §2 |
+| P27 | **Avaliação por curso no cartão do admin:** a nota já planejada é **uma por aluno e geral** ("sem disputa por curso", decisão de 23/09). Para o cartão mostrar uma média por curso, a Fase 5 teria que guardar **qual curso o aluno acabou de concluir** quando deu a nota. Guardar ou deixar o cartão sem avaliação? | Fase 5, antes do pedido de depoimento | `implementation-plan.md` → Fase 5 e Bloco A |
 | P5 | **Aula na TV (Chromecast):** com ou sem? Até lá fica **sem**. O controle de acesso continua (só quem recebeu o token do nosso servidor abre o player). A doc não diz se a TV toca com o CDN token e o MediaCage Basic ligados: **testar numa TV com Chromecast** | bloco de vídeo da Fase 3, com o site já tocando vídeo *(adiada pelo operador em 27/09)* | `bunny.md` §3.2 e §6 (decisão 2) |
 | P17 | **Qual curso é o destaque** da home (o primeiro da ordem, ou o marcado com a etiqueta "Destaque") | etapa 3 do C4 | `implementation-plan.md` → Bloco C4 |
 | P18 | O que fazer com os **2 cursos `exemplo-*`, publicados em produção**, que apareceriam na home | etapa 3 do C4 | `implementation-plan.md` → Bloco C4 |

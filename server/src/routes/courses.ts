@@ -130,13 +130,25 @@ router.get("/admin/courses", requireAdmin, async (_req, res) => {
       status: true,
       language: true,
       displayOrder: true,
-      modules: { select: { _count: { select: { lessons: true } } } },
+      thumbnailUrl: true,
+      introVideoId: true,
+      description: true,
+      modules: { select: { status: true, lessons: { select: { status: true } } } },
     },
   });
-  const cards = courses.map(({ modules, ...course }) => ({
+  // O cartão do admin (lista de cursos, 27/09/2026) mostra o PREENCHIMENTO do
+  // curso: capa, vídeo de apresentação, descrição e aulas publicadas. Descrição e
+  // vídeo saem como sim/não — a lista não precisa do texto inteiro.
+  const cards = courses.map(({ modules, introVideoId, description, ...course }) => ({
     ...comIdioma(course),
     moduleCount: modules.length,
-    lessonCount: modules.reduce((sum, m) => sum + m._count.lessons, 0),
+    lessonCount: modules.reduce((sum, m) => sum + m.lessons.length, 0),
+    // "Publicada" é a CADEIA: aula publicada dentro de módulo publicado.
+    publishedLessonCount: modules
+      .filter((m) => m.status === PUBLISHED)
+      .reduce((sum, m) => sum + m.lessons.filter((l) => l.status === PUBLISHED).length, 0),
+    hasIntroVideo: introVideoId !== null,
+    hasDescription: (description ?? "").trim() !== "",
   }));
   res.json(cards);
 });

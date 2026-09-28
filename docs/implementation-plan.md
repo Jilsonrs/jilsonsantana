@@ -1299,6 +1299,41 @@ landmark. Corrigido junto.
   apresentação toca no admin e na página; o vídeo da aula toca na prévia do admin; o `member@`
   assiste à aula e um aluno sem assinatura vê "Esta aula é para assinantes."
 
+### Bloco A — Lista de cursos do admin: o cartão com capa e números  *(27/09/2026 · pedido do operador, modelo Udemy)*
+
+> Hoje a lista mostrava só título, "módulos · aulas" e o status em inglês. O operador pediu o cartão
+> da Udemy: a capa e os números de cada curso, com **placeholder** no que ainda não existe e o número
+> real entrando quando a parte que o produz for construída. Plano aprovado em 27/09.
+> **Decisões dele:** **sem preço** (a escola é por assinatura) · **horas assistidas** no lugar de
+> "Ganhos do mês / Total recebido" · **avaliação só para ele**, nunca no site · **barra de
+> preenchimento com o que falta** no lugar do "Concluir seu curso".
+
+**O mapeamento (Udemy → escola):**
+
+| Na Udemy | Na escola | Quando vira número |
+|---|---|---|
+| Capa | Capa do curso | **agora** |
+| PUBLICADO / RASCUNHO | Publicado · Rascunho · Arquivado | **agora** |
+| Preço | **não entra** | nunca (assinatura) |
+| Ganhos do mês · Total recebido | Horas assistidas (mês · total) | Fase 5 (`LessonEvent`) |
+| Inscrições neste mês · Total de alunos | Alunos que começaram (mês · total) | Fase 5 (`LessonProgress`) |
+| Classificação (estrelas) | Avaliação, só para o operador | Fase 5 (pedido de depoimento com nota) |
+| Concluir seu curso | Preenchimento + o que falta | **agora** |
+| Oportunidade de conteúdo | **não entra** | nunca (pesquisa de mercado da Udemy) |
+
+- [x] **O cartão** *(27/09, no `dev`)*. `GET /api/admin/courses` devolve também a capa, se tem vídeo
+      de apresentação e descrição (sim/não, sem o texto) e as **aulas publicadas na cadeia** (aula
+      publicada em módulo publicado). `AdminCourseCard.tsx`: capa 16:9 (sem capa, "Sem imagem"),
+      status em português, EN, módulos · aulas, os três números como **"—" / "em breve"**, e a barra
+      de **Preenchimento** (`client/src/lib/course-completeness.ts`) com o que falta: capa, vídeo de
+      apresentação, descrição, aula publicada. Estados de carregando, erro e vazio. Testes: 3 de
+      servidor + 10 de tela; mutações (a conta do preenchimento, o status em inglês, a cadeia das
+      aulas publicadas) reprovam. Os textos são propostas do agente, para o operador aprovar.
+- [ ] **Quinto item do preenchimento: o vídeo de cada aula** — entra com a etapa 3 do Bloco U.
+- [ ] **Horas assistidas** e **Alunos** viram número — na Fase 5 (checkboxes lá).
+- [ ] **Avaliação** vira número — na Fase 5; antes, decidir a P27 (`pendencias.md`).
+- **Fora, e não pedido:** busca, ordenação e troca de visualização que a Udemy tem no topo da lista.
+
 ### Bloco I — Escola bilíngue: idioma no conteúdo + dicionário de textos  *(Set 2026 · decisão do operador · spec em `idiomas.md`)*
 
 > **ESTADO EM 23/09/2026 — parte adiantada por outros blocos, checkboxes abaixo seguem valendo:**
@@ -2148,6 +2183,11 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
         O aluno marca se **autoriza aparecer com o nome completo**; **sem essa marcação o texto fica
         só para o operador**, e o servidor recusa publicá-lo (LGPD — a tela esconder o botão não é
         defesa).
+- [ ] **Os números do cartão do admin** (Bloco A, 27/09/2026), que hoje são placeholder: **horas
+      assistidas** (mês e total, dos `LessonEvent`) e **alunos que começaram** o curso (mês e total,
+      do `LessonProgress`). Leitura do admin, **nunca** no site.
+- [ ] **A avaliação no cartão do admin** — só depois de decidir a P27: a nota planejada é uma por
+      aluno e geral, não por curso.
 - **Done when:** "marquei como vista" works, trilha % completion shows, AND events are captured for future analytics.
 
 ## Phase 6 — JilsonAI (lean v1 + suporte)  *(medium risk)*  → ver **JILSONAI.md** (roadmap interno)

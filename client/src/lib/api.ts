@@ -161,6 +161,12 @@ export type AdminCourseCard = {
   displayOrder: number;
   moduleCount: number;
   lessonCount: number;
+  // O PREENCHIMENTO do cartão do admin (27/09/2026). Descrição e vídeo vêm como
+  // sim/não; aulas publicadas contam a cadeia (aula publicada em módulo publicado).
+  thumbnailUrl: string | null;
+  hasIntroVideo: boolean;
+  hasDescription: boolean;
+  publishedLessonCount: number;
 };
 
 export type AdminLesson = {
