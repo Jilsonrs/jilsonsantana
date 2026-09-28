@@ -155,6 +155,20 @@ export const moduleUpdateSchema = moduleCreateSchema.partial().omit({ courseId: 
 export type ModuleCreateInput = z.infer<typeof moduleCreateSchema>;
 export type ModuleUpdateInput = z.infer<typeof moduleUpdateSchema>;
 
+// ── Estrutura do curso (Bloco E, etapa 2) ─────────────────────────────────────
+// A ORDEM INTEIRA de módulos e aulas de um curso, numa gravação só: é o que as
+// setas, o "+" e o arrastar mandam. A aula pode mudar de módulo, mas só dentro do
+// mesmo curso — quem confere é o servidor.
+export const courseStructureSchema = z.object({
+  modulos: z.array(
+    z.object({
+      id: z.number().int().positive(),
+      aulas: z.array(z.number().int().positive()),
+    }),
+  ),
+});
+export type CourseStructureInput = z.infer<typeof courseStructureSchema>;
+
 // ── Lesson ─────────────────────────────────────────────────────────────────--
 export const lessonCreateSchema = z.object({
   moduleId: z.number().int().positive(),

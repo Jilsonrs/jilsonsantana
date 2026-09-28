@@ -7,6 +7,7 @@ import type {
   PlanItemType,
   CourseCreateInput,
   CourseUpdateInput,
+  CourseStructureInput,
   ModuleCreateInput,
   ModuleUpdateInput,
   LessonCreateInput,
@@ -235,6 +236,11 @@ export async function updateCourse(id: number, input: CourseUpdateInput): Promis
 
 export async function deleteCourse(id: number): Promise<void> {
   await client.delete(`/courses/${id}`);
+}
+
+// A ORDEM INTEIRA de módulos e aulas do curso, numa gravação só (Bloco E, etapa 2).
+export async function updateCourseStructure(id: number, input: CourseStructureInput): Promise<void> {
+  await client.put(`/admin/courses/${id}/estrutura`, input);
 }
 
 // O envio do vídeo de apresentação começa no servidor, que cria o vídeo no

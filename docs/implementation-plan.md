@@ -1330,7 +1330,8 @@ landmark. Corrigido junto.
       depois o campo, depois o botão de enviar; os rótulos "URL da thumbnail" e "ID do vídeo
       (Bunny)" passaram a ser **"Imagem do curso"** e **"Vídeo promocional"**.
 - [ ] **Etapa 3 — vídeo das aulas:** primeiro o `include` → `select` de `GET /api/trilhas/:slug` (o
-      de `/courses/:slug` já foi feito na etapa 2); depois `Lesson.bunnyVideoId` +
+      de `/courses/:slug` já foi feito na etapa 2) *(✅ feito em 28/09, no Bloco E etapa 2, parte
+      2a)*; depois `Lesson.bunnyVideoId` +
       `Lesson.bunnyVideoPendingId` (**sem coleção**, e o nome do vídeo no Bunny é **o nome do
       arquivo enviado** — decisões do operador de 27/09), o envio
       **com a mesma limpeza da etapa 2** (reenviar apaga o incompleto; terminar apaga o substituído)
@@ -1498,7 +1499,24 @@ cada campo, a regra do ✓, 160 caracteres nas três listas e o Visualizar esper
       `descriptionWordCount` (no lugar do sim/não), contado pelo `contarPalavras` do `core` — o
       mesmo do ✓ —, e o que falta diz "Descrição curta (menos de 200 palavras)".
 
-**Etapa 2 — o Conteúdo (junto com a etapa 3 do Bloco U, o vídeo das aulas):**
+**Etapa 2 — o Conteúdo (junto com a etapa 3 do Bloco U, o vídeo das aulas):** *plano aprovado em
+28/09/2026, em 5 partes (2a–2e), um commit cada; o operador pediu para fazer tudo e revisar no
+fim. Respostas dele no mesmo dia: **dnd-kit liberado** · vídeo das aulas **testado no ar** ·
+arquivos numa **Storage Zone própria, sem CDN**, entregues só pelo servidor · **quiz em etapa
+própria**.*
+- [x] **2a — preparação** *(28/09, no `dev`)*. A lista de aulas (328 linhas) virou três arquivos em
+      `components/admin/course-content/` (`ModuleLessonTree`, `ModuleCard`, `LessonRow`). **Uma
+      rota só para a ordem:** `PUT /api/admin/courses/:id/estrutura` recebe a lista inteira
+      (`{ modulos: [{ id, aulas }] }`) e grava numa transação; a aula pode mudar de módulo **dentro
+      do curso**, e a lista tem que ser exatamente a do curso (aula ou módulo de outro curso,
+      faltando ou repetido → 400, nada muda). As setas passaram a usar essa rota: antes trocavam
+      dois números em duas gravações, e itens empatados no 0 não saíam do lugar. A ordem nova sai
+      de `lib/course-structure.ts` (função pura). Setas e lixeiras ganharam nome para leitor de
+      tela, e o status de módulo e aula aparece em português. **Trava da Fase 3:** a árvore da
+      trilha (`/trilhas/:slug` e `/mine/:id`) trocou `include` por `select` explícito, com teste
+      dos campos. Testes: 9 de servidor (ordem) + 1 (campos da trilha), 6 da função, 5 de tela.
+      **Mutação:** aula de outro curso aceita, repetição aceita, trilha de volta ao `include`,
+      a direção ignorada e a seta mandando lista parcial → todas reprovam. Revertido.
 - [ ] **"+" entre dois itens** (passar o mouse entre eles mostra o "+") para inserir aula ou
       módulo ali, também pelo teclado.
 - [ ] **Arrastar para reorganizar** aulas e módulos, **mantendo as setas** para o teclado.

@@ -12,7 +12,7 @@ import { CompletenessBar } from "@/components/admin/CompletenessBar";
 import { camposDoCurso, preenchimentoDoCurso } from "@/lib/course-completeness";
 import { HighlightsField } from "@/components/admin/HighlightsField";
 import { FaqField } from "@/components/admin/FaqField";
-import { ModuleLessonTree } from "@/components/admin/ModuleLessonTree";
+import { ModuleLessonTree } from "@/components/admin/course-content/ModuleLessonTree";
 import { useCursoDoEditor } from "./CourseEditorLayout";
 import { StepForm } from "./StepForm";
 
