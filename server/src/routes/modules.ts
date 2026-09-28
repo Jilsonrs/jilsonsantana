@@ -3,6 +3,7 @@ import { moduleCreateSchema, moduleUpdateSchema } from "@jilson/core";
 import { prisma } from "../lib/prisma.js";
 import { requireAdmin } from "../middleware/auth.js";
 import { validate, parseId } from "../lib/http.js";
+import { limparModuloNoBunny } from "../lib/limpeza-no-bunny.js";
 
 const router = Router();
 
@@ -41,6 +42,11 @@ router.delete("/modules/:id", requireAdmin, async (req, res) => {
   if (id === null) return;
   if (!(await prisma.module.findUnique({ where: { id } }))) {
     res.status(404).json({ error: "NotFound" });
+    return;
+  }
+  // O Bunny primeiro: o que existe lá não pode ficar perdido (operador, 28/09/2026).
+  if (!(await limparModuloNoBunny(id))) {
+    res.status(502).json({ error: "BunnyNaoApagou" });
     return;
   }
   await prisma.module.delete({ where: { id } });

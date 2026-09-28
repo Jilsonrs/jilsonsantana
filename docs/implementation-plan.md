@@ -1616,19 +1616,29 @@ própria**.*
         limpeza pode apagar o vídeo em uso. Correção proposta: `updateMany` condicional
         (`where: { id, bunnyVideoPendingId }`) e apagar só se `count === 1`, com teste que
         intercala os dois pedidos. *O vídeo de apresentação (`admin-media.ts`) tem a mesma forma.*
-  - [ ] **Excluir aula, módulo ou curso não apaga no Bunny** o vídeo, o envio pendente e os
-        arquivos (a cascata do banco perde o caminho). Não há exposição (zona sem CDN, biblioteca
-        com token), mas o pago fica guardado sem como limpar. Opções para o operador: recusar
-        (409) enquanto houver vídeo/arquivo, ou apagar no Bunny antes do registro. *(É o achado
-        da 2e, abaixo, estendido ao vídeo.)*
+  - [x] **Excluir aula, módulo ou curso não apaga no Bunny** o vídeo, o envio pendente e os
+        arquivos (a cascata do banco perde o caminho). **FEITO em 28/09 — decisão do operador:**
+        *"deveria excluir o vídeo, já que ele ficaria perdido no Bunny"*. `server/src/lib/
+        limpeza-no-bunny.ts`: excluir **aula** apaga no Bunny os arquivos, o envio pela metade e o
+        vídeo; **módulo** faz isso em cada aula; **curso** também, e mais o vídeo de apresentação
+        (e o envio pela metade dele). **O Bunny primeiro, o registro depois:** se o Bunny recusar,
+        a exclusão para (502 `BunnyNaoApagou`) e a tela avisa; cada coisa apagada lá sai do banco
+        na hora, então tentar de novo continua de onde parou. Sem o Bunny configurado, aula com
+        vídeo ou arquivo não se exclui (não há como apagar lá). *Não confundir com a deleção de
+        vídeo de curso ARQUIVADO, proposta e rejeitada em Ago 2026: arquivar continua não apagando
+        nada; isto é só a EXCLUSÃO.* Testes: 9 de servidor, 4 de tela. **Mutação:** excluir sem
+        limpar (aula e módulo), excluir com o Bunny recusando, esquecer o envio pela metade, não
+        tirar do banco o que já foi apagado, esquecer a apresentação e a tela sem aviso → todas
+        reprovam. Revertido.
   - [ ] **Testes de "não vaza" sem as trilhas do aluno:** o do texto da aula não consulta
         `/api/trilhas/:slug` nem `/mine/:id`, e o do vídeo não consulta `/mine/:id`. O código
         protege (`select` explícito), mas nenhum teste reprova se voltar o `include`.
   - [ ] **Nome do arquivo para o download** (etapa 4): na rota de entrega, usar
         `res.attachment()`/`res.download()` (nunca interpolar no `Content-Disposition`) e tirar do
         nome os caracteres de direção de texto (U+202E e parecidos), que disfarçam a extensão.
-- [ ] **Excluir a aula (ou o curso) não apaga os arquivos dela no Bunny** *(achado da 2e,
-      registrado e não feito: fora do plano)*. O registro some pela cascata do banco; o arquivo
+- [x] **Excluir a aula (ou o curso) não apaga os arquivos dela no Bunny** *(achado da 2e;
+      **feito em 28/09** junto com o vídeo, decisão do operador — ver a revisão de segurança,
+      acima)*. O registro some pela cascata do banco; o arquivo
       fica na zona, que não é pública, então não vaza — mas ocupa espaço (US$ 0,02/GB/mês). Fazer
       junto com a entrega ao aluno (etapa 4 do Bloco U), ou antes, se o operador pedir.
 - [x] **2d** — Vídeo **sem limite** de tamanho ou resolução no site; **um por vez**; **sem reuso**

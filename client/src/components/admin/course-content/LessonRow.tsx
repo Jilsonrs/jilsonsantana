@@ -11,6 +11,7 @@ import { CLASSE_DO_SELECT_PEQUENO } from "./ModuleCard";
 import { LessonTextPanel } from "./LessonTextPanel";
 import { LessonVideoPanel } from "./LessonVideoPanel";
 import { LessonFilesPanel } from "./LessonFilesPanel";
+import { mensagemAoExcluir } from "@/lib/course-form";
 import { AlcaDeArraste, useArrastavel } from "./arrastar";
 
 const ROTULO_DO_TIPO: Record<LessonKind, string> = { VIDEO: "Vídeo", TEXT: "Texto" };
@@ -117,6 +118,11 @@ export function LessonRow({
         ) : (
           <LessonVideoPanel lesson={lesson} onChanged={onChanged} />
         ))}
+      {del.isError && (
+        <p role="alert" className="w-full text-sm font-medium text-destructive">
+          {mensagemAoExcluir(del.error)}
+        </p>
+      )}
       {aberto === "arquivos" && <LessonFilesPanel lesson={lesson} />}
     </div>
   );

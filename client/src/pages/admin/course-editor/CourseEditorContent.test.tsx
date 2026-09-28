@@ -10,7 +10,11 @@ const updateCourseStructure = vi.fn();
 const insertLesson = vi.fn();
 const insertModule = vi.fn();
 const updateLesson = vi.fn();
+const deleteLesson = vi.fn();
+const deleteModule = vi.fn();
 vi.mock("@/lib/api", () => ({
+  deleteLesson: (...args: unknown[]) => deleteLesson(...args),
+  deleteModule: (...args: unknown[]) => deleteModule(...args),
   adminGetCourse: (...args: unknown[]) => adminGetCourse(...args),
   updateCourseStructure: (...args: unknown[]) => updateCourseStructure(...args),
   insertLesson: (...args: unknown[]) => insertLesson(...args),
@@ -296,5 +300,33 @@ describe("Conteúdo — arrastar", () => {
     await quadro();
 
     expect(updateCourseStructure).not.toHaveBeenCalled();
+  });
+});
+
+// Excluir apaga no Bunny antes (decisão do operador, 28/09/2026): se o Bunny
+// recusar, a aula ou o módulo fica, e a tela diz o porquê.
+describe("Conteúdo — quando excluir falha", () => {
+  const RECUSA = { response: { status: 502, data: { error: "BunnyNaoApagou" } } };
+  const FRASE = "Não foi possível excluir: o Bunny não apagou o vídeo ou os arquivos. Tente de novo.";
+
+  beforeEach(() => {
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+  });
+
+  it("aula: o aviso aparece", async () => {
+    deleteLesson.mockReset().mockRejectedValue(RECUSA);
+    await abrir();
+    fireEvent.click(screen.getByRole("button", { name: "Excluir a aula Abertura" }));
+
+    expect((await screen.findByRole("alert")).textContent).toBe(FRASE);
+    expect(deleteLesson).toHaveBeenCalledWith(11);
+  });
+
+  it("módulo: o aviso aparece", async () => {
+    deleteModule.mockReset().mockRejectedValue(RECUSA);
+    await abrir();
+    fireEvent.click(screen.getByRole("button", { name: "Excluir o módulo Automação" }));
+
+    expect((await screen.findByRole("alert")).textContent).toBe(FRASE);
   });
 });

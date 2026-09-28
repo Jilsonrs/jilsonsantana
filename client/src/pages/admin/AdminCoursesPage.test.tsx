@@ -71,6 +71,28 @@ describe("AdminCoursesPage", () => {
   });
 });
 
+// Excluir apaga no Bunny antes (decisão do operador, 28/09/2026): se o Bunny
+// recusar, o curso fica, e a tela diz o porquê.
+describe("AdminCoursesPage — quando excluir falha", () => {
+  it("o Bunny recusou: diz que o vídeo ou os arquivos não foram apagados", async () => {
+    deleteCourse.mockRejectedValue({ response: { status: 502, data: { error: "BunnyNaoApagou" } } });
+    renderWithProviders(<AdminCoursesPage />);
+    fireEvent.click(await screen.findByRole("button", { name: "Excluir" }));
+
+    expect((await screen.findByRole("alert")).textContent).toBe(
+      "Não foi possível excluir: o Bunny não apagou o vídeo ou os arquivos. Tente de novo.",
+    );
+  });
+
+  it("outra falha: aviso geral", async () => {
+    deleteCourse.mockRejectedValue(new Error("rede"));
+    renderWithProviders(<AdminCoursesPage />);
+    fireEvent.click(await screen.findByRole("button", { name: "Excluir" }));
+
+    expect((await screen.findByRole("alert")).textContent).toBe("Não foi possível excluir. Tente de novo.");
+  });
+});
+
 describe("AdminCoursesPage — idioma", () => {
   it("curso em inglês ganha a etiqueta EN; em português, não", async () => {
     adminGetCourses.mockResolvedValue([

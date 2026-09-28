@@ -3,6 +3,7 @@ import { ContentStatus, LessonKind, lessonCreateSchema, lessonUpdateSchema } fro
 import { prisma } from "../lib/prisma.js";
 import { requireAdmin } from "../middleware/auth.js";
 import { validate, parseId } from "../lib/http.js";
+import { limparAulaNoBunny } from "../lib/limpeza-no-bunny.js";
 
 const router = Router();
 const PUBLISHED = ContentStatus.PUBLISHED;
@@ -90,6 +91,11 @@ router.delete("/lessons/:id", requireAdmin, async (req, res) => {
   if (id === null) return;
   if (!(await prisma.lesson.findUnique({ where: { id } }))) {
     res.status(404).json({ error: "NotFound" });
+    return;
+  }
+  // O Bunny primeiro: o que existe lá não pode ficar perdido (operador, 28/09/2026).
+  if (!(await limparAulaNoBunny(id))) {
+    res.status(502).json({ error: "BunnyNaoApagou" });
     return;
   }
   await prisma.lesson.delete({ where: { id } });

@@ -6,6 +6,7 @@ import { requireAdmin } from "../middleware/auth.js";
 import { validate, parseId } from "../lib/http.js";
 import { paraBanco, doBanco, comIdioma, idiomaDaLista } from "../lib/language.js";
 import { enderecoDoPlayer } from "../lib/bunny-stream.js";
+import { limparCursoNoBunny } from "../lib/limpeza-no-bunny.js";
 
 const router = Router();
 const PUBLISHED = ContentStatus.PUBLISHED;
@@ -265,6 +266,11 @@ router.delete("/courses/:id", requireAdmin, async (req, res) => {
   if (id === null) return;
   if (!(await prisma.course.findUnique({ where: { id } }))) {
     res.status(404).json({ error: "NotFound" });
+    return;
+  }
+  // O Bunny primeiro: o que existe lá não pode ficar perdido (operador, 28/09/2026).
+  if (!(await limparCursoNoBunny(id))) {
+    res.status(502).json({ error: "BunnyNaoApagou" });
     return;
   }
   await prisma.course.delete({ where: { id } });

@@ -188,6 +188,11 @@ ar, decisão de 27/09. O mesmo vale para uma biblioteca de apresentação de dev
 
   Na apresentação, isso já está no código (Bloco U, etapa 2); nas aulas, entra na etapa 3.
   *Não confundir com apagar vídeo de curso arquivado, que continua fora (Ago 2026).*
+- **EXCLUIR apaga no Bunny também** *(decisão do operador, 28/09/2026: "deveria excluir o vídeo,
+  já que ele ficaria perdido no Bunny")*: excluir aula, módulo ou curso apaga lá o vídeo da aula,
+  o envio pela metade e os arquivos para baixar; o curso, também o vídeo de apresentação. O Bunny
+  primeiro: se ele recusar, nada é excluído, e o operador tenta de novo. **Arquivar** continua não
+  apagando nada (é a decisão de Ago 2026, acima).
 - **Prévia grátis** *(decisão do operador, 27/09/2026, "como na Udemy")*: o operador liga e desliga
   por aula quais aulas tocam para **qualquer visitante, sem login e sem assinatura**; ele pensa em
   2, 3 ou 5 aulas de uns 10 minutos por curso. Elas continuam na biblioteca de aulas, com token, e

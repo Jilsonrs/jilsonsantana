@@ -13,6 +13,7 @@ import { InsertPoint, type OpcaoDeInsercao } from "./InsertPoint";
 import { AlcaDeArraste, useArrastavel } from "./arrastar";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { idDoArraste } from "@/lib/course-structure";
+import { mensagemAoExcluir } from "@/lib/course-form";
 
 // O que o "+" entre duas aulas oferece (operador, 27–28/09/2026). O quiz tem
 // etapa própria: por enquanto, EM BREVE.
@@ -108,7 +109,12 @@ export function ModuleCard({
           <Trash2 className="h-4 w-4" />
         </Button>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-2">
+        {del.isError && (
+          <p role="alert" className="w-full text-sm font-medium text-destructive">
+            {mensagemAoExcluir(del.error)}
+          </p>
+        )}
         <LessonList moduleId={module.id} lessons={module.lessons} ocupado={ocupado} onMoverAula={onMoverAula} onChanged={onChanged} />
       </CardContent>
     </Card>

@@ -4,6 +4,7 @@ import * as api from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { PageContainer, PageHeader } from "@/components/layout/PageLayout";
 import { AdminCourseCard } from "@/components/admin/AdminCourseCard";
+import { mensagemAoExcluir } from "@/lib/course-form";
 
 export function AdminCoursesPage() {
   const queryClient = useQueryClient();
@@ -32,6 +33,11 @@ export function AdminCoursesPage() {
       {isError && (
         <p role="alert" className="mt-8 text-sm font-medium text-destructive">
           Não foi possível carregar os cursos.
+        </p>
+      )}
+      {del.isError && (
+        <p role="alert" className="mt-8 text-sm font-medium text-destructive">
+          {mensagemAoExcluir(del.error)}
         </p>
       )}
       {courses && courses.length === 0 && (
