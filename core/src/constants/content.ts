@@ -75,3 +75,16 @@ export const LIMITES_DO_CURSO = {
   slug: LIMITE_DO_SLUG,
   description: 5000,
 } as const;
+
+// Abaixo disto a descrição conta como "curta" no que falta do curso, SEM impedir
+// o salvar (decisão do operador, 28/09/2026 — 200 é o mínimo da Udemy).
+export const MINIMO_DE_PALAVRAS_DA_DESCRICAO = 200;
+
+/**
+ * Quantas palavras tem um texto. A descrição é Markdown: os marcadores (`-`,
+ * `**`, `1.`) não contam, porque só conta o pedaço que tem pelo menos uma letra.
+ * Um lugar só: o servidor (cartão da lista) e a tela (o ✓ do editor) contam igual.
+ */
+export function contarPalavras(texto: string | null | undefined): number {
+  return (texto ?? "").split(/\s+/).filter((pedaco) => /\p{L}/u.test(pedaco)).length;
+}

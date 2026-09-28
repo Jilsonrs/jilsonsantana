@@ -6,8 +6,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { PageSection } from "@/components/layout/PageLayout";
 import { Field, idDoContador } from "./Field";
 import { MarkdownField } from "./MarkdownField";
+import { CourseLanguageLevelFields } from "./CourseLanguageLevelFields";
 
-export function CourseBasicsSection() {
+// `idiomaTravado`: o curso gravado já não é rascunho (ver CourseLanguageLevelFields).
+export function CourseBasicsSection({ idiomaTravado = false }: { idiomaTravado?: boolean }) {
   const { register, formState, control } = useFormContext<CourseFormValues>();
   const [title, subtitle, slug, description] = useWatch({
     control,
@@ -75,6 +77,7 @@ export function CourseBasicsSection() {
               describedBy={idDoContador("description")}
             />
           </Field>
+          <CourseLanguageLevelFields idiomaTravado={idiomaTravado} />
         </CardContent>
       </Card>
     </PageSection>

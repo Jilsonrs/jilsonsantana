@@ -322,6 +322,10 @@ não código espalhado: uma tela nova declara seus níveis e o cromo se monta so
   separadores finos. Nativo por três motivos — sem JavaScript, acessível de graça, e o conteúdo
   existe no HTML mesmo fechado.
 - Item ativo: texto `--primary` + borda esquerda azul de 2px.
+- **Item de tela que ainda não existe:** texto com a etiqueta **EM BREVE**, nunca link — a mesma
+  trava do rail. **Item completo:** ✓ à direita, com "completo" para leitor de tela. Os dois
+  nasceram no editor do curso (Bloco E, 28/09/2026: *"cada um com ✓ quando completo"*, decisão
+  do operador), e valem para qualquer seção que os declare no mapa.
 
 ### Nível 3 — Abas horizontais (topo do conteúdo)
 

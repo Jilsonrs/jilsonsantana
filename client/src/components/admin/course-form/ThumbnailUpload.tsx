@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useFormContext } from "react-hook-form";
 import * as api from "@/lib/api";
 import type { CourseFormValues } from "@/lib/course-form";
@@ -14,6 +14,7 @@ const LIMITE = 5 * 1024 * 1024;
 /** O botão "Enviar imagem": manda a capa para o Bunny e põe o endereço no campo. */
 export function ThumbnailUpload({ courseId }: { courseId: number }) {
   const { setValue } = useFormContext<CourseFormValues>();
+  const queryClient = useQueryClient();
   const entrada = useRef<HTMLInputElement>(null);
 
   const envio = useMutation({
@@ -23,9 +24,13 @@ export function ThumbnailUpload({ courseId }: { courseId: number }) {
       }
       return api.uploadCourseThumbnail(courseId, arquivo);
     },
-    // O servidor já gravou no curso. Aqui só o campo acompanha — sem recarregar
-    // o curso, que apagaria o que ainda não foi salvo nos outros campos.
-    onSuccess: ({ thumbnailUrl }) => setValue("thumbnailUrl", thumbnailUrl, { shouldDirty: true }),
+    // O servidor já gravou no curso: o campo acompanha, e o curso recarrega para
+    // o ✓ do passo ver a capa. Recarregar não reinicia o formulário do editor,
+    // então o que ainda não foi salvo nos outros campos continua lá.
+    onSuccess: ({ thumbnailUrl }) => {
+      setValue("thumbnailUrl", thumbnailUrl, { shouldDirty: true });
+      queryClient.invalidateQueries({ queryKey: ["admin-course", courseId] });
+    },
   });
 
   return (

@@ -8,8 +8,8 @@ import type { CourseFormValues } from "@/lib/course-form";
 // "Diferenciais do curso" icon cards (Course.highlights[]) — the only array-
 // of-OBJECT course field, so unlike learnTags/requirements/personas (plain
 // string lines) this genuinely needs RHF's useFieldArray. Reads `control` +
-// `register` off the form's FormProvider context (set up by
-// AdminCourseFormPage) instead of prop-drilling them in.
+// `register` off the form's FormProvider context (set up by the course
+// editor, `course-editor/CourseEditorLayout.tsx`) instead of prop-drilling them in.
 export function HighlightsField() {
   const { control, register } = useFormContext<CourseFormValues>();
   const { fields, append, remove } = useFieldArray({ control, name: "highlights" });

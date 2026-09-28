@@ -124,8 +124,9 @@
 > **Publicado em 27/09, à noite (`main` = `dbb4c5e`):** o **Bloco A** (o cartão do curso na lista
 > do admin, com capa, status em português e a barra de Preenchimento) e o **Bloco B** (limite de
 > caracteres com contador nos campos do curso, e a descrição com negrito, itálico e listas, pelo
-> `react-markdown`). **No `dev`, ainda não publicado (28/09):** só documentos e o texto do
-> `server/.env.example` — nada que mude o site.
+> `react-markdown`). **Publicado em 28/09 (`main` = `e42b152`):** os documentos do Bloco E.
+> **No `dev`, ainda não publicado (28/09):** o **Bloco E, etapa 1, parte 1a** — o editor do curso
+> em 7 passos no nível 2 (ver Bloco E).
 > **Decidido em 27–28/09, ainda não construído:** o **Bloco E** (o editor do curso em 7 passos, a
 > partir dos prints da Udemy e de 5 plataformas pesquisadas), a mudança das telas do aluno para
 > `/aluno/*`, o conteúdo de cada seção planejada do admin (e a nova **Comunicação**) e as páginas
@@ -1410,23 +1411,48 @@ landmark. Corrigido junto.
 > O operador mandou os 29 prints do admin de curso da Udemy; o agente cruzou com a escola e
 > pesquisou cinco plataformas, e o operador respondeu item a item. **Cada linha abaixo é decisão
 > dele.** O porquê da organização e o que ficou fora estão em `courses.md` → *O admin do curso*.
-> Nada aqui foi construído ainda. **Cada etapa passa por plano aprovado antes do código.**
+> **Cada etapa passa por plano aprovado antes do código.**
 
-**Etapa 1 — o menu do curso em passos (agora, sem depender de nada):**
-- [ ] O formulário único vira **um menu no nível 2** (coluna do meio) com **7 passos em
-      ordem de preenchimento**, cada um com ✓ quando completo: Informações básicas · Para
-      quem é · Conteúdo · Legendas · Página do curso · Mensagens · Publicar. **Cada passo salva a
-      sua parte.** Topo: voltar, título, status, duração publicada, **Visualizar**.
-      *Depende do nível 2 existir (Bloco S2); se ainda não existir, esta etapa o constrói.*
+**Etapa 1 — o menu do curso em passos (agora, sem depender de nada):** *plano aprovado em
+28/09/2026, em 5 partes (1a–1e), um commit cada. Respostas do operador no mesmo dia: onde fica
+cada campo, a regra do ✓, 160 caracteres nas três listas e o Visualizar esperando o C5 — em
+`courses.md` → O admin do curso.*
+- [x] **1a — os passos existem** *(28/09, no `dev`)*. O formulário único virou **um menu no nível
+      2** com **7 passos em ordem de preenchimento**, cada um com ✓ quando completo: Informações
+      básicas · Para quem é · Conteúdo · Legendas · Página do curso · Mensagens · Publicar.
+      **Cada passo salva a sua parte.** Topo: voltar, título e status em português.
+      Endereços: `/admin/cursos/novo` (só o passo 1; "Criar curso" grava e abre o editor) e
+      `/admin/cursos/:id/{basico,para-quem-e,conteudo,pagina,publicar}`; `/admin/cursos/:id`
+      leva ao passo 1. Legendas e Mensagens são texto **EM BREVE** (etapas 3 e 4).
+      Como funciona: o mapa de navegação ganhou a seção "Editar curso" (`/admin/cursos/:id`,
+      fora do menu lateral; o `:id` só casa com número), e o nível 2 ganhou item planejado e
+      o ✓. Os passos, os campos de cada um e a regra do ✓ moram em
+      `client/src/lib/course-steps.ts`; o ✓ lê o curso **gravado**, na mesma consulta do
+      editor (`lib/nav-marks.ts`). O formulário nasce uma vez por curso: o que foi digitado e
+      não salvo continua ao trocar de passo, e salvar um passo manda só os campos dele. A seção
+      "Organização" se dividiu (idioma e nível → Básicas; camadas → Página; status e ordem →
+      Publicar), e o status aparece em português. `AdminCourseFormPage` saiu; os testes dele
+      foram para `pages/admin/course-editor/` sem perder caso. Testes: 22 do editor, 12 de
+      mídia, 5 de Novo curso, 10 da regra do ✓, 4 do mapa. **Mutação:** passo mandando campo
+      de outro, salvar sem recarregar o curso, Legendas virando link, `:id` aceitando texto, as
+      200 palavras, o módulo em rascunho, a capa sem recarregar, o idioma sem trava e o
+      formulário se reiniciando a cada recarga → todas reprovam. Revertido. Textos aprovados pelo
+      operador em 28/09/2026.
+      **Ficam para depois:** a **duração publicada** no topo (entra com o vídeo das aulas, Bloco
+      U etapa 3: hoje a aula não tem duração) e o **Visualizar** (espera o C5, abaixo).
 - [ ] **Publicar** reúne o que falta (a barra de Preenchimento, agora também no editor),
       status, ordem no catálogo e **um lugar para copiar o link do curso**.
 - [ ] **Visualizar** mostra a página do curso como o aluno vê, **inclusive em rascunho, só para o
-      admin** — a rota pública continua devolvendo só o publicado.
+      admin** — a rota pública continua devolvendo só o publicado. **Espera o C5** *(operador,
+      28/09/2026)*: a página de curso de hoje é provisória e nem mostra a descrição, então a
+      prévia mostraria outra página e seria jogada fora.
 - [ ] **Dicas embaixo dos campos**: o agente escreve o rascunho, o operador aprova.
 - [ ] **"Todos os níveis"** no Nível: valor novo no enum `Level`, com migration.
-- [ ] **As três listas viram um campo por item**, com contador, lixeira e ordem; **"O que vai
-      aprender" com até 160 caracteres por item**.
-- [ ] Descrição curta conta como **"falta"** no Preenchimento, sem travar.
+- [ ] **As três listas viram um campo por item**, com contador, lixeira e ordem; **as três com
+      até 160 caracteres por item** *(era só "O que vai aprender"; os outros dois, operador em
+      28/09/2026)*.
+- [ ] Descrição curta conta como **"falta"** no Preenchimento, sem travar. **Curta = menos de 200
+      palavras** *(operador, 28/09/2026)*; a contagem já existe (`contarPalavras`, em `core/`).
 
 **Etapa 2 — o Conteúdo (junto com a etapa 3 do Bloco U, o vídeo das aulas):**
 - [ ] **"+" entre dois itens** (passar o mouse entre eles mostra o "+") para inserir aula ou
@@ -1802,6 +1828,9 @@ landmark. Corrigido junto.
   que vê quem está logado com a assinatura cancelada.
   **Curso apagado que foi substituído por outro** (ex.: o temporário em inglês) leva o endereço
   antigo para o novo, para não virar link quebrado (mesma família do *slug permanente*).
+  **Junto com a página de curso nova entra o Visualizar do editor do curso** (Bloco E, etapa 1):
+  a página como o aluno vê, **inclusive em rascunho, só para o admin**, sem abrir a rota pública
+  para o que não está publicado *(operador, 28/09/2026: esperar a página definitiva)*.
 
 #### Páginas públicas que faltam *(decididas na sessão da home, set/2026; trazidas do `design-lab` em 28/09)*
 

@@ -144,17 +144,23 @@ servidores (§5); o React responde em `localhost:5173`, a home pública em `loca
 |---|---|
 | `/admin` | `client/src/pages/AdminPage.tsx` |
 | `/admin/cursos` | `client/src/pages/admin/AdminCoursesPage.tsx` + **o cartão de cada curso**, `client/src/components/admin/AdminCourseCard.tsx` (27/09) |
-| `/admin/cursos/novo` · `/admin/cursos/:id` | `client/src/pages/admin/AdminCourseFormPage.tsx` + as seções em `client/src/components/admin/course-form/` (divididas em 24/09, com as suas classes). **Novos em 27/09:** `CourseMediaSection.tsx` com `ThumbnailUpload.tsx`, `IntroVideoUpload.tsx` e `IntroVideoPreview.tsx`; `MarkdownField.tsx` (a descrição com abas e botões); `Field.tsx` ganhou o contador. |
-
-> **⚠️ O formulário de curso vai virar 7 PASSOS** *(decisão do operador, 28/09/2026 — plano,
-> Fase 3, **Bloco E**)*: um menu no **nível 2** (Informações básicas · Para quem é · Conteúdo ·
-> Legendas · Página do curso · Mensagens · Publicar), cada passo com ✓ quando completo. **As
-> seções de `course-form/` sobrevivem** (viram o conteúdo de cada passo); **a página comprida que
-> as empilha, não**. Formate as seções à vontade; **não invista no arranjo da página inteira**.
+| `/admin/cursos/novo` | `client/src/pages/admin/course-editor/NewCoursePage.tsx` — só o passo 1; "Criar curso" abre o editor |
+| `/admin/cursos/:id/basico` · `/para-quem-e` · `/conteudo` · `/pagina` · `/publicar` | **O editor do curso em 7 passos** (28/09): `course-editor/CourseEditorLayout.tsx` (o topo, comum a todos), `course-editor/steps.tsx` (o que cada passo mostra) e `course-editor/StepForm.tsx` (o botão Salvar de cada passo). O conteúdo de cada passo são as seções de `client/src/components/admin/course-form/`. |
 | `/admin/site` → leva a `/admin/site/textos` | (só redireciona) |
 | `/admin/site/textos` | `client/src/pages/admin/AdminSiteTextPage.tsx` + `client/src/components/admin/SiteTextField.tsx` — **uma aba por página** ("Toda página", "Home"; página nova ganha aba sozinha). Com busca, as abas somem e o resultado vem de todas as páginas. As abas têm `aria-pressed` e teste. |
 | `/admin/site/depoimentos` | `client/src/pages/admin/AdminTestimonialsPage.tsx` |
 | `/admin/site/faq` | `client/src/pages/admin/AdminFaqPage.tsx` |
+
+> **O editor do curso em 7 passos** *(Bloco E, etapa 1, 28/09/2026)*: os passos ficam no **nível
+> 2** (a coluna do meio). Legendas e Mensagens aparecem como **EM BREVE**, e cada passo completo
+> ganha um **✓**, os dois desenhados em `client/src/components/nav/SecondaryNavItem.tsx`. **Formate
+> as seções à vontade.** A antiga seção "Organização" se dividiu:
+> - idioma e nível foram para `CourseLanguageLevelFields.tsx`, dentro de Informações básicas;
+> - as camadas foram para `CourseLayersSection.tsx`, no passo Página do curso;
+> - status e ordem foram para `CoursePublishSection.tsx`, no passo Publicar.
+>
+> **Não mexa sem falar com o operador:** o ✓ tem um "completo" escondido para leitor de tela, e
+> EM BREVE é texto, nunca link. **Os dois têm teste.**
 
 > **Depoimentos e Perguntas frequentes são a MESMA tela** com nomes diferentes *(Bloco C3,
 > 23/09/2026)*. A marcação mora em três componentes compartilhados — formatar um formata os dois:
@@ -203,13 +209,13 @@ exceto o item 4, que é página pública.
    você desenhou fica. **Em 24/09 o Claude o ligou ao idioma do app:** virou botão (troca o
    idioma sem sair da tela), com `aria-pressed` no idioma atual. As classes que você escreveu
    continuam as mesmas.
-6. **Campo Idioma no formulário de curso** (`client/src/components/admin/course-form/CourseOrganizationSection.tsx`)
+6. **Campo Idioma no formulário de curso** (hoje em `client/src/components/admin/course-form/CourseLanguageLevelFields.tsx`, no passo Informações básicas; era `CourseOrganizationSection.tsx`, que se dividiu em 28/09)
    — novo em 24/09, na seção Organização. A grade tinha 3 colunas (Nível, Status, Ordem) e agora
    tem 4 itens, então o quarto desce de linha: o arranjo é seu. Travado (curso publicado), o
    idioma aparece como texto com o aviso "O idioma trava depois que o curso é publicado." — mude
    o visual, não o texto (é do operador). Também a etiqueta **"EN"** na lista de cursos
-   (`AdminCoursesPage.tsx`) e o **aviso de erro ao salvar**, logo acima do botão "Salvar dados do
-   curso" (cru: uma linha vermelha).
+   (`AdminCoursesPage.tsx`) e o **aviso de erro ao salvar**, logo acima do botão "Salvar" de cada passo (cru: uma linha
+   vermelha; em `course-editor/StepForm.tsx` desde 28/09).
 7. ~~**Menu de conta**~~ — **acabamento feito em 24/09.** Na revisão, o "abrir ao passar o mouse"
    que você pôs ficou, mas **só para mouse**: no celular o toque dispara "entrar" e "clicar" em
    sequência, e o painel abria e fechava na hora; no computador, passar e clicar também fechava.
@@ -399,9 +405,10 @@ Sem essa separação, a décima tela tem dez paletas paralelas e ninguém sabe q
     conteúdo (`AppRail.tsx`).
   - **Nível 2 — a coluna secundária clara:** **construído** (`SecondaryNav.tsx`, montado no
     `Layout`). Aparece sozinha quando a seção declara `filhos` — hoje "Minha conta" tem 6, **"Site"
-    tem 3** (Textos · Depoimentos · Perguntas frequentes), e "JilsonAI Admin" já tem os dele
-    declarados esperando a tela nascer. **Vai ser usado pelo editor do curso (Bloco E) e pela tela
-    da aula**, onde a lista de módulos e aulas fica no nível 2 (decisão do operador, 28/09).
+    tem 3** (Textos · Depoimentos · Perguntas frequentes), **o editor do curso tem os 7 passos**
+    (28/09), e "JilsonAI Admin" já tem os dele declarados esperando a tela nascer. **Vai ser usado
+    também pela tela da aula**, onde a lista de módulos e aulas fica no nível 2 (decisão do
+    operador, 28/09).
   - **Nível 3 — as abas horizontais:** **NÃO construído.** A função `abasDaRota` existe e tem
     teste, mas **nenhum componente a renderiza ainda**. "Cursos Admin" já declara três abas
     (Publicados · Rascunhos · Arquivados) que hoje não aparecem em lugar nenhum.

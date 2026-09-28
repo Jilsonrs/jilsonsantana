@@ -421,6 +421,24 @@ e quase sempre **preço, alunos e certificado**. A escola seguiu o padrão, mas 
 ordem **de preenchimento**: *"ir completando; quando chegar no final está pronto para publicar"*.
 Daí os 7 passos do *Bloco E* do plano, no nível 2 da navegação.
 
+**O que cada passo tem, e quando ganha o ✓** *(decisões do operador, 28/09/2026)*:
+
+| Passo | Campos | ✓ quando |
+|---|---|---|
+| Informações básicas | título, subtítulo, slug, descrição, idioma, nível | título, subtítulo, nível e descrição com **200 palavras ou mais** (o mínimo da Udemy) |
+| Para quem é | o que vai aprender, pré-requisitos, para quem é | pelo menos 1 item em cada lista |
+| Conteúdo | módulos e aulas | pelo menos 1 aula publicada (em módulo publicado) |
+| Legendas | — *(etapa 3)* | — |
+| Página do curso | imagem, vídeo promocional, destaques, perguntas, camadas | imagem **e** vídeo promocional (destaques e perguntas são opcionais) |
+| Mensagens | — *(etapa 4)* | — |
+| Publicar | o que falta, status, ordem no catálogo, link | curso publicado |
+
+- **Descrição com menos de 200 palavras** aparece como "descrição curta" no que falta, **sem
+  impedir o salvar**.
+- **As três listas aceitam até 160 caracteres por item**, cada item com contador.
+- **O Visualizar espera a página de curso definitiva (C5):** a página de hoje é provisória e nem
+  mostra a descrição, então a prévia mostraria outra página.
+
 **O que ficou fora, e por quê** (para ninguém propor de volta sem motivo novo):
 - **Preço, cupom, pacote e carrinho por curso:** a escola é assinatura. Cupom existe, mas é **da
   assinatura**, criado no painel da Stripe.
