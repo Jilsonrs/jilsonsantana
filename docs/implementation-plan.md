@@ -125,8 +125,9 @@
 > do admin, com capa, status em português e a barra de Preenchimento) e o **Bloco B** (limite de
 > caracteres com contador nos campos do curso, e a descrição com negrito, itálico e listas, pelo
 > `react-markdown`). **Publicado em 28/09 (`main` = `e42b152`):** os documentos do Bloco E.
-> **No `dev`, ainda não publicado (28/09):** o **Bloco E, etapa 1, partes 1a e 1b** — o editor do
-> curso em 7 passos no nível 2, e o passo Publicar com o que falta e o link (ver Bloco E).
+> **No `dev`, ainda não publicado (28/09):** o **Bloco E, etapa 1, partes 1a a 1c** — o editor do
+> curso em 7 passos no nível 2, o passo Publicar com o que falta e o link, e as três listas com
+> um campo por item (ver Bloco E).
 > **Decidido em 27–28/09, ainda não construído:** o **Bloco E** (o editor do curso em 7 passos, a
 > partir dos prints da Udemy e de 5 plataformas pesquisadas), a mudança das telas do aluno para
 > `/aluno/*`, o conteúdo de cada seção planejada do admin (e a nova **Comunicação**) e as páginas
@@ -1459,9 +1460,17 @@ cada campo, a regra do ✓, 160 caracteres nas três listas e o Visualizar esper
       prévia mostraria outra página e seria jogada fora.
 - [ ] **Dicas embaixo dos campos**: o agente escreve o rascunho, o operador aprova.
 - [ ] **"Todos os níveis"** no Nível: valor novo no enum `Level`, com migration.
-- [ ] **As três listas viram um campo por item**, com contador, lixeira e ordem; **as três com
-      até 160 caracteres por item** *(era só "O que vai aprender"; os outros dois, operador em
-      28/09/2026)*.
+- [x] **1c — As três listas viram um campo por item** *(28/09, no `dev`)*, com contador, lixeira e
+      ordem; **as três com até 160 caracteres por item** *(era só "O que vai aprender"; os outros
+      dois, operador em 28/09/2026)*. `course-form/ListItemsField.tsx` (o `useFieldArray` do
+      react-hook-form; cada item `{ valor }`); as setas são botões, então funcionam pelo teclado,
+      e o primeiro não sobe nem o último desce. Lista vazia abre com um campo em branco, que não
+      vai no envio. O limite mora em `LIMITES_DO_CURSO.itemDaLista` (`core`), e o servidor recusa
+      item de 161 (400, a lista antiga fica); curso antigo acima do limite mostra o aviso no
+      próprio item e não salva. `lib/array-field.ts` (o "um item por linha") saiu: só o
+      formulário de curso o usava. Testes: 8 das listas, 4 de servidor. **Mutação:** servidor
+      sem o limite, tela sem o limite, "descer" sem mudar a ordem, campo em branco indo no envio
+      e o campo sem trava → todas reprovam. Revertido.
 - [x] Descrição curta conta como **"falta"** no Preenchimento, sem travar. **Curta = menos de 200
       palavras** *(operador, 28/09/2026)*. Feito na 1b: a lista do admin devolve
       `descriptionWordCount` (no lugar do sim/não), contado pelo `contarPalavras` do `core` — o

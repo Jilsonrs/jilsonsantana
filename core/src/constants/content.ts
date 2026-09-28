@@ -74,6 +74,9 @@ export const LIMITES_DO_CURSO = {
   subtitle: 120,
   slug: LIMITE_DO_SLUG,
   description: 5000,
+  // Cada item das três listas (o que vai aprender, pré-requisitos, para quem é):
+  // 160, como na Udemy (decisão do operador, 28/09/2026).
+  itemDaLista: 160,
 } as const;
 
 // Abaixo disto a descrição conta como "curta" no que falta do curso, SEM impedir

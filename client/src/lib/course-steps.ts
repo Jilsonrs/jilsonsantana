@@ -42,7 +42,7 @@ export const PASSOS_DO_CURSO: Passo[] = [
   {
     slug: "para-quem-e",
     label: "Para quem é",
-    campos: ["learnTagsText", "requirementsText", "personasText"],
+    campos: ["learnTags", "requirements", "personas"],
     envia: ["learnTags", "requirements", "personas"],
   },
   // O Conteúdo (módulos e aulas) se salva item a item, como antes: não tem o

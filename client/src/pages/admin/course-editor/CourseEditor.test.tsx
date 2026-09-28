@@ -139,13 +139,13 @@ describe("Editor do curso — cada passo salva só a parte dele", () => {
   it("Para quem é envia só as três listas", async () => {
     updateCourse.mockResolvedValue(CURSO_DE_TESTE);
     abrir("/admin/cursos/1/para-quem-e");
-    const aprender = (await screen.findByLabelText(/learnTags/)) as HTMLTextAreaElement;
-    await waitFor(() => expect(aprender.value).toBe("PROCX"));
-    fireEvent.change(aprender, { target: { value: "Fórmulas\nPROCX" } });
+    const item = (await screen.findByLabelText("O que vai aprender (learnTags), item 1")) as HTMLInputElement;
+    await waitFor(() => expect(item.value).toBe("PROCX"));
+    fireEvent.change(item, { target: { value: "Fórmulas" } });
     salvar();
 
     await waitFor(() => expect(updateCourse).toHaveBeenCalled());
-    expect(updateCourse.mock.calls[0][1]).toEqual({ learnTags: ["Fórmulas", "PROCX"], requirements: [], personas: [] });
+    expect(updateCourse.mock.calls[0][1]).toEqual({ learnTags: ["Fórmulas"], requirements: [], personas: [] });
   });
 
   it("Publicar envia só status e ordem, com o status em português na tela", async () => {

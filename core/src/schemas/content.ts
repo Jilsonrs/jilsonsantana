@@ -109,6 +109,11 @@ export type VideoUploadCompleteInput = z.infer<typeof videoUploadCompleteSchema>
 export const contentLanguageSchema = z.enum(LANGUAGES);
 
 // ── Course ───────────────────────────────────────────────────────────────────
+const itemDaListaSchema = z
+  .string()
+  .min(1)
+  .max(LIMITES_DO_CURSO.itemDaLista, `Use no máximo ${LIMITES_DO_CURSO.itemDaLista} caracteres.`);
+
 // `language` é OBRIGATÓRIO na criação (operador, 14/09/2026). Na edição ele pode
 // vir (é `.partial()`), mas o SERVIDOR só aceita trocar enquanto o curso for
 // rascunho (operador, 24/09/2026).
@@ -120,9 +125,10 @@ export const courseCreateSchema = z.object({
   // Markdown (negrito, itálico e listas), guardado como o operador escreveu.
   description: z.string().max(LIMITES_DO_CURSO.description).optional(),
   level: levelSchema.optional(),
-  learnTags: z.array(z.string().min(1)).optional(),
-  requirements: z.array(z.string().min(1)).optional(),
-  personas: z.array(z.string().min(1)).optional(),
+  // As três listas: até 160 caracteres por item (operador, 28/09/2026).
+  learnTags: z.array(itemDaListaSchema).optional(),
+  requirements: z.array(itemDaListaSchema).optional(),
+  personas: z.array(itemDaListaSchema).optional(),
   highlights: z.array(highlightSchema).optional(),
   faq: z.array(faqItemSchema).optional(),
   camadas: z.array(layerSchema).optional(),

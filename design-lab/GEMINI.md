@@ -165,6 +165,10 @@ servidores (§5); o React responde em `localhost:5173`, a home pública em `loca
 > copiado." sai numa região `role="status"`: **mantenha a região sempre na página, mesmo vazia**,
 > porque é assim que o leitor de tela anuncia a mudança.
 >
+> **As três listas do passo "Para quem é"** (28/09) têm um campo por item, com contador, setas e
+> lixeira, em `course-form/ListItemsField.tsx`. As setas e a lixeira são só ícone: o nome delas
+> ("Subir o item 2") está no `aria-label`, que **tem teste**. Não o tire.
+>
 > **Não mexa sem falar com o operador:** o ✓ tem um "completo" escondido para leitor de tela, e
 > EM BREVE é texto, nunca link. **Os dois têm teste.**
 
