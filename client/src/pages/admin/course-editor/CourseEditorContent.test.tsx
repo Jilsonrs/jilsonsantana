@@ -252,8 +252,12 @@ describe("Conteúdo — arrastar", () => {
     await abrir();
     const alca = screen.getByRole("button", { name: "Arrastar o módulo Fundamentos" });
     expect(screen.getByRole("button", { name: "Arrastar a aula Abertura" })).toBeTruthy();
-    const instrucoes = document.getElementById(alca.getAttribute("aria-describedby") ?? "");
-    expect(instrucoes?.textContent).toMatch(/^Para arrastar, aperte espaço/);
+    // O dnd-kit cria as instruções logo DEPOIS de a tela aparecer: esperar, não
+    // olhar uma vez só (no CI, mais lento, o texto ainda não existia — 28/09).
+    await waitFor(() => {
+      const instrucoes = document.getElementById(alca.getAttribute("aria-describedby") ?? "");
+      expect(instrucoes?.textContent ?? "").toMatch(/^Para arrastar, aperte espaço/);
+    });
   });
 
   it("pelo teclado: o módulo desce, e a ordem inteira vai numa gravação só", async () => {
@@ -299,7 +303,7 @@ describe("Conteúdo — arrastar", () => {
     await quadro();
     // A prova de que o arraste aconteceu (e caiu sobre ele mesmo): sem isto, o
     // teste passaria mesmo gravando, porque soltar antes da medida não tem alvo.
-    expect(document.body.textContent).toContain("o módulo Automação está sobre o módulo Automação.");
+    await waitFor(() => expect(document.body.textContent).toContain("o módulo Automação está sobre o módulo Automação."));
     await act(async () => void fireEvent.keyDown(document, { key: " ", code: "Space" }));
     await quadro();
 
