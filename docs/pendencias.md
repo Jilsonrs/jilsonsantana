@@ -16,12 +16,13 @@
 > 5. **Item novo ganha o próximo número livre.** Número nunca se reutiliza, para que "P7" queira
 >    dizer sempre a mesma coisa em qualquer conversa.
 >
-> **Próximo número livre: P28** · Atualizada em 27/09/2026
+> **Próximo número livre: P29** · Atualizada em 27/09/2026
 
 ## A. Agora, em sequência *(nascidas da configuração do Bunny, 25/09/2026)*
 
-*Vazia desde 27/09/2026: P1 a P11 resolvidas; a P5 foi para a seção C. Item novo que precise de
-resposta rápida entra aqui, com o próximo número livre.*
+| # | O que falta | Onde registrar |
+|---|---|---|
+| P28 | **Responder as perguntas do mapa Udemy × escola** (Q1, Q2…), **depois do último lote de prints**. Elas decidem como o formulário do curso é reorganizado em áreas | `docs/mapa-admin-curso.md` §5, e dali para o plano |
 
 ## B. Conteúdo e cadastro *(tarefas suas, sem ordem fixa)*
 
