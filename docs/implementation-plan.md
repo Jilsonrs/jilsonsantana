@@ -1372,6 +1372,16 @@ landmark. Corrigido junto.
       todas reprovam. Revertido. **O que falta provar no ar** (bunny.md §7): o iframe tocando no
       nosso site com o token do embed **e** o CDN token ligados, e o endereço do player
       (`iframe.` ou `player.mediadelivery.net`).
+- [x] **Uma biblioteca só, com token, e duas validades** *(decisões do operador, 28/09/2026, no
+      `dev`)*: aulas **e** apresentação na `jilsonsantana-stream` (762605), token ligado; **todo
+      player sai assinado** (`enderecoAssinado`), a apresentação inclusive, para qualquer
+      visitante. **Público (apresentação e prévia grátis) = 24 h; aulas pagas = 6 h**, e só para
+      quem está logado com assinatura ativa (etapa 4). As variáveis passam a ser só as
+      `BUNNY_STREAM_LESSONS_*`; as `_INTRO_*` saíram do código. Sem a assinatura, a apresentação
+      **não tocava** mais na biblioteca com token. Registro em `bunny.md` §3.1 e `CLAUDE.md` →
+      Video; P19 atualizada. Testes: apresentação assinada com 24 h, as duas validades, o token.
+      **Mutação:** apresentação com a validade do assinante, pública de 6 h, paga de 24 h,
+      apresentação sem assinatura e o código lendo as variáveis antigas → todas reprovam.
 - [ ] **Etapa 4 — a trava de acesso e a aula tocando para o aluno:** adianta da Fase 4 o model
       `Subscription`, o `temAcessoAtivo()` e o `requireActiveMembership`, **sem Stripe**; rota
       `GET /api/lessons/:id/player`; assinatura de teste do `member@` **só fora de produção** (o
@@ -2025,6 +2035,9 @@ própria**.*
   que vê quem está logado com a assinatura cancelada.
   **Curso apagado que foi substituído por outro** (ex.: o temporário em inglês) leva o endereço
   antigo para o novo, para não virar link quebrado (mesma família do *slug permanente*).
+  **A página pública com o vídeo de apresentação não pode ficar em cache por mais de 24 h**
+  *(consequência da decisão de 28/09/2026: uma biblioteca só, com token — o player sai assinado
+  e a assinatura pública vale 24 h; `bunny.md` §3.1)*.
   **Junto com a página de curso nova entra o Visualizar do editor do curso** (Bloco E, etapa 1):
   a página como o aluno vê, **inclusive em rascunho, só para o admin**, sem abrir a rota pública
   para o que não está publicado *(operador, 28/09/2026: esperar a página definitiva)*.

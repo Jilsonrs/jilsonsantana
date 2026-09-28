@@ -59,11 +59,11 @@ export async function limparCursoNoBunny(cursoId: number): Promise<boolean> {
     select: { introVideoId: true, introVideoPendingId: true },
   });
   if (curso?.introVideoPendingId) {
-    if (!(await apagarVideo("apresentacao", curso.introVideoPendingId))) return false;
+    if (!(await apagarVideo("aulas", curso.introVideoPendingId))) return false;
     await prisma.course.update({ where: { id: cursoId }, data: { introVideoPendingId: null } });
   }
   if (curso?.introVideoId) {
-    if (!(await apagarVideo("apresentacao", curso.introVideoId))) return false;
+    if (!(await apagarVideo("aulas", curso.introVideoId))) return false;
     await prisma.course.update({ where: { id: cursoId }, data: { introVideoId: null } });
   }
   return true;

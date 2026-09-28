@@ -1,5 +1,12 @@
 import { describe, it, expect, afterEach } from "vitest";
-import { assinaturaDeEnvio, enderecoAssinado, enderecoDoPlayer, interpretarEstado, tokenDoPlayer, VALIDADE_DO_PLAYER } from "../lib/bunny-stream.js";
+import {
+  assinaturaDeEnvio,
+  enderecoAssinado,
+  interpretarEstado,
+  tokenDoPlayer,
+  VALIDADE_DO_ASSINANTE,
+  VALIDADE_PUBLICA,
+} from "../lib/bunny-stream.js";
 
 // Unidade GENUÍNA (função pura, sem rede): a exceção que o CLAUDE.md → Testing
 // permite. A assinatura errada não dá erro nenhum no nosso lado — o Bunny só
@@ -17,29 +24,6 @@ describe("assinatura do envio retomável", () => {
     const a = assinaturaDeEnvio("762605", "k", 1, "eb1c4f77-0cda-46be-b47d-1118ad7c2ffe");
     const b = assinaturaDeEnvio("762605", "k", 1, "00000000-0000-0000-0000-000000000000");
     expect(a).not.toBe(b);
-  });
-});
-
-describe("endereço do player da apresentação", () => {
-  const antes = { id: process.env.BUNNY_STREAM_INTRO_LIBRARY_ID, chave: process.env.BUNNY_STREAM_INTRO_API_KEY };
-  afterEach(() => {
-    process.env.BUNNY_STREAM_INTRO_LIBRARY_ID = antes.id;
-    process.env.BUNNY_STREAM_INTRO_API_KEY = antes.chave;
-  });
-
-  it("sem a biblioteca configurada (o computador do operador): nenhum endereço", () => {
-    delete process.env.BUNNY_STREAM_INTRO_LIBRARY_ID;
-    delete process.env.BUNNY_STREAM_INTRO_API_KEY;
-    expect(enderecoDoPlayer("apresentacao", "eb1c4f77-0cda-46be-b47d-1118ad7c2ffe")).toBeNull();
-  });
-
-  it("configurada: o player do Bunny com a biblioteca e o vídeo", () => {
-    process.env.BUNNY_STREAM_INTRO_LIBRARY_ID = "999";
-    process.env.BUNNY_STREAM_INTRO_API_KEY = "k";
-    expect(enderecoDoPlayer("apresentacao", "eb1c4f77-0cda-46be-b47d-1118ad7c2ffe")).toBe(
-      "https://iframe.mediadelivery.net/embed/999/eb1c4f77-0cda-46be-b47d-1118ad7c2ffe",
-    );
-    expect(enderecoDoPlayer("apresentacao", null)).toBeNull();
   });
 });
 
@@ -65,7 +49,8 @@ describe("estado do vídeo no Bunny (a prévia do admin atualiza sozinha)", () =
   });
 });
 
-// O TOKEN DO PLAYER das aulas (Bloco U, etapa 3). Formato confirmado na doc via
+// O TOKEN DO PLAYER (Bloco U, etapa 3) — de aula e de apresentação, que desde
+// 28/09/2026 moram na MESMA biblioteca, com token (decisão do operador). Formato confirmado na doc via
 // context7 em 28/09/2026: SHA256_HEX(token key + id do vídeo + expires). O valor
 // esperado foi calculado FORA do nosso código (hashlib do Python), com a fórmula
 // da doc — o teste não compara a função com ela mesma.
@@ -91,22 +76,36 @@ describe("token do player das aulas", () => {
     restaurar("BUNNY_STREAM_LESSONS_TOKEN_KEY", antes.token);
   });
 
-  it("o endereço assinado leva o token e a validade de 6 h", () => {
+  const configurar = () => {
     process.env.BUNNY_STREAM_LESSONS_LIBRARY_ID = "762605";
     process.env.BUNNY_STREAM_LESSONS_API_KEY = "api";
     process.env.BUNNY_STREAM_LESSONS_TOKEN_KEY = "chave-de-token";
-    const agora = (1790000000 - VALIDADE_DO_PLAYER) * 1000;
+  };
 
-    expect(enderecoAssinado("eb1c4f77-0cda-46be-b47d-1118ad7c2ffe", agora)).toBe(
+  it("o endereço assinado leva o token e a validade pedida", () => {
+    configurar();
+    const agora = (1790000000 - VALIDADE_DO_ASSINANTE) * 1000;
+
+    expect(enderecoAssinado("eb1c4f77-0cda-46be-b47d-1118ad7c2ffe", VALIDADE_DO_ASSINANTE, agora)).toBe(
       "https://iframe.mediadelivery.net/embed/762605/eb1c4f77-0cda-46be-b47d-1118ad7c2ffe" +
         "?token=8e8ef2555bfef9bde43d9baf16188e73f80f584bac0a04d75d67f69b672021aa&expires=1790000000",
     );
   });
 
-  // A janela é de 6 a 12 h (Ago 2026): encurtar faz o vídeo parar no meio da aula.
-  it("a validade fica dentro da janela decidida", () => {
-    expect(VALIDADE_DO_PLAYER).toBeGreaterThanOrEqual(6 * 3600);
-    expect(VALIDADE_DO_PLAYER).toBeLessThanOrEqual(12 * 3600);
+  it("sem validade dita, vale a do assinante", () => {
+    configurar();
+    const agora = 1_000_000_000_000;
+    const expira = Number(new URL(enderecoAssinado("eb1c4f77-0cda-46be-b47d-1118ad7c2ffe", undefined, agora) ?? "").searchParams.get("expires"));
+    expect(expira).toBe(agora / 1000 + VALIDADE_DO_ASSINANTE);
+  });
+
+  // As duas validades (operador, 28/09/2026): 24 h para o que é PÚBLICO
+  // (apresentação e prévia grátis) e 6–12 h para as aulas pagas (Ago 2026 —
+  // encurtar faz o vídeo parar no meio da aula).
+  it("pública: 24 h; do assinante: dentro da janela de 6–12 h", () => {
+    expect(VALIDADE_PUBLICA).toBe(24 * 3600);
+    expect(VALIDADE_DO_ASSINANTE).toBeGreaterThanOrEqual(6 * 3600);
+    expect(VALIDADE_DO_ASSINANTE).toBeLessThanOrEqual(12 * 3600);
   });
 
   it("sem a token key (ou sem a biblioteca): nenhum endereço", () => {

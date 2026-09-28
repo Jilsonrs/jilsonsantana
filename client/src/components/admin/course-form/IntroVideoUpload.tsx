@@ -32,13 +32,15 @@ export function IntroVideoUpload({
       const credenciais = await api.startIntroVideoUpload(courseId, arquivo.name);
       await enviarVideo(arquivo, credenciais, setPorcentagem).concluido;
       const concluido = await api.completeIntroVideoUpload(courseId, credenciais.videoId);
-      return { videoId: concluido.introVideoId, embedUrl: concluido.introVideoEmbedUrl ?? credenciais.embedUrl };
+      return { videoId: concluido.introVideoId, embedUrl: concluido.introVideoEmbedUrl };
     },
     // O servidor já gravou o vídeo no curso: o curso recarrega para o ✓ do passo
     // (sem reiniciar o formulário do editor).
     onSuccess: (video) => {
       setValue("introVideoId", video.videoId, { shouldDirty: true });
-      aoEnviar(video);
+      // A prévia só com o endereço ASSINADO que o servidor devolve (a biblioteca
+      // tem token — operador, 28/09/2026). Sem ele, não há quadro para mostrar.
+      if (video.embedUrl) aoEnviar({ videoId: video.videoId, embedUrl: video.embedUrl });
       queryClient.invalidateQueries({ queryKey: ["admin-course", courseId] });
     },
   });

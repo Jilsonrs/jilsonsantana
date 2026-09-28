@@ -41,7 +41,12 @@ async function sessao(email?: string, senha?: string): Promise<string[]> {
   return (res.headers["set-cookie"] as unknown as string[] | undefined) ?? [];
 }
 
-const envAntes = { id: process.env.BUNNY_STREAM_INTRO_LIBRARY_ID, chave: process.env.BUNNY_STREAM_INTRO_API_KEY };
+// UMA BIBLIOTECA SÓ, com token (operador, 28/09/2026): a apresentação usa as
+// variáveis das aulas e sai ASSINADA, com a validade pública de 24 h.
+const ENV = ["BUNNY_STREAM_LESSONS_LIBRARY_ID", "BUNNY_STREAM_LESSONS_API_KEY", "BUNNY_STREAM_LESSONS_TOKEN_KEY"] as const;
+const envAntes = Object.fromEntries(ENV.map((n) => [n, process.env[n]]));
+const ASSINADO = (videoId: string) =>
+  new RegExp(`^https://iframe\\.mediadelivery\\.net/embed/999/${videoId}\\?token=[0-9a-f]{64}&expires=(\\d+)$`);
 
 beforeAll(async () => {
   admin = await sessao(process.env.SEED_ADMIN_EMAIL, process.env.SEED_ADMIN_PASSWORD);
@@ -50,14 +55,18 @@ beforeAll(async () => {
     data: { slug: SLUG, title: "Curso com apresentação", language: "PT", status: "PUBLISHED" },
   });
   cursoId = curso.id;
-  process.env.BUNNY_STREAM_INTRO_LIBRARY_ID = "999";
-  process.env.BUNNY_STREAM_INTRO_API_KEY = "chave-que-nunca-sai";
+  process.env.BUNNY_STREAM_LESSONS_LIBRARY_ID = "999";
+  process.env.BUNNY_STREAM_LESSONS_API_KEY = "chave-que-nunca-sai";
+  process.env.BUNNY_STREAM_LESSONS_TOKEN_KEY = "token-que-nunca-sai";
 });
 
 afterAll(async () => {
   await prisma.course.deleteMany({ where: { slug: SLUG } });
-  process.env.BUNNY_STREAM_INTRO_LIBRARY_ID = envAntes.id;
-  process.env.BUNNY_STREAM_INTRO_API_KEY = envAntes.chave;
+  // Apagar o que não existia antes: `process.env.X = undefined` grava o TEXTO.
+  for (const n of ENV) {
+    if (envAntes[n] === undefined) delete process.env[n];
+    else process.env[n] = envAntes[n];
+  }
 });
 
 const credenciais = (videoId: string) => ({
@@ -68,7 +77,6 @@ const credenciais = (videoId: string) => ({
     libraryId: "999",
     expirationTime: 1790000000,
     signature: "assinatura",
-    embedUrl: `https://iframe.mediadelivery.net/embed/999/${videoId}`,
   },
 });
 
@@ -111,7 +119,7 @@ describe("vídeo de apresentação — o envio", () => {
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({ videoId: A, libraryId: "999", signature: "assinatura" });
     // O nome no Bunny é o nome do arquivo enviado (operador, 27/09/2026).
-    expect(iniciarEnvio).toHaveBeenCalledWith("apresentacao", ARQUIVO);
+    expect(iniciarEnvio).toHaveBeenCalledWith("aulas", ARQUIVO);
     expect(JSON.stringify(res.body)).not.toContain("chave-que-nunca-sai");
   });
 
@@ -131,7 +139,7 @@ describe("vídeo de apresentação — o envio", () => {
     const res = await concluir(admin, A);
 
     expect(res.status).toBe(200);
-    expect(res.body.introVideoEmbedUrl).toBe(`https://iframe.mediadelivery.net/embed/999/${A}`);
+    expect(res.body.introVideoEmbedUrl).toMatch(ASSINADO(A));
     expect(await curso()).toMatchObject({ introVideoId: A, introVideoPendingId: null });
   });
 
@@ -165,7 +173,7 @@ describe("vídeo de apresentação — a limpeza no Bunny (operador, 27/09)", ()
     iniciarEnvio.mockResolvedValueOnce(credenciais(B));
     await iniciar(admin);
 
-    expect(apagarVideo).toHaveBeenCalledWith("apresentacao", A);
+    expect(apagarVideo).toHaveBeenCalledWith("aulas", A);
     expect((await curso()).introVideoPendingId).toBe(B);
   });
 
@@ -179,7 +187,7 @@ describe("vídeo de apresentação — a limpeza no Bunny (operador, 27/09)", ()
     expect(apagarVideo).not.toHaveBeenCalled();
 
     await concluir(admin, B);
-    expect(apagarVideo).toHaveBeenCalledWith("apresentacao", A);
+    expect(apagarVideo).toHaveBeenCalledWith("aulas", A);
     expect(await curso()).toMatchObject({ introVideoId: B, introVideoPendingId: null });
   });
 
@@ -207,7 +215,11 @@ describe("vídeo de apresentação — na página pública", () => {
     const res = await request(app).get(`/api/courses/${SLUG}`);
 
     expect(res.status).toBe(200);
-    expect(res.body.introVideoEmbedUrl).toBe(`https://iframe.mediadelivery.net/embed/999/${A}`);
+    expect(res.body.introVideoEmbedUrl).toMatch(ASSINADO(A));
+    // Assinado, com a validade PÚBLICA (24 h): a apresentação é vídeo de venda.
+    const expira = Number(ASSINADO(A).exec(res.body.introVideoEmbedUrl)?.[1]);
+    expect(expira - Math.floor(Date.now() / 1000)).toBeGreaterThan(23 * 3600);
+    expect(res.body.introVideoEmbedUrl).not.toContain("token-que-nunca-sai");
   });
 
   it("o envio em andamento NUNCA sai na resposta pública", async () => {
@@ -253,7 +265,7 @@ describe("vídeo de apresentação — o admin pergunta se o Bunny terminou", ()
 
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ pronto: false, falhou: false });
-    expect(estadoDoVideo).toHaveBeenCalledWith("apresentacao", A);
+    expect(estadoDoVideo).toHaveBeenCalledWith("aulas", A);
   });
 
   it("o Bunny não respondeu: 502", async () => {
