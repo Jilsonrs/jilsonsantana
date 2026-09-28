@@ -336,3 +336,27 @@ Na reorganização, cada um precisa de uma área.
   lançamento; o **teste** conforme a Q12; e, mais adiante, o **role play com o JilsonAI** (o aluno
   pratica uma conversa, ex.: apresentar um dashboard a um gerente). É exatamente o tipo de coisa
   que passa no filtro "IA no DNA". Exercício de código, laboratório, simulado e tarefa: **fora**.
+
+## 18. Respostas do operador *(28/09/2026, em rodadas)*
+
+Cada resposta é **decisão dele** e vale a partir daqui. Quando todas estiverem respondidas, elas
+vão para os documentos de destino (plano, `courses.md`, `design.md`) e viram um bloco de trabalho.
+
+| # | Resposta |
+|---|---|
+| Q1 | **Sim, dicas embaixo dos campos.** O agente escreve o rascunho; o operador aprova os textos. |
+| Q2 | **Sem mínimo.** Descrição curta aparece só como "falta" na barra de Preenchimento (o tamanho que conta como "curta" é proposto no plano). |
+| Q3 | **Sim: "Todos os níveis"** entra como quarta opção do Nível. |
+| Q4 | **Categoria e temas não entram.** No lugar de "temas relacionados", a página mostra as trilhas do curso. |
+| Q5 | **A página do curso usa a MESMA seção do autor que já está na home** (`home.author`: "Olá, sou o Jilson", credenciais, números). Uma edição em Admin → Textos serve para a home e para as páginas de curso. |
+| Q6 | **Um campo por item** nas três listas, com contador, lixeira e ordem. |
+| Q7 | **"O que vai aprender" em frases** de até 160 caracteres, em duas colunas com ✓ (substitui as etiquetas de `courses.md`). |
+| Q8 | **Não:** o aluno não baixa o vídeo. |
+| Q9 | **Não:** aula de vídeo não tem descrição. |
+| Q10 | **Sim: arquivos para baixar em cada aula, só para assinantes**, guardados de forma protegida. |
+| Q11 | **Sim: aula sem vídeo.** Leitura do agente, junto com a Q9: a aula de **texto** tem o seu texto (com negrito e listas) e/ou arquivos; a aula de **vídeo** não tem texto. |
+| Q12 | **Os dois:** quiz escrito pelo operador onde fizer sentido, e o JilsonAI fazendo perguntas mais adiante. |
+| Q13 | **Não:** um vídeo por vez. |
+| Q14 | **Sim: arrastar para reorganizar aulas e seções**, com as setas continuando para o teclado. |
+| Q15 | **Sim: botão Visualizar**, que mostra a página do curso como o aluno vê, inclusive em rascunho (só para o admin). |
+| Q16 | **Sim: o "+" entre dois itens** (aulas e seções), também pelo teclado. |
