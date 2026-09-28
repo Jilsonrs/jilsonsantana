@@ -5,7 +5,7 @@ import { prisma } from "../lib/prisma.js";
 import { requireAdmin } from "../middleware/auth.js";
 import { validate, parseId } from "../lib/http.js";
 import { paraBanco, doBanco, comIdioma, idiomaDaLista } from "../lib/language.js";
-import { enderecoAssinado, VALIDADE_PUBLICA } from "../lib/bunny-stream.js";
+import { enderecoAssinado } from "../lib/bunny-stream.js";
 import { limparCursoNoBunny } from "../lib/limpeza-no-bunny.js";
 
 const router = Router();
@@ -107,10 +107,10 @@ router.get("/courses/:slug", async (req, res) => {
   // venda, a única exceção ao portão de vídeo (CLAUDE.md → Access Architecture).
   // ASSINADO, porque mora na biblioteca com token (operador, 28/09/2026). O
   // endereço é derivado a cada pedido, nunca coluna — por isso esta resposta não
-  // pode ficar em cache mais do que a validade pública da assinatura (24 h).
+  // pode ficar em cache mais do que a validade da assinatura (24 h).
   res.json({
     ...comIdioma(course),
-    introVideoEmbedUrl: enderecoAssinado(course.introVideoId, VALIDADE_PUBLICA),
+    introVideoEmbedUrl: enderecoAssinado(course.introVideoId),
     moduleCount: course.modules.length,
     lessonCount,
   });
@@ -183,7 +183,7 @@ router.get("/admin/courses/:id", requireAdmin, async (req, res) => {
     res.status(404).json({ error: "NotFound" });
     return;
   }
-  res.json({ ...comIdioma(course), introVideoEmbedUrl: enderecoAssinado(course.introVideoId, VALIDADE_PUBLICA) });
+  res.json({ ...comIdioma(course), introVideoEmbedUrl: enderecoAssinado(course.introVideoId) });
 });
 
 // ── Writes (admin only) ──────────────────────────────────────────────────────

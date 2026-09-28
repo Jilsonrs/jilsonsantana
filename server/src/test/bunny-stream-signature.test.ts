@@ -4,8 +4,7 @@ import {
   enderecoAssinado,
   interpretarEstado,
   tokenDoPlayer,
-  VALIDADE_DO_ASSINANTE,
-  VALIDADE_PUBLICA,
+  VALIDADE_DO_PLAYER,
 } from "../lib/bunny-stream.js";
 
 // Unidade GENUÍNA (função pura, sem rede): a exceção que o CLAUDE.md → Testing
@@ -82,30 +81,21 @@ describe("token do player das aulas", () => {
     process.env.BUNNY_STREAM_LESSONS_TOKEN_KEY = "chave-de-token";
   };
 
-  it("o endereço assinado leva o token e a validade pedida", () => {
+  it("o endereço assinado leva o token e a validade", () => {
     configurar();
-    const agora = (1790000000 - VALIDADE_DO_ASSINANTE) * 1000;
+    const agora = (1790000000 - VALIDADE_DO_PLAYER) * 1000;
 
-    expect(enderecoAssinado("eb1c4f77-0cda-46be-b47d-1118ad7c2ffe", VALIDADE_DO_ASSINANTE, agora)).toBe(
+    expect(enderecoAssinado("eb1c4f77-0cda-46be-b47d-1118ad7c2ffe", agora)).toBe(
       "https://iframe.mediadelivery.net/embed/762605/eb1c4f77-0cda-46be-b47d-1118ad7c2ffe" +
         "?token=8e8ef2555bfef9bde43d9baf16188e73f80f584bac0a04d75d67f69b672021aa&expires=1790000000",
     );
   });
 
-  it("sem validade dita, vale a do assinante", () => {
-    configurar();
-    const agora = 1_000_000_000_000;
-    const expira = Number(new URL(enderecoAssinado("eb1c4f77-0cda-46be-b47d-1118ad7c2ffe", undefined, agora) ?? "").searchParams.get("expires"));
-    expect(expira).toBe(agora / 1000 + VALIDADE_DO_ASSINANTE);
-  });
-
-  // As duas validades (operador, 28/09/2026): 24 h para o que é PÚBLICO
-  // (apresentação e prévia grátis) e 6–12 h para as aulas pagas (Ago 2026 —
-  // encurtar faz o vídeo parar no meio da aula).
-  it("pública: 24 h; do assinante: dentro da janela de 6–12 h", () => {
-    expect(VALIDADE_PUBLICA).toBe(24 * 3600);
-    expect(VALIDADE_DO_ASSINANTE).toBeGreaterThanOrEqual(6 * 3600);
-    expect(VALIDADE_DO_ASSINANTE).toBeLessThanOrEqual(12 * 3600);
+  // 24 h para todo vídeo (operador, 28/09/2026, depois de comparar Bunny, Mux,
+  // Cloudflare e plataformas de curso). Encurtar faz o aluno recarregar a página
+  // depois de uma pausa longa; a proteção da aula é a trava de acesso.
+  it("a validade é de 24 h", () => {
+    expect(VALIDADE_DO_PLAYER).toBe(24 * 3600);
   });
 
   it("sem a token key (ou sem a biblioteca): nenhum endereço", () => {

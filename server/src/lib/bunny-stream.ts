@@ -49,15 +49,14 @@ export function tokenDoPlayer(chaveDoToken: string, videoId: string, expira: num
   return createHash("sha256").update(`${chaveDoToken}${videoId}${expira}`).digest("hex");
 }
 
-// QUANTO TEMPO a assinatura do player vale depois de emitida. QUEM a recebe é
-// decidido pelo servidor. Sem trava por IP (Ago 2026): o vídeo não pode parar
+// QUANTO TEMPO a assinatura do player vale depois de emitida: 24 h, para TODO
+// vídeo — apresentação, prévia grátis e aula paga (decisões do operador,
+// 28/09/2026, depois de comparar Bunny, Mux, Cloudflare e plataformas de curso;
+// substitui a janela de 6–12 h de Ago 2026). QUEM recebe a assinatura é decidido
+// pelo servidor (a aula paga, só para quem tem assinatura ativa — etapa 4); o
+// player só abre no domínio da escola. Sem trava por IP: o vídeo não pode parar
 // quando o aluno troca o Wi-Fi pelo 4G.
-//   - PÚBLICO — o vídeo de apresentação e a aula com prévia grátis: 24 h
-//     (operador, 28/09/2026: "ficam 24 horas sem precisar recarregar a página");
-//   - ASSINANTE — as aulas pagas: 6 h, dentro da janela de 6–12 h de Ago 2026
-//     (não encurtar; a razão está no plano, Fase 3).
-export const VALIDADE_PUBLICA = 24 * 60 * 60;
-export const VALIDADE_DO_ASSINANTE = 6 * 60 * 60;
+export const VALIDADE_DO_PLAYER = 24 * 60 * 60;
 
 /**
  * O endereço ASSINADO do player (`?token=…&expires=…`), de aula ou de apresentação.
@@ -66,15 +65,11 @@ export const VALIDADE_DO_ASSINANTE = 6 * 60 * 60;
  * apresentação, a qualquer visitante; a aula, ao admin (prévia) e, na etapa 4,
  * ao aluno com acesso.
  */
-export function enderecoAssinado(
-  videoId: string | null,
-  validade: number = VALIDADE_DO_ASSINANTE,
-  agora = Date.now(),
-): string | null {
+export function enderecoAssinado(videoId: string | null, agora = Date.now()): string | null {
   const c = config("aulas");
   const chaveDoToken = process.env.BUNNY_STREAM_LESSONS_TOKEN_KEY;
   if (!videoId || !c || !chaveDoToken) return null;
-  const expira = Math.floor(agora / 1000) + validade;
+  const expira = Math.floor(agora / 1000) + VALIDADE_DO_PLAYER;
   return `${montarEndereco(c.id, videoId)}?token=${tokenDoPlayer(chaveDoToken, videoId, expira)}&expires=${expira}`;
 }
 

@@ -6,7 +6,7 @@ import { parseId, validate } from "../lib/http.js";
 import { tipoDaImagem } from "../lib/image-type.js";
 import { enviarParaOStorage } from "../lib/bunny-storage.js";
 import { videoUploadCompleteSchema, videoUploadStartSchema, bunnyVideoIdSchema } from "@jilson/core";
-import { iniciarEnvio, apagarVideo, enderecoAssinado, estadoDoVideo, VALIDADE_PUBLICA } from "../lib/bunny-stream.js";
+import { iniciarEnvio, apagarVideo, enderecoAssinado, estadoDoVideo } from "../lib/bunny-stream.js";
 
 const router = Router();
 
@@ -124,7 +124,7 @@ router.post("/admin/courses/:id/intro-video/complete", requireAdmin, async (req,
   const substituido = course.introVideoId;
   if (substituido && substituido !== videoId) await apagarVideo("aulas", substituido);
 
-  res.json({ introVideoId: videoId, introVideoEmbedUrl: enderecoAssinado(videoId, VALIDADE_PUBLICA) });
+  res.json({ introVideoId: videoId, introVideoEmbedUrl: enderecoAssinado(videoId) });
 });
 
 // GET /api/admin/intro-video/:videoId/status — o Bunny já terminou de processar?

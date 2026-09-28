@@ -42,7 +42,7 @@ async function sessao(email?: string, senha?: string): Promise<string[]> {
 }
 
 // UMA BIBLIOTECA SÓ, com token (operador, 28/09/2026): a apresentação usa as
-// variáveis das aulas e sai ASSINADA, com a validade pública de 24 h.
+// variáveis das aulas e sai ASSINADA, com a validade de 24 h.
 const ENV = ["BUNNY_STREAM_LESSONS_LIBRARY_ID", "BUNNY_STREAM_LESSONS_API_KEY", "BUNNY_STREAM_LESSONS_TOKEN_KEY"] as const;
 const envAntes = Object.fromEntries(ENV.map((n) => [n, process.env[n]]));
 const ASSINADO = (videoId: string) =>
@@ -216,7 +216,7 @@ describe("vídeo de apresentação — na página pública", () => {
 
     expect(res.status).toBe(200);
     expect(res.body.introVideoEmbedUrl).toMatch(ASSINADO(A));
-    // Assinado, com a validade PÚBLICA (24 h): a apresentação é vídeo de venda.
+    // Assinado, com a validade de 24 h: a apresentação é vídeo de venda.
     const expira = Number(ASSINADO(A).exec(res.body.introVideoEmbedUrl)?.[1]);
     expect(expira - Math.floor(Date.now() / 1000)).toBeGreaterThan(23 * 3600);
     expect(res.body.introVideoEmbedUrl).not.toContain("token-que-nunca-sai");

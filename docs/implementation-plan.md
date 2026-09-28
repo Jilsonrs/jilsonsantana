@@ -1215,7 +1215,8 @@ landmark. Corrigido junto.
       no modelo.** Fix: `select` explícito listando só os campos que `CourseDetail`/`TrilhaDetail`
       (`client/src/lib/api.ts:51,107`) consomem. As rotas irmãs já fazem certo
       (`courses.ts:25`, `lessons.ts:19`) — copiar o padrão.
-- [ ] Server: issue short-lived **signed URLs**, member-only. **Elastic window (~6–12h) and NO
+- [ ] Server: issue short-lived **signed URLs**, member-only. **Validade de 24 h para todo vídeo
+      (operador, 28/09/2026 — era "Elastic window (~6–12h)"; ver o registro no Bloco U) and NO
       IP-lock** — so the video doesn't break when the student switches Wi-Fi↔4G mid-lesson (classic
       mobile support ticket). *Inferência:* exact controls (path-token + expiry, optional IP) are
       Bunny's API — confirm flags at build. Trade-off accepted: no IP-lock slightly raises URL-share
@@ -1230,6 +1231,11 @@ landmark. Corrigido junto.
       alto por proteção quase nula; (c) a justificativa original (não quebrar o playback na troca
       Wi-Fi↔4G) **continua válida**. As linhas de `CLAUDE.md` → Video e `tech-stack.md` → Video
       seguem valendo sem alteração — a razão mora **aqui**, não duplicar lá.
+      **Em 28/09/2026 a janela subiu para 24 h para todo vídeo** (operador, depois de comparar
+      Bunny, Mux, Cloudflare e plataformas de curso) — **na mesma direção** desta decisão: a
+      validade não é o que protege a aula (é quem recebe a assinatura e os domínios permitidos),
+      e uma janela maior poupa o aluno de recarregar depois de uma pausa longa. `CLAUDE.md` e
+      `tech-stack.md` foram atualizados com o número novo.
 - [ ] **Restrição de domínio/referrer no Bunny** — vídeo servido **apenas** para requisições vindas
       do domínio da plataforma. **[VERIFICADO em 25/09/2026, doc oficial via context7:]** a restrição
       existe e se chama **Allowed domains**. Ao lado dela há **Block Direct URL File Access**, que
@@ -1375,13 +1381,14 @@ landmark. Corrigido junto.
 - [x] **Uma biblioteca só, com token, e duas validades** *(decisões do operador, 28/09/2026, no
       `dev`)*: aulas **e** apresentação na `jilsonsantana-stream` (762605), token ligado; **todo
       player sai assinado** (`enderecoAssinado`), a apresentação inclusive, para qualquer
-      visitante. **Público (apresentação e prévia grátis) = 24 h; aulas pagas = 6 h**, e só para
-      quem está logado com assinatura ativa (etapa 4). As variáveis passam a ser só as
+      visitante. **A assinatura vale 24 h para todo vídeo** (o operador decidiu depois de comparar
+      Bunny, Mux, Cloudflare e plataformas de curso; substitui a janela de 6–12 h de Ago 2026); a
+      aula paga continua só para quem está logado com assinatura ativa (etapa 4). As variáveis passam a ser só as
       `BUNNY_STREAM_LESSONS_*`; as `_INTRO_*` saíram do código. Sem a assinatura, a apresentação
       **não tocava** mais na biblioteca com token. Registro em `bunny.md` §3.1 e `CLAUDE.md` →
       Video; P19 atualizada. Testes: apresentação assinada com 24 h, as duas validades, o token.
-      **Mutação:** apresentação com a validade do assinante, pública de 6 h, paga de 24 h,
-      apresentação sem assinatura e o código lendo as variáveis antigas → todas reprovam.
+      **Mutação:** validade de 6 h, apresentação sem assinatura e o código lendo as variáveis
+      antigas → todas reprovam.
 - [ ] **Etapa 4 — a trava de acesso e a aula tocando para o aluno:** adianta da Fase 4 o model
       `Subscription`, o `temAcessoAtivo()` e o `requireActiveMembership`, **sem Stripe**; rota
       `GET /api/lessons/:id/player`; assinatura de teste do `member@` **só fora de produção** (o

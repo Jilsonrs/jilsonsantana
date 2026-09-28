@@ -15,7 +15,7 @@
 > e nome de tela mudam:** confira no painel antes de contratar. O que está marcado **[A VERIFICAR
 > NO PAINEL]** não apareceu na documentação consultada.
 >
-> **O que NÃO está aqui:** as travas de código, como a janela de 6–12 h, a falta de trava por IP
+> **O que NÃO está aqui:** as travas de código, como a validade de 24 h, a falta de trava por IP
 > e o vídeo de apresentação fora do portão. Elas ficam no `CLAUDE.md` → *Video* e *Access
 > Architecture*, porque um agente prestes a escrever código erra sem elas.
 
@@ -78,9 +78,12 @@ apresentação.** Motivo do operador: já era onde a apresentação estava, e é
 painel. O que isso muda, e já está no código (28/09):
 - **todo player sai assinado pelo nosso servidor**, inclusive o da apresentação, que continua
   tocando para qualquer visitante (é vídeo de venda: o servidor assina sem conferir acesso);
-- **duas validades:** o que é **público** (apresentação e aula com prévia grátis) vale **24 h**;
-  as **aulas pagas**, **6 h** (a janela de 6–12 h de Ago 2026), e só para quem está logado com
-  assinatura ativa (a trava da etapa 4 do Bloco U);
+- **a assinatura vale 24 h para todo vídeo** — apresentação, prévia grátis e aula paga
+  *(operador, 28/09/2026, depois de comparar: Bunny recomenda token curto só quando ele é gerado
+  na hora do play; Mux usa 7 dias por padrão e "horas a dias" para assinatura; Cloudflare, 1 h
+  por padrão e 24 h no máximo; plataformas de curso, 4 a 8 h)*. A aula paga continua **só para
+  quem está logado com assinatura ativa** (a trava da etapa 4): é ela, e não a validade, que
+  protege a aula;
 - **as variáveis são só as das aulas** (`BUNNY_STREAM_LESSONS_*`, §5); as `BUNNY_STREAM_INTRO_*`
   deixaram de ser usadas;
 - **página pública com player não pode ficar em cache mais de 24 h**, senão a assinatura vence.
@@ -439,8 +442,7 @@ O Bunny gera estes tipos de chave:
   video_id + expires)`**, com `expires` em **segundos**, entregue como `?token=…&expires=…` no
   iframe `iframe.mediadelivery.net/embed/<biblioteca>/<id>`. A chave é a **token key** da
   biblioteca, não a API key. *(A forma em Base64 que a leitura de 25/09 citava é de outro produto
-  — o token da CDN —, não do embed.)* Validade: **24 h** para o público (apresentação e prévia
-  grátis) e **6 h** para as aulas pagas (§3.1, 28/09).
+  — o token da CDN —, não do embed.)* Validade: **24 h** para todo vídeo (§3.1, 28/09).
 - **Com *Block Direct URL File Access* ligado, o iframe precisa de
   `referrerpolicy="strict-origin-when-cross-origin"`.** Sem isso, uma política de referrer mais
   estrita no site faz o Bunny tratar o acesso como direto e recusar o vídeo.
