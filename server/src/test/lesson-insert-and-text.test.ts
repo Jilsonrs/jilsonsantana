@@ -98,6 +98,37 @@ describe("inserir módulo numa posição", () => {
   });
 });
 
+// O STATUS DE NASCIMENTO, como na Udemy (decisão do operador, 29/09/2026): curso
+// em rascunho → aula e módulo novos já nascem publicados; curso publicado ou
+// arquivado → nascem em rascunho, até serem publicados à mão.
+describe("o status com que nasce", () => {
+  let n = 0;
+  async function cursoCom(status: "DRAFT" | "PUBLISHED" | "ARCHIVED") {
+    n += 1;
+    return prisma.course.create({
+      data: { slug: `nasce${n}${S}`, title: "C", language: "PT", status, modules: { create: { title: "M", status: "PUBLISHED" } } },
+      include: { modules: true },
+    });
+  }
+  const inserirModulo = (curso: number) =>
+    request(app).post(`/api/admin/courses/${curso}/modules`).set("Cookie", admin).send({ title: "Novo", posicao: 0 });
+
+  it.each([
+    ["DRAFT", "PUBLISHED"],
+    ["PUBLISHED", "DRAFT"],
+    ["ARCHIVED", "DRAFT"],
+  ] as const)("curso %s: aula e módulo novos nascem %s", async (statusDoCurso, esperado) => {
+    const curso = await cursoCom(statusDoCurso);
+
+    const aula = await inserirAula(admin, { title: "Nova", kind: "VIDEO", posicao: 0 }, curso.modules[0].id);
+    const modulo = await inserirModulo(curso.id);
+
+    expect(aula.status).toBe(201);
+    expect(aula.body.status).toBe(esperado);
+    expect(modulo.body.status).toBe(esperado);
+  });
+});
+
 describe("o texto da aula", () => {
   const editar = (id: number, corpo: object) => request(app).patch(`/api/lessons/${id}`).set("Cookie", admin).send(corpo);
 

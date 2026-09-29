@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { courseStructureSchema, lessonInsertSchema, moduleInsertSchema } from "@jilson/core";
+import { ContentStatus, courseStructureSchema, lessonInsertSchema, moduleInsertSchema } from "@jilson/core";
 import { prisma } from "../lib/prisma.js";
 import { requireAdmin } from "../middleware/auth.js";
 import { validate, parseId } from "../lib/http.js";
@@ -66,6 +66,16 @@ router.put("/admin/courses/:id/estrutura", requireAdmin, async (req, res) => {
 // Ordem das listas: o número gravado, e o id para desempatar (o mesmo das leituras).
 const porOrdem = [{ displayOrder: "asc" as const }, { id: "asc" as const }];
 
+/**
+ * O status com que a aula ou o módulo NOVO nasce, como na Udemy (decisão do
+ * operador, 29/09/2026): curso ainda em RASCUNHO → já nasce publicado, sem ter de
+ * publicar item por item; curso publicado (ou arquivado) → nasce em rascunho, até
+ * ser publicado à mão, para nada aparecer para o aluno antes da hora.
+ */
+function statusDoNovo(statusDoCurso: string): ContentStatus {
+  return statusDoCurso === ContentStatus.DRAFT ? ContentStatus.PUBLISHED : ContentStatus.DRAFT;
+}
+
 /** A lista com o id novo na posição pedida (além do fim, vai para o fim). */
 function comNovoNaPosicao(ids: number[], novo: number, posicao: number): number[] {
   const lugar = Math.min(posicao, ids.length);
@@ -83,7 +93,7 @@ router.post("/admin/modules/:id/lessons", requireAdmin, async (req, res) => {
 
   const modulo = await prisma.module.findUnique({
     where: { id },
-    select: { lessons: { orderBy: porOrdem, select: { id: true } } },
+    select: { course: { select: { status: true } }, lessons: { orderBy: porOrdem, select: { id: true } } },
   });
   if (!modulo) {
     res.status(404).json({ error: "NotFound" });
@@ -91,7 +101,9 @@ router.post("/admin/modules/:id/lessons", requireAdmin, async (req, res) => {
   }
 
   const criada = await prisma.$transaction(async (tx) => {
-    const nova = await tx.lesson.create({ data: { moduleId: id, title: body.title, kind: body.kind } });
+    const nova = await tx.lesson.create({
+      data: { moduleId: id, title: body.title, kind: body.kind, status: statusDoNovo(modulo.course.status) },
+    });
     const ordem = comNovoNaPosicao(modulo.lessons.map((l) => l.id), nova.id, body.posicao);
     for (const [ordemNova, aulaId] of ordem.entries()) {
       await tx.lesson.update({ where: { id: aulaId }, data: { displayOrder: ordemNova } });
@@ -111,7 +123,7 @@ router.post("/admin/courses/:id/modules", requireAdmin, async (req, res) => {
 
   const curso = await prisma.course.findUnique({
     where: { id },
-    select: { modules: { orderBy: porOrdem, select: { id: true } } },
+    select: { status: true, modules: { orderBy: porOrdem, select: { id: true } } },
   });
   if (!curso) {
     res.status(404).json({ error: "NotFound" });
@@ -119,7 +131,7 @@ router.post("/admin/courses/:id/modules", requireAdmin, async (req, res) => {
   }
 
   const criado = await prisma.$transaction(async (tx) => {
-    const novo = await tx.module.create({ data: { courseId: id, title: body.title } });
+    const novo = await tx.module.create({ data: { courseId: id, title: body.title, status: statusDoNovo(curso.status) } });
     const ordem = comNovoNaPosicao(curso.modules.map((m) => m.id), novo.id, body.posicao);
     for (const [ordemNova, moduloId] of ordem.entries()) {
       await tx.module.update({ where: { id: moduloId }, data: { displayOrder: ordemNova } });

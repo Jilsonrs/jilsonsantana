@@ -1452,6 +1452,12 @@ landmark. Corrigido junto.
       não deixa começar um segundo envio enquanto o primeiro não termina. Fechar ou recarregar a
       aba continua interrompendo (como na Udemy). **Mutação:** a porcentagem sem ser guardada e o
       botão sem travar → reprovam.
+- [x] **Aula e módulo novos nascem conforme o curso, como na Udemy** *(decisão do operador,
+      29/09/2026; os módulos seguem a mesma regra, resposta dele)*: curso em rascunho → nascem
+      **publicados**; curso publicado ou arquivado → nascem em **rascunho**. Nas rotas do "+"
+      (`admin-course-structure.ts`, `statusDoNovo`); os itens que já existiam não mudam. Teste
+      para os três estados do curso; **mutação** (curso publicado fazendo nascer publicado) →
+      reprova.
 - [x] **Etapa 4 — a trava de acesso e a aula tocando para o aluno** *(feita em 29/09, no `dev`, partes 4a–4d abaixo; falta a prova no ar depois do "publica")*: adianta da Fase 4 o model
       `Subscription`, o `temAcessoAtivo()` e o `requireActiveMembership`, **sem Stripe**; rota
       `GET /api/lessons/:id/player`; assinatura de teste do `member@` **só fora de produção** (o
