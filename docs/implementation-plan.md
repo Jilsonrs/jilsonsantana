@@ -157,6 +157,9 @@
 > módulo novos nascendo conforme o curso. **Decidido e registrado, ainda não construído:** o
 > **menu do aluno novo** (Início · Cursos · Trilhas · Meus estudos · JilsonAI — `design.md` §6),
 > que é o **próximo bloco**, junto com as telas sob `/aluno/*` e o painel do Início.
+> **Depois, no mesmo dia (pedido do operador): o Início do admin é o painel dele** (`/admin`, os
+> 4 relatórios de "Dados" EM BREVE + os atalhos); o aluno continua no painel dele. "Dados" saiu
+> do menu. Ver Bloco S.
 > **PUBLICADO em 29/09, à noite (`main` = `35fb940`, CI verde nos dois jobs, deploy ok), em 3
 > etapas:** ✅ 1. as
 > telas do aluno em `/aluno/*`, com os endereços antigos redirecionando · ✅ 2. o menu novo
@@ -371,6 +374,8 @@ escrito em lugar nenhum.
       - **Dados:** **uma tela só, em blocos**: assinantes (ativos, novos e cancelados no mês),
         aprendizado (horas assistidas, cursos mais vistos, conclusões), de onde vieram os alunos
         (campanha do link) e uso do JilsonAI. Se crescer, vira partes depois.
+        **→ Virou o Início do admin em 29/09/2026** (`/admin`, decisão do operador) e saiu do
+        menu; os 4 blocos são EM BREVE até os dados existirem (Fases 4, 5 e 6).
       - **Trilhas Admin:** a lista das trilhas curadas e um editor **no mesmo jeito do curso**
         (passos em ordem de preenchimento): nome, idioma, descrição, **imagem da trilha** (campo
         novo), módulos por competência (cada um com o seu **"Ao terminar, você sabe…"**, visto
@@ -1121,6 +1126,15 @@ tornada executável — não uma lista nova):
       texto; a etiqueta EM BREVE saiu do dicionário (em inglês, "COMING SOON"; no admin, sempre
       em português). Mutação: virar link um item EM BREVE (nível 2 ou rail) e voltar a esconder o
       planejado do aluno — as três reprovam.
+- [x] **O Início do admin é o painel dele** *(decisão do operador, 29/09/2026)*: logado como
+      admin, "Início" leva a `/admin` e é para lá que ele vai depois de entrar; o aluno continua no
+      painel dele. O painel do admin: os 4 relatórios de "Dados" (EM BREVE, sem link, cada um
+      dizendo quando chega) e os atalhos de antes embaixo (Trilhas virou EM BREVE: a tela não
+      existe). "Dados" saiu do menu. No mapa, cada Início tem o seu `papel`, e o teste de rótulo e
+      ícone únicos passou a valer por menu. O papel, depois de entrar, sai da resposta do próprio
+      login (conferido no Better Auth 1.7.5 instalado). Mutação: admin mandado ao Início do aluno,
+      relatório EM BREVE virando link, Início do aluno de volta ao menu do admin — as três
+      reprovam.
 - [x] **As telas do aluno passam para `/aluno/*`** *(decisão do operador, 28/09/2026, era a P15)*:
       `/inicio` → `/aluno/inicio`, `/conta` → `/aluno/conta` (com as subpáginas),
       `/minhas-trilhas` → `/aluno/minhas-trilhas`. Os endereços antigos **redirecionam** para os
