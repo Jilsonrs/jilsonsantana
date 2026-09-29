@@ -73,6 +73,15 @@ describe("CourseDetailPage", () => {
     await waitFor(() => expect(screen.getByText("PROCV e ÍNDICE+CORRESP")).toBeTruthy());
   });
 
+  // Cada aula leva à página da aula (etapa 4 do Bloco U, 29/09/2026).
+  it("cada aula do conteúdo leva à página da aula", async () => {
+    getCourseBySlug.mockResolvedValue(baseCourse);
+    renderWithProviders(<CourseDetailPage />, { route: "/curso/exemplo-fundamentos-excel-ia", path: "/curso/:slug" });
+    (await screen.findByText("Base Lógica Inquebrável")).click();
+    const link = await screen.findByRole("link", { name: "PROCV e ÍNDICE+CORRESP" });
+    expect(link.getAttribute("href")).toBe("/aluno/aula/100");
+  });
+
   it("does not render the FAQ accordion when faq is empty", async () => {
     getCourseBySlug.mockResolvedValue(baseCourse);
     renderWithProviders(<CourseDetailPage />, { route: "/curso/exemplo-fundamentos-excel-ia", path: "/curso/:slug" });

@@ -218,6 +218,15 @@ describe("Conteúdo — o texto da aula", () => {
     await waitFor(() => expect(updateLesson).toHaveBeenCalledWith(12, { content: "**Texto novo**" }));
   });
 
+  // A aula como o aluno vê (etapa 4 do Bloco U, 29/09/2026): em aba nova, para
+  // um envio de vídeo em andamento no editor não parar.
+  it("Visualizar abre a página da aula, em aba nova", async () => {
+    await abrir();
+    const link = screen.getByRole("link", { name: "Visualizar a aula Abertura" });
+    expect(link.getAttribute("href")).toBe("/aluno/aula/11");
+    expect(link.getAttribute("target")).toBe("_blank");
+  });
+
   it("aula de vídeo não tem texto", async () => {
     await abrir();
     // Sem vídeo, ela já começa aberta (operador, 29/09/2026).

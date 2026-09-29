@@ -11,6 +11,7 @@ import { CourseDetailPage } from "@/pages/CourseDetailPage";
 import { TrilhaDetailPage } from "@/pages/TrilhaDetailPage";
 import { MyTrilhasPage } from "@/pages/MyTrilhasPage";
 import { MyTrilhaDetailPage } from "@/pages/MyTrilhaDetailPage";
+import { LessonPage } from "@/pages/aluno/LessonPage";
 import { AdminCoursesPage } from "@/pages/admin/AdminCoursesPage";
 import { NewCoursePage } from "@/pages/admin/course-editor/NewCoursePage";
 import { CourseEditorLayout } from "@/pages/admin/course-editor/CourseEditorLayout";
@@ -33,6 +34,10 @@ export default function App() {
         <Route path="/trilhas" element={<CatalogPage tipo="trilhas" />} />
         <Route path="/curso/:slug" element={<CourseDetailPage />} />
         <Route path="/trilha/:slug" element={<TrilhaDetailPage />} />
+        {/* A PÁGINA DA AULA (etapa 4 do Bloco U, 29/09/2026): a primeira tela nova
+            já sob /aluno/. FORA do ProtectedRoute de propósito: a prévia grátis
+            toca para visitante sem login. Quem decide o que cada um vê é o servidor. */}
+        <Route path="/aluno/aula/:id" element={<LessonPage />} />
         <Route element={<ProtectedRoute />}>
           <Route path="/inicio" element={<StudentHomePage />} />
           <Route path="/minhas-trilhas" element={<MyTrilhasPage />} />

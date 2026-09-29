@@ -5,15 +5,11 @@ import { EXTENSOES_DOS_ARQUIVOS_DA_AULA } from "@jilson/core";
 import * as api from "@/lib/api";
 import type { AdminLesson } from "@/lib/api";
 import { codigoDoErro } from "@/lib/course-form";
+import { tamanhoLegivel } from "@/lib/tamanho-de-arquivo";
 import { Button } from "@/components/ui/button";
 
 const ACEITAS: readonly string[] = EXTENSOES_DOS_ARQUIVOS_DA_AULA;
 
-/** "1,4 MB", "820 KB": o tamanho para o operador conferir o que enviou. */
-export function tamanhoLegivel(bytes: number): string {
-  if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} MB`;
-  return `${Math.max(1, Math.round(bytes / 1024)).toLocaleString("pt-BR")} KB`;
-}
 
 const extensaoDe = (nome: string) => (nome.includes(".") ? (nome.split(".").pop() ?? "").toLowerCase() : "");
 

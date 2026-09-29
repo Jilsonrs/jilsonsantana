@@ -4,6 +4,7 @@ import {
   Bot,
   Globe,
   Library,
+  PlayCircle,
   Route,
   Signpost,
   SlidersHorizontal,
@@ -71,6 +72,12 @@ export type Secao = {
    * os passos do editor do curso, lidos do curso gravado (`lib/nav-marks.ts`).
    */
   marcas?: "passos-do-curso";
+  /**
+   * O nível 2 que NÃO é lista fixa: vem dos dados da tela. Hoje só existe um
+   * caso, a página da aula, onde o nível 2 é o conteúdo do curso daquela aula
+   * (etapa 4 do Bloco U, 29/09/2026 — `components/aula/CourseContentsNav.tsx`).
+   */
+  nivel2?: "conteudo-do-curso";
 };
 
 /**
@@ -118,6 +125,18 @@ export function navegacao(t: AppTexts): Secao[] {
         { label: t.nav.faturamento, to: "/conta/faturamento" },
         { label: t.nav.integracoes, to: "/conta/integracoes" },
       ],
+    },
+
+    {
+      // A PÁGINA DA AULA (etapa 4 do Bloco U — decisão do operador, 28–29/09/2026,
+      // no estilo do LinkedIn Learning): fora do menu lateral; o nível 2 é o
+      // conteúdo do curso, que vem dos dados da aula.
+      label: t.nav.aula,
+      to: "/aluno/aula/:id",
+      icon: PlayCircle,
+      estado: "ativo",
+      foraDoMenuLateral: true,
+      nivel2: "conteudo-do-curso",
     },
 
     // ---------------------------------------------------------------- ADMIN

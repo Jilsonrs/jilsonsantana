@@ -1504,6 +1504,20 @@ landmark. Corrigido junto.
         assiste por rota de admin). **Mutação:** a prévia sem efeito, o conteúdo na resposta
         bloqueada, o download sem a trava, o nome sem limpeza e o rascunho na rota do aluno →
         reprovam.
+      - [x] **4c — a tela** *(29/09, no `dev`)*: `/aluno/aula/:id` (`pages/aluno/LessonPage.tsx`),
+        **fora** do `ProtectedRoute` (a prévia grátis é para visitante). O mapa de navegação
+        ganhou uma seção fora do menu lateral com `nivel2: "conteudo-do-curso"`: o `SecondaryNav`
+        desenha o **conteúdo do curso** da aula (`components/aula/CourseContentsNav.tsx`), com a
+        aula atual em `aria-current`, o ícone de vídeo ou texto, **Recursos** nas aulas com
+        arquivo e o **rascunho marcado só para o admin**; no celular e para o visitante, a lista
+        fica embaixo do player. `LessonContent` (o player grande assinado, o texto no centro com
+        **"Recursos para esta aula"**, ou "para assinantes"), `AiDock` (o botão flutuante e o
+        painel "Em breve", que encolhe o player). O admin lê pela rota de admin
+        (`lib/pagina-da-aula.ts`). Textos por `useT()`, com as chaves `app.aula.*` e
+        `app.nav.aula` em português e inglês (inglês: rascunho do agente). **Visualizar** em cada
+        aula do editor (aba nova, para não parar um envio) e link em cada aula da página de curso
+        provisória. **Mutação:** a aula atual sem destaque e o conteúdo aparecendo na bloqueada →
+        reprovam.
 - **Done when:** no computador do operador, a capa enviada aparece no admin; o vídeo de
   apresentação toca no admin e na página; a aula aberta no editor mostra a miniatura, o nome e a
   duração do vídeo (sem player, decisão de 28/09); o `member@`

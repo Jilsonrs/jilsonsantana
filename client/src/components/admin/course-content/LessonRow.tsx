@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { ArrowDown, ArrowUp, ChevronDown, ChevronUp, Pencil, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronDown, ChevronUp, Eye, Pencil, Trash2 } from "lucide-react";
 import { LessonKind } from "@jilson/core";
 import * as api from "@/lib/api";
 import type { AdminLesson } from "@/lib/api";
@@ -67,6 +67,14 @@ export function LessonRow({
           </>
         )}
         <div className="ml-auto flex flex-wrap items-center gap-1">
+          {/* A aula como o aluno vê (etapa 4 do Bloco U, 29/09/2026). Em aba nova:
+              um envio de vídeo em andamento aqui continua sem interrupção. */}
+          <Button asChild variant="ghost" size="sm">
+            <a href={`/aluno/aula/${lesson.id}`} target="_blank" rel="noopener noreferrer" aria-label={`Visualizar a aula ${lesson.title}`}>
+              <Eye className="h-4 w-4" />
+              Visualizar
+            </a>
+          </Button>
           <Button type="button" variant="ghost" size="icon" aria-label={`Subir a aula ${lesson.title}`} onClick={() => onMover(-1)} disabled={isFirst || ocupado}>
             <ArrowUp className="h-4 w-4" />
           </Button>

@@ -228,6 +228,7 @@ export const pt = {
     nav: {
       principal: "Principal",
       menuDaSecao: "Menu da seção",
+      aula: "Aula",
       abrirMenu: "Abrir o menu",
       abrirMenuConta: "Abrir o menu da conta",
       menu: "Menu",
@@ -346,6 +347,27 @@ export const pt = {
       salvando: "Salvando…",
       salvar: "Salvar trilha",
       erroSalvar: "Não foi possível salvar. Tente de novo."
+    },
+    // A PÁGINA DA AULA (etapa 4 do Bloco U, 29/09/2026). Rascunho do agente: o
+    // texto é do operador.
+    aula: {
+      conteudoDoCurso: "Conteúdo do curso",
+      carregando: "Carregando…",
+      erro: "Não foi possível abrir a aula. Tente de novo.",
+      naoEncontrada: "Aula não encontrada.",
+      paraAssinantes: "Esta aula é para assinantes.",
+      semVideo: "Esta aula ainda não tem vídeo.",
+      recursos: "Recursos",
+      recursosDaAula: "Recursos para esta aula",
+      recursosSoAssinantes: "Os recursos desta aula são para assinantes.",
+      rascunho: "Rascunho",
+      arquivado: "Arquivado",
+      aulaDeVideo: "Aula em vídeo",
+      aulaDeTexto: "Aula em texto",
+      abrirIa: "Abrir o JilsonAI",
+      fecharIa: "Fechar o JilsonAI",
+      iaTitulo: "JilsonAI",
+      iaEmBreve: "Em breve: tire as suas dúvidas sobre esta aula aqui mesmo, sem sair do vídeo."
     }
   }
 };

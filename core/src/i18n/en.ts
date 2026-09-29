@@ -218,6 +218,7 @@ export const en: Dict = {
     nav: {
       principal: "Main",
       menuDaSecao: "Section menu",
+      aula: "Lesson",
       abrirMenu: "Open menu",
       abrirMenuConta: "Open account menu",
       menu: "Menu",
@@ -333,6 +334,25 @@ export const en: Dict = {
       salvando: "Saving…",
       salvar: "Save learning path",
       erroSalvar: "We couldn't save this learning path. Please try again."
+    },
+    aula: {
+      conteudoDoCurso: "Course content",
+      carregando: "Loading…",
+      erro: "We couldn't open this lesson. Please try again.",
+      naoEncontrada: "Lesson not found.",
+      paraAssinantes: "This lesson is for subscribers.",
+      semVideo: "This lesson has no video yet.",
+      recursos: "Resources",
+      recursosDaAula: "Resources for this lesson",
+      recursosSoAssinantes: "This lesson's resources are for subscribers.",
+      rascunho: "Draft",
+      arquivado: "Archived",
+      aulaDeVideo: "Video lesson",
+      aulaDeTexto: "Text lesson",
+      abrirIa: "Open JilsonAI",
+      fecharIa: "Close JilsonAI",
+      iaTitulo: "JilsonAI",
+      iaEmBreve: "Coming soon: ask your questions about this lesson right here, without leaving the video."
     }
   }
 };

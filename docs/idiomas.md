@@ -266,6 +266,10 @@ site para português e pagaria em real, bem menos que US$ 30.
 
 ---
 
+> **A página da aula (29/09/2026) já nasceu bilíngue:** os textos saem de `app.aula.*` e
+> `app.nav.aula`, nos dois idiomas. O inglês é rascunho do agente e passa pelo ciclo de revisão
+> abaixo.
+
 ## 6. O que ainda vai nascer com idioma (nada disto existe hoje)
 
 | Onde | O quê | Fase |
