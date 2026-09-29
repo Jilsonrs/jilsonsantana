@@ -58,7 +58,7 @@ function comAula(aula: Partial<AdminLesson>): AdminCourseDetail {
             kind: "VIDEO",
             content: null,
             bunnyVideoId: null,
-            bunnyVideoPendingId: null,
+            bunnyVideoPendingId: null, bunnyVideoReady: false,
             isFreePreview: false,
             tags: [],
             displayOrder: 0,
@@ -84,10 +84,14 @@ afterEach(() => {
 const renderizar = () =>
   renderWithProviders(<CourseEditorLayout />, { route: "/admin/cursos/1/conteudo", path: "/admin/cursos/:id", filhas: ROTAS_DO_EDITOR });
 
+const seta = () => screen.findByRole("button", { name: /^(Abrir|Recolher) a aula Abertura$/ });
+
+/** Entra no Conteúdo e deixa a aula aberta (a sem vídeo, ou processando, já começa aberta). */
 async function abrirVideo(aula: Partial<AdminLesson> = {}) {
   adminGetCourse.mockResolvedValue(comAula(aula));
   renderizar();
-  fireEvent.click(await screen.findByRole("button", { name: "Abrir a aula Abertura" }));
+  const botao = await seta();
+  if (botao.getAttribute("aria-expanded") === "false") fireEvent.click(botao);
 }
 
 const escolher = () =>
@@ -96,19 +100,19 @@ const escolher = () =>
   });
 
 describe("a aula abre e recolhe (como a Udemy)", () => {
-  it("começa recolhida; a seta abre e recolhe", async () => {
-    adminGetCourse.mockResolvedValue(comAula({}));
+  it("a seta abre e recolhe", async () => {
+    adminGetCourse.mockResolvedValue(comAula({ bunnyVideoId: GUID, bunnyVideoReady: true }));
     renderizar();
-    const seta = await screen.findByRole("button", { name: "Abrir a aula Abertura" });
-    expect(seta.getAttribute("aria-expanded")).toBe("false");
-    expect(screen.queryByRole("button", { name: "Enviar vídeo" })).toBeNull();
+    const botao = await screen.findByRole("button", { name: "Abrir a aula Abertura" });
+    expect(botao.getAttribute("aria-expanded")).toBe("false");
+    expect(screen.queryByRole("button", { name: "Trocar o vídeo" })).toBeNull();
 
-    fireEvent.click(seta);
+    fireEvent.click(botao);
     expect(screen.getByRole("button", { name: "Recolher a aula Abertura" }).getAttribute("aria-expanded")).toBe("true");
-    expect(screen.getByRole("button", { name: "Enviar vídeo" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Trocar o vídeo" })).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: "Recolher a aula Abertura" }));
-    expect(screen.queryByRole("button", { name: "Enviar vídeo" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Trocar o vídeo" })).toBeNull();
   });
 
   it("aula de texto aberta não tem vídeo", async () => {
@@ -117,6 +121,36 @@ describe("a aula abre e recolhe (como a Udemy)", () => {
     fireEvent.click(await screen.findByRole("button", { name: "Abrir a aula Abertura" }));
     expect(screen.getByRole("textbox", { name: "Texto da aula" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Enviar vídeo" })).toBeNull();
+  });
+});
+
+// Quem começa aberta ao entrar (decisão do operador, 29/09/2026): a aula que ainda
+// espera o vídeo ou está processando fica aberta; a pronta e a de texto, recolhidas.
+describe("ao entrar no Conteúdo", () => {
+  const casos: [string, Partial<AdminLesson>, "true" | "false"][] = [
+    ["sem vídeo: aberta", {}, "true"],
+    ["processando (o Bunny ainda não confirmou): aberta", { bunnyVideoId: GUID, bunnyVideoReady: false }, "true"],
+    ["com o vídeo pronto: recolhida", { bunnyVideoId: GUID, bunnyVideoReady: true }, "false"],
+    ["aula de texto: recolhida", { kind: "TEXT" }, "false"],
+  ];
+  for (const [nome, aula, esperado] of casos) {
+    it(nome, async () => {
+      adminGetCourse.mockResolvedValue(comAula(aula));
+      renderizar();
+      expect((await seta()).getAttribute("aria-expanded")).toBe(esperado);
+    });
+  }
+
+  // Aberta continua aberta: o vídeo ficar pronto e o curso recarregar não recolhe
+  // a aula na cara do operador.
+  it("a aula aberta continua aberta quando o curso recarrega com o vídeo pronto", async () => {
+    await abrirVideo({ bunnyVideoId: GUID, bunnyVideoReady: false });
+    adminGetCourse.mockResolvedValue(comAula({ bunnyVideoId: GUID, bunnyVideoReady: true }));
+
+    fireEvent.click(screen.getByRole("checkbox", { name: /Prévia grátis/ }));
+    await waitFor(() => expect(adminGetCourse).toHaveBeenCalledTimes(2));
+
+    expect((await seta()).getAttribute("aria-expanded")).toBe("true");
   });
 });
 

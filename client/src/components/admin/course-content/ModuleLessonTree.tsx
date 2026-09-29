@@ -14,6 +14,7 @@ import { ModuleCard } from "./ModuleCard";
 import { InsertPoint } from "./InsertPoint";
 import { MODULO } from "./opcoes";
 import { ArrasteDoCurso } from "./arrastar";
+import { AulasAbertasProvider } from "./aulas-abertas";
 
 
 /**
@@ -58,39 +59,45 @@ export function ModuleLessonTree({ courseId }: { courseId: number }) {
   const inserirModulo = (posicao: number) => (_tipo: string, titulo: string) =>
     api.insertModule(courseId, { title: titulo, posicao }).then(invalidate);
 
-  return (
-    <div className="space-y-4">
-      {reordenar.isError && (
-        <p role="alert" className="text-sm font-medium text-destructive">
-          Não foi possível mudar a ordem. Tente de novo.
-        </p>
-      )}
-      <InsertPoint rotulo="Inserir módulo no começo" opcoes={MODULO} aoInserir={inserirModulo(0)} />
-      <ArrasteDoCurso nomes={nomes} aoSoltar={soltar}>
-        <SortableContext items={modules.map((m) => idDoArraste({ tipo: "modulo", id: m.id }))} strategy={verticalListSortingStrategy}>
-          {modules.map((mod, index) => (
-            <div key={mod.id} className="space-y-4">
-              <ModuleCard
-                module={mod}
-                isFirst={index === 0}
-                isLast={index === modules.length - 1}
-                ocupado={reordenar.isPending}
-                onMover={(passo) => reordenar.mutate(moverModulo(estrutura, index, passo))}
-                onMoverAula={(indice, passo) => reordenar.mutate(moverAula(estrutura, mod.id, indice, passo))}
-                onChanged={invalidate}
-              />
-              {/* Depois do último módulo, quem insere é o "+ Módulo", logo abaixo. */}
-              {index < modules.length - 1 && (
-                <InsertPoint rotulo={`Inserir módulo depois de ${mod.title}`} opcoes={MODULO} aoInserir={inserirModulo(index + 1)} />
-              )}
-            </div>
-          ))}
-        </SortableContext>
-      </ArrasteDoCurso>
+  // O editor só mostra o passo depois de o curso carregar; sem ele, não há
+  // árvore (e a regra de quem começa aberta precisa das aulas).
+  if (!course) return null;
 
-      {/* Como na Udemy (operador, 28/09/2026): o botão abre o título, e "Adicionar
-          módulo" já grava — sem campo fixo nem Salvar. */}
-      <InsertPoint rotulo="Adicionar módulo no fim do curso" fixo="Módulo" opcoes={MODULO} aoInserir={inserirModulo(modules.length)} />
-    </div>
+  return (
+    <AulasAbertasProvider modulos={modules}>
+      <div className="space-y-4">
+        {reordenar.isError && (
+          <p role="alert" className="text-sm font-medium text-destructive">
+            Não foi possível mudar a ordem. Tente de novo.
+          </p>
+        )}
+        <InsertPoint rotulo="Inserir módulo no começo" opcoes={MODULO} aoInserir={inserirModulo(0)} />
+        <ArrasteDoCurso nomes={nomes} aoSoltar={soltar}>
+          <SortableContext items={modules.map((m) => idDoArraste({ tipo: "modulo", id: m.id }))} strategy={verticalListSortingStrategy}>
+            {modules.map((mod, index) => (
+              <div key={mod.id} className="space-y-4">
+                <ModuleCard
+                  module={mod}
+                  isFirst={index === 0}
+                  isLast={index === modules.length - 1}
+                  ocupado={reordenar.isPending}
+                  onMover={(passo) => reordenar.mutate(moverModulo(estrutura, index, passo))}
+                  onMoverAula={(indice, passo) => reordenar.mutate(moverAula(estrutura, mod.id, indice, passo))}
+                  onChanged={invalidate}
+                />
+                {/* Depois do último módulo, quem insere é o "+ Módulo", logo abaixo. */}
+                {index < modules.length - 1 && (
+                  <InsertPoint rotulo={`Inserir módulo depois de ${mod.title}`} opcoes={MODULO} aoInserir={inserirModulo(index + 1)} />
+                )}
+              </div>
+            ))}
+          </SortableContext>
+        </ArrasteDoCurso>
+
+        {/* Como na Udemy (operador, 28/09/2026): o botão abre o título, e "Adicionar
+            módulo" já grava — sem campo fixo nem Salvar. */}
+        <InsertPoint rotulo="Adicionar módulo no fim do curso" fixo="Módulo" opcoes={MODULO} aoInserir={inserirModulo(modules.length)} />
+      </div>
+    </AulasAbertasProvider>
   );
 }

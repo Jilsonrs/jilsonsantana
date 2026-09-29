@@ -41,7 +41,7 @@ const CURSO: AdminCourseDetail = {
           kind: "VIDEO",
           content: null,
           bunnyVideoId: null,
-          bunnyVideoPendingId: null,
+          bunnyVideoPendingId: null, bunnyVideoReady: false,
           isFreePreview: false,
           tags: [],
           displayOrder: 0,
@@ -62,7 +62,9 @@ beforeEach(() => {
 
 async function abrirArquivos() {
   renderWithProviders(<CourseEditorLayout />, { route: "/admin/cursos/1/conteudo", path: "/admin/cursos/:id", filhas: ROTAS_DO_EDITOR });
-  fireEvent.click(await screen.findByRole("button", { name: "Abrir a aula Abertura" }));
+  // A aula sem vídeo já começa aberta (operador, 29/09/2026).
+  const seta = await screen.findByRole("button", { name: /^(Abrir|Recolher) a aula Abertura$/ });
+  if (seta.getAttribute("aria-expanded") === "false") fireEvent.click(seta);
 }
 
 const escolher = (arquivo: File) => fireEvent.change(screen.getByTestId("lesson-file-11"), { target: { files: [arquivo] } });

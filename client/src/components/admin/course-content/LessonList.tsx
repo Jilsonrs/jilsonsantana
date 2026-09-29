@@ -6,6 +6,7 @@ import { idDoArraste } from "@/lib/course-structure";
 import { LessonRow } from "./LessonRow";
 import { InsertPoint } from "./InsertPoint";
 import { TIPOS_DE_AULA } from "./opcoes";
+import { useAulasAbertas } from "./aulas-abertas";
 
 /**
  * As aulas de um módulo, com o "+" entre elas e o "+ Aula" no fim (como na Udemy
@@ -24,10 +25,15 @@ export function LessonList({
   onMoverAula: (indice: number, passo: -1 | 1) => void;
   onChanged: () => void;
 }) {
-  // A aula nasce NA POSIÇÃO (Bloco E, etapa 2).
+  const { abrir } = useAulasAbertas();
+  // A aula nasce NA POSIÇÃO (Bloco E, etapa 2) e já ABERTA, pronta para o envio
+  // do vídeo (como na Udemy — operador, 29/09/2026).
   const inserirAqui = (posicao: number) => (tipo: string, titulo: string) =>
     // Seguro: o "+" só oferece os tipos de TIPOS_DE_AULA que não são "em breve".
-    api.insertLesson(moduleId, { title: titulo, kind: tipo as LessonKind, posicao }).then(onChanged);
+    api.insertLesson(moduleId, { title: titulo, kind: tipo as LessonKind, posicao }).then((aula) => {
+      abrir(aula.id);
+      onChanged();
+    });
 
   return (
     <div className="space-y-1 pl-4">

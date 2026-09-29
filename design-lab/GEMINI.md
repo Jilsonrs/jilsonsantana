@@ -184,7 +184,9 @@ servidores (§5); o React responde em `localhost:5173`, a home pública em `loca
 > miniatura, o nome do arquivo e a duração (`LessonVideoSummary.tsx`), o envio e a Prévia grátis;
 > na de texto, o texto — e, embaixo, os Arquivos (`LessonFilesPanel.tsx`). **O editor NÃO tem
 > player** (decisão dele: assistir é na página da aula do aluno): não coloque iframe aqui (tem
-> teste).
+> teste). **Quem começa aberta** (29/09, `aulas-abertas.tsx`): a aula de vídeo sem vídeo ou
+> ainda processando; a aula criada pelo "+" já nasce aberta; o que está aberto continua aberto
+> enquanto ele fica na tela. Tudo isso tem teste.
 > **Arrastar** (`arrastar.tsx`): a alça com os pontinhos é um **botão** com nome ("Arrastar a
 > aula Fórmulas"), e as instruções de teclado saem em português. Os dois têm teste.
 >

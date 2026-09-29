@@ -186,6 +186,8 @@ export type AdminLesson = {
   /** O vídeo da aula no Bunny (só o admin vê) e o envio em andamento. */
   bunnyVideoId: string | null;
   bunnyVideoPendingId: string | null;
+  /** O Bunny já confirmou que o vídeo está pronto: no editor, a aula volta recolhida (29/09/2026). */
+  bunnyVideoReady: boolean;
   /** Prévia grátis: a aula toca para qualquer visitante (etapa 4 do Bloco U). */
   isFreePreview: boolean;
   tags: string[];

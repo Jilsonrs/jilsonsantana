@@ -12,6 +12,7 @@ import { LessonTextPanel } from "./LessonTextPanel";
 import { LessonVideoPanel } from "./LessonVideoPanel";
 import { LessonFilesPanel } from "./LessonFilesPanel";
 import { AlcaDeArraste, useArrastavel } from "./arrastar";
+import { useAulasAbertas } from "./aulas-abertas";
 import { CLASSE_DA_ETIQUETA } from "./opcoes";
 
 const ROTULO_DO_TIPO: Record<LessonKind, string> = { VIDEO: "Vídeo", TEXT: "Texto" };
@@ -20,7 +21,8 @@ const ROTULO_DO_TIPO: Record<LessonKind, string> = { VIDEO: "Vídeo", TEXT: "Tex
  * Uma aula, como na Udemy (operador, 28/09/2026): a linha mostra o tipo, o título
  * e o status; o lápis abre a edição (com Cancelar e Salvar). A seta no fim da
  * linha abre e recolhe a aula: dentro, o conteúdo (o vídeo ou o texto) e,
- * embaixo, os arquivos. Toda aula começa recolhida.
+ * embaixo, os arquivos. Quem começa aberta, e a aula recém-criada, vêm de
+ * `aulas-abertas.tsx` (operador, 29/09/2026).
  */
 export function LessonRow({
   lesson,
@@ -38,7 +40,8 @@ export function LessonRow({
   onChanged: () => void;
 }) {
   const [editando, setEditando] = useState(false);
-  const [aberta, setAberta] = useState(false);
+  const { estaAberta, alternar } = useAulasAbertas();
+  const aberta = estaAberta(lesson.id);
 
   const del = useMutation({
     mutationFn: () => api.deleteLesson(lesson.id),
@@ -87,7 +90,7 @@ export function LessonRow({
             size="icon"
             aria-expanded={aberta}
             aria-label={`${aberta ? "Recolher" : "Abrir"} a aula ${lesson.title}`}
-            onClick={() => setAberta(!aberta)}
+            onClick={() => alternar(lesson.id)}
           >
             {aberta ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </Button>

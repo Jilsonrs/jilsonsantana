@@ -1422,6 +1422,11 @@ landmark. Corrigido junto.
       `_prisma_migrations` 12→13 e `session` +1 do login de teste), 0 sem RLS, login 200, "No
       difference detected". **Mutação:** terminar sem desmarcar e perguntar pelas já confirmadas →
       reprovam.
+      **Parte 2 feita:** o aberto/recolhido saiu da linha para a árvore (`aulas-abertas.tsx`, um
+      contexto): a regra de entrada é uma função pura (aula de vídeo sem vídeo ou não confirmada
+      → aberta), a aula criada pelo "+ Aula" ou pelo "+" entre aulas nasce aberta, e a aberta
+      continua aberta quando o curso recarrega. **Mutação:** regra invertida, aula criada que não
+      abre e a regra recalculada a cada recarga → reprovam.
 - [ ] **Etapa 4 — a trava de acesso e a aula tocando para o aluno:** adianta da Fase 4 o model
       `Subscription`, o `temAcessoAtivo()` e o `requireActiveMembership`, **sem Stripe**; rota
       `GET /api/lessons/:id/player`; assinatura de teste do `member@` **só fora de produção** (o
