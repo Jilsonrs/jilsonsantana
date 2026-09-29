@@ -99,3 +99,21 @@ describe("iniciais", () => {
     expect(iniciais(null, null)).toBe("?");
   });
 });
+
+// O nível 2 de Meus estudos (decisão do operador, 29/09/2026): os quatro itens,
+// e só o que existe é link. O resto sai como texto com EM BREVE.
+describe("SecondaryNav — Meus estudos", () => {
+  it("Minhas trilhas é link; Em andamento, Concluídos e Certificados são EM BREVE", () => {
+    render("/aluno/minhas-trilhas/7");
+
+    const minhas = screen.getByRole("link", { name: "Minhas trilhas" });
+    expect(minhas.getAttribute("href")).toBe("/aluno/minhas-trilhas");
+    expect(minhas.getAttribute("aria-current")).toBe("page");
+
+    for (const nome of ["Em andamento", "Concluídos", "Certificados"]) {
+      expect(screen.getByText(nome), nome).toBeTruthy();
+      expect(screen.queryByRole("link", { name: new RegExp(nome) }), nome).toBeNull();
+    }
+    expect(screen.getAllByText("EM BREVE")).toHaveLength(3);
+  });
+});

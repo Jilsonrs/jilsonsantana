@@ -158,7 +158,7 @@
 > **menu do aluno novo** (Início · Cursos · Trilhas · Meus estudos · JilsonAI — `design.md` §6),
 > que é o **próximo bloco**, junto com as telas sob `/aluno/*` e o painel do Início.
 > **Em construção no `dev` (29/09), em 3 etapas:** ✅ 1. as telas do aluno em `/aluno/*`, com os
-> endereços antigos redirecionando · 2. o menu novo + a tela Meus estudos · 3. o painel do Início.
+> endereços antigos redirecionando · ✅ 2. o menu novo + a tela Meus estudos · 3. o painel do Início.
 > **Registrado no fim da sessão de 29/09 (só documentos, no `dev`):** o mapa do que falta nos 7
 > passos do editor (Bloco E, depois da etapa 4), com um **achado novo** (campo já salvo não volta a
 > ficar vazio); o **Live Stream** do Bunny em acesso antecipado (`bunny.md` §6, decisão 8,
@@ -1097,12 +1097,19 @@ tornada executável — não uma lista nova):
       **Direção do operador (28/09/2026):** a tela de **Início é o painel do aluno, rica**, com o
       que ele tem disponível **a um clique**; o menu continua na barra lateral, e o painel nasce
       preparado para **ganhar itens no futuro**.
-- [ ] **O menu do aluno novo** *(decisão do operador, 29/09/2026 — `design.md` §6, "O menu do
+- [x] **O menu do aluno novo** *(decisão do operador, 29/09/2026 — `design.md` §6, "O menu do
       aluno")*: **Início · Cursos · Trilhas · Meus estudos · JilsonAI**. "Trilhas" são as trilhas
       prontas; **Meus estudos** tem no nível 2 **Em andamento · Minhas trilhas · Concluídos ·
       Certificados** (EM BREVE o que ainda não existe). "Minhas trilhas" e "Certificados" saem do
       menu principal. Sem "Salvos" (a trilha personalizada faz esse papel). Anda junto com o item
       abaixo (as telas sob `/aluno/*`) e com o painel do Início.
+      ✅ **29/09/2026 (etapa 2):** o mapa (`navigation.ts`) com os cinco itens; o **JilsonAI
+      aparece para o aluno como EM BREVE** e **Meus estudos tem tela própria**
+      (`/aluno/meus-estudos`, um cartão por item) — as duas decididas pelo operador ao aprovar o
+      plano. O que é planejado passou a aparecer para o aluno (`secoesVisiveis`), sempre como
+      texto; a etiqueta EM BREVE saiu do dicionário (em inglês, "COMING SOON"; no admin, sempre
+      em português). Mutação: virar link um item EM BREVE (nível 2 ou rail) e voltar a esconder o
+      planejado do aluno — as três reprovam.
 - [x] **As telas do aluno passam para `/aluno/*`** *(decisão do operador, 28/09/2026, era a P15)*:
       `/inicio` → `/aluno/inicio`, `/conta` → `/aluno/conta` (com as subpáginas),
       `/minhas-trilhas` → `/aluno/minhas-trilhas`. Os endereços antigos **redirecionam** para os

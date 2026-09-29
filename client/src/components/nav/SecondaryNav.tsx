@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { Role } from "@jilson/core";
 import {
   ROTA_DA_CONTA,
+  etiquetaEmBreve,
   secoesVisiveis,
   secaoAtiva,
   itensSecundarios,
@@ -184,6 +185,7 @@ export function SecondaryNav({
                       item={item}
                       ativo={pathname === item.to || pathname.startsWith(`${item.to}/`)}
                       concluido={item.chave !== undefined && concluidos.has(item.chave)}
+                      emBreve={etiquetaEmBreve(ativa, t)}
                     />
                   </li>
                 ))}

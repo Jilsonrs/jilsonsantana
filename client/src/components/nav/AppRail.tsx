@@ -1,7 +1,7 @@
 import { Fragment } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { secaoAtiva, secoesVisiveis, type Secao } from "@/lib/navigation";
+import { etiquetaEmBreve, secaoAtiva, secoesVisiveis, type Secao } from "@/lib/navigation";
 import { useT } from "@/lib/language";
 
 /**
@@ -73,6 +73,7 @@ const GLOW_ATIVO = cn(
  * quem enxerga não achar que o clique falhou.
  */
 function ItemPlanejado({ secao }: { secao: Secao }) {
+  const t = useT();
   const Icon = secao.icon;
   return (
     <li>
@@ -87,7 +88,7 @@ function ItemPlanejado({ secao }: { secao: Secao }) {
         <span className={cn(ROTULO, "flex items-center gap-2")}>
           {secao.label}
           <span className="rounded-full border border-white/10 px-1.5 py-0.5 font-mono text-[0.55rem] tracking-[0.08em]">
-            EM BREVE
+            {etiquetaEmBreve(secao, t)}
           </span>
         </span>
       </div>

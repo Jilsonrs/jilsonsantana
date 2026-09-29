@@ -14,6 +14,7 @@ import { MyTrilhasPage } from "@/pages/MyTrilhasPage";
 import { MyTrilhaDetailPage } from "@/pages/MyTrilhaDetailPage";
 import { LessonPage } from "@/pages/aluno/LessonPage";
 import { CourseEntryPage } from "@/pages/aluno/CourseEntryPage";
+import { MeusEstudosPage } from "@/pages/aluno/MeusEstudosPage";
 import { AdminCoursesPage } from "@/pages/admin/AdminCoursesPage";
 import { NewCoursePage } from "@/pages/admin/course-editor/NewCoursePage";
 import { CourseEditorLayout } from "@/pages/admin/course-editor/CourseEditorLayout";
@@ -46,6 +47,7 @@ export default function App() {
         {ROTAS_ANTIGAS_DO_ALUNO}
         <Route element={<ProtectedRoute />}>
           <Route path="/aluno/inicio" element={<StudentHomePage />} />
+          <Route path="/aluno/meus-estudos" element={<MeusEstudosPage />} />
           <Route path="/aluno/minhas-trilhas" element={<MyTrilhasPage />} />
           <Route path="/aluno/minhas-trilhas/:id" element={<MyTrilhaDetailPage />} />
           <Route path="/aluno/conta" element={<AccountPage />} />

@@ -384,6 +384,12 @@ O menu separa o que o aluno **descobre** do que é **dele**:
   acervo pequeno, todas mostrariam os mesmos cursos.
 - O que ainda não existe aparece como **EM BREVE**: Em andamento e Concluídos dependem do
   progresso (Fase 5); Certificados, da Fase 6.5.
+- **O JilsonAI aparece para o aluno como EM BREVE**, sem link *(operador, 29/09/2026)* — até
+  então o aluno não via nada planejado. Vale para toda seção DELE que ainda não existe; as
+  planejadas do admin continuam invisíveis para o aluno.
+- **"Meus estudos" tem tela própria** *(operador, 29/09/2026)*, `/aluno/meus-estudos`: um cartão
+  por item do nível 2, com o resumo de cada um. "Minhas trilhas" mantém o endereço dela
+  (`/aluno/minhas-trilhas`) e acende Meus estudos no menu.
 
 ### Mobile (< 768px)
 

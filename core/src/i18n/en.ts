@@ -230,9 +230,13 @@ export const en: Dict = {
       inicio: "Home",
       cursos: "Courses",
       trilhas: "Learning paths",
+      meusEstudos: "My learning",
+      emAndamento: "In progress",
       minhasTrilhas: "My learning paths",
+      concluidos: "Completed",
       jilsonai: "JilsonAI",
       certificados: "Certificates",
+      emBreve: "COMING SOON",
       minhaConta: "My account",
       seusDados: "Your details",
       preferencias: "Preferences",
@@ -290,6 +294,19 @@ export const en: Dict = {
       voltar: "← Back to My learning paths",
       erroDetalhe: "We couldn't load this learning path.",
       semConteudo: "This learning path has no content yet."
+    },
+    meusEstudos: {
+      titulo: "My learning",
+      descricao: "Everything that's yours at the school, in one place.",
+      emAndamentoDescricao: "The courses you've started, so you can pick up where you left off.",
+      minhasTrilhasDescricao: "The learning paths you saved to study.",
+      concluidosDescricao: "The courses you've finished.",
+      certificadosDescricao: "Certificates for the learning paths you complete.",
+      trilhaSalva: "saved learning path",
+      trilhasSalvas: "saved learning paths",
+      abrirMinhasTrilhas: "Open my learning paths",
+      nenhumaTrilha: "You haven't saved any learning paths yet.",
+      verTrilhas: "Browse learning paths"
     },
     catalogo: {
       cursos: "Courses",
