@@ -1,9 +1,8 @@
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import * as api from "@/lib/api";
 import type { AdminLesson } from "@/lib/api";
-import { enviarVideo } from "@/lib/video-upload";
-import { codigoDoErro } from "@/lib/course-form";
+import { enviarVideoDaAula, useEnvioDeVideo } from "@/lib/envios-de-video";
 import { Button } from "@/components/ui/button";
 import { LessonVideoSummary } from "./LessonVideoSummary";
 
@@ -14,27 +13,25 @@ import { LessonVideoSummary } from "./LessonVideoSummary";
  * da aula do aluno (etapa 4).
  *
  * O envio é o mesmo da apresentação (em partes, retomável, direto para o Bunny),
- * e o vídeo só entra na aula quando o envio termina.
+ * e o vídeo só entra na aula quando o envio termina. O estado dele mora em
+ * `lib/envios-de-video.ts`, fora do componente: recolher a aula ou trocar de
+ * passo no meio não interrompe nem esconde a porcentagem (operador, 29/09/2026).
  */
 export function LessonVideoPanel({ lesson, onChanged }: { lesson: AdminLesson; onChanged: () => void }) {
   const queryClient = useQueryClient();
   const entrada = useRef<HTMLInputElement>(null);
-  const [porcentagem, setPorcentagem] = useState(0);
+  const envio = useEnvioDeVideo(lesson.id);
+  const enviando = envio?.tipo === "enviando";
 
-  const envio = useMutation({
-    mutationFn: async (arquivo: File) => {
-      setPorcentagem(0);
-      // O nome do arquivo vira o nome do vídeo no Bunny (operador, 27/09/2026).
-      const dados = await api.startLessonVideoUpload(lesson.id, arquivo.name);
-      await enviarVideo(arquivo, dados, setPorcentagem).concluido;
-      await api.completeLessonVideoUpload(lesson.id, dados.videoId);
-    },
-    // A aula recarrega com o vídeo novo, e o resumo dele é lido de novo.
-    onSuccess: () => {
+  // Continua valendo mesmo que esta tela já tenha saído: a aula recarrega com o
+  // vídeo novo, e o resumo dele é lido de novo.
+  function enviar(arquivo: File) {
+    void enviarVideoDaAula(lesson.id, arquivo).then((entrou) => {
+      if (!entrou) return;
       onChanged();
       queryClient.invalidateQueries({ queryKey: ["lesson-video", lesson.id] });
-    },
-  });
+    });
+  }
 
   const previaGratis = useMutation({
     mutationFn: (ligada: boolean) => api.updateLesson(lesson.id, { isFreePreview: ligada }),
@@ -54,12 +51,16 @@ export function LessonVideoPanel({ lesson, onChanged }: { lesson: AdminLesson; o
             data-testid={`lesson-video-file-${lesson.id}`}
             onChange={(e) => {
               const arquivo = e.target.files?.[0];
-              if (arquivo) envio.mutate(arquivo);
+              if (arquivo) enviar(arquivo);
               e.target.value = "";
             }}
           />
-          <Button type="button" variant="outline" disabled={envio.isPending} onClick={() => entrada.current?.click()}>
-            {envio.isPending ? `Enviando… ${porcentagem}%` : lesson.bunnyVideoId ? "Trocar o vídeo" : "Enviar vídeo"}
+          <Button type="button" variant="outline" disabled={enviando} onClick={() => entrada.current?.click()}>
+            {envio?.tipo === "enviando"
+              ? `Enviando… ${envio.porcentagem}%`
+              : lesson.bunnyVideoId
+                ? "Trocar o vídeo"
+                : "Enviar vídeo"}
           </Button>
           <label className="flex cursor-pointer items-center gap-2 text-sm font-medium">
             <input
@@ -74,9 +75,9 @@ export function LessonVideoPanel({ lesson, onChanged }: { lesson: AdminLesson; o
         </div>
       </div>
 
-      {envio.isError && (
+      {envio?.tipo === "falhou" && (
         <p role="alert" className="text-sm font-medium text-destructive">
-          {codigoDoErro(envio.error) === "StreamNaoConfigurado"
+          {envio.codigo === "StreamNaoConfigurado"
             ? "A biblioteca de aulas não está configurada neste ambiente."
             : "Não foi possível enviar o vídeo. Tente de novo."}
         </p>

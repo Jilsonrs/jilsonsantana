@@ -1,8 +1,10 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { screen, fireEvent, waitFor, act } from "@testing-library/react";
+import { screen, fireEvent, waitFor, act, within } from "@testing-library/react";
 import { afterEach } from "vitest";
+import { Role } from "@jilson/core";
 import { renderWithProviders } from "@/test-utils";
+import { SecondaryNav } from "@/components/nav/SecondaryNav";
 import type { AdminCourseDetail, AdminLesson } from "@/lib/api";
 import { CURSO_DE_TESTE } from "./curso-de-teste";
 
@@ -27,6 +29,7 @@ vi.mock("@/lib/api", () => ({
   updateLesson: (...args: unknown[]) => updateLesson(...args),
 }));
 
+import { esquecerEnvios } from "@/lib/envios-de-video";
 import { CourseEditorLayout } from "./CourseEditorLayout";
 import { ROTAS_DO_EDITOR } from "./steps";
 
@@ -75,6 +78,7 @@ beforeEach(() => {
   for (const f of [adminGetCourse, startLessonVideoUpload, completeLessonVideoUpload, getLessonVideo, updateLesson, enviarVideo]) f.mockReset();
   getLessonVideo.mockResolvedValue({ video: PRONTO });
   updateLesson.mockResolvedValue({ id: 11 });
+  esquecerEnvios();
 });
 
 afterEach(() => {
@@ -205,6 +209,80 @@ describe("vídeo da aula — enviar", () => {
     enviarVideo.mockImplementation(() => ({ concluido: Promise.reject(new Error("rede")), cancelar: () => {} }));
     await abrirVideo();
     escolher();
+    expect((await screen.findByRole("alert")).textContent).toBe("Não foi possível enviar o vídeo. Tente de novo.");
+    expect(completeLessonVideoUpload).not.toHaveBeenCalled();
+  });
+});
+
+// O envio não depende da tela (pedido do operador, 29/09/2026): recolher a aula ou
+// trocar de passo no meio não interrompe nada, e a porcentagem continua lá.
+describe("vídeo da aula — o envio sobrevive à tela", () => {
+  let progredir: (p: number) => void = () => {};
+  let terminar: () => void = () => {};
+  let falhar: (e: Error) => void = () => {};
+  beforeEach(() => {
+    startLessonVideoUpload.mockResolvedValue({ videoId: GUID, titulo: "abertura.mp4", libraryId: "762605", expirationTime: 1, signature: "s" });
+    completeLessonVideoUpload.mockResolvedValue({ bunnyVideoId: GUID });
+    enviarVideo.mockImplementation((_f: File, _d: unknown, aoProgredir: (p: number) => void) => {
+      progredir = aoProgredir;
+      return { concluido: new Promise<void>((r, x) => ((terminar = r), (falhar = x))), cancelar: () => {} };
+    });
+  });
+
+  async function enviarAte37() {
+    await abrirVideo();
+    escolher();
+    await waitFor(() => expect(enviarVideo).toHaveBeenCalled());
+    act(() => progredir(37));
+    await screen.findByRole("button", { name: "Enviando… 37%" });
+  }
+
+  it("recolher e abrir a aula: a porcentagem continua, e não dá para começar outro envio nela", async () => {
+    await enviarAte37();
+    fireEvent.click(screen.getByRole("button", { name: "Recolher a aula Abertura" }));
+    fireEvent.click(screen.getByRole("button", { name: "Abrir a aula Abertura" }));
+
+    const botao = screen.getByRole("button", { name: "Enviando… 37%" });
+    expect((botao as HTMLButtonElement).disabled).toBe(true);
+    act(() => progredir(80));
+    expect(await screen.findByRole("button", { name: "Enviando… 80%" })).toBeTruthy();
+
+    act(() => terminar());
+    await waitFor(() => expect(completeLessonVideoUpload).toHaveBeenCalledWith(11, GUID));
+    expect(startLessonVideoUpload).toHaveBeenCalledTimes(1);
+  });
+
+  it("trocar de passo no meio e voltar: o envio continuou, com a porcentagem", async () => {
+    // Com o nível 2 da navegação ao lado, que é por onde o operador troca de passo.
+    adminGetCourse.mockResolvedValue(comAula({}));
+    renderWithProviders(
+      <>
+        <SecondaryNav papel={Role.ADMIN} onSignOut={vi.fn()} />
+        <CourseEditorLayout />
+      </>,
+      { route: "/admin/cursos/1/conteudo", path: "/admin/cursos/:id", filhas: ROTAS_DO_EDITOR },
+    );
+    await seta();
+    escolher();
+    await waitFor(() => expect(enviarVideo).toHaveBeenCalled());
+    act(() => progredir(37));
+    await screen.findByRole("button", { name: "Enviando… 37%" });
+    const passo = (nome: string) => within(screen.getByRole("complementary")).getByRole("link", { name: new RegExp(nome) });
+    fireEvent.click(passo("Informações básicas"));
+    await waitFor(() => expect(screen.queryByRole("button", { name: /Enviando/ })).toBeNull());
+    act(() => progredir(60));
+
+    fireEvent.click(passo("Conteúdo"));
+    expect(await screen.findByRole("button", { name: "Enviando… 60%" })).toBeTruthy();
+  });
+
+  it("o envio caiu enquanto a aula estava recolhida: ao abrir, o aviso está lá", async () => {
+    await enviarAte37();
+    fireEvent.click(screen.getByRole("button", { name: "Recolher a aula Abertura" }));
+    act(() => falhar(new Error("rede")));
+    await waitFor(() => expect(startLessonVideoUpload).toHaveBeenCalled());
+
+    fireEvent.click(screen.getByRole("button", { name: "Abrir a aula Abertura" }));
     expect((await screen.findByRole("alert")).textContent).toBe("Não foi possível enviar o vídeo. Tente de novo.");
     expect(completeLessonVideoUpload).not.toHaveBeenCalled();
   });

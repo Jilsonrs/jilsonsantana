@@ -133,11 +133,13 @@
 > 401** porque as variáveis misturavam duas bibliotecas (a de apresentação existia; `bunny.md`
 > §3.1). Corrigido pelo operador no mesmo dia: tudo na 762605, a biblioteca de apresentação
 > apagada, CDN token desligado e DRM Basic ligado. O envio da aula **funcionou e o vídeo tocou**.
-> Falta a apresentação enviada de novo (P19). **No `dev`, não publicado (28–29/09):** a aula no
-> editor como na Udemy (abre e recolhe, com a miniatura, sem player; a criada já nasce aberta; ao
-> voltar, só a pronta fica recolhida) e os arquivos para baixar sem limite de tamanho. Duas
-> migrations novas (`lesson_video_ready`, `lesson_file_size_bigint`), aplicadas no dev; produção
-> aplica no publish. Antes de publicar: `BUNNY_STREAM_LESSONS_CDN_HOST` no Railway (P19).
+> Falta a apresentação enviada de novo (P19). **PUBLICADO em 29/09 (`main` = `cb57273`, CI verde
+> nos dois jobs, deploy do Railway ok):** a aula no editor como na Udemy (abre e recolhe, com a
+> miniatura, sem player; a criada já nasce aberta; ao voltar, só a pronta fica recolhida) e os
+> arquivos para baixar sem limite de tamanho. As migrations `lesson_video_ready` e
+> `lesson_file_size_bigint` entraram em produção pelo pre-deploy. O operador criou a zona
+> `jilsonsantana-arquivos` e as variáveis (P33) e a `BUNNY_STREAM_LESSONS_CDN_HOST` (P19). Falta
+> conferir no ar: a miniatura da aula "Teste", o reenvio da apresentação e um .zip enviado.
 > **PUBLICADO em 28/09 (`main` = `5a60fa1`, CI verde): o Bloco E, etapa 2 INTEIRA (partes 2a a 2e)**,
 > mais a edição como na Udemy e a limpeza no Bunny ao excluir. *(A primeira publicação do dia,
 > `d342000`, pegou CI vermelho por um teste do arrastar que dependia de tempo — não do site; o
@@ -1439,6 +1441,14 @@ landmark. Corrigido junto.
       detected". **Mutação:** o limite de 50 MB de volta na tela e no servidor, e o tamanho sem ir
       ao Bunny → reprovam. **Para a etapa 4:** decidir a entrega do .zip (pelo servidor, que sai
       pelo Railway e é cobrado, ou link assinado temporário do Bunny — `bunny.md` §4.5).
+- [x] **O envio de vídeo sobrevive à tela** *(pedido do operador, 29/09/2026: "mudar de passo, se
+      quiser, sem interromper o que estava acontecendo")*. O envio já continuava sozinho quando a
+      tela saía; o que se perdia era a porcentagem, que morava no componente. Agora o estado de
+      cada envio mora em `lib/envios-de-video.ts`, fora da tela: recolher a aula ou trocar de passo
+      e voltar mostra a porcentagem de onde está, uma falha no meio aparece ao reabrir, e a aula
+      não deixa começar um segundo envio enquanto o primeiro não termina. Fechar ou recarregar a
+      aba continua interrompendo (como na Udemy). **Mutação:** a porcentagem sem ser guardada e o
+      botão sem travar → reprovam.
 - [ ] **Etapa 4 — a trava de acesso e a aula tocando para o aluno:** adianta da Fase 4 o model
       `Subscription`, o `temAcessoAtivo()` e o `requireActiveMembership`, **sem Stripe**; rota
       `GET /api/lessons/:id/player`; assinatura de teste do `member@` **só fora de produção** (o
@@ -1454,7 +1464,12 @@ landmark. Corrigido junto.
       Udemy)*: na lista de aulas do curso, a aula com arquivos ganha um botão **Recursos** junto ao
       nome, que abre a lista dos arquivos para baixar — **vale para aula de vídeo e de texto**; na
       aula **só de texto**, o texto fica no centro da tela e, embaixo dele, **"Recursos para esta
-      aula"** com os arquivos. Só assinante baixa (a trava desta etapa), sempre como download.
+      aula"** com os arquivos. Só assinante baixa (a trava desta etapa), sempre como download, e
+      **com o NOME ORIGINAL** — o que o operador enviou, um arquivo só, como na Udemy *(pedido do
+      operador, 29/09/2026, depois de baixar pelo painel do Bunny e receber `download.zip` → pasta
+      da aula → arquivo com nome de código)*. O nome com código no Storage continua (é o endereço
+      interno); o nome original sai do banco no `Content-Disposition` — atenção ao achado P2 da
+      revisão de segurança sobre caracteres invisíveis no nome.
       **Decidir aqui** como o .zip chega ao aluno: pelo servidor (sai pelo Railway, cobrado) ou link
       assinado temporário do Bunny (`bunny.md` §4.5).
       `security-vulnerability-reviewer` e revisão do operador antes do "publica".
