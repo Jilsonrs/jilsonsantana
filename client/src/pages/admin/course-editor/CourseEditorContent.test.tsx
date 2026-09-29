@@ -13,7 +13,12 @@ const updateLesson = vi.fn();
 const deleteLesson = vi.fn();
 const deleteModule = vi.fn();
 const updateModule = vi.fn();
+const listLessonFiles = vi.fn();
 vi.mock("@/lib/api", () => ({
+  listLessonFiles: (...args: unknown[]) => listLessonFiles(...args),
+  // Os arquivos aparecem dentro da aula aberta; aqui não são o assunto.
+  uploadLessonFile: vi.fn(),
+  deleteLessonFile: vi.fn(),
   updateModule: (...args: unknown[]) => updateModule(...args),
   deleteLesson: (...args: unknown[]) => deleteLesson(...args),
   deleteModule: (...args: unknown[]) => deleteModule(...args),
@@ -38,7 +43,7 @@ function modulo(id: number, titulo: string, aulas: [number, string][]): AdminMod
     layer: null,
     displayOrder: 0,
     status: "DRAFT",
-    lessons: aulas.map(([aulaId, t]) => ({ id: aulaId, moduleId: id, title: t, kind: "VIDEO", content: null, bunnyVideoId: null, bunnyVideoPendingId: null, isFreePreview: false, tags: [], displayOrder: 0, status: "DRAFT" })),
+    lessons: aulas.map(([aulaId, t]) => ({ id: aulaId, moduleId: id, title: t, kind: "VIDEO", content: null, bunnyVideoId: null, bunnyVideoPendingId: null, bunnyVideoReady: false, isFreePreview: false, tags: [], displayOrder: 0, status: "DRAFT" })),
   };
 }
 
@@ -56,6 +61,7 @@ beforeEach(() => {
   insertLesson.mockReset().mockResolvedValue({ id: 99 });
   insertModule.mockReset().mockResolvedValue({ id: 98 });
   updateLesson.mockReset().mockResolvedValue({ id: 12 });
+  listLessonFiles.mockReset().mockResolvedValue([]);
 });
 
 async function abrir() {
@@ -202,7 +208,7 @@ describe("Conteúdo — o texto da aula", () => {
   it("aula de texto: abre o texto, edita e salva só o texto", async () => {
     adminGetCourse.mockResolvedValue(COM_AULA_DE_TEXTO);
     await abrir();
-    fireEvent.click(screen.getByRole("button", { name: "Texto da aula" }));
+    fireEvent.click(screen.getByRole("button", { name: "Abrir a aula Fórmulas" }));
     const campo = screen.getByRole("textbox", { name: "Texto da aula" }) as HTMLTextAreaElement;
     expect(campo.value).toBe("Texto antigo");
 
@@ -214,7 +220,9 @@ describe("Conteúdo — o texto da aula", () => {
 
   it("aula de vídeo não tem texto", async () => {
     await abrir();
-    expect(screen.queryByRole("button", { name: "Texto da aula" })).toBeNull();
+    // Sem vídeo, ela já começa aberta (operador, 29/09/2026).
+    expect(screen.getByRole("button", { name: "Recolher a aula Abertura" })).toBeTruthy();
+    expect(screen.queryByRole("textbox", { name: "Texto da aula" })).toBeNull();
     expect(screen.getAllByText("Vídeo").length).toBe(3);
   });
 });
@@ -395,6 +403,50 @@ describe("Conteúdo — editar e adicionar como na Udemy", () => {
     fireEvent.click(screen.getByRole("button", { name: "Adicionar aula" }));
 
     await waitFor(() => expect(insertLesson).toHaveBeenCalledWith(1, { title: "Encerramento", kind: "VIDEO", posicao: 2 }));
+  });
+
+  // Como na Udemy (operador, 29/09/2026): a aula criada já aparece ABERTA, pronta
+  // para o envio. A de texto começaria recolhida pela regra de entrada, então
+  // aberta aqui prova que foi o "+" que abriu.
+  function depoisDeCriar(nova: { id: number; titulo: string }) {
+    insertLesson.mockResolvedValue({ id: nova.id });
+    const [fundamentos, automacao] = COM_CONTEUDO.modules;
+    adminGetCourse.mockResolvedValue({
+      ...COM_CONTEUDO,
+      modules: [
+        {
+          ...fundamentos,
+          lessons: [
+            ...fundamentos.lessons,
+            { ...fundamentos.lessons[0], id: nova.id, title: nova.titulo, kind: "TEXT" as const, content: "" },
+          ],
+        },
+        automacao,
+      ],
+    });
+  }
+
+  it("a aula criada pelo \"+ Aula\" já nasce aberta", async () => {
+    await abrir();
+    depoisDeCriar({ id: 99, titulo: "Leitura" });
+    fireEvent.click(screen.getAllByRole("button", { name: "Adicionar aula no fim do módulo" })[0]);
+    fireEvent.click(screen.getByRole("button", { name: "Aula de texto" }));
+    fireEvent.change(screen.getByLabelText("Título: Aula de texto"), { target: { value: "Leitura" } });
+    fireEvent.click(screen.getByRole("button", { name: "Adicionar aula" }));
+
+    const seta = await screen.findByRole("button", { name: "Recolher a aula Leitura" });
+    expect(seta.getAttribute("aria-expanded")).toBe("true");
+  });
+
+  it("a aula criada pelo \"+\" entre aulas também nasce aberta", async () => {
+    await abrir();
+    depoisDeCriar({ id: 98, titulo: "Intervalo" });
+    fireEvent.click(screen.getByRole("button", { name: "Inserir depois de Abertura" }));
+    fireEvent.click(screen.getByRole("button", { name: "Aula de texto" }));
+    fireEvent.change(screen.getByLabelText("Título: Aula de texto"), { target: { value: "Intervalo" } });
+    fireEvent.click(screen.getByRole("button", { name: "Adicionar aula" }));
+
+    expect(await screen.findByRole("button", { name: "Recolher a aula Intervalo" })).toBeTruthy();
   });
 
   it("\"+ Módulo\" no fim: o módulo nasce depois do último", async () => {

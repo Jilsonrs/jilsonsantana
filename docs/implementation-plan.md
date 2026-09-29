@@ -125,6 +125,19 @@
 > do admin, com capa, status em português e a barra de Preenchimento) e o **Bloco B** (limite de
 > caracteres com contador nos campos do curso, e a descrição com negrito, itálico e listas, pelo
 > `react-markdown`). **Publicado em 28/09 (`main` = `e42b152`):** os documentos do Bloco E.
+> **PUBLICADO em 28/09, à noite (`main` = `a042393`, CI verde nos dois jobs): uma biblioteca só, com
+> token.** Aulas e apresentação moram na `jilsonsantana-stream`; o vídeo de apresentação sai
+> **assinado** para qualquer visitante, e a assinatura vale **24 h para todo vídeo** (decisões do
+> operador, `bunny.md` §3.1). Antes de publicar, o operador desligou o multi-audio e criou as 3
+> variáveis `BUNNY_STREAM_LESSONS_*` no Railway. **No teste no ar, o envio do vídeo da aula deu
+> 401** porque as variáveis misturavam duas bibliotecas (a de apresentação existia; `bunny.md`
+> §3.1). Corrigido pelo operador no mesmo dia: tudo na 762605, a biblioteca de apresentação
+> apagada, CDN token desligado e DRM Basic ligado. O envio da aula **funcionou e o vídeo tocou**.
+> Falta a apresentação enviada de novo (P19). **No `dev`, não publicado (28–29/09):** a aula no
+> editor como na Udemy (abre e recolhe, com a miniatura, sem player; a criada já nasce aberta; ao
+> voltar, só a pronta fica recolhida) e os arquivos para baixar sem limite de tamanho. Duas
+> migrations novas (`lesson_video_ready`, `lesson_file_size_bigint`), aplicadas no dev; produção
+> aplica no publish. Antes de publicar: `BUNNY_STREAM_LESSONS_CDN_HOST` no Railway (P19).
 > **PUBLICADO em 28/09 (`main` = `5a60fa1`, CI verde): o Bloco E, etapa 2 INTEIRA (partes 2a a 2e)**,
 > mais a edição como na Udemy e a limpeza no Bunny ao excluir. *(A primeira publicação do dia,
 > `d342000`, pegou CI vermelho por um teste do arrastar que dependia de tempo — não do site; o
@@ -148,10 +161,7 @@
 >
 > **PRÓXIMO PASSO: implementação, e QUAL BLOCO é decisão do operador.** Candidatos, com o que cada
 > um precisa:
-> - **Bloco U, etapa 3** (o vídeo de cada aula, com prévia no admin e prévia grátis) — precisa das
->   tarefas dele no painel do Bunny (P19: desligar o multi-audio; as 3 variáveis da biblioteca de
->   aulas no Railway). Anda **junto com a etapa 2 do Bloco E** (o Conteúdo). É o que ele disse que
->   queria antes das mudanças na página do curso (27/09).
+> - ~~**Bloco U, etapa 3**~~ — **publicada em 28/09** (ver acima); falta só a prova no ar (P19).
 > - ~~**Bloco E, etapa 1**~~ — **feita em 28/09**, no `dev` (ver acima).
 > - **Telas do aluno para `/aluno/*`** — pequena, e mais barata antes de haver aluno real.
 > - **C4, etapa 3** (a home lendo os cursos do banco) — depende da P17, da P18 e do cadastro dos
@@ -1389,6 +1399,46 @@ landmark. Corrigido junto.
       Video; P19 atualizada. Testes: apresentação assinada com 24 h, as duas validades, o token.
       **Mutação:** validade de 6 h, apresentação sem assinatura e o código lendo as variáveis
       antigas → todas reprovam.
+- [x] **A aula no editor como na Udemy: abre e recolhe, com a miniatura do vídeo, SEM player**
+      *(decisão do operador, 28/09/2026, depois de ver o vídeo tocando no ar: "na Udemy só toca na
+      página do aluno"; plano aprovado no mesmo dia; no `dev`)*. A seta no fim da linha abre e
+      recolhe a aula (toda aula começa recolhida); aberta, ela mostra o conteúdo (na de vídeo: a
+      **miniatura, o nome do arquivo e a duração**, o envio e a Prévia grátis; na de texto: o
+      texto) e, embaixo, os Arquivos. Saíram os botões "Vídeo da aula", "Texto da aula" e
+      "Arquivos". **Assistir é só na página da aula do aluno** (etapa 4), e o **Visualizar** chega
+      com ela. Servidor: `GET /api/admin/lessons/:id/video` lê no Bunny o vídeo **daquela** aula e
+      devolve o resumo (`interpretarResumo`, função pura com teste); **a miniatura só sai com o
+      vídeo pronto** e com a variável nova `BUNNY_STREAM_LESSONS_CDN_HOST` (não é segredo);
+      saíram a rota do player do admin, a do estado por id e o `playerUrl` do fim do envio.
+      **Mutação:** miniatura antes de pronto, o id do vídeo vindo de quem pede, a seta que não
+      abre, a duração sem os dois dígitos e a tela mostrando imagem processando → todas reprovam.
+- [x] **A aula aberta como na Udemy (continuação) e arquivos para baixar sem limite** *(decisões do
+      operador, 29/09/2026; plano aprovado no mesmo dia)*: a aula criada já nasce aberta; o que
+      está aberto fica aberto enquanto ele está na tela; ao voltar, a aula com o vídeo pronto volta
+      **recolhida**, e a que processa ou está sem vídeo volta **aberta** (a de texto, recolhida).
+      Arquivos: zona própria sem CDN (confirmado, P33), **sem limite de tamanho**, em fluxo pelo
+      servidor; o único teto é o do Railway (o envio precisa terminar em 5 minutos).
+      **Parte 1 feita:** `Lesson.bunnyVideoReady` (migration `20260929120000_lesson_video_ready`,
+      um lembrete do que o Bunny respondeu, não um dado derivado); terminar o envio desmarca, o
+      resumo marca, e `GET /api/admin/courses/:id` pergunta ao Bunny só pelas aulas não
+      confirmadas (`lib/videos-prontos.ts`). Passo 0 no branch `dev`: mesmas contagens (só
+      `_prisma_migrations` 12→13 e `session` +1 do login de teste), 0 sem RLS, login 200, "No
+      difference detected". **Mutação:** terminar sem desmarcar e perguntar pelas já confirmadas →
+      reprovam.
+      **Parte 2 feita:** o aberto/recolhido saiu da linha para a árvore (`aulas-abertas.tsx`, um
+      contexto): a regra de entrada é uma função pura (aula de vídeo sem vídeo ou não confirmada
+      → aberta), a aula criada pelo "+ Aula" ou pelo "+" entre aulas nasce aberta, e a aberta
+      continua aberta quando o curso recarrega. **Mutação:** regra invertida, aula criada que não
+      abre e a regra recalculada a cada recarga → reprovam.
+      **Parte 3 feita:** sem limite de tamanho (saiu `LIMITE_DO_ARQUIVO_DA_AULA_MB`); o arquivo
+      passa **em fluxo** pelo servidor até o Bunny, com o tamanho no cabeçalho (medido: sem ele, o
+      fetch do Node manda em pedaços); a tela mostra a porcentagem. `LessonFile.sizeBytes` virou
+      `BigInt` (migration `20260929140000_lesson_file_size_bigint`: o `Int` parava em 2 GB e o
+      .zip seria enviado e depois falharia ao gravar). Passo 0: mesmas contagens (só
+      `_prisma_migrations` 13→14 e o login de teste), 0 sem RLS, login 200, "No difference
+      detected". **Mutação:** o limite de 50 MB de volta na tela e no servidor, e o tamanho sem ir
+      ao Bunny → reprovam. **Para a etapa 4:** decidir a entrega do .zip (pelo servidor, que sai
+      pelo Railway e é cobrado, ou link assinado temporário do Bunny — `bunny.md` §4.5).
 - [ ] **Etapa 4 — a trava de acesso e a aula tocando para o aluno:** adianta da Fase 4 o model
       `Subscription`, o `temAcessoAtivo()` e o `requireActiveMembership`, **sem Stripe**; rota
       `GET /api/lessons/:id/player`; assinatura de teste do `member@` **só fora de produção** (o
@@ -1400,9 +1450,17 @@ landmark. Corrigido junto.
       **Na tela da aula, a lista de módulos e aulas do curso fica no NÍVEL 2 da navegação** (a
       coluna do meio, colada ao menu lateral, `design.md` §13), e o vídeo ao lado dela *(decisão do
       operador, 28/09/2026)*.
+      **Os arquivos para baixar, como na Udemy** *(referência do operador, 29/09/2026, com prints da
+      Udemy)*: na lista de aulas do curso, a aula com arquivos ganha um botão **Recursos** junto ao
+      nome, que abre a lista dos arquivos para baixar — **vale para aula de vídeo e de texto**; na
+      aula **só de texto**, o texto fica no centro da tela e, embaixo dele, **"Recursos para esta
+      aula"** com os arquivos. Só assinante baixa (a trava desta etapa), sempre como download.
+      **Decidir aqui** como o .zip chega ao aluno: pelo servidor (sai pelo Railway, cobrado) ou link
+      assinado temporário do Bunny (`bunny.md` §4.5).
       `security-vulnerability-reviewer` e revisão do operador antes do "publica".
 - **Done when:** no computador do operador, a capa enviada aparece no admin; o vídeo de
-  apresentação toca no admin e na página; o vídeo da aula toca na prévia do admin; o `member@`
+  apresentação toca no admin e na página; a aula aberta no editor mostra a miniatura, o nome e a
+  duração do vídeo (sem player, decisão de 28/09); o `member@`
   assiste à aula e um aluno sem assinatura vê "Esta aula é para assinantes."
 
 ### Bloco A — Lista de cursos do admin: o cartão com capa e números  *(27/09/2026 · pedido do operador, modelo Udemy)*

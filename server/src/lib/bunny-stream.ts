@@ -160,16 +160,70 @@ export function interpretarEstado(video: { status?: unknown; encodeProgress?: un
   return { pronto: status === 4 || progresso >= 100, falhou: status === 5 || status === 8 };
 }
 
-/** O estado de um vídeo no Bunny, para a prévia do admin atualizar sozinha. */
-export async function estadoDoVideo(biblioteca: Biblioteca, videoId: string): Promise<EstadoDoVideo | null> {
-  const c = config(biblioteca);
-  if (!c) return null;
+/** Lê um vídeo no Bunny. O objeto só é usado depois de conferido campo a campo. */
+async function lerVideo(videoId: string): Promise<Record<string, unknown> | "NaoConfigurado" | "Falhou"> {
+  const c = config("aulas");
+  if (!c) return "NaoConfigurado";
   const resposta = await fetch(`https://video.bunnycdn.com/library/${c.id}/videos/${videoId}`, {
     headers: { Accept: "application/json", AccessKey: c.chave },
   });
   if (!resposta.ok) {
     console.error(`[bunny-stream] ler vídeo recusado: ${resposta.status}`);
-    return null;
+    return "Falhou";
   }
-  return interpretarEstado((await resposta.json()) as { status?: unknown; encodeProgress?: unknown });
+  const json: unknown = await resposta.json();
+  return typeof json === "object" && json !== null ? (json as Record<string, unknown>) : {};
+}
+
+/** O estado de um vídeo no Bunny, para a prévia do admin atualizar sozinha. */
+export async function estadoDoVideo(_biblioteca: Biblioteca, videoId: string): Promise<EstadoDoVideo | null> {
+  const video = await lerVideo(videoId);
+  return typeof video === "string" ? null : interpretarEstado(video);
+}
+
+/**
+ * O RESUMO do vídeo de uma aula, para o editor mostrar como a Udemy: a miniatura,
+ * o nome do arquivo e a duração, sem player (decisão do operador, 28/09/2026 —
+ * assistir é na página da aula do aluno).
+ */
+export type ResumoDoVideo = EstadoDoVideo & {
+  nome: string | null;
+  duracaoEmSegundos: number | null;
+  miniaturaUrl: string | null;
+};
+
+// O CDN Hostname da biblioteca (`vz-….b-cdn.net`): só letras, números, hífen e
+// ponto — um valor torto na variável nunca vira pedaço de endereço.
+const HOST_DA_CDN = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/i;
+// O nome do arquivo da miniatura: sem barra e sem "..", só um nome de imagem.
+const ARQUIVO_DA_MINIATURA = /^[A-Za-z0-9_-]{1,64}\.(jpg|jpeg|png|webp)$/i;
+
+/**
+ * Monta o resumo a partir do que o Bunny devolveu. Função pura, com teste de
+ * unidade. A miniatura padrão mora em `https://{CDN host}/{id do vídeo}/thumbnail.jpg`
+ * (doc do Bunny, consultada em 28/09/2026), e só aparece com o vídeo PRONTO: antes
+ * disso ela não existe. A duração (`length`, em segundos) não apareceu nos trechos
+ * da doc lidos, então só vale quando é um número.
+ */
+export function interpretarResumo(videoId: string, video: Record<string, unknown>, cdnHost: string | undefined): ResumoDoVideo {
+  const estado = interpretarEstado(video);
+  const nome = typeof video.title === "string" && video.title.trim() !== "" ? video.title : null;
+  const duracaoEmSegundos =
+    typeof video.length === "number" && Number.isFinite(video.length) && video.length > 0 ? Math.round(video.length) : null;
+  const arquivo =
+    typeof video.thumbnailFileName === "string" && ARQUIVO_DA_MINIATURA.test(video.thumbnailFileName)
+      ? video.thumbnailFileName
+      : "thumbnail.jpg";
+  const host = cdnHost?.trim() ?? "";
+  const miniaturaUrl = estado.pronto && HOST_DA_CDN.test(host) ? `https://${host}/${videoId}/${arquivo}` : null;
+  return { ...estado, nome, duracaoEmSegundos, miniaturaUrl };
+}
+
+export type ResultadoDoResumo = { ok: true; resumo: ResumoDoVideo } | { ok: false; motivo: "NaoConfigurado" | "Falhou" };
+
+/** O resumo do vídeo de uma aula, lido no Bunny na hora (derivado, nunca coluna). */
+export async function resumoDoVideo(videoId: string): Promise<ResultadoDoResumo> {
+  const video = await lerVideo(videoId);
+  if (typeof video === "string") return { ok: false, motivo: video };
+  return { ok: true, resumo: interpretarResumo(videoId, video, process.env.BUNNY_STREAM_LESSONS_CDN_HOST) };
 }

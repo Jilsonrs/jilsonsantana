@@ -2,15 +2,15 @@ import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from "vites
 import request from "supertest";
 
 // O CI não fala com o Bunny: só as funções que chamam a API viram dublê, na NOSSA
-// fronteira. O endereço assinado continua o de verdade.
+// fronteira.
 const iniciarEnvio = vi.fn();
 const apagarVideo = vi.fn();
-const estadoDoVideo = vi.fn();
+const resumoDoVideo = vi.fn();
 vi.mock("../lib/bunny-stream.js", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../lib/bunny-stream.js")>()),
   iniciarEnvio: (...args: unknown[]) => iniciarEnvio(...args),
   apagarVideo: (...args: unknown[]) => apagarVideo(...args),
-  estadoDoVideo: (...args: unknown[]) => estadoDoVideo(...args),
+  resumoDoVideo: (...args: unknown[]) => resumoDoVideo(...args),
 }));
 
 import app from "../app.js";
@@ -18,12 +18,13 @@ import { prisma } from "../lib/prisma.js";
 
 // O VÍDEO DE CADA AULA (Bloco U, etapa 3 — plano aprovado pelo operador em
 // 28/09/2026). O que estes testes protegem:
-//   - só o admin envia e vê a prévia; a resposta tem a assinatura, nunca a chave;
+//   - só o admin envia e vê o resumo; a resposta tem a assinatura, nunca a chave;
 //   - o vídeo só vira o da aula quando o envio TERMINA, e só o envio em
 //     andamento DESTA aula (sem reuso entre aulas — decisão do operador);
 //   - reenviar apaga o incompleto; terminar apaga o substituído; NUNCA o em uso;
 //   - só aula de vídeo recebe vídeo;
-//   - a prévia do admin sai ASSINADA;
+//   - o editor recebe o RESUMO do vídeo DAQUELA aula, sem player (como a Udemy,
+//     operador 28/09/2026);
 //   - NENHUMA rota pública devolve o vídeo da aula (o aluno recebe o player
 //     assinado só na etapa 4, depois da trava de acesso).
 
@@ -77,7 +78,7 @@ afterAll(async () => {
 beforeEach(() => {
   iniciarEnvio.mockReset();
   apagarVideo.mockReset().mockResolvedValue(true);
-  estadoDoVideo.mockReset();
+  resumoDoVideo.mockReset();
 });
 
 async function novaAula(dados: Partial<{ kind: "VIDEO" | "TEXT"; bunnyVideoId: string; bunnyVideoPendingId: string }> = {}) {
@@ -103,13 +104,12 @@ const terminar = (cookies: string[], aulaId: number, videoId: string) =>
   request(app).post(`/api/admin/lessons/${aulaId}/video/complete`).set("Cookie", cookies).send({ videoId });
 
 describe("quem pode", () => {
-  it("sem login 401 e aluno 403, nas quatro rotas", async () => {
+  it("sem login 401 e aluno 403, nas três rotas", async () => {
     const aula = await novaAula();
     const rotas = [
       () => request(app).post(`/api/admin/lessons/${aula.id}/video`).send({ titulo: "x" }),
       () => request(app).post(`/api/admin/lessons/${aula.id}/video/complete`).send({ videoId: A }),
-      () => request(app).get(`/api/admin/lessons/${aula.id}/player`),
-      () => request(app).get(`/api/admin/lesson-video/${A}/status`),
+      () => request(app).get(`/api/admin/lessons/${aula.id}/video`),
     ];
     for (const rota of rotas) {
       expect((await rota()).status).toBe(401);
@@ -172,7 +172,8 @@ describe("terminar o envio", () => {
     const res = await terminar(admin, aula.id, C);
 
     expect(res.status).toBe(200);
-    expect(res.body.playerUrl).toMatch(new RegExp(`^https://iframe\\.mediadelivery\\.net/embed/762605/${C}\\?token=[0-9a-f]{64}&expires=\\d+$`));
+    // Sem player no editor: o fim do envio devolve só o id.
+    expect(res.body).toEqual({ bunnyVideoId: C });
     expect(await prisma.lesson.findUnique({ where: { id: aula.id } })).toMatchObject({ bunnyVideoId: C, bunnyVideoPendingId: null });
     expect(apagarVideo).toHaveBeenCalledWith("aulas", EM_USO);
     expect(apagarVideo).not.toHaveBeenCalledWith("aulas", C);
@@ -202,28 +203,53 @@ describe("terminar o envio", () => {
   });
 });
 
-describe("a prévia do admin", () => {
-  it("sai assinada, com validade", async () => {
-    const aula = await novaAula({ bunnyVideoId: A });
-    const res = await request(app).get(`/api/admin/lessons/${aula.id}/player`).set("Cookie", admin);
+describe("o resumo do vídeo no editor", () => {
+  const resumo = {
+    pronto: true,
+    falhou: false,
+    nome: "aula.mp4",
+    duracaoEmSegundos: 111,
+    miniaturaUrl: `https://vz-teste.b-cdn.net/${A}/thumbnail.jpg`,
+  };
+  const ler = (aulaId: number) => request(app).get(`/api/admin/lessons/${aulaId}/video`).set("Cookie", admin);
+
+  it("lê no Bunny o vídeo DESTA aula (o id nunca vem de quem pede)", async () => {
+    resumoDoVideo.mockResolvedValue({ ok: true, resumo });
+    const aula = await novaAula({ bunnyVideoId: A, bunnyVideoPendingId: B });
+
+    const res = await request(app).get(`/api/admin/lessons/${aula.id}/video`).query({ videoId: C }).set("Cookie", admin);
+
     expect(res.status).toBe(200);
-    expect(res.body.playerUrl).toMatch(/\?token=[0-9a-f]{64}&expires=\d+$/);
+    expect(resumoDoVideo).toHaveBeenCalledTimes(1);
+    expect(resumoDoVideo).toHaveBeenCalledWith(A);
+    expect(res.body).toEqual({ video: resumo });
   });
 
-  it("aula sem vídeo: nenhum endereço", async () => {
-    const aula = await novaAula();
-    const res = await request(app).get(`/api/admin/lessons/${aula.id}/player`).set("Cookie", admin);
-    expect(res.body).toEqual({ playerUrl: null });
+  it("aula sem vídeo: nenhum resumo, e o Bunny nem é chamado", async () => {
+    const aula = await novaAula({ bunnyVideoPendingId: B });
+    const res = await ler(aula.id);
+    expect(res.body).toEqual({ video: null });
+    expect(resumoDoVideo).not.toHaveBeenCalled();
   });
 
-  it("estado do processamento: 400 id inválido, 502 Bunny fora, 200 com o estado", async () => {
-    expect((await request(app).get(`/api/admin/lesson-video/nao-e-id/status`).set("Cookie", admin)).status).toBe(400);
-    estadoDoVideo.mockResolvedValue(null);
-    expect((await request(app).get(`/api/admin/lesson-video/${A}/status`).set("Cookie", admin)).status).toBe(502);
-    estadoDoVideo.mockResolvedValue({ pronto: true, falhou: false });
-    const res = await request(app).get(`/api/admin/lesson-video/${A}/status`).set("Cookie", admin);
-    expect(res.body).toEqual({ pronto: true, falhou: false });
-    expect(estadoDoVideo).toHaveBeenCalledWith("aulas", A);
+  it("aula que não existe: 404", async () => {
+    expect((await ler(999999)).status).toBe(404);
+  });
+
+  it("biblioteca não configurada: 503; Bunny recusou: 502", async () => {
+    const aula = await novaAula({ bunnyVideoId: A });
+    resumoDoVideo.mockResolvedValue({ ok: false, motivo: "NaoConfigurado" });
+    expect((await ler(aula.id)).status).toBe(503);
+    resumoDoVideo.mockResolvedValue({ ok: false, motivo: "Falhou" });
+    const res = await ler(aula.id);
+    expect(res.status).toBe(502);
+    expect(res.body.error).toBe("StreamFalhou");
+  });
+
+  it("o player antigo do editor não existe mais", async () => {
+    const aula = await novaAula({ bunnyVideoId: A });
+    // Rota que não existe cai no desvio de desenvolvimento (302), não num 200.
+    expect((await request(app).get(`/api/admin/lessons/${aula.id}/player`).set("Cookie", admin)).status).not.toBe(200);
   });
 });
 

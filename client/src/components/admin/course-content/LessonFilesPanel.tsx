@@ -1,14 +1,13 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Trash2 } from "lucide-react";
-import { EXTENSOES_DOS_ARQUIVOS_DA_AULA, LIMITE_DO_ARQUIVO_DA_AULA_MB } from "@jilson/core";
+import { EXTENSOES_DOS_ARQUIVOS_DA_AULA } from "@jilson/core";
 import * as api from "@/lib/api";
 import type { AdminLesson } from "@/lib/api";
 import { codigoDoErro } from "@/lib/course-form";
 import { Button } from "@/components/ui/button";
 
 const ACEITAS: readonly string[] = EXTENSOES_DOS_ARQUIVOS_DA_AULA;
-const LIMITE = LIMITE_DO_ARQUIVO_DA_AULA_MB * 1024 * 1024;
 
 /** "1,4 MB", "820 KB": o tamanho para o operador conferir o que enviou. */
 export function tamanhoLegivel(bytes: number): string {
@@ -22,28 +21,29 @@ const extensaoDe = (nome: string) => (nome.includes(".") ? (nome.split(".").pop(
  * OS ARQUIVOS PARA BAIXAR de uma aula (Bloco E, etapa 2, parte 2e — plano
  * aprovado pelo operador em 28/09/2026). Ficam numa zona própria do Bunny, sem
  * endereço público; o aluno assinante baixa pela aula na etapa 4 do Bloco U.
- * A tela confere tipo e tamanho antes de enviar; o servidor confere de novo.
+ * A tela confere o tipo antes de enviar; o servidor confere de novo. SEM limite de
+ * tamanho (operador, 29/09/2026: em geral um .zip por curso), com a porcentagem.
  */
 export function LessonFilesPanel({ lesson }: { lesson: AdminLesson }) {
   const queryClient = useQueryClient();
   const queryKey = ["lesson-files", lesson.id];
   const entrada = useRef<HTMLInputElement>(null);
   const lista = useQuery({ queryKey, queryFn: () => api.listLessonFiles(lesson.id) });
+  const [porcentagem, setPorcentagem] = useState(0);
   const recarregar = () => queryClient.invalidateQueries({ queryKey });
 
   const envio = useMutation({
     mutationFn: (arquivo: File) => {
-      if (!ACEITAS.includes(extensaoDe(arquivo.name)) || arquivo.size > LIMITE) {
-        return Promise.reject(new Error("ArquivoRecusado"));
-      }
-      return api.uploadLessonFile(lesson.id, arquivo);
+      if (!ACEITAS.includes(extensaoDe(arquivo.name))) return Promise.reject(new Error("ArquivoRecusado"));
+      setPorcentagem(0);
+      return api.uploadLessonFile(lesson.id, arquivo, setPorcentagem);
     },
     onSuccess: recarregar,
   });
   const exclusao = useMutation({ mutationFn: api.deleteLessonFile, onSuccess: recarregar });
 
   return (
-    <div className="space-y-3 rounded-lg border border-border p-4">
+    <div className="space-y-3">
       <p className="text-sm font-medium">Arquivos para baixar</p>
       {lista.isLoading && <p className="text-sm text-muted-foreground">Carregando…</p>}
       {lista.isError && (
@@ -89,17 +89,17 @@ export function LessonFilesPanel({ lesson }: { lesson: AdminLesson }) {
         }}
       />
       <Button type="button" variant="outline" size="sm" disabled={envio.isPending} onClick={() => entrada.current?.click()}>
-        {envio.isPending ? "Enviando…" : "Enviar arquivo"}
+        {envio.isPending ? `Enviando… ${porcentagem}%` : "Enviar arquivo"}
       </Button>
       <p className="text-xs text-muted-foreground">
-        Até {LIMITE_DO_ARQUIVO_DA_AULA_MB} MB: {ACEITAS.join(", ")}. Só assinantes baixam.
+        Tipos aceitos: {ACEITAS.join(", ")}. Só assinantes baixam.
       </p>
 
       {envio.isError && (
         <p role="alert" className="text-sm font-medium text-destructive">
           {codigoDoErro(envio.error) === "StorageNaoConfigurado"
             ? "O armazenamento de arquivos não está configurado neste ambiente."
-            : `Não foi possível enviar o arquivo. Use um dos tipos aceitos, com até ${LIMITE_DO_ARQUIVO_DA_AULA_MB} MB.`}
+            : "Não foi possível enviar o arquivo. Use um dos tipos aceitos e tente de novo."}
         </p>
       )}
       {exclusao.isError && (

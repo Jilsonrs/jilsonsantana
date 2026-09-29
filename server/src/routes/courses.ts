@@ -6,6 +6,7 @@ import { requireAdmin } from "../middleware/auth.js";
 import { validate, parseId } from "../lib/http.js";
 import { paraBanco, doBanco, comIdioma, idiomaDaLista } from "../lib/language.js";
 import { enderecoAssinado } from "../lib/bunny-stream.js";
+import { confirmarVideosProntos } from "../lib/videos-prontos.js";
 import { limparCursoNoBunny } from "../lib/limpeza-no-bunny.js";
 
 const router = Router();
@@ -183,7 +184,13 @@ router.get("/admin/courses/:id", requireAdmin, async (req, res) => {
     res.status(404).json({ error: "NotFound" });
     return;
   }
-  res.json({ ...comIdioma(course), introVideoEmbedUrl: enderecoAssinado(course.introVideoId) });
+  // As aulas cujo vídeo ficou pronto desde a última visita já voltam confirmadas.
+  const confirmadas = await confirmarVideosProntos(course.modules.flatMap((m) => m.lessons));
+  const modules = course.modules.map((m) => ({
+    ...m,
+    lessons: m.lessons.map((l) => (confirmadas.has(l.id) ? { ...l, bunnyVideoReady: true } : l)),
+  }));
+  res.json({ ...comIdioma({ ...course, modules }), introVideoEmbedUrl: enderecoAssinado(course.introVideoId) });
 });
 
 // ── Writes (admin only) ──────────────────────────────────────────────────────

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { ArrowDown, ArrowUp, Pencil, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronDown, ChevronUp, Pencil, Trash2 } from "lucide-react";
 import { LessonKind } from "@jilson/core";
 import * as api from "@/lib/api";
 import type { AdminLesson } from "@/lib/api";
@@ -12,14 +12,17 @@ import { LessonTextPanel } from "./LessonTextPanel";
 import { LessonVideoPanel } from "./LessonVideoPanel";
 import { LessonFilesPanel } from "./LessonFilesPanel";
 import { AlcaDeArraste, useArrastavel } from "./arrastar";
+import { useAulasAbertas } from "./aulas-abertas";
 import { CLASSE_DA_ETIQUETA } from "./opcoes";
 
 const ROTULO_DO_TIPO: Record<LessonKind, string> = { VIDEO: "Vídeo", TEXT: "Texto" };
 
 /**
  * Uma aula, como na Udemy (operador, 28/09/2026): a linha mostra o tipo, o título
- * e o status; o lápis abre a edição (com Cancelar e Salvar). Os painéis — o
- * conteúdo (texto ou vídeo) e os arquivos — abrem um de cada vez.
+ * e o status; o lápis abre a edição (com Cancelar e Salvar). A seta no fim da
+ * linha abre e recolhe a aula: dentro, o conteúdo (o vídeo ou o texto) e,
+ * embaixo, os arquivos. Quem começa aberta, e a aula recém-criada, vêm de
+ * `aulas-abertas.tsx` (operador, 29/09/2026).
  */
 export function LessonRow({
   lesson,
@@ -37,9 +40,8 @@ export function LessonRow({
   onChanged: () => void;
 }) {
   const [editando, setEditando] = useState(false);
-  // Um painel aberto por vez: o conteúdo (texto ou vídeo) ou os arquivos.
-  const [aberto, setAberto] = useState<"conteudo" | "arquivos" | null>(null);
-  const alternar = (painel: "conteudo" | "arquivos") => setAberto(aberto === painel ? null : painel);
+  const { estaAberta, alternar } = useAulasAbertas();
+  const aberta = estaAberta(lesson.id);
 
   const del = useMutation({
     mutationFn: () => api.deleteLesson(lesson.id),
@@ -65,14 +67,6 @@ export function LessonRow({
           </>
         )}
         <div className="ml-auto flex flex-wrap items-center gap-1">
-          <Button type="button" variant="outline" size="sm" aria-expanded={aberto === "conteudo"} onClick={() => alternar("conteudo")}>
-            {lesson.kind === LessonKind.TEXT
-              ? aberto === "conteudo" ? "Fechar texto" : "Texto da aula"
-              : aberto === "conteudo" ? "Fechar vídeo" : "Vídeo da aula"}
-          </Button>
-          <Button type="button" variant="outline" size="sm" aria-expanded={aberto === "arquivos"} onClick={() => alternar("arquivos")}>
-            {aberto === "arquivos" ? "Fechar arquivos" : "Arquivos"}
-          </Button>
           <Button type="button" variant="ghost" size="icon" aria-label={`Subir a aula ${lesson.title}`} onClick={() => onMover(-1)} disabled={isFirst || ocupado}>
             <ArrowUp className="h-4 w-4" />
           </Button>
@@ -90,6 +84,16 @@ export function LessonRow({
           >
             <Trash2 className="h-4 w-4" />
           </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            aria-expanded={aberta}
+            aria-label={`${aberta ? "Recolher" : "Abrir"} a aula ${lesson.title}`}
+            onClick={() => alternar(lesson.id)}
+          >
+            {aberta ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </Button>
         </div>
       </div>
       {del.isError && (
@@ -97,13 +101,18 @@ export function LessonRow({
           {mensagemAoExcluir(del.error)}
         </p>
       )}
-      {aberto === "conteudo" &&
-        (lesson.kind === LessonKind.TEXT ? (
-          <LessonTextPanel lesson={lesson} onChanged={onChanged} />
-        ) : (
-          <LessonVideoPanel lesson={lesson} onChanged={onChanged} />
-        ))}
-      {aberto === "arquivos" && <LessonFilesPanel lesson={lesson} />}
+      {aberta && (
+        <div className="space-y-4 rounded-lg border border-border p-4">
+          {lesson.kind === LessonKind.TEXT ? (
+            <LessonTextPanel lesson={lesson} onChanged={onChanged} />
+          ) : (
+            <LessonVideoPanel lesson={lesson} onChanged={onChanged} />
+          )}
+          <div className="border-t border-border pt-4">
+            <LessonFilesPanel lesson={lesson} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

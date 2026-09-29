@@ -179,10 +179,14 @@ servidores (§5); o React responde em `localhost:5173`, a home pública em `loca
 > **lápis** abre a edição com Cancelar e Salvar. **Não volte a deixar os campos abertos na linha**
 > (tem teste: nenhum "Salvar" na tela fora da edição). "+ Aula" e "+ Módulo" ficam no fim de cada
 > lista, e o "+" entre itens fica no começo da linha.
-> **Cada aula** tem dois painéis, um aberto por vez: o conteúdo ("Editar texto" na aula de texto,
-> "Vídeo da aula" na de vídeo — `LessonTextPanel.tsx`, `LessonVideoPanel.tsx`) e os
-> "Arquivos" (`LessonFilesPanel.tsx`). A prévia do vídeo da aula vem **assinada** do servidor:
-> não monte endereço de player na tela.
+> **Cada aula abre e recolhe como na Udemy** (operador, 28/09): a seta no fim da linha
+> (`aria-expanded`, "Abrir a aula …"/"Recolher a aula …") mostra o conteúdo — na aula de vídeo, a
+> miniatura, o nome do arquivo e a duração (`LessonVideoSummary.tsx`), o envio e a Prévia grátis;
+> na de texto, o texto — e, embaixo, os Arquivos (`LessonFilesPanel.tsx`). **O editor NÃO tem
+> player** (decisão dele: assistir é na página da aula do aluno): não coloque iframe aqui (tem
+> teste). **Quem começa aberta** (29/09, `aulas-abertas.tsx`): a aula de vídeo sem vídeo ou
+> ainda processando; a aula criada pelo "+" já nasce aberta; o que está aberto continua aberto
+> enquanto ele fica na tela. Tudo isso tem teste.
 > **Arrastar** (`arrastar.tsx`): a alça com os pontinhos é um **botão** com nome ("Arrastar a
 > aula Fórmulas"), e as instruções de teclado saem em português. Os dois têm teste.
 >

@@ -273,6 +273,11 @@ model Lesson {
   // O progresso do aluno fica preso à AULA, nunca a este id (bunny.md §7.1).
   bunnyVideoId        String?
   bunnyVideoPendingId String?
+  // O Bunny já disse que o vídeo está pronto (decisão do operador, 29/09/2026: ao
+  // voltar para o editor, a aula pronta volta recolhida). É um LEMBRETE do que o
+  // Bunny respondeu, não um dado derivado: sem ele, abrir o editor perguntaria ao
+  // Bunny por todas as aulas, toda vez.
+  bunnyVideoReady     Boolean  @default(false)
   // Prévia grátis (operador, 27/09/2026, "como na Udemy"): a aula toca para
   // qualquer visitante. Só é gravada aqui; tocar para visitante é a etapa 4.
   isFreePreview       Boolean  @default(false)
@@ -358,7 +363,8 @@ model LessonFile {
   // O nome com que o operador enviou (o aluno baixa com este nome).
   originalName String
   storagePath  String   @unique
-  sizeBytes    Int
+  // BigInt: arquivo sem limite de tamanho (operador, 29/09/2026); Int para em 2 GB.
+  sizeBytes    BigInt
   createdAt    DateTime @default(now())
 
   @@index([lessonId])

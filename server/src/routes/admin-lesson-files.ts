@@ -1,6 +1,6 @@
 import { randomBytes } from "node:crypto";
-import express, { Router } from "express";
-import { EXTENSOES_DOS_ARQUIVOS_DA_AULA, LIMITE_DO_ARQUIVO_DA_AULA_MB } from "@jilson/core";
+import { Router } from "express";
+import { EXTENSOES_DOS_ARQUIVOS_DA_AULA } from "@jilson/core";
 import { prisma } from "../lib/prisma.js";
 import { requireAdmin } from "../middleware/auth.js";
 import { parseId } from "../lib/http.js";
@@ -13,10 +13,10 @@ const router = Router();
 // (só assinante, sempre como download) entra com a trava de acesso, na etapa 4
 // do Bloco U: hoje NENHUMA rota entrega o arquivo.
 //
-// O arquivo chega CRU no corpo, como a capa (sem multipart, sem peça nova), e o
-// nome original vem no cabeçalho `X-Nome-Do-Arquivo` (codificado para URL).
-
-const corpoDoArquivo = express.raw({ type: "application/octet-stream", limit: `${LIMITE_DO_ARQUIVO_DA_AULA_MB}mb` });
+// O arquivo chega CRU no corpo (sem multipart, sem peça nova), e o nome original
+// vem no cabeçalho `X-Nome-Do-Arquivo` (codificado para URL). SEM limite de
+// tamanho (operador, 29/09/2026): o corpo segue EM FLUXO para o Bunny, sem ficar
+// inteiro na memória. O único teto é o do Railway (o envio termina em 5 minutos).
 
 const ACEITAS: readonly string[] = EXTENSOES_DOS_ARQUIVOS_DA_AULA;
 
@@ -41,6 +41,10 @@ const extensaoDe = (nome: string) => (nome.includes(".") ? (nome.split(".").pop(
 // O que a tela recebe: nunca o caminho no Storage.
 const campos = { id: true, originalName: true, sizeBytes: true, createdAt: true } as const;
 
+// O tamanho é BigInt no banco (sem limite — operador, 29/09/2026), e o JSON não
+// sabe escrever BigInt: vai como número (exato até ~9 PB).
+const paraTela = <T extends { sizeBytes: bigint }>(arquivo: T) => ({ ...arquivo, sizeBytes: Number(arquivo.sizeBytes) });
+
 // GET /api/admin/lessons/:id/files — os arquivos da aula, na ordem de envio.
 router.get("/admin/lessons/:id/files", requireAdmin, async (req, res) => {
   const id = parseId(req.params.id, res);
@@ -49,11 +53,12 @@ router.get("/admin/lessons/:id/files", requireAdmin, async (req, res) => {
     res.status(404).json({ error: "NotFound" });
     return;
   }
-  res.json(await prisma.lessonFile.findMany({ where: { lessonId: id }, orderBy: { id: "asc" }, select: campos }));
+  const arquivos = await prisma.lessonFile.findMany({ where: { lessonId: id }, orderBy: { id: "asc" }, select: campos });
+  res.json(arquivos.map(paraTela));
 });
 
 // POST /api/admin/lessons/:id/files — guarda um arquivo na zona própria (sem CDN).
-router.post("/admin/lessons/:id/files", requireAdmin, corpoDoArquivo, async (req, res) => {
+router.post("/admin/lessons/:id/files", requireAdmin, async (req, res) => {
   const id = parseId(req.params.id, res);
   if (id === null) return;
   if (!(await prisma.lesson.findUnique({ where: { id }, select: { id: true } }))) {
@@ -71,25 +76,31 @@ router.post("/admin/lessons/:id/files", requireAdmin, corpoDoArquivo, async (req
     res.status(400).json({ error: "TipoNaoAceito" });
     return;
   }
-  const conteudo: unknown = req.body;
-  if (!Buffer.isBuffer(conteudo) || conteudo.length === 0) {
+  // O corpo tem que chegar intacto, como arquivo: outro tipo de envio já teria
+  // sido lido por outro leitor antes daqui.
+  if (!req.is("application/octet-stream")) {
+    res.status(400).json({ error: "EnvioInvalido" });
+    return;
+  }
+  const tamanho = Number(req.get("content-length"));
+  if (!Number.isSafeInteger(tamanho) || tamanho <= 0) {
     res.status(400).json({ error: "ArquivoVazio" });
     return;
   }
 
   // Nome ALEATÓRIO no Storage: o do operador fica só no banco (é o que o aluno vê).
   const caminho = `aulas/${id}/${randomBytes(12).toString("hex")}.${extensao}`;
-  const envio = await enviarArquivoDaAula(caminho, conteudo);
+  const envio = await enviarArquivoDaAula(caminho, req, tamanho);
   if (!envio.ok) {
     res.status(envio.motivo === "NaoConfigurado" ? 503 : 502).json({ error: `Storage${envio.motivo}` });
     return;
   }
 
   const arquivo = await prisma.lessonFile.create({
-    data: { lessonId: id, originalName: nome, storagePath: caminho, sizeBytes: conteudo.length },
+    data: { lessonId: id, originalName: nome, storagePath: caminho, sizeBytes: tamanho },
     select: campos,
   });
-  res.status(201).json(arquivo);
+  res.status(201).json(paraTela(arquivo));
 });
 
 // DELETE /api/admin/lesson-files/:id — apaga no Bunny e depois no banco. Se o

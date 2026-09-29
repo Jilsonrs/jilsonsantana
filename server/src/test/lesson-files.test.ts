@@ -18,7 +18,8 @@ import { caminhoDeArquivoDaAula } from "../lib/bunny-storage.js";
 
 // ARQUIVOS PARA BAIXAR de cada aula (Bloco E, etapa 2, parte 2e — plano aprovado
 // pelo operador em 28/09/2026). O que estes testes protegem: só o admin envia e
-// apaga; só as extensões combinadas, até 50 MB; o nome no Storage é ALEATÓRIO
+// apaga; só as extensões combinadas, SEM limite de tamanho e EM FLUXO (operador,
+// 29/09/2026); o nome no Storage é ALEATÓRIO
 // (o do operador fica só no banco); a tela nunca recebe o caminho; e apagar nunca
 // alcança uma PASTA no Bunny (lá, apagar pasta apaga tudo dentro).
 
@@ -46,8 +47,21 @@ afterAll(async () => {
   await prisma.course.deleteMany({ where: { slug: { endsWith: S } } });
 });
 
+// O que o "Bunny" recebeu: o dublê lê o fluxo inteiro, como o fetch leria.
+let recebido = Buffer.alloc(0);
+let tamanhoInformado = 0;
+async function lerFluxo(_caminho: string, corpo: AsyncIterable<Buffer>, tamanho: number) {
+  const partes: Buffer[] = [];
+  for await (const parte of corpo) partes.push(parte);
+  recebido = Buffer.concat(partes);
+  tamanhoInformado = tamanho;
+  return { ok: true };
+}
+
 beforeEach(() => {
-  enviarArquivoDaAula.mockReset().mockResolvedValue({ ok: true });
+  recebido = Buffer.alloc(0);
+  tamanhoInformado = 0;
+  enviarArquivoDaAula.mockReset().mockImplementation(lerFluxo);
   apagarArquivoDaAula.mockReset().mockResolvedValue({ ok: true });
 });
 
@@ -84,10 +98,12 @@ describe("enviar", () => {
     expect(res.status).toBe(201);
     expect(res.body).toMatchObject({ originalName: "Planilha de Vendas.xlsx", sizeBytes: 5 });
     expect(res.body).not.toHaveProperty("storagePath");
-    const [caminho, conteudo] = enviarArquivoDaAula.mock.calls[0] as [string, Buffer];
+    const [caminho] = enviarArquivoDaAula.mock.calls[0] as [string];
     expect(caminho).toMatch(new RegExp(`^aulas/${aulaId}/[0-9a-f]{24}\\.xlsx$`));
     expect(caminho).not.toContain("Planilha");
-    expect(conteudo.toString()).toBe("xlsx!");
+    // O arquivo chegou inteiro, pelo fluxo, com o tamanho no cabeçalho.
+    expect(recebido.toString()).toBe("xlsx!");
+    expect(tamanhoInformado).toBe(5);
   });
 
   it("a lista traz os arquivos da aula, sem o caminho no Storage", async () => {
@@ -121,9 +137,24 @@ describe("enviar", () => {
     expect((await enviar(admin, "a.pdf", Buffer.alloc(0))).status).toBe(400);
   });
 
-  it("acima de 50 MB: 413", async () => {
-    const res = await enviar(admin, "grande.zip", Buffer.alloc(50 * 1024 * 1024 + 1));
-    expect(res.status).toBe(413);
+  // Sem limite (operador, 29/09/2026): o que antes passava do teto de 50 MB agora
+  // chega inteiro ao Bunny, e o tamanho gravado é o do arquivo.
+  it("acima dos 50 MB de antes: chega inteiro", async () => {
+    const grande = Buffer.alloc(50 * 1024 * 1024 + 1, 7);
+    const res = await enviar(admin, "curso.zip", grande);
+    expect(res.status).toBe(201);
+    expect(res.body.sizeBytes).toBe(grande.length);
+    expect(recebido.length).toBe(grande.length);
+    expect(recebido.equals(grande)).toBe(true);
+  });
+
+  it("corpo que não é arquivo (JSON): 400, nada enviado", async () => {
+    const res = await request(app)
+      .post(`/api/admin/lessons/${aulaId}/files`)
+      .set("Cookie", admin)
+      .set("X-Nome-Do-Arquivo", "a.pdf")
+      .send({ x: 1 });
+    expect(res.status).toBe(400);
     expect(enviarArquivoDaAula).not.toHaveBeenCalled();
   });
 
