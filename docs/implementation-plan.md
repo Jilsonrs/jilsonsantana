@@ -1409,6 +1409,19 @@ landmark. Corrigido junto.
       saíram a rota do player do admin, a do estado por id e o `playerUrl` do fim do envio.
       **Mutação:** miniatura antes de pronto, o id do vídeo vindo de quem pede, a seta que não
       abre, a duração sem os dois dígitos e a tela mostrando imagem processando → todas reprovam.
+- [ ] **A aula aberta como na Udemy (continuação) e arquivos para baixar sem limite** *(decisões do
+      operador, 29/09/2026; plano aprovado no mesmo dia)*: a aula criada já nasce aberta; o que
+      está aberto fica aberto enquanto ele está na tela; ao voltar, a aula com o vídeo pronto volta
+      **recolhida**, e a que processa ou está sem vídeo volta **aberta** (a de texto, recolhida).
+      Arquivos: zona própria sem CDN (confirmado, P33), **sem limite de tamanho**, em fluxo pelo
+      servidor; o único teto é o do Railway (o envio precisa terminar em 5 minutos).
+      **Parte 1 feita:** `Lesson.bunnyVideoReady` (migration `20260929120000_lesson_video_ready`,
+      um lembrete do que o Bunny respondeu, não um dado derivado); terminar o envio desmarca, o
+      resumo marca, e `GET /api/admin/courses/:id` pergunta ao Bunny só pelas aulas não
+      confirmadas (`lib/videos-prontos.ts`). Passo 0 no branch `dev`: mesmas contagens (só
+      `_prisma_migrations` 12→13 e `session` +1 do login de teste), 0 sem RLS, login 200, "No
+      difference detected". **Mutação:** terminar sem desmarcar e perguntar pelas já confirmadas →
+      reprovam.
 - [ ] **Etapa 4 — a trava de acesso e a aula tocando para o aluno:** adianta da Fase 4 o model
       `Subscription`, o `temAcessoAtivo()` e o `requireActiveMembership`, **sem Stripe**; rota
       `GET /api/lessons/:id/player`; assinatura de teste do `member@` **só fora de produção** (o

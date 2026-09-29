@@ -21,7 +21,7 @@ const router = Router();
 async function aulaDeVideo(id: number) {
   return prisma.lesson.findUnique({
     where: { id },
-    select: { kind: true, bunnyVideoId: true, bunnyVideoPendingId: true },
+    select: { kind: true, bunnyVideoId: true, bunnyVideoPendingId: true, bunnyVideoReady: true },
   });
 }
 
@@ -82,7 +82,11 @@ router.post("/admin/lessons/:id/video/complete", requireAdmin, async (req, res) 
     return;
   }
 
-  await prisma.lesson.update({ where: { id }, data: { bunnyVideoId: videoId, bunnyVideoPendingId: null } });
+  // O vídeo novo começa a processar: deixa de estar confirmado como pronto.
+  await prisma.lesson.update({
+    where: { id },
+    data: { bunnyVideoId: videoId, bunnyVideoPendingId: null, bunnyVideoReady: false },
+  });
 
   const substituido = aula.bunnyVideoId;
   if (substituido && substituido !== videoId) await apagarVideo("aulas", substituido);
@@ -110,6 +114,10 @@ router.get("/admin/lessons/:id/video", requireAdmin, async (req, res) => {
   if (!resultado.ok) {
     res.status(resultado.motivo === "NaoConfigurado" ? 503 : 502).json({ error: `Stream${resultado.motivo}` });
     return;
+  }
+  // Pronto no Bunny: fica lembrado, e a aula volta recolhida na próxima visita.
+  if (resultado.resumo.pronto && !aula.bunnyVideoReady) {
+    await prisma.lesson.updateMany({ where: { id, bunnyVideoId: aula.bunnyVideoId }, data: { bunnyVideoReady: true } });
   }
   res.json({ video: resultado.resumo });
 });
