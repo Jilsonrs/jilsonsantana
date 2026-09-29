@@ -52,24 +52,28 @@ export function LessonVideoPanel({ lesson, onChanged }: { lesson: AdminLesson; o
 
   return (
     <div className="space-y-4 rounded-lg border border-border p-4">
-      {videoId && playerUrl ? (
-        <IntroVideoPreview
-          videoId={videoId}
-          embedUrl={playerUrl}
-          titulo={`Prévia do vídeo da aula ${lesson.title}`}
-          consultarEstado={api.getLessonVideoStatus}
-        />
-      ) : (
-        <div className="flex aspect-video w-full max-w-xl items-center justify-center rounded-2xl border border-border/60 bg-muted p-4 text-center">
-          <span className="text-sm text-muted-foreground">
-            {videoId
-              ? player.isLoading
-                ? "Carregando…"
-                : "Vídeo enviado. A prévia aparece onde a biblioteca de aulas está configurada (no site no ar)."
-              : "Sem vídeo"}
-          </span>
-        </div>
-      )}
+      {/* Do tamanho de uma miniatura (pedido do operador, 28/09/2026): aqui é só
+          a conferência do vídeo; assistir de verdade é na tela da aula do aluno. */}
+      <div className="max-w-sm">
+        {videoId && playerUrl ? (
+          <IntroVideoPreview
+            videoId={videoId}
+            embedUrl={playerUrl}
+            titulo={`Prévia do vídeo da aula ${lesson.title}`}
+            consultarEstado={api.getLessonVideoStatus}
+          />
+        ) : (
+          <div className="flex aspect-video w-full items-center justify-center rounded-2xl border border-border/60 bg-muted p-4 text-center">
+            <span className="text-sm text-muted-foreground">
+              {videoId
+                ? player.isLoading
+                  ? "Carregando…"
+                  : "Vídeo enviado. A prévia aparece onde a biblioteca de aulas está configurada (no site no ar)."
+                : "Sem vídeo"}
+            </span>
+          </div>
+        )}
+      </div>
 
       <div className="flex flex-wrap items-center gap-4">
         <input
