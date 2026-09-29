@@ -140,6 +140,9 @@
 > `lesson_file_size_bigint` entraram em produção pelo pre-deploy. O operador criou a zona
 > `jilsonsantana-arquivos` e as variáveis (P33) e a `BUNNY_STREAM_LESSONS_CDN_HOST` (P19). Falta
 > conferir no ar: a miniatura da aula "Teste", o reenvio da apresentação e um .zip enviado.
+> **Conferido pelo operador no mesmo dia:** a miniatura, o nome e a duração aparecem; o .zip chegou
+> inteiro (P33 fechada). **Publicado em seguida (`main` = `013bd1c`, CI verde, deploy ok):** o
+> envio de vídeo sobrevive à tela. Da P19 falta só o reenvio da apresentação.
 > **PUBLICADO em 28/09 (`main` = `5a60fa1`, CI verde): o Bloco E, etapa 2 INTEIRA (partes 2a a 2e)**,
 > mais a edição como na Udemy e a limpeza no Bunny ao excluir. *(A primeira publicação do dia,
 > `d342000`, pegou CI vermelho por um teste do arrastar que dependia de tempo — não do site; o
@@ -1551,7 +1554,8 @@ cada campo, a regra do ✓, 160 caracteres nas três listas e o Visualizar esper
 `courses.md` → O admin do curso.*
 - [x] **1a — os passos existem** *(28/09, no `dev`)*. O formulário único virou **um menu no nível
       2** com **7 passos em ordem de preenchimento**, cada um com ✓ quando completo: Informações
-      básicas · Para quem é · Conteúdo · Legendas · Página do curso · Mensagens · Publicar.
+      básicas · Para quem é · Conteúdo · Legendas · Página do curso *(hoje "Mídia e destaques",
+      29/09)* · Mensagens · Publicar.
       **Cada passo salva a sua parte.** Topo: voltar, título e status em português.
       Endereços: `/admin/cursos/novo` (só o passo 1; "Criar curso" grava e abre o editor) e
       `/admin/cursos/:id/{basico,para-quem-e,conteudo,pagina,publicar}`; `/admin/cursos/:id`
@@ -1588,7 +1592,10 @@ cada campo, a regra do ✓, 160 caracteres nas três listas e o Visualizar esper
 - [ ] **Visualizar** mostra a página do curso como o aluno vê, **inclusive em rascunho, só para o
       admin** — a rota pública continua devolvendo só o publicado. **Espera o C5** *(operador,
       28/09/2026)*: a página de curso de hoje é provisória e nem mostra a descrição, então a
-      prévia mostraria outra página e seria jogada fora.
+      prévia mostraria outra página e seria jogada fora. **Onde fica** *(operador, 29/09/2026)*:
+      um link no passo **Publicar** para abrir a página pública do curso e conferir como ficou.
+      Por isso o passo de imagem, vídeo, destaques, perguntas e camadas deixou de se chamar
+      "Página do curso" e passou a **"Mídia e destaques"** (o endereço `/pagina` ficou).
 - [x] **1e — Dicas embaixo dos campos** *(28/09, no `dev`)*: o agente escreveu o rascunho, **todas
       num arquivo só, `client/src/lib/course-hints.ts`, para a revisão do operador ser de uma vez**
       (ele pediu para seguir e revisar depois — 28/09). Cada dica diz só o que já é regra ou fato

@@ -37,7 +37,7 @@ beforeEach(() => {
   enviarVideo.mockReset();
 });
 
-/** Abre o passo Página do curso (imagem, vídeo, destaques, perguntas e camadas). */
+/** Abre o passo Mídia e destaques (imagem, vídeo, destaques, perguntas e camadas). */
 async function abrirPagina(curso: AdminCourseDetail = CURSO_DE_TESTE) {
   adminGetCourse.mockResolvedValue(curso);
   renderWithProviders(<CourseEditorLayout />, {
@@ -53,7 +53,7 @@ const salvar = () => fireEvent.click(screen.getByRole("button", { name: "Salvar"
 // Imagem do curso (C4, etapa 1 — plano aprovado pelo operador em 23/09/2026):
 // o formato das imagens da home (`/img/curso.jpg`) tem que salvar, e o que o
 // navegador leria como código ou como outro site nem sai da tela.
-describe("Página do curso — imagem", () => {
+describe("Mídia e destaques — imagem", () => {
   const AVISO = "Use um caminho do site que comece com / (ex.: /img/curso.jpg) ou um endereço que comece com https://";
 
   it.each(["/img/curso.jpg", "https://img.jilsonsantana.com/cursos/curso.webp"])(
@@ -92,7 +92,7 @@ describe("Página do curso — imagem", () => {
 
 // Capa enviada pelo admin para o Bunny (bloco de envio, etapa 1 — plano aprovado
 // pelo operador em 27/09/2026).
-describe("Página do curso — enviar a capa", () => {
+describe("Mídia e destaques — enviar a capa", () => {
   const ERRO = "Não foi possível enviar a imagem. Use WebP, JPG ou PNG de até 5 MB.";
   const ENDERECO = "https://img.jilsonsantana.com/cursos/exemplo-fundamentos-excel-ia-3f9a1c2b7d4e.webp";
 
@@ -151,7 +151,7 @@ describe("Página do curso — enviar a capa", () => {
 // Vídeo de apresentação enviado pelo admin (Bloco U, etapa 2 — plano aprovado
 // pelo operador em 27/09/2026). O envio em si é do Bunny (TUS); aqui se prova o
 // que a TELA faz com ele: porcentagem, erro, gravar o id só no fim, e o player.
-describe("Página do curso — vídeo de apresentação", () => {
+describe("Mídia e destaques — vídeo de apresentação", () => {
   const GUID = "eb1c4f77-0cda-46be-b47d-1118ad7c2ffe";
   const EMBED = `https://iframe.mediadelivery.net/embed/999/${GUID}`;
   const credenciais = { videoId: GUID, titulo: "Curso", libraryId: "999", expirationTime: 1, signature: "s", embedUrl: EMBED };

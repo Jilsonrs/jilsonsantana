@@ -75,7 +75,7 @@ describe("passosConcluidos — o ✓ de cada passo", () => {
     expect(passosConcluidos({ ...VAZIO, modules: [modulo("PUBLISHED", ["DRAFT"])] }).has("conteudo")).toBe(false);
   });
 
-  it("Página do curso: imagem E vídeo promocional (destaques e perguntas são opcionais)", () => {
+  it("Mídia e destaques: imagem E vídeo promocional (destaques e perguntas são opcionais)", () => {
     const comMidia = { ...VAZIO, thumbnailUrl: "/img/c.jpg", introVideoId: "eb1c4f77-0cda-46be-b47d-1118ad7c2ffe" };
     expect(passosConcluidos(comMidia).has("pagina")).toBe(true);
     expect(passosConcluidos({ ...comMidia, introVideoId: null }).has("pagina")).toBe(false);

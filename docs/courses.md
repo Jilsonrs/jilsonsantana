@@ -430,7 +430,7 @@ Daí os 7 passos do *Bloco E* do plano, no nível 2 da navegação.
 | Para quem é | o que vai aprender, pré-requisitos, para quem é | pelo menos 1 item em cada lista |
 | Conteúdo | módulos e aulas | pelo menos 1 aula publicada (em módulo publicado) |
 | Legendas | — *(etapa 3)* | — |
-| Página do curso | imagem, vídeo promocional, destaques, perguntas, camadas | imagem **e** vídeo promocional (destaques e perguntas são opcionais) |
+| Mídia e destaques *(nome do operador, 29/09; era "Página do curso")* | imagem, vídeo promocional, destaques, perguntas, camadas | imagem **e** vídeo promocional (destaques e perguntas são opcionais) |
 | Mensagens | — *(etapa 4)* | — |
 | Publicar | o que falta, status, ordem no catálogo, link | curso publicado |
 
@@ -438,7 +438,9 @@ Daí os 7 passos do *Bloco E* do plano, no nível 2 da navegação.
   impedir o salvar**.
 - **As três listas aceitam até 160 caracteres por item**, cada item com contador.
 - **O Visualizar espera a página de curso definitiva (C5):** a página de hoje é provisória e nem
-  mostra a descrição, então a prévia mostraria outra página.
+  mostra a descrição, então a prévia mostraria outra página. *(Operador, 29/09/2026: o nome
+  "Página do curso" fica para ESSA página pública; o link para abri-la e conferir como o curso
+  aparece fica no passo **Publicar**, e chega com o C5.)*
 - **A aula no Conteúdo, como na Udemy** *(operador, 28–29/09/2026)*: abre e recolhe; aberta,
   mostra a miniatura, o nome do arquivo e a duração do vídeo (sem player — assistir é na página
   da aula do aluno), a Prévia grátis e os arquivos para baixar. A aula criada já nasce aberta; ao

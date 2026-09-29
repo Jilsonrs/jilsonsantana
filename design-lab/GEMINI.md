@@ -156,7 +156,7 @@ servidores (§5); o React responde em `localhost:5173`, a home pública em `loca
 > ganha um **✓**, os dois desenhados em `client/src/components/nav/SecondaryNavItem.tsx`. **Formate
 > as seções à vontade.** A antiga seção "Organização" se dividiu:
 > - idioma e nível foram para `CourseLanguageLevelFields.tsx`, dentro de Informações básicas;
-> - as camadas foram para `CourseLayersSection.tsx`, no passo Página do curso;
+> - as camadas foram para `CourseLayersSection.tsx`, no passo Mídia e destaques (era "Página do curso");
 > - status e ordem foram para `CoursePublishSection.tsx`, no passo Publicar.
 >
 > **O passo Publicar** (28/09) também mostra a barra de Preenchimento, a mesma do cartão da lista:

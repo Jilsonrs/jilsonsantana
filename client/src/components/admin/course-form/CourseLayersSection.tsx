@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { PageSection } from "@/components/layout/PageLayout";
 import { Field } from "./Field";
 
-/** As camadas do selo 3 Camadas — no passo Página do curso (operador, 28/09/2026). */
+/** As camadas do selo 3 Camadas — no passo Mídia e destaques (operador, 28/09/2026). */
 export function CourseLayersSection() {
   const { register } = useFormContext<CourseFormValues>();
   return (

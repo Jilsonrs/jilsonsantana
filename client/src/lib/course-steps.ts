@@ -51,7 +51,9 @@ export const PASSOS_DO_CURSO: Passo[] = [
   { slug: "legendas", label: "Legendas", planejado: true, campos: [], envia: [] },
   {
     slug: "pagina",
-    label: "Página do curso",
+    // "Página do curso" fica para a página PÚBLICA, que o operador confere pelo
+    // passo Publicar quando a página definitiva existir (operador, 29/09/2026).
+    label: "Mídia e destaques",
     campos: ["thumbnailUrl", "introVideoId", "highlights", "faq", "camadas"],
     envia: ["thumbnailUrl", "introVideoId", "highlights", "faq", "camadas"],
   },
