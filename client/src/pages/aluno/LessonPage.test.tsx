@@ -32,6 +32,14 @@ function pagina(aula: Partial<PaginaDaAula["aula"]> = {}, rascunho = false): Pag
       title: "Excel + IA",
       language: "pt",
       status: "PUBLISHED",
+      level: "INTERMEDIARIO",
+      description: "Um curso **completo** de fórmulas.",
+      learnTags: ["PROCX"],
+      requirements: ["Excel instalado"],
+      personas: ["Analistas de dados"],
+      highlights: [{ icon: "sparkles", title: "IA do seu lado", text: "Com o JilsonAI." }],
+      faq: [{ pergunta: "Preciso do 365?", resposta: "Não." }],
+      camadas: ["UNIVERSAL"],
       modulos: [
         {
           id: 1,
@@ -181,6 +189,39 @@ describe("página da aula — o conteúdo do curso", () => {
     renderWithProviders(<SecondaryNav papel={Role.MEMBER} onSignOut={vi.fn()} />, { route: "/aluno/aula/11", path: "/aluno/aula/:id" });
     const coluna = await screen.findByRole("complementary", { name: "Menu da seção" });
     expect(await within(coluna).findByRole("link", { name: /Abertura/ })).toBeTruthy();
+  });
+});
+
+// "Sobre o curso" embaixo do player, em toda aula (decisão do operador, 29/09/2026).
+describe("página da aula — sobre o curso", () => {
+  it("os detalhes do curso: nível, descrição, listas, camadas, destaques e perguntas", async () => {
+    abrir();
+    const sobre = await screen.findByRole("region", { name: "Sobre o curso" });
+    expect(within(sobre).getByText("Intermediário")).toBeTruthy();
+    expect(await within(sobre).findByText("completo")).toBeTruthy();
+    expect(within(sobre).getByText("PROCX")).toBeTruthy();
+    expect(within(sobre).getByText("Excel instalado")).toBeTruthy();
+    expect(within(sobre).getByText("Analistas de dados")).toBeTruthy();
+    expect(within(sobre).getByText("Fundamentos sólidos")).toBeTruthy();
+    expect(within(sobre).getByText("IA do seu lado")).toBeTruthy();
+    expect(within(sobre).getByText("Preciso do 365?")).toBeTruthy();
+  });
+
+  it("aparece também na aula bloqueada", async () => {
+    getLessonPage.mockResolvedValue(pagina({ liberada: false, arquivosLiberados: false, playerUrl: undefined, arquivos: undefined }));
+    abrir();
+    expect(await screen.findByRole("region", { name: "Sobre o curso" })).toBeTruthy();
+  });
+
+  it("bloco vazio não aparece", async () => {
+    const semNada = pagina();
+    semNada.curso = { ...semNada.curso, requirements: [], faq: [], highlights: null };
+    getLessonPage.mockResolvedValue(semNada);
+    abrir();
+    const sobre = await screen.findByRole("region", { name: "Sobre o curso" });
+    expect(within(sobre).queryByText("Pré-requisitos")).toBeNull();
+    expect(within(sobre).queryByText("Perguntas frequentes")).toBeNull();
+    expect(within(sobre).getByText("Pra quem é")).toBeTruthy();
   });
 });
 

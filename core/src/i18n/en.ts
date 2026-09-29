@@ -352,7 +352,9 @@ export const en: Dict = {
       abrirIa: "Open JilsonAI",
       fecharIa: "Close JilsonAI",
       iaTitulo: "JilsonAI",
-      iaEmBreve: "Coming soon: ask your questions about this lesson right here, without leaving the video."
+      iaEmBreve: "Coming soon: ask your questions about this lesson right here, without leaving the video.",
+      sobreOCurso: "About this course",
+      cursoSemAulas: "This course has no lessons yet."
     }
   }
 };

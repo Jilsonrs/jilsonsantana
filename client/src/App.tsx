@@ -12,6 +12,7 @@ import { TrilhaDetailPage } from "@/pages/TrilhaDetailPage";
 import { MyTrilhasPage } from "@/pages/MyTrilhasPage";
 import { MyTrilhaDetailPage } from "@/pages/MyTrilhaDetailPage";
 import { LessonPage } from "@/pages/aluno/LessonPage";
+import { CourseEntryPage } from "@/pages/aluno/CourseEntryPage";
 import { AdminCoursesPage } from "@/pages/admin/AdminCoursesPage";
 import { NewCoursePage } from "@/pages/admin/course-editor/NewCoursePage";
 import { CourseEditorLayout } from "@/pages/admin/course-editor/CourseEditorLayout";
@@ -38,6 +39,8 @@ export default function App() {
             já sob /aluno/. FORA do ProtectedRoute de propósito: a prévia grátis
             toca para visitante sem login. Quem decide o que cada um vê é o servidor. */}
         <Route path="/aluno/aula/:id" element={<LessonPage />} />
+        {/* A entrada do aluno num curso: vai para a primeira aula (29/09/2026). */}
+        <Route path="/aluno/curso/:slug" element={<CourseEntryPage />} />
         <Route element={<ProtectedRoute />}>
           <Route path="/inicio" element={<StudentHomePage />} />
           <Route path="/minhas-trilhas" element={<MyTrilhasPage />} />

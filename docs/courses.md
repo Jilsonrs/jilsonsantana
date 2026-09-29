@@ -449,6 +449,13 @@ Daí os 7 passos do *Bloco E* do plano, no nível 2 da navegação.
   *(operador, 29/09/2026)*: curso ainda em **rascunho** → o item novo já nasce **publicado**, sem
   publicar um por um; curso **publicado** (ou arquivado) → nasce em **rascunho**, até ser
   publicado à mão. Os que já existiam não mudaram.
+- **O aluno entra no curso pela PRIMEIRA AULA** *(operador, 29/09/2026)*: no catálogo do aluno
+  logado, clicar num curso abre a página da aula já na primeira aula publicada — a de
+  **boas-vindas, que o operador sobe como as outras** (uma cópia da apresentação, para uso
+  interno). Embaixo do player, **em toda aula**, fica **"Sobre o curso"**: nível, descrição, o que
+  vai aprender, pré-requisitos, pra quem é, as camadas, os destaques e as perguntas frequentes
+  (sem o conteúdo em acordeão, que já está no nível 2). **O vídeo de apresentação fica só na
+  página pública**, a de venda, e o visitante sem login continua indo para ela.
 - **Arquivos para baixar:** na prática, **um .zip por curso, numa aula qualquer** (qualquer aula
   pode receber), **sem limite de tamanho** *(operador, 29/09/2026)*. Só assinantes baixam —
   **inclusive na aula de prévia grátis, onde o visitante só assiste** *(operador, 29/09/2026)*.

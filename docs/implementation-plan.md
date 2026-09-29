@@ -1461,6 +1461,16 @@ landmark. Corrigido junto.
       não deixa começar um segundo envio enquanto o primeiro não termina. Fechar ou recarregar a
       aba continua interrompendo (como na Udemy). **Mutação:** a porcentagem sem ser guardada e o
       botão sem travar → reprovam.
+- [x] **O aluno entra no curso pela primeira aula, com "Sobre o curso" embaixo do player** *(decisão
+      do operador, 29/09/2026; plano aprovado no mesmo dia)*. A rota da aula devolve os detalhes
+      do curso (os mesmos campos da página pública); `CourseDetails.tsx` desenha nível, descrição,
+      listas, camadas, destaques e perguntas **em toda aula, liberada ou não** (bloco vazio não
+      aparece). `/aluno/curso/:slug` (`CourseEntryPage.tsx`) leva à primeira aula publicada; o
+      cartão do catálogo leva para lá quem está logado, e o visitante segue para a página pública.
+      **Mutação:** os detalhes fora da resposta, a entrada na segunda aula, o cartão do logado
+      indo para a página pública e o bloco vazio aparecendo → reprovam. **Fora:** "continuar de
+      onde parou" (Fase 5) e os outros links que levam o aluno logado à página de venda (a trilha
+      e a busca).
 - [x] **Aula e módulo novos nascem conforme o curso, como na Udemy** *(decisão do operador,
       29/09/2026; os módulos seguem a mesma regra, resposta dele)*: curso em rascunho → nascem
       **publicados**; curso publicado ou arquivado → nascem em **rascunho**. Nas rotas do "+"
