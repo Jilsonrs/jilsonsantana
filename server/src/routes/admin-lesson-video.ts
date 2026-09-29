@@ -1,18 +1,18 @@
 import { Router } from "express";
-import { LessonKind, bunnyVideoIdSchema, videoUploadCompleteSchema, videoUploadStartSchema } from "@jilson/core";
+import { LessonKind, videoUploadCompleteSchema, videoUploadStartSchema } from "@jilson/core";
 import { prisma } from "../lib/prisma.js";
 import { requireAdmin } from "../middleware/auth.js";
 import { validate, parseId } from "../lib/http.js";
-import { apagarVideo, enderecoAssinado, estadoDoVideo, iniciarEnvio } from "../lib/bunny-stream.js";
+import { apagarVideo, iniciarEnvio, resumoDoVideo } from "../lib/bunny-stream.js";
 
 const router = Router();
 
 // O VÍDEO DE CADA AULA (Bloco U, etapa 3 = Bloco E etapa 2, parte 2d — plano
 // aprovado pelo operador em 28/09/2026). A mesma forma do vídeo de apresentação
 // (`admin-media.ts`), com duas diferenças:
-//   - a biblioteca é a de AULAS, com token: o player só abre com o endereço
-//     assinado, e aqui ele sai só para o ADMIN (a prévia do editor). O aluno
-//     recebe o dele na etapa 4, depois da trava de acesso;
+//   - o editor NÃO tem player: mostra o resumo do vídeo (miniatura, nome do
+//     arquivo, duração), como a Udemy (operador, 28/09/2026). O player
+//     assinado sai para o aluno na etapa 4, depois da trava de acesso;
 //   - só aula de VÍDEO recebe vídeo (a de texto tem o seu texto).
 // Decisões do operador que valem aqui (bunny.md §3.4 e §7.1): nome do vídeo no
 // Bunny = nome do arquivo; um vídeo por vez e sem reuso entre aulas; reenviar
@@ -57,8 +57,7 @@ router.post("/admin/lessons/:id/video", requireAdmin, async (req, res) => {
   const anterior = aula.bunnyVideoPendingId;
   if (anterior && anterior !== aula.bunnyVideoId) await apagarVideo("aulas", anterior);
 
-  // Só a assinatura do envio: a prévia vem do `complete` ou do `/player`, sempre
-  // assinada.
+  // Só a assinatura do envio: o resumo do vídeo vem de `GET …/video`.
   res.json(inicio.credenciais);
 });
 
@@ -88,13 +87,14 @@ router.post("/admin/lessons/:id/video/complete", requireAdmin, async (req, res) 
   const substituido = aula.bunnyVideoId;
   if (substituido && substituido !== videoId) await apagarVideo("aulas", substituido);
 
-  res.json({ bunnyVideoId: videoId, playerUrl: enderecoAssinado(videoId) });
+  res.json({ bunnyVideoId: videoId });
 });
 
-// GET /api/admin/lessons/:id/player — a prévia do admin, com o endereço
-// assinado (6 h). `null` quando a aula não tem vídeo, ou sem a biblioteca neste
-// ambiente.
-router.get("/admin/lessons/:id/player", requireAdmin, async (req, res) => {
+// GET /api/admin/lessons/:id/video — o RESUMO do vídeo desta aula para o editor:
+// a miniatura, o nome do arquivo, a duração e se o Bunny já terminou de processar.
+// Sem player: assistir é na página da aula do aluno (decisão do operador,
+// 28/09/2026). O id do vídeo sai da aula, nunca de quem pede.
+router.get("/admin/lessons/:id/video", requireAdmin, async (req, res) => {
   const id = parseId(req.params.id, res);
   if (id === null) return;
   const aula = await aulaDeVideo(id);
@@ -102,20 +102,16 @@ router.get("/admin/lessons/:id/player", requireAdmin, async (req, res) => {
     res.status(404).json({ error: "NotFound" });
     return;
   }
-  res.json({ playerUrl: enderecoAssinado(aula.bunnyVideoId) });
-});
-
-// GET /api/admin/lesson-video/:videoId/status — o Bunny já terminou de
-// processar? A prévia pergunta até ficar pronta (como a da apresentação).
-router.get("/admin/lesson-video/:videoId/status", requireAdmin, async (req, res) => {
-  const videoId = validate(bunnyVideoIdSchema, req.params.videoId, res);
-  if (videoId === null) return;
-  const estado = await estadoDoVideo("aulas", videoId);
-  if (!estado) {
-    res.status(502).json({ error: "StreamFalhou" });
+  if (!aula.bunnyVideoId) {
+    res.json({ video: null });
     return;
   }
-  res.json(estado);
+  const resultado = await resumoDoVideo(aula.bunnyVideoId);
+  if (!resultado.ok) {
+    res.status(resultado.motivo === "NaoConfigurado" ? 503 : 502).json({ error: `Stream${resultado.motivo}` });
+    return;
+  }
+  res.json({ video: resultado.resumo });
 });
 
 export default router;

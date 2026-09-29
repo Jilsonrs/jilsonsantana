@@ -3,6 +3,7 @@ import {
   assinaturaDeEnvio,
   enderecoAssinado,
   interpretarEstado,
+  interpretarResumo,
   tokenDoPlayer,
   VALIDADE_DO_PLAYER,
 } from "../lib/bunny-stream.js";
@@ -106,5 +107,50 @@ describe("token do player das aulas", () => {
     process.env.BUNNY_STREAM_LESSONS_TOKEN_KEY = "k";
     delete process.env.BUNNY_STREAM_LESSONS_LIBRARY_ID;
     expect(enderecoAssinado("eb1c4f77-0cda-46be-b47d-1118ad7c2ffe")).toBeNull();
+  });
+});
+
+// O RESUMO do vídeo no editor (como a Udemy: miniatura, nome, duração — operador,
+// 28/09/2026). O que protege: a miniatura só existe com o vídeo PRONTO, e nada
+// torto que venha do Bunny ou da variável vira pedaço de endereço.
+describe("resumo do vídeo da aula", () => {
+  const ID = "eb1c4f77-0cda-46be-b47d-1118ad7c2ffe";
+  const HOST = "vz-a1b2c3d4-e5f.b-cdn.net";
+  const pronto = { status: 4, title: "iniciando-o-curso.mp4", length: 111, thumbnailFileName: "thumbnail.jpg" };
+
+  it("pronto: nome, duração e a miniatura no CDN da biblioteca", () => {
+    expect(interpretarResumo(ID, pronto, HOST)).toEqual({
+      pronto: true,
+      falhou: false,
+      nome: "iniciando-o-curso.mp4",
+      duracaoEmSegundos: 111,
+      miniaturaUrl: `https://${HOST}/${ID}/thumbnail.jpg`,
+    });
+  });
+
+  it("ainda processando: sem miniatura (ela ainda não existe)", () => {
+    expect(interpretarResumo(ID, { ...pronto, status: 2, encodeProgress: 40 }, HOST).miniaturaUrl).toBeNull();
+  });
+
+  it("sem o endereço das miniaturas, ou com um endereço torto: sem miniatura", () => {
+    expect(interpretarResumo(ID, pronto, undefined).miniaturaUrl).toBeNull();
+    expect(interpretarResumo(ID, pronto, "evil.com/x?").miniaturaUrl).toBeNull();
+    expect(interpretarResumo(ID, pronto, "https://vz-a.b-cdn.net").miniaturaUrl).toBeNull();
+  });
+
+  it("nome de miniatura torto vira o padrão, nunca um caminho", () => {
+    const resumo = interpretarResumo(ID, { ...pronto, thumbnailFileName: "../../outro/segredo.jpg" }, HOST);
+    expect(resumo.miniaturaUrl).toBe(`https://${HOST}/${ID}/thumbnail.jpg`);
+    expect(interpretarResumo(ID, { ...pronto, thumbnailFileName: "thumbnail_2.jpg" }, HOST).miniaturaUrl).toBe(
+      `https://${HOST}/${ID}/thumbnail_2.jpg`,
+    );
+  });
+
+  it("duração e nome só valem com o formato certo", () => {
+    const torto = interpretarResumo(ID, { status: 4, title: 123, length: "111" }, HOST);
+    expect(torto.nome).toBeNull();
+    expect(torto.duracaoEmSegundos).toBeNull();
+    expect(interpretarResumo(ID, { ...pronto, length: 0 }, HOST).duracaoEmSegundos).toBeNull();
+    expect(interpretarResumo(ID, { ...pronto, length: 110.6 }, HOST).duracaoEmSegundos).toBe(111);
   });
 });
