@@ -325,9 +325,17 @@ export async function listLessonFiles(lessonId: number): Promise<AdminLessonFile
   return data;
 }
 
-export async function uploadLessonFile(lessonId: number, arquivo: File): Promise<AdminLessonFile> {
+export async function uploadLessonFile(
+  lessonId: number,
+  arquivo: File,
+  aoProgredir: (porcentagem: number) => void = () => {},
+): Promise<AdminLessonFile> {
   const { data } = await client.post<AdminLessonFile>(`/admin/lessons/${lessonId}/files`, arquivo, {
     headers: { "Content-Type": "application/octet-stream", "X-Nome-Do-Arquivo": encodeURIComponent(arquivo.name) },
+    // Sem limite de tamanho (operador, 29/09/2026): um .zip grande sem porcentagem parece travado.
+    onUploadProgress: (e) => {
+      if (e.total) aoProgredir(Math.round((e.loaded * 100) / e.total));
+    },
   });
   return data;
 }

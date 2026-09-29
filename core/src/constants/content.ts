@@ -26,9 +26,10 @@ export type LessonKind = (typeof LessonKind)[keyof typeof LessonKind];
 export const LIMITE_DO_TEXTO_DA_AULA = 20000;
 
 // ARQUIVOS PARA BAIXAR de cada aula, só para assinantes (Bloco E, etapa 2, parte
-// 2e — propostas do agente no plano de 28/09/2026, aprovado pelo operador). O
-// servidor recusa o que passar disto; a tela confere antes, para poupar o envio.
-export const LIMITE_DO_ARQUIVO_DA_AULA_MB = 50;
+// 2e — propostas do agente no plano de 28/09/2026, aprovado pelo operador). SEM
+// limite de tamanho (operador, 29/09/2026: em geral um .zip por curso); o único
+// teto é o do Railway, que fecha o envio que não termina em 5 minutos. O servidor
+// recusa o tipo fora desta lista; a tela confere antes, para poupar o envio.
 export const EXTENSOES_DOS_ARQUIVOS_DA_AULA = [
   "pdf",
   "xlsx",

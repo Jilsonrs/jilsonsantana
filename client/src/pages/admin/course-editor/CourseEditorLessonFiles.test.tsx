@@ -93,18 +93,36 @@ describe("arquivos da aula", () => {
     const arquivo = new File(["x"], "tabela.xlsx", { type: "application/vnd.ms-excel" });
     escolher(arquivo);
 
-    await waitFor(() => expect(uploadLessonFile).toHaveBeenCalledWith(11, arquivo));
+    await waitFor(() => expect(uploadLessonFile).toHaveBeenCalledWith(11, arquivo, expect.any(Function)));
     await waitFor(() => expect(listLessonFiles).toHaveBeenCalledTimes(2));
   });
 
-  it("tipo fora da lista ou acima de 50 MB nem sai da tela", async () => {
+  it("tipo fora da lista nem sai da tela", async () => {
     await abrirArquivos();
     escolher(new File(["x"], "virus.exe"));
     expect((await screen.findByRole("alert")).textContent).toMatch(/Use um dos tipos aceitos/);
-
-    escolher(new File([new Uint8Array(50 * 1024 * 1024 + 1)], "grande.zip"));
-    await screen.findByRole("alert");
     expect(uploadLessonFile).not.toHaveBeenCalled();
+  });
+
+  // Sem limite de tamanho (operador, 29/09/2026: em geral um .zip por curso).
+  it("um .zip acima dos 50 MB de antes é enviado", async () => {
+    uploadLessonFile.mockResolvedValue({ id: 8, originalName: "curso.zip", sizeBytes: 1, createdAt: "2026-09-29" });
+    await abrirArquivos();
+    const grande = new File(["x"], "curso.zip");
+    Object.defineProperty(grande, "size", { value: 3 * 1024 * 1024 * 1024 });
+    escolher(grande);
+    await waitFor(() => expect(uploadLessonFile).toHaveBeenCalledWith(11, grande, expect.any(Function)));
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
+
+  it("mostra a porcentagem do envio", async () => {
+    uploadLessonFile.mockImplementation((_id: number, _arquivo: File, aoProgredir: (p: number) => void) => {
+      aoProgredir(37);
+      return new Promise(() => {});
+    });
+    await abrirArquivos();
+    escolher(new File(["x"], "curso.zip"));
+    expect(await screen.findByRole("button", { name: "Enviando… 37%" })).toBeTruthy();
   });
 
   it("zona não configurada (o computador do operador): diz isso", async () => {

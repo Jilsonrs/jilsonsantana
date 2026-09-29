@@ -133,8 +133,11 @@
 > 401** porque as variáveis misturavam duas bibliotecas (a de apresentação existia; `bunny.md`
 > §3.1). Corrigido pelo operador no mesmo dia: tudo na 762605, a biblioteca de apresentação
 > apagada, CDN token desligado e DRM Basic ligado. O envio da aula **funcionou e o vídeo tocou**.
-> Falta a apresentação enviada de novo (P19). **No `dev`, não publicado:** a aula no editor como na
-> Udemy (abre e recolhe, com a miniatura, sem player) e a prévia do tamanho de uma miniatura.
+> Falta a apresentação enviada de novo (P19). **No `dev`, não publicado (28–29/09):** a aula no
+> editor como na Udemy (abre e recolhe, com a miniatura, sem player; a criada já nasce aberta; ao
+> voltar, só a pronta fica recolhida) e os arquivos para baixar sem limite de tamanho. Duas
+> migrations novas (`lesson_video_ready`, `lesson_file_size_bigint`), aplicadas no dev; produção
+> aplica no publish. Antes de publicar: `BUNNY_STREAM_LESSONS_CDN_HOST` no Railway (P19).
 > **PUBLICADO em 28/09 (`main` = `5a60fa1`, CI verde): o Bloco E, etapa 2 INTEIRA (partes 2a a 2e)**,
 > mais a edição como na Udemy e a limpeza no Bunny ao excluir. *(A primeira publicação do dia,
 > `d342000`, pegou CI vermelho por um teste do arrastar que dependia de tempo — não do site; o
@@ -1409,7 +1412,7 @@ landmark. Corrigido junto.
       saíram a rota do player do admin, a do estado por id e o `playerUrl` do fim do envio.
       **Mutação:** miniatura antes de pronto, o id do vídeo vindo de quem pede, a seta que não
       abre, a duração sem os dois dígitos e a tela mostrando imagem processando → todas reprovam.
-- [ ] **A aula aberta como na Udemy (continuação) e arquivos para baixar sem limite** *(decisões do
+- [x] **A aula aberta como na Udemy (continuação) e arquivos para baixar sem limite** *(decisões do
       operador, 29/09/2026; plano aprovado no mesmo dia)*: a aula criada já nasce aberta; o que
       está aberto fica aberto enquanto ele está na tela; ao voltar, a aula com o vídeo pronto volta
       **recolhida**, e a que processa ou está sem vídeo volta **aberta** (a de texto, recolhida).
@@ -1427,6 +1430,15 @@ landmark. Corrigido junto.
       → aberta), a aula criada pelo "+ Aula" ou pelo "+" entre aulas nasce aberta, e a aberta
       continua aberta quando o curso recarrega. **Mutação:** regra invertida, aula criada que não
       abre e a regra recalculada a cada recarga → reprovam.
+      **Parte 3 feita:** sem limite de tamanho (saiu `LIMITE_DO_ARQUIVO_DA_AULA_MB`); o arquivo
+      passa **em fluxo** pelo servidor até o Bunny, com o tamanho no cabeçalho (medido: sem ele, o
+      fetch do Node manda em pedaços); a tela mostra a porcentagem. `LessonFile.sizeBytes` virou
+      `BigInt` (migration `20260929140000_lesson_file_size_bigint`: o `Int` parava em 2 GB e o
+      .zip seria enviado e depois falharia ao gravar). Passo 0: mesmas contagens (só
+      `_prisma_migrations` 13→14 e o login de teste), 0 sem RLS, login 200, "No difference
+      detected". **Mutação:** o limite de 50 MB de volta na tela e no servidor, e o tamanho sem ir
+      ao Bunny → reprovam. **Para a etapa 4:** decidir a entrega do .zip (pelo servidor, que sai
+      pelo Railway e é cobrado, ou link assinado temporário do Bunny — `bunny.md` §4.5).
 - [ ] **Etapa 4 — a trava de acesso e a aula tocando para o aluno:** adianta da Fase 4 o model
       `Subscription`, o `temAcessoAtivo()` e o `requireActiveMembership`, **sem Stripe**; rota
       `GET /api/lessons/:id/player`; assinatura de teste do `member@` **só fora de produção** (o

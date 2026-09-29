@@ -27,7 +27,7 @@
 | Storage Zone de produção | **criada**: `jilsonsantana-storage` (§4.1) |
 | Storage Zone de dev | **não criada** (§4.1) |
 | Pull Zone das imagens | **criada e testada**: `img.jilsonsantana.com` (§4.2) |
-| Storage Zone dos ARQUIVOS PARA BAIXAR | **a criar pelo operador** (`pendencias.md`, P33): zona própria, **sem Pull Zone** (§4.5). O código do envio está pronto no `dev` (28/09) |
+| Storage Zone dos ARQUIVOS PARA BAIXAR | **a criar pelo operador** (`pendencias.md`, P33): zona própria, **sem Pull Zone**, confirmada por ele em 29/09 (§4.5). O código do envio está pronto no `dev`, **sem limite de tamanho** (29/09) |
 | Stream: biblioteca de aulas | **criada e testada**: `jilsonsantana-stream` (§3.2). Desde 28/09 guarda também a apresentação; o envio do vídeo de uma aula pelo admin **funcionou no ar em 28/09** |
 | Stream: biblioteca de apresentação | **existiu e foi apagada pelo operador em 28/09**: a `jilsonsantana-stream-apresentacao` (763872) guardava o vídeo de apresentação; desde 28/09 é tudo na `jilsonsantana-stream` (§3.1) |
 | Stream: bibliotecas de dev | **não serão criadas por enquanto**: o operador testa o envio direto no ar (decisão de 27/09, §4.1) |
@@ -383,6 +383,15 @@ desligado** (é pago).
   nosso servidor (na Railway), então a réplica não aproxima nada do aluno.
 - **Nome:** sugestão `jilsonsantana-arquivos`. **Sem zona de dev** (o teste é no ar, como nas
   imagens).
+- **Sem limite de tamanho** *(operador, 29/09/2026: em geral um .zip por curso)*. O arquivo passa
+  **em fluxo** pelo nosso servidor até o Bunny, sem ficar inteiro na memória, e o tamanho vai no
+  cabeçalho do `PUT` (medido: sem ele, o fetch do Node manda "em pedaços"). **O único teto é do
+  Railway** *(doc via context7, 29/09)*: o envio precisa terminar em **5 minutos**. O tamanho no
+  banco é `BigInt` (o `Int` parava em 2 GB).
+- **Ponto para a etapa 4 (a entrega ao aluno):** com arquivo sem limite, entregar pelo nosso
+  servidor faz cada download sair pelo Railway, que cobra a saída. A alternativa é um link
+  assinado e temporário direto do Bunny, gerado só para assinante — o que reabre o "sem Pull
+  Zone" acima **com esse dado novo**. Decisão do operador, na etapa 4.
 - **Regras de build que já valem** *(código em `server/src/lib/bunny-storage.ts`)*: nome
   aleatório no Storage (`aulas/<aula>/<24 caracteres>.<ext>`); o nome original fica só no banco;
   **apagar só aceita caminho de arquivo nesse formato**, porque, pela doc (context7, 28/09),

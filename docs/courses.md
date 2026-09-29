@@ -439,6 +439,12 @@ Daí os 7 passos do *Bloco E* do plano, no nível 2 da navegação.
 - **As três listas aceitam até 160 caracteres por item**, cada item com contador.
 - **O Visualizar espera a página de curso definitiva (C5):** a página de hoje é provisória e nem
   mostra a descrição, então a prévia mostraria outra página.
+- **A aula no Conteúdo, como na Udemy** *(operador, 28–29/09/2026)*: abre e recolhe; aberta,
+  mostra a miniatura, o nome do arquivo e a duração do vídeo (sem player — assistir é na página
+  da aula do aluno), a Prévia grátis e os arquivos para baixar. A aula criada já nasce aberta; ao
+  voltar para a tela, só a com o vídeo pronto (e a de texto) volta recolhida.
+- **Arquivos para baixar:** na prática, **um .zip por curso, numa aula qualquer** (qualquer aula
+  pode receber), **sem limite de tamanho** *(operador, 29/09/2026)*. Só assinantes baixam.
 
 **O que ficou fora, e por quê** (para ninguém propor de volta sem motivo novo):
 - **Preço, cupom, pacote e carrinho por curso:** a escola é assinatura. Cupom existe, mas é **da

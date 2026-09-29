@@ -1,3 +1,4 @@
+import { Readable } from "node:stream";
 // O Bunny Storage: onde mora o arquivo que o site RECEBE (capa de curso hoje;
 // foto do aluno depois). Nunca o disco do container: a Railway zera o disco a
 // cada publicação (CLAUDE.md → Video; decisão do operador, 25/09/2026).
@@ -72,17 +73,39 @@ export function caminhoDeArquivoDaAula(caminho: string): boolean {
 
 export type ResultadoDoArquivo = { ok: true } | { ok: false; motivo: "NaoConfigurado" | "Falhou" };
 
-/** Guarda o arquivo na zona dos arquivos. Não há endereço público para devolver. */
-export async function enviarArquivoDaAula(caminho: string, conteudo: Buffer): Promise<ResultadoDoArquivo> {
+/**
+ * Guarda o arquivo na zona dos arquivos, EM FLUXO: o que chega do navegador segue
+ * para o Bunny sem ficar inteiro na memória do servidor (sem limite de tamanho —
+ * operador, 29/09/2026). O tamanho vai no cabeçalho: medido em 29/09, o fetch do
+ * Node manda o corpo "em pedaços" sem ele. Não há endereço público para devolver.
+ */
+export async function enviarArquivoDaAula(
+  caminho: string,
+  corpo: Readable,
+  tamanho: number,
+): Promise<ResultadoDoArquivo> {
   const c = configDosArquivos();
   if (!c) return { ok: false, motivo: "NaoConfigurado" };
   if (!caminhoDeArquivoDaAula(caminho)) return { ok: false, motivo: "Falhou" };
 
-  const resposta = await fetch(`https://${c.host}/${c.zona}/${caminho}`, {
+  // `duplex: "half"` é exigido pelo Node para corpo em fluxo e ainda não está no
+  // tipo RequestInit do "dom" — daí a interseção.
+  const pedido: RequestInit & { duplex: "half" } = {
     method: "PUT",
-    headers: { AccessKey: c.senha, "Content-Type": "application/octet-stream" },
-    body: new Uint8Array(conteudo),
-  });
+    headers: { AccessKey: c.senha, "Content-Type": "application/octet-stream", "Content-Length": String(tamanho) },
+    // Cast: o ReadableStream do Node e o do tipo "dom" são o mesmo objeto em
+    // runtime; só as declarações de tipo divergem.
+    body: Readable.toWeb(corpo) as unknown as BodyInit,
+    duplex: "half",
+  };
+  let resposta: Response;
+  try {
+    resposta = await fetch(`https://${c.host}/${c.zona}/${caminho}`, pedido);
+  } catch {
+    // O envio caiu no meio (o navegador fechou, a rede caiu, o Railway cortou).
+    console.error("[bunny-storage] envio de arquivo interrompido");
+    return { ok: false, motivo: "Falhou" };
+  }
   if (!resposta.ok) {
     console.error(`[bunny-storage] envio de arquivo recusado: ${resposta.status}`);
     return { ok: false, motivo: "Falhou" };

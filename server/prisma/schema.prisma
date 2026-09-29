@@ -363,7 +363,8 @@ model LessonFile {
   // O nome com que o operador enviou (o aluno baixa com este nome).
   originalName String
   storagePath  String   @unique
-  sizeBytes    Int
+  // BigInt: arquivo sem limite de tamanho (operador, 29/09/2026); Int para em 2 GB.
+  sizeBytes    BigInt
   createdAt    DateTime @default(now())
 
   @@index([lessonId])
