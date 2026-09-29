@@ -208,7 +208,7 @@ describe("itensSecundarios — o nível 2 só aparece quando vale a pena", () =>
       "Para quem é",
       "Conteúdo",
       "Legendas",
-      "Página do curso",
+      "Mídia e destaques",
       "Mensagens",
       "Publicar",
     ]);
