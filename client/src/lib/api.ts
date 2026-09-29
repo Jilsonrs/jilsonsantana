@@ -345,6 +345,8 @@ export type PaginaDaAula = {
     status: ContentStatus;
     moduloId: number;
     liberada: boolean;
+    /** Os arquivos são só para assinante, inclusive na prévia grátis (operador, 29/09/2026). */
+    arquivosLiberados: boolean;
     playerUrl?: string | null;
     texto?: string | null;
     arquivos?: ArquivoDaAula[];

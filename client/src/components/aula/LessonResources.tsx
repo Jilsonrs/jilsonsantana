@@ -55,7 +55,7 @@ export function RecursosNaLista({ lessonId }: { lessonId: number }) {
         {t.aula.recursos}
       </summary>
       <div className="pt-2">
-        {data && !data.aula.liberada && <p className="text-xs text-muted-foreground">{t.aula.recursosSoAssinantes}</p>}
+        {data && !data.aula.arquivosLiberados && <p className="text-xs text-muted-foreground">{t.aula.recursosSoAssinantes}</p>}
         {arquivos && <ListaDeArquivos lessonId={lessonId} arquivos={arquivos} comoAdmin={comoAdmin} />}
       </div>
     </details>

@@ -39,7 +39,7 @@ function pagina(aula: Partial<PaginaDaAula["aula"]> = {}, rascunho = false): Pag
           status: "PUBLISHED",
           aulas: [
             { id: 11, title: "Abertura", kind: "VIDEO", isFreePreview: false, status: "PUBLISHED", temArquivos: true },
-            { id: 12, title: "Leitura", kind: "TEXT", isFreePreview: false, status: "PUBLISHED", temArquivos: false },
+            { id: 12, title: "Leitura", kind: "TEXT", isFreePreview: false, status: "PUBLISHED", temArquivos: true },
           ],
         },
         ...(rascunho
@@ -55,6 +55,7 @@ function pagina(aula: Partial<PaginaDaAula["aula"]> = {}, rascunho = false): Pag
       status: "PUBLISHED",
       moduloId: 1,
       liberada: true,
+      arquivosLiberados: true,
       playerUrl: PLAYER,
       texto: null,
       arquivos: [{ id: 5, originalName: "Planilha.zip", sizeBytes: 2048 }],
@@ -106,7 +107,7 @@ describe("página da aula — o conteúdo", () => {
   });
 
   it("bloqueada: \"para assinantes\", sem player", async () => {
-    getLessonPage.mockResolvedValue(pagina({ liberada: false, playerUrl: undefined, arquivos: undefined }));
+    getLessonPage.mockResolvedValue(pagina({ liberada: false, arquivosLiberados: false, playerUrl: undefined, arquivos: undefined }));
     abrir();
     expect((await screen.findByRole("status")).textContent).toContain("Esta aula é para assinantes.");
     expect(document.querySelector("iframe")).toBeNull();
@@ -124,6 +125,29 @@ describe("página da aula — o conteúdo", () => {
   });
 });
 
+// Na prévia grátis o visitante só assiste: os arquivos existem, mas não vêm
+// (decisão do operador, 29/09/2026).
+describe("página da aula — prévia grátis, sem assinatura", () => {
+  it("aula de texto: o texto aparece; no lugar dos recursos, \"para assinantes\"", async () => {
+    getLessonPage.mockResolvedValue(
+      pagina({ id: 12, title: "Leitura", kind: "TEXT", isFreePreview: true, playerUrl: null, texto: "Texto livre.", arquivosLiberados: false, arquivos: undefined }),
+    );
+    abrir("/aluno/aula/12");
+    expect(await screen.findByText("Texto livre.")).toBeTruthy();
+    expect(screen.getByText("Os recursos desta aula são para assinantes.")).toBeTruthy();
+    expect(document.querySelector('a[href*="/files/"]')).toBeNull();
+  });
+
+  it("Recursos na lista: \"para assinantes\", sem link de download", async () => {
+    getLessonPage.mockResolvedValue(pagina({ isFreePreview: true, arquivosLiberados: false, arquivos: undefined }));
+    abrir();
+    const nav = await screen.findByRole("navigation", { name: "Conteúdo do curso" });
+    fireEvent.click(within(nav).getAllByText("Recursos")[0]);
+    expect(await within(nav).findByText("Os recursos desta aula são para assinantes.")).toBeTruthy();
+    expect(within(nav).queryByRole("link", { name: /Planilha/ })).toBeNull();
+  });
+});
+
 describe("página da aula — o conteúdo do curso", () => {
   it("a aula atual fica destacada; as outras levam à página delas", async () => {
     abrir();
@@ -137,7 +161,8 @@ describe("página da aula — o conteúdo do curso", () => {
   it("Recursos, junto à aula, lista os arquivos para baixar", async () => {
     abrir();
     const nav = await screen.findByRole("navigation", { name: "Conteúdo do curso" });
-    fireEvent.click(within(nav).getByText("Recursos"));
+    // O primeiro "Recursos" é o da aula Abertura (a lista tem duas aulas com arquivo).
+    fireEvent.click(within(nav).getAllByText("Recursos")[0]);
     const link = await within(nav).findByRole("link", { name: /Planilha\.zip/ });
     expect(link.getAttribute("href")).toBe("/api/lessons/11/files/5");
   });

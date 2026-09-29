@@ -88,6 +88,17 @@ describe("temAcessoAtivo, lendo o banco", () => {
     expect(await temAcessoAtivo(admin.id)).toBe(false);
   });
 
+  // Achado da revisão de segurança (29/09): no Prisma, `undefined` num filtro é
+  // "sem filtro". Chamada sem pessoa tem que FECHAR, mesmo com assinatura ativa
+  // de outra pessoa no banco.
+  it("chamada sem pessoa: não (fecha na dúvida)", async () => {
+    const dona = await pessoa();
+    await assinatura(dona.id, "active", daquiA(30));
+    // Cast: simula um chamador futuro que perdeu o id (o tipo impede hoje).
+    expect(await temAcessoAtivo(undefined as unknown as string)).toBe(false);
+    expect(await temAcessoAtivo("")).toBe(false);
+  });
+
   it("incomplete com período no futuro: não", async () => {
     const p = await pessoa();
     await assinatura(p.id, "incomplete", daquiA(30));

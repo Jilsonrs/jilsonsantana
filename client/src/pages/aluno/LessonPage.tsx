@@ -38,6 +38,7 @@ export function LessonPage() {
   if (carregandoSessao || !data) return <Aviso texto={t.aula.carregando} />;
 
   const { curso, aula } = data;
+  const temArquivos = curso.modulos.some((m) => m.aulas.some((a) => a.id === aula.id && a.temArquivos));
   return (
     <PageContainer>
       <PageHeader
@@ -53,7 +54,7 @@ export function LessonPage() {
       />
       <div className={cn("grid gap-6", iaAberta && "lg:grid-cols-[minmax(0,1fr)_360px]")}>
         <div className="min-w-0 space-y-8">
-          <LessonContent aula={aula} comoAdmin={comoAdmin} />
+          <LessonContent aula={aula} comoAdmin={comoAdmin} temArquivos={temArquivos} />
           {/* No computador, quem está logado vê o conteúdo do curso no nível 2 da
               navegação. No celular, e para o visitante (que não tem o shell), ele
               fica aqui embaixo — o nível 2 nunca some (design.md §6). */}

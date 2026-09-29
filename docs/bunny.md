@@ -399,7 +399,8 @@ desligado** (é pago).
   banco é `BigInt` (o `Int` parava em 2 GB).
 - **A entrega ao aluno SAI PELO NOSSO SERVIDOR** *(decisão do operador, 29/09/2026, na etapa 4)*:
   `GET /api/lessons/:id/files/:fileId` lê o arquivo do Storage **em fluxo** e entrega com o **nome
-  original** (`Content-Disposition`), só para quem pode ver a aula. Mais simples, e o nome
+  original** (`Content-Disposition`), **só para assinante** — a prévia grátis não libera arquivo,
+  o visitante só assiste *(operador, 29/09/2026)*. Mais simples, e o nome
   original sai sem esforço. **Limites aceitos:** o Railway corta um download que dure mais de 15
   minutos, e cobra o tráfego de saída. *Gatilho de reabertura: download cortado no meio (arquivo
   grande em internet lenta) ou a conta de saída do Railway pesar — aí a alternativa é o link

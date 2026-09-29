@@ -1452,7 +1452,7 @@ landmark. Corrigido junto.
       não deixa começar um segundo envio enquanto o primeiro não termina. Fechar ou recarregar a
       aba continua interrompendo (como na Udemy). **Mutação:** a porcentagem sem ser guardada e o
       botão sem travar → reprovam.
-- [ ] **Etapa 4 — a trava de acesso e a aula tocando para o aluno:** adianta da Fase 4 o model
+- [x] **Etapa 4 — a trava de acesso e a aula tocando para o aluno** *(feita em 29/09, no `dev`, partes 4a–4d abaixo; falta a prova no ar depois do "publica")*: adianta da Fase 4 o model
       `Subscription`, o `temAcessoAtivo()` e o `requireActiveMembership`, **sem Stripe**; rota
       `GET /api/lessons/:id/player`; assinatura de teste do `member@` **só fora de produção** (o
       seed para com erro em produção); a matriz da trava em teste de servidor. **A aula com prévia
@@ -1518,6 +1518,20 @@ landmark. Corrigido junto.
         aula do editor (aba nova, para não parar um envio) e link em cada aula da página de curso
         provisória. **Mutação:** a aula atual sem destaque e o conteúdo aparecendo na bloqueada →
         reprovam.
+      - [x] **4d — a revisão de segurança e os consertos** *(29/09, no `dev`)*. O
+        `security-vulnerability-reviewer` sobre 4a e 4b: **nenhum P0**. **P1 (consertado):** o
+        download usava `.pipe()`, e o Bunny caindo no meio derrubaria o servidor inteiro; agora é
+        `pipeline` com o erro tratado e registrado (teste: o download quebra no meio e o
+        `/api/health` continua 200; `.pipe()` de volta reprova). **P2 consertados:** a trava fecha
+        quando chamada sem pessoa (no Prisma, `undefined` num filtro é "sem filtro"); testes de
+        aula em **módulo** em rascunho e de download de aula em rascunho. **Decisão do operador no
+        mesmo dia: na prévia grátis o visitante SÓ ASSISTE** — os arquivos de qualquer aula são só
+        para assinante (`arquivosLiberados` na resposta; a tela mostra "para assinantes" no lugar
+        dos recursos). Isso também fechou o P2 dos downloads anônimos sem limite. **P2 em
+        aberto:** a opção da Stripe para quando as tentativas acabam (item na Fase 4) e o RLS da
+        `subscription` em produção depois do publish (`pendencias.md`, P34). **Mutação:** `.pipe()`
+        de volta, a trava sem a proteção, a cadeia sem o módulo, o download sem a cadeia, o
+        arquivo liberado pela prévia e os recursos sem o "para assinantes" → todos reprovam.
 - **Done when:** no computador do operador, a capa enviada aparece no admin; o vídeo de
   apresentação toca no admin e na página; a aula aberta no editor mostra a miniatura, o nome e a
   duração do vídeo (sem player, decisão de 28/09); o `member@`
@@ -2530,6 +2544,12 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       **assinaturas cortesia** e para **promoções** (Black Friday, founding member) — não é
       concessão, é o caminho normal.
       *Sem gatilho de reabertura — arquitetural.*
+- [ ] **Na Stripe, "quando todas as tentativas de cobrança falharem" = CANCELAR a assinatura (ou
+      marcar como `unpaid`), NUNCA "deixar como vencida"** *(achado da revisão de segurança,
+      29/09/2026)*. A regra do gate libera `past_due` sem olhar a data (é a janela de novas
+      tentativas, decisão de Ago 2026); ela só acaba se a Stripe tirar a assinatura de `past_due`.
+      Deixada como vencida, o aluno fica com acesso para sempre sem pagar, e nenhum código nosso
+      percebe. Conferir no painel antes do primeiro aluno pagante.
 - [ ] **Setup no dashboard (sem código):** Payments Plano Padrão (conta MEI/CNPJ, payout Banco do Brasil) + **Stripe Billing ativado**. Produto **"Assinatura"** com **2 `Price`**: Mensal R$99,90 (sem fidelidade) / Anual ~R$995 (~17% off). Sem free trial, sem conteúdo grátis. **Sem Customer Portal.** *(Versão em dólar: próximo item.)*
 - [ ] **Preços em dólar, pelo país do CARTÃO** *(decisão do operador, 14/09/2026 — `billing.md`)*:
       **US$ 30/mês** + **US$ 299/ano** (confirmado pelo operador em 14/09). **context7 `/websites/stripe` primeiro:** moedas no mesmo

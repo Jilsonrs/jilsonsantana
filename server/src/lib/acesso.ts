@@ -48,5 +48,9 @@ async function assinaturaIndividualAtiva(userId: string): Promise<boolean> {
  * entra aqui como `|| membroDeOrgComLugarLivre(userId)`, sem tocar em quem chama.
  */
 export async function temAcessoAtivo(userId: string): Promise<boolean> {
+  // FECHA na dúvida: no Prisma, `undefined` num filtro quer dizer "sem filtro", e
+  // a busca voltaria com as assinaturas de todo mundo (achado da revisão de
+  // segurança, 29/09/2026). O tipo protege hoje; isto protege o dia em que não.
+  if (typeof userId !== "string" || userId.length === 0) return false;
   return assinaturaIndividualAtiva(userId);
 }

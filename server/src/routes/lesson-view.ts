@@ -1,4 +1,5 @@
-import { Router, type Response } from "express";
+import { pipeline } from "node:stream/promises";
+import { Router, type Request, type Response } from "express";
 import { ContentStatus, LessonKind } from "@jilson/core";
 import { prisma } from "../lib/prisma.js";
 import { loadSession, requireAdmin } from "../middleware/auth.js";
@@ -13,11 +14,12 @@ const router = Router();
 
 // A PÁGINA DA AULA (etapa 4 do Bloco U — plano aprovado pelo operador em
 // 29/09/2026). Duas portas, e só duas:
-//   - a do ALUNO: só a cadeia PUBLICADA (aula → módulo → curso); o conteúdo
-//     (player, texto, arquivos) sai quando a aula é PRÉVIA GRÁTIS (qualquer
-//     visitante, sem login — a segunda exceção ao portão de vídeo) ou quando
-//     `temAcessoAtivo()` diz sim. Fora isso, a página recebe só a lista do curso
-//     e "para assinantes";
+//   - a do ALUNO: só a cadeia PUBLICADA (aula → módulo → curso). O player e o
+//     texto saem quando a aula é PRÉVIA GRÁTIS (qualquer visitante, sem login — a
+//     segunda exceção ao portão de vídeo) ou quando `temAcessoAtivo()` diz sim.
+//     Os ARQUIVOS, só com assinatura: na prévia grátis o visitante só assiste
+//     (decisão do operador, 29/09/2026). Fora isso, a página recebe só a lista do
+//     curso e "para assinantes";
 //   - a do ADMIN: qualquer status, com o rascunho marcado, e o conteúdo sempre —
 //     é por ela que o operador assiste (decisão dele, 29/09/2026). NÃO é uma
 //     exceção na trava: é leitura de admin, atrás do `requireAdmin`.
@@ -83,26 +85,38 @@ async function arvoreDoCurso(courseId: number, soPublicado: boolean) {
 
 type Aula = { id: number; title: string; kind: string; content: string | null; bunnyVideoId: string | null; isFreePreview: boolean; status: string; moduleId: number };
 
-/** A aula atual. O conteúdo SÓ entra quando `liberada` — bloqueada, nem a chave aparece. */
-async function aulaParaAPagina(aula: Aula, liberada: boolean) {
-  const base = { id: aula.id, title: aula.title, kind: aula.kind, isFreePreview: aula.isFreePreview, status: aula.status, moduloId: aula.moduleId, liberada };
+/**
+ * A aula atual. O player e o texto SÓ entram quando `liberada`; os arquivos, só
+ * quando `arquivosLiberados` (assinatura ou admin). Bloqueada, nem a chave aparece.
+ */
+async function aulaParaAPagina(aula: Aula, liberada: boolean, arquivosLiberados: boolean) {
+  const base = {
+    id: aula.id,
+    title: aula.title,
+    kind: aula.kind,
+    isFreePreview: aula.isFreePreview,
+    status: aula.status,
+    moduloId: aula.moduleId,
+    liberada,
+    arquivosLiberados,
+  };
   if (!liberada) return base;
+  const conteudo = {
+    ...base,
+    playerUrl: aula.kind === LessonKind.VIDEO ? enderecoAssinado(aula.bunnyVideoId) : null,
+    texto: aula.kind === LessonKind.TEXT ? aula.content : null,
+  };
+  if (!arquivosLiberados) return conteudo;
   const arquivos = await prisma.lessonFile.findMany({
     where: { lessonId: aula.id },
     orderBy: { id: "asc" },
     select: { id: true, originalName: true, sizeBytes: true },
   });
-  return {
-    ...base,
-    playerUrl: aula.kind === LessonKind.VIDEO ? enderecoAssinado(aula.bunnyVideoId) : null,
-    texto: aula.kind === LessonKind.TEXT ? aula.content : null,
-    arquivos: arquivos.map((a) => ({ ...a, sizeBytes: Number(a.sizeBytes) })),
-  };
+  return { ...conteudo, arquivos: arquivos.map((a) => ({ ...a, sizeBytes: Number(a.sizeBytes) })) };
 }
 
-/** A aula de aluno está liberada para quem pede? Prévia grátis, ou a trava diz sim. */
-async function liberadaParaQuemPede(req: Parameters<typeof loadSession>[0], isFreePreview: boolean): Promise<boolean> {
-  if (isFreePreview) return true;
+/** Quem pede está logado e com assinatura que dá acesso? Sem sessão: não. */
+async function temAssinatura(req: Request): Promise<boolean> {
   const sessao = await loadSession(req);
   return sessao ? temAcessoAtivo(sessao.user.id) : false;
 }
@@ -116,11 +130,11 @@ router.get("/lessons/:id/aula", async (req, res) => {
     res.status(404).json({ error: "NotFound" });
     return;
   }
-  const liberada = await liberadaParaQuemPede(req, aula.isFreePreview);
+  const assinante = await temAssinatura(req);
   const curso = await arvoreDoCurso(aula.module.courseId, true);
   // A página muda com a assinatura de quem pede: nunca guardada em cache.
   res.set("Cache-Control", "private, no-store");
-  res.json({ curso, aula: await aulaParaAPagina(aula, liberada) });
+  res.json({ curso, aula: await aulaParaAPagina(aula, aula.isFreePreview || assinante, assinante) });
 });
 
 // GET /api/admin/lessons/:id/aula — a mesma página para o ADMIN: qualquer status.
@@ -134,11 +148,11 @@ router.get("/admin/lessons/:id/aula", requireAdmin, async (req, res) => {
   }
   const curso = await arvoreDoCurso(aula.module.courseId, false);
   res.set("Cache-Control", "private, no-store");
-  res.json({ curso, aula: await aulaParaAPagina(aula, true) });
+  res.json({ curso, aula: await aulaParaAPagina(aula, true, true) });
 });
 
 /** Entrega o arquivo do Storage, em fluxo, com o NOME ORIGINAL limpo. */
-async function entregarArquivo(res: Response, arquivo: { storagePath: string; originalName: string }) {
+async function entregarArquivo(res: Response, arquivo: { id: number; storagePath: string; originalName: string }) {
   const leitura = await lerArquivoDaAula(arquivo.storagePath);
   if (!leitura.ok) {
     const status = leitura.motivo === "NaoConfigurado" ? 503 : leitura.motivo === "NaoEncontrado" ? 404 : 502;
@@ -151,23 +165,34 @@ async function entregarArquivo(res: Response, arquivo: { storagePath: string; or
   res.set("X-Content-Type-Options", "nosniff");
   res.set("Cache-Control", "private, no-store");
   if (leitura.tamanho) res.set("Content-Length", leitura.tamanho);
-  leitura.corpo.pipe(res);
+  // `pipeline`, nunca `.pipe()`: se o Bunny cair no meio, o erro vem para cá em
+  // vez de virar "Unhandled 'error' event" e derrubar o servidor inteiro; e se o
+  // aluno desistir, o fluxo do Bunny é fechado junto (achado P1 da revisão de
+  // segurança, 29/09/2026).
+  try {
+    await pipeline(leitura.corpo, res);
+  } catch (erro) {
+    const codigo = erro instanceof Error && "code" in erro ? String((erro as NodeJS.ErrnoException).code) : "sem-codigo";
+    console.error(`[download] arquivo ${arquivo.id} interrompido: ${codigo}`);
+    if (!res.headersSent && !res.destroyed) res.status(502).json({ error: "StorageFalhou" });
+  }
 }
 
-// GET /api/lessons/:id/files/:fileId — o download do ALUNO, com a mesma regra da página.
+// GET /api/lessons/:id/files/:fileId — o download do ALUNO: só com assinatura.
 router.get("/lessons/:id/files/:fileId", async (req, res) => {
   const id = parseId(req.params.id, res);
   if (id === null) return;
   const fileId = parseId(req.params.fileId, res);
   if (fileId === null) return;
-  const aula = await prisma.lesson.findFirst({ where: { id, ...cadeiaPublicada }, select: { isFreePreview: true } });
+  const aula = await prisma.lesson.findFirst({ where: { id, ...cadeiaPublicada }, select: { id: true } });
   // O arquivo tem que ser DESTA aula: o id de outra aula não passa por aqui.
   const arquivo = aula ? await prisma.lessonFile.findFirst({ where: { id: fileId, lessonId: id } }) : null;
   if (!aula || !arquivo) {
     res.status(404).json({ error: "NotFound" });
     return;
   }
-  if (!(await liberadaParaQuemPede(req, aula.isFreePreview))) {
+  // Só com assinatura, inclusive na prévia grátis (decisão do operador, 29/09/2026).
+  if (!(await temAssinatura(req))) {
     res.status(403).json({ error: "AssinaturaNecessaria" });
     return;
   }

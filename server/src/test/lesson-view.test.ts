@@ -20,6 +20,9 @@ import { nomeParaDownload } from "../lib/nome-do-download.js";
 // 29/09/2026). O que estes testes protegem:
 //   - a aula paga só abre para quem tem acesso; a PRÉVIA GRÁTIS abre para
 //     qualquer visitante, e desligar a prévia volta a trancar;
+//   - os ARQUIVOS são só para assinante, inclusive na prévia grátis (o visitante
+//     só assiste — decisão do operador, 29/09/2026);
+//   - um download que cai no meio não derruba o servidor (achado P1, 29/09);
 //   - bloqueada, a resposta NÃO carrega o vídeo, o token nem o texto;
 //   - o aluno só enxerga a cadeia publicada; o admin vê tudo, por rota de admin;
 //   - o download segue a mesma regra e sai com o NOME ORIGINAL, limpo;
@@ -31,7 +34,7 @@ const VIDEO_GRATIS = "bbbbbbbb-2cda-46be-b47d-1118ad7c2ffe";
 const SEGREDO = "Texto só para assinantes";
 let admin: string[] = [];
 let member: string[] = [];
-const ids = { paga: 0, gratis: 0, texto: 0, rascunho: 0, cursoRascunho: 0, ingles: 0, arquivo: 0, arquivoGratis: 0 };
+const ids = { paga: 0, gratis: 0, texto: 0, rascunho: 0, cursoRascunho: 0, ingles: 0, arquivo: 0, arquivoGratis: 0, moduloRascunho: 0, arquivoModuloRascunho: 0, arquivoRascunho: 0 };
 
 async function sessao(email?: string, senha?: string): Promise<string[]> {
   const res = await request(app).post("/api/auth/sign-in/email").send({ email, password: senha });
@@ -67,6 +70,18 @@ beforeAll(async () => {
   ids.cursoRascunho = emRascunho.modules[0].lessons[0].id;
   const en = await curso("ingles", "PUBLISHED", "EN", [{ title: "English", status: "PUBLISHED", bunnyVideoId: VIDEO_PAGO }]);
   ids.ingles = en.modules[0].lessons[0].id;
+  // Um MÓDULO em rascunho, dentro do curso publicado, com uma aula publicada e arquivo.
+  const modulo = await prisma.module.create({
+    data: { courseId: pt.id, title: "Módulo escondido", status: "DRAFT", lessons: { create: { title: "Aula do módulo escondido", status: "PUBLISHED" } } },
+    include: { lessons: true },
+  });
+  ids.moduloRascunho = modulo.lessons[0].id;
+  ids.arquivoModuloRascunho = (await prisma.lessonFile.create({
+    data: { lessonId: modulo.lessons[0].id, originalName: "escondido.zip", storagePath: `aulas/${modulo.lessons[0].id}/${"c".repeat(24)}.zip`, sizeBytes: 1 },
+  })).id;
+  ids.arquivoRascunho = (await prisma.lessonFile.create({
+    data: { lessonId: rascunho.id, originalName: "rascunho.zip", storagePath: `aulas/${rascunho.id}/${"d".repeat(24)}.zip`, sizeBytes: 1 },
+  })).id;
 
   ids.arquivo = (await prisma.lessonFile.create({
     data: { lessonId: paga.id, originalName: "Planilha de Vendas.zip", storagePath: `aulas/${paga.id}/${"a".repeat(24)}.zip`, sizeBytes: 5 },
@@ -165,10 +180,19 @@ describe("a aula paga", () => {
 });
 
 describe("a prévia grátis", () => {
-  it("toca para qualquer visitante, sem login", async () => {
+  it("toca para qualquer visitante, sem login — mas os arquivos não vêm", async () => {
     const res = await pagina(ids.gratis);
     expect(res.body.aula.liberada).toBe(true);
     expect(res.body.aula.playerUrl).toContain(`/${VIDEO_GRATIS}?token=`);
+    expect(res.body.aula.arquivosLiberados).toBe(false);
+    expect(res.body.aula).not.toHaveProperty("arquivos");
+    expect(JSON.stringify(res.body)).not.toContain("brinde.pdf");
+  });
+
+  it("para o assinante, a prévia grátis traz os arquivos também", async () => {
+    const res = await pagina(ids.gratis, member);
+    expect(res.body.aula.arquivosLiberados).toBe(true);
+    expect(res.body.aula.arquivos).toEqual([{ id: ids.arquivoGratis, originalName: "brinde.pdf", sizeBytes: 3 }]);
   });
 
   it("desligar a prévia volta a trancar a aula", async () => {
@@ -195,6 +219,11 @@ describe("o aluno só enxerga o publicado", () => {
   it("a lista do curso não mostra a aula em rascunho", async () => {
     const res = await pagina(ids.paga, member);
     expect(JSON.stringify(res.body.curso)).not.toContain("Rascunho");
+  });
+
+  it("aula publicada dentro de MÓDULO em rascunho: 404, e o módulo nem aparece na lista", async () => {
+    expect((await pagina(ids.moduloRascunho, member)).status).toBe(404);
+    expect(JSON.stringify((await pagina(ids.paga, member)).body.curso)).not.toContain("escondido");
   });
 });
 
@@ -223,8 +252,32 @@ describe("o download", () => {
     expect((await baixar(ids.paga, ids.arquivoGratis, member)).status).toBe(404);
   });
 
-  it("prévia grátis: o arquivo sai para o visitante", async () => {
-    expect((await baixar(ids.gratis, ids.arquivoGratis)).status).toBe(200);
+  it("prévia grátis: o visitante só assiste — o arquivo não sai (403); o assinante baixa", async () => {
+    expect((await baixar(ids.gratis, ids.arquivoGratis)).status).toBe(403);
+    expect(lerArquivoDaAula).not.toHaveBeenCalled();
+    expect((await baixar(ids.gratis, ids.arquivoGratis, member)).status).toBe(200);
+  });
+
+  it("arquivo de aula em rascunho, ou de módulo em rascunho: 404 para o aluno", async () => {
+    expect((await baixar(ids.rascunho, ids.arquivoRascunho, member)).status).toBe(404);
+    expect((await baixar(ids.moduloRascunho, ids.arquivoModuloRascunho, member)).status).toBe(404);
+    expect(lerArquivoDaAula).not.toHaveBeenCalled();
+  });
+
+  // Achado P1 (29/09): com `.pipe()`, o Bunny caindo no meio virava "Unhandled
+  // 'error' event" e derrubava o processo. O servidor tem que continuar de pé.
+  it("o Bunny cai no meio do download: a requisição termina e o servidor continua de pé", async () => {
+    lerArquivoDaAula.mockImplementation(async () => {
+      const quebrado = new Readable({
+        read() {
+          this.push(Buffer.from("parte"));
+          this.destroy(new Error("reset"));
+        },
+      });
+      return { ok: true, corpo: quebrado, tamanho: "999" };
+    });
+    await baixar(ids.paga, ids.arquivo, member).catch(() => undefined);
+    expect((await request(app).get("/api/health")).status).toBe(200);
   });
 
   it("nome com caractere invisível de direção de texto sai limpo", () => {

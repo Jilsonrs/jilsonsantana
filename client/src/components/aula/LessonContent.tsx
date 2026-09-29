@@ -22,7 +22,16 @@ const QUADRO = "flex aspect-video w-full items-center justify-center rounded-2xl
  * assinantes" quando o servidor não liberou. A tela nunca decide acesso: o que
  * não veio na resposta não existe aqui.
  */
-export function LessonContent({ aula, comoAdmin }: { aula: PaginaDaAula["aula"]; comoAdmin: boolean }) {
+export function LessonContent({
+  aula,
+  comoAdmin,
+  temArquivos,
+}: {
+  aula: PaginaDaAula["aula"];
+  comoAdmin: boolean;
+  /** A aula tem arquivos (da lista do curso): na prévia grátis eles existem, mas não vêm. */
+  temArquivos: boolean;
+}) {
   const t = useT();
 
   if (!aula.liberada) {
@@ -52,10 +61,15 @@ export function LessonContent({ aula, comoAdmin }: { aula: PaginaDaAula["aula"];
       <Suspense fallback={<p className="text-muted-foreground">{t.aula.carregando}</p>}>
         <MarkdownText texto={aula.texto ?? ""} permitidos={ELEMENTOS_DA_AULA} className="text-base leading-relaxed" />
       </Suspense>
-      {arquivos.length > 0 && (
+      {(arquivos.length > 0 || (temArquivos && !aula.arquivosLiberados)) && (
         <section className="space-y-4">
           <h2 className="text-xl font-semibold">{t.aula.recursosDaAula}</h2>
-          <ListaDeArquivos lessonId={aula.id} arquivos={arquivos} comoAdmin={comoAdmin} />
+          {aula.arquivosLiberados ? (
+            <ListaDeArquivos lessonId={aula.id} arquivos={arquivos} comoAdmin={comoAdmin} />
+          ) : (
+            // Na prévia grátis o visitante só assiste (decisão do operador, 29/09/2026).
+            <p className="text-sm text-muted-foreground">{t.aula.recursosSoAssinantes}</p>
+          )}
         </section>
       )}
     </article>
