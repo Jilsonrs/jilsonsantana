@@ -445,6 +445,10 @@ Daí os 7 passos do *Bloco E* do plano, no nível 2 da navegação.
   mostra a miniatura, o nome do arquivo e a duração do vídeo (sem player — assistir é na página
   da aula do aluno), a Prévia grátis e os arquivos para baixar. A aula criada já nasce aberta; ao
   voltar para a tela, só a com o vídeo pronto (e a de texto) volta recolhida.
+- **Aula e módulo novos nascem publicados ou em rascunho conforme o curso**, como na Udemy
+  *(operador, 29/09/2026)*: curso ainda em **rascunho** → o item novo já nasce **publicado**, sem
+  publicar um por um; curso **publicado** (ou arquivado) → nasce em **rascunho**, até ser
+  publicado à mão. Os que já existiam não mudaram.
 - **Arquivos para baixar:** na prática, **um .zip por curso, numa aula qualquer** (qualquer aula
   pode receber), **sem limite de tamanho** *(operador, 29/09/2026)*. Só assinantes baixam —
   **inclusive na aula de prévia grátis, onde o visitante só assiste** *(operador, 29/09/2026)*.
