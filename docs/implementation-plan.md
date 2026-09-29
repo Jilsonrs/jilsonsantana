@@ -1086,6 +1086,12 @@ tornada executável — não uma lista nova):
       **Direção do operador (28/09/2026):** a tela de **Início é o painel do aluno, rica**, com o
       que ele tem disponível **a um clique**; o menu continua na barra lateral, e o painel nasce
       preparado para **ganhar itens no futuro**.
+- [ ] **O menu do aluno novo** *(decisão do operador, 29/09/2026 — `design.md` §6, "O menu do
+      aluno")*: **Início · Cursos · Trilhas · Meus estudos · JilsonAI**. "Trilhas" são as trilhas
+      prontas; **Meus estudos** tem no nível 2 **Em andamento · Minhas trilhas · Concluídos ·
+      Certificados** (EM BREVE o que ainda não existe). "Minhas trilhas" e "Certificados" saem do
+      menu principal. Sem "Salvos" (a trilha personalizada faz esse papel). Anda junto com o item
+      abaixo (as telas sob `/aluno/*`) e com o painel do Início.
 - [ ] **As telas do aluno passam para `/aluno/*`** *(decisão do operador, 28/09/2026, era a P15)*:
       `/inicio` → `/aluno/inicio`, `/conta` → `/aluno/conta` (com as subpáginas),
       `/minhas-trilhas` → `/aluno/minhas-trilhas`. Os endereços antigos **redirecionam** para os
