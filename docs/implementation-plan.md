@@ -148,8 +148,10 @@
 > (etapa 4 do Bloco U: a trava de acesso com o espelho `Subscription`, as rotas da aula e do
 > download, a tela no estilo LinkedIn, a prévia grátis em que o visitante só assiste, e os
 > consertos da revisão de segurança) e **aula e módulo novos nascendo conforme o curso**. A
-> migration `20260929160000_subscription` entrou em produção pelo pre-deploy. Falta: a conferência
-> do RLS em produção (P34) e a prova no ar da página da aula.
+> migration `20260929160000_subscription` entrou em produção pelo pre-deploy. **RLS conferido em
+> produção no mesmo dia** (a pedido do operador, pelo MCP do Neon, só leitura no `pg_class` do
+> branch `production`): a `subscription` com RLS, e nenhuma tabela sem ele — a P34 fechou. Falta a
+> prova no ar da página da aula.
 > **PUBLICADO em 28/09 (`main` = `5a60fa1`, CI verde): o Bloco E, etapa 2 INTEIRA (partes 2a a 2e)**,
 > mais a edição como na Udemy e a limpeza no Bunny ao excluir. *(A primeira publicação do dia,
 > `d342000`, pegou CI vermelho por um teste do arrastar que dependia de tempo — não do site; o
