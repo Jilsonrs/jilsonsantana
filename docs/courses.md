@@ -446,7 +446,8 @@ Daí os 7 passos do *Bloco E* do plano, no nível 2 da navegação.
   da aula do aluno), a Prévia grátis e os arquivos para baixar. A aula criada já nasce aberta; ao
   voltar para a tela, só a com o vídeo pronto (e a de texto) volta recolhida.
 - **Arquivos para baixar:** na prática, **um .zip por curso, numa aula qualquer** (qualquer aula
-  pode receber), **sem limite de tamanho** *(operador, 29/09/2026)*. Só assinantes baixam.
+  pode receber), **sem limite de tamanho** *(operador, 29/09/2026)*. Só assinantes baixam —
+  **inclusive na aula de prévia grátis, onde o visitante só assiste** *(operador, 29/09/2026)*.
 
 **O que ficou fora, e por quê** (para ninguém propor de volta sem motivo novo):
 - **Preço, cupom, pacote e carrinho por curso:** a escola é assinatura. Cupom existe, mas é **da

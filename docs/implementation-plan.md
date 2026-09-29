@@ -1452,7 +1452,7 @@ landmark. Corrigido junto.
       não deixa começar um segundo envio enquanto o primeiro não termina. Fechar ou recarregar a
       aba continua interrompendo (como na Udemy). **Mutação:** a porcentagem sem ser guardada e o
       botão sem travar → reprovam.
-- [ ] **Etapa 4 — a trava de acesso e a aula tocando para o aluno:** adianta da Fase 4 o model
+- [x] **Etapa 4 — a trava de acesso e a aula tocando para o aluno** *(feita em 29/09, no `dev`, partes 4a–4d abaixo; falta a prova no ar depois do "publica")*: adianta da Fase 4 o model
       `Subscription`, o `temAcessoAtivo()` e o `requireActiveMembership`, **sem Stripe**; rota
       `GET /api/lessons/:id/player`; assinatura de teste do `member@` **só fora de produção** (o
       seed para com erro em produção); a matriz da trava em teste de servidor. **A aula com prévia
@@ -1476,6 +1476,62 @@ landmark. Corrigido junto.
       **Decidir aqui** como o .zip chega ao aluno: pelo servidor (sai pelo Railway, cobrado) ou link
       assinado temporário do Bunny (`bunny.md` §4.5).
       `security-vulnerability-reviewer` e revisão do operador antes do "publica".
+      **Plano aprovado em 29/09/2026** (a página da aula no estilo do LinkedIn Learning, em 4
+      partes). Respostas do operador: **o admin vê tudo, com o rascunho marcado, por rotas de
+      admin** (a trava do aluno segue com um caminho só) · **o .zip sai pelo nosso servidor** · **o
+      botão flutuante da IA entra já, com "Em breve"**.
+      - [x] **4a — a trava** *(29/09, no `dev`)*: migration `20260929160000_subscription` (o espelho
+        local, com as costuras do corporativo, `status` em texto, sem idioma, RLS); Passo 0 no
+        branch `dev` (tabela nova vazia, o resto igual, 0 sem RLS, login 200, "No difference
+        detected"). `temAcessoAtivo()` em `lib/acesso.ts`, com a regra do gate como função pura
+        (`assinaturaDaAcesso`); não lê idioma nem papel. **Assinatura de teste do `member@`** no
+        seed, só em banco local ou no branch `dev` (hostname conferido, como a trava do teste); em
+        outro banco ela **não nasce e o seed diz por quê**, sem erro, porque o seed também roda em
+        produção para o admin. Criada no branch `dev` em 29/09. **O `requireActiveMembership`
+        ficou para quando uma rota exigir login e assinatura sem exceção**: a rota da aula aceita
+        visitante (prévia grátis) e consulta a trava direto. **Mutação:** `incomplete` liberando, a
+        trava lendo o papel de admin e o banco de produção aceito para a assinatura de teste →
+        reprovam.
+      - [x] **4b — as rotas da aula** *(29/09, no `dev`)*: `routes/lesson-view.ts`. **Aluno:**
+        `GET /api/lessons/:id/aula` (só a cadeia publicada; liberada com a prévia grátis ou com
+        `temAcessoAtivo()`; bloqueada, só a lista do curso — sem vídeo, token, texto nem arquivo;
+        `Cache-Control: private, no-store`) e `GET /api/lessons/:id/files/:fileId` (mesma regra,
+        o arquivo tem que ser **desta** aula, em fluxo do Storage, `Content-Disposition` com o
+        **nome original** limpo de caracteres de controle e de direção de texto — fecha o achado
+        P2 de 28/09 — e `nosniff`). **Admin:** `GET /api/admin/lessons/:id/aula` e
+        `/api/admin/lesson-files/:id/download`, qualquer status, com o rascunho marcado.
+        `CLAUDE.md` → Access Architecture reescrito (a prévia grátis é a segunda exceção; o admin
+        assiste por rota de admin). **Mutação:** a prévia sem efeito, o conteúdo na resposta
+        bloqueada, o download sem a trava, o nome sem limpeza e o rascunho na rota do aluno →
+        reprovam.
+      - [x] **4c — a tela** *(29/09, no `dev`)*: `/aluno/aula/:id` (`pages/aluno/LessonPage.tsx`),
+        **fora** do `ProtectedRoute` (a prévia grátis é para visitante). O mapa de navegação
+        ganhou uma seção fora do menu lateral com `nivel2: "conteudo-do-curso"`: o `SecondaryNav`
+        desenha o **conteúdo do curso** da aula (`components/aula/CourseContentsNav.tsx`), com a
+        aula atual em `aria-current`, o ícone de vídeo ou texto, **Recursos** nas aulas com
+        arquivo e o **rascunho marcado só para o admin**; no celular e para o visitante, a lista
+        fica embaixo do player. `LessonContent` (o player grande assinado, o texto no centro com
+        **"Recursos para esta aula"**, ou "para assinantes"), `AiDock` (o botão flutuante e o
+        painel "Em breve", que encolhe o player). O admin lê pela rota de admin
+        (`lib/pagina-da-aula.ts`). Textos por `useT()`, com as chaves `app.aula.*` e
+        `app.nav.aula` em português e inglês (inglês: rascunho do agente). **Visualizar** em cada
+        aula do editor (aba nova, para não parar um envio) e link em cada aula da página de curso
+        provisória. **Mutação:** a aula atual sem destaque e o conteúdo aparecendo na bloqueada →
+        reprovam.
+      - [x] **4d — a revisão de segurança e os consertos** *(29/09, no `dev`)*. O
+        `security-vulnerability-reviewer` sobre 4a e 4b: **nenhum P0**. **P1 (consertado):** o
+        download usava `.pipe()`, e o Bunny caindo no meio derrubaria o servidor inteiro; agora é
+        `pipeline` com o erro tratado e registrado (teste: o download quebra no meio e o
+        `/api/health` continua 200; `.pipe()` de volta reprova). **P2 consertados:** a trava fecha
+        quando chamada sem pessoa (no Prisma, `undefined` num filtro é "sem filtro"); testes de
+        aula em **módulo** em rascunho e de download de aula em rascunho. **Decisão do operador no
+        mesmo dia: na prévia grátis o visitante SÓ ASSISTE** — os arquivos de qualquer aula são só
+        para assinante (`arquivosLiberados` na resposta; a tela mostra "para assinantes" no lugar
+        dos recursos). Isso também fechou o P2 dos downloads anônimos sem limite. **P2 em
+        aberto:** a opção da Stripe para quando as tentativas acabam (item na Fase 4) e o RLS da
+        `subscription` em produção depois do publish (`pendencias.md`, P34). **Mutação:** `.pipe()`
+        de volta, a trava sem a proteção, a cadeia sem o módulo, o download sem a cadeia, o
+        arquivo liberado pela prévia e os recursos sem o "para assinantes" → todos reprovam.
 - **Done when:** no computador do operador, a capa enviada aparece no admin; o vídeo de
   apresentação toca no admin e na página; a aula aberta no editor mostra a miniatura, o nome e a
   duração do vídeo (sem player, decisão de 28/09); o `member@`
@@ -2488,6 +2544,12 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       **assinaturas cortesia** e para **promoções** (Black Friday, founding member) — não é
       concessão, é o caminho normal.
       *Sem gatilho de reabertura — arquitetural.*
+- [ ] **Na Stripe, "quando todas as tentativas de cobrança falharem" = CANCELAR a assinatura (ou
+      marcar como `unpaid`), NUNCA "deixar como vencida"** *(achado da revisão de segurança,
+      29/09/2026)*. A regra do gate libera `past_due` sem olhar a data (é a janela de novas
+      tentativas, decisão de Ago 2026); ela só acaba se a Stripe tirar a assinatura de `past_due`.
+      Deixada como vencida, o aluno fica com acesso para sempre sem pagar, e nenhum código nosso
+      percebe. Conferir no painel antes do primeiro aluno pagante.
 - [ ] **Setup no dashboard (sem código):** Payments Plano Padrão (conta MEI/CNPJ, payout Banco do Brasil) + **Stripe Billing ativado**. Produto **"Assinatura"** com **2 `Price`**: Mensal R$99,90 (sem fidelidade) / Anual ~R$995 (~17% off). Sem free trial, sem conteúdo grátis. **Sem Customer Portal.** *(Versão em dólar: próximo item.)*
 - [ ] **Preços em dólar, pelo país do CARTÃO** *(decisão do operador, 14/09/2026 — `billing.md`)*:
       **US$ 30/mês** + **US$ 299/ano** (confirmado pelo operador em 14/09). **context7 `/websites/stripe` primeiro:** moedas no mesmo

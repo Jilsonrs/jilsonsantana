@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import * as api from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
@@ -79,7 +79,10 @@ export function CourseDetailPage() {
                         {mod.lessons.map((lesson) => (
                           <li key={lesson.id} className="text-base text-muted-foreground flex items-center gap-2">
                             <span className="h-1.5 w-1.5 rounded-full bg-primary/40"></span>
-                            {lesson.title}
+                            {/* Cada aula abre a página da aula (etapa 4 do Bloco U, 29/09/2026). */}
+                            <Link to={`/aluno/aula/${lesson.id}`} className="hover:text-foreground hover:underline">
+                              {lesson.title}
+                            </Link>
                           </li>
                         ))}
                       </ul>

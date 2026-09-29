@@ -16,7 +16,7 @@
 > 5. **Item novo ganha o próximo número livre.** Número nunca se reutiliza, para que "P7" queira
 >    dizer sempre a mesma coisa em qualquer conversa.
 >
-> **Próximo número livre: P34** · Atualizada em 28/09/2026
+> **Próximo número livre: P35** · Atualizada em 29/09/2026
 
 ## A. Agora, em sequência *(nascidas da configuração do Bunny, 25/09/2026)*
 
@@ -41,6 +41,7 @@ rápida entra aqui, com o próximo número livre.*
 | P17 | **Qual curso é o destaque** da home (o primeiro da ordem, ou o marcado com a etiqueta "Destaque") | etapa 3 do C4 | `implementation-plan.md` → Bloco C4 |
 | P18 | O que fazer com os **2 cursos `exemplo-*`, publicados em produção**, que apareceriam na home | etapa 3 do C4 | `implementation-plan.md` → Bloco C4 |
 | P19 | **Terminar a prova no ar do vídeo — UMA biblioteca só, a `jilsonsantana-stream` (762605), com token (decisão do operador, 28/09; `bunny.md` §3.1).** Provado no ar pelo operador em 28–29/09: o envio do vídeo de uma aula, o vídeo tocando, a miniatura com o nome e a duração, e **a troca de vídeo apagando o antigo no Bunny** (aula "Teste 2"). **Falta:** o vídeo de apresentação, já reenviado em 29/09, **tocar** depois do processamento do Bunny (no passo **Mídia e destaques** ou na página do curso) | agora, no site no ar | `bunny.md` §3.1 e §5 |
+| P34 | **Conferir o RLS da tabela nova `subscription` em PRODUÇÃO**, depois do próximo "publica" (achado da revisão de segurança, 29/09). No painel do Neon, **SQL Editor**, branch **`production`**, rode: `SELECT relname FROM pg_class WHERE relnamespace = 'public'::regnamespace AND relkind = 'r' AND NOT relrowsecurity;` — o esperado é **nenhuma linha**. Qualquer linha é tabela sem RLS: mande o nome | logo depois do próximo publish | `CLAUDE.md` → Database & Migrations |
 | P20 | **Limpar a foto da CDN quando a conta é excluída (LGPD)** — decisão 6: com a chave da conta · cache curto só na pasta de fotos · aceitar até 1 mês | bloco de envio de arquivo | `bunny.md` §4.4 e §6 |
 | P22 | **Imposto de venda fora do Brasil:** Stripe Tax com o contador · Stripe Managed Payments | Fase 4, antes da primeira venda fora do Brasil | `idiomas.md` §5 e `billing.md` |
 | P23 | **Transferência internacional de dados (LGPD)** para os fornecedores de fora do Brasil: pergunta para advogado | antes do lançamento | `bunny.md` §2 |

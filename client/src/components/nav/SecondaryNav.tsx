@@ -2,7 +2,8 @@ import { Link, useLocation } from "react-router-dom";
 import { LogOut, Plus, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Role } from "@jilson/core";
-import { secoesVisiveis, secaoAtiva, itensSecundarios, type ItemSecundario } from "@/lib/navigation";
+import { secoesVisiveis, secaoAtiva, itensSecundarios, casaRota, type ItemSecundario } from "@/lib/navigation";
+import { CourseContentsNav } from "@/components/aula/CourseContentsNav";
 import { useItensConcluidos } from "@/lib/nav-marks";
 import { useT } from "@/lib/language";
 import { ItemDoGrupo } from "./SecondaryNavItem";
@@ -43,6 +44,20 @@ export function SecondaryNav({
   const ativa = secaoAtiva(pathname, secoes);
   const itens = itensSecundarios(pathname, secoes);
   const concluidos = useItensConcluidos(pathname, ativa);
+
+  // O nível 2 que vem dos DADOS da tela: na página da aula, o conteúdo do curso
+  // (etapa 4 do Bloco U, 29/09/2026). O id sai da própria rota.
+  if (ativa?.nivel2 === "conteudo-do-curso") {
+    const id = Number(casaRota(pathname, ativa.to)?.id);
+    return (
+      <aside
+        aria-label={t.nav.menuDaSecao}
+        className="hidden md:flex flex-col shrink-0 w-[280px] bg-surface-alt border-r border-border py-8 px-4 overflow-y-auto"
+      >
+        {Number.isInteger(id) && <CourseContentsNav lessonId={id} />}
+      </aside>
+    );
+  }
 
   if (itens.length === 0) return null;
 

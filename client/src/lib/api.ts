@@ -316,6 +316,54 @@ export async function getLessonVideo(lessonId: number): Promise<{ video: ResumoD
   return data;
 }
 
+// A PÁGINA DA AULA (etapa 4 do Bloco U, 29/09/2026). O aluno lê pela rota da
+// trava (só o publicado; o conteúdo só vem liberado); o admin, pela rota de
+// admin (qualquer status). A tela não decide acesso: mostra o que o servidor mandou.
+export type AulaNaLista = {
+  id: number;
+  title: string;
+  kind: LessonKind;
+  isFreePreview: boolean;
+  status: ContentStatus;
+  temArquivos: boolean;
+};
+export type ArquivoDaAula = { id: number; originalName: string; sizeBytes: number };
+export type PaginaDaAula = {
+  curso: {
+    id: number;
+    slug: string;
+    title: string;
+    language: "pt" | "en";
+    status: ContentStatus;
+    modulos: { id: number; title: string; status: ContentStatus; aulas: AulaNaLista[] }[];
+  };
+  aula: {
+    id: number;
+    title: string;
+    kind: LessonKind;
+    isFreePreview: boolean;
+    status: ContentStatus;
+    moduloId: number;
+    liberada: boolean;
+    /** Os arquivos são só para assinante, inclusive na prévia grátis (operador, 29/09/2026). */
+    arquivosLiberados: boolean;
+    playerUrl?: string | null;
+    texto?: string | null;
+    arquivos?: ArquivoDaAula[];
+  };
+};
+
+export async function getLessonPage(lessonId: number, comoAdmin: boolean): Promise<PaginaDaAula> {
+  const rota = comoAdmin ? `/admin/lessons/${lessonId}/aula` : `/lessons/${lessonId}/aula`;
+  const { data } = await client.get<PaginaDaAula>(rota);
+  return data;
+}
+
+/** O link de download: mesmo site, então o cookie vai junto e o arquivo vem com o nome original. */
+export function enderecoDoArquivo(lessonId: number, fileId: number, comoAdmin: boolean): string {
+  return comoAdmin ? `/api/admin/lesson-files/${fileId}/download` : `/api/lessons/${lessonId}/files/${fileId}`;
+}
+
 // OS ARQUIVOS PARA BAIXAR de cada aula (Bloco E, etapa 2, parte 2e): o admin
 // envia e exclui. O arquivo vai CRU no corpo, e o nome original no cabeçalho.
 export type AdminLessonFile = { id: number; originalName: string; sizeBytes: number; createdAt: string };

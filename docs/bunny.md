@@ -397,10 +397,14 @@ desligado** (é pago).
   cabeçalho do `PUT` (medido: sem ele, o fetch do Node manda "em pedaços"). **O único teto é do
   Railway** *(doc via context7, 29/09)*: o envio precisa terminar em **5 minutos**. O tamanho no
   banco é `BigInt` (o `Int` parava em 2 GB).
-- **Ponto para a etapa 4 (a entrega ao aluno):** com arquivo sem limite, entregar pelo nosso
-  servidor faz cada download sair pelo Railway, que cobra a saída. A alternativa é um link
-  assinado e temporário direto do Bunny, gerado só para assinante — o que reabre o "sem Pull
-  Zone" acima **com esse dado novo**. Decisão do operador, na etapa 4.
+- **A entrega ao aluno SAI PELO NOSSO SERVIDOR** *(decisão do operador, 29/09/2026, na etapa 4)*:
+  `GET /api/lessons/:id/files/:fileId` lê o arquivo do Storage **em fluxo** e entrega com o **nome
+  original** (`Content-Disposition`), **só para assinante** — a prévia grátis não libera arquivo,
+  o visitante só assiste *(operador, 29/09/2026)*. Mais simples, e o nome
+  original sai sem esforço. **Limites aceitos:** o Railway corta um download que dure mais de 15
+  minutos, e cobra o tráfego de saída. *Gatilho de reabertura: download cortado no meio (arquivo
+  grande em internet lenta) ou a conta de saída do Railway pesar — aí a alternativa é o link
+  assinado e temporário direto do Bunny, com uma Pull Zone com token nesta zona.*
 - **Regras de build que já valem** *(código em `server/src/lib/bunny-storage.ts`)*: nome
   aleatório no Storage (`aulas/<aula>/<24 caracteres>.<ext>`); o nome original fica só no banco;
   **apagar só aceita caminho de arquivo nesse formato**, porque, pela doc (context7, 28/09),
