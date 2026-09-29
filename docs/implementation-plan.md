@@ -157,7 +157,8 @@
 > módulo novos nascendo conforme o curso. **Decidido e registrado, ainda não construído:** o
 > **menu do aluno novo** (Início · Cursos · Trilhas · Meus estudos · JilsonAI — `design.md` §6),
 > que é o **próximo bloco**, junto com as telas sob `/aluno/*` e o painel do Início.
-> **FEITO no `dev` em 29/09 (3 etapas, CI verde em cada uma), esperando o "publica":** ✅ 1. as
+> **PUBLICADO em 29/09, à noite (`main` = `35fb940`, CI verde nos dois jobs, deploy ok), em 3
+> etapas:** ✅ 1. as
 > telas do aluno em `/aluno/*`, com os endereços antigos redirecionando · ✅ 2. o menu novo
 > (Início · Cursos · Trilhas · Meus estudos · JilsonAI EM BREVE) + a tela Meus estudos · ✅ 3. o
 > painel do Início (4 blocos). Textos novos em PT e EN são **rascunho do agente, para a revisão
