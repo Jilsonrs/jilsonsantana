@@ -367,7 +367,9 @@ export const pt = {
       abrirIa: "Abrir o JilsonAI",
       fecharIa: "Fechar o JilsonAI",
       iaTitulo: "JilsonAI",
-      iaEmBreve: "Em breve: tire as suas dúvidas sobre esta aula aqui mesmo, sem sair do vídeo."
+      iaEmBreve: "Em breve: tire as suas dúvidas sobre esta aula aqui mesmo, sem sair do vídeo.",
+      sobreOCurso: "Sobre o curso",
+      cursoSemAulas: "Este curso ainda não tem aulas."
     }
   }
 };

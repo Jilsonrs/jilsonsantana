@@ -143,6 +143,15 @@
 > **Conferido pelo operador no mesmo dia:** a miniatura, o nome e a duração aparecem; o .zip chegou
 > inteiro (P33 fechada). **Publicado em seguida (`main` = `013bd1c`, CI verde, deploy ok):** o
 > envio de vídeo sobrevive à tela. Da P19 falta só o reenvio da apresentação.
+> **PUBLICADO em 29/09, à tarde (`main` = `4ecd0f4`, CI verde, deploy ok depois de um incidente
+> do próprio Railway que travou as publicações por ~30 min):** a **página da aula do aluno**
+> (etapa 4 do Bloco U: a trava de acesso com o espelho `Subscription`, as rotas da aula e do
+> download, a tela no estilo LinkedIn, a prévia grátis em que o visitante só assiste, e os
+> consertos da revisão de segurança) e **aula e módulo novos nascendo conforme o curso**. A
+> migration `20260929160000_subscription` entrou em produção pelo pre-deploy. **RLS conferido em
+> produção no mesmo dia** (a pedido do operador, pelo MCP do Neon, só leitura no `pg_class` do
+> branch `production`): a `subscription` com RLS, e nenhuma tabela sem ele — a P34 fechou. Falta a
+> prova no ar da página da aula.
 > **PUBLICADO em 28/09 (`main` = `5a60fa1`, CI verde): o Bloco E, etapa 2 INTEIRA (partes 2a a 2e)**,
 > mais a edição como na Udemy e a limpeza no Bunny ao excluir. *(A primeira publicação do dia,
 > `d342000`, pegou CI vermelho por um teste do arrastar que dependia de tempo — não do site; o
@@ -1077,6 +1086,12 @@ tornada executável — não uma lista nova):
       **Direção do operador (28/09/2026):** a tela de **Início é o painel do aluno, rica**, com o
       que ele tem disponível **a um clique**; o menu continua na barra lateral, e o painel nasce
       preparado para **ganhar itens no futuro**.
+- [ ] **O menu do aluno novo** *(decisão do operador, 29/09/2026 — `design.md` §6, "O menu do
+      aluno")*: **Início · Cursos · Trilhas · Meus estudos · JilsonAI**. "Trilhas" são as trilhas
+      prontas; **Meus estudos** tem no nível 2 **Em andamento · Minhas trilhas · Concluídos ·
+      Certificados** (EM BREVE o que ainda não existe). "Minhas trilhas" e "Certificados" saem do
+      menu principal. Sem "Salvos" (a trilha personalizada faz esse papel). Anda junto com o item
+      abaixo (as telas sob `/aluno/*`) e com o painel do Início.
 - [ ] **As telas do aluno passam para `/aluno/*`** *(decisão do operador, 28/09/2026, era a P15)*:
       `/inicio` → `/aluno/inicio`, `/conta` → `/aluno/conta` (com as subpáginas),
       `/minhas-trilhas` → `/aluno/minhas-trilhas`. Os endereços antigos **redirecionam** para os
@@ -1452,6 +1467,16 @@ landmark. Corrigido junto.
       não deixa começar um segundo envio enquanto o primeiro não termina. Fechar ou recarregar a
       aba continua interrompendo (como na Udemy). **Mutação:** a porcentagem sem ser guardada e o
       botão sem travar → reprovam.
+- [x] **O aluno entra no curso pela primeira aula, com "Sobre o curso" embaixo do player** *(decisão
+      do operador, 29/09/2026; plano aprovado no mesmo dia)*. A rota da aula devolve os detalhes
+      do curso (os mesmos campos da página pública); `CourseDetails.tsx` desenha nível, descrição,
+      listas, camadas, destaques e perguntas **em toda aula, liberada ou não** (bloco vazio não
+      aparece). `/aluno/curso/:slug` (`CourseEntryPage.tsx`) leva à primeira aula publicada; o
+      cartão do catálogo leva para lá quem está logado, e o visitante segue para a página pública.
+      **Mutação:** os detalhes fora da resposta, a entrada na segunda aula, o cartão do logado
+      indo para a página pública e o bloco vazio aparecendo → reprovam. **Fora:** "continuar de
+      onde parou" (Fase 5) e os outros links que levam o aluno logado à página de venda (a trilha
+      e a busca).
 - [x] **Aula e módulo novos nascem conforme o curso, como na Udemy** *(decisão do operador,
       29/09/2026; os módulos seguem a mesma regra, resposta dele)*: curso em rascunho → nascem
       **publicados**; curso publicado ou arquivado → nascem em **rascunho**. Nas rotas do "+"

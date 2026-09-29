@@ -364,6 +364,27 @@ não código espalhado: uma tela nova declara seus níveis e o cromo se monta so
   **Links para páginas que ainda não existem entram assim mesmo**, por decisão dele — não é
   descuido, e não se "conserta" com a regra 12 do `GEMINI.md` (que vale para o menu).
 
+### O menu do aluno *(decisão do operador, 29/09/2026, comparando com o LinkedIn Learning)*
+
+O menu separa o que o aluno **descobre** do que é **dele**:
+
+| Menu lateral (nível 1) | Nível 2 | O que é |
+|---|---|---|
+| **Início** | — | o painel do aluno |
+| **Cursos** | — | o catálogo de todos os cursos (fica como está) |
+| **Trilhas** | — | as **trilhas prontas**, para escolher como se escolhe um curso |
+| **Meus estudos** | Em andamento · Minhas trilhas · Concluídos · Certificados | o que é do aluno — o "My Library" do LinkedIn |
+| **JilsonAI** | — | Fase 6 |
+
+- **"Minhas trilhas" sai do menu principal** e vai para dentro de Meus estudos; **Certificados**
+  também.
+- **Sem "Salvos"** *(operador)*: com até 15 cursos, o aluno navega e começa quando quiser; o papel de
+  guardar para depois é da **trilha personalizada** (o "My collections" do LinkedIn).
+- **Não copiar do LinkedIn** as muitas fileiras do Home ("popular", "mais curtidos"…): com um
+  acervo pequeno, todas mostrariam os mesmos cursos.
+- O que ainda não existe aparece como **EM BREVE**: Em andamento e Concluídos dependem do
+  progresso (Fase 5); Certificados, da Fase 6.5.
+
 ### Mobile (< 768px)
 
 - O rail vira **gaveta** (off-canvas), aberta por botão no cabeçalho.

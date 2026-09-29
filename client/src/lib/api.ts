@@ -335,6 +335,15 @@ export type PaginaDaAula = {
     title: string;
     language: "pt" | "en";
     status: ContentStatus;
+    // Os DETALHES do curso, embaixo do player em toda aula (operador, 29/09/2026).
+    level: Level | null;
+    description: string | null;
+    learnTags: string[];
+    requirements: string[];
+    personas: string[];
+    highlights: Highlight[] | null;
+    faq: FaqItem[] | null;
+    camadas: Layer[];
     modulos: { id: number; title: string; status: ContentStatus; aulas: AulaNaLista[] }[];
   };
   aula: {

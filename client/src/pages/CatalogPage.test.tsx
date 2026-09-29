@@ -12,6 +12,8 @@ vi.mock("@/lib/api", () => ({
   getCourses: (...args: unknown[]) => getCourses(...args),
   search: (...args: unknown[]) => search(...args),
 }));
+const useSessionMock = vi.fn();
+vi.mock("@/lib/auth-client", () => ({ useSession: () => useSessionMock() }));
 
 import { useState } from "react";
 import type { LanguageCode } from "@jilson/core";
@@ -52,6 +54,24 @@ beforeEach(() => {
   getTrilhas.mockReset().mockResolvedValue([trilha]);
   getCourses.mockReset().mockResolvedValue([course]);
   search.mockReset();
+  useSessionMock.mockReset().mockReturnValue({ data: null, isPending: false });
+});
+
+// O clique no curso (decisão do operador, 29/09/2026): logado, abre a página do
+// aluno na primeira aula; visitante, a página pública de venda.
+describe("CatalogPage — para onde o cartão do curso leva", () => {
+  const cartao = async () => (await screen.findByText("Exemplo — Fundamentos de Excel + IA")).closest("a");
+
+  it("visitante: a página pública do curso", async () => {
+    renderWithProviders(<CatalogPage tipo="cursos" />);
+    expect((await cartao())?.getAttribute("href")).toBe("/curso/exemplo-fundamentos-excel-ia");
+  });
+
+  it("logado: a entrada do aluno no curso", async () => {
+    useSessionMock.mockReturnValue({ data: { user: { role: "member" } }, isPending: false });
+    renderWithProviders(<CatalogPage tipo="cursos" />);
+    expect((await cartao())?.getAttribute("href")).toBe("/aluno/curso/exemplo-fundamentos-excel-ia");
+  });
 });
 
 describe("CatalogPage — /cursos e /trilhas são telas SEPARADAS", () => {

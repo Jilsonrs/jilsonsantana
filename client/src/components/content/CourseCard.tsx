@@ -18,12 +18,17 @@ export type CourseCardProps = {
   camadas?: Layer[];
   moduleCount?: number;
   lessonCount?: number;
+  /**
+   * Para onde o cartão leva. Sem ele, a página PÚBLICA do curso (a de venda). O
+   * catálogo passa `/aluno/curso/<slug>` para quem está logado (operador, 29/09/2026).
+   */
+  destino?: string;
 };
 
 export function CourseCard(course: CourseCardProps) {
   const t = useT();
   return (
-    <Link to={`/curso/${course.slug}`} className="block">
+    <Link to={course.destino ?? `/curso/${course.slug}`} className="block">
       <Card className="h-full transition-colors hover:border-primary">
         <div className="flex h-32 items-center justify-center rounded-t-xl bg-muted">
           {course.thumbnailUrl ? (

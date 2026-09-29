@@ -40,7 +40,12 @@ const camposDaAula = {
   module: { select: { courseId: true } },
 } as const;
 
-/** O curso da aula, para a lista do nível 2. O aluno vê só o publicado. */
+/**
+ * O curso da aula: a lista do nível 2 (o aluno vê só o publicado) e os DETALHES
+ * que ficam embaixo do player, em toda aula — descrição, o que vai aprender,
+ * pré-requisitos, pra quem é, camadas, destaques e perguntas (decisão do operador,
+ * 29/09/2026). São os mesmos campos que a página pública já mostra.
+ */
 async function arvoreDoCurso(courseId: number, soPublicado: boolean) {
   const filtro = soPublicado ? { status: PUBLISHED } : {};
   const curso = await prisma.course.findUnique({
@@ -51,6 +56,14 @@ async function arvoreDoCurso(courseId: number, soPublicado: boolean) {
       title: true,
       language: true,
       status: true,
+      level: true,
+      description: true,
+      learnTags: true,
+      requirements: true,
+      personas: true,
+      highlights: true,
+      faq: true,
+      camadas: true,
       modules: {
         where: filtro,
         orderBy: byOrder,
@@ -74,6 +87,14 @@ async function arvoreDoCurso(courseId: number, soPublicado: boolean) {
     title: curso.title,
     language: doBanco(curso.language),
     status: curso.status,
+    level: curso.level,
+    description: curso.description,
+    learnTags: curso.learnTags,
+    requirements: curso.requirements,
+    personas: curso.personas,
+    highlights: curso.highlights,
+    faq: curso.faq,
+    camadas: curso.camadas,
     modulos: curso.modules.map((m) => ({
       id: m.id,
       title: m.title,

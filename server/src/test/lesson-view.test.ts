@@ -46,7 +46,20 @@ const envAntes = Object.fromEntries(ENV.map((n) => [n, process.env[n]]));
 
 async function curso(slug: string, status: "PUBLISHED" | "DRAFT", language: "PT" | "EN", aulas: Prisma.LessonCreateWithoutModuleInput[]) {
   return prisma.course.create({
-    data: { slug: `${slug}${S}`, title: slug, language, status, modules: { create: { title: "M", status: "PUBLISHED", lessons: { create: aulas } } } },
+    data: {
+      slug: `${slug}${S}`,
+      title: slug,
+      language,
+      status,
+      level: "INTERMEDIARIO",
+      description: "Um curso **completo**.",
+      learnTags: ["PROCX"],
+      requirements: ["Excel instalado"],
+      personas: ["Analistas"],
+      highlights: [{ icon: "sparkles", title: "IA do seu lado", text: "Com o JilsonAI." }],
+      faq: [{ pergunta: "Preciso do 365?", resposta: "Não." }],
+      camadas: ["UNIVERSAL", "IA"],
+      modules: { create: { title: "M", status: "PUBLISHED", lessons: { create: aulas } } } },
     include: { modules: { include: { lessons: { orderBy: { id: "asc" } } } } },
   });
 }
@@ -176,6 +189,26 @@ describe("a aula paga", () => {
     const res = await pagina(ids.ingles, member);
     expect(res.body.aula.liberada).toBe(true);
     expect(res.body.curso.language).toBe("en");
+  });
+});
+
+// Os DETALHES do curso ficam embaixo do player em toda aula (decisão do operador,
+// 29/09/2026) — inclusive na aula bloqueada, onde a pessoa decide se é para ela.
+describe("os detalhes do curso", () => {
+  it("vêm na página da aula, liberada ou bloqueada", async () => {
+    for (const cookies of [member, []]) {
+      const { curso } = (await pagina(ids.paga, cookies)).body;
+      expect(curso).toMatchObject({
+        level: "INTERMEDIARIO",
+        description: "Um curso **completo**.",
+        learnTags: ["PROCX"],
+        requirements: ["Excel instalado"],
+        personas: ["Analistas"],
+        faq: [{ pergunta: "Preciso do 365?", resposta: "Não." }],
+        camadas: ["UNIVERSAL", "IA"],
+      });
+      expect(curso.highlights[0].title).toBe("IA do seu lado");
+    }
   });
 });
 
