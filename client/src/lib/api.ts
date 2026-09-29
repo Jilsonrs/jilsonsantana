@@ -288,31 +288,29 @@ export async function completeIntroVideoUpload(
   return data;
 }
 
-// O VÍDEO DE CADA AULA (Bloco U, etapa 3): a mesma forma da apresentação, mas a
-// prévia vem sempre ASSINADA do servidor (a biblioteca de aulas tem token).
+// O VÍDEO DE CADA AULA (Bloco U, etapa 3): o envio tem a mesma forma da
+// apresentação. No editor não há player (como a Udemy — operador, 28/09/2026):
+// a aula mostra o RESUMO do vídeo, lido no Bunny pelo servidor.
 export async function startLessonVideoUpload(lessonId: number, titulo: string): Promise<DadosDoEnvio> {
   const { data } = await client.post<DadosDoEnvio>(`/admin/lessons/${lessonId}/video`, { titulo });
   return data;
 }
 
-export async function completeLessonVideoUpload(
-  lessonId: number,
-  videoId: string,
-): Promise<{ bunnyVideoId: string; playerUrl: string | null }> {
-  const { data } = await client.post<{ bunnyVideoId: string; playerUrl: string | null }>(
-    `/admin/lessons/${lessonId}/video/complete`,
-    { videoId },
-  );
+export async function completeLessonVideoUpload(lessonId: number, videoId: string): Promise<{ bunnyVideoId: string }> {
+  const { data } = await client.post<{ bunnyVideoId: string }>(`/admin/lessons/${lessonId}/video/complete`, { videoId });
   return data;
 }
 
-export async function getLessonPlayer(lessonId: number): Promise<{ playerUrl: string | null }> {
-  const { data } = await client.get<{ playerUrl: string | null }>(`/admin/lessons/${lessonId}/player`);
-  return data;
-}
+export type ResumoDoVideoDaAula = {
+  pronto: boolean;
+  falhou: boolean;
+  nome: string | null;
+  duracaoEmSegundos: number | null;
+  miniaturaUrl: string | null;
+};
 
-export async function getLessonVideoStatus(videoId: string): Promise<{ pronto: boolean; falhou: boolean }> {
-  const { data } = await client.get<{ pronto: boolean; falhou: boolean }>(`/admin/lesson-video/${videoId}/status`);
+export async function getLessonVideo(lessonId: number): Promise<{ video: ResumoDoVideoDaAula | null }> {
+  const { data } = await client.get<{ video: ResumoDoVideoDaAula | null }>(`/admin/lessons/${lessonId}/video`);
   return data;
 }
 

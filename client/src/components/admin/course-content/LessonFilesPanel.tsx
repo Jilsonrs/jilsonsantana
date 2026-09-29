@@ -43,7 +43,7 @@ export function LessonFilesPanel({ lesson }: { lesson: AdminLesson }) {
   const exclusao = useMutation({ mutationFn: api.deleteLessonFile, onSuccess: recarregar });
 
   return (
-    <div className="space-y-3 rounded-lg border border-border p-4">
+    <div className="space-y-3">
       <p className="text-sm font-medium">Arquivos para baixar</p>
       {lista.isLoading && <p className="text-sm text-muted-foreground">Carregando…</p>}
       {lista.isError && (

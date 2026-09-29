@@ -428,6 +428,7 @@ O Bunny gera estes tipos de chave:
   | 3 | `BUNNY_STREAM_LESSONS_LIBRARY_ID` | ID da biblioteca (762605, a `jilsonsantana-stream`) — aulas **e** apresentação desde 28/09 | não |
   | 3 | `BUNNY_STREAM_LESSONS_API_KEY` | API key da biblioteca de aulas | **sim** |
   | 3 | `BUNNY_STREAM_LESSONS_TOKEN_KEY` | token authentication key da biblioteca de aulas | **sim** |
+  | 3 | `BUNNY_STREAM_LESSONS_CDN_HOST` | o *CDN Hostname* da aba **API** da `jilsonsantana-stream` (`vz-….b-cdn.net`): de onde vem a miniatura que o editor mostra (28/09). Sem ela, a aula aberta mostra o nome e a duração, sem a miniatura | não |
   | arquivos | `BUNNY_FILES_STORAGE_ZONE` | nome da Storage Zone dos arquivos (§4.5) | não |
   | arquivos | `BUNNY_FILES_STORAGE_HOST` | o endpoint da zona (ex.: `br.storage.bunnycdn.com`) | não |
   | arquivos | `BUNNY_FILES_STORAGE_PASSWORD` | a senha da zona dos arquivos (a de escrita) | **sim** |
@@ -483,6 +484,11 @@ O Bunny gera estes tipos de chave:
   cabeçalhos `AuthorizationSignature`, `AuthorizationExpire`, `VideoId` e `LibraryId` · a
   assinatura é SHA-256 (hex) de biblioteca + chave + validade + id · o player é
   `iframe.mediadelivery.net/embed/<biblioteca>/<id>`, o dos exemplos oficiais.
+  **Confirmado na doc em 28/09 (context7), e em uso no código (`interpretarResumo`):** a miniatura
+  padrão é `https://{CDN Hostname da biblioteca}/{id do vídeo}/thumbnail.jpg`. Com o CDN token
+  desligado (28/09), ela carrega sem assinatura para quem vem do domínio da escola. **Não
+  confirmado:** o campo `length` (a duração, em segundos) na leitura do vídeo; o código só o usa
+  quando é número.
   **Não confirmado:** o significado dos números de `status` na leitura do vídeo. A doc só lista os
   do webhook (3 = terminado; 4 = a primeira resolução ficou pronta e o vídeo já toca; 5 = falhou).
   Por isso a prévia do admin, que se atualiza sozinha, trata como **pronto** o status 4 **ou** o

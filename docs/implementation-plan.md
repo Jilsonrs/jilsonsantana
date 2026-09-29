@@ -132,8 +132,9 @@
 > variáveis `BUNNY_STREAM_LESSONS_*` no Railway. **No teste no ar, o envio do vídeo da aula deu
 > 401** porque as variáveis misturavam duas bibliotecas (a de apresentação existia; `bunny.md`
 > §3.1). Corrigido pelo operador no mesmo dia: tudo na 762605, a biblioteca de apresentação
-> apagada, CDN token desligado e DRM Basic ligado. O envio da aula **funcionou**. Falta o resto da
-> prova (P19): o vídeo da aula tocando e a apresentação enviada de novo.
+> apagada, CDN token desligado e DRM Basic ligado. O envio da aula **funcionou e o vídeo tocou**.
+> Falta a apresentação enviada de novo (P19). **No `dev`, não publicado:** a aula no editor como na
+> Udemy (abre e recolhe, com a miniatura, sem player) e a prévia do tamanho de uma miniatura.
 > **PUBLICADO em 28/09 (`main` = `5a60fa1`, CI verde): o Bloco E, etapa 2 INTEIRA (partes 2a a 2e)**,
 > mais a edição como na Udemy e a limpeza no Bunny ao excluir. *(A primeira publicação do dia,
 > `d342000`, pegou CI vermelho por um teste do arrastar que dependia de tempo — não do site; o
@@ -1395,6 +1396,19 @@ landmark. Corrigido junto.
       Video; P19 atualizada. Testes: apresentação assinada com 24 h, as duas validades, o token.
       **Mutação:** validade de 6 h, apresentação sem assinatura e o código lendo as variáveis
       antigas → todas reprovam.
+- [x] **A aula no editor como na Udemy: abre e recolhe, com a miniatura do vídeo, SEM player**
+      *(decisão do operador, 28/09/2026, depois de ver o vídeo tocando no ar: "na Udemy só toca na
+      página do aluno"; plano aprovado no mesmo dia; no `dev`)*. A seta no fim da linha abre e
+      recolhe a aula (toda aula começa recolhida); aberta, ela mostra o conteúdo (na de vídeo: a
+      **miniatura, o nome do arquivo e a duração**, o envio e a Prévia grátis; na de texto: o
+      texto) e, embaixo, os Arquivos. Saíram os botões "Vídeo da aula", "Texto da aula" e
+      "Arquivos". **Assistir é só na página da aula do aluno** (etapa 4), e o **Visualizar** chega
+      com ela. Servidor: `GET /api/admin/lessons/:id/video` lê no Bunny o vídeo **daquela** aula e
+      devolve o resumo (`interpretarResumo`, função pura com teste); **a miniatura só sai com o
+      vídeo pronto** e com a variável nova `BUNNY_STREAM_LESSONS_CDN_HOST` (não é segredo);
+      saíram a rota do player do admin, a do estado por id e o `playerUrl` do fim do envio.
+      **Mutação:** miniatura antes de pronto, o id do vídeo vindo de quem pede, a seta que não
+      abre, a duração sem os dois dígitos e a tela mostrando imagem processando → todas reprovam.
 - [ ] **Etapa 4 — a trava de acesso e a aula tocando para o aluno:** adianta da Fase 4 o model
       `Subscription`, o `temAcessoAtivo()` e o `requireActiveMembership`, **sem Stripe**; rota
       `GET /api/lessons/:id/player`; assinatura de teste do `member@` **só fora de produção** (o
@@ -1408,7 +1422,8 @@ landmark. Corrigido junto.
       operador, 28/09/2026)*.
       `security-vulnerability-reviewer` e revisão do operador antes do "publica".
 - **Done when:** no computador do operador, a capa enviada aparece no admin; o vídeo de
-  apresentação toca no admin e na página; o vídeo da aula toca na prévia do admin; o `member@`
+  apresentação toca no admin e na página; a aula aberta no editor mostra a miniatura, o nome e a
+  duração do vídeo (sem player, decisão de 28/09); o `member@`
   assiste à aula e um aluno sem assinatura vê "Esta aula é para assinantes."
 
 ### Bloco A — Lista de cursos do admin: o cartão com capa e números  *(27/09/2026 · pedido do operador, modelo Udemy)*

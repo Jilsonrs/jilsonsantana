@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { screen, fireEvent, waitFor, act } from "@testing-library/react";
+import { afterEach } from "vitest";
 import { renderWithProviders } from "@/test-utils";
 import type { AdminCourseDetail, AdminLesson } from "@/lib/api";
 import { CURSO_DE_TESTE } from "./curso-de-teste";
@@ -8,8 +9,7 @@ import { CURSO_DE_TESTE } from "./curso-de-teste";
 const adminGetCourse = vi.fn();
 const startLessonVideoUpload = vi.fn();
 const completeLessonVideoUpload = vi.fn();
-const getLessonPlayer = vi.fn();
-const getLessonVideoStatus = vi.fn();
+const getLessonVideo = vi.fn();
 const updateLesson = vi.fn();
 const enviarVideo = vi.fn();
 vi.mock("@/lib/video-upload", () => ({
@@ -19,21 +19,25 @@ vi.mock("@/lib/api", () => ({
   adminGetCourse: (...args: unknown[]) => adminGetCourse(...args),
   startLessonVideoUpload: (...args: unknown[]) => startLessonVideoUpload(...args),
   completeLessonVideoUpload: (...args: unknown[]) => completeLessonVideoUpload(...args),
-  getLessonPlayer: (...args: unknown[]) => getLessonPlayer(...args),
-  getLessonVideoStatus: (...args: unknown[]) => getLessonVideoStatus(...args),
+  getLessonVideo: (...args: unknown[]) => getLessonVideo(...args),
+  listLessonFiles: () => Promise.resolve([]),
+  // Os arquivos aparecem dentro da aula aberta; aqui não são o assunto.
+  uploadLessonFile: vi.fn(),
+  deleteLessonFile: vi.fn(),
   updateLesson: (...args: unknown[]) => updateLesson(...args),
 }));
 
 import { CourseEditorLayout } from "./CourseEditorLayout";
 import { ROTAS_DO_EDITOR } from "./steps";
 
-// O VÍDEO DE CADA AULA (Bloco U, etapa 3 — plano aprovado pelo operador em
-// 28/09/2026). O envio em si é do Bunny (TUS); aqui se prova o que a TELA faz:
-// porcentagem, gravar o vídeo só no fim, a prévia sempre ASSINADA (vinda do
-// servidor), o "não configurado" e a prévia grátis.
+// O VÍDEO DE CADA AULA (Bloco U, etapa 3). O envio em si é do Bunny (TUS); aqui
+// se prova o que a TELA faz: a aula abre e recolhe, e aberta mostra a miniatura,
+// o nome e a duração, SEM player (como a Udemy — operador, 28/09/2026); a
+// porcentagem; gravar o vídeo só no fim; o "não configurado"; a prévia grátis.
 
 const GUID = "eb1c4f77-0cda-46be-b47d-1118ad7c2ffe";
-const ASSINADO = `https://iframe.mediadelivery.net/embed/762605/${GUID}?token=abc&expires=1`;
+const MINIATURA = `https://vz-teste.b-cdn.net/${GUID}/thumbnail.jpg`;
+const PRONTO = { pronto: true, falhou: false, nome: "abertura.mp4", duracaoEmSegundos: 111, miniaturaUrl: MINIATURA };
 
 function comAula(aula: Partial<AdminLesson>): AdminCourseDetail {
   return {
@@ -68,15 +72,22 @@ function comAula(aula: Partial<AdminLesson>): AdminCourseDetail {
 }
 
 beforeEach(() => {
-  for (const f of [adminGetCourse, startLessonVideoUpload, completeLessonVideoUpload, getLessonPlayer, updateLesson, enviarVideo]) f.mockReset();
-  getLessonVideoStatus.mockReset().mockResolvedValue({ pronto: true, falhou: false });
+  for (const f of [adminGetCourse, startLessonVideoUpload, completeLessonVideoUpload, getLessonVideo, updateLesson, enviarVideo]) f.mockReset();
+  getLessonVideo.mockResolvedValue({ video: PRONTO });
   updateLesson.mockResolvedValue({ id: 11 });
 });
 
+afterEach(() => {
+  vi.useRealTimers();
+});
+
+const renderizar = () =>
+  renderWithProviders(<CourseEditorLayout />, { route: "/admin/cursos/1/conteudo", path: "/admin/cursos/:id", filhas: ROTAS_DO_EDITOR });
+
 async function abrirVideo(aula: Partial<AdminLesson> = {}) {
   adminGetCourse.mockResolvedValue(comAula(aula));
-  renderWithProviders(<CourseEditorLayout />, { route: "/admin/cursos/1/conteudo", path: "/admin/cursos/:id", filhas: ROTAS_DO_EDITOR });
-  fireEvent.click(await screen.findByRole("button", { name: "Vídeo da aula" }));
+  renderizar();
+  fireEvent.click(await screen.findByRole("button", { name: "Abrir a aula Abertura" }));
 }
 
 const escolher = () =>
@@ -84,15 +95,40 @@ const escolher = () =>
     target: { files: [new File(["mp4"], "abertura.mp4", { type: "video/mp4" })] },
   });
 
+describe("a aula abre e recolhe (como a Udemy)", () => {
+  it("começa recolhida; a seta abre e recolhe", async () => {
+    adminGetCourse.mockResolvedValue(comAula({}));
+    renderizar();
+    const seta = await screen.findByRole("button", { name: "Abrir a aula Abertura" });
+    expect(seta.getAttribute("aria-expanded")).toBe("false");
+    expect(screen.queryByRole("button", { name: "Enviar vídeo" })).toBeNull();
+
+    fireEvent.click(seta);
+    expect(screen.getByRole("button", { name: "Recolher a aula Abertura" }).getAttribute("aria-expanded")).toBe("true");
+    expect(screen.getByRole("button", { name: "Enviar vídeo" })).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "Recolher a aula Abertura" }));
+    expect(screen.queryByRole("button", { name: "Enviar vídeo" })).toBeNull();
+  });
+
+  it("aula de texto aberta não tem vídeo", async () => {
+    adminGetCourse.mockResolvedValue(comAula({ kind: "TEXT" }));
+    renderizar();
+    fireEvent.click(await screen.findByRole("button", { name: "Abrir a aula Abertura" }));
+    expect(screen.getByRole("textbox", { name: "Texto da aula" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Enviar vídeo" })).toBeNull();
+  });
+});
+
 describe("vídeo da aula — enviar", () => {
   it('aula sem vídeo: "Sem vídeo" e o botão de enviar', async () => {
     await abrirVideo();
     expect(screen.getByText("Sem vídeo")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Enviar vídeo" })).toBeTruthy();
-    expect(getLessonPlayer).not.toHaveBeenCalled();
+    expect(getLessonVideo).not.toHaveBeenCalled();
   });
 
-  it("mostra a porcentagem; no fim grava o vídeo e a prévia assinada toca", async () => {
+  it("mostra a porcentagem; no fim grava o vídeo e mostra o resumo dele", async () => {
     let progredir: (p: number) => void = () => {};
     let terminar: () => void = () => {};
     const dados = { videoId: GUID, titulo: "abertura.mp4", libraryId: "762605", expirationTime: 1, signature: "s" };
@@ -101,8 +137,10 @@ describe("vídeo da aula — enviar", () => {
       progredir = aoProgredir;
       return { concluido: new Promise<void>((r) => (terminar = r)), cancelar: () => {} };
     });
-    completeLessonVideoUpload.mockResolvedValue({ bunnyVideoId: GUID, playerUrl: ASSINADO });
+    completeLessonVideoUpload.mockResolvedValue({ bunnyVideoId: GUID });
     await abrirVideo();
+    // Depois do envio, o curso recarrega com o vídeo na aula.
+    adminGetCourse.mockResolvedValue(comAula({ bunnyVideoId: GUID }));
 
     escolher();
     await waitFor(() => expect(enviarVideo).toHaveBeenCalled());
@@ -115,8 +153,9 @@ describe("vídeo da aula — enviar", () => {
 
     act(() => terminar());
     await waitFor(() => expect(completeLessonVideoUpload).toHaveBeenCalledWith(11, GUID));
-    const player = await screen.findByTitle("Prévia do vídeo da aula Abertura");
-    expect(player.getAttribute("src")).toBe(ASSINADO);
+    expect(await screen.findByText("abertura.mp4")).toBeTruthy();
+    expect(getLessonVideo).toHaveBeenCalledWith(11);
+    expect(screen.getByRole("button", { name: "Trocar o vídeo" })).toBeTruthy();
   });
 
   it("biblioteca não configurada (o computador do operador): diz isso", async () => {
@@ -137,24 +176,51 @@ describe("vídeo da aula — enviar", () => {
   });
 });
 
-describe("vídeo da aula — a prévia", () => {
-  it("aula com vídeo: a prévia vem ASSINADA do servidor", async () => {
-    getLessonPlayer.mockResolvedValue({ playerUrl: ASSINADO });
+describe("vídeo da aula — o resumo, sem player", () => {
+  it("pronto: a miniatura, o nome e a duração; nenhum player no editor", async () => {
     await abrirVideo({ bunnyVideoId: GUID });
 
-    const player = await screen.findByTitle("Prévia do vídeo da aula Abertura");
-    expect(player.getAttribute("src")).toBe(ASSINADO);
-    expect(getLessonPlayer).toHaveBeenCalledWith(11);
-    expect(screen.getByRole("button", { name: "Trocar o vídeo" })).toBeTruthy();
-    // O estado do processamento é o da AULA, não o da apresentação.
-    await waitFor(() => expect(getLessonVideoStatus).toHaveBeenCalledWith(GUID));
+    const miniatura = await screen.findByRole("img", { name: "Miniatura do vídeo abertura.mp4" });
+    expect(miniatura.getAttribute("src")).toBe(MINIATURA);
+    expect(screen.getByText("abertura.mp4")).toBeTruthy();
+    expect(screen.getByText("1:51")).toBeTruthy();
+    expect(getLessonVideo).toHaveBeenCalledWith(11);
+    expect(document.querySelector("iframe")).toBeNull();
   });
 
-  it("vídeo enviado mas sem a biblioteca neste ambiente: explica, sem quadro quebrado", async () => {
-    getLessonPlayer.mockResolvedValue({ playerUrl: null });
+  it('processando: "Processando…" sem miniatura; quando fica pronto, ela aparece sozinha', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    getLessonVideo
+      .mockResolvedValueOnce({ video: { ...PRONTO, pronto: false, miniaturaUrl: null } })
+      .mockResolvedValue({ video: PRONTO });
     await abrirVideo({ bunnyVideoId: GUID });
-    expect(await screen.findByText(/A prévia aparece onde a biblioteca de aulas está configurada/)).toBeTruthy();
-    expect(screen.queryByTitle(/Prévia do vídeo da aula/)).toBeNull();
+
+    expect(await screen.findByText("Processando…")).toBeTruthy();
+    expect(screen.queryByRole("img")).toBeNull();
+
+    await act(() => vi.advanceTimersByTimeAsync(15_000));
+    expect(await screen.findByRole("img", { name: "Miniatura do vídeo abertura.mp4" })).toBeTruthy();
+    expect(screen.queryByText("Processando…")).toBeNull();
+  });
+
+  it("o Bunny não conseguiu processar: avisa para enviar de novo", async () => {
+    getLessonVideo.mockResolvedValue({ video: { ...PRONTO, pronto: false, falhou: true, miniaturaUrl: null } });
+    await abrirVideo({ bunnyVideoId: GUID });
+    expect((await screen.findByRole("alert")).textContent).toBe("O Bunny não conseguiu processar este vídeo. Envie de novo.");
+  });
+
+  it("pronto, mas sem o endereço das miniaturas: o nome e a duração, sem imagem quebrada", async () => {
+    getLessonVideo.mockResolvedValue({ video: { ...PRONTO, miniaturaUrl: null } });
+    await abrirVideo({ bunnyVideoId: GUID });
+    expect(await screen.findByText("Sem miniatura")).toBeTruthy();
+    expect(screen.getByText("abertura.mp4")).toBeTruthy();
+    expect(screen.queryByRole("img")).toBeNull();
+  });
+
+  it("biblioteca não configurada neste ambiente: diz isso", async () => {
+    getLessonVideo.mockRejectedValue({ response: { status: 503, data: { error: "StreamNaoConfigurado" } } });
+    await abrirVideo({ bunnyVideoId: GUID });
+    expect((await screen.findByRole("alert")).textContent).toBe("A biblioteca de aulas não está configurada neste ambiente.");
   });
 });
 
@@ -169,12 +235,5 @@ describe("vídeo da aula — prévia grátis", () => {
     await abrirVideo({ isFreePreview: true });
     expect((screen.getByRole("checkbox", { name: /Prévia grátis/ }) as HTMLInputElement).checked).toBe(true);
     expect(screen.getByText("Prévia grátis")).toBeTruthy();
-  });
-
-  it("aula de texto não tem o painel de vídeo", async () => {
-    adminGetCourse.mockResolvedValue(comAula({ kind: "TEXT" }));
-    renderWithProviders(<CourseEditorLayout />, { route: "/admin/cursos/1/conteudo", path: "/admin/cursos/:id", filhas: ROTAS_DO_EDITOR });
-    await screen.findByRole("button", { name: "Texto da aula" });
-    expect(screen.queryByRole("button", { name: "Vídeo da aula" })).toBeNull();
   });
 });

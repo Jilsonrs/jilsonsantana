@@ -62,7 +62,7 @@ beforeEach(() => {
 
 async function abrirArquivos() {
   renderWithProviders(<CourseEditorLayout />, { route: "/admin/cursos/1/conteudo", path: "/admin/cursos/:id", filhas: ROTAS_DO_EDITOR });
-  fireEvent.click(await screen.findByRole("button", { name: "Arquivos" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Abrir a aula Abertura" }));
 }
 
 const escolher = (arquivo: File) => fireEvent.change(screen.getByTestId("lesson-file-11"), { target: { files: [arquivo] } });
@@ -119,9 +119,15 @@ describe("arquivos da aula", () => {
     await waitFor(() => expect(deleteLessonFile.mock.calls[0]?.[0]).toBe(7));
   });
 
-  it("um painel por vez: abrir os arquivos fecha o vídeo", async () => {
+  // Como a Udemy (operador, 28/09/2026): a aula aberta mostra o vídeo e, embaixo,
+  // os arquivos; recolher a aula esconde tudo.
+  it("a aula aberta mostra os arquivos junto com o vídeo; recolher esconde", async () => {
     await abrirArquivos();
-    fireEvent.click(screen.getByRole("button", { name: "Vídeo da aula" }));
+    expect(await screen.findByText("Arquivos para baixar")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Enviar vídeo" })).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "Recolher a aula Abertura" }));
     expect(screen.queryByText("Arquivos para baixar")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Enviar vídeo" })).toBeNull();
   });
 });

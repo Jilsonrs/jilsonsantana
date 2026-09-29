@@ -13,7 +13,12 @@ const updateLesson = vi.fn();
 const deleteLesson = vi.fn();
 const deleteModule = vi.fn();
 const updateModule = vi.fn();
+const listLessonFiles = vi.fn();
 vi.mock("@/lib/api", () => ({
+  listLessonFiles: (...args: unknown[]) => listLessonFiles(...args),
+  // Os arquivos aparecem dentro da aula aberta; aqui não são o assunto.
+  uploadLessonFile: vi.fn(),
+  deleteLessonFile: vi.fn(),
   updateModule: (...args: unknown[]) => updateModule(...args),
   deleteLesson: (...args: unknown[]) => deleteLesson(...args),
   deleteModule: (...args: unknown[]) => deleteModule(...args),
@@ -56,6 +61,7 @@ beforeEach(() => {
   insertLesson.mockReset().mockResolvedValue({ id: 99 });
   insertModule.mockReset().mockResolvedValue({ id: 98 });
   updateLesson.mockReset().mockResolvedValue({ id: 12 });
+  listLessonFiles.mockReset().mockResolvedValue([]);
 });
 
 async function abrir() {
@@ -202,7 +208,7 @@ describe("Conteúdo — o texto da aula", () => {
   it("aula de texto: abre o texto, edita e salva só o texto", async () => {
     adminGetCourse.mockResolvedValue(COM_AULA_DE_TEXTO);
     await abrir();
-    fireEvent.click(screen.getByRole("button", { name: "Texto da aula" }));
+    fireEvent.click(screen.getByRole("button", { name: "Abrir a aula Fórmulas" }));
     const campo = screen.getByRole("textbox", { name: "Texto da aula" }) as HTMLTextAreaElement;
     expect(campo.value).toBe("Texto antigo");
 
@@ -214,7 +220,9 @@ describe("Conteúdo — o texto da aula", () => {
 
   it("aula de vídeo não tem texto", async () => {
     await abrir();
-    expect(screen.queryByRole("button", { name: "Texto da aula" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Abrir a aula Abertura" }));
+    expect(await screen.findByRole("button", { name: "Enviar vídeo" })).toBeTruthy();
+    expect(screen.queryByRole("textbox", { name: "Texto da aula" })).toBeNull();
     expect(screen.getAllByText("Vídeo").length).toBe(3);
   });
 });

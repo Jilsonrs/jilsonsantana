@@ -26,7 +26,7 @@ export function LessonTextPanel({ lesson, onChanged }: { lesson: AdminLesson; on
     <FormProvider {...form}>
       <form
         onSubmit={form.handleSubmit(({ content }) => salvar.mutate(content))}
-        className="space-y-3 rounded-lg border border-border p-4"
+        className="space-y-3"
         noValidate
       >
         <Field id={id} label="Texto da aula" contador={{ atual: texto.length, limite: LIMITE_DO_TEXTO_DA_AULA }}>
