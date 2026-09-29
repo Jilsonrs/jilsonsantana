@@ -1441,6 +1441,14 @@ landmark. Corrigido junto.
       detected". **Mutação:** o limite de 50 MB de volta na tela e no servidor, e o tamanho sem ir
       ao Bunny → reprovam. **Para a etapa 4:** decidir a entrega do .zip (pelo servidor, que sai
       pelo Railway e é cobrado, ou link assinado temporário do Bunny — `bunny.md` §4.5).
+- [x] **O envio de vídeo sobrevive à tela** *(pedido do operador, 29/09/2026: "mudar de passo, se
+      quiser, sem interromper o que estava acontecendo")*. O envio já continuava sozinho quando a
+      tela saía; o que se perdia era a porcentagem, que morava no componente. Agora o estado de
+      cada envio mora em `lib/envios-de-video.ts`, fora da tela: recolher a aula ou trocar de passo
+      e voltar mostra a porcentagem de onde está, uma falha no meio aparece ao reabrir, e a aula
+      não deixa começar um segundo envio enquanto o primeiro não termina. Fechar ou recarregar a
+      aba continua interrompendo (como na Udemy). **Mutação:** a porcentagem sem ser guardada e o
+      botão sem travar → reprovam.
 - [ ] **Etapa 4 — a trava de acesso e a aula tocando para o aluno:** adianta da Fase 4 o model
       `Subscription`, o `temAcessoAtivo()` e o `requireActiveMembership`, **sem Stripe**; rota
       `GET /api/lessons/:id/player`; assinatura de teste do `member@` **só fora de produção** (o
