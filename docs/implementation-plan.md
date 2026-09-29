@@ -157,7 +157,8 @@
 > módulo novos nascendo conforme o curso. **Decidido e registrado, ainda não construído:** o
 > **menu do aluno novo** (Início · Cursos · Trilhas · Meus estudos · JilsonAI — `design.md` §6),
 > que é o **próximo bloco**, junto com as telas sob `/aluno/*` e o painel do Início.
-> **Depois, no mesmo dia (pedido do operador): o Início do admin é o painel dele** (`/admin`, os
+> **PUBLICADO em 29/09, no fim da noite (`main` = `f44187e`, CI verde nos dois jobs, deploy ok),
+> a pedido do operador: o Início do admin é o painel dele** (`/admin`, os
 > 4 relatórios de "Dados" EM BREVE + os atalhos); o aluno continua no painel dele. "Dados" saiu
 > do menu. Ver Bloco S.
 > **PUBLICADO em 29/09, à noite (`main` = `35fb940`, CI verde nos dois jobs, deploy ok), em 3
