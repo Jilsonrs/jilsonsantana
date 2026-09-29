@@ -27,7 +27,7 @@
 | Storage Zone de produção | **criada**: `jilsonsantana-storage` (§4.1) |
 | Storage Zone de dev | **não criada** (§4.1) |
 | Pull Zone das imagens | **criada e testada**: `img.jilsonsantana.com` (§4.2) |
-| Storage Zone dos ARQUIVOS PARA BAIXAR | **a criar pelo operador** (`pendencias.md`, P33): zona própria, **sem Pull Zone**, confirmada por ele em 29/09 (§4.5). O código do envio está pronto no `dev`, **sem limite de tamanho** (29/09) |
+| Storage Zone dos ARQUIVOS PARA BAIXAR | **criada pelo operador em 29/09**: `jilsonsantana-arquivos`, **sem Pull Zone** (§4.5). As 3 variáveis estão no Railway, e o envio **sem limite de tamanho** está no ar (`main` = `cb57273`). Falta o primeiro envio de teste (P33) |
 | Stream: biblioteca de aulas | **criada e testada**: `jilsonsantana-stream` (§3.2). Desde 28/09 guarda também a apresentação; o envio do vídeo de uma aula pelo admin **funcionou no ar em 28/09** |
 | Stream: biblioteca de apresentação | **existiu e foi apagada pelo operador em 28/09**: a `jilsonsantana-stream-apresentacao` (763872) guardava o vídeo de apresentação; desde 28/09 é tudo na `jilsonsantana-stream` (§3.1) |
 | Stream: bibliotecas de dev | **não serão criadas por enquanto**: o operador testa o envio direto no ar (decisão de 27/09, §4.1) |
@@ -381,8 +381,13 @@ desligado** (é pago).
 - **Tier e réplica são IRREVERSÍVEIS** (§4.1): a escolha é do operador. Recomendação do agente:
   **Standard (HDD), São Paulo, sem réplica** — réplica só se acrescenta, e os arquivos saem pelo
   nosso servidor (na Railway), então a réplica não aproxima nada do aluno.
-- **Nome:** sugestão `jilsonsantana-arquivos`. **Sem zona de dev** (o teste é no ar, como nas
-  imagens).
+- **Criada pelo operador em 29/09/2026:** `jilsonsantana-arquivos` · **Standard (HDD)** ·
+  principal **São Paulo (BR)** · **sem réplica** · **S3 desligado** · **sem Pull Zone** · endpoint
+  `br.storage.bunnycdn.com`. O painel sugeriu ligar réplica ("sem réplica, pode haver perda de
+  dados"): **a cópia de segurança dos .zip é a do operador**, como a dos vídeos; réplica pode ser
+  acrescentada depois (não sai mais). **Sem zona de dev** (o teste é no ar, como nas imagens).
+  *(Na criação, o painel veio com Frankfurt como principal e São Paulo como réplica; corrigido
+  antes de criar.)*
 - **Sem limite de tamanho** *(operador, 29/09/2026: em geral um .zip por curso)*. O arquivo passa
   **em fluxo** pelo nosso servidor até o Bunny, sem ficar inteiro na memória, e o tamanho vai no
   cabeçalho do `PUT` (medido: sem ele, o fetch do Node manda "em pedaços"). **O único teto é do

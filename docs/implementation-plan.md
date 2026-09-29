@@ -133,11 +133,13 @@
 > 401** porque as variáveis misturavam duas bibliotecas (a de apresentação existia; `bunny.md`
 > §3.1). Corrigido pelo operador no mesmo dia: tudo na 762605, a biblioteca de apresentação
 > apagada, CDN token desligado e DRM Basic ligado. O envio da aula **funcionou e o vídeo tocou**.
-> Falta a apresentação enviada de novo (P19). **No `dev`, não publicado (28–29/09):** a aula no
-> editor como na Udemy (abre e recolhe, com a miniatura, sem player; a criada já nasce aberta; ao
-> voltar, só a pronta fica recolhida) e os arquivos para baixar sem limite de tamanho. Duas
-> migrations novas (`lesson_video_ready`, `lesson_file_size_bigint`), aplicadas no dev; produção
-> aplica no publish. Antes de publicar: `BUNNY_STREAM_LESSONS_CDN_HOST` no Railway (P19).
+> Falta a apresentação enviada de novo (P19). **PUBLICADO em 29/09 (`main` = `cb57273`, CI verde
+> nos dois jobs, deploy do Railway ok):** a aula no editor como na Udemy (abre e recolhe, com a
+> miniatura, sem player; a criada já nasce aberta; ao voltar, só a pronta fica recolhida) e os
+> arquivos para baixar sem limite de tamanho. As migrations `lesson_video_ready` e
+> `lesson_file_size_bigint` entraram em produção pelo pre-deploy. O operador criou a zona
+> `jilsonsantana-arquivos` e as variáveis (P33) e a `BUNNY_STREAM_LESSONS_CDN_HOST` (P19). Falta
+> conferir no ar: a miniatura da aula "Teste", o reenvio da apresentação e um .zip enviado.
 > **PUBLICADO em 28/09 (`main` = `5a60fa1`, CI verde): o Bloco E, etapa 2 INTEIRA (partes 2a a 2e)**,
 > mais a edição como na Udemy e a limpeza no Bunny ao excluir. *(A primeira publicação do dia,
 > `d342000`, pegou CI vermelho por um teste do arrastar que dependia de tempo — não do site; o
