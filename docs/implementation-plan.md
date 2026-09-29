@@ -1476,6 +1476,22 @@ landmark. Corrigido junto.
       **Decidir aqui** como o .zip chega ao aluno: pelo servidor (sai pelo Railway, cobrado) ou link
       assinado temporário do Bunny (`bunny.md` §4.5).
       `security-vulnerability-reviewer` e revisão do operador antes do "publica".
+      **Plano aprovado em 29/09/2026** (a página da aula no estilo do LinkedIn Learning, em 4
+      partes). Respostas do operador: **o admin vê tudo, com o rascunho marcado, por rotas de
+      admin** (a trava do aluno segue com um caminho só) · **o .zip sai pelo nosso servidor** · **o
+      botão flutuante da IA entra já, com "Em breve"**.
+      - [x] **4a — a trava** *(29/09, no `dev`)*: migration `20260929160000_subscription` (o espelho
+        local, com as costuras do corporativo, `status` em texto, sem idioma, RLS); Passo 0 no
+        branch `dev` (tabela nova vazia, o resto igual, 0 sem RLS, login 200, "No difference
+        detected"). `temAcessoAtivo()` em `lib/acesso.ts`, com a regra do gate como função pura
+        (`assinaturaDaAcesso`); não lê idioma nem papel. **Assinatura de teste do `member@`** no
+        seed, só em banco local ou no branch `dev` (hostname conferido, como a trava do teste); em
+        outro banco ela **não nasce e o seed diz por quê**, sem erro, porque o seed também roda em
+        produção para o admin. Criada no branch `dev` em 29/09. **O `requireActiveMembership`
+        ficou para quando uma rota exigir login e assinatura sem exceção**: a rota da aula aceita
+        visitante (prévia grátis) e consulta a trava direto. **Mutação:** `incomplete` liberando, a
+        trava lendo o papel de admin e o banco de produção aceito para a assinatura de teste →
+        reprovam.
 - **Done when:** no computador do operador, a capa enviada aparece no admin; o vídeo de
   apresentação toca no admin e na página; a aula aberta no editor mostra a miniatura, o nome e a
   duração do vídeo (sem player, decisão de 28/09); o `member@`

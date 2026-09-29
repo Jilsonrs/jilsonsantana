@@ -3,6 +3,7 @@ import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { PrismaClient } from "@prisma/client";
 import { Role } from "@jilson/core";
+import { ASSINATURA_DE_TESTE, podeTerAssinaturaDeTeste } from "./lib/assinatura-de-teste.js";
 
 // Seed: creates the admin (and an optional test member) for Phase 1.
 //
@@ -73,6 +74,30 @@ async function ensureUser({ email, password, name, role }: SeedUser): Promise<vo
   console.log(`+ created ${email} (role="${role}")`);
 }
 
+/**
+ * A assinatura de teste do `member@` — SÓ no banco local ou no branch `dev`
+ * (`lib/assinatura-de-teste.ts`). Em qualquer outro banco, NÃO nasce, e o seed
+ * diz por quê. Não é erro, porque o seed também roda em produção para o admin.
+ */
+async function garantirAssinaturaDeTeste(memberEmail: string): Promise<void> {
+  if (!podeTerAssinaturaDeTeste(process.env.DATABASE_URL)) {
+    console.log("= assinatura de teste NÃO criada: este banco não é o local nem o branch dev");
+    return;
+  }
+  const member = await prisma.user.findUniqueOrThrow({ where: { email: memberEmail } });
+  await prisma.subscription.upsert({
+    where: { stripeSubscriptionId: ASSINATURA_DE_TESTE },
+    create: {
+      ownerUserId: member.id,
+      status: "active",
+      currentPeriodEnd: new Date("2100-01-01T00:00:00Z"),
+      stripeSubscriptionId: ASSINATURA_DE_TESTE,
+    },
+    update: { ownerUserId: member.id, status: "active" },
+  });
+  console.log(`+ assinatura de teste ativa para ${memberEmail} (banco local ou dev)`);
+}
+
 async function main(): Promise<void> {
   await ensureUser({
     email: requireEnv("SEED_ADMIN_EMAIL"),
@@ -91,6 +116,7 @@ async function main(): Promise<void> {
       name: "Test Member",
       role: Role.MEMBER,
     });
+    await garantirAssinaturaDeTeste(memberEmail);
   }
 
   console.log("Seed complete.");

@@ -130,6 +130,9 @@ model User {
   // accounts — REAPPLY after each `@better-auth/cli generate` (same DEBT note as
   // `name String?` above; the CLI does not emit our relations).
   learningPlans LearningPlan[]
+  // Etapa 4 do Bloco U (29/09/2026): as assinaturas desta pessoa. Mesma DEBT
+  // das relações acima — REAPLICAR após cada `@better-auth/cli generate`.
+  subscriptions Subscription[]
 
   birthday            String?
   preferredLanguage   String?   @default("pt")
@@ -369,4 +372,31 @@ model LessonFile {
 
   @@index([lessonId])
   @@map("lesson_file")
+}
+
+// A ASSINATURA — o ESPELHO local da Subscription da Stripe, que é a canônica
+// (CLAUDE.md → Membership Gating). O gate (`temAcessoAtivo`) lê SÓ daqui. Nasce
+// na etapa 4 do Bloco U (29/09/2026), adiantada da Fase 4 e ainda sem Stripe: as
+// colunas da Stripe já nascem, porque o espelho é delas. Costuras do corporativo
+// desde o primeiro dia (`organizationId`, `seats`) e SEM coluna de idioma —
+// idioma é filtro, nunca portão (decisão do operador, 14/09/2026).
+model Subscription {
+  id                   Int       @id @default(autoincrement())
+  ownerUserId          String?
+  owner                User?     @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
+  // Sempre vazio antes do corporativo (pós-MVP).
+  organizationId       Int?
+  seats                Int       @default(1)
+  // TEXTO, não enum: a regra do gate não pode quebrar no dia em que a Stripe
+  // inventar um status novo (CLAUDE.md → Membership Gating).
+  status               String
+  currentPeriodEnd     DateTime?
+  stripeCustomerId     String?
+  // Obrigatório: é a chave do objeto canônico na Stripe.
+  stripeSubscriptionId String    @unique
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  @@index([ownerUserId])
+  @@map("subscription")
 }
