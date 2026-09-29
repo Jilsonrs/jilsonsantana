@@ -58,7 +58,7 @@ describe("StudentHomePage", () => {
 
       expect(screen.getByRole("link", { name: /Catálogo/ }).getAttribute("href")).toBe("/cursos");
       expect(screen.getByRole("link", { name: /Minhas trilhas/ }).getAttribute("href")).toBe(
-        "/minhas-trilhas",
+        "/aluno/minhas-trilhas",
       );
     });
   });

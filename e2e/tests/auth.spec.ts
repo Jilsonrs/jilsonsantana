@@ -14,10 +14,12 @@ async function login(page: Page, creds: { email: string; password: string }) {
   await page.getByLabel("E-mail").fill(creds.email);
   await page.getByLabel("Senha").fill(creds.password);
   await page.getByRole("button", { name: "Entrar" }).click();
-  await page.waitForURL("**/inicio");
+  await page.waitForURL("**/aluno/inicio");
 }
 
 test("unauthenticated visit to /conta redirects to /login", async ({ page }) => {
+  // Endereço ANTIGO de propósito: passa pelo redirecionamento para /aluno/conta
+  // (operador, 28/09/2026) e só então pelo pedido de login.
   await page.goto("/conta");
   await expect(page).toHaveURL(/\/login$/);
 });
@@ -27,7 +29,7 @@ test("unauthenticated visit to /admin redirects to /login", async ({ page }) => 
   await expect(page).toHaveURL(/\/login$/);
 });
 
-test("member reaches /conta but is blocked from /admin", async ({ page }) => {
+test("member reaches /aluno/conta but is blocked from /admin", async ({ page }) => {
   await login(page, MEMBER);
 
   // Alcança a conta pelo MENU DA FOTO, no canto superior direito — não pela URL.
@@ -35,12 +37,12 @@ test("member reaches /conta but is blocked from /admin", async ({ page }) => {
   // "Minha conta" saiu do menu lateral); se o menu sumir, este teste cai.
   await page.getByRole("button", { name: "Abrir o menu da conta" }).click();
   await page.getByRole("link", { name: "Minha conta" }).click();
-  await expect(page).toHaveURL(/\/conta$/);
+  await expect(page).toHaveURL(/\/aluno\/conta$/);
   // `heading` desambigua do link do cabeçalho, que tem o mesmo texto.
   await expect(page.getByRole("heading", { name: "Minha conta" })).toBeVisible();
 
   await page.goto("/admin");
-  await expect(page).toHaveURL(/\/conta$/);
+  await expect(page).toHaveURL(/\/aluno\/conta$/);
 });
 
 test("admin reaches /admin", async ({ page }) => {
@@ -48,7 +50,7 @@ test("admin reaches /admin", async ({ page }) => {
   await page.goto("/admin");
 
   // Duas asserções, e a primeira é a que carrega o teste: o admin NÃO é
-  // redirecionado (o member, no teste acima, é mandado para /conta). Sem ela,
+  // redirecionado (o member, no teste acima, é mandado para /aluno/conta). Sem ela,
   // uma tela de admin vazia passaria.
   await expect(page).toHaveURL(/\/admin$/);
   // Conteúdo que só existe atrás do AdminRoute. `getByRole` em vez de texto
@@ -72,13 +74,13 @@ test("admin reaches /admin", async ({ page }) => {
 // deslogado — e ele desiste antes de abrir chamado.
 test("session survives a page reload", async ({ page }) => {
   await login(page, MEMBER);
-  await expect(page).toHaveURL(/\/inicio$/);
+  await expect(page).toHaveURL(/\/aluno\/inicio$/);
 
   await page.reload();
 
   // Segue logado: continua no início (não foi jogado para /login) e o menu da
   // conta — que só aparece para quem tem sessão — continua lá.
-  await expect(page).toHaveURL(/\/inicio$/);
+  await expect(page).toHaveURL(/\/aluno\/inicio$/);
   await expect(page.getByRole("button", { name: "Abrir o menu da conta" })).toBeVisible();
 });
 

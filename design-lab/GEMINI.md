@@ -126,17 +126,16 @@ servidores (§5); o React responde em `localhost:5173`, a home pública em `loca
 
 **Do aluno — exigem login** *(porta 5173)*
 
-> **Os endereços vão mudar** *(decisão do operador, 28/09/2026)*: `/inicio`, `/conta` e
-> `/minhas-trilhas` passam para **`/aluno/inicio`**, **`/aluno/conta`** e
-> **`/aluno/minhas-trilhas`**, e os antigos redirecionam. Os **arquivos** continuam os mesmos.
-> E o **Início vira o painel do aluno**, rico, com o que ele tem a um clique — vai precisar de mock.
+> **Os endereços mudaram em 29/09** *(decisão do operador, 28/09/2026)*: as telas do aluno moram
+> em `/aluno/*`, e os endereços antigos (`/inicio`, `/conta`, `/minhas-trilhas`) redirecionam. Os
+> **arquivos** continuam os mesmos.
 
 | Endereço | Arquivo |
 |---|---|
-| `/inicio` | `client/src/pages/StudentHomePage.tsx` |
-| `/minhas-trilhas` | `client/src/pages/MyTrilhasPage.tsx` |
-| `/minhas-trilhas/:id` | `client/src/pages/MyTrilhaDetailPage.tsx` |
-| `/conta` | `client/src/pages/AccountPage.tsx` |
+| `/aluno/inicio` | `client/src/pages/StudentHomePage.tsx` |
+| `/aluno/minhas-trilhas` | `client/src/pages/MyTrilhasPage.tsx` |
+| `/aluno/minhas-trilhas/:id` | `client/src/pages/MyTrilhaDetailPage.tsx` |
+| `/aluno/conta` | `client/src/pages/AccountPage.tsx` |
 | `/aluno/aula/:id` | **A página da aula** (29/09, estilo LinkedIn Learning): `client/src/pages/aluno/LessonPage.tsx` + `client/src/components/aula/` — `CourseContentsNav.tsx` (o conteúdo do curso, que é o **nível 2** no computador e fica embaixo do player no celular e para o visitante), `LessonContent.tsx` (o player grande, o texto no centro ou "para assinantes"), `LessonResources.tsx` (os arquivos para baixar e o "Recursos" de cada aula) e `AiDock.tsx` (o **botão flutuante** da IA no canto inferior direito e o painel "Em breve", que encolhe o player). **Não exige login** (a prévia grátis toca para visitante). **Têm teste:** a aula atual com `aria-current`, o "para assinantes" sem player, o rascunho marcado só para o admin, e o botão da IA com `aria-expanded` e nome. O editor ganhou **Visualizar** em cada aula, que abre esta página numa aba nova. **Embaixo do player, em toda aula, "Sobre o curso"** (`components/aula/CourseDetails.tsx`, 29/09): nível, descrição, listas, camadas, destaques e perguntas; bloco vazio não aparece (tem teste). |
 | `/aluno/curso/:slug` | A entrada do aluno num curso (29/09): `client/src/pages/aluno/CourseEntryPage.tsx` só leva à primeira aula (sem tela própria, além de "carregando" e "sem aulas"). O cartão do curso no catálogo leva aqui quando a pessoa está logada. |
 
@@ -452,7 +451,7 @@ e sem ele você vê o estado de erro em vez da tela.
 
 **Para abrir as telas de aluno e de admin é preciso ENTRAR** — `localhost:5173/login`, com a conta
 de admin. **Peça as credenciais ao operador**; elas não ficam escritas em lugar nenhum do repo.
-Sem login, `/inicio`, `/conta`, `/admin/*` redirecionam para o login.
+Sem login, `/aluno/inicio`, `/aluno/conta`, `/admin/*` redirecionam para o login.
 
 ---
 

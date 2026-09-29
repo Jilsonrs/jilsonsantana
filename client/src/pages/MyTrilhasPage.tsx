@@ -43,7 +43,7 @@ export function MyTrilhasPage() {
           {trilhas.map((trilha) => (
             <TrilhaCard
               key={trilha.id}
-              to={`/minhas-trilhas/${trilha.id}`}
+              to={`/aluno/minhas-trilhas/${trilha.id}`}
               name={trilha.name}
               description={trilha.description}
               skillsCovered={trilha.skillsCovered}

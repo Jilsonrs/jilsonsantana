@@ -11,7 +11,7 @@ export type TrilhaCardProps = {
   description: string | null;
   skillsCovered?: string[];
   // Destino explícito, quando o card não se resolve por slug: o clone do aluno
-  // é alcançado por id (`/minhas-trilhas/:id`). Sem `to`, o link vem do slug.
+  // é alcançado por id (`/aluno/minhas-trilhas/:id`). Sem `to`, o link vem do slug.
   to?: string;
 };
 

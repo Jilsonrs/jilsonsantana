@@ -33,7 +33,7 @@ export function StudentHomePage() {
       legenda: t.inicio.portaCatalogoLegenda,
     },
     {
-      to: "/minhas-trilhas",
+      to: "/aluno/minhas-trilhas",
       icon: BookOpen,
       titulo: t.inicio.portaMinhasTrilhas,
       legenda: t.inicio.portaMinhasTrilhasLegenda,

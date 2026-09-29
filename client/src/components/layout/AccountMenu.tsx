@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { LogOut } from "lucide-react";
 import { useT } from "@/lib/language";
 import { iniciais } from "@/components/nav/SecondaryNav";
+import { ROTA_DA_CONTA } from "@/lib/navigation";
 
 type Usuario = { name?: string | null; email?: string | null; image?: string | null };
 
@@ -108,12 +109,12 @@ export function AccountMenu({ usuario, onSignOut }: { usuario?: Usuario; onSignO
           </div>
           <ul className="py-2">
             <li>
-              <Link to="/conta" onClick={fechar} className="block px-4 py-2 text-sm hover:bg-muted focus-visible:bg-muted focus-visible:outline-none">
+              <Link to={ROTA_DA_CONTA} onClick={fechar} className="block px-4 py-2 text-sm hover:bg-muted focus-visible:bg-muted focus-visible:outline-none">
                 {t.nav.minhaConta}
               </Link>
             </li>
             <li>
-              <Link to="/conta/faturamento" onClick={fechar} className="block px-4 py-2 text-sm hover:bg-muted focus-visible:bg-muted focus-visible:outline-none">
+              <Link to={`${ROTA_DA_CONTA}/faturamento`} onClick={fechar} className="block px-4 py-2 text-sm hover:bg-muted focus-visible:bg-muted focus-visible:outline-none">
                 {t.nav.faturamento}
               </Link>
             </li>

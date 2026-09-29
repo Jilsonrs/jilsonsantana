@@ -137,7 +137,7 @@ describe("Layout — em inglês", () => {
 });
 
 // "Minha conta" saiu do menu lateral e mora no menu da foto (decisão do
-// operador, 24/09/2026) — mas a coluna da conta continua em /conta.
+// operador, 24/09/2026) — mas a coluna da conta continua em /aluno/conta.
 describe("Layout — o menu da conta", () => {
   beforeEach(() => {
     useSession.mockReturnValue({ data: { user: { role: Role.MEMBER, name: "Ana Souza", email: "ana@exemplo.com" } } });
@@ -161,8 +161,8 @@ describe("Layout — o menu da conta", () => {
     expect(within(gaveta).queryByRole("link", { name: "Minha conta" })).toBeNull();
   });
 
-  it("em /conta, a coluna da conta continua aparecendo", () => {
-    renderWithProviders(<Layout />, { route: "/conta" });
+  it("em /aluno/conta, a coluna da conta continua aparecendo", () => {
+    renderWithProviders(<Layout />, { route: "/aluno/conta" });
 
     expect(screen.getByRole("link", { name: "Seus dados" })).toBeTruthy();
   });

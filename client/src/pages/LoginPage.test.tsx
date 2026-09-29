@@ -22,12 +22,12 @@ vi.mock("@/lib/api", () => ({
 import { LoginPage } from "./LoginPage";
 import { IdiomaProvider } from "@/lib/language";
 
-/** Monta a tela com um destino real para `/inicio`, para poder assertar navegação. */
+/** Monta a tela com um destino real para `/aluno/inicio`, para poder assertar navegação. */
 function renderLogin(route = "/login") {
   return renderWithProviders(<LoginPage />, {
     route,
     path: "/login",
-    extraRoutes: [{ path: "/inicio", element: <div>HOME DO ALUNO</div> }],
+    extraRoutes: [{ path: "/aluno/inicio", element: <div>HOME DO ALUNO</div> }],
   });
 }
 
@@ -309,7 +309,7 @@ function loginEmIngles(route = "/login?lang=en") {
     {
       route,
       path: "/login",
-      extraRoutes: [{ path: "/inicio", element: <div>HOME DO ALUNO</div> }],
+      extraRoutes: [{ path: "/aluno/inicio", element: <div>HOME DO ALUNO</div> }],
     },
   );
 }

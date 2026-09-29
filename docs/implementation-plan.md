@@ -157,6 +157,8 @@
 > módulo novos nascendo conforme o curso. **Decidido e registrado, ainda não construído:** o
 > **menu do aluno novo** (Início · Cursos · Trilhas · Meus estudos · JilsonAI — `design.md` §6),
 > que é o **próximo bloco**, junto com as telas sob `/aluno/*` e o painel do Início.
+> **Em construção no `dev` (29/09), em 3 etapas:** ✅ 1. as telas do aluno em `/aluno/*`, com os
+> endereços antigos redirecionando · 2. o menu novo + a tela Meus estudos · 3. o painel do Início.
 > **Registrado no fim da sessão de 29/09 (só documentos, no `dev`):** o mapa do que falta nos 7
 > passos do editor (Bloco E, depois da etapa 4), com um **achado novo** (campo já salvo não volta a
 > ficar vazio); o **Live Stream** do Bunny em acesso antecipado (`bunny.md` §6, decisão 8,
@@ -1101,7 +1103,7 @@ tornada executável — não uma lista nova):
       Certificados** (EM BREVE o que ainda não existe). "Minhas trilhas" e "Certificados" saem do
       menu principal. Sem "Salvos" (a trilha personalizada faz esse papel). Anda junto com o item
       abaixo (as telas sob `/aluno/*`) e com o painel do Início.
-- [ ] **As telas do aluno passam para `/aluno/*`** *(decisão do operador, 28/09/2026, era a P15)*:
+- [x] **As telas do aluno passam para `/aluno/*`** *(decisão do operador, 28/09/2026, era a P15)*:
       `/inicio` → `/aluno/inicio`, `/conta` → `/aluno/conta` (com as subpáginas),
       `/minhas-trilhas` → `/aluno/minhas-trilhas`. Os endereços antigos **redirecionam** para os
       novos. Mudar agora porque só o operador e a conta de teste usam: com aluno real, quebraria
@@ -1111,6 +1113,11 @@ tornada executável — não uma lista nova):
       **NOTA (Set 2026): a dependência encolheu.** "Trilhas em andamento" já tem dado real desde
       `GET /api/trilhas/mine` (Bloco 5) — só as barras de **progresso** ainda dependem da Fase 5.
       A home pode ganhar a seção de trilhas antes, e isso é fatia própria, não este bloco.
+      ✅ **29/09/2026 (etapa 1 do bloco do menu novo):** `/aluno/inicio`, `/aluno/conta` e
+      `/aluno/minhas-trilhas(/:id)`; os antigos redirecionam mantendo o resto do caminho e a busca
+      (`RotasAntigasDoAluno.tsx`, 7 testes, mutação derruba). O login cai em `/aluno/inicio`, o
+      aluno barrado no admin vai para `/aluno/conta`, e o botão "Meus estudos" do topo da home
+      (logado) leva a `/aluno/inicio`. O E2E passou a exigir os endereços novos.
 - [x] Navegação mobile — o menu lateral obriga a decidir isto, que o cabeçalho atual adiava.
       ✅ **Set 2026:** gaveta (`Sheet`) abaixo de 768px, aberta pelo mesmo botão do cabeçalho.
       **A gaveta e a barra desktop NUNCA renderizam juntas** (o componente ramifica em

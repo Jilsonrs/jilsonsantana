@@ -42,7 +42,7 @@ const minhaTrilha: TrilhaDetail = {
   ],
 };
 
-const rota = { route: "/minhas-trilhas/7", path: "/minhas-trilhas/:id" };
+const rota = { route: "/aluno/minhas-trilhas/7", path: "/aluno/minhas-trilhas/:id" };
 
 beforeEach(() => {
   getMyTrilha.mockReset();
@@ -79,7 +79,7 @@ describe("MyTrilhaDetailPage", () => {
     expect(screen.getByText("IA aplicada")).toBeTruthy();
 
     const volta = screen.getByRole("link", { name: "← Voltar para Minhas Trilhas" });
-    expect(volta.getAttribute("href")).toBe("/minhas-trilhas");
+    expect(volta.getAttribute("href")).toBe("/aluno/minhas-trilhas");
 
     screen.getByText("Comece por aqui").click();
     const curso = await screen.findByRole("link", { name: "Exemplo — Fundamentos de Excel + IA" });

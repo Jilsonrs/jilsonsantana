@@ -15,6 +15,12 @@ import { MockHome, MockGrid, MockMap, MockUser } from "@/components/nav/MockIcon
 import { Role, pt, type Dict } from "@jilson/core";
 import { PASSOS_DO_CURSO } from "@/lib/course-steps";
 
+/**
+ * "Minha conta". Constante porque a coluna secundária desenha a da conta de um
+ * jeito próprio (foto, nome, Sair) e precisa reconhecê-la pelo endereço.
+ */
+export const ROTA_DA_CONTA = "/aluno/conta";
+
 /** Os textos do app (a parte `app` do dicionário) — de onde vêm os rótulos do aluno. */
 type AppTexts = Dict["app"];
 
@@ -90,7 +96,7 @@ export type Secao = {
 export function navegacao(t: AppTexts): Secao[] {
   return [
     // ---------------------------------------------------------------- ALUNO
-    { label: t.nav.inicio, to: "/inicio", icon: MockHome, estado: "ativo" },
+    { label: t.nav.inicio, to: "/aluno/inicio", icon: MockHome, estado: "ativo" },
     // "Catálogo" com abas virou DUAS seções de primeiro nível (operador, set/2026):
     // "é mais fácil", e abre espaço para curso ao vivo e live session entrarem como
     // seções próprias em vez de mais uma aba escondida.
@@ -108,22 +114,22 @@ export function navegacao(t: AppTexts): Secao[] {
       estado: "ativo",
       tambemAtivoEm: ["/trilha/"],
     },
-    { label: t.nav.minhasTrilhas, to: "/minhas-trilhas", icon: MockMap, estado: "ativo" },
+    { label: t.nav.minhasTrilhas, to: "/aluno/minhas-trilhas", icon: MockMap, estado: "ativo" },
     { label: t.nav.jilsonai, to: "/jilsonai", icon: Bot, estado: "planejado" }, // Fase 6
     { label: t.nav.certificados, to: "/certificados", icon: Award, estado: "planejado" }, // Fase 6.5
     {
       label: t.nav.minhaConta,
-      to: "/conta",
+      to: ROTA_DA_CONTA,
       icon: MockUser,
       estado: "ativo",
       foraDoMenuLateral: true,
       filhos: [
-        { label: t.nav.seusDados, to: "/conta" },
-        { label: t.nav.preferencias, to: "/conta/preferencias" },
-        { label: t.nav.senhaEAcesso, to: "/conta/seguranca" },
-        { label: t.nav.sessoesAtivas, to: "/conta/sessoes" },
-        { label: t.nav.faturamento, to: "/conta/faturamento" },
-        { label: t.nav.integracoes, to: "/conta/integracoes" },
+        { label: t.nav.seusDados, to: ROTA_DA_CONTA },
+        { label: t.nav.preferencias, to: `${ROTA_DA_CONTA}/preferencias` },
+        { label: t.nav.senhaEAcesso, to: `${ROTA_DA_CONTA}/seguranca` },
+        { label: t.nav.sessoesAtivas, to: `${ROTA_DA_CONTA}/sessoes` },
+        { label: t.nav.faturamento, to: `${ROTA_DA_CONTA}/faturamento` },
+        { label: t.nav.integracoes, to: `${ROTA_DA_CONTA}/integracoes` },
       ],
     },
 

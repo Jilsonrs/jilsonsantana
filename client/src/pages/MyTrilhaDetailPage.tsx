@@ -39,7 +39,7 @@ export function MyTrilhaDetailPage() {
     <PageContainer>
       <div className="space-y-10">
         <header className="space-y-4 border-b border-border/40 pb-8">
-          <Link to="/minhas-trilhas" className="inline-block text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+          <Link to="/aluno/minhas-trilhas" className="inline-block text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
             {t.minhasTrilhas.voltar}
           </Link>
           <h1 className="text-3xl font-semibold tracking-tight">{trilha.name}</h1>

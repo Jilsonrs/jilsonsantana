@@ -28,7 +28,7 @@ describe("secoesVisiveis — quem vê o quê", () => {
     const vistas = secoesVisiveis(Role.ADMIN);
 
     expect(vistas.some((s) => s.to === "/admin/cursos")).toBe(true);
-    expect(vistas.some((s) => s.to === "/inicio")).toBe(true);
+    expect(vistas.some((s) => s.to === "/aluno/inicio")).toBe(true);
   });
 
   // Planejada = tela que ainda não existe. O operador quer ver o mapa inteiro
@@ -81,11 +81,11 @@ describe("secaoAtiva — onde estou", () => {
   const doAluno = secoesVisiveis(Role.MEMBER);
 
   it("acende a seção da rota exata", () => {
-    expect(secaoAtiva("/inicio", doAluno)?.label).toBe("Início");
+    expect(secaoAtiva("/aluno/inicio", doAluno)?.label).toBe("Início");
   });
 
   it("acende a seção numa rota filha", () => {
-    expect(secaoAtiva("/minhas-trilhas/7", doAluno)?.label).toBe("Minhas trilhas");
+    expect(secaoAtiva("/aluno/minhas-trilhas/7", doAluno)?.label).toBe("Minhas trilhas");
   });
 
   // A página de um curso é `/curso/:slug`, não `/cursos` — sem isto o aluno
@@ -151,8 +151,8 @@ describe("casaRota — parâmetro só casa com número", () => {
   });
 
   it("não casa com rota que só começa igual", () => {
-    expect(casaRota("/iniciox", "/inicio")).toBeNull();
-    expect(casaRota("/inicio/7", "/inicio")).toEqual({});
+    expect(casaRota("/aluno/iniciox", "/aluno/inicio")).toBeNull();
+    expect(casaRota("/aluno/inicio/7", "/aluno/inicio")).toEqual({});
   });
 });
 
@@ -160,7 +160,7 @@ describe("itensSecundarios — o nível 2 só aparece quando vale a pena", () =>
   const doAluno = secoesVisiveis(Role.MEMBER);
 
   it("não aparece onde a seção não tem filhos", () => {
-    expect(itensSecundarios("/inicio", doAluno)).toEqual([]);
+    expect(itensSecundarios("/aluno/inicio", doAluno)).toEqual([]);
   });
 
   // Uma coluna de navegação com uma linha só é ruído visual, não navegação.
@@ -241,7 +241,7 @@ describe("abasDaRota — o nível 3", () => {
   });
 
   it("vazio onde a seção não tem abas", () => {
-    expect(abasDaRota("/inicio", doAluno)).toEqual([]);
+    expect(abasDaRota("/aluno/inicio", doAluno)).toEqual([]);
   });
 
   // O catálogo do aluno TINHA abas (Cursos | Trilhas) e virou duas seções de

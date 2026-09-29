@@ -5,7 +5,7 @@ import { renderWithProviders } from "@/test-utils";
 import { Role } from "@jilson/core";
 import { AppRail } from "./AppRail";
 
-function render(papel?: string, route = "/inicio") {
+function render(papel?: string, route = "/aluno/inicio") {
   return renderWithProviders(<AppRail papel={papel} />, {
     route,
     path: "*",
@@ -62,7 +62,7 @@ describe("AppRail — quem vê o quê", () => {
 
 describe("AppRail — onde estou", () => {
   it("marca só a rota atual", () => {
-    render(Role.MEMBER, "/inicio");
+    render(Role.MEMBER, "/aluno/inicio");
 
     expect(screen.getByRole("link", { name: "Início" }).getAttribute("aria-current")).toBe("page");
     expect(screen.getByRole("link", { name: "Cursos" }).getAttribute("aria-current")).toBeNull();
@@ -96,7 +96,7 @@ describe("AppRail — o logo é a saída para a vitrine", () => {
     expect(logo.getAttribute("href")).toBe("/");
     // `<a>` e não `<Link>`: o Link do React Router intercepta a navegação e
     // nunca sairia do app — e a home pública é HTML de servidor.
-    expect(logo.getAttribute("href")).not.toMatch(/^\/inicio/);
+    expect(logo.getAttribute("href")).not.toMatch(/^\/aluno\/inicio/);
   });
 });
 

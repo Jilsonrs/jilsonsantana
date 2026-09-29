@@ -7,7 +7,7 @@ import { MobileNav } from "./MobileNav";
 
 function abrirGaveta() {
   renderWithProviders(<MobileNav papel={Role.MEMBER} onSignOut={vi.fn()} />, {
-    route: "/inicio",
+    route: "/aluno/inicio",
     path: "*",
   });
   fireEvent.click(screen.getByRole("button", { name: "Abrir o menu" }));

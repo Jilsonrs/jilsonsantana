@@ -2,7 +2,7 @@ import { Navigate, Outlet } from "react-router-dom";
 import { Role } from "@jilson/core";
 import { useSession } from "@/lib/auth-client";
 
-// Admin-only gate: no session -> /login; authenticated non-admin -> /conta.
+// Admin-only gate: no session -> /login; authenticated non-admin -> /aluno/conta.
 // Role is compared against the shared Role const, never a string literal.
 export function AdminRoute() {
   const { data: session, isPending } = useSession();
@@ -20,7 +20,7 @@ export function AdminRoute() {
   }
 
   if (session.user.role !== Role.ADMIN) {
-    return <Navigate to="/conta" replace />;
+    return <Navigate to="/aluno/conta" replace />;
   }
 
   return <Outlet />;

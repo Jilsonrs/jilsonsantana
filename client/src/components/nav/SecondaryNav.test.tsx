@@ -19,19 +19,19 @@ function render(route: string, usuario: Partial<typeof ALUNO> & { image?: string
 
 describe("SecondaryNav — só aparece quando tem o que mostrar", () => {
   it("não renderiza onde a seção não tem subitens", () => {
-    render("/inicio");
+    render("/aluno/inicio");
     expect(screen.queryByRole("complementary")).toBeNull();
   });
 
   it("renderiza onde a seção tem subitens", () => {
-    render("/conta");
+    render("/aluno/conta");
     expect(screen.getByRole("complementary", { name: "Menu da seção" })).toBeTruthy();
   });
 });
 
 describe("SecondaryNav — os itens levam a algum lugar", () => {
   it("cada item aponta para a rota do mapa", () => {
-    render("/conta");
+    render("/aluno/conta");
 
     const links = screen.getAllByRole("link");
     expect(links.length).toBeGreaterThan(1);
@@ -41,7 +41,7 @@ describe("SecondaryNav — os itens levam a algum lugar", () => {
   });
 
   it("oferece a saída da conta", () => {
-    render("/conta");
+    render("/aluno/conta");
     expect(screen.getByRole("button", { name: "Sair" })).toBeTruthy();
   });
 });
@@ -54,14 +54,14 @@ describe("SecondaryNav — os itens levam a algum lugar", () => {
  */
 describe("SecondaryNav — o avatar não sai do produto", () => {
   it("usa a foto do próprio aluno quando existe", () => {
-    render("/conta", { ...ALUNO, image: "/uploads/jilson.jpg" });
+    render("/aluno/conta", { ...ALUNO, image: "/uploads/jilson.jpg" });
 
     const img = document.querySelector("img");
     expect(img?.getAttribute("src")).toBe("/uploads/jilson.jpg");
   });
 
   it("sem foto, desenha as iniciais — sem buscar imagem nenhuma", () => {
-    render("/conta");
+    render("/aluno/conta");
 
     expect(document.querySelector("img")).toBeNull();
     expect(screen.getByText("JS")).toBeTruthy();
@@ -69,7 +69,7 @@ describe("SecondaryNav — o avatar não sai do produto", () => {
 
   // A trava explícita: qualquer `src` apontando para fora reprova aqui.
   it("NENHUMA imagem vem de domínio externo", () => {
-    render("/conta", { ...ALUNO, image: "/uploads/jilson.jpg" });
+    render("/aluno/conta", { ...ALUNO, image: "/uploads/jilson.jpg" });
 
     for (const img of document.querySelectorAll("img")) {
       expect(img.getAttribute("src") ?? "").not.toMatch(/^https?:\/\//);
