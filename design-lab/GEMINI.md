@@ -132,7 +132,7 @@ servidores (§5); o React responde em `localhost:5173`, a home pública em `loca
 
 | Endereço | Arquivo |
 |---|---|
-| `/aluno/inicio` | `client/src/pages/StudentHomePage.tsx` |
+| `/aluno/inicio` | **O painel do aluno** (29/09): `client/src/pages/StudentHomePage.tsx` + os blocos em `client/src/components/inicio/` (ver a fila, item 14) |
 | `/aluno/minhas-trilhas` | `client/src/pages/MyTrilhasPage.tsx` |
 | `/aluno/minhas-trilhas/:id` | `client/src/pages/MyTrilhaDetailPage.tsx` |
 | `/aluno/conta` | `client/src/pages/AccountPage.tsx` |
@@ -309,12 +309,18 @@ exceto o item 4, que é página pública.
 13. **O Conteúdo do editor** (a linha da aula que abre e recolhe, a miniatura do vídeo, os Arquivos
    com a porcentagem do envio — descritos acima, no bloco sobre `ModuleLessonTree`). O
    comportamento é do operador e tem teste; o acabamento é seu.
-14. **AINDA NÃO EXISTE — o menu novo do aluno** (`docs/design.md` § 6, *O menu do aluno*, decisão
-   do operador de 29/09): Início · Cursos · Trilhas · **Meus estudos** (Em andamento, Minhas
-   trilhas, Concluídos, Certificados) · JilsonAI. **É o próximo bloco do Claude**, e ele monta a
-   estrutura (mapa de navegação, rotas, telas em `/aluno/*`). Se o operador pedir antes um mock de
-   **Início** ou de **Meus estudos**, o conteúdo de cada uma está naquela seção. **Sem "Salvos"**
-   e sem as muitas fileiras do Home do LinkedIn (decisão dele).
+14. **O menu novo do aluno — ESTRUTURA PRONTA em 29/09, o acabamento é seu** (`docs/design.md`
+   § 6, *O menu do aluno*): Início · Cursos · Trilhas · **Meus estudos** · JilsonAI (EM BREVE).
+   Três lugares a formatar:
+   - **o Início** (`pages/StudentHomePage.tsx`), que virou painel de 4 blocos, cada um em
+     `components/inicio/`: `ContinueEstudando.tsx` (EM BREVE), `MinhasTrilhasNoInicio.tsx` (até 3
+     trilhas salvas + "Ver todas") e `Atalhos.tsx` (o card das antigas "portas", sem a legenda);
+   - **Meus estudos** (`pages/aluno/MeusEstudosPage.tsx`), um cartão por item;
+   - **a etiqueta EM BREVE das telas do aluno**, `components/content/EmBreve.tsx` — formatar ali
+     muda todos os lugares.
+   **Têm teste, não mexa sem falar com o operador:** o que é EM BREVE nunca é link, os títulos
+   (`h2`) de cada bloco e cartão, e o máximo de 3 trilhas no Início. **Sem "Salvos"** e sem as
+   muitas fileiras do Home do LinkedIn (decisão dele).
 
 > **Fora do seu trabalho, para não confundir:** o Bunny ganhou **Live Stream** em acesso
 > antecipado (29/09). É só avaliação depois da Fase 3, **não** é tela a desenhar (`docs/bunny.md`

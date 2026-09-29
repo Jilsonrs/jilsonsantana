@@ -280,13 +280,11 @@ export const pt = {
       ola: "Olá",
       intro: "Aqui é o seu ponto de partida. O que você começar a estudar aparece nesta tela, para você continuar de onde parou.",
       continueTitulo: "Continue estudando",
-      continueVazio: "Suas aulas em andamento aparecem aqui assim que você começar um curso. Escolha um no catálogo e o progresso passa a te esperar nesta tela.",
-      verCatalogo: "Ver catálogo",
-      porOndeComecar: "Por onde começar",
-      portaCatalogo: "Catálogo",
-      portaCatalogoLegenda: "CURSOS E TRILHAS",
-      portaMinhasTrilhas: "Minhas trilhas",
-      portaMinhasTrilhasLegenda: "O QUE VOCÊ SALVOU"
+      // O painel do Início (operador, 29/09/2026). Os três textos abaixo são
+      // rascunho do agente, para a revisão do operador.
+      continueEmBreve: "Em breve, a aula em que você parou aparece aqui, para continuar com um clique.",
+      verTodas: "Ver todas",
+      atalhos: "Atalhos"
     },
     conta: {
       titulo: "Minha conta",

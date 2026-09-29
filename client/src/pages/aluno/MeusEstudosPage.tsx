@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getMyTrilhas } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { EmBreve } from "@/components/content/EmBreve";
 import { PageContainer, PageHeader } from "@/components/layout/PageLayout";
 import { contagem } from "@/lib/contagem";
 import { useT } from "@/lib/language";
@@ -49,7 +50,6 @@ function Cartao({
   emBreve?: true;
   children?: ReactNode;
 }) {
-  const t = useT();
   return (
     <Card className={emBreve ? "text-muted-foreground" : undefined}>
       <CardHeader>
@@ -57,11 +57,7 @@ function Cartao({
             pelos títulos, e assim alcança os quatro cartões. */}
         <h2 className="flex items-center gap-2 text-lg font-semibold">
           {titulo}
-          {emBreve && (
-            <span className="rounded-full border border-border px-1.5 py-0.5 font-mono text-[0.55rem] tracking-[0.08em]">
-              {t.nav.emBreve}
-            </span>
-          )}
+          {emBreve && <EmBreve />}
         </h2>
         <p className="text-sm text-muted-foreground">{descricao}</p>
       </CardHeader>

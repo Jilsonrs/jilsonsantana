@@ -157,8 +157,11 @@
 > módulo novos nascendo conforme o curso. **Decidido e registrado, ainda não construído:** o
 > **menu do aluno novo** (Início · Cursos · Trilhas · Meus estudos · JilsonAI — `design.md` §6),
 > que é o **próximo bloco**, junto com as telas sob `/aluno/*` e o painel do Início.
-> **Em construção no `dev` (29/09), em 3 etapas:** ✅ 1. as telas do aluno em `/aluno/*`, com os
-> endereços antigos redirecionando · ✅ 2. o menu novo + a tela Meus estudos · 3. o painel do Início.
+> **FEITO no `dev` em 29/09 (3 etapas, CI verde em cada uma), esperando o "publica":** ✅ 1. as
+> telas do aluno em `/aluno/*`, com os endereços antigos redirecionando · ✅ 2. o menu novo
+> (Início · Cursos · Trilhas · Meus estudos · JilsonAI EM BREVE) + a tela Meus estudos · ✅ 3. o
+> painel do Início (4 blocos). Textos novos em PT e EN são **rascunho do agente, para a revisão
+> do operador**; o acabamento visual é do Antigravity (`GEMINI.md`, fila item 14).
 > **Registrado no fim da sessão de 29/09 (só documentos, no `dev`):** o mapa do que falta nos 7
 > passos do editor (Bloco E, depois da etapa 4), com um **achado novo** (campo já salvo não volta a
 > ficar vazio); o **Live Stream** do Bunny em acesso antecipado (`bunny.md` §6, decisão 8,
@@ -194,8 +197,8 @@
 > Fora da escolha e em paralelo: o **Bloco I** restante, o **C5** (bloqueado até o conteúdo das
 > telas), o corpo da Fase 3 (HIGH RISK) e a continuidade do operador (2FA, backup frio).
 >
-> **Cobertura de teste medida em 27/09/2026:** cliente **27 arquivos / 263 testes** · servidor
-> **18 arquivos / 162 testes** · E2E em job próprio. As três rodam no CI.
+> **Cobertura de teste medida em 29/09/2026:** cliente **41 arquivos / 452 testes** · servidor
+> **27 arquivos / 310 testes** · E2E em job próprio. As três rodam no CI.
 > **Pendências do operador: a lista única está em [`docs/pendencias.md`](pendencias.md)** *(desde
 > 25/09/2026, a pedido do operador)*. As que moravam aqui foram para lá (P12–P16). Item resolvido
 > sai daquela lista no mesmo commit em que a resposta é registrada no destino.
@@ -1093,10 +1096,17 @@ tornada executável — não uma lista nova):
       permanece na árvore de acessibilidade. Isso é fácil de "otimizar" para `display:none` sem
       ninguém notar, porque a tela fica idêntica; o teste da barra recolhida existe para reprovar
       quem tentar.
-- [ ] **Painel do aluno** como destino pós-login: progresso, próxima aula, trilhas em andamento.
+- [x] **Painel do aluno** como destino pós-login: progresso, próxima aula, trilhas em andamento.
       **Direção do operador (28/09/2026):** a tela de **Início é o painel do aluno, rica**, com o
       que ele tem disponível **a um clique**; o menu continua na barra lateral, e o painel nasce
       preparado para **ganhar itens no futuro**.
+      ✅ **29/09/2026 (etapa 3), com os 4 blocos que o operador escolheu ao aprovar o plano:**
+      saudação · **Continue estudando — EM BREVE** · **Minhas trilhas** (até 3 salvas + "Ver
+      todas"; carregando, erro e vazio) · **Atalhos** (Cursos e Trilhas; JilsonAI e Certificados
+      EM BREVE). Cada bloco é um componente em `components/inicio/`: bloco novo entra como mais
+      uma linha no `StudentHomePage`. **Progresso e próxima aula continuam na Fase 5** — ver o
+      checkbox "tirar o EM BREVE" lá. Mutação: sem o ramo de erro de Minhas trilhas, a suíte
+      reprova. O E2E passou a esperar Minhas trilhas carregar depois do login (achado (b) acima).
 - [x] **O menu do aluno novo** *(decisão do operador, 29/09/2026 — `design.md` §6, "O menu do
       aluno")*: **Início · Cursos · Trilhas · Meus estudos · JilsonAI**. "Trilhas" são as trilhas
       prontas; **Meus estudos** tem no nível 2 **Em andamento · Minhas trilhas · Concluídos ·
@@ -2832,6 +2842,9 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       do `LessonProgress`). Leitura do admin, **nunca** no site.
 - [ ] **A avaliação no cartão do admin** — só depois de decidir a P27: a nota planejada é uma por
       aluno e geral, não por curso.
+- [ ] **Tirar o EM BREVE do que espera o progresso** *(menu novo do aluno, 29/09/2026)*: o bloco
+      **Continue estudando** do Início e **Em andamento** e **Concluídos** em Meus estudos (nível 2
+      e cartões da tela). O que cada um mostra é decisão do operador na hora de construir.
 - **Done when:** "marquei como vista" works, trilha % completion shows, AND events are captured for future analytics.
 
 ## Phase 6 — JilsonAI (lean v1 + suporte)  *(medium risk)*  → ver **JILSONAI.md** (roadmap interno)

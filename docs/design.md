@@ -387,6 +387,10 @@ O menu separa o que o aluno **descobre** do que é **dele**:
 - **O JilsonAI aparece para o aluno como EM BREVE**, sem link *(operador, 29/09/2026)* — até
   então o aluno não via nada planejado. Vale para toda seção DELE que ainda não existe; as
   planejadas do admin continuam invisíveis para o aluno.
+- **O Início é um painel com 4 blocos** *(operador, 29/09/2026)*: saudação · **Continue
+  estudando** (EM BREVE até a Fase 5) · **Minhas trilhas** (até 3 salvas e "Ver todas") ·
+  **Atalhos** (Cursos, Trilhas, JilsonAI e Certificados — os dois últimos EM BREVE). Bloco novo
+  entra como mais um bloco, sem virar as fileiras do LinkedIn.
 - **"Meus estudos" tem tela própria** *(operador, 29/09/2026)*, `/aluno/meus-estudos`: um cartão
   por item do nível 2, com o resumo de cada um. "Minhas trilhas" mantém o endereço dela
   (`/aluno/minhas-trilhas`) e acende Meus estudos no menu.

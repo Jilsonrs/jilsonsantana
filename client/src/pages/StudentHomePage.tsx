@@ -1,44 +1,26 @@
-import { Link } from "react-router-dom";
-import { BookOpen, Compass, Sparkles } from "lucide-react";
 import { useSession } from "@/lib/auth-client";
-import { Button } from "@/components/ui/button";
 import { PageContainer } from "@/components/layout/PageLayout";
+import { ContinueEstudando } from "@/components/inicio/ContinueEstudando";
+import { MinhasTrilhasNoInicio } from "@/components/inicio/MinhasTrilhasNoInicio";
+import { Atalhos } from "@/components/inicio/Atalhos";
 import { useT } from "@/lib/language";
 
 /**
- * Home do aluno — o destino de quem acaba de entrar.
+ * O INÍCIO — o painel do aluno, destino de quem acaba de entrar (decisão do
+ * operador, 28–29/09/2026: rico, com o que ele tem a um clique, e preparado
+ * para ganhar itens).
  *
- * **Continua magra de propósito, e a beleza não pode disfarçar isso.** O
- * conteúdo real depende da Fase 5 (captura de progresso): sem `LessonProgress`
- * não existe "o que você estava vendo" nem "o que falta concluir". Encher a
- * tela com número inventado a deixaria bonita e MENTIROSA — e esconderia a
- * dependência de quem for planejar a próxima fase.
+ * É uma COMPOSIÇÃO de blocos, cada um em `components/inicio/` com os estados
+ * dele: bloco novo entra aqui como mais uma linha, sem esta tela crescer.
+ * Hoje: a saudação, Continue estudando (EM BREVE — depende do progresso, Fase
+ * 5), Minhas trilhas (o único com dado real) e os Atalhos.
  *
- * O que a passada de design trouxe foi a linguagem visual (§4, §7): título com
- * ênfase serifada, lista com travessão, cartões com ícone em círculo, luz de
- * IA no fundo. Nenhum dado novo.
- *
- * Não busca dados — por isso não tem estado de carregando nem de erro. Quando
- * passar a buscar, os três entram junto com os testes deles.
+ * **Sem número inventado:** o que ainda não existe diz EM BREVE, em vez de
+ * encher a tela com dado que esconderia a dependência da Fase 5.
  */
-
 export function StudentHomePage() {
   const t = useT();
   const { data: session } = useSession();
-  const portas = [
-    {
-      to: "/cursos",
-      icon: Compass,
-      titulo: t.inicio.portaCatalogo,
-      legenda: t.inicio.portaCatalogoLegenda,
-    },
-    {
-      to: "/aluno/minhas-trilhas",
-      icon: BookOpen,
-      titulo: t.inicio.portaMinhasTrilhas,
-      legenda: t.inicio.portaMinhasTrilhasLegenda,
-    },
-  ];
   const primeiroNome = session?.user.name?.split(" ")[0];
 
   return (
@@ -55,7 +37,7 @@ export function StudentHomePage() {
           de todas as telas do app e do admin). */}
       <PageContainer className="relative pt-10 pb-12 sm:pt-14 md:pt-16">
         {/* A ênfase serifada (§4) cai no NOME — é a palavra que importa aqui, e
-            a regra é uma por título. A copy não mudou: só ganhou o destaque. */}
+            a regra é uma por título. */}
         <h1 className="text-[2.5rem] font-semibold leading-tight">
           {primeiroNome ? (
             <>
@@ -70,57 +52,9 @@ export function StudentHomePage() {
           {t.inicio.intro}
         </p>
 
-        <section aria-labelledby="continue" className="mt-12">
-          <h2 id="continue" className="text-xl font-semibold">
-            {t.inicio.continueTitulo}
-          </h2>
-
-          {/* Estado vazio HONESTO: diz o que vai aparecer e o que fazer agora,
-              e tem SAÍDA. "Nenhum curso" sozinho parece defeito; isto parece
-              começo. */}
-          <div className="mt-6 rounded-2xl border border-border/60 bg-card p-10 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
-            <div className="flex size-12 items-center justify-center rounded-full bg-surface-alt">
-              <Sparkles className="size-5 text-primary" strokeWidth={1.5} />
-            </div>
-            <p className="mt-6 max-w-[52ch] leading-relaxed text-muted-foreground">
-              {t.inicio.continueVazio}
-            </p>
-            <Button asChild className="mt-8 rounded-full">
-              <Link to="/cursos">{t.inicio.verCatalogo}</Link>
-            </Button>
-          </div>
-        </section>
-
-        <section aria-labelledby="portas" className="mt-14">
-          <h2 id="portas" className="text-xl font-semibold">
-            {t.inicio.porOndeComecar}
-          </h2>
-
-          <div className="mt-6 grid gap-6 sm:grid-cols-2">
-            {portas.map(({ to, icon: Icon, titulo, legenda }) => (
-              <Link
-                key={to}
-                to={to}
-                className={
-                  "group flex flex-col items-center rounded-2xl border border-border/60 bg-card p-8 text-center " +
-                  "shadow-[0_4px_20px_rgba(0,0,0,0.02)] transition-[transform,box-shadow,border-color] " +
-                  "hover:-translate-y-1 hover:border-primary/30 hover:shadow-[0_20px_40px_hsl(var(--primary)/0.08),0_1px_3px_hsl(var(--primary)/0.05)] " +
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring " +
-                  "motion-reduce:transition-none motion-reduce:hover:translate-y-0"
-                }
-              >
-                <span className="flex size-12 items-center justify-center rounded-full bg-surface-alt">
-                  <Icon className="size-5 text-primary" strokeWidth={1.5} />
-                </span>
-                <span className="mt-6 font-display text-lg font-semibold">{titulo}</span>
-                {/* Piso de 0,75rem (§9): etiqueta pequena continua legível. */}
-                <span className="mt-2 font-mono text-[0.75rem] tracking-[0.05em] uppercase text-muted-foreground">
-                  {legenda}
-                </span>
-              </Link>
-            ))}
-          </div>
-        </section>
+        <ContinueEstudando />
+        <MinhasTrilhasNoInicio />
+        <Atalhos />
       </PageContainer>
     </div>
   );

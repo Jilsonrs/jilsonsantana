@@ -268,13 +268,9 @@ export const en: Dict = {
       ola: "Hi",
       intro: "This is your starting point. The courses you begin show up here, so you can pick up where you left off.",
       continueTitulo: "Keep learning",
-      continueVazio: "Lessons in progress show up here once you start a course. Pick one from the catalog, and your progress will be waiting for you.",
-      verCatalogo: "Browse the catalog",
-      porOndeComecar: "Where to start",
-      portaCatalogo: "Catalog",
-      portaCatalogoLegenda: "COURSES AND LEARNING PATHS",
-      portaMinhasTrilhas: "My learning paths",
-      portaMinhasTrilhasLegenda: "WHAT YOU SAVED"
+      continueEmBreve: "Soon, the lesson where you left off will show up here, one click away.",
+      verTodas: "See all",
+      atalhos: "Shortcuts"
     },
     conta: {
       titulo: "My account",

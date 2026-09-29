@@ -15,6 +15,12 @@ async function login(page: Page, creds: { email: string; password: string }) {
   await page.getByLabel("Senha").fill(creds.password);
   await page.getByRole("button", { name: "Entrar" }).click();
   await page.waitForURL("**/aluno/inicio");
+  // O Início passou a buscar as trilhas salvas (29/09/2026). Espera o DADO, não
+  // o navegador: clicar durante uma busca em andamento foi a causa provável da
+  // instabilidade do teste de sair (plano → Bloco S, achado (b)).
+  const minhasTrilhas = page.getByRole("region", { name: "Minhas trilhas" });
+  await expect(minhasTrilhas).toBeVisible();
+  await expect(minhasTrilhas.getByText("Carregando…")).toHaveCount(0);
 }
 
 test("unauthenticated visit to /conta redirects to /login", async ({ page }) => {
