@@ -152,6 +152,11 @@
 > produção no mesmo dia** (a pedido do operador, pelo MCP do Neon, só leitura no `pg_class` do
 > branch `production`): a `subscription` com RLS, e nenhuma tabela sem ele — a P34 fechou. Falta a
 > prova no ar da página da aula.
+> **PUBLICADO em 29/09, no fim do dia (`main` = `cbf0129`, CI verde, deploy ok):** o aluno entra no
+> curso pela **primeira aula**, com **"Sobre o curso"** embaixo do player em toda aula, e aula e
+> módulo novos nascendo conforme o curso. **Decidido e registrado, ainda não construído:** o
+> **menu do aluno novo** (Início · Cursos · Trilhas · Meus estudos · JilsonAI — `design.md` §6),
+> que é o **próximo bloco**, junto com as telas sob `/aluno/*` e o painel do Início.
 > **PUBLICADO em 28/09 (`main` = `5a60fa1`, CI verde): o Bloco E, etapa 2 INTEIRA (partes 2a a 2e)**,
 > mais a edição como na Udemy e a limpeza no Bunny ao excluir. *(A primeira publicação do dia,
 > `d342000`, pegou CI vermelho por um teste do arrastar que dependia de tempo — não do site; o
