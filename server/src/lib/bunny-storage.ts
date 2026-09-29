@@ -113,6 +113,33 @@ export async function enviarArquivoDaAula(
   return { ok: true };
 }
 
+export type LeituraDoArquivo =
+  | { ok: true; corpo: Readable; tamanho: string | null }
+  | { ok: false; motivo: "NaoConfigurado" | "NaoEncontrado" | "Falhou" };
+
+/**
+ * LÊ um arquivo de aula da zona dos arquivos, EM FLUXO, para o nosso servidor
+ * entregar ao aluno (etapa 4 do Bloco U — decisão do operador, 29/09/2026: o
+ * download sai pelo nosso servidor, com o nome original). Só aceita caminho de
+ * arquivo de aula, como o apagar.
+ */
+export async function lerArquivoDaAula(caminho: string): Promise<LeituraDoArquivo> {
+  if (!caminhoDeArquivoDaAula(caminho)) return { ok: false, motivo: "Falhou" };
+  const c = configDosArquivos();
+  if (!c) return { ok: false, motivo: "NaoConfigurado" };
+
+  const resposta = await fetch(`https://${c.host}/${c.zona}/${caminho}`, { headers: { AccessKey: c.senha } });
+  if (resposta.status === 404) return { ok: false, motivo: "NaoEncontrado" };
+  if (!resposta.ok || !resposta.body) {
+    console.error(`[bunny-storage] ler arquivo recusado: ${resposta.status}`);
+    return { ok: false, motivo: "Falhou" };
+  }
+  // Cast: o ReadableStream do fetch e o do "stream/web" do Node são o mesmo
+  // objeto em runtime; só as declarações de tipo divergem.
+  const corpo = Readable.fromWeb(resposta.body as unknown as Parameters<typeof Readable.fromWeb>[0]);
+  return { ok: true, corpo, tamanho: resposta.headers.get("content-length") };
+}
+
 /**
  * Apaga UM arquivo da zona dos arquivos. Recusa (sem chamar o Bunny) tudo o que
  * não for caminho de arquivo de aula: apagar pasta, no Bunny, apaga tudo dentro.

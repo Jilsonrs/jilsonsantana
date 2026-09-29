@@ -1492,6 +1492,18 @@ landmark. Corrigido junto.
         visitante (prévia grátis) e consulta a trava direto. **Mutação:** `incomplete` liberando, a
         trava lendo o papel de admin e o banco de produção aceito para a assinatura de teste →
         reprovam.
+      - [x] **4b — as rotas da aula** *(29/09, no `dev`)*: `routes/lesson-view.ts`. **Aluno:**
+        `GET /api/lessons/:id/aula` (só a cadeia publicada; liberada com a prévia grátis ou com
+        `temAcessoAtivo()`; bloqueada, só a lista do curso — sem vídeo, token, texto nem arquivo;
+        `Cache-Control: private, no-store`) e `GET /api/lessons/:id/files/:fileId` (mesma regra,
+        o arquivo tem que ser **desta** aula, em fluxo do Storage, `Content-Disposition` com o
+        **nome original** limpo de caracteres de controle e de direção de texto — fecha o achado
+        P2 de 28/09 — e `nosniff`). **Admin:** `GET /api/admin/lessons/:id/aula` e
+        `/api/admin/lesson-files/:id/download`, qualquer status, com o rascunho marcado.
+        `CLAUDE.md` → Access Architecture reescrito (a prévia grátis é a segunda exceção; o admin
+        assiste por rota de admin). **Mutação:** a prévia sem efeito, o conteúdo na resposta
+        bloqueada, o download sem a trava, o nome sem limpeza e o rascunho na rota do aluno →
+        reprovam.
 - **Done when:** no computador do operador, a capa enviada aparece no admin; o vídeo de
   apresentação toca no admin e na página; a aula aberta no editor mostra a miniatura, o nome e a
   duração do vídeo (sem player, decisão de 28/09); o `member@`
