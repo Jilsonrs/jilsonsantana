@@ -140,6 +140,9 @@
 > `lesson_file_size_bigint` entraram em produção pelo pre-deploy. O operador criou a zona
 > `jilsonsantana-arquivos` e as variáveis (P33) e a `BUNNY_STREAM_LESSONS_CDN_HOST` (P19). Falta
 > conferir no ar: a miniatura da aula "Teste", o reenvio da apresentação e um .zip enviado.
+> **Conferido pelo operador no mesmo dia:** a miniatura, o nome e a duração aparecem; o .zip chegou
+> inteiro (P33 fechada). **Publicado em seguida (`main` = `013bd1c`, CI verde, deploy ok):** o
+> envio de vídeo sobrevive à tela. Da P19 falta só o reenvio da apresentação.
 > **PUBLICADO em 28/09 (`main` = `5a60fa1`, CI verde): o Bloco E, etapa 2 INTEIRA (partes 2a a 2e)**,
 > mais a edição como na Udemy e a limpeza no Bunny ao excluir. *(A primeira publicação do dia,
 > `d342000`, pegou CI vermelho por um teste do arrastar que dependia de tempo — não do site; o
