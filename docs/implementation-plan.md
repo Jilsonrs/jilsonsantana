@@ -143,6 +143,13 @@
 > **Conferido pelo operador no mesmo dia:** a miniatura, o nome e a duração aparecem; o .zip chegou
 > inteiro (P33 fechada). **Publicado em seguida (`main` = `013bd1c`, CI verde, deploy ok):** o
 > envio de vídeo sobrevive à tela. Da P19 falta só o reenvio da apresentação.
+> **PUBLICADO em 29/09, à tarde (`main` = `4ecd0f4`, CI verde, deploy ok depois de um incidente
+> do próprio Railway que travou as publicações por ~30 min):** a **página da aula do aluno**
+> (etapa 4 do Bloco U: a trava de acesso com o espelho `Subscription`, as rotas da aula e do
+> download, a tela no estilo LinkedIn, a prévia grátis em que o visitante só assiste, e os
+> consertos da revisão de segurança) e **aula e módulo novos nascendo conforme o curso**. A
+> migration `20260929160000_subscription` entrou em produção pelo pre-deploy. Falta: a conferência
+> do RLS em produção (P34) e a prova no ar da página da aula.
 > **PUBLICADO em 28/09 (`main` = `5a60fa1`, CI verde): o Bloco E, etapa 2 INTEIRA (partes 2a a 2e)**,
 > mais a edição como na Udemy e a limpeza no Bunny ao excluir. *(A primeira publicação do dia,
 > `d342000`, pegou CI vermelho por um teste do arrastar que dependia de tempo — não do site; o
