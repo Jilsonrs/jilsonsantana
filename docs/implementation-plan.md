@@ -1450,6 +1450,13 @@ landmark. Corrigido junto.
       **Na tela da aula, a lista de módulos e aulas do curso fica no NÍVEL 2 da navegação** (a
       coluna do meio, colada ao menu lateral, `design.md` §13), e o vídeo ao lado dela *(decisão do
       operador, 28/09/2026)*.
+      **Os arquivos para baixar, como na Udemy** *(referência do operador, 29/09/2026, com prints da
+      Udemy)*: na lista de aulas do curso, a aula com arquivos ganha um botão **Recursos** junto ao
+      nome, que abre a lista dos arquivos para baixar — **vale para aula de vídeo e de texto**; na
+      aula **só de texto**, o texto fica no centro da tela e, embaixo dele, **"Recursos para esta
+      aula"** com os arquivos. Só assinante baixa (a trava desta etapa), sempre como download.
+      **Decidir aqui** como o .zip chega ao aluno: pelo servidor (sai pelo Railway, cobrado) ou link
+      assinado temporário do Bunny (`bunny.md` §4.5).
       `security-vulnerability-reviewer` e revisão do operador antes do "publica".
 - **Done when:** no computador do operador, a capa enviada aparece no admin; o vídeo de
   apresentação toca no admin e na página; a aula aberta no editor mostra a miniatura, o nome e a
