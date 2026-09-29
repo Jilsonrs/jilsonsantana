@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { LogOut, Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { secaoAtiva, secoesVisiveis } from "@/lib/navigation";
+import { etiquetaEmBreve, secaoAtiva, secoesVisiveis } from "@/lib/navigation";
 import { useT } from "@/lib/language";
 import {
   Sheet,
@@ -73,7 +73,7 @@ export function MobileNav({ papel, onSignOut }: { papel?: string; onSignOut: () 
                     <Icon className="size-5 shrink-0" />
                     <span>{secao.label}</span>
                     <span className="rounded-full border border-white/10 px-1.5 py-0.5 font-mono text-[0.55rem] tracking-[0.08em]">
-                      EM BREVE
+                      {etiquetaEmBreve(secao, t)}
                     </span>
                   </div>
                 );

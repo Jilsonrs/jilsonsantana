@@ -13,7 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 // Depois de entrar, o aluno cai na HOME DELE — não na conta (destino de tarefa)
 // nem no catálogo (uma seção da home, não o começo). A home cresce para virar
 // painel de estudo; este é o único lugar que aponta para ela.
-const POS_LOGIN = "/inicio";
+const POS_LOGIN = "/aluno/inicio";
 
 // O idioma que veio no ENDEREÇO (`/login?lang=en`, o "Entrar" da home em
 // inglês). Só ele muda a conta: quem entra pelo /login normal não muda de idioma.

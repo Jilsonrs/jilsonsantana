@@ -18,8 +18,8 @@ import { IdiomaProvider } from "@/lib/language";
 
 function renderConta(ui = <AccountPage />) {
   return renderWithProviders(ui, {
-    route: "/conta",
-    path: "/conta",
+    route: "/aluno/conta",
+    path: "/aluno/conta",
     extraRoutes: [{ path: "/login", element: <div>TELA DE LOGIN</div> }],
   });
 }

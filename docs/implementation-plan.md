@@ -152,6 +152,20 @@
 > produção no mesmo dia** (a pedido do operador, pelo MCP do Neon, só leitura no `pg_class` do
 > branch `production`): a `subscription` com RLS, e nenhuma tabela sem ele — a P34 fechou. Falta a
 > prova no ar da página da aula.
+> **PUBLICADO em 29/09, no fim do dia (`main` = `cbf0129`, CI verde, deploy ok):** o aluno entra no
+> curso pela **primeira aula**, com **"Sobre o curso"** embaixo do player em toda aula, e aula e
+> módulo novos nascendo conforme o curso. **Decidido e registrado, ainda não construído:** o
+> **menu do aluno novo** (Início · Cursos · Trilhas · Meus estudos · JilsonAI — `design.md` §6),
+> que é o **próximo bloco**, junto com as telas sob `/aluno/*` e o painel do Início.
+> **FEITO no `dev` em 29/09 (3 etapas, CI verde em cada uma), esperando o "publica":** ✅ 1. as
+> telas do aluno em `/aluno/*`, com os endereços antigos redirecionando · ✅ 2. o menu novo
+> (Início · Cursos · Trilhas · Meus estudos · JilsonAI EM BREVE) + a tela Meus estudos · ✅ 3. o
+> painel do Início (4 blocos). Textos novos em PT e EN são **rascunho do agente, para a revisão
+> do operador**; o acabamento visual é do Antigravity (`GEMINI.md`, fila item 14).
+> **Registrado no fim da sessão de 29/09 (só documentos, no `dev`):** o mapa do que falta nos 7
+> passos do editor (Bloco E, depois da etapa 4), com um **achado novo** (campo já salvo não volta a
+> ficar vazio); o **Live Stream** do Bunny em acesso antecipado (`bunny.md` §6, decisão 8,
+> avaliar depois da Fase 3); e a fila do parceiro de design (`design-lab/GEMINI.md`, itens 11–14).
 > **PUBLICADO em 28/09 (`main` = `5a60fa1`, CI verde): o Bloco E, etapa 2 INTEIRA (partes 2a a 2e)**,
 > mais a edição como na Udemy e a limpeza no Bunny ao excluir. *(A primeira publicação do dia,
 > `d342000`, pegou CI vermelho por um teste do arrastar que dependia de tempo — não do site; o
@@ -183,8 +197,8 @@
 > Fora da escolha e em paralelo: o **Bloco I** restante, o **C5** (bloqueado até o conteúdo das
 > telas), o corpo da Fase 3 (HIGH RISK) e a continuidade do operador (2FA, backup frio).
 >
-> **Cobertura de teste medida em 27/09/2026:** cliente **27 arquivos / 263 testes** · servidor
-> **18 arquivos / 162 testes** · E2E em job próprio. As três rodam no CI.
+> **Cobertura de teste medida em 29/09/2026:** cliente **41 arquivos / 452 testes** · servidor
+> **27 arquivos / 310 testes** · E2E em job próprio. As três rodam no CI.
 > **Pendências do operador: a lista única está em [`docs/pendencias.md`](pendencias.md)** *(desde
 > 25/09/2026, a pedido do operador)*. As que moravam aqui foram para lá (P12–P16). Item resolvido
 > sai daquela lista no mesmo commit em que a resposta é registrada no destino.
@@ -1082,17 +1096,31 @@ tornada executável — não uma lista nova):
       permanece na árvore de acessibilidade. Isso é fácil de "otimizar" para `display:none` sem
       ninguém notar, porque a tela fica idêntica; o teste da barra recolhida existe para reprovar
       quem tentar.
-- [ ] **Painel do aluno** como destino pós-login: progresso, próxima aula, trilhas em andamento.
+- [x] **Painel do aluno** como destino pós-login: progresso, próxima aula, trilhas em andamento.
       **Direção do operador (28/09/2026):** a tela de **Início é o painel do aluno, rica**, com o
       que ele tem disponível **a um clique**; o menu continua na barra lateral, e o painel nasce
       preparado para **ganhar itens no futuro**.
-- [ ] **O menu do aluno novo** *(decisão do operador, 29/09/2026 — `design.md` §6, "O menu do
+      ✅ **29/09/2026 (etapa 3), com os 4 blocos que o operador escolheu ao aprovar o plano:**
+      saudação · **Continue estudando — EM BREVE** · **Minhas trilhas** (até 3 salvas + "Ver
+      todas"; carregando, erro e vazio) · **Atalhos** (Cursos e Trilhas; JilsonAI e Certificados
+      EM BREVE). Cada bloco é um componente em `components/inicio/`: bloco novo entra como mais
+      uma linha no `StudentHomePage`. **Progresso e próxima aula continuam na Fase 5** — ver o
+      checkbox "tirar o EM BREVE" lá. Mutação: sem o ramo de erro de Minhas trilhas, a suíte
+      reprova. O E2E passou a esperar Minhas trilhas carregar depois do login (achado (b) acima).
+- [x] **O menu do aluno novo** *(decisão do operador, 29/09/2026 — `design.md` §6, "O menu do
       aluno")*: **Início · Cursos · Trilhas · Meus estudos · JilsonAI**. "Trilhas" são as trilhas
       prontas; **Meus estudos** tem no nível 2 **Em andamento · Minhas trilhas · Concluídos ·
       Certificados** (EM BREVE o que ainda não existe). "Minhas trilhas" e "Certificados" saem do
       menu principal. Sem "Salvos" (a trilha personalizada faz esse papel). Anda junto com o item
       abaixo (as telas sob `/aluno/*`) e com o painel do Início.
-- [ ] **As telas do aluno passam para `/aluno/*`** *(decisão do operador, 28/09/2026, era a P15)*:
+      ✅ **29/09/2026 (etapa 2):** o mapa (`navigation.ts`) com os cinco itens; o **JilsonAI
+      aparece para o aluno como EM BREVE** e **Meus estudos tem tela própria**
+      (`/aluno/meus-estudos`, um cartão por item) — as duas decididas pelo operador ao aprovar o
+      plano. O que é planejado passou a aparecer para o aluno (`secoesVisiveis`), sempre como
+      texto; a etiqueta EM BREVE saiu do dicionário (em inglês, "COMING SOON"; no admin, sempre
+      em português). Mutação: virar link um item EM BREVE (nível 2 ou rail) e voltar a esconder o
+      planejado do aluno — as três reprovam.
+- [x] **As telas do aluno passam para `/aluno/*`** *(decisão do operador, 28/09/2026, era a P15)*:
       `/inicio` → `/aluno/inicio`, `/conta` → `/aluno/conta` (com as subpáginas),
       `/minhas-trilhas` → `/aluno/minhas-trilhas`. Os endereços antigos **redirecionam** para os
       novos. Mudar agora porque só o operador e a conta de teste usam: com aluno real, quebraria
@@ -1102,6 +1130,11 @@ tornada executável — não uma lista nova):
       **NOTA (Set 2026): a dependência encolheu.** "Trilhas em andamento" já tem dado real desde
       `GET /api/trilhas/mine` (Bloco 5) — só as barras de **progresso** ainda dependem da Fase 5.
       A home pode ganhar a seção de trilhas antes, e isso é fatia própria, não este bloco.
+      ✅ **29/09/2026 (etapa 1 do bloco do menu novo):** `/aluno/inicio`, `/aluno/conta` e
+      `/aluno/minhas-trilhas(/:id)`; os antigos redirecionam mantendo o resto do caminho e a busca
+      (`RotasAntigasDoAluno.tsx`, 7 testes, mutação derruba). O login cai em `/aluno/inicio`, o
+      aluno barrado no admin vai para `/aluno/conta`, e o botão "Meus estudos" do topo da home
+      (logado) leva a `/aluno/inicio`. O E2E passou a exigir os endereços novos.
 - [x] Navegação mobile — o menu lateral obriga a decidir isto, que o cabeçalho atual adiava.
       ✅ **Set 2026:** gaveta (`Sheet`) abaixo de 768px, aberta pelo mesmo botão do cabeçalho.
       **A gaveta e a barra desktop NUNCA renderizam juntas** (o componente ramifica em
@@ -1820,9 +1853,11 @@ própria**.*
   - [ ] **Testes de "não vaza" sem as trilhas do aluno:** o do texto da aula não consulta
         `/api/trilhas/:slug` nem `/mine/:id`, e o do vídeo não consulta `/mine/:id`. O código
         protege (`select` explícito), mas nenhum teste reprova se voltar o `include`.
-  - [ ] **Nome do arquivo para o download** (etapa 4): na rota de entrega, usar
+  - [x] **Nome do arquivo para o download** (etapa 4): na rota de entrega, usar
         `res.attachment()`/`res.download()` (nunca interpolar no `Content-Disposition`) e tirar do
         nome os caracteres de direção de texto (U+202E e parecidos), que disfarçam a extensão.
+        **FEITO na etapa 4 do Bloco U (29/09):** `res.attachment(nomeParaDownload(...))` em
+        `routes/lesson-view.ts`; `lib/nome-do-download.ts` tira os caracteres invisíveis.
 - [x] **Excluir a aula (ou o curso) não apaga os arquivos dela no Bunny** *(achado da 2e;
       **feito em 28/09** junto com o vídeo, decisão do operador — ver a revisão de segurança,
       acima)*. O registro some pela cascata do banco; o arquivo
@@ -1859,6 +1894,30 @@ própria**.*
       **boas-vindas** (ao abrir a primeira aula do curso) e de **parabéns** (ao concluir), e outras
       comunicações do operador ou do JilsonAI. **Sem e-mail.** O passo 6 do editor é onde ele
       escreve as duas mensagens do curso.
+
+**O QUE FALTA NOS 7 PASSOS (resumo de 29/09/2026 — as linhas estão acima; aqui é o mapa):**
+
+| Passo | Estado | O que falta |
+|---|---|---|
+| 1 Informações básicas | pronto | a **duração publicada** no topo do editor (adiada: o Bunny já informa a duração de cada vídeo no resumo do admin, mas a aula **não guarda** duração; falta guardar, somar e mostrar) |
+| 2 Para quem é | pronto | — |
+| 3 Conteúdo | pronto | o **Quiz** (etapa própria, com decisões do operador; no "+" aparece EM BREVE) |
+| 4 Legendas | EM BREVE | a **etapa 3** inteira (tela própria, `.vtt` por vídeo) |
+| 5 Mídia e destaques | pronto | a P19 (o vídeo de apresentação reenviado tocando — `pendencias.md`) |
+| 6 Mensagens | EM BREVE | a **etapa 4** inteira (o sino + boas-vindas e parabéns) |
+| 7 Publicar | pronto | o **link para abrir a página pública do curso** (o Visualizar), que espera o **C5** |
+
+**Em todos os passos, ainda aberto:**
+- [ ] **Revisão das dicas pelo operador** — todas em `client/src/lib/course-hints.ts`, num arquivo
+      só (ele pediu para revisar depois, 28/09).
+- [ ] **ACHADO (29/09, confirmado no código, NÃO corrigido): campo já salvo não volta a ficar
+      vazio.** Apagar o texto do **subtítulo**, da **descrição**, do **nível**, da **imagem** ou
+      do **ID do vídeo de apresentação** e salvar não apaga nada: `toPayload`
+      (`client/src/lib/course-form.ts`) manda `undefined` para o campo vazio, e o servidor lê
+      campo ausente como "deixa como está". O salvamento diz "salvo" e o valor antigo continua.
+      As listas não têm o problema (vão sempre como lista). A correção é decisão de quando, do
+      operador.
+- [ ] **A corrida na troca de vídeo com duas abas** (P2 da revisão de segurança, na etapa 2 acima).
 
 **Vai para outros blocos (anotado lá quando eles abrirem):**
 - **Página do curso (vitrine, depois do C5):** a seção do autor é **a mesma da home**
@@ -2783,6 +2842,9 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       do `LessonProgress`). Leitura do admin, **nunca** no site.
 - [ ] **A avaliação no cartão do admin** — só depois de decidir a P27: a nota planejada é uma por
       aluno e geral, não por curso.
+- [ ] **Tirar o EM BREVE do que espera o progresso** *(menu novo do aluno, 29/09/2026)*: o bloco
+      **Continue estudando** do Início e **Em andamento** e **Concluídos** em Meus estudos (nível 2
+      e cartões da tela). O que cada um mostra é decisão do operador na hora de construir.
 - **Done when:** "marquei como vista" works, trilha % completion shows, AND events are captured for future analytics.
 
 ## Phase 6 — JilsonAI (lean v1 + suporte)  *(medium risk)*  → ver **JILSONAI.md** (roadmap interno)

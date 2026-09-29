@@ -37,8 +37,8 @@ describe("AccountMenu", () => {
     expect(botao.getAttribute("aria-expanded")).toBe("true");
     expect(screen.getByText("Ana Souza")).toBeTruthy();
     expect(screen.getByText("ana@exemplo.com")).toBeTruthy();
-    expect(screen.getByRole("link", { name: "Minha conta" }).getAttribute("href")).toBe("/conta");
-    expect(screen.getByRole("link", { name: "Faturamento e Assinatura" }).getAttribute("href")).toBe("/conta/faturamento");
+    expect(screen.getByRole("link", { name: "Minha conta" }).getAttribute("href")).toBe("/aluno/conta");
+    expect(screen.getByRole("link", { name: "Faturamento e Assinatura" }).getAttribute("href")).toBe("/aluno/conta/faturamento");
   });
 
   it("Sair encerra a sessão e fecha o painel", () => {

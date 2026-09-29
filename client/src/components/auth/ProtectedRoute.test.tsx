@@ -10,10 +10,10 @@ import { ProtectedRoute } from "./ProtectedRoute";
 
 function renderAt() {
   return render(
-    <MemoryRouter initialEntries={["/conta"]}>
+    <MemoryRouter initialEntries={["/aluno/conta"]}>
       <Routes>
         <Route element={<ProtectedRoute />}>
-          <Route path="/conta" element={<div>conta privada</div>} />
+          <Route path="/aluno/conta" element={<div>conta privada</div>} />
         </Route>
         <Route path="/login" element={<div>tela de login</div>} />
       </Routes>

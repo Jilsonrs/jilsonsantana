@@ -126,17 +126,17 @@ servidores (§5); o React responde em `localhost:5173`, a home pública em `loca
 
 **Do aluno — exigem login** *(porta 5173)*
 
-> **Os endereços vão mudar** *(decisão do operador, 28/09/2026)*: `/inicio`, `/conta` e
-> `/minhas-trilhas` passam para **`/aluno/inicio`**, **`/aluno/conta`** e
-> **`/aluno/minhas-trilhas`**, e os antigos redirecionam. Os **arquivos** continuam os mesmos.
-> E o **Início vira o painel do aluno**, rico, com o que ele tem a um clique — vai precisar de mock.
+> **Os endereços mudaram em 29/09** *(decisão do operador, 28/09/2026)*: as telas do aluno moram
+> em `/aluno/*`, e os endereços antigos (`/inicio`, `/conta`, `/minhas-trilhas`) redirecionam. Os
+> **arquivos** continuam os mesmos.
 
 | Endereço | Arquivo |
 |---|---|
-| `/inicio` | `client/src/pages/StudentHomePage.tsx` |
-| `/minhas-trilhas` | `client/src/pages/MyTrilhasPage.tsx` |
-| `/minhas-trilhas/:id` | `client/src/pages/MyTrilhaDetailPage.tsx` |
-| `/conta` | `client/src/pages/AccountPage.tsx` |
+| `/aluno/inicio` | **O painel do aluno** (29/09): `client/src/pages/StudentHomePage.tsx` + os blocos em `client/src/components/inicio/` (ver a fila, item 14) |
+| `/aluno/minhas-trilhas` | `client/src/pages/MyTrilhasPage.tsx` |
+| `/aluno/minhas-trilhas/:id` | `client/src/pages/MyTrilhaDetailPage.tsx` |
+| `/aluno/conta` | `client/src/pages/AccountPage.tsx` |
+| `/aluno/meus-estudos` | **Meus estudos** (29/09): `client/src/pages/aluno/MeusEstudosPage.tsx` — um cartão por item do nível 2 (Em andamento, Minhas trilhas, Concluídos, Certificados). Só Minhas trilhas tem conteúdo (quantas estão salvas + o link); os outros três saem com EM BREVE, **sem link** (tem teste). No celular é por esta tela que o aluno chega a Minhas trilhas. |
 | `/aluno/aula/:id` | **A página da aula** (29/09, estilo LinkedIn Learning): `client/src/pages/aluno/LessonPage.tsx` + `client/src/components/aula/` — `CourseContentsNav.tsx` (o conteúdo do curso, que é o **nível 2** no computador e fica embaixo do player no celular e para o visitante), `LessonContent.tsx` (o player grande, o texto no centro ou "para assinantes"), `LessonResources.tsx` (os arquivos para baixar e o "Recursos" de cada aula) e `AiDock.tsx` (o **botão flutuante** da IA no canto inferior direito e o painel "Em breve", que encolhe o player). **Não exige login** (a prévia grátis toca para visitante). **Têm teste:** a aula atual com `aria-current`, o "para assinantes" sem player, o rascunho marcado só para o admin, e o botão da IA com `aria-expanded` e nome. O editor ganhou **Visualizar** em cada aula, que abre esta página numa aba nova. **Embaixo do player, em toda aula, "Sobre o curso"** (`components/aula/CourseDetails.tsx`, 29/09): nível, descrição, listas, camadas, destaques e perguntas; bloco vazio não aparece (tem teste). |
 | `/aluno/curso/:slug` | A entrada do aluno num curso (29/09): `client/src/pages/aluno/CourseEntryPage.tsx` só leva à primeira aula (sem tela própria, além de "carregando" e "sem aulas"). O cartão do curso no catálogo leva aqui quando a pessoa está logada. |
 
@@ -219,8 +219,12 @@ servidores (§5); o React responde em `localhost:5173`, a home pública em `loca
 
 **PLANEJADAS — aparecem no rail em cinza, com a etiqueta EM BREVE, e NÃO têm tela**
 
-Trilhas Admin · Alunos · JilsonAI Admin · Dados · Certificados · JilsonAI (do aluno).
+Trilhas Admin · Alunos · JilsonAI Admin · Dados · JilsonAI (do aluno) — e, no nível 2 de **Meus
+estudos**, Em andamento · Concluídos · Certificados.
 Elas existem só no mapa de navegação. **Não procure o arquivo: não há.**
+**Desde 29/09 o ALUNO também as vê** (as dele: JilsonAI e as três de Meus estudos), por decisão do
+operador: *"o que ainda não existe aparece como EM BREVE"*. A etiqueta sai do dicionário
+(`app.nav.emBreve` — "COMING SOON" em inglês); nas seções de admin fica sempre em português.
 *(28/09/2026: o operador decidiu o que cada uma tem dentro — plano, Fase 2, "o que cada seção
 PLANEJADA vai ter dentro" — e criou uma nova, **Comunicação** (fila de dúvidas, anúncios). Ela
 entra no mapa de navegação numa etapa próxima; "Escalações" sai do JilsonAI Admin e vai para lá.)*
@@ -285,6 +289,42 @@ exceto o item 4, que é página pública.
    `client/src/components/content/MarkdownText.tsx`, **compartilhado**: formatar ali muda todo lugar
    que mostra Markdown (hoje, a prévia da descrição; depois, telas do aluno e o chat do JilsonAI).
    Ele é carregado só quando alguém abre Visualizar: não troque o `lazy()` por import direto.
+
+> **Acrescentados em 29/09/2026 (fila atualizada no fim da sessão).** O item 9 agora se chama
+> **Mídia e destaques** (era "Página do curso"; o endereço `/pagina` ficou).
+
+11. **A página da aula** (`/aluno/aula/:id` — o mapa das telas acima tem os arquivos). É a tela que
+   o aluno mais vai usar, e está **crua**: player grande, o conteúdo do curso no nível 2, os
+   Recursos, o "para assinantes", o botão flutuante da IA e o painel "Em breve". Os textos saem do
+   dicionário (`app.aula.*`): **mude o visual, não o texto**. **Têm teste e não podem sair:** o
+   `aria-current` da aula atual, o "para assinantes" **sem** player, o rascunho marcado só para o
+   admin, o botão da IA com nome e `aria-expanded`. O player é o mesmo `BunnyPlayer` do item 9:
+   **não tire o `referrerPolicy`**. No celular e para o visitante, o conteúdo do curso desce para
+   baixo do player (não há nível 2): confira os dois jeitos.
+12. **"Sobre o curso"** (`components/aula/CourseDetails.tsx`), embaixo do player em toda aula:
+   nível, descrição, o que vai aprender, pré-requisitos, pra quem é, camadas, destaques e perguntas.
+   **Reaproveita peças compartilhadas** — `LayerSelo`, `HighlightCard` e `MarkdownText`, de
+   `components/content/`, e o `Accordion` do shadcn: formatar ali muda todos os lugares que usam.
+   **Bloco vazio não aparece** (tem teste): o desenho precisa ficar bom com qualquer combinação.
+13. **O Conteúdo do editor** (a linha da aula que abre e recolhe, a miniatura do vídeo, os Arquivos
+   com a porcentagem do envio — descritos acima, no bloco sobre `ModuleLessonTree`). O
+   comportamento é do operador e tem teste; o acabamento é seu.
+14. **O menu novo do aluno — ESTRUTURA PRONTA em 29/09, o acabamento é seu** (`docs/design.md`
+   § 6, *O menu do aluno*): Início · Cursos · Trilhas · **Meus estudos** · JilsonAI (EM BREVE).
+   Três lugares a formatar:
+   - **o Início** (`pages/StudentHomePage.tsx`), que virou painel de 4 blocos, cada um em
+     `components/inicio/`: `ContinueEstudando.tsx` (EM BREVE), `MinhasTrilhasNoInicio.tsx` (até 3
+     trilhas salvas + "Ver todas") e `Atalhos.tsx` (o card das antigas "portas", sem a legenda);
+   - **Meus estudos** (`pages/aluno/MeusEstudosPage.tsx`), um cartão por item;
+   - **a etiqueta EM BREVE das telas do aluno**, `components/content/EmBreve.tsx` — formatar ali
+     muda todos os lugares.
+   **Têm teste, não mexa sem falar com o operador:** o que é EM BREVE nunca é link, os títulos
+   (`h2`) de cada bloco e cartão, e o máximo de 3 trilhas no Início. **Sem "Salvos"** e sem as
+   muitas fileiras do Home do LinkedIn (decisão dele).
+
+> **Fora do seu trabalho, para não confundir:** o Bunny ganhou **Live Stream** em acesso
+> antecipado (29/09). É só avaliação depois da Fase 3, **não** é tela a desenhar (`docs/bunny.md`
+> § 6, decisão 8).
 
 ## 3. Onde você NÃO mexe
 
@@ -382,10 +422,11 @@ uma semana: "Site" nasceu com o ícone do "Catálogo", e "JilsonAI" existia duas
 admin) com o mesmo ícone e o mesmo nome. **Tem teste** — `navigation.test.ts` reprova rótulo ou
 ícone repetido em todo o mapa. Se precisar de um ícone novo, pegue no `lucide-react`.
 
-**12. Seção PLANEJADA é TEXTO, nunca `<a>`.** O rail mostra ao admin as telas que ainda não
-existem, em cinza e com a etiqueta EM BREVE, para o operador não esquecer o que falta. Elas **não
-podem virar link**: a rota não existe, e clique que leva a lugar nenhum é pior que item ausente.
-Vale no rail **e** na gaveta do celular — as duas precisam concordar. **Tem teste.**
+**12. Seção PLANEJADA é TEXTO, nunca `<a>`.** O rail mostra as telas que ainda não existem, em
+cinza e com a etiqueta EM BREVE — ao admin, para ele não esquecer o que falta, e ao aluno, as dele
+(desde 29/09/2026). Elas **não podem virar link**: a rota não existe, e clique que leva a lugar
+nenhum é pior que item ausente. Vale no rail, na gaveta do celular **e** no nível 2 — os três
+precisam concordar. **Tem teste.**
 
 ---
 
@@ -422,7 +463,7 @@ e sem ele você vê o estado de erro em vez da tela.
 
 **Para abrir as telas de aluno e de admin é preciso ENTRAR** — `localhost:5173/login`, com a conta
 de admin. **Peça as credenciais ao operador**; elas não ficam escritas em lugar nenhum do repo.
-Sem login, `/inicio`, `/conta`, `/admin/*` redirecionam para o login.
+Sem login, `/aluno/inicio`, `/aluno/conta`, `/admin/*` redirecionam para o login.
 
 ---
 

@@ -240,9 +240,15 @@ export const pt = {
       inicio: "Início",
       cursos: "Cursos",
       trilhas: "Trilhas",
+      meusEstudos: "Meus estudos",
+      emAndamento: "Em andamento",
       minhasTrilhas: "Minhas trilhas",
+      concluidos: "Concluídos",
       jilsonai: "JilsonAI",
       certificados: "Certificados",
+      // A etiqueta de tela que ainda não existe (rail, gaveta, nível 2). Seção de
+      // admin usa sempre a de português (o Admin não muda de idioma).
+      emBreve: "EM BREVE",
       minhaConta: "Minha conta",
       seusDados: "Seus dados",
       preferencias: "Preferências",
@@ -274,13 +280,11 @@ export const pt = {
       ola: "Olá",
       intro: "Aqui é o seu ponto de partida. O que você começar a estudar aparece nesta tela, para você continuar de onde parou.",
       continueTitulo: "Continue estudando",
-      continueVazio: "Suas aulas em andamento aparecem aqui assim que você começar um curso. Escolha um no catálogo e o progresso passa a te esperar nesta tela.",
-      verCatalogo: "Ver catálogo",
-      porOndeComecar: "Por onde começar",
-      portaCatalogo: "Catálogo",
-      portaCatalogoLegenda: "CURSOS E TRILHAS",
-      portaMinhasTrilhas: "Minhas trilhas",
-      portaMinhasTrilhasLegenda: "O QUE VOCÊ SALVOU"
+      // O painel do Início (operador, 29/09/2026). Os três textos abaixo são
+      // rascunho do agente, para a revisão do operador.
+      continueEmBreve: "Em breve, a aula em que você parou aparece aqui, para continuar com um clique.",
+      verTodas: "Ver todas",
+      atalhos: "Atalhos"
     },
     conta: {
       titulo: "Minha conta",
@@ -300,6 +304,21 @@ export const pt = {
       voltar: "← Voltar para Minhas Trilhas",
       erroDetalhe: "Não foi possível carregar esta trilha.",
       semConteudo: "Esta trilha ainda não tem conteúdo."
+    },
+    // A tela Meus estudos (decisão do operador, 29/09/2026): um cartão por item
+    // do nível 2. Rascunho do agente, para a revisão do operador.
+    meusEstudos: {
+      titulo: "Meus estudos",
+      descricao: "Tudo o que é seu na escola, num lugar só.",
+      emAndamentoDescricao: "Os cursos que você começou, para continuar de onde parou.",
+      minhasTrilhasDescricao: "As trilhas que você salvou para estudar.",
+      concluidosDescricao: "Os cursos que você terminou.",
+      certificadosDescricao: "Os certificados das trilhas que você concluir.",
+      trilhaSalva: "trilha salva",
+      trilhasSalvas: "trilhas salvas",
+      abrirMinhasTrilhas: "Abrir minhas trilhas",
+      nenhumaTrilha: "Você ainda não salvou nenhuma trilha.",
+      verTrilhas: "Ver as trilhas prontas"
     },
     catalogo: {
       cursos: "Cursos",

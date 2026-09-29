@@ -440,10 +440,11 @@ são hoje páginas **React provisórias** (`CatalogPage.tsx`), que fazem os dois
 **serão substituídas** pelo template de servidor — decisão do operador de não construir duas
 vezes. Enquanto isso, **não investir acabamento nelas** (`design-lab/GEMINI.md` § 0).
 
-**DECIDIDO (operador, 28/09/2026):** as telas de aluno de hoje (`/inicio`, `/conta`,
-`/minhas-trilhas`) **passam para `/aluno/*`**, com redirecionamento dos endereços antigos. A
-mudança é tarefa do plano (Fase 2 → navegação do aluno); até ela acontecer, os endereços antigos
-seguem valendo — e telas novas do aluno já nascem sob `/aluno/`.
+**FEITO (29/09/2026; decisão do operador de 28/09):** as telas do aluno moram em `/aluno/*`
+(`/aluno/inicio`, `/aluno/conta`, `/aluno/minhas-trilhas`). Os endereços antigos **redirecionam**,
+mantendo o resto do caminho — as rotas estão em
+`client/src/components/auth/RotasAntigasDoAluno.tsx`, com teste. **Tela nova do aluno nasce sob
+`/aluno/`**; não crie rota nova no endereço curto, que é da vitrine.
 
 ### A home pública JÁ EXISTE — onde ela mora e como se mexe nela *(set/2026)*
 

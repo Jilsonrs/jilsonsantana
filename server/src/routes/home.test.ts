@@ -32,7 +32,7 @@ describe("Home pública (SSR)", () => {
     for (const [rota, login] of [["/", "/login"], ["/en", "/login?lang=en"]]) {
       const res = await request(app).get(rota);
       expect(res.text, rota).toContain(`<a href="${login}" class="btn-login">`);
-      expect(res.text, rota).not.toContain('href="/inicio"');
+      expect(res.text, rota).not.toContain('href="/aluno/inicio"');
     }
   });
 
@@ -49,7 +49,7 @@ describe("Home pública (SSR)", () => {
 
     const res = await request(app).get("/").set("Cookie", cookies);
 
-    expect(res.text).toContain('<a href="/inicio" class="btn-login">');
+    expect(res.text).toContain('<a href="/aluno/inicio" class="btn-login">');
     expect(res.text).toContain("Meus estudos");
     expect(res.text).not.toContain('href="/login"');
   });

@@ -2,7 +2,15 @@ import { Link, useLocation } from "react-router-dom";
 import { LogOut, Plus, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Role } from "@jilson/core";
-import { secoesVisiveis, secaoAtiva, itensSecundarios, casaRota, type ItemSecundario } from "@/lib/navigation";
+import {
+  ROTA_DA_CONTA,
+  etiquetaEmBreve,
+  secoesVisiveis,
+  secaoAtiva,
+  itensSecundarios,
+  casaRota,
+  type ItemSecundario,
+} from "@/lib/navigation";
 import { CourseContentsNav } from "@/components/aula/CourseContentsNav";
 import { useItensConcluidos } from "@/lib/nav-marks";
 import { useT } from "@/lib/language";
@@ -81,7 +89,7 @@ export function SecondaryNav({
         "shadow-[inset_-10px_0_20px_rgba(0,0,0,0.01)]"
       )}
     >
-      {ativa?.to === "/conta" && usuario ? (
+      {ativa?.to === ROTA_DA_CONTA && usuario ? (
         <div className="mb-8 flex flex-col items-center gap-3 px-2 text-center">
           <div className="size-16 overflow-hidden rounded-full border border-border bg-surface-alt">
             {usuario.image ? (
@@ -116,7 +124,7 @@ export function SecondaryNav({
       )}
 
       <div className="flex-1 overflow-y-auto">
-        {ativa?.to === "/conta" ? (
+        {ativa?.to === ROTA_DA_CONTA ? (
           <>
             <ul className="flex flex-col gap-1 mt-2">
               {itens.map((item) => {
@@ -177,6 +185,7 @@ export function SecondaryNav({
                       item={item}
                       ativo={pathname === item.to || pathname.startsWith(`${item.to}/`)}
                       concluido={item.chave !== undefined && concluidos.has(item.chave)}
+                      emBreve={etiquetaEmBreve(ativa, t)}
                     />
                   </li>
                 ))}

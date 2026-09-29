@@ -474,6 +474,7 @@ O Bunny gera estes tipos de chave:
 | 5 | Enterprise DRM | não no lançamento · sim | **FECHADA em 25/09/2026** (operador): **sem Enterprise**; **MediaCage Basic (grátis) ligado** |
 | 6 | Purga da CDN na exclusão de conta | chave da conta · cache curto na pasta de fotos · aceitar até 1 mês | pendente: antes do envio da foto do aluno (§4.4) |
 | 7 | Gatilho da recarga automática | US$ 2 · US$ 5 | **FECHADA em 27/09/2026** (operador): **fica em US$ 2** (§2) |
+| 8 | Live Stream (aula ao vivo) | usar · não usar | **ADIADA pelo operador em 29/09/2026:** inscrito na **lista de acesso antecipado** do Bunny. **Avaliar só depois da Fase 3.** Até lá o foco continua no VOD; o Live é **opção futura, não compromisso**. Quando o acesso sair, testar quatro pontos: **(1)** token de embed e *Allowed domains* funcionando como no VOD; **(2)** gravação automática numa biblioteca do Stream; **(3)** chat nativo ou outra ferramenta; **(4)** preço, e se é cobrado separado do Stream |
 
 ## 7. Para o agente de build (Fase 3)
 

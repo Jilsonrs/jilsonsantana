@@ -4,8 +4,9 @@ import { screen } from "@testing-library/react";
 import { renderWithProviders } from "@/test-utils";
 import { Role } from "@jilson/core";
 import { AppRail } from "./AppRail";
+import { IdiomaProvider } from "@/lib/language";
 
-function render(papel?: string, route = "/inicio") {
+function render(papel?: string, route = "/aluno/inicio") {
   return renderWithProviders(<AppRail papel={papel} />, {
     route,
     path: "*",
@@ -18,7 +19,10 @@ describe("AppRail — quem vê o quê", () => {
 
     expect(screen.getByRole("link", { name: "Início" })).toBeTruthy();
     expect(screen.getByRole("link", { name: "Cursos" })).toBeTruthy();
-    expect(screen.getByRole("link", { name: "Minhas trilhas" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Trilhas" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Meus estudos" }).getAttribute("href")).toBe("/aluno/meus-estudos");
+    // Minhas trilhas mora no nível 2 de Meus estudos (operador, 29/09/2026).
+    expect(screen.queryByRole("link", { name: "Minhas trilhas" })).toBeNull();
     // "Minha conta" mora no menu da foto, no canto superior direito (decisão do
     // operador, 24/09/2026) — não no rail.
     expect(screen.queryByRole("link", { name: "Minha conta" })).toBeNull();
@@ -53,16 +57,35 @@ describe("AppRail — quem vê o quê", () => {
     expect(screen.queryByRole("link", { name: "Alunos" })).toBeNull();
   });
 
-  it("o aluno NÃO vê seção planejada — nem as que um dia serão dele", () => {
+  // Desde 29/09/2026 o aluno também vê o que é DELE e ainda não existe (decisão
+  // do operador: "o que ainda não existe aparece como EM BREVE") — como texto.
+  it("o aluno vê o JilsonAI como EM BREVE, e NUNCA como link", () => {
     render(Role.MEMBER);
+
+    expect(screen.getByText("JilsonAI")).toBeTruthy();
+    expect(screen.getByText("EM BREVE")).toBeTruthy();
+    expect(screen.queryByRole("link", { name: /JilsonAI/ })).toBeNull();
+    // Certificados saiu do primeiro nível: mora em Meus estudos.
     expect(screen.queryByText("Certificados")).toBeNull();
-    expect(screen.queryByText("JilsonAI")).toBeNull();
+  });
+
+  it("em inglês, a etiqueta do aluno traduz — a do admin fica em português", () => {
+    renderWithProviders(
+      <IdiomaProvider idioma="en">
+        <AppRail papel={Role.ADMIN} />
+      </IdiomaProvider>,
+      { route: "/aluno/inicio", path: "*" },
+    );
+
+    // JilsonAI é do aluno; Alunos, Dados e Trilhas Admin são do admin.
+    expect(screen.getAllByText("COMING SOON")).toHaveLength(1);
+    expect(screen.getAllByText("EM BREVE").length).toBeGreaterThan(0);
   });
 });
 
 describe("AppRail — onde estou", () => {
   it("marca só a rota atual", () => {
-    render(Role.MEMBER, "/inicio");
+    render(Role.MEMBER, "/aluno/inicio");
 
     expect(screen.getByRole("link", { name: "Início" }).getAttribute("aria-current")).toBe("page");
     expect(screen.getByRole("link", { name: "Cursos" }).getAttribute("aria-current")).toBeNull();
@@ -96,7 +119,7 @@ describe("AppRail — o logo é a saída para a vitrine", () => {
     expect(logo.getAttribute("href")).toBe("/");
     // `<a>` e não `<Link>`: o Link do React Router intercepta a navegação e
     // nunca sairia do app — e a home pública é HTML de servidor.
-    expect(logo.getAttribute("href")).not.toMatch(/^\/inicio/);
+    expect(logo.getAttribute("href")).not.toMatch(/^\/aluno\/inicio/);
   });
 });
 
@@ -107,7 +130,7 @@ describe("AppRail — acessibilidade do estado recolhido", () => {
     // O rótulo está sempre no DOM: some por RECORTE (overflow), nunca por
     // `display:none`. Isto reprova se alguém apagar o <span> do rótulo e
     // deixar só o ícone.
-    for (const nome of ["Início", "Cursos", "Trilhas", "Minhas trilhas", "Cursos Admin", "Site"]) {
+    for (const nome of ["Início", "Cursos", "Trilhas", "Meus estudos", "Cursos Admin", "Site"]) {
       expect(screen.getByRole("link", { name: nome })).toBeTruthy();
     }
   });

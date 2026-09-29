@@ -53,7 +53,7 @@ describe("MyTrilhasPage", () => {
     renderWithProviders(<MyTrilhasPage />);
 
     const link = await screen.findByRole("link", { name: /Fundamentos de Excel \+ IA/ });
-    expect(link.getAttribute("href")).toBe("/minhas-trilhas/7");
+    expect(link.getAttribute("href")).toBe("/aluno/minhas-trilhas/7");
     expect(screen.getByText("Minha cópia da trilha de fundamentos.")).toBeTruthy();
     expect(screen.getByText("IA aplicada")).toBeTruthy();
     expect(screen.queryByText("Você ainda não salvou nenhuma trilha.")).toBeNull();

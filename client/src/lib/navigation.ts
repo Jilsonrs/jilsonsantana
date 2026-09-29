@@ -1,5 +1,4 @@
 import {
-  Award,
   BarChart3,
   Bot,
   Globe,
@@ -14,6 +13,12 @@ import {
 import { MockHome, MockGrid, MockMap, MockUser } from "@/components/nav/MockIcons";
 import { Role, pt, type Dict } from "@jilson/core";
 import { PASSOS_DO_CURSO } from "@/lib/course-steps";
+
+/**
+ * "Minha conta". Constante porque a coluna secundária desenha a da conta de um
+ * jeito próprio (foto, nome, Sair) e precisa reconhecê-la pelo endereço.
+ */
+export const ROTA_DA_CONTA = "/aluno/conta";
 
 /** Os textos do app (a parte `app` do dicionário) — de onde vêm os rótulos do aluno. */
 type AppTexts = Dict["app"];
@@ -90,7 +95,7 @@ export type Secao = {
 export function navegacao(t: AppTexts): Secao[] {
   return [
     // ---------------------------------------------------------------- ALUNO
-    { label: t.nav.inicio, to: "/inicio", icon: MockHome, estado: "ativo" },
+    { label: t.nav.inicio, to: "/aluno/inicio", icon: MockHome, estado: "ativo" },
     // "Catálogo" com abas virou DUAS seções de primeiro nível (operador, set/2026):
     // "é mais fácil", e abre espaço para curso ao vivo e live session entrarem como
     // seções próprias em vez de mais uma aba escondida.
@@ -108,22 +113,37 @@ export function navegacao(t: AppTexts): Secao[] {
       estado: "ativo",
       tambemAtivoEm: ["/trilha/"],
     },
-    { label: t.nav.minhasTrilhas, to: "/minhas-trilhas", icon: MockMap, estado: "ativo" },
-    { label: t.nav.jilsonai, to: "/jilsonai", icon: Bot, estado: "planejado" }, // Fase 6
-    { label: t.nav.certificados, to: "/certificados", icon: Award, estado: "planejado" }, // Fase 6.5
+    {
+      // MEUS ESTUDOS (decisão do operador, 29/09/2026, a partir do "My Library"
+      // do LinkedIn Learning): o que é DO ALUNO, separado do que ele descobre
+      // (Cursos, Trilhas). Tem tela própria, com um resumo dos quatro itens.
+      // "Minhas trilhas" mantém o endereço dela e acende esta seção.
+      label: t.nav.meusEstudos,
+      to: "/aluno/meus-estudos",
+      icon: MockMap,
+      estado: "ativo",
+      tambemAtivoEm: ["/aluno/minhas-trilhas"],
+      filhos: [
+        { label: t.nav.emAndamento, to: "/aluno/em-andamento", estado: "planejado" }, // Fase 5
+        { label: t.nav.minhasTrilhas, to: "/aluno/minhas-trilhas" },
+        { label: t.nav.concluidos, to: "/aluno/concluidos", estado: "planejado" }, // Fase 5
+        { label: t.nav.certificados, to: "/aluno/certificados", estado: "planejado" }, // Fase 6.5
+      ],
+    },
+    { label: t.nav.jilsonai, to: "/aluno/jilsonai", icon: Bot, estado: "planejado" }, // Fase 6
     {
       label: t.nav.minhaConta,
-      to: "/conta",
+      to: ROTA_DA_CONTA,
       icon: MockUser,
       estado: "ativo",
       foraDoMenuLateral: true,
       filhos: [
-        { label: t.nav.seusDados, to: "/conta" },
-        { label: t.nav.preferencias, to: "/conta/preferencias" },
-        { label: t.nav.senhaEAcesso, to: "/conta/seguranca" },
-        { label: t.nav.sessoesAtivas, to: "/conta/sessoes" },
-        { label: t.nav.faturamento, to: "/conta/faturamento" },
-        { label: t.nav.integracoes, to: "/conta/integracoes" },
+        { label: t.nav.seusDados, to: ROTA_DA_CONTA },
+        { label: t.nav.preferencias, to: `${ROTA_DA_CONTA}/preferencias` },
+        { label: t.nav.senhaEAcesso, to: `${ROTA_DA_CONTA}/seguranca` },
+        { label: t.nav.sessoesAtivas, to: `${ROTA_DA_CONTA}/sessoes` },
+        { label: t.nav.faturamento, to: `${ROTA_DA_CONTA}/faturamento` },
+        { label: t.nav.integracoes, to: `${ROTA_DA_CONTA}/integracoes` },
       ],
     },
 
@@ -235,26 +255,29 @@ export function navegacao(t: AppTexts): Secao[] {
 export const NAVEGACAO: Secao[] = navegacao(pt.app);
 
 /**
- * As seções que ESTA pessoa vê. Dois filtros, e os dois importam:
+ * As seções que ESTA pessoa vê — filtradas só por `papel`: o aluno não vê as
+ * seções de admin. Não é sobre acesso (o servidor barra de qualquer jeito): é
+ * sobre não anunciar a existência de uma área que não é dele.
  *
- * - `papel` — o aluno não vê as seções de admin. Não é sobre acesso (o servidor
- *   barra de qualquer jeito): é sobre não anunciar a existência de uma área que
- *   não é dele.
- * - `estado` — **"planejado" aparece só para o ADMIN** *(decisão do operador,
- *   set/2026: "deixa os itens no menu mesmo que não funcione... vendo eu não
- *   esqueço")*. Ele quer o mapa inteiro à vista enquanto constrói.
- *   **Para o aluno continua escondido**, e o motivo não é o mesmo de antes:
- *   entre as planejadas há seções DELE (JilsonAI, Certificados) — mostrá-las
- *   seria anunciar produto que não existe.
- *   **Quem impede o link quebrado agora é o rail**, que renderiza planejada
- *   como texto e não como `<a>`. A trava mudou de lugar, não sumiu.
+ * **O que é "planejado" aparece para todos**, como texto com EM BREVE:
+ * - para o admin desde set/2026 (*"vendo eu não esqueço"*);
+ * - para o aluno desde 29/09/2026, com o menu novo (*"o que ainda não existe
+ *   aparece como EM BREVE"*) — antes ficava escondido dele.
+ *
+ * **Quem impede o link quebrado é quem desenha** (rail, gaveta, nível 2), que
+ * renderiza planejado como texto e nunca como `<a>`. Tem teste nos três.
  */
 export function secoesVisiveis(papel: string | undefined, t: AppTexts = pt.app): Secao[] {
-  return navegacao(t).filter(
-    (s) =>
-      (s.papel === undefined || s.papel === papel) &&
-      (s.estado === "ativo" || papel === Role.ADMIN),
-  );
+  return navegacao(t).filter((s) => s.papel === undefined || s.papel === papel);
+}
+
+/**
+ * A etiqueta de tela que ainda não existe. Seção de admin fica em português,
+ * qualquer que seja o idioma do app (o Admin não muda de idioma — decisão do
+ * operador, 23/09/2026); a do aluno segue o idioma dele.
+ */
+export function etiquetaEmBreve(secao: Secao | undefined, t: AppTexts): string {
+  return secao?.papel === Role.ADMIN ? pt.app.nav.emBreve : t.nav.emBreve;
 }
 
 /**

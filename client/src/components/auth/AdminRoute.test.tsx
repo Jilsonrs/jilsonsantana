@@ -15,7 +15,7 @@ function renderAt() {
         <Route element={<AdminRoute />}>
           <Route path="/admin" element={<div>painel admin</div>} />
         </Route>
-        <Route path="/conta" element={<div>minha conta</div>} />
+        <Route path="/aluno/conta" element={<div>minha conta</div>} />
         <Route path="/login" element={<div>tela de login</div>} />
       </Routes>
     </MemoryRouter>,
@@ -25,7 +25,7 @@ function renderAt() {
 describe("AdminRoute", () => {
   beforeEach(() => useSessionMock.mockReset());
 
-  it("redirects an authenticated non-admin to /conta", () => {
+  it("redirects an authenticated non-admin to /aluno/conta", () => {
     useSessionMock.mockReturnValue({
       data: { user: { role: "member" } },
       isPending: false,

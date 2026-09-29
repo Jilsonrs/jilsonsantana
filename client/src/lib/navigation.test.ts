@@ -1,11 +1,12 @@
 import { describe, it, expect } from "vitest";
 import { Home } from "lucide-react";
-import { Role, en } from "@jilson/core";
+import { Role, en, pt } from "@jilson/core";
 import {
   NAVEGACAO,
   navegacao,
   abasDaRota,
   casaRota,
+  etiquetaEmBreve,
   itensSecundarios,
   secaoAtiva,
   secoesVisiveis,
@@ -28,23 +29,37 @@ describe("secoesVisiveis — quem vê o quê", () => {
     const vistas = secoesVisiveis(Role.ADMIN);
 
     expect(vistas.some((s) => s.to === "/admin/cursos")).toBe(true);
-    expect(vistas.some((s) => s.to === "/inicio")).toBe(true);
+    expect(vistas.some((s) => s.to === "/aluno/inicio")).toBe(true);
   });
 
-  // Planejada = tela que ainda não existe. O operador quer ver o mapa inteiro
-  // enquanto constrói (set/2026); o aluno, não — entre as planejadas há seções
-  // DELE (JilsonAI, Certificados), e mostrá-las anunciaria produto inexistente.
-  it("seção PLANEJADA aparece para o admin e NÃO para o aluno", () => {
+  // Planejada = tela que ainda não existe. Aparece como EM BREVE para quem tem
+  // o papel dela: o admin vê o mapa inteiro (set/2026) e, desde 29/09/2026, o
+  // aluno vê as planejadas DELE ("o que ainda não existe aparece como EM
+  // BREVE"). As planejadas do admin continuam invisíveis para o aluno.
+  it("seção PLANEJADA aparece para quem tem o papel dela — inclusive o aluno", () => {
     const planejadas = NAVEGACAO.filter((s) => s.estado === "planejado");
-    expect(planejadas.length).toBeGreaterThan(0); // o rascunho existe mesmo
+    const doAlunoPlanejadas = planejadas.filter((s) => s.papel === undefined);
+    const deAdminPlanejadas = planejadas.filter((s) => s.papel === Role.ADMIN);
+    expect(doAlunoPlanejadas.length).toBeGreaterThan(0); // o JilsonAI
+    expect(deAdminPlanejadas.length).toBeGreaterThan(0);
 
     const doAdmin = secoesVisiveis(Role.ADMIN).map((s) => s.to);
     for (const p of planejadas) expect(doAdmin).toContain(p.to);
 
-    for (const papel of [Role.MEMBER, undefined]) {
-      const rotas = secoesVisiveis(papel).map((s) => s.to);
-      for (const p of planejadas) expect(rotas).not.toContain(p.to);
-    }
+    const doAluno = secoesVisiveis(Role.MEMBER).map((s) => s.to);
+    for (const p of doAlunoPlanejadas) expect(doAluno).toContain(p.to);
+    for (const p of deAdminPlanejadas) expect(doAluno).not.toContain(p.to);
+  });
+
+  // O menu do aluno (decisão do operador, 29/09/2026 — design.md §6): o que ele
+  // descobre (Início, Cursos, Trilhas), o que é dele (Meus estudos) e o JilsonAI.
+  it("o menu lateral do aluno: Início · Cursos · Trilhas · Meus estudos · JilsonAI", () => {
+    const menu = secoesVisiveis(Role.MEMBER).filter((s) => !s.foraDoMenuLateral);
+    expect(menu.map((s) => s.label)).toEqual(["Início", "Cursos", "Trilhas", "Meus estudos", "JilsonAI"]);
+    expect(menu.filter((s) => s.estado === "planejado").map((s) => s.label)).toEqual(["JilsonAI"]);
+    // Minhas trilhas e Certificados saíram do primeiro nível: moram em Meus estudos.
+    expect(menu.map((s) => s.label)).not.toContain("Minhas trilhas");
+    expect(menu.map((s) => s.label)).not.toContain("Certificados");
   });
 
   it("toda seção visível aponta para uma rota, e nenhuma se repete", () => {
@@ -71,8 +86,8 @@ describe("secoesVisiveis — quem vê o quê", () => {
     expect(deAdmin(emIngles)).toEqual(deAdmin(NAVEGACAO));
 
     const doAluno = (m: Secao[]) => m.filter((s) => s.papel === undefined).map((s) => s.label);
-    expect(doAluno(emIngles)).toContain("My learning paths");
-    expect(doAluno(emIngles)).not.toContain("Minhas trilhas");
+    expect(doAluno(emIngles)).toContain("My learning");
+    expect(doAluno(emIngles)).not.toContain("Meus estudos");
   });
 });
 
@@ -81,11 +96,13 @@ describe("secaoAtiva — onde estou", () => {
   const doAluno = secoesVisiveis(Role.MEMBER);
 
   it("acende a seção da rota exata", () => {
-    expect(secaoAtiva("/inicio", doAluno)?.label).toBe("Início");
+    expect(secaoAtiva("/aluno/inicio", doAluno)?.label).toBe("Início");
   });
 
-  it("acende a seção numa rota filha", () => {
-    expect(secaoAtiva("/minhas-trilhas/7", doAluno)?.label).toBe("Minhas trilhas");
+  it("Meus estudos acende na tela dele e dentro de Minhas trilhas", () => {
+    for (const rota of ["/aluno/meus-estudos", "/aluno/minhas-trilhas", "/aluno/minhas-trilhas/7"]) {
+      expect(secaoAtiva(rota, doAluno)?.label, rota).toBe("Meus estudos");
+    }
   });
 
   // A página de um curso é `/curso/:slug`, não `/cursos` — sem isto o aluno
@@ -151,8 +168,8 @@ describe("casaRota — parâmetro só casa com número", () => {
   });
 
   it("não casa com rota que só começa igual", () => {
-    expect(casaRota("/iniciox", "/inicio")).toBeNull();
-    expect(casaRota("/inicio/7", "/inicio")).toEqual({});
+    expect(casaRota("/aluno/iniciox", "/aluno/inicio")).toBeNull();
+    expect(casaRota("/aluno/inicio/7", "/aluno/inicio")).toEqual({});
   });
 });
 
@@ -160,7 +177,7 @@ describe("itensSecundarios — o nível 2 só aparece quando vale a pena", () =>
   const doAluno = secoesVisiveis(Role.MEMBER);
 
   it("não aparece onde a seção não tem filhos", () => {
-    expect(itensSecundarios("/inicio", doAluno)).toEqual([]);
+    expect(itensSecundarios("/aluno/inicio", doAluno)).toEqual([]);
   });
 
   // Uma coluna de navegação com uma linha só é ruído visual, não navegação.
@@ -216,6 +233,26 @@ describe("itensSecundarios — o nível 2 só aparece quando vale a pena", () =>
     expect(itens.filter((i) => i.estado === "planejado").map((i) => i.label)).toEqual(["Legendas", "Mensagens"]);
   });
 
+  // O nível 2 de Meus estudos (operador, 29/09/2026). Só Minhas trilhas existe;
+  // os outros três são EM BREVE (Fase 5 e 6.5). Sem "Salvos".
+  it("Meus estudos mostra os quatro itens, com três EM BREVE", () => {
+    for (const rota of ["/aluno/meus-estudos", "/aluno/minhas-trilhas/7"]) {
+      const itens = itensSecundarios(rota, doAluno);
+      expect(itens.map((i) => i.label), rota).toEqual([
+        "Em andamento",
+        "Minhas trilhas",
+        "Concluídos",
+        "Certificados",
+      ]);
+      expect(itens.filter((i) => i.estado === "planejado").map((i) => i.label), rota).toEqual([
+        "Em andamento",
+        "Concluídos",
+        "Certificados",
+      ]);
+      expect(itens.find((i) => i.label === "Minhas trilhas")?.to).toBe("/aluno/minhas-trilhas");
+    }
+  });
+
   it("nenhum filho de Site é prefixo de outro — senão dois acendem juntos", () => {
     // A coluna secundária acende um item também nas sub-rotas dele. Se Textos
     // voltasse para /admin/site, ficaria aceso em /admin/site/depoimentos.
@@ -241,7 +278,7 @@ describe("abasDaRota — o nível 3", () => {
   });
 
   it("vazio onde a seção não tem abas", () => {
-    expect(abasDaRota("/inicio", doAluno)).toEqual([]);
+    expect(abasDaRota("/aluno/inicio", doAluno)).toEqual([]);
   });
 
   // O catálogo do aluno TINHA abas (Cursos | Trilhas) e virou duas seções de
@@ -250,5 +287,19 @@ describe("abasDaRota — o nível 3", () => {
   it("o catálogo do aluno não tem mais abas — Cursos e Trilhas são seções", () => {
     expect(abasDaRota("/cursos", doAluno)).toEqual([]);
     expect(doAluno.map((s) => s.label)).toContain("Cursos");
+  });
+});
+
+describe("etiquetaEmBreve — a etiqueta de tela que ainda não existe", () => {
+  it("a do aluno segue o idioma do app", () => {
+    const jilsonai = navegacao(en.app).find((s) => s.to === "/aluno/jilsonai");
+    expect(etiquetaEmBreve(jilsonai, en.app)).toBe("COMING SOON");
+    expect(etiquetaEmBreve(NAVEGACAO.find((s) => s.to === "/aluno/jilsonai"), pt.app)).toBe("EM BREVE");
+  });
+
+  // O Admin não muda de idioma (decisão do operador, 23/09/2026).
+  it("a de uma seção de admin fica em português mesmo com o app em inglês", () => {
+    const dados = navegacao(en.app).find((s) => s.to === "/admin/dados");
+    expect(etiquetaEmBreve(dados, en.app)).toBe("EM BREVE");
   });
 });

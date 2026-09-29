@@ -3,8 +3,21 @@ import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ItemSecundario } from "@/lib/navigation";
 
-/** Um item de grupo do nível 2: link, ou texto quando a tela ainda não existe. */
-export function ItemDoGrupo({ item, ativo, concluido }: { item: ItemSecundario; ativo: boolean; concluido: boolean }) {
+/**
+ * Um item de grupo do nível 2: link, ou texto quando a tela ainda não existe.
+ * `emBreve` é a etiqueta já no idioma certo (`etiquetaEmBreve`, lib/navigation).
+ */
+export function ItemDoGrupo({
+  item,
+  ativo,
+  concluido,
+  emBreve,
+}: {
+  item: ItemSecundario;
+  ativo: boolean;
+  concluido: boolean;
+  emBreve: string;
+}) {
   // Planejado = a tela não existe: TEXTO, nunca link (mesma trava do rail e da
   // gaveta — GEMINI.md regra 12).
   if (item.estado === "planejado") {
@@ -15,7 +28,7 @@ export function ItemDoGrupo({ item, ativo, concluido }: { item: ItemSecundario; 
       >
         {item.label}
         <span className="rounded-full border border-border px-1.5 py-0.5 font-mono text-[0.55rem] tracking-[0.08em]">
-          EM BREVE
+          {emBreve}
         </span>
       </div>
     );
