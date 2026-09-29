@@ -22,12 +22,18 @@ vi.mock("@/lib/api", () => ({
 import { LoginPage } from "./LoginPage";
 import { IdiomaProvider } from "@/lib/language";
 
-/** Monta a tela com um destino real para `/aluno/inicio`, para poder assertar navegação. */
+/**
+ * Monta a tela com destinos reais para o Início do aluno e o do admin, para
+ * poder assertar para ONDE cada um foi levado.
+ */
 function renderLogin(route = "/login") {
   return renderWithProviders(<LoginPage />, {
     route,
     path: "/login",
-    extraRoutes: [{ path: "/aluno/inicio", element: <div>HOME DO ALUNO</div> }],
+    extraRoutes: [
+      { path: "/aluno/inicio", element: <div>HOME DO ALUNO</div> },
+      { path: "/admin", element: <div>PAINEL DO ADMIN</div> },
+    ],
   });
 }
 
@@ -387,5 +393,44 @@ describe("LoginPage — o idioma do endereço vai para a conta", () => {
     enviar();
 
     expect(await screen.findByText("HOME DO ALUNO")).toBeTruthy();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Cada papel cai no SEU Início (decisão do operador, 29/09/2026): o aluno no
+// painel dele, o admin no painel da escola.
+// ---------------------------------------------------------------------------
+
+describe("LoginPage — para onde cada um vai depois de entrar", () => {
+  it("o admin que entra cai no painel dele", async () => {
+    signInEmail.mockResolvedValue({ data: { user: { role: "admin" } }, error: null });
+    renderLogin();
+    preencher({ email: "admin@exemplo.com", senha: "minhasenha" });
+    enviar();
+
+    expect(await screen.findByText("PAINEL DO ADMIN")).toBeTruthy();
+  });
+
+  it("o aluno que entra cai no Início do aluno", async () => {
+    signInEmail.mockResolvedValue({ data: { user: { role: "member" } }, error: null });
+    renderLogin();
+    preencher({ email: "aluno@exemplo.com", senha: "minhasenha" });
+    enviar();
+
+    expect(await screen.findByText("HOME DO ALUNO")).toBeTruthy();
+  });
+
+  it("o admin já logado que abre /login vai ao painel dele", () => {
+    useSession.mockReturnValue({ data: { user: { role: "admin" } }, isPending: false, refetch });
+    renderLogin();
+
+    expect(screen.getByText("PAINEL DO ADMIN")).toBeTruthy();
+  });
+
+  it("o aluno já logado que abre /login vai ao Início do aluno", () => {
+    useSession.mockReturnValue({ data: { user: { role: "member" } }, isPending: false, refetch });
+    renderLogin();
+
+    expect(screen.getByText("HOME DO ALUNO")).toBeTruthy();
   });
 });

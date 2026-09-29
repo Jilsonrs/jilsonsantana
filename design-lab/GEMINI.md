@@ -144,7 +144,7 @@ servidores (§5); o React responde em `localhost:5173`, a home pública em `loca
 
 | Endereço | Arquivo |
 |---|---|
-| `/admin` | `client/src/pages/AdminPage.tsx` |
+| `/admin` | **O Início do admin** (29/09): `client/src/pages/AdminPage.tsx` — os 4 relatórios (Assinantes, Aprendizado, De onde vieram os alunos, Uso do JilsonAI), todos EM BREVE, e os atalhos embaixo (Trilhas EM BREVE, sem link). Cada cartão é um grupo com nome (`role="group"`) e **tem teste**: EM BREVE nunca é link. |
 | `/admin/cursos` | `client/src/pages/admin/AdminCoursesPage.tsx` + **o cartão de cada curso**, `client/src/components/admin/AdminCourseCard.tsx` (27/09) |
 | `/admin/cursos/novo` | `client/src/pages/admin/course-editor/NewCoursePage.tsx` — só o passo 1; "Criar curso" abre o editor |
 | `/admin/cursos/:id/basico` · `/para-quem-e` · `/conteudo` · `/pagina` · `/publicar` | **O editor do curso em 7 passos** (28/09): `course-editor/CourseEditorLayout.tsx` (o topo, comum a todos), `course-editor/steps.tsx` (o que cada passo mostra) e `course-editor/StepForm.tsx` (o botão Salvar de cada passo). O conteúdo de cada passo são as seções de `client/src/components/admin/course-form/`. |
@@ -219,7 +219,7 @@ servidores (§5); o React responde em `localhost:5173`, a home pública em `loca
 
 **PLANEJADAS — aparecem no rail em cinza, com a etiqueta EM BREVE, e NÃO têm tela**
 
-Trilhas Admin · Alunos · JilsonAI Admin · Dados · JilsonAI (do aluno) — e, no nível 2 de **Meus
+Trilhas Admin · Alunos · JilsonAI Admin · JilsonAI (do aluno) — e, no nível 2 de **Meus
 estudos**, Em andamento · Concluídos · Certificados.
 Elas existem só no mapa de navegação. **Não procure o arquivo: não há.**
 **Desde 29/09 o ALUNO também as vê** (as dele: JilsonAI e as três de Meus estudos), por decisão do
@@ -322,6 +322,12 @@ exceto o item 4, que é página pública.
    (`h2`) de cada bloco e cartão, e o máximo de 3 trilhas no Início. **Sem "Salvos"** e sem as
    muitas fileiras do Home do LinkedIn (decisão dele).
 
+15. **O Início do admin — ESTRUTURA PRONTA em 29/09, o acabamento é seu** (`/admin`,
+   `pages/AdminPage.tsx`; decisão do operador): logado como admin, o Início é o painel da escola;
+   o aluno continua indo para o dele. Os 4 relatórios são EM BREVE até os dados existirem, e os
+   atalhos ficaram embaixo. **Tem teste, não mexa sem falar com o operador:** EM BREVE nunca é
+   link, e a etiqueta do admin fica em português.
+
 > **Fora do seu trabalho, para não confundir:** o Bunny ganhou **Live Stream** em acesso
 > antecipado (29/09). É só avaliação depois da Fase 3, **não** é tela a desenhar (`docs/bunny.md`
 > § 6, decisão 8).
@@ -420,7 +426,9 @@ versionado**, então ele entra no commit junto com a sua mudança.
 itens indistinguíveis no rail **recolhido**, onde só o ícone aparece. Já aconteceu duas vezes em
 uma semana: "Site" nasceu com o ícone do "Catálogo", e "JilsonAI" existia duas vezes (aluno e
 admin) com o mesmo ícone e o mesmo nome. **Tem teste** — `navigation.test.ts` reprova rótulo ou
-ícone repetido em todo o mapa. Se precisar de um ícone novo, pegue no `lucide-react`.
+ícone repetido **em cada menu** (o do aluno e o do admin, nos dois idiomas). Desde 29/09 existem
+dois "Início" no mapa, um por papel, que nunca aparecem juntos. Se precisar de um ícone novo, pegue
+no `lucide-react`.
 
 **12. Seção PLANEJADA é TEXTO, nunca `<a>`.** O rail mostra as telas que ainda não existem, em
 cinza e com a etiqueta EM BREVE — ao admin, para ele não esquecer o que falta, e ao aluno, as dele

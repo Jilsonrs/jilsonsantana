@@ -21,15 +21,28 @@ describe("secoesVisiveis — quem vê o quê", () => {
   it("o aluno NÃO vê nenhuma seção de admin", () => {
     const vistas = secoesVisiveis(Role.MEMBER);
 
-    expect(vistas.every((s) => s.papel === undefined)).toBe(true);
+    expect(vistas.every((s) => s.papel !== Role.ADMIN)).toBe(true);
     expect(vistas.some((s) => s.to.startsWith("/admin"))).toBe(false);
   });
 
-  it("o admin vê as dele E as do aluno", () => {
+  it("o admin vê as dele E as do aluno — menos o Início do aluno", () => {
     const vistas = secoesVisiveis(Role.ADMIN);
 
     expect(vistas.some((s) => s.to === "/admin/cursos")).toBe(true);
-    expect(vistas.some((s) => s.to === "/aluno/inicio")).toBe(true);
+    expect(vistas.some((s) => s.to === "/aluno/meus-estudos")).toBe(true);
+    expect(vistas.some((s) => s.to === "/aluno/inicio")).toBe(false);
+  });
+
+  // O Início é diferente por papel (decisão do operador, 29/09/2026): o aluno vai
+  // ao painel dele; o admin, ao painel da escola, que absorveu a seção "Dados".
+  it("cada papel tem o SEU Início, e só um", () => {
+    const inicio = (papel: string) =>
+      secoesVisiveis(papel).filter((s) => s.label === "Início").map((s) => s.to);
+    expect(inicio(Role.MEMBER)).toEqual(["/aluno/inicio"]);
+    expect(inicio(Role.ADMIN)).toEqual(["/admin"]);
+    // O menu do admin COMEÇA pelo Início dele.
+    expect(secoesVisiveis(Role.ADMIN)[0].to).toBe("/admin");
+    expect(NAVEGACAO.some((s) => s.label === "Dados")).toBe(false);
   });
 
   // Planejada = tela que ainda não existe. Aparece como EM BREVE para quem tem
@@ -67,17 +80,20 @@ describe("secoesVisiveis — quem vê o quê", () => {
     expect(rotas.every((r) => r.startsWith("/"))).toBe(true);
     expect(new Set(rotas).size).toBe(rotas.length);
 
-    // Rótulo e ícone também são únicos. No rail RECOLHIDO só o ícone aparece —
-    // dois iguais viram dois itens indistinguíveis, que foi o que aconteceu
-    // quando "Site" nasceu com o ícone do "Catálogo" (set/2026).
-    const rotulos = NAVEGACAO.map((s) => s.label);
-    expect(new Set(rotulos).size).toBe(rotulos.length);
-    const icones = NAVEGACAO.map((s) => s.icon);
-    expect(new Set(icones).size).toBe(icones.length);
-
-    // E em inglês também: a tradução não pode criar dois itens com o mesmo nome.
-    const emIngles = navegacao(en.app).map((s) => s.label);
-    expect(new Set(emIngles).size).toBe(emIngles.length);
+    // Rótulo e ícone também são únicos EM CADA MENU (o do aluno e o do admin).
+    // No rail RECOLHIDO só o ícone aparece — dois iguais viram dois itens
+    // indistinguíveis, que foi o que aconteceu quando "Site" nasceu com o ícone
+    // do "Catálogo" (set/2026). É por menu, e não no mapa inteiro, porque os
+    // dois "Início" (29/09/2026) nunca aparecem juntos.
+    for (const papel of [Role.MEMBER, Role.ADMIN]) {
+      for (const t of [pt.app, en.app]) {
+        const menu = secoesVisiveis(papel, t);
+        const rotulos = menu.map((s) => s.label);
+        expect(new Set(rotulos).size, `${papel} rótulos`).toBe(rotulos.length);
+        const icones = menu.map((s) => s.icon);
+        expect(new Set(icones).size, `${papel} ícones`).toBe(icones.length);
+      }
+    }
   });
 
   it("em inglês, só os rótulos do ALUNO mudam — os de admin ficam em português", () => {
@@ -85,7 +101,7 @@ describe("secoesVisiveis — quem vê o quê", () => {
     const deAdmin = (m: Secao[]) => m.filter((s) => s.papel === Role.ADMIN).map((s) => s.label);
     expect(deAdmin(emIngles)).toEqual(deAdmin(NAVEGACAO));
 
-    const doAluno = (m: Secao[]) => m.filter((s) => s.papel === undefined).map((s) => s.label);
+    const doAluno = (m: Secao[]) => m.filter((s) => s.papel !== Role.ADMIN).map((s) => s.label);
     expect(doAluno(emIngles)).toContain("My learning");
     expect(doAluno(emIngles)).not.toContain("Meus estudos");
   });
@@ -113,6 +129,9 @@ describe("secaoAtiva — onde estou", () => {
 
   it("acende a seção de admin nas rotas dela", () => {
     expect(secaoAtiva("/admin/cursos", doAdmin)?.label).toBe("Cursos Admin");
+    // O Início do admin é "/admin", PREFIXO de todas as rotas dele: acende só nele.
+    expect(secaoAtiva("/admin", doAdmin)?.to).toBe("/admin");
+    expect(secaoAtiva("/admin/site/textos", doAdmin)?.label).toBe("Site");
     expect(secaoAtiva("/admin/cursos/novo", doAdmin)?.to).toBe("/admin/cursos");
   });
 
@@ -299,7 +318,7 @@ describe("etiquetaEmBreve — a etiqueta de tela que ainda não existe", () => {
 
   // O Admin não muda de idioma (decisão do operador, 23/09/2026).
   it("a de uma seção de admin fica em português mesmo com o app em inglês", () => {
-    const dados = navegacao(en.app).find((s) => s.to === "/admin/dados");
-    expect(etiquetaEmBreve(dados, en.app)).toBe("EM BREVE");
+    const alunos = navegacao(en.app).find((s) => s.to === "/admin/alunos");
+    expect(etiquetaEmBreve(alunos, en.app)).toBe("EM BREVE");
   });
 });

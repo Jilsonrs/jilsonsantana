@@ -41,7 +41,21 @@ describe("AppRail — quem vê o quê", () => {
   it("o admin vê as dele e as do aluno", () => {
     render(Role.ADMIN);
     expect(screen.getByRole("link", { name: "Cursos Admin" })).toBeTruthy();
-    expect(screen.getByRole("link", { name: "Início" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Meus estudos" })).toBeTruthy();
+  });
+
+  // O Início é diferente por papel (decisão do operador, 29/09/2026).
+  it("o Início do admin leva ao painel dele; o do aluno, ao painel do aluno", () => {
+    render(Role.ADMIN, "/admin");
+    const doAdmin = screen.getAllByRole("link", { name: "Início" });
+    expect(doAdmin.map((l) => l.getAttribute("href"))).toEqual(["/admin"]);
+    expect(doAdmin[0].getAttribute("aria-current")).toBe("page");
+  });
+
+  it("o Início do aluno leva ao painel do aluno", () => {
+    render(Role.MEMBER);
+    const doAluno = screen.getAllByRole("link", { name: "Início" });
+    expect(doAluno.map((l) => l.getAttribute("href"))).toEqual(["/aluno/inicio"]);
   });
 
   // O mapa tem seções "planejadas" (JilsonAI, Certificados, Alunos…) que

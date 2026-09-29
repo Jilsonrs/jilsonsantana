@@ -9,11 +9,21 @@ const MEMBER = {
   password: process.env.SEED_MEMBER_PASSWORD ?? "",
 };
 
-async function login(page: Page, creds: { email: string; password: string }) {
+// Cada papel cai no SEU Início (decisão do operador, 29/09/2026): o aluno no
+// painel dele, o admin no painel da escola.
+async function login(
+  page: Page,
+  creds: { email: string; password: string },
+  papel: "aluno" | "admin" = "aluno",
+) {
   await page.goto("/login");
   await page.getByLabel("E-mail").fill(creds.email);
   await page.getByLabel("Senha").fill(creds.password);
   await page.getByRole("button", { name: "Entrar" }).click();
+  if (papel === "admin") {
+    await page.waitForURL("**/admin");
+    return;
+  }
   await page.waitForURL("**/aluno/inicio");
   // O Início passou a buscar as trilhas salvas (29/09/2026). Espera o DADO, não
   // o navegador: clicar durante uma busca em andamento foi a causa provável da
@@ -52,7 +62,8 @@ test("member reaches /aluno/conta but is blocked from /admin", async ({ page }) 
 });
 
 test("admin reaches /admin", async ({ page }) => {
-  await login(page, ADMIN);
+  // O login já leva o admin ao painel dele; o `goto` prova também o acesso direto.
+  await login(page, ADMIN, "admin");
   await page.goto("/admin");
 
   // Duas asserções, e a primeira é a que carrega o teste: o admin NÃO é
@@ -63,7 +74,8 @@ test("admin reaches /admin", async ({ page }) => {
   // solto: sobrevive a mudança de copy, que é justamente o que quebrou esta
   // spec — ela esperava "Área administrativa", texto renomeado para "Admin" no
   // Bloco 6a e não detectado por meses, porque o E2E não rodava no CI.
-  await expect(page.getByRole("heading", { name: "Admin" })).toBeVisible();
+  // O título virou "Início" em 29/09/2026: /admin é o Início do admin.
+  await expect(page.getByRole("heading", { level: 1, name: "Início" })).toBeVisible();
   // Escopado ao conteúdo (`main`) porque a barra lateral também tem um item
   // "Cursos" — os dois apontam para o mesmo lugar, então não é ambiguidade
   // para o aluno, só para o seletor. E o escopo devolve a INTENÇÃO original

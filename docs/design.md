@@ -391,6 +391,12 @@ O menu separa o que o aluno **descobre** do que é **dele**:
   estudando** (EM BREVE até a Fase 5) · **Minhas trilhas** (até 3 salvas e "Ver todas") ·
   **Atalhos** (Cursos, Trilhas, JilsonAI e Certificados — os dois últimos EM BREVE). Bloco novo
   entra como mais um bloco, sem virar as fileiras do LinkedIn.
+- **O Início é diferente por papel** *(operador, 29/09/2026)*: logado como **admin**, o Início é
+  o **painel da escola** (`/admin`), e é para lá que ele vai depois de entrar; o aluno vai para o
+  dele. O painel do admin tem os **4 relatórios** mapeados para "Dados" (Assinantes · Aprendizado
+  · De onde vieram os alunos · Uso do JilsonAI), **EM BREVE** até os dados existirem, e os
+  **atalhos** de antes embaixo. **"Dados" virou esse Início e saiu do menu.** O resto do menu do
+  admin não mudou.
 - **"Meus estudos" tem tela própria** *(operador, 29/09/2026)*, `/aluno/meus-estudos`: um cartão
   por item do nível 2, com o resumo de cada um. "Minhas trilhas" mantém o endereço dela
   (`/aluno/minhas-trilhas`) e acende Meus estudos no menu.
