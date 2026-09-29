@@ -1456,7 +1456,12 @@ landmark. Corrigido junto.
       Udemy)*: na lista de aulas do curso, a aula com arquivos ganha um botão **Recursos** junto ao
       nome, que abre a lista dos arquivos para baixar — **vale para aula de vídeo e de texto**; na
       aula **só de texto**, o texto fica no centro da tela e, embaixo dele, **"Recursos para esta
-      aula"** com os arquivos. Só assinante baixa (a trava desta etapa), sempre como download.
+      aula"** com os arquivos. Só assinante baixa (a trava desta etapa), sempre como download, e
+      **com o NOME ORIGINAL** — o que o operador enviou, um arquivo só, como na Udemy *(pedido do
+      operador, 29/09/2026, depois de baixar pelo painel do Bunny e receber `download.zip` → pasta
+      da aula → arquivo com nome de código)*. O nome com código no Storage continua (é o endereço
+      interno); o nome original sai do banco no `Content-Disposition` — atenção ao achado P2 da
+      revisão de segurança sobre caracteres invisíveis no nome.
       **Decidir aqui** como o .zip chega ao aluno: pelo servidor (sai pelo Railway, cobrado) ou link
       assinado temporário do Bunny (`bunny.md` §4.5).
       `security-vulnerability-reviewer` e revisão do operador antes do "publica".

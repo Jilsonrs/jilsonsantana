@@ -27,7 +27,7 @@
 | Storage Zone de produção | **criada**: `jilsonsantana-storage` (§4.1) |
 | Storage Zone de dev | **não criada** (§4.1) |
 | Pull Zone das imagens | **criada e testada**: `img.jilsonsantana.com` (§4.2) |
-| Storage Zone dos ARQUIVOS PARA BAIXAR | **criada pelo operador em 29/09**: `jilsonsantana-arquivos`, **sem Pull Zone** (§4.5). As 3 variáveis estão no Railway, e o envio **sem limite de tamanho** está no ar (`main` = `cb57273`). Falta o primeiro envio de teste (P33) |
+| Storage Zone dos ARQUIVOS PARA BAIXAR | **criada pelo operador em 29/09**: `jilsonsantana-arquivos`, **sem Pull Zone** (§4.5). As 3 variáveis estão no Railway, e o envio **sem limite de tamanho** está no ar (`main` = `cb57273`). **Provado no ar em 29/09:** um .zip enviado pelo admin chegou inteiro à zona |
 | Stream: biblioteca de aulas | **criada e testada**: `jilsonsantana-stream` (§3.2). Desde 28/09 guarda também a apresentação; o envio do vídeo de uma aula pelo admin **funcionou no ar em 28/09** |
 | Stream: biblioteca de apresentação | **existiu e foi apagada pelo operador em 28/09**: a `jilsonsantana-stream-apresentacao` (763872) guardava o vídeo de apresentação; desde 28/09 é tudo na `jilsonsantana-stream` (§3.1) |
 | Stream: bibliotecas de dev | **não serão criadas por enquanto**: o operador testa o envio direto no ar (decisão de 27/09, §4.1) |
@@ -388,6 +388,10 @@ desligado** (é pago).
   acrescentada depois (não sai mais). **Sem zona de dev** (o teste é no ar, como nas imagens).
   *(Na criação, o painel veio com Frankfurt como principal e São Paulo como réplica; corrigido
   antes de criar.)*
+- **Provado no ar em 29/09:** o operador enviou um .zip (98 KB) numa aula pelo admin, e ele chegou
+  inteiro em `aulas/<aula>/<código>.zip`. **Baixar pelo painel do Bunny não é o caminho do
+  aluno:** o painel junta a pasta num `download.zip`, com a pasta da aula e o arquivo com nome de
+  código dentro. O aluno baixa pelo site, com o nome original (etapa 4 do Bloco U).
 - **Sem limite de tamanho** *(operador, 29/09/2026: em geral um .zip por curso)*. O arquivo passa
   **em fluxo** pelo nosso servidor até o Bunny, sem ficar inteiro na memória, e o tamanho vai no
   cabeçalho do `PUT` (medido: sem ele, o fetch do Node manda "em pedaços"). **O único teto é do
