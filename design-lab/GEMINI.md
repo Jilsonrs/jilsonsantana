@@ -286,6 +286,36 @@ exceto o item 4, que é página pública.
    que mostra Markdown (hoje, a prévia da descrição; depois, telas do aluno e o chat do JilsonAI).
    Ele é carregado só quando alguém abre Visualizar: não troque o `lazy()` por import direto.
 
+> **Acrescentados em 29/09/2026 (fila atualizada no fim da sessão).** O item 9 agora se chama
+> **Mídia e destaques** (era "Página do curso"; o endereço `/pagina` ficou).
+
+11. **A página da aula** (`/aluno/aula/:id` — o mapa das telas acima tem os arquivos). É a tela que
+   o aluno mais vai usar, e está **crua**: player grande, o conteúdo do curso no nível 2, os
+   Recursos, o "para assinantes", o botão flutuante da IA e o painel "Em breve". Os textos saem do
+   dicionário (`app.aula.*`): **mude o visual, não o texto**. **Têm teste e não podem sair:** o
+   `aria-current` da aula atual, o "para assinantes" **sem** player, o rascunho marcado só para o
+   admin, o botão da IA com nome e `aria-expanded`. O player é o mesmo `BunnyPlayer` do item 9:
+   **não tire o `referrerPolicy`**. No celular e para o visitante, o conteúdo do curso desce para
+   baixo do player (não há nível 2): confira os dois jeitos.
+12. **"Sobre o curso"** (`components/aula/CourseDetails.tsx`), embaixo do player em toda aula:
+   nível, descrição, o que vai aprender, pré-requisitos, pra quem é, camadas, destaques e perguntas.
+   **Reaproveita peças compartilhadas** — `LayerSelo`, `HighlightCard` e `MarkdownText`, de
+   `components/content/`, e o `Accordion` do shadcn: formatar ali muda todos os lugares que usam.
+   **Bloco vazio não aparece** (tem teste): o desenho precisa ficar bom com qualquer combinação.
+13. **O Conteúdo do editor** (a linha da aula que abre e recolhe, a miniatura do vídeo, os Arquivos
+   com a porcentagem do envio — descritos acima, no bloco sobre `ModuleLessonTree`). O
+   comportamento é do operador e tem teste; o acabamento é seu.
+14. **AINDA NÃO EXISTE — o menu novo do aluno** (`docs/design.md` § 6, *O menu do aluno*, decisão
+   do operador de 29/09): Início · Cursos · Trilhas · **Meus estudos** (Em andamento, Minhas
+   trilhas, Concluídos, Certificados) · JilsonAI. **É o próximo bloco do Claude**, e ele monta a
+   estrutura (mapa de navegação, rotas, telas em `/aluno/*`). Se o operador pedir antes um mock de
+   **Início** ou de **Meus estudos**, o conteúdo de cada uma está naquela seção. **Sem "Salvos"**
+   e sem as muitas fileiras do Home do LinkedIn (decisão dele).
+
+> **Fora do seu trabalho, para não confundir:** o Bunny ganhou **Live Stream** em acesso
+> antecipado (29/09). É só avaliação depois da Fase 3, **não** é tela a desenhar (`docs/bunny.md`
+> § 6, decisão 8).
+
 ## 3. Onde você NÃO mexe
 
 | Arquivo | Por quê |

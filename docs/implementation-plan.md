@@ -157,6 +157,10 @@
 > módulo novos nascendo conforme o curso. **Decidido e registrado, ainda não construído:** o
 > **menu do aluno novo** (Início · Cursos · Trilhas · Meus estudos · JilsonAI — `design.md` §6),
 > que é o **próximo bloco**, junto com as telas sob `/aluno/*` e o painel do Início.
+> **Registrado no fim da sessão de 29/09 (só documentos, no `dev`):** o mapa do que falta nos 7
+> passos do editor (Bloco E, depois da etapa 4), com um **achado novo** (campo já salvo não volta a
+> ficar vazio); o **Live Stream** do Bunny em acesso antecipado (`bunny.md` §6, decisão 8,
+> avaliar depois da Fase 3); e a fila do parceiro de design (`design-lab/GEMINI.md`, itens 11–14).
 > **PUBLICADO em 28/09 (`main` = `5a60fa1`, CI verde): o Bloco E, etapa 2 INTEIRA (partes 2a a 2e)**,
 > mais a edição como na Udemy e a limpeza no Bunny ao excluir. *(A primeira publicação do dia,
 > `d342000`, pegou CI vermelho por um teste do arrastar que dependia de tempo — não do site; o
@@ -1825,9 +1829,11 @@ própria**.*
   - [ ] **Testes de "não vaza" sem as trilhas do aluno:** o do texto da aula não consulta
         `/api/trilhas/:slug` nem `/mine/:id`, e o do vídeo não consulta `/mine/:id`. O código
         protege (`select` explícito), mas nenhum teste reprova se voltar o `include`.
-  - [ ] **Nome do arquivo para o download** (etapa 4): na rota de entrega, usar
+  - [x] **Nome do arquivo para o download** (etapa 4): na rota de entrega, usar
         `res.attachment()`/`res.download()` (nunca interpolar no `Content-Disposition`) e tirar do
         nome os caracteres de direção de texto (U+202E e parecidos), que disfarçam a extensão.
+        **FEITO na etapa 4 do Bloco U (29/09):** `res.attachment(nomeParaDownload(...))` em
+        `routes/lesson-view.ts`; `lib/nome-do-download.ts` tira os caracteres invisíveis.
 - [x] **Excluir a aula (ou o curso) não apaga os arquivos dela no Bunny** *(achado da 2e;
       **feito em 28/09** junto com o vídeo, decisão do operador — ver a revisão de segurança,
       acima)*. O registro some pela cascata do banco; o arquivo
@@ -1864,6 +1870,30 @@ própria**.*
       **boas-vindas** (ao abrir a primeira aula do curso) e de **parabéns** (ao concluir), e outras
       comunicações do operador ou do JilsonAI. **Sem e-mail.** O passo 6 do editor é onde ele
       escreve as duas mensagens do curso.
+
+**O QUE FALTA NOS 7 PASSOS (resumo de 29/09/2026 — as linhas estão acima; aqui é o mapa):**
+
+| Passo | Estado | O que falta |
+|---|---|---|
+| 1 Informações básicas | pronto | a **duração publicada** no topo do editor (adiada: o Bunny já informa a duração de cada vídeo no resumo do admin, mas a aula **não guarda** duração; falta guardar, somar e mostrar) |
+| 2 Para quem é | pronto | — |
+| 3 Conteúdo | pronto | o **Quiz** (etapa própria, com decisões do operador; no "+" aparece EM BREVE) |
+| 4 Legendas | EM BREVE | a **etapa 3** inteira (tela própria, `.vtt` por vídeo) |
+| 5 Mídia e destaques | pronto | a P19 (o vídeo de apresentação reenviado tocando — `pendencias.md`) |
+| 6 Mensagens | EM BREVE | a **etapa 4** inteira (o sino + boas-vindas e parabéns) |
+| 7 Publicar | pronto | o **link para abrir a página pública do curso** (o Visualizar), que espera o **C5** |
+
+**Em todos os passos, ainda aberto:**
+- [ ] **Revisão das dicas pelo operador** — todas em `client/src/lib/course-hints.ts`, num arquivo
+      só (ele pediu para revisar depois, 28/09).
+- [ ] **ACHADO (29/09, confirmado no código, NÃO corrigido): campo já salvo não volta a ficar
+      vazio.** Apagar o texto do **subtítulo**, da **descrição**, do **nível**, da **imagem** ou
+      do **ID do vídeo de apresentação** e salvar não apaga nada: `toPayload`
+      (`client/src/lib/course-form.ts`) manda `undefined` para o campo vazio, e o servidor lê
+      campo ausente como "deixa como está". O salvamento diz "salvo" e o valor antigo continua.
+      As listas não têm o problema (vão sempre como lista). A correção é decisão de quando, do
+      operador.
+- [ ] **A corrida na troca de vídeo com duas abas** (P2 da revisão de segurança, na etapa 2 acima).
 
 **Vai para outros blocos (anotado lá quando eles abrirem):**
 - **Página do curso (vitrine, depois do C5):** a seção do autor é **a mesma da home**
