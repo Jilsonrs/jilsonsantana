@@ -28,8 +28,8 @@
 | Storage Zone de dev | **não criada** (§4.1) |
 | Pull Zone das imagens | **criada e testada**: `img.jilsonsantana.com` (§4.2) |
 | Storage Zone dos ARQUIVOS PARA BAIXAR | **a criar pelo operador** (`pendencias.md`, P33): zona própria, **sem Pull Zone** (§4.5). O código do envio está pronto no `dev` (28/09) |
-| Stream: biblioteca de aulas | **criada e testada**: `jilsonsantana-stream` (§3.2) |
-| Stream: biblioteca de apresentação | **não criada**; o código do envio está pronto no `dev` (Bloco U, etapa 2, 27/09) |
+| Stream: biblioteca de aulas | **criada e testada**: `jilsonsantana-stream` (§3.2). Desde 28/09 guarda também a apresentação; o envio do vídeo de uma aula pelo admin **funcionou no ar em 28/09** |
+| Stream: biblioteca de apresentação | **existiu e foi apagada pelo operador em 28/09**: a `jilsonsantana-stream-apresentacao` (763872) guardava o vídeo de apresentação; desde 28/09 é tudo na `jilsonsantana-stream` (§3.1) |
 | Stream: bibliotecas de dev | **não serão criadas por enquanto**: o operador testa o envio direto no ar (decisão de 27/09, §4.1) |
 | Código do site usando o Bunny | **envio da capa do curso pelo admin**: **no ar e provado em 27/09** (Bloco U, etapa 1): o operador enviou uma capa pelo admin, e ela saiu por `img.jilsonsantana.com/cursos/…`. Sem Storage de dev, por decisão dele |
 
@@ -91,12 +91,24 @@ painel. O que isso muda, e já está no código (28/09):
 Gatilho de reabertura: se uma página pública passar a ficar em cache por mais de 24 h (uma CDN na
 frente do site, por exemplo), ou se o Enterprise DRM entrar só para as aulas.*
 
+**O que o primeiro teste no ar mostrou (28/09/2026, fato medido):** a biblioteca de apresentação
+**existia** (`jilsonsantana-stream-apresentacao`, 763872), ao contrário do que este documento
+dizia, e o vídeo de apresentação morava nela. A variável `BUNNY_STREAM_LESSONS_LIBRARY_ID` apontava
+para ela, e a `…_API_KEY` era da `jilsonsantana-stream` (762605): a apresentação tocava, e criar
+vídeo de aula dava **401**. *Fato da doc do Bunny:* o 401 na criação quer dizer chave ausente,
+chave da conta em vez da biblioteca, **ou chave de outra biblioteca**. O operador trocou o ID e a
+token key para os da 762605 e **apagou** a biblioteca de apresentação; o envio da aula passou a
+funcionar. **Consequência:** o vídeo de apresentação que existia se perdeu com a biblioteca e
+precisa ser enviado de novo pelo admin (`pendencias.md`, P19). **Diagnóstico para a próxima vez:**
+o número da biblioteca em uso aparece no endereço público do player da apresentação, sem precisar
+de chave nenhuma.
+
 ### 3.1-bis O desenho de 25/09 (histórico, substituído em 28/09)
 
 | Biblioteca | Ambiente | O que guarda | Token | Regiões | Estado |
 |---|---|---|---|---|---|
 | `jilsonsantana-stream` (library ID 762605) | produção | as aulas: só para quem tem assinatura ativa | **ligado** | Frankfurt + São Paulo | **criada e testada em 25/09** |
-| `jilsonsantana-stream-apresentacao` | produção | o vídeo de apresentação dos cursos, que toca para quem **não** é assinante (é ativo de venda) | desligado | Frankfurt + São Paulo | **não será criada** (28/09: tudo na `jilsonsantana-stream`, §3.1) |
+| `jilsonsantana-stream-apresentacao` (library ID 763872) | produção | o vídeo de apresentação dos cursos, que toca para quem **não** é assinante (é ativo de venda) | desligado | Frankfurt + São Paulo | **existiu e foi apagada pelo operador em 28/09** (tudo na `jilsonsantana-stream`, §3.1) |
 | `jilsonsantana-stream-dev` | desenvolvimento | 2 ou 3 vídeos de teste | ligado, igual à de aulas | só Frankfurt | **não será criada por enquanto** (testa no ar, decisão de 27/09) |
 
 - **Regiões:** no Stream, **Frankfurt é a principal e não se escolhe**; São Paulo foi
@@ -148,30 +160,38 @@ vídeos (`CLAUDE.md` → *Idiomas*). Os vídeos dele ficam na mesma `jilsonsanta
       domains*.
 - [x] **Block Direct URL File Access:** ligado. Impede baixar o arquivo pelo endereço direto.
 - [x] **Embed view token authentication:** ligado. Sem o token, o player recusa (403). Quem gera
-      o token é o **nosso servidor**, e só para quem tem assinatura ativa. A validade é de **6 a
-      12 h**, por decisão de Ago 2026 (não encurtar; a razão está no plano, Fase 3).
-- [x] **CDN token authentication:** ligado. *Fato da tela, registrado pelo operador:* o player
-      embutido assina sozinho. *(⚠️ ver a divergência no §7.)*
+      o token é o **nosso servidor**, e só para quem tem assinatura ativa. A validade é de **24 h**
+      para todo vídeo (§3.1, 28/09). **Nunca desligar:** é nele que a proteção da aula paga se apoia.
+- [x] **CDN token authentication:** **DESLIGADO pelo operador em 28/09/2026**, para ligar o DRM.
+      *Fato medido no painel:* o Bunny recusa os dois juntos (*"Cannot have Token Authentication
+      and DRM enabled at the same time"*); desligar o CDN token deixou ligar o DRM, e o Embed view
+      token continuou ligado. Entre os dois, o operador ficou com o DRM *(recomendação do agente:
+      o risco real é baixar a aula enquanto assiste, e é o DRM que impede isso; os domínios
+      permitidos e o bloqueio de acesso direto continuam valendo)*. *Gatilho de reabertura: o Bunny
+      passar a aceitar os dois juntos, ou o DRM sair da biblioteca.*
 - [x] **Sem trava por IP.** É decisão de Ago 2026: o vídeo não pode parar quando o aluno troca o
       Wi-Fi pelo 4G.
-- [x] **DRM:** **MediaCage Basic (grátis) ligado.** Enterprise **não** (decisão 5, §6).
+- [x] **DRM:** **MediaCage Basic (grátis) ligado em 28/09/2026.** Até ali este documento o dava
+      como ligado, mas ele estava ligado só na biblioteca de apresentação. Enterprise **não**
+      (decisão 5, §6).
 - **Chromecast:** configurado **sem** (`*.gstatic.com` fora dos *Allowed domains*). **A decisão
   fica para o bloco de vídeo da Fase 3** *(operador, 27/09/2026)*, com um teste numa TV com o site
   já tocando vídeo. **O controle de acesso continua com a TV:** só quem recebeu o token do nosso
   servidor abre o player, e é do player que a aula vai para a TV. **O que a doc não responde:** se
-  a TV toca com o CDN token e o MediaCage Basic ligados. Para ligar: acrescentar `*.gstatic.com`
+  a TV toca com o MediaCage Basic ligado. Para ligar: acrescentar `*.gstatic.com`
   aos *Allowed domains* (fato da doc) e ativar a transmissão nas configurações do player da
   biblioteca **[A VERIFICAR NO PAINEL: o nome exato da opção]**.
 - **Teste do operador:** toca no painel; é **bloqueado numa aba anônima**.
 
 **Entrega:** tier **High Volume**, sem filtros de roteamento.
 
-**Vídeo de teste:** "Apresentação" (`apresentacao.mp4`) está nesta biblioteca. **Mover** para a
-`jilsonsantana-stream-apresentacao` quando ela existir.
+**Vídeo de teste:** "Apresentação" (`apresentacao.mp4`) está nesta biblioteca desde 25/09. Não
+precisa mais mudar de biblioteca (§3.1).
 
-### 3.3 As duas bibliotecas que faltam *(a criar)*
+### 3.3 As duas bibliotecas que faltavam *(nenhuma a criar hoje)*
 
-**`jilsonsantana-stream-apresentacao`** (Frankfurt + São Paulo):
+**`jilsonsantana-stream-apresentacao`** — *existiu e foi apagada em 28/09 (§3.1); não volta.*
+O que estava previsto para ela, guardado como histórico (Frankfurt + São Paulo):
 - [ ] Token **desligado**: ela precisa tocar para qualquer visitante.
 - [ ] **Allowed domains → `jilsonsantana.com`**: sem isso, qualquer site poderia exibir os seus
       vídeos de venda.
@@ -403,8 +423,8 @@ O Bunny gera estes tipos de chave:
   | 1 | `BUNNY_STORAGE_HOST` | `br.storage.bunnycdn.com` | não |
   | 1 | `BUNNY_STORAGE_PASSWORD` | a senha da Storage Zone (a de escrita, não a só de leitura) | **sim** |
   | 1 | `BUNNY_IMG_BASE_URL` | `https://img.jilsonsantana.com` no ar; o endereço da Pull Zone de dev no computador | não |
-  | ~~2~~ | ~~`BUNNY_STREAM_INTRO_LIBRARY_ID`~~ | **não é mais usada** (28/09: uma biblioteca só, §3.1). A versão nova está no ar desde 28/09 (`main` = `a042393`): pode sair do Railway depois que a apresentação tocar na página do curso (P19) | não |
-  | ~~2~~ | ~~`BUNNY_STREAM_INTRO_API_KEY`~~ | **não é mais usada** — idem | **sim** |
+  | ~~2~~ | ~~`BUNNY_STREAM_INTRO_LIBRARY_ID`~~ | **não é mais usada** (28/09: uma biblioteca só, §3.1). **Apagada do Railway pelo operador em 28/09** | não |
+  | ~~2~~ | ~~`BUNNY_STREAM_INTRO_API_KEY`~~ | **não é mais usada** — apagada do Railway em 28/09 | **sim** |
   | 3 | `BUNNY_STREAM_LESSONS_LIBRARY_ID` | ID da biblioteca (762605, a `jilsonsantana-stream`) — aulas **e** apresentação desde 28/09 | não |
   | 3 | `BUNNY_STREAM_LESSONS_API_KEY` | API key da biblioteca de aulas | **sim** |
   | 3 | `BUNNY_STREAM_LESSONS_TOKEN_KEY` | token authentication key da biblioteca de aulas | **sim** |
@@ -448,10 +468,8 @@ O Bunny gera estes tipos de chave:
   estrita no site faz o Bunny tratar o acesso como direto e recusar o vídeo.
 - **CDN token authentication** (na Pull Zone) serve para player próprio ou URL direta. Com o
   player do Bunny em iframe, **não é necessário**.
-  **⚠️ Divergência reportada em 25/09, não resolvida:** o operador **ligou** o CDN token na
-  `jilsonsantana-stream`. A tela do painel diz que o player embutido assina sozinho, e o vídeo tocou
-  no painel. **Falta provar no build** que o iframe no **nosso site**, com o token do embed, continua
-  tocando com o CDN token ligado.
+  *(A divergência de 25/09 — o CDN token ligado na `jilsonsantana-stream` — **acabou em 28/09**: o
+  operador o desligou para ligar o DRM, §3.2.)*
 - **ACHADO, reportado e não corrigido (25/09):** o token do embed é **por vídeo e por
   validade**. Ele **não carrega a identidade do aluno**. O `CLAUDE.md` → *Video* e o
   `tech-stack.md` citam *"per-user signing"* entre as proteções. Na prática, isso só pode

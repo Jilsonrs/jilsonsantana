@@ -129,8 +129,11 @@
 > token.** Aulas e apresentação moram na `jilsonsantana-stream`; o vídeo de apresentação sai
 > **assinado** para qualquer visitante, e a assinatura vale **24 h para todo vídeo** (decisões do
 > operador, `bunny.md` §3.1). Antes de publicar, o operador desligou o multi-audio e criou as 3
-> variáveis `BUNNY_STREAM_LESSONS_*` no Railway. **Falta a prova no ar** (P19): a apresentação
-> tocando na página do curso e o vídeo de uma aula enviado pelo admin tocando na prévia.
+> variáveis `BUNNY_STREAM_LESSONS_*` no Railway. **No teste no ar, o envio do vídeo da aula deu
+> 401** porque as variáveis misturavam duas bibliotecas (a de apresentação existia; `bunny.md`
+> §3.1). Corrigido pelo operador no mesmo dia: tudo na 762605, a biblioteca de apresentação
+> apagada, CDN token desligado e DRM Basic ligado. O envio da aula **funcionou**. Falta o resto da
+> prova (P19): o vídeo da aula tocando e a apresentação enviada de novo.
 > **PUBLICADO em 28/09 (`main` = `5a60fa1`, CI verde): o Bloco E, etapa 2 INTEIRA (partes 2a a 2e)**,
 > mais a edição como na Udemy e a limpeza no Bunny ao excluir. *(A primeira publicação do dia,
 > `d342000`, pegou CI vermelho por um teste do arrastar que dependia de tempo — não do site; o
