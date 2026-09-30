@@ -14,21 +14,22 @@ import { ClipboardList, Users } from "lucide-react";
 function Lista({ titulo, itens, icon: Icon }: { titulo: string; itens: string[]; icon: React.ElementType }) {
   if (itens.length === 0) return null;
   return (
-    <section className="flex flex-col rounded-2xl border border-border/50 bg-card p-6 shadow-sm">
-      <div className="mb-6 flex items-center gap-3">
-        <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-          <Icon className="size-5" />
+    <section className="group relative overflow-hidden flex flex-col rounded-3xl bg-gradient-to-br from-indigo-50/30 via-background to-blue-50/20 p-8 shadow-sm ring-1 ring-primary/10 transition-all hover:shadow-md">
+      <div className="absolute -left-6 -bottom-6 h-32 w-32 rounded-full bg-primary/5 blur-3xl transition-all group-hover:bg-primary/10" />
+      <div className="relative">
+        <div className="mb-6 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-background text-primary shadow-sm ring-1 ring-primary/10">
+          <Icon className="h-6 w-6" />
         </div>
-        <h3 className="font-display text-lg font-bold tracking-tight text-foreground">{titulo}</h3>
+        <h3 className="font-display text-[1.25rem] font-bold tracking-tight text-foreground mb-6">{titulo}</h3>
+        <ul className="space-y-4">
+          {itens.map((item) => (
+            <li key={item} className="flex items-start gap-3 text-[0.95rem] leading-relaxed text-muted-foreground">
+              <span className="mt-2 flex size-1.5 shrink-0 rounded-full bg-primary/50" />
+              <span>{item}</span>
+            </li>
+          ))}
+        </ul>
       </div>
-      <ul className="space-y-4">
-        {itens.map((item) => (
-          <li key={item} className="flex items-start gap-3 text-[0.95rem] leading-relaxed text-muted-foreground">
-            <span className="mt-2 flex size-1.5 shrink-0 rounded-full bg-primary/40" />
-            <span>{item}</span>
-          </li>
-        ))}
-      </ul>
     </section>
   );
 }
@@ -74,8 +75,10 @@ export function CourseDetails({ curso }: { curso: PaginaDaAula["curso"] }) {
       )}
 
       {destaques.length > 0 && (
-        <section className="space-y-6 pt-4">
-          <h3 className="font-display text-xl font-bold tracking-tight text-foreground">{t.curso.diferenciais ?? "Diferenciais do curso"}</h3>
+        <section className="space-y-8 pt-8">
+          <h3 className="font-display text-3xl font-bold tracking-tighter text-foreground sm:text-4xl">
+            {t.curso.diferenciais ?? "Diferenciais do curso"}
+          </h3>
           <div className="grid gap-6 sm:grid-cols-3">
             {destaques.map((h, i) => (
               <HighlightCard key={i} {...h} />
