@@ -230,6 +230,7 @@ export const pt = {
       menuDaSecao: "Menu da seção",
       aula: "Aula",
       abrirMenu: "Abrir o menu",
+      fecharMenu: "Fechar o menu",
       abrirMenuConta: "Abrir o menu da conta",
       menu: "Menu",
       descricaoMenu: "Navegação principal do site.",

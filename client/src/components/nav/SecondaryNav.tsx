@@ -69,7 +69,7 @@ export function SecondaryNav({
       >
         <button
           onClick={() => setSearchParams((prev) => { prev.set("sidebar", "0"); return prev; }, { replace: true })}
-          className="absolute top-6 right-4 p-1.5 text-muted-foreground hover:text-foreground hover:bg-black/5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity focus-visible:opacity-100"
+          className="absolute top-6 right-4 p-1.5 bg-primary text-primary-foreground hover:bg-primary/90 rounded-full shadow-sm transition-colors flex items-center justify-center"
           aria-label={t.nav.fecharMenu ?? "Fechar conteúdo"}
         >
           <X className="size-4" />

@@ -220,6 +220,7 @@ export const en: Dict = {
       menuDaSecao: "Section menu",
       aula: "Lesson",
       abrirMenu: "Open menu",
+      fecharMenu: "Close menu",
       abrirMenuConta: "Open account menu",
       menu: "Menu",
       descricaoMenu: "Main site navigation.",
