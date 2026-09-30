@@ -82,7 +82,8 @@ function ModuleEditForm({
       api.updateModule(module.id, {
         title: title.trim(),
         // Seguros: os dois selects só oferecem valores das listas do core.
-        layer: layer === "" ? undefined : (layer as Layer),
+        // "—" vai como `null` (tira a camada); ausente, o servidor não mexeria.
+        layer: layer === "" ? null : (layer as Layer),
         status: status as ContentStatus,
       }),
     onSuccess: () => {

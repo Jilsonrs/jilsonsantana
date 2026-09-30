@@ -16,7 +16,7 @@
 > 5. **Item novo ganha o próximo número livre.** Número nunca se reutiliza, para que "P7" queira
 >    dizer sempre a mesma coisa em qualquer conversa.
 >
-> **Próximo número livre: P35** · Atualizada em 29/09/2026
+> **Próximo número livre: P36** · Atualizada em 29/09/2026
 
 ## A. Agora, em sequência *(nascidas da configuração do Bunny, 25/09/2026)*
 
@@ -30,6 +30,7 @@ rápida entra aqui, com o próximo número livre.*
 | P12 | Revisar as **15 perguntas da FAQ**, que já estão no admin | no próprio admin |
 | P16 | **Cadastrar os 5 cursos da home** no admin. Tudo o que o cadastro precisa **já está no ar**: o envio da capa e do vídeo promocional, a descrição com negrito e listas, e os limites de caracteres | `implementation-plan.md` → Bloco C4 |
 | P32 | **Confirmar o número de alunos corporativos (4.150+)** que está na home, no bloco do autor (os 107 mil+ e os 70 países já foram confirmados na sessão da home) | no próprio admin, em Textos → Home |
+| P35 | **Revisar os textos novos de 29/09**, que são rascunho do agente, em português e em inglês. No **Início:** o "Continue estudando" EM BREVE, o vazio de Minhas trilhas, "Ver todas" e "Atalhos". No **Dashboard:** a descrição, os 4 relatórios e o "Chega com…" de cada um. No **menu:** Em andamento, Concluídos e a etiqueta EM BREVE ("COMING SOON" em inglês). Esses textos **não** aparecem em Admin → Textos (são do app) | `core/src/i18n/pt.ts` e `en.ts` (parte `app`); o Dashboard em `client/src/pages/AdminPage.tsx` |
 
 ## C. Com hora marcada *(resolver quando o bloco abrir, não antes)*
 
@@ -40,7 +41,6 @@ rápida entra aqui, com o próximo número livre.*
 | P5 | **Aula na TV (Chromecast):** com ou sem? Até lá fica **sem**. O controle de acesso continua (só quem recebeu o token do nosso servidor abre o player). A doc não diz se a TV toca com o CDN token e o MediaCage Basic ligados: **testar numa TV com Chromecast** | bloco de vídeo da Fase 3, com o site já tocando vídeo *(adiada pelo operador em 27/09)* | `bunny.md` §3.2 e §6 (decisão 2) |
 | P17 | **Qual curso é o destaque** da home (o primeiro da ordem, ou o marcado com a etiqueta "Destaque") | etapa 3 do C4 | `implementation-plan.md` → Bloco C4 |
 | P18 | O que fazer com os **2 cursos `exemplo-*`, publicados em produção**, que apareceriam na home | etapa 3 do C4 | `implementation-plan.md` → Bloco C4 |
-| P19 | **Terminar a prova no ar do vídeo — UMA biblioteca só, a `jilsonsantana-stream` (762605), com token (decisão do operador, 28/09; `bunny.md` §3.1).** Provado no ar pelo operador em 28–29/09: o envio do vídeo de uma aula, o vídeo tocando, a miniatura com o nome e a duração, e **a troca de vídeo apagando o antigo no Bunny** (aula "Teste 2"). **Falta:** o vídeo de apresentação, já reenviado em 29/09, **tocar** depois do processamento do Bunny (no passo **Mídia e destaques** ou na página do curso) | agora, no site no ar | `bunny.md` §3.1 e §5 |
 | P20 | **Limpar a foto da CDN quando a conta é excluída (LGPD)** — decisão 6: com a chave da conta · cache curto só na pasta de fotos · aceitar até 1 mês | bloco de envio de arquivo | `bunny.md` §4.4 e §6 |
 | P22 | **Imposto de venda fora do Brasil:** Stripe Tax com o contador · Stripe Managed Payments | Fase 4, antes da primeira venda fora do Brasil | `idiomas.md` §5 e `billing.md` |
 | P23 | **Transferência internacional de dados (LGPD)** para os fornecedores de fora do Brasil: pergunta para advogado | antes do lançamento | `bunny.md` §2 |

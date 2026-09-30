@@ -343,6 +343,7 @@ describe("Editor do curso — quando salvar falha", () => {
     ["SlugTaken", "Este slug já está em uso por outro curso."],
     ["LanguageLocked", "O idioma trava depois que o curso é publicado."],
     ["LanguageInUse", "Este curso está numa trilha de outro idioma. Tire-o da trilha antes de trocar o idioma."],
+    ["BunnyNaoApagou", "Não foi possível tirar o vídeo de apresentação: o Bunny não apagou. Tente de novo."],
     [undefined, "Não foi possível salvar o curso. Tente de novo."],
   ])("recusa %s mostra a frase certa", async (codigo, frase) => {
     updateCourse.mockRejectedValue(recusa(codigo));
@@ -366,5 +367,27 @@ describe("Editor do curso — quando salvar falha", () => {
     salvar();
     await waitFor(() => expect(updateCourse).toHaveBeenCalledTimes(2));
     await waitFor(() => expect(screen.queryByRole("alert")).toBeNull());
+  });
+});
+
+// O defeito de 29/09/2026: apagar um campo JÁ SALVO e salvar não apagava nada.
+// O vazio ia como "ausente", e o servidor lê ausente como "não mexe"; a tela
+// dizia "salvo" e o valor antigo continuava lá. Agora o vazio vai como `null`.
+describe("Editor do curso — apagar um campo já salvo", () => {
+  it("apagar o subtítulo e a descrição e salvar envia os dois VAZIOS, não ausentes", async () => {
+    updateCourse.mockResolvedValue(CURSO_DE_TESTE);
+    abrir("/admin/cursos/1/basico", { ...CURSO_DE_TESTE, subtitle: "Um subtítulo", description: "Uma descrição" });
+    await esperarTitulo();
+    const subtitulo = screen.getByLabelText("Subtítulo") as HTMLInputElement;
+    await waitFor(() => expect(subtitulo.value).toBe("Um subtítulo"));
+
+    fireEvent.change(subtitulo, { target: { value: "" } });
+    fireEvent.change(screen.getByLabelText("Descrição"), { target: { value: "   " } });
+    salvar();
+
+    await waitFor(() => expect(updateCourse).toHaveBeenCalled());
+    const enviado = updateCourse.mock.calls[0][1];
+    expect(enviado).toHaveProperty("subtitle", null);
+    expect(enviado).toHaveProperty("description", null);
   });
 });

@@ -5,7 +5,7 @@ import { prisma } from "../lib/prisma.js";
 import { requireAdmin } from "../middleware/auth.js";
 import { validate, parseId } from "../lib/http.js";
 import { paraBanco, doBanco, comIdioma, idiomaDaLista } from "../lib/language.js";
-import { enderecoAssinado } from "../lib/bunny-stream.js";
+import { apagarVideo, enderecoAssinado } from "../lib/bunny-stream.js";
 import { confirmarVideosProntos } from "../lib/videos-prontos.js";
 import { limparCursoNoBunny } from "../lib/limpeza-no-bunny.js";
 
@@ -259,6 +259,17 @@ router.patch("/courses/:id", requireAdmin, async (req, res) => {
     const bySlug = await prisma.course.findUnique({ where: { slug: data.slug } });
     if (bySlug && bySlug.id !== id) {
       res.status(409).json({ error: "SlugTaken" });
+      return;
+    }
+  }
+  // APAGAR O ID DO VÍDEO DE APRESENTAÇÃO apaga o vídeo no Bunny (decisão do
+  // operador, 29/09/2026 — como a troca de vídeo já faz). O Bunny PRIMEIRO, como
+  // na exclusão do curso: se ele recusar, nada é gravado, e o vídeo não fica
+  // perdido lá sem nenhum curso apontando para ele. `undefined` (campo ausente)
+  // não mexe no vídeo; só `null` apaga.
+  if (data.introVideoId === null && atual.introVideoId) {
+    if (!(await apagarVideo("aulas", atual.introVideoId))) {
+      res.status(502).json({ error: "BunnyNaoApagou" });
       return;
     }
   }

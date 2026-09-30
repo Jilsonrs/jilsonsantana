@@ -154,25 +154,26 @@
 > prova no ar da página da aula.
 > **PUBLICADO em 29/09, no fim do dia (`main` = `cbf0129`, CI verde, deploy ok):** o aluno entra no
 > curso pela **primeira aula**, com **"Sobre o curso"** embaixo do player em toda aula, e aula e
-> módulo novos nascendo conforme o curso. **Decidido e registrado, ainda não construído:** o
-> **menu do aluno novo** (Início · Cursos · Trilhas · Meus estudos · JilsonAI — `design.md` §6),
-> que é o **próximo bloco**, junto com as telas sob `/aluno/*` e o painel do Início.
-> **No `dev` (29/09, ajuste do operador, esperando o "publica"): a plataforma é uma só** — o
-> Início volta a ser `/inicio`, o mesmo para o aluno e para o admin (que testa ali tudo o que o
-> aluno faz), todo mundo cai nele depois de entrar, e o painel do admin passa a `/dashboard`, no
-> item "Dashboard" antes de Cursos Admin. **Depois, também no `dev`:** Meus estudos abre em Em
-> andamento (só o título), sem a tela de cartões; e os endereços antigos deixaram de redirecionar.
-> Ver Bloco S.
-> **PUBLICADO em 29/09, no fim da noite (`main` = `f44187e`, CI verde nos dois jobs, deploy ok),
-> a pedido do operador: o Início do admin é o painel dele** (`/admin`, os
-> 4 relatórios de "Dados" EM BREVE + os atalhos); o aluno continua no painel dele. "Dados" saiu
-> do menu. Ver Bloco S.
-> **PUBLICADO em 29/09, à noite (`main` = `35fb940`, CI verde nos dois jobs, deploy ok), em 3
-> etapas:** ✅ 1. as
-> telas do aluno em `/aluno/*`, com os endereços antigos redirecionando · ✅ 2. o menu novo
-> (Início · Cursos · Trilhas · Meus estudos · JilsonAI EM BREVE) + a tela Meus estudos · ✅ 3. o
-> painel do Início (4 blocos). Textos novos em PT e EN são **rascunho do agente, para a revisão
-> do operador**; o acabamento visual é do Antigravity (`GEMINI.md`, fila item 14).
+> módulo novos nascendo conforme o curso.
+> **🟢 NO AR DESDE 29/09, no fim da noite (`main` = `7a769c8`, CI verde nos dois jobs, deploy ok) —
+> o menu novo e a área do admin, no formato final do dia** (decisões do operador; detalhe no
+> Bloco S):
+> - **A plataforma é uma só.** O Início é `/inicio`, o mesmo painel para o aluno e para o admin,
+>   que testa ali tudo o que o aluno faz; todo mundo cai nele depois de entrar. O painel tem 4
+>   blocos: saudação · Continue estudando (EM BREVE) · Minhas trilhas · Atalhos.
+> - **Menu:** Início · Cursos · Trilhas · Meus estudos · JilsonAI (EM BREVE). Para o admin, a
+>   parte administrativa começa em **Dashboard** (`/dashboard`: 4 relatórios EM BREVE + atalhos;
+>   "Dados" virou ele).
+> - **Meus estudos** abre em Em andamento (`/aluno/em-andamento`, só o título até a Fase 5); a
+>   coluna do nível 2 é o guia (Em andamento · Minhas trilhas · Concluídos · Certificados).
+> - As telas do aluno moram em `/aluno/*`; **endereço antigo não redireciona** (a escola está em
+>   desenvolvimento).
+> - Chegou lá em 3 publicações no mesmo dia (`35fb940`, `f44187e`, `7a769c8`), cada uma com CI
+>   verde e deploy ok. Textos novos em PT e EN são **rascunho do agente, para a revisão do
+>   operador**; o acabamento visual é do Antigravity (`GEMINI.md`, fila itens 14 e 15).
+> **No `dev` (29/09, esperando o "publica"):** no editor do curso, **campo já salvo volta a
+> poder ficar vazio** (subtítulo, descrição, nível, imagem, vídeo de apresentação e a camada do
+> módulo); apagar o ID do vídeo apaga o vídeo no Bunny. Ver Bloco E.
 > **Registrado no fim da sessão de 29/09 (só documentos, no `dev`):** o mapa do que falta nos 7
 > passos do editor (Bloco E, depois da etapa 4), com um **achado novo** (campo já salvo não volta a
 > ficar vazio); o **Live Stream** do Bunny em acesso antecipado (`bunny.md` §6, decisão 8,
@@ -194,21 +195,23 @@
 > novos das partes 1b e 1c e as dicas (`client/src/lib/course-hints.ts`). O Visualizar e a
 > duração publicada no topo ficaram para depois, com motivo (ver Bloco E).
 > **Decidido em 27–28/09, ainda não construído:** o **Bloco E** (o editor do curso em 7 passos, a
-> partir dos prints da Udemy e de 5 plataformas pesquisadas), a mudança das telas do aluno para
-> `/aluno/*`, o conteúdo de cada seção planejada do admin (e a nova **Comunicação**) e as páginas
-> públicas que faltam. Tudo no corpo deste plano.
+> partir dos prints da Udemy e de 5 plataformas pesquisadas), o conteúdo de cada seção planejada
+> do admin (e a nova **Comunicação**) e as páginas públicas que faltam. *(A mudança das telas do
+> aluno para `/aluno/*`, que também estava aqui, foi feita em 29/09.)* Tudo no corpo deste plano.
 >
 > **PRÓXIMO PASSO: implementação, e QUAL BLOCO é decisão do operador.** Candidatos, com o que cada
 > um precisa:
-> - ~~**Bloco U, etapa 3**~~ — **publicada em 28/09** (ver acima); falta só a prova no ar (P19).
+> - ~~**Bloco U, etapa 3**~~ — **publicada em 28/09**; prova no ar fechada em 29/09 (a P19).
 > - ~~**Bloco E, etapa 1**~~ — **feita em 28/09**, no `dev` (ver acima).
-> - **Telas do aluno para `/aluno/*`** — pequena, e mais barata antes de haver aluno real.
+> - ~~**Telas do aluno para `/aluno/*`**~~ — **publicada em 29/09**, com o menu novo (ver acima).
+> - **O que falta nos 7 passos do editor do curso** (Bloco E, o mapa depois da etapa 4) — o
+>   próximo assunto do operador, em 29/09.
 > - **C4, etapa 3** (a home lendo os cursos do banco) — depende da P17, da P18 e do cadastro dos
 >   cursos (P16).
 > Fora da escolha e em paralelo: o **Bloco I** restante, o **C5** (bloqueado até o conteúdo das
 > telas), o corpo da Fase 3 (HIGH RISK) e a continuidade do operador (2FA, backup frio).
 >
-> **Cobertura de teste medida em 29/09/2026:** cliente **41 arquivos / 452 testes** · servidor
+> **Cobertura de teste medida em 29/09/2026:** cliente **41 arquivos / 453 testes** · servidor
 > **27 arquivos / 310 testes** · E2E em job próprio. As três rodam no CI.
 > **Pendências do operador: a lista única está em [`docs/pendencias.md`](pendencias.md)** *(desde
 > 25/09/2026, a pedido do operador)*. As que moravam aqui foram para lá (P12–P16). Item resolvido
@@ -1042,8 +1045,8 @@ tornada executável — não uma lista nova):
       só `err.message`). Idem `seed-content.ts:165`.
 - [ ] **Sem `helmet`** — nenhum header de segurança. Hoje o que expõe é estreito (app mesma-origem,
       sem `dangerouslySetInnerHTML`, sem sink de `href`): falta `nosniff`, falta
-      `X-Frame-Options`/`frame-ancestors` (**a app pode ser enquadrada** → clickjacking em `/conta`
-      e `/admin`), falta `Referrer-Policy` — que é justamente o que faz a URL `/__preview?token=`
+      `X-Frame-Options`/`frame-ancestors` (**a app pode ser enquadrada** → clickjacking em
+      `/aluno/conta`, `/dashboard` e `/admin/*`), falta `Referrer-Policy` — que é justamente o que faz a URL `/__preview?token=`
       vazar. **Entra no MESMO bloco que introduzir o HTML público de servidor**, não antes: a CSP
       precisa conhecer a origem do Bunny (`frame-src`) e a da Stripe (`script-src`), e escrita antes
       é escrita duas vezes. Dependência de runtime nova ⇒ **decisão de nível de plano**.
@@ -1129,7 +1132,7 @@ tornada executável — não uma lista nova):
       ✅ **29/09/2026 (etapa 2):** o mapa (`navigation.ts`) com os cinco itens; o **JilsonAI
       aparece para o aluno como EM BREVE** e **Meus estudos tem tela própria**
       (`/aluno/meus-estudos`, um cartão por item) — as duas decididas pelo operador ao aprovar o
-      plano. O que é planejado passou a aparecer para o aluno (`secoesVisiveis`), sempre como
+      plano. *(A tela de cartões saiu no mesmo dia: ver "Meus estudos sem repetição", abaixo.)* O que é planejado passou a aparecer para o aluno (`secoesVisiveis`), sempre como
       texto; a etiqueta EM BREVE saiu do dicionário (em inglês, "COMING SOON"; no admin, sempre
       em português). Mutação: virar link um item EM BREVE (nível 2 ou rail) e voltar a esconder o
       planejado do aluno — as três reprovam.
@@ -1179,6 +1182,8 @@ tornada executável — não uma lista nova):
       (`RotasAntigasDoAluno.tsx`, 7 testes, mutação derruba). O login cai em `/aluno/inicio`, o
       aluno barrado no admin vai para `/aluno/conta`, e o botão "Meus estudos" do topo da home
       (logado) leva a `/aluno/inicio`. O E2E passou a exigir os endereços novos.
+      *(Mais tarde, no mesmo dia, o operador ajustou: o Início voltou a `/inicio` e os
+      redirecionamentos saíram — ver os itens acima.)*
 - [x] Navegação mobile — o menu lateral obriga a decidir isto, que o cabeçalho atual adiava.
       ✅ **Set 2026:** gaveta (`Sheet`) abaixo de 768px, aberta pelo mesmo botão do cabeçalho.
       **A gaveta e a barra desktop NUNCA renderizam juntas** (o componente ramifica em
@@ -1947,20 +1952,31 @@ própria**.*
 | 2 Para quem é | pronto | — |
 | 3 Conteúdo | pronto | o **Quiz** (etapa própria, com decisões do operador; no "+" aparece EM BREVE) |
 | 4 Legendas | EM BREVE | a **etapa 3** inteira (tela própria, `.vtt` por vídeo) |
-| 5 Mídia e destaques | pronto | a P19 (o vídeo de apresentação reenviado tocando — `pendencias.md`) |
+| 5 Mídia e destaques | pronto | — *(a P19 fechou em 29/09: o vídeo de apresentação reenviado toca)* |
 | 6 Mensagens | EM BREVE | a **etapa 4** inteira (o sino + boas-vindas e parabéns) |
 | 7 Publicar | pronto | o **link para abrir a página pública do curso** (o Visualizar), que espera o **C5** |
 
 **Em todos os passos, ainda aberto:**
 - [ ] **Revisão das dicas pelo operador** — todas em `client/src/lib/course-hints.ts`, num arquivo
       só (ele pediu para revisar depois, 28/09).
-- [ ] **ACHADO (29/09, confirmado no código, NÃO corrigido): campo já salvo não volta a ficar
+- [x] **ACHADO (29/09, confirmado no código): campo já salvo não volta a ficar
       vazio.** Apagar o texto do **subtítulo**, da **descrição**, do **nível**, da **imagem** ou
       do **ID do vídeo de apresentação** e salvar não apaga nada: `toPayload`
       (`client/src/lib/course-form.ts`) manda `undefined` para o campo vazio, e o servidor lê
       campo ausente como "deixa como está". O salvamento diz "salvo" e o valor antigo continua.
-      As listas não têm o problema (vão sempre como lista). A correção é decisão de quando, do
-      operador.
+      As listas não têm o problema (vão sempre como lista).
+      ✅ **Corrigido em 29/09/2026, a pedido do operador:** campo apagado vai como `null`, que o
+      servidor grava; ausente continua querendo dizer "não mexe" (é o que deixa cada passo salvar
+      só os campos dele). **A camada do módulo tinha o mesmo defeito e entrou junto** (decisão
+      dele). **Apagar o ID do vídeo de apresentação apaga o vídeo no Bunny** (decisão dele, como
+      a troca já faz), com o Bunny primeiro: se ele recusar, nada é gravado e o passo avisa
+      (`bunny.md` §3.4). A capa não é apagada do Storage ao limpar o campo, como na troca (27/09).
+      Teste de servidor novo (`clear-fields.test.ts`, 7 casos) e de tela. Mutação: o formulário
+      voltando a mandar "ausente", o servidor sem apagar no Bunny e o servidor gravando com o
+      Bunny recusando — as três reprovam.
+- [ ] **ACHADO (29/09, NÃO corrigido): colar à mão OUTRO ID no campo do vídeo de apresentação e
+      salvar troca o vídeo, mas NÃO apaga o antigo no Bunny** — só o envio pelo botão apaga. O
+      antigo fica lá sem curso nenhum. Correção é decisão do operador.
 - [ ] **A corrida na troca de vídeo com duas abas** (P2 da revisão de segurança, na etapa 2 acima).
 
 **Vai para outros blocos (anotado lá quando eles abrirem):**

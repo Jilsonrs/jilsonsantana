@@ -134,22 +134,26 @@ export function toFormValues(course: AdminCourseDetail): CourseFormValues {
 // CLAUDE.md: it's the exception, not the routine); omitting it from the
 // payload leaves it untouched server-side (update schema treats an omitted
 // field as "leave unchanged", not "reset").
+//
+// Campo APAGADO vai como `null`, nunca como ausente: ausente o servidor lê como
+// "não mexe", e o valor antigo continuava lá com a tela dizendo "salvo"
+// (achado de 29/09/2026). No ID do vídeo, `null` apaga o vídeo no Bunny também.
 export function toPayload(values: CourseFormValues): CourseCreateInput {
   return {
     slug: values.slug,
     language: values.language,
     title: values.title,
-    subtitle: values.subtitle.trim() || undefined,
-    description: values.description.trim() || undefined,
-    level: values.level === "" ? undefined : values.level,
+    subtitle: values.subtitle.trim() || null,
+    description: values.description.trim() || null,
+    level: values.level === "" ? null : values.level,
     learnTags: deItens(values.learnTags),
     requirements: deItens(values.requirements),
     personas: deItens(values.personas),
     highlights: values.highlights.filter((h) => h.icon.trim() && h.title.trim() && h.text.trim()),
     faq: values.faq.filter((f) => f.pergunta.trim() && f.resposta.trim()),
     camadas: values.camadas,
-    thumbnailUrl: values.thumbnailUrl.trim() || undefined,
-    introVideoId: values.introVideoId.trim() || undefined,
+    thumbnailUrl: values.thumbnailUrl.trim() || null,
+    introVideoId: values.introVideoId.trim() || null,
     displayOrder: values.displayOrder,
     status: values.status,
   };
@@ -179,6 +183,8 @@ export function mensagemDeErroAoSalvar(erro: unknown): string {
       return "O idioma trava depois que o curso é publicado.";
     case "LanguageInUse":
       return "Este curso está numa trilha de outro idioma. Tire-o da trilha antes de trocar o idioma.";
+    case "BunnyNaoApagou":
+      return "Não foi possível tirar o vídeo de apresentação: o Bunny não apagou. Tente de novo.";
     default:
       return "Não foi possível salvar o curso. Tente de novo.";
   }
