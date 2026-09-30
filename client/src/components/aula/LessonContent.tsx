@@ -14,7 +14,7 @@ const MarkdownText = lazy(() => import("@/components/content/MarkdownText").then
 // longo, que o operador organiza em seções.
 const ELEMENTOS_DA_AULA = ["p", "strong", "em", "ul", "ol", "li", "br", "h2", "h3"] as const;
 
-const QUADRO = "flex aspect-video w-full flex-col items-center justify-center rounded-2xl border border-border/60 bg-muted p-8 text-center";
+const QUADRO = "flex aspect-video w-full flex-col items-center justify-center bg-muted p-8 text-center";
 
 /**
  * O CONTEÚDO da aula aberta: o player grande (aula de vídeo), o texto no centro

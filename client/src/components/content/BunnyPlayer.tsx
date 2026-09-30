@@ -9,7 +9,7 @@
  */
 export function BunnyPlayer({ src, title }: { src: string; title: string }) {
   return (
-    <div className="aspect-video w-full overflow-hidden rounded-2xl border border-border/60 bg-muted">
+    <div className="aspect-video w-full overflow-hidden bg-muted">
       <iframe
         src={src}
         title={title}
