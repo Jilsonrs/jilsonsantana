@@ -59,7 +59,7 @@ export function LessonPage() {
         </div>
       </div>
 
-      <div className="mx-auto w-full max-w-[1600px] px-4 py-6 sm:px-6 sm:py-8 md:px-[50px] md:py-8">
+      <div className="mx-auto w-full max-w-[1600px] px-4 pt-[20px] pb-6 sm:px-6 sm:pb-8 md:px-[50px] md:pb-8">
         <div className={cn("grid gap-6", iaAberta && "lg:grid-cols-[minmax(0,1fr)_360px]")}>
           <div className="min-w-0 space-y-8">
             <LessonContent aula={aula} comoAdmin={comoAdmin} temArquivos={temArquivos} />
