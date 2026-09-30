@@ -3,7 +3,7 @@ import type { PaginaDaAula } from "@/lib/api";
 import { useT } from "@/lib/language";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { CoursePremiumFeatures } from "@/components/content/CoursePremiumFeatures";
+import { CourseHighlights, CourseLayers } from "@/components/content/CoursePremiumFeatures";
 
 // A peça do Markdown só baixa quando a descrição aparece (CLAUDE.md → Client).
 const MarkdownText = lazy(() => import("@/components/content/MarkdownText").then((m) => ({ default: m.MarkdownText })));
@@ -54,12 +54,7 @@ export function CourseDetails({ curso }: { curso: PaginaDaAula["curso"] }) {
         {curso.level && <Badge variant="secondary" className="rounded-full font-medium">{t.niveis[curso.level]}</Badge>}
       </div>
 
-      {curso.description && (
-        <Suspense fallback={null}>
-          <MarkdownText texto={curso.description} className="max-w-3xl text-base leading-relaxed" />
-        </Suspense>
-      )}
-
+      {/* 1. O que você vai aprender */}
       {curso.learnTags.length > 0 && (
         <section className="space-y-5">
           <h3 className="font-display text-[1.4rem] font-bold tracking-tight text-foreground">{t.curso.aprender}</h3>
@@ -73,12 +68,24 @@ export function CourseDetails({ curso }: { curso: PaginaDaAula["curso"] }) {
         </section>
       )}
 
+      {/* 2. Diferenciais (agora sem título, conforme pedido) */}
+      <CourseHighlights destaques={destaques} />
+
+      {/* 3. Descrição */}
+      {curso.description && (
+        <Suspense fallback={null}>
+          <MarkdownText texto={curso.description} className="max-w-3xl text-base leading-relaxed" />
+        </Suspense>
+      )}
+
+      {/* 4. Requisitos / Pra quem é */}
       <div className="grid gap-6 sm:grid-cols-2">
         <Lista titulo={t.curso.requisitos} itens={curso.requirements} icon={ClipboardList} />
         <Lista titulo={t.curso.paraQuem} itens={curso.personas} icon={Users} />
       </div>
 
-      <CoursePremiumFeatures destaques={destaques} camadas={curso.camadas} />
+      {/* 5. DNA (Camadas) */}
+      <CourseLayers camadas={curso.camadas} />
 
       {perguntas.length > 0 && (
         <section className="space-y-6">

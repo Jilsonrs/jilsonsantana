@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import * as api from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { CoursePremiumFeatures } from "@/components/content/CoursePremiumFeatures";
+import { CourseHighlights, CourseLayers } from "@/components/content/CoursePremiumFeatures";
 import { BunnyPlayer } from "@/components/content/BunnyPlayer";
 import { PageContainer } from "@/components/layout/PageLayout";
 import { useT } from "@/lib/language";
@@ -60,7 +60,8 @@ export function CourseDetailPage() {
             {course.introVideoEmbedUrl && (
               <BunnyPlayer src={course.introVideoEmbedUrl} title={t.curso.videoApresentacao} />
             )}
-            <CoursePremiumFeatures destaques={course.highlights ?? []} camadas={course.camadas} />
+            <CourseHighlights destaques={course.highlights ?? []} />
+            <CourseLayers camadas={course.camadas} />
 
             <section>
               <h2 className="text-2xl font-semibold">{t.curso.conteudo}</h2>
