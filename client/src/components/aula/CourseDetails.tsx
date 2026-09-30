@@ -19,7 +19,7 @@ function Lista({ titulo, itens, icon: Icon }: { titulo: string; itens: string[];
         <div className="mb-6 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-background text-primary shadow-sm ring-1 ring-primary/10">
           <Icon className="h-6 w-6" />
         </div>
-        <h3 className="font-display text-[1.25rem] font-bold tracking-tight text-foreground mb-6">{titulo}</h3>
+        <h3 className="font-display text-[1.4rem] font-bold tracking-tight text-foreground mb-6">{titulo}</h3>
         <ul className="space-y-4">
           {itens.map((item) => (
             <li key={item} className="flex items-start gap-3 text-[0.95rem] leading-relaxed text-muted-foreground">
@@ -62,7 +62,7 @@ export function CourseDetails({ curso }: { curso: PaginaDaAula["curso"] }) {
 
       {curso.learnTags.length > 0 && (
         <section className="space-y-5">
-          <h3 className="font-display text-lg font-semibold tracking-tight text-foreground">{t.curso.aprender}</h3>
+          <h3 className="font-display text-[1.4rem] font-bold tracking-tight text-foreground">{t.curso.aprender}</h3>
           <div className="flex flex-wrap gap-2">
             {curso.learnTags.map((tag) => (
               <Badge key={tag} variant="secondary" className="rounded-md px-3 py-1 font-normal text-sm bg-muted/50 hover:bg-muted">
@@ -82,7 +82,7 @@ export function CourseDetails({ curso }: { curso: PaginaDaAula["curso"] }) {
 
       {perguntas.length > 0 && (
         <section className="space-y-6">
-          <h3 className="font-display text-lg font-semibold tracking-tight text-foreground">{t.curso.faq}</h3>
+          <h3 className="font-display text-[1.4rem] font-bold tracking-tight text-foreground">{t.curso.faq}</h3>
           <Accordion type="multiple" className="rounded-xl border border-border/40 bg-card px-4">
             {perguntas.map((item, i) => (
               <AccordionItem key={i} value={String(i)} className="border-border/40 last:border-0">
