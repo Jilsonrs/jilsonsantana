@@ -2955,6 +2955,9 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       — o admin não tem assinatura. **Sem** pôr `role === admin` dentro de `temAcessoAtivo()`
       (`CLAUDE.md` → Access Architecture): o admin entra por uma regra própria, como já faz na
       aula.
+- [ ] **Barra de progresso no cartão do curso, na lista de Cursos do aluno** *(pedido do operador,
+      30/09/2026, a partir da Mosh)*: só nos cursos que o aluno já começou, com a porcentagem (aulas
+      vistas ÷ aulas publicadas). Depende do `LessonProgress` acima; entra com ele.
 - [ ] **Tirar o EM BREVE do que espera o progresso** *(menu novo do aluno, 29/09/2026)*: o bloco
       **Continue estudando** do Início, o **conteúdo** da página Em andamento (hoje só o título) e
       **Concluídos** em Meus estudos. O que cada um mostra é decisão do operador na hora de
