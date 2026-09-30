@@ -119,15 +119,17 @@ export function navegacao(t: AppTexts): Secao[] {
     {
       // MEUS ESTUDOS (decisão do operador, 29/09/2026, a partir do "My Library"
       // do LinkedIn Learning): o que é DO ALUNO, separado do que ele descobre
-      // (Cursos, Trilhas). Tem tela própria, com um resumo dos quatro itens.
-      // "Minhas trilhas" mantém o endereço dela e acende esta seção.
+      // (Cursos, Trilhas). Abre em Em andamento, SEM tela de resumo: a coluna do
+      // nível 2 é o guia, e o título de cada página a identifica. "Minhas
+      // trilhas" mantém o endereço dela e acende esta seção.
       label: t.nav.meusEstudos,
-      to: "/aluno/meus-estudos",
+      to: "/aluno/em-andamento",
       icon: MockMap,
       estado: "ativo",
       tambemAtivoEm: ["/aluno/minhas-trilhas"],
       filhos: [
-        { label: t.nav.emAndamento, to: "/aluno/em-andamento", estado: "planejado" }, // Fase 5
+        // Existe só com o título; o conteúdo é da Fase 5.
+        { label: t.nav.emAndamento, to: "/aluno/em-andamento" },
         { label: t.nav.minhasTrilhas, to: "/aluno/minhas-trilhas" },
         { label: t.nav.concluidos, to: "/aluno/concluidos", estado: "planejado" }, // Fase 5
         { label: t.nav.certificados, to: "/aluno/certificados", estado: "planejado" }, // Fase 6.5

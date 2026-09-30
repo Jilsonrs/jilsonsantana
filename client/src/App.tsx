@@ -2,7 +2,6 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { Layout } from "@/components/Layout";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { AdminRoute } from "@/components/auth/AdminRoute";
-import { ROTAS_ANTIGAS } from "@/components/auth/RotasAntigas";
 import { LoginPage } from "@/pages/LoginPage";
 import { StudentHomePage } from "@/pages/StudentHomePage";
 import { AccountPage } from "@/pages/AccountPage";
@@ -14,7 +13,7 @@ import { MyTrilhasPage } from "@/pages/MyTrilhasPage";
 import { MyTrilhaDetailPage } from "@/pages/MyTrilhaDetailPage";
 import { LessonPage } from "@/pages/aluno/LessonPage";
 import { CourseEntryPage } from "@/pages/aluno/CourseEntryPage";
-import { MeusEstudosPage } from "@/pages/aluno/MeusEstudosPage";
+import { EmAndamentoPage } from "@/pages/aluno/EmAndamentoPage";
 import { AdminCoursesPage } from "@/pages/admin/AdminCoursesPage";
 import { NewCoursePage } from "@/pages/admin/course-editor/NewCoursePage";
 import { CourseEditorLayout } from "@/pages/admin/course-editor/CourseEditorLayout";
@@ -43,13 +42,12 @@ export default function App() {
         <Route path="/aluno/aula/:id" element={<LessonPage />} />
         {/* A entrada do aluno num curso: vai para a primeira aula (29/09/2026). */}
         <Route path="/aluno/curso/:slug" element={<CourseEntryPage />} />
-        {/* Endereços antigos → atuais (/conta, /minhas-trilhas, /aluno/inicio, /admin). */}
-        {ROTAS_ANTIGAS}
         <Route element={<ProtectedRoute />}>
           {/* O Início é UM SÓ, para o aluno e para o admin, que testa por ele
               tudo o que o aluno faz (decisão do operador, 29/09/2026). */}
           <Route path="/inicio" element={<StudentHomePage />} />
-          <Route path="/aluno/meus-estudos" element={<MeusEstudosPage />} />
+          {/* Meus estudos abre aqui (decisão do operador, 29/09/2026). */}
+          <Route path="/aluno/em-andamento" element={<EmAndamentoPage />} />
           <Route path="/aluno/minhas-trilhas" element={<MyTrilhasPage />} />
           <Route path="/aluno/minhas-trilhas/:id" element={<MyTrilhaDetailPage />} />
           <Route path="/aluno/conta" element={<AccountPage />} />

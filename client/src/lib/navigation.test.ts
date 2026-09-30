@@ -29,7 +29,7 @@ describe("secoesVisiveis — quem vê o quê", () => {
     const vistas = secoesVisiveis(Role.ADMIN);
 
     expect(vistas.some((s) => s.to === "/admin/cursos")).toBe(true);
-    expect(vistas.some((s) => s.to === "/aluno/meus-estudos")).toBe(true);
+    expect(vistas.some((s) => s.to === "/aluno/em-andamento")).toBe(true);
     expect(vistas.some((s) => s.to === "/inicio")).toBe(true);
   });
 
@@ -126,7 +126,7 @@ describe("secaoAtiva — onde estou", () => {
   });
 
   it("Meus estudos acende na tela dele e dentro de Minhas trilhas", () => {
-    for (const rota of ["/aluno/meus-estudos", "/aluno/minhas-trilhas", "/aluno/minhas-trilhas/7"]) {
+    for (const rota of ["/aluno/em-andamento", "/aluno/minhas-trilhas", "/aluno/minhas-trilhas/7"]) {
       expect(secaoAtiva(rota, doAluno)?.label, rota).toBe("Meus estudos");
     }
   });
@@ -262,10 +262,11 @@ describe("itensSecundarios — o nível 2 só aparece quando vale a pena", () =>
     expect(itens.filter((i) => i.estado === "planejado").map((i) => i.label)).toEqual(["Legendas", "Mensagens"]);
   });
 
-  // O nível 2 de Meus estudos (operador, 29/09/2026). Só Minhas trilhas existe;
-  // os outros três são EM BREVE (Fase 5 e 6.5). Sem "Salvos".
-  it("Meus estudos mostra os quatro itens, com três EM BREVE", () => {
-    for (const rota of ["/aluno/meus-estudos", "/aluno/minhas-trilhas/7"]) {
+  // O nível 2 de Meus estudos (operador, 29/09/2026): o guia de onde a pessoa
+  // está. Em andamento (só o título, por ora) e Minhas trilhas existem;
+  // Concluídos e Certificados são EM BREVE (Fase 5 e 6.5). Sem "Salvos".
+  it("Meus estudos mostra os quatro itens, com dois EM BREVE", () => {
+    for (const rota of ["/aluno/em-andamento", "/aluno/minhas-trilhas/7"]) {
       const itens = itensSecundarios(rota, doAluno);
       expect(itens.map((i) => i.label), rota).toEqual([
         "Em andamento",
@@ -274,10 +275,10 @@ describe("itensSecundarios — o nível 2 só aparece quando vale a pena", () =>
         "Certificados",
       ]);
       expect(itens.filter((i) => i.estado === "planejado").map((i) => i.label), rota).toEqual([
-        "Em andamento",
         "Concluídos",
         "Certificados",
       ]);
+      expect(itens.find((i) => i.label === "Em andamento")?.to).toBe("/aluno/em-andamento");
       expect(itens.find((i) => i.label === "Minhas trilhas")?.to).toBe("/aluno/minhas-trilhas");
     }
   });

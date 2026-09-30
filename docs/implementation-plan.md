@@ -160,7 +160,9 @@
 > **No `dev` (29/09, ajuste do operador, esperando o "publica"): a plataforma é uma só** — o
 > Início volta a ser `/inicio`, o mesmo para o aluno e para o admin (que testa ali tudo o que o
 > aluno faz), todo mundo cai nele depois de entrar, e o painel do admin passa a `/dashboard`, no
-> item "Dashboard" antes de Cursos Admin. `/aluno/inicio` e `/admin` redirecionam. Ver Bloco S.
+> item "Dashboard" antes de Cursos Admin. **Depois, também no `dev`:** Meus estudos abre em Em
+> andamento (só o título), sem a tela de cartões; e os endereços antigos deixaram de redirecionar.
+> Ver Bloco S.
 > **PUBLICADO em 29/09, no fim da noite (`main` = `f44187e`, CI verde nos dois jobs, deploy ok),
 > a pedido do operador: o Início do admin é o painel dele** (`/admin`, os
 > 4 relatórios de "Dados" EM BREVE + os atalhos); o aluno continua no painel dele. "Dados" saiu
@@ -1152,6 +1154,16 @@ tornada executável — não uma lista nova):
       pela rota de admin (vê até rascunho) e salva e edita trilhas como qualquer pessoa logada.
       Mutação: admin mandado ao Dashboard no login, sem o redirecionamento de `/admin`, e o
       Início escondido do admin — as três reprovam.
+- [x] **Meus estudos sem repetição + fim dos endereços antigos** *(decisão do operador,
+      29/09/2026, olhando a tela no ar)*: a tela `/aluno/meus-estudos` (um cartão por item)
+      **saiu**, porque repetia o título e os itens da coluna. Meus estudos abre em **Em andamento**
+      (`/aluno/em-andamento`), só com o título até a Fase 5; a coluna do nível 2 é o guia, e o
+      título de cada página a identifica. No nível 2, Em andamento e Minhas trilhas são links;
+      Concluídos e Certificados, EM BREVE. **Os 4 redirecionamentos saíram** (`/conta`,
+      `/minhas-trilhas`, `/aluno/inicio`, `/admin`; `RotasAntigas.tsx` apagado): a escola está em
+      desenvolvimento, e o que não se usa sai. No celular, Minhas trilhas fica acessível pelo
+      "Ver todas" do Início. Mutação: Em andamento de volta a EM BREVE, e Meus estudos apontando
+      para a tela removida — as duas reprovam.
 - [x] **As telas do aluno passam para `/aluno/*`** *(decisão do operador, 28/09/2026, era a P15)*:
       `/inicio` → `/aluno/inicio`, `/conta` → `/aluno/conta` (com as subpáginas),
       `/minhas-trilhas` → `/aluno/minhas-trilhas`. Os endereços antigos **redirecionam** para os
@@ -2881,8 +2893,9 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       (`CLAUDE.md` → Access Architecture): o admin entra por uma regra própria, como já faz na
       aula.
 - [ ] **Tirar o EM BREVE do que espera o progresso** *(menu novo do aluno, 29/09/2026)*: o bloco
-      **Continue estudando** do Início e **Em andamento** e **Concluídos** em Meus estudos (nível 2
-      e cartões da tela). O que cada um mostra é decisão do operador na hora de construir.
+      **Continue estudando** do Início, o **conteúdo** da página Em andamento (hoje só o título) e
+      **Concluídos** em Meus estudos. O que cada um mostra é decisão do operador na hora de
+      construir.
 - **Done when:** "marquei como vista" works, trilha % completion shows, AND events are captured for future analytics.
 
 ## Phase 6 — JilsonAI (lean v1 + suporte)  *(medium risk)*  → ver **JILSONAI.md** (roadmap interno)

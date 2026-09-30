@@ -441,12 +441,13 @@ são hoje páginas **React provisórias** (`CatalogPage.tsx`), que fazem os dois
 vezes. Enquanto isso, **não investir acabamento nelas** (`design-lab/GEMINI.md` § 0).
 
 **FEITO (29/09/2026; decisão do operador de 28/09):** as telas do aluno moram em `/aluno/*`
-(`/aluno/conta`, `/aluno/minhas-trilhas`, `/aluno/meus-estudos`…). **Duas exceções, decididas
+(`/aluno/conta`, `/aluno/minhas-trilhas`, `/aluno/em-andamento`…). **Duas exceções, decididas
 por ele em 29/09:** o **Início é `/inicio`**, um só para o aluno e para o admin (a plataforma é
-uma só: o admin testa ali tudo o que o aluno faz), e o painel do admin é o **`/dashboard`**. Os
-endereços antigos **redirecionam** — `/conta`, `/minhas-trilhas`, `/aluno/inicio` e `/admin` —, e
-as rotas estão em `client/src/components/auth/RotasAntigas.tsx`, com teste. **Tela nova do aluno
-nasce sob `/aluno/`**; não crie outra rota no endereço curto, que é da vitrine.
+uma só: o admin testa ali tudo o que o aluno faz), e o painel do admin é o **`/dashboard`**.
+**Endereço antigo NÃO redireciona** *(decisão dele, 29/09: a escola está em desenvolvimento, o que
+não se usa sai)*: `/conta`, `/minhas-trilhas`, `/aluno/inicio` e `/admin` deixaram de existir.
+**Tela nova do aluno nasce sob `/aluno/`**; não crie outra rota no endereço curto, que é da
+vitrine.
 
 ### A home pública JÁ EXISTE — onde ela mora e como se mexe nela *(set/2026)*
 

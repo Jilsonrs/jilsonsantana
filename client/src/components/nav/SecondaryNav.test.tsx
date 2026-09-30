@@ -103,17 +103,26 @@ describe("iniciais", () => {
 // O nível 2 de Meus estudos (decisão do operador, 29/09/2026): os quatro itens,
 // e só o que existe é link. O resto sai como texto com EM BREVE.
 describe("SecondaryNav — Meus estudos", () => {
-  it("Minhas trilhas é link; Em andamento, Concluídos e Certificados são EM BREVE", () => {
+  it("Em andamento e Minhas trilhas são links; Concluídos e Certificados são EM BREVE", () => {
     render("/aluno/minhas-trilhas/7");
 
     const minhas = screen.getByRole("link", { name: "Minhas trilhas" });
     expect(minhas.getAttribute("href")).toBe("/aluno/minhas-trilhas");
     expect(minhas.getAttribute("aria-current")).toBe("page");
+    const emAndamento = screen.getByRole("link", { name: "Em andamento" });
+    expect(emAndamento.getAttribute("href")).toBe("/aluno/em-andamento");
+    expect(emAndamento.getAttribute("aria-current")).toBeNull();
 
-    for (const nome of ["Em andamento", "Concluídos", "Certificados"]) {
+    for (const nome of ["Concluídos", "Certificados"]) {
       expect(screen.getByText(nome), nome).toBeTruthy();
       expect(screen.queryByRole("link", { name: new RegExp(nome) }), nome).toBeNull();
     }
-    expect(screen.getAllByText("EM BREVE")).toHaveLength(3);
+    expect(screen.getAllByText("EM BREVE")).toHaveLength(2);
+  });
+
+  // Meus estudos abre em Em andamento (operador, 29/09/2026): lá, é ele que acende.
+  it("em Em andamento, o item dele fica aceso", () => {
+    render("/aluno/em-andamento");
+    expect(screen.getByRole("link", { name: "Em andamento" }).getAttribute("aria-current")).toBe("page");
   });
 });

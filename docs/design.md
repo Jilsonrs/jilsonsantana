@@ -382,8 +382,8 @@ O menu separa o que o aluno **descobre** do que é **dele**:
   guardar para depois é da **trilha personalizada** (o "My collections" do LinkedIn).
 - **Não copiar do LinkedIn** as muitas fileiras do Home ("popular", "mais curtidos"…): com um
   acervo pequeno, todas mostrariam os mesmos cursos.
-- O que ainda não existe aparece como **EM BREVE**: Em andamento e Concluídos dependem do
-  progresso (Fase 5); Certificados, da Fase 6.5.
+- O que ainda não existe aparece como **EM BREVE**: Concluídos depende do progresso (Fase 5);
+  Certificados, da Fase 6.5. Em andamento existe, só com o título, até a Fase 5 (abaixo).
 - **O JilsonAI aparece para o aluno como EM BREVE**, sem link *(operador, 29/09/2026)* — até
   então o aluno não via nada planejado. Vale para toda seção DELE que ainda não existe; as
   planejadas do admin continuam invisíveis para o aluno.
@@ -400,9 +400,11 @@ O menu separa o que o aluno **descobre** do que é **dele**:
   administrativa. O painel tem os **4 relatórios** mapeados para "Dados" (Assinantes ·
   Aprendizado · De onde vieram os alunos · Uso do JilsonAI), **EM BREVE** até os dados existirem,
   e os **atalhos** de antes embaixo. **"Dados" virou o Dashboard e saiu do menu.**
-- **"Meus estudos" tem tela própria** *(operador, 29/09/2026)*, `/aluno/meus-estudos`: um cartão
-  por item do nível 2, com o resumo de cada um. "Minhas trilhas" mantém o endereço dela
-  (`/aluno/minhas-trilhas`) e acende Meus estudos no menu.
+- **Meus estudos abre em Em andamento, sem tela de resumo** *(operador, 29/09/2026 — substitui a
+  "tela própria com um cartão por item" da manhã, que repetia a coluna)*: a **coluna do nível 2 é
+  o guia** (a pessoa sabe onde está), e o **título de cada página a identifica**. Em andamento
+  (`/aluno/em-andamento`) existe **só com o título** até o progresso chegar (Fase 5). "Minhas
+  trilhas" mantém o endereço dela (`/aluno/minhas-trilhas`) e acende Meus estudos no menu.
 
 ### Mobile (< 768px)
 

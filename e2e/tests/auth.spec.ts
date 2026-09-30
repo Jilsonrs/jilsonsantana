@@ -28,10 +28,8 @@ async function login(page: Page, creds: { email: string; password: string }) {
   await expect(minhasTrilhas.getByText("Carregando…")).toHaveCount(0);
 }
 
-test("unauthenticated visit to /conta redirects to /login", async ({ page }) => {
-  // Endereço ANTIGO de propósito: passa pelo redirecionamento para /aluno/conta
-  // (operador, 28/09/2026) e só então pelo pedido de login.
-  await page.goto("/conta");
+test("unauthenticated visit to /aluno/conta redirects to /login", async ({ page }) => {
+  await page.goto("/aluno/conta");
   await expect(page).toHaveURL(/\/login$/);
 });
 
@@ -58,8 +56,7 @@ test("member reaches /aluno/conta but is blocked from /dashboard", async ({ page
 
 test("admin reaches /dashboard", async ({ page }) => {
   await login(page, ADMIN);
-  // O endereço ANTIGO de propósito: /admin leva ao /dashboard (29/09/2026).
-  await page.goto("/admin");
+  await page.goto("/dashboard");
 
   // Duas asserções, e a primeira é a que carrega o teste: o admin NÃO é
   // redirecionado (o member, no teste acima, é mandado para /aluno/conta). Sem ela,

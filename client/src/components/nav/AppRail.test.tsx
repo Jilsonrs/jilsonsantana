@@ -20,7 +20,7 @@ describe("AppRail — quem vê o quê", () => {
     expect(screen.getByRole("link", { name: "Início" })).toBeTruthy();
     expect(screen.getByRole("link", { name: "Cursos" })).toBeTruthy();
     expect(screen.getByRole("link", { name: "Trilhas" })).toBeTruthy();
-    expect(screen.getByRole("link", { name: "Meus estudos" }).getAttribute("href")).toBe("/aluno/meus-estudos");
+    expect(screen.getByRole("link", { name: "Meus estudos" }).getAttribute("href")).toBe("/aluno/em-andamento");
     // Minhas trilhas mora no nível 2 de Meus estudos (operador, 29/09/2026).
     expect(screen.queryByRole("link", { name: "Minhas trilhas" })).toBeNull();
     // "Minha conta" mora no menu da foto, no canto superior direito (decisão do

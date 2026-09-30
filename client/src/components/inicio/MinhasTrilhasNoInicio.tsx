@@ -14,7 +14,7 @@ const NO_PAINEL = 3;
  */
 export function MinhasTrilhasNoInicio() {
   const t = useT();
-  // Mesma chave da tela Minhas trilhas e de Meus estudos: uma busca só.
+  // Mesma chave da tela Minhas trilhas: uma busca só.
   const { data: trilhas, isLoading, isError } = useQuery({
     queryKey: ["myTrilhas"],
     queryFn: getMyTrilhas,
@@ -41,9 +41,9 @@ export function MinhasTrilhasNoInicio() {
         {!isLoading && !isError && !temTrilha && (
           // O vazio tem SAÍDA: as trilhas prontas, de onde se salva uma.
           <div className="space-y-4">
-            <p className="text-muted-foreground">{t.meusEstudos.nenhumaTrilha}</p>
+            <p className="text-muted-foreground">{t.inicio.nenhumaTrilha}</p>
             <Button asChild variant="outline" className="rounded-full">
-              <Link to="/trilhas">{t.meusEstudos.verTrilhas}</Link>
+              <Link to="/trilhas">{t.inicio.verTrilhas}</Link>
             </Button>
           </div>
         )}
