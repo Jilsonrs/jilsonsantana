@@ -41,23 +41,31 @@ export function LessonPage() {
   const { curso, aula } = data;
   const temArquivos = curso.modulos.some((m) => m.aulas.some((a) => a.id === aula.id && a.temArquivos));
   return (
-    <PageContainer>
-      <PageHeader
-        title={aula.title}
-        description={curso.title}
-        actions={
-          aula.status !== ContentStatus.PUBLISHED && (
-            <span className="rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">
-              {aula.status === ContentStatus.ARCHIVED ? t.aula.arquivado : t.aula.rascunho}
-            </span>
-          )
-        }
-      />
-      <div className={cn("grid gap-6", iaAberta && "lg:grid-cols-[minmax(0,1fr)_360px]")}>
-        <div className="min-w-0 space-y-8">
-          <LessonContent aula={aula} comoAdmin={comoAdmin} temArquivos={temArquivos} />
-          {/* Em toda aula, liberada ou não (operador, 29/09/2026). */}
-          <CourseDetails curso={curso} />
+    <div className="flex min-h-full flex-col">
+      {/* Barra Superior Customizada da Aula (Avatar flutua por cima, à direita) */}
+      <div className="flex min-h-[60px] md:min-h-[80px] items-center px-4 sm:px-6 md:px-[50px] border-b border-border/40 bg-card/50">
+        <div className="flex flex-col justify-center max-w-[80%]">
+          <span className="text-xs md:text-sm font-medium text-muted-foreground truncate">
+            {curso.title}
+          </span>
+          <h1 className="text-sm md:text-base font-display font-semibold tracking-tight text-foreground truncate flex items-center gap-3">
+            {aula.title}
+            {aula.status !== ContentStatus.PUBLISHED && (
+              <span className="inline-flex rounded-full border border-border px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-wider text-muted-foreground">
+                {aula.status === ContentStatus.ARCHIVED ? t.aula.arquivado : t.aula.rascunho}
+              </span>
+            )}
+          </h1>
+        </div>
+      </div>
+
+      <div className="mx-auto w-full max-w-[1600px] px-4 pt-[20px] pb-6 sm:px-6 sm:pb-8 md:px-[50px] md:pb-8">
+        <div className={cn("grid gap-6", iaAberta && "lg:grid-cols-[minmax(0,1fr)_360px]")}>
+          <div className="min-w-0 space-y-8">
+            <LessonContent aula={aula} comoAdmin={comoAdmin} temArquivos={temArquivos} />
+
+            {/* Em toda aula, liberada ou não (operador, 29/09/2026). */}
+            <CourseDetails curso={curso} />
           {/* No computador, quem está logado vê o conteúdo do curso no nível 2 da
               navegação. No celular, e para o visitante (que não tem o shell), ele
               fica aqui embaixo — o nível 2 nunca some (design.md §6). */}
@@ -68,7 +76,8 @@ export function LessonPage() {
         {iaAberta && <PainelDaIa aoFechar={() => setIaAberta(false)} />}
       </div>
       <BotaoDaIa aberto={iaAberta} aoAlternar={() => setIaAberta(!iaAberta)} />
-    </PageContainer>
+      </div>
+    </div>
   );
 }
 

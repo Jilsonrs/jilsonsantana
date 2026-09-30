@@ -21,17 +21,23 @@ export function ListaDeArquivos({
 }) {
   const idioma = useIdioma();
   return (
-    <ul className="space-y-2">
+    <ul className="grid gap-3 sm:grid-cols-2">
       {arquivos.map((arquivo) => (
         <li key={arquivo.id}>
           <a
             href={api.enderecoDoArquivo(lessonId, arquivo.id, comoAdmin)}
             download
-            className="inline-flex items-center gap-2 text-sm font-medium text-primary-tint-foreground hover:underline"
+            className="group flex items-center gap-4 rounded-xl border border-border/50 bg-card p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:bg-muted/30 hover:shadow-sm"
           >
-            <FileDown className="size-4 shrink-0" aria-hidden="true" />
-            {arquivo.originalName}
-            <span className="text-muted-foreground">· {tamanhoLegivel(arquivo.sizeBytes, idioma)}</span>
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+              <FileDown className="size-5" aria-hidden="true" />
+            </div>
+            <div className="flex min-w-0 flex-col">
+              <span className="truncate text-sm font-medium text-foreground transition-colors group-hover:text-primary">
+                {arquivo.originalName}
+              </span>
+              <span className="text-xs text-muted-foreground">{tamanhoLegivel(arquivo.sizeBytes, idioma)}</span>
+            </div>
           </a>
         </li>
       ))}

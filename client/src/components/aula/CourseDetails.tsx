@@ -12,9 +12,9 @@ const MarkdownText = lazy(() => import("@/components/content/MarkdownText").then
 function Lista({ titulo, itens }: { titulo: string; itens: string[] }) {
   if (itens.length === 0) return null;
   return (
-    <section className="space-y-3">
-      <h3 className="font-semibold">{titulo}</h3>
-      <ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+    <section className="space-y-4">
+      <h3 className="font-display text-lg font-semibold tracking-tight text-foreground">{titulo}</h3>
+      <ul className="list-disc space-y-2 pl-5 text-[0.95rem] leading-relaxed text-muted-foreground">
         {itens.map((item) => (
           <li key={item}>{item}</li>
         ))}
@@ -36,12 +36,12 @@ export function CourseDetails({ curso }: { curso: PaginaDaAula["curso"] }) {
   const perguntas = curso.faq ?? [];
 
   return (
-    <section aria-labelledby="sobre-o-curso" className="space-y-8 border-t border-border/60 pt-8">
-      <div className="flex flex-wrap items-center gap-3">
-        <h2 id="sobre-o-curso" className="text-xl font-semibold">
+    <section aria-labelledby="sobre-o-curso" className="space-y-10 border-t border-border/40 pt-10">
+      <div className="flex flex-wrap items-center gap-4">
+        <h2 id="sobre-o-curso" className="font-display text-[1.4rem] font-bold tracking-tight text-foreground">
           {t.aula.sobreOCurso}
         </h2>
-        {curso.level && <Badge variant="secondary">{t.niveis[curso.level]}</Badge>}
+        {curso.level && <Badge variant="secondary" className="rounded-full font-medium">{t.niveis[curso.level]}</Badge>}
       </div>
 
       {curso.description && (
@@ -51,24 +51,17 @@ export function CourseDetails({ curso }: { curso: PaginaDaAula["curso"] }) {
       )}
 
       {curso.learnTags.length > 0 && (
-        <section className="space-y-3">
-          <h3 className="font-semibold">{t.curso.aprender}</h3>
+        <section className="space-y-5">
+          <h3 className="font-display text-lg font-semibold tracking-tight text-foreground">{t.curso.aprender}</h3>
           <div className="flex flex-wrap gap-2">
             {curso.learnTags.map((tag) => (
-              <Badge key={tag} variant="secondary">
+              <Badge key={tag} variant="secondary" className="rounded-md px-3 py-1 font-normal text-sm bg-muted/50 hover:bg-muted">
                 {tag}
               </Badge>
             ))}
           </div>
         </section>
       )}
-
-      <div className="grid gap-8 sm:grid-cols-2">
-        <Lista titulo={t.curso.requisitos} itens={curso.requirements} />
-        <Lista titulo={t.curso.paraQuem} itens={curso.personas} />
-      </div>
-
-      <LayerSelo camadas={curso.camadas} />
 
       {destaques.length > 0 && (
         <div className="grid gap-6 sm:grid-cols-3">
@@ -78,14 +71,21 @@ export function CourseDetails({ curso }: { curso: PaginaDaAula["curso"] }) {
         </div>
       )}
 
+      <div className="grid gap-8 sm:grid-cols-2">
+        <Lista titulo={t.curso.requisitos} itens={curso.requirements} />
+        <Lista titulo={t.curso.paraQuem} itens={curso.personas} />
+      </div>
+
+      <LayerSelo camadas={curso.camadas} />
+
       {perguntas.length > 0 && (
-        <section className="space-y-3">
-          <h3 className="font-semibold">{t.curso.faq}</h3>
-          <Accordion type="multiple">
+        <section className="space-y-6">
+          <h3 className="font-display text-lg font-semibold tracking-tight text-foreground">{t.curso.faq}</h3>
+          <Accordion type="multiple" className="rounded-xl border border-border/40 bg-card px-4">
             {perguntas.map((item, i) => (
-              <AccordionItem key={i} value={String(i)}>
-                <AccordionTrigger>{item.pergunta}</AccordionTrigger>
-                <AccordionContent>{item.resposta}</AccordionContent>
+              <AccordionItem key={i} value={String(i)} className="border-border/40 last:border-0">
+                <AccordionTrigger className="text-left font-medium hover:no-underline hover:text-primary transition-colors">{item.pergunta}</AccordionTrigger>
+                <AccordionContent className="text-muted-foreground leading-relaxed">{item.resposta}</AccordionContent>
               </AccordionItem>
             ))}
           </Accordion>
