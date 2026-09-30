@@ -18,8 +18,11 @@ export function LayerSelo({ camadas }: { camadas: Layer[] }) {
       <div className="absolute -right-20 -top-20 h-[300px] w-[300px] rounded-full bg-primary/20 blur-[100px] pointer-events-none" />
       <div className="absolute -left-20 -bottom-20 h-[300px] w-[300px] rounded-full bg-indigo-500/20 blur-[100px] pointer-events-none" />
       
-      <div className="relative z-10 grid gap-12 lg:grid-cols-[1fr_1.5fr] items-center">
-        <div className="space-y-6">
+      <div className={cn(
+        "relative z-10",
+        camadas.length === 3 ? "grid gap-12 lg:grid-cols-[1fr_1.5fr] items-center" : "flex flex-col items-center text-center gap-10"
+      )}>
+        <div className={cn("space-y-6", camadas.length < 3 && "max-w-2xl")}>
           <h2 className="font-display text-4xl font-bold tracking-tighter text-white sm:text-5xl leading-[1.1]">
             O DNA de uma escola <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">moderna</span>.
           </h2>
@@ -28,13 +31,19 @@ export function LayerSelo({ camadas }: { camadas: Layer[] }) {
           </p>
         </div>
         
-        <div className="flex flex-col gap-4">
+        <div className={cn(
+          "w-full",
+          camadas.length === 3 ? "flex flex-col gap-4" :
+          camadas.length === 2 ? "grid gap-6 sm:grid-cols-2" :
+          "max-w-md"
+        )}>
           {camadas.map((layer) => {
             const config = LAYER_CONFIG[layer];
             const Icon = resolveIcon(config.icon);
             return (
               <div key={layer} className={cn(
-                "relative flex items-start gap-5 rounded-3xl p-6 transition-colors",
+                "relative flex items-start gap-5 rounded-3xl p-6 transition-colors text-left",
+                camadas.length < 3 && "flex-col items-center text-center gap-4",
                 config.accent ? "bg-white/10 ring-1 ring-white/20 shadow-lg" : "bg-white/5 hover:bg-white/10"
               )}>
                 <div className={cn(
@@ -43,7 +52,7 @@ export function LayerSelo({ camadas }: { camadas: Layer[] }) {
                 )}>
                   <Icon className="h-7 w-7 stroke-[1.5px]" />
                 </div>
-                <div className="space-y-1.5 pt-1">
+                <div className={cn("space-y-1.5", camadas.length === 3 ? "pt-1" : "")}>
                   <p className="text-[1.15rem] font-bold text-white tracking-tight">{textos.camadas[layer].nome}</p>
                   <p className="text-[0.95rem] leading-relaxed text-slate-300">{textos.camadas[layer].texto}</p>
                 </div>
