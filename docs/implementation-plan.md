@@ -181,6 +181,10 @@
 > **PUBLICADO em 30/09 (`main` = `d96589d`, CI verde nos dois jobs, deploy ok):** a duração também
 > no **cartão do catálogo** e na **página do curso** ("2 módulos · 4 aulas · 1h 05min"; só aulas
 > publicadas; "0min" sem vídeo).
+> **PUBLICADO em 30/09 (`main` = `0b6b4d1`, CI verde nos dois jobs, deploy ok):** a duração
+> também na **lista de cursos do admin** ("2 módulos · 5 aulas · 1h 05min"). Antes, no mesmo dia,
+> o **Antigravity publicou** o acabamento do cartão de curso do admin (`0419a93`), pelo caminho
+> do `GEMINI.md` §5.
 > **`dev` = `main` em código (30/09):** tudo o que foi construído está no ar. O operador passa a
 > trabalhar com o Antigravity no acabamento (fila em `design-lab/GEMINI.md`, itens 11 a 16).
 > **Registrado no fim da sessão de 29/09 (só documentos, no `dev`):** o mapa do que falta nos 7
