@@ -25,24 +25,34 @@ describe("secoesVisiveis — quem vê o quê", () => {
     expect(vistas.some((s) => s.to.startsWith("/admin"))).toBe(false);
   });
 
-  it("o admin vê as dele E as do aluno — menos o Início do aluno", () => {
+  it("o admin vê as dele E as do aluno — inclusive o Início", () => {
     const vistas = secoesVisiveis(Role.ADMIN);
 
     expect(vistas.some((s) => s.to === "/admin/cursos")).toBe(true);
-    expect(vistas.some((s) => s.to === "/aluno/meus-estudos")).toBe(true);
-    expect(vistas.some((s) => s.to === "/aluno/inicio")).toBe(false);
+    expect(vistas.some((s) => s.to === "/aluno/em-andamento")).toBe(true);
+    expect(vistas.some((s) => s.to === "/inicio")).toBe(true);
   });
 
-  // O Início é diferente por papel (decisão do operador, 29/09/2026): o aluno vai
-  // ao painel dele; o admin, ao painel da escola, que absorveu a seção "Dados".
-  it("cada papel tem o SEU Início, e só um", () => {
+  // A PLATAFORMA É UMA SÓ (decisão do operador, 29/09/2026): o Início é o mesmo
+  // para o aluno e para o admin, que testa por ele tudo o que o aluno faz. O
+  // painel do admin é o Dashboard, que absorveu a seção "Dados".
+  it("o Início é um só, para os dois papéis", () => {
     const inicio = (papel: string) =>
       secoesVisiveis(papel).filter((s) => s.label === "Início").map((s) => s.to);
-    expect(inicio(Role.MEMBER)).toEqual(["/aluno/inicio"]);
-    expect(inicio(Role.ADMIN)).toEqual(["/admin"]);
-    // O menu do admin COMEÇA pelo Início dele.
-    expect(secoesVisiveis(Role.ADMIN)[0].to).toBe("/admin");
+    expect(inicio(Role.MEMBER)).toEqual(["/inicio"]);
+    expect(inicio(Role.ADMIN)).toEqual(["/inicio"]);
     expect(NAVEGACAO.some((s) => s.label === "Dados")).toBe(false);
+  });
+
+  // Tudo antes do Dashboard é a área do aluno; dele para baixo, a administrativa.
+  it("o Dashboard é o PRIMEIRO item do admin, logo antes de Cursos Admin", () => {
+    const menu = secoesVisiveis(Role.ADMIN).filter((s) => !s.foraDoMenuLateral);
+    const i = menu.findIndex((s) => s.label === "Dashboard");
+    expect(menu[i].to).toBe("/dashboard");
+    expect(menu[i + 1].label).toBe("Cursos Admin");
+    expect(menu.slice(0, i).every((s) => s.papel !== Role.ADMIN)).toBe(true);
+    expect(menu.slice(i).every((s) => s.papel === Role.ADMIN)).toBe(true);
+    expect(secoesVisiveis(Role.MEMBER).some((s) => s.label === "Dashboard")).toBe(false);
   });
 
   // Planejada = tela que ainda não existe. Aparece como EM BREVE para quem tem
@@ -112,11 +122,11 @@ describe("secaoAtiva — onde estou", () => {
   const doAluno = secoesVisiveis(Role.MEMBER);
 
   it("acende a seção da rota exata", () => {
-    expect(secaoAtiva("/aluno/inicio", doAluno)?.label).toBe("Início");
+    expect(secaoAtiva("/inicio", doAluno)?.label).toBe("Início");
   });
 
   it("Meus estudos acende na tela dele e dentro de Minhas trilhas", () => {
-    for (const rota of ["/aluno/meus-estudos", "/aluno/minhas-trilhas", "/aluno/minhas-trilhas/7"]) {
+    for (const rota of ["/aluno/em-andamento", "/aluno/minhas-trilhas", "/aluno/minhas-trilhas/7"]) {
       expect(secaoAtiva(rota, doAluno)?.label, rota).toBe("Meus estudos");
     }
   });
@@ -129,8 +139,8 @@ describe("secaoAtiva — onde estou", () => {
 
   it("acende a seção de admin nas rotas dela", () => {
     expect(secaoAtiva("/admin/cursos", doAdmin)?.label).toBe("Cursos Admin");
-    // O Início do admin é "/admin", PREFIXO de todas as rotas dele: acende só nele.
-    expect(secaoAtiva("/admin", doAdmin)?.to).toBe("/admin");
+    expect(secaoAtiva("/dashboard", doAdmin)?.label).toBe("Dashboard");
+    expect(secaoAtiva("/inicio", doAdmin)?.label).toBe("Início");
     expect(secaoAtiva("/admin/site/textos", doAdmin)?.label).toBe("Site");
     expect(secaoAtiva("/admin/cursos/novo", doAdmin)?.to).toBe("/admin/cursos");
   });
@@ -187,8 +197,8 @@ describe("casaRota — parâmetro só casa com número", () => {
   });
 
   it("não casa com rota que só começa igual", () => {
-    expect(casaRota("/aluno/iniciox", "/aluno/inicio")).toBeNull();
-    expect(casaRota("/aluno/inicio/7", "/aluno/inicio")).toEqual({});
+    expect(casaRota("/iniciox", "/inicio")).toBeNull();
+    expect(casaRota("/inicio/7", "/inicio")).toEqual({});
   });
 });
 
@@ -196,7 +206,7 @@ describe("itensSecundarios — o nível 2 só aparece quando vale a pena", () =>
   const doAluno = secoesVisiveis(Role.MEMBER);
 
   it("não aparece onde a seção não tem filhos", () => {
-    expect(itensSecundarios("/aluno/inicio", doAluno)).toEqual([]);
+    expect(itensSecundarios("/inicio", doAluno)).toEqual([]);
   });
 
   // Uma coluna de navegação com uma linha só é ruído visual, não navegação.
@@ -252,10 +262,11 @@ describe("itensSecundarios — o nível 2 só aparece quando vale a pena", () =>
     expect(itens.filter((i) => i.estado === "planejado").map((i) => i.label)).toEqual(["Legendas", "Mensagens"]);
   });
 
-  // O nível 2 de Meus estudos (operador, 29/09/2026). Só Minhas trilhas existe;
-  // os outros três são EM BREVE (Fase 5 e 6.5). Sem "Salvos".
-  it("Meus estudos mostra os quatro itens, com três EM BREVE", () => {
-    for (const rota of ["/aluno/meus-estudos", "/aluno/minhas-trilhas/7"]) {
+  // O nível 2 de Meus estudos (operador, 29/09/2026): o guia de onde a pessoa
+  // está. Em andamento (só o título, por ora) e Minhas trilhas existem;
+  // Concluídos e Certificados são EM BREVE (Fase 5 e 6.5). Sem "Salvos".
+  it("Meus estudos mostra os quatro itens, com dois EM BREVE", () => {
+    for (const rota of ["/aluno/em-andamento", "/aluno/minhas-trilhas/7"]) {
       const itens = itensSecundarios(rota, doAluno);
       expect(itens.map((i) => i.label), rota).toEqual([
         "Em andamento",
@@ -264,10 +275,10 @@ describe("itensSecundarios — o nível 2 só aparece quando vale a pena", () =>
         "Certificados",
       ]);
       expect(itens.filter((i) => i.estado === "planejado").map((i) => i.label), rota).toEqual([
-        "Em andamento",
         "Concluídos",
         "Certificados",
       ]);
+      expect(itens.find((i) => i.label === "Em andamento")?.to).toBe("/aluno/em-andamento");
       expect(itens.find((i) => i.label === "Minhas trilhas")?.to).toBe("/aluno/minhas-trilhas");
     }
   });
@@ -297,7 +308,7 @@ describe("abasDaRota — o nível 3", () => {
   });
 
   it("vazio onde a seção não tem abas", () => {
-    expect(abasDaRota("/aluno/inicio", doAluno)).toEqual([]);
+    expect(abasDaRota("/inicio", doAluno)).toEqual([]);
   });
 
   // O catálogo do aluno TINHA abas (Cursos | Trilhas) e virou duas seções de

@@ -10,10 +10,10 @@ import { AdminRoute } from "./AdminRoute";
 
 function renderAt() {
   return render(
-    <MemoryRouter initialEntries={["/admin"]}>
+    <MemoryRouter initialEntries={["/dashboard"]}>
       <Routes>
         <Route element={<AdminRoute />}>
-          <Route path="/admin" element={<div>painel admin</div>} />
+          <Route path="/dashboard" element={<div>painel admin</div>} />
         </Route>
         <Route path="/aluno/conta" element={<div>minha conta</div>} />
         <Route path="/login" element={<div>tela de login</div>} />

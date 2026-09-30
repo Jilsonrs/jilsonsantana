@@ -6,7 +6,7 @@ import { Role } from "@jilson/core";
 import { AppRail } from "./AppRail";
 import { IdiomaProvider } from "@/lib/language";
 
-function render(papel?: string, route = "/aluno/inicio") {
+function render(papel?: string, route = "/inicio") {
   return renderWithProviders(<AppRail papel={papel} />, {
     route,
     path: "*",
@@ -20,7 +20,7 @@ describe("AppRail — quem vê o quê", () => {
     expect(screen.getByRole("link", { name: "Início" })).toBeTruthy();
     expect(screen.getByRole("link", { name: "Cursos" })).toBeTruthy();
     expect(screen.getByRole("link", { name: "Trilhas" })).toBeTruthy();
-    expect(screen.getByRole("link", { name: "Meus estudos" }).getAttribute("href")).toBe("/aluno/meus-estudos");
+    expect(screen.getByRole("link", { name: "Meus estudos" }).getAttribute("href")).toBe("/aluno/em-andamento");
     // Minhas trilhas mora no nível 2 de Meus estudos (operador, 29/09/2026).
     expect(screen.queryByRole("link", { name: "Minhas trilhas" })).toBeNull();
     // "Minha conta" mora no menu da foto, no canto superior direito (decisão do
@@ -44,18 +44,21 @@ describe("AppRail — quem vê o quê", () => {
     expect(screen.getByRole("link", { name: "Meus estudos" })).toBeTruthy();
   });
 
-  // O Início é diferente por papel (decisão do operador, 29/09/2026).
-  it("o Início do admin leva ao painel dele; o do aluno, ao painel do aluno", () => {
-    render(Role.ADMIN, "/admin");
-    const doAdmin = screen.getAllByRole("link", { name: "Início" });
-    expect(doAdmin.map((l) => l.getAttribute("href"))).toEqual(["/admin"]);
-    expect(doAdmin[0].getAttribute("aria-current")).toBe("page");
+  // A plataforma é uma só (decisão do operador, 29/09/2026): o Início é o mesmo
+  // para o aluno e para o admin; o painel do admin é o Dashboard.
+  it("o admin tem o MESMO Início do aluno, e o Dashboard dele", () => {
+    render(Role.ADMIN, "/dashboard");
+    const inicio = screen.getAllByRole("link", { name: "Início" });
+    expect(inicio.map((l) => l.getAttribute("href"))).toEqual(["/inicio"]);
+    const dashboard = screen.getByRole("link", { name: "Dashboard" });
+    expect(dashboard.getAttribute("href")).toBe("/dashboard");
+    expect(dashboard.getAttribute("aria-current")).toBe("page");
   });
 
-  it("o Início do aluno leva ao painel do aluno", () => {
+  it("o aluno tem o Início, e NÃO tem o Dashboard", () => {
     render(Role.MEMBER);
-    const doAluno = screen.getAllByRole("link", { name: "Início" });
-    expect(doAluno.map((l) => l.getAttribute("href"))).toEqual(["/aluno/inicio"]);
+    expect(screen.getByRole("link", { name: "Início" }).getAttribute("href")).toBe("/inicio");
+    expect(screen.queryByRole("link", { name: "Dashboard" })).toBeNull();
   });
 
   // O mapa tem seções "planejadas" (JilsonAI, Certificados, Alunos…) que
@@ -88,7 +91,7 @@ describe("AppRail — quem vê o quê", () => {
       <IdiomaProvider idioma="en">
         <AppRail papel={Role.ADMIN} />
       </IdiomaProvider>,
-      { route: "/aluno/inicio", path: "*" },
+      { route: "/inicio", path: "*" },
     );
 
     // JilsonAI é do aluno; Alunos, Dados e Trilhas Admin são do admin.
@@ -99,7 +102,7 @@ describe("AppRail — quem vê o quê", () => {
 
 describe("AppRail — onde estou", () => {
   it("marca só a rota atual", () => {
-    render(Role.MEMBER, "/aluno/inicio");
+    render(Role.MEMBER, "/inicio");
 
     expect(screen.getByRole("link", { name: "Início" }).getAttribute("aria-current")).toBe("page");
     expect(screen.getByRole("link", { name: "Cursos" }).getAttribute("aria-current")).toBeNull();

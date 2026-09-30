@@ -269,6 +269,8 @@ export const en: Dict = {
       intro: "This is your starting point. The courses you begin show up here, so you can pick up where you left off.",
       continueTitulo: "Keep learning",
       continueEmBreve: "Soon, the lesson where you left off will show up here, one click away.",
+      nenhumaTrilha: "You haven't saved any learning paths yet.",
+      verTrilhas: "Browse learning paths",
       verTodas: "See all",
       atalhos: "Shortcuts"
     },
@@ -290,19 +292,6 @@ export const en: Dict = {
       voltar: "← Back to My learning paths",
       erroDetalhe: "We couldn't load this learning path.",
       semConteudo: "This learning path has no content yet."
-    },
-    meusEstudos: {
-      titulo: "My learning",
-      descricao: "Everything that's yours at the school, in one place.",
-      emAndamentoDescricao: "The courses you've started, so you can pick up where you left off.",
-      minhasTrilhasDescricao: "The learning paths you saved to study.",
-      concluidosDescricao: "The courses you've finished.",
-      certificadosDescricao: "Certificates for the learning paths you complete.",
-      trilhaSalva: "saved learning path",
-      trilhasSalvas: "saved learning paths",
-      abrirMinhasTrilhas: "Open my learning paths",
-      nenhumaTrilha: "You haven't saved any learning paths yet.",
-      verTrilhas: "Browse learning paths"
     },
     catalogo: {
       cursos: "Courses",

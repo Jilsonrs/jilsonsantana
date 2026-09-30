@@ -7,7 +7,7 @@ import { MobileNav } from "./MobileNav";
 
 function abrirGaveta() {
   renderWithProviders(<MobileNav papel={Role.MEMBER} onSignOut={vi.fn()} />, {
-    route: "/aluno/inicio",
+    route: "/inicio",
     path: "*",
   });
   fireEvent.click(screen.getByRole("button", { name: "Abrir o menu" }));
@@ -30,7 +30,7 @@ describe("MobileNav — o menu do aluno no celular", () => {
   it("tem Meus estudos, e o JilsonAI como EM BREVE sem link", () => {
     abrirGaveta();
 
-    expect(screen.getByRole("link", { name: "Meus estudos" }).getAttribute("href")).toBe("/aluno/meus-estudos");
+    expect(screen.getByRole("link", { name: "Meus estudos" }).getAttribute("href")).toBe("/aluno/em-andamento");
     expect(screen.getByText("JilsonAI")).toBeTruthy();
     expect(screen.getByText("EM BREVE")).toBeTruthy();
     expect(screen.queryByRole("link", { name: /JilsonAI/ })).toBeNull();

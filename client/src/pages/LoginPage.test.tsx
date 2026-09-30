@@ -23,16 +23,16 @@ import { LoginPage } from "./LoginPage";
 import { IdiomaProvider } from "@/lib/language";
 
 /**
- * Monta a tela com destinos reais para o Início do aluno e o do admin, para
- * poder assertar para ONDE cada um foi levado.
+ * Monta a tela com destinos reais para o Início e para o Dashboard, para poder
+ * assertar para ONDE cada um foi levado.
  */
 function renderLogin(route = "/login") {
   return renderWithProviders(<LoginPage />, {
     route,
     path: "/login",
     extraRoutes: [
-      { path: "/aluno/inicio", element: <div>HOME DO ALUNO</div> },
-      { path: "/admin", element: <div>PAINEL DO ADMIN</div> },
+      { path: "/inicio", element: <div>HOME DO ALUNO</div> },
+      { path: "/dashboard", element: <div>PAINEL DO ADMIN</div> },
     ],
   });
 }
@@ -315,7 +315,7 @@ function loginEmIngles(route = "/login?lang=en") {
     {
       route,
       path: "/login",
-      extraRoutes: [{ path: "/aluno/inicio", element: <div>HOME DO ALUNO</div> }],
+      extraRoutes: [{ path: "/inicio", element: <div>HOME DO ALUNO</div> }],
     },
   );
 }
@@ -397,18 +397,19 @@ describe("LoginPage — o idioma do endereço vai para a conta", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Cada papel cai no SEU Início (decisão do operador, 29/09/2026): o aluno no
-// painel dele, o admin no painel da escola.
+// TODO MUNDO cai no Início, inclusive o admin (decisão do operador, 29/09/2026):
+// a plataforma é uma só, e o Dashboard fica a um clique no menu.
 // ---------------------------------------------------------------------------
 
 describe("LoginPage — para onde cada um vai depois de entrar", () => {
-  it("o admin que entra cai no painel dele", async () => {
+  it("o admin que entra cai no Início, não no Dashboard", async () => {
     signInEmail.mockResolvedValue({ data: { user: { role: "admin" } }, error: null });
     renderLogin();
     preencher({ email: "admin@exemplo.com", senha: "minhasenha" });
     enviar();
 
-    expect(await screen.findByText("PAINEL DO ADMIN")).toBeTruthy();
+    expect(await screen.findByText("HOME DO ALUNO")).toBeTruthy();
+    expect(screen.queryByText("PAINEL DO ADMIN")).toBeNull();
   });
 
   it("o aluno que entra cai no Início do aluno", async () => {
@@ -420,11 +421,11 @@ describe("LoginPage — para onde cada um vai depois de entrar", () => {
     expect(await screen.findByText("HOME DO ALUNO")).toBeTruthy();
   });
 
-  it("o admin já logado que abre /login vai ao painel dele", () => {
+  it("o admin já logado que abre /login vai ao Início", () => {
     useSession.mockReturnValue({ data: { user: { role: "admin" } }, isPending: false, refetch });
     renderLogin();
 
-    expect(screen.getByText("PAINEL DO ADMIN")).toBeTruthy();
+    expect(screen.getByText("HOME DO ALUNO")).toBeTruthy();
   });
 
   it("o aluno já logado que abre /login vai ao Início do aluno", () => {

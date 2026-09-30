@@ -126,17 +126,17 @@ servidores (§5); o React responde em `localhost:5173`, a home pública em `loca
 
 **Do aluno — exigem login** *(porta 5173)*
 
-> **Os endereços mudaram em 29/09** *(decisão do operador, 28/09/2026)*: as telas do aluno moram
-> em `/aluno/*`, e os endereços antigos (`/inicio`, `/conta`, `/minhas-trilhas`) redirecionam. Os
-> **arquivos** continuam os mesmos.
+> **Os endereços mudaram em 29/09** *(decisões do operador, 28–29/09/2026)*: as telas do aluno
+> moram em `/aluno/*`, menos o Início (`/inicio`); o painel do admin é `/dashboard`. **Endereço
+> antigo não redireciona** (decisão dele: a escola está em desenvolvimento).
 
 | Endereço | Arquivo |
 |---|---|
-| `/aluno/inicio` | **O painel do aluno** (29/09): `client/src/pages/StudentHomePage.tsx` + os blocos em `client/src/components/inicio/` (ver a fila, item 14) |
+| `/inicio` | **O painel do aluno** (29/09) — o MESMO para o aluno e para o admin, que testa por ele o que o aluno vê: `client/src/pages/StudentHomePage.tsx` + os blocos em `client/src/components/inicio/` (ver a fila, item 14). |
 | `/aluno/minhas-trilhas` | `client/src/pages/MyTrilhasPage.tsx` |
 | `/aluno/minhas-trilhas/:id` | `client/src/pages/MyTrilhaDetailPage.tsx` |
 | `/aluno/conta` | `client/src/pages/AccountPage.tsx` |
-| `/aluno/meus-estudos` | **Meus estudos** (29/09): `client/src/pages/aluno/MeusEstudosPage.tsx` — um cartão por item do nível 2 (Em andamento, Minhas trilhas, Concluídos, Certificados). Só Minhas trilhas tem conteúdo (quantas estão salvas + o link); os outros três saem com EM BREVE, **sem link** (tem teste). No celular é por esta tela que o aluno chega a Minhas trilhas. |
+| `/aluno/em-andamento` | **Em andamento** (29/09): `client/src/pages/aluno/EmAndamentoPage.tsx` — é onde "Meus estudos" abre. **Só o título**, por decisão do operador, até o progresso chegar (Fase 5). Meus estudos **não tem tela de resumo**: a coluna do nível 2 é o guia. |
 | `/aluno/aula/:id` | **A página da aula** (29/09, estilo LinkedIn Learning): `client/src/pages/aluno/LessonPage.tsx` + `client/src/components/aula/` — `CourseContentsNav.tsx` (o conteúdo do curso, que é o **nível 2** no computador e fica embaixo do player no celular e para o visitante), `LessonContent.tsx` (o player grande, o texto no centro ou "para assinantes"), `LessonResources.tsx` (os arquivos para baixar e o "Recursos" de cada aula) e `AiDock.tsx` (o **botão flutuante** da IA no canto inferior direito e o painel "Em breve", que encolhe o player). **Não exige login** (a prévia grátis toca para visitante). **Têm teste:** a aula atual com `aria-current`, o "para assinantes" sem player, o rascunho marcado só para o admin, e o botão da IA com `aria-expanded` e nome. O editor ganhou **Visualizar** em cada aula, que abre esta página numa aba nova. **Embaixo do player, em toda aula, "Sobre o curso"** (`components/aula/CourseDetails.tsx`, 29/09): nível, descrição, listas, camadas, destaques e perguntas; bloco vazio não aparece (tem teste). |
 | `/aluno/curso/:slug` | A entrada do aluno num curso (29/09): `client/src/pages/aluno/CourseEntryPage.tsx` só leva à primeira aula (sem tela própria, além de "carregando" e "sem aulas"). O cartão do curso no catálogo leva aqui quando a pessoa está logada. |
 
@@ -144,7 +144,7 @@ servidores (§5); o React responde em `localhost:5173`, a home pública em `loca
 
 | Endereço | Arquivo |
 |---|---|
-| `/admin` | **O Início do admin** (29/09): `client/src/pages/AdminPage.tsx` — os 4 relatórios (Assinantes, Aprendizado, De onde vieram os alunos, Uso do JilsonAI), todos EM BREVE, e os atalhos embaixo (Trilhas EM BREVE, sem link). Cada cartão é um grupo com nome (`role="group"`) e **tem teste**: EM BREVE nunca é link. |
+| `/dashboard` | **O Dashboard do admin** (29/09): `client/src/pages/AdminPage.tsx` — os 4 relatórios (Assinantes, Aprendizado, De onde vieram os alunos, Uso do JilsonAI), todos EM BREVE, e os atalhos embaixo (Trilhas EM BREVE, sem link). Cada cartão é um grupo com nome (`role="group"`) e **tem teste**: EM BREVE nunca é link. |
 | `/admin/cursos` | `client/src/pages/admin/AdminCoursesPage.tsx` + **o cartão de cada curso**, `client/src/components/admin/AdminCourseCard.tsx` (27/09) |
 | `/admin/cursos/novo` | `client/src/pages/admin/course-editor/NewCoursePage.tsx` — só o passo 1; "Criar curso" abre o editor |
 | `/admin/cursos/:id/basico` · `/para-quem-e` · `/conteudo` · `/pagina` · `/publicar` | **O editor do curso em 7 passos** (28/09): `course-editor/CourseEditorLayout.tsx` (o topo, comum a todos), `course-editor/steps.tsx` (o que cada passo mostra) e `course-editor/StepForm.tsx` (o botão Salvar de cada passo). O conteúdo de cada passo são as seções de `client/src/components/admin/course-form/`. |
@@ -220,9 +220,9 @@ servidores (§5); o React responde em `localhost:5173`, a home pública em `loca
 **PLANEJADAS — aparecem no rail em cinza, com a etiqueta EM BREVE, e NÃO têm tela**
 
 Trilhas Admin · Alunos · JilsonAI Admin · JilsonAI (do aluno) — e, no nível 2 de **Meus
-estudos**, Em andamento · Concluídos · Certificados.
+estudos**, Concluídos · Certificados.
 Elas existem só no mapa de navegação. **Não procure o arquivo: não há.**
-**Desde 29/09 o ALUNO também as vê** (as dele: JilsonAI e as três de Meus estudos), por decisão do
+**Desde 29/09 o ALUNO também as vê** (as dele: JilsonAI e as duas de Meus estudos), por decisão do
 operador: *"o que ainda não existe aparece como EM BREVE"*. A etiqueta sai do dicionário
 (`app.nav.emBreve` — "COMING SOON" em inglês); nas seções de admin fica sempre em português.
 *(28/09/2026: o operador decidiu o que cada uma tem dentro — plano, Fase 2, "o que cada seção
@@ -311,21 +311,21 @@ exceto o item 4, que é página pública.
    comportamento é do operador e tem teste; o acabamento é seu.
 14. **O menu novo do aluno — ESTRUTURA PRONTA em 29/09, o acabamento é seu** (`docs/design.md`
    § 6, *O menu do aluno*): Início · Cursos · Trilhas · **Meus estudos** · JilsonAI (EM BREVE).
-   Três lugares a formatar:
+   Dois lugares a formatar:
    - **o Início** (`pages/StudentHomePage.tsx`), que virou painel de 4 blocos, cada um em
      `components/inicio/`: `ContinueEstudando.tsx` (EM BREVE), `MinhasTrilhasNoInicio.tsx` (até 3
      trilhas salvas + "Ver todas") e `Atalhos.tsx` (o card das antigas "portas", sem a legenda);
-   - **Meus estudos** (`pages/aluno/MeusEstudosPage.tsx`), um cartão por item;
    - **a etiqueta EM BREVE das telas do aluno**, `components/content/EmBreve.tsx` — formatar ali
      muda todos os lugares.
    **Têm teste, não mexa sem falar com o operador:** o que é EM BREVE nunca é link, os títulos
    (`h2`) de cada bloco e cartão, e o máximo de 3 trilhas no Início. **Sem "Salvos"** e sem as
    muitas fileiras do Home do LinkedIn (decisão dele).
 
-15. **O Início do admin — ESTRUTURA PRONTA em 29/09, o acabamento é seu** (`/admin`,
-   `pages/AdminPage.tsx`; decisão do operador): logado como admin, o Início é o painel da escola;
-   o aluno continua indo para o dele. Os 4 relatórios são EM BREVE até os dados existirem, e os
-   atalhos ficaram embaixo. **Tem teste, não mexa sem falar com o operador:** EM BREVE nunca é
+15. **O Dashboard do admin — ESTRUTURA PRONTA em 29/09, o acabamento é seu** (`/dashboard`,
+   `pages/AdminPage.tsx`; decisão do operador): o item "Dashboard" abre a parte administrativa do
+   menu (o que vem antes é a área do aluno, que o admin também usa). Os 4 relatórios são EM BREVE
+   até os dados existirem, e os atalhos ficaram embaixo. Se o operador quiser um separador
+   visual entre as duas áreas do menu, é seu. **Tem teste, não mexa sem falar com o operador:** EM BREVE nunca é
    link, e a etiqueta do admin fica em português.
 
 > **Fora do seu trabalho, para não confundir:** o Bunny ganhou **Live Stream** em acesso
@@ -426,9 +426,8 @@ versionado**, então ele entra no commit junto com a sua mudança.
 itens indistinguíveis no rail **recolhido**, onde só o ícone aparece. Já aconteceu duas vezes em
 uma semana: "Site" nasceu com o ícone do "Catálogo", e "JilsonAI" existia duas vezes (aluno e
 admin) com o mesmo ícone e o mesmo nome. **Tem teste** — `navigation.test.ts` reprova rótulo ou
-ícone repetido **em cada menu** (o do aluno e o do admin, nos dois idiomas). Desde 29/09 existem
-dois "Início" no mapa, um por papel, que nunca aparecem juntos. Se precisar de um ícone novo, pegue
-no `lucide-react`.
+ícone repetido **em cada menu** (o do aluno e o do admin, nos dois idiomas). Se precisar de um
+ícone novo, pegue no `lucide-react`.
 
 **12. Seção PLANEJADA é TEXTO, nunca `<a>`.** O rail mostra as telas que ainda não existem, em
 cinza e com a etiqueta EM BREVE — ao admin, para ele não esquecer o que falta, e ao aluno, as dele
@@ -471,7 +470,7 @@ e sem ele você vê o estado de erro em vez da tela.
 
 **Para abrir as telas de aluno e de admin é preciso ENTRAR** — `localhost:5173/login`, com a conta
 de admin. **Peça as credenciais ao operador**; elas não ficam escritas em lugar nenhum do repo.
-Sem login, `/aluno/inicio`, `/aluno/conta`, `/admin/*` redirecionam para o login.
+Sem login, `/inicio`, `/aluno/conta`, `/dashboard` e `/admin/*` redirecionam para o login.
 
 ---
 

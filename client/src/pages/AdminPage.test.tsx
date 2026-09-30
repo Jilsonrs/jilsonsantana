@@ -10,13 +10,13 @@ function cartao(titulo: string) {
   return screen.getByRole("group", { name: new RegExp(`^${titulo}`) });
 }
 
-// O Início do admin (decisão do operador, 29/09/2026): os relatórios que eram a
-// seção "Dados", todos EM BREVE, e os atalhos que já existiam, embaixo.
-describe("AdminPage — o Início do admin", () => {
-  it("tem o título Início e as duas seções, nesta ordem", () => {
+// O Dashboard do admin (decisão do operador, 29/09/2026): os relatórios que eram
+// a seção "Dados", todos EM BREVE, e os atalhos que já existiam, embaixo.
+describe("AdminPage — o Dashboard", () => {
+  it("tem o título Dashboard e as duas seções, nesta ordem", () => {
     renderWithProviders(<AdminPage />);
 
-    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Início");
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Dashboard");
     const secoes = screen.getAllByRole("heading", { level: 2 }).map((h) => h.textContent);
     expect(secoes).toEqual(["Relatórios", "Atalhos"]);
   });

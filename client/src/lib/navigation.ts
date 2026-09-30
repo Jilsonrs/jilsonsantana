@@ -1,6 +1,7 @@
 import {
   Bot,
   Globe,
+  LayoutDashboard,
   Library,
   PlayCircle,
   Route,
@@ -94,19 +95,10 @@ export type Secao = {
 export function navegacao(t: AppTexts): Secao[] {
   return [
     // ---------------------------------------------------------------- ALUNO
-    // O Início é DIFERENTE por papel (decisão do operador, 29/09/2026): o aluno
-    // vai ao painel dele; o admin, ao painel da escola (`/admin`, logo abaixo).
-    // `papel` aqui é o que impede o admin de ver dois "Início" no mesmo menu.
-    { label: t.nav.inicio, to: "/aluno/inicio", icon: MockHome, papel: Role.MEMBER, estado: "ativo" },
-    {
-      // O painel do admin: os relatórios que eram a seção "Dados" (mapeados pelo
-      // operador em 28/09) viraram o Início dele. Rótulo em português (Admin).
-      label: "Início",
-      to: "/admin",
-      icon: MockHome,
-      papel: Role.ADMIN,
-      estado: "ativo",
-    },
+    // A PLATAFORMA É UMA SÓ (decisão do operador, 29/09/2026): o Início é o
+    // mesmo para o aluno e para o admin, que testa por aqui tudo o que o aluno
+    // faz. O painel do admin é o Dashboard, no começo da parte administrativa.
+    { label: t.nav.inicio, to: "/inicio", icon: MockHome, estado: "ativo" },
     // "Catálogo" com abas virou DUAS seções de primeiro nível (operador, set/2026):
     // "é mais fácil", e abre espaço para curso ao vivo e live session entrarem como
     // seções próprias em vez de mais uma aba escondida.
@@ -127,15 +119,17 @@ export function navegacao(t: AppTexts): Secao[] {
     {
       // MEUS ESTUDOS (decisão do operador, 29/09/2026, a partir do "My Library"
       // do LinkedIn Learning): o que é DO ALUNO, separado do que ele descobre
-      // (Cursos, Trilhas). Tem tela própria, com um resumo dos quatro itens.
-      // "Minhas trilhas" mantém o endereço dela e acende esta seção.
+      // (Cursos, Trilhas). Abre em Em andamento, SEM tela de resumo: a coluna do
+      // nível 2 é o guia, e o título de cada página a identifica. "Minhas
+      // trilhas" mantém o endereço dela e acende esta seção.
       label: t.nav.meusEstudos,
-      to: "/aluno/meus-estudos",
+      to: "/aluno/em-andamento",
       icon: MockMap,
       estado: "ativo",
       tambemAtivoEm: ["/aluno/minhas-trilhas"],
       filhos: [
-        { label: t.nav.emAndamento, to: "/aluno/em-andamento", estado: "planejado" }, // Fase 5
+        // Existe só com o título; o conteúdo é da Fase 5.
+        { label: t.nav.emAndamento, to: "/aluno/em-andamento" },
         { label: t.nav.minhasTrilhas, to: "/aluno/minhas-trilhas" },
         { label: t.nav.concluidos, to: "/aluno/concluidos", estado: "planejado" }, // Fase 5
         { label: t.nav.certificados, to: "/aluno/certificados", estado: "planejado" }, // Fase 6.5
@@ -171,6 +165,16 @@ export function navegacao(t: AppTexts): Secao[] {
     },
 
     // ---------------------------------------------------------------- ADMIN
+    {
+      // O DASHBOARD (decisão do operador, 29/09/2026): o painel da escola, com
+      // os relatórios que eram a seção "Dados". É o PRIMEIRO item do admin: tudo
+      // antes dele no menu é a área do aluno; dele para baixo, a administrativa.
+      label: "Dashboard",
+      to: "/dashboard",
+      icon: LayoutDashboard,
+      papel: Role.ADMIN,
+      estado: "ativo",
+    },
     {
       // "Admin" no rótulo porque o aluno tem "Cursos" e "Trilhas" logo acima
       // (operador, set/2026): dois itens com o mesmo nome no mesmo rail, e no

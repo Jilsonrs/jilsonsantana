@@ -6,11 +6,12 @@ import { PageContainer, PageHeader, PageSection } from "@/components/layout/Page
 import { EmBreve } from "@/components/content/EmBreve";
 
 /**
- * O INÍCIO DO ADMIN — o painel da escola (decisão do operador, 29/09/2026: logado
- * como admin, o Início é o painel dele; o aluno vai para o painel do aluno).
+ * O DASHBOARD — o painel da escola, só do admin (decisão do operador,
+ * 29/09/2026). Fica em `/dashboard`, no primeiro item da parte administrativa do
+ * menu; o Início (`/inicio`) é o mesmo para o aluno e para o admin.
  *
  * RELATÓRIOS: os blocos que o operador mapeou para a seção "Dados" (28/09), que
- * virou este Início. Todos EM BREVE por decisão dele — nenhum número inventado:
+ * virou este painel. Todos EM BREVE por decisão dele — nenhum número inventado:
  * cada bloco diz o que vai mostrar e quando os dados existem.
  *
  * ATALHOS: os que já existiam nesta tela, embaixo (decisão dele). O de Trilhas
@@ -64,7 +65,7 @@ const ATALHOS: { titulo: string; texto: string; to?: string }[] = [
 export function AdminPage() {
   return (
     <PageContainer>
-      <PageHeader title="Início" description="Os relatórios da escola e o acesso rápido às ferramentas." />
+      <PageHeader title="Dashboard" description="Os relatórios da escola e o acesso rápido às ferramentas." />
 
       <div className="space-y-12">
         <PageSection title="Relatórios" description="Cada bloco acende quando os dados dele existirem.">

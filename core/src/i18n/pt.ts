@@ -280,9 +280,11 @@ export const pt = {
       ola: "Olá",
       intro: "Aqui é o seu ponto de partida. O que você começar a estudar aparece nesta tela, para você continuar de onde parou.",
       continueTitulo: "Continue estudando",
-      // O painel do Início (operador, 29/09/2026). Os três textos abaixo são
-      // rascunho do agente, para a revisão do operador.
+      // O painel do Início (operador, 29/09/2026). Os textos abaixo são rascunho
+      // do agente, para a revisão do operador.
       continueEmBreve: "Em breve, a aula em que você parou aparece aqui, para continuar com um clique.",
+      nenhumaTrilha: "Você ainda não salvou nenhuma trilha.",
+      verTrilhas: "Ver as trilhas prontas",
       verTodas: "Ver todas",
       atalhos: "Atalhos"
     },
@@ -304,21 +306,6 @@ export const pt = {
       voltar: "← Voltar para Minhas Trilhas",
       erroDetalhe: "Não foi possível carregar esta trilha.",
       semConteudo: "Esta trilha ainda não tem conteúdo."
-    },
-    // A tela Meus estudos (decisão do operador, 29/09/2026): um cartão por item
-    // do nível 2. Rascunho do agente, para a revisão do operador.
-    meusEstudos: {
-      titulo: "Meus estudos",
-      descricao: "Tudo o que é seu na escola, num lugar só.",
-      emAndamentoDescricao: "Os cursos que você começou, para continuar de onde parou.",
-      minhasTrilhasDescricao: "As trilhas que você salvou para estudar.",
-      concluidosDescricao: "Os cursos que você terminou.",
-      certificadosDescricao: "Os certificados das trilhas que você concluir.",
-      trilhaSalva: "trilha salva",
-      trilhasSalvas: "trilhas salvas",
-      abrirMinhasTrilhas: "Abrir minhas trilhas",
-      nenhumaTrilha: "Você ainda não salvou nenhuma trilha.",
-      verTrilhas: "Ver as trilhas prontas"
     },
     catalogo: {
       cursos: "Cursos",
