@@ -16,7 +16,7 @@
 > 5. **Item novo ganha o próximo número livre.** Número nunca se reutiliza, para que "P7" queira
 >    dizer sempre a mesma coisa em qualquer conversa.
 >
-> **Próximo número livre: P35** · Atualizada em 29/09/2026
+> **Próximo número livre: P36** · Atualizada em 29/09/2026
 
 ## A. Agora, em sequência *(nascidas da configuração do Bunny, 25/09/2026)*
 
@@ -30,6 +30,7 @@ rápida entra aqui, com o próximo número livre.*
 | P12 | Revisar as **15 perguntas da FAQ**, que já estão no admin | no próprio admin |
 | P16 | **Cadastrar os 5 cursos da home** no admin. Tudo o que o cadastro precisa **já está no ar**: o envio da capa e do vídeo promocional, a descrição com negrito e listas, e os limites de caracteres | `implementation-plan.md` → Bloco C4 |
 | P32 | **Confirmar o número de alunos corporativos (4.150+)** que está na home, no bloco do autor (os 107 mil+ e os 70 países já foram confirmados na sessão da home) | no próprio admin, em Textos → Home |
+| P35 | **Revisar os textos novos de 29/09**, que são rascunho do agente, em português e em inglês. No **Início:** o "Continue estudando" EM BREVE, o vazio de Minhas trilhas, "Ver todas" e "Atalhos". No **Dashboard:** a descrição, os 4 relatórios e o "Chega com…" de cada um. No **menu:** Em andamento, Concluídos e a etiqueta EM BREVE ("COMING SOON" em inglês). Esses textos **não** aparecem em Admin → Textos (são do app) | `core/src/i18n/pt.ts` e `en.ts` (parte `app`); o Dashboard em `client/src/pages/AdminPage.tsx` |
 
 ## C. Com hora marcada *(resolver quando o bloco abrir, não antes)*
 
