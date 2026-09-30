@@ -31,33 +31,46 @@ export type CourseCardProps = {
 export function CourseCard(course: CourseCardProps) {
   const t = useT();
   return (
-    <Link to={course.destino ?? `/curso/${course.slug}`} className="block">
-      <Card className="h-full transition-colors hover:border-primary">
-        <div className="flex h-32 items-center justify-center rounded-t-xl bg-muted">
+    <Link to={course.destino ?? `/curso/${course.slug}`} className="block h-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-xl">
+      <Card className="group flex h-full flex-col overflow-hidden border border-border/50 bg-card transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-md">
+        <div className="relative aspect-video w-full shrink-0 overflow-hidden bg-surface-alt">
           {course.thumbnailUrl ? (
             <img
               src={course.thumbnailUrl}
-              alt={course.title}
-              className="h-full w-full rounded-t-xl object-cover"
+              alt={`Capa de ${course.title}`}
+              className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
             />
           ) : (
-            <BookOpen className="h-8 w-8 text-muted-foreground" />
+            <div className="flex h-full w-full items-center justify-center border-b border-border/30 bg-surface-alt/50">
+              <BookOpen className="h-10 w-10 text-muted-foreground/30" />
+            </div>
           )}
         </div>
-        <CardHeader>
-          <CardTitle className="text-base">{course.title}</CardTitle>
-          {course.subtitle && <p className="text-sm text-muted-foreground">{course.subtitle}</p>}
-        </CardHeader>
-        <CardContent className="flex flex-wrap items-center gap-2">
-          {/* O NOME do nível, não o valor cru (operador, 24/09/2026). */}
-          {course.level && <Badge variant="secondary">{t.niveis[course.level]}</Badge>}
-          {course.moduleCount !== undefined && course.lessonCount !== undefined && (
-            <span className="text-xs text-muted-foreground">
-              {contagem(course.moduleCount, t.curso.modulo, t.curso.modulos)} ·{" "}
-              {contagem(course.lessonCount, t.curso.aula, t.curso.aulas)}
-              {course.videoSeconds !== undefined && ` · ${horasEMinutos(course.videoSeconds)}`}
-            </span>
+        <CardHeader className="flex-none p-6 pb-4">
+          <CardTitle className="font-display text-[1.15rem] font-semibold leading-snug text-foreground transition-colors group-hover:text-primary">
+            {course.title}
+          </CardTitle>
+          {course.subtitle && (
+            <p className="mt-2 line-clamp-2 text-sm text-muted-foreground leading-relaxed">
+              {course.subtitle}
+            </p>
           )}
+        </CardHeader>
+        <CardContent className="mt-auto flex flex-col gap-4 p-6 pt-0">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
+            {course.level && (
+              <Badge variant="secondary" className="rounded-full px-3 py-0.5 font-medium text-xs">
+                {t.niveis[course.level]}
+              </Badge>
+            )}
+            {course.moduleCount !== undefined && course.lessonCount !== undefined && (
+              <span className="font-mono text-xs font-medium tracking-wide text-muted-foreground">
+                {contagem(course.moduleCount, t.curso.modulo, t.curso.modulos)} ·{" "}
+                {contagem(course.lessonCount, t.curso.aula, t.curso.aulas)}
+                {course.videoSeconds !== undefined && ` · ${horasEMinutos(course.videoSeconds)}`}
+              </span>
+            )}
+          </div>
         </CardContent>
       </Card>
     </Link>
