@@ -14,7 +14,7 @@ const MarkdownText = lazy(() => import("@/components/content/MarkdownText").then
 // longo, que o operador organiza em seções.
 const ELEMENTOS_DA_AULA = ["p", "strong", "em", "ul", "ol", "li", "br", "h2", "h3"] as const;
 
-const QUADRO = "flex aspect-video w-full flex-col items-center justify-center rounded-3xl border border-border/40 bg-gradient-to-br from-surface-alt to-muted/20 p-8 text-center shadow-inner relative overflow-hidden";
+const QUADRO = "flex aspect-video w-full flex-col items-center justify-center bg-black p-8 text-center";
 
 /**
  * O CONTEÚDO da aula aberta: o player grande (aula de vídeo), o texto no centro
@@ -37,10 +37,10 @@ export function LessonContent({
   if (!aula.liberada) {
     return (
       <div role="status" className={QUADRO}>
-        <div className="mb-4 flex size-16 items-center justify-center rounded-full bg-background/80 shadow-sm backdrop-blur border border-border/50">
-          <Lock className="size-6 text-muted-foreground/80" aria-hidden="true" />
+        <div className="mb-4 flex size-16 items-center justify-center rounded-full bg-white/10 shadow-sm backdrop-blur border border-white/20">
+          <Lock className="size-6 text-white/80" aria-hidden="true" />
         </div>
-        <p className="text-lg font-medium tracking-tight text-foreground">
+        <p className="text-lg font-medium tracking-tight text-white/90">
           {t.aula.paraAssinantes}
         </p>
       </div>
@@ -54,7 +54,7 @@ export function LessonContent({
       </div>
     ) : (
       <div className={QUADRO}>
-        <p className="text-muted-foreground">{t.aula.semVideo}</p>
+        <p className="text-white/70">{t.aula.semVideo}</p>
       </div>
     );
   }
