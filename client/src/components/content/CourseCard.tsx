@@ -33,20 +33,23 @@ export function CourseCard(course: CourseCardProps) {
   return (
     <Link to={course.destino ?? `/curso/${course.slug}`} className="block h-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-xl">
       <Card className="group flex h-full flex-col overflow-hidden border border-border/50 bg-card transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-md">
-        <div className="relative aspect-video w-full shrink-0 overflow-hidden bg-surface-alt">
-          {course.thumbnailUrl ? (
-            <img
-              src={course.thumbnailUrl}
-              alt={`Capa de ${course.title}`}
-              className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center border-b border-border/30 bg-surface-alt/50">
-              <BookOpen className="h-10 w-10 text-muted-foreground/30" />
-            </div>
-          )}
+        <div className="p-6 pb-0 flex-none">
+          <div className="relative aspect-video w-full shrink-0 overflow-hidden bg-surface-alt">
+            {course.thumbnailUrl ? (
+              <img
+                src={course.thumbnailUrl}
+                alt={`Capa de ${course.title}`}
+                className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
+              />
+            ) : (
+              <div className="flex h-full w-full flex-col items-center justify-center border border-dashed border-border/50 bg-surface-alt/50">
+                <BookOpen className="mb-2 h-6 w-6 text-muted-foreground/40" />
+                <span className="font-mono text-[10px] tracking-widest text-muted-foreground/60 uppercase">Sem imagem</span>
+              </div>
+            )}
+          </div>
         </div>
-        <CardHeader className="flex-none p-6 pb-4">
+        <CardHeader className="flex-none p-6 pb-4 pt-5">
           <CardTitle className="font-display text-[1.15rem] font-semibold leading-snug text-foreground transition-colors group-hover:text-primary">
             {course.title}
           </CardTitle>
