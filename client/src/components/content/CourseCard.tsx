@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useT } from "@/lib/language";
 import { contagem } from "@/lib/contagem";
+import { horasEMinutos } from "@/lib/duracao-do-curso";
 
 // Only the fields actually rendered — shared by the full catalog card (which
 // has moduleCount/lessonCount) and search results (which don't), so callers
@@ -18,6 +19,8 @@ export type CourseCardProps = {
   camadas?: Layer[];
   moduleCount?: number;
   lessonCount?: number;
+  /** A duração dos vídeos publicados, em segundos: "· 1h 05min" (operador, 30/09/2026). */
+  videoSeconds?: number;
   /**
    * Para onde o cartão leva. Sem ele, a página PÚBLICA do curso (a de venda). O
    * catálogo passa `/aluno/curso/<slug>` para quem está logado (operador, 29/09/2026).
@@ -52,6 +55,7 @@ export function CourseCard(course: CourseCardProps) {
             <span className="text-xs text-muted-foreground">
               {contagem(course.moduleCount, t.curso.modulo, t.curso.modulos)} ·{" "}
               {contagem(course.lessonCount, t.curso.aula, t.curso.aulas)}
+              {course.videoSeconds !== undefined && ` · ${horasEMinutos(course.videoSeconds)}`}
             </span>
           )}
         </CardContent>

@@ -9,6 +9,7 @@ import { BunnyPlayer } from "@/components/content/BunnyPlayer";
 import { PageContainer } from "@/components/layout/PageLayout";
 import { useT } from "@/lib/language";
 import { contagem } from "@/lib/contagem";
+import { horasEMinutos } from "@/lib/duracao-do-curso";
 
 // O TEXTO DA TELA segue o idioma do app; o CONTEÚDO do curso (título, descrição,
 // aulas, FAQ) sai como o operador escreveu, no idioma do próprio curso. O link
@@ -47,7 +48,9 @@ export function CourseDetailPage() {
           {course.subtitle && <p className="text-xl text-muted-foreground max-w-[80ch]">{course.subtitle}</p>}
           <p className="text-sm font-medium text-muted-foreground pt-2">
             {contagem(course.moduleCount, t.curso.modulo, t.curso.modulos)} ·{" "}
-              {contagem(course.lessonCount, t.curso.aula, t.curso.aulas)}
+              {contagem(course.lessonCount, t.curso.aula, t.curso.aulas)} ·{" "}
+              {/* A duração dos vídeos publicados (operador, 30/09/2026). */}
+              {horasEMinutos(course.videoSeconds)}
           </p>
         </header>
 

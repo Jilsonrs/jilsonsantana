@@ -48,6 +48,7 @@ const course: CourseCard = {
   displayOrder: 0,
   moduleCount: 1,
   lessonCount: 2,
+  videoSeconds: 3900, // 1h 05min
 };
 
 beforeEach(() => {
@@ -241,7 +242,7 @@ describe("CatalogPage — cartão do curso", () => {
     emIngles("cursos");
 
     expect(await screen.findByText("Intermediate")).toBeTruthy();
-    expect(screen.getByText("1 module · 2 lessons")).toBeTruthy();
+    expect(screen.getByText("1 module · 2 lessons · 1h 05min")).toBeTruthy();
   });
 
   // Revisão do inglês (24/09): singular só no 1, nos dois idiomas; zero é plural.
@@ -249,13 +250,15 @@ describe("CatalogPage — cartão do curso", () => {
     getCourses.mockResolvedValue([{ ...course, moduleCount: 1, lessonCount: 1 }]);
     renderWithProviders(<CatalogPage tipo="cursos" />);
 
-    expect(await screen.findByText("1 módulo · 1 aula")).toBeTruthy();
+    // A duração no fim (operador, 30/09/2026).
+    expect(await screen.findByText("1 módulo · 1 aula · 1h 05min")).toBeTruthy();
   });
 
   it("curso publicado com 0 aulas aparece com 0 aulas, sem quebrar", async () => {
-    getCourses.mockResolvedValue([{ ...course, moduleCount: 0, lessonCount: 0 }]);
+    getCourses.mockResolvedValue([{ ...course, moduleCount: 0, lessonCount: 0, videoSeconds: 0 }]);
     renderWithProviders(<CatalogPage tipo="cursos" />);
 
-    expect(await screen.findByText("0 módulos · 0 aulas")).toBeTruthy();
+    // Sem vídeo, "0min", como já mostra "0 aulas" (operador, 30/09/2026).
+    expect(await screen.findByText("0 módulos · 0 aulas · 0min")).toBeTruthy();
   });
 });

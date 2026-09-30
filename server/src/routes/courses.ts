@@ -23,6 +23,9 @@ const byOrder = [{ displayOrder: "asc" as const }, { id: "asc" as const }];
 // GET /api/courses?lang=pt|en — catalog cards. lessonCount is DERIVED (Σ
 // published lessons across published modules), never a stored column. Lista de
 // DESCOBERTA: filtra pelo idioma, como filtra pelo status (CLAUDE.md → Idiomas).
+// `videoSeconds` (operador, 30/09/2026: "2 módulos · 4 aulas · 1h 05min") é a
+// soma das aulas de VÍDEO publicadas na mesma cadeia — só o que o aluno vê.
+// A duração de cada aula não sai: só o total.
 router.get("/courses", async (req, res) => {
   const language = idiomaDaLista(req.query.lang, res);
   if (language === null) return;
@@ -40,7 +43,13 @@ router.get("/courses", async (req, res) => {
       displayOrder: true,
       modules: {
         where: { status: PUBLISHED },
-        select: { _count: { select: { lessons: { where: { status: PUBLISHED } } } } },
+        select: {
+          _count: { select: { lessons: { where: { status: PUBLISHED } } } },
+          lessons: {
+            where: { status: PUBLISHED, kind: LessonKind.VIDEO },
+            select: { videoDurationSeconds: true },
+          },
+        },
       },
     },
   });
@@ -49,6 +58,9 @@ router.get("/courses", async (req, res) => {
     ...course,
     moduleCount: modules.length,
     lessonCount: modules.reduce((sum, m) => sum + m._count.lessons, 0),
+    videoSeconds: modules
+      .flatMap((m) => m.lessons)
+      .reduce((sum, l) => sum + (l.videoDurationSeconds ?? 0), 0),
   }));
   res.json(cards);
 });
@@ -104,6 +116,14 @@ router.get("/courses/:slug", async (req, res) => {
   }
 
   const lessonCount = course.modules.reduce((sum, m) => sum + m.lessons.length, 0);
+  // A duração (operador, 30/09/2026): a soma das aulas de VÍDEO publicadas, em
+  // módulo publicado — a mesma cadeia do lessonCount. Consulta à parte para a
+  // duração de cada aula NÃO entrar na resposta pública (o `select` acima é a
+  // lista explícita do que sai).
+  const { _sum } = await prisma.lesson.aggregate({
+    _sum: { videoDurationSeconds: true },
+    where: { status: PUBLISHED, kind: LessonKind.VIDEO, module: { status: PUBLISHED, courseId: course.id } },
+  });
   // O vídeo de APRESENTAÇÃO sai para qualquer visitante, sem login: é ativo de
   // venda, a única exceção ao portão de vídeo (CLAUDE.md → Access Architecture).
   // ASSINADO, porque mora na biblioteca com token (operador, 28/09/2026). O
@@ -114,6 +134,7 @@ router.get("/courses/:slug", async (req, res) => {
     introVideoEmbedUrl: enderecoAssinado(course.introVideoId),
     moduleCount: course.modules.length,
     lessonCount,
+    videoSeconds: _sum.videoDurationSeconds ?? 0,
   });
 });
 

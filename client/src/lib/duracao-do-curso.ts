@@ -18,14 +18,20 @@ export function segundosDeVideo(modulos: AdminModule[]): number {
 }
 
 /**
- * "2h 35min de vídeo", "45min de vídeo", "0min de vídeo" (formato do operador,
- * 29/09/2026). Arredonda para o minuto mais próximo; com qualquer vídeo, nunca
- * diz "0min": um vídeo curto conta como 1min.
+ * "2h 35min", "45min", "0min" — o formato curto, igual nos dois idiomas (o
+ * cartão do catálogo e a página do curso: "2 módulos · 4 aulas · 1h 05min",
+ * operador, 30/09/2026). Arredonda para o minuto mais próximo; com qualquer
+ * vídeo, nunca diz "0min": um vídeo curto conta como 1min.
  */
-export function textoDaDuracao(segundos: number): string {
-  if (segundos <= 0) return "0min de vídeo";
+export function horasEMinutos(segundos: number): string {
+  if (segundos <= 0) return "0min";
   const minutos = Math.max(1, Math.round(segundos / 60));
   const horas = Math.floor(minutos / 60);
   const resto = minutos % 60;
-  return horas > 0 ? `${horas}h ${String(resto).padStart(2, "0")}min de vídeo` : `${resto}min de vídeo`;
+  return horas > 0 ? `${horas}h ${String(resto).padStart(2, "0")}min` : `${resto}min`;
+}
+
+/** "2h 35min de vídeo" — o topo do editor (formato do operador, 29/09/2026). Admin: em português. */
+export function textoDaDuracao(segundos: number): string {
+  return `${horasEMinutos(segundos)} de vídeo`;
 }

@@ -38,6 +38,7 @@ const baseCourse: CourseDetail = {
   introVideoEmbedUrl: null,
   moduleCount: 1,
   lessonCount: 2,
+  videoSeconds: 3900, // 1h 05min
   modules: [
     {
       id: 10,
@@ -114,7 +115,7 @@ describe("CourseDetailPage — idioma e textos", () => {
     expect(screen.getByRole("heading", { name: "Course content" })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "What you'll learn" })).toBeTruthy();
     expect(screen.getByText("Intermediate")).toBeTruthy();
-    expect(screen.getByText("1 module · 2 lessons")).toBeTruthy();
+    expect(screen.getByText("1 module · 2 lessons · 1h 05min")).toBeTruthy();
     expect(screen.getByText("Solid foundations")).toBeTruthy();
     // Conteúdo não é traduzido: o módulo e a tag saem como foram escritos.
     expect(screen.getByText("Base Lógica Inquebrável")).toBeTruthy();
@@ -142,10 +143,11 @@ describe("CourseDetailPage — idioma e textos", () => {
   });
 
   it("curso publicado com 0 aulas: mostra 0 aulas e não quebra", async () => {
-    getCourseBySlug.mockResolvedValue({ ...baseCourse, modules: [], moduleCount: 0, lessonCount: 0 });
+    getCourseBySlug.mockResolvedValue({ ...baseCourse, modules: [], moduleCount: 0, lessonCount: 0, videoSeconds: 0 });
     renderWithProviders(<CourseDetailPage />, rota);
 
-    expect(await screen.findByText("0 módulos · 0 aulas")).toBeTruthy();
+    // Sem vídeo, "0min" (operador, 30/09/2026).
+    expect(await screen.findByText("0 módulos · 0 aulas · 0min")).toBeTruthy();
   });
 });
 
