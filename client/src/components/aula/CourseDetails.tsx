@@ -9,14 +9,24 @@ import { HighlightCard } from "@/components/content/HighlightCard";
 // A peça do Markdown só baixa quando a descrição aparece (CLAUDE.md → Client).
 const MarkdownText = lazy(() => import("@/components/content/MarkdownText").then((m) => ({ default: m.MarkdownText })));
 
-function Lista({ titulo, itens }: { titulo: string; itens: string[] }) {
+import { ClipboardList, Users } from "lucide-react";
+
+function Lista({ titulo, itens, icon: Icon }: { titulo: string; itens: string[]; icon: React.ElementType }) {
   if (itens.length === 0) return null;
   return (
-    <section className="space-y-4">
-      <h3 className="font-display text-lg font-semibold tracking-tight text-foreground">{titulo}</h3>
-      <ul className="list-disc space-y-2 pl-5 text-[0.95rem] leading-relaxed text-muted-foreground">
+    <section className="flex flex-col rounded-2xl border border-border/50 bg-card p-6 shadow-sm">
+      <div className="mb-6 flex items-center gap-3">
+        <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          <Icon className="size-5" />
+        </div>
+        <h3 className="font-display text-lg font-bold tracking-tight text-foreground">{titulo}</h3>
+      </div>
+      <ul className="space-y-4">
         {itens.map((item) => (
-          <li key={item}>{item}</li>
+          <li key={item} className="flex items-start gap-3 text-[0.95rem] leading-relaxed text-muted-foreground">
+            <span className="mt-2 flex size-1.5 shrink-0 rounded-full bg-primary/40" />
+            <span>{item}</span>
+          </li>
         ))}
       </ul>
     </section>
@@ -64,16 +74,19 @@ export function CourseDetails({ curso }: { curso: PaginaDaAula["curso"] }) {
       )}
 
       {destaques.length > 0 && (
-        <div className="grid gap-6 sm:grid-cols-3">
-          {destaques.map((h, i) => (
-            <HighlightCard key={i} {...h} />
-          ))}
-        </div>
+        <section className="space-y-6 pt-4">
+          <h3 className="font-display text-xl font-bold tracking-tight text-foreground">{t.curso.diferenciais ?? "Diferenciais do curso"}</h3>
+          <div className="grid gap-6 sm:grid-cols-3">
+            {destaques.map((h, i) => (
+              <HighlightCard key={i} {...h} />
+            ))}
+          </div>
+        </section>
       )}
 
-      <div className="grid gap-8 sm:grid-cols-2">
-        <Lista titulo={t.curso.requisitos} itens={curso.requirements} />
-        <Lista titulo={t.curso.paraQuem} itens={curso.personas} />
+      <div className="grid gap-6 sm:grid-cols-2">
+        <Lista titulo={t.curso.requisitos} itens={curso.requirements} icon={ClipboardList} />
+        <Lista titulo={t.curso.paraQuem} itens={curso.personas} icon={Users} />
       </div>
 
       <LayerSelo camadas={curso.camadas} />

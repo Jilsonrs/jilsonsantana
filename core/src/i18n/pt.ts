@@ -344,6 +344,7 @@ export const pt = {
       aprender: "O que você vai aprender",
       requisitos: "Pré-requisitos",
       paraQuem: "Pra quem é",
+      diferenciais: "Diferenciais do curso",
       videoApresentacao: "Vídeo de apresentação do curso"
     },
     trilha: {
