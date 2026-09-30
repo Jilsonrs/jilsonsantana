@@ -59,7 +59,7 @@ export function LessonPage() {
         </div>
 
         {/* Linha de progresso (visual) */}
-        <div className="absolute bottom-0 left-0 h-[3px] w-full bg-primary/10" aria-hidden="true">
+        <div className="absolute bottom-0 left-4 right-4 sm:left-6 sm:right-6 md:left-[50px] md:right-[50px] h-[3px] bg-primary/10" aria-hidden="true">
           {/* Valor estático para visualização do design, será dinâmico depois */}
           <div className="h-full bg-primary rounded-r-full transition-all duration-500" style={{ width: "35%" }} />
         </div>
