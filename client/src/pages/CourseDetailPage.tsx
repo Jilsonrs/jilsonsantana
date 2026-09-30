@@ -3,8 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import * as api from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { LayerSelo } from "@/components/content/LayerSelo";
-import { HighlightCard } from "@/components/content/HighlightCard";
+import { CoursePremiumFeatures } from "@/components/content/CoursePremiumFeatures";
 import { BunnyPlayer } from "@/components/content/BunnyPlayer";
 import { PageContainer } from "@/components/layout/PageLayout";
 import { useT } from "@/lib/language";
@@ -61,15 +60,7 @@ export function CourseDetailPage() {
             {course.introVideoEmbedUrl && (
               <BunnyPlayer src={course.introVideoEmbedUrl} title={t.curso.videoApresentacao} />
             )}
-            <LayerSelo camadas={course.camadas} />
-
-            {course.highlights && course.highlights.length > 0 && (
-              <div className="grid gap-6 sm:grid-cols-3">
-                {course.highlights.map((h, i) => (
-                  <HighlightCard key={i} {...h} />
-                ))}
-              </div>
-            )}
+            <CoursePremiumFeatures destaques={course.highlights ?? []} camadas={course.camadas} />
 
             <section>
               <h2 className="text-2xl font-semibold">{t.curso.conteudo}</h2>

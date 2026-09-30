@@ -3,8 +3,7 @@ import type { PaginaDaAula } from "@/lib/api";
 import { useT } from "@/lib/language";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { LayerSelo } from "@/components/content/LayerSelo";
-import { HighlightCard } from "@/components/content/HighlightCard";
+import { CoursePremiumFeatures } from "@/components/content/CoursePremiumFeatures";
 
 // A peça do Markdown só baixa quando a descrição aparece (CLAUDE.md → Client).
 const MarkdownText = lazy(() => import("@/components/content/MarkdownText").then((m) => ({ default: m.MarkdownText })));
@@ -74,25 +73,12 @@ export function CourseDetails({ curso }: { curso: PaginaDaAula["curso"] }) {
         </section>
       )}
 
-      {destaques.length > 0 && (
-        <section className="space-y-8 pt-8">
-          <h3 className="font-display text-3xl font-bold tracking-tighter text-foreground sm:text-4xl">
-            {t.curso.diferenciais ?? "Diferenciais do curso"}
-          </h3>
-          <div className="grid gap-6 sm:grid-cols-3">
-            {destaques.map((h, i) => (
-              <HighlightCard key={i} {...h} />
-            ))}
-          </div>
-        </section>
-      )}
-
       <div className="grid gap-6 sm:grid-cols-2">
         <Lista titulo={t.curso.requisitos} itens={curso.requirements} icon={ClipboardList} />
         <Lista titulo={t.curso.paraQuem} itens={curso.personas} icon={Users} />
       </div>
 
-      <LayerSelo camadas={curso.camadas} />
+      <CoursePremiumFeatures destaques={destaques} camadas={curso.camadas} />
 
       {perguntas.length > 0 && (
         <section className="space-y-6">
