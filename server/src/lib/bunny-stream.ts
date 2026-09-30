@@ -175,10 +175,27 @@ async function lerVideo(videoId: string): Promise<Record<string, unknown> | "Nao
   return typeof json === "object" && json !== null ? (json as Record<string, unknown>) : {};
 }
 
-/** O estado de um vídeo no Bunny, para a prévia do admin atualizar sozinha. */
-export async function estadoDoVideo(_biblioteca: Biblioteca, videoId: string): Promise<EstadoDoVideo | null> {
+/**
+ * A duração que o Bunny informa: o campo `length`, em SEGUNDOS, inteiro
+ * (confirmado na doc em 29/09/2026, pela fonte alternativa do CLAUDE.md). Só vale
+ * número positivo — antes de processar, ou num vídeo com falha, não há duração.
+ */
+export function duracaoDoVideo(video: Record<string, unknown>): number | null {
+  return typeof video.length === "number" && Number.isFinite(video.length) && video.length > 0
+    ? Math.round(video.length)
+    : null;
+}
+
+/**
+ * O estado de um vídeo no Bunny, e a duração dele (a do curso é a soma das
+ * aulas — 29/09/2026). Serve à prévia do admin e ao "vídeo pronto" da aula.
+ */
+export async function estadoDoVideo(
+  _biblioteca: Biblioteca,
+  videoId: string,
+): Promise<(EstadoDoVideo & { duracaoEmSegundos: number | null }) | null> {
   const video = await lerVideo(videoId);
-  return typeof video === "string" ? null : interpretarEstado(video);
+  return typeof video === "string" ? null : { ...interpretarEstado(video), duracaoEmSegundos: duracaoDoVideo(video) };
 }
 
 /**
@@ -202,14 +219,12 @@ const ARQUIVO_DA_MINIATURA = /^[A-Za-z0-9_-]{1,64}\.(jpg|jpeg|png|webp)$/i;
  * Monta o resumo a partir do que o Bunny devolveu. Função pura, com teste de
  * unidade. A miniatura padrão mora em `https://{CDN host}/{id do vídeo}/thumbnail.jpg`
  * (doc do Bunny, consultada em 28/09/2026), e só aparece com o vídeo PRONTO: antes
- * disso ela não existe. A duração (`length`, em segundos) não apareceu nos trechos
- * da doc lidos, então só vale quando é um número.
+ * disso ela não existe. A duração sai de `duracaoDoVideo`.
  */
 export function interpretarResumo(videoId: string, video: Record<string, unknown>, cdnHost: string | undefined): ResumoDoVideo {
   const estado = interpretarEstado(video);
   const nome = typeof video.title === "string" && video.title.trim() !== "" ? video.title : null;
-  const duracaoEmSegundos =
-    typeof video.length === "number" && Number.isFinite(video.length) && video.length > 0 ? Math.round(video.length) : null;
+  const duracaoEmSegundos = duracaoDoVideo(video);
   const arquivo =
     typeof video.thumbnailFileName === "string" && ARQUIVO_DA_MINIATURA.test(video.thumbnailFileName)
       ? video.thumbnailFileName
@@ -221,7 +236,10 @@ export function interpretarResumo(videoId: string, video: Record<string, unknown
 
 export type ResultadoDoResumo = { ok: true; resumo: ResumoDoVideo } | { ok: false; motivo: "NaoConfigurado" | "Falhou" };
 
-/** O resumo do vídeo de uma aula, lido no Bunny na hora (derivado, nunca coluna). */
+/**
+ * O resumo do vídeo de uma aula, lido no Bunny na hora. Só o "pronto" e a duração
+ * ficam lembrados na aula (é o que evita perguntar ao Bunny por todas, toda vez).
+ */
 export async function resumoDoVideo(videoId: string): Promise<ResultadoDoResumo> {
   const video = await lerVideo(videoId);
   if (typeof video === "string") return { ok: false, motivo: video };

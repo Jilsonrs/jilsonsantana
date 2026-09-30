@@ -184,11 +184,15 @@ router.get("/admin/courses/:id", requireAdmin, async (req, res) => {
     res.status(404).json({ error: "NotFound" });
     return;
   }
-  // As aulas cujo vídeo ficou pronto desde a última visita já voltam confirmadas.
+  // As aulas cujo vídeo ficou pronto desde a última visita já voltam confirmadas,
+  // e com a duração (que o topo do editor soma).
   const confirmadas = await confirmarVideosProntos(course.modules.flatMap((m) => m.lessons));
   const modules = course.modules.map((m) => ({
     ...m,
-    lessons: m.lessons.map((l) => (confirmadas.has(l.id) ? { ...l, bunnyVideoReady: true } : l)),
+    lessons: m.lessons.map((l) => {
+      const lembrado = confirmadas.get(l.id);
+      return lembrado ? { ...l, ...lembrado } : l;
+    }),
   }));
   res.json({ ...comIdioma({ ...course, modules }), introVideoEmbedUrl: enderecoAssinado(course.introVideoId) });
 });

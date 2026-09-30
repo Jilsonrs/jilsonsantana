@@ -6,6 +6,7 @@ import * as api from "@/lib/api";
 import type { AdminCourseDetail } from "@/lib/api";
 import { courseFormSchema, toFormValues, codigoDoErro, type CourseFormValues } from "@/lib/course-form";
 import { ROTULO_DO_STATUS } from "@/lib/course-completeness";
+import { segundosDeVideo, textoDaDuracao } from "@/lib/duracao-do-curso";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PageContainer, PageHeader } from "@/components/layout/PageLayout";
@@ -54,6 +55,9 @@ export function CourseEditorLayout() {
     <PageContainer>
       <PageHeader
         title={curso.title}
+        // Quanto vídeo o curso tem, como no topo da Udemy (decisão do operador,
+        // 29/09/2026): todo vídeo enviado, inclusive de aula em rascunho.
+        description={textoDaDuracao(segundosDeVideo(curso.modules))}
         actions={
           <>
             <Badge variant="secondary">{ROTULO_DO_STATUS[curso.status]}</Badge>

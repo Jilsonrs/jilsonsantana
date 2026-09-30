@@ -281,6 +281,9 @@ model Lesson {
   // Bunny respondeu, não um dado derivado: sem ele, abrir o editor perguntaria ao
   // Bunny por todas as aulas, toda vez.
   bunnyVideoReady     Boolean  @default(false)
+  // A duração do vídeo em segundos (o `length` do Bunny), gravada quando ele fica
+  // pronto; a do curso é a soma, nunca coluna (29/09/2026).
+  videoDurationSeconds Int?
   // Prévia grátis (operador, 27/09/2026, "como na Udemy"): a aula toca para
   // qualquer visitante. Só é gravada aqui; tocar para visitante é a etapa 4.
   isFreePreview       Boolean  @default(false)

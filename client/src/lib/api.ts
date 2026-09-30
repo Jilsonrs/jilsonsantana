@@ -188,6 +188,8 @@ export type AdminLesson = {
   bunnyVideoPendingId: string | null;
   /** O Bunny já confirmou que o vídeo está pronto: no editor, a aula volta recolhida (29/09/2026). */
   bunnyVideoReady: boolean;
+  /** A duração do vídeo em segundos, que o Bunny informa quando termina (29/09/2026). */
+  videoDurationSeconds: number | null;
   /** Prévia grátis: a aula toca para qualquer visitante (etapa 4 do Bloco U). */
   isFreePreview: boolean;
   tags: string[];
