@@ -43,12 +43,9 @@ export function LessonPage() {
   return (
     <div className="flex min-h-full flex-col">
       {/* Barra Superior Customizada da Aula (Avatar flutua por cima, à direita) */}
-      <div className="flex min-h-[60px] md:min-h-[80px] items-center px-4 sm:px-6 md:px-[50px] border-b border-border/40 bg-card/50">
-        <div className="flex flex-col justify-center max-w-[80%]">
-          <span className="text-xs md:text-sm font-medium text-muted-foreground truncate">
-            {curso.title}
-          </span>
-          <h1 className="text-sm md:text-base font-display font-semibold tracking-tight text-foreground truncate flex items-center gap-3">
+      <div className="relative flex min-h-[60px] md:min-h-[80px] items-center px-4 sm:px-6 md:px-[50px] border-b border-border/40 bg-card/50">
+        <div className="flex flex-col justify-center max-w-[80%] py-3 gap-1">
+          <h1 className="text-lg md:text-2xl font-display font-bold tracking-tight text-foreground truncate flex items-center gap-3">
             {aula.title}
             {aula.status !== ContentStatus.PUBLISHED && (
               <span className="inline-flex rounded-full border border-border px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-wider text-muted-foreground">
@@ -56,6 +53,15 @@ export function LessonPage() {
               </span>
             )}
           </h1>
+          <span className="text-sm md:text-[0.95rem] text-muted-foreground truncate">
+            {curso.title}
+          </span>
+        </div>
+
+        {/* Linha de progresso (visual) */}
+        <div className="absolute bottom-0 left-0 h-[3px] w-full bg-primary/10" aria-hidden="true">
+          {/* Valor estático para visualização do design, será dinâmico depois */}
+          <div className="h-full bg-primary rounded-r-full transition-all duration-500" style={{ width: "35%" }} />
         </div>
       </div>
 
