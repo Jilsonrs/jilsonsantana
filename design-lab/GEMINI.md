@@ -107,21 +107,23 @@ servidores (§5); o React responde em `localhost:5173`, a home pública em `loca
 |---|---|
 | `/` · `/en` | `server/src/views/home.ts` + `client/src/public-input.css` |
 
-**Públicas — hoje em React, mas PROVISÓRIAS** *(porta 5173)*
+**Públicas e do aluno ao mesmo tempo — hoje em React** *(porta 5173)*
 
-| Endereço | Arquivo | Atenção |
+| Endereço | Arquivo | O destino |
 |---|---|---|
-| `/cursos` | `client/src/pages/CatalogPage.tsx` (`tipo="cursos"`) | ⛔ será substituída |
-| `/trilhas` | o MESMO arquivo (`tipo="trilhas"`) | ⛔ idem |
-| `/curso/:slug` | `client/src/pages/CourseDetailPage.tsx` | ⛔ idem |
-| `/trilha/:slug` | `client/src/pages/TrilhaDetailPage.tsx` | ⛔ idem |
+| `/cursos` | `client/src/pages/CatalogPage.tsx` (`tipo="cursos"`) | aluno: definitiva · vitrine: transposta |
+| `/trilhas` | o MESMO arquivo (`tipo="trilhas"`) | idem |
+| `/curso/:slug` | `client/src/pages/CourseDetailPage.tsx` | vitrine: transposta |
+| `/trilha/:slug` | `client/src/pages/TrilhaDetailPage.tsx` | idem |
 | `/login` | `client/src/pages/LoginPage.tsx` | fica no React |
 
-> **⛔ NÃO invista acabamento nessas quatro.** Elas vão ser **substituídas** por templates de
-> servidor, como a home já é (decisão do operador, set/2026: *"eu quero que seja a versão final que
-> vamos utilizar"* — sem construir duas vezes). Quando a substituta existir, **você trabalha nela**;
-> o que você fizer no `.tsx` de hoje é jogado fora junto com o arquivo. Tokens e CSS sobrevivem,
-> marcação não.
+> **✅ PODE investir acabamento nessas telas — nada do que você fizer é jogado fora** *(decisão do
+> operador, 30/09/2026, que substitui o "não invista" de set/2026)*: *"O que estiver dentro da área logada não é página temporária, já é definitiva, e o que montar de HTML nas páginas públicas também não será perdido, apenas transportado para dados dinâmicos."*
+> - **O que o aluno vê atrás do login já é a versão definitiva** (vira o catálogo do aluno, em
+>   `/aluno/*`), e continua em React.
+> - **A vitrine pública vira template de servidor** com a **mesma marcação e as mesmas classes**
+>   do que você desenhar, seja aqui no `.tsx`, seja um mock na `design-lab/`: o Claude transpõe e
+>   troca o conteúdo fixo por dados do banco, como fez com a home.
 
 
 **Do aluno — exigem login** *(porta 5173)*
@@ -329,9 +331,9 @@ exceto o item 4, que é página pública.
    link, e a etiqueta do admin fica em português.
 16. **A duração do curso** *(29–30/09, decisões do operador)*. No **topo do editor**, embaixo do
    título: "2h 35min de vídeo" (é a `description` do `PageHeader` em `CourseEditorLayout.tsx`).
-   No **cartão do catálogo** e na **página do curso**: "2 módulos · 4 aulas · 1h 05min" — mas
-   essas duas páginas são **provisórias** (§ 0: não invista acabamento nelas). **Tem teste:** o
-   texto e o formato ("0min" sem vídeo).
+   No **cartão do catálogo** e na **página do curso**: "2 módulos · 4 aulas · 1h 05min" — o
+   acabamento ali vale (§ 2, "Públicas e do aluno ao mesmo tempo", decisão de 30/09). **Tem
+   teste:** o texto e o formato ("0min" sem vídeo).
 
 > **Fora do seu trabalho, para não confundir:** o Bunny ganhou **Live Stream** em acesso
 > antecipado (29/09). É só avaliação depois da Fase 3, **não** é tela a desenhar (`docs/bunny.md`

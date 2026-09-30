@@ -414,7 +414,7 @@ todo vídeo enviado, inclusive rascunho, por decisão do operador.)*
 curso ainda não tem vídeo (como já mostra "0 aulas"). Aqui a soma é **só do que o aluno vê**:
 aula de vídeo publicada em módulo publicado, a mesma cadeia do "4 aulas" (leitura pública nunca
 soma rascunho). A duração de cada aula não sai na resposta pública, só o total. **A vitrine
-definitiva (C5) leva isso** quando trocar as páginas provisórias.
+definitiva (C5) leva isso** quando o desenho de hoje for transposto para o template de servidor.
 
 **Decisões de 28/09/2026 sobre a página e o certificado** (operador): a seção do autor é **a mesma
 da home** (`home.author`, uma edição serve às duas) · etiqueta **"Novo"**, **sem** número de alunos
@@ -447,7 +447,7 @@ Daí os 7 passos do *Bloco E* do plano, no nível 2 da navegação.
 - **Descrição com menos de 200 palavras** aparece como "descrição curta" no que falta, **sem
   impedir o salvar**.
 - **As três listas aceitam até 160 caracteres por item**, cada item com contador.
-- **O Visualizar espera a página de curso definitiva (C5):** a página de hoje é provisória e nem
+- **O Visualizar espera a página de curso definitiva (C5):** a página pública de hoje ainda é React e nem
   mostra a descrição, então a prévia mostraria outra página. *(Operador, 29/09/2026: o nome
   "Página do curso" fica para ESSA página pública; o link para abri-la e conferir como o curso
   aparece fica no passo **Publicar**, e chega com o C5.)*

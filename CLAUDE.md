@@ -435,10 +435,16 @@ compartilha, e slug de catálogo é permanente (ver *Slug de catálogo é PERMAN
 **TRAVA — não "unifique" os dois catálogos.** Eles parecem duplicados e não são: mesma fonte de
 dados, propósitos opostos. Juntar devolve exatamente o problema que a separação resolve.
 
-**ESTADO ATUAL (set/2026), para ninguém se enganar com o que está no ar:** `/cursos` e `/trilhas`
-são hoje páginas **React provisórias** (`CatalogPage.tsx`), que fazem os dois papéis mal. Elas
-**serão substituídas** pelo template de servidor — decisão do operador de não construir duas
-vezes. Enquanto isso, **não investir acabamento nelas** (`design-lab/GEMINI.md` § 0).
+**ESTADO ATUAL, para ninguém se enganar com o que está no ar:** `/cursos`, `/trilhas`,
+`/curso/:slug` e `/trilha/:slug` são hoje páginas **React** que atendem o visitante e o aluno.
+**NADA do que se constrói nelas é descartável** *(decisão do operador, 30/09/2026 — substitui o
+"não investir acabamento nelas" de set/2026)*: *"O que estiver dentro da área logada não é página temporária, já é definitiva, e o que montar de HTML nas páginas públicas também não será perdido, apenas transportado para dados dinâmicos."*
+- **Área logada (React) = versão DEFINITIVA.** O que o aluno vê atrás do login não será refeito:
+  vira o catálogo do aluno (`/aluno/*`, Bloco C5). Acabamento ali vale.
+- **Páginas públicas = o desenho é TRANSPOSTO, não refeito.** A vitrine vira template de servidor
+  (Rendering Boundary) com a mesma marcação e as mesmas classes do HTML desenhado — o `.tsx` de
+  hoje ou o mock da `design-lab/` —, só trocando o conteúdo fixo por dados do banco. É o caminho
+  que a home já percorreu.
 
 **FEITO (29/09/2026; decisão do operador de 28/09):** as telas do aluno moram em `/aluno/*`
 (`/aluno/conta`, `/aluno/minhas-trilhas`, `/aluno/em-andamento`…). **Duas exceções, decididas

@@ -1770,8 +1770,8 @@ cada campo, a regra do ✓, 160 caracteres nas três listas e o Visualizar esper
       todas reprovam. Revertido.
 - [ ] **Visualizar** mostra a página do curso como o aluno vê, **inclusive em rascunho, só para o
       admin** — a rota pública continua devolvendo só o publicado. **Espera o C5** *(operador,
-      28/09/2026)*: a página de curso de hoje é provisória e nem mostra a descrição, então a
-      prévia mostraria outra página e seria jogada fora. **Onde fica** *(operador, 29/09/2026)*:
+      28/09/2026)*: a página pública de curso de hoje ainda é React e nem mostra a descrição,
+      então a prévia mostraria outra página. **Onde fica** *(operador, 29/09/2026)*:
       um link no passo **Publicar** para abrir a página pública do curso e conferir como ficou.
       Por isso o passo de imagem, vídeo, destaques, perguntas e camadas deixou de se chamar
       "Página do curso" e passou a **"Mídia e destaques"** (o endereço `/pagina` ficou).
@@ -2006,8 +2006,8 @@ própria**.*
       duração de cada aula não sai. `horasEMinutos` (`lib/duracao-do-curso.ts`) é o formato
       curto; o topo do editor acrescenta "de vídeo". Testes: servidor (`course-duration.test.ts`,
       4 casos) e tela. Mutação: a lista somando rascunho, a página somando módulo em rascunho e
-      o cartão sem a duração — as três reprovam. *(Estas duas páginas são provisórias: o C5 leva
-      a duração para o template — `courses.md`.)*
+      o cartão sem a duração — as três reprovam. *(O C5 leva a duração para o template de
+      servidor, junto com o desenho transposto — `courses.md`.)*
 
 **Vai para outros blocos (anotado lá quando eles abrirem):**
 - **Página do curso (vitrine, depois do C5):** a seção do autor é **a mesma da home**
@@ -2061,6 +2061,8 @@ própria**.*
 >   internacionais não o usam).
 > - As páginas provisórias (`/cursos`, `/trilhas`, `/curso/…`, `/trilha/…`): **não mexer** — ele
 >   ainda vai pensar nelas; foco na home.
+>   *(30/09/2026, operador: não são mais "provisórias" — o que está atrás do login é definitivo, e o
+>   desenho da vitrine é transposto para o template, nada se perde. Ver Bloco C5.)*
 > - `Course.language` entra pela **etapa 2 do C4**, que precisa dele. O resto da parte de dados
 >   (`LearningPlan.language`, filtro nas listas e na busca, recusa de item de outro idioma na
 >   trilha, clone herdando) continua neste bloco. O campo Idioma no formulário de **trilha** espera
@@ -2325,6 +2327,10 @@ própria**.*
 > visitante vê cromo de app, o aluno não vê progresso. O operador separou as duas superfícies
 > (`CLAUDE.md` → *DUAS SUPERFÍCIES*) e pediu que o que for construído agora **seja a versão
 > final**: *"eu quero que seja a versão final que vamos utilizar"*. Sem construir duas vezes.
+> **NADA SE PERDE** *(operador, 30/09/2026)*: *"O que estiver dentro da área logada não é página temporária, já é definitiva, e o que montar de HTML nas páginas públicas também não será perdido, apenas transportado para dados dinâmicos."* O que o aluno vê em React já é o
+> catálogo do aluno; da vitrine, a marcação e as classes de hoje (ou do mock) são **transpostas**
+> para o template de servidor, trocando o conteúdo fixo por dados do banco. O acabamento que o
+> Antigravity fizer nessas telas agora vale.
 >
 > **BLOQUEADO — e o bloqueio é do operador, não técnico.** O passo 1 do fluxo com o parceiro de
 > design é *"o operador e o Claude definem o que vai ter na tela"*, e ele adiou: *"depois
