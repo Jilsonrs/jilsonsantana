@@ -21,8 +21,8 @@ export function LayerSelo({ camadas }: { camadas: Layer[] }) {
         return (
           <div key={layer} className={cn("flex gap-5 pb-6", index !== camadas.length - 1 ? "border-b border-border/60" : "")}>
             <div className={cn(
-              "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl",
-              config.accent ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted text-foreground/80"
+              "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-muted",
+              config.accent ? "text-primary" : "text-foreground/80"
             )}>
               <Icon className="h-5 w-5 stroke-[1.5px]" />
             </div>
