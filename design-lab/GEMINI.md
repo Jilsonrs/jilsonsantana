@@ -147,7 +147,7 @@ servidores (§5); o React responde em `localhost:5173`, a home pública em `loca
 | `/dashboard` | **O Dashboard do admin** (29/09): `client/src/pages/AdminPage.tsx` — os 4 relatórios (Assinantes, Aprendizado, De onde vieram os alunos, Uso do JilsonAI), todos EM BREVE, e os atalhos embaixo (Trilhas EM BREVE, sem link). Cada cartão é um grupo com nome (`role="group"`) e **tem teste**: EM BREVE nunca é link. |
 | `/admin/cursos` | `client/src/pages/admin/AdminCoursesPage.tsx` + **o cartão de cada curso**, `client/src/components/admin/AdminCourseCard.tsx` (27/09) |
 | `/admin/cursos/novo` | `client/src/pages/admin/course-editor/NewCoursePage.tsx` — só o passo 1; "Criar curso" abre o editor |
-| `/admin/cursos/:id/basico` · `/para-quem-e` · `/conteudo` · `/pagina` · `/publicar` | **O editor do curso em 7 passos** (28/09): `course-editor/CourseEditorLayout.tsx` (o topo, comum a todos), `course-editor/steps.tsx` (o que cada passo mostra) e `course-editor/StepForm.tsx` (o botão Salvar de cada passo). O conteúdo de cada passo são as seções de `client/src/components/admin/course-form/`. |
+| `/admin/cursos/:id/basico` · `/para-quem-e` · `/conteudo` · `/pagina` · `/publicar` | **O editor do curso em 7 passos** (28/09): `course-editor/CourseEditorLayout.tsx` (o topo, comum a todos; embaixo do título, **a duração**: "2h 35min de vídeo", desde 29/09), `course-editor/steps.tsx` (o que cada passo mostra) e `course-editor/StepForm.tsx` (o botão Salvar de cada passo). O conteúdo de cada passo são as seções de `client/src/components/admin/course-form/`. |
 | `/admin/site` → leva a `/admin/site/textos` | (só redireciona) |
 | `/admin/site/textos` | `client/src/pages/admin/AdminSiteTextPage.tsx` + `client/src/components/admin/SiteTextField.tsx` — **uma aba por página** ("Toda página", "Home"; página nova ganha aba sozinha). Com busca, as abas somem e o resultado vem de todas as páginas. As abas têm `aria-pressed` e teste. |
 | `/admin/site/depoimentos` | `client/src/pages/admin/AdminTestimonialsPage.tsx` |
@@ -327,6 +327,11 @@ exceto o item 4, que é página pública.
    até os dados existirem, e os atalhos ficaram embaixo. Se o operador quiser um separador
    visual entre as duas áreas do menu, é seu. **Tem teste, não mexa sem falar com o operador:** EM BREVE nunca é
    link, e a etiqueta do admin fica em português.
+16. **A duração do curso** *(29–30/09, decisões do operador)*. No **topo do editor**, embaixo do
+   título: "2h 35min de vídeo" (é a `description` do `PageHeader` em `CourseEditorLayout.tsx`).
+   No **cartão do catálogo** e na **página do curso**: "2 módulos · 4 aulas · 1h 05min" — mas
+   essas duas páginas são **provisórias** (§ 0: não invista acabamento nelas). **Tem teste:** o
+   texto e o formato ("0min" sem vídeo).
 
 > **Fora do seu trabalho, para não confundir:** o Bunny ganhou **Live Stream** em acesso
 > antecipado (29/09). É só avaliação depois da Fase 3, **não** é tela a desenhar (`docs/bunny.md`
