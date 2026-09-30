@@ -15,9 +15,12 @@ export function BotaoDaIa({ aberto, aoAlternar }: { aberto: boolean; aoAlternar:
       onClick={aoAlternar}
       aria-expanded={aberto}
       aria-label={aberto ? t.aula.fecharIa : t.aula.abrirIa}
-      className="fixed bottom-6 right-6 z-40 flex size-14 items-center justify-center rounded-full bg-gradient-to-tr from-primary to-[#8A2BE2] text-primary-foreground shadow-[0_8px_30px_rgb(0,0,0,0.12)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_40px_rgba(138,43,226,0.3)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 motion-reduce:transition-none"
+      className="fixed bottom-6 right-6 z-40 flex h-14 items-center gap-2.5 rounded-full bg-card px-6 shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-border/50 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_40px_rgba(35,143,232,0.15)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 motion-reduce:transition-none group"
     >
-      <Sparkles className="size-6" aria-hidden="true" />
+      <Sparkles className="size-5 text-primary transition-transform group-hover:scale-110" aria-hidden="true" />
+      <span className="font-display text-lg font-extrabold tracking-tight text-foreground">
+        jilson<span className="text-primary">AI</span>
+      </span>
     </button>
   );
 }
@@ -31,9 +34,9 @@ export function PainelDaIa({ aoFechar }: { aoFechar: () => void }) {
         <Sparkles className="size-32" aria-hidden="true" />
       </div>
       <div className="relative z-10 flex items-center justify-between gap-4">
-        <h2 className="flex items-center gap-2 text-lg font-bold font-display tracking-tight text-foreground">
+        <h2 className="flex items-center gap-2 font-display text-[1.4rem] font-extrabold tracking-tight text-foreground">
           <Sparkles className="size-5 text-primary" aria-hidden="true" />
-          {t.aula.iaTitulo}
+          <span>jilson<span className="text-primary">AI</span></span>
         </h2>
         <button
           type="button"
