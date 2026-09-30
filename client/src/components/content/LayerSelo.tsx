@@ -19,10 +19,10 @@ export function LayerSelo({ camadas }: { camadas: Layer[] }) {
         const config = LAYER_CONFIG[layer];
         const Icon = resolveIcon(config.icon);
         return (
-          <div key={layer} className="space-y-2 rounded-lg border border-border p-4">
-            <Icon className={cn("h-5 w-5", config.accent ? "text-primary" : "text-foreground")} />
-            <p className="text-sm font-medium">{textos.camadas[layer].nome}</p>
-            <p className="text-sm text-muted-foreground">{textos.camadas[layer].texto}</p>
+          <div key={layer} className="flex flex-col rounded-xl border border-border/60 bg-card p-5 shadow-sm">
+            <Icon className={cn("mb-4 h-6 w-6 stroke-[1.5px]", config.accent ? "text-primary" : "text-foreground/80")} />
+            <p className="mb-2 text-[0.95rem] font-semibold text-foreground tracking-tight">{textos.camadas[layer].nome}</p>
+            <p className="text-[0.9rem] leading-relaxed text-muted-foreground">{textos.camadas[layer].texto}</p>
           </div>
         );
       })}
