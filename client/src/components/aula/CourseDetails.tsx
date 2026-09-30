@@ -47,13 +47,6 @@ export function CourseDetails({ curso }: { curso: PaginaDaAula["curso"] }) {
 
   return (
     <section aria-labelledby="sobre-o-curso" className="space-y-10 border-t border-border/40 pt-10">
-      <div className="flex flex-wrap items-center gap-4">
-        <h2 id="sobre-o-curso" className="font-display text-[1.4rem] font-bold tracking-tight text-foreground">
-          {t.aula.sobreOCurso}
-        </h2>
-        {curso.level && <Badge variant="secondary" className="rounded-full font-medium">{t.niveis[curso.level]}</Badge>}
-      </div>
-
       {/* 1. O que você vai aprender */}
       {curso.learnTags.length > 0 && (
         <section className="space-y-5">
@@ -68,15 +61,24 @@ export function CourseDetails({ curso }: { curso: PaginaDaAula["curso"] }) {
         </section>
       )}
 
-      {/* 2. Diferenciais (agora sem título, conforme pedido) */}
+      {/* 2. Diferenciais (sem título) */}
       <CourseHighlights destaques={destaques} />
 
-      {/* 3. Descrição */}
-      {curso.description && (
-        <Suspense fallback={null}>
-          <MarkdownText texto={curso.description} className="max-w-3xl text-base leading-relaxed" />
-        </Suspense>
-      )}
+      {/* 3. Título "Sobre o curso" e Descrição */}
+      <div className="space-y-5">
+        <div className="flex flex-wrap items-center gap-4">
+          <h2 id="sobre-o-curso" className="font-display text-[1.4rem] font-bold tracking-tight text-foreground">
+            {t.aula.sobreOCurso}
+          </h2>
+          {curso.level && <Badge variant="secondary" className="rounded-full font-medium">{t.niveis[curso.level]}</Badge>}
+        </div>
+
+        {curso.description && (
+          <Suspense fallback={null}>
+            <MarkdownText texto={curso.description} className="max-w-3xl text-base leading-relaxed" />
+          </Suspense>
+        )}
+      </div>
 
       {/* 4. Requisitos / Pra quem é */}
       <div className="grid gap-6 sm:grid-cols-2">
