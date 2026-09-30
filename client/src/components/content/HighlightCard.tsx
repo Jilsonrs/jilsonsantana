@@ -5,14 +5,14 @@ import { resolveIcon } from "./icon-registry";
 export function HighlightCard({ icon, title, text }: Highlight) {
   const Icon = resolveIcon(icon);
   return (
-    <div className="flex flex-col gap-4 rounded-2xl border border-border/50 bg-card p-6 shadow-sm">
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
-        <Icon className="h-5 w-5" />
+    <div className="flex flex-col gap-3 rounded-2xl border border-border/50 bg-card p-6 shadow-sm">
+      <div className="flex items-center gap-3">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
+          <Icon className="h-5 w-5" />
+        </div>
+        <h4 className="font-bold text-foreground leading-tight">{title}</h4>
       </div>
-      <div className="space-y-1.5">
-        <h4 className="font-bold text-foreground">{title}</h4>
-        <p className="text-sm leading-relaxed text-muted-foreground">{text}</p>
-      </div>
+      <p className="text-sm leading-relaxed text-muted-foreground">{text}</p>
     </div>
   );
 }
