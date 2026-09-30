@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { ContentStatus } from "@jilson/core";
 import { useSession } from "@/lib/auth-client";
 import { useT } from "@/lib/language";
@@ -10,6 +10,7 @@ import { CourseContentsNav } from "@/components/aula/CourseContentsNav";
 import { LessonContent } from "@/components/aula/LessonContent";
 import { CourseDetails } from "@/components/aula/CourseDetails";
 import { BotaoDaIa, PainelDaIa } from "@/components/aula/AiDock";
+import { List } from "lucide-react";
 
 /** O servidor respondeu 404? (aula que não existe, ou fora da cadeia publicada). */
 function naoEncontrada(erro: unknown): boolean {
@@ -31,6 +32,8 @@ export function LessonPage() {
   const { data: session } = useSession();
   const { data, isError, error, comoAdmin, carregandoSessao } = usePaginaDaAula(lessonId);
   const [iaAberta, setIaAberta] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const sidebarFechada = searchParams.get("sidebar") === "0";
 
   if (lessonId === null || (isError && naoEncontrada(error))) {
     return <Aviso texto={t.aula.naoEncontrada} />;
@@ -44,18 +47,30 @@ export function LessonPage() {
     <div className="flex min-h-full flex-col">
       {/* Barra Superior Customizada da Aula (Avatar flutua por cima, à direita) */}
       <div className="relative flex min-h-[60px] md:min-h-[80px] items-center px-4 sm:px-6 md:px-[50px] border-b border-border/40 bg-card/50">
-        <div className="flex flex-col justify-center max-w-[80%] py-3 gap-1">
-          <h1 className="text-lg md:text-2xl font-display font-bold tracking-tight text-foreground truncate flex items-center gap-3">
-            {aula.title}
-            {aula.status !== ContentStatus.PUBLISHED && (
-              <span className="inline-flex rounded-full border border-border px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-wider text-muted-foreground">
-                {aula.status === ContentStatus.ARCHIVED ? t.aula.arquivado : t.aula.rascunho}
-              </span>
-            )}
-          </h1>
-          <span className="text-sm md:text-[0.95rem] text-muted-foreground truncate">
-            {curso.title}
-          </span>
+        <div className="flex items-center gap-5 max-w-[80%]">
+          {sidebarFechada && (
+            <button
+              onClick={() => setSearchParams((prev) => { prev.delete("sidebar"); return prev; }, { replace: true })}
+              className="hidden md:flex items-center gap-2 px-3 py-2 -ml-3 text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-black/5 rounded-md transition-colors"
+              aria-label={t.aula.conteudoDoCurso ?? "Conteúdo do Curso"}
+            >
+              <List className="size-5" />
+              <span>{t.aula.conteudoDoCurso ?? "Conteúdo"}</span>
+            </button>
+          )}
+          <div className="flex flex-col justify-center py-3 gap-1">
+            <h1 className="text-lg md:text-2xl font-display font-bold tracking-tight text-foreground truncate flex items-center gap-3">
+              {aula.title}
+              {aula.status !== ContentStatus.PUBLISHED && (
+                <span className="inline-flex rounded-full border border-border px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-wider text-muted-foreground">
+                  {aula.status === ContentStatus.ARCHIVED ? t.aula.arquivado : t.aula.rascunho}
+                </span>
+              )}
+            </h1>
+            <span className="text-sm md:text-[0.95rem] text-muted-foreground truncate">
+              {curso.title}
+            </span>
+          </div>
         </div>
 
         {/* Linha de progresso (visual) */}
