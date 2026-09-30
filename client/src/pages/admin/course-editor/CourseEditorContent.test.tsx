@@ -401,7 +401,25 @@ describe("Conteúdo — editar e adicionar como na Udemy", () => {
     fireEvent.change(screen.getByLabelText("Título do módulo"), { target: { value: "Automação com IA" } });
     fireEvent.click(screen.getByRole("button", { name: "Salvar" }));
 
-    await waitFor(() => expect(updateModule).toHaveBeenCalledWith(2, { title: "Automação com IA", layer: undefined, status: "DRAFT" }));
+    // Sem camada vai como `null` (não "ausente"): é o que deixa tirar a camada.
+    await waitFor(() => expect(updateModule).toHaveBeenCalledWith(2, { title: "Automação com IA", layer: null, status: "DRAFT" }));
+  });
+
+  // O defeito de 29/09/2026: escolher "—" e salvar não tirava a camada, porque o
+  // vazio ia como "ausente" e o servidor lia "não mexe".
+  it("escolher \"—\" na camada e salvar TIRA a camada do módulo", async () => {
+    adminGetCourse.mockResolvedValue({
+      ...COM_CONTEUDO,
+      modules: [COM_CONTEUDO.modules[0], { ...COM_CONTEUDO.modules[1], layer: "IA" }],
+    });
+    await abrir();
+    fireEvent.click(screen.getByRole("button", { name: "Editar o módulo Automação" }));
+    const camada = screen.getByLabelText("Camada do módulo") as HTMLSelectElement;
+    expect(camada.value).toBe("IA");
+    fireEvent.change(camada, { target: { value: "" } });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar" }));
+
+    await waitFor(() => expect(updateModule).toHaveBeenCalledWith(2, { title: "Automação", layer: null, status: "DRAFT" }));
   });
 
   it("\"+ Aula\" no fim do módulo: a aula nasce depois da última, e o botão já grava", async () => {

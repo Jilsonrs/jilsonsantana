@@ -233,6 +233,11 @@ ar, decisão de 27/09. O mesmo vale para uma biblioteca de apresentação de dev
   o envio pela metade e os arquivos para baixar; o curso, também o vídeo de apresentação. O Bunny
   primeiro: se ele recusar, nada é excluído, e o operador tenta de novo. **Arquivar** continua não
   apagando nada (é a decisão de Ago 2026, acima).
+- **APAGAR O ID DO VÍDEO DE APRESENTAÇÃO apaga o vídeo no Bunny** *(decisão do operador,
+  29/09/2026, "como a troca de vídeo já faz")*: no passo Mídia e destaques, esvaziar o campo e
+  salvar tira o vídeo do curso e apaga lá. O Bunny primeiro: se ele recusar, nada é gravado, e
+  aparece o aviso para tentar de novo. **Colar outro ID à mão ainda NÃO apaga o antigo** (só o
+  envio pelo botão apaga) — achado registrado no plano, Bloco E.
 - **Prévia grátis** *(decisão do operador, 27/09/2026, "como na Udemy")*: o operador liga e desliga
   por aula quais aulas tocam para **qualquer visitante, sem login e sem assinatura**; ele pensa em
   2, 3 ou 5 aulas de uns 10 minutos por curso. Elas continuam na biblioteca de aulas, com token, e

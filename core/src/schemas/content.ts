@@ -120,14 +120,19 @@ const itemDaListaSchema = z
 // `language` é OBRIGATÓRIO na criação (operador, 14/09/2026). Na edição ele pode
 // vir (é `.partial()`), mas o SERVIDOR só aceita trocar enquanto o curso for
 // rascunho (operador, 24/09/2026).
+//
+// CAMPO AUSENTE ≠ CAMPO VAZIO (achado de 29/09/2026, corrigido no mesmo dia):
+// ausente quer dizer "não mexe" — é o que deixa cada passo do editor salvar só
+// os campos dele; `null` quer dizer "apaga". Antes os opcionais só aceitavam
+// ausente, e apagar um campo já salvo não apagava nada (a tela dizia "salvo").
 export const courseCreateSchema = z.object({
   slug: slugSchema,
   language: contentLanguageSchema,
   title: z.string().min(1).max(LIMITES_DO_CURSO.title),
-  subtitle: z.string().max(LIMITES_DO_CURSO.subtitle).optional(),
+  subtitle: z.string().max(LIMITES_DO_CURSO.subtitle).nullable().optional(),
   // Markdown (negrito, itálico e listas), guardado como o operador escreveu.
-  description: z.string().max(LIMITES_DO_CURSO.description).optional(),
-  level: levelSchema.optional(),
+  description: z.string().max(LIMITES_DO_CURSO.description).nullable().optional(),
+  level: levelSchema.nullable().optional(),
   // As três listas: até 160 caracteres por item (operador, 28/09/2026).
   learnTags: z.array(itemDaListaSchema).optional(),
   requirements: z.array(itemDaListaSchema).optional(),
@@ -136,8 +141,9 @@ export const courseCreateSchema = z.object({
   faq: z.array(faqItemSchema).optional(),
   camadas: z.array(layerSchema).optional(),
   camadaOverride: camadaOverrideSchema.optional(),
-  thumbnailUrl: imageUrlSchema.optional(),
-  introVideoId: bunnyVideoIdSchema.optional(),
+  thumbnailUrl: imageUrlSchema.nullable().optional(),
+  // `null` apaga o vídeo no Bunny também (operador, 29/09/2026 — rota do curso).
+  introVideoId: bunnyVideoIdSchema.nullable().optional(),
   displayOrder: z.number().int().optional(),
   status: contentStatusSchema.optional(),
 });
@@ -149,7 +155,8 @@ export type CourseUpdateInput = z.infer<typeof courseUpdateSchema>;
 export const moduleCreateSchema = z.object({
   courseId: z.number().int().positive(),
   title: z.string().min(1),
-  layer: layerSchema.optional(),
+  // `null` tira a camada (mesmo achado do curso, 29/09/2026).
+  layer: layerSchema.nullable().optional(),
   displayOrder: z.number().int().optional(),
   status: contentStatusSchema.optional(),
 });

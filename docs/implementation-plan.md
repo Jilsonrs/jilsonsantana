@@ -171,6 +171,9 @@
 > - Chegou lá em 3 publicações no mesmo dia (`35fb940`, `f44187e`, `7a769c8`), cada uma com CI
 >   verde e deploy ok. Textos novos em PT e EN são **rascunho do agente, para a revisão do
 >   operador**; o acabamento visual é do Antigravity (`GEMINI.md`, fila itens 14 e 15).
+> **No `dev` (29/09, esperando o "publica"):** no editor do curso, **campo já salvo volta a
+> poder ficar vazio** (subtítulo, descrição, nível, imagem, vídeo de apresentação e a camada do
+> módulo); apagar o ID do vídeo apaga o vídeo no Bunny. Ver Bloco E.
 > **Registrado no fim da sessão de 29/09 (só documentos, no `dev`):** o mapa do que falta nos 7
 > passos do editor (Bloco E, depois da etapa 4), com um **achado novo** (campo já salvo não volta a
 > ficar vazio); o **Live Stream** do Bunny em acesso antecipado (`bunny.md` §6, decisão 8,
@@ -1956,13 +1959,24 @@ própria**.*
 **Em todos os passos, ainda aberto:**
 - [ ] **Revisão das dicas pelo operador** — todas em `client/src/lib/course-hints.ts`, num arquivo
       só (ele pediu para revisar depois, 28/09).
-- [ ] **ACHADO (29/09, confirmado no código, NÃO corrigido): campo já salvo não volta a ficar
+- [x] **ACHADO (29/09, confirmado no código): campo já salvo não volta a ficar
       vazio.** Apagar o texto do **subtítulo**, da **descrição**, do **nível**, da **imagem** ou
       do **ID do vídeo de apresentação** e salvar não apaga nada: `toPayload`
       (`client/src/lib/course-form.ts`) manda `undefined` para o campo vazio, e o servidor lê
       campo ausente como "deixa como está". O salvamento diz "salvo" e o valor antigo continua.
-      As listas não têm o problema (vão sempre como lista). A correção é decisão de quando, do
-      operador.
+      As listas não têm o problema (vão sempre como lista).
+      ✅ **Corrigido em 29/09/2026, a pedido do operador:** campo apagado vai como `null`, que o
+      servidor grava; ausente continua querendo dizer "não mexe" (é o que deixa cada passo salvar
+      só os campos dele). **A camada do módulo tinha o mesmo defeito e entrou junto** (decisão
+      dele). **Apagar o ID do vídeo de apresentação apaga o vídeo no Bunny** (decisão dele, como
+      a troca já faz), com o Bunny primeiro: se ele recusar, nada é gravado e o passo avisa
+      (`bunny.md` §3.4). A capa não é apagada do Storage ao limpar o campo, como na troca (27/09).
+      Teste de servidor novo (`clear-fields.test.ts`, 7 casos) e de tela. Mutação: o formulário
+      voltando a mandar "ausente", o servidor sem apagar no Bunny e o servidor gravando com o
+      Bunny recusando — as três reprovam.
+- [ ] **ACHADO (29/09, NÃO corrigido): colar à mão OUTRO ID no campo do vídeo de apresentação e
+      salvar troca o vídeo, mas NÃO apaga o antigo no Bunny** — só o envio pelo botão apaga. O
+      antigo fica lá sem curso nenhum. Correção é decisão do operador.
 - [ ] **A corrida na troca de vídeo com duas abas** (P2 da revisão de segurança, na etapa 2 acima).
 
 **Vai para outros blocos (anotado lá quando eles abrirem):**
