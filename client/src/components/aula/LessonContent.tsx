@@ -49,7 +49,7 @@ export function LessonContent({
 
   if (aula.kind === LessonKind.VIDEO) {
     return aula.playerUrl ? (
-      <div className="w-full bg-black">
+      <div className="w-full">
         <BunnyPlayer src={aula.playerUrl} title={aula.title} />
       </div>
     ) : (
