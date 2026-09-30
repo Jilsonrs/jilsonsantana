@@ -2,7 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { Layout } from "@/components/Layout";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { AdminRoute } from "@/components/auth/AdminRoute";
-import { ROTAS_ANTIGAS_DO_ALUNO } from "@/components/auth/RotasAntigasDoAluno";
+import { ROTAS_ANTIGAS } from "@/components/auth/RotasAntigas";
 import { LoginPage } from "@/pages/LoginPage";
 import { StudentHomePage } from "@/pages/StudentHomePage";
 import { AccountPage } from "@/pages/AccountPage";
@@ -43,17 +43,20 @@ export default function App() {
         <Route path="/aluno/aula/:id" element={<LessonPage />} />
         {/* A entrada do aluno num curso: vai para a primeira aula (29/09/2026). */}
         <Route path="/aluno/curso/:slug" element={<CourseEntryPage />} />
-        {/* /inicio, /conta e /minhas-trilhas → /aluno/... (operador, 28/09/2026). */}
-        {ROTAS_ANTIGAS_DO_ALUNO}
+        {/* Endereços antigos → atuais (/conta, /minhas-trilhas, /aluno/inicio, /admin). */}
+        {ROTAS_ANTIGAS}
         <Route element={<ProtectedRoute />}>
-          <Route path="/aluno/inicio" element={<StudentHomePage />} />
+          {/* O Início é UM SÓ, para o aluno e para o admin, que testa por ele
+              tudo o que o aluno faz (decisão do operador, 29/09/2026). */}
+          <Route path="/inicio" element={<StudentHomePage />} />
           <Route path="/aluno/meus-estudos" element={<MeusEstudosPage />} />
           <Route path="/aluno/minhas-trilhas" element={<MyTrilhasPage />} />
           <Route path="/aluno/minhas-trilhas/:id" element={<MyTrilhaDetailPage />} />
           <Route path="/aluno/conta" element={<AccountPage />} />
         </Route>
         <Route element={<AdminRoute />}>
-          <Route path="/admin" element={<AdminPage />} />
+          {/* O painel do admin (decisão do operador, 29/09/2026). */}
+          <Route path="/dashboard" element={<AdminPage />} />
           <Route path="/admin/cursos" element={<AdminCoursesPage />} />
           <Route path="/admin/cursos/novo" element={<NewCoursePage />} />
           {/* O editor em 7 passos (Bloco E, 28/09/2026): cada passo é uma rota

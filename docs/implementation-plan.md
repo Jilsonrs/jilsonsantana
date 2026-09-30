@@ -157,6 +157,10 @@
 > módulo novos nascendo conforme o curso. **Decidido e registrado, ainda não construído:** o
 > **menu do aluno novo** (Início · Cursos · Trilhas · Meus estudos · JilsonAI — `design.md` §6),
 > que é o **próximo bloco**, junto com as telas sob `/aluno/*` e o painel do Início.
+> **No `dev` (29/09, ajuste do operador, esperando o "publica"): a plataforma é uma só** — o
+> Início volta a ser `/inicio`, o mesmo para o aluno e para o admin (que testa ali tudo o que o
+> aluno faz), todo mundo cai nele depois de entrar, e o painel do admin passa a `/dashboard`, no
+> item "Dashboard" antes de Cursos Admin. `/aluno/inicio` e `/admin` redirecionam. Ver Bloco S.
 > **PUBLICADO em 29/09, no fim da noite (`main` = `f44187e`, CI verde nos dois jobs, deploy ok),
 > a pedido do operador: o Início do admin é o painel dele** (`/admin`, os
 > 4 relatórios de "Dados" EM BREVE + os atalhos); o aluno continua no painel dele. "Dados" saiu
@@ -375,8 +379,8 @@ escrito em lugar nenhum.
       - **Dados:** **uma tela só, em blocos**: assinantes (ativos, novos e cancelados no mês),
         aprendizado (horas assistidas, cursos mais vistos, conclusões), de onde vieram os alunos
         (campanha do link) e uso do JilsonAI. Se crescer, vira partes depois.
-        **→ Virou o Início do admin em 29/09/2026** (`/admin`, decisão do operador) e saiu do
-        menu; os 4 blocos são EM BREVE até os dados existirem (Fases 4, 5 e 6).
+        **→ Virou o Dashboard do admin em 29/09/2026** (`/dashboard`, decisão do operador) e
+        saiu do menu; os 4 blocos são EM BREVE até os dados existirem (Fases 4, 5 e 6).
       - **Trilhas Admin:** a lista das trilhas curadas e um editor **no mesmo jeito do curso**
         (passos em ordem de preenchimento): nome, idioma, descrição, **imagem da trilha** (campo
         novo), módulos por competência (cada um com o seu **"Ao terminar, você sabe…"**, visto
@@ -1136,6 +1140,18 @@ tornada executável — não uma lista nova):
       login (conferido no Better Auth 1.7.5 instalado). Mutação: admin mandado ao Início do aluno,
       relatório EM BREVE virando link, Início do aluno de volta ao menu do admin — as três
       reprovam.
+      **Refinado pelo operador no mesmo dia (item abaixo):** o Início voltou a ser um só.
+- [x] **A plataforma é uma só: Início em `/inicio` para todos + "Dashboard" do admin**
+      *(decisão do operador, 29/09/2026 — refina o item acima)*: o Início é o painel do aluno,
+      o mesmo para o aluno e para o admin, que testa por ele tudo o que o aluno faz; todo mundo
+      cai nele depois de entrar. O painel do admin passa a `/dashboard`, no item **"Dashboard"**
+      logo antes de Cursos Admin (o que vem antes é do aluno; dali para baixo, administrativo),
+      com o título "Dashboard". `/aluno/inicio` → `/inicio` e `/admin` → `/dashboard`
+      redirecionam (`RotasAntigas.tsx`, que antes era `RotasAntigasDoAluno.tsx`); `/admin/cursos`
+      e o resto não mudam. **Conferido no código:** o admin já usa tudo do lado do aluno — assiste
+      pela rota de admin (vê até rascunho) e salva e edita trilhas como qualquer pessoa logada.
+      Mutação: admin mandado ao Dashboard no login, sem o redirecionamento de `/admin`, e o
+      Início escondido do admin — as três reprovam.
 - [x] **As telas do aluno passam para `/aluno/*`** *(decisão do operador, 28/09/2026, era a P15)*:
       `/inicio` → `/aluno/inicio`, `/conta` → `/aluno/conta` (com as subpáginas),
       `/minhas-trilhas` → `/aluno/minhas-trilhas`. Os endereços antigos **redirecionam** para os
@@ -2858,6 +2874,12 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       do `LessonProgress`). Leitura do admin, **nunca** no site.
 - [ ] **A avaliação no cartão do admin** — só depois de decidir a P27: a nota planejada é uma por
       aluno e geral, não por curso.
+- [ ] **O progresso também funciona para o ADMIN** *(consequência da decisão do operador de
+      29/09/2026: a plataforma é uma só, e ele testa tudo como aluno sem trocar de conta)*: "marcar
+      como vista", o Continue estudando e as conclusões não podem depender só de assinatura ativa
+      — o admin não tem assinatura. **Sem** pôr `role === admin` dentro de `temAcessoAtivo()`
+      (`CLAUDE.md` → Access Architecture): o admin entra por uma regra própria, como já faz na
+      aula.
 - [ ] **Tirar o EM BREVE do que espera o progresso** *(menu novo do aluno, 29/09/2026)*: o bloco
       **Continue estudando** do Início e **Em andamento** e **Concluídos** em Meus estudos (nível 2
       e cartões da tela). O que cada um mostra é decisão do operador na hora de construir.

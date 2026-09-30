@@ -408,7 +408,7 @@ NEVER pass a secret as a CLI argument or read one back into the transcript. Comm
 > **REGRA, uma linha:** **rota pública = HTML montado no servidor. Qualquer coisa atrás de login = React SPA.** A fronteira é a mesma do `temAcessoAtivo()` — o que o crawler pode ver, o servidor desenha; o que exige sessão, o React desenha.
 
 - **Rotas públicas (template no servidor, ZERO React, zero hidratação):** `/` · `/cursos` · `/curso/:slug` · `/trilha/:slug` · `/certificado/:publicId` · `/assinar` (topo informativo; o Payment Element em si é React) · páginas legais — **e o equivalente de cada uma sob `/en`** (ver *Idiomas*).
-- **Rotas privadas (React SPA como hoje):** tudo sob `/aluno/*` e `/admin/*` — player, JilsonAI, progresso, gestão de assinatura.
+- **Rotas privadas (React SPA como hoje):** tudo sob `/aluno/*` e `/admin/*`, **mais `/inicio` e `/dashboard`** (decisão do operador, 29/09/2026) — player, JilsonAI, progresso, gestão de assinatura. Esses dois são endereços curtos **atrás de login**, não vitrine.
 - **Por que sem React no lado público:** hidratação é a principal fonte de dor em SSR de React, e uma página de curso não é app — é buscar do banco e desenhar. FAQ é `<details>/<summary>`, card é `div`, vídeo de intro é iframe do Bunny, "assinar" é link. Sem React ali essa classe inteira de bug não existe, e as páginas de marketing carregam **sem bundle JS**.
 - **A consistência visual mora no Tailwind, não nos componentes** — mesmo config, mesmos tokens, mesma marca. shadcn continua valendo do lado privado, onde há interação de verdade.
 - **NEXT.JS: PROPOSTO E REJEITADO (Ago 2026).** A superfície pública é pequena e read-only o bastante para ser template de servidor, e Next.js reescreveria o app privado, que não ganha nada com SEO. *Raciocínio completo e gatilho de reabertura: `decisions-archive.md`, Ago 2026 (12b).*
@@ -426,8 +426,8 @@ faria as duas coisas mal — o visitante veria cromo de app, e o aluno não veri
 | Papel | Endereço | Como é desenhada |
 |---|---|---|
 | Vitrine | `/cursos` · `/trilhas` · `/curso/:slug` · `/trilha/:slug` (+ `/en/…`) | template de **servidor** |
-| Ferramenta do aluno | `/aluno/*` | **React**, dentro do shell |
-| Painel do operador | `/admin/*` | **React**, dentro do shell |
+| Ferramenta do aluno | `/inicio` · `/aluno/*` | **React**, dentro do shell |
+| Painel do operador | `/dashboard` · `/admin/*` | **React**, dentro do shell |
 
 **O endereço CURTO é da vitrine, não do aluno** — é ele que o Google indexa e que o aluno
 compartilha, e slug de catálogo é permanente (ver *Slug de catálogo é PERMANENTE*).
@@ -441,10 +441,12 @@ são hoje páginas **React provisórias** (`CatalogPage.tsx`), que fazem os dois
 vezes. Enquanto isso, **não investir acabamento nelas** (`design-lab/GEMINI.md` § 0).
 
 **FEITO (29/09/2026; decisão do operador de 28/09):** as telas do aluno moram em `/aluno/*`
-(`/aluno/inicio`, `/aluno/conta`, `/aluno/minhas-trilhas`). Os endereços antigos **redirecionam**,
-mantendo o resto do caminho — as rotas estão em
-`client/src/components/auth/RotasAntigasDoAluno.tsx`, com teste. **Tela nova do aluno nasce sob
-`/aluno/`**; não crie rota nova no endereço curto, que é da vitrine.
+(`/aluno/conta`, `/aluno/minhas-trilhas`, `/aluno/meus-estudos`…). **Duas exceções, decididas
+por ele em 29/09:** o **Início é `/inicio`**, um só para o aluno e para o admin (a plataforma é
+uma só: o admin testa ali tudo o que o aluno faz), e o painel do admin é o **`/dashboard`**. Os
+endereços antigos **redirecionam** — `/conta`, `/minhas-trilhas`, `/aluno/inicio` e `/admin` —, e
+as rotas estão em `client/src/components/auth/RotasAntigas.tsx`, com teste. **Tela nova do aluno
+nasce sob `/aluno/`**; não crie outra rota no endereço curto, que é da vitrine.
 
 ### A home pública JÁ EXISTE — onde ela mora e como se mexe nela *(set/2026)*
 
@@ -513,7 +515,7 @@ qualquer template em `server/src/views/**` → ler aquela seção.
 ### Indexação (a política; o checklist por rota é da Fase 3 no plano)
 
 - Toda rota pública emite, **no HTML da primeira resposta**: `<title>` e `description` próprios da página, Open Graph completo, `canonical` absoluto e os blocos JSON-LD. **É isso — e só isso — que o crawler do LinkedIn e do WhatsApp leem.**
-- **`noindex` obrigatório** em `/aluno/*` e `/admin/*`, via meta e via `robots.txt`. Área de membro nunca é indexada.
+- **`noindex` obrigatório** em `/aluno/*`, `/admin/*`, `/inicio` e `/dashboard`, via meta e via `robots.txt`. Área de membro nunca é indexada.
 - **`sitemap.xml` é gerado do banco** (rota do servidor, não arquivo estático) e **respeita o mesmo filtro das leituras públicas** — `DRAFT`/`ARCHIVED` nunca entram.
 - **`robots.txt` — POLÍTICA DECIDIDA: permitir crawler de busca E de treino.** Os de busca (`OAI-SearchBot`, `Claude-SearchBot`, `PerplexityBot`) respondem em tempo real, e bloqueá-los tira a escola das respostas de IA — que é o canal desejado. Bloquear os de treino **protege nada**: o ativo é o **vídeo**, que vive no Bunny. *Raciocínio e gatilho: `decisions-archive.md`, Ago 2026 (12d).*
 - **Botão de compartilhar depende das metas acima.** Share sem OG tags compartilha card genérico — **as metas vêm primeiro, sempre.**

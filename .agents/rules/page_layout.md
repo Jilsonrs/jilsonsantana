@@ -1,6 +1,6 @@
 # Padrão de Layout (Área Logada / Dashboard)
 
-Este projeto utiliza um padrão de interface de usuário rigoroso para **todas as páginas da ÁREA LOGADA da aplicação** (tanto no painel administrativo `/admin`, quanto nas telas do painel do aluno `/aluno/inicio`, `/aluno/conta`, `/aluno/meus-estudos`, `/aluno/minhas-trilhas`, etc).
+Este projeto utiliza um padrão de interface de usuário rigoroso para **todas as páginas da ÁREA LOGADA da aplicação** (tanto no painel administrativo `/dashboard` e `/admin/*`, quanto nas telas do aluno `/inicio`, `/aluno/conta`, `/aluno/meus-estudos`, `/aluno/minhas-trilhas`, etc).
 
 **As páginas públicas NÃO usam estes componentes do dashboard.** A home (`/` e `/en`) é HTML montado no servidor, com padrão próprio de vitrine. O catálogo (`/cursos`, `/trilhas`) e as páginas de detalhe (`/curso/:slug`, `/trilha/:slug`) seguem o mesmo destino, mas **hoje ainda são React provisório e usam `PageContainer`**. Isso fica até serem trocadas pelo template de servidor (Bloco C5). Não invista acabamento nelas.
 

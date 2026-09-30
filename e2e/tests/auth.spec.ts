@@ -9,22 +9,17 @@ const MEMBER = {
   password: process.env.SEED_MEMBER_PASSWORD ?? "",
 };
 
-// Cada papel cai no SEU Início (decisão do operador, 29/09/2026): o aluno no
-// painel dele, o admin no painel da escola.
-async function login(
-  page: Page,
-  creds: { email: string; password: string },
-  papel: "aluno" | "admin" = "aluno",
-) {
+/** O Início exato — `/\/inicio$/` também casaria com o antigo /aluno/inicio. */
+const INICIO = /^https?:\/\/[^/]+\/inicio$/;
+
+// TODO MUNDO cai no Início depois de entrar, inclusive o admin (decisão do
+// operador, 29/09/2026: a plataforma é uma só).
+async function login(page: Page, creds: { email: string; password: string }) {
   await page.goto("/login");
   await page.getByLabel("E-mail").fill(creds.email);
   await page.getByLabel("Senha").fill(creds.password);
   await page.getByRole("button", { name: "Entrar" }).click();
-  if (papel === "admin") {
-    await page.waitForURL("**/admin");
-    return;
-  }
-  await page.waitForURL("**/aluno/inicio");
+  await page.waitForURL((url) => url.pathname === "/inicio");
   // O Início passou a buscar as trilhas salvas (29/09/2026). Espera o DADO, não
   // o navegador: clicar durante uma busca em andamento foi a causa provável da
   // instabilidade do teste de sair (plano → Bloco S, achado (b)).
@@ -40,12 +35,12 @@ test("unauthenticated visit to /conta redirects to /login", async ({ page }) => 
   await expect(page).toHaveURL(/\/login$/);
 });
 
-test("unauthenticated visit to /admin redirects to /login", async ({ page }) => {
-  await page.goto("/admin");
+test("unauthenticated visit to /dashboard redirects to /login", async ({ page }) => {
+  await page.goto("/dashboard");
   await expect(page).toHaveURL(/\/login$/);
 });
 
-test("member reaches /aluno/conta but is blocked from /admin", async ({ page }) => {
+test("member reaches /aluno/conta but is blocked from /dashboard", async ({ page }) => {
   await login(page, MEMBER);
 
   // Alcança a conta pelo MENU DA FOTO, no canto superior direito — não pela URL.
@@ -57,25 +52,25 @@ test("member reaches /aluno/conta but is blocked from /admin", async ({ page }) 
   // `heading` desambigua do link do cabeçalho, que tem o mesmo texto.
   await expect(page.getByRole("heading", { name: "Minha conta" })).toBeVisible();
 
-  await page.goto("/admin");
+  await page.goto("/dashboard");
   await expect(page).toHaveURL(/\/aluno\/conta$/);
 });
 
-test("admin reaches /admin", async ({ page }) => {
-  // O login já leva o admin ao painel dele; o `goto` prova também o acesso direto.
-  await login(page, ADMIN, "admin");
+test("admin reaches /dashboard", async ({ page }) => {
+  await login(page, ADMIN);
+  // O endereço ANTIGO de propósito: /admin leva ao /dashboard (29/09/2026).
   await page.goto("/admin");
 
   // Duas asserções, e a primeira é a que carrega o teste: o admin NÃO é
   // redirecionado (o member, no teste acima, é mandado para /aluno/conta). Sem ela,
   // uma tela de admin vazia passaria.
-  await expect(page).toHaveURL(/\/admin$/);
+  await expect(page).toHaveURL(/\/dashboard$/);
   // Conteúdo que só existe atrás do AdminRoute. `getByRole` em vez de texto
   // solto: sobrevive a mudança de copy, que é justamente o que quebrou esta
   // spec — ela esperava "Área administrativa", texto renomeado para "Admin" no
   // Bloco 6a e não detectado por meses, porque o E2E não rodava no CI.
-  // O título virou "Início" em 29/09/2026: /admin é o Início do admin.
-  await expect(page.getByRole("heading", { level: 1, name: "Início" })).toBeVisible();
+  // Desde 29/09/2026 o painel do admin é o Dashboard, em /dashboard.
+  await expect(page.getByRole("heading", { level: 1, name: "Dashboard" })).toBeVisible();
   // Escopado ao conteúdo (`main`) porque a barra lateral também tem um item
   // "Cursos" — os dois apontam para o mesmo lugar, então não é ambiguidade
   // para o aluno, só para o seletor. E o escopo devolve a INTENÇÃO original
@@ -92,13 +87,13 @@ test("admin reaches /admin", async ({ page }) => {
 // deslogado — e ele desiste antes de abrir chamado.
 test("session survives a page reload", async ({ page }) => {
   await login(page, MEMBER);
-  await expect(page).toHaveURL(/\/aluno\/inicio$/);
+  await expect(page).toHaveURL(INICIO);
 
   await page.reload();
 
   // Segue logado: continua no início (não foi jogado para /login) e o menu da
   // conta — que só aparece para quem tem sessão — continua lá.
-  await expect(page).toHaveURL(/\/aluno\/inicio$/);
+  await expect(page).toHaveURL(INICIO);
   await expect(page.getByRole("button", { name: "Abrir o menu da conta" })).toBeVisible();
 });
 

@@ -19,7 +19,7 @@ function render(route: string, usuario: Partial<typeof ALUNO> & { image?: string
 
 describe("SecondaryNav — só aparece quando tem o que mostrar", () => {
   it("não renderiza onde a seção não tem subitens", () => {
-    render("/aluno/inicio");
+    render("/inicio");
     expect(screen.queryByRole("complementary")).toBeNull();
   });
 

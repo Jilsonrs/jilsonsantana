@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
-import { LANGUAGES, Role, loginSchema, type LanguageCode, type LoginInput } from "@jilson/core";
+import { LANGUAGES, loginSchema, type LanguageCode, type LoginInput } from "@jilson/core";
 import { signIn, useSession } from "@/lib/auth-client";
 import { useT, useTrocarIdioma } from "@/lib/language";
 import { Button } from "@/components/ui/button";
@@ -10,13 +10,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-// Depois de entrar, cada um cai no SEU início — nunca na conta (destino de
-// tarefa) nem no catálogo (uma seção, não o começo): o aluno no painel dele, o
-// admin no painel da escola (decisão do operador, 29/09/2026). É o único lugar
-// que decide isso.
-function destinoPosLogin(papel: string | null | undefined): string {
-  return papel === Role.ADMIN ? "/admin" : "/aluno/inicio";
-}
+// Depois de entrar, TODO MUNDO cai no Início — nunca na conta (destino de
+// tarefa) nem no catálogo (uma seção, não o começo). Inclusive o admin: a
+// plataforma é uma só, e o Dashboard dele fica a um clique no menu (decisão do
+// operador, 29/09/2026). Este é o único lugar que aponta para lá.
+const POS_LOGIN = "/inicio";
 
 // O idioma que veio no ENDEREÇO (`/login?lang=en`, o "Entrar" da home em
 // inglês). Só ele muda a conta: quem entra pelo /login normal não muda de idioma.
@@ -40,16 +38,13 @@ export function LoginPage() {
 
   // Already signed in -> skip the form.
   if (!isPending && session) {
-    return <Navigate to={destinoPosLogin(session.user.role)} replace />;
+    return <Navigate to={POS_LOGIN} replace />;
   }
 
   async function onSubmit(values: LoginInput) {
     setFormError(null);
-    // O papel vem na própria resposta do login (o Better Auth devolve o usuário
-    // com os campos extras) — sem esperar a sessão ser buscada de novo.
-    let papel: string | null | undefined;
     try {
-      const { data, error } = await signIn.email({
+      const { error } = await signIn.email({
         email: values.email,
         password: values.password,
       });
@@ -64,7 +59,6 @@ export function LoginPage() {
         }
         return;
       }
-      papel = data?.user.role;
     } catch (err) {
       // `signIn.email` normalmente RESOLVE com `{ error }`, mas numa queda de
       // rede ela pode REJEITAR. Sem este catch a rejeição escapava do handler:
@@ -86,7 +80,7 @@ export function LoginPage() {
         console.error("Falha ao gravar o idioma no login:", err);
       }
     }
-    navigate(destinoPosLogin(papel), { replace: true });
+    navigate(POS_LOGIN, { replace: true });
   }
 
   // Numa credencial recusada o servidor diz "e-mail OU senha incorretos" — ele
