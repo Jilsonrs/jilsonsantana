@@ -409,6 +409,13 @@ o banco guarda é a duração de **cada** aula — `Lesson.videoDurationSeconds`
 informa quando o vídeo fica pronto. A do curso é sempre a soma. No topo do editor, a soma é de
 todo vídeo enviado, inclusive rascunho, por decisão do operador.)*
 
+**A duração no cartão do catálogo e na página do curso** *(decisão do operador, 30/09/2026)*:
+"2 módulos · 4 aulas · **1h 05min**" — o mesmo formato nos dois idiomas, e **"0min"** quando o
+curso ainda não tem vídeo (como já mostra "0 aulas"). Aqui a soma é **só do que o aluno vê**:
+aula de vídeo publicada em módulo publicado, a mesma cadeia do "4 aulas" (leitura pública nunca
+soma rascunho). A duração de cada aula não sai na resposta pública, só o total. **A vitrine
+definitiva (C5) leva isso** quando trocar as páginas provisórias.
+
 **Decisões de 28/09/2026 sobre a página e o certificado** (operador): a seção do autor é **a mesma
 da home** (`home.author`, uma edição serve às duas) · etiqueta **"Novo"**, **sem** número de alunos
 e **sem** "Atualizado em" · as **trilhas do curso** no lugar de categorias, e **outros cursos da

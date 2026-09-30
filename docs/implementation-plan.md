@@ -175,9 +175,11 @@
 > curso, **campo já salvo volta a poder ficar vazio** (subtítulo, descrição, nível, imagem, vídeo
 > de apresentação e a camada do módulo); apagar o ID do vídeo apaga o vídeo no Bunny. E a **P19
 > fechou**: o vídeo de apresentação reenviado toca. Ver Bloco E.
-> **No `dev` (29/09, esperando o "publica"):** a **duração do curso no topo do editor** ("2h 35min
-> de vídeo", soma de todo vídeo enviado), com a migration `lesson_video_duration`, que a
-> produção aplica pelo pre-deploy no próximo "publica". Ver Bloco E.
+> **PUBLICADO em 30/09 (`main` = `8aff7eb`, CI verde nos dois jobs, deploy ok):** a **duração do
+> curso no topo do editor** ("2h 35min de vídeo", soma de todo vídeo enviado), com a migration
+> `lesson_video_duration`, aplicada na produção pelo pre-deploy. Ver Bloco E.
+> **No `dev` (30/09, esperando o "publica"):** a duração também no **cartão do catálogo** e na
+> **página do curso** ("2 módulos · 4 aulas · 1h 05min"; só aulas publicadas; "0min" sem vídeo).
 > **Registrado no fim da sessão de 29/09 (só documentos, no `dev`):** o mapa do que falta nos 7
 > passos do editor (Bloco E, depois da etapa 4), com um **achado novo** (campo já salvo não volta a
 > ficar vazio); o **Live Stream** do Bunny em acesso antecipado (`bunny.md` §6, decisão 8,
@@ -1994,6 +1996,15 @@ própria**.*
       Passo 0 no branch `dev`: contagens iguais (só a migration +1 e as sessões do login), 0
       tabelas sem RLS, login 200 (admin e aluno), *No difference detected*. Mutação: a soma sem
       rascunho, a troca sem zerar a duração e o formato sem o "1min" — as três reprovam.
+- [x] **A duração também no catálogo e na página do curso** *(decisões do operador, 30/09/2026)*:
+      "2 módulos · 4 aulas · **1h 05min**", "0min" sem vídeo, nos dois lugares. As leituras
+      públicas (`GET /api/courses` e `/api/courses/:slug`) devolvem `videoSeconds`, a soma **só
+      das aulas de vídeo publicadas em módulo publicado** (a mesma cadeia do "4 aulas"); a
+      duração de cada aula não sai. `horasEMinutos` (`lib/duracao-do-curso.ts`) é o formato
+      curto; o topo do editor acrescenta "de vídeo". Testes: servidor (`course-duration.test.ts`,
+      4 casos) e tela. Mutação: a lista somando rascunho, a página somando módulo em rascunho e
+      o cartão sem a duração — as três reprovam. *(Estas duas páginas são provisórias: o C5 leva
+      a duração para o template — `courses.md`.)*
 
 **Vai para outros blocos (anotado lá quando eles abrirem):**
 - **Página do curso (vitrine, depois do C5):** a seção do autor é **a mesma da home**
@@ -2319,7 +2330,9 @@ própria**.*
 
 - [ ] **Passo 0 (operador):** o que a vitrine mostra, e o que a tela do aluno mostra **a mais**.
       Direção já dada por ele, a detalhar: progresso por curso · "continue de onde parou" no topo ·
-      o botão sendo **Continuar** em vez de **Assinar**.
+      o botão sendo **Continuar** em vez de **Assinar**. **Já decidido (30/09/2026):** o cartão e
+      a página do curso mostram a duração ("2 módulos · 4 aulas · 1h 05min", "0min" sem vídeo) —
+      `courses.md`; o servidor já devolve `videoSeconds`.
 - [ ] **Mock na `design-lab/`** (parceiro de design) → **transposição** para template de servidor
       (mesma marcação, mesmas classes) → **formatação** pelo parceiro. É o caminho que a home já
       percorreu inteiro.

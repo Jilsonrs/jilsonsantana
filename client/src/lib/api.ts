@@ -44,6 +44,8 @@ export type CourseCard = {
   displayOrder: number;
   moduleCount: number;
   lessonCount: number;
+  /** A soma dos vídeos PUBLICADOS, em segundos (operador, 30/09/2026). */
+  videoSeconds: number;
 };
 
 export type CourseLesson = { id: number; title: string; tags: string[]; displayOrder: number };
@@ -80,6 +82,8 @@ export type CourseDetail = {
   modules: CourseModule[];
   moduleCount: number;
   lessonCount: number;
+  /** A soma dos vídeos PUBLICADOS, em segundos (operador, 30/09/2026). */
+  videoSeconds: number;
 };
 
 export type TrilhaCard = {

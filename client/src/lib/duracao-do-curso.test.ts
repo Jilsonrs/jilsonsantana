@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import type { AdminLesson, AdminModule } from "@/lib/api";
-import { segundosDeVideo, textoDaDuracao } from "./duracao-do-curso";
+import { horasEMinutos, segundosDeVideo, textoDaDuracao } from "./duracao-do-curso";
 
 // Função pura, sem I/O e sem tela: o caso em que o repo aceita teste unitário
 // (CLAUDE.md → Testing).
@@ -72,5 +72,18 @@ describe("textoDaDuracao", () => {
   // Com vídeo enviado, o topo nunca diz "0min".
   it("um vídeo curto (menos de 1 min) conta como 1min", () => {
     expect(textoDaDuracao(20)).toBe("1min de vídeo");
+  });
+});
+
+// O formato curto do catálogo e da página do curso: "2 módulos · 4 aulas · 1h 05min"
+// (operador, 30/09/2026), igual nos dois idiomas.
+describe("horasEMinutos", () => {
+  it.each([
+    [0, "0min"],
+    [45 * 60, "45min"],
+    [3600 + 5 * 60, "1h 05min"],
+    [20, "1min"],
+  ])("%i segundos → %s", (segundos, texto) => {
+    expect(horasEMinutos(segundos)).toBe(texto);
   });
 });
