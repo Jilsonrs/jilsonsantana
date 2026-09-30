@@ -93,3 +93,51 @@ describe("a página do curso", () => {
     expect(res.body.videoSeconds).toBe(0);
   });
 });
+
+// A LISTA DO ADMIN (operador, 30/09/2026: "2 módulos · 5 aulas · 1h 05min" também
+// ali): soma TODO vídeo enviado, inclusive rascunho, como o topo do editor e como
+// o "5 aulas" da mesma linha. Aula de texto e aula sem vídeo não contam.
+describe("a lista de cursos do admin", () => {
+  const ADMIN_SLUG = `admin${S}`;
+  const V = "aaaaaaaa-2cda-46be-b47d-1118ad7c2ffe";
+
+  it("soma todo vídeo enviado, inclusive de aula e módulo em rascunho", async () => {
+    await prisma.course.create({
+      data: {
+        slug: ADMIN_SLUG,
+        title: "Admin",
+        language: "PT",
+        modules: {
+          create: [
+            {
+              title: "Publicado",
+              status: "PUBLISHED",
+              lessons: {
+                create: [
+                  { title: "publicada", status: "PUBLISHED", bunnyVideoId: V, videoDurationSeconds: 600 },
+                  { title: "rascunho", status: "DRAFT", bunnyVideoId: V, videoDurationSeconds: 300 },
+                  { title: "texto", kind: "TEXT", videoDurationSeconds: 999 },
+                  { title: "sem vídeo", videoDurationSeconds: 999 },
+                ],
+              },
+            },
+            {
+              title: "Rascunho",
+              lessons: { create: [{ title: "em módulo rascunho", bunnyVideoId: V, videoDurationSeconds: 3000 }] },
+            },
+          ],
+        },
+      },
+    });
+    const login = await request(app).post("/api/auth/sign-in/email").send({
+      email: process.env.SEED_ADMIN_EMAIL,
+      password: process.env.SEED_ADMIN_PASSWORD,
+    });
+    const cookies = (login.headers["set-cookie"] as unknown as string[] | undefined) ?? [];
+
+    const res = await request(app).get("/api/admin/courses").set("Cookie", cookies);
+
+    expect(res.status).toBe(200);
+    expect((res.body as Cartao[]).find((c) => c.slug === ADMIN_SLUG)?.videoSeconds).toBe(3900);
+  });
+});

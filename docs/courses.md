@@ -406,8 +406,8 @@ digitados) e **manuais**. Manter os manuais poucos é o que sustenta o operador 
 **Derivados, nunca coluna:** carga horária e número de aulas (Σ das aulas), o agrupamento por
 camada (vem das camadas marcadas), a metadata strip. *(Convenção de engenharia, 29/09/2026: o que
 o banco guarda é a duração de **cada** aula — `Lesson.videoDurationSeconds`, o `length` que o Bunny
-informa quando o vídeo fica pronto. A do curso é sempre a soma. No topo do editor, a soma é de
-todo vídeo enviado, inclusive rascunho, por decisão do operador.)*
+informa quando o vídeo fica pronto. A do curso é sempre a soma. No topo do editor e na lista de cursos do admin, a soma é de
+todo vídeo enviado, inclusive rascunho, por decisão do operador (29–30/09).)*
 
 **A duração no cartão do catálogo e na página do curso** *(decisão do operador, 30/09/2026)*:
 "2 módulos · 4 aulas · **1h 05min**" — o mesmo formato nos dois idiomas, e **"0min"** quando o

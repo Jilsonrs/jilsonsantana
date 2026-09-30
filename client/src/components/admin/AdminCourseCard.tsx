@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import type { AdminCourseCard as Curso } from "@/lib/api";
 import { preenchimentoDoCurso, ROTULO_DO_STATUS } from "@/lib/course-completeness";
+import { horasEMinutos } from "@/lib/duracao-do-curso";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -53,7 +54,7 @@ export function AdminCourseCard({ curso, aoExcluir }: { curso: Curso; aoExcluir:
                   </Badge>
                 )}
                 <span className="flex items-center gap-2 font-mono text-xs tracking-wide text-muted-foreground before:text-primary before:font-bold before:content-['—']">
-                  {curso.moduleCount} módulos · {curso.lessonCount} aulas
+                  {curso.moduleCount} módulos · {curso.lessonCount} aulas · {horasEMinutos(curso.videoSeconds)}
                 </span>
               </div>
             </div>

@@ -331,6 +331,7 @@ exceto o item 4, que é página pública.
    link, e a etiqueta do admin fica em português.
 16. **A duração do curso** *(29–30/09, decisões do operador)*. No **topo do editor**, embaixo do
    título: "2h 35min de vídeo" (é a `description` do `PageHeader` em `CourseEditorLayout.tsx`).
+   Na **lista de cursos do admin** (`AdminCourseCard.tsx`, 30/09): "2 módulos · 5 aulas · 1h 05min".
    No **cartão do catálogo** e na **página do curso**: "2 módulos · 4 aulas · 1h 05min" — o
    acabamento ali vale (§ 2, "Públicas e do aluno ao mesmo tempo", decisão de 30/09). **Tem
    teste:** o texto e o formato ("0min" sem vídeo).
