@@ -201,7 +201,7 @@
 >
 > **PRÓXIMO PASSO: implementação, e QUAL BLOCO é decisão do operador.** Candidatos, com o que cada
 > um precisa:
-> - ~~**Bloco U, etapa 3**~~ — **publicada em 28/09** (ver acima); falta só a prova no ar (P19).
+> - ~~**Bloco U, etapa 3**~~ — **publicada em 28/09**; prova no ar fechada em 29/09 (a P19).
 > - ~~**Bloco E, etapa 1**~~ — **feita em 28/09**, no `dev` (ver acima).
 > - ~~**Telas do aluno para `/aluno/*`**~~ — **publicada em 29/09**, com o menu novo (ver acima).
 > - **O que falta nos 7 passos do editor do curso** (Bloco E, o mapa depois da etapa 4) — o
@@ -1952,7 +1952,7 @@ própria**.*
 | 2 Para quem é | pronto | — |
 | 3 Conteúdo | pronto | o **Quiz** (etapa própria, com decisões do operador; no "+" aparece EM BREVE) |
 | 4 Legendas | EM BREVE | a **etapa 3** inteira (tela própria, `.vtt` por vídeo) |
-| 5 Mídia e destaques | pronto | a P19 (o vídeo de apresentação reenviado tocando — `pendencias.md`) |
+| 5 Mídia e destaques | pronto | — *(a P19 fechou em 29/09: o vídeo de apresentação reenviado toca)* |
 | 6 Mensagens | EM BREVE | a **etapa 4** inteira (o sino + boas-vindas e parabéns) |
 | 7 Publicar | pronto | o **link para abrir a página pública do curso** (o Visualizar), que espera o **C5** |
 

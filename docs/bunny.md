@@ -99,7 +99,10 @@ vídeo de aula dava **401**. *Fato da doc do Bunny:* o 401 na criação quer diz
 chave da conta em vez da biblioteca, **ou chave de outra biblioteca**. O operador trocou o ID e a
 token key para os da 762605 e **apagou** a biblioteca de apresentação; o envio da aula passou a
 funcionar. **Consequência:** o vídeo de apresentação que existia se perdeu com a biblioteca e
-precisa ser enviado de novo pelo admin (`pendencias.md`, P19). **Diagnóstico para a próxima vez:**
+precisou ser enviado de novo pelo admin. **✅ Prova no ar fechada em 29/09/2026** (a antiga P19,
+confirmada pelo operador): o vídeo das aulas envia, toca, mostra miniatura, nome e duração, a
+troca apaga o antigo no Bunny, e **o vídeo de apresentação reenviado toca**. **Diagnóstico para a
+próxima vez:**
 o número da biblioteca em uso aparece no endereço público do player da apresentação, sem precisar
 de chave nenhuma.
 
