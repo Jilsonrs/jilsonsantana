@@ -23,6 +23,7 @@ const course: AdminCourseCard = {
   displayOrder: 0,
   moduleCount: 2,
   lessonCount: 3,
+  videoSeconds: 3900, // 1h 05min
   thumbnailUrl: null,
   hasIntroVideo: false,
   descriptionWordCount: 0,
@@ -109,6 +110,19 @@ describe("AdminCoursesPage — idioma", () => {
 // O cartão do curso (plano aprovado pelo operador em 27/09/2026): capa, status
 // em português, os números que virão na Fase 5 e o preenchimento.
 describe("AdminCoursesPage — o cartão do curso", () => {
+  // A duração também na lista do admin (operador, 30/09/2026): "2 módulos · 5
+  // aulas · 1h 05min", somando todo vídeo enviado, como o topo do editor.
+  it("a linha das contagens termina com a duração", async () => {
+    renderWithProviders(<AdminCoursesPage />);
+    expect(await screen.findByText("2 módulos · 3 aulas · 1h 05min")).toBeTruthy();
+  });
+
+  it("curso sem vídeo mostra 0min", async () => {
+    adminGetCourses.mockResolvedValue([{ ...course, videoSeconds: 0 }]);
+    renderWithProviders(<AdminCoursesPage />);
+    expect(await screen.findByText("2 módulos · 3 aulas · 0min")).toBeTruthy();
+  });
+
   const cartao = (titulo: string) => screen.findByRole("article", { name: titulo });
 
   it("com capa: a imagem do curso; sem capa: \"Sem imagem\"", async () => {

@@ -2008,6 +2008,11 @@ própria**.*
       4 casos) e tela. Mutação: a lista somando rascunho, a página somando módulo em rascunho e
       o cartão sem a duração — as três reprovam. *(O C5 leva a duração para o template de
       servidor, junto com o desenho transposto — `courses.md`.)*
+- [x] **A duração também na lista de cursos do admin** *(operador, 30/09/2026)*: "2 módulos · 5
+      aulas · 1h 05min" no cartão de Cursos Admin, somando **todo vídeo enviado, inclusive
+      rascunho** — como o topo do editor e como o "5 aulas" da mesma linha. `GET
+      /api/admin/courses` devolve `videoSeconds`. Mutação: o cartão sem a duração e a soma
+      ignorando rascunho — as duas reprovam.
 
 **Vai para outros blocos (anotado lá quando eles abrirem):**
 - **Página do curso (vitrine, depois do C5):** a seção do autor é **a mesma da home**

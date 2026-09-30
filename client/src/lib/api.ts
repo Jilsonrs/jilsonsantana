@@ -169,6 +169,8 @@ export type AdminCourseCard = {
   displayOrder: number;
   moduleCount: number;
   lessonCount: number;
+  /** Todo vídeo enviado, em segundos, inclusive rascunho (operador, 30/09/2026). */
+  videoSeconds: number;
   // O PREENCHIMENTO do cartão do admin (27/09/2026). O vídeo vem como sim/não e a
   // descrição como número de palavras (curta abaixo de 200 — 28/09); aulas
   // publicadas contam a cadeia (aula publicada em módulo publicado).

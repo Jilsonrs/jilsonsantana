@@ -158,7 +158,12 @@ router.get("/admin/courses", requireAdmin, async (_req, res) => {
       thumbnailUrl: true,
       introVideoId: true,
       description: true,
-      modules: { select: { status: true, lessons: { select: { status: true, kind: true, bunnyVideoId: true } } } },
+      modules: {
+        select: {
+          status: true,
+          lessons: { select: { status: true, kind: true, bunnyVideoId: true, videoDurationSeconds: true } },
+        },
+      },
     },
   });
   // O cartão do admin (lista de cursos, 27/09/2026) mostra o PREENCHIMENTO do
@@ -169,6 +174,13 @@ router.get("/admin/courses", requireAdmin, async (_req, res) => {
     ...comIdioma(course),
     moduleCount: modules.length,
     lessonCount: modules.reduce((sum, m) => sum + m.lessons.length, 0),
+    // A duração (operador, 30/09/2026: "2 módulos · 5 aulas · 1h 05min" também
+    // aqui): soma TODO vídeo enviado, como o topo do editor e como o
+    // lessonCount desta mesma linha, que conta rascunho. Tela do admin.
+    videoSeconds: modules
+      .flatMap((m) => m.lessons)
+      .filter((l) => l.kind === LessonKind.VIDEO && l.bunnyVideoId)
+      .reduce((sum, l) => sum + (l.videoDurationSeconds ?? 0), 0),
     // "Publicada" é a CADEIA: aula publicada dentro de módulo publicado.
     publishedLessonCount: modules
       .filter((m) => m.status === PUBLISHED)
