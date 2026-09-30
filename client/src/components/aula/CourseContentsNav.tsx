@@ -27,13 +27,13 @@ function AulaDaLista({ aula, atual }: { aula: AulaNaLista; atual: boolean }) {
         to={`/aluno/aula/${aula.id}`}
         aria-current={atual ? "page" : undefined}
         className={cn(
-          "flex items-start gap-3 border-l-2 px-3 py-2.5 text-sm transition-colors",
-          atual ? "border-primary bg-black/5 font-medium text-foreground" : "border-transparent text-muted-foreground hover:text-foreground",
+          "flex items-start gap-3 rounded-lg px-3 py-2.5 text-sm transition-all duration-200",
+          atual ? "bg-primary/10 font-semibold text-primary" : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
         )}
       >
         <Icone className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
         <span className="sr-only">{aula.kind === LessonKind.TEXT ? t.aula.aulaDeTexto : t.aula.aulaDeVideo}:</span>
-        <span className="flex-1">{aula.title}</span>
+        <span className="flex-1 leading-snug">{aula.title}</span>
         <EtiquetaDeStatus status={aula.status} />
       </Link>
       {aula.temArquivos && <RecursosNaLista lessonId={aula.id} />}
@@ -55,23 +55,25 @@ export function CourseContentsNav({ lessonId }: { lessonId: number }) {
   const { curso } = data;
 
   return (
-    <nav aria-label={t.aula.conteudoDoCurso} className="space-y-2">
-      <p className="px-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">{t.aula.conteudoDoCurso}</p>
-      {curso.modulos.map((modulo) => (
-        <details key={modulo.id} open={modulo.aulas.some((a) => a.id === lessonId)} className="group">
-          <summary className="flex cursor-pointer list-none items-center gap-2 border-b border-border/50 px-2 py-3 font-semibold text-foreground [&::-webkit-details-marker]:hidden">
-            <span className="flex-1">{modulo.title}</span>
-            <EtiquetaDeStatus status={modulo.status} />
-          </summary>
-          <ul className="flex flex-col py-1">
-            {modulo.aulas.map((aula) => (
-              <li key={aula.id}>
-                <AulaDaLista aula={aula} atual={aula.id === lessonId} />
-              </li>
-            ))}
-          </ul>
-        </details>
-      ))}
+    <nav aria-label={t.aula.conteudoDoCurso} className="space-y-4">
+      <p className="px-1 text-xs font-bold uppercase tracking-wider text-muted-foreground/80">{t.aula.conteudoDoCurso}</p>
+      <div className="space-y-3">
+        {curso.modulos.map((modulo) => (
+          <details key={modulo.id} open={modulo.aulas.some((a) => a.id === lessonId)} className="group rounded-2xl border border-border/50 bg-card overflow-hidden shadow-sm transition-all hover:border-border">
+            <summary className="flex cursor-pointer list-none items-center gap-3 bg-muted/20 px-5 py-4 font-semibold text-foreground transition-colors hover:bg-muted/40 [&::-webkit-details-marker]:hidden">
+              <span className="flex-1 font-display tracking-tight text-[1.05rem]">{modulo.title}</span>
+              <EtiquetaDeStatus status={modulo.status} />
+            </summary>
+            <ul className="flex flex-col space-y-1 p-2 pt-1 border-t border-border/30">
+              {modulo.aulas.map((aula) => (
+                <li key={aula.id}>
+                  <AulaDaLista aula={aula} atual={aula.id === lessonId} />
+                </li>
+              ))}
+            </ul>
+          </details>
+        ))}
+      </div>
     </nav>
   );
 }
