@@ -63,13 +63,6 @@ export function CourseDetails({ curso }: { curso: PaginaDaAula["curso"] }) {
         </section>
       )}
 
-      <div className="grid gap-8 sm:grid-cols-2">
-        <Lista titulo={t.curso.requisitos} itens={curso.requirements} />
-        <Lista titulo={t.curso.paraQuem} itens={curso.personas} />
-      </div>
-
-      <LayerSelo camadas={curso.camadas} />
-
       {destaques.length > 0 && (
         <div className="grid gap-6 sm:grid-cols-3">
           {destaques.map((h, i) => (
@@ -77,6 +70,13 @@ export function CourseDetails({ curso }: { curso: PaginaDaAula["curso"] }) {
           ))}
         </div>
       )}
+
+      <div className="grid gap-8 sm:grid-cols-2">
+        <Lista titulo={t.curso.requisitos} itens={curso.requirements} />
+        <Lista titulo={t.curso.paraQuem} itens={curso.personas} />
+      </div>
+
+      <LayerSelo camadas={curso.camadas} />
 
       {perguntas.length > 0 && (
         <section className="space-y-6">
