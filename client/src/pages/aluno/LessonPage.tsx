@@ -5,7 +5,7 @@ import { useSession } from "@/lib/auth-client";
 import { useT } from "@/lib/language";
 import { cn } from "@/lib/utils";
 import { usePaginaDaAula } from "@/lib/pagina-da-aula";
-import { PageContainer, PageHeader } from "@/components/layout/PageLayout";
+import { PageContainer } from "@/components/layout/PageLayout";
 import { CourseContentsNav } from "@/components/aula/CourseContentsNav";
 import { LessonContent } from "@/components/aula/LessonContent";
 import { CourseDetails } from "@/components/aula/CourseDetails";
