@@ -479,6 +479,50 @@ e sem ele você vê o estado de erro em vez da tela.
 de admin. **Peça as credenciais ao operador**; elas não ficam escritas em lugar nenhum do repo.
 Sem login, `/inicio`, `/aluno/conta`, `/dashboard` e `/admin/*` redirecionam para o login.
 
+### Publicar o SEU trabalho visual *(autorizado pelo operador em 30/09/2026)*
+
+O operador autorizou você a **publicar o seu próprio trabalho de acabamento**, sem passar pelo
+Claude: *"atualize o GEMINI.md como ele deve publicar, para ficar no mesmo padrão que você faz"*.
+**Publique quando o operador pedir.** A `main` vai direto para o site no ar (Railway), então o
+caminho é um só, o mesmo que o Claude segue, sem atalho:
+
+1. **Comece do `dev` atualizado:** `git checkout dev` e `git pull`. Nunca trabalhe na `main`.
+2. **Um commit por ajuste**, no `dev`, com a mensagem dizendo o que mudou na tela
+   (ex.: `style(inicio): espaçamento dos blocos do painel`).
+3. **Rode os três gates, UM DE CADA VEZ, e confira que cada um terminou sem erro** (não encadeie
+   com `&&` escondendo qual falhou):
+   ```bash
+   npm run typecheck
+   npm run test        # cliente E servidor; o servidor precisa do Postgres local ligado
+   npm run build
+   ```
+   Se mexeu no CSS da vitrine, rode `npm run css:publico` antes e inclua o `public.css` gerado no
+   commit (regra 10).
+4. **`git push` do `dev`** e espere o **CI do GitHub terminar VERDE nos DOIS jobs**: "Typecheck,
+   test & build" **e** "E2E (Playwright)" (`gh run list --branch dev` mostra). Vermelho = **não
+   publica**: avise o operador.
+5. **Levar para a `main`** (é isto que publica):
+   ```bash
+   git checkout main
+   git pull
+   git merge --no-ff dev -m "Merge dev -> main: <o que mudou, em português>"
+   git push
+   git checkout dev
+   ```
+6. **Confira que chegou no ar:** o CI da `main` verde nos dois jobs (`gh run list --branch main`)
+   e o deploy do Railway concluído. Depois, **diga ao operador** o que foi publicado.
+
+**O que NUNCA fazer para "fazer passar":**
+- editar, pular ou apagar teste — se um teste reprovar e você achar que o erro é do teste, **pare
+  e avise o operador**; o Claude revisa;
+- mexer nos arquivos da §3 (mapa de navegação, dicionário de textos, `server/` fora de `views/`);
+- publicar com qualquer gate vermelho, ou com mudança que não seja visual (comportamento, texto,
+  rota, dado). Isso é trabalho do Claude, com plano aprovado pelo operador.
+
+**Por que o caminho é este:** é o mesmo "dev primeiro, três gates, CI verde, só então a main" do
+`CLAUDE.md` (*Working Method*). A suíte é o que garante que o acabamento não apagou acessibilidade,
+destino de link ou visibilidade por papel — ela reprova e diz qual.
+
 ---
 
 ## 6. A regra que mantém o sistema coerente
