@@ -2,7 +2,7 @@
 
 Este projeto utiliza um padrão de interface de usuário rigoroso para **todas as páginas da ÁREA LOGADA da aplicação** (tanto no painel administrativo `/dashboard` e `/admin/*`, quanto nas telas do aluno `/inicio`, `/aluno/conta`, `/aluno/em-andamento`, `/aluno/minhas-trilhas`, etc).
 
-**As páginas públicas NÃO usam estes componentes do dashboard.** A home (`/` e `/en`) é HTML montado no servidor, com padrão próprio de vitrine. O catálogo (`/cursos`, `/trilhas`) e as páginas de detalhe (`/curso/:slug`, `/trilha/:slug`) seguem o mesmo destino, mas **hoje ainda são React provisório e usam `PageContainer`**. Isso fica até serem trocadas pelo template de servidor (Bloco C5). Não invista acabamento nelas.
+**As páginas públicas NÃO usam estes componentes do dashboard.** A home (`/` e `/en`) é HTML montado no servidor, com padrão próprio de vitrine. O catálogo (`/cursos`, `/trilhas`) e as páginas de detalhe (`/curso/:slug`, `/trilha/:slug`) são **hoje React e usam `PageContainer`**, e **nada do que se faz nelas se perde** (decisão do operador, 30/09/2026): o que o aluno vê atrás do login já é a versão definitiva, e a vitrine pública será o template de servidor com a mesma marcação e as mesmas classes, transpostas para dados do banco (Bloco C5).
 
 **NUNCA utilize formulários centralizados tradicionais soltos, layouts estreitos (`max-w-md`) ou larguras inconsistentes DENTRO do dashboard. Toda página logada principal deve seguir o sistema de Layout Base.**
 

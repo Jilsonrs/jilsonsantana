@@ -16,7 +16,7 @@
 > 5. **Item novo ganha o próximo número livre.** Número nunca se reutiliza, para que "P7" queira
 >    dizer sempre a mesma coisa em qualquer conversa.
 >
-> **Próximo número livre: P36** · Atualizada em 29/09/2026
+> **Próximo número livre: P38** · Atualizada em 30/09/2026
 
 ## A. Agora, em sequência *(nascidas da configuração do Bunny, 25/09/2026)*
 
@@ -31,6 +31,8 @@ rápida entra aqui, com o próximo número livre.*
 | P16 | **Cadastrar os 5 cursos da home** no admin. Tudo o que o cadastro precisa **já está no ar**: o envio da capa e do vídeo promocional, a descrição com negrito e listas, e os limites de caracteres | `implementation-plan.md` → Bloco C4 |
 | P32 | **Confirmar o número de alunos corporativos (4.150+)** que está na home, no bloco do autor (os 107 mil+ e os 70 países já foram confirmados na sessão da home) | no próprio admin, em Textos → Home |
 | P35 | **Revisar os textos novos de 29/09**, que são rascunho do agente, em português e em inglês. No **Início:** o "Continue estudando" EM BREVE, o vazio de Minhas trilhas, "Ver todas" e "Atalhos". No **Dashboard:** a descrição, os 4 relatórios e o "Chega com…" de cada um. No **menu:** Em andamento, Concluídos e a etiqueta EM BREVE ("COMING SOON" em inglês). Esses textos **não** aparecem em Admin → Textos (são do app) | `core/src/i18n/pt.ts` e `en.ts` (parte `app`); o Dashboard em `client/src/pages/AdminPage.tsx` |
+| P36 | **Revisar as dicas embaixo dos campos do editor do curso** (você pediu para revisar depois, em 28/09). Todas num arquivo só | `client/src/lib/course-hints.ts` e o plano, Bloco E ("Em todos os passos") |
+| P37 | **Colar à mão outro ID no campo do vídeo de apresentação** troca o vídeo, mas **não apaga o antigo no Bunny** (só o envio pelo botão apaga; o antigo fica lá sem curso). Apagar também, como na troca pelo botão? | `implementation-plan.md` → Bloco E e `bunny.md` §3.4 |
 
 ## C. Com hora marcada *(resolver quando o bloco abrir, não antes)*
 

@@ -107,21 +107,23 @@ servidores (§5); o React responde em `localhost:5173`, a home pública em `loca
 |---|---|
 | `/` · `/en` | `server/src/views/home.ts` + `client/src/public-input.css` |
 
-**Públicas — hoje em React, mas PROVISÓRIAS** *(porta 5173)*
+**Públicas e do aluno ao mesmo tempo — hoje em React** *(porta 5173)*
 
-| Endereço | Arquivo | Atenção |
+| Endereço | Arquivo | O destino |
 |---|---|---|
-| `/cursos` | `client/src/pages/CatalogPage.tsx` (`tipo="cursos"`) | ⛔ será substituída |
-| `/trilhas` | o MESMO arquivo (`tipo="trilhas"`) | ⛔ idem |
-| `/curso/:slug` | `client/src/pages/CourseDetailPage.tsx` | ⛔ idem |
-| `/trilha/:slug` | `client/src/pages/TrilhaDetailPage.tsx` | ⛔ idem |
+| `/cursos` | `client/src/pages/CatalogPage.tsx` (`tipo="cursos"`) | aluno: definitiva · vitrine: transposta |
+| `/trilhas` | o MESMO arquivo (`tipo="trilhas"`) | idem |
+| `/curso/:slug` | `client/src/pages/CourseDetailPage.tsx` | vitrine: transposta |
+| `/trilha/:slug` | `client/src/pages/TrilhaDetailPage.tsx` | idem |
 | `/login` | `client/src/pages/LoginPage.tsx` | fica no React |
 
-> **⛔ NÃO invista acabamento nessas quatro.** Elas vão ser **substituídas** por templates de
-> servidor, como a home já é (decisão do operador, set/2026: *"eu quero que seja a versão final que
-> vamos utilizar"* — sem construir duas vezes). Quando a substituta existir, **você trabalha nela**;
-> o que você fizer no `.tsx` de hoje é jogado fora junto com o arquivo. Tokens e CSS sobrevivem,
-> marcação não.
+> **✅ PODE investir acabamento nessas telas — nada do que você fizer é jogado fora** *(decisão do
+> operador, 30/09/2026, que substitui o "não invista" de set/2026)*: *"O que estiver dentro da área logada não é página temporária, já é definitiva, e o que montar de HTML nas páginas públicas também não será perdido, apenas transportado para dados dinâmicos."*
+> - **O que o aluno vê atrás do login já é a versão definitiva** (vira o catálogo do aluno, em
+>   `/aluno/*`), e continua em React.
+> - **A vitrine pública vira template de servidor** com a **mesma marcação e as mesmas classes**
+>   do que você desenhar, seja aqui no `.tsx`, seja um mock na `design-lab/`: o Claude transpõe e
+>   troca o conteúdo fixo por dados do banco, como fez com a home.
 
 
 **Do aluno — exigem login** *(porta 5173)*
@@ -147,7 +149,7 @@ servidores (§5); o React responde em `localhost:5173`, a home pública em `loca
 | `/dashboard` | **O Dashboard do admin** (29/09): `client/src/pages/AdminPage.tsx` — os 4 relatórios (Assinantes, Aprendizado, De onde vieram os alunos, Uso do JilsonAI), todos EM BREVE, e os atalhos embaixo (Trilhas EM BREVE, sem link). Cada cartão é um grupo com nome (`role="group"`) e **tem teste**: EM BREVE nunca é link. |
 | `/admin/cursos` | `client/src/pages/admin/AdminCoursesPage.tsx` + **o cartão de cada curso**, `client/src/components/admin/AdminCourseCard.tsx` (27/09) |
 | `/admin/cursos/novo` | `client/src/pages/admin/course-editor/NewCoursePage.tsx` — só o passo 1; "Criar curso" abre o editor |
-| `/admin/cursos/:id/basico` · `/para-quem-e` · `/conteudo` · `/pagina` · `/publicar` | **O editor do curso em 7 passos** (28/09): `course-editor/CourseEditorLayout.tsx` (o topo, comum a todos), `course-editor/steps.tsx` (o que cada passo mostra) e `course-editor/StepForm.tsx` (o botão Salvar de cada passo). O conteúdo de cada passo são as seções de `client/src/components/admin/course-form/`. |
+| `/admin/cursos/:id/basico` · `/para-quem-e` · `/conteudo` · `/pagina` · `/publicar` | **O editor do curso em 7 passos** (28/09): `course-editor/CourseEditorLayout.tsx` (o topo, comum a todos; embaixo do título, **a duração**: "2h 35min de vídeo", desde 29/09), `course-editor/steps.tsx` (o que cada passo mostra) e `course-editor/StepForm.tsx` (o botão Salvar de cada passo). O conteúdo de cada passo são as seções de `client/src/components/admin/course-form/`. |
 | `/admin/site` → leva a `/admin/site/textos` | (só redireciona) |
 | `/admin/site/textos` | `client/src/pages/admin/AdminSiteTextPage.tsx` + `client/src/components/admin/SiteTextField.tsx` — **uma aba por página** ("Toda página", "Home"; página nova ganha aba sozinha). Com busca, as abas somem e o resultado vem de todas as páginas. As abas têm `aria-pressed` e teste. |
 | `/admin/site/depoimentos` | `client/src/pages/admin/AdminTestimonialsPage.tsx` |
@@ -327,6 +329,11 @@ exceto o item 4, que é página pública.
    até os dados existirem, e os atalhos ficaram embaixo. Se o operador quiser um separador
    visual entre as duas áreas do menu, é seu. **Tem teste, não mexa sem falar com o operador:** EM BREVE nunca é
    link, e a etiqueta do admin fica em português.
+16. **A duração do curso** *(29–30/09, decisões do operador)*. No **topo do editor**, embaixo do
+   título: "2h 35min de vídeo" (é a `description` do `PageHeader` em `CourseEditorLayout.tsx`).
+   No **cartão do catálogo** e na **página do curso**: "2 módulos · 4 aulas · 1h 05min" — o
+   acabamento ali vale (§ 2, "Públicas e do aluno ao mesmo tempo", decisão de 30/09). **Tem
+   teste:** o texto e o formato ("0min" sem vídeo).
 
 > **Fora do seu trabalho, para não confundir:** o Bunny ganhou **Live Stream** em acesso
 > antecipado (29/09). É só avaliação depois da Fase 3, **não** é tela a desenhar (`docs/bunny.md`
@@ -471,6 +478,50 @@ e sem ele você vê o estado de erro em vez da tela.
 **Para abrir as telas de aluno e de admin é preciso ENTRAR** — `localhost:5173/login`, com a conta
 de admin. **Peça as credenciais ao operador**; elas não ficam escritas em lugar nenhum do repo.
 Sem login, `/inicio`, `/aluno/conta`, `/dashboard` e `/admin/*` redirecionam para o login.
+
+### Publicar o SEU trabalho visual *(autorizado pelo operador em 30/09/2026)*
+
+O operador autorizou você a **publicar o seu próprio trabalho de acabamento**, sem passar pelo
+Claude: *"atualize o GEMINI.md como ele deve publicar, para ficar no mesmo padrão que você faz"*.
+**Publique quando o operador pedir.** A `main` vai direto para o site no ar (Railway), então o
+caminho é um só, o mesmo que o Claude segue, sem atalho:
+
+1. **Comece do `dev` atualizado:** `git checkout dev` e `git pull`. Nunca trabalhe na `main`.
+2. **Um commit por ajuste**, no `dev`, com a mensagem dizendo o que mudou na tela
+   (ex.: `style(inicio): espaçamento dos blocos do painel`).
+3. **Rode os três gates, UM DE CADA VEZ, e confira que cada um terminou sem erro** (não encadeie
+   com `&&` escondendo qual falhou):
+   ```bash
+   npm run typecheck
+   npm run test        # cliente E servidor; o servidor precisa do Postgres local ligado
+   npm run build
+   ```
+   Se mexeu no CSS da vitrine, rode `npm run css:publico` antes e inclua o `public.css` gerado no
+   commit (regra 10).
+4. **`git push` do `dev`** e espere o **CI do GitHub terminar VERDE nos DOIS jobs**: "Typecheck,
+   test & build" **e** "E2E (Playwright)" (`gh run list --branch dev` mostra). Vermelho = **não
+   publica**: avise o operador.
+5. **Levar para a `main`** (é isto que publica):
+   ```bash
+   git checkout main
+   git pull
+   git merge --no-ff dev -m "Merge dev -> main: <o que mudou, em português>"
+   git push
+   git checkout dev
+   ```
+6. **Confira que chegou no ar:** o CI da `main` verde nos dois jobs (`gh run list --branch main`)
+   e o deploy do Railway concluído. Depois, **diga ao operador** o que foi publicado.
+
+**O que NUNCA fazer para "fazer passar":**
+- editar, pular ou apagar teste — se um teste reprovar e você achar que o erro é do teste, **pare
+  e avise o operador**; o Claude revisa;
+- mexer nos arquivos da §3 (mapa de navegação, dicionário de textos, `server/` fora de `views/`);
+- publicar com qualquer gate vermelho, ou com mudança que não seja visual (comportamento, texto,
+  rota, dado). Isso é trabalho do Claude, com plano aprovado pelo operador.
+
+**Por que o caminho é este:** é o mesmo "dev primeiro, três gates, CI verde, só então a main" do
+`CLAUDE.md` (*Working Method*). A suíte é o que garante que o acabamento não apagou acessibilidade,
+destino de link ou visibilidade por papel — ela reprova e diz qual.
 
 ---
 

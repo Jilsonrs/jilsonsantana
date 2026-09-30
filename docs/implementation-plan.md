@@ -178,8 +178,11 @@
 > **PUBLICADO em 30/09 (`main` = `8aff7eb`, CI verde nos dois jobs, deploy ok):** a **duração do
 > curso no topo do editor** ("2h 35min de vídeo", soma de todo vídeo enviado), com a migration
 > `lesson_video_duration`, aplicada na produção pelo pre-deploy. Ver Bloco E.
-> **No `dev` (30/09, esperando o "publica"):** a duração também no **cartão do catálogo** e na
-> **página do curso** ("2 módulos · 4 aulas · 1h 05min"; só aulas publicadas; "0min" sem vídeo).
+> **PUBLICADO em 30/09 (`main` = `d96589d`, CI verde nos dois jobs, deploy ok):** a duração também
+> no **cartão do catálogo** e na **página do curso** ("2 módulos · 4 aulas · 1h 05min"; só aulas
+> publicadas; "0min" sem vídeo).
+> **`dev` = `main` em código (30/09):** tudo o que foi construído está no ar. O operador passa a
+> trabalhar com o Antigravity no acabamento (fila em `design-lab/GEMINI.md`, itens 11 a 16).
 > **Registrado no fim da sessão de 29/09 (só documentos, no `dev`):** o mapa do que falta nos 7
 > passos do editor (Bloco E, depois da etapa 4), com um **achado novo** (campo já salvo não volta a
 > ficar vazio); o **Live Stream** do Bunny em acesso antecipado (`bunny.md` §6, decisão 8,
@@ -1767,8 +1770,8 @@ cada campo, a regra do ✓, 160 caracteres nas três listas e o Visualizar esper
       todas reprovam. Revertido.
 - [ ] **Visualizar** mostra a página do curso como o aluno vê, **inclusive em rascunho, só para o
       admin** — a rota pública continua devolvendo só o publicado. **Espera o C5** *(operador,
-      28/09/2026)*: a página de curso de hoje é provisória e nem mostra a descrição, então a
-      prévia mostraria outra página e seria jogada fora. **Onde fica** *(operador, 29/09/2026)*:
+      28/09/2026)*: a página pública de curso de hoje ainda é React e nem mostra a descrição,
+      então a prévia mostraria outra página. **Onde fica** *(operador, 29/09/2026)*:
       um link no passo **Publicar** para abrir a página pública do curso e conferir como ficou.
       Por isso o passo de imagem, vídeo, destaques, perguntas e camadas deixou de se chamar
       "Página do curso" e passou a **"Mídia e destaques"** (o endereço `/pagina` ficou).
@@ -1951,21 +1954,21 @@ própria**.*
       comunicações do operador ou do JilsonAI. **Sem e-mail.** O passo 6 do editor é onde ele
       escreve as duas mensagens do curso.
 
-**O QUE FALTA NOS 7 PASSOS (resumo de 29/09/2026 — as linhas estão acima; aqui é o mapa):**
+**O QUE FALTA NOS 7 PASSOS (atualizado em 30/09/2026 — as linhas estão acima; aqui é o mapa):**
 
-| Passo | Estado | O que falta |
-|---|---|---|
-| 1 Informações básicas | pronto | — *(a duração no topo entrou em 29/09: ver abaixo)* |
-| 2 Para quem é | pronto | — |
-| 3 Conteúdo | pronto | o **Quiz** (etapa própria, com decisões do operador; no "+" aparece EM BREVE) |
-| 4 Legendas | EM BREVE | a **etapa 3** inteira (tela própria, `.vtt` por vídeo) |
-| 5 Mídia e destaques | pronto | — *(a P19 fechou em 29/09: o vídeo de apresentação reenviado toca)* |
-| 6 Mensagens | EM BREVE | a **etapa 4** inteira (o sino + boas-vindas e parabéns) |
-| 7 Publicar | pronto | o **link para abrir a página pública do curso** (o Visualizar), que espera o **C5** |
+| Passo | Estado | O que falta | Depende de |
+|---|---|---|---|
+| 1 Informações básicas | pronto | — *(a duração no topo entrou em 29/09, e no catálogo em 30/09: ver abaixo)* | — |
+| 2 Para quem é | pronto | — | — |
+| 3 Conteúdo | pronto | o **Quiz** (no "+" aparece EM BREVE) | as regras do operador: uma ou várias respostas certas, explicação, nota mínima, o que o aluno vê |
+| 4 Legendas | EM BREVE | a **etapa 3** inteira: "x de y aulas com legenda"; enviar, baixar e excluir o `.vtt` por vídeo, só no idioma do curso | código (alto risco: Bunny) |
+| 5 Mídia e destaques | pronto | — *(a P19 fechou em 29/09)* | — |
+| 6 Mensagens | EM BREVE | a **etapa 4** inteira: o sino ao lado da foto, a mensagem de boas-vindas (ao abrir a 1ª aula) e a de parabéns (ao concluir) | a de **parabéns** precisa saber que o aluno concluiu: **Fase 5** |
+| 7 Publicar | pronto | o **Visualizar** (abrir a página pública do curso) | a página definitiva do curso: **C5** |
 
 **Em todos os passos, ainda aberto:**
 - [ ] **Revisão das dicas pelo operador** — todas em `client/src/lib/course-hints.ts`, num arquivo
-      só (ele pediu para revisar depois, 28/09).
+      só (ele pediu para revisar depois, 28/09). *(Também na lista de pendências: P36.)*
 - [x] **ACHADO (29/09, confirmado no código): campo já salvo não volta a ficar
       vazio.** Apagar o texto do **subtítulo**, da **descrição**, do **nível**, da **imagem** ou
       do **ID do vídeo de apresentação** e salvar não apaga nada: `toPayload`
@@ -1983,7 +1986,7 @@ própria**.*
       Bunny recusando — as três reprovam.
 - [ ] **ACHADO (29/09, NÃO corrigido): colar à mão OUTRO ID no campo do vídeo de apresentação e
       salvar troca o vídeo, mas NÃO apaga o antigo no Bunny** — só o envio pelo botão apaga. O
-      antigo fica lá sem curso nenhum. Correção é decisão do operador.
+      antigo fica lá sem curso nenhum. Correção é decisão do operador. *(Pendências: P37.)*
 - [ ] **A corrida na troca de vídeo com duas abas** (P2 da revisão de segurança, na etapa 2 acima).
 - [x] **A duração do curso no topo do editor** *(29/09/2026, decisões do operador: soma **todo
       vídeo enviado**, como a Udemy, inclusive de aula em rascunho; formato **"2h 35min de
@@ -2003,8 +2006,8 @@ própria**.*
       duração de cada aula não sai. `horasEMinutos` (`lib/duracao-do-curso.ts`) é o formato
       curto; o topo do editor acrescenta "de vídeo". Testes: servidor (`course-duration.test.ts`,
       4 casos) e tela. Mutação: a lista somando rascunho, a página somando módulo em rascunho e
-      o cartão sem a duração — as três reprovam. *(Estas duas páginas são provisórias: o C5 leva
-      a duração para o template — `courses.md`.)*
+      o cartão sem a duração — as três reprovam. *(O C5 leva a duração para o template de
+      servidor, junto com o desenho transposto — `courses.md`.)*
 
 **Vai para outros blocos (anotado lá quando eles abrirem):**
 - **Página do curso (vitrine, depois do C5):** a seção do autor é **a mesma da home**
@@ -2058,6 +2061,8 @@ própria**.*
 >   internacionais não o usam).
 > - As páginas provisórias (`/cursos`, `/trilhas`, `/curso/…`, `/trilha/…`): **não mexer** — ele
 >   ainda vai pensar nelas; foco na home.
+>   *(30/09/2026, operador: não são mais "provisórias" — o que está atrás do login é definitivo, e o
+>   desenho da vitrine é transposto para o template, nada se perde. Ver Bloco C5.)*
 > - `Course.language` entra pela **etapa 2 do C4**, que precisa dele. O resto da parte de dados
 >   (`LearningPlan.language`, filtro nas listas e na busca, recusa de item de outro idioma na
 >   trilha, clone herdando) continua neste bloco. O campo Idioma no formulário de **trilha** espera
@@ -2322,6 +2327,10 @@ própria**.*
 > visitante vê cromo de app, o aluno não vê progresso. O operador separou as duas superfícies
 > (`CLAUDE.md` → *DUAS SUPERFÍCIES*) e pediu que o que for construído agora **seja a versão
 > final**: *"eu quero que seja a versão final que vamos utilizar"*. Sem construir duas vezes.
+> **NADA SE PERDE** *(operador, 30/09/2026)*: *"O que estiver dentro da área logada não é página temporária, já é definitiva, e o que montar de HTML nas páginas públicas também não será perdido, apenas transportado para dados dinâmicos."* O que o aluno vê em React já é o
+> catálogo do aluno; da vitrine, a marcação e as classes de hoje (ou do mock) são **transpostas**
+> para o template de servidor, trocando o conteúdo fixo por dados do banco. O acabamento que o
+> Antigravity fizer nessas telas agora vale.
 >
 > **BLOQUEADO — e o bloqueio é do operador, não técnico.** O passo 1 do fluxo com o parceiro de
 > design é *"o operador e o Claude definem o que vai ter na tela"*, e ele adiou: *"depois

@@ -309,6 +309,7 @@ teste e o `server` não tem suíte. Não faltou regra; ficou pra depois, e depoi
 - **`useEffect` discipline:** React Query owns server state, so effects are RARE. Every remaining `useEffect` carries a 1-line comment saying why it must be an effect. If a value can be derived from props/state, derive it (or `useMemo`) — no state-syncing effects. Never chain effects that trigger each other.
 - Adding a global state library (Zustand/Redux/etc.) is an operator decision, not a default — local state + React Query first.
 - **O ACABAMENTO VISUAL TEM OUTRO AUTOR — agente parceiro de design (Antigravity), que edita `.tsx` de verdade.** Você constrói estrutura, lógica e testes; ele formata. **Não desfaça escolha visual dele achando que é descuido** (espaçamento incomum, sombra, ordem de classe): se estiver errado, é conversa com o operador, não correção de passagem. **GATILHO (mecânico):** antes de editar `client/src/index.css`, `client/tailwind.config.ts`, `client/src/components/nav/**`, `client/src/components/ui/**` ou `client/src/components/layout/**` → ler [`design-lab/GEMINI.md`](design-lab/GEMINI.md) (os arquivos que ele toca e as regras dele) + `docs/design.md`. **Os mocks dele NÃO são versionados** — `design-lab/` chega vazia num clone, só com o `GEMINI.md`; não é defeito.
+  **ELE PUBLICA O PRÓPRIO TRABALHO VISUAL** *(autorização do operador, 30/09/2026)*, pelo mesmo caminho que você segue — `dev`, os três gates, CI verde nos dois jobs, merge `--no-ff` para a `main` quando o operador pedir (`GEMINI.md` §5, *Publicar*). **Consequência para você:** ao começar uma sessão, `git log` pode mostrar commits e merges dele que você não fez; leia o diff antes de construir em cima. Mudança que não seja visual (comportamento, texto, rota, dado) continua sendo sua, com plano aprovado.
 - **Tela nova do app (React, atrás de login) nasce com o LAYOUT PADRÃO:** `PageContainer` + `PageHeader` + `PageSection`, de `client/src/components/layout/PageLayout.tsx` *(decisão do operador, 23–24/09/2026, desenhado com o Antigravity)*. Sem ele, a tela nasce no formato antigo (`mx-auto max-w-3xl px-6 py-16`) e o parceiro tem que refazer. Exemplo e regras de uso: [`.agents/rules/page_layout.md`](.agents/rules/page_layout.md). Você monta a estrutura com esses três; o acabamento fino continua sendo dele. **Rota pública não usa** — é template de servidor (Rendering Boundary).
 - **Texto de tela do ALUNO sai de `useT()`, nunca escrito no `.tsx`** *(decisão do operador, 24/09/2026: tudo depois do login existe em inglês)*. `useT()` devolve a parte `app` do dicionário (`core/src/i18n/`) no idioma do app, que o `Layout` decide uma vez só (conta, ou `?lang=` no login) — `client/src/lib/language.tsx`. **Por quê:** literal numa tela do aluno aparece em português para o aluno estrangeiro, e nenhum teste, typecheck ou build acusa. **O Admin é a exceção** (decisão dele, 23/09): fica em português, com o texto na própria tela. `app.*` **não** entra em *Admin → Textos* (`ehTextoEditavel`); o rodapé do app usa `common.*`, que entra.
 - **Corolário — a suíte é o que torna isso seguro, então não a enfraqueça:** o que impede o parceiro de apagar acessibilidade sem perceber é o teste reprovar. Expansão por teclado (`focus-within:`), `aria-current`, rótulo do rail recolhido (escondido por **opacidade**, nunca `hidden`), visibilidade por papel e destino de link **têm teste de propósito**. Afrouxar qualquer um deles remove a única rede que existe nessa fronteira.
@@ -435,10 +436,16 @@ compartilha, e slug de catálogo é permanente (ver *Slug de catálogo é PERMAN
 **TRAVA — não "unifique" os dois catálogos.** Eles parecem duplicados e não são: mesma fonte de
 dados, propósitos opostos. Juntar devolve exatamente o problema que a separação resolve.
 
-**ESTADO ATUAL (set/2026), para ninguém se enganar com o que está no ar:** `/cursos` e `/trilhas`
-são hoje páginas **React provisórias** (`CatalogPage.tsx`), que fazem os dois papéis mal. Elas
-**serão substituídas** pelo template de servidor — decisão do operador de não construir duas
-vezes. Enquanto isso, **não investir acabamento nelas** (`design-lab/GEMINI.md` § 0).
+**ESTADO ATUAL, para ninguém se enganar com o que está no ar:** `/cursos`, `/trilhas`,
+`/curso/:slug` e `/trilha/:slug` são hoje páginas **React** que atendem o visitante e o aluno.
+**NADA do que se constrói nelas é descartável** *(decisão do operador, 30/09/2026 — substitui o
+"não investir acabamento nelas" de set/2026)*: *"O que estiver dentro da área logada não é página temporária, já é definitiva, e o que montar de HTML nas páginas públicas também não será perdido, apenas transportado para dados dinâmicos."*
+- **Área logada (React) = versão DEFINITIVA.** O que o aluno vê atrás do login não será refeito:
+  vira o catálogo do aluno (`/aluno/*`, Bloco C5). Acabamento ali vale.
+- **Páginas públicas = o desenho é TRANSPOSTO, não refeito.** A vitrine vira template de servidor
+  (Rendering Boundary) com a mesma marcação e as mesmas classes do HTML desenhado — o `.tsx` de
+  hoje ou o mock da `design-lab/` —, só trocando o conteúdo fixo por dados do banco. É o caminho
+  que a home já percorreu.
 
 **FEITO (29/09/2026; decisão do operador de 28/09):** as telas do aluno moram em `/aluno/*`
 (`/aluno/conta`, `/aluno/minhas-trilhas`, `/aluno/em-andamento`…). **Duas exceções, decididas
