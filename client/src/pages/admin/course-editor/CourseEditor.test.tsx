@@ -79,6 +79,34 @@ describe("Editor do curso — estados da tela", () => {
     expect(screen.getByRole("link", { name: "Voltar para cursos" }).getAttribute("href")).toBe("/admin/cursos");
   });
 
+  // A duração no topo, como a Udemy (decisão do operador, 29/09/2026): todo vídeo
+  // enviado, inclusive de aula em rascunho; a aula de texto não conta.
+  it("topo: a duração de todo vídeo enviado", async () => {
+    const aula = (id: number, parcial: Partial<AdminCourseDetail["modules"][number]["lessons"][number]>) => ({
+      id, moduleId: 1, title: `Aula ${id}`, kind: "VIDEO" as const, content: null,
+      bunnyVideoId: "aaaaaaaa-0cda-46be-b47d-1118ad7c2ffe", bunnyVideoPendingId: null,
+      bunnyVideoReady: true, videoDurationSeconds: 1800, isFreePreview: false, tags: [],
+      displayOrder: id, status: "PUBLISHED" as const, ...parcial,
+    });
+    abrir("/admin/cursos/1/basico", {
+      ...CURSO_DE_TESTE,
+      modules: [{
+        id: 1, courseId: 1, title: "M", layer: null, displayOrder: 0, status: "PUBLISHED",
+        lessons: [
+          aula(1, {}),
+          aula(2, { status: "DRAFT", videoDurationSeconds: 2100 }),
+          aula(3, { kind: "TEXT", bunnyVideoId: null, videoDurationSeconds: null }),
+        ],
+      }],
+    });
+    expect(await screen.findByText("1h 05min de vídeo")).toBeTruthy();
+  });
+
+  it("topo: curso sem vídeo mostra 0min", async () => {
+    abrir("/admin/cursos/1/basico");
+    expect(await screen.findByText("0min de vídeo")).toBeTruthy();
+  });
+
   // O "Editar" do cartão da lista aponta para /admin/cursos/:id.
   it("o endereço do curso sem passo abre Informações básicas", async () => {
     abrir("/admin/cursos/1");

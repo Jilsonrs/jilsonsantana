@@ -171,9 +171,13 @@
 > - Chegou lá em 3 publicações no mesmo dia (`35fb940`, `f44187e`, `7a769c8`), cada uma com CI
 >   verde e deploy ok. Textos novos em PT e EN são **rascunho do agente, para a revisão do
 >   operador**; o acabamento visual é do Antigravity (`GEMINI.md`, fila itens 14 e 15).
-> **No `dev` (29/09, esperando o "publica"):** no editor do curso, **campo já salvo volta a
-> poder ficar vazio** (subtítulo, descrição, nível, imagem, vídeo de apresentação e a camada do
-> módulo); apagar o ID do vídeo apaga o vídeo no Bunny. Ver Bloco E.
+> **PUBLICADO em 29/09 (`main` = `5271ca6`, CI verde nos dois jobs, deploy ok):** no editor do
+> curso, **campo já salvo volta a poder ficar vazio** (subtítulo, descrição, nível, imagem, vídeo
+> de apresentação e a camada do módulo); apagar o ID do vídeo apaga o vídeo no Bunny. E a **P19
+> fechou**: o vídeo de apresentação reenviado toca. Ver Bloco E.
+> **No `dev` (29/09, esperando o "publica"):** a **duração do curso no topo do editor** ("2h 35min
+> de vídeo", soma de todo vídeo enviado), com a migration `lesson_video_duration`, que a
+> produção aplica pelo pre-deploy no próximo "publica". Ver Bloco E.
 > **Registrado no fim da sessão de 29/09 (só documentos, no `dev`):** o mapa do que falta nos 7
 > passos do editor (Bloco E, depois da etapa 4), com um **achado novo** (campo já salvo não volta a
 > ficar vazio); o **Live Stream** do Bunny em acesso antecipado (`bunny.md` §6, decisão 8,
@@ -1745,6 +1749,7 @@ cada campo, a regra do ✓, 160 caracteres nas três listas e o Visualizar esper
       operador em 28/09/2026.
       **Ficam para depois:** a **duração publicada** no topo (entra com o vídeo das aulas, Bloco
       U etapa 3: hoje a aula não tem duração) e o **Visualizar** (espera o C5, abaixo).
+      *(A duração entrou em 29/09/2026: ver "A duração do curso no topo", no mapa do que falta.)*
 - [x] **1b — Publicar** *(28/09, no `dev`)* reúne o que falta (a barra de Preenchimento, agora
       também no editor — `components/admin/CompletenessBar.tsx`, a mesma do cartão), status em
       português, ordem no catálogo e **o link do curso com o botão de copiar**
@@ -1948,7 +1953,7 @@ própria**.*
 
 | Passo | Estado | O que falta |
 |---|---|---|
-| 1 Informações básicas | pronto | a **duração publicada** no topo do editor (adiada: o Bunny já informa a duração de cada vídeo no resumo do admin, mas a aula **não guarda** duração; falta guardar, somar e mostrar) |
+| 1 Informações básicas | pronto | — *(a duração no topo entrou em 29/09: ver abaixo)* |
 | 2 Para quem é | pronto | — |
 | 3 Conteúdo | pronto | o **Quiz** (etapa própria, com decisões do operador; no "+" aparece EM BREVE) |
 | 4 Legendas | EM BREVE | a **etapa 3** inteira (tela própria, `.vtt` por vídeo) |
@@ -1978,6 +1983,17 @@ própria**.*
       salvar troca o vídeo, mas NÃO apaga o antigo no Bunny** — só o envio pelo botão apaga. O
       antigo fica lá sem curso nenhum. Correção é decisão do operador.
 - [ ] **A corrida na troca de vídeo com duas abas** (P2 da revisão de segurança, na etapa 2 acima).
+- [x] **A duração do curso no topo do editor** *(29/09/2026, decisões do operador: soma **todo
+      vídeo enviado**, como a Udemy, inclusive de aula em rascunho; formato **"2h 35min de
+      vídeo"**)*. A aula guarda a duração do vídeo (`Lesson.videoDurationSeconds`, migration
+      `20260929180000_lesson_video_duration`), gravada quando o Bunny confirma o "pronto" — ao
+      abrir o editor e no resumo do vídeo — e esvaziada na troca. **Os vídeos que já existiam
+      ganham a duração na primeira vez que o editor do curso é aberto.** A soma é derivada
+      (`client/src/lib/duracao-do-curso.ts`); a aula de texto não conta; vídeo curto conta 1min.
+      Confirmado na doc do Bunny (context7, fonte alternativa): `length` = segundos, inteiro.
+      Passo 0 no branch `dev`: contagens iguais (só a migration +1 e as sessões do login), 0
+      tabelas sem RLS, login 200 (admin e aluno), *No difference detected*. Mutação: a soma sem
+      rascunho, a troca sem zerar a duração e o formato sem o "1min" — as três reprovam.
 
 **Vai para outros blocos (anotado lá quando eles abrirem):**
 - **Página do curso (vitrine, depois do C5):** a seção do autor é **a mesma da home**

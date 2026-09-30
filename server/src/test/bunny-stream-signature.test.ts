@@ -4,6 +4,7 @@ import {
   enderecoAssinado,
   interpretarEstado,
   interpretarResumo,
+  duracaoDoVideo,
   tokenDoPlayer,
   VALIDADE_DO_PLAYER,
 } from "../lib/bunny-stream.js";
@@ -152,5 +153,20 @@ describe("resumo do vídeo da aula", () => {
     expect(torto.duracaoEmSegundos).toBeNull();
     expect(interpretarResumo(ID, { ...pronto, length: 0 }, HOST).duracaoEmSegundos).toBeNull();
     expect(interpretarResumo(ID, { ...pronto, length: 110.6 }, HOST).duracaoEmSegundos).toBe(111);
+  });
+});
+
+// A duração que o Bunny informa (`length`, em segundos, inteiro — doc de
+// 29/09/2026). Só número positivo vale: vira a soma do topo do editor.
+describe("duracaoDoVideo", () => {
+  it("lê o length em segundos", () => {
+    expect(duracaoDoVideo({ length: 754 })).toBe(754);
+    expect(duracaoDoVideo({ length: 12.6 })).toBe(13);
+  });
+
+  it("sem duração de verdade, devolve vazio", () => {
+    for (const length of [0, -5, "754", null, undefined, Number.NaN, Number.POSITIVE_INFINITY]) {
+      expect(duracaoDoVideo({ length }), String(length)).toBeNull();
+    }
   });
 });

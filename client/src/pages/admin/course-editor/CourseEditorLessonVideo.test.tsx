@@ -61,7 +61,7 @@ function comAula(aula: Partial<AdminLesson>): AdminCourseDetail {
             kind: "VIDEO",
             content: null,
             bunnyVideoId: null,
-            bunnyVideoPendingId: null, bunnyVideoReady: false,
+            bunnyVideoPendingId: null, bunnyVideoReady: false, videoDurationSeconds: null,
             isFreePreview: false,
             tags: [],
             displayOrder: 0,

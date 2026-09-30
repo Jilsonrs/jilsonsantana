@@ -21,7 +21,7 @@ const router = Router();
 async function aulaDeVideo(id: number) {
   return prisma.lesson.findUnique({
     where: { id },
-    select: { kind: true, bunnyVideoId: true, bunnyVideoPendingId: true, bunnyVideoReady: true },
+    select: { kind: true, bunnyVideoId: true, bunnyVideoPendingId: true, bunnyVideoReady: true, videoDurationSeconds: true },
   });
 }
 
@@ -82,10 +82,11 @@ router.post("/admin/lessons/:id/video/complete", requireAdmin, async (req, res) 
     return;
   }
 
-  // O vídeo novo começa a processar: deixa de estar confirmado como pronto.
+  // O vídeo novo começa a processar: deixa de estar confirmado como pronto, e a
+  // duração do antigo sai junto (o topo do editor não pode somar o vídeo velho).
   await prisma.lesson.update({
     where: { id },
-    data: { bunnyVideoId: videoId, bunnyVideoPendingId: null, bunnyVideoReady: false },
+    data: { bunnyVideoId: videoId, bunnyVideoPendingId: null, bunnyVideoReady: false, videoDurationSeconds: null },
   });
 
   const substituido = aula.bunnyVideoId;
@@ -115,9 +116,14 @@ router.get("/admin/lessons/:id/video", requireAdmin, async (req, res) => {
     res.status(resultado.motivo === "NaoConfigurado" ? 503 : 502).json({ error: `Stream${resultado.motivo}` });
     return;
   }
-  // Pronto no Bunny: fica lembrado, e a aula volta recolhida na próxima visita.
-  if (resultado.resumo.pronto && !aula.bunnyVideoReady) {
-    await prisma.lesson.updateMany({ where: { id, bunnyVideoId: aula.bunnyVideoId }, data: { bunnyVideoReady: true } });
+  // Pronto no Bunny: fica lembrado, com a duração, e a aula volta recolhida na
+  // próxima visita. Só grava quando muda alguma coisa.
+  const { pronto, duracaoEmSegundos } = resultado.resumo;
+  if (pronto && (!aula.bunnyVideoReady || aula.videoDurationSeconds !== duracaoEmSegundos)) {
+    await prisma.lesson.updateMany({
+      where: { id, bunnyVideoId: aula.bunnyVideoId },
+      data: { bunnyVideoReady: true, videoDurationSeconds: duracaoEmSegundos },
+    });
   }
   res.json({ video: resultado.resumo });
 });
