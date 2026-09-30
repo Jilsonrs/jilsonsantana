@@ -11,6 +11,7 @@ import { LessonContent } from "@/components/aula/LessonContent";
 import { CourseDetails } from "@/components/aula/CourseDetails";
 import { BotaoDaIa, PainelDaIa } from "@/components/aula/AiDock";
 import { List } from "lucide-react";
+import { Sheet, SheetTrigger, SheetContent, SheetTitle } from "@/components/ui/sheet";
 
 /** O servidor respondeu 404? (aula que não existe, ou fora da cadeia publicada). */
 function naoEncontrada(erro: unknown): boolean {
@@ -48,6 +49,7 @@ export function LessonPage() {
       {/* Barra Superior Customizada da Aula (Avatar flutua por cima, à direita) */}
       <div className="relative flex min-h-[60px] md:min-h-[80px] items-center px-4 sm:px-6 md:px-[50px] border-b border-border/40 bg-card/50">
         <div className="flex items-center gap-5 max-w-[80%]">
+          {/* Botão DESKTOP: reabre a barra lateral se estiver fechada */}
           {sidebarFechada && (
             <button
               onClick={() => setSearchParams((prev) => { prev.delete("sidebar"); return prev; }, { replace: true })}
@@ -58,6 +60,28 @@ export function LessonPage() {
               <span>{t.aula.conteudoDoCurso ?? "Conteúdo"}</span>
             </button>
           )}
+
+          {/* Botão MOBILE: abre a gaveta por cima da tela */}
+          <div className="md:hidden -ml-3">
+            <Sheet>
+              <SheetTrigger asChild>
+                <button
+                  className="flex items-center gap-2 px-3 py-2 text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-black/5 rounded-md transition-colors"
+                  aria-label={t.aula.conteudoDoCurso ?? "Conteúdo do Curso"}
+                >
+                  <List className="size-5" />
+                  <span>{t.aula.conteudoDoCurso ?? "Conteúdo"}</span>
+                </button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-[85vw] max-w-[320px] p-0 flex flex-col bg-surface-alt">
+                <SheetTitle className="sr-only">{t.aula.conteudoDoCurso ?? "Conteúdo"}</SheetTitle>
+                <div className="flex-1 overflow-y-auto p-4 py-8">
+                  <CourseContentsNav lessonId={lessonId} />
+                </div>
+              </SheetContent>
+            </Sheet>
+          </div>
+
           <div className="flex flex-col justify-center py-3 gap-1">
             <h1 className="text-lg md:text-2xl font-display font-bold tracking-tight text-foreground truncate flex items-center gap-3">
               {aula.title}
@@ -87,11 +111,10 @@ export function LessonPage() {
 
             {/* Em toda aula, liberada ou não (operador, 29/09/2026). */}
             <CourseDetails curso={curso} />
-          {/* No computador, quem está logado vê o conteúdo do curso no nível 2 da
-              navegação. No celular, e para o visitante (que não tem o shell), ele
-              fica aqui embaixo — o nível 2 nunca some (design.md §6). */}
-          <div className={cn(session && "md:hidden")}>
-            <CourseContentsNav lessonId={lessonId} />
+          {/* No desktop, o visitante não tem o shell, então o menu fica aqui no fim da página.
+              No celular, todos agora usam a gaveta lá no topo. */}
+          <div className="hidden md:block">
+            {!session && <CourseContentsNav lessonId={lessonId} />}
           </div>
         </div>
         {iaAberta && <PainelDaIa aoFechar={() => setIaAberta(false)} />}
