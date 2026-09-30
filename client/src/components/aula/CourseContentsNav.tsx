@@ -27,8 +27,10 @@ function AulaDaLista({ aula, atual }: { aula: AulaNaLista; atual: boolean }) {
         to={`/aluno/aula/${aula.id}`}
         aria-current={atual ? "page" : undefined}
         className={cn(
-          "flex items-start gap-3 rounded-lg px-3 py-2.5 text-sm transition-all duration-200",
-          atual ? "bg-primary/10 font-semibold text-primary" : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+          "flex items-start gap-3 px-3 py-2.5 text-sm transition-all duration-200 border-l-[3px]",
+          atual 
+            ? "border-primary bg-muted/60 font-semibold text-foreground rounded-r-lg" 
+            : "border-transparent rounded-lg text-muted-foreground hover:bg-muted/50 hover:text-foreground",
         )}
       >
         <Icone className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
