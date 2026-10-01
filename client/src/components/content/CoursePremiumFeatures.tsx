@@ -44,38 +44,33 @@ export function CourseLayers({ camadas = [] }: { camadas: Layer[] }) {
   if (camadas.length === 0) return null;
 
   return (
-    <section className="space-y-10 py-6">
-      <div className="space-y-2">
+    <section className="flex flex-col h-full rounded-3xl bg-gradient-to-br from-indigo-50/30 via-background to-blue-50/20 p-8 shadow-sm ring-1 ring-primary/10 transition-all hover:shadow-md">
+      <div className="space-y-2 mb-8">
         <h3 className="font-display text-[1.4rem] font-bold tracking-tight text-foreground">
           O DNA da escola <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">moderna</span>.
         </h3>
-        <p className="text-[0.95rem] text-muted-foreground">Uma metodologia construída em camadas.</p>
       </div>
 
-      <div className={cn("grid gap-8", getGridColsClass(camadas.length))}>
+      <div className="relative flex flex-col gap-8">
         {camadas.map((layer, i) => {
           const config = LAYER_CONFIG[layer];
           const Icon = resolveIcon(config.icon);
           return (
-            <div key={layer} className="relative z-10 flex flex-col gap-5">
-              {/* Linha horizontal para o próximo nó (escondida no mobile) */}
+            <div key={layer} className="relative z-10 flex gap-4">
+              {/* Linha vertical fixa */}
               {i !== camadas.length - 1 && (
-                <div className="absolute top-6 left-[1.5rem] w-[calc(100%+2rem)] h-[2px] bg-border hidden sm:block -z-10" />
-              )}
-              {/* Linha vertical (mobile fallback) */}
-              {i !== camadas.length - 1 && (
-                <div className="absolute top-[1.5rem] bottom-[-2rem] left-[1.45rem] w-[2px] bg-border sm:hidden -z-10" />
+                <div className="absolute top-[2.5rem] bottom-[-2rem] left-[1.15rem] w-[2px] bg-border -z-10" />
               )}
 
               <div className={cn(
-                "flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl",
-                config.accent ? "bg-primary text-primary-foreground shadow-[0_0_20px_rgba(59,130,246,0.3)] ring-[6px] ring-background" : "bg-muted text-foreground/80 ring-[6px] ring-background"
+                "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl",
+                config.accent ? "bg-primary text-primary-foreground shadow-[0_0_15px_rgba(59,130,246,0.3)] ring-4 ring-background" : "bg-muted text-foreground/80 ring-4 ring-background"
               )}>
-                <Icon className="h-6 w-6 stroke-[1.5px]" />
+                <Icon className="h-5 w-5 stroke-[1.5px]" />
               </div>
-              <div className="space-y-2">
-                <p className="font-display text-[1.2rem] font-bold tracking-tight text-foreground">{textos.camadas[layer].nome}</p>
-                <p className="text-[0.95rem] leading-relaxed text-muted-foreground">{textos.camadas[layer].texto}</p>
+              <div className="space-y-1 pt-1">
+                <p className="font-display text-[1rem] font-bold tracking-tight text-foreground">{textos.camadas[layer].nome}</p>
+                <p className="text-sm leading-relaxed text-muted-foreground">{textos.camadas[layer].texto}</p>
               </div>
             </div>
           );

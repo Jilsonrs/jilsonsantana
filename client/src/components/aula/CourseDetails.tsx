@@ -92,14 +92,12 @@ export function CourseDetails({ curso }: { curso: PaginaDaAula["curso"] }) {
         )}
       </div>
 
-      {/* 4. Requisitos / Pra quem é */}
-      <div className="grid gap-6 sm:grid-cols-2">
-        <Lista titulo={t.curso.requisitos} itens={curso.requirements} icon={ClipboardList} />
+      {/* 4 e 5. DNA (Camadas), Requisitos, e Pra quem é - em 3 colunas */}
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <CourseLayers camadas={curso.camadas} />
         <Lista titulo={t.curso.paraQuem} itens={curso.personas} icon={Users} />
+        <Lista titulo={t.curso.requisitos} itens={curso.requirements} icon={ClipboardList} />
       </div>
-
-      {/* 5. DNA (Camadas) */}
-      <CourseLayers camadas={curso.camadas} />
 
       {perguntas.length > 0 && (
         <section className="space-y-6">
