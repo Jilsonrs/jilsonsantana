@@ -28,10 +28,14 @@ export function ListItemsField({ nome, rotulo }: { nome: NomeDaLista; rotulo: st
 
   return (
     <fieldset className="space-y-3">
-      <legend className="mb-2 text-sm font-medium text-foreground">{rotulo}</legend>
-      <p id={`${nome}-dica`} className="text-sm text-muted-foreground">
-        {dica}
-      </p>
+      <legend className="mb-2 flex items-baseline gap-1 text-sm font-medium text-foreground">
+        <span>{rotulo}</span>
+        {dica && (
+          <span id={`${nome}-dica`} className="font-normal text-xs text-muted-foreground leading-none">
+            — {dica}
+          </span>
+        )}
+      </legend>
       {fields.map((campo, i) => {
         const id = `${nome}-${i}`;
         const numero = i + 1;
