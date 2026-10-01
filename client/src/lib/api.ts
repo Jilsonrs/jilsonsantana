@@ -164,6 +164,7 @@ export type AdminCourseCard = {
   id: number;
   slug: string;
   title: string;
+  level: Level | null;
   status: ContentStatus;
   language: LanguageCode;
   displayOrder: number;
