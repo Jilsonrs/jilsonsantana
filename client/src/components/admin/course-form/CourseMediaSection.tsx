@@ -36,10 +36,7 @@ export function CourseMediaSection({
   const video = enviado ?? salvo;
 
   return (
-    <PageSection
-      title="Mídia e Apresentação"
-      description="A imagem de capa e o vídeo promocional. A imagem deve estar em proporção 16:9 para encaixar perfeitamente nos cards."
-    >
+    <PageSection title="Mídia e Apresentação">
       <Card>
         <CardContent className="space-y-8 pt-6">
           <div className="grid gap-8 sm:grid-cols-2">

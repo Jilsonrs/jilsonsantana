@@ -2,7 +2,7 @@ import { useFieldArray, useFormContext } from "react-hook-form";
 import { Plus, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
+
 import { Button } from "@/components/ui/button";
 import type { CourseFormValues } from "@/lib/course-form";
 
@@ -14,7 +14,7 @@ export function FaqField() {
 
   return (
     <div className="space-y-3">
-      <Label>FAQ (opcional — só preencha onde houver dúvida recorrente real)</Label>
+      <p className="text-sm text-muted-foreground">Opcional — só preencha onde houver dúvida recorrente real.</p>
       {fields.map((field, index) => (
         <div key={field.id} className="flex gap-2 rounded-md border border-border p-3">
           <div className="flex-1 space-y-2">

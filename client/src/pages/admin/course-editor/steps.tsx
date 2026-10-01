@@ -63,20 +63,14 @@ function PassoPagina() {
         courseId={curso.id}
         videoSalvo={{ id: curso.introVideoId, embedUrl: curso.introVideoEmbedUrl }}
       />
-      <PageSection
-        title="Destaques (Highlights)"
-        description="Os diferenciais deste curso, em cartões com ícone (de 3 a 4). Diferente das Camadas: aqui entra o que só este curso oferece."
-      >
+      <PageSection title="Destaques (Highlights)">
         <Card>
           <CardContent className="pt-6">
             <HighlightsField />
           </CardContent>
         </Card>
       </PageSection>
-      <PageSection
-        title="Perguntas Frequentes (FAQ)"
-        description="Dúvidas comuns e específicas apenas para este curso."
-      >
+      <PageSection title="Perguntas Frequentes (FAQ)">
         <Card>
           <CardContent className="pt-6">
             <FaqField />
