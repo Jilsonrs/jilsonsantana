@@ -51,18 +51,39 @@ export function ListaDeArquivos({
  */
 export function RecursosNaLista({ lessonId }: { lessonId: number }) {
   const t = useT();
+  const idioma = useIdioma();
   const [aberto, setAberto] = useState(false);
   const { data, comoAdmin } = usePaginaDaAula(aberto ? lessonId : null);
   const arquivos = data?.aula.arquivos;
 
   return (
-    <details className="pl-7" onToggle={(e) => setAberto(e.currentTarget.open)}>
-      <summary className="cursor-pointer text-xs font-medium text-muted-foreground hover:text-foreground">
+    <details className="pl-7 pb-2" onToggle={(e) => setAberto(e.currentTarget.open)}>
+      <summary className="cursor-pointer text-xs font-medium text-muted-foreground hover:text-foreground mb-2">
         {t.aula.recursos}
       </summary>
-      <div className="pt-2">
+      <div className="pt-1">
         {data && !data.aula.arquivosLiberados && <p className="text-xs text-muted-foreground">{t.aula.recursosSoAssinantes}</p>}
-        {arquivos && <ListaDeArquivos lessonId={lessonId} arquivos={arquivos} comoAdmin={comoAdmin} />}
+        {arquivos && (
+          <ul className="flex flex-col gap-2">
+            {arquivos.map((arquivo) => (
+              <li key={arquivo.id}>
+                <a
+                  href={api.enderecoDoArquivo(lessonId, arquivo.id, comoAdmin)}
+                  download
+                  className="group flex items-center gap-2 py-1 transition-colors hover:text-primary"
+                >
+                  <FileDown className="size-4 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" aria-hidden="true" />
+                  <span className="truncate text-[0.8rem] font-medium text-muted-foreground transition-colors group-hover:text-primary">
+                    {arquivo.originalName}
+                  </span>
+                  <span className="ml-auto shrink-0 text-[0.7rem] text-muted-foreground/60">
+                    {tamanhoLegivel(arquivo.sizeBytes, idioma)}
+                  </span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </details>
   );
