@@ -15,7 +15,6 @@ export function CoursePublishSection() {
   return (
     <PageSection
       title="Visibilidade"
-      description="Se o curso aparece no catálogo, e em que posição."
     >
       <Card>
         <CardContent className="grid gap-4 pt-6 sm:grid-cols-2">

@@ -89,7 +89,7 @@ function PassoPublicar() {
   const { porcentagem, faltando } = preenchimentoDoCurso(camposDoCurso(curso));
   return (
     <StepForm passo="publicar">
-      <PageSection title="O que falta" description="O que ainda falta preencher. Nada aqui impede de publicar.">
+      <PageSection title="O que falta">
         <Card>
           <CardContent className="pt-6">
             <CompletenessBar titulo={curso.title} porcentagem={porcentagem} faltando={faltando} />

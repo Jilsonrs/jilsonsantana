@@ -36,7 +36,6 @@ export function CourseLinkField({ slug, idioma }: { slug: string; idioma: Langua
   return (
     <PageSection
       title="Link do curso"
-      description="O endereço público do curso, para compartilhar. Ele abre para visitantes depois que o curso é publicado."
     >
       <Card>
         <CardContent className="space-y-3 pt-6">
