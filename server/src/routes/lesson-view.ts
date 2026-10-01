@@ -74,7 +74,7 @@ async function arvoreDoCurso(courseId: number, soPublicado: boolean) {
           lessons: {
             where: filtro,
             orderBy: byOrder,
-            select: { id: true, title: true, kind: true, isFreePreview: true, status: true, _count: { select: { files: true } } },
+            select: { id: true, title: true, kind: true, isFreePreview: true, status: true, videoDurationSeconds: true, _count: { select: { files: true } } },
           },
         },
       },
@@ -95,11 +95,12 @@ async function arvoreDoCurso(courseId: number, soPublicado: boolean) {
     highlights: curso.highlights,
     faq: curso.faq,
     camadas: curso.camadas,
+    videoSeconds: curso.modules.reduce((acc, m) => acc + m.lessons.reduce((acc2, l) => acc2 + (l.videoDurationSeconds ?? 0), 0), 0),
     modulos: curso.modules.map((m) => ({
       id: m.id,
       title: m.title,
       status: m.status,
-      aulas: m.lessons.map(({ _count, ...aula }) => ({ ...aula, temArquivos: _count.files > 0 })),
+      aulas: m.lessons.map(({ _count, videoDurationSeconds, ...aula }) => ({ ...aula, temArquivos: _count.files > 0 })),
     })),
   };
 }

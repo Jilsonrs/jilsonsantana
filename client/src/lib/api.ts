@@ -352,6 +352,7 @@ export type PaginaDaAula = {
     highlights: Highlight[] | null;
     faq: FaqItem[] | null;
     camadas: Layer[];
+    videoSeconds: number;
     modulos: { id: number; title: string; status: ContentStatus; aulas: AulaNaLista[] }[];
   };
   aula: {

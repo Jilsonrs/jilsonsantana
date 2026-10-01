@@ -1,6 +1,8 @@
 import { lazy, Suspense } from "react";
 import type { PaginaDaAula } from "@/lib/api";
 import { useT } from "@/lib/language";
+import { contagem } from "@/lib/contagem";
+import { horasEMinutos } from "@/lib/duracao-do-curso";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { CourseHighlights, CourseLayers } from "@/components/content/CoursePremiumFeatures";
@@ -45,6 +47,9 @@ export function CourseDetails({ curso }: { curso: PaginaDaAula["curso"] }) {
   const destaques = curso.highlights ?? [];
   const perguntas = curso.faq ?? [];
 
+  const moduleCount = curso.modulos?.length ?? 0;
+  const lessonCount = curso.modulos?.reduce((acc, m) => acc + m.aulas.length, 0) ?? 0;
+
   return (
     <section aria-labelledby="sobre-o-curso" className="space-y-10 border-t border-border/40 pt-10">
       {/* 1. O que você vai aprender */}
@@ -66,11 +71,18 @@ export function CourseDetails({ curso }: { curso: PaginaDaAula["curso"] }) {
 
       {/* 3. Título "Sobre o curso" e Descrição */}
       <div className="space-y-5">
-        <div className="flex flex-wrap items-center gap-4">
-          <h2 id="sobre-o-curso" className="font-display text-[1.4rem] font-bold tracking-tight text-foreground">
-            {t.aula.sobreOCurso}
-          </h2>
-          {curso.level && <Badge variant="secondary" className="rounded-full font-medium">{t.niveis[curso.level]}</Badge>}
+        <div className="space-y-2">
+          <div className="flex flex-wrap items-center gap-4">
+            <h2 id="sobre-o-curso" className="font-display text-[1.4rem] font-bold tracking-tight text-foreground">
+              {t.aula.sobreOCurso}
+            </h2>
+            {curso.level && <Badge variant="secondary" className="rounded-full font-medium">{t.niveis[curso.level]}</Badge>}
+          </div>
+          {(moduleCount > 0 || lessonCount > 0) && (
+            <p className="font-mono text-[0.9rem] font-medium tracking-wide text-muted-foreground/80">
+              {contagem(moduleCount, t.curso.modulo, t.curso.modulos)} · {contagem(lessonCount, t.curso.aula, t.curso.aulas)} · {horasEMinutos(curso.videoSeconds)}
+            </p>
+          )}
         </div>
 
         {curso.description && (
