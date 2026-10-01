@@ -70,7 +70,7 @@ export function LessonRow({
           {/* A aula como o aluno vê (etapa 4 do Bloco U, 29/09/2026). Em aba nova:
               um envio de vídeo em andamento aqui continua sem interrupção. */}
           <Button asChild variant="ghost" size="sm">
-            <a href={`/aluno/aula/${lesson.id}`} target="_blank" rel="noopener noreferrer" aria-label={`Visualizar a aula ${lesson.title}`}>
+            <a href={`/aluno/aula/${lesson.id}`} target="_blank" rel="noopener noreferrer" aria-label={`Visualizar a aula ${lesson.title}`} className="flex items-center gap-2">
               <Eye className="h-4 w-4" />
               Visualizar
             </a>
