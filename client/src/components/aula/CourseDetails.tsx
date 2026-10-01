@@ -98,7 +98,7 @@ export function CourseDetails({ curso }: { curso: PaginaDaAula["curso"] }) {
       </div>
 
       {/* 5. Pra quem é e Requisitos */}
-      <div className="grid gap-6 sm:grid-cols-2">
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         <Lista titulo={t.curso.paraQuem} itens={curso.personas} icon={Users} />
         <Lista titulo={t.curso.requisitos} itens={curso.requirements} icon={ClipboardList} />
       </div>
