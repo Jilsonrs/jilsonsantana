@@ -57,7 +57,12 @@ export function PageSection({
   return (
     <div className={cn("flex flex-col gap-y-4 pt-8 sm:pt-10", className)}>
       <div>
-        <h2 className="text-lg font-semibold leading-7 text-foreground">{title}</h2>
+        <h2 className="flex items-center gap-2 text-lg font-semibold leading-7 text-foreground">
+          <span className="text-primary font-mono font-bold tracking-tighter opacity-80 select-none" aria-hidden="true">
+            //
+          </span>
+          {title}
+        </h2>
         {description && <p className="mt-1 text-sm leading-6 text-muted-foreground max-w-[80ch]">{description}</p>}
       </div>
       <div>
