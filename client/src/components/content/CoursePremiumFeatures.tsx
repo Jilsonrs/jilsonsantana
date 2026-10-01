@@ -47,7 +47,7 @@ export function CourseLayers({ camadas = [] }: { camadas: Layer[] }) {
     <section className="flex flex-col h-full rounded-3xl bg-gradient-to-br from-indigo-50/30 via-background to-blue-50/20 p-8 shadow-sm ring-1 ring-primary/10 transition-all hover:shadow-md">
       <div className="space-y-2 mb-8">
         <h3 className="font-display text-[1.4rem] font-bold tracking-tight text-foreground">
-          O DNA da escola <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">moderna</span>.
+          Uma escola <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">moderna</span>.
         </h3>
       </div>
 
