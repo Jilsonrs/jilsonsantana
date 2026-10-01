@@ -33,8 +33,8 @@ export function ModuleCard({
   const { setNodeRef, estilo, alca } = useArrastavel({ tipo: "modulo", id: module.id });
 
   return (
-    <Card ref={setNodeRef} style={estilo}>
-      <CardHeader className="space-y-0">
+    <Card ref={setNodeRef} style={estilo} className="overflow-hidden">
+      <CardHeader className="space-y-0 border-b border-border/50 bg-muted/30 px-5 py-4">
         <ModuleHeader
           module={module}
           alca={alca}

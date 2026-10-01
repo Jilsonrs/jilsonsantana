@@ -50,8 +50,8 @@ export function LessonRow({
   const { setNodeRef, estilo, alca } = useArrastavel({ tipo: "aula", id: lesson.id });
 
   return (
-    <div ref={setNodeRef} style={estilo} className="space-y-2">
-      <div className="flex flex-wrap items-center gap-2 border-l border-border pl-3">
+    <div ref={setNodeRef} style={estilo} className="space-y-2 group">
+      <div className="flex flex-wrap items-center gap-2 border-l-2 border-border pl-4 py-2 pr-2 rounded-r-md hover:bg-muted/30 transition-colors">
         <AlcaDeArraste rotulo={`Arrastar a aula ${lesson.title}`} alca={alca} />
         <span className={CLASSE_DA_ETIQUETA}>{ROTULO_DO_TIPO[lesson.kind]}</span>
         {editando ? (
