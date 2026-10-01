@@ -70,39 +70,38 @@ export function CourseDetails({ curso }: { curso: PaginaDaAula["curso"] }) {
 
       {/* 3, 4 e 5. Sobre o Curso, Listas e Nosso Método lado a lado */}
       <div className="grid gap-12 lg:grid-cols-2">
-        {/* Coluna da Esquerda: Descrição + Listas */}
-        <div className="space-y-12">
-          <div className="space-y-5">
-            <div className="flex flex-wrap items-center gap-3">
-              <h2 id="sobre-o-curso" className="font-display text-[1.4rem] font-bold tracking-tight text-foreground">
-                {t.aula.sobreOCurso}
-              </h2>
-              <div className="flex items-center gap-3 pt-1">
-                {curso.level && <Badge variant="secondary" className="rounded-full font-medium">{t.niveis[curso.level]}</Badge>}
-                {(moduleCount > 0 || lessonCount > 0) && (
-                  <span className="font-mono text-xs font-medium tracking-wide text-muted-foreground">
-                    {contagem(moduleCount, t.curso.modulo, t.curso.modulos)} · {contagem(lessonCount, t.curso.aula, t.curso.aulas)} · {horasEMinutos(curso.videoSeconds)}
-                  </span>
-                )}
-              </div>
+        {/* 1. Descrição (No desktop: topo esquerda) */}
+        <div className="space-y-5 lg:col-start-1 lg:row-start-1">
+          <div className="flex flex-wrap items-center gap-3">
+            <h2 id="sobre-o-curso" className="font-display text-[1.4rem] font-bold tracking-tight text-foreground">
+              {t.aula.sobreOCurso}
+            </h2>
+            <div className="flex items-center gap-3 pt-1">
+              {curso.level && <Badge variant="secondary" className="rounded-full font-medium">{t.niveis[curso.level]}</Badge>}
+              {(moduleCount > 0 || lessonCount > 0) && (
+                <span className="font-mono text-xs font-medium tracking-wide text-muted-foreground">
+                  {contagem(moduleCount, t.curso.modulo, t.curso.modulos)} · {contagem(lessonCount, t.curso.aula, t.curso.aulas)} · {horasEMinutos(curso.videoSeconds)}
+                </span>
+              )}
             </div>
-
-            {curso.description && (
-              <Suspense fallback={null}>
-                <MarkdownText texto={curso.description} className="text-base leading-relaxed" />
-              </Suspense>
-            )}
           </div>
 
-          <div className="grid gap-6 sm:grid-cols-2">
-            <Lista titulo={t.curso.paraQuem} itens={curso.personas} icon={Users} />
-            <Lista titulo={t.curso.requisitos} itens={curso.requirements} icon={ClipboardList} />
-          </div>
+          {curso.description && (
+            <Suspense fallback={null}>
+              <MarkdownText texto={curso.description} className="text-base leading-relaxed" />
+            </Suspense>
+          )}
         </div>
 
-        {/* Coluna da Direita: DNA (Camadas) */}
-        <div>
+        {/* 2. Método (No desktop: direita, ocupando toda altura. No mobile: logo abaixo da descrição!) */}
+        <div className="lg:col-start-2 lg:row-span-2 lg:row-start-1">
           <CourseLayers camadas={curso.camadas} />
+        </div>
+
+        {/* 3. Listas (No desktop: baixo esquerda. No mobile: por último) */}
+        <div className="grid gap-6 sm:grid-cols-2 lg:col-start-1 lg:row-start-2 lg:self-start">
+          <Lista titulo={t.curso.paraQuem} itens={curso.personas} icon={Users} />
+          <Lista titulo={t.curso.requisitos} itens={curso.requirements} icon={ClipboardList} />
         </div>
       </div>
 
