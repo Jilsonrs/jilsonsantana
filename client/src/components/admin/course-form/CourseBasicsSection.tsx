@@ -35,7 +35,7 @@ export function CourseBasicsSection({ idiomaTravado = false }: { idiomaTravado?:
               <Input
                 id="title"
                 maxLength={LIMITES_DO_CURSO.title}
-                aria-describedby={descritoPor("title", { contador: true })}
+                aria-describedby={descritoPor("title", { dica: true, contador: true })}
                 {...register("title")}
               />
             </Field>
@@ -49,7 +49,7 @@ export function CourseBasicsSection({ idiomaTravado = false }: { idiomaTravado?:
               <Input
                 id="subtitle"
                 maxLength={LIMITES_DO_CURSO.subtitle}
-                aria-describedby={descritoPor("subtitle", { contador: true })}
+                aria-describedby={descritoPor("subtitle", { dica: true, contador: true })}
                 {...register("subtitle")}
               />
             </Field>
@@ -63,7 +63,7 @@ export function CourseBasicsSection({ idiomaTravado = false }: { idiomaTravado?:
               <Input
                 id="slug"
                 maxLength={LIMITES_DO_CURSO.slug}
-                aria-describedby={descritoPor("slug", { contador: true })}
+                aria-describedby={descritoPor("slug", { dica: true, contador: true })}
                 {...register("slug")}
               />
             </Field>
@@ -86,7 +86,7 @@ export function CourseBasicsSection({ idiomaTravado = false }: { idiomaTravado?:
                 id="description"
                 name="description"
                 maxLength={LIMITES_DO_CURSO.description}
-                describedBy={descritoPor("description", { contador: true })}
+                describedBy={descritoPor("description", { dica: true, contador: true })}
               />
             </Field>
           </CardContent>

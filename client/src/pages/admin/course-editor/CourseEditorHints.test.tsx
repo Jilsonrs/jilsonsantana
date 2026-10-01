@@ -61,9 +61,9 @@ describe("dicas embaixo dos campos, ligadas a eles", () => {
   });
 
   it.each([
-    ["O que vai aprender (learnTags)", DICAS_DO_CURSO.learnTags],
-    ["Pré-requisitos", DICAS_DO_CURSO.requirements],
-    ["Pra quem é (personas)", DICAS_DO_CURSO.personas],
+    ["Entregáveis e Habilidades", DICAS_DO_CURSO.learnTags],
+    ["Requisitos", DICAS_DO_CURSO.requirements],
+    ["Perfil do aluno", DICAS_DO_CURSO.personas],
   ])("para-quem-e → %s (cada item da lista)", async (lista, dica) => {
     await abrir("para-quem-e");
     expect(descricao(screen.getByLabelText(`${lista}, item 1`))).toContain(dica);

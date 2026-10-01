@@ -72,7 +72,7 @@ const escolher = (arquivo: File) => fireEvent.change(screen.getByTestId("lesson-
 describe("arquivos da aula", () => {
   it("aula sem arquivo: diz isso", async () => {
     await abrirArquivos();
-    expect(await screen.findByText("Nenhum arquivo nesta aula.")).toBeTruthy();
+    expect(await screen.findByText("Nenhum arquivo.")).toBeTruthy();
     expect(listLessonFiles).toHaveBeenCalledWith(11);
   });
 
@@ -89,7 +89,7 @@ describe("arquivos da aula", () => {
 
   it("enviar: manda o arquivo da aula e recarrega a lista", async () => {
     await abrirArquivos();
-    await screen.findByText("Nenhum arquivo nesta aula.");
+    await screen.findByText("Nenhum arquivo.");
     const arquivo = new File(["x"], "tabela.xlsx", { type: "application/vnd.ms-excel" });
     escolher(arquivo);
 
@@ -143,11 +143,11 @@ describe("arquivos da aula", () => {
   // os arquivos; recolher a aula esconde tudo.
   it("a aula aberta mostra os arquivos junto com o vídeo; recolher esconde", async () => {
     await abrirArquivos();
-    expect(await screen.findByText("Arquivos para baixar")).toBeTruthy();
+    expect(await screen.findByText("Arquivos")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Enviar vídeo" })).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: "Recolher a aula Abertura" }));
-    expect(screen.queryByText("Arquivos para baixar")).toBeNull();
+    expect(screen.queryByText("Arquivos")).toBeNull();
     expect(screen.queryByRole("button", { name: "Enviar vídeo" })).toBeNull();
   });
 });

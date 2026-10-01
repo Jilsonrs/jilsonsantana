@@ -57,12 +57,15 @@ export function PageSection({
   return (
     <div className={cn("flex flex-col gap-y-4 pt-8 sm:pt-10", className)}>
       <div>
-        <h2 className="flex items-center gap-2 text-lg font-semibold leading-7 text-foreground">
+        {/* As barras "//" são enfeite (acabamento do Antigravity, 30/09/2026): ficam
+            AO LADO do título, fora do <h2>, e escondidas do leitor de tela. Dentro
+            dele, viravam parte do texto do título ("//Relatórios"). */}
+        <div className="flex items-center gap-2">
           <span className="text-primary font-mono font-bold tracking-[-0.25em] opacity-80 select-none" aria-hidden="true">
             //
           </span>
-          {title}
-        </h2>
+          <h2 className="text-lg font-semibold leading-7 text-foreground">{title}</h2>
+        </div>
         {description && <p className="mt-1 text-sm leading-6 text-muted-foreground max-w-[80ch]">{description}</p>}
       </div>
       <div>

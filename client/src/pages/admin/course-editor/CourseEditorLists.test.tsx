@@ -23,7 +23,8 @@ beforeEach(() => {
   updateCourse.mockReset().mockResolvedValue(CURSO_DE_TESTE);
 });
 
-const APRENDER = "O que vai aprender (learnTags)";
+// Rótulos renomeados pelo operador em 30/09/2026 (acabamento com o Antigravity).
+const APRENDER = "Entregáveis e Habilidades";
 const item = (lista: string, n: number) => screen.getByLabelText(`${lista}, item ${n}`) as HTMLInputElement;
 
 async function abrir(curso: Partial<AdminCourseDetail> = {}) {
@@ -52,7 +53,7 @@ describe("Para quem é — um campo por item", () => {
   // Lista vazia abre com um campo em branco, que não vai no envio.
   it("lista vazia abre com um campo em branco, e campo em branco não é enviado", async () => {
     await abrir({ requirements: [] });
-    expect(item("Pré-requisitos", 1).value).toBe("");
+    expect(item("Requisitos", 1).value).toBe("");
 
     expect((await salvarEPegar()).requirements).toEqual([]);
   });
@@ -104,7 +105,7 @@ describe("Para quem é — 160 caracteres por item", () => {
     fireEvent.click(screen.getByRole("button", { name: "Salvar" }));
 
     expect(await screen.findByText("Use no máximo 160 caracteres.")).toBeTruthy();
-    expect(item("Pra quem é (personas)", 1).getAttribute("aria-invalid")).toBe("true");
+    expect(item("Perfil do aluno", 1).getAttribute("aria-invalid")).toBe("true");
     expect(updateCourse).not.toHaveBeenCalled();
   });
 });
