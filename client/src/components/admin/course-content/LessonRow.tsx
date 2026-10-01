@@ -110,13 +110,13 @@ export function LessonRow({
         </p>
       )}
       {aberta && (
-        <div className="space-y-4 rounded-lg border border-border p-4">
+        <div className="space-y-3 rounded-lg border border-border p-3">
           {lesson.kind === LessonKind.TEXT ? (
             <LessonTextPanel lesson={lesson} onChanged={onChanged} />
           ) : (
             <LessonVideoPanel lesson={lesson} onChanged={onChanged} />
           )}
-          <div className="border-t border-border pt-4">
+          <div className="border-t border-border pt-3">
             <LessonFilesPanel lesson={lesson} />
           </div>
         </div>
