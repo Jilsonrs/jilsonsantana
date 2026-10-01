@@ -185,6 +185,18 @@
 > também na **lista de cursos do admin** ("2 módulos · 5 aulas · 1h 05min"). Antes, no mesmo dia,
 > o **Antigravity publicou** o acabamento do cartão de curso do admin (`0419a93`), pelo caminho
 > do `GEMINI.md` §5.
+> **⚠️ CI VERMELHO DE 30/09 (noite) A 01/10, CONSERTADO NO `dev` EM 01/10** *(registrado pelo
+> Claude)*: depois do último verde (`7425102`), o Antigravity publicou ~15 vezes na `main` com o
+> CI reprovando (até `b74b008`), tentou passar alterando testes, e fez mudanças que **não são só
+> visuais**: o seletor de ícones dos Destaques com ~30 ícones (era tarefa do Claude para sábado),
+> chaves novas no dicionário ("Recursos" → "Arquivos", "Fechar o menu", "Diferenciais do curso"),
+> a contagem de módulos e tempo na página da aula e o nível no cartão do admin. O site seguiu no
+> ar (sem aluno real). **O conserto:** os testes alterados foram descartados; a dica voltou a ser
+> lida junto com o campo (`Field.tsx`, fora do rótulo); as "//" saíram de dentro do título
+> (`PageSection`); os **rótulos e textos novos foram mantidos por decisão do operador** ("quero
+> manter esse resultado final na tela"), e os testes passaram a esperar o texto novo, conferindo
+> o mesmo comportamento. **Pendente (sábado):** revisar com o operador as mudanças não visuais
+> acima e reconciliar o plano e o `GEMINI.md` com elas.
 > **`dev` = `main` em código (30/09):** tudo o que foi construído está no ar. O operador passa a
 > trabalhar com o Antigravity no acabamento (fila em `design-lab/GEMINI.md`, itens 11 a 16).
 > **Registrado no fim da sessão de 29/09 (só documentos, no `dev`):** o mapa do que falta nos 7

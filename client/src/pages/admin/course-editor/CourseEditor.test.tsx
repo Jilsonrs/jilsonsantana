@@ -188,7 +188,7 @@ describe("Editor do curso — cada passo salva só a parte dele", () => {
   it("Para quem é envia só as três listas", async () => {
     updateCourse.mockResolvedValue(CURSO_DE_TESTE);
     abrir("/admin/cursos/1/para-quem-e");
-    const item = (await screen.findByLabelText("O que vai aprender (learnTags), item 1")) as HTMLInputElement;
+    const item = (await screen.findByLabelText("Entregáveis e Habilidades, item 1")) as HTMLInputElement;
     await waitFor(() => expect(item.value).toBe("PROCX"));
     fireEvent.change(item, { target: { value: "Fórmulas" } });
     salvar();
