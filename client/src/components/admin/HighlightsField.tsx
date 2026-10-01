@@ -84,7 +84,6 @@ export function HighlightsField() {
 
   return (
     <div className="space-y-3">
-      <Label>Diferenciais (highlights)</Label>
       {fields.map((field, index) => (
         <div key={field.id} className="flex gap-2 rounded-md border border-border p-3">
           <div className="grid flex-1 gap-4 sm:grid-cols-[1fr_2fr_3fr]">
