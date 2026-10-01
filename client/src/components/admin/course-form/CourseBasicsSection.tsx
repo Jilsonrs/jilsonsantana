@@ -20,71 +20,96 @@ export function CourseBasicsSection({ idiomaTravado = false }: { idiomaTravado?:
   const contador = (valor: string, limite: number) => ({ atual: valor.length, limite });
 
   return (
-    <PageSection
-      title="Informações básicas"
-      description="O título, subtítulo e a URL amigável do seu curso. Capriche no título para atrair alunos e ser facilmente encontrado."
-    >
-      <Card>
-        <CardContent className="space-y-6 pt-6">
-          <Field
-            id="title"
-            label="Título"
-            error={formState.errors.title?.message}
-            contador={contador(title, LIMITES_DO_CURSO.title)}
-            dica={DICAS_DO_CURSO.title}
-          >
-            <Input
+    <div className="space-y-10">
+      {/* 1. Identidade */}
+      <PageSection
+        title="Identidade"
+        description="O título, subtítulo e a URL amigável do seu curso. Capriche no título para ser encontrado facilmente."
+      >
+        <Card>
+          <CardContent className="space-y-6 pt-6">
+            <Field
               id="title"
-              maxLength={LIMITES_DO_CURSO.title}
-              aria-describedby={descritoPor("title", { dica: true, contador: true })}
-              {...register("title")}
-            />
-          </Field>
-          <Field
-            id="subtitle"
-            label="Subtítulo"
-            error={formState.errors.subtitle?.message}
-            contador={contador(subtitle, LIMITES_DO_CURSO.subtitle)}
-            dica={DICAS_DO_CURSO.subtitle}
-          >
-            <Input
+              label="Título"
+              error={formState.errors.title?.message}
+              contador={contador(title, LIMITES_DO_CURSO.title)}
+              dica={DICAS_DO_CURSO.title}
+            >
+              <Input
+                id="title"
+                maxLength={LIMITES_DO_CURSO.title}
+                aria-describedby={descritoPor("title", { dica: true, contador: true })}
+                {...register("title")}
+              />
+            </Field>
+            <Field
               id="subtitle"
-              maxLength={LIMITES_DO_CURSO.subtitle}
-              aria-describedby={descritoPor("subtitle", { dica: true, contador: true })}
-              {...register("subtitle")}
-            />
-          </Field>
-          <Field
-            id="slug"
-            label="Slug"
-            error={formState.errors.slug?.message}
-            contador={contador(slug, LIMITES_DO_CURSO.slug)}
-            dica={DICAS_DO_CURSO.slug}
-          >
-            <Input
+              label="Subtítulo"
+              error={formState.errors.subtitle?.message}
+              contador={contador(subtitle, LIMITES_DO_CURSO.subtitle)}
+              dica={DICAS_DO_CURSO.subtitle}
+            >
+              <Input
+                id="subtitle"
+                maxLength={LIMITES_DO_CURSO.subtitle}
+                aria-describedby={descritoPor("subtitle", { dica: true, contador: true })}
+                {...register("subtitle")}
+              />
+            </Field>
+            <Field
               id="slug"
-              maxLength={LIMITES_DO_CURSO.slug}
-              aria-describedby={descritoPor("slug", { dica: true, contador: true })}
-              {...register("slug")}
-            />
-          </Field>
-          <Field
-            id="description"
-            label="Descrição"
-            error={formState.errors.description?.message}
-            contador={contador(description, LIMITES_DO_CURSO.description)}
-            dica={DICAS_DO_CURSO.description}
-          >
-            <MarkdownField
+              label="Slug"
+              error={formState.errors.slug?.message}
+              contador={contador(slug, LIMITES_DO_CURSO.slug)}
+              dica={DICAS_DO_CURSO.slug}
+            >
+              <Input
+                id="slug"
+                maxLength={LIMITES_DO_CURSO.slug}
+                aria-describedby={descritoPor("slug", { dica: true, contador: true })}
+                {...register("slug")}
+              />
+            </Field>
+          </CardContent>
+        </Card>
+      </PageSection>
+
+      {/* 2. Apresentação */}
+      <PageSection
+        title="Apresentação"
+        description="A descrição detalhada que convence o aluno. O editor aceita formatação, listas e negrito."
+      >
+        <Card>
+          <CardContent className="pt-6">
+            <Field
               id="description"
-              name="description"
-              maxLength={LIMITES_DO_CURSO.description}
-              describedBy={descritoPor("description", { dica: true, contador: true })}
-            />
-          </Field>
-          <CourseLanguageLevelFields idiomaTravado={idiomaTravado} />
-        </CardContent>
-      </Card>
-    </PageSection>
+              label="Descrição"
+              error={formState.errors.description?.message}
+              contador={contador(description, LIMITES_DO_CURSO.description)}
+              dica={DICAS_DO_CURSO.description}
+            >
+              <MarkdownField
+                id="description"
+                name="description"
+                maxLength={LIMITES_DO_CURSO.description}
+                describedBy={descritoPor("description", { dica: true, contador: true })}
+              />
+            </Field>
+          </CardContent>
+        </Card>
+      </PageSection>
+
+      {/* 3. Classificação */}
+      <PageSection
+        title="Classificação"
+        description="O idioma oficial e o nível de dificuldade esperado do aluno."
+      >
+        <Card>
+          <CardContent className="pt-6">
+            <CourseLanguageLevelFields idiomaTravado={idiomaTravado} />
+          </CardContent>
+        </Card>
+      </PageSection>
+    </div>
   );
 }

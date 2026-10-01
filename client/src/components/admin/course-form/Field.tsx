@@ -24,15 +24,15 @@ export function Field({
 }) {
   return (
     <div className="space-y-1.5">
-      <Label htmlFor={id} className="font-medium text-foreground">
-        {label}
+      <Label htmlFor={id} className="font-medium text-foreground flex items-baseline gap-1">
+        <span>{label}</span>
+        {dica && (
+          <span className="font-normal text-muted-foreground text-xs leading-none">
+            — {dica}
+          </span>
+        )}
       </Label>
       {children}
-      {dica && (
-        <p id={id && idDaDica(id)} className="text-sm text-muted-foreground">
-          {dica}
-        </p>
-      )}
       {(error || contador) && (
         <div className="flex items-start justify-between gap-4">
           {error ? <p className="text-sm font-medium text-destructive">{error}</p> : <span />}
@@ -51,12 +51,8 @@ export function idDoContador(id: string): string {
   return `${id}-contador`;
 }
 
-export function idDaDica(id: string): string {
-  return `${id}-dica`;
-}
-
-/** O `aria-describedby` do campo: a dica e/ou o contador que o `Field` desenha. */
-export function descritoPor(id: string, { dica = false, contador = false }: { dica?: boolean; contador?: boolean }): string | undefined {
-  const ids = [dica && idDaDica(id), contador && idDoContador(id)].filter(Boolean);
+/** O `aria-describedby` do campo: apenas o contador, pois a dica agora fica no `<Label>`. */
+export function descritoPor(id: string, { contador = false }: { dica?: boolean; contador?: boolean }): string | undefined {
+  const ids = [contador && idDoContador(id)].filter(Boolean);
   return ids.length > 0 ? ids.join(" ") : undefined;
 }
