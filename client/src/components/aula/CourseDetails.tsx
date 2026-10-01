@@ -91,9 +91,11 @@ export function CourseDetails({ curso }: { curso: PaginaDaAula["curso"] }) {
         )}
       </div>
 
-      {/* 4 e 5. DNA (Camadas), Requisitos, e Pra quem é - em 3 colunas */}
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        <CourseLayers camadas={curso.camadas} />
+      {/* 4 e 5. DNA (Camadas), Requisitos, e Pra quem é - em 4 colunas (DNA ocupa 2) */}
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="sm:col-span-2">
+          <CourseLayers camadas={curso.camadas} />
+        </div>
         <Lista titulo={t.curso.paraQuem} itens={curso.personas} icon={Users} />
         <Lista titulo={t.curso.requisitos} itens={curso.requirements} icon={ClipboardList} />
       </div>
