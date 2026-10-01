@@ -8,9 +8,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { CompletenessBar } from "./CompletenessBar";
 import { ContentStatus } from "@jilson/core";
 
+import { useT } from "@/lib/language";
+
 const NUMEROS_EM_BREVE = ["Horas assistidas", "Alunos", "Avaliação"];
 
 export function AdminCourseCard({ curso, aoExcluir }: { curso: Curso; aoExcluir: () => void }) {
+  const t = useT();
   const { porcentagem, faltando } = preenchimentoDoCurso(curso);
 
   return (
@@ -48,6 +51,11 @@ export function AdminCourseCard({ curso, aoExcluir }: { curso: Curso; aoExcluir:
                 <Badge variant={curso.status === ContentStatus.PUBLISHED ? "default" : "secondary"} className="rounded-full px-3 font-medium">
                   {ROTULO_DO_STATUS[curso.status]}
                 </Badge>
+                {curso.level && (
+                  <Badge variant="secondary" className="rounded-full font-medium">
+                    {t.niveis[curso.level]}
+                  </Badge>
+                )}
                 {curso.language === "en" && (
                   <Badge variant="outline" className="rounded-full px-2 font-mono text-[10px] tracking-wider uppercase">
                     EN

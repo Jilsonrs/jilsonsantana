@@ -152,6 +152,7 @@ router.get("/admin/courses", requireAdmin, async (_req, res) => {
       id: true,
       slug: true,
       title: true,
+      level: true,
       status: true,
       language: true,
       displayOrder: true,
