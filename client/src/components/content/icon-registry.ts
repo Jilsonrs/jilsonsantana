@@ -3,6 +3,10 @@ import {
   CheckCircle2, Clock, Compass, FileText, Flag, Globe, Key, Lightbulb,
   Map, PieChart, Puzzle, Shield, Star, TrendingUp, Users, Video,
   Brain, Code, Laptop, LineChart, Medal,
+  BarChart3, Presentation, Database, Server, Filter, Workflow, Network,
+  GitBranch, Repeat, Bot, Cpu, Wand2, Atom, Terminal, Braces,
+  LayoutDashboard, Monitor, Calculator, Sigma, Search, Eye, PenTool,
+  Activity, Settings, Box, Layers3,
   type LucideIcon
 } from "lucide-react";
 
@@ -10,6 +14,7 @@ import {
 // LAYER_CONFIG) to a Lucide component. Fixed set per CLAUDE.md ("Icons from a
 // fixed Lucide set, avoid bespoke art per course").
 export const ICONS: Record<string, LucideIcon> = {
+  // Gerais & Ensino
   "stack-2": Layers,
   "bolt": Zap,
   "sparkles": Sparkles,
@@ -39,6 +44,44 @@ export const ICONS: Record<string, LucideIcon> = {
   "laptop": Laptop,
   "line-chart": LineChart,
   "medal": Medal,
+
+  // BI & Analytics
+  "bar-chart": BarChart3,
+  "presentation": Presentation,
+  "layout-dashboard": LayoutDashboard,
+  "monitor": Monitor,
+  "activity": Activity,
+  "eye": Eye,
+  "search": Search,
+
+  // Dados, SQL & ETL
+  "database": Database,
+  "server": Server,
+  "filter": Filter,
+  
+  // Automações & Lógica
+  "workflow": Workflow,
+  "network": Network,
+  "git-branch": GitBranch,
+  "repeat": Repeat,
+  "calculator": Calculator,
+  "sigma": Sigma,
+
+  // IA & Agentes
+  "bot": Bot,
+  "cpu": Cpu,
+  "wand": Wand2,
+  "atom": Atom,
+
+  // Programação (Python, etc)
+  "terminal": Terminal,
+  "braces": Braces,
+
+  // Outros
+  "pen-tool": PenTool,
+  "settings": Settings,
+  "box": Box,
+  "layers-3": Layers3,
 };
 
 // Available icon tokens for the admin select field
