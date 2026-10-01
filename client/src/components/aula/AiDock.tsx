@@ -29,7 +29,7 @@ export function BotaoDaIa({ aberto, aoAlternar }: { aberto: boolean; aoAlternar:
 export function PainelDaIa({ aoFechar }: { aoFechar: () => void }) {
   const t = useT();
   return (
-    <aside aria-label={t.aula.iaTitulo} className="relative overflow-hidden rounded-3xl border border-primary/20 bg-gradient-to-b from-surface-alt to-background p-6 shadow-xl">
+    <aside aria-label={t.aula.iaTitulo} className="relative overflow-hidden rounded-3xl border border-primary/20 bg-gradient-to-b from-surface-alt to-background p-6 shadow-xl h-full flex flex-col">
       <div className="absolute -right-4 -top-4 opacity-[0.03] pointer-events-none">
         <Sparkles className="size-32" aria-hidden="true" />
       </div>

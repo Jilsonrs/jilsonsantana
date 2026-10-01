@@ -65,11 +65,11 @@ export function SecondaryNav({
     return (
       <aside
         aria-label={t.nav.menuDaSecao}
-        className="hidden md:flex flex-col shrink-0 w-[280px] bg-surface-alt border-r border-border py-8 px-4 overflow-y-auto relative group"
+        className="hidden md:flex flex-col shrink-0 w-[280px] bg-surface-alt border-r border-border py-8 px-4 overflow-y-auto relative group sticky top-0 h-screen"
       >
         <button
           onClick={() => setSearchParams((prev) => { prev.set("sidebar", "0"); return prev; }, { replace: true })}
-          className="absolute top-6 right-4 p-1.5 bg-primary text-primary-foreground hover:bg-primary/90 rounded-full shadow-sm transition-colors flex items-center justify-center"
+          className="absolute top-6 right-4 p-1.5 bg-primary text-primary-foreground hover:bg-primary/90 rounded-full shadow-sm transition-colors flex items-center justify-center z-10"
           aria-label={t.nav.fecharMenu ?? "Fechar conteúdo"}
         >
           <X className="size-4" />
@@ -98,7 +98,8 @@ export function SecondaryNav({
       className={cn(
         "hidden md:flex flex-col shrink-0 w-[280px] bg-surface-alt",
         "border-r border-border py-8 px-6",
-        "shadow-[inset_-10px_0_20px_rgba(0,0,0,0.01)]"
+        "shadow-[inset_-10px_0_20px_rgba(0,0,0,0.01)]",
+        "sticky top-0 h-screen"
       )}
     >
       {ativa?.to === ROTA_DA_CONTA && usuario ? (

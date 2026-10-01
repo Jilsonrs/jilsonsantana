@@ -117,7 +117,13 @@ export function LessonPage() {
             {!session && <CourseContentsNav lessonId={lessonId} />}
           </div>
         </div>
-        {iaAberta && <PainelDaIa aoFechar={() => setIaAberta(false)} />}
+        {iaAberta && (
+          <div className="hidden lg:block relative">
+            <div className="sticky top-8 h-[calc(100vh-64px)]">
+              <PainelDaIa aoFechar={() => setIaAberta(false)} />
+            </div>
+          </div>
+        )}
       </div>
       <BotaoDaIa aberto={iaAberta} aoAlternar={() => setIaAberta(!iaAberta)} />
       </div>

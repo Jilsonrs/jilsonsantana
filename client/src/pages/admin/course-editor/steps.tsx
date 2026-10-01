@@ -68,7 +68,7 @@ function PassoPagina() {
       />
       <PageSection
         title="Destaques (Highlights)"
-        description="Os 3 pilares principais exibidos em destaque no topo da página do curso."
+        description="Os diferenciais deste curso, em cartões com ícone (de 3 a 4). Diferente das Camadas: aqui entra o que só este curso oferece."
       >
         <Card>
           <CardContent className="pt-6">

@@ -40,6 +40,7 @@ function pagina(aula: Partial<PaginaDaAula["aula"]> = {}, rascunho = false): Pag
       highlights: [{ icon: "sparkles", title: "IA do seu lado", text: "Com o JilsonAI." }],
       faq: [{ pergunta: "Preciso do 365?", resposta: "Não." }],
       camadas: ["UNIVERSAL"],
+      videoSeconds: 0,
       modulos: [
         {
           id: 1,
