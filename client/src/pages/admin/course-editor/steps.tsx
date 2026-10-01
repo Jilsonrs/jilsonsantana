@@ -47,10 +47,7 @@ const ModuleLessonTree = lazy(() =>
 function PassoConteudo() {
   const { curso } = useCursoDoEditor();
   return (
-    <PageSection
-      title="Módulos e Aulas"
-      description="Gerencie a estrutura do curso. Adicione os módulos e as aulas do curso."
-    >
+    <PageSection title="Módulos e Aulas">
       <Suspense fallback={<p className="text-muted-foreground">Carregando…</p>}>
         <ModuleLessonTree courseId={curso.id} />
       </Suspense>

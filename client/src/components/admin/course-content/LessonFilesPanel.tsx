@@ -40,18 +40,41 @@ export function LessonFilesPanel({ lesson }: { lesson: AdminLesson }) {
 
   return (
     <div className="space-y-3">
-      <p className="text-sm font-medium">Arquivos para baixar</p>
-      {lista.isLoading && <p className="text-sm text-muted-foreground">Carregando…</p>}
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <p className="text-sm font-medium">Arquivos</p>
+          <p className="text-xs text-muted-foreground">Tipos: {ACEITAS.join(", ")}</p>
+        </div>
+        <div className="flex items-center gap-2">
+          {lista.isLoading && <span className="text-xs text-muted-foreground">Carregando…</span>}
+          {lista.data && lista.data.length === 0 && <span className="text-xs text-muted-foreground">Nenhum arquivo.</span>}
+          <input
+            ref={entrada}
+            type="file"
+            accept={ACEITAS.map((e) => `.${e}`).join(",")}
+            className="hidden"
+            data-testid={`lesson-file-${lesson.id}`}
+            onChange={(e) => {
+              const arquivo = e.target.files?.[0];
+              if (arquivo) envio.mutate(arquivo);
+              e.target.value = "";
+            }}
+          />
+          <Button type="button" variant="outline" size="sm" disabled={envio.isPending} onClick={() => entrada.current?.click()}>
+            {envio.isPending ? `Enviando… ${porcentagem}%` : "Enviar arquivo"}
+          </Button>
+        </div>
+      </div>
+      
       {lista.isError && (
         <p role="alert" className="text-sm font-medium text-destructive">
           Não foi possível carregar os arquivos.
         </p>
       )}
-      {lista.data && lista.data.length === 0 && <p className="text-sm text-muted-foreground">Nenhum arquivo nesta aula.</p>}
       {lista.data && lista.data.length > 0 && (
         <ul className="space-y-1">
           {lista.data.map((arquivo) => (
-            <li key={arquivo.id} className="flex items-center justify-between gap-2 text-sm">
+            <li key={arquivo.id} className="flex items-center justify-between gap-2 text-sm rounded-md border border-border/40 px-3 py-1 bg-muted/20">
               <span>
                 {arquivo.originalName} <span className="text-muted-foreground">· {tamanhoLegivel(arquivo.sizeBytes)}</span>
               </span>
@@ -59,6 +82,7 @@ export function LessonFilesPanel({ lesson }: { lesson: AdminLesson }) {
                 type="button"
                 variant="ghost"
                 size="icon"
+                className="h-6 w-6"
                 aria-label={`Excluir o arquivo ${arquivo.originalName}`}
                 disabled={exclusao.isPending}
                 onClick={() => {
@@ -71,25 +95,6 @@ export function LessonFilesPanel({ lesson }: { lesson: AdminLesson }) {
           ))}
         </ul>
       )}
-
-      <input
-        ref={entrada}
-        type="file"
-        accept={ACEITAS.map((e) => `.${e}`).join(",")}
-        className="hidden"
-        data-testid={`lesson-file-${lesson.id}`}
-        onChange={(e) => {
-          const arquivo = e.target.files?.[0];
-          if (arquivo) envio.mutate(arquivo);
-          e.target.value = "";
-        }}
-      />
-      <Button type="button" variant="outline" size="sm" disabled={envio.isPending} onClick={() => entrada.current?.click()}>
-        {envio.isPending ? `Enviando… ${porcentagem}%` : "Enviar arquivo"}
-      </Button>
-      <p className="text-xs text-muted-foreground">
-        Tipos aceitos: {ACEITAS.join(", ")}. Só assinantes baixam.
-      </p>
 
       {envio.isError && (
         <p role="alert" className="text-sm font-medium text-destructive">

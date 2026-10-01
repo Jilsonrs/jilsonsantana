@@ -40,9 +40,19 @@ export function LessonVideoPanel({ lesson, onChanged }: { lesson: AdminLesson; o
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-start gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <LessonVideoSummary key={lesson.bunnyVideoId ?? "sem-video"} lessonId={lesson.id} videoId={lesson.bunnyVideoId} />
-        <div className="ml-auto flex flex-col items-end gap-3">
+        <div className="flex flex-wrap items-center gap-4">
+          <label className="flex cursor-pointer items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+            <input
+              type="checkbox"
+              checked={lesson.isFreePreview}
+              disabled={previaGratis.isPending}
+              onChange={(e) => previaGratis.mutate(e.target.checked)}
+              className="h-4 w-4 rounded border-border/60"
+            />
+            Prévia grátis (visitantes)
+          </label>
           <input
             ref={entrada}
             type="file"
@@ -55,23 +65,13 @@ export function LessonVideoPanel({ lesson, onChanged }: { lesson: AdminLesson; o
               e.target.value = "";
             }}
           />
-          <Button type="button" variant="outline" disabled={enviando} onClick={() => entrada.current?.click()}>
+          <Button type="button" variant="outline" size="sm" disabled={enviando} onClick={() => entrada.current?.click()}>
             {envio?.tipo === "enviando"
               ? `Enviando… ${envio.porcentagem}%`
               : lesson.bunnyVideoId
                 ? "Trocar o vídeo"
                 : "Enviar vídeo"}
           </Button>
-          <label className="flex cursor-pointer items-center gap-2 text-sm font-medium">
-            <input
-              type="checkbox"
-              checked={lesson.isFreePreview}
-              disabled={previaGratis.isPending}
-              onChange={(e) => previaGratis.mutate(e.target.checked)}
-              className="h-4 w-4 rounded border-border/60"
-            />
-            Prévia grátis (toca para qualquer visitante)
-          </label>
         </div>
       </div>
 

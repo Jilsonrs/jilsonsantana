@@ -75,7 +75,7 @@ export function ModuleLessonTree({ courseId }: { courseId: number }) {
         <ArrasteDoCurso nomes={nomes} aoSoltar={soltar}>
           <SortableContext items={modules.map((m) => idDoArraste({ tipo: "modulo", id: m.id }))} strategy={verticalListSortingStrategy}>
             {modules.map((mod, index) => (
-              <div key={mod.id} className="space-y-4">
+              <div key={mod.id} className="space-y-8">
                 <ModuleCard
                   module={mod}
                   isFirst={index === 0}

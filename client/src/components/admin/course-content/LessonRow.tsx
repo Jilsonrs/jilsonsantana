@@ -50,8 +50,8 @@ export function LessonRow({
   const { setNodeRef, estilo, alca } = useArrastavel({ tipo: "aula", id: lesson.id });
 
   return (
-    <div ref={setNodeRef} style={estilo} className="space-y-2">
-      <div className="flex flex-wrap items-center gap-2 border-l border-border pl-3">
+    <div ref={setNodeRef} style={estilo} className="space-y-2 group">
+      <div className="flex flex-wrap items-center gap-2 border-l-2 border-border pl-4 py-2 pr-2 rounded-r-md hover:bg-muted/30 transition-colors">
         <AlcaDeArraste rotulo={`Arrastar a aula ${lesson.title}`} alca={alca} />
         <span className={CLASSE_DA_ETIQUETA}>{ROTULO_DO_TIPO[lesson.kind]}</span>
         {editando ? (
@@ -70,7 +70,7 @@ export function LessonRow({
           {/* A aula como o aluno vê (etapa 4 do Bloco U, 29/09/2026). Em aba nova:
               um envio de vídeo em andamento aqui continua sem interrupção. */}
           <Button asChild variant="ghost" size="sm">
-            <a href={`/aluno/aula/${lesson.id}`} target="_blank" rel="noopener noreferrer" aria-label={`Visualizar a aula ${lesson.title}`}>
+            <a href={`/aluno/aula/${lesson.id}`} target="_blank" rel="noopener noreferrer" aria-label={`Visualizar a aula ${lesson.title}`} className="flex items-center gap-2">
               <Eye className="h-4 w-4" />
               Visualizar
             </a>
@@ -110,13 +110,13 @@ export function LessonRow({
         </p>
       )}
       {aberta && (
-        <div className="space-y-4 rounded-lg border border-border p-4">
+        <div className="space-y-3 rounded-lg border border-border p-3">
           {lesson.kind === LessonKind.TEXT ? (
             <LessonTextPanel lesson={lesson} onChanged={onChanged} />
           ) : (
             <LessonVideoPanel lesson={lesson} onChanged={onChanged} />
           )}
-          <div className="border-t border-border pt-4">
+          <div className="border-t border-border pt-3">
             <LessonFilesPanel lesson={lesson} />
           </div>
         </div>
