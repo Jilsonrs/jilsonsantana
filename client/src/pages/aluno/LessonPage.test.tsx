@@ -128,7 +128,7 @@ describe("página da aula — o conteúdo", () => {
     );
     abrir("/aluno/aula/12");
     expect(await screen.findByText("PROCV")).toBeTruthy();
-    expect(screen.getByRole("heading", { name: "Recursos para esta aula" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Arquivos para baixar" })).toBeTruthy();
     const link = screen.getByRole("link", { name: /Base\.xlsx/ });
     expect(link.getAttribute("href")).toBe("/api/lessons/12/files/7");
   });
@@ -143,16 +143,16 @@ describe("página da aula — prévia grátis, sem assinatura", () => {
     );
     abrir("/aluno/aula/12");
     expect(await screen.findByText("Texto livre.")).toBeTruthy();
-    expect(screen.getByText("Os recursos desta aula são para assinantes.")).toBeTruthy();
+    expect(screen.getByText("Os arquivos desta aula são para assinantes.")).toBeTruthy();
     expect(document.querySelector('a[href*="/files/"]')).toBeNull();
   });
 
-  it("Recursos na lista: \"para assinantes\", sem link de download", async () => {
+  it("Arquivos na lista: \"para assinantes\", sem link de download", async () => {
     getLessonPage.mockResolvedValue(pagina({ isFreePreview: true, arquivosLiberados: false, arquivos: undefined }));
     abrir();
     const nav = await screen.findByRole("navigation", { name: "Conteúdo do curso" });
-    fireEvent.click(within(nav).getAllByText("Recursos")[0]);
-    expect(await within(nav).findByText("Os recursos desta aula são para assinantes.")).toBeTruthy();
+    fireEvent.click(within(nav).getAllByText("Arquivos")[0]);
+    expect(await within(nav).findByText("Os arquivos desta aula são para assinantes.")).toBeTruthy();
     expect(within(nav).queryByRole("link", { name: /Planilha/ })).toBeNull();
   });
 });
@@ -167,11 +167,11 @@ describe("página da aula — o conteúdo do curso", () => {
     expect(outra.getAttribute("href")).toBe("/aluno/aula/12");
   });
 
-  it("Recursos, junto à aula, lista os arquivos para baixar", async () => {
+  it("Arquivos, junto à aula, lista os arquivos para baixar", async () => {
     abrir();
     const nav = await screen.findByRole("navigation", { name: "Conteúdo do curso" });
-    // O primeiro "Recursos" é o da aula Abertura (a lista tem duas aulas com arquivo).
-    fireEvent.click(within(nav).getAllByText("Recursos")[0]);
+    // O primeiro "Arquivos" é o da aula Abertura (a lista tem duas aulas com arquivo).
+    fireEvent.click(within(nav).getAllByText("Arquivos")[0]);
     const link = await within(nav).findByRole("link", { name: /Planilha\.zip/ });
     expect(link.getAttribute("href")).toBe("/api/lessons/11/files/5");
   });
@@ -180,6 +180,8 @@ describe("página da aula — o conteúdo do curso", () => {
     getLessonPage.mockResolvedValue(pagina({}, true));
     comoAdmin();
     abrir();
+    // Como logado, a navegação fica no drawer no celular ou na barra lateral. Na página isolada, abrimos o drawer.
+    fireEvent.click(await screen.findByRole("button", { name: "Conteúdo do curso" }));
     const nav = await screen.findByRole("navigation", { name: "Conteúdo do curso" });
     expect(within(nav).getByRole("link", { name: /Macros/ }).textContent).toContain("Rascunho");
     expect(getLessonPage).toHaveBeenCalledWith(11, true);
