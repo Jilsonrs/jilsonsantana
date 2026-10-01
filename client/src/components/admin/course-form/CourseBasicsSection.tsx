@@ -22,10 +22,7 @@ export function CourseBasicsSection({ idiomaTravado = false }: { idiomaTravado?:
   return (
     <div className="space-y-10">
       {/* 1. Identidade */}
-      <PageSection
-        title="Identidade"
-        description="O título, subtítulo e a URL amigável do seu curso. Capriche no título para ser encontrado facilmente."
-      >
+      <PageSection title="Identidade">
         <Card>
           <CardContent className="space-y-6 pt-6">
             <Field
@@ -38,7 +35,7 @@ export function CourseBasicsSection({ idiomaTravado = false }: { idiomaTravado?:
               <Input
                 id="title"
                 maxLength={LIMITES_DO_CURSO.title}
-                aria-describedby={descritoPor("title", { dica: true, contador: true })}
+                aria-describedby={descritoPor("title", { contador: true })}
                 {...register("title")}
               />
             </Field>
@@ -52,7 +49,7 @@ export function CourseBasicsSection({ idiomaTravado = false }: { idiomaTravado?:
               <Input
                 id="subtitle"
                 maxLength={LIMITES_DO_CURSO.subtitle}
-                aria-describedby={descritoPor("subtitle", { dica: true, contador: true })}
+                aria-describedby={descritoPor("subtitle", { contador: true })}
                 {...register("subtitle")}
               />
             </Field>
@@ -66,7 +63,7 @@ export function CourseBasicsSection({ idiomaTravado = false }: { idiomaTravado?:
               <Input
                 id="slug"
                 maxLength={LIMITES_DO_CURSO.slug}
-                aria-describedby={descritoPor("slug", { dica: true, contador: true })}
+                aria-describedby={descritoPor("slug", { contador: true })}
                 {...register("slug")}
               />
             </Field>
@@ -74,11 +71,8 @@ export function CourseBasicsSection({ idiomaTravado = false }: { idiomaTravado?:
         </Card>
       </PageSection>
 
-      {/* 2. Apresentação */}
-      <PageSection
-        title="Apresentação"
-        description="A descrição detalhada que convence o aluno. O editor aceita formatação, listas e negrito."
-      >
+      {/* 2. Apresentação -> Detalhes */}
+      <PageSection title="Detalhes">
         <Card>
           <CardContent className="pt-6">
             <Field
@@ -92,7 +86,7 @@ export function CourseBasicsSection({ idiomaTravado = false }: { idiomaTravado?:
                 id="description"
                 name="description"
                 maxLength={LIMITES_DO_CURSO.description}
-                describedBy={descritoPor("description", { dica: true, contador: true })}
+                describedBy={descritoPor("description", { contador: true })}
               />
             </Field>
           </CardContent>
@@ -100,10 +94,7 @@ export function CourseBasicsSection({ idiomaTravado = false }: { idiomaTravado?:
       </PageSection>
 
       {/* 3. Classificação */}
-      <PageSection
-        title="Classificação"
-        description="O idioma oficial e o nível de dificuldade esperado do aluno."
-      >
+      <PageSection title="Classificação">
         <Card>
           <CardContent className="pt-6">
             <CourseLanguageLevelFields idiomaTravado={idiomaTravado} />
