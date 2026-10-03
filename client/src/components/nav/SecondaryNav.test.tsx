@@ -120,6 +120,18 @@ describe("SecondaryNav — Meus estudos", () => {
     expect(screen.getAllByText("EM BREVE")).toHaveLength(2);
   });
 
+  // "Salvos" entra depois de Minhas trilhas (decisão do operador, 03/10/2026), e
+  // a seção acende no endereço dele.
+  it("Salvos: o item depois de Minhas trilhas, aceso no endereço dele", () => {
+    render("/aluno/salvos");
+
+    const salvos = screen.getByRole("link", { name: "Salvos" });
+    expect(salvos.getAttribute("href")).toBe("/aluno/salvos");
+    expect(salvos.getAttribute("aria-current")).toBe("page");
+    const nomes = screen.getAllByRole("link").map((l) => l.textContent);
+    expect(nomes.indexOf("Salvos")).toBe(nomes.indexOf("Minhas trilhas") + 1);
+  });
+
   // Meus estudos abre em Em andamento (operador, 29/09/2026): lá, é ele que acende.
   it("em Em andamento, o item dele fica aceso", () => {
     render("/aluno/em-andamento");

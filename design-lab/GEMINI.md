@@ -139,6 +139,7 @@ servidores (§5); o React responde em `localhost:5173`, a home pública em `loca
 | `/aluno/minhas-trilhas/:id` | `client/src/pages/MyTrilhaDetailPage.tsx` |
 | `/aluno/conta` | `client/src/pages/AccountPage.tsx` |
 | `/aluno/em-andamento` | **Em andamento** (29/09): `client/src/pages/aluno/EmAndamentoPage.tsx` — é onde "Meus estudos" abre. **Só o título**, por decisão do operador, até o progresso chegar (Fase 5). Meus estudos **não tem tela de resumo**: a coluna do nível 2 é o guia. |
+| `/aluno/salvos` | **Salvos** (03/10, decisão do operador, "como no LinkedIn"): `client/src/pages/aluno/SalvosPage.tsx` — os cursos e as aulas salvos para depois, com o botão de tirar (o mesmo `BotaoSalvar`). Estrutura pronta, acabamento seu (fila, item 19). |
 | `/aluno/aula/:id` | **A página da aula** (29/09, estilo LinkedIn Learning): `client/src/pages/aluno/LessonPage.tsx` + `client/src/components/aula/` — `CourseContentsNav.tsx` (o conteúdo do curso, que é o **nível 2** no computador e fica embaixo do player no celular e para o visitante), `LessonContent.tsx` (o player grande, o texto no centro ou "para assinantes"), `LessonResources.tsx` (os arquivos para baixar e o "Recursos" de cada aula) e `AiDock.tsx` (o **botão flutuante** da IA no canto inferior direito e o painel "Em breve", que encolhe o player). **Não exige login** (a prévia grátis toca para visitante). **Têm teste:** a aula atual com `aria-current`, o "para assinantes" sem player, o rascunho marcado só para o admin, e o botão da IA com `aria-expanded` e nome. O editor ganhou **Visualizar** em cada aula, que abre esta página numa aba nova. **Embaixo do player, em toda aula, "Sobre o curso"** (`components/aula/CourseDetails.tsx`, 29/09): nível, descrição, listas, camadas, destaques e perguntas; bloco vazio não aparece (tem teste). |
 | `/aluno/curso/:slug` | A entrada do aluno num curso (29/09): `client/src/pages/aluno/CourseEntryPage.tsx` só leva à primeira aula (sem tela própria, além de "carregando" e "sem aulas"). O cartão do curso no catálogo leva aqui quando a pessoa está logada. |
 
@@ -360,6 +361,7 @@ exceto o item 4, que é página pública.
    (`components/content/BotaoSalvar.tsx`, um só para os dois). Estrutura pronta, acabamento seu. O
    botão é de ligar e desligar (`aria-pressed`): o nome não muda, o ícone muda — **não troque por
    dois botões** nem tire o nome do botão só com ícone, que é o que o leitor de tela ouve. Tem teste.
+   E a tela **Salvos** (`/aluno/salvos`), com cursos em cartão e aulas em lista.
 
 > **Fora do seu trabalho, para não confundir:** o Bunny ganhou **Live Stream** em acesso
 > antecipado (29/09). É só avaliação depois da Fase 3, **não** é tela a desenhar (`docs/bunny.md`

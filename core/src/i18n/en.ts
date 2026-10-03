@@ -233,6 +233,7 @@ export const en: Dict = {
       trilhas: "Learning paths",
       meusEstudos: "My learning",
       emAndamento: "In progress",
+      salvos: "Saved",
       minhasTrilhas: "My learning paths",
       concluidos: "Completed",
       jilsonai: "JilsonAI",
@@ -283,6 +284,10 @@ export const en: Dict = {
       nome: "Name",
       email: "Email",
       papel: "Role"
+    },
+    salvos: {
+      vazio: "Nothing saved yet. Save lessons and courses to watch later.",
+      erro: "Couldn't load your saved items.",
     },
     minhasTrilhas: {
       titulo: "My learning paths",

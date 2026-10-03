@@ -264,13 +264,15 @@ describe("itensSecundarios — o nível 2 só aparece quando vale a pena", () =>
 
   // O nível 2 de Meus estudos (operador, 29/09/2026): o guia de onde a pessoa
   // está. Em andamento (só o título, por ora) e Minhas trilhas existem;
-  // Concluídos e Certificados são EM BREVE (Fase 5 e 6.5). Sem "Salvos".
-  it("Meus estudos mostra os quatro itens, com dois EM BREVE", () => {
-    for (const rota of ["/aluno/em-andamento", "/aluno/minhas-trilhas/7"]) {
+  // Concluídos e Certificados são EM BREVE (Fase 5 e 6.5). "Salvos" entrou em
+  // 03/10/2026, depois de Minhas trilhas (decisão do operador, "como no LinkedIn").
+  it("Meus estudos mostra os cinco itens, com dois EM BREVE", () => {
+    for (const rota of ["/aluno/em-andamento", "/aluno/minhas-trilhas/7", "/aluno/salvos"]) {
       const itens = itensSecundarios(rota, doAluno);
       expect(itens.map((i) => i.label), rota).toEqual([
         "Em andamento",
         "Minhas trilhas",
+        "Salvos",
         "Concluídos",
         "Certificados",
       ]);
@@ -280,6 +282,7 @@ describe("itensSecundarios — o nível 2 só aparece quando vale a pena", () =>
       ]);
       expect(itens.find((i) => i.label === "Em andamento")?.to).toBe("/aluno/em-andamento");
       expect(itens.find((i) => i.label === "Minhas trilhas")?.to).toBe("/aluno/minhas-trilhas");
+      expect(itens.find((i) => i.label === "Salvos")?.to).toBe("/aluno/salvos");
     }
   });
 

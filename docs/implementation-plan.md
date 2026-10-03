@@ -166,7 +166,8 @@
 >   parte administrativa começa em **Dashboard** (`/dashboard`: 4 relatórios EM BREVE + atalhos;
 >   "Dados" virou ele).
 > - **Meus estudos** abre em Em andamento (`/aluno/em-andamento`, só o título até a Fase 5); a
->   coluna do nível 2 é o guia (Em andamento · Minhas trilhas · Concluídos · Certificados).
+>   coluna do nível 2 é o guia (Em andamento · Minhas trilhas · Salvos · Concluídos · Certificados;
+>   Salvos entrou em 03/10).
 > - As telas do aluno moram em `/aluno/*`; **endereço antigo não redireciona** (a escola está em
 >   desenvolvimento).
 > - Chegou lá em 3 publicações no mesmo dia (`35fb940`, `f44187e`, `7a769c8`), cada uma com CI
@@ -1165,7 +1166,8 @@ tornada executável — não uma lista nova):
       aluno")*: **Início · Cursos · Trilhas · Meus estudos · JilsonAI**. "Trilhas" são as trilhas
       prontas; **Meus estudos** tem no nível 2 **Em andamento · Minhas trilhas · Concluídos ·
       Certificados** (EM BREVE o que ainda não existe). "Minhas trilhas" e "Certificados" saem do
-      menu principal. Sem "Salvos" (a trilha personalizada faz esse papel). Anda junto com o item
+      menu principal. Sem "Salvos" (a trilha personalizada faz esse papel) *(revisto em 03/10/2026: o operador decidiu ter
+      "Salvos", como no LinkedIn, depois de Minhas trilhas — ver Fase 5)*. Anda junto com o item
       abaixo (as telas sob `/aluno/*`) e com o painel do Início.
       ✅ **29/09/2026 (etapa 2):** o mapa (`navigation.ts`) com os cinco itens; o **JilsonAI
       aparece para o aluno como EM BREVE** e **Meus estudos tem tela própria**
@@ -2992,7 +2994,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       aula.
       *(03/10/2026: rota própria `PUT /api/admin/lessons/:id/concluida`; a página da aula do admin
       conclui por ela e conta as aulas em rascunho da lista dele.)*
-- [ ] **"Salvos" — salvar para assistir depois, curso ou aula** *(decisão do operador, 03/10/2026,
+- [x] **"Salvos" — salvar para assistir depois, curso ou aula** *(decisão do operador, 03/10/2026,
       "como no LinkedIn")*: um botão ao lado de cada aula (no conteúdo do curso) e no curso; a lista
       é um item novo de Meus estudos, **"Salvos"**, depois de Minhas trilhas, com aulas e cursos
       juntos. **Feito (etapa 2):** tabela `saved_item` (exatamente um dos dois, pelo banco; RLS) e
@@ -3001,7 +3003,9 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       publicado. Revisão de segurança sem P0/P1; os dois buracos de teste que ela apontou foram
       cobertos. **Os botões (etapa 3):** ao lado de cada aula do conteúdo do curso e "Salvar curso" no
       topo da página da aula — só logado e só no que está publicado na cadeia inteira; ligado/desligado
-      para o leitor de tela. **Falta:** a tela `/aluno/salvos` (etapa 4).
+      para o leitor de tela. **A tela (etapa 4):** `/aluno/salvos`, com cursos (levam à primeira aula)
+      e aulas (com o nome do curso), tirar dos salvos pelo mesmo botão, e os estados de carregando,
+      erro e vazio; o item **Salvos** em Meus estudos, depois de Minhas trilhas.
 - [x] **O vídeo não recomeça ao trocar de aba nem ao concluir** *(achado do operador, 03/10/2026)*:
       o player mantém o endereço enquanto o vídeo for o mesmo; a apresentação abre **pausada** e
       a aula **toca sozinha** (decisões dele), pelo próprio endereço (`bunny.md` §3.1). O defeito

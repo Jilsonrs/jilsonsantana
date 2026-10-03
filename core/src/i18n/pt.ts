@@ -243,6 +243,7 @@ export const pt = {
       trilhas: "Trilhas",
       meusEstudos: "Meus estudos",
       emAndamento: "Em andamento",
+      salvos: "Salvos",
       minhasTrilhas: "Minhas trilhas",
       concluidos: "Concluídos",
       jilsonai: "JilsonAI",
@@ -297,6 +298,11 @@ export const pt = {
       nome: "Nome",
       email: "E-mail",
       papel: "Papel"
+    },
+    // A tela Salvos, em Meus estudos (decisão do operador, 03/10/2026).
+    salvos: {
+      vazio: "Nada salvo ainda. Salve aulas e cursos para assistir depois.",
+      erro: "Não foi possível carregar os salvos.",
     },
     minhasTrilhas: {
       titulo: "Minhas trilhas",
