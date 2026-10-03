@@ -199,6 +199,11 @@
 > manter esse resultado final na tela"), e os testes passaram a esperar o texto novo, conferindo
 > o mesmo comportamento. **Pendente (sábado):** revisar com o operador as mudanças não visuais
 > acima e reconciliar o plano e o `GEMINI.md` com elas.
+> **PUBLICADO em 03/10/2026 (`main` = `73e5324`, CI verde nos dois jobs, deploy ok, migrations
+> `lesson_progress` e `saved_item` aplicadas pelo pre-deploy):** as correções abaixo, o progresso real
+> (aula concluída sozinha, barra na aula e no cartão), o vídeo que não recomeça ao trocar de aba
+> (a apresentação abre pausada, a aula toca sozinha) e o "Salvos". **Primeiro teste com o player de
+> verdade: com o operador** (assistir uma aula até perto do fim e ver a barra andar).
 > **Revisão de 03/10 (plano aprovado pelo operador), em 5 etapas:** **(1) página da aula** — a
 > duração soma só aula de vídeo, como na página do curso (com teste de servidor); a contagem
 > "módulos · aulas · tempo" ganhou teste; "Nosso método." saiu da tela para o dicionário (o

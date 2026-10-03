@@ -43,7 +43,7 @@ export function CourseMediaSection({
             {/* Ordem pedida pelo operador (27/09/2026): primeiro a mídia, depois o
                 campo, depois o botão de enviar — nas duas colunas. */}
             <div className="space-y-4">
-              <div className="aspect-video w-full overflow-hidden rounded-2xl border border-border/60 bg-muted flex items-center justify-center">
+              <div className="aspect-video w-full overflow-hidden border border-border/60 bg-muted flex items-center justify-center">
                 {thumbnailUrl ? (
                   <img src={thumbnailUrl} alt="Thumbnail preview" className="h-full w-full object-cover" />
                 ) : (
@@ -64,7 +64,7 @@ export function CourseMediaSection({
               {video ? (
                 <IntroVideoPreview videoId={video.videoId} embedUrl={video.embedUrl} />
               ) : (
-                <div className="aspect-video w-full overflow-hidden rounded-2xl border border-border/60 bg-muted flex flex-col items-center justify-center gap-3">
+                <div className="aspect-video w-full overflow-hidden border border-border/60 bg-muted flex flex-col items-center justify-center gap-3">
                   {introVideoId ? (
                     <>
                       <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/20 text-primary">
