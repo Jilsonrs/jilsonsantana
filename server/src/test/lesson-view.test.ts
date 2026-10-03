@@ -165,7 +165,8 @@ describe("a aula paga", () => {
   it("aluno com assinatura: o player ASSINADO e os arquivos", async () => {
     const res = await pagina(ids.paga, member);
     expect(res.body.aula.liberada).toBe(true);
-    expect(res.body.aula.playerUrl).toMatch(new RegExp(`/embed/762605/${VIDEO_PAGO}\\?token=[0-9a-f]{64}&expires=\\d+$`));
+    // A aula começa a tocar sozinha, como no LinkedIn (operador, 03/10/2026).
+    expect(res.body.aula.playerUrl).toMatch(new RegExp(`/embed/762605/${VIDEO_PAGO}\\?token=[0-9a-f]{64}&expires=\\d+&autoplay=true$`));
     expect(res.body.aula.arquivos).toEqual([{ id: ids.arquivo, originalName: "Planilha de Vendas.zip", sizeBytes: 5 }]);
     expect(res.headers["cache-control"]).toBe("private, no-store");
   });

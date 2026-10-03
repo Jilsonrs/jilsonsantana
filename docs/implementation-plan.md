@@ -29,8 +29,9 @@
 > Verificado antes do merge, não presumido: as **4 migrations já estavam aplicadas** em produção e
 > as **7 variáveis do Railway cobrem** tudo que o servidor lê em runtime — por isso o merge não
 > exigiu janela de manutenção.
-> **Pendência de véspera de lançamento:** os dois cursos `exemplo-*` do seed estão **PUBLISHED em
-> produção**. Invisíveis hoje; aparecem no dia em que a coming-soon for desligada.
+> **Cursos de exemplo APAGADOS de produção pelo operador (03/10/2026)**, que passou a cadastrar
+> os cursos reais (fecha a P18). O seed continua criando os `exemplo-*` só no banco de teste e no
+> de dev.
 >
 > **🟢 NO AR EM PRODUÇÃO (23/09/2026, `main` = `b38b0f5`) — atrás do portão "Em breve":**
 > home pública `/` e `/en` em HTML de servidor, bilíngue, com depoimentos (**4 sorteados por
@@ -165,7 +166,8 @@
 >   parte administrativa começa em **Dashboard** (`/dashboard`: 4 relatórios EM BREVE + atalhos;
 >   "Dados" virou ele).
 > - **Meus estudos** abre em Em andamento (`/aluno/em-andamento`, só o título até a Fase 5); a
->   coluna do nível 2 é o guia (Em andamento · Minhas trilhas · Concluídos · Certificados).
+>   coluna do nível 2 é o guia (Em andamento · Minhas trilhas · Salvos · Concluídos · Certificados;
+>   Salvos entrou em 03/10).
 > - As telas do aluno moram em `/aluno/*`; **endereço antigo não redireciona** (a escola está em
 >   desenvolvimento).
 > - Chegou lá em 3 publicações no mesmo dia (`35fb940`, `f44187e`, `7a769c8`), cada uma com CI
@@ -185,8 +187,8 @@
 > também na **lista de cursos do admin** ("2 módulos · 5 aulas · 1h 05min"). Antes, no mesmo dia,
 > o **Antigravity publicou** o acabamento do cartão de curso do admin (`0419a93`), pelo caminho
 > do `GEMINI.md` §5.
-> **⚠️ CI VERMELHO DE 30/09 (noite) A 01/10, CONSERTADO NO `dev` EM 01/10** *(registrado pelo
-> Claude)*: depois do último verde (`7425102`), o Antigravity publicou ~15 vezes na `main` com o
+> **⚠️ CI VERMELHO DE 30/09 (noite) A 01/10 — CONSERTADO E PUBLICADO EM 01/10 (`main` = `dc8aad4`,
+> CI verde nos dois jobs, deploy ok)** *(registrado pelo Claude)*: depois do último verde (`7425102`), o Antigravity publicou ~15 vezes na `main` com o
 > CI reprovando (até `b74b008`), tentou passar alterando testes, e fez mudanças que **não são só
 > visuais**: o seletor de ícones dos Destaques com ~30 ícones (era tarefa do Claude para sábado),
 > chaves novas no dicionário ("Recursos" → "Arquivos", "Fechar o menu", "Diferenciais do curso"),
@@ -197,6 +199,18 @@
 > manter esse resultado final na tela"), e os testes passaram a esperar o texto novo, conferindo
 > o mesmo comportamento. **Pendente (sábado):** revisar com o operador as mudanças não visuais
 > acima e reconciliar o plano e o `GEMINI.md` com elas.
+> **Revisão de 03/10 (plano aprovado pelo operador), em 5 etapas:** **(1) página da aula** — a
+> duração soma só aula de vídeo, como na página do curso (com teste de servidor); a contagem
+> "módulos · aulas · tempo" ganhou teste; "Nosso método." saiu da tela para o dicionário (o
+> inglês é rascunho, P38); e o menu do curso, **fechado, continua fechado** nas próximas aulas
+> (decisão do operador, 03/10), guardado no navegador de cada pessoa em vez do endereço.
+> **(2) editor e admin** — o seletor de ícones dos Destaques (feito pelo Antigravity) ficou, com
+> **nome em português** em cada ícone (decisão do operador, 03/10; rascunho na P38), teclado e
+> leitor de tela; as caixas das Camadas mostram o nome que o aluno vê, em português e com as
+> edições de Admin → Textos; o nível no cartão do admin fica em português mesmo com o app em
+> inglês. Tudo com teste.
+> **(3) progresso: banco e servidor**, **(4) progresso na tela da aula** e **(5) barra no cartão do
+> curso** — ver Fase 5. **A revisão do trabalho do Antigravity está fechada.**
 > **`dev` = `main` em código (30/09):** tudo o que foi construído está no ar. O operador passa a
 > trabalhar com o Antigravity no acabamento (fila em `design-lab/GEMINI.md`, itens 11 a 16).
 > **Registrado no fim da sessão de 29/09 (só documentos, no `dev`):** o mapa do que falta nos 7
@@ -231,8 +245,8 @@
 > - ~~**Telas do aluno para `/aluno/*`**~~ — **publicada em 29/09**, com o menu novo (ver acima).
 > - **O que falta nos 7 passos do editor do curso** (Bloco E, o mapa depois da etapa 4) — o
 >   próximo assunto do operador, em 29/09.
-> - **C4, etapa 3** (a home lendo os cursos do banco) — depende da P17, da P18 e do cadastro dos
->   cursos (P16).
+> - **C4, etapa 3** (a home lendo os cursos do banco) — depende da P17 e do cadastro dos cursos
+>   (P16; a P18 fechou em 03/10: os cursos de exemplo foram apagados de produção).
 > Fora da escolha e em paralelo: o **Bloco I** restante, o **C5** (bloqueado até o conteúdo das
 > telas), o corpo da Fase 3 (HIGH RISK) e a continuidade do operador (2FA, backup frio).
 >
@@ -1152,7 +1166,8 @@ tornada executável — não uma lista nova):
       aluno")*: **Início · Cursos · Trilhas · Meus estudos · JilsonAI**. "Trilhas" são as trilhas
       prontas; **Meus estudos** tem no nível 2 **Em andamento · Minhas trilhas · Concluídos ·
       Certificados** (EM BREVE o que ainda não existe). "Minhas trilhas" e "Certificados" saem do
-      menu principal. Sem "Salvos" (a trilha personalizada faz esse papel). Anda junto com o item
+      menu principal. Sem "Salvos" (a trilha personalizada faz esse papel) *(revisto em 03/10/2026: o operador decidiu ter
+      "Salvos", como no LinkedIn, depois de Minhas trilhas — ver Fase 5)*. Anda junto com o item
       abaixo (as telas sob `/aluno/*`) e com o painel do Início.
       ✅ **29/09/2026 (etapa 2):** o mapa (`navigation.ts`) com os cinco itens; o **JilsonAI
       aparece para o aluno como EM BREVE** e **Meus estudos tem tela própria**
@@ -2930,8 +2945,18 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
 
 ## Phase 5 — Lesson Progress + Event Capture Foundation  *(low–medium risk)*
 
-- [ ] `LessonProgress` (user×lesson, `completed`, `completedAt`) + RLS ; migration
-- [ ] Endpoint: mark lesson watched; lesson list shows completion
+- **Decisões do operador, 03/10/2026:** a aula conta como concluída **sozinha, sem botão** — vídeo
+  ao chegar a **90%**, texto **ao abrir**; o site ouve o player do Bunny pelo pacote `player.js`
+  (dependência aprovada, versão travada). O que o certificado atesta com isso é a **P39**.
+- [x] `LessonProgress` (user×lesson, `completed`, `completedAt`) + RLS ; migration
+      *(03/10/2026: migration `lesson_progress`; churn não apaga, só some com a aula ou a pessoa)*
+- [x] Endpoint: mark lesson watched; lesson list shows completion
+      *(03/10/2026, o servidor: `PUT /api/lessons/:id/concluida` — só a cadeia publicada e só a
+      aula que a pessoa pode assistir, pela mesma regra da página da aula, `aulaLiberada()`; e
+      `PUT /api/admin/lessons/:id/concluida` para o admin; a página da aula devolve `concluidas`
+      de quem pede. Revisão de segurança sem P0/P1. **A tela (etapa 4):** o vídeo conclui aos 90%
+      (`player-do-bunny.ts`), o texto ao abrir, só com login; a barra da página da aula mostra o
+      número real (aulas concluídas ÷ aulas da lista) e o conteúdo do curso marca a aula feita.)*
 - [ ] **Trilha completion:** a saved trilha is "complete" when all its `PlanItem` lessons are
       done (course-item = its lessons). Drives certificate eligibility (Phase 6.5).
 - [ ] `LessonEvent` table (event-sourced: type, position, ts) + RLS — **capture only, no analytics yet**
@@ -2961,15 +2986,36 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       do `LessonProgress`). Leitura do admin, **nunca** no site.
 - [ ] **A avaliação no cartão do admin** — só depois de decidir a P27: a nota planejada é uma por
       aluno e geral, não por curso.
-- [ ] **O progresso também funciona para o ADMIN** *(consequência da decisão do operador de
+- [x] **O progresso também funciona para o ADMIN** *(consequência da decisão do operador de
       29/09/2026: a plataforma é uma só, e ele testa tudo como aluno sem trocar de conta)*: "marcar
       como vista", o Continue estudando e as conclusões não podem depender só de assinatura ativa
       — o admin não tem assinatura. **Sem** pôr `role === admin` dentro de `temAcessoAtivo()`
       (`CLAUDE.md` → Access Architecture): o admin entra por uma regra própria, como já faz na
       aula.
-- [ ] **Barra de progresso no cartão do curso, na lista de Cursos do aluno** *(pedido do operador,
+      *(03/10/2026: rota própria `PUT /api/admin/lessons/:id/concluida`; a página da aula do admin
+      conclui por ela e conta as aulas em rascunho da lista dele.)*
+- [x] **"Salvos" — salvar para assistir depois, curso ou aula** *(decisão do operador, 03/10/2026,
+      "como no LinkedIn")*: um botão ao lado de cada aula (no conteúdo do curso) e no curso; a lista
+      é um item novo de Meus estudos, **"Salvos"**, depois de Minhas trilhas, com aulas e cursos
+      juntos. **Feito (etapa 2):** tabela `saved_item` (exatamente um dos dois, pelo banco; RLS) e
+      as rotas `/api/salvos` — só com login, sem exigir assinatura (é só um marcador), salvar só o
+      que está publicado na cadeia inteira (rascunho é 404), e a lista só mostra o que continua
+      publicado. Revisão de segurança sem P0/P1; os dois buracos de teste que ela apontou foram
+      cobertos. **Os botões (etapa 3):** ao lado de cada aula do conteúdo do curso e "Salvar curso" no
+      topo da página da aula — só logado e só no que está publicado na cadeia inteira; ligado/desligado
+      para o leitor de tela. **A tela (etapa 4):** `/aluno/salvos`, com cursos (levam à primeira aula)
+      e aulas (com o nome do curso), tirar dos salvos pelo mesmo botão, e os estados de carregando,
+      erro e vazio; o item **Salvos** em Meus estudos, depois de Minhas trilhas.
+- [x] **O vídeo não recomeça ao trocar de aba nem ao concluir** *(achado do operador, 03/10/2026)*:
+      o player mantém o endereço enquanto o vídeo for o mesmo; a apresentação abre **pausada** e
+      a aula **toca sozinha** (decisões dele), pelo próprio endereço (`bunny.md` §3.1). O defeito
+      também atingia a etapa 4 do progresso (concluir aos 90% recarregaria a aula do início) e
+      foi pego antes de publicar.
+- [x] **Barra de progresso no cartão do curso, na lista de Cursos do aluno** *(pedido do operador,
       30/09/2026, a partir da Mosh)*: só nos cursos que o aluno já começou, com a porcentagem (aulas
       vistas ÷ aulas publicadas). Depende do `LessonProgress` acima; entra com ele.
+      *(03/10/2026: `GET /api/progresso/cursos`, só com login, só a cadeia publicada nos dois
+      lados da conta; o cartão do catálogo mostra a barra e "67% concluído" só no curso começado.)*
 - [ ] **Tirar o EM BREVE do que espera o progresso** *(menu novo do aluno, 29/09/2026)*: o bloco
       **Continue estudando** do Início, o **conteúdo** da página Em andamento (hoje só o título) e
       **Concluídos** em Meus estudos. O que cada um mostra é decisão do operador na hora de

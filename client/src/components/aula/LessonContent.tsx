@@ -26,11 +26,14 @@ export function LessonContent({
   aula,
   comoAdmin,
   temArquivos,
+  aoConcluir,
 }: {
   aula: PaginaDaAula["aula"];
   comoAdmin: boolean;
   /** A aula tem arquivos (da lista do curso): na prévia grátis eles existem, mas não vêm. */
   temArquivos: boolean;
+  /** Concluir a aula de vídeo ao chegar a 90%; ausente, o player não é ouvido. */
+  aoConcluir?: () => void;
 }) {
   const t = useT();
 
@@ -50,7 +53,7 @@ export function LessonContent({
   if (aula.kind === LessonKind.VIDEO) {
     return aula.playerUrl ? (
       <div className="w-full">
-        <BunnyPlayer src={aula.playerUrl} title={aula.title} />
+        <BunnyPlayer src={aula.playerUrl} title={aula.title} aoConcluir={aoConcluir} />
       </div>
     ) : (
       <div className={QUADRO}>

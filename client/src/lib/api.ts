@@ -370,11 +370,46 @@ export type PaginaDaAula = {
     texto?: string | null;
     arquivos?: ArquivoDaAula[];
   };
+  /** As aulas deste curso que QUEM PEDE concluiu (Fase 5, 03/10/2026); visitante: []. */
+  concluidas: number[];
 };
 
 export async function getLessonPage(lessonId: number, comoAdmin: boolean): Promise<PaginaDaAula> {
   const rota = comoAdmin ? `/admin/lessons/${lessonId}/aula` : `/lessons/${lessonId}/aula`;
   const { data } = await client.get<PaginaDaAula>(rota);
+  return data;
+}
+
+/**
+ * Conclui a aula para quem está logado (Fase 5, 03/10/2026). A tela chama sozinha:
+ * vídeo a 90%, texto ao abrir. O admin conclui pela rota dele, em qualquer status.
+ */
+export async function concluirAula(lessonId: number, comoAdmin: boolean): Promise<void> {
+  await client.put(comoAdmin ? `/admin/lessons/${lessonId}/concluida` : `/lessons/${lessonId}/concluida`);
+}
+
+// "SALVOS" — salvar curso ou aula para assistir depois (decisão do operador,
+// 03/10/2026, "como no LinkedIn"). Só com login; a lista só traz o publicado.
+export type CursoSalvo = { id: number; slug: string; title: string; subtitle: string | null; level: Level | null; thumbnailUrl: string | null };
+export type AulaSalva = { id: number; title: string; kind: LessonKind; curso: { slug: string; title: string } };
+export type Salvos = { cursos: CursoSalvo[]; aulas: AulaSalva[] };
+
+export async function getSalvos(): Promise<Salvos> {
+  const { data } = await client.get<Salvos>("/salvos");
+  return data;
+}
+
+/** Salva ou tira dos salvos um curso ou uma aula. */
+export async function alternarSalvo(tipo: "cursos" | "aulas", id: number, salvar: boolean): Promise<void> {
+  if (salvar) await client.put(`/salvos/${tipo}/${id}`);
+  else await client.delete(`/salvos/${tipo}/${id}`);
+}
+
+/** O progresso de quem está logado em cada curso que ele começou (só aulas publicadas). */
+export type ProgressoDoCurso = { courseId: number; concluidas: number; total: number };
+
+export async function getProgressoDosCursos(): Promise<ProgressoDoCurso[]> {
+  const { data } = await client.get<ProgressoDoCurso[]>("/progresso/cursos");
   return data;
 }
 

@@ -233,6 +233,7 @@ export const en: Dict = {
       trilhas: "Learning paths",
       meusEstudos: "My learning",
       emAndamento: "In progress",
+      salvos: "Saved",
       minhasTrilhas: "My learning paths",
       concluidos: "Completed",
       jilsonai: "JilsonAI",
@@ -284,6 +285,10 @@ export const en: Dict = {
       email: "Email",
       papel: "Role"
     },
+    salvos: {
+      vazio: "Nothing saved yet. Save lessons and courses to watch later.",
+      erro: "Couldn't load your saved items.",
+    },
     minhasTrilhas: {
       titulo: "My learning paths",
       descricao: "Learning paths and selections you saved to study.",
@@ -328,6 +333,8 @@ export const en: Dict = {
       requisitos: "Prerequisites",
       paraQuem: "Who this course is for",
       diferenciais: "Course Highlights",
+      concluido: "complete",
+      metodo: { inicio: "Our", destaque: "method" },
       videoApresentacao: "Course introduction video"
     },
     trilha: {
@@ -345,6 +352,10 @@ export const en: Dict = {
       erro: "We couldn't open this lesson. Please try again.",
       naoEncontrada: "Lesson not found.",
       paraAssinantes: "This lesson is for subscribers.",
+      salvarParaDepois: "Save for later",
+      salvarCurso: "Save course",
+      progressoNoCurso: "Course progress",
+      concluida: "Completed",
       semVideo: "This lesson has no video yet.",
       recursos: "Downloads",
       recursosDaAula: "Downloads",

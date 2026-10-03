@@ -6,14 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { CompletenessBar } from "./CompletenessBar";
-import { ContentStatus } from "@jilson/core";
-
-import { useT } from "@/lib/language";
+import { ContentStatus, pt } from "@jilson/core";
 
 const NUMEROS_EM_BREVE = ["Horas assistidas", "Alunos", "Avaliação"];
 
 export function AdminCourseCard({ curso, aoExcluir }: { curso: Curso; aoExcluir: () => void }) {
-  const t = useT();
   const { porcentagem, faltando } = preenchimentoDoCurso(curso);
 
   return (
@@ -53,7 +50,8 @@ export function AdminCourseCard({ curso, aoExcluir }: { curso: Curso; aoExcluir:
                 </Badge>
                 {curso.level && (
                   <Badge variant="secondary" className="rounded-full font-medium">
-                    {t.niveis[curso.level]}
+                    {/* Em português sempre: o admin não muda de idioma (23/09/2026). */}
+                    {pt.app.niveis[curso.level]}
                   </Badge>
                 )}
                 {curso.language === "en" && (

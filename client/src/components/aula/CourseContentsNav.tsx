@@ -1,10 +1,13 @@
 import { Link } from "react-router-dom";
-import { FileText, PlayCircle } from "lucide-react";
+import { CheckCircle2, FileText, PlayCircle } from "lucide-react";
 import { ContentStatus, LessonKind } from "@jilson/core";
 import type { AulaNaLista } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/language";
 import { usePaginaDaAula } from "@/lib/pagina-da-aula";
+import { useSession } from "@/lib/auth-client";
+import { useIdsSalvos } from "@/lib/salvos";
+import { BotaoSalvar } from "@/components/content/BotaoSalvar";
 import { RecursosNaLista } from "./LessonResources";
 
 /** "Rascunho" / "Arquivado": só o admin recebe o que não está publicado. */
@@ -18,26 +21,48 @@ function EtiquetaDeStatus({ status }: { status: ContentStatus }) {
   );
 }
 
-function AulaDaLista({ aula, atual }: { aula: AulaNaLista; atual: boolean }) {
+function AulaDaLista({
+  aula,
+  atual,
+  concluida,
+  salvar,
+}: {
+  aula: AulaNaLista;
+  atual: boolean;
+  concluida: boolean;
+  /** O botão de salvar (só logado e só aula publicada); ausente, não aparece. */
+  salvar?: { salvo: boolean };
+}) {
   const t = useT();
   const Icone = aula.kind === LessonKind.TEXT ? FileText : PlayCircle;
   return (
     <>
-      <Link
-        to={`/aluno/aula/${aula.id}`}
-        aria-current={atual ? "page" : undefined}
-        className={cn(
-          "flex items-start gap-3 px-3 py-2.5 text-sm transition-all duration-200 border-l-[3px]",
-          atual 
-            ? "border-primary bg-muted/60 font-semibold text-foreground rounded-r-lg" 
-            : "border-transparent rounded-lg text-muted-foreground hover:bg-muted/50 hover:text-foreground",
-        )}
-      >
-        <Icone className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-        <span className="sr-only">{aula.kind === LessonKind.TEXT ? t.aula.aulaDeTexto : t.aula.aulaDeVideo}:</span>
-        <span className="flex-1 leading-snug">{aula.title}</span>
-        <EtiquetaDeStatus status={aula.status} />
-      </Link>
+      <div className="flex items-start gap-1">
+        <Link
+          to={`/aluno/aula/${aula.id}`}
+          aria-current={atual ? "page" : undefined}
+          className={cn(
+            "flex min-w-0 flex-1 items-start gap-3 px-3 py-2.5 text-sm transition-all duration-200 border-l-[3px]",
+            atual 
+              ? "border-primary bg-muted/60 font-semibold text-foreground rounded-r-lg" 
+              : "border-transparent rounded-lg text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+          )}
+        >
+          <Icone className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+          <span className="sr-only">{aula.kind === LessonKind.TEXT ? t.aula.aulaDeTexto : t.aula.aulaDeVideo}:</span>
+          <span className="flex-1 leading-snug">{aula.title}</span>
+          {/* A aula concluída (Fase 5, 03/10/2026); o leitor de tela ouve "Concluída". */}
+          {concluida && (
+            <>
+              <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
+              <span className="sr-only">{t.aula.concluida}</span>
+            </>
+          )}
+          <EtiquetaDeStatus status={aula.status} />
+        </Link>
+        {/* Salvar para depois, ao lado da aula (decisão do operador, 03/10/2026). */}
+        {salvar && <BotaoSalvar tipo="aulas" id={aula.id} salvo={salvar.salvo} nome={`${t.aula.salvarParaDepois}: ${aula.title}`} />}
+      </div>
       {aula.temArquivos && <RecursosNaLista lessonId={aula.id} />}
     </>
   );
@@ -53,8 +78,13 @@ function AulaDaLista({ aula, atual }: { aula: AulaNaLista; atual: boolean }) {
 export function CourseContentsNav({ lessonId }: { lessonId: number }) {
   const t = useT();
   const { data } = usePaginaDaAula(lessonId);
+  const { data: session } = useSession();
+  const salvos = useIdsSalvos(Boolean(session));
   if (!data) return null;
   const { curso } = data;
+  // Só o que está publicado na cadeia inteira pode ser salvo (o servidor recusa o resto).
+  const podeSalvar = (aula: AulaNaLista, moduloPublicado: boolean) =>
+    Boolean(session) && curso.status === ContentStatus.PUBLISHED && moduloPublicado && aula.status === ContentStatus.PUBLISHED;
 
   return (
     <nav aria-label={t.aula.conteudoDoCurso} className="space-y-4">
@@ -69,7 +99,12 @@ export function CourseContentsNav({ lessonId }: { lessonId: number }) {
             <ul className="flex flex-col space-y-1 p-2 pt-1 border-t border-border/30">
               {modulo.aulas.map((aula) => (
                 <li key={aula.id}>
-                  <AulaDaLista aula={aula} atual={aula.id === lessonId} />
+                  <AulaDaLista
+                    aula={aula}
+                    atual={aula.id === lessonId}
+                    concluida={data.concluidas.includes(aula.id)}
+                    salvar={podeSalvar(aula, modulo.status === ContentStatus.PUBLISHED) ? { salvo: salvos.aulas.has(aula.id) } : undefined}
+                  />
                 </li>
               ))}
             </ul>

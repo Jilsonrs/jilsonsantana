@@ -45,8 +45,9 @@ async function sessao(email?: string, senha?: string): Promise<string[]> {
 // variáveis das aulas e sai ASSINADA, com a validade de 24 h.
 const ENV = ["BUNNY_STREAM_LESSONS_LIBRARY_ID", "BUNNY_STREAM_LESSONS_API_KEY", "BUNNY_STREAM_LESSONS_TOKEN_KEY"] as const;
 const envAntes = Object.fromEntries(ENV.map((n) => [n, process.env[n]]));
+// A apresentação abre pausada (`autoplay=false` — decisão do operador, 03/10/2026).
 const ASSINADO = (videoId: string) =>
-  new RegExp(`^https://iframe\\.mediadelivery\\.net/embed/999/${videoId}\\?token=[0-9a-f]{64}&expires=(\\d+)$`);
+  new RegExp(`^https://iframe\\.mediadelivery\\.net/embed/999/${videoId}\\?token=[0-9a-f]{64}&expires=(\\d+)&autoplay=false$`);
 
 beforeAll(async () => {
   admin = await sessao(process.env.SEED_ADMIN_EMAIL, process.env.SEED_ADMIN_PASSWORD);

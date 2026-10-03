@@ -12,6 +12,7 @@ const startIntroVideoUpload = vi.fn();
 const completeIntroVideoUpload = vi.fn();
 const getIntroVideoStatus = vi.fn();
 const enviarVideo = vi.fn();
+const getCommonTexts = vi.fn();
 vi.mock("@/lib/video-upload", () => ({
   enviarVideo: (...args: unknown[]) => enviarVideo(...args),
 }));
@@ -22,10 +23,15 @@ vi.mock("@/lib/api", () => ({
   startIntroVideoUpload: (...args: unknown[]) => startIntroVideoUpload(...args),
   completeIntroVideoUpload: (...args: unknown[]) => completeIntroVideoUpload(...args),
   getIntroVideoStatus: (...args: unknown[]) => getIntroVideoStatus(...args),
+  getCommonTexts: (...args: unknown[]) => getCommonTexts(...args),
+  COMMON_TEXTS_QUERY: "site-text-common",
 }));
 
 import { CourseEditorLayout } from "./CourseEditorLayout";
 import { ROTAS_DO_EDITOR } from "./steps";
+import { pt } from "@jilson/core";
+import { AVAILABLE_ICONS } from "@/components/content/icon-registry";
+import { NOME_DO_ICONE } from "@/components/admin/nomes-dos-icones";
 
 beforeEach(() => {
   adminGetCourse.mockReset();
@@ -35,6 +41,8 @@ beforeEach(() => {
   completeIntroVideoUpload.mockReset();
   getIntroVideoStatus.mockReset().mockResolvedValue({ pronto: true, falhou: false });
   enviarVideo.mockReset();
+  // Sem resposta do servidor, valem os textos de fábrica.
+  getCommonTexts.mockReset().mockRejectedValue(new Error("sem servidor"));
 });
 
 /** Abre o passo Mídia e destaques (imagem, vídeo, destaques, perguntas e camadas). */
@@ -217,5 +225,97 @@ describe("Mídia e destaques — vídeo de apresentação", () => {
 
     expect(await screen.findByText(/Cole o ID do vídeo como aparece no Bunny/)).toBeTruthy();
     expect(updateCourse).not.toHaveBeenCalled();
+  });
+});
+
+// O SELETOR DE ÍCONE dos Destaques (desenho do Antigravity, 30/09/2026; nomes em
+// português por decisão do operador, 03/10/2026): o operador escolhe pelo nome em
+// português, e o curso grava o nome técnico, que é o que o site do aluno lê.
+describe("Mídia e destaques — o ícone do destaque", () => {
+  const seletor = () => screen.getByRole("button", { name: /^Ícone/ });
+
+  it("escolhe pelo nome em português e grava o nome técnico", async () => {
+    updateCourse.mockResolvedValue(CURSO_DE_TESTE);
+    await abrirPagina();
+    fireEvent.click(screen.getByRole("button", { name: "Adicionar destaque" }));
+
+    fireEvent.click(seletor());
+    expect(seletor().getAttribute("aria-expanded")).toBe("true");
+    fireEvent.click(screen.getByRole("button", { name: "Varinha mágica" }));
+    expect(seletor().getAttribute("aria-expanded")).toBe("false");
+    expect(seletor().textContent).toBe("Varinha mágica");
+
+    fireEvent.change(screen.getByLabelText("Título"), { target: { value: "Projeto final" } });
+    fireEvent.change(screen.getByLabelText("Texto descritivo"), { target: { value: "Um painel do zero." } });
+    salvar();
+
+    await waitFor(() => expect(updateCourse).toHaveBeenCalled());
+    expect(updateCourse.mock.calls[0][1]).toMatchObject({
+      highlights: [{ icon: "wand", title: "Projeto final", text: "Um painel do zero." }],
+    });
+  });
+
+  it("Esc fecha a grade e devolve o foco ao botão", async () => {
+    await abrirPagina();
+    fireEvent.click(screen.getByRole("button", { name: "Adicionar destaque" }));
+    fireEvent.click(seletor());
+    const escolhido = document.activeElement;
+    expect(escolhido?.getAttribute("aria-pressed")).not.toBeNull();
+
+    fireEvent.keyDown(escolhido as Element, { key: "Escape" });
+
+    expect(screen.queryByRole("button", { name: "Varinha mágica" })).toBeNull();
+    expect(document.activeElement).toBe(seletor());
+  });
+
+  it("o ícone já salvo aparece pelo nome, marcado na grade", async () => {
+    await abrirPagina({ ...CURSO_DE_TESTE, highlights: [{ icon: "bolt", title: "Rápido", text: "Direto ao ponto." }] });
+
+    expect(seletor().textContent).toBe("Raio");
+    fireEvent.click(seletor());
+    expect(screen.getByRole("button", { name: "Raio" }).getAttribute("aria-pressed")).toBe("true");
+    expect(screen.getByRole("button", { name: "Varinha mágica" }).getAttribute("aria-pressed")).toBe("false");
+  });
+
+  it("a lixeira tem nome e remove o destaque", async () => {
+    await abrirPagina({ ...CURSO_DE_TESTE, highlights: [{ icon: "bolt", title: "Rápido", text: "Direto ao ponto." }] });
+
+    fireEvent.click(screen.getByRole("button", { name: "Remover destaque" }));
+
+    expect(screen.queryByLabelText("Título")).toBeNull();
+  });
+
+  it("todo ícone da lista tem nome em português", () => {
+    const semNome = AVAILABLE_ICONS.filter((icone) => !NOME_DO_ICONE[icone]);
+    expect(semNome).toEqual([]);
+  });
+});
+
+// As caixas das CAMADAS mostram o nome que o aluno vê (pendência de 01/10/2026),
+// sempre em português e com as edições de Admin → Textos; o curso continua
+// gravando o valor do sistema.
+describe("Mídia e destaques — as camadas", () => {
+  it("cada caixa pelo nome do aluno; marcar grava o valor do sistema", async () => {
+    updateCourse.mockResolvedValue(CURSO_DE_TESTE);
+    await abrirPagina();
+
+    expect(screen.queryByLabelText("UNIVERSAL")).toBeNull();
+    fireEvent.click(screen.getByLabelText("Fundamentos sólidos"));
+    fireEvent.click(screen.getByLabelText("Com IA do seu lado"));
+    salvar();
+
+    await waitFor(() => expect(updateCourse).toHaveBeenCalled());
+    expect(updateCourse.mock.calls[0][1].camadas).toEqual(["UNIVERSAL", "IA"]);
+  });
+
+  it("o nome editado em Admin → Textos aparece editado", async () => {
+    getCommonTexts.mockResolvedValue({
+      ...pt.common,
+      camadas: { ...pt.common.camadas, MODERNO: { ...pt.common.camadas.MODERNO, nome: "Recursos novos" } },
+    });
+    await abrirPagina();
+
+    expect(await screen.findByLabelText("Recursos novos")).toBeTruthy();
+    expect(getCommonTexts).toHaveBeenCalledWith("pt");
   });
 });

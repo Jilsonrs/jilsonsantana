@@ -1,6 +1,7 @@
-import { Link, useLocation, useSearchParams } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { LogOut, Plus, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useMenuDoCursoFechado } from "@/lib/menu-do-curso";
 import { Role } from "@jilson/core";
 import {
   ROTA_DA_CONTA,
@@ -53,13 +54,12 @@ export function SecondaryNav({
   const itens = itensSecundarios(pathname, secoes);
   const concluidos = useItensConcluidos(pathname, ativa);
 
-  const [searchParams, setSearchParams] = useSearchParams();
-  const sidebarFechada = searchParams.get("sidebar") === "0";
+  const [menuDoCursoFechado, fecharMenuDoCurso] = useMenuDoCursoFechado();
 
   // O nível 2 que vem dos DADOS da tela: na página da aula, o conteúdo do curso
   // (etapa 4 do Bloco U, 29/09/2026). O id sai da própria rota.
   if (ativa?.nivel2 === "conteudo-do-curso") {
-    if (sidebarFechada) return null;
+    if (menuDoCursoFechado) return null;
 
     const id = Number(casaRota(pathname, ativa.to)?.id);
     return (
@@ -68,9 +68,10 @@ export function SecondaryNav({
         className="hidden md:flex flex-col shrink-0 w-[280px] bg-surface-alt border-r border-border py-8 px-4 overflow-y-auto relative group sticky top-0 h-screen"
       >
         <button
-          onClick={() => setSearchParams((prev) => { prev.set("sidebar", "0"); return prev; }, { replace: true })}
+          type="button"
+          onClick={() => fecharMenuDoCurso(true)}
           className="absolute top-6 right-4 p-1.5 bg-primary text-primary-foreground hover:bg-primary/90 rounded-full shadow-sm transition-colors flex items-center justify-center z-10"
-          aria-label={t.nav.fecharMenu ?? "Fechar conteúdo"}
+          aria-label={t.nav.fecharMenu}
         >
           <X className="size-4" />
         </button>

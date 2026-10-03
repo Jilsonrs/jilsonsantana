@@ -2,6 +2,7 @@ import { LAYER_CONFIG, type Layer } from "@jilson/core";
 import { resolveIcon } from "./icon-registry";
 import { cn } from "@/lib/utils";
 import { useTextosComuns } from "@/lib/common-texts";
+import { useT } from "@/lib/language";
 import type { PaginaDaAula } from "@/lib/api";
 
 const getGridColsClass = (length: number) => {
@@ -40,6 +41,7 @@ export function CourseHighlights({ destaques }: { destaques: PaginaDaAula["curso
 
 export function CourseLayers({ camadas = [] }: { camadas: Layer[] }) {
   const textos = useTextosComuns();
+  const t = useT();
 
   if (camadas.length === 0) return null;
 
@@ -47,7 +49,7 @@ export function CourseLayers({ camadas = [] }: { camadas: Layer[] }) {
     <section className="flex flex-col h-fit rounded-3xl bg-gradient-to-br from-indigo-50/30 via-background to-blue-50/20 p-8 shadow-sm ring-1 ring-primary/10 transition-all hover:shadow-md">
       <div className="space-y-2 mb-8">
         <h3 className="font-display text-[1.4rem] font-bold tracking-tight text-foreground">
-          Nosso <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">método</span>.
+          {t.curso.metodo.inicio} <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">{t.curso.metodo.destaque}</span>.
         </h3>
       </div>
 

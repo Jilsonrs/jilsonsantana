@@ -3,11 +3,17 @@ import { Layer } from "@jilson/core";
 import type { CourseFormValues } from "@/lib/course-form";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageSection } from "@/components/layout/PageLayout";
+import { useTextosComuns } from "@/lib/common-texts";
 
 
-/** As camadas do selo 3 Camadas — no passo Mídia e destaques (operador, 28/09/2026). */
+/**
+ * As camadas do selo 3 Camadas — no passo Mídia e destaques (operador, 28/09/2026).
+ * Cada caixa mostra o NOME que o aluno vê, em português e com as edições de
+ * Admin → Textos; o valor gravado continua o do sistema (UNIVERSAL, MODERNO, IA).
+ */
 export function CourseLayersSection() {
   const { register } = useFormContext<CourseFormValues>();
+  const textos = useTextosComuns("pt");
   return (
     <PageSection title="Camadas">
       <Card>
@@ -21,7 +27,7 @@ export function CourseLayersSection() {
                     {...register("camadas")}
                     className="h-4 w-4 rounded border-border/60 text-primary focus:ring-primary"
                   />
-                  {layer}
+                  {textos.camadas[layer].nome}
                 </label>
               ))}
             </div>

@@ -373,7 +373,7 @@ O menu separa o que o aluno **descobre** do que é **dele**:
 | **Início** | — | o painel do aluno |
 | **Cursos** | — | o catálogo de todos os cursos (fica como está) |
 | **Trilhas** | — | as **trilhas prontas**, para escolher como se escolhe um curso |
-| **Meus estudos** | Em andamento · Minhas trilhas · Concluídos · Certificados | o que é do aluno — o "My Library" do LinkedIn |
+| **Meus estudos** | Em andamento · Minhas trilhas · Salvos · Concluídos · Certificados *(Salvos: decisão do operador, 03/10/2026)* | o que é do aluno — o "My Library" do LinkedIn |
 | **JilsonAI** | — | Fase 6 |
 
 - **"Minhas trilhas" sai do menu principal** e vai para dentro de Meus estudos; **Certificados**

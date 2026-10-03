@@ -139,6 +139,7 @@ servidores (§5); o React responde em `localhost:5173`, a home pública em `loca
 | `/aluno/minhas-trilhas/:id` | `client/src/pages/MyTrilhaDetailPage.tsx` |
 | `/aluno/conta` | `client/src/pages/AccountPage.tsx` |
 | `/aluno/em-andamento` | **Em andamento** (29/09): `client/src/pages/aluno/EmAndamentoPage.tsx` — é onde "Meus estudos" abre. **Só o título**, por decisão do operador, até o progresso chegar (Fase 5). Meus estudos **não tem tela de resumo**: a coluna do nível 2 é o guia. |
+| `/aluno/salvos` | **Salvos** (03/10, decisão do operador, "como no LinkedIn"): `client/src/pages/aluno/SalvosPage.tsx` — os cursos e as aulas salvos para depois, com o botão de tirar (o mesmo `BotaoSalvar`). Estrutura pronta, acabamento seu (fila, item 19). |
 | `/aluno/aula/:id` | **A página da aula** (29/09, estilo LinkedIn Learning): `client/src/pages/aluno/LessonPage.tsx` + `client/src/components/aula/` — `CourseContentsNav.tsx` (o conteúdo do curso, que é o **nível 2** no computador e fica embaixo do player no celular e para o visitante), `LessonContent.tsx` (o player grande, o texto no centro ou "para assinantes"), `LessonResources.tsx` (os arquivos para baixar e o "Recursos" de cada aula) e `AiDock.tsx` (o **botão flutuante** da IA no canto inferior direito e o painel "Em breve", que encolhe o player). **Não exige login** (a prévia grátis toca para visitante). **Têm teste:** a aula atual com `aria-current`, o "para assinantes" sem player, o rascunho marcado só para o admin, e o botão da IA com `aria-expanded` e nome. O editor ganhou **Visualizar** em cada aula, que abre esta página numa aba nova. **Embaixo do player, em toda aula, "Sobre o curso"** (`components/aula/CourseDetails.tsx`, 29/09): nível, descrição, listas, camadas, destaques e perguntas; bloco vazio não aparece (tem teste). |
 | `/aluno/curso/:slug` | A entrada do aluno num curso (29/09): `client/src/pages/aluno/CourseEntryPage.tsx` só leva à primeira aula (sem tela própria, além de "carregando" e "sem aulas"). O cartão do curso no catálogo leva aqui quando a pessoa está logada. |
 
@@ -335,6 +336,32 @@ exceto o item 4, que é página pública.
    No **cartão do catálogo** e na **página do curso**: "2 módulos · 4 aulas · 1h 05min" — o
    acabamento ali vale (§ 2, "Públicas e do aluno ao mesmo tempo", decisão de 30/09). **Tem
    teste:** o texto e o formato ("0min" sem vídeo).
+17. **O que você fez em 30/09 e o Claude revisou em 03/10 — FICOU, agora com teste.** O seletor de
+   ícones dos Destaques (`HighlightsField.tsx`), o nível no cartão do admin, a contagem em "Sobre
+   o curso", o "Nosso método" e o botão de fechar o menu do curso. O que mudou na revisão, para
+   você não desfazer: **(a)** cada ícone tem **nome em português** (`nomes-dos-icones.ts`; ícone
+   novo no registro sem nome ali reprova um teste) e a grade funciona por teclado — Enter abre,
+   Esc fecha; **(b)** "Nosso método." saiu do `.tsx` para o dicionário (`app.curso.metodo`),
+   porque texto escrito na tela aparece em português para o aluno em inglês; **(c)** o menu do
+   curso fechado **continua fechado** nas próximas aulas (decisão do operador, 03/10), guardado
+   no navegador, e não mais no endereço (`?sidebar=0` saiu); **(d)** as caixas das Camadas no
+   editor mostram o nome que o aluno vê. **Achado para você:** o quadro "Nosso método" usa cores
+   fixas (`blue-600`, `indigo-600`, `indigo-50`) em vez dos tokens — regra 2 deste arquivo ("cor só via token").
+18. **O progresso é REAL desde 03/10** (Fase 5). A barra fina que você desenhou no topo da página
+   da aula (`LessonPage.tsx`) mostra agora a porcentagem do aluno no curso, e só aparece para
+   quem está logado. O desenho é o seu; **não** volte a pôr número fixo nem `aria-hidden`: ela é
+   lida pelo leitor de tela como "Progresso no curso" e tem teste. **Para você formatar:** o
+   **sinal de concluída** em cada aula do conteúdo do curso (`CourseContentsNav.tsx`, um
+   `CheckCircle2` depois do título — hoje só o ícone, sem acabamento). O texto escondido
+   "Concluída" ao lado dele é para o leitor de tela: não apague.
+   E a **barra no cartão do curso** (`CourseCard.tsx`, no catálogo para quem está logado), só nos
+   cursos começados, com "67% concluído" embaixo — hoje estrutura simples, o acabamento é seu.
+19. **Salvar para depois** *(decisão do operador, 03/10, "como no LinkedIn")*: o botão de marcador
+   ao lado de cada aula no conteúdo do curso e o **"Salvar curso"** no topo da página da aula
+   (`components/content/BotaoSalvar.tsx`, um só para os dois). Estrutura pronta, acabamento seu. O
+   botão é de ligar e desligar (`aria-pressed`): o nome não muda, o ícone muda — **não troque por
+   dois botões** nem tire o nome do botão só com ícone, que é o que o leitor de tela ouve. Tem teste.
+   E a tela **Salvos** (`/aluno/salvos`), com cursos em cartão e aulas em lista.
 
 > **Fora do seu trabalho, para não confundir:** o Bunny ganhou **Live Stream** em acesso
 > antecipado (29/09). É só avaliação depois da Fase 3, **não** é tela a desenhar (`docs/bunny.md`

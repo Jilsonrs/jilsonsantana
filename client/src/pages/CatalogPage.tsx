@@ -8,6 +8,7 @@ import { CourseCard } from "@/components/content/CourseCard";
 import { PageContainer, PageHeader } from "@/components/layout/PageLayout";
 import { useIdioma, useT } from "@/lib/language";
 import { useSession } from "@/lib/auth-client";
+import { useProgressoDosCursos } from "@/lib/progresso";
 
 // Catálogo, navegável por qualquer pessoa ("onboarding aberto e livre" —
 // CLAUDE.md). São DUAS telas, `/cursos` e `/trilhas` (operador, set/2026:
@@ -33,6 +34,8 @@ export function CatalogPage({ tipo }: { tipo: Tipo }) {
   // visitante vai para a página pública, a de venda (decisão do operador, 29/09/2026).
   const { data: session } = useSession();
   const destinoDoCurso = (slug: string) => (session ? `/aluno/curso/${slug}` : undefined);
+  // A barra nos cursos que a pessoa já começou (pedido do operador, 30/09/2026).
+  const progresso = useProgressoDosCursos(Boolean(session) && tipo === "cursos");
 
   // Duas consultas em vez de uma que devolve os dois: estando em /cursos, não
   // há por que buscar trilhas que ninguém vai ver.
@@ -127,7 +130,7 @@ export function CatalogPage({ tipo }: { tipo: Tipo }) {
           {tipo === "cursos" && cursos.data && (
             <Section title={t.catalogo.catalogoCursos}>
               {cursos.data.map((c) => (
-                <CourseCard key={c.id} {...c} destino={destinoDoCurso(c.slug)} />
+                <CourseCard key={c.id} {...c} destino={destinoDoCurso(c.slug)} progresso={progresso.get(c.id)} />
               ))}
             </Section>
           )}

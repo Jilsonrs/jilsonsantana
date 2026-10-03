@@ -124,7 +124,7 @@ router.post("/admin/courses/:id/intro-video/complete", requireAdmin, async (req,
   const substituido = course.introVideoId;
   if (substituido && substituido !== videoId) await apagarVideo("aulas", substituido);
 
-  res.json({ introVideoId: videoId, introVideoEmbedUrl: enderecoAssinado(videoId) });
+  res.json({ introVideoId: videoId, introVideoEmbedUrl: enderecoAssinado(videoId, { tocarAoAbrir: false }) });
 });
 
 // GET /api/admin/intro-video/:videoId/status — o Bunny já terminou de processar?

@@ -243,6 +243,7 @@ export const pt = {
       trilhas: "Trilhas",
       meusEstudos: "Meus estudos",
       emAndamento: "Em andamento",
+      salvos: "Salvos",
       minhasTrilhas: "Minhas trilhas",
       concluidos: "Concluídos",
       jilsonai: "JilsonAI",
@@ -298,6 +299,11 @@ export const pt = {
       email: "E-mail",
       papel: "Papel"
     },
+    // A tela Salvos, em Meus estudos (decisão do operador, 03/10/2026).
+    salvos: {
+      vazio: "Nada salvo ainda. Salve aulas e cursos para assistir depois.",
+      erro: "Não foi possível carregar os salvos.",
+    },
     minhasTrilhas: {
       titulo: "Minhas trilhas",
       descricao: "Trilhas e seleções que você salvou para estudar.",
@@ -345,6 +351,10 @@ export const pt = {
       requisitos: "Pré-requisitos",
       paraQuem: "Pra quem é",
       diferenciais: "Diferenciais do curso",
+      // "Nosso método." — a segunda palavra sai destacada na tela.
+      // "40% concluído", no cartão do curso começado (Fase 5, 03/10/2026).
+      concluido: "concluído",
+      metodo: { inicio: "Nosso", destaque: "método" },
       videoApresentacao: "Vídeo de apresentação do curso"
     },
     trilha: {
@@ -364,6 +374,11 @@ export const pt = {
       erro: "Não foi possível abrir a aula. Tente de novo.",
       naoEncontrada: "Aula não encontrada.",
       paraAssinantes: "Esta aula é para assinantes.",
+      // Salvar para assistir depois (decisão do operador, 03/10/2026, "como no LinkedIn").
+      salvarParaDepois: "Salvar para depois",
+      salvarCurso: "Salvar curso",
+      progressoNoCurso: "Progresso no curso",
+      concluida: "Concluída",
       semVideo: "Esta aula ainda não tem vídeo.",
       recursos: "Arquivos",
       recursosDaAula: "Arquivos para baixar",

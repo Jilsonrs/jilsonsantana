@@ -5,10 +5,11 @@ import { prisma } from "../lib/prisma.js";
 import { loadSession, requireAdmin } from "../middleware/auth.js";
 import { parseId } from "../lib/http.js";
 import { doBanco } from "../lib/language.js";
-import { temAcessoAtivo } from "../lib/acesso.js";
+import { aulaLiberada, temAcessoAtivo } from "../lib/acesso.js";
 import { enderecoAssinado } from "../lib/bunny-stream.js";
 import { lerArquivoDaAula } from "../lib/bunny-storage.js";
 import { nomeParaDownload } from "../lib/nome-do-download.js";
+import { aulasConcluidas } from "../lib/progresso.js";
 
 const router = Router();
 
@@ -95,7 +96,12 @@ async function arvoreDoCurso(courseId: number, soPublicado: boolean) {
     highlights: curso.highlights,
     faq: curso.faq,
     camadas: curso.camadas,
-    videoSeconds: curso.modules.reduce((acc, m) => acc + m.lessons.reduce((acc2, l) => acc2 + (l.videoDurationSeconds ?? 0), 0), 0),
+    // A duração do curso: só aula de VÍDEO, como na página do curso — uma aula que
+    // virou texto não leva o tempo do vídeo antigo. O aluno soma só o publicado
+    // (é a lista que ele vê); o admin, a lista inteira.
+    videoSeconds: curso.modules
+      .flatMap((m) => m.lessons)
+      .reduce((total, l) => total + (l.kind === LessonKind.VIDEO ? (l.videoDurationSeconds ?? 0) : 0), 0),
     modulos: curso.modules.map((m) => ({
       id: m.id,
       title: m.title,
@@ -125,7 +131,7 @@ async function aulaParaAPagina(aula: Aula, liberada: boolean, arquivosLiberados:
   if (!liberada) return base;
   const conteudo = {
     ...base,
-    playerUrl: aula.kind === LessonKind.VIDEO ? enderecoAssinado(aula.bunnyVideoId) : null,
+    playerUrl: aula.kind === LessonKind.VIDEO ? enderecoAssinado(aula.bunnyVideoId, { tocarAoAbrir: true }) : null,
     texto: aula.kind === LessonKind.TEXT ? aula.content : null,
   };
   if (!arquivosLiberados) return conteudo;
@@ -135,6 +141,15 @@ async function aulaParaAPagina(aula: Aula, liberada: boolean, arquivosLiberados:
     select: { id: true, originalName: true, sizeBytes: true },
   });
   return { ...conteudo, arquivos: arquivos.map((a) => ({ ...a, sizeBytes: Number(a.sizeBytes) })) };
+}
+
+/**
+ * As aulas DESTE curso que quem pede concluiu (Fase 5, 03/10/2026) — só entre as
+ * aulas da lista que ele vê, então nunca vaza o id de um rascunho. Sem login, nada.
+ */
+function concluidasDoCurso(userId: string | undefined, curso: Awaited<ReturnType<typeof arvoreDoCurso>>): Promise<number[]> {
+  if (!userId || !curso) return Promise.resolve([]);
+  return aulasConcluidas(userId, curso.modulos.flatMap((m) => m.aulas.map((a) => a.id)));
 }
 
 /** Quem pede está logado e com assinatura que dá acesso? Sem sessão: não. */
@@ -152,11 +167,16 @@ router.get("/lessons/:id/aula", async (req, res) => {
     res.status(404).json({ error: "NotFound" });
     return;
   }
-  const assinante = await temAssinatura(req);
+  const sessao = await loadSession(req);
+  const assinante = sessao ? await temAcessoAtivo(sessao.user.id) : false;
   const curso = await arvoreDoCurso(aula.module.courseId, true);
-  // A página muda com a assinatura de quem pede: nunca guardada em cache.
+  // A página muda com a assinatura e o progresso de quem pede: nunca em cache.
   res.set("Cache-Control", "private, no-store");
-  res.json({ curso, aula: await aulaParaAPagina(aula, aula.isFreePreview || assinante, assinante) });
+  res.json({
+    curso,
+    aula: await aulaParaAPagina(aula, aulaLiberada(aula, assinante), assinante),
+    concluidas: await concluidasDoCurso(sessao?.user.id, curso),
+  });
 });
 
 // GET /api/admin/lessons/:id/aula — a mesma página para o ADMIN: qualquer status.
@@ -170,7 +190,7 @@ router.get("/admin/lessons/:id/aula", requireAdmin, async (req, res) => {
   }
   const curso = await arvoreDoCurso(aula.module.courseId, false);
   res.set("Cache-Control", "private, no-store");
-  res.json({ curso, aula: await aulaParaAPagina(aula, true, true) });
+  res.json({ curso, aula: await aulaParaAPagina(aula, true, true), concluidas: await concluidasDoCurso(req.user?.id, curso) });
 });
 
 /** Entrega o arquivo do Storage, em fluxo, com o NOME ORIGINAL limpo. */

@@ -87,10 +87,25 @@ describe("token do player das aulas", () => {
     configurar();
     const agora = (1790000000 - VALIDADE_DO_PLAYER) * 1000;
 
-    expect(enderecoAssinado("eb1c4f77-0cda-46be-b47d-1118ad7c2ffe", agora)).toBe(
+    expect(enderecoAssinado("eb1c4f77-0cda-46be-b47d-1118ad7c2ffe", { tocarAoAbrir: true }, agora)).toBe(
       "https://iframe.mediadelivery.net/embed/762605/eb1c4f77-0cda-46be-b47d-1118ad7c2ffe" +
-        "?token=8e8ef2555bfef9bde43d9baf16188e73f80f584bac0a04d75d67f69b672021aa&expires=1790000000",
+        "?token=8e8ef2555bfef9bde43d9baf16188e73f80f584bac0a04d75d67f69b672021aa&expires=1790000000&autoplay=true",
     );
+  });
+
+  // A aula toca sozinha; a apresentação abre pausada (decisão do operador,
+  // 03/10/2026). O token é o mesmo nos dois: o `autoplay` não entra na assinatura.
+  it("tocar ao abrir vai no endereço, sem mudar o token", () => {
+    configurar();
+    const agora = (1790000000 - VALIDADE_DO_PLAYER) * 1000;
+    const id = "eb1c4f77-0cda-46be-b47d-1118ad7c2ffe";
+
+    const aula = enderecoAssinado(id, { tocarAoAbrir: true }, agora);
+    const apresentacao = enderecoAssinado(id, { tocarAoAbrir: false }, agora);
+
+    expect(aula).toMatch(/&autoplay=true$/);
+    expect(apresentacao).toMatch(/&autoplay=false$/);
+    expect(aula?.replace("&autoplay=true", "")).toBe(apresentacao?.replace("&autoplay=false", ""));
   });
 
   // 24 h para todo vídeo (operador, 28/09/2026, depois de comparar Bunny, Mux,
@@ -104,10 +119,10 @@ describe("token do player das aulas", () => {
     process.env.BUNNY_STREAM_LESSONS_LIBRARY_ID = "762605";
     process.env.BUNNY_STREAM_LESSONS_API_KEY = "api";
     delete process.env.BUNNY_STREAM_LESSONS_TOKEN_KEY;
-    expect(enderecoAssinado("eb1c4f77-0cda-46be-b47d-1118ad7c2ffe")).toBeNull();
+    expect(enderecoAssinado("eb1c4f77-0cda-46be-b47d-1118ad7c2ffe", { tocarAoAbrir: true })).toBeNull();
     process.env.BUNNY_STREAM_LESSONS_TOKEN_KEY = "k";
     delete process.env.BUNNY_STREAM_LESSONS_LIBRARY_ID;
-    expect(enderecoAssinado("eb1c4f77-0cda-46be-b47d-1118ad7c2ffe")).toBeNull();
+    expect(enderecoAssinado("eb1c4f77-0cda-46be-b47d-1118ad7c2ffe", { tocarAoAbrir: true })).toBeNull();
   });
 });
 
