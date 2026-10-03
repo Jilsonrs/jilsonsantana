@@ -64,13 +64,22 @@ export const VALIDADE_DO_PLAYER = 24 * 60 * 60;
  * computador do operador — bunny.md §5). Quem chama decide a quem entregar: a
  * apresentação, a qualquer visitante; a aula, ao admin (prévia) e, na etapa 4,
  * ao aluno com acesso.
+ *
+ * `tocarAoAbrir` é OBRIGATÓRIO, e vai no endereço (`autoplay`, parâmetro de embed
+ * do Bunny que se sobrepõe ao painel da biblioteca): a AULA começa a tocar sozinha,
+ * como no LinkedIn; a APRESENTAÇÃO abre pausada (decisão do operador, 03/10/2026).
+ * Não entra no token, que assina só o vídeo e a validade.
  */
-export function enderecoAssinado(videoId: string | null, agora = Date.now()): string | null {
+export function enderecoAssinado(
+  videoId: string | null,
+  { tocarAoAbrir }: { tocarAoAbrir: boolean },
+  agora = Date.now(),
+): string | null {
   const c = config("aulas");
   const chaveDoToken = process.env.BUNNY_STREAM_LESSONS_TOKEN_KEY;
   if (!videoId || !c || !chaveDoToken) return null;
   const expira = Math.floor(agora / 1000) + VALIDADE_DO_PLAYER;
-  return `${montarEndereco(c.id, videoId)}?token=${tokenDoPlayer(chaveDoToken, videoId, expira)}&expires=${expira}`;
+  return `${montarEndereco(c.id, videoId)}?token=${tokenDoPlayer(chaveDoToken, videoId, expira)}&expires=${expira}&autoplay=${tocarAoAbrir}`;
 }
 
 export type CredenciaisDeEnvio = {

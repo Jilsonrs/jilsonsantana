@@ -131,7 +131,7 @@ router.get("/courses/:slug", async (req, res) => {
   // pode ficar em cache mais do que a validade da assinatura (24 h).
   res.json({
     ...comIdioma(course),
-    introVideoEmbedUrl: enderecoAssinado(course.introVideoId),
+    introVideoEmbedUrl: enderecoAssinado(course.introVideoId, { tocarAoAbrir: false }),
     moduleCount: course.modules.length,
     lessonCount,
     videoSeconds: _sum.videoDurationSeconds ?? 0,
@@ -228,7 +228,7 @@ router.get("/admin/courses/:id", requireAdmin, async (req, res) => {
       return lembrado ? { ...l, ...lembrado } : l;
     }),
   }));
-  res.json({ ...comIdioma({ ...course, modules }), introVideoEmbedUrl: enderecoAssinado(course.introVideoId) });
+  res.json({ ...comIdioma({ ...course, modules }), introVideoEmbedUrl: enderecoAssinado(course.introVideoId, { tocarAoAbrir: false }) });
 });
 
 // ── Writes (admin only) ──────────────────────────────────────────────────────

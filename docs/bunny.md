@@ -91,6 +91,16 @@ painel. O que isso muda, e já está no código (28/09):
 Gatilho de reabertura: se uma página pública passar a ficar em cache por mais de 24 h (uma CDN na
 frente do site, por exemplo), ou se o Enterprise DRM entrar só para as aulas.*
 
+**Tocar sozinho e trocar de aba** *(decisões do operador, 03/10/2026)*:
+- **A aula começa a tocar sozinha** ao abrir, como no LinkedIn; **a apresentação abre pausada**,
+  no editor e na página do curso. A escolha vai no próprio endereço (`autoplay=true|false`,
+  parâmetro de embed que, segundo a doc do Bunny, se sobrepõe à configuração da aba *Player* da
+  biblioteca). Por isso o painel deixou de decidir: mudar o *autoplay* lá não muda o site. O
+  `autoplay` não entra no token, que assina só o vídeo e a validade.
+- **Trocar de aba não recomeça o vídeo:** o servidor assina o endereço de novo a cada busca, e a
+  tela **mantém o endereço** enquanto o vídeo for o mesmo (`BunnyPlayer.tsx`). Antes, voltar à
+  aba recarregava o player do zero e fazia tocar o que estava pausado.
+
 **O que o primeiro teste no ar mostrou (28/09/2026, fato medido):** a biblioteca de apresentação
 **existia** (`jilsonsantana-stream-apresentacao`, 763872), ao contrário do que este documento
 dizia, e o vídeo de apresentação morava nela. A variável `BUNNY_STREAM_LESSONS_LIBRARY_ID` apontava

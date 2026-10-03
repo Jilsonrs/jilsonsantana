@@ -2992,6 +2992,11 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       aula.
       *(03/10/2026: rota própria `PUT /api/admin/lessons/:id/concluida`; a página da aula do admin
       conclui por ela e conta as aulas em rascunho da lista dele.)*
+- [x] **O vídeo não recomeça ao trocar de aba nem ao concluir** *(achado do operador, 03/10/2026)*:
+      o player mantém o endereço enquanto o vídeo for o mesmo; a apresentação abre **pausada** e
+      a aula **toca sozinha** (decisões dele), pelo próprio endereço (`bunny.md` §3.1). O defeito
+      também atingia a etapa 4 do progresso (concluir aos 90% recarregaria a aula do início) e
+      foi pego antes de publicar.
 - [x] **Barra de progresso no cartão do curso, na lista de Cursos do aluno** *(pedido do operador,
       30/09/2026, a partir da Mosh)*: só nos cursos que o aluno já começou, com a porcentagem (aulas
       vistas ÷ aulas publicadas). Depende do `LessonProgress` acima; entra com ele.

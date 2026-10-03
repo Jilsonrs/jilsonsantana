@@ -378,6 +378,24 @@ describe("página da aula — o progresso", () => {
     await waitFor(() => expect(concluirAula).toHaveBeenCalledWith(11, false));
   });
 
+  // Concluir recarrega os dados da página, e o servidor assina o vídeo de novo
+  // (token novo). O player NÃO pode recomeçar aos 90% (achado de 03/10/2026).
+  it("ao concluir, o vídeo continua de onde estava (o player não recarrega)", async () => {
+    comoMembro();
+    getLessonPage.mockResolvedValueOnce(pagina()).mockResolvedValue(
+      comConcluidas(pagina({ playerUrl: PLAYER.replace("token=t", "token=novo") }), [11]),
+    );
+    abrir();
+    const quadro = await screen.findByTitle("Abertura");
+    await waitFor(() => expect(ouvirConclusao).toHaveBeenCalled());
+
+    (ouvirConclusao.mock.calls[0][1] as () => void)();
+
+    await waitFor(() => expect(screen.getByRole("progressbar").getAttribute("aria-valuenow")).toBe("50"));
+    expect(screen.getByTitle("Abertura")).toBe(quadro);
+    expect(quadro.getAttribute("src")).toBe(PLAYER);
+  });
+
   it("aula de vídeo já concluída, ou de visitante: o player não é ouvido", async () => {
     comoMembro();
     getLessonPage.mockResolvedValue(comConcluidas(pagina(), [11]));

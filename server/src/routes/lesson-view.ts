@@ -131,7 +131,7 @@ async function aulaParaAPagina(aula: Aula, liberada: boolean, arquivosLiberados:
   if (!liberada) return base;
   const conteudo = {
     ...base,
-    playerUrl: aula.kind === LessonKind.VIDEO ? enderecoAssinado(aula.bunnyVideoId) : null,
+    playerUrl: aula.kind === LessonKind.VIDEO ? enderecoAssinado(aula.bunnyVideoId, { tocarAoAbrir: true }) : null,
     texto: aula.kind === LessonKind.TEXT ? aula.content : null,
   };
   if (!arquivosLiberados) return conteudo;
