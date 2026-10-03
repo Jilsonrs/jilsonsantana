@@ -95,7 +95,12 @@ async function arvoreDoCurso(courseId: number, soPublicado: boolean) {
     highlights: curso.highlights,
     faq: curso.faq,
     camadas: curso.camadas,
-    videoSeconds: curso.modules.reduce((acc, m) => acc + m.lessons.reduce((acc2, l) => acc2 + (l.videoDurationSeconds ?? 0), 0), 0),
+    // A duração do curso: só aula de VÍDEO, como na página do curso — uma aula que
+    // virou texto não leva o tempo do vídeo antigo. O aluno soma só o publicado
+    // (é a lista que ele vê); o admin, a lista inteira.
+    videoSeconds: curso.modules
+      .flatMap((m) => m.lessons)
+      .reduce((total, l) => total + (l.kind === LessonKind.VIDEO ? (l.videoDurationSeconds ?? 0) : 0), 0),
     modulos: curso.modules.map((m) => ({
       id: m.id,
       title: m.title,

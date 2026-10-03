@@ -345,6 +345,8 @@ export const pt = {
       requisitos: "Pré-requisitos",
       paraQuem: "Pra quem é",
       diferenciais: "Diferenciais do curso",
+      // "Nosso método." — a segunda palavra sai destacada na tela.
+      metodo: { inicio: "Nosso", destaque: "método" },
       videoApresentacao: "Vídeo de apresentação do curso"
     },
     trilha: {

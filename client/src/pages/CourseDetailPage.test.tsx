@@ -66,6 +66,7 @@ describe("CourseDetailPage", () => {
 
     expect(await screen.findByText("Exemplo — Fundamentos de Excel + IA")).toBeTruthy();
     expect(screen.getByText("Fundamentos sólidos")).toBeTruthy();
+    expect(screen.getByRole("heading", { name: /^Nosso método/ })).toBeTruthy();
     expect(screen.getByText("Com IA do seu lado")).toBeTruthy();
     expect(screen.queryByText("Recursos modernos")).toBeNull();
     expect(screen.getByText("PROCX")).toBeTruthy();
@@ -117,6 +118,8 @@ describe("CourseDetailPage — idioma e textos", () => {
     expect(screen.getByText("Intermediate")).toBeTruthy();
     expect(screen.getByText("1 module · 2 lessons · 1h 05min")).toBeTruthy();
     expect(screen.getByText("Solid foundations")).toBeTruthy();
+    // O título do quadro das camadas sai do dicionário, não fica em português.
+    expect(screen.getByRole("heading", { name: /^Our method/ })).toBeTruthy();
     // Conteúdo não é traduzido: o módulo e a tag saem como foram escritos.
     expect(screen.getByText("Base Lógica Inquebrável")).toBeTruthy();
     expect(screen.queryByText("Conteúdo do curso")).toBeNull();

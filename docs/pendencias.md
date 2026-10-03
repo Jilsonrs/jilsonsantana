@@ -33,6 +33,7 @@ rápida entra aqui, com o próximo número livre.*
 | P35 | **Revisar os textos novos de 29/09**, que são rascunho do agente, em português e em inglês. No **Início:** o "Continue estudando" EM BREVE, o vazio de Minhas trilhas, "Ver todas" e "Atalhos". No **Dashboard:** a descrição, os 4 relatórios e o "Chega com…" de cada um. No **menu:** Em andamento, Concluídos e a etiqueta EM BREVE ("COMING SOON" em inglês). Esses textos **não** aparecem em Admin → Textos (são do app) | `core/src/i18n/pt.ts` e `en.ts` (parte `app`); o Dashboard em `client/src/pages/AdminPage.tsx` |
 | P36 | **Revisar as dicas embaixo dos campos do editor do curso** (você pediu para revisar depois, em 28/09). Todas num arquivo só | `client/src/lib/course-hints.ts` e o plano, Bloco E ("Em todos os passos") |
 | P37 | **Colar à mão outro ID no campo do vídeo de apresentação** troca o vídeo, mas **não apaga o antigo no Bunny** (só o envio pelo botão apaga; o antigo fica lá sem curso). Apagar também, como na troca pelo botão? | `implementation-plan.md` → Bloco E e `bunny.md` §3.4 |
+| P38 | **Revisar os textos novos de 03/10**, rascunho do agente. Na página da aula e na do curso: o título do quadro das camadas em inglês, **"Our method."** (o português, "Nosso método.", é o do Antigravity). Esses textos **não** aparecem em Admin → Textos (são do app) | `core/src/i18n/pt.ts` e `en.ts` (parte `app.curso.metodo`) |
 
 ## C. Com hora marcada *(resolver quando o bloco abrir, não antes)*
 

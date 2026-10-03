@@ -197,6 +197,11 @@
 > manter esse resultado final na tela"), e os testes passaram a esperar o texto novo, conferindo
 > o mesmo comportamento. **Pendente (sábado):** revisar com o operador as mudanças não visuais
 > acima e reconciliar o plano e o `GEMINI.md` com elas.
+> **Revisão de 03/10 (plano aprovado pelo operador), em 5 etapas:** **(1) página da aula** — a
+> duração soma só aula de vídeo, como na página do curso (com teste de servidor); a contagem
+> "módulos · aulas · tempo" ganhou teste; "Nosso método." saiu da tela para o dicionário (o
+> inglês é rascunho, P38); e o menu do curso, **fechado, continua fechado** nas próximas aulas
+> (decisão do operador, 03/10), guardado no navegador de cada pessoa em vez do endereço.
 > **`dev` = `main` em código (30/09):** tudo o que foi construído está no ar. O operador passa a
 > trabalhar com o Antigravity no acabamento (fila em `design-lab/GEMINI.md`, itens 11 a 16).
 > **Registrado no fim da sessão de 29/09 (só documentos, no `dev`):** o mapa do que falta nos 7

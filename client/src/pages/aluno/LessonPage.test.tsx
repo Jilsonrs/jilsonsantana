@@ -15,6 +15,7 @@ vi.mock("@/lib/auth-client", () => ({ useSession: () => useSessionMock() }));
 
 import { LessonPage } from "./LessonPage";
 import { SecondaryNav } from "@/components/nav/SecondaryNav";
+import { definirMenuDoCursoFechado } from "@/lib/menu-do-curso";
 
 // A PÁGINA DA AULA (etapa 4 do Bloco U — plano aprovado pelo operador em
 // 29/09/2026, no estilo do LinkedIn Learning). O que estes testes protegem: os
@@ -76,6 +77,8 @@ function pagina(aula: Partial<PaginaDaAula["aula"]> = {}, rascunho = false): Pag
 beforeEach(() => {
   getLessonPage.mockReset().mockResolvedValue(pagina());
   useSessionMock.mockReset().mockReturnValue({ data: null, isPending: false });
+  window.localStorage.clear();
+  definirMenuDoCursoFechado(false);
 });
 
 const abrir = (rota = "/aluno/aula/11") => renderWithProviders(<LessonPage />, { route: rota, path: "/aluno/aula/:id" });
@@ -210,6 +213,17 @@ describe("página da aula — sobre o curso", () => {
     expect(within(sobre).getByText("Preciso do 365?")).toBeTruthy();
   });
 
+  // A contagem ao lado do nível (acabamento do Antigravity, 30/09/2026), no formato
+  // da página do curso: "1 módulo · 2 aulas · 1h 05min".
+  it("a contagem de módulos, aulas e tempo de vídeo", async () => {
+    const comVideo = pagina();
+    comVideo.curso = { ...comVideo.curso, videoSeconds: 3900 };
+    getLessonPage.mockResolvedValue(comVideo);
+    abrir();
+    const sobre = await screen.findByRole("region", { name: "Sobre o curso" });
+    expect(within(sobre).getByText("1 módulo · 2 aulas · 1h 05min")).toBeTruthy();
+  });
+
   it("aparece também na aula bloqueada", async () => {
     getLessonPage.mockResolvedValue(pagina({ liberada: false, arquivosLiberados: false, playerUrl: undefined, arquivos: undefined }));
     abrir();
@@ -238,5 +252,46 @@ describe("página da aula — o JilsonAI", () => {
 
     fireEvent.click(within(painel).getByRole("button", { name: "Fechar o JilsonAI" }));
     await waitFor(() => expect(screen.queryByRole("complementary", { name: "JilsonAI" })).toBeNull());
+  });
+});
+
+// FECHOU, CONTINUA FECHADO (decisão do operador, 03/10/2026): o menu do curso fica
+// fechado nas próximas aulas, e na próxima visita, até a pessoa reabrir.
+describe("página da aula — fechar o menu do curso", () => {
+  const abrirComMenu = (rota = "/aluno/aula/11") =>
+    renderWithProviders(
+      <>
+        <SecondaryNav papel={Role.MEMBER} onSignOut={vi.fn()} />
+        <LessonPage />
+      </>,
+      { route: rota, path: "/aluno/aula/:id" },
+    );
+
+  it("fechado, continua fechado na aula seguinte; e reabre", async () => {
+    useSessionMock.mockReturnValue({ data: { user: { role: Role.MEMBER } }, isPending: false });
+    const primeira = abrirComMenu();
+    const coluna = await screen.findByRole("complementary", { name: "Menu da seção" });
+    fireEvent.click(within(coluna).getByRole("button", { name: "Fechar o menu" }));
+    expect(screen.queryByRole("complementary", { name: "Menu da seção" })).toBeNull();
+    primeira.unmount();
+
+    getLessonPage.mockResolvedValue(pagina({ id: 12, title: "Leitura", kind: "TEXT", playerUrl: null, texto: "Texto." }));
+    abrirComMenu("/aluno/aula/12");
+    await screen.findByText("Texto.");
+    expect(screen.queryByRole("complementary", { name: "Menu da seção" })).toBeNull();
+
+    // Fechado, a página mostra o botão de reabrir ANTES do da gaveta do celular
+    // (no navegador, cada um só aparece no seu tamanho de tela).
+    fireEvent.click(screen.getAllByRole("button", { name: "Conteúdo do curso" })[0]);
+    expect(await screen.findByRole("complementary", { name: "Menu da seção" })).toBeTruthy();
+  });
+
+  it("sem fechar, o menu aparece e não há botão de reabrir", async () => {
+    useSessionMock.mockReturnValue({ data: { user: { role: Role.MEMBER } }, isPending: false });
+    abrirComMenu();
+    expect(await screen.findByRole("complementary", { name: "Menu da seção" })).toBeTruthy();
+    await screen.findByTitle("Abertura");
+    // Só o botão da gaveta do celular.
+    expect(screen.getAllByRole("button", { name: "Conteúdo do curso" })).toHaveLength(1);
   });
 });

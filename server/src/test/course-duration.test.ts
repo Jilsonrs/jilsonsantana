@@ -141,3 +141,43 @@ describe("a lista de cursos do admin", () => {
     expect((res.body as Cartao[]).find((c) => c.slug === ADMIN_SLUG)?.videoSeconds).toBe(3900);
   });
 });
+
+// A PÁGINA DA AULA ("Sobre o curso", acabamento do Antigravity de 30/09/2026): a
+// mesma regra das outras leituras. O aluno soma só o vídeo da lista que ele vê; o
+// admin soma a lista inteira, com rascunho. Aula de TEXTO nunca soma, nem com uma
+// duração antiga guardada.
+describe("a página da aula", () => {
+  async function umaAulaPublicada(): Promise<number> {
+    const aula = await prisma.lesson.findFirstOrThrow({ where: { title: "vídeo publicado", module: { course: { slug: COM_VIDEO } } } });
+    return aula.id;
+  }
+
+  it("para o aluno, soma só o vídeo publicado em módulo publicado; texto não entra", async () => {
+    const res = await request(app).get(`/api/lessons/${await umaAulaPublicada()}/aula`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.curso.videoSeconds).toBe(3900);
+  });
+
+  it("para o admin, soma também o rascunho, e o texto continua de fora", async () => {
+    const login = await request(app).post("/api/auth/sign-in/email").send({
+      email: process.env.SEED_ADMIN_EMAIL,
+      password: process.env.SEED_ADMIN_PASSWORD,
+    });
+    const cookies = (login.headers["set-cookie"] as unknown as string[] | undefined) ?? [];
+
+    const res = await request(app).get(`/api/admin/lessons/${await umaAulaPublicada()}/aula`).set("Cookie", cookies);
+
+    expect(res.status).toBe(200);
+    // 600 + 3300 publicados, 300 da aula em rascunho, 1200 do módulo em rascunho.
+    expect(res.body.curso.videoSeconds).toBe(5400);
+  });
+
+  it("não devolve a duração de cada aula, só o total", async () => {
+    const res = await request(app).get(`/api/lessons/${await umaAulaPublicada()}/aula`);
+
+    const aulas = (res.body.curso.modulos as { aulas: Record<string, unknown>[] }[]).flatMap((m) => m.aulas);
+    expect(aulas.length).toBeGreaterThan(0);
+    for (const aula of aulas) expect(aula).not.toHaveProperty("videoDurationSeconds");
+  });
+});
