@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { FileText, PlayCircle } from "lucide-react";
+import { CheckCircle2, FileText, PlayCircle } from "lucide-react";
 import { ContentStatus, LessonKind } from "@jilson/core";
 import type { AulaNaLista } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -18,7 +18,7 @@ function EtiquetaDeStatus({ status }: { status: ContentStatus }) {
   );
 }
 
-function AulaDaLista({ aula, atual }: { aula: AulaNaLista; atual: boolean }) {
+function AulaDaLista({ aula, atual, concluida }: { aula: AulaNaLista; atual: boolean; concluida: boolean }) {
   const t = useT();
   const Icone = aula.kind === LessonKind.TEXT ? FileText : PlayCircle;
   return (
@@ -36,6 +36,13 @@ function AulaDaLista({ aula, atual }: { aula: AulaNaLista; atual: boolean }) {
         <Icone className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
         <span className="sr-only">{aula.kind === LessonKind.TEXT ? t.aula.aulaDeTexto : t.aula.aulaDeVideo}:</span>
         <span className="flex-1 leading-snug">{aula.title}</span>
+        {/* A aula concluída (Fase 5, 03/10/2026); o leitor de tela ouve "Concluída". */}
+        {concluida && (
+          <>
+            <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
+            <span className="sr-only">{t.aula.concluida}</span>
+          </>
+        )}
         <EtiquetaDeStatus status={aula.status} />
       </Link>
       {aula.temArquivos && <RecursosNaLista lessonId={aula.id} />}
@@ -69,7 +76,7 @@ export function CourseContentsNav({ lessonId }: { lessonId: number }) {
             <ul className="flex flex-col space-y-1 p-2 pt-1 border-t border-border/30">
               {modulo.aulas.map((aula) => (
                 <li key={aula.id}>
-                  <AulaDaLista aula={aula} atual={aula.id === lessonId} />
+                  <AulaDaLista aula={aula} atual={aula.id === lessonId} concluida={data.concluidas.includes(aula.id)} />
                 </li>
               ))}
             </ul>

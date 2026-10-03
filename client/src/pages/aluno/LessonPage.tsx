@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { ContentStatus } from "@jilson/core";
+import { ContentStatus, LessonKind } from "@jilson/core";
 import { useSession } from "@/lib/auth-client";
 import { useT } from "@/lib/language";
 import { cn } from "@/lib/utils";
 import { usePaginaDaAula } from "@/lib/pagina-da-aula";
 import { useMenuDoCursoFechado } from "@/lib/menu-do-curso";
+import { porcentagemDoCurso, useConcluirAula } from "@/lib/progresso";
 import { PageContainer } from "@/components/layout/PageLayout";
 import { CourseContentsNav } from "@/components/aula/CourseContentsNav";
 import { LessonContent } from "@/components/aula/LessonContent";
@@ -35,6 +36,18 @@ export function LessonPage() {
   const { data, isError, error, comoAdmin, carregandoSessao } = usePaginaDaAula(lessonId);
   const [iaAberta, setIaAberta] = useState(false);
   const [menuDoCursoFechado, fecharMenuDoCurso] = useMenuDoCursoFechado();
+  const { mutate: concluir } = useConcluirAula();
+
+  // A aula que esta pessoa pode concluir agora: logada, liberada e ainda não
+  // concluída (Fase 5, 03/10/2026). O visitante da prévia grátis não tem progresso.
+  const concluivel = data && session && data.aula.liberada && !data.concluidas.includes(data.aula.id) ? data.aula : null;
+  const textoParaConcluir = concluivel?.kind === LessonKind.TEXT ? concluivel.id : null;
+
+  // Efeito: ABRIR a aula de texto é o que a conclui (decisão do operador,
+  // 03/10/2026) — uma escrita no servidor disparada pela tela que abriu.
+  useEffect(() => {
+    if (textoParaConcluir !== null) concluir({ lessonId: textoParaConcluir, comoAdmin });
+  }, [textoParaConcluir, comoAdmin, concluir]);
 
   if (lessonId === null || (isError && naoEncontrada(error))) {
     return <Aviso texto={t.aula.naoEncontrada} />;
@@ -43,6 +56,8 @@ export function LessonPage() {
   if (carregandoSessao || !data) return <Aviso texto={t.aula.carregando} />;
 
   const { curso, aula } = data;
+  const porcentagem = porcentagemDoCurso(curso, data.concluidas);
+  const concluirVideo = concluivel?.kind === LessonKind.VIDEO ? () => concluir({ lessonId: concluivel.id, comoAdmin }) : undefined;
   const temArquivos = curso.modulos.some((m) => m.aulas.some((a) => a.id === aula.id && a.temArquivos));
   return (
     <div className="flex min-h-full flex-col">
@@ -98,17 +113,26 @@ export function LessonPage() {
           </div>
         </div>
 
-        {/* Linha de progresso (visual) */}
-        <div className="absolute bottom-0 left-4 right-4 sm:left-6 sm:right-6 md:left-[50px] md:right-[50px] h-[3px] bg-primary/10" aria-hidden="true">
-          {/* Valor estático para visualização do design, será dinâmico depois */}
-          <div className="h-full bg-primary rounded-r-full transition-all duration-500" style={{ width: "35%" }} />
-        </div>
+        {/* O progresso no curso (desenho do Antigravity; o número é real desde
+            03/10/2026): aulas concluídas ÷ aulas da lista. Só para quem está logado. */}
+        {session && (
+          <div
+            role="progressbar"
+            aria-label={t.aula.progressoNoCurso}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={porcentagem}
+            className="absolute bottom-0 left-4 right-4 sm:left-6 sm:right-6 md:left-[50px] md:right-[50px] h-[3px] bg-primary/10"
+          >
+            <div className="h-full bg-primary rounded-r-full transition-all duration-500" style={{ width: `${porcentagem}%` }} />
+          </div>
+        )}
       </div>
 
       <div className="mx-auto w-full max-w-[1600px] px-4 pt-[20px] pb-6 sm:px-6 sm:pb-8 md:px-[50px] md:pb-8">
         <div className={cn("grid gap-6", iaAberta && "lg:grid-cols-[minmax(0,1fr)_360px]")}>
           <div className="min-w-0 space-y-8">
-            <LessonContent aula={aula} comoAdmin={comoAdmin} temArquivos={temArquivos} />
+            <LessonContent aula={aula} comoAdmin={comoAdmin} temArquivos={temArquivos} aoConcluir={concluirVideo} />
 
             {/* Em toda aula, liberada ou não (operador, 29/09/2026). */}
             <CourseDetails curso={curso} />

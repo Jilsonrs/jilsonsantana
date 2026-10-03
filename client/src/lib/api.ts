@@ -370,12 +370,22 @@ export type PaginaDaAula = {
     texto?: string | null;
     arquivos?: ArquivoDaAula[];
   };
+  /** As aulas deste curso que QUEM PEDE concluiu (Fase 5, 03/10/2026); visitante: []. */
+  concluidas: number[];
 };
 
 export async function getLessonPage(lessonId: number, comoAdmin: boolean): Promise<PaginaDaAula> {
   const rota = comoAdmin ? `/admin/lessons/${lessonId}/aula` : `/lessons/${lessonId}/aula`;
   const { data } = await client.get<PaginaDaAula>(rota);
   return data;
+}
+
+/**
+ * Conclui a aula para quem está logado (Fase 5, 03/10/2026). A tela chama sozinha:
+ * vídeo a 90%, texto ao abrir. O admin conclui pela rota dele, em qualquer status.
+ */
+export async function concluirAula(lessonId: number, comoAdmin: boolean): Promise<void> {
+  await client.put(comoAdmin ? `/admin/lessons/${lessonId}/concluida` : `/lessons/${lessonId}/concluida`);
 }
 
 /** O link de download: mesmo site, então o cookie vai junto e o arquivo vem com o nome original. */

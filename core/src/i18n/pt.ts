@@ -366,6 +366,8 @@ export const pt = {
       erro: "Não foi possível abrir a aula. Tente de novo.",
       naoEncontrada: "Aula não encontrada.",
       paraAssinantes: "Esta aula é para assinantes.",
+      progressoNoCurso: "Progresso no curso",
+      concluida: "Concluída",
       semVideo: "Esta aula ainda não tem vídeo.",
       recursos: "Arquivos",
       recursosDaAula: "Arquivos para baixar",

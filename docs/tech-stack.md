@@ -78,6 +78,13 @@
   oficiais do Bunny. Isolada em `client/src/lib/video-upload.ts`, o único arquivo que a importa:
   trocar de peça custa um arquivo. O arquivo vai do navegador direto para o Bunny, e a chave fica
   no servidor, que só entrega a assinatura.
+- **`player.js` 0.1.0** (client, versão **travada**) — o site ouve o player do Bunny para saber até
+  onde o aluno assistiu: a aula em vídeo conta como concluída **aos 90%** (decisão do operador,
+  03/10/2026; peça aprovada por ele no mesmo dia). É a peça que a doc do Bunny indica ("Playback
+  control API": eventos `timeupdate` com segundos e duração, e `ended`). Instalada do npm, e **não**
+  carregada do CDN do Bunny (`playerjs-latest`), para nenhum código de fora mudar sob o site sem
+  aviso. Isolada em `client/src/lib/player-do-bunny.ts`, o único arquivo que a importa. Travada
+  porque a última versão é de 2017 e o protocolo não muda: atualizar não traz nada.
 - **O que contratar e configurar no Bunny** (bibliotecas, segurança, chaves, o que fica de fora):
   [`docs/bunny.md`](bunny.md). **Enterprise DRM fica fora do lançamento**: são US$ 99/mês fixos
   por biblioteca *(doc do Bunny, 25/09/2026)*.

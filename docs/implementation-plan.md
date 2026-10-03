@@ -208,7 +208,7 @@
 > leitor de tela; as caixas das Camadas mostram o nome que o aluno vê, em português e com as
 > edições de Admin → Textos; o nível no cartão do admin fica em português mesmo com o app em
 > inglês. Tudo com teste.
-> **(3) progresso: banco e servidor** — ver Fase 5.
+> **(3) progresso: banco e servidor** e **(4) progresso na tela da aula** — ver Fase 5.
 > **`dev` = `main` em código (30/09):** tudo o que foi construído está no ar. O operador passa a
 > trabalhar com o Antigravity no acabamento (fila em `design-lab/GEMINI.md`, itens 11 a 16).
 > **Registrado no fim da sessão de 29/09 (só documentos, no `dev`):** o mapa do que falta nos 7
@@ -2947,11 +2947,13 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
   (dependência aprovada, versão travada). O que o certificado atesta com isso é a **P39**.
 - [x] `LessonProgress` (user×lesson, `completed`, `completedAt`) + RLS ; migration
       *(03/10/2026: migration `lesson_progress`; churn não apaga, só some com a aula ou a pessoa)*
-- [ ] Endpoint: mark lesson watched; lesson list shows completion
+- [x] Endpoint: mark lesson watched; lesson list shows completion
       *(03/10/2026, o servidor: `PUT /api/lessons/:id/concluida` — só a cadeia publicada e só a
       aula que a pessoa pode assistir, pela mesma regra da página da aula, `aulaLiberada()`; e
       `PUT /api/admin/lessons/:id/concluida` para o admin; a página da aula devolve `concluidas`
-      de quem pede. Revisão de segurança sem P0/P1. Falta a tela — etapa 4.)*
+      de quem pede. Revisão de segurança sem P0/P1. **A tela (etapa 4):** o vídeo conclui aos 90%
+      (`player-do-bunny.ts`), o texto ao abrir, só com login; a barra da página da aula mostra o
+      número real (aulas concluídas ÷ aulas da lista) e o conteúdo do curso marca a aula feita.)*
 - [ ] **Trilha completion:** a saved trilha is "complete" when all its `PlanItem` lessons are
       done (course-item = its lessons). Drives certificate eligibility (Phase 6.5).
 - [ ] `LessonEvent` table (event-sourced: type, position, ts) + RLS — **capture only, no analytics yet**
@@ -2981,12 +2983,14 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       do `LessonProgress`). Leitura do admin, **nunca** no site.
 - [ ] **A avaliação no cartão do admin** — só depois de decidir a P27: a nota planejada é uma por
       aluno e geral, não por curso.
-- [ ] **O progresso também funciona para o ADMIN** *(consequência da decisão do operador de
+- [x] **O progresso também funciona para o ADMIN** *(consequência da decisão do operador de
       29/09/2026: a plataforma é uma só, e ele testa tudo como aluno sem trocar de conta)*: "marcar
       como vista", o Continue estudando e as conclusões não podem depender só de assinatura ativa
       — o admin não tem assinatura. **Sem** pôr `role === admin` dentro de `temAcessoAtivo()`
       (`CLAUDE.md` → Access Architecture): o admin entra por uma regra própria, como já faz na
       aula.
+      *(03/10/2026: rota própria `PUT /api/admin/lessons/:id/concluida`; a página da aula do admin
+      conclui por ela e conta as aulas em rascunho da lista dele.)*
 - [ ] **Barra de progresso no cartão do curso, na lista de Cursos do aluno** *(pedido do operador,
       30/09/2026, a partir da Mosh)*: só nos cursos que o aluno já começou, com a porcentagem (aulas
       vistas ÷ aulas publicadas). Depende do `LessonProgress` acima; entra com ele.

@@ -345,7 +345,14 @@ exceto o item 4, que é página pública.
    curso fechado **continua fechado** nas próximas aulas (decisão do operador, 03/10), guardado
    no navegador, e não mais no endereço (`?sidebar=0` saiu); **(d)** as caixas das Camadas no
    editor mostram o nome que o aluno vê. **Achado para você:** o quadro "Nosso método" usa cores
-   fixas (`blue-600`, `indigo-600`, `indigo-50`) em vez dos tokens — regra 1 deste arquivo.
+   fixas (`blue-600`, `indigo-600`, `indigo-50`) em vez dos tokens — regra 2 deste arquivo ("cor só via token").
+18. **O progresso é REAL desde 03/10** (Fase 5). A barra fina que você desenhou no topo da página
+   da aula (`LessonPage.tsx`) mostra agora a porcentagem do aluno no curso, e só aparece para
+   quem está logado. O desenho é o seu; **não** volte a pôr número fixo nem `aria-hidden`: ela é
+   lida pelo leitor de tela como "Progresso no curso" e tem teste. **Para você formatar:** o
+   **sinal de concluída** em cada aula do conteúdo do curso (`CourseContentsNav.tsx`, um
+   `CheckCircle2` depois do título — hoje só o ícone, sem acabamento). O texto escondido
+   "Concluída" ao lado dele é para o leitor de tela: não apague.
 
 > **Fora do seu trabalho, para não confundir:** o Bunny ganhou **Live Stream** em acesso
 > antecipado (29/09). É só avaliação depois da Fase 3, **não** é tela a desenhar (`docs/bunny.md`
