@@ -335,6 +335,17 @@ exceto o item 4, que é página pública.
    No **cartão do catálogo** e na **página do curso**: "2 módulos · 4 aulas · 1h 05min" — o
    acabamento ali vale (§ 2, "Públicas e do aluno ao mesmo tempo", decisão de 30/09). **Tem
    teste:** o texto e o formato ("0min" sem vídeo).
+17. **O que você fez em 30/09 e o Claude revisou em 03/10 — FICOU, agora com teste.** O seletor de
+   ícones dos Destaques (`HighlightsField.tsx`), o nível no cartão do admin, a contagem em "Sobre
+   o curso", o "Nosso método" e o botão de fechar o menu do curso. O que mudou na revisão, para
+   você não desfazer: **(a)** cada ícone tem **nome em português** (`nomes-dos-icones.ts`; ícone
+   novo no registro sem nome ali reprova um teste) e a grade funciona por teclado — Enter abre,
+   Esc fecha; **(b)** "Nosso método." saiu do `.tsx` para o dicionário (`app.curso.metodo`),
+   porque texto escrito na tela aparece em português para o aluno em inglês; **(c)** o menu do
+   curso fechado **continua fechado** nas próximas aulas (decisão do operador, 03/10), guardado
+   no navegador, e não mais no endereço (`?sidebar=0` saiu); **(d)** as caixas das Camadas no
+   editor mostram o nome que o aluno vê. **Achado para você:** o quadro "Nosso método" usa cores
+   fixas (`blue-600`, `indigo-600`, `indigo-50`) em vez dos tokens — regra 1 deste arquivo.
 
 > **Fora do seu trabalho, para não confundir:** o Bunny ganhou **Live Stream** em acesso
 > antecipado (29/09). É só avaliação depois da Fase 3, **não** é tela a desenhar (`docs/bunny.md`

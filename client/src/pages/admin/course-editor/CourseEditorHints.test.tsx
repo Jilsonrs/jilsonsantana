@@ -8,6 +8,9 @@ import { CURSO_DE_TESTE } from "./curso-de-teste";
 const adminGetCourse = vi.fn();
 vi.mock("@/lib/api", () => ({
   adminGetCourse: (...args: unknown[]) => adminGetCourse(...args),
+  // As caixas das Camadas leem os textos comuns; sem servidor, valem os de fábrica.
+  getCommonTexts: () => Promise.reject(new Error("sem servidor")),
+  COMMON_TEXTS_QUERY: "site-text-common",
 }));
 
 import { CourseEditorLayout } from "./CourseEditorLayout";

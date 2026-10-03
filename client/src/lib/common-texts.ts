@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { pt, en } from "@jilson/core";
+import { pt, en, type LanguageCode } from "@jilson/core";
 import { getCommonTexts, COMMON_TEXTS_QUERY, type CommonTexts } from "@/lib/api";
 import { useIdioma } from "@/lib/language";
 
@@ -13,8 +13,10 @@ const FABRICA = { pt: pt.common, en: en.common };
  * mesma leitura que a home faz no servidor (`getDict()`), então editar uma vez
  * muda nos dois lugares.
  */
-export function useTextosComuns(): CommonTexts {
-  const idioma = useIdioma();
+export function useTextosComuns(fixo?: LanguageCode): CommonTexts {
+  const doApp = useIdioma();
+  // O admin passa "pt": ele fica em português mesmo com o app em inglês (23/09/2026).
+  const idioma = fixo ?? doApp;
   const { data } = useQuery({
     queryKey: [COMMON_TEXTS_QUERY, idioma],
     queryFn: () => getCommonTexts(idioma),

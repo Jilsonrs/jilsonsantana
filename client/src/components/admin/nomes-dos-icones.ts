@@ -1,0 +1,67 @@
+// O NOME EM PORTUGUÊS de cada ícone dos Destaques, para o seletor do editor
+// (decisão do operador, 03/10/2026). Fica aqui, e não no dicionário, porque o
+// admin é em português, com o texto na própria tela (decisão de 23/09). O valor
+// gravado no curso continua sendo o nome técnico (a chave), que o site do aluno lê.
+// Ícone novo no registro sem nome aqui reprova um teste.
+export const NOME_DO_ICONE: Record<string, string> = {
+  "stack-2": "Camadas",
+  bolt: "Raio",
+  sparkles: "Brilho",
+  target: "Alvo",
+  rocket: "Foguete",
+  award: "Prêmio",
+  "book-open": "Livro aberto",
+  briefcase: "Maleta",
+  "check-circle": "Confirmado",
+  clock: "Relógio",
+  compass: "Bússola",
+  "file-text": "Documento",
+  flag: "Bandeira",
+  globe: "Globo",
+  key: "Chave",
+  lightbulb: "Lâmpada",
+  map: "Mapa",
+  "pie-chart": "Gráfico de pizza",
+  puzzle: "Quebra-cabeça",
+  shield: "Escudo",
+  star: "Estrela",
+  "trending-up": "Crescimento",
+  users: "Pessoas",
+  video: "Vídeo",
+  brain: "Cérebro",
+  code: "Código",
+  laptop: "Notebook",
+  "line-chart": "Gráfico de linha",
+  medal: "Medalha",
+  "bar-chart": "Gráfico de barras",
+  presentation: "Apresentação",
+  "layout-dashboard": "Painel",
+  monitor: "Monitor",
+  activity: "Atividade",
+  eye: "Olho",
+  search: "Lupa",
+  database: "Banco de dados",
+  server: "Servidor",
+  filter: "Filtro",
+  workflow: "Fluxo de trabalho",
+  network: "Rede",
+  "git-branch": "Ramificação",
+  repeat: "Repetir",
+  calculator: "Calculadora",
+  sigma: "Somatório",
+  bot: "Robô",
+  cpu: "Processador",
+  wand: "Varinha mágica",
+  atom: "Átomo",
+  terminal: "Terminal",
+  braces: "Chaves de código",
+  "pen-tool": "Caneta",
+  settings: "Engrenagem",
+  box: "Caixa",
+  "layers-3": "Pilha",
+};
+
+/** O nome em português; um token desconhecido (gravado à mão antes) aparece como está. */
+export function nomeDoIcone(token: string): string {
+  return NOME_DO_ICONE[token] ?? token;
+}

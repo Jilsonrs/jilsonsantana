@@ -202,6 +202,11 @@
 > "módulos · aulas · tempo" ganhou teste; "Nosso método." saiu da tela para o dicionário (o
 > inglês é rascunho, P38); e o menu do curso, **fechado, continua fechado** nas próximas aulas
 > (decisão do operador, 03/10), guardado no navegador de cada pessoa em vez do endereço.
+> **(2) editor e admin** — o seletor de ícones dos Destaques (feito pelo Antigravity) ficou, com
+> **nome em português** em cada ícone (decisão do operador, 03/10; rascunho na P38), teclado e
+> leitor de tela; as caixas das Camadas mostram o nome que o aluno vê, em português e com as
+> edições de Admin → Textos; o nível no cartão do admin fica em português mesmo com o app em
+> inglês. Tudo com teste.
 > **`dev` = `main` em código (30/09):** tudo o que foi construído está no ar. O operador passa a
 > trabalhar com o Antigravity no acabamento (fila em `design-lab/GEMINI.md`, itens 11 a 16).
 > **Registrado no fim da sessão de 29/09 (só documentos, no `dev`):** o mapa do que falta nos 7
