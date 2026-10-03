@@ -54,3 +54,14 @@ export async function temAcessoAtivo(userId: string): Promise<boolean> {
   if (typeof userId !== "string" || userId.length === 0) return false;
   return assinaturaIndividualAtiva(userId);
 }
+
+/**
+ * A aula abre para esta pessoa? PRÉVIA GRÁTIS (qualquer um — a segunda exceção ao
+ * portão de vídeo, CLAUDE.md → Access Architecture) ou acesso ativo. É a MESMA
+ * regra para assistir e para concluir: num lugar só, para as duas rotas nunca
+ * discordarem (achado P2 da revisão de segurança, 03/10/2026). Sem papel aqui
+ * dentro: o admin entra pelas rotas de admin.
+ */
+export function aulaLiberada(aula: { isFreePreview: boolean }, temAcesso: boolean): boolean {
+  return aula.isFreePreview || temAcesso;
+}

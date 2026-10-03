@@ -29,8 +29,9 @@
 > Verificado antes do merge, não presumido: as **4 migrations já estavam aplicadas** em produção e
 > as **7 variáveis do Railway cobrem** tudo que o servidor lê em runtime — por isso o merge não
 > exigiu janela de manutenção.
-> **Pendência de véspera de lançamento:** os dois cursos `exemplo-*` do seed estão **PUBLISHED em
-> produção**. Invisíveis hoje; aparecem no dia em que a coming-soon for desligada.
+> **Cursos de exemplo APAGADOS de produção pelo operador (03/10/2026)**, que passou a cadastrar
+> os cursos reais (fecha a P18). O seed continua criando os `exemplo-*` só no banco de teste e no
+> de dev.
 >
 > **🟢 NO AR EM PRODUÇÃO (23/09/2026, `main` = `b38b0f5`) — atrás do portão "Em breve":**
 > home pública `/` e `/en` em HTML de servidor, bilíngue, com depoimentos (**4 sorteados por
@@ -207,6 +208,7 @@
 > leitor de tela; as caixas das Camadas mostram o nome que o aluno vê, em português e com as
 > edições de Admin → Textos; o nível no cartão do admin fica em português mesmo com o app em
 > inglês. Tudo com teste.
+> **(3) progresso: banco e servidor** — ver Fase 5.
 > **`dev` = `main` em código (30/09):** tudo o que foi construído está no ar. O operador passa a
 > trabalhar com o Antigravity no acabamento (fila em `design-lab/GEMINI.md`, itens 11 a 16).
 > **Registrado no fim da sessão de 29/09 (só documentos, no `dev`):** o mapa do que falta nos 7
@@ -241,8 +243,8 @@
 > - ~~**Telas do aluno para `/aluno/*`**~~ — **publicada em 29/09**, com o menu novo (ver acima).
 > - **O que falta nos 7 passos do editor do curso** (Bloco E, o mapa depois da etapa 4) — o
 >   próximo assunto do operador, em 29/09.
-> - **C4, etapa 3** (a home lendo os cursos do banco) — depende da P17, da P18 e do cadastro dos
->   cursos (P16).
+> - **C4, etapa 3** (a home lendo os cursos do banco) — depende da P17 e do cadastro dos cursos
+>   (P16; a P18 fechou em 03/10: os cursos de exemplo foram apagados de produção).
 > Fora da escolha e em paralelo: o **Bloco I** restante, o **C5** (bloqueado até o conteúdo das
 > telas), o corpo da Fase 3 (HIGH RISK) e a continuidade do operador (2FA, backup frio).
 >
@@ -2940,8 +2942,16 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
 
 ## Phase 5 — Lesson Progress + Event Capture Foundation  *(low–medium risk)*
 
-- [ ] `LessonProgress` (user×lesson, `completed`, `completedAt`) + RLS ; migration
+- **Decisões do operador, 03/10/2026:** a aula conta como concluída **sozinha, sem botão** — vídeo
+  ao chegar a **90%**, texto **ao abrir**; o site ouve o player do Bunny pelo pacote `player.js`
+  (dependência aprovada, versão travada). O que o certificado atesta com isso é a **P39**.
+- [x] `LessonProgress` (user×lesson, `completed`, `completedAt`) + RLS ; migration
+      *(03/10/2026: migration `lesson_progress`; churn não apaga, só some com a aula ou a pessoa)*
 - [ ] Endpoint: mark lesson watched; lesson list shows completion
+      *(03/10/2026, o servidor: `PUT /api/lessons/:id/concluida` — só a cadeia publicada e só a
+      aula que a pessoa pode assistir, pela mesma regra da página da aula, `aulaLiberada()`; e
+      `PUT /api/admin/lessons/:id/concluida` para o admin; a página da aula devolve `concluidas`
+      de quem pede. Revisão de segurança sem P0/P1. Falta a tela — etapa 4.)*
 - [ ] **Trilha completion:** a saved trilha is "complete" when all its `PlanItem` lessons are
       done (course-item = its lessons). Drives certificate eligibility (Phase 6.5).
 - [ ] `LessonEvent` table (event-sourced: type, position, ts) + RLS — **capture only, no analytics yet**

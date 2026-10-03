@@ -133,6 +133,9 @@ model User {
   // Etapa 4 do Bloco U (29/09/2026): as assinaturas desta pessoa. Mesma DEBT
   // das relações acima — REAPLICAR após cada `@better-auth/cli generate`.
   subscriptions Subscription[]
+  // Fase 5 (03/10/2026): as aulas que esta pessoa concluiu. Mesma DEBT das
+  // relações acima — REAPLICAR após cada `@better-auth/cli generate`.
+  progress      LessonProgress[]
 
   birthday            String?
   preferredLanguage   String?   @default("pt")
@@ -292,9 +295,31 @@ model Lesson {
   displayOrder Int           @default(0)
   status       ContentStatus @default(DRAFT)
   planItems    PlanItem[]
+  progress     LessonProgress[]
 
   @@index([moduleId])
   @@map("lesson")
+}
+
+// O PROGRESSO do aluno numa aula (Fase 5 — plano aprovado pelo operador em
+// 03/10/2026). Uma linha por pessoa e aula; a aula conta como concluída sozinha:
+// vídeo ao chegar a 90%, texto ao abrir. Preso à AULA, nunca ao vídeo do Bunny
+// (bunny.md §7.1). CHURN NÃO APAGA: perder o acesso não toca nestas linhas
+// (CLAUDE.md → Membership Gating); só some com a aula ou com a pessoa.
+model LessonProgress {
+  id          Int       @id @default(autoincrement())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lessonId    Int
+  lesson      Lesson    @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  completed   Boolean   @default(false)
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([userId, lessonId])
+  @@index([lessonId])
+  @@map("lesson_progress")
 }
 
 // A trilha (learning track). Curated template (ownerUserId = null, isTemplate)
