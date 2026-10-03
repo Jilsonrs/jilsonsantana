@@ -355,6 +355,11 @@ exceto o item 4, que é página pública.
    "Concluída" ao lado dele é para o leitor de tela: não apague.
    E a **barra no cartão do curso** (`CourseCard.tsx`, no catálogo para quem está logado), só nos
    cursos começados, com "67% concluído" embaixo — hoje estrutura simples, o acabamento é seu.
+19. **Salvar para depois** *(decisão do operador, 03/10, "como no LinkedIn")*: o botão de marcador
+   ao lado de cada aula no conteúdo do curso e o **"Salvar curso"** no topo da página da aula
+   (`components/content/BotaoSalvar.tsx`, um só para os dois). Estrutura pronta, acabamento seu. O
+   botão é de ligar e desligar (`aria-pressed`): o nome não muda, o ícone muda — **não troque por
+   dois botões** nem tire o nome do botão só com ícone, que é o que o leitor de tela ouve. Tem teste.
 
 > **Fora do seu trabalho, para não confundir:** o Bunny ganhou **Live Stream** em acesso
 > antecipado (29/09). É só avaliação depois da Fase 3, **não** é tela a desenhar (`docs/bunny.md`

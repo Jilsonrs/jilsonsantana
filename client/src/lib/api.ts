@@ -388,6 +388,23 @@ export async function concluirAula(lessonId: number, comoAdmin: boolean): Promis
   await client.put(comoAdmin ? `/admin/lessons/${lessonId}/concluida` : `/lessons/${lessonId}/concluida`);
 }
 
+// "SALVOS" — salvar curso ou aula para assistir depois (decisão do operador,
+// 03/10/2026, "como no LinkedIn"). Só com login; a lista só traz o publicado.
+export type CursoSalvo = { id: number; slug: string; title: string; subtitle: string | null; level: Level | null; thumbnailUrl: string | null };
+export type AulaSalva = { id: number; title: string; kind: LessonKind; curso: { slug: string; title: string } };
+export type Salvos = { cursos: CursoSalvo[]; aulas: AulaSalva[] };
+
+export async function getSalvos(): Promise<Salvos> {
+  const { data } = await client.get<Salvos>("/salvos");
+  return data;
+}
+
+/** Salva ou tira dos salvos um curso ou uma aula. */
+export async function alternarSalvo(tipo: "cursos" | "aulas", id: number, salvar: boolean): Promise<void> {
+  if (salvar) await client.put(`/salvos/${tipo}/${id}`);
+  else await client.delete(`/salvos/${tipo}/${id}`);
+}
+
 /** O progresso de quem está logado em cada curso que ele começou (só aulas publicadas). */
 export type ProgressoDoCurso = { courseId: number; concluidas: number; total: number };
 

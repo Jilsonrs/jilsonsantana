@@ -2999,7 +2999,9 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       as rotas `/api/salvos` — só com login, sem exigir assinatura (é só um marcador), salvar só o
       que está publicado na cadeia inteira (rascunho é 404), e a lista só mostra o que continua
       publicado. Revisão de segurança sem P0/P1; os dois buracos de teste que ela apontou foram
-      cobertos. **Falta:** os botões (etapa 3) e a tela `/aluno/salvos` (etapa 4).
+      cobertos. **Os botões (etapa 3):** ao lado de cada aula do conteúdo do curso e "Salvar curso" no
+      topo da página da aula — só logado e só no que está publicado na cadeia inteira; ligado/desligado
+      para o leitor de tela. **Falta:** a tela `/aluno/salvos` (etapa 4).
 - [x] **O vídeo não recomeça ao trocar de aba nem ao concluir** *(achado do operador, 03/10/2026)*:
       o player mantém o endereço enquanto o vídeo for o mesmo; a apresentação abre **pausada** e
       a aula **toca sozinha** (decisões dele), pelo próprio endereço (`bunny.md` §3.1). O defeito

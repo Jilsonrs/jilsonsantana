@@ -7,6 +7,8 @@ import { cn } from "@/lib/utils";
 import { usePaginaDaAula } from "@/lib/pagina-da-aula";
 import { useMenuDoCursoFechado } from "@/lib/menu-do-curso";
 import { porcentagemDoCurso, useConcluirAula } from "@/lib/progresso";
+import { useIdsSalvos } from "@/lib/salvos";
+import { BotaoSalvar } from "@/components/content/BotaoSalvar";
 import { PageContainer } from "@/components/layout/PageLayout";
 import { CourseContentsNav } from "@/components/aula/CourseContentsNav";
 import { LessonContent } from "@/components/aula/LessonContent";
@@ -37,6 +39,7 @@ export function LessonPage() {
   const [iaAberta, setIaAberta] = useState(false);
   const [menuDoCursoFechado, fecharMenuDoCurso] = useMenuDoCursoFechado();
   const { mutate: concluir } = useConcluirAula();
+  const salvos = useIdsSalvos(Boolean(session));
 
   // A aula que esta pessoa pode concluir agora: logada, liberada e ainda não
   // concluída (Fase 5, 03/10/2026). O visitante da prévia grátis não tem progresso.
@@ -107,9 +110,15 @@ export function LessonPage() {
                 </span>
               )}
             </h1>
-            <span className="text-sm md:text-[0.95rem] text-muted-foreground truncate">
-              {curso.title}
-            </span>
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-sm md:text-[0.95rem] text-muted-foreground truncate">
+                {curso.title}
+              </span>
+              {/* Salvar o curso para depois (decisão do operador, 03/10/2026): só logado, só curso publicado. */}
+              {session && curso.status === ContentStatus.PUBLISHED && (
+                <BotaoSalvar tipo="cursos" id={curso.id} salvo={salvos.cursos.has(curso.id)} nome={t.aula.salvarCurso} texto={t.aula.salvarCurso} />
+              )}
+            </div>
           </div>
         </div>
 

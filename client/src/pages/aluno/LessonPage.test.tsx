@@ -7,10 +7,14 @@ import type { PaginaDaAula } from "@/lib/api";
 
 const getLessonPage = vi.fn();
 const concluirAula = vi.fn();
+const getSalvos = vi.fn();
+const alternarSalvo = vi.fn();
 vi.mock("@/lib/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/api")>()),
   getLessonPage: (...args: unknown[]) => getLessonPage(...args),
   concluirAula: (...args: unknown[]) => concluirAula(...args),
+  getSalvos: (...args: unknown[]) => getSalvos(...args),
+  alternarSalvo: (...args: unknown[]) => alternarSalvo(...args),
 }));
 // O player do Bunny é ouvido pelo NOSSO módulo; aqui ele vira dublê, e o teste
 // "chega aos 90%" chamando o aviso que a página entregou.
@@ -89,6 +93,8 @@ beforeEach(() => {
   window.localStorage.clear();
   definirMenuDoCursoFechado(false);
   concluirAula.mockReset().mockResolvedValue(undefined);
+  getSalvos.mockReset().mockResolvedValue({ cursos: [], aulas: [] });
+  alternarSalvo.mockReset().mockResolvedValue(undefined);
   ouvirConclusao.mockReset().mockReturnValue(() => {});
 });
 
@@ -417,5 +423,66 @@ describe("página da aula — o progresso", () => {
     const nav = await screen.findByRole("navigation", { name: "Conteúdo do curso" });
     expect(within(nav).getByRole("link", { name: /Leitura/ }).textContent).toContain("Concluída");
     expect(within(nav).getByRole("link", { name: /Abertura/ }).textContent).not.toContain("Concluída");
+  });
+});
+
+// SALVAR PARA DEPOIS (decisão do operador, 03/10/2026, "como no LinkedIn"): um
+// botão ao lado de cada aula e um no curso. Só logado, e só no que está publicado.
+describe("página da aula — salvar para depois", () => {
+  const comoMembro = () => useSessionMock.mockReturnValue({ data: { user: { role: Role.MEMBER } }, isPending: false });
+  const navDoCurso = () => screen.findByRole("navigation", { name: "Conteúdo do curso" });
+
+  it("salvar uma aula e tirar outra que já estava salva", async () => {
+    comoMembro();
+    getSalvos.mockResolvedValue({ cursos: [], aulas: [{ id: 11, title: "Abertura", kind: "VIDEO", curso: { slug: "excel", title: "Excel + IA" } }] });
+    abrir();
+    fireEvent.click(await screen.findByRole("button", { name: "Conteúdo do curso" }));
+    const nav = await navDoCurso();
+
+    const leitura = within(nav).getByRole("button", { name: "Salvar para depois: Leitura" });
+    const abertura = within(nav).getByRole("button", { name: "Salvar para depois: Abertura" });
+    await waitFor(() => expect(abertura.getAttribute("aria-pressed")).toBe("true"));
+    expect(leitura.getAttribute("aria-pressed")).toBe("false");
+
+    fireEvent.click(leitura);
+    await waitFor(() => expect(alternarSalvo).toHaveBeenCalledWith("aulas", 12, true));
+    fireEvent.click(abertura);
+    await waitFor(() => expect(alternarSalvo).toHaveBeenCalledWith("aulas", 11, false));
+  });
+
+  it("salvar o curso, no topo da página", async () => {
+    comoMembro();
+    abrir();
+    const botao = await screen.findByRole("button", { name: "Salvar curso" });
+    expect(botao.getAttribute("aria-pressed")).toBe("false");
+
+    fireEvent.click(botao);
+
+    await waitFor(() => expect(alternarSalvo).toHaveBeenCalledWith("cursos", 1, true));
+  });
+
+  it("o curso já salvo aparece ligado", async () => {
+    comoMembro();
+    getSalvos.mockResolvedValue({ cursos: [{ id: 1, slug: "excel", title: "Excel + IA", subtitle: null, level: null, thumbnailUrl: null }], aulas: [] });
+    abrir();
+    await waitFor(async () => expect((await screen.findByRole("button", { name: "Salvar curso" })).getAttribute("aria-pressed")).toBe("true"));
+  });
+
+  it("visitante: nenhum botão de salvar, e a lista nem é pedida", async () => {
+    abrir();
+    const nav = await navDoCurso();
+    expect(within(nav).queryByRole("button", { name: /Salvar para depois/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Salvar curso" })).toBeNull();
+    expect(getSalvos).not.toHaveBeenCalled();
+  });
+
+  it("aula em rascunho (o admin vê): sem botão de salvar", async () => {
+    getLessonPage.mockResolvedValue(pagina({}, true));
+    comoAdmin();
+    abrir();
+    fireEvent.click(await screen.findByRole("button", { name: "Conteúdo do curso" }));
+    const nav = await navDoCurso();
+    expect(within(nav).getByRole("button", { name: "Salvar para depois: Abertura" })).toBeTruthy();
+    expect(within(nav).queryByRole("button", { name: "Salvar para depois: Macros" })).toBeNull();
   });
 });

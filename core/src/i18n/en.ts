@@ -347,6 +347,8 @@ export const en: Dict = {
       erro: "We couldn't open this lesson. Please try again.",
       naoEncontrada: "Lesson not found.",
       paraAssinantes: "This lesson is for subscribers.",
+      salvarParaDepois: "Save for later",
+      salvarCurso: "Save course",
       progressoNoCurso: "Course progress",
       concluida: "Completed",
       semVideo: "This lesson has no video yet.",

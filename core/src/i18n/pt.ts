@@ -368,6 +368,9 @@ export const pt = {
       erro: "Não foi possível abrir a aula. Tente de novo.",
       naoEncontrada: "Aula não encontrada.",
       paraAssinantes: "Esta aula é para assinantes.",
+      // Salvar para assistir depois (decisão do operador, 03/10/2026, "como no LinkedIn").
+      salvarParaDepois: "Salvar para depois",
+      salvarCurso: "Salvar curso",
       progressoNoCurso: "Progresso no curso",
       concluida: "Concluída",
       semVideo: "Esta aula ainda não tem vídeo.",
