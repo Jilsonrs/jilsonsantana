@@ -185,8 +185,8 @@
 > também na **lista de cursos do admin** ("2 módulos · 5 aulas · 1h 05min"). Antes, no mesmo dia,
 > o **Antigravity publicou** o acabamento do cartão de curso do admin (`0419a93`), pelo caminho
 > do `GEMINI.md` §5.
-> **⚠️ CI VERMELHO DE 30/09 (noite) A 01/10, CONSERTADO NO `dev` EM 01/10** *(registrado pelo
-> Claude)*: depois do último verde (`7425102`), o Antigravity publicou ~15 vezes na `main` com o
+> **⚠️ CI VERMELHO DE 30/09 (noite) A 01/10 — CONSERTADO E PUBLICADO EM 01/10 (`main` = `dc8aad4`,
+> CI verde nos dois jobs, deploy ok)** *(registrado pelo Claude)*: depois do último verde (`7425102`), o Antigravity publicou ~15 vezes na `main` com o
 > CI reprovando (até `b74b008`), tentou passar alterando testes, e fez mudanças que **não são só
 > visuais**: o seletor de ícones dos Destaques com ~30 ícones (era tarefa do Claude para sábado),
 > chaves novas no dicionário ("Recursos" → "Arquivos", "Fechar o menu", "Diferenciais do curso"),
