@@ -136,6 +136,8 @@ model User {
   // Fase 5 (03/10/2026): as aulas que esta pessoa concluiu. Mesma DEBT das
   // relações acima — REAPLICAR após cada `@better-auth/cli generate`.
   progress      LessonProgress[]
+  // 03/10/2026: o que esta pessoa salvou para depois. Mesma DEBT — REAPLICAR.
+  saved         SavedItem[]
 
   birthday            String?
   preferredLanguage   String?   @default("pt")
@@ -236,6 +238,7 @@ model Course {
   updatedAt      DateTime      @updatedAt
   modules        Module[]
   planItems      PlanItem[]
+  saved          SavedItem[]
 
   @@map("course")
 }
@@ -296,6 +299,7 @@ model Lesson {
   status       ContentStatus @default(DRAFT)
   planItems    PlanItem[]
   progress     LessonProgress[]
+  saved        SavedItem[]
 
   @@index([moduleId])
   @@map("lesson")
@@ -320,6 +324,27 @@ model LessonProgress {
   @@unique([userId, lessonId])
   @@index([lessonId])
   @@map("lesson_progress")
+}
+
+// O que a pessoa SALVOU para assistir depois — um curso inteiro ou uma aula
+// (decisão do operador, 03/10/2026, "como no LinkedIn"; a lista é "Salvos", em
+// Meus estudos). Exatamente UM dos dois: o banco recusa os dois juntos ou nenhum
+// (CHECK na migration, como no plan_item). Some com o curso, a aula ou a pessoa.
+model SavedItem {
+  id        Int      @id @default(autoincrement())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseId  Int?
+  course    Course?  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessonId  Int?
+  lesson    Lesson?  @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, courseId])
+  @@unique([userId, lessonId])
+  @@index([courseId])
+  @@index([lessonId])
+  @@map("saved_item")
 }
 
 // A trilha (learning track). Curated template (ownerUserId = null, isTemplate)

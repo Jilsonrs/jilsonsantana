@@ -2992,6 +2992,14 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       aula.
       *(03/10/2026: rota própria `PUT /api/admin/lessons/:id/concluida`; a página da aula do admin
       conclui por ela e conta as aulas em rascunho da lista dele.)*
+- [ ] **"Salvos" — salvar para assistir depois, curso ou aula** *(decisão do operador, 03/10/2026,
+      "como no LinkedIn")*: um botão ao lado de cada aula (no conteúdo do curso) e no curso; a lista
+      é um item novo de Meus estudos, **"Salvos"**, depois de Minhas trilhas, com aulas e cursos
+      juntos. **Feito (etapa 2):** tabela `saved_item` (exatamente um dos dois, pelo banco; RLS) e
+      as rotas `/api/salvos` — só com login, sem exigir assinatura (é só um marcador), salvar só o
+      que está publicado na cadeia inteira (rascunho é 404), e a lista só mostra o que continua
+      publicado. Revisão de segurança sem P0/P1; os dois buracos de teste que ela apontou foram
+      cobertos. **Falta:** os botões (etapa 3) e a tela `/aluno/salvos` (etapa 4).
 - [x] **O vídeo não recomeça ao trocar de aba nem ao concluir** *(achado do operador, 03/10/2026)*:
       o player mantém o endereço enquanto o vídeo for o mesmo; a apresentação abre **pausada** e
       a aula **toca sozinha** (decisões dele), pelo próprio endereço (`bunny.md` §3.1). O defeito
