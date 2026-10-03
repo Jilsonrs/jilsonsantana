@@ -388,6 +388,14 @@ export async function concluirAula(lessonId: number, comoAdmin: boolean): Promis
   await client.put(comoAdmin ? `/admin/lessons/${lessonId}/concluida` : `/lessons/${lessonId}/concluida`);
 }
 
+/** O progresso de quem está logado em cada curso que ele começou (só aulas publicadas). */
+export type ProgressoDoCurso = { courseId: number; concluidas: number; total: number };
+
+export async function getProgressoDosCursos(): Promise<ProgressoDoCurso[]> {
+  const { data } = await client.get<ProgressoDoCurso[]>("/progresso/cursos");
+  return data;
+}
+
 /** O link de download: mesmo site, então o cookie vai junto e o arquivo vem com o nome original. */
 export function enderecoDoArquivo(lessonId: number, fileId: number, comoAdmin: boolean): string {
   return comoAdmin ? `/api/admin/lesson-files/${fileId}/download` : `/api/lessons/${lessonId}/files/${fileId}`;

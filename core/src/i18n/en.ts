@@ -328,6 +328,7 @@ export const en: Dict = {
       requisitos: "Prerequisites",
       paraQuem: "Who this course is for",
       diferenciais: "Course Highlights",
+      concluido: "complete",
       metodo: { inicio: "Our", destaque: "method" },
       videoApresentacao: "Course introduction video"
     },

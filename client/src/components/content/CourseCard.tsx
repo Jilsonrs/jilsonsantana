@@ -26,6 +26,11 @@ export type CourseCardProps = {
    * catálogo passa `/aluno/curso/<slug>` para quem está logado (operador, 29/09/2026).
    */
   destino?: string;
+  /**
+   * A porcentagem do aluno neste curso, só quando ele já COMEÇOU (pedido do
+   * operador de 30/09/2026, a partir da Mosh). Sem ela, o cartão não tem barra.
+   */
+  progresso?: number;
 };
 
 export function CourseCard(course: CourseCardProps) {
@@ -74,6 +79,23 @@ export function CourseCard(course: CourseCardProps) {
               </span>
             )}
           </div>
+          {course.progresso !== undefined && (
+            <div className="space-y-1.5">
+              <div
+                role="progressbar"
+                aria-label={t.aula.progressoNoCurso}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={course.progresso}
+                className="h-1.5 w-full overflow-hidden rounded-full bg-primary/10"
+              >
+                <div className="h-full rounded-full bg-primary" style={{ width: `${course.progresso}%` }} />
+              </div>
+              <p className="text-xs font-medium text-muted-foreground">
+                {course.progresso}% {t.curso.concluido}
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
     </Link>

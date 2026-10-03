@@ -219,3 +219,33 @@ describe("sem pessoa, o progresso não responde", () => {
     expect(await aulasConcluidas(undefined as unknown as string, [ids.paga])).toEqual([]);
   });
 });
+
+// A BARRA NO CARTÃO DO CURSO (pedido do operador, 30/09/2026): o progresso em cada
+// curso começado, contando só a cadeia publicada.
+describe("o progresso por curso", () => {
+  type Linha = { courseId: number; concluidas: number; total: number };
+  const progressoDosCursos = (cookies: string[] = []) => request(app).get("/api/progresso/cursos").set("Cookie", cookies);
+  const cursoDe = async (lessonId: number) =>
+    (await prisma.lesson.findUniqueOrThrow({ where: { id: lessonId }, select: { module: { select: { courseId: true } } } })).module.courseId;
+
+  it("visitante: 401", async () => {
+    expect((await progressoDosCursos()).status).toBe(401);
+  });
+
+  it("só o curso começado, com concluídas ÷ aulas publicadas; rascunho não conta em nenhum lado", async () => {
+    const res = await progressoDosCursos(member);
+
+    expect(res.status).toBe(200);
+    expect(res.headers["cache-control"]).toBe("private, no-store");
+    // O member concluiu "Paga" e "Grátis"; tem uma conclusão antiga em "Rascunho",
+    // que não conta. O curso tem 3 aulas publicadas em módulo publicado.
+    expect(res.body).toEqual([{ courseId: await cursoDe(ids.paga), concluidas: 2, total: 3 }]);
+  });
+
+  it("um aluno não vê o progresso do outro", async () => {
+    const res = await progressoDosCursos(admin);
+
+    // O admin concluiu "Outra paga" (publicada) e "Rascunho" (não conta).
+    expect(res.body).toEqual([{ courseId: await cursoDe(ids.paga), concluidas: 1, total: 3 }]);
+  });
+});

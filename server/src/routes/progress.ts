@@ -61,4 +61,38 @@ router.put("/admin/lessons/:id/concluida", requireAdmin, async (req, res) => {
   res.status(204).end();
 });
 
+// GET /api/progresso/cursos — o progresso de quem pede em cada curso que ele
+// COMEÇOU (a barra no cartão do curso — pedido do operador de 30/09/2026). Conta só
+// a cadeia publicada, nos dois lados da conta: aulas concluídas ÷ aulas
+// publicadas. Curso não começado não entra. Não filtra por idioma: o que é do
+// aluno aparece nos dois (CLAUDE.md → Idiomas).
+router.get("/progresso/cursos", requireAuth, async (req, res) => {
+  const user = req.user;
+  if (!user) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  const feitas = await prisma.lessonProgress.findMany({
+    where: { userId: user.id, completed: true, lesson: cadeiaPublicada },
+    select: { lesson: { select: { module: { select: { courseId: true } } } } },
+  });
+  const concluidasPorCurso = new Map<number, number>();
+  for (const { lesson } of feitas) {
+    const curso = lesson.module.courseId;
+    concluidasPorCurso.set(curso, (concluidasPorCurso.get(curso) ?? 0) + 1);
+  }
+  const modulos = await prisma.module.findMany({
+    where: { courseId: { in: [...concluidasPorCurso.keys()] }, status: PUBLISHED, course: { status: PUBLISHED } },
+    select: { courseId: true, _count: { select: { lessons: { where: { status: PUBLISHED } } } } },
+  });
+  const totalPorCurso = new Map<number, number>();
+  for (const m of modulos) totalPorCurso.set(m.courseId, (totalPorCurso.get(m.courseId) ?? 0) + m._count.lessons);
+
+  // Muda com o progresso de quem pede: nunca em cache.
+  res.set("Cache-Control", "private, no-store");
+  res.json(
+    [...concluidasPorCurso].map(([courseId, concluidas]) => ({ courseId, concluidas, total: totalPorCurso.get(courseId) ?? 0 })),
+  );
+});
+
 export default router;

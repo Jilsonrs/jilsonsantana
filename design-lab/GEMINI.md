@@ -353,6 +353,8 @@ exceto o item 4, que é página pública.
    **sinal de concluída** em cada aula do conteúdo do curso (`CourseContentsNav.tsx`, um
    `CheckCircle2` depois do título — hoje só o ícone, sem acabamento). O texto escondido
    "Concluída" ao lado dele é para o leitor de tela: não apague.
+   E a **barra no cartão do curso** (`CourseCard.tsx`, no catálogo para quem está logado), só nos
+   cursos começados, com "67% concluído" embaixo — hoje estrutura simples, o acabamento é seu.
 
 > **Fora do seu trabalho, para não confundir:** o Bunny ganhou **Live Stream** em acesso
 > antecipado (29/09). É só avaliação depois da Fase 3, **não** é tela a desenhar (`docs/bunny.md`

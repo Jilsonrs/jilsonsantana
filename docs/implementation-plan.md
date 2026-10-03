@@ -208,7 +208,8 @@
 > leitor de tela; as caixas das Camadas mostram o nome que o aluno vê, em português e com as
 > edições de Admin → Textos; o nível no cartão do admin fica em português mesmo com o app em
 > inglês. Tudo com teste.
-> **(3) progresso: banco e servidor** e **(4) progresso na tela da aula** — ver Fase 5.
+> **(3) progresso: banco e servidor**, **(4) progresso na tela da aula** e **(5) barra no cartão do
+> curso** — ver Fase 5. **A revisão do trabalho do Antigravity está fechada.**
 > **`dev` = `main` em código (30/09):** tudo o que foi construído está no ar. O operador passa a
 > trabalhar com o Antigravity no acabamento (fila em `design-lab/GEMINI.md`, itens 11 a 16).
 > **Registrado no fim da sessão de 29/09 (só documentos, no `dev`):** o mapa do que falta nos 7
@@ -2991,9 +2992,11 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       aula.
       *(03/10/2026: rota própria `PUT /api/admin/lessons/:id/concluida`; a página da aula do admin
       conclui por ela e conta as aulas em rascunho da lista dele.)*
-- [ ] **Barra de progresso no cartão do curso, na lista de Cursos do aluno** *(pedido do operador,
+- [x] **Barra de progresso no cartão do curso, na lista de Cursos do aluno** *(pedido do operador,
       30/09/2026, a partir da Mosh)*: só nos cursos que o aluno já começou, com a porcentagem (aulas
       vistas ÷ aulas publicadas). Depende do `LessonProgress` acima; entra com ele.
+      *(03/10/2026: `GET /api/progresso/cursos`, só com login, só a cadeia publicada nos dois
+      lados da conta; o cartão do catálogo mostra a barra e "67% concluído" só no curso começado.)*
 - [ ] **Tirar o EM BREVE do que espera o progresso** *(menu novo do aluno, 29/09/2026)*: o bloco
       **Continue estudando** do Início, o **conteúdo** da página Em andamento (hoje só o título) e
       **Concluídos** em Meus estudos. O que cada um mostra é decisão do operador na hora de

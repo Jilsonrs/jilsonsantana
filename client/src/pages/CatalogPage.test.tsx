@@ -7,10 +7,12 @@ import type { CourseCard, TrilhaCard, SearchResult } from "@/lib/api";
 const getTrilhas = vi.fn();
 const getCourses = vi.fn();
 const search = vi.fn();
+const getProgressoDosCursos = vi.fn();
 vi.mock("@/lib/api", () => ({
   getTrilhas: (...args: unknown[]) => getTrilhas(...args),
   getCourses: (...args: unknown[]) => getCourses(...args),
   search: (...args: unknown[]) => search(...args),
+  getProgressoDosCursos: (...args: unknown[]) => getProgressoDosCursos(...args),
 }));
 const useSessionMock = vi.fn();
 vi.mock("@/lib/auth-client", () => ({ useSession: () => useSessionMock() }));
@@ -56,6 +58,7 @@ beforeEach(() => {
   getCourses.mockReset().mockResolvedValue([course]);
   search.mockReset();
   useSessionMock.mockReset().mockReturnValue({ data: null, isPending: false });
+  getProgressoDosCursos.mockReset().mockResolvedValue([]);
 });
 
 // O clique no curso (decisão do operador, 29/09/2026): logado, abre a página do
@@ -260,5 +263,33 @@ describe("CatalogPage — cartão do curso", () => {
 
     // Sem vídeo, "0min", como já mostra "0 aulas" (operador, 30/09/2026).
     expect(await screen.findByText("0 módulos · 0 aulas · 0min")).toBeTruthy();
+  });
+});
+
+// A BARRA DE PROGRESSO no cartão do curso (pedido do operador, 30/09/2026, a
+// partir da Mosh): só nos cursos que o aluno já começou, com a porcentagem.
+describe("CatalogPage — o progresso no cartão do curso", () => {
+  const outro: CourseCard = { ...course, id: 3, slug: "outro", title: "Outro curso" };
+  const comoMembro = () => useSessionMock.mockReturnValue({ data: { user: { role: "member" } }, isPending: false });
+  const cartaoDe = async (titulo: string) => (await screen.findByText(titulo)).closest("a") as HTMLElement;
+
+  it("o curso começado mostra a barra e a porcentagem; o não começado, nada", async () => {
+    comoMembro();
+    getCourses.mockResolvedValue([course, outro]);
+    getProgressoDosCursos.mockResolvedValue([{ courseId: 1, concluidas: 2, total: 3 }]);
+    renderWithProviders(<CatalogPage tipo="cursos" />);
+
+    const comecado = await cartaoDe("Exemplo — Fundamentos de Excel + IA");
+    await waitFor(() => expect(comecado.querySelector('[role="progressbar"]')?.getAttribute("aria-valuenow")).toBe("67"));
+    expect(comecado.textContent).toContain("67% concluído");
+    const naoComecado = await cartaoDe("Outro curso");
+    expect(naoComecado.querySelector('[role="progressbar"]')).toBeNull();
+  });
+
+  it("visitante: nem pergunta o progresso, e nenhum cartão tem barra", async () => {
+    renderWithProviders(<CatalogPage tipo="cursos" />);
+    await screen.findByText("Exemplo — Fundamentos de Excel + IA");
+    expect(getProgressoDosCursos).not.toHaveBeenCalled();
+    expect(screen.queryByRole("progressbar")).toBeNull();
   });
 });
