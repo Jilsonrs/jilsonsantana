@@ -204,6 +204,10 @@
 > (aula concluída sozinha, barra na aula e no cartão), o vídeo que não recomeça ao trocar de aba
 > (a apresentação abre pausada, a aula toca sozinha) e o "Salvos". **Primeiro teste com o player de
 > verdade: com o operador** (assistir uma aula até perto do fim e ver a barra andar).
+> **PUBLICADO em 04/10/2026 (`main` = `4cbebf3`, CI verde, deploy ok, migration `caption` aplicada
+> pelo pre-deploy):** a tela **Legendas** do editor (aula e apresentação, com reenvio na troca de
+> vídeo). Antes, em 03/10 (`8ad1037`): o Salvar no topo do editor, com mensagem de confirmação.
+> **Primeiro envio real de legenda ao Bunny: com o operador.**
 > **Revisão de 03/10 (plano aprovado pelo operador), em 5 etapas:** **(1) página da aula** — a
 > duração soma só aula de vídeo, como na página do curso (com teste de servidor); a contagem
 > "módulos · aulas · tempo" ganhou teste; "Nosso método." saiu da tela para o dicionário (o
