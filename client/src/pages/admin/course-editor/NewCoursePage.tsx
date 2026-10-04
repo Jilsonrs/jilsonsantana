@@ -1,4 +1,4 @@
-import type { FormEvent } from "react";
+import { useId, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { FormProvider, useForm } from "react-hook-form";
@@ -9,16 +9,23 @@ import { passoDoCurso, payloadDoPasso } from "@/lib/course-steps";
 import { Button } from "@/components/ui/button";
 import { PageContainer, PageHeader } from "@/components/layout/PageLayout";
 import { CourseBasicsSection } from "@/components/admin/course-form/CourseBasicsSection";
+import { AvisoFlutuante } from "@/components/admin/AvisoFlutuante";
+import { useAvisoFlutuante } from "@/lib/aviso-flutuante";
+import { CONFIRA_OS_CAMPOS } from "./StepForm";
 
 /**
  * NOVO CURSO: só o passo 1. Os outros passos precisam do curso já gravado (o
  * endereço deles leva o id, e a capa e o vídeo vão para um curso que existe);
- * "Criar curso" grava e abre o editor.
+ * "Criar curso" grava e abre o editor, que diz "Curso criado.". O botão fica no
+ * TOPO, depois de "Voltar para cursos", e o erro sai na mensagem flutuante
+ * (decisões do operador, 03/10/2026, a partir da Udemy).
  */
 export function NewCoursePage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const form = useForm<CourseFormValues>({ resolver: zodResolver(courseFormSchema), defaultValues: blankValues });
+  const formId = useId();
+  const { aviso, avisar, fechar } = useAvisoFlutuante();
 
   const criar = useMutation({
     mutationFn: (values: CourseFormValues) =>
@@ -31,13 +38,17 @@ export function NewCoursePage() {
       }),
     onSuccess: (novo) => {
       queryClient.invalidateQueries({ queryKey: ["admin-courses"] });
-      navigate(`/admin/cursos/${novo.id}/basico`, { replace: true });
+      navigate(`/admin/cursos/${novo.id}/basico`, { replace: true, state: { aviso: "Curso criado." } });
     },
+    onError: (erro) => avisar("erro", mensagemDeErroAoSalvar(erro)),
   });
 
   async function enviar(evento: FormEvent) {
     evento.preventDefault();
-    if (!(await form.trigger(passoDoCurso("basico").campos))) return;
+    if (!(await form.trigger(passoDoCurso("basico").campos))) {
+      avisar("erro", CONFIRA_OS_CAMPOS);
+      return;
+    }
     criar.mutate(form.getValues());
   }
 
@@ -46,26 +57,22 @@ export function NewCoursePage() {
       <PageHeader
         title="Novo curso"
         actions={
-          <Button asChild variant="outline">
-            <Link to="/admin/cursos">Voltar para cursos</Link>
-          </Button>
+          <>
+            <Button asChild variant="outline">
+              <Link to="/admin/cursos">Voltar para cursos</Link>
+            </Button>
+            <Button type="submit" form={formId} disabled={criar.isPending}>
+              {criar.isPending ? "Criando…" : "Criar curso"}
+            </Button>
+          </>
         }
       />
       <FormProvider {...form}>
-        <form onSubmit={enviar} className="space-y-12" noValidate>
+        <form id={formId} onSubmit={enviar} className="space-y-12" noValidate>
           <CourseBasicsSection />
-          {criar.isError && (
-            <p role="alert" className="text-sm font-medium text-destructive">
-              {mensagemDeErroAoSalvar(criar.error)}
-            </p>
-          )}
-          <div className="flex justify-end border-t border-border/40 pt-8">
-            <Button type="submit" size="lg" disabled={criar.isPending}>
-              {criar.isPending ? "Criando…" : "Criar curso"}
-            </Button>
-          </div>
         </form>
       </FormProvider>
+      <AvisoFlutuante aviso={aviso} aoFechar={fechar} />
     </PageContainer>
   );
 }

@@ -2003,6 +2003,13 @@ própria**.*
 | 7 Publicar | pronto | o **Visualizar** (abrir a página pública do curso) | a página definitiva do curso: **C5** |
 
 **Em todos os passos, ainda aberto:**
+- [x] **O Salvar no TOPO, com mensagem de confirmação** *(decisões do operador, 03/10/2026, a
+      partir da Udemy)*: o **Salvar** de cada passo com formulário e o **Criar curso** ficam no topo,
+      depois de "Voltar para cursos"; a linha de baixo, que só existia para o botão, saiu. Uma
+      **mensagem flutuante nossa** (sem dependência nova) diz se salvou: o sucesso some sozinho em
+      5 s, com "Fechar"; o erro fica até fechar. Campo inválido avisa "Confira os campos marcados
+      antes de salvar." (com o botão no topo, o campo pode estar fora da tela). Ao criar, o editor
+      abre com "Curso criado.". O passo Conteúdo, que salva aula por aula, não tem Salvar no topo.
 - [ ] **Revisão das dicas pelo operador** — todas em `client/src/lib/course-hints.ts`, num arquivo
       só (ele pediu para revisar depois, 28/09). *(Também na lista de pendências: P36.)*
 - [x] **ACHADO (29/09, confirmado no código): campo já salvo não volta a ficar
