@@ -9,6 +9,7 @@ import { PageContainer } from "@/components/layout/PageLayout";
 import { useT } from "@/lib/language";
 import { contagem } from "@/lib/contagem";
 import { horasEMinutos } from "@/lib/duracao-do-curso";
+import { CourseIncludes } from "@/components/content/CourseIncludes";
 
 // O TEXTO DA TELA segue o idioma do app; o CONTEÚDO do curso (título, descrição,
 // aulas, FAQ) sai como o operador escreveu, no idioma do próprio curso. O link
@@ -103,6 +104,7 @@ export function CourseDetailPage() {
           </div>
 
           <aside className="space-y-10">
+            <CourseIncludes materiais={course.materiais ?? []} temArquivos={course.temArquivos ?? false} />
             {course.learnTags.length > 0 && (
               <section className="rounded-2xl border border-border/40 bg-card p-6 shadow-sm">
                 <h2 className="text-lg font-semibold">{t.curso.aprender}</h2>

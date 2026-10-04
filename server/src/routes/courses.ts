@@ -88,6 +88,8 @@ router.get("/courses/:slug", async (req, res) => {
       highlights: true,
       faq: true,
       camadas: true,
+      // O quadro "Este curso inclui" (decisões do operador, 04/10/2026).
+      materiais: true,
       thumbnailUrl: true,
       introVideoId: true,
       language: true,
@@ -129,8 +131,16 @@ router.get("/courses/:slug", async (req, res) => {
   // ASSINADO, porque mora na biblioteca com token (operador, 28/09/2026). O
   // endereço é derivado a cada pedido, nunca coluna — por isso esta resposta não
   // pode ficar em cache mais do que a validade da assinatura (24 h).
+  // "Arquivos para acompanhar as aulas" aparece SOZINHO quando alguma aula
+  // publicada, em módulo publicado, tem arquivo (decisão do operador, 04/10/2026:
+  // nunca prometer arquivo que não existe). Só o sim ou não: nome e quantidade não saem.
+  const umArquivo = await prisma.lessonFile.findFirst({
+    where: { lesson: { status: PUBLISHED, module: { status: PUBLISHED, courseId: course.id } } },
+    select: { id: true },
+  });
   res.json({
     ...comIdioma(course),
+    temArquivos: umArquivo !== null,
     introVideoEmbedUrl: enderecoAssinado(course.introVideoId, { tocarAoAbrir: false }),
     moduleCount: course.modules.length,
     lessonCount,

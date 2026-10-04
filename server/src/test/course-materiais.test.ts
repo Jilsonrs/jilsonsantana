@@ -46,3 +46,59 @@ describe("materiais exclusivos — o passo Publicar", () => {
     expect(await gravado()).toEqual(["APOSTILA"]);
   });
 });
+
+// O QUADRO "ESTE CURSO INCLUI" na leitura pública (decisões do operador,
+// 04/10/2026): os materiais marcados e `temArquivos` — que só conta arquivo de
+// aula PUBLICADA em módulo publicado, e não diz nome nem quantidade.
+describe("o quadro na página do curso", () => {
+  const PUB = `pub${S}`;
+  let aulaPublicada = 0;
+  let aulaRascunho = 0;
+  let aulaModuloRascunho = 0;
+
+  beforeAll(async () => {
+    const curso = await prisma.course.create({
+      data: {
+        slug: PUB,
+        title: "Publicado",
+        language: "PT",
+        status: "PUBLISHED",
+        materiais: ["APOSTILA"],
+        modules: {
+          create: [
+            { title: "M1", status: "PUBLISHED", lessons: { create: [{ title: "Pub", status: "PUBLISHED" }, { title: "Rasc", status: "DRAFT" }] } },
+            { title: "M2", status: "DRAFT", lessons: { create: { title: "No módulo rascunho", status: "PUBLISHED" } } },
+          ],
+        },
+      },
+      include: { modules: { include: { lessons: { orderBy: { id: "asc" } } }, orderBy: { id: "asc" } } },
+    });
+    aulaPublicada = curso.modules[0].lessons[0].id;
+    aulaRascunho = curso.modules[0].lessons[1].id;
+    aulaModuloRascunho = curso.modules[1].lessons[0].id;
+  });
+
+  const arquivo = (lessonId: number, n: string) =>
+    prisma.lessonFile.create({ data: { lessonId, originalName: `${n}.zip`, storagePath: `aulas/${lessonId}/${n.padEnd(24, "x")}.zip`, sizeBytes: 1 } });
+  const pagina = () => request(app).get(`/api/courses/${PUB}`);
+
+  it("sem arquivo nenhum: temArquivos é false; os materiais saem", async () => {
+    const res = await pagina();
+    expect(res.status).toBe(200);
+    expect(res.body.temArquivos).toBe(false);
+    expect(res.body.materiais).toEqual(["APOSTILA"]);
+  });
+
+  it("arquivo só em aula ou módulo em rascunho não conta", async () => {
+    await arquivo(aulaRascunho, "rascunho");
+    await arquivo(aulaModuloRascunho, "modulorascunho");
+    expect((await pagina()).body.temArquivos).toBe(false);
+  });
+
+  it("arquivo em aula publicada: true — e nem o nome nem a quantidade saem", async () => {
+    await arquivo(aulaPublicada, "planilha");
+    const res = await pagina();
+    expect(res.body.temArquivos).toBe(true);
+    expect(JSON.stringify(res.body)).not.toContain("planilha");
+  });
+});

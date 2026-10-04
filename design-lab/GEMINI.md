@@ -376,6 +376,11 @@ exceto o item 4, que é página pública.
    ações **na linha** (Enviar/Substituir, Baixar, Excluir). O acabamento é seu — pode virar o menu
    "⋮" da Udemy. Mantenha o nome de cada ação com o título da aula (é o que o leitor de tela ouve,
    e tem teste) e a confirmação antes de excluir.
+22. **"Este curso inclui"** *(04/10, decisões do operador, a partir da Udemy)*: o quadro no topo da
+   coluna lateral da página do curso (`components/content/CourseIncludes.tsx`) e as caixas
+   **Materiais exclusivos** no passo Publicar do editor (`CourseMaterialsSection.tsx`). Estrutura
+   pronta, acabamento seu. Os textos saem do dicionário (Admin → Textos): **não escreva texto no
+   `.tsx`**. Quadro sem itens fica escondido — tem teste.
 
 > **Fora do seu trabalho, para não confundir:** o Bunny ganhou **Live Stream** em acesso
 > antecipado (29/09). É só avaliação depois da Fase 3, **não** é tela a desenhar (`docs/bunny.md`

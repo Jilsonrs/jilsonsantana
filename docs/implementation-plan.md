@@ -2433,6 +2433,9 @@ própria**.*
       os arquivos para baixar aparecem sozinhos quando existem; os materiais exclusivos
       (Biblioteca de prompts, Apostila) são marcados no passo Publicar, com texto global; sem
       linha de acesso (`courses.md` §2.3). As linhas derivadas restantes: P41.
+      **Feito em 04/10/2026, na página de hoje** (a transpor no C5, nada se perde): o quadro na
+      coluna lateral de `/curso/:slug` (`CourseIncludes.tsx`), com os arquivos (derivado do
+      servidor: `temArquivos`, só a cadeia publicada) e os materiais marcados.
 - [ ] **Mock na `design-lab/`** (parceiro de design) → **transposição** para template de servidor
       (mesma marcação, mesmas classes) → **formatação** pelo parceiro. É o caminho que a home já
       percorreu inteiro.

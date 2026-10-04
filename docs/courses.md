@@ -430,6 +430,9 @@ curso, como o resto da vitrine:
   cada item é **global**, escrito uma vez e editável em Admin → Textos; no curso, só se marca quais
   ele tem (`Course.materiais[]`, enum do Prisma, como `camadas[]`). Item novo na lista é decisão
   dele, não um campo de texto.
+  *(Construído em 04/10/2026: enum `Material` — `BIBLIOTECA_DE_PROMPTS`, `APOSTILA`; textos em
+  `common.materiais` e `common.inclui`; o derivado dos arquivos sai como `temArquivos` na leitura
+  pública, só sim ou não.)*
 - **Sem linha de acesso** *(decisão dele)*: o quadro fala só do conteúdo; o acesso fica no cartão
   de preço. (E "vitalício" continua proibido — decisão de 28/09, abaixo.)
 
