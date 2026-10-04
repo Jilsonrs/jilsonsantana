@@ -417,7 +417,7 @@ soma rascunho). A duração de cada aula não sai na resposta pública, só o to
 definitiva (C5) leva isso** quando o desenho de hoje for transposto para o template de servidor.
 
 **O quadro "Este curso inclui"** *(decisões do operador, 04/10/2026, a partir da Udemy)*: o
-resumo do que o curso entrega, na **página de venda** do curso, para quem não lê a descrição
+resumo do que o curso entrega, na **página de venda** do curso **e no "Sobre o curso" da página da aula** (o aluno descobre os materiais enquanto estuda), para quem não lê a descrição
 (*"cada curso por si só já justifique a assinatura"*). Montado de campos, sem texto livre por
 curso, como o resto da vitrine:
 - **Derivado, nunca marcado à mão:** **os arquivos para acompanhar as aulas** aparecem sozinhos

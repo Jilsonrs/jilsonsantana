@@ -2436,6 +2436,8 @@ própria**.*
       **Feito em 04/10/2026, na página de hoje** (a transpor no C5, nada se perde): o quadro na
       coluna lateral de `/curso/:slug` (`CourseIncludes.tsx`), com os arquivos (derivado do
       servidor: `temArquivos`, só a cadeia publicada) e os materiais marcados.
+      **E também no "Sobre o curso" da página da aula** *(decisão do operador, 04/10/2026: "nos dois
+      lugares")*, onde o aluno logado está.
 - [ ] **Mock na `design-lab/`** (parceiro de design) → **transposição** para template de servidor
       (mesma marcação, mesmas classes) → **formatação** pelo parceiro. É o caminho que a home já
       percorreu inteiro.

@@ -360,6 +360,8 @@ export type PaginaDaAula = {
     highlights: Highlight[] | null;
     faq: FaqItem[] | null;
     camadas: Layer[];
+    /** Os materiais exclusivos, para o quadro "Este curso inclui" (04/10/2026). */
+    materiais: Material[];
     videoSeconds: number;
     modulos: { id: number; title: string; status: ContentStatus; aulas: AulaNaLista[] }[];
   };

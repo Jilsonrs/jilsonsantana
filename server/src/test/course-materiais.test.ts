@@ -95,6 +95,12 @@ describe("o quadro na página do curso", () => {
     expect((await pagina()).body.temArquivos).toBe(false);
   });
 
+  it("a página da aula também traz os materiais (o quadro no \"Sobre o curso\")", async () => {
+    const res = await request(app).get(`/api/lessons/${aulaPublicada}/aula`);
+    expect(res.status).toBe(200);
+    expect(res.body.curso.materiais).toEqual(["APOSTILA"]);
+  });
+
   it("arquivo em aula publicada: true — e nem o nome nem a quantidade saem", async () => {
     await arquivo(aulaPublicada, "planilha");
     const res = await pagina();

@@ -65,6 +65,8 @@ async function arvoreDoCurso(courseId: number, soPublicado: boolean) {
       highlights: true,
       faq: true,
       camadas: true,
+      // O quadro "Este curso inclui", também no "Sobre o curso" (operador, 04/10/2026).
+      materiais: true,
       modules: {
         where: filtro,
         orderBy: byOrder,
@@ -96,6 +98,7 @@ async function arvoreDoCurso(courseId: number, soPublicado: boolean) {
     highlights: curso.highlights,
     faq: curso.faq,
     camadas: curso.camadas,
+    materiais: curso.materiais,
     // A duração do curso: só aula de VÍDEO, como na página do curso — uma aula que
     // virou texto não leva o tempo do vídeo antigo. O aluno soma só o publicado
     // (é a lista que ele vê); o admin, a lista inteira.

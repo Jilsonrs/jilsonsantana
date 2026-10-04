@@ -377,7 +377,8 @@ exceto o item 4, que é página pública.
    "⋮" da Udemy. Mantenha o nome de cada ação com o título da aula (é o que o leitor de tela ouve,
    e tem teste) e a confirmação antes de excluir.
 22. **"Este curso inclui"** *(04/10, decisões do operador, a partir da Udemy)*: o quadro no topo da
-   coluna lateral da página do curso (`components/content/CourseIncludes.tsx`) e as caixas
+   coluna lateral da página do curso e no "Sobre o curso" da aula, acima do "Nosso método"
+   (`components/content/CourseIncludes.tsx`, um só para os dois), e as caixas
    **Materiais exclusivos** no passo Publicar do editor (`CourseMaterialsSection.tsx`). Estrutura
    pronta, acabamento seu. Os textos saem do dicionário (Admin → Textos): **não escreva texto no
    `.tsx`**. Quadro sem itens fica escondido — tem teste.

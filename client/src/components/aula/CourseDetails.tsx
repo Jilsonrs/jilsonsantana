@@ -6,6 +6,7 @@ import { horasEMinutos } from "@/lib/duracao-do-curso";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { CourseHighlights, CourseLayers } from "@/components/content/CoursePremiumFeatures";
+import { CourseIncludes } from "@/components/content/CourseIncludes";
 
 // A peça do Markdown só baixa quando a descrição aparece (CLAUDE.md → Client).
 const MarkdownText = lazy(() => import("@/components/content/MarkdownText").then((m) => ({ default: m.MarkdownText })));
@@ -94,7 +95,10 @@ export function CourseDetails({ curso }: { curso: PaginaDaAula["curso"] }) {
         </div>
 
         {/* 2. Método (No desktop: direita, ocupando toda altura. No mobile: logo abaixo da descrição!) */}
-        <div className="lg:col-start-2 lg:row-span-2 lg:row-start-1">
+        <div className="space-y-6 lg:col-start-2 lg:row-span-2 lg:row-start-1">
+          {/* "Este curso inclui", também aqui (operador, 04/10/2026): o aluno descobre os
+              materiais enquanto estuda. Os arquivos saem da lista que ele vê. */}
+          <CourseIncludes materiais={curso.materiais ?? []} temArquivos={curso.modulos.some((m) => m.aulas.some((a) => a.temArquivos))} />
           <CourseLayers camadas={curso.camadas} />
         </div>
 
