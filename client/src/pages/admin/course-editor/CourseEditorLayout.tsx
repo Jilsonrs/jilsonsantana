@@ -1,4 +1,5 @@
-import { Link, Outlet, useOutletContext, useParams } from "react-router-dom";
+import { useState } from "react";
+import { Link, Outlet, useLocation, useOutletContext, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { FormProvider, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -10,6 +11,8 @@ import { segundosDeVideo, textoDaDuracao } from "@/lib/duracao-do-curso";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PageContainer, PageHeader } from "@/components/layout/PageLayout";
+import { AvisoFlutuante } from "@/components/admin/AvisoFlutuante";
+import { useAvisoFlutuante, type Aviso } from "@/lib/aviso-flutuante";
 
 /**
  * O EDITOR DO CURSO (Bloco E, etapa 1 — decisões do operador, 27–28/09/2026).
@@ -17,7 +20,17 @@ import { PageContainer, PageHeader } from "@/components/layout/PageLayout";
  * aqui mora o que é comum a todos: o topo e o formulário. Cada passo é uma rota
  * filha (`course-editor/steps.tsx`) e salva só a parte dele.
  */
-export type ContextoDoEditor = { curso: AdminCourseDetail };
+export type ContextoDoEditor = {
+  curso: AdminCourseDetail;
+  /**
+   * O lugar do topo, depois de "Voltar para cursos", onde o passo desenha o seu
+   * Salvar (decisão do operador, 03/10/2026, a partir da Udemy). `null` até o topo
+   * existir na tela.
+   */
+  acoes: HTMLElement | null;
+  /** Mostra a mensagem flutuante de "salvou" ou "não salvou". */
+  avisar: (tipo: Aviso["tipo"], texto: string) => void;
+};
 
 export function useCursoDoEditor(): ContextoDoEditor {
   return useOutletContext<ContextoDoEditor>();
@@ -40,6 +53,13 @@ export function CourseEditorLayout() {
     queryFn: () => api.adminGetCourse(courseId),
     enabled: idValido,
   });
+  // A mensagem mora aqui, e não no passo: ela continua na tela quando o operador
+  // troca de passo. Recém-criado, o curso abre dizendo "Curso criado.".
+  const location = useLocation();
+  // Seguro: o estado da navegação é opcional e só a página Criar curso o preenche.
+  const criado = (location.state as { aviso?: string } | null)?.aviso;
+  const { aviso, avisar, fechar } = useAvisoFlutuante(criado ? { tipo: "sucesso", texto: criado } : null);
+  const [acoes, setAcoes] = useState<HTMLElement | null>(null);
 
   if (!idValido || codigoDoErro(error) === "NotFound") {
     return <Aviso titulo="Curso não encontrado" texto="Este curso não existe ou foi excluído." />;
@@ -62,11 +82,14 @@ export function CourseEditorLayout() {
           <>
             <Badge variant="secondary">{ROTULO_DO_STATUS[curso.status]}</Badge>
             <Voltar />
+            {/* O Salvar do passo aberto entra aqui (o passo Conteúdo não tem). */}
+            <span ref={setAcoes} className="contents" />
           </>
         }
       />
       {/* `key`: outro curso, outro formulário. */}
-      <FormularioDoCurso key={curso.id} curso={curso} />
+      <FormularioDoCurso key={curso.id} contexto={{ curso, acoes, avisar }} />
+      <AvisoFlutuante aviso={aviso} aoFechar={fechar} />
     </PageContainer>
   );
 }
@@ -78,12 +101,11 @@ export function CourseEditorLayout() {
  * NÃO o reinicia — `defaultValues` só vale na criação. Por isso não há efeito
  * sincronizando curso → formulário.
  */
-function FormularioDoCurso({ curso }: { curso: AdminCourseDetail }) {
+function FormularioDoCurso({ contexto }: { contexto: ContextoDoEditor }) {
   const form = useForm<CourseFormValues>({
     resolver: zodResolver(courseFormSchema),
-    defaultValues: toFormValues(curso),
+    defaultValues: toFormValues(contexto.curso),
   });
-  const contexto: ContextoDoEditor = { curso };
   return (
     <FormProvider {...form}>
       <Outlet context={contexto} />

@@ -362,6 +362,14 @@ exceto o item 4, que é página pública.
    botão é de ligar e desligar (`aria-pressed`): o nome não muda, o ícone muda — **não troque por
    dois botões** nem tire o nome do botão só com ícone, que é o que o leitor de tela ouve. Tem teste.
    E a tela **Salvos** (`/aluno/salvos`), com cursos em cartão e aulas em lista.
+20. **O Salvar no TOPO do editor do curso, com mensagem** *(decisões do operador, 03/10, a partir da
+   Udemy)*. O **Salvar** de cada passo e o **Criar curso** ficam no topo, depois de "Voltar para
+   cursos" (`CourseEditorLayout.tsx` reserva o lugar; `StepForm.tsx` desenha o botão ali). **Não
+   devolva o botão para baixo** nem recrie a linha de baixo: tem teste. A **mensagem flutuante**
+   (`components/admin/AvisoFlutuante.tsx`) está em estrutura simples, no canto de baixo à direita —
+   o desenho é seu (o print da Udemy que o operador mandou é a referência). Mantenha: a região
+   sempre na página (o leitor de tela só anuncia o que aparece dentro dela), o `role="alert"` só
+   na frase do erro, e o "Fechar".
 
 > **Fora do seu trabalho, para não confundir:** o Bunny ganhou **Live Stream** em acesso
 > antecipado (29/09). É só avaliação depois da Fase 3, **não** é tela a desenhar (`docs/bunny.md`

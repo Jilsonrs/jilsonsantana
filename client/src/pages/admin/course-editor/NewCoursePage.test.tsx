@@ -5,11 +5,14 @@ import { renderWithProviders } from "@/test-utils";
 import { CURSO_DE_TESTE } from "./curso-de-teste";
 
 const createCourse = vi.fn();
+const adminGetCourse = vi.fn();
 vi.mock("@/lib/api", () => ({
   createCourse: (...args: unknown[]) => createCourse(...args),
+  adminGetCourse: (...args: unknown[]) => adminGetCourse(...args),
 }));
 
 import { NewCoursePage } from "./NewCoursePage";
+import { CourseEditorLayout } from "./CourseEditorLayout";
 
 beforeEach(() => {
   createCourse.mockReset();
@@ -85,5 +88,37 @@ describe("Novo curso", () => {
 
     expect((await screen.findByRole("alert")).textContent).toBe("Este slug já está em uso por outro curso.");
     expect(screen.queryByText("editor aberto")).toBeNull();
+  });
+});
+
+// O CRIAR CURSO NO TOPO (decisões do operador, 03/10/2026, a partir da Udemy):
+// depois de "Voltar para cursos", sem linha embaixo; o erro sai na mensagem
+// flutuante, e o editor abre dizendo "Curso criado.".
+describe("Novo curso — o botão no topo e a mensagem", () => {
+  it("um Criar curso só, no topo, logo depois de Voltar para cursos", () => {
+    abrir();
+    const criar = screen.getByRole("button", { name: "Criar curso" });
+    const voltar = screen.getByRole("link", { name: "Voltar para cursos" });
+    expect(screen.getAllByRole("button", { name: "Criar curso" })).toHaveLength(1);
+    expect(voltar.nextElementSibling).toBe(criar);
+  });
+
+  it("criou: o editor abre com a mensagem \"Curso criado.\"", async () => {
+    createCourse.mockResolvedValue({ ...CURSO_DE_TESTE, id: 2 });
+    adminGetCourse.mockResolvedValue({ ...CURSO_DE_TESTE, id: 2 });
+    renderWithProviders(<NewCoursePage />, {
+      route: "/admin/cursos/novo",
+      extraRoutes: [{ path: "/admin/cursos/:id/basico", element: <CourseEditorLayout /> }],
+    });
+    preencher("curso-teste", "Curso Teste");
+
+    expect(await screen.findByText("Curso criado.")).toBeTruthy();
+    expect(adminGetCourse).toHaveBeenCalledWith(2);
+  });
+
+  it("sem título: a mensagem pede para conferir", async () => {
+    abrir();
+    preencher("curso-teste", "");
+    expect((await screen.findByRole("alert")).textContent).toBe("Confira os campos marcados antes de salvar.");
   });
 });

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { screen, fireEvent, waitFor, within } from "@testing-library/react";
+import { screen, fireEvent, waitFor, within, act } from "@testing-library/react";
 import { Role } from "@jilson/core";
 import { renderWithProviders } from "@/test-utils";
 import type { AdminCourseDetail } from "@/lib/api";
@@ -18,6 +18,7 @@ vi.mock("@/lib/api", () => ({
 
 import { CourseEditorLayout } from "./CourseEditorLayout";
 import { ROTAS_DO_EDITOR } from "./steps";
+import { TEMPO_DO_SUCESSO } from "@/lib/aviso-flutuante";
 
 beforeEach(() => {
   adminGetCourse.mockReset();
@@ -417,5 +418,95 @@ describe("Editor do curso — apagar um campo já salvo", () => {
     const enviado = updateCourse.mock.calls[0][1];
     expect(enviado).toHaveProperty("subtitle", null);
     expect(enviado).toHaveProperty("description", null);
+  });
+});
+
+// O SALVAR NO TOPO, com a mensagem de "salvou" ou "não salvou" (decisões do
+// operador, 03/10/2026, a partir da Udemy): o botão fica depois de "Voltar para
+// cursos" e não há outro embaixo; o sucesso some sozinho, o erro fica até fechar.
+describe("Editor do curso — o Salvar no topo e a mensagem", () => {
+  const SALVOU = "Suas alterações foram salvas.";
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("um Salvar só, no topo, logo depois de Voltar para cursos", async () => {
+    abrir("/admin/cursos/1/basico");
+    await esperarTitulo();
+
+    const salvarNoTopo = screen.getByRole("button", { name: "Salvar" });
+    const voltar = screen.getByRole("link", { name: "Voltar para cursos" });
+    expect(screen.getAllByRole("button", { name: "Salvar" })).toHaveLength(1);
+    // Mesmo grupo do topo, e o Salvar logo depois do Voltar (dentro do lugar que
+    // o topo reserva para o botão do passo, que não ocupa espaço na tela).
+    expect(voltar.parentElement?.contains(salvarNoTopo)).toBe(true);
+    expect(voltar.nextElementSibling?.contains(salvarNoTopo)).toBe(true);
+  });
+
+  it("salvou: a mensagem aparece, some sozinha, e o Fechar também fecha", async () => {
+    updateCourse.mockResolvedValue(CURSO_DE_TESTE);
+    abrir("/admin/cursos/1/basico");
+    await esperarTitulo();
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+
+    salvar();
+    expect(await screen.findByText(SALVOU)).toBeTruthy();
+    act(() => {
+      vi.advanceTimersByTime(TEMPO_DO_SUCESSO);
+    });
+    expect(screen.queryByText(SALVOU)).toBeNull();
+
+    salvar();
+    expect(await screen.findByText(SALVOU)).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Fechar" }));
+    expect(screen.queryByText(SALVOU)).toBeNull();
+  });
+
+  it("o servidor recusou: o erro aparece e FICA, até fechar", async () => {
+    updateCourse.mockRejectedValue(new Error("Network Error"));
+    abrir("/admin/cursos/1/basico");
+    await esperarTitulo();
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+
+    salvar();
+    const erro = await screen.findByRole("alert");
+    expect(erro.textContent).toBe("Não foi possível salvar o curso. Tente de novo.");
+    act(() => {
+      vi.advanceTimersByTime(TEMPO_DO_SUCESSO * 3);
+    });
+    expect(screen.getByRole("alert")).toBe(erro);
+
+    fireEvent.click(screen.getByRole("button", { name: "Fechar" }));
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
+
+  it("campo inválido: a mensagem pede para conferir, e nada é enviado", async () => {
+    abrir("/admin/cursos/1/basico");
+    const titulo = await esperarTitulo();
+    fireEvent.change(titulo, { target: { value: "" } });
+
+    salvar();
+
+    expect((await screen.findByRole("alert")).textContent).toBe("Confira os campos marcados antes de salvar.");
+    expect(updateCourse).not.toHaveBeenCalled();
+  });
+
+  it("a mensagem continua quando o operador troca de passo", async () => {
+    updateCourse.mockResolvedValue(CURSO_DE_TESTE);
+    abrir("/admin/cursos/1/basico");
+    await esperarTitulo();
+    salvar();
+    expect(await screen.findByText(SALVOU)).toBeTruthy();
+
+    fireEvent.click(passo("Para quem é"));
+
+    expect(await screen.findByText(SALVOU)).toBeTruthy();
+  });
+
+  it("o passo Conteúdo (salva aula por aula) não tem Salvar no topo", async () => {
+    abrir("/admin/cursos/1/conteudo");
+    await screen.findByRole("button", { name: "Adicionar módulo no fim do curso" });
+    expect(screen.queryByRole("button", { name: "Salvar" })).toBeNull();
   });
 });
