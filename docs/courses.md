@@ -416,6 +416,23 @@ aula de vídeo publicada em módulo publicado, a mesma cadeia do "4 aulas" (leit
 soma rascunho). A duração de cada aula não sai na resposta pública, só o total. **A vitrine
 definitiva (C5) leva isso** quando o desenho de hoje for transposto para o template de servidor.
 
+**O quadro "Este curso inclui"** *(decisões do operador, 04/10/2026, a partir da Udemy)*: o
+resumo do que o curso entrega, na **página de venda** do curso, para quem não lê a descrição
+(*"cada curso por si só já justifique a assinatura"*). Montado de campos, sem texto livre por
+curso, como o resto da vitrine:
+- **Derivado, nunca marcado à mão:** **os arquivos para acompanhar as aulas** aparecem sozinhos
+  quando alguma aula publicada tem arquivo para baixar *(decisão dele: "nunca promete arquivo que
+  não existe")*. Seguem a mesma lógica, como **proposta do agente, a confirmar pelo operador
+  (P41):** as horas de vídeo (já calculadas), os artigos (aulas de texto) e "Legendas" (quando
+  todas as aulas de vídeo publicadas têm — a mesma conta do passo Legendas).
+- **Marcado no passo Publicar:** os **materiais exclusivos**, numa **lista fixa** — hoje
+  **Biblioteca de prompts** e **Apostila** *(decisão dele)*. Mesmo modelo das Camadas: o texto de
+  cada item é **global**, escrito uma vez e editável em Admin → Textos; no curso, só se marca quais
+  ele tem (`Course.materiais[]`, enum do Prisma, como `camadas[]`). Item novo na lista é decisão
+  dele, não um campo de texto.
+- **Sem linha de acesso** *(decisão dele)*: o quadro fala só do conteúdo; o acesso fica no cartão
+  de preço. (E "vitalício" continua proibido — decisão de 28/09, abaixo.)
+
 **Decisões de 28/09/2026 sobre a página e o certificado** (operador): a seção do autor é **a mesma
 da home** (`home.author`, uma edição serve às duas) · etiqueta **"Novo"**, **sem** número de alunos
 e **sem** "Atualizado em" · as **trilhas do curso** no lugar de categorias, e **outros cursos da

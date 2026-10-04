@@ -20,9 +20,8 @@
 
 ## A. Agora, em sequência *(nascidas da configuração do Bunny, 25/09/2026)*
 
-| # | O que falta | Onde registrar |
-|---|---|---|
-| P40 | **Colocar a chave da CONTA do Bunny na Railway** (`BUNNY_ACCOUNT_API_KEY`, decisão de 04/10): no Bunny, *Account settings → API*; no Railway, *Variables* do serviço. Direto do painel para o Railway, **nunca pelo chat**. Sem ela, trocar ou excluir uma legenda funciona, mas o player pode mostrar a anterior por algumas horas | `bunny.md` §5 item 5 |
+*Vazia desde 04/10/2026 (a P40, a chave da conta do Bunny, foi resolvida). Item novo que precise
+de resposta rápida entra aqui, com o próximo número livre.*
 
 ## B. Conteúdo e cadastro *(tarefas suas, sem ordem fixa)*
 
@@ -53,6 +52,7 @@
 | P30 | **Quem somos e Contato:** o conteúdo das duas páginas e **onde ficam os dados da empresa** (rodapé ou Contato) | quando as páginas forem construídas | `implementation-plan.md` → *Páginas públicas que faltam* |
 | P31 | **Mostrar curso "em breve"** (ainda não publicado) na vitrine? Hoje só aparece curso publicado, e mostrar "em breve" seria regra nova | quando a vitrine de cursos for desenhada (C5) | `implementation-plan.md` → Bloco C5 |
 | P39 | **O que o certificado atesta:** a aula conta como concluída sozinha (vídeo a 90%, texto ao abrir — decisão de 03/10), e quem decide isso é a **tela**. Alguém que chame o site por fora consegue marcar como concluídas as aulas a que tem acesso sem assistir. Para o progresso não faz diferença; para o **certificado público** (Fase 6.5), sim. Aceitar e o certificado atestar "concluiu o curso na plataforma", ou exigir no servidor a prova de que o vídeo chegou aos 90%? *(achado P2 da revisão de segurança, 03/10)* | antes da Fase 6.5 (certificado) | `implementation-plan.md` → Fase 5 e Fase 6.5 |
+| P41 | **As linhas finais do quadro "Este curso inclui"** (página de venda do curso). Decidido: os arquivos para baixar aparecem sozinhos; os materiais exclusivos (Biblioteca de prompts, Apostila) são marcados no Publicar; sem linha de acesso. **Falta você escolher** quais destas entram, todas calculadas sozinhas: as horas de vídeo · o número de artigos (aulas de texto) · "Legendas" (quando todas as aulas publicadas têm) · "N aulas grátis para experimentar" (as prévias grátis, sugestão do agente) · o certificado (quando a Fase 6.5 existir) | antes do mock da página de curso (Bloco C5) | `courses.md` §2.3 |
 
 ## Fora desta lista, de propósito
 

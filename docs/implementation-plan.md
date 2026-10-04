@@ -2005,6 +2005,11 @@ própria**.*
       Enviar/Substituir, Baixar e Excluir (com confirmação) **na própria linha** — o menu "⋮" da
       Udemy fica para o acabamento do Antigravity, se o operador quiser; a contagem e "Todas as
       aulas publicadas têm legenda."; a mensagem flutuante do editor ao enviar ou falhar.
+- [ ] **Materiais exclusivos no passo Publicar** *(decisão do operador, 04/10/2026)*: caixas de
+      marcar para a lista fixa (hoje Biblioteca de prompts e Apostila), gravadas em
+      `Course.materiais[]` (enum do Prisma, migration própria), com o texto de cada item global em
+      `common.*` (editável em Admin → Textos) — o mesmo desenho das Camadas. Alimenta o quadro
+      "Este curso inclui" da vitrine (`courses.md` §2.3; Bloco C5).
 - [x] **Etapa 3c — trocar o vídeo não perde a legenda (04/10/2026):** ao terminar a troca do vídeo
       da aula ou da apresentação, o site manda a legenda guardada para o vídeo novo
       (`server/src/lib/legendas.ts`). Se o Bunny recusar (ou a rede cair), o vídeo troca do mesmo
@@ -2424,6 +2429,10 @@ própria**.*
       o botão sendo **Continuar** em vez de **Assinar**. **Já decidido (30/09/2026):** o cartão e
       a página do curso mostram a duração ("2 módulos · 4 aulas · 1h 05min", "0min" sem vídeo) —
       `courses.md`; o servidor já devolve `videoSeconds`.
+      **Já decidido (04/10/2026):** o quadro **"Este curso inclui"** na página de venda —
+      os arquivos para baixar aparecem sozinhos quando existem; os materiais exclusivos
+      (Biblioteca de prompts, Apostila) são marcados no passo Publicar, com texto global; sem
+      linha de acesso (`courses.md` §2.3). As linhas derivadas restantes: P41.
 - [ ] **Mock na `design-lab/`** (parceiro de design) → **transposição** para template de servidor
       (mesma marcação, mesmas classes) → **formatação** pelo parceiro. É o caminho que a home já
       percorreu inteiro.
