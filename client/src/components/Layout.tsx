@@ -6,6 +6,7 @@ import { MobileNav } from "@/components/nav/MobileNav";
 import { SecondaryNav } from "@/components/nav/SecondaryNav";
 import { AppFooter } from "@/components/layout/AppFooter";
 import { AccountMenu } from "@/components/layout/AccountMenu";
+import { Sino } from "@/components/notificacoes/Sino";
 import { ROTAS_PUBLICAS } from "@jilson/core";
 import { IdiomaProvider, useIdioma, useIdiomaDoShell, useT } from "@/lib/language";
 
@@ -82,7 +83,9 @@ function Shell() {
           <div className="md:hidden pointer-events-auto">
             <MobileNav papel={session.user.role} onSignOut={handleSignOut} />
           </div>
-          <div className="ml-auto pointer-events-auto">
+          {/* O sino ao lado da foto (operador, 04/10/2026), para aluno e admin. */}
+          <div className="ml-auto flex items-center gap-2 pointer-events-auto">
+            <Sino />
             <AccountMenu usuario={session.user} onSignOut={handleSignOut} />
           </div>
         </header>

@@ -417,6 +417,34 @@ export async function alternarSalvo(tipo: "cursos" | "aulas", id: number, salvar
   else await client.delete(`/salvos/${tipo}/${id}`);
 }
 
+/** Uma notificação do sino (Bloco E, etapa 4 — 04/10/2026). O texto é Markdown do admin. */
+export type Notificacao = {
+  id: number;
+  tipo: "BOAS_VINDAS" | "PARABENS";
+  texto: string;
+  criadaEm: string;
+  lida: boolean;
+  /** O título do envio; `slug` só enquanto o curso está publicado. */
+  curso: { titulo: string | null; slug: string | null } | null;
+};
+export type Notificacoes = { naoLidas: number; itens: Notificacao[] };
+
+/** As notificações de quem está logado: as mais recentes e quantas faltam ler. */
+export async function getNotificacoes(): Promise<Notificacoes> {
+  const { data } = await client.get<Notificacoes>("/notificacoes");
+  return data;
+}
+
+/** Marca uma notificação como lida. */
+export async function marcarNotificacaoLida(id: number): Promise<void> {
+  await client.put(`/notificacoes/${id}/lida`);
+}
+
+/** Marca todas as notificações como lidas. */
+export async function marcarTodasLidas(): Promise<void> {
+  await client.put("/notificacoes/lidas");
+}
+
 /** O progresso de quem está logado em cada curso que ele começou (só aulas publicadas). */
 export type ProgressoDoCurso = { courseId: number; concluidas: number; total: number };
 

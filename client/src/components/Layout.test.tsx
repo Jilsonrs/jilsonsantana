@@ -16,6 +16,8 @@ vi.mock("@/lib/api", () => ({
   COMMON_TEXTS_QUERY: "site-text-common",
   getCommonTexts: () => new Promise(() => {}),
   updateMyLanguage: () => Promise.resolve(),
+  // O sino do topo (04/10/2026) busca as notificações de quem entrou.
+  getNotificacoes: () => Promise.resolve({ naoLidas: 2, itens: [] }),
 }));
 
 import { Layout } from "./Layout";
@@ -148,6 +150,14 @@ describe("Layout — o menu da conta", () => {
 
     expect(screen.getByRole("button", { name: "Abrir o menu da conta" })).toBeTruthy();
     expect(screen.queryByRole("link", { name: "Minha conta" })).toBeNull();
+  });
+
+  // O sino ao lado da foto (operador, 04/10/2026), com o número de não lidas no nome.
+  it("o sino fica no topo, ao lado da foto, com as não lidas", async () => {
+    renderWithProviders(<Layout />);
+    const sino = await screen.findByRole("button", { name: "Notificações, 2 não lidas" });
+    const foto = screen.getByRole("button", { name: "Abrir o menu da conta" });
+    expect(sino.parentElement?.parentElement).toBe(foto.parentElement?.parentElement);
   });
 
   it("nem na gaveta do celular", async () => {

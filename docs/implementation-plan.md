@@ -2027,7 +2027,7 @@ própria**.*
       biblioteca no painel (vale para todos); não achei na doc um controle para o aluno.
 
 **Etapa 4 — Mensagens e o sino:**
-- [ ] **O sino ao lado da foto, no topo**: área de avisos do aluno, com as mensagens de
+- [x] **O sino ao lado da foto, no topo**: área de avisos do aluno, com as mensagens de
       **boas-vindas** (ao abrir a primeira aula do curso) e de **parabéns** (ao concluir), e outras
       comunicações do operador ou do JilsonAI. **Sem e-mail.** O passo 6 do editor é onde ele
       escreve as duas mensagens do curso.
@@ -2053,7 +2053,14 @@ própria**.*
         corrigidos — os parabéns também exigem assinatura (a prévia grátis não basta), e a falha
         ao criar a notificação não derruba a aula nem a conclusão (`semDerrubar`, log só com ids e
         código). Mutação nas três correções: reprovam.
-  - [ ] **4c — O sino, a lista e a página Ver todas** (`/aluno/notificacoes`).
+  - [x] **4c — O sino, a lista e a página Ver todas** *(04/10/2026)*: o sino no cabeçalho, ao lado
+        da foto, para aluno e admin, com o número de não lidas ("9+") no nome do botão; a lista
+        das 5 mais recentes (título, começo do texto sem as marcas do Markdown, há quanto tempo)
+        com **Marcar todas como lidas** e **Ver todas**; clicar marca como lida e leva à página
+        `/aluno/notificacoes`, na notificação clicada, com o texto inteiro (`MarkdownText`, sem
+        link, carregado só ali). O número se atualiza ao voltar para a aba, ao abrir e ao concluir
+        aula. Textos em `app.notificacoes` (P38). Mutação: o sino sem o número, o clique sem
+        marcar e o texto com link — as três reprovam.
 
 **O QUE FALTA NOS 7 PASSOS (atualizado em 30/09/2026 — as linhas estão acima; aqui é o mapa):**
 
@@ -2064,7 +2071,7 @@ própria**.*
 | 3 Conteúdo | pronto | o **Quiz** (no "+" aparece EM BREVE) | as regras do operador: uma ou várias respostas certas, explicação, nota mínima, o que o aluno vê |
 | 4 Legendas | EM BREVE | a **etapa 3** inteira: "x de y aulas com legenda"; enviar, baixar e excluir o `.vtt` por vídeo, só no idioma do curso | código (alto risco: Bunny) |
 | 5 Mídia e destaques | pronto | — *(a P19 fechou em 29/09)* | — |
-| 6 Mensagens | tela pronta (04/10) | o envio ao aluno e o sino: **etapa 4b e 4c**; a regra do ✓ do passo | — *(a Fase 5 já diz quando o aluno concluiu)* |
+| 6 Mensagens | pronto (04/10: o passo, o envio e o sino) | a regra do ✓ do passo | o operador |
 | 7 Publicar | pronto | o **Visualizar** (abrir a página pública do curso) | a página definitiva do curso: **C5** |
 
 **Em todos os passos, ainda aberto:**

@@ -15,6 +15,7 @@ import { LessonPage } from "@/pages/aluno/LessonPage";
 import { CourseEntryPage } from "@/pages/aluno/CourseEntryPage";
 import { EmAndamentoPage } from "@/pages/aluno/EmAndamentoPage";
 import { SalvosPage } from "@/pages/aluno/SalvosPage";
+import { NotificacoesPage } from "@/pages/aluno/NotificacoesPage";
 import { AdminCoursesPage } from "@/pages/admin/AdminCoursesPage";
 import { NewCoursePage } from "@/pages/admin/course-editor/NewCoursePage";
 import { CourseEditorLayout } from "@/pages/admin/course-editor/CourseEditorLayout";
@@ -50,6 +51,7 @@ export default function App() {
           {/* Meus estudos abre aqui (decisão do operador, 29/09/2026). */}
           <Route path="/aluno/em-andamento" element={<EmAndamentoPage />} />
           <Route path="/aluno/salvos" element={<SalvosPage />} />
+          <Route path="/aluno/notificacoes" element={<NotificacoesPage />} />
           <Route path="/aluno/minhas-trilhas" element={<MyTrilhasPage />} />
           <Route path="/aluno/minhas-trilhas/:id" element={<MyTrilhaDetailPage />} />
           <Route path="/aluno/conta" element={<AccountPage />} />
