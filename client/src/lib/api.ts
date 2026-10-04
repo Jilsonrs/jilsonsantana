@@ -3,6 +3,7 @@ import type { CredenciaisDeEnvio, DadosDoEnvio } from "@/lib/video-upload";
 import type {
   Level,
   Layer,
+  Material,
   ContentStatus,
   PlanItemType,
   CourseCreateInput,
@@ -84,6 +85,10 @@ export type CourseDetail = {
   lessonCount: number;
   /** A soma dos vídeos PUBLICADOS, em segundos (operador, 30/09/2026). */
   videoSeconds: number;
+  /** O quadro "Este curso inclui" (04/10/2026): os materiais marcados no Publicar… */
+  materiais: Material[];
+  /** …e se alguma aula publicada tem arquivo para baixar (derivado, nunca marcado). */
+  temArquivos: boolean;
 };
 
 export type TrilhaCard = {
@@ -227,6 +232,8 @@ export type AdminCourseDetail = {
   highlights: Highlight[] | null;
   faq: FaqItem[] | null;
   camadas: Layer[];
+  /** Os materiais exclusivos marcados no passo Publicar (04/10/2026). */
+  materiais: Material[];
   thumbnailUrl: string | null;
   introVideoId: string | null;
   // O player do vídeo de apresentação, montado no SERVIDOR (null sem vídeo, ou

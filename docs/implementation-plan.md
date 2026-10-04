@@ -2005,7 +2005,7 @@ própria**.*
       Enviar/Substituir, Baixar e Excluir (com confirmação) **na própria linha** — o menu "⋮" da
       Udemy fica para o acabamento do Antigravity, se o operador quiser; a contagem e "Todas as
       aulas publicadas têm legenda."; a mensagem flutuante do editor ao enviar ou falhar.
-- [ ] **Materiais exclusivos no passo Publicar** *(decisão do operador, 04/10/2026)*: caixas de
+- [x] **Materiais exclusivos no passo Publicar** *(decisão do operador, 04/10/2026; feito no mesmo dia — migration `course_materiais`, caixas em `CourseMaterialsSection.tsx`)*: caixas de
       marcar para a lista fixa (hoje Biblioteca de prompts e Apostila), gravadas em
       `Course.materiais[]` (enum do Prisma, migration própria), com o texto de cada item global em
       `common.*` (editável em Admin → Textos) — o mesmo desenho das Camadas. Alimenta o quadro

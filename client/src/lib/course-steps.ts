@@ -62,8 +62,9 @@ export const PASSOS_DO_CURSO: Passo[] = [
   {
     slug: "publicar",
     label: "Publicar",
-    campos: ["status", "displayOrder"],
-    envia: ["status", "displayOrder"],
+    // Os materiais exclusivos são marcados aqui (decisão do operador, 04/10/2026).
+    campos: ["status", "displayOrder", "materiais"],
+    envia: ["status", "displayOrder", "materiais"],
   },
 ];
 

@@ -50,6 +50,17 @@ export const pt = {
         nome: "Com IA do seu lado",
         texto: "A IA como copiloto pra gerar lógica, destravar erros e ganhar tempo."
       }
+    },
+    // O quadro "Este curso inclui" da página do curso (decisões do operador,
+    // 04/10/2026). Os materiais exclusivos têm texto GLOBAL, como as camadas: no
+    // curso, só se marca quais ele tem. Editáveis em Admin → Textos.
+    inclui: {
+      titulo: "Este curso inclui:",
+      arquivos: "Arquivos para acompanhar as aulas"
+    },
+    materiais: {
+      BIBLIOTECA_DE_PROMPTS: "Biblioteca de prompts",
+      APOSTILA: "Apostila"
     }
   },
   home: {

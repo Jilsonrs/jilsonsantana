@@ -19,6 +19,7 @@ const VAZIO: AdminCourseDetail = {
   highlights: null,
   faq: null,
   camadas: [],
+  materiais: [],
   thumbnailUrl: null,
   introVideoId: null,
   introVideoEmbedUrl: null,

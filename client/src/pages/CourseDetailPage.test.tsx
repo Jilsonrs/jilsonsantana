@@ -39,6 +39,8 @@ const baseCourse: CourseDetail = {
   moduleCount: 1,
   lessonCount: 2,
   videoSeconds: 3900, // 1h 05min
+  materiais: [],
+  temArquivos: false,
   modules: [
     {
       id: 10,

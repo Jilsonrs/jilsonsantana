@@ -43,6 +43,14 @@ export const en: Dict = {
         nome: "AI on your side",
         texto: "AI as your copilot to generate logic, fix errors, and save time."
       }
+    },
+    inclui: {
+      titulo: "This course includes:",
+      arquivos: "Files to follow along with the lessons"
+    },
+    materiais: {
+      BIBLIOTECA_DE_PROMPTS: "Prompt library",
+      APOSTILA: "Course handbook"
     }
   },
   home: {

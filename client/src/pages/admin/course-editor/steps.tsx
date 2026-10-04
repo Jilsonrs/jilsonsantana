@@ -16,6 +16,7 @@ import { FaqField } from "@/components/admin/FaqField";
 import { useCursoDoEditor } from "./CourseEditorLayout";
 import { StepForm } from "./StepForm";
 import { CaptionsStep } from "@/components/admin/captions/CaptionsStep";
+import { CourseMaterialsSection } from "@/components/admin/course-form/CourseMaterialsSection";
 
 // Os passos do editor do curso — o que cada um mostra é decisão do operador
 // (28/09/2026). Mensagens ainda não tem tela (etapa 4 do Bloco E); Legendas ganhou a sua em 04/10.
@@ -104,6 +105,7 @@ function PassoPublicar() {
         </Card>
       </PageSection>
       <CoursePublishSection />
+      <CourseMaterialsSection />
       <CourseLinkField slug={curso.slug} idioma={curso.language} />
     </StepForm>
   );
