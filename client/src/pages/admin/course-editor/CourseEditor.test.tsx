@@ -336,6 +336,15 @@ describe("Editor do curso — Publicar", () => {
     expect(screen.queryByText("Falta a capa")).toBeNull();
   });
 
+  // Visualizar como aluno (operador, 04/10/2026): a prévia DESTE curso, numa nova
+  // aba, para o editor continuar aberto.
+  it("Visualizar como aluno abre a prévia deste curso em nova aba", async () => {
+    abrir("/admin/cursos/1/publicar");
+    const link = await screen.findByRole("link", { name: "Visualizar como aluno" });
+    expect(link.getAttribute("href")).toBe("/admin/cursos/1/previa");
+    expect(link.getAttribute("target")).toBe("_blank");
+  });
+
   it("o link é o endereço público do curso, no idioma dele", async () => {
     abrir("/admin/cursos/1/publicar");
     expect(await linkDoCurso()).toBe(`${window.location.origin}/curso/exemplo-fundamentos-excel-ia`);

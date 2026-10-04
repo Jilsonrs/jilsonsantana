@@ -18,6 +18,7 @@ import { StepForm } from "./StepForm";
 import { CaptionsStep } from "@/components/admin/captions/CaptionsStep";
 import { CourseMaterialsSection } from "@/components/admin/course-form/CourseMaterialsSection";
 import { CourseMessagesSection } from "@/components/admin/course-form/CourseMessagesSection";
+import { CoursePreviewLink } from "@/components/admin/course-form/CoursePreviewLink";
 
 // Os passos do editor do curso — o que cada um mostra é decisão do operador
 // (28/09/2026). Legendas e Mensagens ganharam as suas em 04/10.
@@ -116,6 +117,8 @@ function PassoPublicar() {
       </PageSection>
       <CoursePublishSection />
       <CourseMaterialsSection />
+      {/* Ver como o aluno vê, em qualquer status (operador, 04/10/2026). */}
+      <CoursePreviewLink courseId={curso.id} />
       <CourseLinkField slug={curso.slug} idioma={curso.language} />
     </StepForm>
   );

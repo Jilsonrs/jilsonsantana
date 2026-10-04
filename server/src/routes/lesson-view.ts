@@ -207,6 +207,22 @@ router.get("/admin/lessons/:id/aula", requireAdmin, async (req, res) => {
   res.json({ curso, aula: await aulaParaAPagina(aula, true, true), concluidas: await concluidasDoCurso(req.user?.id, curso) });
 });
 
+// GET /api/admin/courses/:id/pagina — a PRÉ-VISUALIZAÇÃO do curso como aluno, no
+// passo Publicar (decisão do operador, 04/10/2026): o mesmo curso que a página da
+// aula monta para o admin, em qualquer status, SEM aula. Serve ao curso que ainda
+// não tem nenhuma aula; com aula, a prévia abre a primeira pela rota de sempre.
+router.get("/admin/courses/:id/pagina", requireAdmin, async (req, res) => {
+  const id = parseId(req.params.id, res);
+  if (id === null) return;
+  const curso = await arvoreDoCurso(id, false);
+  if (!curso) {
+    res.status(404).json({ error: "NotFound" });
+    return;
+  }
+  res.set("Cache-Control", "private, no-store");
+  res.json({ curso });
+});
+
 /** Entrega o arquivo do Storage, em fluxo, com o NOME ORIGINAL limpo. */
 async function entregarArquivo(res: Response, arquivo: { id: number; storagePath: string; originalName: string }) {
   const leitura = await lerArquivoDaAula(arquivo.storagePath);

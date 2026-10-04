@@ -386,6 +386,15 @@ export type PaginaDaAula = {
   concluidas: number[];
 };
 
+/**
+ * A PRÉ-VISUALIZAÇÃO do curso como aluno (passo Publicar, 04/10/2026): o curso como
+ * a página da aula o mostra ao admin, em qualquer status, sem aula. Só o admin.
+ */
+export async function getAdminCoursePage(courseId: number): Promise<{ curso: PaginaDaAula["curso"] }> {
+  const { data } = await client.get<{ curso: PaginaDaAula["curso"] }>(`/admin/courses/${courseId}/pagina`);
+  return data;
+}
+
 export async function getLessonPage(lessonId: number, comoAdmin: boolean): Promise<PaginaDaAula> {
   const rota = comoAdmin ? `/admin/lessons/${lessonId}/aula` : `/lessons/${lessonId}/aula`;
   const { data } = await client.get<PaginaDaAula>(rota);

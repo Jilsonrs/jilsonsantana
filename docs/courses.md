@@ -479,10 +479,13 @@ Daí os 7 passos do *Bloco E* do plano, no nível 2 da navegação.
 - **Descrição com menos de 200 palavras** aparece como "descrição curta" no que falta, **sem
   impedir o salvar**.
 - **As três listas aceitam até 160 caracteres por item**, cada item com contador.
-- **O Visualizar espera a página de curso definitiva (C5):** a página pública de hoje ainda é React e nem
-  mostra a descrição, então a prévia mostraria outra página. *(Operador, 29/09/2026: o nome
-  "Página do curso" fica para ESSA página pública; o link para abri-la e conferir como o curso
-  aparece fica no passo **Publicar**, e chega com o C5.)*
+- **Visualizar como aluno** *(decisão do operador, 04/10/2026)*: no passo **Publicar**, um botão
+  abre, em nova aba, a **tela do aluno** (a página logada da aula) com este curso, **em qualquer
+  status**: o operador simula o aluno entrando no curso enquanto cadastra e vê como a página fica.
+  Com aula, abre a primeira; sem nenhuma, mostra o "Sobre o curso" com o que já foi preenchido.
+- **O Visualizar da página PÚBLICA espera a página de curso definitiva (C5):** a página pública de
+  hoje ainda é React e nem mostra a descrição. *(Operador, 29/09/2026: o nome "Página do curso"
+  fica para ESSA página pública; o link para abri-la fica no passo **Publicar**, e chega com o C5.)*
 - **A aula no Conteúdo, como na Udemy** *(operador, 28–29/09/2026)*: abre e recolhe; aberta,
   mostra a miniatura, o nome do arquivo e a duração do vídeo (sem player — assistir é na página
   da aula do aluno), a Prévia grátis e os arquivos para baixar. A aula criada já nasce aberta; ao

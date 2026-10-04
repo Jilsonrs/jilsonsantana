@@ -1813,8 +1813,17 @@ cada campo, a regra do ✓, 160 caracteres nas três listas e o Visualizar esper
       como feita, o aviso sem dizer "curta", o copiar salvando o passo, o link ignorando o idioma,
       o erro de cópia virando sucesso e o servidor contando marcador de Markdown como palavra →
       todas reprovam. Revertido.
-- [ ] **Visualizar** mostra a página do curso como o aluno vê, **inclusive em rascunho, só para o
-      admin** — a rota pública continua devolvendo só o publicado. **Espera o C5** *(operador,
+- [x] **Visualizar como aluno** *(decisão do operador, 04/10/2026 — muda o alvo: a TELA DO ALUNO,
+      logada, onde ele assiste às aulas, e não a página pública)*: botão no passo **Publicar**,
+      em nova aba, para **qualquer status**; o operador simula o aluno entrando no curso enquanto
+      cadastra. Com aula, `/admin/cursos/:id/previa` leva à **primeira aula** na ordem do Conteúdo
+      (a rota de admin da página da aula já marca o rascunho); sem nenhuma aula, mostra a tela do
+      aluno com o título, *"Este curso ainda não tem aulas."* e o "Sobre o curso"
+      (`GET /api/admin/courses/:id/pagina`, `requireAdmin`). Abrir a prévia é o admin abrindo a
+      aula: texto conta como concluído para ele e a boas-vindas chega no sino dele. Mutação: a
+      prévia ignorando rascunho (cliente e servidor) e a rota sem `requireAdmin` — reprovam.
+      *O texto abaixo é o histórico do Visualizar da página PÚBLICA, que continua com o C5:*
+      a rota pública continua devolvendo só o publicado. **Espera o C5** *(operador,
       28/09/2026)*: a página pública de curso de hoje ainda é React e nem mostra a descrição,
       então a prévia mostraria outra página. **Onde fica** *(operador, 29/09/2026)*:
       um link no passo **Publicar** para abrir a página pública do curso e conferir como ficou.
@@ -2053,6 +2062,12 @@ própria**.*
         corrigidos — os parabéns também exigem assinatura (a prévia grátis não basta), e a falha
         ao criar a notificação não derruba a aula nem a conclusão (`semDerrubar`, log só com ids e
         código). Mutação nas três correções: reprovam.
+  - [ ] **4d — A Comunicação: mensagens do operador no mesmo sino** *(próximo bloco, plano próprio —
+        decisões do operador, 04/10/2026)*. Além das mensagens do curso, o operador escreve
+        **qualquer** mensagem na área **Comunicação** do admin: aula ao vivo, evento, pergunta
+        sobre cursos desejados. **Para quem:** todos os alunos, **ou** só os de um curso.
+        **Pergunta sobre cursos desejados é só mensagem por enquanto** (sem enquete, sem resposta).
+        O sino já aceita outros tipos (`NotificationKind` ganha valor novo; `courseId` é opcional).
   - [x] **4c — O sino, a lista e a página Ver todas** *(04/10/2026)*: o sino no cabeçalho, ao lado
         da foto, para aluno e admin, com o número de não lidas ("9+") no nome do botão; a lista
         das 5 mais recentes (título, começo do texto sem as marcas do Markdown, há quanto tempo)
@@ -2072,7 +2087,7 @@ própria**.*
 | 4 Legendas | EM BREVE | a **etapa 3** inteira: "x de y aulas com legenda"; enviar, baixar e excluir o `.vtt` por vídeo, só no idioma do curso | código (alto risco: Bunny) |
 | 5 Mídia e destaques | pronto | — *(a P19 fechou em 29/09)* | — |
 | 6 Mensagens | pronto (04/10: o passo, o envio e o sino) | a regra do ✓ do passo | o operador |
-| 7 Publicar | pronto | o **Visualizar** (abrir a página pública do curso) | a página definitiva do curso: **C5** |
+| 7 Publicar | pronto *(Visualizar como aluno desde 04/10)* | o Visualizar da página **pública** do curso | a página definitiva do curso: **C5** |
 
 **Em todos os passos, ainda aberto:**
 - [x] **O Salvar no TOPO, com mensagem de confirmação** *(decisões do operador, 03/10/2026, a
@@ -2501,7 +2516,8 @@ própria**.*
   **A página pública com o vídeo de apresentação não pode ficar em cache por mais de 24 h**
   *(consequência da decisão de 28/09/2026: uma biblioteca só, com token — o player sai assinado
   e a assinatura pública vale 24 h; `bunny.md` §3.1)*.
-  **Junto com a página de curso nova entra o Visualizar do editor do curso** (Bloco E, etapa 1):
+  **Junto com a página de curso nova entra o Visualizar da página PÚBLICA** (Bloco E, etapa 1; o
+  Visualizar **como aluno**, da tela logada, existe desde 04/10/2026):
   a página como o aluno vê, **inclusive em rascunho, só para o admin**, sem abrir a rota pública
   para o que não está publicado *(operador, 28/09/2026: esperar a página definitiva)*.
 
