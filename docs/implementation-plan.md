@@ -204,6 +204,8 @@
 > (aula concluída sozinha, barra na aula e no cartão), o vídeo que não recomeça ao trocar de aba
 > (a apresentação abre pausada, a aula toca sozinha) e o "Salvos". **Primeiro teste com o player de
 > verdade: com o operador** (assistir uma aula até perto do fim e ver a barra andar).
+> **PUBLICADO em 04/10/2026, depois (`main` = `45e33b8`, CI verde, deploy ok):** a limpeza do cache
+> da legenda trocada (falta a chave da conta no Railway — P40).
 > **PUBLICADO em 04/10/2026 (`main` = `4cbebf3`, CI verde, deploy ok, migration `caption` aplicada
 > pelo pre-deploy):** a tela **Legendas** do editor (aula e apresentação, com reenvio na troca de
 > vídeo). Antes, em 03/10 (`8ad1037`): o Salvar no topo do editor, com mensagem de confirmação.
