@@ -204,6 +204,8 @@
 > (aula concluída sozinha, barra na aula e no cartão), o vídeo que não recomeça ao trocar de aba
 > (a apresentação abre pausada, a aula toca sozinha) e o "Salvos". **Primeiro teste com o player de
 > verdade: com o operador** (assistir uma aula até perto do fim e ver a barra andar).
+> **PUBLICADO em 04/10/2026, depois (`main` = `45e33b8`, CI verde, deploy ok):** a limpeza do cache
+> da legenda trocada (falta a chave da conta no Railway — P40).
 > **PUBLICADO em 04/10/2026 (`main` = `4cbebf3`, CI verde, deploy ok, migration `caption` aplicada
 > pelo pre-deploy):** a tela **Legendas** do editor (aula e apresentação, com reenvio na troca de
 > vídeo). Antes, em 03/10 (`8ad1037`): o Salvar no topo do editor, com mensagem de confirmação.
@@ -2003,6 +2005,11 @@ própria**.*
       Enviar/Substituir, Baixar e Excluir (com confirmação) **na própria linha** — o menu "⋮" da
       Udemy fica para o acabamento do Antigravity, se o operador quiser; a contagem e "Todas as
       aulas publicadas têm legenda."; a mensagem flutuante do editor ao enviar ou falhar.
+- [x] **Materiais exclusivos no passo Publicar** *(decisão do operador, 04/10/2026; feito no mesmo dia — migration `course_materiais`, caixas em `CourseMaterialsSection.tsx`)*: caixas de
+      marcar para a lista fixa (hoje Biblioteca de prompts e Apostila), gravadas em
+      `Course.materiais[]` (enum do Prisma, migration própria), com o texto de cada item global em
+      `common.*` (editável em Admin → Textos) — o mesmo desenho das Camadas. Alimenta o quadro
+      "Este curso inclui" da vitrine (`courses.md` §2.3; Bloco C5).
 - [x] **Etapa 3c — trocar o vídeo não perde a legenda (04/10/2026):** ao terminar a troca do vídeo
       da aula ou da apresentação, o site manda a legenda guardada para o vídeo novo
       (`server/src/lib/legendas.ts`). Se o Bunny recusar (ou a rede cair), o vídeo troca do mesmo
@@ -2422,6 +2429,15 @@ própria**.*
       o botão sendo **Continuar** em vez de **Assinar**. **Já decidido (30/09/2026):** o cartão e
       a página do curso mostram a duração ("2 módulos · 4 aulas · 1h 05min", "0min" sem vídeo) —
       `courses.md`; o servidor já devolve `videoSeconds`.
+      **Já decidido (04/10/2026):** o quadro **"Este curso inclui"** na página de venda —
+      os arquivos para baixar aparecem sozinhos quando existem; os materiais exclusivos
+      (Biblioteca de prompts, Apostila) são marcados no passo Publicar, com texto global; sem
+      linha de acesso (`courses.md` §2.3). As linhas derivadas restantes: P41.
+      **Feito em 04/10/2026, na página de hoje** (a transpor no C5, nada se perde): o quadro na
+      coluna lateral de `/curso/:slug` (`CourseIncludes.tsx`), com os arquivos (derivado do
+      servidor: `temArquivos`, só a cadeia publicada) e os materiais marcados.
+      **E também no "Sobre o curso" da página da aula** *(decisão do operador, 04/10/2026: "nos dois
+      lugares")*, onde o aluno logado está.
 - [ ] **Mock na `design-lab/`** (parceiro de design) → **transposição** para template de servidor
       (mesma marcação, mesmas classes) → **formatação** pelo parceiro. É o caminho que a home já
       percorreu inteiro.

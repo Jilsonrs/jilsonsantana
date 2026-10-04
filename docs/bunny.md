@@ -577,6 +577,11 @@ O Bunny gera estes tipos de chave:
   da legenda (`…/{vídeo}/captions/{idioma}.vtt`) e do `playlist.m3u8` do vídeo, com a chave da
   conta (§5 item 5). Sem a chave, ou se o Bunny recusar, a legenda vale assim mesmo e a tela avisa
   que o player pode mostrar a anterior por algumas horas.
+  **Provado no ar em 04/10/2026 (operador):** com a chave no Railway, a mensagem foi só "Legenda
+  enviada." (cache do CDN limpo), e a legenda nova apareceu depois de limpar o cache do
+  **navegador**. **Consequência aceita:** quem já tinha assistido antes da troca pode ver a legenda
+  antiga até o navegador dele renovar o arquivo — só pesa quando se corrige uma legenda de aula já
+  publicada.
 - **O preload do embed gasta banda:** decidir o comportamento junto com o `design.md`.
 - **A API key e a token authentication key da biblioteca de produção ficam só no Railway**, nunca
   no chat nem no navegador. As da biblioteca de dev vão no `server/.env` (§5). **Gate do context7 obrigatório**, com a consulta dizendo **"Stream"**.

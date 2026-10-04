@@ -3,6 +3,7 @@ import {
   Level,
   ContentStatus,
   Layer,
+  Material,
   PlanItemType,
   LIMITE_DO_SLUG,
   LIMITES_DO_CURSO,
@@ -27,6 +28,7 @@ const enumFrom = <T extends string>(obj: Record<string, T>) =>
 export const levelSchema = enumFrom(Level);
 export const contentStatusSchema = enumFrom(ContentStatus);
 export const layerSchema = enumFrom(Layer);
+export const materialSchema = enumFrom(Material);
 export const planItemTypeSchema = enumFrom(PlanItemType);
 export const lessonKindSchema = enumFrom(LessonKind);
 
@@ -140,6 +142,8 @@ export const courseCreateSchema = z.object({
   highlights: z.array(highlightSchema).optional(),
   faq: z.array(faqItemSchema).optional(),
   camadas: z.array(layerSchema).optional(),
+  // Os materiais exclusivos marcados no passo Publicar (04/10/2026).
+  materiais: z.array(materialSchema).optional(),
   camadaOverride: camadaOverrideSchema.optional(),
   thumbnailUrl: imageUrlSchema.nullable().optional(),
   // `null` apaga o vídeo no Bunny também (operador, 29/09/2026 — rota do curso).

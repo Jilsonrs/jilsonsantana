@@ -21,6 +21,8 @@ const NOMES: Record<string, string> = {
   "common.a11y": "Toda página · Leitor de tela",
   "common.footer": "Toda página · Rodapé",
   "common.camadas": "Toda página · 3 camadas",
+  "common.inclui": "Toda página · Este curso inclui",
+  "common.materiais": "Toda página · Materiais exclusivos",
   "home.a11y": "Home · Leitor de tela",
   "home.hero": "Home · Topo",
   "home.catalog": "Home · Catálogo de cursos",

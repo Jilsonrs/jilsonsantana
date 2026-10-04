@@ -10,20 +10,27 @@ import { CURSO_DE_TESTE } from "./curso-de-teste";
 const adminGetCourse = vi.fn();
 const updateCourse = vi.fn();
 const insertModule = vi.fn();
+const getCommonTexts = vi.fn();
 vi.mock("@/lib/api", () => ({
   adminGetCourse: (...args: unknown[]) => adminGetCourse(...args),
   updateCourse: (...args: unknown[]) => updateCourse(...args),
   insertModule: (...args: unknown[]) => insertModule(...args),
+  // As caixas das Camadas e dos materiais leem os textos comuns.
+  getCommonTexts: (...args: unknown[]) => getCommonTexts(...args),
+  COMMON_TEXTS_QUERY: "site-text-common",
 }));
 
 import { CourseEditorLayout } from "./CourseEditorLayout";
 import { ROTAS_DO_EDITOR } from "./steps";
 import { TEMPO_DO_SUCESSO } from "@/lib/aviso-flutuante";
+import { pt } from "@jilson/core";
 
 beforeEach(() => {
   adminGetCourse.mockReset();
   updateCourse.mockReset();
   insertModule.mockReset();
+  // Sem resposta do servidor, valem os textos de fábrica.
+  getCommonTexts.mockReset().mockRejectedValue(new Error("sem servidor"));
 });
 
 /**
@@ -198,7 +205,8 @@ describe("Editor do curso — cada passo salva só a parte dele", () => {
     expect(updateCourse.mock.calls[0][1]).toEqual({ learnTags: ["Fórmulas"], requirements: [], personas: [] });
   });
 
-  it("Publicar envia só status e ordem, com o status em português na tela", async () => {
+  // Os materiais exclusivos também são do Publicar (decisão do operador, 04/10/2026).
+  it("Publicar envia só status, ordem e materiais, com o status em português na tela", async () => {
     updateCourse.mockResolvedValue(CURSO_DE_TESTE);
     abrir("/admin/cursos/1/publicar");
     const status = (await screen.findByLabelText("Status")) as HTMLSelectElement;
@@ -207,7 +215,30 @@ describe("Editor do curso — cada passo salva só a parte dele", () => {
     salvar();
 
     await waitFor(() => expect(updateCourse).toHaveBeenCalled());
-    expect(updateCourse.mock.calls[0][1]).toEqual({ status: "PUBLISHED", displayOrder: 0 });
+    expect(updateCourse.mock.calls[0][1]).toEqual({ status: "PUBLISHED", displayOrder: 0, materiais: [] });
+  });
+
+  // OS MATERIAIS EXCLUSIVOS (decisão do operador, 04/10/2026): cada caixa com o
+  // nome global (em português, com as edições de Admin → Textos); o curso grava o
+  // valor do sistema, que o quadro "Este curso inclui" lê.
+  it("materiais: marcar Apostila grava o valor do sistema; o já marcado vem marcado", async () => {
+    updateCourse.mockResolvedValue(CURSO_DE_TESTE);
+    abrir("/admin/cursos/1/publicar", { ...CURSO_DE_TESTE, materiais: ["BIBLIOTECA_DE_PROMPTS"] });
+    const prompts = (await screen.findByLabelText("Biblioteca de prompts")) as HTMLInputElement;
+    expect(prompts.checked).toBe(true);
+
+    fireEvent.click(screen.getByLabelText("Apostila"));
+    salvar();
+
+    await waitFor(() => expect(updateCourse).toHaveBeenCalled());
+    expect([...updateCourse.mock.calls[0][1].materiais].sort()).toEqual(["APOSTILA", "BIBLIOTECA_DE_PROMPTS"]);
+  });
+
+  it("materiais: o nome editado em Admin → Textos aparece na caixa", async () => {
+    getCommonTexts.mockResolvedValue({ ...pt.common, materiais: { ...pt.common.materiais, APOSTILA: "Apostila em PDF" } });
+    abrir("/admin/cursos/1/publicar");
+    expect(await screen.findByLabelText("Apostila em PDF")).toBeTruthy();
+    expect(getCommonTexts).toHaveBeenCalledWith("pt");
   });
 
   it("o que foi digitado e não salvo continua lá depois de trocar de passo, e não vai junto no salvar de outro", async () => {

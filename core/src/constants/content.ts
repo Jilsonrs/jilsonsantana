@@ -96,6 +96,21 @@ export const LAYER_CONFIG: Record<Layer, LayerConfig> = {
   IA: { icon: "sparkles", accent: true },
 };
 
+// Os MATERIAIS EXCLUSIVOS do curso (decisão do operador, 04/10/2026): lista FIXA,
+// marcada no passo Publicar (Course.materiais[]), para o quadro "Este curso
+// inclui". Como as camadas: o TEXTO de cada um é global, no dicionário
+// (`common.materiais`, editável em Admin → Textos); aqui fica só o ícone.
+export const Material = {
+  BIBLIOTECA_DE_PROMPTS: "BIBLIOTECA_DE_PROMPTS",
+  APOSTILA: "APOSTILA",
+} as const;
+export type Material = (typeof Material)[keyof typeof Material];
+
+export const MATERIAL_CONFIG: Record<Material, { icon: string }> = {
+  BIBLIOTECA_DE_PROMPTS: { icon: "wand" },
+  APOSTILA: { icon: "book-open" },
+};
+
 // Temporário: Slug do curso em destaque até existir a escolha no painel admin.
 export const FEATURED_COURSE_SLUG = "agentic-ai-na-pratica";
 

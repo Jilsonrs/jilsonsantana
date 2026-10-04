@@ -53,6 +53,7 @@ function pagina(aula: Partial<PaginaDaAula["aula"]> = {}, rascunho = false): Pag
       highlights: [{ icon: "sparkles", title: "IA do seu lado", text: "Com o JilsonAI." }],
       faq: [{ pergunta: "Preciso do 365?", resposta: "Não." }],
       camadas: ["UNIVERSAL"],
+      materiais: [],
       videoSeconds: 0,
       modulos: [
         {
@@ -256,6 +257,32 @@ describe("página da aula — sobre o curso", () => {
     expect(within(sobre).queryByText("Pré-requisitos")).toBeNull();
     expect(within(sobre).queryByText("Perguntas frequentes")).toBeNull();
     expect(within(sobre).getByText("Pra quem é")).toBeTruthy();
+  });
+});
+
+// "ESTE CURSO INCLUI" também no "Sobre o curso" (decisão do operador, 04/10/2026):
+// os arquivos aparecem quando alguma aula da lista tem; os materiais, os marcados.
+describe("página da aula — este curso inclui", () => {
+  it("os arquivos (há aula com arquivo na lista) e o material marcado", async () => {
+    const comMaterial = pagina();
+    comMaterial.curso = { ...comMaterial.curso, materiais: ["APOSTILA"] };
+    getLessonPage.mockResolvedValue(comMaterial);
+    abrir();
+    const sobre = await screen.findByRole("region", { name: "Sobre o curso" });
+    const quadro = within(sobre).getByRole("heading", { name: "Este curso inclui:" }).closest("section") as HTMLElement;
+    expect([...quadro.querySelectorAll("li")].map((li) => li.textContent)).toEqual(["Arquivos para acompanhar as aulas", "Apostila"]);
+  });
+
+  it("nenhuma aula com arquivo e nenhum material: o quadro não aparece", async () => {
+    const vazio = pagina();
+    vazio.curso = {
+      ...vazio.curso,
+      modulos: vazio.curso.modulos.map((m) => ({ ...m, aulas: m.aulas.map((a) => ({ ...a, temArquivos: false })) })),
+    };
+    getLessonPage.mockResolvedValue(vazio);
+    abrir();
+    const sobre = await screen.findByRole("region", { name: "Sobre o curso" });
+    expect(within(sobre).queryByRole("heading", { name: "Este curso inclui:" })).toBeNull();
   });
 });
 

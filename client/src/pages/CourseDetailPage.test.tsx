@@ -39,6 +39,8 @@ const baseCourse: CourseDetail = {
   moduleCount: 1,
   lessonCount: 2,
   videoSeconds: 3900, // 1h 05min
+  materiais: [],
+  temArquivos: false,
   modules: [
     {
       id: 10,
@@ -186,5 +188,55 @@ describe("CourseDetailPage — vídeo de apresentação", () => {
     );
 
     expect(await screen.findByTitle("Course introduction video")).toBeTruthy();
+  });
+});
+
+// "ESTE CURSO INCLUI" (decisões do operador, 04/10/2026): os arquivos aparecem
+// sozinhos quando existem; os materiais, os marcados no Publicar; sem nada, o
+// quadro não aparece. Textos globais, editáveis em Admin → Textos.
+describe("CourseDetailPage — este curso inclui", () => {
+  it("os arquivos e os materiais marcados, cada um numa linha", async () => {
+    getCourseBySlug.mockResolvedValue({ ...baseCourse, temArquivos: true, materiais: ["BIBLIOTECA_DE_PROMPTS", "APOSTILA"] });
+    renderWithProviders(<CourseDetailPage />, rota);
+    const quadro = (await screen.findByRole("heading", { name: "Este curso inclui:" })).closest("section") as HTMLElement;
+    expect([...quadro.querySelectorAll("li")].map((li) => li.textContent)).toEqual([
+      "Arquivos para acompanhar as aulas",
+      "Biblioteca de prompts",
+      "Apostila",
+    ]);
+  });
+
+  it("sem arquivos nem materiais: o quadro não aparece", async () => {
+    getCourseBySlug.mockResolvedValue(baseCourse);
+    renderWithProviders(<CourseDetailPage />, rota);
+    await screen.findByText("Exemplo — Fundamentos de Excel + IA");
+    expect(screen.queryByRole("heading", { name: "Este curso inclui:" })).toBeNull();
+  });
+
+  it("só os materiais: sem a linha dos arquivos", async () => {
+    getCourseBySlug.mockResolvedValue({ ...baseCourse, materiais: ["APOSTILA"] });
+    renderWithProviders(<CourseDetailPage />, rota);
+    await screen.findByRole("heading", { name: "Este curso inclui:" });
+    expect(screen.queryByText("Arquivos para acompanhar as aulas")).toBeNull();
+    expect(screen.getByText("Apostila")).toBeTruthy();
+  });
+
+  it("o texto editado em Admin → Textos aparece editado", async () => {
+    getCourseBySlug.mockResolvedValue({ ...baseCourse, materiais: ["APOSTILA"] });
+    getCommonTexts.mockResolvedValue({ ...pt.common, materiais: { ...pt.common.materiais, APOSTILA: "Apostila completa em PDF" } });
+    renderWithProviders(<CourseDetailPage />, rota);
+    expect(await screen.findByText("Apostila completa em PDF")).toBeTruthy();
+  });
+
+  it("em inglês", async () => {
+    getCourseBySlug.mockResolvedValue({ ...baseCourse, temArquivos: true, materiais: ["APOSTILA"] });
+    renderWithProviders(
+      <IdiomaProvider idioma="en">
+        <CourseDetailPage />
+      </IdiomaProvider>,
+      rota,
+    );
+    expect(await screen.findByRole("heading", { name: "This course includes:" })).toBeTruthy();
+    expect(screen.getByText("Files to follow along with the lessons")).toBeTruthy();
   });
 });

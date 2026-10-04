@@ -5,6 +5,7 @@ import {
   levelSchema,
   contentStatusSchema,
   layerSchema,
+  materialSchema,
   highlightSchema,
   faqItemSchema,
   contentLanguageSchema,
@@ -53,6 +54,7 @@ export const courseFormSchema = z.object({
   highlights: z.array(highlightSchema),
   faq: z.array(faqItemSchema),
   camadas: z.array(layerSchema),
+  materiais: z.array(materialSchema),
   // Mesma regra do servidor (`core`), conferida antes de enviar para o erro
   // aparecer embaixo do campo. Vazio = sem imagem.
   thumbnailUrl: z
@@ -90,6 +92,7 @@ export const blankValues: CourseFormValues = {
   highlights: [],
   faq: [],
   camadas: [],
+  materiais: [],
   thumbnailUrl: "",
   introVideoId: "",
   displayOrder: 0,
@@ -123,6 +126,7 @@ export function toFormValues(course: AdminCourseDetail): CourseFormValues {
     highlights: course.highlights ?? [],
     faq: course.faq ?? [],
     camadas: course.camadas,
+    materiais: course.materiais ?? [],
     thumbnailUrl: course.thumbnailUrl ?? "",
     introVideoId: course.introVideoId ?? "",
     displayOrder: course.displayOrder,
@@ -152,6 +156,7 @@ export function toPayload(values: CourseFormValues): CourseCreateInput {
     highlights: values.highlights.filter((h) => h.icon.trim() && h.title.trim() && h.text.trim()),
     faq: values.faq.filter((f) => f.pergunta.trim() && f.resposta.trim()),
     camadas: values.camadas,
+    materiais: values.materiais,
     thumbnailUrl: values.thumbnailUrl.trim() || null,
     introVideoId: values.introVideoId.trim() || null,
     displayOrder: values.displayOrder,

@@ -34,6 +34,14 @@ enum Layer {
   IA
 }
 
+// Os MATERIAIS EXCLUSIVOS do curso, para o quadro "Este curso inclui" (decisão do
+// operador, 04/10/2026): lista FIXA, texto global em `common.materiais`. Item novo
+// é decisão dele — não um campo de texto.
+enum Material {
+  BIBLIOTECA_DE_PROMPTS
+  APOSTILA
+}
+
 enum PlanItemType {
   COURSE
   LESSON
@@ -220,6 +228,7 @@ model Course {
   highlights     Json? // [{ icon, title, text }] — "diferenciais" icon cards
   faq            Json? // [{ pergunta, resposta }] — optional; renders only if filled
   camadas        Layer[]       @default([]) // which 3-camadas layers this course shows (0–3)
+  materiais      Material[]    @default([]) // os materiais exclusivos marcados no passo Publicar (04/10/2026)
   camadaOverride Json? // per-course layer text override (exception, e.g. N8N)
   thumbnailUrl   String? // catalog/list image
   introVideoId   String? // presentation video (Bunny); non-gated wiring is Phase 3
