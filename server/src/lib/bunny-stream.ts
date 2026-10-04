@@ -152,6 +152,40 @@ export async function apagarVideo(biblioteca: Biblioteca, videoId: string): Prom
   return false;
 }
 
+// AS LEGENDAS (passo Legendas do editor — decisões do operador, 04/10/2026).
+// Formato conferido na referência oficial da API do Stream em 04/10/2026
+// ("Add Caption" e "Delete Caption"): `POST` e `DELETE` em
+// `/library/:id/videos/:videoId/captions/:srclang`; o envio leva o arquivo em
+// base64 no campo `captionsFile`. NUNCA pedimos transcrição: ela é cobrada
+// mesmo com a opção desligada na biblioteca (bunny.md §3.5).
+
+/** Envia (ou substitui) a legenda do vídeo. `false` se o Bunny recusou ou não há biblioteca. */
+export async function enviarLegenda(videoId: string, idioma: "pt" | "en", rotulo: string, conteudo: string): Promise<boolean> {
+  const c = config("aulas");
+  if (!c) return false;
+  const resposta = await fetch(`https://video.bunnycdn.com/library/${c.id}/videos/${videoId}/captions/${idioma}`, {
+    method: "POST",
+    headers: { Accept: "application/json", "Content-Type": "application/json", AccessKey: c.chave },
+    body: JSON.stringify({ srclang: idioma, label: rotulo, captionsFile: Buffer.from(conteudo, "utf8").toString("base64") }),
+  });
+  if (resposta.ok) return true;
+  console.error(`[bunny-stream] enviar legenda recusado: ${resposta.status}`);
+  return false;
+}
+
+/** Apaga a legenda do vídeo. 404 conta como apagada (o vídeo ou a legenda já não existem). */
+export async function apagarLegenda(videoId: string, idioma: "pt" | "en"): Promise<boolean> {
+  const c = config("aulas");
+  if (!c) return false;
+  const resposta = await fetch(`https://video.bunnycdn.com/library/${c.id}/videos/${videoId}/captions/${idioma}`, {
+    method: "DELETE",
+    headers: { Accept: "application/json", AccessKey: c.chave },
+  });
+  if (resposta.ok || resposta.status === 404) return true;
+  console.error(`[bunny-stream] apagar legenda recusado: ${resposta.status}`);
+  return false;
+}
+
 export type EstadoDoVideo = { pronto: boolean; falhou: boolean };
 
 /**

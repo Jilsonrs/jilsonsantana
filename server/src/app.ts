@@ -23,6 +23,7 @@ import adminLessonFilesRouter from "./routes/admin-lesson-files.js";
 import lessonViewRouter from "./routes/lesson-view.js";
 import progressRouter from "./routes/progress.js";
 import savedRouter from "./routes/saved.js";
+import adminCaptionsRouter from "./routes/admin-captions.js";
 
 // Monta o app e EXPORTA sem escutar porta. O `listen()` vive em `index.ts`.
 //
@@ -74,6 +75,8 @@ app.use("/api", adminLessonFilesRouter);
 app.use("/api", lessonViewRouter);
 app.use("/api", progressRouter);
 app.use("/api", savedRouter);
+// As legendas: o corpo cru (`.vtt`) é lido só dentro da rota, como a capa.
+app.use("/api", adminCaptionsRouter);
 
 // ── Home pública (SSR, sem React) ───────────────────────────────────────────
 // Registrada em TODOS os ambientes (em dev o operador abre localhost:3000).

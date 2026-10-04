@@ -556,6 +556,12 @@ O Bunny gera estes tipos de chave:
   As legendas `.vtt` enviadas pelo operador são compatíveis com esta regra; a transcrição paga do
   Bunny não é. A escolha da fonte continua sendo da Fase 5.)*
 - **Legendas `.vtt` casadas pelo nome do arquivo** com o `.mp4`.
+  **Revisto em 04/10/2026 (operador):** uma legenda por aula, enviada na linha da própria aula — o
+  envio em lote pelo nome do arquivo ficou de fora. **Formato conferido na referência oficial da
+  API do Stream (04/10/2026):** `POST /library/{id}/videos/{videoId}/captions/{srclang}` com o
+  arquivo em base64 no campo `captionsFile` e o rótulo em `label`; `DELETE` no mesmo endereço. A
+  legenda fica presa ao **vídeo** no Bunny; por isso o site guarda uma **cópia** no banco
+  (`caption`) e a reenvia quando o vídeo é trocado. Idioma = o do curso (`pt`/`en`).
 - **O preload do embed gasta banda:** decidir o comportamento junto com o `design.md`.
 - **A API key e a token authentication key da biblioteca de produção ficam só no Railway**, nunca
   no chat nem no navegador. As da biblioteca de dev vão no `server/.env` (§5). **Gate do context7 obrigatório**, com a consulta dizendo **"Stream"**.

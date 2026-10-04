@@ -239,6 +239,7 @@ model Course {
   modules        Module[]
   planItems      PlanItem[]
   saved          SavedItem[]
+  introCaption   Caption?
 
   @@map("course")
 }
@@ -300,6 +301,7 @@ model Lesson {
   planItems    PlanItem[]
   progress     LessonProgress[]
   saved        SavedItem[]
+  caption      Caption?
 
   @@index([moduleId])
   @@map("lesson")
@@ -345,6 +347,30 @@ model SavedItem {
   @@index([courseId])
   @@index([lessonId])
   @@map("saved_item")
+}
+
+// A LEGENDA de uma aula ou da apresentação do curso (passo Legendas do editor —
+// decisões do operador, 04/10/2026). Exatamente UM dono: o banco recusa os dois
+// ou nenhum (CHECK na migration). O player toca a legenda que está no BUNNY; esta
+// é a CÓPIA do site, e é ela que deixa trocar o vídeo sem perder a legenda (o
+// site reenvia para o vídeo novo), abrir a tela sem perguntar ao Bunny aula por
+// aula, e baixar. Só no idioma do curso. Some com a aula ou o curso.
+model Caption {
+  id           Int      @id @default(autoincrement())
+  lessonId     Int?     @unique
+  lesson       Lesson?  @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  // A da apresentação do curso.
+  courseId     Int?     @unique
+  course       Course?  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  language     Language
+  content      String
+  originalName String
+  // O vídeo foi trocado e o Bunny recusou receber esta legenda no vídeo novo: a
+  // tela pede para enviar de novo, em vez de a legenda sumir em silêncio.
+  needsResend  Boolean  @default(false)
+  uploadedAt   DateTime @default(now())
+
+  @@map("caption")
 }
 
 // A trilha (learning track). Curated template (ownerUserId = null, isTemplate)

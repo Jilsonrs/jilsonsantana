@@ -1983,6 +1983,18 @@ própria**.*
 - [ ] **Tela própria** no passo 4: "x de y aulas com legenda"; enviar, baixar e excluir o `.vtt`
       por vídeo. Legenda só no idioma do curso. A regra do nome do arquivo (`bunny.md` §7.1)
       continua valendo.
+- **Decisões do operador, 04/10/2026** (a partir da tela da Udemy): **uma legenda por aula**, sem
+  envio em lote; **a apresentação também tem legenda**; **sem editor de texto na tela** — corrigir
+  é enviar de novo, que substitui. O menu de cada linha: Enviar/Substituir, Baixar, Excluir.
+- [x] **Etapa 3a — banco, Bunny e servidor (04/10/2026):** tabela `caption` (uma por aula ou pela
+      apresentação; CHECK de um dono só; RLS) com a **cópia** de cada legenda — é ela que a tela
+      lista, que o "Baixar" entrega e que a troca de vídeo vai reenviar (etapa 3c). Rotas do admin
+      `/api/admin/courses/:id/legendas`, `/api/admin/lessons/:id/legenda` e
+      `/api/admin/courses/:id/legenda-apresentacao` (enviar, baixar, excluir). Só `.vtt` que começa
+      com `WEBVTT`, até 2 MB, sem byte nulo; o Bunny primeiro (recusou, nada gravado). Revisão de
+      segurança sem P0/P1; os três P2 de código e teste corrigidos.
+- [ ] **Etapa 3b — a tela Legendas** (o passo deixa de ser EM BREVE).
+- [ ] **Etapa 3c — trocar o vídeo não perde a legenda** (reenvio a partir da cópia).
 
 **Etapa 4 — Mensagens e o sino:**
 - [ ] **O sino ao lado da foto, no topo**: área de avisos do aluno, com as mensagens de
