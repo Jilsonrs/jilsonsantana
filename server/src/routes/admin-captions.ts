@@ -7,6 +7,7 @@ import { parseId } from "../lib/http.js";
 import { doBanco } from "../lib/language.js";
 import { apagarLegenda, enviarLegenda } from "../lib/bunny-stream.js";
 import { nomeParaDownload } from "../lib/nome-do-download.js";
+import { ROTULO_DA_LEGENDA } from "../lib/legendas.js";
 
 const router = Router();
 
@@ -18,8 +19,6 @@ const router = Router();
 // (502). O banco guarda uma CÓPIA de cada legenda (bunny.md §7.1): é ela que a
 // tela lista, que o "Baixar" entrega, e que a troca de vídeo reenvia.
 
-/** O que o player mostra no seletor de legenda, no idioma do curso. */
-const ROTULO: Record<Language, string> = { PT: "Português", EN: "English" };
 
 /** Até 2 MB: uma legenda de aula longa tem dezenas de KB. Maior que isso, 413. */
 const corpoDaLegenda = express.text({ type: () => true, limit: "2mb" });
@@ -66,7 +65,7 @@ async function enviar(dono: Dono, nome: string | null, corpo: unknown, res: Resp
     res.status(400).json({ error: lida.motivo });
     return;
   }
-  if (!(await enviarLegenda(dono.videoId, doBanco(dono.idioma), ROTULO[dono.idioma], lida.conteudo))) {
+  if (!(await enviarLegenda(dono.videoId, doBanco(dono.idioma), ROTULO_DA_LEGENDA[dono.idioma], lida.conteudo))) {
     res.status(502).json({ error: "BunnyRecusou" });
     return;
   }

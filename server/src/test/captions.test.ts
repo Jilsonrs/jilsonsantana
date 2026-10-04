@@ -5,10 +5,12 @@ import request from "supertest";
 // fronteira (`bunny-stream.ts`), e o teste decide se o Bunny aceita.
 const enviarLegenda = vi.fn();
 const apagarLegenda = vi.fn();
+const apagarVideo = vi.fn();
 vi.mock("../lib/bunny-stream.js", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../lib/bunny-stream.js")>()),
   enviarLegenda: (...args: unknown[]) => enviarLegenda(...args),
   apagarLegenda: (...args: unknown[]) => apagarLegenda(...args),
+  apagarVideo: (...args: unknown[]) => apagarVideo(...args),
 }));
 
 import app from "../app.js";
@@ -77,6 +79,7 @@ afterAll(async () => {
 beforeEach(() => {
   enviarLegenda.mockReset().mockResolvedValue(true);
   apagarLegenda.mockReset().mockResolvedValue(true);
+  apagarVideo.mockReset().mockResolvedValue(true);
 });
 
 const enviar = (rota: string, conteudo: string, nome = "aula.vtt", cookies = admin) =>
@@ -246,5 +249,64 @@ describe("legendas — o banco", () => {
     const base = { language: "PT" as const, content: VTT, originalName: "x.vtt" };
     await expect(prisma.caption.create({ data: base })).rejects.toThrow();
     await expect(prisma.caption.create({ data: { ...base, lessonId: ids.semVideo, courseId: ids.curso } })).rejects.toThrow();
+  });
+});
+
+// TROCAR O VÍDEO NÃO PERDE A LEGENDA (decisões do operador, 04/10/2026): no
+// Bunny, a legenda é do VÍDEO; o site manda a cópia para o vídeo novo. Se o Bunny
+// recusar, o vídeo troca do mesmo jeito e a legenda fica marcada para reenviar.
+describe("legendas — trocar o vídeo", () => {
+  const NOVO = "cccccccc-2cda-46be-b47d-1118ad7c2ffe";
+  const OUTRO_NOVO = "dddddddd-2cda-46be-b47d-1118ad7c2ffe";
+  const terminarTroca = (id: number, videoId: string) =>
+    request(app).post(`/api/admin/lessons/${id}/video/complete`).set("Cookie", admin).send({ videoId });
+
+  it("trocou o vídeo da aula: a legenda vai para o vídeo novo", async () => {
+    await enviar(daAula(ids.aula), VTT);
+    await prisma.lesson.update({ where: { id: ids.aula }, data: { bunnyVideoPendingId: NOVO } });
+    enviarLegenda.mockClear();
+
+    expect((await terminarTroca(ids.aula, NOVO)).status).toBe(200);
+
+    expect(enviarLegenda).toHaveBeenCalledWith(NOVO, "pt", "Português", VTT);
+    expect((await legendaDaAula(ids.aula))?.needsResend).toBe(false);
+  });
+
+  it("o Bunny recusou: o vídeo troca, e a legenda fica marcada para reenviar", async () => {
+    await prisma.lesson.update({ where: { id: ids.aula }, data: { bunnyVideoPendingId: OUTRO_NOVO } });
+    enviarLegenda.mockResolvedValue(false);
+
+    expect((await terminarTroca(ids.aula, OUTRO_NOVO)).status).toBe(200);
+
+    expect((await prisma.lesson.findUnique({ where: { id: ids.aula } }))?.bunnyVideoId).toBe(OUTRO_NOVO);
+    expect((await legendaDaAula(ids.aula))?.needsResend).toBe(true);
+    // E a tela mostra: a contagem não conta a legenda que precisa ser reenviada.
+    const aula = ((await lista()).body.modulos[0].aulas as { title: string; legenda: { precisaReenviar: boolean } }[]).find((a) => a.title === "Com vídeo");
+    expect(aula?.legenda.precisaReenviar).toBe(true);
+  });
+
+  it("enviar de novo pela tela tira a marca", async () => {
+    expect((await enviar(daAula(ids.aula), VTT)).status).toBe(204);
+    expect((await legendaDaAula(ids.aula))?.needsResend).toBe(false);
+  });
+
+  it("trocou o vídeo da apresentação: a legenda dela vai para o vídeo novo", async () => {
+    await enviar(daApresentacao(), VTT, "apresentacao.vtt");
+    await prisma.course.update({ where: { id: ids.curso }, data: { introVideoPendingId: NOVO } });
+    enviarLegenda.mockClear();
+
+    const res = await request(app).post(`/api/admin/courses/${ids.curso}/intro-video/complete`).set("Cookie", admin).send({ videoId: NOVO });
+
+    expect(res.status).toBe(200);
+    expect(enviarLegenda).toHaveBeenCalledWith(NOVO, "pt", "Português", VTT);
+  });
+
+  it("aula sem legenda: trocar o vídeo não manda nada", async () => {
+    await prisma.lesson.update({ where: { id: ids.outraAula }, data: { bunnyVideoPendingId: NOVO } });
+    await prisma.caption.deleteMany({ where: { lessonId: ids.outraAula } });
+    enviarLegenda.mockClear();
+
+    expect((await terminarTroca(ids.outraAula, NOVO)).status).toBe(200);
+    expect(enviarLegenda).not.toHaveBeenCalled();
   });
 });

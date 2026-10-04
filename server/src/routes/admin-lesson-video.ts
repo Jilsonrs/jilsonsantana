@@ -4,6 +4,7 @@ import { prisma } from "../lib/prisma.js";
 import { requireAdmin } from "../middleware/auth.js";
 import { validate, parseId } from "../lib/http.js";
 import { apagarVideo, iniciarEnvio, resumoDoVideo } from "../lib/bunny-stream.js";
+import { reenviarLegenda } from "../lib/legendas.js";
 
 const router = Router();
 
@@ -88,6 +89,8 @@ router.post("/admin/lessons/:id/video/complete", requireAdmin, async (req, res) 
     where: { id },
     data: { bunnyVideoId: videoId, bunnyVideoPendingId: null, bunnyVideoReady: false, videoDurationSeconds: null },
   });
+  // A legenda vai junto para o vídeo novo (04/10/2026): no Bunny ela fica presa ao vídeo.
+  await reenviarLegenda({ lessonId: id }, videoId);
 
   const substituido = aula.bunnyVideoId;
   if (substituido && substituido !== videoId) await apagarVideo("aulas", substituido);

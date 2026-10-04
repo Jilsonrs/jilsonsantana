@@ -1999,7 +1999,12 @@ própria**.*
       Enviar/Substituir, Baixar e Excluir (com confirmação) **na própria linha** — o menu "⋮" da
       Udemy fica para o acabamento do Antigravity, se o operador quiser; a contagem e "Todas as
       aulas publicadas têm legenda."; a mensagem flutuante do editor ao enviar ou falhar.
-- [ ] **Etapa 3c — trocar o vídeo não perde a legenda** (reenvio a partir da cópia).
+- [x] **Etapa 3c — trocar o vídeo não perde a legenda (04/10/2026):** ao terminar a troca do vídeo
+      da aula ou da apresentação, o site manda a legenda guardada para o vídeo novo
+      (`server/src/lib/legendas.ts`). Se o Bunny recusar (ou a rede cair), o vídeo troca do mesmo
+      jeito e a linha mostra **"Envie a legenda de novo"**, fora da contagem; enviar pela tela tira
+      a marca. **Fato a confirmar no ar:** se o Bunny aceita legenda enquanto o vídeo novo ainda
+      processa — se não aceitar, a marca aparece e o operador reenvia depois.
 
 **Etapa 4 — Mensagens e o sino:**
 - [ ] **O sino ao lado da foto, no topo**: área de avisos do aluno, com as mensagens de
