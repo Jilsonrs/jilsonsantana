@@ -204,6 +204,9 @@
 > (aula concluída sozinha, barra na aula e no cartão), o vídeo que não recomeça ao trocar de aba
 > (a apresentação abre pausada, a aula toca sozinha) e o "Salvos". **Primeiro teste com o player de
 > verdade: com o operador** (assistir uma aula até perto do fim e ver a barra andar).
+> **PUBLICADO em 04/10/2026, por último (`main` = `643dd08`, CI verde nos dois jobs, deploy ok,
+> migration `course_materiais` aplicada pelo pre-deploy):** o quadro "Este curso inclui" — os
+> materiais marcados no passo Publicar, o quadro na página do curso e no "Sobre o curso" da aula.
 > **PUBLICADO em 04/10/2026, depois (`main` = `45e33b8`, CI verde, deploy ok):** a limpeza do cache
 > da legenda trocada (falta a chave da conta no Railway — P40).
 > **PUBLICADO em 04/10/2026 (`main` = `4cbebf3`, CI verde, deploy ok, migration `caption` aplicada
