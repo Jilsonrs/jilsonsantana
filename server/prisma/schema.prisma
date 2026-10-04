@@ -403,15 +403,19 @@ model Caption {
 // aula dez vezes não manda dez boas-vindas). Boas-vindas e parabéns têm curso
 // (CHECK na migration). Some com a pessoa ou o curso.
 model Notification {
-  id        Int              @id @default(autoincrement())
-  userId    String
-  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  kind      NotificationKind
-  courseId  Int?
-  course    Course?          @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  body      String
-  createdAt DateTime         @default(now())
-  readAt    DateTime?
+  id          Int              @id @default(autoincrement())
+  userId      String
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind        NotificationKind
+  courseId    Int?
+  course      Course?          @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  body        String
+  // O título do curso NO ENVIO, como o texto: o curso pode sair do ar e ser
+  // renomeado em rascunho, e o nome novo não pode vazar pelo sino (achado P1 da
+  // revisão de segurança, 04/10/2026).
+  courseTitle String?
+  createdAt   DateTime         @default(now())
+  readAt      DateTime?
 
   @@unique([userId, courseId, kind])
   @@index([userId, createdAt])

@@ -23,6 +23,7 @@ import adminLessonFilesRouter from "./routes/admin-lesson-files.js";
 import lessonViewRouter from "./routes/lesson-view.js";
 import progressRouter from "./routes/progress.js";
 import savedRouter from "./routes/saved.js";
+import notificacoesRouter from "./routes/notificacoes.js";
 import adminCaptionsRouter from "./routes/admin-captions.js";
 
 // Monta o app e EXPORTA sem escutar porta. O `listen()` vive em `index.ts`.
@@ -75,6 +76,8 @@ app.use("/api", adminLessonFilesRouter);
 app.use("/api", lessonViewRouter);
 app.use("/api", progressRouter);
 app.use("/api", savedRouter);
+// O sino de Notificações (Bloco E, etapa 4 — 04/10/2026).
+app.use("/api", notificacoesRouter);
 // As legendas: o corpo cru (`.vtt`) é lido só dentro da rota, como a capa.
 app.use("/api", adminCaptionsRouter);
 

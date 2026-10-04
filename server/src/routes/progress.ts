@@ -5,6 +5,7 @@ import { requireAdmin, requireAuth } from "../middleware/auth.js";
 import { parseId } from "../lib/http.js";
 import { aulaLiberada, temAcessoAtivo } from "../lib/acesso.js";
 import { concluirAula } from "../lib/progresso.js";
+import { enviarParabensSeConcluiu, semDerrubar } from "../lib/notificacoes.js";
 
 const router = Router();
 
@@ -35,11 +36,15 @@ router.put("/lessons/:id/concluida", requireAuth, async (req, res) => {
     return;
   }
   // A mesma regra da página da aula: só conclui o que pode assistir.
-  if (!aulaLiberada(aula, await temAcessoAtivo(user.id))) {
+  const assinante = await temAcessoAtivo(user.id);
+  if (!aulaLiberada(aula, assinante)) {
     res.status(403).json({ error: "AssinaturaNecessaria" });
     return;
   }
   await concluirAula(user.id, aula.id);
+  // Era a última? Os parabéns do curso (operador, 04/10/2026), contando só o
+  // publicado — e só para quem assina, como a boas-vindas: a prévia grátis não basta.
+  if (assinante) await semDerrubar("parabéns", user.id, aula.id, () => enviarParabensSeConcluiu(user.id, aula.id, true));
   res.status(204).end();
 });
 
@@ -58,6 +63,8 @@ router.put("/admin/lessons/:id/concluida", requireAdmin, async (req, res) => {
     return;
   }
   await concluirAula(user.id, aula.id);
+  // O admin conta todas as aulas, como a barra de progresso dele.
+  await semDerrubar("parabéns", user.id, aula.id, () => enviarParabensSeConcluiu(user.id, aula.id, false));
   res.status(204).end();
 });
 

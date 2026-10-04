@@ -2040,8 +2040,19 @@ própria**.*
         campos em Markdown, até 2.000 caracteres, com o Salvar no topo. O ✓ do passo fica
         esperando a regra do operador. Mutação: o passo sem `congratsMessage` e o servidor sem
         `welcomeMessage` — as duas reprovam.
-  - [ ] **4b — O servidor manda, lista e marca como lida** (boas-vindas com assinatura ou admin;
-        parabéns na última aula; o texto copiado no envio).
+  - [x] **4b — O servidor manda, lista e marca como lida** *(04/10/2026)*: a boas-vindas na
+        página da aula, só com assinatura (ou o admin, pela rota dele); os parabéns na conclusão
+        da última aula (o aluno conta só o publicado; o admin, todas); o texto copiado no envio;
+        `GET /api/notificacoes` (as 50 mais recentes + não lidas; o link do curso só enquanto
+        publicado), `PUT …/:id/lida` (a de outra pessoa dá 404) e `PUT …/lidas`
+        (`server/src/lib/notificacoes.ts`, `routes/notificacoes.ts`). Mutação: boas-vindas sem
+        conferir a assinatura, parabéns contando rascunho e marcar sem conferir o dono — as três
+        reprovam. **Revisão de segurança (04/10):** P1 corrigido — o título do curso também é
+        copiado no envio (`notification.courseTitle`, migration `notificacao_titulo_do_curso`),
+        senão um curso fora do ar renomeado em rascunho vazaria o nome novo pelo sino; P2
+        corrigidos — os parabéns também exigem assinatura (a prévia grátis não basta), e a falha
+        ao criar a notificação não derruba a aula nem a conclusão (`semDerrubar`, log só com ids e
+        código). Mutação nas três correções: reprovam.
   - [ ] **4c — O sino, a lista e a página Ver todas** (`/aluno/notificacoes`).
 
 **O QUE FALTA NOS 7 PASSOS (atualizado em 30/09/2026 — as linhas estão acima; aqui é o mapa):**
