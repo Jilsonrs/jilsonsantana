@@ -2009,6 +2009,12 @@ própria**.*
       jeito e a linha mostra **"Envie a legenda de novo"**, fora da contagem; enviar pela tela tira
       a marca. **Fato a confirmar no ar:** se o Bunny aceita legenda enquanto o vídeo novo ainda
       processa — se não aceitar, a marca aparece e o operador reenvia depois.
+- [x] **ACHADO NO TESTE NO AR (operador, 04/10/2026): a legenda trocada seguia antiga no player**
+      (o "Baixar" trazia a nova). Causa: o cache do CDN do Bunny. **Correção (decisão do operador):**
+      ao substituir ou excluir, o site limpa o cache da legenda e do `playlist.m3u8`, com a chave da
+      conta (`bunny.md` §5 item 5; a chave é a P40). Sem limpar, a tela avisa que o player pode
+      mostrar a anterior por algumas horas. O tamanho da letra da legenda é ajuste de visual da
+      biblioteca no painel (vale para todos); não achei na doc um controle para o aluno.
 
 **Etapa 4 — Mensagens e o sino:**
 - [ ] **O sino ao lado da foto, no topo**: área de avisos do aluno, com as mensagens de

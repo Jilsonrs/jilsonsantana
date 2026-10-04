@@ -27,14 +27,18 @@ export function CaptionsStep({ courseId, avisar }: { courseId: number; avisar: (
     );
   }
 
+  // Sem limpar o cache do Bunny, o player pode mostrar a legenda anterior por um
+  // tempo (teste no ar, 04/10/2026): a mensagem avisa, em vez de parecer que falhou.
+  const comAviso = (frase: string, r: api.ResultadoDaLegenda) =>
+    r.cacheLimpo ? frase : `${frase} O player pode mostrar a anterior por algumas horas.`;
   const aoEnviar = (dono: api.DonoDaLegenda) => (arquivo: File) =>
     enviar.mutate(
       { dono, arquivo },
-      { onSuccess: () => avisar("sucesso", "Legenda enviada."), onError: (e) => avisar("erro", mensagemDoErroDaLegenda(e)) },
+      { onSuccess: (r) => avisar("sucesso", comAviso("Legenda enviada.", r)), onError: (e) => avisar("erro", mensagemDoErroDaLegenda(e)) },
     );
   const aoExcluir = (dono: api.DonoDaLegenda) => () =>
     excluir.mutate(dono, {
-      onSuccess: () => avisar("sucesso", "Legenda excluída."),
+      onSuccess: (r) => avisar("sucesso", comAviso("Legenda excluída.", r)),
       onError: (e) => avisar("erro", mensagemDoErroDaLegenda(e)),
     });
   const linha = (titulo: string, dono: api.DonoDaLegenda, temVideo: boolean, legenda: api.LegendaNaTela | null) => (

@@ -439,15 +439,23 @@ export async function getLegendas(courseId: number): Promise<LegendasDoCurso> {
   return data;
 }
 
+/**
+ * O servidor diz se conseguiu limpar o cache do Bunny (04/10/2026): sem isso, o
+ * player pode mostrar a legenda anterior por um tempo. Sem corpo (nada a excluir), limpo.
+ */
+export type ResultadoDaLegenda = { cacheLimpo: boolean };
+
 /** Envia (ou substitui) a legenda: o arquivo cru no corpo, o nome no cabeçalho. */
-export async function enviarLegenda(dono: DonoDaLegenda, arquivo: File): Promise<void> {
-  await client.put(rotaDaLegenda(dono), arquivo, {
+export async function enviarLegenda(dono: DonoDaLegenda, arquivo: File): Promise<ResultadoDaLegenda> {
+  const { data } = await client.put<ResultadoDaLegenda>(rotaDaLegenda(dono), arquivo, {
     headers: { "Content-Type": "text/vtt", "X-Nome-Do-Arquivo": encodeURIComponent(arquivo.name) },
   });
+  return { cacheLimpo: data?.cacheLimpo !== false };
 }
 
-export async function excluirLegenda(dono: DonoDaLegenda): Promise<void> {
-  await client.delete(rotaDaLegenda(dono));
+export async function excluirLegenda(dono: DonoDaLegenda): Promise<ResultadoDaLegenda> {
+  const { data } = await client.delete<ResultadoDaLegenda | "">(rotaDaLegenda(dono));
+  return { cacheLimpo: !(typeof data === "object" && data?.cacheLimpo === false) };
 }
 
 /** O link de "Baixar": mesmo site, então o cookie vai junto, e vem com o nome original. */
