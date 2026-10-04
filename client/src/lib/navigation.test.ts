@@ -246,7 +246,8 @@ describe("itensSecundarios — o nível 2 só aparece quando vale a pena", () =>
   });
 
   // Os 7 passos, em ordem de preenchimento (operador, 27–28/09/2026), com o id
-  // do curso já no endereço. Legendas e Mensagens ainda não têm tela.
+  // do curso já no endereço. Mensagens ainda não tem tela; Legendas ganhou a
+  // sua em 04/10/2026 (decisão do operador).
   it("o editor do curso mostra os 7 passos, com o id no endereço", () => {
     const itens = itensSecundarios("/admin/cursos/12/pagina", secoesVisiveis(Role.ADMIN));
     expect(itens.map((i) => i.label)).toEqual([
@@ -259,7 +260,8 @@ describe("itensSecundarios — o nível 2 só aparece quando vale a pena", () =>
       "Publicar",
     ]);
     expect(itens[0].to).toBe("/admin/cursos/12/basico");
-    expect(itens.filter((i) => i.estado === "planejado").map((i) => i.label)).toEqual(["Legendas", "Mensagens"]);
+    expect(itens.filter((i) => i.estado === "planejado").map((i) => i.label)).toEqual(["Mensagens"]);
+    expect(itens.find((i) => i.label === "Legendas")?.to).toBe("/admin/cursos/12/legendas");
   });
 
   // O nível 2 de Meus estudos (operador, 29/09/2026): o guia de onde a pessoa

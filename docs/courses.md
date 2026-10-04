@@ -439,7 +439,7 @@ Daí os 7 passos do *Bloco E* do plano, no nível 2 da navegação.
 | Informações básicas | título, subtítulo, slug, descrição, idioma, nível | título, subtítulo, nível e descrição com **200 palavras ou mais** (o mínimo da Udemy) |
 | Para quem é | o que vai aprender, pré-requisitos, para quem é | pelo menos 1 item em cada lista |
 | Conteúdo | módulos e aulas | pelo menos 1 aula publicada (em módulo publicado) |
-| Legendas | — *(etapa 3)* | — |
+| Legendas *(tela desde 04/10/2026)* | uma `.vtt` por aula de vídeo e pela apresentação, no idioma do curso | — *(a tela tem a própria contagem: "x de y aulas publicadas com legenda")* |
 | Mídia e destaques *(nome do operador, 29/09; era "Página do curso")* | imagem, vídeo promocional, destaques, perguntas, camadas | imagem **e** vídeo promocional (destaques e perguntas são opcionais) |
 | Mensagens | — *(etapa 4)* | — |
 | Publicar | o que falta, status, ordem no catálogo, link | curso publicado |

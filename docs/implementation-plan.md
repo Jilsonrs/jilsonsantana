@@ -1983,6 +1983,28 @@ própria**.*
 - [ ] **Tela própria** no passo 4: "x de y aulas com legenda"; enviar, baixar e excluir o `.vtt`
       por vídeo. Legenda só no idioma do curso. A regra do nome do arquivo (`bunny.md` §7.1)
       continua valendo.
+- **Decisões do operador, 04/10/2026** (a partir da tela da Udemy): **uma legenda por aula**, sem
+  envio em lote; **a apresentação também tem legenda**; **sem editor de texto na tela** — corrigir
+  é enviar de novo, que substitui. O menu de cada linha: Enviar/Substituir, Baixar, Excluir.
+- [x] **Etapa 3a — banco, Bunny e servidor (04/10/2026):** tabela `caption` (uma por aula ou pela
+      apresentação; CHECK de um dono só; RLS) com a **cópia** de cada legenda — é ela que a tela
+      lista, que o "Baixar" entrega e que a troca de vídeo vai reenviar (etapa 3c). Rotas do admin
+      `/api/admin/courses/:id/legendas`, `/api/admin/lessons/:id/legenda` e
+      `/api/admin/courses/:id/legenda-apresentacao` (enviar, baixar, excluir). Só `.vtt` que começa
+      com `WEBVTT`, até 2 MB, sem byte nulo; o Bunny primeiro (recusou, nada gravado). Revisão de
+      segurança sem P0/P1; os três P2 de código e teste corrigidos.
+- [x] **Etapa 3b — a tela Legendas (04/10/2026):** o passo deixou de ser EM BREVE. A apresentação e
+      cada módulo com as suas aulas de vídeo; o estado de cada linha ("Legenda enviada", "Sem
+      legenda", "Envie a legenda de novo", "Envie o vídeo primeiro") e há quanto tempo; as ações
+      Enviar/Substituir, Baixar e Excluir (com confirmação) **na própria linha** — o menu "⋮" da
+      Udemy fica para o acabamento do Antigravity, se o operador quiser; a contagem e "Todas as
+      aulas publicadas têm legenda."; a mensagem flutuante do editor ao enviar ou falhar.
+- [x] **Etapa 3c — trocar o vídeo não perde a legenda (04/10/2026):** ao terminar a troca do vídeo
+      da aula ou da apresentação, o site manda a legenda guardada para o vídeo novo
+      (`server/src/lib/legendas.ts`). Se o Bunny recusar (ou a rede cair), o vídeo troca do mesmo
+      jeito e a linha mostra **"Envie a legenda de novo"**, fora da contagem; enviar pela tela tira
+      a marca. **Fato a confirmar no ar:** se o Bunny aceita legenda enquanto o vídeo novo ainda
+      processa — se não aceitar, a marca aparece e o operador reenvia depois.
 
 **Etapa 4 — Mensagens e o sino:**
 - [ ] **O sino ao lado da foto, no topo**: área de avisos do aluno, com as mensagens de

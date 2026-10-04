@@ -15,9 +15,10 @@ import { HighlightsField } from "@/components/admin/HighlightsField";
 import { FaqField } from "@/components/admin/FaqField";
 import { useCursoDoEditor } from "./CourseEditorLayout";
 import { StepForm } from "./StepForm";
+import { CaptionsStep } from "@/components/admin/captions/CaptionsStep";
 
 // Os passos do editor do curso — o que cada um mostra é decisão do operador
-// (28/09/2026). Legendas e Mensagens ainda não têm tela (etapas 3 e 4 do Bloco E).
+// (28/09/2026). Mensagens ainda não tem tela (etapa 4 do Bloco E); Legendas ganhou a sua em 04/10.
 
 function PassoBasico() {
   const { curso } = useCursoDoEditor();
@@ -53,6 +54,12 @@ function PassoConteudo() {
       </Suspense>
     </PageSection>
   );
+}
+
+// As legendas se salvam linha a linha, com a mensagem flutuante do editor (04/10/2026).
+function PassoLegendas() {
+  const { curso, avisar } = useCursoDoEditor();
+  return <CaptionsStep courseId={curso.id} avisar={avisar} />;
 }
 
 function PassoPagina() {
@@ -113,6 +120,7 @@ export const ROTAS_DO_EDITOR = (
     <Route path="basico" element={<PassoBasico />} />
     <Route path="para-quem-e" element={<PassoParaQuemE />} />
     <Route path="conteudo" element={<PassoConteudo />} />
+    <Route path="legendas" element={<PassoLegendas />} />
     <Route path="pagina" element={<PassoPagina />} />
     <Route path="publicar" element={<PassoPublicar />} />
   </>

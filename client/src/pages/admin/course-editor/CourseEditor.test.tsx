@@ -123,16 +123,16 @@ describe("Editor do curso — o nível 2", () => {
     expect(passo("Publicar").getAttribute("href")).toBe("/admin/cursos/1/publicar");
   });
 
-  // Legendas e Mensagens ainda não têm tela: link ali levaria a lugar nenhum.
-  it("Legendas e Mensagens são texto EM BREVE, nunca link", async () => {
+  // Mensagens ainda não tem tela: link ali levaria a lugar nenhum. Legendas ganhou
+  // a sua em 04/10/2026 (decisão do operador) e virou link.
+  it("Mensagens é texto EM BREVE; Legendas é link", async () => {
     abrir("/admin/cursos/1/basico");
     await esperarTitulo();
     const coluna = within(screen.getByRole("complementary"));
-    for (const nome of ["Legendas", "Mensagens"]) {
-      expect(coluna.queryByRole("link", { name: new RegExp(nome) })).toBeNull();
-      expect(coluna.getByText(nome)).toBeTruthy();
-    }
-    expect(coluna.getAllByText("EM BREVE")).toHaveLength(2);
+    expect(coluna.queryByRole("link", { name: /Mensagens/ })).toBeNull();
+    expect(coluna.getByText("Mensagens")).toBeTruthy();
+    expect(coluna.getAllByText("EM BREVE")).toHaveLength(1);
+    expect(coluna.getByRole("link", { name: /Legendas/ }).getAttribute("href")).toBe("/admin/cursos/1/legendas");
   });
 
   it("o ✓ aparece quando o passo SALVO fica completo", async () => {

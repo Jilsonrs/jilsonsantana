@@ -7,6 +7,7 @@ import { tipoDaImagem } from "../lib/image-type.js";
 import { enviarParaOStorage } from "../lib/bunny-storage.js";
 import { videoUploadCompleteSchema, videoUploadStartSchema, bunnyVideoIdSchema } from "@jilson/core";
 import { iniciarEnvio, apagarVideo, enderecoAssinado, estadoDoVideo } from "../lib/bunny-stream.js";
+import { reenviarLegenda } from "../lib/legendas.js";
 
 const router = Router();
 
@@ -120,6 +121,8 @@ router.post("/admin/courses/:id/intro-video/complete", requireAdmin, async (req,
   }
 
   await prisma.course.update({ where: { id }, data: { introVideoId: videoId, introVideoPendingId: null } });
+  // A legenda da apresentação vai junto para o vídeo novo (04/10/2026).
+  await reenviarLegenda({ courseId: id }, videoId);
 
   const substituido = course.introVideoId;
   if (substituido && substituido !== videoId) await apagarVideo("aulas", substituido);
