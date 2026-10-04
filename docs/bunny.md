@@ -381,8 +381,9 @@ desligado** (é pago).
     exige a **chave de API da CONTA**, que tem poder total.
     **Decisão do operador pendente:** purgar com essa chave · cache curto só na pasta de fotos de
     aluno · aceitar até 1 mês.
-    **⚠️ DIVERGÊNCIA reportada em 25/09:** a primeira opção contradiz o §5, que diz que a chave da
-    conta "não vai para lugar nenhum, porque o site não precisa dela".
+    *(A divergência de 25/09 com o §5 se desfez em 04/10/2026: o operador decidiu ter a chave da
+    conta no servidor para purgar o cache das legendas — §5 item 5. A escolha para as fotos, a
+    P20, continua dele; a chave já existe, se ele escolher purgar.)*
 - **Estrutura de pastas no Storage:** decidida em 27/09 (§4.1).
 - **Site aberto por outro endereço** (por exemplo `.up.railway.app`) **não mostra as imagens**,
   por causa dos *Allowed referrers*.
@@ -444,8 +445,16 @@ O Bunny gera estes tipos de chave:
 3. **Senha de cada Storage Zone:** envia e apaga arquivos. Vai para o **servidor**.
 4. **Senha só de leitura da Storage Zone:** lê e baixa. É a da **cópia fria** (Fase 7); não vai
    para o site.
-5. **API key da conta:** dá acesso total à conta. **Não vai para lugar nenhum**, porque o site
-   não precisa dela. *(⚠️ ver a divergência em §4.4: a purga da CDN depende dela.)*
+5. **API key da conta:** dá acesso total à conta (apagar zonas e bibliotecas, ler as chaves de
+   todas, mexer no faturamento). **Desde 04/10/2026 (decisão do operador) ela vive no servidor,
+   SÓ no Railway** (`BUNNY_ACCOUNT_API_KEY`), **usada SÓ por `limparCacheDaLegenda`**, **SÓ
+   contra `api.bunny.net/purge`**: a legenda substituída seguia antiga no player por causa do
+   cache do CDN (teste no ar, 04/10), e a purga pela API só aceita esta chave — a doc do Bunny não
+   oferece chave restrita a purga. **Nunca em log, nunca na resposta, nunca no `server/.env` de
+   dev** (sem ela, a tela avisa que o player pode mostrar a legenda anterior por um tempo).
+   *Gatilho de reabertura: se o Bunny oferecer chave com escopo só de purga (trocar por ela), ou
+   se houver qualquer suspeita de vazamento do ambiente do Railway (gerar outra no painel na
+   hora).*
 
 - **NUNCA cole uma chave no chat**: nem no Claude do projeto, nem no Claude Code, nem em
   print. Conversa não se apaga. **Se uma chave aparecer no chat, gere outra no painel na mesma
@@ -472,6 +481,7 @@ O Bunny gera estes tipos de chave:
   | arquivos | `BUNNY_FILES_STORAGE_ZONE` | nome da Storage Zone dos arquivos (§4.5) | não |
   | arquivos | `BUNNY_FILES_STORAGE_HOST` | o endpoint da zona (ex.: `br.storage.bunnycdn.com`) | não |
   | arquivos | `BUNNY_FILES_STORAGE_PASSWORD` | a senha da zona dos arquivos (a de escrita) | **sim** |
+  | legendas | `BUNNY_ACCOUNT_API_KEY` | a **API key da CONTA** ("Account settings → API" no painel) — só para limpar o cache da legenda trocada (§5 item 5, 04/10/2026). **Só no Railway**; acesso total à conta | **sim** |
 
   **Estado em 27/09: as 4 da etapa 1 estão no Railway** (o envio foi provado no ar). As das etapas
   2 e 3 ainda não existem. **Em 28/09 o código da etapa 3 ficou pronto no `dev`** (o vídeo das
@@ -562,6 +572,11 @@ O Bunny gera estes tipos de chave:
   arquivo em base64 no campo `captionsFile` e o rótulo em `label`; `DELETE` no mesmo endereço. A
   legenda fica presa ao **vídeo** no Bunny; por isso o site guarda uma **cópia** no banco
   (`caption`) e a reenvia quando o vídeo é trocado. Idioma = o do curso (`pt`/`en`).
+  **Cache (04/10/2026, achado no teste no ar):** o CDN não percebe que a legenda mudou, e o player
+  seguia mostrando a antiga. Ao **substituir** ou **excluir**, o site **limpa o cache** do endereço
+  da legenda (`…/{vídeo}/captions/{idioma}.vtt`) e do `playlist.m3u8` do vídeo, com a chave da
+  conta (§5 item 5). Sem a chave, ou se o Bunny recusar, a legenda vale assim mesmo e a tela avisa
+  que o player pode mostrar a anterior por algumas horas.
 - **O preload do embed gasta banda:** decidir o comportamento junto com o `design.md`.
 - **A API key e a token authentication key da biblioteca de produção ficam só no Railway**, nunca
   no chat nem no navegador. As da biblioteca de dev vão no `server/.env` (§5). **Gate do context7 obrigatório**, com a consulta dizendo **"Stream"**.

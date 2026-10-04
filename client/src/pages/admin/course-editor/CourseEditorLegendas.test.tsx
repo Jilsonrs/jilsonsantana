@@ -47,8 +47,8 @@ const TELA: LegendasDoCurso = {
 beforeEach(() => {
   adminGetCourse.mockReset().mockResolvedValue(CURSO_DE_TESTE);
   getLegendas.mockReset().mockResolvedValue(TELA);
-  enviarLegenda.mockReset().mockResolvedValue(undefined);
-  excluirLegenda.mockReset().mockResolvedValue(undefined);
+  enviarLegenda.mockReset().mockResolvedValue({ cacheLimpo: true });
+  excluirLegenda.mockReset().mockResolvedValue({ cacheLimpo: true });
   vi.spyOn(window, "confirm").mockReturnValue(true);
 });
 
@@ -119,6 +119,16 @@ describe("Legendas — as ações", () => {
 
     await waitFor(() => expect(enviarLegenda).toHaveBeenCalledWith({ tipo: "aula", id: 12 }, arquivo));
     expect(await screen.findByText("Legenda enviada.")).toBeTruthy();
+  });
+
+  // O cache do Bunny não foi limpo (teste no ar, 04/10/2026): enviou, mas o player
+  // pode mostrar a anterior por um tempo — a mensagem diz isso.
+  it("enviou sem limpar o cache: a mensagem avisa que o player pode mostrar a anterior", async () => {
+    enviarLegenda.mockResolvedValue({ cacheLimpo: false });
+    abrir();
+    await screen.findByRole("button", { name: "Enviar a legenda: Iniciando" });
+    fireEvent.change(screen.getByLabelText("Arquivo da legenda: Iniciando"), { target: { files: [vtt()] } });
+    expect(await screen.findByText("Legenda enviada. O player pode mostrar a anterior por algumas horas.")).toBeTruthy();
   });
 
   it("substituir a da apresentação: vai para a apresentação do curso", async () => {

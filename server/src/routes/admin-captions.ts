@@ -5,7 +5,7 @@ import { prisma } from "../lib/prisma.js";
 import { requireAdmin } from "../middleware/auth.js";
 import { parseId } from "../lib/http.js";
 import { doBanco } from "../lib/language.js";
-import { apagarLegenda, enviarLegenda } from "../lib/bunny-stream.js";
+import { apagarLegenda, enviarLegenda, limparCacheDaLegenda } from "../lib/bunny-stream.js";
 import { nomeParaDownload } from "../lib/nome-do-download.js";
 import { ROTULO_DA_LEGENDA } from "../lib/legendas.js";
 
@@ -76,7 +76,9 @@ async function enviar(dono: Dono, nome: string | null, corpo: unknown, res: Resp
     create: { ...dados, ...dono.onde },
     update: dados,
   });
-  res.status(204).end();
+  // O CDN guardaria a legenda anterior (teste no ar, 04/10/2026): limpa, e diz à
+  // tela se conseguiu — a legenda já valeu de qualquer jeito.
+  res.json({ cacheLimpo: await limparCacheDaLegenda(dono.videoId, doBanco(dono.idioma)) });
 }
 
 /** Baixa a cópia da legenda, com o nome original. */
@@ -105,7 +107,8 @@ async function excluir(dono: Dono, res: Response) {
     return;
   }
   await prisma.caption.delete({ where: { id: legenda.id } });
-  res.status(204).end();
+  // Sem vídeo, não há o que limpar no CDN.
+  res.json({ cacheLimpo: dono.videoId ? await limparCacheDaLegenda(dono.videoId, doBanco(legenda.language)) : true });
 }
 
 /** A aula como dono de legenda: só aula de VÍDEO. `null` (e a resposta) se não serve. */

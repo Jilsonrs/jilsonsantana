@@ -6,8 +6,10 @@ import request from "supertest";
 const enviarLegenda = vi.fn();
 const apagarLegenda = vi.fn();
 const apagarVideo = vi.fn();
+const limparCacheDaLegenda = vi.fn();
 vi.mock("../lib/bunny-stream.js", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../lib/bunny-stream.js")>()),
+  limparCacheDaLegenda: (...args: unknown[]) => limparCacheDaLegenda(...args),
   enviarLegenda: (...args: unknown[]) => enviarLegenda(...args),
   apagarLegenda: (...args: unknown[]) => apagarLegenda(...args),
   apagarVideo: (...args: unknown[]) => apagarVideo(...args),
@@ -80,6 +82,7 @@ beforeEach(() => {
   enviarLegenda.mockReset().mockResolvedValue(true);
   apagarLegenda.mockReset().mockResolvedValue(true);
   apagarVideo.mockReset().mockResolvedValue(true);
+  limparCacheDaLegenda.mockReset().mockResolvedValue(true);
 });
 
 const enviar = (rota: string, conteudo: string, nome = "aula.vtt", cookies = admin) =>
@@ -156,7 +159,7 @@ describe("legendas — o Bunny primeiro", () => {
 describe("legendas — enviar, substituir, baixar e excluir", () => {
   it("envia: vai para o vídeo da aula no Bunny, no idioma do curso, e a cópia fica aqui", async () => {
     // Com o BOM do começo, que alguns editores gravam.
-    expect((await enviar(daAula(ids.aula), `﻿${VTT}`, "Aula 1 - Abertura.vtt")).status).toBe(204);
+    expect((await enviar(daAula(ids.aula), `﻿${VTT}`, "Aula 1 - Abertura.vtt")).status).toBe(200);
 
     expect(enviarLegenda).toHaveBeenCalledWith(VIDEO, "pt", "Português", VTT);
     const legenda = await legendaDaAula(ids.aula);
@@ -167,7 +170,7 @@ describe("legendas — enviar, substituir, baixar e excluir", () => {
 
   it("enviar de novo substitui (uma legenda por aula)", async () => {
     const nova = `${VTT}\n00:00:02.000 --> 00:00:04.000\nVamos lá.\n`;
-    expect((await enviar(daAula(ids.aula), nova, "corrigida.vtt")).status).toBe(204);
+    expect((await enviar(daAula(ids.aula), nova, "corrigida.vtt")).status).toBe(200);
     expect((await legendaDaAula(ids.aula))?.content).toBe(nova);
     expect(await prisma.caption.count({ where: { lessonId: ids.aula } })).toBe(1);
   });
@@ -194,13 +197,13 @@ describe("legendas — enviar, substituir, baixar e excluir", () => {
   });
 
   it("a apresentação também: vai para o vídeo de apresentação", async () => {
-    expect((await enviar(daApresentacao(), VTT, "apresentacao.vtt")).status).toBe(204);
+    expect((await enviar(daApresentacao(), VTT, "apresentacao.vtt")).status).toBe(200);
     expect(enviarLegenda).toHaveBeenCalledWith(INTRO, "pt", "Português", VTT);
     expect((await prisma.caption.findUnique({ where: { courseId: ids.curso } }))?.originalName).toBe("apresentacao.vtt");
   });
 
   it("excluir: apaga no Bunny e aqui; excluir de novo também é 204", async () => {
-    expect((await request(app).delete(daAula(ids.aula)).set("Cookie", admin)).status).toBe(204);
+    expect((await request(app).delete(daAula(ids.aula)).set("Cookie", admin)).status).toBe(200);
     expect(apagarLegenda).toHaveBeenCalledWith(VIDEO, "pt");
     expect(await legendaDaAula(ids.aula)).toBeNull();
     expect((await request(app).delete(daAula(ids.aula)).set("Cookie", admin)).status).toBe(204);
@@ -286,7 +289,7 @@ describe("legendas — trocar o vídeo", () => {
   });
 
   it("enviar de novo pela tela tira a marca", async () => {
-    expect((await enviar(daAula(ids.aula), VTT)).status).toBe(204);
+    expect((await enviar(daAula(ids.aula), VTT)).status).toBe(200);
     expect((await legendaDaAula(ids.aula))?.needsResend).toBe(false);
   });
 
@@ -308,5 +311,33 @@ describe("legendas — trocar o vídeo", () => {
 
     expect((await terminarTroca(ids.outraAula, NOVO)).status).toBe(200);
     expect(enviarLegenda).not.toHaveBeenCalled();
+  });
+});
+
+// O CACHE DO CDN (achado no teste no ar, 04/10/2026: o "Baixar" trazia a legenda
+// nova e o player mostrava a antiga). Substituir e excluir limpam o cache; se não
+// der, a legenda vale assim mesmo e a resposta diz que o cache não foi limpo.
+describe("legendas — o cache do Bunny", () => {
+  it("enviar ou substituir limpa o cache da legenda daquele vídeo", async () => {
+    const res = await enviar(daAula(ids.aula), VTT);
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ cacheLimpo: true });
+    expect(limparCacheDaLegenda).toHaveBeenCalledWith(expect.any(String), "pt");
+  });
+
+  it("excluir limpa o cache", async () => {
+    await enviar(daAula(ids.aula), VTT);
+    limparCacheDaLegenda.mockClear();
+    const res = await request(app).delete(daAula(ids.aula)).set("Cookie", admin);
+    expect(res.body).toEqual({ cacheLimpo: true });
+    expect(limparCacheDaLegenda).toHaveBeenCalledTimes(1);
+  });
+
+  it("não deu para limpar: a legenda vale assim mesmo, e a resposta avisa", async () => {
+    limparCacheDaLegenda.mockResolvedValue(false);
+    const res = await enviar(daAula(ids.aula), VTT, "nova.vtt");
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ cacheLimpo: false });
+    expect((await legendaDaAula(ids.aula))?.originalName).toBe("nova.vtt");
   });
 });

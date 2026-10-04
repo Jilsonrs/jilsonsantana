@@ -186,6 +186,41 @@ export async function apagarLegenda(videoId: string, idioma: "pt" | "en"): Promi
   return false;
 }
 
+/**
+ * LIMPA O CACHE da legenda no CDN (achado no teste no ar, 04/10/2026: o CDN não
+ * percebe que o arquivo mudou, e o player seguia mostrando a legenda antiga).
+ * Limpa o endereço exato da legenda e o `playlist.m3u8` do vídeo, a lista onde o
+ * player descobre se há legenda (sem ela, a legenda excluída continuaria
+ * aparecendo). Formato conferido na referência oficial ("Purge URL", 04/10/2026):
+ * `POST https://api.bunny.net/purge?url=…` com a CHAVE DA CONTA — a mais poderosa
+ * do Bunny, por isso só aqui, só para isto, e nunca em log. `false` se faltar a
+ * chave ou o CDN da biblioteca, ou se o Bunny recusar: quem chama avisa que a
+ * legenda pode demorar a aparecer.
+ */
+export async function limparCacheDaLegenda(videoId: string, idioma: "pt" | "en"): Promise<boolean> {
+  const chaveDaConta = process.env.BUNNY_ACCOUNT_API_KEY;
+  const cdn = process.env.BUNNY_STREAM_LESSONS_CDN_HOST?.trim();
+  if (!chaveDaConta || !cdn) return false;
+  const enderecos = [`https://${cdn}/${videoId}/captions/${idioma}.vtt`, `https://${cdn}/${videoId}/playlist.m3u8`];
+  let tudoLimpo = true;
+  for (const endereco of enderecos) {
+    try {
+      const resposta = await fetch(`https://api.bunny.net/purge?url=${encodeURIComponent(endereco)}`, {
+        method: "POST",
+        headers: { Accept: "application/json", AccessKey: chaveDaConta },
+      });
+      if (!resposta.ok) {
+        console.error(`[bunny-stream] limpar cache recusado: ${resposta.status}`);
+        tudoLimpo = false;
+      }
+    } catch {
+      console.error("[bunny-stream] limpar cache caiu na rede");
+      tudoLimpo = false;
+    }
+  }
+  return tudoLimpo;
+}
+
 export type EstadoDoVideo = { pronto: boolean; falhou: boolean };
 
 /**
