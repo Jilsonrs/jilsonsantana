@@ -130,15 +130,14 @@ describe("Editor do curso — o nível 2", () => {
     expect(passo("Publicar").getAttribute("href")).toBe("/admin/cursos/1/publicar");
   });
 
-  // Mensagens ainda não tem tela: link ali levaria a lugar nenhum. Legendas ganhou
-  // a sua em 04/10/2026 (decisão do operador) e virou link.
-  it("Mensagens é texto EM BREVE; Legendas é link", async () => {
+  // Legendas e Mensagens ganharam as suas telas em 04/10/2026 (decisões do
+  // operador): os sete passos são links, nenhum EM BREVE.
+  it("Legendas e Mensagens são links, sem EM BREVE", async () => {
     abrir("/admin/cursos/1/basico");
     await esperarTitulo();
     const coluna = within(screen.getByRole("complementary"));
-    expect(coluna.queryByRole("link", { name: /Mensagens/ })).toBeNull();
-    expect(coluna.getByText("Mensagens")).toBeTruthy();
-    expect(coluna.getAllByText("EM BREVE")).toHaveLength(1);
+    expect(coluna.getByRole("link", { name: /Mensagens/ }).getAttribute("href")).toBe("/admin/cursos/1/mensagens");
+    expect(coluna.queryByText("EM BREVE")).toBeNull();
     expect(coluna.getByRole("link", { name: /Legendas/ }).getAttribute("href")).toBe("/admin/cursos/1/legendas");
   });
 
@@ -203,6 +202,33 @@ describe("Editor do curso — cada passo salva só a parte dele", () => {
 
     await waitFor(() => expect(updateCourse).toHaveBeenCalled());
     expect(updateCourse.mock.calls[0][1]).toEqual({ learnTags: ["Fórmulas"], requirements: [], personas: [] });
+  });
+
+  // As mensagens do curso (operador, 04/10/2026): vão só as duas, e a apagada
+  // vai como `null` (ausente o servidor leria "não mexe").
+  it("Mensagens envia só as duas mensagens; a em branco vai como null", async () => {
+    updateCourse.mockResolvedValue(CURSO_DE_TESTE);
+    abrir("/admin/cursos/1/mensagens", { ...CURSO_DE_TESTE, congratsMessage: "Parabéns antigo" });
+    const boasVindas = (await screen.findByLabelText("Mensagem de boas-vindas")) as HTMLTextAreaElement;
+    const parabens = screen.getByLabelText("Mensagem de parabéns") as HTMLTextAreaElement;
+    await waitFor(() => expect(parabens.value).toBe("Parabéns antigo"));
+    expect(screen.getByText(/Chega quando o aluno abre a primeira aula do curso/)).toBeTruthy();
+    fireEvent.change(boasVindas, { target: { value: "  Bem-vindo ao **curso**!  " } });
+    fireEvent.change(parabens, { target: { value: "   " } });
+    salvar();
+
+    await waitFor(() => expect(updateCourse).toHaveBeenCalled());
+    expect(updateCourse.mock.calls[0][1]).toEqual({ welcomeMessage: "Bem-vindo ao **curso**!", congratsMessage: null });
+  });
+
+  it("Mensagens: acima do limite não envia e diz o porquê", async () => {
+    abrir("/admin/cursos/1/mensagens");
+    const boasVindas = await screen.findByLabelText("Mensagem de boas-vindas");
+    // O campo trava no limite ao digitar; colado por fora, o formulário confere.
+    fireEvent.change(boasVindas, { target: { value: "a".repeat(2001) } });
+    salvar();
+    expect(await screen.findByText(/no máximo 2\.000 caracteres/)).toBeTruthy();
+    expect(updateCourse).not.toHaveBeenCalled();
   });
 
   // Os materiais exclusivos também são do Publicar (decisão do operador, 04/10/2026).

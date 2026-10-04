@@ -8,9 +8,10 @@ import { cn } from "@/lib/utils";
 
 // Texto em Markdown, como o GitHub: botões em cima do campo e a aba Visualizar
 // (decisão do operador, 27/09/2026). O texto é guardado como está. Serve à
-// descrição do curso e ao texto da aula de texto (Bloco E, etapa 2): os dois
-// formulários têm um campo de texto com um desses nomes.
-type CamposDeTexto = Record<"description" | "content", string>;
+// descrição do curso, ao texto da aula de texto (Bloco E, etapa 2) e às mensagens
+// do curso (04/10/2026): cada formulário tem um campo de texto com um desses nomes.
+type NomeDoCampo = "description" | "content" | "welcomeMessage" | "congratsMessage";
+type CamposDeTexto = Record<NomeDoCampo, string>;
 
 // A peça que desenha o Markdown (~37 KB compactados) só baixa quando alguém abre
 // Visualizar. Importada direto, entraria no pacote que TODO aluno baixa, por uma
@@ -46,7 +47,7 @@ export function MarkdownField({
   rotuloDoModo = "Modo de edição da descrição",
 }: {
   id: string;
-  name: "description" | "content";
+  name: NomeDoCampo;
   maxLength: number;
   describedBy?: string;
   /** O nome das abas Escrever/Visualizar para o leitor de tela. */

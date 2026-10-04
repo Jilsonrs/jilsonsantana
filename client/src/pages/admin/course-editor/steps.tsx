@@ -17,9 +17,10 @@ import { useCursoDoEditor } from "./CourseEditorLayout";
 import { StepForm } from "./StepForm";
 import { CaptionsStep } from "@/components/admin/captions/CaptionsStep";
 import { CourseMaterialsSection } from "@/components/admin/course-form/CourseMaterialsSection";
+import { CourseMessagesSection } from "@/components/admin/course-form/CourseMessagesSection";
 
 // Os passos do editor do curso — o que cada um mostra é decisão do operador
-// (28/09/2026). Mensagens ainda não tem tela (etapa 4 do Bloco E); Legendas ganhou a sua em 04/10.
+// (28/09/2026). Legendas e Mensagens ganharam as suas em 04/10.
 
 function PassoBasico() {
   const { curso } = useCursoDoEditor();
@@ -90,6 +91,15 @@ function PassoPagina() {
   );
 }
 
+// As duas mensagens que chegam ao aluno pelo sino (operador, 04/10/2026).
+function PassoMensagens() {
+  return (
+    <StepForm passo="mensagens">
+      <CourseMessagesSection />
+    </StepForm>
+  );
+}
+
 // O que falta, o status, a ordem no catálogo e o link (operador, 27–28/09/2026).
 // O que falta e o link leem o curso GRAVADO, como o ✓.
 function PassoPublicar() {
@@ -124,6 +134,7 @@ export const ROTAS_DO_EDITOR = (
     <Route path="conteudo" element={<PassoConteudo />} />
     <Route path="legendas" element={<PassoLegendas />} />
     <Route path="pagina" element={<PassoPagina />} />
+    <Route path="mensagens" element={<PassoMensagens />} />
     <Route path="publicar" element={<PassoPublicar />} />
   </>
 );

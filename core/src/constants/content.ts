@@ -128,6 +128,8 @@ export const LIMITES_DO_CURSO = {
   // Cada item das três listas (o que vai aprender, pré-requisitos, para quem é):
   // 160, como na Udemy (decisão do operador, 28/09/2026).
   itemDaLista: 160,
+  // As mensagens de boas-vindas e de parabéns (passo Mensagens, 04/10/2026).
+  mensagem: 2000,
 } as const;
 
 // Abaixo disto a descrição conta como "curta" no que falta do curso, SEM impedir

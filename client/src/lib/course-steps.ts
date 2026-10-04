@@ -24,7 +24,7 @@ type CampoDoPayload = keyof CourseUpdateInput;
 type Passo = {
   slug: PassoDoCurso;
   label: string;
-  /** Tela que ainda não existe (Mensagens: etapa 4). Sai como texto, nunca link. */
+  /** Tela que ainda não existe. Sai como texto, nunca link. */
   planejado?: true;
   /** Os campos do formulário que o passo confere antes de salvar. */
   campos: (keyof CourseFormValues)[];
@@ -58,7 +58,13 @@ export const PASSOS_DO_CURSO: Passo[] = [
     campos: ["thumbnailUrl", "introVideoId", "highlights", "faq", "camadas"],
     envia: ["thumbnailUrl", "introVideoId", "highlights", "faq", "camadas"],
   },
-  { slug: "mensagens", label: "Mensagens", planejado: true, campos: [], envia: [] },
+  {
+    slug: "mensagens",
+    label: "Mensagens",
+    // As duas mensagens que vão para o sino do aluno (operador, 04/10/2026).
+    campos: ["welcomeMessage", "congratsMessage"],
+    envia: ["welcomeMessage", "congratsMessage"],
+  },
   {
     slug: "publicar",
     label: "Publicar",

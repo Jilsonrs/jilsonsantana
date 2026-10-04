@@ -2031,6 +2031,18 @@ própria**.*
       **boas-vindas** (ao abrir a primeira aula do curso) e de **parabéns** (ao concluir), e outras
       comunicações do operador ou do JilsonAI. **Sem e-mail.** O passo 6 do editor é onde ele
       escreve as duas mensagens do curso.
+      **Plano aprovado em 04/10/2026, em três partes** (decisões do operador no mesmo dia, a partir
+      da Udemy, do Bunny e do YouTube): boas-vindas na **primeira aula que o aluno abrir** (qualquer
+      uma), só o **número no sino** (nada interrompe a aula), a **lista** com "Marcar todas como
+      lidas" e a página **Ver todas**, e o nome **Notificações**.
+  - [x] **4a — O passo Mensagens** *(04/10/2026)*: migration `notificacoes` (as duas colunas do
+        curso e a tabela `notification`, uma de cada tipo por aluno e curso, CHECK e RLS); os dois
+        campos em Markdown, até 2.000 caracteres, com o Salvar no topo. O ✓ do passo fica
+        esperando a regra do operador. Mutação: o passo sem `congratsMessage` e o servidor sem
+        `welcomeMessage` — as duas reprovam.
+  - [ ] **4b — O servidor manda, lista e marca como lida** (boas-vindas com assinatura ou admin;
+        parabéns na última aula; o texto copiado no envio).
+  - [ ] **4c — O sino, a lista e a página Ver todas** (`/aluno/notificacoes`).
 
 **O QUE FALTA NOS 7 PASSOS (atualizado em 30/09/2026 — as linhas estão acima; aqui é o mapa):**
 
@@ -2041,7 +2053,7 @@ própria**.*
 | 3 Conteúdo | pronto | o **Quiz** (no "+" aparece EM BREVE) | as regras do operador: uma ou várias respostas certas, explicação, nota mínima, o que o aluno vê |
 | 4 Legendas | EM BREVE | a **etapa 3** inteira: "x de y aulas com legenda"; enviar, baixar e excluir o `.vtt` por vídeo, só no idioma do curso | código (alto risco: Bunny) |
 | 5 Mídia e destaques | pronto | — *(a P19 fechou em 29/09)* | — |
-| 6 Mensagens | EM BREVE | a **etapa 4** inteira: o sino ao lado da foto, a mensagem de boas-vindas (ao abrir a 1ª aula) e a de parabéns (ao concluir) | a de **parabéns** precisa saber que o aluno concluiu: **Fase 5** |
+| 6 Mensagens | tela pronta (04/10) | o envio ao aluno e o sino: **etapa 4b e 4c**; a regra do ✓ do passo | — *(a Fase 5 já diz quando o aluno concluiu)* |
 | 7 Publicar | pronto | o **Visualizar** (abrir a página pública do curso) | a página definitiva do curso: **C5** |
 
 **Em todos os passos, ainda aberto:**

@@ -42,6 +42,14 @@ enum Material {
   APOSTILA
 }
 
+// O TIPO de notificação do sino (Bloco E, etapa 4 — decisões do operador,
+// 04/10/2026). Hoje só as duas mensagens do curso; anúncio do operador é outro
+// bloco, e entra como valor novo.
+enum NotificationKind {
+  BOAS_VINDAS
+  PARABENS
+}
+
 enum PlanItemType {
   COURSE
   LESSON
@@ -120,17 +128,17 @@ model FaqItem {
 // phase's migration.
 
 model User {
-  id            String         @id
+  id            String           @id
   // DEBT: o Better Auth CLI gera `name` como required (String). Mantido opcional
   // (String?) para respeitar o CLAUDE.md (name opcional — convite corporativo só
   // por e-mail). REAPLICAR `String?` após cada `@better-auth/cli generate`.
   name          String?
   email         String
-  emailVerified Boolean        @default(false)
+  emailVerified Boolean          @default(false)
   image         String?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  role          String         @default("member")
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  role          String           @default("member")
   sessions      Session[]
   accounts      Account[]
   // Phase 2 back-relation: a member's saved/cloned trilhas (curated templates
@@ -146,6 +154,8 @@ model User {
   progress      LessonProgress[]
   // 03/10/2026: o que esta pessoa salvou para depois. Mesma DEBT — REAPLICAR.
   saved         SavedItem[]
+  // 04/10/2026: as notificações do sino. Mesma DEBT — REAPLICAR.
+  notifications Notification[]
 
   birthday            String?
   preferredLanguage   String?   @default("pt")
@@ -216,39 +226,44 @@ model Verification {
 // most fields are optional, filled per course by the operator. Derived data
 // (carga horária, lesson count, 3-camadas grouping) is computed, never stored.
 model Course {
-  id             Int           @id @default(autoincrement())
-  slug           String        @unique
-  title          String
-  subtitle       String?
-  description    String?
-  level          Level?
-  learnTags      String[]      @default([]) // "o que você vai aprender" — clickable pills
-  requirements   String[]      @default([]) // pré-requisitos, shown openly
-  personas       String[]      @default([]) // "pra quem é"
-  highlights     Json? // [{ icon, title, text }] — "diferenciais" icon cards
-  faq            Json? // [{ pergunta, resposta }] — optional; renders only if filled
-  camadas        Layer[]       @default([]) // which 3-camadas layers this course shows (0–3)
-  materiais      Material[]    @default([]) // os materiais exclusivos marcados no passo Publicar (04/10/2026)
-  camadaOverride Json? // per-course layer text override (exception, e.g. N8N)
-  thumbnailUrl   String? // catalog/list image
-  introVideoId   String? // presentation video (Bunny); non-gated wiring is Phase 3
+  id                  Int            @id @default(autoincrement())
+  slug                String         @unique
+  title               String
+  subtitle            String?
+  description         String?
+  level               Level?
+  learnTags           String[]       @default([]) // "o que você vai aprender" — clickable pills
+  requirements        String[]       @default([]) // pré-requisitos, shown openly
+  personas            String[]       @default([]) // "pra quem é"
+  highlights          Json? // [{ icon, title, text }] — "diferenciais" icon cards
+  faq                 Json? // [{ pergunta, resposta }] — optional; renders only if filled
+  camadas             Layer[]        @default([]) // which 3-camadas layers this course shows (0–3)
+  materiais           Material[]     @default([]) // os materiais exclusivos marcados no passo Publicar (04/10/2026)
+  camadaOverride      Json? // per-course layer text override (exception, e.g. N8N)
+  thumbnailUrl        String? // catalog/list image
+  introVideoId        String? // presentation video (Bunny); non-gated wiring is Phase 3
   // O envio de apresentação EM ANDAMENTO (Bloco U, etapa 2). Existe para a
   // limpeza que o operador pediu em 27/09/2026: reenviar apaga no Bunny o envio
   // que ficou pela metade, e ao terminar apaga o vídeo substituído. Nunca sai
   // numa rota pública.
   introVideoPendingId String?
-  displayOrder   Int           @default(0)
-  status         ContentStatus @default(DRAFT)
+  // As MENSAGENS do curso (passo Mensagens, 04/10/2026): em branco, nada é
+  // enviado. Vão para o sino como CÓPIA (Notification.body).
+  welcomeMessage      String? // ao abrir a primeira aula do curso
+  congratsMessage     String? // ao concluir todas as aulas
+  displayOrder        Int            @default(0)
+  status              ContentStatus  @default(DRAFT)
   // O idioma do curso (decisão do operador, 14/09/2026). Obrigatório e SEM
   // default: o banco recusa curso sem idioma. Módulo e aula herdam daqui.
   // Troca só enquanto rascunho (operador, 24/09) — regra no servidor.
-  language       Language
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  modules        Module[]
-  planItems      PlanItem[]
-  saved          SavedItem[]
-  introCaption   Caption?
+  language            Language
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+  modules             Module[]
+  planItems           PlanItem[]
+  saved               SavedItem[]
+  introCaption        Caption?
+  notifications       Notification[]
 
   @@map("course")
 }
@@ -278,39 +293,39 @@ enum LessonKind {
 }
 
 model Lesson {
-  id           Int           @id @default(autoincrement())
-  moduleId     Int
-  module       Module        @relation(fields: [moduleId], references: [id], onDelete: Cascade)
-  title        String
-  kind         LessonKind    @default(VIDEO)
+  id                   Int              @id @default(autoincrement())
+  moduleId             Int
+  module               Module           @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  title                String
+  kind                 LessonKind       @default(VIDEO)
   // O texto da aula de TEXTO, em Markdown (negrito, itálico e listas). Conteúdo
   // pago: nenhuma rota pública o devolve.
-  content      String?
+  content              String?
   // O vídeo da aula no Bunny (biblioteca de aulas, com token) e o envio EM
   // ANDAMENTO — a mesma limpeza da apresentação (Bloco U, etapa 3). Nenhuma rota
   // pública devolve os dois: o aluno recebe só o player assinado, na etapa 4.
   // O progresso do aluno fica preso à AULA, nunca a este id (bunny.md §7.1).
-  bunnyVideoId        String?
-  bunnyVideoPendingId String?
+  bunnyVideoId         String?
+  bunnyVideoPendingId  String?
   // O Bunny já disse que o vídeo está pronto (decisão do operador, 29/09/2026: ao
   // voltar para o editor, a aula pronta volta recolhida). É um LEMBRETE do que o
   // Bunny respondeu, não um dado derivado: sem ele, abrir o editor perguntaria ao
   // Bunny por todas as aulas, toda vez.
-  bunnyVideoReady     Boolean  @default(false)
+  bunnyVideoReady      Boolean          @default(false)
   // A duração do vídeo em segundos (o `length` do Bunny), gravada quando ele fica
   // pronto; a do curso é a soma, nunca coluna (29/09/2026).
   videoDurationSeconds Int?
   // Prévia grátis (operador, 27/09/2026, "como na Udemy"): a aula toca para
   // qualquer visitante. Só é gravada aqui; tocar para visitante é a etapa 4.
-  isFreePreview       Boolean  @default(false)
-  files               LessonFile[]
-  tags         String[]      @default([])
-  displayOrder Int           @default(0)
-  status       ContentStatus @default(DRAFT)
-  planItems    PlanItem[]
-  progress     LessonProgress[]
-  saved        SavedItem[]
-  caption      Caption?
+  isFreePreview        Boolean          @default(false)
+  files                LessonFile[]
+  tags                 String[]         @default([])
+  displayOrder         Int              @default(0)
+  status               ContentStatus    @default(DRAFT)
+  planItems            PlanItem[]
+  progress             LessonProgress[]
+  saved                SavedItem[]
+  caption              Caption?
 
   @@index([moduleId])
   @@map("lesson")
@@ -380,6 +395,28 @@ model Caption {
   uploadedAt   DateTime @default(now())
 
   @@map("caption")
+}
+
+// Uma NOTIFICAÇÃO do sino (Bloco E, etapa 4 — decisões do operador, 04/10/2026).
+// O texto é COPIADO no envio: editar a mensagem do curso depois não muda o que o
+// aluno já recebeu. Uma de cada tipo por pessoa e curso (o banco garante: abrir a
+// aula dez vezes não manda dez boas-vindas). Boas-vindas e parabéns têm curso
+// (CHECK na migration). Some com a pessoa ou o curso.
+model Notification {
+  id        Int              @id @default(autoincrement())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind      NotificationKind
+  courseId  Int?
+  course    Course?          @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  body      String
+  createdAt DateTime         @default(now())
+  readAt    DateTime?
+
+  @@unique([userId, courseId, kind])
+  @@index([userId, createdAt])
+  @@index([courseId])
+  @@map("notification")
 }
 
 // A trilha (learning track). Curated template (ownerUserId = null, isTemplate)

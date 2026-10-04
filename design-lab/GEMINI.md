@@ -410,6 +410,11 @@ exceto o item 4, que é página pública.
    mas cada texto vira chave (`common.*`/`app.*`), nunca literal no `.tsx` ou no template. Página
    com campo vazio esconde a seção (tem teste): o desenho precisa ficar bom com um curso que só
    tem título e aulas.
+24. **Mensagens do curso e o sino de Notificações** *(04/10, decisões do operador, a partir da
+   Udemy, do Bunny e do YouTube)*. **Pronto em estrutura:** o passo **Mensagens** do editor
+   (`components/admin/course-form/CourseMessagesSection.tsx`): a mensagem de boas-vindas e a de
+   parabéns, com o mesmo editor da descrição (`MarkdownField`). O sino, a lista e a página "Ver
+   todas" entram em seguida (etapas 4b e 4c do plano), e este item ganha os arquivos deles.
 
 > **Fora do seu trabalho, para não confundir:** o Bunny ganhou **Live Stream** em acesso
 > antecipado (29/09). É só avaliação depois da Fase 3, **não** é tela a desenhar (`docs/bunny.md`

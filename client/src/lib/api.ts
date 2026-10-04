@@ -234,6 +234,9 @@ export type AdminCourseDetail = {
   camadas: Layer[];
   /** Os materiais exclusivos marcados no passo Publicar (04/10/2026). */
   materiais: Material[];
+  /** As mensagens do passo Mensagens (04/10/2026); `null` = nenhuma. */
+  welcomeMessage: string | null;
+  congratsMessage: string | null;
   thumbnailUrl: string | null;
   introVideoId: string | null;
   // O player do vídeo de apresentação, montado no SERVIDOR (null sem vídeo, ou
