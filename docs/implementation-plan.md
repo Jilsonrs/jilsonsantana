@@ -2428,6 +2428,9 @@ própria**.*
 > transposição.
 
 - [ ] **Passo 0 (operador):** o que a vitrine mostra, e o que a tela do aluno mostra **a mais**.
+      **Já decidido (04/10/2026): cada página de curso é uma LANDING PAGE DE VENDA** — cada curso,
+      sozinho, justifica a assinatura; conversão e retenção (`courses.md` §2.3, `CLAUDE.md`). O
+      mock da página de curso vai para a fila do Antigravity (`GEMINI.md`, item 23).
       Direção já dada por ele, a detalhar: progresso por curso · "continue de onde parou" no topo ·
       o botão sendo **Continuar** em vez de **Assinar**. **Já decidido (30/09/2026):** o cartão e
       a página do curso mostram a duração ("2 módulos · 4 aulas · 1h 05min", "0min" sem vídeo) —

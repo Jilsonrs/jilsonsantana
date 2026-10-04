@@ -382,6 +382,34 @@ exceto o item 4, que é página pública.
    **Materiais exclusivos** no passo Publicar do editor (`CourseMaterialsSection.tsx`). Estrutura
    pronta, acabamento seu. Os textos saem do dicionário (Admin → Textos): **não escreva texto no
    `.tsx`**. Quadro sem itens fica escondido — tem teste.
+23. **A página do curso vira LANDING PAGE DE VENDA** *(decisão do operador, 04/10/2026)*: *"cada
+   curso por si só já justifica a assinatura"*, com o máximo de conversão e retenção. Quem chega
+   por um curso só (busca, YouTube, link) tem que sair querendo assinar, sem passar pela home.
+   **O que se vende é a ASSINATURA:** não desenhe preço nem "comprar este curso" por curso.
+   **O seu trabalho, em duas partes:**
+   - **(a) Formatar o que já existe** em `/curso/:slug` (`client/src/pages/CourseDetailPage.tsx`,
+     React, porta 5173): o topo (nível, título, subtítulo, "2 módulos · 5 aulas · 1h 05min"), o
+     vídeo de apresentação, os diferenciais e as camadas (`components/content/CoursePremiumFeatures.tsx`),
+     o conteúdo do curso (accordion), as perguntas, e a coluna lateral: "Este curso inclui"
+     (`CourseIncludes.tsx`), "O que você vai aprender", pré-requisitos e "Pra quem é". A hierarquia
+     é de página de venda: o que convence primeiro, o que tira dúvida depois. **Estas peças são
+     compartilhadas com o "Sobre o curso" da aula** (item 12): formatar aqui muda lá também, e lá
+     elas servem à retenção do aluno que já assina.
+   - **(b) Um mock da página COMPLETA na `design-lab/`**, porque ela vai virar template de
+     servidor (Bloco C5): o Claude transpõe a sua marcação e as suas classes, como fez com a home.
+     O mock inclui as seções que o operador **já decidiu** e que ainda **não existem na tela**:
+     o **cartão de assinar** ao lado (decisão de ago/2026; é a assinatura, a mesma da home) · a
+     **seção do autor**, a mesma da home (`home.author`) · a etiqueta **"Novo"** · as **frases do
+     "O que você vai aprender" com ✓ em duas colunas** (até 160 caracteres cada; hoje saem como
+     pílulas) · as **ferramentas do curso** (ex.: Excel 365, Power BI) · as **trilhas do curso** ·
+     no fim, **outros cursos da escola**, sem nota e sem preço. **A ordem das seções é proposta sua
+     no mock; quem aprova é o operador.**
+   **Não entram (decisões dele):** número de alunos, "Atualizado em", "acesso vitalício", escassez
+   fabricada (contador, "últimas vagas"). **Seção nova fora desta lista é
+   pergunta ao operador, não desenho.** Texto sai do dicionário: no mock pode ser texto de exemplo,
+   mas cada texto vira chave (`common.*`/`app.*`), nunca literal no `.tsx` ou no template. Página
+   com campo vazio esconde a seção (tem teste): o desenho precisa ficar bom com um curso que só
+   tem título e aulas.
 
 > **Fora do seu trabalho, para não confundir:** o Bunny ganhou **Live Stream** em acesso
 > antecipado (29/09). É só avaliação depois da Fase 3, **não** é tela a desenhar (`docs/bunny.md`

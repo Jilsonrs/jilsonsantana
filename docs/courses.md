@@ -379,6 +379,18 @@ A página é **vitrine** montada de **campos estruturados**, nunca de copy escri
 trava e o porquê estão no `CLAUDE.md`). Os campos se dividem em **derivados** (calculados, nunca
 digitados) e **manuais**. Manter os manuais poucos é o que sustenta o operador solo.
 
+**Cada página de curso é uma landing page otimizada para venda** *(decisão do operador,
+04/10/2026)*: *"mesmo que não venda cursos individualmente, cada curso por si só já justifica a
+assinatura, aumentando ao máximo a conversão e a retenção dos alunos."* Na prática:
+- **o que se vende é a assinatura**: não há preço nem compra por curso;
+- **cada seção existe para convencer**: o visitante que chega por um curso só (busca, YouTube, link
+  compartilhado) tem que sair dali querendo assinar, sem precisar ver a home;
+- **a mesma página serve à retenção**: o aluno logado que relê o curso tem que ver o valor do que
+  já paga (é por isso que o "Este curso inclui" também está no "Sobre o curso" da aula);
+- **o desenho é o que otimiza, não texto livre**: a página continua montada dos campos abaixo
+  (trava no `CLAUDE.md`). A ordem das seções e o visual saem do mock do parceiro de design
+  (`design-lab/GEMINI.md`, item 23), com aprovação do operador.
+
 `Course` carrega:
 - `title` · `subtitle?` (uma frase enquadrada em **resultado**) · `description?` (longa) ·
   `level?` (`INICIANTE|INTERMEDIARIO|AVANCADO|TODOS_OS_NIVEIS` — "Todos os níveis" entrou por
