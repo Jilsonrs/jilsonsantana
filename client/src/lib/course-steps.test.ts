@@ -86,7 +86,9 @@ describe("passosConcluidos — o ✓ de cada passo", () => {
     expect(passosConcluidos({ ...VAZIO, status: "ARCHIVED" }).has("publicar")).toBe(false);
   });
 
-  it("Legendas e Mensagens nunca ganham ✓ (ainda não existem)", () => {
+  // Legendas: o ✓ dependeria das legendas, que o curso salvo não traz (a tela tem a
+  // própria contagem, 04/10/2026). Mensagens: a tela ainda não existe.
+  it("Legendas e Mensagens nunca ganham ✓", () => {
     const tudo = passosConcluidos({ ...VAZIO, status: "PUBLISHED" });
     expect(tudo.has("legendas")).toBe(false);
     expect(tudo.has("mensagens")).toBe(false);

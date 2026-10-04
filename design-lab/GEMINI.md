@@ -150,7 +150,7 @@ servidores (§5); o React responde em `localhost:5173`, a home pública em `loca
 | `/dashboard` | **O Dashboard do admin** (29/09): `client/src/pages/AdminPage.tsx` — os 4 relatórios (Assinantes, Aprendizado, De onde vieram os alunos, Uso do JilsonAI), todos EM BREVE, e os atalhos embaixo (Trilhas EM BREVE, sem link). Cada cartão é um grupo com nome (`role="group"`) e **tem teste**: EM BREVE nunca é link. |
 | `/admin/cursos` | `client/src/pages/admin/AdminCoursesPage.tsx` + **o cartão de cada curso**, `client/src/components/admin/AdminCourseCard.tsx` (27/09) |
 | `/admin/cursos/novo` | `client/src/pages/admin/course-editor/NewCoursePage.tsx` — só o passo 1; "Criar curso" abre o editor |
-| `/admin/cursos/:id/basico` · `/para-quem-e` · `/conteudo` · `/pagina` · `/publicar` | **O editor do curso em 7 passos** (28/09): `course-editor/CourseEditorLayout.tsx` (o topo, comum a todos; embaixo do título, **a duração**: "2h 35min de vídeo", desde 29/09), `course-editor/steps.tsx` (o que cada passo mostra) e `course-editor/StepForm.tsx` (o botão Salvar de cada passo). O conteúdo de cada passo são as seções de `client/src/components/admin/course-form/`. |
+| `/admin/cursos/:id/basico` · `/para-quem-e` · `/conteudo` · `/legendas` · `/pagina` · `/publicar` | **O editor do curso em 7 passos** (28/09): `course-editor/CourseEditorLayout.tsx` (o topo, comum a todos; embaixo do título, **a duração**: "2h 35min de vídeo", desde 29/09), `course-editor/steps.tsx` (o que cada passo mostra) e `course-editor/StepForm.tsx` (o botão Salvar de cada passo). O conteúdo de cada passo são as seções de `client/src/components/admin/course-form/`. |
 | `/admin/site` → leva a `/admin/site/textos` | (só redireciona) |
 | `/admin/site/textos` | `client/src/pages/admin/AdminSiteTextPage.tsx` + `client/src/components/admin/SiteTextField.tsx` — **uma aba por página** ("Toda página", "Home"; página nova ganha aba sozinha). Com busca, as abas somem e o resultado vem de todas as páginas. As abas têm `aria-pressed` e teste. |
 | `/admin/site/depoimentos` | `client/src/pages/admin/AdminTestimonialsPage.tsx` |
@@ -370,6 +370,12 @@ exceto o item 4, que é página pública.
    o desenho é seu (o print da Udemy que o operador mandou é a referência). Mantenha: a região
    sempre na página (o leitor de tela só anuncia o que aparece dentro dela), o `role="alert"` só
    na frase do erro, e o "Fechar".
+21. **A tela Legendas do editor** *(04/10, decisões do operador, a partir da tela da Udemy que ele
+   mandou)*: `components/admin/captions/CaptionsStep.tsx` e `CaptionRow.tsx`. Estrutura pronta:
+   apresentação e módulos com as aulas de vídeo, o estado de cada linha, há quanto tempo, e as
+   ações **na linha** (Enviar/Substituir, Baixar, Excluir). O acabamento é seu — pode virar o menu
+   "⋮" da Udemy. Mantenha o nome de cada ação com o título da aula (é o que o leitor de tela ouve,
+   e tem teste) e a confirmação antes de excluir.
 
 > **Fora do seu trabalho, para não confundir:** o Bunny ganhou **Live Stream** em acesso
 > antecipado (29/09). É só avaliação depois da Fase 3, **não** é tela a desenhar (`docs/bunny.md`

@@ -418,6 +418,43 @@ export function enderecoDoArquivo(lessonId: number, fileId: number, comoAdmin: b
   return comoAdmin ? `/api/admin/lesson-files/${fileId}/download` : `/api/lessons/${lessonId}/files/${fileId}`;
 }
 
+// AS LEGENDAS (passo Legendas do editor — decisões do operador, 04/10/2026):
+// uma `.vtt` por aula de vídeo e uma pela apresentação, no idioma do curso.
+export type LegendaNaTela = { enviadaEm: string; nomeDoArquivo: string; precisaReenviar: boolean };
+export type AulaNasLegendas = { id: number; title: string; status: ContentStatus; temVideo: boolean; legenda: LegendaNaTela | null };
+export type LegendasDoCurso = {
+  idioma: LanguageCode;
+  apresentacao: { temVideo: boolean; legenda: LegendaNaTela | null };
+  modulos: { id: number; title: string; status: ContentStatus; aulas: AulaNasLegendas[] }[];
+  contagem: { comLegenda: number; total: number };
+};
+/** De quem é a legenda: uma aula, ou a apresentação do curso. */
+export type DonoDaLegenda = { tipo: "aula"; id: number } | { tipo: "apresentacao"; cursoId: number };
+
+const rotaDaLegenda = (dono: DonoDaLegenda) =>
+  dono.tipo === "aula" ? `/admin/lessons/${dono.id}/legenda` : `/admin/courses/${dono.cursoId}/legenda-apresentacao`;
+
+export async function getLegendas(courseId: number): Promise<LegendasDoCurso> {
+  const { data } = await client.get<LegendasDoCurso>(`/admin/courses/${courseId}/legendas`);
+  return data;
+}
+
+/** Envia (ou substitui) a legenda: o arquivo cru no corpo, o nome no cabeçalho. */
+export async function enviarLegenda(dono: DonoDaLegenda, arquivo: File): Promise<void> {
+  await client.put(rotaDaLegenda(dono), arquivo, {
+    headers: { "Content-Type": "text/vtt", "X-Nome-Do-Arquivo": encodeURIComponent(arquivo.name) },
+  });
+}
+
+export async function excluirLegenda(dono: DonoDaLegenda): Promise<void> {
+  await client.delete(rotaDaLegenda(dono));
+}
+
+/** O link de "Baixar": mesmo site, então o cookie vai junto, e vem com o nome original. */
+export function enderecoDaLegenda(dono: DonoDaLegenda): string {
+  return `/api${rotaDaLegenda(dono)}`;
+}
+
 // OS ARQUIVOS PARA BAIXAR de cada aula (Bloco E, etapa 2, parte 2e): o admin
 // envia e exclui. O arquivo vai CRU no corpo, e o nome original no cabeçalho.
 export type AdminLessonFile = { id: number; originalName: string; sizeBytes: number; createdAt: string };

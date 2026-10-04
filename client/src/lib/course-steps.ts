@@ -24,7 +24,7 @@ type CampoDoPayload = keyof CourseUpdateInput;
 type Passo = {
   slug: PassoDoCurso;
   label: string;
-  /** Tela que ainda não existe (Legendas: etapa 3; Mensagens: etapa 4). Sai como texto, nunca link. */
+  /** Tela que ainda não existe (Mensagens: etapa 4). Sai como texto, nunca link. */
   planejado?: true;
   /** Os campos do formulário que o passo confere antes de salvar. */
   campos: (keyof CourseFormValues)[];
@@ -48,7 +48,8 @@ export const PASSOS_DO_CURSO: Passo[] = [
   // O Conteúdo (módulos e aulas) se salva item a item, como antes: não tem o
   // botão Salvar do passo.
   { slug: "conteudo", label: "Conteúdo", campos: [], envia: [] },
-  { slug: "legendas", label: "Legendas", planejado: true, campos: [], envia: [] },
+  // As legendas se salvam linha a linha (04/10/2026): sem o Salvar do passo.
+  { slug: "legendas", label: "Legendas", campos: [], envia: [] },
   {
     slug: "pagina",
     // "Página do curso" fica para a página PÚBLICA, que o operador confere pelo
