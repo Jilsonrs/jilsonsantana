@@ -426,6 +426,12 @@ exceto o item 4, que é página pública.
    que fecha e devolve o foco ao sino; o "Marcar todas" desligado quando não há não lidas. O
    texto da mensagem sai pelo `MarkdownText` **sem link** (revisão de segurança): não acrescente
    `a` na lista. Textos do dicionário (`app.notificacoes`), nunca no `.tsx`.
+25. **Visualizar como aluno** *(04/10, decisão do operador)*: no passo Publicar, a seção "Como o
+   aluno vê" com o botão (`components/admin/course-form/CoursePreviewLink.tsx`), que abre em nova
+   aba a tela do aluno com o curso, em qualquer status. Com aula, cai na página da aula de sempre;
+   **sem nenhuma aula**, a tela própria (`pages/admin/CoursePreviewPage.tsx`): o título, o aviso
+   no lugar do player e o "Sobre o curso". Ela imita o topo e a largura da página da aula —
+   acerte as duas juntas se mexer numa. O botão abre em nova aba e tem teste.
 
 > **Fora do seu trabalho, para não confundir:** o Bunny ganhou **Live Stream** em acesso
 > antecipado (29/09). É só avaliação depois da Fase 3, **não** é tela a desenhar (`docs/bunny.md`
