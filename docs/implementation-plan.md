@@ -204,6 +204,10 @@
 > (aula concluída sozinha, barra na aula e no cartão), o vídeo que não recomeça ao trocar de aba
 > (a apresentação abre pausada, a aula toca sozinha) e o "Salvos". **Primeiro teste com o player de
 > verdade: com o operador** (assistir uma aula até perto do fim e ver a barra andar).
+> **PUBLICADO em 05/10/2026, à noite (`main` = `ce94db8`, CI verde nos dois jobs, deploy ok):** o
+> ✓ dos passos Legendas e Mensagens, e o gerador de esquema do Better Auth oficial (`auth`, na
+> versão do site). *(O CI da `main` ficou ~10 min na fila por lentidão do GitHub Actions; o
+> deploy já tinha saído, e o conteúdo era idêntico ao do `dev`, que tinha passado nos dois jobs.)*
 > **PUBLICADO em 05/10/2026, no fim do dia (`main` = `f956f6c`, CI verde nos dois jobs, deploy
 > ok):** o fim do vídeo abre a próxima aula e quem volta abre onde parou; os testes de servidor
 > num servidor em `127.0.0.1` (fim das falhas intermitentes); `npm run test:changed`; e o cache
