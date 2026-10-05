@@ -204,6 +204,13 @@
 > (aula concluída sozinha, barra na aula e no cartão), o vídeo que não recomeça ao trocar de aba
 > (a apresentação abre pausada, a aula toca sozinha) e o "Salvos". **Primeiro teste com o player de
 > verdade: com o operador** (assistir uma aula até perto do fim e ver a barra andar).
+> **PUBLICADO em 05/10/2026, no fim do dia (`main` = `f956f6c`, CI verde nos dois jobs, deploy
+> ok):** o fim do vídeo abre a próxima aula e quem volta abre onde parou; os testes de servidor
+> num servidor em `127.0.0.1` (fim das falhas intermitentes); `npm run test:changed`; e o cache
+> das bibliotecas no CI. *(A `main` não usa o cache criado no `dev` — regra do GitHub —, então a
+> primeira execução dela instalou e guardou; as seguintes, e as do `dev`, já o usam.)*
+> **PUBLICADO em 05/10/2026, antes (`main` = `789e9eb`, CI verde, deploy ok):** as linhas
+> calculadas do "Este curso inclui".
 > **PUBLICADO em 05/10/2026, depois (`main` = `93ed6a6`, CI verde nos dois jobs, deploy ok):** o
 > ícone dos Destaques escolhido por busca entre todos os do Lucide (feito em outro chat; o pacote
 > principal não cresceu, medido) e o `courses.md` reescrito pelo operador.
