@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import request from "supertest";
-import app from "../app.js";
+import servidor from "./servidor.js";
 import { prisma } from "../lib/prisma.js";
 
 // Suíte de SERVIDOR do login — a fronteira de acesso, que NÃO TEM TELA.
@@ -33,7 +33,7 @@ function cookiesFrom(res: request.Response): string[] {
 
 describe("login — caminho feliz", () => {
   it("credencial correta devolve 200 e emite cookie de sessão", async () => {
-    const res = await request(app)
+    const res = await request(servidor)
       .post(SIGN_IN)
       .send({ email: ADMIN_EMAIL(), password: ADMIN_PASSWORD() });
 
@@ -42,11 +42,11 @@ describe("login — caminho feliz", () => {
   });
 
   it("a sessão emitida é utilizável — linha criada não prova sessão", async () => {
-    const signIn = await request(app)
+    const signIn = await request(servidor)
       .post(SIGN_IN)
       .send({ email: ADMIN_EMAIL(), password: ADMIN_PASSWORD() });
 
-    const me = await request(app).get("/api/me").set("Cookie", cookiesFrom(signIn));
+    const me = await request(servidor).get("/api/me").set("Cookie", cookiesFrom(signIn));
 
     expect(me.status).toBe(200);
     expect(me.body.user.email).toBe(ADMIN_EMAIL());
@@ -55,7 +55,7 @@ describe("login — caminho feliz", () => {
 
 describe("login — o que tem que ser RECUSADO", () => {
   it("senha errada não autentica e não emite sessão", async () => {
-    const res = await request(app)
+    const res = await request(servidor)
       .post(SIGN_IN)
       .send({ email: ADMIN_EMAIL(), password: "senha-definitivamente-errada" });
 
@@ -67,7 +67,7 @@ describe("login — o que tem que ser RECUSADO", () => {
   });
 
   it("e-mail inexistente não autentica", async () => {
-    const res = await request(app)
+    const res = await request(servidor)
       .post(SIGN_IN)
       .send({ email: "nao-existe@exemplo.invalido", password: "qualquer-coisa" });
 
@@ -78,11 +78,11 @@ describe("login — o que tem que ser RECUSADO", () => {
   // de formas distinguíveis, qualquer um descobre QUAIS e-mails têm conta na
   // escola — sem precisar de senha. Numa escola isso é lista de alunos.
   it("senha errada e e-mail inexistente são INDISTINGUÍVEIS de fora", async () => {
-    const senhaErrada = await request(app)
+    const senhaErrada = await request(servidor)
       .post(SIGN_IN)
       .send({ email: ADMIN_EMAIL(), password: "senha-definitivamente-errada" });
 
-    const naoExiste = await request(app)
+    const naoExiste = await request(servidor)
       .post(SIGN_IN)
       .send({ email: "nao-existe@exemplo.invalido", password: "senha-definitivamente-errada" });
 
@@ -91,14 +91,14 @@ describe("login — o que tem que ser RECUSADO", () => {
   });
 
   it("senha vazia não autentica", async () => {
-    const res = await request(app).post(SIGN_IN).send({ email: ADMIN_EMAIL(), password: "" });
+    const res = await request(servidor).post(SIGN_IN).send({ email: ADMIN_EMAIL(), password: "" });
     expect(res.status).toBe(401);
   });
 
   // A tela agora bloqueia isto antes de chegar aqui (`.refine` no loginSchema),
   // mas a tela não é a fronteira: quem chama a API direto pula o formulário.
   it("senha só de espaços não autentica", async () => {
-    const res = await request(app).post(SIGN_IN).send({ email: ADMIN_EMAIL(), password: "   " });
+    const res = await request(servidor).post(SIGN_IN).send({ email: ADMIN_EMAIL(), password: "   " });
     expect(res.status).toBe(401);
   });
 });
@@ -108,7 +108,7 @@ describe("login — normalização de e-mail (decisão do SERVIDOR, não da tela
   // quem decide se autentica é o Better Auth. É o chamado clássico de "não
   // consigo entrar" — e a resposta só existe medindo.
   it("e-mail em MAIÚSCULAS: o comportamento fica REGISTRADO por medição", async () => {
-    const res = await request(app)
+    const res = await request(servidor)
       .post(SIGN_IN)
       .send({ email: ADMIN_EMAIL().toUpperCase(), password: ADMIN_PASSWORD() });
 
@@ -132,7 +132,7 @@ describe("login — cadastro fechado", () => {
   // `disableSignUp: true` é o que impede conta nova sem passar pelo Stripe
   // (Fase 4). Sem teste, alguém desliga na config e nada avisa.
   it("sign-up público é recusado", async () => {
-    const res = await request(app).post("/api/auth/sign-up/email").send({
+    const res = await request(servidor).post("/api/auth/sign-up/email").send({
       email: "invasor@exemplo.invalido",
       password: "SenhaForte123!",
       name: "Invasor",
@@ -159,14 +159,14 @@ describe("login — aluno excluído (LGPD)", () => {
 
     await prisma.user.update({ where: { email }, data: { deletedAt: new Date() } });
     try {
-      const signIn = await request(app).post(SIGN_IN).send({ email, password });
+      const signIn = await request(servidor).post(SIGN_IN).send({ email, password });
 
       // MEDIDO, não presumido: o Better Auth não conhece `deletedAt`, então o
       // sign-in em si pode devolver 200 e emitir cookie. O que decide o acesso é
       // `loadSession` (middleware/auth.ts:31), que devolve null para excluído.
       // Por isso a asserção que importa é a SEGUNDA: o cookie eventualmente
       // emitido não abre nada.
-      const me = await request(app).get("/api/me").set("Cookie", cookiesFrom(signIn));
+      const me = await request(servidor).get("/api/me").set("Cookie", cookiesFrom(signIn));
       expect(me.status).toBe(401);
     } finally {
       await prisma.user.update({ where: { email }, data: { deletedAt: null } });
@@ -176,7 +176,7 @@ describe("login — aluno excluído (LGPD)", () => {
 
 describe("login — o cookie de sessão", () => {
   it("é httpOnly e tem sameSite — sem httpOnly, qualquer XSS lê a sessão", async () => {
-    const res = await request(app)
+    const res = await request(servidor)
       .post(SIGN_IN)
       .send({ email: ADMIN_EMAIL(), password: ADMIN_PASSWORD() });
 

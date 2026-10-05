@@ -44,7 +44,24 @@ jobs:
           node-version: "20"
           cache: "npm"
 
+      # As bibliotecas instaladas ficam guardadas entre uma execução e outra
+      # (05/10/2026: a instalação levava ~1 min 37 s dos ~4 min do job, com o
+      # cache do npm já ligado — o tempo era descompactar e rodar os scripts de
+      # instalação). A chave é o package-lock + a versão do Node: mudou qualquer
+      # dependência, a chave muda e o `npm ci` roda inteiro. Sem `restore-keys`
+      # de propósito: restaurar uma pasta "parecida" seria instalar o que o
+      # lockfile não pede.
+      - name: Cache node_modules
+        id: cache-modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            */node_modules
+          key: modules-${{ runner.os }}-node20-${{ hashFiles('package-lock.json') }}
+
       - name: Install dependencies
+        if: steps.cache-modules.outputs.cache-hit != 'true'
         run: npm ci
 
       - name: Build core
@@ -147,7 +164,24 @@ jobs:
           node-version: "20"
           cache: "npm"
 
+      # As bibliotecas instaladas ficam guardadas entre uma execução e outra
+      # (05/10/2026: a instalação levava ~1 min 37 s dos ~4 min do job, com o
+      # cache do npm já ligado — o tempo era descompactar e rodar os scripts de
+      # instalação). A chave é o package-lock + a versão do Node: mudou qualquer
+      # dependência, a chave muda e o `npm ci` roda inteiro. Sem `restore-keys`
+      # de propósito: restaurar uma pasta "parecida" seria instalar o que o
+      # lockfile não pede.
+      - name: Cache node_modules
+        id: cache-modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            */node_modules
+          key: modules-${{ runner.os }}-node20-${{ hashFiles('package-lock.json') }}
+
       - name: Install dependencies
+        if: steps.cache-modules.outputs.cache-hit != 'true'
         run: npm ci
 
       # O server e o client importam @jilson/core, que resolve para core/dist —

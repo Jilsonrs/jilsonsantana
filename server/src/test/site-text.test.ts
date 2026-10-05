@@ -1,7 +1,7 @@
 import { describe, it, expect, afterEach } from "vitest";
 import request from "supertest";
 import { pt } from "@jilson/core";
-import app from "../app.js";
+import servidor from "./servidor.js";
 import { prisma } from "../lib/prisma.js";
 import { invalidarCacheDeTexto } from "../lib/dict.js";
 
@@ -17,7 +17,7 @@ const FABRICA_PT = pt.home.hero.subtitle;
 const EDITADO = "Texto que o operador escreveu no painel.";
 
 async function sessao(email?: string, senha?: string): Promise<string[]> {
-  const res = await request(app).post("/api/auth/sign-in/email").send({ email, password: senha });
+  const res = await request(servidor).post("/api/auth/sign-in/email").send({ email, password: senha });
   return (res.headers["set-cookie"] as unknown as string[] | undefined) ?? [];
 }
 
@@ -27,7 +27,7 @@ const sessaoMember = () => sessao(process.env.SEED_MEMBER_EMAIL, process.env.SEE
 // `object` e não o tipo do schema: metade dos casos manda corpo INVÁLIDO de
 // propósito, e tipar como válido impediria justamente esses testes de existir.
 async function editar(cookies: string[], body: object) {
-  return request(app).put("/api/admin/site-text").set("Cookie", cookies).send(body);
+  return request(servidor).put("/api/admin/site-text").set("Cookie", cookies).send(body);
 }
 
 afterEach(async () => {
@@ -40,7 +40,7 @@ afterEach(async () => {
 
 describe("texto do site — o que o visitante lê", () => {
   it("sem sobrescrita, a home mostra o valor de fábrica", async () => {
-    const res = await request(app).get("/");
+    const res = await request(servidor).get("/");
     expect(res.text).toContain(FABRICA_PT);
   });
 
@@ -49,7 +49,7 @@ describe("texto do site — o que o visitante lê", () => {
     const put = await editar(cookies, { key: CHAVE, language: "pt", value: EDITADO });
     expect(put.status).toBe(200);
 
-    const res = await request(app).get("/");
+    const res = await request(servidor).get("/");
     expect(res.text).toContain(EDITADO);
     expect(res.text).not.toContain(FABRICA_PT);
   });
@@ -58,7 +58,7 @@ describe("texto do site — o que o visitante lê", () => {
     const cookies = await sessaoAdmin();
     await editar(cookies, { key: CHAVE, language: "pt", value: EDITADO });
 
-    const en = await request(app).get("/en");
+    const en = await request(servidor).get("/en");
     expect(en.text).not.toContain(EDITADO);
     expect(en.text).toContain("Courses and guided learning paths");
   });
@@ -67,8 +67,8 @@ describe("texto do site — o que o visitante lê", () => {
     const cookies = await sessaoAdmin();
     await editar(cookies, { key: CHAVE, language: "en", value: "Operator wrote this." });
 
-    const en = await request(app).get("/en");
-    const ptRes = await request(app).get("/");
+    const en = await request(servidor).get("/en");
+    const ptRes = await request(servidor).get("/");
     expect(en.text).toContain("Operator wrote this.");
     expect(ptRes.text).toContain(FABRICA_PT);
     expect(ptRes.text).not.toContain("Operator wrote this.");
@@ -83,20 +83,20 @@ describe("texto do site — o que o visitante lê", () => {
     expect(limpar.body.usandoFabrica).toBe(true);
     expect(await prisma.siteText.count()).toBe(0);
 
-    const res = await request(app).get("/");
+    const res = await request(servidor).get("/");
     expect(res.text).toContain(FABRICA_PT);
   });
 });
 
 describe("texto do site — o que tem que ser RECUSADO", () => {
   it("sem sessão, não lista e não grava", async () => {
-    expect((await request(app).get("/api/admin/site-text")).status).toBe(401);
+    expect((await request(servidor).get("/api/admin/site-text")).status).toBe(401);
     expect((await editar([], { key: CHAVE, language: "pt", value: EDITADO })).status).toBe(401);
   });
 
   it("membro autenticado não é admin — 403, e nada é gravado", async () => {
     const cookies = await sessaoMember();
-    expect((await request(app).get("/api/admin/site-text").set("Cookie", cookies)).status).toBe(403);
+    expect((await request(servidor).get("/api/admin/site-text").set("Cookie", cookies)).status).toBe(403);
     expect((await editar(cookies, { key: CHAVE, language: "pt", value: EDITADO })).status).toBe(403);
     expect(await prisma.siteText.count()).toBe(0);
   });
@@ -123,7 +123,7 @@ describe("texto do site — a lista que a tela de admin consome", () => {
     const cookies = await sessaoAdmin();
     await editar(cookies, { key: CHAVE, language: "pt", value: EDITADO });
 
-    const res = await request(app).get("/api/admin/site-text").set("Cookie", cookies);
+    const res = await request(servidor).get("/api/admin/site-text").set("Cookie", cookies);
     expect(res.status).toBe(200);
 
     const campo = res.body.campos.find((c: { key: string }) => c.key === CHAVE);
@@ -147,7 +147,7 @@ describe("texto do site — os textos comuns, lidos pelo rodapé do app", () => 
   const FABRICA_CONTATO = pt.common.footer.links[5];
 
   it("sem edição, devolve o texto de fábrica — sem sessão, porque é texto público", async () => {
-    const res = await request(app).get("/api/site-text/common/pt");
+    const res = await request(servidor).get("/api/site-text/common/pt");
 
     expect(res.status).toBe(200);
     expect(res.body.footer.links[5]).toBe(FABRICA_CONTATO);
@@ -158,7 +158,7 @@ describe("texto do site — os textos comuns, lidos pelo rodapé do app", () => 
     const cookies = await sessaoAdmin();
     await editar(cookies, { key: CHAVE_CONTATO, language: "pt", value: "Fale comigo" });
 
-    const res = await request(app).get("/api/site-text/common/pt");
+    const res = await request(servidor).get("/api/site-text/common/pt");
     expect(res.body.footer.links[5]).toBe("Fale comigo");
   });
 
@@ -166,13 +166,13 @@ describe("texto do site — os textos comuns, lidos pelo rodapé do app", () => 
     const cookies = await sessaoAdmin();
     await editar(cookies, { key: CHAVE_CONTATO, language: "pt", value: "Fale comigo" });
 
-    const res = await request(app).get("/api/site-text/common/en");
+    const res = await request(servidor).get("/api/site-text/common/en");
     expect(res.status).toBe(200);
     expect(res.body.footer.links[5]).not.toBe("Fale comigo");
   });
 
   it("só os textos comuns: os de cada página (home.*) não saem por aqui", async () => {
-    const res = await request(app).get("/api/site-text/common/pt");
+    const res = await request(servidor).get("/api/site-text/common/pt");
 
     expect(res.body.footer).toBeDefined();
     expect(res.body.hero).toBeUndefined();
@@ -180,7 +180,7 @@ describe("texto do site — os textos comuns, lidos pelo rodapé do app", () => 
   });
 
   it("idioma fora dos dois da escola é recusado", async () => {
-    expect((await request(app).get("/api/site-text/common/es")).status).toBe(400);
+    expect((await request(servidor).get("/api/site-text/common/es")).status).toBe(400);
   });
 });
 
@@ -189,7 +189,7 @@ describe("texto do site — os textos comuns, lidos pelo rodapé do app", () => 
 describe("texto do site — o texto do app fica FORA de Textos", () => {
   it("a lista de Textos não traz nenhuma chave do app", async () => {
     const cookies = await sessaoAdmin();
-    const res = await request(app).get("/api/admin/site-text").set("Cookie", cookies);
+    const res = await request(servidor).get("/api/admin/site-text").set("Cookie", cookies);
 
     expect(res.status).toBe(200);
     const doApp = res.body.campos.filter((c: { key: string }) => c.key.startsWith("app."));
@@ -214,7 +214,7 @@ describe("texto do site — as 3 camadas são editáveis", () => {
 
   it("aparecem na lista de Textos, nos dois idiomas", async () => {
     const cookies = await sessaoAdmin();
-    const res = await request(app).get("/api/admin/site-text").set("Cookie", cookies);
+    const res = await request(servidor).get("/api/admin/site-text").set("Cookie", cookies);
 
     const campo = res.body.campos.find((c: { key: string }) => c.key === CHAVE_CAMADA);
     expect(campo.section).toBe("common.camadas");
@@ -226,7 +226,7 @@ describe("texto do site — as 3 camadas são editáveis", () => {
     const cookies = await sessaoAdmin();
     await editar(cookies, { key: CHAVE_CAMADA, language: "pt", value: "Base que não quebra" });
 
-    const res = await request(app).get("/api/site-text/common/pt");
+    const res = await request(servidor).get("/api/site-text/common/pt");
     expect(res.body.camadas.UNIVERSAL.nome).toBe("Base que não quebra");
   });
 });

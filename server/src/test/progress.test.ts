@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import request from "supertest";
-import app from "../app.js";
+import servidor from "./servidor.js";
 import { prisma } from "../lib/prisma.js";
 import { ASSINATURA_DE_TESTE } from "../lib/assinatura-de-teste.js";
 import { aulasConcluidas } from "../lib/progresso.js";
@@ -24,7 +24,7 @@ let memberId = "";
 let adminId = "";
 
 async function sessao(email?: string, senha?: string): Promise<string[]> {
-  const res = await request(app).post("/api/auth/sign-in/email").send({ email, password: senha });
+  const res = await request(servidor).post("/api/auth/sign-in/email").send({ email, password: senha });
   return (res.headers["set-cookie"] as unknown as string[] | undefined) ?? [];
 }
 
@@ -96,10 +96,10 @@ async function semAssinatura(fn: () => Promise<void>) {
   }
 }
 
-const concluir = (id: number, cookies: string[] = []) => request(app).put(`/api/lessons/${id}/concluida`).set("Cookie", cookies);
-const concluirComoAdmin = (id: number, cookies: string[] = []) => request(app).put(`/api/admin/lessons/${id}/concluida`).set("Cookie", cookies);
+const concluir = (id: number, cookies: string[] = []) => request(servidor).put(`/api/lessons/${id}/concluida`).set("Cookie", cookies);
+const concluirComoAdmin = (id: number, cookies: string[] = []) => request(servidor).put(`/api/admin/lessons/${id}/concluida`).set("Cookie", cookies);
 const linha = (userId: string, lessonId: number) => prisma.lessonProgress.findUnique({ where: { userId_lessonId: { userId, lessonId } } });
-const pagina = (id: number, cookies: string[] = []) => request(app).get(`/api/lessons/${id}/aula`).set("Cookie", cookies);
+const pagina = (id: number, cookies: string[] = []) => request(servidor).get(`/api/lessons/${id}/aula`).set("Cookie", cookies);
 
 describe("concluir uma aula — o aluno", () => {
   it("visitante: 401, nada gravado", async () => {
@@ -182,7 +182,7 @@ describe("a página da aula devolve o que QUEM PEDE concluiu", () => {
   });
 
   it("o admin vê as dele, e não as do aluno", async () => {
-    const res = await request(app).get(`/api/admin/lessons/${ids.paga}/aula`).set("Cookie", admin);
+    const res = await request(servidor).get(`/api/admin/lessons/${ids.paga}/aula`).set("Cookie", admin);
 
     expect(res.body.concluidas).toEqual([ids.rascunho, ids.outraPaga].sort((a, b) => a - b));
   });
@@ -224,7 +224,7 @@ describe("sem pessoa, o progresso não responde", () => {
 // curso começado, contando só a cadeia publicada.
 describe("o progresso por curso", () => {
   type Linha = { courseId: number; concluidas: number; total: number };
-  const progressoDosCursos = (cookies: string[] = []) => request(app).get("/api/progresso/cursos").set("Cookie", cookies);
+  const progressoDosCursos = (cookies: string[] = []) => request(servidor).get("/api/progresso/cursos").set("Cookie", cookies);
   const cursoDe = async (lessonId: number) =>
     (await prisma.lesson.findUniqueOrThrow({ where: { id: lessonId }, select: { module: { select: { courseId: true } } } })).module.courseId;
 

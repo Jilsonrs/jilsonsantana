@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import request from "supertest";
-import app from "../app.js";
+import servidor from "./servidor.js";
 import { prisma } from "../lib/prisma.js";
 
 // A ORDEM DO CURSO numa gravação só (Bloco E, etapa 2 — plano aprovado pelo
@@ -21,7 +21,7 @@ let aulaDeOutroCurso = 0;
 let moduloDeOutroCurso = 0;
 
 async function sessao(email?: string, senha?: string): Promise<string[]> {
-  const res = await request(app).post("/api/auth/sign-in/email").send({ email, password: senha });
+  const res = await request(servidor).post("/api/auth/sign-in/email").send({ email, password: senha });
   return (res.headers["set-cookie"] as unknown as string[] | undefined) ?? [];
 }
 
@@ -61,7 +61,7 @@ afterAll(async () => {
 });
 
 const enviar = (cookies: string[], modulos: { id: number; aulas: number[] }[], curso = cursoA) =>
-  request(app).put(`/api/admin/courses/${curso}/estrutura`).set("Cookie", cookies).send({ modulos });
+  request(servidor).put(`/api/admin/courses/${curso}/estrutura`).set("Cookie", cookies).send({ modulos });
 
 async function ordemAtual() {
   const modulos = await prisma.module.findMany({
@@ -74,7 +74,7 @@ async function ordemAtual() {
 
 describe("ordem do curso", () => {
   it("sem login 401; aluno 403", async () => {
-    expect((await request(app).put(`/api/admin/courses/${cursoA}/estrutura`).send({ modulos: [] })).status).toBe(401);
+    expect((await request(servidor).put(`/api/admin/courses/${cursoA}/estrutura`).send({ modulos: [] })).status).toBe(401);
     expect((await enviar(member, [])).status).toBe(403);
   });
 

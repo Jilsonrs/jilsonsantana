@@ -1,13 +1,13 @@
 import { describe, it, expect } from "vitest";
 import request from "supertest";
-import app from "../app.js";
+import servidor from "../test/servidor.js";
 
 // Testa o app REAL (nada de dublê de Prisma): o que importa aqui é que a rota
 // esteja registrada, que o HTML venha inteiro na primeira resposta e que as
 // duas versões de idioma se apontem uma para a outra.
 describe("Home pública (SSR)", () => {
   it("GET / responde HTML em português, completo na primeira resposta", async () => {
-    const res = await request(app).get("/");
+    const res = await request(servidor).get("/");
 
     expect(res.status).toBe(200);
     expect(res.headers["content-type"]).toMatch(/html/);
@@ -19,7 +19,7 @@ describe("Home pública (SSR)", () => {
   });
 
   it("GET /en responde HTML em inglês", async () => {
-    const res = await request(app).get("/en");
+    const res = await request(servidor).get("/en");
 
     expect(res.status).toBe(200);
     expect(res.text).toContain('<html lang="en"');
@@ -30,7 +30,7 @@ describe("Home pública (SSR)", () => {
     // quebra teste, typecheck nem build — só decepciona quem clica.
     // Cada idioma leva ao login no SEU idioma (decisão do operador, 24/09/2026).
     for (const [rota, login] of [["/", "/login"], ["/en", "/login?lang=en"]]) {
-      const res = await request(app).get(rota);
+      const res = await request(servidor).get(rota);
       expect(res.text, rota).toContain(`<a href="${login}" class="btn-login">`);
       expect(res.text, rota).not.toContain('href="/inicio"');
     }
@@ -40,14 +40,14 @@ describe("Home pública (SSR)", () => {
     // O visitante logado não deve ser convidado a "Entrar" de novo. É a ÚNICA
     // coisa que a sessão muda na vitrine — o resto é igual para todo mundo,
     // inclusive para o robô do Google, que nunca tem cookie.
-    const login = await request(app).post("/api/auth/sign-in/email").send({
+    const login = await request(servidor).post("/api/auth/sign-in/email").send({
       email: process.env.SEED_MEMBER_EMAIL,
       password: process.env.SEED_MEMBER_PASSWORD,
     });
     const cookies = (login.headers["set-cookie"] as unknown as string[] | undefined) ?? [];
     expect(cookies.length).toBeGreaterThan(0);
 
-    const res = await request(app).get("/").set("Cookie", cookies);
+    const res = await request(servidor).get("/").set("Cookie", cookies);
 
     expect(res.text).toContain('<a href="/inicio" class="btn-login">');
     expect(res.text).toContain("Meus estudos");
@@ -60,14 +60,14 @@ describe("Home pública (SSR)", () => {
     // Os destinos apontam para a página final mesmo onde ela ainda não existe
     // (decisão do operador): link no lugar certo desde o começo.
     for (const rota of ["/", "/en"]) {
-      const res = await request(app).get(rota);
+      const res = await request(servidor).get(rota);
       expect(res.text, rota).not.toContain('href="#"');
     }
   });
 
   it("cada idioma aponta para os endereços DELE", async () => {
-    const pt = await request(app).get("/");
-    const en = await request(app).get("/en");
+    const pt = await request(servidor).get("/");
+    const en = await request(servidor).get("/en");
 
     expect(pt.text).toContain('href="/cursos"');
     expect(pt.text).toContain('href="/quem-somos"');
@@ -83,8 +83,8 @@ describe("Home pública (SSR)", () => {
   // O estrangeiro escolhe o idioma na home e ENTRA já em inglês (decisão do
   // operador, 24/09/2026): o "Entrar" de /en leva o idioma para o login.
   it("o Entrar leva o idioma da página para o login", async () => {
-    const pt = await request(app).get("/");
-    const en = await request(app).get("/en");
+    const pt = await request(servidor).get("/");
+    const en = await request(servidor).get("/en");
 
     expect(pt.text).toContain('href="/login"');
     expect(pt.text).not.toContain("/login?lang=en");
@@ -94,8 +94,8 @@ describe("Home pública (SSR)", () => {
   // Um canal por idioma (decisão do operador, 24/09/2026): o visitante em
   // inglês não cai no canal em português.
   it("o YouTube leva ao canal do idioma da página", async () => {
-    const pt = await request(app).get("/");
-    const en = await request(app).get("/en");
+    const pt = await request(servidor).get("/");
+    const en = await request(servidor).get("/en");
 
     expect(pt.text).toContain('href="https://www.youtube.com/@JilsonSantanaBI/"');
     expect(pt.text).not.toContain("@jilsonen");
@@ -107,7 +107,7 @@ describe("Home pública (SSR)", () => {
     // O template do servidor não herda nada do index.html do React: o que não
     // estiver escrito aqui simplesmente não existe na página pública.
     for (const rota of ["/", "/en"]) {
-      const res = await request(app).get(rota);
+      const res = await request(servidor).get(rota);
       expect(res.text, rota).toContain('<link rel="icon" type="image/svg+xml" href="/favicon.svg">');
     }
   });
@@ -117,7 +117,7 @@ describe("Home pública (SSR)", () => {
     // é isso que faz a versão em inglês ter arquivo próprio sem convenção extra.
     // Vale a pena testar porque o erro é INVISÍVEL: a página renderiza a imagem
     // de outro curso e parece certa. Já aconteceu uma vez, em 22/09.
-    const res = await request(app).get("/");
+    const res = await request(servidor).get("/");
 
     const slugs = [...res.text.matchAll(/href="\/curso\/([^"]+)"/g)].map((m) => m[1]);
     const imagens = [...res.text.matchAll(/src="\/img\/([^"]+)\.jpg"/g)].map((m) => m[1]);
@@ -127,8 +127,8 @@ describe("Home pública (SSR)", () => {
   });
 
   it("o seletor PT | EN leva ao endereço do outro idioma e marca o atual", async () => {
-    const pt = await request(app).get("/");
-    const en = await request(app).get("/en");
+    const pt = await request(servidor).get("/");
+    const en = await request(servidor).get("/en");
 
     // Um endereço por idioma: o seletor é dois links, nunca um botão que troca
     // o idioma no mesmo endereço (CLAUDE.md → Idiomas).
@@ -145,8 +145,8 @@ describe("Home pública (SSR)", () => {
   });
 
   it("as duas versões declaram canonical e hreflang recíprocos", async () => {
-    const pt = await request(app).get("/");
-    const en = await request(app).get("/en");
+    const pt = await request(servidor).get("/");
+    const en = await request(servidor).get("/en");
 
     expect(pt.text).toMatch(/<link rel="canonical" href="[^"]+">/);
     expect(pt.text).toContain('hreflang="en"');
@@ -154,7 +154,7 @@ describe("Home pública (SSR)", () => {
   });
 
   it("sem curso em inglês, a home /en não quebra e não mostra card de curso", async () => {
-    const res = await request(app).get("/en");
+    const res = await request(servidor).get("/en");
 
     expect(res.status).toBe(200);
     expect(res.text).not.toContain("Agentic AI na Prática");
@@ -180,7 +180,7 @@ const TRECHOS_PT = [
 
 describe("Home — nenhum texto fica cravado no template", () => {
   it("a home em português mostra todos os trechos (o dicionário está ligado)", async () => {
-    const res = await request(app).get("/");
+    const res = await request(servidor).get("/");
 
     for (const trecho of TRECHOS_PT) {
       expect(res.text, `faltou em /: ${trecho}`).toContain(trecho);
@@ -188,7 +188,7 @@ describe("Home — nenhum texto fica cravado no template", () => {
   });
 
   it("a home em inglês NÃO vaza nenhum deles", async () => {
-    const res = await request(app).get("/en");
+    const res = await request(servidor).get("/en");
 
     for (const trecho of TRECHOS_PT) {
       expect(res.text, `vazou em /en: ${trecho}`).not.toContain(trecho);

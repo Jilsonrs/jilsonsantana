@@ -18,10 +18,12 @@ vi.mock("@/lib/api", async (importOriginal) => ({
 }));
 // O player do Bunny é ouvido pelo NOSSO módulo; aqui ele vira dublê, e o teste
 // "chega aos 90%" chamando o aviso que a página entregou.
-const ouvirConclusao = vi.fn();
+const ouvirPlayer = vi.fn();
 vi.mock("@/lib/player-do-bunny", () => ({
-  ouvirConclusao: (...args: unknown[]) => ouvirConclusao(...args),
+  ouvirPlayer: (...args: unknown[]) => ouvirPlayer(...args),
 }));
+/** Os avisos que a página entregou ao player (o dublê guarda o que recebeu). */
+const avisosDoPlayer = () => ouvirPlayer.mock.calls[0][1] as { aoConcluir: () => void; aoTerminar: () => void };
 const useSessionMock = vi.fn();
 vi.mock("@/lib/auth-client", () => ({ useSession: () => useSessionMock() }));
 
@@ -98,7 +100,7 @@ beforeEach(() => {
   concluirAula.mockReset().mockResolvedValue(undefined);
   getSalvos.mockReset().mockResolvedValue({ cursos: [], aulas: [] });
   alternarSalvo.mockReset().mockResolvedValue(undefined);
-  ouvirConclusao.mockReset().mockReturnValue(() => {});
+  ouvirPlayer.mockReset().mockReturnValue(() => {});
 });
 
 const abrir = (rota = "/aluno/aula/11") => renderWithProviders(<LessonPage />, { route: rota, path: "/aluno/aula/:id" });
@@ -394,18 +396,17 @@ describe("página da aula — o progresso", () => {
     abrir("/aluno/aula/12");
     await screen.findByRole("status");
     expect(concluirAula).not.toHaveBeenCalled();
-    expect(ouvirConclusao).not.toHaveBeenCalled();
+    expect(ouvirPlayer).not.toHaveBeenCalled();
   });
 
   it("aula de vídeo: o player é ouvido, e chegar aos 90% conclui", async () => {
     comoMembro();
     abrir();
     await screen.findByTitle("Abertura");
-    await waitFor(() => expect(ouvirConclusao).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(ouvirPlayer).toHaveBeenCalledTimes(1));
     expect(concluirAula).not.toHaveBeenCalled();
 
-    const aoChegarAos90 = ouvirConclusao.mock.calls[0][1] as () => void;
-    aoChegarAos90();
+    avisosDoPlayer().aoConcluir();
 
     await waitFor(() => expect(concluirAula).toHaveBeenCalledWith(11, false));
   });
@@ -419,28 +420,35 @@ describe("página da aula — o progresso", () => {
     );
     abrir();
     const quadro = await screen.findByTitle("Abertura");
-    await waitFor(() => expect(ouvirConclusao).toHaveBeenCalled());
+    await waitFor(() => expect(ouvirPlayer).toHaveBeenCalled());
 
-    (ouvirConclusao.mock.calls[0][1] as () => void)();
+    avisosDoPlayer().aoConcluir();
 
     await waitFor(() => expect(screen.getByRole("progressbar").getAttribute("aria-valuenow")).toBe("50"));
     expect(screen.getByTitle("Abertura")).toBe(quadro);
     expect(quadro.getAttribute("src")).toBe(PLAYER);
   });
 
-  it("aula de vídeo já concluída, ou de visitante: o player não é ouvido", async () => {
+  // O player é sempre ouvido (o ponto e o fim, 05/10/2026); o que não pode é
+  // CONCLUIR de novo, nem concluir para o visitante.
+  it("aula de vídeo já concluída, ou de visitante: chegar aos 90% não conclui", async () => {
     comoMembro();
     getLessonPage.mockResolvedValue(comConcluidas(pagina(), [11]));
     const primeira = abrir();
     await screen.findByTitle("Abertura");
+    await waitFor(() => expect(ouvirPlayer).toHaveBeenCalled());
+    avisosDoPlayer().aoConcluir();
     primeira.unmount();
 
+    ouvirPlayer.mockClear();
     useSessionMock.mockReturnValue({ data: null, isPending: false });
     getLessonPage.mockResolvedValue(pagina({ isFreePreview: true }));
     abrir();
     await screen.findByTitle("Abertura");
+    await waitFor(() => expect(ouvirPlayer).toHaveBeenCalled());
+    avisosDoPlayer().aoConcluir();
 
-    expect(ouvirConclusao).not.toHaveBeenCalled();
+    expect(concluirAula).not.toHaveBeenCalled();
   });
 
   it("o conteúdo do curso marca só a aula concluída", async () => {
@@ -449,6 +457,50 @@ describe("página da aula — o progresso", () => {
     const nav = await screen.findByRole("navigation", { name: "Conteúdo do curso" });
     expect(within(nav).getByRole("link", { name: /Leitura/ }).textContent).toContain("Concluída");
     expect(within(nav).getByRole("link", { name: /Abertura/ }).textContent).not.toContain("Concluída");
+  });
+});
+
+// A PRÓXIMA AULA (decisão do operador, 05/10/2026): o vídeo terminou, a próxima
+// aula da lista abre na hora, seja vídeo ou texto — para o aluno e na prévia do
+// admin. Na última aula, o vídeo só termina.
+describe("página da aula — o fim do vídeo abre a próxima", () => {
+  it("aluno: o fim da aula de vídeo abre a próxima, que é de texto", async () => {
+    useSessionMock.mockReturnValue({ data: { user: { role: Role.MEMBER } }, isPending: false });
+    getLessonPage.mockImplementation((id: number) =>
+      Promise.resolve(id === 12 ? pagina({ id: 12, title: "Leitura", kind: "TEXT", playerUrl: null, texto: "A aula seguinte." }) : pagina()),
+    );
+    abrir();
+    await screen.findByTitle("Abertura");
+    await waitFor(() => expect(ouvirPlayer).toHaveBeenCalled());
+
+    avisosDoPlayer().aoTerminar();
+
+    expect(await screen.findByText("A aula seguinte.")).toBeTruthy();
+    expect(getLessonPage).toHaveBeenLastCalledWith(12, false);
+  });
+
+  it("na prévia do admin também", async () => {
+    useSessionMock.mockReturnValue({ data: { user: { role: Role.ADMIN } }, isPending: false });
+    abrir();
+    await screen.findByTitle("Abertura");
+    await waitFor(() => expect(ouvirPlayer).toHaveBeenCalled());
+    avisosDoPlayer().aoTerminar();
+    await waitFor(() => expect(getLessonPage).toHaveBeenLastCalledWith(12, true));
+  });
+
+  it("na última aula: o vídeo termina e a página fica", async () => {
+    useSessionMock.mockReturnValue({ data: { user: { role: Role.MEMBER } }, isPending: false });
+    getLessonPage.mockResolvedValue(pagina({ id: 12, title: "Leitura", kind: "VIDEO", playerUrl: PLAYER }));
+    abrir("/aluno/aula/12");
+    await screen.findByTitle("Leitura");
+    await waitFor(() => expect(ouvirPlayer).toHaveBeenCalled());
+    const chamadas = getLessonPage.mock.calls.length;
+
+    avisosDoPlayer().aoTerminar();
+
+    expect(screen.getByTitle("Leitura")).toBeTruthy();
+    expect(getLessonPage.mock.calls.length).toBe(chamadas);
+    expect(getLessonPage.mock.calls.every(([id]) => id === 12)).toBe(true);
   });
 });
 

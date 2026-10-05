@@ -15,7 +15,7 @@ vi.mock("../lib/bunny-stream.js", async (importOriginal) => ({
   apagarVideo: (...args: unknown[]) => apagarVideo(...args),
 }));
 
-import app from "../app.js";
+import servidor from "./servidor.js";
 import { prisma } from "../lib/prisma.js";
 
 // AS LEGENDAS (passo Legendas do editor — decisões do operador, 04/10/2026). O
@@ -39,7 +39,7 @@ let admin: string[] = [];
 let member: string[] = [];
 
 async function sessao(email?: string, senha?: string): Promise<string[]> {
-  const res = await request(app).post("/api/auth/sign-in/email").send({ email, password: senha });
+  const res = await request(servidor).post("/api/auth/sign-in/email").send({ email, password: senha });
   return (res.headers["set-cookie"] as unknown as string[] | undefined) ?? [];
 }
 
@@ -86,7 +86,7 @@ beforeEach(() => {
 });
 
 const enviar = (rota: string, conteudo: string, nome = "aula.vtt", cookies = admin) =>
-  request(app)
+  request(servidor)
     .put(rota)
     .set("Cookie", cookies)
     .set("Content-Type", "text/vtt")
@@ -94,7 +94,7 @@ const enviar = (rota: string, conteudo: string, nome = "aula.vtt", cookies = adm
     .send(conteudo);
 const daAula = (id: number) => `/api/admin/lessons/${id}/legenda`;
 const daApresentacao = () => `/api/admin/courses/${ids.curso}/legenda-apresentacao`;
-const lista = () => request(app).get(`/api/admin/courses/${ids.curso}/legendas`).set("Cookie", admin);
+const lista = () => request(servidor).get(`/api/admin/courses/${ids.curso}/legendas`).set("Cookie", admin);
 const legendaDaAula = (id: number) => prisma.caption.findUnique({ where: { lessonId: id } });
 
 describe("legendas — quem entra", () => {
@@ -111,7 +111,7 @@ describe("legendas — quem entra", () => {
 
   it.each(ROTAS)("%s %s: visitante 401, aluno 403, nada muda", async (metodo, rota) => {
     for (const [cookies, esperado] of [[[], 401], [member, 403]] as const) {
-      const pedido = metodo === "put" ? request(app).put(rota()) : metodo === "delete" ? request(app).delete(rota()) : request(app).get(rota());
+      const pedido = metodo === "put" ? request(servidor).put(rota()) : metodo === "delete" ? request(servidor).delete(rota()) : request(servidor).get(rota());
       const res = await pedido.set("Cookie", [...cookies]).set("Content-Type", "text/vtt").set("X-Nome-Do-Arquivo", "a.vtt").send(metodo === "put" ? VTT : undefined);
       expect(res.status).toBe(esperado);
     }
@@ -176,7 +176,7 @@ describe("legendas — enviar, substituir, baixar e excluir", () => {
   });
 
   it("baixar devolve o arquivo, com o nome original", async () => {
-    const res = await request(app).get(daAula(ids.aula)).set("Cookie", admin);
+    const res = await request(servidor).get(daAula(ids.aula)).set("Cookie", admin);
     expect(res.status).toBe(200);
     expect(res.headers["content-type"]).toMatch(/^text\/vtt/);
     // Sempre baixar, nunca abrir no navegador (achado P2 da revisão, 04/10/2026).
@@ -188,12 +188,12 @@ describe("legendas — enviar, substituir, baixar e excluir", () => {
 
   it("nome com aspas e caractere de inverter texto sai limpo no download", async () => {
     await enviar(daAula(ids.outraAula), VTT, 'aula"\u202Etxt.vtt');
-    const res = await request(app).get(daAula(ids.outraAula)).set("Cookie", admin);
+    const res = await request(servidor).get(daAula(ids.outraAula)).set("Cookie", admin);
     expect(res.headers["content-disposition"]).toMatch(/^attachment;/);
     expect(res.headers["content-disposition"]).not.toContain("\u202E");
     // O nome entre aspas, com toda aspa de dentro escapada: não fecha o cabeçalho antes da hora.
     expect(res.headers["content-disposition"]?.split("filename=")[1]?.split(";")[0]).toMatch(/^"(?:[^"\\]|\\.)*"$/);
-    await request(app).delete(daAula(ids.outraAula)).set("Cookie", admin);
+    await request(servidor).delete(daAula(ids.outraAula)).set("Cookie", admin);
   });
 
   it("a apresentação também: vai para o vídeo de apresentação", async () => {
@@ -203,17 +203,17 @@ describe("legendas — enviar, substituir, baixar e excluir", () => {
   });
 
   it("excluir: apaga no Bunny e aqui; excluir de novo também é 204", async () => {
-    expect((await request(app).delete(daAula(ids.aula)).set("Cookie", admin)).status).toBe(200);
+    expect((await request(servidor).delete(daAula(ids.aula)).set("Cookie", admin)).status).toBe(200);
     expect(apagarLegenda).toHaveBeenCalledWith(VIDEO, "pt");
     expect(await legendaDaAula(ids.aula)).toBeNull();
-    expect((await request(app).delete(daAula(ids.aula)).set("Cookie", admin)).status).toBe(204);
-    expect((await request(app).get(daAula(ids.aula)).set("Cookie", admin)).status).toBe(404);
+    expect((await request(servidor).delete(daAula(ids.aula)).set("Cookie", admin)).status).toBe(204);
+    expect((await request(servidor).get(daAula(ids.aula)).set("Cookie", admin)).status).toBe(404);
   });
 
   it("o Bunny recusou excluir: 502, e a cópia continua", async () => {
     await enviar(daAula(ids.outraAula), VTT);
     apagarLegenda.mockResolvedValue(false);
-    expect((await request(app).delete(daAula(ids.outraAula)).set("Cookie", admin)).status).toBe(502);
+    expect((await request(servidor).delete(daAula(ids.outraAula)).set("Cookie", admin)).status).toBe(502);
     expect(await legendaDaAula(ids.outraAula)).not.toBeNull();
   });
 });
@@ -262,7 +262,7 @@ describe("legendas — trocar o vídeo", () => {
   const NOVO = "cccccccc-2cda-46be-b47d-1118ad7c2ffe";
   const OUTRO_NOVO = "dddddddd-2cda-46be-b47d-1118ad7c2ffe";
   const terminarTroca = (id: number, videoId: string) =>
-    request(app).post(`/api/admin/lessons/${id}/video/complete`).set("Cookie", admin).send({ videoId });
+    request(servidor).post(`/api/admin/lessons/${id}/video/complete`).set("Cookie", admin).send({ videoId });
 
   it("trocou o vídeo da aula: a legenda vai para o vídeo novo", async () => {
     await enviar(daAula(ids.aula), VTT);
@@ -298,7 +298,7 @@ describe("legendas — trocar o vídeo", () => {
     await prisma.course.update({ where: { id: ids.curso }, data: { introVideoPendingId: NOVO } });
     enviarLegenda.mockClear();
 
-    const res = await request(app).post(`/api/admin/courses/${ids.curso}/intro-video/complete`).set("Cookie", admin).send({ videoId: NOVO });
+    const res = await request(servidor).post(`/api/admin/courses/${ids.curso}/intro-video/complete`).set("Cookie", admin).send({ videoId: NOVO });
 
     expect(res.status).toBe(200);
     expect(enviarLegenda).toHaveBeenCalledWith(NOVO, "pt", "Português", VTT);
@@ -328,7 +328,7 @@ describe("legendas — o cache do Bunny", () => {
   it("excluir limpa o cache", async () => {
     await enviar(daAula(ids.aula), VTT);
     limparCacheDaLegenda.mockClear();
-    const res = await request(app).delete(daAula(ids.aula)).set("Cookie", admin);
+    const res = await request(servidor).delete(daAula(ids.aula)).set("Cookie", admin);
     expect(res.body).toEqual({ cacheLimpo: true });
     expect(limparCacheDaLegenda).toHaveBeenCalledTimes(1);
   });

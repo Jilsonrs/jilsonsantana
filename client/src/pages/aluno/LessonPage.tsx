@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { ContentStatus, LessonKind } from "@jilson/core";
 import { useSession } from "@/lib/auth-client";
 import { useT } from "@/lib/language";
@@ -39,6 +39,7 @@ export function LessonPage() {
   const [iaAberta, setIaAberta] = useState(false);
   const [menuDoCursoFechado, fecharMenuDoCurso] = useMenuDoCursoFechado();
   const { mutate: concluir } = useConcluirAula();
+  const navigate = useNavigate();
   const salvos = useIdsSalvos(Boolean(session));
 
   // A aula que esta pessoa pode concluir agora: logada, liberada e ainda não
@@ -62,6 +63,11 @@ export function LessonPage() {
   const porcentagem = porcentagemDoCurso(curso, data.concluidas);
   const concluirVideo = concluivel?.kind === LessonKind.VIDEO ? () => concluir({ lessonId: concluivel.id, comoAdmin }) : undefined;
   const temArquivos = curso.modulos.some((m) => m.aulas.some((a) => a.id === aula.id && a.temArquivos));
+  // A PRÓXIMA aula da lista que a pessoa vê (operador, 05/10/2026): o fim do vídeo
+  // leva até ela, na hora, seja vídeo ou texto. Na última aula, o vídeo só termina.
+  const lista = curso.modulos.flatMap((m) => m.aulas);
+  const proxima = lista[lista.findIndex((a) => a.id === aula.id) + 1];
+  const irParaAProxima = proxima ? () => navigate(`/aluno/aula/${proxima.id}`) : undefined;
   return (
     <div className="flex min-h-full flex-col">
       {/* Barra Superior Customizada da Aula (Avatar flutua por cima, à direita) */}
@@ -141,7 +147,7 @@ export function LessonPage() {
       <div className="mx-auto w-full max-w-[1600px] px-4 pt-[20px] pb-6 sm:px-6 sm:pb-8 md:px-[50px] md:pb-8">
         <div className={cn("grid gap-6", iaAberta && "lg:grid-cols-[minmax(0,1fr)_360px]")}>
           <div className="min-w-0 space-y-8">
-            <LessonContent aula={aula} comoAdmin={comoAdmin} temArquivos={temArquivos} aoConcluir={concluirVideo} />
+            <LessonContent aula={aula} comoAdmin={comoAdmin} temArquivos={temArquivos} aoConcluir={concluirVideo} aoTerminar={irParaAProxima} />
 
             {/* Em toda aula, liberada ou não (operador, 29/09/2026). */}
             <CourseDetails curso={curso} />

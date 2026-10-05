@@ -14,7 +14,7 @@ vi.mock("../lib/bunny-stream.js", async (importOriginal) => ({
   estadoDoVideo: (...args: unknown[]) => estadoDoVideo(...args),
 }));
 
-import app from "../app.js";
+import servidor from "./servidor.js";
 import { prisma } from "../lib/prisma.js";
 
 // VÍDEO DE APRESENTAÇÃO (Bloco U, etapa 2 — plano aprovado pelo operador em
@@ -37,7 +37,7 @@ let admin: string[] = [];
 let member: string[] = [];
 
 async function sessao(email?: string, senha?: string): Promise<string[]> {
-  const res = await request(app).post("/api/auth/sign-in/email").send({ email, password: senha });
+  const res = await request(servidor).post("/api/auth/sign-in/email").send({ email, password: senha });
   return (res.headers["set-cookie"] as unknown as string[] | undefined) ?? [];
 }
 
@@ -89,15 +89,15 @@ beforeEach(async () => {
 
 const ARQUIVO = "apresentacao-power-bi.mp4";
 const iniciar = (cookies: string[], id = cursoId, corpo: object = { titulo: ARQUIVO }) =>
-  request(app).post(`/api/admin/courses/${id}/intro-video`).set("Cookie", cookies).send(corpo);
+  request(servidor).post(`/api/admin/courses/${id}/intro-video`).set("Cookie", cookies).send(corpo);
 const concluir = (cookies: string[], videoId: unknown, id = cursoId) =>
-  request(app).post(`/api/admin/courses/${id}/intro-video/complete`).set("Cookie", cookies).send({ videoId });
+  request(servidor).post(`/api/admin/courses/${id}/intro-video/complete`).set("Cookie", cookies).send({ videoId });
 const curso = () => prisma.course.findUniqueOrThrow({ where: { id: cursoId } });
 
 describe("vídeo de apresentação — quem pode enviar", () => {
   it("sem login: 401 nas duas rotas, e nada é criado nem apagado no Bunny", async () => {
-    expect((await request(app).post(`/api/admin/courses/${cursoId}/intro-video`)).status).toBe(401);
-    expect((await request(app).post(`/api/admin/courses/${cursoId}/intro-video/complete`).send({ videoId: A })).status).toBe(401);
+    expect((await request(servidor).post(`/api/admin/courses/${cursoId}/intro-video`)).status).toBe(401);
+    expect((await request(servidor).post(`/api/admin/courses/${cursoId}/intro-video/complete`).send({ videoId: A })).status).toBe(401);
     expect(iniciarEnvio).not.toHaveBeenCalled();
     expect(apagarVideo).not.toHaveBeenCalled();
   });
@@ -213,7 +213,7 @@ describe("vídeo de apresentação — na página pública", () => {
   it("o player sai para VISITANTE SEM LOGIN (ativo de venda)", async () => {
     await prisma.course.update({ where: { id: cursoId }, data: { introVideoId: A } });
 
-    const res = await request(app).get(`/api/courses/${SLUG}`);
+    const res = await request(servidor).get(`/api/courses/${SLUG}`);
 
     expect(res.status).toBe(200);
     expect(res.body.introVideoEmbedUrl).toMatch(ASSINADO(A));
@@ -226,31 +226,31 @@ describe("vídeo de apresentação — na página pública", () => {
   it("o envio em andamento NUNCA sai na resposta pública", async () => {
     await prisma.course.update({ where: { id: cursoId }, data: { introVideoId: A, introVideoPendingId: B } });
 
-    const res = await request(app).get(`/api/courses/${SLUG}`);
+    const res = await request(servidor).get(`/api/courses/${SLUG}`);
 
     expect(res.body).not.toHaveProperty("introVideoPendingId");
     expect(JSON.stringify(res.body)).not.toContain(B);
   });
 
   it("curso sem vídeo: nenhum player", async () => {
-    const res = await request(app).get(`/api/courses/${SLUG}`);
+    const res = await request(servidor).get(`/api/courses/${SLUG}`);
     expect(res.body.introVideoEmbedUrl).toBeNull();
   });
 
   it("id colado à mão fora do formato do Bunny é recusado pelo PATCH do curso", async () => {
-    const res = await request(app).patch(`/api/courses/${cursoId}`).set("Cookie", admin).send({ introVideoId: "meu-video" });
+    const res = await request(servidor).patch(`/api/courses/${cursoId}`).set("Cookie", admin).send({ introVideoId: "meu-video" });
     expect(res.status).toBe(400);
   });
 });
 
 describe("vídeo de apresentação — o admin pergunta se o Bunny terminou", () => {
   const estado = (cookies: string[], videoId: string) =>
-    request(app).get(`/api/admin/intro-video/${videoId}/status`).set("Cookie", cookies);
+    request(servidor).get(`/api/admin/intro-video/${videoId}/status`).set("Cookie", cookies);
 
   beforeEach(() => estadoDoVideo.mockReset().mockResolvedValue({ pronto: true, falhou: false }));
 
   it("sem login 401, aluno 403 — e o Bunny nem é consultado", async () => {
-    expect((await request(app).get(`/api/admin/intro-video/${A}/status`)).status).toBe(401);
+    expect((await request(servidor).get(`/api/admin/intro-video/${A}/status`)).status).toBe(401);
     expect((await estado(member, A)).status).toBe(403);
     expect(estadoDoVideo).not.toHaveBeenCalled();
   });

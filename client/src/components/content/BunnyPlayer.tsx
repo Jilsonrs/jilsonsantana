@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { ouvirConclusao } from "@/lib/player-do-bunny";
+import { ouvirPlayer } from "@/lib/player-do-bunny";
+import { enderecoNoPonto, esquecerPonto, guardarPonto, lerPonto } from "@/lib/posicao-do-video";
 
 /**
  * O player do Bunny Stream, num quadro 16:9. O endereço vem SEMPRE do servidor
  * (derivado lá, nunca montado aqui), então este componente não conhece chave,
- * biblioteca nem token.
+ * biblioteca nem token. A tela só acrescenta onde começar (`posicao-do-video.ts`).
  *
  * `referrerPolicy="strict-origin-when-cross-origin"` é exigência do Bunny: com
  * "Block Direct URL File Access" ligado na biblioteca, uma política mais estrita
@@ -15,36 +16,72 @@ function videoDoEndereco(src: string): string {
   return src.split("?")[0];
 }
 
+/** De quantos em quantos segundos o ponto é guardado enquanto o vídeo toca. */
+const PASSO_DO_PONTO = 2;
+
 export function BunnyPlayer({
   src,
   title,
   aoConcluir,
+  aoTerminar,
+  lembrarComo,
 }: {
   src: string;
   title: string;
   /**
    * Chamado UMA vez quando o aluno chega a 90% do vídeo (Fase 5, decisão do
-   * operador de 03/10/2026). Sem ele, o player não é ouvido (o vídeo de apresentação).
+   * operador de 03/10/2026).
    */
   aoConcluir?: () => void;
+  /** O vídeo terminou: a página da aula abre a próxima (operador, 05/10/2026). */
+  aoTerminar?: () => void;
+  /**
+   * Lembrar o ponto deste vídeo com este nome (a aula): quem sai e volta abre
+   * onde parou, pausado se tinha pausado (operador, 05/10/2026). Sem ele (o vídeo
+   * de apresentação), nada é lembrado.
+   */
+  lembrarComo?: string;
 }) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   // O ENDEREÇO FICA enquanto o vídeo for o mesmo (operador, 03/10/2026: trocar de
   // aba não pode recomeçar o vídeo). O servidor assina de novo a cada busca, com
   // token e validade novos; trocar o `src` recarregaria o player do zero, tocando
-  // o que estava pausado. Só um vídeo DIFERENTE troca o endereço.
-  const [endereco, setEndereco] = useState(src);
-  if (videoDoEndereco(src) !== videoDoEndereco(endereco)) setEndereco(src);
-  // A função mais recente, sem voltar a ouvir o player a cada desenho da tela.
+  // o que estava pausado. Só um vídeo DIFERENTE troca o endereço — e é nessa
+  // hora, uma vez, que o ponto guardado entra.
+  const noPonto = (endereco: string) => (lembrarComo ? enderecoNoPonto(endereco, lerPonto(lembrarComo)) : endereco);
+  const [endereco, setEndereco] = useState(() => noPonto(src));
+  if (videoDoEndereco(src) !== videoDoEndereco(endereco)) setEndereco(noPonto(src));
+  // As funções mais recentes, sem voltar a ouvir o player a cada desenho da tela.
   const aoConcluirRef = useRef(aoConcluir);
   aoConcluirRef.current = aoConcluir;
-  const ouvir = aoConcluir !== undefined;
+  const aoTerminarRef = useRef(aoTerminar);
+  aoTerminarRef.current = aoTerminar;
+  const ouvir = aoConcluir !== undefined || aoTerminar !== undefined || lembrarComo !== undefined;
 
   // Efeito: ouvir o player é conversar com o iframe do Bunny, fora do React.
   useEffect(() => {
     if (!ouvir || !iframeRef.current) return;
-    return ouvirConclusao(iframeRef.current, () => aoConcluirRef.current?.());
-  }, [endereco, ouvir]);
+    let ultimo: { segundos: number; pausado: boolean } | null = null;
+    // Depois do fim, nenhum ponto volta a ser guardado (um último aviso de tempo
+    // chegando atrasado guardaria o fim, e a aula reabriria no fim).
+    let terminou = false;
+    return ouvirPlayer(iframeRef.current, {
+      aoConcluir: () => aoConcluirRef.current?.(),
+      aoTerminar: () => {
+        // Viu até o fim: na próxima vez, a aula começa do início.
+        terminou = true;
+        if (lembrarComo) esquecerPonto(lembrarComo);
+        aoTerminarRef.current?.();
+      },
+      aoMudar: (estado) => {
+        if (!lembrarComo || terminou) return;
+        const mudou = !ultimo || ultimo.pausado !== estado.pausado || Math.abs(ultimo.segundos - estado.segundos) >= PASSO_DO_PONTO;
+        if (!mudou) return;
+        ultimo = estado;
+        guardarPonto(lembrarComo, estado);
+      },
+    });
+  }, [endereco, ouvir, lembrarComo]);
 
   return (
     <div className="aspect-video w-full overflow-hidden bg-muted">

@@ -13,7 +13,7 @@ vi.mock("../lib/bunny-stream.js", async (importOriginal) => ({
   resumoDoVideo: (...args: unknown[]) => resumoDoVideo(...args),
 }));
 
-import app from "../app.js";
+import servidor from "./servidor.js";
 import { prisma } from "../lib/prisma.js";
 
 // O VÍDEO DE CADA AULA (Bloco U, etapa 3 — plano aprovado pelo operador em
@@ -39,7 +39,7 @@ let member: string[] = [];
 let moduloId = 0;
 
 async function sessao(email?: string, senha?: string): Promise<string[]> {
-  const res = await request(app).post("/api/auth/sign-in/email").send({ email, password: senha });
+  const res = await request(servidor).post("/api/auth/sign-in/email").send({ email, password: senha });
   return (res.headers["set-cookie"] as unknown as string[] | undefined) ?? [];
 }
 
@@ -99,17 +99,17 @@ function credenciais(videoId: string) {
 }
 
 const comecar = (cookies: string[], aulaId: number) =>
-  request(app).post(`/api/admin/lessons/${aulaId}/video`).set("Cookie", cookies).send({ titulo: "aula.mp4" });
+  request(servidor).post(`/api/admin/lessons/${aulaId}/video`).set("Cookie", cookies).send({ titulo: "aula.mp4" });
 const terminar = (cookies: string[], aulaId: number, videoId: string) =>
-  request(app).post(`/api/admin/lessons/${aulaId}/video/complete`).set("Cookie", cookies).send({ videoId });
+  request(servidor).post(`/api/admin/lessons/${aulaId}/video/complete`).set("Cookie", cookies).send({ videoId });
 
 describe("quem pode", () => {
   it("sem login 401 e aluno 403, nas três rotas", async () => {
     const aula = await novaAula();
     const rotas = [
-      () => request(app).post(`/api/admin/lessons/${aula.id}/video`).send({ titulo: "x" }),
-      () => request(app).post(`/api/admin/lessons/${aula.id}/video/complete`).send({ videoId: A }),
-      () => request(app).get(`/api/admin/lessons/${aula.id}/video`),
+      () => request(servidor).post(`/api/admin/lessons/${aula.id}/video`).send({ titulo: "x" }),
+      () => request(servidor).post(`/api/admin/lessons/${aula.id}/video/complete`).send({ videoId: A }),
+      () => request(servidor).get(`/api/admin/lessons/${aula.id}/video`),
     ];
     for (const rota of rotas) {
       expect((await rota()).status).toBe(401);
@@ -211,13 +211,13 @@ describe("o resumo do vídeo no editor", () => {
     duracaoEmSegundos: 111,
     miniaturaUrl: `https://vz-teste.b-cdn.net/${A}/thumbnail.jpg`,
   };
-  const ler = (aulaId: number) => request(app).get(`/api/admin/lessons/${aulaId}/video`).set("Cookie", admin);
+  const ler = (aulaId: number) => request(servidor).get(`/api/admin/lessons/${aulaId}/video`).set("Cookie", admin);
 
   it("lê no Bunny o vídeo DESTA aula (o id nunca vem de quem pede)", async () => {
     resumoDoVideo.mockResolvedValue({ ok: true, resumo });
     const aula = await novaAula({ bunnyVideoId: A, bunnyVideoPendingId: B });
 
-    const res = await request(app).get(`/api/admin/lessons/${aula.id}/video`).query({ videoId: C }).set("Cookie", admin);
+    const res = await request(servidor).get(`/api/admin/lessons/${aula.id}/video`).query({ videoId: C }).set("Cookie", admin);
 
     expect(res.status).toBe(200);
     expect(resumoDoVideo).toHaveBeenCalledTimes(1);
@@ -249,23 +249,23 @@ describe("o resumo do vídeo no editor", () => {
   it("o player antigo do editor não existe mais", async () => {
     const aula = await novaAula({ bunnyVideoId: A });
     // Rota que não existe cai no desvio de desenvolvimento (302), não num 200.
-    expect((await request(app).get(`/api/admin/lessons/${aula.id}/player`).set("Cookie", admin)).status).not.toBe(200);
+    expect((await request(servidor).get(`/api/admin/lessons/${aula.id}/player`).set("Cookie", admin)).status).not.toBe(200);
   });
 });
 
 describe("prévia grátis", () => {
   it("o admin liga e desliga; o aluno não", async () => {
     const aula = await novaAula();
-    const ligar = await request(app).patch(`/api/lessons/${aula.id}`).set("Cookie", admin).send({ isFreePreview: true });
+    const ligar = await request(servidor).patch(`/api/lessons/${aula.id}`).set("Cookie", admin).send({ isFreePreview: true });
     expect(ligar.status).toBe(200);
     expect((await prisma.lesson.findUnique({ where: { id: aula.id } }))?.isFreePreview).toBe(true);
-    expect((await request(app).patch(`/api/lessons/${aula.id}`).set("Cookie", member).send({ isFreePreview: false })).status).toBe(403);
+    expect((await request(servidor).patch(`/api/lessons/${aula.id}`).set("Cookie", member).send({ isFreePreview: false })).status).toBe(403);
   });
 
   // O vídeo só entra pelo envio: colar o id de outra aula pela edição não vale.
   it("o vídeo não entra pela edição da aula", async () => {
     const aula = await novaAula();
-    await request(app).patch(`/api/lessons/${aula.id}`).set("Cookie", admin).send({ bunnyVideoId: EM_USO });
+    await request(servidor).patch(`/api/lessons/${aula.id}`).set("Cookie", admin).send({ bunnyVideoId: EM_USO });
     expect((await prisma.lesson.findUnique({ where: { id: aula.id } }))?.bunnyVideoId).toBeNull();
   });
 });
@@ -293,10 +293,10 @@ describe("o vídeo da aula não sai em rota pública", () => {
     });
 
     const respostas = await Promise.all([
-      request(app).get(`/api/courses/curso${S}`),
-      request(app).get(`/api/lessons/${aula.id}`),
-      request(app).get(`/api/search`).query({ q: "Aula com vídeo" }),
-      request(app).get(`/api/trilhas/trilha${S}`),
+      request(servidor).get(`/api/courses/curso${S}`),
+      request(servidor).get(`/api/lessons/${aula.id}`),
+      request(servidor).get(`/api/search`).query({ q: "Aula com vídeo" }),
+      request(servidor).get(`/api/trilhas/trilha${S}`),
     ]);
     for (const res of respostas) {
       expect(res.status).toBe(200);
@@ -337,7 +337,7 @@ describe("o quinto item do preenchimento", () => {
         },
       },
     });
-    const res = await request(app).get("/api/admin/courses").set("Cookie", admin);
+    const res = await request(servidor).get("/api/admin/courses").set("Cookie", admin);
     expect(res.body.find((c: { id: number }) => c.id === curso.id).lessonsWithoutVideo).toBe(1);
   });
 });

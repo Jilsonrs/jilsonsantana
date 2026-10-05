@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import request from "supertest";
-import app from "../app.js";
+import servidor from "./servidor.js";
 import { prisma } from "../lib/prisma.js";
 
 // LISTA DE CURSOS DO ADMIN (27/09/2026 — plano aprovado pelo operador). O cartão
@@ -15,7 +15,7 @@ let admin: string[] = [];
 let member: string[] = [];
 
 async function sessao(email?: string, senha?: string): Promise<string[]> {
-  const res = await request(app).post("/api/auth/sign-in/email").send({ email, password: senha });
+  const res = await request(servidor).post("/api/auth/sign-in/email").send({ email, password: senha });
   return (res.headers["set-cookie"] as unknown as string[] | undefined) ?? [];
 }
 
@@ -54,11 +54,11 @@ afterAll(async () => {
   await prisma.course.deleteMany({ where: { slug: { endsWith: S } } });
 });
 
-const lista = (cookies: string[]) => request(app).get("/api/admin/courses").set("Cookie", cookies);
+const lista = (cookies: string[]) => request(servidor).get("/api/admin/courses").set("Cookie", cookies);
 
 describe("lista de cursos do admin", () => {
   it("sem login 401; aluno 403", async () => {
-    expect((await request(app).get("/api/admin/courses")).status).toBe(401);
+    expect((await request(servidor).get("/api/admin/courses")).status).toBe(401);
     expect((await lista(member)).status).toBe(403);
   });
 

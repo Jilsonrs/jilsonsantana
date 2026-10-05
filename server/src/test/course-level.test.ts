@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import request from "supertest";
-import app from "../app.js";
+import servidor from "./servidor.js";
 import { prisma } from "../lib/prisma.js";
 
 // "TODOS OS NÍVEIS" (decisão do operador, 28/09/2026). O valor é do enum do
@@ -12,7 +12,7 @@ const slug = `nivel-todos-${Date.now()}`;
 let admin: string[] = [];
 
 beforeAll(async () => {
-  const res = await request(app).post("/api/auth/sign-in/email").send({
+  const res = await request(servidor).post("/api/auth/sign-in/email").send({
     email: process.env.SEED_ADMIN_EMAIL,
     password: process.env.SEED_ADMIN_PASSWORD,
   });
@@ -25,7 +25,7 @@ afterAll(async () => {
 
 describe("nível do curso", () => {
   it("aceita e grava Todos os níveis", async () => {
-    const res = await request(app)
+    const res = await request(servidor)
       .post("/api/courses")
       .set("Cookie", admin)
       .send({ slug, title: "Para todos", language: "pt", level: "TODOS_OS_NIVEIS" });
@@ -35,7 +35,7 @@ describe("nível do curso", () => {
   });
 
   it("valor fora da lista: 400", async () => {
-    const res = await request(app)
+    const res = await request(servidor)
       .post("/api/courses")
       .set("Cookie", admin)
       .send({ slug: `${slug}-x`, title: "X", language: "pt", level: "EXPERT" });

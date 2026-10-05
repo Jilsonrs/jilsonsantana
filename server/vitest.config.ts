@@ -22,6 +22,20 @@ export default defineConfig({
     // determinismo vale mais que segundos.
     fileParallelism: false,
 
+    // `npm run test:changed` roda só os testes afetados pelo que mudou (05/10/2026).
+    // Mudança nestes arquivos roda TUDO: os três primeiros são o padrão do Vitest
+    // (definir a lista substitui o padrão); `core/src` porque o servidor o importa
+    // pelo `core/dist`; o `prisma/` (schema e migrations) e o seed porque nenhum
+    // teste os importa, mas todo teste depende do banco que eles montam.
+    forceRerunTriggers: [
+      "**/package.json/**",
+      "**/vitest.config.*/**",
+      "**/vite.config.*/**",
+      "**/core/src/**",
+      "**/server/prisma/**",
+      "**/server/src/seed*.ts",
+    ],
+
     // O reset + migrations + seed leva mais que o default de 5s.
     hookTimeout: 120_000,
     testTimeout: 30_000,

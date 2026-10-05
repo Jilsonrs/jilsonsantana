@@ -1033,6 +1033,31 @@ tornada executável — não uma lista nova):
   **Não** inclui escrever template público nenhum — isso é o bloco da superfície indexável, depois
   do Bunny.
 
+#### Velocidade e confiabilidade da suíte *(05/10/2026 — pedido do operador: "fazer do jeito certo, como as empresas grandes")*
+
+> Medido antes de mexer: a suíte inteira leva ~50 s na máquina do operador (tela 11 s,
+> servidor 38 s) e ~4 min no CI, dos quais ~1 min 37 s é instalar as bibliotecas. O número de
+> testes **não** era o gargalo. O modelo adotado é o do Google (TAP): **durante o trabalho, só os
+> testes afetados; antes de publicar, todos** — a suíte inteira continua sendo o gate.
+
+- [x] **As falhas intermitentes da suíte de servidor, com causa provada e corrigida.** O supertest
+      abria um servidor por pedido sem endereço; no macOS, outro programa que abra depois só em
+      `127.0.0.1` (Antigravity, VS Code) toma a mesma porta — 200 de 200 no experimento — e
+      responde no lugar do teste ("Invalid CSRF token"). Agora cada arquivo usa um servidor em
+      `127.0.0.1` (`server/src/test/servidor.ts`; 0 de 200), e `servidor.test.ts` reprova se algum
+      teste voltar a usar o `app` direto. Mutação: o servidor sem endereço e um `request(app)` num
+      teste — as duas reprovam.
+- [x] **Durante o trabalho, só os testes afetados** (`npm run test:changed`); antes de commitar e
+      de publicar, a suíte inteira (`CLAUDE.md` → Commands). Medido: mudar um componente roda 3
+      arquivos da tela em vez de 51; mudar o dicionário no `core` roda todos (`forceRerunTriggers`);
+      no servidor, uma rota roda 34 de 40 arquivos — quase tudo passa pelo `app`, de propósito.
+- [x] **CI mais rápido:** as bibliotecas instaladas guardadas entre uma execução e outra
+      (`node_modules` por `package-lock` + Node 20; `npm ci` só quando a chave muda). **Medido no
+      mesmo commit, sem e com o cache:** job principal 4 min 4 s → 2 min 22 s; E2E 2 min 22 s →
+      1 min 18 s. Mudar qualquer dependência muda a chave e a primeira execução volta a instalar.
+      O navegador do Playwright segue sem cache (a doc dele desaconselha: restaurar custa quase o
+      mesmo que baixar).
+
 #### Postura de segurança — o que JÁ está coberto  *(varredura completa do `security-vulnerability-reviewer`, Ago 2026, branch `dev` @ `d9b22ea`)*
 
 > **Por que isto está escrito:** sem inventário, toda auditoria futura re-descobre o mesmo chão e
@@ -1821,6 +1846,13 @@ cada campo, a regra do ✓, 160 caracteres nas três listas e o Visualizar esper
       como feita, o aviso sem dizer "curta", o copiar salvando o passo, o link ignorando o idioma,
       o erro de cópia virando sucesso e o servidor contando marcador de Markdown como palavra →
       todas reprovam. Revertido.
+- [x] **A aula que passa para a próxima e o vídeo que volta de onde parou** *(decisões do operador,
+      05/10/2026)*: o FIM do vídeo abre a próxima aula da lista na hora (vídeo ou texto; aluno e
+      prévia do admin; na última, fica); a aula de texto espera o clique. Quem sai e volta abre no
+      mesmo ponto, pausado se tinha pausado — guardado no navegador, por aula (`t` e `autoplay` no
+      endereço do Bunny); ver até o fim apaga o ponto. A prévia grátis do visitante fica para a
+      página pública. Mutação: o fim sem passar de aula, abrir sempre tocando e não apagar o ponto
+      no fim — reprovam.
 - [x] **Visualizar como aluno** *(decisão do operador, 04/10/2026 — muda o alvo: a TELA DO ALUNO,
       logada, onde ele assiste às aulas, e não a página pública)*: botão **Visualizar** no TOPO do
       editor, entre "Voltar para cursos" e "Salvar", em todo passo (operador, 04/10/2026; nasceu

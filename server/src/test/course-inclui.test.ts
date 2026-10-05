@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import request from "supertest";
-import app from "../app.js";
+import servidor from "./servidor.js";
 import { prisma } from "../lib/prisma.js";
 
 // "ESTE CURSO INCLUI" — AS LINHAS QUE SE CALCULAM SOZINHAS (decisões do operador,
@@ -14,7 +14,7 @@ let cursoId = 0;
 const ids = { video1: 0, video2: 0, texto: 0, rascunhoTexto: 0, moduloRascunhoVideo: 0 };
 
 beforeAll(async () => {
-  const res = await request(app).post("/api/auth/sign-in/email").send({
+  const res = await request(servidor).post("/api/auth/sign-in/email").send({
     email: process.env.SEED_ADMIN_EMAIL,
     password: process.env.SEED_ADMIN_PASSWORD,
   });
@@ -60,9 +60,9 @@ afterAll(async () => {
 
 const legenda = (lessonId: number, needsResend = false) =>
   prisma.caption.create({ data: { lessonId, language: "PT", content: "WEBVTT\n", originalName: "a.vtt", needsResend } });
-const venda = async () => (await request(app).get(`/api/courses/curso${S}`)).body.inclui;
-const aulaDoAluno = async () => (await request(app).get(`/api/lessons/${ids.video1}/aula`)).body.curso.inclui;
-const previa = async () => (await request(app).get(`/api/admin/courses/${cursoId}/pagina`).set("Cookie", admin)).body.curso.inclui;
+const venda = async () => (await request(servidor).get(`/api/courses/curso${S}`)).body.inclui;
+const aulaDoAluno = async () => (await request(servidor).get(`/api/lessons/${ids.video1}/aula`)).body.curso.inclui;
+const previa = async () => (await request(servidor).get(`/api/admin/courses/${cursoId}/pagina`).set("Cookie", admin)).body.curso.inclui;
 
 describe("as contas — aluno e visitante só a cadeia publicada", () => {
   it("página de venda: vídeo só de aula de vídeo, artigos e aulas grátis do publicado; sem arquivo e sem legenda", async () => {

@@ -1,10 +1,14 @@
 import playerjs from "player.js";
 
-// OUVIR O PLAYER DO BUNNY (Fase 5 — decisão do operador, 03/10/2026: a aula em
-// vídeo conta como concluída sozinha, ao chegar a 90%). O player do Bunny fala o
-// protocolo player.js (doc do Bunny, "Playback control API"): o evento
-// `timeupdate` traz os segundos assistidos e a duração; `ended`, o fim. O pacote
-// fica SÓ aqui: o resto do site não o conhece, e os testes simulam este módulo.
+// OUVIR O PLAYER DO BUNNY. O player do Bunny fala o protocolo player.js (doc do
+// Bunny, "Playback control API"): `timeupdate` traz os segundos e a duração;
+// `play`, `pause` e `ended`, o que aconteceu. O pacote fica SÓ aqui: o resto do
+// site não o conhece, e os testes simulam este módulo.
+//
+// O que a página da aula ouve:
+//   - os 90% que CONCLUEM a aula (Fase 5 — decisão do operador, 03/10/2026);
+//   - o FIM do vídeo, que leva à próxima aula (operador, 05/10/2026);
+//   - o PONTO e a PAUSA, para quem sair e voltar abrir onde parou (05/10/2026).
 
 /** A partir de quanto do vídeo a aula conta como concluída. */
 export const PARTE_QUE_CONCLUI = 0.9;
@@ -21,29 +25,53 @@ function tempoAssistido(dados: unknown): { segundos: number; duracao: number } |
   return typeof seconds === "number" && typeof duration === "number" ? { segundos: seconds, duracao: duration } : null;
 }
 
-/**
- * Ouve o player no iframe e chama `aoConcluir` UMA vez: quando o aluno chega a
- * 90% do vídeo, ou quando o vídeo termina (quem pula para o fim também conclui).
- * Devolve a função que para de ouvir.
- */
-export function ouvirConclusao(iframe: HTMLIFrameElement, aoConcluir: () => void): () => void {
+export type OuvintesDoPlayer = {
+  /** UMA vez: aos 90% do vídeo, ou no fim (quem pula para o fim também conclui). */
+  aoConcluir?: () => void;
+  /** O vídeo terminou. */
+  aoTerminar?: () => void;
+  /** O ponto e se está pausado, a cada mudança (tocando, pausou, voltou a tocar). */
+  aoMudar?: (estado: { segundos: number; pausado: boolean }) => void;
+};
+
+/** Ouve o player no iframe. Devolve a função que para de ouvir. */
+export function ouvirPlayer(iframe: HTMLIFrameElement, { aoConcluir, aoTerminar, aoMudar }: OuvintesDoPlayer): () => void {
   const player = new playerjs.Player(iframe);
-  let encerrado = false;
+  let parado = false;
+  let concluiu = false;
+  let segundos = 0;
   const concluir = () => {
-    if (encerrado) return;
-    encerrado = true;
-    aoConcluir();
+    if (parado || concluiu) return;
+    concluiu = true;
+    aoConcluir?.();
   };
   const aoAtualizar = (dados: unknown) => {
     const tempo = tempoAssistido(dados);
-    if (tempo && chegouAoFim(tempo.segundos, tempo.duracao)) concluir();
+    if (!tempo || parado) return;
+    segundos = tempo.segundos;
+    aoMudar?.({ segundos, pausado: false });
+    if (chegouAoFim(tempo.segundos, tempo.duracao)) concluir();
   };
-  const aoTerminar = () => concluir();
+  const aoPausar = () => {
+    if (!parado) aoMudar?.({ segundos, pausado: true });
+  };
+  const aoTocar = () => {
+    if (!parado) aoMudar?.({ segundos, pausado: false });
+  };
+  const aoFim = () => {
+    if (parado) return;
+    concluir();
+    aoTerminar?.();
+  };
   player.on("timeupdate", aoAtualizar);
-  player.on("ended", aoTerminar);
+  player.on("pause", aoPausar);
+  player.on("play", aoTocar);
+  player.on("ended", aoFim);
   return () => {
-    encerrado = true;
+    parado = true;
     player.off("timeupdate", aoAtualizar);
-    player.off("ended", aoTerminar);
+    player.off("pause", aoPausar);
+    player.off("play", aoTocar);
+    player.off("ended", aoFim);
   };
 }

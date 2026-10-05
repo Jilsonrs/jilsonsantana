@@ -9,7 +9,7 @@ vi.mock("../lib/bunny-stream.js", async (importOriginal) => ({
   apagarVideo: (...args: unknown[]) => apagarVideo(...args),
 }));
 
-import app from "../app.js";
+import servidor from "./servidor.js";
 import { prisma } from "../lib/prisma.js";
 
 // CAMPO JÁ SALVO VOLTA A PODER FICAR VAZIO (achado de 29/09/2026, corrigido no
@@ -36,7 +36,7 @@ const CHEIO = {
 };
 
 beforeAll(async () => {
-  const login = await request(app).post("/api/auth/sign-in/email").send({
+  const login = await request(servidor).post("/api/auth/sign-in/email").send({
     email: process.env.SEED_ADMIN_EMAIL,
     password: process.env.SEED_ADMIN_PASSWORD,
   });
@@ -60,7 +60,7 @@ beforeEach(async () => {
 });
 
 const salvar = (corpo: object) =>
-  request(app).patch(`/api/courses/${cursoId}`).set("Cookie", admin).send(corpo);
+  request(servidor).patch(`/api/courses/${cursoId}`).set("Cookie", admin).send(corpo);
 const curso = () => prisma.course.findUniqueOrThrow({ where: { id: cursoId } });
 
 describe("salvar o curso com campo vazio", () => {
@@ -129,12 +129,12 @@ describe("apagar o ID do vídeo de apresentação", () => {
 
 describe("salvar o módulo com a camada vazia", () => {
   it("null tira a camada; ausente não mexe", async () => {
-    const tira = await request(app).patch(`/api/modules/${moduloId}`).set("Cookie", admin).send({ layer: null });
+    const tira = await request(servidor).patch(`/api/modules/${moduloId}`).set("Cookie", admin).send({ layer: null });
     expect(tira.status).toBe(200);
     expect((await prisma.module.findUniqueOrThrow({ where: { id: moduloId } })).layer).toBeNull();
 
     await prisma.module.update({ where: { id: moduloId }, data: { layer: "IA" } });
-    const mantem = await request(app).patch(`/api/modules/${moduloId}`).set("Cookie", admin).send({ title: "Outro" });
+    const mantem = await request(servidor).patch(`/api/modules/${moduloId}`).set("Cookie", admin).send({ title: "Outro" });
     expect(mantem.status).toBe(200);
     expect((await prisma.module.findUniqueOrThrow({ where: { id: moduloId } })).layer).toBe("IA");
   });

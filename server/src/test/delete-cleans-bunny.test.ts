@@ -14,7 +14,7 @@ vi.mock("../lib/bunny-storage.js", async (importOriginal) => ({
   apagarArquivoDaAula: (...args: unknown[]) => apagarArquivoDaAula(...args),
 }));
 
-import app from "../app.js";
+import servidor from "./servidor.js";
 import { prisma } from "../lib/prisma.js";
 
 // EXCLUIR APAGA NO BUNNY TAMBÉM (decisão do operador, 28/09/2026: "deveria
@@ -32,7 +32,7 @@ let admin: string[] = [];
 let n = 0;
 
 beforeAll(async () => {
-  const res = await request(app).post("/api/auth/sign-in/email").send({
+  const res = await request(servidor).post("/api/auth/sign-in/email").send({
     email: process.env.SEED_ADMIN_EMAIL,
     password: process.env.SEED_ADMIN_PASSWORD,
   });
@@ -70,7 +70,7 @@ async function cursoCompleto(comApresentacao = false) {
   return { cursoId: curso.id, moduloId: curso.modules[0].id, aulaId: aula.id };
 }
 
-const excluir = (rota: string) => request(app).delete(rota).set("Cookie", admin);
+const excluir = (rota: string) => request(servidor).delete(rota).set("Cookie", admin);
 
 describe("excluir aula", () => {
   it("apaga no Bunny os arquivos, o envio pela metade e o vídeo; depois a aula", async () => {

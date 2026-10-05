@@ -13,7 +13,7 @@ vi.mock("../lib/bunny-stream.js", async (importOriginal) => ({
   apagarVideo: (...args: unknown[]) => apagarVideo(...args),
 }));
 
-import app from "../app.js";
+import servidor from "./servidor.js";
 import { prisma } from "../lib/prisma.js";
 
 // O VÍDEO JÁ FICOU PRONTO? (decisão do operador, 29/09/2026: ao voltar para o
@@ -34,7 +34,7 @@ let admin: string[] = [];
 let n = 0;
 
 beforeAll(async () => {
-  const res = await request(app).post("/api/auth/sign-in/email").send({
+  const res = await request(servidor).post("/api/auth/sign-in/email").send({
     email: process.env.SEED_ADMIN_EMAIL,
     password: process.env.SEED_ADMIN_PASSWORD,
   });
@@ -86,7 +86,7 @@ describe("o curso no editor", () => {
   it("pergunta ao Bunny SÓ pelo vídeo não confirmado, e já devolve confirmado", async () => {
     const { cursoId, naoConfirmada } = await curso();
 
-    const res = await request(app).get(`/api/admin/courses/${cursoId}`).set("Cookie", admin);
+    const res = await request(servidor).get(`/api/admin/courses/${cursoId}`).set("Cookie", admin);
 
     expect(res.status).toBe(200);
     expect(estadoDoVideo).toHaveBeenCalledTimes(1);
@@ -99,7 +99,7 @@ describe("o curso no editor", () => {
     estadoDoVideo.mockResolvedValue({ pronto: true, falhou: false, duracaoEmSegundos: 754 });
     const { cursoId, naoConfirmada } = await curso();
 
-    const res = await request(app).get(`/api/admin/courses/${cursoId}`).set("Cookie", admin);
+    const res = await request(servidor).get(`/api/admin/courses/${cursoId}`).set("Cookie", admin);
 
     expect(aulasDa(res.body).find((l) => l.id === naoConfirmada.id)?.videoDurationSeconds).toBe(754);
     expect((await prisma.lesson.findUnique({ where: { id: naoConfirmada.id } }))?.videoDurationSeconds).toBe(754);
@@ -112,12 +112,12 @@ describe("o curso no editor", () => {
     const { cursoId, confirmada } = await curso();
     await prisma.lesson.update({ where: { id: confirmada.id }, data: { videoDurationSeconds: null } });
 
-    await request(app).get(`/api/admin/courses/${cursoId}`).set("Cookie", admin);
+    await request(servidor).get(`/api/admin/courses/${cursoId}`).set("Cookie", admin);
     expect(estadoDoVideo).toHaveBeenCalledWith("aulas", B);
     expect((await prisma.lesson.findUnique({ where: { id: confirmada.id } }))?.videoDurationSeconds).toBe(90);
 
     estadoDoVideo.mockClear();
-    await request(app).get(`/api/admin/courses/${cursoId}`).set("Cookie", admin);
+    await request(servidor).get(`/api/admin/courses/${cursoId}`).set("Cookie", admin);
     expect(estadoDoVideo).not.toHaveBeenCalledWith("aulas", B);
   });
 
@@ -125,7 +125,7 @@ describe("o curso no editor", () => {
     estadoDoVideo.mockResolvedValue({ pronto: false, falhou: false });
     const { cursoId, naoConfirmada } = await curso();
 
-    const res = await request(app).get(`/api/admin/courses/${cursoId}`).set("Cookie", admin);
+    const res = await request(servidor).get(`/api/admin/courses/${cursoId}`).set("Cookie", admin);
 
     expect(aulasDa(res.body).find((l) => l.id === naoConfirmada.id)?.bunnyVideoReady).toBe(false);
   });
@@ -134,7 +134,7 @@ describe("o curso no editor", () => {
     estadoDoVideo.mockResolvedValue(null);
     const { cursoId, naoConfirmada } = await curso();
 
-    const res = await request(app).get(`/api/admin/courses/${cursoId}`).set("Cookie", admin);
+    const res = await request(servidor).get(`/api/admin/courses/${cursoId}`).set("Cookie", admin);
 
     expect(res.status).toBe(200);
     expect(aulasDa(res.body).find((l) => l.id === naoConfirmada.id)?.bunnyVideoReady).toBe(false);
@@ -149,7 +149,7 @@ describe("o resumo e o fim do envio", () => {
       resumo: { pronto: true, falhou: false, nome: "a.mp4", duracaoEmSegundos: 61, miniaturaUrl: null },
     });
 
-    await request(app).get(`/api/admin/lessons/${naoConfirmada.id}/video`).set("Cookie", admin);
+    await request(servidor).get(`/api/admin/lessons/${naoConfirmada.id}/video`).set("Cookie", admin);
 
     expect(await prisma.lesson.findUnique({ where: { id: naoConfirmada.id } })).toMatchObject({
       bunnyVideoReady: true,
@@ -164,7 +164,7 @@ describe("o resumo e o fim do envio", () => {
       resumo: { pronto: false, falhou: false, nome: "a.mp4", duracaoEmSegundos: null, miniaturaUrl: null },
     });
 
-    await request(app).get(`/api/admin/lessons/${naoConfirmada.id}/video`).set("Cookie", admin);
+    await request(servidor).get(`/api/admin/lessons/${naoConfirmada.id}/video`).set("Cookie", admin);
 
     expect((await prisma.lesson.findUnique({ where: { id: naoConfirmada.id } }))?.bunnyVideoReady).toBe(false);
   });
@@ -173,7 +173,7 @@ describe("o resumo e o fim do envio", () => {
     const { confirmada } = await curso();
     await prisma.lesson.update({ where: { id: confirmada.id }, data: { bunnyVideoPendingId: C } });
 
-    const res = await request(app)
+    const res = await request(servidor)
       .post(`/api/admin/lessons/${confirmada.id}/video/complete`)
       .set("Cookie", admin)
       .send({ videoId: C });

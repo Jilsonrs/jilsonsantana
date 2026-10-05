@@ -27,13 +27,16 @@ export function LessonContent({
   comoAdmin,
   temArquivos,
   aoConcluir,
+  aoTerminar,
 }: {
   aula: PaginaDaAula["aula"];
   comoAdmin: boolean;
   /** A aula tem arquivos (da lista do curso): na prévia grátis eles existem, mas não vêm. */
   temArquivos: boolean;
-  /** Concluir a aula de vídeo ao chegar a 90%; ausente, o player não é ouvido. */
+  /** Concluir a aula de vídeo ao chegar a 90%. */
   aoConcluir?: () => void;
+  /** O vídeo terminou: abrir a próxima aula (operador, 05/10/2026). */
+  aoTerminar?: () => void;
 }) {
   const t = useT();
 
@@ -53,7 +56,8 @@ export function LessonContent({
   if (aula.kind === LessonKind.VIDEO) {
     return aula.playerUrl ? (
       <div className="w-full">
-        <BunnyPlayer src={aula.playerUrl} title={aula.title} aoConcluir={aoConcluir} />
+        {/* O ponto fica guardado por aula: quem sai e volta abre onde parou (05/10/2026). */}
+        <BunnyPlayer src={aula.playerUrl} title={aula.title} aoConcluir={aoConcluir} aoTerminar={aoTerminar} lembrarComo={String(aula.id)} />
       </div>
     ) : (
       <div className={QUADRO}>

@@ -304,7 +304,9 @@ exceto o item 4, que é página pública.
    `aria-current` da aula atual, o "para assinantes" **sem** player, o rascunho marcado só para o
    admin, o botão da IA com nome e `aria-expanded`. O player é o mesmo `BunnyPlayer` do item 9:
    **não tire o `referrerPolicy`**. No celular e para o visitante, o conteúdo do curso desce para
-   baixo do player (não há nível 2): confira os dois jeitos.
+   baixo do player (não há nível 2): confira os dois jeitos. **Desde 05/10** (decisões do
+   operador): o fim do vídeo abre a próxima aula na hora, e quem sai e volta abre no mesmo ponto,
+   pausado se tinha pausado — é comportamento, não visual, e tem teste; não há botão novo.
 12. **"Sobre o curso"** (`components/aula/CourseDetails.tsx`), embaixo do player em toda aula:
    nível, descrição, o que vai aprender, pré-requisitos, pra quem é, camadas, destaques e perguntas.
    **Reaproveita peças compartilhadas** — `LayerSelo`, `HighlightCard` e `MarkdownText`, de
