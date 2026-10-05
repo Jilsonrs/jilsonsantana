@@ -30,8 +30,6 @@ vi.mock("@/lib/api", () => ({
 import { CourseEditorLayout } from "./CourseEditorLayout";
 import { ROTAS_DO_EDITOR } from "./steps";
 import { pt } from "@jilson/core";
-import { AVAILABLE_ICONS } from "@/components/content/icon-registry";
-import { NOME_DO_ICONE } from "@/components/admin/nomes-dos-icones";
 
 beforeEach(() => {
   adminGetCourse.mockReset();
@@ -229,21 +227,31 @@ describe("Mídia e destaques — vídeo de apresentação", () => {
 });
 
 // O SELETOR DE ÍCONE dos Destaques (desenho do Antigravity, 30/09/2026; nomes em
-// português por decisão do operador, 03/10/2026): o operador escolhe pelo nome em
-// português, e o curso grava o nome técnico, que é o que o site do aluno lê.
+// português, 03/10; busca entre todos os ícones do Lucide, 05/10 — decisões do
+// operador): o operador busca e escolhe pelo nome em português, e o curso grava
+// o nome técnico, que é o que o site do aluno lê.
 describe("Mídia e destaques — o ícone do destaque", () => {
   const seletor = () => screen.getByRole("button", { name: /^Ícone/ });
+  const busca = () => screen.getByRole("combobox", { name: "Buscar ícone" });
+  const opcoes = () => screen.getAllByRole("option").map((o) => o.textContent);
+  const buscar = (texto: string) => fireEvent.change(busca(), { target: { value: texto } });
 
-  it("escolhe pelo nome em português e grava o nome técnico", async () => {
+  /** Abre o editor com um destaque novo e abre o seletor (que chega por lazy). */
+  async function abrirSeletor(curso?: AdminCourseDetail) {
+    await abrirPagina(curso);
+    if (!curso) fireEvent.click(screen.getByRole("button", { name: "Adicionar destaque" }));
+    fireEvent.click(await screen.findByRole("button", { name: /^Ícone/ }));
+  }
+
+  it("busca em português, escolhe pelo nome e grava o nome técnico", async () => {
     updateCourse.mockResolvedValue(CURSO_DE_TESTE);
-    await abrirPagina();
-    fireEvent.click(screen.getByRole("button", { name: "Adicionar destaque" }));
-
-    fireEvent.click(seletor());
+    await abrirSeletor();
     expect(seletor().getAttribute("aria-expanded")).toBe("true");
-    fireEvent.click(screen.getByRole("button", { name: "Varinha mágica" }));
+
+    buscar("construção");
+    fireEvent.click(screen.getByRole("option", { name: "Construção" }));
     expect(seletor().getAttribute("aria-expanded")).toBe("false");
-    expect(seletor().textContent).toBe("Varinha mágica");
+    expect(seletor().textContent).toBe("Construção");
 
     fireEvent.change(screen.getByLabelText("Título"), { target: { value: "Projeto final" } });
     fireEvent.change(screen.getByLabelText("Texto descritivo"), { target: { value: "Um painel do zero." } });
@@ -251,30 +259,89 @@ describe("Mídia e destaques — o ícone do destaque", () => {
 
     await waitFor(() => expect(updateCourse).toHaveBeenCalled());
     expect(updateCourse.mock.calls[0][1]).toMatchObject({
-      highlights: [{ icon: "wand", title: "Projeto final", text: "Um painel do zero." }],
+      highlights: [{ icon: "construction", title: "Projeto final", text: "Um painel do zero." }],
     });
   });
 
-  it("Esc fecha a grade e devolve o foco ao botão", async () => {
-    await abrirPagina();
-    fireEvent.click(screen.getByRole("button", { name: "Adicionar destaque" }));
+  it("acha sem acento, em inglês e pelo sinônimo", async () => {
+    await abrirSeletor();
+
+    buscar("construcao");
+    expect(opcoes()).toContain("Construção");
+    buscar("package");
+    expect(opcoes()[0]).toBe("Pacote");
+    // "caixa" é o nome de um e sinônimo de outros: os que COMEÇAM com a busca vêm antes.
+    buscar("caixa");
+    expect(opcoes()[0]).toBe("Caixa");
+    expect(opcoes()).toEqual(expect.arrayContaining(["Pacote", "Arquivo morto", "Caixa de entrada"]));
+  });
+
+  it("busca vazia mostra os sugeridos; busca larga mostra só os primeiros", async () => {
+    await abrirSeletor();
+    expect(opcoes()).toContain("Varinha mágica");
+    expect(opcoes()).not.toContain("Construção");
+    expect(screen.getByText(/Sugeridos\. Digite para buscar entre os .+ ícones\./)).toBeTruthy();
+
+    buscar("seta");
+    expect(opcoes()).toHaveLength(60);
+    expect(screen.getByText(/^Mostrando 60 de \d+\. Continue digitando para filtrar\.$/)).toBeTruthy();
+  });
+
+  it("nada encontrado: a lista diz o que foi buscado", async () => {
+    await abrirSeletor();
+
+    buscar("xyzqw");
+
+    expect(screen.queryAllByRole("option")).toHaveLength(0);
+    expect(screen.getByRole("status").textContent).toBe("Nenhum ícone encontrado para “xyzqw”.");
+  });
+
+  it("pelo teclado: o cursor já está na busca, as setas andam e o Enter escolhe sem enviar o curso", async () => {
+    await abrirSeletor();
+    expect(document.activeElement).toBe(busca());
+
+    buscar("foguete");
+    // O navegador envia o formulário no Enter de um campo de texto; o jsdom não.
+    // O que prova que o curso NÃO é enviado é o seletor consumir o Enter.
+    const enterSeguiu = fireEvent.keyDown(busca(), { key: "Enter" });
+
+    expect(enterSeguiu).toBe(false);
+    expect(seletor().textContent).toBe("Foguete");
+    expect(document.activeElement).toBe(seletor());
+
     fireEvent.click(seletor());
-    const escolhido = document.activeElement;
-    expect(escolhido?.getAttribute("aria-pressed")).not.toBeNull();
+    buscar("seta para baixo");
+    const primeira = screen.getAllByRole("option")[0];
+    const segunda = screen.getAllByRole("option")[1];
+    expect(primeira.getAttribute("aria-selected")).toBe("true");
+    fireEvent.keyDown(busca(), { key: "ArrowDown" });
+    expect(segunda.getAttribute("aria-selected")).toBe("true");
+    expect(busca().getAttribute("aria-activedescendant")).toBe(segunda.id);
+    fireEvent.keyDown(busca(), { key: "Enter" });
+    expect(seletor().textContent).toBe(segunda.textContent);
+  });
 
-    fireEvent.keyDown(escolhido as Element, { key: "Escape" });
+  it("Esc fecha a lista e devolve o foco ao botão", async () => {
+    await abrirSeletor();
 
-    expect(screen.queryByRole("button", { name: "Varinha mágica" })).toBeNull();
+    fireEvent.keyDown(busca(), { key: "Escape" });
+
+    expect(screen.queryByRole("listbox")).toBeNull();
     expect(document.activeElement).toBe(seletor());
   });
 
-  it("o ícone já salvo aparece pelo nome, marcado na grade", async () => {
-    await abrirPagina({ ...CURSO_DE_TESTE, highlights: [{ icon: "bolt", title: "Rápido", text: "Direto ao ponto." }] });
+  it("o ícone já salvo aparece pelo nome, marcado na lista", async () => {
+    await abrirSeletor({ ...CURSO_DE_TESTE, highlights: [{ icon: "bolt", title: "Rápido", text: "Direto ao ponto." }] });
 
     expect(seletor().textContent).toBe("Raio");
-    fireEvent.click(seletor());
-    expect(screen.getByRole("button", { name: "Raio" }).getAttribute("aria-pressed")).toBe("true");
-    expect(screen.getByRole("button", { name: "Varinha mágica" }).getAttribute("aria-pressed")).toBe("false");
+    expect(screen.getByRole("option", { name: "Raio" }).getAttribute("aria-selected")).toBe("true");
+    expect(screen.getByRole("option", { name: "Varinha mágica" }).getAttribute("aria-selected")).toBe("false");
+  });
+
+  it("um ícone novo já salvo aparece pelo nome em português", async () => {
+    await abrirPagina({ ...CURSO_DE_TESTE, highlights: [{ icon: "hard-hat", title: "Obra", text: "Na prática." }] });
+
+    expect((await screen.findByRole("button", { name: /^Ícone/ })).textContent).toBe("Capacete de obra");
   });
 
   it("a lixeira tem nome e remove o destaque", async () => {
@@ -283,11 +350,6 @@ describe("Mídia e destaques — o ícone do destaque", () => {
     fireEvent.click(screen.getByRole("button", { name: "Remover destaque" }));
 
     expect(screen.queryByLabelText("Título")).toBeNull();
-  });
-
-  it("todo ícone da lista tem nome em português", () => {
-    const semNome = AVAILABLE_ICONS.filter((icone) => !NOME_DO_ICONE[icone]);
-    expect(semNome).toEqual([]);
   });
 });
 

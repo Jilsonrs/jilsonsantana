@@ -10,9 +10,11 @@ import {
   type LucideIcon
 } from "lucide-react";
 
-// Maps the icon tokens stored in core/ (Course.highlights[].icon, the global
-// LAYER_CONFIG) to a Lucide component. Fixed set per CLAUDE.md ("Icons from a
-// fixed Lucide set, avoid bespoke art per course").
+// Maps the icon tokens stored in core/ (the global LAYER_CONFIG, MATERIAL_CONFIG)
+// to a Lucide component, loaded with the page. Since 05/10/2026 a Destaque may use
+// ANY Lucide icon (HighlightIcon.tsx loads the others on demand); these 55 stay
+// because courses already saved them — some names here ("bar-chart", "wand",
+// "stack-2", "check-circle") are OURS, not Lucide's, and must keep winning.
 export const ICONS: Record<string, LucideIcon> = {
   // Gerais & Ensino
   "stack-2": Layers,
@@ -84,7 +86,7 @@ export const ICONS: Record<string, LucideIcon> = {
   "layers-3": Layers3,
 };
 
-// Available icon tokens for the admin select field
+// The 55 above: the "sugeridos" of the admin picker, shown before any search.
 export const AVAILABLE_ICONS = Object.keys(ICONS).sort();
 
 // Sparkles as the neutral fallback keeps an unmapped token rendering something

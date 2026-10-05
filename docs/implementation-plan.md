@@ -2150,6 +2150,18 @@ própria**.*
       /api/admin/courses` devolve `videoSeconds`. Mutação: o cartão sem a duração e a soma
       ignorando rascunho — as duas reprovam.
 
+- [x] **O ícone dos Destaques: busca entre TODOS os ícones do Lucide** *(pedido do operador,
+      05/10/2026)*: o seletor virou campo de busca — digita "caixa" ou "construção" e aparece a
+      lista com ícone e nome em português. Busca em português, sem acento, por sinônimo e pelo
+      nome em inglês; vazia, mostra os 55 de sempre. 1.485 ícones na lista (os 1.488 do Lucide
+      menos 5 que repetem um dos 55, mais os 2 nomes antigos nossos), nome em português escrito
+      pelo agente (`nomes-dos-icones.ts`, revisão na P38). Cursos já salvos não mudam. O aluno
+      baixa os desenhos **só** quando a página do curso usa um ícone fora dos 55 (um pacote,
+      ~100 KB compactados, depois em cache); o pacote principal não cresceu (medido). Mutação:
+      a busca sem tirar acento, o ícone novo virando Brilho e o Enter sem ser consumido — as três
+      reprovam. **Quando a página do curso virar template de servidor**, o ícone passa a ser
+      desenhado lá, e o aluno não baixa nada.
+
 **Vai para outros blocos (anotado lá quando eles abrirem):**
 - **Página do curso (vitrine, depois do C5):** a seção do autor é **a mesma da home**
   (`home.author`, uma edição serve às duas) · frases com ✓ em duas colunas · **ferramentas do

@@ -338,7 +338,7 @@ exceto o item 4, que é página pública.
    acabamento ali vale (§ 2, "Públicas e do aluno ao mesmo tempo", decisão de 30/09). **Tem
    teste:** o texto e o formato ("0min" sem vídeo).
 17. **O que você fez em 30/09 e o Claude revisou em 03/10 — FICOU, agora com teste.** O seletor de
-   ícones dos Destaques (`HighlightsField.tsx`), o nível no cartão do admin, a contagem em "Sobre
+   ícones dos Destaques (`HighlightsField.tsx`; **a grade virou busca em 05/10, item 26**), o nível no cartão do admin, a contagem em "Sobre
    o curso", o "Nosso método" e o botão de fechar o menu do curso. O que mudou na revisão, para
    você não desfazer: **(a)** cada ícone tem **nome em português** (`nomes-dos-icones.ts`; ícone
    novo no registro sem nome ali reprova um teste) e a grade funciona por teclado — Enter abre,
@@ -432,6 +432,17 @@ exceto o item 4, que é página pública.
    Com aula, cai na página da aula de sempre; **sem nenhuma aula**, a tela própria
    (`pages/admin/CoursePreviewPage.tsx`): o título, o aviso no lugar do player e o "Sobre o
    curso". Ela imita o topo e a largura da página da aula — acerte as duas juntas se mexer numa.
+
+26. **O seletor de ícone dos Destaques virou BUSCA** *(05/10, pedido do operador)* — substitui a
+   grade do item 17 (`components/admin/IconPicker.tsx`; o `HighlightsField.tsx` só o carrega).
+   Clicou no campo, abre uma caixa com a **busca em cima** (o cursor já está nela) e uma **lista**
+   embaixo: ícone + nome em português, o salvo com um ✓. Busca vazia mostra os 55 de sempre;
+   cabem 60 resultados por vez, com o aviso no rodapé. Estrutura crua, o acabamento é seu.
+   **Não mude:** os textos (são do operador, revisão na P38); `role="combobox"` na busca,
+   `role="listbox"`/`role="option"` na lista e o `aria-activedescendant` — as **setas andam na
+   lista sem tirar o cursor da busca**, Enter escolhe, Esc fecha e devolve o foco ao botão. **Tem
+   teste.** E não importe `todos-os-icones.ts` nem `catalogo-de-icones.ts` direto numa tela:
+   eles trazem os 1.488 desenhos, que só entram por `lazy()`.
 
 > **Fora do seu trabalho, para não confundir:** o Bunny ganhou **Live Stream** em acesso
 > antecipado (29/09). É só avaliação depois da Fase 3, **não** é tela a desenhar (`docs/bunny.md`

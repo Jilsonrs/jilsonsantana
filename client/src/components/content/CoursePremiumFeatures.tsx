@@ -1,5 +1,6 @@
 import { LAYER_CONFIG, type Layer } from "@jilson/core";
 import { resolveIcon } from "./icon-registry";
+import { HighlightIcon } from "./HighlightIcon";
 import { cn } from "@/lib/utils";
 import { useTextosComuns } from "@/lib/common-texts";
 import { useT } from "@/lib/language";
@@ -21,12 +22,11 @@ export function CourseHighlights({ destaques }: { destaques: PaginaDaAula["curso
   return (
     <div className={cn("grid gap-8 pt-4", getGridColsClass(safeDestaques.length))}>
       {safeDestaques.map((h, i) => {
-        const Icon = resolveIcon(h.icon);
         return (
           <div key={i} className="group relative flex flex-col gap-5">
             <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-primary/10 blur-2xl transition-all group-hover:bg-primary/20 pointer-events-none" />
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-sm ring-1 ring-primary/20">
-              <Icon className="h-6 w-6 stroke-[1.5px]" />
+              <HighlightIcon token={h.icon} className="h-6 w-6 stroke-[1.5px]" />
             </div>
             <div className="space-y-2">
               <h4 className="font-display text-[1.15rem] font-bold tracking-tight text-foreground">{h.title}</h4>
