@@ -98,7 +98,7 @@ export function CourseDetails({ curso }: { curso: PaginaDaAula["curso"] }) {
         <div className="space-y-6 lg:col-start-2 lg:row-span-2 lg:row-start-1">
           {/* "Este curso inclui", também aqui (operador, 04/10/2026): o aluno descobre os
               materiais enquanto estuda. Os arquivos saem da lista que ele vê. */}
-          <CourseIncludes materiais={curso.materiais ?? []} temArquivos={curso.modulos.some((m) => m.aulas.some((a) => a.temArquivos))} />
+          <CourseIncludes materiais={curso.materiais ?? []} inclui={curso.inclui} idiomaDoCurso={curso.language} />
           <CourseLayers camadas={curso.camadas} />
         </div>
 

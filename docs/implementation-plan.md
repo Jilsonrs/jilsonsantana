@@ -204,6 +204,9 @@
 > (aula concluída sozinha, barra na aula e no cartão), o vídeo que não recomeça ao trocar de aba
 > (a apresentação abre pausada, a aula toca sozinha) e o "Salvos". **Primeiro teste com o player de
 > verdade: com o operador** (assistir uma aula até perto do fim e ver a barra andar).
+> **PUBLICADO em 05/10/2026, depois (`main` = `93ed6a6`, CI verde nos dois jobs, deploy ok):** o
+> ícone dos Destaques escolhido por busca entre todos os do Lucide (feito em outro chat; o pacote
+> principal não cresceu, medido) e o `courses.md` reescrito pelo operador.
 > **PUBLICADO em 05/10/2026 (`main` = `59176c0`, CI verde nos dois jobs, deploy ok, migrations
 > `notificacoes` e `notificacao_titulo_do_curso` aplicadas pelo pre-deploy):** o passo Mensagens,
 > o sino de Notificações (boas-vindas e parabéns do curso, lista e página Ver todas) e o botão
@@ -2507,6 +2510,11 @@ própria**.*
       servidor: `temArquivos`, só a cadeia publicada) e os materiais marcados.
       **E também no "Sobre o curso" da página da aula** *(decisão do operador, 04/10/2026: "nos dois
       lugares")*, onde o aluno logado está.
+      **As linhas calculadas, feitas em 05/10/2026** *(decisão do operador, fecha a P41 menos o
+      certificado)*: horas de vídeo, artigos, aulas grátis e legendas, além dos arquivos — uma
+      função só no servidor (`server/src/lib/inclui.ts`) para a página de venda, a página da aula e
+      a prévia; o aluno conta a cadeia publicada, o admin tudo. Mutação: legendas com aula sem
+      legenda, a venda contando rascunho e a linha de aulas grátis sumindo — reprovam.
 - [ ] **Mock na `design-lab/`** (parceiro de design) → **transposição** para template de servidor
       (mesma marcação, mesmas classes) → **formatação** pelo parceiro. É o caminho que a home já
       percorreu inteiro.

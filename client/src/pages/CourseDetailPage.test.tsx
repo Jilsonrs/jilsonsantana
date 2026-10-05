@@ -20,6 +20,8 @@ import { IdiomaProvider } from "@/lib/language";
 
 const rota = { route: "/curso/exemplo-fundamentos-excel-ia", path: "/curso/:slug" };
 
+const NADA = { segundosDeVideo: 0, artigos: 0, aulasGratis: 0, arquivos: false, legendas: false };
+
 const baseCourse: CourseDetail = {
   id: 1,
   slug: "exemplo-fundamentos-excel-ia",
@@ -39,8 +41,9 @@ const baseCourse: CourseDetail = {
   moduleCount: 1,
   lessonCount: 2,
   videoSeconds: 3900, // 1h 05min
+  language: "pt",
   materiais: [],
-  temArquivos: false,
+  inclui: NADA,
   modules: [
     {
       id: 10,
@@ -196,13 +199,65 @@ describe("CourseDetailPage — vídeo de apresentação", () => {
 // quadro não aparece. Textos globais, editáveis em Admin → Textos.
 describe("CourseDetailPage — este curso inclui", () => {
   it("os arquivos e os materiais marcados, cada um numa linha", async () => {
-    getCourseBySlug.mockResolvedValue({ ...baseCourse, temArquivos: true, materiais: ["BIBLIOTECA_DE_PROMPTS", "APOSTILA"] });
+    getCourseBySlug.mockResolvedValue({ ...baseCourse, inclui: { ...NADA, arquivos: true }, materiais: ["BIBLIOTECA_DE_PROMPTS", "APOSTILA"] });
     renderWithProviders(<CourseDetailPage />, rota);
     const quadro = (await screen.findByRole("heading", { name: "Este curso inclui:" })).closest("section") as HTMLElement;
     expect([...quadro.querySelectorAll("li")].map((li) => li.textContent)).toEqual([
       "Arquivos para acompanhar as aulas",
       "Biblioteca de prompts",
       "Apostila",
+    ]);
+  });
+
+  // As linhas calculadas (decisões do operador, 05/10/2026), na ordem: vídeo,
+  // artigos, aulas grátis, arquivos, legendas, materiais. Zero não aparece.
+  it("todas as linhas calculadas, com o número, antes dos materiais", async () => {
+    getCourseBySlug.mockResolvedValue({
+      ...baseCourse,
+      inclui: { segundosDeVideo: 12_000, artigos: 4, aulasGratis: 2, arquivos: true, legendas: true },
+      materiais: ["APOSTILA"],
+    });
+    renderWithProviders(<CourseDetailPage />, rota);
+    const quadro = (await screen.findByRole("heading", { name: "Este curso inclui:" })).closest("section") as HTMLElement;
+    expect([...quadro.querySelectorAll("li")].map((li) => li.textContent)).toEqual([
+      "3h 20min de vídeo",
+      "4 artigos",
+      "2 aulas grátis para experimentar",
+      "Arquivos para acompanhar as aulas",
+      "Legendas em português",
+      "Apostila",
+    ]);
+  });
+
+  it("um de cada: no singular; curso em inglês: legendas em inglês", async () => {
+    getCourseBySlug.mockResolvedValue({
+      ...baseCourse,
+      language: "en",
+      inclui: { segundosDeVideo: 0, artigos: 1, aulasGratis: 1, arquivos: false, legendas: true },
+    });
+    renderWithProviders(<CourseDetailPage />, rota);
+    const quadro = (await screen.findByRole("heading", { name: "Este curso inclui:" })).closest("section") as HTMLElement;
+    expect([...quadro.querySelectorAll("li")].map((li) => li.textContent)).toEqual([
+      "1 artigo",
+      "1 aula grátis para experimentar",
+      "Legendas em inglês",
+    ]);
+  });
+
+  it("as linhas calculadas em inglês", async () => {
+    getCourseBySlug.mockResolvedValue({ ...baseCourse, inclui: { segundosDeVideo: 3900, artigos: 2, aulasGratis: 1, arquivos: false, legendas: true } });
+    renderWithProviders(
+      <IdiomaProvider idioma="en">
+        <CourseDetailPage />
+      </IdiomaProvider>,
+      rota,
+    );
+    const quadro = (await screen.findByRole("heading", { name: "This course includes:" })).closest("section") as HTMLElement;
+    expect([...quadro.querySelectorAll("li")].map((li) => li.textContent)).toEqual([
+      "1h 05min of video",
+      "2 articles",
+      "1 free lesson to try",
+      "Portuguese subtitles",
     ]);
   });
 
@@ -229,7 +284,7 @@ describe("CourseDetailPage — este curso inclui", () => {
   });
 
   it("em inglês", async () => {
-    getCourseBySlug.mockResolvedValue({ ...baseCourse, temArquivos: true, materiais: ["APOSTILA"] });
+    getCourseBySlug.mockResolvedValue({ ...baseCourse, inclui: { ...NADA, arquivos: true }, materiais: ["APOSTILA"] });
     renderWithProviders(
       <IdiomaProvider idioma="en">
         <CourseDetailPage />
