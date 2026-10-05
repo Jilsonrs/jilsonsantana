@@ -1051,7 +1051,12 @@ tornada executável — não uma lista nova):
       de publicar, a suíte inteira (`CLAUDE.md` → Commands). Medido: mudar um componente roda 3
       arquivos da tela em vez de 51; mudar o dicionário no `core` roda todos (`forceRerunTriggers`);
       no servidor, uma rota roda 34 de 40 arquivos — quase tudo passa pelo `app`, de propósito.
-- [ ] **CI mais rápido:** as bibliotecas instaladas guardadas entre uma execução e outra.
+- [x] **CI mais rápido:** as bibliotecas instaladas guardadas entre uma execução e outra
+      (`node_modules` por `package-lock` + Node 20; `npm ci` só quando a chave muda). **Medido no
+      mesmo commit, sem e com o cache:** job principal 4 min 4 s → 2 min 22 s; E2E 2 min 22 s →
+      1 min 18 s. Mudar qualquer dependência muda a chave e a primeira execução volta a instalar.
+      O navegador do Playwright segue sem cache (a doc dele desaconselha: restaurar custa quase o
+      mesmo que baixar).
 
 #### Postura de segurança — o que JÁ está coberto  *(varredura completa do `security-vulnerability-reviewer`, Ago 2026, branch `dev` @ `d9b22ea`)*
 
