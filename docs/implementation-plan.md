@@ -2093,6 +2093,13 @@ própria**.*
       mostrar a anterior por algumas horas. O tamanho da letra da legenda é ajuste de visual da
       biblioteca no painel (vale para todos); não achei na doc um controle para o aluno.
 
+- [x] **O ✓ dos passos Legendas e Mensagens** *(decisões do operador, 05/10/2026 — fecha a P42)*:
+      Legendas com todas as aulas de vídeo publicadas com legenda em dia (a mesma conta do "x de
+      y" da tela, numa função só no servidor — `contagemDeLegendas`; a apresentação não conta;
+      sem aula de vídeo, sem ✓); Mensagens com as duas escritas. Enviar ou excluir legenda
+      recarrega o curso, e o ✓ aparece na hora. Mutação: a conta ignorando a legenda a reenviar,
+      mensagens com uma só e enviar sem recarregar o curso — reprovam.
+
 **Etapa 4 — Mensagens e o sino:**
 - [x] **O sino ao lado da foto, no topo**: área de avisos do aluno, com as mensagens de
       **boas-vindas** (ao abrir a primeira aula do curso) e de **parabéns** (ao concluir), e outras
@@ -2142,9 +2149,9 @@ própria**.*
 | 1 Informações básicas | pronto | — *(a duração no topo entrou em 29/09, e no catálogo em 30/09: ver abaixo)* | — |
 | 2 Para quem é | pronto | — | — |
 | 3 Conteúdo | pronto | o **Quiz** (no "+" aparece EM BREVE) | as regras do operador: uma ou várias respostas certas, explicação, nota mínima, o que o aluno vê |
-| 4 Legendas | EM BREVE | a **etapa 3** inteira: "x de y aulas com legenda"; enviar, baixar e excluir o `.vtt` por vídeo, só no idioma do curso | código (alto risco: Bunny) |
+| 4 Legendas | pronto (04/10: a tela; o ✓ em 05/10) | — | — |
 | 5 Mídia e destaques | pronto | — *(a P19 fechou em 29/09)* | — |
-| 6 Mensagens | pronto (04/10: o passo, o envio e o sino) | a regra do ✓ do passo | o operador |
+| 6 Mensagens | pronto (04/10: o passo, o envio e o sino; o ✓ com as duas escritas em 05/10) | — | — |
 | 7 Publicar | pronto *(Visualizar como aluno desde 04/10)* | o Visualizar da página **pública** do curso | a página definitiva do curso: **C5** |
 
 **Em todos os passos, ainda aberto:**

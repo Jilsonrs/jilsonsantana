@@ -9,6 +9,7 @@ import { paraBanco, doBanco, comIdioma, idiomaDaLista } from "../lib/language.js
 import { apagarVideo, enderecoAssinado } from "../lib/bunny-stream.js";
 import { confirmarVideosProntos } from "../lib/videos-prontos.js";
 import { limparCursoNoBunny } from "../lib/limpeza-no-bunny.js";
+import { legendasCompletas } from "../lib/legendas.js";
 
 const router = Router();
 const PUBLISHED = ContentStatus.PUBLISHED;
@@ -234,7 +235,12 @@ router.get("/admin/courses/:id", requireAdmin, async (req, res) => {
       return lembrado ? { ...l, ...lembrado } : l;
     }),
   }));
-  res.json({ ...comIdioma({ ...course, modules }), introVideoEmbedUrl: enderecoAssinado(course.introVideoId, { tocarAoAbrir: false }) });
+  res.json({
+    ...comIdioma({ ...course, modules }),
+    introVideoEmbedUrl: enderecoAssinado(course.introVideoId, { tocarAoAbrir: false }),
+    // O ✓ do passo Legendas (operador, 05/10/2026) — a mesma conta da tela Legendas.
+    legendasCompletas: await legendasCompletas(id),
+  });
 });
 
 // ── Writes (admin only) ──────────────────────────────────────────────────────

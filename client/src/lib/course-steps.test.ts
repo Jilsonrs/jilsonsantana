@@ -22,6 +22,7 @@ const VAZIO: AdminCourseDetail = {
   materiais: [],
   welcomeMessage: null,
   congratsMessage: null,
+  legendasCompletas: false,
   thumbnailUrl: null,
   introVideoId: null,
   introVideoEmbedUrl: null,
@@ -89,12 +90,18 @@ describe("passosConcluidos — o ✓ de cada passo", () => {
     expect(passosConcluidos({ ...VAZIO, status: "ARCHIVED" }).has("publicar")).toBe(false);
   });
 
-  // Legendas: o ✓ dependeria das legendas, que o curso salvo não traz (a tela tem a
-  // própria contagem, 04/10/2026). Mensagens: a regra do ✓ ainda é do operador.
-  it("Legendas e Mensagens nunca ganham ✓", () => {
-    const tudo = passosConcluidos({ ...VAZIO, status: "PUBLISHED" });
-    expect(tudo.has("legendas")).toBe(false);
-    expect(tudo.has("mensagens")).toBe(false);
+  // Legendas: a mesma conta da tela, feita no servidor (05/10/2026).
+  it("Legendas: ✓ quando o servidor diz que todas as aulas publicadas têm legenda", () => {
+    expect(passosConcluidos({ ...VAZIO, legendasCompletas: true }).has("legendas")).toBe(true);
+    expect(passosConcluidos({ ...VAZIO, legendasCompletas: false }).has("legendas")).toBe(false);
+  });
+
+  // Mensagens: as duas escritas (operador, 05/10/2026). Só espaços não conta.
+  it("Mensagens: ✓ só com as duas mensagens escritas", () => {
+    const duas = { ...VAZIO, welcomeMessage: "Bem-vindo!", congratsMessage: "Parabéns!" };
+    expect(passosConcluidos(duas).has("mensagens")).toBe(true);
+    expect(passosConcluidos({ ...duas, congratsMessage: null }).has("mensagens")).toBe(false);
+    expect(passosConcluidos({ ...duas, welcomeMessage: "   " }).has("mensagens")).toBe(false);
   });
 });
 

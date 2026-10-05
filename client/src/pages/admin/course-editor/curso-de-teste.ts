@@ -18,6 +18,7 @@ export const CURSO_DE_TESTE: AdminCourseDetail = {
   materiais: [],
   welcomeMessage: null,
   congratsMessage: null,
+  legendasCompletas: false,
   thumbnailUrl: null,
   introVideoId: null,
   introVideoEmbedUrl: null,

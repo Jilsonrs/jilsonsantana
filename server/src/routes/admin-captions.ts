@@ -7,7 +7,7 @@ import { parseId } from "../lib/http.js";
 import { doBanco } from "../lib/language.js";
 import { apagarLegenda, enviarLegenda, limparCacheDaLegenda } from "../lib/bunny-stream.js";
 import { nomeParaDownload } from "../lib/nome-do-download.js";
-import { ROTULO_DA_LEGENDA } from "../lib/legendas.js";
+import { ROTULO_DA_LEGENDA, contagemDeLegendas } from "../lib/legendas.js";
 
 const router = Router();
 
@@ -184,7 +184,7 @@ router.get("/admin/courses/:id/legendas", requireAdmin, async (req, res) => {
       status: m.status,
       aulas: m.lessons.map((a) => ({ id: a.id, title: a.title, status: a.status, temVideo: a.bunnyVideoId !== null, legenda: legendaParaATela(a.caption) })),
     })),
-    contagem: { comLegenda: publicadas.filter((a) => a.caption && !a.caption.needsResend).length, total: publicadas.length },
+    contagem: contagemDeLegendas(publicadas),
   });
 });
 

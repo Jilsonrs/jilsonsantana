@@ -510,9 +510,9 @@ Sete passos em ordem de preenchimento, cada um com ✓:
 | Informações básicas | título, subtítulo, slug, descrição, idioma, nível | título, subtítulo, nível e descrição ≥ 200 palavras |
 | Para quem é | o que vai aprender, pré-requisitos, para quem é | ≥ 1 item em cada lista |
 | Conteúdo | módulos e aulas | ≥ 1 aula publicada em módulo publicado |
-| Legendas | uma `.vtt` por aula e pela apresentação | contagem própria |
+| Legendas | uma `.vtt` por aula e pela apresentação | todas as aulas de vídeo publicadas com legenda em dia — a mesma conta do "x de y" da tela; a apresentação não conta *(operador, 05/10/2026)* |
 | Mídia e destaques | imagem, vídeo, destaques, perguntas, camadas | imagem **e** vídeo promocional |
-| Mensagens | boas-vindas e parabéns | — |
+| Mensagens | boas-vindas e parabéns | as duas escritas *(operador, 05/10/2026)* |
 | Publicar | o que falta, status, ordem, link | curso publicado |
 
 - **Visualizar** abre a tela do aluno em qualquer status. A visualização da página **pública**
