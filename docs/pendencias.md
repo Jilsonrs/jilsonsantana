@@ -16,7 +16,7 @@
 > 5. **Item novo ganha o próximo número livre.** Número nunca se reutiliza, para que "P7" queira
 >    dizer sempre a mesma coisa em qualquer conversa.
 >
-> **Próximo número livre: P38** · Atualizada em 30/09/2026
+> **Próximo número livre: P44** · Atualizada em 05/10/2026
 
 ## A. Agora, em sequência *(nascidas da configuração do Bunny, 25/09/2026)*
 
@@ -53,6 +53,8 @@ de resposta rápida entra aqui, com o próximo número livre.*
 | P31 | **Mostrar curso "em breve"** (ainda não publicado) na vitrine? Hoje só aparece curso publicado, e mostrar "em breve" seria regra nova | quando a vitrine de cursos for desenhada (C5) | `implementation-plan.md` → Bloco C5 |
 | P39 | **O que o certificado atesta:** a aula conta como concluída sozinha (vídeo a 90%, texto ao abrir — decisão de 03/10), e quem decide isso é a **tela**. Alguém que chame o site por fora consegue marcar como concluídas as aulas a que tem acesso sem assistir. Para o progresso não faz diferença; para o **certificado público** (Fase 6.5), sim. Aceitar e o certificado atestar "concluiu o curso na plataforma", ou exigir no servidor a prova de que o vídeo chegou aos 90%? *(achado P2 da revisão de segurança, 03/10)* | antes da Fase 6.5 (certificado) | `implementation-plan.md` → Fase 5 e Fase 6.5 |
 | P41 | **As linhas finais do quadro "Este curso inclui"** (página de venda do curso). Decidido: os arquivos para baixar aparecem sozinhos; os materiais exclusivos (Biblioteca de prompts, Apostila) são marcados no Publicar; sem linha de acesso. **Falta você escolher** quais destas entram, todas calculadas sozinhas: as horas de vídeo · o número de artigos (aulas de texto) · "Legendas" (quando todas as aulas publicadas têm) · "N aulas grátis para experimentar" (as prévias grátis, sugestão do agente) · o certificado (quando a Fase 6.5 existir) | antes do mock da página de curso (Bloco C5) | `courses.md` §2.3 |
+| P42 | **Quando o passo Mensagens do editor ganha o ✓?** Hoje nunca ganha. Exemplos: com as duas mensagens escritas, ou com pelo menos uma. (A regra do ✓ de cada passo é sua, 28/09.) | `docs/courses.md` (tabela dos passos, linha Mensagens) e `client/src/lib/course-steps.ts` |
+| P43 | **O Visualizar conta como você abrindo a aula:** aula de texto aberta fica concluída para você, e a boas-vindas do curso chega no seu sino. O aluno não é afetado. **Fica assim, ou a prévia não deve contar nada?** | `docs/implementation-plan.md` (Bloco E, Visualizar como aluno) |
 
 ## Fora desta lista, de propósito
 
