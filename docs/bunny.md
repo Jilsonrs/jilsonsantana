@@ -100,6 +100,12 @@ frente do site, por exemplo), ou se o Enterprise DRM entrar só para as aulas.*
 - **Trocar de aba não recomeça o vídeo:** o servidor assina o endereço de novo a cada busca, e a
   tela **mantém o endereço** enquanto o vídeo for o mesmo (`BunnyPlayer.tsx`). Antes, voltar à
   aba recarregava o player do zero e fazia tocar o que estava pausado.
+- **Voltar à aula abre onde parou, e o fim leva à próxima** *(decisões do operador, 05/10/2026)*:
+  a tela guarda no navegador o ponto e a pausa de cada aula (eventos `timeupdate`, `pause` e
+  `play` do player.js) e, ao reabrir, acrescenta ao endereço `t=<segundos>s` e, se estava
+  pausado, `autoplay=false` — os dois são parâmetros de embed do Stream, e nenhum entra no token.
+  O evento `ended` apaga o ponto e abre a próxima aula da lista. Só a aula: o vídeo de
+  apresentação não lembra nada (`posicao-do-video.ts`, `player-do-bunny.ts`).
 
 **O que o primeiro teste no ar mostrou (28/09/2026, fato medido):** a biblioteca de apresentação
 **existia** (`jilsonsantana-stream-apresentacao`, 763872), ao contrário do que este documento

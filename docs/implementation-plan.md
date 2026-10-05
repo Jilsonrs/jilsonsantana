@@ -1821,6 +1821,13 @@ cada campo, a regra do ✓, 160 caracteres nas três listas e o Visualizar esper
       como feita, o aviso sem dizer "curta", o copiar salvando o passo, o link ignorando o idioma,
       o erro de cópia virando sucesso e o servidor contando marcador de Markdown como palavra →
       todas reprovam. Revertido.
+- [x] **A aula que passa para a próxima e o vídeo que volta de onde parou** *(decisões do operador,
+      05/10/2026)*: o FIM do vídeo abre a próxima aula da lista na hora (vídeo ou texto; aluno e
+      prévia do admin; na última, fica); a aula de texto espera o clique. Quem sai e volta abre no
+      mesmo ponto, pausado se tinha pausado — guardado no navegador, por aula (`t` e `autoplay` no
+      endereço do Bunny); ver até o fim apaga o ponto. A prévia grátis do visitante fica para a
+      página pública. Mutação: o fim sem passar de aula, abrir sempre tocando e não apagar o ponto
+      no fim — reprovam.
 - [x] **Visualizar como aluno** *(decisão do operador, 04/10/2026 — muda o alvo: a TELA DO ALUNO,
       logada, onde ele assiste às aulas, e não a página pública)*: botão **Visualizar** no TOPO do
       editor, entre "Voltar para cursos" e "Salvar", em todo passo (operador, 04/10/2026; nasceu
