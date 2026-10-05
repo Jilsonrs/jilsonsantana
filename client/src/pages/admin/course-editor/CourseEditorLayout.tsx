@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, Outlet, useLocation, useOutletContext, useParams } from "react-router-dom";
+import { Eye } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { FormProvider, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -44,6 +45,22 @@ function Voltar() {
   );
 }
 
+/**
+ * VISUALIZAR — a tela do aluno com este curso, em qualquer status, numa NOVA ABA
+ * (decisões do operador, 04/10/2026: no topo, entre Voltar e Salvar). Mostra o
+ * que está salvo.
+ */
+function Visualizar({ courseId }: { courseId: number }) {
+  return (
+    <Button asChild variant="outline">
+      <Link to={`/admin/cursos/${courseId}/previa`} target="_blank" rel="noopener">
+        <Eye className="size-4" aria-hidden="true" />
+        Visualizar
+      </Link>
+    </Button>
+  );
+}
+
 export function CourseEditorLayout() {
   const { id } = useParams<{ id: string }>();
   const courseId = Number(id);
@@ -82,6 +99,7 @@ export function CourseEditorLayout() {
           <>
             <Badge variant="secondary">{ROTULO_DO_STATUS[curso.status]}</Badge>
             <Voltar />
+            <Visualizar courseId={curso.id} />
             {/* O Salvar do passo aberto entra aqui (o passo Conteúdo não tem). */}
             <span ref={setAcoes} className="contents" />
           </>

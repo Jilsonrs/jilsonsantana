@@ -479,8 +479,8 @@ Daí os 7 passos do *Bloco E* do plano, no nível 2 da navegação.
 - **Descrição com menos de 200 palavras** aparece como "descrição curta" no que falta, **sem
   impedir o salvar**.
 - **As três listas aceitam até 160 caracteres por item**, cada item com contador.
-- **Visualizar como aluno** *(decisão do operador, 04/10/2026)*: no passo **Publicar**, um botão
-  abre, em nova aba, a **tela do aluno** (a página logada da aula) com este curso, **em qualquer
+- **Visualizar** *(decisões do operador, 04/10/2026)*: no **topo do editor**, entre "Voltar para
+  cursos" e "Salvar", em todo passo, um botão abre, em nova aba, a **tela do aluno** (a página logada da aula) com este curso, **em qualquer
   status**: o operador simula o aluno entrando no curso enquanto cadastra e vê como a página fica.
   Com aula, abre a primeira; sem nenhuma, mostra o "Sobre o curso" com o que já foi preenchido.
 - **O Visualizar da página PÚBLICA espera a página de curso definitiva (C5):** a página pública de

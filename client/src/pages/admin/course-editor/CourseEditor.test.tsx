@@ -336,15 +336,6 @@ describe("Editor do curso — Publicar", () => {
     expect(screen.queryByText("Falta a capa")).toBeNull();
   });
 
-  // Visualizar como aluno (operador, 04/10/2026): a prévia DESTE curso, numa nova
-  // aba, para o editor continuar aberto.
-  it("Visualizar como aluno abre a prévia deste curso em nova aba", async () => {
-    abrir("/admin/cursos/1/publicar");
-    const link = await screen.findByRole("link", { name: "Visualizar como aluno" });
-    expect(link.getAttribute("href")).toBe("/admin/cursos/1/previa");
-    expect(link.getAttribute("target")).toBe("_blank");
-  });
-
   it("o link é o endereço público do curso, no idioma dele", async () => {
     abrir("/admin/cursos/1/publicar");
     expect(await linkDoCurso()).toBe(`${window.location.origin}/curso/exemplo-fundamentos-excel-ia`);
@@ -497,17 +488,32 @@ describe("Editor do curso — o Salvar no topo e a mensagem", () => {
     vi.useRealTimers();
   });
 
-  it("um Salvar só, no topo, logo depois de Voltar para cursos", async () => {
+  // A ordem do topo (operador, 04/10/2026): Voltar para cursos, Visualizar, Salvar.
+  it("um Salvar só, no topo: Voltar para cursos, Visualizar e Salvar, nessa ordem", async () => {
     abrir("/admin/cursos/1/basico");
     await esperarTitulo();
 
     const salvarNoTopo = screen.getByRole("button", { name: "Salvar" });
     const voltar = screen.getByRole("link", { name: "Voltar para cursos" });
+    const visualizar = screen.getByRole("link", { name: "Visualizar" });
     expect(screen.getAllByRole("button", { name: "Salvar" })).toHaveLength(1);
-    // Mesmo grupo do topo, e o Salvar logo depois do Voltar (dentro do lugar que
-    // o topo reserva para o botão do passo, que não ocupa espaço na tela).
+    // Mesmo grupo do topo; o Salvar mora no lugar que o topo reserva para o botão
+    // do passo, que não ocupa espaço na tela.
     expect(voltar.parentElement?.contains(salvarNoTopo)).toBe(true);
-    expect(voltar.nextElementSibling?.contains(salvarNoTopo)).toBe(true);
+    expect(voltar.nextElementSibling).toBe(visualizar);
+    expect(visualizar.nextElementSibling?.contains(salvarNoTopo)).toBe(true);
+  });
+
+  // Visualizar (operador, 04/10/2026): a prévia DESTE curso, numa nova aba, para o
+  // editor continuar aberto — em todo passo, inclusive o Conteúdo, que não tem Salvar.
+  it("Visualizar abre a prévia deste curso em nova aba, em todo passo", async () => {
+    for (const passo of ["publicar", "conteudo"]) {
+      const { unmount } = abrir(`/admin/cursos/1/${passo}`);
+      const link = await screen.findByRole("link", { name: "Visualizar" });
+      expect(link.getAttribute("href"), passo).toBe("/admin/cursos/1/previa");
+      expect(link.getAttribute("target"), passo).toBe("_blank");
+      unmount();
+    }
   });
 
   it("salvou: a mensagem aparece, some sozinha, e o Fechar também fecha", async () => {

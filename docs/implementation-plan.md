@@ -1814,8 +1814,9 @@ cada campo, a regra do ✓, 160 caracteres nas três listas e o Visualizar esper
       o erro de cópia virando sucesso e o servidor contando marcador de Markdown como palavra →
       todas reprovam. Revertido.
 - [x] **Visualizar como aluno** *(decisão do operador, 04/10/2026 — muda o alvo: a TELA DO ALUNO,
-      logada, onde ele assiste às aulas, e não a página pública)*: botão no passo **Publicar**,
-      em nova aba, para **qualquer status**; o operador simula o aluno entrando no curso enquanto
+      logada, onde ele assiste às aulas, e não a página pública)*: botão **Visualizar** no TOPO do
+      editor, entre "Voltar para cursos" e "Salvar", em todo passo (operador, 04/10/2026; nasceu
+      no passo Publicar e subiu no mesmo dia), em nova aba, para **qualquer status**; o operador simula o aluno entrando no curso enquanto
       cadastra. Com aula, `/admin/cursos/:id/previa` leva à **primeira aula** na ordem do Conteúdo
       (a rota de admin da página da aula já marca o rascunho); sem nenhuma aula, mostra a tela do
       aluno com o título, *"Este curso ainda não tem aulas."* e o "Sobre o curso"
