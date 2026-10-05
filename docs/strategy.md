@@ -99,7 +99,7 @@ tutor 24/7) + autoridade pessoal + simplicidade Apple — combinação que nenhu
   numa empresa é mídia que se distribui sozinha. **Não viola a trava "sem grátis na escola"** — o
   grátis vive fora, como já decidido. ⚠️ Anti-burnout: é projeto, não decisão — fila pós-launch,
   começar com **1 template piloto** + captura de e-mail (Resend já existe). Candidato natural:
-  material do "Excel do Zero" (courses.md §7.3).
+  material do "Excel do Zero" (courses.md §17.2).
 
 ---
 
