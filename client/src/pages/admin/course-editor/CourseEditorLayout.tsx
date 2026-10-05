@@ -53,7 +53,7 @@ function Voltar() {
 function Visualizar({ courseId }: { courseId: number }) {
   return (
     <Button asChild variant="outline">
-      <Link to={`/admin/cursos/${courseId}/previa`} target="_blank" rel="noopener">
+      <Link to={`/admin/cursos/${courseId}/previa`} target="_blank" rel="noopener" className="gap-2">
         <Eye className="size-4" aria-hidden="true" />
         Visualizar
       </Link>
