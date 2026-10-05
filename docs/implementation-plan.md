@@ -204,6 +204,9 @@
 > (aula concluída sozinha, barra na aula e no cartão), o vídeo que não recomeça ao trocar de aba
 > (a apresentação abre pausada, a aula toca sozinha) e o "Salvos". **Primeiro teste com o player de
 > verdade: com o operador** (assistir uma aula até perto do fim e ver a barra andar).
+> **PUBLICADO em 04/10/2026, por último (`main` = `643dd08`, CI verde nos dois jobs, deploy ok,
+> migration `course_materiais` aplicada pelo pre-deploy):** o quadro "Este curso inclui" — os
+> materiais marcados no passo Publicar, o quadro na página do curso e no "Sobre o curso" da aula.
 > **PUBLICADO em 04/10/2026, depois (`main` = `45e33b8`, CI verde, deploy ok):** a limpeza do cache
 > da legenda trocada (falta a chave da conta no Railway — P40).
 > **PUBLICADO em 04/10/2026 (`main` = `4cbebf3`, CI verde, deploy ok, migration `caption` aplicada
@@ -1810,8 +1813,18 @@ cada campo, a regra do ✓, 160 caracteres nas três listas e o Visualizar esper
       como feita, o aviso sem dizer "curta", o copiar salvando o passo, o link ignorando o idioma,
       o erro de cópia virando sucesso e o servidor contando marcador de Markdown como palavra →
       todas reprovam. Revertido.
-- [ ] **Visualizar** mostra a página do curso como o aluno vê, **inclusive em rascunho, só para o
-      admin** — a rota pública continua devolvendo só o publicado. **Espera o C5** *(operador,
+- [x] **Visualizar como aluno** *(decisão do operador, 04/10/2026 — muda o alvo: a TELA DO ALUNO,
+      logada, onde ele assiste às aulas, e não a página pública)*: botão **Visualizar** no TOPO do
+      editor, entre "Voltar para cursos" e "Salvar", em todo passo (operador, 04/10/2026; nasceu
+      no passo Publicar e subiu no mesmo dia), em nova aba, para **qualquer status**; o operador simula o aluno entrando no curso enquanto
+      cadastra. Com aula, `/admin/cursos/:id/previa` leva à **primeira aula** na ordem do Conteúdo
+      (a rota de admin da página da aula já marca o rascunho); sem nenhuma aula, mostra a tela do
+      aluno com o título, *"Este curso ainda não tem aulas."* e o "Sobre o curso"
+      (`GET /api/admin/courses/:id/pagina`, `requireAdmin`). Abrir a prévia é o admin abrindo a
+      aula: texto conta como concluído para ele e a boas-vindas chega no sino dele. Mutação: a
+      prévia ignorando rascunho (cliente e servidor) e a rota sem `requireAdmin` — reprovam.
+      *O texto abaixo é o histórico do Visualizar da página PÚBLICA, que continua com o C5:*
+      a rota pública continua devolvendo só o publicado. **Espera o C5** *(operador,
       28/09/2026)*: a página pública de curso de hoje ainda é React e nem mostra a descrição,
       então a prévia mostraria outra página. **Onde fica** *(operador, 29/09/2026)*:
       um link no passo **Publicar** para abrir a página pública do curso e conferir como ficou.
@@ -2024,10 +2037,46 @@ própria**.*
       biblioteca no painel (vale para todos); não achei na doc um controle para o aluno.
 
 **Etapa 4 — Mensagens e o sino:**
-- [ ] **O sino ao lado da foto, no topo**: área de avisos do aluno, com as mensagens de
+- [x] **O sino ao lado da foto, no topo**: área de avisos do aluno, com as mensagens de
       **boas-vindas** (ao abrir a primeira aula do curso) e de **parabéns** (ao concluir), e outras
       comunicações do operador ou do JilsonAI. **Sem e-mail.** O passo 6 do editor é onde ele
       escreve as duas mensagens do curso.
+      **Plano aprovado em 04/10/2026, em três partes** (decisões do operador no mesmo dia, a partir
+      da Udemy, do Bunny e do YouTube): boas-vindas na **primeira aula que o aluno abrir** (qualquer
+      uma), só o **número no sino** (nada interrompe a aula), a **lista** com "Marcar todas como
+      lidas" e a página **Ver todas**, e o nome **Notificações**.
+  - [x] **4a — O passo Mensagens** *(04/10/2026)*: migration `notificacoes` (as duas colunas do
+        curso e a tabela `notification`, uma de cada tipo por aluno e curso, CHECK e RLS); os dois
+        campos em Markdown, até 2.000 caracteres, com o Salvar no topo. O ✓ do passo fica
+        esperando a regra do operador. Mutação: o passo sem `congratsMessage` e o servidor sem
+        `welcomeMessage` — as duas reprovam.
+  - [x] **4b — O servidor manda, lista e marca como lida** *(04/10/2026)*: a boas-vindas na
+        página da aula, só com assinatura (ou o admin, pela rota dele); os parabéns na conclusão
+        da última aula (o aluno conta só o publicado; o admin, todas); o texto copiado no envio;
+        `GET /api/notificacoes` (as 50 mais recentes + não lidas; o link do curso só enquanto
+        publicado), `PUT …/:id/lida` (a de outra pessoa dá 404) e `PUT …/lidas`
+        (`server/src/lib/notificacoes.ts`, `routes/notificacoes.ts`). Mutação: boas-vindas sem
+        conferir a assinatura, parabéns contando rascunho e marcar sem conferir o dono — as três
+        reprovam. **Revisão de segurança (04/10):** P1 corrigido — o título do curso também é
+        copiado no envio (`notification.courseTitle`, migration `notificacao_titulo_do_curso`),
+        senão um curso fora do ar renomeado em rascunho vazaria o nome novo pelo sino; P2
+        corrigidos — os parabéns também exigem assinatura (a prévia grátis não basta), e a falha
+        ao criar a notificação não derruba a aula nem a conclusão (`semDerrubar`, log só com ids e
+        código). Mutação nas três correções: reprovam.
+  - [ ] **4d — A Comunicação: mensagens do operador no mesmo sino** *(próximo bloco, plano próprio —
+        decisões do operador, 04/10/2026)*. Além das mensagens do curso, o operador escreve
+        **qualquer** mensagem na área **Comunicação** do admin: aula ao vivo, evento, pergunta
+        sobre cursos desejados. **Para quem:** todos os alunos, **ou** só os de um curso.
+        **Pergunta sobre cursos desejados é só mensagem por enquanto** (sem enquete, sem resposta).
+        O sino já aceita outros tipos (`NotificationKind` ganha valor novo; `courseId` é opcional).
+  - [x] **4c — O sino, a lista e a página Ver todas** *(04/10/2026)*: o sino no cabeçalho, ao lado
+        da foto, para aluno e admin, com o número de não lidas ("9+") no nome do botão; a lista
+        das 5 mais recentes (título, começo do texto sem as marcas do Markdown, há quanto tempo)
+        com **Marcar todas como lidas** e **Ver todas**; clicar marca como lida e leva à página
+        `/aluno/notificacoes`, na notificação clicada, com o texto inteiro (`MarkdownText`, sem
+        link, carregado só ali). O número se atualiza ao voltar para a aba, ao abrir e ao concluir
+        aula. Textos em `app.notificacoes` (P38). Mutação: o sino sem o número, o clique sem
+        marcar e o texto com link — as três reprovam.
 
 **O QUE FALTA NOS 7 PASSOS (atualizado em 30/09/2026 — as linhas estão acima; aqui é o mapa):**
 
@@ -2038,8 +2087,8 @@ própria**.*
 | 3 Conteúdo | pronto | o **Quiz** (no "+" aparece EM BREVE) | as regras do operador: uma ou várias respostas certas, explicação, nota mínima, o que o aluno vê |
 | 4 Legendas | EM BREVE | a **etapa 3** inteira: "x de y aulas com legenda"; enviar, baixar e excluir o `.vtt` por vídeo, só no idioma do curso | código (alto risco: Bunny) |
 | 5 Mídia e destaques | pronto | — *(a P19 fechou em 29/09)* | — |
-| 6 Mensagens | EM BREVE | a **etapa 4** inteira: o sino ao lado da foto, a mensagem de boas-vindas (ao abrir a 1ª aula) e a de parabéns (ao concluir) | a de **parabéns** precisa saber que o aluno concluiu: **Fase 5** |
-| 7 Publicar | pronto | o **Visualizar** (abrir a página pública do curso) | a página definitiva do curso: **C5** |
+| 6 Mensagens | pronto (04/10: o passo, o envio e o sino) | a regra do ✓ do passo | o operador |
+| 7 Publicar | pronto *(Visualizar como aluno desde 04/10)* | o Visualizar da página **pública** do curso | a página definitiva do curso: **C5** |
 
 **Em todos os passos, ainda aberto:**
 - [x] **O Salvar no TOPO, com mensagem de confirmação** *(decisões do operador, 03/10/2026, a
@@ -2425,6 +2474,9 @@ própria**.*
 > transposição.
 
 - [ ] **Passo 0 (operador):** o que a vitrine mostra, e o que a tela do aluno mostra **a mais**.
+      **Já decidido (04/10/2026): cada página de curso é uma LANDING PAGE DE VENDA** — cada curso,
+      sozinho, justifica a assinatura; conversão e retenção (`courses.md` §2.3, `CLAUDE.md`). O
+      mock da página de curso vai para a fila do Antigravity (`GEMINI.md`, item 23).
       Direção já dada por ele, a detalhar: progresso por curso · "continue de onde parou" no topo ·
       o botão sendo **Continuar** em vez de **Assinar**. **Já decidido (30/09/2026):** o cartão e
       a página do curso mostram a duração ("2 módulos · 4 aulas · 1h 05min", "0min" sem vídeo) —
@@ -2465,7 +2517,8 @@ própria**.*
   **A página pública com o vídeo de apresentação não pode ficar em cache por mais de 24 h**
   *(consequência da decisão de 28/09/2026: uma biblioteca só, com token — o player sai assinado
   e a assinatura pública vale 24 h; `bunny.md` §3.1)*.
-  **Junto com a página de curso nova entra o Visualizar do editor do curso** (Bloco E, etapa 1):
+  **Junto com a página de curso nova entra o Visualizar da página PÚBLICA** (Bloco E, etapa 1; o
+  Visualizar **como aluno**, da tela logada, existe desde 04/10/2026):
   a página como o aluno vê, **inclusive em rascunho, só para o admin**, sem abrir a rota pública
   para o que não está publicado *(operador, 28/09/2026: esperar a página definitiva)*.
 

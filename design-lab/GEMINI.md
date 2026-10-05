@@ -139,6 +139,7 @@ servidores (§5); o React responde em `localhost:5173`, a home pública em `loca
 | `/aluno/minhas-trilhas/:id` | `client/src/pages/MyTrilhaDetailPage.tsx` |
 | `/aluno/conta` | `client/src/pages/AccountPage.tsx` |
 | `/aluno/em-andamento` | **Em andamento** (29/09): `client/src/pages/aluno/EmAndamentoPage.tsx` — é onde "Meus estudos" abre. **Só o título**, por decisão do operador, até o progresso chegar (Fase 5). Meus estudos **não tem tela de resumo**: a coluna do nível 2 é o guia. |
+| `/aluno/notificacoes` | **Notificações — Ver todas** (04/10, decisões do operador): `client/src/pages/aluno/NotificacoesPage.tsx` — todas as notificações, com o texto inteiro e a data. Chega-se pelo sino do topo (`components/notificacoes/Sino.tsx`). Estrutura pronta, acabamento seu (fila, item 24). |
 | `/aluno/salvos` | **Salvos** (03/10, decisão do operador, "como no LinkedIn"): `client/src/pages/aluno/SalvosPage.tsx` — os cursos e as aulas salvos para depois, com o botão de tirar (o mesmo `BotaoSalvar`). Estrutura pronta, acabamento seu (fila, item 19). |
 | `/aluno/aula/:id` | **A página da aula** (29/09, estilo LinkedIn Learning): `client/src/pages/aluno/LessonPage.tsx` + `client/src/components/aula/` — `CourseContentsNav.tsx` (o conteúdo do curso, que é o **nível 2** no computador e fica embaixo do player no celular e para o visitante), `LessonContent.tsx` (o player grande, o texto no centro ou "para assinantes"), `LessonResources.tsx` (os arquivos para baixar e o "Recursos" de cada aula) e `AiDock.tsx` (o **botão flutuante** da IA no canto inferior direito e o painel "Em breve", que encolhe o player). **Não exige login** (a prévia grátis toca para visitante). **Têm teste:** a aula atual com `aria-current`, o "para assinantes" sem player, o rascunho marcado só para o admin, e o botão da IA com `aria-expanded` e nome. O editor ganhou **Visualizar** em cada aula, que abre esta página numa aba nova. **Embaixo do player, em toda aula, "Sobre o curso"** (`components/aula/CourseDetails.tsx`, 29/09): nível, descrição, listas, camadas, destaques e perguntas; bloco vazio não aparece (tem teste). |
 | `/aluno/curso/:slug` | A entrada do aluno num curso (29/09): `client/src/pages/aluno/CourseEntryPage.tsx` só leva à primeira aula (sem tela própria, além de "carregando" e "sem aulas"). O cartão do curso no catálogo leva aqui quando a pessoa está logada. |
@@ -382,6 +383,55 @@ exceto o item 4, que é página pública.
    **Materiais exclusivos** no passo Publicar do editor (`CourseMaterialsSection.tsx`). Estrutura
    pronta, acabamento seu. Os textos saem do dicionário (Admin → Textos): **não escreva texto no
    `.tsx`**. Quadro sem itens fica escondido — tem teste.
+23. **A página do curso vira LANDING PAGE DE VENDA** *(decisão do operador, 04/10/2026)*: *"cada
+   curso por si só já justifica a assinatura"*, com o máximo de conversão e retenção. Quem chega
+   por um curso só (busca, YouTube, link) tem que sair querendo assinar, sem passar pela home.
+   **O que se vende é a ASSINATURA:** não desenhe preço nem "comprar este curso" por curso.
+   **O seu trabalho, em duas partes:**
+   - **(a) Formatar o que já existe** em `/curso/:slug` (`client/src/pages/CourseDetailPage.tsx`,
+     React, porta 5173): o topo (nível, título, subtítulo, "2 módulos · 5 aulas · 1h 05min"), o
+     vídeo de apresentação, os diferenciais e as camadas (`components/content/CoursePremiumFeatures.tsx`),
+     o conteúdo do curso (accordion), as perguntas, e a coluna lateral: "Este curso inclui"
+     (`CourseIncludes.tsx`), "O que você vai aprender", pré-requisitos e "Pra quem é". A hierarquia
+     é de página de venda: o que convence primeiro, o que tira dúvida depois. **Estas peças são
+     compartilhadas com o "Sobre o curso" da aula** (item 12): formatar aqui muda lá também, e lá
+     elas servem à retenção do aluno que já assina.
+   - **(b) Um mock da página COMPLETA na `design-lab/`**, porque ela vai virar template de
+     servidor (Bloco C5): o Claude transpõe a sua marcação e as suas classes, como fez com a home.
+     O mock inclui as seções que o operador **já decidiu** e que ainda **não existem na tela**:
+     o **cartão de assinar** ao lado (decisão de ago/2026; é a assinatura, a mesma da home) · a
+     **seção do autor**, a mesma da home (`home.author`) · a etiqueta **"Novo"** · as **frases do
+     "O que você vai aprender" com ✓ em duas colunas** (até 160 caracteres cada; hoje saem como
+     pílulas) · as **ferramentas do curso** (ex.: Excel 365, Power BI) · as **trilhas do curso** ·
+     no fim, **outros cursos da escola**, sem nota e sem preço. **A ordem das seções é proposta sua
+     no mock; quem aprova é o operador.**
+   **Não entram (decisões dele):** número de alunos, "Atualizado em", "acesso vitalício", escassez
+   fabricada (contador, "últimas vagas"). **Seção nova fora desta lista é
+   pergunta ao operador, não desenho.** Texto sai do dicionário: no mock pode ser texto de exemplo,
+   mas cada texto vira chave (`common.*`/`app.*`), nunca literal no `.tsx` ou no template. Página
+   com campo vazio esconde a seção (tem teste): o desenho precisa ficar bom com um curso que só
+   tem título e aulas.
+24. **Mensagens do curso e o sino de Notificações** *(04/10, decisões do operador, a partir da
+   Udemy, do Bunny e do YouTube)*. **Pronto em estrutura:** o passo **Mensagens** do editor
+   (`components/admin/course-form/CourseMessagesSection.tsx`): a mensagem de boas-vindas e a de
+   parabéns, com o mesmo editor da descrição (`MarkdownField`). **E o lado do aluno:**
+   - **o sino** (`components/notificacoes/Sino.tsx`), no cabeçalho ao lado da foto
+     (`components/Layout.tsx`), com o número de não lidas ("9+" acima de nove) e a lista das 5
+     mais recentes: título, começo do texto, há quanto tempo, **Marcar todas como lidas** e **Ver
+     todas**. O desenho de referência é o das telas que o operador mandou (Udemy, Bunny,
+     YouTube); o estado vazio pode ganhar ilustração, como a do YouTube;
+   - **a página Ver todas** (`/aluno/notificacoes`, `pages/aluno/NotificacoesPage.tsx`).
+   **Têm teste e não podem sair:** o número de não lidas no **nome** do botão do sino (é o que o
+   leitor de tela ouve) e o `aria-expanded`; o "(Não lida)" escondido na tela, mas lido; o Esc
+   que fecha e devolve o foco ao sino; o "Marcar todas" desligado quando não há não lidas. O
+   texto da mensagem sai pelo `MarkdownText` **sem link** (revisão de segurança): não acrescente
+   `a` na lista. Textos do dicionário (`app.notificacoes`), nunca no `.tsx`.
+25. **Visualizar** *(04/10, decisões do operador)*: o botão no **topo do editor do curso**, entre
+   "Voltar para cursos" e "Salvar" (`pages/admin/course-editor/CourseEditorLayout.tsx`), que abre
+   em nova aba a tela do aluno com o curso, em qualquer status. **A ordem dos três tem teste.**
+   Com aula, cai na página da aula de sempre; **sem nenhuma aula**, a tela própria
+   (`pages/admin/CoursePreviewPage.tsx`): o título, o aviso no lugar do player e o "Sobre o
+   curso". Ela imita o topo e a largura da página da aula — acerte as duas juntas se mexer numa.
 
 > **Fora do seu trabalho, para não confundir:** o Bunny ganhou **Live Stream** em acesso
 > antecipado (29/09). É só avaliação depois da Fase 3, **não** é tela a desenhar (`docs/bunny.md`

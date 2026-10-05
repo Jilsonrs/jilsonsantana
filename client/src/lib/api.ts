@@ -234,6 +234,9 @@ export type AdminCourseDetail = {
   camadas: Layer[];
   /** Os materiais exclusivos marcados no passo Publicar (04/10/2026). */
   materiais: Material[];
+  /** As mensagens do passo Mensagens (04/10/2026); `null` = nenhuma. */
+  welcomeMessage: string | null;
+  congratsMessage: string | null;
   thumbnailUrl: string | null;
   introVideoId: string | null;
   // O player do vídeo de apresentação, montado no SERVIDOR (null sem vídeo, ou
@@ -383,6 +386,15 @@ export type PaginaDaAula = {
   concluidas: number[];
 };
 
+/**
+ * A PRÉ-VISUALIZAÇÃO do curso como aluno (passo Publicar, 04/10/2026): o curso como
+ * a página da aula o mostra ao admin, em qualquer status, sem aula. Só o admin.
+ */
+export async function getAdminCoursePage(courseId: number): Promise<{ curso: PaginaDaAula["curso"] }> {
+  const { data } = await client.get<{ curso: PaginaDaAula["curso"] }>(`/admin/courses/${courseId}/pagina`);
+  return data;
+}
+
 export async function getLessonPage(lessonId: number, comoAdmin: boolean): Promise<PaginaDaAula> {
   const rota = comoAdmin ? `/admin/lessons/${lessonId}/aula` : `/lessons/${lessonId}/aula`;
   const { data } = await client.get<PaginaDaAula>(rota);
@@ -412,6 +424,34 @@ export async function getSalvos(): Promise<Salvos> {
 export async function alternarSalvo(tipo: "cursos" | "aulas", id: number, salvar: boolean): Promise<void> {
   if (salvar) await client.put(`/salvos/${tipo}/${id}`);
   else await client.delete(`/salvos/${tipo}/${id}`);
+}
+
+/** Uma notificação do sino (Bloco E, etapa 4 — 04/10/2026). O texto é Markdown do admin. */
+export type Notificacao = {
+  id: number;
+  tipo: "BOAS_VINDAS" | "PARABENS";
+  texto: string;
+  criadaEm: string;
+  lida: boolean;
+  /** O título do envio; `slug` só enquanto o curso está publicado. */
+  curso: { titulo: string | null; slug: string | null } | null;
+};
+export type Notificacoes = { naoLidas: number; itens: Notificacao[] };
+
+/** As notificações de quem está logado: as mais recentes e quantas faltam ler. */
+export async function getNotificacoes(): Promise<Notificacoes> {
+  const { data } = await client.get<Notificacoes>("/notificacoes");
+  return data;
+}
+
+/** Marca uma notificação como lida. */
+export async function marcarNotificacaoLida(id: number): Promise<void> {
+  await client.put(`/notificacoes/${id}/lida`);
+}
+
+/** Marca todas as notificações como lidas. */
+export async function marcarTodasLidas(): Promise<void> {
+  await client.put("/notificacoes/lidas");
 }
 
 /** O progresso de quem está logado em cada curso que ele começou (só aulas publicadas). */

@@ -260,7 +260,8 @@ describe("itensSecundarios — o nível 2 só aparece quando vale a pena", () =>
       "Publicar",
     ]);
     expect(itens[0].to).toBe("/admin/cursos/12/basico");
-    expect(itens.filter((i) => i.estado === "planejado").map((i) => i.label)).toEqual(["Mensagens"]);
+    expect(itens.filter((i) => i.estado === "planejado").map((i) => i.label)).toEqual([]);
+    expect(itens.find((i) => i.label === "Mensagens")?.to).toBe("/admin/cursos/12/mensagens");
     expect(itens.find((i) => i.label === "Legendas")?.to).toBe("/admin/cursos/12/legendas");
   });
 

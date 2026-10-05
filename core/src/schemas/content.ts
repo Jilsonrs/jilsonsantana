@@ -144,6 +144,10 @@ export const courseCreateSchema = z.object({
   camadas: z.array(layerSchema).optional(),
   // Os materiais exclusivos marcados no passo Publicar (04/10/2026).
   materiais: z.array(materialSchema).optional(),
+  // As mensagens do curso (passo Mensagens, 04/10/2026), em Markdown como a
+  // descrição. Em branco ou `null`, nada é enviado ao aluno.
+  welcomeMessage: z.string().max(LIMITES_DO_CURSO.mensagem).nullable().optional(),
+  congratsMessage: z.string().max(LIMITES_DO_CURSO.mensagem).nullable().optional(),
   camadaOverride: camadaOverrideSchema.optional(),
   thumbnailUrl: imageUrlSchema.nullable().optional(),
   // `null` apaga o vídeo no Bunny também (operador, 29/09/2026 — rota do curso).

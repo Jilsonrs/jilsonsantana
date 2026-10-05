@@ -20,6 +20,8 @@ const VAZIO: AdminCourseDetail = {
   faq: null,
   camadas: [],
   materiais: [],
+  welcomeMessage: null,
+  congratsMessage: null,
   thumbnailUrl: null,
   introVideoId: null,
   introVideoEmbedUrl: null,
@@ -88,7 +90,7 @@ describe("passosConcluidos — o ✓ de cada passo", () => {
   });
 
   // Legendas: o ✓ dependeria das legendas, que o curso salvo não traz (a tela tem a
-  // própria contagem, 04/10/2026). Mensagens: a tela ainda não existe.
+  // própria contagem, 04/10/2026). Mensagens: a regra do ✓ ainda é do operador.
   it("Legendas e Mensagens nunca ganham ✓", () => {
     const tudo = passosConcluidos({ ...VAZIO, status: "PUBLISHED" });
     expect(tudo.has("legendas")).toBe(false);

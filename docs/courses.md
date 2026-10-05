@@ -379,6 +379,18 @@ A página é **vitrine** montada de **campos estruturados**, nunca de copy escri
 trava e o porquê estão no `CLAUDE.md`). Os campos se dividem em **derivados** (calculados, nunca
 digitados) e **manuais**. Manter os manuais poucos é o que sustenta o operador solo.
 
+**Cada página de curso é uma landing page otimizada para venda** *(decisão do operador,
+04/10/2026)*: *"mesmo que não venda cursos individualmente, cada curso por si só já justifica a
+assinatura, aumentando ao máximo a conversão e a retenção dos alunos."* Na prática:
+- **o que se vende é a assinatura**: não há preço nem compra por curso;
+- **cada seção existe para convencer**: o visitante que chega por um curso só (busca, YouTube, link
+  compartilhado) tem que sair dali querendo assinar, sem precisar ver a home;
+- **a mesma página serve à retenção**: o aluno logado que relê o curso tem que ver o valor do que
+  já paga (é por isso que o "Este curso inclui" também está no "Sobre o curso" da aula);
+- **o desenho é o que otimiza, não texto livre**: a página continua montada dos campos abaixo
+  (trava no `CLAUDE.md`). A ordem das seções e o visual saem do mock do parceiro de design
+  (`design-lab/GEMINI.md`, item 23), com aprovação do operador.
+
 `Course` carrega:
 - `title` · `subtitle?` (uma frase enquadrada em **resultado**) · `description?` (longa) ·
   `level?` (`INICIANTE|INTERMEDIARIO|AVANCADO|TODOS_OS_NIVEIS` — "Todos os níveis" entrou por
@@ -461,16 +473,19 @@ Daí os 7 passos do *Bloco E* do plano, no nível 2 da navegação.
 | Conteúdo | módulos e aulas | pelo menos 1 aula publicada (em módulo publicado) |
 | Legendas *(tela desde 04/10/2026)* | uma `.vtt` por aula de vídeo e pela apresentação, no idioma do curso | — *(a tela tem a própria contagem: "x de y aulas publicadas com legenda")* |
 | Mídia e destaques *(nome do operador, 29/09; era "Página do curso")* | imagem, vídeo promocional, destaques, perguntas, camadas | imagem **e** vídeo promocional (destaques e perguntas são opcionais) |
-| Mensagens | — *(etapa 4)* | — |
+| Mensagens *(tela desde 04/10/2026)* | `welcomeMessage` (chega ao abrir a primeira aula do curso) e `congratsMessage` (ao concluir todas as aulas publicadas), em Markdown, até 2.000 caracteres; em branco, nada é enviado. Chegam pelo sino de **Notificações**, uma vez cada, **só para quem assina** (e o admin, que testa como aluno); o texto é copiado no envio, então editar depois vale só para os próximos alunos *(plano aprovado pelo operador, 04/10/2026)* | — *(a regra do ✓ ainda é do operador)* |
 | Publicar | o que falta, status, ordem no catálogo, link | curso publicado |
 
 - **Descrição com menos de 200 palavras** aparece como "descrição curta" no que falta, **sem
   impedir o salvar**.
 - **As três listas aceitam até 160 caracteres por item**, cada item com contador.
-- **O Visualizar espera a página de curso definitiva (C5):** a página pública de hoje ainda é React e nem
-  mostra a descrição, então a prévia mostraria outra página. *(Operador, 29/09/2026: o nome
-  "Página do curso" fica para ESSA página pública; o link para abri-la e conferir como o curso
-  aparece fica no passo **Publicar**, e chega com o C5.)*
+- **Visualizar** *(decisões do operador, 04/10/2026)*: no **topo do editor**, entre "Voltar para
+  cursos" e "Salvar", em todo passo, um botão abre, em nova aba, a **tela do aluno** (a página logada da aula) com este curso, **em qualquer
+  status**: o operador simula o aluno entrando no curso enquanto cadastra e vê como a página fica.
+  Com aula, abre a primeira; sem nenhuma, mostra o "Sobre o curso" com o que já foi preenchido.
+- **O Visualizar da página PÚBLICA espera a página de curso definitiva (C5):** a página pública de
+  hoje ainda é React e nem mostra a descrição. *(Operador, 29/09/2026: o nome "Página do curso"
+  fica para ESSA página pública; o link para abri-la fica no passo **Publicar**, e chega com o C5.)*
 - **A aula no Conteúdo, como na Udemy** *(operador, 28–29/09/2026)*: abre e recolhe; aberta,
   mostra a miniatura, o nome do arquivo e a duração do vídeo (sem player — assistir é na página
   da aula do aluno), a Prévia grátis e os arquivos para baixar. A aula criada já nasce aberta; ao

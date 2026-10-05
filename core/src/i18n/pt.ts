@@ -310,6 +310,22 @@ export const pt = {
       email: "E-mail",
       papel: "Papel"
     },
+    // O sino de Notificações (Bloco E, etapa 4 — decisões do operador,
+    // 04/10/2026). Rascunho do agente, para a revisão do operador (P38).
+    // `{curso}` e `{n}` são trocados no código.
+    notificacoes: {
+      titulo: "Notificações",
+      rotuloComUmaNaoLida: "Notificações, 1 não lida",
+      rotuloComNaoLidas: "Notificações, {n} não lidas",
+      marcarTodas: "Marcar todas como lidas",
+      verTodas: "Ver todas",
+      vazio: "Nenhuma notificação por enquanto.",
+      erro: "Não foi possível carregar as notificações.",
+      boasVindas: "Boas-vindas ao curso {curso}",
+      parabens: "Parabéns! Você concluiu {curso}",
+      irParaOCurso: "Ir para o curso",
+      naoLida: "Não lida",
+    },
     // A tela Salvos, em Meus estudos (decisão do operador, 03/10/2026).
     salvos: {
       vazio: "Nada salvo ainda. Salve aulas e cursos para assistir depois.",

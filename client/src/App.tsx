@@ -12,9 +12,11 @@ import { TrilhaDetailPage } from "@/pages/TrilhaDetailPage";
 import { MyTrilhasPage } from "@/pages/MyTrilhasPage";
 import { MyTrilhaDetailPage } from "@/pages/MyTrilhaDetailPage";
 import { LessonPage } from "@/pages/aluno/LessonPage";
+import { CoursePreviewPage } from "@/pages/admin/CoursePreviewPage";
 import { CourseEntryPage } from "@/pages/aluno/CourseEntryPage";
 import { EmAndamentoPage } from "@/pages/aluno/EmAndamentoPage";
 import { SalvosPage } from "@/pages/aluno/SalvosPage";
+import { NotificacoesPage } from "@/pages/aluno/NotificacoesPage";
 import { AdminCoursesPage } from "@/pages/admin/AdminCoursesPage";
 import { NewCoursePage } from "@/pages/admin/course-editor/NewCoursePage";
 import { CourseEditorLayout } from "@/pages/admin/course-editor/CourseEditorLayout";
@@ -50,6 +52,7 @@ export default function App() {
           {/* Meus estudos abre aqui (decisão do operador, 29/09/2026). */}
           <Route path="/aluno/em-andamento" element={<EmAndamentoPage />} />
           <Route path="/aluno/salvos" element={<SalvosPage />} />
+          <Route path="/aluno/notificacoes" element={<NotificacoesPage />} />
           <Route path="/aluno/minhas-trilhas" element={<MyTrilhasPage />} />
           <Route path="/aluno/minhas-trilhas/:id" element={<MyTrilhaDetailPage />} />
           <Route path="/aluno/conta" element={<AccountPage />} />
@@ -61,6 +64,9 @@ export default function App() {
           <Route path="/admin/cursos/novo" element={<NewCoursePage />} />
           {/* O editor em 7 passos (Bloco E, 28/09/2026): cada passo é uma rota
               filha, e o nível 2 da navegação os lista (lib/navigation.ts). */}
+          {/* Visualizar como aluno (passo Publicar, 04/10/2026): fora do editor,
+              para abrir a tela do aluno e não os passos. */}
+          <Route path="/admin/cursos/:id/previa" element={<CoursePreviewPage />} />
           <Route path="/admin/cursos/:id" element={<CourseEditorLayout />}>
             {ROTAS_DO_EDITOR}
           </Route>

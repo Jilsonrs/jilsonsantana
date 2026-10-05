@@ -293,6 +293,19 @@ export const en: Dict = {
       email: "Email",
       papel: "Role"
     },
+    notificacoes: {
+      titulo: "Notifications",
+      rotuloComUmaNaoLida: "Notifications, 1 unread",
+      rotuloComNaoLidas: "Notifications, {n} unread",
+      marcarTodas: "Mark all as read",
+      verTodas: "See all",
+      vazio: "No notifications yet.",
+      erro: "Couldn't load your notifications.",
+      boasVindas: "Welcome to {curso}",
+      parabens: "Congratulations! You completed {curso}",
+      irParaOCurso: "Go to the course",
+      naoLida: "Unread",
+    },
     salvos: {
       vazio: "Nothing saved yet. Save lessons and courses to watch later.",
       erro: "Couldn't load your saved items.",

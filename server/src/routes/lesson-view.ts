@@ -10,6 +10,7 @@ import { enderecoAssinado } from "../lib/bunny-stream.js";
 import { lerArquivoDaAula } from "../lib/bunny-storage.js";
 import { nomeParaDownload } from "../lib/nome-do-download.js";
 import { aulasConcluidas } from "../lib/progresso.js";
+import { enviarBoasVindas, semDerrubar } from "../lib/notificacoes.js";
 
 const router = Router();
 
@@ -173,6 +174,13 @@ router.get("/lessons/:id/aula", async (req, res) => {
   const sessao = await loadSession(req);
   const assinante = sessao ? await temAcessoAtivo(sessao.user.id) : false;
   const curso = await arvoreDoCurso(aula.module.courseId, true);
+  // A boas-vindas do curso chega ao abrir a primeira aula — só para quem ASSINA
+  // (operador, 04/10/2026): o visitante e o logado sem assinatura não recebem,
+  // nem na prévia grátis.
+  if (sessao && assinante) {
+    const { id: userId } = sessao.user;
+    await semDerrubar("boas-vindas", userId, aula.module.courseId, () => enviarBoasVindas(userId, aula.module.courseId));
+  }
   // A página muda com a assinatura e o progresso de quem pede: nunca em cache.
   res.set("Cache-Control", "private, no-store");
   res.json({
@@ -192,8 +200,27 @@ router.get("/admin/lessons/:id/aula", requireAdmin, async (req, res) => {
     return;
   }
   const curso = await arvoreDoCurso(aula.module.courseId, false);
+  // O admin também recebe: ele testa como aluno (a plataforma é uma só).
+  const admin = req.user;
+  if (admin) await semDerrubar("boas-vindas", admin.id, aula.module.courseId, () => enviarBoasVindas(admin.id, aula.module.courseId));
   res.set("Cache-Control", "private, no-store");
   res.json({ curso, aula: await aulaParaAPagina(aula, true, true), concluidas: await concluidasDoCurso(req.user?.id, curso) });
+});
+
+// GET /api/admin/courses/:id/pagina — a PRÉ-VISUALIZAÇÃO do curso como aluno, no
+// passo Publicar (decisão do operador, 04/10/2026): o mesmo curso que a página da
+// aula monta para o admin, em qualquer status, SEM aula. Serve ao curso que ainda
+// não tem nenhuma aula; com aula, a prévia abre a primeira pela rota de sempre.
+router.get("/admin/courses/:id/pagina", requireAdmin, async (req, res) => {
+  const id = parseId(req.params.id, res);
+  if (id === null) return;
+  const curso = await arvoreDoCurso(id, false);
+  if (!curso) {
+    res.status(404).json({ error: "NotFound" });
+    return;
+  }
+  res.set("Cache-Control", "private, no-store");
+  res.json({ curso });
 });
 
 /** Entrega o arquivo do Storage, em fluxo, com o NOME ORIGINAL limpo. */

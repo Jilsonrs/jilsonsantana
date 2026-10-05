@@ -16,6 +16,8 @@ export const CURSO_DE_TESTE: AdminCourseDetail = {
   faq: null,
   camadas: [],
   materiais: [],
+  welcomeMessage: null,
+  congratsMessage: null,
   thumbnailUrl: null,
   introVideoId: null,
   introVideoEmbedUrl: null,

@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as api from "@/lib/api";
+import { NOTIFICACOES } from "@/lib/notificacoes";
 
 // O PROGRESSO na tela (Fase 5 — plano aprovado pelo operador em 03/10/2026). A
 // aula conta como concluída sozinha (vídeo a 90%, texto ao abrir); quem decide se
@@ -16,6 +17,8 @@ export function useConcluirAula() {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["pagina-da-aula"] }),
         queryClient.invalidateQueries({ queryKey: [PROGRESSO_DOS_CURSOS] }),
+        // A última aula concluída pode ter mandado os parabéns do curso.
+        queryClient.invalidateQueries({ queryKey: [NOTIFICACOES] }),
       ]);
     },
   });

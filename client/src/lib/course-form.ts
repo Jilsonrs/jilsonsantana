@@ -55,6 +55,9 @@ export const courseFormSchema = z.object({
   faq: z.array(faqItemSchema),
   camadas: z.array(layerSchema),
   materiais: z.array(materialSchema),
+  // As mensagens do passo Mensagens (04/10/2026). Vazio = nenhuma mensagem.
+  welcomeMessage: z.string().max(LIMITES_DO_CURSO.mensagem, acimaDoLimite(LIMITES_DO_CURSO.mensagem)),
+  congratsMessage: z.string().max(LIMITES_DO_CURSO.mensagem, acimaDoLimite(LIMITES_DO_CURSO.mensagem)),
   // Mesma regra do servidor (`core`), conferida antes de enviar para o erro
   // aparecer embaixo do campo. Vazio = sem imagem.
   thumbnailUrl: z
@@ -93,6 +96,8 @@ export const blankValues: CourseFormValues = {
   faq: [],
   camadas: [],
   materiais: [],
+  welcomeMessage: "",
+  congratsMessage: "",
   thumbnailUrl: "",
   introVideoId: "",
   displayOrder: 0,
@@ -127,6 +132,8 @@ export function toFormValues(course: AdminCourseDetail): CourseFormValues {
     faq: course.faq ?? [],
     camadas: course.camadas,
     materiais: course.materiais ?? [],
+    welcomeMessage: course.welcomeMessage ?? "",
+    congratsMessage: course.congratsMessage ?? "",
     thumbnailUrl: course.thumbnailUrl ?? "",
     introVideoId: course.introVideoId ?? "",
     displayOrder: course.displayOrder,
@@ -157,6 +164,8 @@ export function toPayload(values: CourseFormValues): CourseCreateInput {
     faq: values.faq.filter((f) => f.pergunta.trim() && f.resposta.trim()),
     camadas: values.camadas,
     materiais: values.materiais,
+    welcomeMessage: values.welcomeMessage.trim() || null,
+    congratsMessage: values.congratsMessage.trim() || null,
     thumbnailUrl: values.thumbnailUrl.trim() || null,
     introVideoId: values.introVideoId.trim() || null,
     displayOrder: values.displayOrder,
