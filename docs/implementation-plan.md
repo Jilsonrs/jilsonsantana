@@ -332,7 +332,7 @@ once and reused in N courses**.
       already exists and may cover this without any schema change). **Do not add a many-to-many
       until (b) is proven insufficient.**
 
-**Course-page fields + Metodologia 3 Camadas** — spec de produto (catálogo de campos, textos e ícones globais das camadas) em **`courses.md` §2.2–2.3**; invariantes de build em **`CLAUDE.md` → Página de curso e selo 3 Camadas**:
+**Course-page fields + Metodologia 3 Camadas** — spec de produto (catálogo de campos, textos e ícones globais das camadas) em **`courses.md` §7.1 e §10**; invariantes de build em **`CLAUDE.md` → Página de curso e selo 3 Camadas**:
 - [x] `Course` fields: `subtitle?`, `description?`, `level?` (`INICIANTE|INTERMEDIARIO|AVANCADO`, `as const` in `core/`), `learnTags[]`, `requirements[]`, `personas[]`, `highlights[]` (`{icon,title,text}`), `faq[]?` (`{pergunta,resposta}` — optional per-course FAQ, renders only if filled), `thumbnailUrl?` (catalog image), `introVideoId?` (detail-page presentation video), `displayOrder`, `status` (`DRAFT|PUBLISHED|ARCHIVED`)
 - [x] `Module`: `layer?` (`UNIVERSAL|MODERNO|IA`, optional), `displayOrder`, `status` ; `Lesson`: `displayOrder`, `status`
 - [x] **3-camadas as `Course.camadas[]`** (array, NOT boolean — a course may have 1, 2 or 3 layers) + `camadaOverride?` (jsonb, per-course text exception) ; migration (+ RLS on new tables)
@@ -2027,7 +2027,7 @@ própria**.*
       marcar para a lista fixa (hoje Biblioteca de prompts e Apostila), gravadas em
       `Course.materiais[]` (enum do Prisma, migration própria), com o texto de cada item global em
       `common.*` (editável em Admin → Textos) — o mesmo desenho das Camadas. Alimenta o quadro
-      "Este curso inclui" da vitrine (`courses.md` §2.3; Bloco C5).
+      "Este curso inclui" da vitrine (`courses.md` §10.10; Bloco C5).
 - [x] **Etapa 3c — trocar o vídeo não perde a legenda (04/10/2026):** ao terminar a troca do vídeo
       da aula ou da apresentação, o site manda a legenda guardada para o vídeo novo
       (`server/src/lib/legendas.ts`). Se o Bunny recusar (ou a rede cair), o vídeo troca do mesmo
@@ -2492,7 +2492,7 @@ própria**.*
 
 - [ ] **Passo 0 (operador):** o que a vitrine mostra, e o que a tela do aluno mostra **a mais**.
       **Já decidido (04/10/2026): cada página de curso é uma LANDING PAGE DE VENDA** — cada curso,
-      sozinho, justifica a assinatura; conversão e retenção (`courses.md` §2.3, `CLAUDE.md`). O
+      sozinho, justifica a assinatura; conversão e retenção (`courses.md` §9, `CLAUDE.md`). O
       mock da página de curso vai para a fila do Antigravity (`GEMINI.md`, item 23).
       Direção já dada por ele, a detalhar: progresso por curso · "continue de onde parou" no topo ·
       o botão sendo **Continuar** em vez de **Assinar**. **Já decidido (30/09/2026):** o cartão e
@@ -2501,7 +2501,7 @@ própria**.*
       **Já decidido (04/10/2026):** o quadro **"Este curso inclui"** na página de venda —
       os arquivos para baixar aparecem sozinhos quando existem; os materiais exclusivos
       (Biblioteca de prompts, Apostila) são marcados no passo Publicar, com texto global; sem
-      linha de acesso (`courses.md` §2.3). As linhas derivadas restantes: P41.
+      linha de acesso (`courses.md` §10.10). As linhas derivadas restantes: P41.
       **Feito em 04/10/2026, na página de hoje** (a transpor no C5, nada se perde): o quadro na
       coluna lateral de `/curso/:slug` (`CourseIncludes.tsx`), com os arquivos (derivado do
       servidor: `temArquivos`, só a cadeia publicada) e os materiais marcados.
