@@ -204,6 +204,9 @@
 > (aula concluída sozinha, barra na aula e no cartão), o vídeo que não recomeça ao trocar de aba
 > (a apresentação abre pausada, a aula toca sozinha) e o "Salvos". **Primeiro teste com o player de
 > verdade: com o operador** (assistir uma aula até perto do fim e ver a barra andar).
+> **PUBLICADO em 05/10/2026, depois (`main` = `93ed6a6`, CI verde nos dois jobs, deploy ok):** o
+> ícone dos Destaques escolhido por busca entre todos os do Lucide (feito em outro chat; o pacote
+> principal não cresceu, medido) e o `courses.md` reescrito pelo operador.
 > **PUBLICADO em 05/10/2026 (`main` = `59176c0`, CI verde nos dois jobs, deploy ok, migrations
 > `notificacoes` e `notificacao_titulo_do_curso` aplicadas pelo pre-deploy):** o passo Mensagens,
 > o sino de Notificações (boas-vindas e parabéns do curso, lista e página Ver todas) e o botão
