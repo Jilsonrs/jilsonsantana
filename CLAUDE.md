@@ -405,7 +405,7 @@ NEVER pass a secret as a CLI argument or read one back into the transcript. Comm
   - `marketingConsent` default `false` (LGPD) — gates promotional email only; transactional email (receipt, password reset) ignores it.
   - `acquisitionSource` / `acquisitionCampaign` **optional** — UTM capture. Read on first visit (cookie/localStorage), persisted at user creation (seed in P1, Stripe webhook in P4). Lets the YouTube→site funnel be measured (which video converts). Must be live before the channel sends traffic.
   - `deletedAt` (soft-delete). `requireAuth` rejects soft-deleted users.
-- These extras are Better Auth `additionalFields` (mark `input: false` where users shouldn't set them directly, e.g. `role`). Re-run the Better Auth migration after adding fields.
+- These extras are Better Auth `additionalFields` (mark `input: false` where users shouldn't set them directly, e.g. `role`). Re-run the Better Auth migration after adding fields: **`npm --workspace server run auth:generate`** — o pacote `auth`, sucessor oficial do `@better-auth/cli` (que parou na 1.4.21 e geraria o esquema de OUTRA versão, sem erro). O `auth` fica na **mesma versão** do `better-auth`: atualize os dois juntos (`better-auth-cli.test.ts` reprova se divergirem). O comando reescreve o `schema.prisma`: confira o diff e reaplique as notas *REAPLICAR* de lá.
 
 ## Rendering Boundary (a fronteira de renderização)
 

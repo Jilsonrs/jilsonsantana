@@ -1058,6 +1058,16 @@ tornada executável — não uma lista nova):
       de publicar, a suíte inteira (`CLAUDE.md` → Commands). Medido: mudar um componente roda 3
       arquivos da tela em vez de 51; mudar o dicionário no `core` roda todos (`forceRerunTriggers`);
       no servidor, uma rota roda 34 de 40 arquivos — quase tudo passa pelo `app`, de propósito.
+- [x] **A ferramenta do esquema do Better Auth, trocada pela oficial** *(05/10/2026, pedido do
+      operador)*. O `@better-auth/cli` parou na 1.4.21 (o site está na 1.7.5) e trazia um SQLite,
+      o Drizzle e uma segunda cópia do Better Auth. Desde o 1.5 o sucessor é o pacote `auth`, do
+      mesmo repositório e com a mesma numeração: entrou fixo na 1.7.5 (`npm --workspace server run
+      auth:generate`), e `better-auth-cli.test.ts` reprova se ele e o `better-auth` divergirem.
+      **Conferido:** gerado com a 1.7.5 a partir do nosso `auth.ts`, numa cópia, o esquema não
+      muda nenhum campo — o banco já estava certo para a versão do site. **Efeito medido:**
+      vulnerabilidades apontadas nas dependências 25 → 17 (a crítica sumiu; altas 12 → 9) e 779 →
+      745 pacotes. Docs check (context7): Better Auth → `/better-auth/better-auth` → o CLI novo
+      (`npx auth`, blog do 1.5) e as opções do `generate`.
 - [x] **CI mais rápido:** as bibliotecas instaladas guardadas entre uma execução e outra
       (`node_modules` por `package-lock` + Node 20; `npm ci` só quando a chave muda). **Medido no
       mesmo commit, sem e com o cache:** job principal 4 min 4 s → 2 min 22 s; E2E 2 min 22 s →
