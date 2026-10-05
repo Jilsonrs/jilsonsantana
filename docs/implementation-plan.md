@@ -1047,8 +1047,10 @@ tornada executável — não uma lista nova):
       `127.0.0.1` (`server/src/test/servidor.ts`; 0 de 200), e `servidor.test.ts` reprova se algum
       teste voltar a usar o `app` direto. Mutação: o servidor sem endereço e um `request(app)` num
       teste — as duas reprovam.
-- [ ] **Durante o trabalho, só os testes afetados** (`npm run test:changed`); antes de commitar e
-      de publicar, a suíte inteira.
+- [x] **Durante o trabalho, só os testes afetados** (`npm run test:changed`); antes de commitar e
+      de publicar, a suíte inteira (`CLAUDE.md` → Commands). Medido: mudar um componente roda 3
+      arquivos da tela em vez de 51; mudar o dicionário no `core` roda todos (`forceRerunTriggers`);
+      no servidor, uma rota roda 34 de 40 arquivos — quase tudo passa pelo `app`, de propósito.
 - [ ] **CI mais rápido:** as bibliotecas instaladas guardadas entre uma execução e outra.
 
 #### Postura de segurança — o que JÁ está coberto  *(varredura completa do `security-vulnerability-reviewer`, Ago 2026, branch `dev` @ `d9b22ea`)*

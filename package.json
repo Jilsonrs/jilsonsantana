@@ -13,6 +13,7 @@
     "build": "npm --workspace core run build && npm --workspace client run build && npm --workspace server run build",
     "typecheck": "npm --workspace core run typecheck && npm --workspace client run typecheck && npm --workspace server run typecheck && npm --workspace e2e run typecheck",
     "test": "npm --workspace client run test && npm --workspace server run test",
+    "test:changed": "npm --workspace client run test:changed && npm --workspace server run test:changed",
     "revisao:ingles": "npm --workspace core run build && node scripts/gerar-revisao-ingles.mjs",
     "css:publico": "npm --workspace client run build:css"
   },

@@ -39,5 +39,11 @@ export default defineConfig({
   },
   test: {
     setupFiles: ["./src/test-setup.ts"],
+    // `npm run test:changed` roda só os testes afetados pelo que mudou (05/10/2026).
+    // Mudança nestes arquivos roda TUDO: os três primeiros são o padrão do Vitest
+    // (definir a lista substitui o padrão); o `core` entra porque o app o importa
+    // pelo `core/dist`, então o Vitest não liga uma mudança em `core/src` a teste
+    // nenhum — e é lá que mora o dicionário de textos.
+    forceRerunTriggers: ["**/package.json/**", "**/vitest.config.*/**", "**/vite.config.*/**", "**/core/src/**"],
   },
 });

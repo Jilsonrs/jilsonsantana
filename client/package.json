@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "test:changed": "vitest run --changed --passWithNoTests",
     "build:css": "tailwindcss -c ./tailwind.public.config.ts -i ./src/public-input.css -o ./public/css/public.css"
   },
   "dependencies": {
