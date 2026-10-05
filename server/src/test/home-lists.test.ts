@@ -1,7 +1,7 @@
 import { describe, it, expect, afterEach } from "vitest";
 import request from "supertest";
 import { en } from "@jilson/core";
-import app from "../app.js";
+import servidor from "./servidor.js";
 import { prisma } from "../lib/prisma.js";
 import { iniciais } from "../views/home.js";
 import { isolarDepoimentos } from "./testimonial-pool.js";
@@ -59,13 +59,13 @@ describe("home — depoimentos e perguntas vêm do banco", () => {
     await depoimento("PT", "ARCHIVED", "Depoimento arquivado.");
     await depoimento("EN", "PUBLISHED", "Published testimonial in English.");
 
-    const pt = await request(app).get("/");
+    const pt = await request(servidor).get("/");
     expect(pt.text).toContain("Depoimento publicado em português.");
     expect(pt.text).not.toContain("Depoimento ainda em rascunho.");
     expect(pt.text).not.toContain("Depoimento arquivado.");
     expect(pt.text).not.toContain("Published testimonial in English.");
 
-    const enPage = await request(app).get("/en");
+    const enPage = await request(servidor).get("/en");
     expect(enPage.text).toContain("Published testimonial in English.");
     expect(enPage.text).not.toContain("Depoimento publicado em português.");
   });
@@ -75,7 +75,7 @@ describe("home — depoimentos e perguntas vêm do banco", () => {
     await pergunta("PT", "DRAFT", "Pergunta em rascunho?");
     await pergunta("EN", "PUBLISHED", "Published question?");
 
-    const pt = await request(app).get("/");
+    const pt = await request(servidor).get("/");
     expect(pt.text).toContain("Pergunta publicada?");
     expect(pt.text).not.toContain("Pergunta em rascunho?");
     expect(pt.text).not.toContain("Published question?");
@@ -89,14 +89,14 @@ describe("home — depoimentos e perguntas vêm do banco", () => {
       await depoimento("PT", "PUBLISHED", `Depoimento número ${n}.`, 0, `Pessoa ${n} ${MARCA}`);
     }
 
-    const uma = await request(app).get("/");
+    const uma = await request(servidor).get("/");
     expect([...uma.text.matchAll(/Depoimento número \d\./g)]).toHaveLength(4);
 
     // Sempre os mesmos 4 seria "os primeiros", não sorteio. Em 15 visitas, a
     // chance de repetir o mesmo conjunto em todas é (1/15)^14 — nula.
     const vistos = new Set<string>();
     for (let i = 0; i < 15; i++) {
-      const res = await request(app).get("/");
+      const res = await request(servidor).get("/");
       for (const m of res.text.matchAll(/Depoimento número (\d)\./g)) vistos.add(m[1]);
     }
     expect(vistos.size).toBeGreaterThan(4);
@@ -111,7 +111,7 @@ describe("home — depoimentos e perguntas vêm do banco", () => {
     // que começa com "⟦".
     await isolar("PT");
     await depoimento("PT", "PUBLISHED", "Texto qualquer.", 5, `Ana Maria de Souza ${MARCA}`);
-    const res = await request(app).get("/");
+    const res = await request(servidor).get("/");
     expect(res.text).toContain('aria-hidden="true">A⟦</div>');
   });
 
@@ -132,7 +132,7 @@ describe("home — depoimentos e perguntas vêm do banco", () => {
     await prisma.testimonial.updateMany({ where: { id: { in: idsD } }, data: { status: "ARCHIVED" } });
     await prisma.faqItem.updateMany({ where: { id: { in: idsP } }, data: { status: "ARCHIVED" } });
     try {
-      const res = await request(app).get("/en");
+      const res = await request(servidor).get("/en");
       expect(res.status).toBe(200);
       expect(res.text).not.toContain(en.home.testimonials.title);
       expect(res.text).not.toContain("testimonials-grid");
@@ -141,7 +141,7 @@ describe("home — depoimentos e perguntas vêm do banco", () => {
       expect(jsonLds(res.text).some((b) => b["@type"] === "FAQPage")).toBe(false);
 
       // O português não foi tocado e continua com as duas seções.
-      const pt = await request(app).get("/");
+      const pt = await request(servidor).get("/");
       expect(pt.text).toContain("testimonials-grid");
       expect(pt.text).toContain('id="faq"');
     } finally {
@@ -151,7 +151,7 @@ describe("home — depoimentos e perguntas vêm do banco", () => {
   });
 
   it("FAQ ganha JSON-LD FAQPage com exatamente as perguntas da página", async () => {
-    const res = await request(app).get("/");
+    const res = await request(servidor).get("/");
 
     const faqPage = jsonLds(res.text).find((b) => b["@type"] === "FAQPage");
     expect(faqPage).toBeDefined();
@@ -169,7 +169,7 @@ describe("home — o que vem do banco nunca vira HTML", () => {
     await isolar("PT");
     await depoimento("PT", "PUBLISHED", '<img src=x onerror="alert(1)">');
 
-    const res = await request(app).get("/");
+    const res = await request(servidor).get("/");
     expect(res.text).toContain("&lt;img src=x onerror=&quot;alert(1)&quot;&gt;");
     expect(res.text).not.toContain('<img src=x onerror="alert(1)">');
   });
@@ -177,7 +177,7 @@ describe("home — o que vem do banco nunca vira HTML", () => {
   it("pergunta com </script> não fecha o bloco do JSON-LD", async () => {
     await pergunta("PT", "PUBLISHED", "</script><script>alert(1)</script>");
 
-    const res = await request(app).get("/");
+    const res = await request(servidor).get("/");
     expect(res.text).not.toContain("</script><script>alert(1)");
     // E o bloco continua JSON válido, com a pergunta inteira dentro.
     const faqPage = jsonLds(res.text).find((b) => b["@type"] === "FAQPage");

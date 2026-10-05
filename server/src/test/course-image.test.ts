@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import request from "supertest";
-import app from "../app.js";
+import servidor from "./servidor.js";
 import { prisma } from "../lib/prisma.js";
 
 // IMAGEM DO CURSO (C4, etapa 1 — plano aprovado pelo operador em 23/09/2026).
@@ -14,7 +14,7 @@ const criados: string[] = [];
 let admin: string[] = [];
 
 beforeAll(async () => {
-  const res = await request(app).post("/api/auth/sign-in/email").send({
+  const res = await request(servidor).post("/api/auth/sign-in/email").send({
     email: process.env.SEED_ADMIN_EMAIL,
     password: process.env.SEED_ADMIN_PASSWORD,
   });
@@ -24,7 +24,7 @@ beforeAll(async () => {
 async function criar(thumbnailUrl: string) {
   const slug = `curso${S}-${criados.length}`;
   criados.push(slug);
-  const res = await request(app)
+  const res = await request(servidor)
     .post("/api/courses")
     .set("Cookie", admin)
     .send({ slug, title: "Curso", language: "pt", thumbnailUrl });
@@ -72,7 +72,7 @@ describe("imagem do curso — o que o servidor recusa", () => {
     const { res } = await criar("/img/original.jpg");
     const id = res.body.id as number;
 
-    const edicao = await request(app)
+    const edicao = await request(servidor)
       .patch(`/api/courses/${id}`)
       .set("Cookie", admin)
       .send({ thumbnailUrl: "javascript:alert(1)" });

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import request from "supertest";
-import app from "../app.js";
+import servidor from "./servidor.js";
 import { Role } from "@jilson/core";
 
 // Testes de FUMAÇA do encanamento — provam que a infraestrutura de teste de
@@ -16,14 +16,14 @@ function requireEnv(name: string): string {
 
 describe("encanamento da suíte de servidor", () => {
   it("sobe o app e responde numa rota pública", async () => {
-    const res = await request(app).get("/api/health");
+    const res = await request(servidor).get("/api/health");
 
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ status: "ok" });
   });
 
   it("recusa /api/me sem sessão", async () => {
-    const res = await request(app).get("/api/me");
+    const res = await request(servidor).get("/api/me");
 
     // Falha se `requireAuth` sair de me.ts — é o alvo de mutação desta suíte.
     expect(res.status).toBe(401);
@@ -33,7 +33,7 @@ describe("encanamento da suíte de servidor", () => {
     // Este é o teste que prova a ORDEM do globalSetup: `migrate reset` apaga os
     // usuários, então o admin só existe aqui se o seed rodou DEPOIS do reset.
     // Se a ordem inverter, isto falha — que é exatamente o ponto.
-    const signIn = await request(app)
+    const signIn = await request(servidor)
       .post("/api/auth/sign-in/email")
       .send({
         email: requireEnv("SEED_ADMIN_EMAIL"),
@@ -47,7 +47,7 @@ describe("encanamento da suíte de servidor", () => {
     expect(cookies, "sign-in deveria emitir cookie de sessão").toBeDefined();
 
     // Linha criada não prova sessão utilizável — só uma request autenticada prova.
-    const me = await request(app).get("/api/me").set("Cookie", cookies ?? []);
+    const me = await request(servidor).get("/api/me").set("Cookie", cookies ?? []);
 
     expect(me.status).toBe(200);
     expect(me.body.user.email).toBe(requireEnv("SEED_ADMIN_EMAIL"));

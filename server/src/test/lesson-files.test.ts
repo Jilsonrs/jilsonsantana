@@ -12,7 +12,7 @@ vi.mock("../lib/bunny-storage.js", async (importOriginal) => ({
   apagarArquivoDaAula: (...args: unknown[]) => apagarArquivoDaAula(...args),
 }));
 
-import app from "../app.js";
+import servidor from "./servidor.js";
 import { prisma } from "../lib/prisma.js";
 import { caminhoDeArquivoDaAula } from "../lib/bunny-storage.js";
 
@@ -29,7 +29,7 @@ let member: string[] = [];
 let aulaId = 0;
 
 async function sessao(email?: string, senha?: string): Promise<string[]> {
-  const res = await request(app).post("/api/auth/sign-in/email").send({ email, password: senha });
+  const res = await request(servidor).post("/api/auth/sign-in/email").send({ email, password: senha });
   return (res.headers["set-cookie"] as unknown as string[] | undefined) ?? [];
 }
 
@@ -66,7 +66,7 @@ beforeEach(() => {
 });
 
 const enviar = (cookies: string[], nome: string, conteudo = Buffer.from("conteúdo"), aula = aulaId) =>
-  request(app)
+  request(servidor)
     .post(`/api/admin/lessons/${aula}/files`)
     .set("Cookie", cookies)
     .set("Content-Type", "application/octet-stream")
@@ -76,9 +76,9 @@ const enviar = (cookies: string[], nome: string, conteudo = Buffer.from("conteú
 describe("quem pode", () => {
   it("sem login 401 e aluno 403, nas três rotas", async () => {
     const rotas = [
-      () => request(app).get(`/api/admin/lessons/${aulaId}/files`),
-      () => request(app).post(`/api/admin/lessons/${aulaId}/files`),
-      () => request(app).delete(`/api/admin/lesson-files/1`),
+      () => request(servidor).get(`/api/admin/lessons/${aulaId}/files`),
+      () => request(servidor).post(`/api/admin/lessons/${aulaId}/files`),
+      () => request(servidor).delete(`/api/admin/lesson-files/1`),
     ];
     for (const rota of rotas) {
       expect((await rota()).status).toBe(401);
@@ -107,7 +107,7 @@ describe("enviar", () => {
   });
 
   it("a lista traz os arquivos da aula, sem o caminho no Storage", async () => {
-    const res = await request(app).get(`/api/admin/lessons/${aulaId}/files`).set("Cookie", admin);
+    const res = await request(servidor).get(`/api/admin/lessons/${aulaId}/files`).set("Cookie", admin);
     expect(res.status).toBe(200);
     expect(res.body.length).toBeGreaterThan(0);
     for (const arquivo of res.body) expect(arquivo).not.toHaveProperty("storagePath");
@@ -128,7 +128,7 @@ describe("enviar", () => {
   });
 
   it("sem nome: 400; arquivo vazio: 400", async () => {
-    const semNome = await request(app)
+    const semNome = await request(servidor)
       .post(`/api/admin/lessons/${aulaId}/files`)
       .set("Cookie", admin)
       .set("Content-Type", "application/octet-stream")
@@ -149,7 +149,7 @@ describe("enviar", () => {
   });
 
   it("corpo que não é arquivo (JSON): 400, nada enviado", async () => {
-    const res = await request(app)
+    const res = await request(servidor)
       .post(`/api/admin/lessons/${aulaId}/files`)
       .set("Cookie", admin)
       .set("X-Nome-Do-Arquivo", "a.pdf")
@@ -173,7 +173,7 @@ describe("excluir", () => {
     const criado = await enviar(admin, "apagar.csv");
     const caminho = (await prisma.lessonFile.findUnique({ where: { id: criado.body.id } }))?.storagePath;
 
-    const res = await request(app).delete(`/api/admin/lesson-files/${criado.body.id}`).set("Cookie", admin);
+    const res = await request(servidor).delete(`/api/admin/lesson-files/${criado.body.id}`).set("Cookie", admin);
 
     expect(res.status).toBe(204);
     expect(apagarArquivoDaAula).toHaveBeenCalledWith(caminho);
@@ -184,12 +184,12 @@ describe("excluir", () => {
     const criado = await enviar(admin, "fica.csv");
     apagarArquivoDaAula.mockResolvedValue({ ok: false, motivo: "Falhou" });
 
-    expect((await request(app).delete(`/api/admin/lesson-files/${criado.body.id}`).set("Cookie", admin)).status).toBe(502);
+    expect((await request(servidor).delete(`/api/admin/lesson-files/${criado.body.id}`).set("Cookie", admin)).status).toBe(502);
     expect(await prisma.lessonFile.findUnique({ where: { id: criado.body.id } })).not.toBeNull();
   });
 
   it("arquivo que não existe: 404", async () => {
-    expect((await request(app).delete(`/api/admin/lesson-files/999999`).set("Cookie", admin)).status).toBe(404);
+    expect((await request(servidor).delete(`/api/admin/lesson-files/999999`).set("Cookie", admin)).status).toBe(404);
   });
 });
 

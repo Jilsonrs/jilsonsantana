@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import request from "supertest";
-import app from "../app.js";
+import servidor from "./servidor.js";
 import { prisma } from "../lib/prisma.js";
 import { ASSINATURA_DE_TESTE } from "../lib/assinatura-de-teste.js";
 
@@ -21,7 +21,7 @@ let memberId = "";
 let adminId = "";
 
 async function sessao(email?: string, senha?: string): Promise<string[]> {
-  const res = await request(app).post("/api/auth/sign-in/email").send({ email, password: senha });
+  const res = await request(servidor).post("/api/auth/sign-in/email").send({ email, password: senha });
   return (res.headers["set-cookie"] as unknown as string[] | undefined) ?? [];
 }
 
@@ -87,10 +87,10 @@ async function semAssinatura(fn: () => Promise<void>) {
   }
 }
 
-const abrir = (id: number, cookies: string[] = []) => request(app).get(`/api/lessons/${id}/aula`).set("Cookie", cookies);
-const abrirComoAdmin = (id: number) => request(app).get(`/api/admin/lessons/${id}/aula`).set("Cookie", admin);
-const concluir = (id: number) => request(app).put(`/api/lessons/${id}/concluida`).set("Cookie", member);
-const concluirComoAdmin = (id: number) => request(app).put(`/api/admin/lessons/${id}/concluida`).set("Cookie", admin);
+const abrir = (id: number, cookies: string[] = []) => request(servidor).get(`/api/lessons/${id}/aula`).set("Cookie", cookies);
+const abrirComoAdmin = (id: number) => request(servidor).get(`/api/admin/lessons/${id}/aula`).set("Cookie", admin);
+const concluir = (id: number) => request(servidor).put(`/api/lessons/${id}/concluida`).set("Cookie", member);
+const concluirComoAdmin = (id: number) => request(servidor).put(`/api/admin/lessons/${id}/concluida`).set("Cookie", admin);
 const doCurso = (userId: string, courseId: number) =>
   prisma.notification.findMany({ where: { userId, courseId }, select: { kind: true, body: true } });
 
@@ -182,12 +182,12 @@ describe("parabéns — ao concluir a última aula", () => {
 });
 
 describe("o sino — ler e marcar como lida", () => {
-  const lista = (cookies: string[] = []) => request(app).get("/api/notificacoes").set("Cookie", cookies);
+  const lista = (cookies: string[] = []) => request(servidor).get("/api/notificacoes").set("Cookie", cookies);
 
   it("sem login: 401 nas três rotas", async () => {
     expect((await lista()).status).toBe(401);
-    expect((await request(app).put("/api/notificacoes/lidas")).status).toBe(401);
-    expect((await request(app).put("/api/notificacoes/1/lida")).status).toBe(401);
+    expect((await request(servidor).put("/api/notificacoes/lidas")).status).toBe(401);
+    expect((await request(servidor).put("/api/notificacoes/1/lida")).status).toBe(401);
   });
 
   it("cada um vê só as suas, com o título do curso e quantas faltam ler", async () => {
@@ -224,22 +224,22 @@ describe("o sino — ler e marcar como lida", () => {
     const minha = await prisma.notification.findFirstOrThrow({ where: { userId: memberId, courseId: c.id } });
     const doAdmin = await prisma.notification.findFirstOrThrow({ where: { userId: adminId, courseId: c.id } });
 
-    expect((await request(app).put(`/api/notificacoes/${doAdmin.id}/lida`).set("Cookie", member)).status).toBe(404);
+    expect((await request(servidor).put(`/api/notificacoes/${doAdmin.id}/lida`).set("Cookie", member)).status).toBe(404);
     expect((await prisma.notification.findUniqueOrThrow({ where: { id: doAdmin.id } })).readAt).toBeNull();
 
-    expect((await request(app).put(`/api/notificacoes/${minha.id}/lida`).set("Cookie", member)).status).toBe(204);
+    expect((await request(servidor).put(`/api/notificacoes/${minha.id}/lida`).set("Cookie", member)).status).toBe(204);
     expect((await prisma.notification.findUniqueOrThrow({ where: { id: minha.id } })).readAt).not.toBeNull();
     // Marcar de novo continua 204; id que não existe, 404; id inválido, 400.
-    expect((await request(app).put(`/api/notificacoes/${minha.id}/lida`).set("Cookie", member)).status).toBe(204);
-    expect((await request(app).put("/api/notificacoes/999999999/lida").set("Cookie", member)).status).toBe(404);
-    expect((await request(app).put("/api/notificacoes/abc/lida").set("Cookie", member)).status).toBe(400);
+    expect((await request(servidor).put(`/api/notificacoes/${minha.id}/lida`).set("Cookie", member)).status).toBe(204);
+    expect((await request(servidor).put("/api/notificacoes/999999999/lida").set("Cookie", member)).status).toBe(404);
+    expect((await request(servidor).put("/api/notificacoes/abc/lida").set("Cookie", member)).status).toBe(400);
   });
 
   it("marcar todas: zera as próprias e não toca nas de outra pessoa", async () => {
     const c = await curso({ welcomeMessage: "Todas" });
     await abrir(c.paga, member);
     await abrirComoAdmin(c.paga);
-    expect((await request(app).put("/api/notificacoes/lidas").set("Cookie", member)).status).toBe(204);
+    expect((await request(servidor).put("/api/notificacoes/lidas").set("Cookie", member)).status).toBe(204);
     expect(await prisma.notification.count({ where: { userId: memberId, readAt: null } })).toBe(0);
     expect((await lista(member)).body.naoLidas).toBe(0);
     expect(await prisma.notification.count({ where: { userId: adminId, courseId: c.id, readAt: null } })).toBe(1);

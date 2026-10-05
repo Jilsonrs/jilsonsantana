@@ -11,7 +11,7 @@ vi.mock("../lib/bunny-storage.js", async (importOriginal) => ({
   lerArquivoDaAula: (...args: unknown[]) => lerArquivoDaAula(...args),
 }));
 
-import app from "../app.js";
+import servidor from "./servidor.js";
 import { prisma } from "../lib/prisma.js";
 import { ASSINATURA_DE_TESTE } from "../lib/assinatura-de-teste.js";
 import { nomeParaDownload } from "../lib/nome-do-download.js";
@@ -37,7 +37,7 @@ let member: string[] = [];
 const ids = { paga: 0, gratis: 0, texto: 0, rascunho: 0, cursoRascunho: 0, ingles: 0, arquivo: 0, arquivoGratis: 0, moduloRascunho: 0, arquivoModuloRascunho: 0, arquivoRascunho: 0 };
 
 async function sessao(email?: string, senha?: string): Promise<string[]> {
-  const res = await request(app).post("/api/auth/sign-in/email").send({ email, password: senha });
+  const res = await request(servidor).post("/api/auth/sign-in/email").send({ email, password: senha });
   return (res.headers["set-cookie"] as unknown as string[] | undefined) ?? [];
 }
 
@@ -132,7 +132,7 @@ async function semAssinatura(fn: () => Promise<void>) {
   }
 }
 
-const pagina = (id: number, cookies: string[] = []) => request(app).get(`/api/lessons/${id}/aula`).set("Cookie", cookies);
+const pagina = (id: number, cookies: string[] = []) => request(servidor).get(`/api/lessons/${id}/aula`).set("Cookie", cookies);
 // O corpo do download como bytes (o supertest não lê .zip sozinho).
 const bytes = (res: request.Response, pronto: (erro: Error | null, corpo: unknown) => void) => {
   // Cast: no Node, o superagent entrega aqui a própria resposta HTTP, que é um fluxo.
@@ -142,7 +142,7 @@ const bytes = (res: request.Response, pronto: (erro: Error | null, corpo: unknow
   fluxo.on("end", () => pronto(null, Buffer.concat(partes)));
 };
 const baixar = (aula: number, arquivo: number, cookies: string[] = []) =>
-  request(app).get(`/api/lessons/${aula}/files/${arquivo}`).set("Cookie", cookies).buffer(true).parse(bytes);
+  request(servidor).get(`/api/lessons/${aula}/files/${arquivo}`).set("Cookie", cookies).buffer(true).parse(bytes);
 
 /** Bloqueada: a resposta não pode carregar nada do conteúdo. */
 function semConteudo(corpo: unknown) {
@@ -311,7 +311,7 @@ describe("o download", () => {
       return { ok: true, corpo: quebrado, tamanho: "999" };
     });
     await baixar(ids.paga, ids.arquivo, member).catch(() => undefined);
-    expect((await request(app).get("/api/health")).status).toBe(200);
+    expect((await request(servidor).get("/api/health")).status).toBe(200);
   });
 
   it("nome com caractere invisível de direção de texto sai limpo", () => {
@@ -324,13 +324,13 @@ describe("o download", () => {
 describe("a porta do admin", () => {
   it("sem login 401, aluno 403", async () => {
     for (const rota of [`/api/admin/lessons/${ids.paga}/aula`, `/api/admin/lesson-files/${ids.arquivo}/download`]) {
-      expect((await request(app).get(rota)).status).toBe(401);
-      expect((await request(app).get(rota).set("Cookie", member)).status).toBe(403);
+      expect((await request(servidor).get(rota)).status).toBe(401);
+      expect((await request(servidor).get(rota).set("Cookie", member)).status).toBe(403);
     }
   });
 
   it("o admin vê a aula em RASCUNHO, com o status, e o player", async () => {
-    const res = await request(app).get(`/api/admin/lessons/${ids.rascunho}/aula`).set("Cookie", admin);
+    const res = await request(servidor).get(`/api/admin/lessons/${ids.rascunho}/aula`).set("Cookie", admin);
     expect(res.status).toBe(200);
     expect(res.body.aula).toMatchObject({ status: "DRAFT", liberada: true });
     const rascunho = res.body.curso.modulos[0].aulas.find((a: { id: number }) => a.id === ids.rascunho);
@@ -338,7 +338,7 @@ describe("a porta do admin", () => {
   });
 
   it("o admin baixa o arquivo", async () => {
-    const res = await request(app).get(`/api/admin/lesson-files/${ids.arquivo}/download`).set("Cookie", admin).buffer(true).parse(bytes);
+    const res = await request(servidor).get(`/api/admin/lesson-files/${ids.arquivo}/download`).set("Cookie", admin).buffer(true).parse(bytes);
     expect(res.status).toBe(200);
     expect(res.headers["content-disposition"]).toContain("Planilha de Vendas.zip");
   });

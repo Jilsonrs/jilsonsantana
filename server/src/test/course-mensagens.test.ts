@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import request from "supertest";
 import { LIMITES_DO_CURSO } from "@jilson/core";
-import app from "../app.js";
+import servidor from "./servidor.js";
 import { prisma } from "../lib/prisma.js";
 
 // AS MENSAGENS DO CURSO (passo Mensagens — decisões do operador, 04/10/2026): a
@@ -13,7 +13,7 @@ let admin: string[] = [];
 let cursoId = 0;
 
 beforeAll(async () => {
-  const res = await request(app).post("/api/auth/sign-in/email").send({
+  const res = await request(servidor).post("/api/auth/sign-in/email").send({
     email: process.env.SEED_ADMIN_EMAIL,
     password: process.env.SEED_ADMIN_PASSWORD,
   });
@@ -25,7 +25,7 @@ afterAll(async () => {
   await prisma.course.deleteMany({ where: { slug: { endsWith: S } } });
 });
 
-const salvar = (corpo: object) => request(app).patch(`/api/courses/${cursoId}`).set("Cookie", admin).send(corpo);
+const salvar = (corpo: object) => request(servidor).patch(`/api/courses/${cursoId}`).set("Cookie", admin).send(corpo);
 const gravado = () =>
   prisma.course.findUniqueOrThrow({ where: { id: cursoId }, select: { welcomeMessage: true, congratsMessage: true } });
 
@@ -34,7 +34,7 @@ describe("mensagens do curso — o passo Mensagens", () => {
     const res = await salvar({ welcomeMessage: "Bem-vindo **ao curso**!", congratsMessage: "Parabéns!" });
     expect(res.status).toBe(200);
     expect(await gravado()).toEqual({ welcomeMessage: "Bem-vindo **ao curso**!", congratsMessage: "Parabéns!" });
-    const lido = await request(app).get(`/api/admin/courses/${cursoId}`).set("Cookie", admin);
+    const lido = await request(servidor).get(`/api/admin/courses/${cursoId}`).set("Cookie", admin);
     expect(lido.body.welcomeMessage).toBe("Bem-vindo **ao curso**!");
     expect(lido.body.congratsMessage).toBe("Parabéns!");
   });
@@ -51,7 +51,7 @@ describe("mensagens do curso — o passo Mensagens", () => {
   });
 
   it("a página pública do curso não leva as mensagens", async () => {
-    const res = await request(app).get(`/api/courses/curso${S}`);
+    const res = await request(servidor).get(`/api/courses/curso${S}`);
     expect(res.status).toBe(200);
     expect(res.body).not.toHaveProperty("welcomeMessage");
     expect(res.body).not.toHaveProperty("congratsMessage");

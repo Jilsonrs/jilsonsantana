@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import request from "supertest";
-import app from "../app.js";
+import servidor from "./servidor.js";
 import { prisma } from "../lib/prisma.js";
 
 // O "+" ENTRE ITENS e a AULA DE TEXTO (Bloco E, etapa 2, parte 2b — plano
@@ -18,7 +18,7 @@ let aulaA = 0;
 let aulaB = 0;
 
 async function sessao(email?: string, senha?: string): Promise<string[]> {
-  const res = await request(app).post("/api/auth/sign-in/email").send({ email, password: senha });
+  const res = await request(servidor).post("/api/auth/sign-in/email").send({ email, password: senha });
   return (res.headers["set-cookie"] as unknown as string[] | undefined) ?? [];
 }
 
@@ -56,11 +56,11 @@ const ordemDasAulas = async () =>
   );
 
 const inserirAula = (cookies: string[], corpo: object, modulo = moduloId) =>
-  request(app).post(`/api/admin/modules/${modulo}/lessons`).set("Cookie", cookies).send(corpo);
+  request(servidor).post(`/api/admin/modules/${modulo}/lessons`).set("Cookie", cookies).send(corpo);
 
 describe("inserir aula numa posição", () => {
   it("sem login 401; aluno 403; módulo que não existe 404", async () => {
-    expect((await request(app).post(`/api/admin/modules/${moduloId}/lessons`).send({})).status).toBe(401);
+    expect((await request(servidor).post(`/api/admin/modules/${moduloId}/lessons`).send({})).status).toBe(401);
     expect((await inserirAula(member, { title: "X", kind: "VIDEO", posicao: 0 })).status).toBe(403);
     expect((await inserirAula(admin, { title: "X", kind: "VIDEO", posicao: 0 }, 999999)).status).toBe(404);
   });
@@ -82,7 +82,7 @@ describe("inserir aula numa posição", () => {
 
 describe("inserir módulo numa posição", () => {
   it("nasce no começo", async () => {
-    const res = await request(app)
+    const res = await request(servidor)
       .post(`/api/admin/courses/${cursoId}/modules`)
       .set("Cookie", admin)
       .send({ title: "Abertura", posicao: 0 });
@@ -93,7 +93,7 @@ describe("inserir módulo numa posição", () => {
   });
 
   it("aluno 403", async () => {
-    const res = await request(app).post(`/api/admin/courses/${cursoId}/modules`).set("Cookie", member).send({ title: "X", posicao: 0 });
+    const res = await request(servidor).post(`/api/admin/courses/${cursoId}/modules`).set("Cookie", member).send({ title: "X", posicao: 0 });
     expect(res.status).toBe(403);
   });
 });
@@ -111,7 +111,7 @@ describe("o status com que nasce", () => {
     });
   }
   const inserirModulo = (curso: number) =>
-    request(app).post(`/api/admin/courses/${curso}/modules`).set("Cookie", admin).send({ title: "Novo", posicao: 0 });
+    request(servidor).post(`/api/admin/courses/${curso}/modules`).set("Cookie", admin).send({ title: "Novo", posicao: 0 });
 
   it.each([
     ["DRAFT", "PUBLISHED"],
@@ -130,7 +130,7 @@ describe("o status com que nasce", () => {
 });
 
 describe("o texto da aula", () => {
-  const editar = (id: number, corpo: object) => request(app).patch(`/api/lessons/${id}`).set("Cookie", admin).send(corpo);
+  const editar = (id: number, corpo: object) => request(servidor).patch(`/api/lessons/${id}`).set("Cookie", admin).send(corpo);
 
   it("aula de vídeo não aceita texto: 400, nada gravado", async () => {
     const res = await editar(aulaA, { content: "texto" });
@@ -140,7 +140,7 @@ describe("o texto da aula", () => {
   });
 
   it("criar aula de vídeo já com texto: 400", async () => {
-    const res = await request(app).post("/api/lessons").set("Cookie", admin).send({ moduleId: moduloId, title: "V", content: "x" });
+    const res = await request(servidor).post("/api/lessons").set("Cookie", admin).send({ moduleId: moduloId, title: "V", content: "x" });
     expect(res.status).toBe(400);
   });
 
@@ -168,9 +168,9 @@ describe("o texto da aula não vaza", () => {
     });
 
     const respostas = await Promise.all([
-      request(app).get(`/api/courses/curso${S}`),
-      request(app).get(`/api/lessons/${aula.id}`),
-      request(app).get(`/api/search`).query({ q: "Aula secreta" }),
+      request(servidor).get(`/api/courses/curso${S}`),
+      request(servidor).get(`/api/lessons/${aula.id}`),
+      request(servidor).get(`/api/search`).query({ q: "Aula secreta" }),
     ]);
     for (const res of respostas) {
       expect(res.status).toBe(200);

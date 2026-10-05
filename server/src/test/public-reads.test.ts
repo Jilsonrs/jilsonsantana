@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import request from "supertest";
-import app from "../app.js";
+import servidor from "./servidor.js";
 import { prisma } from "../lib/prisma.js";
 
 // Fecha os QUATRO achados P1 do `security-vulnerability-reviewer` (Ago 2026).
@@ -86,7 +86,7 @@ afterAll(async () => {
 });
 
 async function sessaoMember(): Promise<string[]> {
-  const res = await request(app).post("/api/auth/sign-in/email").send({
+  const res = await request(servidor).post("/api/auth/sign-in/email").send({
     email: process.env.SEED_MEMBER_EMAIL,
     password: process.env.SEED_MEMBER_PASSWORD,
   });
@@ -98,7 +98,7 @@ async function sessaoMember(): Promise<string[]> {
 // decidir. Voltar ao `include` faz dono, status e `isTemplate` aparecerem aqui.
 describe("a trilha pública só devolve os campos escolhidos", () => {
   it("GET /api/trilhas/:slug", async () => {
-    const res = await request(app).get(`/api/trilhas/trilha-ok${SUFIXO}`);
+    const res = await request(servidor).get(`/api/trilhas/trilha-ok${SUFIXO}`);
     expect(res.status).toBe(200);
     expect(Object.keys(res.body).sort()).toEqual([
       "description",
@@ -115,7 +115,7 @@ describe("a trilha pública só devolve os campos escolhidos", () => {
 
 describe("P1-a — aula publicada em curso arquivado não vaza", () => {
   it("GET /api/lessons/:id devolve 404, não os dados do curso fora do ar", async () => {
-    const res = await request(app).get(`/api/lessons/${aulaOrfaId}`);
+    const res = await request(servidor).get(`/api/lessons/${aulaOrfaId}`);
 
     // Antes: 200, com o slug e o título do curso que saiu do ar embutidos.
     expect(res.status).toBe(404);
@@ -126,7 +126,7 @@ describe("P1-a — aula publicada em curso arquivado não vaza", () => {
 describe("P1-c — salvar trilha não publicada", () => {
   it("POST /api/trilhas/:id/save recusa trilha em DRAFT", async () => {
     const cookies = await sessaoMember();
-    const res = await request(app).post(`/api/trilhas/${trilhaDraftId}/save`).set("Cookie", cookies);
+    const res = await request(servidor).post(`/api/trilhas/${trilhaDraftId}/save`).set("Cookie", cookies);
 
     // O save era o desvio em volta do gate que `GET /trilhas/:slug` já aplicava.
     expect(res.status).toBe(404);
@@ -140,12 +140,12 @@ describe("P1-c — salvar trilha não publicada", () => {
 
 /** Clona a trilha publicada para o membro e devolve o id do módulo do plano DELE. */
 async function moduloDoMembro(cookies: string[]): Promise<number> {
-  const save = await request(app)
+  const save = await request(servidor)
     .post(`/api/trilhas/${trilhaPublicadaId}/save`)
     .set("Cookie", cookies);
   expect([200, 201]).toContain(save.status);
 
-  const meu = await request(app).get(`/api/trilhas/mine/${save.body.id}`).set("Cookie", cookies);
+  const meu = await request(servidor).get(`/api/trilhas/mine/${save.body.id}`).set("Cookie", cookies);
   expect(meu.status).toBe(200);
   return meu.body.planModules[0].id;
 }
@@ -157,7 +157,7 @@ describe("P1-b — o oráculo de enumeração está fechado", () => {
     // de STATUS pode barrar, e é exatamente ela que faltava.
     const planModuleId = await moduloDoMembro(cookies);
 
-    const item = await request(app)
+    const item = await request(servidor)
       .post("/api/plan-items")
       .set("Cookie", cookies)
       .send({ planModuleId, itemType: "COURSE", courseId: cursoDraftId, order: 1 });
@@ -171,7 +171,7 @@ describe("P1-b — o oráculo de enumeração está fechado", () => {
     const cookies = await sessaoMember();
     const planModuleId = await moduloDoMembro(cookies);
 
-    const item = await request(app)
+    const item = await request(servidor)
       .post("/api/plan-items")
       .set("Cookie", cookies)
       .send({ planModuleId, itemType: "COURSE", courseId: cursoArquivadoId, order: 1 });

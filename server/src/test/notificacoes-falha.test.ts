@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 import request from "supertest";
-import app from "../app.js";
+import servidor from "./servidor.js";
 import { prisma } from "../lib/prisma.js";
 
 // A NOTIFICAÇÃO É EFEITO SECUNDÁRIO (achado P2 da revisão de segurança,
@@ -15,7 +15,7 @@ let memberId = "";
 let ids = { gratis: 0, paga: 0 };
 
 beforeAll(async () => {
-  const res = await request(app).post("/api/auth/sign-in/email").send({
+  const res = await request(servidor).post("/api/auth/sign-in/email").send({
     email: process.env.SEED_MEMBER_EMAIL,
     password: process.env.SEED_MEMBER_PASSWORD,
   });
@@ -56,9 +56,9 @@ describe("falha ao criar a notificação não derruba nada", () => {
   it("a aula abre (200), a conclusão grava (204), e o log leva o código", async () => {
     const falha = vi.spyOn(prisma.notification, "createMany").mockRejectedValue(Object.assign(new Error("x"), { code: "P2003" }));
     const log = vi.spyOn(console, "error").mockImplementation(() => {});
-    expect((await request(app).get(`/api/lessons/${ids.paga}/aula`).set("Cookie", member)).status).toBe(200);
-    await request(app).put(`/api/lessons/${ids.gratis}/concluida`).set("Cookie", member);
-    expect((await request(app).put(`/api/lessons/${ids.paga}/concluida`).set("Cookie", member)).status).toBe(204);
+    expect((await request(servidor).get(`/api/lessons/${ids.paga}/aula`).set("Cookie", member)).status).toBe(200);
+    await request(servidor).put(`/api/lessons/${ids.gratis}/concluida`).set("Cookie", member);
+    expect((await request(servidor).put(`/api/lessons/${ids.paga}/concluida`).set("Cookie", member)).status).toBe(204);
     expect(await prisma.lessonProgress.count({ where: { userId: memberId, lessonId: ids.paga, completed: true } })).toBe(1);
     expect(falha).toHaveBeenCalledTimes(2);
     const linhas = log.mock.calls.flat().join("\n");

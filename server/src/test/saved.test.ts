@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import request from "supertest";
-import app from "../app.js";
+import servidor from "./servidor.js";
 import { prisma } from "../lib/prisma.js";
 
 // "SALVOS" (decisão do operador, 03/10/2026, "como no LinkedIn"). O que estes
@@ -19,7 +19,7 @@ let member: string[] = [];
 let memberId = "";
 
 async function sessao(email?: string, senha?: string): Promise<string[]> {
-  const res = await request(app).post("/api/auth/sign-in/email").send({ email, password: senha });
+  const res = await request(servidor).post("/api/auth/sign-in/email").send({ email, password: senha });
   return (res.headers["set-cookie"] as unknown as string[] | undefined) ?? [];
 }
 
@@ -75,9 +75,9 @@ afterAll(async () => {
 });
 
 type Salvos = { cursos: { id: number; slug: string; title: string }[]; aulas: { id: number; title: string; curso: { slug: string; title: string } }[] };
-const lista = (cookies: string[] = []) => request(app).get("/api/salvos").set("Cookie", cookies);
-const salvar = (tipo: "cursos" | "aulas", id: number, cookies: string[] = []) => request(app).put(`/api/salvos/${tipo}/${id}`).set("Cookie", cookies);
-const tirar = (tipo: "cursos" | "aulas", id: number, cookies: string[] = []) => request(app).delete(`/api/salvos/${tipo}/${id}`).set("Cookie", cookies);
+const lista = (cookies: string[] = []) => request(servidor).get("/api/salvos").set("Cookie", cookies);
+const salvar = (tipo: "cursos" | "aulas", id: number, cookies: string[] = []) => request(servidor).put(`/api/salvos/${tipo}/${id}`).set("Cookie", cookies);
+const tirar = (tipo: "cursos" | "aulas", id: number, cookies: string[] = []) => request(servidor).delete(`/api/salvos/${tipo}/${id}`).set("Cookie", cookies);
 const linhasDoMember = () => prisma.savedItem.count({ where: { userId: memberId } });
 
 describe("salvos — sem login", () => {

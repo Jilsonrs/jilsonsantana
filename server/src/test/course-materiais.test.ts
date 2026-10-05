@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import request from "supertest";
-import app from "../app.js";
+import servidor from "./servidor.js";
 import { prisma } from "../lib/prisma.js";
 
 // OS MATERIAIS EXCLUSIVOS do curso (decisão do operador, 04/10/2026): lista FIXA,
@@ -12,7 +12,7 @@ let admin: string[] = [];
 let cursoId = 0;
 
 beforeAll(async () => {
-  const res = await request(app).post("/api/auth/sign-in/email").send({
+  const res = await request(servidor).post("/api/auth/sign-in/email").send({
     email: process.env.SEED_ADMIN_EMAIL,
     password: process.env.SEED_ADMIN_PASSWORD,
   });
@@ -24,14 +24,14 @@ afterAll(async () => {
   await prisma.course.deleteMany({ where: { slug: { endsWith: S } } });
 });
 
-const salvar = (materiais: unknown) => request(app).patch(`/api/courses/${cursoId}`).set("Cookie", admin).send({ materiais });
+const salvar = (materiais: unknown) => request(servidor).patch(`/api/courses/${cursoId}`).set("Cookie", admin).send({ materiais });
 const gravado = async () => (await prisma.course.findUniqueOrThrow({ where: { id: cursoId } })).materiais;
 
 describe("materiais exclusivos — o passo Publicar", () => {
   it("grava os marcados, e o admin lê de volta", async () => {
     expect((await salvar(["APOSTILA", "BIBLIOTECA_DE_PROMPTS"])).status).toBe(200);
     expect([...(await gravado())].sort()).toEqual(["APOSTILA", "BIBLIOTECA_DE_PROMPTS"]);
-    const res = await request(app).get(`/api/admin/courses/${cursoId}`).set("Cookie", admin);
+    const res = await request(servidor).get(`/api/admin/courses/${cursoId}`).set("Cookie", admin);
     expect([...res.body.materiais].sort()).toEqual(["APOSTILA", "BIBLIOTECA_DE_PROMPTS"]);
   });
 
@@ -80,7 +80,7 @@ describe("o quadro na página do curso", () => {
 
   const arquivo = (lessonId: number, n: string) =>
     prisma.lessonFile.create({ data: { lessonId, originalName: `${n}.zip`, storagePath: `aulas/${lessonId}/${n.padEnd(24, "x")}.zip`, sizeBytes: 1 } });
-  const pagina = () => request(app).get(`/api/courses/${PUB}`);
+  const pagina = () => request(servidor).get(`/api/courses/${PUB}`);
 
   it("sem arquivo nenhum: inclui.arquivos é false; os materiais saem", async () => {
     const res = await pagina();
@@ -96,7 +96,7 @@ describe("o quadro na página do curso", () => {
   });
 
   it("a página da aula também traz os materiais (o quadro no \"Sobre o curso\")", async () => {
-    const res = await request(app).get(`/api/lessons/${aulaPublicada}/aula`);
+    const res = await request(servidor).get(`/api/lessons/${aulaPublicada}/aula`);
     expect(res.status).toBe(200);
     expect(res.body.curso.materiais).toEqual(["APOSTILA"]);
   });

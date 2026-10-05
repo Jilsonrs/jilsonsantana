@@ -8,7 +8,7 @@ vi.mock("../lib/bunny-storage.js", () => ({
   enviarParaOStorage: (...args: unknown[]) => enviarParaOStorage(...args),
 }));
 
-import app from "../app.js";
+import servidor from "./servidor.js";
 import { prisma } from "../lib/prisma.js";
 
 // CAPA DO CURSO ENVIADA PELO ADMIN (bloco de envio, etapa 1 — plano aprovado
@@ -30,7 +30,7 @@ let admin: string[] = [];
 let member: string[] = [];
 
 async function sessao(email?: string, senha?: string): Promise<string[]> {
-  const res = await request(app).post("/api/auth/sign-in/email").send({ email, password: senha });
+  const res = await request(servidor).post("/api/auth/sign-in/email").send({ email, password: senha });
   return (res.headers["set-cookie"] as unknown as string[] | undefined) ?? [];
 }
 
@@ -54,13 +54,13 @@ beforeEach(() => {
 });
 
 const enviar = (cookies: string[], tipo: string, corpo: Buffer, id = cursoId) =>
-  request(app).post(`/api/admin/courses/${id}/thumbnail`).set("Cookie", cookies).set("Content-Type", tipo).send(corpo);
+  request(servidor).post(`/api/admin/courses/${id}/thumbnail`).set("Cookie", cookies).set("Content-Type", tipo).send(corpo);
 
 const capaGravada = async () => (await prisma.course.findUnique({ where: { id: cursoId } }))?.thumbnailUrl;
 
 describe("capa do curso — quem pode enviar", () => {
   it("sem login: 401, e nada vai para o Storage", async () => {
-    const res = await request(app)
+    const res = await request(servidor)
       .post(`/api/admin/courses/${cursoId}/thumbnail`)
       .set("Content-Type", "image/webp")
       .send(WEBP);
