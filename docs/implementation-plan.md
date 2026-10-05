@@ -204,7 +204,12 @@
 > (aula concluída sozinha, barra na aula e no cartão), o vídeo que não recomeça ao trocar de aba
 > (a apresentação abre pausada, a aula toca sozinha) e o "Salvos". **Primeiro teste com o player de
 > verdade: com o operador** (assistir uma aula até perto do fim e ver a barra andar).
-> **PUBLICADO em 04/10/2026, por último (`main` = `643dd08`, CI verde nos dois jobs, deploy ok,
+> **PUBLICADO em 05/10/2026 (`main` = `59176c0`, CI verde nos dois jobs, deploy ok, migrations
+> `notificacoes` e `notificacao_titulo_do_curso` aplicadas pelo pre-deploy):** o passo Mensagens,
+> o sino de Notificações (boas-vindas e parabéns do curso, lista e página Ver todas) e o botão
+> **Visualizar** no topo do editor. `/api/notificacoes` e `/api/admin/courses/:id/pagina`
+> respondem 401 sem login no ar.
+> **PUBLICADO em 04/10/2026 (`main` = `643dd08`, CI verde nos dois jobs, deploy ok,
 > migration `course_materiais` aplicada pelo pre-deploy):** o quadro "Este curso inclui" — os
 > materiais marcados no passo Publicar, o quadro na página do curso e no "Sobre o curso" da aula.
 > **PUBLICADO em 04/10/2026, depois (`main` = `45e33b8`, CI verde, deploy ok):** a limpeza do cache
