@@ -34,6 +34,7 @@ const CURSO: PaginaDaAula["curso"] = {
   faq: null,
   camadas: [],
   materiais: [],
+  inclui: { segundosDeVideo: 0, artigos: 0, aulasGratis: 0, arquivos: false, legendas: false },
   videoSeconds: 0,
   modulos: [],
 };

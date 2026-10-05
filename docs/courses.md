@@ -115,10 +115,12 @@ inventa. Estas regras valem para toda página, todo campo e todo texto de venda.
 | Reembolso de 7 dias (CDC art. 49) e cancelamento visível em 1 clique, com tom calmo | decisões de preço |
 | "Mais vendido" é **afirmação do operador**, revisada por ele, não cálculo | operador, 22/09/2026 |
 
+**Ferramenta de terceiros: "utilizamos o plano gratuito"** `[FATO, operador, 05/10/2026]`. Não
+"começa no plano gratuito" (soa como se fosse preciso pagar depois). Nunca "100% grátis", "custo
+zero" ou "ilimitado": cotas gratuitas mudam sem aviso, por isso o texto cita que existem limites.
+
 **Regras propostas nesta sessão, a confirmar** `[PROPOSTA, 05/10/2026]`:
 
-- **Ferramenta de terceiros: "começa no plano gratuito", nunca "100% grátis", "custo zero" ou
-  "ilimitado".** Cotas gratuitas mudam sem aviso e um curso congelado não acompanha.
 - **Verbo que o curso cumpre.** "Reduzir respostas inventadas", não "evitar alucinações"; "aprender
   a usar", não "dominar".
 - **O que o curso não ensina não aparece**, nem como tag nem como persona.
@@ -384,7 +386,7 @@ Limites são técnicos `[FATO, admin]`. As diretrizes de escrita seguem a marca 
 | **O que vai aprender** (`learnTags`) | 160 por item | **Tags curtas.** §10.4 |
 | **Pré-requisitos** | 160 por item | Honestos e verificáveis. §10.5 |
 | **Para quem é** (`personas`) | 160 por item | 3 a 5 personas, uma por linha. §10.6 |
-| **Destaques** (`highlights`) | ícone + título + texto | 3 a 4 cards; ícone escolhido por busca entre todos os do Lucide (operador, 05/10/2026). §10.7 |
+| **Destaques** (`highlights`) | ícone + título + texto | 3 a 4 cards; ícone do conjunto fixo do Lucide (55 nomes). §10.7 |
 | **Perguntas frequentes** | opcional | 0 a 2, só dúvida real recorrente. §10.8 |
 | **Camadas** | enum | Marcar só as que o curso tem |
 | **Materiais exclusivos** | enum | Biblioteca de prompts · Apostila. Arquivos para baixar são **derivados** |
@@ -463,10 +465,10 @@ Diretrizes `[PROPOSTA, 05/10]`:
 ### 10.7 Destaques (3 a 4 cards)
 
 - Cada card: **título de até ~5 palavras + uma frase**.
-- Bons temas, do que já funcionou: projeto completo; resultado na mesma aula; começa no plano
+- Bons temas, do que já funcionou: projeto completo; resultado na mesma aula; usamos o plano
   gratuito (com a ressalva dos limites); **método que vale além da ferramenta** (obrigatório em
   curso do pilar 5, `[PROPOSTA]`: protege o curso quando a ferramenta muda).
-- Ícone escolhido entre **todos os do Lucide**, pela busca do editor *(operador, 05/10/2026; antes, 55 fixos)* — nunca arte sob medida por curso, que seria burnout.
+- Ícone do conjunto fixo. Arte sob medida por curso = burnout.
 
 ### 10.8 Perguntas frequentes
 
@@ -490,8 +492,12 @@ Diretrizes `[PROPOSTA, 05/10]`:
 ### 10.10 "Este curso inclui" `[FATO, operador, 04/10/2026]`
 
 - Aparece na página de venda **e** no "Sobre o curso" da página da aula.
-- **Derivado:** arquivos para acompanhar as aulas (só quando existem). Também derivados, como
-  proposta a confirmar (P41): horas de vídeo, artigos e "Legendas".
+- **Derivado, nesta ordem** *(operador: arquivos em 04/10; as outras quatro em 05/10/2026)*: horas
+  de vídeo ("3h 20min de vídeo") · artigos (aulas de texto) · aulas grátis ("2 aulas grátis para
+  experimentar") · arquivos para acompanhar as aulas · "Legendas em português" (ou em inglês, pelo
+  idioma do curso), só quando **todas** as aulas de vídeo têm legenda em dia. Cada linha só
+  aparece quando existe. O aluno conta a cadeia publicada; o admin, na prévia, tudo. O número
+  quem põe é o código; a palavra é editável em Admin → Textos. O certificado entra com a Fase 6.5.
 - **Marcado à mão:** materiais exclusivos de uma lista fixa (Biblioteca de prompts, Apostila).
 - **Sem linha de acesso:** o acesso fica no cartão de preço; "vitalício" continua proibido.
 
@@ -994,7 +1000,7 @@ PL-300 e o diagnóstico de modelo errado entra no curso 6. **Emendar `content.md
   sem precisar saber programar.* (o "Desenvolva" do título pode soar para programador; o subtítulo
   desfaz)
 
-**Descrição (227 palavras):**
+**Descrição (229 palavras):**
 
 ```
 Você já trabalha com planilhas, relatórios ou dashboards e ouve falar de IA o dia todo. O próximo passo não é virar programador: é aprender a dirigir uma IA que programa por você.
@@ -1010,7 +1016,7 @@ Neste curso você usa o **Google Antigravity**, a plataforma de agentes de IA do
 - revisar o trabalho da IA com olhar crítico, em vez de aceitar tudo;
 - controlar formato, tom e escopo das respostas com engenharia de prompt.
 
-Tudo começa no plano gratuito do Google AI Studio, sem servidor e sem banco de dados para configurar. Como os limites de uso existem e mudam, você também aprende a acompanhá-los para não ser pego de surpresa no meio do projeto.
+Utilizamos o plano gratuito do Google Gemini e AI Studio, sem servidor e sem banco de dados para configurar. Como os limites de uso existem e mudam, você também aprende a acompanhá-los para não ser pego de surpresa no meio do projeto.
 
 Aulas curtas e diretas, com quiz ao fim de cada seção, biblioteca de prompts e os arquivos do projeto para acompanhar.
 ```
@@ -1047,7 +1053,7 @@ Se o limite for 8, saem "Memória de projeto" e "API do Gemini" (já estão na d
 ```
 Do zero ao app funcionando — Você termina com um assistente completo, construído aula a aula.
 Resultado na mesma aula — Cada aula entrega algo que você testa no navegador na hora.
-Começa no plano gratuito — Sem servidor e sem banco de dados, e você aprende a acompanhar os limites.
+Usamos o plano gratuito — Google Gemini e AI Studio no plano gratuito, sem servidor e sem banco de dados. Você aprende a acompanhar os limites de uso.
 Método que vale além da ferramenta — Planejar, dar memória e revisar o agente é o mesmo raciocínio em outras ferramentas de IA.
 ```
 
@@ -1072,8 +1078,8 @@ Quem quer usar o Antigravity de verdade, do primeiro acesso a um projeto complet
 
 **Materiais e FAQ**
 - Materiais: Biblioteca de prompts (os arquivos do projeto aparecem sozinhos com o .zip).
-- FAQ (opcional, 1 item): *"Preciso pagar pelo Antigravity ou pelo AI Studio?"* → *"O curso começa
-  no plano gratuito. Os limites de uso mudam com o tempo, e uma aula mostra como acompanhá-los."*
+- FAQ (opcional, 1 item): *"Preciso pagar pelo Google Gemini ou pelo AI Studio?"* → *"Não. No curso utilizamos
+  o plano gratuito do Google Gemini e AI Studio. Os limites de uso mudam com o tempo, e uma aula mostra como acompanhá-los."*
 
 **Promessas da Udemy que não vieram para a escola:** "100% gratuita" e "Custo Zero" (a cota muda) ·
 "evitando alucinações" (exagero) · "Orquestrador de IA" como título profissional (linguagem de

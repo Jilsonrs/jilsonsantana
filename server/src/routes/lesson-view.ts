@@ -11,6 +11,7 @@ import { lerArquivoDaAula } from "../lib/bunny-storage.js";
 import { nomeParaDownload } from "../lib/nome-do-download.js";
 import { aulasConcluidas } from "../lib/progresso.js";
 import { enviarBoasVindas, semDerrubar } from "../lib/notificacoes.js";
+import { oQueOCursoInclui } from "../lib/inclui.js";
 
 const router = Router();
 
@@ -100,6 +101,9 @@ async function arvoreDoCurso(courseId: number, soPublicado: boolean) {
     faq: curso.faq,
     camadas: curso.camadas,
     materiais: curso.materiais,
+    // As linhas de "Este curso inclui" que se calculam sozinhas, da mesma lista
+    // que a pessoa vê (05/10/2026 — `lib/inclui.ts`).
+    inclui: await oQueOCursoInclui(curso.id, soPublicado),
     // A duração do curso: só aula de VÍDEO, como na página do curso — uma aula que
     // virou texto não leva o tempo do vídeo antigo. O aluno soma só o publicado
     // (é a lista que ele vê); o admin, a lista inteira.

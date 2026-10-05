@@ -2510,6 +2510,11 @@ própria**.*
       servidor: `temArquivos`, só a cadeia publicada) e os materiais marcados.
       **E também no "Sobre o curso" da página da aula** *(decisão do operador, 04/10/2026: "nos dois
       lugares")*, onde o aluno logado está.
+      **As linhas calculadas, feitas em 05/10/2026** *(decisão do operador, fecha a P41 menos o
+      certificado)*: horas de vídeo, artigos, aulas grátis e legendas, além dos arquivos — uma
+      função só no servidor (`server/src/lib/inclui.ts`) para a página de venda, a página da aula e
+      a prévia; o aluno conta a cadeia publicada, o admin tudo. Mutação: legendas com aula sem
+      legenda, a venda contando rascunho e a linha de aulas grátis sumindo — reprovam.
 - [ ] **Mock na `design-lab/`** (parceiro de design) → **transposição** para template de servidor
       (mesma marcação, mesmas classes) → **formatação** pelo parceiro. É o caminho que a home já
       percorreu inteiro.

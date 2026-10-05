@@ -104,7 +104,7 @@ export function CourseDetailPage() {
           </div>
 
           <aside className="space-y-10">
-            <CourseIncludes materiais={course.materiais ?? []} temArquivos={course.temArquivos ?? false} />
+            <CourseIncludes materiais={course.materiais ?? []} inclui={course.inclui} idiomaDoCurso={course.language} />
             {course.learnTags.length > 0 && (
               <section className="rounded-2xl border border-border/40 bg-card p-6 shadow-sm">
                 <h2 className="text-lg font-semibold">{t.curso.aprender}</h2>

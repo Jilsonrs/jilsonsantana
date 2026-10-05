@@ -48,7 +48,7 @@ describe("materiais exclusivos — o passo Publicar", () => {
 });
 
 // O QUADRO "ESTE CURSO INCLUI" na leitura pública (decisões do operador,
-// 04/10/2026): os materiais marcados e `temArquivos` — que só conta arquivo de
+// 04/10/2026): os materiais marcados e `inclui.arquivos` — que só conta arquivo de
 // aula PUBLICADA em módulo publicado, e não diz nome nem quantidade.
 describe("o quadro na página do curso", () => {
   const PUB = `pub${S}`;
@@ -82,17 +82,17 @@ describe("o quadro na página do curso", () => {
     prisma.lessonFile.create({ data: { lessonId, originalName: `${n}.zip`, storagePath: `aulas/${lessonId}/${n.padEnd(24, "x")}.zip`, sizeBytes: 1 } });
   const pagina = () => request(app).get(`/api/courses/${PUB}`);
 
-  it("sem arquivo nenhum: temArquivos é false; os materiais saem", async () => {
+  it("sem arquivo nenhum: inclui.arquivos é false; os materiais saem", async () => {
     const res = await pagina();
     expect(res.status).toBe(200);
-    expect(res.body.temArquivos).toBe(false);
+    expect(res.body.inclui.arquivos).toBe(false);
     expect(res.body.materiais).toEqual(["APOSTILA"]);
   });
 
   it("arquivo só em aula ou módulo em rascunho não conta", async () => {
     await arquivo(aulaRascunho, "rascunho");
     await arquivo(aulaModuloRascunho, "modulorascunho");
-    expect((await pagina()).body.temArquivos).toBe(false);
+    expect((await pagina()).body.inclui.arquivos).toBe(false);
   });
 
   it("a página da aula também traz os materiais (o quadro no \"Sobre o curso\")", async () => {
@@ -104,7 +104,7 @@ describe("o quadro na página do curso", () => {
   it("arquivo em aula publicada: true — e nem o nome nem a quantidade saem", async () => {
     await arquivo(aulaPublicada, "planilha");
     const res = await pagina();
-    expect(res.body.temArquivos).toBe(true);
+    expect(res.body.inclui.arquivos).toBe(true);
     expect(JSON.stringify(res.body)).not.toContain("planilha");
   });
 });

@@ -382,7 +382,9 @@ exceto o item 4, que é página pública.
    (`components/content/CourseIncludes.tsx`, um só para os dois), e as caixas
    **Materiais exclusivos** no passo Publicar do editor (`CourseMaterialsSection.tsx`). Estrutura
    pronta, acabamento seu. Os textos saem do dicionário (Admin → Textos): **não escreva texto no
-   `.tsx`**. Quadro sem itens fica escondido — tem teste.
+   `.tsx`**. Quadro sem itens fica escondido — tem teste. **Em 05/10 o quadro ganhou linhas
+   calculadas** (horas de vídeo, artigos, aulas grátis, legendas), cada uma com o seu ícone, na
+   ordem decidida: vídeo · artigos · aulas grátis · arquivos · legendas · materiais. A ordem tem teste.
 23. **A página do curso vira LANDING PAGE DE VENDA** *(decisão do operador, 04/10/2026)*: *"cada
    curso por si só já justifica a assinatura"*, com o máximo de conversão e retenção. Quem chega
    por um curso só (busca, YouTube, link) tem que sair querendo assinar, sem passar pela home.

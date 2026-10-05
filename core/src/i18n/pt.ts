@@ -56,7 +56,16 @@ export const pt = {
     // curso, só se marca quais ele tem. Editáveis em Admin → Textos.
     inclui: {
       titulo: "Este curso inclui:",
-      arquivos: "Arquivos para acompanhar as aulas"
+      arquivos: "Arquivos para acompanhar as aulas",
+      // As linhas calculadas (operador, 05/10/2026). O NÚMERO quem põe é o código,
+      // antes da palavra: editar aqui não apaga o número.
+      deVideo: "de vídeo",
+      artigo: "artigo",
+      artigos: "artigos",
+      aulaGratis: "aula grátis para experimentar",
+      aulasGratis: "aulas grátis para experimentar",
+      legendasPt: "Legendas em português",
+      legendasEn: "Legendas em inglês"
     },
     materiais: {
       BIBLIOTECA_DE_PROMPTS: "Biblioteca de prompts",

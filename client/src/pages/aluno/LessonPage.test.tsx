@@ -54,6 +54,8 @@ function pagina(aula: Partial<PaginaDaAula["aula"]> = {}, rascunho = false): Pag
       faq: [{ pergunta: "Preciso do 365?", resposta: "Não." }],
       camadas: ["UNIVERSAL"],
       materiais: [],
+      // As linhas calculadas vêm do servidor; há aula com arquivo na lista.
+      inclui: { segundosDeVideo: 0, artigos: 0, aulasGratis: 0, arquivos: true, legendas: false },
       videoSeconds: 0,
       modulos: [
         {
@@ -263,7 +265,7 @@ describe("página da aula — sobre o curso", () => {
 // "ESTE CURSO INCLUI" também no "Sobre o curso" (decisão do operador, 04/10/2026):
 // os arquivos aparecem quando alguma aula da lista tem; os materiais, os marcados.
 describe("página da aula — este curso inclui", () => {
-  it("os arquivos (há aula com arquivo na lista) e o material marcado", async () => {
+  it("as linhas que o servidor calculou e o material marcado", async () => {
     const comMaterial = pagina();
     comMaterial.curso = { ...comMaterial.curso, materiais: ["APOSTILA"] };
     getLessonPage.mockResolvedValue(comMaterial);
@@ -275,10 +277,7 @@ describe("página da aula — este curso inclui", () => {
 
   it("nenhuma aula com arquivo e nenhum material: o quadro não aparece", async () => {
     const vazio = pagina();
-    vazio.curso = {
-      ...vazio.curso,
-      modulos: vazio.curso.modulos.map((m) => ({ ...m, aulas: m.aulas.map((a) => ({ ...a, temArquivos: false })) })),
-    };
+    vazio.curso = { ...vazio.curso, inclui: { ...vazio.curso.inclui, arquivos: false } };
     getLessonPage.mockResolvedValue(vazio);
     abrir();
     const sobre = await screen.findByRole("region", { name: "Sobre o curso" });

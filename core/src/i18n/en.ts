@@ -46,7 +46,14 @@ export const en: Dict = {
     },
     inclui: {
       titulo: "This course includes:",
-      arquivos: "Files to follow along with the lessons"
+      arquivos: "Files to follow along with the lessons",
+      deVideo: "of video",
+      artigo: "article",
+      artigos: "articles",
+      aulaGratis: "free lesson to try",
+      aulasGratis: "free lessons to try",
+      legendasPt: "Portuguese subtitles",
+      legendasEn: "English subtitles"
     },
     materiais: {
       BIBLIOTECA_DE_PROMPTS: "Prompt library",

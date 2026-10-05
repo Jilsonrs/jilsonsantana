@@ -66,6 +66,8 @@ export type CourseDetail = {
   id: number;
   slug: string;
   title: string;
+  /** O idioma do curso (a legenda do "Este curso inclui" é nesse idioma). */
+  language: LanguageCode;
   subtitle: string | null;
   description: string | null;
   level: Level | null;
@@ -87,8 +89,20 @@ export type CourseDetail = {
   videoSeconds: number;
   /** O quadro "Este curso inclui" (04/10/2026): os materiais marcados no Publicar… */
   materiais: Material[];
-  /** …e se alguma aula publicada tem arquivo para baixar (derivado, nunca marcado). */
-  temArquivos: boolean;
+  /** …e as linhas que se calculam sozinhas, da cadeia publicada (04 e 05/10/2026). */
+  inclui: CursoInclui;
+};
+
+/**
+ * "Este curso inclui" — as linhas que o SERVIDOR calcula (decisões do operador, 04
+ * e 05/10/2026; `server/src/lib/inclui.ts`). O aluno conta o publicado; o admin, tudo.
+ */
+export type CursoInclui = {
+  segundosDeVideo: number;
+  artigos: number;
+  aulasGratis: number;
+  arquivos: boolean;
+  legendas: boolean;
 };
 
 export type TrilhaCard = {
@@ -363,8 +377,10 @@ export type PaginaDaAula = {
     highlights: Highlight[] | null;
     faq: FaqItem[] | null;
     camadas: Layer[];
-    /** Os materiais exclusivos, para o quadro "Este curso inclui" (04/10/2026). */
+    /** Os materiais exclusivos, para o quadro "Este curso inclui" (04/10/2026)… */
     materiais: Material[];
+    /** …e as linhas que se calculam sozinhas, da lista que a pessoa vê (05/10/2026). */
+    inclui: CursoInclui;
     videoSeconds: number;
     modulos: { id: number; title: string; status: ContentStatus; aulas: AulaNaLista[] }[];
   };
