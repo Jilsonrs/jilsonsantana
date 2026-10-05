@@ -204,6 +204,13 @@
 > (aula concluída sozinha, barra na aula e no cartão), o vídeo que não recomeça ao trocar de aba
 > (a apresentação abre pausada, a aula toca sozinha) e o "Salvos". **Primeiro teste com o player de
 > verdade: com o operador** (assistir uma aula até perto do fim e ver a barra andar).
+> **PUBLICADO em 05/10/2026, no fim do dia (`main` = `f956f6c`, CI verde nos dois jobs, deploy
+> ok):** o fim do vídeo abre a próxima aula e quem volta abre onde parou; os testes de servidor
+> num servidor em `127.0.0.1` (fim das falhas intermitentes); `npm run test:changed`; e o cache
+> das bibliotecas no CI. *(A `main` não usa o cache criado no `dev` — regra do GitHub —, então a
+> primeira execução dela instalou e guardou; as seguintes, e as do `dev`, já o usam.)*
+> **PUBLICADO em 05/10/2026, antes (`main` = `789e9eb`, CI verde, deploy ok):** as linhas
+> calculadas do "Este curso inclui".
 > **PUBLICADO em 05/10/2026, depois (`main` = `93ed6a6`, CI verde nos dois jobs, deploy ok):** o
 > ícone dos Destaques escolhido por busca entre todos os do Lucide (feito em outro chat; o pacote
 > principal não cresceu, medido) e o `courses.md` reescrito pelo operador.
@@ -1051,6 +1058,16 @@ tornada executável — não uma lista nova):
       de publicar, a suíte inteira (`CLAUDE.md` → Commands). Medido: mudar um componente roda 3
       arquivos da tela em vez de 51; mudar o dicionário no `core` roda todos (`forceRerunTriggers`);
       no servidor, uma rota roda 34 de 40 arquivos — quase tudo passa pelo `app`, de propósito.
+- [x] **A ferramenta do esquema do Better Auth, trocada pela oficial** *(05/10/2026, pedido do
+      operador)*. O `@better-auth/cli` parou na 1.4.21 (o site está na 1.7.5) e trazia um SQLite,
+      o Drizzle e uma segunda cópia do Better Auth. Desde o 1.5 o sucessor é o pacote `auth`, do
+      mesmo repositório e com a mesma numeração: entrou fixo na 1.7.5 (`npm --workspace server run
+      auth:generate`), e `better-auth-cli.test.ts` reprova se ele e o `better-auth` divergirem.
+      **Conferido:** gerado com a 1.7.5 a partir do nosso `auth.ts`, numa cópia, o esquema não
+      muda nenhum campo — o banco já estava certo para a versão do site. **Efeito medido:**
+      vulnerabilidades apontadas nas dependências 25 → 17 (a crítica sumiu; altas 12 → 9) e 779 →
+      745 pacotes. Docs check (context7): Better Auth → `/better-auth/better-auth` → o CLI novo
+      (`npx auth`, blog do 1.5) e as opções do `generate`.
 - [x] **CI mais rápido:** as bibliotecas instaladas guardadas entre uma execução e outra
       (`node_modules` por `package-lock` + Node 20; `npm ci` só quando a chave muda). **Medido no
       mesmo commit, sem e com o cache:** job principal 4 min 4 s → 2 min 22 s; E2E 2 min 22 s →
@@ -2076,6 +2093,13 @@ própria**.*
       mostrar a anterior por algumas horas. O tamanho da letra da legenda é ajuste de visual da
       biblioteca no painel (vale para todos); não achei na doc um controle para o aluno.
 
+- [x] **O ✓ dos passos Legendas e Mensagens** *(decisões do operador, 05/10/2026 — fecha a P42)*:
+      Legendas com todas as aulas de vídeo publicadas com legenda em dia (a mesma conta do "x de
+      y" da tela, numa função só no servidor — `contagemDeLegendas`; a apresentação não conta;
+      sem aula de vídeo, sem ✓); Mensagens com as duas escritas. Enviar ou excluir legenda
+      recarrega o curso, e o ✓ aparece na hora. Mutação: a conta ignorando a legenda a reenviar,
+      mensagens com uma só e enviar sem recarregar o curso — reprovam.
+
 **Etapa 4 — Mensagens e o sino:**
 - [x] **O sino ao lado da foto, no topo**: área de avisos do aluno, com as mensagens de
       **boas-vindas** (ao abrir a primeira aula do curso) e de **parabéns** (ao concluir), e outras
@@ -2125,9 +2149,9 @@ própria**.*
 | 1 Informações básicas | pronto | — *(a duração no topo entrou em 29/09, e no catálogo em 30/09: ver abaixo)* | — |
 | 2 Para quem é | pronto | — | — |
 | 3 Conteúdo | pronto | o **Quiz** (no "+" aparece EM BREVE) | as regras do operador: uma ou várias respostas certas, explicação, nota mínima, o que o aluno vê |
-| 4 Legendas | EM BREVE | a **etapa 3** inteira: "x de y aulas com legenda"; enviar, baixar e excluir o `.vtt` por vídeo, só no idioma do curso | código (alto risco: Bunny) |
+| 4 Legendas | pronto (04/10: a tela; o ✓ em 05/10) | — | — |
 | 5 Mídia e destaques | pronto | — *(a P19 fechou em 29/09)* | — |
-| 6 Mensagens | pronto (04/10: o passo, o envio e o sino) | a regra do ✓ do passo | o operador |
+| 6 Mensagens | pronto (04/10: o passo, o envio e o sino; o ✓ com as duas escritas em 05/10) | — | — |
 | 7 Publicar | pronto *(Visualizar como aluno desde 04/10)* | o Visualizar da página **pública** do curso | a página definitiva do curso: **C5** |
 
 **Em todos os passos, ainda aberto:**

@@ -17,7 +17,8 @@
     "db:generate": "if grep -qE '^model ' prisma/schema.prisma; then prisma generate; else echo 'No models defined — skipping prisma generate'; fi",
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx src/seed.ts",
-    "db:seed:content": "tsx src/seed-content.ts"
+    "db:seed:content": "tsx src/seed-content.ts",
+    "auth:generate": "auth generate --config src/lib/auth.ts"
   },
   "dependencies": {
     "@jilson/core": "*",
@@ -28,10 +29,10 @@
     "prisma": "^5.16.1"
   },
   "devDependencies": {
-    "@better-auth/cli": "^1.4.21",
     "@types/express": "^5.0.0",
     "@types/node": "^20.14.10",
     "@types/supertest": "^6.0.3",
+    "auth": "1.7.5",
     "supertest": "^7.2.2",
     "tsx": "^4.16.2",
     "typescript": "^5.5.3",

@@ -251,6 +251,8 @@ export type AdminCourseDetail = {
   /** As mensagens do passo Mensagens (04/10/2026); `null` = nenhuma. */
   welcomeMessage: string | null;
   congratsMessage: string | null;
+  /** Todas as aulas de vídeo publicadas com legenda em dia — o ✓ do passo Legendas (05/10/2026). */
+  legendasCompletas: boolean;
   thumbnailUrl: string | null;
   introVideoId: string | null;
   // O player do vídeo de apresentação, montado no SERVIDOR (null sem vídeo, ou

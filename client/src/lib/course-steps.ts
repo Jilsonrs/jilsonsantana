@@ -91,7 +91,8 @@ export function payloadDoPasso(values: CourseFormValues, slug: PassoDoCurso): Co
 
 /**
  * Os passos COMPLETOS, lidos do curso GRAVADO — nunca do formulário: o ✓ diz o
- * que está salvo. As regras são do operador (28/09/2026).
+ * que está salvo. As regras são do operador (28/09/2026; Legendas e Mensagens em
+ * 05/10/2026).
  */
 export function passosConcluidos(curso: AdminCourseDetail): Set<PassoDoCurso> {
   const regras: Partial<Record<PassoDoCurso, boolean>> = {
@@ -103,7 +104,11 @@ export function passosConcluidos(curso: AdminCourseDetail): Set<PassoDoCurso> {
     "para-quem-e": curso.learnTags.length > 0 && curso.requirements.length > 0 && curso.personas.length > 0,
     // A mesma cadeia do cartão da lista: aula publicada DENTRO de módulo publicado.
     conteudo: contarAulasPublicadas(curso.modules) > 0,
+    // A mesma conta da frase "Todas as aulas publicadas têm legenda" (05/10/2026).
+    legendas: curso.legendasCompletas,
     pagina: Boolean(curso.thumbnailUrl) && Boolean(curso.introVideoId),
+    // As duas mensagens escritas (operador, 05/10/2026).
+    mensagens: Boolean(curso.welcomeMessage?.trim()) && Boolean(curso.congratsMessage?.trim()),
     publicar: curso.status === ContentStatus.PUBLISHED,
   };
   // Seguro: as chaves de `regras` são escritas acima, todas do tipo PassoDoCurso.

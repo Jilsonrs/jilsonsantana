@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { screen, fireEvent, waitFor } from "@testing-library/react";
+import { screen, fireEvent, waitFor, within } from "@testing-library/react";
+import { Role } from "@jilson/core";
 import { renderWithProviders } from "@/test-utils";
 import type { LegendasDoCurso } from "@/lib/api";
 import { CURSO_DE_TESTE } from "./curso-de-teste";
@@ -18,6 +19,7 @@ vi.mock("@/lib/api", async (importOriginal) => ({
 }));
 
 import { CourseEditorLayout } from "./CourseEditorLayout";
+import { SecondaryNav } from "@/components/nav/SecondaryNav";
 import { ROTAS_DO_EDITOR } from "./steps";
 
 // O PASSO LEGENDAS (decisões do operador, 04/10/2026, a partir da tela da Udemy):
@@ -164,6 +166,27 @@ describe("Legendas — as ações", () => {
     fireEvent.click(excluir);
     await waitFor(() => expect(excluirLegenda).toHaveBeenCalledWith({ tipo: "aula", id: 11 }));
     expect(await screen.findByText("Legenda excluída.")).toBeTruthy();
+  });
+
+  // O ✓ do passo (decisão do operador, 05/10/2026): mandar a última legenda faz o
+  // editor recarregar o curso, e o ✓ aparece no menu na hora, sem recarregar a página.
+  it("mandar a última legenda: o ✓ do passo Legendas aparece no menu", async () => {
+    renderWithProviders(
+      <>
+        <SecondaryNav papel={Role.ADMIN} onSignOut={vi.fn()} />
+        <CourseEditorLayout />
+      </>,
+      { route: "/admin/cursos/1/legendas", path: "/admin/cursos/:id", filhas: ROTAS_DO_EDITOR },
+    );
+    const passoLegendas = async () =>
+      within(screen.getByRole("complementary")).getByRole("link", { name: /Legendas/ });
+    await screen.findByRole("button", { name: "Enviar a legenda: Iniciando" });
+    expect((await passoLegendas()).textContent).not.toContain("completo");
+
+    adminGetCourse.mockResolvedValue({ ...CURSO_DE_TESTE, legendasCompletas: true });
+    fireEvent.change(screen.getByLabelText("Arquivo da legenda: Iniciando"), { target: { files: [vtt()] } });
+
+    await waitFor(async () => expect((await passoLegendas()).textContent).toContain("completo"));
   });
 
   it("o passo não tem Salvar no topo (cada linha se salva sozinha)", async () => {

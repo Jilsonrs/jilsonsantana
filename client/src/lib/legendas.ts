@@ -13,7 +13,12 @@ export function useLegendas(courseId: number) {
 
 export function useAlterarLegenda(courseId: number) {
   const queryClient = useQueryClient();
-  const recarregar = () => queryClient.invalidateQueries({ queryKey: chave(courseId) });
+  // A lista E o curso: o ✓ do passo Legendas vem do curso, e aparece ou some na hora.
+  const recarregar = () =>
+    Promise.all([
+      queryClient.invalidateQueries({ queryKey: chave(courseId) }),
+      queryClient.invalidateQueries({ queryKey: ["admin-course", courseId] }),
+    ]);
   return {
     enviar: useMutation({ mutationFn: (v: { dono: api.DonoDaLegenda; arquivo: File }) => api.enviarLegenda(v.dono, v.arquivo), onSuccess: recarregar }),
     excluir: useMutation({ mutationFn: (dono: api.DonoDaLegenda) => api.excluirLegenda(dono), onSuccess: recarregar }),

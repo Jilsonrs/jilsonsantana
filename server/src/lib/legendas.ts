@@ -1,4 +1,5 @@
 import type { Language } from "@prisma/client";
+import { ContentStatus, LessonKind } from "@jilson/core";
 import { prisma } from "./prisma.js";
 import { enviarLegenda } from "./bunny-stream.js";
 import { doBanco } from "./language.js";
@@ -26,4 +27,28 @@ export async function reenviarLegenda(onde: { lessonId: number } | { courseId: n
     console.error(`[legendas] reenvio da legenda ${legenda.id} caiu na rede`);
   }
   await prisma.caption.update({ where: { id: legenda.id }, data: { needsResend: !aceitou } });
+}
+
+/**
+ * "x de y aulas publicadas com legenda" — a conta da tela Legendas e do ✓ do passo
+ * (decisões do operador, 04 e 05/10/2026): aulas de VÍDEO publicadas, em módulo
+ * publicado; a legenda que precisa ser reenviada não conta. Uma função só, para a
+ * frase e o ✓ nunca discordarem.
+ */
+export function contagemDeLegendas(aulasPublicadas: { caption: { needsResend: boolean } | null }[]): { comLegenda: number; total: number } {
+  return { comLegenda: aulasPublicadas.filter((a) => a.caption && !a.caption.needsResend).length, total: aulasPublicadas.length };
+}
+
+/**
+ * O passo Legendas está completo (o ✓ — decisão do operador, 05/10/2026): TODAS
+ * as aulas de vídeo publicadas com legenda em dia. A apresentação não conta. Sem
+ * nenhuma aula de vídeo publicada, não está — como o Conteúdo, que exige uma aula.
+ */
+export async function legendasCompletas(courseId: number): Promise<boolean> {
+  const aulas = await prisma.lesson.findMany({
+    where: { kind: LessonKind.VIDEO, status: ContentStatus.PUBLISHED, module: { courseId, status: ContentStatus.PUBLISHED } },
+    select: { caption: { select: { needsResend: true } } },
+  });
+  const { comLegenda, total } = contagemDeLegendas(aulas);
+  return total > 0 && comLegenda === total;
 }
