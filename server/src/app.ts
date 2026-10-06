@@ -1,3 +1,4 @@
+import { pedeArquivo } from "./lib/pede-arquivo.js";
 import express from "express";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -145,8 +146,14 @@ if (process.env.NODE_ENV === "production") {
   registrarHome();
 
   app.use(express.static(clientDist));
-  // SPA fallback — must be after all API routes
-  app.get("/*splat", (_req, res) => {
+  // SPA fallback — must be after all API routes. Só para TELA: um arquivo que
+  // não existe (o pedaço do app de uma versão anterior) responde 404, nunca a
+  // página do app no lugar — senão a tela fica em branco (05/10/2026).
+  app.get("/*splat", (req, res) => {
+    if (pedeArquivo(req.path)) {
+      res.status(404).end();
+      return;
+    }
     res.sendFile(path.join(clientDist, "index.html"));
   });
 }

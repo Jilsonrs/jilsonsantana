@@ -274,16 +274,21 @@ describe("página da aula — este curso inclui", () => {
     abrir();
     const sobre = await screen.findByRole("region", { name: "Sobre o curso" });
     const quadro = within(sobre).getByRole("heading", { name: "Este curso inclui:" }).closest("section") as HTMLElement;
-    expect([...quadro.querySelectorAll("li")].map((li) => li.textContent)).toEqual(["Arquivos para acompanhar as aulas", "Apostila"]);
+    expect([...quadro.querySelectorAll("li")].map((li) => li.textContent)).toEqual([
+      "Arquivos para acompanhar as aulas",
+      "Apostila",
+      "Certificado de conclusão",
+    ]);
   });
 
-  it("nenhuma aula com arquivo e nenhum material: o quadro não aparece", async () => {
+  it("nenhuma outra linha: o quadro aparece só com o certificado", async () => {
     const vazio = pagina();
     vazio.curso = { ...vazio.curso, inclui: { ...vazio.curso.inclui, arquivos: false } };
     getLessonPage.mockResolvedValue(vazio);
     abrir();
     const sobre = await screen.findByRole("region", { name: "Sobre o curso" });
-    expect(within(sobre).queryByRole("heading", { name: "Este curso inclui:" })).toBeNull();
+    const quadro = within(sobre).getByRole("heading", { name: "Este curso inclui:" }).closest("section") as HTMLElement;
+    expect([...quadro.querySelectorAll("li")].map((li) => li.textContent)).toEqual(["Certificado de conclusão"]);
   });
 });
 
@@ -463,6 +468,23 @@ describe("página da aula — o progresso", () => {
 // A PRÓXIMA AULA (decisão do operador, 05/10/2026): o vídeo terminou, a próxima
 // aula da lista abre na hora, seja vídeo ou texto — para o aluno e na prévia do
 // admin. Na última aula, o vídeo só termina.
+// AULA DE TEXTO SEM TEXTO (achado do operador, 05/10/2026): o aviso, nunca a
+// área vazia — e o texto, quando existe, continua aparecendo.
+describe("página da aula — aula de texto sem texto", () => {
+  it("mostra que a aula ainda não tem texto", async () => {
+    getLessonPage.mockResolvedValue(pagina({ id: 12, title: "Leitura", kind: "TEXT", playerUrl: null, texto: "   " }));
+    abrir("/aluno/aula/12");
+    expect(await screen.findByText("Esta aula ainda não tem texto.")).toBeTruthy();
+  });
+
+  it("com texto: o texto, sem o aviso", async () => {
+    getLessonPage.mockResolvedValue(pagina({ id: 12, title: "Leitura", kind: "TEXT", playerUrl: null, texto: "O **PROCV** procura." }));
+    abrir("/aluno/aula/12");
+    expect(await screen.findByText("PROCV")).toBeTruthy();
+    expect(screen.queryByText("Esta aula ainda não tem texto.")).toBeNull();
+  });
+});
+
 describe("página da aula — o fim do vídeo abre a próxima", () => {
   it("aluno: o fim da aula de vídeo abre a próxima, que é de texto", async () => {
     useSessionMock.mockReturnValue({ data: { user: { role: Role.MEMBER } }, isPending: false });

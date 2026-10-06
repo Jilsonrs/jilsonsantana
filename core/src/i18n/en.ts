@@ -53,7 +53,8 @@ export const en: Dict = {
       aulaGratis: "free lesson to try",
       aulasGratis: "free lessons to try",
       legendasPt: "Portuguese subtitles",
-      legendasEn: "English subtitles"
+      legendasEn: "English subtitles",
+      certificado: "Certificate of completion"
     },
     materiais: {
       BIBLIOTECA_DE_PROMPTS: "Prompt library",
@@ -279,7 +280,9 @@ export const en: Dict = {
       erroIdioma: "We couldn't change the language. Please try again."
     },
     comum: {
-      carregando: "Loading…"
+      carregando: "Loading…",
+      algoDeuErrado: "Something went wrong opening this screen.",
+      recarregar: "Reload the page"
     },
     inicio: {
       ola: "Hi",
@@ -385,6 +388,7 @@ export const en: Dict = {
       progressoNoCurso: "Course progress",
       concluida: "Completed",
       semVideo: "This lesson has no video yet.",
+      semTexto: "This lesson has no text yet.",
       recursos: "Downloads",
       recursosDaAula: "Downloads",
       recursosSoAssinantes: "This lesson's downloads are for subscribers.",

@@ -2099,6 +2099,21 @@ própria**.*
       mostrar a anterior por algumas horas. O tamanho da letra da legenda é ajuste de visual da
       biblioteca no painel (vale para todos); não achei na doc um controle para o aluno.
 
+- [x] **"Este curso inclui": o ícone CC nas legendas e o "Certificado de conclusão" fixo** *(decisões
+      do operador, 05/10/2026 — fecha a P41)*: a última linha, em todo curso; o quadro sempre
+      aparece. ⚠️ O certificado nasce na Fase 6.5 e precisa estar no ar antes do lançamento.
+- [x] **Defeito corrigido (05/10/2026, achado pelo operador): a tela da aula ficava em branco** ao
+      abrir uma aula de texto, ou ao clicar numa aula, depois de uma publicação com o site aberto.
+      **Causa provada no site:** o pedaço antigo do app (`MarkdownText-Cse5IHeA.js`) não existe
+      mais, e o servidor devolvia a página do app (HTML) no lugar do `.js` — o navegador falhava e,
+      sem tela de erro, ficava tudo branco; recarregar resolvia. **Agora:** arquivo que não existe
+      responde 404 (`server/src/lib/pede-arquivo.ts`); o app recarrega sozinho UMA vez quando um
+      pedaço não carrega (`vite:preloadError` + trava de 30 s, `client/src/lib/recarregar.ts`); e
+      qualquer tela que quebrar mostra "Algo deu errado… / Recarregar a página" com o menu ainda
+      na tela (`ErroDaTela`, em volta das telas no `Layout`). A aula de texto vazia mostra "Esta
+      aula ainda não tem texto.". Mutação: certificado sumindo, servidor devolvendo a página no
+      lugar do arquivo, recarregar sem trava e a tela de erro removida — reprovam. *O 404 do arquivo
+      só existe em produção: conferido no site depois de publicar.*
 - [x] **Defeito corrigido (05/10/2026, achado pelo operador): salvar o passo Publicar dava erro
       depois de editar a Ordem**, com qualquer status. O campo guardava o texto digitado ("1"), e o
       Salvar de cada passo envia os valores crus do formulário (desde o editor em 7 passos, 28/09) —
@@ -2252,7 +2267,9 @@ própria**.*
   Escalações"** (operador, 28/09): o JilsonAI Admin fica só com a configuração da IA (Persona,
   Modelo, Quotas). Corrigir o `navigation.ts` quando a P13 for declarada lá · o JilsonAI **revisando a página do curso** e **fazendo perguntas**
   sobre a aula · **Role play** com o JilsonAI.
-- **Fase 6.5 (certificados):** **o curso também dá certificado** ao ser concluído; o da trilha
+- **Fase 6.5 (certificados):** ⚠️ **desde 05/10/2026 o quadro "Este curso inclui" já promete
+  "Certificado de conclusão" em todo curso** (decisão do operador) — a Fase 6.5 precisa estar no ar
+  antes do lançamento. **O curso também dá certificado** ao ser concluído; o da trilha
   continua o de competências.
 - **Fora, por decisão:** a lista, com o porquê de cada item, está em `courses.md` → *O admin do
   curso*.

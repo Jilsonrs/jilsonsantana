@@ -387,6 +387,9 @@ exceto o item 4, que é página pública.
    `.tsx`**. Quadro sem itens fica escondido — tem teste. **Em 05/10 o quadro ganhou linhas
    calculadas** (horas de vídeo, artigos, aulas grátis, legendas), cada uma com o seu ícone, na
    ordem decidida: vídeo · artigos · aulas grátis · arquivos · legendas · materiais. A ordem tem teste.
+   **Depois, ainda em 05/10:** "Certificado de conclusão" com o troféu, sempre, na última linha (o
+   quadro nunca mais some), e Legendas com um ícone **CC** desenhado à mão
+   (`components/content/IconeCC.tsx` — o Lucide não tem CC); pode refinar o traço.
 23. **A página do curso vira LANDING PAGE DE VENDA** *(decisão do operador, 04/10/2026)*: *"cada
    curso por si só já justifica a assinatura"*, com o máximo de conversão e retenção. Quem chega
    por um curso só (busca, YouTube, link) tem que sair querendo assinar, sem passar pela home.
@@ -447,6 +450,12 @@ exceto o item 4, que é página pública.
    lista sem tirar o cursor da busca**, Enter escolhe, Esc fecha e devolve o foco ao botão. **Tem
    teste.** E não importe `todos-os-icones.ts` nem `catalogo-de-icones.ts` direto numa tela:
    eles trazem os 1.488 desenhos, que só entram por `lazy()`.
+
+27. **A tela de erro** *(05/10, achado do operador: a aula ficava em branco)*:
+   `components/ErroDaTela.tsx`, em volta de toda tela, no `Layout`. Se uma tela quebra, o menu
+   continua e no lugar dela aparece "Algo deu errado ao abrir esta tela." com "Recarregar a página".
+   Estrutura pronta, acabamento seu. O `role="alert"` e o nome do botão têm teste. E a aula de texto
+   sem texto ganhou o aviso "Esta aula ainda não tem texto.", no mesmo tom do "sem vídeo".
 
 > **Fora do seu trabalho, para não confundir:** o Bunny ganhou **Live Stream** em acesso
 > antecipado (29/09). É só avaliação depois da Fase 3, **não** é tela a desenhar (`docs/bunny.md`

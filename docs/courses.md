@@ -497,7 +497,11 @@ Diretrizes `[PROPOSTA, 05/10]`:
   experimentar") · arquivos para acompanhar as aulas · "Legendas em português" (ou em inglês, pelo
   idioma do curso), só quando **todas** as aulas de vídeo têm legenda em dia. Cada linha só
   aparece quando existe. O aluno conta a cadeia publicada; o admin, na prévia, tudo. O número
-  quem põe é o código; a palavra é editável em Admin → Textos. O certificado entra com a Fase 6.5.
+  quem põe é o código; a palavra é editável em Admin → Textos. Legendas com o ícone **CC**.
+- **Fixo, em todo curso** *(operador, 05/10/2026: "todos os cursos terão certificados")*:
+  **"Certificado de conclusão"**, a última linha, com o troféu. Com ele, o quadro sempre aparece.
+  ⚠️ O certificado em si nasce na Fase 6.5: precisa estar no ar antes do lançamento, senão a página
+  promete o que não existe (§2).
 - **Marcado à mão:** materiais exclusivos de uma lista fixa (Biblioteca de prompts, Apostila).
 - **Sem linha de acesso:** o acesso fica no cartão de preço; "vitalício" continua proibido.
 

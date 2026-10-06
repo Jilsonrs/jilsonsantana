@@ -206,6 +206,7 @@ describe("CourseDetailPage — este curso inclui", () => {
       "Arquivos para acompanhar as aulas",
       "Biblioteca de prompts",
       "Apostila",
+      "Certificado de conclusão",
     ]);
   });
 
@@ -226,6 +227,7 @@ describe("CourseDetailPage — este curso inclui", () => {
       "Arquivos para acompanhar as aulas",
       "Legendas em português",
       "Apostila",
+      "Certificado de conclusão",
     ]);
   });
 
@@ -241,6 +243,7 @@ describe("CourseDetailPage — este curso inclui", () => {
       "1 artigo",
       "1 aula grátis para experimentar",
       "Legendas em inglês",
+      "Certificado de conclusão",
     ]);
   });
 
@@ -258,14 +261,25 @@ describe("CourseDetailPage — este curso inclui", () => {
       "2 articles",
       "1 free lesson to try",
       "Portuguese subtitles",
+      "Certificate of completion",
     ]);
   });
 
-  it("sem arquivos nem materiais: o quadro não aparece", async () => {
+  // Todo curso dá certificado (operador, 05/10/2026): sem nenhuma outra linha, o
+  // quadro aparece só com ele — nunca mais escondido.
+  it("sem nenhuma outra linha: o quadro aparece só com o certificado", async () => {
     getCourseBySlug.mockResolvedValue(baseCourse);
     renderWithProviders(<CourseDetailPage />, rota);
-    await screen.findByText("Exemplo — Fundamentos de Excel + IA");
-    expect(screen.queryByRole("heading", { name: "Este curso inclui:" })).toBeNull();
+    const quadro = (await screen.findByRole("heading", { name: "Este curso inclui:" })).closest("section") as HTMLElement;
+    expect([...quadro.querySelectorAll("li")].map((li) => li.textContent)).toEqual(["Certificado de conclusão"]);
+  });
+
+  // O ícone CC nas legendas (pedido do operador, 05/10/2026).
+  it("Legendas com o ícone CC", async () => {
+    getCourseBySlug.mockResolvedValue({ ...baseCourse, inclui: { ...NADA, legendas: true } });
+    renderWithProviders(<CourseDetailPage />, rota);
+    const linha = (await screen.findByText("Legendas em português")).closest("li") as HTMLElement;
+    expect(linha.querySelector('svg[data-icone="cc"]')).not.toBeNull();
   });
 
   it("só os materiais: sem a linha dos arquivos", async () => {
