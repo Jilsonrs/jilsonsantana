@@ -204,7 +204,13 @@
 > (aula concluída sozinha, barra na aula e no cartão), o vídeo que não recomeça ao trocar de aba
 > (a apresentação abre pausada, a aula toca sozinha) e o "Salvos". **Primeiro teste com o player de
 > verdade: com o operador** (assistir uma aula até perto do fim e ver a barra andar).
-> **PUBLICADO em 06/10/2026, por último (`main` = `40ae6f8`, CI verde nos dois jobs, deploy ok):**
+> **PUBLICADO em 06/10/2026, por último (`main` = `84d55d5`, CI verde nos dois jobs, deploy ok;
+> a migration `comunicacao_notificacoes` aplicada pelo pre-deploy):** a Comunicação (C1 — menu,
+> Notificações e Mensagens automáticas), "Notificações" em Meus estudos com a lista e a mensagem
+> completa, e a mensagem do curso com o texto atual do admin (P46). **Provado no site:** a versão
+> nova (`mux2k0zg-923a6b7c`); `/api/notificacoes` e `/api/admin/announcements` respondem 401 sem
+> login. *Ainda não publicado:* o conserto da troca de aula (`6bdd9eb`, no `dev`).
+> **PUBLICADO em 06/10/2026 (`main` = `40ae6f8`, CI verde nos dois jobs, deploy ok):**
 > a prévia do sino volta a mostrar só as 2 primeiras linhas e a data, como na Udemy (o clique abre
 > a mensagem completa em "Ver todas"). **Provado no site:** a versão nova (`muwymfgl-553ac24d`) no
 > cabeçalho e no `versao.txt`.
