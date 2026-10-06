@@ -204,6 +204,13 @@
 > (aula concluída sozinha, barra na aula e no cartão), o vídeo que não recomeça ao trocar de aba
 > (a apresentação abre pausada, a aula toca sozinha) e o "Salvos". **Primeiro teste com o player de
 > verdade: com o operador** (assistir uma aula até perto do fim e ver a barra andar).
+> **PUBLICADO em 06/10/2026 (`main` = `0ba6d76`, CI verde nos dois jobs, deploy ok):** atualizar o
+> site sem atrapalhar quem está estudando, na área logada inteira — a versão nova entra no próximo
+> clique, os pedaços do aluno e do admin baixados com antecedência, o envio de vídeo nunca cortado,
+> o teste-guarda dos `import()`, e o servidor antigo terminando os pedidos antes de sair. **Provado
+> no site:** `X-Versao-Do-App` nas respostas da API, igual ao `versao.txt` publicado; arquivo antigo
+> → 404. *Não conferido no site:* o `no-cache` da página do app, que fica atrás da página "Em
+> breve" (só com o acesso de prévia do operador); a página "Em breve" sai com `max-age=0`.
 > **PUBLICADO em 05/10/2026, no fechamento (`main` = `ecc9025`, CI verde nos dois jobs, deploy
 > ok):** o fim da tela em branco depois de publicar (provado no site: arquivo antigo e inexistente
 > → 404; tela do aluno → app), a tela de erro, a aula de texto vazia, e o CC e o certificado no
