@@ -114,7 +114,14 @@ async function arvoreDoCurso(courseId: number, soPublicado: boolean) {
       id: m.id,
       title: m.title,
       status: m.status,
-      aulas: m.lessons.map(({ _count, videoDurationSeconds, ...aula }) => ({ ...aula, temArquivos: _count.files > 0 })),
+      // A duração ao lado de cada aula, como no LinkedIn (operador, 06/10/2026): só
+      // a de VÍDEO, pela mesma regra da soma acima; texto e vídeo ainda
+      // processando vêm sem (`null`).
+      aulas: m.lessons.map(({ _count, videoDurationSeconds, ...aula }) => ({
+        ...aula,
+        temArquivos: _count.files > 0,
+        duracaoSegundos: aula.kind === LessonKind.VIDEO ? (videoDurationSeconds ?? null) : null,
+      })),
     })),
   };
 }

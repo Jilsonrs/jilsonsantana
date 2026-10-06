@@ -36,7 +36,7 @@ export function LessonPage() {
   const lessonId = /^\d+$/.test(id ?? "") ? Number(id) : null;
   const t = useT();
   const { data: session } = useSession();
-  const { data, isError, error, comoAdmin, carregandoSessao } = usePaginaDaAula(lessonId);
+  const { data, isError, error, comoAdmin, carregandoSessao, refetch } = usePaginaDaAula(lessonId);
   const [iaAberta, setIaAberta] = useState(false);
   const [menuDoCursoFechado, fecharMenuDoCurso] = useMenuDoCursoFechado();
   const { mutate: concluir } = useConcluirAula();
@@ -126,6 +126,13 @@ export function LessonPage() {
               {session && curso.status === ContentStatus.PUBLISHED && (
                 <BotaoSalvar tipo="cursos" id={curso.id} salvo={salvos.cursos.has(curso.id)} nome={t.aula.salvarCurso} texto={t.aula.salvarCurso} />
               )}
+              {/* O quanto do curso já foi, como no cartão (operador, 06/10/2026): o
+                  mesmo número da barra embaixo. Só para quem está logado. */}
+              {session && (
+                <span className="shrink-0 text-sm text-muted-foreground">
+                  {porcentagem}% {t.curso.concluido}
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -149,7 +156,15 @@ export function LessonPage() {
       <div className="mx-auto w-full max-w-[1600px] px-4 pt-[20px] pb-6 sm:px-6 sm:pb-8 md:px-[50px] md:pb-8">
         <div className={cn("grid gap-6", iaAberta && "lg:grid-cols-[minmax(0,1fr)_360px]")}>
           <div className="min-w-0 space-y-8">
-            <LessonContent aula={aula} comoAdmin={comoAdmin} temArquivos={temArquivos} aoConcluir={concluirVideo} aoTerminar={irParaAProxima} />
+            <LessonContent
+              aula={aula}
+              comoAdmin={comoAdmin}
+              temArquivos={temArquivos}
+              aoConcluir={concluirVideo}
+              aoTerminar={irParaAProxima}
+              // Aba aberta de um dia para o outro: a aula busca um endereço novo do vídeo (06/10/2026).
+              renovarVideo={() => void refetch()}
+            />
 
             {/* Em toda aula, liberada ou não (operador, 29/09/2026). */}
             <CourseDetails curso={curso} />

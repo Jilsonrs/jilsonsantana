@@ -456,6 +456,12 @@ exceto o item 4, que é página pública.
    continua e no lugar dela aparece "Algo deu errado ao abrir esta tela." com "Recarregar a página".
    Estrutura pronta, acabamento seu. O `role="alert"` e o nome do botão têm teste. E a aula de texto
    sem texto ganhou o aviso "Esta aula ainda não tem texto.", no mesmo tom do "sem vídeo".
+28. **A duração de cada aula e o "% concluído" na página da aula** *(06/10, decisões do operador,
+   a partir do LinkedIn Learning)*. No **Conteúdo do curso** (`components/aula/CourseContentsNav.tsx`),
+   embaixo do título de cada aula de VÍDEO, a duração ("1min 22s", "48s"); aula de texto não tem.
+   No **topo da aula** (`pages/aluno/LessonPage.tsx`), depois de "Salvar curso", o "50% concluído",
+   o mesmo número da barra fina e do cartão; só para quem está logado. Estrutura pronta, acabamento
+   seu. O texto da duração e o "% concluído" têm teste.
 
 > **Fora do seu trabalho, para não confundir:** o Bunny ganhou **Live Stream** em acesso
 > antecipado (29/09). É só avaliação depois da Fase 3, **não** é tela a desenhar (`docs/bunny.md`

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import type { AdminLesson, AdminModule } from "@/lib/api";
-import { horasEMinutos, segundosDeVideo, textoDaDuracao } from "./duracao-do-curso";
+import { horasEMinutos, minutosESegundos, segundosDeVideo, textoDaDuracao } from "./duracao-do-curso";
 
 // Função pura, sem I/O e sem tela: o caso em que o repo aceita teste unitário
 // (CLAUDE.md → Testing).
@@ -85,5 +85,17 @@ describe("horasEMinutos", () => {
     [20, "1min"],
   ])("%i segundos → %s", (segundos, texto) => {
     expect(horasEMinutos(segundos)).toBe(texto);
+  });
+});
+
+// A duração de UMA aula, como no LinkedIn (operador, 06/10/2026).
+describe("minutosESegundos", () => {
+  it("segundos, minutos com segundos, minuto cheio e mais de uma hora", () => {
+    expect(minutosESegundos(48)).toBe("48s");
+    expect(minutosESegundos(82)).toBe("1min 22s");
+    expect(minutosESegundos(120)).toBe("2min");
+    expect(minutosESegundos(61.6)).toBe("1min 2s");
+    expect(minutosESegundos(3900)).toBe("1h 05min");
+    expect(minutosESegundos(0)).toBe("0s");
   });
 });

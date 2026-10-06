@@ -465,6 +465,9 @@ por ele em 29/09:** o **Início é `/inicio`**, um só para o aluno e para o adm
 uma só: o admin testa ali tudo o que o aluno faz), e o painel do admin é o **`/dashboard`**.
 **Endereço antigo NÃO redireciona** *(decisão dele, 29/09: a escola está em desenvolvimento, o que
 não se usa sai)*: `/conta`, `/minhas-trilhas`, `/aluno/inicio` e `/admin` deixaram de existir.
+**Endereço que não existe no app leva ao Início** *(decisão dele, 06/10/2026, P44)*: a rota `*`
+do `App.tsx` manda para `/inicio` (sem login, de lá para o login). Não é redirecionar o antigo
+para o novo, é não deixar página em branco; não crie desvio por endereço antigo.
 **Tela nova do aluno nasce sob `/aluno/`**; não crie outra rota no endereço curto, que é da
 vitrine.
 
@@ -602,7 +605,7 @@ qualquer template em `server/src/views/**` → ler aquela seção.
 > **GATILHO (mecânico):** o MESMO da superfície Bunny na tabela de context7 abaixo, **e também** antes do primeiro código que **envie arquivo** pelo site (foto do aluno): → **ler `bunny.md`**.
 > **TRAVA — arquivo enviado pelo site NUNCA fica no disco do container:** a Railway zera o disco a cada publicação, então o arquivo some sem erro nenhum. O banco guarda só o **caminho**; o arquivo mora no **Bunny Storage** *(decisão do operador, 25/09/2026)* — `bunny.md` §4.
 
-- Never expose raw Bunny URLs. **Uma biblioteca só, `jilsonsantana-stream`, com token** (operador, 28/09/2026): todo player sai do servidor ASSINADO (`enderecoAssinado` em `server/src/lib/bunny-stream.ts`). **Validade de 24 h para todo vídeo, e NO IP-lock** — don't break playback when a student switches Wi-Fi↔4G mid-lesson (`VALIDADE_DO_PLAYER`; operador, 28/09/2026, depois de comparar Bunny, Mux, Cloudflare e plataformas de curso — substitui a janela de 6–12 h de Ago 2026). **A proteção da aula paga NÃO é a validade:** é quem recebe a assinatura (só quem tem assinatura ativa — etapa 4) e os domínios permitidos no Bunny. *Gatilho de reabertura: vazamento de aula medido, ou a assinatura passar a ser gerada na hora do play (aí a validade pode ser curta).* **Consequência:** página que mostra player não pode ficar em cache mais de 24 h. Trade-off accepted: DRM + per-user signing over marginal anti-piracy (solo-operator UX call).
+- Never expose raw Bunny URLs. **Uma biblioteca só, `jilsonsantana-stream`, com token** (operador, 28/09/2026): todo player sai do servidor ASSINADO (`enderecoAssinado` em `server/src/lib/bunny-stream.ts`). **Validade de 24 h para todo vídeo, e NO IP-lock** — don't break playback when a student switches Wi-Fi↔4G mid-lesson (`VALIDADE_DO_PLAYER`; operador, 28/09/2026, depois de comparar Bunny, Mux, Cloudflare e plataformas de curso — substitui a janela de 6–12 h de Ago 2026). **A proteção da aula paga NÃO é a validade:** é quem recebe a assinatura (só quem tem assinatura ativa — etapa 4) e os domínios permitidos no Bunny. *Gatilho de reabertura: vazamento de aula medido, ou a assinatura passar a ser gerada na hora do play (aí a validade pode ser curta).* **Consequência:** página que mostra player não pode ficar em cache mais de 24 h. **Aba aberta além da validade** *(decisão do operador, 06/10/2026: "se expirar, recarrega a aula")*: o `BunnyPlayer` pede endereço novo 10 min antes de vencer — ou no play de um vencido — e recarrega no mesmo ponto (`aoVencer`). Só o endereço VENCIDO troca: trocar a cada busca do servidor recomeçaria o vídeo a cada troca de aba (regra de 03/10). Trade-off accepted: DRM + per-user signing over marginal anti-piracy (solo-operator UX call).
 - Store Bunny video IDs on the `Lesson` model.
 
 ## Analytics Convention (modular growth)

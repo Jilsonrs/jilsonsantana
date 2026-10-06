@@ -204,6 +204,11 @@
 > (aula concluída sozinha, barra na aula e no cartão), o vídeo que não recomeça ao trocar de aba
 > (a apresentação abre pausada, a aula toca sozinha) e o "Salvos". **Primeiro teste com o player de
 > verdade: com o operador** (assistir uma aula até perto do fim e ver a barra andar).
+> **PUBLICADO em 06/10/2026, no fechamento (`main` = `33fe367`, CI verde nos dois jobs, deploy
+> ok):** a última varredura da área logada — gravações do aluno que tentam de novo, falha do login
+> ao abrir sem expulsar ninguém, a moldura do app com tela de erro, e o ponto do vídeo por aula e
+> vídeo. **Provado no site:** a versão nova (`muwhzedy-3d6c240e`) no cabeçalho e no `versao.txt`;
+> arquivo antigo → 404. Abertos para o operador: P44 e o player aberto há mais de 24 h.
 > **PUBLICADO em 06/10/2026 (`main` = `0ba6d76`, CI verde nos dois jobs, deploy ok):** atualizar o
 > site sem atrapalhar quem está estudando, na área logada inteira — a versão nova entra no próximo
 > clique, os pedaços do aluno e do admin baixados com antecedência, o envio de vídeo nunca cortado,
@@ -2143,6 +2148,23 @@ própria**.*
       `desligarComCalma` no aviso de desligar (`server/src/lib/desligar.ts`). Já coberto sem código
       novo: a volta à aba busca os dados de novo (React Query), o que já informa a versão. Mutação:
       as 9 partes reprovam.
+- [x] **Aula aberta há mais de 24 h: o player renova o endereço sozinho** *(decisão do operador,
+      06/10/2026: "se expirar, recarrega a página ao dar play ou recarrega aula" — fecha o achado da
+      varredura do mesmo dia)*. A doc do Bunny (context7) diz que abrir o player com o endereço
+      vencido dá 403. Agora o `BunnyPlayer`, 10 min antes de vencer — ou quando a pessoa dá play num
+      vencido (o relógio atrasa com a aba em segundo plano) —, pede um endereço novo à página da aula
+      e recarrega só o player, no ponto guardado, pausado se estava pausado. Um pedido por vez (o
+      play avisa várias vezes por segundo). Endereço que ainda vale nunca troca: trocar de aba
+      continua sem recomeçar o vídeo. Mutação: as 6 partes reprovam.
+- [x] **A duração de cada aula, o "% concluído" no topo da aula, e o endereço inexistente** *(decisões
+      do operador, 06/10/2026, a partir do LinkedIn Learning)*: (1) no Conteúdo do curso da página
+      da aula, **a duração embaixo de cada aula de VÍDEO** ("1min 22s", "48s", "1h 05min" —
+      `minutosESegundos`); aula de texto e vídeo ainda processando vêm sem (o servidor manda
+      `duracaoSegundos`, pela mesma regra da soma do curso: aula que virou texto não leva o tempo do
+      vídeo antigo); (2) **no topo da aula, depois de "Salvar curso", o "% concluído"** — o mesmo
+      número da barra e do cartão, só logado; (3) **endereço que não existe no app leva ao Início**
+      (P44 resolvida — rota `*` do `App.tsx`; antes, página em branco). Mutação: as 6 partes
+      reprovam.
 - [x] **Última varredura da área logada, do aluno e do admin** *(pedido do operador, 06/10/2026:
       "análise minuciosa de tudo que está na área logada para não quebrar")*. Consertado:
       (1) **concluir a aula, salvar e marcar notificação como lida tentam de novo** depois de um

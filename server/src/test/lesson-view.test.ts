@@ -72,9 +72,10 @@ beforeAll(async () => {
   process.env.BUNNY_STREAM_LESSONS_TOKEN_KEY = "token-de-teste";
 
   const pt = await curso("curso", "PUBLISHED", "PT", [
-    { title: "Paga", status: "PUBLISHED", bunnyVideoId: VIDEO_PAGO, displayOrder: 0 },
+    { title: "Paga", status: "PUBLISHED", bunnyVideoId: VIDEO_PAGO, videoDurationSeconds: 82, displayOrder: 0 },
     { title: "Grátis", status: "PUBLISHED", bunnyVideoId: VIDEO_GRATIS, isFreePreview: true, displayOrder: 1 },
-    { title: "Texto", status: "PUBLISHED", kind: "TEXT", content: SEGREDO, displayOrder: 2 },
+    // Era vídeo e virou texto: a duração antiga ficou no banco, e não pode aparecer.
+    { title: "Texto", status: "PUBLISHED", kind: "TEXT", content: SEGREDO, videoDurationSeconds: 999, displayOrder: 2 },
     { title: "Rascunho", status: "DRAFT", displayOrder: 3 },
   ]);
   const [paga, gratis, texto, rascunho] = pt.modules[0].lessons;
@@ -195,6 +196,17 @@ describe("a aula paga", () => {
 
 // Os DETALHES do curso ficam embaixo do player em toda aula (decisão do operador,
 // 29/09/2026) — inclusive na aula bloqueada, onde a pessoa decide se é para ela.
+// A DURAÇÃO AO LADO DE CADA AULA, como no LinkedIn (operador, 06/10/2026).
+describe("a duração de cada aula na lista", () => {
+  it("vídeo leva a duração; vídeo ainda processando e aula de texto, não", async () => {
+    const res = await pagina(ids.paga);
+    const duracoes = Object.fromEntries(
+      (res.body.curso.modulos[0].aulas as { title: string; duracaoSegundos: number | null }[]).map((a) => [a.title, a.duracaoSegundos]),
+    );
+    expect(duracoes).toEqual({ Paga: 82, Grátis: null, Texto: null });
+  });
+});
+
 describe("os detalhes do curso", () => {
   it("vêm na página da aula, liberada ou bloqueada", async () => {
     for (const cookies of [member, []]) {

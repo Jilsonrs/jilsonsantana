@@ -28,6 +28,7 @@ export function LessonContent({
   temArquivos,
   aoConcluir,
   aoTerminar,
+  renovarVideo,
 }: {
   aula: PaginaDaAula["aula"];
   comoAdmin: boolean;
@@ -37,6 +38,8 @@ export function LessonContent({
   aoConcluir?: () => void;
   /** O vídeo terminou: abrir a próxima aula (operador, 05/10/2026). */
   aoTerminar?: () => void;
+  /** O endereço do vídeo está vencendo: buscar a aula de novo, com um endereço novo (06/10/2026). */
+  renovarVideo?: () => void;
 }) {
   const t = useT();
 
@@ -57,7 +60,7 @@ export function LessonContent({
     return aula.playerUrl ? (
       <div className="w-full">
         {/* O ponto fica guardado por aula: quem sai e volta abre onde parou (05/10/2026). */}
-        <BunnyPlayer src={aula.playerUrl} title={aula.title} aoConcluir={aoConcluir} aoTerminar={aoTerminar} lembrarComo={String(aula.id)} />
+        <BunnyPlayer src={aula.playerUrl} title={aula.title} aoConcluir={aoConcluir} aoTerminar={aoTerminar} lembrarComo={String(aula.id)} aoVencer={renovarVideo} />
       </div>
     ) : (
       <div className={QUADRO}>

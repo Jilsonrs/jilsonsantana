@@ -38,7 +38,8 @@ import { definirMenuDoCursoFechado } from "@/lib/menu-do-curso";
 // destacada no conteúdo do curso; o rascunho aparece só para o admin; os recursos;
 // e o painel da IA.
 
-const PLAYER = "https://iframe.mediadelivery.net/embed/762605/abc?token=t&expires=1";
+// Vale até 2100: um endereço vencido faria a aula pedir outro (06/10/2026).
+const PLAYER = "https://iframe.mediadelivery.net/embed/762605/abc?token=t&expires=4102444800";
 
 function pagina(aula: Partial<PaginaDaAula["aula"]> = {}, rascunho = false): PaginaDaAula {
   return {
@@ -66,8 +67,8 @@ function pagina(aula: Partial<PaginaDaAula["aula"]> = {}, rascunho = false): Pag
           title: "Fundamentos",
           status: "PUBLISHED",
           aulas: [
-            { id: 11, title: "Abertura", kind: "VIDEO", isFreePreview: false, status: "PUBLISHED", temArquivos: true },
-            { id: 12, title: "Leitura", kind: "TEXT", isFreePreview: false, status: "PUBLISHED", temArquivos: true },
+            { id: 11, title: "Abertura", kind: "VIDEO", isFreePreview: false, status: "PUBLISHED", temArquivos: true, duracaoSegundos: 82 },
+            { id: 12, title: "Leitura", kind: "TEXT", isFreePreview: false, status: "PUBLISHED", temArquivos: true, duracaoSegundos: null },
           ],
         },
         ...(rascunho
@@ -134,6 +135,23 @@ describe("página da aula — estados", () => {
 });
 
 describe("página da aula — o conteúdo", () => {
+  // Aba aberta de um dia para o outro (decisão do operador, 06/10/2026: "se
+  // expirar, recarrega a aula"): a aula busca um endereço novo e o player troca.
+  it("endereço do vídeo vencido: a aula busca de novo e o player recebe o endereço novo", async () => {
+    // Logado: a página tem uma busca só (o visitante tem também a da lista de aulas,
+    // que traria o endereço novo por outro caminho e esconderia a renovação).
+    useSessionMock.mockReturnValue({ data: { user: { role: Role.MEMBER } }, isPending: false });
+    const vencido = PLAYER.replace("token=t", "token=velho").replace("expires=4102444800", "expires=1");
+    getLessonPage.mockResolvedValueOnce(pagina({ playerUrl: vencido })).mockResolvedValue(pagina({ playerUrl: PLAYER }));
+    abrir();
+    const player = await screen.findByTitle("Abertura");
+    await waitFor(() => expect(player.getAttribute("src")).toBe(PLAYER));
+    // Com o endereço novo no player, a aula para de pedir.
+    const pedidos = getLessonPage.mock.calls.length;
+    await new Promise((r) => setTimeout(r, 50));
+    expect(getLessonPage.mock.calls.length).toBe(pedidos);
+  });
+
   it("aula de vídeo liberada: o player grande, com o endereço do servidor", async () => {
     abrir();
     const player = await screen.findByTitle("Abertura");
@@ -191,6 +209,14 @@ describe("página da aula — o conteúdo do curso", () => {
     const outra = within(nav).getByRole("link", { name: /Leitura/ });
     expect(outra.getAttribute("aria-current")).toBeNull();
     expect(outra.getAttribute("href")).toBe("/aluno/aula/12");
+  });
+
+  // A duração ao lado de cada aula, como no LinkedIn (operador, 06/10/2026).
+  it("a aula de vídeo mostra a duração; a de texto, não", async () => {
+    abrir();
+    const nav = await screen.findByRole("navigation", { name: "Conteúdo do curso" });
+    expect(within(nav).getByRole("link", { name: /Abertura/ }).textContent).toContain("1min 22s");
+    expect(within(nav).getByRole("link", { name: /Leitura/ }).textContent).not.toMatch(/\d+(min|s)\b/);
   });
 
   it("Arquivos, junto à aula, lista os arquivos para baixar", async () => {
@@ -362,6 +388,8 @@ describe("página da aula — o progresso", () => {
     abrir();
     const barra = await screen.findByRole("progressbar", { name: "Progresso no curso" });
     expect(barra.getAttribute("aria-valuenow")).toBe("50");
+    // E o número escrito no topo, como no cartão (operador, 06/10/2026).
+    expect(screen.getByText("50% concluído")).toBeTruthy();
   });
 
   it("visitante: sem barra, e abrir a aula de texto não conclui nada", async () => {
@@ -369,6 +397,7 @@ describe("página da aula — o progresso", () => {
     abrir("/aluno/aula/12");
     await screen.findByText("Texto da aula.");
     expect(screen.queryByRole("progressbar")).toBeNull();
+    expect(screen.queryByText(/% concluído/)).toBeNull();
     expect(concluirAula).not.toHaveBeenCalled();
   });
 

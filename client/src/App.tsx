@@ -80,6 +80,11 @@ export default function App() {
           <Route path="/admin/site/depoimentos" element={<AdminTestimonialsPage />} />
           <Route path="/admin/site/faq" element={<AdminFaqPage />} />
         </Route>
+        {/* Endereço que não existe no app — um favorito antigo de /conta, um
+            endereço digitado errado — leva ao Início (decisão do operador,
+            06/10/2026, P44); antes, a página ficava em branco. Quem não entrou
+            segue do Início para o login, como em qualquer tela protegida. */}
+        <Route path="*" element={<Navigate to="/inicio" replace />} />
       </Route>
     </Routes>
   );
