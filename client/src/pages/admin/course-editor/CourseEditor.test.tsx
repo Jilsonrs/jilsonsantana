@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { screen, fireEvent, waitFor, within, act } from "@testing-library/react";
-import { Role } from "@jilson/core";
+import { Role, courseUpdateSchema } from "@jilson/core";
 import { renderWithProviders } from "@/test-utils";
 import type { AdminCourseDetail } from "@/lib/api";
 import { SecondaryNav } from "@/components/nav/SecondaryNav";
@@ -242,6 +242,28 @@ describe("Editor do curso — cada passo salva só a parte dele", () => {
 
     await waitFor(() => expect(updateCourse).toHaveBeenCalled());
     expect(updateCourse.mock.calls[0][1]).toEqual({ status: "PUBLISHED", displayOrder: 0, materiais: [] });
+  });
+
+  // A ORDEM EDITADA (defeito achado pelo operador em 05/10/2026): o campo guardava
+  // o texto digitado ("3"), o Salvar do passo envia os valores crus, e o servidor
+  // recusava (400) — com qualquer status. Vai o NÚMERO, e o envio passa no mesmo
+  // schema que o servidor confere. Apagada, a ordem vale 0, como antes.
+  it("Publicar: a Ordem editada vai como número, e o envio passa no schema do servidor", async () => {
+    updateCourse.mockResolvedValue(CURSO_DE_TESTE);
+    abrir("/admin/cursos/1/publicar");
+    const ordem = (await screen.findByLabelText("Ordem")) as HTMLInputElement;
+    fireEvent.change(ordem, { target: { value: "3" } });
+    salvar();
+
+    await waitFor(() => expect(updateCourse).toHaveBeenCalled());
+    const enviado = updateCourse.mock.calls[0][1];
+    expect(enviado.displayOrder).toBe(3);
+    expect(courseUpdateSchema.safeParse(enviado).success).toBe(true);
+
+    fireEvent.change(ordem, { target: { value: "" } });
+    salvar();
+    await waitFor(() => expect(updateCourse).toHaveBeenCalledTimes(2));
+    expect(updateCourse.mock.calls[1][1].displayOrder).toBe(0);
   });
 
   // OS MATERIAIS EXCLUSIVOS (decisão do operador, 04/10/2026): cada caixa com o

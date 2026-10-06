@@ -204,6 +204,10 @@
 > (aula concluída sozinha, barra na aula e no cartão), o vídeo que não recomeça ao trocar de aba
 > (a apresentação abre pausada, a aula toca sozinha) e o "Salvos". **Primeiro teste com o player de
 > verdade: com o operador** (assistir uma aula até perto do fim e ver a barra andar).
+> **PUBLICADO em 05/10/2026, à noite (`main` = `ce94db8`, CI verde nos dois jobs, deploy ok):** o
+> ✓ dos passos Legendas e Mensagens, e o gerador de esquema do Better Auth oficial (`auth`, na
+> versão do site). *(O CI da `main` ficou ~10 min na fila por lentidão do GitHub Actions; o
+> deploy já tinha saído, e o conteúdo era idêntico ao do `dev`, que tinha passado nos dois jobs.)*
 > **PUBLICADO em 05/10/2026, no fim do dia (`main` = `f956f6c`, CI verde nos dois jobs, deploy
 > ok):** o fim do vídeo abre a próxima aula e quem volta abre onde parou; os testes de servidor
 > num servidor em `127.0.0.1` (fim das falhas intermitentes); `npm run test:changed`; e o cache
@@ -2093,6 +2097,12 @@ própria**.*
       mostrar a anterior por algumas horas. O tamanho da letra da legenda é ajuste de visual da
       biblioteca no painel (vale para todos); não achei na doc um controle para o aluno.
 
+- [x] **Defeito corrigido (05/10/2026, achado pelo operador): salvar o passo Publicar dava erro
+      depois de editar a Ordem**, com qualquer status. O campo guardava o texto digitado ("1"), e o
+      Salvar de cada passo envia os valores crus do formulário (desde o editor em 7 passos, 28/09) —
+      o servidor recusava (400). O campo agora guarda o número (`CoursePublishSection.tsx`); o teste
+      edita a Ordem, salva e confere o envio contra o MESMO schema do servidor
+      (`courseUpdateSchema`). Era o único campo numérico do formulário do curso.
 - [x] **O ✓ dos passos Legendas e Mensagens** *(decisões do operador, 05/10/2026 — fecha a P42)*:
       Legendas com todas as aulas de vídeo publicadas com legenda em dia (a mesma conta do "x de
       y" da tela, numa função só no servidor — `contagemDeLegendas`; a apresentação não conta;
