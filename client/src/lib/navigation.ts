@@ -3,6 +3,7 @@ import {
   Globe,
   LayoutDashboard,
   Library,
+  Megaphone,
   PlayCircle,
   Route,
   Signpost,
@@ -241,6 +242,25 @@ export function navegacao(t: AppTexts): Secao[] {
       ],
     },
     {
+      // COMUNICAÇÃO (decisões do operador, 06/10/2026, a partir da Udemy): o lugar
+      // do operador para falar com os alunos, antes de "Alunos". As Dúvidas são a
+      // fila do JilsonAI (privada: o que ele não resolve chega ao operador), que
+      // saiu do JilsonAI Admin para cá.
+      label: "Comunicação",
+      to: "/admin/comunicacao",
+      icon: Megaphone,
+      papel: Role.ADMIN,
+      estado: "ativo",
+      filhos: [
+        { label: "Notificações", to: "/admin/comunicacao/notificacoes" },
+        { label: "Mensagens automáticas", to: "/admin/comunicacao/mensagens-automaticas" },
+        { label: "Dúvidas", to: "/admin/comunicacao/duvidas", estado: "planejado" }, // JilsonAI, Fase 6
+        { label: "E-mails educacionais", to: "/admin/comunicacao/emails-educacionais", estado: "planejado" }, // C4
+        { label: "E-mails promocionais", to: "/admin/comunicacao/emails-promocionais", estado: "planejado" }, // C5
+        { label: "Insights do JilsonAI", to: "/admin/comunicacao/insights", estado: "planejado" }, // depois do uso real
+      ],
+    },
+    {
       label: "Alunos",
       to: "/admin/alunos",
       icon: Users,
@@ -255,7 +275,6 @@ export function navegacao(t: AppTexts): Secao[] {
       papel: Role.ADMIN,
       estado: "planejado", // Fase 6
       filhos: [
-        { label: "Escalações", to: "/admin/jilsonai/escalacoes" },
         { label: "Persona", to: "/admin/jilsonai/persona" },
         { label: "Modelo", to: "/admin/jilsonai/modelo" },
         { label: "Quotas", to: "/admin/jilsonai/quotas" },

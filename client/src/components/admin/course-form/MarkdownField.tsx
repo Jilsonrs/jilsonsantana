@@ -9,8 +9,9 @@ import { cn } from "@/lib/utils";
 // Texto em Markdown, como o GitHub: botões em cima do campo e a aba Visualizar
 // (decisão do operador, 27/09/2026). O texto é guardado como está. Serve à
 // descrição do curso, ao texto da aula de texto (Bloco E, etapa 2) e às mensagens
-// do curso (04/10/2026): cada formulário tem um campo de texto com um desses nomes.
-type NomeDoCampo = "description" | "content" | "welcomeMessage" | "congratsMessage";
+// do curso (04/10/2026) e ao texto do aviso de Comunicação (`body`, 06/10/2026): cada
+// formulário tem um campo de texto com um desses nomes.
+type NomeDoCampo = "description" | "content" | "welcomeMessage" | "congratsMessage" | "body";
 type CamposDeTexto = Record<NomeDoCampo, string>;
 
 // A peça que desenha o Markdown (~37 KB compactados) só baixa quando alguém abre

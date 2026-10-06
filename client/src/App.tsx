@@ -25,6 +25,9 @@ import { ROTAS_DO_EDITOR } from "@/pages/admin/course-editor/steps";
 import { AdminSiteTextPage } from "@/pages/admin/AdminSiteTextPage";
 import { AdminTestimonialsPage } from "@/pages/admin/AdminTestimonialsPage";
 import { AdminFaqPage } from "@/pages/admin/AdminFaqPage";
+import { AvisosPage } from "@/pages/admin/comunicacao/AvisosPage";
+import { AvisoEditorPage } from "@/pages/admin/comunicacao/AvisoEditorPage";
+import { MensagensAutomaticasPage } from "@/pages/admin/comunicacao/MensagensAutomaticasPage";
 
 export default function App() {
   return (
@@ -82,6 +85,13 @@ export default function App() {
           <Route path="/admin/site/textos" element={<AdminSiteTextPage />} />
           <Route path="/admin/site/depoimentos" element={<AdminTestimonialsPage />} />
           <Route path="/admin/site/faq" element={<AdminFaqPage />} />
+          {/* COMUNICAÇÃO (bloco C1 — decisões do operador, 06/10/2026). O link do menu
+              é /admin/comunicacao, que leva a Notificações (como "Site" leva a Textos). */}
+          <Route path="/admin/comunicacao" element={<Navigate to="/admin/comunicacao/notificacoes" replace />} />
+          <Route path="/admin/comunicacao/notificacoes" element={<AvisosPage />} />
+          <Route path="/admin/comunicacao/notificacoes/nova" element={<AvisoEditorPage />} />
+          <Route path="/admin/comunicacao/notificacoes/:id" element={<AvisoEditorPage />} />
+          <Route path="/admin/comunicacao/mensagens-automaticas" element={<MensagensAutomaticasPage />} />
         </Route>
         {/* Endereço que não existe no app — um favorito antigo de /conta, um
             endereço digitado errado — leva ao Início (decisão do operador,

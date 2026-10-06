@@ -293,6 +293,27 @@ describe("itensSecundarios — o nível 2 só aparece quando vale a pena", () =>
     }
   });
 
+  // COMUNICAÇÃO (decisões do operador, 06/10/2026): antes de "Alunos", com o nível 2;
+  // o que ainda não existe é EM BREVE. As Dúvidas saíram do JilsonAI Admin para cá.
+  it("Comunicação vem antes de Alunos, com o nível 2 e a mensagem aberta acendendo Notificações", () => {
+    const doAdmin = secoesVisiveis(Role.ADMIN);
+    const rotulos = doAdmin.map((s) => s.label);
+    expect(rotulos.indexOf("Comunicação")).toBe(rotulos.indexOf("Alunos") - 1);
+    expect(secaoAtiva("/admin/comunicacao/notificacoes/5", doAdmin)?.label).toBe("Comunicação");
+    const itens = itensSecundarios("/admin/comunicacao/notificacoes", doAdmin);
+    expect(itens.map((i) => i.label)).toEqual([
+      "Notificações",
+      "Mensagens automáticas",
+      "Dúvidas",
+      "E-mails educacionais",
+      "E-mails promocionais",
+      "Insights do JilsonAI",
+    ]);
+    expect(itens.filter((i) => i.estado !== "planejado").map((i) => i.label)).toEqual(["Notificações", "Mensagens automáticas"]);
+    const jilsonai = doAdmin.find((s) => s.label === "JilsonAI Admin");
+    expect(jilsonai?.filhos?.map((f) => f.label)).not.toContain("Escalações");
+  });
+
   it("nenhum filho de Site é prefixo de outro — senão dois acendem juntos", () => {
     // A coluna secundária acende um item também nas sub-rotas dele. Se Textos
     // voltasse para /admin/site, ficaria aceso em /admin/site/depoimentos.

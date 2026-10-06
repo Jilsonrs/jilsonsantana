@@ -2304,10 +2304,20 @@ própria**.*
           mensagens automáticas em `/api/admin/course-messages`); o sino traz o aviso com o
           **título e o texto atuais** e sem link de curso (campo novo `titulo`, API aditiva).
           Mutação: as 6 partes reprovam.
-    - [ ] **C1, etapa 2 — as telas**: o item Comunicação no menu (e "Escalações" saindo do
-          JilsonAI Admin para Comunicação → Dúvidas, EM BREVE); Notificações (lista, nova, editar,
-          apagar, Visualizar, Salvar como rascunho, Enviar com a contagem); Mensagens automáticas;
-          o aluno vê o título do aviso.
+    - [x] **C1, etapa 2 — as telas** *(06/10/2026)*: **Comunicação** no menu do admin, antes de
+          Alunos, com o nível 2 (Notificações e Mensagens automáticas ativas; Dúvidas, E-mails
+          educacionais, E-mails promocionais e Insights do JilsonAI com EM BREVE) — e "Escalações"
+          saiu do JilsonAI Admin; **Notificações** (`/admin/comunicacao/notificacoes`): a lista
+          (para quem, rascunho ou "Enviada em", "x de y leram", Editar, Apagar com confirmação), a
+          **Nova notificação** e o **Editar** (título, texto no mesmo editor com Visualizar, para
+          quem; Salvar como rascunho; **Enviar** salva, diz "Vai para N pessoas" e só envia ao
+          confirmar; enviada: só Salvar, com o "para quem" travado); **Mensagens automáticas**
+          (`/admin/comunicacao/mensagens-automaticas`): a boas-vindas e os parabéns de cada curso,
+          com "Editar no curso"; no aluno, o sino e a mensagem mostram o **título do aviso**, sem
+          "Ir para o curso". Defeito pego pelo teste antes de chegar à tela: "nenhum curso
+          escolhido" virava **0** (e a mensagem saía "Number must be greater than 0" em vez de
+          "Escolha o curso."). Textos do admin, rascunho do agente: P50. Mutação: as 8 partes
+          reprovam.
     - [ ] **C2 — A base do e-mail** (nada chega a aluno): a peça `resend` e o renderizador de
           Markdown no servidor (dependências novas — OK do operador no bloco), um ponto só de envio
           (`server/src/lib/email.ts`, `await` em `try/catch`), o modelo base, "enviar um e-mail de

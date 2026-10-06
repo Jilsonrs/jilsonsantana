@@ -84,6 +84,20 @@ describe("Uma notificação — o conteúdo", () => {
   });
 });
 
+// O aviso de Comunicação (06/10/2026): o título que o operador escreveu, sem link de curso.
+describe("Uma notificação — o aviso de Comunicação", () => {
+  it("o título do aviso, o texto, e nenhum Ir para o curso", async () => {
+    getNotificacoes.mockResolvedValue({
+      naoLidas: 1,
+      itens: [{ ...UMA, tipo: "AVISO", titulo: "Aula ao vivo hoje", texto: "Às **20h**.", curso: null }],
+    });
+    abrir();
+    expect(await screen.findByRole("heading", { name: "Aula ao vivo hoje" })).toBeTruthy();
+    expect((await screen.findByText("20h")).tagName).toBe("STRONG");
+    expect(screen.queryByRole("link", { name: "Ir para o curso" })).toBeNull();
+  });
+});
+
 describe("Uma notificação — lida", () => {
   it("abrir a não lida a marca como lida, uma vez", async () => {
     abrir();
