@@ -250,6 +250,7 @@ export const en: Dict = {
       meusEstudos: "My learning",
       emAndamento: "In progress",
       salvos: "Saved",
+      notificacoes: "Notifications",
       minhasTrilhas: "My learning paths",
       concluidos: "Completed",
       jilsonai: "JilsonAI",
@@ -315,6 +316,7 @@ export const en: Dict = {
       parabens: "Congratulations! You completed {curso}",
       irParaOCurso: "Go to the course",
       naoLida: "Unread",
+      naoEncontrada: "Notification not found.",
     },
     salvos: {
       vazio: "Nothing saved yet. Save lessons and courses to watch later.",

@@ -204,7 +204,11 @@
 > (aula concluída sozinha, barra na aula e no cartão), o vídeo que não recomeça ao trocar de aba
 > (a apresentação abre pausada, a aula toca sozinha) e o "Salvos". **Primeiro teste com o player de
 > verdade: com o operador** (assistir uma aula até perto do fim e ver a barra andar).
-> **PUBLICADO em 06/10/2026, por último (`main` = `04ef820`, CI verde nos dois jobs, deploy ok):**
+> **PUBLICADO em 06/10/2026, por último (`main` = `40ae6f8`, CI verde nos dois jobs, deploy ok):**
+> a prévia do sino volta a mostrar só as 2 primeiras linhas e a data, como na Udemy (o clique abre
+> a mensagem completa em "Ver todas"). **Provado no site:** a versão nova (`muwymfgl-553ac24d`) no
+> cabeçalho e no `versao.txt`.
+> **PUBLICADO em 06/10/2026 (`main` = `04ef820`, CI verde nos dois jobs, deploy ok):**
 > a duração ao lado de cada aula e o "% concluído" no topo da aula, o endereço inexistente levando
 > ao Início (P44), e o player renovando sozinho o endereço vencido (aula aberta há mais de 24 h).
 > **Provado no site:** a versão nova (`muwr1cyr-f4243b2b`) no cabeçalho e no `versao.txt`; arquivo
@@ -2153,6 +2157,26 @@ própria**.*
       `desligarComCalma` no aviso de desligar (`server/src/lib/desligar.ts`). Já coberto sem código
       novo: a volta à aba busca os dados de novo (React Query), o que já informa a versão. Mutação:
       as 9 partes reprovam.
+- [x] **A mensagem do curso mostra o que está no admin** *(decisão do operador, 06/10/2026 — P46,
+      opção b: "mostra o que está no Admin porque lê o que está corrigido; e-mail vai ser o que
+      chegar no e-mail do aluno e aí sim não tem como mudar")*. Corrigir a boas-vindas ou os
+      parabéns corrige também para quem já recebeu (`GET /api/notificacoes` lê o texto e o título
+      atuais do curso). **Só enquanto o curso está publicado:** fora do ar ele pode estar sendo
+      reescrito em rascunho, e o texto e o título novos não vazam pelo sino (achado P1 da revisão de
+      segurança de 04/10 continua valendo) — vale o que foi copiado no envio, que segue gravado.
+      Mensagem apagada no admin também volta ao que chegou. "Ir para o curso" fica só nas mensagens
+      de curso; os avisos da Comunicação (4d) não terão esse link. Mutação: as 4 partes reprovam.
+      *Gatilho de reabertura: a mensagem do curso passar a sair também por e-mail — aí o e-mail é o
+      retrato do envio, e a tela pode continuar lendo o atual.*
+- [x] **Notificações em Meus estudos: lista e mensagem completa** *(decisões do operador, 06/10/2026,
+      a partir da Udemy: "o sino é só mais um atalho")*. (1) **"Notificações" no menu de Meus
+      estudos, embaixo de Salvos**; (2) **a página vira LISTA** — título, 2 primeiras linhas e
+      data de cada uma (`/aluno/notificacoes`); (3) **clicar abre a mensagem completa**, com os
+      parágrafos, o link do curso e a volta para a lista (`/aluno/notificacoes/:id`,
+      `NotificacaoPage`); (4) **o sino leva à mesma mensagem**; (5) **abrir a mensagem é o que a
+      marca como lida** — um lugar só, venha do sino ou da lista (antes, era o clique no sino).
+      Texto novo, rascunho do agente: "Notificação não encontrada." e "Notifications" no menu em
+      inglês (P45). Mutação: as 6 partes reprovam.
 - [x] **Defeito corrigido (06/10/2026, achado do operador): a prévia do sino mostrava a mensagem
       inteira, numa massa só**, em vez das 2 primeiras linhas (o texto inteiro, com os parágrafos,
       fica em "Ver todas"). Causa: `line-clamp-2` junto de `block` — a classe de exibição vem
@@ -2251,12 +2275,62 @@ própria**.*
         corrigidos — os parabéns também exigem assinatura (a prévia grátis não basta), e a falha
         ao criar a notificação não derruba a aula nem a conclusão (`semDerrubar`, log só com ids e
         código). Mutação nas três correções: reprovam.
-  - [ ] **4d — A Comunicação: mensagens do operador no mesmo sino** *(próximo bloco, plano próprio —
-        decisões do operador, 04/10/2026)*. Além das mensagens do curso, o operador escreve
-        **qualquer** mensagem na área **Comunicação** do admin: aula ao vivo, evento, pergunta
-        sobre cursos desejados. **Para quem:** todos os alunos, **ou** só os de um curso.
-        **Pergunta sobre cursos desejados é só mensagem por enquanto** (sem enquete, sem resposta).
-        O sino já aceita outros tipos (`NotificationKind` ganha valor novo; `courseId` é opcional).
+  - **4d — COMUNICAÇÃO: o lugar do operador para falar com os alunos** *(decisões do operador,
+        04/10 e 06/10/2026, a partir da área Comunicação da Udemy; plano aprovado em 06/10)*.
+        No menu do admin, **"Comunicação" antes de "Alunos"**, com o nível 2: Notificações ·
+        Mensagens automáticas · Dúvidas · E-mails educacionais · E-mails promocionais · Insights
+        do JilsonAI (o que ainda não existe, com EM BREVE). **O mapa Udemy → escola:**
+        Perguntas e respostas → **Dúvidas, PRIVADO** (o JilsonAI responde primeiro; o que ele não
+        resolve chega ao operador, e a resposta volta ao aluno — sem perguntas públicas entre
+        alunos; a "Escalações" do JilsonAI Admin passa para cá) · Perguntas em destaque → não entra
+        (as perguntas frequentes de cada curso já existem e alimentam o JilsonAI) · Insights do AI
+        Assistant → **Insights do JilsonAI** (depois de uso real) · Mensagens automáticas → **a
+        boas-vindas e os parabéns de cada curso, numa lista** · conversa 1 a 1 → a fila das Dúvidas
+        · Tarefas → não existe na escola · Anúncios educacionais → **E-mails educacionais** ·
+        E-mails promocionais → **E-mails promocionais** (só para quem aceitou) · o sino →
+        **Notificações**. **E-mail pelo Resend** (doc via context7): ele faz o envio em massa, a
+        página de descadastro (educacional × promocional) e os números (entregues, abertura,
+        cliques, descadastro) — sem fila nem contador nossos. **Decisões do operador (06/10):**
+        "todos" = **todo mundo com conta**; "de um curso" = **quem já começou o curso** (abriu uma
+        aula com acesso — `CourseStart`); notificação enviada pode ser **editada** (todos veem o
+        texto novo) e **apagada** (some do sino de todos).
+    - [x] **C1, etapa 1 — banco e servidor** *(06/10/2026)*: migration `comunicacao_notificacoes`
+          (`Announcement`, o enum `AnnouncementAudience`, `NotificationKind.AVISO`,
+          `Notification.announcementId` com CHECK, e `CourseStart` preenchido com quem já tinha
+          boas-vindas ou aula concluída; RLS nas duas tabelas novas — conferido: zero tabelas sem
+          RLS); a página da aula registra o começo do curso (aula com acesso, logado; e o admin pela
+          rota dele); `server/src/routes/admin-announcements.ts` (listar com recebidas/lidas,
+          quantos vão receber, criar como rascunho, salvar, enviar uma vez só, apagar, e as
+          mensagens automáticas em `/api/admin/course-messages`); o sino traz o aviso com o
+          **título e o texto atuais** e sem link de curso (campo novo `titulo`, API aditiva).
+          Mutação: as 6 partes reprovam.
+    - [x] **C1, etapa 2 — as telas** *(06/10/2026)*: **Comunicação** no menu do admin, antes de
+          Alunos, com o nível 2 (Notificações e Mensagens automáticas ativas; Dúvidas, E-mails
+          educacionais, E-mails promocionais e Insights do JilsonAI com EM BREVE) — e "Escalações"
+          saiu do JilsonAI Admin; **Notificações** (`/admin/comunicacao/notificacoes`): a lista
+          (para quem, rascunho ou "Enviada em", "x de y leram", Editar, Apagar com confirmação), a
+          **Nova notificação** e o **Editar** (título, texto no mesmo editor com Visualizar, para
+          quem; Salvar como rascunho; **Enviar** salva, diz "Vai para N pessoas" e só envia ao
+          confirmar; enviada: só Salvar, com o "para quem" travado); **Mensagens automáticas**
+          (`/admin/comunicacao/mensagens-automaticas`): a boas-vindas e os parabéns de cada curso,
+          com "Editar no curso"; no aluno, o sino e a mensagem mostram o **título do aviso**, sem
+          "Ir para o curso". Defeito pego pelo teste antes de chegar à tela: "nenhum curso
+          escolhido" virava **0** (e a mensagem saía "Number must be greater than 0" em vez de
+          "Escolha o curso."). Textos do admin, rascunho do agente: P50. Mutação: as 8 partes
+          reprovam.
+    - [ ] **C2 — A base do e-mail** (nada chega a aluno): a peça `resend` e o renderizador de
+          Markdown no servidor (dependências novas — OK do operador no bloco), um ponto só de envio
+          (`server/src/lib/email.ts`, `await` em `try/catch`), o modelo base, "enviar um e-mail de
+          prévia para mim" e o passo a passo do Resend para o operador (conta, domínio, remetente,
+          chave na Railway).
+    - [ ] **C3 — E-mails da conta**: "esqueci minha senha" (tela + e-mail; doc do Better Auth), a
+          boas-vindas da conta; o "ao assinar" ligado no webhook da Fase 4.
+    - [ ] **C4 — E-mails educacionais** como na Udemy (para quem, assunto, texto com link e imagem,
+          Visualizar, prévia por e-mail, rascunho, Enviar, a lista com os números), alunos
+          sincronizados com o Resend. Depois: filtros por progresso, data de início e "excluir quem
+          fez outro curso", e o agendamento.
+    - [ ] **C5 — E-mails promocionais**: só para quem aceitou; o aceite em Minha conta →
+          Preferências e a regra da página de baixar material (P29).
   - [x] **4c — O sino, a lista e a página Ver todas** *(04/10/2026)*: o sino no cabeçalho, ao lado
         da foto, para aluno e admin, com o número de não lidas ("9+") no nome do botão; a lista
         das 5 mais recentes (título, começo do texto sem as marcas do Markdown, há quanto tempo)

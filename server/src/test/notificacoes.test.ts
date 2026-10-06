@@ -56,7 +56,7 @@ async function curso(mensagens: { welcomeMessage?: string; congratsMessage?: str
     include: { modules: { include: { lessons: { orderBy: { displayOrder: "asc" } } }, orderBy: { id: "asc" } } },
   });
   const [gratis, paga, rascunho] = c.modules[0].lessons;
-  return { id: c.id, gratis: gratis.id, paga: paga.id, rascunho: rascunho.id, moduloRascunho: c.modules[1].lessons[0].id };
+  return { id: c.id, slug: c.slug, gratis: gratis.id, paga: paga.id, rascunho: rascunho.id, moduloRascunho: c.modules[1].lessons[0].id };
 }
 
 beforeAll(async () => {
@@ -207,14 +207,47 @@ describe("o sino — ler e marcar como lida", () => {
 
   // Achado P1 da revisão de segurança (04/10/2026): o título é o do ENVIO. Um
   // curso fora do ar renomeado em rascunho não vaza o nome novo pelo sino.
-  it("curso que saiu do ar e foi renomeado: fica o título do envio, sem o link", async () => {
+  it("curso que saiu do ar e foi reescrito: ficam o título e o texto do envio, sem o link", async () => {
     const c = await curso({ welcomeMessage: "Curso que vai sair" });
     await abrir(c.paga, member);
-    await prisma.course.update({ where: { id: c.id }, data: { status: "DRAFT", title: "Lançamento secreto" } });
+    await prisma.course.update({
+      where: { id: c.id },
+      data: { status: "DRAFT", title: "Lançamento secreto", welcomeMessage: "Texto secreto do rascunho" },
+    });
     const res = await lista(member);
     const item = res.body.itens.find((n: { texto: string }) => n.texto === "Curso que vai sair");
     expect(item.curso).toEqual({ titulo: `Curso ${contador}`, slug: null });
     expect(JSON.stringify(res.body)).not.toContain("Lançamento secreto");
+    expect(JSON.stringify(res.body)).not.toContain("Texto secreto do rascunho");
+  });
+
+  // P46 (decisão do operador, 06/10/2026): a mensagem do curso mostra o que está
+  // no admin — corrigir corrige também para quem já recebeu.
+  it("curso publicado: o texto e o título mostram o que está no admin agora", async () => {
+    const c = await curso({ welcomeMessage: "Abraço, Jilson" });
+    await abrir(c.paga, member);
+    await prisma.course.update({ where: { id: c.id }, data: { welcomeMessage: "Abraço,\n\nJilson", title: "Título corrigido" } });
+    const item = (await lista(member)).body.itens.find((n: { curso: { slug: string | null } | null }) => n.curso?.slug === c.slug);
+    expect(item.texto).toBe("Abraço,\n\nJilson");
+    expect(item.curso.titulo).toBe("Título corrigido");
+  });
+
+  it("os parabéns também mostram a mensagem de parabéns atual", async () => {
+    const c = await curso({ welcomeMessage: "Oi", congratsMessage: "Parabéns!" });
+    await prisma.notification.create({ data: { userId: memberId, courseId: c.id, courseTitle: "x", kind: "PARABENS", body: "Parabéns!" } });
+    await prisma.course.update({ where: { id: c.id }, data: { congratsMessage: "Parabéns, corrigido!" } });
+    const item = (await lista(member)).body.itens.find(
+      (n: { tipo: string; curso: { slug: string | null } | null }) => n.tipo === "PARABENS" && n.curso?.slug === c.slug,
+    );
+    expect(item.texto).toBe("Parabéns, corrigido!");
+  });
+
+  it("mensagem apagada no admin: fica a que chegou", async () => {
+    const c = await curso({ welcomeMessage: "A que chegou" });
+    await abrir(c.paga, member);
+    await prisma.course.update({ where: { id: c.id }, data: { welcomeMessage: "  " } });
+    const item = (await lista(member)).body.itens.find((n: { curso: { slug: string | null } | null }) => n.curso?.slug === c.slug);
+    expect(item.texto).toBe("A que chegou");
   });
 
   it("marcar uma: a própria fica lida; a de outra pessoa dá 404 e continua sem ler", async () => {

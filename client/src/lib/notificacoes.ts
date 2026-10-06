@@ -26,8 +26,10 @@ export function useMarcarLida() {
   });
 }
 
-/** O título da notificação, no idioma do app: "Boas-vindas ao curso X". */
+/** O título da notificação: o do aviso, ou, nas mensagens do curso, "Boas-vindas ao curso X" no idioma do app. */
 export function tituloDaNotificacao(n: api.Notificacao, t: AppTexts): string {
+  // O aviso de Comunicação tem o título que o operador escreveu (06/10/2026).
+  if (n.titulo) return n.titulo;
   const modelo = n.tipo === "PARABENS" ? t.notificacoes.parabens : t.notificacoes.boasVindas;
   return modelo.replace("{curso}", n.curso?.titulo ?? "").trim();
 }

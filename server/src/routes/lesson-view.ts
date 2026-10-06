@@ -11,6 +11,7 @@ import { lerArquivoDaAula } from "../lib/bunny-storage.js";
 import { nomeParaDownload } from "../lib/nome-do-download.js";
 import { aulasConcluidas } from "../lib/progresso.js";
 import { enviarBoasVindas, semDerrubar } from "../lib/notificacoes.js";
+import { registrarInicioDoCurso } from "../lib/inicio-do-curso.js";
 import { oQueOCursoInclui } from "../lib/inclui.js";
 
 const router = Router();
@@ -192,11 +193,15 @@ router.get("/lessons/:id/aula", async (req, res) => {
     const { id: userId } = sessao.user;
     await semDerrubar("boas-vindas", userId, aula.module.courseId, () => enviarBoasVindas(userId, aula.module.courseId));
   }
+  // Abrir uma aula COM ACESSO é começar o curso (06/10/2026): é para estes que vai o
+  // aviso "para os alunos de um curso". A prévia grátis, logado, também conta.
+  const liberada = aulaLiberada(aula, assinante);
+  if (sessao && liberada) await registrarInicioDoCurso(sessao.user.id, aula.module.courseId);
   // A página muda com a assinatura e o progresso de quem pede: nunca em cache.
   res.set("Cache-Control", "private, no-store");
   res.json({
     curso,
-    aula: await aulaParaAPagina(aula, aulaLiberada(aula, assinante), assinante),
+    aula: await aulaParaAPagina(aula, liberada, assinante),
     concluidas: await concluidasDoCurso(sessao?.user.id, curso),
   });
 });
@@ -214,6 +219,7 @@ router.get("/admin/lessons/:id/aula", requireAdmin, async (req, res) => {
   // O admin também recebe: ele testa como aluno (a plataforma é uma só).
   const admin = req.user;
   if (admin) await semDerrubar("boas-vindas", admin.id, aula.module.courseId, () => enviarBoasVindas(admin.id, aula.module.courseId));
+  if (admin) await registrarInicioDoCurso(admin.id, aula.module.courseId);
   res.set("Cache-Control", "private, no-store");
   res.json({ curso, aula: await aulaParaAPagina(aula, true, true), concluidas: await concluidasDoCurso(req.user?.id, curso) });
 });

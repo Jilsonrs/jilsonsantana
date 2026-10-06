@@ -462,6 +462,19 @@ exceto o item 4, que é página pública.
    No **topo da aula** (`pages/aluno/LessonPage.tsx`), depois de "Salvar curso", o "50% concluído",
    o mesmo número da barra fina e do cartão; só para quem está logado. Estrutura pronta, acabamento
    seu. O texto da duração e o "% concluído" têm teste.
+29. **Notificações: a lista e a mensagem completa** *(06/10, decisões do operador, a partir da
+   Udemy)*. "Notificações" entrou no menu de Meus estudos, embaixo de Salvos. A página
+   (`pages/aluno/NotificacoesPage.tsx`) virou **lista** — título, 2 linhas e data, como no sino — e
+   cada item abre a **mensagem completa** (`pages/aluno/NotificacaoPage.tsx`), com "← Notificações"
+   para voltar. Estrutura pronta, acabamento seu. ⚠️ O corte de 2 linhas é `line-clamp-2`
+   **sozinho** (regra 14).
+30. **Comunicação, no admin** *(06/10, decisões do operador, a partir da Udemy)*: o item novo do
+   menu, antes de Alunos (ícone `Megaphone`), com o nível 2. As telas: **Notificações** (a lista,
+   `pages/admin/comunicacao/AvisosPage.tsx`), **Nova/Editar notificação** (`AvisoEditorPage.tsx` +
+   `components/admin/comunicacao/AvisoForm.tsx`: título, texto, "Para quem", e a confirmação "Vai
+   para N pessoas") e **Mensagens automáticas** (`MensagensAutomaticasPage.tsx`). Estrutura pronta,
+   acabamento seu. A confirmação do envio (`role="alertdialog"`), os rótulos dos botões Editar/
+   Apagar e o "para quem" travado na enviada têm teste.
 
 > **Fora do seu trabalho, para não confundir:** o Bunny ganhou **Live Stream** em acesso
 > antecipado (29/09). É só avaliação depois da Fase 3, **não** é tela a desenhar (`docs/bunny.md`

@@ -269,13 +269,16 @@ describe("itensSecundarios — o nível 2 só aparece quando vale a pena", () =>
   // está. Em andamento (só o título, por ora) e Minhas trilhas existem;
   // Concluídos e Certificados são EM BREVE (Fase 5 e 6.5). "Salvos" entrou em
   // 03/10/2026, depois de Minhas trilhas (decisão do operador, "como no LinkedIn").
-  it("Meus estudos mostra os cinco itens, com dois EM BREVE", () => {
-    for (const rota of ["/aluno/em-andamento", "/aluno/minhas-trilhas/7", "/aluno/salvos"]) {
+  // "Notificações" entrou embaixo de Salvos em 06/10/2026 (operador: "o sino é só
+  // mais um atalho"), e a mensagem aberta também acende Meus estudos.
+  it("Meus estudos mostra os seis itens, com dois EM BREVE", () => {
+    for (const rota of ["/aluno/em-andamento", "/aluno/minhas-trilhas/7", "/aluno/salvos", "/aluno/notificacoes", "/aluno/notificacoes/3"]) {
       const itens = itensSecundarios(rota, doAluno);
       expect(itens.map((i) => i.label), rota).toEqual([
         "Em andamento",
         "Minhas trilhas",
         "Salvos",
+        "Notificações",
         "Concluídos",
         "Certificados",
       ]);
@@ -286,7 +289,29 @@ describe("itensSecundarios — o nível 2 só aparece quando vale a pena", () =>
       expect(itens.find((i) => i.label === "Em andamento")?.to).toBe("/aluno/em-andamento");
       expect(itens.find((i) => i.label === "Minhas trilhas")?.to).toBe("/aluno/minhas-trilhas");
       expect(itens.find((i) => i.label === "Salvos")?.to).toBe("/aluno/salvos");
+      expect(itens.find((i) => i.label === "Notificações")?.to).toBe("/aluno/notificacoes");
     }
+  });
+
+  // COMUNICAÇÃO (decisões do operador, 06/10/2026): antes de "Alunos", com o nível 2;
+  // o que ainda não existe é EM BREVE. As Dúvidas saíram do JilsonAI Admin para cá.
+  it("Comunicação vem antes de Alunos, com o nível 2 e a mensagem aberta acendendo Notificações", () => {
+    const doAdmin = secoesVisiveis(Role.ADMIN);
+    const rotulos = doAdmin.map((s) => s.label);
+    expect(rotulos.indexOf("Comunicação")).toBe(rotulos.indexOf("Alunos") - 1);
+    expect(secaoAtiva("/admin/comunicacao/notificacoes/5", doAdmin)?.label).toBe("Comunicação");
+    const itens = itensSecundarios("/admin/comunicacao/notificacoes", doAdmin);
+    expect(itens.map((i) => i.label)).toEqual([
+      "Notificações",
+      "Mensagens automáticas",
+      "Dúvidas",
+      "E-mails educacionais",
+      "E-mails promocionais",
+      "Insights do JilsonAI",
+    ]);
+    expect(itens.filter((i) => i.estado !== "planejado").map((i) => i.label)).toEqual(["Notificações", "Mensagens automáticas"]);
+    const jilsonai = doAdmin.find((s) => s.label === "JilsonAI Admin");
+    expect(jilsonai?.filhos?.map((f) => f.label)).not.toContain("Escalações");
   });
 
   it("nenhum filho de Site é prefixo de outro — senão dois acendem juntos", () => {

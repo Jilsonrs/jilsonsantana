@@ -18,6 +18,7 @@ import adminSiteTextRouter from "./routes/admin-site-text.js";
 import siteTextRouter from "./routes/site-text.js";
 import adminTestimonialsRouter from "./routes/admin-testimonials.js";
 import adminFaqRouter from "./routes/admin-faq.js";
+import adminAnnouncementsRouter from "./routes/admin-announcements.js";
 import adminMediaRouter from "./routes/admin-media.js";
 import adminCourseStructureRouter from "./routes/admin-course-structure.js";
 import adminLessonVideoRouter from "./routes/admin-lesson-video.js";
@@ -82,6 +83,7 @@ app.use("/api", siteTextRouter);
 app.use("/api", adminSiteTextRouter);
 app.use("/api", adminTestimonialsRouter);
 app.use("/api", adminFaqRouter);
+app.use("/api", adminAnnouncementsRouter);
 // Envio de arquivo pelo admin (capa de curso → Bunny Storage). O corpo cru é
 // lido só dentro da rota, com `express.raw` — o `express.json()` acima ignora
 // `image/*`, então não há conflito.

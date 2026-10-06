@@ -40,7 +40,9 @@ router.get("/notificacoes", requireAuth, async (req, res) => {
         createdAt: true,
         readAt: true,
         courseTitle: true,
-        course: { select: { slug: true, status: true } },
+        course: { select: { slug: true, status: true, title: true, welcomeMessage: true, congratsMessage: true } },
+        // O aviso de Comunicação (06/10/2026): o sino lê o título e o texto ATUAIS.
+        announcement: { select: { title: true, body: true } },
       },
     }),
     prisma.notification.count({ where: { userId, readAt: null } }),
@@ -48,19 +50,36 @@ router.get("/notificacoes", requireAuth, async (req, res) => {
   res.set("Cache-Control", "private, no-store");
   res.json({
     naoLidas,
-    itens: linhas.map((n) => ({
-      id: n.id,
-      tipo: n.kind,
-      texto: n.body,
-      criadaEm: n.createdAt,
-      lida: n.readAt !== null,
-      // O título é o do ENVIO (copiado, nunca lido do curso agora: um curso fora
-      // do ar pode ter sido renomeado). O link para a página do curso, só enquanto
-      // ele está publicado — senão levaria a uma página que não existe.
-      curso: n.course
-        ? { titulo: n.courseTitle, slug: n.course.status === ContentStatus.PUBLISHED ? n.course.slug : null }
-        : null,
-    })),
+    itens: linhas.map((n) => {
+      // A MENSAGEM DO CURSO MOSTRA O QUE ESTÁ NO ADMIN (decisão do operador,
+      // 06/10/2026, P46: corrigir a mensagem corrige também para quem já recebeu;
+      // é o e-mail que, depois de chegar, não muda). Só enquanto o curso está
+      // PUBLICADO: fora do ar ele pode estar sendo reescrito em rascunho, e o texto
+      // e o título novos não podem vazar pelo sino (achado P1 da revisão de
+      // segurança, 04/10/2026) — aí vale o que foi copiado no envio. Mensagem
+      // apagada no admin também volta ao que chegou.
+      // O AVISO de Comunicação (bloco C1, 06/10/2026): o título e o texto que estão
+      // no admin agora (a mesma regra), e nenhum link de curso.
+      if (n.announcement) {
+        return { id: n.id, tipo: n.kind, titulo: n.announcement.title, texto: n.announcement.body, criadaEm: n.createdAt, lida: n.readAt !== null, curso: null };
+      }
+      const publicado = n.course?.status === ContentStatus.PUBLISHED;
+      const textoAtual = publicado ? (n.kind === "PARABENS" ? n.course?.congratsMessage : n.course?.welcomeMessage)?.trim() : undefined;
+      return {
+        id: n.id,
+        tipo: n.kind,
+        // Só o aviso tem título próprio; o das mensagens do curso a tela monta.
+        titulo: null,
+        texto: textoAtual || n.body,
+        criadaEm: n.createdAt,
+        lida: n.readAt !== null,
+        // O link para a página do curso, só enquanto ele está publicado — senão
+        // levaria a uma página que não existe.
+        curso: n.course
+          ? { titulo: publicado ? n.course.title : n.courseTitle, slug: publicado ? n.course.slug : null }
+          : null,
+      };
+    }),
   });
 });
 

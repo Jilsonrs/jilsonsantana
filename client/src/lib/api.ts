@@ -23,6 +23,8 @@ import type {
   TestimonialUpdateInput,
   HomeFaqCreateInput,
   HomeFaqUpdateInput,
+  AnnouncementInput,
+  AnnouncementAudience,
 } from "@jilson/core";
 
 // Same-origin by design (mirrors auth-client.ts): in dev the Vite proxy
@@ -467,11 +469,17 @@ export async function alternarSalvo(tipo: "cursos" | "aulas", id: number, salvar
 /** Uma notificação do sino (Bloco E, etapa 4 — 04/10/2026). O texto é Markdown do admin. */
 export type Notificacao = {
   id: number;
-  tipo: "BOAS_VINDAS" | "PARABENS";
+  /** AVISO = o que o operador escreve em Comunicação → Notificações (06/10/2026). */
+  tipo: "BOAS_VINDAS" | "PARABENS" | "AVISO";
+  /**
+   * O título do aviso; nas mensagens do curso, `null` (a tela monta). Opcional: um
+   * servidor de antes desta mudança não o manda (API aditiva).
+   */
+  titulo?: string | null;
   texto: string;
   criadaEm: string;
   lida: boolean;
-  /** O título do envio; `slug` só enquanto o curso está publicado. */
+  /** O título do envio; `slug` só enquanto o curso está publicado. O aviso não tem curso. */
   curso: { titulo: string | null; slug: string | null } | null;
 };
 export type Notificacoes = { naoLidas: number; itens: Notificacao[] };
@@ -762,4 +770,66 @@ export async function adminUpdateHomeFaq(id: number, input: HomeFaqUpdateInput):
 }
 export async function adminDeleteHomeFaq(id: number): Promise<void> {
   await client.delete(`/admin/faq/${id}`);
+}
+
+// ---------------------------------------------------------------- COMUNICAÇÃO
+// O AVISO de Comunicação → Notificações (bloco C1 — decisões do operador,
+// 06/10/2026): rascunho até enviar; enviado, pode ser editado e apagado.
+
+export type AdminAviso = {
+  id: number;
+  title: string;
+  body: string;
+  audience: AnnouncementAudience;
+  course: { id: number; title: string } | null;
+  /** `null` = rascunho. */
+  sentAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  recebidas: number;
+  lidas: number;
+};
+
+export async function adminGetAvisos(): Promise<AdminAviso[]> {
+  const { data } = await client.get<AdminAviso[]>("/admin/announcements");
+  return data;
+}
+export async function adminGetAviso(id: number): Promise<AdminAviso> {
+  const { data } = await client.get<AdminAviso>(`/admin/announcements/${id}`);
+  return data;
+}
+export async function adminCriarAviso(input: AnnouncementInput): Promise<AdminAviso> {
+  const { data } = await client.post<AdminAviso>("/admin/announcements", input);
+  return data;
+}
+export async function adminSalvarAviso(id: number, input: AnnouncementInput): Promise<AdminAviso> {
+  const { data } = await client.put<AdminAviso>(`/admin/announcements/${id}`, input);
+  return data;
+}
+export async function adminEnviarAviso(id: number): Promise<{ enviadas: number }> {
+  const { data } = await client.post<{ enviadas: number }>(`/admin/announcements/${id}/enviar`);
+  return data;
+}
+export async function adminApagarAviso(id: number): Promise<void> {
+  await client.delete(`/admin/announcements/${id}`);
+}
+/** Quantas pessoas vão receber (o Enviar confirma antes). */
+export async function adminContarDestinatarios(audience: AnnouncementAudience, courseId: number | null): Promise<number> {
+  const { data } = await client.get<{ quantos: number }>("/admin/announcements/destinatarios", {
+    params: { audience, ...(courseId ? { courseId } : {}) },
+  });
+  return data.quantos;
+}
+
+/** As MENSAGENS AUTOMÁTICAS de cada curso (a boas-vindas e os parabéns), para a lista. */
+export type MensagensDoCurso = {
+  courseId: number;
+  courseTitle: string;
+  status: ContentStatus;
+  boasVindas: string | null;
+  parabens: string | null;
+};
+export async function adminGetMensagensDosCursos(): Promise<MensagensDoCurso[]> {
+  const { data } = await client.get<MensagensDoCurso[]>("/admin/course-messages");
+  return data;
 }

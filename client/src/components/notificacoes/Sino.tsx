@@ -105,11 +105,9 @@ export function Sino() {
                 {itens.map((n) => (
                   <li key={n.id}>
                     <Link
-                      to={`${ROTA_DAS_NOTIFICACOES}#notificacao-${n.id}`}
-                      onClick={() => {
-                        if (!n.lida) marcar(n.id);
-                        setAberto(false);
-                      }}
+                      // A mensagem completa; abrir é o que a marca como lida (06/10/2026).
+                      to={`${ROTA_DAS_NOTIFICACOES}/${n.id}`}
+                      onClick={() => setAberto(false)}
                       className="flex gap-3 px-4 py-3 hover:bg-muted focus-visible:bg-muted focus-visible:outline-none"
                     >
                       <span
