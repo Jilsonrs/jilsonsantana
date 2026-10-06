@@ -481,7 +481,7 @@ exceto o item 4, que é página pública.
 
 ---
 
-## 4. Treze regras — cada uma já custou tempo aqui
+## 4. Catorze regras — cada uma já custou tempo aqui
 
 **1. Classe de Tailwind tem que ser TEXTO LITERAL.**
 ```tsx
@@ -583,6 +583,11 @@ continuar valendo:
 - **Não crie aviso de "nova versão disponível"**: é exatamente o que o operador decidiu evitar,
   porque passa insegurança. A tela de erro (item 27 da fila) é o último recurso, quase nunca vista.
 - Depois de publicar, **não precisa pedir a ninguém para recarregar** a página.
+
+**14. `line-clamp-N` nunca junto de uma classe de exibição** (`block`, `flex`, `inline-block`,
+`grid`…) *(06/10/2026)*. A classe de exibição vem depois no CSS do Tailwind e anula o corte: o
+texto aparece inteiro, sem erro. Aconteceu na prévia do sino, que mostrava a mensagem toda em vez
+de 2 linhas. **Tem teste** (`components/corte-de-linhas.test.ts`).
 
 ---
 
