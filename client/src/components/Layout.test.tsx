@@ -29,6 +29,18 @@ vi.mock("@/lib/versao", async (original) => ({
   usePreCarregarDoAdmin: (ehAdmin: boolean) => usePreCarregarDoAdmin(ehAdmin),
 }));
 
+// O sino é a peça da moldura que este teste quebra de propósito (06/10/2026).
+const sinoQuebrado = { ligado: false };
+vi.mock("@/components/notificacoes/Sino", async (original) => {
+  const real = await original<typeof import("@/components/notificacoes/Sino")>();
+  return {
+    Sino: () => {
+      if (sinoQuebrado.ligado) throw new Error("o sino quebrou");
+      return real.Sino();
+    },
+  };
+});
+
 import { Layout } from "./Layout";
 
 function marca() {
@@ -224,5 +236,21 @@ describe("Layout — os pedaços do admin", () => {
     useSession.mockReturnValue({ data: null });
     renderWithProviders(<Layout />);
     expect(usePreCarregarDoAdmin).not.toHaveBeenCalledWith(true);
+  });
+});
+
+describe("Layout — a moldura quebrou", () => {
+  it("a tela de erro no lugar da página em branco", () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    useSession.mockReturnValue({ data: { user: { role: Role.MEMBER } } });
+    sinoQuebrado.ligado = true;
+    try {
+      renderWithProviders(<Layout />);
+      expect(screen.getByRole("alert").textContent).toBe("Algo deu errado ao abrir esta tela.");
+      expect(screen.getByRole("button", { name: "Recarregar a página" })).toBeTruthy();
+    } finally {
+      sinoQuebrado.ligado = false;
+      vi.restoreAllMocks();
+    }
   });
 });

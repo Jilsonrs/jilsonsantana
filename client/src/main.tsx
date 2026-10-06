@@ -1,12 +1,12 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { isAxiosError } from "axios";
 import { BrowserRouter } from "react-router-dom";
 import "./index.css";
 import App from "./App.tsx";
 import { captureUtmOnce } from "@/lib/attribution";
 import { recarregarUmaVez } from "@/lib/recarregar";
+import { deveTentarDeNovo } from "@/lib/tentar-de-novo";
 import { desviarLinksQuandoHouverVersaoNova, PEDACOS_DO_ALUNO, preCarregarPedacos } from "@/lib/versao";
 
 // Capture first-touch UTM attribution before the app renders (P1 seam; the
@@ -34,10 +34,7 @@ const queryClient = new QueryClient({
       // succeed on retry — without this, every not-found page state (Bloco 5
       // CourseDetailPage/TrilhaDetailPage) sits on "Carregando…" for ~10s
       // while React Query's default 3 retries + backoff burn through.
-      retry: (failureCount, error) =>
-        isAxiosError(error) && error.response && error.response.status < 500
-          ? false
-          : failureCount < 3,
+      retry: deveTentarDeNovo,
     },
   },
 });

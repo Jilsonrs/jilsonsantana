@@ -16,6 +16,11 @@ function videoDoEndereco(src: string): string {
   return src.split("?")[0];
 }
 
+/** O id do vídeo no Bunny: o último pedaço do caminho do endereço. */
+function idDoVideo(src: string): string {
+  return videoDoEndereco(src).split("/").pop() ?? "";
+}
+
 /** De quantos em quantos segundos o ponto é guardado enquanto o vídeo toca. */
 const PASSO_DO_PONTO = 2;
 
@@ -48,7 +53,11 @@ export function BunnyPlayer({
   // token e validade novos; trocar o `src` recarregaria o player do zero, tocando
   // o que estava pausado. Só um vídeo DIFERENTE troca o endereço — e é nessa
   // hora, uma vez, que o ponto guardado entra.
-  const noPonto = (endereco: string) => (lembrarComo ? enderecoNoPonto(endereco, lerPonto(lembrarComo)) : endereco);
+  // O ponto é da AULA com ESTE vídeo (06/10/2026): se o operador troca o vídeo da
+  // aula, o ponto do vídeo antigo não vale — num vídeo mais curto, ele cairia depois
+  // do fim, e a aula pularia direto para a próxima.
+  const chave = lembrarComo ? `${lembrarComo}:${idDoVideo(src)}` : undefined;
+  const noPonto = (endereco: string) => (chave ? enderecoNoPonto(endereco, lerPonto(chave)) : endereco);
   const [endereco, setEndereco] = useState(() => noPonto(src));
   if (videoDoEndereco(src) !== videoDoEndereco(endereco)) setEndereco(noPonto(src));
   // As funções mais recentes, sem voltar a ouvir o player a cada desenho da tela.
@@ -56,7 +65,7 @@ export function BunnyPlayer({
   aoConcluirRef.current = aoConcluir;
   const aoTerminarRef = useRef(aoTerminar);
   aoTerminarRef.current = aoTerminar;
-  const ouvir = aoConcluir !== undefined || aoTerminar !== undefined || lembrarComo !== undefined;
+  const ouvir = aoConcluir !== undefined || aoTerminar !== undefined || chave !== undefined;
 
   // Efeito: ouvir o player é conversar com o iframe do Bunny, fora do React.
   useEffect(() => {
@@ -70,18 +79,18 @@ export function BunnyPlayer({
       aoTerminar: () => {
         // Viu até o fim: na próxima vez, a aula começa do início.
         terminou = true;
-        if (lembrarComo) esquecerPonto(lembrarComo);
+        if (chave) esquecerPonto(chave);
         aoTerminarRef.current?.();
       },
       aoMudar: (estado) => {
-        if (!lembrarComo || terminou) return;
+        if (!chave || terminou) return;
         const mudou = !ultimo || ultimo.pausado !== estado.pausado || Math.abs(ultimo.segundos - estado.segundos) >= PASSO_DO_PONTO;
         if (!mudou) return;
         ultimo = estado;
-        guardarPonto(lembrarComo, estado);
+        guardarPonto(chave, estado);
       },
     });
-  }, [endereco, ouvir, lembrarComo]);
+  }, [endereco, ouvir, chave]);
 
   return (
     <div className="aspect-video w-full overflow-hidden bg-muted">

@@ -204,6 +204,13 @@
 > (aula concluída sozinha, barra na aula e no cartão), o vídeo que não recomeça ao trocar de aba
 > (a apresentação abre pausada, a aula toca sozinha) e o "Salvos". **Primeiro teste com o player de
 > verdade: com o operador** (assistir uma aula até perto do fim e ver a barra andar).
+> **PUBLICADO em 06/10/2026 (`main` = `0ba6d76`, CI verde nos dois jobs, deploy ok):** atualizar o
+> site sem atrapalhar quem está estudando, na área logada inteira — a versão nova entra no próximo
+> clique, os pedaços do aluno e do admin baixados com antecedência, o envio de vídeo nunca cortado,
+> o teste-guarda dos `import()`, e o servidor antigo terminando os pedidos antes de sair. **Provado
+> no site:** `X-Versao-Do-App` nas respostas da API, igual ao `versao.txt` publicado; arquivo antigo
+> → 404. *Não conferido no site:* o `no-cache` da página do app, que fica atrás da página "Em
+> breve" (só com o acesso de prévia do operador); a página "Em breve" sai com `max-age=0`.
 > **PUBLICADO em 05/10/2026, no fechamento (`main` = `ecc9025`, CI verde nos dois jobs, deploy
 > ok):** o fim da tela em branco depois de publicar (provado no site: arquivo antigo e inexistente
 > → 404; tela do aluno → app), a tela de erro, a aula de texto vazia, e o CC e o certificado no
@@ -2136,6 +2143,26 @@ própria**.*
       `desligarComCalma` no aviso de desligar (`server/src/lib/desligar.ts`). Já coberto sem código
       novo: a volta à aba busca os dados de novo (React Query), o que já informa a versão. Mutação:
       as 9 partes reprovam.
+- [x] **Última varredura da área logada, do aluno e do admin** *(pedido do operador, 06/10/2026:
+      "análise minuciosa de tudo que está na área logada para não quebrar")*. Consertado:
+      (1) **concluir a aula, salvar e marcar notificação como lida tentam de novo** depois de um
+      tropeço de rede ou erro do servidor (antes, a falha sumia em silêncio e a aula ficava sem
+      concluir) — só essas três, que o servidor aceita repetidas; um 4xx nunca insiste
+      (`client/src/lib/tentar-de-novo.ts`); (2) **ao abrir a página, se a conferência do login
+      falhar** (rede, servidor), aparece a tela de erro com "Recarregar" — antes, quem estava logado
+      era mandado para o login (`ProtectedRoute`, `AdminRoute`; conferido no código do Better Auth
+      1.7.5 e via context7: numa falha DEPOIS de aberta, a sessão já se mantinha); (3) **a moldura do
+      app** (menu, sino, topo) ganhou a mesma tela de erro que a tela tinha — antes, um defeito nela
+      deixava a página inteira em branco; (4) **o ponto do vídeo é lembrado por aula E vídeo**:
+      trocar o vídeo de uma aula por um mais curto fazia o ponto antigo cair depois do fim, e a aula
+      pulava direto para a próxima. Conferido sem defeito: trocar de aba não recarrega o player;
+      carregando/erro/vazio nas telas do aluno e do admin; o servidor não tem tarefa "solta" que o
+      derrube, e o download de arquivo trata a falha. Mutação: as 9 partes reprovam.
+      **Achados NÃO consertados (decisão do operador):** endereço inexistente dentro do app (ex.:
+      um favorito antigo de `/conta`) mostra a **página em branco** — falta uma tela "Página não
+      encontrada", que é texto e tela novos (P44 em `pendencias.md`); e um player aberto há **mais
+      de 24 h** usa um endereço assinado já vencido — o que o Bunny faz ao dar play nele não está
+      na doc, então não mexi sem medir.
 - [x] **"Este curso inclui": o ícone CC nas legendas e o "Certificado de conclusão" fixo** *(decisões
       do operador, 05/10/2026 — fecha a P41)*: a última linha, em todo curso; o quadro sempre
       aparece. ⚠️ O certificado nasce na Fase 6.5 e precisa estar no ar antes do lançamento.

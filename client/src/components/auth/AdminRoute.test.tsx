@@ -49,4 +49,20 @@ describe("AdminRoute", () => {
     renderAt();
     expect(screen.getByText("tela de login")).toBeTruthy();
   });
+
+  // A conferência da sessão FALHOU (rede, servidor) ao abrir a página: quem está
+  // logado não pode ser mandado para o login (06/10/2026).
+  it("a sessão não veio por falha (rede, 5xx): a tela de erro, não o login", () => {
+    useSessionMock.mockReturnValue({ data: null, isPending: false, error: { status: 502 } });
+    renderAt();
+    expect(screen.getByRole("alert").textContent).toBe("Algo deu errado ao abrir esta tela.");
+    expect(screen.queryByText("tela de login")).toBeNull();
+    expect(screen.queryByText("painel admin")).toBeNull();
+  });
+
+  it("401 é sem login: vai para o login", () => {
+    useSessionMock.mockReturnValue({ data: null, isPending: false, error: { status: 401 } });
+    renderAt();
+    expect(screen.getByText("tela de login")).toBeTruthy();
+  });
 });

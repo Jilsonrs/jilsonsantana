@@ -297,7 +297,8 @@ teste e o `server` não tem suíte. Não faltou regra; ficou pra depois, e depoi
 
 ### Client
 - TanStack React Query (`useQuery`/`useMutation`) for server state — not `useEffect` + `useState`.
-- Global `QueryClient` retry policy: **never retry 4xx** (a 404 must fail fast, not hang "Carregando…" through the 3 default retries — landed in Fase 2 Bloco 5).
+- Global `QueryClient` retry policy: **never retry 4xx** (a 404 must fail fast, not hang "Carregando…" through the 3 default retries — landed in Fase 2 Bloco 5). A regra é `deveTentarDeNovo` (`client/src/lib/tentar-de-novo.ts`).
+- **Gravação do aluno que o servidor aceita REPETIDA sem efeito a mais** (concluir aula, salvar, marcar como lida — `PUT`/`DELETE` com `skipDuplicates`/`updateMany`) leva `retry: deveTentarDeNovo`: um tropeço de rede não perde o progresso (06/10/2026). **Gravação que CRIA (curso, módulo, aula) nunca tenta de novo** — se a resposta se perdeu depois de gravar, a repetição cria outro.
 - Axios for HTTP (not `fetch`).
 - **Dev é MESMA ORIGEM, via proxy do Vite — nunca chamada cross-origin.** O `vite.config.ts` proxeia `/api` para o server; o Axios usa **`baseURL` relativo (`/api`)**, jamais um host absoluto. **Por que é regra e não detalhe de setup:** a sessão é **cookie**, e em produção client e server saem do mesmo container. Dev cross-origin (5173 → 3000) passaria a exigir CORS, `credentials` e um `sameSite` diferente — dois ambientes com regras de cookie distintas, que é a receita do bug que só aparece em um deles. O proxy **elimina** a diferença em vez de administrá-la. **Corolário de diagnóstico:** se aparecer `Access-Control-Allow-*` no server, algo saiu do desenho — pare e investigue **antes** de adicionar o header.
 - React Hook Form + `zodResolver` for forms.
@@ -395,7 +396,7 @@ NEVER pass a secret as a CLI argument or read one back into the transcript. Comm
 
 - Email/password, database sessions, Prisma adapter on Neon Postgres. Mounted at `/api/auth/{*any}` (before `express.json()`).
 - Server middleware: `requireAuth` (sets `req.user`/`req.session`), `requireAdmin`.
-- Client: `ProtectedRoute` (redirect to `/login` if unauthenticated), `AdminRoute` (redirect non-admins).
+- Client: `ProtectedRoute` (redirect to `/login` if unauthenticated), `AdminRoute` (redirect non-admins). **Sessão que não veio por FALHA (rede, 5xx — `error` do `useSession` sem 401) mostra a tela de erro, nunca o login:** mandar ao login poria para fora quem está logado (06/10/2026). Sem sessão e sem erro, ou 401, é "sem login".
 - **Sign-up is gated, never open self-registration:** `disableSignUp: true`. A user is created by a **trusted trigger** — Phase 1: a seeded test member (and admin Jilson); Phase 4: the Stripe webhook creates the user after payment. Registration is **open to all countries** (plataforma global, PT + EN — ver *Idiomas*).
 - Rate-limit auth routes in production.
 - **`User` fields — keep identity lean, extras optional (Phase 1):**
