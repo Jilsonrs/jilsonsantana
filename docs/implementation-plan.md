@@ -204,6 +204,8 @@
 > (aula concluída sozinha, barra na aula e no cartão), o vídeo que não recomeça ao trocar de aba
 > (a apresentação abre pausada, a aula toca sozinha) e o "Salvos". **Primeiro teste com o player de
 > verdade: com o operador** (assistir uma aula até perto do fim e ver a barra andar).
+> **PUBLICADO em 05/10/2026, por último (`main` = `592d588`, CI verde nos dois jobs, deploy ok):**
+> a correção do Salvar no passo Publicar com a Ordem editada.
 > **PUBLICADO em 05/10/2026, à noite (`main` = `ce94db8`, CI verde nos dois jobs, deploy ok):** o
 > ✓ dos passos Legendas e Mensagens, e o gerador de esquema do Better Auth oficial (`auth`, na
 > versão do site). *(O CI da `main` ficou ~10 min na fila por lentidão do GitHub Actions; o
