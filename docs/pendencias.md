@@ -16,17 +16,19 @@
 > 5. **Item novo ganha o próximo número livre.** Número nunca se reutiliza, para que "P7" queira
 >    dizer sempre a mesma coisa em qualquer conversa.
 >
-> **Próximo número livre: P45** · Atualizada em 06/10/2026
+> **Próximo número livre: P47** · Atualizada em 06/10/2026
 
 ## A. Agora, em sequência *(nascidas da configuração do Bunny, 25/09/2026)*
 
-*Vazia desde 06/10/2026 (a P44, o endereço que não existe no app, foi resolvida: leva ao Início).
-Item novo que precise de resposta rápida entra aqui, com o próximo número livre.*
+| # | O que falta | Onde registrar |
+|---|---|---|
+| P46 | **A mensagem já enviada acompanha a correção?** Hoje a notificação guarda o texto do **momento do envio**, como um e-mail: corrigir a mensagem do curso no admin vale para quem receber **dali em diante**, e quem já recebeu continua vendo o texto antigo (achado do operador, 06/10/2026, na assinatura "Abraço, Jilson Santana"). **(a)** fica assim *(como e-mail; o título do curso também é guardado no envio, por segurança — revisão de 04/10)* · **(b)** a mensagem do curso mostra sempre o texto atual do admin, também para quem já recebeu | `implementation-plan.md` (Bloco E, etapa 4) e `server/src/lib/notificacoes.ts` |
 
 ## B. Conteúdo e cadastro *(tarefas suas, sem ordem fixa)*
 
 | # | O que falta | Onde registrar |
 |---|---|---|
+| P45 | **Revisar os textos novos de 06/10**, rascunho do agente: "Notificação não encontrada." / "Notification not found." (mensagem aberta que não está mais na lista) e "Notifications" (o item do menu em inglês) | `core/src/i18n/pt.ts` e `en.ts` |
 | P12 | Revisar as **15 perguntas da FAQ**, que já estão no admin | no próprio admin |
 | P16 | **Cadastrar os 5 cursos da home** no admin. Tudo o que o cadastro precisa **já está no ar**: o envio da capa e do vídeo promocional, a descrição com negrito e listas, e os limites de caracteres | `implementation-plan.md` → Bloco C4 |
 | P32 | **Confirmar o número de alunos corporativos (4.150+)** que está na home, no bloco do autor (os 107 mil+ e os 70 países já foram confirmados na sessão da home) | no próprio admin, em Textos → Home |

@@ -126,13 +126,16 @@ export function navegacao(t: AppTexts): Secao[] {
       to: "/aluno/em-andamento",
       icon: MockMap,
       estado: "ativo",
-      tambemAtivoEm: ["/aluno/minhas-trilhas", "/aluno/salvos"],
+      tambemAtivoEm: ["/aluno/minhas-trilhas", "/aluno/salvos", "/aluno/notificacoes"],
       filhos: [
         // Existe só com o título; o conteúdo é da Fase 5.
         { label: t.nav.emAndamento, to: "/aluno/em-andamento" },
         { label: t.nav.minhasTrilhas, to: "/aluno/minhas-trilhas" },
         // Salvar para depois (decisão do operador, 03/10/2026, "como no LinkedIn").
         { label: t.nav.salvos, to: "/aluno/salvos" },
+        // A lista de notificações, embaixo de Salvos (decisão do operador, 06/10/2026:
+        // "o sino é só mais um atalho").
+        { label: t.nav.notificacoes, to: "/aluno/notificacoes" },
         { label: t.nav.concluidos, to: "/aluno/concluidos", estado: "planejado" }, // Fase 5
         { label: t.nav.certificados, to: "/aluno/certificados", estado: "planejado" }, // Fase 6.5
       ],

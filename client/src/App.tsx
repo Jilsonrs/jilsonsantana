@@ -17,6 +17,7 @@ import { CourseEntryPage } from "@/pages/aluno/CourseEntryPage";
 import { EmAndamentoPage } from "@/pages/aluno/EmAndamentoPage";
 import { SalvosPage } from "@/pages/aluno/SalvosPage";
 import { NotificacoesPage } from "@/pages/aluno/NotificacoesPage";
+import { NotificacaoPage } from "@/pages/aluno/NotificacaoPage";
 import { AdminCoursesPage } from "@/pages/admin/AdminCoursesPage";
 import { NewCoursePage } from "@/pages/admin/course-editor/NewCoursePage";
 import { CourseEditorLayout } from "@/pages/admin/course-editor/CourseEditorLayout";
@@ -53,6 +54,8 @@ export default function App() {
           <Route path="/aluno/em-andamento" element={<EmAndamentoPage />} />
           <Route path="/aluno/salvos" element={<SalvosPage />} />
           <Route path="/aluno/notificacoes" element={<NotificacoesPage />} />
+          {/* Uma notificação, completa (operador, 06/10/2026): da lista ou do sino. */}
+          <Route path="/aluno/notificacoes/:id" element={<NotificacaoPage />} />
           <Route path="/aluno/minhas-trilhas" element={<MyTrilhasPage />} />
           <Route path="/aluno/minhas-trilhas/:id" element={<MyTrilhaDetailPage />} />
           <Route path="/aluno/conta" element={<AccountPage />} />

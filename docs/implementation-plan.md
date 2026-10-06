@@ -2157,6 +2157,15 @@ própria**.*
       `desligarComCalma` no aviso de desligar (`server/src/lib/desligar.ts`). Já coberto sem código
       novo: a volta à aba busca os dados de novo (React Query), o que já informa a versão. Mutação:
       as 9 partes reprovam.
+- [x] **Notificações em Meus estudos: lista e mensagem completa** *(decisões do operador, 06/10/2026,
+      a partir da Udemy: "o sino é só mais um atalho")*. (1) **"Notificações" no menu de Meus
+      estudos, embaixo de Salvos**; (2) **a página vira LISTA** — título, 2 primeiras linhas e
+      data de cada uma (`/aluno/notificacoes`); (3) **clicar abre a mensagem completa**, com os
+      parágrafos, o link do curso e a volta para a lista (`/aluno/notificacoes/:id`,
+      `NotificacaoPage`); (4) **o sino leva à mesma mensagem**; (5) **abrir a mensagem é o que a
+      marca como lida** — um lugar só, venha do sino ou da lista (antes, era o clique no sino).
+      Texto novo, rascunho do agente: "Notificação não encontrada." e "Notifications" no menu em
+      inglês (P45). Mutação: as 6 partes reprovam.
 - [x] **Defeito corrigido (06/10/2026, achado do operador): a prévia do sino mostrava a mensagem
       inteira, numa massa só**, em vez das 2 primeiras linhas (o texto inteiro, com os parágrafos,
       fica em "Ver todas"). Causa: `line-clamp-2` junto de `block` — a classe de exibição vem

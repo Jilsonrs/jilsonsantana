@@ -19,7 +19,7 @@ import { Sino } from "./Sino";
 
 // O SINO (Bloco E, etapa 4 — decisões do operador, 04/10/2026): só o número no
 // sino; a lista das mais recentes com "Marcar todas como lidas" e "Ver todas";
-// clicar numa notificação marca como lida e leva à página.
+// clicar numa notificação abre a mensagem completa (06/10/2026).
 
 const HA_2_DIAS = new Date(Date.now() - 2 * 86_400_000).toISOString();
 const n = (id: number, extra: Partial<Notificacao> = {}): Notificacao => ({
@@ -146,21 +146,22 @@ describe("Sino — a lista", () => {
 });
 
 describe("Sino — as ações", () => {
-  it("clicar na não lida: marca como lida e leva à página, na notificação", async () => {
+  // O sino é só mais um atalho (operador, 06/10/2026): clicar abre a mensagem
+  // completa; quem marca como lida é abrir a mensagem (NotificacaoPage).
+  it("clicar numa notificação: fecha o sino e abre a mensagem completa", async () => {
     abrir();
     fireEvent.click(await screen.findByRole("button", { name: "Notificações, 2 não lidas" }));
     fireEvent.click(painel().getAllByRole("link")[0]);
-    await waitFor(() => expect(marcarNotificacaoLida).toHaveBeenCalledWith(1));
-    expect(screen.getByTestId("onde").textContent).toBe("/aluno/notificacoes#notificacao-1");
+    expect(screen.getByTestId("onde").textContent).toBe("/aluno/notificacoes/1");
     expect(screen.queryByRole("heading", { name: "Notificações" })).toBeNull();
+    expect(marcarNotificacaoLida).not.toHaveBeenCalled();
   });
 
-  it("clicar na já lida: não marca de novo", async () => {
+  it("a já lida também abre a mensagem dela", async () => {
     abrir();
     fireEvent.click(await screen.findByRole("button", { name: "Notificações, 2 não lidas" }));
     fireEvent.click(painel().getAllByRole("link")[1]);
-    expect(screen.getByTestId("onde").textContent).toBe("/aluno/notificacoes#notificacao-2");
-    expect(marcarNotificacaoLida).not.toHaveBeenCalled();
+    expect(screen.getByTestId("onde").textContent).toBe("/aluno/notificacoes/2");
   });
 
   it("Marcar todas como lidas: marca, e o número some", async () => {

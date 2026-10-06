@@ -266,6 +266,8 @@ export const pt = {
       meusEstudos: "Meus estudos",
       emAndamento: "Em andamento",
       salvos: "Salvos",
+      // A lista de notificações, embaixo de Salvos (decisão do operador, 06/10/2026).
+      notificacoes: "Notificações",
       minhasTrilhas: "Minhas trilhas",
       concluidos: "Concluídos",
       jilsonai: "JilsonAI",
@@ -339,6 +341,8 @@ export const pt = {
       parabens: "Parabéns! Você concluiu {curso}",
       irParaOCurso: "Ir para o curso",
       naoLida: "Não lida",
+      // A notificação aberta que não está mais na lista (rascunho do agente, 06/10/2026).
+      naoEncontrada: "Notificação não encontrada.",
     },
     // A tela Salvos, em Meus estudos (decisão do operador, 03/10/2026).
     salvos: {
