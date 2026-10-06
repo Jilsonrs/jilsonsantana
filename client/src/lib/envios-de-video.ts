@@ -2,6 +2,7 @@ import { useSyncExternalStore } from "react";
 import * as api from "@/lib/api";
 import { enviarVideo } from "@/lib/video-upload";
 import { codigoDoErro } from "@/lib/course-form";
+import { semInterromper } from "@/lib/versao";
 
 /**
  * OS ENVIOS DE VÍDEO EM ANDAMENTO, por aula, FORA dos componentes (pedido do
@@ -40,17 +41,20 @@ export function useEnvioDeVideo(lessonId: number): EstadoDoEnvio | null {
 export async function enviarVideoDaAula(lessonId: number, arquivo: File): Promise<boolean> {
   if (estados.get(lessonId)?.tipo === "enviando") return false;
   mudar(lessonId, { tipo: "enviando", porcentagem: 0 });
-  try {
-    // O nome do arquivo vira o nome do vídeo no Bunny (operador, 27/09/2026).
-    const dados = await api.startLessonVideoUpload(lessonId, arquivo.name);
-    await enviarVideo(arquivo, dados, (porcentagem) => mudar(lessonId, { tipo: "enviando", porcentagem })).concluido;
-    await api.completeLessonVideoUpload(lessonId, dados.videoId);
-    mudar(lessonId, null);
-    return true;
-  } catch (erro) {
-    mudar(lessonId, { tipo: "falhou", codigo: codigoDoErro(erro) ?? null });
-    return false;
-  }
+  // Uma atualização do site no meio não corta o envio (`semInterromper`).
+  return semInterromper(async () => {
+    try {
+      // O nome do arquivo vira o nome do vídeo no Bunny (operador, 27/09/2026).
+      const dados = await api.startLessonVideoUpload(lessonId, arquivo.name);
+      await enviarVideo(arquivo, dados, (porcentagem) => mudar(lessonId, { tipo: "enviando", porcentagem })).concluido;
+      await api.completeLessonVideoUpload(lessonId, dados.videoId);
+      mudar(lessonId, null);
+      return true;
+    } catch (erro) {
+      mudar(lessonId, { tipo: "falhou", codigo: codigoDoErro(erro) ?? null });
+      return false;
+    }
+  });
 }
 
 /** Só para os testes: cada teste começa sem envio nenhum. */

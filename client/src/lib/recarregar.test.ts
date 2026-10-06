@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { ehErroDeVersaoAntiga, pagina, recarregarUmaVez, JANELA_DA_TRAVA } from "./recarregar";
+import { semInterromper } from "./versao";
 
 // O SITE FOI ATUALIZADO COM A TELA ABERTA (05/10/2026): recarrega UMA vez, e a
 // trava impede o ciclo se o pedaço continuar faltando.
@@ -19,6 +20,17 @@ describe("recarregarUmaVez", () => {
     expect(recarregou).toHaveBeenCalledTimes(1);
     expect(recarregarUmaVez(1_000_000 + JANELA_DA_TRAVA)).toBe(true);
     expect(recarregou).toHaveBeenCalledTimes(2);
+  });
+
+  it("com um envio de vídeo em andamento: não recarrega (cortaria o envio); terminado, recarrega", async () => {
+    let terminar: () => void = () => {};
+    const envio = semInterromper(() => new Promise<void>((r) => (terminar = r)));
+    expect(recarregarUmaVez()).toBe(false);
+    expect(recarregou).not.toHaveBeenCalled();
+
+    terminar();
+    await envio;
+    expect(recarregarUmaVez()).toBe(true);
   });
 
   it("sem armazenamento no navegador: não recarrega (não há como travar o ciclo)", () => {

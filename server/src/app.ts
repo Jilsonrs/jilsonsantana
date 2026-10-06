@@ -1,4 +1,5 @@
 import { pedeArquivo } from "./lib/pede-arquivo.js";
+import { lerVersaoDoApp } from "./lib/versao-do-app.js";
 import express from "express";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -51,6 +52,20 @@ app.all("/api/auth/{*any}", (req, res, next) => authHandler(req, res).catch(next
 
 // JSON body parsing for the REST of the API — AFTER the auth handler.
 app.use(express.json());
+
+// A VERSÃO do app que este servidor entrega, em toda resposta da API (decisão do
+// operador, 06/10/2026): uma aba aberta antes de uma publicação percebe a
+// diferença e carrega a página inteira na próxima troca de tela, já atualizada
+// (`client/src/lib/versao.ts`). Só em produção: em desenvolvimento não há app
+// montado ao lado, e o Vite serve outro.
+const versaoDoApp =
+  process.env.NODE_ENV === "production" ? lerVersaoDoApp(path.join(path.dirname(fileURLToPath(import.meta.url)), "../public")) : null;
+if (versaoDoApp) {
+  app.use("/api", (_req, res, next) => {
+    res.set("X-Versao-Do-App", versaoDoApp);
+    next();
+  });
+}
 
 // API routes
 app.use("/api", healthRouter);
@@ -145,7 +160,16 @@ if (process.env.NODE_ENV === "production") {
 
   registrarHome();
 
-  app.use(express.static(clientDist));
+  // A página do app (HTML) NUNCA fica guardada no navegador (`no-cache`, a
+  // recomendação da doc do Vite): senão, mesmo recarregando, o navegador podia
+  // reabrir a versão anterior, que aponta para arquivos que não existem mais.
+  app.use(
+    express.static(clientDist, {
+      setHeaders: (res, arquivo) => {
+        if (arquivo.endsWith(".html")) res.setHeader("Cache-Control", "no-cache");
+      },
+    }),
+  );
   // SPA fallback — must be after all API routes. Só para TELA: um arquivo que
   // não existe (o pedaço do app de uma versão anterior) responde 404, nunca a
   // página do app no lugar — senão a tela fica em branco (05/10/2026).
@@ -154,7 +178,7 @@ if (process.env.NODE_ENV === "production") {
       res.status(404).end();
       return;
     }
-    res.sendFile(path.join(clientDist, "index.html"));
+    res.sendFile(path.join(clientDist, "index.html"), { headers: { "Cache-Control": "no-cache" } });
   });
 }
 

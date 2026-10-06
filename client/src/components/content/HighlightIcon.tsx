@@ -12,8 +12,15 @@ function iconePreguicoso(token: string): LazyExoticComponent<LucideIcon> {
     Icone = lazy(async () => {
       // Os desenhos chegam num pacote só, na primeira vez que um curso usa um
       // ícone fora dos 55; depois ficam no cache do navegador.
-      const { desenhoDoLucide } = await import("./todos-os-icones");
-      return { default: desenhoDoLucide(token) ?? Sparkles };
+      try {
+        const { desenhoDoLucide } = await import("./todos-os-icones");
+        return { default: desenhoDoLucide(token) ?? Sparkles };
+      } catch {
+        // O pacote não veio (o site foi atualizado com a página aberta, e o de
+        // antes não existe mais): o Brilho no lugar, e a página segue inteira.
+        // A versão nova entra na próxima troca de tela (`lib/versao.ts`).
+        return { default: Sparkles };
+      }
     });
     carregados.set(token, Icone);
   }

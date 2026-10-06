@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import { render, waitFor } from "@testing-library/react";
 import { HighlightIcon } from "./HighlightIcon";
 
@@ -21,6 +21,25 @@ describe("HighlightIcon", () => {
 
   it("nome desconhecido vira o Brilho", async () => {
     const { container } = render(<HighlightIcon token="nao-existe" />);
+    await waitFor(() => expect(desenho(container)).toContain("lucide-sparkles"));
+  });
+});
+
+// O site foi atualizado com a página do curso aberta, e o pacote de desenhos de
+// antes não existe mais: o Brilho no lugar, sem a tela de erro e sem recarregar.
+describe("HighlightIcon — o pacote de desenhos não vem", () => {
+  afterEach(() => {
+    vi.doUnmock("./todos-os-icones");
+    vi.resetModules();
+  });
+
+  it("mostra o Brilho e a página segue", async () => {
+    vi.resetModules();
+    vi.doMock("./todos-os-icones", () => {
+      throw new TypeError("Failed to fetch dynamically imported module: /assets/todos-os-icones-velho.js");
+    });
+    const { HighlightIcon: IconeSemPacote } = await import("./HighlightIcon");
+    const { container } = render(<IconeSemPacote token="hard-hat" />);
     await waitFor(() => expect(desenho(container)).toContain("lucide-sparkles"));
   });
 });

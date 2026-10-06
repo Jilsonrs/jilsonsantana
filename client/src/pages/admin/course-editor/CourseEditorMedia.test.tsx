@@ -28,6 +28,7 @@ vi.mock("@/lib/api", () => ({
 }));
 
 import { CourseEditorLayout } from "./CourseEditorLayout";
+import { anotarVersaoDoServidor, esquecerVersaoDoServidor, trocarDeVersaoAgora } from "@/lib/versao";
 import { ROTAS_DO_EDITOR } from "./steps";
 import { pt } from "@jilson/core";
 
@@ -39,6 +40,7 @@ beforeEach(() => {
   completeIntroVideoUpload.mockReset();
   getIntroVideoStatus.mockReset().mockResolvedValue({ pronto: true, falhou: false });
   enviarVideo.mockReset();
+  esquecerVersaoDoServidor();
   // Sem resposta do servidor, valem os textos de fábrica.
   getCommonTexts.mockReset().mockRejectedValue(new Error("sem servidor"));
 });
@@ -194,6 +196,23 @@ describe("Mídia e destaques — vídeo de apresentação", () => {
     const player = await screen.findByTitle("Prévia do vídeo de apresentação");
     expect(player.getAttribute("src")).toBe(EMBED);
     expect((screen.getByLabelText("Vídeo promocional") as HTMLInputElement).value).toBe(GUID);
+  });
+
+  it("uma atualização do site no meio não corta o envio: a versão nova espera ele terminar", async () => {
+    let terminar: () => void = () => {};
+    startIntroVideoUpload.mockResolvedValue(credenciais);
+    enviarVideo.mockImplementation(() => ({ concluido: new Promise<void>((r) => (terminar = r)), cancelar: () => {} }));
+    completeIntroVideoUpload.mockResolvedValue({ introVideoId: GUID, introVideoEmbedUrl: EMBED });
+    await abrirPagina();
+    anotarVersaoDoServidor("outra-versao");
+
+    escolher();
+    await waitFor(() => expect(enviarVideo).toHaveBeenCalled());
+    expect(trocarDeVersaoAgora()).toBe(false);
+
+    act(() => terminar());
+    await screen.findByTitle("Prévia do vídeo de apresentação");
+    expect(trocarDeVersaoAgora()).toBe(true);
   });
 
   it("o envio caiu de vez: aparece o aviso, e o curso NÃO grava o vídeo", async () => {

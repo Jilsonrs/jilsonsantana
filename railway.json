@@ -3,6 +3,7 @@
   "deploy": {
     "preDeployCommand": [
       "npx prisma migrate deploy --schema server/prisma/schema.prisma"
-    ]
+    ],
+    "drainingSeconds": 30
   }
 }

@@ -204,7 +204,11 @@
 > (aula concluída sozinha, barra na aula e no cartão), o vídeo que não recomeça ao trocar de aba
 > (a apresentação abre pausada, a aula toca sozinha) e o "Salvos". **Primeiro teste com o player de
 > verdade: com o operador** (assistir uma aula até perto do fim e ver a barra andar).
-> **PUBLICADO em 05/10/2026, por último (`main` = `592d588`, CI verde nos dois jobs, deploy ok):**
+> **PUBLICADO em 05/10/2026, no fechamento (`main` = `ecc9025`, CI verde nos dois jobs, deploy
+> ok):** o fim da tela em branco depois de publicar (provado no site: arquivo antigo e inexistente
+> → 404; tela do aluno → app), a tela de erro, a aula de texto vazia, e o CC e o certificado no
+> "Este curso inclui". Antes, `main` = `388225f`: o `courses.md` §10.11.
+> **PUBLICADO em 05/10/2026 (`main` = `592d588`, CI verde nos dois jobs, deploy ok):**
 > a correção do Salvar no passo Publicar com a Ordem editada.
 > **PUBLICADO em 05/10/2026, à noite (`main` = `ce94db8`, CI verde nos dois jobs, deploy ok):** o
 > ✓ dos passos Legendas e Mensagens, e o gerador de esquema do Better Auth oficial (`auth`, na
@@ -2099,6 +2103,39 @@ própria**.*
       mostrar a anterior por algumas horas. O tamanho da letra da legenda é ajuste de visual da
       biblioteca no painel (vale para todos); não achei na doc um controle para o aluno.
 
+- [x] **Atualizar o site sem atrapalhar quem está estudando** *(decisão do operador, 06/10/2026: "recarrega
+      só se houver versão nova")*. O app de uma página só roda a versão de quando a aba abriu; antes,
+      uma publicação podia deixar a aula em branco ou recarregando. Três camadas, mais a rede de
+      05/10 (recarregar uma vez / tela de erro) como último recurso:
+      (1) **o leitor de texto da aula é baixado logo depois de abrir** (`PEDACOS_DO_ALUNO`), então
+      a aba aberta não depende dele depois; (2) **identidade da versão** gerada na montagem do Vite
+      (`versao.txt` + `__VERSAO_DO_APP__`), mandada pelo servidor de produção em toda resposta da
+      API (`X-Versao-Do-App`); quando não bate, **o próximo clique num link ou a passagem
+      automática de aula carregam a página inteira**, já atualizada (`client/src/lib/versao.ts`);
+      (3) **API aditiva** como regra (`CLAUDE.md` → Rendering Boundary). E a página do app nunca
+      fica guardada no navegador (`Cache-Control: no-cache`). Fora: manter versões antigas no ar
+      (CDN ou disco persistente — na Railway, disco persistente custa segundos fora do ar a cada
+      publicação). Fontes: Next.js (`deploymentId` → navegação completa, via context7), Vercel
+      Skew Protection, doc do Vite (`vite:preloadError`, `no-cache` no HTML), "Version Skew"
+      (Malte Ubl). Mutação: a comparação sempre igual, o clique sem desviar e o fim do vídeo sem
+      carregar a página — reprovam. *O cabeçalho só existe em produção: conferido no site depois
+      de publicar.*
+- [x] **O mesmo cuidado para a área logada inteira, do aluno e do admin** *(pedido do operador,
+      06/10/2026: "não só na página de aula")*. Auditoria do que ainda podia quebrar numa aba aberta
+      durante uma publicação, e o conserto de cada achado: (1) **os pedaços do editor de curso**
+      (passo Conteúdo e seletor de ícones) passam a ser baixados em segundo plano para quem é admin
+      (`PEDACOS_DO_ADMIN`) — o operador costuma publicar com o editor aberto; (2) **o ícone dos
+      Destaques** na página do curso: se os desenhos não vierem, mostra o Brilho e a página segue
+      (antes, a tela de erro e o recarregar); (3) **o envio de vídeo** (da aula e de apresentação)
+      **não é cortado** por uma atualização: enquanto ele corre, nada carrega a página inteira
+      (`semInterromper`); (4) **teste-guarda** (`client/src/lib/pedacos.test.ts`): um `import()` novo
+      fora das listas reprova a suíte — a regra deixa de depender de memória; (5) **o servidor
+      antigo termina os pedidos em andamento antes de sair**: a Railway o desligava na hora (padrão
+      de 0 s, conferido na doc dela via context7), cortando um "marcar como concluída" ou um
+      "Salvar" que estivesse no meio — agora `drainingSeconds: 30` no `railway.json` +
+      `desligarComCalma` no aviso de desligar (`server/src/lib/desligar.ts`). Já coberto sem código
+      novo: a volta à aba busca os dados de novo (React Query), o que já informa a versão. Mutação:
+      as 9 partes reprovam.
 - [x] **"Este curso inclui": o ícone CC nas legendas e o "Certificado de conclusão" fixo** *(decisões
       do operador, 05/10/2026 — fecha a P41)*: a última linha, em todo curso; o quadro sempre
       aparece. ⚠️ O certificado nasce na Fase 6.5 e precisa estar no ar antes do lançamento.
