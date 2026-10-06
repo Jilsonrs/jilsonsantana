@@ -126,6 +126,13 @@ export function LessonPage() {
               {session && curso.status === ContentStatus.PUBLISHED && (
                 <BotaoSalvar tipo="cursos" id={curso.id} salvo={salvos.cursos.has(curso.id)} nome={t.aula.salvarCurso} texto={t.aula.salvarCurso} />
               )}
+              {/* O quanto do curso já foi, como no cartão (operador, 06/10/2026): o
+                  mesmo número da barra embaixo. Só para quem está logado. */}
+              {session && (
+                <span className="shrink-0 text-sm text-muted-foreground">
+                  {porcentagem}% {t.curso.concluido}
+                </span>
+              )}
             </div>
           </div>
         </div>

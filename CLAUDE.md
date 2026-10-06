@@ -465,6 +465,9 @@ por ele em 29/09:** o **Início é `/inicio`**, um só para o aluno e para o adm
 uma só: o admin testa ali tudo o que o aluno faz), e o painel do admin é o **`/dashboard`**.
 **Endereço antigo NÃO redireciona** *(decisão dele, 29/09: a escola está em desenvolvimento, o que
 não se usa sai)*: `/conta`, `/minhas-trilhas`, `/aluno/inicio` e `/admin` deixaram de existir.
+**Endereço que não existe no app leva ao Início** *(decisão dele, 06/10/2026, P44)*: a rota `*`
+do `App.tsx` manda para `/inicio` (sem login, de lá para o login). Não é redirecionar o antigo
+para o novo, é não deixar página em branco; não crie desvio por endereço antigo.
 **Tela nova do aluno nasce sob `/aluno/`**; não crie outra rota no endereço curto, que é da
 vitrine.
 

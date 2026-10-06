@@ -31,6 +31,20 @@ export function horasEMinutos(segundos: number): string {
   return horas > 0 ? `${horas}h ${String(resto).padStart(2, "0")}min` : `${resto}min`;
 }
 
+/**
+ * A duração de UMA aula, ao lado dela na página da aula, como no LinkedIn
+ * (operador, 06/10/2026): "48s", "1min 22s", "2min", "1h 05min". Com segundos,
+ * porque aula é curta e "1min" esconderia a diferença entre 1min e 1min 59s.
+ */
+export function minutosESegundos(segundos: number): string {
+  const total = Math.max(0, Math.round(segundos));
+  if (total >= 3600) return horasEMinutos(total);
+  const minutos = Math.floor(total / 60);
+  const resto = total % 60;
+  if (minutos === 0) return `${resto}s`;
+  return resto === 0 ? `${minutos}min` : `${minutos}min ${resto}s`;
+}
+
 /** "2h 35min de vídeo" — o topo do editor (formato do operador, 29/09/2026). Admin: em português. */
 export function textoDaDuracao(segundos: number): string {
   return `${horasEMinutos(segundos)} de vídeo`;

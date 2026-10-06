@@ -2148,6 +2148,15 @@ própria**.*
       `desligarComCalma` no aviso de desligar (`server/src/lib/desligar.ts`). Já coberto sem código
       novo: a volta à aba busca os dados de novo (React Query), o que já informa a versão. Mutação:
       as 9 partes reprovam.
+- [x] **A duração de cada aula, o "% concluído" no topo da aula, e o endereço inexistente** *(decisões
+      do operador, 06/10/2026, a partir do LinkedIn Learning)*: (1) no Conteúdo do curso da página
+      da aula, **a duração embaixo de cada aula de VÍDEO** ("1min 22s", "48s", "1h 05min" —
+      `minutosESegundos`); aula de texto e vídeo ainda processando vêm sem (o servidor manda
+      `duracaoSegundos`, pela mesma regra da soma do curso: aula que virou texto não leva o tempo do
+      vídeo antigo); (2) **no topo da aula, depois de "Salvar curso", o "% concluído"** — o mesmo
+      número da barra e do cartão, só logado; (3) **endereço que não existe no app leva ao Início**
+      (P44 resolvida — rota `*` do `App.tsx`; antes, página em branco). Mutação: as 6 partes
+      reprovam.
 - [x] **Última varredura da área logada, do aluno e do admin** *(pedido do operador, 06/10/2026:
       "análise minuciosa de tudo que está na área logada para não quebrar")*. Consertado:
       (1) **concluir a aula, salvar e marcar notificação como lida tentam de novo** depois de um

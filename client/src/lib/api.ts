@@ -375,6 +375,12 @@ export type AulaNaLista = {
   isFreePreview: boolean;
   status: ContentStatus;
   temArquivos: boolean;
+  /**
+   * A duração do vídeo, ao lado da aula (operador, 06/10/2026); `null` em aula de
+   * texto ou vídeo processando. Opcional: um servidor de antes desta mudança não a
+   * manda (API aditiva — `CLAUDE.md` → Rendering Boundary).
+   */
+  duracaoSegundos?: number | null;
 };
 export type ArquivoDaAula = { id: number; originalName: string; sizeBytes: number };
 export type PaginaDaAula = {

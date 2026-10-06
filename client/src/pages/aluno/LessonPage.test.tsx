@@ -66,8 +66,8 @@ function pagina(aula: Partial<PaginaDaAula["aula"]> = {}, rascunho = false): Pag
           title: "Fundamentos",
           status: "PUBLISHED",
           aulas: [
-            { id: 11, title: "Abertura", kind: "VIDEO", isFreePreview: false, status: "PUBLISHED", temArquivos: true },
-            { id: 12, title: "Leitura", kind: "TEXT", isFreePreview: false, status: "PUBLISHED", temArquivos: true },
+            { id: 11, title: "Abertura", kind: "VIDEO", isFreePreview: false, status: "PUBLISHED", temArquivos: true, duracaoSegundos: 82 },
+            { id: 12, title: "Leitura", kind: "TEXT", isFreePreview: false, status: "PUBLISHED", temArquivos: true, duracaoSegundos: null },
           ],
         },
         ...(rascunho
@@ -191,6 +191,14 @@ describe("página da aula — o conteúdo do curso", () => {
     const outra = within(nav).getByRole("link", { name: /Leitura/ });
     expect(outra.getAttribute("aria-current")).toBeNull();
     expect(outra.getAttribute("href")).toBe("/aluno/aula/12");
+  });
+
+  // A duração ao lado de cada aula, como no LinkedIn (operador, 06/10/2026).
+  it("a aula de vídeo mostra a duração; a de texto, não", async () => {
+    abrir();
+    const nav = await screen.findByRole("navigation", { name: "Conteúdo do curso" });
+    expect(within(nav).getByRole("link", { name: /Abertura/ }).textContent).toContain("1min 22s");
+    expect(within(nav).getByRole("link", { name: /Leitura/ }).textContent).not.toMatch(/\d+(min|s)\b/);
   });
 
   it("Arquivos, junto à aula, lista os arquivos para baixar", async () => {
@@ -362,6 +370,8 @@ describe("página da aula — o progresso", () => {
     abrir();
     const barra = await screen.findByRole("progressbar", { name: "Progresso no curso" });
     expect(barra.getAttribute("aria-valuenow")).toBe("50");
+    // E o número escrito no topo, como no cartão (operador, 06/10/2026).
+    expect(screen.getByText("50% concluído")).toBeTruthy();
   });
 
   it("visitante: sem barra, e abrir a aula de texto não conclui nada", async () => {
@@ -369,6 +379,7 @@ describe("página da aula — o progresso", () => {
     abrir("/aluno/aula/12");
     await screen.findByText("Texto da aula.");
     expect(screen.queryByRole("progressbar")).toBeNull();
+    expect(screen.queryByText(/% concluído/)).toBeNull();
     expect(concluirAula).not.toHaveBeenCalled();
   });
 
