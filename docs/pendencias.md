@@ -20,9 +20,8 @@
 
 ## A. Agora, em sequência *(nascidas da configuração do Bunny, 25/09/2026)*
 
-| # | O que falta | Onde registrar |
-|---|---|---|
-| P46 | **A mensagem já enviada acompanha a correção?** Hoje a notificação guarda o texto do **momento do envio**, como um e-mail: corrigir a mensagem do curso no admin vale para quem receber **dali em diante**, e quem já recebeu continua vendo o texto antigo (achado do operador, 06/10/2026, na assinatura "Abraço, Jilson Santana"). **(a)** fica assim *(como e-mail; o título do curso também é guardado no envio, por segurança — revisão de 04/10)* · **(b)** a mensagem do curso mostra sempre o texto atual do admin, também para quem já recebeu | `implementation-plan.md` (Bloco E, etapa 4) e `server/src/lib/notificacoes.ts` |
+*Vazia desde 06/10/2026 (a P46 foi resolvida: a mensagem do curso mostra o texto atual do admin).
+Item novo que precise de resposta rápida entra aqui, com o próximo número livre.*
 
 ## B. Conteúdo e cadastro *(tarefas suas, sem ordem fixa)*
 

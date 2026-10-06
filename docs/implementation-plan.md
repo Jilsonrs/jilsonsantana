@@ -2157,6 +2157,17 @@ própria**.*
       `desligarComCalma` no aviso de desligar (`server/src/lib/desligar.ts`). Já coberto sem código
       novo: a volta à aba busca os dados de novo (React Query), o que já informa a versão. Mutação:
       as 9 partes reprovam.
+- [x] **A mensagem do curso mostra o que está no admin** *(decisão do operador, 06/10/2026 — P46,
+      opção b: "mostra o que está no Admin porque lê o que está corrigido; e-mail vai ser o que
+      chegar no e-mail do aluno e aí sim não tem como mudar")*. Corrigir a boas-vindas ou os
+      parabéns corrige também para quem já recebeu (`GET /api/notificacoes` lê o texto e o título
+      atuais do curso). **Só enquanto o curso está publicado:** fora do ar ele pode estar sendo
+      reescrito em rascunho, e o texto e o título novos não vazam pelo sino (achado P1 da revisão de
+      segurança de 04/10 continua valendo) — vale o que foi copiado no envio, que segue gravado.
+      Mensagem apagada no admin também volta ao que chegou. "Ir para o curso" fica só nas mensagens
+      de curso; os avisos da Comunicação (4d) não terão esse link. Mutação: as 4 partes reprovam.
+      *Gatilho de reabertura: a mensagem do curso passar a sair também por e-mail — aí o e-mail é o
+      retrato do envio, e a tela pode continuar lendo o atual.*
 - [x] **Notificações em Meus estudos: lista e mensagem completa** *(decisões do operador, 06/10/2026,
       a partir da Udemy: "o sino é só mais um atalho")*. (1) **"Notificações" no menu de Meus
       estudos, embaixo de Salvos**; (2) **a página vira LISTA** — título, 2 primeiras linhas e
