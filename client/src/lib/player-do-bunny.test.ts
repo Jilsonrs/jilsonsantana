@@ -20,7 +20,9 @@ vi.mock("player.js", () => ({
 
 import { chegouAoFim, ouvirPlayer } from "./player-do-bunny";
 
-const iframe = {} as HTMLIFrameElement; // Cast: o player de mentira não lê o iframe.
+// Cast: o player de mentira não lê o iframe; o que importa aqui é que ele ainda
+// está na página (sair da página tem teste próprio, com o player.js de verdade).
+const iframe = { isConnected: true, contentWindow: {} } as HTMLIFrameElement;
 const assistiu = (seconds: number, duration: number) => ouvintes.get("timeupdate")?.({ seconds, duration });
 
 beforeEach(() => {

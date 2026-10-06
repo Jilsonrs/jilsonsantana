@@ -204,7 +204,13 @@
 > (aula concluída sozinha, barra na aula e no cartão), o vídeo que não recomeça ao trocar de aba
 > (a apresentação abre pausada, a aula toca sozinha) e o "Salvos". **Primeiro teste com o player de
 > verdade: com o operador** (assistir uma aula até perto do fim e ver a barra andar).
-> **PUBLICADO em 06/10/2026, por último (`main` = `40ae6f8`, CI verde nos dois jobs, deploy ok):**
+> **PUBLICADO em 06/10/2026, por último (`main` = `84d55d5`, CI verde nos dois jobs, deploy ok;
+> a migration `comunicacao_notificacoes` aplicada pelo pre-deploy):** a Comunicação (C1 — menu,
+> Notificações e Mensagens automáticas), "Notificações" em Meus estudos com a lista e a mensagem
+> completa, e a mensagem do curso com o texto atual do admin (P46). **Provado no site:** a versão
+> nova (`mux2k0zg-923a6b7c`); `/api/notificacoes` e `/api/admin/announcements` respondem 401 sem
+> login. *Ainda não publicado:* o conserto da troca de aula (`6bdd9eb`, no `dev`).
+> **PUBLICADO em 06/10/2026 (`main` = `40ae6f8`, CI verde nos dois jobs, deploy ok):**
 > a prévia do sino volta a mostrar só as 2 primeiras linhas e a data, como na Udemy (o clique abre
 > a mensagem completa em "Ver todas"). **Provado no site:** a versão nova (`muwymfgl-553ac24d`) no
 > cabeçalho e no `versao.txt`.
@@ -2157,6 +2163,16 @@ própria**.*
       `desligarComCalma` no aviso de desligar (`server/src/lib/desligar.ts`). Já coberto sem código
       novo: a volta à aba busca os dados de novo (React Query), o que já informa a versão. Mutação:
       as 9 partes reprovam.
+- [x] **Defeito corrigido (06/10/2026, achado do operador): sair de uma aula de vídeo derrubava a
+      próxima na tela de erro** — a passagem automática ao fim do vídeo e o clique em outra aula
+      abriam "Algo deu errado ao abrir esta tela" (às vezes: só quando o player saía da página).
+      **Causa, reproduzida em teste com o `player.js` de verdade:** ao sair da aula, o app manda o
+      player parar de avisar; nessa hora o iframe já saiu da página, e o `player.js` tenta mandar
+      uma mensagem para a janela dele, que não existe mais (`TypeError`) — o erro sobe até a tela de
+      erro da aula seguinte. Os testes não pegavam porque trocavam o `player.js` por dublê.
+      **Agora:** sem o iframe na página, parar de ouvir não fala com ele (e nunca derruba a tela)
+      (`client/src/lib/player-do-bunny.ts`); teste novo com o pacote de verdade
+      (`player-do-bunny.real.test.ts`). Mutação: sem a proteção, reprova.
 - [x] **A mensagem do curso mostra o que está no admin** *(decisão do operador, 06/10/2026 — P46,
       opção b: "mostra o que está no Admin porque lê o que está corrigido; e-mail vai ser o que
       chegar no e-mail do aluno e aí sim não tem como mudar")*. Corrigir a boas-vindas ou os
