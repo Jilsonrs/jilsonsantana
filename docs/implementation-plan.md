@@ -204,6 +204,11 @@
 > (aula concluída sozinha, barra na aula e no cartão), o vídeo que não recomeça ao trocar de aba
 > (a apresentação abre pausada, a aula toca sozinha) e o "Salvos". **Primeiro teste com o player de
 > verdade: com o operador** (assistir uma aula até perto do fim e ver a barra andar).
+> **PUBLICADO em 06/10/2026, no fechamento (`main` = `33fe367`, CI verde nos dois jobs, deploy
+> ok):** a última varredura da área logada — gravações do aluno que tentam de novo, falha do login
+> ao abrir sem expulsar ninguém, a moldura do app com tela de erro, e o ponto do vídeo por aula e
+> vídeo. **Provado no site:** a versão nova (`muwhzedy-3d6c240e`) no cabeçalho e no `versao.txt`;
+> arquivo antigo → 404. Abertos para o operador: P44 e o player aberto há mais de 24 h.
 > **PUBLICADO em 06/10/2026 (`main` = `0ba6d76`, CI verde nos dois jobs, deploy ok):** atualizar o
 > site sem atrapalhar quem está estudando, na área logada inteira — a versão nova entra no próximo
 > clique, os pedaços do aluno e do admin baixados com antecedência, o envio de vídeo nunca cortado,
