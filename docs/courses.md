@@ -392,7 +392,7 @@ Limites são técnicos `[FATO, admin]`. As diretrizes de escrita seguem a marca 
 | **Materiais exclusivos** | enum | Biblioteca de prompts · Apostila. Arquivos para baixar são **derivados** |
 | **Etiqueta** | Novo · Destaque · Mais vendido | "Novo" expira sozinho em 120 dias. §10.9 |
 | **Imagem / vídeo promocional** | — | Imagem = catálogo; vídeo = página de detalhe (toca para não membro) |
-| **Mensagens** | 2.000 cada | Boas-vindas (1ª aula) e parabéns (conclusão), só para assinantes |
+| **Mensagens** | 2.000 cada | Boas-vindas (1ª aula) e parabéns (conclusão), só para assinantes. Parágrafos curtos, voz do professor, JilsonAI. §10.11 |
 
 **Derivados, nunca digitados:** carga horária, número de módulos e aulas, a faixa de metadados, o
 item de arquivos do "Este curso inclui". Por isso **não se escreve número de aulas ou duração na
@@ -501,6 +501,80 @@ Diretrizes `[PROPOSTA, 05/10]`:
 - **Marcado à mão:** materiais exclusivos de uma lista fixa (Biblioteca de prompts, Apostila).
 - **Sem linha de acesso:** o acesso fica no cartão de preço; "vitalício" continua proibido.
 
+### 10.11 Mensagens do curso: boas-vindas e parabéns `[FATO, operador, 05/10/2026, a partir do Antigravity]`
+
+**Como funcionam** `[FATO, admin]`
+- **Boas-vindas** chega quando o aluno abre a primeira aula. **Parabéns** chega quando ele conclui
+  todas as aulas publicadas. Campo em branco = nenhuma mensagem.
+- Até 2.000 caracteres cada. Editor com negrito, itálico e listas, com abas Escrever/Visualizar.
+- Chegam como **aviso**, não como página: o aluno lê de passagem, e a prévia mostra só o começo.
+
+**Decisões do operador** `[FATO, 05/10/2026]`
+- É o **padrão de todos os cursos** da escola daqui em diante.
+- **Enxutas, mas com calor humano.** É o professor falando com o aluno, não um comunicado da
+  plataforma.
+- **Não precisa copiar o formato da Udemy** (lá eram passos numerados). O texto da Udemy é ponto de
+  partida: aproveita as palavras-chave e a mensagem central, e a forma é reescrita.
+- **O JilsonAI aparece nas duas**, como apoio ao aluno.
+
+**Forma** (o que fez a versão aprovada funcionar)
+- **3 a 5 parágrafos curtos, sem lista.** Em aviso, lista parece formulário; parágrafo soa como
+  recado do professor.
+- **A primeira linha traz o nome do curso em negrito** (é o que aparece na prévia).
+- **Primeira pessoa do professor:** "preparei", "faça junto comigo", "fiquei muito feliz", "conte
+  comigo".
+- **No máximo um trecho em negrito por parágrafo**, só na promessa ou na conquista principal.
+- **Enxugar = tirar ideia repetida, nunca conectivo.** Frases completas, com ritmo. A versão
+  telegráfica (cortando conectivos e trocando frases por dois-pontos) foi reprovada pelo operador.
+- **Tamanho de referência:** ~900 caracteres cada (Antigravity: 924 e 909). Os 2.000 são teto, não
+  meta.
+- **Assinatura:** "Abraço," na boas-vindas e "Um grande abraço," nos parabéns, seguido de "Jilson
+  Santana".
+
+**Boas-vindas: esqueleto**
+1. Acolhida com o nome do curso: *"Que bom ter você aqui no **<curso>**!"*
+2. O que o aluno vai construir e a habilidade que leva, com negrito na promessa principal.
+3. Como aproveitar: fazer junto, onde estão os materiais (**nome exato da aula**) e a dica que é
+   própria do curso (no Antigravity: ajustar o pedido e revisar o que o agente entrega).
+4. JilsonAI: *"Travou em alguma parte? Chame o JilsonAI. Ele está aqui para tirar suas dúvidas a
+   qualquer hora."*
+5. Fechamento caloroso (*"Conte comigo nessa jornada. Bons estudos!"*) e assinatura.
+
+**Parabéns: esqueleto**
+1. Parabéns com o nome do curso e uma frase de afeto do professor (*"Fiquei muito feliz de estar
+   com você até aqui."*).
+2. O que o aluno fez, com as **entregas concretas do projeto** e negrito na conquista principal.
+3. Próximo passo: aplicar no cenário dele, o **cuidado específico do curso** (no Antigravity: proteger
+   a chave de acesso) e o JilsonAI continuando disponível.
+4. Frase-síntese do curso em negrito, como fechamento.
+5. Assinatura.
+
+**Checklist antes de entregar**
+- **Só cite o que existe na escola no dia da publicação:** nome da aula de materiais, quiz,
+  certificado (Fase 6.5), JilsonAI. O que ainda não estiver no ar sai do texto e entra depois numa
+  edição. ⚠️ O JilsonAI é fase própria do build (`jilsonai.md`): conferir se está no ar antes de
+  publicar um curso que o cite `[INFER: risco de prometer recurso inexistente]`.
+- **Precisão técnica:** descreva o que o aluno fez de verdade. Ex.: *"conectou o assistente ao
+  Gemini pelo AI Studio"* (o AI Studio é onde se gera a chave), e não "conectou o Gemini ao AI
+  Studio".
+- **Promessas:** valem as regras da §2. Exagero que não passa na página também não passa na
+  mensagem.
+- **Sem imagem repetida:** a mesma expressão não aparece duas vezes. Ex.: "o JilsonAI ao seu lado"
+  disputava com o fechamento "lado a lado com a IA", então virou "continua por aqui para ajudar".
+- **Gramática:** "o passo a passo" (singular); aspas fecham logo depois do nome da aula; dois-pontos
+  quando a frase seguinte explica a anterior.
+- **Convite para outros cursos:** ficou **fora** do texto aprovado, para não enfraquecer o
+  fechamento. Só entra se o operador pedir.
+- **Entrega:** os dois textos completos, cada um num bloco de código, prontos para colar. O operador
+  cola e confere na aba **Visualizar**.
+- **Curso em inglês** `[PROPOSTA]`: mesmo esqueleto, escrito direto em inglês (não traduzido), com a
+  voz do professor.
+
+> ⚠️ **Burnout:** são duas mensagens por curso; com o esqueleto, ~10 minutos. Se virar muitas
+> rodadas de ajuste fino, entregue a versão do esqueleto e deixe o retoque final para o operador.
+
+Referência de qualidade: as mensagens aprovadas do Antigravity estão no **Anexo A**.
+
 ## 11. O admin do curso (como o operador preenche) `[FATO, 27–28/09/2026]`
 
 Sete passos em ordem de preenchimento, cada um com ✓:
@@ -584,7 +658,8 @@ Entregar **parte por parte**, na ordem do admin, com a coluna "Udemy (atual)", a
 (novo)" e o **porquê** de cada mudança `[FATO, operador, 05/10: comparar parte por parte]`:
 
 Título → Slug → Subtítulo → Descrição → O que vai aprender → Destaques → Pré-requisitos → Para quem
-é → Materiais → Perguntas frequentes.
+é → Materiais → Perguntas frequentes → Mensagens (§10.11; aqui não há coluna Udemy × Escola, entregam-se
+os dois textos finais prontos para colar).
 
 ### Etapa 7 — Formato de entrega
 
@@ -602,7 +677,8 @@ segunda cópia do texto que ficaria velha.
 ### Etapa 9 — Antes de publicar
 
 Legendas · aula de boas-vindas · .zip de materiais · menções à Udemy tratadas · slug conferido ·
-etiqueta.
+etiqueta · mensagens escritas e conferidas em Visualizar, citando só recursos que já estão no ar
+(§10.11).
 
 ### Etapa 10 — Registro
 
@@ -1081,6 +1157,44 @@ Quem quer usar o Antigravity de verdade, do primeiro acesso a um projeto complet
 - FAQ (opcional, 1 item): *"Preciso pagar pelo Google Gemini ou pelo AI Studio?"* → *"Não. No curso utilizamos
   o plano gratuito do Google Gemini e AI Studio. Os limites de uso mudam com o tempo, e uma aula mostra como acompanhá-los."*
 
+**Mensagens (texto aprovado pelo operador, 05/10/2026; modelo da §10.11):**
+
+Boas-vindas (924 caracteres):
+
+```
+Que bom ter você aqui no **Google Antigravity: Desenvolva com Agentes de IA**!
+
+Preparei este curso para você criar um assistente inteligente completo, do zero e **sem escrever uma linha de código**. Você descreve o que quer em português e o agente constrói. O projeto é para uma rede de hotéis, mas o que você leva é a habilidade de **transformar uma ideia em software funcionando, em horas em vez de semanas**.
+
+Faça junto comigo: baixe os arquivos do projeto e a biblioteca de prompts em "Arquivos Fontes do Curso" e siga o passo a passo das aulas. Se o resultado do agente sair diferente do meu, tudo bem: ajustar o pedido é metade do aprendizado. E revise sempre o que ele entrega, porque é isso que separa quem comanda a IA de quem torce para dar certo.
+
+Travou em alguma parte? Chame o JilsonAI. Ele está aqui para tirar suas dúvidas a qualquer hora.
+
+Conte comigo nessa jornada. Bons estudos!
+
+Abraço,
+Jilson Santana
+```
+
+Parabéns (909 caracteres):
+
+```
+Parabéns, você concluiu o **Google Antigravity: Desenvolva com Agentes de IA**! Fiquei muito feliz de estar com você até aqui.
+
+Você fez algo que até pouco tempo exigia um time de desenvolvimento: **tirou uma ideia do papel e entregou uma aplicação funcionando**, comandando a IA em linguagem natural. Definiu o conhecimento do negócio, criou a interface, conectou o assistente ao Gemini pelo AI Studio e o ensinou a responder com precisão, sem inventar informação.
+
+Agora é a sua vez: troque o cenário do hotel pelo da sua empresa ou projeto. Antes de usar de verdade, peça ao próprio Antigravity que explique como proteger a chave de acesso, que no curso fica exposta no navegador para facilitar o aprendizado. E, se surgir alguma dúvida no caminho, o JilsonAI continua por aqui para ajudar.
+
+Você não aprendeu uma ferramenta. **Aprendeu a trabalhar lado a lado com a IA.**
+
+Um grande abraço,
+Jilson Santana
+```
+
+Na Udemy eram passos numerados; na escola viraram parágrafos com a voz do professor e o JilsonAI.
+"Comandos" virou "prompts" (mesmo termo da página) e "conectou a inteligência do Gemini" virou
+"conectou o assistente ao Gemini pelo AI Studio" (precisão técnica).
+
 **Promessas da Udemy que não vieram para a escola:** "100% gratuita" e "Custo Zero" (a cota muda) ·
 "evitando alucinações" (exagero) · "Orquestrador de IA" como título profissional (linguagem de
 vendedor) · "2026" no título.
@@ -1091,6 +1205,8 @@ vendedor) · "2026" no título.
 - Menções à Udemy nos vídeos: levantar nas transcrições.
 - Linha de transparência (T14).
 - O que a escola dá a mais **neste curso** no lançamento (só prometer o que estiver no ar).
+- As mensagens citam o **JilsonAI**: se ele não estiver no ar na publicação, tirar o 4º parágrafo
+  da boas-vindas e a última frase do 3º parágrafo dos parabéns, e devolver quando entrar.
 
 ## Anexo B — Template de ficha de transposição
 
@@ -1106,6 +1222,7 @@ Demanda (vidIQ, <data>)
 Decisões do operador
 - Título: "<...>" (<n>/60) [FATO, <data>]
 - Slug: <...> [FATO, <data>]  ⚠️ irreversível
+Mensagens (§10.11): escritas em <data> · recursos citados: <JilsonAI / aula de materiais / ...> · todos no ar? <s/n>
 Texto: vive no admin. Diferenças-chave Udemy → escola e o porquê:
 - <campo>: <antes> → <depois> · <motivo>
 Pendências
@@ -1118,7 +1235,8 @@ Pendências
 Transpor o curso "<nome>" da Udemy para a escola. Siga o courses.md: Leitura rápida, §2, §10 e o
 Playbook da §12 (Etapas 0 a 10), com o Anexo A como referência de qualidade. Use o vidIQ (§14.1,
 transposição). Entregue parte por parte, Udemy × Escola, com o porquê, cada item de lista numa
-linha. Separe fato, inferência e especulação, e sinalize risco de burnout.
+linha. No fim, as mensagens de boas-vindas e parabéns (§10.11, modelo no Anexo A), completas e
+prontas para colar. Separe fato, inferência e especulação, e sinalize risco de burnout.
 ```
 
 ## Anexo C — O que saiu desta versão e por quê
@@ -1155,3 +1273,4 @@ Mesmo conceito, mesmo nome, em todo o catálogo. Cresce a cada transposição.
 | Set 2026 | Teto de 15 por idioma; slate de 12; D8 revogado; 4 camadas; IA camada × assunto; lançamento com 5; escola bilíngue; etiqueta; admin em passos; página como vitrine |
 | 04/10/2026 | Página de curso = landing de venda da assinatura; "Este curso inclui" |
 | **05/10/2026** | **Reescrita do zero.** Novos: filosofia de produto (princípio iPhone, venda honesta), Udemy × escola (§3), padrão de campos com diretrizes, tags no lugar das frases com ✓, playbook de transposição, vidIQ por situação e cuidados de leitura, radar de tendências, transposição para o inglês, fila de transposição, demanda de Out/2026, tensões T9–T15, Anexo A (Antigravity) |
+| 05/10/2026 (tarde) | §10.11 Mensagens do curso (padrão aprovado pelo operador: parágrafos, voz do professor, JilsonAI); mensagens do Antigravity no Anexo A; Etapas 6 e 9 e Anexo B atualizados |
