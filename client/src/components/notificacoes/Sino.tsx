@@ -121,7 +121,7 @@ export function Sino() {
                           {tituloDaNotificacao(n, t)}
                           {!n.lida && <span className="sr-only"> ({t.notificacoes.naoLida})</span>}
                         </span>
-                        <span className="mt-0.5 line-clamp-2 block text-sm text-muted-foreground">{previaDoTexto(n.texto)}</span>
+                        <span className="mt-0.5 line-clamp-2 text-sm text-muted-foreground">{previaDoTexto(n.texto)}</span>
                         <span className="mt-1 block text-xs text-muted-foreground">{haQuantoTempo(n.criadaEm, idioma)}</span>
                       </span>
                     </Link>

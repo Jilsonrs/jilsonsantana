@@ -2153,6 +2153,12 @@ própria**.*
       `desligarComCalma` no aviso de desligar (`server/src/lib/desligar.ts`). Já coberto sem código
       novo: a volta à aba busca os dados de novo (React Query), o que já informa a versão. Mutação:
       as 9 partes reprovam.
+- [x] **Defeito corrigido (06/10/2026, achado do operador): a prévia do sino mostrava a mensagem
+      inteira, numa massa só**, em vez das 2 primeiras linhas (o texto inteiro, com os parágrafos,
+      fica em "Ver todas"). Causa: `line-clamp-2` junto de `block` — a classe de exibição vem
+      depois no CSS do Tailwind e anula o corte. Defeito do agente, de 04/10. Teste-guarda
+      `client/src/components/corte-de-linhas.test.ts` reprova a combinação em qualquer tela
+      (mutação: devolver o `block` reprova); regra 14 no `GEMINI.md`.
 - [x] **Aula aberta há mais de 24 h: o player renova o endereço sozinho** *(decisão do operador,
       06/10/2026: "se expirar, recarrega a página ao dar play ou recarrega aula" — fecha o achado da
       varredura do mesmo dia)*. A doc do Bunny (context7) diz que abrir o player com o endereço
