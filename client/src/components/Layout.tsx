@@ -1,4 +1,4 @@
-import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Link, Outlet, useNavigate } from "react-router-dom";
 import { useSession, signOut } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { AppRail } from "@/components/nav/AppRail";
@@ -7,7 +7,7 @@ import { SecondaryNav } from "@/components/nav/SecondaryNav";
 import { AppFooter } from "@/components/layout/AppFooter";
 import { AccountMenu } from "@/components/layout/AccountMenu";
 import { Sino } from "@/components/notificacoes/Sino";
-import { ErroDaTela } from "@/components/ErroDaTela";
+import { ProtecaoDoApp } from "@/components/ErroDaTela";
 import { ROTAS_PUBLICAS, Role } from "@jilson/core";
 import { usePreCarregarDoAdmin } from "@/lib/versao";
 import { IdiomaProvider, useIdioma, useIdiomaDoShell, useT } from "@/lib/language";
@@ -31,7 +31,11 @@ export function Layout() {
   const idioma = useIdiomaDoShell();
   return (
     <IdiomaProvider idioma={idioma}>
-      <Shell />
+      {/* Se a moldura quebrar (menu, sino, topo), a tela de erro no lugar da
+          página em branco (06/10/2026). A tela tem a proteção dela, abaixo. */}
+      <ProtecaoDoApp>
+        <Shell />
+      </ProtecaoDoApp>
     </IdiomaProvider>
   );
 }
@@ -108,10 +112,9 @@ function Shell() {
  * lugar dela, e trocar de endereço limpa o erro (05/10/2026).
  */
 function TelaAtual() {
-  const { pathname } = useLocation();
   return (
-    <ErroDaTela chave={pathname}>
+    <ProtecaoDoApp>
       <Outlet />
-    </ErroDaTela>
+    </ProtecaoDoApp>
   );
 }

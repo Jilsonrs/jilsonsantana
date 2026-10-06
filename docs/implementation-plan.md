@@ -2143,6 +2143,26 @@ própria**.*
       `desligarComCalma` no aviso de desligar (`server/src/lib/desligar.ts`). Já coberto sem código
       novo: a volta à aba busca os dados de novo (React Query), o que já informa a versão. Mutação:
       as 9 partes reprovam.
+- [x] **Última varredura da área logada, do aluno e do admin** *(pedido do operador, 06/10/2026:
+      "análise minuciosa de tudo que está na área logada para não quebrar")*. Consertado:
+      (1) **concluir a aula, salvar e marcar notificação como lida tentam de novo** depois de um
+      tropeço de rede ou erro do servidor (antes, a falha sumia em silêncio e a aula ficava sem
+      concluir) — só essas três, que o servidor aceita repetidas; um 4xx nunca insiste
+      (`client/src/lib/tentar-de-novo.ts`); (2) **ao abrir a página, se a conferência do login
+      falhar** (rede, servidor), aparece a tela de erro com "Recarregar" — antes, quem estava logado
+      era mandado para o login (`ProtectedRoute`, `AdminRoute`; conferido no código do Better Auth
+      1.7.5 e via context7: numa falha DEPOIS de aberta, a sessão já se mantinha); (3) **a moldura do
+      app** (menu, sino, topo) ganhou a mesma tela de erro que a tela tinha — antes, um defeito nela
+      deixava a página inteira em branco; (4) **o ponto do vídeo é lembrado por aula E vídeo**:
+      trocar o vídeo de uma aula por um mais curto fazia o ponto antigo cair depois do fim, e a aula
+      pulava direto para a próxima. Conferido sem defeito: trocar de aba não recarrega o player;
+      carregando/erro/vazio nas telas do aluno e do admin; o servidor não tem tarefa "solta" que o
+      derrube, e o download de arquivo trata a falha. Mutação: as 9 partes reprovam.
+      **Achados NÃO consertados (decisão do operador):** endereço inexistente dentro do app (ex.:
+      um favorito antigo de `/conta`) mostra a **página em branco** — falta uma tela "Página não
+      encontrada", que é texto e tela novos (P44 em `pendencias.md`); e um player aberto há **mais
+      de 24 h** usa um endereço assinado já vencido — o que o Bunny faz ao dar play nele não está
+      na doc, então não mexi sem medir.
 - [x] **"Este curso inclui": o ícone CC nas legendas e o "Certificado de conclusão" fixo** *(decisões
       do operador, 05/10/2026 — fecha a P41)*: a última linha, em todo curso; o quadro sempre
       aparece. ⚠️ O certificado nasce na Fase 6.5 e precisa estar no ar antes do lançamento.

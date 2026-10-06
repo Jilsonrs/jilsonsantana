@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as api from "@/lib/api";
+import { deveTentarDeNovo } from "@/lib/tentar-de-novo";
 
 // "SALVOS" na tela (decisão do operador, 03/10/2026, "como no LinkedIn"). Uma
 // consulta só para a lista inteira: o botão de cada aula e o do curso leem dela se
@@ -26,6 +27,8 @@ export function useAlternarSalvo() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ tipo, id, salvar }: { tipo: "cursos" | "aulas"; id: number; salvar: boolean }) => api.alternarSalvo(tipo, id, salvar),
+    // Salvar (ou tirar) de novo não muda nada no servidor (06/10/2026).
+    retry: deveTentarDeNovo,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: [SALVOS] }),
   });
 }

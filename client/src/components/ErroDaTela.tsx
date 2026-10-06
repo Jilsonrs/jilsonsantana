@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
+import { useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { PageContainer } from "@/components/layout/PageLayout";
 import { useT } from "@/lib/language";
@@ -33,7 +34,18 @@ export class ErroDaTela extends Component<{ chave: string; children: ReactNode }
   }
 }
 
-function TelaDeErro() {
+/**
+ * A mesma proteção em volta da MOLDURA do app (06/10/2026), no `Layout`: a outra
+ * cobre só a tela; se o menu, o sino ou o topo quebrarem, sem isto a página
+ * ficaria em branco.
+ */
+export function ProtecaoDoApp({ children }: { children: ReactNode }) {
+  const { pathname } = useLocation();
+  return <ErroDaTela chave={pathname}>{children}</ErroDaTela>;
+}
+
+/** A mensagem com "Recarregar a página" — também para quem precisa dela sem erro de tela (a sessão que não veio). */
+export function TelaDeErro() {
   const t = useT();
   return (
     <PageContainer>

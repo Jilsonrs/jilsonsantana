@@ -16,12 +16,13 @@
 > 5. **Item novo ganha o próximo número livre.** Número nunca se reutiliza, para que "P7" queira
 >    dizer sempre a mesma coisa em qualquer conversa.
 >
-> **Próximo número livre: P44** · Atualizada em 05/10/2026
+> **Próximo número livre: P45** · Atualizada em 06/10/2026
 
 ## A. Agora, em sequência *(nascidas da configuração do Bunny, 25/09/2026)*
 
-*Vazia desde 04/10/2026 (a P40, a chave da conta do Bunny, foi resolvida). Item novo que precise
-de resposta rápida entra aqui, com o próximo número livre.*
+| # | O que falta | Onde registrar |
+|---|---|---|
+| P44 | **Endereço que não existe dentro do app mostra a página EM BRANCO** (achado da varredura de 06/10/2026). Ex.: um favorito antigo de `/conta` ou `/minhas-trilhas` (que saíram em 29/09, sem redirecionar, por decisão sua), ou um endereço digitado errado. É tela e texto novos, então é sua: **(a)** uma tela "Página não encontrada" com um link para o Início *(recomendado: não contraria o "endereço antigo não redireciona" de 29/09)* · **(b)** levar direto ao Início · **(c)** deixar como está | `implementation-plan.md` (checkbox de 06/10, "Achados NÃO consertados") e o dicionário (`core/src/i18n/`) |
 
 ## B. Conteúdo e cadastro *(tarefas suas, sem ordem fixa)*
 

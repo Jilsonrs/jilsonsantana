@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { LanguageCode } from "@jilson/core";
 import * as api from "@/lib/api";
+import { deveTentarDeNovo } from "@/lib/tentar-de-novo";
 import type { AppTexts } from "@/lib/language";
 
 // O SINO DE NOTIFICAÇÕES na tela (Bloco E, etapa 4 — decisões do operador,
@@ -19,6 +20,8 @@ export function useMarcarLida() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id?: number) => (id === undefined ? api.marcarTodasLidas() : api.marcarNotificacaoLida(id)),
+    // Marcar de novo não muda nada no servidor (06/10/2026).
+    retry: deveTentarDeNovo,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: [NOTIFICACOES] }),
   });
 }

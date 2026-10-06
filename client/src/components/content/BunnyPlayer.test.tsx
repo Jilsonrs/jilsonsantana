@@ -56,7 +56,8 @@ describe("BunnyPlayer — o endereço", () => {
 // parou — pausado se tinha pausado, tocando se saiu tocando. Ver até o fim apaga.
 // A AULA, não o vídeo de apresentação (sem `lembrarComo`, nada é lembrado).
 const AULA = "https://iframe.mediadelivery.net/embed/762605/aaa?token=t1&expires=1&autoplay=true";
-const PONTO = "jilson:ponto-da-aula:11";
+// O ponto é da aula 11 com o vídeo "aaa" (06/10/2026).
+const PONTO = "jilson:ponto-da-aula:11:aaa";
 const params = () => new URL(document.querySelector("iframe")?.getAttribute("src") ?? "").searchParams;
 
 describe("BunnyPlayer — o ponto da aula", () => {
@@ -80,6 +81,12 @@ describe("BunnyPlayer — o ponto da aula", () => {
     expect(document.querySelector("iframe")?.getAttribute("src")).toBe(AULA);
     unmount();
     localStorage.setItem(PONTO, "{quebrado");
+    render(<BunnyPlayer src={AULA} title="Aula" lembrarComo="11" />);
+    expect(document.querySelector("iframe")?.getAttribute("src")).toBe(AULA);
+  });
+
+  it("a aula trocou de vídeo: o ponto do vídeo antigo não vale, e a aula abre do começo", () => {
+    localStorage.setItem("jilson:ponto-da-aula:11:velho", JSON.stringify({ segundos: 480, pausado: true }));
     render(<BunnyPlayer src={AULA} title="Aula" lembrarComo="11" />);
     expect(document.querySelector("iframe")?.getAttribute("src")).toBe(AULA);
   });

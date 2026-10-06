@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as api from "@/lib/api";
+import { deveTentarDeNovo } from "@/lib/tentar-de-novo";
 import { NOTIFICACOES } from "@/lib/notificacoes";
 
 // O PROGRESSO na tela (Fase 5 — plano aprovado pelo operador em 03/10/2026). A
@@ -13,6 +14,8 @@ export function useConcluirAula() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ lessonId, comoAdmin }: { lessonId: number; comoAdmin: boolean }) => api.concluirAula(lessonId, comoAdmin),
+    // Concluir de novo não muda nada no servidor: um tropeço de rede não perde a aula (06/10/2026).
+    retry: deveTentarDeNovo,
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["pagina-da-aula"] }),
