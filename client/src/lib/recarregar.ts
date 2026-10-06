@@ -7,6 +7,9 @@
 // depois de recarregar (outro defeito), a tela de erro aparece em vez de a página
 // ficar recarregando em ciclo. Sem armazenamento no navegador, não recarrega
 // sozinho (não há como travar o ciclo): a tela de erro oferece o botão.
+// Com um envio de vídeo em andamento também não: recarregar o cortaria.
+
+import { haTrabalhoEmAndamento } from "@/lib/versao";
 
 const CHAVE = "jilson:recarregou-por-versao";
 export const JANELA_DA_TRAVA = 30_000;
@@ -20,8 +23,12 @@ export function ehErroDeVersaoAntiga(erro: unknown): boolean {
   return /dynamically imported module|Importing a module script failed|error loading dynamically imported module|Unable to preload/i.test(mensagem);
 }
 
-/** Recarrega a página, a não ser que já tenha recarregado há menos de 30 s. Diz se recarregou. */
+/**
+ * Recarrega a página, a não ser que já tenha recarregado há menos de 30 s, ou que
+ * haja um envio de vídeo em andamento. Diz se recarregou.
+ */
 export function recarregarUmaVez(agora: number = Date.now()): boolean {
+  if (haTrabalhoEmAndamento()) return false;
   try {
     const ultima = Number(window.sessionStorage.getItem(CHAVE) ?? 0);
     if (agora - ultima < JANELA_DA_TRAVA) return false;

@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useFormContext } from "react-hook-form";
 import * as api from "@/lib/api";
 import { enviarVideo } from "@/lib/video-upload";
+import { semInterromper } from "@/lib/versao";
 import type { CourseFormValues } from "@/lib/course-form";
 import { Button } from "@/components/ui/button";
 
@@ -26,14 +27,16 @@ export function IntroVideoUpload({
   const [porcentagem, setPorcentagem] = useState(0);
 
   const envio = useMutation({
-    mutationFn: async (arquivo: File) => {
-      setPorcentagem(0);
-      // O nome do arquivo vira o nome do vídeo no Bunny (operador, 27/09/2026).
-      const credenciais = await api.startIntroVideoUpload(courseId, arquivo.name);
-      await enviarVideo(arquivo, credenciais, setPorcentagem).concluido;
-      const concluido = await api.completeIntroVideoUpload(courseId, credenciais.videoId);
-      return { videoId: concluido.introVideoId, embedUrl: concluido.introVideoEmbedUrl };
-    },
+    // Uma atualização do site no meio não corta o envio (`semInterromper`).
+    mutationFn: (arquivo: File) =>
+      semInterromper(async () => {
+        setPorcentagem(0);
+        // O nome do arquivo vira o nome do vídeo no Bunny (operador, 27/09/2026).
+        const credenciais = await api.startIntroVideoUpload(courseId, arquivo.name);
+        await enviarVideo(arquivo, credenciais, setPorcentagem).concluido;
+        const concluido = await api.completeIntroVideoUpload(courseId, credenciais.videoId);
+        return { videoId: concluido.introVideoId, embedUrl: concluido.introVideoEmbedUrl };
+      }),
     // O servidor já gravou o vídeo no curso: o curso recarrega para o ✓ do passo
     // (sem reiniciar o formulário do editor).
     onSuccess: (video) => {

@@ -8,7 +8,8 @@ import { AppFooter } from "@/components/layout/AppFooter";
 import { AccountMenu } from "@/components/layout/AccountMenu";
 import { Sino } from "@/components/notificacoes/Sino";
 import { ErroDaTela } from "@/components/ErroDaTela";
-import { ROTAS_PUBLICAS } from "@jilson/core";
+import { ROTAS_PUBLICAS, Role } from "@jilson/core";
+import { usePreCarregarDoAdmin } from "@/lib/versao";
 import { IdiomaProvider, useIdioma, useIdiomaDoShell, useT } from "@/lib/language";
 
 /**
@@ -40,6 +41,7 @@ function Shell() {
   const navigate = useNavigate();
   const idioma = useIdioma();
   const t = useT();
+  usePreCarregarDoAdmin(session?.user.role === Role.ADMIN);
 
   async function handleSignOut() {
     await signOut();

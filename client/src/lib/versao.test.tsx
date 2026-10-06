@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, renderHook, screen, fireEvent } from "@testing-library/react";
 import { AxiosError, AxiosHeaders } from "axios";
 import { Link, MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import {
@@ -9,8 +9,12 @@ import {
   desviarLinksQuandoHouverVersaoNova,
   esquecerVersaoDoServidor,
   haVersaoNova,
+  PEDACOS_DO_ADMIN,
   PEDACOS_DO_ALUNO,
-  preCarregarPedacosDoAluno,
+  preCarregarPedacos,
+  semInterromper,
+  trocarDeVersaoAgora,
+  usePreCarregarDoAdmin,
 } from "./versao";
 import { aoFalhar, aoResponder } from "./api";
 
@@ -75,7 +79,11 @@ describe("os links", () => {
     // O jsdom avisa que não navega de verdade; o teste não precisa do barulho.
     vi.spyOn(console, "error").mockImplementation(() => {});
   });
-  afterEach(() => desligar());
+  // O jsdom segue o link num instante seguinte: espera ele, ainda com o console calado.
+  afterEach(async () => {
+    desligar();
+    await new Promise((r) => setTimeout(r, 0));
+  });
 
   it("sem versão nova: o app troca a tela por dentro, como hoje", () => {
     abrirComUmLink();
@@ -91,6 +99,19 @@ describe("os links", () => {
     expect(screen.getByTestId("onde").textContent).toBe("/aluno/aula/1"); // o app não trocou por dentro
   });
 
+  it("com versão nova mas um envio de vídeo em andamento: o app troca a tela por dentro, sem cortar o envio", async () => {
+    anotarVersaoDoServidor("outra-versao");
+    let terminar: () => void = () => {};
+    const envio = semInterromper(() => new Promise<void>((r) => (terminar = r)));
+    abrirComUmLink();
+    fireEvent.click(screen.getByRole("link", { name: "Próxima aula" }));
+    expect(screen.getByTestId("onde").textContent).toBe("/aluno/aula/2");
+
+    terminar();
+    await envio;
+    expect(trocarDeVersaoAgora()).toBe(true); // terminou: a próxima troca de tela já traz a versão nova
+  });
+
   it("com versão nova, clique com Ctrl (nova aba) segue como sempre", () => {
     anotarVersaoDoServidor("outra-versao");
     abrirComUmLink();
@@ -104,11 +125,31 @@ describe("o pré-carregamento do que o aluno usa", () => {
     vi.useFakeTimers();
     const pedaco = vi.fn(() => Promise.resolve());
     // Sem requestIdleCallback (como no jsdom), espera alguns segundos.
-    preCarregarPedacosDoAluno([pedaco]);
+    preCarregarPedacos([pedaco]);
     expect(pedaco).not.toHaveBeenCalled();
     vi.advanceTimersByTime(3000);
     expect(pedaco).toHaveBeenCalledTimes(1);
     vi.useRealTimers();
+  });
+
+  it("o admin baixa os pedaços do admin; o aluno, não", () => {
+    vi.useFakeTimers();
+    const pedaco = vi.fn(() => Promise.resolve());
+    const lista = [pedaco];
+    renderHook(() => usePreCarregarDoAdmin(false, lista));
+    vi.advanceTimersByTime(3000);
+    expect(pedaco).not.toHaveBeenCalled();
+
+    renderHook(() => usePreCarregarDoAdmin(true, lista));
+    vi.advanceTimersByTime(3000);
+    expect(pedaco).toHaveBeenCalledTimes(1);
+    vi.useRealTimers();
+  });
+
+  it("a lista do admin inclui o passo Conteúdo e o seletor de ícones", async () => {
+    const modulos = (await Promise.all(PEDACOS_DO_ADMIN.map((pedaco) => pedaco()))) as Record<string, unknown>[];
+    expect(modulos.some((m) => typeof m.ModuleLessonTree === "function")).toBe(true);
+    expect(modulos.some((m) => typeof m.default === "function")).toBe(true); // o IconPicker sai como default
   });
 
   it("a lista inclui o leitor de texto da aula de texto", async () => {

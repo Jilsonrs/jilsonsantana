@@ -466,6 +466,7 @@ exceto o item 4, que é página pública.
 | Arquivo | Por quê |
 |---|---|
 | `client/src/lib/navigation.ts` | É o **mapa de navegação** — dado, não estilo. Ele decide o que aparece e para quem; você decide como aparece. |
+| `client/src/lib/versao.ts` e `recarregar.ts` | A **troca de versão sem atrapalhar o aluno** (regra 13) — lógica, não estilo. |
 | `client/src/lib/footer.ts` | Os **itens do rodapé do app** e para onde levam — dado, igual ao mapa de navegação. O visual fica em `components/layout/AppFooter.tsx`. |
 | Qualquer `*.test.tsx` / `*.test.ts` | Se um teste incomodar, **avise** — não edite. Um teste ajustado para passar deixa de proteger. |
 | `client/src/components/ui/sheet.tsx` | Vem da biblioteca (shadcn/Radix). |
@@ -474,7 +475,7 @@ exceto o item 4, que é página pública.
 
 ---
 
-## 4. Doze regras — cada uma já custou tempo aqui
+## 4. Treze regras — cada uma já custou tempo aqui
 
 **1. Classe de Tailwind tem que ser TEXTO LITERAL.**
 ```tsx
@@ -563,6 +564,19 @@ cinza e com a etiqueta EM BREVE — ao admin, para ele não esquecer o que falta
 (desde 29/09/2026). Elas **não podem virar link**: a rota não existe, e clique que leva a lugar
 nenhum é pior que item ausente. Vale no rail, na gaveta do celular **e** no nível 2 — os três
 precisam concordar. **Tem teste.**
+
+**13. Publicar não pode atrapalhar quem está estudando** *(decisão do operador, 06/10/2026)*.
+Quando você publica, quem está com o site aberto (o aluno no meio da aula, o operador no editor)
+pega a versão nova **sozinho, no próximo clique** — sem aviso e sem botão de recarregar. Para isso
+continuar valendo:
+- **Link é `<Link>` ou `<a href>`**: já funciona sozinho. Se uma tela precisar mudar de endereço
+  por código (num `onClick`), não use `navigate()`: use `useIrPara()`, de `@/lib/versao`.
+- **Não crie `lazy()` nem `import()` novo sem falar com o Claude.** Todo pedaço carregado sob
+  demanda precisa entrar na lista de pré-carregamento (`client/src/lib/versao.ts`); **o teste
+  `pedacos.test.ts` reprova** se não entrar.
+- **Não crie aviso de "nova versão disponível"**: é exatamente o que o operador decidiu evitar,
+  porque passa insegurança. A tela de erro (item 27 da fila) é o último recurso, quase nunca vista.
+- Depois de publicar, **não precisa pedir a ninguém para recarregar** a página.
 
 ---
 

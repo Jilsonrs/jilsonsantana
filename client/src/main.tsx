@@ -7,7 +7,7 @@ import "./index.css";
 import App from "./App.tsx";
 import { captureUtmOnce } from "@/lib/attribution";
 import { recarregarUmaVez } from "@/lib/recarregar";
-import { desviarLinksQuandoHouverVersaoNova, preCarregarPedacosDoAluno } from "@/lib/versao";
+import { desviarLinksQuandoHouverVersaoNova, PEDACOS_DO_ALUNO, preCarregarPedacos } from "@/lib/versao";
 
 // Capture first-touch UTM attribution before the app renders (P1 seam; the
 // value is persisted to the User at checkout in P4).
@@ -25,7 +25,7 @@ window.addEventListener("vite:preloadError", (evento) => {
 // página inteira, já atualizada; e o que a aula usa sob demanda é baixado logo,
 // em segundo plano, para uma aba aberta não depender de arquivo que vai mudar.
 desviarLinksQuandoHouverVersaoNova();
-preCarregarPedacosDoAluno();
+preCarregarPedacos(PEDACOS_DO_ALUNO);
 
 const queryClient = new QueryClient({
   defaultOptions: {

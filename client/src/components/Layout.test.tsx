@@ -21,6 +21,14 @@ vi.mock("@/lib/api", () => ({
   getNotificacoes: () => Promise.resolve({ naoLidas: 2, itens: [] }),
 }));
 
+// Os pedaços do admin baixados em segundo plano (06/10/2026): aqui só importa
+// QUEM pede; o que é baixado tem teste em `lib/versao.test.tsx`.
+const usePreCarregarDoAdmin = vi.fn();
+vi.mock("@/lib/versao", async (original) => ({
+  ...(await original<typeof import("@/lib/versao")>()),
+  usePreCarregarDoAdmin: (ehAdmin: boolean) => usePreCarregarDoAdmin(ehAdmin),
+}));
+
 import { Layout } from "./Layout";
 
 function marca() {
@@ -197,5 +205,24 @@ describe("Layout — o menu da conta", () => {
     renderWithProviders(<Layout />, { route: "/aluno/conta" });
 
     expect(screen.getByRole("link", { name: "Seus dados" })).toBeTruthy();
+  });
+});
+
+describe("Layout — os pedaços do admin", () => {
+  it("o admin os baixa; o aluno e o visitante, não", () => {
+    useSession.mockReturnValue({ data: { user: { role: Role.ADMIN } } });
+    renderWithProviders(<Layout />);
+    expect(usePreCarregarDoAdmin).toHaveBeenLastCalledWith(true);
+
+    vi.clearAllMocks();
+    useSession.mockReturnValue({ data: { user: { role: Role.MEMBER } } });
+    renderWithProviders(<Layout />);
+    expect(usePreCarregarDoAdmin).not.toHaveBeenCalledWith(true);
+    expect(usePreCarregarDoAdmin).toHaveBeenCalledWith(false);
+
+    vi.clearAllMocks();
+    useSession.mockReturnValue({ data: null });
+    renderWithProviders(<Layout />);
+    expect(usePreCarregarDoAdmin).not.toHaveBeenCalledWith(true);
   });
 });
