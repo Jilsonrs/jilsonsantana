@@ -48,6 +48,15 @@ enum Material {
 enum NotificationKind {
   BOAS_VINDAS
   PARABENS
+  // O aviso que o operador escreve em Comunicação → Notificações (bloco C1, 06/10/2026).
+  AVISO
+}
+
+// Para quem vai o aviso (decisões do operador, 06/10/2026): TODOS = todo mundo com
+// conta; CURSO = quem já começou aquele curso (`CourseStart`).
+enum AnnouncementAudience {
+  TODOS
+  CURSO
 }
 
 enum PlanItemType {
@@ -161,6 +170,7 @@ model User {
   saved         SavedItem[]
   // 04/10/2026: as notificações do sino. Mesma DEBT — REAPLICAR.
   notifications Notification[]
+  courseStarts  CourseStart[]
 
   birthday            String?
   preferredLanguage   String?   @default("pt")
@@ -269,6 +279,8 @@ model Course {
   saved               SavedItem[]
   introCaption        Caption?
   notifications       Notification[]
+  announcements       Announcement[]
+  courseStarts        CourseStart[]
 
   @@map("course")
 }
@@ -422,10 +434,54 @@ model Notification {
   createdAt   DateTime         @default(now())
   readAt      DateTime?
 
+  // O aviso de Comunicação de onde esta notificação veio (só no tipo AVISO). O sino
+  // lê o título e o texto ATUAIS dele (regra da P46); apagar o aviso apaga daqui.
+  announcementId Int?
+  announcement   Announcement? @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+
   @@unique([userId, courseId, kind])
+  @@unique([userId, announcementId])
   @@index([userId, createdAt])
   @@index([courseId])
+  @@index([announcementId])
   @@map("notification")
+}
+
+// O AVISO de Comunicação → Notificações (bloco C1 — decisões do operador, 06/10/2026):
+// o operador escreve, escolhe para quem, salva como rascunho ou envia. Enviado,
+// pode ser editado (todos passam a ver o texto novo) e apagado (some do sino de
+// todos). `sentAt` nulo = rascunho.
+model Announcement {
+  id            Int                  @id @default(autoincrement())
+  title         String
+  body          String
+  audience      AnnouncementAudience @default(TODOS)
+  courseId      Int?
+  course        Course?              @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  sentAt        DateTime?
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  notifications Notification[]
+
+  @@index([courseId])
+  @@map("announcement")
+}
+
+// QUEM JÁ COMEÇOU O CURSO (decisão do operador, 06/10/2026): a escola não tem
+// matrícula — a assinatura dá acesso a tudo —, então "os alunos de um curso" são
+// os que abriram uma aula dele com acesso. Gravado na página da aula; a primeira
+// vez fica.
+model CourseStart {
+  id        Int      @id @default(autoincrement())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseId  Int
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  startedAt DateTime @default(now())
+
+  @@unique([userId, courseId])
+  @@index([courseId])
+  @@map("course_start")
 }
 
 // A trilha (learning track). Curated template (ownerUserId = null, isTemplate)

@@ -2275,12 +2275,52 @@ própria**.*
         corrigidos — os parabéns também exigem assinatura (a prévia grátis não basta), e a falha
         ao criar a notificação não derruba a aula nem a conclusão (`semDerrubar`, log só com ids e
         código). Mutação nas três correções: reprovam.
-  - [ ] **4d — A Comunicação: mensagens do operador no mesmo sino** *(próximo bloco, plano próprio —
-        decisões do operador, 04/10/2026)*. Além das mensagens do curso, o operador escreve
-        **qualquer** mensagem na área **Comunicação** do admin: aula ao vivo, evento, pergunta
-        sobre cursos desejados. **Para quem:** todos os alunos, **ou** só os de um curso.
-        **Pergunta sobre cursos desejados é só mensagem por enquanto** (sem enquete, sem resposta).
-        O sino já aceita outros tipos (`NotificationKind` ganha valor novo; `courseId` é opcional).
+  - **4d — COMUNICAÇÃO: o lugar do operador para falar com os alunos** *(decisões do operador,
+        04/10 e 06/10/2026, a partir da área Comunicação da Udemy; plano aprovado em 06/10)*.
+        No menu do admin, **"Comunicação" antes de "Alunos"**, com o nível 2: Notificações ·
+        Mensagens automáticas · Dúvidas · E-mails educacionais · E-mails promocionais · Insights
+        do JilsonAI (o que ainda não existe, com EM BREVE). **O mapa Udemy → escola:**
+        Perguntas e respostas → **Dúvidas, PRIVADO** (o JilsonAI responde primeiro; o que ele não
+        resolve chega ao operador, e a resposta volta ao aluno — sem perguntas públicas entre
+        alunos; a "Escalações" do JilsonAI Admin passa para cá) · Perguntas em destaque → não entra
+        (as perguntas frequentes de cada curso já existem e alimentam o JilsonAI) · Insights do AI
+        Assistant → **Insights do JilsonAI** (depois de uso real) · Mensagens automáticas → **a
+        boas-vindas e os parabéns de cada curso, numa lista** · conversa 1 a 1 → a fila das Dúvidas
+        · Tarefas → não existe na escola · Anúncios educacionais → **E-mails educacionais** ·
+        E-mails promocionais → **E-mails promocionais** (só para quem aceitou) · o sino →
+        **Notificações**. **E-mail pelo Resend** (doc via context7): ele faz o envio em massa, a
+        página de descadastro (educacional × promocional) e os números (entregues, abertura,
+        cliques, descadastro) — sem fila nem contador nossos. **Decisões do operador (06/10):**
+        "todos" = **todo mundo com conta**; "de um curso" = **quem já começou o curso** (abriu uma
+        aula com acesso — `CourseStart`); notificação enviada pode ser **editada** (todos veem o
+        texto novo) e **apagada** (some do sino de todos).
+    - [x] **C1, etapa 1 — banco e servidor** *(06/10/2026)*: migration `comunicacao_notificacoes`
+          (`Announcement`, o enum `AnnouncementAudience`, `NotificationKind.AVISO`,
+          `Notification.announcementId` com CHECK, e `CourseStart` preenchido com quem já tinha
+          boas-vindas ou aula concluída; RLS nas duas tabelas novas — conferido: zero tabelas sem
+          RLS); a página da aula registra o começo do curso (aula com acesso, logado; e o admin pela
+          rota dele); `server/src/routes/admin-announcements.ts` (listar com recebidas/lidas,
+          quantos vão receber, criar como rascunho, salvar, enviar uma vez só, apagar, e as
+          mensagens automáticas em `/api/admin/course-messages`); o sino traz o aviso com o
+          **título e o texto atuais** e sem link de curso (campo novo `titulo`, API aditiva).
+          Mutação: as 6 partes reprovam.
+    - [ ] **C1, etapa 2 — as telas**: o item Comunicação no menu (e "Escalações" saindo do
+          JilsonAI Admin para Comunicação → Dúvidas, EM BREVE); Notificações (lista, nova, editar,
+          apagar, Visualizar, Salvar como rascunho, Enviar com a contagem); Mensagens automáticas;
+          o aluno vê o título do aviso.
+    - [ ] **C2 — A base do e-mail** (nada chega a aluno): a peça `resend` e o renderizador de
+          Markdown no servidor (dependências novas — OK do operador no bloco), um ponto só de envio
+          (`server/src/lib/email.ts`, `await` em `try/catch`), o modelo base, "enviar um e-mail de
+          prévia para mim" e o passo a passo do Resend para o operador (conta, domínio, remetente,
+          chave na Railway).
+    - [ ] **C3 — E-mails da conta**: "esqueci minha senha" (tela + e-mail; doc do Better Auth), a
+          boas-vindas da conta; o "ao assinar" ligado no webhook da Fase 4.
+    - [ ] **C4 — E-mails educacionais** como na Udemy (para quem, assunto, texto com link e imagem,
+          Visualizar, prévia por e-mail, rascunho, Enviar, a lista com os números), alunos
+          sincronizados com o Resend. Depois: filtros por progresso, data de início e "excluir quem
+          fez outro curso", e o agendamento.
+    - [ ] **C5 — E-mails promocionais**: só para quem aceitou; o aceite em Minha conta →
+          Preferências e a regra da página de baixar material (P29).
   - [x] **4c — O sino, a lista e a página Ver todas** *(04/10/2026)*: o sino no cabeçalho, ao lado
         da foto, para aluno e admin, com o número de não lidas ("9+") no nome do botão; a lista
         das 5 mais recentes (título, começo do texto sem as marcas do Markdown, há quanto tempo)

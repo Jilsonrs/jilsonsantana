@@ -16,7 +16,7 @@
 > 5. **Item novo ganha o próximo número livre.** Número nunca se reutiliza, para que "P7" queira
 >    dizer sempre a mesma coisa em qualquer conversa.
 >
-> **Próximo número livre: P47** · Atualizada em 06/10/2026
+> **Próximo número livre: P50** · Atualizada em 06/10/2026
 
 ## A. Agora, em sequência *(nascidas da configuração do Bunny, 25/09/2026)*
 
@@ -28,6 +28,9 @@ Item novo que precise de resposta rápida entra aqui, com o próximo número liv
 | # | O que falta | Onde registrar |
 |---|---|---|
 | P45 | **Revisar os textos novos de 06/10**, rascunho do agente: "Notificação não encontrada." / "Notification not found." (mensagem aberta que não está mais na lista) e "Notifications" (o item do menu em inglês) | `core/src/i18n/pt.ts` e `en.ts` |
+| P47 | **O e-mail educacional também aparece no sino?** (a Udemy põe nos dois). Recomendação do agente: sim | `implementation-plan.md` → 4d, antes do C4 |
+| P48 | **Limite de envios por mês?** (a Udemy: 4 educacionais e 2 promocionais). Recomendação do agente: sem limite no sistema | `implementation-plan.md` → 4d, antes do C4 |
+| P49 | **O remetente dos e-mails:** nome e endereço (ex.: "Jilson Santana <jilson@jilsonsantana.com>") e o e-mail que recebe as respostas | `implementation-plan.md` → 4d, antes do C2 |
 | P12 | Revisar as **15 perguntas da FAQ**, que já estão no admin | no próprio admin |
 | P16 | **Cadastrar os 5 cursos da home** no admin. Tudo o que o cadastro precisa **já está no ar**: o envio da capa e do vídeo promocional, a descrição com negrito e listas, e os limites de caracteres | `implementation-plan.md` → Bloco C4 |
 | P32 | **Confirmar o número de alunos corporativos (4.150+)** que está na home, no bloco do autor (os 107 mil+ e os 70 países já foram confirmados na sessão da home) | no próprio admin, em Textos → Home |
