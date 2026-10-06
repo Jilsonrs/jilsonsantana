@@ -33,7 +33,10 @@ export function CoursePublishSection() {
               id="displayOrder"
               type="number"
               aria-describedby={descritoPor("displayOrder", { dica: true })}
-              {...register("displayOrder")}
+              // O NÚMERO, não o texto digitado: o Salvar do passo envia os valores
+              // crus do formulário, e o servidor recusava "3" (defeito de 05/10/2026).
+              // Apagado vale 0, como sempre valeu.
+              {...register("displayOrder", { setValueAs: (v: unknown) => (v === "" || v === null || v === undefined ? 0 : Number(v)) })}
             />
           </Field>
         </CardContent>
