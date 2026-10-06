@@ -204,7 +204,11 @@
 > (aula concluída sozinha, barra na aula e no cartão), o vídeo que não recomeça ao trocar de aba
 > (a apresentação abre pausada, a aula toca sozinha) e o "Salvos". **Primeiro teste com o player de
 > verdade: com o operador** (assistir uma aula até perto do fim e ver a barra andar).
-> **PUBLICADO em 06/10/2026, por último (`main` = `04ef820`, CI verde nos dois jobs, deploy ok):**
+> **PUBLICADO em 06/10/2026, por último (`main` = `40ae6f8`, CI verde nos dois jobs, deploy ok):**
+> a prévia do sino volta a mostrar só as 2 primeiras linhas e a data, como na Udemy (o clique abre
+> a mensagem completa em "Ver todas"). **Provado no site:** a versão nova (`muwymfgl-553ac24d`) no
+> cabeçalho e no `versao.txt`.
+> **PUBLICADO em 06/10/2026 (`main` = `04ef820`, CI verde nos dois jobs, deploy ok):**
 > a duração ao lado de cada aula e o "% concluído" no topo da aula, o endereço inexistente levando
 > ao Início (P44), e o player renovando sozinho o endereço vencido (aula aberta há mais de 24 h).
 > **Provado no site:** a versão nova (`muwr1cyr-f4243b2b`) no cabeçalho e no `versao.txt`; arquivo
