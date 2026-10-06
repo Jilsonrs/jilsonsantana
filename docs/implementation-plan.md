@@ -2157,6 +2157,16 @@ própria**.*
       `desligarComCalma` no aviso de desligar (`server/src/lib/desligar.ts`). Já coberto sem código
       novo: a volta à aba busca os dados de novo (React Query), o que já informa a versão. Mutação:
       as 9 partes reprovam.
+- [x] **Defeito corrigido (06/10/2026, achado do operador): sair de uma aula de vídeo derrubava a
+      próxima na tela de erro** — a passagem automática ao fim do vídeo e o clique em outra aula
+      abriam "Algo deu errado ao abrir esta tela" (às vezes: só quando o player saía da página).
+      **Causa, reproduzida em teste com o `player.js` de verdade:** ao sair da aula, o app manda o
+      player parar de avisar; nessa hora o iframe já saiu da página, e o `player.js` tenta mandar
+      uma mensagem para a janela dele, que não existe mais (`TypeError`) — o erro sobe até a tela de
+      erro da aula seguinte. Os testes não pegavam porque trocavam o `player.js` por dublê.
+      **Agora:** sem o iframe na página, parar de ouvir não fala com ele (e nunca derruba a tela)
+      (`client/src/lib/player-do-bunny.ts`); teste novo com o pacote de verdade
+      (`player-do-bunny.real.test.ts`). Mutação: sem a proteção, reprova.
 - [x] **A mensagem do curso mostra o que está no admin** *(decisão do operador, 06/10/2026 — P46,
       opção b: "mostra o que está no Admin porque lê o que está corrigido; e-mail vai ser o que
       chegar no e-mail do aluno e aí sim não tem como mudar")*. Corrigir a boas-vindas ou os

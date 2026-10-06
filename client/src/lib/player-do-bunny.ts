@@ -69,9 +69,19 @@ export function ouvirPlayer(iframe: HTMLIFrameElement, { aoConcluir, aoTerminar,
   player.on("ended", aoFim);
   return () => {
     parado = true;
-    player.off("timeupdate", aoAtualizar);
-    player.off("pause", aoPausar);
-    player.off("play", aoTocar);
-    player.off("ended", aoFim);
+    // A pessoa saiu da aula (a passagem automática, ou o clique em outra): o iframe
+    // JÁ SAIU da página quando isto roda, e o `player.js`, ao parar de ouvir, manda
+    // uma mensagem para a janela dele, que não existe mais — o erro derrubava a
+    // próxima aula na tela de erro (achado do operador, 06/10/2026). Com `parado`,
+    // nenhum aviso que ainda chegue faz nada; então, sem a janela, não há o que avisar.
+    if (!iframe.isConnected || !iframe.contentWindow) return;
+    try {
+      player.off("timeupdate", aoAtualizar);
+      player.off("pause", aoPausar);
+      player.off("play", aoTocar);
+      player.off("ended", aoFim);
+    } catch {
+      // O iframe pode sair da página no meio; parar de ouvir nunca derruba a tela.
+    }
   };
 }
