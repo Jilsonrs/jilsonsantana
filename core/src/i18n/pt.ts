@@ -65,7 +65,9 @@ export const pt = {
       aulaGratis: "aula grátis para experimentar",
       aulasGratis: "aulas grátis para experimentar",
       legendasPt: "Legendas em português",
-      legendasEn: "Legendas em inglês"
+      legendasEn: "Legendas em inglês",
+      // Todo curso dá certificado ao ser concluído (operador, 05/10/2026): linha fixa.
+      certificado: "Certificado de conclusão"
     },
     materiais: {
       BIBLIOTECA_DE_PROMPTS: "Biblioteca de prompts",
@@ -296,7 +298,10 @@ export const pt = {
       erroIdioma: "Não foi possível trocar o idioma. Tente de novo."
     },
     comum: {
-      carregando: "Carregando…"
+      carregando: "Carregando…",
+      // A tela de erro no lugar da página em branco (05/10/2026). Rascunho (P38).
+      algoDeuErrado: "Algo deu errado ao abrir esta tela.",
+      recarregar: "Recarregar a página"
     },
     inicio: {
       ola: "Olá",
@@ -416,6 +421,7 @@ export const pt = {
       progressoNoCurso: "Progresso no curso",
       concluida: "Concluída",
       semVideo: "Esta aula ainda não tem vídeo.",
+      semTexto: "Esta aula ainda não tem texto.",
       recursos: "Arquivos",
       recursosDaAula: "Arquivos para baixar",
       recursosSoAssinantes: "Os arquivos desta aula são para assinantes.",

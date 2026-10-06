@@ -69,9 +69,14 @@ export function LessonContent({
   const arquivos = aula.arquivos ?? [];
   return (
     <article className="mx-auto max-w-[800px] space-y-12 py-6">
-      <Suspense fallback={<p className="text-muted-foreground animate-pulse">{t.aula.carregando}</p>}>
-        <MarkdownText texto={aula.texto ?? ""} permitidos={ELEMENTOS_DA_AULA} className="text-lg leading-relaxed text-foreground/90" />
-      </Suspense>
+      {/* Aula de texto ainda sem texto: o aviso, como a de vídeo sem vídeo (05/10/2026). */}
+      {aula.texto?.trim() ? (
+        <Suspense fallback={<p className="text-muted-foreground animate-pulse">{t.aula.carregando}</p>}>
+          <MarkdownText texto={aula.texto} permitidos={ELEMENTOS_DA_AULA} className="text-lg leading-relaxed text-foreground/90" />
+        </Suspense>
+      ) : (
+        <p className="text-muted-foreground">{t.aula.semTexto}</p>
+      )}
       {(arquivos.length > 0 || (temArquivos && !aula.arquivosLiberados)) && (
         <section className="space-y-6 border-t border-border/40 pt-8">
           <h2 className="font-display text-2xl font-semibold tracking-tight">{t.aula.recursosDaAula}</h2>

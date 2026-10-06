@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { screen, fireEvent, within } from "@testing-library/react";
 import { renderWithProviders } from "@/test-utils";
 import { Role } from "@jilson/core";
+import { Route } from "react-router-dom";
 
 const useSession = vi.fn();
 const signOut = vi.fn();
@@ -140,6 +141,27 @@ describe("Layout — em inglês", () => {
 
 // "Minha conta" saiu do menu lateral e mora no menu da foto (decisão do
 // operador, 24/09/2026) — mas a coluna da conta continua em /aluno/conta.
+// A TELA DE ERRO (achado do operador, 05/10/2026): uma tela que quebra não deixa
+// mais tudo em branco — o menu continua, e no lugar dela aparece a mensagem.
+function TelaQueQuebra(): never {
+  throw new Error("Cannot read properties of undefined");
+}
+
+describe("Layout — a tela que quebra", () => {
+  it("o menu continua, e no lugar da tela aparece a mensagem com Recarregar", () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    useSession.mockReturnValue({ data: { user: { role: Role.MEMBER } } });
+    renderWithProviders(<Layout />, {
+      route: "/aluno/quebra",
+      path: "/",
+      filhas: <Route path="aluno/quebra" element={<TelaQueQuebra />} />,
+    });
+    expect(screen.getByRole("navigation", { name: "Principal" })).toBeTruthy();
+    expect(screen.getByRole("alert").textContent).toBe("Algo deu errado ao abrir esta tela.");
+    expect(screen.getByRole("button", { name: "Recarregar a página" })).toBeTruthy();
+  });
+});
+
 describe("Layout — o menu da conta", () => {
   beforeEach(() => {
     useSession.mockReturnValue({ data: { user: { role: Role.MEMBER, name: "Ana Souza", email: "ana@exemplo.com" } } });

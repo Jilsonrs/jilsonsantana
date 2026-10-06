@@ -1,4 +1,4 @@
-import { Link, Outlet, useNavigate } from "react-router-dom";
+import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useSession, signOut } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { AppRail } from "@/components/nav/AppRail";
@@ -7,6 +7,7 @@ import { SecondaryNav } from "@/components/nav/SecondaryNav";
 import { AppFooter } from "@/components/layout/AppFooter";
 import { AccountMenu } from "@/components/layout/AccountMenu";
 import { Sino } from "@/components/notificacoes/Sino";
+import { ErroDaTela } from "@/components/ErroDaTela";
 import { ROTAS_PUBLICAS } from "@jilson/core";
 import { IdiomaProvider, useIdioma, useIdiomaDoShell, useT } from "@/lib/language";
 
@@ -65,7 +66,7 @@ function Shell() {
           </nav>
         </header>
         <main className="flex-1">
-          <Outlet />
+          <TelaAtual />
         </main>
       </div>
     );
@@ -90,12 +91,25 @@ function Shell() {
           </div>
         </header>
         <main className="flex-1">
-          <Outlet />
+          <TelaAtual />
         </main>
         {/* Só com sessão (aluno e admin): o visitante está na superfície
             pública, que tem o rodapé dela no servidor. */}
         <AppFooter />
       </div>
     </div>
+  );
+}
+
+/**
+ * A tela do endereço atual, protegida: se ela quebrar, aparece a tela de erro no
+ * lugar dela, e trocar de endereço limpa o erro (05/10/2026).
+ */
+function TelaAtual() {
+  const { pathname } = useLocation();
+  return (
+    <ErroDaTela chave={pathname}>
+      <Outlet />
+    </ErroDaTela>
   );
 }

@@ -6,10 +6,18 @@ import { BrowserRouter } from "react-router-dom";
 import "./index.css";
 import App from "./App.tsx";
 import { captureUtmOnce } from "@/lib/attribution";
+import { recarregarUmaVez } from "@/lib/recarregar";
 
 // Capture first-touch UTM attribution before the app renders (P1 seam; the
 // value is persisted to the User at checkout in P4).
 captureUtmOnce();
+
+// O site foi atualizado com a tela aberta: um pedaço do app de antes não existe
+// mais. O Vite avisa (`vite:preloadError`), e a página recarrega na versão nova —
+// uma vez; se já recarregou há pouco, o erro segue para a tela de erro (05/10/2026).
+window.addEventListener("vite:preloadError", (evento) => {
+  if (recarregarUmaVez()) evento.preventDefault();
+});
 
 const queryClient = new QueryClient({
   defaultOptions: {
