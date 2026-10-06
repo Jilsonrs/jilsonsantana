@@ -28,6 +28,7 @@ const useSessionMock = vi.fn();
 vi.mock("@/lib/auth-client", () => ({ useSession: () => useSessionMock() }));
 
 import { LessonPage } from "./LessonPage";
+import { anotarVersaoDoServidor, esquecerVersaoDoServidor, navegador } from "@/lib/versao";
 import { SecondaryNav } from "@/components/nav/SecondaryNav";
 import { definirMenuDoCursoFechado } from "@/lib/menu-do-curso";
 
@@ -499,6 +500,24 @@ describe("página da aula — o fim do vídeo abre a próxima", () => {
 
     expect(await screen.findByText("A aula seguinte.")).toBeTruthy();
     expect(getLessonPage).toHaveBeenLastCalledWith(12, false);
+  });
+
+  // Com versão nova no servidor (06/10/2026): a próxima aula abre carregando a
+  // página inteira, já atualizada — não por dentro do app.
+  it("com versão nova no servidor: a próxima aula abre carregando a página", async () => {
+    const ir = vi.spyOn(navegador, "ir").mockImplementation(() => {});
+    useSessionMock.mockReturnValue({ data: { user: { role: Role.MEMBER } }, isPending: false });
+    abrir();
+    await screen.findByTitle("Abertura");
+    await waitFor(() => expect(ouvirPlayer).toHaveBeenCalled());
+    anotarVersaoDoServidor("outra-versao");
+
+    avisosDoPlayer().aoTerminar();
+
+    expect(ir).toHaveBeenCalledWith("/aluno/aula/12");
+    expect(getLessonPage.mock.calls.every(([id]) => id === 11)).toBe(true);
+    esquecerVersaoDoServidor();
+    ir.mockRestore();
   });
 
   it("na prévia do admin também", async () => {

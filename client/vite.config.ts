@@ -1,11 +1,34 @@
 import path from "node:path";
+import { randomUUID } from "node:crypto";
 // vitest/config re-exports vite's defineConfig with the `test` field typed
 // (this file doubles as both the Vite build config and the Vitest config).
 import { defineConfig } from "vitest/config";
+import type { Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 
+// A IDENTIDADE DESTA VERSÃO do app (decisão do operador, 06/10/2026: atualizar o
+// site sem atrapalhar quem está estudando). Nasce a cada montagem e vai para dois
+// lugares: dentro do app (`__VERSAO_DO_APP__`) e num arquivo ao lado dele
+// (`versao.txt`), que o servidor de produção lê e manda em toda resposta da API.
+// Quando as duas não batem, a aba aberta é de antes da publicação, e a próxima
+// troca de tela carrega a página inteira, já atualizada (`src/lib/versao.ts`).
+const VERSAO_DO_APP = `${Date.now().toString(36)}-${randomUUID().slice(0, 8)}`;
+
+function arquivoDaVersao(versao: string): Plugin {
+  return {
+    name: "versao-do-app",
+    apply: "build",
+    generateBundle() {
+      this.emitFile({ type: "asset", fileName: "versao.txt", source: versao });
+    },
+  };
+}
+
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), arquivoDaVersao(VERSAO_DO_APP)],
+  define: {
+    __VERSAO_DO_APP__: JSON.stringify(VERSAO_DO_APP),
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

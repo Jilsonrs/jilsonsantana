@@ -2103,6 +2103,23 @@ própria**.*
       mostrar a anterior por algumas horas. O tamanho da letra da legenda é ajuste de visual da
       biblioteca no painel (vale para todos); não achei na doc um controle para o aluno.
 
+- [x] **Atualizar o site sem atrapalhar quem está estudando** *(decisão do operador, 06/10/2026: "recarrega
+      só se houver versão nova")*. O app de uma página só roda a versão de quando a aba abriu; antes,
+      uma publicação podia deixar a aula em branco ou recarregando. Três camadas, mais a rede de
+      05/10 (recarregar uma vez / tela de erro) como último recurso:
+      (1) **o leitor de texto da aula é baixado logo depois de abrir** (`PEDACOS_DO_ALUNO`), então
+      a aba aberta não depende dele depois; (2) **identidade da versão** gerada na montagem do Vite
+      (`versao.txt` + `__VERSAO_DO_APP__`), mandada pelo servidor de produção em toda resposta da
+      API (`X-Versao-Do-App`); quando não bate, **o próximo clique num link ou a passagem
+      automática de aula carregam a página inteira**, já atualizada (`client/src/lib/versao.ts`);
+      (3) **API aditiva** como regra (`CLAUDE.md` → Rendering Boundary). E a página do app nunca
+      fica guardada no navegador (`Cache-Control: no-cache`). Fora: manter versões antigas no ar
+      (CDN ou disco persistente — na Railway, disco persistente custa segundos fora do ar a cada
+      publicação). Fontes: Next.js (`deploymentId` → navegação completa, via context7), Vercel
+      Skew Protection, doc do Vite (`vite:preloadError`, `no-cache` no HTML), "Version Skew"
+      (Malte Ubl). Mutação: a comparação sempre igual, o clique sem desviar e o fim do vídeo sem
+      carregar a página — reprovam. *O cabeçalho só existe em produção: conferido no site depois
+      de publicar.*
 - [x] **"Este curso inclui": o ícone CC nas legendas e o "Certificado de conclusão" fixo** *(decisões
       do operador, 05/10/2026 — fecha a P41)*: a última linha, em todo curso; o quadro sempre
       aparece. ⚠️ O certificado nasce na Fase 6.5 e precisa estar no ar antes do lançamento.

@@ -7,6 +7,7 @@ import "./index.css";
 import App from "./App.tsx";
 import { captureUtmOnce } from "@/lib/attribution";
 import { recarregarUmaVez } from "@/lib/recarregar";
+import { desviarLinksQuandoHouverVersaoNova, preCarregarPedacosDoAluno } from "@/lib/versao";
 
 // Capture first-touch UTM attribution before the app renders (P1 seam; the
 // value is persisted to the User at checkout in P4).
@@ -18,6 +19,13 @@ captureUtmOnce();
 window.addEventListener("vite:preloadError", (evento) => {
   if (recarregarUmaVez()) evento.preventDefault();
 });
+
+// Atualizar o site sem atrapalhar quem está estudando (decisão do operador,
+// 06/10/2026): com versão nova no servidor, o próximo clique num link carrega a
+// página inteira, já atualizada; e o que a aula usa sob demanda é baixado logo,
+// em segundo plano, para uma aba aberta não depender de arquivo que vai mudar.
+desviarLinksQuandoHouverVersaoNova();
+preCarregarPedacosDoAluno();
 
 const queryClient = new QueryClient({
   defaultOptions: {

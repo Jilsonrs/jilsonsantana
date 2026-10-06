@@ -410,6 +410,12 @@ NEVER pass a secret as a CLI argument or read one back into the transcript. Comm
 ## Rendering Boundary (a fronteira de renderização)
 
 > **REGRA, uma linha:** **rota pública = HTML montado no servidor. Qualquer coisa atrás de login = React SPA.** A fronteira é a mesma do `temAcessoAtivo()` — o que o crawler pode ver, o servidor desenha; o que exige sessão, o React desenha.
+> *(Origem, corrigida em 06/10/2026: foi decisão TÉCNICA de Ago 2026 registrada pelo agente — o operador não a tomou. O React atrás de login vem da escolha inicial de stack. Reabrir é decisão dele, sem amarra.)*
+
+**ATUALIZAR O SITE SEM ATRAPALHAR QUEM ESTÁ ESTUDANDO** *(decisão do operador, 06/10/2026 — entre recarregar a cada clique, reescrever como páginas do servidor e esta)*: **recarrega só se houver versão nova**, como o Next.js. O app de uma página só roda a versão de quando a aba abriu; o servidor diz a dele em toda resposta da API (`X-Versao-Do-App`, gerada na montagem do Vite); quando não bate, a **próxima troca de tela vira carregamento normal de página**, já atualizada — sem aviso. Três regras que produzem diff ERRADO se ignoradas:
+- **API aditiva:** mudança em resposta ou pedido da API não renomeia nem remove o que a versão anterior do app usa, **na mesma publicação** — a aba aberta continua chamando o servidor novo até a próxima troca de tela. Tirar vem numa publicação seguinte.
+- **Navegação de dentro do código no caminho do aluno usa `useIrPara()`** (`client/src/lib/versao.ts`), nunca `navigate()` direto — é ele que troca para carregamento normal quando há versão nova. Links (`<Link>`/`<a>`) já são cobertos sozinhos.
+- **Pedaço carregado sob demanda (`lazy()`) no caminho do aluno entra em `PEDACOS_DO_ALUNO`** (o pré-carregamento logo depois de abrir): senão, uma aba aberta antes de uma publicação pede um arquivo que não existe mais.
 
 - **Rotas públicas (template no servidor, ZERO React, zero hidratação):** `/` · `/cursos` · `/curso/:slug` · `/trilha/:slug` · `/certificado/:publicId` · `/assinar` (topo informativo; o Payment Element em si é React) · páginas legais — **e o equivalente de cada uma sob `/en`** (ver *Idiomas*).
 - **Rotas privadas (React SPA como hoje):** tudo sob `/aluno/*` e `/admin/*`, **mais `/inicio` e `/dashboard`** (decisão do operador, 29/09/2026) — player, JilsonAI, progresso, gestão de assinatura. Esses dois são endereços curtos **atrás de login**, não vitrine.

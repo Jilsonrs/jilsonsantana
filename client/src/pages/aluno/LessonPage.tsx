@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { ContentStatus, LessonKind } from "@jilson/core";
 import { useSession } from "@/lib/auth-client";
 import { useT } from "@/lib/language";
@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { usePaginaDaAula } from "@/lib/pagina-da-aula";
 import { useMenuDoCursoFechado } from "@/lib/menu-do-curso";
 import { porcentagemDoCurso, useConcluirAula } from "@/lib/progresso";
+import { useIrPara } from "@/lib/versao";
 import { useIdsSalvos } from "@/lib/salvos";
 import { BotaoSalvar } from "@/components/content/BotaoSalvar";
 import { PageContainer } from "@/components/layout/PageLayout";
@@ -39,7 +40,8 @@ export function LessonPage() {
   const [iaAberta, setIaAberta] = useState(false);
   const [menuDoCursoFechado, fecharMenuDoCurso] = useMenuDoCursoFechado();
   const { mutate: concluir } = useConcluirAula();
-  const navigate = useNavigate();
+  // Com versão nova no servidor, a próxima aula abre carregando a página (06/10/2026).
+  const irPara = useIrPara();
   const salvos = useIdsSalvos(Boolean(session));
 
   // A aula que esta pessoa pode concluir agora: logada, liberada e ainda não
@@ -67,7 +69,7 @@ export function LessonPage() {
   // leva até ela, na hora, seja vídeo ou texto. Na última aula, o vídeo só termina.
   const lista = curso.modulos.flatMap((m) => m.aulas);
   const proxima = lista[lista.findIndex((a) => a.id === aula.id) + 1];
-  const irParaAProxima = proxima ? () => navigate(`/aluno/aula/${proxima.id}`) : undefined;
+  const irParaAProxima = proxima ? () => irPara(`/aluno/aula/${proxima.id}`) : undefined;
   return (
     <div className="flex min-h-full flex-col">
       {/* Barra Superior Customizada da Aula (Avatar flutua por cima, à direita) */}

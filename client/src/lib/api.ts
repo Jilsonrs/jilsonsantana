@@ -1,4 +1,5 @@
 import axios from "axios";
+import { anotarVersaoDoServidor } from "@/lib/versao";
 import type { CredenciaisDeEnvio, DadosDoEnvio } from "@/lib/video-upload";
 import type {
   Level,
@@ -29,6 +30,19 @@ import type {
 // origin. withCredentials so the better-auth session cookie rides along on
 // member-only writes (e.g. saveTrilha).
 const client = axios.create({ baseURL: "/api", withCredentials: true });
+
+// Toda resposta do servidor diz qual versão ele é (`X-Versao-Do-App`, 06/10/2026):
+// é assim que uma aba aberta antes de uma publicação percebe a versão nova e passa
+// a carregar a página inteira na próxima troca de tela (`lib/versao.ts`).
+export function aoResponder<T extends { headers: Record<string, unknown> }>(resposta: T): T {
+  anotarVersaoDoServidor(resposta.headers["x-versao-do-app"]);
+  return resposta;
+}
+export function aoFalhar(erro: unknown): Promise<never> {
+  if (axios.isAxiosError(erro)) anotarVersaoDoServidor(erro.response?.headers["x-versao-do-app"]);
+  return Promise.reject(erro);
+}
+client.interceptors.response.use(aoResponder, aoFalhar);
 
 // ── Response shapes ──────────────────────────────────────────────────────────
 // Mirror the `select`/`include` shape of each server route exactly (courses.ts,
