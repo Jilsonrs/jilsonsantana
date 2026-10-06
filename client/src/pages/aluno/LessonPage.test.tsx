@@ -38,7 +38,8 @@ import { definirMenuDoCursoFechado } from "@/lib/menu-do-curso";
 // destacada no conteúdo do curso; o rascunho aparece só para o admin; os recursos;
 // e o painel da IA.
 
-const PLAYER = "https://iframe.mediadelivery.net/embed/762605/abc?token=t&expires=1";
+// Vale até 2100: um endereço vencido faria a aula pedir outro (06/10/2026).
+const PLAYER = "https://iframe.mediadelivery.net/embed/762605/abc?token=t&expires=4102444800";
 
 function pagina(aula: Partial<PaginaDaAula["aula"]> = {}, rascunho = false): PaginaDaAula {
   return {
@@ -134,6 +135,23 @@ describe("página da aula — estados", () => {
 });
 
 describe("página da aula — o conteúdo", () => {
+  // Aba aberta de um dia para o outro (decisão do operador, 06/10/2026: "se
+  // expirar, recarrega a aula"): a aula busca um endereço novo e o player troca.
+  it("endereço do vídeo vencido: a aula busca de novo e o player recebe o endereço novo", async () => {
+    // Logado: a página tem uma busca só (o visitante tem também a da lista de aulas,
+    // que traria o endereço novo por outro caminho e esconderia a renovação).
+    useSessionMock.mockReturnValue({ data: { user: { role: Role.MEMBER } }, isPending: false });
+    const vencido = PLAYER.replace("token=t", "token=velho").replace("expires=4102444800", "expires=1");
+    getLessonPage.mockResolvedValueOnce(pagina({ playerUrl: vencido })).mockResolvedValue(pagina({ playerUrl: PLAYER }));
+    abrir();
+    const player = await screen.findByTitle("Abertura");
+    await waitFor(() => expect(player.getAttribute("src")).toBe(PLAYER));
+    // Com o endereço novo no player, a aula para de pedir.
+    const pedidos = getLessonPage.mock.calls.length;
+    await new Promise((r) => setTimeout(r, 50));
+    expect(getLessonPage.mock.calls.length).toBe(pedidos);
+  });
+
   it("aula de vídeo liberada: o player grande, com o endereço do servidor", async () => {
     abrir();
     const player = await screen.findByTitle("Abertura");

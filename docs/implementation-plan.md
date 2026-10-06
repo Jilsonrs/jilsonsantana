@@ -2148,6 +2148,14 @@ própria**.*
       `desligarComCalma` no aviso de desligar (`server/src/lib/desligar.ts`). Já coberto sem código
       novo: a volta à aba busca os dados de novo (React Query), o que já informa a versão. Mutação:
       as 9 partes reprovam.
+- [x] **Aula aberta há mais de 24 h: o player renova o endereço sozinho** *(decisão do operador,
+      06/10/2026: "se expirar, recarrega a página ao dar play ou recarrega aula" — fecha o achado da
+      varredura do mesmo dia)*. A doc do Bunny (context7) diz que abrir o player com o endereço
+      vencido dá 403. Agora o `BunnyPlayer`, 10 min antes de vencer — ou quando a pessoa dá play num
+      vencido (o relógio atrasa com a aba em segundo plano) —, pede um endereço novo à página da aula
+      e recarrega só o player, no ponto guardado, pausado se estava pausado. Um pedido por vez (o
+      play avisa várias vezes por segundo). Endereço que ainda vale nunca troca: trocar de aba
+      continua sem recomeçar o vídeo. Mutação: as 6 partes reprovam.
 - [x] **A duração de cada aula, o "% concluído" no topo da aula, e o endereço inexistente** *(decisões
       do operador, 06/10/2026, a partir do LinkedIn Learning)*: (1) no Conteúdo do curso da página
       da aula, **a duração embaixo de cada aula de VÍDEO** ("1min 22s", "48s", "1h 05min" —

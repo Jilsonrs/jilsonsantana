@@ -36,7 +36,7 @@ export function LessonPage() {
   const lessonId = /^\d+$/.test(id ?? "") ? Number(id) : null;
   const t = useT();
   const { data: session } = useSession();
-  const { data, isError, error, comoAdmin, carregandoSessao } = usePaginaDaAula(lessonId);
+  const { data, isError, error, comoAdmin, carregandoSessao, refetch } = usePaginaDaAula(lessonId);
   const [iaAberta, setIaAberta] = useState(false);
   const [menuDoCursoFechado, fecharMenuDoCurso] = useMenuDoCursoFechado();
   const { mutate: concluir } = useConcluirAula();
@@ -156,7 +156,15 @@ export function LessonPage() {
       <div className="mx-auto w-full max-w-[1600px] px-4 pt-[20px] pb-6 sm:px-6 sm:pb-8 md:px-[50px] md:pb-8">
         <div className={cn("grid gap-6", iaAberta && "lg:grid-cols-[minmax(0,1fr)_360px]")}>
           <div className="min-w-0 space-y-8">
-            <LessonContent aula={aula} comoAdmin={comoAdmin} temArquivos={temArquivos} aoConcluir={concluirVideo} aoTerminar={irParaAProxima} />
+            <LessonContent
+              aula={aula}
+              comoAdmin={comoAdmin}
+              temArquivos={temArquivos}
+              aoConcluir={concluirVideo}
+              aoTerminar={irParaAProxima}
+              // Aba aberta de um dia para o outro: a aula busca um endereço novo do vídeo (06/10/2026).
+              renovarVideo={() => void refetch()}
+            />
 
             {/* Em toda aula, liberada ou não (operador, 29/09/2026). */}
             <CourseDetails curso={curso} />

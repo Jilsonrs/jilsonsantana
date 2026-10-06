@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { render, waitFor } from "@testing-library/react";
 
 // O player do Bunny é ouvido pelo NOSSO módulo; aqui ele vira dublê.
 const ouvirPlayer = vi.fn();
@@ -15,8 +15,10 @@ import { BunnyPlayer } from "./BunnyPlayer";
 // TROCAR DE ABA NÃO RECOMEÇA O VÍDEO (operador, 03/10/2026). O servidor assina o
 // endereço de novo a cada busca (token e validade novos); se o player trocasse de
 // endereço, recarregaria do zero e tocaria o que estava pausado.
+// Vale até 2100: o endereço que ainda vale é o caso do dia a dia (o vencido tem testes abaixo).
+const ATE_2100 = 4102444800;
 const ENDERECO = (video: string, token: string) =>
-  `https://iframe.mediadelivery.net/embed/762605/${video}?token=${token}&expires=1&autoplay=false`;
+  `https://iframe.mediadelivery.net/embed/762605/${video}?token=${token}&expires=${ATE_2100}&autoplay=false`;
 
 beforeEach(() => {
   ouvirPlayer.mockReset().mockReturnValue(() => {});
@@ -55,7 +57,7 @@ describe("BunnyPlayer — o endereço", () => {
 // O PONTO DA AULA (decisão do operador, 05/10/2026): quem sai e volta abre onde
 // parou — pausado se tinha pausado, tocando se saiu tocando. Ver até o fim apaga.
 // A AULA, não o vídeo de apresentação (sem `lembrarComo`, nada é lembrado).
-const AULA = "https://iframe.mediadelivery.net/embed/762605/aaa?token=t1&expires=1&autoplay=true";
+const AULA = `https://iframe.mediadelivery.net/embed/762605/aaa?token=t1&expires=${ATE_2100}&autoplay=true`;
 // O ponto é da aula 11 com o vídeo "aaa" (06/10/2026).
 const PONTO = "jilson:ponto-da-aula:11:aaa";
 const params = () => new URL(document.querySelector("iframe")?.getAttribute("src") ?? "").searchParams;
@@ -128,5 +130,61 @@ describe("BunnyPlayer — o ponto da aula", () => {
     expect(() => avisos().aoMudar({ segundos: 40, pausado: true })).not.toThrow();
     ler.mockRestore();
     gravar.mockRestore();
+  });
+});
+
+// O ENDEREÇO VENCIDO (decisão do operador, 06/10/2026: "se expirar, recarrega a
+// aula"). Abrir o player com ele vencido dá 403 (doc do Bunny); a aba aberta de um
+// dia para o outro pede um novo, e o player recarrega no mesmo ponto.
+describe("BunnyPlayer — o endereço vencido", () => {
+  const comValidade = (token: string, expira: number) =>
+    `https://iframe.mediadelivery.net/embed/762605/aaa?token=${token}&expires=${expira}&autoplay=true`;
+  const VENCIDO = comValidade("velho", 1);
+  const NOVO = comValidade("novo", ATE_2100);
+  afterEach(() => vi.useRealTimers());
+
+  it("vencido: pede um endereço novo; quando ele chega, o player recarrega no ponto, pausado se estava", async () => {
+    localStorage.setItem(PONTO, JSON.stringify({ segundos: 125, pausado: true }));
+    const aoVencer = vi.fn();
+    const { rerender } = render(<BunnyPlayer src={VENCIDO} title="Aula" lembrarComo="11" aoVencer={aoVencer} />);
+    await waitFor(() => expect(aoVencer).toHaveBeenCalledTimes(1));
+
+    rerender(<BunnyPlayer src={NOVO} title="Aula" lembrarComo="11" aoVencer={aoVencer} />);
+    expect(params().get("token")).toBe("novo");
+    expect(params().get("t")).toBe("125s");
+    expect(params().get("autoplay")).toBe("false");
+  });
+
+  it("perto de vencer, o relógio pede um endereço novo — uma vez", () => {
+    vi.useFakeTimers();
+    const vinteMinutos = Math.floor(Date.now() / 1000) + 20 * 60;
+    const aoVencer = vi.fn();
+    render(<BunnyPlayer src={comValidade("t", vinteMinutos)} title="Aula" lembrarComo="11" aoVencer={aoVencer} />);
+    vi.advanceTimersByTime(9 * 60 * 1000);
+    expect(aoVencer).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(2 * 60 * 1000);
+    expect(aoVencer).toHaveBeenCalledTimes(1);
+  });
+
+  it("play num endereço vencido (relógio atrasado na aba em segundo plano): pede, sem repetir a cada aviso", () => {
+    vi.useFakeTimers();
+    const aoVencer = vi.fn();
+    render(<BunnyPlayer src={VENCIDO} title="Aula" lembrarComo="11" aoVencer={aoVencer} />);
+    // O relógio ainda não andou: quem pede é o play.
+    avisos().aoMudar({ segundos: 5, pausado: false });
+    expect(aoVencer).toHaveBeenCalledTimes(1);
+    avisos().aoMudar({ segundos: 5.3, pausado: false });
+    avisos().aoMudar({ segundos: 5.6, pausado: false });
+    vi.advanceTimersByTime(0);
+    expect(aoVencer).toHaveBeenCalledTimes(1);
+  });
+
+  it("endereço que ainda vale: nada é pedido", () => {
+    vi.useFakeTimers();
+    const aoVencer = vi.fn();
+    render(<BunnyPlayer src={NOVO} title="Aula" lembrarComo="11" aoVencer={aoVencer} />);
+    avisos().aoMudar({ segundos: 5, pausado: false });
+    vi.advanceTimersByTime(60 * 60 * 1000);
+    expect(aoVencer).not.toHaveBeenCalled();
   });
 });

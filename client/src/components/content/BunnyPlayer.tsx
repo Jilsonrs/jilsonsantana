@@ -21,6 +21,35 @@ function idDoVideo(src: string): string {
   return videoDoEndereco(src).split("/").pop() ?? "";
 }
 
+/**
+ * O ENDEREÇO VENCIDO (decisão do operador, 06/10/2026: "se expirar, recarrega a
+ * aula"). O endereço assinado vale 24 h (`expires`, em segundos); a doc do Bunny diz
+ * que abrir o player com ele vencido dá 403. Uma aba aberta de um dia para o outro
+ * ficaria com ele: então, um pouco antes de vencer — ou se a pessoa der play num
+ * vencido —, a aula pede um endereço novo ao servidor e o player recarrega no
+ * mesmo ponto.
+ */
+const FOLGA_DO_VENCIMENTO = 10 * 60;
+
+/** Quando o endereço vence (segundos), ou `null` se ele não disser. */
+function vencimento(endereco: string): number | null {
+  try {
+    const expira = Number(new URL(endereco).searchParams.get("expires"));
+    return Number.isFinite(expira) && expira > 0 ? expira : null;
+  } catch {
+    return null;
+  }
+}
+
+/** O endereço já venceu (ou vence nos próximos minutos)? Sem `expires`, nunca. */
+function venceu(endereco: string, agora = Date.now()): boolean {
+  const expira = vencimento(endereco);
+  return expira !== null && agora / 1000 >= expira - FOLGA_DO_VENCIMENTO;
+}
+
+/** Depois de pedir um endereço novo, quanto esperar antes de pedir outra vez (se o primeiro pedido falhou). */
+const INTERVALO_ENTRE_PEDIDOS = 30_000;
+
 /** De quantos em quantos segundos o ponto é guardado enquanto o vídeo toca. */
 const PASSO_DO_PONTO = 2;
 
@@ -30,6 +59,7 @@ export function BunnyPlayer({
   aoConcluir,
   aoTerminar,
   lembrarComo,
+  aoVencer,
 }: {
   src: string;
   title: string;
@@ -46,6 +76,11 @@ export function BunnyPlayer({
    * de apresentação), nada é lembrado.
    */
   lembrarComo?: string;
+  /**
+   * O endereço está vencendo: peça um novo ao servidor (06/10/2026). Quando ele
+   * chegar no `src`, o player troca, no mesmo ponto. Sem ele, nada é renovado.
+   */
+  aoVencer?: () => void;
 }) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   // O ENDEREÇO FICA enquanto o vídeo for o mesmo (operador, 03/10/2026: trocar de
@@ -60,12 +95,38 @@ export function BunnyPlayer({
   const noPonto = (endereco: string) => (chave ? enderecoNoPonto(endereco, lerPonto(chave)) : endereco);
   const [endereco, setEndereco] = useState(() => noPonto(src));
   if (videoDoEndereco(src) !== videoDoEndereco(endereco)) setEndereco(noPonto(src));
+  // O MESMO vídeo só troca de endereço quando o que está no player venceu e o
+  // servidor mandou um que vale: recarrega no ponto guardado.
+  else if (venceu(endereco) && !venceu(src)) setEndereco(noPonto(src));
   // As funções mais recentes, sem voltar a ouvir o player a cada desenho da tela.
   const aoConcluirRef = useRef(aoConcluir);
   aoConcluirRef.current = aoConcluir;
   const aoTerminarRef = useRef(aoTerminar);
   aoTerminarRef.current = aoTerminar;
-  const ouvir = aoConcluir !== undefined || aoTerminar !== undefined || chave !== undefined;
+  const aoVencerRef = useRef(aoVencer);
+  aoVencerRef.current = aoVencer;
+  const renova = aoVencer !== undefined;
+  // Um pedido por vez: o play avisa várias vezes por segundo, e cada pedido novo
+  // cancelaria o anterior antes de ele chegar.
+  const ultimoPedido = useRef(0);
+  const pedirEnderecoNovo = () => {
+    if (Date.now() - ultimoPedido.current < INTERVALO_ENTRE_PEDIDOS) return;
+    ultimoPedido.current = Date.now();
+    aoVencerRef.current?.();
+  };
+  const pedirRef = useRef(pedirEnderecoNovo);
+  pedirRef.current = pedirEnderecoNovo;
+
+  // Efeito: o relógio até o endereço vencer é do navegador, fora do React.
+  useEffect(() => {
+    const expira = vencimento(endereco);
+    if (!renova || expira === null) return;
+    const espera = Math.max(0, (expira - FOLGA_DO_VENCIMENTO) * 1000 - Date.now());
+    // O `setTimeout` não aceita mais que ~24,8 dias; o endereço vale 24 h.
+    const relogio = window.setTimeout(() => pedirRef.current(), Math.min(espera, 2 ** 31 - 1));
+    return () => window.clearTimeout(relogio);
+  }, [endereco, renova]);
+  const ouvir = aoConcluir !== undefined || aoTerminar !== undefined || chave !== undefined || renova;
 
   // Efeito: ouvir o player é conversar com o iframe do Bunny, fora do React.
   useEffect(() => {
@@ -83,6 +144,8 @@ export function BunnyPlayer({
         aoTerminarRef.current?.();
       },
       aoMudar: (estado) => {
+        // Play num endereço vencido (o relógio pode atrasar com a aba em segundo plano).
+        if (!estado.pausado && venceu(endereco)) pedirRef.current();
         if (!chave || terminou) return;
         const mudou = !ultimo || ultimo.pausado !== estado.pausado || Math.abs(ultimo.segundos - estado.segundos) >= PASSO_DO_PONTO;
         if (!mudou) return;
