@@ -204,7 +204,11 @@
 > (aula concluída sozinha, barra na aula e no cartão), o vídeo que não recomeça ao trocar de aba
 > (a apresentação abre pausada, a aula toca sozinha) e o "Salvos". **Primeiro teste com o player de
 > verdade: com o operador** (assistir uma aula até perto do fim e ver a barra andar).
-> **PUBLICADO em 05/10/2026, por último (`main` = `592d588`, CI verde nos dois jobs, deploy ok):**
+> **PUBLICADO em 05/10/2026, no fechamento (`main` = `ecc9025`, CI verde nos dois jobs, deploy
+> ok):** o fim da tela em branco depois de publicar (provado no site: arquivo antigo e inexistente
+> → 404; tela do aluno → app), a tela de erro, a aula de texto vazia, e o CC e o certificado no
+> "Este curso inclui". Antes, `main` = `388225f`: o `courses.md` §10.11.
+> **PUBLICADO em 05/10/2026 (`main` = `592d588`, CI verde nos dois jobs, deploy ok):**
 > a correção do Salvar no passo Publicar com a Ordem editada.
 > **PUBLICADO em 05/10/2026, à noite (`main` = `ce94db8`, CI verde nos dois jobs, deploy ok):** o
 > ✓ dos passos Legendas e Mensagens, e o gerador de esquema do Better Auth oficial (`auth`, na
