@@ -3765,7 +3765,7 @@ da aba Player — **3 consultas na análise (passou de 2: anotado)**. A sessão 
       e a página da aula espera a preferência chegar antes de abrir o vídeo (ela vai no endereço);
       aviso igual ao que a conta já tem não vira pedido. **O script** do Bunny está no `bunny.md`, e
       **só avisa a mudança que vem logo depois de um toque do aluno no player** (as do player se
-      preparando não contam); **P52:** o operador cola no painel. *Arrumação:* as funções de montar o
+      preparando não contam); **P52:** o operador cola no painel — *colado por ele em 07/10/2026*. *Arrumação:* as funções de montar o
       endereço do player saíram para `client/src/lib/endereco-do-player.ts` (o `BunnyPlayer` tinha
       passado de 200 linhas). **Testes:** servidor 7 (`preferencias.test.ts`); site: o leitor do
       aviso (3), o player (6 novos), a página da aula (8 novos) e **o próprio script, tirado do

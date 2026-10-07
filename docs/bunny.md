@@ -131,7 +131,7 @@ frente do site, por exemplo), ou se o Enterprise DRM entrar só para as aulas.*
   (`/api/me/preferences`) e abre cada aula com `captions=<idioma do curso>` enquanto ela estiver
   ligada (`client/src/lib/legenda-lembrada.ts`). **Onde colar** (operador, uma vez — P52): Stream →
   biblioteca `jilsonsantana-stream` → **Player** → **Custom HTML head** → colar o bloco abaixo → **Save
-  Settings**. *Gatilhos:* o script para de funcionar se **"Enable legacy player"** for ligado (o player
+  Settings**. **Colado pelo operador em 07/10/2026** (print do painel) — P52 resolvida. *Gatilhos:* o script para de funcionar se **"Enable legacy player"** for ligado (o player
   antigo não é media-chrome) ou se o Bunny mudar o player; **"Reset to Default"** na aba apaga o
   script. Em todos esses casos a aula continua funcionando — só a legenda deixa de ser lembrada.
 
