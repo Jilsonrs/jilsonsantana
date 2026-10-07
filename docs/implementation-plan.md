@@ -204,7 +204,17 @@
 > (aula concluída sozinha, barra na aula e no cartão), o vídeo que não recomeça ao trocar de aba
 > (a apresentação abre pausada, a aula toca sozinha) e o "Salvos". **Primeiro teste com o player de
 > verdade: com o operador** (assistir uma aula até perto do fim e ver a barra andar).
-> **PUBLICADO em 07/10/2026, por último (`main` = `2203e69`, CI verde nos dois jobs, deploy ok; a
+> **PUBLICADO em 07/10/2026, por último (`main` = `c241002`, CI verde nos dois jobs, deploy ok):** o
+> Bloco AULA, etapas 6c e 6d — **o player NOVO do Bunny** (`player.mediadelivery.net`), com os
+> botões no idioma do app e a legenda decidida pela conta (`captions=<idioma>` ou `off`), o script
+> da legenda do player novo já colado no Bunny pelo operador (P53), e **a checagem diária** do
+> script. **Provado no site:** a versão nova (`muy9y8ea-68f7f36e`); a API entrega o endereço do
+> player novo; `npm run checar:player` passa contra o site no ar; a checagem rodada uma vez pelo
+> próprio GitHub passa, e o registro público dela mostra só "✓" (nenhum endereço). *O teste com o
+> vídeo real é do operador: a aula de ponta a ponta (abrir no ponto, 90%, próxima aula), a legenda
+> (ligar → a próxima abre ligada → sair e voltar; desligar → continua desligada), os botões em
+> português, no Chrome do computador e no iPhone.*
+> **PUBLICADO em 07/10/2026, antes (`main` = `2203e69`, CI verde nos dois jobs, deploy ok; a
 > migration `preferencia_do_aluno` aplicada pelo pre-deploy):** o Bloco AULA, etapa 6 — a legenda
 > lembrada pelo CC do player, como no LinkedIn —, com o script já colado no Bunny pelo operador
 > (P52) e a janela da escola isolada (`Cross-Origin-Opener-Policy`). **Provado no site:** a versão
