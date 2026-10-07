@@ -204,6 +204,11 @@
 > (aula concluída sozinha, barra na aula e no cartão), o vídeo que não recomeça ao trocar de aba
 > (a apresentação abre pausada, a aula toca sozinha) e o "Salvos". **Primeiro teste com o player de
 > verdade: com o operador** (assistir uma aula até perto do fim e ver a barra andar).
+> **PUBLICADO em 07/10/2026, depois (`main` = `bd3d895`, CI verde nos dois jobs, deploy ok):** o
+> conserto do ponto do vídeo — o servidor aceita o segundo com casas decimais que o player manda, e
+> recarregar, outro aparelho e voltar outro dia abrem no mesmo segundo (defeito do agente, achado no
+> teste do operador). **Provado no site:** a versão nova (`muxxrnij-22d64293`). *A prova com o vídeo
+> real é o novo teste do operador (itens 4 e 6).*
 > **PUBLICADO em 07/10/2026 (`main` = `f247200`, CI verde nos dois jobs, deploy ok):** o Bloco
 > AULA, etapas 3 e 4 — trocar de aula sem a tela piscar (topo e lista ficam), a moldura nova do
 > player (o Voltar certo), a gaveta do celular que fecha, o "Próxima aula" na aula de texto, e o
@@ -3722,9 +3727,29 @@ da aba Player — **3 consultas na análise (passou de 2: anotado)**. A sessão 
       "preferência lembrada" de legenda, mas ela mora no aparelho, dentro da moldura do Bunny — que o
       Safari bloqueia, e o Chrome em algumas configurações. E o player.js **não avisa** quando o aluno
       liga ou desliga o CC (só play, pausa, tempo, fim). O que o site consegue é mandar o player abrir
-      com a legenda ligada (`captions=<idioma>`). **Decisão do operador (07/10/2026): "se o aluno
-      ligou, fica ligada até que ele desligue"** — o mecanismo (um botão da escola, lembrado na conta)
-      foi proposto a ele e espera a confirmação.
+      com a legenda ligada (`captions=<idioma>`). **Decisão do operador (07/10/2026), como no
+      LinkedIn:** começa desligada; o aluno liga **no CC do próprio player**, e ela continua ligada
+      nas próximas aulas e ao sair e voltar, até ele desligar no mesmo CC. **Sem botão novo**
+      (ele recusou o botão da escola: "botão extra não faz sentido"), e sem ligar sempre ("incomoda
+      quem não precisa"). Pediu a pesquisa na doc do Bunny → etapa 6.
+- [ ] **Etapa 6 — a legenda lembrada, pelo CC do player (M)** *(PROPOSTA em 07/10/2026, aguarda o OK
+      do operador)*. **O que a pesquisa achou** (doc do Bunny, via context7 — 3 consultas além das 4
+      da sessão, anotado; e a doc do media-chrome, `/muxinc/media-chrome`): o player novo do Bunny é
+      feito de componentes do **media-chrome** e **ainda executa o HTML personalizado** da aba Player
+      (*Custom HTML head* — "selectors and script hooks should be updated", guia de migração do
+      Bunny); o media-chrome marca a legenda ligada num atributo oficial do controlador,
+      **`mediasubtitlesshowing`** (e `aria-checked` no botão CC). **O desenho:** (1) **no painel do
+      Bunny** (operador cola uma vez; o texto fica versionado no `bunny.md`), um script curto observa
+      esse atributo e avisa a página da escola "ligou/desligou" (`postMessage` só para
+      `www.jilsonsantana.com`); (2) **o site** ouve só a moldura do player da aula (origem do Bunny,
+      a própria moldura e o formato do aviso conferidos — o aviso é dado não confiável), **grava a
+      escolha na conta** (tabela própria `preferencia_do_aluno`, com RLS — `User` fica só com
+      identidade) e abre cada aula com `captions=<idioma do curso>` enquanto ela estiver ligada; vale
+      em qualquer aparelho. (3) **Testes:** servidor (401, só a própria escolha) e tela (aviso de
+      outra origem, de outra moldura ou com formato estranho é ignorado; ligou → gravou e a próxima
+      aula abre com `captions`; desligou → a próxima abre sem). **O que só se prova no ar:** o script
+      depende do player pôr o controlador ao alcance do HTML personalizado (a doc indica que sim,
+      pelos exemplos de CSS do guia); se não puser, ele só não avisa, e nada quebra.
 - **Done when:** os 6 comportamentos do pedido passam no roteiro da etapa 5, sem erro, nos aparelhos
   testados; CI verde nos dois jobs.
 
