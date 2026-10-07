@@ -4,6 +4,7 @@ import { LessonKind } from "@jilson/core";
 import type { PaginaDaAula } from "@/lib/api";
 import { useT } from "@/lib/language";
 import { BunnyPlayer } from "@/components/content/BunnyPlayer";
+import type { OuvintesDoPonto } from "@/lib/ponto-da-aula";
 import { ListaDeArquivos } from "./LessonResources";
 
 // A peça do Markdown (~37 KB) só baixa quando uma aula de TEXTO abre: direto, ela
@@ -28,6 +29,7 @@ export function LessonContent({
   temArquivos,
   aoConcluir,
   aoTerminar,
+  ponto,
   renovarVideo,
 }: {
   aula: PaginaDaAula["aula"];
@@ -36,8 +38,10 @@ export function LessonContent({
   temArquivos: boolean;
   /** Concluir a aula de vídeo ao chegar a 90%. */
   aoConcluir?: () => void;
-  /** O vídeo terminou: abrir a próxima aula (operador, 05/10/2026). */
+  /** O vídeo terminou: gravar "viu até o fim" e abrir a próxima aula (05 e 06/10/2026). */
   aoTerminar?: () => void;
+  /** O que grava o ponto do vídeo na conta (Bloco AULA, 06/10/2026). */
+  ponto?: Pick<OuvintesDoPonto, "aoAndar" | "aoPausar" | "aoTocar">;
   /** O endereço do vídeo está vencendo: buscar a aula de novo, com um endereço novo (06/10/2026). */
   renovarVideo?: () => void;
 }) {
@@ -59,8 +63,20 @@ export function LessonContent({
   if (aula.kind === LessonKind.VIDEO) {
     return aula.playerUrl ? (
       <div className="w-full">
-        {/* O ponto fica guardado por aula: quem sai e volta abre onde parou (05/10/2026). */}
-        <BunnyPlayer src={aula.playerUrl} title={aula.title} aoConcluir={aoConcluir} aoTerminar={aoTerminar} lembrarComo={String(aula.id)} aoVencer={renovarVideo} />
+        {/* Abre no ponto guardado na conta e sempre tocando (Bloco AULA, 06/10/2026).
+            Um player por AULA (`key`): o ponto e os avisos de uma não passam para a outra. */}
+        <BunnyPlayer
+          key={aula.id}
+          src={aula.playerUrl}
+          title={aula.title}
+          comecarEm={aula.ponto ?? null}
+          aoConcluir={aoConcluir}
+          aoTerminar={aoTerminar}
+          aoAndar={ponto?.aoAndar}
+          aoPausar={ponto?.aoPausar}
+          aoTocar={ponto?.aoTocar}
+          aoVencer={renovarVideo}
+        />
       </div>
     ) : (
       <div className={QUADRO}>

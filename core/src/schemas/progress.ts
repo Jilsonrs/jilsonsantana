@@ -12,3 +12,23 @@ export const pontoDaAulaSchema = z.object({
   segundos: z.number().int().min(0).max(PONTO_MAXIMO).nullable(),
 });
 export type PontoDaAulaInput = z.infer<typeof pontoDaAulaSchema>;
+
+/** Abaixo disto, o vídeo abre do começo: não vale pular. */
+export const PONTO_COMECO = 5;
+/**
+ * Nos últimos segundos, é o fim (proposta do agente, aprovada com o plano): abrir
+ * ali tocaria um instante e passaria para a próxima aula — parece defeito.
+ */
+export const PONTO_FIM = 5;
+
+/**
+ * O ponto guardado vale? O começo e o fim contam como "do começo" (`null`); sem a
+ * duração (vídeo ainda processando), vale o que foi guardado. Uma regra só, para o
+ * servidor (o que a página da aula devolve) e a tela (o ponto de quem volta à aula
+ * na mesma visita).
+ */
+export function pontoUtil(segundos: number | null, duracao: number | null): number | null {
+  if (segundos === null || segundos < PONTO_COMECO) return null;
+  if (duracao !== null && duracao > 0 && segundos >= duracao - PONTO_FIM) return null;
+  return segundos;
+}

@@ -204,9 +204,11 @@
 > (aula concluída sozinha, barra na aula e no cartão), o vídeo que não recomeça ao trocar de aba
 > (a apresentação abre pausada, a aula toca sozinha) e o "Salvos". **Primeiro teste com o player de
 > verdade: com o operador** (assistir uma aula até perto do fim e ver a barra andar).
-> **Bloco AULA (a tela onde o aluno estuda), pedido do operador em 06/10/2026 — ETAPA 1 FEITA no
-> `dev` (o servidor: o ponto e a última aula na conta, a entrada no curso; migration aplicada no
-> dev). Próxima: a etapa 2 (a tela).** A análise explica os 3 erros relatados (entrar sempre na 1ª
+> **Bloco AULA (a tela onde o aluno estuda), pedido do operador em 06/10/2026 — ETAPAS 1 E 2 FEITAS
+> no `dev`:** o ponto e a última aula na conta (migration aplicada no dev), entrar no curso onde
+> parou e o vídeo voltando sempre tocando, gravado também ao fechar a aba. **Os 3 erros relatados
+> estão corrigidos no código; a prova com o vídeo de verdade é no site (etapa 5). Próxima: a etapa
+> 3.** A análise explica os 3 erros relatados (entrar sempre na 1ª
 > aula, a próxima abrindo pausada, o ponto só no navegador) e traz 4 achados novos, provados (o
 > Voltar com o vídeo errado, a gaveta do celular aberta, a tela piscando entre aulas, a compilação
 > acima do piso das bibliotecas). 5 etapas: ver Fase 5 → **Bloco AULA**. Antes do teste no ar: a P51.
@@ -3586,13 +3588,40 @@ da aba Player — **3 consultas na análise (passou de 2: anotado)**. A sessão 
       bloqueada; o fim do vídeo valendo como ponto; gravar desmarcando a conclusão; a troca de vídeo
       zerando para vazio, zerando todas as aulas, ou não zerando; a rota do admin aberta a qualquer
       logado; as concluídas e o % contando a aula só aberta; e zerar sem a trava.
-- [ ] **Etapa 2 — tela: entrar onde parou e tocar sempre (G):** `CourseEntryPage` pela rota nova,
+- [x] **Etapa 2 — tela: entrar onde parou e tocar sempre (G):** `CourseEntryPage` pela rota nova,
       gravar e ler o ponto na conta, sair o "pausado" e o `localStorage`, os envios na saída.
       Componente: a entrada (carregando, erro, vazio, destino) · player no ponto e tocando ·
       gravação na pausa, no intervalo e na saída · o fim apaga · o cache recebe o ponto.
       **Mutação:** voltar o `autoplay=false`, gravar só no fim, entrar sempre na 1ª → reprovam.
       Reconciliar `bunny.md` (*Tocar sozinho e trocar de aba*).
-- [ ] **Etapa 3 — trocar de aula sem erro (M):** a `key` do player, cabeçalho e lista que ficam, a
+      *(06/10/2026, no `dev`.)* **A entrada** pergunta ao servidor a cada visita (a resposta de uma
+      visita anterior nunca leva à aula antiga) e separa "curso não encontrado" (404) de falha de
+      rede, que agora avisa o erro em vez de dizer que o curso não existe. **A gravação**
+      (`client/src/lib/ponto-da-aula.ts`): "estou aqui" ao abrir (vídeo no ponto em que abre; texto
+      sem ponto), a cada 15 s de vídeo, na pausa, ao sair da aula, e "viu até o fim" no `ended`;
+      em **fila** (o servidor recebe na ordem em que o vídeo andou) e **insistindo** só em queda de
+      rede ou 5xx, como as outras gravações do aluno; ao sair, a memória da tela recebe o ponto
+      (quem volta na mesma visita não abre no ponto velho). **Fechar a aba ou trocar de app**
+      (`client/src/lib/envio-na-saida.ts`): o padrão do guia modern-web-guidance
+      (`full-session-analytics`, consultado) — `fetchLater` no Chrome/Edge; no Safari/Firefox, o
+      envio sai quando a página esconde, com `keepalive`; nunca `unload`. É a **exceção única** ao
+      "Axios para HTTP", registrada no `CLAUDE.md` → Client. **O player** abre no ponto da conta
+      com `t=`, nunca mexe no `autoplay` que veio do servidor (a aula sempre volta tocando), e
+      recarrega no ponto em que o vídeo estava quando o endereço vence; **um player por aula**
+      (`key` no `LessonContent`), o que já tira a entrada extra no histórico ao **trocar de aula**
+      (o achado A fica por inteiro com a etapa 3, para a renovação do endereço). `posicao-do-video.ts`
+      saiu; as chaves antigas do navegador são limpas uma vez. A regra "começo e fim valem como do
+      começo" (`pontoUtil`) mudou para o `core`: uma só para o servidor e a tela. **Testes:** suíte
+      do cliente 697 → **717** (entrada, player, envio na saída, e 12 do ponto na página da aula);
+      servidor 513, verde. **Mutação: as 16 partes reprovam** — duas passavam na primeira rodada e
+      viraram teste: a entrada tinha duas proteções iguais (ficou uma, vigiada), e faltava o fim do
+      vídeo na ÚLTIMA aula, onde não há "próxima" para gravar na saída. `bunny.md` reconciliado.
+      **Docs check (context7):** Bunny → `/bunnyway/documentation` → reaproveitado da análise
+      nesta mesma sessão (`t` em `Xs`, `autoplay`, eventos do player.js); Better Auth e Stripe: não
+      disparados.
+- [ ] **Etapa 3 — trocar de aula sem erro (M):** *(entra também: a `LessonPage.tsx` passou do limite
+      de ~200 linhas na etapa 2 — 214 —, então o topo da aula vira componente próprio, com as mesmas
+      classes; é a parte que esta etapa já reescreve.)* A `key` do player, cabeçalho e lista que ficam, a
       gaveta que fecha, o botão "Próxima aula". Componente: moldura nova por aula · carregando só no
       quadro · gaveta fechada depois da escolha · botão na aula de texto (não na última, não no
       vídeo). **Mutação:** cada um dos quatro → reprova.

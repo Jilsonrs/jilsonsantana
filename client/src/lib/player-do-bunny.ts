@@ -8,7 +8,8 @@ import playerjs from "player.js";
 // O que a página da aula ouve:
 //   - os 90% que CONCLUEM a aula (Fase 5 — decisão do operador, 03/10/2026);
 //   - o FIM do vídeo, que leva à próxima aula (operador, 05/10/2026);
-//   - o PONTO e a PAUSA, para quem sair e voltar abrir onde parou (05/10/2026).
+//   - o PONTO (o vídeo andou, pausou, voltou a tocar), gravado na conta de quem
+//     assiste: quem sai e volta abre onde parou (Bloco AULA, 06/10/2026).
 
 /** A partir de quanto do vídeo a aula conta como concluída. */
 export const PARTE_QUE_CONCLUI = 0.9;
@@ -30,12 +31,16 @@ export type OuvintesDoPlayer = {
   aoConcluir?: () => void;
   /** O vídeo terminou. */
   aoTerminar?: () => void;
-  /** O ponto e se está pausado, a cada mudança (tocando, pausou, voltou a tocar). */
-  aoMudar?: (estado: { segundos: number; pausado: boolean }) => void;
+  /** O vídeo andou (tocando, ou a pessoa pulou para outro ponto): o segundo e a duração. */
+  aoAndar?: (segundos: number, duracao: number) => void;
+  /** Pausou, no último segundo que o player avisou. */
+  aoPausar?: (segundos: number) => void;
+  /** Começou ou voltou a tocar. */
+  aoTocar?: () => void;
 };
 
 /** Ouve o player no iframe. Devolve a função que para de ouvir. */
-export function ouvirPlayer(iframe: HTMLIFrameElement, { aoConcluir, aoTerminar, aoMudar }: OuvintesDoPlayer): () => void {
+export function ouvirPlayer(iframe: HTMLIFrameElement, ouvintes: OuvintesDoPlayer): () => void {
   const player = new playerjs.Player(iframe);
   let parado = false;
   let concluiu = false;
@@ -43,25 +48,25 @@ export function ouvirPlayer(iframe: HTMLIFrameElement, { aoConcluir, aoTerminar,
   const concluir = () => {
     if (parado || concluiu) return;
     concluiu = true;
-    aoConcluir?.();
+    ouvintes.aoConcluir?.();
   };
   const aoAtualizar = (dados: unknown) => {
     const tempo = tempoAssistido(dados);
     if (!tempo || parado) return;
     segundos = tempo.segundos;
-    aoMudar?.({ segundos, pausado: false });
+    ouvintes.aoAndar?.(tempo.segundos, tempo.duracao);
     if (chegouAoFim(tempo.segundos, tempo.duracao)) concluir();
   };
   const aoPausar = () => {
-    if (!parado) aoMudar?.({ segundos, pausado: true });
+    if (!parado) ouvintes.aoPausar?.(segundos);
   };
   const aoTocar = () => {
-    if (!parado) aoMudar?.({ segundos, pausado: false });
+    if (!parado) ouvintes.aoTocar?.();
   };
   const aoFim = () => {
     if (parado) return;
     concluir();
-    aoTerminar?.();
+    ouvintes.aoTerminar?.();
   };
   player.on("timeupdate", aoAtualizar);
   player.on("pause", aoPausar);

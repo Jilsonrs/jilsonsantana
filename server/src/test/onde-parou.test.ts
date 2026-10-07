@@ -4,7 +4,8 @@ import type { Prisma } from "@prisma/client";
 import servidor from "./servidor.js";
 import { prisma } from "../lib/prisma.js";
 import { ASSINATURA_DE_TESTE } from "../lib/assinatura-de-teste.js";
-import { esquecerPontosDaAula, gravarPonto, pontoDaAula, pontoUtil } from "../lib/onde-parou.js";
+import { pontoUtil } from "@jilson/core";
+import { esquecerPontosDaAula, gravarPonto, pontoDaAula } from "../lib/onde-parou.js";
 
 // ONDE A PESSOA PAROU (Bloco AULA, etapa 1 — plano aprovado pelo operador em
 // 06/10/2026). O que estes testes protegem:

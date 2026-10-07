@@ -26,7 +26,7 @@ describe("ouvirPlayer com o player.js de verdade", () => {
     const iframe = document.createElement("iframe");
     iframe.src = ENDERECO;
     document.body.appendChild(iframe);
-    const pararDeOuvir = ouvirPlayer(iframe, { aoTerminar: () => {}, aoMudar: () => {} });
+    const pararDeOuvir = ouvirPlayer(iframe, { aoTerminar: () => {}, aoAndar: () => {}, aoPausar: () => {} });
     playerPronto(iframe);
 
     iframe.remove(); // o React tira o iframe da página antes de limpar o efeito

@@ -1,4 +1,4 @@
-import { ContentStatus, LessonKind } from "@jilson/core";
+import { ContentStatus, LessonKind, pontoUtil } from "@jilson/core";
 import { prisma } from "./prisma.js";
 import { aulasConcluidas, pessoaValida } from "./progresso.js";
 
@@ -11,14 +11,6 @@ import { aulasConcluidas, pessoaValida } from "./progresso.js";
 //
 // Nada aqui decide ACESSO: quem chama confere antes (a rota do aluno com
 // `aulaLiberada()`, a do admin com `requireAdmin`), como em `progresso.ts`.
-
-/** Abaixo disto, é o começo: não vale pular. */
-const COMECO = 5;
-/**
- * Nos últimos segundos, é o fim (proposta do agente, aprovada com o plano): abrir
- * ali tocaria um instante e passaria para a próxima aula — parece defeito.
- */
-const FIM = 5;
 
 const PUBLISHED = ContentStatus.PUBLISHED;
 const byOrder = [{ displayOrder: "asc" as const }, { id: "asc" as const }];
@@ -45,16 +37,10 @@ export async function gravarPonto(userId: string, lessonId: number, segundos: nu
 }
 
 /**
- * O ponto guardado vale? Função pura. O começo e o fim contam como "do começo";
- * sem a duração (vídeo ainda processando), vale o que foi guardado.
+ * De que segundo a aula abre para esta pessoa: o ponto dela, ou `null` (do começo).
+ * Sem pessoa, do começo. O começo e o fim do vídeo contam como "do começo"
+ * (`pontoUtil`, no `core`: a mesma regra da tela).
  */
-export function pontoUtil(segundos: number | null, duracao: number | null): number | null {
-  if (segundos === null || segundos < COMECO) return null;
-  if (duracao !== null && duracao > 0 && segundos >= duracao - FIM) return null;
-  return segundos;
-}
-
-/** De que segundo a aula abre para esta pessoa: o ponto dela, ou `null` (do começo). Sem pessoa, do começo. */
 export async function pontoDaAula(userId: string | undefined, lessonId: number, duracao: number | null): Promise<number | null> {
   if (!pessoaValida(userId)) return null;
   const linha = await prisma.lessonProgress.findUnique({
