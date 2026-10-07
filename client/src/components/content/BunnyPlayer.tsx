@@ -2,14 +2,15 @@ import { useEffect, useRef, useState } from "react";
 import { pontoUtil } from "@jilson/core";
 import { ouvirPlayer } from "@/lib/player-do-bunny";
 import { avisoDeLegenda } from "@/lib/legenda-lembrada";
+import { useIdioma } from "@/lib/language";
 import { FOLGA_DO_VENCIMENTO, enderecoDoPlayer, vencimento, venceu, videoDoEndereco } from "@/lib/endereco-do-player";
 
 /**
  * O player do Bunny Stream, num quadro 16:9. O endereço vem SEMPRE do servidor
  * (derivado lá, nunca montado aqui), então este componente não conhece chave,
- * biblioteca nem token. A tela só acrescenta ONDE COMEÇAR (`t`) e, quando o aluno
- * deixou ligada, a LEGENDA (`captions`) — parâmetros de embed do Stream, fora do token
- * (`lib/endereco-do-player.ts`). Tocar sozinho ou não vem do servidor: a aula toca, a
+ * biblioteca nem token. A tela só acrescenta ONDE COMEÇAR (`t`), a LEGENDA que a conta
+ * escolheu (`captions`) e o IDIOMA dos botões (`lang`, o do app) — parâmetros de embed
+ * do Bunny Player, fora do token (`lib/endereco-do-player.ts`). Tocar sozinho ou não vem do servidor: a aula toca, a
  * apresentação abre pausada (03/10/2026) — aqui nunca se muda isso.
  *
  * `referrerPolicy="strict-origin-when-cross-origin"` é exigência do Bunny: com
@@ -40,8 +41,9 @@ export function BunnyPlayer({
    */
   comecarEm?: number | null;
   /**
-   * O idioma da legenda que abre LIGADA — o aluno a deixou ligada no CC (Bloco AULA,
-   * etapa 6, 07/10/2026). Vazio, abre desligada, como o operador decidiu.
+   * A legenda que a CONTA escolheu (Bloco AULA, etapa 6, 07/10/2026): o idioma do curso
+   * (abre ligada) ou `off` (abre desligada, mesmo que o aparelho lembre o contrário).
+   * Vazio (visitante), o player decide.
    */
   legenda?: string | null;
   /** O aluno ligou ou desligou a legenda no CC do player (o aviso do nosso script, `bunny.md`). */
@@ -66,6 +68,7 @@ export function BunnyPlayer({
   aoVencer?: () => void;
 }) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const idioma = useIdioma();
   // O último ponto que o player avisou, do vídeo em que avisou: é nele que o player
   // recarrega quando o endereço vence.
   const ultimoPonto = useRef<{ video: string; segundos: number; duracao: number } | null>(null);
@@ -78,11 +81,11 @@ export function BunnyPlayer({
   // aba não pode recomeçar o vídeo). O servidor assina de novo a cada busca, com
   // token e validade novos; trocar o `src` recarregaria o player do zero. Só um
   // vídeo DIFERENTE troca o endereço — começando no ponto que veio com ele.
-  const [endereco, setEndereco] = useState(() => enderecoDoPlayer(src, comecarEm, legenda));
-  if (videoDoEndereco(src) !== videoDoEndereco(endereco)) setEndereco(enderecoDoPlayer(src, comecarEm, legenda));
+  const [endereco, setEndereco] = useState(() => enderecoDoPlayer(src, { comecarEm, legenda, idioma }));
+  if (videoDoEndereco(src) !== videoDoEndereco(endereco)) setEndereco(enderecoDoPlayer(src, { comecarEm, legenda, idioma }));
   // O MESMO vídeo só troca de endereço quando o que está no player venceu e o
   // servidor mandou um que vale: recarrega no ponto em que estava.
-  else if (venceu(endereco) && !venceu(src)) setEndereco(enderecoDoPlayer(src, pontoAtual(src), legenda));
+  else if (venceu(endereco) && !venceu(src)) setEndereco(enderecoDoPlayer(src, { comecarEm: pontoAtual(src), legenda, idioma }));
   // As funções mais recentes, sem voltar a ouvir o player a cada desenho da tela.
   const aoConcluirRef = useRef(aoConcluir);
   aoConcluirRef.current = aoConcluir;

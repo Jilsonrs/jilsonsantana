@@ -11,21 +11,29 @@ export function videoDoEndereco(src: string): string {
 }
 
 /**
- * O endereço do player abrindo no ponto — `t=<segundos>s` — e, quando o aluno deixou a
- * legenda ligada, com ela ligada — `captions=<idioma>` (os dois são parâmetros de embed
- * do Bunny Stream, fora do token). Antes do começo útil, ou sem ponto, sem `t`.
+ * O endereço do player com o que a TELA acrescenta ao endereço assinado (parâmetros de embed do
+ * Bunny Player, fora do token — doc do Bunny):
+ * - `t=<segundos>s`: abrir no ponto. Antes do começo útil, ou sem ponto, sem `t`;
+ * - `captions=<idioma>` ou `captions=off`: a legenda que a CONTA do aluno escolheu (Bloco AULA,
+ *   etapa 6, 07/10/2026). Vence a memória do próprio player no aparelho (medido, `bunny.md`). Sem
+ *   ela (visitante), o player decide;
+ * - `lang=<idioma do app>`: os botões do player no idioma do app (decisão do operador, 07/10/2026).
  */
-export function enderecoDoPlayer(src: string, segundos: number | null, legenda: string | null): string {
-  const comPonto = segundos !== null && segundos >= PONTO_COMECO;
-  if (!comPonto && !legenda) return src;
+export function enderecoDoPlayer(
+  src: string,
+  { comecarEm, legenda, idioma }: { comecarEm: number | null; legenda: string | null; idioma: string | null },
+): string {
+  const comPonto = comecarEm !== null && comecarEm >= PONTO_COMECO;
+  if (!comPonto && !legenda && !idioma) return src;
   let url: URL;
   try {
     url = new URL(src);
   } catch {
     return src;
   }
-  if (comPonto) url.searchParams.set("t", `${Math.floor(segundos)}s`);
+  if (comPonto) url.searchParams.set("t", `${Math.floor(comecarEm)}s`);
   if (legenda) url.searchParams.set("captions", legenda);
+  if (idioma) url.searchParams.set("lang", idioma);
   return url.toString();
 }
 

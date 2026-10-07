@@ -161,7 +161,7 @@ describe("Mídia e destaques — enviar a capa", () => {
 // que a TELA faz com ele: porcentagem, erro, gravar o id só no fim, e o player.
 describe("Mídia e destaques — vídeo de apresentação", () => {
   const GUID = "eb1c4f77-0cda-46be-b47d-1118ad7c2ffe";
-  const EMBED = `https://iframe.mediadelivery.net/embed/999/${GUID}`;
+  const EMBED = `https://player.mediadelivery.net/embed/999/${GUID}`;
   const credenciais = { videoId: GUID, titulo: "Curso", libraryId: "999", expirationTime: 1, signature: "s", embedUrl: EMBED };
 
   const escolher = () =>
@@ -194,7 +194,7 @@ describe("Mídia e destaques — vídeo de apresentação", () => {
     act(() => terminar());
     await waitFor(() => expect(completeIntroVideoUpload).toHaveBeenCalledWith(1, GUID));
     const player = await screen.findByTitle("Prévia do vídeo de apresentação");
-    expect(player.getAttribute("src")).toBe(EMBED);
+    expect(player.getAttribute("src")).toBe(`${EMBED}?lang=pt`);
     expect((screen.getByLabelText("Vídeo promocional") as HTMLInputElement).value).toBe(GUID);
   });
 
@@ -231,7 +231,7 @@ describe("Mídia e destaques — vídeo de apresentação", () => {
     await abrirPagina({ ...CURSO_DE_TESTE, introVideoId: GUID, introVideoEmbedUrl: EMBED });
 
     const player = await screen.findByTitle("Prévia do vídeo de apresentação");
-    expect(player.getAttribute("src")).toBe(EMBED);
+    expect(player.getAttribute("src")).toBe(`${EMBED}?lang=pt`);
   });
 
   it("id colado fora do formato do Bunny: aviso no campo, e nada é salvo", async () => {

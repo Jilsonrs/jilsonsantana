@@ -36,8 +36,12 @@ export function assinaturaDeEnvio(libraryId: string, chave: string, expira: numb
   return createHash("sha256").update(`${libraryId}${chave}${expira}${videoId}`).digest("hex");
 }
 
+// O PLAYER NOVO do Bunny (Bunny Player, `player.mediadelivery.net` — Bloco AULA, decisão do
+// operador de 07/10/2026). O antigo, `iframe.mediadelivery.net`, é o Plyr: descontinuado, sai do ar
+// no começo de 2027 (doc do Bunny), e continuava respondendo mesmo com o player novo ligado no
+// painel — o endereço é que escolhe o player (medido, bunny.md). Mesmo token, mesmos parâmetros.
 const montarEndereco = (libraryId: string, videoId: string) =>
-  `https://iframe.mediadelivery.net/embed/${libraryId}/${videoId}`;
+  `https://player.mediadelivery.net/embed/${libraryId}/${videoId}`;
 
 /**
  * O token do player com token (Embed view token authentication). Função pura.

@@ -88,7 +88,7 @@ describe("token do player das aulas", () => {
     const agora = (1790000000 - VALIDADE_DO_PLAYER) * 1000;
 
     expect(enderecoAssinado("eb1c4f77-0cda-46be-b47d-1118ad7c2ffe", { tocarAoAbrir: true }, agora)).toBe(
-      "https://iframe.mediadelivery.net/embed/762605/eb1c4f77-0cda-46be-b47d-1118ad7c2ffe" +
+      "https://player.mediadelivery.net/embed/762605/eb1c4f77-0cda-46be-b47d-1118ad7c2ffe" +
         "?token=8e8ef2555bfef9bde43d9baf16188e73f80f584bac0a04d75d67f69b672021aa&expires=1790000000&autoplay=true",
     );
   });

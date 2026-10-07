@@ -9,21 +9,21 @@ import { avisoDeLegenda } from "./legenda-lembrada";
 // Seguro: o teste só compara a identidade da janela; nenhum método dela é usado.
 const janelaDoPlayer = {} as Window;
 const outraJanela = {} as Window;
-const doPlayer = (data: unknown, origin = "https://iframe.mediadelivery.net", source: Window = janelaDoPlayer) => ({ origin, source, data });
+const doPlayer = (data: unknown, origin = "https://player.mediadelivery.net", source: Window = janelaDoPlayer) => ({ origin, source, data });
 
 describe("o aviso de legenda", () => {
   it("o nosso script, do player desta moldura: ligou e desligou", () => {
     expect(avisoDeLegenda(doPlayer({ origem: "jilsonsantana-legenda", ligada: true }), janelaDoPlayer)).toBe(true);
     expect(avisoDeLegenda(doPlayer({ origem: "jilsonsantana-legenda", ligada: false }), janelaDoPlayer)).toBe(false);
-    // O endereço novo do player, da doc do Bunny, também.
-    expect(avisoDeLegenda(doPlayer({ origem: "jilsonsantana-legenda", ligada: true }, "https://player.mediadelivery.net"), janelaDoPlayer)).toBe(true);
   });
 
   it("de outra moldura, de outra origem, ou sem a moldura: ignorado", () => {
     const certo = { origem: "jilsonsantana-legenda", ligada: true };
-    expect(avisoDeLegenda(doPlayer(certo, "https://iframe.mediadelivery.net", outraJanela), janelaDoPlayer)).toBeNull();
+    expect(avisoDeLegenda(doPlayer(certo, "https://player.mediadelivery.net", outraJanela), janelaDoPlayer)).toBeNull();
+    // O player antigo do Bunny não é mais usado (07/10/2026): o endereço dele também não vale.
+    expect(avisoDeLegenda(doPlayer(certo, "https://iframe.mediadelivery.net"), janelaDoPlayer)).toBeNull();
     expect(avisoDeLegenda(doPlayer(certo, "https://evil.example"), janelaDoPlayer)).toBeNull();
-    expect(avisoDeLegenda(doPlayer(certo, "https://iframe.mediadelivery.net.evil.example"), janelaDoPlayer)).toBeNull();
+    expect(avisoDeLegenda(doPlayer(certo, "https://player.mediadelivery.net.evil.example"), janelaDoPlayer)).toBeNull();
     expect(avisoDeLegenda(doPlayer(certo), null)).toBeNull();
   });
 

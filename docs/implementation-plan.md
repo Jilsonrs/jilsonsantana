@@ -204,6 +204,14 @@
 > (aula concluída sozinha, barra na aula e no cartão), o vídeo que não recomeça ao trocar de aba
 > (a apresentação abre pausada, a aula toca sozinha) e o "Salvos". **Primeiro teste com o player de
 > verdade: com o operador** (assistir uma aula até perto do fim e ver a barra andar).
+> **PUBLICADO em 07/10/2026, por último (`main` = `2203e69`, CI verde nos dois jobs, deploy ok; a
+> migration `preferencia_do_aluno` aplicada pelo pre-deploy):** o Bloco AULA, etapa 6 — a legenda
+> lembrada pelo CC do player, como no LinkedIn —, com o script já colado no Bunny pelo operador
+> (P52) e a janela da escola isolada (`Cross-Origin-Opener-Policy`). **Provado no site:** a versão
+> nova (`muy035j7-f3b5e71d`); `/api/me/preferences` responde 401 sem login; o cabeçalho
+> `cross-origin-opener-policy: same-origin-allow-popups` nas respostas; a entrada do curso segue
+> levando à aula 14. *O teste com o vídeo real é do operador: ligar o CC numa aula e ver a próxima
+> abrir com ela; desligar e ver a próxima abrir sem; o player tocando normalmente.*
 > **PUBLICADO em 07/10/2026, depois (`main` = `bd3d895`, CI verde nos dois jobs, deploy ok):** o
 > conserto do ponto do vídeo — o servidor aceita o segundo com casas decimais que o player manda, e
 > recarregar, outro aparelho e voltar outro dia abrem no mesmo segundo (defeito do agente, achado no
@@ -3788,6 +3796,81 @@ da aba Player — **3 consultas na análise (passou de 2: anotado)**. A sessão 
       o teste foi corrigido para esperar a aula chegar antes de soltar a preferência. **Docs check (context7):** Bunny
       (`/bunnyway/documentation` e o fallback `/llmstxt/bunny_net_llms_txt`) e media-chrome
       (`/muxinc/media-chrome`) — consultas listadas acima.
+- [x] **Etapa 6b — conserto: o script da legenda refeito para o player que o Bunny serve de verdade
+      (P)** *(07/10/2026; teste do operador: no iPhone a legenda era lembrada, no Chrome do computador
+      não)*. **Achado, medido:** a página do player, baixada como Chrome de computador e como iPhone
+      (pelo endereço do vídeo de apresentação, que é público; o endereço assinado não foi impresso),
+      carrega o **Plyr** (`plyr/3.7.8.4-bn`), não o media-chrome que a doc do Bunny descreve — com
+      "Enable legacy player" desligado. O script da etapa 6 procurava o `media-controller`, que não
+      existe ali: **nunca avisou nada**, em nenhum aparelho. O que funcionava no iPhone era a memória
+      do próprio Plyr, guardada no armazenamento da moldura (`captions` e `language`), que no Chrome
+      do computador falha. **Conserto, só no script do `bunny.md` (o site não muda):** (1) apaga a
+      memória de legenda do Plyr antes de ele começar — a conta passa a ser a única que decide, também
+      no iPhone; (2) avisa nos eventos do Plyr (`captionsenabled`/`captionsdisabled`), logo depois
+      de um toque do aluno, **um aviso por clique, com o estado final** (o menu do player dispara
+      desligou → ligou → desligou em ~14 ms — medido). **Provado com o Plyr do Bunny num Chrome de
+      verdade** (banco de prova local, fora do repo: a página e a moldura em endereços diferentes,
+      o script tirado do `bunny.md`): abre como a conta manda mesmo com o aparelho lembrando o
+      contrário, e o volume lembrado fica; botão CC e menu, ligar e desligar → um aviso cada; o
+      player mudando sozinho, sem toque → nada. **Testes:** o do script refeito (7) imita o Plyr
+      medido. **Mutação:** 5 de 6 reprovam; a que sobrevive (ouvir sem captura) é equivalente — a
+      cópia do aviso na moldura do player sobe pela página. **P53:** o operador cola o script novo
+      no painel; vale na hora, sem publicar o site. **Lição:** a página do player se olha **antes**
+      de escrever script para ela — a doc descreve um player, e a biblioteca serve outro.
+      **Docs check (context7):** não acionado — a fonte foi a própria página do player no ar, que
+      desmentiu a doc. **Substituída no mesmo dia pela etapa 6c** (o operador preferiu trocar de
+      player); o script do Plyr nunca foi colado.
+- [x] **Etapa 6c — o player NOVO do Bunny (M)** *(07/10/2026; pergunta do operador: "por que não
+      troca para o mais novo?"; **decisão dele: trocar agora**, e os botões do player no idioma do
+      app do aluno)*. **O que a pesquisa achou** (doc do Bunny via context7, 2 consultas, e a página
+      do player baixada do ar): o player antigo (Plyr, `iframe.mediadelivery.net`) está
+      **descontinuado e sai do ar no começo de 2027**; o novo mora em `player.mediadelivery.net`, e
+      **o endereço é que escolhe o player** — com *Enable legacy player* desligado, o antigo
+      continuava respondendo. No novo: o mesmo token vale (e sem token, 403); `t`, `autoplay` e
+      `captions` iguais; o player.js com os mesmos eventos; o HTML personalizado roda; e **`captions=off`
+      vence a memória do aparelho** (o antigo não tinha isso). **Achado de segurança, medido** (a
+      partir da revisão do `security-vulnerability-reviewer`, que pediu a conferência — sem P0/P1):
+      o endereço **antigo** abria o player com o endereço assinado vindo de **outro site** ou **sem
+      origem** (a trava de domínios do painel não valia ali); o **novo** recusa os dois (403). A troca
+      fecha a brecha. **O que mudou:** o servidor monta o
+      endereço novo (`montarEndereco`, uma linha — vale para aula, apresentação e prévia do admin);
+      a página da aula, para quem está logado, abre **toda** aula com `captions=<idioma>` ou
+      `captions=off` (a conta decide sozinha — sem apagar memória nenhuma); todo player leva
+      `lang=<idioma do app>`; a página só aceita aviso de legenda do endereço novo; e o script do
+      `bunny.md` foi refeito para o player novo (ouve os **pedidos** de legenda, que o player só
+      dispara por ação de quem assiste; um aviso por clique). **Provado com o player novo num Chrome
+      de verdade** (banco de prova local: a página do player baixada do ar, com um vídeo público de
+      teste no lugar do nosso): abre como a conta manda mesmo com o aparelho lembrando o contrário;
+      CC e menu, ligar e desligar → um aviso cada; abrir ligada → nenhum aviso. **Testes:** o do
+      script (5, com os tempos medidos), o player (idioma dos botões, `off`, o endereço antigo
+      recusado), a página da aula (`off` para quem está logado) e os do endereço no servidor.
+      **Mutação:** 6 de 6 no código reprovam; no script, 5 de 6 — a sobrevivente (não ouvir o
+      pedido "desligar") é equivalente no medido, porque o "Desligado" do menu também dispara
+      "mostrar: desligado". **Não provado aqui, fica para o teste do operador:** o player novo num
+      **iPhone antigo** (a varredura do pacote dele não achou nada além do iOS 15, mas só o aparelho
+      prova) e a aula tocando de ponta a ponta no ar (ponto, próxima aula, 90%), porque o vídeo do
+      Bunny só toca no domínio da escola. **P53:** o operador troca o script no painel.
+      **Docs check (context7):** Bunny Stream → `/bunnyway/documentation` → o player novo, o fim
+      do antigo, os parâmetros do embed (`captions`, `lang`, `t`, `autoplay`) — 2 consultas.
+      **Revisão do player (pedido do operador, 07/10/2026, enquanto o CI do GitHub estava fora do
+      ar):** o NOSSO módulo de verdade (`player-do-bunny.ts`, empacotado) ouvindo o player novo de
+      verdade, com um vídeo público tocando: tocou sozinho, abriu no segundo pedido (565), tempo com
+      duração, 90% concluíram (571 de 634 s), pausa e volta, fim (pausa e depois fim, a mesma ordem do
+      antigo — a gravação do ponto já trata). Lido no pacote do player: o player.js dele só fala com a
+      página que o abriu, e o "pronto" exige o endereço idêntico ao da moldura — **no ar não há
+      redirecionamento** (medido). Sem nada a corrigir.
+- [x] **Etapa 6d — a checagem diária do script da legenda (P)** *(07/10/2026; decisão do operador,
+      entre as saídas para o dia em que o Bunny não rodar mais o script — as outras ficam registradas
+      no `bunny.md`)*. `scripts/checar-legenda-no-player.mjs` (`npm run checar:player`) +
+      `.github/workflows/checagem-do-player.yml` (todo dia, 06:17 em Brasília, e à mão): confere no ar
+      que o site abre o player novo, que o nosso script (versão do player novo) está na página dele e
+      que o pacote do player tem os nomes que o script ouve; falhou → e-mail do GitHub. Nunca imprime
+      o endereço assinado (repositório público). **Provado:** contra o site de hoje (ainda no player
+      antigo) **falha**, com a explicação certa; com a página e o pacote reais do player novo
+      **passa** — o que também confirmou que o script colado pelo operador é a versão nova —; e
+      **falha** em cada quebra simulada (script fora do painel, script antigo colado, pedido
+      renomeado, estado renomeado, volta do Plyr, pacote ausente). *Começa a valer quando a `main`
+      tiver o player novo (o agendamento só roda na `main`).*
 - **Done when:** os 6 comportamentos do pedido passam no roteiro da etapa 5, sem erro, nos aparelhos
   testados; CI verde nos dois jobs.
 

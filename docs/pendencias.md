@@ -16,13 +16,13 @@
 > 5. **Item novo ganha o próximo número livre.** Número nunca se reutiliza, para que "P7" queira
 >    dizer sempre a mesma coisa em qualquer conversa.
 >
-> **Próximo número livre: P53** · Atualizada em 07/10/2026
+> **Próximo número livre: P54** · Atualizada em 07/10/2026
 
 ## A. Agora, em sequência *(nascidas da configuração do Bunny, 25/09/2026)*
 
-*Vazia desde 07/10/2026: a P51 (o "Resumable player position" desligado) e a P52 (o script da
-legenda lembrada colado no Custom HTML head do player) foram resolvidas — registro em `bunny.md`.
-Item novo que precise de resposta rápida entra aqui, com o próximo número livre.*
+*Vazia desde 07/10/2026: a P51, a P52 e a P53 (o script da legenda lembrada, refeito para o player
+novo do Bunny) foram resolvidas — registro em `bunny.md`. Item novo que precise de resposta rápida
+entra aqui, com o próximo número livre.*
 
 ## B. Conteúdo e cadastro *(tarefas suas, sem ordem fixa)*
 

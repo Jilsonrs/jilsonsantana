@@ -67,10 +67,10 @@ export function LessonContent({
   /** A próxima aula da lista: na aula de texto, o botão "Próxima aula" leva a ela (06/10/2026). Na última, nenhum. */
   proximaAulaId?: number;
   /**
-   * A legenda lembrada (Bloco AULA, etapa 6, 07/10/2026): o idioma com que ela abre
-   * ligada (vazio, desligada), e o que grava quando o aluno muda no CC do player.
+   * A legenda lembrada (Bloco AULA, etapa 6, 07/10/2026): como ela abre — o idioma do
+   * curso (ligada) ou `off` (desligada) —, e o que grava quando o aluno muda no CC do player.
    */
-  legenda?: { abrirLigada: string | null; aoMudar: (ligada: boolean) => void };
+  legenda?: { abrirCom: string; aoMudar: (ligada: boolean) => void };
   /** O endereço do vídeo está vencendo: buscar a aula de novo, com um endereço novo (06/10/2026). */
   renovarVideo?: () => void;
 }) {
@@ -99,7 +99,7 @@ export function LessonContent({
           src={aula.playerUrl}
           title={aula.title}
           comecarEm={aula.ponto ?? null}
-          legenda={legenda?.abrirLigada ?? null}
+          legenda={legenda?.abrirCom ?? null}
           aoMudarLegenda={legenda?.aoMudar}
           aoConcluir={aoConcluir}
           aoTerminar={aoTerminar}

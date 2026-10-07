@@ -118,61 +118,82 @@ frente do site, por exemplo), ou se o Enterprise DRM entrar só para as aulas.*
   aba, ou se a biblioteca for trocada por outra.*
 - **A legenda lembrada** *(Bloco AULA, etapa 6 — decisão do operador, 07/10/2026, como no LinkedIn)*:
   começa desligada; o aluno liga **no CC do próprio player**, e ela continua ligada nas próximas
-  aulas e ao sair e voltar, em qualquer aparelho, até ele desligar no mesmo CC. **Por que precisa de
-  um script no player:** o player.js não avisa quando o CC muda (só play, pausa, tempo e fim — doc),
-  e a "preferência lembrada" do próprio Bunny (doc do parâmetro `captions`) mora no aparelho, dentro
-  da moldura do Bunny, que o Safari bloqueia e o Chrome em algumas configurações — no teste do
-  operador de 07/10 ela não funcionou. **Como funciona:** o player novo é feito de componentes do
-  **media-chrome**, que marca a legenda ligada no atributo `mediasubtitlesshowing` do
-  `media-controller` (doc do media-chrome); o player **ainda executa o HTML personalizado** da aba
-  Player (*Custom HTML head* — guia de migração do Bunny). O script abaixo observa esse atributo e,
-  **só quando a mudança vem logo depois de um toque do aluno no player** (as mudanças do player se
-  preparando não contam), avisa a página da aula. A página grava a escolha na conta
-  (`/api/me/preferences`) e abre cada aula com `captions=<idioma do curso>` enquanto ela estiver
-  ligada (`client/src/lib/legenda-lembrada.ts`). **Onde colar** (operador, uma vez — P52): Stream →
-  biblioteca `jilsonsantana-stream` → **Player** → **Custom HTML head** → colar o bloco abaixo → **Save
-  Settings**. **Colado pelo operador em 07/10/2026** (print do painel) — P52 resolvida. *Gatilhos:* o script para de funcionar se **"Enable legacy player"** for ligado (o player
-  antigo não é media-chrome) ou se o Bunny mudar o player; **"Reset to Default"** na aba apaga o
-  script. Em todos esses casos a aula continua funcionando — só a legenda deixa de ser lembrada.
+  aulas e ao sair e voltar, em qualquer aparelho, até ele desligar no mesmo CC. **Quem decide é a
+  CONTA do aluno:** a página grava a escolha (`/api/me/preferences`) e, para quem está logado, abre
+  **toda** aula com `captions=<idioma do curso>` (ligada) ou **`captions=off`** (desligada) —
+  `client/src/lib/legenda-lembrada.ts`. **Medido no player novo (07/10/2026):** com `captions`, a
+  página vem com `captions-forced`, e o player **ignora a memória dele no aparelho** (a chave
+  `bunny_stream_settings_<biblioteca>`); com `off`, nenhuma faixa abre. Sem o parâmetro (visitante),
+  o player decide pela memória do aparelho.
+  **Por que precisa de um script no player:** o player.js não avisa quando o CC muda (só play,
+  pausa, tempo e fim — doc). **O que o script ouve:** os **pedidos** de legenda do player
+  (`mediashowsubtitlesrequest`, `mediadisablesubtitlesrequest`, `mediatogglesubtitlesrequest`), que
+  ele dispara **só por ação de quem assiste** — botão CC, menu ou tecla C; abrir com a legenda
+  ligada pelo endereço não dispara nenhum (é o mesmo sinal que o próprio player usa para saber que
+  "o aluno escolheu"). Depois de cada pedido, espera o player assentar e avisa o **estado final**,
+  lido no atributo `mediasubtitlesshowing` do `media-controller`: **um aviso por clique** — o
+  "Desligado" do menu dispara dois pedidos seguidos (medido).
+  **Provado com o player novo do Bunny num Chrome de verdade** (07/10/2026; banco de prova local
+  fora do repo — a página do player baixada do ar, com um vídeo público de teste no lugar do nosso,
+  que só toca no domínio da escola): abre como a conta manda mesmo com o aparelho lembrando o
+  contrário; CC e menu, ligar e desligar → um aviso cada; abrir ligada → nenhum aviso.
+  **Histórico, para não repetir:** o primeiro script (07/10) foi escrito para este player, mas o
+  site ainda abria o **antigo** (Plyr, `iframe.mediadelivery.net` — §7), onde ele nunca avisou
+  nada; no iPhone a legenda "funcionava" pela memória do próprio Plyr. **A página do player se olha
+  antes de escrever script para ela.**
+  **Onde colar** (operador — P53): Stream → biblioteca `jilsonsantana-stream` → **Player** →
+  **Custom HTML head** → **apagar o script anterior** e colar o bloco abaixo → **Save Settings**.
+  **Colado pelo operador em 07/10/2026** (só o que vai de `<script>` a `</script>`; as linhas de
+  marcação do documento, as que têm as três crases, não entram) — P53 resolvida.
+  *Gatilhos:* o script para de funcionar se o Bunny mudar os nomes desses pedidos ou do atributo
+  (são do media-chrome, a base do player); **"Reset to Default"** na aba apaga o script. Em todos
+  esses casos a aula continua funcionando — só a legenda deixa de ser lembrada.
+  **A CHECAGEM DIÁRIA** *(decisão do operador, 07/10/2026)*: `.github/workflows/checagem-do-player.yml`
+  roda `scripts/checar-legenda-no-player.mjs` todo dia, no site no ar, e confere que o site abre o
+  player novo, que o NOSSO script (na versão do player novo) está na página dele e que o pacote do
+  player ainda tem os nomes que o script ouve. **Falhou → o GitHub manda e-mail.** À mão:
+  `npm run checar:player`. **Mudou o script acima (a marca `jilsonsantana-legenda` ou os nomes que
+  ele ouve)? Mude a checagem no mesmo commit.** O registro dela é público (o repositório é), então
+  ela nunca imprime o endereço assinado. *Em repositório público, o GitHub desliga a checagem depois
+  de 60 dias sem commit — aí se religa na aba Actions.*
+  **Se a checagem falhar e o Bunny não aceitar mais o script — as saídas** *(levantadas pelo agente
+  em 07/10/2026; o operador escolheu, por ora, só a checagem; as outras ficam para esse dia)*:
+  (1) **pedir ao Bunny um aviso de legenda no player.js** — o canal que o site já usa para o ponto;
+  o Bunny já pôs nele um aviso fora do padrão (`playbackratechange`); com ele, o script deixa de
+  ser necessário; (2) **deixar o próprio player lembrar no aparelho** — o site para de mandar
+  `captions` e o player volta a lembrar sozinho (por aparelho, não por conta: é como funcionava no
+  iPhone com o player antigo); dá para o site trocar sozinho se o script avisar "estou aqui" ao abrir;
+  (3) **um player nosso**, tocando o vídeo do Bunny direto — controle total, mas obra grande, e perde
+  o MediaCage do player do Bunny. *(O botão de legenda da escola, fora do player, foi recusado pelo
+  operador em 07/10/2026: "botão extra não faz sentido".)*
 
   ```html
   <script>
-  /* jilsonsantana.com — a legenda lembrada (Bloco AULA, etapa 6, 07/10/2026).
-     Avisa a página da aula quando o ALUNO liga ou desliga a legenda no CC do player.
-     Só manda para www.jilsonsantana.com, e só "ligou" ou "desligou". */
+  /* jilsonsantana.com — a legenda lembrada (Bloco AULA, etapa 6; refeito em 07/10/2026 para o
+     player novo do Bunny). Quem diz se a legenda abre ligada é a CONTA do aluno: a escola abre o
+     player com captions=<idioma> ou captions=off. Este script só avisa a página da aula quando o
+     ALUNO pede para ligar ou desligar (botão CC, menu ou tecla C): o player dispara esses pedidos
+     só por ação de quem assiste. Só manda para www.jilsonsantana.com, e só "ligou" ou "desligou". */
   (function () {
     var DESTINO = "https://www.jilsonsantana.com";
-    var JANELA_DO_TOQUE = 3000;
-    var tocouEm = 0;
-    var ultimo = null;
-    ["pointerdown", "keydown", "touchstart"].forEach(function (tipo) {
-      document.addEventListener(tipo, function () { tocouEm = Date.now(); }, true);
-    });
-    function avisar(ligada) {
-      var doAluno = Date.now() - tocouEm <= JANELA_DO_TOQUE;
-      if (!doAluno || ligada === ultimo) { ultimo = ligada; return; }
-      ultimo = ligada;
-      try {
-        window.parent.postMessage({ origem: "jilsonsantana-legenda", ligada: ligada }, DESTINO);
-      } catch (e) {}
-    }
-    function observar(controle) {
-      ultimo = Boolean((controle.getAttribute("mediasubtitlesshowing") || "").trim());
-      new MutationObserver(function () {
-        avisar(Boolean((controle.getAttribute("mediasubtitlesshowing") || "").trim()));
-      }).observe(controle, { attributes: true, attributeFilter: ["mediasubtitlesshowing"] });
-    }
-    function procurar() {
+    var ASSENTAR = 400;
+    var espera = null;
+    function ligada() {
       var controle = document.querySelector("media-controller");
-      if (!controle) return false;
-      observar(controle);
-      return true;
+      return Boolean(controle && (controle.getAttribute("mediasubtitlesshowing") || "").trim());
     }
-    if (!procurar()) {
-      var espera = new MutationObserver(function () { if (procurar()) espera.disconnect(); });
-      espera.observe(document.documentElement, { childList: true, subtree: true });
-      setTimeout(function () { espera.disconnect(); }, 30000);
+    function pediu() {
+      if (espera !== null) clearTimeout(espera);
+      espera = setTimeout(function () {
+        espera = null;
+        try {
+          window.parent.postMessage({ origem: "jilsonsantana-legenda", ligada: ligada() }, DESTINO);
+        } catch (e) {}
+      }, ASSENTAR);
     }
+    ["mediashowsubtitlesrequest", "mediadisablesubtitlesrequest", "mediatogglesubtitlesrequest"].forEach(function (tipo) {
+      document.addEventListener(tipo, pediu, true);
+    });
   })();
   </script>
   ```
@@ -588,7 +609,8 @@ O Bunny gera estes tipos de chave:
 - **Token do embed: CONFIRMADO em 28/09/2026 (context7) e em uso no código** (`tokenDoPlayer`
   e `enderecoAssinado` em `server/src/lib/bunny-stream.ts`): **`SHA256_hex(token_security_key +
   video_id + expires)`**, com `expires` em **segundos**, entregue como `?token=…&expires=…` no
-  iframe `iframe.mediadelivery.net/embed/<biblioteca>/<id>`. A chave é a **token key** da
+  iframe `player.mediadelivery.net/embed/<biblioteca>/<id>` (o player novo, desde 07/10/2026; o
+  mesmo token vale nos dois endereços — medido). A chave é a **token key** da
   biblioteca, não a API key. *(A forma em Base64 que a leitura de 25/09 citava é de outro produto
   — o token da CDN —, não do embed.)* Validade: **24 h** para todo vídeo (§3.1, 28/09).
 - **Com *Block Direct URL File Access* ligado, o iframe precisa de
@@ -609,8 +631,8 @@ O Bunny gera estes tipos de chave:
 - **Confirmado na doc em 27/09, e já em uso no código (Bloco U, etapa 2):** criar o vídeo devolve
   o id em **`guid`** · o envio retomável usa `https://video.bunnycdn.com/tusupload` com os
   cabeçalhos `AuthorizationSignature`, `AuthorizationExpire`, `VideoId` e `LibraryId` · a
-  assinatura é SHA-256 (hex) de biblioteca + chave + validade + id · o player é
-  `iframe.mediadelivery.net/embed/<biblioteca>/<id>`, o dos exemplos oficiais.
+  assinatura é SHA-256 (hex) de biblioteca + chave + validade + id · o player era
+  `iframe.mediadelivery.net/embed/<biblioteca>/<id>` (hoje, o player novo — item abaixo).
   **Confirmado na doc em 28/09 (context7), e em uso no código (`interpretarResumo`):** a miniatura
   padrão é `https://{CDN Hostname da biblioteca}/{id do vídeo}/thumbnail.jpg`. Com o CDN token
   desligado (28/09), ela carrega sem assinatura para quem vem do domínio da escola. **Não
@@ -621,13 +643,23 @@ O Bunny gera estes tipos de chave:
   Por isso a prévia do admin, que se atualiza sozinha, trata como **pronto** o status 4 **ou** o
   `encodeProgress` 100 (`interpretarEstado` em `server/src/lib/bunny-stream.ts`). Se um envio no
   ar ficar "processando" para sempre, é aqui que se ajusta.
-- **Endereço do player a conferir (achado de 27/09, anotado a pedido do operador):** a doc do
-  Bunny mostra que o **player novo** usa `player.mediadelivery.net/embed/` (com a opção *Enable
-  legacy player* desligada em *Player Settings*). Este guia cita o endereço antigo,
-  `iframe.mediadelivery.net`. **Confirmar no build qual vale** para a `jilsonsantana-stream`, e usar
-  o mesmo no iframe e na CSP.
+- **O endereço do player: `player.mediadelivery.net` — RESOLVIDO em 07/10/2026** (o achado de
+  27/09 pedia para confirmar). **Fato medido:** com *Enable legacy player* desligado no painel, o
+  endereço antigo, `iframe.mediadelivery.net`, **continuava entregando o player antigo** (Plyr) —
+  quem escolhe o player é o **endereço**, não o painel. A doc do Bunny: o player antigo está
+  **descontinuado e sai do ar no começo de 2027**. **Decisão do operador (07/10/2026): trocar
+  agora**, e os **botões do player no idioma do app do aluno** (`lang=pt`/`en`; o player novo
+  tem a tradução em português). O mesmo token vale no endereço novo, e ele recusa sem token (403);
+  **e recusa (403) o endereço assinado aberto de outro site ou sem origem — o antigo ABRIA o player
+  nos dois casos** (medido em 07/10/2026, na página do player, com o endereço do vídeo de
+  apresentação: a trava de *Allowed domains* não valia no endereço antigo; um endereço de aula que
+  vazasse abriria o player em qualquer site por 24 h). A troca fecha isso;
+  `t`, `autoplay` e `captions` funcionam igual, e o player.js também (ready, play, pause,
+  timeupdate, ended, seeked, error). *Gatilho de reabertura: o Bunny mudar o endereço de novo, ou
+  um defeito do player novo que o antigo não tinha — voltar é trocar uma linha
+  (`montarEndereco`), só até o antigo sair do ar.*
 - **CSP:** quando o bloco do `helmet` entrar (backlog P2), o `frame-src` precisa do endereço do
-  player (acima: `iframe.mediadelivery.net` ou `player.mediadelivery.net`), e o `img-src` precisa
+  player (`player.mediadelivery.net`, acima), e o `img-src` precisa
   de `img.jilsonsantana.com`.
 
 ### 7.1 Regras do operador para o build da Fase 3 *(25/09/2026: registradas, NÃO implementadas)*
