@@ -213,11 +213,11 @@
 > 404. *O vídeo de verdade (o ponto, tocar sozinho, o fim) é o teste do operador, etapa 5, depois
 > da P51.*
 > **Bloco AULA (a tela onde o aluno estuda), pedido do operador em 06/10/2026 — ETAPAS 1 E 2 FEITAS
-> e publicadas; ETAPA 3 FEITA no `dev` (07/10):** o ponto e a última aula na conta, entrar no curso
-> onde parou e o vídeo voltando sempre tocando, gravado também ao fechar a aba; e trocar de aula sem
-> a tela piscar, com a gaveta do celular fechando e o "Próxima aula" no texto. **Os 3 erros
-> relatados estão corrigidos; a prova com o vídeo de verdade é no site (etapa 5). Próxima: a etapa
-> 4.** A análise explica os 3 erros relatados (entrar sempre na 1ª
+> e publicadas; ETAPAS 3 E 4 FEITAS no `dev` (07/10):** o ponto e a última aula na conta, entrar no
+> curso onde parou e o vídeo voltando sempre tocando, gravado também ao fechar a aba; trocar de aula
+> sem a tela piscar, com a gaveta do celular fechando e o "Próxima aula" no texto; e o piso de
+> aparelhos (iOS 15 em diante) escrito e medido. **Os 3 erros relatados estão corrigidos; falta a
+> prova com o vídeo de verdade, no site (etapa 5, com o operador, depois da P51).** A análise explica os 3 erros relatados (entrar sempre na 1ª
 > aula, a próxima abrindo pausada, o ponto só no navegador) e traz 4 achados novos, provados (o
 > Voltar com o vídeo errado, a gaveta do celular aberta, a tela piscando entre aulas, a compilação
 > acima do piso das bibliotecas). 5 etapas: ver Fase 5 → **Bloco AULA**. Antes do teste no ar: a P51.
@@ -3659,8 +3659,26 @@ da aba Player — **3 consultas na análise (passou de 2: anotado)**. A sessão 
       anterior, a gaveta sem `key`, o botão na última aula, o botão levando à própria aula, e o título
       da aula anterior no topo. **Docs check (context7):** não disparado (nenhum endereço ou token do
       Bunny montado; só a moldura do iframe).
-- [ ] **Etapa 4 — aparelho antigo (P):** `build.target` explícito; conferir o pacote (nenhuma
+- [x] **Etapa 4 — aparelho antigo (P):** `build.target` explícito; conferir o pacote (nenhuma
       sintaxe acima do piso) e o tamanho.
+      *(07/10/2026, no `dev`.)* **O piso ficou escrito** no `vite.config.ts`: iOS 15 (iPhone 6s em
+      diante), Chrome e Edge 91, Firefox 90 — no código e no CSS (conferido no que o próprio Vite
+      resolve). **Medido no pacote, não presumido:** a sintaxe saiu igual (o código de hoje não usa
+      nada que o iOS 15 não entenda; a linha protege o futuro, porque o padrão do Vite muda a cada
+      versão grande — no Vite 7, Safari 16); tamanho: +174 bytes no pacote principal, o resto igual.
+      Das funções novas do navegador, as bibliotecas conferem antes de usar quase todas
+      (`structuredClone`, `crypto.randomUUID`, `checkVisibility`, `requestIdleCallback`); **a única
+      usada sem conferir é `Object.hasOwn` (iOS 15.4), pela biblioteca do texto das aulas** — sem
+      ela, toda aula de texto quebrava num iPhone com iOS 15.0 a 15.3 (provado com a peça real no
+      teste). Reforço de 3 linhas em `client/src/lib/compat.ts`, a primeira coisa que o app carrega,
+      que só entra quando o navegador não tem a função. *A afirmação do plano sobre o piso do
+      TanStack Query não foi conferida na doc: a medição do pacote a substituiu.* **Testes:** o
+      reforço (3, com a peça real do texto) e o guarda do piso (2: a linha da configuração e o
+      reforço como primeira importação — as duas falhariam em silêncio). **Mutação: as 5 partes
+      reprovam.** Regra no `CLAUDE.md` → Client (biblioteca nova × função nova do navegador).
+      **Achado visual, NÃO consertado (decisão do operador):** no iOS 15.0 a 15.3 a moldura do app
+      (`min-h-svh` no `Layout.tsx`) não ocupa a altura toda da tela — o resto funciona; o anel de foco
+      do teclado (`:focus-visible`) também só aparece do iOS 15.4 em diante, o que não pesa no toque.
 - [ ] **Etapa 5 — publicar e testar no ar, com o operador (P):** o player só toca no domínio da
       escola, então a prova é no site. **Antes:** a P51. Roteiro em cada aparelho (Chrome no
       computador, Safari no Mac, iPhone, Android, e um aparelho antigo se houver): 1ª vez no curso
