@@ -204,6 +204,14 @@
 > (aula concluída sozinha, barra na aula e no cartão), o vídeo que não recomeça ao trocar de aba
 > (a apresentação abre pausada, a aula toca sozinha) e o "Salvos". **Primeiro teste com o player de
 > verdade: com o operador** (assistir uma aula até perto do fim e ver a barra andar).
+> **PUBLICADO em 07/10/2026 (`main` = `f247200`, CI verde nos dois jobs, deploy ok):** o Bloco
+> AULA, etapas 3 e 4 — trocar de aula sem a tela piscar (topo e lista ficam), a moldura nova do
+> player (o Voltar certo), a gaveta do celular que fecha, o "Próxima aula" na aula de texto, e o
+> piso de aparelhos (iOS 15 em diante, com o reforço do texto das aulas). A P51 está resolvida
+> (Resumable desligado no painel). **Provado no site:** a versão nova (`muxuuxt0-37d01787`) no
+> cabeçalho e no `versao.txt`; a entrada do curso no ar leva à aula 14; curso inexistente → 404;
+> gravar o ponto sem login → 401; o pacote anterior → 404. **Falta só a etapa 5: o roteiro nos
+> aparelhos, com o operador.**
 > **PUBLICADO em 06/10/2026, à noite (`main` = `778bbee`, CI verde nos dois jobs, deploy ok; a
 > migration `ponto_da_aula` aplicada pelo pre-deploy):** o Bloco AULA, etapas 1 e 2 — entrar no
 > curso onde parou, o vídeo voltando sempre tocando, o ponto na conta (também ao fechar a aba).
@@ -3688,6 +3696,35 @@ da aba Player — **3 consultas na análise (passou de 2: anotado)**. A sessão 
       catálogo, no mesmo aparelho e no outro · pausar, sair, voltar tocando · o Voltar do navegador
       · a gaveta no celular · legenda ligada numa aula continua na próxima? · fim do curso → 1ª não
       concluída.
+      *(07/10/2026: **publicado** — `main` = `f247200`, as 4 etapas no ar. Falta o operador rodar o
+      roteiro nos aparelhos; o que ele achar entra aqui, e o checkbox fecha com o resultado.)*
+      **O teste do operador no ar (07/10/2026, com a conta de admin** — a de aluno de teste não tem
+      assinatura em produção, por decisão dele de 27/09: só com a Stripe, na Fase 4**):** (1) primeira
+      vez — não reproduzível com uma conta que já tinha visto aulas, mas entrou na primeira aula,
+      como esperado para quem ainda não tinha ponto gravado; (2) fim do vídeo → próxima, (3) texto
+      parado e "Próxima aula", (5) pausar e voltar tocando, (7) o Voltar do navegador e (8) a gaveta
+      do celular — **ok**; (4) sair e voltar pelo site — ok, mas **recarregar a página** abria do
+      começo; (6) outro aparelho abria a aula certa, mas **do começo**; (9) **a legenda ligada não
+      continua na aula seguinte**, nem ao voltar.
+      **Defeito do agente, CORRIGIDO no mesmo dia (itens 4 e 6):** o player do Bunny avisa o tempo
+      com **casas decimais** (17,43 s), e o servidor, pelo contrato da etapa 1, só aceitava inteiro —
+      recusava (400) toda gravação durante o vídeo; só o "estou aqui" ao abrir, sempre no começo,
+      chegava ao banco. Sair e voltar dentro do site funcionava porque a tela guarda o ponto na
+      própria memória; recarregar, outro aparelho e **voltar no dia seguinte** dependem do banco — era
+      o item 4 do pedido que não funcionava. Os testes não pegaram porque usavam segundos inteiros.
+      **Conserto:** a tela manda o segundo inteiro (`Math.floor`), e o servidor **aceita fração e
+      arredonda para baixo** — o que conserta até a aba aberta antes da publicação (API aditiva). Os
+      testes passaram a usar os tempos quebrados do player de verdade. **Mutação:** a tela sem
+      arredondar (andando e na pausa) e o servidor voltando a recusar fração → reprovam; tirar o
+      arredondamento do servidor **não** reprova, porque o próprio Prisma grava o inteiro truncado
+      (medido: 89,73 → 89) — o comportamento continua protegido pelo teste, e a linha fica, explícita.
+      **Legenda (item 9) — o que a doc do Bunny diz e por que não funcionou:** o player tem uma
+      "preferência lembrada" de legenda, mas ela mora no aparelho, dentro da moldura do Bunny — que o
+      Safari bloqueia, e o Chrome em algumas configurações. E o player.js **não avisa** quando o aluno
+      liga ou desliga o CC (só play, pausa, tempo, fim). O que o site consegue é mandar o player abrir
+      com a legenda ligada (`captions=<idioma>`). **Decisão do operador (07/10/2026): "se o aluno
+      ligou, fica ligada até que ele desligue"** — o mecanismo (um botão da escola, lembrado na conta)
+      foi proposto a ele e espera a confirmação.
 - **Done when:** os 6 comportamentos do pedido passam no roteiro da etapa 5, sem erro, nos aparelhos
   testados; CI verde nos dois jobs.
 

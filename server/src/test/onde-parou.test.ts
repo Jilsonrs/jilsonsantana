@@ -260,9 +260,16 @@ describe("gravar o ponto — o aluno", () => {
     expect((await linha(memberId, ids.gratis))?.positionSeconds).toBeNull();
   });
 
+  // Defeito achado no teste do operador (07/10/2026): o player do Bunny avisa o tempo
+  // com casas decimais, e a primeira versão recusava — o ponto nunca chegava ao banco.
+  it("o segundo com casas decimais (como o player manda): aceito, e gravado inteiro", async () => {
+    expect((await gravar(ids.primeira, { segundos: 89.73 }, member)).status).toBe(204);
+    expect((await linha(memberId, ids.primeira))?.positionSeconds).toBe(89);
+    expect((await gravar(ids.primeira, { segundos: 90 }, member)).status).toBe(204);
+  });
+
   it.each([
     ["negativo", { segundos: -1 }],
-    ["fração", { segundos: 1.5 }],
     ["mais de 24 h", { segundos: 86_401 }],
     ["texto", { segundos: "10" }],
     ["sem o campo", {}],

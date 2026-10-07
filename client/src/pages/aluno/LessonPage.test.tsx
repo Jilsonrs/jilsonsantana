@@ -656,15 +656,18 @@ describe("página da aula — onde a pessoa parou", () => {
     expect(agendarNaSaida).not.toHaveBeenCalled();
   });
 
-  it("o vídeo andando grava a cada 15 s; a PAUSA grava na hora; o envio da saída fica sempre com o último ponto", async () => {
+  // O player do Bunny avisa o tempo com CASAS DECIMAIS (defeito achado no teste do
+  // operador, 07/10/2026: o servidor recusava, e o ponto nunca chegava ao banco). Os
+  // tempos daqui imitam o player de verdade; o que sai da tela é o segundo inteiro.
+  it("o vídeo andando grava a cada 15 s; a PAUSA grava na hora; o envio da saída fica sempre com o último ponto — em segundos inteiros", async () => {
     const player = await abrirAssistindo();
     await waitFor(() => expect(gravarPonto).toHaveBeenCalledTimes(1));
 
-    player.aoAndar(10, 600);
-    player.aoAndar(16, 600);
-    player.aoAndar(20, 600);
+    player.aoAndar(10.41, 600.5);
+    player.aoAndar(16.73, 600.5);
+    player.aoAndar(20.2, 600.5);
     expect(ultimoAgendado()[1]).toEqual({ segundos: 20 });
-    player.aoPausar(22);
+    player.aoPausar(22.96);
 
     await waitFor(() => expect(gravarPonto).toHaveBeenCalledTimes(3));
     expect(gravarPonto.mock.calls).toEqual([
@@ -679,7 +682,7 @@ describe("página da aula — onde a pessoa parou", () => {
     const player = await abrirAssistindo();
     getLessonPage.mockImplementation((id: number) => Promise.resolve(id === 12 ? texto() : pagina()));
 
-    player.aoAndar(590, 600);
+    player.aoAndar(590.38, 600.5);
     player.aoTerminar();
 
     expect(await screen.findByText("Texto da aula.")).toBeTruthy();
@@ -730,8 +733,8 @@ describe("página da aula — onde a pessoa parou", () => {
     await screen.findByTitle("Abertura");
     await waitFor(() => expect(ouvirPlayer).toHaveBeenCalled());
     const player = avisosDoPlayer();
-    player.aoAndar(140, 600);
-    player.aoAndar(147, 600);
+    player.aoAndar(140.25, 600.5);
+    player.aoAndar(147.81, 600.5);
 
     fireEvent.click(screen.getByText("sair"));
     await waitFor(() => expect(gravarPonto).toHaveBeenLastCalledWith(11, 147, false));
