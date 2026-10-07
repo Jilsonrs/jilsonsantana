@@ -158,7 +158,10 @@ describe("página da aula — o conteúdo", () => {
     getLessonPage.mockResolvedValueOnce(pagina({ playerUrl: vencido })).mockResolvedValue(pagina({ playerUrl: PLAYER }));
     abrir();
     const player = await screen.findByTitle("Abertura");
-    await waitFor(() => expect(player.getAttribute("src")).toBe(PLAYER));
+    await waitFor(() => expect(screen.getByTitle("Abertura").getAttribute("src")).toBe(PLAYER));
+    // Numa moldura NOVA (Bloco AULA, 07/10/2026): trocar o `src` da mesma criaria uma
+    // entrada no histórico do navegador.
+    expect(screen.getByTitle("Abertura")).not.toBe(player);
     // Com o endereço novo no player, a aula para de pedir.
     const pedidos = getLessonPage.mock.calls.length;
     await new Promise((r) => setTimeout(r, 50));
@@ -784,6 +787,123 @@ describe("página da aula — onde a pessoa parou", () => {
     avisosDoPlayer().aoPausar(50);
     await new Promise((r) => setTimeout(r, 1200));
     expect(gravarPonto).toHaveBeenCalledTimes(1);
+  });
+});
+
+// TROCAR DE AULA SEM ERRO (Bloco AULA, etapa 3 — plano aprovado pelo operador em
+// 06/10/2026): a tela não pisca entre aulas do mesmo curso, a gaveta do celular fecha
+// ao escolher, e a aula de texto tem o botão "Próxima aula".
+describe("página da aula — trocar de aula", () => {
+  const comoMembro = () => useSessionMock.mockReturnValue({ data: { user: { role: Role.MEMBER } }, isPending: false });
+  const leitura = (extra: Partial<PaginaDaAula["aula"]> = {}) =>
+    pagina({ id: 12, title: "Leitura", kind: "TEXT", playerUrl: null, texto: "Texto da aula.", ...extra });
+  /** O curso com uma terceira aula, de vídeo, depois da de texto. */
+  const comTerceira = (base: PaginaDaAula): PaginaDaAula => ({
+    ...base,
+    curso: {
+      ...base.curso,
+      modulos: [
+        {
+          ...base.curso.modulos[0],
+          aulas: [
+            ...base.curso.modulos[0].aulas,
+            { id: 13, title: "Fechamento", kind: "VIDEO", isFreePreview: false, status: "PUBLISHED", temArquivos: false, duracaoSegundos: 60 },
+          ],
+        },
+      ],
+    },
+  });
+  const titulo = () => screen.getByRole("heading", { level: 1 }).textContent;
+
+  it("enquanto a aula seguinte carrega: o topo (já com o título dela) e a lista ficam; só o conteúdo carrega", async () => {
+    let soltarLeitura: (p: PaginaDaAula) => void = () => {};
+    getLessonPage.mockImplementation((id: number) => (id === 12 ? new Promise((r) => (soltarLeitura = r)) : Promise.resolve(pagina())));
+    abrir();
+    await screen.findByTitle("Abertura");
+
+    fireEvent.click(within(screen.getByRole("navigation", { name: "Conteúdo do curso" })).getByRole("link", { name: /Leitura/ }));
+
+    expect(titulo()).toContain("Leitura");
+    expect(screen.getByText("Excel + IA")).toBeTruthy();
+    expect(screen.getByRole("navigation", { name: "Conteúdo do curso" })).toBeTruthy();
+    expect(screen.getByText("Carregando…")).toBeTruthy();
+    // Nada da aula anterior no lugar do conteúdo: nem o player dela.
+    expect(screen.queryByTitle("Abertura")).toBeNull();
+
+    soltarLeitura(leitura());
+    expect(await screen.findByText("Texto da aula.")).toBeTruthy();
+    expect(screen.queryByText("Carregando…")).toBeNull();
+  });
+
+  it("aula de OUTRO curso: a tela inteira carrega — o topo e a lista do curso anterior não ficam", async () => {
+    getLessonPage.mockImplementation((id: number) => (id === 99 ? new Promise(() => {}) : Promise.resolve(pagina())));
+    renderWithProviders(
+      <>
+        <LessonPage />
+        <Link to="/aluno/aula/99">aula de outro curso</Link>
+      </>,
+      { route: "/aluno/aula/11", path: "/aluno/aula/:id" },
+    );
+    await screen.findByTitle("Abertura");
+
+    fireEvent.click(screen.getByText("aula de outro curso"));
+
+    expect(await screen.findByText("Carregando…")).toBeTruthy();
+    expect(screen.queryByRole("heading", { level: 1 })).toBeNull();
+    expect(screen.queryByText("Excel + IA")).toBeNull();
+  });
+
+  it("no celular, escolher uma aula na gaveta FECHA a gaveta — também na aula já aberta antes", async () => {
+    comoMembro();
+    getLessonPage.mockImplementation((id: number) => Promise.resolve(id === 12 ? leitura() : pagina()));
+    abrir();
+    await screen.findByTitle("Abertura");
+    const escolherNaGaveta = async (nome: RegExp) => {
+      fireEvent.click(screen.getByRole("button", { name: "Conteúdo do curso" }));
+      fireEvent.click(within(await screen.findByRole("dialog")).getByRole("link", { name: nome }));
+    };
+
+    await escolherNaGaveta(/Leitura/);
+    expect(await screen.findByText("Texto da aula.")).toBeTruthy();
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+
+    // A volta para a primeira aula: ela está na memória, e a tela nem carrega.
+    await escolherNaGaveta(/Abertura/);
+    expect(await screen.findByTitle("Abertura")).toBeTruthy();
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+  });
+
+  it("aula de texto: o botão 'Próxima aula' leva à próxima", async () => {
+    getLessonPage.mockImplementation((id: number) => Promise.resolve(comTerceira(id === 12 ? leitura() : pagina({ id: 13, title: "Fechamento" }))));
+    abrir("/aluno/aula/12");
+    await screen.findByText("Texto da aula.");
+
+    const botao = screen.getByRole("link", { name: "Próxima aula" });
+    expect(botao.getAttribute("href")).toBe("/aluno/aula/13");
+    fireEvent.click(botao);
+
+    expect(await screen.findByTitle("Fechamento")).toBeTruthy();
+    expect(getLessonPage).toHaveBeenLastCalledWith(13, false);
+  });
+
+  it("sem 'Próxima aula' na ÚLTIMA aula, na aula de VÍDEO e na aula trancada", async () => {
+    // "Leitura" é a última aula do curso padrão.
+    getLessonPage.mockResolvedValue(leitura());
+    const ultima = abrir("/aluno/aula/12");
+    await screen.findByText("Texto da aula.");
+    expect(screen.queryByRole("link", { name: "Próxima aula" })).toBeNull();
+    ultima.unmount();
+
+    getLessonPage.mockResolvedValue(pagina());
+    const video = abrir();
+    await screen.findByTitle("Abertura");
+    expect(screen.queryByRole("link", { name: "Próxima aula" })).toBeNull();
+    video.unmount();
+
+    getLessonPage.mockResolvedValue(comTerceira(leitura({ liberada: false, texto: undefined, arquivos: undefined })));
+    abrir("/aluno/aula/12");
+    await screen.findByRole("status");
+    expect(screen.queryByRole("link", { name: "Próxima aula" })).toBeNull();
   });
 });
 

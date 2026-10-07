@@ -29,6 +29,11 @@ export function usePaginaDaAula(lessonId: number | null) {
       return pagina;
     },
     enabled: lessonId !== null && !isPending,
+    // Enquanto a aula seguinte carrega, os dados da anterior ficam — SÓ se forem do
+    // mesmo curso (Bloco AULA, 07/10/2026): o topo e a lista não piscam. A página da
+    // aula sabe que são emprestados (`isPlaceholderData`) e não mostra o conteúdo deles.
+    placeholderData: (anterior: api.PaginaDaAula | undefined) =>
+      anterior && lessonId !== null && anterior.curso.modulos.some((m) => m.aulas.some((a) => a.id === lessonId)) ? anterior : undefined,
   });
   return { ...consulta, comoAdmin, carregandoSessao: isPending };
 }

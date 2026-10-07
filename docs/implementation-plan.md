@@ -213,9 +213,11 @@
 > 404. *O vídeo de verdade (o ponto, tocar sozinho, o fim) é o teste do operador, etapa 5, depois
 > da P51.*
 > **Bloco AULA (a tela onde o aluno estuda), pedido do operador em 06/10/2026 — ETAPAS 1 E 2 FEITAS
-> e publicadas:** o ponto e a última aula na conta, entrar no curso onde parou e o vídeo voltando
-> sempre tocando, gravado também ao fechar a aba. **Os 3 erros relatados estão corrigidos; a prova
-> com o vídeo de verdade é no site (etapa 5). Próxima: a etapa 3.** A análise explica os 3 erros relatados (entrar sempre na 1ª
+> e publicadas; ETAPA 3 FEITA no `dev` (07/10):** o ponto e a última aula na conta, entrar no curso
+> onde parou e o vídeo voltando sempre tocando, gravado também ao fechar a aba; e trocar de aula sem
+> a tela piscar, com a gaveta do celular fechando e o "Próxima aula" no texto. **Os 3 erros
+> relatados estão corrigidos; a prova com o vídeo de verdade é no site (etapa 5). Próxima: a etapa
+> 4.** A análise explica os 3 erros relatados (entrar sempre na 1ª
 > aula, a próxima abrindo pausada, o ponto só no navegador) e traz 4 achados novos, provados (o
 > Voltar com o vídeo errado, a gaveta do celular aberta, a tela piscando entre aulas, a compilação
 > acima do piso das bibliotecas). 5 etapas: ver Fase 5 → **Bloco AULA**. Antes do teste no ar: a P51.
@@ -3632,12 +3634,31 @@ da aba Player — **3 consultas na análise (passou de 2: anotado)**. A sessão 
       **Docs check (context7):** Bunny → `/bunnyway/documentation` → reaproveitado da análise
       nesta mesma sessão (`t` em `Xs`, `autoplay`, eventos do player.js); Better Auth e Stripe: não
       disparados.
-- [ ] **Etapa 3 — trocar de aula sem erro (M):** *(entra também: a `LessonPage.tsx` passou do limite
+- [x] **Etapa 3 — trocar de aula sem erro (M):** *(entra também: a `LessonPage.tsx` passou do limite
       de ~200 linhas na etapa 2 — 214 —, então o topo da aula vira componente próprio, com as mesmas
       classes; é a parte que esta etapa já reescreve.)* A `key` do player, cabeçalho e lista que ficam, a
       gaveta que fecha, o botão "Próxima aula". Componente: moldura nova por aula · carregando só no
       quadro · gaveta fechada depois da escolha · botão na aula de texto (não na última, não no
       vídeo). **Mutação:** cada um dos quatro → reprova.
+      *(07/10/2026, no `dev`.)* **O topo** foi para `components/aula/LessonHeader.tsx` (mesmas
+      classes; a `LessonPage` caiu de 214 para 152 linhas). **A moldura do player é nova a cada
+      endereço** (`key` no iframe) — também na renovação de 24 h: fecha o achado A inteiro (o Voltar
+      nunca mais troca só o vídeo). **Enquanto a aula seguinte carrega**, a página da aula mostra os
+      dados da anterior **só se forem do mesmo curso** (`placeholderData` em `pagina-da-aula.ts`): o
+      topo (já com o título da aula nova, tirado da lista) e a lista ficam, e só o lugar do conteúdo
+      mostra "Carregando…" (`LessonContentCarregando`: o quadro 16:9 no vídeo, a largura do texto no
+      texto); nada da aula anterior — conteúdo, conclusão, ponto — vale para a nova. Aula de outro
+      curso carrega a tela inteira, como antes. **A gaveta do celular** é uma por aula (`key`): fecha
+      ao escolher uma aula e na passagem automática. **"Próxima aula"** no fim da aula de texto
+      (texto aprovado pelo operador — `app.aula.proximaAula`, "Next lesson" em inglês): link de
+      verdade, então a versão nova do site entra nele; não aparece na última aula, na de vídeo nem
+      na trancada. `GEMINI.md`: o mapa da tela, o item 11 (sem o "pausado") e o item 31 na fila do
+      Antigravity (o acabamento do botão e do carregando). **Testes:** 5 novos na página da aula e 2
+      afirmações novas no player; suíte verde. **Mutação: as 8 partes reprovam** — a moldura
+      reaproveitada, sem manter a aula anterior, mantendo a de OUTRO curso, mostrando o conteúdo da
+      anterior, a gaveta sem `key`, o botão na última aula, o botão levando à própria aula, e o título
+      da aula anterior no topo. **Docs check (context7):** não disparado (nenhum endereço ou token do
+      Bunny montado; só a moldura do iframe).
 - [ ] **Etapa 4 — aparelho antigo (P):** `build.target` explícito; conferir o pacote (nenhuma
       sintaxe acima do piso) e o tamanho.
 - [ ] **Etapa 5 — publicar e testar no ar, com o operador (P):** o player só toca no domínio da
