@@ -204,11 +204,18 @@
 > (aula concluída sozinha, barra na aula e no cartão), o vídeo que não recomeça ao trocar de aba
 > (a apresentação abre pausada, a aula toca sozinha) e o "Salvos". **Primeiro teste com o player de
 > verdade: com o operador** (assistir uma aula até perto do fim e ver a barra andar).
+> **PUBLICADO em 06/10/2026, à noite (`main` = `778bbee`, CI verde nos dois jobs, deploy ok; a
+> migration `ponto_da_aula` aplicada pelo pre-deploy):** o Bloco AULA, etapas 1 e 2 — entrar no
+> curso onde parou, o vídeo voltando sempre tocando, o ponto na conta (também ao fechar a aba).
+> **Provado no site:** a versão nova (`muxf3a8v-c0cdae17`) no cabeçalho e no `versao.txt`; a
+> entrada do curso no ar (`google-antigravity-agentes-ia`) leva o visitante à aula 14, a primeira
+> publicada, sem cache; curso inexistente → 404; gravar o ponto sem login → 401; arquivo antigo →
+> 404. *O vídeo de verdade (o ponto, tocar sozinho, o fim) é o teste do operador, etapa 5, depois
+> da P51.*
 > **Bloco AULA (a tela onde o aluno estuda), pedido do operador em 06/10/2026 — ETAPAS 1 E 2 FEITAS
-> no `dev`:** o ponto e a última aula na conta (migration aplicada no dev), entrar no curso onde
-> parou e o vídeo voltando sempre tocando, gravado também ao fechar a aba. **Os 3 erros relatados
-> estão corrigidos no código; a prova com o vídeo de verdade é no site (etapa 5). Próxima: a etapa
-> 3.** A análise explica os 3 erros relatados (entrar sempre na 1ª
+> e publicadas:** o ponto e a última aula na conta, entrar no curso onde parou e o vídeo voltando
+> sempre tocando, gravado também ao fechar a aba. **Os 3 erros relatados estão corrigidos; a prova
+> com o vídeo de verdade é no site (etapa 5). Próxima: a etapa 3.** A análise explica os 3 erros relatados (entrar sempre na 1ª
 > aula, a próxima abrindo pausada, o ponto só no navegador) e traz 4 achados novos, provados (o
 > Voltar com o vídeo errado, a gaveta do celular aberta, a tela piscando entre aulas, a compilação
 > acima do piso das bibliotecas). 5 etapas: ver Fase 5 → **Bloco AULA**. Antes do teste no ar: a P51.
@@ -1212,6 +1219,12 @@ tornada executável — não uma lista nova):
       número de linhas, e o cadastro é fechado. `express-rate-limit` é dependência nova ⇒ **decisão
       de plano**; um contador em memória é a alternativa sem dependência. *Esta decisão se reabre
       (vira prioridade) com o primeiro aluno pagante, ou com qualquer sinal de abuso no log.*
+- [ ] **Endereço de API que não existe responde 200 com a página do app** *(achado na publicação de
+      06/10/2026, NÃO consertado — fora do pedido)*. Medido no ar: `GET /api/rota-que-nao-existe`
+      devolve o HTML do React com 200, em vez de 404. Hoje o app só chama rotas que existem, então
+      nada quebra; o risco é o dia em que uma chamada nova errar o endereço — ela "dá certo" com
+      HTML, em silêncio, em vez de falhar alto. O conserto é um 404 em JSON para todo `/api/*` que
+      nenhuma rota atendeu, antes do app. Decisão do operador quando mexer no servidor.
 
 ### Bloco S — Shell do aluno: menu lateral e, depois, painel  *(Ago 2026 · direção do operador)*
 
