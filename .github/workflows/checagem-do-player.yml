@@ -1,0 +1,41 @@
+name: Checagem do player
+
+# UMA VEZ POR DIA (decisão do operador, 07/10/2026): confere, no site no ar, que o script
+# da legenda lembrada continua dentro do player do Bunny e que o player ainda usa os nomes
+# que o script ouve. Se o Bunny parar de rodar o script, a legenda só deixa de ser
+# lembrada — sem erro nenhum na tela. Esta checagem é o aviso: quando ela falha, o GitHub
+# manda e-mail. O que ela confere e o que fazer: scripts/checar-legenda-no-player.mjs e
+# docs/bunny.md → "A legenda lembrada".
+#
+# O repositório é PÚBLICO, e o registro desta checagem também: o script nunca imprime o
+# endereço assinado do player.
+#
+# Em repositório público, o GitHub desliga a checagem agendada depois de 60 dias sem
+# nenhum commit — aí ela precisa ser religada na aba Actions.
+
+on:
+  schedule:
+    # 09:17 UTC = 06:17 em Brasília (minuto quebrado: no minuto cheio a fila do GitHub atrasa).
+    - cron: "17 9 * * *"
+  # E à mão, na aba Actions ("Run workflow").
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  checar:
+    name: Script da legenda no player do Bunny
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      # Sem instalar nada: o script só usa o que vem com o Node.
+      - name: Conferir o script no player
+        run: node scripts/checar-legenda-no-player.mjs

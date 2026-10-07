@@ -3852,6 +3852,25 @@ da aba Player — **3 consultas na análise (passou de 2: anotado)**. A sessão 
       Bunny só toca no domínio da escola. **P53:** o operador troca o script no painel.
       **Docs check (context7):** Bunny Stream → `/bunnyway/documentation` → o player novo, o fim
       do antigo, os parâmetros do embed (`captions`, `lang`, `t`, `autoplay`) — 2 consultas.
+      **Revisão do player (pedido do operador, 07/10/2026, enquanto o CI do GitHub estava fora do
+      ar):** o NOSSO módulo de verdade (`player-do-bunny.ts`, empacotado) ouvindo o player novo de
+      verdade, com um vídeo público tocando: tocou sozinho, abriu no segundo pedido (565), tempo com
+      duração, 90% concluíram (571 de 634 s), pausa e volta, fim (pausa e depois fim, a mesma ordem do
+      antigo — a gravação do ponto já trata). Lido no pacote do player: o player.js dele só fala com a
+      página que o abriu, e o "pronto" exige o endereço idêntico ao da moldura — **no ar não há
+      redirecionamento** (medido). Sem nada a corrigir.
+- [x] **Etapa 6d — a checagem diária do script da legenda (P)** *(07/10/2026; decisão do operador,
+      entre as saídas para o dia em que o Bunny não rodar mais o script — as outras ficam registradas
+      no `bunny.md`)*. `scripts/checar-legenda-no-player.mjs` (`npm run checar:player`) +
+      `.github/workflows/checagem-do-player.yml` (todo dia, 06:17 em Brasília, e à mão): confere no ar
+      que o site abre o player novo, que o nosso script (versão do player novo) está na página dele e
+      que o pacote do player tem os nomes que o script ouve; falhou → e-mail do GitHub. Nunca imprime
+      o endereço assinado (repositório público). **Provado:** contra o site de hoje (ainda no player
+      antigo) **falha**, com a explicação certa; com a página e o pacote reais do player novo
+      **passa** — o que também confirmou que o script colado pelo operador é a versão nova —; e
+      **falha** em cada quebra simulada (script fora do painel, script antigo colado, pedido
+      renomeado, estado renomeado, volta do Plyr, pacote ausente). *Começa a valer quando a `main`
+      tiver o player novo (o agendamento só roda na `main`).*
 - **Done when:** os 6 comportamentos do pedido passam no roteiro da etapa 5, sem erro, nos aparelhos
   testados; CI verde nos dois jobs.
 

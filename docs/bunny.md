@@ -148,6 +148,24 @@ frente do site, por exemplo), ou se o Enterprise DRM entrar só para as aulas.*
   *Gatilhos:* o script para de funcionar se o Bunny mudar os nomes desses pedidos ou do atributo
   (são do media-chrome, a base do player); **"Reset to Default"** na aba apaga o script. Em todos
   esses casos a aula continua funcionando — só a legenda deixa de ser lembrada.
+  **A CHECAGEM DIÁRIA** *(decisão do operador, 07/10/2026)*: `.github/workflows/checagem-do-player.yml`
+  roda `scripts/checar-legenda-no-player.mjs` todo dia, no site no ar, e confere que o site abre o
+  player novo, que o NOSSO script (na versão do player novo) está na página dele e que o pacote do
+  player ainda tem os nomes que o script ouve. **Falhou → o GitHub manda e-mail.** À mão:
+  `npm run checar:player`. **Mudou o script acima (a marca `jilsonsantana-legenda` ou os nomes que
+  ele ouve)? Mude a checagem no mesmo commit.** O registro dela é público (o repositório é), então
+  ela nunca imprime o endereço assinado. *Em repositório público, o GitHub desliga a checagem depois
+  de 60 dias sem commit — aí se religa na aba Actions.*
+  **Se a checagem falhar e o Bunny não aceitar mais o script — as saídas** *(levantadas pelo agente
+  em 07/10/2026; o operador escolheu, por ora, só a checagem; as outras ficam para esse dia)*:
+  (1) **pedir ao Bunny um aviso de legenda no player.js** — o canal que o site já usa para o ponto;
+  o Bunny já pôs nele um aviso fora do padrão (`playbackratechange`); com ele, o script deixa de
+  ser necessário; (2) **deixar o próprio player lembrar no aparelho** — o site para de mandar
+  `captions` e o player volta a lembrar sozinho (por aparelho, não por conta: é como funcionava no
+  iPhone com o player antigo); dá para o site trocar sozinho se o script avisar "estou aqui" ao abrir;
+  (3) **um player nosso**, tocando o vídeo do Bunny direto — controle total, mas obra grande, e perde
+  o MediaCage do player do Bunny. *(O botão de legenda da escola, fora do player, foi recusado pelo
+  operador em 07/10/2026: "botão extra não faz sentido".)*
 
   ```html
   <script>

@@ -15,7 +15,8 @@
     "test": "npm --workspace client run test && npm --workspace server run test",
     "test:changed": "npm --workspace client run test:changed && npm --workspace server run test:changed",
     "revisao:ingles": "npm --workspace core run build && node scripts/gerar-revisao-ingles.mjs",
-    "css:publico": "npm --workspace client run build:css"
+    "css:publico": "npm --workspace client run build:css",
+    "checar:player": "node scripts/checar-legenda-no-player.mjs"
   },
   "engines": {
     "node": ">=20.0.0",
