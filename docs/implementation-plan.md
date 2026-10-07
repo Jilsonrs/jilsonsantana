@@ -204,6 +204,14 @@
 > (aula concluída sozinha, barra na aula e no cartão), o vídeo que não recomeça ao trocar de aba
 > (a apresentação abre pausada, a aula toca sozinha) e o "Salvos". **Primeiro teste com o player de
 > verdade: com o operador** (assistir uma aula até perto do fim e ver a barra andar).
+> **PUBLICADO em 07/10/2026 (`main` = `f247200`, CI verde nos dois jobs, deploy ok):** o Bloco
+> AULA, etapas 3 e 4 — trocar de aula sem a tela piscar (topo e lista ficam), a moldura nova do
+> player (o Voltar certo), a gaveta do celular que fecha, o "Próxima aula" na aula de texto, e o
+> piso de aparelhos (iOS 15 em diante, com o reforço do texto das aulas). A P51 está resolvida
+> (Resumable desligado no painel). **Provado no site:** a versão nova (`muxuuxt0-37d01787`) no
+> cabeçalho e no `versao.txt`; a entrada do curso no ar leva à aula 14; curso inexistente → 404;
+> gravar o ponto sem login → 401; o pacote anterior → 404. **Falta só a etapa 5: o roteiro nos
+> aparelhos, com o operador.**
 > **PUBLICADO em 06/10/2026, à noite (`main` = `778bbee`, CI verde nos dois jobs, deploy ok; a
 > migration `ponto_da_aula` aplicada pelo pre-deploy):** o Bloco AULA, etapas 1 e 2 — entrar no
 > curso onde parou, o vídeo voltando sempre tocando, o ponto na conta (também ao fechar a aba).
@@ -3688,6 +3696,8 @@ da aba Player — **3 consultas na análise (passou de 2: anotado)**. A sessão 
       catálogo, no mesmo aparelho e no outro · pausar, sair, voltar tocando · o Voltar do navegador
       · a gaveta no celular · legenda ligada numa aula continua na próxima? · fim do curso → 1ª não
       concluída.
+      *(07/10/2026: **publicado** — `main` = `f247200`, as 4 etapas no ar. Falta o operador rodar o
+      roteiro nos aparelhos; o que ele achar entra aqui, e o checkbox fecha com o resultado.)*
 - **Done when:** os 6 comportamentos do pedido passam no roteiro da etapa 5, sem erro, nos aparelhos
   testados; CI verde nos dois jobs.
 
