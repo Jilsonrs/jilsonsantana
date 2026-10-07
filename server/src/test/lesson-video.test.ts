@@ -179,6 +179,30 @@ describe("terminar o envio", () => {
     expect(apagarVideo).not.toHaveBeenCalledWith("aulas", C);
   });
 
+  // O ponto de quem estava no meio do vídeo antigo não vale para o novo (Bloco AULA,
+  // 06/10/2026): volta ao começo — ZERO, e não vazio, que quer dizer "viu até o fim".
+  it("o ponto de quem estava no meio volta ao começo; o de outra aula não muda", async () => {
+    const aula = await novaAula({ bunnyVideoId: EM_USO, bunnyVideoPendingId: C });
+    const outra = await novaAula({ bunnyVideoId: A });
+    const memberId = (await prisma.user.findUniqueOrThrow({ where: { email: process.env.SEED_MEMBER_EMAIL } })).id;
+    const adminId = (await prisma.user.findUniqueOrThrow({ where: { email: process.env.SEED_ADMIN_EMAIL } })).id;
+    const visto = new Date("2026-10-06T12:00:00Z");
+    await prisma.lessonProgress.createMany({
+      data: [
+        { userId: memberId, lessonId: aula.id, positionSeconds: 300, lastSeenAt: visto },
+        { userId: adminId, lessonId: aula.id, positionSeconds: null, completed: true, lastSeenAt: visto },
+        { userId: memberId, lessonId: outra.id, positionSeconds: 200, lastSeenAt: visto },
+      ],
+    });
+
+    expect((await terminar(admin, aula.id, C)).status).toBe(200);
+
+    const progresso = (userId: string, lessonId: number) => prisma.lessonProgress.findUniqueOrThrow({ where: { userId_lessonId: { userId, lessonId } } });
+    expect(await progresso(memberId, aula.id)).toMatchObject({ positionSeconds: 0, lastSeenAt: visto });
+    expect(await progresso(adminId, aula.id)).toMatchObject({ positionSeconds: null, completed: true });
+    expect((await progresso(memberId, outra.id)).positionSeconds).toBe(200);
+  });
+
   it("id que não é o envio em andamento desta aula: 409, nada muda", async () => {
     const aula = await novaAula({ bunnyVideoId: EM_USO, bunnyVideoPendingId: C });
     const res = await terminar(admin, aula.id, A);

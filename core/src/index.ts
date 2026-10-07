@@ -8,6 +8,7 @@ export * from "./schemas/site-text.js";
 export * from "./schemas/home-lists.js";
 export * from "./schemas/me.js";
 export * from "./schemas/announcement.js";
+export * from "./schemas/progress.js";
 export { pt, type Dict } from "./i18n/pt.js";
 export { en } from "./i18n/en.js";
 export { flattenDict, DICT_KEYS, setByPath } from "./i18n/keys.js";

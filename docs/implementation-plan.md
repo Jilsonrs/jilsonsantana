@@ -204,12 +204,25 @@
 > (aula concluída sozinha, barra na aula e no cartão), o vídeo que não recomeça ao trocar de aba
 > (a apresentação abre pausada, a aula toca sozinha) e o "Salvos". **Primeiro teste com o player de
 > verdade: com o operador** (assistir uma aula até perto do fim e ver a barra andar).
-> **PUBLICADO em 06/10/2026, por último (`main` = `84d55d5`, CI verde nos dois jobs, deploy ok;
+> **Bloco AULA (a tela onde o aluno estuda), pedido do operador em 06/10/2026 — ETAPAS 1 E 2 FEITAS
+> no `dev`:** o ponto e a última aula na conta (migration aplicada no dev), entrar no curso onde
+> parou e o vídeo voltando sempre tocando, gravado também ao fechar a aba. **Os 3 erros relatados
+> estão corrigidos no código; a prova com o vídeo de verdade é no site (etapa 5). Próxima: a etapa
+> 3.** A análise explica os 3 erros relatados (entrar sempre na 1ª
+> aula, a próxima abrindo pausada, o ponto só no navegador) e traz 4 achados novos, provados (o
+> Voltar com o vídeo errado, a gaveta do celular aberta, a tela piscando entre aulas, a compilação
+> acima do piso das bibliotecas). 5 etapas: ver Fase 5 → **Bloco AULA**. Antes do teste no ar: a P51.
+> **PUBLICADO em 06/10/2026, no fechamento (`main` = `e12530d`, CI verde nos dois jobs, deploy
+> ok):** o conserto da troca de aula — sair de uma aula de vídeo não derruba mais a próxima na tela
+> de erro. **Provado no site:** a versão nova (`mux313p8-c56d5a94`). *A passagem automática com o
+> vídeo real do Bunny fica para o teste do operador* (o teste automático cobre o player.js, não o
+> vídeo do Bunny).
+> **PUBLICADO em 06/10/2026 (`main` = `84d55d5`, CI verde nos dois jobs, deploy ok;
 > a migration `comunicacao_notificacoes` aplicada pelo pre-deploy):** a Comunicação (C1 — menu,
 > Notificações e Mensagens automáticas), "Notificações" em Meus estudos com a lista e a mensagem
 > completa, e a mensagem do curso com o texto atual do admin (P46). **Provado no site:** a versão
 > nova (`mux2k0zg-923a6b7c`); `/api/notificacoes` e `/api/admin/announcements` respondem 401 sem
-> login. *Ainda não publicado:* o conserto da troca de aula (`6bdd9eb`, no `dev`).
+> login.
 > **PUBLICADO em 06/10/2026 (`main` = `40ae6f8`, CI verde nos dois jobs, deploy ok):**
 > a prévia do sino volta a mostrar só as 2 primeiras linhas e a data, como na Udemy (o clique abre
 > a mensagem completa em "Ver todas"). **Provado no site:** a versão nova (`muwymfgl-553ac24d`) no
@@ -1190,6 +1203,15 @@ tornada executável — não uma lista nova):
       vazar. **Entra no MESMO bloco que introduzir o HTML público de servidor**, não antes: a CSP
       precisa conhecer a origem do Bunny (`frame-src`) e a da Stripe (`script-src`), e escrita antes
       é escrita duas vezes. Dependência de runtime nova ⇒ **decisão de nível de plano**.
+- [ ] **Nenhum limite de pedidos por conta na API do aluno** *(achado P2 da revisão de segurança do
+      Bloco AULA, etapa 1, 06/10/2026)*. O `POST /api/lessons/:id/ponto` nasceu para ser chamado em
+      intervalo (a cada ~15 s com o vídeo tocando) e custa ~5 idas ao banco; quem tem conta pode
+      repeti-lo sem teto contra o Neon. **Não é só dele:** o `GET /api/lessons/:id/aula`, mais
+      pesado, também não tem limite — então a decisão é um limite **por conta, para a API logada**,
+      e não um remendo numa rota. O risco é carga, não dado: o índice único (pessoa × aula) segura o
+      número de linhas, e o cadastro é fechado. `express-rate-limit` é dependência nova ⇒ **decisão
+      de plano**; um contador em memória é a alternativa sem dependência. *Esta decisão se reabre
+      (vira prioridade) com o primeiro aluno pagante, ou com qualquer sinal de abuso no log.*
 
 ### Bloco S — Shell do aluno: menu lateral e, depois, painel  *(Ago 2026 · direção do operador)*
 
@@ -3431,6 +3453,193 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       **Concluídos** em Meus estudos. O que cada um mostra é decisão do operador na hora de
       construir.
 - **Done when:** "marquei como vista" works, trilha % completion shows, AND events are captured for future analytics.
+
+### Bloco AULA — A tela onde o aluno estuda, no nível do LinkedIn Learning  *(pedido do operador, 06/10/2026 · plano aprovado por ele no mesmo dia · etapas 1 e 2 tocam a trava da aula)*
+
+**O pedido** *(comportamento esperado, nas palavras do operador, 06/10/2026 — é a tela "coração da
+escola", e tem que ser impecável no computador, no celular e em aparelho antigo, com legenda)*:
+1. **Primeira vez no curso:** abre a primeira aula; vídeo toca sozinho, texto fica para ler; o
+   sino recebe a boas-vindas.
+2. **O vídeo vai até o fim e abre a próxima aula sozinho**; vídeo toca, texto fica — e assim por
+   diante.
+3. **Texto e quiz não passam sozinhos:** a próxima aula só com um clique. Tocar sozinho é só vídeo.
+4. **Saiu e voltou ao curso** — amanhã, daqui a um mês, daqui a um ano —: abre a MESMA aula, no
+   MESMO segundo, tocando.
+5. **Pausou, saiu e voltou:** abre no ponto e TOCA. *Revoga o "pausou, volta pausado" de
+   05/10/2026 (operador: "pode esquecer isso").* Texto e quiz não tocam.
+6. **Passar de aula, sozinho ou no clique, funciona sem erro.**
+
+**Decisões do operador na análise (06/10/2026):** **curso terminado** (viu até o fim a ÚLTIMA aula)
+→ entrar de novo abre a **primeira aula ainda não concluída**; se concluiu todas, a primeira do
+curso · **botão "Próxima aula" no fim da aula de texto** (e do quiz, quando existir), além da
+lista — texto "Próxima aula" / "Next lesson" · **legenda desligada ao abrir** (o aluno liga no CC),
+como hoje; o teste no aparelho confere se, ligada numa aula, ela continua ligada na próxima.
+
+**Diagnóstico (06/10/2026 — medido, não presumido):**
+- **Erro 1, "entra sempre na primeira aula":** `CourseEntryPage` vai à primeira aula publicada por
+  construção (decisão de 29/09, quando o progresso não existia), e nada registra em que aula a
+  pessoa estava.
+- **Erro 2, "volta na primeira, e a próxima abre pausada":** a mesma causa, mais o
+  `autoplay=false` que `posicao-do-video.ts` põe no endereço quando o ponto guardado diz "pausado"
+  — a aula seguinte era uma que tinha sido pausada antes.
+- **O ponto vive só no `localStorage`:** não vale em outro aparelho, e o Safari (iOS e macOS) apaga
+  o armazenamento do site depois de 7 dias sem visita (ITP). O item 4 ("daqui a um mês") é
+  impossível nesse desenho.
+- **Achado A — o Voltar do navegador mostra o vídeo errado.** Ir para uma aula que ainda está na
+  memória (aberta nos últimos 5 min) reaproveita a MESMA moldura do player e só troca o `src`
+  (provado por teste de componente). No Chrome, trocar o `src` de uma moldura já carregada cria uma
+  entrada no histórico (provado no navegador: `history.length` +1 por troca; moldura nova, +0); um
+  Voltar então troca só o vídeo, e o título continua o da aula atual (provado).
+- **Achado B — no celular, a gaveta do conteúdo fica aberta por cima da aula escolhida**, no mesmo
+  caso (provado). Com aula nova ela fecha só porque a página inteira some (achado C).
+- **Achado C — entre uma aula e outra, a tela inteira vira "Carregando…"**: título, nome do curso,
+  lista lateral e player somem e voltam (provado).
+- **Achado D — aparelho antigo:** o Vite 7 compila por padrão para Safari 16 / Chrome 107, acima do
+  piso que o TanStack Query v5 declara (Safari/iOS 15, Chrome/Edge 91, Firefox 90 — conferir na
+  etapa 4). O pacote de hoje não tem sintaxe nova (conferido: sem *lookbehind*, sem *static
+  block*), mas nada garante isso no próximo build.
+- **Risco no painel do Bunny:** o player tem um "retomar de onde parou" próprio (*Resumable Player*,
+  aba Player da biblioteca — doc oficial). Ligado, disputa o ponto com o do site → **P51**.
+- **Conferido sem defeito:** a boas-vindas no sino ao abrir a primeira aula (assinante e admin,
+  curso com mensagem), o fim do vídeo abrindo a próxima, trocar de aba sem recomeçar, e a renovação
+  do endereço vencido.
+
+**Limite que não depende do site (para o teste):** o navegador pode bloquear vídeo com som que
+começa sozinho. Chrome, Edge e Firefox permitem quando a pessoa já clicou no site — o caminho normal,
+clicando no curso. No iPhone, a Apple tende a exigir um toque dentro do próprio player: o vídeo
+abre no ponto certo, com o botão de play, e um toque basta. *Começar sem som: NÃO adotado (quem não
+percebe perde o começo); reabre se o teste no iPhone mostrar que o toque incomoda.*
+
+**Desenho:**
+- **O ponto e a última aula NA CONTA** (`LessonProgress`, migration aditiva `ponto_da_aula`):
+  `positionSeconds Int?` (o segundo do vídeo; vazio = do começo) e `lastSeenAt DateTime?` (quando a
+  pessoa esteve na aula). Passa a existir linha com `completed = false` — o esquema já a previa
+  ("reservado para o 'começou'") e todo leitor de `lessonProgress` já filtra `completed: true`
+  (conferido: `aulasConcluidas`, `/progresso/cursos`, parabéns). Churn não apaga; excluir a conta
+  apaga junto (cascade).
+- **Gravar:** `POST /api/lessons/:id/ponto` — `requireAuth` + cadeia publicada + `aulaLiberada()`,
+  a MESMA regra do concluir (401/404/403) — e `POST /api/admin/lessons/:id/ponto` (`requireAdmin`,
+  qualquer status). Corpo validado por schema Zod no `core`: `{ segundos: inteiro 0..86400 | null }`
+  (`null` = viu até o fim, ou aula sem vídeo). POST porque o envio na saída da página vai com
+  `keepalive`.
+- **Ler:** a página da aula devolve `aula.ponto` (API aditiva). *Proposta do agente, aprovada com o
+  plano:* ponto nos últimos 5 s do vídeo conta como "do começo" (senão tocaria 2 s e pularia para a
+  próxima), e trocar o vídeo de uma aula (`admin-lesson-video.ts`) zera o ponto dela para todos.
+- **Entrar no curso:** `GET /api/cursos/:slug/entrada` → `{ aulaId }`. Logado: a aula de
+  `lastSeenAt` mais recente na cadeia publicada; se ela é a ÚLTIMA da lista, de vídeo, vista até o
+  fim → a primeira não concluída (todas concluídas → a primeira). Sem histórico ou visitante → a
+  primeira. Curso inexistente ou não publicado → 404. Sem filtro de idioma (link direto não filtra).
+  O catálogo, os Salvos e o sino já entram por `/aluno/curso/:slug` e ganham o comportamento sem
+  mudança; o Visualizar do admin continua abrindo a primeira aula.
+- **Tela:** saem `posicao-do-video.ts`, o "pausado" e o `localStorage` (as chaves antigas
+  `jilson:ponto-da-aula:*` são limpas uma vez). Endereço do player: `autoplay=true` sempre (já vem
+  do servidor) + `t=<ponto>s`. A página avisa "estou nesta aula" ao abrir (vídeo e texto); o player
+  grava o ponto **a cada ~15 s tocando, na pausa, ao sair da aula e ao fechar ou esconder a página**
+  (`visibilitychange`/`pagehide`, Axios com o adaptador `fetch` + `keepalive` — conferido no Axios
+  1.18 do repo); no fim do vídeo, ponto vazio. O cache da página da aula recebe o ponto gravado, para
+  quem volta à aula na mesma visita não abrir no ponto velho.
+- **Trocar de aula sem erro:** moldura NOVA do player a cada endereço (`key`), fim da entrada extra
+  no histórico · o cabeçalho e a lista do curso FICAM enquanto a aula seguinte carrega (dado
+  anterior só se for do mesmo curso; o título novo sai da própria lista) e só o quadro do conteúdo
+  mostra o carregando, em 16:9 · a gaveta do celular fecha ao escolher uma aula.
+- **"Próxima aula"** no fim da aula de texto (decisão acima); na última aula, não aparece.
+- **Aparelho antigo:** `build.target` explícito no `vite.config.ts` = o piso das bibliotecas (iOS 15
+  — iPhone 6s em diante —, Chrome/Edge 91, Firefox 90).
+
+**Fora do escopo, de propósito:** o "Continue estudando" do Início e a página Em andamento (o dado
+passa a existir; o que mostram é decisão do operador — checkbox acima) · `LessonEvent` · começar
+sem som no iPhone · a prévia grátis do visitante passando de aula (página pública, C5) · o quiz (não
+existe; a regra "não passa sozinho" já vale para tudo que não é vídeo).
+**Dependências novas:** nenhuma.
+**Docs check (context7):** Bunny Stream → `/bunnyway/documentation` → parâmetros do embed (`t` em
+`Xs`, `autoplay`, `muted`, `captions` = idioma padrão da legenda, `disableIosPlayer`), eventos do
+player.js (`ready`, `play`, `pause`, `ended`, `timeupdate`, `seeked`, `error`) e o *Resumable Player*
+da aba Player — **3 consultas na análise (passou de 2: anotado)**. A sessão que construir refaz uma
+(regra: uma por sessão). Better Auth e Stripe: não disparados.
+**Revisão de segurança:** `security-vulnerability-reviewer` na etapa 1 (rota nova que aplica
+`aulaLiberada()`/`temAcessoAtivo()` e lê progresso de outra pessoa se errar o filtro).
+
+**Etapas** — uma por commit no `dev`; seguro parar depois de qualquer uma:
+- [x] **Etapa 1 — servidor (G):** a migration (`migrate diff` + `migrate deploy` no dev; conferir RLS
+      e `migrate diff` vazio), o schema no `core`, `POST …/ponto` (aluno e admin), `aula.ponto`, a
+      entrada no curso, e zerar o ponto ao trocar o vídeo. **Testes de servidor:** 401 sem login ·
+      404 rascunho e cadeia quebrada · 403 aula paga sem assinatura · 204 assinante e prévia grátis
+      · admin em rascunho · o ponto volta só para quem gravou · entrada: sem histórico → 1ª, última
+      vista → ela, aula que saiu do ar é pulada, curso terminado → 1ª não concluída, todas
+      concluídas → 1ª, visitante → 1ª, curso não publicado → 404 · trocar o vídeo zera. Revisão de
+      segurança. **Mutação:** sem a trava de acesso, sem o filtro da cadeia, ignorando o
+      "terminado" → reprovam.
+      *(06/10/2026, no `dev`.)* Migration `20261006210000_ponto_da_aula` — só acrescenta as duas
+      colunas; **aplicada no dev** (produção aplica no próximo publish, pelo pre-deploy). **Passo 0
+      no dev:** as mesmas contagens antes e depois (2 usuários, 2 cursos, 5 aulas, 63 sessões), admin
+      e aluno entram, zero tabelas sem RLS, `migrate diff` vazio; a suíte recria o banco de teste do
+      zero com ela. O código mora em `server/src/lib/onde-parou.ts` (gravar o ponto, o ponto que
+      vale, a entrada) e `core/src/schemas/progress.ts`; as rotas em `routes/progress.ts`; o
+      `aula.ponto` em `routes/lesson-view.ts`; a troca de vídeo zera o ponto **para zero, não vazio**
+      (vazio quer dizer "viu até o fim" e faria a entrada achar que o curso terminou). **Testes:**
+      `onde-parou.test.ts` (41) e 1 em `lesson-video.test.ts`; suíte inteira verde. **Revisão de
+      segurança** (`security-vulnerability-reviewer`): **sem P0/P1**; dois P2 corrigidos na hora — o
+      teste de que ABRIR a aula não conta como CONCLUIR (nas concluídas da página, no % do curso,
+      nos parabéns e na entrada; antes, tirar o filtro `completed: true` passava a suíte) e a trava
+      de `esquecerPontosDaAula` sem aula (zeraria o ponto de todo mundo); o terceiro, o limite de
+      pedidos por conta, foi para o *Backlog P2 — endurecimento* (vale para a API logada inteira).
+      **Mutação: as 16 partes reprovam** — além das três acima, a entrada sem filtrar a aula
+      publicada, na ordem de criação, lendo o histórico de outra pessoa; o ponto saindo na aula
+      bloqueada; o fim do vídeo valendo como ponto; gravar desmarcando a conclusão; a troca de vídeo
+      zerando para vazio, zerando todas as aulas, ou não zerando; a rota do admin aberta a qualquer
+      logado; as concluídas e o % contando a aula só aberta; e zerar sem a trava.
+- [x] **Etapa 2 — tela: entrar onde parou e tocar sempre (G):** `CourseEntryPage` pela rota nova,
+      gravar e ler o ponto na conta, sair o "pausado" e o `localStorage`, os envios na saída.
+      Componente: a entrada (carregando, erro, vazio, destino) · player no ponto e tocando ·
+      gravação na pausa, no intervalo e na saída · o fim apaga · o cache recebe o ponto.
+      **Mutação:** voltar o `autoplay=false`, gravar só no fim, entrar sempre na 1ª → reprovam.
+      Reconciliar `bunny.md` (*Tocar sozinho e trocar de aba*).
+      *(06/10/2026, no `dev`.)* **A entrada** pergunta ao servidor a cada visita (a resposta de uma
+      visita anterior nunca leva à aula antiga) e separa "curso não encontrado" (404) de falha de
+      rede, que agora avisa o erro em vez de dizer que o curso não existe. **A gravação**
+      (`client/src/lib/ponto-da-aula.ts`): "estou aqui" ao abrir (vídeo no ponto em que abre; texto
+      sem ponto), a cada 15 s de vídeo, na pausa, ao sair da aula, e "viu até o fim" no `ended`;
+      em **fila** (o servidor recebe na ordem em que o vídeo andou) e **insistindo** só em queda de
+      rede ou 5xx, como as outras gravações do aluno; ao sair, a memória da tela recebe o ponto
+      (quem volta na mesma visita não abre no ponto velho). **Fechar a aba ou trocar de app**
+      (`client/src/lib/envio-na-saida.ts`): o padrão do guia modern-web-guidance
+      (`full-session-analytics`, consultado) — `fetchLater` no Chrome/Edge; no Safari/Firefox, o
+      envio sai quando a página esconde, com `keepalive`; nunca `unload`. É a **exceção única** ao
+      "Axios para HTTP", registrada no `CLAUDE.md` → Client. **O player** abre no ponto da conta
+      com `t=`, nunca mexe no `autoplay` que veio do servidor (a aula sempre volta tocando), e
+      recarrega no ponto em que o vídeo estava quando o endereço vence; **um player por aula**
+      (`key` no `LessonContent`), o que já tira a entrada extra no histórico ao **trocar de aula**
+      (o achado A fica por inteiro com a etapa 3, para a renovação do endereço). `posicao-do-video.ts`
+      saiu; as chaves antigas do navegador são limpas uma vez. A regra "começo e fim valem como do
+      começo" (`pontoUtil`) mudou para o `core`: uma só para o servidor e a tela. **Testes:** suíte
+      do cliente 697 → **717** (entrada, player, envio na saída, e 12 do ponto na página da aula);
+      servidor 513, verde. **Mutação: as 16 partes reprovam** — duas passavam na primeira rodada e
+      viraram teste: a entrada tinha duas proteções iguais (ficou uma, vigiada), e faltava o fim do
+      vídeo na ÚLTIMA aula, onde não há "próxima" para gravar na saída. `bunny.md` reconciliado.
+      **Docs check (context7):** Bunny → `/bunnyway/documentation` → reaproveitado da análise
+      nesta mesma sessão (`t` em `Xs`, `autoplay`, eventos do player.js); Better Auth e Stripe: não
+      disparados.
+- [ ] **Etapa 3 — trocar de aula sem erro (M):** *(entra também: a `LessonPage.tsx` passou do limite
+      de ~200 linhas na etapa 2 — 214 —, então o topo da aula vira componente próprio, com as mesmas
+      classes; é a parte que esta etapa já reescreve.)* A `key` do player, cabeçalho e lista que ficam, a
+      gaveta que fecha, o botão "Próxima aula". Componente: moldura nova por aula · carregando só no
+      quadro · gaveta fechada depois da escolha · botão na aula de texto (não na última, não no
+      vídeo). **Mutação:** cada um dos quatro → reprova.
+- [ ] **Etapa 4 — aparelho antigo (P):** `build.target` explícito; conferir o pacote (nenhuma
+      sintaxe acima do piso) e o tamanho.
+- [ ] **Etapa 5 — publicar e testar no ar, com o operador (P):** o player só toca no domínio da
+      escola, então a prova é no site. **Antes:** a P51. Roteiro em cada aparelho (Chrome no
+      computador, Safari no Mac, iPhone, Android, e um aparelho antigo se houver): 1ª vez no curso
+      + sino · fim do vídeo → próxima · texto parado + "Próxima aula" · sair aos 17 s e voltar pelo
+      catálogo, no mesmo aparelho e no outro · pausar, sair, voltar tocando · o Voltar do navegador
+      · a gaveta no celular · legenda ligada numa aula continua na próxima? · fim do curso → 1ª não
+      concluída.
+- **Done when:** os 6 comportamentos do pedido passam no roteiro da etapa 5, sem erro, nos aparelhos
+  testados; CI verde nos dois jobs.
+
+**Decisão registrada:** *o ponto e a última aula moram na CONTA, não no navegador* — o pedido exige
+outro aparelho e "daqui a um mês", e o Safari apaga o armazenamento do site em 7 dias. *Sem gatilho:
+é o que o comportamento pedido exige.*
 
 ## Phase 6 — JilsonAI (lean v1 + suporte)  *(medium risk)*  → ver **JILSONAI.md** (roadmap interno)
 

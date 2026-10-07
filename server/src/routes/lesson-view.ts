@@ -10,6 +10,7 @@ import { enderecoAssinado } from "../lib/bunny-stream.js";
 import { lerArquivoDaAula } from "../lib/bunny-storage.js";
 import { nomeParaDownload } from "../lib/nome-do-download.js";
 import { aulasConcluidas } from "../lib/progresso.js";
+import { pontoDaAula } from "../lib/onde-parou.js";
 import { enviarBoasVindas, semDerrubar } from "../lib/notificacoes.js";
 import { registrarInicioDoCurso } from "../lib/inicio-do-curso.js";
 import { oQueOCursoInclui } from "../lib/inclui.js";
@@ -38,6 +39,8 @@ const camposDaAula = {
   kind: true,
   content: true,
   bunnyVideoId: true,
+  // A duração diz se o ponto guardado está no fim do vídeo (Bloco AULA, 06/10/2026).
+  videoDurationSeconds: true,
   isFreePreview: true,
   status: true,
   moduleId: true,
@@ -127,13 +130,24 @@ async function arvoreDoCurso(courseId: number, soPublicado: boolean) {
   };
 }
 
-type Aula = { id: number; title: string; kind: string; content: string | null; bunnyVideoId: string | null; isFreePreview: boolean; status: string; moduleId: number };
+type Aula = {
+  id: number;
+  title: string;
+  kind: string;
+  content: string | null;
+  bunnyVideoId: string | null;
+  videoDurationSeconds: number | null;
+  isFreePreview: boolean;
+  status: string;
+  moduleId: number;
+};
 
 /**
- * A aula atual. O player e o texto SÓ entram quando `liberada`; os arquivos, só
- * quando `arquivosLiberados` (assinatura ou admin). Bloqueada, nem a chave aparece.
+ * A aula atual. O player, o texto e o PONTO de quem pede SÓ entram quando
+ * `liberada`; os arquivos, só quando `arquivosLiberados` (assinatura ou admin).
+ * Bloqueada, nem a chave aparece.
  */
-async function aulaParaAPagina(aula: Aula, liberada: boolean, arquivosLiberados: boolean) {
+async function aulaParaAPagina(aula: Aula, liberada: boolean, arquivosLiberados: boolean, userId: string | undefined) {
   const base = {
     id: aula.id,
     title: aula.title,
@@ -149,6 +163,9 @@ async function aulaParaAPagina(aula: Aula, liberada: boolean, arquivosLiberados:
     ...base,
     playerUrl: aula.kind === LessonKind.VIDEO ? enderecoAssinado(aula.bunnyVideoId, { tocarAoAbrir: true }) : null,
     texto: aula.kind === LessonKind.TEXT ? aula.content : null,
+    // De que segundo o vídeo abre para QUEM PEDE (Bloco AULA, 06/10/2026): o ponto
+    // dele, gravado na conta; `null` = do começo. Visitante e aula de texto: `null`.
+    ponto: aula.kind === LessonKind.VIDEO ? await pontoDaAula(userId, aula.id, aula.videoDurationSeconds) : null,
   };
   if (!arquivosLiberados) return conteudo;
   const arquivos = await prisma.lessonFile.findMany({
@@ -201,7 +218,7 @@ router.get("/lessons/:id/aula", async (req, res) => {
   res.set("Cache-Control", "private, no-store");
   res.json({
     curso,
-    aula: await aulaParaAPagina(aula, liberada, assinante),
+    aula: await aulaParaAPagina(aula, liberada, assinante, sessao?.user.id),
     concluidas: await concluidasDoCurso(sessao?.user.id, curso),
   });
 });
@@ -221,7 +238,7 @@ router.get("/admin/lessons/:id/aula", requireAdmin, async (req, res) => {
   if (admin) await semDerrubar("boas-vindas", admin.id, aula.module.courseId, () => enviarBoasVindas(admin.id, aula.module.courseId));
   if (admin) await registrarInicioDoCurso(admin.id, aula.module.courseId);
   res.set("Cache-Control", "private, no-store");
-  res.json({ curso, aula: await aulaParaAPagina(aula, true, true), concluidas: await concluidasDoCurso(req.user?.id, curso) });
+  res.json({ curso, aula: await aulaParaAPagina(aula, true, true, req.user?.id), concluidas: await concluidasDoCurso(req.user?.id, curso) });
 });
 
 // GET /api/admin/courses/:id/pagina — a PRÉ-VISUALIZAÇÃO do curso como aluno, no

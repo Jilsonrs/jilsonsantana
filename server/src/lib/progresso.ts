@@ -20,7 +20,8 @@ export async function concluirAula(userId: string, lessonId: number): Promise<vo
     data: [{ userId, lessonId, completed: true, completedAt: agora }],
     skipDuplicates: true,
   });
-  // Uma linha que exista sem estar concluída (reservado para o "começou" da Fase 5).
+  // Uma linha que exista sem estar concluída: a que o PONTO da aula cria quando a
+  // pessoa abre a aula (Bloco AULA, `onde-parou.ts`).
   await prisma.lessonProgress.updateMany({
     where: { userId, lessonId, completed: false },
     data: { completed: true, completedAt: agora },
@@ -39,6 +40,6 @@ export async function aulasConcluidas(userId: string, lessonIds: number[]): Prom
   return linhas.map((l) => l.lessonId);
 }
 
-function pessoaValida(userId: unknown): userId is string {
+export function pessoaValida(userId: unknown): userId is string {
   return typeof userId === "string" && userId.length > 0;
 }

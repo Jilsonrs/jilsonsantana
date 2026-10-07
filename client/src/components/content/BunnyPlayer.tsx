@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from "react";
+import { PONTO_COMECO, pontoUtil } from "@jilson/core";
 import { ouvirPlayer } from "@/lib/player-do-bunny";
-import { enderecoNoPonto, esquecerPonto, guardarPonto, lerPonto } from "@/lib/posicao-do-video";
 
 /**
  * O player do Bunny Stream, num quadro 16:9. O endereço vem SEMPRE do servidor
  * (derivado lá, nunca montado aqui), então este componente não conhece chave,
- * biblioteca nem token. A tela só acrescenta onde começar (`posicao-do-video.ts`).
+ * biblioteca nem token. A tela só acrescenta ONDE COMEÇAR (`t`, parâmetro de embed
+ * do Stream, fora do token). Tocar sozinho ou não também vem do servidor: a aula
+ * toca, a apresentação abre pausada (03/10/2026) — aqui nunca se muda isso.
  *
  * `referrerPolicy="strict-origin-when-cross-origin"` é exigência do Bunny: com
  * "Block Direct URL File Access" ligado na biblioteca, uma política mais estrita
@@ -16,9 +18,20 @@ function videoDoEndereco(src: string): string {
   return src.split("?")[0];
 }
 
-/** O id do vídeo no Bunny: o último pedaço do caminho do endereço. */
-function idDoVideo(src: string): string {
-  return videoDoEndereco(src).split("/").pop() ?? "";
+/**
+ * O endereço do player abrindo no ponto: `t=<segundos>s` (formato da doc do Bunny
+ * Stream). Antes do começo útil, ou sem ponto, o endereço como veio do servidor.
+ */
+function enderecoNoPonto(src: string, segundos: number | null): string {
+  if (segundos === null || segundos < PONTO_COMECO) return src;
+  let url: URL;
+  try {
+    url = new URL(src);
+  } catch {
+    return src;
+  }
+  url.searchParams.set("t", `${Math.floor(segundos)}s`);
+  return url.toString();
 }
 
 /**
@@ -50,32 +63,37 @@ function venceu(endereco: string, agora = Date.now()): boolean {
 /** Depois de pedir um endereço novo, quanto esperar antes de pedir outra vez (se o primeiro pedido falhou). */
 const INTERVALO_ENTRE_PEDIDOS = 30_000;
 
-/** De quantos em quantos segundos o ponto é guardado enquanto o vídeo toca. */
-const PASSO_DO_PONTO = 2;
-
 export function BunnyPlayer({
   src,
   title,
+  comecarEm = null,
   aoConcluir,
   aoTerminar,
-  lembrarComo,
+  aoAndar,
+  aoPausar,
+  aoTocar,
   aoVencer,
 }: {
   src: string;
   title: string;
   /**
+   * De que segundo o vídeo abre: o ponto de quem assiste, guardado na conta (Bloco
+   * AULA, 06/10/2026). Vazio, do começo. O vídeo de apresentação não tem.
+   */
+  comecarEm?: number | null;
+  /**
    * Chamado UMA vez quando o aluno chega a 90% do vídeo (Fase 5, decisão do
    * operador de 03/10/2026).
    */
   aoConcluir?: () => void;
-  /** O vídeo terminou: a página da aula abre a próxima (operador, 05/10/2026). */
+  /** O vídeo terminou: a página da aula grava "viu até o fim" e abre a próxima (05/10/2026). */
   aoTerminar?: () => void;
-  /**
-   * Lembrar o ponto deste vídeo com este nome (a aula): quem sai e volta abre
-   * onde parou, pausado se tinha pausado (operador, 05/10/2026). Sem ele (o vídeo
-   * de apresentação), nada é lembrado.
-   */
-  lembrarComo?: string;
+  /** O vídeo andou: a página da aula grava o ponto (Bloco AULA). */
+  aoAndar?: (segundos: number, duracao: number) => void;
+  /** Pausou: a página da aula grava o ponto na hora. */
+  aoPausar?: (segundos: number) => void;
+  /** Começou ou voltou a tocar. */
+  aoTocar?: () => void;
   /**
    * O endereço está vencendo: peça um novo ao servidor (06/10/2026). Quando ele
    * chegar no `src`, o player troca, no mesmo ponto. Sem ele, nada é renovado.
@@ -83,26 +101,34 @@ export function BunnyPlayer({
   aoVencer?: () => void;
 }) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  // O último ponto que o player avisou, do vídeo em que avisou: é nele que o player
+  // recarrega quando o endereço vence.
+  const ultimoPonto = useRef<{ video: string; segundos: number; duracao: number } | null>(null);
+  /** Onde recomeçar ESTE vídeo: o ponto que ele já andou aqui, ou o que veio da conta. */
+  const pontoAtual = (endereco: string): number | null => {
+    const ultimo = ultimoPonto.current;
+    return ultimo && ultimo.video === videoDoEndereco(endereco) ? pontoUtil(ultimo.segundos, ultimo.duracao) : comecarEm;
+  };
   // O ENDEREÇO FICA enquanto o vídeo for o mesmo (operador, 03/10/2026: trocar de
   // aba não pode recomeçar o vídeo). O servidor assina de novo a cada busca, com
-  // token e validade novos; trocar o `src` recarregaria o player do zero, tocando
-  // o que estava pausado. Só um vídeo DIFERENTE troca o endereço — e é nessa
-  // hora, uma vez, que o ponto guardado entra.
-  // O ponto é da AULA com ESTE vídeo (06/10/2026): se o operador troca o vídeo da
-  // aula, o ponto do vídeo antigo não vale — num vídeo mais curto, ele cairia depois
-  // do fim, e a aula pularia direto para a próxima.
-  const chave = lembrarComo ? `${lembrarComo}:${idDoVideo(src)}` : undefined;
-  const noPonto = (endereco: string) => (chave ? enderecoNoPonto(endereco, lerPonto(chave)) : endereco);
-  const [endereco, setEndereco] = useState(() => noPonto(src));
-  if (videoDoEndereco(src) !== videoDoEndereco(endereco)) setEndereco(noPonto(src));
+  // token e validade novos; trocar o `src` recarregaria o player do zero. Só um
+  // vídeo DIFERENTE troca o endereço — começando no ponto que veio com ele.
+  const [endereco, setEndereco] = useState(() => enderecoNoPonto(src, comecarEm));
+  if (videoDoEndereco(src) !== videoDoEndereco(endereco)) setEndereco(enderecoNoPonto(src, comecarEm));
   // O MESMO vídeo só troca de endereço quando o que está no player venceu e o
-  // servidor mandou um que vale: recarrega no ponto guardado.
-  else if (venceu(endereco) && !venceu(src)) setEndereco(noPonto(src));
+  // servidor mandou um que vale: recarrega no ponto em que estava.
+  else if (venceu(endereco) && !venceu(src)) setEndereco(enderecoNoPonto(src, pontoAtual(src)));
   // As funções mais recentes, sem voltar a ouvir o player a cada desenho da tela.
   const aoConcluirRef = useRef(aoConcluir);
   aoConcluirRef.current = aoConcluir;
   const aoTerminarRef = useRef(aoTerminar);
   aoTerminarRef.current = aoTerminar;
+  const aoAndarRef = useRef(aoAndar);
+  aoAndarRef.current = aoAndar;
+  const aoPausarRef = useRef(aoPausar);
+  aoPausarRef.current = aoPausar;
+  const aoTocarRef = useRef(aoTocar);
+  aoTocarRef.current = aoTocar;
   const aoVencerRef = useRef(aoVencer);
   aoVencerRef.current = aoVencer;
   const renova = aoVencer !== undefined;
@@ -126,34 +152,42 @@ export function BunnyPlayer({
     const relogio = window.setTimeout(() => pedirRef.current(), Math.min(espera, 2 ** 31 - 1));
     return () => window.clearTimeout(relogio);
   }, [endereco, renova]);
-  const ouvir = aoConcluir !== undefined || aoTerminar !== undefined || chave !== undefined || renova;
+  const ouvir = aoConcluir !== undefined || aoTerminar !== undefined || aoAndar !== undefined || aoPausar !== undefined || renova;
 
   // Efeito: ouvir o player é conversar com o iframe do Bunny, fora do React.
   useEffect(() => {
     if (!ouvir || !iframeRef.current) return;
-    let ultimo: { segundos: number; pausado: boolean } | null = null;
-    // Depois do fim, nenhum ponto volta a ser guardado (um último aviso de tempo
-    // chegando atrasado guardaria o fim, e a aula reabriria no fim).
+    const video = videoDoEndereco(endereco);
+    // Depois do fim, nenhum ponto volta a ser avisado (um último aviso de tempo
+    // chegando atrasado gravaria o fim, e a aula reabriria no fim) — até a pessoa
+    // dar play de novo, para rever.
     let terminou = false;
+    // Play (ou o vídeo andando) num endereço vencido: o relógio pode atrasar com a aba em segundo plano.
+    const conferirVencimento = () => {
+      if (venceu(endereco)) pedirRef.current();
+    };
     return ouvirPlayer(iframeRef.current, {
       aoConcluir: () => aoConcluirRef.current?.(),
       aoTerminar: () => {
-        // Viu até o fim: na próxima vez, a aula começa do início.
         terminou = true;
-        if (chave) esquecerPonto(chave);
         aoTerminarRef.current?.();
       },
-      aoMudar: (estado) => {
-        // Play num endereço vencido (o relógio pode atrasar com a aba em segundo plano).
-        if (!estado.pausado && venceu(endereco)) pedirRef.current();
-        if (!chave || terminou) return;
-        const mudou = !ultimo || ultimo.pausado !== estado.pausado || Math.abs(ultimo.segundos - estado.segundos) >= PASSO_DO_PONTO;
-        if (!mudou) return;
-        ultimo = estado;
-        guardarPonto(chave, estado);
+      aoAndar: (segundos, duracao) => {
+        conferirVencimento();
+        if (terminou) return;
+        ultimoPonto.current = { video, segundos, duracao };
+        aoAndarRef.current?.(segundos, duracao);
+      },
+      aoPausar: (segundos) => {
+        if (!terminou) aoPausarRef.current?.(segundos);
+      },
+      aoTocar: () => {
+        conferirVencimento();
+        terminou = false;
+        aoTocarRef.current?.();
       },
     });
-  }, [endereco, ouvir, chave]);
+  }, [endereco, ouvir]);
 
   return (
     <div className="aspect-video w-full overflow-hidden bg-muted">

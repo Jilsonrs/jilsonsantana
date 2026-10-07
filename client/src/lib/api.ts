@@ -420,6 +420,11 @@ export type PaginaDaAula = {
     arquivosLiberados: boolean;
     playerUrl?: string | null;
     texto?: string | null;
+    /**
+     * De que segundo o vídeo abre para QUEM PEDE (Bloco AULA, 06/10/2026): o ponto
+     * dele, guardado na conta; `null` = do começo. Só vem com a aula liberada.
+     */
+    ponto?: number | null;
     arquivos?: ArquivoDaAula[];
   };
   /** As aulas deste curso que QUEM PEDE concluiu (Fase 5, 03/10/2026); visitante: []. */
@@ -447,6 +452,25 @@ export async function getLessonPage(lessonId: number, comoAdmin: boolean): Promi
  */
 export async function concluirAula(lessonId: number, comoAdmin: boolean): Promise<void> {
   await client.put(comoAdmin ? `/admin/lessons/${lessonId}/concluida` : `/lessons/${lessonId}/concluida`);
+}
+
+// ONDE A PESSOA PAROU (Bloco AULA — plano aprovado pelo operador em 06/10/2026): o
+// segundo do vídeo e a aula em que a pessoa está, gravados na CONTA.
+
+/** O endereço que grava o ponto (o do admin, em qualquer status). Também o do envio na saída da página. */
+export function enderecoDoPonto(lessonId: number, comoAdmin: boolean): string {
+  return comoAdmin ? `/api/admin/lessons/${lessonId}/ponto` : `/api/lessons/${lessonId}/ponto`;
+}
+
+/** A pessoa está nesta aula, neste segundo (`null` = viu até o fim, ou a aula não tem vídeo). */
+export async function gravarPonto(lessonId: number, segundos: number | null, comoAdmin: boolean): Promise<void> {
+  await client.post(comoAdmin ? `/admin/lessons/${lessonId}/ponto` : `/lessons/${lessonId}/ponto`, { segundos });
+}
+
+/** Em que aula a pessoa entra no curso: a última em que esteve, ou a primeira. `null`: o curso não tem aula. */
+export async function getEntradaDoCurso(slug: string): Promise<{ aulaId: number | null }> {
+  const { data } = await client.get<{ aulaId: number | null }>(`/cursos/${encodeURIComponent(slug)}/entrada`);
+  return data;
 }
 
 // "SALVOS" — salvar curso ou aula para assistir depois (decisão do operador,

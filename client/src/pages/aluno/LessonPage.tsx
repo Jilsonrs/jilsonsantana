@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { usePaginaDaAula } from "@/lib/pagina-da-aula";
 import { useMenuDoCursoFechado } from "@/lib/menu-do-curso";
 import { porcentagemDoCurso, useConcluirAula } from "@/lib/progresso";
+import { usePontoDaAula } from "@/lib/ponto-da-aula";
 import { useIrPara } from "@/lib/versao";
 import { useIdsSalvos } from "@/lib/salvos";
 import { BotaoSalvar } from "@/components/content/BotaoSalvar";
@@ -55,6 +56,15 @@ export function LessonPage() {
     if (textoParaConcluir !== null) concluir({ lessonId: textoParaConcluir, comoAdmin });
   }, [textoParaConcluir, comoAdmin, concluir]);
 
+  // ONDE A PESSOA PAROU, na conta (Bloco AULA, 06/10/2026): só logado e com a aula liberada.
+  const ponto = usePontoDaAula({
+    lessonId,
+    comoAdmin,
+    ativo: Boolean(session && data?.aula.id === lessonId && data.aula.liberada),
+    video: data?.aula.kind === LessonKind.VIDEO,
+    comecarEm: data?.aula.ponto ?? null,
+  });
+
   if (lessonId === null || (isError && naoEncontrada(error))) {
     return <Aviso texto={t.aula.naoEncontrada} />;
   }
@@ -66,10 +76,14 @@ export function LessonPage() {
   const concluirVideo = concluivel?.kind === LessonKind.VIDEO ? () => concluir({ lessonId: concluivel.id, comoAdmin }) : undefined;
   const temArquivos = curso.modulos.some((m) => m.aulas.some((a) => a.id === aula.id && a.temArquivos));
   // A PRÓXIMA aula da lista que a pessoa vê (operador, 05/10/2026): o fim do vídeo
-  // leva até ela, na hora, seja vídeo ou texto. Na última aula, o vídeo só termina.
+  // grava "viu até o fim" e leva até ela, na hora, seja vídeo ou texto. Na última
+  // aula, o vídeo só termina.
   const lista = curso.modulos.flatMap((m) => m.aulas);
   const proxima = lista[lista.findIndex((a) => a.id === aula.id) + 1];
-  const irParaAProxima = proxima ? () => irPara(`/aluno/aula/${proxima.id}`) : undefined;
+  const aoTerminarOVideo = () => {
+    ponto.aoTerminar();
+    if (proxima) irPara(`/aluno/aula/${proxima.id}`);
+  };
   return (
     <div className="flex min-h-full flex-col">
       {/* Barra Superior Customizada da Aula (Avatar flutua por cima, à direita) */}
@@ -161,7 +175,8 @@ export function LessonPage() {
               comoAdmin={comoAdmin}
               temArquivos={temArquivos}
               aoConcluir={concluirVideo}
-              aoTerminar={irParaAProxima}
+              aoTerminar={aoTerminarOVideo}
+              ponto={ponto}
               // Aba aberta de um dia para o outro: a aula busca um endereço novo do vídeo (06/10/2026).
               renovarVideo={() => void refetch()}
             />

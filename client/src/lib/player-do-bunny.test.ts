@@ -62,19 +62,19 @@ describe("ouvirPlayer — concluir", () => {
 
   it("dado estranho do player não conclui nem quebra", () => {
     const aoConcluir = vi.fn();
-    const aoMudar = vi.fn();
-    ouvirPlayer(iframe, { aoConcluir, aoMudar });
+    const aoAndar = vi.fn();
+    ouvirPlayer(iframe, { aoConcluir, aoAndar });
 
     ouvintes.get("timeupdate")?.("90");
     ouvintes.get("timeupdate")?.({ seconds: "95", duration: 100 });
     ouvintes.get("timeupdate")?.(null);
 
     expect(aoConcluir).not.toHaveBeenCalled();
-    expect(aoMudar).not.toHaveBeenCalled();
+    expect(aoAndar).not.toHaveBeenCalled();
   });
 });
 
-// O FIM leva à próxima aula; o PONTO e a PAUSA ficam lembrados (operador, 05/10/2026).
+// O FIM leva à próxima aula (05/10/2026); o PONTO vai para a conta (Bloco AULA, 06/10/2026).
 describe("ouvirPlayer — o fim, o ponto e a pausa", () => {
   it("o fim avisa \"terminou\"; os 90% não", () => {
     const aoTerminar = vi.fn();
@@ -85,32 +85,35 @@ describe("ouvirPlayer — o fim, o ponto e a pausa", () => {
     expect(aoTerminar).toHaveBeenCalledTimes(1);
   });
 
-  it("tocando, pausou, voltou a tocar: o ponto e o estado de cada momento", () => {
-    const aoMudar = vi.fn();
-    ouvirPlayer(iframe, { aoMudar });
+  it("andou, pausou, voltou a tocar: o segundo e a duração; a pausa no último segundo avisado", () => {
+    const aoAndar = vi.fn();
+    const aoPausar = vi.fn();
+    const aoTocar = vi.fn();
+    ouvirPlayer(iframe, { aoAndar, aoPausar, aoTocar });
 
     assistiu(42, 100);
     ouvintes.get("pause")?.();
     ouvintes.get("play")?.();
 
-    expect(aoMudar.mock.calls.map((c) => c[0])).toEqual([
-      { segundos: 42, pausado: false },
-      { segundos: 42, pausado: true },
-      { segundos: 42, pausado: false },
-    ]);
+    expect(aoAndar).toHaveBeenCalledWith(42, 100);
+    expect(aoPausar).toHaveBeenCalledWith(42);
+    expect(aoTocar).toHaveBeenCalledTimes(1);
   });
 
   it("depois de parar de ouvir, nada mais chega", () => {
     const aoConcluir = vi.fn();
     const aoTerminar = vi.fn();
-    const aoMudar = vi.fn();
-    const parar = ouvirPlayer(iframe, { aoConcluir, aoTerminar, aoMudar });
-    const [tempo, fim, pausa] = [ouvintes.get("timeupdate"), ouvintes.get("ended"), ouvintes.get("pause")];
+    const aoAndar = vi.fn();
+    const aoPausar = vi.fn();
+    const aoTocar = vi.fn();
+    const parar = ouvirPlayer(iframe, { aoConcluir, aoTerminar, aoAndar, aoPausar, aoTocar });
+    const [tempo, fim, pausa, play] = [ouvintes.get("timeupdate"), ouvintes.get("ended"), ouvintes.get("pause"), ouvintes.get("play")];
 
     parar();
     tempo?.({ seconds: 99, duration: 100 });
     fim?.();
     pausa?.();
+    play?.();
 
     expect(off).toHaveBeenCalledWith("timeupdate");
     expect(off).toHaveBeenCalledWith("ended");
@@ -118,6 +121,8 @@ describe("ouvirPlayer — o fim, o ponto e a pausa", () => {
     expect(off).toHaveBeenCalledWith("play");
     expect(aoConcluir).not.toHaveBeenCalled();
     expect(aoTerminar).not.toHaveBeenCalled();
-    expect(aoMudar).not.toHaveBeenCalled();
+    expect(aoAndar).not.toHaveBeenCalled();
+    expect(aoPausar).not.toHaveBeenCalled();
+    expect(aoTocar).not.toHaveBeenCalled();
   });
 });

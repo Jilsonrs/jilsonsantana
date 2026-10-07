@@ -5,6 +5,7 @@ import { requireAdmin } from "../middleware/auth.js";
 import { validate, parseId } from "../lib/http.js";
 import { apagarVideo, iniciarEnvio, resumoDoVideo } from "../lib/bunny-stream.js";
 import { reenviarLegenda } from "../lib/legendas.js";
+import { esquecerPontosDaAula } from "../lib/onde-parou.js";
 
 const router = Router();
 
@@ -89,6 +90,9 @@ router.post("/admin/lessons/:id/video/complete", requireAdmin, async (req, res) 
     where: { id },
     data: { bunnyVideoId: videoId, bunnyVideoPendingId: null, bunnyVideoReady: false, videoDurationSeconds: null },
   });
+  // O ponto de quem estava no meio do vídeo antigo não vale para o novo (Bloco AULA,
+  // 06/10/2026): todos voltam ao começo desta aula.
+  await esquecerPontosDaAula(id);
   // A legenda vai junto para o vídeo novo (04/10/2026): no Bunny ela fica presa ao vídeo.
   await reenviarLegenda({ lessonId: id }, videoId);
 

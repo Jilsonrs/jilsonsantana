@@ -100,12 +100,19 @@ frente do site, por exemplo), ou se o Enterprise DRM entrar só para as aulas.*
 - **Trocar de aba não recomeça o vídeo:** o servidor assina o endereço de novo a cada busca, e a
   tela **mantém o endereço** enquanto o vídeo for o mesmo (`BunnyPlayer.tsx`). Antes, voltar à
   aba recarregava o player do zero e fazia tocar o que estava pausado.
-- **Voltar à aula abre onde parou, e o fim leva à próxima** *(decisões do operador, 05/10/2026)*:
-  a tela guarda no navegador o ponto e a pausa de cada aula (eventos `timeupdate`, `pause` e
-  `play` do player.js) e, ao reabrir, acrescenta ao endereço `t=<segundos>s` e, se estava
-  pausado, `autoplay=false` — os dois são parâmetros de embed do Stream, e nenhum entra no token.
-  O evento `ended` apaga o ponto e abre a próxima aula da lista. Só a aula: o vídeo de
-  apresentação não lembra nada (`posicao-do-video.ts`, `player-do-bunny.ts`).
+- **Voltar à aula abre onde parou, e o fim leva à próxima** *(decisões do operador, 05/10/2026;
+  refeito no Bloco AULA, 06/10/2026)*: o ponto de cada aula e a aula em que a pessoa está ficam
+  **na conta** (`lesson_progress`), não mais no navegador — valem em outro aparelho e não somem com
+  os 7 dias do Safari. A tela ouve `timeupdate`, `pause`, `play` e `ended` do player.js, grava o
+  ponto (a cada 15 s de vídeo, na pausa, ao sair; ao fechar a aba, pelo envio na saída da página)
+  e, ao reabrir, acrescenta ao endereço só `t=<segundos>s` — parâmetro de embed do Stream, fora do
+  token. **A aula sempre volta tocando:** o `autoplay=false` de quem tinha pausado saiu (o operador
+  revogou o "volta pausado" em 06/10/2026); o `autoplay` é só o que o servidor manda. O `ended`
+  grava "viu até o fim" e abre a próxima aula da lista. Só a aula: o vídeo de apresentação não
+  guarda ponto (`ponto-da-aula.ts`, `envio-na-saida.ts`, `player-do-bunny.ts`).
+- **O "Resumable Player" do painel tem que ficar DESLIGADO** (aba Player da biblioteca — doc
+  oficial): é o "retomar de onde parou" do próprio Bunny, guardado no aparelho, e disputaria o ponto
+  com o da conta. Conferir no painel: P51.
 
 **O que o primeiro teste no ar mostrou (28/09/2026, fato medido):** a biblioteca de apresentação
 **existia** (`jilsonsantana-stream-apresentacao`, 763872), ao contrário do que este documento
