@@ -3698,6 +3698,33 @@ da aba Player — **3 consultas na análise (passou de 2: anotado)**. A sessão 
       concluída.
       *(07/10/2026: **publicado** — `main` = `f247200`, as 4 etapas no ar. Falta o operador rodar o
       roteiro nos aparelhos; o que ele achar entra aqui, e o checkbox fecha com o resultado.)*
+      **O teste do operador no ar (07/10/2026, com a conta de admin** — a de aluno de teste não tem
+      assinatura em produção, por decisão dele de 27/09: só com a Stripe, na Fase 4**):** (1) primeira
+      vez — não reproduzível com uma conta que já tinha visto aulas, mas entrou na primeira aula,
+      como esperado para quem ainda não tinha ponto gravado; (2) fim do vídeo → próxima, (3) texto
+      parado e "Próxima aula", (5) pausar e voltar tocando, (7) o Voltar do navegador e (8) a gaveta
+      do celular — **ok**; (4) sair e voltar pelo site — ok, mas **recarregar a página** abria do
+      começo; (6) outro aparelho abria a aula certa, mas **do começo**; (9) **a legenda ligada não
+      continua na aula seguinte**, nem ao voltar.
+      **Defeito do agente, CORRIGIDO no mesmo dia (itens 4 e 6):** o player do Bunny avisa o tempo
+      com **casas decimais** (17,43 s), e o servidor, pelo contrato da etapa 1, só aceitava inteiro —
+      recusava (400) toda gravação durante o vídeo; só o "estou aqui" ao abrir, sempre no começo,
+      chegava ao banco. Sair e voltar dentro do site funcionava porque a tela guarda o ponto na
+      própria memória; recarregar, outro aparelho e **voltar no dia seguinte** dependem do banco — era
+      o item 4 do pedido que não funcionava. Os testes não pegaram porque usavam segundos inteiros.
+      **Conserto:** a tela manda o segundo inteiro (`Math.floor`), e o servidor **aceita fração e
+      arredonda para baixo** — o que conserta até a aba aberta antes da publicação (API aditiva). Os
+      testes passaram a usar os tempos quebrados do player de verdade. **Mutação:** a tela sem
+      arredondar (andando e na pausa) e o servidor voltando a recusar fração → reprovam; tirar o
+      arredondamento do servidor **não** reprova, porque o próprio Prisma grava o inteiro truncado
+      (medido: 89,73 → 89) — o comportamento continua protegido pelo teste, e a linha fica, explícita.
+      **Legenda (item 9) — o que a doc do Bunny diz e por que não funcionou:** o player tem uma
+      "preferência lembrada" de legenda, mas ela mora no aparelho, dentro da moldura do Bunny — que o
+      Safari bloqueia, e o Chrome em algumas configurações. E o player.js **não avisa** quando o aluno
+      liga ou desliga o CC (só play, pausa, tempo, fim). O que o site consegue é mandar o player abrir
+      com a legenda ligada (`captions=<idioma>`). **Decisão do operador (07/10/2026): "se o aluno
+      ligou, fica ligada até que ele desligue"** — o mecanismo (um botão da escola, lembrado na conta)
+      foi proposto a ele e espera a confirmação.
 - **Done when:** os 6 comportamentos do pedido passam no roteiro da etapa 5, sem erro, nos aparelhos
   testados; CI verde nos dois jobs.
 

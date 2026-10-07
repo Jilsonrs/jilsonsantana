@@ -26,13 +26,15 @@ export async function gravarPonto(userId: string, lessonId: number, segundos: nu
   // quer dizer "sem filtro", e o `updateMany` abaixo gravaria o ponto de TODO MUNDO.
   if (!pessoaValida(userId)) throw new Error("gravarPonto sem pessoa");
   const agora = new Date();
+  // O player avisa o tempo com casas decimais; a coluna guarda o segundo inteiro.
+  const ponto = segundos === null ? null : Math.floor(segundos);
   await prisma.lessonProgress.createMany({
-    data: [{ userId, lessonId, positionSeconds: segundos, lastSeenAt: agora }],
+    data: [{ userId, lessonId, positionSeconds: ponto, lastSeenAt: agora }],
     skipDuplicates: true,
   });
   await prisma.lessonProgress.updateMany({
     where: { userId, lessonId },
-    data: { positionSeconds: segundos, lastSeenAt: agora },
+    data: { positionSeconds: ponto, lastSeenAt: agora },
   });
 }
 

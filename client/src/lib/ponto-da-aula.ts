@@ -135,8 +135,11 @@ export function usePontoDaAula({
     document.addEventListener("visibilitychange", aoMudarDeVisibilidade);
 
     gravacao.current = {
-      andou: (segundos, d) => {
+      // O player avisa o tempo com casas decimais (17,43 s); o ponto vai em segundos
+      // inteiros (defeito achado no teste do operador, 07/10/2026).
+      andou: (tempo, d) => {
         if (!video || terminou) return;
+        const segundos = Math.floor(tempo);
         ultimo = segundos;
         duracao = d;
         if (gravado === null || Math.abs(segundos - gravado) >= PASSO_DA_GRAVACAO) {
@@ -146,8 +149,9 @@ export function usePontoDaAula({
           agendar(segundos);
         }
       },
-      pausou: (segundos) => {
+      pausou: (tempo) => {
         if (!video || terminou) return;
+        const segundos = Math.floor(tempo);
         ultimo = segundos;
         gravar(segundos);
         agendar(segundos);
