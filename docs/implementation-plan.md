@@ -3796,6 +3796,29 @@ da aba Player — **3 consultas na análise (passou de 2: anotado)**. A sessão 
       o teste foi corrigido para esperar a aula chegar antes de soltar a preferência. **Docs check (context7):** Bunny
       (`/bunnyway/documentation` e o fallback `/llmstxt/bunny_net_llms_txt`) e media-chrome
       (`/muxinc/media-chrome`) — consultas listadas acima.
+- [x] **Etapa 6b — conserto: o script da legenda refeito para o player que o Bunny serve de verdade
+      (P)** *(07/10/2026; teste do operador: no iPhone a legenda era lembrada, no Chrome do computador
+      não)*. **Achado, medido:** a página do player, baixada como Chrome de computador e como iPhone
+      (pelo endereço do vídeo de apresentação, que é público; o endereço assinado não foi impresso),
+      carrega o **Plyr** (`plyr/3.7.8.4-bn`), não o media-chrome que a doc do Bunny descreve — com
+      "Enable legacy player" desligado. O script da etapa 6 procurava o `media-controller`, que não
+      existe ali: **nunca avisou nada**, em nenhum aparelho. O que funcionava no iPhone era a memória
+      do próprio Plyr, guardada no armazenamento da moldura (`captions` e `language`), que no Chrome
+      do computador falha. **Conserto, só no script do `bunny.md` (o site não muda):** (1) apaga a
+      memória de legenda do Plyr antes de ele começar — a conta passa a ser a única que decide, também
+      no iPhone; (2) avisa nos eventos do Plyr (`captionsenabled`/`captionsdisabled`), logo depois
+      de um toque do aluno, **um aviso por clique, com o estado final** (o menu do player dispara
+      desligou → ligou → desligou em ~14 ms — medido). **Provado com o Plyr do Bunny num Chrome de
+      verdade** (banco de prova local, fora do repo: a página e a moldura em endereços diferentes,
+      o script tirado do `bunny.md`): abre como a conta manda mesmo com o aparelho lembrando o
+      contrário, e o volume lembrado fica; botão CC e menu, ligar e desligar → um aviso cada; o
+      player mudando sozinho, sem toque → nada. **Testes:** o do script refeito (7) imita o Plyr
+      medido. **Mutação:** 5 de 6 reprovam; a que sobrevive (ouvir sem captura) é equivalente — a
+      cópia do aviso na moldura do player sobe pela página. **P53:** o operador cola o script novo
+      no painel; vale na hora, sem publicar o site. **Lição:** a página do player se olha **antes**
+      de escrever script para ela — a doc descreve um player, e a biblioteca serve outro.
+      **Docs check (context7):** não acionado — a fonte foi a própria página do player no ar, que
+      desmentiu a doc.
 - **Done when:** os 6 comportamentos do pedido passam no roteiro da etapa 5, sem erro, nos aparelhos
   testados; CI verde nos dois jobs.
 

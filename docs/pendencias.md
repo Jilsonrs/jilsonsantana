@@ -16,13 +16,15 @@
 > 5. **Item novo ganha o próximo número livre.** Número nunca se reutiliza, para que "P7" queira
 >    dizer sempre a mesma coisa em qualquer conversa.
 >
-> **Próximo número livre: P53** · Atualizada em 07/10/2026
+> **Próximo número livre: P54** · Atualizada em 07/10/2026
 
 ## A. Agora, em sequência *(nascidas da configuração do Bunny, 25/09/2026)*
 
-*Vazia desde 07/10/2026: a P51 (o "Resumable player position" desligado) e a P52 (o script da
-legenda lembrada colado no Custom HTML head do player) foram resolvidas — registro em `bunny.md`.
-Item novo que precise de resposta rápida entra aqui, com o próximo número livre.*
+| # | O que falta | Onde registrar |
+|---|---|---|
+| **P53** | **Trocar o script da legenda lembrada no painel do Bunny.** O de 07/10 foi escrito para outro player e nunca funcionou (o player da biblioteca é o Plyr — medido). Stream → `jilsonsantana-stream` → **Player** → **Custom HTML head** → apagar o script anterior → colar o bloco do `bunny.md` (seção *A legenda lembrada*) → **Save Settings**. Vale na hora, sem publicar o site. Depois, testar no Chrome do computador e no iPhone. | `bunny.md`, seção *A legenda lembrada*: "colado pelo operador em <data>" |
+
+*A P51 e a P52 foram resolvidas em 07/10/2026 — registro em `bunny.md`.*
 
 ## B. Conteúdo e cadastro *(tarefas suas, sem ordem fixa)*
 

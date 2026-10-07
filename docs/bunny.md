@@ -118,61 +118,76 @@ frente do site, por exemplo), ou se o Enterprise DRM entrar só para as aulas.*
   aba, ou se a biblioteca for trocada por outra.*
 - **A legenda lembrada** *(Bloco AULA, etapa 6 — decisão do operador, 07/10/2026, como no LinkedIn)*:
   começa desligada; o aluno liga **no CC do próprio player**, e ela continua ligada nas próximas
-  aulas e ao sair e voltar, em qualquer aparelho, até ele desligar no mesmo CC. **Por que precisa de
-  um script no player:** o player.js não avisa quando o CC muda (só play, pausa, tempo e fim — doc),
-  e a "preferência lembrada" do próprio Bunny (doc do parâmetro `captions`) mora no aparelho, dentro
-  da moldura do Bunny, que o Safari bloqueia e o Chrome em algumas configurações — no teste do
-  operador de 07/10 ela não funcionou. **Como funciona:** o player novo é feito de componentes do
-  **media-chrome**, que marca a legenda ligada no atributo `mediasubtitlesshowing` do
-  `media-controller` (doc do media-chrome); o player **ainda executa o HTML personalizado** da aba
-  Player (*Custom HTML head* — guia de migração do Bunny). O script abaixo observa esse atributo e,
-  **só quando a mudança vem logo depois de um toque do aluno no player** (as mudanças do player se
-  preparando não contam), avisa a página da aula. A página grava a escolha na conta
-  (`/api/me/preferences`) e abre cada aula com `captions=<idioma do curso>` enquanto ela estiver
-  ligada (`client/src/lib/legenda-lembrada.ts`). **Onde colar** (operador, uma vez — P52): Stream →
-  biblioteca `jilsonsantana-stream` → **Player** → **Custom HTML head** → colar o bloco abaixo → **Save
-  Settings**. **Colado pelo operador em 07/10/2026** (print do painel) — P52 resolvida. *Gatilhos:* o script para de funcionar se **"Enable legacy player"** for ligado (o player
-  antigo não é media-chrome) ou se o Bunny mudar o player; **"Reset to Default"** na aba apaga o
-  script. Em todos esses casos a aula continua funcionando — só a legenda deixa de ser lembrada.
+  aulas e ao sair e voltar, em qualquer aparelho, até ele desligar no mesmo CC. **Quem decide é a
+  CONTA do aluno:** a página grava a escolha (`/api/me/preferences`) e abre cada aula com
+  `captions=<idioma do curso>` enquanto ela estiver ligada (`client/src/lib/legenda-lembrada.ts`).
+  **Por que precisa de um script no player:** o player.js não avisa quando o CC muda (só play,
+  pausa, tempo e fim — doc).
+  **O player da biblioteca é o PLYR** *(fato medido em 07/10/2026, na página do player servida no
+  ar, como Chrome de computador e como iPhone: `plyr/3.7.8.4-bn`, com "Enable legacy player"
+  desligado)* — **não** o player de componentes media-chrome que a doc do Bunny descreve. A primeira
+  versão do script procurava o media-chrome e **nunca avisou nada**; o que funcionava no iPhone era a
+  memória do próprio Plyr, que guarda a legenda (`captions` e `language`) no armazenamento do
+  navegador **dentro da moldura** (chave `plyr--lib-762605`) e a repõe ao abrir. No Chrome do
+  computador essa memória falha (o idioma do navegador decide a faixa, e o Chrome pode bloquear o
+  armazenamento da moldura). **Por isso o script faz duas coisas:** (1) **apaga a memória de legenda
+  do Plyr** antes de ele começar, para a conta ser a única que decide — sem isso, o aparelho que
+  lembrou "ligada" contradiz a conta; (2) avisa a página quando o Plyr dispara `captionsenabled` ou
+  `captionsdisabled` **logo depois de um toque do aluno** (o player ligando sozinho não conta),
+  **um aviso por clique, com o estado final** — medido: o "Desativado" do menu do player dispara
+  desligou → ligou → desligou em ~14 ms, e três gravações quase juntas podiam chegar fora de ordem.
+  **Provado com o Plyr do Bunny num navegador de verdade** (07/10/2026). **Onde colar** (operador —
+  P53): Stream → biblioteca `jilsonsantana-stream` → **Player** → **Custom HTML head** → **apagar o
+  script anterior** e colar o bloco abaixo → **Save Settings**. *Gatilhos:* o script para de
+  funcionar se o Bunny trocar o player (a página dele deixar de carregar o `plyr`) — aí se olha a
+  página do player de novo antes de escrever outro; **"Reset to Default"** na aba apaga o script. Em
+  todos esses casos a aula continua funcionando — só a legenda deixa de ser lembrada.
 
   ```html
   <script>
-  /* jilsonsantana.com — a legenda lembrada (Bloco AULA, etapa 6, 07/10/2026).
-     Avisa a página da aula quando o ALUNO liga ou desliga a legenda no CC do player.
+  /* jilsonsantana.com — a legenda lembrada (Bloco AULA, etapa 6; refeito em 07/10/2026 para o
+     player do Bunny, que é o Plyr). Quem diz se a legenda abre ligada é a CONTA do aluno.
+     1. Apaga a memória de legenda do próprio player neste aparelho, antes de ele começar.
+     2. Avisa a página da aula quando o ALUNO liga ou desliga no CC.
      Só manda para www.jilsonsantana.com, e só "ligou" ou "desligou". */
   (function () {
     var DESTINO = "https://www.jilsonsantana.com";
     var JANELA_DO_TOQUE = 3000;
+    var ASSENTAR = 400;
     var tocouEm = 0;
-    var ultimo = null;
+    var ligada = null;
+    var espera = null;
+    try {
+      var chaves = [];
+      for (var i = 0; i < localStorage.length; i++) chaves.push(localStorage.key(i));
+      chaves.forEach(function (chave) {
+        if (!chave || chave.indexOf("plyr") !== 0) return;
+        try {
+          var salvo = JSON.parse(localStorage.getItem(chave) || "null");
+          if (!salvo || typeof salvo !== "object") return;
+          delete salvo.captions;
+          delete salvo.language;
+          localStorage.setItem(chave, JSON.stringify(salvo));
+        } catch (e) {}
+      });
+    } catch (e) {}
     ["pointerdown", "keydown", "touchstart"].forEach(function (tipo) {
       document.addEventListener(tipo, function () { tocouEm = Date.now(); }, true);
     });
-    function avisar(ligada) {
-      var doAluno = Date.now() - tocouEm <= JANELA_DO_TOQUE;
-      if (!doAluno || ligada === ultimo) { ultimo = ligada; return; }
-      ultimo = ligada;
-      try {
-        window.parent.postMessage({ origem: "jilsonsantana-legenda", ligada: ligada }, DESTINO);
-      } catch (e) {}
+    /* O menu do player liga e desliga mais de uma vez num clique só: avisa o estado final. */
+    function mudou(agora) {
+      ligada = agora;
+      if (espera === null && Date.now() - tocouEm > JANELA_DO_TOQUE) return;
+      if (espera !== null) clearTimeout(espera);
+      espera = setTimeout(function () {
+        espera = null;
+        try {
+          window.parent.postMessage({ origem: "jilsonsantana-legenda", ligada: ligada }, DESTINO);
+        } catch (e) {}
+      }, ASSENTAR);
     }
-    function observar(controle) {
-      ultimo = Boolean((controle.getAttribute("mediasubtitlesshowing") || "").trim());
-      new MutationObserver(function () {
-        avisar(Boolean((controle.getAttribute("mediasubtitlesshowing") || "").trim()));
-      }).observe(controle, { attributes: true, attributeFilter: ["mediasubtitlesshowing"] });
-    }
-    function procurar() {
-      var controle = document.querySelector("media-controller");
-      if (!controle) return false;
-      observar(controle);
-      return true;
-    }
-    if (!procurar()) {
-      var espera = new MutationObserver(function () { if (procurar()) espera.disconnect(); });
-      espera.observe(document.documentElement, { childList: true, subtree: true });
-      setTimeout(function () { espera.disconnect(); }, 30000);
-    }
+    document.addEventListener("captionsenabled", function () { mudou(true); }, true);
+    document.addEventListener("captionsdisabled", function () { mudou(false); }, true);
   })();
   </script>
   ```
