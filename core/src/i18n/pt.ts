@@ -438,7 +438,9 @@ export const pt = {
       iaTitulo: "JilsonAI",
       iaEmBreve: "Em breve: tire as suas dúvidas sobre esta aula aqui mesmo, sem sair do vídeo.",
       sobreOCurso: "Sobre o curso",
-      cursoSemAulas: "Este curso ainda não tem aulas."
+      cursoSemAulas: "Este curso ainda não tem aulas.",
+      // O botão no fim da aula de texto (decisão do operador, 06/10/2026 — texto aprovado por ele).
+      proximaAula: "Próxima aula"
     }
   }
 };

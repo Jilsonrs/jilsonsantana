@@ -36,12 +36,16 @@ describe("BunnyPlayer — o endereço", () => {
     expect(quadro?.getAttribute("src")).toBe(ENDERECO("aaa", "t1"));
   });
 
-  it("outro vídeo: troca o endereço", () => {
+  // Uma moldura NOVA a cada endereço (Bloco AULA, 07/10/2026): trocar o `src` de uma
+  // moldura já carregada cria uma entrada no histórico do navegador (medido no Chrome).
+  it("outro vídeo: troca o endereço, numa moldura NOVA", () => {
     const { rerender } = render(<BunnyPlayer src={ENDERECO("aaa", "t1")} title="Aula" />);
+    const antes = document.querySelector("iframe");
 
     rerender(<BunnyPlayer src={ENDERECO("bbb", "t2")} title="Aula" />);
 
     expect(document.querySelector("iframe")?.getAttribute("src")).toBe(ENDERECO("bbb", "t2"));
+    expect(document.querySelector("iframe")).not.toBe(antes);
   });
 
   it("token novo não volta a ouvir o player (o aviso dos 90% continua valendo)", () => {
@@ -142,12 +146,15 @@ describe("BunnyPlayer — o endereço vencido", () => {
     const { rerender } = render(<BunnyPlayer src={VENCIDO} title="Aula" comecarEm={125} aoVencer={aoVencer} />);
     await waitFor(() => expect(aoVencer).toHaveBeenCalledTimes(1));
     avisos().aoAndar(200, 600);
+    const antes = document.querySelector("iframe");
 
     rerender(<BunnyPlayer src={NOVO} title="Aula" comecarEm={125} aoVencer={aoVencer} />);
 
     expect(params().get("token")).toBe("novo");
     expect(params().get("t")).toBe("200s");
     expect(params().get("autoplay")).toBe("true");
+    // Moldura nova também na renovação: nada de entrada extra no histórico.
+    expect(document.querySelector("iframe")).not.toBe(antes);
   });
 
   it("vencido antes de o vídeo andar: recarrega no ponto com que abriu", async () => {

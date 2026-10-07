@@ -141,8 +141,8 @@ servidores (§5); o React responde em `localhost:5173`, a home pública em `loca
 | `/aluno/em-andamento` | **Em andamento** (29/09): `client/src/pages/aluno/EmAndamentoPage.tsx` — é onde "Meus estudos" abre. **Só o título**, por decisão do operador, até o progresso chegar (Fase 5). Meus estudos **não tem tela de resumo**: a coluna do nível 2 é o guia. |
 | `/aluno/notificacoes` | **Notificações — Ver todas** (04/10, decisões do operador): `client/src/pages/aluno/NotificacoesPage.tsx` — todas as notificações, com o texto inteiro e a data. Chega-se pelo sino do topo (`components/notificacoes/Sino.tsx`). Estrutura pronta, acabamento seu (fila, item 24). |
 | `/aluno/salvos` | **Salvos** (03/10, decisão do operador, "como no LinkedIn"): `client/src/pages/aluno/SalvosPage.tsx` — os cursos e as aulas salvos para depois, com o botão de tirar (o mesmo `BotaoSalvar`). Estrutura pronta, acabamento seu (fila, item 19). |
-| `/aluno/aula/:id` | **A página da aula** (29/09, estilo LinkedIn Learning): `client/src/pages/aluno/LessonPage.tsx` + `client/src/components/aula/` — `CourseContentsNav.tsx` (o conteúdo do curso, que é o **nível 2** no computador e fica embaixo do player no celular e para o visitante), `LessonContent.tsx` (o player grande, o texto no centro ou "para assinantes"), `LessonResources.tsx` (os arquivos para baixar e o "Recursos" de cada aula) e `AiDock.tsx` (o **botão flutuante** da IA no canto inferior direito e o painel "Em breve", que encolhe o player). **Não exige login** (a prévia grátis toca para visitante). **Têm teste:** a aula atual com `aria-current`, o "para assinantes" sem player, o rascunho marcado só para o admin, e o botão da IA com `aria-expanded` e nome. O editor ganhou **Visualizar** em cada aula, que abre esta página numa aba nova. **Embaixo do player, em toda aula, "Sobre o curso"** (`components/aula/CourseDetails.tsx`, 29/09): nível, descrição, listas, camadas, destaques e perguntas; bloco vazio não aparece (tem teste). |
-| `/aluno/curso/:slug` | A entrada do aluno num curso (29/09): `client/src/pages/aluno/CourseEntryPage.tsx` só leva à primeira aula (sem tela própria, além de "carregando" e "sem aulas"). O cartão do curso no catálogo leva aqui quando a pessoa está logada. |
+| `/aluno/aula/:id` | **A página da aula** (29/09, estilo LinkedIn Learning): `client/src/pages/aluno/LessonPage.tsx` + `client/src/components/aula/` — `LessonHeader.tsx` (o topo: título, curso, "Salvar curso", "% concluído", a barra e os botões do conteúdo do curso — saiu da `LessonPage` em 07/10, com as mesmas classes), `CourseContentsNav.tsx` (o conteúdo do curso, que é o **nível 2** no computador e fica embaixo do player no celular e para o visitante), `LessonContent.tsx` (o player grande, o texto no centro ou "para assinantes"), `LessonResources.tsx` (os arquivos para baixar e o "Recursos" de cada aula) e `AiDock.tsx` (o **botão flutuante** da IA no canto inferior direito e o painel "Em breve", que encolhe o player). **Não exige login** (a prévia grátis toca para visitante). **Têm teste:** a aula atual com `aria-current`, o "para assinantes" sem player, o rascunho marcado só para o admin, e o botão da IA com `aria-expanded` e nome. O editor ganhou **Visualizar** em cada aula, que abre esta página numa aba nova. **Embaixo do player, em toda aula, "Sobre o curso"** (`components/aula/CourseDetails.tsx`, 29/09): nível, descrição, listas, camadas, destaques e perguntas; bloco vazio não aparece (tem teste). |
+| `/aluno/curso/:slug` | A entrada do aluno num curso: `client/src/pages/aluno/CourseEntryPage.tsx` leva à aula **em que a pessoa parou** (desde 06/10, Bloco AULA; a primeira, para quem nunca abriu). Sem tela própria, além de "carregando", "sem aulas", "curso não encontrado" e o erro. O cartão do curso no catálogo leva aqui quando a pessoa está logada. |
 
 **Do admin — exigem login como admin** *(porta 5173)*
 
@@ -304,9 +304,10 @@ exceto o item 4, que é página pública.
    `aria-current` da aula atual, o "para assinantes" **sem** player, o rascunho marcado só para o
    admin, o botão da IA com nome e `aria-expanded`. O player é o mesmo `BunnyPlayer` do item 9:
    **não tire o `referrerPolicy`**. No celular e para o visitante, o conteúdo do curso desce para
-   baixo do player (não há nível 2): confira os dois jeitos. **Desde 05/10** (decisões do
-   operador): o fim do vídeo abre a próxima aula na hora, e quem sai e volta abre no mesmo ponto,
-   pausado se tinha pausado — é comportamento, não visual, e tem teste; não há botão novo.
+   baixo do player (não há nível 2): confira os dois jeitos. **Desde 06/10** (Bloco AULA, decisões
+   do operador): o fim do vídeo abre a próxima aula na hora, e quem sai e volta abre no mesmo ponto,
+   **sempre tocando** (o ponto fica na conta) — é comportamento, não visual, e tem teste. A aula de
+   texto ganhou o botão **"Próxima aula"** (item 31).
 12. **"Sobre o curso"** (`components/aula/CourseDetails.tsx`), embaixo do player em toda aula:
    nível, descrição, o que vai aprender, pré-requisitos, pra quem é, camadas, destaques e perguntas.
    **Reaproveita peças compartilhadas** — `LayerSelo`, `HighlightCard` e `MarkdownText`, de
@@ -459,7 +460,7 @@ exceto o item 4, que é página pública.
 28. **A duração de cada aula e o "% concluído" na página da aula** *(06/10, decisões do operador,
    a partir do LinkedIn Learning)*. No **Conteúdo do curso** (`components/aula/CourseContentsNav.tsx`),
    embaixo do título de cada aula de VÍDEO, a duração ("1min 22s", "48s"); aula de texto não tem.
-   No **topo da aula** (`pages/aluno/LessonPage.tsx`), depois de "Salvar curso", o "50% concluído",
+   No **topo da aula** (hoje `components/aula/LessonHeader.tsx`), depois de "Salvar curso", o "50% concluído",
    o mesmo número da barra fina e do cartão; só para quem está logado. Estrutura pronta, acabamento
    seu. O texto da duração e o "% concluído" têm teste.
 29. **Notificações: a lista e a mensagem completa** *(06/10, decisões do operador, a partir da
@@ -475,6 +476,15 @@ exceto o item 4, que é página pública.
    para N pessoas") e **Mensagens automáticas** (`MensagensAutomaticasPage.tsx`). Estrutura pronta,
    acabamento seu. A confirmação do envio (`role="alertdialog"`), os rótulos dos botões Editar/
    Apagar e o "para quem" travado na enviada têm teste.
+31. **Trocar de aula sem a tela piscar, e o "Próxima aula"** *(07/10, Bloco AULA, decisões do
+   operador)*. Na **página da aula**: (a) **o topo saiu para `components/aula/LessonHeader.tsx`**, com
+   as suas classes, sem mudança visual; (b) enquanto a aula seguinte carrega, o topo (já com o título
+   dela) e a lista **ficam**, e só o lugar do conteúdo mostra "Carregando…" — no quadro 16:9 do
+   player, ou na largura do texto (`LessonContentCarregando`, em `LessonContent.tsx`); (c) no
+   celular, **a gaveta do conteúdo fecha** ao escolher uma aula; (d) no fim da **aula de texto**, o
+   botão **"Próxima aula"** (`Button` do shadcn com a seta), que não aparece na última aula, na de
+   vídeo nem na trancada. Estrutura pronta, acabamento seu: o botão e o quadro de carregando. O texto
+   do botão (aprovado pelo operador), onde ele aparece e para onde leva **têm teste**.
 
 > **Fora do seu trabalho, para não confundir:** o Bunny ganhou **Live Stream** em acesso
 > antecipado (29/09). É só avaliação depois da Fase 3, **não** é tela a desenhar (`docs/bunny.md`

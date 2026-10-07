@@ -204,14 +204,23 @@
 > (aula concluída sozinha, barra na aula e no cartão), o vídeo que não recomeça ao trocar de aba
 > (a apresentação abre pausada, a aula toca sozinha) e o "Salvos". **Primeiro teste com o player de
 > verdade: com o operador** (assistir uma aula até perto do fim e ver a barra andar).
+> **PUBLICADO em 06/10/2026, à noite (`main` = `778bbee`, CI verde nos dois jobs, deploy ok; a
+> migration `ponto_da_aula` aplicada pelo pre-deploy):** o Bloco AULA, etapas 1 e 2 — entrar no
+> curso onde parou, o vídeo voltando sempre tocando, o ponto na conta (também ao fechar a aba).
+> **Provado no site:** a versão nova (`muxf3a8v-c0cdae17`) no cabeçalho e no `versao.txt`; a
+> entrada do curso no ar (`google-antigravity-agentes-ia`) leva o visitante à aula 14, a primeira
+> publicada, sem cache; curso inexistente → 404; gravar o ponto sem login → 401; arquivo antigo →
+> 404. *O vídeo de verdade (o ponto, tocar sozinho, o fim) é o teste do operador, etapa 5, depois
+> da P51.*
 > **Bloco AULA (a tela onde o aluno estuda), pedido do operador em 06/10/2026 — ETAPAS 1 E 2 FEITAS
-> no `dev`:** o ponto e a última aula na conta (migration aplicada no dev), entrar no curso onde
-> parou e o vídeo voltando sempre tocando, gravado também ao fechar a aba. **Os 3 erros relatados
-> estão corrigidos no código; a prova com o vídeo de verdade é no site (etapa 5). Próxima: a etapa
-> 3.** A análise explica os 3 erros relatados (entrar sempre na 1ª
+> e publicadas; ETAPAS 3 E 4 FEITAS no `dev` (07/10):** o ponto e a última aula na conta, entrar no
+> curso onde parou e o vídeo voltando sempre tocando, gravado também ao fechar a aba; trocar de aula
+> sem a tela piscar, com a gaveta do celular fechando e o "Próxima aula" no texto; e o piso de
+> aparelhos (iOS 15 em diante) escrito e medido. **Os 3 erros relatados estão corrigidos; falta a
+> prova com o vídeo de verdade, no site (etapa 5, com o operador; a P51 foi resolvida em 07/10).** A análise explica os 3 erros relatados (entrar sempre na 1ª
 > aula, a próxima abrindo pausada, o ponto só no navegador) e traz 4 achados novos, provados (o
 > Voltar com o vídeo errado, a gaveta do celular aberta, a tela piscando entre aulas, a compilação
-> acima do piso das bibliotecas). 5 etapas: ver Fase 5 → **Bloco AULA**. Antes do teste no ar: a P51.
+> acima do piso das bibliotecas). 5 etapas: ver Fase 5 → **Bloco AULA**. A P51 (antes do teste no ar) foi resolvida em 07/10.
 > **PUBLICADO em 06/10/2026, no fechamento (`main` = `e12530d`, CI verde nos dois jobs, deploy
 > ok):** o conserto da troca de aula — sair de uma aula de vídeo não derruba mais a próxima na tela
 > de erro. **Provado no site:** a versão nova (`mux313p8-c56d5a94`). *A passagem automática com o
@@ -1212,6 +1221,12 @@ tornada executável — não uma lista nova):
       número de linhas, e o cadastro é fechado. `express-rate-limit` é dependência nova ⇒ **decisão
       de plano**; um contador em memória é a alternativa sem dependência. *Esta decisão se reabre
       (vira prioridade) com o primeiro aluno pagante, ou com qualquer sinal de abuso no log.*
+- [ ] **Endereço de API que não existe responde 200 com a página do app** *(achado na publicação de
+      06/10/2026, NÃO consertado — fora do pedido)*. Medido no ar: `GET /api/rota-que-nao-existe`
+      devolve o HTML do React com 200, em vez de 404. Hoje o app só chama rotas que existem, então
+      nada quebra; o risco é o dia em que uma chamada nova errar o endereço — ela "dá certo" com
+      HTML, em silêncio, em vez de falhar alto. O conserto é um 404 em JSON para todo `/api/*` que
+      nenhuma rota atendeu, antes do app. Decisão do operador quando mexer no servidor.
 
 ### Bloco S — Shell do aluno: menu lateral e, depois, painel  *(Ago 2026 · direção do operador)*
 
@@ -3499,7 +3514,8 @@ como hoje; o teste no aparelho confere se, ligada numa aula, ela continua ligada
   etapa 4). O pacote de hoje não tem sintaxe nova (conferido: sem *lookbehind*, sem *static
   block*), mas nada garante isso no próximo build.
 - **Risco no painel do Bunny:** o player tem um "retomar de onde parou" próprio (*Resumable Player*,
-  aba Player da biblioteca — doc oficial). Ligado, disputa o ponto com o do site → **P51**.
+  aba Player da biblioteca — doc oficial). Ligado, disputa o ponto com o do site → **P51, resolvida
+  em 07/10/2026: o operador conferiu no painel que está desligado** (registro em `bunny.md`).
 - **Conferido sem defeito:** a boas-vindas no sino ao abrir a primeira aula (assinante e admin,
   curso com mensagem), o fim do vídeo abrindo a próxima, trocar de aba sem recomeçar, e a renovação
   do endereço vencido.
@@ -3619,16 +3635,54 @@ da aba Player — **3 consultas na análise (passou de 2: anotado)**. A sessão 
       **Docs check (context7):** Bunny → `/bunnyway/documentation` → reaproveitado da análise
       nesta mesma sessão (`t` em `Xs`, `autoplay`, eventos do player.js); Better Auth e Stripe: não
       disparados.
-- [ ] **Etapa 3 — trocar de aula sem erro (M):** *(entra também: a `LessonPage.tsx` passou do limite
+- [x] **Etapa 3 — trocar de aula sem erro (M):** *(entra também: a `LessonPage.tsx` passou do limite
       de ~200 linhas na etapa 2 — 214 —, então o topo da aula vira componente próprio, com as mesmas
       classes; é a parte que esta etapa já reescreve.)* A `key` do player, cabeçalho e lista que ficam, a
       gaveta que fecha, o botão "Próxima aula". Componente: moldura nova por aula · carregando só no
       quadro · gaveta fechada depois da escolha · botão na aula de texto (não na última, não no
       vídeo). **Mutação:** cada um dos quatro → reprova.
-- [ ] **Etapa 4 — aparelho antigo (P):** `build.target` explícito; conferir o pacote (nenhuma
+      *(07/10/2026, no `dev`.)* **O topo** foi para `components/aula/LessonHeader.tsx` (mesmas
+      classes; a `LessonPage` caiu de 214 para 152 linhas). **A moldura do player é nova a cada
+      endereço** (`key` no iframe) — também na renovação de 24 h: fecha o achado A inteiro (o Voltar
+      nunca mais troca só o vídeo). **Enquanto a aula seguinte carrega**, a página da aula mostra os
+      dados da anterior **só se forem do mesmo curso** (`placeholderData` em `pagina-da-aula.ts`): o
+      topo (já com o título da aula nova, tirado da lista) e a lista ficam, e só o lugar do conteúdo
+      mostra "Carregando…" (`LessonContentCarregando`: o quadro 16:9 no vídeo, a largura do texto no
+      texto); nada da aula anterior — conteúdo, conclusão, ponto — vale para a nova. Aula de outro
+      curso carrega a tela inteira, como antes. **A gaveta do celular** é uma por aula (`key`): fecha
+      ao escolher uma aula e na passagem automática. **"Próxima aula"** no fim da aula de texto
+      (texto aprovado pelo operador — `app.aula.proximaAula`, "Next lesson" em inglês): link de
+      verdade, então a versão nova do site entra nele; não aparece na última aula, na de vídeo nem
+      na trancada. `GEMINI.md`: o mapa da tela, o item 11 (sem o "pausado") e o item 31 na fila do
+      Antigravity (o acabamento do botão e do carregando). **Testes:** 5 novos na página da aula e 2
+      afirmações novas no player; suíte verde. **Mutação: as 8 partes reprovam** — a moldura
+      reaproveitada, sem manter a aula anterior, mantendo a de OUTRO curso, mostrando o conteúdo da
+      anterior, a gaveta sem `key`, o botão na última aula, o botão levando à própria aula, e o título
+      da aula anterior no topo. **Docs check (context7):** não disparado (nenhum endereço ou token do
+      Bunny montado; só a moldura do iframe).
+- [x] **Etapa 4 — aparelho antigo (P):** `build.target` explícito; conferir o pacote (nenhuma
       sintaxe acima do piso) e o tamanho.
+      *(07/10/2026, no `dev`.)* **O piso ficou escrito** no `vite.config.ts`: iOS 15 (iPhone 6s em
+      diante), Chrome e Edge 91, Firefox 90 — no código e no CSS (conferido no que o próprio Vite
+      resolve). **Medido no pacote, não presumido:** a sintaxe saiu igual (o código de hoje não usa
+      nada que o iOS 15 não entenda; a linha protege o futuro, porque o padrão do Vite muda a cada
+      versão grande — no Vite 7, Safari 16); tamanho: +174 bytes no pacote principal, o resto igual.
+      Das funções novas do navegador, as bibliotecas conferem antes de usar quase todas
+      (`structuredClone`, `crypto.randomUUID`, `checkVisibility`, `requestIdleCallback`); **a única
+      usada sem conferir é `Object.hasOwn` (iOS 15.4), pela biblioteca do texto das aulas** — sem
+      ela, toda aula de texto quebrava num iPhone com iOS 15.0 a 15.3 (provado com a peça real no
+      teste). Reforço de 3 linhas em `client/src/lib/compat.ts`, a primeira coisa que o app carrega,
+      que só entra quando o navegador não tem a função. *A afirmação do plano sobre o piso do
+      TanStack Query não foi conferida na doc: a medição do pacote a substituiu.* **Testes:** o
+      reforço (3, com a peça real do texto) e o guarda do piso (2: a linha da configuração e o
+      reforço como primeira importação — as duas falhariam em silêncio). **Mutação: as 5 partes
+      reprovam.** Regra no `CLAUDE.md` → Client (biblioteca nova × função nova do navegador).
+      **Achado visual, NÃO consertado (decisão do operador):** no iOS 15.0 a 15.3 a moldura do app
+      (`min-h-svh` no `Layout.tsx`) não ocupa a altura toda da tela — o resto funciona; o anel de foco
+      do teclado (`:focus-visible`) também só aparece do iOS 15.4 em diante, o que não pesa no toque.
 - [ ] **Etapa 5 — publicar e testar no ar, com o operador (P):** o player só toca no domínio da
-      escola, então a prova é no site. **Antes:** a P51. Roteiro em cada aparelho (Chrome no
+      escola, então a prova é no site. **Antes:** a P51 — *resolvida em 07/10/2026 (desligado no
+      painel, conferido pelo operador)*. Roteiro em cada aparelho (Chrome no
       computador, Safari no Mac, iPhone, Android, e um aparelho antigo se houver): 1ª vez no curso
       + sino · fim do vídeo → próxima · texto parado + "Próxima aula" · sair aos 17 s e voltar pelo
       catálogo, no mesmo aparelho e no outro · pausar, sair, voltar tocando · o Voltar do navegador

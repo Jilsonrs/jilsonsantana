@@ -1,3 +1,5 @@
+// Primeiro de tudo: o que falta nos aparelhos antigos do piso do site (Bloco AULA, etapa 4).
+import "@/lib/compat";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";

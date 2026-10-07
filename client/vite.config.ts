@@ -34,6 +34,15 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    // O PISO DE APARELHOS do site (Bloco AULA, etapa 4 — plano aprovado pelo operador
+    // em 06/10/2026): iOS 15 (iPhone 6s em diante, os que pararam no iOS 15), Chrome e
+    // Edge 91, Firefox 90. Escrito AQUI porque o padrão do Vite muda a cada versão
+    // grande: no Vite 7 ele é Safari 16, e deixaria de fora, sem erro nenhum, todo
+    // iPhone que parou no iOS 15. A sintaxe nova o build converte para este piso; as
+    // funções novas do navegador foram medidas no pacote (`src/lib/compat.ts`).
+    target: ["chrome91", "edge91", "firefox90", "safari15", "ios15"],
+  },
   server: {
     port: 5173,
     proxy: {

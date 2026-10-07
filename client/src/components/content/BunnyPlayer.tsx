@@ -191,7 +191,11 @@ export function BunnyPlayer({
 
   return (
     <div className="aspect-video w-full overflow-hidden bg-muted">
+      {/* Uma moldura NOVA a cada endereço (`key` — Bloco AULA, 07/10/2026): trocar o
+          `src` de uma moldura já carregada cria uma entrada no histórico do navegador,
+          e o Voltar trocaria só o vídeo, deixando o título da aula (medido no Chrome). */}
       <iframe
+        key={endereco}
         ref={iframeRef}
         src={endereco}
         title={title}

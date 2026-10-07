@@ -110,9 +110,12 @@ frente do site, por exemplo), ou se o Enterprise DRM entrar só para as aulas.*
   revogou o "volta pausado" em 06/10/2026); o `autoplay` é só o que o servidor manda. O `ended`
   grava "viu até o fim" e abre a próxima aula da lista. Só a aula: o vídeo de apresentação não
   guarda ponto (`ponto-da-aula.ts`, `envio-na-saida.ts`, `player-do-bunny.ts`).
-- **O "Resumable Player" do painel tem que ficar DESLIGADO** (aba Player da biblioteca — doc
-  oficial): é o "retomar de onde parou" do próprio Bunny, guardado no aparelho, e disputaria o ponto
-  com o da conta. Conferir no painel: P51.
+- **O "Resumable player position" do painel tem que ficar DESLIGADO** (aba Player da biblioteca —
+  doc oficial): é o "retomar de onde parou" do próprio Bunny, guardado no aparelho, e disputaria o
+  ponto com o da conta. **Conferido desligado pelo operador em 07/10/2026** (print do painel da
+  `jilsonsantana-stream`, junto com *Show watchtime heatmap*, *Compact controls* e *Enable legacy
+  player*, também desligados). *Esta conferência se refaz se alguém clicar "Reset to Default" nessa
+  aba, ou se a biblioteca for trocada por outra.*
 
 **O que o primeiro teste no ar mostrou (28/09/2026, fato medido):** a biblioteca de apresentação
 **existia** (`jilsonsantana-stream-apresentacao`, 763872), ao contrário do que este documento

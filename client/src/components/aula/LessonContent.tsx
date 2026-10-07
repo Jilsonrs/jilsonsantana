@@ -1,9 +1,11 @@
 import { lazy, Suspense } from "react";
-import { Lock } from "lucide-react";
+import { Link } from "react-router-dom";
+import { ArrowRight, Lock } from "lucide-react";
 import { LessonKind } from "@jilson/core";
 import type { PaginaDaAula } from "@/lib/api";
 import { useT } from "@/lib/language";
 import { BunnyPlayer } from "@/components/content/BunnyPlayer";
+import { Button } from "@/components/ui/button";
 import type { OuvintesDoPonto } from "@/lib/ponto-da-aula";
 import { ListaDeArquivos } from "./LessonResources";
 
@@ -18,6 +20,24 @@ const ELEMENTOS_DA_AULA = ["p", "strong", "em", "ul", "ol", "li", "br", "h2", "h
 const QUADRO = "flex aspect-video w-full flex-col items-center justify-center bg-muted p-8 text-center";
 
 /**
+ * O lugar do conteúdo enquanto a aula seguinte carrega (Bloco AULA, 07/10/2026): o
+ * topo e a lista do curso ficam na tela, e só aqui aparece o "Carregando…" — no
+ * quadro do player (vídeo) ou na largura do texto (texto).
+ */
+export function LessonContentCarregando({ video }: { video: boolean }) {
+  const t = useT();
+  return video ? (
+    <div aria-busy="true" className={QUADRO}>
+      <p className="text-muted-foreground">{t.aula.carregando}</p>
+    </div>
+  ) : (
+    <div aria-busy="true" className="mx-auto max-w-[800px] py-6">
+      <p className="text-muted-foreground">{t.aula.carregando}</p>
+    </div>
+  );
+}
+
+/**
  * O CONTEÚDO da aula aberta: o player grande (aula de vídeo), o texto no centro
  * com os recursos embaixo (aula de texto — o print 03 do operador), ou "para
  * assinantes" quando o servidor não liberou. A tela nunca decide acesso: o que
@@ -30,6 +50,7 @@ export function LessonContent({
   aoConcluir,
   aoTerminar,
   ponto,
+  proximaAulaId,
   renovarVideo,
 }: {
   aula: PaginaDaAula["aula"];
@@ -42,6 +63,8 @@ export function LessonContent({
   aoTerminar?: () => void;
   /** O que grava o ponto do vídeo na conta (Bloco AULA, 06/10/2026). */
   ponto?: Pick<OuvintesDoPonto, "aoAndar" | "aoPausar" | "aoTocar">;
+  /** A próxima aula da lista: na aula de texto, o botão "Próxima aula" leva a ela (06/10/2026). Na última, nenhum. */
+  proximaAulaId?: number;
   /** O endereço do vídeo está vencendo: buscar a aula de novo, com um endereço novo (06/10/2026). */
   renovarVideo?: () => void;
 }) {
@@ -108,6 +131,19 @@ export function LessonContent({
             </div>
           )}
         </section>
+      )}
+      {/* A aula de texto não passa sozinha: a próxima abre no clique — na lista ou
+          aqui, no fim do texto (decisão do operador, 06/10/2026: no celular a lista
+          fica numa gaveta). Um link de verdade: a versão nova do site entra nele. */}
+      {proximaAulaId !== undefined && (
+        <div className="flex justify-end">
+          <Button asChild>
+            <Link to={`/aluno/aula/${proximaAulaId}`}>
+              {t.aula.proximaAula}
+              <ArrowRight className="ml-2 size-4" aria-hidden="true" />
+            </Link>
+          </Button>
+        </div>
       )}
     </article>
   );
