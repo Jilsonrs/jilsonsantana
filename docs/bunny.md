@@ -143,6 +143,8 @@ frente do site, por exemplo), ou se o Enterprise DRM entrar só para as aulas.*
   antes de escrever script para ela.**
   **Onde colar** (operador — P53): Stream → biblioteca `jilsonsantana-stream` → **Player** →
   **Custom HTML head** → **apagar o script anterior** e colar o bloco abaixo → **Save Settings**.
+  **Colado pelo operador em 07/10/2026** (só o que vai de `<script>` a `</script>`; as linhas de
+  marcação do documento, as que têm as três crases, não entram) — P53 resolvida.
   *Gatilhos:* o script para de funcionar se o Bunny mudar os nomes desses pedidos ou do atributo
   (são do media-chrome, a base do player); **"Reset to Default"** na aba apaga o script. Em todos
   esses casos a aula continua funcionando — só a legenda deixa de ser lembrada.

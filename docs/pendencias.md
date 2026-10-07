@@ -20,11 +20,9 @@
 
 ## A. Agora, em sequência *(nascidas da configuração do Bunny, 25/09/2026)*
 
-| # | O que falta | Onde registrar |
-|---|---|---|
-| **P53** | **Trocar o script da legenda lembrada no painel do Bunny** (07/10/2026) — pode ser antes ou depois de publicar o site com o player novo: no player antigo o script novo não faz nada. Stream → `jilsonsantana-stream` → **Player** → **Custom HTML head** → apagar o script anterior → colar o bloco do `bunny.md` (seção *A legenda lembrada*) → **Save Settings**. Depois, testar a página da aula no Chrome do computador e no iPhone (o roteiro da etapa 5 do Bloco AULA, mais a legenda). | `bunny.md`, seção *A legenda lembrada*: "colado pelo operador em <data>" |
-
-*A P51 e a P52 foram resolvidas em 07/10/2026 — registro em `bunny.md`.*
+*Vazia desde 07/10/2026: a P51, a P52 e a P53 (o script da legenda lembrada, refeito para o player
+novo do Bunny) foram resolvidas — registro em `bunny.md`. Item novo que precise de resposta rápida
+entra aqui, com o próximo número livre.*
 
 ## B. Conteúdo e cadastro *(tarefas suas, sem ordem fixa)*
 
