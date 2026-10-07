@@ -171,6 +171,9 @@ model User {
   // 04/10/2026: as notificações do sino. Mesma DEBT — REAPLICAR.
   notifications Notification[]
   courseStarts  CourseStart[]
+  // 07/10/2026 (Bloco AULA, etapa 6): as preferências do aluno (a legenda
+  // lembrada). Mesma DEBT — REAPLICAR após cada `npm run auth:generate`.
+  preference    StudentPreference?
 
   birthday            String?
   preferredLanguage   String?   @default("pt")
@@ -377,6 +380,21 @@ model LessonProgress {
   @@unique([userId, lessonId])
   @@index([lessonId])
   @@map("lesson_progress")
+}
+
+// AS PREFERÊNCIAS DO ALUNO (Bloco AULA, etapa 6 — decisão do operador, 07/10/2026,
+// "como no LinkedIn"): a LEGENDA começa desligada; o aluno liga no CC do próprio
+// player, e ela continua ligada nas próximas aulas e ao sair e voltar, em qualquer
+// aparelho, até ele desligar no mesmo CC. Uma linha por pessoa, criada na primeira
+// mudança; sem linha, vale o padrão. Fora do `User`, que fica só com identidade
+// (CLAUDE.md → Access Architecture). Some com a pessoa.
+model StudentPreference {
+  userId     String   @id
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  captionsOn Boolean  @default(false)
+  updatedAt  DateTime @updatedAt
+
+  @@map("student_preference")
 }
 
 // O que a pessoa SALVOU para assistir depois — um curso inteiro ou uma aula

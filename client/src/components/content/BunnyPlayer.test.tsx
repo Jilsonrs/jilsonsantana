@@ -131,6 +131,57 @@ describe("BunnyPlayer — os avisos para gravar o ponto", () => {
   });
 });
 
+// A LEGENDA LEMBRADA (Bloco AULA, etapa 6 — decisão do operador, 07/10/2026, como no
+// LinkedIn): o player abre com ela ligada quando o aluno a deixou ligada, e o aviso do
+// nosso script (de dentro do player) chega à página — só o desta moldura.
+describe("BunnyPlayer — a legenda lembrada", () => {
+  const aviso = (data: unknown, origin = "https://iframe.mediadelivery.net", source = document.querySelector("iframe")?.contentWindow ?? null) =>
+    window.dispatchEvent(new MessageEvent("message", { origin, data, source }));
+
+  it("deixada ligada: abre com ela ligada, no idioma do curso; sem, abre como veio", () => {
+    const { unmount } = render(<BunnyPlayer src={AULA} title="Aula" legenda="pt" />);
+    expect(params().get("captions")).toBe("pt");
+    expect(params().get("autoplay")).toBe("true");
+    unmount();
+    render(<BunnyPlayer src={AULA} title="Aula" legenda={null} />);
+    expect(document.querySelector("iframe")?.getAttribute("src")).toBe(AULA);
+  });
+
+  it("com o ponto e a legenda: os dois no endereço", () => {
+    render(<BunnyPlayer src={AULA} title="Aula" comecarEm={42} legenda="en" />);
+    expect(params().get("t")).toBe("42s");
+    expect(params().get("captions")).toBe("en");
+  });
+
+  it("o aviso do script, vindo DESTA moldura: ligou e desligou chegam à página", () => {
+    const aoMudarLegenda = vi.fn();
+    render(<BunnyPlayer src={AULA} title="Aula" aoMudarLegenda={aoMudarLegenda} />);
+
+    aviso({ origem: "jilsonsantana-legenda", ligada: true });
+    aviso({ origem: "jilsonsantana-legenda", ligada: false });
+
+    expect(aoMudarLegenda.mock.calls).toEqual([[true], [false]]);
+  });
+
+  it("de outra origem, de outra moldura ou com outro formato: nada chega", () => {
+    const aoMudarLegenda = vi.fn();
+    render(<BunnyPlayer src={AULA} title="Aula" aoMudarLegenda={aoMudarLegenda} />);
+
+    aviso({ origem: "jilsonsantana-legenda", ligada: true }, "https://evil.example");
+    aviso({ origem: "jilsonsantana-legenda", ligada: true }, "https://iframe.mediadelivery.net", window);
+    aviso({ origem: "jilsonsantana-legenda", ligada: "sim" });
+
+    expect(aoMudarLegenda).not.toHaveBeenCalled();
+  });
+
+  it("o vídeo de apresentação não ouve aviso nenhum", () => {
+    const ouvir = vi.spyOn(window, "addEventListener");
+    render(<BunnyPlayer src={ENDERECO("aaa", "t1")} title="Apresentação" />);
+    expect(ouvir.mock.calls.some(([tipo]) => tipo === "message")).toBe(false);
+    ouvir.mockRestore();
+  });
+});
+
 // O ENDEREÇO VENCIDO (decisão do operador, 06/10/2026: "se expirar, recarrega a
 // aula"). Abrir o player com ele vencido dá 403 (doc do Bunny); a aba aberta de um
 // dia para o outro pede um novo, e o player recarrega no mesmo ponto, tocando.
@@ -155,6 +206,17 @@ describe("BunnyPlayer — o endereço vencido", () => {
     expect(params().get("autoplay")).toBe("true");
     // Moldura nova também na renovação: nada de entrada extra no histórico.
     expect(document.querySelector("iframe")).not.toBe(antes);
+  });
+
+  it("vencido, com a legenda deixada ligada: o endereço novo continua com ela", async () => {
+    const aoVencer = vi.fn();
+    const { rerender } = render(<BunnyPlayer src={VENCIDO} title="Aula" legenda="pt" aoVencer={aoVencer} />);
+    await waitFor(() => expect(aoVencer).toHaveBeenCalledTimes(1));
+
+    rerender(<BunnyPlayer src={NOVO} title="Aula" legenda="pt" aoVencer={aoVencer} />);
+
+    expect(params().get("token")).toBe("novo");
+    expect(params().get("captions")).toBe("pt");
   });
 
   it("vencido antes de o vídeo andar: recarrega no ponto com que abriu", async () => {

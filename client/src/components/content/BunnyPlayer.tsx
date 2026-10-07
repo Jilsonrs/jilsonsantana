@@ -1,65 +1,21 @@
 import { useEffect, useRef, useState } from "react";
-import { PONTO_COMECO, pontoUtil } from "@jilson/core";
+import { pontoUtil } from "@jilson/core";
 import { ouvirPlayer } from "@/lib/player-do-bunny";
+import { avisoDeLegenda } from "@/lib/legenda-lembrada";
+import { FOLGA_DO_VENCIMENTO, enderecoDoPlayer, vencimento, venceu, videoDoEndereco } from "@/lib/endereco-do-player";
 
 /**
  * O player do Bunny Stream, num quadro 16:9. O endereço vem SEMPRE do servidor
  * (derivado lá, nunca montado aqui), então este componente não conhece chave,
- * biblioteca nem token. A tela só acrescenta ONDE COMEÇAR (`t`, parâmetro de embed
- * do Stream, fora do token). Tocar sozinho ou não também vem do servidor: a aula
- * toca, a apresentação abre pausada (03/10/2026) — aqui nunca se muda isso.
+ * biblioteca nem token. A tela só acrescenta ONDE COMEÇAR (`t`) e, quando o aluno
+ * deixou ligada, a LEGENDA (`captions`) — parâmetros de embed do Stream, fora do token
+ * (`lib/endereco-do-player.ts`). Tocar sozinho ou não vem do servidor: a aula toca, a
+ * apresentação abre pausada (03/10/2026) — aqui nunca se muda isso.
  *
  * `referrerPolicy="strict-origin-when-cross-origin"` é exigência do Bunny: com
  * "Block Direct URL File Access" ligado na biblioteca, uma política mais estrita
  * no site faz o Bunny ler o acesso como direto e recusar o vídeo (bunny.md §7).
  */
-/** O vídeo do endereço, sem o token e a validade, que mudam a cada resposta do servidor. */
-function videoDoEndereco(src: string): string {
-  return src.split("?")[0];
-}
-
-/**
- * O endereço do player abrindo no ponto: `t=<segundos>s` (formato da doc do Bunny
- * Stream). Antes do começo útil, ou sem ponto, o endereço como veio do servidor.
- */
-function enderecoNoPonto(src: string, segundos: number | null): string {
-  if (segundos === null || segundos < PONTO_COMECO) return src;
-  let url: URL;
-  try {
-    url = new URL(src);
-  } catch {
-    return src;
-  }
-  url.searchParams.set("t", `${Math.floor(segundos)}s`);
-  return url.toString();
-}
-
-/**
- * O ENDEREÇO VENCIDO (decisão do operador, 06/10/2026: "se expirar, recarrega a
- * aula"). O endereço assinado vale 24 h (`expires`, em segundos); a doc do Bunny diz
- * que abrir o player com ele vencido dá 403. Uma aba aberta de um dia para o outro
- * ficaria com ele: então, um pouco antes de vencer — ou se a pessoa der play num
- * vencido —, a aula pede um endereço novo ao servidor e o player recarrega no
- * mesmo ponto.
- */
-const FOLGA_DO_VENCIMENTO = 10 * 60;
-
-/** Quando o endereço vence (segundos), ou `null` se ele não disser. */
-function vencimento(endereco: string): number | null {
-  try {
-    const expira = Number(new URL(endereco).searchParams.get("expires"));
-    return Number.isFinite(expira) && expira > 0 ? expira : null;
-  } catch {
-    return null;
-  }
-}
-
-/** O endereço já venceu (ou vence nos próximos minutos)? Sem `expires`, nunca. */
-function venceu(endereco: string, agora = Date.now()): boolean {
-  const expira = vencimento(endereco);
-  return expira !== null && agora / 1000 >= expira - FOLGA_DO_VENCIMENTO;
-}
-
 /** Depois de pedir um endereço novo, quanto esperar antes de pedir outra vez (se o primeiro pedido falhou). */
 const INTERVALO_ENTRE_PEDIDOS = 30_000;
 
@@ -67,6 +23,8 @@ export function BunnyPlayer({
   src,
   title,
   comecarEm = null,
+  legenda = null,
+  aoMudarLegenda,
   aoConcluir,
   aoTerminar,
   aoAndar,
@@ -81,6 +39,13 @@ export function BunnyPlayer({
    * AULA, 06/10/2026). Vazio, do começo. O vídeo de apresentação não tem.
    */
   comecarEm?: number | null;
+  /**
+   * O idioma da legenda que abre LIGADA — o aluno a deixou ligada no CC (Bloco AULA,
+   * etapa 6, 07/10/2026). Vazio, abre desligada, como o operador decidiu.
+   */
+  legenda?: string | null;
+  /** O aluno ligou ou desligou a legenda no CC do player (o aviso do nosso script, `bunny.md`). */
+  aoMudarLegenda?: (ligada: boolean) => void;
   /**
    * Chamado UMA vez quando o aluno chega a 90% do vídeo (Fase 5, decisão do
    * operador de 03/10/2026).
@@ -113,11 +78,11 @@ export function BunnyPlayer({
   // aba não pode recomeçar o vídeo). O servidor assina de novo a cada busca, com
   // token e validade novos; trocar o `src` recarregaria o player do zero. Só um
   // vídeo DIFERENTE troca o endereço — começando no ponto que veio com ele.
-  const [endereco, setEndereco] = useState(() => enderecoNoPonto(src, comecarEm));
-  if (videoDoEndereco(src) !== videoDoEndereco(endereco)) setEndereco(enderecoNoPonto(src, comecarEm));
+  const [endereco, setEndereco] = useState(() => enderecoDoPlayer(src, comecarEm, legenda));
+  if (videoDoEndereco(src) !== videoDoEndereco(endereco)) setEndereco(enderecoDoPlayer(src, comecarEm, legenda));
   // O MESMO vídeo só troca de endereço quando o que está no player venceu e o
   // servidor mandou um que vale: recarrega no ponto em que estava.
-  else if (venceu(endereco) && !venceu(src)) setEndereco(enderecoNoPonto(src, pontoAtual(src)));
+  else if (venceu(endereco) && !venceu(src)) setEndereco(enderecoDoPlayer(src, pontoAtual(src), legenda));
   // As funções mais recentes, sem voltar a ouvir o player a cada desenho da tela.
   const aoConcluirRef = useRef(aoConcluir);
   aoConcluirRef.current = aoConcluir;
@@ -131,7 +96,22 @@ export function BunnyPlayer({
   aoTocarRef.current = aoTocar;
   const aoVencerRef = useRef(aoVencer);
   aoVencerRef.current = aoVencer;
+  const aoMudarLegendaRef = useRef(aoMudarLegenda);
+  aoMudarLegendaRef.current = aoMudarLegenda;
+  const ouvirLegenda = aoMudarLegenda !== undefined;
   const renova = aoVencer !== undefined;
+
+  // Efeito: o aviso de legenda chega por mensagem do navegador, vinda da moldura do
+  // player — só a desta moldura vale (`avisoDeLegenda` confere a janela e a origem).
+  useEffect(() => {
+    if (!ouvirLegenda) return;
+    const aoReceber = (evento: MessageEvent) => {
+      const ligada = avisoDeLegenda(evento, iframeRef.current?.contentWindow ?? null);
+      if (ligada !== null) aoMudarLegendaRef.current?.(ligada);
+    };
+    window.addEventListener("message", aoReceber);
+    return () => window.removeEventListener("message", aoReceber);
+  }, [ouvirLegenda]);
   // Um pedido por vez: o play avisa várias vezes por segundo, e cada pedido novo
   // cancelaria o anterior antes de ele chegar.
   const ultimoPedido = useRef(0);

@@ -13,6 +13,8 @@ const concluirAula = vi.fn();
 const getSalvos = vi.fn();
 const alternarSalvo = vi.fn();
 const gravarPonto = vi.fn();
+const getPreferencias = vi.fn();
+const salvarPreferencias = vi.fn();
 vi.mock("@/lib/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/api")>()),
   getLessonPage: (...args: unknown[]) => getLessonPage(...args),
@@ -20,6 +22,8 @@ vi.mock("@/lib/api", async (importOriginal) => ({
   getSalvos: (...args: unknown[]) => getSalvos(...args),
   alternarSalvo: (...args: unknown[]) => alternarSalvo(...args),
   gravarPonto: (...args: unknown[]) => gravarPonto(...args),
+  getPreferencias: (...args: unknown[]) => getPreferencias(...args),
+  salvarPreferencias: (...args: unknown[]) => salvarPreferencias(...args),
 }));
 // O player do Bunny é ouvido pelo NOSSO módulo; aqui ele vira dublê, e o teste
 // "chega aos 90%" chamando o aviso que a página entregou.
@@ -115,6 +119,8 @@ beforeEach(() => {
   alternarSalvo.mockReset().mockResolvedValue(undefined);
   ouvirPlayer.mockReset().mockReturnValue(() => {});
   gravarPonto.mockReset().mockResolvedValue(undefined);
+  getPreferencias.mockReset().mockResolvedValue({ legendas: false });
+  salvarPreferencias.mockReset().mockResolvedValue(undefined);
   agendarNaSaida.mockReset().mockImplementation((): EnvioFalso => ({ cancelar: vi.fn(), enviado: vi.fn(() => false) }));
 });
 
@@ -907,6 +913,131 @@ describe("página da aula — trocar de aula", () => {
     abrir("/aluno/aula/12");
     await screen.findByRole("status");
     expect(screen.queryByRole("link", { name: "Próxima aula" })).toBeNull();
+  });
+});
+
+// A LEGENDA LEMBRADA (Bloco AULA, etapa 6 — decisão do operador, 07/10/2026, como no
+// LinkedIn): começa desligada; o aluno liga no CC do player, e ela continua ligada nas
+// próximas aulas e ao voltar, até ele desligar no mesmo CC. A escolha fica na conta.
+describe("página da aula — a legenda lembrada", () => {
+  const comoMembro = () => useSessionMock.mockReturnValue({ data: { user: { role: Role.MEMBER } }, isPending: false });
+  const captions = (titulo = "Abertura") => new URL(screen.getByTitle(titulo).getAttribute("src") ?? "").searchParams.get("captions");
+  /** O aviso do nosso script, de dentro do player da aula aberta. */
+  const avisoDoPlayer = (ligada: boolean, titulo = "Abertura") =>
+    window.dispatchEvent(
+      new MessageEvent("message", {
+        origin: "https://iframe.mediadelivery.net",
+        data: { origem: "jilsonsantana-legenda", ligada },
+        source: (screen.getByTitle(titulo) as HTMLIFrameElement).contentWindow,
+      }),
+    );
+  /** O curso com duas aulas de VÍDEO seguidas: 11 e 13. */
+  const duasDeVideo = (id: number): PaginaDaAula => {
+    const base = pagina(id === 13 ? { id: 13, title: "Fechamento" } : {});
+    const [abertura] = base.curso.modulos[0].aulas;
+    return {
+      ...base,
+      curso: {
+        ...base.curso,
+        modulos: [
+          {
+            ...base.curso.modulos[0],
+            aulas: [abertura, { id: 13, title: "Fechamento", kind: "VIDEO", isFreePreview: false, status: "PUBLISHED", temArquivos: false, duracaoSegundos: 60 }],
+          },
+        ],
+      },
+    };
+  };
+
+  it("deixada ligada: a aula de vídeo abre com ela ligada, no idioma do curso", async () => {
+    comoMembro();
+    getPreferencias.mockResolvedValue({ legendas: true });
+    abrir();
+    await screen.findByTitle("Abertura");
+    expect(captions()).toBe("pt");
+  });
+
+  it("desligada (o padrão): a aula abre sem ela", async () => {
+    comoMembro();
+    abrir();
+    await screen.findByTitle("Abertura");
+    expect(captions()).toBeNull();
+  });
+
+  it("o aluno liga no CC: grava na conta, e a PRÓXIMA aula já abre com ela ligada", async () => {
+    comoMembro();
+    getLessonPage.mockImplementation((id: number) => Promise.resolve(duasDeVideo(id)));
+    abrir();
+    await screen.findByTitle("Abertura");
+    await waitFor(() => expect(ouvirPlayer).toHaveBeenCalled());
+    expect(captions()).toBeNull();
+
+    avisoDoPlayer(true);
+    await waitFor(() => expect(salvarPreferencias).toHaveBeenCalledWith({ legendas: true }));
+
+    avisosDoPlayer().aoTerminar();
+    expect(await screen.findByTitle("Fechamento")).toBeTruthy();
+    expect(captions("Fechamento")).toBe("pt");
+  });
+
+  it("e desliga no CC: grava, e a próxima abre sem ela", async () => {
+    comoMembro();
+    getPreferencias.mockResolvedValue({ legendas: true });
+    getLessonPage.mockImplementation((id: number) => Promise.resolve(duasDeVideo(id)));
+    abrir();
+    await screen.findByTitle("Abertura");
+    await waitFor(() => expect(ouvirPlayer).toHaveBeenCalled());
+
+    avisoDoPlayer(false);
+    await waitFor(() => expect(salvarPreferencias).toHaveBeenCalledWith({ legendas: false }));
+
+    avisosDoPlayer().aoTerminar();
+    expect(await screen.findByTitle("Fechamento")).toBeTruthy();
+    expect(captions("Fechamento")).toBeNull();
+  });
+
+  it("aviso igual ao que a conta já tem (o player se preparando): nada é gravado", async () => {
+    comoMembro();
+    getPreferencias.mockResolvedValue({ legendas: true });
+    abrir();
+    await screen.findByTitle("Abertura");
+    avisoDoPlayer(true);
+    await new Promise((r) => setTimeout(r, 20));
+    expect(salvarPreferencias).not.toHaveBeenCalled();
+  });
+
+  it("enquanto a preferência não chega, o player espera (ela vai no endereço do vídeo)", async () => {
+    comoMembro();
+    let soltar: (p: { legendas: boolean }) => void = () => {};
+    getPreferencias.mockReturnValue(new Promise((r) => (soltar = r)));
+    abrir();
+    // A aula já chegou (o topo mostra o título dela); só o player espera.
+    expect((await screen.findByRole("heading", { level: 1 })).textContent).toContain("Abertura");
+    expect(screen.getByText("Carregando…")).toBeTruthy();
+    expect(screen.queryByTitle("Abertura")).toBeNull();
+
+    soltar({ legendas: true });
+    expect(await screen.findByTitle("Abertura")).toBeTruthy();
+    expect(captions()).toBe("pt");
+  });
+
+  it("a busca da preferência falhou: a aula abre assim mesmo, sem legenda", async () => {
+    comoMembro();
+    getPreferencias.mockRejectedValue(new Error("rede"));
+    abrir();
+    expect(await screen.findByTitle("Abertura")).toBeTruthy();
+    expect(captions()).toBeNull();
+  });
+
+  it("visitante: nada é buscado nem gravado, e a aula abre sem legenda", async () => {
+    getLessonPage.mockResolvedValue(pagina({ isFreePreview: true }));
+    abrir();
+    await screen.findByTitle("Abertura");
+    avisoDoPlayer(true);
+    await new Promise((r) => setTimeout(r, 20));
+    expect(getPreferencias).not.toHaveBeenCalled();
+    expect(salvarPreferencias).not.toHaveBeenCalled();
+    expect(captions()).toBeNull();
   });
 });
 
