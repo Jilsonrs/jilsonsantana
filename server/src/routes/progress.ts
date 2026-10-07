@@ -1,10 +1,11 @@
 import { Router } from "express";
-import { ContentStatus } from "@jilson/core";
+import { ContentStatus, pontoDaAulaSchema } from "@jilson/core";
 import { prisma } from "../lib/prisma.js";
-import { requireAdmin, requireAuth } from "../middleware/auth.js";
-import { parseId } from "../lib/http.js";
+import { loadSession, requireAdmin, requireAuth } from "../middleware/auth.js";
+import { parseId, validate } from "../lib/http.js";
 import { aulaLiberada, temAcessoAtivo } from "../lib/acesso.js";
 import { concluirAula } from "../lib/progresso.js";
+import { aulaDeEntrada, gravarPonto } from "../lib/onde-parou.js";
 import { enviarParabensSeConcluiu, semDerrubar } from "../lib/notificacoes.js";
 
 const router = Router();
@@ -66,6 +67,70 @@ router.put("/admin/lessons/:id/concluida", requireAdmin, async (req, res) => {
   // O admin conta todas as aulas, como a barra de progresso dele.
   await semDerrubar("parabéns", user.id, aula.id, () => enviarParabensSeConcluiu(user.id, aula.id, false));
   res.status(204).end();
+});
+
+// ONDE A PESSOA PAROU (Bloco AULA — plano aprovado pelo operador em 06/10/2026).
+// A tela grava sozinha: ao abrir a aula, de tempos em tempos enquanto o vídeo
+// toca, na pausa e ao sair; no fim do vídeo, o ponto fica vazio. As mesmas duas
+// portas e a MESMA regra do concluir: só grava o ponto de quem pode assistir.
+
+// POST /api/lessons/:id/ponto — o aluno está nesta aula, neste segundo.
+router.post("/lessons/:id/ponto", requireAuth, async (req, res) => {
+  const user = req.user;
+  if (!user) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  const id = parseId(req.params.id, res);
+  if (id === null) return;
+  const body = validate(pontoDaAulaSchema, req.body, res);
+  if (body === null) return;
+  const aula = await prisma.lesson.findFirst({ where: { id, ...cadeiaPublicada }, select: { id: true, isFreePreview: true } });
+  if (!aula) {
+    res.status(404).json({ error: "NotFound" });
+    return;
+  }
+  if (!aulaLiberada(aula, await temAcessoAtivo(user.id))) {
+    res.status(403).json({ error: "AssinaturaNecessaria" });
+    return;
+  }
+  await gravarPonto(user.id, aula.id, body.segundos);
+  res.status(204).end();
+});
+
+// POST /api/admin/lessons/:id/ponto — o admin, em qualquer status (ele testa como aluno).
+router.post("/admin/lessons/:id/ponto", requireAdmin, async (req, res) => {
+  const user = req.user;
+  if (!user) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  const id = parseId(req.params.id, res);
+  if (id === null) return;
+  const body = validate(pontoDaAulaSchema, req.body, res);
+  if (body === null) return;
+  const aula = await prisma.lesson.findUnique({ where: { id }, select: { id: true } });
+  if (!aula) {
+    res.status(404).json({ error: "NotFound" });
+    return;
+  }
+  await gravarPonto(user.id, aula.id, body.segundos);
+  res.status(204).end();
+});
+
+// GET /api/cursos/:slug/entrada — em que aula esta pessoa entra no curso: a última
+// em que esteve (ou, se terminou o curso, a primeira que não concluiu). Visitante
+// e quem nunca abriu: a primeira. Só a cadeia publicada.
+router.get("/cursos/:slug/entrada", async (req, res) => {
+  const sessao = await loadSession(req);
+  const entrada = await aulaDeEntrada(req.params.slug, sessao?.user.id);
+  if (!entrada) {
+    res.status(404).json({ error: "NotFound" });
+    return;
+  }
+  // Muda com o progresso de quem pede: nunca em cache.
+  res.set("Cache-Control", "private, no-store");
+  res.json(entrada);
 });
 
 // GET /api/progresso/cursos — o progresso de quem pede em cada curso que ele

@@ -204,8 +204,9 @@
 > (aula concluída sozinha, barra na aula e no cartão), o vídeo que não recomeça ao trocar de aba
 > (a apresentação abre pausada, a aula toca sozinha) e o "Salvos". **Primeiro teste com o player de
 > verdade: com o operador** (assistir uma aula até perto do fim e ver a barra andar).
-> **PLANO PRONTO em 06/10/2026 — Bloco AULA (a tela onde o aluno estuda), pedido do operador;
-> aguarda o OK dele para a etapa 1.** A análise explica os 3 erros relatados (entrar sempre na 1ª
+> **Bloco AULA (a tela onde o aluno estuda), pedido do operador em 06/10/2026 — ETAPA 1 FEITA no
+> `dev` (o servidor: o ponto e a última aula na conta, a entrada no curso; migration aplicada no
+> dev). Próxima: a etapa 2 (a tela).** A análise explica os 3 erros relatados (entrar sempre na 1ª
 > aula, a próxima abrindo pausada, o ponto só no navegador) e traz 4 achados novos, provados (o
 > Voltar com o vídeo errado, a gaveta do celular aberta, a tela piscando entre aulas, a compilação
 > acima do piso das bibliotecas). 5 etapas: ver Fase 5 → **Bloco AULA**. Antes do teste no ar: a P51.
@@ -1200,6 +1201,15 @@ tornada executável — não uma lista nova):
       vazar. **Entra no MESMO bloco que introduzir o HTML público de servidor**, não antes: a CSP
       precisa conhecer a origem do Bunny (`frame-src`) e a da Stripe (`script-src`), e escrita antes
       é escrita duas vezes. Dependência de runtime nova ⇒ **decisão de nível de plano**.
+- [ ] **Nenhum limite de pedidos por conta na API do aluno** *(achado P2 da revisão de segurança do
+      Bloco AULA, etapa 1, 06/10/2026)*. O `POST /api/lessons/:id/ponto` nasceu para ser chamado em
+      intervalo (a cada ~15 s com o vídeo tocando) e custa ~5 idas ao banco; quem tem conta pode
+      repeti-lo sem teto contra o Neon. **Não é só dele:** o `GET /api/lessons/:id/aula`, mais
+      pesado, também não tem limite — então a decisão é um limite **por conta, para a API logada**,
+      e não um remendo numa rota. O risco é carga, não dado: o índice único (pessoa × aula) segura o
+      número de linhas, e o cadastro é fechado. `express-rate-limit` é dependência nova ⇒ **decisão
+      de plano**; um contador em memória é a alternativa sem dependência. *Esta decisão se reabre
+      (vira prioridade) com o primeiro aluno pagante, ou com qualquer sinal de abuso no log.*
 
 ### Bloco S — Shell do aluno: menu lateral e, depois, painel  *(Ago 2026 · direção do operador)*
 
@@ -3442,7 +3452,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       construir.
 - **Done when:** "marquei como vista" works, trilha % completion shows, AND events are captured for future analytics.
 
-### Bloco AULA — A tela onde o aluno estuda, no nível do LinkedIn Learning  *(pedido do operador, 06/10/2026 · PLANO PRONTO, aguarda o OK dele para a etapa 1 · etapas 1 e 2 tocam a trava da aula)*
+### Bloco AULA — A tela onde o aluno estuda, no nível do LinkedIn Learning  *(pedido do operador, 06/10/2026 · plano aprovado por ele no mesmo dia · etapas 1 e 2 tocam a trava da aula)*
 
 **O pedido** *(comportamento esperado, nas palavras do operador, 06/10/2026 — é a tela "coração da
 escola", e tem que ser impecável no computador, no celular e em aparelho antigo, com legenda)*:
@@ -3548,7 +3558,7 @@ da aba Player — **3 consultas na análise (passou de 2: anotado)**. A sessão 
 `aulaLiberada()`/`temAcessoAtivo()` e lê progresso de outra pessoa se errar o filtro).
 
 **Etapas** — uma por commit no `dev`; seguro parar depois de qualquer uma:
-- [ ] **Etapa 1 — servidor (G):** a migration (`migrate diff` + `migrate deploy` no dev; conferir RLS
+- [x] **Etapa 1 — servidor (G):** a migration (`migrate diff` + `migrate deploy` no dev; conferir RLS
       e `migrate diff` vazio), o schema no `core`, `POST …/ponto` (aluno e admin), `aula.ponto`, a
       entrada no curso, e zerar o ponto ao trocar o vídeo. **Testes de servidor:** 401 sem login ·
       404 rascunho e cadeia quebrada · 403 aula paga sem assinatura · 204 assinante e prévia grátis
@@ -3557,6 +3567,25 @@ da aba Player — **3 consultas na análise (passou de 2: anotado)**. A sessão 
       concluídas → 1ª, visitante → 1ª, curso não publicado → 404 · trocar o vídeo zera. Revisão de
       segurança. **Mutação:** sem a trava de acesso, sem o filtro da cadeia, ignorando o
       "terminado" → reprovam.
+      *(06/10/2026, no `dev`.)* Migration `20261006210000_ponto_da_aula` — só acrescenta as duas
+      colunas; **aplicada no dev** (produção aplica no próximo publish, pelo pre-deploy). **Passo 0
+      no dev:** as mesmas contagens antes e depois (2 usuários, 2 cursos, 5 aulas, 63 sessões), admin
+      e aluno entram, zero tabelas sem RLS, `migrate diff` vazio; a suíte recria o banco de teste do
+      zero com ela. O código mora em `server/src/lib/onde-parou.ts` (gravar o ponto, o ponto que
+      vale, a entrada) e `core/src/schemas/progress.ts`; as rotas em `routes/progress.ts`; o
+      `aula.ponto` em `routes/lesson-view.ts`; a troca de vídeo zera o ponto **para zero, não vazio**
+      (vazio quer dizer "viu até o fim" e faria a entrada achar que o curso terminou). **Testes:**
+      `onde-parou.test.ts` (41) e 1 em `lesson-video.test.ts`; suíte inteira verde. **Revisão de
+      segurança** (`security-vulnerability-reviewer`): **sem P0/P1**; dois P2 corrigidos na hora — o
+      teste de que ABRIR a aula não conta como CONCLUIR (nas concluídas da página, no % do curso,
+      nos parabéns e na entrada; antes, tirar o filtro `completed: true` passava a suíte) e a trava
+      de `esquecerPontosDaAula` sem aula (zeraria o ponto de todo mundo); o terceiro, o limite de
+      pedidos por conta, foi para o *Backlog P2 — endurecimento* (vale para a API logada inteira).
+      **Mutação: as 16 partes reprovam** — além das três acima, a entrada sem filtrar a aula
+      publicada, na ordem de criação, lendo o histórico de outra pessoa; o ponto saindo na aula
+      bloqueada; o fim do vídeo valendo como ponto; gravar desmarcando a conclusão; a troca de vídeo
+      zerando para vazio, zerando todas as aulas, ou não zerando; a rota do admin aberta a qualquer
+      logado; as concluídas e o % contando a aula só aberta; e zerar sem a trava.
 - [ ] **Etapa 2 — tela: entrar onde parou e tocar sempre (G):** `CourseEntryPage` pela rota nova,
       gravar e ler o ponto na conta, sair o "pausado" e o `localStorage`, os envios na saída.
       Componente: a entrada (carregando, erro, vazio, destino) · player no ponto e tocando ·

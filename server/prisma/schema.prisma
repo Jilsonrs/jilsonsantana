@@ -361,6 +361,16 @@ model LessonProgress {
   lesson      Lesson    @relation(fields: [lessonId], references: [id], onDelete: Cascade)
   completed   Boolean   @default(false)
   completedAt DateTime?
+  // ONDE A PESSOA PAROU (Bloco AULA — plano aprovado pelo operador em 06/10/2026):
+  // quem sai e volta — no mesmo aparelho ou em outro, amanhã ou daqui a um ano —
+  // abre a MESMA aula, no MESMO segundo. Fica na CONTA, e não no navegador: o
+  // Safari apaga o que o site guarda no aparelho depois de 7 dias sem visita.
+  // `positionSeconds`: o segundo do vídeo; vazio = viu até o fim (ou aula sem
+  // vídeo). `lastSeenAt`: a última vez que a pessoa esteve na aula — é o que diz
+  // em que aula ela entra quando volta ao curso. Por isso a linha pode existir
+  // SEM estar concluída: quem lê conclusão filtra `completed: true`.
+  positionSeconds Int?
+  lastSeenAt      DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
