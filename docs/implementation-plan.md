@@ -204,6 +204,14 @@
 > (aula concluída sozinha, barra na aula e no cartão), o vídeo que não recomeça ao trocar de aba
 > (a apresentação abre pausada, a aula toca sozinha) e o "Salvos". **Primeiro teste com o player de
 > verdade: com o operador** (assistir uma aula até perto do fim e ver a barra andar).
+> **PUBLICADO em 07/10/2026, por último (`main` = `2203e69`, CI verde nos dois jobs, deploy ok; a
+> migration `preferencia_do_aluno` aplicada pelo pre-deploy):** o Bloco AULA, etapa 6 — a legenda
+> lembrada pelo CC do player, como no LinkedIn —, com o script já colado no Bunny pelo operador
+> (P52) e a janela da escola isolada (`Cross-Origin-Opener-Policy`). **Provado no site:** a versão
+> nova (`muy035j7-f3b5e71d`); `/api/me/preferences` responde 401 sem login; o cabeçalho
+> `cross-origin-opener-policy: same-origin-allow-popups` nas respostas; a entrada do curso segue
+> levando à aula 14. *O teste com o vídeo real é do operador: ligar o CC numa aula e ver a próxima
+> abrir com ela; desligar e ver a próxima abrir sem; o player tocando normalmente.*
 > **PUBLICADO em 07/10/2026, depois (`main` = `bd3d895`, CI verde nos dois jobs, deploy ok):** o
 > conserto do ponto do vídeo — o servidor aceita o segundo com casas decimais que o player manda, e
 > recarregar, outro aparelho e voltar outro dia abrem no mesmo segundo (defeito do agente, achado no
