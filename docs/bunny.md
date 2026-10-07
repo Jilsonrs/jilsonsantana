@@ -119,75 +119,61 @@ frente do site, por exemplo), ou se o Enterprise DRM entrar só para as aulas.*
 - **A legenda lembrada** *(Bloco AULA, etapa 6 — decisão do operador, 07/10/2026, como no LinkedIn)*:
   começa desligada; o aluno liga **no CC do próprio player**, e ela continua ligada nas próximas
   aulas e ao sair e voltar, em qualquer aparelho, até ele desligar no mesmo CC. **Quem decide é a
-  CONTA do aluno:** a página grava a escolha (`/api/me/preferences`) e abre cada aula com
-  `captions=<idioma do curso>` enquanto ela estiver ligada (`client/src/lib/legenda-lembrada.ts`).
+  CONTA do aluno:** a página grava a escolha (`/api/me/preferences`) e, para quem está logado, abre
+  **toda** aula com `captions=<idioma do curso>` (ligada) ou **`captions=off`** (desligada) —
+  `client/src/lib/legenda-lembrada.ts`. **Medido no player novo (07/10/2026):** com `captions`, a
+  página vem com `captions-forced`, e o player **ignora a memória dele no aparelho** (a chave
+  `bunny_stream_settings_<biblioteca>`); com `off`, nenhuma faixa abre. Sem o parâmetro (visitante),
+  o player decide pela memória do aparelho.
   **Por que precisa de um script no player:** o player.js não avisa quando o CC muda (só play,
-  pausa, tempo e fim — doc).
-  **O player da biblioteca é o PLYR** *(fato medido em 07/10/2026, na página do player servida no
-  ar, como Chrome de computador e como iPhone: `plyr/3.7.8.4-bn`, com "Enable legacy player"
-  desligado)* — **não** o player de componentes media-chrome que a doc do Bunny descreve. A primeira
-  versão do script procurava o media-chrome e **nunca avisou nada**; o que funcionava no iPhone era a
-  memória do próprio Plyr, que guarda a legenda (`captions` e `language`) no armazenamento do
-  navegador **dentro da moldura** (chave `plyr--lib-762605`) e a repõe ao abrir. No Chrome do
-  computador essa memória falha (o idioma do navegador decide a faixa, e o Chrome pode bloquear o
-  armazenamento da moldura). **Por isso o script faz duas coisas:** (1) **apaga a memória de legenda
-  do Plyr** antes de ele começar, para a conta ser a única que decide — sem isso, o aparelho que
-  lembrou "ligada" contradiz a conta; (2) avisa a página quando o Plyr dispara `captionsenabled` ou
-  `captionsdisabled` **logo depois de um toque do aluno** (o player ligando sozinho não conta),
-  **um aviso por clique, com o estado final** — medido: o "Desativado" do menu do player dispara
-  desligou → ligou → desligou em ~14 ms, e três gravações quase juntas podiam chegar fora de ordem.
-  **Provado com o Plyr do Bunny num navegador de verdade** (07/10/2026). **Onde colar** (operador —
-  P53): Stream → biblioteca `jilsonsantana-stream` → **Player** → **Custom HTML head** → **apagar o
-  script anterior** e colar o bloco abaixo → **Save Settings**. *Gatilhos:* o script para de
-  funcionar se o Bunny trocar o player (a página dele deixar de carregar o `plyr`) — aí se olha a
-  página do player de novo antes de escrever outro; **"Reset to Default"** na aba apaga o script. Em
-  todos esses casos a aula continua funcionando — só a legenda deixa de ser lembrada.
+  pausa, tempo e fim — doc). **O que o script ouve:** os **pedidos** de legenda do player
+  (`mediashowsubtitlesrequest`, `mediadisablesubtitlesrequest`, `mediatogglesubtitlesrequest`), que
+  ele dispara **só por ação de quem assiste** — botão CC, menu ou tecla C; abrir com a legenda
+  ligada pelo endereço não dispara nenhum (é o mesmo sinal que o próprio player usa para saber que
+  "o aluno escolheu"). Depois de cada pedido, espera o player assentar e avisa o **estado final**,
+  lido no atributo `mediasubtitlesshowing` do `media-controller`: **um aviso por clique** — o
+  "Desligado" do menu dispara dois pedidos seguidos (medido).
+  **Provado com o player novo do Bunny num Chrome de verdade** (07/10/2026; banco de prova local
+  fora do repo — a página do player baixada do ar, com um vídeo público de teste no lugar do nosso,
+  que só toca no domínio da escola): abre como a conta manda mesmo com o aparelho lembrando o
+  contrário; CC e menu, ligar e desligar → um aviso cada; abrir ligada → nenhum aviso.
+  **Histórico, para não repetir:** o primeiro script (07/10) foi escrito para este player, mas o
+  site ainda abria o **antigo** (Plyr, `iframe.mediadelivery.net` — §7), onde ele nunca avisou
+  nada; no iPhone a legenda "funcionava" pela memória do próprio Plyr. **A página do player se olha
+  antes de escrever script para ela.**
+  **Onde colar** (operador — P53): Stream → biblioteca `jilsonsantana-stream` → **Player** →
+  **Custom HTML head** → **apagar o script anterior** e colar o bloco abaixo → **Save Settings**.
+  *Gatilhos:* o script para de funcionar se o Bunny mudar os nomes desses pedidos ou do atributo
+  (são do media-chrome, a base do player); **"Reset to Default"** na aba apaga o script. Em todos
+  esses casos a aula continua funcionando — só a legenda deixa de ser lembrada.
 
   ```html
   <script>
   /* jilsonsantana.com — a legenda lembrada (Bloco AULA, etapa 6; refeito em 07/10/2026 para o
-     player do Bunny, que é o Plyr). Quem diz se a legenda abre ligada é a CONTA do aluno.
-     1. Apaga a memória de legenda do próprio player neste aparelho, antes de ele começar.
-     2. Avisa a página da aula quando o ALUNO liga ou desliga no CC.
-     Só manda para www.jilsonsantana.com, e só "ligou" ou "desligou". */
+     player novo do Bunny). Quem diz se a legenda abre ligada é a CONTA do aluno: a escola abre o
+     player com captions=<idioma> ou captions=off. Este script só avisa a página da aula quando o
+     ALUNO pede para ligar ou desligar (botão CC, menu ou tecla C): o player dispara esses pedidos
+     só por ação de quem assiste. Só manda para www.jilsonsantana.com, e só "ligou" ou "desligou". */
   (function () {
     var DESTINO = "https://www.jilsonsantana.com";
-    var JANELA_DO_TOQUE = 3000;
     var ASSENTAR = 400;
-    var tocouEm = 0;
-    var ligada = null;
     var espera = null;
-    try {
-      var chaves = [];
-      for (var i = 0; i < localStorage.length; i++) chaves.push(localStorage.key(i));
-      chaves.forEach(function (chave) {
-        if (!chave || chave.indexOf("plyr") !== 0) return;
-        try {
-          var salvo = JSON.parse(localStorage.getItem(chave) || "null");
-          if (!salvo || typeof salvo !== "object") return;
-          delete salvo.captions;
-          delete salvo.language;
-          localStorage.setItem(chave, JSON.stringify(salvo));
-        } catch (e) {}
-      });
-    } catch (e) {}
-    ["pointerdown", "keydown", "touchstart"].forEach(function (tipo) {
-      document.addEventListener(tipo, function () { tocouEm = Date.now(); }, true);
-    });
-    /* O menu do player liga e desliga mais de uma vez num clique só: avisa o estado final. */
-    function mudou(agora) {
-      ligada = agora;
-      if (espera === null && Date.now() - tocouEm > JANELA_DO_TOQUE) return;
+    function ligada() {
+      var controle = document.querySelector("media-controller");
+      return Boolean(controle && (controle.getAttribute("mediasubtitlesshowing") || "").trim());
+    }
+    function pediu() {
       if (espera !== null) clearTimeout(espera);
       espera = setTimeout(function () {
         espera = null;
         try {
-          window.parent.postMessage({ origem: "jilsonsantana-legenda", ligada: ligada }, DESTINO);
+          window.parent.postMessage({ origem: "jilsonsantana-legenda", ligada: ligada() }, DESTINO);
         } catch (e) {}
       }, ASSENTAR);
     }
-    document.addEventListener("captionsenabled", function () { mudou(true); }, true);
-    document.addEventListener("captionsdisabled", function () { mudou(false); }, true);
+    ["mediashowsubtitlesrequest", "mediadisablesubtitlesrequest", "mediatogglesubtitlesrequest"].forEach(function (tipo) {
+      document.addEventListener(tipo, pediu, true);
+    });
   })();
   </script>
   ```
@@ -603,7 +589,8 @@ O Bunny gera estes tipos de chave:
 - **Token do embed: CONFIRMADO em 28/09/2026 (context7) e em uso no código** (`tokenDoPlayer`
   e `enderecoAssinado` em `server/src/lib/bunny-stream.ts`): **`SHA256_hex(token_security_key +
   video_id + expires)`**, com `expires` em **segundos**, entregue como `?token=…&expires=…` no
-  iframe `iframe.mediadelivery.net/embed/<biblioteca>/<id>`. A chave é a **token key** da
+  iframe `player.mediadelivery.net/embed/<biblioteca>/<id>` (o player novo, desde 07/10/2026; o
+  mesmo token vale nos dois endereços — medido). A chave é a **token key** da
   biblioteca, não a API key. *(A forma em Base64 que a leitura de 25/09 citava é de outro produto
   — o token da CDN —, não do embed.)* Validade: **24 h** para todo vídeo (§3.1, 28/09).
 - **Com *Block Direct URL File Access* ligado, o iframe precisa de
@@ -624,8 +611,8 @@ O Bunny gera estes tipos de chave:
 - **Confirmado na doc em 27/09, e já em uso no código (Bloco U, etapa 2):** criar o vídeo devolve
   o id em **`guid`** · o envio retomável usa `https://video.bunnycdn.com/tusupload` com os
   cabeçalhos `AuthorizationSignature`, `AuthorizationExpire`, `VideoId` e `LibraryId` · a
-  assinatura é SHA-256 (hex) de biblioteca + chave + validade + id · o player é
-  `iframe.mediadelivery.net/embed/<biblioteca>/<id>`, o dos exemplos oficiais.
+  assinatura é SHA-256 (hex) de biblioteca + chave + validade + id · o player era
+  `iframe.mediadelivery.net/embed/<biblioteca>/<id>` (hoje, o player novo — item abaixo).
   **Confirmado na doc em 28/09 (context7), e em uso no código (`interpretarResumo`):** a miniatura
   padrão é `https://{CDN Hostname da biblioteca}/{id do vídeo}/thumbnail.jpg`. Com o CDN token
   desligado (28/09), ela carrega sem assinatura para quem vem do domínio da escola. **Não
@@ -636,13 +623,23 @@ O Bunny gera estes tipos de chave:
   Por isso a prévia do admin, que se atualiza sozinha, trata como **pronto** o status 4 **ou** o
   `encodeProgress` 100 (`interpretarEstado` em `server/src/lib/bunny-stream.ts`). Se um envio no
   ar ficar "processando" para sempre, é aqui que se ajusta.
-- **Endereço do player a conferir (achado de 27/09, anotado a pedido do operador):** a doc do
-  Bunny mostra que o **player novo** usa `player.mediadelivery.net/embed/` (com a opção *Enable
-  legacy player* desligada em *Player Settings*). Este guia cita o endereço antigo,
-  `iframe.mediadelivery.net`. **Confirmar no build qual vale** para a `jilsonsantana-stream`, e usar
-  o mesmo no iframe e na CSP.
+- **O endereço do player: `player.mediadelivery.net` — RESOLVIDO em 07/10/2026** (o achado de
+  27/09 pedia para confirmar). **Fato medido:** com *Enable legacy player* desligado no painel, o
+  endereço antigo, `iframe.mediadelivery.net`, **continuava entregando o player antigo** (Plyr) —
+  quem escolhe o player é o **endereço**, não o painel. A doc do Bunny: o player antigo está
+  **descontinuado e sai do ar no começo de 2027**. **Decisão do operador (07/10/2026): trocar
+  agora**, e os **botões do player no idioma do app do aluno** (`lang=pt`/`en`; o player novo
+  tem a tradução em português). O mesmo token vale no endereço novo, e ele recusa sem token (403);
+  **e recusa (403) o endereço assinado aberto de outro site ou sem origem — o antigo ABRIA o player
+  nos dois casos** (medido em 07/10/2026, na página do player, com o endereço do vídeo de
+  apresentação: a trava de *Allowed domains* não valia no endereço antigo; um endereço de aula que
+  vazasse abriria o player em qualquer site por 24 h). A troca fecha isso;
+  `t`, `autoplay` e `captions` funcionam igual, e o player.js também (ready, play, pause,
+  timeupdate, ended, seeked, error). *Gatilho de reabertura: o Bunny mudar o endereço de novo, ou
+  um defeito do player novo que o antigo não tinha — voltar é trocar uma linha
+  (`montarEndereco`), só até o antigo sair do ar.*
 - **CSP:** quando o bloco do `helmet` entrar (backlog P2), o `frame-src` precisa do endereço do
-  player (acima: `iframe.mediadelivery.net` ou `player.mediadelivery.net`), e o `img-src` precisa
+  player (`player.mediadelivery.net`, acima), e o `img-src` precisa
   de `img.jilsonsantana.com`.
 
 ### 7.1 Regras do operador para o build da Fase 3 *(25/09/2026: registradas, NÃO implementadas)*

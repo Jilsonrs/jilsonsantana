@@ -22,7 +22,7 @@
 
 | # | O que falta | Onde registrar |
 |---|---|---|
-| **P53** | **Trocar o script da legenda lembrada no painel do Bunny.** O de 07/10 foi escrito para outro player e nunca funcionou (o player da biblioteca é o Plyr — medido). Stream → `jilsonsantana-stream` → **Player** → **Custom HTML head** → apagar o script anterior → colar o bloco do `bunny.md` (seção *A legenda lembrada*) → **Save Settings**. Vale na hora, sem publicar o site. Depois, testar no Chrome do computador e no iPhone. | `bunny.md`, seção *A legenda lembrada*: "colado pelo operador em <data>" |
+| **P53** | **Trocar o script da legenda lembrada no painel do Bunny** (07/10/2026) — pode ser antes ou depois de publicar o site com o player novo: no player antigo o script novo não faz nada. Stream → `jilsonsantana-stream` → **Player** → **Custom HTML head** → apagar o script anterior → colar o bloco do `bunny.md` (seção *A legenda lembrada*) → **Save Settings**. Depois, testar a página da aula no Chrome do computador e no iPhone (o roteiro da etapa 5 do Bloco AULA, mais a legenda). | `bunny.md`, seção *A legenda lembrada*: "colado pelo operador em <data>" |
 
 *A P51 e a P52 foram resolvidas em 07/10/2026 — registro em `bunny.md`.*
 

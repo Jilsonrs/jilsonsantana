@@ -15,7 +15,7 @@ import { IntroVideoPreview } from "./IntroVideoPreview";
 // recarregar a página).
 
 const GUID = "eb1c4f77-0cda-46be-b47d-1118ad7c2ffe";
-const EMBED = `https://iframe.mediadelivery.net/embed/999/${GUID}`;
+const EMBED = `https://player.mediadelivery.net/embed/999/${GUID}`;
 const PROCESSANDO = "O Bunny está processando o vídeo. A prévia atualiza sozinha quando terminar.";
 const player = () => screen.getByTitle("Prévia do vídeo de apresentação");
 
@@ -42,7 +42,7 @@ describe("IntroVideoPreview", () => {
     expect(getIntroVideoStatus).toHaveBeenCalledWith(GUID);
     // Um quadro NOVO: é o recarregamento que tira o player do "Processing video".
     expect(player()).not.toBe(antes);
-    expect(player().getAttribute("src")).toBe(EMBED);
+    expect(player().getAttribute("src")).toBe(`${EMBED}?lang=pt`);
   });
 
   it("vídeo já pronto: sem aviso, e pergunta uma vez só", async () => {

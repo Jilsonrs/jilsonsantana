@@ -3818,7 +3818,40 @@ da aba Player — **3 consultas na análise (passou de 2: anotado)**. A sessão 
       no painel; vale na hora, sem publicar o site. **Lição:** a página do player se olha **antes**
       de escrever script para ela — a doc descreve um player, e a biblioteca serve outro.
       **Docs check (context7):** não acionado — a fonte foi a própria página do player no ar, que
-      desmentiu a doc.
+      desmentiu a doc. **Substituída no mesmo dia pela etapa 6c** (o operador preferiu trocar de
+      player); o script do Plyr nunca foi colado.
+- [x] **Etapa 6c — o player NOVO do Bunny (M)** *(07/10/2026; pergunta do operador: "por que não
+      troca para o mais novo?"; **decisão dele: trocar agora**, e os botões do player no idioma do
+      app do aluno)*. **O que a pesquisa achou** (doc do Bunny via context7, 2 consultas, e a página
+      do player baixada do ar): o player antigo (Plyr, `iframe.mediadelivery.net`) está
+      **descontinuado e sai do ar no começo de 2027**; o novo mora em `player.mediadelivery.net`, e
+      **o endereço é que escolhe o player** — com *Enable legacy player* desligado, o antigo
+      continuava respondendo. No novo: o mesmo token vale (e sem token, 403); `t`, `autoplay` e
+      `captions` iguais; o player.js com os mesmos eventos; o HTML personalizado roda; e **`captions=off`
+      vence a memória do aparelho** (o antigo não tinha isso). **Achado de segurança, medido** (a
+      partir da revisão do `security-vulnerability-reviewer`, que pediu a conferência — sem P0/P1):
+      o endereço **antigo** abria o player com o endereço assinado vindo de **outro site** ou **sem
+      origem** (a trava de domínios do painel não valia ali); o **novo** recusa os dois (403). A troca
+      fecha a brecha. **O que mudou:** o servidor monta o
+      endereço novo (`montarEndereco`, uma linha — vale para aula, apresentação e prévia do admin);
+      a página da aula, para quem está logado, abre **toda** aula com `captions=<idioma>` ou
+      `captions=off` (a conta decide sozinha — sem apagar memória nenhuma); todo player leva
+      `lang=<idioma do app>`; a página só aceita aviso de legenda do endereço novo; e o script do
+      `bunny.md` foi refeito para o player novo (ouve os **pedidos** de legenda, que o player só
+      dispara por ação de quem assiste; um aviso por clique). **Provado com o player novo num Chrome
+      de verdade** (banco de prova local: a página do player baixada do ar, com um vídeo público de
+      teste no lugar do nosso): abre como a conta manda mesmo com o aparelho lembrando o contrário;
+      CC e menu, ligar e desligar → um aviso cada; abrir ligada → nenhum aviso. **Testes:** o do
+      script (5, com os tempos medidos), o player (idioma dos botões, `off`, o endereço antigo
+      recusado), a página da aula (`off` para quem está logado) e os do endereço no servidor.
+      **Mutação:** 6 de 6 no código reprovam; no script, 5 de 6 — a sobrevivente (não ouvir o
+      pedido "desligar") é equivalente no medido, porque o "Desligado" do menu também dispara
+      "mostrar: desligado". **Não provado aqui, fica para o teste do operador:** o player novo num
+      **iPhone antigo** (a varredura do pacote dele não achou nada além do iOS 15, mas só o aparelho
+      prova) e a aula tocando de ponta a ponta no ar (ponto, próxima aula, 90%), porque o vídeo do
+      Bunny só toca no domínio da escola. **P53:** o operador troca o script no painel.
+      **Docs check (context7):** Bunny Stream → `/bunnyway/documentation` → o player novo, o fim
+      do antigo, os parâmetros do embed (`captions`, `lang`, `t`, `autoplay`) — 2 consultas.
 - **Done when:** os 6 comportamentos do pedido passam no roteiro da etapa 5, sem erro, nos aparelhos
   testados; CI verde nos dois jobs.
 

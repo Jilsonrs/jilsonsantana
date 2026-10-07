@@ -8,7 +8,7 @@ import { ouvirPlayer } from "./player-do-bunny";
 // isso que o defeito passou: ao parar de ouvir, o `player.js` manda uma mensagem
 // para a janela do iframe, que já saiu da página e não existe mais.
 
-const ORIGEM = "https://iframe.mediadelivery.net";
+const ORIGEM = "https://player.mediadelivery.net";
 const ENDERECO = `${ORIGEM}/embed/762605/aaa?token=t&expires=4102444800`;
 
 /** O player avisa que está pronto, como o do Bunny faz depois de carregar. */

@@ -12,6 +12,10 @@ vi.mock("@/lib/player-do-bunny", () => ({
 const avisos = () => ouvirPlayer.mock.calls[0][1] as Required<OuvintesDoPlayer>;
 
 import { BunnyPlayer } from "./BunnyPlayer";
+import { IdiomaProvider } from "@/lib/language";
+
+/** O endereço com o idioma dos botões do player, que vai SEMPRE (o do app — operador, 07/10/2026). */
+const comBotoesEm = (endereco: string, idioma = "pt") => `${endereco}&lang=${idioma}`;
 
 // TROCAR DE ABA NÃO RECOMEÇA O VÍDEO (operador, 03/10/2026). O servidor assina o
 // endereço de novo a cada busca (token e validade novos); se o player trocasse de
@@ -19,7 +23,7 @@ import { BunnyPlayer } from "./BunnyPlayer";
 // Vale até 2100: o endereço que ainda vale é o caso do dia a dia (o vencido tem testes abaixo).
 const ATE_2100 = 4102444800;
 const ENDERECO = (video: string, token: string) =>
-  `https://iframe.mediadelivery.net/embed/762605/${video}?token=${token}&expires=${ATE_2100}&autoplay=false`;
+  `https://player.mediadelivery.net/embed/762605/${video}?token=${token}&expires=${ATE_2100}&autoplay=false`;
 
 beforeEach(() => {
   ouvirPlayer.mockReset().mockReturnValue(() => {});
@@ -33,7 +37,7 @@ describe("BunnyPlayer — o endereço", () => {
     rerender(<BunnyPlayer src={ENDERECO("aaa", "t2")} title="Apresentação" />);
 
     expect(document.querySelector("iframe")).toBe(quadro);
-    expect(quadro?.getAttribute("src")).toBe(ENDERECO("aaa", "t1"));
+    expect(quadro?.getAttribute("src")).toBe(comBotoesEm(ENDERECO("aaa", "t1")));
   });
 
   // Uma moldura NOVA a cada endereço (Bloco AULA, 07/10/2026): trocar o `src` de uma
@@ -44,7 +48,7 @@ describe("BunnyPlayer — o endereço", () => {
 
     rerender(<BunnyPlayer src={ENDERECO("bbb", "t2")} title="Aula" />);
 
-    expect(document.querySelector("iframe")?.getAttribute("src")).toBe(ENDERECO("bbb", "t2"));
+    expect(document.querySelector("iframe")?.getAttribute("src")).toBe(comBotoesEm(ENDERECO("bbb", "t2")));
     expect(document.querySelector("iframe")).not.toBe(antes);
   });
 
@@ -61,7 +65,7 @@ describe("BunnyPlayer — o endereço", () => {
 // ONDE COMEÇA (Bloco AULA — decisões do operador, 06/10/2026): a aula abre no ponto
 // guardado na CONTA, e SEMPRE TOCANDO — o "pausou, volta pausado" de 05/10 foi
 // revogado. Tocar sozinho vem do servidor (a aula toca; a apresentação abre pausada).
-const AULA = `https://iframe.mediadelivery.net/embed/762605/aaa?token=t1&expires=${ATE_2100}&autoplay=true`;
+const AULA = `https://player.mediadelivery.net/embed/762605/aaa?token=t1&expires=${ATE_2100}&autoplay=true`;
 const params = () => new URL(document.querySelector("iframe")?.getAttribute("src") ?? "").searchParams;
 
 describe("BunnyPlayer — onde a aula começa", () => {
@@ -72,12 +76,26 @@ describe("BunnyPlayer — onde a aula começa", () => {
     expect(params().get("token")).toBe("t1");
   });
 
-  it("sem ponto, ou antes do começo útil (5 s): o endereço como veio", () => {
+  it("sem ponto, ou antes do começo útil (5 s): o endereço como veio (só com o idioma dos botões)", () => {
     const { unmount } = render(<BunnyPlayer src={AULA} title="Aula" comecarEm={null} />);
-    expect(document.querySelector("iframe")?.getAttribute("src")).toBe(AULA);
+    expect(document.querySelector("iframe")?.getAttribute("src")).toBe(comBotoesEm(AULA));
     unmount();
     render(<BunnyPlayer src={AULA} title="Aula" comecarEm={4} />);
-    expect(document.querySelector("iframe")?.getAttribute("src")).toBe(AULA);
+    expect(document.querySelector("iframe")?.getAttribute("src")).toBe(comBotoesEm(AULA));
+  });
+
+  // OS BOTÕES DO PLAYER NO IDIOMA DO APP (decisão do operador, 07/10/2026): o player novo do
+  // Bunny tem a tradução; vale para a aula e para o vídeo de apresentação.
+  it("os botões do player no idioma do app: português por padrão, inglês no app em inglês", () => {
+    const { unmount } = render(<BunnyPlayer src={AULA} title="Aula" />);
+    expect(params().get("lang")).toBe("pt");
+    unmount();
+    render(
+      <IdiomaProvider idioma="en">
+        <BunnyPlayer src={ENDERECO("aaa", "t1")} title="Intro" />
+      </IdiomaProvider>,
+    );
+    expect(params().get("lang")).toBe("en");
   });
 
   it("o player nunca muda o tocar sozinho: nem na aula com ponto, nem na apresentação", () => {
@@ -135,16 +153,19 @@ describe("BunnyPlayer — os avisos para gravar o ponto", () => {
 // LinkedIn): o player abre com ela ligada quando o aluno a deixou ligada, e o aviso do
 // nosso script (de dentro do player) chega à página — só o desta moldura.
 describe("BunnyPlayer — a legenda lembrada", () => {
-  const aviso = (data: unknown, origin = "https://iframe.mediadelivery.net", source = document.querySelector("iframe")?.contentWindow ?? null) =>
+  const aviso = (data: unknown, origin = "https://player.mediadelivery.net", source = document.querySelector("iframe")?.contentWindow ?? null) =>
     window.dispatchEvent(new MessageEvent("message", { origin, data, source }));
 
-  it("deixada ligada: abre com ela ligada, no idioma do curso; sem, abre como veio", () => {
+  it("a conta diz como abre: ligada (o idioma do curso) ou desligada (off); sem conta, o player decide", () => {
     const { unmount } = render(<BunnyPlayer src={AULA} title="Aula" legenda="pt" />);
     expect(params().get("captions")).toBe("pt");
     expect(params().get("autoplay")).toBe("true");
     unmount();
+    const desligada = render(<BunnyPlayer src={AULA} title="Aula" legenda="off" />);
+    expect(params().get("captions")).toBe("off");
+    desligada.unmount();
     render(<BunnyPlayer src={AULA} title="Aula" legenda={null} />);
-    expect(document.querySelector("iframe")?.getAttribute("src")).toBe(AULA);
+    expect(params().has("captions")).toBe(false);
   });
 
   it("com o ponto e a legenda: os dois no endereço", () => {
@@ -168,7 +189,9 @@ describe("BunnyPlayer — a legenda lembrada", () => {
     render(<BunnyPlayer src={AULA} title="Aula" aoMudarLegenda={aoMudarLegenda} />);
 
     aviso({ origem: "jilsonsantana-legenda", ligada: true }, "https://evil.example");
-    aviso({ origem: "jilsonsantana-legenda", ligada: true }, "https://iframe.mediadelivery.net", window);
+    aviso({ origem: "jilsonsantana-legenda", ligada: true }, "https://player.mediadelivery.net", window);
+    // O player antigo do Bunny não é mais usado (07/10/2026): o endereço dele também não vale.
+    aviso({ origem: "jilsonsantana-legenda", ligada: true }, "https://iframe.mediadelivery.net");
     aviso({ origem: "jilsonsantana-legenda", ligada: "sim" });
 
     expect(aoMudarLegenda).not.toHaveBeenCalled();
@@ -187,7 +210,7 @@ describe("BunnyPlayer — a legenda lembrada", () => {
 // dia para o outro pede um novo, e o player recarrega no mesmo ponto, tocando.
 describe("BunnyPlayer — o endereço vencido", () => {
   const comValidade = (token: string, expira: number) =>
-    `https://iframe.mediadelivery.net/embed/762605/aaa?token=${token}&expires=${expira}&autoplay=true`;
+    `https://player.mediadelivery.net/embed/762605/aaa?token=${token}&expires=${expira}&autoplay=true`;
   const VENCIDO = comValidade("velho", 1);
   const NOVO = comValidade("novo", ATE_2100);
   afterEach(() => vi.useRealTimers());

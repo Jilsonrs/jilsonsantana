@@ -10,11 +10,12 @@ import { deveTentarDeNovo } from "@/lib/tentar-de-novo";
 // Como: o player.js não avisa quando o CC muda, então um script NOSSO, colado no HTML
 // personalizado do player do Bunny (o texto está no `bunny.md`), avisa a página da
 // aula com `{ origem: "jilsonsantana-legenda", ligada }`. A página grava a escolha na
-// conta e abre cada aula com `captions=<idioma do curso>` enquanto ela estiver ligada
-// (parâmetro de embed do Stream: liga a legenda desse idioma ao começar).
+// conta e abre cada aula com `captions=<idioma do curso>` (ligada) ou `captions=off`
+// (desligada) — parâmetro de embed do Bunny Player que vence a memória do próprio player
+// no aparelho (medido, `bunny.md`).
 
-/** De onde o player do Bunny fala: o endereço do embed, e o novo, da doc do Bunny. */
-export const ORIGENS_DO_PLAYER: ReadonlyArray<string> = ["https://iframe.mediadelivery.net", "https://player.mediadelivery.net"];
+/** De onde o player do Bunny fala: só o player novo, o Bunny Player (07/10/2026). */
+export const ORIGENS_DO_PLAYER: ReadonlyArray<string> = ["https://player.mediadelivery.net"];
 const AVISO_DE_LEGENDA = "jilsonsantana-legenda";
 
 /**

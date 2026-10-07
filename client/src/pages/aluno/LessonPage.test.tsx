@@ -54,7 +54,11 @@ import { definirMenuDoCursoFechado } from "@/lib/menu-do-curso";
 // e o painel da IA.
 
 // Vale até 2100: um endereço vencido faria a aula pedir outro (06/10/2026).
-const PLAYER = "https://iframe.mediadelivery.net/embed/762605/abc?token=t&expires=4102444800";
+const PLAYER = "https://player.mediadelivery.net/embed/762605/abc?token=t&expires=4102444800";
+// O que a tela põe no player além do endereço do servidor: o idioma dos botões (o do app) e,
+// para quem está logado, a legenda que a conta escolheu — desligada por padrão (07/10/2026).
+const NO_PLAYER_VISITANTE = `${PLAYER}&lang=pt`;
+const NO_PLAYER_LOGADO = `${PLAYER}&captions=off&lang=pt`;
 
 function pagina(aula: Partial<PaginaDaAula["aula"]> = {}, rascunho = false): PaginaDaAula {
   return {
@@ -164,7 +168,7 @@ describe("página da aula — o conteúdo", () => {
     getLessonPage.mockResolvedValueOnce(pagina({ playerUrl: vencido })).mockResolvedValue(pagina({ playerUrl: PLAYER }));
     abrir();
     const player = await screen.findByTitle("Abertura");
-    await waitFor(() => expect(screen.getByTitle("Abertura").getAttribute("src")).toBe(PLAYER));
+    await waitFor(() => expect(screen.getByTitle("Abertura").getAttribute("src")).toBe(NO_PLAYER_LOGADO));
     // Numa moldura NOVA (Bloco AULA, 07/10/2026): trocar o `src` da mesma criaria uma
     // entrada no histórico do navegador.
     expect(screen.getByTitle("Abertura")).not.toBe(player);
@@ -177,7 +181,7 @@ describe("página da aula — o conteúdo", () => {
   it("aula de vídeo liberada: o player grande, com o endereço do servidor", async () => {
     abrir();
     const player = await screen.findByTitle("Abertura");
-    expect(player.getAttribute("src")).toBe(PLAYER);
+    expect(player.getAttribute("src")).toBe(NO_PLAYER_VISITANTE);
     expect(getLessonPage).toHaveBeenCalledWith(11, false);
   });
 
@@ -483,7 +487,7 @@ describe("página da aula — o progresso", () => {
 
     await waitFor(() => expect(screen.getByRole("progressbar").getAttribute("aria-valuenow")).toBe("50"));
     expect(screen.getByTitle("Abertura")).toBe(quadro);
-    expect(quadro.getAttribute("src")).toBe(PLAYER);
+    expect(quadro.getAttribute("src")).toBe(NO_PLAYER_LOGADO);
   });
 
   // O player é sempre ouvido (o ponto e o fim, 05/10/2026); o que não pode é
@@ -926,7 +930,7 @@ describe("página da aula — a legenda lembrada", () => {
   const avisoDoPlayer = (ligada: boolean, titulo = "Abertura") =>
     window.dispatchEvent(
       new MessageEvent("message", {
-        origin: "https://iframe.mediadelivery.net",
+        origin: "https://player.mediadelivery.net",
         data: { origem: "jilsonsantana-legenda", ligada },
         source: (screen.getByTitle(titulo) as HTMLIFrameElement).contentWindow,
       }),
@@ -957,11 +961,13 @@ describe("página da aula — a legenda lembrada", () => {
     expect(captions()).toBe("pt");
   });
 
-  it("desligada (o padrão): a aula abre sem ela", async () => {
+  // Desligada vai EXPLÍCITA no endereço (`off`): sem ela, o player abriria pela memória dele
+  // no aparelho, e o aparelho que lembrou "ligada" contradiria a conta (medido, bunny.md).
+  it("desligada (o padrão): a aula abre com ela desligada, dita no endereço", async () => {
     comoMembro();
     abrir();
     await screen.findByTitle("Abertura");
-    expect(captions()).toBeNull();
+    expect(captions()).toBe("off");
   });
 
   it("o aluno liga no CC: grava na conta, e a PRÓXIMA aula já abre com ela ligada", async () => {
@@ -970,7 +976,7 @@ describe("página da aula — a legenda lembrada", () => {
     abrir();
     await screen.findByTitle("Abertura");
     await waitFor(() => expect(ouvirPlayer).toHaveBeenCalled());
-    expect(captions()).toBeNull();
+    expect(captions()).toBe("off");
 
     avisoDoPlayer(true);
     await waitFor(() => expect(salvarPreferencias).toHaveBeenCalledWith({ legendas: true }));
@@ -980,7 +986,7 @@ describe("página da aula — a legenda lembrada", () => {
     expect(captions("Fechamento")).toBe("pt");
   });
 
-  it("e desliga no CC: grava, e a próxima abre sem ela", async () => {
+  it("e desliga no CC: grava, e a próxima abre com ela desligada", async () => {
     comoMembro();
     getPreferencias.mockResolvedValue({ legendas: true });
     getLessonPage.mockImplementation((id: number) => Promise.resolve(duasDeVideo(id)));
@@ -993,7 +999,7 @@ describe("página da aula — a legenda lembrada", () => {
 
     avisosDoPlayer().aoTerminar();
     expect(await screen.findByTitle("Fechamento")).toBeTruthy();
-    expect(captions("Fechamento")).toBeNull();
+    expect(captions("Fechamento")).toBe("off");
   });
 
   it("aviso igual ao que a conta já tem (o player se preparando): nada é gravado", async () => {
@@ -1021,15 +1027,15 @@ describe("página da aula — a legenda lembrada", () => {
     expect(captions()).toBe("pt");
   });
 
-  it("a busca da preferência falhou: a aula abre assim mesmo, sem legenda", async () => {
+  it("a busca da preferência falhou: a aula abre assim mesmo, com a legenda desligada (o padrão)", async () => {
     comoMembro();
     getPreferencias.mockRejectedValue(new Error("rede"));
     abrir();
     expect(await screen.findByTitle("Abertura")).toBeTruthy();
-    expect(captions()).toBeNull();
+    expect(captions()).toBe("off");
   });
 
-  it("visitante: nada é buscado nem gravado, e a aula abre sem legenda", async () => {
+  it("visitante: nada é buscado nem gravado, e a aula abre sem dizer nada da legenda (o player decide)", async () => {
     getLessonPage.mockResolvedValue(pagina({ isFreePreview: true }));
     abrir();
     await screen.findByTitle("Abertura");
