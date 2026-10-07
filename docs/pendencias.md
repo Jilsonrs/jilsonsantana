@@ -16,15 +16,13 @@
 > 5. **Item novo ganha o próximo número livre.** Número nunca se reutiliza, para que "P7" queira
 >    dizer sempre a mesma coisa em qualquer conversa.
 >
-> **Próximo número livre: P52** · Atualizada em 06/10/2026
+> **Próximo número livre: P52** · Atualizada em 07/10/2026
 
 ## A. Agora, em sequência *(nascidas da configuração do Bunny, 25/09/2026)*
 
-*Item novo que precise de resposta rápida entra aqui, com o próximo número livre.*
-
-| # | O que falta | Onde registrar |
-|---|---|---|
-| P51 | **Conferir no painel do Bunny** (Stream → biblioteca `jilsonsantana-stream` → aba **Player**) se o **"Resumable Player"** (o player retomar sozinho de onde o vídeo parou) está **desligado**, e desligar se estiver ligado. O site passa a guardar o ponto de cada aula na conta do aluno (Bloco AULA); com os dois ligados, eles disputam o ponto. Antes do teste no ar (etapa 5) | `bunny.md` → *Tocar sozinho e trocar de aba* |
+*Vazia desde 07/10/2026 (a P51 foi resolvida: o "Resumable player position" do Bunny está
+desligado — registrado em `bunny.md`). Item novo que precise de resposta rápida entra aqui, com o
+próximo número livre.*
 
 ## B. Conteúdo e cadastro *(tarefas suas, sem ordem fixa)*
 

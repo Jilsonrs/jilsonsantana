@@ -217,10 +217,10 @@
 > curso onde parou e o vídeo voltando sempre tocando, gravado também ao fechar a aba; trocar de aula
 > sem a tela piscar, com a gaveta do celular fechando e o "Próxima aula" no texto; e o piso de
 > aparelhos (iOS 15 em diante) escrito e medido. **Os 3 erros relatados estão corrigidos; falta a
-> prova com o vídeo de verdade, no site (etapa 5, com o operador, depois da P51).** A análise explica os 3 erros relatados (entrar sempre na 1ª
+> prova com o vídeo de verdade, no site (etapa 5, com o operador; a P51 foi resolvida em 07/10).** A análise explica os 3 erros relatados (entrar sempre na 1ª
 > aula, a próxima abrindo pausada, o ponto só no navegador) e traz 4 achados novos, provados (o
 > Voltar com o vídeo errado, a gaveta do celular aberta, a tela piscando entre aulas, a compilação
-> acima do piso das bibliotecas). 5 etapas: ver Fase 5 → **Bloco AULA**. Antes do teste no ar: a P51.
+> acima do piso das bibliotecas). 5 etapas: ver Fase 5 → **Bloco AULA**. A P51 (antes do teste no ar) foi resolvida em 07/10.
 > **PUBLICADO em 06/10/2026, no fechamento (`main` = `e12530d`, CI verde nos dois jobs, deploy
 > ok):** o conserto da troca de aula — sair de uma aula de vídeo não derruba mais a próxima na tela
 > de erro. **Provado no site:** a versão nova (`mux313p8-c56d5a94`). *A passagem automática com o
@@ -3514,7 +3514,8 @@ como hoje; o teste no aparelho confere se, ligada numa aula, ela continua ligada
   etapa 4). O pacote de hoje não tem sintaxe nova (conferido: sem *lookbehind*, sem *static
   block*), mas nada garante isso no próximo build.
 - **Risco no painel do Bunny:** o player tem um "retomar de onde parou" próprio (*Resumable Player*,
-  aba Player da biblioteca — doc oficial). Ligado, disputa o ponto com o do site → **P51**.
+  aba Player da biblioteca — doc oficial). Ligado, disputa o ponto com o do site → **P51, resolvida
+  em 07/10/2026: o operador conferiu no painel que está desligado** (registro em `bunny.md`).
 - **Conferido sem defeito:** a boas-vindas no sino ao abrir a primeira aula (assinante e admin,
   curso com mensagem), o fim do vídeo abrindo a próxima, trocar de aba sem recomeçar, e a renovação
   do endereço vencido.
@@ -3680,7 +3681,8 @@ da aba Player — **3 consultas na análise (passou de 2: anotado)**. A sessão 
       (`min-h-svh` no `Layout.tsx`) não ocupa a altura toda da tela — o resto funciona; o anel de foco
       do teclado (`:focus-visible`) também só aparece do iOS 15.4 em diante, o que não pesa no toque.
 - [ ] **Etapa 5 — publicar e testar no ar, com o operador (P):** o player só toca no domínio da
-      escola, então a prova é no site. **Antes:** a P51. Roteiro em cada aparelho (Chrome no
+      escola, então a prova é no site. **Antes:** a P51 — *resolvida em 07/10/2026 (desligado no
+      painel, conferido pelo operador)*. Roteiro em cada aparelho (Chrome no
       computador, Safari no Mac, iPhone, Android, e um aparelho antigo se houver): 1ª vez no curso
       + sino · fim do vídeo → próxima · texto parado + "Próxima aula" · sair aos 17 s e voltar pelo
       catálogo, no mesmo aparelho e no outro · pausar, sair, voltar tocando · o Voltar do navegador
