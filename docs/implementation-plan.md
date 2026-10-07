@@ -1225,6 +1225,10 @@ tornada executável — não uma lista nova):
       vazar. **Entra no MESMO bloco que introduzir o HTML público de servidor**, não antes: a CSP
       precisa conhecer a origem do Bunny (`frame-src`) e a da Stripe (`script-src`), e escrita antes
       é escrita duas vezes. Dependência de runtime nova ⇒ **decisão de nível de plano**.
+      *(07/10/2026: o **`Cross-Origin-Opener-Policy`** entrou sozinho, sem dependência, pela revisão
+      de segurança do Bloco AULA, etapa 6 — em toda resposta, `server/src/app.ts`, com teste. Os
+      outros — `X-Frame-Options`/`frame-ancestors`, `nosniff`, `Referrer-Policy`, CSP — seguem
+      aqui.)*
 - [ ] **Nenhum limite de pedidos por conta na API do aluno** *(achado P2 da revisão de segurança do
       Bloco AULA, etapa 1, 06/10/2026)*. O `POST /api/lessons/:id/ponto` nasceu para ser chamado em
       intervalo (a cada ~15 s com o vídeo tocando) e custa ~5 idas ao banco; quem tem conta pode
@@ -3732,8 +3736,8 @@ da aba Player — **3 consultas na análise (passou de 2: anotado)**. A sessão 
       nas próximas aulas e ao sair e voltar, até ele desligar no mesmo CC. **Sem botão novo**
       (ele recusou o botão da escola: "botão extra não faz sentido"), e sem ligar sempre ("incomoda
       quem não precisa"). Pediu a pesquisa na doc do Bunny → etapa 6.
-- [ ] **Etapa 6 — a legenda lembrada, pelo CC do player (M)** *(PROPOSTA em 07/10/2026, aguarda o OK
-      do operador)*. **O que a pesquisa achou** (doc do Bunny, via context7 — 3 consultas além das 4
+- [x] **Etapa 6 — a legenda lembrada, pelo CC do player (M)** *(proposta em 07/10/2026, aprovada pelo
+      operador no mesmo dia: "implementa agora")*. **O que a pesquisa achou** (doc do Bunny, via context7 — 3 consultas além das 4
       da sessão, anotado; e a doc do media-chrome, `/muxinc/media-chrome`): o player novo do Bunny é
       feito de componentes do **media-chrome** e **ainda executa o HTML personalizado** da aba Player
       (*Custom HTML head* — "selectors and script hooks should be updated", guia de migração do
@@ -3750,6 +3754,40 @@ da aba Player — **3 consultas na análise (passou de 2: anotado)**. A sessão 
       aula abre com `captions`; desligou → a próxima abre sem). **O que só se prova no ar:** o script
       depende do player pôr o controlador ao alcance do HTML personalizado (a doc indica que sim,
       pelos exemplos de CSS do guia); se não puser, ele só não avisa, e nada quebra.
+      *(07/10/2026, no `dev`.)* **Banco:** tabela `student_preference` (migration
+      `20261007120000_preferencia_do_aluno`, com RLS; uma linha por pessoa, criada na primeira
+      mudança; some com a pessoa) — **passo 0 no dev:** as mesmas contagens antes e depois, zero tabelas
+      sem RLS, `migrate diff` vazio. **Servidor:** `GET`/`PATCH /api/me/preferences` (`requireAuth`,
+      sempre a da sessão; sem linha, desligada). **Site:** `client/src/lib/legenda-lembrada.ts` (o
+      leitor do aviso — só a moldura do player da aula, a origem do Bunny e o formato do nosso
+      script — e a preferência na memória da tela, que muda na hora e insiste como as outras
+      gravações); o player abre com `captions=<idioma do curso>` quando a legenda foi deixada ligada,
+      e a página da aula espera a preferência chegar antes de abrir o vídeo (ela vai no endereço);
+      aviso igual ao que a conta já tem não vira pedido. **O script** do Bunny está no `bunny.md`, e
+      **só avisa a mudança que vem logo depois de um toque do aluno no player** (as do player se
+      preparando não contam); **P52:** o operador cola no painel. *Arrumação:* as funções de montar o
+      endereço do player saíram para `client/src/lib/endereco-do-player.ts` (o `BunnyPlayer` tinha
+      passado de 200 linhas). **Testes:** servidor 7 (`preferencias.test.ts`); site: o leitor do
+      aviso (3), o player (6 novos), a página da aula (8 novos) e **o próprio script, tirado do
+      `bunny.md` e rodado num navegador simulado** (5 — se o script e a página deixarem de combinar,
+      reprova); suíte inteira verde. **Revisão de segurança** (`security-vulnerability-reviewer`):
+      **sem P0**; o **P1** — a página sem `Cross-Origin-Opener-Policy`, e a origem do Bunny sendo a
+      mesma para todo cliente dele, o que deixa o canal do aviso menos garantido do que o comentário
+      dizia — foi **corrigido na hora**: o cabeçalho `same-origin-allow-popups` em toda resposta
+      (`server/src/app.ts`; só vale para a janela principal, o player não muda) e o comentário de
+      `legenda-lembrada.ts` com a garantia real (um documento do Bunny na nossa moldura) e a regra
+      que segue dela: **por esse canal só passa preferência cosmética**. Análise do agente,
+      registrada: o pior caso de um aviso forjado é ligar ou desligar a legenda de alguém; abrir a
+      escola numa janela e trocar o documento da moldura já esbarra na regra dos navegadores, e a
+      escola dentro da moldura de outro site não leva a sessão (cookie `sameSite=lax`). Os dois **P2**:
+      os testes de que um `userId` vindo do cliente (no corpo ou no endereço) não muda de quem é a
+      preferência — feitos —, e a RLS conferida no banco (dev: zero tabelas sem RLS, medido; produção:
+      a mesma migration, aplicada pelo pre-deploy). *A confirmar no teste no ar: o player continua
+      tocando com o cabeçalho novo.* **Mutação: as 17 partes reprovam** (10 do código, 4 do script e
+      da página, 3 da revisão) — uma passava na primeira rodada (o player sem esperar a preferência) e
+      o teste foi corrigido para esperar a aula chegar antes de soltar a preferência. **Docs check (context7):** Bunny
+      (`/bunnyway/documentation` e o fallback `/llmstxt/bunny_net_llms_txt`) e media-chrome
+      (`/muxinc/media-chrome`) — consultas listadas acima.
 - **Done when:** os 6 comportamentos do pedido passam no roteiro da etapa 5, sem erro, nos aparelhos
   testados; CI verde nos dois jobs.
 

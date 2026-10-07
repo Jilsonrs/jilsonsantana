@@ -54,6 +54,18 @@ app.all("/api/auth/{*any}", (req, res, next) => authHandler(req, res).catch(next
 // JSON body parsing for the REST of the API — AFTER the auth handler.
 app.use(express.json());
 
+// A JANELA DA ESCOLA ISOLADA de quem a abre (achado P1 da revisão de segurança do Bloco
+// AULA, etapa 6, 07/10/2026). Sem este cabeçalho, um site de terceiros que abre a escola
+// numa janela continua "no mesmo grupo" dela, e o canal do aviso de legenda (que aceita a
+// moldura do Bunny — o mesmo endereço para todo cliente do Bunny) fica menos garantido.
+// `same-origin-allow-popups`: quem abre a escola perde a referência a ela; as janelas que
+// a escola abrir continuam funcionando. Só vale para a página principal — a moldura do
+// player não muda. Em toda resposta: nas que não são página, o navegador o ignora.
+app.use((_req, res, next) => {
+  res.setHeader("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
+  next();
+});
+
 // A VERSÃO do app que este servidor entrega, em toda resposta da API (decisão do
 // operador, 06/10/2026): uma aba aberta antes de uma publicação percebe a
 // diferença e carrega a página inteira na próxima troca de tela, já atualizada

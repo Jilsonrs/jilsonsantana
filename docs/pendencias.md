@@ -16,13 +16,16 @@
 > 5. **Item novo ganha o próximo número livre.** Número nunca se reutiliza, para que "P7" queira
 >    dizer sempre a mesma coisa em qualquer conversa.
 >
-> **Próximo número livre: P52** · Atualizada em 07/10/2026
+> **Próximo número livre: P53** · Atualizada em 07/10/2026
 
 ## A. Agora, em sequência *(nascidas da configuração do Bunny, 25/09/2026)*
 
-*Vazia desde 07/10/2026 (a P51 foi resolvida: o "Resumable player position" do Bunny está
-desligado — registrado em `bunny.md`). Item novo que precise de resposta rápida entra aqui, com o
-próximo número livre.*
+*Item novo que precise de resposta rápida entra aqui, com o próximo número livre. (A P51 foi
+resolvida em 07/10/2026: o "Resumable player position" do Bunny está desligado — `bunny.md`.)*
+
+| # | O que falta | Onde registrar |
+|---|---|---|
+| P52 | **Colar o script da legenda lembrada no painel do Bunny** — Stream → biblioteca `jilsonsantana-stream` → **Player** → **Custom HTML head** → colar o bloco que está no `bunny.md` (seção *A legenda lembrada*, começa com `<script>` e termina com `</script>`) → **Save Settings**. É o que faz a legenda ligada no CC continuar ligada nas próximas aulas (Bloco AULA, etapa 6). **Depois de publicar a etapa 6**, testar: ligar o CC numa aula, passar para a próxima → continua ligada; desligar → a próxima abre sem | `bunny.md` → *A legenda lembrada* (marcar "colado em DD/MM") |
 
 ## B. Conteúdo e cadastro *(tarefas suas, sem ordem fixa)*
 

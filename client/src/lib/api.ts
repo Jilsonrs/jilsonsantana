@@ -467,6 +467,22 @@ export async function gravarPonto(lessonId: number, segundos: number | null, com
   await client.post(comoAdmin ? `/admin/lessons/${lessonId}/ponto` : `/lessons/${lessonId}/ponto`, { segundos });
 }
 
+/**
+ * As preferências do aluno logado (Bloco AULA, etapa 6 — decisão do operador, 07/10/2026):
+ * hoje, a LEGENDA lembrada. Ligada no CC do player, continua ligada nas próximas aulas, em
+ * qualquer aparelho, até o aluno desligar no mesmo CC.
+ */
+export type PreferenciasDoAluno = { legendas: boolean };
+
+export async function getPreferencias(): Promise<PreferenciasDoAluno> {
+  const { data } = await client.get<PreferenciasDoAluno>("/me/preferences");
+  return data;
+}
+
+export async function salvarPreferencias(preferencias: PreferenciasDoAluno): Promise<void> {
+  await client.patch("/me/preferences", preferencias);
+}
+
 /** Em que aula a pessoa entra no curso: a última em que esteve, ou a primeira. `null`: o curso não tem aula. */
 export async function getEntradaDoCurso(slug: string): Promise<{ aulaId: number | null }> {
   const { data } = await client.get<{ aulaId: number | null }>(`/cursos/${encodeURIComponent(slug)}/entrada`);

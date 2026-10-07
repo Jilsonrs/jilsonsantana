@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { usePaginaDaAula } from "@/lib/pagina-da-aula";
 import { porcentagemDoCurso, useConcluirAula } from "@/lib/progresso";
 import { usePontoDaAula } from "@/lib/ponto-da-aula";
+import { useLembrarLegenda, usePreferencias } from "@/lib/legenda-lembrada";
 import { useIrPara } from "@/lib/versao";
 import { useIdsSalvos } from "@/lib/salvos";
 import { PageContainer } from "@/components/layout/PageLayout";
@@ -40,6 +41,9 @@ export function LessonPage() {
   // Com versão nova no servidor, a próxima aula abre carregando a página (06/10/2026).
   const irPara = useIrPara();
   const salvos = useIdsSalvos(Boolean(session));
+  // A legenda lembrada (Bloco AULA, etapa 6, 07/10/2026): só para quem está logado.
+  const preferencias = usePreferencias(Boolean(session));
+  const lembrarLegenda = useLembrarLegenda();
   // Os dados DESTA aula. Enquanto a próxima carrega, a tela mostra os da anterior
   // (mesmo curso — Bloco AULA, 07/10/2026): o topo e a lista ficam, e nada da aula
   // anterior — conteúdo, conclusão, ponto — pode valer para esta.
@@ -87,6 +91,13 @@ export function LessonPage() {
     ponto.aoTerminar();
     if (proxima) irPara(`/aluno/aula/${proxima.id}`);
   };
+  // A legenda vai no endereço do vídeo: logado, o player espera a preferência chegar.
+  const esperandoALegenda = Boolean(session) && preferencias.isPending;
+  const legendaLigada = Boolean(preferencias.data?.legendas);
+  // Só grava o que MUDOU: o aviso igual ao que a conta já tem não vira pedido.
+  const aoMudarLegenda = (ligada: boolean) => {
+    if (ligada !== legendaLigada) lembrarLegenda(ligada);
+  };
   return (
     <div className="flex min-h-full flex-col">
       {/* Barra Superior Customizada da Aula (Avatar flutua por cima, à direita) */}
@@ -103,7 +114,7 @@ export function LessonPage() {
       <div className="mx-auto w-full max-w-[1600px] px-4 pt-[20px] pb-6 sm:px-6 sm:pb-8 md:px-[50px] md:pb-8">
         <div className={cn("grid gap-6", iaAberta && "lg:grid-cols-[minmax(0,1fr)_360px]")}>
           <div className="min-w-0 space-y-8">
-            {aula ? (
+            {aula && !(esperandoALegenda && aula.kind === LessonKind.VIDEO) ? (
               <LessonContent
                 aula={aula}
                 comoAdmin={comoAdmin}
@@ -112,11 +123,12 @@ export function LessonPage() {
                 aoTerminar={aoTerminarOVideo}
                 ponto={ponto}
                 proximaAulaId={proxima?.id}
+                legenda={session ? { abrirLigada: legendaLigada ? curso.language : null, aoMudar: aoMudarLegenda } : undefined}
                 // Aba aberta de um dia para o outro: a aula busca um endereço novo do vídeo (06/10/2026).
                 renovarVideo={() => void refetch()}
               />
             ) : (
-              <LessonContentCarregando video={naLista?.kind !== LessonKind.TEXT} />
+              <LessonContentCarregando video={(aula?.kind ?? naLista?.kind) !== LessonKind.TEXT} />
             )}
 
             {/* Em toda aula, liberada ou não (operador, 29/09/2026). */}
