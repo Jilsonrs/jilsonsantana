@@ -409,7 +409,10 @@ export const pt = {
       salva: "Trilha salva ✓",
       salvando: "Salvando…",
       salvar: "Salvar trilha",
-      erroSalvar: "Não foi possível salvar. Tente de novo."
+      erroSalvar: "Não foi possível salvar. Tente de novo.",
+      // A barra no cartão da trilha (Bloco MEDIR, etapa 3, 09/10/2026), lida pelo leitor de
+      // tela. Rascunho do agente: o texto é do operador (P55).
+      progressoNaTrilha: "Progresso na trilha"
     },
     // A PÁGINA DA AULA (etapa 4 do Bloco U, 29/09/2026). Rascunho do agente: o
     // texto é do operador.

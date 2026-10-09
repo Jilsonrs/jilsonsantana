@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useT } from "@/lib/language";
 import { contagem } from "@/lib/contagem";
+import { BarraDeProgresso } from "./BarraDeProgresso";
 import { horasEMinutos } from "@/lib/duracao-do-curso";
 
 // Only the fields actually rendered — shared by the full catalog card (which
@@ -80,21 +81,7 @@ export function CourseCard(course: CourseCardProps) {
             )}
           </div>
           {course.progresso !== undefined && (
-            <div className="space-y-1.5">
-              <div
-                role="progressbar"
-                aria-label={t.aula.progressoNoCurso}
-                aria-valuemin={0}
-                aria-valuemax={100}
-                aria-valuenow={course.progresso}
-                className="h-1.5 w-full overflow-hidden rounded-full bg-primary/10"
-              >
-                <div className="h-full rounded-full bg-primary" style={{ width: `${course.progresso}%` }} />
-              </div>
-              <p className="text-xs font-medium text-muted-foreground">
-                {course.progresso}% {t.curso.concluido}
-              </p>
-            </div>
+            <BarraDeProgresso porcentagem={course.progresso} rotulo={t.aula.progressoNoCurso} concluido={t.curso.concluido} />
           )}
         </CardContent>
       </Card>

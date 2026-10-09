@@ -28,6 +28,7 @@ import progressRouter from "./routes/progress.js";
 import savedRouter from "./routes/saved.js";
 import notificacoesRouter from "./routes/notificacoes.js";
 import adminCaptionsRouter from "./routes/admin-captions.js";
+import adminStatsRouter from "./routes/admin-stats.js";
 
 // Monta o app e EXPORTA sem escutar porta. O `listen()` vive em `index.ts`.
 //
@@ -110,6 +111,9 @@ app.use("/api", savedRouter);
 app.use("/api", notificacoesRouter);
 // As legendas: o corpo cru (`.vtt`) é lido só dentro da rota, como a capa.
 app.use("/api", adminCaptionsRouter);
+// Os números do cartão do curso no admin (Fase 5, Bloco MEDIR, etapa 2 — 09/10/2026):
+// estatística, em rota própria (CLAUDE.md → Analytics Convention).
+app.use("/api", adminStatsRouter);
 
 // ── Home pública (SSR, sem React) ───────────────────────────────────────────
 // Registrada em TODOS os ambientes (em dev o operador abre localhost:3000).

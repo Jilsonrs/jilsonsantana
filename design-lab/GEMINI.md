@@ -275,8 +275,11 @@ exceto o item 4, que é página pública.
    mantenha o fechamento por Esc e por clique fora: **têm teste**.
 
 8. **Cartão do curso na lista do admin** (`AdminCourseCard.tsx`, 27/09) — capa 16:9 (sem capa,
-   "Sem imagem"), status em português, "EN", módulos e aulas, três números como **"—" / "em
-   breve"** e a barra de **Preenchimento** com o que falta. Os textos foram **aprovados pelo
+   "Sem imagem"), status em português, "EN", módulos e aulas, os três números e a barra de
+   **Preenchimento** com o que falta. **Desde 09/10** (Bloco MEDIR, decisão do operador): Horas
+   assistidas e Alunos são **reais** — o total grande e **"N este mês"** na linha pequena, no lugar
+   do "em breve"; carregando ou se a busca falhar, "—" sem a linha. A Avaliação continua "—" / "em
+   breve" até a avaliação por curso existir. Os textos foram **aprovados pelo
    operador**: mude o visual, não o texto. O cartão tem `role="article"` com o título como nome, e
    a barra é um `progressbar` com valor: **têm teste**.
 9. **Mídia do curso** (`CourseMediaSection.tsx` e os três componentes de envio, 27/09) — **a ordem
@@ -499,6 +502,12 @@ exceto o item 4, que é página pública.
    aluno liga o CC e ela continua nas próximas aulas): ao ajustar o visual lá, **não apague esse
    script e não use "Reset to Default"** — a checagem diária do GitHub acusa, mas o aluno perde a
    legenda até alguém colar de novo (`docs/bunny.md` → *A legenda lembrada*).
+33. **A barra da trilha** *(09/10, Bloco MEDIR, decisão do operador)*: no **cartão da trilha**
+   (`components/content/TrilhaCard.tsx`), em **Minhas trilhas** e no **Início**, a mesma barra do
+   cartão do curso, só na trilha que o aluno já começou. A barra virou uma peça só para os dois
+   cartões, `components/content/BarraDeProgresso.tsx`, com as suas classes de antes — acabar uma
+   acaba as duas. Estrutura pronta, acabamento seu. O `progressbar` com o valor, o nome que o
+   leitor de tela anuncia e o "N% concluído" **têm teste**.
 
 > **Fora do seu trabalho, para não confundir:** o Bunny ganhou **Live Stream** em acesso
 > antecipado (29/09). É só avaliação depois da Fase 3, **não** é tela a desenhar (`docs/bunny.md`

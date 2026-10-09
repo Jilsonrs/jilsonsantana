@@ -5,11 +5,14 @@ import { TrilhaCard } from "@/components/content/TrilhaCard";
 import { Button } from "@/components/ui/button";
 import { PageContainer, PageHeader } from "@/components/layout/PageLayout";
 import { useT } from "@/lib/language";
+import { useProgressoDasTrilhas } from "@/lib/progresso";
 
 // As trilhas que o aluno salvou. Sem esta tela, salvar uma trilha é um beco sem
 // saída: o clone não recebe slug e só é alcançável por id.
 export function MyTrilhasPage() {
   const t = useT();
+  // A barra de quem já começou (Bloco MEDIR, etapa 3 — 09/10/2026). A tela é de quem está logado.
+  const progresso = useProgressoDasTrilhas(true);
   const { data: trilhas, isLoading, isError } = useQuery({
     queryKey: ["myTrilhas"],
     queryFn: getMyTrilhas,
@@ -47,6 +50,7 @@ export function MyTrilhasPage() {
               name={trilha.name}
               description={trilha.description}
               skillsCovered={trilha.skillsCovered}
+              progresso={progresso.get(trilha.id)}
             />
           ))}
         </div>

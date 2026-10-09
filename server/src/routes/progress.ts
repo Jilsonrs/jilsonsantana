@@ -4,7 +4,7 @@ import { prisma } from "../lib/prisma.js";
 import { loadSession, requireAdmin, requireAuth } from "../middleware/auth.js";
 import { parseId, validate } from "../lib/http.js";
 import { aulaLiberada, temAcessoAtivo } from "../lib/acesso.js";
-import { concluirAula } from "../lib/progresso.js";
+import { concluirAula, progressoDasTrilhas } from "../lib/progresso.js";
 import { aulaDeEntrada, gravarPonto } from "../lib/onde-parou.js";
 import { enviarParabensSeConcluiu, semDerrubar } from "../lib/notificacoes.js";
 
@@ -219,6 +219,20 @@ router.get("/progresso/cursos", requireAuth, async (req, res) => {
   res.json(
     [...concluidasPorCurso].map(([courseId, concluidas]) => ({ courseId, concluidas, total: totalPorCurso.get(courseId) ?? 0 })),
   );
+});
+
+// GET /api/progresso/trilhas — o progresso de quem pede em cada trilha DELE que ele
+// começou (a barra no cartão da trilha — Bloco MEDIR, etapa 3, decisão do operador de
+// 09/10/2026), e se ela está CONCLUÍDA (o certificado, Fase 6.5). Só a cadeia publicada.
+router.get("/progresso/trilhas", requireAuth, async (req, res) => {
+  const user = req.user;
+  if (!user) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  // Muda com o progresso de quem pede: nunca em cache.
+  res.set("Cache-Control", "private, no-store");
+  res.json(await progressoDasTrilhas(user.id));
 });
 
 export default router;

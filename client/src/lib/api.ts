@@ -286,6 +286,22 @@ export async function adminGetCourses(): Promise<AdminCourseCard[]> {
   return data;
 }
 
+/**
+ * Os NÚMEROS do cartão do curso no admin (Fase 5, Bloco MEDIR, etapa 2 — 09/10/2026): as
+ * horas assistidas (em segundos) e os alunos que começaram, no total e no mês de Brasília.
+ * Só alunos. Curso sem nenhum número não vem: é zero.
+ */
+export type NumerosDoCurso = {
+  courseId: number;
+  horas: { total: number; mes: number };
+  alunos: { total: number; mes: number };
+};
+
+export async function adminGetNumerosDosCursos(): Promise<NumerosDoCurso[]> {
+  const { data } = await client.get<{ cursos: NumerosDoCurso[] }>("/admin/stats/cursos");
+  return data.cursos;
+}
+
 export async function adminGetCourse(id: number): Promise<AdminCourseDetail> {
   const { data } = await client.get<AdminCourseDetail>(`/admin/courses/${id}`);
   return data;
@@ -560,6 +576,17 @@ export type ProgressoDoCurso = { courseId: number; concluidas: number; total: nu
 
 export async function getProgressoDosCursos(): Promise<ProgressoDoCurso[]> {
   const { data } = await client.get<ProgressoDoCurso[]>("/progresso/cursos");
+  return data;
+}
+
+/**
+ * O progresso de quem está logado em cada trilha DELE que ele começou (Bloco MEDIR, etapa 3 —
+ * 09/10/2026), e se ela está CONCLUÍDA — todas as aulas concluídas (o certificado, Fase 6.5).
+ */
+export type ProgressoDaTrilha = { planId: number; concluidas: number; total: number; concluida: boolean };
+
+export async function getProgressoDasTrilhas(): Promise<ProgressoDaTrilha[]> {
+  const { data } = await client.get<ProgressoDaTrilha[]>("/progresso/trilhas");
   return data;
 }
 

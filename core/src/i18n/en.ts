@@ -377,7 +377,8 @@ export const en: Dict = {
       salva: "Learning path saved ✓",
       salvando: "Saving…",
       salvar: "Save learning path",
-      erroSalvar: "We couldn't save this learning path. Please try again."
+      erroSalvar: "We couldn't save this learning path. Please try again.",
+      progressoNaTrilha: "Learning path progress"
     },
     aula: {
       conteudoDoCurso: "Course content",

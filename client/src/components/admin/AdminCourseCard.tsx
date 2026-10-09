@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import type { AdminCourseCard as Curso } from "@/lib/api";
+import type { AdminCourseCard as Curso, NumerosDoCurso } from "@/lib/api";
 import { preenchimentoDoCurso, ROTULO_DO_STATUS } from "@/lib/course-completeness";
 import { horasEMinutos } from "@/lib/duracao-do-curso";
 import { Button } from "@/components/ui/button";
@@ -8,9 +8,22 @@ import { Card, CardContent } from "@/components/ui/card";
 import { CompletenessBar } from "./CompletenessBar";
 import { ContentStatus, pt } from "@jilson/core";
 
-const NUMEROS_EM_BREVE = ["Horas assistidas", "Alunos", "Avaliação"];
+type Numero = { rotulo: string; total: string; embaixo: string | null };
 
-export function AdminCourseCard({ curso, aoExcluir }: { curso: Curso; aoExcluir: () => void }) {
+/**
+ * Os números do cartão (Bloco A de 27/09; Bloco MEDIR, etapa 2 — decisão do operador de
+ * 09/10/2026): o TOTAL grande e "N este mês" embaixo. Sem os números (carregando, ou a busca
+ * falhou): "—". A Avaliação continua "em breve" até a avaliação por curso existir.
+ */
+function numerosDoCartao(n: NumerosDoCurso | null): Numero[] {
+  return [
+    { rotulo: "Horas assistidas", total: n ? horasEMinutos(n.horas.total) : "—", embaixo: n ? `${horasEMinutos(n.horas.mes)} este mês` : null },
+    { rotulo: "Alunos", total: n ? String(n.alunos.total) : "—", embaixo: n ? `${n.alunos.mes} este mês` : null },
+    { rotulo: "Avaliação", total: "—", embaixo: "em breve" },
+  ];
+}
+
+export function AdminCourseCard({ curso, numeros = null, aoExcluir }: { curso: Curso; numeros?: NumerosDoCurso | null; aoExcluir: () => void }) {
   const { porcentagem, faltando } = preenchimentoDoCurso(curso);
 
   return (
@@ -82,11 +95,11 @@ export function AdminCourseCard({ curso, aoExcluir }: { curso: Curso; aoExcluir:
 
           {/* Grid de Números */}
           <dl className="grid grid-cols-3 gap-6 pt-1">
-            {NUMEROS_EM_BREVE.map((rotulo) => (
+            {numerosDoCartao(numeros).map(({ rotulo, total, embaixo }) => (
               <div key={rotulo} className="flex flex-col gap-1 border-l border-border-fine pl-4 first:border-0 first:pl-0">
                 <dt className="text-xs font-medium text-muted-foreground">{rotulo}</dt>
-                <dd className="font-display text-2xl font-light text-foreground">—</dd>
-                <dd className="font-mono text-[10px] tracking-widest text-muted-foreground/70 uppercase">em breve</dd>
+                <dd className="font-display text-2xl font-light text-foreground">{total}</dd>
+                {embaixo && <dd className="font-mono text-[10px] tracking-widest text-muted-foreground/70 uppercase">{embaixo}</dd>}
               </div>
             ))}
           </dl>

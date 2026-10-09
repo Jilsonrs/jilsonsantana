@@ -4,6 +4,7 @@ import { getMyTrilhas } from "@/lib/api";
 import { TrilhaCard } from "@/components/content/TrilhaCard";
 import { Button } from "@/components/ui/button";
 import { useT } from "@/lib/language";
+import { useProgressoDasTrilhas } from "@/lib/progresso";
 
 /** Quantas trilhas salvas o painel mostra; o resto fica a um clique, em "Ver todas". */
 const NO_PAINEL = 3;
@@ -15,6 +16,8 @@ const NO_PAINEL = 3;
 export function MinhasTrilhasNoInicio() {
   const t = useT();
   // Mesma chave da tela Minhas trilhas: uma busca só.
+  // A barra de quem já começou (Bloco MEDIR, etapa 3 — 09/10/2026). A tela é de quem está logado.
+  const progresso = useProgressoDasTrilhas(true);
   const { data: trilhas, isLoading, isError } = useQuery({
     queryKey: ["myTrilhas"],
     queryFn: getMyTrilhas,
@@ -57,6 +60,7 @@ export function MinhasTrilhasNoInicio() {
                 name={trilha.name}
                 description={trilha.description}
                 skillsCovered={trilha.skillsCovered}
+                progresso={progresso.get(trilha.id)}
               />
             ))}
           </div>
