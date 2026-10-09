@@ -204,7 +204,14 @@
 > (aula concluída sozinha, barra na aula e no cartão), o vídeo que não recomeça ao trocar de aba
 > (a apresentação abre pausada, a aula toca sozinha) e o "Salvos". **Primeiro teste com o player de
 > verdade: com o operador** (assistir uma aula até perto do fim e ver a barra andar).
-> **PUBLICADO em 09/10/2026, por último (`main` = `a236c0c`, CI verde nos dois jobs, deploy ok; a
+> **PUBLICADO em 09/10/2026, por último (`main` = `307581c`, CI verde nos dois jobs, deploy ok):** o
+> Bloco MEDIR, etapas 2 e 3 — **horas assistidas e alunos reais no cartão do curso do admin** e **a
+> barra da trilha** (Minhas trilhas e Início), com a trilha sabendo quando está concluída. **Provado
+> no site:** a versão nova (`mv0thvrg-dbb213a7`); `/api/admin/stats/cursos` e
+> `/api/progresso/trilhas` respondem 401 sem login; a checagem do player passa. *A prova com o vídeo
+> de verdade é do operador: entrar com a conta de aluno, assistir uma aula de prévia grátis (a conta
+> de aluno de produção não tem assinatura, decisão dele de 27/09) e ver as horas no cartão do admin.*
+> **PUBLICADO em 09/10/2026, antes (`main` = `a236c0c`, CI verde nos dois jobs, deploy ok; a
 > migration `eventos_do_video` aplicada pelo pre-deploy):** o Bloco MEDIR, etapa 1 — **os eventos do
 > vídeo guardados** (tocou, pausou, terminou; só do aluno; teto por pessoa) — e as decisões do
 > operador de 09/10 (P27, P39, P43). **Provado no site:** a versão nova (`mv0sesh1-8e53964f`) — o
