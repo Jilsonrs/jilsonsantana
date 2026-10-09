@@ -7,7 +7,8 @@ import type { MyTrilhaSummary } from "@/lib/api";
 const useSession = vi.fn();
 vi.mock("@/lib/auth-client", () => ({ useSession: () => useSession() }));
 const getMyTrilhas = vi.fn();
-vi.mock("@/lib/api", () => ({ getMyTrilhas: () => getMyTrilhas() }));
+const getProgressoDasTrilhas = vi.fn();
+vi.mock("@/lib/api", () => ({ getMyTrilhas: () => getMyTrilhas(), getProgressoDasTrilhas: () => getProgressoDasTrilhas() }));
 
 import { StudentHomePage } from "./StudentHomePage";
 import { IdiomaProvider } from "@/lib/language";
@@ -29,6 +30,7 @@ const blocoMinhasTrilhas = () => screen.getByRole("region", { name: "Minhas tril
 
 beforeEach(() => {
   vi.clearAllMocks();
+  getProgressoDasTrilhas.mockResolvedValue([]);
   useSession.mockReturnValue({
     data: { user: { name: "Jilson Santana", email: "j@x.com" } },
     isPending: false,
@@ -86,6 +88,16 @@ describe("StudentHomePage — o painel", () => {
 });
 
 describe("StudentHomePage — Minhas trilhas", () => {
+  // A porcentagem da trilha também no Início (Bloco MEDIR, etapa 3 — decisão do operador, 09/10/2026).
+  it("a trilha começada mostra a barra com a porcentagem", async () => {
+    getMyTrilhas.mockResolvedValue([trilha(1), trilha(2)]);
+    getProgressoDasTrilhas.mockResolvedValue([{ planId: 2, concluidas: 1, total: 2, concluida: false }]);
+    renderWithProviders(<StudentHomePage />);
+    const barra = await screen.findByRole("progressbar", { name: "Progresso na trilha" });
+    expect(barra.getAttribute("aria-valuenow")).toBe("50");
+    expect(screen.getAllByRole("progressbar")).toHaveLength(1);
+  });
+
   it("carregando, enquanto a busca não volta", () => {
     getMyTrilhas.mockReturnValue(new Promise(() => {})); // nunca resolve
     renderWithProviders(<StudentHomePage />);

@@ -1,6 +1,8 @@
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useT } from "@/lib/language";
+import { BarraDeProgresso } from "./BarraDeProgresso";
 
 // Only the fields actually rendered — shared by the full catalog card (which
 // has skillsCovered), search results (which don't carry it) and a trilha SALVA
@@ -13,9 +15,15 @@ export type TrilhaCardProps = {
   // Destino explícito, quando o card não se resolve por slug: o clone do aluno
   // é alcançado por id (`/aluno/minhas-trilhas/:id`). Sem `to`, o link vem do slug.
   to?: string;
+  /**
+   * A porcentagem do aluno nesta trilha, só quando ele já COMEÇOU (Bloco MEDIR, etapa 3 —
+   * decisão do operador, 09/10/2026: no cartão, com a barra do cartão do curso). Sem ela, sem barra.
+   */
+  progresso?: number;
 };
 
 export function TrilhaCard(trilha: TrilhaCardProps) {
+  const t = useT();
   const body = (
     <Card className="group flex h-full flex-col overflow-hidden rounded-xl border border-border/50 bg-card transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-md">
       <CardHeader className="flex-none p-6 pb-4 relative">
@@ -41,6 +49,11 @@ export function TrilhaCard(trilha: TrilhaCardProps) {
               {skill}
             </Badge>
           ))}
+        </CardContent>
+      )}
+      {trilha.progresso !== undefined && (
+        <CardContent className="mt-auto p-6 pt-0">
+          <BarraDeProgresso porcentagem={trilha.progresso} rotulo={t.trilha.progressoNaTrilha} concluido={t.curso.concluido} />
         </CardContent>
       )}
     </Card>

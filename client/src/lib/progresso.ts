@@ -8,6 +8,7 @@ import { NOTIFICACOES } from "@/lib/notificacoes";
 // a pessoa pode concluir é o servidor, que recusa o que ela não pode assistir.
 
 const PROGRESSO_DOS_CURSOS = "progresso-dos-cursos";
+const PROGRESSO_DAS_TRILHAS = "progresso-das-trilhas";
 
 /** Concluir uma aula. Ao terminar, a página da aula recarrega: a barra e o sinal mudam na hora. */
 export function useConcluirAula() {
@@ -20,6 +21,7 @@ export function useConcluirAula() {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["pagina-da-aula"] }),
         queryClient.invalidateQueries({ queryKey: [PROGRESSO_DOS_CURSOS] }),
+        queryClient.invalidateQueries({ queryKey: [PROGRESSO_DAS_TRILHAS] }),
         // A última aula concluída pode ter mandado os parabéns do curso.
         queryClient.invalidateQueries({ queryKey: [NOTIFICACOES] }),
       ]);
@@ -47,4 +49,18 @@ export function useProgressoDosCursos(logado: boolean): Map<number, number> {
     enabled: logado,
   });
   return new Map((logado ? (data ?? []) : []).filter((p) => p.total > 0).map((p) => [p.courseId, Math.round((p.concluidas / p.total) * 100)]));
+}
+
+/**
+ * A porcentagem de quem está logado em cada trilha DELE já COMEÇADA, por id da trilha (a barra
+ * no cartão da trilha — Bloco MEDIR, etapa 3, decisão do operador de 09/10/2026). Sem login, a
+ * consulta nem sai e o mapa fica vazio.
+ */
+export function useProgressoDasTrilhas(logado: boolean): Map<number, number> {
+  const { data } = useQuery({
+    queryKey: [PROGRESSO_DAS_TRILHAS],
+    queryFn: api.getProgressoDasTrilhas,
+    enabled: logado,
+  });
+  return new Map((logado ? (data ?? []) : []).filter((p) => p.total > 0).map((p) => [p.planId, Math.round((p.concluidas / p.total) * 100)]));
 }

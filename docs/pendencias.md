@@ -16,7 +16,7 @@
 > 5. **Item novo ganha o próximo número livre.** Número nunca se reutiliza, para que "P7" queira
 >    dizer sempre a mesma coisa em qualquer conversa.
 >
-> **Próximo número livre: P55** · Atualizada em 09/10/2026
+> **Próximo número livre: P56** · Atualizada em 09/10/2026
 
 ## A. Agora, em sequência *(nascidas da configuração do Bunny, 25/09/2026)*
 
@@ -28,6 +28,7 @@ entra aqui, com o próximo número livre.*
 
 | # | O que falta | Onde registrar |
 |---|---|---|
+| P55 | **Revisar o texto novo de 09/10**, rascunho do agente: **"Progresso na trilha"** / **"Learning path progress"** — o que o leitor de tela anuncia na barra do cartão da trilha (a porcentagem visível usa o "concluído" que já existe). Junto da P38 | `core/src/i18n/` (`app.trilha.progressoNaTrilha`) |
 | P54 | **Revisar com o Antigravity o acabamento do editor do curso em 7 passos** (a estrutura existe desde 28/09; Legendas e Mensagens desde 04/10). Depois disso, a P38 | `design-lab/GEMINI.md` (o mapa das telas e a fila de formatação) |
 | P45 | **Revisar os textos novos de 06/10**, rascunho do agente: "Notificação não encontrada." / "Notification not found." (mensagem aberta que não está mais na lista) e "Notifications" (o item do menu em inglês) | `core/src/i18n/pt.ts` e `en.ts` |
 | P47 | **O e-mail educacional também aparece no sino?** (a Udemy põe nos dois). Recomendação do agente: sim | `implementation-plan.md` → 4d, antes do C4 |

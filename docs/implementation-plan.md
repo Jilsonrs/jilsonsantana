@@ -3450,8 +3450,8 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       de quem pede. Revisão de segurança sem P0/P1. **A tela (etapa 4):** o vídeo conclui aos 90%
       (`player-do-bunny.ts`), o texto ao abrir, só com login; a barra da página da aula mostra o
       número real (aulas concluídas ÷ aulas da lista) e o conteúdo do curso marca a aula feita.)*
-- [ ] **Trilha completion:** a saved trilha is "complete" when all its `PlanItem` lessons are
-      done (course-item = its lessons). Drives certificate eligibility (Phase 6.5). → **Bloco MEDIR, etapa 3**
+- [x] **Trilha completion:** a saved trilha is "complete" when all its `PlanItem` lessons are
+      done (course-item = its lessons). Drives certificate eligibility (Phase 6.5). → **Bloco MEDIR, etapa 3** *(09/10/2026)*
 - [x] `LessonEvent` table (event-sourced: type, position, ts) + RLS — **capture only, no analytics yet** → **Bloco MEDIR, etapa 1** *(09/10/2026)*
 - [x] Client: fire PLAY/PAUSE/ENDED events from the player (cheap writes) → **Bloco MEDIR, etapa 1** *(09/10/2026)*
 - [ ] **Ao concluir um curso: a AVALIAÇÃO do curso e, uma vez por aluno, o DEPOIMENTO** *(decisões do
@@ -3961,10 +3961,18 @@ outro aparelho e "daqui a um mês", e o Safari apaga o armazenamento do site em 
       Brasília conferido por fora do banco, e um trecho uma hora antes da meia-noite de lá contando
       no mês passado); site 3 do cartão. **Mutação: as 9 partes reprovam.** *A prova com o vídeo de
       verdade: depois de publicar, assistir uma aula com a conta de aluno e ver as horas no cartão.*
-- [ ] **Etapa 3 — a trilha concluída e a porcentagem da trilha (M)**: a trilha salva está concluída
+- [x] **Etapa 3 — a trilha concluída e a porcentagem da trilha (M)**: a trilha salva está concluída
       quando todas as aulas dos itens dela estão concluídas (item de curso = as aulas publicadas dele);
       é o que a Fase 6.5 usa para o certificado. **Visível para o aluno:** onde a porcentagem aparece é
       do operador (proposta abaixo).
+      *(09/10/2026, no `dev`.)* **Servidor:** `progressoDasTrilhas` em `server/src/lib/progresso.ts` +
+      `GET /api/progresso/trilhas` (só logado, sem cache), irmã da `/progresso/cursos`: só as trilhas
+      DELE, só a cadeia publicada, a aula que entra pelo curso e avulsa conta uma vez, concluída =
+      aula concluída de verdade; devolve só as começadas, com `concluida` (todas as aulas). **Site:**
+      a barra do cartão do curso virou peça compartilhada (`components/content/BarraDeProgresso.tsx`,
+      as mesmas classes) e o cartão da trilha a usa em Minhas trilhas e no Início, só na começada; o
+      rótulo do leitor de tela, "Progresso na trilha", é rascunho do agente (P55). **Testes:**
+      servidor 5; site 3 (Minhas trilhas e Início). **Mutação: as 8 partes reprovam.**
 - **Decididas pelo operador em 09/10/2026 (as propostas do agente, aceitas como estavam):** (2) no cartão do admin,
   o número grande é o **total** e a linha pequena embaixo diz **"N este mês"**, no lugar de "em
   breve"; a Avaliação continua "em breve" até a avaliação do curso existir. (3) A porcentagem da

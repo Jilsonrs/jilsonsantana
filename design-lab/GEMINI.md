@@ -502,6 +502,12 @@ exceto o item 4, que é página pública.
    aluno liga o CC e ela continua nas próximas aulas): ao ajustar o visual lá, **não apague esse
    script e não use "Reset to Default"** — a checagem diária do GitHub acusa, mas o aluno perde a
    legenda até alguém colar de novo (`docs/bunny.md` → *A legenda lembrada*).
+33. **A barra da trilha** *(09/10, Bloco MEDIR, decisão do operador)*: no **cartão da trilha**
+   (`components/content/TrilhaCard.tsx`), em **Minhas trilhas** e no **Início**, a mesma barra do
+   cartão do curso, só na trilha que o aluno já começou. A barra virou uma peça só para os dois
+   cartões, `components/content/BarraDeProgresso.tsx`, com as suas classes de antes — acabar uma
+   acaba as duas. Estrutura pronta, acabamento seu. O `progressbar` com o valor, o nome que o
+   leitor de tela anuncia e o "N% concluído" **têm teste**.
 
 > **Fora do seu trabalho, para não confundir:** o Bunny ganhou **Live Stream** em acesso
 > antecipado (29/09). É só avaliação depois da Fase 3, **não** é tela a desenhar (`docs/bunny.md`

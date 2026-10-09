@@ -579,6 +579,17 @@ export async function getProgressoDosCursos(): Promise<ProgressoDoCurso[]> {
   return data;
 }
 
+/**
+ * O progresso de quem está logado em cada trilha DELE que ele começou (Bloco MEDIR, etapa 3 —
+ * 09/10/2026), e se ela está CONCLUÍDA — todas as aulas concluídas (o certificado, Fase 6.5).
+ */
+export type ProgressoDaTrilha = { planId: number; concluidas: number; total: number; concluida: boolean };
+
+export async function getProgressoDasTrilhas(): Promise<ProgressoDaTrilha[]> {
+  const { data } = await client.get<ProgressoDaTrilha[]>("/progresso/trilhas");
+  return data;
+}
+
 /** O link de download: mesmo site, então o cookie vai junto e o arquivo vem com o nome original. */
 export function enderecoDoArquivo(lessonId: number, fileId: number, comoAdmin: boolean): string {
   return comoAdmin ? `/api/admin/lesson-files/${fileId}/download` : `/api/lessons/${lessonId}/files/${fileId}`;

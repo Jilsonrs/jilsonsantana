@@ -5,7 +5,8 @@ import { renderWithProviders } from "@/test-utils";
 import type { MyTrilhaSummary } from "@/lib/api";
 
 const getMyTrilhas = vi.fn();
-vi.mock("@/lib/api", () => ({ getMyTrilhas: () => getMyTrilhas() }));
+const getProgressoDasTrilhas = vi.fn();
+vi.mock("@/lib/api", () => ({ getMyTrilhas: () => getMyTrilhas(), getProgressoDasTrilhas: () => getProgressoDasTrilhas() }));
 
 import { MyTrilhasPage } from "./MyTrilhasPage";
 import { IdiomaProvider } from "@/lib/language";
@@ -22,6 +23,7 @@ const trilhaSalva: MyTrilhaSummary = {
 
 beforeEach(() => {
   getMyTrilhas.mockReset();
+  getProgressoDasTrilhas.mockReset().mockResolvedValue([]);
 });
 
 describe("MyTrilhasPage", () => {
@@ -57,6 +59,32 @@ describe("MyTrilhasPage", () => {
     expect(screen.getByText("Minha cópia da trilha de fundamentos.")).toBeTruthy();
     expect(screen.getByText("IA aplicada")).toBeTruthy();
     expect(screen.queryByText("Você ainda não salvou nenhuma trilha.")).toBeNull();
+  });
+});
+
+// A PORCENTAGEM DA TRILHA (Bloco MEDIR, etapa 3 — decisão do operador, 09/10/2026): no cartão,
+// com a barra do cartão do curso, só na trilha COMEÇADA.
+describe("MyTrilhasPage — a porcentagem da trilha", () => {
+  const outra: MyTrilhaSummary = { ...trilhaSalva, id: 8, name: "Outra trilha" };
+
+  it("a trilha começada mostra a barra e \"33% concluído\"; a não começada, nada", async () => {
+    getMyTrilhas.mockResolvedValue([trilhaSalva, outra]);
+    getProgressoDasTrilhas.mockResolvedValue([{ planId: 7, concluidas: 1, total: 3, concluida: false }]);
+    renderWithProviders(<MyTrilhasPage />);
+
+    const barra = await screen.findByRole("progressbar", { name: "Progresso na trilha" });
+    expect(barra.getAttribute("aria-valuenow")).toBe("33");
+    expect(screen.getByText("33% concluído")).toBeTruthy();
+    // A barra é da trilha 7, dentro do link dela; a 8 não tem barra.
+    expect(screen.getByRole("link", { name: /Fundamentos de Excel/ }).contains(barra)).toBe(true);
+    expect(screen.getAllByRole("progressbar")).toHaveLength(1);
+  });
+
+  it("a trilha concluída: 100%", async () => {
+    getMyTrilhas.mockResolvedValue([trilhaSalva]);
+    getProgressoDasTrilhas.mockResolvedValue([{ planId: 7, concluidas: 3, total: 3, concluida: true }]);
+    renderWithProviders(<MyTrilhasPage />);
+    expect(await screen.findByText("100% concluído")).toBeTruthy();
   });
 });
 
