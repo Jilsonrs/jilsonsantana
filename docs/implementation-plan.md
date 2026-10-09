@@ -213,7 +213,8 @@
 > próprio GitHub passa, e o registro público dela mostra só "✓" (nenhum endereço). *O teste com o
 > vídeo real é do operador: a aula de ponta a ponta (abrir no ponto, 90%, próxima aula), a legenda
 > (ligar → a próxima abre ligada → sair e voltar; desligar → continua desligada), os botões em
-> português, no Chrome do computador e no iPhone.*
+> português, no Chrome do computador e no iPhone.* **Feito pelo operador em 09/10/2026: "Está tudo
+> funcionando."**
 > **PUBLICADO em 07/10/2026, antes (`main` = `2203e69`, CI verde nos dois jobs, deploy ok; a
 > migration `preferencia_do_aluno` aplicada pelo pre-deploy):** o Bloco AULA, etapa 6 — a legenda
 > lembrada pelo CC do player, como no LinkedIn —, com o script já colado no Bunny pelo operador
@@ -243,15 +244,12 @@
 > publicada, sem cache; curso inexistente → 404; gravar o ponto sem login → 401; arquivo antigo →
 > 404. *O vídeo de verdade (o ponto, tocar sozinho, o fim) é o teste do operador, etapa 5, depois
 > da P51.*
-> **Bloco AULA (a tela onde o aluno estuda), pedido do operador em 06/10/2026 — ETAPAS 1 E 2 FEITAS
-> e publicadas; ETAPAS 3 E 4 FEITAS no `dev` (07/10):** o ponto e a última aula na conta, entrar no
-> curso onde parou e o vídeo voltando sempre tocando, gravado também ao fechar a aba; trocar de aula
-> sem a tela piscar, com a gaveta do celular fechando e o "Próxima aula" no texto; e o piso de
-> aparelhos (iOS 15 em diante) escrito e medido. **Os 3 erros relatados estão corrigidos; falta a
-> prova com o vídeo de verdade, no site (etapa 5, com o operador; a P51 foi resolvida em 07/10).** A análise explica os 3 erros relatados (entrar sempre na 1ª
-> aula, a próxima abrindo pausada, o ponto só no navegador) e traz 4 achados novos, provados (o
-> Voltar com o vídeo errado, a gaveta do celular aberta, a tela piscando entre aulas, a compilação
-> acima do piso das bibliotecas). 5 etapas: ver Fase 5 → **Bloco AULA**. A P51 (antes do teste no ar) foi resolvida em 07/10.
+> **✅ Bloco AULA (a tela onde o aluno estuda) — FECHADO em 09/10/2026**, pedido do operador em
+> 06/10/2026: entrar no curso onde parou, no mesmo segundo e tocando (o ponto na conta, também ao
+> fechar a aba), a próxima aula sozinha no fim do vídeo, o "Próxima aula" no texto, trocar de aula
+> sem a tela piscar, o piso de aparelhos (iOS 15 em diante), **o player novo do Bunny** com os botões
+> no idioma do app e **a legenda lembrada na conta**, mais a checagem diária do script da legenda.
+> Confirmado no ar pelo operador ("Está tudo funcionando"). Detalhe: Fase 5 → **Bloco AULA**.
 > **PUBLICADO em 06/10/2026, no fechamento (`main` = `e12530d`, CI verde nos dois jobs, deploy
 > ok):** o conserto da troca de aula — sair de uma aula de vídeo não derruba mais a próxima na tela
 > de erro. **Provado no site:** a versão nova (`mux313p8-c56d5a94`). *A passagem automática com o
@@ -3504,7 +3502,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       construir.
 - **Done when:** "marquei como vista" works, trilha % completion shows, AND events are captured for future analytics.
 
-### Bloco AULA — A tela onde o aluno estuda, no nível do LinkedIn Learning  *(pedido do operador, 06/10/2026 · plano aprovado por ele no mesmo dia · etapas 1 e 2 tocam a trava da aula)*
+### Bloco AULA — A tela onde o aluno estuda, no nível do LinkedIn Learning  ✅ FECHADO em 09/10/2026  *(pedido do operador, 06/10/2026 · plano aprovado por ele no mesmo dia · etapas 1 e 2 tocam a trava da aula)*
 
 **O pedido** *(comportamento esperado, nas palavras do operador, 06/10/2026 — é a tela "coração da
 escola", e tem que ser impecável no computador, no celular e em aparelho antigo, com legenda)*:
@@ -3715,7 +3713,7 @@ da aba Player — **3 consultas na análise (passou de 2: anotado)**. A sessão 
       **Achado visual, NÃO consertado (decisão do operador):** no iOS 15.0 a 15.3 a moldura do app
       (`min-h-svh` no `Layout.tsx`) não ocupa a altura toda da tela — o resto funciona; o anel de foco
       do teclado (`:focus-visible`) também só aparece do iOS 15.4 em diante, o que não pesa no toque.
-- [ ] **Etapa 5 — publicar e testar no ar, com o operador (P):** o player só toca no domínio da
+- [x] **Etapa 5 — publicar e testar no ar, com o operador (P):** o player só toca no domínio da
       escola, então a prova é no site. **Antes:** a P51 — *resolvida em 07/10/2026 (desligado no
       painel, conferido pelo operador)*. Roteiro em cada aparelho (Chrome no
       computador, Safari no Mac, iPhone, Android, e um aparelho antigo se houver): 1ª vez no curso
@@ -3754,6 +3752,11 @@ da aba Player — **3 consultas na análise (passou de 2: anotado)**. A sessão 
       nas próximas aulas e ao sair e voltar, até ele desligar no mesmo CC. **Sem botão novo**
       (ele recusou o botão da escola: "botão extra não faz sentido"), e sem ligar sempre ("incomoda
       quem não precisa"). Pediu a pesquisa na doc do Bunny → etapa 6.
+      **FECHADA em 09/10/2026 — o operador, depois do player novo no ar (etapas 6c e 6d): "Está
+      tudo funcionando"**, no Chrome do computador e no iPhone, seguindo o roteiro da publicação de
+      07/10 (a aula de ponta a ponta, a legenda lembrada, os botões em português). *Android e aparelho
+      antigo não foram citados no retorno dele; o piso de aparelhos segue provado pela medição da
+      etapa 4.*
 - [x] **Etapa 6 — a legenda lembrada, pelo CC do player (M)** *(proposta em 07/10/2026, aprovada pelo
       operador no mesmo dia: "implementa agora")*. **O que a pesquisa achou** (doc do Bunny, via context7 — 3 consultas além das 4
       da sessão, anotado; e a doc do media-chrome, `/muxinc/media-chrome`): o player novo do Bunny é
@@ -3882,7 +3885,8 @@ da aba Player — **3 consultas na análise (passou de 2: anotado)**. A sessão 
       renomeado, estado renomeado, volta do Plyr, pacote ausente). *Começa a valer quando a `main`
       tiver o player novo (o agendamento só roda na `main`).*
 - **Done when:** os 6 comportamentos do pedido passam no roteiro da etapa 5, sem erro, nos aparelhos
-  testados; CI verde nos dois jobs.
+  testados; CI verde nos dois jobs. ✅ **Cumprido em 09/10/2026** (o retorno do operador na etapa 5;
+  CI da `main` = `c241002` verde nos dois jobs).
 
 **Decisão registrada:** *o ponto e a última aula moram na CONTA, não no navegador* — o pedido exige
 outro aparelho e "daqui a um mês", e o Safari apaga o armazenamento do site em 7 dias. *Sem gatilho:
