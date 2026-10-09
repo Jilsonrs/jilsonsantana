@@ -6,8 +6,10 @@ import type { AdminCourseCard } from "@/lib/api";
 
 const adminGetCourses = vi.fn();
 const deleteCourse = vi.fn();
+const adminGetNumerosDosCursos = vi.fn();
 vi.mock("@/lib/api", () => ({
   adminGetCourses: (...args: unknown[]) => adminGetCourses(...args),
+  adminGetNumerosDosCursos: (...args: unknown[]) => adminGetNumerosDosCursos(...args),
   deleteCourse: (...args: unknown[]) => deleteCourse(...args),
 }));
 
@@ -48,6 +50,7 @@ const completo: AdminCourseCard = {
 beforeEach(() => {
   adminGetCourses.mockReset().mockResolvedValue([course]);
   deleteCourse.mockReset().mockResolvedValue(undefined);
+  adminGetNumerosDosCursos.mockReset().mockResolvedValue([]);
   vi.spyOn(window, "confirm").mockReturnValue(true);
 });
 
@@ -166,16 +169,48 @@ describe("AdminCoursesPage — o cartão do curso", () => {
     expect(screen.queryByText("PUBLISHED")).toBeNull();
   });
 
-  it("os três números da Fase 5 aparecem como placeholder, e não há preço", async () => {
+  // OS NÚMEROS (Bloco MEDIR, etapa 2 — decisão do operador, 09/10/2026): o TOTAL grande e
+  // "N este mês" embaixo; a Avaliação continua "em breve" até a avaliação por curso existir.
+  it("com os números: o total grande e \"este mês\" embaixo; a Avaliação em breve; sem preço", async () => {
+    adminGetNumerosDosCursos.mockResolvedValue([{ courseId: course.id, horas: { total: 151_800, mes: 12_000 }, alunos: { total: 130, mes: 12 } }]);
     renderWithProviders(<AdminCoursesPage />);
     const c = within(await cartao(course.title));
 
     for (const rotulo of ["Horas assistidas", "Alunos", "Avaliação"]) {
       expect(c.getByText(rotulo)).toBeTruthy();
     }
-    expect(c.getAllByText("—")).toHaveLength(3);
-    expect(c.getAllByText("em breve")).toHaveLength(3);
+    expect(await c.findByText("42h 10min")).toBeTruthy();
+    expect(c.getByText("3h 20min este mês")).toBeTruthy();
+    expect(c.getByText("130")).toBeTruthy();
+    expect(c.getByText("12 este mês")).toBeTruthy();
+    expect(c.getAllByText("em breve")).toHaveLength(1);
     expect(c.queryByText(/R\$/)).toBeNull();
+  });
+
+  it("curso sem nenhum número: zero, não traço", async () => {
+    adminGetNumerosDosCursos.mockResolvedValue([{ courseId: 999, horas: { total: 60, mes: 60 }, alunos: { total: 1, mes: 1 } }]);
+    renderWithProviders(<AdminCoursesPage />);
+    const c = within(await cartao(course.title));
+
+    expect(await c.findByText("0min este mês")).toBeTruthy();
+    expect(c.getByText("0 este mês")).toBeTruthy();
+    expect(c.getByText("0")).toBeTruthy();
+  });
+
+  it("os números ainda chegando, ou a busca falhou: traço, sem \"este mês\" — e a lista aparece", async () => {
+    adminGetNumerosDosCursos.mockReturnValue(new Promise(() => {}));
+    const chegando = renderWithProviders(<AdminCoursesPage />);
+    const c = within(await cartao(course.title));
+    expect(c.getAllByText("—")).toHaveLength(3);
+    expect(c.queryByText(/este mês/)).toBeNull();
+    chegando.unmount();
+
+    adminGetNumerosDosCursos.mockRejectedValue(new Error("rede"));
+    renderWithProviders(<AdminCoursesPage />);
+    const f = within(await cartao(course.title));
+    await new Promise((r) => setTimeout(r, 20));
+    expect(f.getAllByText("—")).toHaveLength(3);
+    expect(f.queryByText(/este mês/)).toBeNull();
   });
 
   it("curso vazio: 0% e os quatro itens que faltam", async () => {

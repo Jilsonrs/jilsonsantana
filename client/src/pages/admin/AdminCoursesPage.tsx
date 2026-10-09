@@ -12,6 +12,13 @@ export function AdminCoursesPage() {
     queryKey: ["admin-courses"],
     queryFn: api.adminGetCourses,
   });
+  // Os números do cartão (Bloco MEDIR, etapa 2): uma busca à parte — se ela falhar, a lista
+  // continua; o cartão mostra "—".
+  const numeros = useQuery({ queryKey: ["admin-numeros-dos-cursos"], queryFn: api.adminGetNumerosDosCursos });
+  const numerosDe = (id: number): api.NumerosDoCurso | null => {
+    if (!numeros.data) return null;
+    return numeros.data.find((n) => n.courseId === id) ?? { courseId: id, horas: { total: 0, mes: 0 }, alunos: { total: 0, mes: 0 } };
+  };
   const del = useMutation({
     mutationFn: api.deleteCourse,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-courses"] }),
@@ -49,6 +56,7 @@ export function AdminCoursesPage() {
           <AdminCourseCard
             key={course.id}
             curso={course}
+            numeros={numerosDe(course.id)}
             aoExcluir={() => {
               if (confirm(`Excluir o curso "${course.title}"?`)) del.mutate(course.id);
             }}

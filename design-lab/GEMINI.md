@@ -275,8 +275,11 @@ exceto o item 4, que é página pública.
    mantenha o fechamento por Esc e por clique fora: **têm teste**.
 
 8. **Cartão do curso na lista do admin** (`AdminCourseCard.tsx`, 27/09) — capa 16:9 (sem capa,
-   "Sem imagem"), status em português, "EN", módulos e aulas, três números como **"—" / "em
-   breve"** e a barra de **Preenchimento** com o que falta. Os textos foram **aprovados pelo
+   "Sem imagem"), status em português, "EN", módulos e aulas, os três números e a barra de
+   **Preenchimento** com o que falta. **Desde 09/10** (Bloco MEDIR, decisão do operador): Horas
+   assistidas e Alunos são **reais** — o total grande e **"N este mês"** na linha pequena, no lugar
+   do "em breve"; carregando ou se a busca falhar, "—" sem a linha. A Avaliação continua "—" / "em
+   breve" até a avaliação por curso existir. Os textos foram **aprovados pelo
    operador**: mude o visual, não o texto. O cartão tem `role="article"` com o título como nome, e
    a barra é um `progressbar` com valor: **têm teste**.
 9. **Mídia do curso** (`CourseMediaSection.tsx` e os três componentes de envio, 27/09) — **a ordem

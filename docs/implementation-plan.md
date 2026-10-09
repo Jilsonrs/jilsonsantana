@@ -1888,8 +1888,8 @@ landmark. Corrigido junto.
 | Capa | Capa do curso | **agora** |
 | PUBLICADO / RASCUNHO | Publicado · Rascunho · Arquivado | **agora** |
 | Preço | **não entra** | nunca (assinatura) |
-| Ganhos do mês · Total recebido | Horas assistidas (mês · total) | Fase 5 (`LessonEvent`) |
-| Inscrições neste mês · Total de alunos | Alunos que começaram (mês · total) | Fase 5 (`LessonProgress`) |
+| Ganhos do mês · Total recebido | Horas assistidas (mês · total) | **real desde 09/10/2026** (Bloco MEDIR) |
+| Inscrições neste mês · Total de alunos | Alunos que começaram (mês · total) | **real desde 09/10/2026** (Bloco MEDIR) |
 | Classificação (estrelas) | Avaliação, só para o operador | Fase 5 (a avaliação do curso ao concluir — P27, 09/10) |
 | Concluir seu curso | Preenchimento + o que falta | **agora** |
 | Oportunidade de conteúdo | **não entra** | nunca (pesquisa de mercado da Udemy) |
@@ -3476,9 +3476,9 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       - *A confirmar com o operador na hora de construir:* o **"Não, obrigado"** de 23/09 (o aluno
         encerra de vez o pedido de depoimento) continua junto do "aparece até ele preencher"? Se
         continuar, a recusa fica gravada **sem** coluna nova no `User` (identidade enxuta).
-- [ ] **Os números do cartão do admin** (Bloco A, 27/09/2026), que hoje são placeholder: **horas
+- [x] **Os números do cartão do admin** (Bloco A, 27/09/2026), que hoje são placeholder: **horas
       assistidas** (mês e total, dos `LessonEvent`) e **alunos que começaram** o curso (mês e total,
-      do `LessonProgress`). Leitura do admin, **nunca** no site. → **Bloco MEDIR, etapa 2**
+      do `LessonProgress`). Leitura do admin, **nunca** no site. → **Bloco MEDIR, etapa 2** *(09/10/2026)*
 - [ ] **A avaliação no cartão do admin** — **destravada em 09/10/2026 (a P27):** a média das notas do
       curso (1 a 5), só para o operador, nunca no site. Nasce junto da avaliação do item acima.
 - [x] **O progresso também funciona para o ADMIN** *(consequência da decisão do operador de
@@ -3942,13 +3942,25 @@ outro aparelho e "daqui a um mês", e o Safari apaga o armazenamento do site em 
       gravar (a tela não insiste em 4xx); 2 testes, e tirar o teto (inteiro, do minuto ou do dia)
       reprova. Os dois **P2** viraram nota onde agem: a conta das horas limita cada trecho e ignora
       conta excluída (etapa 2, abaixo); a exclusão a pedido apaga os eventos (Fase 7, LGPD).
-- [ ] **Etapa 2 — os números do cartão do admin (M)**: **horas assistidas** (do `LessonEvent`: o
+- [x] **Etapa 2 — os números do cartão do admin (M)**: **horas assistidas** (do `LessonEvent`: o
       tempo entre "tocou" e o próximo "pausou"/"terminou", com teto, só de alunos) e **alunos que
       começaram** (do `LessonProgress`: quem abriu uma aula do curso, só alunos), **no mês e no
       total** — rota própria `/api/admin/stats/*` (`CLAUDE.md` → *Analytics Convention*). O mês é o
       de Brasília. **Visível para o operador:** o formato no cartão é dele (proposta abaixo).
       *Da revisão de segurança da etapa 1 (P2):* cada trecho conta no máximo a **duração do vídeo da
       aula**; "tocou" sem evento seguinte **não conta**; conta com `deletedAt` **não entra**.
+      *(09/10/2026, no `dev`.)* **Servidor:** `server/src/routes/admin-stats.ts` —
+      `GET /api/admin/stats/cursos` (`requireAdmin`, sem cache), duas consultas SQL: as horas (o
+      trecho de cada "tocou" até o evento seguinte da mesma pessoa na mesma aula, com o teto da
+      duração do vídeo, ou 3 h sem ela) e os alunos (a primeira linha de progresso de cada um no
+      curso); os dois no total e a partir da meia-noite do dia 1º **em Brasília**; só `member`, sem
+      `deletedAt`. **Site:** o cartão mostra o total grande e "N este mês" embaixo (decisão do
+      operador); curso sem número = zero; carregando ou falha = "—" (a lista continua). **Testes:**
+      servidor 6 (quem lê; as horas com o "tocou" repetido, o fechamento perdido, a falta de duração,
+      o "tocou" sem fechamento, o admin e a conta excluída fora; os alunos contados uma vez; o mês de
+      Brasília conferido por fora do banco, e um trecho uma hora antes da meia-noite de lá contando
+      no mês passado); site 3 do cartão. **Mutação: as 9 partes reprovam.** *A prova com o vídeo de
+      verdade: depois de publicar, assistir uma aula com a conta de aluno e ver as horas no cartão.*
 - [ ] **Etapa 3 — a trilha concluída e a porcentagem da trilha (M)**: a trilha salva está concluída
       quando todas as aulas dos itens dela estão concluídas (item de curso = as aulas publicadas dele);
       é o que a Fase 6.5 usa para o certificado. **Visível para o aluno:** onde a porcentagem aparece é
