@@ -204,7 +204,12 @@
 > (aula concluída sozinha, barra na aula e no cartão), o vídeo que não recomeça ao trocar de aba
 > (a apresentação abre pausada, a aula toca sozinha) e o "Salvos". **Primeiro teste com o player de
 > verdade: com o operador** (assistir uma aula até perto do fim e ver a barra andar).
-> **PUBLICADO em 07/10/2026, por último (`main` = `c241002`, CI verde nos dois jobs, deploy ok):** o
+> **PUBLICADO em 09/10/2026, por último (`main` = `aea39eb`, CI verde nos dois jobs, deploy ok):** só
+> documentação — o Bloco AULA fechado com o retorno do operador, o guia do Antigravity com o player
+> novo (`GEMINI.md`, item 32) e a entrada (20) do `CLAUDE.md`. **Provado no site:** a versão nova
+> (`mv0qkr43-4cc217c2`) e a checagem do player passando contra o site no ar. A checagem agendada já
+> rodou sozinha em 08/10 e passou (o GitHub a soltou com horas de atraso — normal em agendamento).
+> **PUBLICADO em 07/10/2026, antes (`main` = `c241002`, CI verde nos dois jobs, deploy ok):** o
 > Bloco AULA, etapas 6c e 6d — **o player NOVO do Bunny** (`player.mediadelivery.net`), com os
 > botões no idioma do app e a legenda decidida pela conta (`captions=<idioma>` ou `off`), o script
 > da legenda do player novo já colado no Bunny pelo operador (P53), e **a checagem diária** do
