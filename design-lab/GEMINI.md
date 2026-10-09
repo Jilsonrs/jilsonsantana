@@ -485,6 +485,20 @@ exceto o item 4, que é página pública.
    botão **"Próxima aula"** (`Button` do shadcn com a seta), que não aparece na última aula, na de
    vídeo nem na trancada. Estrutura pronta, acabamento seu: o botão e o quadro de carregando. O texto
    do botão (aprovado pelo operador), onde ele aparece e para onde leva **têm teste**.
+32. **O player NOVO do Bunny** *(07/10, Bloco AULA — decisões do operador; confirmado por ele no ar
+   em 09/10)*. A aula, o vídeo de apresentação e a prévia do admin usam o player novo do Bunny
+   (`player.mediadelivery.net`). **O que é seu e o que não é:** o player roda **dentro de uma
+   moldura (iframe) do Bunny** — o nosso CSS **não alcança** os controles dele. Cor, botões e o que
+   aparece na barra se ajustam no **painel do Bunny** (Stream → `jilsonsantana-stream` → **Player**),
+   e mexer lá é decisão do operador. O nosso lado desenha **só a moldura**: o quadro 16:9 em
+   `components/content/BunnyPlayer.tsx` e o "Carregando…" do item 31. **Os botões do player saem no
+   idioma do app** (decisão do operador) — não há texto nosso dentro dele. **No `BunnyPlayer.tsx`, não
+   tire do iframe:** o `referrerPolicy` (item 9), o `key` (uma moldura nova a cada vídeo — sem ele, o
+   Voltar do navegador troca só o vídeo) e o `allow` com `autoplay` (sem ele a aula não toca
+   sozinha). **No painel, aba Player, o "Custom HTML head" tem o script da legenda lembrada** (o
+   aluno liga o CC e ela continua nas próximas aulas): ao ajustar o visual lá, **não apague esse
+   script e não use "Reset to Default"** — a checagem diária do GitHub acusa, mas o aluno perde a
+   legenda até alguém colar de novo (`docs/bunny.md` → *A legenda lembrada*).
 
 > **Fora do seu trabalho, para não confundir:** o Bunny ganhou **Live Stream** em acesso
 > antecipado (29/09). É só avaliação depois da Fase 3, **não** é tela a desenhar (`docs/bunny.md`
@@ -496,6 +510,7 @@ exceto o item 4, que é página pública.
 |---|---|
 | `client/src/lib/navigation.ts` | É o **mapa de navegação** — dado, não estilo. Ele decide o que aparece e para quem; você decide como aparece. |
 | `client/src/lib/versao.ts` e `recarregar.ts` | A **troca de versão sem atrapalhar o aluno** (regra 13) — lógica, não estilo. |
+| `client/src/lib/endereco-do-player.ts`, `legenda-lembrada.ts`, `player-do-bunny.ts`, `ponto-da-aula.ts` | A **lógica do player** (item 32): onde a aula abre, a legenda da conta, o idioma dos botões, o ponto gravado e a próxima aula. Comportamento, não estilo — e tudo tem teste. |
 | `client/src/lib/footer.ts` | Os **itens do rodapé do app** e para onde levam — dado, igual ao mapa de navegação. O visual fica em `components/layout/AppFooter.tsx`. |
 | Qualquer `*.test.tsx` / `*.test.ts` | Se um teste incomodar, **avise** — não edite. Um teste ajustado para passar deixa de proteger. |
 | `client/src/components/ui/sheet.tsx` | Vem da biblioteca (shadcn/Radix). |

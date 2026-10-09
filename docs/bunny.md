@@ -137,6 +137,8 @@ frente do site, por exemplo), ou se o Enterprise DRM entrar só para as aulas.*
   fora do repo — a página do player baixada do ar, com um vídeo público de teste no lugar do nosso,
   que só toca no domínio da escola): abre como a conta manda mesmo com o aparelho lembrando o
   contrário; CC e menu, ligar e desligar → um aviso cada; abrir ligada → nenhum aviso.
+  **Confirmado no ar pelo operador em 09/10/2026** (Chrome do computador e iPhone, com o player
+  novo): "Está tudo funcionando".
   **Histórico, para não repetir:** o primeiro script (07/10) foi escrito para este player, mas o
   site ainda abria o **antigo** (Plyr, `iframe.mediadelivery.net` — §7), onde ele nunca avisou
   nada; no iPhone a legenda "funcionava" pela memória do próprio Plyr. **A página do player se olha
@@ -655,7 +657,8 @@ O Bunny gera estes tipos de chave:
   apresentação: a trava de *Allowed domains* não valia no endereço antigo; um endereço de aula que
   vazasse abriria o player em qualquer site por 24 h). A troca fecha isso;
   `t`, `autoplay` e `captions` funcionam igual, e o player.js também (ready, play, pause,
-  timeupdate, ended, seeked, error). *Gatilho de reabertura: o Bunny mudar o endereço de novo, ou
+  timeupdate, ended, seeked, error). **No ar desde 07/10/2026 (`main` = `c241002`), confirmado pelo
+  operador em 09/10/2026.** *Gatilho de reabertura: o Bunny mudar o endereço de novo, ou
   um defeito do player novo que o antigo não tinha — voltar é trocar uma linha
   (`montarEndereco`), só até o antigo sair do ar.*
 - **CSP:** quando o bloco do `helmet` entrar (backlog P2), o `frame-src` precisa do endereço do
