@@ -15,6 +15,7 @@ const alternarSalvo = vi.fn();
 const gravarPonto = vi.fn();
 const getPreferencias = vi.fn();
 const salvarPreferencias = vi.fn();
+const gravarEvento = vi.fn();
 vi.mock("@/lib/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/api")>()),
   getLessonPage: (...args: unknown[]) => getLessonPage(...args),
@@ -24,6 +25,7 @@ vi.mock("@/lib/api", async (importOriginal) => ({
   gravarPonto: (...args: unknown[]) => gravarPonto(...args),
   getPreferencias: (...args: unknown[]) => getPreferencias(...args),
   salvarPreferencias: (...args: unknown[]) => salvarPreferencias(...args),
+  gravarEvento: (...args: unknown[]) => gravarEvento(...args),
 }));
 // O player do Bunny é ouvido pelo NOSSO módulo; aqui ele vira dublê, e o teste
 // "chega aos 90%" chamando o aviso que a página entregou.
@@ -36,8 +38,10 @@ const avisosDoPlayer = () => ouvirPlayer.mock.calls[0][1] as Required<OuvintesDo
 // O envio na saída da página é a NOSSA fronteira com o navegador (`fetchLater`): dublê.
 type EnvioFalso = { cancelar: ReturnType<typeof vi.fn>; enviado: ReturnType<typeof vi.fn> };
 const agendarNaSaida = vi.fn();
+const enviarJa = vi.fn();
 vi.mock("@/lib/envio-na-saida", () => ({
   agendarNaSaida: (...args: unknown[]) => agendarNaSaida(...args),
+  enviarJa: (...args: unknown[]) => enviarJa(...args),
 }));
 const useSessionMock = vi.fn();
 vi.mock("@/lib/auth-client", () => ({ useSession: () => useSessionMock() }));
@@ -125,6 +129,8 @@ beforeEach(() => {
   gravarPonto.mockReset().mockResolvedValue(undefined);
   getPreferencias.mockReset().mockResolvedValue({ legendas: false });
   salvarPreferencias.mockReset().mockResolvedValue(undefined);
+  gravarEvento.mockReset().mockResolvedValue(undefined);
+  enviarJa.mockReset();
   agendarNaSaida.mockReset().mockImplementation((): EnvioFalso => ({ cancelar: vi.fn(), enviado: vi.fn(() => false) }));
 });
 
@@ -917,6 +923,67 @@ describe("página da aula — trocar de aula", () => {
     abrir("/aluno/aula/12");
     await screen.findByRole("status");
     expect(screen.queryByRole("link", { name: "Próxima aula" })).toBeNull();
+  });
+});
+
+// OS EVENTOS DO VÍDEO (Fase 5, Bloco MEDIR, etapa 1 — pedido do operador, 09/10/2026): o
+// player avisa UMA vez, e a página entrega o aviso ao ponto E aos eventos. Só o aluno
+// guarda eventos: o admin (assistir para conferir) e o visitante, não.
+describe("página da aula — os eventos do vídeo", () => {
+  const comoMembro = () => useSessionMock.mockReturnValue({ data: { user: { role: Role.MEMBER } }, isPending: false });
+  const playerPronto = async () => {
+    await screen.findByTitle("Abertura");
+    await waitFor(() => expect(ouvirPlayer).toHaveBeenCalled());
+  };
+
+  it("aluno: tocou e pausou viram eventos, e o ponto continua recebendo a pausa", async () => {
+    comoMembro();
+    abrir();
+    await playerPronto();
+
+    avisosDoPlayer().aoTocar();
+    avisosDoPlayer().aoAndar(29.4, 600);
+    avisosDoPlayer().aoPausar(30.5);
+
+    await waitFor(() =>
+      expect(gravarEvento.mock.calls).toEqual([
+        [11, "PLAY", 0],
+        [11, "PAUSE", 30.5],
+      ]),
+    );
+    await waitFor(() => expect(gravarPonto).toHaveBeenCalledWith(11, 30, false));
+  });
+
+  it("aluno: o fim do vídeo vira o evento terminou", async () => {
+    comoMembro();
+    abrir();
+    await playerPronto();
+
+    avisosDoPlayer().aoTocar();
+    avisosDoPlayer().aoAndar(599, 600);
+    avisosDoPlayer().aoTerminar();
+
+    await waitFor(() => expect(gravarEvento.mock.calls.map(([, tipo]) => tipo)).toEqual(["PLAY", "ENDED"]));
+  });
+
+  it("admin e visitante: nenhum evento é guardado", async () => {
+    comoAdmin();
+    const admin = abrir();
+    await playerPronto();
+    avisosDoPlayer().aoTocar();
+    avisosDoPlayer().aoPausar(10);
+    admin.unmount();
+
+    ouvirPlayer.mockClear();
+    useSessionMock.mockReturnValue({ data: null, isPending: false });
+    getLessonPage.mockResolvedValue(pagina({ isFreePreview: true }));
+    abrir();
+    await playerPronto();
+    avisosDoPlayer().aoTocar();
+    avisosDoPlayer().aoPausar(10);
+
+    await new Promise((r) => setTimeout(r, 20));
+    expect(gravarEvento).not.toHaveBeenCalled();
   });
 });
 

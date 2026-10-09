@@ -3446,8 +3446,8 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       número real (aulas concluídas ÷ aulas da lista) e o conteúdo do curso marca a aula feita.)*
 - [ ] **Trilha completion:** a saved trilha is "complete" when all its `PlanItem` lessons are
       done (course-item = its lessons). Drives certificate eligibility (Phase 6.5). → **Bloco MEDIR, etapa 3**
-- [ ] `LessonEvent` table (event-sourced: type, position, ts) + RLS — **capture only, no analytics yet** → **Bloco MEDIR, etapa 1**
-- [ ] Client: fire PLAY/PAUSE/ENDED events from the player (cheap writes) → **Bloco MEDIR, etapa 1**
+- [x] `LessonEvent` table (event-sourced: type, position, ts) + RLS — **capture only, no analytics yet** → **Bloco MEDIR, etapa 1** *(09/10/2026)*
+- [x] Client: fire PLAY/PAUSE/ENDED events from the player (cheap writes) → **Bloco MEDIR, etapa 1** *(09/10/2026)*
 - [ ] **Ao concluir um curso: a AVALIAÇÃO do curso e, uma vez por aluno, o DEPOIMENTO** *(decisões do
       operador de 23/09/2026 e de 09/10/2026 — a P27, que troca a nota "uma por aluno, geral" por uma
       nota POR CURSO)*. Depende deste bloco: "concluiu um curso" só existe com o `LessonProgress`.
@@ -3908,7 +3908,7 @@ outro aparelho e "daqui a um mês", e o Safari apaga o armazenamento do site em 
 > avaliação do curso e o depoimento (decididos em 09/10) ficam para o bloco seguinte, porque têm
 > tela e texto novos que são do operador.
 
-- [ ] **Etapa 1 — guardar os eventos do vídeo (`LessonEvent`) (M)** — **não muda nada que o aluno
+- [x] **Etapa 1 — guardar os eventos do vídeo (`LessonEvent`) (M)** — **não muda nada que o aluno
       vê**. Tabela `lesson_event` (tipo **PLAY / PAUSE / ENDED**, o segundo do vídeo, a hora), com
       RLS, presa à pessoa e à aula — some com elas, **nunca** com o churn (`CLAUDE.md` → *Churn não
       apaga nada*). `POST /api/lessons/:id/eventos`: só logado, só aula de **vídeo**, a mesma trava
@@ -3917,11 +3917,32 @@ outro aparelho e "daqui a um mês", e o Safari apaga o armazenamento do site em 
       página some com o vídeo tocando (o envio que sobrevive a fechar a aba, `envio-na-saida.ts`) e
       **tocou** quando ela volta. **O admin não grava** — assistir para conferir não pode inflar as
       horas dos alunos. *SEEK fica de fora até uma análise pedir (uma linha de migration).*
+      *(09/10/2026, no `dev`.)* **Banco:** migration `eventos_do_video` (enum + tabela + 2 índices +
+      RLS) — **passo 0 no dev:** as mesmas contagens antes e depois (25 → 26 migrations), zero tabelas
+      sem RLS, `migrate diff` vazio. **Servidor:** a rota no `progress.ts`, junto da do ponto, com o
+      segundo inteiro (o player manda fração). **Site:** `client/src/lib/eventos-da-aula.ts` (o
+      gancho: um "tocou" abre o trecho e o evento seguinte fecha; esconder a página tocando fecha na
+      hora pelo `enviarJa` de `envio-na-saida.ts`, e voltar tocando reabre; sair da aula tocando
+      fecha; em fila, insistindo — evento repetido não muda a conta); a página da aula entrega o aviso
+      do player ao ponto E aos eventos, e o admin não grava. **Testes:** servidor 12 (401, 404 fora da
+      cadeia publicada, 400 na aula de texto e no corpo errado, 403 sem assinatura e a prévia grátis
+      guardando, a ordem, o segundo inteiro e a pessoa da sessão); site 6 do gancho + 3 da página da
+      aula. **Mutação: as 10 partes reprovam** (a trava da assinatura, a aula de texto, a cadeia
+      publicada; esconder, voltar, sair, a fila, a aba escondida; o admin gravando; a pausa sem chegar
+      aos eventos). *A prova com o vídeo de verdade, no ar, vem com a etapa 2: as horas no cartão.*
+      **Revisão de segurança** (`security-vulnerability-reviewer`): **sem P0**; o **P1** — a primeira
+      tabela em que o aluno só acrescenta linhas, sem teto: um script enchia o banco de todos —
+      **corrigido na hora**: **30 eventos por minuto e 1.000 por dia por pessoa**, passou → 429 sem
+      gravar (a tela não insiste em 4xx); 2 testes, e tirar o teto (inteiro, do minuto ou do dia)
+      reprova. Os dois **P2** viraram nota onde agem: a conta das horas limita cada trecho e ignora
+      conta excluída (etapa 2, abaixo); a exclusão a pedido apaga os eventos (Fase 7, LGPD).
 - [ ] **Etapa 2 — os números do cartão do admin (M)**: **horas assistidas** (do `LessonEvent`: o
       tempo entre "tocou" e o próximo "pausou"/"terminou", com teto, só de alunos) e **alunos que
       começaram** (do `LessonProgress`: quem abriu uma aula do curso, só alunos), **no mês e no
       total** — rota própria `/api/admin/stats/*` (`CLAUDE.md` → *Analytics Convention*). O mês é o
       de Brasília. **Visível para o operador:** o formato no cartão é dele (proposta abaixo).
+      *Da revisão de segurança da etapa 1 (P2):* cada trecho conta no máximo a **duração do vídeo da
+      aula**; "tocou" sem evento seguinte **não conta**; conta com `deletedAt` **não entra**.
 - [ ] **Etapa 3 — a trilha concluída e a porcentagem da trilha (M)**: a trilha salva está concluída
       quando todas as aulas dos itens dela estão concluídas (item de curso = as aulas publicadas dele);
       é o que a Fase 6.5 usa para o certificado. **Visível para o aluno:** onde a porcentagem aparece é
@@ -4170,7 +4191,9 @@ outro aparelho e "daqui a um mês", e o Safari apaga o armazenamento do site em 
 - [ ] **LGPD mínimo: política de privacidade publicada + caminho de exclusão de conta.** É
       **pendência de lançamento, não item de engenharia** — não vira bloco de código. O checkbox
       amplo de LGPD no topo desta fase cobre o resto (termos, consentimento, export); aqui fica só
-      o mínimo que não pode faltar no dia do GO-LIVE.
+      o mínimo que não pode faltar no dia do GO-LIVE. *Nota técnica (revisão de segurança do Bloco
+      MEDIR, 09/10/2026): a exclusão a pedido apaga os eventos do vídeo (`lesson_event`) da pessoa —
+      o `deletedAt` sozinho os deixa para sempre.*
 
 - **Done when:** the Excel + IA course is buyable and watchable end to end. **→ LAUNCH**
 

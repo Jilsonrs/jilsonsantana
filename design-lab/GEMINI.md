@@ -510,7 +510,7 @@ exceto o item 4, que é página pública.
 |---|---|
 | `client/src/lib/navigation.ts` | É o **mapa de navegação** — dado, não estilo. Ele decide o que aparece e para quem; você decide como aparece. |
 | `client/src/lib/versao.ts` e `recarregar.ts` | A **troca de versão sem atrapalhar o aluno** (regra 13) — lógica, não estilo. |
-| `client/src/lib/endereco-do-player.ts`, `legenda-lembrada.ts`, `player-do-bunny.ts`, `ponto-da-aula.ts` | A **lógica do player** (item 32): onde a aula abre, a legenda da conta, o idioma dos botões, o ponto gravado e a próxima aula. Comportamento, não estilo — e tudo tem teste. |
+| `client/src/lib/endereco-do-player.ts`, `legenda-lembrada.ts`, `player-do-bunny.ts`, `ponto-da-aula.ts`, `eventos-da-aula.ts` | A **lógica do player** (item 32): onde a aula abre, a legenda da conta, o idioma dos botões, o ponto gravado e a próxima aula. Comportamento, não estilo — e tudo tem teste. |
 | `client/src/lib/footer.ts` | Os **itens do rodapé do app** e para onde levam — dado, igual ao mapa de navegação. O visual fica em `components/layout/AppFooter.tsx`. |
 | Qualquer `*.test.tsx` / `*.test.ts` | Se um teste incomodar, **avise** — não edite. Um teste ajustado para passar deixa de proteger. |
 | `client/src/components/ui/sheet.tsx` | Vem da biblioteca (shadcn/Radix). |

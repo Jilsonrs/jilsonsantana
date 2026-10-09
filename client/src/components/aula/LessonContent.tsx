@@ -49,7 +49,7 @@ export function LessonContent({
   temArquivos,
   aoConcluir,
   aoTerminar,
-  ponto,
+  ouvintes,
   proximaAulaId,
   legenda,
   renovarVideo,
@@ -62,8 +62,11 @@ export function LessonContent({
   aoConcluir?: () => void;
   /** O vídeo terminou: gravar "viu até o fim" e abrir a próxima aula (05 e 06/10/2026). */
   aoTerminar?: () => void;
-  /** O que grava o ponto do vídeo na conta (Bloco AULA, 06/10/2026). */
-  ponto?: Pick<OuvintesDoPonto, "aoAndar" | "aoPausar" | "aoTocar">;
+  /**
+   * Quem ouve o vídeo andar, pausar e tocar: o ponto na conta (Bloco AULA, 06/10/2026) e os
+   * eventos do vídeo (Bloco MEDIR, 09/10/2026).
+   */
+  ouvintes?: Pick<OuvintesDoPonto, "aoAndar" | "aoPausar" | "aoTocar">;
   /** A próxima aula da lista: na aula de texto, o botão "Próxima aula" leva a ela (06/10/2026). Na última, nenhum. */
   proximaAulaId?: number;
   /**
@@ -103,9 +106,9 @@ export function LessonContent({
           aoMudarLegenda={legenda?.aoMudar}
           aoConcluir={aoConcluir}
           aoTerminar={aoTerminar}
-          aoAndar={ponto?.aoAndar}
-          aoPausar={ponto?.aoPausar}
-          aoTocar={ponto?.aoTocar}
+          aoAndar={ouvintes?.aoAndar}
+          aoPausar={ouvintes?.aoPausar}
+          aoTocar={ouvintes?.aoTocar}
           aoVencer={renovarVideo}
         />
       </div>

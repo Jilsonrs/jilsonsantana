@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { ContentStatus, pontoDaAulaSchema } from "@jilson/core";
+import { ContentStatus, LessonKind, eventoDaAulaSchema, pontoDaAulaSchema } from "@jilson/core";
 import { prisma } from "../lib/prisma.js";
 import { loadSession, requireAdmin, requireAuth } from "../middleware/auth.js";
 import { parseId, validate } from "../lib/http.js";
@@ -115,6 +115,60 @@ router.post("/admin/lessons/:id/ponto", requireAdmin, async (req, res) => {
     return;
   }
   await gravarPonto(user.id, aula.id, body.segundos);
+  res.status(204).end();
+});
+
+// OS EVENTOS DO VÍDEO (Fase 5, Bloco MEDIR, etapa 1 — pedido do operador, 09/10/2026):
+// tocou, pausou, terminou — só GUARDADOS, para as horas assistidas do cartão do admin
+// (a conta é leitura à parte, etapa 2). Só aula de VÍDEO, e a MESMA trava do ponto. Só a
+// porta do aluno: a tela do admin não manda (assistir para conferir não conta como aluno),
+// e a conta das horas soma só alunos.
+
+// O TETO POR PESSOA (achado P1 da revisão de segurança, 09/10/2026): é a primeira tabela em
+// que o aluno só ACRESCENTA linhas, e sem teto um script enche o banco de todos. Quem assiste
+// de verdade faz poucos eventos por minuto (tocar, pausar, trocar de aba); o teto é folgado.
+// Passou: 429, e a tela não insiste (`deveTentarDeNovo` não repete 4xx).
+export const EVENTOS_POR_MINUTO = 30;
+export const EVENTOS_POR_DIA = 1000;
+
+async function passouDoTeto(userId: string): Promise<boolean> {
+  const agora = Date.now();
+  const noMinuto = await prisma.lessonEvent.count({ where: { userId, createdAt: { gte: new Date(agora - 60_000) } } });
+  if (noMinuto >= EVENTOS_POR_MINUTO) return true;
+  const noDia = await prisma.lessonEvent.count({ where: { userId, createdAt: { gte: new Date(agora - 24 * 60 * 60_000) } } });
+  return noDia >= EVENTOS_POR_DIA;
+}
+
+// POST /api/lessons/:id/eventos — aconteceu isto no vídeo desta aula, neste segundo.
+router.post("/lessons/:id/eventos", requireAuth, async (req, res) => {
+  const user = req.user;
+  if (!user) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  const id = parseId(req.params.id, res);
+  if (id === null) return;
+  const body = validate(eventoDaAulaSchema, req.body, res);
+  if (body === null) return;
+  const aula = await prisma.lesson.findFirst({ where: { id, ...cadeiaPublicada }, select: { id: true, isFreePreview: true, kind: true } });
+  if (!aula) {
+    res.status(404).json({ error: "NotFound" });
+    return;
+  }
+  if (aula.kind !== LessonKind.VIDEO) {
+    res.status(400).json({ error: "AulaSemVideo" });
+    return;
+  }
+  if (!aulaLiberada(aula, await temAcessoAtivo(user.id))) {
+    res.status(403).json({ error: "AssinaturaNecessaria" });
+    return;
+  }
+  if (await passouDoTeto(user.id)) {
+    res.status(429).json({ error: "MuitosEventos" });
+    return;
+  }
+  // O player avisa o tempo com casas decimais; o evento guarda o segundo inteiro.
+  await prisma.lessonEvent.create({ data: { userId: user.id, lessonId: aula.id, type: body.tipo, positionSeconds: Math.floor(body.segundos) } });
   res.status(204).end();
 });
 
