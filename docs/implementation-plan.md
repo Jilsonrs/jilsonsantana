@@ -204,7 +204,13 @@
 > (aula concluída sozinha, barra na aula e no cartão), o vídeo que não recomeça ao trocar de aba
 > (a apresentação abre pausada, a aula toca sozinha) e o "Salvos". **Primeiro teste com o player de
 > verdade: com o operador** (assistir uma aula até perto do fim e ver a barra andar).
-> **PUBLICADO em 09/10/2026, por último (`main` = `aea39eb`, CI verde nos dois jobs, deploy ok):** só
+> **PUBLICADO em 09/10/2026, por último (`main` = `a236c0c`, CI verde nos dois jobs, deploy ok; a
+> migration `eventos_do_video` aplicada pelo pre-deploy):** o Bloco MEDIR, etapa 1 — **os eventos do
+> vídeo guardados** (tocou, pausou, terminou; só do aluno; teto por pessoa) — e as decisões do
+> operador de 09/10 (P27, P39, P43). **Provado no site:** a versão nova (`mv0sesh1-8e53964f`) — o
+> deploy só sobe depois do pre-deploy, então a tabela existe —; guardar evento sem login → 401; a
+> checagem do player passa. *A prova com o vídeo de verdade vem com a etapa 2: as horas no cartão.*
+> **PUBLICADO em 09/10/2026, antes (`main` = `aea39eb`, CI verde nos dois jobs, deploy ok):** só
 > documentação — o Bloco AULA fechado com o retorno do operador, o guia do Antigravity com o player
 > novo (`GEMINI.md`, item 32) e a entrada (20) do `CLAUDE.md`. **Provado no site:** a versão nova
 > (`mv0qkr43-4cc217c2`) e a checagem do player passando contra o site no ar. A checagem agendada já
