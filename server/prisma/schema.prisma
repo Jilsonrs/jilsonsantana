@@ -386,6 +386,18 @@ model LessonProgress {
   @@map("lesson_progress")
 }
 
+// OS AVISOS DA STRIPE JÁ PROCESSADOS (Fase 4, etapa 4.1 — CLAUDE.md → Membership Gating). A
+// Stripe entrega o mesmo aviso mais de uma vez: o repetido não faz nada. O id é o `event.id`
+// da Stripe; a linha nasce na MESMA transação que atualiza o espelho da assinatura — se a
+// atualização falhar, o aviso não fica marcado e a Stripe entrega de novo.
+model StripeEvent {
+  id          String   @id
+  type        String
+  processedAt DateTime @default(now())
+
+  @@map("stripe_event")
+}
+
 // OS EVENTOS DO VÍDEO (Fase 5, Bloco MEDIR, etapa 1 — pedido do operador, 09/10/2026).
 // Só GUARDA: tocou, pausou, terminou, no segundo do vídeo e na hora — a análise (as
 // horas assistidas do cartão do admin) é leitura à parte, em rota própria (CLAUDE.md →
@@ -644,6 +656,11 @@ model Subscription {
   stripeCustomerId     String?
   // Obrigatório: é a chave do objeto canônico na Stripe.
   stripeSubscriptionId String    @unique
+  // Assinatura de verdade ou do MODO DE TESTE da Stripe (Fase 4, etapa 4.1 — achado P2 da
+  // revisão, 09/10/2026). Até o lançamento o site no ar usa as chaves de teste; no GO-LIVE, as
+  // de teste saem do banco de produção (Fase 7), senão dariam acesso para sempre. Sem saber
+  // (a assinatura de teste do seed), FALSO.
+  livemode             Boolean   @default(false)
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
 

@@ -16,7 +16,7 @@
 > 5. **Item novo ganha o próximo número livre.** Número nunca se reutiliza, para que "P7" queira
 >    dizer sempre a mesma coisa em qualquer conversa.
 >
-> **Próximo número livre: P56** · Atualizada em 09/10/2026
+> **Próximo número livre: P57** · Atualizada em 09/10/2026
 
 ## A. Agora, em sequência *(nascidas da configuração do Bunny, 25/09/2026)*
 
@@ -47,6 +47,7 @@ entra aqui, com o próximo número livre.*
 
 | # | O que falta | Quando | Onde registrar |
 |---|---|---|---|
+| P56 | **Cancelamento NA HORA** (o reembolso dos 7 dias, ou você cancelando uma assinatura pelo painel da Stripe): o acesso **acaba na hora** ou vai **até o fim do período já cobrado**? Hoje o espelho segue a regra do gate ("o período já foi pago") e o acesso iria até o fim — mas, com o dinheiro devolvido, o período deixa de estar pago. **E a Stripe não avisa isso sozinha:** a fatura reembolsada continua "paga" (não existe situação de "reembolsada" — conferido em 09/10); se a resposta for "acaba na hora", o servidor passa a ouvir o aviso de reembolso. Recomendação do agente: acaba na hora quando houver reembolso | Fase 4, etapa 4.6 (cancelar) — **antes da primeira venda de verdade**: o reembolso de 7 dias é direito por lei e pode chegar já na primeira semana | `billing.md` → *Reembolso* e o plano, Fase 4 |
 | P14 | Confirmar os **slugs em inglês** que ainda faltarem. Os endereços `/en/courses`, `/en/course/:slug`, `/en/learning-path/:slug` e `/en/certificate/:publicId` já foram decididos em 14/09 | quando as páginas públicas em inglês forem construídas *(operador, 27/09: "vamos vendo no desenvolvimento")* | `idiomas.md` §2 |
 | P5 | **Aula na TV (Chromecast):** com ou sem? Até lá fica **sem**. O controle de acesso continua (só quem recebeu o token do nosso servidor abre o player). A doc não diz se a TV toca com o CDN token e o MediaCage Basic ligados: **testar numa TV com Chromecast** | bloco de vídeo da Fase 3, com o site já tocando vídeo *(adiada pelo operador em 27/09)* | `bunny.md` §3.2 e §6 (decisão 2) |
 | P17 | **Qual curso é o destaque** da home (o primeiro da ordem, ou o marcado com a etiqueta "Destaque") | etapa 3 do C4 | `implementation-plan.md` → Bloco C4 |

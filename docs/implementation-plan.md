@@ -204,7 +204,17 @@
 > (aula concluída sozinha, barra na aula e no cartão), o vídeo que não recomeça ao trocar de aba
 > (a apresentação abre pausada, a aula toca sozinha) e o "Salvos". **Primeiro teste com o player de
 > verdade: com o operador** (assistir uma aula até perto do fim e ver a barra andar).
-> **PUBLICADO em 09/10/2026, por último (`main` = `a236c0c`, CI verde nos dois jobs, deploy ok; a
+> **NO `dev`, AINDA NÃO PUBLICADO (09/10/2026):** a Fase 4, etapa 4.1 — o aviso da Stripe (webhook)
+> e o espelho da assinatura, com as duas migrations novas já aplicadas no banco de dev. Publicar não
+> muda nada para quem visita: sem as chaves da Stripe no Railway, todo aviso é recusado (503).
+> **PUBLICADO em 09/10/2026, por último (`main` = `307581c`, CI verde nos dois jobs, deploy ok):** o
+> Bloco MEDIR, etapas 2 e 3 — **horas assistidas e alunos reais no cartão do curso do admin** e **a
+> barra da trilha** (Minhas trilhas e Início), com a trilha sabendo quando está concluída. **Provado
+> no site:** a versão nova (`mv0thvrg-dbb213a7`); `/api/admin/stats/cursos` e
+> `/api/progresso/trilhas` respondem 401 sem login; a checagem do player passa. *A prova com o vídeo
+> de verdade é do operador: entrar com a conta de aluno, assistir uma aula de prévia grátis (a conta
+> de aluno de produção não tem assinatura, decisão dele de 27/09) e ver as horas no cartão do admin.*
+> **PUBLICADO em 09/10/2026, antes (`main` = `a236c0c`, CI verde nos dois jobs, deploy ok; a
 > migration `eventos_do_video` aplicada pelo pre-deploy):** o Bloco MEDIR, etapa 1 — **os eventos do
 > vídeo guardados** (tocou, pausou, terminou; só do aluno; teto por pessoa) — e as decisões do
 > operador de 09/10 (P27, P39, P43). **Provado no site:** a versão nova (`mv0sesh1-8e53964f`) — o
@@ -3143,6 +3153,115 @@ servidor → acabamento. Cada uma em PT e EN.
 `Docs check (context7)`: **obrigatório** nesta fase — Stripe → `/websites/stripe`. Preencher no
 plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
 
+### O PLANO EM ETAPAS DE UMA SESSÃO  *(pedido do operador, 09/10/2026: "etapas pequenas que possam ser feitas uma por sessão")*
+
+> **O objetivo primeiro é TESTAR DE VERDADE.** Boa parte da escola não se testa no ar porque a
+> conta de aluno de produção não tem assinatura (decisão de 27/09: a assinatura de teste só existe
+> fora de produção). O caminho mais curto até o operador assinar como aluno e ver tudo funcionando
+> é **4.0 → 4.1 → 4.2 → 4.3**: a Stripe em **modo de teste** dentro do site no ar — que continua
+> atrás do "Em breve" —, com o cartão de teste da Stripe ou o cupom de 100%. As chaves de verdade
+> só entram no GO-LIVE (Fase 7).
+> **Estimativa honesta:** cerca de **3 sessões de código**, mais a configuração do painel pelo
+> operador, até o primeiro teste real (4.3); cerca de **10 a 12 sessões** para a fase inteira. Pode
+> crescer com surpresa da Stripe: é fase de alto risco, e toda etapa de código tem revisão de
+> segurança.
+> **O fato que decidiu o desenho do cupom** `[FATO — context7 /websites/stripe, 09/10/2026]`: *"If
+> the first payment succeeds or requires no payment, the invoice marks as paid and the subscription
+> becomes active."* Cupom de 100% **para sempre** → assinatura ativa **sem cartão**. É o caminho já
+> decidido para o `member@` de produção e serve igual para cortesia e promoção (item *DECISÃO
+> REGISTRADA — usuários semeados*, abaixo).
+> **Docs check (context7):** Stripe → `/websites/stripe` → a assinatura com o Payment Element
+> (`payment_behavior: default_incomplete` + `latest_invoice.confirmation_secret`) e a fatura zerada
+> pelo cupom (assinatura ativa sem pagamento) — **2 consultas** (09/10/2026). O dólar pelo país do
+> cartão consulta na etapa 4.8.
+> **Em paralelo com a Fase 5** (decisão do operador, 09/10/2026 — *CLAUDE.md → Working Method*): a
+> avaliação do curso e o depoimento, e as telas sem "EM BREVE", andam sem esperar esta fase.
+
+- [ ] **4.0 — A Stripe em modo de TESTE (operador, no painel, sem código, ~1 h).** A conta (CNPJ/MEI,
+      pagamento no Banco do Brasil) — o modo de teste funciona antes de a conta ser aprovada. No
+      **modo de teste**: o produto "Assinatura" com os **2 preços em real** (mensal R$ 99,90, anual
+      R$ 995) · **um cupom de 100% "para sempre"** e **um código promocional** dele, com limite de
+      usos · em *Billing → falhas de pagamento*: **"cancelar a assinatura quando todas as tentativas
+      falharem"** (achado de segurança de 29/09, item abaixo) · **sem Customer Portal**. **As chaves
+      não passam pelo chat:** o operador cola no `server/.env` (dev) e, na 4.3, no Railway — o passo a
+      passo vem na hora (*CLAUDE.md → Secrets in agent sessions*).
+- [x] **4.1 — O webhook e o espelho (código, ALTO RISCO).** Dependência nova: **`stripe`** (servidor).
+      `POST /api/stripe/webhook` montado **acima** do `express.json()`, com o corpo cru → confere a
+      assinatura → grava o `event.id` (tabela nova, com RLS; repetido = nada) → **recalcula** o
+      espelho buscando a assinatura na Stripe (nunca o retrato do evento) → responde 200. A assinatura
+      se liga à conta pelo `userId` que o NOSSO checkout grava no cliente da Stripe; sem ele, o evento
+      é registrado e ignorado (o visitante entra na 4.7). Testes de servidor com a Stripe simulada **na
+      nossa fronteira**: assinatura inválida 400, evento repetido sem efeito, fora de ordem recalcula,
+      cada status no espelho. Dá para construir e testar **sem a conta da Stripe pronta**.
+      **FEITO (09/10/2026, no `dev`, não publicado).** `stripe@23.0.0` fixada (API 2026-09-30) ·
+      `server/src/lib/stripe.ts` (a nossa fronteira: verificar o aviso, buscar a assinatura) ·
+      `lib/assinaturas.ts` (o espelho) · `routes/stripe-webhook.ts` · migrations
+      `20261009180000_avisos_da_stripe` (tabela `stripe_event`, com RLS) e
+      `20261009190000_assinatura_de_teste_ou_real` (`subscription.livemode`), aplicadas no `dev`
+      com o retrato antes/depois idêntico, zero tabela sem RLS e `migrate diff` sem diferença.
+      **O "pago até":** o `currentPeriodEnd` do espelho é o fim do último período PAGO, não o fim
+      do período da Stripe (`billing.md` → *O espelho*). Sem a chave do webhook, todo aviso é
+      recusado (503).
+      **Revisão de segurança (`security-vulnerability-reviewer`) — os achados e o destino de cada um:**
+      (P1) dois avisos da mesma assinatura ao mesmo tempo deixavam a resposta velha por cima da nova
+      → **corrigido**: uma assinatura de cada vez (`pg_advisory_xact_lock`), com a busca na Stripe
+      **dentro** da trava · (P1) a cobrança pausada continua `active` na Stripe → **corrigido**: vira
+      `paused` no espelho · (P1) assinatura paga sem conta passava calada → **corrigido**: o registro
+      grita (erro, com a assinatura e o cliente) · (P1) o reembolso não corta o acesso → **P56**, do
+      operador · (P2) recusas sem registro → **corrigido**, sem o corpo do aviso · (P2) assinatura
+      do modo de teste viraria acesso eterno depois do GO-LIVE → **corrigido** com a coluna
+      `livemode` + item novo na Fase 7 · (P2) RLS da tabela nova → conferido no `dev` (produção
+      confere no pre-deploy) · (P2) a sessão cair ao perder o acesso → já era a **etapa 4.4**.
+      **Testes:** 16 de servidor (o aviso de ponta a ponta, com assinaturas da própria biblioteca
+      da Stripe) + 7 unitários (o espelho a partir da Stripe). **Mutação:** 7 de 7 reprovaram —
+      sem a trava, a busca fora da trava, pausa vista como ativa, modo de teste não gravado, sem
+      conta só avisando, recusa registrando o erro inteiro, 503 mudo.
+      **Docs check (context7):** Stripe → `/websites/stripe` → a verificação do aviso com o corpo
+      cru e as mudanças da API "basil" (o período por item, a fatura → assinatura) — **4 consultas
+      no dia**, contando as 2 do plano. A pausa e o reembolso foram conferidos nos tipos da própria
+      `stripe@23.0.0`.
+- [ ] **4.2 — Assinar com a conta logada: o checkout embutido (código, ALTO RISCO).** Dependências
+      novas: **`@stripe/stripe-js`** e **`@stripe/react-stripe-js`** (site). Mensal **ou** anual (trava
+      do `billing.md`), o campo do código promocional e o **Payment Element**; o servidor cria o
+      cliente (com o `userId`) e a assinatura; com o cupom de 100%, ela já nasce ativa; a tela de
+      "pronto" espera o webhook. **Decisões do operador antes de codar:** de onde se chega à tela
+      (a aula trancada, o Início, o menu) e os textos.
+- [ ] **4.3 — No ar, em modo de teste: o PRIMEIRO TESTE REAL (sessão curta, com o operador).** As
+      chaves de teste e o segredo do webhook no Railway, o endereço do webhook no painel, publicar,
+      e o `member@` assina com o cartão de teste `4242…` ou com o código de 100% → **a aula paga
+      tocando no ar.** ← **Daqui em diante o operador testa tudo como aluno.**
+- [ ] **4.4 — Sincronizar e perder o acesso direito (código).** Forçar a sincronia pelo admin (a
+      recuperação de webhook perdido; nunca rota aberta) · ao perder o acesso, a sessão cai
+      (`session.deleteMany`) · `requireActiveMembership` · a **matriz de testes de servidor** deste
+      plano (os ~16 casos, incluindo o acesso cruzado de idioma).
+- [ ] **4.5 — ESLint com `no-floating-promises`, bloqueante no CI (código, pequena).** Dependências
+      de desenvolvimento novas: `eslint` + `typescript-eslint`. Já decidido para esta fase (item
+      abaixo): promessa sem `await` dentro do webhook derruba o servidor sem nenhum teste perceber.
+- [ ] **4.6 — Minha assinatura, dentro da escola (código, 2 sessões).** (a) ver o plano e a próxima
+      cobrança, trocar o cartão; (b) mudar mensal↔anual com a proração mostrada **antes**, e cancelar
+      com o motivo — "cancelar mesmo assim" de 1 clique sempre visível, tom calmo. Sem Customer
+      Portal. Telas e textos: decisões do operador.
+- [ ] **4.7 — O visitante assina: a conta nasce no pagamento (código, ALTO RISCO).** O checkout
+      público: e-mail + pagamento → o webhook cria a conta (o cadastro continua fechado) e manda o
+      e-mail de "crie sua senha". **Depende do Resend configurado e da P49** (o remetente). Junto:
+      a origem do aluno (UTM) gravada na criação da conta.
+- [ ] **4.8 — Dólar pelo país do cartão + o botão das páginas em inglês (código + decisão).** context7
+      primeiro. **Depende da decisão de imposto internacional com o contador (P22)** antes da primeira
+      venda fora do Brasil.
+- [ ] **4.9 — Pix recorrente (código).** O mandato no Payment Element e a régua própria do Pix (falha
+      de Pix não se retenta como cartão).
+- [ ] **4.10 — Fechamento da fase (código + painel).** E2E de ponta a ponta (assinar, renovar, cancelar,
+      pagamento falho com acesso mantido na janela) · a régua de inadimplência no painel (Smart
+      Retries) · revisão de segurança da fase inteira. **A troca para as chaves de verdade fica no
+      GO-LIVE (Fase 7).**
+
+> **Os itens abaixo continuam sendo a ESPECIFICAÇÃO da fase** (as travas, os casos de teste, as
+> decisões); as etapas acima dizem em que ordem e em que sessão cada um entra. **Reconciliado em
+> 09/10/2026:** o *pré-requisito de separar o banco de dev do de produção* está **cumprido** desde a
+> mudança para o Neon (Set 2026 — produção, dev e teste em bancos diferentes, *CLAUDE.md →
+> Database & Migrations*); e o *follow-up do "Automatic RLS"* ficou **sem objeto** — era do Supabase,
+> que foi apagado.
+
 - [ ] **ESLint entra AQUI** (gatilho registrado em `CLAUDE.md` → changelog Ago 2026 (11)):
       typescript-eslint, escopo inicial `server/src`, **bloqueante no CI**, 2–3 regras. A que se
       justifica sozinha é **`no-floating-promises`** — promise não aguardada escapa do `try/catch`,
@@ -4063,6 +4182,14 @@ outro aparelho e "daqui a um mês", e o Safari apaga o armazenamento do site em 
 - [ ] LGPD: privacy policy, terms, consent, data export/delete path — **plus English versions of
       the legal pages** (the English side is live from launch — `idiomas.md`)
 - [ ] Error/loading states everywhere; security review (subagent) on auth/billing/video
+- [ ] **A Stripe de verdade — e as assinaturas do modo de teste SAEM do banco de produção** *(achado
+      P2 da revisão de segurança da etapa 4.1, 09/10/2026)*. No Railway, trocar as chaves e o segredo
+      do webhook do modo de teste pelos de verdade, e cadastrar o endereço do webhook no modo de
+      verdade do painel. **Na mesma publicação, apagar do banco de produção as `subscription` com
+      `livemode = false`:** as chaves de verdade nunca mais recebem aviso delas, então nenhuma seria
+      cancelada — e uma ativa daria acesso para sempre. Como apagar sem falar direto com o banco de
+      produção (só o Railway fala com ele) se decide na abertura do item. O `member@` de produção
+      assina de novo, com o cupom de 100% do modo de verdade.
 - **→ MOVIDOS para a Fase 3, bloco "Gates" (Ago 2026):** *rate-limit de auth* e *CI não roda
       testes*. Razão: **gate não é feature** — sem CI, teste escrito depois vale zero. O texto
       completo dos dois (com os `[FATO]` e o "passo 1 = verificar a borda") mora agora no **Bloco 0

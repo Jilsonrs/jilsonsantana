@@ -105,6 +105,12 @@ dele, isto passa a ser uma **promessa nossa**, oferecida por escolha. Duas coisa
   arrependimento", sem citar os 7 dias que esta seção manda dizer. *Alinhar é decisão do operador
   (texto de interface é dele); fica aqui apontado, não corrigido.*
 
+**Estado do código (etapa 4.1, 09/10/2026): o reembolso ainda NÃO corta o acesso.** A fatura da
+Stripe não tem situação de "reembolsada" (as situações são `draft`, `open`, `paid`, `uncollectible`
+e `void` — tipos da `stripe@23.0.0`): devolvido o dinheiro, ela continua `paid`, e o espelho trata o
+mês como pago. Se o acesso acaba na hora do reembolso é a pendência **P56** do operador, a decidir
+antes da primeira venda de verdade.
+
 ## O plano ANUAL não aparece na home *(decisão do operador, set/2026)*
 
 A home mostra **um cartão só** (Mensal R$ 99,90) com o selo "17% de desconto no plano anual". O
@@ -153,9 +159,39 @@ acontece em telas nativas da escola (o aluno nunca sai do site).
 Aluno corporativo passa **pelo mesmo gate**: `temAcessoAtivo()` nunca precisa
 saber qual caminho concedeu o acesso.
 
+## O espelho: o que o gate lê *(Fase 4, etapa 4.1 — 09/10/2026)*
+
+O aviso da Stripe (webhook) atualiza a nossa `Subscription`, que é o que `temAcessoAtivo()` lê.
+**Como o `currentPeriodEnd` do espelho é calculado — convenção de engenharia, não decisão de
+produto:** a regra do gate (`CLAUDE.md`) diz *"o período já foi PAGO"*. Na Stripe, quando a
+renovação falha, o período **já avançou antes de cobrar**: o fim do período atual seria um mês **não
+pago**, e quem tivesse a assinatura cancelada por falta de pagamento ficaria com acesso até lá. Por
+isso o espelho guarda o **pago até**: última fatura **paga** → o fim do período atual; senão → o
+**começo** dele, que é onde o último período pago terminou. `[FATO — context7 /websites/stripe e os
+tipos da `stripe@23.0.0`, 09/10/2026: o período fica em `items.data[].current_period_end`.]`
+O espelho se recalcula **buscando a assinatura na Stripe a cada aviso** (nunca o retrato do aviso), e
+liga a assinatura à conta pelo `userId` que o NOSSO checkout grava na Stripe.
+
+**As chaves:** `STRIPE_SECRET_KEY` e `STRIPE_WEBHOOK_SECRET`, **só no ambiente do servidor**
+(`server/.env` em dev, Railway em produção) — coladas pelo operador, nunca pelo chat. Até o
+lançamento: as do **modo de teste**. Sem o segredo do webhook, todo aviso é recusado (nunca "aceitar
+sem verificar", como alguns exemplos da própria doc da Stripe fazem). O espelho guarda de qual modo
+veio cada assinatura (`livemode`): no GO-LIVE, as do modo de teste saem do banco de produção (plano,
+Fase 7) — as chaves de verdade nunca mais recebem aviso delas, e uma ativa daria acesso para sempre.
+
+**A cobrança pausada** `[FATO — tipos da `stripe@23.0.0`, 09/10/2026: com a cobrança pausada
+(`pause_collection`), "o status da assinatura não muda" — continua `active` — e as faturas continuam
+sendo geradas]`. O espelho grava **`paused`** enquanto a pausa durar; senão o gate, que libera
+`active` sem olhar data, daria a pausa inteira de graça. Como `paused`, vale a segunda metade da
+regra do gate: o acesso vai até o fim do período pago — e o "pago até" acompanha, porque a fatura
+gerada na pausa nunca fica paga. *(Achado da revisão de segurança da etapa 4.1; fecha a pendência
+de verificação que existia aqui desde Ago 2026.)*
+
+**Uma assinatura de cada vez:** dois avisos da mesma assinatura nunca são processados juntos, e a
+busca na Stripe acontece **depois** da trava (`server/src/lib/assinaturas.ts`). Sem isso, a resposta
+velha ("atrasada") podia gravar por cima da nova ("cancelada") — e, como assinatura cancelada não
+gera mais aviso, o acesso ficaria liberado para sempre. *(Achado P1 da revisão da etapa 4.1.)*
+
 ## Pendências de verificação
 
-- **`[VERIFICAR antes de codar a Fase 4]`** — semântica exata de `paused` /
-  `pause_collection`, e se `currentPeriodEnd` continua populado durante a pausa.
-  A regra do gate (no `CLAUDE.md`) é a **especificação**; o mapeamento para os
-  campos reais da API se confirma na hora, via context7 `/websites/stripe`.
+Nenhuma aberta. *(A da pausa fechou em 09/10/2026 — ver "A cobrança pausada", acima.)*
