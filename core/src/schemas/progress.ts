@@ -38,3 +38,18 @@ export function pontoUtil(segundos: number | null, duracao: number | null): numb
   if (duracao !== null && duracao > 0 && segundos >= duracao - PONTO_FIM) return null;
   return segundos;
 }
+
+// OS EVENTOS DO VÍDEO (Fase 5, Bloco MEDIR, etapa 1 — pedido do operador, 09/10/2026): o
+// corpo do pedido que guarda um evento — tocou, pausou, terminou —, no segundo do vídeo
+// (com fração, como o ponto: o servidor arredonda para baixo). Uma fonte só para a rota e
+// para a tela. É o que alimenta as horas assistidas do cartão do admin.
+
+/** Os eventos guardados. SEEK fica de fora até uma análise pedir. */
+export const TIPOS_DE_EVENTO = ["PLAY", "PAUSE", "ENDED"] as const;
+export type TipoDeEvento = (typeof TIPOS_DE_EVENTO)[number];
+
+export const eventoDaAulaSchema = z.object({
+  tipo: z.enum(TIPOS_DE_EVENTO),
+  segundos: z.number().min(0).max(PONTO_MAXIMO),
+});
+export type EventoDaAulaInput = z.infer<typeof eventoDaAulaSchema>;

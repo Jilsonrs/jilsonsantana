@@ -2,6 +2,7 @@ import axios from "axios";
 import { anotarVersaoDoServidor } from "@/lib/versao";
 import type { CredenciaisDeEnvio, DadosDoEnvio } from "@/lib/video-upload";
 import type {
+  TipoDeEvento,
   Level,
   Layer,
   Material,
@@ -465,6 +466,20 @@ export function enderecoDoPonto(lessonId: number, comoAdmin: boolean): string {
 /** A pessoa está nesta aula, neste segundo (`null` = viu até o fim, ou a aula não tem vídeo). */
 export async function gravarPonto(lessonId: number, segundos: number | null, comoAdmin: boolean): Promise<void> {
   await client.post(comoAdmin ? `/admin/lessons/${lessonId}/ponto` : `/lessons/${lessonId}/ponto`, { segundos });
+}
+
+// OS EVENTOS DO VÍDEO (Fase 5, Bloco MEDIR, etapa 1 — pedido do operador, 09/10/2026):
+// tocou, pausou, terminou, guardados para as horas assistidas do cartão do admin. Só a
+// porta do aluno: o admin não grava.
+
+/** O endereço que guarda os eventos. Também o do "pausou" que sai quando a página esconde. */
+export function enderecoDosEventos(lessonId: number): string {
+  return `/api/lessons/${lessonId}/eventos`;
+}
+
+/** Aconteceu isto no vídeo desta aula, neste segundo. */
+export async function gravarEvento(lessonId: number, tipo: TipoDeEvento, segundos: number): Promise<void> {
+  await client.post(`/lessons/${lessonId}/eventos`, { tipo, segundos });
 }
 
 /**

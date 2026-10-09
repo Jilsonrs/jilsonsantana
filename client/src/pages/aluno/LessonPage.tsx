@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { ContentStatus, LessonKind } from "@jilson/core";
 import { useSession } from "@/lib/auth-client";
@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { usePaginaDaAula } from "@/lib/pagina-da-aula";
 import { porcentagemDoCurso, useConcluirAula } from "@/lib/progresso";
 import { usePontoDaAula } from "@/lib/ponto-da-aula";
+import { useEventosDaAula } from "@/lib/eventos-da-aula";
 import { useLembrarLegenda, usePreferencias } from "@/lib/legenda-lembrada";
 import { useIrPara } from "@/lib/versao";
 import { useIdsSalvos } from "@/lib/salvos";
@@ -68,6 +69,29 @@ export function LessonPage() {
     video: daAula?.aula.kind === LessonKind.VIDEO,
     comecarEm: daAula?.aula.ponto ?? null,
   });
+  // OS EVENTOS DO VÍDEO (Bloco MEDIR, 09/10/2026): só do aluno — o admin não grava.
+  const eventos = useEventosDaAula({
+    lessonId,
+    ativo: Boolean(session && !comoAdmin && daAula?.aula.id === lessonId && daAula.aula.liberada && daAula.aula.kind === LessonKind.VIDEO),
+  });
+  // O player avisa uma vez; quem ouve são o ponto e os eventos.
+  const ouvintes = useMemo(
+    () => ({
+      aoAndar: (segundos: number, duracao: number) => {
+        ponto.aoAndar(segundos, duracao);
+        eventos.aoAndar(segundos);
+      },
+      aoPausar: (segundos: number) => {
+        ponto.aoPausar(segundos);
+        eventos.aoPausar(segundos);
+      },
+      aoTocar: () => {
+        ponto.aoTocar();
+        eventos.aoTocar();
+      },
+    }),
+    [ponto, eventos],
+  );
 
   if (lessonId === null || (isError && naoEncontrada(error))) {
     return <Aviso texto={t.aula.naoEncontrada} />;
@@ -89,6 +113,7 @@ export function LessonPage() {
   const proxima = lista[lista.findIndex((a) => a.id === lessonId) + 1];
   const aoTerminarOVideo = () => {
     ponto.aoTerminar();
+    eventos.aoTerminar();
     if (proxima) irPara(`/aluno/aula/${proxima.id}`);
   };
   // A legenda vai no endereço do vídeo: logado, o player espera a preferência chegar.
@@ -121,7 +146,7 @@ export function LessonPage() {
                 temArquivos={temArquivos}
                 aoConcluir={concluirVideo}
                 aoTerminar={aoTerminarOVideo}
-                ponto={ponto}
+                ouvintes={ouvintes}
                 proximaAulaId={proxima?.id}
                 // Logado, a conta SEMPRE diz como a legenda abre: ligada ou `off` (vence a memória do aparelho).
                 legenda={session ? { abrirCom: legendaLigada ? curso.language : "off", aoMudar: aoMudarLegenda } : undefined}

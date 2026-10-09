@@ -66,3 +66,22 @@ export function agendarNaSaida(endereco: string, corpo: unknown): EnvioAgendado 
     enviado: () => enviou,
   };
 }
+
+/**
+ * Envia JÁ um POST com JSON que sobrevive a fechar a página (`keepalive`), sem esperar
+ * resposta. Para o que tem de sair NO MOMENTO em que a página esconde: o "pausou" dos
+ * eventos do vídeo (Fase 5, Bloco MEDIR, 09/10/2026), que fecha as horas assistidas quando
+ * a aba some com o vídeo tocando — agendar para a saída (como o ponto) contaria a aba
+ * escondida. Falhou: fica sem o evento.
+ */
+export function enviarJa(endereco: string, corpo: unknown): void {
+  fetch(endereco, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(corpo),
+    credentials: "same-origin",
+    keepalive: true,
+  }).catch(() => {
+    // Sem rede na saída: as horas daquele trecho ficam de fora.
+  });
+}

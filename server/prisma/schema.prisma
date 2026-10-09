@@ -142,17 +142,17 @@ model FaqItem {
 // phase's migration.
 
 model User {
-  id            String           @id
+  id            String             @id
   // DEBT: o Better Auth CLI gera `name` como required (String). Mantido opcional
   // (String?) para respeitar o CLAUDE.md (name opcional — convite corporativo só
   // por e-mail). REAPLICAR `String?` após cada `npm run auth:generate`.
   name          String?
   email         String
-  emailVerified Boolean          @default(false)
+  emailVerified Boolean            @default(false)
   image         String?
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
-  role          String           @default("member")
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  role          String             @default("member")
   sessions      Session[]
   accounts      Account[]
   // Phase 2 back-relation: a member's saved/cloned trilhas (curated templates
@@ -174,6 +174,9 @@ model User {
   // 07/10/2026 (Bloco AULA, etapa 6): as preferências do aluno (a legenda
   // lembrada). Mesma DEBT — REAPLICAR após cada `npm run auth:generate`.
   preference    StudentPreference?
+  // 09/10/2026 (Bloco MEDIR, etapa 1): os eventos do vídeo desta pessoa. Mesma
+  // DEBT — REAPLICAR após cada `npm run auth:generate`.
+  lessonEvents  LessonEvent[]
 
   birthday            String?
   preferredLanguage   String?   @default("pt")
@@ -346,6 +349,7 @@ model Lesson {
   progress             LessonProgress[]
   saved                SavedItem[]
   caption              Caption?
+  events               LessonEvent[]
 
   @@index([moduleId])
   @@map("lesson")
@@ -357,13 +361,13 @@ model Lesson {
 // (bunny.md §7.1). CHURN NÃO APAGA: perder o acesso não toca nestas linhas
 // (CLAUDE.md → Membership Gating); só some com a aula ou com a pessoa.
 model LessonProgress {
-  id          Int       @id @default(autoincrement())
-  userId      String
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  lessonId    Int
-  lesson      Lesson    @relation(fields: [lessonId], references: [id], onDelete: Cascade)
-  completed   Boolean   @default(false)
-  completedAt DateTime?
+  id              Int       @id @default(autoincrement())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lessonId        Int
+  lesson          Lesson    @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  completed       Boolean   @default(false)
+  completedAt     DateTime?
   // ONDE A PESSOA PAROU (Bloco AULA — plano aprovado pelo operador em 06/10/2026):
   // quem sai e volta — no mesmo aparelho ou em outro, amanhã ou daqui a um ano —
   // abre a MESMA aula, no MESMO segundo. Fica na CONTA, e não no navegador: o
@@ -374,12 +378,40 @@ model LessonProgress {
   // SEM estar concluída: quem lê conclusão filtra `completed: true`.
   positionSeconds Int?
   lastSeenAt      DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   @@unique([userId, lessonId])
   @@index([lessonId])
   @@map("lesson_progress")
+}
+
+// OS EVENTOS DO VÍDEO (Fase 5, Bloco MEDIR, etapa 1 — pedido do operador, 09/10/2026).
+// Só GUARDA: tocou, pausou, terminou, no segundo do vídeo e na hora — a análise (as
+// horas assistidas do cartão do admin) é leitura à parte, em rota própria (CLAUDE.md →
+// Analytics Convention). Some com a aula, ou com a pessoa APAGADA de vez (cascade) — o
+// soft-delete (`deletedAt`) não apaga: a exclusão a pedido (Fase 7, LGPD) apaga os eventos
+// junto. NUNCA some com o churn (CLAUDE.md → Churn não apaga nada). Teto por pessoa na rota. O admin não grava: assistir para conferir não conta como aluno.
+// SEEK fica de fora até uma análise pedir (acrescentar ao enum é uma linha de migration).
+enum LessonEventType {
+  PLAY
+  PAUSE
+  ENDED
+}
+
+model LessonEvent {
+  id              Int             @id @default(autoincrement())
+  userId          String
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lessonId        Int
+  lesson          Lesson          @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  type            LessonEventType
+  positionSeconds Int
+  createdAt       DateTime        @default(now())
+
+  @@index([lessonId, createdAt])
+  @@index([userId, lessonId, createdAt])
+  @@map("lesson_event")
 }
 
 // AS PREFERÊNCIAS DO ALUNO (Bloco AULA, etapa 6 — decisão do operador, 07/10/2026,
