@@ -29,6 +29,7 @@ import savedRouter from "./routes/saved.js";
 import notificacoesRouter from "./routes/notificacoes.js";
 import adminCaptionsRouter from "./routes/admin-captions.js";
 import adminStatsRouter from "./routes/admin-stats.js";
+import stripeWebhookRouter from "./routes/stripe-webhook.js";
 
 // Monta o app e EXPORTA sem escutar porta. O `listen()` vive em `index.ts`.
 //
@@ -51,6 +52,11 @@ const app = express();
 // the Phase 0 boot bug). Path uses the Express 5 named-wildcard syntax.
 const authHandler = toNodeHandler(auth);
 app.all("/api/auth/{*any}", (req, res, next) => authHandler(req, res).catch(next));
+
+// O AVISO DA STRIPE (webhook — Fase 4, etapa 4.1) — TAMBÉM ANTES do express.json(): a
+// verificação da assinatura precisa do corpo CRU (CLAUDE.md → Membership Gating, a trava de
+// montagem). A rota lê o próprio corpo com `express.raw`.
+app.use("/api", stripeWebhookRouter);
 
 // JSON body parsing for the REST of the API — AFTER the auth handler.
 app.use(express.json());

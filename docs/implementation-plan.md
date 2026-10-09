@@ -204,6 +204,9 @@
 > (aula concluída sozinha, barra na aula e no cartão), o vídeo que não recomeça ao trocar de aba
 > (a apresentação abre pausada, a aula toca sozinha) e o "Salvos". **Primeiro teste com o player de
 > verdade: com o operador** (assistir uma aula até perto do fim e ver a barra andar).
+> **NO `dev`, AINDA NÃO PUBLICADO (09/10/2026):** a Fase 4, etapa 4.1 — o aviso da Stripe (webhook)
+> e o espelho da assinatura, com as duas migrations novas já aplicadas no banco de dev. Publicar não
+> muda nada para quem visita: sem as chaves da Stripe no Railway, todo aviso é recusado (503).
 > **PUBLICADO em 09/10/2026, por último (`main` = `307581c`, CI verde nos dois jobs, deploy ok):** o
 > Bloco MEDIR, etapas 2 e 3 — **horas assistidas e alunos reais no cartão do curso do admin** e **a
 > barra da trilha** (Minhas trilhas e Início), com a trilha sabendo quando está concluída. **Provado
@@ -3182,7 +3185,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       falharem"** (achado de segurança de 29/09, item abaixo) · **sem Customer Portal**. **As chaves
       não passam pelo chat:** o operador cola no `server/.env` (dev) e, na 4.3, no Railway — o passo a
       passo vem na hora (*CLAUDE.md → Secrets in agent sessions*).
-- [ ] **4.1 — O webhook e o espelho (código, ALTO RISCO).** Dependência nova: **`stripe`** (servidor).
+- [x] **4.1 — O webhook e o espelho (código, ALTO RISCO).** Dependência nova: **`stripe`** (servidor).
       `POST /api/stripe/webhook` montado **acima** do `express.json()`, com o corpo cru → confere a
       assinatura → grava o `event.id` (tabela nova, com RLS; repetido = nada) → **recalcula** o
       espelho buscando a assinatura na Stripe (nunca o retrato do evento) → responde 200. A assinatura
@@ -3190,6 +3193,33 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       é registrado e ignorado (o visitante entra na 4.7). Testes de servidor com a Stripe simulada **na
       nossa fronteira**: assinatura inválida 400, evento repetido sem efeito, fora de ordem recalcula,
       cada status no espelho. Dá para construir e testar **sem a conta da Stripe pronta**.
+      **FEITO (09/10/2026, no `dev`, não publicado).** `stripe@23.0.0` fixada (API 2026-09-30) ·
+      `server/src/lib/stripe.ts` (a nossa fronteira: verificar o aviso, buscar a assinatura) ·
+      `lib/assinaturas.ts` (o espelho) · `routes/stripe-webhook.ts` · migrations
+      `20261009180000_avisos_da_stripe` (tabela `stripe_event`, com RLS) e
+      `20261009190000_assinatura_de_teste_ou_real` (`subscription.livemode`), aplicadas no `dev`
+      com o retrato antes/depois idêntico, zero tabela sem RLS e `migrate diff` sem diferença.
+      **O "pago até":** o `currentPeriodEnd` do espelho é o fim do último período PAGO, não o fim
+      do período da Stripe (`billing.md` → *O espelho*). Sem a chave do webhook, todo aviso é
+      recusado (503).
+      **Revisão de segurança (`security-vulnerability-reviewer`) — os achados e o destino de cada um:**
+      (P1) dois avisos da mesma assinatura ao mesmo tempo deixavam a resposta velha por cima da nova
+      → **corrigido**: uma assinatura de cada vez (`pg_advisory_xact_lock`), com a busca na Stripe
+      **dentro** da trava · (P1) a cobrança pausada continua `active` na Stripe → **corrigido**: vira
+      `paused` no espelho · (P1) assinatura paga sem conta passava calada → **corrigido**: o registro
+      grita (erro, com a assinatura e o cliente) · (P1) o reembolso não corta o acesso → **P56**, do
+      operador · (P2) recusas sem registro → **corrigido**, sem o corpo do aviso · (P2) assinatura
+      do modo de teste viraria acesso eterno depois do GO-LIVE → **corrigido** com a coluna
+      `livemode` + item novo na Fase 7 · (P2) RLS da tabela nova → conferido no `dev` (produção
+      confere no pre-deploy) · (P2) a sessão cair ao perder o acesso → já era a **etapa 4.4**.
+      **Testes:** 16 de servidor (o aviso de ponta a ponta, com assinaturas da própria biblioteca
+      da Stripe) + 7 unitários (o espelho a partir da Stripe). **Mutação:** 7 de 7 reprovaram —
+      sem a trava, a busca fora da trava, pausa vista como ativa, modo de teste não gravado, sem
+      conta só avisando, recusa registrando o erro inteiro, 503 mudo.
+      **Docs check (context7):** Stripe → `/websites/stripe` → a verificação do aviso com o corpo
+      cru e as mudanças da API "basil" (o período por item, a fatura → assinatura) — **4 consultas
+      no dia**, contando as 2 do plano. A pausa e o reembolso foram conferidos nos tipos da própria
+      `stripe@23.0.0`.
 - [ ] **4.2 — Assinar com a conta logada: o checkout embutido (código, ALTO RISCO).** Dependências
       novas: **`@stripe/stripe-js`** e **`@stripe/react-stripe-js`** (site). Mensal **ou** anual (trava
       do `billing.md`), o campo do código promocional e o **Payment Element**; o servidor cria o
@@ -4152,6 +4182,14 @@ outro aparelho e "daqui a um mês", e o Safari apaga o armazenamento do site em 
 - [ ] LGPD: privacy policy, terms, consent, data export/delete path — **plus English versions of
       the legal pages** (the English side is live from launch — `idiomas.md`)
 - [ ] Error/loading states everywhere; security review (subagent) on auth/billing/video
+- [ ] **A Stripe de verdade — e as assinaturas do modo de teste SAEM do banco de produção** *(achado
+      P2 da revisão de segurança da etapa 4.1, 09/10/2026)*. No Railway, trocar as chaves e o segredo
+      do webhook do modo de teste pelos de verdade, e cadastrar o endereço do webhook no modo de
+      verdade do painel. **Na mesma publicação, apagar do banco de produção as `subscription` com
+      `livemode = false`:** as chaves de verdade nunca mais recebem aviso delas, então nenhuma seria
+      cancelada — e uma ativa daria acesso para sempre. Como apagar sem falar direto com o banco de
+      produção (só o Railway fala com ele) se decide na abertura do item. O `member@` de produção
+      assina de novo, com o cupom de 100% do modo de verdade.
 - **→ MOVIDOS para a Fase 3, bloco "Gates" (Ago 2026):** *rate-limit de auth* e *CI não roda
       testes*. Razão: **gate não é feature** — sem CI, teste escrito depois vale zero. O texto
       completo dos dois (com os `[FATO]` e o "passo 1 = verificar a borda") mora agora no **Bloco 0
