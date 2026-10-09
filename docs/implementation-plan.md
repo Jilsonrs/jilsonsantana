@@ -3947,7 +3947,7 @@ outro aparelho e "daqui a um mês", e o Safari apaga o armazenamento do site em 
       quando todas as aulas dos itens dela estão concluídas (item de curso = as aulas publicadas dele);
       é o que a Fase 6.5 usa para o certificado. **Visível para o aluno:** onde a porcentagem aparece é
       do operador (proposta abaixo).
-- **Propostas do agente, a confirmar pelo operador antes das etapas 2 e 3:** (2) no cartão do admin,
+- **Decididas pelo operador em 09/10/2026 (as propostas do agente, aceitas como estavam):** (2) no cartão do admin,
   o número grande é o **total** e a linha pequena embaixo diz **"N este mês"**, no lugar de "em
   breve"; a Avaliação continua "em breve" até a avaliação do curso existir. (3) A porcentagem da
   trilha aparece **no cartão da trilha em Minhas trilhas e no Início**, com a mesma barra do cartão
