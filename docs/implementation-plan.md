@@ -204,10 +204,13 @@
 > (aula concluída sozinha, barra na aula e no cartão), o vídeo que não recomeça ao trocar de aba
 > (a apresentação abre pausada, a aula toca sozinha) e o "Salvos". **Primeiro teste com o player de
 > verdade: com o operador** (assistir uma aula até perto do fim e ver a barra andar).
-> **NO `dev`, AINDA NÃO PUBLICADO (09/10/2026):** a Fase 4, etapa 4.1 — o aviso da Stripe (webhook)
-> e o espelho da assinatura, com as duas migrations novas já aplicadas no banco de dev. Publicar não
-> muda nada para quem visita: sem as chaves da Stripe no Railway, todo aviso é recusado (503).
-> **PUBLICADO em 09/10/2026, por último (`main` = `307581c`, CI verde nos dois jobs, deploy ok):** o
+> **PUBLICADO em 09/10/2026, por último (`main` = `6b09789`, CI verde nos dois jobs, deploy ok; as
+> migrations `avisos_da_stripe` e `assinatura_de_teste_ou_real` aplicadas pelo pre-deploy):** a
+> Fase 4, etapa 4.1 — **o aviso da Stripe (webhook) e o espelho da assinatura.** Nada muda para quem
+> visita: sem as chaves da Stripe no Railway, todo aviso é recusado. **Provado no site:** a versão
+> nova (`mv163qiw-f7d8cbce`); `POST /api/stripe/webhook` → 503 `NaoConfigurado`;
+> `/api/progresso/trilhas` sem login → 401; a checagem do player passa.
+> **PUBLICADO em 09/10/2026, antes (`main` = `307581c`, CI verde nos dois jobs, deploy ok):** o
 > Bloco MEDIR, etapas 2 e 3 — **horas assistidas e alunos reais no cartão do curso do admin** e **a
 > barra da trilha** (Minhas trilhas e Início), com a trilha sabendo quando está concluída. **Provado
 > no site:** a versão nova (`mv0thvrg-dbb213a7`); `/api/admin/stats/cursos` e
@@ -3193,7 +3196,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       é registrado e ignorado (o visitante entra na 4.7). Testes de servidor com a Stripe simulada **na
       nossa fronteira**: assinatura inválida 400, evento repetido sem efeito, fora de ordem recalcula,
       cada status no espelho. Dá para construir e testar **sem a conta da Stripe pronta**.
-      **FEITO (09/10/2026, no `dev`, não publicado).** `stripe@23.0.0` fixada (API 2026-09-30) ·
+      **FEITO E PUBLICADO (09/10/2026, `main` = `6b09789`).** `stripe@23.0.0` fixada (API 2026-09-30) ·
       `server/src/lib/stripe.ts` (a nossa fronteira: verificar o aviso, buscar a assinatura) ·
       `lib/assinaturas.ts` (o espelho) · `routes/stripe-webhook.ts` · migrations
       `20261009180000_avisos_da_stripe` (tabela `stripe_event`, com RLS) e
@@ -3224,10 +3227,14 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       novas: **`@stripe/stripe-js`** e **`@stripe/react-stripe-js`** (site). Mensal **ou** anual (trava
       do `billing.md`), o campo do código promocional e o **Payment Element**; o servidor cria o
       cliente (com o `userId`) e a assinatura; com o cupom de 100%, ela já nasce ativa; a tela de
-      "pronto" espera o webhook. **Decisões do operador antes de codar:** de onde se chega à tela
-      (a aula trancada, o Início, o menu) e os textos.
+      "pronto" espera o webhook. **Decidido pelo operador (09/10/2026):** as duas bibliotecas do
+      site **aprovadas**; chega-se à tela pela **aula trancada** (um botão Assinar embaixo de "Esta
+      aula é para assinantes.") e pelos **botões Assinar da home** quando há login (sem login é a
+      4.7). Falta: os textos — rascunho do agente, para a revisão dele.
 - [ ] **4.3 — No ar, em modo de teste: o PRIMEIRO TESTE REAL (sessão curta, com o operador).** As
-      chaves de teste e o segredo do webhook no Railway, o endereço do webhook no painel, publicar,
+      chaves de teste e o segredo do webhook no Railway, o endereço do webhook no painel — **com
+      "www"**: `https://www.jilsonsantana.com/api/stripe/webhook` (medido em 09/10/2026: sem o "www",
+      só a página inicial redireciona e todo outro endereço responde 404) —, publicar,
       e o `member@` assina com o cartão de teste `4242…` ou com o código de 100% → **a aula paga
       tocando no ar.** ← **Daqui em diante o operador testa tudo como aluno.**
 - [ ] **4.4 — Sincronizar e perder o acesso direito (código).** Forçar a sincronia pelo admin (a
