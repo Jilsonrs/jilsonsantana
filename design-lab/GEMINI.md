@@ -158,8 +158,8 @@ servidores (§5); o React responde em `localhost:5173`, a home pública em `loca
 | `/admin/site/faq` | `client/src/pages/admin/AdminFaqPage.tsx` |
 
 > **O editor do curso em 7 passos** *(Bloco E, etapa 1, 28/09/2026)*: os passos ficam no **nível
-> 2** (a coluna do meio). Legendas e Mensagens aparecem como **EM BREVE**, e cada passo completo
-> ganha um **✓**, os dois desenhados em `client/src/components/nav/SecondaryNavItem.tsx`. **Formate
+> 2** (a coluna do meio). Legendas e Mensagens nasceram como **EM BREVE** e **existem desde 04/10**
+> (itens 21 e 24 da fila); cada passo completo ganha um **✓**, os dois desenhados em `client/src/components/nav/SecondaryNavItem.tsx`. **Formate
 > as seções à vontade.** A antiga seção "Organização" se dividiu:
 > - idioma e nível foram para `CourseLanguageLevelFields.tsx`, dentro de Informações básicas;
 > - as camadas foram para `CourseLayersSection.tsx`, no passo Mídia e destaques (era "Página do curso");
@@ -751,14 +751,16 @@ Sem essa separação, a décima tela tem dez paletas paralelas e ninguém sabe q
 - **O azul `#238FE8` é o acento ÚNICO.** No rail, é o único sinal de "onde estou" — por isso o
   hover ali é neutro.
 
-- **Vem aí, e vai precisar de você** *(decidido pelo operador em 27–28/09, ainda não
-  construído; detalhe no plano)*: o **editor do curso em 7 passos** no nível 2 (Bloco E) · o
-  **"+" entre aulas** e **arrastar para reorganizar** (uma peça de arrastar só, também para a
-  ordem dos cursos e das perguntas) · o **sino** ao lado da foto, no topo, com os avisos do aluno ·
-  o **painel do aluno** no Início · a tela da **aula** (vídeo + lista no nível 2) · e, do lado
-  público, a **página do curso**, a **página curta da trilha**, **Quem somos**, **Contato** e a
-  **página de baixar material** (plano → *Páginas públicas que faltam*). As públicas seguem o
-  caminho da home: mock aqui, transposição, acabamento.
+- **Já construído, esperando o seu acabamento** *(conferido em 09/10/2026)*: o **editor do curso em
+  7 passos** no nível 2 — **a revisão dele com o operador está marcada** (`docs/pendencias.md`, P54) —,
+  com o **"+" entre aulas** e o **arrastar das aulas** no Conteúdo; o **sino** ao lado da foto; o
+  **painel do aluno** no Início; e a tela da **aula** (vídeo + lista no nível 2). Cada um tem o seu
+  item na fila de formatação acima.
+- **Vem aí, e vai precisar de você** *(decidido pelo operador, ainda não construído; detalhe no
+  plano)*: o **arrastar na ordem dos cursos e das perguntas** (a mesma peça do Conteúdo) e, do lado
+  público, a **página do curso** em HTML de servidor, a **página curta da trilha**, **Quem somos**,
+  **Contato** e a **página de baixar material** (plano → *Páginas públicas que faltam*). As públicas
+  seguem o caminho da home: mock aqui, transposição, acabamento.
 
 **A lei visual completa é `docs/design.md`.** Ela é viva: se você tiver algo melhor, proponha e a
 gente reescreve. O que não muda sem conversa são as travas de **acessibilidade** — elas não

@@ -1884,7 +1884,7 @@ landmark. Corrigido junto.
 | Preço | **não entra** | nunca (assinatura) |
 | Ganhos do mês · Total recebido | Horas assistidas (mês · total) | Fase 5 (`LessonEvent`) |
 | Inscrições neste mês · Total de alunos | Alunos que começaram (mês · total) | Fase 5 (`LessonProgress`) |
-| Classificação (estrelas) | Avaliação, só para o operador | Fase 5 (pedido de depoimento com nota) |
+| Classificação (estrelas) | Avaliação, só para o operador | Fase 5 (a avaliação do curso ao concluir — P27, 09/10) |
 | Concluir seu curso | Preenchimento + o que falta | **agora** |
 | Oportunidade de conteúdo | **não entra** | nunca (pesquisa de mercado da Udemy) |
 
@@ -1990,7 +1990,8 @@ cada campo, a regra do ✓, 160 caracteres nas três listas e o Visualizar esper
       (a rota de admin da página da aula já marca o rascunho); sem nenhuma aula, mostra a tela do
       aluno com o título, *"Este curso ainda não tem aulas."* e o "Sobre o curso"
       (`GET /api/admin/courses/:id/pagina`, `requireAdmin`). Abrir a prévia é o admin abrindo a
-      aula: texto conta como concluído para ele e a boas-vindas chega no sino dele. Mutação: a
+      aula: texto conta como concluído para ele e a boas-vindas chega no sino dele. **Fica assim** (decisão do
+      operador, 09/10/2026 — a P43: "abriu a aula, conta como vista"). Mutação: a
       prévia ignorando rascunho (cliente e servidor) e a rota sem `requireAdmin` — reprovam.
       *O texto abaixo é o histórico do Visualizar da página PÚBLICA, que continua com o C5:*
       a rota pública continua devolvendo só o publicado. **Espera o C5** *(operador,
@@ -3432,7 +3433,8 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
 
 - **Decisões do operador, 03/10/2026:** a aula conta como concluída **sozinha, sem botão** — vídeo
   ao chegar a **90%**, texto **ao abrir**; o site ouve o player do Bunny pelo pacote `player.js`
-  (dependência aprovada, versão travada). O que o certificado atesta com isso é a **P39**.
+  (dependência aprovada, versão travada). O que o certificado atesta com isso foi decidido
+  em 09/10/2026 (a P39): ver Fase 6.5.
 - [x] `LessonProgress` (user×lesson, `completed`, `completedAt`) + RLS ; migration
       *(03/10/2026: migration `lesson_progress`; churn não apaga, só some com a aula ou a pessoa)*
 - [x] Endpoint: mark lesson watched; lesson list shows completion
@@ -3443,34 +3445,36 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       (`player-do-bunny.ts`), o texto ao abrir, só com login; a barra da página da aula mostra o
       número real (aulas concluídas ÷ aulas da lista) e o conteúdo do curso marca a aula feita.)*
 - [ ] **Trilha completion:** a saved trilha is "complete" when all its `PlanItem` lessons are
-      done (course-item = its lessons). Drives certificate eligibility (Phase 6.5).
-- [ ] `LessonEvent` table (event-sourced: type, position, ts) + RLS — **capture only, no analytics yet**
-- [ ] Client: fire PLAY/PAUSE/ENDED events from the player (cheap writes)
-- [ ] **Depoimento pedido ao aluno quando ele conclui um curso — UMA VEZ por aluno, nunca por
-      curso** *(decisão do operador, 23/09/2026: "não preciso de prova social por curso… pensei
-      num depoimento geral"; o oposto da disputa por estrelas da Udemy)*. Depende deste bloco:
-      "concluiu um curso" só existe com o `LessonProgress`.
-      - **O pedido:** nota de **1 a 5 estrelas** + **uma pergunta aberta, geral** — curso, escola,
-        experiência de ensino, o que o aluno quiser. **Sem escolha de tema** (proposta do agente
-        aceita pelo operador: separar por tema acrescenta uma escolha e um filtro que ninguém usa).
-        O texto exato da pergunta é do operador, na hora de construir.
-      - **As estrelas são só do operador:** nunca aparecem no site, em nenhum idioma. Teste de
-        servidor garante que a nota não sai na home.
-      - **Um por aluno, garantido pelo BANCO:** `Testimonial` ganha o aluno ligado a ele, **único**
-        e opcional (os depoimentos cadastrados à mão, como os 4 vindos da Udemy, não têm conta
-        aqui). O segundo envio do mesmo aluno é recusado pelo banco, não só pela tela.
-      - **Se o aluno pular:** o pedido volta no **próximo curso concluído**, até ele responder ou
-        clicar em **"Não, obrigado"**, que encerra de vez. Quem respondeu nunca mais é perguntado.
-        A recusa definitiva precisa ficar gravada — **sem** coluna nova no `User` (identidade enxuta).
-      - **Chega como Rascunho**, e o operador escolhe o que publicar no `/admin/site/depoimentos`.
-        O aluno marca se **autoriza aparecer com o nome completo**; **sem essa marcação o texto fica
-        só para o operador**, e o servidor recusa publicá-lo (LGPD — a tela esconder o botão não é
+      done (course-item = its lessons). Drives certificate eligibility (Phase 6.5). → **Bloco MEDIR, etapa 3**
+- [ ] `LessonEvent` table (event-sourced: type, position, ts) + RLS — **capture only, no analytics yet** → **Bloco MEDIR, etapa 1**
+- [ ] Client: fire PLAY/PAUSE/ENDED events from the player (cheap writes) → **Bloco MEDIR, etapa 1**
+- [ ] **Ao concluir um curso: a AVALIAÇÃO do curso e, uma vez por aluno, o DEPOIMENTO** *(decisões do
+      operador de 23/09/2026 e de 09/10/2026 — a P27, que troca a nota "uma por aluno, geral" por uma
+      nota POR CURSO)*. Depende deste bloco: "concluiu um curso" só existe com o `LessonProgress`.
+      - **A avaliação, a cada curso concluído:** nota de **1 a 5 estrelas** daquele curso + um
+        **comentário, se o aluno quiser**. Serve **só ao operador** — *"para eu entender se estou
+        ensinando do jeito que os alunos gostam ou não"* — e **nunca é publicada**, em nenhum idioma.
+        Teste de servidor garante que nem a nota nem o comentário saem no site. É ela que vira a
+        **Avaliação do cartão do admin** (a média do curso).
+      - **O depoimento, um por aluno:** o testemunho que pode ir para o **site**. Aparece **abaixo da
+        avaliação**, no mesmo pedido, **até o aluno preencher**; depois disso, os próximos cursos
+        concluídos pedem **só a avaliação**. O texto exato da pergunta é do operador, na hora de
+        construir. *(De 23/09, não revogado: sem escolha de tema.)*
+      - **Um depoimento por aluno, garantido pelo BANCO:** `Testimonial` ganha o aluno ligado a ele,
+        **único** e opcional (os depoimentos cadastrados à mão, como os 4 vindos da Udemy, não têm
+        conta aqui). O segundo envio do mesmo aluno é recusado pelo banco, não só pela tela.
+      - **Chega como Rascunho**, e o operador escolhe o que publicar no `/admin/site/depoimentos`. O
+        aluno marca se **autoriza aparecer com o nome completo**; **sem essa marcação o texto fica só
+        para o operador**, e o servidor recusa publicá-lo (LGPD — a tela esconder o botão não é
         defesa).
+      - *A confirmar com o operador na hora de construir:* o **"Não, obrigado"** de 23/09 (o aluno
+        encerra de vez o pedido de depoimento) continua junto do "aparece até ele preencher"? Se
+        continuar, a recusa fica gravada **sem** coluna nova no `User` (identidade enxuta).
 - [ ] **Os números do cartão do admin** (Bloco A, 27/09/2026), que hoje são placeholder: **horas
       assistidas** (mês e total, dos `LessonEvent`) e **alunos que começaram** o curso (mês e total,
-      do `LessonProgress`). Leitura do admin, **nunca** no site.
-- [ ] **A avaliação no cartão do admin** — só depois de decidir a P27: a nota planejada é uma por
-      aluno e geral, não por curso.
+      do `LessonProgress`). Leitura do admin, **nunca** no site. → **Bloco MEDIR, etapa 2**
+- [ ] **A avaliação no cartão do admin** — **destravada em 09/10/2026 (a P27):** a média das notas do
+      curso (1 a 5), só para o operador, nunca no site. Nasce junto da avaliação do item acima.
 - [x] **O progresso também funciona para o ADMIN** *(consequência da decisão do operador de
       29/09/2026: a plataforma é uma só, e ele testa tudo como aluno sem trocar de conta)*: "marcar
       como vista", o Continue estudando e as conclusões não podem depender só de assinatura ativa
@@ -3897,6 +3901,40 @@ da aba Player — **3 consultas na análise (passou de 2: anotado)**. A sessão 
 outro aparelho e "daqui a um mês", e o Safari apaga o armazenamento do site em 7 dias. *Sem gatilho:
 é o que o comportamento pedido exige.*
 
+### Bloco MEDIR — o que a Fase 5 constrói sem decisão pendente  *(pedido do operador, 09/10/2026: "você não quer montar um plano de implementação e fazer logo?")*
+
+> Os três itens da Fase 5 que **não esperam decisão**: guardar os eventos do vídeo, os números do
+> cartão do admin e a trilha concluída. Uma etapa por commit, cada uma com teste e mutação. A
+> avaliação do curso e o depoimento (decididos em 09/10) ficam para o bloco seguinte, porque têm
+> tela e texto novos que são do operador.
+
+- [ ] **Etapa 1 — guardar os eventos do vídeo (`LessonEvent`) (M)** — **não muda nada que o aluno
+      vê**. Tabela `lesson_event` (tipo **PLAY / PAUSE / ENDED**, o segundo do vídeo, a hora), com
+      RLS, presa à pessoa e à aula — some com elas, **nunca** com o churn (`CLAUDE.md` → *Churn não
+      apaga nada*). `POST /api/lessons/:id/eventos`: só logado, só aula de **vídeo**, a mesma trava
+      do ponto (cadeia publicada + aula liberada). A página da aula manda: **tocou**, **pausou**,
+      **terminou**; e, para as horas assistidas não contarem a aba escondida, **pausou** quando a
+      página some com o vídeo tocando (o envio que sobrevive a fechar a aba, `envio-na-saida.ts`) e
+      **tocou** quando ela volta. **O admin não grava** — assistir para conferir não pode inflar as
+      horas dos alunos. *SEEK fica de fora até uma análise pedir (uma linha de migration).*
+- [ ] **Etapa 2 — os números do cartão do admin (M)**: **horas assistidas** (do `LessonEvent`: o
+      tempo entre "tocou" e o próximo "pausou"/"terminou", com teto, só de alunos) e **alunos que
+      começaram** (do `LessonProgress`: quem abriu uma aula do curso, só alunos), **no mês e no
+      total** — rota própria `/api/admin/stats/*` (`CLAUDE.md` → *Analytics Convention*). O mês é o
+      de Brasília. **Visível para o operador:** o formato no cartão é dele (proposta abaixo).
+- [ ] **Etapa 3 — a trilha concluída e a porcentagem da trilha (M)**: a trilha salva está concluída
+      quando todas as aulas dos itens dela estão concluídas (item de curso = as aulas publicadas dele);
+      é o que a Fase 6.5 usa para o certificado. **Visível para o aluno:** onde a porcentagem aparece é
+      do operador (proposta abaixo).
+- **Propostas do agente, a confirmar pelo operador antes das etapas 2 e 3:** (2) no cartão do admin,
+  o número grande é o **total** e a linha pequena embaixo diz **"N este mês"**, no lugar de "em
+  breve"; a Avaliação continua "em breve" até a avaliação do curso existir. (3) A porcentagem da
+  trilha aparece **no cartão da trilha em Minhas trilhas e no Início**, com a mesma barra do cartão
+  do curso, só na trilha começada.
+- **Done when:** os eventos chegam ao banco a cada tocar/pausar/terminar (provado no ar com o vídeo
+  de verdade); o cartão do admin mostra horas e alunos reais; a trilha mostra a porcentagem e sabe
+  quando está concluída. CI verde nos dois jobs.
+
 ## Phase 6 — JilsonAI (lean v1 + suporte)  *(medium risk)*  → ver **JILSONAI.md** (roadmap interno)
 
 - [ ] JilsonAI Fases 0–3 (gateway, chat com contexto do curso, escalação humana, tools com
@@ -3948,6 +3986,12 @@ outro aparelho e "daqui a um mês", e o Safari apaga o armazenamento do site em 
 - [ ] `Certificate` (user, planId/courseId, issuedAt, `nameSnapshot`, `skillsCovered[]`, **`isPublic` default false**) + RLS ; migration
 - [ ] Server-side PDF on 100% completion of a trilha (or course). Name = trilha name; lists skills covered.
 - [ ] If `User.name` missing at issue time, prompt the student for the name to print.
+- **Decisão do operador, 09/10/2026 (a P39 — o que o certificado atesta):** *"o certificado é só para
+  assinante, e o cálculo para emissão só com as aulas concluídas do aluno logado"*. Emite só para
+  quem tem assinatura ativa, contando as aulas que a plataforma marcou como concluídas **na conta
+  dele** (vídeo aos 90%, texto ao abrir — decisão de 03/10), **sem** prova extra no servidor de que
+  o vídeo chegou aos 90%. *Gatilho de reabertura (proposto pelo agente): certificado emitido para
+  quem marcou aulas sem assistir, medido — aí o servidor passa a exigir a prova.*
 - [ ] **Certificate in the trilha/course language** (bilingual school, Sep 2026 — `idiomas.md`): fixed PDF/page text comes from the shared dictionary; `/certificado/:publicId` gets its `/en` counterpart like every public route.
 - [ ] **Public verifiable URL.** Route **`/certificado/:publicId`** (`publicId` cuid — **nunca a PK sequencial**; ver `CLAUDE.md` → Database & Migrations) listing the `skillsCovered`, with Open Graph optimized for LinkedIn sharing → each graduate becomes an organic marketing vector and feeds the "emprego em empresa" angle (cert by competencies). **TRAVA:** student opt-in (`isPublic`, default false). The cert always exists; the public route is private/404 unless the student allows it (LGPD). ✅ **O requisito de OG passa a ser CUMPRÍVEL desde Ago 2026** — esta rota é pública e montada no servidor (`CLAUDE.md` → Rendering Boundary); enquanto o site era SPA puro, este checkbox pedia algo que a arquitetura não entregava, porque o crawler do LinkedIn lê HTML cru.
 - [ ] **Certificate-as-media upgrade (same phase, small):** dedicated **OG image** rendered
