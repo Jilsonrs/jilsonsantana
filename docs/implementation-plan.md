@@ -3992,6 +3992,11 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       decisão de 10/10/2026 a produção só tem chaves de verdade: cumprido por construção)* · (d)
       medir na área restrita se criar uma assinatura incompleta com código gasta um uso dele (se
       gastar, trocar de plano várias vezes esgota um código sem pagar nada).
+      **Decisão do operador (10/10/2026), que entra aqui porque é esta etapa que traz o envio de
+      e-mail:** quando as tentativas de cobrança acabam, a Stripe CANCELA a assinatura (P60: a
+      opção do painel) e **a escola manda um e-mail avisando, com o link para reativar**
+      (`billing.md` → *Régua de inadimplência*). O link leva à tela de assinar, que já diz
+      "Reativar assinatura".
 - [ ] **4.8 — Dólar pelo país do cartão + o botão das páginas em inglês (código + decisão).** context7
       primeiro. **Depende da decisão de imposto internacional com o contador (P22)** antes da primeira
       venda fora do Brasil. **Trazido da 4.2 (10/10/2026):** a tela de assinar já recebe o valor e a

@@ -140,6 +140,19 @@ Churn involuntário é a maior alavanca de receita da escola (`strategy.md`) —
 cortar acesso de quem só teve o cartão recusado é perder assinante por problema
 que se resolve sozinho na maioria das vezes.
 
+**Quando as tentativas acabam, a assinatura é CANCELADA — e a escola avisa por e-mail, com o
+link para reativar** *(decisão do operador, 10/10/2026: "é melhor cancelar e enviar e-mail com
+link para reativação ou instrução, igual a AI quando não consegue cobrar cancela e depois paga
+reativa")*. No painel da Stripe a opção é **"cancelar a assinatura"** — nunca "marcar como não
+paga" nem "deixar atrasada" —, nos dois ambientes (tarefa do operador: pendência P60). Quem foi
+cancelado assim lê "Reativar assinatura" e assina de novo pela tela de assinar; o e-mail entra
+na etapa 4.7, que traz o envio de e-mail.
+`[FATO — context7 /websites/stripe, 10/10/2026]` "Não paga" (`unpaid`) **não tenta mais cobrar**,
+mas continua gerando fatura a cada período; **cancelada é estado final** — não se reativa,
+cria-se outra (é o que "Reativar assinatura" faz).
+*Reabre se a escola quiser cobrar o período em atraso de quem volta (é para isso que "não paga"
+guarda a dívida), ou quando a pausa for lançada.*
+
 ## Cancelamento dentro do site
 
 Deliberadamente **não usamos o Customer Portal da Stripe**: cancelar e gerenciar
@@ -355,7 +368,8 @@ por mais 31 dias, com acesso.
 - **Assinatura "não paga" (`unpaid`), ou pausada com o período vencido:** a pessoa vê "Reativar
   assinatura", clica, e o checkout responde "já é assinante" — ela não consegue voltar a pagar
   por ali, e o registro grita. Só acontece se a régua da Stripe terminar em "marcar como não
-  paga" (configuração do painel) — **pendência P60**.
+  paga" — **decidido em 10/10/2026: a régua termina em CANCELAR** (*Régua de inadimplência*,
+  acima); falta a configuração no painel (pendência P60).
 - **A tela de depois do pagamento não chama a sincronia:** se o aviso atrasar, ela fica em "está
   demorando" até ele chegar, ou até a pessoa voltar à tela de assinar e clicar de novo.
 - **A sincronia do admin olha as últimas 20 assinaturas** do cliente na Stripe.
