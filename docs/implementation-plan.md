@@ -204,13 +204,15 @@
 > (aula concluída sozinha, barra na aula e no cartão), o vídeo que não recomeça ao trocar de aba
 > (a apresentação abre pausada, a aula toca sozinha) e o "Salvos". **Primeiro teste com o player de
 > verdade: com o operador** (assistir uma aula até perto do fim e ver a barra andar).
-> **NO `dev`, NÃO PUBLICADO (10/10/2026): a Fase 4, etapa 4.4 — sincronizar e perder o acesso.**
+> **PUBLICAÇÃO AUTORIZADA pelo operador em 10/10/2026 ("Publica a 4.4"): a Fase 4, etapa 4.4 —
+> sincronizar e perder o acesso.**
 > **Admin → Assinaturas** (o e-mail do aluno e "Conferir na Stripe": a recuperação de quando um
 > aviso da Stripe se perde) · quem pagou e ficou trancado é liberado ao clicar em Assinar de novo ·
 > quem perde o acesso sai da conta · **"Reativar assinatura"** no lugar de "Assinar" para quem já
 > foi assinante · o download dos arquivos da aula atrás de login + assinatura · um tratador de
 > erro próprio no fim da API. **Sem migration.** Revisão de segurança feita: nenhum bloqueio.
-> **Nada disto está no site:** o merge para a `main` espera a decisão do operador.
+> **O painel de assinaturas** (lista, filtros e ações — o mapa aprovado por ele no mesmo dia)
+> **NÃO está nesta publicação:** é a etapa 4.7b, depois da 4.7.
 > **PUBLICADO em 10/10/2026, por último (`main` = `efb231f`, CI verde nos dois jobs, deploy ok; a
 > migration `cliente_da_stripe` aplicada pelo pre-deploy):** a Fase 4, etapas 4.2 e 4.3 —
 > **assinar com a conta logada, com a Stripe DE VERDADE no site** (decisão do operador no mesmo
@@ -3954,68 +3956,10 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             servidor (701) e do site (810), build.
       **Fora desta etapa:** ESLint (4.5) · "minha assinatura" e quem cancelou com dias pagos voltar
       a assinar (4.6) · o visitante e a sincronia de assinatura sem conta (4.7) · o reembolso (P56).
-      **ONDE PAROU:** etapa FECHADA no `dev` (10/10/2026), os 9 passos commitados. **Não
-      publicada:** o merge para a `main` é decisão do operador. Com ele: a P59 (textos e posição
-      no menu), a P60 (a assinatura "não paga") e abrir a tela Admin → Assinaturas no navegador.
-- [ ] **4.4b — Admin → Assinaturas vira um PAINEL de assinaturas (código, ALTO RISCO).**
-      **PROPOSTA do agente, a pedido do operador — NADA aqui está aprovado para construir** (P62).
-      **O pedido (operador, 10/10/2026, depois de usar a tela da 4.4):** *"achei pouco funcional
-      […] Eu quero uma tela funcional e não só saber como está a assinatura"* · *"pode ser um mini
-      sisteminha administrativo sem precisar ficar indo na Stripe para gerenciar assinaturas e
-      problema dos alunos e que no futuro o JilsonAI possa resolver me avisando o que fez quando
-      for relevante para não ter prejuízos financeiros"*.
-      **Já decidido por ele (10/10/2026), e vale para esta tela:** assinatura cancelada → o admin
-      **envia ou copia o link** para o aluno reativar, e é o aluno quem paga · cancelar não corta
-      o acesso já pago; **dentro dos 7 dias**, cancelar devolve o dinheiro e corta o acesso na
-      hora (`billing.md` → *Reembolso*) · quando as tentativas de cobrança acabam, a Stripe
-      cancela (P60).
-      **O MAPA — o que faz sentido ter:**
-      1. **A lista.** Todas as assinaturas, a mais recente primeiro: o aluno (nome e e-mail), o
-         plano (mensal ou anual), a situação, até quando está pago (ou a próxima cobrança) e o
-         código promocional, se houver. **Filtros:** Ativas · Vão cancelar · Pagamento atrasado ·
-         Canceladas · Aguardando o primeiro pagamento · Todas. **Busca** por e-mail ou nome. No
-         topo, quantas há em cada situação.
-      2. **"Precisa de atenção"** — o filtro que abre primeiro: pagamento atrasado · quem pagou e
-         está sem acesso · assinatura paga sem conta na escola (etapa 4.7) · pedido de reembolso.
-      3. **O detalhe de uma assinatura** (ao clicar): as cobranças, uma por linha (data, valor,
-         paga, falhou ou devolvida — e o **motivo da falha** como a Stripe diz: cartão recusado,
-         sem saldo, vencido) · o cartão em uso (bandeira e os 4 últimos números, nunca o cartão) ·
-         desde quando assina · o que já foi feito nesta assinatura, e por quem.
-      4. **As ações, conforme a situação:**
-         - **Ativa** → Cancelar no fim do período (continua assistindo até o fim do que pagou) ·
-           Cancelar e devolver o dinheiro (só dentro dos 7 dias; corta o acesso na hora) ·
-           Conferir na Stripe.
-         - **Ativa, com o cancelamento marcado** → Desfazer o cancelamento.
-         - **Pagamento atrasado** → Tentar cobrar de novo agora (o aluno avisou que resolveu o
-           cartão) · Copiar o link para trocar o cartão (a tela é a da etapa 4.6) · Cancelar.
-         - **Cancelada** → Copiar o link para reativar (o envio por e-mail chega com a 4.7).
-         - **Paga e sem conta na escola** → Ligar a uma conta (etapa 4.7).
-
-         Toda ação pede confirmação dizendo o efeito ("Fulano continua com acesso até 10/11"), e
-         a tela se atualiza com o que a Stripe respondeu.
-      5. **O registro do que foi feito.** Cada ação fica gravada: quem fez (o operador e, no
-         futuro, o JilsonAI), quando, em qual assinatura e o que a Stripe respondeu. É o que
-         deixa o JilsonAI agir e o operador ver depois.
-      **O JilsonAI, no futuro (`jilsonai.md` → *Decisões em aberto*, item 8):** as ações acima
-      são as MESMAS que ele vai usar — construídas uma vez, no servidor. Proposta de três níveis,
-      a decidir quando aquela fase abrir: **faz sozinho** o que não mexe em dinheiro (conferir,
-      explicar ao aluno a situação dele, mandar o link de reativar ou de trocar o cartão) · **faz
-      e avisa** o que segue uma regra fechada (devolver o dinheiro dentro dos 7 dias, tentar
-      cobrar de novo) · **só com o OK do operador** o que foge da regra (devolução fora do
-      prazo, qualquer exceção).
-      **O que fica FORA, e por quê:** cobrar o cartão do aluno por conta própria (uma assinatura
-      nova sem ele clicar: cobrança contestada é prejuízo e risco para a conta na Stripe) · dar
-      acesso de cortesia pela tela (ele escolheu só o link; o código de 100% continua existindo) ·
-      trocar o plano do aluno pelo admin (o aluno troca na tela dele, etapa 4.6) · contestação
-      de cobrança no cartão, repasses e imposto: continuam no painel da Stripe.
-      **Como se constrói (engenharia; uma sessão cada, e a ordem é do operador):** (1) a lista,
-      os filtros, a busca e o detalhe — só leitura; (2) as ações que não mexem em dinheiro + o
-      registro; (3) as que mexem (devolver, cobrar de novo). Pede uma migration (o espelho passa
-      a guardar o plano e o "vai cancelar"; a tabela do registro, com RLS). Cancelar e desfazer
-      são as mesmas operações da tela do aluno (etapa 4.6): constroem-se uma vez. context7 da
-      Stripe antes de escrever; revisão de segurança ao fim.
-      **Em aberto:** P61 (cancelar dentro dos 7 dias: o aluno escolhe? e o reembolso repetido) ·
-      P62 (aprovar este mapa e a ordem: antes ou depois da 4.5 e da 4.6).
+      **ONDE PAROU:** etapa FECHADA (10/10/2026), os 9 passos commitados, e a **publicação
+      autorizada pelo operador** no mesmo dia. Ele abriu a tela Admin → Assinaturas no navegador
+      e ela conferiu certo. Com ele ficam: a P59 (textos e posição no menu) e a P60 (a opção do
+      painel da Stripe). O que ele pediu a mais para a tela virou a etapa 4.7b.
 - [ ] **4.5 — ESLint com `no-floating-promises`, bloqueante no CI (código, pequena).** Dependências
       de desenvolvimento novas: `eslint` + `typescript-eslint`. Já decidido para esta fase (item
       abaixo): promessa sem `await` dentro do webhook derruba o servidor sem nenhum teste perceber.
@@ -4025,6 +3969,13 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       Portal. Telas e textos: decisões do operador. **(c) — trazido da 4.2 (10/10/2026):** quem
       cancelou e ainda tem dias pagos volta a assinar pela tela de assinar, sem pagar duas vezes o
       mesmo período (na 4.2 essa pessoa vê "Você já é assinante").
+      **Decisões do operador (10/10/2026) que esta etapa constrói** (`billing.md` → *Reembolso*):
+      o aluno cancela quando quiser e mantém o acesso pago · **dentro dos 7 dias a tela oferece
+      as duas saídas** — "parar a renovação e continuar" e "cancelar e receber o dinheiro de
+      volta" · **o reembolso corta o acesso na hora** (o período devolvido deixa de contar como
+      pago no espelho; hoje a Stripe segue dizendo "paga") · **no máximo 2 reembolsos por
+      aluno**: depois do segundo, a conta não assina mais, e a mensagem não diz que foi
+      bloqueada — **só vale depois da P61** (advogado e o texto da mensagem).
 - [ ] **4.7 — O visitante assina: a conta nasce no pagamento (código, ALTO RISCO).** O checkout
       público: e-mail + pagamento → o webhook cria a conta (o cadastro continua fechado) e manda o
       e-mail de "crie sua senha". **Depende do Resend configurado e da P49** (o remetente). Junto:
@@ -4055,7 +4006,73 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       e-mail:** quando as tentativas de cobrança acabam, a Stripe CANCELA a assinatura (P60: a
       opção do painel) e **a escola manda um e-mail avisando, com o link para reativar**
       (`billing.md` → *Régua de inadimplência*). O link leva à tela de assinar, que já diz
-      "Reativar assinatura".
+      "Reativar assinatura". **E vale para TODA assinatura cancelada, não só a da cobrança que
+      falhou:** *"o sistema envia automaticamente e-mail para o aluno, como a Anthropic faz"*
+      (operador, 10/10/2026) — sai sozinho quando o aviso da Stripe chega, sem botão do admin.
+- [ ] **4.7b — Admin → Assinaturas vira um PAINEL de assinaturas (código, ALTO RISCO).**
+      **MAPA APROVADO pelo operador (10/10/2026: "Aprovo o mapa"), e fica para DEPOIS da 4.7**
+      (decisão dele no mesmo dia: *"o Painel pode ficar para depois da 4.7 que é mais
+      importante"*). O mapa abaixo foi proposto pelo agente a pedido dele; o plano de cada
+      sessão ainda é mostrado a ele antes de programar, como em todo bloco. *(Nasceu como "4.4b";
+      mudou de número ao mudar de lugar.)*
+      **O pedido (operador, 10/10/2026, depois de usar a tela da 4.4):** *"achei pouco funcional
+      […] Eu quero uma tela funcional e não só saber como está a assinatura"* · *"pode ser um mini
+      sisteminha administrativo sem precisar ficar indo na Stripe para gerenciar assinaturas e
+      problema dos alunos e que no futuro o JilsonAI possa resolver me avisando o que fez quando
+      for relevante para não ter prejuízos financeiros"*.
+      **Já decidido por ele (10/10/2026), e vale para esta tela:** assinatura cancelada → o admin
+      **envia ou copia o link** para o aluno reativar, e é o aluno quem paga · cancelar não corta
+      o acesso já pago; **dentro dos 7 dias**, cancelar devolve o dinheiro e corta o acesso na
+      hora (`billing.md` → *Reembolso*) · quando as tentativas de cobrança acabam, a Stripe
+      cancela (P60).
+      **O MAPA — o que faz sentido ter:**
+      1. **A lista.** Todas as assinaturas, a mais recente primeiro: o aluno (nome e e-mail), o
+         plano (mensal ou anual), a situação, até quando está pago (ou a próxima cobrança) e o
+         código promocional, se houver. **Filtros:** Ativas · Vão cancelar · Pagamento atrasado ·
+         Canceladas · Aguardando o primeiro pagamento · Todas. **Busca** por e-mail ou nome. No
+         topo, quantas há em cada situação.
+      2. **"Precisa de atenção"** — o filtro que abre primeiro: pagamento atrasado · quem pagou e
+         está sem acesso · assinatura paga sem conta na escola (etapa 4.7) · pedido de reembolso.
+      3. **O detalhe de uma assinatura** (ao clicar): as cobranças, uma por linha (data, valor,
+         paga, falhou ou devolvida — e o **motivo da falha** como a Stripe diz: cartão recusado,
+         sem saldo, vencido) · o cartão em uso (bandeira e os 4 últimos números, nunca o cartão) ·
+         desde quando assina · o que já foi feito nesta assinatura, e por quem.
+      4. **As ações, conforme a situação:**
+         - **Ativa** → Cancelar no fim do período (continua assistindo até o fim do que pagou) ·
+           Cancelar e devolver o dinheiro (só dentro dos 7 dias; corta o acesso na hora) ·
+           Conferir na Stripe.
+         - **Ativa, com o cancelamento marcado** → Desfazer o cancelamento.
+         - **Pagamento atrasado** → Tentar cobrar de novo agora (o aluno avisou que resolveu o
+           cartão) · Copiar o link para trocar o cartão (a tela é a da etapa 4.6) · Cancelar.
+         - **Cancelada** → Copiar o link para reativar (o e-mail automático do sistema já
+           terá saído sozinho: decisão dele de 10/10/2026, etapa 4.7).
+         - **Paga e sem conta na escola** → Ligar a uma conta (etapa 4.7).
+
+         Toda ação pede confirmação dizendo o efeito ("Fulano continua com acesso até 10/11"), e
+         a tela se atualiza com o que a Stripe respondeu.
+      5. **O registro do que foi feito.** Cada ação fica gravada: quem fez (o operador e, no
+         futuro, o JilsonAI), quando, em qual assinatura e o que a Stripe respondeu. É o que
+         deixa o JilsonAI agir e o operador ver depois.
+      **O JilsonAI, no futuro (`jilsonai.md` → *Decisões em aberto*, item 8):** as ações acima
+      são as MESMAS que ele vai usar — construídas uma vez, no servidor. Proposta de três níveis,
+      a decidir quando aquela fase abrir: **faz sozinho** o que não mexe em dinheiro (conferir,
+      explicar ao aluno a situação dele, mandar o link de reativar ou de trocar o cartão) · **faz
+      e avisa** o que segue uma regra fechada (devolver o dinheiro dentro dos 7 dias, tentar
+      cobrar de novo) · **só com o OK do operador** o que foge da regra (devolução fora do
+      prazo, qualquer exceção).
+      **O que fica FORA, e por quê:** cobrar o cartão do aluno por conta própria (uma assinatura
+      nova sem ele clicar: cobrança contestada é prejuízo e risco para a conta na Stripe) · dar
+      acesso de cortesia pela tela (ele escolheu só o link; o código de 100% continua existindo) ·
+      trocar o plano do aluno pelo admin (o aluno troca na tela dele, etapa 4.6) · contestação
+      de cobrança no cartão, repasses e imposto: continuam no painel da Stripe.
+      **Como se constrói (engenharia; uma sessão cada, e a ordem é do operador):** (1) a lista,
+      os filtros, a busca e o detalhe — só leitura; (2) as ações que não mexem em dinheiro + o
+      registro; (3) as que mexem (devolver, cobrar de novo). Pede uma migration (o espelho passa
+      a guardar o plano e o "vai cancelar"; a tabela do registro, com RLS). Cancelar, desfazer
+      e devolver o dinheiro são as mesmas operações da tela do aluno (etapa 4.6): quando este
+      painel começar, elas já existem. context7 da Stripe antes de escrever; revisão de
+      segurança ao fim.
+      **Em aberto:** P61 (o limite de 2 reembolsos: advogado, e o texto que a pessoa lê).
 - [ ] **4.8 — Dólar pelo país do cartão + o botão das páginas em inglês (código + decisão).** context7
       primeiro. **Depende da decisão de imposto internacional com o contador (P22)** antes da primeira
       venda fora do Brasil. **Trazido da 4.2 (10/10/2026):** a tela de assinar já recebe o valor e a
@@ -5010,7 +5027,7 @@ outro aparelho e "daqui a um mês", e o Safari apaga o armazenamento do site em 
       recebe assinatura nem cliente do modo de teste). **O que continua sendo deste item, antes da
       primeira venda de verdade:** avaliar uma **chave restrita** no lugar da secreta padrão · o
       nome que aparece na fatura do cartão (P58) · o reembolso cortar o acesso (decidido em
-      10/10/2026, `billing.md` → *Reembolso*; falta o código: etapas 4.4b e 4.6) · o
+      10/10/2026, `billing.md` → *Reembolso*; falta o código: etapa 4.6) · o
       imposto fora do Brasil (P22) · o código de 100% para presentear: aleatório e de 1 uso.
       *O texto original, como registro:*
       **A Stripe de verdade — e as assinaturas do modo de teste SAEM do banco de produção** *(achado

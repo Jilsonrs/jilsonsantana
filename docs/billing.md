@@ -111,14 +111,38 @@ dele, isto passa a ser uma **promessa nossa**, oferecida por escolha. Duas coisa
 - **Dentro dos 7 dias:** cancelou com reembolso → **recebe o dinheiro de volta e perde o acesso**.
 - **Depois dos 7 dias:** não há reembolso, e o acesso continua até o fim do período pago.
 
-*Reabre se a escola passar a dar mais que a lei (prazo maior, devolução proporcional).* **Em
-aberto (P61):** se, dentro dos 7 dias, o aluno escolhe entre só parar a renovação e receber o
-dinheiro de volta; e se quem já recebeu de volta uma vez tem direito de novo ao reativar.
+*Reabre se a escola passar a dar mais que a lei (prazo maior, devolução proporcional).*
+
+**Dentro dos 7 dias, o aluno ESCOLHE** *(decisão do operador, 10/10/2026)*: a tela oferece as
+duas saídas — **"parar a renovação e continuar"** (assiste até o fim do período pago) e
+**"cancelar e receber o dinheiro de volta"** (perde o acesso na hora). *Sem gatilho próprio:
+acompanha a regra acima.*
+
+**No máximo 2 reembolsos por aluno** *(decisão do operador, 10/10/2026: "2 reembolsos máximo por
+aluno" — do terceiro em diante "está agindo de má fé")*. Depois do segundo, **aquela conta não
+assina mais**, e a mensagem **não diz que ela foi bloqueada**. A regra recusa a assinatura NOVA;
+não nega reembolso de ninguém — assim nunca existe um terceiro pedido a negar.
+`[PESQUISA — busca na web, 10/10/2026; NÃO é parecer jurídico]` O art. 49 do CDC dá os 7 dias sem
+exigir motivo e **não diz quantas vezes**. Não achamos lei nem decisão de tribunal superior sobre
+uso repetido: a doutrina fala em boa-fé e abuso de direito, sem consenso
+([Conjur](https://www.conjur.com.br/2025-set-16/litigancia-predatoria-no-e-commerce-o-desafio-do-direito-de-retencao//?print=1),
+[UniCEUB](https://repositorio.uniceub.br/jspui/bitstream/prefix/17158/1/22002038.pdf)). O art. 39,
+II e IX, trata como prática abusiva recusar venda a quem quer pagar, e o TJDFT admite a recusa
+quando há **justa causa**
+([TJDFT](https://www.tjdft.jus.br/consultas/jurisprudencia/jurisprudencia-em-temas/cdc-na-visao-do-tjdft-1/praticas-abusivas/recusa-de-contratar-pelo-fornecedor)).
+**Por isso a regra só vale depois de um advogado confirmar (P61)**, e convém estar escrita nos
+termos de uso.
+**Em aberto (P61):** o texto que essa pessoa lê. O operador sugeriu algo como "digite um e-mail
+válido"; recomendação do agente: uma frase neutra e verdadeira ("Não foi possível concluir a
+assinatura nesta conta. Fale com a gente."), porque uma mensagem falsa enfraquece a justa causa
+se alguém reclamar. **Proposta do agente, a decidir ao construir:** contar também pelo cartão (o
+mesmo cartão com outro e-mail).
+*Reabre com a resposta do advogado, ou se a regra barrar aluno de boa-fé.*
 
 **Estado do código (10/10/2026): o reembolso ainda NÃO corta o acesso.** A fatura da Stripe não
 tem situação de "reembolsada" (as situações são `draft`, `open`, `paid`, `uncollectible` e `void`
 — tipos da `stripe@23.0.0`): devolvido o dinheiro, ela continua `paid`, e o espelho trata o mês
-como pago. A regra acima entra com o cancelamento (plano → etapas 4.4b e 4.6): o período
+como pago. A regra acima entra com o cancelamento (plano → etapa 4.6): o período
 devolvido deixa de contar como pago no espelho. **Precede a primeira venda de verdade.**
 
 ## O plano ANUAL não aparece na home *(decisão do operador, set/2026)*
@@ -172,6 +196,11 @@ acontece em telas nativas da escola (o aluno nunca sai do site).
 - **Anti roach-motel:** um "cancelar mesmo assim" claro, de **1 clique**, sempre
   visível. Tom calmo, não retentivo. *(Sensibilidade Procon/CDC — já levantada na
   decisão de preço.)*
+- **Toda assinatura cancelada gera um e-mail AUTOMÁTICO do sistema para o aluno**, com o link
+  para reativar *(decisão do operador, 10/10/2026: "o sistema envia automaticamente e-mail para
+  o aluno, como a Anthropic faz")*. Não é botão do admin: sai sozinho quando a Stripe avisa.
+  Entra na etapa 4.7, que traz o envio de e-mail. *Reabre se o e-mail incomodar quem cancelou
+  de propósito — aí separa-se o cancelamento pedido do cancelamento por falta de pagamento.*
 - **Faseamento:** captura de motivo = lançamento · **"pausar 1 mês"** (pause
   collection da Stripe) = logo depois, não no lançamento.
 
@@ -327,11 +356,12 @@ pagamento sem ter assinado vê "confirmando" e depois "está demorando", sem cam
   subscription" são RASCUNHO do agente** (pendência P59). *Fecha quando ele revisar.*
 - **A tela "Assinaturas" vai virar um painel** *(pedido dele depois de usar a tela: "achei pouco
   funcional […] um mini sisteminha administrativo sem precisar ficar indo na Stripe")*: lista com
-  filtros e busca, e as ações que cabem em cada situação. O mapa é **proposta do agente**, no
-  plano (etapa 4.4b), e aguarda a aprovação dele (P62).
-- **Assinatura cancelada: o admin envia ou copia o link para o aluno reativar — é o aluno quem
-  paga** (entre isso, dar acesso de cortesia pela tela, e os dois). *Reabre se ele quiser
-  presentear acesso por ali.*
+  filtros e busca, e as ações que cabem em cada situação. **Mapa aprovado por ele em
+  10/10/2026**, e fica para depois da etapa 4.7 (*"que é mais importante"*): plano → etapa 4.7b.
+  *Reabre se um problema de aluno não se resolver com a tela de hoje antes de o painel existir.*
+- **Assinatura cancelada: o SISTEMA manda sozinho o e-mail com o link para reativar, e é o
+  aluno quem paga**; no painel, o admin só copia o link (entre isso, dar acesso de cortesia
+  pela tela, e os dois). *Reabre se ele quiser presentear acesso por ali.*
 
 **Convenções de engenharia (como o código faz):**
 - **O espelho é gravado por UMA rotina só** (`sincronizar`, em `server/src/lib/assinaturas.ts`),

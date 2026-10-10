@@ -611,10 +611,10 @@ seams v2 — construir quando houver aluno usando, não antes.
 8. **O JilsonAI resolvendo problema de assinatura** *(direção do operador, 10/10/2026)*: *"no
    futuro o JilsonAI possa resolver me avisando o que fez quando for relevante para não ter
    prejuízos financeiros"* — automático, com ele intervindo quando precisar. As operações são
-   as do painel de assinaturas do admin (`implementation-plan.md` → etapa 4.4b), expostas como
+   as do painel de assinaturas do admin (`implementation-plan.md` → etapa 4.7b), expostas como
    tools de escopo fixo, e cada uma grava o que fez. **Em aberto, e é dele:** o que o JilsonAI
    faz sozinho, o que faz avisando e o que só faz com o OK dele (a proposta do agente está na
-   4.4b). Não é do lançamento: entra depois que o painel existir.
+   4.7b). Não é do lançamento: entra depois que o painel existir.
 
 ---
 
@@ -716,5 +716,5 @@ existindo; muda só onde ele é explicado.*
 *Atualizado Out 2026 — **direção do operador (10/10/2026): o JilsonAI vai poder resolver
 problema de assinatura** (conferir, mandar o link de reativar, e o que mais ele autorizar),
 avisando o que fez quando for relevante. Entra como item 8 das *Decisões em aberto*; as
-operações nascem no painel de assinaturas do admin (plano → etapa 4.4b). Roadmap inalterado.
+operações nascem no painel de assinaturas do admin (plano → etapa 4.7b). Roadmap inalterado.
 Reabre quando o painel existir e a fase das tools de operação abrir.*
