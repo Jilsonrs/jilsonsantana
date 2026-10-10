@@ -5159,8 +5159,13 @@ outro aparelho e "daqui a um mês", e o Safari apaga o armazenamento do site em 
       - **Não provado ainda:** a chegada ao Sentry DE VERDADE — depende do DSN novo e da
         variável na Railway (pendência P63); a prova é o aviso de "no ar" aparecer no painel
         depois da publicação.
-      **ONDE PAROU:** parte 1 pronta no `dev`, não publicada. Faltam: a P63 (com o operador),
-      a publicação (decisão dele) e a parte 2 (as telas do aluno).
+      - **O CI reprovou a primeira tentativa, e a causa virou regra:** um teste novo passava
+        no computador (que tem as chaves de teste da Stripe no `.env.test`) e reprovou no CI,
+        que não tem — 503 no lugar de 500. Reproduzido sem as chaves, corrigido, e a suíte
+        inteira rodada nessa condição (727). A regra está no `CLAUDE.md` → *Testing*.
+      **ONDE PAROU:** parte 1 pronta no `dev` (CI verde nos dois jobs em `7c31be4`), não
+      publicada. Faltam: a P63 (com o operador), a publicação (decisão dele) e a parte 2 (as
+      telas do aluno).
 - [ ] **Backlog P2 do `security-vulnerability-reviewer` (7 no relatório; os nº 1, 2 e 6 foram
       movidos e o nº 5 foi **fechado por migration versionada** → **3 pendentes aqui**. Nenhum
       bloqueia merge; todos antes do primeiro aluno pagante.)** A numeração original do relatório é
