@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import Stripe from "stripe";
-import { chavePublicavel, erroSemMensagem, paraAssinaturaNaStripe, paraPrecosDosPlanos } from "./stripe.js";
+import { chavePublicavel, erroSemMensagem, paraAssinaturaNaStripe, paraCodigoPromocional, paraPrecosDosPlanos } from "./stripe.js";
 
 // O ESPELHO A PARTIR DA STRIPE (Fase 4, etapa 4.1) — função pura, teste unitário (CLAUDE.md →
 // Testing: só função pura, sem I/O). O que protege é o "PAGO ATÉ": quando a renovação falha, a
@@ -133,5 +133,41 @@ describe("a chave publicável", () => {
     expect(com("rk_test_abc")).toBeNull();
     expect(com("")).toBeNull();
     expect(com(undefined)).toBeNull();
+  });
+});
+
+// O CÓDIGO PROMOCIONAL NO FORMATO DA TELA (etapa 4.2). O que protege: a tela só descreve um
+// desconto que a Stripe vai mesmo dar.
+type Cupom = { valid?: boolean; percent_off?: number | null; amount_off?: number | null; duration?: string; duration_in_months?: number | null };
+function codigo(cupom: Cupom | string | null = {}, ativo = true): Stripe.PromotionCode {
+  const cheio = typeof cupom === "object" && cupom !== null ? { valid: true, percent_off: 100, amount_off: null, duration: "forever", duration_in_months: null, ...cupom } : cupom;
+  // Seguro: o objeto de teste tem só os campos que a função lê; a forma completa é da Stripe.
+  return { id: "promo_1", active: ativo, promotion: { type: "coupon", coupon: cheio } } as unknown as Stripe.PromotionCode;
+}
+
+describe("o código promocional no formato da tela", () => {
+  it("100% para sempre", () => {
+    expect(paraCodigoPromocional(codigo())).toEqual({ id: "promo_1", desconto: { percentual: 100, centavos: null, duracao: "para-sempre", meses: null } });
+  });
+
+  it("valor fixo, uma vez", () => {
+    expect(paraCodigoPromocional(codigo({ percent_off: null, amount_off: 2000, duration: "once" }))?.desconto).toEqual({ percentual: null, centavos: 2000, duracao: "uma-vez", meses: null });
+  });
+
+  it("por meses: leva quantos; fora disso, os meses não saem", () => {
+    expect(paraCodigoPromocional(codigo({ percent_off: 50, duration: "repeating", duration_in_months: 3 }))?.desconto).toEqual({ percentual: 50, centavos: null, duracao: "por-meses", meses: 3 });
+    expect(paraCodigoPromocional(codigo({ duration: "forever", duration_in_months: 3 }))?.desconto.meses).toBeNull();
+  });
+
+  it("código inativo, cupom que não vale mais, cupom sem os dados ou sem desconto: nada", () => {
+    expect(paraCodigoPromocional(codigo({}, false))).toBeNull();
+    expect(paraCodigoPromocional(codigo({ valid: false }))).toBeNull();
+    expect(paraCodigoPromocional(codigo("coupon_so_o_id"))).toBeNull();
+    expect(paraCodigoPromocional(codigo(null))).toBeNull();
+    expect(paraCodigoPromocional(codigo({ percent_off: null, amount_off: null }))).toBeNull();
+  });
+
+  it("duração que a Stripe inventar depois: nada, em vez de descrever errado", () => {
+    expect(paraCodigoPromocional(codigo({ duration: "lifetime_plus" }))).toBeNull();
   });
 });

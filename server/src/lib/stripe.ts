@@ -1,5 +1,5 @@
 import Stripe from "stripe";
-import { PLANOS, type Plano } from "@jilson/core";
+import { DuracaoDoDesconto, PLANOS, type DescontoDoCodigo, type Plano } from "@jilson/core";
 
 // A NOSSA FRONTEIRA COM A STRIPE (Fase 4, etapa 4.1 — billing.md; CLAUDE.md → Membership
 // Gating). Tudo que fala com a Stripe passa por aqui. As chaves vivem SÓ no ambiente do
@@ -103,6 +103,56 @@ export async function buscarPrecos(): Promise<PrecoDoPlano[]> {
     return paraPrecosDosPlanos(precos.data);
   } catch (erro) {
     throw erroSemMensagem(erro, "a busca dos preços");
+  }
+}
+
+/** O código promocional como a tela o descreve. O `id` não sai do servidor. */
+export type CodigoPromocional = { id: string; desconto: DescontoDoCodigo };
+
+// A duração na Stripe é uma lista ABERTA (os tipos da `stripe@23.0.0` aceitam valor novo): o que
+// não estiver aqui não tem como ser descrito na tela, e o código é tratado como inválido.
+const DURACAO: Partial<Record<string, DuracaoDoDesconto>> = {
+  forever: DuracaoDoDesconto.PARA_SEMPRE,
+  once: DuracaoDoDesconto.UMA_VEZ,
+  repeating: DuracaoDoDesconto.POR_MESES,
+};
+
+/** O código promocional da Stripe (com o cupom expandido) no formato da tela — ou nada. Função pura. */
+export function paraCodigoPromocional(codigo: Stripe.PromotionCode): CodigoPromocional | null {
+  const cupom = codigo.promotion.coupon;
+  if (!codigo.active || typeof cupom !== "object" || cupom === null || !cupom.valid) return null;
+  const duracao = DURACAO[cupom.duration];
+  if (!duracao || (cupom.percent_off === null && cupom.amount_off === null)) return null;
+  const meses = duracao === DuracaoDoDesconto.POR_MESES ? cupom.duration_in_months : null;
+  return { id: codigo.id, desconto: { percentual: cupom.percent_off, centavos: cupom.amount_off, duracao, meses } };
+}
+
+/** O código promocional que o aluno digitou, se existir e ainda valer (a Stripe não diferencia maiúsculas). */
+export async function buscarCodigo(codigo: string): Promise<CodigoPromocional | null> {
+  try {
+    const achados = await stripe().promotionCodes.list({ code: codigo, active: true, limit: 1, expand: ["data.promotion.coupon"] });
+    const achado = achados.data[0];
+    return achado ? paraCodigoPromocional(achado) : null;
+  } catch (erro) {
+    throw erroSemMensagem(erro, "a busca do código promocional");
+  }
+}
+
+/**
+ * Quanto se paga HOJE por este plano com este código — a conta é da Stripe (a prévia da fatura),
+ * nunca nossa: o valor mostrado é o valor cobrado. Não gasta uso do código. Devolve nada quando
+ * a Stripe recusa o DESCONTO nesta compra (outra moeda, valor mínimo); qualquer outra falha sobe.
+ */
+export async function calcularPrevia(precoId: string, codigoId: string): Promise<{ centavosHoje: number; moeda: string } | null> {
+  try {
+    const fatura = await stripe().invoices.createPreview({
+      subscription_details: { items: [{ price: precoId, quantity: 1 }] },
+      discounts: [{ promotion_code: codigoId }],
+    });
+    return { centavosHoje: fatura.total, moeda: fatura.currency };
+  } catch (erro) {
+    if (erro instanceof Stripe.errors.StripeInvalidRequestError && erro.param?.startsWith("discounts")) return null;
+    throw erroSemMensagem(erro, "a prévia da assinatura");
   }
 }
 

@@ -3311,8 +3311,22 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             **Testes:** 6 de servidor + 8 unitários. **Mutação:** 4 de 4 reprovaram (a rota sem
             login, a chave sem conferir o `pk_`, o código do preço na resposta, o intervalo sem
             conferir).
-      - [ ] **Passo 2 — servidor, o código.** `POST /api/billing/previa` + testes. *Prova:*
+      - [x] **Passo 2 — servidor, o código.** `POST /api/billing/previa` + testes. *Prova:*
             `TESTE100` → R$ 0; código errado → recusado.
+            **FEITO (10/10/2026).** `core/src/schemas/billing.ts` (`previaSchema`: plano + código,
+            aparado) · em `lib/stripe.ts`: `buscarCodigo` e `calcularPrevia` (a prévia da fatura da
+            Stripe). Código que não existe e código que não vale para a compra dão a MESMA resposta
+            (400 `CodigoInvalido`); o código digitado não vai para o registro. **Provado no app de
+            verdade, com o banco de dev e a área restrita:** `TESTE100` no mensal e ` teste100 `
+            (minúsculas, com espaço) no anual → R$ 0, 100% para sempre; código inexistente → 400;
+            sem login → 401; **os usos do `TESTE100` continuaram 0 de 5.** **Testes:** 9 de servidor
+            + 5 unitários. **Mutação:** 5 de 5 reprovaram (sem login, sempre o preço do primeiro
+            plano, código inexistente seguindo para o cálculo, cupom vencido aceito, código sem
+            aparar). *Sem teste automático, só a prova acima:* qual recusa da Stripe na prévia conta
+            como "código não vale" (`calcularPrevia` olha se o erro é do desconto) — é a função que
+            vai à rede.
+            **Para o passo 3:** código promocional preso a UM cliente na Stripe só confere com o
+            cliente no pedido — a prévia passa a mandar o cliente quando a conta já tiver um.
       - [ ] **Passo 3 — servidor, criar a assinatura.** Migration `stripe_customer` (escrita à mão
             como na 4.1, aplicada no `dev` com o OK do operador; RLS conferido; `migrate diff` sem
             diferença) + as duas rotas de assinatura + testes (401 · plano inválido · 409 de quem já
@@ -3375,8 +3389,10 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       amount, currency })` + `elements.submit()` + `confirmPayment` com o `clientSecret`) — **2
       consultas** (10/10/2026). Nos tipos da `stripe@23.0.0`: `prices.list` por `lookup_keys`,
       `invoices.createPreview`, `PromotionCode.promotion`, `Invoice.confirmation_secret`.
-      **PAREI EM (10/10/2026):** passo 1 feito e commitado no `dev`. Próximo: passo 2 (o código
-      promocional). Os textos em rascunho, acima, esperam a revisão do operador antes do passo 4.
+      **PAREI EM (10/10/2026):** passos 1 e 2 feitos e commitados no `dev` (nada publicado).
+      Próximo: **passo 3** (criar a assinatura) — começa pela migration `stripe_customer`, que
+      precisa do OK do operador para ser aplicada no banco de dev. Os textos em rascunho, acima,
+      esperam a revisão dele antes do passo 4.
 - [ ] **4.3 — No ar, em modo de teste: o PRIMEIRO TESTE REAL (sessão curta, com o operador).** As
       chaves de teste e o segredo do webhook no Railway, o endereço do webhook no painel — **com
       "www"**: `https://www.jilsonsantana.com/api/stripe/webhook` (medido em 09/10/2026: sem o "www",
