@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeAll, afterAll, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeAll, afterAll, afterEach, beforeEach } from "vitest";
 import request from "supertest";
 import Stripe from "stripe";
 import { inspect } from "node:util";
@@ -15,6 +15,8 @@ vi.mock("../lib/stripe.js", async (importOriginal) => ({
 import servidor from "./servidor.js";
 import { prisma } from "../lib/prisma.js";
 import { temAcessoAtivo } from "../lib/acesso.js";
+import { sincronizarAssinatura } from "../lib/assinaturas.js";
+import { ASSINATURA_DE_TESTE } from "../lib/assinatura-de-teste.js";
 
 // O AVISO DA STRIPE (webhook — Fase 4, etapa 4.1; CLAUDE.md → Membership Gating). O que estes
 // testes protegem — é a fronteira de dinheiro, e webhook não tem tela:
@@ -30,7 +32,11 @@ import { temAcessoAtivo } from "../lib/acesso.js";
 //     da Stripe por cima da nova — e a busca na Stripe acontece DEPOIS da trava, nunca antes
 //     (achado P1 da revisão de segurança, 09/10/2026);
 //   - nenhuma recusa fica muda, e a assinatura paga sem conta grita no registro (achados P1/P2);
-//   - de ponta a ponta com o gate: ativa → acesso; cancelada por falta de pagamento → sem acesso.
+//   - de ponta a ponta com o gate: ativa → acesso; cancelada por falta de pagamento → sem acesso;
+//   - PERDER O ACESSO DERRUBA A SESSÃO (etapa 4.4): o cookie de antes deixa de valer — mas só
+//     o de quem TINHA acesso e deixou de ter. Quem cancelou e ainda tem dias pagos continua
+//     assistindo e logado; quem tenta pagar e não consegue nunca é deslogado; outra assinatura
+//     da conta segura a sessão; e a sessão das OUTRAS contas nunca cai junto.
 
 const SEGREDO = "whsec_teste_da_suite_local";
 const S = `${Date.now()}`;
@@ -267,6 +273,20 @@ describe("o aviso da Stripe — uma assinatura de cada vez", () => {
     expect((await espelho(sub))?.status).toBe("canceled");
   });
 
+  it("a sincronia SEM aviso (o checkout, o admin) e um aviso ao mesmo tempo: a mesma trava — a resposta velha não fica por cima da nova", async () => {
+    const sub = novoId("sub");
+    // A sincronia pega uma resposta lenta e velha; o aviso, que chega depois, uma rápida e nova.
+    buscarAssinatura
+      .mockImplementationOnce(() => new Promise((r) => setTimeout(() => r(naStripe(sub, { status: "past_due" })), 300)))
+      .mockImplementationOnce(() => Promise.resolve(naStripe(sub, { status: "canceled", pagoAte: new Date(Date.now() - DIA) })));
+    const sincronia = sincronizarAssinatura(sub);
+    await new Promise((r) => setTimeout(r, 60));
+    const aviso = enviar(avisoDaAssinatura(sub, "customer.subscription.deleted")).then((r) => r);
+    const [, resposta] = await Promise.all([sincronia, aviso]);
+    expect(resposta.status).toBe(200);
+    expect((await espelho(sub))?.status).toBe("canceled");
+  });
+
   it("o espelho guarda se a assinatura é de verdade ou do modo de teste", async () => {
     const sub = novoId("sub");
     buscarAssinatura.mockResolvedValue(naStripe(sub, { livemode: true }));
@@ -329,5 +349,120 @@ describe("o aviso da Stripe — de ponta a ponta com o gate", () => {
     buscarAssinatura.mockResolvedValue(naStripe(sub, { status: "canceled", pagoAte: new Date(Date.now() - DIA), userId: doGate }));
     await enviar(avisoDaAssinatura(sub, "customer.subscription.deleted"));
     expect(await temAcessoAtivo(doGate)).toBe(false);
+  });
+});
+
+describe("o aviso da Stripe — perder o acesso derruba a sessão", () => {
+  // Sessões DE VERDADE: as do member@ e do admin semeados. A assinatura de teste do member@
+  // sai do caminho (vencida) enquanto este bloco roda: o acesso dele depende só das assinaturas
+  // que cada teste cria — e que saem ao fim de cada um.
+  let memberId = "";
+  const eu = (cookies: string[]) => request(servidor).get("/api/me").set("Cookie", cookies);
+  async function entrar(email?: string, senha?: string): Promise<string[]> {
+    const res = await request(servidor).post("/api/auth/sign-in/email").send({ email, password: senha });
+    const cookies = (res.headers["set-cookie"] as unknown as string[] | undefined) ?? [];
+    expect(cookies.length).toBeGreaterThan(0);
+    return cookies;
+  }
+  const entrarComoAluno = () => entrar(process.env.SEED_MEMBER_EMAIL, process.env.SEED_MEMBER_PASSWORD);
+  const doAluno = (sub: string, dados: Partial<AssinaturaNaStripe> = {}) => naStripe(sub, { userId: memberId, ...dados });
+  const VENCIDA = { status: "canceled", pagoAte: new Date(Date.now() - DIA) };
+  /** O aviso chega com a Stripe dizendo isto da assinatura. */
+  async function avisar(sub: string, dados: Partial<AssinaturaNaStripe> = {}) {
+    buscarAssinatura.mockResolvedValue(doAluno(sub, dados));
+    expect((await enviar(avisoDaAssinatura(sub))).status).toBe(200);
+  }
+
+  beforeAll(async () => {
+    memberId = (await prisma.user.findUniqueOrThrow({ where: { email: process.env.SEED_MEMBER_EMAIL }, select: { id: true } })).id;
+    await prisma.subscription.update({ where: { stripeSubscriptionId: ASSINATURA_DE_TESTE }, data: { status: "canceled", currentPeriodEnd: new Date("2020-01-01T00:00:00Z") } });
+  });
+  afterEach(async () => {
+    await prisma.subscription.deleteMany({ where: { ownerUserId: memberId, stripeSubscriptionId: { contains: S } } });
+  });
+  afterAll(async () => {
+    await prisma.subscription.update({ where: { stripeSubscriptionId: ASSINATURA_DE_TESTE }, data: { status: "active", currentPeriodEnd: new Date("2100-01-01T00:00:00Z") } });
+  });
+
+  it("a assinatura acabou (as cobranças falharam e a Stripe cancelou): o cookie de antes deixa de valer", async () => {
+    const sub = novoId("sub");
+    await avisar(sub);
+    const cookies = await entrarComoAluno();
+    expect((await eu(cookies)).status).toBe(200);
+
+    const registro = vi.spyOn(console, "info").mockImplementation(() => {});
+    try {
+      await avisar(sub, VENCIDA);
+      expect(registro.mock.calls.flat().join(" ")).toContain("perdeu o acesso");
+    } finally {
+      registro.mockRestore();
+    }
+    expect(await temAcessoAtivo(memberId)).toBe(false);
+    expect((await eu(cookies)).status).toBe(401);
+    expect(await prisma.session.count({ where: { userId: memberId } })).toBe(0);
+  });
+
+  it("cancelou e ainda tem dias pagos: continua assistindo E logado, até o fim deles", async () => {
+    const sub = novoId("sub");
+    await avisar(sub);
+    const cookies = await entrarComoAluno();
+    await avisar(sub, { status: "canceled", pagoAte: new Date(Date.now() + 10 * DIA) });
+    expect(await temAcessoAtivo(memberId)).toBe(true);
+    expect((await eu(cookies)).status).toBe(200);
+  });
+
+  it("quem NÃO tinha acesso não é deslogado: a tentativa de pagar que expira, ou a assinatura antiga conferida de novo", async () => {
+    const cookies = await entrarComoAluno();
+    const tentativa = novoId("sub");
+    await avisar(tentativa, { status: "incomplete" });
+    await avisar(tentativa, { status: "incomplete_expired" });
+    const antiga = novoId("sub");
+    await avisar(antiga, VENCIDA);
+    await avisar(antiga, VENCIDA);
+    expect(await temAcessoAtivo(memberId)).toBe(false);
+    expect((await eu(cookies)).status).toBe(200);
+  });
+
+  it("outra assinatura da conta ainda dá acesso: a sessão fica", async () => {
+    const [uma, outra] = [novoId("sub"), novoId("sub")];
+    await avisar(uma);
+    await avisar(outra);
+    const cookies = await entrarComoAluno();
+    await avisar(uma, VENCIDA);
+    expect(await temAcessoAtivo(memberId)).toBe(true);
+    expect((await eu(cookies)).status).toBe(200);
+  });
+
+  it("cai SÓ a sessão de quem perdeu o acesso: a das outras contas continua", async () => {
+    const sub = novoId("sub");
+    await avisar(sub);
+    const aluno = await entrarComoAluno();
+    const admin = await entrar(process.env.SEED_ADMIN_EMAIL, process.env.SEED_ADMIN_PASSWORD);
+    await avisar(sub, VENCIDA);
+    expect((await eu(aluno)).status).toBe(401);
+    expect((await eu(admin)).status).toBe(200);
+  });
+
+  it("a sincronia SEM aviso (a do checkout e a do admin) é a mesma rotina: grava o espelho, derruba a sessão e não marca aviso nenhum", async () => {
+    const sub = novoId("sub");
+    const avisosAntes = await prisma.stripeEvent.count();
+    buscarAssinatura.mockResolvedValue(doAluno(sub));
+    expect(await sincronizarAssinatura(sub)).toMatchObject({ resultado: "atualizada", perdeuAcesso: false });
+    expect((await espelho(sub))?.ownerUserId).toBe(memberId);
+    expect(await temAcessoAtivo(memberId)).toBe(true);
+
+    const cookies = await entrarComoAluno();
+    buscarAssinatura.mockResolvedValue(doAluno(sub, VENCIDA));
+    expect(await sincronizarAssinatura(sub)).toMatchObject({ resultado: "atualizada", perdeuAcesso: true });
+    expect((await espelho(sub))?.status).toBe("canceled");
+    expect((await eu(cookies)).status).toBe(401);
+    expect(await prisma.stripeEvent.count()).toBe(avisosAntes);
+  });
+
+  it("a sincronia sem aviso com a Stripe fora do ar: o erro sobe dizendo QUAL assinatura, e nada é gravado", async () => {
+    const sub = novoId("sub");
+    buscarAssinatura.mockRejectedValue(new Error("a Stripe não respondeu"));
+    await expect(sincronizarAssinatura(sub)).rejects.toThrow(sub);
+    expect(await espelho(sub)).toBeNull();
   });
 });

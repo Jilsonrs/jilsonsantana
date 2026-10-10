@@ -41,7 +41,9 @@ router.post("/stripe/webhook", express.raw({ type: "application/json" }), async 
     else console.warn(linha);
   } else {
     const qual = "assinatura" in desfecho ? ` — assinatura ${desfecho.assinatura.id} (${desfecho.assinatura.status})` : "";
-    console.info(`[stripe] aviso ${aviso.id} (${aviso.tipo}): ${desfecho.resultado}${qual}`);
+    // A conta tinha acesso e deixou de ter: as sessões dela caíram junto (etapa 4.4).
+    const caiu = desfecho.resultado === "atualizada" && desfecho.perdeuAcesso ? "; a conta perdeu o acesso: sessões encerradas" : "";
+    console.info(`[stripe] aviso ${aviso.id} (${aviso.tipo}): ${desfecho.resultado}${qual}${caiu}`);
   }
   res.json({ recebido: true });
 });

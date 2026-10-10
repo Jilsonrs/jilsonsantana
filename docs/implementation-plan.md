@@ -3722,13 +3722,28 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       consulta · Better Auth → /better-auth/better-auth → apagar as sessões no banco desloga na hora
       enquanto não houver `cookieCache` nem `secondaryStorage` (este repo não usa nenhum dos dois;
       com `cookieCache`, a sessão revogada valeria até o cache vencer) — 1 consulta (10/10/2026).`
-      - [ ] **Passo 1 — a sincronia única e a sessão que cai.** `lib/assinaturas.ts`: a rotina do
+      - [x] **Passo 1 — a sincronia única e a sessão que cai.** `lib/assinaturas.ts`: a rotina do
             aviso vira `sincronizarAssinatura` (trava → busca na Stripe AGORA → grava o espelho), que
             o aviso chama marcando o `event.id` na mesma transação · ao perder o acesso,
             `session.deleteMany` na mesma transação · `temAcessoAtivo()` aceita ler pela transação.
             Testes de servidor: perdeu o acesso → o cookie de antes responde 401; quem não tinha
             acesso não é deslogado; cancelou com dias pagos → segue com acesso e logado; outra
             assinatura ainda dá acesso → não cai. Mutação.
+            **FEITO (10/10/2026).** `sincronizar` (com a trava já tomada) é o miolo único;
+            `processarAviso` o chama e marca o `event.id` na mesma transação; `sincronizarAssinatura`
+            é a entrada sem aviso (checkout e admin, passos 2 e 3). A queda da sessão compara o
+            acesso de antes e de depois pela transação, e apaga só as sessões da conta que perdeu.
+            O registro do aviso diz quando a conta perdeu o acesso. **Testes:** +8 de servidor em
+            `stripe-webhook.test.ts`, com sessões de verdade do `member@` e do admin — a que acabou
+            derruba (o cookie de antes → 401); cancelou com dias pagos → acesso e sessão ficam; quem
+            não tinha acesso não cai (a incompleta que expira, a antiga conferida de novo); outra
+            assinatura segura a sessão; a sessão das OUTRAS contas não cai junto; a sincronia sem
+            aviso faz o mesmo e não marca aviso; com a Stripe fora do ar, nada é gravado; a
+            sincronia sem aviso e um aviso ao mesmo tempo respeitam a mesma trava. **Mutação:** 6
+            de 6 reprovaram — sem apagar a sessão, derrubar sem comparar com o antes, o "depois"
+            lido fora da transação, apagar a sessão de todo mundo, a sincronia sem a trava, o aviso
+            sem marcar o `event.id`. Gates: typecheck, suíte de servidor (649) e do site (797),
+            build.
       - [ ] **Passo 2 — o checkout chama a sincronia** (o achado P1 da revisão da 4.2). A Stripe
             diz que a conta tem assinatura viva e o espelho não dá acesso → sincroniza e responde
             409 `JaAssinante`, agora com a aula liberada. Se a Stripe não responder nessa hora, o
@@ -3770,7 +3785,8 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             achado aqui · `billing.md` e `CLAUDE.md` reconciliados · checkbox e *Estado atual*.
       **Fora desta etapa:** ESLint (4.5) · "minha assinatura" e quem cancelou com dias pagos voltar
       a assinar (4.6) · o visitante e a sincronia de assinatura sem conta (4.7) · o reembolso (P56).
-      **ONDE PAROU:** plano aprovado e gravado; nenhum código escrito. Próximo: Passo 1.
+      **ONDE PAROU:** Passo 1 feito e commitado no `dev`. Próximo: Passo 2 (o checkout chama a
+      sincronia).
 - [ ] **4.5 — ESLint com `no-floating-promises`, bloqueante no CI (código, pequena).** Dependências
       de desenvolvimento novas: `eslint` + `typescript-eslint`. Já decidido para esta fase (item
       abaixo): promessa sem `await` dentro do webhook derruba o servidor sem nenhum teste perceber.
