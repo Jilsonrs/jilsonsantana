@@ -36,7 +36,9 @@ import { AssinarPage } from "./AssinarPage";
 
 // ASSINAR COM A CONTA LOGADA (Fase 4, etapa 4.2). O que estes testes protegem:
 //   - carregando, erro e "já é assinante" (quem já assina não vê formulário);
-//   - o valor na tela é o que o SERVIDOR mandou, e o campo do cartão abre com ele;
+//   - o valor na tela é o que o SERVIDOR mandou, e o campo do cartão abre com ele; cada plano diz
+//     o preço e como é cobrado, e o anual leva o selo do desconto, CALCULADO dos dois preços;
+//   - "Hoje você paga" só aparece com código promocional (sem código, repetia o preço do plano);
 //   - o código promocional: o valor de hoje é o da prévia do servidor; código que não vale
 //     avisa e não muda nada; com 100% PARA SEMPRE o cartão some — e só nesse caso;
 //   - o envio, na ordem: confere o cartão → cria no servidor (só plano e código) → confirma com
@@ -124,21 +126,48 @@ describe("AssinarPage — o plano e o valor", () => {
     const anual = screen.getByRole("radio", { name: /Anual/ }) as HTMLInputElement;
     expect(mensal.checked).toBe(true);
     expect(anual.checked).toBe(false);
-    expect(naTela()).toContain("R$ 99,90/mês");
-    expect(naTela()).toContain("R$ 995,00/ano");
-    expect(naTela()).toContain("equivale a R$ 82,92 por mês");
-    expect(naTela()).toContain("Hoje você pagaR$ 99,90");
-    expect(naTela()).toContain("Depois, R$ 99,90 por mês até você cancelar.");
+    // Cada cartão diz o preço e como é cobrado; o anual leva o selo do desconto.
+    expect(mensal.closest("label")?.textContent?.replace(/\u00a0/g, " ")).toBe("MensalR$ 99,90/mêsCobrado todo mês");
+    expect(anual.closest("label")?.textContent?.replace(/\u00a0/g, " ")).toBe("Anual17% de descontoR$ 995,00/anoCobrado uma vez por anoequivale a R$ 82,92 por mês");
+    // Sem código promocional, o valor não é repetido num bloco à parte.
+    expect(naTela()).not.toContain("Hoje você paga");
     expect(cartao()?.dataset).toMatchObject({ centavos: "9990", moeda: "brl", formas: "card", chave: "pk_test_da_tela", idioma: "pt" });
     expect(screen.getByText("campo do cartão")).toBeTruthy();
   });
 
-  it("escolher o anual: o valor de hoje e o cartão passam a ser os do anual", async () => {
+  it("escolher o anual: ele fica marcado, e o cartão passa a abrir com o valor dele", async () => {
     abrir();
-    fireEvent.click(await screen.findByRole("radio", { name: /Anual/ }));
-    expect(naTela()).toContain("Hoje você pagaR$ 995,00");
-    expect(naTela()).toContain("Depois, R$ 995,00 por ano até você cancelar.");
+    const anual = (await screen.findByRole("radio", { name: /Anual/ })) as HTMLInputElement;
+    fireEvent.click(anual);
+    expect(anual.checked).toBe(true);
+    expect((screen.getByRole("radio", { name: /Mensal/ }) as HTMLInputElement).checked).toBe(false);
     expect(cartao()?.dataset.centavos).toBe("99500");
+  });
+});
+
+describe("AssinarPage — o selo do desconto do anual", () => {
+  const comPrecos = (mensal: number, anual: number) =>
+    getPlanosDaAssinatura.mockResolvedValue({ ...PLANOS, planos: [{ plano: "mensal", centavos: mensal, moeda: "brl" }, { plano: "anual", centavos: anual, moeda: "brl" }] });
+
+  it("é CALCULADO dos dois preços do servidor, não um texto fixo", async () => {
+    comPrecos(10000, 90000);
+    abrir();
+    await screen.findByRole("radio", { name: /Anual/ });
+    expect(naTela()).toContain("25% de desconto");
+    expect(naTela()).not.toContain("17% de desconto");
+  });
+
+  it("anual que não sai mais barato que doze mensais: sem selo", async () => {
+    comPrecos(10000, 120000);
+    abrir();
+    await screen.findByRole("radio", { name: /Anual/ });
+    expect(naTela()).not.toContain("de desconto");
+  });
+
+  it("o selo fica só no anual", async () => {
+    abrir();
+    const mensal = await screen.findByRole("radio", { name: /Mensal/ });
+    expect(mensal.closest("label")?.textContent).not.toContain("de desconto");
   });
 });
 
@@ -150,7 +179,6 @@ describe("AssinarPage — o código promocional", () => {
     expect(getPreviaDaAssinatura).toHaveBeenCalledWith({ plano: "mensal", codigo: "TESTE100" });
     expect(naTela()).toContain("Hoje você pagaR$ 0,00");
     expect(naTela()).toContain("100% de desconto em todas as cobranças");
-    expect(naTela()).not.toContain("Depois, R$");
     expect(cartao()).toBeNull();
     expect(screen.getByRole("button", { name: "Assinar" })).toBeTruthy();
   });
@@ -160,7 +188,7 @@ describe("AssinarPage — o código promocional", () => {
     abrir();
     await aplicar("NAOEXISTE");
     expect((await screen.findByRole("alert")).textContent).toBe("Este código não é válido.");
-    expect(naTela()).toContain("Hoje você pagaR$ 99,90");
+    expect(naTela()).not.toContain("Hoje você paga");
     expect(cartao()?.dataset.centavos).toBe("9990");
     expect(screen.getByLabelText("Código promocional").getAttribute("aria-invalid")).toBe("true");
   });
@@ -169,7 +197,8 @@ describe("AssinarPage — o código promocional", () => {
     abrir();
     await aplicar("TESTE100");
     fireEvent.click(await screen.findByRole("button", { name: "Remover" }));
-    expect(naTela()).toContain("Hoje você pagaR$ 99,90");
+    expect(naTela()).not.toContain("Hoje você paga");
+    expect(naTela()).not.toContain("100% de desconto em todas as cobranças");
     expect(cartao()?.dataset.centavos).toBe("9990");
     expect(screen.getByLabelText("Código promocional")).toBeTruthy();
   });

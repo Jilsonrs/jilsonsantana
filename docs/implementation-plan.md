@@ -3489,6 +3489,19 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             listen` (ativa, paga até 10/11/2026, modo de teste); na Stripe, ativa e com o cartão
             guardado. O que o teste criou foi apagado (o cliente na Stripe e as linhas do admin no
             banco de dev); o `member@` ficou como estava, sem assinatura.
+            **PROVADO PELO OPERADOR (10/10/2026), no navegador dele:** o `member@`, da aula
+            trancada à tela de assinar, pagou com o cartão `4242` — *"funcionou"*. No banco de dev:
+            a assinatura dele ativa, paga até 10/11/2026, do modo de teste, gravada pelo aviso.
+            **A TELA SIMPLIFICADA, a pedido dele no mesmo dia** (*"faltou destacar o desconto no
+            plano anual, e 'hoje você paga…' ficou confuso; veja como simplificar como a Anthropic
+            faz"*): cada cartão de plano diz o preço e como é cobrado ("Cobrado todo mês" | "Cobrado
+            uma vez por ano"), o anual leva o selo **"17% de desconto"** — CALCULADO dos dois
+            preços do servidor, nunca um texto fixo —, o plano escolhido fica destacado, e o bloco
+            "Hoje você paga" **só aparece com código promocional** (sem código, repetia o preço do
+            cartão). Textos novos como rascunho; as duas frases do "Depois, …" saíram do dicionário.
+            **Testes:** +3 de componente. **Mutação:** 5 de 5 reprovaram. Conferido em duas fotos da
+            tela no navegador de teste. **O acabamento visual é do Antigravity** (*"depois ajuste
+            design com Antigravity"*): a estrutura está pronta para ele.
             **Achado, fora desta etapa (reportado ao operador):** com os servidores de
             desenvolvimento ligados, a suíte do site estoura o tempo em testes de peças carregadas
             à parte (13 e depois 8 falhas, sempre diferentes; carga da máquina acima de 100). Com 3
@@ -3555,6 +3568,10 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       de teste com a conta de admin (acima). **Falta só o operador repetir com o `member@`** (a
       aula trancada → Assinar → `4242`) e depois o `TESTE100`; para o segundo teste, tirar antes a
       assinatura que o primeiro criar (o cliente na Stripe e as linhas dele no banco de dev).
+      **ATUALIZAÇÃO 2 (10/10/2026):** o teste dele com o `member@` e o cartão `4242` **funcionou**,
+      e a tela foi simplificada a pedido dele. **Para fechar a etapa falta só o `TESTE100`** — o
+      `member@` está assinando (a do cartão): com o OK dele, tirar essa assinatura (o cliente na
+      área restrita e as duas linhas no banco de dev) e ele assina de novo com o código.
 - [ ] **4.3 — No ar, em modo de teste: o PRIMEIRO TESTE REAL (sessão curta, com o operador).** As
       chaves de teste e o segredo do webhook no Railway, o endereço do webhook no painel — **com
       "www"**: `https://www.jilsonsantana.com/api/stripe/webhook` (medido em 09/10/2026: sem o "www",
@@ -3594,6 +3611,9 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       e-mail · **antes de abrir ao visitante, o limite de tentativas do código promocional** (na
       4.2 só conta logada confere código, e o cadastro é fechado) · os botões Assinar da home
       passam a funcionar sem login.
+      **Pedido do operador (10/10/2026, depois de testar a 4.2):** *"tem que funcionar também a
+      partir do card da home para quem não é cadastrado no site"* — é esta etapa. Se ela sobe na
+      ordem (hoje vem depois da 4.3 à 4.6) é decisão dele, levada a ele no mesmo dia.
       **Trazido da revisão de segurança da 4.2 (10/10/2026) — pré-requisitos de abrir ao
       visitante:** (a) o limite de tentativas é **por conta e por IP** (`x-real-ip`) e cobre as
       DUAS rotas que conferem código (`/billing/previa` e `/billing/assinatura`), que também são

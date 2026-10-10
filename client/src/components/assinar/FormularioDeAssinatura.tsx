@@ -78,7 +78,6 @@ export function FormularioDeAssinatura({ dados, aoConcluir, aoSaberQueJaAssina }
       <EscolhaDoPlano planos={dados.planos} escolhido={plano} aoEscolher={setPlano} travado={enviando} />
       <CodigoPromocional
         aplicado={comCodigo ? codigo : null}
-        desconto={comCodigo ? descreverDesconto(t, comCodigo.desconto, comCodigo.moeda, idioma) : null}
         recusado={recusado}
         conferindo={conferindo}
         travado={enviando}
@@ -86,16 +85,19 @@ export function FormularioDeAssinatura({ dados, aoConcluir, aoSaberQueJaAssina }
         aoRemover={() => setCodigo(null)}
       />
 
-      <div aria-live="polite" className="space-y-1 rounded-xl border border-border/60 bg-card p-4">
-        <p className="flex items-baseline justify-between gap-4">
-          <span className="text-sm text-muted-foreground">{t.hoje}</span>
-          <span className="text-xl font-semibold text-foreground">{dinheiro(centavosHoje, escolhido.moeda, idioma)}</span>
-        </p>
-        <p className="text-sm text-muted-foreground">
-          {comCodigo
-            ? descreverDesconto(t, comCodigo.desconto, comCodigo.moeda, idioma)
-            : (plano === Plano.ANUAL ? t.depoisPorAno : t.depoisPorMes).replace("{valor}", dinheiro(escolhido.centavos, escolhido.moeda, idioma))}
-        </p>
+      {/* SÓ com código promocional (pedido do operador, 10/10/2026): sem código, o cartão do plano
+          já diz o preço e como é cobrado, e repetir o valor aqui confundia. Com código, o valor
+          de hoje muda — e é o que a Stripe calculou. */}
+      <div aria-live="polite">
+        {comCodigo && (
+          <div className="space-y-1 rounded-xl border border-border/60 bg-card p-4">
+            <p className="flex items-baseline justify-between gap-4">
+              <span className="text-sm text-muted-foreground">{t.hoje}</span>
+              <span className="text-xl font-semibold text-foreground">{dinheiro(centavosHoje, escolhido.moeda, idioma)}</span>
+            </p>
+            <p className="text-sm text-muted-foreground">{descreverDesconto(t, comCodigo.desconto, comCodigo.moeda, idioma)}</p>
+          </div>
+        )}
       </div>
 
       {erro && (

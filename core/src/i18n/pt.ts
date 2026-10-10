@@ -427,6 +427,11 @@ export const pt = {
       porMes: "/mês",
       porAno: "/ano",
       anualEquivale: "equivale a {valor} por mês",
+      // Como cada plano é cobrado e o selo do anual (pedido do operador, 10/10/2026: destacar o
+      // desconto do anual e simplificar, "como a Anthropic faz"). `{desconto}` é calculado dos preços.
+      cobradoPorMes: "Cobrado todo mês",
+      cobradoPorAno: "Cobrado uma vez por ano",
+      seloDoAnual: "{desconto} de desconto",
       semFidelidade: "Sem fidelidade. Cancele quando quiser.",
       codigo: "Código promocional",
       aplicar: "Aplicar",
@@ -435,9 +440,8 @@ export const pt = {
       descontoParaSempre: "{desconto} de desconto em todas as cobranças",
       descontoUmaVez: "{desconto} de desconto na primeira cobrança",
       descontoPorMeses: "{desconto} de desconto por {meses} meses",
+      // Só aparece com código promocional aplicado: sem código, o cartão do plano já diz tudo.
       hoje: "Hoje você paga",
-      depoisPorMes: "Depois, {valor} por mês até você cancelar.",
-      depoisPorAno: "Depois, {valor} por ano até você cancelar.",
       pagamento: "Pagamento",
       botao: "Assinar",
       processando: "Processando…",

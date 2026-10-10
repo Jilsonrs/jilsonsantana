@@ -213,6 +213,12 @@ gera mais aviso, o acesso ficaria liberado para sempre. *(Achado P1 da revisão 
 - **Os textos da tela estão como RASCUNHO do agente** (`app.assinar.*` e `app.aula.assinar`, nos
   dois idiomas), a revisar por ele (*"isso fazemos depois, é detalhe"*, 10/10/2026) — inclusive
   se a tela leva uma linha sobre o reembolso de 7 dias. *Fecha quando ele revisar.*
+- **A tela é simples, "como a Anthropic faz"** (10/10/2026, depois do primeiro teste dele): cada
+  cartão de plano diz o preço e como é cobrado; o anual leva o selo do desconto (calculado dos
+  dois preços, nunca um texto fixo); **"Hoje você paga" só aparece com código promocional**. O
+  acabamento visual é do Antigravity. *Reabre se o dólar (etapa 4.8) ou o Pix (4.9) pedirem
+  mostrar de novo o valor final antes de confirmar.*
+- **A home tem que levar à assinatura também quem não tem conta** (10/10/2026): é a etapa 4.7.
 - **A Stripe fecha INTEIRA na Fase 4, com o Pix** (10/10/2026): *"quero que a escola possa ser
   lançada a qualquer momento depois da fase da Stripe."* *Reabre só por decisão dele.*
 

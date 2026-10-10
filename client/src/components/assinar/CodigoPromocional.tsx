@@ -11,17 +11,14 @@ import { useT } from "@/lib/language";
  */
 export function CodigoPromocional({
   aplicado,
-  desconto,
   recusado,
   conferindo,
   travado,
   aoAplicar,
   aoRemover,
 }: {
-  /** O código que está valendo, ou nada. */
+  /** O código que está valendo, ou nada. O desconto dele aparece no resumo, logo abaixo. */
   aplicado: string | null;
-  /** O desconto dele, por extenso. */
-  desconto: string | null;
   /** A frase da recusa, quando o último código não valeu. */
   recusado: string | null;
   conferindo: boolean;
@@ -38,7 +35,6 @@ export function CodigoPromocional({
         <p className="text-sm font-medium text-foreground">{t.codigo}</p>
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
           <span className="font-medium text-foreground">{aplicado}</span>
-          {desconto && <span className="text-sm text-muted-foreground">{desconto}</span>}
           <Button
             type="button"
             variant="ghost"
