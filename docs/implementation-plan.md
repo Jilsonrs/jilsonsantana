@@ -3417,10 +3417,26 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             **NÃO provado ainda, fica para o passo 6:** o campo de verdade da Stripe abrindo num
             navegador — os testes usam um dublê da nossa fronteira, e `stripe-do-site.tsx` só tem a
             conferência de tipos contra a biblioteca.
-      - [ ] **Passo 5 — site, o concluído e as entradas.** `/aluno/assinar/concluido` (espera o
+      - [x] **Passo 5 — site, o concluído e as entradas.** `/aluno/assinar/concluido` (espera o
             aviso; mensagem calma se demorar) · o botão Assinar embaixo de "Esta aula é para
             assinantes." · os botões Assinar da home viram link quando há login (sem login ficam como
             hoje, até a 4.7) + testes.
+            **FEITO (10/10/2026).** `pages/aluno/AssinaturaConcluidaPage.tsx`: pergunta ao servidor
+            a cada 2 s até ele dizer que a conta tem acesso (inclusive depois de falha de rede), e
+            então para; aos 20 s sem resposta, diz que continua conferindo; confirmada, esquece o
+            que as outras telas guardaram de antes (senão a aula mostraria "para assinantes" por um
+            instante, logo depois de pagar). **A aula trancada:** o botão Assinar embaixo do aviso,
+            **só para quem está logado** — o visitante não vê botão, como na home (ele é a 4.7).
+            **A home:** os dois botões Assinar (o do preço e o do fim da página) levam à tela de
+            assinar quando há login e o botão está ligado; são os MESMOS botões do mock, dentro de
+            um formulário que só navega (`display: contents`, fora do desenho); sem login e na
+            página em inglês desligada, nada muda. Os endereços das duas telas moram no `core`
+            (`TELA_DE_ASSINAR`, `TELA_DE_CONCLUIDO`), para o servidor e o site apontarem igual.
+            **Testes:** 6 de componente (concluído) + 3 na página da aula + 3 de servidor (home).
+            **Mutação:** 10 de 10 reprovaram.
+            **Fica como está, por não ter texto nem decisão:** quem abre `/aluno/assinar/concluido`
+            sem ter assinado vê "confirmando" e depois "está demorando", sem um caminho de volta
+            na própria tela (a navegação da escola continua ao lado).
       - [ ] **Passo 6 — a prova no computador, a revisão de segurança e os docs.** O operador instala
             o Stripe CLI (`stripe login` interativo; o `stripe listen` dá o segredo, que ele cola no
             `.env` FECHADO). O `member@`, sem a assinatura de mentira, assina com `4242` e com
@@ -3472,9 +3488,9 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       textos — *"isso fazemos depois, é detalhe"* (seguem como rascunho no dicionário) · **o cartão
       só some com desconto de 100% PARA SEMPRE** (com 100% só na primeira cobrança o cartão é
       pedido, porque a cobrança seguinte precisa dele) — **OK**.
-      **PAREI EM (10/10/2026):** passos 1 a 4 feitos e commitados no `dev` (nada publicado).
-      Próximo: **passo 5** (a tela de concluído, o botão na aula trancada e os botões da home com
-      login).
+      **PAREI EM (10/10/2026):** passos 1 a 5 feitos e commitados no `dev` (nada publicado). Falta
+      o **passo 6**: a revisão de segurança (o agente a faz sozinho), o `billing.md` reconciliado e
+      **a prova no navegador, com o operador** — o Stripe CLI instalado e o `stripe listen` ligado.
 - [ ] **4.3 — No ar, em modo de teste: o PRIMEIRO TESTE REAL (sessão curta, com o operador).** As
       chaves de teste e o segredo do webhook no Railway, o endereço do webhook no painel — **com
       "www"**: `https://www.jilsonsantana.com/api/stripe/webhook` (medido em 09/10/2026: sem o "www",

@@ -4,6 +4,7 @@ import { ArrowRight, Lock } from "lucide-react";
 import { LessonKind } from "@jilson/core";
 import type { PaginaDaAula } from "@/lib/api";
 import { useT } from "@/lib/language";
+import { TELA_DE_ASSINAR } from "@/lib/assinar";
 import { BunnyPlayer } from "@/components/content/BunnyPlayer";
 import { Button } from "@/components/ui/button";
 import type { OuvintesDoPonto } from "@/lib/ponto-da-aula";
@@ -53,6 +54,7 @@ export function LessonContent({
   proximaAulaId,
   legenda,
   renovarVideo,
+  podeAssinar,
 }: {
   aula: PaginaDaAula["aula"];
   comoAdmin: boolean;
@@ -76,6 +78,11 @@ export function LessonContent({
   legenda?: { abrirCom: string; aoMudar: (ligada: boolean) => void };
   /** O endereço do vídeo está vencendo: buscar a aula de novo, com um endereço novo (06/10/2026). */
   renovarVideo?: () => void;
+  /**
+   * Na aula trancada, o botão Assinar (decisão do operador, 09/10/2026) — só para quem está
+   * logado: a tela de assinar exige a conta, e o visitante sem login é a etapa 4.7.
+   */
+  podeAssinar?: boolean;
 }) {
   const t = useT();
 
@@ -88,6 +95,11 @@ export function LessonContent({
         <p className="text-lg font-medium tracking-tight text-foreground">
           {t.aula.paraAssinantes}
         </p>
+        {podeAssinar && (
+          <Button asChild className="mt-4">
+            <Link to={TELA_DE_ASSINAR}>{t.aula.assinar}</Link>
+          </Button>
+        )}
       </div>
     );
   }

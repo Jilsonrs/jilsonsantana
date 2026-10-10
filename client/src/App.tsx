@@ -19,6 +19,7 @@ import { SalvosPage } from "@/pages/aluno/SalvosPage";
 import { NotificacoesPage } from "@/pages/aluno/NotificacoesPage";
 import { NotificacaoPage } from "@/pages/aluno/NotificacaoPage";
 import { AssinarPage } from "@/pages/aluno/AssinarPage";
+import { AssinaturaConcluidaPage } from "@/pages/aluno/AssinaturaConcluidaPage";
 import { AdminCoursesPage } from "@/pages/admin/AdminCoursesPage";
 import { NewCoursePage } from "@/pages/admin/course-editor/NewCoursePage";
 import { CourseEditorLayout } from "@/pages/admin/course-editor/CourseEditorLayout";
@@ -66,6 +67,7 @@ export default function App() {
           {/* Assinar, com a conta logada (Fase 4, etapa 4.2; endereço decidido pelo
               operador em 10/10/2026). O /assinar curto fica para o visitante (4.7). */}
           <Route path="/aluno/assinar" element={<AssinarPage />} />
+          <Route path="/aluno/assinar/concluido" element={<AssinaturaConcluidaPage />} />
         </Route>
         <Route element={<AdminRoute />}>
           {/* O painel do admin (decisão do operador, 29/09/2026). */}

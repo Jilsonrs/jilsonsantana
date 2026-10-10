@@ -148,6 +148,7 @@ export function LessonPage() {
                 aoTerminar={aoTerminarOVideo}
                 ouvintes={ouvintes}
                 proximaAulaId={proxima?.id}
+                podeAssinar={Boolean(session)}
                 // Logado, a conta SEMPRE diz como a legenda abre: ligada ou `off` (vence a memória do aparelho).
                 legenda={session ? { abrirCom: legendaLigada ? curso.language : "off", aoMudar: aoMudarLegenda } : undefined}
                 // Aba aberta de um dia para o outro: a aula busca um endereço novo do vídeo (06/10/2026).

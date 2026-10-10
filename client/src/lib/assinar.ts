@@ -5,8 +5,7 @@ import type { AppTexts } from "@/lib/language";
 
 // ASSINAR (Fase 4, etapa 4.2): os endereços, o dinheiro por extenso e as três leituras da tela.
 
-export const TELA_DE_ASSINAR = "/aluno/assinar";
-export const TELA_DE_CONCLUIDO = "/aluno/assinar/concluido";
+export { TELA_DE_ASSINAR, TELA_DE_CONCLUIDO } from "@jilson/core";
 
 const LOCAL: Record<LanguageCode, string> = { pt: "pt-BR", en: "en-US" };
 
@@ -32,7 +31,14 @@ export function usePrevia(plano: Plano, codigo: string | null) {
   return useQuery({ queryKey: ["billing", "previa", plano, codigo], queryFn: () => getPreviaDaAssinatura({ plano, codigo: codigo ?? "" }), enabled: codigo !== null });
 }
 
-/** Esta conta tem acesso agora? `conferirACada`: pergunta de novo nesse intervalo (a tela de concluído). */
-export function useSituacaoDaAssinatura(conferirACada?: number | false) {
-  return useQuery({ queryKey: ["billing", "assinatura"], queryFn: getSituacaoDaAssinatura, refetchInterval: conferirACada ?? false });
+/**
+ * Esta conta tem acesso agora? Com `conferirACada` (a tela de concluído), pergunta de novo nesse
+ * intervalo ATÉ a resposta ser sim — inclusive depois de uma falha — e então para.
+ */
+export function useSituacaoDaAssinatura(conferirACada?: number) {
+  return useQuery({
+    queryKey: ["billing", "assinatura"],
+    queryFn: getSituacaoDaAssinatura,
+    refetchInterval: (consulta) => (conferirACada && consulta.state.data?.temAcesso !== true ? conferirACada : false),
+  });
 }

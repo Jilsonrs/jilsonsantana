@@ -456,6 +456,8 @@ export const pt = {
       erro: "Não foi possível abrir a aula. Tente de novo.",
       naoEncontrada: "Aula não encontrada.",
       paraAssinantes: "Esta aula é para assinantes.",
+      // O botão embaixo, só para quem está logado (Fase 4, etapa 4.2). Rascunho.
+      assinar: "Assinar",
       // Salvar para assistir depois (decisão do operador, 03/10/2026, "como no LinkedIn").
       salvarParaDepois: "Salvar para depois",
       salvarCurso: "Salvar curso",

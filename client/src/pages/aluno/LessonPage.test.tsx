@@ -196,6 +196,26 @@ describe("página da aula — o conteúdo", () => {
     abrir();
     expect((await screen.findByRole("status")).textContent).toContain("Esta aula é para assinantes.");
     expect(document.querySelector("iframe")).toBeNull();
+    // O visitante sem login não vê o botão Assinar: a tela de assinar exige a conta (ele é a etapa 4.7).
+    expect(screen.queryByRole("link", { name: "Assinar" })).toBeNull();
+  });
+
+  it("bloqueada, com login: o botão Assinar, embaixo do aviso, leva à tela de assinar", async () => {
+    useSessionMock.mockReturnValue({ data: { user: { role: Role.MEMBER } }, isPending: false });
+    getLessonPage.mockResolvedValue(pagina({ liberada: false, arquivosLiberados: false, playerUrl: undefined, arquivos: undefined }));
+    abrir();
+    const aviso = await screen.findByRole("status");
+    expect(aviso.textContent).toContain("Esta aula é para assinantes.");
+    const botao = screen.getByRole("link", { name: "Assinar" });
+    expect(aviso.contains(botao)).toBe(true);
+    expect(botao.getAttribute("href")).toBe("/aluno/assinar");
+  });
+
+  it("aula liberada: sem botão Assinar", async () => {
+    useSessionMock.mockReturnValue({ data: { user: { role: Role.MEMBER } }, isPending: false });
+    abrir();
+    await screen.findByTitle(/.+/);
+    expect(screen.queryByRole("link", { name: "Assinar" })).toBeNull();
   });
 
   it("aula de texto: o texto e, embaixo, os recursos para baixar", async () => {

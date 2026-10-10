@@ -12,6 +12,14 @@ export type Plano = (typeof Plano)[keyof typeof Plano];
 
 export const PLANOS = [Plano.MENSAL, Plano.ANUAL] as const;
 
+/**
+ * Os endereços da tela de assinar e da de depois do pagamento (decisão do operador, 10/10/2026).
+ * Atrás do login; o `/assinar` curto é o do visitante (etapa 4.7). Aqui, e não no site: a home,
+ * que é montada no servidor, aponta para o mesmo lugar.
+ */
+export const TELA_DE_ASSINAR = "/aluno/assinar";
+export const TELA_DE_CONCLUIDO = "/aluno/assinar/concluido";
+
 /** Um plano como a tela de assinar o mostra. O valor vem em CENTAVOS, como a Stripe guarda. */
 export type PlanoDaAssinatura = { plano: Plano; centavos: number; moeda: string };
 
