@@ -3696,6 +3696,81 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       próprio no fim de `/api`**: hoje é o padrão do Express, que em produção responde só
       "Internal Server Error" (conferido), mas copia o status e os cabeçalhos de um erro que
       escape cru.
+      **O PLANO APROVADO (operador, 10/10/2026) — um commit por passo no `dev`; sem migration e
+      sem dependência nova.**
+      **Decisões do operador (10/10/2026):** (1) o botão de forçar a sincronia mora num **item novo
+      "Assinaturas" no menu do admin** (entre um item novo, um bloco no Dashboard e nenhuma tela) ·
+      (2) **"Reativar assinatura" no lugar de "Assinar"** para quem já foi assinante e está sem
+      acesso — *"'Assinar' apenas na primeira vez. Algo nesse sentido como as empresas grandes
+      fazem"* · (3) confirmou a regra do gate: *"Quem cancela mas ainda tem dias pagos pode
+      continuar assistindo enquanto for válida a assinatura nos dias restantes"* — já é a regra de
+      Ago 2026, com teste; nesse caso a sessão também **não** cai. Os textos novos (a tela do admin,
+      e o inglês de "Reativar assinatura") entram como RASCUNHO do agente, a revisar por ele.
+      **Convenções de engenharia (como o código faz):** a sincronia é UMA rotina, a do aviso, com a
+      trava da assinatura — o aviso, o checkout e o admin chamam a mesma · a sessão cai só quando a
+      conta **tinha** acesso antes da sincronia e **deixou** de ter depois (comparado dentro da
+      mesma transação, pelo próprio `temAcessoAtivo()`): quem tenta pagar e não consegue nunca é
+      deslogado · **a queda da sessão não é a fronteira** — quem só deixa o período pago vencer não
+      recebe aviso da Stripe e continua logado; quem tranca a aula é o gate, a cada pedido · o
+      checkout chama a sincronia **fora** da trava da conta (não segura conexão a mais) · "já foi
+      assinante" é DERIVADO do espelho (uma assinatura que passou do primeiro pagamento), nunca
+      coluna · assinatura que a Stripe não conhece é **relatada** pela sincronia do admin, nunca
+      apagada.
+      `Docs check (context7): Stripe → /websites/stripe → a Stripe reentrega o aviso por até 3 dias
+      na conta de verdade, com intervalos crescentes (na área restrita, 3 vezes em poucas horas); o
+      reenvio manual vale 15 dias no painel e 30 na CLI — depois disso só a sincronia recupera — 1
+      consulta · Better Auth → /better-auth/better-auth → apagar as sessões no banco desloga na hora
+      enquanto não houver `cookieCache` nem `secondaryStorage` (este repo não usa nenhum dos dois;
+      com `cookieCache`, a sessão revogada valeria até o cache vencer) — 1 consulta (10/10/2026).`
+      - [ ] **Passo 1 — a sincronia única e a sessão que cai.** `lib/assinaturas.ts`: a rotina do
+            aviso vira `sincronizarAssinatura` (trava → busca na Stripe AGORA → grava o espelho), que
+            o aviso chama marcando o `event.id` na mesma transação · ao perder o acesso,
+            `session.deleteMany` na mesma transação · `temAcessoAtivo()` aceita ler pela transação.
+            Testes de servidor: perdeu o acesso → o cookie de antes responde 401; quem não tinha
+            acesso não é deslogado; cancelou com dias pagos → segue com acesso e logado; outra
+            assinatura ainda dá acesso → não cai. Mutação.
+      - [ ] **Passo 2 — o checkout chama a sincronia** (o achado P1 da revisão da 4.2). A Stripe
+            diz que a conta tem assinatura viva e o espelho não dá acesso → sincroniza e responde
+            409 `JaAssinante`, agora com a aula liberada. Se a Stripe não responder nessa hora, o
+            erro sobe (500): o aluno vê "tente de novo", e não um "já é assinante" com a aula
+            trancada. Testes + mutação.
+      - [ ] **Passo 3 — forçar a sincronia pelo admin: a rota.** `POST
+            /api/admin/assinaturas/sincronizar`, com o e-mail do aluno, atrás do `requireAdmin`:
+            sincroniza as assinaturas do cliente da conta na Stripe e as que o espelho já conhece,
+            e devolve o que a Stripe diz e se a conta tem acesso. Testes: sem login 401, aluno comum
+            403 (casos 13 e 14 da matriz), libera quem pagou, tira de quem não paga mais, conta que
+            não existe. Mutação.
+      - [ ] **Passo 4 — a tela do admin "Assinaturas".** `/admin/assinaturas`: o e-mail do aluno, o
+            botão, o resultado; carregando, erro e vazio, com teste de componente de cada um. Layout
+            padrão (`PageContainer` + `PageHeader` + `PageSection`); textos em português, na tela.
+      - [ ] **Passo 5 — `requireActiveMembership`.** O invólucro HTTP de `temAcessoAtivo()`: sem
+            login 401, sem acesso 403 `AssinaturaNecessaria`. Primeira rota: o download dos arquivos
+            da aula (login + assinatura, sem exceção). Para o aluno nada muda; o visitante sem login
+            que pedir o endereço direto passa a receber 401 (era 403), e a recusa vem antes de
+            procurar o arquivo. Testes da trava (anônimo / sem assinatura / assinante) + mutação.
+      - [ ] **Passo 6 — o tratador de erro no fim de `/api`.** Erro que escape de qualquer rota de
+            `/api`: 500 `ErroInterno`, sem copiar status nem cabeçalho do erro; o corpo malformado
+            continua 4xx; o registro continua levando o erro. Testes + mutação.
+      - [ ] **Passo 7 — o que falta da matriz.** (7–10) 401/403/200 em `/api/me` e
+            `/api/admin/ping` · (11) a trilha em rascunho pelo endereço, se faltar · (15) o limite
+            de tentativas de login **ligado de verdade**, num teste isolado · (16) o player assinado
+            no curso em inglês. Os casos 1–6 e 12 já existem (`stripe-webhook.test.ts`,
+            `acesso.test.ts`, `public-reads.test.ts`).
+      - [ ] **Passo 8 — "Reativar assinatura".** Quem já foi assinante e está sem acesso vê
+            "Reativar assinatura" onde hoje lê "Assinar": na aula trancada, na tela de assinar e
+            nos dois botões da home quando há login. O visitante sem login continua vendo
+            "Assinar". O servidor diz se a conta já foi assinante; os textos saem do dicionário,
+            nos dois idiomas. Testes de servidor e de componente + mutação.
+      - [ ] **Passo 9 — a prova na área restrita, a revisão de segurança e os docs.** No
+            computador, com uma conta descartável criada e apagada no banco de desenvolvimento
+            (branch `dev` do Neon) e o cartão de teste, **com o aviso desligado**: pagou e ficou
+            trancado → Assinar de novo libera; a sincronia do admin libera; cancelada na Stripe → a
+            sincronia acompanha. Não gasta uso do `TESTE100` e não toca a produção.
+            `security-vulnerability-reviewer` no código de acesso e cobrança, com o destino de cada
+            achado aqui · `billing.md` e `CLAUDE.md` reconciliados · checkbox e *Estado atual*.
+      **Fora desta etapa:** ESLint (4.5) · "minha assinatura" e quem cancelou com dias pagos voltar
+      a assinar (4.6) · o visitante e a sincronia de assinatura sem conta (4.7) · o reembolso (P56).
+      **ONDE PAROU:** plano aprovado e gravado; nenhum código escrito. Próximo: Passo 1.
 - [ ] **4.5 — ESLint com `no-floating-promises`, bloqueante no CI (código, pequena).** Dependências
       de desenvolvimento novas: `eslint` + `typescript-eslint`. Já decidido para esta fase (item
       abaixo): promessa sem `await` dentro do webhook derruba o servidor sem nenhum teste perceber.
