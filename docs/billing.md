@@ -247,6 +247,11 @@ gasta uso · **o Stripe.js no ar recusa `paymentMethodTypes` ao abrir o campo** 
 aparece, sem erro na tela); a opção que vale é `allowedPaymentMethodTypes` · a Stripe CLI 1.53.1
 exige dizer quais avisos encaminhar (`stripe listen --all-snapshot --forward-to …`).
 
+`[FATO — context7 /websites/stripe, nota de versão de 30/09/2025]` **O botão "stripe" no canto da
+tela de assinar** é a ajuda de teste da própria Stripe: *"automatically rendered in Elements while
+using a sandbox environment"*. Aparece com as chaves de teste e não com as de verdade; desliga-se
+com `developerTools.assistant.enabled: false`.
+
 **Limitações conhecidas:** código promocional preso a UM cliente aparece como inválido na tela
 (a prévia não manda o cliente; hoje não existe código assim) · quem abre a tela de depois do
 pagamento sem ter assinado vê "confirmando" e depois "está demorando", sem caminho de volta nela ·
@@ -269,8 +274,7 @@ pagamento sem ter assinado vê "confirmando" e depois "está demorando", sem cam
 
 ## Pendências de verificação
 
-**Uma aberta (etapa 4.2, passo 6 — com o operador):** o código `TESTE100` criando a assinatura de
-verdade (ativa, sem cartão). O campo de pagamento abrindo, o cartão de teste pagando e o aviso
-chegando pelo `stripe listen` foram provados em 10/10/2026, num navegador de teste, com a conta
-de admin; falta o operador repetir com o `member@`.
+Nenhuma aberta. A da etapa 4.2 fechou em 10/10/2026: o operador assinou como `member@`, no
+navegador dele, com o cartão de teste e depois com o `TESTE100` (ativa, sem cartão, fatura de
+valor zero, 1 de 5 usos do código) — com o aviso chegando pelo `stripe listen`.
 *(A da pausa fechou em 09/10/2026 — ver "A cobrança pausada", acima.)*

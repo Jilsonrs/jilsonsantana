@@ -204,6 +204,13 @@
 > (aula concluída sozinha, barra na aula e no cartão), o vídeo que não recomeça ao trocar de aba
 > (a apresentação abre pausada, a aula toca sozinha) e o "Salvos". **Primeiro teste com o player de
 > verdade: com o operador** (assistir uma aula até perto do fim e ver a barra andar).
+> **NO `dev`, AINDA NÃO PUBLICADO (10/10/2026, `dev` = a etapa 4.2 fechada):** a Fase 4, etapa
+> 4.2 — **assinar com a conta logada.** A tela `/aluno/assinar` (mensal ou anual, código
+> promocional, o campo de pagamento da Stripe), a de depois do pagamento, o botão Assinar na aula
+> trancada e os botões da home para quem está logado. **Provado no computador do operador, na área
+> restrita da Stripe:** ele assinou como `member@` com o cartão de teste e, depois, com o código
+> de 100% (sem cartão). **Em produção nada disso existe ainda:** a publicação é a etapa 4.3, e
+> leva junto uma migration nova (`cliente_da_stripe`), que o pre-deploy aplica.
 > **PUBLICADO em 09/10/2026, por último (`main` = `6b09789`, CI verde nos dois jobs, deploy ok; as
 > migrations `avisos_da_stripe` e `assinatura_de_teste_ou_real` aplicadas pelo pre-deploy):** a
 > Fase 4, etapa 4.1 — **o aviso da Stripe (webhook) e o espelho da assinatura.** Nada muda para quem
@@ -3250,7 +3257,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       cru e as mudanças da API "basil" (o período por item, a fatura → assinatura) — **4 consultas
       no dia**, contando as 2 do plano. A pausa e o reembolso foram conferidos nos tipos da própria
       `stripe@23.0.0`.
-- [ ] **4.2 — Assinar com a conta logada: o checkout embutido (código, ALTO RISCO).** Dependências
+- [x] **4.2 — Assinar com a conta logada: o checkout embutido (código, ALTO RISCO).** Dependências
       novas: **`@stripe/stripe-js`** e **`@stripe/react-stripe-js`** (site). Mensal **ou** anual (trava
       do `billing.md`), o campo do código promocional e o **Payment Element**; o servidor cria o
       cliente (com o `userId`) e a assinatura; com o cupom de 100%, ela já nasce ativa; a tela de
@@ -3437,7 +3444,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             **Fica como está, por não ter texto nem decisão:** quem abre `/aluno/assinar/concluido`
             sem ter assinado vê "confirmando" e depois "está demorando", sem um caminho de volta
             na própria tela (a navegação da escola continua ao lado).
-      - [ ] **Passo 6 — a prova no computador, a revisão de segurança e os docs.** O operador instala
+      - [x] **Passo 6 — a prova no computador, a revisão de segurança e os docs.** O operador instala
             o Stripe CLI (`stripe login` interativo; o `stripe listen` dá o segredo, que ele cola no
             `.env` FECHADO). O `member@`, sem a assinatura de mentira, assina com `4242` e com
             `TESTE100` → a aula trancada abre. `security-vulnerability-reviewer` no código de
@@ -3572,6 +3579,24 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       e a tela foi simplificada a pedido dele. **Para fechar a etapa falta só o `TESTE100`** — o
       `member@` está assinando (a do cartão): com o OK dele, tirar essa assinatura (o cliente na
       área restrita e as duas linhas no banco de dev) e ele assina de novo com o código.
+      **ETAPA FECHADA (10/10/2026).** Com o OK dele, a assinatura do cartão foi tirada (o cliente
+      apagado na área restrita, as duas linhas do `member@` apagadas no banco de dev) e **ele
+      assinou de novo com o `TESTE100`** — *"feito, ficou ótimo"*: a tela foi a "Assinatura
+      confirmada". **Conferido nos registros, só leitura:** na Stripe, a assinatura ativa, com o
+      desconto, **sem cartão guardado**, a primeira fatura paga com total zero; no banco de dev,
+      o espelho ativo, do modo de teste, e o `member@` com acesso; **o `TESTE100` com 1 de 5
+      usos.** *O `member@` do banco de dev fica assinando por esse código (a assinatura de mentira
+      do seed volta se o seed rodar de novo).* **Nada foi publicado:** `dev` à frente da `main`;
+      o merge é decisão do operador, na etapa 4.3.
+      **O botão "stripe" no canto da tela** (pergunta dele, 10/10/2026). `[FATO — context7
+      /websites/stripe, a nota de versão de 30/09/2025]` *"A developer assistant is now
+      automatically rendered in Elements while using a sandbox environment."* É a ajuda de teste
+      da própria Stripe: aparece com as chaves de teste, e some com as de verdade. **Consequência
+      para a etapa 4.3:** enquanto a produção usar chaves de teste, ele aparece na tela de assinar
+      do site no ar (só para quem chega nela, atrás do "Em breve"). Desligar é uma linha em
+      `client/src/lib/stripe-do-site.tsx` (`developerTools.assistant.enabled: false`, opção que
+      existe nos tipos da biblioteca) — se desliga, é decisão dele. *5 consultas ao context7 no
+      dia para esta etapa (uma sem resultado).*
 - [ ] **4.3 — No ar, em modo de teste: o PRIMEIRO TESTE REAL (sessão curta, com o operador).** As
       chaves de teste e o segredo do webhook no Railway, o endereço do webhook no painel — **com
       "www"**: `https://www.jilsonsantana.com/api/stripe/webhook` (medido em 09/10/2026: sem o "www",
