@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeAll, afterAll, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeAll, afterAll, afterEach, beforeEach } from "vitest";
 import request from "supertest";
-import type { AssinaturaNoCheckout, CodigoPromocional, PrecoDoPlano } from "../lib/stripe.js";
+import type { AssinaturaNaStripe, AssinaturaNoCheckout, CodigoPromocional, PrecoDoPlano } from "../lib/stripe.js";
 
 // A Stripe na NOSSA fronteira: só o que iria à rede vira dublê. O resto de `lib/stripe.ts` (a
 // chave publicável, o que está configurado) roda de verdade.
@@ -12,6 +12,9 @@ const criarCliente = vi.fn<(conta: { userId: string; email: string; nome: string
 const assinaturasDoCliente = vi.fn<(clienteId: string) => Promise<AssinaturaNoCheckout[]>>();
 const cancelarIncompleta = vi.fn<(id: string) => Promise<string>>();
 const criarAssinatura = vi.fn<(pedido: PedidoDeAssinatura) => Promise<AssinaturaNoCheckout | null>>();
+// A busca que a SINCRONIA faz na Stripe (etapa 4.4): o checkout a chama quando a Stripe diz que
+// a conta já assina e o espelho não dá acesso.
+const buscarAssinatura = vi.fn<(id: string) => Promise<AssinaturaNaStripe>>();
 vi.mock("../lib/stripe.js", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../lib/stripe.js")>()),
   buscarPrecos: () => buscarPrecos(),
@@ -21,6 +24,7 @@ vi.mock("../lib/stripe.js", async (importOriginal) => ({
   assinaturasDoCliente: (clienteId: string) => assinaturasDoCliente(clienteId),
   cancelarIncompleta: (id: string) => cancelarIncompleta(id),
   criarAssinatura: (pedido: PedidoDeAssinatura) => criarAssinatura(pedido),
+  buscarAssinatura: (id: string) => buscarAssinatura(id),
 }));
 
 import servidor from "./servidor.js";
@@ -40,6 +44,10 @@ import { ASSINATURA_DE_TESTE } from "../lib/assinatura-de-teste.js";
 //     dois; quem já tem acesso não assina de novo, nem quem a Stripe diz que já assina; uma
 //     conta é um cliente só; a nova tentativa usa a MESMA assinatura incompleta; trocar de plano
 //     cancela a incompleta antes de criar outra; dois cliques ao mesmo tempo criam UMA;
+//   - QUEM PAGOU E FICOU TRANCADO (o aviso da Stripe se perdeu): assinar de novo SINCRONIZA o
+//     espelho e a conta passa a ter acesso — sem assinatura nova; a Stripe fora do ar nessa hora
+//     é 500, nunca um "já é assinante" com a aula trancada; e a conta da sessão nunca fica com a
+//     assinatura que a Stripe diz ser de outra conta (etapa 4.4);
 //   - o código promocional: o valor de hoje é o que a STRIPE calcula, para o preço do plano
 //     pedido — o corpo não tem como apontar outro preço; código que não existe e código que
 //     não vale para a compra dão a MESMA recusa; o código da Stripe não vai ao navegador.
@@ -286,6 +294,8 @@ describe("POST /api/billing/assinatura", () => {
     await prisma.stripeCustomer.deleteMany({ where: { userId: memberId } });
     naStripe = [];
     let n = 0;
+    // Sem resposta combinada, a sincronia falha: nenhum teste herda a Stripe de mentira do anterior.
+    buscarAssinatura.mockReset().mockRejectedValue(new Error("este teste não combinou o que a Stripe diz da assinatura"));
     criarCliente.mockReset().mockImplementation(async () => ({ id: `cus_${S}_${++n}`, livemode: false }));
     assinaturasDoCliente.mockReset().mockImplementation(async (clienteId) => naStripe.filter((a) => a.cliente === undefined || a.cliente === clienteId));
     cancelarIncompleta.mockReset().mockImplementation(async (id) => {
@@ -417,27 +427,121 @@ describe("POST /api/billing/assinatura", () => {
     }
   });
 
-  it("a STRIPE diz que a conta já assina (o espelho está atrasado): 409, e nenhuma nova — e GRITA quando ela dá acesso lá (há alguém pagando e trancado fora)", async () => {
-    const aviso = vi.spyOn(console, "warn").mockImplementation(() => {});
-    const grito = vi.spyOn(console, "error").mockImplementation(() => {});
-    try {
+  // QUEM PAGOU E FICOU TRANCADO (etapa 4.4 — o achado P1 da revisão de segurança da 4.2).
+  describe("a Stripe diz que a conta já assina, e o espelho não dá acesso", () => {
+    const DIA = 24 * 60 * 60 * 1000;
+    const acesso = async () => (await request(servidor).get("/api/billing/assinatura").set("Cookie", member)).body.temAcesso;
+    const doEspelho = (id: string) => prisma.subscription.findUnique({ where: { stripeSubscriptionId: id } });
+    /** O que a sincronia ouve da Stripe sobre a assinatura. */
+    const dizAStripe = (id: string, dados: Partial<AssinaturaNaStripe> = {}): AssinaturaNaStripe => ({
+      id,
+      status: "active",
+      pagoAte: new Date(Date.now() + 30 * DIA),
+      clienteId: "cus_do_member",
+      userId: memberId,
+      livemode: false,
+      ...dados,
+    });
+
+    afterEach(async () => {
+      await prisma.subscription.deleteMany({ where: { stripeSubscriptionId: { startsWith: `sub_viva_${S}` } } });
+    });
+
+    it("o aviso se perdeu: assinar de novo SINCRONIZA — 409, o espelho nasce da Stripe, a conta passa a ter acesso, e nenhuma assinatura nova", async () => {
       await semAssinatura(async () => {
-        for (const status of ["active", "past_due", "unpaid", "trialing", "paused"]) {
-          naStripe = [encerrada(`sub_viva_${status}`, status)];
-          const res = await assinarComo({ plano: "anual" }, member);
-          expect(res.status).toBe(409);
-        }
+        const id = `sub_viva_${S}_perdida`;
+        naStripe = [encerrada(id, "active")];
+        buscarAssinatura.mockResolvedValue(dizAStripe(id));
+        expect(await acesso()).toBe(false);
+
+        const res = await assinarComo({ plano: "anual" }, member);
+        expect(res.status).toBe(409);
+        expect(res.body).toEqual({ error: "JaAssinante" });
+        expect(buscarAssinatura).toHaveBeenCalledWith(id);
+        expect(await doEspelho(id)).toMatchObject({ ownerUserId: memberId, status: "active" });
+        expect(await acesso()).toBe(true);
         expect(criarAssinatura).not.toHaveBeenCalled();
         expect(cancelarIncompleta).not.toHaveBeenCalled();
-        // active, past_due e trialing dão acesso na Stripe: erro. unpaid e paused: aviso.
-        expect(grito.mock.calls.map(([linha]) => String(linha).match(/sub_viva_(\w+)/)?.[1])).toEqual(["active", "past_due", "trialing"]);
-        expect(grito.mock.calls.every(([linha]) => String(linha).includes("trancado fora"))).toBe(true);
-        expect(aviso.mock.calls.map(([linha]) => String(linha).match(/sub_viva_(\w+)/)?.[1])).toEqual(["unpaid", "paused"]);
       });
-    } finally {
-      aviso.mockRestore();
-      grito.mockRestore();
-    }
+    });
+
+    it("o espelho estava ATRASADO (parou em incompleta; na Stripe a assinatura já vale): a sincronia o atualiza, e a conta passa a ter acesso", async () => {
+      await semAssinatura(async () => {
+        const id = `sub_viva_${S}_atrasada`;
+        await prisma.subscription.create({ data: { ownerUserId: memberId, status: "incomplete", currentPeriodEnd: null, stripeSubscriptionId: id } });
+        naStripe = [encerrada(id, "past_due")];
+        buscarAssinatura.mockResolvedValue(dizAStripe(id, { status: "past_due", pagoAte: new Date(Date.now() - DIA) }));
+        expect((await assinarComo({ plano: "mensal" }, member)).status).toBe(409);
+        expect((await doEspelho(id))?.status).toBe("past_due");
+        expect(await acesso()).toBe(true);
+      });
+    });
+
+    it("sincronizou e a conta segue sem acesso: 409 — GRITA se a assinatura dá acesso na Stripe (precisa de gente), só avisa se não dá", async () => {
+      const aviso = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const grito = vi.spyOn(console, "error").mockImplementation(() => {});
+      const qual = (linha: unknown) => String(linha).match(new RegExp(`sub_viva_${S}_(\\w+)`))?.[1];
+      try {
+        await semAssinatura(async () => {
+          // Dá acesso na Stripe, mas ela não diz de que conta é: o espelho não nasce.
+          for (const status of ["active", "past_due", "trialing"]) {
+            const id = `sub_viva_${S}_${status}`;
+            naStripe = [encerrada(id, status)];
+            buscarAssinatura.mockResolvedValue(dizAStripe(id, { status, userId: null }));
+            expect((await assinarComo({ plano: "anual" }, member)).status).toBe(409);
+            expect(await doEspelho(id)).toBeNull();
+          }
+          // Não dá acesso nem na Stripe: o espelho nasce, e a conta segue trancada — é o certo.
+          for (const status of ["unpaid", "paused"]) {
+            const id = `sub_viva_${S}_${status}`;
+            naStripe = [encerrada(id, status)];
+            buscarAssinatura.mockResolvedValue(dizAStripe(id, { status, pagoAte: new Date(Date.now() - DIA) }));
+            expect((await assinarComo({ plano: "anual" }, member)).status).toBe(409);
+            expect((await doEspelho(id))?.status).toBe(status);
+          }
+          expect(await acesso()).toBe(false);
+          expect(criarAssinatura).not.toHaveBeenCalled();
+          expect(grito.mock.calls.map(([linha]) => qual(linha))).toEqual(["active", "past_due", "trialing"]);
+          expect(grito.mock.calls.every(([linha]) => String(linha).includes("trancado fora"))).toBe(true);
+          expect(aviso.mock.calls.map(([linha]) => qual(linha))).toEqual(["unpaid", "paused"]);
+        });
+      } finally {
+        aviso.mockRestore();
+        grito.mockRestore();
+      }
+    });
+
+    it("a Stripe não responde na hora de sincronizar: 500 — nunca um \"já é assinante\" com a aula trancada — e nada é gravado", async () => {
+      await semAssinatura(async () => {
+        const id = `sub_viva_${S}_fora_do_ar`;
+        naStripe = [encerrada(id, "active")];
+        buscarAssinatura.mockRejectedValue(new Error("a Stripe não respondeu"));
+        const res = await assinarComo({ plano: "mensal" }, member);
+        expect(res.status).toBe(500);
+        expect(JSON.stringify(res.body)).not.toContain("JaAssinante");
+        expect(await doEspelho(id)).toBeNull();
+        expect(await acesso()).toBe(false);
+      });
+    });
+
+    it("a conta da sessão NÃO fica com a assinatura que a Stripe diz ser de OUTRA conta", async () => {
+      const grito = vi.spyOn(console, "error").mockImplementation(() => {});
+      const outra = await prisma.user.create({ data: { id: `outra-${S}`, email: `outra-${S}@teste.local` } });
+      try {
+        await semAssinatura(async () => {
+          const id = `sub_viva_${S}_de_outra`;
+          naStripe = [encerrada(id, "active")];
+          buscarAssinatura.mockResolvedValue(dizAStripe(id, { userId: outra.id }));
+          expect((await assinarComo({ plano: "mensal" }, member)).status).toBe(409);
+          expect((await doEspelho(id))?.ownerUserId).toBe(outra.id);
+          expect(await acesso()).toBe(false);
+          expect(grito.mock.calls.flat().join(" ")).toContain("trancado fora");
+        });
+      } finally {
+        grito.mockRestore();
+        await prisma.user.delete({ where: { id: outra.id } });
+      }
+    });
   });
 
   it("assinatura encerrada na Stripe (cancelada ou expirada) não impede assinar de novo", async () => {
@@ -513,6 +617,7 @@ describe("POST /api/billing/assinatura", () => {
         cancelarIncompleta.mockResolvedValueOnce("canceled");
         await assinarComo({ plano: "anual" }, member);
         naStripe = [encerrada("sub_viva", "active")];
+        buscarAssinatura.mockResolvedValue({ id: "sub_viva", status: "active", pagoAte: new Date("2100-01-01T00:00:00Z"), clienteId: "cus_sem_conta", userId: null, livemode: false });
         await assinarComo({ plano: "mensal" }, member);
         const linhas = vias.flatMap((via) => via.mock.calls.map((linha) => linha.join(" "))).join("\n");
         expect(linhas).toContain("checkout");

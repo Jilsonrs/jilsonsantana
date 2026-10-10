@@ -3744,11 +3744,25 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             lido fora da transação, apagar a sessão de todo mundo, a sincronia sem a trava, o aviso
             sem marcar o `event.id`. Gates: typecheck, suíte de servidor (649) e do site (797),
             build.
-      - [ ] **Passo 2 — o checkout chama a sincronia** (o achado P1 da revisão da 4.2). A Stripe
+      - [x] **Passo 2 — o checkout chama a sincronia** (o achado P1 da revisão da 4.2). A Stripe
             diz que a conta tem assinatura viva e o espelho não dá acesso → sincroniza e responde
             409 `JaAssinante`, agora com a aula liberada. Se a Stripe não responder nessa hora, o
             erro sobe (500): o aluno vê "tente de novo", e não um "já é assinante" com a aula
             trancada. Testes + mutação.
+            **FEITO (10/10/2026).** `lib/checkout.ts`: a assinatura viva sai da trava da conta e é
+            sincronizada FORA dela (`sincronizarAViva`), pela rotina do passo 1; responde 409
+            `JaAssinante` como antes — a diferença é que o espelho passa a dizer o que a Stripe diz.
+            Sincronizou e a conta segue sem acesso: se a assinatura dá acesso na Stripe (ela não diz
+            de que conta é, ou diz que é de outra), o registro GRITA "trancado fora"; se não dá
+            (`unpaid`, pausada vencida), só avisa. **Testes:** o teste antigo (que só gritava) deu
+            lugar a 5 de servidor — o aviso se perdeu → espelho nasce e a conta tem acesso, sem
+            assinatura nova; o espelho atrasado é atualizado; segue sem acesso → grita ou avisa; a
+            Stripe fora do ar → 500 e nada gravado; **a conta da sessão não fica com a assinatura
+            que a Stripe diz ser de outra conta**. A Stripe de mentira da sincronia passou a ser
+            zerada a cada teste (um teste antigo passava com a resposta deixada pelo anterior).
+            **Mutação:** 4 de 4 reprovaram — sem sincronizar, engolindo a falha da Stripe, sem
+            gritar, criando outra assinatura em vez de reconhecer a viva. Gates: typecheck, suíte de
+            servidor (653) e do site (797), build.
       - [ ] **Passo 3 — forçar a sincronia pelo admin: a rota.** `POST
             /api/admin/assinaturas/sincronizar`, com o e-mail do aluno, atrás do `requireAdmin`:
             sincroniza as assinaturas do cliente da conta na Stripe e as que o espelho já conhece,
@@ -3785,8 +3799,8 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             achado aqui · `billing.md` e `CLAUDE.md` reconciliados · checkbox e *Estado atual*.
       **Fora desta etapa:** ESLint (4.5) · "minha assinatura" e quem cancelou com dias pagos voltar
       a assinar (4.6) · o visitante e a sincronia de assinatura sem conta (4.7) · o reembolso (P56).
-      **ONDE PAROU:** Passo 1 feito e commitado no `dev`. Próximo: Passo 2 (o checkout chama a
-      sincronia).
+      **ONDE PAROU:** Passos 1 e 2 feitos e commitados no `dev`. Próximo: Passo 3 (a rota do admin
+      que força a sincronia).
 - [ ] **4.5 — ESLint com `no-floating-promises`, bloqueante no CI (código, pequena).** Dependências
       de desenvolvimento novas: `eslint` + `typescript-eslint`. Já decidido para esta fase (item
       abaixo): promessa sem `await` dentro do webhook derruba o servidor sem nenhum teste perceber.
