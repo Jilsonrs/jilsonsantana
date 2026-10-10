@@ -3193,8 +3193,14 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       num não existe no outro: **o produto, os preços e o cupom nascem no MESMO ambiente de onde
       saem as chaves.** A conta do operador mostra dois: o **"Test mode"** padrão, que *"shares
       certain settings with live mode"* (mexer numa configuração ali pode mudar a da conta de
-      verdade), e uma **área restrita** isolada. Recomendação do agente: a área restrita.
-      *Em andamento com o operador, passo a passo, desde 10/10/2026.*
+      verdade), e uma **área restrita** isolada. **O operador usou a área restrita** (10/10/2026).
+      **Feito por ele em 10/10/2026, na área restrita:** um produto, **"Assinatura Jilson Santana"**
+      (o nome é dele; aparece no recibo do aluno), com os 2 preços em real e uma **lookup key** em
+      cada um — `assinatura_mensal` (R$ 99,90/mês) e `assinatura_anual` (R$ 995/ano). **Convenção de
+      engenharia:** o site acha o preço pela lookup key, nunca pelo ID nem pelo nome — assim não há
+      código de preço para colar em nenhum ambiente, e no lançamento basta repetir as mesmas chaves
+      na conta de verdade. *Falta: o cupom de 100% com o código, o ajuste de falha de pagamento e
+      as chaves no `server/.env`.*
 - [x] **4.1 — O webhook e o espelho (código, ALTO RISCO).** Dependência nova: **`stripe`** (servidor).
       `POST /api/stripe/webhook` montado **acima** do `express.json()`, com o corpo cru → confere a
       assinatura → grava o `event.id` (tabela nova, com RLS; repetido = nada) → **recalcula** o
@@ -4200,8 +4206,10 @@ outro aparelho e "daqui a um mês", e o Safari apaga o armazenamento do site em 
       P2 da revisão de segurança da etapa 4.1, 09/10/2026)*. No Railway, trocar as chaves e o segredo
       do webhook do modo de teste pelos de verdade, e cadastrar o endereço do webhook no modo de
       verdade do painel. **O que foi criado no ambiente de teste não existe na conta de verdade**
-      (fato da doc, 10/10/2026): o produto, os 2 preços, o cupom com o código promocional e o ajuste
-      de "cancelar quando todas as tentativas falharem" são refeitos lá. **Na mesma publicação, apagar do banco de produção as `subscription` com
+      (fato da doc, 10/10/2026): o produto, os 2 preços **com as mesmas lookup keys**
+      (`assinatura_mensal`, `assinatura_anual`), o cupom com o código promocional e o ajuste de
+      "cancelar quando todas as tentativas falharem" são refeitos lá; e o nome que aparece na fatura
+      do cartão se decide (P58). **Na mesma publicação, apagar do banco de produção as `subscription` com
       `livemode = false`:** as chaves de verdade nunca mais recebem aviso delas, então nenhuma seria
       cancelada — e uma ativa daria acesso para sempre. Como apagar sem falar direto com o banco de
       produção (só o Railway fala com ele) se decide na abertura do item. O `member@` de produção
