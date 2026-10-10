@@ -3188,6 +3188,10 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       falharem"** (achado de segurança de 29/09, item abaixo) · **sem Customer Portal**. **As chaves
       não passam pelo chat:** o operador cola no `server/.env` (dev) e, na 4.3, no Railway — o passo a
       passo vem na hora (*CLAUDE.md → Secrets in agent sessions*).
+      `[FATO — context7 /websites/stripe, 10/10/2026, 2 consultas]` a Stripe hoje chama o ambiente de
+      teste de **sandbox** ("sandbox (test mode)"). Cada ambiente tem as suas chaves, e o que se cria
+      num não existe no outro: **o produto, os preços e o cupom nascem no MESMO ambiente de onde
+      saem as chaves.** *Em andamento com o operador, passo a passo, desde 10/10/2026.*
 - [x] **4.1 — O webhook e o espelho (código, ALTO RISCO).** Dependência nova: **`stripe`** (servidor).
       `POST /api/stripe/webhook` montado **acima** do `express.json()`, com o corpo cru → confere a
       assinatura → grava o `event.id` (tabela nova, com RLS; repetido = nada) → **recalcula** o
