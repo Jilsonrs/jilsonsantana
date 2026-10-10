@@ -3254,6 +3254,24 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       site **aprovadas**; chega-se à tela pela **aula trancada** (um botão Assinar embaixo de "Esta
       aula é para assinantes.") e pelos **botões Assinar da home** quando há login (sem login é a
       4.7). Falta: os textos — rascunho do agente, para a revisão dele.
+      **PONTO DE PARTIDA (10/10/2026 — o que a sessão que abrir esta etapa precisa saber):**
+      (a) no `server/.env` já estão `STRIPE_SECRET_KEY` e `STRIPE_PUBLISHABLE_KEY`, de teste, da
+      área restrita; `STRIPE_WEBHOOK_SECRET` está **vazio**, e o **Stripe CLI não está instalado** —
+      para o aviso chegar no computador, o operador instala e faz o `stripe login` (interativo,
+      nunca chave por argumento) e o `stripe listen` dá o segredo, que ele cola no `.env` fechado ·
+      (b) **a chave publicável sai do servidor** (`STRIPE_PUBLISHABLE_KEY`), não do build do site:
+      trocar de ambiente é trocar variável num lugar só · (c) **os preços se acham pela lookup key**
+      (`assinatura_mensal`, `assinatura_anual`), nunca por ID nem por nome · (d) `[FATO — tipos da
+      `stripe@23.0.0`]` no código promocional, o cupom fica em `promotion.coupon` · (e) **no banco
+      de dev o `member@` JÁ tem a assinatura de teste do seed**, que dá acesso: o teste do checkout
+      precisa de uma conta sem assinatura — como, se decide no plano da etapa · (f) **o endereço da
+      tela é decisão a levar ao operador:** tela do aluno nasce sob `/aluno/`, e o `/assinar`
+      público da *Rendering Boundary* é o do visitante (4.7) · (g) para conferir a Stripe sem ver
+      chave: um script só de leitura que imprime sim/não e o que existe, nunca a mensagem de erro
+      da Stripe (ela pode trazer um pedaço da chave).
+      **SE A SESSÃO PARAR NO MEIO** (limite de uso): o plano aprovado é escrito AQUI antes do
+      código, cada passo é um commit no `dev`, e o último passo de cada sessão é uma linha
+      *"parei em …"* neste item — a próxima conversa continua daí, sem depender da anterior.
 - [ ] **4.3 — No ar, em modo de teste: o PRIMEIRO TESTE REAL (sessão curta, com o operador).** As
       chaves de teste e o segredo do webhook no Railway, o endereço do webhook no painel — **com
       "www"**: `https://www.jilsonsantana.com/api/stripe/webhook` (medido em 09/10/2026: sem o "www",
