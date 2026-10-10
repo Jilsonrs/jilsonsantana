@@ -204,8 +204,9 @@
 > (aula concluída sozinha, barra na aula e no cartão), o vídeo que não recomeça ao trocar de aba
 > (a apresentação abre pausada, a aula toca sozinha) e o "Salvos". **Primeiro teste com o player de
 > verdade: com o operador** (assistir uma aula até perto do fim e ver a barra andar).
-> **PUBLICAÇÃO AUTORIZADA pelo operador em 10/10/2026 ("Publica a 4.4"): a Fase 4, etapa 4.4 —
-> sincronizar e perder o acesso.**
+> **PUBLICADO em 10/10/2026, por último (`main` = `91cb4dc`, CI verde nos dois jobs, deploy ok;
+> sem migration; publicação autorizada pelo operador: "Publica a 4.4"):** a Fase 4, etapa 4.4 —
+> **sincronizar e perder o acesso.**
 > **Admin → Assinaturas** (o e-mail do aluno e "Conferir na Stripe": a recuperação de quando um
 > aviso da Stripe se perde) · quem pagou e ficou trancado é liberado ao clicar em Assinar de novo ·
 > quem perde o acesso sai da conta · **"Reativar assinatura"** no lugar de "Assinar" para quem já
@@ -213,7 +214,12 @@
 > erro próprio no fim da API. **Sem migration.** Revisão de segurança feita: nenhum bloqueio.
 > **O painel de assinaturas** (lista, filtros e ações — o mapa aprovado por ele no mesmo dia)
 > **NÃO está nesta publicação:** é a etapa 4.7b, depois da 4.7.
-> **PUBLICADO em 10/10/2026, por último (`main` = `efb231f`, CI verde nos dois jobs, deploy ok; a
+> **Provado no site, de fora:** a versão nova (`mv2vto41-b161cf53`); conferir assinatura sem
+> login → 401 (antes da publicação, 404: a rota não existia); o corpo malformado → 400
+> `CorpoInvalido` (antes, a página de erro padrão); o download de arquivo sem login → 401; o
+> aviso sem assinatura → 400; a página inicial, a tela de assinar e o endereço do admin, para o
+> público, seguem no "Em breve".
+> **PUBLICADO em 10/10/2026, antes (`main` = `efb231f`, CI verde nos dois jobs, deploy ok; a
 > migration `cliente_da_stripe` aplicada pelo pre-deploy):** a Fase 4, etapas 4.2 e 4.3 —
 > **assinar com a conta logada, com a Stripe DE VERDADE no site** (decisão do operador no mesmo
 > dia: a produção usa as chaves de verdade; o computador, a área restrita). A tela
