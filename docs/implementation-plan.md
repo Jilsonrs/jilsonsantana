@@ -3301,8 +3301,16 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       (cria; devolve `ativa`, ou `pagar` com o segredo do pagamento) · `GET /api/billing/assinatura`
       (tem acesso? — a tela de concluído pergunta até a resposta ser sim).
       **Passos — um commit cada, no `dev`; em todos: typecheck, a suíte inteira e build:**
-      - [ ] **Passo 1 — servidor, os planos.** `GET /api/billing/planos` + o tipo `Plano` no `core` +
+      - [x] **Passo 1 — servidor, os planos.** `GET /api/billing/planos` + o tipo `Plano` no `core` +
             testes de servidor. *Prova:* com login, devolve R$ 99,90 e R$ 995 da área restrita.
+            **FEITO (10/10/2026).** `core/src/constants/billing.ts` · `server/src/routes/billing.ts` ·
+            em `lib/stripe.ts`: `buscarPrecos` (pela lookup key; lança se um preço faltar ou vier
+            com o intervalo trocado), `chavePublicavel` (só `pk_`) e `erroSemMensagem`. **Provado no
+            app de verdade, com o banco de dev e a área restrita:** sem login 401; com o `member@`,
+            200 com mensal 9990 e anual 99500 centavos, em `brl`, e a chave publicável de teste.
+            **Testes:** 6 de servidor + 8 unitários. **Mutação:** 4 de 4 reprovaram (a rota sem
+            login, a chave sem conferir o `pk_`, o código do preço na resposta, o intervalo sem
+            conferir).
       - [ ] **Passo 2 — servidor, o código.** `POST /api/billing/previa` + testes. *Prova:*
             `TESTE100` → R$ 0; código errado → recusado.
       - [ ] **Passo 3 — servidor, criar a assinatura.** Migration `stripe_customer` (escrita à mão
@@ -3367,7 +3375,8 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       amount, currency })` + `elements.submit()` + `confirmPayment` com o `clientSecret`) — **2
       consultas** (10/10/2026). Nos tipos da `stripe@23.0.0`: `prices.list` por `lookup_keys`,
       `invoices.createPreview`, `PromotionCode.promotion`, `Invoice.confirmation_secret`.
-      **PAREI EM (10/10/2026):** plano aprovado e escrito; nenhum código ainda. Próximo: passo 1.
+      **PAREI EM (10/10/2026):** passo 1 feito e commitado no `dev`. Próximo: passo 2 (o código
+      promocional). Os textos em rascunho, acima, esperam a revisão do operador antes do passo 4.
 - [ ] **4.3 — No ar, em modo de teste: o PRIMEIRO TESTE REAL (sessão curta, com o operador).** As
       chaves de teste e o segredo do webhook no Railway, o endereço do webhook no painel — **com
       "www"**: `https://www.jilsonsantana.com/api/stripe/webhook` (medido em 09/10/2026: sem o "www",

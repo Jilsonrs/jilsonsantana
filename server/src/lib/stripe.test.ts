@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import type Stripe from "stripe";
-import { paraAssinaturaNaStripe } from "./stripe.js";
+import Stripe from "stripe";
+import { chavePublicavel, erroSemMensagem, paraAssinaturaNaStripe, paraPrecosDosPlanos } from "./stripe.js";
 
 // O ESPELHO A PARTIR DA STRIPE (Fase 4, etapa 4.1) — função pura, teste unitário (CLAUDE.md →
 // Testing: só função pura, sem I/O). O que protege é o "PAGO ATÉ": quando a renovação falha, a
@@ -62,5 +62,76 @@ describe("o espelho a partir da assinatura da Stripe", () => {
   it("modo de teste ou de verdade: vai como a Stripe diz", () => {
     expect(paraAssinaturaNaStripe(assinatura({ livemode: true })).livemode).toBe(true);
     expect(paraAssinaturaNaStripe(assinatura()).livemode).toBe(false);
+  });
+});
+
+// OS PLANOS A PARTIR DOS PREÇOS DA STRIPE (etapa 4.2). O que protege: a tela nunca mostra um
+// plano com o preço de outro, e nunca abre com um preço faltando.
+function preco({ chave = "assinatura_mensal", centavos = 9990 as number | null, intervalo = "month", cada = 1, ativo = true, id = "price_1" } = {}): Stripe.Price {
+  // Seguro: o objeto de teste tem só os campos que a função lê; a forma completa é da Stripe.
+  return { id, lookup_key: chave, unit_amount: centavos, currency: "brl", active: ativo, recurring: { interval: intervalo, interval_count: cada } } as unknown as Stripe.Price;
+}
+const anual = preco({ chave: "assinatura_anual", centavos: 99500, intervalo: "year", id: "price_2" });
+
+describe("os planos a partir dos preços da Stripe", () => {
+  it("devolve o mensal e o anual, cada um com o seu valor, na ordem da tela", () => {
+    expect(paraPrecosDosPlanos([anual, preco()])).toEqual([
+      { plano: "mensal", precoId: "price_1", centavos: 9990, moeda: "brl" },
+      { plano: "anual", precoId: "price_2", centavos: 99500, moeda: "brl" },
+    ]);
+  });
+
+  it("um plano faltando: lança, em vez de abrir a tela pela metade", () => {
+    expect(() => paraPrecosDosPlanos([preco()])).toThrow(/anual/);
+  });
+
+  it("a chave do mensal num preço que renova por ANO: lança", () => {
+    expect(() => paraPrecosDosPlanos([preco({ intervalo: "year" }), anual])).toThrow(/mensal/);
+  });
+
+  it("preço que renova a cada 3 meses, inativo ou sem valor fixo: lança", () => {
+    expect(() => paraPrecosDosPlanos([preco({ cada: 3 }), anual])).toThrow(/mensal/);
+    expect(() => paraPrecosDosPlanos([preco({ ativo: false }), anual])).toThrow(/mensal/);
+    expect(() => paraPrecosDosPlanos([preco({ centavos: null }), anual])).toThrow(/mensal/);
+  });
+});
+
+describe("o erro da Stripe sem a mensagem dela", () => {
+  it("guarda o tipo, o código e o status — e NUNCA a mensagem, que pode trazer um pedaço da chave", () => {
+    const daStripe = new Stripe.errors.StripeAuthenticationError({ message: "Invalid API Key provided: sk_test_abc123", type: "invalid_request_error", code: "api_key_invalid", statusCode: 401 });
+    const limpo = erroSemMensagem(daStripe, "a busca dos preços");
+    expect(limpo.message).toBe("[stripe] a busca dos preços falhou: StripeAuthenticationError (api_key_invalid), status 401");
+    expect(limpo.message).not.toContain("sk_test");
+    expect(limpo.cause).toBeUndefined();
+  });
+
+  it("erro que não é da Stripe passa como veio", () => {
+    const nosso = new Error("[stripe] o preço do plano anual não existe");
+    expect(erroSemMensagem(nosso, "a busca dos preços")).toBe(nosso);
+  });
+});
+
+describe("a chave publicável", () => {
+  const antes = process.env.STRIPE_PUBLISHABLE_KEY;
+  const com = (valor: string | undefined): string | null => {
+    if (valor === undefined) delete process.env.STRIPE_PUBLISHABLE_KEY;
+    else process.env.STRIPE_PUBLISHABLE_KEY = valor;
+    try {
+      return chavePublicavel();
+    } finally {
+      if (antes === undefined) delete process.env.STRIPE_PUBLISHABLE_KEY;
+      else process.env.STRIPE_PUBLISHABLE_KEY = antes;
+    }
+  };
+
+  it("sai quando tem cara de chave publicável", () => {
+    expect(com("pk_test_abc")).toBe("pk_test_abc");
+  });
+
+  it("a SECRETA colada na variável errada nunca sai; vazia ou ausente também não", () => {
+    expect(com("sk_test_abc")).toBeNull();
+    expect(com("rk_test_abc")).toBeNull();
+    expect(com("")).toBeNull();
+    expect(com(undefined)).toBeNull();
   });
 });

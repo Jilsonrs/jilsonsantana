@@ -1,4 +1,5 @@
 import Stripe from "stripe";
+import { PLANOS, type Plano } from "@jilson/core";
 
 // A NOSSA FRONTEIRA COM A STRIPE (Fase 4, etapa 4.1 — billing.md; CLAUDE.md → Membership
 // Gating). Tudo que fala com a Stripe passa por aqui. As chaves vivem SÓ no ambiente do
@@ -45,6 +46,64 @@ function stripe(): Stripe {
   // uma conexão do banco enquanto espera. Sem resposta, o aviso falha e a Stripe entrega de novo.
   cliente ??= new Stripe(chave, { timeout: 10_000, maxNetworkRetries: 1 });
   return cliente;
+}
+
+/** A Stripe está configurada para cobrar? Sem a chave secreta, a tela de assinar não abre. */
+export function cobrancaConfigurada(): boolean {
+  return Boolean(process.env.STRIPE_SECRET_KEY);
+}
+
+/**
+ * A chave que o SITE usa para abrir o campo do cartão. Não é segredo, mas sai daqui (etapa 4.2):
+ * trocar de ambiente é trocar variável num lugar só. Só sai se tiver cara de chave publicável
+ * (`pk_`): a SECRETA colada na variável errada nunca vai ao navegador — sem ela, não há tela.
+ */
+export function chavePublicavel(): string | null {
+  const chave = process.env.STRIPE_PUBLISHABLE_KEY;
+  return chave && chave.startsWith("pk_") ? chave : null;
+}
+
+/**
+ * O erro da Stripe SEM a mensagem dela, que pode trazer um pedaço da chave ou dado do cliente —
+ * e o que sobe daqui vai para o registro. Ficam o tipo, o código e o status. Função pura.
+ */
+export function erroSemMensagem(erro: unknown, oQue: string): Error {
+  if (!(erro instanceof Stripe.errors.StripeError)) return erro instanceof Error ? erro : new Error(`[stripe] ${oQue} falhou`);
+  const codigo = erro.code ? ` (${erro.code})` : "";
+  const status = erro.statusCode ? `, status ${erro.statusCode}` : "";
+  return new Error(`[stripe] ${oQue} falhou: ${erro.type}${codigo}${status}`);
+}
+
+// OS PREÇOS SE ACHAM PELA LOOKUP KEY, nunca por ID nem por nome (convenção da etapa 4.0): não há
+// código de preço para colar em nenhum ambiente, e no lançamento basta repetir as mesmas chaves
+// na conta de verdade.
+const CHAVE_DO_PRECO: Record<Plano, string> = { mensal: "assinatura_mensal", anual: "assinatura_anual" };
+const INTERVALO: Record<Plano, Stripe.Price.Recurring.Interval> = { mensal: "month", anual: "year" };
+
+/** O preço de um plano como a Stripe diz AGORA. O `precoId` não sai do servidor. */
+export type PrecoDoPlano = { plano: Plano; precoId: string; centavos: number; moeda: string };
+
+/**
+ * Os dois planos, a partir dos preços da Stripe. LANÇA se um faltar ou vier trocado (a chave do
+ * mensal num preço que renova por ano): a tela mostraria "mensal" numa cobrança anual. Função pura.
+ */
+export function paraPrecosDosPlanos(precos: Stripe.Price[]): PrecoDoPlano[] {
+  return PLANOS.map((plano) => {
+    const preco = precos.find((p) => p.lookup_key === CHAVE_DO_PRECO[plano]);
+    const certo = preco && preco.active && preco.unit_amount !== null && preco.recurring?.interval === INTERVALO[plano] && preco.recurring.interval_count === 1;
+    if (!certo || preco.unit_amount === null) throw new Error(`[stripe] o preço do plano ${plano} (${CHAVE_DO_PRECO[plano]}) não existe, está inativo ou veio trocado`);
+    return { plano, precoId: preco.id, centavos: preco.unit_amount, moeda: preco.currency };
+  });
+}
+
+/** Os preços dos dois planos, lidos da Stripe: o valor mostrado é o valor cobrado. */
+export async function buscarPrecos(): Promise<PrecoDoPlano[]> {
+  try {
+    const precos = await stripe().prices.list({ lookup_keys: Object.values(CHAVE_DO_PRECO), active: true, limit: 10 });
+    return paraPrecosDosPlanos(precos.data);
+  } catch (erro) {
+    throw erroSemMensagem(erro, "a busca dos preços");
+  }
 }
 
 /** A Stripe está configurada para receber avisos? Sem o segredo, NENHUM aviso é aceito. */
