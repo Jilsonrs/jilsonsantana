@@ -3188,10 +3188,13 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       falharem"** (achado de segurança de 29/09, item abaixo) · **sem Customer Portal**. **As chaves
       não passam pelo chat:** o operador cola no `server/.env` (dev) e, na 4.3, no Railway — o passo a
       passo vem na hora (*CLAUDE.md → Secrets in agent sessions*).
-      `[FATO — context7 /websites/stripe, 10/10/2026, 2 consultas]` a Stripe hoje chama o ambiente de
+      `[FATO — context7 /websites/stripe, 10/10/2026, 3 consultas]` a Stripe hoje chama o ambiente de
       teste de **sandbox** ("sandbox (test mode)"). Cada ambiente tem as suas chaves, e o que se cria
       num não existe no outro: **o produto, os preços e o cupom nascem no MESMO ambiente de onde
-      saem as chaves.** *Em andamento com o operador, passo a passo, desde 10/10/2026.*
+      saem as chaves.** A conta do operador mostra dois: o **"Test mode"** padrão, que *"shares
+      certain settings with live mode"* (mexer numa configuração ali pode mudar a da conta de
+      verdade), e uma **área restrita** isolada. Recomendação do agente: a área restrita.
+      *Em andamento com o operador, passo a passo, desde 10/10/2026.*
 - [x] **4.1 — O webhook e o espelho (código, ALTO RISCO).** Dependência nova: **`stripe`** (servidor).
       `POST /api/stripe/webhook` montado **acima** do `express.json()`, com o corpo cru → confere a
       assinatura → grava o `event.id` (tabela nova, com RLS; repetido = nada) → **recalcula** o
@@ -4196,7 +4199,9 @@ outro aparelho e "daqui a um mês", e o Safari apaga o armazenamento do site em 
 - [ ] **A Stripe de verdade — e as assinaturas do modo de teste SAEM do banco de produção** *(achado
       P2 da revisão de segurança da etapa 4.1, 09/10/2026)*. No Railway, trocar as chaves e o segredo
       do webhook do modo de teste pelos de verdade, e cadastrar o endereço do webhook no modo de
-      verdade do painel. **Na mesma publicação, apagar do banco de produção as `subscription` com
+      verdade do painel. **O que foi criado no ambiente de teste não existe na conta de verdade**
+      (fato da doc, 10/10/2026): o produto, os 2 preços, o cupom com o código promocional e o ajuste
+      de "cancelar quando todas as tentativas falharem" são refeitos lá. **Na mesma publicação, apagar do banco de produção as `subscription` com
       `livemode = false`:** as chaves de verdade nunca mais recebem aviso delas, então nenhuma seria
       cancelada — e uma ativa daria acesso para sempre. Como apagar sem falar direto com o banco de
       produção (só o Railway fala com ele) se decide na abertura do item. O `member@` de produção
