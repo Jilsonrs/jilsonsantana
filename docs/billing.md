@@ -105,11 +105,21 @@ dele, isto passa a ser uma **promessa nossa**, oferecida por escolha. Duas coisa
   arrependimento", sem citar os 7 dias que esta seção manda dizer. *Alinhar é decisão do operador
   (texto de interface é dele); fica aqui apontado, não corrigido.*
 
-**Estado do código (etapa 4.1, 09/10/2026): o reembolso ainda NÃO corta o acesso.** A fatura da
-Stripe não tem situação de "reembolsada" (as situações são `draft`, `open`, `paid`, `uncollectible`
-e `void` — tipos da `stripe@23.0.0`): devolvido o dinheiro, ela continua `paid`, e o espelho trata o
-mês como pago. Se o acesso acaba na hora do reembolso é a pendência **P56** do operador, a decidir
-antes da primeira venda de verdade.
+**Cancelar e reembolso — a regra inteira** *(decisão do operador, 10/10/2026 — fecha a P56)*:
+- **O aluno cancela a qualquer momento**, inclusive cedo, só para não esquecer de ser cobrado
+  (*"às vezes só quer estudar um mês"*). O acesso fica **garantido até o fim do período pago**.
+- **Dentro dos 7 dias:** cancelou com reembolso → **recebe o dinheiro de volta e perde o acesso**.
+- **Depois dos 7 dias:** não há reembolso, e o acesso continua até o fim do período pago.
+
+*Reabre se a escola passar a dar mais que a lei (prazo maior, devolução proporcional).* **Em
+aberto (P61):** se, dentro dos 7 dias, o aluno escolhe entre só parar a renovação e receber o
+dinheiro de volta; e se quem já recebeu de volta uma vez tem direito de novo ao reativar.
+
+**Estado do código (10/10/2026): o reembolso ainda NÃO corta o acesso.** A fatura da Stripe não
+tem situação de "reembolsada" (as situações são `draft`, `open`, `paid`, `uncollectible` e `void`
+— tipos da `stripe@23.0.0`): devolvido o dinheiro, ela continua `paid`, e o espelho trata o mês
+como pago. A regra acima entra com o cancelamento (plano → etapas 4.4b e 4.6): o período
+devolvido deixa de contar como pago no espelho. **Precede a primeira venda de verdade.**
 
 ## O plano ANUAL não aparece na home *(decisão do operador, set/2026)*
 
@@ -312,9 +322,16 @@ pagamento sem ter assinado vê "confirmando" e depois "está demorando", sem cam
 - **Quem cancela e ainda tem dias pagos continua assistindo até o fim deles** — *"enquanto for
   válida a assinatura nos dias restantes"*. É a regra do gate de Ago 2026, confirmada; nesse caso
   a pessoa também não é deslogada. *Sem gatilho próprio: é a regra do gate. O reembolso, em que o
-  período deixa de estar pago, continua sendo a pendência P56.*
+  período deixa de estar pago, tem regra própria desde 10/10/2026 (*Reembolso*, acima).*
 - **Os textos da tela "Assinaturas", a posição do item no menu e o inglês "Reactivate
   subscription" são RASCUNHO do agente** (pendência P59). *Fecha quando ele revisar.*
+- **A tela "Assinaturas" vai virar um painel** *(pedido dele depois de usar a tela: "achei pouco
+  funcional […] um mini sisteminha administrativo sem precisar ficar indo na Stripe")*: lista com
+  filtros e busca, e as ações que cabem em cada situação. O mapa é **proposta do agente**, no
+  plano (etapa 4.4b), e aguarda a aprovação dele (P62).
+- **Assinatura cancelada: o admin envia ou copia o link para o aluno reativar — é o aluno quem
+  paga** (entre isso, dar acesso de cortesia pela tela, e os dois). *Reabre se ele quiser
+  presentear acesso por ali.*
 
 **Convenções de engenharia (como o código faz):**
 - **O espelho é gravado por UMA rotina só** (`sincronizar`, em `server/src/lib/assinaturas.ts`),
@@ -378,7 +395,7 @@ por mais 31 dias, com acesso.
 **Da revisão de segurança da etapa (10/10/2026) — nenhum bloqueio.** Corrigidos na hora, com
 teste: a busca do admin por e-mail (acima) e a recusa de corpo sem registro. Com destino marcado:
 a trava do checkout que segura conexão do banco (pré-requisito (b) da etapa 4.7, no plano) · o
-monitor de erro, sem o qual toda falha de cobrança só existe no registro (Fase 7, pendência P25) ·
+monitor de erro, sem o qual toda falha de cobrança só existe no registro (Fase 7; será o Sentry) ·
 a assinatura "não paga" (P60). O relato completo está no plano, Fase 4 → etapa 4.4 → Passo 9.
 
 ## Pendências de verificação
