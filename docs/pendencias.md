@@ -16,7 +16,7 @@
 > 5. **Item novo ganha o próximo número livre.** Número nunca se reutiliza, para que "P7" queira
 >    dizer sempre a mesma coisa em qualquer conversa.
 >
-> **Próximo número livre: P59** · Atualizada em 10/10/2026
+> **Próximo número livre: P61** · Atualizada em 10/10/2026
 
 ## A. Agora, em sequência *(nascidas da configuração do Bunny, 25/09/2026)*
 
@@ -28,6 +28,7 @@ entra aqui, com o próximo número livre.*
 
 | # | O que falta | Onde registrar |
 |---|---|---|
+| P59 | **Revisar os textos novos de 10/10 (etapa 4.4)**, rascunho do agente. **Admin → Assinaturas:** o título e a descrição da tela, "Conferir na Stripe", "E-mail do aluno", "Esta conta tem acesso." / "Esta conta está sem acesso.", "Esta conta não tem nenhuma assinatura na Stripe.", a situação de cada assinatura ("Ativa", "Pagamento atrasado, em novas tentativas", "Cancelada", "Aguardando o primeiro pagamento"…) e as três frases de erro. **A posição do item "Assinaturas" no menu:** está logo depois de "Alunos"; pode ser outra. **O inglês de "Reativar assinatura":** "Reactivate subscription" (a outra opção é "Resubscribe") — passa pelo ciclo de revisão do `idiomas.md` | `client/src/lib/sincronia.ts`, `client/src/pages/admin/AdminAssinaturasPage.tsx`, `client/src/lib/navigation.ts` e `core/src/i18n/en.ts` |
 | P55 | **Revisar o texto novo de 09/10**, rascunho do agente: **"Progresso na trilha"** / **"Learning path progress"** — o que o leitor de tela anuncia na barra do cartão da trilha (a porcentagem visível usa o "concluído" que já existe). Junto da P38 | `core/src/i18n/` (`app.trilha.progressoNaTrilha`) |
 | P54 | **Revisar com o Antigravity o acabamento do editor do curso em 7 passos** (a estrutura existe desde 28/09; Legendas e Mensagens desde 04/10). Depois disso, a P38 | `design-lab/GEMINI.md` (o mapa das telas e a fila de formatação) |
 | P45 | **Revisar os textos novos de 06/10**, rascunho do agente: "Notificação não encontrada." / "Notification not found." (mensagem aberta que não está mais na lista) e "Notifications" (o item do menu em inglês) | `core/src/i18n/pt.ts` e `en.ts` |
@@ -47,6 +48,7 @@ entra aqui, com o próximo número livre.*
 
 | # | O que falta | Quando | Onde registrar |
 |---|---|---|---|
+| P60 | **Quando as tentativas de cobrança acabam, a assinatura é CANCELADA ou fica "não paga"?** É uma configuração do painel da Stripe (o que fazer depois da última tentativa de cobrança), e vale conferir nos dois lugares: na área restrita e na conta de verdade. Se ficar "não paga", a pessoa vê "Reativar assinatura", clica, e nada acontece: ela não consegue voltar a pagar por ali (hoje o servidor só registra o caso em voz alta). Recomendação do agente: **cancelar** — aí o "Reativar assinatura" funciona sozinho, sem código novo. *(Achado da revisão de segurança da etapa 4.4.)* | antes de a etapa 4.7 ir ao ar (o primeiro pagante que não é você) | `billing.md` → *Régua de inadimplência* |
 | P58 | **O nome que aparece na fatura do cartão do aluno** (na Stripe, "statement descriptor"): qual vai ser? É por ele que o aluno reconhece a cobrança. Fica nas configurações da conta de verdade; no ambiente de teste não aparece em fatura nenhuma, então o campo do produto ficou em branco | GO-LIVE (Fase 7), ao trocar para a Stripe de verdade | `billing.md` |
 | P57 | **Endereço sem "www":** só a página inicial redireciona para `www.jilsonsantana.com`; qualquer outra página (`jilsonsantana.com/cursos`, `/login`, `/api/health`) responde **404** (medido em 09/10/2026). Quem digitar ou compartilhar um link sem "www" cai numa página de erro. O ajuste é no painel do domínio (o redirecionamento passar a levar o resto do endereço junto), com o agente orientando | quando as páginas públicas estiverem definidas *(operador, 10/10/2026: "vou resolver você me orientando quando já souber as páginas que vou construir")* | o plano, Fase 7 (lançamento) |
 | P56 | **Cancelamento NA HORA** (o reembolso dos 7 dias, ou você cancelando uma assinatura pelo painel da Stripe): o acesso **acaba na hora** ou vai **até o fim do período já cobrado**? Hoje o espelho segue a regra do gate ("o período já foi pago") e o acesso iria até o fim — mas, com o dinheiro devolvido, o período deixa de estar pago. **E a Stripe não avisa isso sozinha:** a fatura reembolsada continua "paga" (não existe situação de "reembolsada" — conferido em 09/10); se a resposta for "acaba na hora", o servidor passa a ouvir o aviso de reembolso. Recomendação do agente: acaba na hora quando houver reembolso | Fase 4, etapa 4.6 (cancelar) — **antes da primeira venda de verdade**: o reembolso de 7 dias é direito por lei e pode chegar já na primeira semana | `billing.md` → *Reembolso* e o plano, Fase 4 |

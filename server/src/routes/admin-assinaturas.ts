@@ -27,8 +27,11 @@ router.post("/admin/assinaturas/sincronizar", requireAdmin, async (req, res) => 
     res.status(503).json({ error: "NaoConfigurado" });
     return;
   }
-  // O e-mail é único; sem diferenciar maiúsculas, como quem digita o que o aluno escreveu.
-  const conta = await prisma.user.findFirst({ where: { email: { equals: corpo.email, mode: "insensitive" } }, select: { id: true } });
+  // AO PÉ DA LETRA, em minúsculas — como o login acha a conta (o Better Auth grava e busca o
+  // e-mail assim). A busca "sem diferenciar maiúsculas" do banco NÃO serve: nela o "_" vale por
+  // qualquer caractere, e um e-mail parecido conferiria a conta de outra pessoa (achado da
+  // revisão de segurança da etapa 4.4, medido).
+  const conta = await prisma.user.findUnique({ where: { email: corpo.email.toLowerCase() }, select: { id: true } });
   if (!conta) {
     res.status(404).json({ error: "ContaNaoEncontrada" });
     return;

@@ -66,11 +66,14 @@ async function sincronizarAViva(conta: Conta, assinaturaId: string): Promise<Des
     console.info(`[stripe] checkout: a conta ${conta.id} estava sem o espelho da assinatura ${assinaturaId} (${status}); sincronizada, com acesso`);
     return { resultado: "ja-assinante" };
   }
-  // Sincronizou e a conta segue sem acesso. Se a assinatura dá acesso na Stripe, o espelho não
-  // nasceu para ESTA conta (sem `userId` lá, ou é de outro dono): precisa de gente — em voz alta.
+  // Sincronizou e a conta segue sem acesso — e sem poder assinar de novo, porque a assinatura
+  // continua aberta na Stripe. Precisa de gente nos dois casos, em voz alta:
+  //   - ela dá acesso na Stripe: o espelho não nasceu para ESTA conta (sem `userId` lá, ou é de
+  //     outro dono) — há alguém pagando e trancado fora;
+  //   - ela não dá (não paga, ou pausada com o período vencido): a pessoa quer pagar e este
+  //     caminho não deixa (achado da revisão de segurança da etapa 4.4 — pendência P60).
   const linha = `[stripe] checkout: a conta ${conta.id} tem a assinatura ${assinaturaId} (${status}) na Stripe e segue sem acesso depois da sincronia (${sincronia.resultado})`;
-  if (DA_ACESSO_NA_STRIPE.has(status)) console.error(`${linha}: o assinante está trancado fora`);
-  else console.warn(linha);
+  console.error(`${linha}: ${DA_ACESSO_NA_STRIPE.has(status) ? "o assinante está trancado fora" : "quer assinar e não consegue"}`);
   return { resultado: "ja-assinante" };
 }
 

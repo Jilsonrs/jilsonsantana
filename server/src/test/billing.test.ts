@@ -501,8 +501,7 @@ describe("POST /api/billing/assinatura", () => {
       });
     });
 
-    it("sincronizou e a conta segue sem acesso: 409 — GRITA se a assinatura dá acesso na Stripe (precisa de gente), só avisa se não dá", async () => {
-      const aviso = vi.spyOn(console, "warn").mockImplementation(() => {});
+    it("sincronizou e a conta segue sem acesso: 409 — e GRITA nos dois casos (precisa de gente): pagando e trancado fora, ou querendo assinar sem conseguir", async () => {
       const grito = vi.spyOn(console, "error").mockImplementation(() => {});
       const qual = (linha: unknown) => String(linha).match(new RegExp(`sub_viva_${S}_(\\w+)`))?.[1];
       try {
@@ -515,7 +514,8 @@ describe("POST /api/billing/assinatura", () => {
             expect((await assinarComo({ plano: "anual" }, member)).status).toBe(409);
             expect(await doEspelho(id)).toBeNull();
           }
-          // Não dá acesso nem na Stripe: o espelho nasce, e a conta segue trancada — é o certo.
+          // Não dá acesso nem na Stripe: o espelho nasce, e a conta segue trancada — é o certo. Mas
+          // ela também não consegue assinar de novo, e isso não pode ficar mudo (pendência P60).
           for (const status of ["unpaid", "paused"]) {
             const id = `sub_viva_${S}_${status}`;
             naStripe = [encerrada(id, status)];
@@ -525,12 +525,12 @@ describe("POST /api/billing/assinatura", () => {
           }
           expect(await acesso()).toBe(false);
           expect(criarAssinatura).not.toHaveBeenCalled();
-          expect(grito.mock.calls.map(([linha]) => qual(linha))).toEqual(["active", "past_due", "trialing"]);
-          expect(grito.mock.calls.every(([linha]) => String(linha).includes("trancado fora"))).toBe(true);
-          expect(aviso.mock.calls.map(([linha]) => qual(linha))).toEqual(["unpaid", "paused"]);
+          const gritos = grito.mock.calls.map(([linha]) => String(linha));
+          expect(gritos.map(qual)).toEqual(["active", "past_due", "trialing", "unpaid", "paused"]);
+          expect(gritos.map((linha) => linha.includes("trancado fora"))).toEqual([true, true, true, false, false]);
+          expect(gritos.map((linha) => linha.includes("quer assinar e não consegue"))).toEqual([false, false, false, true, true]);
         });
       } finally {
-        aviso.mockRestore();
         grito.mockRestore();
       }
     });

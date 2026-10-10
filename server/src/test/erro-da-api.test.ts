@@ -20,15 +20,17 @@ import { tratarErroDaApi } from "../lib/erro-da-api.js";
 //   - o erro que escapa de uma rota de `/api` responde 500 `ErroInterno` — NUNCA o status nem
 //     os cabeçalhos que o erro carrega (o da Stripe carrega os dela), nem a mensagem, nem o rastro;
 //   - a falha não fica muda: o registro leva o endereço e o erro — sem o que vem depois do "?";
-//   - o corpo que o Express recusou ao ler continua 4xx (não é falha nossa), e o corpo recusado
-//     não vai para o registro;
+//   - o corpo que o Express recusou ao ler continua 4xx (não é falha nossa); a recusa fica no
+//     registro (endereço, status e motivo), e o corpo recusado NÃO;
 //   - com a resposta já começada, não tenta responder de novo.
 
 const AMBIENTE = ["STRIPE_SECRET_KEY", "STRIPE_PUBLISHABLE_KEY"] as const;
 const antes = Object.fromEntries(AMBIENTE.map((nome) => [nome, process.env[nome]]));
 let member: string[] = [];
 let registro: MockInstance<typeof console.error>;
+let avisos: MockInstance<typeof console.warn>;
 const linhas = () => registro.mock.calls.flat().join("\n");
+const avisados = () => avisos.mock.calls.flat().join("\n");
 
 /** Um erro com a cara do da Stripe quando escapa cru: status, cabeçalhos e mensagem dela. */
 function erroComCaraDeStripe() {
@@ -50,8 +52,12 @@ beforeAll(async () => {
 beforeEach(() => {
   buscarPrecos.mockReset();
   registro = vi.spyOn(console, "error").mockImplementation(() => {});
+  avisos = vi.spyOn(console, "warn").mockImplementation(() => {});
 });
-afterEach(() => registro.mockRestore());
+afterEach(() => {
+  registro.mockRestore();
+  avisos.mockRestore();
+});
 afterAll(() => {
   for (const nome of AMBIENTE) {
     if (antes[nome] === undefined) delete process.env[nome];
@@ -104,11 +110,15 @@ describe("o erro que escapa de uma rota de /api", () => {
 
 describe("o corpo que o Express recusou ao ler", () => {
   it("JSON malformado: 400 CorpoInvalido — não é falha nossa —, e o corpo recusado não vai para o registro", async () => {
-    const res = await request(servidor).post("/api/billing/previa").set("Cookie", member).set("Content-Type", "application/json").send('{"plano": "mensal", "codigo": "CODIGO_DIGITADO"');
+    // Sem aspas no valor, e CURTO: a mensagem do erro de leitura cita uns 10 caracteres do corpo
+    // em volta do defeito (medido: `..."codigo": PROMO9}" is not valid JSON`). Nem ela vai.
+    const res = await request(servidor).post("/api/billing/previa").set("Cookie", member).set("Content-Type", "application/json").send('{"plano": "mensal", "codigo": PROMO9}');
     expect(res.status).toBe(400);
     expect(res.body).toEqual({ error: "CorpoInvalido" });
-    expect(res.text).not.toContain("CODIGO_DIGITADO");
-    expect(linhas()).not.toContain("CODIGO_DIGITADO");
+    expect(res.text).not.toContain("PROMO9");
+    expect(linhas()).not.toContain("PROMO9");
+    expect(avisados()).toContain("[api] POST /api/billing/previa: corpo recusado (400, entity.parse.failed)");
+    expect(avisados()).not.toContain("PROMO9");
     expect(buscarPrecos).not.toHaveBeenCalled();
   });
 
@@ -116,6 +126,20 @@ describe("o corpo que o Express recusou ao ler", () => {
     const res = await request(servidor).post("/api/billing/previa").set("Cookie", member).send({ plano: "mensal", codigo: "x".repeat(200_000) });
     expect(res.status).toBe(413);
     expect(res.body).toEqual({ error: "CorpoInvalido" });
+  });
+
+  it("a recusa não fica muda: o registro diz o endereço, o status e o motivo — sem o corpo", async () => {
+    // Achado da revisão de segurança da etapa 4.4: um aviso da Stripe grande demais levava 413
+    // sem linha nenhuma no registro — ela reentregaria por 3 dias, e só o painel dela mostraria.
+    const res = await request(servidor)
+      .post("/api/stripe/webhook?token=nao_vai_para_o_registro")
+      .set("Content-Type", "application/json")
+      .send(JSON.stringify({ id: "evt_grande", conteudo: "CORPO_DO_AVISO".repeat(20_000) }));
+    expect(res.status).toBe(413);
+    expect(res.body).toEqual({ error: "CorpoInvalido" });
+    expect(avisados()).toContain("[api] POST /api/stripe/webhook: corpo recusado (413, entity.too.large)");
+    expect(avisados()).not.toContain("CORPO_DO_AVISO");
+    expect(avisados()).not.toContain("nao_vai_para_o_registro");
   });
 });
 

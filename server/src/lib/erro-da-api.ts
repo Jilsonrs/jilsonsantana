@@ -8,8 +8,10 @@ import type { ErrorRequestHandler } from "express";
 // Aqui, o erro que escapar de qualquer rota de `/api` vira 500 `ErroInterno`, em qualquer
 // ambiente, sem NADA do erro na resposta.
 // A ÚNICA exceção é o corpo do pedido que o próprio Express recusou ao ler (JSON malformado,
-// grande demais): continua 4xx. Não é falha nossa, e virar 500 faria a Stripe reentregar por 3
-// dias um aviso que nunca vai caber.
+// grande demais): continua 4xx, porque não é falha nossa. Mas a recusa NÃO fica muda (achado da
+// revisão de segurança da etapa 4.4): a Stripe reentrega o aviso em qualquer resposta que não
+// seja 2xx, e um aviso que não coubesse seria recusado por 3 dias sem ninguém ver. Vai o
+// endereço, o status e o motivo — nunca o corpo.
 // O REGISTRO continua levando o erro, como o padrão fazia — sem isso a falha ficaria muda. Vai
 // o rastro (`stack`), nunca o objeto inteiro: o erro da Stripe carrega a resposta crua dela, e o
 // de leitura do corpo carrega o corpo. O endereço vai sem o que vem depois do "?".
@@ -24,9 +26,10 @@ const CORPO_RECUSADO: Readonly<Record<string, number>> = {
   "request.size.invalid": 400,
 };
 
-function statusDoCorpoRecusado(erro: unknown): number | null {
+/** O corpo recusado: o motivo (o `type`, de uma lista fechada — nunca a mensagem, que cita o corpo) e o status. */
+function corpoRecusado(erro: unknown): { motivo: string; status: number } | null {
   if (typeof erro !== "object" || erro === null || !("type" in erro) || typeof erro.type !== "string") return null;
-  return Object.hasOwn(CORPO_RECUSADO, erro.type) ? CORPO_RECUSADO[erro.type] : null;
+  return Object.hasOwn(CORPO_RECUSADO, erro.type) ? { motivo: erro.type, status: CORPO_RECUSADO[erro.type] } : null;
 }
 
 export const tratarErroDaApi: ErrorRequestHandler = (erro, req, res, next) => {
@@ -35,12 +38,14 @@ export const tratarErroDaApi: ErrorRequestHandler = (erro, req, res, next) => {
     next(erro);
     return;
   }
-  const corpoRecusado = statusDoCorpoRecusado(erro);
-  if (corpoRecusado !== null) {
-    res.status(corpoRecusado).json({ error: "CorpoInvalido" });
+  const endereco = `${req.method} ${req.originalUrl.split("?")[0]}`;
+  const recusado = corpoRecusado(erro);
+  if (recusado !== null) {
+    console.warn(`[api] ${endereco}: corpo recusado (${recusado.status}, ${recusado.motivo})`);
+    res.status(recusado.status).json({ error: "CorpoInvalido" });
     return;
   }
   const rastro = erro instanceof Error ? (erro.stack ?? erro.message) : `erro que não é Error (${typeof erro})`;
-  console.error(`[api] ${req.method} ${req.originalUrl.split("?")[0]} falhou: ${rastro}`);
+  console.error(`[api] ${endereco} falhou: ${rastro}`);
   res.status(500).json({ error: "ErroInterno" });
 };

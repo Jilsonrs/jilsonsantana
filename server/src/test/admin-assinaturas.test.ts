@@ -90,10 +90,17 @@ describe("forçar a sincronia — quem entra", () => {
     expect(buscarAssinatura).not.toHaveBeenCalled();
   });
 
-  it("não existe por GET: forçar a sincronia nunca é um endereço que se abre", async () => {
-    const res = await request(servidor).get("/api/admin/assinaturas/sincronizar").set("Cookie", admin);
-    expect(res.status).not.toBe(200);
+  it("abrir o endereço (GET) não sincroniza nada: nem com login de admin, nem com o e-mail no endereço", async () => {
+    // O que se afirma é o que protege em QUALQUER ambiente: a Stripe não é consultada e o espelho
+    // não muda. O status não entra — sem rota de GET, o pedido cai no que vem depois de `/api`,
+    // e isso muda com o ambiente (aqui, o desvio para o Vite; em produção, a página do site).
+    const sub = `sub_${S}_por_get`;
+    await prisma.subscription.create({ data: { ownerUserId: aluno, status: "past_due", currentPeriodEnd: null, stripeSubscriptionId: sub } });
+    naStripe[sub] = { status: "canceled", pagoAte: null };
+    await request(servidor).get(`/api/admin/assinaturas/sincronizar?email=${encodeURIComponent(emailDoAluno)}`).set("Cookie", admin);
+    expect(assinaturasDoCliente).not.toHaveBeenCalled();
     expect(buscarAssinatura).not.toHaveBeenCalled();
+    expect((await espelho(sub))?.status).toBe("past_due");
   });
 
   it("sem e-mail, ou com algo que não é e-mail: 400, sem ir à Stripe", async () => {
@@ -229,6 +236,22 @@ describe("forçar a sincronia — o que ela faz", () => {
     const res = await sincronizar({ email: `  ${emailDoAluno.toUpperCase()} ` }, admin);
     expect(res.status).toBe(200);
     expect(res.body.temAcesso).toBe(true);
+  });
+
+  it("o e-mail vale AO PÉ DA LETRA: o \"_\" não é curinga — um e-mail parecido não confere a conta de outra pessoa", async () => {
+    // Achado da revisão de segurança da etapa 4.4: na busca "sem diferenciar maiúsculas" do
+    // banco, o "_" vale por qualquer caractere — `sincronia_…` acharia a conta `sincronia-…`, e o
+    // admin leria "esta conta tem acesso" de outra pessoa.
+    const sub = `sub_${S}_parecida`;
+    await prisma.subscription.create({ data: { ownerUserId: aluno, status: "incomplete", currentPeriodEnd: null, stripeSubscriptionId: sub } });
+    naStripe[sub] = {};
+    const parecido = emailDoAluno.replace("sincronia-", "sincronia_");
+    expect(parecido).not.toBe(emailDoAluno);
+    const res = await sincronizar({ email: parecido }, admin);
+    expect(res.status).toBe(404);
+    expect(res.body).toEqual({ error: "ContaNaoEncontrada" });
+    expect(buscarAssinatura).not.toHaveBeenCalled();
+    expect((await espelho(sub))?.status).toBe("incomplete");
   });
 
   it("o corpo diz só DE QUEM: uma assinatura apontada no corpo não é conferida nem ligada à conta", async () => {
