@@ -5093,6 +5093,39 @@ outro aparelho e "daqui a um mês", e o Safari apaga o armazenamento do site em 
       assinante trancado fora, quem quer assinar e não consegue, a cancelada já paga, o aviso
       recusado por falta do segredo). *Com as chaves de verdade já no site (10/10), isto precede
       o primeiro pagante que não seja o operador.*
+      **PLANO APROVADO (10/10/2026) — PARTE 1: O SERVIDOR.** *(Operador: "você arruma de forma
+      que ele cumpra o seu papel e justifique o seu uso" e, visto o plano, "Sim. vamos lá".)*
+      Puxado para antes da etapa 4.7: o site já usa as chaves de verdade da Stripe.
+      - **Dependência nova, aprovada:** `@sentry/node`, fixada em **`10.75.3`**. *Por que a
+        linha 10 e não a 11 `[MEDIDO em 10/10/2026]`:* a 11 tinha 17 dias de vida e 7 versões
+        nesse tempo, e traz 42 pacotes; a 10.75.3 traz 21, tem um ano de uso e segue recebendo
+        correção. *Reabre quando a linha 10 parar de receber correção, ou com a 11 madura.*
+      - **O que vira alerta:** todo `console.error` do servidor que começa com uma etiqueta
+        nossa (`[stripe]`, `[api]`, `[bunny-stream]`…) — é a convenção que o repo já usa (erro =
+        precisa de gente; aviso = não) — e o que derrubaria o processo. **Linha de biblioteca de
+        terceiro não vai:** o Better Auth registra senha errada como erro, e isso gastaria a cota.
+      - **O que sai do servidor:** a linha ou o erro, e a versão do app. **Nunca:** cabeçalho,
+        cookie, corpo do pedido, usuário, IP, nem o rastro do que veio antes (desligado). E-mail
+        e segredo que apareçam num texto são mascarados antes de sair.
+      - **Convenções de engenharia:** o Sentry só é importado em `server/src/lib/monitor.ts`
+        (trocar de fornecedor custa um arquivo) · liga só em produção e só com `SENTRY_DSN` (em
+        produção sem ela, um aviso no registro) · sem medição de desempenho e sem os ganchos de
+        carregamento de módulo · a cada subida, um aviso "no ar, versão X" — é a prova de que a
+        ligação funciona em produção · ao desligar, espera o envio do que estiver pendente.
+      - **Passos, um commit cada:** (1) este plano · (2) a biblioteca, `monitor.ts`, a ligação
+        no `index.ts` e no desligar, e os testes com um transporte de mentira (o que sai e o
+        que não sai), com mutação · (3) os docs — `CLAUDE.md` (a convenção do `console.error` e
+        o import único), `tech-stack.md`, `.env.example` e as pendências do operador.
+      - **Com o operador, no painel:** um DSN novo no lugar do que apareceu numa foto de tela, a
+        variável `SENTRY_DSN` na Railway, a regra de alerta por e-mail e o monitor de site fora
+        do ar.
+      - **Fora desta parte:** as telas do aluno (parte 2, com a medição do peso no carregamento
+        e do piso de aparelhos) · ligar o repositório ao Sentry · medição de desempenho.
+      - `Docs check (context7): superfícies fixadas → not triggered`. Sentry →
+        `/getsentry/sentry-javascript` (2 consultas) → o transporte de teste (`createTransport`),
+        `captureConsoleIntegration` (eventos) × `consoleLoggingIntegration` (outro produto), a
+        ligação sem `--import` quando não se usa instrumentação automática, e o que mudou na 11.
+      **ONDE PAROU:** plano escrito. Próximo: passo 2.
 - [ ] **Backlog P2 do `security-vulnerability-reviewer` (7 no relatório; os nº 1, 2 e 6 foram
       movidos e o nº 5 foi **fechado por migration versionada** → **3 pendentes aqui**. Nenhum
       bloqueia merge; todos antes do primeiro aluno pagante.)** A numeração original do relatório é
