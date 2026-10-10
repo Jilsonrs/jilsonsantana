@@ -3982,7 +3982,10 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       pago no espelho; hoje a Stripe segue dizendo "paga") · **reembolso repetido não tem
       bloqueio automático** (decisão dele no mesmo dia, que substituiu o "no máximo 2
       reembolsos"): a trava é a cláusula de reembolso abusivo nos termos de uso (P61) e a
-      análise caso a caso — esta etapa NÃO constrói contador nem recusa de assinatura.
+      análise caso a caso — esta etapa NÃO constrói contador nem recusa de assinatura ·
+      **o prazo é de 7 dias no Brasil e 14 fora**, pelo país do cartão (a cobrança em dólar
+      chega na 4.8; até lá só existe o de 7) · **trocar de plano não recomeça o prazo**: os
+      dias contam do primeiro dia da assinatura.
 - [ ] **4.7 — O visitante assina: a conta nasce no pagamento (código, ALTO RISCO).** O checkout
       público: e-mail + pagamento → o webhook cria a conta (o cadastro continua fechado) e manda o
       e-mail de "crie sua senha". **Depende do Resend configurado e da P49** (o remetente). Junto:
@@ -4082,7 +4085,9 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       **Em aberto:** P61 (a cláusula de reembolso abusivo nos termos de uso). O detalhe de cada
       assinatura mostra as cobranças devolvidas: é o que sustenta a análise caso a caso, já que
       não há bloqueio automático por reembolso repetido (decisão do operador, 10/10/2026).
-- [ ] **4.8 — Dólar pelo país do cartão + o botão das páginas em inglês (código + decisão).** context7
+- [ ] **4.8 — Dólar pelo país do cartão + o botão das páginas em inglês (código + decisão).**
+      *(Decisão do operador, 10/10/2026: fora do Brasil o prazo de reembolso é de 14 dias —
+      `billing.md` → Reembolso. Esta etapa liga os 14 dias à cobrança em dólar.)* context7
       primeiro. **Depende da decisão de imposto internacional com o contador (P22)** antes da primeira
       venda fora do Brasil. **Trazido da 4.2 (10/10/2026):** a tela de assinar já recebe o valor e a
       moeda do servidor e já lê o cartão antes de a assinatura existir — o dólar entra no servidor,

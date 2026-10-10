@@ -105,6 +105,24 @@ dele, isto passa a ser uma **promessa nossa**, oferecida por escolha. Duas coisa
   arrependimento", sem citar os 7 dias que esta seção manda dizer. *Alinhar é decisão do operador
   (texto de interface é dele); fica aqui apontado, não corrigido.*
 
+**O PRAZO: 7 dias no Brasil, 14 dias fora** *(decisão do operador, 10/10/2026: "deixa no sistema
+7 dias Brasil e 14 dias lá fora" — depois de ver, na tabela da Udemy, que a lei de vários países
+dá 14)*. **Substitui, para fora do Brasil, os 7 dias prometidos ao mundo em 22/09** (acima).
+*Convenção de engenharia:* "Brasil ou fora" é o **país do cartão**, o mesmo critério da moeda
+(cobrança em real → 7 dias; em dólar → 14) — nunca o idioma do site. **A resposta de "Is there a
+refund?" ainda diz 7 dias** (é conteúdo do banco, editado em Admin → FAQ): trocar é do operador
+(P61). *Reabre se a escola vender num lugar em que a lei exija mais de 14 dias — a tabela da
+Udemy cita Quebec e Turquia, "a qualquer momento".*
+
+**Trocar de plano não recomeça o prazo** *(decisão do operador, 10/10/2026, como na Udemy)*: os
+dias contam do primeiro dia da assinatura; passar do mensal para o anual não abre prazo novo.
+*Reabre se chegar reclamação formal sobre o reembolso do plano anual.*
+
+**Sem advogado: a escola segue o que as grandes fazem** *(decisão do operador, 10/10/2026: "Eu
+não vou consultar advogado, vamos seguir como os grandes fazem")*. O modelo é a política da
+Udemy, descrita abaixo. *Reabre se chegar uma reclamação formal: Procon, juizado, ou cobrança
+contestada no cartão por reembolso negado.*
+
 **Cancelar e reembolso — a regra inteira** *(decisão do operador, 10/10/2026 — fecha a P56)*:
 - **O aluno cancela a qualquer momento**, inclusive cedo, só para não esquecer de ser cobrado
   (*"às vezes só quer estudar um mês"*). O acesso fica **garantido até o fim do período pago**.
@@ -139,9 +157,8 @@ aplicável"), mais busca na web; NÃO é parecer jurídico]`
 - **Os prazos da tabela dela:** Brasil 7 dias · Austrália, África do Sul, Taiwan e Tailândia 7 ·
   Argentina e Chile 10 · Colômbia e México 5 · **União Europeia, Reino Unido, Suíça e outros: 14** ·
   Quebec e Turquia: a qualquer momento.
-- **APONTADO, não decidido:** a página em inglês da escola promete 7 dias ao mundo (acima), e a
-  tabela da Udemy mostra países em que a lei dá **14**. Onde a lei der mais, vale a lei — os
-  termos precisam dizer isso (P61).
+- **Foi esta tabela que levou à decisão de 14 dias fora do Brasil** (acima, 10/10/2026): a
+  página em inglês da escola prometia 7 dias ao mundo, menos do que a lei de vários países.
 - **No Brasil, a própria Udemy diz que não consegue impedir de forma sistemática vários
   reembolsos**, porque a lei daqui não abre exceção para quem compra e devolve várias vezes:
   analisa caso a caso ([comunidade](https://community.udemy.com/pt/discussion/30395/reembolsos-acima-do-normal)).
@@ -156,12 +173,11 @@ aplicável"), mais busca na web; NÃO é parecer jurídico]`
 — a garantia de 7 dias prometida fora do Brasil é promessa nossa, e pode ter condição. Para o
 consumidor brasileiro, dentro dos 7 dias da lei, negar reembolso só pela cláusula é frágil: ali
 ela serve para dizer o que a escola considera abuso e para sustentar a análise caso a caso.
-**O texto dos termos é do operador, com advogado (P61).**
+**O texto dos termos é do operador, no modelo da cláusula da Udemy (P61).**
 **As travas que não dependem de texto** (já decididas ou no plano): o reembolso corta o acesso na
 hora · o painel de assinaturas (etapa 4.7b) mostra as cobranças devolvidas de cada aluno, para o
 caso a caso.
-*Reabre se o reembolso repetido virar prejuízo medido — aí um limite volta à mesa, com parecer de
-advogado.*
+*Reabre se o reembolso repetido virar prejuízo medido — aí um limite volta à mesa.*
 
 **Estado do código (10/10/2026): o reembolso ainda NÃO corta o acesso.** A fatura da Stripe não
 tem situação de "reembolsada" (as situações são `draft`, `open`, `paid`, `uncollectible` e `void`
