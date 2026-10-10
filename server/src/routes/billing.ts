@@ -1,9 +1,10 @@
 import { Router } from "express";
-import { previaSchema, type PlanosDaAssinatura, type PreviaDaAssinatura, type SituacaoDaAssinatura } from "@jilson/core";
+import { assinarSchema, previaSchema, type AssinaturaCriada, type PlanosDaAssinatura, type PreviaDaAssinatura, type SituacaoDaAssinatura } from "@jilson/core";
 import { requireAuth } from "../middleware/auth.js";
 import { validate } from "../lib/http.js";
 import { buscarCodigo, buscarPrecos, calcularPrevia, chavePublicavel, cobrancaConfigurada } from "../lib/stripe.js";
 import { temAcessoAtivo } from "../lib/acesso.js";
+import { assinar } from "../lib/checkout.js";
 
 // ASSINAR COM A CONTA LOGADA (Fase 4, etapa 4.2 — billing.md; CLAUDE.md → Membership Gating).
 // Tudo aqui exige login, e a conta é SEMPRE a da sessão. O site diz só QUAL plano e o código
@@ -64,6 +65,35 @@ router.get("/billing/assinatura", requireAuth, async (req, res) => {
     return;
   }
   const resposta: SituacaoDaAssinatura = { temAcesso: await temAcessoAtivo(user.id) };
+  res.json(resposta);
+});
+
+// POST /api/billing/assinatura — assinar. A regra inteira mora em `lib/checkout.ts`; aqui, só a
+// conta da SESSÃO (o corpo não diz de quem é) e a resposta. O segredo do pagamento vai SÓ na
+// resposta — nunca para o registro.
+router.post("/billing/assinatura", requireAuth, async (req, res) => {
+  const user = req.user;
+  if (!user) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  const corpo = validate(assinarSchema, req.body, res);
+  if (corpo === null) return;
+  if (!cobrancaConfigurada()) {
+    console.error("[stripe] assinatura recusada: STRIPE_SECRET_KEY ausente");
+    res.status(503).json({ error: "NaoConfigurado" });
+    return;
+  }
+  const desfecho = await assinar({ id: user.id, email: user.email, nome: user.name ?? null }, corpo);
+  if (desfecho.resultado === "ja-assinante") {
+    res.status(409).json({ error: "JaAssinante" });
+    return;
+  }
+  if (desfecho.resultado === "codigo-invalido") {
+    res.status(400).json({ error: "CodigoInvalido" });
+    return;
+  }
+  const resposta: AssinaturaCriada = desfecho.resultado === "ativa" ? { estado: "ativa" } : { estado: "pagar", segredo: desfecho.segredo, tipo: desfecho.tipo };
   res.json(resposta);
 });
 

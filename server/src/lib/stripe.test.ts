@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import Stripe from "stripe";
-import { chavePublicavel, erroSemMensagem, paraAssinaturaNaStripe, paraCodigoPromocional, paraPrecosDosPlanos } from "./stripe.js";
+import { chavePublicavel, erroSemMensagem, paraAssinaturaNaStripe, paraAssinaturaNoCheckout, paraCodigoPromocional, paraPrecosDosPlanos } from "./stripe.js";
 
 // O ESPELHO A PARTIR DA STRIPE (Fase 4, etapa 4.1) — função pura, teste unitário (CLAUDE.md →
 // Testing: só função pura, sem I/O). O que protege é o "PAGO ATÉ": quando a renovação falha, a
@@ -169,5 +169,37 @@ describe("o código promocional no formato da tela", () => {
 
   it("duração que a Stripe inventar depois: nada, em vez de descrever errado", () => {
     expect(paraCodigoPromocional(codigo({ duration: "lifetime_plus" }))).toBeNull();
+  });
+});
+
+// A ASSINATURA COMO O CHECKOUT A VÊ (etapa 4.2). O que protege: o segredo do pagamento só sai
+// de uma fatura AINDA ABERTA, e o plano e o código são os que o nosso checkout gravou.
+function doCheckout({ status = "incomplete", fatura = { status: "open", confirmation_secret: { client_secret: "pi_1_secret_x", type: "payment_intent" } } as object | string | null, cartao = null as { client_secret: string | null } | string | null, metadata = { userId: "u1", plano: "mensal" } as Record<string, string> } = {}): Stripe.Subscription {
+  // Seguro: o objeto de teste tem só os campos que a função lê; a forma completa é da Stripe.
+  return { id: "sub_1", status, latest_invoice: fatura, pending_setup_intent: cartao, metadata } as unknown as Stripe.Subscription;
+}
+
+describe("a assinatura como o checkout a vê", () => {
+  it("incompleta com a fatura aberta: o segredo do pagamento, o plano e nenhum código", () => {
+    expect(paraAssinaturaNoCheckout(doCheckout())).toEqual({ id: "sub_1", status: "incomplete", plano: "mensal", codigoId: null, segredoDoPagamento: "pi_1_secret_x", segredoDoCartao: null });
+  });
+
+  it("o código promocional com que foi criada", () => {
+    expect(paraAssinaturaNoCheckout(doCheckout({ metadata: { userId: "u1", plano: "anual", codigo: "promo_1" } })).codigoId).toBe("promo_1");
+  });
+
+  it("fatura anulada ou paga, não expandida ou ausente: SEM segredo do pagamento", () => {
+    for (const fatura of [{ status: "void", confirmation_secret: { client_secret: "pi_1_secret_x" } }, { status: "paid", confirmation_secret: { client_secret: "pi_1_secret_x" } }, { status: "open", confirmation_secret: null }, "in_so_o_id", null]) {
+      expect(paraAssinaturaNoCheckout(doCheckout({ fatura })).segredoDoPagamento).toBeNull();
+    }
+  });
+
+  it("o pedido de cartão, quando a Stripe manda um (nada a pagar hoje)", () => {
+    expect(paraAssinaturaNoCheckout(doCheckout({ status: "active", fatura: { status: "paid" }, cartao: { client_secret: "seti_1_secret_x" } })).segredoDoCartao).toBe("seti_1_secret_x");
+    expect(paraAssinaturaNoCheckout(doCheckout({ cartao: "seti_so_o_id" })).segredoDoCartao).toBeNull();
+  });
+
+  it("assinatura que não nasceu no nosso checkout (sem plano na metadata): plano vazio, nunca reaproveitada por engano", () => {
+    expect(paraAssinaturaNoCheckout(doCheckout({ metadata: {} })).plano).toBeNull();
   });
 });

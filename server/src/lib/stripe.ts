@@ -156,6 +156,100 @@ export async function calcularPrevia(precoId: string, codigoId: string): Promise
   }
 }
 
+/** Uma assinatura como o CHECKOUT a vê na Stripe, agora: só o que ele decide com ela. */
+export type AssinaturaNoCheckout = {
+  id: string;
+  status: string;
+  /** O plano e o código promocional com que o NOSSO checkout a criou (metadata). */
+  plano: string | null;
+  codigoId: string | null;
+  /** O segredo para o site confirmar o pagamento de hoje — só com a fatura ainda aberta. */
+  segredoDoPagamento: string | null;
+  /** O segredo para o site guardar o cartão quando hoje não há o que pagar. */
+  segredoDoCartao: string | null;
+};
+
+/** A assinatura da Stripe (com a fatura e o pedido de cartão expandidos) no formato do checkout. Função pura. */
+export function paraAssinaturaNoCheckout(assinatura: Stripe.Subscription): AssinaturaNoCheckout {
+  const fatura = assinatura.latest_invoice;
+  const aberta = typeof fatura === "object" && fatura !== null && fatura.status === "open";
+  const cartao = assinatura.pending_setup_intent;
+  return {
+    id: assinatura.id,
+    status: assinatura.status,
+    plano: assinatura.metadata.plano || null,
+    codigoId: assinatura.metadata.codigo || null,
+    segredoDoPagamento: aberta ? (fatura.confirmation_secret?.client_secret ?? null) : null,
+    segredoDoCartao: typeof cartao === "object" && cartao !== null ? cartao.client_secret : null,
+  };
+}
+
+const DO_CHECKOUT = ["latest_invoice.confirmation_secret", "pending_setup_intent"];
+
+/**
+ * Um cliente novo na Stripe para esta conta. O `userId` vai no cliente: é por ele que o aviso
+ * liga a assinatura à conta (`assinaturas.ts`). Quem garante UM cliente por conta é a tabela
+ * `stripe_customer` e a trava do checkout — sem chave de repetição aqui, de propósito: ela
+ * devolveria por 24 h o MESMO cliente, mesmo depois de ele ser apagado no painel.
+ */
+export async function criarCliente(conta: { userId: string; email: string; nome: string | null }): Promise<{ id: string; livemode: boolean }> {
+  try {
+    const cliente = await stripe().customers.create({ email: conta.email, name: conta.nome ?? undefined, metadata: { userId: conta.userId } });
+    return { id: cliente.id, livemode: cliente.livemode };
+  } catch (erro) {
+    throw erroSemMensagem(erro, "a criação do cliente");
+  }
+}
+
+/** As assinaturas deste cliente na Stripe, AGORA — de qualquer status (as últimas 20). */
+export async function assinaturasDoCliente(clienteId: string): Promise<AssinaturaNoCheckout[]> {
+  try {
+    const lista = await stripe().subscriptions.list({ customer: clienteId, status: "all", limit: 20, expand: DO_CHECKOUT.map((campo) => `data.${campo}`) });
+    return lista.data.map(paraAssinaturaNoCheckout);
+  } catch (erro) {
+    throw erroSemMensagem(erro, "a lista de assinaturas do cliente");
+  }
+}
+
+/**
+ * Cancela uma assinatura que estava INCOMPLETA e devolve o status em que ela ficou.
+ * `[FATO — medido na área restrita, 10/10/2026]` a incompleta vai para `incomplete_expired`, e a
+ * fatura dela é anulada. Qualquer outro status quer dizer que ela NÃO estava mais incompleta.
+ */
+export async function cancelarIncompleta(id: string): Promise<string> {
+  try {
+    return (await stripe().subscriptions.cancel(id)).status;
+  } catch (erro) {
+    throw erroSemMensagem(erro, "o cancelamento da assinatura incompleta");
+  }
+}
+
+// AS FORMAS DE PAGAMENTO DA ASSINATURA — uma lista só, aqui. Nesta etapa, cartão; o Pix (etapa
+// 4.9) é um item a mais, com o mandato.
+const FORMAS_DE_PAGAMENTO: Stripe.SubscriptionCreateParams.PaymentSettings.PaymentMethodType[] = ["card"];
+
+/**
+ * Cria a assinatura — INCOMPLETA até o site confirmar o pagamento (`default_incomplete`); com
+ * nada a pagar hoje, a Stripe já a devolve ativa. O `userId`, o plano e o código vão na
+ * assinatura: o primeiro liga à conta, os outros dois dizem se uma nova tentativa pode usar a mesma.
+ */
+export async function criarAssinatura(pedido: { clienteId: string; userId: string; precoId: string; plano: Plano; codigoId: string | null }): Promise<AssinaturaNoCheckout> {
+  try {
+    const assinatura = await stripe().subscriptions.create({
+      customer: pedido.clienteId,
+      items: [{ price: pedido.precoId, quantity: 1 }],
+      payment_behavior: "default_incomplete",
+      payment_settings: { save_default_payment_method: "on_subscription", payment_method_types: FORMAS_DE_PAGAMENTO },
+      discounts: pedido.codigoId ? [{ promotion_code: pedido.codigoId }] : undefined,
+      metadata: { userId: pedido.userId, plano: pedido.plano, ...(pedido.codigoId ? { codigo: pedido.codigoId } : {}) },
+      expand: DO_CHECKOUT,
+    });
+    return paraAssinaturaNoCheckout(assinatura);
+  } catch (erro) {
+    throw erroSemMensagem(erro, "a criação da assinatura");
+  }
+}
+
 /** A Stripe está configurada para receber avisos? Sem o segredo, NENHUM aviso é aceito. */
 export function avisosConfigurados(): boolean {
   return Boolean(process.env.STRIPE_WEBHOOK_SECRET);

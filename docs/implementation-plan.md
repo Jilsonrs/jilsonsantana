@@ -3338,7 +3338,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             **⚠️ A migration AINDA NÃO foi aplicada no banco de DEV** — espera o OK do operador
             (`npx prisma migrate deploy`, de dentro de `server/`, com o retrato antes e depois). Até
             lá, só a rota de criar a assinatura (passo 3b) falharia no dev; o resto não usa a tabela.
-      - [ ] **Passo 3b — servidor, criar a assinatura.** `POST /api/billing/assinatura` + testes (401
+      - [x] **Passo 3b — servidor, criar a assinatura.** `POST /api/billing/assinatura` + testes (401
             · plano inválido · 409 de quem já tem acesso · o corpo não escolhe preço nem conta ·
             código inválido · um cliente só · 100% → ativa · cartão → pagar · Stripe fora do ar sem
             vazar o erro · dois cliques) + **mutação**. **O desenho, para quem continuar:** tudo
@@ -3360,6 +3360,27 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             incompleta leva a `incomplete_expired`; e o que vem em `pending_setup_intent` com 100%.
             A prova na área restrita pode usar o banco LOCAL (que já tem a tabela) com as chaves de
             teste, sem esperar o banco de dev.
+            **FEITO (10/10/2026).** `server/src/lib/checkout.ts` (a regra) · em `lib/stripe.ts`:
+            `criarCliente`, `assinaturasDoCliente`, `cancelarIncompleta`, `criarAssinatura` (as formas
+            de pagamento numa lista só, hoje `card`) · `assinarSchema` no `core`. **Dois fatos medidos
+            na área restrita:** cancelar a incompleta a leva a `incomplete_expired` e anula a fatura;
+            o segredo da fatura aberta é de um pagamento (`pi_`). **Sem chave de repetição ao criar o
+            cliente, de propósito:** ela devolveria por 24 h o mesmo cliente mesmo depois de apagado
+            no painel. **Provado no app de verdade, com o banco LOCAL e a área restrita:** assinar
+            mensal → `pagar`, com o cliente da conta levando o `userId` · tentar de novo → o MESMO
+            segredo, uma assinatura só · trocar para anual → a mensal vira `incomplete_expired` e
+            nasce a anual · confirmar com o cartão de teste → 99500 centavos pagos, assinatura
+            `active`, cartão guardado nela · o espelho da 4.1 buscando essa assinatura na Stripe →
+            "tem acesso?" passa de não para sim · assinar de novo → 409 `JaAssinante`. O cliente de
+            teste foi apagado no fim. **Testes:** 18 de servidor + 5 unitários. **Mutação:** 10 de 10
+            reprovaram (sem a trava, quem já tem acesso assinando, a viva da Stripe ignorada, a
+            incompleta de outro plano e a de outro código reaproveitadas, a cancelada sem conferir,
+            o cliente não guardado, o desconto que acaba sem pedir cartão, o 100% para sempre
+            pedindo cartão, o segredo saindo de fatura fechada).
+            **NÃO provado ainda, fica para o passo 6 (com o operador):** o caminho do `TESTE100`
+            criando a assinatura de verdade (gastaria 1 dos 5 usos), a confirmação pelo navegador e
+            o aviso chegando pelo `stripe listen`. **Sem teste automático, só a prova acima:** as
+            quatro funções que vão à rede (os parâmetros que a Stripe aceita).
       - [ ] **Passo 4 — site, a tela `/aluno/assinar`.** `@stripe/stripe-js` e
             `@stripe/react-stripe-js` entram aqui. O layout padrão (`PageContainer`…), os textos pelo
             `useT()`, e a nossa fronteira com o Stripe.js num arquivo só (os testes simulam ELA, nunca
@@ -3415,10 +3436,14 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       amount, currency })` + `elements.submit()` + `confirmPayment` com o `clientSecret`) — **2
       consultas** (10/10/2026). Nos tipos da `stripe@23.0.0`: `prices.list` por `lookup_keys`,
       `invoices.createPreview`, `PromotionCode.promotion`, `Invoice.confirmation_secret`.
-      **PAREI EM (10/10/2026):** passos 1, 2 e 3a feitos e commitados no `dev` (nada publicado).
-      Próximo: **passo 3b** (criar a assinatura — o desenho está escrito no item). **Esperam o
-      operador:** o OK para aplicar a migration `20261010120000_cliente_da_stripe` no banco de dev,
-      e a revisão dos textos em rascunho, acima, antes do passo 4.
+      **PAREI EM (10/10/2026):** o SERVIDOR da etapa está pronto — passos 1, 2, 3a e 3b feitos e
+      commitados no `dev` (nada publicado). Próximo: **passo 4** (o site: a tela `/aluno/assinar`).
+      **Esperam o operador, antes do passo 4:** (1) o OK para aplicar a migration
+      `20261010120000_cliente_da_stripe` no banco de dev — sem ela, assinar falha no computador
+      dele; (2) a revisão dos textos em rascunho, acima; (3) saber que **o cartão só some com
+      desconto de 100% PARA SEMPRE** — com 100% só na primeira cobrança o cartão é pedido, porque a
+      cobrança seguinte precisa dele (consequência de como a Stripe funciona; se ele quiser outra
+      regra, muda em `lib/checkout.ts`).
 - [ ] **4.3 — No ar, em modo de teste: o PRIMEIRO TESTE REAL (sessão curta, com o operador).** As
       chaves de teste e o segredo do webhook no Railway, o endereço do webhook no painel — **com
       "www"**: `https://www.jilsonsantana.com/api/stripe/webhook` (medido em 09/10/2026: sem o "www",

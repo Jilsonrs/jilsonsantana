@@ -11,3 +11,14 @@ export const previaSchema = z.object({
   codigo: z.string().trim().min(1).max(64),
 });
 export type PreviaInput = z.infer<typeof previaSchema>;
+
+/**
+ * Corpo de `POST /api/billing/assinatura` — assinar (Fase 4, etapa 4.2). Só o plano e, se houver,
+ * o código promocional: a conta é a da sessão, e o preço é achado no servidor. Sem código, o
+ * campo NÃO vem (vazio é recusado: a tela não manda o que o aluno não aplicou).
+ */
+export const assinarSchema = z.object({
+  plano: z.enum(PLANOS),
+  codigo: z.string().trim().min(1).max(64).optional(),
+});
+export type AssinarInput = z.infer<typeof assinarSchema>;

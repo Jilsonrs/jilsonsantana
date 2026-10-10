@@ -43,3 +43,10 @@ export type PreviaDaAssinatura = { centavosHoje: number; moeda: string; desconto
 
 /** Resposta de `GET /api/billing/assinatura`: esta conta tem acesso agora? (a resposta do gate) */
 export type SituacaoDaAssinatura = { temAcesso: boolean };
+
+/**
+ * Resposta de `POST /api/billing/assinatura`. `ativa`: a Stripe já ativou (nada a pagar, hoje nem
+ * depois). `pagar`: o site confirma com o segredo — `pagamento` cobra hoje; `cartao` só guarda o
+ * cartão, para a cobrança seguinte (nada a pagar hoje, mas o desconto acaba).
+ */
+export type AssinaturaCriada = { estado: "ativa" } | { estado: "pagar"; segredo: string; tipo: "pagamento" | "cartao" };
