@@ -250,7 +250,10 @@ exige dizer quais avisos encaminhar (`stripe listen --all-snapshot --forward-to 
 `[FATO — context7 /websites/stripe, nota de versão de 30/09/2025]` **O botão "stripe" no canto da
 tela de assinar** é a ajuda de teste da própria Stripe: *"automatically rendered in Elements while
 using a sandbox environment"*. Aparece com as chaves de teste e não com as de verdade; desliga-se
-com `developerTools.assistant.enabled: false`.
+com `developerTools.assistant.enabled: false`. **Está DESLIGADO** (decisão do operador,
+10/10/2026: *"não precisamos desse botão"*), porque a produção fica com chaves de teste até o
+lançamento. *Reabre se alguém quiser usar a ajuda de teste da Stripe ao desenvolver — aí liga só
+fora de produção.*
 
 **Limitações conhecidas:** código promocional preso a UM cliente aparece como inválido na tela
 (a prévia não manda o cliente; hoje não existe código assim) · quem abre a tela de depois do

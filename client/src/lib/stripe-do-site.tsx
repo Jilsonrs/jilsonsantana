@@ -20,7 +20,10 @@ const carregadas = new Map<string, Promise<Stripe | null>>();
 function stripeDoSite(chavePublicavel: string): Promise<Stripe | null> {
   let stripe = carregadas.get(chavePublicavel);
   if (!stripe) {
-    stripe = loadStripe(chavePublicavel);
+    // Sem a ajuda de teste da Stripe (o botão "stripe" no canto da tela): ela aparece sozinha
+    // com as chaves de teste, e a produção fica com chaves de teste até o lançamento (decisão do
+    // operador, 10/10/2026: "não precisamos desse botão").
+    stripe = loadStripe(chavePublicavel, { developerTools: { assistant: { enabled: false } } });
     carregadas.set(chavePublicavel, stripe);
   }
   return stripe;

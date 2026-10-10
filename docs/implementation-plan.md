@@ -3597,6 +3597,9 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       `client/src/lib/stripe-do-site.tsx` (`developerTools.assistant.enabled: false`, opção que
       existe nos tipos da biblioteca) — se desliga, é decisão dele. *5 consultas ao context7 no
       dia para esta etapa (uma sem resultado).*
+      **DESLIGADO (decisão do operador, 10/10/2026):** *"Desliga ela… não precisamos desse botão
+      do Stripe."* Conferido no navegador de teste: o botão sumiu, o campo de pagamento continua
+      abrindo, e a Stripe não relatou erro.
 - [ ] **4.3 — No ar, em modo de teste: o PRIMEIRO TESTE REAL (sessão curta, com o operador).** As
       chaves de teste e o segredo do webhook no Railway, o endereço do webhook no painel — **com
       "www"**: `https://www.jilsonsantana.com/api/stripe/webhook` (medido em 09/10/2026: sem o "www",
@@ -3637,8 +3640,9 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       4.2 só conta logada confere código, e o cadastro é fechado) · os botões Assinar da home
       passam a funcionar sem login.
       **Pedido do operador (10/10/2026, depois de testar a 4.2):** *"tem que funcionar também a
-      partir do card da home para quem não é cadastrado no site"* — é esta etapa. Se ela sobe na
-      ordem (hoje vem depois da 4.3 à 4.6) é decisão dele, levada a ele no mesmo dia.
+      partir do card da home para quem não é cadastrado no site"* — é esta etapa. **A ordem fica
+      a do plano** (decisão dele, no mesmo dia: *"Seguir a ordem do plano"*), e o Resend e o
+      remetente (P49) se resolvem **com a ajuda do agente, na hora** em que esta etapa abrir.
       **Trazido da revisão de segurança da 4.2 (10/10/2026) — pré-requisitos de abrir ao
       visitante:** (a) o limite de tentativas é **por conta e por IP** (`x-real-ip`) e cobre as
       DUAS rotas que conferem código (`/billing/previa` e `/billing/assinatura`), que também são
