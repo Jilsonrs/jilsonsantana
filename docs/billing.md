@@ -110,11 +110,13 @@ dele, isto passa a ser uma **promessa nossa**, oferecida por escolha. Duas coisa
 dá 14)*. **Substitui, para fora do Brasil, os 7 dias prometidos ao mundo em 22/09** (acima).
 *Convenção de engenharia:* "Brasil ou fora" é o **país do cartão**, o mesmo critério da moeda
 (cobrança em real → 7 dias; em dólar → 14) — nunca o idioma do site. **A resposta de "Is there a
-refund?" passou a dizer 14 dias** *(pedido do operador, 10/10/2026: "muda para 14 em inglês")*:
-"Yes, we offer a 14-day money-back guarantee (7 days for purchases made in Brazil)." — por uma
-migration de dado, que só troca o texto de fábrica (uma edição feita em Admin → FAQ não é
-sobrescrita). O trecho entre parênteses veio da sugestão do agente, para a promessa valer também
-para quem lê em inglês e paga com cartão do Brasil; ele pode cortar em Admin → FAQ. *Reabre se a escola vender num lugar em que a lei exija mais de 14 dias — a tabela da
+refund?" passou a dizer 14 dias** *(pedido do operador, 10/10/2026: "muda para 14 em inglês";
+o texto é o dele: "14-day money-back guarantee")*: **"Yes, we offer a 14-day money-back
+guarantee."** — por duas migrations de dado, que só trocam o texto de fábrica (uma edição feita
+em Admin → FAQ não é sobrescrita). A primeira gravou a sugestão do agente, com "(7 days for
+purchases made in Brazil)"; ele escolheu o texto sem o parêntese, e a segunda tirou.
+**Consequência conhecida:** quem lê a página em inglês e paga com cartão do Brasil lê 14 dias,
+e a regra do cartão dá 7 — a decidir quando a cobrança em dólar for construída (etapa 4.8). *Reabre se a escola vender num lugar em que a lei exija mais de 14 dias — a tabela da
 Udemy cita Quebec e Turquia, "a qualquer momento".*
 
 **Trocar de plano não recomeça o prazo** *(decisão do operador, 10/10/2026, como na Udemy)*: os

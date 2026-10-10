@@ -205,8 +205,9 @@
 > (a apresentação abre pausada, a aula toca sozinha) e o "Salvos". **Primeiro teste com o player de
 > verdade: com o operador** (assistir uma aula até perto do fim e ver a barra andar).
 > **NO `dev`, AINDA NÃO PUBLICADO (10/10/2026):** a resposta de "Is there a refund?" na página em
-> inglês passa a dizer 14 dias (migration de dado `reembolso_de_14_dias_na_resposta_em_ingles`,
-> sem mudança de estrutura; aplicada no banco de desenvolvimento) e as decisões de reembolso do
+> inglês passa a dizer "Yes, we offer a 14-day money-back guarantee." (duas migrations de dado,
+> `reembolso_de_14_dias_na_resposta_em_ingles` e `resposta_do_reembolso_em_ingles_sem_o_parentese`,
+> sem mudança de estrutura; aplicadas no banco de desenvolvimento) e as decisões de reembolso do
 > mesmo dia, só em documento (`billing.md` → *Reembolso*). Vai ao site na próxima publicação.
 > **PUBLICADO em 10/10/2026, por último (`main` = `91cb4dc`, CI verde nos dois jobs, deploy ok;
 > sem migration; publicação autorizada pelo operador: "Publica a 4.4"):** a Fase 4, etapa 4.4 —
@@ -4091,7 +4092,9 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       não há bloqueio automático por reembolso repetido (decisão do operador, 10/10/2026).
 - [ ] **4.8 — Dólar pelo país do cartão + o botão das páginas em inglês (código + decisão).**
       *(Decisão do operador, 10/10/2026: fora do Brasil o prazo de reembolso é de 14 dias —
-      `billing.md` → Reembolso. Esta etapa liga os 14 dias à cobrança em dólar.)* context7
+      `billing.md` → Reembolso. Esta etapa liga os 14 dias à cobrança em dólar. A decidir com
+      ele aqui: a página em inglês promete 14 dias a todos, e quem paga com cartão do Brasil
+      teria 7 pela regra do cartão.)* context7
       primeiro. **Depende da decisão de imposto internacional com o contador (P22)** antes da primeira
       venda fora do Brasil. **Trazido da 4.2 (10/10/2026):** a tela de assinar já recebe o valor e a
       moeda do servidor e já lê o cartão antes de a assinatura existir — o dólar entra no servidor,
