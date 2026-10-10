@@ -3979,9 +3979,10 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       o aluno cancela quando quiser e mantém o acesso pago · **dentro dos 7 dias a tela oferece
       as duas saídas** — "parar a renovação e continuar" e "cancelar e receber o dinheiro de
       volta" · **o reembolso corta o acesso na hora** (o período devolvido deixa de contar como
-      pago no espelho; hoje a Stripe segue dizendo "paga") · **no máximo 2 reembolsos por
-      aluno**: depois do segundo, a conta não assina mais, e a mensagem não diz que foi
-      bloqueada — **só vale depois da P61** (advogado e o texto da mensagem).
+      pago no espelho; hoje a Stripe segue dizendo "paga") · **reembolso repetido não tem
+      bloqueio automático** (decisão dele no mesmo dia, que substituiu o "no máximo 2
+      reembolsos"): a trava é a cláusula de reembolso abusivo nos termos de uso (P61) e a
+      análise caso a caso — esta etapa NÃO constrói contador nem recusa de assinatura.
 - [ ] **4.7 — O visitante assina: a conta nasce no pagamento (código, ALTO RISCO).** O checkout
       público: e-mail + pagamento → o webhook cria a conta (o cadastro continua fechado) e manda o
       e-mail de "crie sua senha". **Depende do Resend configurado e da P49** (o remetente). Junto:
@@ -4078,7 +4079,9 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       e devolver o dinheiro são as mesmas operações da tela do aluno (etapa 4.6): quando este
       painel começar, elas já existem. context7 da Stripe antes de escrever; revisão de
       segurança ao fim.
-      **Em aberto:** P61 (o limite de 2 reembolsos: advogado, e o texto que a pessoa lê).
+      **Em aberto:** P61 (a cláusula de reembolso abusivo nos termos de uso). O detalhe de cada
+      assinatura mostra as cobranças devolvidas: é o que sustenta a análise caso a caso, já que
+      não há bloqueio automático por reembolso repetido (decisão do operador, 10/10/2026).
 - [ ] **4.8 — Dólar pelo país do cartão + o botão das páginas em inglês (código + decisão).** context7
       primeiro. **Depende da decisão de imposto internacional com o contador (P22)** antes da primeira
       venda fora do Brasil. **Trazido da 4.2 (10/10/2026):** a tela de assinar já recebe o valor e a

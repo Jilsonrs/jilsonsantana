@@ -118,26 +118,40 @@ duas saídas — **"parar a renovação e continuar"** (assiste até o fim do pe
 **"cancelar e receber o dinheiro de volta"** (perde o acesso na hora). *Sem gatilho próprio:
 acompanha a regra acima.*
 
-**No máximo 2 reembolsos por aluno** *(decisão do operador, 10/10/2026: "2 reembolsos máximo por
-aluno" — do terceiro em diante "está agindo de má fé")*. Depois do segundo, **aquela conta não
-assina mais**, e a mensagem **não diz que ela foi bloqueada**. A regra recusa a assinatura NOVA;
-não nega reembolso de ninguém — assim nunca existe um terceiro pedido a negar.
-`[PESQUISA — busca na web, 10/10/2026; NÃO é parecer jurídico]` O art. 49 do CDC dá os 7 dias sem
-exigir motivo e **não diz quantas vezes**. Não achamos lei nem decisão de tribunal superior sobre
-uso repetido: a doutrina fala em boa-fé e abuso de direito, sem consenso
-([Conjur](https://www.conjur.com.br/2025-set-16/litigancia-predatoria-no-e-commerce-o-desafio-do-direito-de-retencao//?print=1),
-[UniCEUB](https://repositorio.uniceub.br/jspui/bitstream/prefix/17158/1/22002038.pdf)). O art. 39,
-II e IX, trata como prática abusiva recusar venda a quem quer pagar, e o TJDFT admite a recusa
-quando há **justa causa**
-([TJDFT](https://www.tjdft.jus.br/consultas/jurisprudencia/jurisprudencia-em-temas/cdc-na-visao-do-tjdft-1/praticas-abusivas/recusa-de-contratar-pelo-fornecedor)).
-**Por isso a regra só vale depois de um advogado confirmar (P61)**, e convém estar escrita nos
-termos de uso.
-**Em aberto (P61):** o texto que essa pessoa lê. O operador sugeriu algo como "digite um e-mail
-válido"; recomendação do agente: uma frase neutra e verdadeira ("Não foi possível concluir a
-assinatura nesta conta. Fale com a gente."), porque uma mensagem falsa enfraquece a justa causa
-se alguém reclamar. **Proposta do agente, a decidir ao construir:** contar também pelo cartão (o
-mesmo cartão com outro e-mail).
-*Reabre com a resposta do advogado, ou se a regra barrar aluno de boa-fé.*
+**Reembolso repetido: SEM bloqueio automático — a trava são os termos de uso** *(decisão do
+operador, 10/10/2026: "não barrar depois de 2 reembolsos, vamos usar outras travas colocando
+alguma coisa nos termos" — quem pede reembolso de forma abusiva, contra as políticas da escola,
+perde o direito a ele. **Substitui** o "no máximo 2 reembolsos por aluno" decidido horas antes, no
+mesmo dia, e nunca construído.)* **Referência dele: a Udemy.**
+`[PESQUISA — busca na web, 10/10/2026; a página oficial da Udemy não abriu para o agente (403);
+NÃO é parecer jurídico]`
+- **Como a Udemy faz:** ela se reserva o direito de limitar ou negar o reembolso quando entende
+  que há abuso — parte grande do curso já assistida ou baixada, vários pedidos do mesmo curso,
+  conta com reembolso demais — e de restringir a conta
+  ([comunicado](https://teach.udemy.com/new-refund-system-policy-updates/),
+  [resposta a instrutor](https://community.udemy.com/en/discussion/82596/the-same-student-keeps-asking-for-refunds-and-signing-up-again)).
+  Nas assinaturas ela não devolve, "a menos que a lei aplicável exija"
+  ([política](https://support.udemy.com/hc/articles/360050856093)).
+- **No Brasil, a própria Udemy diz que não consegue impedir de forma sistemática vários
+  reembolsos**, porque a lei daqui não abre exceção para quem compra e devolve várias vezes:
+  analisa caso a caso ([comunidade](https://community.udemy.com/pt/discussion/30395/reembolsos-acima-do-normal)).
+- **O que a lei diz:** o art. 49 do CDC dá os 7 dias sem exigir motivo e não diz quantas vezes;
+  não achamos lei nem decisão de tribunal superior sobre uso repetido — a doutrina fala em boa-fé
+  e abuso de direito, sem consenso
+  ([Conjur](https://www.conjur.com.br/2025-set-16/litigancia-predatoria-no-e-commerce-o-desafio-do-direito-de-retencao//?print=1)).
+  E cláusula que tira o arrependimento já foi anulada
+  ([TJDF](https://www.conjur.com.br/2025-out-18/homem-e-pressionado-a-contratar-curso-enganoso-e-tj-df-determina-devolucao-de-dinheiro//?print=1)).
+
+**O que isso muda para a escola:** a cláusula vale por inteiro para o que a escola dá ALÉM da lei
+— a garantia de 7 dias prometida fora do Brasil é promessa nossa, e pode ter condição. Para o
+consumidor brasileiro, dentro dos 7 dias da lei, negar reembolso só pela cláusula é frágil: ali
+ela serve para dizer o que a escola considera abuso e para sustentar a análise caso a caso.
+**O texto dos termos é do operador, com advogado (P61).**
+**As travas que não dependem de texto** (já decididas ou no plano): o reembolso corta o acesso na
+hora · o painel de assinaturas (etapa 4.7b) mostra as cobranças devolvidas de cada aluno, para o
+caso a caso.
+*Reabre se o reembolso repetido virar prejuízo medido — aí um limite volta à mesa, com parecer de
+advogado.*
 
 **Estado do código (10/10/2026): o reembolso ainda NÃO corta o acesso.** A fatura da Stripe não
 tem situação de "reembolsada" (as situações são `draft`, `open`, `paid`, `uncollectible` e `void`
