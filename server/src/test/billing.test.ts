@@ -11,7 +11,7 @@ type PedidoDeAssinatura = { clienteId: string; userId: string; precoId: string; 
 const criarCliente = vi.fn<(conta: { userId: string; email: string; nome: string | null }) => Promise<{ id: string; livemode: boolean }>>();
 const assinaturasDoCliente = vi.fn<(clienteId: string) => Promise<AssinaturaNoCheckout[]>>();
 const cancelarIncompleta = vi.fn<(id: string) => Promise<string>>();
-const criarAssinatura = vi.fn<(pedido: PedidoDeAssinatura) => Promise<AssinaturaNoCheckout>>();
+const criarAssinatura = vi.fn<(pedido: PedidoDeAssinatura) => Promise<AssinaturaNoCheckout | null>>();
 vi.mock("../lib/stripe.js", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../lib/stripe.js")>()),
   buscarPrecos: () => buscarPrecos(),
@@ -260,8 +260,11 @@ describe("POST /api/billing/assinatura", () => {
   let memberEmail = "";
 
   // A Stripe de mentira, com memória: o que foi criado aparece na lista seguinte — como na de verdade.
-  let naStripe: AssinaturaNoCheckout[] = [];
-  const incompleta = (id: string, plano: string, codigoId: string | null = null): AssinaturaNoCheckout => ({ id, status: "incomplete", plano, codigoId, segredoDoPagamento: `pi_${id}_secret_x`, segredoDoCartao: null });
+  // Cada assinatura criada fica com o cliente que a pediu; as postas à mão num teste (sem
+  // `cliente`) valem para quem perguntar.
+  let naStripe: (AssinaturaNoCheckout & { cliente?: string })[] = [];
+  const incompleta = (id: string, precoId: string, codigoId: string | null = null): AssinaturaNoCheckout => ({ id, status: "incomplete", precoId, codigoId, segredoDoPagamento: `pi_${id}_secret_x`, segredoDoCartao: null });
+  const encerrada = (id: string, status: string): AssinaturaNoCheckout => ({ id, status, precoId: "price_mensal", codigoId: null, segredoDoPagamento: null, segredoDoCartao: null });
 
   /** Roda o bloco com a assinatura de teste do member@ vencida, e devolve ela ao fim. */
   async function semAssinatura(fn: () => Promise<void>) {
@@ -284,7 +287,7 @@ describe("POST /api/billing/assinatura", () => {
     naStripe = [];
     let n = 0;
     criarCliente.mockReset().mockImplementation(async () => ({ id: `cus_${S}_${++n}`, livemode: false }));
-    assinaturasDoCliente.mockReset().mockImplementation(async () => [...naStripe]);
+    assinaturasDoCliente.mockReset().mockImplementation(async (clienteId) => naStripe.filter((a) => a.cliente === undefined || a.cliente === clienteId));
     cancelarIncompleta.mockReset().mockImplementation(async (id) => {
       naStripe = naStripe.map((a) => (a.id === id ? { ...a, status: "incomplete_expired", segredoDoPagamento: null } : a));
       return "incomplete_expired";
@@ -292,8 +295,8 @@ describe("POST /api/billing/assinatura", () => {
     criarAssinatura.mockReset().mockImplementation(async (pedido) => {
       // Um instante, como a rede: sem a trava por conta, dois pedidos juntos passariam os dois da lista.
       await new Promise((ok) => setTimeout(ok, 30));
-      const nova = incompleta(`sub_${S}_${++n}`, pedido.plano, pedido.codigoId);
-      naStripe.push(nova);
+      const nova = incompleta(`sub_${S}_${++n}`, pedido.precoId, pedido.codigoId);
+      naStripe.push({ ...nova, cliente: pedido.clienteId });
       return nova;
     });
   });
@@ -414,30 +417,32 @@ describe("POST /api/billing/assinatura", () => {
     }
   });
 
-  it("a STRIPE diz que a conta já assina (o espelho está atrasado): 409, e nenhuma nova", async () => {
+  it("a STRIPE diz que a conta já assina (o espelho está atrasado): 409, e nenhuma nova — e GRITA quando ela dá acesso lá (há alguém pagando e trancado fora)", async () => {
     const aviso = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const grito = vi.spyOn(console, "error").mockImplementation(() => {});
     try {
       await semAssinatura(async () => {
         for (const status of ["active", "past_due", "unpaid", "trialing", "paused"]) {
-          naStripe = [{ id: `sub_viva_${status}`, status, plano: "mensal", codigoId: null, segredoDoPagamento: null, segredoDoCartao: null }];
+          naStripe = [encerrada(`sub_viva_${status}`, status)];
           const res = await assinarComo({ plano: "anual" }, member);
           expect(res.status).toBe(409);
         }
         expect(criarAssinatura).not.toHaveBeenCalled();
         expect(cancelarIncompleta).not.toHaveBeenCalled();
-        expect(aviso).toHaveBeenCalledTimes(5);
+        // active, past_due e trialing dão acesso na Stripe: erro. unpaid e paused: aviso.
+        expect(grito.mock.calls.map(([linha]) => String(linha).match(/sub_viva_(\w+)/)?.[1])).toEqual(["active", "past_due", "trialing"]);
+        expect(grito.mock.calls.every(([linha]) => String(linha).includes("trancado fora"))).toBe(true);
+        expect(aviso.mock.calls.map(([linha]) => String(linha).match(/sub_viva_(\w+)/)?.[1])).toEqual(["unpaid", "paused"]);
       });
     } finally {
       aviso.mockRestore();
+      grito.mockRestore();
     }
   });
 
   it("assinatura encerrada na Stripe (cancelada ou expirada) não impede assinar de novo", async () => {
     await semAssinatura(async () => {
-      naStripe = [
-        { id: "sub_cancelada", status: "canceled", plano: "mensal", codigoId: null, segredoDoPagamento: null, segredoDoCartao: null },
-        { id: "sub_expirada", status: "incomplete_expired", plano: "mensal", codigoId: null, segredoDoPagamento: null, segredoDoCartao: null },
-      ];
+      naStripe = [encerrada("sub_cancelada", "canceled"), encerrada("sub_expirada", "incomplete_expired")];
       const res = await assinarComo({ plano: "mensal" }, member);
       expect(res.status).toBe(200);
       expect(res.body.estado).toBe("pagar");
@@ -457,7 +462,7 @@ describe("POST /api/billing/assinatura", () => {
   });
 
   it("código de 100% para sempre: a Stripe já devolve ativa — sem cartão, sem segredo", async () => {
-    criarAssinatura.mockImplementation(async (pedido) => ({ id: "sub_cem", status: "active", plano: pedido.plano, codigoId: pedido.codigoId, segredoDoPagamento: null, segredoDoCartao: "seti_cem_secret_x" }));
+    criarAssinatura.mockImplementation(async (pedido) => ({ id: "sub_cem", status: "active", precoId: pedido.precoId, codigoId: pedido.codigoId, segredoDoPagamento: null, segredoDoCartao: "seti_cem_secret_x" }));
     await semAssinatura(async () => {
       const res = await assinarComo({ plano: "mensal", codigo: " teste100 " }, member);
       expect(res.status).toBe(200);
@@ -469,7 +474,7 @@ describe("POST /api/billing/assinatura", () => {
 
   it("100% só na primeira cobrança: nada hoje, mas o cartão é guardado para a seguinte", async () => {
     buscarCodigo.mockResolvedValue({ id: "promo_primeira", desconto: { percentual: 100, centavos: null, duracao: "uma-vez", meses: null } });
-    criarAssinatura.mockImplementation(async (pedido) => ({ id: "sub_primeira", status: "active", plano: pedido.plano, codigoId: pedido.codigoId, segredoDoPagamento: null, segredoDoCartao: "seti_primeira_secret_x" }));
+    criarAssinatura.mockImplementation(async (pedido) => ({ id: "sub_primeira", status: "active", precoId: pedido.precoId, codigoId: pedido.codigoId, segredoDoPagamento: null, segredoDoCartao: "seti_primeira_secret_x" }));
     await semAssinatura(async () => {
       const res = await assinarComo({ plano: "mensal", codigo: "PRIMEIRA" }, member);
       expect(res.body).toEqual({ estado: "pagar", segredo: "seti_primeira_secret_x", tipo: "cartao" });
@@ -499,18 +504,119 @@ describe("POST /api/billing/assinatura", () => {
     });
   });
 
-  it("o segredo do pagamento não vai para o registro", async () => {
-    const registro = vi.spyOn(console, "info").mockImplementation(() => {});
+  it("o segredo do pagamento não vai para o registro — por nenhuma das quatro vias", async () => {
+    const vias = (["info", "warn", "error", "log"] as const).map((via) => vi.spyOn(console, via).mockImplementation(() => {}));
     try {
       await semAssinatura(async () => {
         const res = await assinarComo({ plano: "mensal" }, member);
-        const linhas = registro.mock.calls.map((linha) => linha.join(" ")).join("\n");
+        // Também nos caminhos que gritam: a viva na Stripe e a paga no cancelamento.
+        cancelarIncompleta.mockResolvedValueOnce("canceled");
+        await assinarComo({ plano: "anual" }, member);
+        naStripe = [encerrada("sub_viva", "active")];
+        await assinarComo({ plano: "mensal" }, member);
+        const linhas = vias.flatMap((via) => via.mock.calls.map((linha) => linha.join(" "))).join("\n");
         expect(linhas).toContain("checkout");
+        expect(linhas).toContain("trancado fora");
         expect(linhas).not.toContain(res.body.segredo);
         expect(linhas).not.toContain("_secret_");
       });
     } finally {
-      registro.mockRestore();
+      for (const via of vias) via.mockRestore();
     }
+  });
+
+  // ── Achados da revisão de segurança da etapa (10/10/2026) ────────────────────────────────────
+
+  it("DUAS contas: cada uma com o SEU cliente — a incompleta de uma nunca volta para a outra", async () => {
+    const admin = await sessao(process.env.SEED_ADMIN_EMAIL, process.env.SEED_ADMIN_PASSWORD);
+    const adminId = (await prisma.user.findUniqueOrThrow({ where: { email: process.env.SEED_ADMIN_EMAIL }, select: { id: true } })).id;
+    try {
+      await semAssinatura(async () => {
+        const doMember = await assinarComo({ plano: "mensal" }, member);
+        const doAdmin = await assinarComo({ plano: "mensal" }, admin);
+        expect(doAdmin.status).toBe(200);
+        expect(doAdmin.body.segredo).not.toBe(doMember.body.segredo);
+        const clientes = await prisma.stripeCustomer.findMany({ where: { userId: { in: [memberId, adminId] } } });
+        const clienteDe = (userId: string) => clientes.find((c) => c.userId === userId)?.stripeCustomerId;
+        expect(clienteDe(adminId)).toBeTruthy();
+        expect(clienteDe(adminId)).not.toBe(clienteDe(memberId));
+        // A lista e a criação do admin foram pedidas com o cliente e a conta DELE.
+        expect(assinaturasDoCliente).toHaveBeenLastCalledWith(clienteDe(adminId));
+        expect(criarAssinatura).toHaveBeenLastCalledWith(expect.objectContaining({ userId: adminId, clienteId: clienteDe(adminId) }));
+        expect(criarAssinatura).toHaveBeenCalledTimes(2);
+        expect(criarCliente).toHaveBeenCalledTimes(2);
+      });
+    } finally {
+      await prisma.stripeCustomer.deleteMany({ where: { userId: adminId } });
+    }
+  });
+
+  it("o checkout NÃO grava o espelho: depois de assinar (a pagar, ou já ativa na Stripe), a conta segue sem acesso até o aviso chegar", async () => {
+    await semAssinatura(async () => {
+      const antes = await prisma.subscription.count({ where: { ownerUserId: memberId } });
+      expect((await assinarComo({ plano: "mensal" }, member)).body.estado).toBe("pagar");
+      criarAssinatura.mockImplementation(async (pedido) => ({ id: "sub_cem", status: "active", precoId: pedido.precoId, codigoId: pedido.codigoId, segredoDoPagamento: null, segredoDoCartao: null }));
+      expect((await assinarComo({ plano: "mensal", codigo: "TESTE100" }, member)).body.estado).toBe("ativa");
+      expect(await prisma.subscription.count({ where: { ownerUserId: memberId } })).toBe(antes);
+      expect((await request(servidor).get("/api/billing/assinatura").set("Cookie", member)).body).toEqual({ temAcesso: false });
+    });
+  });
+
+  it("quem já tem acesso NEM chega à Stripe: a resposta não diz a um assinante se um código existe", async () => {
+    buscarCodigo.mockResolvedValue(null);
+    const comCodigoQueNaoExiste = await assinarComo({ plano: "mensal", codigo: "NAOEXISTE" }, member);
+    buscarCodigo.mockResolvedValue(CEM_PARA_SEMPRE);
+    const comCodigoQueExiste = await assinarComo({ plano: "mensal", codigo: "TESTE100" }, member);
+    expect(comCodigoQueNaoExiste.status).toBe(409);
+    expect(comCodigoQueExiste.status).toBe(409);
+    expect(comCodigoQueExiste.body).toEqual(comCodigoQueNaoExiste.body);
+    expect(buscarCodigo).not.toHaveBeenCalled();
+    expect(buscarPrecos).not.toHaveBeenCalled();
+  });
+
+  it("o aviso da Stripe chegou enquanto o pedido esperava: COM a trava, confere de novo — 409, sem ir às assinaturas na Stripe", async () => {
+    await semAssinatura(async () => {
+      // A busca dos preços roda ANTES da trava: no meio dela, o aviso libera a conta.
+      buscarPrecos.mockImplementationOnce(async () => {
+        await prisma.subscription.update({ where: { stripeSubscriptionId: ASSINATURA_DE_TESTE }, data: { status: "active", currentPeriodEnd: new Date("2100-01-01T00:00:00Z") } });
+        return PRECOS;
+      });
+      const res = await assinarComo({ plano: "mensal" }, member);
+      expect(res.status).toBe(409);
+      expect(assinaturasDoCliente).not.toHaveBeenCalled();
+      expect(criarAssinatura).not.toHaveBeenCalled();
+    });
+  });
+
+  it("a Stripe recusa o desconto NA CRIAÇÃO (o código esgotou entre a prévia e o clique): 400 CodigoInvalido, igual a código que não existe", async () => {
+    criarAssinatura.mockResolvedValue(null);
+    await semAssinatura(async () => {
+      const res = await assinarComo({ plano: "mensal", codigo: "ESGOTOU" }, member);
+      expect(res.status).toBe(400);
+      expect(res.body).toEqual({ error: "CodigoInvalido" });
+    });
+  });
+
+  it("o PREÇO do plano mudou: a incompleta do preço antigo NÃO é reaproveitada — é cancelada, e nasce outra com o preço de agora", async () => {
+    await semAssinatura(async () => {
+      naStripe = [incompleta("sub_do_preco_antigo", "price_mensal_antigo")];
+      const res = await assinarComo({ plano: "mensal" }, member);
+      expect(res.status).toBe(200);
+      expect(res.body.segredo).not.toBe("pi_sub_do_preco_antigo_secret_x");
+      expect(cancelarIncompleta).toHaveBeenCalledWith("sub_do_preco_antigo");
+      expect(criarAssinatura).toHaveBeenCalledWith(expect.objectContaining({ precoId: "price_mensal" }));
+    });
+  });
+
+  it("nenhuma resposta por conta fica em cache — nem a que leva o segredo do pagamento", async () => {
+    const semCache = "private, no-store";
+    expect((await planos(member)).headers["cache-control"]).toBe(semCache);
+    expect((await previa({ plano: "mensal", codigo: "TESTE100" }, member)).headers["cache-control"]).toBe(semCache);
+    expect((await request(servidor).get("/api/billing/assinatura").set("Cookie", member)).headers["cache-control"]).toBe(semCache);
+    await semAssinatura(async () => {
+      const res = await assinarComo({ plano: "mensal" }, member);
+      expect(res.body.segredo).toBeTruthy();
+      expect(res.headers["cache-control"]).toBe(semCache);
+    });
   });
 });

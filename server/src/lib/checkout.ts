@@ -10,7 +10,7 @@ import { assinaturasDoCliente, buscarCodigo, buscarPrecos, cancelarIncompleta, c
 //   2. UMA CONTA É UM CLIENTE na Stripe: acha em `stripe_customer`, ou cria e grava;
 //   3. o que a STRIPE diz deste cliente, agora — o espelho pode estar atrasado:
 //        - uma assinatura VIVA (nem incompleta, nem encerrada) → já é assinante;
-//        - uma INCOMPLETA do mesmo plano e do mesmo código → é ela (o cartão recusado e a nova
+//        - uma INCOMPLETA do mesmo preço e do mesmo código → é ela (o cartão recusado e a nova
 //          tentativa não criam outra);
 //        - incompleta de outro plano ou código → cancela, e só então cria a nova;
 //   4. cria a assinatura, incompleta até o SITE confirmar o pagamento.
@@ -41,7 +41,14 @@ async function clienteDaConta(conta: Conta): Promise<string> {
   return novo.id;
 }
 
+/** Na Stripe a assinatura está DANDO acesso: se o espelho não dá, há alguém pagando e trancado fora. */
+const DA_ACESSO_NA_STRIPE: ReadonlySet<string> = new Set(["active", "trialing", "past_due"]);
+
 export async function assinar(conta: Conta, pedido: AssinarInput): Promise<Desfecho> {
+  // Quem já tem acesso nem chega à Stripe: senão a resposta diria a um assinante se um código
+  // promocional existe (400) ou não (409) — achado da revisão de segurança, 10/10/2026.
+  if (await temAcessoAtivo(conta.id)) return { resultado: "ja-assinante" };
+
   // Leituras, antes da trava: o preço do plano pedido e o código, se veio um.
   const [precos, codigo] = await Promise.all([buscarPrecos(), pedido.codigo ? buscarCodigo(pedido.codigo) : null]);
   const preco = precos.find((p) => p.plano === pedido.plano);
@@ -51,6 +58,7 @@ export async function assinar(conta: Conta, pedido: AssinarInput): Promise<Desfe
 
   return prisma.$transaction(async (tx): Promise<Desfecho> => {
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`assinar:${conta.id}`}))`;
+    // De novo, com a trava: o aviso da Stripe pode ter chegado enquanto este pedido esperava.
     if (await temAcessoAtivo(conta.id)) return { resultado: "ja-assinante" };
 
     const clienteId = await clienteDaConta(conta);
@@ -58,14 +66,19 @@ export async function assinar(conta: Conta, pedido: AssinarInput): Promise<Desfe
     const viva = existentes.find((a) => a.status !== "incomplete");
     if (viva) {
       // A Stripe diz que há assinatura; o espelho, que não dá acesso. O aviso está atrasado ou se
-      // perdeu (a sincronia forçada é a etapa 4.4) — em voz alta, e sem criar outra.
-      console.warn(`[stripe] checkout: a conta ${conta.id} já tem a assinatura ${viva.id} (${viva.status}) na Stripe, e o espelho não dá acesso`);
+      // perdeu — sem criar outra, e EM VOZ ALTA: se ela dá acesso na Stripe, há alguém pagando e
+      // trancado fora (achado P1 da revisão de segurança, 10/10/2026; o conserto, a sincronia
+      // chamada daqui, é a etapa 4.4).
+      const linha = `[stripe] checkout: a conta ${conta.id} já tem a assinatura ${viva.id} (${viva.status}) na Stripe, e o espelho não dá acesso`;
+      if (DA_ACESSO_NA_STRIPE.has(viva.status)) console.error(`${linha}: o assinante está trancado fora`);
+      else console.warn(linha);
       return { resultado: "ja-assinante" };
     }
 
     let assinatura: AssinaturaNoCheckout | null = null;
     for (const incompleta of existentes) {
-      const aMesma = incompleta.plano === pedido.plano && incompleta.codigoId === codigoId && incompleta.segredoDoPagamento !== null;
+      // A MESMA: o mesmo PREÇO (o de verdade, não um rótulo) e o mesmo código.
+      const aMesma = incompleta.precoId === preco.precoId && incompleta.codigoId === codigoId && incompleta.segredoDoPagamento !== null;
       if (aMesma && !assinatura) {
         assinatura = incompleta;
         continue;
@@ -80,6 +93,8 @@ export async function assinar(conta: Conta, pedido: AssinarInput): Promise<Desfe
     }
 
     assinatura ??= await criarAssinatura({ clienteId, userId: conta.id, precoId: preco.precoId, plano: pedido.plano, codigoId });
+    // A Stripe recusou o desconto na criação (o código esgotou entre a prévia e o clique).
+    if (!assinatura) return { resultado: "codigo-invalido" };
     console.info(`[stripe] checkout: conta ${conta.id}, plano ${pedido.plano} → assinatura ${assinatura.id} (${assinatura.status})`);
 
     if (assinatura.status === "incomplete" && assinatura.segredoDoPagamento) return { resultado: "pagar", segredo: assinatura.segredoDoPagamento, tipo: "pagamento" };

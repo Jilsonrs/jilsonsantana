@@ -245,6 +245,20 @@ pagamento sem ter assinado vê "confirmando" e depois "está demorando", sem cam
 **o limite de tentativas do código promocional não existe** — precisa existir antes de a etapa
 4.7 abrir a conferência ao visitante.
 
+**Da revisão de segurança da etapa (10/10/2026):**
+- **Código promocional que NÃO é "para sempre"** (100% só na primeira cobrança, ou por alguns
+  meses): a assinatura já nasce ativa e o acesso é liberado ANTES de o cartão ser guardado — quem
+  fecha a tela fica com o período grátis; e nada impede a mesma conta de usar o código de novo
+  depois. Hoje não existe código assim. *Quando o operador criar o primeiro: criá-lo na Stripe com
+  a restrição de "só na primeira compra", e decidir se a escola recusa o código repetido pela
+  mesma conta.*
+- **Apagar a conta de quem assina** (exclusão a pedido do titular, LGPD): a linha do cliente sai
+  junto com a conta, mas a assinatura **continua cobrando na Stripe**. *Quando a exclusão de conta
+  for construída: cancelar a assinatura na Stripe antes de apagar.*
+- **Uma assinatura paga pode ser cancelada pelo checkout** se o pagamento cair no instante exato em
+  que o aluno troca de plano em outra aba: o registro grita e a conta fica com o período pago, sem
+  renovação. Com cartão é questão de frações de segundo; o Pix (etapa 4.9) reabre o assunto.
+
 ## Pendências de verificação
 
 **Uma aberta (etapa 4.2, passo 6 — com o operador):** o código `TESTE100` criando a assinatura de

@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, type Response } from "express";
 import type { Language } from "@prisma/client";
 import { ContentStatus } from "@jilson/core";
 import { prisma } from "../lib/prisma.js";
@@ -102,12 +102,22 @@ const listasDaHome = (language: Language) =>
 // `loadSession` é o mesmo helper do middleware de propósito: ele já recusa
 // usuário com exclusão pedida, e duplicar essa checagem aqui seria a segunda
 // cópia que um dia diverge.
+/**
+ * Com sessão, a home sai diferente ("Meus estudos" e os botões Assinar ligados): essa página
+ * nunca pode ser guardada por um cache no caminho e servida a um visitante (achado da revisão de
+ * segurança da etapa 4.2, 10/10/2026). Sem sessão — o visitante e o robô do Google —, nada muda.
+ */
+function paginaDeQuemEstaLogado(res: Response, logado: boolean): void {
+  if (logado) res.set("Cache-Control", "private, no-cache");
+}
+
 router.get("/", async (req, res) => {
   const [dict, sessao, [testimonials, faq]] = await Promise.all([
     getDict("pt"),
     loadSession(req),
     listasDaHome("PT"),
   ]);
+  paginaDeQuemEstaLogado(res, sessao !== null);
   res.send(
     renderHome({
       dict,
@@ -129,6 +139,7 @@ router.get("/en", async (req, res) => {
     loadSession(req),
     listasDaHome("EN"),
   ]);
+  paginaDeQuemEstaLogado(res, sessao !== null);
   res.send(
     renderHome({
       dict,

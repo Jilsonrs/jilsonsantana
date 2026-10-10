@@ -160,8 +160,13 @@ export async function calcularPrevia(precoId: string, codigoId: string): Promise
 export type AssinaturaNoCheckout = {
   id: string;
   status: string;
-  /** O plano e o código promocional com que o NOSSO checkout a criou (metadata). */
-  plano: string | null;
+  /**
+   * O PREÇO de verdade do item da assinatura — é por ele que uma nova tentativa reaproveita a
+   * incompleta, nunca por um rótulo: se o preço do plano mudar, a incompleta antiga cobraria o
+   * valor velho com a tela mostrando o novo (achado da revisão de segurança, 10/10/2026).
+   */
+  precoId: string | null;
+  /** O código promocional com que o NOSSO checkout a criou (metadata). */
   codigoId: string | null;
   /** O segredo para o site confirmar o pagamento de hoje — só com a fatura ainda aberta. */
   segredoDoPagamento: string | null;
@@ -177,7 +182,7 @@ export function paraAssinaturaNoCheckout(assinatura: Stripe.Subscription): Assin
   return {
     id: assinatura.id,
     status: assinatura.status,
-    plano: assinatura.metadata.plano || null,
+    precoId: assinatura.items.data[0]?.price.id ?? null,
     codigoId: assinatura.metadata.codigo || null,
     segredoDoPagamento: aberta ? (fatura.confirmation_secret?.client_secret ?? null) : null,
     segredoDoCartao: typeof cartao === "object" && cartao !== null ? cartao.client_secret : null,
@@ -186,15 +191,22 @@ export function paraAssinaturaNoCheckout(assinatura: Stripe.Subscription): Assin
 
 const DO_CHECKOUT = ["latest_invoice.confirmation_secret", "pending_setup_intent"];
 
+export type ContaDoCliente = { userId: string; email: string; nome: string | null };
+
+/** O pedido de cliente que vai à Stripe. Função pura, com teste: sem o `userId` aqui, todo pagante vira "sem conta". */
+export function paraPedidoDeCliente(conta: ContaDoCliente): Stripe.CustomerCreateParams {
+  return { email: conta.email, name: conta.nome ?? undefined, metadata: { userId: conta.userId } };
+}
+
 /**
  * Um cliente novo na Stripe para esta conta. O `userId` vai no cliente: é por ele que o aviso
  * liga a assinatura à conta (`assinaturas.ts`). Quem garante UM cliente por conta é a tabela
  * `stripe_customer` e a trava do checkout — sem chave de repetição aqui, de propósito: ela
  * devolveria por 24 h o MESMO cliente, mesmo depois de ele ser apagado no painel.
  */
-export async function criarCliente(conta: { userId: string; email: string; nome: string | null }): Promise<{ id: string; livemode: boolean }> {
+export async function criarCliente(conta: ContaDoCliente): Promise<{ id: string; livemode: boolean }> {
   try {
-    const cliente = await stripe().customers.create({ email: conta.email, name: conta.nome ?? undefined, metadata: { userId: conta.userId } });
+    const cliente = await stripe().customers.create(paraPedidoDeCliente(conta));
     return { id: cliente.id, livemode: cliente.livemode };
   } catch (erro) {
     throw erroSemMensagem(erro, "a criação do cliente");
@@ -229,24 +241,39 @@ export async function cancelarIncompleta(id: string): Promise<string> {
 // para abrir o campo de pagamento: as duas pontas nunca discordam.
 export const FORMAS_DE_PAGAMENTO: Stripe.SubscriptionCreateParams.PaymentSettings.PaymentMethodType[] = ["card"];
 
+export type PedidoDeAssinatura = { clienteId: string; userId: string; precoId: string; plano: Plano; codigoId: string | null };
+
+/**
+ * O pedido de assinatura que vai à Stripe. Função pura, com teste — é aqui que moram as duas
+ * linhas que nenhum outro teste veria sumir: o DESCONTO (sem ele, o aluno paga o valor cheio com
+ * o código aplicado na tela) e o `userId` (sem ele, quem pagou fica sem conta).
+ */
+export function paraPedidoDeAssinatura(pedido: PedidoDeAssinatura): Stripe.SubscriptionCreateParams {
+  return {
+    customer: pedido.clienteId,
+    items: [{ price: pedido.precoId, quantity: 1 }],
+    payment_behavior: "default_incomplete",
+    payment_settings: { save_default_payment_method: "on_subscription", payment_method_types: FORMAS_DE_PAGAMENTO },
+    discounts: pedido.codigoId ? [{ promotion_code: pedido.codigoId }] : undefined,
+    metadata: { userId: pedido.userId, plano: pedido.plano, ...(pedido.codigoId ? { codigo: pedido.codigoId } : {}) },
+    expand: DO_CHECKOUT,
+  };
+}
+
 /**
  * Cria a assinatura — INCOMPLETA até o site confirmar o pagamento (`default_incomplete`); com
  * nada a pagar hoje, a Stripe já a devolve ativa. O `userId`, o plano e o código vão na
- * assinatura: o primeiro liga à conta, os outros dois dizem se uma nova tentativa pode usar a mesma.
+ * assinatura: o primeiro liga à conta; o código diz se uma nova tentativa pode usar a mesma.
+ * Devolve nada quando a Stripe recusa o desconto nesta compra.
  */
-export async function criarAssinatura(pedido: { clienteId: string; userId: string; precoId: string; plano: Plano; codigoId: string | null }): Promise<AssinaturaNoCheckout> {
+export async function criarAssinatura(pedido: PedidoDeAssinatura): Promise<AssinaturaNoCheckout | null> {
   try {
-    const assinatura = await stripe().subscriptions.create({
-      customer: pedido.clienteId,
-      items: [{ price: pedido.precoId, quantity: 1 }],
-      payment_behavior: "default_incomplete",
-      payment_settings: { save_default_payment_method: "on_subscription", payment_method_types: FORMAS_DE_PAGAMENTO },
-      discounts: pedido.codigoId ? [{ promotion_code: pedido.codigoId }] : undefined,
-      metadata: { userId: pedido.userId, plano: pedido.plano, ...(pedido.codigoId ? { codigo: pedido.codigoId } : {}) },
-      expand: DO_CHECKOUT,
-    });
-    return paraAssinaturaNoCheckout(assinatura);
+    return paraAssinaturaNoCheckout(await stripe().subscriptions.create(paraPedidoDeAssinatura(pedido)));
   } catch (erro) {
+    // A Stripe recusou o DESCONTO nesta compra (o código esgotou entre a prévia e o clique, é de
+    // outro cliente, só vale na primeira compra): nada, como na prévia — e não um erro 500, que
+    // diria ao navegador que o código existe (achado da revisão de segurança, 10/10/2026).
+    if (pedido.codigoId && erro instanceof Stripe.errors.StripeInvalidRequestError && erro.param?.startsWith("discounts")) return null;
     throw erroSemMensagem(erro, "a criação da assinatura");
   }
 }
@@ -312,6 +339,12 @@ export function paraAssinaturaNaStripe(assinatura: Stripe.Subscription): Assinat
 
 /** A assinatura como a Stripe diz AGORA — o espelho se recalcula daqui, nunca do retrato do aviso. */
 export async function buscarAssinatura(id: string): Promise<AssinaturaNaStripe> {
-  const assinatura = await stripe().subscriptions.retrieve(id, { expand: ["customer", "latest_invoice"] });
-  return paraAssinaturaNaStripe(assinatura);
+  try {
+    const assinatura = await stripe().subscriptions.retrieve(id, { expand: ["customer", "latest_invoice"] });
+    return paraAssinaturaNaStripe(assinatura);
+  } catch (erro) {
+    // Era a única ida à Stripe que subia com a mensagem dela — e o aviso a cola no registro
+    // (`assinaturas.ts`). Achado da revisão de segurança da etapa 4.2, 10/10/2026.
+    throw erroSemMensagem(erro, "a busca da assinatura");
+  }
 }

@@ -3443,6 +3443,35 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             `TESTE100` → a aula trancada abre. `security-vulnerability-reviewer` no código de
             cobrança, com os achados e o destino de cada um aqui. `billing.md` reconciliado e o
             checkbox da etapa. *(Cada teste de verdade com `TESTE100` gasta 1 dos 5 usos.)*
+            **Revisão de segurança FEITA (`security-vulnerability-reviewer`, 10/10/2026): nenhum
+            bloqueio, 1 achado P1 e 19 P2. O destino de cada um:**
+            **Corrigidos nesta etapa** — (P1) a Stripe diz que a conta assina e o espelho não dá
+            acesso: era só um aviso → agora **grita** (erro) quando ela dá acesso lá, porque há
+            alguém pagando e trancado fora; o conserto de verdade (o checkout chamar a sincronia)
+            foi para a **4.4** · quem já tem acesso **nem chega à Stripe** (a resposta dizia a um
+            assinante se um código existe) · a incompleta se reaproveita pelo **preço de verdade**,
+            não pelo rótulo do plano (com o preço trocado, cobraria o valor velho) · desconto
+            recusado pela Stripe **na criação** vira 400 `CodigoInvalido`, não 500 · o que vai à
+            Stripe (o desconto, o `userId`) passou a sair de **funções puras com teste** — antes,
+            apagar o desconto ou o `userId` deixava a suíte verde · a busca da assinatura da 4.1
+            também sobe **sem a mensagem da Stripe** · **nenhuma resposta por conta fica em cache**
+            (`private, no-store`), nem a home de quem está logado (`private, no-cache`; a do
+            visitante não muda) · testes novos: duas contas com clientes diferentes, o checkout não
+            grava o espelho, o segredo fora das quatro vias do registro, a conferência de novo com
+            a trava. **Provado de novo na área restrita depois das correções** (assinar, tentar de
+            novo, trocar de plano, pagar, o espelho liberar, 409 com código qualquer). **Testes:**
+            +12 de servidor e +6 unitários. **Mutação:** 12 de 12 reprovaram.
+            **Movidos, com destino:** 4.3 — conferir o `connection_limit` do banco no Railway e
+            rodar o SQL de RLS em produção · 4.4 — a sincronia chamada do checkout; um tratador de
+            erro próprio no fim de `/api` · 4.7 — o limite por conta e por IP nas DUAS rotas que
+            conferem código; a trava que segura conexão esperando; o checkout público nunca no ar
+            com chave de teste; medir se a incompleta com código gasta uso dele · 4.9 — a corrida do
+            cancelamento com o Pix; limpar o endereço da volta · Fase 7 — a conferência de
+            `livemode` na subida, a lista de erros de cobrança para o monitor, o código de 100% da
+            conta de verdade · `billing.md` → *Limitações conhecidas* — código que não é "para
+            sempre"; apagar a conta com assinatura na Stripe.
+            **Sem teste automático, só a prova na área restrita:** a limpeza do erro em
+            `buscarAssinatura` e qual recusa da Stripe conta como "o desconto não vale".
       **Para não refazer depois (o que cada etapa seguinte ACRESCENTA, sem reescrever a 4.2):** o
       valor e a **moeda** já vêm do servidor, e o cartão já é lido antes de cobrar → o dólar (4.8)
       entra no servidor · as formas de pagamento saem de **uma lista no servidor** (hoje só `card`)
@@ -3488,19 +3517,35 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       textos — *"isso fazemos depois, é detalhe"* (seguem como rascunho no dicionário) · **o cartão
       só some com desconto de 100% PARA SEMPRE** (com 100% só na primeira cobrança o cartão é
       pedido, porque a cobrança seguinte precisa dele) — **OK**.
-      **PAREI EM (10/10/2026):** passos 1 a 5 feitos e commitados no `dev` (nada publicado). Falta
-      o **passo 6**: a revisão de segurança (o agente a faz sozinho), o `billing.md` reconciliado e
-      **a prova no navegador, com o operador** — o Stripe CLI instalado e o `stripe listen` ligado.
+      **PAREI EM (10/10/2026):** passos 1 a 5, a revisão de segurança com as correções e o
+      `billing.md` feitos e commitados no `dev` (nada publicado). **Só falta a prova no navegador,
+      com o operador:** o Stripe CLI (o Mac dele é Intel e não tem Homebrew — baixado direto da
+      página oficial, versão 1.53.1, em `~/stripe-cli`), o `stripe login` na área restrita, o
+      `stripe listen --forward-to localhost:3000/api/stripe/webhook`, o segredo `whsec_` colado
+      no `server/.env` com o arquivo FECHADO no editor, e o OK dele para apagar a assinatura de
+      mentira do `member@` no banco de dev. Depois: `4242` e `TESTE100`, e o checkbox da etapa.
 - [ ] **4.3 — No ar, em modo de teste: o PRIMEIRO TESTE REAL (sessão curta, com o operador).** As
       chaves de teste e o segredo do webhook no Railway, o endereço do webhook no painel — **com
       "www"**: `https://www.jilsonsantana.com/api/stripe/webhook` (medido em 09/10/2026: sem o "www",
       só a página inicial redireciona e todo outro endereço responde 404) —, publicar,
       e o `member@` assina com o cartão de teste `4242…` ou com o código de 100% → **a aula paga
       tocando no ar.** ← **Daqui em diante o operador testa tudo como aluno.**
+      **Trazido da revisão de segurança da 4.2 (10/10/2026):** antes de publicar, conferir o
+      limite de conexões do banco no Railway (`connection_limit` na `DATABASE_URL`; com 1, todo
+      checkout falharia — assinar segura uma conexão enquanto fala com a Stripe e usa outra para
+      ler) · depois de publicar, rodar em produção o SQL de RLS do `CLAUDE.md` (zero linhas; a
+      tabela nova é `stripe_customer`).
 - [ ] **4.4 — Sincronizar e perder o acesso direito (código).** Forçar a sincronia pelo admin (a
       recuperação de webhook perdido; nunca rota aberta) · ao perder o acesso, a sessão cai
       (`session.deleteMany`) · `requireActiveMembership` · a **matriz de testes de servidor** deste
       plano (os ~16 casos, incluindo o acesso cruzado de idioma).
+      **Trazido da revisão de segurança da 4.2 (10/10/2026):** (a) **o checkout chama a sincronia**
+      quando a Stripe diz que a conta já tem assinatura viva e o espelho não dá acesso — hoje ele
+      responde "já é assinante", grita no registro e a aula continua trancada (achado P1); a
+      sincronia é a MESMA rotina do aviso, com a trava da assinatura · (b) **um tratador de erro
+      próprio no fim de `/api`**: hoje é o padrão do Express, que em produção responde só
+      "Internal Server Error" (conferido), mas copia o status e os cabeçalhos de um erro que
+      escape cru.
 - [ ] **4.5 — ESLint com `no-floating-promises`, bloqueante no CI (código, pequena).** Dependências
       de desenvolvimento novas: `eslint` + `typescript-eslint`. Já decidido para esta fase (item
       abaixo): promessa sem `await` dentro do webhook derruba o servidor sem nenhum teste perceber.
@@ -3518,6 +3563,16 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       e-mail · **antes de abrir ao visitante, o limite de tentativas do código promocional** (na
       4.2 só conta logada confere código, e o cadastro é fechado) · os botões Assinar da home
       passam a funcionar sem login.
+      **Trazido da revisão de segurança da 4.2 (10/10/2026) — pré-requisitos de abrir ao
+      visitante:** (a) o limite de tentativas é **por conta e por IP** (`x-real-ip`) e cobre as
+      DUAS rotas que conferem código (`/billing/previa` e `/billing/assinatura`), que também são
+      as que chamam a Stripe · (b) **a trava do checkout não pode segurar conexão do banco
+      esperando**: vários pedidos juntos esgotariam as conexões e parariam a API inteira — a trava
+      que não espera (`pg_try_advisory_xact_lock`) ou a Stripe fora da transação · (c) **o
+      checkout público NUNCA vai ao ar com chave de teste**: o gate não lê `livemode`, e a API não
+      fica atrás do "Em breve" — qualquer pessoa assinaria de graça com o cartão `4242` · (d)
+      medir na área restrita se criar uma assinatura incompleta com código gasta um uso dele (se
+      gastar, trocar de plano várias vezes esgota um código sem pagar nada).
 - [ ] **4.8 — Dólar pelo país do cartão + o botão das páginas em inglês (código + decisão).** context7
       primeiro. **Depende da decisão de imposto internacional com o contador (P22)** antes da primeira
       venda fora do Brasil. **Trazido da 4.2 (10/10/2026):** a tela de assinar já recebe o valor e a
@@ -3527,6 +3582,11 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       de Pix não se retenta como cartão). **Trazido da 4.2 (10/10/2026):** o Pix é um item a mais na
       lista de formas de pagamento do servidor (na 4.2, só cartão), sem refazer a tela. A home já
       diz "Pagamento no cartão ou no Pix": esta etapa fecha antes do lançamento.
+      **Trazido da revisão de segurança da 4.2 (10/10/2026):** com o Pix o pagamento chega minutos
+      depois do pedido — conferir na área restrita que trocar de plano com um Pix pendente
+      invalida o Pix antigo (hoje o checkout cancela a incompleta e só GRITA se ela tiver sido
+      paga nesse instante) · se entrar forma de pagamento que saia do site e volte, tirar do
+      endereço da volta o segredo que a Stripe acrescenta.
 - [ ] **4.10 — Fechamento da fase (código + painel).** E2E de ponta a ponta (assinar, renovar, cancelar,
       pagamento falho com acesso mantido na janela) · a régua de inadimplência no painel (Smart
       Retries) · revisão de segurança da fase inteira. **A troca para as chaves de verdade fica no
@@ -4472,7 +4532,10 @@ outro aparelho e "daqui a um mês", e o Safari apaga o armazenamento do site em 
       `livemode = false`:** as chaves de verdade nunca mais recebem aviso delas, então nenhuma seria
       cancelada — e uma ativa daria acesso para sempre. **E os `stripe_customer` com `livemode =
       false`** *(etapa 4.2, 10/10/2026)*: o cliente do modo de teste não existe na conta de verdade,
-      e a conta que ficasse com ele não conseguiria assinar. Como apagar sem falar direto com o banco de
+      e a conta que ficasse com ele não conseguiria assinar. **Na subida do servidor, uma
+      conferência que grita** se houver linha de teste nas duas tabelas com a chave de verdade no
+      lugar *(revisão de segurança da 4.2)*. **O código de 100% da conta de verdade:** aleatório
+      e de 1 uso — código legível se adivinha. Como apagar sem falar direto com o banco de
       produção (só o Railway fala com ele) se decide na abertura do item. O `member@` de produção
       assina de novo, com o cupom de 100% do modo de verdade.
 - **→ MOVIDOS para a Fase 3, bloco "Gates" (Ago 2026):** *rate-limit de auth* e *CI não roda
@@ -4486,6 +4549,11 @@ outro aparelho e "daqui a um mês", e o Safari apaga o armazenamento do site em 
       decisão PENDENTE**, resolver na abertura do item. Substitui o antigo alerta por fila
       `admin-alerts` do pg-boss, cujo defeito era a detecção depender da própria coisa que deveria
       detectar (ver Fase 4 e CLAUDE.md → Background Jobs).
+      **Os erros de cobrança que hoje morrem no registro** *(revisão de segurança da etapa 4.2,
+      10/10/2026)* e que o monitor precisa pegar: o checkout dizendo que há assinante pagando e
+      trancado fora, ou que uma assinatura foi cancelada já paga (`lib/checkout.ts`) · a cobrança
+      não configurada e todo erro 500 de assinar (`routes/billing.ts`) · o aviso recusado, a
+      assinatura sem conta e a falha ao processar o aviso (`routes/stripe-webhook.ts`).
 - [ ] **Backlog P2 do `security-vulnerability-reviewer` (7 no relatório; os nº 1, 2 e 6 foram
       movidos e o nº 5 foi **fechado por migration versionada** → **3 pendentes aqui**. Nenhum
       bloqueia merge; todos antes do primeiro aluno pagante.)** A numeração original do relatório é

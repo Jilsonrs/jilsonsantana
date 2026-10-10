@@ -13,6 +13,13 @@ import { assinar } from "../lib/checkout.js";
 
 const router = Router();
 
+// Tudo aqui é por conta — e uma das respostas leva o segredo do pagamento: nada fica em cache
+// (a mesma linha de toda rota por conta do repo; achado da revisão de segurança, 10/10/2026).
+router.use("/billing", (_req, res, next) => {
+  res.set("Cache-Control", "private, no-store");
+  next();
+});
+
 // GET /api/billing/planos — os dois planos com o valor lido da Stripe (o mostrado é o cobrado) e
 // a chave que o site usa para abrir o campo do cartão.
 router.get("/billing/planos", requireAuth, async (_req, res) => {

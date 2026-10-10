@@ -66,6 +66,8 @@ describe("Home pública (SSR)", () => {
     it("COM sessão: os dois botões Assinar levam à tela de assinar — e são os mesmos botões do mock", async () => {
       const res = await request(servidor).get("/").set("Cookie", await entrar());
       expect(res.text.split(paraATelaDeAssinar).length - 1).toBe(2);
+      // A página de quem está logado nunca fica guardada num cache do caminho (revisão de segurança).
+      expect(res.headers["cache-control"]).toBe("private, no-cache");
       expect(res.text).toContain(`${paraATelaDeAssinar} style="width: 100%;">Assinar</button></form>`);
       expect(res.text).toContain(`${paraATelaDeAssinar} style="padding: 24px 64px; font-size: 1.35rem;">Assinar</button></form>`);
     });
@@ -74,6 +76,8 @@ describe("Home pública (SSR)", () => {
       const res = await request(servidor).get("/");
       expect(res.text).not.toContain("/aluno/assinar");
       expect(res.text).toContain('<button  class="btn" style="width: 100%;">Assinar</button>');
+      // Para o visitante e o robô do Google, a resposta não ganha cabeçalho nenhum.
+      expect(res.headers["cache-control"]).toBeUndefined();
       expect(res.text).toContain('<button  class="btn" style="padding: 24px 64px; font-size: 1.35rem;">Assinar</button>');
     });
 
