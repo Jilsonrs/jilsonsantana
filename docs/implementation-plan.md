@@ -3520,8 +3520,11 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       **PAREI EM (10/10/2026):** passos 1 a 5, a revisão de segurança com as correções e o
       `billing.md` feitos e commitados no `dev` (nada publicado). **Só falta a prova no navegador,
       com o operador:** o Stripe CLI (o Mac dele é Intel e não tem Homebrew — baixado direto da
-      página oficial, versão 1.53.1, em `~/stripe-cli`), o `stripe login` na área restrita, o
-      `stripe listen --forward-to localhost:3000/api/stripe/webhook`, o segredo `whsec_` colado
+      página oficial, versão 1.53.1, em `~/stripe-cli` — **instalado pelo agente em 10/10/2026**,
+      conferido com a soma oficial), o `stripe login` na área restrita (**feito por ele**), o
+      `~/stripe-cli/stripe listen --all-snapshot --forward-to localhost:3000/api/stripe/webhook`
+      (`[FATO — a ajuda da própria CLI 1.53.1]` ela exige dizer quais avisos encaminhar; sem
+      `--all-snapshot` ou `--events`, recusa com *"must specify events to forward"*), o segredo `whsec_` colado
       no `server/.env` com o arquivo FECHADO no editor, e o OK dele para apagar a assinatura de
       mentira do `member@` no banco de dev. Depois: `4242` e `TESTE100`, e o checkbox da etapa.
 - [ ] **4.3 — No ar, em modo de teste: o PRIMEIRO TESTE REAL (sessão curta, com o operador).** As
