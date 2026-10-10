@@ -123,15 +123,25 @@ operador, 10/10/2026: "não barrar depois de 2 reembolsos, vamos usar outras tra
 alguma coisa nos termos" — quem pede reembolso de forma abusiva, contra as políticas da escola,
 perde o direito a ele. **Substitui** o "no máximo 2 reembolsos por aluno" decidido horas antes, no
 mesmo dia, e nunca construído.)* **Referência dele: a Udemy.**
-`[PESQUISA — busca na web, 10/10/2026; a página oficial da Udemy não abriu para o agente (403);
-NÃO é parecer jurídico]`
-- **Como a Udemy faz:** ela se reserva o direito de limitar ou negar o reembolso quando entende
-  que há abuso — parte grande do curso já assistida ou baixada, vários pedidos do mesmo curso,
-  conta com reembolso demais — e de restringir a conta
-  ([comunicado](https://teach.udemy.com/new-refund-system-policy-updates/),
-  [resposta a instrutor](https://community.udemy.com/en/discussion/82596/the-same-student-keeps-asking-for-refunds-and-signing-up-again)).
-  Nas assinaturas ela não devolve, "a menos que a lei aplicável exija"
-  ([política](https://support.udemy.com/hc/articles/360050856093)).
+`[PESQUISA — as duas páginas oficiais da Udemy, em telas enviadas pelo operador em 10/10/2026
+("Política de reembolso da Udemy" e "Exceções de reembolso do plano de assinatura devido à lei
+aplicável"), mais busca na web; NÃO é parecer jurídico]`
+- **A cláusula de abuso da Udemy, como está escrita:** *"Reservamos o direito, a nosso critério
+  exclusivo, de limitar ou recusar solicitações se acreditarmos que há um abuso de reembolso,
+  incluindo, entre outros"*: parte considerável do curso consumida ou baixada antes do pedido ·
+  vários reembolsos do mesmo curso · reembolsos em excesso · conta reportada ou banida por violar
+  os termos · reembolso já dado por terceiro (o processador de pagamento). E fecha com: *"Essas
+  restrições de reembolso serão aplicadas no limite permitido pela lei aplicável."*
+- **Na ASSINATURA a Udemy não dá garantia nenhuma além da lei:** *"não há reembolsos parciais ou
+  totais incluídos, exceto quando exigido pela lei aplicável"*. Onde a lei exige, ela honra
+  **dentro do prazo de cada país**, contado **do primeiro dia da assinatura** — e **trocar do
+  mensal para o anual não recomeça o prazo**. O pedido de reembolso cancela a assinatura.
+- **Os prazos da tabela dela:** Brasil 7 dias · Austrália, África do Sul, Taiwan e Tailândia 7 ·
+  Argentina e Chile 10 · Colômbia e México 5 · **União Europeia, Reino Unido, Suíça e outros: 14** ·
+  Quebec e Turquia: a qualquer momento.
+- **APONTADO, não decidido:** a página em inglês da escola promete 7 dias ao mundo (acima), e a
+  tabela da Udemy mostra países em que a lei dá **14**. Onde a lei der mais, vale a lei — os
+  termos precisam dizer isso (P61).
 - **No Brasil, a própria Udemy diz que não consegue impedir de forma sistemática vários
   reembolsos**, porque a lei daqui não abre exceção para quem compra e devolve várias vezes:
   analisa caso a caso ([comunidade](https://community.udemy.com/pt/discussion/30395/reembolsos-acima-do-normal)).
