@@ -33,6 +33,7 @@ import stripeWebhookRouter from "./routes/stripe-webhook.js";
 import billingRouter from "./routes/billing.js";
 import adminAssinaturasRouter from "./routes/admin-assinaturas.js";
 import { tratarErroDaApi } from "./lib/erro-da-api.js";
+import { anotarErroDoSite } from "./lib/erro-do-site.js";
 
 // Monta o app e EXPORTA sem escutar porta. O `listen()` vive em `index.ts`.
 //
@@ -239,5 +240,9 @@ if (process.env.NODE_ENV !== "production") {
     return res.redirect(302, VITE + req.originalUrl);
   });
 }
+
+// O ÚLTIMO de tudo: o erro que escapar FORA de `/api` (a home, uma página pública) é anotado com
+// etiqueta — é o que o faz virar alerta — e segue para a resposta de sempre do Express.
+app.use(anotarErroDoSite);
 
 export default app;

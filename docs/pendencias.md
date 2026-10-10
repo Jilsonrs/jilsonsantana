@@ -16,7 +16,7 @@
 > 5. **Item novo ganha o próximo número livre.** Número nunca se reutiliza, para que "P7" queira
 >    dizer sempre a mesma coisa em qualquer conversa.
 >
-> **Próximo número livre: P63** · Atualizada em 10/10/2026
+> **Próximo número livre: P64** · Atualizada em 10/10/2026
 
 ## A. Agora, em sequência *(nascidas da configuração do Bunny, 25/09/2026)*
 
@@ -48,6 +48,7 @@ entra aqui, com o próximo número livre.*
 
 | # | O que falta | Quando | Onde registrar |
 |---|---|---|---|
+| P63 | **Ligar o alerta de erro no site: quatro passos no painel do Sentry e da Railway**, com o agente orientando (uns 5 minutos). (1) No Sentry, criar um endereço "DSN" novo para o projeto do servidor e apagar o que apareceu numa foto de tela. (2) Na Railway, criar a variável `SENTRY_DSN` com esse endereço — ele não passa pelo chat. (3) No Sentry, conferir a regra de alerta: e-mail a cada problema novo, e sempre que a origem for a cobrança. (4) Opcional: ligar o monitor de "site fora do ar" do plano grátis, apontando para o site. Enquanto a variável não existir, o site funciona igual e o alerta fica desligado | depois da próxima publicação (o código do alerta já está pronto) | `tech-stack.md` e o plano, Fase 7 |
 | P61 | **A cláusula de reembolso abusivo nos termos de uso: escrever o texto**, no modelo da Udemy — você decidiu em 10/10 seguir o que as grandes fazem, sem advogado: "Reservamos o direito, a nosso critério exclusivo, de limitar ou recusar solicitações se acreditarmos que há um abuso de reembolso […] no limite permitido pela lei aplicável". Os termos também dizem o prazo: 7 dias no Brasil, 14 fora, contados do primeiro dia da assinatura | quando os termos de uso forem escritos | `billing.md` → *Reembolso*, e as páginas legais |
 | P60 | **No painel da Stripe, escolher "cancelar a assinatura" para quando as tentativas de cobrança acabam** — nos dois lugares: na área restrita e na conta de verdade (o agente orienta na hora). Você já decidiu isso em 10/10 (cancela, e a escola manda um e-mail com o link para reativar). Enquanto a opção do painel for outra ("marcar como não paga"), a pessoa clica em "Reativar assinatura" e nada acontece | antes de a etapa 4.7 ir ao ar (o primeiro pagante que não é você) | já registrado em `billing.md` → *Régua de inadimplência*; aqui falta só o painel |
 | P58 | **O nome que aparece na fatura do cartão do aluno** (na Stripe, "statement descriptor"): qual vai ser? É por ele que o aluno reconhece a cobrança. Fica nas configurações da conta de verdade; no ambiente de teste não aparece em fatura nenhuma, então o campo do produto ficou em branco | GO-LIVE (Fase 7), ao trocar para a Stripe de verdade | `billing.md` |

@@ -143,6 +143,18 @@ describe("o corpo que o Express recusou ao ler", () => {
   });
 });
 
+describe("o endereço malformado", () => {
+  it("coisa de robô: 400 EnderecoInvalido, com aviso — nunca 500 nem linha de ERRO, que viraria alerta à toa", async () => {
+    // Medido antes da correção (10/10/2026): este pedido respondia 500 e gritava no registro.
+    const res = await request(servidor).get("/api/lessons/%E0%A4%A").set("Cookie", member);
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual({ error: "EnderecoInvalido" });
+    expect(linhas()).toBe("");
+    expect(avisados()).toContain("[api] GET: endereço malformado recusado (400)");
+    expect(avisados()).not.toContain("%E0");
+  });
+});
+
 describe("com a resposta já começada", () => {
   it("não tenta responder de novo: o erro ORIGINAL segue adiante, e o Express fecha a conexão", async () => {
     // Um app mínimo, escutando só em 127.0.0.1 como o servidor dos testes (`servidor.ts`).

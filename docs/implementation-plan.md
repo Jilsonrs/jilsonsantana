@@ -204,6 +204,9 @@
 > (aula concluída sozinha, barra na aula e no cartão), o vídeo que não recomeça ao trocar de aba
 > (a apresentação abre pausada, a aula toca sozinha) e o "Salvos". **Primeiro teste com o player de
 > verdade: com o operador** (assistir uma aula até perto do fim e ver a barra andar).
+> **NO `dev`, AINDA NÃO PUBLICADO (10/10/2026): o alerta de erro no servidor** (Sentry, parte 1 —
+> plano → Fase 7). Sem a variável `SENTRY_DSN` na Railway (pendência P63) ele fica desligado e o
+> site funciona igual. Junto: o endereço malformado em `/api` passa a responder 400 (era 500).
 > **NO `dev`, AINDA NÃO PUBLICADO (10/10/2026):** a resposta de "Is there a refund?" na página em
 > inglês passa a dizer "Yes, we offer a 14-day money-back guarantee." (duas migrations de dado,
 > `reembolso_de_14_dias_na_resposta_em_ingles` e `resposta_do_reembolso_em_ingles_sem_o_parentese`,
@@ -5125,7 +5128,39 @@ outro aparelho e "daqui a um mês", e o Safari apaga o armazenamento do site em 
         `/getsentry/sentry-javascript` (2 consultas) → o transporte de teste (`createTransport`),
         `captureConsoleIntegration` (eventos) × `consoleLoggingIntegration` (outro produto), a
         ligação sem `--import` quando não se usa instrumentação automática, e o que mudou na 11.
-      **ONDE PAROU:** plano escrito. Próximo: passo 2.
+      **FEITO (10/10/2026) — passos 2 e 3.**
+      - **O que nasceu:** `lib/monitor.ts` (o único arquivo com o Sentry), `monitor-no-ar.ts`
+        (liga antes de o app montar) e a ligação no `index.ts` — o aviso de "no ar" a cada
+        subida, e a espera do envio ao desligar.
+      - **Três ajustes para o alerta não gritar à toa, achados ao ligar:** (a) **erro fora de
+        `/api`** (a home quebrada) não tinha etiqueta e não alertaria: `lib/erro-do-site.ts`
+        anota com `[site]` e deixa a resposta como era · (b) **endereço malformado em `/api`**
+        (coisa de robô) respondia 500 com linha de erro — medido; agora é 400
+        `EnderecoInvalido`, com aviso · (c) **o aluno que desiste de um download** gerava linha
+        de erro; agora é aviso, e o Storage caindo no meio continua erro.
+      - **Mudança de comportamento, de propósito:** com o alerta ligado, a promessa rejeitada
+        sem tratamento vira alerta e o servidor segue de pé (antes, ela o derrubava e cortava
+        os pedidos de todos). Fora de produção continua derrubando.
+      - **A cota:** no máximo 30 envios em 10 minutos e 150 por dia; o que passar fica só no
+        registro, com um aviso. *Reabre se um problema de verdade ficar sem alerta por causa
+        do limite.*
+      - **Removido por medição:** a opção de tamanho máximo do texto — na versão instalada o
+        texto da linha não é cortado, então ela não fazia nada.
+      - **Testes:** +26 de servidor (727): o que vira alerta e o que não vira, o que nunca sai,
+        a cota, o import único, o erro fora de `/api`, o endereço malformado e os dois casos de
+        download. Nos testes o Sentry de verdade roda com a rede trocada por um gravador.
+        **Mutação:** 23 de 23 reprovaram (uma 24ª mostrou a opção inútil, removida).
+      - **Provado em execução, no computador:** o servidor MONTADO, em modo de produção, contra
+        um Sentry de mentira local e o banco de teste local — chegaram o aviso de "no ar" e uma
+        linha de erro de verdade (`[stripe] aviso recusado…`, origem `stripe`); a senha errada
+        do Better Auth (linha de terceiro) e o endereço malformado NÃO saíram; do pedido não
+        saiu nada (cookie, e-mail do corpo, o que vem depois do "?"); o servidor saiu com
+        código 0 ao receber o aviso de desligar.
+      - **Não provado ainda:** a chegada ao Sentry DE VERDADE — depende do DSN novo e da
+        variável na Railway (pendência P63); a prova é o aviso de "no ar" aparecer no painel
+        depois da publicação.
+      **ONDE PAROU:** parte 1 pronta no `dev`, não publicada. Faltam: a P63 (com o operador),
+      a publicação (decisão dele) e a parte 2 (as telas do aluno).
 - [ ] **Backlog P2 do `security-vulnerability-reviewer` (7 no relatório; os nº 1, 2 e 6 foram
       movidos e o nº 5 foi **fechado por migration versionada** → **3 pendentes aqui**. Nenhum
       bloqueia merge; todos antes do primeiro aluno pagante.)** A numeração original do relatório é

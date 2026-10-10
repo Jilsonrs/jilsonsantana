@@ -1,6 +1,9 @@
 import "dotenv/config";
+// O alerta de erro liga AQUI, antes do app: uma falha ao montar o app já o encontra ligado.
+import { versaoNoAr } from "./monitor-no-ar.js";
 import app from "./app.js";
 import { desligarComCalma } from "./lib/desligar.js";
+import { avisarQueSubiu, esvaziarMonitor } from "./lib/monitor.js";
 
 // Entrada de PRODUÇÃO (`dist/index.js` — o que Dockerfile e Railway executam).
 // A montagem do app vive em `app.ts`, que não escuta porta, para que supertest
@@ -22,8 +25,11 @@ const PORT = process.env.PORT ?? 3000;
 
 const servidor = app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  // Um aviso por subida: é a prova, em produção, de que o alerta chega ao Sentry.
+  avisarQueSubiu(versaoNoAr);
 });
 
 // Na publicação, o servidor antigo termina o que estava atendendo antes de sair
 // (`lib/desligar.ts`; a folga é o `drainingSeconds` do `railway.json`).
-process.on("SIGTERM", () => desligarComCalma(servidor, () => process.exit(0)));
+// Antes de sair, espera o envio dos alertas pendentes (`esvaziarMonitor` nunca falha).
+process.on("SIGTERM", () => desligarComCalma(servidor, () => void esvaziarMonitor().finally(() => process.exit(0))));
