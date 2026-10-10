@@ -3657,8 +3657,13 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       com `Cache-Control: private, no-store` · a página inicial e `/aluno/assinar`, para o
       público, mostram o "Em breve" (nenhum botão para a tela de assinar). *A migration não se vê
       de fora; a versão nova no ar é o sinal de que o pre-deploy passou.*
-      **FALTA para fechar:** (6) o SQL de RLS em produção · (7) o operador assinar no site com o
-      código de 100% — é o que prova as duas chaves de verdade, os preços e o aviso real.
+      **PASSO 6 FEITO (10/10/2026) — RLS em PRODUÇÃO, com a autorização do operador** (*"pode
+      rodar no banco de produção"*): uma consulta que só lê o catálogo, no branch `production` do
+      Neon (`br-divine-pond-aezsg40q`). **Resultado: zero tabela em `public` sem RLS, e a
+      `stripe_customer` existe, com RLS ligado** — a migration foi aplicada pelo pre-deploy.
+      **FALTA para fechar:** (7) o operador assinar no site com o código de 100% — é o que prova as
+      duas chaves de verdade, os preços e o aviso real. Ele disse *"Já fiz"* (10/10/2026); falta
+      registrar o que a tela mostrou.
       **O TEXTO ORIGINAL, de antes da revisão (fica como registro):** As
       chaves de teste e o segredo do webhook no Railway, o endereço do webhook no painel — **com
       "www"**: `https://www.jilsonsantana.com/api/stripe/webhook` (medido em 09/10/2026: sem o "www",
