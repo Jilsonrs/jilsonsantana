@@ -416,6 +416,40 @@ export const pt = {
     },
     // A PÁGINA DA AULA (etapa 4 do Bloco U, 29/09/2026). Rascunho do agente: o
     // texto é do operador.
+    // ASSINAR (Fase 4, etapa 4.2 — 10/10/2026). RASCUNHO do agente: o operador revisa depois
+    // ("isso fazemos depois, é detalhe"). `{valor}`, `{desconto}` e `{meses}` são trocados no código.
+    assinar: {
+      titulo: "Assinar",
+      descricao: "Uma assinatura, todos os cursos e trilhas.",
+      escolhaDoPlano: "Escolha o plano",
+      mensal: "Mensal",
+      anual: "Anual",
+      porMes: "/mês",
+      porAno: "/ano",
+      anualEquivale: "equivale a {valor} por mês",
+      semFidelidade: "Sem fidelidade. Cancele quando quiser.",
+      codigo: "Código promocional",
+      aplicar: "Aplicar",
+      remover: "Remover",
+      codigoInvalido: "Este código não é válido.",
+      descontoParaSempre: "{desconto} de desconto em todas as cobranças",
+      descontoUmaVez: "{desconto} de desconto na primeira cobrança",
+      descontoPorMeses: "{desconto} de desconto por {meses} meses",
+      hoje: "Hoje você paga",
+      depoisPorMes: "Depois, {valor} por mês até você cancelar.",
+      depoisPorAno: "Depois, {valor} por ano até você cancelar.",
+      pagamento: "Pagamento",
+      botao: "Assinar",
+      processando: "Processando…",
+      erroPlanos: "Não foi possível carregar os planos. Tente de novo.",
+      erro: "Não foi possível concluir a assinatura. Confira os dados e tente de novo.",
+      jaAssinante: "Você já é assinante.",
+      irParaInicio: "Ir para o Início",
+      confirmando: "Confirmando sua assinatura…",
+      confirmada: "Assinatura confirmada. Bons estudos!",
+      comecar: "Começar a estudar",
+      demorando: "Está demorando mais que o normal. Seu pagamento não se perde: esta página continua conferindo."
+    },
     aula: {
       conteudoDoCurso: "Conteúdo do curso",
       carregando: "Carregando…",

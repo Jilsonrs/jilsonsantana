@@ -156,4 +156,9 @@ describe("o pré-carregamento do que o aluno usa", () => {
     const modulos = await Promise.all(PEDACOS_DO_ALUNO.map((pedaco) => pedaco()));
     expect(modulos.some((m) => typeof (m as { MarkdownText?: unknown }).MarkdownText === "function")).toBe(true);
   });
+
+  it("a lista inclui o formulário de assinar", async () => {
+    const modulos = await Promise.all(PEDACOS_DO_ALUNO.map((pedaco) => pedaco()));
+    expect(modulos.some((m) => typeof (m as { FormularioDeAssinatura?: unknown }).FormularioDeAssinatura === "function")).toBe(true);
+  });
 });

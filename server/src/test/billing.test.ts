@@ -96,6 +96,8 @@ describe("GET /api/billing/planos", () => {
         { plano: "mensal", centavos: 9990, moeda: "brl" },
         { plano: "anual", centavos: 99500, moeda: "brl" },
       ],
+      // A mesma lista com que o servidor cria a assinatura (nesta etapa, só cartão).
+      formasDePagamento: ["card"],
     });
   });
 

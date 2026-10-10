@@ -3179,6 +3179,10 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
 > cartão consulta na etapa 4.8.
 > **Em paralelo com a Fase 5** (decisão do operador, 09/10/2026 — *CLAUDE.md → Working Method*): a
 > avaliação do curso e o depoimento, e as telas sem "EM BREVE", andam sem esperar esta fase.
+> **A Stripe fecha INTEIRA nesta fase, com o Pix** (decisão do operador, 10/10/2026): *"o PIX vai
+> estar pronto nessa fase Stripe, quero deixar essa parte pronta mesmo sem ter terminado todas as
+> telas da escola; quero que a escola possa ser lançada a qualquer momento depois da fase da
+> Stripe."* Nenhuma etapa de 4.0 a 4.10 fica para depois do lançamento.
 
 - [x] **4.0 — A Stripe em modo de TESTE (operador, no painel, sem código, ~1 h).** A conta (CNPJ/MEI,
       pagamento no Banco do Brasil) — o modo de teste funciona antes de a conta ser aprovada. No
@@ -3339,9 +3343,10 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             em `public` sem RLS. **Testes:** 4 de servidor. **Mutação:** 2 de 2 reprovaram (sem login,
             "sim" sem perguntar ao gate). O item da Fase 7 (*as de teste saem do banco de produção*)
             já inclui a tabela nova.
-            **⚠️ A migration AINDA NÃO foi aplicada no banco de DEV** — espera o OK do operador
-            (`npx prisma migrate deploy`, de dentro de `server/`, com o retrato antes e depois). Até
-            lá, só a rota de criar a assinatura (passo 3b) falharia no dev; o resto não usa a tabela.
+            **Aplicada no banco de DEV em 10/10/2026, com o OK do operador** (`npx prisma migrate
+            deploy`, de dentro de `server/`): o retrato das 24 tabelas igual antes e depois, fora a
+            tabela nova (0 linhas) e o registro da migration; login do admin e do `member@` 200 antes
+            e depois; zero tabela em `public` sem RLS; `migrate diff` sem diferença.
       - [x] **Passo 3b — servidor, criar a assinatura.** `POST /api/billing/assinatura` + testes (401
             · plano inválido · 409 de quem já tem acesso · o corpo não escolhe preço nem conta ·
             código inválido · um cliente só · 100% → ativa · cartão → pagar · Stripe fora do ar sem
@@ -3385,13 +3390,33 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             criando a assinatura de verdade (gastaria 1 dos 5 usos), a confirmação pelo navegador e
             o aviso chegando pelo `stripe listen`. **Sem teste automático, só a prova acima:** as
             quatro funções que vão à rede (os parâmetros que a Stripe aceita).
-      - [ ] **Passo 4 — site, a tela `/aluno/assinar`.** `@stripe/stripe-js` e
+      - [x] **Passo 4 — site, a tela `/aluno/assinar`.** `@stripe/stripe-js` e
             `@stripe/react-stripe-js` entram aqui. O layout padrão (`PageContainer`…), os textos pelo
             `useT()`, e a nossa fronteira com o Stripe.js num arquivo só (os testes simulam ELA, nunca
             `@stripe/*`). Estados: carregando, erro, já assinante, código aplicado ou inválido, valor
             zero sem cartão, enviando. Teste de componente de cada um + mutação. Medir o peso no
             pacote do aluno; `import()` novo entra em `PEDACOS_DO_ALUNO`. O envio passa por
             `semInterromper()`.
+            **FEITO (10/10/2026).** `@stripe/stripe-js@10.0.0` e `@stripe/react-stripe-js@7.0.0`,
+            fixadas · `client/src/lib/stripe-do-site.tsx` (a ÚNICA porta para `@stripe/*` no site) ·
+            `lib/assinar.ts` · `components/assinar/` (o formulário, separado da página: plano,
+            código, resumo, cartão, botão) · `pages/aluno/AssinarPage.tsx` · a rota, atrás do login.
+            **As formas de pagamento vêm do servidor** (`formasDePagamento` em `GET
+            /api/billing/planos`, a mesma lista com que ele cria a assinatura). **Os textos entraram
+            no dicionário como RASCUNHO** (`app.assinar.*`, PT e EN) — o operador revisa depois
+            (*"isso fazemos depois, é detalhe"*, 10/10/2026); um texto a mais que o rascunho não
+            tinha: "Escolha o plano" | "Choose your plan", a legenda do grupo dos planos.
+            **O peso, medido:** direto, o formulário punha +9,3 KB compactados no pacote de todo
+            aluno (231,1 → 240,4 KB); carregado à parte (`lazy()` + `PEDACOS_DO_ALUNO`), o pacote
+            ficou em 232,7 KB e o formulário em 8 KB só dele. O script da Stripe só é baixado quando
+            a tela abre (`@stripe/stripe-js/pure`). **Testes:** 21 de componente (carregando, erro,
+            já assinante, os valores do servidor, o código, o envio na ordem, cartão incompleto e
+            recusado, 409, dois cliques) + 1 do pré-carregamento. **Mutação:** 9 de 9 reprovaram —
+            uma foi refeita: a primeira forma dela dava o mesmo resultado na tela por outro caminho
+            e não provava nada.
+            **NÃO provado ainda, fica para o passo 6:** o campo de verdade da Stripe abrindo num
+            navegador — os testes usam um dublê da nossa fronteira, e `stripe-do-site.tsx` só tem a
+            conferência de tipos contra a biblioteca.
       - [ ] **Passo 5 — site, o concluído e as entradas.** `/aluno/assinar/concluido` (espera o
             aviso; mensagem calma se demorar) · o botão Assinar embaixo de "Esta aula é para
             assinantes." · os botões Assinar da home viram link quando há login (sem login ficam como
@@ -3440,14 +3465,16 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       amount, currency })` + `elements.submit()` + `confirmPayment` com o `clientSecret`) — **2
       consultas** (10/10/2026). Nos tipos da `stripe@23.0.0`: `prices.list` por `lookup_keys`,
       `invoices.createPreview`, `PromotionCode.promotion`, `Invoice.confirmation_secret`.
-      **PAREI EM (10/10/2026):** o SERVIDOR da etapa está pronto — passos 1, 2, 3a e 3b feitos e
-      commitados no `dev` (nada publicado). Próximo: **passo 4** (o site: a tela `/aluno/assinar`).
-      **Esperam o operador, antes do passo 4:** (1) o OK para aplicar a migration
-      `20261010120000_cliente_da_stripe` no banco de dev — sem ela, assinar falha no computador
-      dele; (2) a revisão dos textos em rascunho, acima; (3) saber que **o cartão só some com
-      desconto de 100% PARA SEMPRE** — com 100% só na primeira cobrança o cartão é pedido, porque a
-      cobrança seguinte precisa dele (consequência de como a Stripe funciona; se ele quiser outra
-      regra, muda em `lib/checkout.ts`).
+      **Uma 3ª consulta no passo 4** (o lado do site: `elements.update` do valor,
+      `redirect: "if_required"`, `confirmSetup`) — **3 no dia para esta etapa**; acima das 2 que
+      o `CLAUDE.md` dá como sinal, porque a etapa tem servidor e site.
+      **Respostas do operador (10/10/2026):** a migration no banco de dev — **OK** (aplicada) · os
+      textos — *"isso fazemos depois, é detalhe"* (seguem como rascunho no dicionário) · **o cartão
+      só some com desconto de 100% PARA SEMPRE** (com 100% só na primeira cobrança o cartão é
+      pedido, porque a cobrança seguinte precisa dele) — **OK**.
+      **PAREI EM (10/10/2026):** passos 1 a 4 feitos e commitados no `dev` (nada publicado).
+      Próximo: **passo 5** (a tela de concluído, o botão na aula trancada e os botões da home com
+      login).
 - [ ] **4.3 — No ar, em modo de teste: o PRIMEIRO TESTE REAL (sessão curta, com o operador).** As
       chaves de teste e o segredo do webhook no Railway, o endereço do webhook no painel — **com
       "www"**: `https://www.jilsonsantana.com/api/stripe/webhook` (medido em 09/10/2026: sem o "www",

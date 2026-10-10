@@ -225,8 +225,9 @@ export async function cancelarIncompleta(id: string): Promise<string> {
 }
 
 // AS FORMAS DE PAGAMENTO DA ASSINATURA — uma lista só, aqui. Nesta etapa, cartão; o Pix (etapa
-// 4.9) é um item a mais, com o mandato.
-const FORMAS_DE_PAGAMENTO: Stripe.SubscriptionCreateParams.PaymentSettings.PaymentMethodType[] = ["card"];
+// 4.9) é um item a mais, com o mandato. O SITE recebe esta mesma lista (`GET /api/billing/planos`)
+// para abrir o campo de pagamento: as duas pontas nunca discordam.
+export const FORMAS_DE_PAGAMENTO: Stripe.SubscriptionCreateParams.PaymentSettings.PaymentMethodType[] = ["card"];
 
 /**
  * Cria a assinatura — INCOMPLETA até o site confirmar o pagamento (`default_incomplete`); com

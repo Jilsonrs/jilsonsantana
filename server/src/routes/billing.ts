@@ -2,7 +2,7 @@ import { Router } from "express";
 import { assinarSchema, previaSchema, type AssinaturaCriada, type PlanosDaAssinatura, type PreviaDaAssinatura, type SituacaoDaAssinatura } from "@jilson/core";
 import { requireAuth } from "../middleware/auth.js";
 import { validate } from "../lib/http.js";
-import { buscarCodigo, buscarPrecos, calcularPrevia, chavePublicavel, cobrancaConfigurada } from "../lib/stripe.js";
+import { buscarCodigo, buscarPrecos, calcularPrevia, chavePublicavel, cobrancaConfigurada, FORMAS_DE_PAGAMENTO } from "../lib/stripe.js";
 import { temAcessoAtivo } from "../lib/acesso.js";
 import { assinar } from "../lib/checkout.js";
 
@@ -27,6 +27,7 @@ router.get("/billing/planos", requireAuth, async (_req, res) => {
   const resposta: PlanosDaAssinatura = {
     chavePublicavel: chave,
     planos: precos.map(({ plano, centavos, moeda }) => ({ plano, centavos, moeda })),
+    formasDePagamento: [...FORMAS_DE_PAGAMENTO],
   };
   res.json(resposta);
 });

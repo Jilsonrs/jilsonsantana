@@ -101,7 +101,12 @@ type Pedaco = () => Promise<unknown>;
  * ⚠️ Todo `import()` do app entra numa destas listas, ou na lista de exceções de
  * `pedacos.test.ts`, com o motivo. O teste reprova se não entrar.
  */
-export const PEDACOS_DO_ALUNO: ReadonlyArray<Pedaco> = [() => import("@/components/content/MarkdownText")];
+export const PEDACOS_DO_ALUNO: ReadonlyArray<Pedaco> = [
+  () => import("@/components/content/MarkdownText"),
+  // O formulário de assinar (Fase 4, etapa 4.2). O script da Stripe em si só é baixado quando a
+  // tela de assinar abre (`lib/stripe-do-site.tsx`), não aqui.
+  () => import("@/components/assinar/FormularioDeAssinatura"),
+];
 
 /**
  * O mesmo para o admin, baixado só para quem é admin: o operador costuma publicar

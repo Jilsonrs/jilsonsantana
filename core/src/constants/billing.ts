@@ -15,8 +15,11 @@ export const PLANOS = [Plano.MENSAL, Plano.ANUAL] as const;
 /** Um plano como a tela de assinar o mostra. O valor vem em CENTAVOS, como a Stripe guarda. */
 export type PlanoDaAssinatura = { plano: Plano; centavos: number; moeda: string };
 
-/** Resposta de `GET /api/billing/planos`. */
-export type PlanosDaAssinatura = { chavePublicavel: string; planos: PlanoDaAssinatura[] };
+/**
+ * Resposta de `GET /api/billing/planos`. `formasDePagamento`: a lista do servidor (hoje só
+ * `card`), a MESMA com que ele cria a assinatura — o site abre o campo de pagamento com ela.
+ */
+export type PlanosDaAssinatura = { chavePublicavel: string; planos: PlanoDaAssinatura[]; formasDePagamento: string[] };
 
 /** Por quanto tempo o desconto de um código promocional vale. */
 export const DuracaoDoDesconto = {

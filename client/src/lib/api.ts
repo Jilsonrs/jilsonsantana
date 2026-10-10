@@ -26,6 +26,12 @@ import type {
   HomeFaqUpdateInput,
   AnnouncementInput,
   AnnouncementAudience,
+  PlanosDaAssinatura,
+  PreviaInput,
+  PreviaDaAssinatura,
+  AssinarInput,
+  AssinaturaCriada,
+  SituacaoDaAssinatura,
 } from "@jilson/core";
 
 // Same-origin by design (mirrors auth-client.ts): in dev the Vite proxy
@@ -913,5 +919,32 @@ export type MensagensDoCurso = {
 };
 export async function adminGetMensagensDosCursos(): Promise<MensagensDoCurso[]> {
   const { data } = await client.get<MensagensDoCurso[]>("/admin/course-messages");
+  return data;
+}
+
+// ── Assinar (Fase 4, etapa 4.2) ──────────────────────────────────────────────
+// O site diz só QUAL plano e o código promocional: preço, valor e conta são do servidor.
+
+/** Os dois planos com o valor lido da Stripe, a chave publicável e as formas de pagamento. */
+export async function getPlanosDaAssinatura(): Promise<PlanosDaAssinatura> {
+  const { data } = await client.get<PlanosDaAssinatura>("/billing/planos");
+  return data;
+}
+
+/** Quanto se paga hoje com o código promocional. Código que não vale: 400 `CodigoInvalido`. */
+export async function getPreviaDaAssinatura(corpo: PreviaInput): Promise<PreviaDaAssinatura> {
+  const { data } = await client.post<PreviaDaAssinatura>("/billing/previa", corpo);
+  return data;
+}
+
+/** Cria a assinatura. Quem já assina: 409 `JaAssinante`. NUNCA tenta de novo sozinho (gravação que cria). */
+export async function criarAssinatura(corpo: AssinarInput): Promise<AssinaturaCriada> {
+  const { data } = await client.post<AssinaturaCriada>("/billing/assinatura", corpo);
+  return data;
+}
+
+/** Esta conta tem acesso agora? (a resposta do gate do servidor) */
+export async function getSituacaoDaAssinatura(): Promise<SituacaoDaAssinatura> {
+  const { data } = await client.get<SituacaoDaAssinatura>("/billing/assinatura");
   return data;
 }
