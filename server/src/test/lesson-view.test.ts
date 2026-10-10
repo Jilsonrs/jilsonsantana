@@ -191,6 +191,8 @@ describe("a aula paga", () => {
     const res = await pagina(ids.ingles, member);
     expect(res.body.aula.liberada).toBe(true);
     expect(res.body.curso.language).toBe("en");
+    // Caso 16 da matriz da Fase 4: inclusive o endereço ASSINADO do vídeo — é ele que toca.
+    expect(res.body.aula.playerUrl).toMatch(new RegExp(`/${VIDEO_PAGO}\\?token=[0-9a-f]{64}&expires=\\d+`));
   });
 });
 

@@ -7,6 +7,8 @@ import { auth } from "../lib/auth.js";
 // faria toda a suíte de login bater no limite. A prova de comportamento está no
 // plano (BLOQUEIO DO GO-LIVE): o aviso do balde compartilhado sumir do log da
 // Railway, e errar a senha 3 vezes numa rede sem travar o login na outra.
+// *(Desde 10/10/2026 o comportamento também tem teste, isolado em
+// `login-limite.test.ts`; o que só a produção prova continua no plano.)*
 //
 // O que este teste impede: alguém remover a linha achando que o default cobre.
 // Sem ela, o login volta ao balde único EM SILÊNCIO — nenhum outro teste

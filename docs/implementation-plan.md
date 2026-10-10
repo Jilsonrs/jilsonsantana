@@ -3833,11 +3833,26 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             estava, ele não tinha como reprovar). **No servidor de desenvolvimento, de verdade:**
             corpo malformado → 400 `CorpoInvalido`; forçar a sincronia sem login → 401; download
             sem login → 401. Gates: typecheck, suíte de servidor (680) e do site (806), build.
-      - [ ] **Passo 7 — o que falta da matriz.** (7–10) 401/403/200 em `/api/me` e
+      - [x] **Passo 7 — o que falta da matriz.** (7–10) 401/403/200 em `/api/me` e
             `/api/admin/ping` · (11) a trilha em rascunho pelo endereço, se faltar · (15) o limite
             de tentativas de login **ligado de verdade**, num teste isolado · (16) o player assinado
             no curso em inglês. Os casos 1–6 e 12 já existem (`stripe-webhook.test.ts`,
             `acesso.test.ts`, `public-reads.test.ts`).
+            **FEITO (10/10/2026) — a matriz está completa.** (7–10) `matriz-http.test.ts`: sem
+            login / aluno / admin em `/api/me` e `/api/admin/ping`, e um cookie inventado · (11) a
+            trilha em rascunho pelo endereço → 404, com e sem login (faltava: só o "salvar" tinha
+            teste) · (13–14) no passo 3 · **(15) `login-limite.test.ts`: o limite LIGADO, por
+            comportamento** — o arquivo carrega o `auth` como em produção e fala com ele direto,
+            isolado no seu processo (a suíte inteira seguiu verde com ele no meio).
+            `[MEDIDO, 10/10/2026]` do mesmo IP: 401, 401, 401, **429**, 429; barrado, nem a senha
+            certa entra; de outro IP ela entra; trocar o `x-forwarded-for` a cada pedido não escapa
+            · (16) o curso em inglês com o endereço ASSINADO do vídeo. **Onde está cada caso:** 1–3
+            `stripe-webhook.test.ts` · 4–6 `acesso.test.ts` · 7–10 `matriz-http.test.ts` · 11–12
+            `public-reads.test.ts` · 13–14 `admin-assinaturas.test.ts` · 15 `login-limite.test.ts`
+            · 16 `lesson-view.test.ts`. **Mutação:** 5 de 5 reprovaram — o limite desligado, o IP
+            lido do cabeçalho padrão (cai o "cada pessoa tem o seu"), `/api/admin/ping` sem a trava,
+            `requireAdmin` sem conferir o papel, a trilha sem o filtro de publicada. Gates:
+            typecheck, suíte de servidor (688) e do site (806), build.
       - [ ] **Passo 8 — "Reativar assinatura".** Quem já foi assinante e está sem acesso vê
             "Reativar assinatura" onde hoje lê "Assinar": na aula trancada, na tela de assinar e
             nos dois botões da home quando há login. O visitante sem login continua vendo
@@ -3852,8 +3867,8 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             achado aqui · `billing.md` e `CLAUDE.md` reconciliados · checkbox e *Estado atual*.
       **Fora desta etapa:** ESLint (4.5) · "minha assinatura" e quem cancelou com dias pagos voltar
       a assinar (4.6) · o visitante e a sincronia de assinatura sem conta (4.7) · o reembolso (P56).
-      **ONDE PAROU:** Passos 1 a 6 feitos e commitados no `dev`. Próximo: Passo 7 (o que falta da
-      matriz de testes).
+      **ONDE PAROU:** Passos 1 a 7 feitos e commitados no `dev`. Próximo: Passo 8 ("Reativar
+      assinatura").
 - [ ] **4.5 — ESLint com `no-floating-promises`, bloqueante no CI (código, pequena).** Dependências
       de desenvolvimento novas: `eslint` + `typescript-eslint`. Já decidido para esta fase (item
       abaixo): promessa sem `await` dentro do webhook derruba o servidor sem nenhum teste perceber.

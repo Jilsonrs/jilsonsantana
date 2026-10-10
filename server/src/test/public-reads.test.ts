@@ -113,6 +113,19 @@ describe("a trilha pública só devolve os campos escolhidos", () => {
   });
 });
 
+// Caso 11 da matriz de testes da Fase 4 (plano, etapa 4.4): a leitura pública não devolve
+// rascunho — nem pelo endereço direto de quem adivinhar o slug.
+describe("a trilha em rascunho não sai pelo endereço", () => {
+  it("GET /api/trilhas/:slug de trilha em DRAFT: 404, sem o nome dela na resposta", async () => {
+    const res = await request(servidor).get(`/api/trilhas/trilha-draft${SUFIXO}`);
+    expect(res.status).toBe(404);
+    expect(JSON.stringify(res.body)).not.toContain("trilha-draft");
+    // E com login de aluno também: rascunho não é de quem assina, é de ninguém.
+    const comLogin = await request(servidor).get(`/api/trilhas/trilha-draft${SUFIXO}`).set("Cookie", await sessaoMember());
+    expect(comLogin.status).toBe(404);
+  });
+});
+
 describe("P1-a — aula publicada em curso arquivado não vaza", () => {
   it("GET /api/lessons/:id devolve 404, não os dados do curso fora do ar", async () => {
     const res = await request(servidor).get(`/api/lessons/${aulaOrfaId}`);
