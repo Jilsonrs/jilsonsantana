@@ -3272,6 +3272,102 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       **SE A SESSÃO PARAR NO MEIO** (limite de uso): o plano aprovado é escrito AQUI antes do
       código, cada passo é um commit no `dev`, e o último passo de cada sessão é uma linha
       *"parei em …"* neste item — a próxima conversa continua daí, sem depender da anterior.
+      **O PLANO APROVADO (operador, 10/10/2026).** Decisões dele nesta data: a tela mora em
+      **`/aluno/assinar`** e a de depois do pagamento em **`/aluno/assinar/concluido`** (o `/assinar`
+      curto fica para o visitante, 4.7) · quem **já é assinante** e abre a tela vê "Você já é
+      assinante" com um botão para o Início · para testar no computador, o agente apaga **só a
+      assinatura de mentira do seed** do `member@` no banco de dev, pedindo o OK na hora (o seed a
+      devolve) · **o que ficou de fora desta etapa foi escrito nas etapas 4.6 a 4.9** (*"quero fechar
+      a Stripe em 100% ao final dessas sessões"*), e a 4.2 é montada para elas entrarem **sem
+      refazer** a tela (*Para não refazer depois*, abaixo).
+      **O que o aluno vê:** mensal ou anual · o campo do código promocional · o cartão. Com código de
+      100% o cartão some e o botão já assina. Depois, a tela de concluído, que espera o aviso da
+      Stripe e libera a escola.
+      **Como fica por dentro (convenção de engenharia):** o site manda só `plano` (mensal|anual) e
+      `codigo`; preço, valor e conta **nunca** vêm do navegador (o `userId` é o da sessão) · o cartão
+      é preenchido **antes** de a assinatura existir na Stripe (Elements em modo `subscription`; a
+      assinatura nasce no clique em Assinar) — quem só olha a tela não deixa assinatura pela metade
+      lá · **só o webhook grava o espelho**, como na 4.1 · tabela nova **`stripe_customer`**
+      (`userId` → cliente da Stripe, `livemode`, com RLS): uma conta é sempre UM cliente · dois
+      cliques não viram duas assinaturas (trava por conta; a assinatura incompleta anterior é
+      reaproveitada ou cancelada) · quem já tem acesso (`temAcessoAtivo()`) recebe 409 · a chave
+      publicável só sai do servidor se começar com `pk_` (a secreta colada na variável errada nunca
+      vai ao navegador) · o erro da Stripe nunca vai inteiro para o registro nem para a resposta ·
+      nesta etapa, **só cartão** e **só real**.
+      **Rotas novas** (`server/src/routes/billing.ts`, todas com `requireAuth`, depois do
+      `express.json()`): `GET /api/billing/planos` (os 2 preços lidos da Stripe + a chave
+      publicável) · `POST /api/billing/previa` (o valor de hoje com o código, calculado pela própria
+      Stripe — `invoices.createPreview`; não gasta uso do código) · `POST /api/billing/assinatura`
+      (cria; devolve `ativa`, ou `pagar` com o segredo do pagamento) · `GET /api/billing/assinatura`
+      (tem acesso? — a tela de concluído pergunta até a resposta ser sim).
+      **Passos — um commit cada, no `dev`; em todos: typecheck, a suíte inteira e build:**
+      - [ ] **Passo 1 — servidor, os planos.** `GET /api/billing/planos` + o tipo `Plano` no `core` +
+            testes de servidor. *Prova:* com login, devolve R$ 99,90 e R$ 995 da área restrita.
+      - [ ] **Passo 2 — servidor, o código.** `POST /api/billing/previa` + testes. *Prova:*
+            `TESTE100` → R$ 0; código errado → recusado.
+      - [ ] **Passo 3 — servidor, criar a assinatura.** Migration `stripe_customer` (escrita à mão
+            como na 4.1, aplicada no `dev` com o OK do operador; RLS conferido; `migrate diff` sem
+            diferença) + as duas rotas de assinatura + testes (401 · plano inválido · 409 de quem já
+            tem acesso · o corpo não escolhe preço nem conta · código inválido · um cliente só · 100%
+            → ativa · cartão → pagar · Stripe fora do ar sem vazar o erro · dois cliques) +
+            **mutação**. Estender o item da Fase 7 (*as de teste saem do banco de produção*) com a
+            tabela nova.
+      - [ ] **Passo 4 — site, a tela `/aluno/assinar`.** `@stripe/stripe-js` e
+            `@stripe/react-stripe-js` entram aqui. O layout padrão (`PageContainer`…), os textos pelo
+            `useT()`, e a nossa fronteira com o Stripe.js num arquivo só (os testes simulam ELA, nunca
+            `@stripe/*`). Estados: carregando, erro, já assinante, código aplicado ou inválido, valor
+            zero sem cartão, enviando. Teste de componente de cada um + mutação. Medir o peso no
+            pacote do aluno; `import()` novo entra em `PEDACOS_DO_ALUNO`. O envio passa por
+            `semInterromper()`.
+      - [ ] **Passo 5 — site, o concluído e as entradas.** `/aluno/assinar/concluido` (espera o
+            aviso; mensagem calma se demorar) · o botão Assinar embaixo de "Esta aula é para
+            assinantes." · os botões Assinar da home viram link quando há login (sem login ficam como
+            hoje, até a 4.7) + testes.
+      - [ ] **Passo 6 — a prova no computador, a revisão de segurança e os docs.** O operador instala
+            o Stripe CLI (`stripe login` interativo; o `stripe listen` dá o segredo, que ele cola no
+            `.env` FECHADO). O `member@`, sem a assinatura de mentira, assina com `4242` e com
+            `TESTE100` → a aula trancada abre. `security-vulnerability-reviewer` no código de
+            cobrança, com os achados e o destino de cada um aqui. `billing.md` reconciliado e o
+            checkbox da etapa. *(Cada teste de verdade com `TESTE100` gasta 1 dos 5 usos.)*
+      **Para não refazer depois (o que cada etapa seguinte ACRESCENTA, sem reescrever a 4.2):** o
+      valor e a **moeda** já vêm do servidor, e o cartão já é lido antes de cobrar → o dólar (4.8)
+      entra no servidor · as formas de pagamento saem de **uma lista no servidor** (hoje só `card`)
+      → o Pix (4.9) é um item a mais, com o mandato · o formulário (plano + código + cartão) é um
+      **componente separado da página** → o visitante (4.7) usa o mesmo, com o campo de e-mail ·
+      "já tem acesso?" é uma função só → a volta de quem cancelou (4.6) muda ali.
+      **Textos — RASCUNHO do agente, para a revisão do operador ANTES do passo 4** (vão para
+      `app.assinar.*` no dicionário; português | inglês):
+      título: "Assinar" | "Subscribe" · abaixo dele: "Uma assinatura, todos os cursos e trilhas." |
+      "One subscription, every course and learning path." · planos: "Mensal" | "Monthly", "Anual" |
+      "Yearly", "/mês" | "/month", "/ano" | "/year" · no anual: "equivale a {valor} por mês" | "works
+      out to {valor} per month" (calculado do preço) · abaixo dos planos: "Sem fidelidade. Cancele
+      quando quiser." | "No commitment. Cancel anytime." · código: "Código promocional" | "Promo
+      code", "Aplicar" | "Apply", "Remover" | "Remove", "Este código não é válido." | "This code
+      isn't valid." · desconto: "{desconto} de desconto em todas as cobranças" | "{desconto} off
+      every charge", "{desconto} de desconto na primeira cobrança" | "{desconto} off your first
+      charge", "{desconto} de desconto por {meses} meses" | "{desconto} off for {meses} months" ·
+      resumo: "Hoje você paga" | "Due today"; sem código: "Depois, {valor} por mês até você
+      cancelar." | "Then {valor} per month until you cancel." (e a versão "por ano" | "per year") ·
+      cartão: "Pagamento" | "Payment" · botão: "Assinar" | "Subscribe", "Processando…" |
+      "Processing…" · erros: "Não foi possível carregar os planos. Tente de novo." | "We couldn't
+      load the plans. Please try again.", "Não foi possível concluir a assinatura. Confira os dados
+      e tente de novo." | "We couldn't complete your subscription. Check your details and try
+      again." · já assinante: "Você já é assinante." | "You're already a subscriber.", "Ir para o
+      Início" | "Go to Home" · concluído: "Confirmando sua assinatura…" | "Confirming your
+      subscription…", "Assinatura confirmada. Bons estudos!" | "You're subscribed. Happy
+      learning!", "Começar a estudar" | "Start learning"; se demorar: "Está demorando mais que o
+      normal. Seu pagamento não se perde: esta página continua conferindo." | "This is taking longer
+      than usual. Your payment is safe: this page keeps checking." · na aula trancada, o botão:
+      "Assinar" | "Subscribe".
+      *A decidir por ele na revisão: se a tela leva uma linha sobre o reembolso de 7 dias (o texto
+      em português da home segue mais vago que o em inglês — `billing.md` → Reembolso).*
+      **Docs check (context7):** Stripe → `/websites/stripe` → a assinatura com o Payment Element
+      (`default_incomplete` + `latest_invoice.confirmation_secret` + `confirmPayment` com
+      `return_url`) e o cartão antes da assinatura (`stripe.elements({ mode: "subscription",
+      amount, currency })` + `elements.submit()` + `confirmPayment` com o `clientSecret`) — **2
+      consultas** (10/10/2026). Nos tipos da `stripe@23.0.0`: `prices.list` por `lookup_keys`,
+      `invoices.createPreview`, `PromotionCode.promotion`, `Invoice.confirmation_secret`.
+      **PAREI EM (10/10/2026):** plano aprovado e escrito; nenhum código ainda. Próximo: passo 1.
 - [ ] **4.3 — No ar, em modo de teste: o PRIMEIRO TESTE REAL (sessão curta, com o operador).** As
       chaves de teste e o segredo do webhook no Railway, o endereço do webhook no painel — **com
       "www"**: `https://www.jilsonsantana.com/api/stripe/webhook` (medido em 09/10/2026: sem o "www",
@@ -3288,16 +3384,26 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
 - [ ] **4.6 — Minha assinatura, dentro da escola (código, 2 sessões).** (a) ver o plano e a próxima
       cobrança, trocar o cartão; (b) mudar mensal↔anual com a proração mostrada **antes**, e cancelar
       com o motivo — "cancelar mesmo assim" de 1 clique sempre visível, tom calmo. Sem Customer
-      Portal. Telas e textos: decisões do operador.
+      Portal. Telas e textos: decisões do operador. **(c) — trazido da 4.2 (10/10/2026):** quem
+      cancelou e ainda tem dias pagos volta a assinar pela tela de assinar, sem pagar duas vezes o
+      mesmo período (na 4.2 essa pessoa vê "Você já é assinante").
 - [ ] **4.7 — O visitante assina: a conta nasce no pagamento (código, ALTO RISCO).** O checkout
       público: e-mail + pagamento → o webhook cria a conta (o cadastro continua fechado) e manda o
       e-mail de "crie sua senha". **Depende do Resend configurado e da P49** (o remetente). Junto:
-      a origem do aluno (UTM) gravada na criação da conta.
+      a origem do aluno (UTM) gravada na criação da conta. **Trazido da 4.2 (10/10/2026):** o
+      `/assinar` público usa o MESMO formulário da 4.2 (plano + código + cartão), com o campo de
+      e-mail · **antes de abrir ao visitante, o limite de tentativas do código promocional** (na
+      4.2 só conta logada confere código, e o cadastro é fechado) · os botões Assinar da home
+      passam a funcionar sem login.
 - [ ] **4.8 — Dólar pelo país do cartão + o botão das páginas em inglês (código + decisão).** context7
       primeiro. **Depende da decisão de imposto internacional com o contador (P22)** antes da primeira
-      venda fora do Brasil.
+      venda fora do Brasil. **Trazido da 4.2 (10/10/2026):** a tela de assinar já recebe o valor e a
+      moeda do servidor e já lê o cartão antes de a assinatura existir — o dólar entra no servidor,
+      sem refazer a tela.
 - [ ] **4.9 — Pix recorrente (código).** O mandato no Payment Element e a régua própria do Pix (falha
-      de Pix não se retenta como cartão).
+      de Pix não se retenta como cartão). **Trazido da 4.2 (10/10/2026):** o Pix é um item a mais na
+      lista de formas de pagamento do servidor (na 4.2, só cartão), sem refazer a tela. A home já
+      diz "Pagamento no cartão ou no Pix": esta etapa fecha antes do lançamento.
 - [ ] **4.10 — Fechamento da fase (código + painel).** E2E de ponta a ponta (assinar, renovar, cancelar,
       pagamento falho com acesso mantido na janela) · a régua de inadimplência no painel (Smart
       Retries) · revisão de segurança da fase inteira. **A troca para as chaves de verdade fica no
