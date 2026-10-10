@@ -204,6 +204,10 @@
 > (aula concluída sozinha, barra na aula e no cartão), o vídeo que não recomeça ao trocar de aba
 > (a apresentação abre pausada, a aula toca sozinha) e o "Salvos". **Primeiro teste com o player de
 > verdade: com o operador** (assistir uma aula até perto do fim e ver a barra andar).
+> **NO `dev`, AINDA NÃO PUBLICADO (10/10/2026):** a resposta de "Is there a refund?" na página em
+> inglês passa a dizer 14 dias (migration de dado `reembolso_de_14_dias_na_resposta_em_ingles`,
+> sem mudança de estrutura; aplicada no banco de desenvolvimento) e as decisões de reembolso do
+> mesmo dia, só em documento (`billing.md` → *Reembolso*). Vai ao site na próxima publicação.
 > **PUBLICADO em 10/10/2026, por último (`main` = `91cb4dc`, CI verde nos dois jobs, deploy ok;
 > sem migration; publicação autorizada pelo operador: "Publica a 4.4"):** a Fase 4, etapa 4.4 —
 > **sincronizar e perder o acesso.**
