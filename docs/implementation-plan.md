@@ -3171,6 +3171,9 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
 > é **4.0 → 4.1 → 4.2 → 4.3**: a Stripe em **modo de teste** dentro do site no ar — que continua
 > atrás do "Em breve" —, com o cartão de teste da Stripe ou o cupom de 100%. As chaves de verdade
 > só entram no GO-LIVE (Fase 7).
+> **⚠️ REVISTO em 10/10/2026 (decisão do operador): a produção usa as chaves de VERDADE já na
+> etapa 4.3.** O computador fica com a área restrita; o site, com a conta de verdade. O porquê e o
+> que muda: etapa 4.3, abaixo, e `CLAUDE.md` → changelog (22).
 > **Estimativa honesta:** cerca de **3 sessões de código**, mais a configuração do painel pelo
 > operador, até o primeiro teste real (4.3); cerca de **10 a 12 sessões** para a fase inteira. Pode
 > crescer com surpresa da Stripe: é fase de alto risco, e toda etapa de código tem revisão de
@@ -3600,7 +3603,33 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       **DESLIGADO (decisão do operador, 10/10/2026):** *"Desliga ela… não precisamos desse botão
       do Stripe."* Conferido no navegador de teste: o botão sumiu, o campo de pagamento continua
       abrindo, e a Stripe não relatou erro.
-- [ ] **4.3 — No ar, em modo de teste: o PRIMEIRO TESTE REAL (sessão curta, com o operador).** As
+- [ ] **4.3 — No ar, COM AS CHAVES DE VERDADE: o PRIMEIRO TESTE REAL (com o operador).**
+      **DECISÃO REVISTA (operador, 10/10/2026 — *"Por que não colocamos no ar as chaves de
+      produção?"*; confirmada por ele: *"chaves de verdade"*).** O texto original desta etapa
+      (abaixo) previa as chaves de TESTE no site até o lançamento. **O que fez mudar:** o
+      computador e o site ficariam ligados à MESMA área restrita — cada teste do dev avisaria o
+      site no ar, que registraria erros falsos de "assinante pagando e trancado fora", e a chave
+      do dev seria a de produção (contra *cada ambiente nasce com credencial própria*). **A conta
+      de verdade está verificada** (e-mail e empresa; visto por ele no painel em 10/10/2026).
+      **O que passa a valer:** no site, o cartão de teste NÃO funciona — o operador testa com um
+      código de 100% (não cobra nada); cartão de verdade, quando ele quiser, e devolve pelo painel.
+      Ninguém além dele assina (cadastro fechado; o visitante é a 4.7).
+      **O plano aprovado, ajustado:** (1) ✅ o `dev` enviado ao GitHub e o CI verde nos dois jobs
+      (`c36d494`, 10/10/2026) · (2) o operador, **na conta de verdade** da Stripe: o produto com os
+      2 preços e as MESMAS lookup keys (`assinatura_mensal`, `assinatura_anual`), o cupom de 100%
+      com um código (aleatório, poucos usos), o ajuste de "cancelar quando todas as tentativas
+      falharem", e o endereço do aviso (com "www"; os 5 tipos de aviso que o servidor trata; a
+      versão da API mais recente — o servidor lê a assinatura da fatura no formato novo) · (3) o
+      operador, no Railway: `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY` e `STRIPE_WEBHOOK_SECRET`,
+      **de verdade**, nunca pelo chat; e se a `DATABASE_URL` tem `connection_limit` · (4) com o
+      "pode publicar" dele: merge `dev → main`; o pre-deploy aplica a migration `cliente_da_stripe`
+      · (5) o agente prova de fora, só leitura · (6) o SQL de RLS em produção · (7) o operador
+      testa no site com o código de 100% · (8) checkbox e *Estado atual*.
+      `Docs check (context7): Stripe → /websites/stripe → como cadastrar o endereço do aviso no
+      painel (Workbench: um "event destination", com a conta de origem, a versão da API, os tipos
+      de aviso e o endereço; o segredo `whsec_` fica na página do destino) — 1 consulta
+      (10/10/2026). Nenhum código da Stripe é escrito nesta etapa.`
+      **O TEXTO ORIGINAL, de antes da revisão (fica como registro):** As
       chaves de teste e o segredo do webhook no Railway, o endereço do webhook no painel — **com
       "www"**: `https://www.jilsonsantana.com/api/stripe/webhook` (medido em 09/10/2026: sem o "www",
       só a página inicial redireciona e todo outro endereço responde 404) —, publicar,
@@ -3650,7 +3679,8 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       esperando**: vários pedidos juntos esgotariam as conexões e parariam a API inteira — a trava
       que não espera (`pg_try_advisory_xact_lock`) ou a Stripe fora da transação · (c) **o
       checkout público NUNCA vai ao ar com chave de teste**: o gate não lê `livemode`, e a API não
-      fica atrás do "Em breve" — qualquer pessoa assinaria de graça com o cartão `4242` · (d)
+      fica atrás do "Em breve" — qualquer pessoa assinaria de graça com o cartão `4242` *(desde a
+      decisão de 10/10/2026 a produção só tem chaves de verdade: cumprido por construção)* · (d)
       medir na área restrita se criar uma assinatura incompleta com código gasta um uso dele (se
       gastar, trocar de plano várias vezes esgota um código sem pagar nada).
 - [ ] **4.8 — Dólar pelo país do cartão + o botão das páginas em inglês (código + decisão).** context7
@@ -3671,7 +3701,8 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       da Stripe e paga com o cartão de teste** — na 4.2 o campo não abria e nenhum teste acusou,
       porque todos usam um dublê; o roteiro que provou está descrito no item 4.2 (passo 6). E2E de ponta a ponta (assinar, renovar, cancelar,
       pagamento falho com acesso mantido na janela) · a régua de inadimplência no painel (Smart
-      Retries) · revisão de segurança da fase inteira. **A troca para as chaves de verdade fica no
+      Retries) · revisão de segurança da fase inteira. *(Revisto em 10/10/2026: as chaves de
+      verdade entram já na etapa 4.3 — não há mais troca no lançamento.)* **A troca para as chaves de verdade fica no
       GO-LIVE (Fase 7).**
 
 > **Os itens abaixo continuam sendo a ESPECIFICAÇÃO da fase** (as travas, os casos de teste, as
@@ -4601,7 +4632,14 @@ outro aparelho e "daqui a um mês", e o Safari apaga o armazenamento do site em 
 - [ ] LGPD: privacy policy, terms, consent, data export/delete path — **plus English versions of
       the legal pages** (the English side is live from launch — `idiomas.md`)
 - [ ] Error/loading states everywhere; security review (subagent) on auth/billing/video
-- [ ] **A Stripe de verdade — e as assinaturas do modo de teste SAEM do banco de produção** *(achado
+- [ ] **⚠️ REVISTO em 10/10/2026: a Stripe de verdade entra na etapa 4.3, não aqui.** Com isso, a
+      troca de chaves e a limpeza descritas abaixo **deixam de existir** (o banco de produção nunca
+      recebe assinatura nem cliente do modo de teste). **O que continua sendo deste item, antes da
+      primeira venda de verdade:** avaliar uma **chave restrita** no lugar da secreta padrão · o
+      nome que aparece na fatura do cartão (P58) · o reembolso cortar ou não o acesso (P56) · o
+      imposto fora do Brasil (P22) · o código de 100% para presentear: aleatório e de 1 uso.
+      *O texto original, como registro:*
+      **A Stripe de verdade — e as assinaturas do modo de teste SAEM do banco de produção** *(achado
       P2 da revisão de segurança da etapa 4.1, 09/10/2026)*. Com a conta de verdade **ativada** (os
       dados da empresa e a conta bancária): no Railway, trocar as chaves e o segredo do webhook do
       modo de teste pelos de verdade — avaliando uma **chave restrita** no lugar da secreta padrão

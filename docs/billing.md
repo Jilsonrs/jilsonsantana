@@ -176,7 +176,8 @@ liga a assinatura à conta pelo `userId` que o NOSSO checkout grava na Stripe.
 segredo, mas mora junto: o servidor a entrega ao site, e trocar de ambiente é trocar as variáveis
 de um lugar só), **só no ambiente do servidor**
 (`server/.env` em dev, Railway em produção) — coladas pelo operador, nunca pelo chat. Até o
-lançamento: as do **modo de teste**. Sem o segredo do webhook, todo aviso é recusado (nunca "aceitar
+lançamento: as do **modo de teste** *(revisto em 10/10/2026: no site, as de VERDADE desde a etapa
+4.3; as de teste ficam só no computador — ver "Assinar com a conta logada", abaixo)*. Sem o segredo do webhook, todo aviso é recusado (nunca "aceitar
 sem verificar", como alguns exemplos da própria doc da Stripe fazem). O espelho guarda de qual modo
 veio cada assinatura (`livemode`): no GO-LIVE, as do modo de teste saem do banco de produção (plano,
 Fase 7) — as chaves de verdade nunca mais recebem aviso delas, e uma ativa daria acesso para sempre.
@@ -219,6 +220,11 @@ gera mais aviso, o acesso ficaria liberado para sempre. *(Achado P1 da revisão 
   acabamento visual é do Antigravity. *Reabre se o dólar (etapa 4.8) ou o Pix (4.9) pedirem
   mostrar de novo o valor final antes de confirmar.*
 - **A home tem que levar à assinatura também quem não tem conta** (10/10/2026): é a etapa 4.7.
+- **A produção usa as chaves de VERDADE desde a etapa 4.3; o computador, a área restrita**
+  (10/10/2026 — revê a decisão de 09/10, de chaves de teste no site até o lançamento). Cada
+  ambiente com a sua credencial: os testes do dev nunca tocam o site. No site, o cartão de teste
+  não funciona: testa-se com um código de 100%. *Reabre se uma etapa precisar simular no site no ar
+  o que só o ambiente de teste simula (cartão recusado, renovação adiantada).*
 - **A Stripe fecha INTEIRA na Fase 4, com o Pix** (10/10/2026): *"quero que a escola possa ser
   lançada a qualquer momento depois da fase da Stripe."* *Reabre só por decisão dele.*
 
