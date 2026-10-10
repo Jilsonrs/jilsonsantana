@@ -217,6 +217,10 @@
 > página inicial e a tela de assinar, para o público, seguem no "Em breve".
 > *Antes, no computador do operador (área restrita):* ele assinou como `member@` com o cartão de
 > teste e com o código de 100%.
+> **A PRIMEIRA ASSINATURA DE VERDADE (10/10/2026):** o operador assinou no site, como `member@`,
+> com um código de 100% (nada cobrado). No banco de produção: ativa, de verdade, paga até
+> 10/11/2026. **O `member@` de produção agora tem acesso de assinante** — ele testa a escola como
+> aluno no site no ar. Zero tabela em `public` sem RLS (conferido em produção no mesmo dia).
 > **PUBLICADO em 09/10/2026, por último (`main` = `6b09789`, CI verde nos dois jobs, deploy ok; as
 > migrations `avisos_da_stripe` e `assinatura_de_teste_ou_real` aplicadas pelo pre-deploy):** a
 > Fase 4, etapa 4.1 — **o aviso da Stripe (webhook) e o espelho da assinatura.** Nada muda para quem
@@ -3609,7 +3613,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       **DESLIGADO (decisão do operador, 10/10/2026):** *"Desliga ela… não precisamos desse botão
       do Stripe."* Conferido no navegador de teste: o botão sumiu, o campo de pagamento continua
       abrindo, e a Stripe não relatou erro.
-- [ ] **4.3 — No ar, COM AS CHAVES DE VERDADE: o PRIMEIRO TESTE REAL (com o operador).**
+- [x] **4.3 — No ar, COM AS CHAVES DE VERDADE: o PRIMEIRO TESTE REAL (com o operador).**
       **DECISÃO REVISTA (operador, 10/10/2026 — *"Por que não colocamos no ar as chaves de
       produção?"*; confirmada por ele: *"chaves de verdade"*).** O texto original desta etapa
       (abaixo) previa as chaves de TESTE no site até o lançamento. **O que fez mudar:** o
@@ -3661,9 +3665,15 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       rodar no banco de produção"*): uma consulta que só lê o catálogo, no branch `production` do
       Neon (`br-divine-pond-aezsg40q`). **Resultado: zero tabela em `public` sem RLS, e a
       `stripe_customer` existe, com RLS ligado** — a migration foi aplicada pelo pre-deploy.
-      **FALTA para fechar:** (7) o operador assinar no site com o código de 100% — é o que prova as
-      duas chaves de verdade, os preços e o aviso real. Ele disse *"Já fiz"* (10/10/2026); falta
-      registrar o que a tela mostrou.
+      **PASSO 7 FEITO — ETAPA FECHADA (10/10/2026).** O operador assinou no site, como `member@`,
+      com o código de 100% da conta de verdade. O que ele viu (respostas dele): a tela mostrou os
+      dois preços, R$ 99,90 e R$ 995 · com o código, "Hoje você paga R$ 0,00", sem o campo do
+      cartão · terminou em "Assinatura confirmada" e a aula abriu. **Conferido no banco de
+      produção, com a autorização dele, lendo só a linha do `member@`:** uma assinatura, `active`,
+      paga até 10/11/2026, **de verdade (`livemode` verdadeiro)**, com o cliente da Stripe
+      guardado, também de verdade. Isso prova as duas chaves de verdade, os preços pelas lookup
+      keys, o código promocional e o aviso real da Stripe gravando o espelho.
+      **← Daqui em diante o operador testa tudo como aluno, no site de verdade.** Nada foi cobrado.
       **O TEXTO ORIGINAL, de antes da revisão (fica como registro):** As
       chaves de teste e o segredo do webhook no Railway, o endereço do webhook no painel — **com
       "www"**: `https://www.jilsonsantana.com/api/stripe/webhook` (medido em 09/10/2026: sem o "www",

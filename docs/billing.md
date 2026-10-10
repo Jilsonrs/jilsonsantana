@@ -283,7 +283,10 @@ pagamento sem ter assinado vê "confirmando" e depois "está demorando", sem cam
 
 ## Pendências de verificação
 
-Nenhuma aberta. A da etapa 4.2 fechou em 10/10/2026: o operador assinou como `member@`, no
+Nenhuma aberta. **Na conta de VERDADE (etapa 4.3, 10/10/2026):** o operador assinou no site com um
+código de 100% e o espelho de produção ficou ativo, de verdade — as chaves, os preços, o código e o
+aviso real provados; o caminho do CARTÃO de verdade ainda não foi exercitado no site (é cobrança
+real: quando ele quiser). A da etapa 4.2 fechou em 10/10/2026: o operador assinou como `member@`, no
 navegador dele, com o cartão de teste e depois com o `TESTE100` (ativa, sem cartão, fatura de
 valor zero, 1 de 5 usos do código) — com o aviso chegando pelo `stripe listen`.
 *(A da pausa fechou em 09/10/2026 — ver "A cobrança pausada", acima.)*
