@@ -3629,6 +3629,20 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       painel (Workbench: um "event destination", com a conta de origem, a versão da API, os tipos
       de aviso e o endereço; o segredo `whsec_` fica na página do destino) — 1 consulta
       (10/10/2026). Nenhum código da Stripe é escrito nesta etapa.`
+      **PASSOS 2 e 3 FEITOS PELO OPERADOR (10/10/2026), na conta de VERDADE — conferidos pelos
+      prints dele, sem nenhum segredo à mostra:** o produto "Assinatura Jilson Santana", ativo,
+      com os 2 preços recorrentes — R$ 99,90 por mês (`assinatura_mensal`) e R$ 995,00 por ano
+      (`assinatura_anual`) · o cupom "FreeJS" (o nome é dele), 100% para sempre, sem teto no
+      cupom, com um código promocional gerado pela Stripe — **o primeiro código apareceu num print
+      e foi trocado por ele** (a regra de segredo que chega à conversa) · falha de pagamento: a
+      1ª deixa a assinatura em atraso, todas falhando **cancela** (os e-mails de cobrança da Stripe
+      estão desligados: decide-se na 4.10) · o destino dos avisos "jilsonsantana.com": ativo, o
+      endereço com "www", **a versão `2026-09-30.endive`** (a mesma da biblioteca; a conta estava
+      em `2026-05-27.dahlia`), os 5 tipos de aviso · no Railway, as 3 variáveis.
+      **Provado de fora, só leitura:** o aviso sem assinatura passou de 503 (`NaoConfigurado`) para
+      **400** — o site leu o segredo. As duas chaves só se provam depois da publicação (a tela de
+      assinar lê os preços com elas). **A `DATABASE_URL` do Railway não tem `connection_limit`**
+      (dito por ele, sem mostrar o endereço): não há o limite de 1 conexão.
       **O TEXTO ORIGINAL, de antes da revisão (fica como registro):** As
       chaves de teste e o segredo do webhook no Railway, o endereço do webhook no painel — **com
       "www"**: `https://www.jilsonsantana.com/api/stripe/webhook` (medido em 09/10/2026: sem o "www",
