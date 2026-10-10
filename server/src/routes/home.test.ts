@@ -37,9 +37,9 @@ describe("Home pública (SSR)", () => {
   });
 
   it("COM sessão, o botão vira Meus estudos e leva ao app", async () => {
-    // O visitante logado não deve ser convidado a "Entrar" de novo. É a ÚNICA
-    // coisa que a sessão muda na vitrine — o resto é igual para todo mundo,
-    // inclusive para o robô do Google, que nunca tem cookie.
+    // O visitante logado não deve ser convidado a "Entrar" de novo. A sessão muda
+    // DUAS coisas na vitrine — esta e os botões Assinar (teste abaixo); o resto é
+    // igual para todo mundo, inclusive para o robô do Google, que nunca tem cookie.
     const login = await request(servidor).post("/api/auth/sign-in/email").send({
       email: process.env.SEED_MEMBER_EMAIL,
       password: process.env.SEED_MEMBER_PASSWORD,
@@ -52,6 +52,40 @@ describe("Home pública (SSR)", () => {
     expect(res.text).toContain('<a href="/inicio" class="btn-login">');
     expect(res.text).toContain("Meus estudos");
     expect(res.text).not.toContain('href="/login"');
+  });
+
+  // OS BOTÕES ASSINAR (Fase 4, etapa 4.2 — decisão do operador, 09/10/2026): com login, levam
+  // à tela de assinar; sem login continuam como no mock, sem ação (o visitante é a etapa 4.7).
+  describe("os botões Assinar", () => {
+    const paraATelaDeAssinar = '<form method="get" action="/aluno/assinar" style="display: contents;"><button  class="btn"';
+    const entrar = async (): Promise<string[]> => {
+      const login = await request(servidor).post("/api/auth/sign-in/email").send({ email: process.env.SEED_MEMBER_EMAIL, password: process.env.SEED_MEMBER_PASSWORD });
+      return (login.headers["set-cookie"] as unknown as string[] | undefined) ?? [];
+    };
+
+    it("COM sessão: os dois botões Assinar levam à tela de assinar — e são os mesmos botões do mock", async () => {
+      const res = await request(servidor).get("/").set("Cookie", await entrar());
+      expect(res.text.split(paraATelaDeAssinar).length - 1).toBe(2);
+      // A página de quem está logado nunca fica guardada num cache do caminho (revisão de segurança).
+      expect(res.headers["cache-control"]).toBe("private, no-cache");
+      expect(res.text).toContain(`${paraATelaDeAssinar} style="width: 100%;">Assinar</button></form>`);
+      expect(res.text).toContain(`${paraATelaDeAssinar} style="padding: 24px 64px; font-size: 1.35rem;">Assinar</button></form>`);
+    });
+
+    it("SEM sessão: nenhum botão leva a lugar nenhum — a vitrine do visitante e do Google não muda", async () => {
+      const res = await request(servidor).get("/");
+      expect(res.text).not.toContain("/aluno/assinar");
+      expect(res.text).toContain('<button  class="btn" style="width: 100%;">Assinar</button>');
+      // Para o visitante e o robô do Google, a resposta não ganha cabeçalho nenhum.
+      expect(res.headers["cache-control"]).toBeUndefined();
+      expect(res.text).toContain('<button  class="btn" style="padding: 24px 64px; font-size: 1.35rem;">Assinar</button>');
+    });
+
+    it("na página em INGLÊS, com o botão desligado (sem aula em inglês): continua desligado, mesmo com sessão", async () => {
+      const res = await request(servidor).get("/en").set("Cookie", await entrar());
+      expect(res.text).not.toContain("/aluno/assinar");
+      expect(res.text).toContain('<button disabled class="btn" style="width: 100%;">');
+    });
   });
 
   it("não sobra NENHUM link morto na vitrine", async () => {

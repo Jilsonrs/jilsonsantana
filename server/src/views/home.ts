@@ -1,5 +1,5 @@
 import { escapeHtml, jsonLd } from "../lib/html.js";
-import { ROTAS_PUBLICAS, type Dict } from "@jilson/core";
+import { ROTAS_PUBLICAS, TELA_DE_ASSINAR, type Dict } from "@jilson/core";
 
 export interface HomeCourse {
   slug: string;
@@ -77,6 +77,15 @@ export function renderHome({
   // Os endereços da vitrine, por idioma — compartilhados com o rodapé do app
   // (`core/src/constants/site.ts`, onde está o porquê).
   const rotas = ROTAS_PUBLICAS[lang];
+
+  // O BOTÃO ASSINAR (decisão do operador, 09/10/2026): com login, leva à tela de assinar; sem
+  // login continua sem ação, até a etapa 4.7. É o MESMO botão do mock aprovado — só passa a
+  // estar dentro de um formulário que apenas navega (`display: contents`: ele não entra no
+  // desenho). Onde o botão está desligado (a página em inglês sem aula em inglês), continua.
+  const botaoAssinar = (rotulo: string, estilo: string): string => {
+    const botao = `<button ${canSubscribe ? "" : "disabled"} class="btn" style="${estilo}">${escapeHtml(rotulo)}</button>`;
+    return logado && canSubscribe ? `<form method="get" action="${TELA_DE_ASSINAR}" style="display: contents;">${botao}</form>` : botao;
+  };
 
   // Seletor PT | EN: dois links, um por endereço — sem cookie e sem negociação
   // por cabeçalho ("UM ENDEREÇO POR IDIOMA", CLAUDE.md → Idiomas). O idioma
@@ -648,7 +657,7 @@ ${testimonials.map((t) => `        <div class="test-card">
 
             <div class="price-value">${escapeHtml(dict.home.pricing.pricePt)}<span style="font-size: 1rem;">${escapeHtml(dict.home.pricing.period)}</span></div>
             <p class="price-desc">${escapeHtml(dict.home.pricing.desc)}</p>
-            <button ${canSubscribe ? "" : "disabled"} class="btn" style="width: 100%;">${escapeHtml(dict.home.pricing.btn)}</button>
+            ${botaoAssinar(dict.home.pricing.btn, "width: 100%;")}
 
             <ul class="price-list">
               <li>${escapeHtml(dict.home.pricing.features[0])}</li>
@@ -681,7 +690,7 @@ ${faq.map((item) => `        <details>
     <!-- Chamada final -->
     <section class="section container" style="text-align: center; padding-top: 0;">
       <h2 style="font-size: clamp(2.5rem, 4vw, 3.5rem); margin: 0 auto 48px; max-width: 800px; line-height: 1.1;">${escapeHtml(dict.home.cta.title)}</h2>
-      <button ${canSubscribe ? "" : "disabled"} class="btn" style="padding: 24px 64px; font-size: 1.35rem;">${escapeHtml(dict.home.cta.btn)}</button>
+      ${botaoAssinar(dict.home.cta.btn, "padding: 24px 64px; font-size: 1.35rem;")}
     </section>
 
     <!-- Footer -->

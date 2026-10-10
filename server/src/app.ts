@@ -30,6 +30,7 @@ import notificacoesRouter from "./routes/notificacoes.js";
 import adminCaptionsRouter from "./routes/admin-captions.js";
 import adminStatsRouter from "./routes/admin-stats.js";
 import stripeWebhookRouter from "./routes/stripe-webhook.js";
+import billingRouter from "./routes/billing.js";
 
 // Monta o app e EXPORTA sem escutar porta. O `listen()` vive em `index.ts`.
 //
@@ -120,6 +121,9 @@ app.use("/api", adminCaptionsRouter);
 // Os números do cartão do curso no admin (Fase 5, Bloco MEDIR, etapa 2 — 09/10/2026):
 // estatística, em rota própria (CLAUDE.md → Analytics Convention).
 app.use("/api", adminStatsRouter);
+// Assinar com a conta logada (Fase 4, etapa 4.2): depois do `express.json()` — só o AVISO da
+// Stripe, lá em cima, precisa do corpo cru.
+app.use("/api", billingRouter);
 
 // ── Home pública (SSR, sem React) ───────────────────────────────────────────
 // Registrada em TODOS os ambientes (em dev o operador abre localhost:3000).
