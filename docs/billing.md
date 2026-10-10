@@ -194,6 +194,60 @@ busca na Stripe acontece **depois** da trava (`server/src/lib/assinaturas.ts`). 
 velha ("atrasada") podia gravar por cima da nova ("cancelada") — e, como assinatura cancelada não
 gera mais aviso, o acesso ficaria liberado para sempre. *(Achado P1 da revisão da etapa 4.1.)*
 
+## Assinar com a conta logada *(Fase 4, etapa 4.2 — 10/10/2026)*
+
+**Decisões do operador:**
+- **A tela mora em `/aluno/assinar`; a de depois do pagamento, em `/aluno/assinar/concluido`**
+  (10/10/2026). O `/assinar` curto fica para o visitante (etapa 4.7). *Reabre se a etapa 4.7
+  decidir uma tela só para os dois.*
+- **Chega-se a ela pela aula trancada e pelos botões Assinar da home, quando há login**
+  (09/10/2026). Sem login nada muda. *Reabre na etapa 4.7, que liga os botões para o visitante.*
+- **Quem já é assinante e abre a tela vê "Você já é assinante" e o caminho para o Início**
+  (10/10/2026). *Reabre na etapa 4.6: quem cancelou e ainda tem dias pagos volta a assinar por
+  esta tela.*
+- **O cartão só some com desconto de 100% PARA SEMPRE** (10/10/2026 — consequência da Stripe,
+  levada pelo agente e aceita por ele). Com 100% só na primeira cobrança, ou por alguns meses,
+  nada é cobrado hoje, mas o cartão é pedido: a cobrança seguinte precisa dele. *Reabre se ele
+  quiser cortesia temporária sem cartão — aí a primeira cobrança falharia, e quem decide o resto
+  é a régua de inadimplência.*
+- **Os textos da tela estão como RASCUNHO do agente** (`app.assinar.*` e `app.aula.assinar`, nos
+  dois idiomas), a revisar por ele (*"isso fazemos depois, é detalhe"*, 10/10/2026) — inclusive
+  se a tela leva uma linha sobre o reembolso de 7 dias. *Fecha quando ele revisar.*
+- **A Stripe fecha INTEIRA na Fase 4, com o Pix** (10/10/2026): *"quero que a escola possa ser
+  lançada a qualquer momento depois da fase da Stripe."* *Reabre só por decisão dele.*
+
+**Convenções de engenharia (como o código faz):**
+- **O site diz só QUAL plano e o código promocional.** A conta é a da sessão; cliente, preço e
+  valor são do servidor (`server/src/lib/checkout.ts`).
+- **O valor mostrado é o cobrado.** Os preços vêm da Stripe, pela lookup key; com código, o valor
+  de hoje é a prévia da fatura da própria Stripe — que não gasta uso do código.
+- **O cartão é preenchido antes de a assinatura existir na Stripe**: quem só olha a tela não deixa
+  assinatura pela metade lá. É também o que a etapa 4.8 precisa (o país do cartão antes de cobrar).
+- **Uma conta é sempre UM cliente na Stripe** (tabela `stripe_customer`).
+- **Uma tentativa de cada vez por conta, e a nova tentativa usa a MESMA assinatura**: cartão
+  recusado e novo clique não criam outra; trocar de plano ou de código cancela a tentativa
+  anterior antes de criar a nova.
+- **Só o aviso da Stripe grava o espelho.** A tela de depois do pagamento pergunta ao gate até a
+  resposta ser sim; nada no navegador libera acesso.
+- **As formas de pagamento são UMA lista no servidor** (`FORMAS_DE_PAGAMENTO`, hoje só `card`); o
+  site abre o campo de pagamento com ela. O Pix (etapa 4.9) é um item a mais.
+- **No site, só `client/src/lib/stripe-do-site.tsx` importa `@stripe/*`**; os testes simulam esse
+  arquivo, nunca a biblioteca.
+
+`[FATO — medido na área restrita, 10/10/2026, `stripe@23.0.0`]` Cancelar uma assinatura incompleta
+a leva a `incomplete_expired` e anula a fatura dela · o segredo da fatura aberta é de um pagamento
+(`pi_…`) · campo de `metadata` com valor vazio não é guardado · o `TESTE100` na prévia dá R$ 0 e não
+gasta uso.
+
+**Limitações conhecidas:** código promocional preso a UM cliente aparece como inválido na tela
+(a prévia não manda o cliente; hoje não existe código assim) · quem abre a tela de depois do
+pagamento sem ter assinado vê "confirmando" e depois "está demorando", sem caminho de volta nela ·
+**o limite de tentativas do código promocional não existe** — precisa existir antes de a etapa
+4.7 abrir a conferência ao visitante.
+
 ## Pendências de verificação
 
-Nenhuma aberta. *(A da pausa fechou em 09/10/2026 — ver "A cobrança pausada", acima.)*
+**Uma aberta (etapa 4.2, passo 6 — com o operador):** o código `TESTE100` criando a assinatura de
+verdade (ativa, sem cartão), o campo de pagamento da Stripe abrindo no navegador e o aviso
+chegando pelo `stripe listen`. Tudo o mais da etapa foi provado na área restrita em 10/10/2026.
+*(A da pausa fechou em 09/10/2026 — ver "A cobrança pausada", acima.)*
