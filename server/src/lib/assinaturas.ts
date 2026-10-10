@@ -1,7 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "./prisma.js";
 import { temAcessoAtivo } from "./acesso.js";
-import { buscarAssinatura, type AssinaturaNaStripe, type AvisoDaStripe } from "./stripe.js";
+import { AssinaturaNaoEncontrada, assinaturasDoCliente, buscarAssinatura, type AssinaturaNaStripe, type AvisoDaStripe } from "./stripe.js";
 
 // O ESPELHO DA ASSINATURA (Fase 4, etapa 4.1 — CLAUDE.md → Membership Gating). A assinatura da
 // Stripe é a CANÔNICA; a nossa é o espelho que o gate (`temAcessoAtivo()`) lê. Cada aviso:
@@ -126,4 +126,38 @@ export async function sincronizarAssinatura(assinaturaId: string): Promise<Sincr
     const motivo = erro instanceof Error ? erro.message : String(erro);
     throw new Error(`[stripe] a sincronia da assinatura ${assinaturaId} falhou: ${motivo}`, { cause: erro });
   }
+}
+
+/** O que a sincronia de uma conta encontrou em CADA assinatura dela. */
+export type Conferida = { id: string } & (Sincronia | { resultado: "nao-encontrada" });
+
+/**
+ * A SINCRONIA DE UMA CONTA — o que o admin força quando o aviso da Stripe se perdeu (etapa 4.4;
+ * a Stripe reentrega por até 3 dias, e depois disso só isto recupera). Confere, uma a uma e
+ * pela rotina de sempre, as assinaturas que a STRIPE lista para o cliente desta conta (as
+ * últimas 20, de qualquer status) e as que o ESPELHO já conhece dela. Serve aos dois lados:
+ * libera quem pagou e ficou trancado, e tira o acesso de quem a Stripe já encerrou.
+ * A assinatura que a Stripe não conhece é RELATADA — o espelho dela nunca é apagado por aqui.
+ * Qualquer outra falha sobe: o que já foi conferido fica gravado, e repetir não faz mal.
+ */
+export async function sincronizarConta(userId: string): Promise<Conferida[]> {
+  // FECHA na dúvida, como o gate: no Prisma, um filtro vazio traria as assinaturas de todo mundo.
+  if (typeof userId !== "string" || userId.length === 0) throw new Error("[stripe] sincronia de conta sem a conta");
+  const [cliente, noEspelho] = await Promise.all([
+    prisma.stripeCustomer.findUnique({ where: { userId }, select: { stripeCustomerId: true } }),
+    prisma.subscription.findMany({ where: { ownerUserId: userId }, select: { stripeSubscriptionId: true }, orderBy: { id: "asc" } }),
+  ]);
+  const naStripe = cliente ? await assinaturasDoCliente(cliente.stripeCustomerId) : [];
+  const ids = [...new Set([...naStripe.map((a) => a.id), ...noEspelho.map((a) => a.stripeSubscriptionId)])];
+
+  const conferidas: Conferida[] = [];
+  for (const id of ids) {
+    try {
+      conferidas.push({ id, ...(await sincronizarAssinatura(id)) });
+    } catch (erro) {
+      if (!(erro instanceof Error && erro.cause instanceof AssinaturaNaoEncontrada)) throw erro;
+      conferidas.push({ id, resultado: "nao-encontrada" });
+    }
+  }
+  return conferidas;
 }

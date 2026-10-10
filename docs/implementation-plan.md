@@ -3763,12 +3763,29 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             **Mutação:** 4 de 4 reprovaram — sem sincronizar, engolindo a falha da Stripe, sem
             gritar, criando outra assinatura em vez de reconhecer a viva. Gates: typecheck, suíte de
             servidor (653) e do site (797), build.
-      - [ ] **Passo 3 — forçar a sincronia pelo admin: a rota.** `POST
+      - [x] **Passo 3 — forçar a sincronia pelo admin: a rota.** `POST
             /api/admin/assinaturas/sincronizar`, com o e-mail do aluno, atrás do `requireAdmin`:
             sincroniza as assinaturas do cliente da conta na Stripe e as que o espelho já conhece,
             e devolve o que a Stripe diz e se a conta tem acesso. Testes: sem login 401, aluno comum
             403 (casos 13 e 14 da matriz), libera quem pagou, tira de quem não paga mais, conta que
             não existe. Mutação.
+            **FEITO (10/10/2026).** `routes/admin-assinaturas.ts` (só admin; o corpo diz só o
+            e-mail) + `sincronizarConta` em `lib/assinaturas.ts`: confere, uma a uma e pela rotina
+            do passo 1, as assinaturas que a Stripe lista para o cliente da conta e as que o espelho
+            já conhece dela; responde o que a Stripe diz de cada uma e a resposta do gate depois.
+            **A assinatura que a Stripe não conhece** (apagada lá, a de teste do seed, ou do outro
+            modo) é relatada como `nao-encontrada` — erro com nome próprio na fronteira
+            (`AssinaturaNaoEncontrada`) — e o espelho dela nunca é apagado. O registro leva ids e
+            status, nunca o e-mail. Tipos e corpo no `core` (`sincronizarContaSchema`,
+            `SincroniaDaConta`). **Testes:** 16 de servidor (`admin-assinaturas.test.ts`) — 401 e
+            403 sem consultar a Stripe (casos 13 e 14 da matriz), não existe por GET, 400, 404, 503,
+            libera quem pagou, tira o acesso de quem a Stripe encerrou, a sessão de quem perde o
+            acesso cai e a do admin fica, Stripe + espelho sem repetir, sem-conta, conta que nunca
+            passou pela Stripe, e-mail com espaço e maiúsculas, o corpo não aponta assinatura, a
+            Stripe fora do ar → 500, fecha na dúvida sem a conta, o registro sem o e-mail.
+            **Mutação:** 8 de 8 reprovaram. Gates: typecheck, suíte de servidor (669) e do site
+            (797), build. **Sem teste automático, fica para a prova na área restrita (passo 9):** a
+            Stripe responder `resource_missing` para a assinatura que ela não conhece.
       - [ ] **Passo 4 — a tela do admin "Assinaturas".** `/admin/assinaturas`: o e-mail do aluno, o
             botão, o resultado; carregando, erro e vazio, com teste de componente de cada um. Layout
             padrão (`PageContainer` + `PageHeader` + `PageSection`); textos em português, na tela.
@@ -3799,8 +3816,8 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             achado aqui · `billing.md` e `CLAUDE.md` reconciliados · checkbox e *Estado atual*.
       **Fora desta etapa:** ESLint (4.5) · "minha assinatura" e quem cancelou com dias pagos voltar
       a assinar (4.6) · o visitante e a sincronia de assinatura sem conta (4.7) · o reembolso (P56).
-      **ONDE PAROU:** Passos 1 e 2 feitos e commitados no `dev`. Próximo: Passo 3 (a rota do admin
-      que força a sincronia).
+      **ONDE PAROU:** Passos 1 a 3 feitos e commitados no `dev`. Próximo: Passo 4 (a tela
+      "Assinaturas" do admin).
 - [ ] **4.5 — ESLint com `no-floating-promises`, bloqueante no CI (código, pequena).** Dependências
       de desenvolvimento novas: `eslint` + `typescript-eslint`. Já decidido para esta fase (item
       abaixo): promessa sem `await` dentro do webhook derruba o servidor sem nenhum teste perceber.
