@@ -1,8 +1,8 @@
 import { pipeline } from "node:stream/promises";
-import { Router, type Request, type Response } from "express";
+import { Router, type Response } from "express";
 import { ContentStatus, LessonKind } from "@jilson/core";
 import { prisma } from "../lib/prisma.js";
-import { loadSession, requireAdmin } from "../middleware/auth.js";
+import { loadSession, requireActiveMembership, requireAdmin } from "../middleware/auth.js";
 import { parseId } from "../lib/http.js";
 import { doBanco } from "../lib/language.js";
 import { aulaLiberada, temAcessoAtivo } from "../lib/acesso.js";
@@ -185,12 +185,6 @@ function concluidasDoCurso(userId: string | undefined, curso: Awaited<ReturnType
   return aulasConcluidas(userId, curso.modulos.flatMap((m) => m.aulas.map((a) => a.id)));
 }
 
-/** Quem pede está logado e com assinatura que dá acesso? Sem sessão: não. */
-async function temAssinatura(req: Request): Promise<boolean> {
-  const sessao = await loadSession(req);
-  return sessao ? temAcessoAtivo(sessao.user.id) : false;
-}
-
 // GET /api/lessons/:id/aula — a página da aula para o ALUNO (e para o visitante).
 router.get("/lessons/:id/aula", async (req, res) => {
   const id = parseId(req.params.id, res);
@@ -284,8 +278,10 @@ async function entregarArquivo(res: Response, arquivo: { id: number; storagePath
   }
 }
 
-// GET /api/lessons/:id/files/:fileId — o download do ALUNO: só com assinatura.
-router.get("/lessons/:id/files/:fileId", async (req, res) => {
+// GET /api/lessons/:id/files/:fileId — o download do ALUNO: só com login e assinatura,
+// inclusive na prévia grátis (decisão do operador, 29/09/2026). A trava vem ANTES de procurar o
+// arquivo (etapa 4.4): quem não assina recebe a mesma recusa exista o arquivo ou não.
+router.get("/lessons/:id/files/:fileId", requireActiveMembership, async (req, res) => {
   const id = parseId(req.params.id, res);
   if (id === null) return;
   const fileId = parseId(req.params.fileId, res);
@@ -295,11 +291,6 @@ router.get("/lessons/:id/files/:fileId", async (req, res) => {
   const arquivo = aula ? await prisma.lessonFile.findFirst({ where: { id: fileId, lessonId: id } }) : null;
   if (!aula || !arquivo) {
     res.status(404).json({ error: "NotFound" });
-    return;
-  }
-  // Só com assinatura, inclusive na prévia grátis (decisão do operador, 29/09/2026).
-  if (!(await temAssinatura(req))) {
-    res.status(403).json({ error: "AssinaturaNecessaria" });
     return;
   }
   await entregarArquivo(res, arquivo);

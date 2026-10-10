@@ -3802,11 +3802,22 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             item). **Mutação:** 6 de 6 reprovaram. Gates: typecheck, suíte do site (806) e de
             servidor (669), build. **Sem prova no navegador pelo agente** (precisaria da senha do
             admin): o acabamento é do Antigravity, e quem abre a tela é o operador.
-      - [ ] **Passo 5 — `requireActiveMembership`.** O invólucro HTTP de `temAcessoAtivo()`: sem
+      - [x] **Passo 5 — `requireActiveMembership`.** O invólucro HTTP de `temAcessoAtivo()`: sem
             login 401, sem acesso 403 `AssinaturaNecessaria`. Primeira rota: o download dos arquivos
             da aula (login + assinatura, sem exceção). Para o aluno nada muda; o visitante sem login
             que pedir o endereço direto passa a receber 401 (era 403), e a recusa vem antes de
             procurar o arquivo. Testes da trava (anônimo / sem assinatura / assinante) + mutação.
+            **FEITO (10/10/2026).** `requireActiveMembership` em `middleware/auth.ts`, sozinho como
+            o `requireAdmin`; a regra continua em `temAcessoAtivo()`. `GET
+            /api/lessons/:id/files/:fileId` passou a usá-lo, no lugar da checagem escrita na rota.
+            **O que mudou de fora:** o visitante sem login recebe 401 (era 403), e quem não assina
+            recebe a MESMA recusa exista o arquivo ou não (antes, 404 para o que não existia e 403
+            para o que existia — dava para descobrir quais arquivos existem). O site não lê essa
+            resposta: o download é um link. **Testes:** +3 de servidor em `lesson-view.test.ts` e 2
+            ajustados — a recusa antes de procurar o arquivo; a regra é a do gate (pagamento
+            atrasado e cancelada com dias pagos baixam; cancelada e vencida e a nunca paga, não);
+            o admin não baixa pela rota do aluno. **Mutação:** 5 de 5 reprovaram. Gates: typecheck,
+            suíte de servidor (672) e do site (806), build.
       - [ ] **Passo 6 — o tratador de erro no fim de `/api`.** Erro que escape de qualquer rota de
             `/api`: 500 `ErroInterno`, sem copiar status nem cabeçalho do erro; o corpo malformado
             continua 4xx; o registro continua levando o erro. Testes + mutação.
@@ -3829,8 +3840,8 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             achado aqui · `billing.md` e `CLAUDE.md` reconciliados · checkbox e *Estado atual*.
       **Fora desta etapa:** ESLint (4.5) · "minha assinatura" e quem cancelou com dias pagos voltar
       a assinar (4.6) · o visitante e a sincronia de assinatura sem conta (4.7) · o reembolso (P56).
-      **ONDE PAROU:** Passos 1 a 4 feitos e commitados no `dev`. Próximo: Passo 5
-      (`requireActiveMembership`).
+      **ONDE PAROU:** Passos 1 a 5 feitos e commitados no `dev`. Próximo: Passo 6 (o tratador de
+      erro no fim de `/api`).
 - [ ] **4.5 — ESLint com `no-floating-promises`, bloqueante no CI (código, pequena).** Dependências
       de desenvolvimento novas: `eslint` + `typescript-eslint`. Já decidido para esta fase (item
       abaixo): promessa sem `await` dentro do webhook derruba o servidor sem nenhum teste perceber.
