@@ -204,13 +204,19 @@
 > (aula concluída sozinha, barra na aula e no cartão), o vídeo que não recomeça ao trocar de aba
 > (a apresentação abre pausada, a aula toca sozinha) e o "Salvos". **Primeiro teste com o player de
 > verdade: com o operador** (assistir uma aula até perto do fim e ver a barra andar).
-> **NO `dev`, AINDA NÃO PUBLICADO (10/10/2026, `dev` = a etapa 4.2 fechada):** a Fase 4, etapa
-> 4.2 — **assinar com a conta logada.** A tela `/aluno/assinar` (mensal ou anual, código
-> promocional, o campo de pagamento da Stripe), a de depois do pagamento, o botão Assinar na aula
-> trancada e os botões da home para quem está logado. **Provado no computador do operador, na área
-> restrita da Stripe:** ele assinou como `member@` com o cartão de teste e, depois, com o código
-> de 100% (sem cartão). **Em produção nada disso existe ainda:** a publicação é a etapa 4.3, e
-> leva junto uma migration nova (`cliente_da_stripe`), que o pre-deploy aplica.
+> **PUBLICADO em 10/10/2026, por último (`main` = `efb231f`, CI verde nos dois jobs, deploy ok; a
+> migration `cliente_da_stripe` aplicada pelo pre-deploy):** a Fase 4, etapas 4.2 e 4.3 —
+> **assinar com a conta logada, com a Stripe DE VERDADE no site** (decisão do operador no mesmo
+> dia: a produção usa as chaves de verdade; o computador, a área restrita). A tela
+> `/aluno/assinar` (mensal ou anual, código promocional, o campo de pagamento da Stripe), a de
+> depois do pagamento, o botão Assinar na aula trancada e os botões da home para quem está
+> logado. **Para o visitante nada muda** (continua o "Em breve"), e ninguém além do operador
+> consegue assinar: o cadastro é fechado, e a tela do visitante é a etapa 4.7.
+> **Provado no site, de fora:** a versão nova (`mv2p7nvt-a7885b6b`); o aviso sem assinatura → 400
+> (o segredo lido); as quatro rotas `/api/billing/*` → 401 sem login, com `private, no-store`; a
+> página inicial e a tela de assinar, para o público, seguem no "Em breve".
+> *Antes, no computador do operador (área restrita):* ele assinou como `member@` com o cartão de
+> teste e com o código de 100%.
 > **PUBLICADO em 09/10/2026, por último (`main` = `6b09789`, CI verde nos dois jobs, deploy ok; as
 > migrations `avisos_da_stripe` e `assinatura_de_teste_ou_real` aplicadas pelo pre-deploy):** a
 > Fase 4, etapa 4.1 — **o aviso da Stripe (webhook) e o espelho da assinatura.** Nada muda para quem
@@ -3643,6 +3649,16 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       **400** — o site leu o segredo. As duas chaves só se provam depois da publicação (a tela de
       assinar lê os preços com elas). **A `DATABASE_URL` do Railway não tem `connection_limit`**
       (dito por ele, sem mostrar o endereço): não há o limite de 1 conexão.
+      **PASSOS 4 e 5 FEITOS (10/10/2026):** com o *"Pode publicar"* do operador e o CI verde nos
+      dois jobs no `dev` (`c57aeee`), merge `--no-ff` → **`main` = `efb231f`**; CI da `main` verde
+      nos dois jobs; o Railway publicou (a versão passou a `mv2p7nvt-a7885b6b`). **Provado de
+      fora, só leitura:** `health` 200 · o aviso sem assinatura → 400 · `GET /api/billing/planos`,
+      `GET` e `POST /api/billing/assinatura` e `POST /api/billing/previa` → 401 sem login, todas
+      com `Cache-Control: private, no-store` · a página inicial e `/aluno/assinar`, para o
+      público, mostram o "Em breve" (nenhum botão para a tela de assinar). *A migration não se vê
+      de fora; a versão nova no ar é o sinal de que o pre-deploy passou.*
+      **FALTA para fechar:** (6) o SQL de RLS em produção · (7) o operador assinar no site com o
+      código de 100% — é o que prova as duas chaves de verdade, os preços e o aviso real.
       **O TEXTO ORIGINAL, de antes da revisão (fica como registro):** As
       chaves de teste e o segredo do webhook no Railway, o endereço do webhook no painel — **com
       "www"**: `https://www.jilsonsantana.com/api/stripe/webhook` (medido em 09/10/2026: sem o "www",
