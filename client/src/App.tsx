@@ -27,6 +27,7 @@ import { ROTAS_DO_EDITOR } from "@/pages/admin/course-editor/steps";
 import { AdminSiteTextPage } from "@/pages/admin/AdminSiteTextPage";
 import { AdminTestimonialsPage } from "@/pages/admin/AdminTestimonialsPage";
 import { AdminFaqPage } from "@/pages/admin/AdminFaqPage";
+import { AdminAssinaturasPage } from "@/pages/admin/AdminAssinaturasPage";
 import { AvisosPage } from "@/pages/admin/comunicacao/AvisosPage";
 import { AvisoEditorPage } from "@/pages/admin/comunicacao/AvisoEditorPage";
 import { MensagensAutomaticasPage } from "@/pages/admin/comunicacao/MensagensAutomaticasPage";
@@ -98,6 +99,8 @@ export default function App() {
           <Route path="/admin/comunicacao/notificacoes/nova" element={<AvisoEditorPage />} />
           <Route path="/admin/comunicacao/notificacoes/:id" element={<AvisoEditorPage />} />
           <Route path="/admin/comunicacao/mensagens-automaticas" element={<MensagensAutomaticasPage />} />
+          {/* Conferir na Stripe a assinatura de um aluno (Fase 4, etapa 4.4 — operador, 10/10/2026). */}
+          <Route path="/admin/assinaturas" element={<AdminAssinaturasPage />} />
         </Route>
         {/* Endereço que não existe no app — um favorito antigo de /conta, um
             endereço digitado errado — leva ao Início (decisão do operador,

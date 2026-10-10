@@ -191,6 +191,8 @@ describe("a aula paga", () => {
     const res = await pagina(ids.ingles, member);
     expect(res.body.aula.liberada).toBe(true);
     expect(res.body.curso.language).toBe("en");
+    // Caso 16 da matriz da Fase 4: inclusive o endereço ASSINADO do vídeo — é ele que toca.
+    expect(res.body.aula.playerUrl).toMatch(new RegExp(`/${VIDEO_PAGO}\\?token=[0-9a-f]{64}&expires=\\d+`));
   });
 });
 
@@ -273,10 +275,80 @@ describe("o aluno só enxerga o publicado", () => {
   });
 });
 
+// "REATIVAR ASSINATURA" na aula trancada (etapa 4.4 — decisão do operador, 10/10/2026).
+describe("a aula trancada diz se o convite é reativar", () => {
+  const com = (status: string, currentPeriodEnd: Date) => prisma.subscription.update({ where: { stripeSubscriptionId: ASSINATURA_DE_TESTE }, data: { status, currentPeriodEnd } });
+  const [PASSADO, FUTURO] = [new Date("2020-01-01T00:00:00Z"), new Date("2100-01-01T00:00:00Z")];
+
+  it("já foi assinante e está sem acesso: reativar — e a aula continua trancada, sem conteúdo", async () => {
+    try {
+      await com("canceled", PASSADO);
+      const res = await pagina(ids.paga, member);
+      expect(res.body.reativar).toBe(true);
+      expect(res.body.aula.liberada).toBe(false);
+      semConteudo(res.body);
+    } finally {
+      await com("active", FUTURO);
+    }
+  });
+
+  it("só tentou pagar, é visitante, ou tem acesso: não", async () => {
+    try {
+      await com("incomplete_expired", PASSADO);
+      expect((await pagina(ids.paga, member)).body.reativar).toBe(false);
+      await com("canceled", PASSADO);
+      // O visitante sem login nunca: ninguém sabe quem ele é.
+      expect((await pagina(ids.paga)).body.reativar).toBe(false);
+    } finally {
+      await com("active", FUTURO);
+    }
+    const comAcesso = await pagina(ids.paga, member);
+    expect(comAcesso.body.reativar).toBe(false);
+    expect(comAcesso.body.aula.liberada).toBe(true);
+  });
+});
+
 describe("o download", () => {
-  it("visitante na aula paga: 403, e o Storage nem é lido", async () => {
+  // A TRAVA DE "LOGIN + ASSINATURA" (`requireActiveMembership`, Fase 4, etapa 4.4): o invólucro
+  // HTTP de `temAcessoAtivo()`. Sem login 401; com login e sem acesso 403; com acesso, passa.
+  it("visitante na aula paga: 401 (falta o login), e o Storage nem é lido", async () => {
     const res = await baixar(ids.paga, ids.arquivo);
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(401);
+    expect(lerArquivoDaAula).not.toHaveBeenCalled();
+  });
+
+  it("a recusa vem ANTES de procurar o arquivo: quem não assina recebe a mesma resposta, exista o arquivo ou não", async () => {
+    await semAssinatura(async () => {
+      const existe = await baixar(ids.paga, ids.arquivo, member);
+      const naoExiste = await baixar(ids.paga, 999_999, member);
+      const aulaQueNaoExiste = await baixar(999_999, ids.arquivo, member);
+      for (const res of [existe, naoExiste, aulaQueNaoExiste]) {
+        expect(res.status).toBe(403);
+        expect(JSON.parse((res.body as Buffer).toString())).toEqual({ error: "AssinaturaNecessaria" });
+      }
+    });
+    expect((await baixar(ids.paga, 999_999)).status).toBe(401);
+    expect(lerArquivoDaAula).not.toHaveBeenCalled();
+  });
+
+  it("a regra é a do GATE: pagamento atrasado (em novas tentativas) e cancelada com dias pagos baixam; cancelada e vencida, não", async () => {
+    const com = (status: string, currentPeriodEnd: Date) => prisma.subscription.update({ where: { stripeSubscriptionId: ASSINATURA_DE_TESTE }, data: { status, currentPeriodEnd } });
+    try {
+      await com("past_due", new Date("2020-01-01T00:00:00Z"));
+      expect((await baixar(ids.paga, ids.arquivo, member)).status).toBe(200);
+      await com("canceled", new Date("2100-01-01T00:00:00Z"));
+      expect((await baixar(ids.paga, ids.arquivo, member)).status).toBe(200);
+      await com("canceled", new Date("2020-01-01T00:00:00Z"));
+      expect((await baixar(ids.paga, ids.arquivo, member)).status).toBe(403);
+      await com("incomplete", new Date("2100-01-01T00:00:00Z"));
+      expect((await baixar(ids.paga, ids.arquivo, member)).status).toBe(403);
+    } finally {
+      await com("active", new Date("2100-01-01T00:00:00Z"));
+    }
+  });
+
+  it("o admin não assina: pela rota do ALUNO ele não baixa (403) — a porta dele é a rota de admin", async () => {
+    expect((await baixar(ids.paga, ids.arquivo, admin)).status).toBe(403);
     expect(lerArquivoDaAula).not.toHaveBeenCalled();
   });
 
@@ -298,8 +370,8 @@ describe("o download", () => {
     expect((await baixar(ids.paga, ids.arquivoGratis, member)).status).toBe(404);
   });
 
-  it("prévia grátis: o visitante só assiste — o arquivo não sai (403); o assinante baixa", async () => {
-    expect((await baixar(ids.gratis, ids.arquivoGratis)).status).toBe(403);
+  it("prévia grátis: o visitante só assiste — o arquivo não sai (401); o assinante baixa", async () => {
+    expect((await baixar(ids.gratis, ids.arquivoGratis)).status).toBe(401);
     expect(lerArquivoDaAula).not.toHaveBeenCalled();
     expect((await baixar(ids.gratis, ids.arquivoGratis, member)).status).toBe(200);
   });

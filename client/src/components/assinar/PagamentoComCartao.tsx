@@ -5,7 +5,7 @@ import { BotaoDeAssinar } from "./BotaoDeAssinar";
  * O campo do cartão (da Stripe) com o botão de assinar. Mora DENTRO do `CartaoProvider`: é
  * daqui que sai o cartão que o envio confere e confirma.
  */
-export function PagamentoComCartao({ enviando, aoEnviar }: { enviando: boolean; aoEnviar: (cartao: Cartao) => void }) {
+export function PagamentoComCartao({ enviando, aoEnviar, reativar }: { enviando: boolean; aoEnviar: (cartao: Cartao) => void; reativar?: boolean }) {
   const cartao = useCartao();
   return (
     <form
@@ -16,7 +16,7 @@ export function PagamentoComCartao({ enviando, aoEnviar }: { enviando: boolean; 
       }}
     >
       <CampoDoCartao />
-      <BotaoDeAssinar enviando={enviando} />
+      <BotaoDeAssinar enviando={enviando} reativar={reativar} />
     </form>
   );
 }

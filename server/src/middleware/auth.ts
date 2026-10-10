@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from "express";
 import { fromNodeHeaders } from "better-auth/node";
 import { Role } from "@jilson/core";
 import { auth } from "../lib/auth.js";
+import { temAcessoAtivo } from "../lib/acesso.js";
 
 // Types inferred from the Better Auth instance — includes the custom `role`
 // additionalField on the user. No `any`, no hand-written user shape.
@@ -65,6 +66,31 @@ export async function requireAdmin(
   }
   if (result.user.role !== Role.ADMIN) {
     res.status(403).json({ error: "Forbidden" });
+    return;
+  }
+  req.user = result.user;
+  req.session = result.session;
+  next();
+}
+
+// requireActiveMembership — o invólucro HTTP de `temAcessoAtivo()` (CLAUDE.md → Access
+// Architecture; Fase 4, etapa 4.4). Para a rota que exige login E assinatura, SEM EXCEÇÃO:
+// 401 sem sessão, 403 `AssinaturaNecessaria` sem acesso. Sozinho, como o `requireAdmin`.
+// A regra não mora aqui: quem decide é `temAcessoAtivo()`, a fonte única — este middleware só
+// traduz a resposta dela em HTTP. NÃO serve à página da aula, que aceita visitante por causa da
+// prévia grátis e pergunta ao gate direto. O admin não passa por aqui: ele tem as rotas dele.
+export async function requireActiveMembership(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  const result = await loadSession(req);
+  if (!result) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  if (!(await temAcessoAtivo(result.user.id))) {
+    res.status(403).json({ error: "AssinaturaNecessaria" });
     return;
   }
   req.user = result.user;

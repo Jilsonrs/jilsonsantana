@@ -211,6 +211,25 @@ describe("página da aula — o conteúdo", () => {
     expect(botao.getAttribute("href")).toBe("/aluno/assinar");
   });
 
+  // "REATIVAR ASSINATURA" (Fase 4, etapa 4.4 — decisão do operador, 10/10/2026): "Assinar" só
+  // na primeira vez. Quem diz que a pessoa já foi assinante é o servidor.
+  it("bloqueada, com login, e quem JÁ FOI assinante: o botão diz Reativar assinatura, e leva à mesma tela", async () => {
+    useSessionMock.mockReturnValue({ data: { user: { role: Role.MEMBER } }, isPending: false });
+    getLessonPage.mockResolvedValue({ ...pagina({ liberada: false, arquivosLiberados: false, playerUrl: undefined, arquivos: undefined }), reativar: true });
+    abrir();
+    await screen.findByRole("status");
+    expect(screen.getByRole("link", { name: "Reativar assinatura" }).getAttribute("href")).toBe("/aluno/assinar");
+    expect(screen.queryByRole("link", { name: "Assinar" })).toBeNull();
+  });
+
+  it("o visitante sem login não vê botão nenhum, nem o de reativar", async () => {
+    getLessonPage.mockResolvedValue({ ...pagina({ liberada: false, arquivosLiberados: false, playerUrl: undefined, arquivos: undefined }), reativar: true });
+    abrir();
+    await screen.findByRole("status");
+    expect(screen.queryByRole("link", { name: "Reativar assinatura" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "Assinar" })).toBeNull();
+  });
+
   it("aula liberada: sem botão Assinar", async () => {
     useSessionMock.mockReturnValue({ data: { user: { role: Role.MEMBER } }, isPending: false });
     abrir();

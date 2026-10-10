@@ -208,6 +208,7 @@ export const en: Dict = {
       period: "/month",
       desc: "Billed every month. Cancel anytime.",
       btn: "Subscribe",
+      btnReactivate: "Reactivate subscription",
       features: [
         "Access to all courses and learning paths",
         "Certificate of completion",
@@ -222,7 +223,8 @@ export const en: Dict = {
     },
     cta: {
       title: "Ready to master data, AI and whatever comes next?",
-      btn: "Subscribe"
+      btn: "Subscribe",
+      btnReactivate: "Reactivate subscription"
     }
   },
 
@@ -383,6 +385,7 @@ export const en: Dict = {
     // SUBSCRIBE (Phase 4, step 4.2). DRAFT — the operator reviews it later.
     assinar: {
       titulo: "Subscribe",
+      tituloReativar: "Reactivate subscription",
       descricao: "One subscription, every course and learning path.",
       escolhaDoPlano: "Choose your plan",
       mensal: "Monthly",
@@ -404,6 +407,7 @@ export const en: Dict = {
       hoje: "Due today",
       pagamento: "Payment",
       botao: "Subscribe",
+      botaoReativar: "Reactivate subscription",
       processando: "Processing…",
       erroPlanos: "We couldn't load the plans. Please try again.",
       erro: "We couldn't complete your subscription. Check your details and try again.",
@@ -421,6 +425,7 @@ export const en: Dict = {
       naoEncontrada: "Lesson not found.",
       paraAssinantes: "This lesson is for subscribers.",
       assinar: "Subscribe",
+      reativar: "Reactivate subscription",
       salvarParaDepois: "Save for later",
       salvarCurso: "Save course",
       progressoNoCurso: "Course progress",

@@ -55,6 +55,7 @@ export function LessonContent({
   legenda,
   renovarVideo,
   podeAssinar,
+  reativar,
 }: {
   aula: PaginaDaAula["aula"];
   comoAdmin: boolean;
@@ -83,6 +84,8 @@ export function LessonContent({
    * logado: a tela de assinar exige a conta, e o visitante sem login é a etapa 4.7.
    */
   podeAssinar?: boolean;
+  /** Quem já foi assinante lê "Reativar assinatura" no botão (decisão do operador, 10/10/2026). */
+  reativar?: boolean;
 }) {
   const t = useT();
 
@@ -97,7 +100,7 @@ export function LessonContent({
         </p>
         {podeAssinar && (
           <Button asChild className="mt-4">
-            <Link to={TELA_DE_ASSINAR}>{t.aula.assinar}</Link>
+            <Link to={TELA_DE_ASSINAR}>{reativar ? t.aula.reativar : t.aula.assinar}</Link>
           </Button>
         )}
       </div>

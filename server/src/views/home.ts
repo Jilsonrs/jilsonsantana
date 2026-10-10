@@ -41,6 +41,9 @@ export interface HomeView {
   /** Há sessão válida? Muda SÓ o cabeçalho — o resto da vitrine é igual para
    *  todo mundo, inclusive para o robô do Google, que nunca tem cookie. */
   logado: boolean;
+  /** Quem está logado já foi assinante e hoje está sem acesso: os botões dizem "Reativar
+   *  assinatura" (decisão do operador, 10/10/2026). Sem login, nunca. */
+  reativar: boolean;
   /** Só os PUBLICADOS do idioma da página. Vazia = a seção não aparece. */
   testimonials: HomeTestimonial[];
   /** Só os PUBLICADOS do idioma da página. Vazia = a seção não aparece. */
@@ -66,6 +69,7 @@ export function renderHome({
   canSubscribe,
   baseUrl,
   logado,
+  reativar,
   testimonials,
   faq,
 }: HomeView): string {
@@ -82,7 +86,10 @@ export function renderHome({
   // login continua sem ação, até a etapa 4.7. É o MESMO botão do mock aprovado — só passa a
   // estar dentro de um formulário que apenas navega (`display: contents`: ele não entra no
   // desenho). Onde o botão está desligado (a página em inglês sem aula em inglês), continua.
-  const botaoAssinar = (rotulo: string, estilo: string): string => {
+  // Quem já foi assinante e está sem acesso lê "Reativar assinatura" (decisão dele, 10/10/2026);
+  // "Assinar" fica para a primeira vez — e para o visitante sem login, sempre.
+  const botaoAssinar = (textos: { btn: string; btnReactivate: string }, estilo: string): string => {
+    const rotulo = logado && reativar ? textos.btnReactivate : textos.btn;
     const botao = `<button ${canSubscribe ? "" : "disabled"} class="btn" style="${estilo}">${escapeHtml(rotulo)}</button>`;
     return logado && canSubscribe ? `<form method="get" action="${TELA_DE_ASSINAR}" style="display: contents;">${botao}</form>` : botao;
   };
@@ -657,7 +664,7 @@ ${testimonials.map((t) => `        <div class="test-card">
 
             <div class="price-value">${escapeHtml(dict.home.pricing.pricePt)}<span style="font-size: 1rem;">${escapeHtml(dict.home.pricing.period)}</span></div>
             <p class="price-desc">${escapeHtml(dict.home.pricing.desc)}</p>
-            ${botaoAssinar(dict.home.pricing.btn, "width: 100%;")}
+            ${botaoAssinar(dict.home.pricing, "width: 100%;")}
 
             <ul class="price-list">
               <li>${escapeHtml(dict.home.pricing.features[0])}</li>
@@ -690,7 +697,7 @@ ${faq.map((item) => `        <details>
     <!-- Chamada final -->
     <section class="section container" style="text-align: center; padding-top: 0;">
       <h2 style="font-size: clamp(2.5rem, 4vw, 3.5rem); margin: 0 auto 48px; max-width: 800px; line-height: 1.1;">${escapeHtml(dict.home.cta.title)}</h2>
-      ${botaoAssinar(dict.home.cta.btn, "padding: 24px 64px; font-size: 1.35rem;")}
+      ${botaoAssinar(dict.home.cta, "padding: 24px 64px; font-size: 1.35rem;")}
     </section>
 
     <!-- Footer -->

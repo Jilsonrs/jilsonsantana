@@ -1,3 +1,4 @@
+import type { Prisma } from "@prisma/client";
 import { prisma } from "./prisma.js";
 
 // A FONTE ÚNICA DE ACESSO (CLAUDE.md → Access Architecture): o conteúdo de membro
@@ -28,9 +29,16 @@ export function assinaturaDaAcesso(
   return assinatura.currentPeriodEnd !== null && assinatura.currentPeriodEnd > agora;
 }
 
+/**
+ * De onde o gate lê: o banco — ou a TRANSAÇÃO de quem está gravando o espelho
+ * (`assinaturas.ts`), que precisa comparar o acesso de antes e de depois da gravação
+ * com a MESMA regra, sem uma segunda conta de "quem tem acesso".
+ */
+type Leitor = Pick<Prisma.TransactionClient, "subscription">;
+
 /** Alguma assinatura INDIVIDUAL desta pessoa dá acesso agora? */
-async function assinaturaIndividualAtiva(userId: string): Promise<boolean> {
-  const assinaturas = await prisma.subscription.findMany({
+async function assinaturaIndividualAtiva(userId: string, db: Leitor): Promise<boolean> {
+  const assinaturas = await db.subscription.findMany({
     where: { ownerUserId: userId },
     select: { id: true, status: true, currentPeriodEnd: true },
   });
@@ -47,12 +55,30 @@ async function assinaturaIndividualAtiva(userId: string): Promise<boolean> {
  * os dois — decisão do operador, 14/09/2026) nem papel. Pós-MVP, o corporativo
  * entra aqui como `|| membroDeOrgComLugarLivre(userId)`, sem tocar em quem chama.
  */
-export async function temAcessoAtivo(userId: string): Promise<boolean> {
+export async function temAcessoAtivo(userId: string, db: Leitor = prisma): Promise<boolean> {
   // FECHA na dúvida: no Prisma, `undefined` num filtro quer dizer "sem filtro", e
   // a busca voltaria com as assinaturas de todo mundo (achado da revisão de
   // segurança, 29/09/2026). O tipo protege hoje; isto protege o dia em que não.
   if (typeof userId !== "string" || userId.length === 0) return false;
-  return assinaturaIndividualAtiva(userId);
+  return assinaturaIndividualAtiva(userId, db);
+}
+
+/**
+ * Esta pessoa JÁ FOI assinante? Tem no espelho uma assinatura que passou do primeiro pagamento
+ * (qualquer status que não seja o de "nunca pagou"). Só serve ao TEXTO do convite — "Reativar
+ * assinatura" para quem volta, "Assinar" só na primeira vez (decisão do operador, 10/10/2026) —
+ * e NUNCA decide acesso: quem decide é `temAcessoAtivo()`. Derivado do espelho, sem coluna.
+ */
+export async function jaFoiAssinante(userId: string): Promise<boolean> {
+  // FECHA na dúvida, como o gate: um filtro vazio contaria as assinaturas de todo mundo.
+  if (typeof userId !== "string" || userId.length === 0) return false;
+  const quantas = await prisma.subscription.count({ where: { ownerUserId: userId, status: { notIn: [...NUNCA_PAGOU] } } });
+  return quantas > 0;
+}
+
+/** O convite desta pessoa é REATIVAR? Já foi assinante e, pela resposta do gate, está sem acesso. */
+export async function convidaAReativar(userId: string, temAcesso: boolean): Promise<boolean> {
+  return !temAcesso && (await jaFoiAssinante(userId));
 }
 
 /**

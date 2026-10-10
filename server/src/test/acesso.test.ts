@@ -1,7 +1,7 @@
 import { describe, it, expect, afterAll } from "vitest";
 import { Role } from "@jilson/core";
 import { prisma } from "../lib/prisma.js";
-import { assinaturaDaAcesso, temAcessoAtivo } from "../lib/acesso.js";
+import { assinaturaDaAcesso, convidaAReativar, jaFoiAssinante, temAcessoAtivo } from "../lib/acesso.js";
 import { ASSINATURA_DE_TESTE, podeTerAssinaturaDeTeste } from "../lib/assinatura-de-teste.js";
 
 // A TRAVA DE ACESSO (etapa 4 do Bloco U — plano aprovado pelo operador em
@@ -103,6 +103,37 @@ describe("temAcessoAtivo, lendo o banco", () => {
     const p = await pessoa();
     await assinatura(p.id, "incomplete", daquiA(30));
     expect(await temAcessoAtivo(p.id)).toBe(false);
+  });
+
+  // "REATIVAR ASSINATURA" (etapa 4.4 — decisão do operador, 10/10/2026): quem JÁ FOI assinante
+  // lê "Reativar"; "Assinar" é só a primeira vez. É texto — nunca decide acesso.
+  it("já foi assinante: sim com uma assinatura que passou do primeiro pagamento, em qualquer situação de hoje", async () => {
+    for (const status of ["active", "past_due", "canceled", "unpaid", "paused", "status_novo"]) {
+      const p = await pessoa();
+      await assinatura(p.id, status, daquiA(-30));
+      expect(await jaFoiAssinante(p.id), status).toBe(true);
+    }
+  });
+
+  it("já foi assinante: não para quem nunca assinou, nem para quem só tentou pagar — e a de outra pessoa não conta", async () => {
+    const nunca = await pessoa();
+    const tentou = await pessoa();
+    const outra = await pessoa();
+    await assinatura(tentou.id, "incomplete", daquiA(30));
+    await assinatura(tentou.id, "incomplete_expired", daquiA(-1));
+    await assinatura(outra.id, "canceled", daquiA(-1));
+    expect(await jaFoiAssinante(nunca.id)).toBe(false);
+    expect(await jaFoiAssinante(tentou.id)).toBe(false);
+    expect(await jaFoiAssinante("")).toBe(false);
+    expect(await jaFoiAssinante(undefined as unknown as string)).toBe(false);
+  });
+
+  it("o convite é REATIVAR só para quem já foi assinante E está sem acesso", async () => {
+    const voltou = await pessoa();
+    await assinatura(voltou.id, "canceled", daquiA(-1));
+    expect(await convidaAReativar(voltou.id, false)).toBe(true);
+    expect(await convidaAReativar(voltou.id, true)).toBe(false);
+    expect(await convidaAReativar((await pessoa()).id, false)).toBe(false);
   });
 
   it("o seed deu ao member@ a assinatura de teste (banco local)", async () => {

@@ -337,12 +337,26 @@ export function paraAssinaturaNaStripe(assinatura: Stripe.Subscription): Assinat
   return { id: assinatura.id, status, pagoAte, clienteId, userId, livemode: assinatura.livemode };
 }
 
+/**
+ * A Stripe NÃO CONHECE esta assinatura (etapa 4.4): foi apagada lá, nunca existiu (a assinatura
+ * de teste do seed), ou é do outro modo — de teste, pedida com a chave de verdade. Erro com nome
+ * próprio para a sincronia do admin RELATAR o caso em vez de falhar inteira; nunca é motivo para
+ * apagar o espelho. Só o id na mensagem.
+ */
+export class AssinaturaNaoEncontrada extends Error {
+  constructor(id: string) {
+    super(`[stripe] a Stripe não conhece a assinatura ${id}`);
+    this.name = "AssinaturaNaoEncontrada";
+  }
+}
+
 /** A assinatura como a Stripe diz AGORA — o espelho se recalcula daqui, nunca do retrato do aviso. */
 export async function buscarAssinatura(id: string): Promise<AssinaturaNaStripe> {
   try {
     const assinatura = await stripe().subscriptions.retrieve(id, { expand: ["customer", "latest_invoice"] });
     return paraAssinaturaNaStripe(assinatura);
   } catch (erro) {
+    if (erro instanceof Stripe.errors.StripeInvalidRequestError && erro.code === "resource_missing") throw new AssinaturaNaoEncontrada(id);
     // Era a única ida à Stripe que subia com a mensagem dela — e o aviso a cola no registro
     // (`assinaturas.ts`). Achado da revisão de segurança da etapa 4.2, 10/10/2026.
     throw erroSemMensagem(erro, "a busca da assinatura");

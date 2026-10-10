@@ -31,6 +31,8 @@ import adminCaptionsRouter from "./routes/admin-captions.js";
 import adminStatsRouter from "./routes/admin-stats.js";
 import stripeWebhookRouter from "./routes/stripe-webhook.js";
 import billingRouter from "./routes/billing.js";
+import adminAssinaturasRouter from "./routes/admin-assinaturas.js";
+import { tratarErroDaApi } from "./lib/erro-da-api.js";
 
 // Monta o app e EXPORTA sem escutar porta. O `listen()` vive em `index.ts`.
 //
@@ -124,6 +126,14 @@ app.use("/api", adminStatsRouter);
 // Assinar com a conta logada (Fase 4, etapa 4.2): depois do `express.json()` — só o AVISO da
 // Stripe, lá em cima, precisa do corpo cru.
 app.use("/api", billingRouter);
+// O admin força a sincronia de uma conta com a Stripe (etapa 4.4) — só admin, nunca rota aberta.
+app.use("/api", adminAssinaturasRouter);
+
+// O TRATADOR DE ERRO DA API — o ÚLTIMO de `/api`, depois de todas as rotas (etapa 4.4): o erro
+// que escapar de qualquer uma delas (inclusive do login e do aviso da Stripe, montados lá em
+// cima) responde 500 `ErroInterno`, sem copiar status nem cabeçalho do erro. Rota nova de
+// `/api` entra ACIMA desta linha.
+app.use("/api", tratarErroDaApi);
 
 // ── Home pública (SSR, sem React) ───────────────────────────────────────────
 // Registrada em TODOS os ambientes (em dev o operador abre localhost:3000).

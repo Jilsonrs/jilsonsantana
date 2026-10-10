@@ -105,11 +105,45 @@ dele, isto passa a ser uma **promessa nossa**, oferecida por escolha. Duas coisa
   arrependimento", sem citar os 7 dias que esta seção manda dizer. *Alinhar é decisão do operador
   (texto de interface é dele); fica aqui apontado, não corrigido.*
 
-**Estado do código (etapa 4.1, 09/10/2026): o reembolso ainda NÃO corta o acesso.** A fatura da
-Stripe não tem situação de "reembolsada" (as situações são `draft`, `open`, `paid`, `uncollectible`
-e `void` — tipos da `stripe@23.0.0`): devolvido o dinheiro, ela continua `paid`, e o espelho trata o
-mês como pago. Se o acesso acaba na hora do reembolso é a pendência **P56** do operador, a decidir
-antes da primeira venda de verdade.
+**Cancelar e reembolso — a regra inteira** *(decisão do operador, 10/10/2026 — fecha a P56)*:
+- **O aluno cancela a qualquer momento**, inclusive cedo, só para não esquecer de ser cobrado
+  (*"às vezes só quer estudar um mês"*). O acesso fica **garantido até o fim do período pago**.
+- **Dentro dos 7 dias:** cancelou com reembolso → **recebe o dinheiro de volta e perde o acesso**.
+- **Depois dos 7 dias:** não há reembolso, e o acesso continua até o fim do período pago.
+
+*Reabre se a escola passar a dar mais que a lei (prazo maior, devolução proporcional).*
+
+**Dentro dos 7 dias, o aluno ESCOLHE** *(decisão do operador, 10/10/2026)*: a tela oferece as
+duas saídas — **"parar a renovação e continuar"** (assiste até o fim do período pago) e
+**"cancelar e receber o dinheiro de volta"** (perde o acesso na hora). *Sem gatilho próprio:
+acompanha a regra acima.*
+
+**No máximo 2 reembolsos por aluno** *(decisão do operador, 10/10/2026: "2 reembolsos máximo por
+aluno" — do terceiro em diante "está agindo de má fé")*. Depois do segundo, **aquela conta não
+assina mais**, e a mensagem **não diz que ela foi bloqueada**. A regra recusa a assinatura NOVA;
+não nega reembolso de ninguém — assim nunca existe um terceiro pedido a negar.
+`[PESQUISA — busca na web, 10/10/2026; NÃO é parecer jurídico]` O art. 49 do CDC dá os 7 dias sem
+exigir motivo e **não diz quantas vezes**. Não achamos lei nem decisão de tribunal superior sobre
+uso repetido: a doutrina fala em boa-fé e abuso de direito, sem consenso
+([Conjur](https://www.conjur.com.br/2025-set-16/litigancia-predatoria-no-e-commerce-o-desafio-do-direito-de-retencao//?print=1),
+[UniCEUB](https://repositorio.uniceub.br/jspui/bitstream/prefix/17158/1/22002038.pdf)). O art. 39,
+II e IX, trata como prática abusiva recusar venda a quem quer pagar, e o TJDFT admite a recusa
+quando há **justa causa**
+([TJDFT](https://www.tjdft.jus.br/consultas/jurisprudencia/jurisprudencia-em-temas/cdc-na-visao-do-tjdft-1/praticas-abusivas/recusa-de-contratar-pelo-fornecedor)).
+**Por isso a regra só vale depois de um advogado confirmar (P61)**, e convém estar escrita nos
+termos de uso.
+**Em aberto (P61):** o texto que essa pessoa lê. O operador sugeriu algo como "digite um e-mail
+válido"; recomendação do agente: uma frase neutra e verdadeira ("Não foi possível concluir a
+assinatura nesta conta. Fale com a gente."), porque uma mensagem falsa enfraquece a justa causa
+se alguém reclamar. **Proposta do agente, a decidir ao construir:** contar também pelo cartão (o
+mesmo cartão com outro e-mail).
+*Reabre com a resposta do advogado, ou se a regra barrar aluno de boa-fé.*
+
+**Estado do código (10/10/2026): o reembolso ainda NÃO corta o acesso.** A fatura da Stripe não
+tem situação de "reembolsada" (as situações são `draft`, `open`, `paid`, `uncollectible` e `void`
+— tipos da `stripe@23.0.0`): devolvido o dinheiro, ela continua `paid`, e o espelho trata o mês
+como pago. A regra acima entra com o cancelamento (plano → etapa 4.6): o período
+devolvido deixa de contar como pago no espelho. **Precede a primeira venda de verdade.**
 
 ## O plano ANUAL não aparece na home *(decisão do operador, set/2026)*
 
@@ -140,6 +174,19 @@ Churn involuntário é a maior alavanca de receita da escola (`strategy.md`) —
 cortar acesso de quem só teve o cartão recusado é perder assinante por problema
 que se resolve sozinho na maioria das vezes.
 
+**Quando as tentativas acabam, a assinatura é CANCELADA — e a escola avisa por e-mail, com o
+link para reativar** *(decisão do operador, 10/10/2026: "é melhor cancelar e enviar e-mail com
+link para reativação ou instrução, igual a AI quando não consegue cobrar cancela e depois paga
+reativa")*. No painel da Stripe a opção é **"cancelar a assinatura"** — nunca "marcar como não
+paga" nem "deixar atrasada" —, nos dois ambientes (tarefa do operador: pendência P60). Quem foi
+cancelado assim lê "Reativar assinatura" e assina de novo pela tela de assinar; o e-mail entra
+na etapa 4.7, que traz o envio de e-mail.
+`[FATO — context7 /websites/stripe, 10/10/2026]` "Não paga" (`unpaid`) **não tenta mais cobrar**,
+mas continua gerando fatura a cada período; **cancelada é estado final** — não se reativa,
+cria-se outra (é o que "Reativar assinatura" faz).
+*Reabre se a escola quiser cobrar o período em atraso de quem volta (é para isso que "não paga"
+guarda a dívida), ou quando a pausa for lançada.*
+
 ## Cancelamento dentro do site
 
 Deliberadamente **não usamos o Customer Portal da Stripe**: cancelar e gerenciar
@@ -149,6 +196,11 @@ acontece em telas nativas da escola (o aluno nunca sai do site).
 - **Anti roach-motel:** um "cancelar mesmo assim" claro, de **1 clique**, sempre
   visível. Tom calmo, não retentivo. *(Sensibilidade Procon/CDC — já levantada na
   decisão de preço.)*
+- **Toda assinatura cancelada gera um e-mail AUTOMÁTICO do sistema para o aluno**, com o link
+  para reativar *(decisão do operador, 10/10/2026: "o sistema envia automaticamente e-mail para
+  o aluno, como a Anthropic faz")*. Não é botão do admin: sai sozinho quando a Stripe avisa.
+  Entra na etapa 4.7, que traz o envio de e-mail. *Reabre se o e-mail incomodar quem cancelou
+  de propósito — aí separa-se o cancelamento pedido do cancelamento por falta de pagamento.*
 - **Faseamento:** captura de motivo = lançamento · **"pausar 1 mês"** (pause
   collection da Stripe) = logo depois, não no lançamento.
 
@@ -240,7 +292,9 @@ gera mais aviso, o acesso ficaria liberado para sempre. *(Achado P1 da revisão 
   recusado e novo clique não criam outra; trocar de plano ou de código cancela a tentativa
   anterior antes de criar a nova.
 - **Só o aviso da Stripe grava o espelho.** A tela de depois do pagamento pergunta ao gate até a
-  resposta ser sim; nada no navegador libera acesso.
+  resposta ser sim; nada no navegador libera acesso. *(Revisto na etapa 4.4: quem grava é a
+  ROTINA do aviso, que o checkout e o admin também chamam quando o aviso atrasa ou se perde — ver
+  "Sincronizar e perder o acesso", abaixo. Continua valendo: nada no navegador libera acesso.)*
 - **As formas de pagamento são UMA lista no servidor** (`FORMAS_DE_PAGAMENTO`, hoje só `card`); o
   site abre o campo de pagamento com ela. O Pix (etapa 4.9) é um item a mais.
 - **No site, só `client/src/lib/stripe-do-site.tsx` importa `@stripe/*`**; os testes simulam esse
@@ -281,9 +335,107 @@ pagamento sem ter assinado vê "confirmando" e depois "está demorando", sem cam
   que o aluno troca de plano em outra aba: o registro grita e a conta fica com o período pago, sem
   renovação. Com cartão é questão de frações de segundo; o Pix (etapa 4.9) reabre o assunto.
 
+## Sincronizar e perder o acesso *(Fase 4, etapa 4.4 — 10/10/2026)*
+
+**Decisões do operador (10/10/2026):**
+- **Forçar a sincronia mora em Admin → "Assinaturas"**, um item novo no menu (entre um item novo,
+  um bloco no Dashboard e nenhuma tela): o e-mail do aluno e o botão "Conferir na Stripe". A tela
+  diz se a conta ficou com acesso e o que a Stripe respondeu de cada assinatura. *Reabre quando a
+  tela "Alunos" (planejada) existir, se fizer sentido conferir a assinatura a partir do aluno.*
+- **"Reativar assinatura" no lugar de "Assinar" para quem já foi assinante e está sem acesso** —
+  *"'Assinar' apenas na primeira vez. Algo nesse sentido como as empresas grandes fazem."* Vale na
+  aula trancada, na tela de assinar (título e botão) e nos dois botões da home quando há login. O
+  visitante sem login lê sempre "Assinar". *Reabre na etapa 4.6 (quem cancelou e ainda tem dias
+  pagos tem acesso, e hoje não vê botão nenhum para voltar) e na 4.7 (o visitante que já foi
+  assinante só é reconhecido depois de entrar).*
+- **Quem cancela e ainda tem dias pagos continua assistindo até o fim deles** — *"enquanto for
+  válida a assinatura nos dias restantes"*. É a regra do gate de Ago 2026, confirmada; nesse caso
+  a pessoa também não é deslogada. *Sem gatilho próprio: é a regra do gate. O reembolso, em que o
+  período deixa de estar pago, tem regra própria desde 10/10/2026 (*Reembolso*, acima).*
+- **Os textos da tela "Assinaturas", a posição do item no menu e o inglês "Reactivate
+  subscription" são RASCUNHO do agente** (pendência P59). *Fecha quando ele revisar.*
+- **A tela "Assinaturas" vai virar um painel** *(pedido dele depois de usar a tela: "achei pouco
+  funcional […] um mini sisteminha administrativo sem precisar ficar indo na Stripe")*: lista com
+  filtros e busca, e as ações que cabem em cada situação. **Mapa aprovado por ele em
+  10/10/2026**, e fica para depois da etapa 4.7 (*"que é mais importante"*): plano → etapa 4.7b.
+  *Reabre se um problema de aluno não se resolver com a tela de hoje antes de o painel existir.*
+- **Assinatura cancelada: o SISTEMA manda sozinho o e-mail com o link para reativar, e é o
+  aluno quem paga**; no painel, o admin só copia o link (entre isso, dar acesso de cortesia
+  pela tela, e os dois). *Reabre se ele quiser presentear acesso por ali.*
+
+**Convenções de engenharia (como o código faz):**
+- **O espelho é gravado por UMA rotina só** (`sincronizar`, em `server/src/lib/assinaturas.ts`),
+  com a trava da assinatura e buscando na Stripe na hora. Quem a chama: o aviso da Stripe, o
+  checkout e o admin. O que precisar "acertar o acesso" chama a rotina, nunca grava à mão.
+- **O checkout sincroniza** quando a Stripe diz que a conta tem assinatura viva e o espelho não dá
+  acesso (quem pagou e ficou trancado): responde "já é assinante", agora com a aula aberta. Roda
+  fora da trava da conta. Se a Stripe não responder nessa hora, é erro ("tente de novo"), nunca
+  um "já é assinante" com a aula trancada.
+- **A sincronia do admin** (`POST /api/admin/assinaturas/sincronizar`, só admin; o corpo diz só o
+  e-mail — a conta se acha **ao pé da letra, em minúsculas**, como o login; a busca "sem
+  diferenciar maiúsculas" do banco trata "_" como qualquer caractere e acharia a conta de outra
+  pessoa): confere as assinaturas que a Stripe lista para o cliente da conta (as últimas 20) e as
+  que o espelho já conhece dela. Serve aos dois lados — libera quem pagou, tira de quem a Stripe
+  encerrou. **A assinatura que a Stripe não conhece é relatada, e o espelho dela nunca é apagado
+  por ali** (é o caso das assinaturas de teste no banco de produção: quem as tira é a Fase 7).
+- **Perder o acesso derruba a sessão** — só quando a conta TINHA acesso antes da gravação e
+  DEIXOU de ter depois, na mesma transação, e só as sessões dela. Quem tenta pagar e não consegue
+  nunca é deslogado. **Não é a fronteira:** quem tranca a aula é o gate, a cada pedido.
+- **"Já foi assinante" é derivado do espelho** (uma assinatura que passou do primeiro pagamento),
+  sem coluna; só escolhe o texto do botão.
+- **`requireActiveMembership`** (login + assinatura, sem exceção) é o invólucro HTTP do gate; a
+  primeira rota é o download dos arquivos da aula. **O erro que escapa de qualquer rota da API**
+  responde sempre a mesma coisa, sem status nem cabeçalho do erro (o da Stripe carrega os dela).
+  O pedido cujo corpo o servidor recusou ao ler continua 4xx, e a recusa fica no registro
+  (endereço, status e motivo — nunca o corpo).
+- **Toda ida nova à Stripe passa por `erroSemMensagem`** (`server/src/lib/stripe.ts`), como as de
+  hoje: o registro leva o rastro do erro, e a mensagem crua da Stripe iria junto.
+
+`[FATO — context7 /websites/stripe, 10/10/2026]` A Stripe reentrega um aviso que falhou por **até
+3 dias** na conta de verdade, com intervalos crescentes (na área restrita, 3 vezes em poucas
+horas); o reenvio manual vale 15 dias pelo painel e 30 pela CLI. Depois disso, só a sincronia.
+`[FATO — context7 /better-auth/better-auth e medido na suíte, 10/10/2026]` Apagar as sessões no
+banco desloga na hora **enquanto não houver `cookieCache` nem `secondaryStorage`** (o repo não usa
+nenhum; com `cookieCache`, a sessão revogada valeria até o cache vencer — o teste que usa o cookie
+de antes reprovaria).
+`[FATO — medido na área restrita, 10/10/2026]` com uma conta descartável e o cartão de teste: a
+Stripe diz ativa e o espelho não existe → assinar de novo devolveu o espelho e o acesso, sem
+assinatura nova · a sincronia do admin fez o mesmo · a assinatura que a Stripe não conhece voltou
+como `resource_missing` e foi relatada · cancelada na Stripe com a fatura paga → `canceled`, paga
+por mais 31 dias, com acesso.
+
+**Limitações conhecidas:**
+- **A sessão só cai quando a Stripe avisa** (ou quando alguém sincroniza). Quem só deixa o período
+  pago vencer continua logado — a aula tranca do mesmo jeito.
+- **Duas assinaturas da mesma conta mudando no mesmo instante** (uma acabando, outra começando)
+  podem deslogar quem tem acesso: a pessoa entra de novo e segue. E duas ACABANDO no mesmo
+  instante podem deixar logado quem ficou sem acesso. Nos dois casos, não libera nem tira
+  acesso: a aula tranca pelo gate. *Reabre se a escola passar a permitir duas assinaturas vivas
+  na mesma conta — aí a sincronia ganha uma trava por conta.*
+- **Assinatura "não paga" (`unpaid`), ou pausada com o período vencido:** a pessoa vê "Reativar
+  assinatura", clica, e o checkout responde "já é assinante" — ela não consegue voltar a pagar
+  por ali, e o registro grita. Só acontece se a régua da Stripe terminar em "marcar como não
+  paga" — **decidido em 10/10/2026: a régua termina em CANCELAR** (*Régua de inadimplência*,
+  acima); falta a configuração no painel (pendência P60).
+- **A tela de depois do pagamento não chama a sincronia:** se o aviso atrasar, ela fica em "está
+  demorando" até ele chegar, ou até a pessoa voltar à tela de assinar e clicar de novo.
+- **A sincronia do admin olha as últimas 20 assinaturas** do cliente na Stripe.
+- **Assinatura paga sem conta** (a Stripe não diz de quem é) não se resolve por aqui: é a etapa 4.7.
+
+**Da revisão de segurança da etapa (10/10/2026) — nenhum bloqueio.** Corrigidos na hora, com
+teste: a busca do admin por e-mail (acima) e a recusa de corpo sem registro. Com destino marcado:
+a trava do checkout que segura conexão do banco (pré-requisito (b) da etapa 4.7, no plano) · o
+monitor de erro, sem o qual toda falha de cobrança só existe no registro (Fase 7; será o Sentry) ·
+a assinatura "não paga" (P60). O relato completo está no plano, Fase 4 → etapa 4.4 → Passo 9.
+
 ## Pendências de verificação
 
-Nenhuma aberta. A da etapa 4.2 fechou em 10/10/2026: o operador assinou como `member@`, no
+Nenhuma aberta. **Da etapa 4.4 (10/10/2026):** a sincronia do checkout e a do admin foram
+provadas na área restrita (acima). *Não exercitado contra a Stripe, só com ela simulada e sessões
+de verdade:* a assinatura cancelada por falta de pagamento derrubando a sessão. **Na conta de VERDADE (etapa 4.3, 10/10/2026):** o operador assinou no site com um
+código de 100% e o espelho de produção ficou ativo, de verdade — as chaves, os preços, o código e o
+aviso real provados; o caminho do CARTÃO de verdade ainda não foi exercitado no site (é cobrança
+real: quando ele quiser). A da etapa 4.2 fechou em 10/10/2026: o operador assinou como `member@`, no
 navegador dele, com o cartão de teste e depois com o `TESTE100` (ativa, sem cartão, fatura de
 valor zero, 1 de 5 usos do código) — com o aviso chegando pelo `stripe listen`.
 *(A da pausa fechou em 09/10/2026 — ver "A cobrança pausada", acima.)*

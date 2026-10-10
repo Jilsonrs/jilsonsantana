@@ -22,3 +22,13 @@ export const assinarSchema = z.object({
   codigo: z.string().trim().min(1).max(64).optional(),
 });
 export type AssinarInput = z.infer<typeof assinarSchema>;
+
+/**
+ * Corpo de `POST /api/admin/assinaturas/sincronizar` — o admin força a sincronia de UMA conta com
+ * a Stripe (Fase 4, etapa 4.4). Só o e-mail do aluno: quais assinaturas conferir é o servidor
+ * que acha. Aparado nas pontas (colado de e-mail, vem com espaço).
+ */
+export const sincronizarContaSchema = z.object({
+  email: z.string().trim().email().max(254),
+});
+export type SincronizarContaInput = z.infer<typeof sincronizarContaSchema>;

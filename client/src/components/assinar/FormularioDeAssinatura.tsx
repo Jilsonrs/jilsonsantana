@@ -21,7 +21,18 @@ import { PagamentoComCartao } from "./PagamentoComCartao";
  * cartão confirma com o segredo que ele devolveu. Com desconto de 100% PARA SEMPRE não há
  * cartão: a assinatura já nasce ativa (decisão do operador, 09/10/2026).
  */
-export function FormularioDeAssinatura({ dados, aoConcluir, aoSaberQueJaAssina }: { dados: PlanosDaAssinatura; aoConcluir: () => void; aoSaberQueJaAssina: () => void }) {
+export function FormularioDeAssinatura({
+  dados,
+  aoConcluir,
+  aoSaberQueJaAssina,
+  reativar,
+}: {
+  dados: PlanosDaAssinatura;
+  aoConcluir: () => void;
+  aoSaberQueJaAssina: () => void;
+  /** Quem já foi assinante REATIVA: só muda o texto do botão (decisão do operador, 10/10/2026). */
+  reativar?: boolean;
+}) {
   const t = useT().assinar;
   const idioma = useIdioma();
   const [plano, setPlano] = useState<Plano>(Plano.MENSAL);
@@ -107,11 +118,11 @@ export function FormularioDeAssinatura({ dados, aoConcluir, aoSaberQueJaAssina }
       )}
 
       {semCartao ? (
-        <BotaoDeAssinar enviando={enviando} aoClicar={() => void enviar(null)} />
+        <BotaoDeAssinar enviando={enviando} aoClicar={() => void enviar(null)} reativar={reativar} />
       ) : (
         <PageSection title={t.pagamento} className="pt-0 sm:pt-0">
           <CartaoProvider pedido={{ chavePublicavel: dados.chavePublicavel, centavos: centavosHoje, moeda: escolhido.moeda, formasDePagamento: dados.formasDePagamento, idioma }}>
-            <PagamentoComCartao enviando={enviando} aoEnviar={(cartao) => void enviar(cartao)} />
+            <PagamentoComCartao enviando={enviando} aoEnviar={(cartao) => void enviar(cartao)} reativar={reativar} />
           </CartaoProvider>
         </PageSection>
       )}

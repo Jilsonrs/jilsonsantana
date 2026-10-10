@@ -3,7 +3,7 @@ import { assinarSchema, previaSchema, type AssinaturaCriada, type PlanosDaAssina
 import { requireAuth } from "../middleware/auth.js";
 import { validate } from "../lib/http.js";
 import { buscarCodigo, buscarPrecos, calcularPrevia, chavePublicavel, cobrancaConfigurada, FORMAS_DE_PAGAMENTO } from "../lib/stripe.js";
-import { temAcessoAtivo } from "../lib/acesso.js";
+import { convidaAReativar, temAcessoAtivo } from "../lib/acesso.js";
 import { assinar } from "../lib/checkout.js";
 
 // ASSINAR COM A CONTA LOGADA (Fase 4, etapa 4.2 — billing.md; CLAUDE.md → Membership Gating).
@@ -72,7 +72,9 @@ router.get("/billing/assinatura", requireAuth, async (req, res) => {
     res.status(401).json({ error: "Unauthorized" });
     return;
   }
-  const resposta: SituacaoDaAssinatura = { temAcesso: await temAcessoAtivo(user.id) };
+  const temAcesso = await temAcessoAtivo(user.id);
+  // `reativar`: só o texto do convite ("Reativar assinatura" × "Assinar") — não decide nada.
+  const resposta: SituacaoDaAssinatura = { temAcesso, reativar: await convidaAReativar(user.id, temAcesso) };
   res.json(resposta);
 });
 

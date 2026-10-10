@@ -221,6 +221,9 @@ export const pt = {
       period: "/mês",
       desc: "Cobrado todo mês. Cancele quando quiser.",
       btn: "Assinar",
+      // Para quem está logado, já foi assinante e hoje está sem acesso (decisão do operador,
+      // 10/10/2026: "Assinar" só na primeira vez). O visitante sem login vê sempre `btn`.
+      btnReactivate: "Reativar assinatura",
       features: [
         "Acesso a todos os Cursos e Trilhas",
         "Certificado de Conclusão",
@@ -235,7 +238,8 @@ export const pt = {
     },
     cta: {
       title: "Pronto para dominar dados, IA e o que vier depois?",
-      btn: "Assinar"
+      btn: "Assinar",
+      btnReactivate: "Reativar assinatura"
     }
   },
 
@@ -420,6 +424,9 @@ export const pt = {
     // ("isso fazemos depois, é detalhe"). `{valor}`, `{desconto}` e `{meses}` são trocados no código.
     assinar: {
       titulo: "Assinar",
+      // Quem já foi assinante e está sem acesso REATIVA (decisão do operador, 10/10/2026):
+      // o título da tela e o botão trocam; "Assinar" fica só para a primeira vez.
+      tituloReativar: "Reativar assinatura",
       descricao: "Uma assinatura, todos os cursos e trilhas.",
       escolhaDoPlano: "Escolha o plano",
       mensal: "Mensal",
@@ -444,6 +451,7 @@ export const pt = {
       hoje: "Hoje você paga",
       pagamento: "Pagamento",
       botao: "Assinar",
+      botaoReativar: "Reativar assinatura",
       processando: "Processando…",
       erroPlanos: "Não foi possível carregar os planos. Tente de novo.",
       erro: "Não foi possível concluir a assinatura. Confira os dados e tente de novo.",
@@ -462,6 +470,8 @@ export const pt = {
       paraAssinantes: "Esta aula é para assinantes.",
       // O botão embaixo, só para quem está logado (Fase 4, etapa 4.2). Rascunho.
       assinar: "Assinar",
+      // O mesmo botão para quem já foi assinante (decisão do operador, 10/10/2026).
+      reativar: "Reativar assinatura",
       // Salvar para assistir depois (decisão do operador, 03/10/2026, "como no LinkedIn").
       salvarParaDepois: "Salvar para depois",
       salvarCurso: "Salvar curso",

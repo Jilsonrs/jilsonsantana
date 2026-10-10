@@ -32,6 +32,7 @@ import type {
   AssinarInput,
   AssinaturaCriada,
   SituacaoDaAssinatura,
+  SincroniaDaConta,
 } from "@jilson/core";
 
 // Same-origin by design (mirrors auth-client.ts): in dev the Vite proxy
@@ -452,6 +453,11 @@ export type PaginaDaAula = {
   };
   /** As aulas deste curso que QUEM PEDE concluiu (Fase 5, 03/10/2026); visitante: []. */
   concluidas: number[];
+  /**
+   * Quem pede já foi assinante e hoje está sem acesso: o botão da aula trancada diz "Reativar
+   * assinatura" (decisão do operador, 10/10/2026). Não vem na página do admin.
+   */
+  reativar?: boolean;
 };
 
 /**
@@ -946,5 +952,14 @@ export async function criarAssinatura(corpo: AssinarInput): Promise<AssinaturaCr
 /** Esta conta tem acesso agora? (a resposta do gate do servidor) */
 export async function getSituacaoDaAssinatura(): Promise<SituacaoDaAssinatura> {
   const { data } = await client.get<SituacaoDaAssinatura>("/billing/assinatura");
+  return data;
+}
+
+/**
+ * ADMIN: confere na Stripe as assinaturas da conta deste e-mail e acerta o acesso (etapa 4.4).
+ * Conta que não existe: 404 `ContaNaoEncontrada`. Sem tentar de novo sozinho.
+ */
+export async function adminSincronizarConta(email: string): Promise<SincroniaDaConta> {
+  const { data } = await client.post<SincroniaDaConta>("/admin/assinaturas/sincronizar", { email });
   return data;
 }

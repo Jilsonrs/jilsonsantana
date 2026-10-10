@@ -133,7 +133,7 @@
 - **Docker** — multi-stage build (client + server)
 - **Railway** — hosting; auto-deploy on push to `main` (railway.toml + Dockerfile). Health check at `/api/health`.
 - **GitHub Actions** — `npm ci` + build do core + typecheck (client/server) + **`Test client`** + **`Test server`** + build (client/server) + `npm audit` informativo. *(A frase antiga aqui — "não roda teste e não roda lint" — ficou obsoleta em duas etapas: o Bloco 0 da Fase 3 ligou o teste de client e apagou o `lint`, e a fatia do `globalSetup` ligou o de servidor. Não há ESLint no repo; o nome `lint` segue livre.)* O step de servidor **não precisa de secret nenhum** desde Ago 2026: o banco é um **service container `postgres:17`** em `localhost`, e todo segredo do run (`BETTER_AUTH_SECRET`, senhas de seed) é gerado no próprio job — o `globalSetup` reseta o banco a cada execução, então nada precisa sobreviver. *(Antes eram dois secrets, `TEST_DATABASE_URL` e `TEST_DIRECT_URL`, apontando para um banco de nuvem; saíram junto com a mudança para banco local — connection string de nuvem em secret é superfície, `localhost` não é segredo.)* Claude code review on PRs: pendente.
-- **Monitor de erro em produção** — **decisão PENDENTE** (gerenciado, tier grátis, tipo Sentry; fornecedor não escolhido). Não é opcional: é pré-requisito do primeiro aluno pagante (`implementation-plan.md` → Fase 7).
+- **Monitor de erro em produção** — **Sentry, no plano grátis** *(decisão do operador, 10/10/2026; ainda NÃO instalado — entra antes de a etapa 4.7 ir ao ar. Reabre se o plano grátis deixar de dar conta: aí se compara com outro serviço antes de pagar)*. Não é opcional: é pré-requisito do primeiro aluno pagante (`implementation-plan.md` → Fase 7).
 
 ## AI-Assisted Dev (quality gates)
 
