@@ -3325,8 +3325,12 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             aparar). *Sem teste automático, só a prova acima:* qual recusa da Stripe na prévia conta
             como "código não vale" (`calcularPrevia` olha se o erro é do desconto) — é a função que
             vai à rede.
-            **Para o passo 3:** código promocional preso a UM cliente na Stripe só confere com o
-            cliente no pedido — a prévia passa a mandar o cliente quando a conta já tiver um.
+            **Limitação conhecida, NÃO resolvida no passo 3:** um código promocional preso a UM
+            cliente na Stripe só confere com o cliente no pedido, e a prévia não manda cliente — esse
+            código apareceria como inválido na tela (na criação da assinatura a Stripe confere
+            certo). Hoje não existe código assim (`TESTE100` vale para qualquer conta). *Gatilho: o
+            operador criar um código preso a um cliente — aí a prévia passa a mandar o cliente da
+            conta.*
       - [x] **Passo 3a — a tabela do cliente da Stripe e "tem acesso?".** **FEITO (10/10/2026).**
             Migration `20261010120000_cliente_da_stripe` (tabela `stripe_customer`, com RLS; o SQL
             saiu do `prisma migrate diff` contra o banco local) + o model `StripeCustomer` + `GET
