@@ -172,7 +172,9 @@ tipos da `stripe@23.0.0`, 09/10/2026: o período fica em `items.data[].current_p
 O espelho se recalcula **buscando a assinatura na Stripe a cada aviso** (nunca o retrato do aviso), e
 liga a assinatura à conta pelo `userId` que o NOSSO checkout grava na Stripe.
 
-**As chaves:** `STRIPE_SECRET_KEY` e `STRIPE_WEBHOOK_SECRET`, **só no ambiente do servidor**
+**As chaves:** `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` e `STRIPE_PUBLISHABLE_KEY` (esta não é
+segredo, mas mora junto: o servidor a entrega ao site, e trocar de ambiente é trocar as variáveis
+de um lugar só), **só no ambiente do servidor**
 (`server/.env` em dev, Railway em produção) — coladas pelo operador, nunca pelo chat. Até o
 lançamento: as do **modo de teste**. Sem o segredo do webhook, todo aviso é recusado (nunca "aceitar
 sem verificar", como alguns exemplos da própria doc da Stripe fazem). O espelho guarda de qual modo

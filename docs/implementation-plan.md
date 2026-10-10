@@ -3180,7 +3180,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
 > **Em paralelo com a Fase 5** (decisão do operador, 09/10/2026 — *CLAUDE.md → Working Method*): a
 > avaliação do curso e o depoimento, e as telas sem "EM BREVE", andam sem esperar esta fase.
 
-- [ ] **4.0 — A Stripe em modo de TESTE (operador, no painel, sem código, ~1 h).** A conta (CNPJ/MEI,
+- [x] **4.0 — A Stripe em modo de TESTE (operador, no painel, sem código, ~1 h).** A conta (CNPJ/MEI,
       pagamento no Banco do Brasil) — o modo de teste funciona antes de a conta ser aprovada. No
       **modo de teste**: o produto "Assinatura" com os **2 preços em real** (mensal R$ 99,90, anual
       R$ 995) · **um cupom de 100% "para sempre"** e **um código promocional** dele, com limite de
@@ -3188,7 +3188,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       falharem"** (achado de segurança de 29/09, item abaixo) · **sem Customer Portal**. **As chaves
       não passam pelo chat:** o operador cola no `server/.env` (dev) e, na 4.3, no Railway — o passo a
       passo vem na hora (*CLAUDE.md → Secrets in agent sessions*).
-      `[FATO — context7 /websites/stripe, 10/10/2026, 3 consultas]` a Stripe hoje chama o ambiente de
+      `[FATO — context7 /websites/stripe, 10/10/2026, 4 consultas]` a Stripe hoje chama o ambiente de
       teste de **sandbox** ("sandbox (test mode)"). Cada ambiente tem as suas chaves, e o que se cria
       num não existe no outro: **o produto, os preços e o cupom nascem no MESMO ambiente de onde
       saem as chaves.** A conta do operador mostra dois: o **"Test mode"** padrão, que *"shares
@@ -3199,8 +3199,18 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       cada um — `assinatura_mensal` (R$ 99,90/mês) e `assinatura_anual` (R$ 995/ano). **Convenção de
       engenharia:** o site acha o preço pela lookup key, nunca pelo ID nem pelo nome — assim não há
       código de preço para colar em nenhum ambiente, e no lançamento basta repetir as mesmas chaves
-      na conta de verdade. *Falta: o cupom de 100% com o código, o ajuste de falha de pagamento e
-      as chaves no `server/.env`.*
+      na conta de verdade. **O cupom:** "Free" (nome dele), 100%, para sempre, com o código de teste
+      `TESTE100` (5 usos). É um cupom só para a conta de aluno dele e para quem ele quiser
+      presentear; o que muda por pessoa é o **código** *(sugestão do agente para a conta de verdade,
+      a confirmar no lançamento: um código por pessoa, com 1 uso)*. **Falha de pagamento** (tela
+      *Billing → Revenue recovery → Retries*, como já vinha): a 1ª falha deixa a assinatura em
+      atraso, e todas as tentativas falhando **cancela**. **As chaves** de teste (a secreta e a
+      publicável) estão no `server/.env`; o segredo do webhook entra na 4.2.
+      **FECHADA em 10/10/2026, conferida pela API da Stripe (só leitura, sem mostrar chave):** as
+      duas chaves são de teste e da mesma conta; os 2 preços saem pelas lookup keys, ativos, no
+      mesmo produto, e ele é o único ativo; o código `TESTE100` está ativo, com 0 de 5 usos, no
+      cupom de 100% para sempre. *Fica para o GO-LIVE: ativar a conta de verdade e refazer tudo lá
+      (Fase 7).*
 - [x] **4.1 — O webhook e o espelho (código, ALTO RISCO).** Dependência nova: **`stripe`** (servidor).
       `POST /api/stripe/webhook` montado **acima** do `express.json()`, com o corpo cru → confere a
       assinatura → grava o `event.id` (tabela nova, com RLS; repetido = nada) → **recalcula** o
@@ -4203,9 +4213,11 @@ outro aparelho e "daqui a um mês", e o Safari apaga o armazenamento do site em 
       the legal pages** (the English side is live from launch — `idiomas.md`)
 - [ ] Error/loading states everywhere; security review (subagent) on auth/billing/video
 - [ ] **A Stripe de verdade — e as assinaturas do modo de teste SAEM do banco de produção** *(achado
-      P2 da revisão de segurança da etapa 4.1, 09/10/2026)*. No Railway, trocar as chaves e o segredo
-      do webhook do modo de teste pelos de verdade, e cadastrar o endereço do webhook no modo de
-      verdade do painel. **O que foi criado no ambiente de teste não existe na conta de verdade**
+      P2 da revisão de segurança da etapa 4.1, 09/10/2026)*. Com a conta de verdade **ativada** (os
+      dados da empresa e a conta bancária): no Railway, trocar as chaves e o segredo do webhook do
+      modo de teste pelos de verdade — avaliando uma **chave restrita** no lugar da secreta padrão
+      (menos poderes se vazar) —, e cadastrar o endereço do webhook no modo de verdade do painel.
+      **O que foi criado no ambiente de teste não existe na conta de verdade**
       (fato da doc, 10/10/2026): o produto, os 2 preços **com as mesmas lookup keys**
       (`assinatura_mensal`, `assinatura_anual`), o cupom com o código promocional e o ajuste de
       "cancelar quando todas as tentativas falharem" são refeitos lá; e o nome que aparece na fatura
