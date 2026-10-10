@@ -142,41 +142,44 @@ model FaqItem {
 // phase's migration.
 
 model User {
-  id            String             @id
+  id             String             @id
   // DEBT: o Better Auth CLI gera `name` como required (String). Mantido opcional
   // (String?) para respeitar o CLAUDE.md (name opcional — convite corporativo só
   // por e-mail). REAPLICAR `String?` após cada `npm run auth:generate`.
-  name          String?
-  email         String
-  emailVerified Boolean            @default(false)
-  image         String?
-  createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @updatedAt
-  role          String             @default("member")
-  sessions      Session[]
-  accounts      Account[]
+  name           String?
+  email          String
+  emailVerified  Boolean            @default(false)
+  image          String?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  role           String             @default("member")
+  sessions       Session[]
+  accounts       Account[]
   // Phase 2 back-relation: a member's saved/cloned trilhas (curated templates
   // have ownerUserId = null and are not listed here). Hand-added like sessions/
   // accounts — REAPPLY after each `npm run auth:generate` (same DEBT note as
   // `name String?` above; the CLI does not emit our relations).
-  learningPlans LearningPlan[]
+  learningPlans  LearningPlan[]
   // Etapa 4 do Bloco U (29/09/2026): as assinaturas desta pessoa. Mesma DEBT
   // das relações acima — REAPLICAR após cada `npm run auth:generate`.
-  subscriptions Subscription[]
+  subscriptions  Subscription[]
   // Fase 5 (03/10/2026): as aulas que esta pessoa concluiu. Mesma DEBT das
   // relações acima — REAPLICAR após cada `npm run auth:generate`.
-  progress      LessonProgress[]
+  progress       LessonProgress[]
   // 03/10/2026: o que esta pessoa salvou para depois. Mesma DEBT — REAPLICAR.
-  saved         SavedItem[]
+  saved          SavedItem[]
   // 04/10/2026: as notificações do sino. Mesma DEBT — REAPLICAR.
-  notifications Notification[]
-  courseStarts  CourseStart[]
+  notifications  Notification[]
+  courseStarts   CourseStart[]
   // 07/10/2026 (Bloco AULA, etapa 6): as preferências do aluno (a legenda
   // lembrada). Mesma DEBT — REAPLICAR após cada `npm run auth:generate`.
-  preference    StudentPreference?
+  preference     StudentPreference?
   // 09/10/2026 (Bloco MEDIR, etapa 1): os eventos do vídeo desta pessoa. Mesma
   // DEBT — REAPLICAR após cada `npm run auth:generate`.
-  lessonEvents  LessonEvent[]
+  lessonEvents   LessonEvent[]
+  // 10/10/2026 (Fase 4, etapa 4.2): o cliente desta pessoa na Stripe. Mesma DEBT —
+  // REAPLICAR após cada `npm run auth:generate`.
+  stripeCustomer StripeCustomer?
 
   birthday            String?
   preferredLanguage   String?   @default("pt")
@@ -396,6 +399,22 @@ model StripeEvent {
   processedAt DateTime @default(now())
 
   @@map("stripe_event")
+}
+
+// O CLIENTE DA STRIPE DE CADA CONTA (Fase 4, etapa 4.2 — billing.md). Uma conta é sempre UM
+// cliente na Stripe: sem esta linha, cada tentativa de assinar criaria um cliente novo, e a
+// tela de "minha assinatura" (etapa 4.6) não teria de quem buscar cartão e faturas. Não fica no
+// `User` (identidade) nem na `Subscription` (que só nasce com o aviso da Stripe, depois do
+// cliente). `livemode`: cliente do modo de teste não existe na conta de verdade — no GO-LIVE,
+// os de teste saem do banco de produção junto com as assinaturas de teste (plano, Fase 7).
+model StripeCustomer {
+  userId           String   @id
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stripeCustomerId String   @unique
+  livemode         Boolean
+  createdAt        DateTime @default(now())
+
+  @@map("stripe_customer")
 }
 
 // OS EVENTOS DO VÍDEO (Fase 5, Bloco MEDIR, etapa 1 — pedido do operador, 09/10/2026).

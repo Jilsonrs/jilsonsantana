@@ -3327,13 +3327,39 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             vai à rede.
             **Para o passo 3:** código promocional preso a UM cliente na Stripe só confere com o
             cliente no pedido — a prévia passa a mandar o cliente quando a conta já tiver um.
-      - [ ] **Passo 3 — servidor, criar a assinatura.** Migration `stripe_customer` (escrita à mão
-            como na 4.1, aplicada no `dev` com o OK do operador; RLS conferido; `migrate diff` sem
-            diferença) + as duas rotas de assinatura + testes (401 · plano inválido · 409 de quem já
-            tem acesso · o corpo não escolhe preço nem conta · código inválido · um cliente só · 100%
-            → ativa · cartão → pagar · Stripe fora do ar sem vazar o erro · dois cliques) +
-            **mutação**. Estender o item da Fase 7 (*as de teste saem do banco de produção*) com a
-            tabela nova.
+      - [x] **Passo 3a — a tabela do cliente da Stripe e "tem acesso?".** **FEITO (10/10/2026).**
+            Migration `20261010120000_cliente_da_stripe` (tabela `stripe_customer`, com RLS; o SQL
+            saiu do `prisma migrate diff` contra o banco local) + o model `StripeCustomer` + `GET
+            /api/billing/assinatura` (a resposta do gate para a conta da sessão). **Provado num banco
+            limpo** (o local, recriado do zero pela suíte): `migrate diff` sem diferença, zero tabela
+            em `public` sem RLS. **Testes:** 4 de servidor. **Mutação:** 2 de 2 reprovaram (sem login,
+            "sim" sem perguntar ao gate). O item da Fase 7 (*as de teste saem do banco de produção*)
+            já inclui a tabela nova.
+            **⚠️ A migration AINDA NÃO foi aplicada no banco de DEV** — espera o OK do operador
+            (`npx prisma migrate deploy`, de dentro de `server/`, com o retrato antes e depois). Até
+            lá, só a rota de criar a assinatura (passo 3b) falharia no dev; o resto não usa a tabela.
+      - [ ] **Passo 3b — servidor, criar a assinatura.** `POST /api/billing/assinatura` + testes (401
+            · plano inválido · 409 de quem já tem acesso · o corpo não escolhe preço nem conta ·
+            código inválido · um cliente só · 100% → ativa · cartão → pagar · Stripe fora do ar sem
+            vazar o erro · dois cliques) + **mutação**. **O desenho, para quem continuar:** tudo
+            dentro de uma trava por conta (`pg_advisory_xact_lock`, como o aviso da 4.1) → (1) quem
+            `temAcessoAtivo()` recebe 409 `JaAssinante` → (2) acha ou cria o cliente (`metadata.userId`;
+            grava em `stripe_customer`) → (3) lista as assinaturas dele NA STRIPE: uma viva (nem
+            incompleta, nem cancelada) → 409 `JaAssinante` (o espelho está atrasado); uma incompleta
+            do MESMO plano e código → devolve o segredo dela (tentar de novo depois do cartão
+            recusado não cria outra); incompleta de outro plano ou código → cancela, e se o
+            cancelamento mostrar que ela tinha sido paga nesse instante, grita no registro e responde
+            409 → (4) cria: `payment_behavior: default_incomplete`, só `card`,
+            `save_default_payment_method: on_subscription`, `metadata` com `userId`, plano e código,
+            `expand` do `latest_invoice.confirmation_secret` e do `pending_setup_intent`. **A
+            resposta:** `ativa` (a Stripe já ativou: nada a pagar hoje e desconto para sempre) ·
+            `pagar` com o segredo e o tipo — `pagamento` (cobra hoje) ou `cartao` (nada hoje, mas o
+            desconto acaba: guarda o cartão para a cobrança seguinte). **Consequência para a tela:**
+            o cartão só some com desconto de 100% PARA SEMPRE; com 100% só na primeira cobrança, o
+            cartão é pedido. *A conferir na área restrita antes de confiar:* cancelar uma assinatura
+            incompleta leva a `incomplete_expired`; e o que vem em `pending_setup_intent` com 100%.
+            A prova na área restrita pode usar o banco LOCAL (que já tem a tabela) com as chaves de
+            teste, sem esperar o banco de dev.
       - [ ] **Passo 4 — site, a tela `/aluno/assinar`.** `@stripe/stripe-js` e
             `@stripe/react-stripe-js` entram aqui. O layout padrão (`PageContainer`…), os textos pelo
             `useT()`, e a nossa fronteira com o Stripe.js num arquivo só (os testes simulam ELA, nunca
@@ -3389,10 +3415,10 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       amount, currency })` + `elements.submit()` + `confirmPayment` com o `clientSecret`) — **2
       consultas** (10/10/2026). Nos tipos da `stripe@23.0.0`: `prices.list` por `lookup_keys`,
       `invoices.createPreview`, `PromotionCode.promotion`, `Invoice.confirmation_secret`.
-      **PAREI EM (10/10/2026):** passos 1 e 2 feitos e commitados no `dev` (nada publicado).
-      Próximo: **passo 3** (criar a assinatura) — começa pela migration `stripe_customer`, que
-      precisa do OK do operador para ser aplicada no banco de dev. Os textos em rascunho, acima,
-      esperam a revisão dele antes do passo 4.
+      **PAREI EM (10/10/2026):** passos 1, 2 e 3a feitos e commitados no `dev` (nada publicado).
+      Próximo: **passo 3b** (criar a assinatura — o desenho está escrito no item). **Esperam o
+      operador:** o OK para aplicar a migration `20261010120000_cliente_da_stripe` no banco de dev,
+      e a revisão dos textos em rascunho, acima, antes do passo 4.
 - [ ] **4.3 — No ar, em modo de teste: o PRIMEIRO TESTE REAL (sessão curta, com o operador).** As
       chaves de teste e o segredo do webhook no Railway, o endereço do webhook no painel — **com
       "www"**: `https://www.jilsonsantana.com/api/stripe/webhook` (medido em 09/10/2026: sem o "www",
@@ -4372,7 +4398,9 @@ outro aparelho e "daqui a um mês", e o Safari apaga o armazenamento do site em 
       "cancelar quando todas as tentativas falharem" são refeitos lá; e o nome que aparece na fatura
       do cartão se decide (P58). **Na mesma publicação, apagar do banco de produção as `subscription` com
       `livemode = false`:** as chaves de verdade nunca mais recebem aviso delas, então nenhuma seria
-      cancelada — e uma ativa daria acesso para sempre. Como apagar sem falar direto com o banco de
+      cancelada — e uma ativa daria acesso para sempre. **E os `stripe_customer` com `livemode =
+      false`** *(etapa 4.2, 10/10/2026)*: o cliente do modo de teste não existe na conta de verdade,
+      e a conta que ficasse com ele não conseguiria assinar. Como apagar sem falar direto com o banco de
       produção (só o Railway fala com ele) se decide na abertura do item. O `member@` de produção
       assina de novo, com o cupom de 100% do modo de verdade.
 - **→ MOVIDOS para a Fase 3, bloco "Gates" (Ago 2026):** *rate-limit de auth* e *CI não roda

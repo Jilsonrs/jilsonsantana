@@ -1,8 +1,9 @@
 import { Router } from "express";
-import { previaSchema, type PlanosDaAssinatura, type PreviaDaAssinatura } from "@jilson/core";
+import { previaSchema, type PlanosDaAssinatura, type PreviaDaAssinatura, type SituacaoDaAssinatura } from "@jilson/core";
 import { requireAuth } from "../middleware/auth.js";
 import { validate } from "../lib/http.js";
 import { buscarCodigo, buscarPrecos, calcularPrevia, chavePublicavel, cobrancaConfigurada } from "../lib/stripe.js";
+import { temAcessoAtivo } from "../lib/acesso.js";
 
 // ASSINAR COM A CONTA LOGADA (Fase 4, etapa 4.2 — billing.md; CLAUDE.md → Membership Gating).
 // Tudo aqui exige login, e a conta é SEMPRE a da sessão. O site diz só QUAL plano e o código
@@ -50,6 +51,19 @@ router.post("/billing/previa", requireAuth, async (req, res) => {
     return;
   }
   const resposta: PreviaDaAssinatura = { centavosHoje: previa.centavosHoje, moeda: previa.moeda, desconto: codigo.desconto };
+  res.json(resposta);
+});
+
+// GET /api/billing/assinatura — esta conta tem acesso agora? É o que a tela de depois do
+// pagamento pergunta até a resposta ser sim. A resposta é a do GATE (`temAcessoAtivo()`), que lê
+// o espelho gravado pelo aviso da Stripe — nunca "o pagamento passou no navegador".
+router.get("/billing/assinatura", requireAuth, async (req, res) => {
+  const user = req.user;
+  if (!user) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  const resposta: SituacaoDaAssinatura = { temAcesso: await temAcessoAtivo(user.id) };
   res.json(resposta);
 });
 

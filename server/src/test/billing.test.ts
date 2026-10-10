@@ -15,6 +15,8 @@ vi.mock("../lib/stripe.js", async (importOriginal) => ({
 }));
 
 import servidor from "./servidor.js";
+import { prisma } from "../lib/prisma.js";
+import { ASSINATURA_DE_TESTE } from "../lib/assinatura-de-teste.js";
 
 // ASSINAR COM A CONTA LOGADA (Fase 4, etapa 4.2). O que estes testes protegem — é a fronteira
 // de dinheiro:
@@ -23,6 +25,8 @@ import servidor from "./servidor.js";
 //   - sem a chave certa no lugar certo a tela não abre — e a SECRETA colada na variável da
 //     publicável nunca sai na resposta;
 //   - a Stripe fora do ar chega à tela como falha, sem plano e sem chave.
+//   - "tem acesso?" é a resposta do GATE para a conta da sessão — a tela de depois do pagamento
+//     só libera quando o espelho (gravado pelo aviso da Stripe) disser que sim;
 //   - o código promocional: o valor de hoje é o que a STRIPE calcula, para o preço do plano
 //     pedido — o corpo não tem como apontar outro preço; código que não existe e código que
 //     não vale para a compra dão a MESMA recusa; o código da Stripe não vai ao navegador.
@@ -181,5 +185,55 @@ describe("POST /api/billing/previa", () => {
     const res = await previa({ plano: "mensal", codigo: "TESTE100" }, member);
     expect(res.status).toBe(503);
     expect(buscarCodigo).not.toHaveBeenCalled();
+  });
+});
+
+describe("GET /api/billing/assinatura", () => {
+  const S = `${Date.now()}`;
+  const situacao = (cookies: string[] = []) => request(servidor).get("/api/billing/assinatura").set("Cookie", cookies);
+  let memberId = "";
+
+  /** Roda o bloco com a assinatura de teste do member@ vencida, e devolve ela ao fim. */
+  async function semAssinatura(fn: () => Promise<void>) {
+    await prisma.subscription.update({ where: { stripeSubscriptionId: ASSINATURA_DE_TESTE }, data: { status: "canceled", currentPeriodEnd: new Date("2020-01-01T00:00:00Z") } });
+    try {
+      await fn();
+    } finally {
+      await prisma.subscription.update({ where: { stripeSubscriptionId: ASSINATURA_DE_TESTE }, data: { status: "active", currentPeriodEnd: new Date("2100-01-01T00:00:00Z") } });
+    }
+  }
+
+  beforeAll(async () => {
+    memberId = (await prisma.user.findUniqueOrThrow({ where: { email: process.env.SEED_MEMBER_EMAIL }, select: { id: true } })).id;
+  });
+
+  it("sem login: 401", async () => {
+    expect((await situacao()).status).toBe(401);
+  });
+
+  it("conta com assinatura ativa: tem acesso", async () => {
+    const res = await situacao(member);
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ temAcesso: true });
+  });
+
+  it("conta sem assinatura que dê acesso: não tem", async () => {
+    await semAssinatura(async () => {
+      expect((await situacao(member)).body).toEqual({ temAcesso: false });
+    });
+  });
+
+  it("assinatura que nunca foi paga (incomplete) não libera; quando o espelho passa a ativa, libera", async () => {
+    await semAssinatura(async () => {
+      const nova = await prisma.subscription.create({ data: { ownerUserId: memberId, status: "incomplete", stripeSubscriptionId: `sub_da_tela_${S}` } });
+      try {
+        expect((await situacao(member)).body).toEqual({ temAcesso: false });
+        // É o que o aviso da Stripe faz quando o pagamento passa.
+        await prisma.subscription.update({ where: { id: nova.id }, data: { status: "active" } });
+        expect((await situacao(member)).body).toEqual({ temAcesso: true });
+      } finally {
+        await prisma.subscription.delete({ where: { id: nova.id } });
+      }
+    });
   });
 });

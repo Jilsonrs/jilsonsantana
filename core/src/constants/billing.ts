@@ -40,3 +40,6 @@ export type DescontoDoCodigo = {
 
 /** Resposta de `POST /api/billing/previa`: quanto se paga HOJE com o código, pela conta da Stripe. */
 export type PreviaDaAssinatura = { centavosHoje: number; moeda: string; desconto: DescontoDoCodigo };
+
+/** Resposta de `GET /api/billing/assinatura`: esta conta tem acesso agora? (a resposta do gate) */
+export type SituacaoDaAssinatura = { temAcesso: boolean };
