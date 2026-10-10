@@ -42,8 +42,16 @@ export type PedidoDeCartao = {
 
 /** Dá o campo do cartão e o `useCartao()` a quem estiver dentro. */
 export function CartaoProvider({ pedido, children }: { pedido: PedidoDeCartao; children: ReactNode }) {
-  const comum = { currency: pedido.moeda, paymentMethodTypes: pedido.formasDePagamento, locale: IDIOMA_DO_CAMPO[pedido.idioma], appearance: APARENCIA };
-  const opcoes: StripeElementsOptionsMode = pedido.centavos > 0 ? { ...comum, mode: "subscription", amount: pedido.centavos } : { ...comum, mode: "setup" };
+  // `allowedPaymentMethodTypes`: o campo só mostra as formas da lista do servidor.
+  // `[FATO — medido no navegador, 10/10/2026]` o Stripe.js no ar RECUSA a opção antiga
+  // (`paymentMethodTypes`: "is no longer supported in this version of Stripe.js") e o campo
+  // simplesmente não aparece, sem erro na tela. E os tipos não acusaram porque as opções eram
+  // montadas com `...espalhar`, que o TypeScript não confere — por isso aqui é tudo escrito
+  // por extenso, com o tipo: nome de opção errado volta a quebrar a compilação.
+  const opcoes: StripeElementsOptionsMode =
+    pedido.centavos > 0
+      ? { mode: "subscription", amount: pedido.centavos, currency: pedido.moeda, allowedPaymentMethodTypes: pedido.formasDePagamento, locale: IDIOMA_DO_CAMPO[pedido.idioma], appearance: APARENCIA }
+      : { mode: "setup", currency: pedido.moeda, allowedPaymentMethodTypes: pedido.formasDePagamento, locale: IDIOMA_DO_CAMPO[pedido.idioma], appearance: APARENCIA };
   // A `key`: trocar entre "cobra hoje" e "só guarda o cartão" monta um campo novo.
   return (
     <Elements key={opcoes.mode} stripe={stripeDoSite(pedido.chavePublicavel)} options={opcoes}>

@@ -237,7 +237,9 @@ gera mais aviso, o acesso ficaria liberado para sempre. *(Achado P1 da revisão 
 `[FATO — medido na área restrita, 10/10/2026, `stripe@23.0.0`]` Cancelar uma assinatura incompleta
 a leva a `incomplete_expired` e anula a fatura dela · o segredo da fatura aberta é de um pagamento
 (`pi_…`) · campo de `metadata` com valor vazio não é guardado · o `TESTE100` na prévia dá R$ 0 e não
-gasta uso.
+gasta uso · **o Stripe.js no ar recusa `paymentMethodTypes` ao abrir o campo** (o campo não
+aparece, sem erro na tela); a opção que vale é `allowedPaymentMethodTypes` · a Stripe CLI 1.53.1
+exige dizer quais avisos encaminhar (`stripe listen --all-snapshot --forward-to …`).
 
 **Limitações conhecidas:** código promocional preso a UM cliente aparece como inválido na tela
 (a prévia não manda o cliente; hoje não existe código assim) · quem abre a tela de depois do
@@ -262,6 +264,7 @@ pagamento sem ter assinado vê "confirmando" e depois "está demorando", sem cam
 ## Pendências de verificação
 
 **Uma aberta (etapa 4.2, passo 6 — com o operador):** o código `TESTE100` criando a assinatura de
-verdade (ativa, sem cartão), o campo de pagamento da Stripe abrindo no navegador e o aviso
-chegando pelo `stripe listen`. Tudo o mais da etapa foi provado na área restrita em 10/10/2026.
+verdade (ativa, sem cartão). O campo de pagamento abrindo, o cartão de teste pagando e o aviso
+chegando pelo `stripe listen` foram provados em 10/10/2026, num navegador de teste, com a conta
+de admin; falta o operador repetir com o `member@`.
 *(A da pausa fechou em 09/10/2026 — ver "A cobrança pausada", acima.)*

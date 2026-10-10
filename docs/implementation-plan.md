@@ -3472,6 +3472,28 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             sempre"; apagar a conta com assinatura na Stripe.
             **Sem teste automático, só a prova na área restrita:** a limpeza do erro em
             `buscarAssinatura` e qual recusa da Stripe conta como "o desconto não vale".
+            **O DEFEITO QUE SÓ O NAVEGADOR MOSTROU (10/10/2026):** no primeiro teste do operador,
+            **o campo do cartão não apareceu** — a seção Pagamento veio vazia, sem erro na tela.
+            `[FATO — lido do que a própria Stripe registra, num navegador de teste em localhost]` o
+            Stripe.js no ar recusa a opção `paymentMethodTypes` (*"is no longer supported in this
+            version of Stripe.js. Use `allowedPaymentMethodTypes`…"*). Nenhum gate acusou: os testes
+            de tela usam um dublê da nossa fronteira, e a conferência de tipos não viu porque as
+            opções eram montadas com `...espalhar`, que o TypeScript não confere. **Corrigido**
+            (`client/src/lib/stripe-do-site.tsx`): `allowedPaymentMethodTypes`, com as opções
+            escritas por extenso — a opção antiga agora quebra a compilação (conferido).
+            **PROVADO NO NAVEGADOR DE TESTE (Playwright, localhost, área restrita, com o `stripe
+            listen` do operador ligado):** o `member@` vê o campo (número, validade, código de
+            segurança, país) · a conta de **admin** assinou o mensal com o cartão `4242`: `POST
+            /api/billing/assinatura` 200 → tela de concluído → "Confirmando sua assinatura…" →
+            **"Assinatura confirmada"**. O espelho foi gravado pelo aviso que chegou pelo `stripe
+            listen` (ativa, paga até 10/11/2026, modo de teste); na Stripe, ativa e com o cartão
+            guardado. O que o teste criou foi apagado (o cliente na Stripe e as linhas do admin no
+            banco de dev); o `member@` ficou como estava, sem assinatura.
+            **Achado, fora desta etapa (reportado ao operador):** com os servidores de
+            desenvolvimento ligados, a suíte do site estoura o tempo em testes de peças carregadas
+            à parte (13 e depois 8 falhas, sempre diferentes; carga da máquina acima de 100). Com 3
+            processos em vez de 16 (`vitest run --maxWorkers=3`), 794 de 794. O gate desta
+            correção foi rodado assim, mais a suíte de servidor inteira (641).
       **Para não refazer depois (o que cada etapa seguinte ACRESCENTA, sem reescrever a 4.2):** o
       valor e a **moeda** já vêm do servidor, e o cartão já é lido antes de cobrar → o dólar (4.8)
       entra no servidor · as formas de pagamento saem de **uma lista no servidor** (hoje só `card`)
@@ -3527,6 +3549,12 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       `--all-snapshot` ou `--events`, recusa com *"must specify events to forward"*), o segredo `whsec_` colado
       no `server/.env` com o arquivo FECHADO no editor, e o OK dele para apagar a assinatura de
       mentira do `member@` no banco de dev. Depois: `4242` e `TESTE100`, e o checkbox da etapa.
+      **ATUALIZAÇÃO (10/10/2026, mais tarde):** a CLI está instalada, o login e o `listen` feitos,
+      o segredo no `.env`, e a assinatura de mentira do `member@` **apagada do banco de dev com o
+      OK dele** (o seed a devolve). O campo do cartão não abria — corrigido e provado no navegador
+      de teste com a conta de admin (acima). **Falta só o operador repetir com o `member@`** (a
+      aula trancada → Assinar → `4242`) e depois o `TESTE100`; para o segundo teste, tirar antes a
+      assinatura que o primeiro criar (o cliente na Stripe e as linhas dele no banco de dev).
 - [ ] **4.3 — No ar, em modo de teste: o PRIMEIRO TESTE REAL (sessão curta, com o operador).** As
       chaves de teste e o segredo do webhook no Railway, o endereço do webhook no painel — **com
       "www"**: `https://www.jilsonsantana.com/api/stripe/webhook` (medido em 09/10/2026: sem o "www",
@@ -3590,7 +3618,9 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       invalida o Pix antigo (hoje o checkout cancela a incompleta e só GRITA se ela tiver sido
       paga nesse instante) · se entrar forma de pagamento que saia do site e volte, tirar do
       endereço da volta o segredo que a Stripe acrescenta.
-- [ ] **4.10 — Fechamento da fase (código + painel).** E2E de ponta a ponta (assinar, renovar, cancelar,
+- [ ] **4.10 — Fechamento da fase (código + painel).** **O E2E de assinar abre o campo DE VERDADE
+      da Stripe e paga com o cartão de teste** — na 4.2 o campo não abria e nenhum teste acusou,
+      porque todos usam um dublê; o roteiro que provou está descrito no item 4.2 (passo 6). E2E de ponta a ponta (assinar, renovar, cancelar,
       pagamento falho com acesso mantido na janela) · a régua de inadimplência no painel (Smart
       Retries) · revisão de segurança da fase inteira. **A troca para as chaves de verdade fica no
       GO-LIVE (Fase 7).**
