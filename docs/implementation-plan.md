@@ -3818,9 +3818,21 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             atrasado e cancelada com dias pagos baixam; cancelada e vencida e a nunca paga, não);
             o admin não baixa pela rota do aluno. **Mutação:** 5 de 5 reprovaram. Gates: typecheck,
             suíte de servidor (672) e do site (806), build.
-      - [ ] **Passo 6 — o tratador de erro no fim de `/api`.** Erro que escape de qualquer rota de
+      - [x] **Passo 6 — o tratador de erro no fim de `/api`.** Erro que escape de qualquer rota de
             `/api`: 500 `ErroInterno`, sem copiar status nem cabeçalho do erro; o corpo malformado
             continua 4xx; o registro continua levando o erro. Testes + mutação.
+            **FEITO (10/10/2026).** `lib/erro-da-api.ts`, montado em `app.ts` como o ÚLTIMO de
+            `/api` (rota nova entra acima dele). Erro que escapa: 500 `ErroInterno` em qualquer
+            ambiente, sem status, cabeçalho, mensagem nem rastro do erro na resposta. O corpo que o
+            Express recusou ao ler (JSON malformado, grande demais) responde 4xx `CorpoInvalido`,
+            por uma lista fechada de tipos. O registro leva o método, o endereço sem o que vem
+            depois do "?" e o rastro — nunca o objeto do erro inteiro. Com a resposta já começada,
+            passa o erro original adiante. **Testes:** 8 de servidor (`erro-da-api.test.ts`), com um
+            erro com a cara do da Stripe escapando de uma rota de verdade. **Mutação:** 8 de 8
+            reprovaram (a da resposta já começada só depois de o teste ser refeito: do jeito que
+            estava, ele não tinha como reprovar). **No servidor de desenvolvimento, de verdade:**
+            corpo malformado → 400 `CorpoInvalido`; forçar a sincronia sem login → 401; download
+            sem login → 401. Gates: typecheck, suíte de servidor (680) e do site (806), build.
       - [ ] **Passo 7 — o que falta da matriz.** (7–10) 401/403/200 em `/api/me` e
             `/api/admin/ping` · (11) a trilha em rascunho pelo endereço, se faltar · (15) o limite
             de tentativas de login **ligado de verdade**, num teste isolado · (16) o player assinado
@@ -3840,8 +3852,8 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             achado aqui · `billing.md` e `CLAUDE.md` reconciliados · checkbox e *Estado atual*.
       **Fora desta etapa:** ESLint (4.5) · "minha assinatura" e quem cancelou com dias pagos voltar
       a assinar (4.6) · o visitante e a sincronia de assinatura sem conta (4.7) · o reembolso (P56).
-      **ONDE PAROU:** Passos 1 a 5 feitos e commitados no `dev`. Próximo: Passo 6 (o tratador de
-      erro no fim de `/api`).
+      **ONDE PAROU:** Passos 1 a 6 feitos e commitados no `dev`. Próximo: Passo 7 (o que falta da
+      matriz de testes).
 - [ ] **4.5 — ESLint com `no-floating-promises`, bloqueante no CI (código, pequena).** Dependências
       de desenvolvimento novas: `eslint` + `typescript-eslint`. Já decidido para esta fase (item
       abaixo): promessa sem `await` dentro do webhook derruba o servidor sem nenhum teste perceber.
