@@ -293,6 +293,17 @@ describe("itensSecundarios — o nível 2 só aparece quando vale a pena", () =>
     }
   });
 
+  // ASSINATURAS (decisão do operador, 10/10/2026 — Fase 4, etapa 4.4): conferir na Stripe a
+  // assinatura de um aluno. É do ADMIN: o aluno não fica sabendo que a área existe.
+  it("Assinaturas é do admin (o aluno não vê), é tela de verdade e vem logo depois de Alunos", () => {
+    const doAdmin = secoesVisiveis(Role.ADMIN);
+    expect(doAdmin.find((s) => s.label === "Assinaturas")).toMatchObject({ to: "/admin/assinaturas", estado: "ativo", papel: Role.ADMIN });
+    expect(secoesVisiveis(Role.MEMBER).some((s) => s.to === "/admin/assinaturas")).toBe(false);
+    const rotulos = doAdmin.map((s) => s.label);
+    expect(rotulos.indexOf("Assinaturas")).toBe(rotulos.indexOf("Alunos") + 1);
+    expect(secaoAtiva("/admin/assinaturas", doAdmin)?.label).toBe("Assinaturas");
+  });
+
   // COMUNICAÇÃO (decisões do operador, 06/10/2026): antes de "Alunos", com o nível 2;
   // o que ainda não existe é EM BREVE. As Dúvidas saíram do JilsonAI Admin para cá.
   it("Comunicação vem antes de Alunos, com o nível 2 e a mensagem aberta acendendo Notificações", () => {

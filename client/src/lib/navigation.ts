@@ -1,5 +1,6 @@
 import {
   Bot,
+  CreditCard,
   Globe,
   LayoutDashboard,
   Library,
@@ -266,6 +267,16 @@ export function navegacao(t: AppTexts): Secao[] {
       icon: Users,
       papel: Role.ADMIN,
       estado: "planejado", // Fase 4
+    },
+    {
+      // ASSINATURAS (decisão do operador, 10/10/2026 — Fase 4, etapa 4.4): conferir na
+      // Stripe a assinatura de um aluno e acertar o acesso dele. Depois de "Alunos":
+      // "Comunicação" fica logo antes de "Alunos" por decisão dele (06/10/2026).
+      label: "Assinaturas",
+      to: "/admin/assinaturas",
+      icon: CreditCard,
+      papel: Role.ADMIN,
+      estado: "ativo",
     },
     {
       // Mesmo caso de "Cursos Admin": o aluno também tem um "JilsonAI".

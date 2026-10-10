@@ -3786,9 +3786,22 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             **Mutação:** 8 de 8 reprovaram. Gates: typecheck, suíte de servidor (669) e do site
             (797), build. **Sem teste automático, fica para a prova na área restrita (passo 9):** a
             Stripe responder `resource_missing` para a assinatura que ela não conhece.
-      - [ ] **Passo 4 — a tela do admin "Assinaturas".** `/admin/assinaturas`: o e-mail do aluno, o
+      - [x] **Passo 4 — a tela do admin "Assinaturas".** `/admin/assinaturas`: o e-mail do aluno, o
             botão, o resultado; carregando, erro e vazio, com teste de componente de cada um. Layout
             padrão (`PageContainer` + `PageHeader` + `PageSection`); textos em português, na tela.
+            **FEITO (10/10/2026).** `pages/admin/AdminAssinaturasPage.tsx` (92 linhas) + os textos
+            em `lib/sincronia.ts` + `adminSincronizarConta` em `lib/api.ts`. O item "Assinaturas"
+            entrou no menu do admin **logo depois de "Alunos"** — a posição é escolha do agente,
+            para não desfazer a decisão de 06/10 ("Comunicação" logo antes de "Alunos"); *a ordem é
+            do operador, a confirmar.* A tela mostra se a conta ficou com acesso e, de cada
+            assinatura, a situação em português e até quando está paga; as que precisam de gente
+            dizem por quê. **Textos em RASCUNHO do agente**, a revisar por ele. **Testes:** 8 de
+            componente (de início, o e-mail aparado, carregando, sem acesso com cada situação,
+            vazio, as três frases de erro, o que não é e-mail, o resultado de um aluno não fica na
+            tela quando a conferência do seguinte falha) + 1 do mapa de navegação (o aluno não vê o
+            item). **Mutação:** 6 de 6 reprovaram. Gates: typecheck, suíte do site (806) e de
+            servidor (669), build. **Sem prova no navegador pelo agente** (precisaria da senha do
+            admin): o acabamento é do Antigravity, e quem abre a tela é o operador.
       - [ ] **Passo 5 — `requireActiveMembership`.** O invólucro HTTP de `temAcessoAtivo()`: sem
             login 401, sem acesso 403 `AssinaturaNecessaria`. Primeira rota: o download dos arquivos
             da aula (login + assinatura, sem exceção). Para o aluno nada muda; o visitante sem login
@@ -3816,8 +3829,8 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             achado aqui · `billing.md` e `CLAUDE.md` reconciliados · checkbox e *Estado atual*.
       **Fora desta etapa:** ESLint (4.5) · "minha assinatura" e quem cancelou com dias pagos voltar
       a assinar (4.6) · o visitante e a sincronia de assinatura sem conta (4.7) · o reembolso (P56).
-      **ONDE PAROU:** Passos 1 a 3 feitos e commitados no `dev`. Próximo: Passo 4 (a tela
-      "Assinaturas" do admin).
+      **ONDE PAROU:** Passos 1 a 4 feitos e commitados no `dev`. Próximo: Passo 5
+      (`requireActiveMembership`).
 - [ ] **4.5 — ESLint com `no-floating-promises`, bloqueante no CI (código, pequena).** Dependências
       de desenvolvimento novas: `eslint` + `typescript-eslint`. Já decidido para esta fase (item
       abaixo): promessa sem `await` dentro do webhook derruba o servidor sem nenhum teste perceber.

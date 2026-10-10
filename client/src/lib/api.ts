@@ -32,6 +32,7 @@ import type {
   AssinarInput,
   AssinaturaCriada,
   SituacaoDaAssinatura,
+  SincroniaDaConta,
 } from "@jilson/core";
 
 // Same-origin by design (mirrors auth-client.ts): in dev the Vite proxy
@@ -946,5 +947,14 @@ export async function criarAssinatura(corpo: AssinarInput): Promise<AssinaturaCr
 /** Esta conta tem acesso agora? (a resposta do gate do servidor) */
 export async function getSituacaoDaAssinatura(): Promise<SituacaoDaAssinatura> {
   const { data } = await client.get<SituacaoDaAssinatura>("/billing/assinatura");
+  return data;
+}
+
+/**
+ * ADMIN: confere na Stripe as assinaturas da conta deste e-mail e acerta o acesso (etapa 4.4).
+ * Conta que não existe: 404 `ContaNaoEncontrada`. Sem tentar de novo sozinho.
+ */
+export async function adminSincronizarConta(email: string): Promise<SincroniaDaConta> {
+  const { data } = await client.post<SincroniaDaConta>("/admin/assinaturas/sincronizar", { email });
   return data;
 }
