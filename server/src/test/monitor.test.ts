@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeAll, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeAll, afterAll, afterEach } from "vitest";
 import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -64,10 +64,24 @@ console.warn = (...partes: unknown[]) => void avisos.push(juntar(partes));
 console.info = () => {};
 let member: string[] = [];
 
+// As chaves da Stripe DESTE arquivo: a rota usada para um erro escapar só chega à Stripe (o
+// dublê) se a cobrança estiver configurada. Sem pô-las aqui, o teste passava só no computador
+// de quem tem as chaves no `.env.test` — e reprovou no CI, que não tem (10/10/2026).
+const AMBIENTE = ["STRIPE_SECRET_KEY", "STRIPE_PUBLISHABLE_KEY"] as const;
+const antes = Object.fromEntries(AMBIENTE.map((nome) => [nome, process.env[nome]]));
+
 beforeAll(async () => {
+  process.env.STRIPE_SECRET_KEY = "sk_test_da_suite_local";
+  process.env.STRIPE_PUBLISHABLE_KEY = "pk_test_da_suite_local";
   const res = await request(servidor).post("/api/auth/sign-in/email").send({ email: process.env.SEED_MEMBER_EMAIL, password: process.env.SEED_MEMBER_PASSWORD });
   member = (res.headers["set-cookie"] as unknown as string[] | undefined) ?? [];
   expect(member.length).toBeGreaterThan(0);
+});
+afterAll(() => {
+  for (const nome of AMBIENTE) {
+    if (antes[nome] === undefined) delete process.env[nome];
+    else process.env[nome] = antes[nome];
+  }
 });
 afterEach(() => {
   enviados.length = 0;
