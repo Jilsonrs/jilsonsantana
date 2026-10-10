@@ -64,6 +64,24 @@ export async function temAcessoAtivo(userId: string, db: Leitor = prisma): Promi
 }
 
 /**
+ * Esta pessoa JÁ FOI assinante? Tem no espelho uma assinatura que passou do primeiro pagamento
+ * (qualquer status que não seja o de "nunca pagou"). Só serve ao TEXTO do convite — "Reativar
+ * assinatura" para quem volta, "Assinar" só na primeira vez (decisão do operador, 10/10/2026) —
+ * e NUNCA decide acesso: quem decide é `temAcessoAtivo()`. Derivado do espelho, sem coluna.
+ */
+export async function jaFoiAssinante(userId: string): Promise<boolean> {
+  // FECHA na dúvida, como o gate: um filtro vazio contaria as assinaturas de todo mundo.
+  if (typeof userId !== "string" || userId.length === 0) return false;
+  const quantas = await prisma.subscription.count({ where: { ownerUserId: userId, status: { notIn: [...NUNCA_PAGOU] } } });
+  return quantas > 0;
+}
+
+/** O convite desta pessoa é REATIVAR? Já foi assinante e, pela resposta do gate, está sem acesso. */
+export async function convidaAReativar(userId: string, temAcesso: boolean): Promise<boolean> {
+  return !temAcesso && (await jaFoiAssinante(userId));
+}
+
+/**
  * A aula abre para esta pessoa? PRÉVIA GRÁTIS (qualquer um — a segunda exceção ao
  * portão de vídeo, CLAUDE.md → Access Architecture) ou acesso ativo. É a MESMA
  * regra para assistir e para concluir: num lugar só, para as duas rotas nunca

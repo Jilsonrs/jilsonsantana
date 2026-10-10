@@ -453,6 +453,11 @@ export type PaginaDaAula = {
   };
   /** As aulas deste curso que QUEM PEDE concluiu (Fase 5, 03/10/2026); visitante: []. */
   concluidas: number[];
+  /**
+   * Quem pede já foi assinante e hoje está sem acesso: o botão da aula trancada diz "Reativar
+   * assinatura" (decisão do operador, 10/10/2026). Não vem na página do admin.
+   */
+  reativar?: boolean;
 };
 
 /**

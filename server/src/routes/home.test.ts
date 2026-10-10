@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
 import request from "supertest";
 import servidor from "../test/servidor.js";
+import { prisma } from "../lib/prisma.js";
+import { ASSINATURA_DE_TESTE } from "../lib/assinatura-de-teste.js";
 
 // Testa o app REAL (nada de dublê de Prisma): o que importa aqui é que a rota
 // esteja registrada, que o HTML venha inteiro na primeira resposta e que as
@@ -79,6 +81,64 @@ describe("Home pública (SSR)", () => {
       // Para o visitante e o robô do Google, a resposta não ganha cabeçalho nenhum.
       expect(res.headers["cache-control"]).toBeUndefined();
       expect(res.text).toContain('<button  class="btn" style="padding: 24px 64px; font-size: 1.35rem;">Assinar</button>');
+    });
+
+    // "REATIVAR ASSINATURA" (etapa 4.4 — decisão do operador, 10/10/2026): quem está logado, já
+    // foi assinante e hoje está sem acesso lê "Reativar assinatura"; "Assinar" é só a primeira vez.
+    describe("para quem já foi assinante", () => {
+      const com = (status: string, currentPeriodEnd: Date) => prisma.subscription.update({ where: { stripeSubscriptionId: ASSINATURA_DE_TESTE }, data: { status, currentPeriodEnd } });
+      const [PASSADO, FUTURO] = [new Date("2020-01-01T00:00:00Z"), new Date("2100-01-01T00:00:00Z")];
+      /** Roda o bloco com a assinatura de teste do member@ nesta situação, e devolve ela ao fim. */
+      async function naSituacao(status: string, fim: Date, fn: () => Promise<void>) {
+        await com(status, fim);
+        try {
+          await fn();
+        } finally {
+          await com("active", FUTURO);
+        }
+      }
+
+      it("logado, já foi assinante e sem acesso: os DOIS botões dizem Reativar assinatura, e seguem levando à tela de assinar", async () => {
+        await naSituacao("canceled", PASSADO, async () => {
+          const res = await request(servidor).get("/").set("Cookie", await entrar());
+          expect(res.text).toContain(`${paraATelaDeAssinar} style="width: 100%;">Reativar assinatura</button></form>`);
+          expect(res.text).toContain(`${paraATelaDeAssinar} style="padding: 24px 64px; font-size: 1.35rem;">Reativar assinatura</button></form>`);
+          expect(res.text).not.toContain(">Assinar</button>");
+        });
+      });
+
+      it("na página em inglês o texto é o do dicionário em inglês — nunca o português", async () => {
+        await naSituacao("canceled", PASSADO, async () => {
+          const res = await request(servidor).get("/en").set("Cookie", await entrar());
+          expect(res.text.split(">Reactivate subscription</button>").length - 1).toBe(2);
+          expect(res.text).not.toContain("Reativar assinatura");
+        });
+      });
+
+      it("logado e só TENTOU pagar (nunca foi assinante): continua Assinar", async () => {
+        await naSituacao("incomplete_expired", PASSADO, async () => {
+          const res = await request(servidor).get("/").set("Cookie", await entrar());
+          expect(res.text.split(">Assinar</button>").length - 1).toBe(2);
+          expect(res.text).not.toContain("Reativar assinatura");
+        });
+      });
+
+      it("cancelou e ainda tem dias pagos (tem acesso): continua Assinar — não há o que reativar", async () => {
+        await naSituacao("canceled", FUTURO, async () => {
+          const res = await request(servidor).get("/").set("Cookie", await entrar());
+          expect(res.text).not.toContain("Reativar assinatura");
+        });
+      });
+
+      it("SEM login nunca: o visitante e o Google veem Assinar, mesmo com ex-assinante no banco", async () => {
+        await naSituacao("canceled", PASSADO, async () => {
+          for (const [rota, texto] of [["/", "Reativar assinatura"], ["/en", "Reactivate subscription"]]) {
+            const res = await request(servidor).get(rota);
+            expect(res.text, rota).not.toContain(texto);
+            expect(res.headers["cache-control"], rota).toBeUndefined();
+          }
+        });
+      });
     });
 
     it("na página em INGLÊS, com o botão desligado (sem aula em inglês): continua desligado, mesmo com sessão", async () => {

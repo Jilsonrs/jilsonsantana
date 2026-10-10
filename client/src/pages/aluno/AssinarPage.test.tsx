@@ -58,7 +58,7 @@ const PAGAR: AssinaturaCriada = { estado: "pagar", segredo: "pi_1_secret_x", tip
 const erroDoServidor = (codigo: string) => ({ response: { data: { error: codigo } } });
 
 beforeEach(() => {
-  getSituacaoDaAssinatura.mockReset().mockResolvedValue({ temAcesso: false });
+  getSituacaoDaAssinatura.mockReset().mockResolvedValue({ temAcesso: false, reativar: false });
   getPlanosDaAssinatura.mockReset().mockResolvedValue(PLANOS);
   getPreviaDaAssinatura.mockReset().mockResolvedValue(CEM_PARA_SEMPRE);
   criarAssinatura.mockReset().mockResolvedValue(PAGAR);
@@ -82,6 +82,36 @@ async function aplicar(codigo: string) {
   fireEvent.change(await screen.findByLabelText("Código promocional"), { target: { value: codigo } });
   fireEvent.click(screen.getByRole("button", { name: "Aplicar" }));
 }
+
+// "REATIVAR ASSINATURA" (Fase 4, etapa 4.4 — decisão do operador, 10/10/2026): quem já foi
+// assinante e está sem acesso REATIVA; "Assinar" fica só para a primeira vez (o resto deste
+// arquivo). Quem diz é o servidor — a tela só troca o texto.
+describe("AssinarPage — quem já foi assinante", () => {
+  it("o título da tela e o botão dizem Reativar assinatura — com o cartão, e também sem ele (código de 100%)", async () => {
+    getSituacaoDaAssinatura.mockResolvedValue({ temAcesso: false, reativar: true });
+    abrir();
+    expect(await screen.findByRole("heading", { level: 1, name: "Reativar assinatura" })).toBeTruthy();
+    expect(await screen.findByRole("button", { name: "Reativar assinatura" })).toBeTruthy();
+    expect(cartao()).not.toBeNull();
+    expect(screen.queryByRole("button", { name: "Assinar" })).toBeNull();
+
+    await aplicar("TESTE100");
+    await screen.findByText("TESTE100");
+    await waitFor(() => expect(cartao()).toBeNull());
+    expect(screen.getByRole("button", { name: "Reativar assinatura" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Assinar" })).toBeNull();
+  });
+
+  it("reativar manda ao servidor o mesmo pedido de quem assina pela primeira vez", async () => {
+    getSituacaoDaAssinatura.mockResolvedValue({ temAcesso: false, reativar: true });
+    abrir();
+    await aplicar("TESTE100");
+    await screen.findByText("TESTE100");
+    await waitFor(() => expect(cartao()).toBeNull());
+    fireEvent.click(screen.getByRole("button", { name: "Reativar assinatura" }));
+    await waitFor(() => expect(criarAssinatura).toHaveBeenCalledWith({ plano: "mensal", codigo: "TESTE100" }));
+  });
+});
 
 describe("AssinarPage — estados", () => {
   it("carregando", () => {

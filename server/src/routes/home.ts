@@ -4,6 +4,7 @@ import { ContentStatus } from "@jilson/core";
 import { prisma } from "../lib/prisma.js";
 import { getDict } from "../lib/dict.js";
 import { loadSession } from "../middleware/auth.js";
+import { convidaAReativar, temAcessoAtivo } from "../lib/acesso.js";
 import { renderHome, type HomeCourse } from "../views/home.js";
 
 const router = Router();
@@ -111,6 +112,16 @@ function paginaDeQuemEstaLogado(res: Response, logado: boolean): void {
   if (logado) res.set("Cache-Control", "private, no-cache");
 }
 
+/**
+ * Os botões desta pessoa dizem "Reativar assinatura"? Só para quem está logado, já foi assinante
+ * e hoje está sem acesso (decisão do operador, 10/10/2026). O visitante sem login — e o robô do
+ * Google — nem chega ao banco por isto: a resposta é sempre não.
+ */
+async function botoesDeReativar(sessao: Awaited<ReturnType<typeof loadSession>>): Promise<boolean> {
+  if (!sessao) return false;
+  return convidaAReativar(sessao.user.id, await temAcessoAtivo(sessao.user.id));
+}
+
 router.get("/", async (req, res) => {
   const [dict, sessao, [testimonials, faq]] = await Promise.all([
     getDict("pt"),
@@ -127,6 +138,7 @@ router.get("/", async (req, res) => {
       canSubscribe: true,
       baseUrl: BASE_URL,
       logado: sessao !== null,
+      reativar: await botoesDeReativar(sessao),
       testimonials,
       faq,
     }),
@@ -149,6 +161,7 @@ router.get("/en", async (req, res) => {
       canSubscribe: CAN_SUBSCRIBE_EN,
       baseUrl: BASE_URL,
       logado: sessao !== null,
+      reativar: await botoesDeReativar(sessao),
       testimonials,
       faq,
     }),

@@ -52,8 +52,12 @@ export type DescontoDoCodigo = {
 /** Resposta de `POST /api/billing/previa`: quanto se paga HOJE com o código, pela conta da Stripe. */
 export type PreviaDaAssinatura = { centavosHoje: number; moeda: string; desconto: DescontoDoCodigo };
 
-/** Resposta de `GET /api/billing/assinatura`: esta conta tem acesso agora? (a resposta do gate) */
-export type SituacaoDaAssinatura = { temAcesso: boolean };
+/**
+ * Resposta de `GET /api/billing/assinatura`: esta conta tem acesso agora? (a resposta do gate).
+ * `reativar` (etapa 4.4 — decisão do operador, 10/10/2026): a conta JÁ FOI assinante e hoje está
+ * sem acesso — o convite dela é "Reativar assinatura", e não "Assinar". Só muda o texto.
+ */
+export type SituacaoDaAssinatura = { temAcesso: boolean; reativar: boolean };
 
 /**
  * Resposta de `POST /api/billing/assinatura`. `ativa`: a Stripe já ativou (nada a pagar, hoje nem

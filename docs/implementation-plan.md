@@ -3853,11 +3853,33 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             lido do cabeçalho padrão (cai o "cada pessoa tem o seu"), `/api/admin/ping` sem a trava,
             `requireAdmin` sem conferir o papel, a trilha sem o filtro de publicada. Gates:
             typecheck, suíte de servidor (688) e do site (806), build.
-      - [ ] **Passo 8 — "Reativar assinatura".** Quem já foi assinante e está sem acesso vê
+      - [x] **Passo 8 — "Reativar assinatura".** Quem já foi assinante e está sem acesso vê
             "Reativar assinatura" onde hoje lê "Assinar": na aula trancada, na tela de assinar e
             nos dois botões da home quando há login. O visitante sem login continua vendo
             "Assinar". O servidor diz se a conta já foi assinante; os textos saem do dicionário,
             nos dois idiomas. Testes de servidor e de componente + mutação.
+            **FEITO (10/10/2026).** **A regra (derivada, sem coluna):** o convite é "Reativar
+            assinatura" quando a conta **já foi assinante** (tem no espelho uma assinatura que
+            passou do primeiro pagamento — qualquer status que não seja `incomplete` nem
+            `incomplete_expired`) **e hoje está sem acesso** (`jaFoiAssinante` e `convidaAReativar`,
+            em `lib/acesso.ts`, ao lado do gate; é só texto, nunca decide acesso). Quem só tentou
+            pagar continua lendo "Assinar"; quem cancelou e ainda tem dias pagos tem acesso, então
+            não há botão a trocar. **Onde:** a aula trancada (`GET /api/lessons/:id/aula` ganhou
+            `reativar`) · a tela de assinar, no título e no botão (`GET /api/billing/assinatura`
+            ganhou `reativar`) · os dois botões da home para quem está logado — o visitante sem
+            login vê sempre "Assinar", e a home dele continua sem ir ao banco por isto. As duas
+            respostas só GANHARAM um campo (API aditiva). **Textos novos, nos dois idiomas:**
+            `home.pricing.btnReactivate` e `home.cta.btnReactivate` (editáveis em Admin → Textos),
+            `app.assinar.tituloReativar`, `app.assinar.botaoReativar` e `app.aula.reativar` —
+            português do operador ("Reativar assinatura"); **inglês "Reactivate subscription",
+            RASCUNHO do agente, que ainda passa pelo ciclo de revisão do `idiomas.md`** (ponto de
+            dúvida: "Reactivate subscription" × "Resubscribe"). **Não mudou:** a tela de depois do
+            pagamento continua com o título "Assinar". **Testes:** +11 de servidor (a regra, a
+            resposta do gate em 6 situações, a aula trancada, a home nos dois idiomas e sem login)
+            e +4 de componente. **Mutação:** 13 de 13 reprovaram. **No servidor de
+            desenvolvimento:** a home do visitante, nos dois idiomas, segue com os 2 botões
+            Assinar/Subscribe e nenhum "Reativar". Gates: typecheck, suíte de servidor (699) e do
+            site (810), build.
       - [ ] **Passo 9 — a prova na área restrita, a revisão de segurança e os docs.** No
             computador, com uma conta descartável criada e apagada no banco de desenvolvimento
             (branch `dev` do Neon) e o cartão de teste, **com o aviso desligado**: pagou e ficou
@@ -3867,8 +3889,8 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             achado aqui · `billing.md` e `CLAUDE.md` reconciliados · checkbox e *Estado atual*.
       **Fora desta etapa:** ESLint (4.5) · "minha assinatura" e quem cancelou com dias pagos voltar
       a assinar (4.6) · o visitante e a sincronia de assinatura sem conta (4.7) · o reembolso (P56).
-      **ONDE PAROU:** Passos 1 a 7 feitos e commitados no `dev`. Próximo: Passo 8 ("Reativar
-      assinatura").
+      **ONDE PAROU:** Passos 1 a 8 feitos e commitados no `dev`. Próximo: Passo 9 (a prova na área
+      restrita, a revisão de segurança e os docs).
 - [ ] **4.5 — ESLint com `no-floating-promises`, bloqueante no CI (código, pequena).** Dependências
       de desenvolvimento novas: `eslint` + `typescript-eslint`. Já decidido para esta fase (item
       abaixo): promessa sem `await` dentro do webhook derruba o servidor sem nenhum teste perceber.

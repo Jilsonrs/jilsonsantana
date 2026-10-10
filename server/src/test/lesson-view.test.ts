@@ -275,6 +275,39 @@ describe("o aluno só enxerga o publicado", () => {
   });
 });
 
+// "REATIVAR ASSINATURA" na aula trancada (etapa 4.4 — decisão do operador, 10/10/2026).
+describe("a aula trancada diz se o convite é reativar", () => {
+  const com = (status: string, currentPeriodEnd: Date) => prisma.subscription.update({ where: { stripeSubscriptionId: ASSINATURA_DE_TESTE }, data: { status, currentPeriodEnd } });
+  const [PASSADO, FUTURO] = [new Date("2020-01-01T00:00:00Z"), new Date("2100-01-01T00:00:00Z")];
+
+  it("já foi assinante e está sem acesso: reativar — e a aula continua trancada, sem conteúdo", async () => {
+    try {
+      await com("canceled", PASSADO);
+      const res = await pagina(ids.paga, member);
+      expect(res.body.reativar).toBe(true);
+      expect(res.body.aula.liberada).toBe(false);
+      semConteudo(res.body);
+    } finally {
+      await com("active", FUTURO);
+    }
+  });
+
+  it("só tentou pagar, é visitante, ou tem acesso: não", async () => {
+    try {
+      await com("incomplete_expired", PASSADO);
+      expect((await pagina(ids.paga, member)).body.reativar).toBe(false);
+      await com("canceled", PASSADO);
+      // O visitante sem login nunca: ninguém sabe quem ele é.
+      expect((await pagina(ids.paga)).body.reativar).toBe(false);
+    } finally {
+      await com("active", FUTURO);
+    }
+    const comAcesso = await pagina(ids.paga, member);
+    expect(comAcesso.body.reativar).toBe(false);
+    expect(comAcesso.body.aula.liberada).toBe(true);
+  });
+});
+
 describe("o download", () => {
   // A TRAVA DE "LOGIN + ASSINATURA" (`requireActiveMembership`, Fase 4, etapa 4.4): o invólucro
   // HTTP de `temAcessoAtivo()`. Sem login 401; com login e sem acesso 403; com acesso, passa.

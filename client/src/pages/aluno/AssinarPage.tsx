@@ -22,13 +22,16 @@ export function AssinarPage() {
   const irPara = useIrPara();
   const situacao = useSituacaoDaAssinatura();
   const jaAssina = situacao.data?.temAcesso === true;
+  // Quem já foi assinante e está sem acesso REATIVA; "Assinar" é só a primeira vez (decisão do
+  // operador, 10/10/2026). Quem diz é o servidor; aqui muda só o texto.
+  const reativar = situacao.data?.reativar === true;
   const planos = usePlanosDaAssinatura(situacao.data?.temAcesso === false);
   const carregando = situacao.isLoading || planos.isLoading;
   const falhou = situacao.isError || planos.isError;
 
   return (
     <PageContainer>
-      <PageHeader title={t.assinar.titulo} description={t.assinar.descricao} />
+      <PageHeader title={reativar ? t.assinar.tituloReativar : t.assinar.titulo} description={t.assinar.descricao} />
       {carregando && <p className="text-muted-foreground">{t.comum.carregando}</p>}
       {!carregando && falhou && (
         <p role="alert" className="text-sm text-destructive">
@@ -45,7 +48,7 @@ export function AssinarPage() {
       )}
       {!carregando && !falhou && !jaAssina && planos.data && (
         <Suspense fallback={<p className="text-muted-foreground">{t.comum.carregando}</p>}>
-          <FormularioDeAssinatura dados={planos.data} aoConcluir={() => irPara(TELA_DE_CONCLUIDO)} aoSaberQueJaAssina={() => void situacao.refetch()} />
+          <FormularioDeAssinatura dados={planos.data} aoConcluir={() => irPara(TELA_DE_CONCLUIDO)} aoSaberQueJaAssina={() => void situacao.refetch()} reativar={reativar} />
         </Suspense>
       )}
     </PageContainer>

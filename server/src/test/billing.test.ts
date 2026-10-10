@@ -237,23 +237,47 @@ describe("GET /api/billing/assinatura", () => {
   it("conta com assinatura ativa: tem acesso", async () => {
     const res = await situacao(member);
     expect(res.status).toBe(200);
-    expect(res.body).toEqual({ temAcesso: true });
+    expect(res.body).toEqual({ temAcesso: true, reativar: false });
   });
 
   it("conta sem assinatura que dê acesso: não tem", async () => {
     await semAssinatura(async () => {
-      expect((await situacao(member)).body).toEqual({ temAcesso: false });
+      expect((await situacao(member)).body.temAcesso).toBe(false);
     });
+  });
+
+  // "REATIVAR ASSINATURA" (etapa 4.4 — decisão do operador, 10/10/2026): "Assinar" só na
+  // primeira vez. `reativar` é só o TEXTO do convite: quem já foi assinante e está sem acesso.
+  it("reativar: sim para quem JÁ FOI assinante e está sem acesso; não para quem só tentou pagar, nem para quem tem acesso", async () => {
+    const com = (status: string, currentPeriodEnd: Date) => prisma.subscription.update({ where: { stripeSubscriptionId: ASSINATURA_DE_TESTE }, data: { status, currentPeriodEnd } });
+    const [PASSADO, FUTURO] = [new Date("2020-01-01T00:00:00Z"), new Date("2100-01-01T00:00:00Z")];
+    try {
+      const casos: [string, Date, { temAcesso: boolean; reativar: boolean }][] = [
+        ["canceled", PASSADO, { temAcesso: false, reativar: true }],
+        ["unpaid", PASSADO, { temAcesso: false, reativar: true }],
+        ["incomplete", FUTURO, { temAcesso: false, reativar: false }],
+        ["incomplete_expired", PASSADO, { temAcesso: false, reativar: false }],
+        // Cancelou e ainda tem dias pagos: continua assistindo — não há o que reativar.
+        ["canceled", FUTURO, { temAcesso: true, reativar: false }],
+        ["past_due", PASSADO, { temAcesso: true, reativar: false }],
+      ];
+      for (const [status, fim, esperado] of casos) {
+        await com(status, fim);
+        expect((await situacao(member)).body, `${status} até ${fim.getFullYear()}`).toEqual(esperado);
+      }
+    } finally {
+      await com("active", FUTURO);
+    }
   });
 
   it("assinatura que nunca foi paga (incomplete) não libera; quando o espelho passa a ativa, libera", async () => {
     await semAssinatura(async () => {
       const nova = await prisma.subscription.create({ data: { ownerUserId: memberId, status: "incomplete", stripeSubscriptionId: `sub_da_tela_${S}` } });
       try {
-        expect((await situacao(member)).body).toEqual({ temAcesso: false });
+        expect((await situacao(member)).body.temAcesso).toBe(false);
         // É o que o aviso da Stripe faz quando o pagamento passa.
         await prisma.subscription.update({ where: { id: nova.id }, data: { status: "active" } });
-        expect((await situacao(member)).body).toEqual({ temAcesso: true });
+        expect((await situacao(member)).body.temAcesso).toBe(true);
       } finally {
         await prisma.subscription.delete({ where: { id: nova.id } });
       }
@@ -663,7 +687,7 @@ describe("POST /api/billing/assinatura", () => {
       criarAssinatura.mockImplementation(async (pedido) => ({ id: "sub_cem", status: "active", precoId: pedido.precoId, codigoId: pedido.codigoId, segredoDoPagamento: null, segredoDoCartao: null }));
       expect((await assinarComo({ plano: "mensal", codigo: "TESTE100" }, member)).body.estado).toBe("ativa");
       expect(await prisma.subscription.count({ where: { ownerUserId: memberId } })).toBe(antes);
-      expect((await request(servidor).get("/api/billing/assinatura").set("Cookie", member)).body).toEqual({ temAcesso: false });
+      expect((await request(servidor).get("/api/billing/assinatura").set("Cookie", member)).body.temAcesso).toBe(false);
     });
   });
 
