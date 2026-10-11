@@ -20,12 +20,11 @@
 
 ## A. Agora, em sequência *(nascidas da configuração do Bunny, 25/09/2026)*
 
-*As três abaixo nasceram na sessão (b) da etapa 4.6 (11/10/2026). Item novo que
+*As duas abaixo nasceram na sessão (b) da etapa 4.6 (11/10/2026). Item novo que
 precise de resposta rápida entra aqui, com o próximo número livre.*
 
 | # | O que falta | Onde registrar |
 |---|---|---|
-| P70 | **Quem marcou a troca do Anual para o Mensal e depois cancela: a troca marcada é desfeita.** A Stripe não deixa parar a renovação com a troca marcada, então o servidor desfaz a troca antes. Consequência: se a pessoa clicar depois em "Manter a assinatura", ela volta a renovar no **Anual**, e teria que marcar a troca de novo. Recomendação do agente: deixar assim e avisar na tela de cancelar com uma linha — sugestão: "Sua troca para o plano Mensal também será desfeita." / "Your switch to the Monthly plan will also be undone." | `billing.md` → *Minha assinatura*, e `app.faturamento.*` |
 | P71 | **Duas conferências antes de publicar a sessão (b), nos painéis** (da revisão de segurança, 11/10/2026): **(1) Stripe, conta de verdade — a chave secreta que está na Railway é a comum (começa com `sk_live_`) ou uma restrita (`rk_live_`)?** Não me diga a chave, só o começo. Toda conferência de assinatura passou a ler também o pagamento; se a chave for restrita e não tiver leitura de pagamentos, faturas, devoluções e agendamentos, todo aviso da Stripe passa a dar erro. **(2) Railway — a variável `SENTRY_DSN` está preenchida?** Os alertas novos (devolução que falhou, espelho não acertado depois do reembolso) só chegam por e-mail com ela | `billing.md` → *Minha assinatura* → Limitações conhecidas |
 | P69 | **No painel da Stripe, na conta de VERDADE: incluir dois avisos no endereço de avisos do site** (Desenvolvedores → Webhooks → o endereço do site → eventos): **dinheiro devolvido (`charge.refunded`)** e **devolução que falhou (`refund.failed`)** — ou me dizer que o endereço já recebe todos os avisos. **É condição de publicar o reembolso** (a revisão de segurança mostrou que não vale só para o reembolso dado pelo painel): sem eles, quem recebe o dinheiro de volta pode seguir com acesso num caso de falha, e a devolução que o banco rejeita dias depois não avisa ninguém | `billing.md` → *Minha assinatura* → Limitações conhecidas |
 

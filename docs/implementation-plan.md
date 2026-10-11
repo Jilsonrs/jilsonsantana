@@ -4552,8 +4552,9 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       cobrança atrasada termina a assinatura na hora, para as tentativas e mantém a pessoa
       logada (servidor: a operação de parar, a resposta e o que a tela recebe; a prova pede o
       relógio de teste) · (ii) limpar o que as telas guardaram também ao ENTRAR.
-      **Próximo, nesta ordem:** (i) e (ii) · o passo 9 e o 11 (as telas) · o 12 · o 13. A P70
-      (a troca marcada desfeita ao cancelar) só muda uma linha de texto da tela de cancelar.
+      **Próximo, nesta ordem:** (i) e (ii) · o passo 9 e o 11 (as telas) · o 12 · o 13. A tela
+      de cancelar avisa quem tem a troca para o Mensal marcada de que ela também será desfeita
+      (decisão dele, 11/10/2026; `billing.md` → *Minha assinatura*).
       Nas telas: os endereços `…/faturamento/cancelar` e `…/faturamento/plano` (constantes no
       `core`), os botões no resumo ("Cancelar assinatura", "Manter a assinatura", "Mudar de
       plano", "Continuar no Anual"), a confirmação do banco pelo site (`handleNextAction`, em

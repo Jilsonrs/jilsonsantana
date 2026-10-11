@@ -670,8 +670,14 @@ Stripe guardou o cartão de teste e o resumo passou a mostrá-lo:
   pede confirmação, a resposta de aplicar o cartão leva o segredo da fatura em aberto — fecha, do
   lado do servidor, a limitação anotada na sessão (a).
 - **Quem está saindo não troca de plano:** parar a renovação solta antes a troca marcada (com
-  ela a Stripe recusa parar) e anula a troca que esperava a confirmação do banco. *O que isso
-  significa para o aluno é pergunta ao operador — pendência P70.*
+  ela a Stripe recusa parar) e anula a troca que esperava a confirmação do banco. **Decisão do
+  operador (11/10/2026): fica assim, e a tela de cancelar AVISA** — entre isso e o site lembrar
+  da troca e refazê-la sozinho quando a pessoa clica em "Manter a assinatura". Quem cancela com
+  a troca para o Mensal marcada e depois volta atrás torna a renovar no ANUAL (o resumo mostra
+  a próxima cobrança), e marca a troca de novo se quiser. O texto do aviso, aprovado em
+  português: **"Sua troca para o plano Mensal também será desfeita."** (inglês, rascunho: "Your
+  switch to the Monthly plan will also be undone." — P72). *Reabre se um aluno for cobrado pelo
+  ano por causa disso, ou reclamar.*
 - **A fronteira com a Stripe tem seis arquivos** (sessão b): `stripe-cliente.ts` (a biblioteca
   com a chave), `stripe.ts` (assinar e o espelho), `stripe-assinatura.ts` (gerir a assinatura),
   `stripe-devolucao.ts` (ler se a fatura foi devolvida), `stripe-reembolso.ts` (encerrar e
