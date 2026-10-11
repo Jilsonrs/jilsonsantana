@@ -298,8 +298,9 @@ router.post("/billing/minha-assinatura/reembolso", requireAuth, async (req, res)
 });
 
 // MUDAR DE PLANO (etapa 4.6, sessão b). Mensal → anual vale na hora, com o valor mostrado antes;
-// anual → mensal vale no fim do período já pago, e dá para desistir. O site diz só PARA QUAL
-// plano: preço, valor e assinatura são do servidor (`lib/meu-plano.ts`).
+// anual → mensal vale no fim do período já pago, e dá para desistir. O site diz PARA QUAL plano
+// e devolve o valor que mostrou e o instante da conta; preço e assinatura são do servidor, e o
+// valor só é cobrado depois de conferido lá (`lib/meu-plano.ts`).
 
 // GET /api/billing/minha-assinatura/plano — a troca que esta conta pode fazer agora, já com a
 // conta da Stripe (quanto se paga hoje, ou quando a troca vale). Não muda nada.

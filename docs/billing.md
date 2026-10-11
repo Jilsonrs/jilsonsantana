@@ -841,6 +841,21 @@ encerrada de vez com dias pagos: tem acesso e o servidor recusa cartão.
   cliente. Na fatura da Stripe o crédito aparece como uma linha negativa com o nome do produto.
   **A rede de segurança:** se um dia a fatura da troca não der o valor mostrado, a que ainda
   espera o banco é anulada e a troca falha; a que já foi cobrada vira alerta para o operador.
+  A rede olha a fatura NOVA (outra que não a de antes da troca), sem depender do motivo que a
+  Stripe escreve nela; e, se a anulação falhar, o alerta diz que a fatura continua em aberto.
+- **O pedido de troca repetido** (terceira revisão de segurança, 11/10/2026). Se a Stripe demorar
+  e o pedido "falhar" do nosso lado com a cobrança ainda andando, a pessoa clica de novo.
+  `[FATO — medido em tempo de verdade]` repetido numa assinatura que já virou anual, o pedido não
+  cobra outra vez, mas deixa o crédito do mês SOLTO no cliente — e a renovação seguinte sairia
+  R$ 99,90 mais barata. Duas travas: o pedido nem é feito se o item já está no preço novo, e vai
+  com uma chave de repetição (`chaveDaTroca`) — com a mesma chave a Stripe devolve o resultado
+  do primeiro pedido. A chave leva a última fatura de antes da troca, para a tentativa seguinte
+  a uma recusa (ou a uma confirmação do banco desfeita) ser uma tentativa de verdade.
+- **Saldo de crédito do cliente na Stripe** (só existe se o operador der saldo pelo painel): a
+  troca para o Anual o consome de um jeito diferente do que a conta por tempo consumiria, sempre
+  contra o aluno, nunca contra a escola — no pior caso, a sobra do mês se perde. Hoje nenhum
+  fluxo da escola cria saldo. *Reabre se a escola passar a dar saldo a alunos: aí o crédito da
+  troca se calcula sobre o total da fatura, e não sobre o valor devido.*
 - **O reembolso pela tela pode se repetir** — assinar, pedir o dinheiro em 7 dias, assinar de
   novo, pedir de novo. Nada limita hoje; é pergunta ao operador (pendência P75), a responder
   antes da etapa 4.7.

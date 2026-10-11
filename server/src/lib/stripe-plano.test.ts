@@ -10,7 +10,7 @@ import Stripe from "stripe";
 //   - a troca marcada não muda nada até o fim do período pago, e leva o desconto junto;
 //   - um agendamento pela metade nunca fica preso à assinatura.
 const falsa = {
-  subscriptions: { update: vi.fn() },
+  subscriptions: { update: vi.fn(), retrieve: vi.fn() },
   invoices: { createPreview: vi.fn(), retrieve: vi.fn(), voidInvoice: vi.fn() },
   prices: { retrieve: vi.fn() },
   subscriptionSchedules: { create: vi.fn(), update: vi.fn(), release: vi.fn() },
@@ -20,7 +20,7 @@ vi.mock("./stripe-cliente.js", async (importOriginal) => ({
   stripe: () => falsa,
 }));
 
-import { MARCA_DA_TROCA, agendarTroca, anularFatura, calcularTroca, paraFasesDaTroca, paraPedidoDeCobrar, paraPedidoDeTroca, segredoDaFatura, situacaoDoPagamento, soltarAgendamento, trocarAgora } from "./stripe-plano.js";
+import { MARCA_DA_TROCA, agendarTroca, anularFatura, calcularTroca, chaveDaTroca, paraFasesDaTroca, paraPedidoDeCobrar, paraPedidoDeTroca, segredoDaFatura, situacaoDoPagamento, soltarAgendamento, trocarAgora } from "./stripe-plano.js";
 
 const TROCA = { assinaturaId: "sub_1", itemId: "si_1", precoId: "price_anual" };
 // O PERÍODO RECOMEÇA NO DIA DA TROCA (decisão do operador, 11/10/2026): é o `billing_cycle_anchor`,
@@ -31,7 +31,9 @@ const recusa = (code?: string) => new Stripe.errors.StripeInvalidRequestError({ 
 const cartaoRecusado = () => new Stripe.errors.StripeCardError({ message: "Your card was declined, com sk_test_abc", type: "card_error", code: "card_declined", statusCode: 402 });
 const foraDoAr = () => new Stripe.errors.StripeConnectionError({ message: "mensagem crua da Stripe, com sk_test_abc", type: "api_error" });
 const comPagamento = (status: string) => falsa.invoices.retrieve.mockResolvedValue({ id: "in_troca", status: "open", payments: { data: [{ payment: { type: "payment_intent", payment_intent: { id: "pi_1", status } } }] } });
-const pendente = (fatura: object | string | null) => ({ id: "sub_1", pending_update: { expires_at: 1 }, latest_invoice: fatura });
+// A troca pendente como a Stripe a devolve: a fatura NOVA (outra que não a de antes), no valor pedido.
+const pendente = (fatura: object | string | null) => ({ id: "sub_1", pending_update: { expires_at: 1 }, latest_invoice: typeof fatura === "object" && fatura !== null ? { billing_reason: "subscription_update", amount_due: 89510, ...fatura } : fatura });
+const invalida = () => new Stripe.errors.StripeInvalidRequestError({ message: "invoice is already paid, com sk_test_abc", type: "invalid_request_error" });
 
 beforeEach(() => {
   for (const grupo of Object.values(falsa)) for (const dublê of Object.values(grupo)) dublê.mockReset();
@@ -81,6 +83,8 @@ describe("trocar o plano na hora", () => {
     // O plano novo cheio dá R$ 995,00 (a conta da "Stripe"), e o preço é do produto prod_1.
     falsa.invoices.createPreview.mockResolvedValue({ amount_due: 99500, currency: "brl" });
     falsa.prices.retrieve.mockResolvedValue({ id: "price_anual", product: "prod_1" });
+    // A assinatura ANTES da troca: mensal, e a última fatura é a do mês.
+    falsa.subscriptions.retrieve.mockResolvedValue({ id: "sub_1", latest_invoice: "in_antes", items: { data: [{ id: "si_1", price: { id: "price_mensal" } }] } });
   });
 
   it("cobra EXATAMENTE o valor dado: o plano novo cheio menos um crédito do tamanho da diferença — e a assinatura SÓ muda se o pagamento passar", async () => {
@@ -89,8 +93,34 @@ describe("trocar o plano na hora", () => {
     // 995,00 − 895,10 = 99,90 de crédito.
     expect(falsa.invoices.createPreview.mock.calls).toEqual([[{ subscription: "sub_1", subscription_details: CHEIO }]]);
     expect(falsa.prices.retrieve.mock.calls).toEqual([["price_anual"]]);
-    expect(falsa.subscriptions.update.mock.calls).toEqual([["sub_1", { ...CHEIO, add_invoice_items: CREDITO, payment_behavior: "pending_if_incomplete", expand: ["latest_invoice.confirmation_secret"] }]]);
+    expect(falsa.subscriptions.update.mock.calls).toEqual([["sub_1", { ...CHEIO, add_invoice_items: CREDITO, payment_behavior: "pending_if_incomplete", expand: ["latest_invoice.confirmation_secret"] }, { idempotencyKey: "troca-de-plano:sub_1:price_anual:in_antes:89510" }]]);
     expect(falsa.invoices.retrieve).not.toHaveBeenCalled();
+  });
+
+  // O PEDIDO REPETIDO (achado da revisão de segurança, 11/10/2026). `[FATO — medido]` repetido
+  // numa assinatura que já virou anual, o `update` não cobra de novo, mas deixa o crédito SOLTO no
+  // cliente — e a renovação seguinte sairia com o desconto do mês outra vez.
+  it("a assinatura JÁ está no plano novo (o pedido anterior, dado como perdido, chegou): 'trocado', sem mandar o update de novo", async () => {
+    falsa.subscriptions.retrieve.mockResolvedValue({ id: "sub_1", latest_invoice: "in_da_troca", items: { data: [{ id: "si_1", price: { id: "price_anual" } }] } });
+    expect(await trocarAgora(TROCA, 89510)).toEqual({ estado: "trocado" });
+    expect(falsa.subscriptions.update).not.toHaveBeenCalled();
+  });
+
+  it("a chave de repetição: a mesma para o mesmo pedido no mesmo estado; outra quando muda a última fatura, o valor ou o preço", () => {
+    const base = chaveDaTroca(TROCA, "in_antes", 89510);
+    expect(base).toBe("troca-de-plano:sub_1:price_anual:in_antes:89510");
+    expect(chaveDaTroca(TROCA, "in_antes", 89510)).toBe(base);
+    // Depois de uma tentativa que criou fatura (recusada, ou desfeita no banco), a seguinte é uma tentativa de verdade.
+    expect(chaveDaTroca(TROCA, "in_da_tentativa_anterior", 89510)).not.toBe(base);
+    expect(chaveDaTroca(TROCA, "in_antes", 89511)).not.toBe(base);
+    expect(chaveDaTroca({ ...TROCA, precoId: "price_outro" }, "in_antes", 89510)).not.toBe(base);
+    expect(chaveDaTroca(TROCA, null, 89510)).toBe("troca-de-plano:sub_1:price_anual:sem-fatura:89510");
+  });
+
+  it("valor a cobrar que não é um número inteiro de centavos, ou é negativo: recusado antes de qualquer ida à Stripe", async () => {
+    for (const valor of [Number.NaN, -1, 895.1, Number.POSITIVE_INFINITY]) await expect(trocarAgora(TROCA, valor), String(valor)).rejects.toThrow("valor a cobrar inválido");
+    expect(falsa.invoices.createPreview).not.toHaveBeenCalled();
+    expect(falsa.subscriptions.update).not.toHaveBeenCalled();
   });
 
   it("o valor a cobrar é o plano cheio (a cortesia a R$ 0, ou nada sobrando do mês): sem linha de crédito nenhuma", async () => {
@@ -117,8 +147,35 @@ describe("trocar o plano na hora", () => {
   it("a fatura da troca saiu com OUTRO valor e ainda espera o banco: é anulada, e a troca falha dizendo que nada foi cobrado", async () => {
     falsa.subscriptions.update.mockResolvedValue(pendente({ id: "in_troca", status: "open", billing_reason: "subscription_update", amount_due: 89511, confirmation_secret: { client_secret: "pi_1_secret_x" } }));
     falsa.invoices.voidInvoice.mockResolvedValue({ id: "in_troca", status: "void" });
-    await expect(trocarAgora(TROCA, 89510)).rejects.toThrow("a fatura saiu com 89511 centavos e o valor mostrado era 89510 — nada foi cobrado");
+    await expect(trocarAgora(TROCA, 89510)).rejects.toThrow("a fatura saiu com 89511 centavos e o valor mostrado era 89510 — anulada, nada foi cobrado");
     expect(falsa.invoices.voidInvoice.mock.calls).toEqual([["in_troca"]]);
+  });
+
+  it("…e se a anulação FALHAR: o erro diz que a fatura continua em aberto — nunca 'nada foi cobrado'", async () => {
+    falsa.subscriptions.update.mockResolvedValue(pendente({ id: "in_troca", status: "open", amount_due: 89511, confirmation_secret: { client_secret: "pi_1_secret_x" } }));
+    falsa.invoices.voidInvoice.mockRejectedValue(foraDoAr());
+    const promessa = trocarAgora(TROCA, 89510);
+    await expect(promessa).rejects.toThrow("e ela CONTINUA EM ABERTO — anular pelo painel da Stripe");
+    await expect(promessa).rejects.not.toThrow(/nada foi cobrado/);
+  });
+
+  it("…e se ela foi PAGA no mesmo instante (a pessoa confirmou no banco): a troca valeu, e alguém é avisado do valor cobrado", async () => {
+    falsa.subscriptions.update.mockResolvedValue(pendente({ id: "in_troca", status: "open", amount_due: 89511, confirmation_secret: { client_secret: "pi_1_secret_x" } }));
+    falsa.invoices.voidInvoice.mockRejectedValue(invalida());
+    falsa.invoices.retrieve.mockResolvedValue({ id: "in_troca", status: "paid" });
+    const erro = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      expect(await trocarAgora(TROCA, 89510)).toEqual({ estado: "trocado" });
+      expect(erro.mock.calls.flat().join(" ")).toContain("[stripe] mudar de plano: a assinatura sub_1 foi cobrada em 89511 centavos, e o valor mostrado era 89510");
+    } finally {
+      erro.mockRestore();
+    }
+  });
+
+  it("a rede não depende do MOTIVO que a Stripe escreve na fatura: basta ser outra fatura que não a de antes", async () => {
+    falsa.subscriptions.update.mockResolvedValue(pendente({ id: "in_troca", status: "open", billing_reason: "manual", amount_due: 89511, confirmation_secret: { client_secret: "pi_1_secret_x" } }));
+    falsa.invoices.voidInvoice.mockResolvedValue({ id: "in_troca", status: "void" });
+    await expect(trocarAgora(TROCA, 89510)).rejects.toThrow("anulada, nada foi cobrado");
   });
 
   it("a fatura da troca saiu com outro valor e JÁ foi cobrada: alguém é avisado, com os dois valores — e a troca valeu", async () => {
@@ -132,12 +189,13 @@ describe("trocar o plano na hora", () => {
     }
   });
 
-  it("a fatura no valor certo, ou a última fatura que não é a da troca: ninguém é incomodado", async () => {
+  it("a fatura no valor certo, ou a última fatura que é a MESMA de antes (nenhuma nova): ninguém é incomodado", async () => {
     const erro = vi.spyOn(console, "error").mockImplementation(() => {});
     try {
       falsa.subscriptions.update.mockResolvedValue({ id: "sub_1", pending_update: null, latest_invoice: { id: "in_1", status: "paid", billing_reason: "subscription_update", amount_due: 89510 } });
       await trocarAgora(TROCA, 89510);
-      falsa.subscriptions.update.mockResolvedValue({ id: "sub_1", pending_update: null, latest_invoice: { id: "in_0", status: "paid", billing_reason: "subscription_cycle", amount_due: 9990 } });
+      // A troca a R$ 0 não gera fatura: a "última" continua sendo a de antes, com o valor do mês.
+      falsa.subscriptions.update.mockResolvedValue({ id: "sub_1", pending_update: null, latest_invoice: { id: "in_antes", status: "paid", billing_reason: "subscription_cycle", amount_due: 9990 } });
       await trocarAgora(TROCA, 89510);
       expect(erro).not.toHaveBeenCalled();
       expect(falsa.invoices.voidInvoice).not.toHaveBeenCalled();

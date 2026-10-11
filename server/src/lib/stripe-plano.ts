@@ -6,9 +6,13 @@ import { erroSemMensagem, stripe } from "./stripe.js";
 // vale NO FIM do ano já pago, e dá para desistir. Quem decide SE pode é `meu-plano.ts`; aqui é
 // só a ida à Stripe, e toda ida sobe por `erroSemMensagem`.
 // `[FATO — medido na área restrita, 11/10/2026]`
-//   - NA HORA: `update` com o preço novo no item, `always_invoice` e `pending_if_incomplete` —
-//     cobra a diferença agora (a conta é da Stripe) e a assinatura só muda SE o pagamento passar.
-//     Com o MESMO instante de conta (`proration_date`) na prévia e na troca, o cobrado é o mostrado.
+//   - NA HORA: `update` com o preço novo no item e `pending_if_incomplete` — a assinatura só
+//     muda SE o pagamento passar —, com o período recomeçando no dia da troca. A PRÉVIA usa a
+//     conta por tempo da Stripe (`paraPedidoDeTroca`); a COBRANÇA usa o plano cheio e um crédito
+//     de valor fixo (`paraPedidoDeCobrar`), para sair exatamente no valor mostrado.
+//   - O `update` NÃO é inofensivo quando repetido (achado da revisão de segurança, 11/10/2026):
+//     aplicado a uma assinatura que já virou anual, ele fatura outro ano. Por isso vai com chave
+//     de repetição própria (`chaveDaTroca`), e nem é feito se o item já está no preço novo.
 //   - Se o banco pede confirmação OU o cartão é recusado, a resposta vem igual (200, a troca
 //     pendente, a fatura em aberto): distingue-se pelo PAGAMENTO da fatura. Confirmado o pagamento,
 //     a Stripe aplica a troca sozinha. Desistir é ANULAR a fatura da troca.
@@ -94,44 +98,82 @@ export async function situacaoDoPagamento(faturaId: string): Promise<string | nu
 }
 
 /**
- * Troca o plano NA HORA: cobra a diferença agora, e a assinatura só muda se o pagamento passar.
- * Só o pagamento que PEDE A CONFIRMAÇÃO DO BANCO, e com segredo para o site completar, vira
- * `confirmar`; qualquer outra pendência é recusa — na dúvida, nada fica para ser cobrado depois.
+ * A CHAVE DE REPETIÇÃO da troca (achado da revisão de segurança, 11/10/2026). Se a Stripe demorar
+ * e o pedido "falhar" do nosso lado com a cobrança ainda andando, a pessoa clica de novo: com a
+ * MESMA chave, a Stripe devolve o resultado do primeiro pedido em vez de cobrar outra vez.
+ * A chave leva a ÚLTIMA FATURA de antes da troca — é o que a faz mudar depois de cada tentativa
+ * que chegou a criar fatura (recusada, ou esperando o banco e desfeita): a tentativa seguinte é
+ * uma tentativa de verdade, e não a repetição da resposta antiga. Função pura, com teste.
+ */
+export function chaveDaTroca(troca: TrocaNaHora, ultimaFaturaId: string | null, cobrar: number): string {
+  return `troca-de-plano:${troca.assinaturaId}:${troca.precoId}:${ultimaFaturaId ?? "sem-fatura"}:${cobrar}`;
+}
+
+/**
+ * Troca o plano NA HORA, cobrando EXATAMENTE `cobrar` centavos — e a assinatura só muda se o
+ * pagamento passar. Só o pagamento que PEDE A CONFIRMAÇÃO DO BANCO, e com segredo para o site
+ * completar, vira `confirmar`; qualquer outra pendência é recusa — na dúvida, nada fica para ser
+ * cobrado depois.
  */
 export async function trocarAgora(troca: TrocaNaHora, cobrar: number): Promise<DesfechoDaTroca> {
-  // O plano novo CHEIO (a conta da Stripe, já com o desconto da assinatura): não depende do
-  // instante. O crédito é o que falta para a fatura dar exatamente o valor a cobrar.
+  // O valor a cobrar é um número inteiro de centavos, nunca negativo: quem chama já conferiu, e
+  // aqui é a última porta (um `NaN` passaria por toda comparação e cobraria o plano cheio).
+  if (!Number.isInteger(cobrar) || cobrar < 0) throw new Error(`[stripe] a troca de plano da assinatura ${troca.assinaturaId}: valor a cobrar inválido`);
+  // O plano novo CHEIO (a conta da Stripe, já com o desconto da assinatura) não depende do
+  // instante: o crédito é o que falta para a fatura dar exatamente o valor a cobrar. E a
+  // assinatura como está AGORA: de onde sai a última fatura (para a chave de repetição).
   let cheio: Stripe.Invoice;
   let preco: Stripe.Price;
+  let antes: Stripe.Subscription;
   try {
-    [cheio, preco] = await Promise.all([stripe().invoices.createPreview({ subscription: troca.assinaturaId, subscription_details: paraPedidoDeCobrar(troca, null) }), stripe().prices.retrieve(troca.precoId)]);
+    [cheio, preco, antes] = await Promise.all([
+      stripe().invoices.createPreview({ subscription: troca.assinaturaId, subscription_details: paraPedidoDeCobrar(troca, null) }),
+      stripe().prices.retrieve(troca.precoId),
+      stripe().subscriptions.retrieve(troca.assinaturaId),
+    ]);
   } catch (erro) {
     throw erroSemMensagem(erro, "a conta do plano novo");
   }
+  // JÁ ESTÁ no plano novo — um pedido anterior, dado como perdido, chegou à Stripe enquanto este
+  // andava: a troca valeu, e repetir o `update` faturaria outro período inteiro.
+  if (antes.items.data.some((item) => item.id === troca.itemId && item.price.id === troca.precoId)) return { estado: "trocado" };
+  const ultimaFaturaId = typeof antes.latest_invoice === "string" ? antes.latest_invoice : (antes.latest_invoice?.id ?? null);
   const centavos = cheio.amount_due - cobrar;
   // Nunca se cobra MAIS que o plano novo inteiro: um crédito negativo seria uma cobrança a mais.
   if (centavos < 0) throw new Error(`[stripe] a troca de plano da assinatura ${troca.assinaturaId}: o valor a cobrar (${cobrar}) é maior que o plano novo inteiro (${cheio.amount_due})`);
   const credito = centavos > 0 ? { centavos, moeda: cheio.currency, produtoId: typeof preco.product === "string" ? preco.product : preco.product.id } : null;
   let assinatura: Stripe.Subscription;
   try {
-    assinatura = await stripe().subscriptions.update(troca.assinaturaId, { ...paraPedidoDeCobrar(troca, credito), payment_behavior: "pending_if_incomplete", expand: ["latest_invoice.confirmation_secret"] });
+    assinatura = await stripe().subscriptions.update(troca.assinaturaId, { ...paraPedidoDeCobrar(troca, credito), payment_behavior: "pending_if_incomplete", expand: ["latest_invoice.confirmation_secret"] }, { idempotencyKey: chaveDaTroca(troca, ultimaFaturaId, cobrar) });
   } catch (erro) {
     // O cartão recusado costuma voltar como troca pendente (abaixo); se vier como erro, é o mesmo desfecho.
     if (erro instanceof Stripe.errors.StripeCardError) return { estado: "recusado", faturaId: null };
     throw erroSemMensagem(erro, "a troca de plano");
   }
-  // A FATURA DA TROCA TEM QUE DAR O VALOR MOSTRADO. Se um dia não der (um imposto por cima, uma
-  // regra nova da Stripe), ninguém confirma no banco um valor que não leu: a pendente é anulada
-  // e a troca falha; a que já foi cobrada vira alerta — precisa de gente.
-  const daTroca = typeof assinatura.latest_invoice === "object" && assinatura.latest_invoice?.billing_reason === "subscription_update" ? assinatura.latest_invoice : null;
-  if (daTroca && daTroca.amount_due !== cobrar) {
-    if (assinatura.pending_update) {
-      await anularFatura(daTroca.id).catch(() => {});
-      throw new Error(`[stripe] a troca de plano da assinatura ${troca.assinaturaId}: a fatura saiu com ${daTroca.amount_due} centavos e o valor mostrado era ${cobrar} — nada foi cobrado`);
+  // A FATURA DA TROCA TEM QUE DAR O VALOR MOSTRADO. A fatura da troca é a última fatura, se ela
+  // é OUTRA que não a de antes (não depende do motivo que a Stripe escreve nela). Se um dia o
+  // valor não bater (um imposto por cima, uma regra nova da Stripe), ninguém confirma no banco um
+  // valor que não leu: a pendente é anulada e a troca falha; a que foi cobrada vira alerta.
+  const ultima = assinatura.latest_invoice;
+  const nova = typeof ultima === "object" && ultima !== null && ultima.id !== ultimaFaturaId ? ultima : null;
+  let pendente = Boolean(assinatura.pending_update);
+  if (nova && nova.amount_due !== cobrar) {
+    if (pendente) {
+      let desfecho: "anulada" | "paga" | "falhou";
+      try {
+        desfecho = await anularFatura(nova.id);
+      } catch {
+        desfecho = "falhou";
+      }
+      const oQueHouve = `a fatura saiu com ${nova.amount_due} centavos e o valor mostrado era ${cobrar}`;
+      if (desfecho === "anulada") throw new Error(`[stripe] a troca de plano da assinatura ${troca.assinaturaId}: ${oQueHouve} — anulada, nada foi cobrado`);
+      if (desfecho === "falhou") throw new Error(`[stripe] a troca de plano da assinatura ${troca.assinaturaId}: ${oQueHouve}, e ela CONTINUA EM ABERTO — anular pelo painel da Stripe`);
+      // `paga`: a pessoa confirmou no banco no mesmo instante — a troca valeu, no valor errado.
+      pendente = false;
     }
-    console.error(`[stripe] mudar de plano: a assinatura ${troca.assinaturaId} foi cobrada em ${daTroca.amount_due} centavos, e o valor mostrado era ${cobrar} — conferir no painel da Stripe`);
+    console.error(`[stripe] mudar de plano: a assinatura ${troca.assinaturaId} foi cobrada em ${nova.amount_due} centavos, e o valor mostrado era ${cobrar} — conferir no painel da Stripe`);
   }
-  if (!assinatura.pending_update) return { estado: "trocado" };
+  if (!pendente) return { estado: "trocado" };
   const fatura = assinatura.latest_invoice;
   if (!fatura || typeof fatura === "string") return { estado: "recusado", faturaId: typeof fatura === "string" ? fatura : null };
   const segredo = fatura.confirmation_secret?.client_secret;

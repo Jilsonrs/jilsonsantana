@@ -107,8 +107,10 @@ export async function mudarMeuPlano(userId: string, pedido: { plano: Plano; valo
   }
 
   // Sem o valor que a tela mostrou, ou com ele vencido: nada é trocado, e a tela pede a conta.
+  // O valor é conferido AQUI também, e não só no formato da rota: este arquivo é a porta que o
+  // painel do admin e o JilsonAI vão usar (um `NaN` passaria por toda comparação de folga).
   const { valorMostrado } = pedido;
-  if (typeof valorMostrado !== "number" || !ofertaAindaVale(pedido.mostradoEm)) return { resultado: "previa-vencida" };
+  if (typeof valorMostrado !== "number" || !Number.isInteger(valorMostrado) || valorMostrado < 0 || !ofertaAindaVale(pedido.mostradoEm)) return { resultado: "previa-vencida" };
   const operacao = await operarNaAssinatura(id, async (): Promise<DesfechoDaTroca | "mudou-o-valor" | null> => {
     const agora = await buscarDetalhes(id);
     if (outroPlano(agora) !== "anual" || !agora.itemId) return null;
@@ -124,8 +126,15 @@ export async function mudarMeuPlano(userId: string, pedido: { plano: Plano; valo
     // A CONTA É REFEITA AGORA, com a trava: o valor mostrado só é cobrado se estiver até a folga
     // ABAIXO dela (a escola abre mão desses centavos). Acima (o mês virou, o preço mudou), ou
     // longe demais (um valor inventado): nada é cobrado — a pessoa vê o valor novo e decide.
-    const abreMao = (await calcularTroca(troca)).centavosHoje - valorMostrado;
-    if (abreMao < 0 || abreMao > FOLGA_DO_VALOR_MOSTRADO) return "mudou-o-valor";
+    const deAgora = (await calcularTroca(troca)).centavosHoje;
+    const abreMao = deAgora - valorMostrado;
+    // Escrito pelo que PASSA: qualquer coisa fora de "entre zero e a folga" é recusa.
+    if (!(abreMao >= 0 && abreMao <= FOLGA_DO_VALOR_MOSTRADO)) {
+      // Dentro do prazo e fora da folga não é o tempo passando: o mês virou, o preço mudou, ou o
+      // valor foi inventado. Fica o rastro (aviso, não erro: nada foi cobrado).
+      console.warn(`[stripe] mudar de plano: o valor mostrado (${valorMostrado}) não confere com a conta de agora (${deAgora}) — conta ${userId}, assinatura ${id}; nada foi cobrado`);
+      return "mudou-o-valor";
+    }
     const desfecho = await trocarAgora(troca, valorMostrado);
     // RECUSADO: a fatura da troca é anulada JÁ — a tela diz "nada foi cobrado", e uma fatura em
     // aberto ainda poderia ser cobrada depois. Se não anular, precisa de gente.

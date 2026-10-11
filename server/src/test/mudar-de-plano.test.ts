@@ -38,7 +38,7 @@ vi.mock("../lib/stripe.js", async (importOriginal) => ({
 
 import servidor from "./servidor.js";
 import { prisma } from "../lib/prisma.js";
-import { FOLGA_DO_VALOR_MOSTRADO, ofertaAindaVale } from "../lib/meu-plano.js";
+import { FOLGA_DO_VALOR_MOSTRADO, mudarMeuPlano, ofertaAindaVale } from "../lib/meu-plano.js";
 import { AssinaturaNaoEncontrada } from "../lib/stripe.js";
 import { ASSINATURA_DE_TESTE } from "../lib/assinatura-de-teste.js";
 
@@ -298,14 +298,38 @@ describe("POST /api/billing/minha-assinatura/plano — para o ANUAL, na hora", (
   });
 
   // O VALOR E O INSTANTE VÊM DO NAVEGADOR: o máximo que um valor forjado tira da escola é a folga.
-  it("além da folga — a conta de agora 6 centavos acima, ou um valor inventado: 409, e NADA é cobrado", async () => {
-    calcularTroca.mockResolvedValue({ centavosHoje: MOSTRADO + FOLGA_DO_VALOR_MOSTRADO + 1, moeda: "brl", proximaEm: EM_UM_ANO });
-    expect((await mudar(member, anual())).body).toEqual({ error: "PreviaVencida" });
-    calcularTroca.mockResolvedValue({ centavosHoje: MOSTRADO, moeda: "brl", proximaEm: EM_UM_ANO });
-    for (const valorMostrado of [MOSTRADO - FOLGA_DO_VALOR_MOSTRADO - 1, 100, 1, 0]) {
-      const res = await mudar(member, anual({ valorMostrado }));
-      expect([res.status, res.body], String(valorMostrado)).toEqual([409, { error: "PreviaVencida" }]);
+  it("além da folga — a conta de agora 6 centavos acima, ou um valor inventado: 409, NADA é cobrado — e fica o rastro, com os dois valores", async () => {
+    const aviso = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      calcularTroca.mockResolvedValue({ centavosHoje: MOSTRADO + FOLGA_DO_VALOR_MOSTRADO + 1, moeda: "brl", proximaEm: EM_UM_ANO });
+      expect((await mudar(member, anual())).body).toEqual({ error: "PreviaVencida" });
+      calcularTroca.mockResolvedValue({ centavosHoje: MOSTRADO, moeda: "brl", proximaEm: EM_UM_ANO });
+      for (const valorMostrado of [MOSTRADO - FOLGA_DO_VALOR_MOSTRADO - 1, 100, 1, 0]) {
+        const res = await mudar(member, anual({ valorMostrado }));
+        expect([res.status, res.body], String(valorMostrado)).toEqual([409, { error: "PreviaVencida" }]);
+      }
+      expect(aviso.mock.calls.flat().join(" ")).toContain(`[stripe] mudar de plano: o valor mostrado (1) não confere com a conta de agora (${MOSTRADO}) — conta ${memberId}, assinatura ${SUB}; nada foi cobrado`);
+    } finally {
+      aviso.mockRestore();
     }
+    nadaMudouNaStripe();
+  });
+
+  // A CORTESIA (código de 100%): a conta é R$ 0, e zero é um valor mostrado como qualquer outro.
+  it("a conta é R$ 0 e a tela mostrou R$ 0: a troca passa, cobrando zero", async () => {
+    calcularTroca.mockResolvedValue({ centavosHoje: 0, moeda: "brl", proximaEm: EM_UM_ANO });
+    const res = await mudar(member, anual({ valorMostrado: 0 }));
+    expect([res.status, res.body]).toEqual([200, { estado: "trocado" }]);
+    expect(trocarAgora.mock.calls.map((chamada) => chamada[1])).toEqual([0]);
+  });
+
+  // A operação é a porta que o painel do admin e o JilsonAI vão usar: ela confere o valor por
+  // conta própria, e não só pelo formato da rota. Um `NaN` passaria por toda comparação de folga.
+  it("chamada direto, fora da rota, com um valor que não é um inteiro de centavos: nada é trocado", async () => {
+    for (const valorMostrado of [Number.NaN, -1, 928.4, Number.POSITIVE_INFINITY]) {
+      expect(await mudarMeuPlano(memberId, { plano: "anual", valorMostrado, mostradoEm: agora() }), String(valorMostrado)).toEqual({ resultado: "previa-vencida" });
+    }
+    expect(calcularTroca).not.toHaveBeenCalled();
     nadaMudouNaStripe();
   });
 

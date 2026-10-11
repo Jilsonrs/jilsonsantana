@@ -4765,6 +4765,27 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       fatura da troca que não der o valor mostrado é anulada (se ainda espera o banco) ou vira
       alerta (se já foi cobrada). **Antes da etapa 4.8:** o imposto na fatura muda essa conta —
       rever o crédito e a folga lá.
+      **TERCEIRA REVISÃO DE SEGURANÇA (11/10/2026), sobre o ano do Anual e o valor congelado:**
+      nenhum bloqueio; não há caminho em que um valor forjado tire da escola mais que a folga.
+      **Um achado para corrigir antes de produção, corrigido:** o pedido de troca deixou de ser
+      inofensivo quando repetido. `[FATO — medido em tempo de verdade]` repetido numa assinatura
+      que já virou anual ele não cobra de novo, mas deixa o crédito do mês solto no cliente (a
+      renovação seguinte sairia R$ 99,90 mais barata). Agora `trocarAgora` não manda o pedido se
+      o item já está no preço novo, e manda com chave de repetição (`chaveDaTroca`, que leva a
+      última fatura de antes). **As melhorias, feitas:** a rede de segurança olha a fatura nova
+      sem depender do motivo que a Stripe escreve, e não diz "nada foi cobrado" se a anulação
+      falhou ou se a fatura foi paga no mesmo instante · a operação confere o valor por conta
+      própria (inteiro, não negativo), porque é a porta que o admin e o JilsonAI vão usar · o
+      valor fora da folga deixa rastro no registro · testes: a cortesia a R$ 0 pela rota, o
+      pedido repetido, a anulação que falha, os dublês de troca pendente com fatura realista.
+      **Prova na área restrita:** 31 de 31 (repetir a troca que já valeu não gera fatura; a
+      mesma chave duas vezes, uma cobrança; recusado → trocou o cartão → passa; desistiu no
+      banco → a tentativa seguinte é nova). **Mutação:** 11 de 11. **Registrado, sem código:**
+      o saldo de crédito do cliente na Stripe (`billing.md` → Limitações) · o caminho da troca
+      faz mais idas à Stripe com a trava do que antes; com a Stripe muito lenta o tempo da
+      operação pode estourar — o pedido falha e nada é cobrado em dobro (as duas travas acima).
+      `CLAUDE.md`: a trava "o site nunca escolhe valor" aponta a exceção, e a decisão ganhou a
+      entrada (25) do changelog, com gatilho de reabertura; a (22) desceu para o arquivo.
       **Para a parte 2 do teste:** a assinatura de cortesia do `member@` do computador foi
       encerrada a pedido do operador (11/10/2026). `[FATO — medido]` encerrar uma assinatura de
       100% direto deixa o período inteiro como "pago" (um ano de acesso, no anual); para a
