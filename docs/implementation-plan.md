@@ -204,15 +204,28 @@
 > (aula concluída sozinha, barra na aula e no cartão), o vídeo que não recomeça ao trocar de aba
 > (a apresentação abre pausada, a aula toca sozinha) e o "Salvos". **Primeiro teste com o player de
 > verdade: com o operador** (assistir uma aula até perto do fim e ver a barra andar).
-> **NO `dev`, AINDA NÃO PUBLICADO (10/10/2026): o alerta de erro no servidor** (Sentry, parte 1 —
-> plano → Fase 7). Sem a variável `SENTRY_DSN` na Railway (pendência P63) ele fica desligado e o
-> site funciona igual. Junto: o endereço malformado em `/api` passa a responder 400 (era 500).
-> **NO `dev`, AINDA NÃO PUBLICADO (10/10/2026):** a resposta de "Is there a refund?" na página em
-> inglês passa a dizer "Yes, we offer a 14-day money-back guarantee." (duas migrations de dado,
-> `reembolso_de_14_dias_na_resposta_em_ingles` e `resposta_do_reembolso_em_ingles_sem_o_parentese`,
-> sem mudança de estrutura; aplicadas no banco de desenvolvimento) e as decisões de reembolso do
-> mesmo dia, só em documento (`billing.md` → *Reembolso*). Vai ao site na próxima publicação.
-> **PUBLICADO em 10/10/2026, por último (`main` = `91cb4dc`, CI verde nos dois jobs, deploy ok;
+> **NO `dev`, AINDA NÃO PUBLICADO (10/10/2026): a Fase 4, etapa 4.5 — o revisor automático
+> (ESLint).** `npm run lint` é o quarto gate, bloqueante no CI: reprova a tarefa disparada e não
+> esperada no servidor (o que derruba o servidor sem nenhum teste perceber) e o `any` no projeto
+> inteiro. **Nada muda para o aluno:** são ferramentas de desenvolvimento e duas linhas
+> reescritas no servidor. Vai junto na próxima publicação.
+> **PUBLICADO em 10/10/2026, por último (`main` = `354c96a`, CI verde nos dois jobs, deploy ok;
+> duas migrations de DADO aplicadas pelo pre-deploy, sem mudança de estrutura; publicação
+> autorizada pelo operador):** **o alerta de erro no servidor** (Sentry, parte 1 — plano → Fase 7)
+> e **a resposta de "Is there a refund?" com 14 dias** ("Yes, we offer a 14-day money-back
+> guarantee."). O operador já tinha posto a variável `SENTRY_DSN` na Railway, com uma chave nova,
+> e criado no Sentry o monitor de site fora do ar ("Site online", verde).
+> **Provado no site, de fora:** a versão nova (`mv32ckxr-d02f9f62`); o endereço malformado que
+> chega ao servidor (`/api/lessons/%C3%28`) → 400 `EnderecoInvalido` (antes da publicação, 500);
+> conferir assinatura sem login → 401; o corpo malformado → 400 `CorpoInvalido`; o aviso sem
+> assinatura → 400; as páginas públicas seguem no "Em breve".
+> **Confirmado pelo operador no painel do Sentry (10/10/2026):** o aviso "[servidor] no ar, versão
+> mv32ckxr-d02f9f62" chegou — o alerta está ligado em produção — e o e-mail de teste da regra
+> de alerta chegou na caixa dele. No mesmo dia ele criou a regra "Erro novo no servidor"
+> (e-mail a cada erro novo), e o teste dela chegou: a P63 fechou. **A resposta nova na página em inglês:** o
+> operador mandou a foto da página com "Yes, we offer a 14-day money-back guarantee." — do
+> site no ar, confirmou ele. A publicação ficou conferida por completo.
+> **PUBLICADO em 10/10/2026, antes (`main` = `91cb4dc`, CI verde nos dois jobs, deploy ok;
 > sem migration; publicação autorizada pelo operador: "Publica a 4.4"):** a Fase 4, etapa 4.4 —
 > **sincronizar e perder o acesso.**
 > **Admin → Assinaturas** (o e-mail do aluno e "Conferir na Stripe": a recuperação de quando um
@@ -684,6 +697,8 @@ de uma sessão própria antes do launch):**
       **também** não cobria — ele rodava `tsc --noEmit`, que aceita `any` sem reclamar. Ou seja, a
       remoção não perdeu cobertura nenhuma; só parou de simular que havia. Fecha de vez quando
       ESLint + `typescript-eslint` com `no-explicit-any: error` entrarem em bloco próprio.)*
+      **FECHOU em 10/10/2026:** a etapa 4.5 da Fase 4 ligou `no-explicit-any: error` nos quatro
+      workspaces, bloqueante no CI. Medido naquele dia: nenhum `any` no repositório.
 - [ ] **Rate-limit de login — VERIFICAR a borda ANTES de escrever código** (achado do
       `security-vulnerability-reviewer`, Ago 2026). `rateLimit` está ligado em produção
       (`server/src/lib/auth.ts:72`), mas sem `advanced.ipAddress` o Better Auth lê
@@ -3974,9 +3989,67 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       autorizada pelo operador** no mesmo dia. Ele abriu a tela Admin → Assinaturas no navegador
       e ela conferiu certo. Com ele ficam: a P59 (textos e posição no menu) e a P60 (a opção do
       painel da Stripe). O que ele pediu a mais para a tela virou a etapa 4.7b.
-- [ ] **4.5 — ESLint com `no-floating-promises`, bloqueante no CI (código, pequena).** Dependências
+- [x] **4.5 — ESLint com `no-floating-promises`, bloqueante no CI (código, pequena).** Dependências
       de desenvolvimento novas: `eslint` + `typescript-eslint`. Já decidido para esta fase (item
       abaixo): promessa sem `await` dentro do webhook derruba o servidor sem nenhum teste perceber.
+      **PLANO APROVADO (10/10/2026)** *(operador: "Pode seguir. A")*.
+      - **O que é, em uma frase:** um revisor automático que barra no CI o código que manda
+        fazer uma tarefa e não espera ela terminar — o descuido que passa em todo teste e
+        derruba o servidor quando a tarefa falha.
+      - **Medido antes de planejar** (numa pasta fora do repositório, sem mexer em nada):
+        servidor 131 arquivos, código compartilhado 17 e testes de navegador 3 — **zero achados**
+        nas três regras; o site, 248 arquivos — **zero `any`**, e 20 pontos de "não esperou"
+        (8 + 12), todos em telas do admin.
+      - **Decisões do operador:** (A) **o "sem `any`" vale no projeto inteiro**, site incluído
+        (custo zero hoje; fecha a pendência antiga de a regra valer só por revisão) · (B) **as
+        regras de "não esperou" no SITE ficam para depois** — lá o efeito é um erro na tela, não
+        o servidor caindo, e mais da metade é o padrão normal dos formulários. *Reabre quando um
+        erro de tela do aluno tiver essa causa, ou quando o alerta de erro das telas (Sentry,
+        parte 2) mostrar promessa rejeitada sem tratamento.*
+      - **Dependências de desenvolvimento novas** (previstas neste item): `eslint` **10.11.0** e
+        `typescript-eslint` **8.70.1**, fixadas — as últimas com duas semanas ou mais. Não vão
+        para a imagem de produção (`--omit=dev` no Dockerfile).
+      - **As regras** (servidor, código compartilhado e testes de navegador):
+        `no-floating-promises` **sem aceitar `void` como saída** — toda promessa é esperada ou
+        tem tratamento de falha; medido: custa reescrever 2 linhas — · `no-misused-promises` ·
+        `no-explicit-any`. No site, só a `no-explicit-any`. **Nenhum pacote pronto de regras**
+        (traria dezenas de avisos em código que funciona) e nada de estilo.
+      - **Convenções de engenharia:** um `eslint.config.mjs` na raiz; `npm run lint` passa a ser
+        o quarto gate da raiz; no CI, um passo bloqueante depois do typecheck do servidor (a
+        regra precisa dos tipos); comentário que desliga uma regra sem precisar também reprova.
+      - **Passos, um commit cada:** (1) este plano · (2) as dependências, a configuração, o
+        comando e as 2 linhas reescritas, com a prova por mutação (uma promessa solta, um
+        `try/catch` sem `await`, um `any`) · (3) o passo no CI, com a prova de que ele BLOQUEIA
+        (um ramo descartável com uma violação, CI vermelho, ramo apagado) · (4) os docs —
+        `CLAUDE.md` (o `lint` existe; "sem `any`" com verificação; a trava do `await`),
+        `tech-stack.md` e os checkboxes.
+      - **Fora:** as regras de promessa no site (decisão B) · estilo e formatação.
+      - `Docs check (context7): not triggered` — a configuração foi verificada rodando.
+      - **Passo 2 — FEITO (10/10/2026).** `eslint.config.mjs` na raiz, `npm run lint`, as duas
+        dependências fixadas. **Reescritas para passar:** o desligar do servidor (`index.ts`) e
+        o fim de um script de senha (`set-db-password.ts`), que usavam `void`; e saiu um
+        comentário antigo que desligava uma regra que não está ligada (`middleware/auth.ts`).
+        **Mutação (um arquivo de prova, criado e apagado):** no servidor o revisor reprovou os
+        seis descuidos — a promessa solta, o `try/catch` sem `await`, o `void`, a função
+        assíncrona onde ninguém espera, o `any` e o comentário que desliga sem precisar —; no
+        site reprovou o `any` e, como decidido, NÃO a promessa solta. Apagados, voltou a passar.
+        **Provado em execução:** o servidor montado, em modo de produção, sai com código 0 ao
+        receber o aviso de desligar, com o alerta ligado e desligado. Gates: typecheck, suíte de
+        servidor (727) e do site (810), build e lint.
+      - **Passo 3 — FEITO (10/10/2026).** O passo `Lint` entrou no job principal do CI, depois
+        do build do `core` e da geração do cliente do Prisma (as regras de promessa leem os
+        tipos; sem eles o passo ficaria verde sem conferir nada). **A prova de que BLOQUEIA:**
+        no `dev` (`59fdf22`) o CI passou nos dois jobs; num ramo descartável com UMA promessa
+        solta numa chamada ao banco, o job principal **reprovou no passo `Lint`**, apontando a
+        linha. O ramo foi apagado, no computador e no GitHub. *(O job do E2E não roda o lint, e
+        passou nos dois casos: quem bloqueia é o job principal.)*
+      - **Passo 4 — FEITO (10/10/2026).** `CLAUDE.md` (o `lint` existe e é o quarto gate; o "sem
+        `any`" passa a ter verificação; a trava do `await` no e-mail, agora barrada pelo lint;
+        o CI), `tech-stack.md` e o `GEMINI.md` do parceiro de design (os quatro gates que ele
+        roda antes de publicar).
+      **ONDE PAROU:** etapa FECHADA no `dev` (10/10/2026). Não publicada: nada muda para o
+      aluno — são ferramentas de desenvolvimento, o passo do CI e duas linhas reescritas no
+      servidor (o desligar e um script de senha). Vai junto na próxima publicação.
 - [ ] **4.6 — Minha assinatura, dentro da escola (código, 2 sessões).** (a) ver o plano e a próxima
       cobrança, trocar o cartão; (b) mudar mensal↔anual com a proração mostrada **antes**, e cancelar
       com o motivo — "cancelar mesmo assim" de 1 clique sempre visível, tom calmo. Sem Customer
@@ -4126,7 +4199,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
 > Database & Migrations*); e o *follow-up do "Automatic RLS"* ficou **sem objeto** — era do Supabase,
 > que foi apagado.
 
-- [ ] **ESLint entra AQUI** (gatilho registrado em `CLAUDE.md` → changelog Ago 2026 (11)):
+- [x] **ESLint entra AQUI** *(feito em 10/10/2026 — é a etapa 4.5, acima; as três regras valem também no `core` e no `e2e`, e a do `any` nos quatro workspaces)* (gatilho registrado em `CLAUDE.md` → changelog Ago 2026 (11)):
       typescript-eslint, escopo inicial `server/src`, **bloqueante no CI**, 2–3 regras. A que se
       justifica sozinha é **`no-floating-promises`** — promise não aguardada escapa do `try/catch`,
       vira *unhandled rejection* e pode derrubar o Node **dentro do handler de webhook da Stripe**;
@@ -5156,16 +5229,28 @@ outro aparelho e "daqui a um mês", e o Safari apaga o armazenamento do site em 
         do Better Auth (linha de terceiro) e o endereço malformado NÃO saíram; do pedido não
         saiu nada (cookie, e-mail do corpo, o que vem depois do "?"); o servidor saiu com
         código 0 ao receber o aviso de desligar.
-      - **Não provado ainda:** a chegada ao Sentry DE VERDADE — depende do DSN novo e da
-        variável na Railway (pendência P63); a prova é o aviso de "no ar" aparecer no painel
-        depois da publicação.
+      - **Provado em PRODUÇÃO (10/10/2026):** depois da publicação, o aviso "[servidor] no
+        ar, versão mv32ckxr-d02f9f62" apareceu no painel do Sentry (o operador conferiu), e o
+        e-mail de teste da regra de alerta chegou na caixa dele.
       - **O CI reprovou a primeira tentativa, e a causa virou regra:** um teste novo passava
         no computador (que tem as chaves de teste da Stripe no `.env.test`) e reprovou no CI,
         que não tem — 503 no lugar de 500. Reproduzido sem as chaves, corrigido, e a suíte
         inteira rodada nessa condição (727). A regra está no `CLAUDE.md` → *Testing*.
-      **ONDE PAROU:** parte 1 pronta no `dev` (CI verde nos dois jobs em `7c31be4`), não
-      publicada. Faltam: a P63 (com o operador), a publicação (decisão dele) e a parte 2 (as
-      telas do aluno).
+      - **A borda da Railway barra parte dos endereços malformados antes de nós**
+        `[MEDIDO em produção, 10/10/2026]`: `%zz`, `%` e `%E0%A4%A` recebem 502 "upstream
+        error" da própria borda (`server: railway-hikari`), sem chegar ao servidor; a sequência
+        com hexadecimal válido e UTF-8 inválido (`%C3%28`) chega — era ela que respondia 500 e
+        passou a responder 400. É a que serve de prova depois de uma publicação.
+      - **No painel, com o operador (10/10/2026 — fecha a P63):** a chave antiga apagada e uma
+        nova na variável `SENTRY_DSN` da Railway · o monitor de site fora do ar "Site online"
+        (a cada 1 minuto em `/api/health`; verde) · a regra "Erro novo no servidor" (problema
+        novo, que piora ou que volta, de nível erro ou maior → e-mail para ele) · a regra de
+        fábrica, de alta prioridade, mantida para o site fora do ar · os dois e-mails de teste
+        chegaram. Na regra de fábrica, o destinatário de reserva passou de "membros ativos
+        recentemente" para "todos os membros do projeto" (o aviso não depende de ele ter
+        aberto o painel há pouco).
+      **ONDE PAROU:** parte 1 PUBLICADA e ligada em 10/10/2026 (`main` = `354c96a`). Falta a
+      parte 2 (as telas do aluno), quando o operador escolher.
 - [ ] **Backlog P2 do `security-vulnerability-reviewer` (7 no relatório; os nº 1, 2 e 6 foram
       movidos e o nº 5 foi **fechado por migration versionada** → **3 pendentes aqui**. Nenhum
       bloqueia merge; todos antes do primeiro aluno pagante.)** A numeração original do relatório é

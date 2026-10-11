@@ -81,6 +81,16 @@ jobs:
       - name: Typecheck server
         run: npm --workspace @jilson/server run typecheck
 
+      # O REVISOR AUTOMÁTICO (Fase 4, etapa 4.5 — `eslint.config.mjs`): reprova a
+      # tarefa disparada e não esperada — o descuido que passa no typecheck e nos
+      # testes e derruba o servidor quando a tarefa falha — e o `any`.
+      # Fica DEPOIS do "Build core" e do "Generate Prisma client", e não é por
+      # arrumação: as regras de promessa leem os TIPOS. Sem eles, uma chamada ao
+      # banco vira "tipo desconhecido", a regra não enxerga promessa nenhuma e o
+      # passo fica VERDE sem ter conferido nada — um gate que mente.
+      - name: Lint
+        run: npm run lint
+
       # Runs after "Build core": the suites import @jilson/core, which resolves
       # to core/dist — absent in a fresh runner until that step has run.
       # E2E (Playwright) is deliberately NOT here: it needs a server + a test DB.

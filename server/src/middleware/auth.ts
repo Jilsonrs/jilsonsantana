@@ -12,7 +12,6 @@ type SessionData = AuthSession["session"];
 
 // Declaration merging: make req.user / req.session typed everywhere downstream.
 declare global {
-  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Express {
     interface Request {
       user?: AuthUser;
