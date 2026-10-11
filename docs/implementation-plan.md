@@ -4608,6 +4608,19 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
         **Não visto em navegador pelo agente** — e **a janela do banco de verdade nunca abriu
         num navegador**: é do operador, no computador, com o cartão de teste que exige
         confirmação (`billing.md` → *Pendências de verificação*).
+      - **Passo 12 — FEITO (11/10/2026): quem cancelou e abre a tela de assinar.** A tela de
+        assinar, para quem JÁ tem acesso, passou a ler a assinatura: se ela termina numa data
+        (a renovação parada, ou a encerrada de vez ainda com dias pagos), a pessoa é levada a
+        Faturamento e Assinatura — onde está "Manter a assinatura", que não cobra nada — em vez
+        de ler só "Você já é assinante". Assinar de novo cobraria duas vezes o mesmo período, e
+        o servidor já recusa (409). Quem renova, ou está com a cobrança atrasada, continua
+        lendo "Você já é assinante". Se a leitura falhar, vale o aviso de sempre: a tela não
+        tranca. Quem não assina nem tem a assinatura lida. **O caso raro** (a encerrada de vez,
+        ainda com dias pagos): não dá para manter nem para assinar de novo antes do fim — o
+        resumo diz até quando há acesso, e "Reativar assinatura" aparece depois da data. *Se a
+        tela deve dizer isso com todas as letras é pergunta ao operador (pendência P74).*
+        **Testes:** 5 de tela. **Mutação:** 4 de 4 reprovaram. Gates: typecheck, lint, suíte do
+        site (921) e de servidor como o CI (1017), build.
       **ONDE PAROU:** SESSÃO (a) FECHADA e **PUBLICADA em 11/10/2026 (`main` = `6305077`)**, com
       a autorização do operador (*"pode publicar depois desses ajustes"*): CI verde nos dois jobs
       no `dev` e na `main`, e conferido no ar como visitante — as rotas novas respondem 401 sem
@@ -4621,9 +4634,8 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       `.cancelamento` e `.banco` — o inglês é rascunho, a revisar com o Antigravity: P72).
       As duas decisões dele de 11/10/2026 (cancelar com a cobrança atrasada; limpar ao entrar)
       já estão no código, e os **passos 9 e 11** (as telas de cancelar e de mudar de plano)
-      estão feitos. **Próximo, nesta ordem:** o passo 12 (quem cancelou e abre a tela de
-      assinar) · o 13 (a prova com conta descartável e o relógio de teste, a revisão de
-      segurança das telas, os documentos e o fechamento). A tela
+      e o **passo 12** estão feitos. **Próximo: o passo 13** — a prova com conta descartável
+      e o relógio de teste, a revisão de segurança das telas, os documentos e o fechamento. A tela
       de cancelar avisa quem tem a troca para o Mensal marcada de que ela também será desfeita
       (decisão dele, 11/10/2026; `billing.md` → *Minha assinatura*).
       Nas telas: os endereços `…/faturamento/cancelar` e `…/faturamento/plano` (constantes no

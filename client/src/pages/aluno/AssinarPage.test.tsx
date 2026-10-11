@@ -10,8 +10,10 @@ const getPlanosDaAssinatura = vi.fn();
 const getPreviaDaAssinatura = vi.fn();
 const criarAssinatura = vi.fn();
 const getSituacaoDaAssinatura = vi.fn();
+const getMinhaAssinatura = vi.fn();
 vi.mock("@/lib/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/api")>()),
+  getMinhaAssinatura: (...args: unknown[]) => getMinhaAssinatura(...args),
   getPlanosDaAssinatura: (...args: unknown[]) => getPlanosDaAssinatura(...args),
   getPreviaDaAssinatura: (...args: unknown[]) => getPreviaDaAssinatura(...args),
   criarAssinatura: (...args: unknown[]) => criarAssinatura(...args),
@@ -59,6 +61,7 @@ const erroDoServidor = (codigo: string) => ({ response: { data: { error: codigo 
 
 beforeEach(() => {
   getSituacaoDaAssinatura.mockReset().mockResolvedValue({ temAcesso: false, reativar: false });
+  getMinhaAssinatura.mockReset().mockResolvedValue(RENOVA);
   getPlanosDaAssinatura.mockReset().mockResolvedValue(PLANOS);
   getPreviaDaAssinatura.mockReset().mockResolvedValue(CEM_PARA_SEMPRE);
   criarAssinatura.mockReset().mockResolvedValue(PAGAR);
@@ -66,12 +69,16 @@ beforeEach(() => {
   confirmar.mockReset().mockResolvedValue({ ok: true });
 });
 
+/** A assinatura de quem já assina e RENOVA, como a tela de Faturamento e Assinatura a recebe. */
+const RENOVA = { situacao: "ativa", plano: "mensal", preco: { centavos: 9990, moeda: "brl" }, proximaCobranca: null, acessoAte: null, cartao: null, aceitaCartao: true, podeParar: true, podeManter: false, terminaAoCancelar: false, reembolso: null, podeMudarDePlano: true, trocaMarcada: null };
+
 const abrir = () =>
   renderWithProviders(<AssinarPage />, {
     route: "/aluno/assinar",
     extraRoutes: [
       { path: "/aluno/assinar/concluido", element: <p>tela de concluído</p> },
       { path: "/inicio", element: <p>tela de início</p> },
+      { path: "/aluno/conta/faturamento", element: <p>tela de faturamento e assinatura</p> },
     ],
   });
 /** O texto da tela, com o espaço do "R$ 99,90" (que não quebra linha) trocado por um comum. */
@@ -146,6 +153,49 @@ describe("AssinarPage — estados", () => {
     expect(getPlanosDaAssinatura).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("link", { name: "Ir para o Início" }));
     expect(await screen.findByText("tela de início")).toBeTruthy();
+  });
+
+  // QUEM CANCELOU E AINDA TEM DIAS PAGOS (etapa 4.6, passo 12): assinar de novo cobraria duas
+  // vezes o mesmo período. A pessoa é levada a Faturamento e Assinatura, onde está "Manter a
+  // assinatura" (ou a data em que o acesso termina).
+  it("parou a renovação e ainda tem dias pagos: é levada a Faturamento e Assinatura — sem formulário, sem cobrar de novo", async () => {
+    getSituacaoDaAssinatura.mockResolvedValue({ temAcesso: true });
+    getMinhaAssinatura.mockResolvedValue({ ...RENOVA, situacao: "vai-cancelar", acessoAte: "2026-11-10T15:00:00.000Z", podeParar: false, podeManter: true });
+    abrir();
+    expect(await screen.findByText("tela de faturamento e assinatura")).toBeTruthy();
+    expect(screen.queryByText("Você já é assinante.")).toBeNull();
+    expect(getPlanosDaAssinatura).not.toHaveBeenCalled();
+    expect(criarAssinatura).not.toHaveBeenCalled();
+  });
+
+  it("encerrada de vez, ainda com dias pagos (não dá para manter): também vai para lá, que diz até quando há acesso", async () => {
+    getSituacaoDaAssinatura.mockResolvedValue({ temAcesso: true });
+    getMinhaAssinatura.mockResolvedValue({ ...RENOVA, situacao: "vai-cancelar", acessoAte: "2026-11-10T15:00:00.000Z", podeParar: false, podeManter: false, aceitaCartao: false, podeMudarDePlano: false });
+    abrir();
+    expect(await screen.findByText("tela de faturamento e assinatura")).toBeTruthy();
+  });
+
+  it("quem assina e RENOVA (ou está com a cobrança atrasada) continua lendo 'Você já é assinante' — não é levado a lugar nenhum", async () => {
+    getSituacaoDaAssinatura.mockResolvedValue({ temAcesso: true });
+    for (const situacao of ["ativa", "atrasada"]) {
+      getMinhaAssinatura.mockResolvedValue({ ...RENOVA, situacao });
+      const { unmount } = abrir();
+      expect(await screen.findByText("Você já é assinante."), situacao).toBeTruthy();
+      unmount();
+    }
+  });
+
+  it("não deu para ler a assinatura (a Stripe fora do ar, ou a de mentira do seed): vale o aviso de sempre — a tela não tranca", async () => {
+    getSituacaoDaAssinatura.mockResolvedValue({ temAcesso: true });
+    getMinhaAssinatura.mockRejectedValue(new Error("404"));
+    abrir();
+    expect(await screen.findByText("Você já é assinante.")).toBeTruthy();
+  });
+
+  it("quem NÃO assina: a assinatura nem é lida", async () => {
+    abrir();
+    await screen.findByRole("button", { name: "Assinar" });
+    expect(getMinhaAssinatura).not.toHaveBeenCalled();
   });
 });
 

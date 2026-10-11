@@ -322,7 +322,9 @@ gera mais aviso, o acesso ficaria liberado para sempre. *(Achado P1 da revisão 
   (09/10/2026). Sem login nada muda. *Reabre na etapa 4.7, que liga os botões para o visitante.*
 - **Quem já é assinante e abre a tela vê "Você já é assinante" e o caminho para o Início**
   (10/10/2026). *Reabre na etapa 4.6: quem cancelou e ainda tem dias pagos volta a assinar por
-  esta tela.*
+  esta tela.* **Feito na etapa 4.6 (11/10/2026):** quem tem a assinatura terminando numa data é
+  levado dali a Faturamento e Assinatura, onde está "Manter a assinatura" — voltar sem pagar de
+  novo o período que já pagou.
 - **O cartão só some com desconto de 100% PARA SEMPRE** (10/10/2026 — consequência da Stripe,
   levada pelo agente e aceita por ele). Com 100% só na primeira cobrança, ou por alguns meses,
   nada é cobrado hoje, mas o cartão é pedido: a cobrança seguinte precisa dele. *Reabre se ele

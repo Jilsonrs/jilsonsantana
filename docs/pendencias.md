@@ -16,7 +16,7 @@
 > 5. **Item novo ganha o próximo número livre.** Número nunca se reutiliza, para que "P7" queira
 >    dizer sempre a mesma coisa em qualquer conversa.
 >
-> **Próximo número livre: P74** · Atualizada em 11/10/2026
+> **Próximo número livre: P75** · Atualizada em 11/10/2026
 
 ## A. Agora, em sequência *(nascidas da configuração do Bunny, 25/09/2026)*
 
@@ -32,6 +32,7 @@ precise de resposta rápida entra aqui, com o próximo número livre.*
 
 | # | O que falta | Onde registrar |
 |---|---|---|
+| P74 | **Caso raro: a assinatura ENCERRADA DE VEZ e ainda com dias pagos** (por exemplo, encerrada à mão no painel da Stripe, sem reembolso). A pessoa assiste até o fim dos dias pagos, não tem "Manter a assinatura" (encerrada não volta) e não consegue assinar de novo antes do fim (pagaria duas vezes). Hoje a tela diz só "Sua assinatura termina em {data}. Você continua com acesso até lá." e "Reativar assinatura" aparece depois da data. Fica assim, ou a tela deve dizer que ela poderá reativar depois dessa data? Sugestão de frase: "Depois dessa data, você pode reativar a assinatura." / "After that date, you can reactivate your subscription." | `billing.md` → *Minha assinatura*, e `app.faturamento.*` |
 | P73 | **Revisar um texto novo de 11/10 (etapa 4.6), rascunho do agente:** **"Não foi possível manter a assinatura. Tente de novo."** / **"We couldn't keep your subscription. Try again."** — aparece no resumo quando o clique em "Manter a assinatura" falha. Não estava nos blocos que você aprovou | `core/src/i18n/pt.ts` e `en.ts` (`app.faturamento.cancelamento.erroAoManter`) |
 | P72 | **Revisar com o Antigravity o INGLÊS dos textos da sessão (b) da etapa 4.6** — as telas de mudar de plano e de cancelar (com os cinco motivos) e o banco pedindo confirmação. O português você aprovou em 11/10/2026; o inglês é rascunho do agente (*"depois revisamos com o Antigravity a parte do inglês"*) | `core/src/i18n/en.ts` (`app.faturamento.plano`, `.cancelamento` e `.banco`) |
 | P65 | **Revisar o texto novo de 11/10 (etapa 4.6)**, rascunho do agente: **"Sua assinatura terminou."** / **"Your subscription has ended."** — aparece em Faturamento e Assinatura quando a assinatura acabou e não há a data do fim (o texto que você aprovou, sem o "em {data}"). Os outros textos da tela e da troca de cartão você aprovou em 11/10 | `core/src/i18n/pt.ts` e `en.ts` (`app.faturamento.terminouSemData`) |

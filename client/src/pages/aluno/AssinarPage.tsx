@@ -1,8 +1,10 @@
 import { lazy, Suspense } from "react";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
+import { SituacaoDoFaturamento } from "@jilson/core";
 import { PageContainer, PageHeader } from "@/components/layout/PageLayout";
 import { Button } from "@/components/ui/button";
 import { TELA_DE_CONCLUIDO, usePlanosDaAssinatura, useSituacaoDaAssinatura } from "@/lib/assinar";
+import { TELA_DO_FATURAMENTO, useMinhaAssinatura } from "@/lib/faturamento";
 import { useT } from "@/lib/language";
 import { useIrPara } from "@/lib/versao";
 
@@ -16,6 +18,10 @@ const FormularioDeAssinatura = lazy(() => import("@/components/assinar/Formulari
  * 10/10/2026). Chega-se aqui pela aula trancada e pelos botões Assinar da home, quando há
  * login. Quem já é assinante vê só o aviso e o caminho para o Início (decisão dele, 10/10).
  * Quem responde "já assina?" é o servidor (o gate), não a tela.
+ * QUEM CANCELOU E AINDA TEM DIAS PAGOS (etapa 4.6, passo 12) não assina de novo — pagaria duas
+ * vezes o mesmo período: é levado a Faturamento e Assinatura, onde está "Manter a assinatura"
+ * (a renovação parada) ou a data em que o acesso termina (a encerrada de vez, que só reativa
+ * depois dela).
  */
 export function AssinarPage() {
   const t = useT();
@@ -26,8 +32,13 @@ export function AssinarPage() {
   // operador, 10/10/2026). Quem diz é o servidor; aqui muda só o texto.
   const reativar = situacao.data?.reativar === true;
   const planos = usePlanosDaAssinatura(situacao.data?.temAcesso === false);
-  const carregando = situacao.isLoading || planos.isLoading;
+  // Só para quem já assina: a assinatura dela renova, ou termina numa data? Se esta leitura
+  // falhar, vale o aviso de sempre ("Você já é assinante") — ela nunca tranca a tela.
+  const minha = useMinhaAssinatura(jaAssina);
+  const carregando = situacao.isLoading || planos.isLoading || (jaAssina && minha.isLoading);
   const falhou = situacao.isError || planos.isError;
+
+  if (jaAssina && !minha.isError && minha.data?.situacao === SituacaoDoFaturamento.VAI_CANCELAR) return <Navigate to={TELA_DO_FATURAMENTO} replace />;
 
   return (
     <PageContainer>
