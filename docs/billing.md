@@ -506,8 +506,16 @@ a assinatura "não paga" (P60). O relato completo está no plano, Fase 4 → eta
   passa a cortar o acesso. *Acompanham a regra do reembolso, acima.*
 - **Os textos da sessão (a) — o resumo e a troca de cartão —, em português e inglês: aprovados**
   (`app.faturamento.*`). Um a mais é rascunho do agente: "Sua assinatura terminou." / "Your
-  subscription has ended.", para quando não há a data do fim (pendência P65). Os da sessão (b)
-  são mostrados a ele na abertura dela.
+  subscription has ended.", para quando não há a data do fim (pendência P65).
+- **Os textos da sessão (b), em PORTUGUÊS: aprovados** (11/10/2026, em três blocos mostrados a
+  ele — a tela de mudar de plano, a de cancelar e o banco pedindo confirmação; moram em
+  `app.faturamento.plano`, `.cancelamento` e `.banco`). **O inglês entra como está e será
+  revisado com o Antigravity** (*"pode deixar assim, depois revisamos com o Antigravity a parte
+  do inglês"*; pendência P72). *Fecha quando o inglês for revisado.*
+- **"Já aprendi o que precisava" aparece como "Outro" no painel da Stripe** (a lista de motivos
+  dela é fixa); o motivo exato fica junto da assinatura, e é o que o painel da escola vai
+  contar. Aceito por ele em 11/10/2026. *Reabre se a Stripe passar a aceitar motivos próprios
+  sem configuração por ambiente.*
 
 **Depois do teste dele no navegador (11/10/2026)** — as duas telas abriram, o campo de verdade da
 Stripe guardou o cartão de teste e o resumo passou a mostrá-lo:

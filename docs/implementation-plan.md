@@ -4545,8 +4545,11 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       Stripe traz o nome público da conta de verdade (P58) — só olhar: salvar ali guarda um
       cartão de verdade.
       **SESSÃO (b) — ABERTA em 11/10/2026.** Feito: o item 0 ("Sair"), a consulta à Stripe, os
-      textos mostrados a ele (aguardam aprovação — pendência P66) e os **passos 7, 8 e 10**
-      (todo o servidor). **Próximo: o passo 9 e o 11 (as telas), só com os textos aprovados.**
+      **passos 7, 8 e 10** (todo o servidor) e **os textos das telas, aprovados por ele em
+      português** (três blocos, 11/10/2026; já no dicionário, em `app.faturamento.plano`,
+      `.cancelamento` e `.banco` — o inglês é rascunho, a revisar com o Antigravity: P72).
+      **Próximo: o passo 9 e o 11 (as telas)**, depois de ele responder a P67 e a P70, que
+      mudam o que a tela de cancelar mostra.
       Nas telas: os endereços `…/faturamento/cancelar` e `…/faturamento/plano` (constantes no
       `core`), os botões no resumo ("Cancelar assinatura", "Manter a assinatura", "Mudar de
       plano", "Continuar no Anual"), a confirmação do banco pelo site (`handleNextAction`, em
