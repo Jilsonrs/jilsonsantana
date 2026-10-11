@@ -105,6 +105,29 @@ dele, isto passa a ser uma **promessa nossa**, oferecida por escolha. Duas coisa
   arrependimento", sem citar os 7 dias que esta seção manda dizer. *Alinhar é decisão do operador
   (texto de interface é dele); fica aqui apontado, não corrigido.*
 
+**O PRAZO: 7 dias no Brasil, 14 dias fora** *(decisão do operador, 10/10/2026: "deixa no sistema
+7 dias Brasil e 14 dias lá fora" — depois de ver, na tabela da Udemy, que a lei de vários países
+dá 14)*. **Substitui, para fora do Brasil, os 7 dias prometidos ao mundo em 22/09** (acima).
+*Convenção de engenharia:* "Brasil ou fora" é o **país do cartão**, o mesmo critério da moeda
+(cobrança em real → 7 dias; em dólar → 14) — nunca o idioma do site. **A resposta de "Is there a
+refund?" passou a dizer 14 dias** *(pedido do operador, 10/10/2026: "muda para 14 em inglês";
+o texto é o dele: "14-day money-back guarantee")*: **"Yes, we offer a 14-day money-back
+guarantee."** — por duas migrations de dado, que só trocam o texto de fábrica (uma edição feita
+em Admin → FAQ não é sobrescrita). A primeira gravou a sugestão do agente, com "(7 days for
+purchases made in Brazil)"; ele escolheu o texto sem o parêntese, e a segunda tirou.
+**Consequência conhecida:** quem lê a página em inglês e paga com cartão do Brasil lê 14 dias,
+e a regra do cartão dá 7 — a decidir quando a cobrança em dólar for construída (etapa 4.8). *Reabre se a escola vender num lugar em que a lei exija mais de 14 dias — a tabela da
+Udemy cita Quebec e Turquia, "a qualquer momento".*
+
+**Trocar de plano não recomeça o prazo** *(decisão do operador, 10/10/2026, como na Udemy)*: os
+dias contam do primeiro dia da assinatura; passar do mensal para o anual não abre prazo novo.
+*Reabre se chegar reclamação formal sobre o reembolso do plano anual.*
+
+**Sem advogado: a escola segue o que as grandes fazem** *(decisão do operador, 10/10/2026: "Eu
+não vou consultar advogado, vamos seguir como os grandes fazem")*. O modelo é a política da
+Udemy, descrita abaixo. *Reabre se chegar uma reclamação formal: Procon, juizado, ou cobrança
+contestada no cartão por reembolso negado.*
+
 **Cancelar e reembolso — a regra inteira** *(decisão do operador, 10/10/2026 — fecha a P56)*:
 - **O aluno cancela a qualquer momento**, inclusive cedo, só para não esquecer de ser cobrado
   (*"às vezes só quer estudar um mês"*). O acesso fica **garantido até o fim do período pago**.
@@ -118,26 +141,48 @@ duas saídas — **"parar a renovação e continuar"** (assiste até o fim do pe
 **"cancelar e receber o dinheiro de volta"** (perde o acesso na hora). *Sem gatilho próprio:
 acompanha a regra acima.*
 
-**No máximo 2 reembolsos por aluno** *(decisão do operador, 10/10/2026: "2 reembolsos máximo por
-aluno" — do terceiro em diante "está agindo de má fé")*. Depois do segundo, **aquela conta não
-assina mais**, e a mensagem **não diz que ela foi bloqueada**. A regra recusa a assinatura NOVA;
-não nega reembolso de ninguém — assim nunca existe um terceiro pedido a negar.
-`[PESQUISA — busca na web, 10/10/2026; NÃO é parecer jurídico]` O art. 49 do CDC dá os 7 dias sem
-exigir motivo e **não diz quantas vezes**. Não achamos lei nem decisão de tribunal superior sobre
-uso repetido: a doutrina fala em boa-fé e abuso de direito, sem consenso
-([Conjur](https://www.conjur.com.br/2025-set-16/litigancia-predatoria-no-e-commerce-o-desafio-do-direito-de-retencao//?print=1),
-[UniCEUB](https://repositorio.uniceub.br/jspui/bitstream/prefix/17158/1/22002038.pdf)). O art. 39,
-II e IX, trata como prática abusiva recusar venda a quem quer pagar, e o TJDFT admite a recusa
-quando há **justa causa**
-([TJDFT](https://www.tjdft.jus.br/consultas/jurisprudencia/jurisprudencia-em-temas/cdc-na-visao-do-tjdft-1/praticas-abusivas/recusa-de-contratar-pelo-fornecedor)).
-**Por isso a regra só vale depois de um advogado confirmar (P61)**, e convém estar escrita nos
-termos de uso.
-**Em aberto (P61):** o texto que essa pessoa lê. O operador sugeriu algo como "digite um e-mail
-válido"; recomendação do agente: uma frase neutra e verdadeira ("Não foi possível concluir a
-assinatura nesta conta. Fale com a gente."), porque uma mensagem falsa enfraquece a justa causa
-se alguém reclamar. **Proposta do agente, a decidir ao construir:** contar também pelo cartão (o
-mesmo cartão com outro e-mail).
-*Reabre com a resposta do advogado, ou se a regra barrar aluno de boa-fé.*
+**Reembolso repetido: SEM bloqueio automático — a trava são os termos de uso** *(decisão do
+operador, 10/10/2026: "não barrar depois de 2 reembolsos, vamos usar outras travas colocando
+alguma coisa nos termos" — quem pede reembolso de forma abusiva, contra as políticas da escola,
+perde o direito a ele. **Substitui** o "no máximo 2 reembolsos por aluno" decidido horas antes, no
+mesmo dia, e nunca construído.)* **Referência dele: a Udemy.**
+`[PESQUISA — as duas páginas oficiais da Udemy, em telas enviadas pelo operador em 10/10/2026
+("Política de reembolso da Udemy" e "Exceções de reembolso do plano de assinatura devido à lei
+aplicável"), mais busca na web; NÃO é parecer jurídico]`
+- **A cláusula de abuso da Udemy, como está escrita:** *"Reservamos o direito, a nosso critério
+  exclusivo, de limitar ou recusar solicitações se acreditarmos que há um abuso de reembolso,
+  incluindo, entre outros"*: parte considerável do curso consumida ou baixada antes do pedido ·
+  vários reembolsos do mesmo curso · reembolsos em excesso · conta reportada ou banida por violar
+  os termos · reembolso já dado por terceiro (o processador de pagamento). E fecha com: *"Essas
+  restrições de reembolso serão aplicadas no limite permitido pela lei aplicável."*
+- **Na ASSINATURA a Udemy não dá garantia nenhuma além da lei:** *"não há reembolsos parciais ou
+  totais incluídos, exceto quando exigido pela lei aplicável"*. Onde a lei exige, ela honra
+  **dentro do prazo de cada país**, contado **do primeiro dia da assinatura** — e **trocar do
+  mensal para o anual não recomeça o prazo**. O pedido de reembolso cancela a assinatura.
+- **Os prazos da tabela dela:** Brasil 7 dias · Austrália, África do Sul, Taiwan e Tailândia 7 ·
+  Argentina e Chile 10 · Colômbia e México 5 · **União Europeia, Reino Unido, Suíça e outros: 14** ·
+  Quebec e Turquia: a qualquer momento.
+- **Foi esta tabela que levou à decisão de 14 dias fora do Brasil** (acima, 10/10/2026): a
+  página em inglês da escola prometia 7 dias ao mundo, menos do que a lei de vários países.
+- **No Brasil, a própria Udemy diz que não consegue impedir de forma sistemática vários
+  reembolsos**, porque a lei daqui não abre exceção para quem compra e devolve várias vezes:
+  analisa caso a caso ([comunidade](https://community.udemy.com/pt/discussion/30395/reembolsos-acima-do-normal)).
+- **O que a lei diz:** o art. 49 do CDC dá os 7 dias sem exigir motivo e não diz quantas vezes;
+  não achamos lei nem decisão de tribunal superior sobre uso repetido — a doutrina fala em boa-fé
+  e abuso de direito, sem consenso
+  ([Conjur](https://www.conjur.com.br/2025-set-16/litigancia-predatoria-no-e-commerce-o-desafio-do-direito-de-retencao//?print=1)).
+  E cláusula que tira o arrependimento já foi anulada
+  ([TJDF](https://www.conjur.com.br/2025-out-18/homem-e-pressionado-a-contratar-curso-enganoso-e-tj-df-determina-devolucao-de-dinheiro//?print=1)).
+
+**O que isso muda para a escola:** a cláusula vale por inteiro para o que a escola dá ALÉM da lei
+— a garantia de 7 dias prometida fora do Brasil é promessa nossa, e pode ter condição. Para o
+consumidor brasileiro, dentro dos 7 dias da lei, negar reembolso só pela cláusula é frágil: ali
+ela serve para dizer o que a escola considera abuso e para sustentar a análise caso a caso.
+**O texto dos termos é do operador, no modelo da cláusula da Udemy (P61).**
+**As travas que não dependem de texto** (já decididas ou no plano): o reembolso corta o acesso na
+hora · o painel de assinaturas (etapa 4.7b) mostra as cobranças devolvidas de cada aluno, para o
+caso a caso.
+*Reabre se o reembolso repetido virar prejuízo medido — aí um limite volta à mesa.*
 
 **Estado do código (10/10/2026): o reembolso ainda NÃO corta o acesso.** A fatura da Stripe não
 tem situação de "reembolsada" (as situações são `draft`, `open`, `paid`, `uncollectible` e `void`

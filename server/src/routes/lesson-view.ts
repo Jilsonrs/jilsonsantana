@@ -276,7 +276,11 @@ async function entregarArquivo(res: Response, arquivo: { id: number; storagePath
     await pipeline(leitura.corpo, res);
   } catch (erro) {
     const codigo = erro instanceof Error && "code" in erro ? String((erro as NodeJS.ErrnoException).code) : "sem-codigo";
-    console.error(`[download] arquivo ${arquivo.id} interrompido: ${codigo}`);
+    // "Fechou antes da hora" é o ALUNO indo embora (fechou a aba, cancelou): não é falha, e não
+    // pode virar alerta (`lib/monitor.ts` — erro = precisa de gente). O Bunny caindo no meio
+    // chega com o erro DELE (rede, conexão), e continua sendo erro.
+    if (codigo === "ERR_STREAM_PREMATURE_CLOSE") console.warn(`[download] arquivo ${arquivo.id}: o aluno desistiu no meio`);
+    else console.error(`[download] arquivo ${arquivo.id} interrompido: ${codigo}`);
     if (!res.headersSent && !res.destroyed) res.status(502).json({ error: "StorageFalhou" });
   }
 }

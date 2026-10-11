@@ -204,8 +204,17 @@
 > (aula concluída sozinha, barra na aula e no cartão), o vídeo que não recomeça ao trocar de aba
 > (a apresentação abre pausada, a aula toca sozinha) e o "Salvos". **Primeiro teste com o player de
 > verdade: com o operador** (assistir uma aula até perto do fim e ver a barra andar).
-> **PUBLICAÇÃO AUTORIZADA pelo operador em 10/10/2026 ("Publica a 4.4"): a Fase 4, etapa 4.4 —
-> sincronizar e perder o acesso.**
+> **NO `dev`, AINDA NÃO PUBLICADO (10/10/2026): o alerta de erro no servidor** (Sentry, parte 1 —
+> plano → Fase 7). Sem a variável `SENTRY_DSN` na Railway (pendência P63) ele fica desligado e o
+> site funciona igual. Junto: o endereço malformado em `/api` passa a responder 400 (era 500).
+> **NO `dev`, AINDA NÃO PUBLICADO (10/10/2026):** a resposta de "Is there a refund?" na página em
+> inglês passa a dizer "Yes, we offer a 14-day money-back guarantee." (duas migrations de dado,
+> `reembolso_de_14_dias_na_resposta_em_ingles` e `resposta_do_reembolso_em_ingles_sem_o_parentese`,
+> sem mudança de estrutura; aplicadas no banco de desenvolvimento) e as decisões de reembolso do
+> mesmo dia, só em documento (`billing.md` → *Reembolso*). Vai ao site na próxima publicação.
+> **PUBLICADO em 10/10/2026, por último (`main` = `91cb4dc`, CI verde nos dois jobs, deploy ok;
+> sem migration; publicação autorizada pelo operador: "Publica a 4.4"):** a Fase 4, etapa 4.4 —
+> **sincronizar e perder o acesso.**
 > **Admin → Assinaturas** (o e-mail do aluno e "Conferir na Stripe": a recuperação de quando um
 > aviso da Stripe se perde) · quem pagou e ficou trancado é liberado ao clicar em Assinar de novo ·
 > quem perde o acesso sai da conta · **"Reativar assinatura"** no lugar de "Assinar" para quem já
@@ -213,7 +222,12 @@
 > erro próprio no fim da API. **Sem migration.** Revisão de segurança feita: nenhum bloqueio.
 > **O painel de assinaturas** (lista, filtros e ações — o mapa aprovado por ele no mesmo dia)
 > **NÃO está nesta publicação:** é a etapa 4.7b, depois da 4.7.
-> **PUBLICADO em 10/10/2026, por último (`main` = `efb231f`, CI verde nos dois jobs, deploy ok; a
+> **Provado no site, de fora:** a versão nova (`mv2vto41-b161cf53`); conferir assinatura sem
+> login → 401 (antes da publicação, 404: a rota não existia); o corpo malformado → 400
+> `CorpoInvalido` (antes, a página de erro padrão); o download de arquivo sem login → 401; o
+> aviso sem assinatura → 400; a página inicial, a tela de assinar e o endereço do admin, para o
+> público, seguem no "Em breve".
+> **PUBLICADO em 10/10/2026, antes (`main` = `efb231f`, CI verde nos dois jobs, deploy ok; a
 > migration `cliente_da_stripe` aplicada pelo pre-deploy):** a Fase 4, etapas 4.2 e 4.3 —
 > **assinar com a conta logada, com a Stripe DE VERDADE no site** (decisão do operador no mesmo
 > dia: a produção usa as chaves de verdade; o computador, a área restrita). A tela
@@ -3973,9 +3987,13 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       o aluno cancela quando quiser e mantém o acesso pago · **dentro dos 7 dias a tela oferece
       as duas saídas** — "parar a renovação e continuar" e "cancelar e receber o dinheiro de
       volta" · **o reembolso corta o acesso na hora** (o período devolvido deixa de contar como
-      pago no espelho; hoje a Stripe segue dizendo "paga") · **no máximo 2 reembolsos por
-      aluno**: depois do segundo, a conta não assina mais, e a mensagem não diz que foi
-      bloqueada — **só vale depois da P61** (advogado e o texto da mensagem).
+      pago no espelho; hoje a Stripe segue dizendo "paga") · **reembolso repetido não tem
+      bloqueio automático** (decisão dele no mesmo dia, que substituiu o "no máximo 2
+      reembolsos"): a trava é a cláusula de reembolso abusivo nos termos de uso (P61) e a
+      análise caso a caso — esta etapa NÃO constrói contador nem recusa de assinatura ·
+      **o prazo é de 7 dias no Brasil e 14 fora**, pelo país do cartão (a cobrança em dólar
+      chega na 4.8; até lá só existe o de 7) · **trocar de plano não recomeça o prazo**: os
+      dias contam do primeiro dia da assinatura.
 - [ ] **4.7 — O visitante assina: a conta nasce no pagamento (código, ALTO RISCO).** O checkout
       público: e-mail + pagamento → o webhook cria a conta (o cadastro continua fechado) e manda o
       e-mail de "crie sua senha". **Depende do Resend configurado e da P49** (o remetente). Junto:
@@ -4072,8 +4090,14 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       e devolver o dinheiro são as mesmas operações da tela do aluno (etapa 4.6): quando este
       painel começar, elas já existem. context7 da Stripe antes de escrever; revisão de
       segurança ao fim.
-      **Em aberto:** P61 (o limite de 2 reembolsos: advogado, e o texto que a pessoa lê).
-- [ ] **4.8 — Dólar pelo país do cartão + o botão das páginas em inglês (código + decisão).** context7
+      **Em aberto:** P61 (a cláusula de reembolso abusivo nos termos de uso). O detalhe de cada
+      assinatura mostra as cobranças devolvidas: é o que sustenta a análise caso a caso, já que
+      não há bloqueio automático por reembolso repetido (decisão do operador, 10/10/2026).
+- [ ] **4.8 — Dólar pelo país do cartão + o botão das páginas em inglês (código + decisão).**
+      *(Decisão do operador, 10/10/2026: fora do Brasil o prazo de reembolso é de 14 dias —
+      `billing.md` → Reembolso. Esta etapa liga os 14 dias à cobrança em dólar. A decidir com
+      ele aqui: a página em inglês promete 14 dias a todos, e quem paga com cartão do Brasil
+      teria 7 pela regra do cartão.)* context7
       primeiro. **Depende da decisão de imposto internacional com o contador (P22)** antes da primeira
       venda fora do Brasil. **Trazido da 4.2 (10/10/2026):** a tela de assinar já recebe o valor e a
       moeda do servidor e já lê o cartão antes de a assinatura existir — o dólar entra no servidor,
@@ -5072,6 +5096,76 @@ outro aparelho e "daqui a um mês", e o Safari apaga o armazenamento do site em 
       assinante trancado fora, quem quer assinar e não consegue, a cancelada já paga, o aviso
       recusado por falta do segredo). *Com as chaves de verdade já no site (10/10), isto precede
       o primeiro pagante que não seja o operador.*
+      **PLANO APROVADO (10/10/2026) — PARTE 1: O SERVIDOR.** *(Operador: "você arruma de forma
+      que ele cumpra o seu papel e justifique o seu uso" e, visto o plano, "Sim. vamos lá".)*
+      Puxado para antes da etapa 4.7: o site já usa as chaves de verdade da Stripe.
+      - **Dependência nova, aprovada:** `@sentry/node`, fixada em **`10.75.3`**. *Por que a
+        linha 10 e não a 11 `[MEDIDO em 10/10/2026]`:* a 11 tinha 17 dias de vida e 7 versões
+        nesse tempo, e traz 42 pacotes; a 10.75.3 traz 21, tem um ano de uso e segue recebendo
+        correção. *Reabre quando a linha 10 parar de receber correção, ou com a 11 madura.*
+      - **O que vira alerta:** todo `console.error` do servidor que começa com uma etiqueta
+        nossa (`[stripe]`, `[api]`, `[bunny-stream]`…) — é a convenção que o repo já usa (erro =
+        precisa de gente; aviso = não) — e o que derrubaria o processo. **Linha de biblioteca de
+        terceiro não vai:** o Better Auth registra senha errada como erro, e isso gastaria a cota.
+      - **O que sai do servidor:** a linha ou o erro, e a versão do app. **Nunca:** cabeçalho,
+        cookie, corpo do pedido, usuário, IP, nem o rastro do que veio antes (desligado). E-mail
+        e segredo que apareçam num texto são mascarados antes de sair.
+      - **Convenções de engenharia:** o Sentry só é importado em `server/src/lib/monitor.ts`
+        (trocar de fornecedor custa um arquivo) · liga só em produção e só com `SENTRY_DSN` (em
+        produção sem ela, um aviso no registro) · sem medição de desempenho e sem os ganchos de
+        carregamento de módulo · a cada subida, um aviso "no ar, versão X" — é a prova de que a
+        ligação funciona em produção · ao desligar, espera o envio do que estiver pendente.
+      - **Passos, um commit cada:** (1) este plano · (2) a biblioteca, `monitor.ts`, a ligação
+        no `index.ts` e no desligar, e os testes com um transporte de mentira (o que sai e o
+        que não sai), com mutação · (3) os docs — `CLAUDE.md` (a convenção do `console.error` e
+        o import único), `tech-stack.md`, `.env.example` e as pendências do operador.
+      - **Com o operador, no painel:** um DSN novo no lugar do que apareceu numa foto de tela, a
+        variável `SENTRY_DSN` na Railway, a regra de alerta por e-mail e o monitor de site fora
+        do ar.
+      - **Fora desta parte:** as telas do aluno (parte 2, com a medição do peso no carregamento
+        e do piso de aparelhos) · ligar o repositório ao Sentry · medição de desempenho.
+      - `Docs check (context7): superfícies fixadas → not triggered`. Sentry →
+        `/getsentry/sentry-javascript` (2 consultas) → o transporte de teste (`createTransport`),
+        `captureConsoleIntegration` (eventos) × `consoleLoggingIntegration` (outro produto), a
+        ligação sem `--import` quando não se usa instrumentação automática, e o que mudou na 11.
+      **FEITO (10/10/2026) — passos 2 e 3.**
+      - **O que nasceu:** `lib/monitor.ts` (o único arquivo com o Sentry), `monitor-no-ar.ts`
+        (liga antes de o app montar) e a ligação no `index.ts` — o aviso de "no ar" a cada
+        subida, e a espera do envio ao desligar.
+      - **Três ajustes para o alerta não gritar à toa, achados ao ligar:** (a) **erro fora de
+        `/api`** (a home quebrada) não tinha etiqueta e não alertaria: `lib/erro-do-site.ts`
+        anota com `[site]` e deixa a resposta como era · (b) **endereço malformado em `/api`**
+        (coisa de robô) respondia 500 com linha de erro — medido; agora é 400
+        `EnderecoInvalido`, com aviso · (c) **o aluno que desiste de um download** gerava linha
+        de erro; agora é aviso, e o Storage caindo no meio continua erro.
+      - **Mudança de comportamento, de propósito:** com o alerta ligado, a promessa rejeitada
+        sem tratamento vira alerta e o servidor segue de pé (antes, ela o derrubava e cortava
+        os pedidos de todos). Fora de produção continua derrubando.
+      - **A cota:** no máximo 30 envios em 10 minutos e 150 por dia; o que passar fica só no
+        registro, com um aviso. *Reabre se um problema de verdade ficar sem alerta por causa
+        do limite.*
+      - **Removido por medição:** a opção de tamanho máximo do texto — na versão instalada o
+        texto da linha não é cortado, então ela não fazia nada.
+      - **Testes:** +26 de servidor (727): o que vira alerta e o que não vira, o que nunca sai,
+        a cota, o import único, o erro fora de `/api`, o endereço malformado e os dois casos de
+        download. Nos testes o Sentry de verdade roda com a rede trocada por um gravador.
+        **Mutação:** 23 de 23 reprovaram (uma 24ª mostrou a opção inútil, removida).
+      - **Provado em execução, no computador:** o servidor MONTADO, em modo de produção, contra
+        um Sentry de mentira local e o banco de teste local — chegaram o aviso de "no ar" e uma
+        linha de erro de verdade (`[stripe] aviso recusado…`, origem `stripe`); a senha errada
+        do Better Auth (linha de terceiro) e o endereço malformado NÃO saíram; do pedido não
+        saiu nada (cookie, e-mail do corpo, o que vem depois do "?"); o servidor saiu com
+        código 0 ao receber o aviso de desligar.
+      - **Não provado ainda:** a chegada ao Sentry DE VERDADE — depende do DSN novo e da
+        variável na Railway (pendência P63); a prova é o aviso de "no ar" aparecer no painel
+        depois da publicação.
+      - **O CI reprovou a primeira tentativa, e a causa virou regra:** um teste novo passava
+        no computador (que tem as chaves de teste da Stripe no `.env.test`) e reprovou no CI,
+        que não tem — 503 no lugar de 500. Reproduzido sem as chaves, corrigido, e a suíte
+        inteira rodada nessa condição (727). A regra está no `CLAUDE.md` → *Testing*.
+      **ONDE PAROU:** parte 1 pronta no `dev` (CI verde nos dois jobs em `7c31be4`), não
+      publicada. Faltam: a P63 (com o operador), a publicação (decisão dele) e a parte 2 (as
+      telas do aluno).
 - [ ] **Backlog P2 do `security-vulnerability-reviewer` (7 no relatório; os nº 1, 2 e 6 foram
       movidos e o nº 5 foi **fechado por migration versionada** → **3 pendentes aqui**. Nenhum
       bloqueia merge; todos antes do primeiro aluno pagante.)** A numeração original do relatório é

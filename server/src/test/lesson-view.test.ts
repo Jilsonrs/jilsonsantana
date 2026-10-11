@@ -1,5 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from "vitest";
 import { Readable } from "node:stream";
+import http from "node:http";
+import type { AddressInfo } from "node:net";
 import request from "supertest";
 import type { Prisma } from "@prisma/client";
 
@@ -364,6 +366,54 @@ describe("o download", () => {
     await semAssinatura(async () => {
       expect((await baixar(ids.paga, ids.arquivo, member)).status).toBe(403);
     });
+  });
+
+  it("o aluno desiste no meio: é só um AVISO — erro vira alerta, e cancelar um download não é falha", async () => {
+    // O Storage manda o começo e fica aberto; o aluno fecha a conexão ao receber o primeiro pedaço.
+    const fonte = new Readable({ read() {} });
+    fonte.push(Buffer.alloc(64 * 1024, "a"));
+    lerArquivoDaAula.mockResolvedValueOnce({ ok: true, corpo: fonte, tamanho: undefined });
+    const avisos = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const gritos = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      const { port } = servidor.address() as AddressInfo;
+      await new Promise<void>((foiEmbora, falhou) => {
+        const pedido = http.get({ host: "127.0.0.1", port, path: `/api/lessons/${ids.paga}/files/${ids.arquivo}`, headers: { Cookie: member.map((c) => c.split(";")[0]).join("; ") } }, (resposta) => {
+          expect(resposta.statusCode).toBe(200);
+          resposta.once("data", () => {
+            pedido.destroy();
+            foiEmbora();
+          });
+        });
+        pedido.once("error", falhou);
+      });
+      await vi.waitFor(() => expect(avisos.mock.calls.flat().join(" ")).toContain(`[download] arquivo ${ids.arquivo}: o aluno desistiu no meio`));
+      expect(gritos.mock.calls.flat().join(" ")).not.toContain("[download]");
+    } finally {
+      fonte.destroy();
+      avisos.mockRestore();
+      gritos.mockRestore();
+    }
+  });
+
+  it("o Storage cai no meio do envio: ERRO, com o motivo — isto sim precisa de gente", async () => {
+    const fonte = new Readable({ read() {} });
+    fonte.push(Buffer.alloc(1024, "a"));
+    lerArquivoDaAula.mockResolvedValueOnce({ ok: true, corpo: fonte, tamanho: undefined });
+    const avisos = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const gritos = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      setTimeout(() => fonte.destroy(Object.assign(new Error("a conexão com o Storage caiu"), { code: "ECONNRESET" })), 50);
+      await baixar(ids.paga, ids.arquivo, member).then(
+        () => undefined,
+        () => undefined,
+      );
+      await vi.waitFor(() => expect(gritos.mock.calls.flat().join(" ")).toContain(`[download] arquivo ${ids.arquivo} interrompido: ECONNRESET`));
+      expect(avisos.mock.calls.flat().join(" ")).not.toContain("desistiu");
+    } finally {
+      avisos.mockRestore();
+      gritos.mockRestore();
+    }
   });
 
   it("o arquivo de OUTRA aula não sai por esta: 404", async () => {
