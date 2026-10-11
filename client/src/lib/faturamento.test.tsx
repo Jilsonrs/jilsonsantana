@@ -18,7 +18,7 @@ import { comAcesso, useMinhaAssinatura } from "./faturamento";
 // entrasse na MESMA aba veria por um instante o plano e o cartão da anterior. O teste usa UM cliente de leituras para as duas "visitas", como
 // a aba do navegador.
 
-const DA_ANA: MinhaAssinatura = { situacao: "ativa", plano: "anual", preco: { centavos: 99500, moeda: "brl" }, proximaCobranca: null, acessoAte: null, cartao: { bandeira: "visa", final: "1111", mes: 1, ano: 2030 }, aceitaCartao: true, podeParar: true, podeManter: false, reembolso: null };
+const DA_ANA: MinhaAssinatura = { situacao: "ativa", plano: "anual", preco: { centavos: 99500, moeda: "brl" }, proximaCobranca: null, acessoAte: null, cartao: { bandeira: "visa", final: "1111", mes: 1, ano: 2030 }, aceitaCartao: true, podeParar: true, podeManter: false, reembolso: null, podeMudarDePlano: true, trocaMarcada: null };
 
 function Tela() {
   const { data, isPending } = useMinhaAssinatura();

@@ -4412,6 +4412,80 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
         a assinatura, o valor cheio no lugar do que falta, sem chave de repetição, o crédito
         proporcional, faturas de qualquer assinatura. Gates: typecheck, lint, suíte do site (852)
         e de servidor como o CI (929), build.
+      - **Passo 10 — MEDIDO na área restrita antes de escrever (11/10/2026; 8 clientes
+        descartáveis e 1 cupom, já apagados).** `[FATO]`
+        **Mensal → anual na hora** (`subscriptions.update` com o preço novo no item,
+        `proration_behavior: always_invoice` e `payment_behavior: pending_if_incomplete`): a
+        prévia (`invoices.createPreview` com `subscription_details`) dá o valor de hoje — o ano
+        inteiro menos o que sobrou do mês (R$ 895,10 no primeiro dia) — e **o cobrado é o da
+        prévia**; a assinatura vira anual na hora, com o fim do período um ano à frente e a
+        MESMA data de início (o prazo do reembolso não recomeça); ficam duas faturas pagas, e o
+        reembolso devolve as duas. De cortesia: prévia de R$ 0, troca na hora.
+        **O banco pede confirmação:** a resposta vem 200, a assinatura CONTINUA mensal, com a
+        troca pendente (vale ~23 h) e a fatura da troca em aberto; o pagamento fica
+        `requires_action`, e o segredo de confirmação da fatura é o que o site usa. Confirmado o
+        pagamento, a Stripe aplica a troca sozinha (anual, fatura paga).
+        **Cartão recusado:** a mesma forma (200, troca pendente, fatura em aberto), com o
+        pagamento `requires_payment_method` e `card_declined` — distingue-se pelo PAGAMENTO, que
+        se lê com `invoices.retrieve` expandindo `payments.data.payment.payment_intent`.
+        **Desistir da troca pendente = anular a fatura dela:** a pendência some, a assinatura
+        segue mensal, a próxima cobrança segue a do mensal e não sobra crédito no cliente. Uma
+        segunda tentativa substitui a primeira sozinha (a fatura antiga é anulada pela Stripe).
+        *Consequência conhecida:* depois de anulada, a "última fatura" da assinatura é a anulada
+        até a próxima renovação.
+        **Anual → mensal no fim do ano (agendamento):** `subscriptionSchedules.create` com
+        `from_subscription` cria uma fase (o ano pago); `update` com duas fases (a atual e a
+        mensal) e `end_behavior: release` deixa a assinatura intacta até lá, e a prévia da
+        próxima cobrança já diz R$ 99,90 na data do fim do ano; `release` desfaz (a assinatura
+        segue anual, sem agendamento) e dá para agendar de novo. O agendamento se lê junto com a
+        assinatura (`expand: schedule.phases.items.price`). **O desconto só sobrevive se as fases
+        o levarem** (a fase criada traz `discounts`; copiado para as duas, a cortesia segue
+        cortesia). **Com agendamento, a Stripe RECUSA parar a renovação direto na assinatura**
+        ("managed by the subscription schedule"): antes, soltar o agendamento. Trocar o cartão e
+        gravar o motivo continuam aceitos; encerrar na hora também (o agendamento vira cancelado).
+      - **Passo 10 — FEITO (11/10/2026): o servidor mostra a conta e muda o plano.**
+        `GET /api/billing/minha-assinatura/plano` diz a troca que a conta pode fazer agora, já
+        com a conta da Stripe: para o **anual**, quanto se paga hoje, a cobrança seguinte e o
+        instante da conta (`previaDe`); para o **mensal**, quando a troca vale (o fim do período
+        pago) e quanto passa a custar. `POST …/plano` recebe só PARA QUAL plano (e o `previaDe`
+        de volta): **anual vale na hora**, e a assinatura só muda se o pagamento passar;
+        **mensal é só marcado** para o fim do período — nada é cobrado nem trocado até lá.
+        `POST …/plano/desistir` solta a troca marcada, ou anula a que ficou esperando o banco.
+        **O valor mostrado é o cobrado:** a troca usa o MESMO instante da prévia, e o servidor só
+        o aceita com até 30 minutos (`VALIDADE_DA_PREVIA_DA_TROCA`): um instante antigo daria
+        crédito por dias que a pessoa já usou; vencido, responde 409 `PreviaVencida` e a tela
+        pede outra conta. **Cartão recusado:** 402, e a fatura da troca é anulada na hora (se não
+        anular, `console.error` com etiqueta: ela ainda poderia ser cobrada). **O banco pede
+        confirmação:** a resposta leva o segredo para o site completar; a troca só vale depois, e
+        desistir anula a fatura (se o pagamento já tinha passado, a resposta diz que o plano
+        mudou). **A mesma confirmação na troca de cartão:** com a cobrança atrasada e o banco
+        pedindo confirmação, a resposta de aplicar o cartão passou a levar o segredo da fatura em
+        aberto (`confirmar`). **Quem está saindo não troca de plano:** parar a renovação solta
+        antes a troca marcada (com ela a Stripe recusa parar) e anula a que esperava o banco —
+        **o que isso significa para o aluno é pergunta ao operador (pendência P70)**. O reembolso
+        já convive com o agendamento (medido). **A tela** passa a receber `podeMudarDePlano` e
+        `trocaMarcada` (para qual plano e quando). As operações moram em `lib/meu-plano.ts`, e as
+        idas à Stripe em `lib/stripe-plano.ts`.
+        **A prova com as funções de verdade** (área restrita, 6 clientes descartáveis e 1 cupom,
+        já apagados; o banco não foi tocado): **25 de 25 pontos** — a prévia, a troca cobrando
+        exatamente o mostrado mesmo segundos depois, a data de início que não muda, o banco
+        pedindo confirmação (continua mensal; desistir; confirmar e virar anual; desistir depois
+        de pago), o cartão recusado sem fatura sobrando, a troca marcada (continua anual, a
+        próxima cobrança já é a do mensal, a Stripe recusando parar a renovação até soltar),
+        desistir, e a cortesia nos dois sentidos (R$ 0 e o desconto indo junto).
+        **Não exercitado:** a virada de verdade para o mensal no fim do ano (só a prévia da
+        Stripe diz R$ 99,90 naquela data) — fica para o relógio de teste do passo 13.
+        **Testes:** 62 novos (de rota, com a biblioteca da Stripe trocada por dublê e unitários).
+        **Mutação:** 22 de 22 reprovaram — a troca com a hora do servidor no lugar do instante
+        mostrado, a conta velha aceita, a troca sem conferir a conta, o plano que não cabe, a
+        fatura do recusado ficando em aberto, o recusado e o "confirmar" respondendo "trocado",
+        o mensal trocando na hora, quem não renova mudando de plano, duas trocas marcadas,
+        desistir sem soltar e dizendo que desfez o que foi pago, parar a renovação sem soltar nem
+        anular, o segredo que não chega ao site, a troca valendo sem o pagamento, o recusado
+        ficando à espera, a prévia e a troca com contas diferentes, o desconto perdido na fase
+        nova, o agendamento pela metade preso, a fatura paga dada como anulada, "troca marcada"
+        para o mesmo plano. Gates: typecheck, lint, suíte do site (852) e de servidor como o CI
+        (991), build.
       **ONDE PAROU:** SESSÃO (a) FECHADA e **PUBLICADA em 11/10/2026 (`main` = `6305077`)**, com
       a autorização do operador (*"pode publicar depois desses ajustes"*): CI verde nos dois jobs
       no `dev` e na `main`, e conferido no ar como visitante — as rotas novas respondem 401 sem
@@ -4420,10 +4494,14 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       Stripe traz o nome público da conta de verdade (P58) — só olhar: salvar ali guarda um
       cartão de verdade.
       **SESSÃO (b) — ABERTA em 11/10/2026.** Feito: o item 0 ("Sair"), a consulta à Stripe, os
-      textos mostrados a ele (aguardam aprovação — pendência P66) e os **passos 7 e 8**.
-      **Próximo: o passo 10** (servidor: a prévia e a troca de plano — não depende dos textos);
-      nele, parar a renovação e reembolsar precisam soltar o agendamento da troca, se houver.
-      **O passo 9 e o 11 (as telas) só com os textos aprovados.** Depois, o 12 e o 13.
+      textos mostrados a ele (aguardam aprovação — pendência P66) e os **passos 7, 8 e 10**
+      (todo o servidor). **Próximo: o passo 9 e o 11 (as telas), só com os textos aprovados.**
+      Nas telas: os endereços `…/faturamento/cancelar` e `…/faturamento/plano` (constantes no
+      `core`), os botões no resumo ("Cancelar assinatura", "Manter a assinatura", "Mudar de
+      plano", "Continuar no Anual"), a confirmação do banco pelo site (`handleNextAction`, em
+      `stripe-do-site.tsx`) na troca de plano e na troca de cartão, e a tela pedindo outra conta
+      quando a resposta é `PreviaVencida`. Depois, o 12 e o 13 (com o relógio de teste para a
+      virada do anual para o mensal).
       **Quando ele responder a P67** (cancelar com a cobrança atrasada), a resposta entra na
       operação de parar. **Antes de publicar:** a P69 (o aviso de dinheiro devolvido no endereço
       de avisos da conta de verdade). Nada desta sessão está publicado. A sessão (c) começa
@@ -4446,7 +4524,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       as que chamam a Stripe — **e as três da etapa 4.6** (revisão de segurança de 11/10/2026):
       `GET /billing/minha-assinatura`, `POST /billing/cartao` (poucos pedidos por hora: cada um
       abre um pedido de guardar cartão, e sem limite o site serve para testar cartão roubado) e
-      `POST /billing/cartao/aplicar` (numa conta atrasada, cada chamada tenta uma cobrança) — **e as três da sessão (b)**: `POST /billing/minha-assinatura/cancelar`, `…/manter` e `…/reembolso` (cada uma vai à Stripe; a de reembolso lê as faturas e as cobranças) · (b) **a trava do checkout não pode segurar conexão do banco
+      `POST /billing/cartao/aplicar` (numa conta atrasada, cada chamada tenta uma cobrança) — **e as três da sessão (b)**: `POST /billing/minha-assinatura/cancelar`, `…/manter` e `…/reembolso` (cada uma vai à Stripe; a de reembolso lê as faturas e as cobranças), e `GET`/`POST …/minha-assinatura/plano` e `…/plano/desistir` (a de trocar tenta uma cobrança a cada chamada) · (b) **a trava do checkout não pode segurar conexão do banco
       esperando**: vários pedidos juntos esgotariam as conexões e parariam a API inteira — a trava
       que não espera (`pg_try_advisory_xact_lock`) ou a Stripe fora da transação *(a revisão da
       4.4 voltou a apontar, como P1: quem tem a trava ainda pede uma SEGUNDA conexão para ler o

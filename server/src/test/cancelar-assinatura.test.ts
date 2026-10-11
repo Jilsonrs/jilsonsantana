@@ -14,6 +14,14 @@ vi.mock("../lib/stripe-assinatura.js", async (importOriginal) => ({
   pararRenovacao: (id: string, dado: MotivoDado) => pararRenovacao(id, dado),
   retomarRenovacao: (id: string, acabaNoFimDoPeriodo: boolean) => retomarRenovacao(id, acabaNoFimDoPeriodo),
 }));
+// A troca de plano que estava marcada, ou esperando a confirmação do banco, sai antes de parar.
+const soltarAgendamento = vi.fn<(agendamentoId: string) => Promise<void>>();
+const anularFatura = vi.fn<(faturaId: string) => Promise<"anulada" | "paga">>();
+vi.mock("../lib/stripe-plano.js", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../lib/stripe-plano.js")>()),
+  soltarAgendamento: (agendamentoId: string) => soltarAgendamento(agendamentoId),
+  anularFatura: (faturaId: string) => anularFatura(faturaId),
+}));
 // A busca que a SINCRONIA faz na Stripe, depois de cada operação.
 const buscarAssinatura = vi.fn<(id: string) => Promise<AssinaturaNaStripe>>();
 vi.mock("../lib/stripe.js", async (importOriginal) => ({
@@ -61,7 +69,7 @@ const comEspelho = (status: string, currentPeriodEnd: Date | null) => prisma.sub
 /** O que a Stripe diz da assinatura do member@ (os detalhes da tela e o que a sincronia lê). */
 let detalhes: Partial<DetalhesDaAssinatura> = {};
 let naStripe: Partial<AssinaturaNaStripe> = {};
-const daStripe = (id: string): DetalhesDaAssinatura => ({ id, status: "active", pagoAte: EM_30_DIAS, plano: "mensal", preco: { centavos: 9990, moeda: "brl" }, fimDoPeriodo: EM_30_DIAS, comecouEm: null, acabaEm: null, acabaNoFimDoPeriodo: false, cartao: null, clienteId: CLIENTE, userId: memberId, faturaEmAbertoId: null, ...detalhes });
+const daStripe = (id: string): DetalhesDaAssinatura => ({ id, status: "active", pagoAte: EM_30_DIAS, plano: "mensal", preco: { centavos: 9990, moeda: "brl" }, fimDoPeriodo: EM_30_DIAS, comecouEm: null, acabaEm: null, acabaNoFimDoPeriodo: false, cartao: null, clienteId: CLIENTE, userId: memberId, faturaEmAbertoId: null, itemId: "si_do_teste", agendamentoId: null, trocaMarcada: null, faturaDaTrocaId: null, ...detalhes });
 const PARADA: Partial<DetalhesDaAssinatura> = { acabaEm: EM_30_DIAS, acabaNoFimDoPeriodo: true };
 
 /** Segura a trava da assinatura, como faz quem a está sincronizando neste instante. */
@@ -109,6 +117,8 @@ beforeEach(async () => {
   pararRenovacao.mockReset().mockImplementation(async (id) => ({ ...daStripe(id), ...PARADA }));
   retomarRenovacao.mockReset().mockImplementation(async (id) => ({ ...daStripe(id), acabaEm: null, acabaNoFimDoPeriodo: false }));
   buscarAssinatura.mockReset().mockImplementation(async (id) => ({ id, status: "active", pagoAte: EM_30_DIAS, clienteId: CLIENTE, userId: memberId, livemode: false, ...naStripe }));
+  soltarAgendamento.mockReset().mockResolvedValue(undefined);
+  anularFatura.mockReset().mockResolvedValue("anulada");
 });
 
 afterEach(async () => {
@@ -303,6 +313,42 @@ describe("POST /api/billing/minha-assinatura/cancelar — parar a renovação", 
     } finally {
       aviso.mockRestore();
     }
+  });
+});
+
+// QUEM ESTÁ SAINDO NÃO TROCA DE PLANO (passo 10). `[FATO — medido na área restrita, 11/10/2026]`
+// com uma troca marcada, a Stripe RECUSA parar a renovação direto na assinatura.
+describe("POST /api/billing/minha-assinatura/cancelar — com uma troca de plano no caminho", () => {
+  it("a assinatura comum: nada é solto nem anulado", async () => {
+    expect((await cancelar(member, {})).status).toBe(200);
+    expect(soltarAgendamento).not.toHaveBeenCalled();
+    expect(anularFatura).not.toHaveBeenCalled();
+  });
+
+  it("com a troca MARCADA para o fim do período: solta o agendamento ANTES de parar a renovação", async () => {
+    detalhes = { plano: "anual", agendamentoId: "sub_sched_do_teste", trocaMarcada: { plano: "mensal", em: EM_30_DIAS } };
+    expect((await cancelar(member, {})).status).toBe(200);
+    expect(soltarAgendamento.mock.calls).toEqual([["sub_sched_do_teste"]]);
+    expect(soltarAgendamento.mock.invocationCallOrder[0]).toBeLessThan(pararRenovacao.mock.invocationCallOrder[0] ?? 0);
+  });
+
+  it("com a troca na hora ESPERANDO a confirmação do banco: anula a fatura dela antes — senão ainda poderia ser cobrada", async () => {
+    detalhes = { faturaDaTrocaId: "in_da_troca" };
+    expect((await cancelar(member, {})).status).toBe(200);
+    expect(anularFatura.mock.calls).toEqual([["in_da_troca"]]);
+    expect(anularFatura.mock.invocationCallOrder[0]).toBeLessThan(pararRenovacao.mock.invocationCallOrder[0] ?? 0);
+  });
+
+  it("não deu para soltar o agendamento: 500, e a renovação NÃO é dada como parada", async () => {
+    detalhes = { plano: "anual", agendamentoId: "sub_sched_do_teste" };
+    soltarAgendamento.mockRejectedValue(new Error("[stripe] a soltura do agendamento da troca falhou: StripeConnectionError"));
+    const erro = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      expect((await cancelar(member, {})).status).toBe(500);
+    } finally {
+      erro.mockRestore();
+    }
+    expect(pararRenovacao).not.toHaveBeenCalled();
   });
 });
 

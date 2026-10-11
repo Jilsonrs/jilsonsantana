@@ -35,6 +35,8 @@ const ATIVA: MinhaAssinatura = {
   podeParar: true,
   podeManter: false,
   reembolso: null,
+  podeMudarDePlano: true,
+  trocaMarcada: null,
 };
 
 const abrir = (ui = <FaturamentoPage />) =>

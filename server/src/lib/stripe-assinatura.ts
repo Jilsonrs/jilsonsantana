@@ -35,6 +35,14 @@ export type DetalhesDaAssinatura = {
   userId: string | null;
   /** A última fatura, se ainda está em aberto (a cobrança falhou): é a que o cartão novo paga. Não sai do servidor. */
   faturaEmAbertoId: string | null;
+  /** O item da assinatura (ela tem um só): é nele que o preço troca. Não sai do servidor. */
+  itemId: string | null;
+  /** O agendamento preso à assinatura (a troca marcada para o fim do período). Não sai do servidor. */
+  agendamentoId: string | null;
+  /** A troca de plano MARCADA para o fim do período pago: para qual plano e quando. */
+  trocaMarcada: { plano: Plano; em: Date } | null;
+  /** A fatura em aberto de uma troca na hora que NÃO se completou (o banco pediu confirmação). Não sai do servidor. */
+  faturaDaTrocaId: string | null;
 };
 
 /** O cartão no formato da tela — nunca o número, nem o código dele na Stripe. Função pura. */
@@ -75,14 +83,37 @@ export function paraDetalhesDaAssinatura(assinatura: Stripe.Subscription, devolv
     clienteId,
     userId,
     faturaEmAbertoId: typeof fatura === "object" && fatura !== null && fatura.status === "open" ? fatura.id : null,
+    itemId: itens[0]?.id ?? null,
+    agendamentoId: typeof assinatura.schedule === "string" ? assinatura.schedule : (assinatura.schedule?.id ?? null),
+    trocaMarcada: paraTrocaMarcada(assinatura.schedule, plano),
+    faturaDaTrocaId: assinatura.pending_update && typeof fatura === "object" && fatura !== null && fatura.status === "open" ? fatura.id : null,
   };
 }
 
 /**
- * O que toda leitura dos detalhes pede junto: sem isto a tela não teria cartão nem "pago até" —
- * e os pagamentos da última fatura, para saber se ela foi devolvida.
+ * A troca de plano que o agendamento vai fazer — ou nenhuma. É a fase que começa quando a atual
+ * termina, se o preço dela é de OUTRO plano. Precisa do agendamento com `phases.items.price`
+ * expandido; sem isso (só o id), nenhuma. Função pura.
  */
-const COM_OS_DETALHES = ["latest_invoice.payments", "default_payment_method", "customer.invoice_settings.default_payment_method"];
+export function paraTrocaMarcada(agendamento: Stripe.Subscription["schedule"], planoDeHoje: Plano | null): { plano: Plano; em: Date } | null {
+  if (!agendamento || typeof agendamento === "string") return null;
+  const fimDaAtual = agendamento.current_phase?.end_date;
+  if (!fimDaAtual) return null;
+  const proxima = agendamento.phases.find((fase) => fase.start_date === fimDaAtual);
+  const preco = proxima?.items[0]?.price;
+  if (!preco || typeof preco === "string" || preco.deleted) return null;
+  const plano = planoDoPreco(preco);
+  if (!plano || plano === planoDeHoje) return null;
+  return { plano, em: new Date(fimDaAtual * 1000) };
+}
+
+/**
+ * O que toda leitura dos detalhes pede junto: sem isto a tela não teria cartão nem "pago até" —
+ * e os pagamentos da última fatura, para saber se ela foi devolvida, e o agendamento com o preço
+ * de cada fase, para saber se há uma troca de plano marcada (`[FATO — medido, 11/10/2026]` a
+ * Stripe aceita expandir até ali).
+ */
+const COM_OS_DETALHES = ["latest_invoice.payments", "default_payment_method", "customer.invoice_settings.default_payment_method", "schedule.phases.items.price"];
 
 /** Os detalhes, já sabendo se a última fatura foi devolvida (uma ida a mais à Stripe, só quando há o que conferir). */
 async function comADevolucao(assinatura: Stripe.Subscription): Promise<DetalhesDaAssinatura> {

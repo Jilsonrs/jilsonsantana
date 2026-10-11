@@ -36,6 +36,17 @@ export const cancelarSchema = z.object({
 export type CancelarInput = z.infer<typeof cancelarSchema>;
 
 /**
+ * Corpo de `POST /api/billing/minha-assinatura/plano` — mudar de plano (Fase 4, etapa 4.6). Só
+ * PARA QUAL plano e, na troca que vale na hora, o instante da conta mostrada (`previaDe`, que o
+ * servidor mandou e confere de novo). Preço, valor e assinatura nunca vêm do site.
+ */
+export const mudarDePlanoSchema = z.object({
+  plano: z.enum(PLANOS),
+  previaDe: z.number().int().positive().optional(),
+});
+export type MudarDePlanoInput = z.infer<typeof mudarDePlanoSchema>;
+
+/**
  * Corpo de `POST /api/admin/assinaturas/sincronizar` — o admin força a sincronia de UMA conta com
  * a Stripe (Fase 4, etapa 4.4). Só o e-mail do aluno: quais assinaturas conferir é o servidor
  * que acha. Aparado nas pontas (colado de e-mail, vem com espaço).

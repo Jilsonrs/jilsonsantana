@@ -1,10 +1,11 @@
 import { Router } from "express";
-import { assinarSchema, cancelarSchema, previaSchema, type AssinaturaCriada, type CartaoTrocado, type PlanosDaAssinatura, type PreviaDaAssinatura, type ReembolsoFeito, type RenovacaoParada, type SituacaoDaAssinatura, type TrocaDeCartaoPreparada } from "@jilson/core";
+import { assinarSchema, cancelarSchema, mudarDePlanoSchema, previaSchema, type AssinaturaCriada, type CartaoTrocado, type PlanosDaAssinatura, type PreviaDaAssinatura, type PlanoMudado, type ReembolsoFeito, type RenovacaoParada, type SituacaoDaAssinatura, type TrocaDeCartaoPreparada, type TrocaDesfeita, type TrocaDisponivel } from "@jilson/core";
 import { requireAuth } from "../middleware/auth.js";
 import { validate } from "../lib/http.js";
 import { buscarCodigo, buscarPrecos, calcularPrevia, chavePublicavel, cobrancaConfigurada, FORMAS_DE_PAGAMENTO } from "../lib/stripe.js";
 import { convidaAReativar, temAcessoAtivo } from "../lib/acesso.js";
 import { assinar } from "../lib/checkout.js";
+import { desistirDaTroca, lerTrocaDePlano, mudarMeuPlano } from "../lib/meu-plano.js";
 import { aplicarCartaoNovo, lerMinhaAssinatura, manterMinhaAssinatura, pararMinhaRenovacao, prepararTrocaDeCartao, reembolsarMinhaAssinatura, registrarAssinaturaDesconhecida } from "../lib/minha-assinatura.js";
 
 // ASSINAR COM A CONTA LOGADA (Fase 4, etapa 4.2 — billing.md; CLAUDE.md → Membership Gating).
@@ -185,7 +186,8 @@ router.post("/billing/cartao/aplicar", requireAuth, async (req, res) => {
     res.status(409).json({ error: "CartaoNaoConfirmado" });
     return;
   }
-  const resposta: CartaoTrocado = { cartao: troca.cartao, pagou: troca.pagou };
+  // `confirmar`: o banco pediu uma confirmação para a cobrança em aberto — o site a completa.
+  const resposta: CartaoTrocado = { cartao: troca.cartao, pagou: troca.pagou, confirmar: troca.confirmar };
   res.json(resposta);
 });
 
@@ -205,6 +207,9 @@ const RECUSAS = {
   "fora-do-prazo": [409, "ForaDoPrazo"],
   "nada-a-devolver": [409, "NadaADevolver"],
   "devolucao-falhou": [502, "DevolucaoFalhou"],
+  indisponivel: [409, "TrocaIndisponivel"],
+  "previa-vencida": [409, "PreviaVencida"],
+  recusado: [402, "CartaoRecusado"],
 } as const;
 
 // POST /api/billing/minha-assinatura/cancelar — para a renovação, com o motivo (se a pessoa disse).
@@ -279,6 +284,84 @@ router.post("/billing/minha-assinatura/reembolso", requireAuth, async (req, res)
     return;
   }
   const resposta: ReembolsoFeito = { centavos: reembolso.centavos, moeda: reembolso.moeda };
+  res.json(resposta);
+});
+
+// MUDAR DE PLANO (etapa 4.6, sessão b). Mensal → anual vale na hora, com o valor mostrado antes;
+// anual → mensal vale no fim do período já pago, e dá para desistir. O site diz só PARA QUAL
+// plano: preço, valor e assinatura são do servidor (`lib/meu-plano.ts`).
+
+// GET /api/billing/minha-assinatura/plano — a troca que esta conta pode fazer agora, já com a
+// conta da Stripe (quanto se paga hoje, ou quando a troca vale). Não muda nada.
+router.get("/billing/minha-assinatura/plano", requireAuth, async (req, res) => {
+  const user = req.user;
+  if (!user) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  if (!cobrancaConfigurada()) {
+    console.error("[stripe] troca de plano recusada: STRIPE_SECRET_KEY ausente");
+    res.status(503).json({ error: "NaoConfigurado" });
+    return;
+  }
+  const oferta = await lerTrocaDePlano(user.id);
+  if (oferta.resultado === "desconhecida") registrarAssinaturaDesconhecida(user.id, "mudar de plano");
+  if (oferta.resultado !== "ok") {
+    const [status, error] = RECUSAS[oferta.resultado];
+    res.status(status).json({ error });
+    return;
+  }
+  const resposta: TrocaDisponivel = { troca: oferta.troca };
+  res.json(resposta);
+});
+
+// POST /api/billing/minha-assinatura/plano — muda o plano. O segredo da confirmação do banco,
+// quando há, vai SÓ na resposta.
+router.post("/billing/minha-assinatura/plano", requireAuth, async (req, res) => {
+  const user = req.user;
+  if (!user) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  const corpo = validate(mudarDePlanoSchema, req.body, res);
+  if (corpo === null) return;
+  if (!cobrancaConfigurada()) {
+    console.error("[stripe] troca de plano recusada: STRIPE_SECRET_KEY ausente");
+    res.status(503).json({ error: "NaoConfigurado" });
+    return;
+  }
+  const mudanca = await mudarMeuPlano(user.id, { plano: corpo.plano, previaDe: corpo.previaDe });
+  if (mudanca.resultado === "desconhecida") registrarAssinaturaDesconhecida(user.id, "mudar de plano");
+  if (mudanca.resultado !== "ok") {
+    const [status, error] = RECUSAS[mudanca.resultado];
+    res.status(status).json({ error });
+    return;
+  }
+  const resposta: PlanoMudado = mudanca.estado === "confirmar" ? { estado: "confirmar", segredo: mudanca.segredo } : mudanca.estado === "marcado" ? { estado: "marcado", em: mudanca.em } : { estado: "trocado" };
+  res.json(resposta);
+});
+
+// POST /api/billing/minha-assinatura/plano/desistir — desfaz a troca marcada, ou a que ficou
+// esperando a confirmação do banco. Sem corpo.
+router.post("/billing/minha-assinatura/plano/desistir", requireAuth, async (req, res) => {
+  const user = req.user;
+  if (!user) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  if (!cobrancaConfigurada()) {
+    console.error("[stripe] desistência da troca recusada: STRIPE_SECRET_KEY ausente");
+    res.status(503).json({ error: "NaoConfigurado" });
+    return;
+  }
+  const desistencia = await desistirDaTroca(user.id);
+  if (desistencia.resultado === "desconhecida") registrarAssinaturaDesconhecida(user.id, "desistir da troca de plano");
+  if (desistencia.resultado !== "ok") {
+    const [status, error] = RECUSAS[desistencia.resultado];
+    res.status(status).json({ error });
+    return;
+  }
+  const resposta: TrocaDesfeita = { trocado: desistencia.trocado };
   res.json(resposta);
 });
 

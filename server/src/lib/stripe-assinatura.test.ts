@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import type Stripe from "stripe";
-import { escolherCartaoConfirmado, paraCartao, paraDetalhesDaAssinatura, paraMotivoNaStripe, paraPedidoDeCartao, paraPedidoDeManter, paraPedidoDeParar } from "./stripe-assinatura.js";
+import { escolherCartaoConfirmado, paraCartao, paraDetalhesDaAssinatura, paraMotivoNaStripe, paraPedidoDeCartao, paraPedidoDeManter, paraPedidoDeParar, paraTrocaMarcada } from "./stripe-assinatura.js";
 import { planoDoPreco } from "./stripe.js";
 
 // A ASSINATURA DA STRIPE NO FORMATO DA TELA (Fase 4, etapa 4.6) — funções puras, teste unitário
@@ -275,5 +275,46 @@ describe("o que a tela precisa saber para o reembolso", () => {
   it("última fatura devolvida por inteiro: 'pago até' é o começo do período — a mesma conta do espelho", () => {
     expect(paraDetalhesDaAssinatura(assinatura({ status: "canceled" }), true).pagoAte?.getTime()).toBe(inicio * 1000);
     expect(paraDetalhesDaAssinatura(assinatura({ status: "canceled" })).pagoAte?.getTime()).toBe(fim * 1000);
+  });
+});
+
+// MUDAR DE PLANO (passo 10). O que protege: a tela só diz "seu plano muda em tal data" quando a
+// Stripe tem MESMO uma troca marcada, para o plano certo; e o servidor sabe em que item o preço
+// troca e qual fatura anular quando a troca na hora não se completa.
+describe("a troca de plano marcada para o fim do período", () => {
+  const fase = (inicio: number, termino: number, intervalo: string | null) => ({ start_date: inicio, end_date: termino, items: [{ price: intervalo ? preco({ intervalo }) : "price_so_o_id" }] });
+  // Seguro: só os campos que a função lê; a forma completa é da Stripe.
+  const agendamento = (fases: object[], fimDaAtual: number | null = fim) => ({ id: "sub_sched_1", current_phase: fimDaAtual ? { start_date: inicio, end_date: fimDaAtual } : null, phases: fases }) as unknown as Stripe.SubscriptionSchedule;
+
+  it("a fase que começa quando a atual termina, de OUTRO plano: para qual plano e quando", () => {
+    expect(paraTrocaMarcada(agendamento([fase(inicio, fim, "year"), fase(fim, fim + 30 * DIA, "month")]), "anual")).toEqual({ plano: "mensal", em: new Date(fim * 1000) });
+  });
+
+  it("sem fase seguinte, com a fase seguinte do MESMO plano, ou com o preço que veio só com o id: nenhuma troca", () => {
+    expect(paraTrocaMarcada(agendamento([fase(inicio, fim, "year")]), "anual")).toBeNull();
+    expect(paraTrocaMarcada(agendamento([fase(inicio, fim, "year"), fase(fim, fim + 365 * DIA, "year")]), "anual")).toBeNull();
+    expect(paraTrocaMarcada(agendamento([fase(inicio, fim, "year"), fase(fim, fim + 30 * DIA, null)]), "anual")).toBeNull();
+  });
+
+  it("sem agendamento, com ele só pelo id, ou já sem fase atual: nenhuma troca", () => {
+    expect(paraTrocaMarcada(null, "anual")).toBeNull();
+    expect(paraTrocaMarcada("sub_sched_so_o_id", "anual")).toBeNull();
+    expect(paraTrocaMarcada(agendamento([fase(inicio, fim, "year"), fase(fim, fim + 30 * DIA, "month")], null), "anual")).toBeNull();
+  });
+
+  it("os detalhes levam o item, o agendamento e a troca marcada — e a assinatura comum, nada disso", () => {
+    // Seguro: acrescenta ao objeto de teste os campos que só este bloco lê.
+    const comAgendamento = { ...assinatura({ doPreco: preco({ intervalo: "year" }), itens: [{ id: "si_1", current_period_start: inicio, current_period_end: fim, price: preco({ intervalo: "year" }) }] }), schedule: agendamento([fase(inicio, fim, "year"), fase(fim, fim + 30 * DIA, "month")]) } as unknown as Stripe.Subscription;
+    const detalhes = paraDetalhesDaAssinatura(comAgendamento);
+    expect([detalhes.itemId, detalhes.agendamentoId, detalhes.trocaMarcada]).toEqual(["si_1", "sub_sched_1", { plano: "mensal", em: new Date(fim * 1000) }]);
+    const comum = paraDetalhesDaAssinatura(assinatura());
+    expect([comum.agendamentoId, comum.trocaMarcada, comum.faturaDaTrocaId]).toEqual([null, null, null]);
+  });
+
+  it("a fatura da troca que não se completou: só com a troca PENDENTE e a fatura em aberto", () => {
+    const pendente = (fatura: object, comPendencia: boolean) => ({ ...assinatura({ fatura }), pending_update: comPendencia ? { expires_at: fim } : null }) as unknown as Stripe.Subscription;
+    expect(paraDetalhesDaAssinatura(pendente({ id: "in_troca", status: "open" }, true)).faturaDaTrocaId).toBe("in_troca");
+    expect(paraDetalhesDaAssinatura(pendente({ id: "in_troca", status: "open" }, false)).faturaDaTrocaId).toBeNull();
+    expect(paraDetalhesDaAssinatura(pendente({ id: "in_paga", status: "paid" }, true)).faturaDaTrocaId).toBeNull();
   });
 });

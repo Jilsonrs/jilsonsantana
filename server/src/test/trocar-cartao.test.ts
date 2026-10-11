@@ -21,6 +21,12 @@ vi.mock("../lib/stripe-assinatura.js", async (importOriginal) => ({
   soltarOutrosCartoes: (clienteId: string, manter: string) => soltarOutrosCartoes(clienteId, manter),
   pagarFatura: (faturaId: string) => pagarFatura(faturaId),
 }));
+// O segredo com que o site completa a confirmação do banco da fatura em aberto (sessão b).
+const segredoDaFatura = vi.fn<(faturaId: string) => Promise<string | null>>();
+vi.mock("../lib/stripe-plano.js", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../lib/stripe-plano.js")>()),
+  segredoDaFatura: (faturaId: string) => segredoDaFatura(faturaId),
+}));
 // A busca que a SINCRONIA faz na Stripe, depois de o cartão novo pagar a fatura em aberto.
 const buscarAssinatura = vi.fn<(id: string) => Promise<AssinaturaNaStripe>>();
 vi.mock("../lib/stripe.js", async (importOriginal) => ({
@@ -85,7 +91,7 @@ beforeEach(async () => {
   naStripe = {};
   buscarDetalhes.mockReset().mockImplementation(async (id) => {
     if (id !== SUB) throw new AssinaturaNaoEncontrada(id);
-    return { id, status: "active", pagoAte: EM_30_DIAS, plano: "mensal", preco: { centavos: 9990, moeda: "brl" }, fimDoPeriodo: EM_30_DIAS, comecouEm: null, acabaEm: null, acabaNoFimDoPeriodo: false, cartao: { bandeira: "visa", final: "4242", mes: 12, ano: 2028 }, clienteId: CLIENTE, userId: memberId, faturaEmAbertoId: null, ...detalhes };
+    return { id, status: "active", pagoAte: EM_30_DIAS, plano: "mensal", preco: { centavos: 9990, moeda: "brl" }, fimDoPeriodo: EM_30_DIAS, comecouEm: null, acabaEm: null, acabaNoFimDoPeriodo: false, cartao: { bandeira: "visa", final: "4242", mes: 12, ano: 2028 }, clienteId: CLIENTE, userId: memberId, faturaEmAbertoId: null, itemId: "si_do_teste", agendamentoId: null, trocaMarcada: null, faturaDaTrocaId: null, ...detalhes };
   });
   buscarAssinatura.mockReset().mockImplementation(async (id) => ({ id, status: "active", pagoAte: EM_30_DIAS, clienteId: CLIENTE, userId: memberId, livemode: false, ...naStripe }));
   criarPedidoDeCartao.mockReset().mockResolvedValue("seti_segredo_do_teste");
@@ -93,6 +99,7 @@ beforeEach(async () => {
   definirCartao.mockReset().mockResolvedValue(MASTER);
   soltarOutrosCartoes.mockReset().mockResolvedValue(1);
   pagarFatura.mockReset().mockResolvedValue("paga");
+  segredoDaFatura.mockReset().mockRejectedValue(new Error("o segredo da fatura não devia ter sido pedido"));
 });
 
 afterEach(async () => {
@@ -194,7 +201,7 @@ describe("POST /api/billing/cartao/aplicar — o cartão novo vai para a assinat
   it("o cartão é o que o SERVIDOR leu na Stripe para o pedido desta conta; a resposta só tem o que a tela mostra", async () => {
     const res = await aplicar(member);
     expect(res.status).toBe(200);
-    expect(res.body).toEqual({ cartao: MASTER, pagou: false });
+    expect(res.body).toEqual({ cartao: MASTER, pagou: false, confirmar: null });
     expect(buscarCartaoConfirmado.mock.calls).toEqual([[{ clienteId: CLIENTE, userId: memberId, assinaturaId: SUB }]]);
     expect(definirCartao.mock.calls).toEqual([[SUB, "pm_novo"]]);
     const texto = JSON.stringify(res.body);
@@ -246,7 +253,7 @@ describe("POST /api/billing/cartao/aplicar — o cartão novo vai para a assinat
     const aviso = vi.spyOn(console, "warn").mockImplementation(() => {});
     try {
       const res = await aplicar(member);
-      expect([res.status, res.body]).toEqual([200, { cartao: MASTER, pagou: false }]);
+      expect([res.status, res.body]).toEqual([200, { cartao: MASTER, pagou: false, confirmar: null }]);
       expect(aviso.mock.calls.flat().join(" ")).toContain(`um cartão antigo do cliente da assinatura ${SUB} continuou guardado`);
     } finally {
       aviso.mockRestore();
@@ -299,7 +306,7 @@ describe("POST /api/billing/cartao/aplicar — com a cobrança atrasada", () => 
   it("o cartão novo paga a fatura em aberto, e o espelho é acertado pela rotina de sempre", async () => {
     naStripe = { status: "active", pagoAte: EM_30_DIAS };
     const res = await aplicar(member);
-    expect([res.status, res.body]).toEqual([200, { cartao: MASTER, pagou: true }]);
+    expect([res.status, res.body]).toEqual([200, { cartao: MASTER, pagou: true, confirmar: null }]);
     expect(pagarFatura.mock.calls).toEqual([["in_em_aberto"]]);
     // Só cobra depois de o cartão novo estar na assinatura: senão cobraria o cartão que falhou.
     expect(definirCartao.mock.invocationCallOrder[0]).toBeLessThan(pagarFatura.mock.invocationCallOrder[0] ?? 0);
@@ -307,13 +314,38 @@ describe("POST /api/billing/cartao/aplicar — com a cobrança atrasada", () => 
     expect([depois.status, depois.currentPeriodEnd?.getTime()]).toEqual(["active", EM_30_DIAS.getTime()]);
   });
 
-  it("o banco pede uma confirmação que só a pessoa dá: a troca valeu, sem 'pagou' — e fica registrado, com a conta e a assinatura", async () => {
+  it("o banco pede uma confirmação que só a pessoa dá: a troca valeu, sem 'pagou', e a resposta leva o segredo DA FATURA EM ABERTO para o site completar", async () => {
     pagarFatura.mockResolvedValue("pede-confirmacao");
+    segredoDaFatura.mockReset().mockResolvedValue("pi_3_secret_da_fatura");
+    naStripe = { status: "past_due", pagoAte: PASSADO };
+    const linhas: unknown[] = [];
+    const espioes = (["info", "warn", "error", "log"] as const).map((nivel) => vi.spyOn(console, nivel).mockImplementation((...args: unknown[]) => void linhas.push(...args)));
+    try {
+      const res = await aplicar(member);
+      expect([res.status, res.body]).toEqual([200, { cartao: MASTER, pagou: false, confirmar: "pi_3_secret_da_fatura" }]);
+      expect(segredoDaFatura.mock.calls).toEqual([["in_em_aberto"]]);
+    } finally {
+      espioes.forEach((espiao) => espiao.mockRestore());
+    }
+    // O segredo vai SÓ na resposta — nunca para o registro.
+    expect(linhas.join(" ")).not.toContain("pi_3_secret_da_fatura");
+  });
+
+  it("a cobrança paga, ou recusada: nenhum segredo é pedido nem devolvido", async () => {
+    expect((await aplicar(member)).body).toMatchObject({ pagou: true, confirmar: null });
+    pagarFatura.mockResolvedValue("recusada");
+    expect((await aplicar(member)).body).toMatchObject({ pagou: false, confirmar: null });
+    expect(segredoDaFatura).not.toHaveBeenCalled();
+  });
+
+  it("o banco pede confirmação e o segredo não veio: a troca valeu do mesmo jeito — e fica registrado, com a conta e a assinatura", async () => {
+    pagarFatura.mockResolvedValue("pede-confirmacao");
+    segredoDaFatura.mockReset().mockResolvedValue(null);
     naStripe = { status: "past_due", pagoAte: PASSADO };
     const aviso = vi.spyOn(console, "warn").mockImplementation(() => {});
     try {
       const res = await aplicar(member);
-      expect([res.status, res.body]).toEqual([200, { cartao: MASTER, pagou: false }]);
+      expect([res.status, res.body]).toEqual([200, { cartao: MASTER, pagou: false, confirmar: null }]);
       const linhas = aviso.mock.calls.flat().join(" ");
       expect(linhas).toContain("pede confirmação do banco");
       expect(linhas).toContain(SUB);
@@ -338,7 +370,7 @@ describe("POST /api/billing/cartao/aplicar — com a cobrança atrasada", () => 
     await comATrava;
     try {
       const res = await aplicar(member);
-      expect([res.status, res.body]).toEqual([200, { cartao: MASTER, pagou: true }]);
+      expect([res.status, res.body]).toEqual([200, { cartao: MASTER, pagou: true, confirmar: null }]);
       // Não entrou na fila: a Stripe nem foi consultada pela sincronia, e o espelho fica para quem tem a trava (e para o aviso).
       expect(buscarAssinatura).not.toHaveBeenCalled();
       expect((await espelho()).status).toBe("past_due");
@@ -352,14 +384,14 @@ describe("POST /api/billing/cartao/aplicar — com a cobrança atrasada", () => 
     pagarFatura.mockResolvedValue("recusada");
     naStripe = { status: "past_due", pagoAte: PASSADO };
     const res = await aplicar(member);
-    expect([res.status, res.body]).toEqual([200, { cartao: MASTER, pagou: false }]);
+    expect([res.status, res.body]).toEqual([200, { cartao: MASTER, pagou: false, confirmar: null }]);
     expect((await espelho()).status).toBe("past_due");
   });
 
   it("a sincronia falhou depois de pagar: a troca valeu (quem acerta o espelho é o aviso da Stripe)", async () => {
     buscarAssinatura.mockRejectedValue(new Error("[stripe] a busca da assinatura falhou: StripeConnectionError"));
     const res = await aplicar(member);
-    expect([res.status, res.body]).toEqual([200, { cartao: MASTER, pagou: true }]);
+    expect([res.status, res.body]).toEqual([200, { cartao: MASTER, pagou: true, confirmar: null }]);
     expect((await espelho()).status).toBe("past_due");
   });
 

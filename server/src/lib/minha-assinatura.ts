@@ -18,6 +18,7 @@ import {
   type PedidoDeCartao,
 } from "./stripe-assinatura.js";
 import { aDevolver, buscarOQueFoiPago, cancelarNaHora, devolver } from "./stripe-reembolso.js";
+import { anularFatura, segredoDaFatura, soltarAgendamento } from "./stripe-plano.js";
 
 // MINHA ASSINATURA (Fase 4, etapa 4.6 — billing.md; CLAUDE.md → Membership Gating). O que a tela
 // de Faturamento e Assinatura lê e — a partir do passo 4 — as OPERAÇÕES sobre a assinatura
@@ -62,6 +63,16 @@ export function podeManter(detalhes: DetalhesDaAssinatura): boolean {
   return RENOVAM.has(detalhes.status) && detalhes.acabaEm !== null;
 }
 
+/**
+ * Para qual plano esta assinatura pode MUDAR agora — ou nenhum. Só a que renova (a parada e a
+ * atrasada, não), de um dos dois planos da escola, e sem troca já marcada. Uma regra só, para a
+ * tela (que mostra "Mudar de plano") e para a operação (que recusa).
+ */
+export function outroPlano(detalhes: DetalhesDaAssinatura): "mensal" | "anual" | null {
+  if (!renova(detalhes) || !detalhes.plano || !detalhes.itemId || detalhes.agendamentoId) return null;
+  return detalhes.plano === "mensal" ? "anual" : "mensal";
+}
+
 const DIA = 24 * 60 * 60 * 1000;
 
 /** A saída do reembolso, como a tela a recebe: quanto volta e até quando dá para pedir. */
@@ -96,7 +107,7 @@ export function paraMinhaAssinatura(detalhes: DetalhesDaAssinatura, proxima: { c
   }
   // `podeParar` e `podeManter`: as MESMAS regras das operações (`renova`, `podeManter`) — a tela
   // nunca mostra um botão que o servidor vai recusar.
-  const comum = { plano: detalhes.plano, preco: detalhes.preco, cartao: detalhes.cartao, aceitaCartao: aceitaCartaoNovo(detalhes), podeParar: renova(detalhes), podeManter: podeManter(detalhes), reembolso };
+  const comum = { plano: detalhes.plano, preco: detalhes.preco, cartao: detalhes.cartao, aceitaCartao: aceitaCartaoNovo(detalhes), podeParar: renova(detalhes), podeManter: podeManter(detalhes), reembolso, podeMudarDePlano: outroPlano(detalhes) !== null, trocaMarcada: detalhes.trocaMarcada ? { plano: detalhes.trocaMarcada.plano, em: detalhes.trocaMarcada.em.toISOString() } : null };
   if (detalhes.status === "past_due") return { situacao: SituacaoDoFaturamento.ATRASADA, ...comum, proximaCobranca: null, acessoAte: null };
   if (renova(detalhes)) {
     const em = iso(detalhes.fimDoPeriodo);
@@ -121,7 +132,7 @@ type LinhaDoEspelho = { stripeSubscriptionId: string; status: string; currentPer
  *     de teste pedida com a chave de verdade).
  * A Stripe fora do ar SOBE: ninguém decide nada com dado velho.
  */
-async function assinaturaDaConta(userId: string): Promise<{ resultado: "ok"; detalhes: DetalhesDaAssinatura } | { resultado: "nenhuma"; linhas: LinhaDoEspelho[] } | { resultado: "desconhecida" }> {
+export async function assinaturaDaConta(userId: string): Promise<{ resultado: "ok"; detalhes: DetalhesDaAssinatura } | { resultado: "nenhuma"; linhas: LinhaDoEspelho[] } | { resultado: "desconhecida" }> {
   // FECHA na dúvida, como o gate: no Prisma, um filtro vazio traria as assinaturas de todo mundo.
   if (typeof userId !== "string" || userId.length === 0) throw new Error("[stripe] minha assinatura sem a conta");
   const linhas = await prisma.subscription.findMany({
@@ -268,12 +279,20 @@ export async function aplicarCartaoNovo(userId: string): Promise<Troca> {
   // A cobrança estava atrasada: o cartão novo paga a fatura em aberto agora, sem esperar a
   // próxima tentativa da Stripe (decisão do operador, 11/10/2026).
   let pagou = false;
+  let confirmar: string | null = null;
   if (detalhes.status === "past_due" && detalhes.faturaEmAbertoId) {
     const cobranca = await pagarFatura(detalhes.faturaEmAbertoId);
     pagou = cobranca === "paga";
-    // O banco pede uma confirmação que só a pessoa dá, e a tela ainda não a completa: a
-    // assinatura tende ao cancelamento mesmo com o cartão trocado. Fica registrado, com quem.
-    if (cobranca === "pede-confirmacao") console.warn(`[stripe] trocar cartão: a fatura em aberto da assinatura ${detalhes.id} (conta ${userId}) pede confirmação do banco, e a tela não a completa`);
+    // O banco pede uma confirmação que só a pessoa dá: o site a completa com o segredo da fatura
+    // (sessão b). Sem o segredo, a cobrança fica para as tentativas da Stripe — e fica registrado.
+    if (cobranca === "pede-confirmacao") {
+      try {
+        confirmar = await segredoDaFatura(detalhes.faturaEmAbertoId);
+      } catch (erro) {
+        console.warn(`[stripe] trocar cartão: a fatura em aberto da assinatura ${detalhes.id} (conta ${userId}) pede confirmação do banco, e o segredo não veio: ${erro instanceof Error ? erro.message : String(erro)}`);
+      }
+      if (!confirmar) console.warn(`[stripe] trocar cartão: a fatura em aberto da assinatura ${detalhes.id} (conta ${userId}) pede confirmação do banco, e a tela não tem como completá-la`);
+    }
     try {
       await sincronizarSeLivre(detalhes.id);
     } catch (erro) {
@@ -283,7 +302,7 @@ export async function aplicarCartaoNovo(userId: string): Promise<Troca> {
     }
   }
   console.info(`[stripe] trocar cartão: conta ${userId}, assinatura ${detalhes.id}${detalhes.faturaEmAbertoId && detalhes.status === "past_due" ? (pagou ? ", a fatura em aberto foi paga" : ", a fatura em aberto continua em aberto") : ""}`);
-  return { resultado: "ok", cartao, pagou };
+  return { resultado: "ok", cartao, pagou, confirmar };
 }
 
 // ── PARAR A RENOVAÇÃO E VOLTAR ATRÁS (passo 7) ───────────────────────────────────────────────
@@ -312,7 +331,14 @@ export async function pararMinhaRenovacao(userId: string, dado: MotivoDado): Pro
   if (detalhes.status === "past_due") return { resultado: "atrasada" };
   // Só a que renova, ou a que já está parada e ainda pode voltar atrás (repetir não faz mal).
   if (!renova(detalhes) && !podeManter(detalhes)) return { resultado: "sem-assinatura" };
-  const operacao = await operarNaAssinatura(detalhes.id, () => pararRenovacao(detalhes.id, dado));
+  const operacao = await operarNaAssinatura(detalhes.id, async () => {
+    // QUEM ESTÁ SAINDO NÃO TROCA DE PLANO: a troca marcada para o fim do período é solta antes
+    // (com ela a Stripe RECUSA parar a renovação — medido, 11/10/2026), e a troca na hora que
+    // ficou esperando a confirmação do banco é anulada — senão ainda poderia ser cobrada.
+    if (detalhes.agendamentoId) await soltarAgendamento(detalhes.agendamentoId);
+    if (detalhes.faturaDaTrocaId) await anularFatura(detalhes.faturaDaTrocaId);
+    return pararRenovacao(detalhes.id, dado);
+  });
   if (!operacao) return { resultado: "ocupada" };
   // O motivo é da lista; o comentário é texto livre da pessoa e nunca vem para o registro.
   console.info(`[stripe] parar a renovação: conta ${userId}, assinatura ${detalhes.id}, motivo ${dado.motivo ?? "não dito"}`);

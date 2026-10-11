@@ -605,10 +605,39 @@ Stripe guardou o cartão de teste e o resumo passou a mostrá-lo:
   assinatura pelo pagamento e a sincroniza. É o que faz o reembolso dado **direto no painel da
   Stripe** também cortar o acesso, quando a assinatura já está encerrada. Devolver sem encerrar
   não tira acesso: a assinatura viva dá acesso pelo status.
-- **A fronteira com a Stripe tem cinco arquivos** (sessão b): `stripe-cliente.ts` (a biblioteca
+- **Mudar de plano** (sessão b, passo 10; as operações em `meu-plano.ts`). O site diz só PARA
+  QUAL plano. **Mensal → anual vale na hora**, e a assinatura só muda se o pagamento passar.
+  **O valor mostrado é o cobrado:** a prévia devolve o instante da conta, o site o manda de
+  volta, e a troca usa o MESMO instante — que o servidor só aceita com até 30 minutos (um
+  instante antigo daria crédito por dias já usados); vencido, a tela pede outra conta.
+  **Anual → mensal é só marcado** para o fim do período pago (um agendamento com duas fases, que
+  leva o desconto junto): até lá nada muda nem é cobrado, e desistir solta o agendamento.
+  **Cartão recusado:** a fatura da troca é anulada na hora — nada fica para ser cobrado depois.
+  **O banco pede confirmação:** o site a completa com o segredo que a resposta traz; a troca só
+  vale depois. Desistir anula a fatura da troca; se o pagamento já tinha passado, o plano mudou.
+- **A confirmação do banco na troca de cartão** (sessão b): com a cobrança atrasada, se o banco
+  pede confirmação, a resposta de aplicar o cartão leva o segredo da fatura em aberto — fecha, do
+  lado do servidor, a limitação anotada na sessão (a).
+- **Quem está saindo não troca de plano:** parar a renovação solta antes a troca marcada (com
+  ela a Stripe recusa parar) e anula a troca que esperava a confirmação do banco. *O que isso
+  significa para o aluno é pergunta ao operador — pendência P70.*
+- **A fronteira com a Stripe tem seis arquivos** (sessão b): `stripe-cliente.ts` (a biblioteca
   com a chave), `stripe.ts` (assinar e o espelho), `stripe-assinatura.ts` (gerir a assinatura),
-  `stripe-devolucao.ts` (ler se a fatura foi devolvida) e `stripe-reembolso.ts` (encerrar e
-  devolver). Só eles falam com a Stripe.
+  `stripe-devolucao.ts` (ler se a fatura foi devolvida), `stripe-reembolso.ts` (encerrar e
+  devolver) e `stripe-plano.ts` (mudar de plano). Só eles falam com a Stripe.
+
+`[FATO — medido na área restrita, 11/10/2026, e provado com as funções de verdade: 25 pontos]`
+A troca na hora cobra o plano novo inteiro menos o que sobrou do período pago (R$ 895,10 no
+primeiro dia do mensal), e com o mesmo instante na prévia e na troca **o cobrado é o mostrado**,
+mesmo segundos depois · a assinatura vira anual com a MESMA data de início (o prazo do reembolso
+não recomeça), e o reembolso devolve as duas cobranças · com o banco pedindo confirmação ou o
+cartão recusado a Stripe responde igual (a assinatura CONTINUA no plano antigo, a troca pendente
+por ~23 h, a fatura em aberto): distingue-se pelo pagamento da fatura · confirmado o pagamento, a
+Stripe aplica a troca sozinha · anular a fatura da troca desfaz a pendência, sem deixar crédito ·
+a troca marcada deixa a assinatura intacta, e a prévia da próxima cobrança já diz o valor do
+plano novo na data do fim do período · o desconto só sobrevive ao agendamento se as fases o
+levarem · com agendamento, a Stripe recusa parar a renovação direto na assinatura; trocar o
+cartão e encerrar na hora continuam aceitos.
 
 `[FATO — medido na área restrita, 11/10/2026]` a fatura devolvida continua `paid`, com o mesmo
 valor pago, e o pagamento dela também · a Stripe não deixa expandir da assinatura até a cobrança
@@ -648,6 +677,14 @@ encerrada de vez com dias pagos: tem acesso e o servidor recusa cartão.
 - **Os botões de mudar de plano, de cancelar e de "Manter a assinatura" chegam na sessão (b)**,
   junto com a tela de cada um: até lá o resumo mostra a situação, sem a ação. *(11/10/2026: o
   servidor já para a renovação e volta atrás; as telas esperam os textos — pendência P66.)*
+- **Depois de uma troca de plano que não se completou** (recusada, ou desistida), a "última
+  fatura" da assinatura na Stripe é a anulada, até a próxima renovação. Para a assinatura viva
+  não muda nada (ela dá acesso pelo status); se for ENCERRADA NA HORA pelo painel nesse
+  intervalo, o período pago deixa de contar.
+- **A virada do anual para o mensal no fim do ano não foi exercitada** (só a prévia da Stripe a
+  confirma): fica para o relógio de teste da prova final da sessão.
+- **O agendamento copia o desconto, e só ele.** Quando a escola ligar o imposto automático
+  (etapa 4.8), conferir que as fases da troca marcada o levam.
 - **O aviso de dinheiro devolvido precisa chegar ao site no ar:** o endereço de avisos da conta
   de verdade tem que incluir `charge.refunded` (tarefa do operador no painel da Stripe —
   pendência P69). Sem ele, o reembolso pedido pela tela funciona do mesmo jeito; o que não corta

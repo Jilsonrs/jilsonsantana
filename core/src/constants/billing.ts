@@ -140,6 +140,10 @@ export type MinhaAssinatura =
        * de novo, na hora da ação.
        */
       reembolso: { centavos: number; moeda: string; ate: string } | null;
+      /** Dá para mudar de plano agora (renova, não está atrasada e não há troca já marcada). */
+      podeMudarDePlano: boolean;
+      /** A troca de plano MARCADA para o fim do período pago (anual → mensal): para qual plano e quando (ISO). Dá para desistir. */
+      trocaMarcada: { plano: Plano; em: string } | null;
     };
 
 /**
@@ -169,6 +173,35 @@ export type ReembolsoFeito = { centavos: number; moeda: string };
  */
 export type RenovacaoParada = { acessoAte: string | null };
 
+/**
+ * Resposta de `GET /api/billing/minha-assinatura/plano`: a troca de plano que esta conta pode
+ * fazer AGORA — ou nenhuma (decisões do operador, 11/10/2026).
+ *   - para o ANUAL vale na hora: quanto se paga hoje (a conta é da Stripe, já descontado o que
+ *     sobrou do mês pago) e quando é a cobrança seguinte. `previaDe` é o instante da conta: o
+ *     site o devolve ao confirmar, para o valor cobrado ser EXATAMENTE o mostrado.
+ *   - para o MENSAL vale no fim do período já pago: quando, e quanto passa a custar por mês.
+ */
+export type TrocaDePlano =
+  | { para: "anual"; quando: "agora"; preco: { centavos: number; moeda: string }; hoje: { centavos: number; moeda: string }; proximaEm: string | null; previaDe: number }
+  | { para: "mensal"; quando: "fim-do-periodo"; preco: { centavos: number; moeda: string }; em: string };
+export type TrocaDisponivel = { troca: TrocaDePlano | null };
+
+/**
+ * Resposta de `POST /api/billing/minha-assinatura/plano`: `trocado` (vale agora) · `confirmar`
+ * (o banco pediu uma confirmação: o site a completa com este segredo, e a troca só vale depois) ·
+ * `marcado` (vale no fim do período pago, na data — ISO).
+ */
+export type PlanoMudado = { estado: "trocado" } | { estado: "confirmar"; segredo: string } | { estado: "marcado"; em: string };
+
+/**
+ * Resposta de `POST /api/billing/minha-assinatura/plano/desistir`. `trocado: true`: não deu para
+ * desistir — o pagamento da troca se completou no mesmo instante, e o plano mudou.
+ */
+export type TrocaDesfeita = { trocado: boolean };
+
+/** Por quanto tempo vale a conta mostrada na tela de mudar de plano, em segundos: depois, a tela pede outra. */
+export const VALIDADE_DA_PREVIA_DA_TROCA = 30 * 60;
+
 /** Resposta de `POST /api/billing/cartao`: o segredo com que o campo da Stripe guarda o cartão novo. */
 export type TrocaDeCartaoPreparada = { segredo: string };
 
@@ -176,4 +209,9 @@ export type TrocaDeCartaoPreparada = { segredo: string };
  * Resposta de `POST /api/billing/cartao/aplicar`: o cartão que passou a valer na assinatura.
  * `pagou`: a cobrança estava atrasada, e o cartão novo pagou a fatura em aberto na hora.
  */
-export type CartaoTrocado = { cartao: CartaoDaAssinatura | null; pagou: boolean };
+export type CartaoTrocado = {
+  cartao: CartaoDaAssinatura | null;
+  pagou: boolean;
+  /** O banco pediu uma confirmação para a cobrança em aberto: o site a completa com este segredo. */
+  confirmar?: string | null;
+};

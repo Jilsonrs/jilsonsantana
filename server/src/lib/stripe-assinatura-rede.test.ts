@@ -34,7 +34,7 @@ describe("buscar os detalhes da assinatura", () => {
   it("pede a fatura, o cartão da assinatura e o padrão do cliente — sem eles a tela não teria cartão nem 'pago até'", async () => {
     falsa.subscriptions.retrieve.mockRejectedValue(recusaDoPedido("resource_missing"));
     await expect(buscarDetalhes("sub_1")).rejects.toBeInstanceOf(AssinaturaNaoEncontrada);
-    expect(falsa.subscriptions.retrieve.mock.calls).toEqual([["sub_1", { expand: ["latest_invoice.payments", "default_payment_method", "customer.invoice_settings.default_payment_method"] }]]);
+    expect(falsa.subscriptions.retrieve.mock.calls).toEqual([["sub_1", { expand: ["latest_invoice.payments", "default_payment_method", "customer.invoice_settings.default_payment_method", "schedule.phases.items.price"] }]]);
   });
 
   it("a Stripe fora do ar: sobe, sem a mensagem dela", async () => {
@@ -149,7 +149,7 @@ describe("parar a renovação e voltar atrás, na Stripe", () => {
   it("parar: marca para acabar no fim do período, com o motivo — e devolve a assinatura como ficou", async () => {
     falsa.subscriptions.update.mockResolvedValue(daStripe(true));
     const depois = await pararRenovacao("sub_1", { motivo: "caro", comentario: "volto em janeiro" });
-    expect(falsa.subscriptions.update.mock.calls).toEqual([["sub_1", { cancel_at_period_end: true, cancellation_details: { feedback: "too_expensive", comment: "volto em janeiro" }, metadata: { motivo: "caro" }, expand: ["latest_invoice.payments", "default_payment_method", "customer.invoice_settings.default_payment_method"] }]]);
+    expect(falsa.subscriptions.update.mock.calls).toEqual([["sub_1", { cancel_at_period_end: true, cancellation_details: { feedback: "too_expensive", comment: "volto em janeiro" }, metadata: { motivo: "caro" }, expand: ["latest_invoice.payments", "default_payment_method", "customer.invoice_settings.default_payment_method", "schedule.phases.items.price"] }]]);
     expect([depois.status, depois.acabaEm?.getTime(), depois.acabaNoFimDoPeriodo]).toEqual(["active", fim * 1000, true]);
   });
 
