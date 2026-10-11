@@ -218,8 +218,8 @@
 > mv32ckxr-d02f9f62" chegou — o alerta está ligado em produção — e o e-mail de teste da regra
 > de alerta chegou na caixa dele. No mesmo dia ele criou a regra "Erro novo no servidor"
 > (e-mail a cada erro novo), e o teste dela chegou: a P63 fechou. **A resposta nova na página em inglês:** o
-> operador mandou a foto da página com "Yes, we offer a 14-day money-back guarantee." (a foto
-> não mostra o endereço: se foi do site no ar ou do computador dele, não ficou registrado).
+> operador mandou a foto da página com "Yes, we offer a 14-day money-back guarantee." — do
+> site no ar, confirmou ele. A publicação ficou conferida por completo.
 > **PUBLICADO em 10/10/2026, antes (`main` = `91cb4dc`, CI verde nos dois jobs, deploy ok;
 > sem migration; publicação autorizada pelo operador: "Publica a 4.4"):** a Fase 4, etapa 4.4 —
 > **sincronizar e perder o acesso.**
