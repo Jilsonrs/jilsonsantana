@@ -2,7 +2,8 @@ import Stripe from "stripe";
 import { DuracaoDoDesconto, PLANOS, type DescontoDoCodigo, type Plano } from "@jilson/core";
 
 // A NOSSA FRONTEIRA COM A STRIPE (Fase 4, etapa 4.1 — billing.md; CLAUDE.md → Membership
-// Gating). Tudo que fala com a Stripe passa por aqui. As chaves vivem SÓ no ambiente do
+// Gating). Tudo que fala com a Stripe passa por aqui — e, para gerir uma assinatura que já
+// existe (etapa 4.6), por `stripe-assinatura.ts`, a outra metade desta fronteira. As chaves vivem SÓ no ambiente do
 // servidor (`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`) e nunca vão para o site nem para o
 // registro. Os testes simulam SÓ o que vai à rede (`buscarAssinatura`); a verificação do aviso
 // roda de verdade.
@@ -39,7 +40,11 @@ export type AssinaturaNaStripe = {
 };
 
 let cliente: Stripe | null = null;
-function stripe(): Stripe {
+/**
+ * A biblioteca da Stripe, já com a chave. Sai deste arquivo SÓ para a outra metade da fronteira
+ * (`stripe-assinatura.ts`, etapa 4.6): rota, regra e tela nunca falam com ela direto.
+ */
+export function stripe(): Stripe {
   const chave = process.env.STRIPE_SECRET_KEY;
   if (!chave) throw new Error("Stripe sem STRIPE_SECRET_KEY");
   // Tempo limite curto: a busca roda dentro da transação do aviso (`assinaturas.ts`), que segura
@@ -79,6 +84,16 @@ export function erroSemMensagem(erro: unknown, oQue: string): Error {
 // na conta de verdade.
 const CHAVE_DO_PRECO: Record<Plano, string> = { mensal: "assinatura_mensal", anual: "assinatura_anual" };
 const INTERVALO: Record<Plano, Stripe.Price.Recurring.Interval> = { mensal: "month", anual: "year" };
+
+/**
+ * De que plano é este preço — pelo INTERVALO da cobrança, e não pela lookup key: a chave passa
+ * para o preço novo quando o valor do plano muda, e quem assinou antes continua no preço antigo,
+ * sem chave. Preço que não renova por mês nem por ano (de um em um): nenhum. Função pura.
+ */
+export function planoDoPreco(preco: Stripe.Price): Plano | null {
+  if (preco.recurring?.interval_count !== 1) return null;
+  return PLANOS.find((plano) => INTERVALO[plano] === preco.recurring?.interval) ?? null;
+}
 
 /** O preço de um plano como a Stripe diz AGORA. O `precoId` não sai do servidor. */
 export type PrecoDoPlano = { plano: Plano; precoId: string; centavos: number; moeda: string };

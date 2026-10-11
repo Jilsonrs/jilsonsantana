@@ -5,11 +5,14 @@ import { validate } from "../lib/http.js";
 import { buscarCodigo, buscarPrecos, calcularPrevia, chavePublicavel, cobrancaConfigurada, FORMAS_DE_PAGAMENTO } from "../lib/stripe.js";
 import { convidaAReativar, temAcessoAtivo } from "../lib/acesso.js";
 import { assinar } from "../lib/checkout.js";
+import { lerMinhaAssinatura } from "../lib/minha-assinatura.js";
 
 // ASSINAR COM A CONTA LOGADA (Fase 4, etapa 4.2 — billing.md; CLAUDE.md → Membership Gating).
 // Tudo aqui exige login, e a conta é SEMPRE a da sessão. O site diz só QUAL plano e o código
 // promocional: preço, valor e conta nunca vêm do navegador. Quem grava o espelho da assinatura
 // continua sendo só o aviso da Stripe (`stripe-webhook.ts`).
+// MINHA ASSINATURA (etapa 4.6): o que a tela de Faturamento e Assinatura lê e faz também mora
+// aqui — e o site continua sem dizer de quem nem QUAL assinatura.
 
 const router = Router();
 
@@ -105,6 +108,31 @@ router.post("/billing/assinatura", requireAuth, async (req, res) => {
   }
   const resposta: AssinaturaCriada = desfecho.resultado === "ativa" ? { estado: "ativa" } : { estado: "pagar", segredo: desfecho.segredo, tipo: desfecho.tipo };
   res.json(resposta);
+});
+
+// GET /api/billing/minha-assinatura — a assinatura da conta da SESSÃO, para a tela de Faturamento
+// e Assinatura (etapa 4.6): o plano, a próxima cobrança e o cartão, como a Stripe diz agora. O
+// pedido não diz de quem nem qual: a regra mora em `lib/minha-assinatura.ts`.
+router.get("/billing/minha-assinatura", requireAuth, async (req, res) => {
+  const user = req.user;
+  if (!user) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  if (!cobrancaConfigurada()) {
+    console.error("[stripe] minha assinatura recusada: STRIPE_SECRET_KEY ausente");
+    res.status(503).json({ error: "NaoConfigurado" });
+    return;
+  }
+  const leitura = await lerMinhaAssinatura(user.id);
+  if (leitura.resultado === "desconhecida") {
+    // Aviso, e não erro: é a assinatura de mentira do seed (fora de produção) ou uma do modo de
+    // teste que ficou no banco de produção até a Fase 7 — conhecido, e ninguém precisa agir.
+    console.warn(`[stripe] minha assinatura: a conta ${user.id} tem acesso por uma assinatura que a Stripe não conhece`);
+    res.status(404).json({ error: "AssinaturaDesconhecida" });
+    return;
+  }
+  res.json(leitura.assinatura);
 });
 
 export default router;

@@ -4178,7 +4178,21 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       - **Fora desta etapa:** o visitante assinar e o e-mail (4.7) · o painel do admin (4.7b) ·
         o dólar e os 14 dias (4.8) · o Pix (4.9) · o alerta de erro nas telas do aluno · a pausa
         de um mês · contador ou recusa por reembolso repetido (decisão dele: não existe).
-      **ONDE PAROU:** plano aprovado e escrito (11/10/2026). Próximo: passo 2.
+      - **Passo 2 — FEITO (11/10/2026).** `GET /api/billing/minha-assinatura`: a assinatura da
+        conta da sessão, como a Stripe diz agora — o plano (pelo intervalo da cobrança, não pela
+        lookup key: quem assinou antes de um aumento continua no preço antigo, sem chave), o
+        preço, o cartão (a bandeira, os 4 últimos e a validade) e a próxima cobrança, que é a
+        prévia da fatura da própria Stripe e só é pedida para a assinatura que renova. A regra
+        mora em `lib/minha-assinatura.ts`; a ida à Stripe, em `lib/stripe-assinatura.ts` (a
+        segunda metade da fronteira: `stripe.ts` passou de 360 linhas). "Tem acesso?" é a
+        função do gate, a mesma da aula. Sem assinatura que dê acesso, a resposta sai do espelho
+        e a Stripe nem é consultada. **A assinatura que a Stripe não conhece** (a de mentira do
+        seed) responde 404 com aviso, não erro: a tela mostra "não foi possível carregar".
+        **Testes:** 19 de servidor + 15 unitários. **Mutação:** 3 de 3 reprovaram — a busca
+        sem o filtro da conta, a tela sem a regra do gate, a próxima cobrança pedida para
+        toda assinatura. Gates: typecheck, lint, suíte de servidor como o CI (761) e do site
+        (810), build.
+      **ONDE PAROU:** passo 2 feito (11/10/2026). Próximo: passo 3, a tela de resumo.
 - [ ] **4.7 — O visitante assina: a conta nasce no pagamento (código, ALTO RISCO).** O checkout
       público: e-mail + pagamento → o webhook cria a conta (o cadastro continua fechado) e manda o
       e-mail de "crie sua senha". **Depende do Resend configurado e da P49** (o remetente). Junto:
