@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import type { CartaoDaAssinatura, LanguageCode } from "@jilson/core";
+import { SituacaoDoFaturamento, type CartaoDaAssinatura, type LanguageCode, type MinhaAssinatura } from "@jilson/core";
 import { getMinhaAssinatura } from "@/lib/api";
 import type { AppTexts } from "@/lib/language";
 
@@ -13,6 +13,15 @@ export const CHAVE_DA_MINHA_ASSINATURA = ["billing", "minha-assinatura"] as cons
 
 export function useMinhaAssinatura() {
   return useQuery({ queryKey: CHAVE_DA_MINHA_ASSINATURA, queryFn: getMinhaAssinatura });
+}
+
+/** A assinatura de quem TEM acesso: é a que traz plano, cobrança e cartão. */
+export type AssinaturaComAcesso = Exclude<MinhaAssinatura, { situacao: typeof SituacaoDoFaturamento.NENHUMA } | { situacao: typeof SituacaoDoFaturamento.TERMINADA }>;
+
+/** A assinatura, se a conta tem acesso por ela — senão nada (nunca assinou, ou terminou). */
+export function comAcesso(assinatura: MinhaAssinatura | undefined): AssinaturaComAcesso | null {
+  if (!assinatura || assinatura.situacao === SituacaoDoFaturamento.NENHUMA || assinatura.situacao === SituacaoDoFaturamento.TERMINADA) return null;
+  return assinatura;
 }
 
 /**

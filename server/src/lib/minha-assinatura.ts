@@ -39,6 +39,15 @@ export function renova(detalhes: DetalhesDaAssinatura): boolean {
 }
 
 /**
+ * Esta assinatura ACEITA cartão novo? Só a que ainda pode ser cobrada: a encerrada de vez
+ * (`canceled`), ainda que com dias pagos, não cobra mais nada — não há onde pôr um cartão. Uma
+ * regra só, para a tela (que mostra o botão) e para a operação (que recusa) nunca discordarem.
+ */
+export function aceitaCartaoNovo(detalhes: DetalhesDaAssinatura): boolean {
+  return detalhes.status !== "canceled" && detalhes.clienteId !== null;
+}
+
+/**
  * O que a Stripe diz, no formato da tela. Função pura.
  *   - sem acesso pela regra do gate → terminada;
  *   - a última cobrança falhou (`past_due`) → atrasada: o acesso continua, e o que a tela oferece
@@ -51,7 +60,7 @@ export function paraMinhaAssinatura(detalhes: DetalhesDaAssinatura, proxima: { c
   if (!assinaturaDaAcesso({ status: detalhes.status, currentPeriodEnd: detalhes.pagoAte }, agora)) {
     return { situacao: SituacaoDoFaturamento.TERMINADA, terminouEm: iso(detalhes.pagoAte) };
   }
-  const comum = { plano: detalhes.plano, preco: detalhes.preco, cartao: detalhes.cartao };
+  const comum = { plano: detalhes.plano, preco: detalhes.preco, cartao: detalhes.cartao, aceitaCartao: aceitaCartaoNovo(detalhes) };
   if (detalhes.status === "past_due") return { situacao: SituacaoDoFaturamento.ATRASADA, ...comum, proximaCobranca: null, acessoAte: null };
   if (renova(detalhes)) {
     const em = iso(detalhes.fimDoPeriodo);
@@ -126,16 +135,13 @@ export async function lerMinhaAssinatura(userId: string): Promise<Leitura> {
 /** `sem-assinatura`: a conta não tem assinatura que ainda possa ser cobrada. */
 type SemOndePor = { resultado: "sem-assinatura" } | { resultado: "desconhecida" };
 
-/**
- * A assinatura desta conta que ACEITA cartão novo, e de quem é o pedido. A encerrada de vez
- * (`canceled`), ainda que com dias pagos, não cobra mais nada: não há onde pôr um cartão.
- */
+/** A assinatura desta conta que ACEITA cartão novo (`aceitaCartaoNovo`), e de quem é o pedido. */
 async function ondePorOCartao(userId: string): Promise<{ resultado: "ok"; detalhes: DetalhesDaAssinatura; pedido: PedidoDeCartao } | SemOndePor> {
   const achada = await assinaturaDaConta(userId);
   if (achada.resultado === "desconhecida") return achada;
   if (achada.resultado === "nenhuma") return { resultado: "sem-assinatura" };
   const { detalhes } = achada;
-  if (detalhes.status === "canceled" || !detalhes.clienteId) return { resultado: "sem-assinatura" };
+  if (!aceitaCartaoNovo(detalhes) || !detalhes.clienteId) return { resultado: "sem-assinatura" };
   return { resultado: "ok", detalhes, pedido: { clienteId: detalhes.clienteId, userId, assinaturaId: detalhes.id } };
 }
 

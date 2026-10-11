@@ -31,13 +31,17 @@ const ATIVA: MinhaAssinatura = {
   proximaCobranca: { centavos: 9990, moeda: "brl", em: MEIO_DIA },
   acessoAte: null,
   cartao: VISA,
+  aceitaCartao: true,
 };
 
 const abrir = (ui = <FaturamentoPage />) =>
   renderWithProviders(ui, {
     route: "/aluno/conta/faturamento",
     path: "/aluno/conta/faturamento",
-    extraRoutes: [{ path: "/aluno/assinar", element: <p>TELA DE ASSINAR</p> }],
+    extraRoutes: [
+      { path: "/aluno/assinar", element: <p>TELA DE ASSINAR</p> },
+      { path: "/aluno/conta/faturamento/cartao", element: <p>TELA DE TROCAR O CARTÃO</p> },
+    ],
   });
 
 /** O texto da tela, com o espaço do "R$ 99,90" (que não quebra linha) trocado por um comum. */
@@ -144,6 +148,27 @@ describe("FaturamentoPage — com acesso", () => {
     abrir();
     expect(await screen.findByText("Nenhum cartão cadastrado.")).toBeTruthy();
     expect(naTela()).not.toContain("••••");
+  });
+
+  it("com cartão: o botão 'Trocar cartão' leva à tela de trocar", async () => {
+    abrir();
+    fireEvent.click(await screen.findByRole("link", { name: "Trocar cartão" }));
+    expect(await screen.findByText("TELA DE TROCAR O CARTÃO")).toBeTruthy();
+  });
+
+  it("sem cartão: o botão diz 'Adicionar cartão', e leva à mesma tela", async () => {
+    getMinhaAssinatura.mockResolvedValue({ ...ATIVA, cartao: null });
+    abrir();
+    expect(screen.queryByRole("link", { name: "Trocar cartão" })).toBeNull();
+    fireEvent.click(await screen.findByRole("link", { name: "Adicionar cartão" }));
+    expect(await screen.findByText("TELA DE TROCAR O CARTÃO")).toBeTruthy();
+  });
+
+  it("assinatura que o servidor diz que NÃO aceita cartão (encerrada de vez, com dias pagos): sem botão", async () => {
+    getMinhaAssinatura.mockResolvedValue({ ...ATIVA, situacao: "vai-cancelar", proximaCobranca: null, acessoAte: MEIO_DIA, aceitaCartao: false });
+    abrir();
+    expect(await screen.findByText("Visa •••• 4242 · vence em 03/2028")).toBeTruthy();
+    expect(screen.queryByRole("link")).toBeNull();
   });
 
   it("bandeira que a tela não conhece: só os 4 últimos e a validade, sem um nome errado", async () => {

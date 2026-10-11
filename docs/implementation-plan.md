@@ -4228,7 +4228,24 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
         mutação um teste que não toca a Stripe marcou 493 s e reprovou; não se repetiu em três
         rodadas seguidas nem na suíte inteira — fica anotado.)* Gates: typecheck, lint, suíte
         de servidor como o CI (796) e do site (825), build.
-      **ONDE PAROU:** passo 4 feito (11/10/2026). Próximo: passo 5, a tela de trocar o cartão.
+      - **Passo 5 — FEITO (11/10/2026).** A tela `/aluno/conta/faturamento/cartao` e o botão
+        "Trocar cartão" (ou "Adicionar cartão") no resumo. O campo é o da Stripe, aberto para só
+        GUARDAR o cartão — nada é cobrado ali —, com a moeda da assinatura. O envio, na ordem:
+        confere o preenchimento → o servidor abre o pedido → o campo confirma → o servidor
+        aplica. Depois, a tela diz "Cartão atualizado." (ou "…e pagamento confirmado.", quando a
+        cobrança estava atrasada), mostra o cartão novo e o caminho de volta ao resumo. **O
+        botão só aparece quando o SERVIDOR diz que a assinatura aceita cartão** (campo novo na
+        resposta, `aceitaCartao`; a regra é uma só, `aceitaCartaoNovo`, para a tela e para a
+        operação). Se o último passo falha, o novo clique repete só ele: confirmar de novo
+        guardaria um segundo cartão. O formulário é carregado à parte e está em
+        `PEDACOS_DO_ALUNO` (+0,7 KB compactado no pacote de todo aluno). **Testes:** 17 da tela
+        nova + 3 no resumo. **Mutação:** 6 de 6 reprovaram — o cartão recusado sendo aplicado,
+        o novo clique guardando outro cartão, o campo abrindo com valor a cobrar, o cartão mal
+        preenchido indo ao servidor, o formulário abrindo para quem não pode, "pagamento
+        confirmado" sem ter pago. Gates: typecheck, lint, suíte do site (845) e de servidor
+        como o CI (796), build.
+      **ONDE PAROU:** passo 5 feito (11/10/2026). Próximo: passo 6 — a prova na área restrita
+      com uma conta descartável, a revisão de segurança e o `billing.md`.
 - [ ] **4.7 — O visitante assina: a conta nasce no pagamento (código, ALTO RISCO).** O checkout
       público: e-mail + pagamento → o webhook cria a conta (o cadastro continua fechado) e manda o
       e-mail de "crie sua senha". **Depende do Resend configurado e da P49** (o remetente). Junto:

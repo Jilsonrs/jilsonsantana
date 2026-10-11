@@ -128,6 +128,8 @@ export type MinhaAssinatura =
       /** Até quando há acesso — só quando não renova. */
       acessoAte: string | null;
       cartao: CartaoDaAssinatura | null;
+      /** Esta assinatura ainda pode ser cobrada: aceita cartão novo. A encerrada de vez, com dias pagos, não. */
+      aceitaCartao: boolean;
     };
 
 /** Resposta de `POST /api/billing/cartao`: o segredo com que o campo da Stripe guarda o cartão novo. */

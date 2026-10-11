@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { BlocoDoCartao } from "@/components/faturamento/BlocoDoCartao";
 import { BlocoDoPlano } from "@/components/faturamento/BlocoDoPlano";
 import { TELA_DE_ASSINAR } from "@/lib/assinar";
-import { dataPorExtenso, useMinhaAssinatura } from "@/lib/faturamento";
+import { comAcesso, dataPorExtenso, useMinhaAssinatura } from "@/lib/faturamento";
 import { useIdioma, useT } from "@/lib/language";
 
 /**
@@ -18,6 +18,7 @@ export function FaturamentoPage() {
   const t = useT();
   const idioma = useIdioma();
   const { data: assinatura, isLoading, isError } = useMinhaAssinatura();
+  const viva = comAcesso(assinatura);
 
   return (
     <PageContainer>
@@ -44,10 +45,10 @@ export function FaturamentoPage() {
           </Button>
         </div>
       )}
-      {assinatura && assinatura.situacao !== SituacaoDoFaturamento.NENHUMA && assinatura.situacao !== SituacaoDoFaturamento.TERMINADA && (
+      {viva && (
         <div className="space-y-12">
-          <BlocoDoPlano assinatura={assinatura} />
-          <BlocoDoCartao cartao={assinatura.cartao} />
+          <BlocoDoPlano assinatura={viva} />
+          <BlocoDoCartao cartao={viva.cartao} aceitaCartao={viva.aceitaCartao} />
         </div>
       )}
     </PageContainer>

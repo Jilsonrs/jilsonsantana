@@ -21,6 +21,7 @@ import { NotificacaoPage } from "@/pages/aluno/NotificacaoPage";
 import { AssinarPage } from "@/pages/aluno/AssinarPage";
 import { AssinaturaConcluidaPage } from "@/pages/aluno/AssinaturaConcluidaPage";
 import { FaturamentoPage } from "@/pages/aluno/FaturamentoPage";
+import { TrocarCartaoPage } from "@/pages/aluno/TrocarCartaoPage";
 import { AdminCoursesPage } from "@/pages/admin/AdminCoursesPage";
 import { NewCoursePage } from "@/pages/admin/course-editor/NewCoursePage";
 import { CourseEditorLayout } from "@/pages/admin/course-editor/CourseEditorLayout";
@@ -69,6 +70,8 @@ export default function App() {
           {/* Faturamento e Assinatura (Fase 4, etapa 4.6): o item já estava no menu da
               conta, sem tela — o lugar é decisão do operador, 11/10/2026. */}
           <Route path="/aluno/conta/faturamento" element={<FaturamentoPage />} />
+          {/* Cada ação tem a sua tela, com endereço próprio (decisão do operador, 11/10/2026). */}
+          <Route path="/aluno/conta/faturamento/cartao" element={<TrocarCartaoPage />} />
           {/* Assinar, com a conta logada (Fase 4, etapa 4.2; endereço decidido pelo
               operador em 10/10/2026). O /assinar curto fica para o visitante (4.7). */}
           <Route path="/aluno/assinar" element={<AssinarPage />} />
