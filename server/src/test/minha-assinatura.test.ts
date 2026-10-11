@@ -59,7 +59,7 @@ beforeEach(() => {
   buscarDetalhes.mockReset().mockImplementation(async (id) => {
     const dados = naStripe[id];
     if (!dados) throw new AssinaturaNaoEncontrada(id);
-    return { id, status: "active", pagoAte: null, plano: "mensal", preco: { centavos: 9990, moeda: "brl" }, fimDoPeriodo: null, acabaEm: null, cartao: VISA, ...dados };
+    return { id, status: "active", pagoAte: null, plano: "mensal", preco: { centavos: 9990, moeda: "brl" }, fimDoPeriodo: null, acabaEm: null, cartao: VISA, clienteId: "cus_da_conta", cartaoId: "pm_atual", faturaEmAbertoId: null, ...dados };
   });
   buscarProximaCobranca.mockReset().mockResolvedValue({ centavos: 9990, moeda: "brl" });
 });

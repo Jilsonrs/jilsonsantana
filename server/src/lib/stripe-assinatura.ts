@@ -1,6 +1,6 @@
 import Stripe from "stripe";
 import type { CartaoDaAssinatura, Plano } from "@jilson/core";
-import { AssinaturaNaoEncontrada, erroSemMensagem, paraAssinaturaNaStripe, planoDoPreco, stripe } from "./stripe.js";
+import { AssinaturaNaoEncontrada, erroSemMensagem, FORMAS_DE_PAGAMENTO, paraAssinaturaNaStripe, planoDoPreco, stripe } from "./stripe.js";
 
 // GERIR UMA ASSINATURA QUE JÁ EXISTE (Fase 4, etapa 4.6 — billing.md → Minha assinatura). A
 // outra metade da nossa fronteira com a Stripe (`stripe.ts` é a de assinar e a do espelho): o que
@@ -24,6 +24,12 @@ export type DetalhesDaAssinatura = {
   /** Marcada para acabar (no fim do período, ou numa data): não renova. */
   acabaEm: Date | null;
   cartao: CartaoDaAssinatura | null;
+  /** O cliente da Stripe que esta assinatura cobra — é dele o cartão novo. Não sai do servidor. */
+  clienteId: string | null;
+  /** O cartão que ela cobra hoje, se for o DELA (e não o padrão do cliente). Não sai do servidor. */
+  cartaoId: string | null;
+  /** A última fatura, se ainda está em aberto (a cobrança falhou): é a que o cartão novo paga. Não sai do servidor. */
+  faturaEmAbertoId: string | null;
 };
 
 /** O cartão no formato da tela — nunca o número, nem o código dele na Stripe. Função pura. */
@@ -39,7 +45,9 @@ export function paraCartao(forma: string | Stripe.PaymentMethod | null | undefin
  * escolhe qual cobrar.
  */
 export function paraDetalhesDaAssinatura(assinatura: Stripe.Subscription): DetalhesDaAssinatura {
-  const { status, pagoAte } = paraAssinaturaNaStripe(assinatura);
+  const { status, pagoAte, clienteId } = paraAssinaturaNaStripe(assinatura);
+  const daAssinatura = assinatura.default_payment_method;
+  const fatura = assinatura.latest_invoice;
   const itens = assinatura.items.data;
   const preco = itens[0]?.price;
   const plano = preco ? planoDoPreco(preco) : null;
@@ -55,7 +63,10 @@ export function paraDetalhesDaAssinatura(assinatura: Stripe.Subscription): Detal
     preco: plano && preco && preco.unit_amount !== null ? { centavos: preco.unit_amount, moeda: preco.currency } : null,
     fimDoPeriodo,
     acabaEm,
-    cartao: paraCartao(assinatura.default_payment_method) ?? paraCartao(padraoDoCliente),
+    cartao: paraCartao(daAssinatura) ?? paraCartao(padraoDoCliente),
+    clienteId,
+    cartaoId: typeof daAssinatura === "string" ? daAssinatura : (daAssinatura?.id ?? null),
+    faturaEmAbertoId: typeof fatura === "object" && fatura !== null && fatura.status === "open" ? fatura.id : null,
   };
 }
 
@@ -82,5 +93,106 @@ export async function buscarProximaCobranca(id: string): Promise<{ centavos: num
   } catch (erro) {
     if (erro instanceof Stripe.errors.StripeInvalidRequestError && erro.code === "invoice_upcoming_none") return null;
     throw erroSemMensagem(erro, "a prévia da próxima cobrança");
+  }
+}
+
+// TROCAR O CARTÃO (passo 4). O cartão novo é guardado pelo campo da Stripe, no site, contra um
+// PEDIDO DE GUARDAR CARTÃO que o servidor abre para o cliente da assinatura — e que leva de
+// quem é e para qual assinatura. Depois, quem escolhe qual cartão vai para a assinatura é o
+// SERVIDOR, lendo na Stripe os pedidos desse cliente: o site nunca manda o código de um cartão.
+
+/** De quem é e para qual assinatura é o cartão novo. */
+export type PedidoDeCartao = { clienteId: string; userId: string; assinaturaId: string };
+
+/** A marca dos pedidos que o NOSSO fluxo de trocar o cartão abre. */
+const TROCAR_CARTAO = "trocar-cartao";
+
+/**
+ * O pedido de guardar cartão que vai à Stripe. Função pura, com teste: sem a conta e a
+ * assinatura aqui, o servidor não teria como saber depois que o cartão confirmado é deste pedido.
+ * `allowed_payment_method_types`: a mesma lista com que a assinatura é criada — o nome antigo
+ * (`payment_method_types`) não existe mais nesta versão da API (tipos da `stripe@23.0.0`).
+ */
+export function paraPedidoDeCartao(pedido: PedidoDeCartao): Stripe.SetupIntentCreateParams {
+  return {
+    customer: pedido.clienteId,
+    allowed_payment_method_types: [...FORMAS_DE_PAGAMENTO],
+    // O cartão vai ser cobrado nas renovações, sem a pessoa na tela.
+    usage: "off_session",
+    metadata: { para: TROCAR_CARTAO, userId: pedido.userId, assinatura: pedido.assinaturaId },
+  };
+}
+
+/** Abre na Stripe o pedido de guardar cartão e devolve o segredo com que o SITE o confirma. */
+export async function criarPedidoDeCartao(pedido: PedidoDeCartao): Promise<string> {
+  try {
+    const criado = await stripe().setupIntents.create(paraPedidoDeCartao(pedido));
+    if (!criado.client_secret) throw new Error("[stripe] o pedido de guardar cartão veio sem segredo");
+    return criado.client_secret;
+  } catch (erro) {
+    throw erroSemMensagem(erro, "o pedido de guardar cartão");
+  }
+}
+
+/**
+ * O cartão que o site acabou de confirmar para ESTE pedido — ou nenhum. Função pura, com teste:
+ * é ela que impede um cartão de ir para a assinatura errada. Só vale o pedido que DEU CERTO, que
+ * é do nosso fluxo e que foi aberto para esta conta, este cliente e esta assinatura. A lista vem
+ * da Stripe com o mais novo primeiro: vale o primeiro que servir.
+ */
+export function escolherCartaoConfirmado(pedidos: Stripe.SetupIntent[], pedido: PedidoDeCartao): string | null {
+  for (const candidato of pedidos) {
+    const doCliente = typeof candidato.customer === "string" ? candidato.customer : candidato.customer?.id;
+    const m = candidato.metadata ?? {};
+    const serve = candidato.status === "succeeded" && doCliente === pedido.clienteId && m.para === TROCAR_CARTAO && m.userId === pedido.userId && m.assinatura === pedido.assinaturaId;
+    if (!serve) continue;
+    const forma = candidato.payment_method;
+    const formaId = typeof forma === "string" ? forma : forma?.id;
+    if (formaId) return formaId;
+  }
+  return null;
+}
+
+/** O cartão novo deste pedido, lido na Stripe (os 10 pedidos mais recentes do cliente). */
+export async function buscarCartaoConfirmado(pedido: PedidoDeCartao): Promise<string | null> {
+  try {
+    const lista = await stripe().setupIntents.list({ customer: pedido.clienteId, limit: 10 });
+    return escolherCartaoConfirmado(lista.data, pedido);
+  } catch (erro) {
+    throw erroSemMensagem(erro, "a busca do cartão confirmado");
+  }
+}
+
+/** Põe este cartão como o da assinatura: é ele que a Stripe cobra dali em diante. Devolve-o no formato da tela. */
+export async function definirCartao(assinaturaId: string, formaId: string): Promise<CartaoDaAssinatura | null> {
+  try {
+    const assinatura = await stripe().subscriptions.update(assinaturaId, { default_payment_method: formaId, expand: ["default_payment_method"] });
+    return paraCartao(assinatura.default_payment_method);
+  } catch (erro) {
+    throw erroSemMensagem(erro, "a troca do cartão da assinatura");
+  }
+}
+
+/** Tira da Stripe o cartão que foi trocado: cartão que a pessoa substituiu não fica guardado. */
+export async function soltarCartao(formaId: string): Promise<void> {
+  try {
+    await stripe().paymentMethods.detach(formaId);
+  } catch (erro) {
+    throw erroSemMensagem(erro, "a remoção do cartão antigo");
+  }
+}
+
+/**
+ * Cobra AGORA a fatura em aberto, com o cartão da assinatura. `true`: pagou. `false`: o cartão
+ * foi recusado, ou o banco pede uma confirmação que só a pessoa dá — nada a fazer aqui: a Stripe
+ * segue tentando sozinha, já com o cartão novo. Qualquer outra falha sobe.
+ */
+export async function pagarFatura(faturaId: string): Promise<boolean> {
+  try {
+    return (await stripe().invoices.pay(faturaId)).status === "paid";
+  } catch (erro) {
+    if (erro instanceof Stripe.errors.StripeCardError) return false;
+    if (erro instanceof Stripe.errors.StripeInvalidRequestError && erro.code === "invoice_payment_intent_requires_action") return false;
+    throw erroSemMensagem(erro, "a cobrança da fatura em aberto");
   }
 }

@@ -4207,7 +4207,28 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
         "Reativar". Gates: typecheck, lint, suíte do site (825) e de servidor como o CI (761),
         build. **Não visto em navegador pelo agente** (entrar exige a senha do aluno): a
         conferência visual é do operador.
-      **ONDE PAROU:** passo 3 feito (11/10/2026). Próximo: passo 4, o servidor trocando o cartão.
+      - **Passo 4 — FEITO (11/10/2026).** Trocar o cartão, em dois pedidos sem corpo.
+        `POST /api/billing/cartao` abre na Stripe um pedido de guardar cartão para o cliente da
+        assinatura da conta e devolve só o segredo; `POST /api/billing/cartao/aplicar` lê **na
+        Stripe** o cartão que esse pedido confirmou (só vale o que deu certo, do nosso fluxo,
+        desta conta, deste cliente e desta assinatura) e o põe na assinatura. O site não manda
+        código de cartão. O cartão antigo sai da Stripe depois de o novo estar no lugar (se não
+        sair, é aviso: a troca valeu). **Com a cobrança atrasada**, o cartão novo paga a fatura
+        em aberto na hora e o espelho é acertado por `sincronizarAssinatura`; cartão novo
+        recusado não é erro — a troca valeu e a Stripe segue tentando. Assinatura encerrada de
+        vez não recebe cartão (409). `[FATO — tipos da `stripe@23.0.0`]` no pedido de guardar
+        cartão a lista de formas de pagamento é `allowed_payment_method_types`; o nome antigo
+        não existe mais nesta versão. **Mudou em relação ao plano:** a troca do cartão **não
+        segura a trava da assinatura** — ela não decide nada pelo espelho, e quem ordena a
+        gravação é a própria rotina de sincronia; a trava fica para cancelar e reembolsar
+        (sessão b). **Testes:** 25 de servidor + 10 unitários. **Mutação:** 6 de 6 reprovaram —
+        cartão confirmado de outra conta valendo, pedido que não deu certo valendo, assinatura
+        encerrada recebendo cartão, fatura cobrada com a assinatura em dia, o cartão novo
+        sendo tirado, a falha ao tirar o antigo derrubando a troca. *(Numa das rodadas de
+        mutação um teste que não toca a Stripe marcou 493 s e reprovou; não se repetiu em três
+        rodadas seguidas nem na suíte inteira — fica anotado.)* Gates: typecheck, lint, suíte
+        de servidor como o CI (796) e do site (825), build.
+      **ONDE PAROU:** passo 4 feito (11/10/2026). Próximo: passo 5, a tela de trocar o cartão.
 - [ ] **4.7 — O visitante assina: a conta nasce no pagamento (código, ALTO RISCO).** O checkout
       público: e-mail + pagamento → o webhook cria a conta (o cadastro continua fechado) e manda o
       e-mail de "crie sua senha". **Depende do Resend configurado e da P49** (o remetente). Junto:

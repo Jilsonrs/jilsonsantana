@@ -129,3 +129,12 @@ export type MinhaAssinatura =
       acessoAte: string | null;
       cartao: CartaoDaAssinatura | null;
     };
+
+/** Resposta de `POST /api/billing/cartao`: o segredo com que o campo da Stripe guarda o cartão novo. */
+export type TrocaDeCartaoPreparada = { segredo: string };
+
+/**
+ * Resposta de `POST /api/billing/cartao/aplicar`: o cartão que passou a valer na assinatura.
+ * `pagou`: a cobrança estava atrasada, e o cartão novo pagou a fatura em aberto na hora.
+ */
+export type CartaoTrocado = { cartao: CartaoDaAssinatura | null; pagou: boolean };

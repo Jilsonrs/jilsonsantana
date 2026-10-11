@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import type Stripe from "stripe";
-import { paraCartao, paraDetalhesDaAssinatura } from "./stripe-assinatura.js";
+import { escolherCartaoConfirmado, paraCartao, paraDetalhesDaAssinatura, paraPedidoDeCartao } from "./stripe-assinatura.js";
 import { planoDoPreco } from "./stripe.js";
 
 // A ASSINATURA DA STRIPE NO FORMATO DA TELA (Fase 4, etapa 4.6) — funções puras, teste unitário
@@ -29,12 +29,13 @@ function assinatura({
   cliente = { id: "cus_1", metadata: {}, invoice_settings: { default_payment_method: null as object | string | null } } as object | string,
   pausa = null as { behavior: string } | null,
   itens = undefined as object[] | undefined,
+  fatura = { id: "in_1", status: "paid" } as object | string | null,
 } = {}): Stripe.Subscription {
   // Seguro: o objeto de teste tem só os campos que a função lê; a forma completa é da Stripe.
   return {
     id: "sub_1",
     status,
-    latest_invoice: { status: "paid" },
+    latest_invoice: fatura,
     items: { data: itens ?? [{ current_period_start: inicio, current_period_end: fim, price: doPreco }] },
     metadata: {},
     customer: cliente,
@@ -131,5 +132,82 @@ describe("o cartão que a tela mostra", () => {
     // Seguro: uma forma de pagamento que não é cartão — só os campos que a função lê.
     expect(paraCartao({ id: "pm_pix", type: "pix" } as unknown as Stripe.PaymentMethod)).toBeNull();
     expect(paraCartao(null)).toBeNull();
+  });
+});
+
+// TROCAR O CARTÃO (passo 4). O que protege: o cartão novo só vai para a assinatura de quem o
+// confirmou. Quem escolhe é o servidor, lendo os pedidos de guardar cartão na Stripe.
+describe("o que o servidor guarda da assinatura para trocar o cartão", () => {
+  it("o cliente que a assinatura cobra e o cartão que é DELA", () => {
+    const detalhes = paraDetalhesDaAssinatura(assinatura());
+    expect([detalhes.clienteId, detalhes.cartaoId]).toEqual(["cus_1", "pm_visa"]);
+    expect(paraDetalhesDaAssinatura(assinatura({ cartao: "pm_so_o_id" })).cartaoId).toBe("pm_so_o_id");
+  });
+
+  it("assinatura que cobra o cartão padrão do cliente: não tem cartão DELA para tirar depois", () => {
+    const cliente = { id: "cus_1", metadata: {}, invoice_settings: { default_payment_method: MASTER } };
+    expect(paraDetalhesDaAssinatura(assinatura({ cartao: null, cliente })).cartaoId).toBeNull();
+  });
+
+  it("a fatura em aberto: só a que está aberta — paga, anulada, sem expandir ou ausente, nenhuma", () => {
+    expect(paraDetalhesDaAssinatura(assinatura({ status: "past_due", fatura: { id: "in_aberta", status: "open" } })).faturaEmAbertoId).toBe("in_aberta");
+    for (const fatura of [{ id: "in_paga", status: "paid" }, { id: "in_anulada", status: "void" }, { id: "in_rascunho", status: "draft" }, "in_so_o_id", null]) {
+      expect(paraDetalhesDaAssinatura(assinatura({ fatura })).faturaEmAbertoId).toBeNull();
+    }
+  });
+});
+
+describe("o pedido de guardar cartão que vai à Stripe", () => {
+  const PEDIDO = { clienteId: "cus_1", userId: "u-1", assinaturaId: "sub_1" };
+
+  it("é do cliente da assinatura, só aceita as formas de pagamento da escola e serve para cobrar depois", () => {
+    const pedido = paraPedidoDeCartao(PEDIDO);
+    expect(pedido.customer).toBe("cus_1");
+    expect(pedido.allowed_payment_method_types).toEqual(["card"]);
+    expect(pedido.usage).toBe("off_session");
+  });
+
+  it("leva de quem é e para qual assinatura — é o que o servidor confere depois", () => {
+    expect(paraPedidoDeCartao(PEDIDO).metadata).toEqual({ para: "trocar-cartao", userId: "u-1", assinatura: "sub_1" });
+  });
+});
+
+describe("qual cartão confirmado vale para este pedido", () => {
+  const PEDIDO = { clienteId: "cus_1", userId: "u-1", assinaturaId: "sub_1" };
+  const NOSSO = { para: "trocar-cartao", userId: "u-1", assinatura: "sub_1" };
+  function guardado({ id = "seti_1", status = "succeeded", cliente = "cus_1" as string | { id: string } | null, metadata = NOSSO as Record<string, string> | null, forma = "pm_novo" as string | { id: string } | null } = {}): Stripe.SetupIntent {
+    // Seguro: o objeto de teste tem só os campos que a função lê; a forma completa é da Stripe.
+    return { id, status, customer: cliente, metadata, payment_method: forma } as unknown as Stripe.SetupIntent;
+  }
+
+  it("o pedido que deu certo, deste cliente, desta conta e desta assinatura: o cartão dele", () => {
+    expect(escolherCartaoConfirmado([guardado()], PEDIDO)).toBe("pm_novo");
+    expect(escolherCartaoConfirmado([guardado({ cliente: { id: "cus_1" }, forma: { id: "pm_expandido" } })], PEDIDO)).toBe("pm_expandido");
+  });
+
+  it("vários: vale o mais novo que serve (a Stripe lista o mais novo primeiro)", () => {
+    const lista = [guardado({ status: "requires_payment_method", forma: null }), guardado({ forma: "pm_mais_novo" }), guardado({ forma: "pm_mais_velho" })];
+    expect(escolherCartaoConfirmado(lista, PEDIDO)).toBe("pm_mais_novo");
+  });
+
+  it("pedido que NÃO deu certo nunca vale: pela metade, pedindo confirmação, processando ou cancelado", () => {
+    for (const status of ["requires_payment_method", "requires_confirmation", "requires_action", "processing", "canceled"]) {
+      expect(escolherCartaoConfirmado([guardado({ status })], PEDIDO), status).toBeNull();
+    }
+  });
+
+  it("de outro cliente, de outra conta, de outra assinatura ou de outro fluxo: nunca vale", () => {
+    expect(escolherCartaoConfirmado([guardado({ cliente: "cus_alheio" })], PEDIDO)).toBeNull();
+    expect(escolherCartaoConfirmado([guardado({ cliente: null })], PEDIDO)).toBeNull();
+    expect(escolherCartaoConfirmado([guardado({ metadata: { ...NOSSO, userId: "u-outro" } })], PEDIDO)).toBeNull();
+    expect(escolherCartaoConfirmado([guardado({ metadata: { ...NOSSO, assinatura: "sub_outra" } })], PEDIDO)).toBeNull();
+    // O pedido de cartão do CHECKOUT (o da assinatura que nasce sem nada a pagar) não tem a nossa marca.
+    expect(escolherCartaoConfirmado([guardado({ metadata: {} })], PEDIDO)).toBeNull();
+    expect(escolherCartaoConfirmado([guardado({ metadata: null })], PEDIDO)).toBeNull();
+  });
+
+  it("deu certo mas veio sem cartão, ou a lista veio vazia: nenhum", () => {
+    expect(escolherCartaoConfirmado([guardado({ forma: null })], PEDIDO)).toBeNull();
+    expect(escolherCartaoConfirmado([], PEDIDO)).toBeNull();
   });
 });

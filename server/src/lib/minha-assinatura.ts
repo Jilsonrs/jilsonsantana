@@ -1,8 +1,19 @@
-import { SituacaoDoFaturamento, type MinhaAssinatura } from "@jilson/core";
+import { SituacaoDoFaturamento, type CartaoTrocado, type MinhaAssinatura } from "@jilson/core";
 import { prisma } from "./prisma.js";
 import { assinaturaDaAcesso, passouDoPrimeiroPagamento } from "./acesso.js";
+import { sincronizarAssinatura } from "./assinaturas.js";
 import { AssinaturaNaoEncontrada } from "./stripe.js";
-import { buscarDetalhes, buscarProximaCobranca, type DetalhesDaAssinatura } from "./stripe-assinatura.js";
+import {
+  buscarCartaoConfirmado,
+  buscarDetalhes,
+  buscarProximaCobranca,
+  criarPedidoDeCartao,
+  definirCartao,
+  pagarFatura,
+  soltarCartao,
+  type DetalhesDaAssinatura,
+  type PedidoDeCartao,
+} from "./stripe-assinatura.js";
 
 // MINHA ASSINATURA (Fase 4, etapa 4.6 — billing.md; CLAUDE.md → Membership Gating). O que a tela
 // de Faturamento e Assinatura lê e — a partir do passo 4 — as OPERAÇÕES sobre a assinatura
@@ -49,15 +60,18 @@ export function paraMinhaAssinatura(detalhes: DetalhesDaAssinatura, proxima: { c
   return { situacao: SituacaoDoFaturamento.VAI_CANCELAR, ...comum, proximaCobranca: null, acessoAte: iso(detalhes.acabaEm ?? detalhes.pagoAte) };
 }
 
-/** `desconhecida`: a conta tem acesso por uma assinatura que a Stripe não conhece (a de mentira do seed, ou uma do modo de teste pedida com a chave de verdade). */
-export type Leitura = { resultado: "ok"; assinatura: MinhaAssinatura } | { resultado: "desconhecida" };
+type LinhaDoEspelho = { stripeSubscriptionId: string; status: string; currentPeriodEnd: Date | null };
 
 /**
- * A assinatura DESTA conta, para a tela. Sem nenhuma que dê acesso, a resposta sai do espelho e a
- * Stripe nem é consultada. Com acesso, vale a mais recente que a Stripe conhece. A Stripe fora do
- * ar SOBE: a tela mostra a falha, nunca um dado velho.
+ * A assinatura que dá acesso a ESTA conta, como a Stripe diz agora. É por aqui que a leitura e
+ * toda operação acham "a assinatura da conta": o espelho diz QUAIS são dela e quais dão acesso
+ * (a regra do gate); a Stripe diz como está a mais recente que ela conhece.
+ *   - `nenhuma`: nada no espelho dá acesso (vão as linhas, para a tela dizer "nunca" ou "terminou");
+ *   - `desconhecida`: dá acesso, e a Stripe não a conhece (a de mentira do seed, ou uma do modo
+ *     de teste pedida com a chave de verdade).
+ * A Stripe fora do ar SOBE: ninguém decide nada com dado velho.
  */
-export async function lerMinhaAssinatura(userId: string): Promise<Leitura> {
+async function assinaturaDaConta(userId: string): Promise<{ resultado: "ok"; detalhes: DetalhesDaAssinatura } | { resultado: "nenhuma"; linhas: LinhaDoEspelho[] } | { resultado: "desconhecida" }> {
   // FECHA na dúvida, como o gate: no Prisma, um filtro vazio traria as assinaturas de todo mundo.
   if (typeof userId !== "string" || userId.length === 0) throw new Error("[stripe] minha assinatura sem a conta");
   const linhas = await prisma.subscription.findMany({
@@ -66,22 +80,108 @@ export async function lerMinhaAssinatura(userId: string): Promise<Leitura> {
     orderBy: { id: "desc" },
   });
   const comAcesso = linhas.filter((linha) => assinaturaDaAcesso(linha));
-  if (comAcesso.length === 0) {
-    const pagas = linhas.filter(passouDoPrimeiroPagamento);
+  if (comAcesso.length === 0) return { resultado: "nenhuma", linhas };
+  for (const linha of comAcesso) {
+    try {
+      return { resultado: "ok", detalhes: await buscarDetalhes(linha.stripeSubscriptionId) };
+    } catch (erro) {
+      if (!(erro instanceof AssinaturaNaoEncontrada)) throw erro;
+    }
+  }
+  return { resultado: "desconhecida" };
+}
+
+/** `desconhecida`: a conta tem acesso por uma assinatura que a Stripe não conhece. */
+export type Leitura = { resultado: "ok"; assinatura: MinhaAssinatura } | { resultado: "desconhecida" };
+
+/**
+ * A assinatura DESTA conta, para a tela. Sem nenhuma que dê acesso, a resposta sai do espelho e a
+ * Stripe nem é consultada. A Stripe fora do ar SOBE: a tela mostra a falha, nunca um dado velho.
+ */
+export async function lerMinhaAssinatura(userId: string): Promise<Leitura> {
+  const achada = await assinaturaDaConta(userId);
+  if (achada.resultado === "desconhecida") return achada;
+  if (achada.resultado === "nenhuma") {
+    const pagas = achada.linhas.filter(passouDoPrimeiroPagamento);
     if (pagas.length === 0) return { resultado: "ok", assinatura: { situacao: SituacaoDoFaturamento.NENHUMA } };
     const fins = pagas.flatMap((linha) => (linha.currentPeriodEnd ? [linha.currentPeriodEnd.getTime()] : []));
     return { resultado: "ok", assinatura: { situacao: SituacaoDoFaturamento.TERMINADA, terminouEm: fins.length > 0 ? new Date(Math.max(...fins)).toISOString() : null } };
   }
-  for (const linha of comAcesso) {
-    let detalhes: DetalhesDaAssinatura;
+  const { detalhes } = achada;
+  const proxima = renova(detalhes) ? await buscarProximaCobranca(detalhes.id) : null;
+  return { resultado: "ok", assinatura: paraMinhaAssinatura(detalhes, proxima) };
+}
+
+// ── TROCAR O CARTÃO (passo 4) ────────────────────────────────────────────────────────────────
+// Em dois tempos, com o campo da Stripe no meio (o dado do cartão nunca passa pelo servidor):
+//   1. PREPARAR: o servidor abre na Stripe um pedido de guardar cartão para o cliente da
+//      assinatura desta conta, e entrega ao site só o segredo com que o campo o confirma;
+//   2. APLICAR: o servidor lê NA STRIPE o cartão que esse pedido confirmou e o põe na
+//      assinatura. O site não manda código de cartão nenhum — só "apliquei".
+// Com a cobrança atrasada, o cartão novo já paga a fatura em aberto, e o espelho é acertado pela
+// rotina de sempre (`sincronizarAssinatura`). Aqui NADA grava o espelho à mão, e nada segura a
+// trava da assinatura: a troca do cartão não decide nada pelo espelho.
+// Repetir não faz mal: aplicar duas vezes põe o mesmo cartão, e a fatura já paga não é cobrada.
+
+/** `sem-assinatura`: a conta não tem assinatura que ainda possa ser cobrada. */
+type SemOndePor = { resultado: "sem-assinatura" } | { resultado: "desconhecida" };
+
+/**
+ * A assinatura desta conta que ACEITA cartão novo, e de quem é o pedido. A encerrada de vez
+ * (`canceled`), ainda que com dias pagos, não cobra mais nada: não há onde pôr um cartão.
+ */
+async function ondePorOCartao(userId: string): Promise<{ resultado: "ok"; detalhes: DetalhesDaAssinatura; pedido: PedidoDeCartao } | SemOndePor> {
+  const achada = await assinaturaDaConta(userId);
+  if (achada.resultado === "desconhecida") return achada;
+  if (achada.resultado === "nenhuma") return { resultado: "sem-assinatura" };
+  const { detalhes } = achada;
+  if (detalhes.status === "canceled" || !detalhes.clienteId) return { resultado: "sem-assinatura" };
+  return { resultado: "ok", detalhes, pedido: { clienteId: detalhes.clienteId, userId, assinaturaId: detalhes.id } };
+}
+
+export type Preparo = { resultado: "ok"; segredo: string } | SemOndePor;
+
+/** Abre o pedido de guardar cartão para a assinatura desta conta. O segredo vai SÓ na resposta. */
+export async function prepararTrocaDeCartao(userId: string): Promise<Preparo> {
+  const onde = await ondePorOCartao(userId);
+  if (onde.resultado !== "ok") return onde;
+  return { resultado: "ok", segredo: await criarPedidoDeCartao(onde.pedido) };
+}
+
+/** `sem-cartao-novo`: a Stripe não tem cartão confirmado para um pedido desta conta e desta assinatura. */
+export type Troca = ({ resultado: "ok" } & CartaoTrocado) | SemOndePor | { resultado: "sem-cartao-novo" };
+
+/** Põe na assinatura desta conta o cartão que o site acabou de confirmar — lido na Stripe, nunca do pedido. */
+export async function aplicarCartaoNovo(userId: string): Promise<Troca> {
+  const onde = await ondePorOCartao(userId);
+  if (onde.resultado !== "ok") return onde;
+  const { detalhes, pedido } = onde;
+  const novo = await buscarCartaoConfirmado(pedido);
+  if (!novo) return { resultado: "sem-cartao-novo" };
+  const cartao = await definirCartao(detalhes.id, novo);
+
+  // O cartão que foi trocado sai da Stripe. Se não sair, a troca valeu do mesmo jeito: é aviso.
+  if (detalhes.cartaoId && detalhes.cartaoId !== novo) {
     try {
-      detalhes = await buscarDetalhes(linha.stripeSubscriptionId);
+      await soltarCartao(detalhes.cartaoId);
     } catch (erro) {
-      if (erro instanceof AssinaturaNaoEncontrada) continue;
-      throw erro;
+      console.warn(`[stripe] trocar cartão: o cartão antigo da assinatura ${detalhes.id} continuou guardado: ${erro instanceof Error ? erro.message : String(erro)}`);
     }
-    const proxima = renova(detalhes) ? await buscarProximaCobranca(detalhes.id) : null;
-    return { resultado: "ok", assinatura: paraMinhaAssinatura(detalhes, proxima) };
   }
-  return { resultado: "desconhecida" };
+
+  // A cobrança estava atrasada: o cartão novo paga a fatura em aberto agora, sem esperar a
+  // próxima tentativa da Stripe (decisão do operador, 11/10/2026).
+  let pagou = false;
+  if (detalhes.status === "past_due" && detalhes.faturaEmAbertoId) {
+    pagou = await pagarFatura(detalhes.faturaEmAbertoId);
+    try {
+      await sincronizarAssinatura(detalhes.id);
+    } catch (erro) {
+      // O cartão está trocado e a cobrança foi tentada: quem acerta o espelho, então, é o aviso
+      // da Stripe, que chega de qualquer jeito. Aviso, e não uma falha da troca.
+      console.warn(`[stripe] trocar cartão: a sincronia da assinatura ${detalhes.id} ficou para o aviso: ${erro instanceof Error ? erro.message : String(erro)}`);
+    }
+  }
+  console.info(`[stripe] trocar cartão: conta ${userId}, assinatura ${detalhes.id}${detalhes.faturaEmAbertoId && detalhes.status === "past_due" ? (pagou ? ", a fatura em aberto foi paga" : ", a fatura em aberto continua em aberto") : ""}`);
+  return { resultado: "ok", cartao, pagou };
 }
