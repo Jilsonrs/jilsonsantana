@@ -217,7 +217,26 @@ A régua (D0 → tentativas → corte) é **decisão nossa**; quem executa é a 
 **Acima de tudo: o acesso é MANTIDO durante a janela de tentativas** (`past_due`).
 Churn involuntário é a maior alavanca de receita da escola (`strategy.md`) —
 cortar acesso de quem só teve o cartão recusado é perder assinante por problema
-que se resolve sozinho na maioria das vezes.
+que se resolve sozinho na maioria das vezes. *(Regra de Ago 2026 — **revista em 11/10/2026**,
+logo abaixo: o acesso passa a durar 3 dias, não a janela inteira.)*
+
+**A TOLERÂNCIA: as aulas ficam abertas por 3 DIAS depois da cobrança que falhou** *(decisão do
+operador, 11/10/2026: "2 semanas é muito tempo, ele pode estudar os cursos todos e não pagar mais
+nada […] não quero perder aluno e nem ser vítima de espertinhos" — entre 0, 3 e 7 dias)*. Os
+dois relógios se separam: **a Stripe continua tentando cobrar** pelo prazo do painel, e **as
+aulas trancam passados 3 dias** da cobrança que falhou. Pagou — uma tentativa passou, ou a pessoa
+trocou o cartão —, as aulas reabrem na hora. **Dois e-mails automáticos, pedidos por ele:** na
+falha ("não conseguimos renovar; vamos tentar de novo no dia X", com o link para trocar o
+cartão — a Stripe diz a data da próxima tentativa) e antes de trancar ("se não for pago até o dia
+Y, você perde o acesso"). Entram na etapa 4.7, que traz o envio de e-mail.
+**AINDA NÃO ESTÁ NO CÓDIGO:** hoje `past_due` dá acesso enquanto durar. É passo próprio (plano →
+etapa 4.6b), antes de a etapa 4.7 abrir a assinatura ao público; até lá só o operador assina.
+*Proposta do agente, ainda a confirmar com ele: manter as tentativas da Stripe em 2 semanas (o
+padrão recomendado por ela — `[FATO — context7 /websites/stripe, 11/10/2026]` 8 tentativas em 2
+semanas; as opções são 1, 2 ou 3 semanas, 1 mês e 2 meses), já que com a tolerância separada
+esse prazo deixa de dar dias de aula sem pagar.*
+*Reabre se os dados de alunos de verdade mostrarem que 3 dias perde pagante honesto (muita gente
+reativando logo depois de trancar) ou que ainda sobra abuso.*
 
 **Quando as tentativas acabam, a assinatura é CANCELADA — e a escola avisa por e-mail, com o
 link para reativar** *(decisão do operador, 10/10/2026: "é melhor cancelar e enviar e-mail com

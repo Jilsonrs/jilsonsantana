@@ -4562,6 +4562,27 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       a P71 (a chave de produção e o Sentry). A revisão de segurança do servidor já foi feita e
       corrigida; a do passo 13 cobre as telas. Nada desta sessão está publicado. A sessão (c)
       começa pela pendência P64.
+- [ ] **4.6b — A tolerância de 3 dias na cobrança atrasada (código, ALTO RISCO).** Decisão do
+      operador de 11/10/2026 (`billing.md` → *Régua de inadimplência*): depois da cobrança que
+      falhou, as aulas ficam abertas por **3 dias**, e não mais pela janela inteira de
+      tentativas; a Stripe continua tentando, e quem paga (uma tentativa que passa, ou o cartão
+      novo) volta a ter as aulas na hora. **Revê a regra do gate de Ago 2026** — `past_due`
+      deixa de dar acesso sem prazo. **Antes da etapa 4.7** (até lá só o operador assina).
+      O que o passo mexe, para o plano dele (a escrever e aprovar na abertura):
+      - **O gate:** `past_due` dá acesso só até 3 dias depois do "pago até" — que, na cobrança
+        atrasada, já é o dia em que a renovação falhou (o começo do período não pago). Sem
+        migration; a constante no `core`.
+      - **Faturamento e Assinatura para quem está atrasado e já SEM aulas:** hoje a tela só
+        acha a assinatura que dá acesso — essa pessoa leria "sua assinatura terminou", e não o
+        alerta com "Trocar cartão". A busca da assinatura da conta passa a achar a atrasada.
+      - **"Reativar assinatura" e a tela de assinar:** para a atrasada sem aulas, o caminho é
+        trocar o cartão (que paga a fatura em aberto na hora), não assinar de novo — hoje o
+        checkout responderia "você já é assinante".
+      - **A sessão:** passar dos 3 dias não gera aviso da Stripe; a aula tranca pelo gate e a
+        pessoa continua logada (é o que ela precisa para trocar o cartão).
+      - **Cancelar com a cobrança atrasada** (pendência P67), se ainda não tiver entrado.
+      - `CLAUDE.md` → *Membership Gating* (a regra do gate) reescrita no MESMO commit; os testes
+        do gate e de ponta a ponta com o aviso; a prova com o relógio de teste da Stripe.
 - [ ] **4.7 — O visitante assina: a conta nasce no pagamento (código, ALTO RISCO).** O checkout
       público: e-mail + pagamento → o webhook cria a conta (o cadastro continua fechado) e manda o
       e-mail de "crie sua senha". **Depende do Resend configurado e da P49** (o remetente). Junto:
@@ -4570,6 +4591,11 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       e-mail · **antes de abrir ao visitante, o limite de tentativas do código promocional** (na
       4.2 só conta logada confere código, e o cadastro é fechado) · os botões Assinar da home
       passam a funcionar sem login.
+      **Dois e-mails da cobrança atrasada, pedidos pelo operador (11/10/2026):** na falha —
+      "não conseguimos renovar; vamos tentar de novo no dia X", com o link para trocar o cartão
+      (`…/faturamento/cartao`; a data vem da Stripe, no aviso da cobrança que falhou) — e antes
+      de trancar — "se não for pago até o dia Y, você perde o acesso" (Y = 3 dias depois da
+      falha: etapa 4.6b). Os textos são dele.
       **Pedido do operador (10/10/2026, depois de testar a 4.2):** *"tem que funcionar também a
       partir do card da home para quem não é cadastrado no site"* — é esta etapa. **A ordem fica
       a do plano** (decisão dele, no mesmo dia: *"Seguir a ordem do plano"*), e o Resend e o
