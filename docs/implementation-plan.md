@@ -4711,10 +4711,24 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       Stripe traz o nome público da conta de verdade (P58) — só olhar: salvar ali guarda um
       cartão de verdade.
       **SESSÃO (b) — FECHADA NO `dev` em 11/10/2026, NÃO PUBLICADA** (os passos 7 a 13, com as
-      duas revisões de segurança). **Falta, e é do operador:** testar no navegador dele — a
-      janela do banco de verdade ainda não abriu num navegador (`billing.md` → *Pendências de
-      verificação*) —, a **P69** e a **P71** nos painéis, e a decisão de publicar. O histórico
-      da sessão segue abaixo.
+      duas revisões de segurança). **Falta, e é do operador:** a parte 2 do teste no navegador
+      (com cartão de teste: o reembolso e a janela do banco, que ainda não abriu num navegador —
+      `billing.md` → *Pendências de verificação*), a **P69** e a **P71** nos painéis, a **P76**
+      (abaixo) e a decisão de publicar. O histórico da sessão segue abaixo.
+      **Teste do operador no navegador, parte 1 — FEITO (11/10/2026)**, com a assinatura de
+      cortesia do `member@` do computador, 12 telas conferidas: mudar para o Anual (R$ 0,00, na
+      hora), marcar o Mensal para o fim do ano, "Continuar no Anual", cancelar com motivo e
+      comentário (uma saída só, sem reembolso), "Manter a assinatura". Tudo como esperado; a
+      assinatura ficou anual, renovando, sem troca marcada e sem motivo guardado (conferido na
+      Stripe e no espelho).
+      **Achado do teste, medido em seguida na área restrita — é pergunta ao operador (P76):** o
+      ano do Anual termina no ANIVERSÁRIO da assinatura, e não um ano depois da troca.
+      `[FATO — medido com o relógio de teste, 11/10/2026]` mensal assinado em 11/10, trocado em
+      30/12: R$ 738,25 na hora (o anual proporcional aos 285 dias até o aniversário, menos os 12
+      dias que sobraram do mês), e a cobrança seguinte em 11/10/2027. O cobrado é o mostrado, e
+      a data aparece na tela; mas a frase aprovada (e o comentário de `calcularTroca`, a corrigir
+      junto com a decisão) descreve "o plano novo inteiro, menos o que sobrou do mês". As provas
+      anteriores só trocaram no primeiro dia da assinatura, quando as duas contas coincidem.
       Feito: o item 0 ("Sair"), a consulta à Stripe, os
       **passos 7, 8 e 10** (todo o servidor) e **os textos das telas, aprovados por ele em
       português** (três blocos, 11/10/2026; já no dicionário, em `app.faturamento.plano`,

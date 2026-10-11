@@ -809,6 +809,13 @@ encerrada de vez com dias pagos: tem acesso e o servidor recusa cartão.
 - **Pedido que muda cobrança e vem de outro site é recusado** (403 `OutroSite`, pelo
   `Sec-Fetch-Site` do navegador): segunda trava além do cookie, para todo `/api/billing`.
   Navegador antigo que não manda o cabeçalho fica só com a primeira.
+- **O ano do Anual termina no aniversário da assinatura, e não um ano depois da troca.**
+  `[FATO — medido com o relógio de teste, 11/10/2026]` quem assinou o Mensal em 11/10 e troca em
+  30/12 paga R$ 738,25 na hora — o anual proporcional aos 285 dias que faltam até 11/10/2027,
+  menos os 12 dias que sobraram do mês — e a cobrança seguinte, de R$ 995,00, vem em 11/10/2027.
+  A tela mostra esse valor e essa data (o cobrado é o mostrado); a frase aprovada explica só o
+  desconto do mês que sobrou. Se fica assim (com a frase completada) ou se o ano passa a começar
+  no dia da troca é decisão do operador — pendência P76.
 - **O reembolso pela tela pode se repetir** — assinar, pedir o dinheiro em 7 dias, assinar de
   novo, pedir de novo. Nada limita hoje; é pergunta ao operador (pendência P75), a responder
   antes da etapa 4.7.
