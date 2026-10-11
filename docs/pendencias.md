@@ -16,7 +16,7 @@
 > 5. **Item novo ganha o próximo número livre.** Número nunca se reutiliza, para que "P7" queira
 >    dizer sempre a mesma coisa em qualquer conversa.
 >
-> **Próximo número livre: P65** · Atualizada em 11/10/2026
+> **Próximo número livre: P66** · Atualizada em 11/10/2026
 
 ## A. Agora, em sequência *(nascidas da configuração do Bunny, 25/09/2026)*
 
@@ -28,6 +28,7 @@ entra aqui, com o próximo número livre.*
 
 | # | O que falta | Onde registrar |
 |---|---|---|
+| P65 | **Revisar o texto novo de 11/10 (etapa 4.6)**, rascunho do agente: **"Sua assinatura terminou."** / **"Your subscription has ended."** — aparece em Faturamento e Assinatura quando a assinatura acabou e não há a data do fim (o texto que você aprovou, sem o "em {data}"). Os outros textos da tela e da troca de cartão você aprovou em 11/10 | `core/src/i18n/pt.ts` e `en.ts` (`app.faturamento.terminouSemData`) |
 | P59 | **Revisar os textos novos de 10/10 (etapa 4.4)**, rascunho do agente. **Admin → Assinaturas:** o título e a descrição da tela, "Conferir na Stripe", "E-mail do aluno", "Esta conta tem acesso." / "Esta conta está sem acesso.", "Esta conta não tem nenhuma assinatura na Stripe.", a situação de cada assinatura ("Ativa", "Pagamento atrasado, em novas tentativas", "Cancelada", "Aguardando o primeiro pagamento"…) e as três frases de erro. **A posição do item "Assinaturas" no menu:** está logo depois de "Alunos"; pode ser outra. **O inglês de "Reativar assinatura":** "Reactivate subscription" (a outra opção é "Resubscribe") — passa pelo ciclo de revisão do `idiomas.md` | `client/src/lib/sincronia.ts`, `client/src/pages/admin/AdminAssinaturasPage.tsx`, `client/src/lib/navigation.ts` e `core/src/i18n/en.ts` |
 | P55 | **Revisar o texto novo de 09/10**, rascunho do agente: **"Progresso na trilha"** / **"Learning path progress"** — o que o leitor de tela anuncia na barra do cartão da trilha (a porcentagem visível usa o "concluído" que já existe). Junto da P38 | `core/src/i18n/` (`app.trilha.progressoNaTrilha`) |
 | P54 | **Revisar com o Antigravity o acabamento do editor do curso em 7 passos** (a estrutura existe desde 28/09; Legendas e Mensagens desde 04/10). Depois disso, a P38 | `design-lab/GEMINI.md` (o mapa das telas e a fila de formatação) |

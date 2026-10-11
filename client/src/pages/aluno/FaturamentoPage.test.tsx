@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { screen, fireEvent } from "@testing-library/react";
+import { screen, fireEvent, act } from "@testing-library/react";
 import type { MinhaAssinatura } from "@jilson/core";
 import { renderWithProviders } from "@/test-utils";
 
@@ -68,6 +68,22 @@ describe("FaturamentoPage — carregando e falha", () => {
     expect((await screen.findByRole("alert")).textContent).toBe("Não foi possível carregar a sua assinatura. Tente de novo.");
     expect(screen.queryByText("Carregando…")).toBeNull();
     expect(screen.queryByText("Seu plano")).toBeNull();
+    expect(screen.queryByRole("link")).toBeNull();
+  });
+});
+
+describe("FaturamentoPage — a leitura que falha DEPOIS de ter dado certo", () => {
+  it("ao voltar à aba a tela lê de novo; se falhar, mostra só a falha — e não o plano e o cartão de antes", async () => {
+    abrir();
+    expect(await screen.findByText("Visa •••• 4242 · vence em 03/2028")).toBeTruthy();
+    getMinhaAssinatura.mockRejectedValue(new Error("500"));
+    // É o que o navegador avisa quando a pessoa volta para a aba: a tela busca de novo.
+    act(() => {
+      window.dispatchEvent(new Event("visibilitychange"));
+    });
+    expect((await screen.findByRole("alert")).textContent).toBe("Não foi possível carregar a sua assinatura. Tente de novo.");
+    expect(screen.queryByText("Seu plano")).toBeNull();
+    expect(screen.queryByText("Visa •••• 4242 · vence em 03/2028")).toBeNull();
     expect(screen.queryByRole("link")).toBeNull();
   });
 });

@@ -17,7 +17,10 @@ import { useIdioma, useT } from "@/lib/language";
 export function FaturamentoPage() {
   const t = useT();
   const idioma = useIdioma();
-  const { data: assinatura, isLoading, isError } = useMinhaAssinatura();
+  const { data, isLoading, isError } = useMinhaAssinatura();
+  // A leitura falhou: só a falha. O que a tela tinha lido antes pode não valer mais, e plano,
+  // cobrança e cartão velhos ao lado de um erro diriam duas coisas ao mesmo tempo.
+  const assinatura = isError ? undefined : data;
   const viva = comAcesso(assinatura);
 
   return (
