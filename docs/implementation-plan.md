@@ -204,15 +204,20 @@
 > (aula concluída sozinha, barra na aula e no cartão), o vídeo que não recomeça ao trocar de aba
 > (a apresentação abre pausada, a aula toca sozinha) e o "Salvos". **Primeiro teste com o player de
 > verdade: com o operador** (assistir uma aula até perto do fim e ver a barra andar).
-> **NO `dev`, AINDA NÃO PUBLICADO (10/10/2026): o alerta de erro no servidor** (Sentry, parte 1 —
-> plano → Fase 7). Sem a variável `SENTRY_DSN` na Railway (pendência P63) ele fica desligado e o
-> site funciona igual. Junto: o endereço malformado em `/api` passa a responder 400 (era 500).
-> **NO `dev`, AINDA NÃO PUBLICADO (10/10/2026):** a resposta de "Is there a refund?" na página em
-> inglês passa a dizer "Yes, we offer a 14-day money-back guarantee." (duas migrations de dado,
-> `reembolso_de_14_dias_na_resposta_em_ingles` e `resposta_do_reembolso_em_ingles_sem_o_parentese`,
-> sem mudança de estrutura; aplicadas no banco de desenvolvimento) e as decisões de reembolso do
-> mesmo dia, só em documento (`billing.md` → *Reembolso*). Vai ao site na próxima publicação.
-> **PUBLICADO em 10/10/2026, por último (`main` = `91cb4dc`, CI verde nos dois jobs, deploy ok;
+> **PUBLICADO em 10/10/2026, por último (`main` = `354c96a`, CI verde nos dois jobs, deploy ok;
+> duas migrations de DADO aplicadas pelo pre-deploy, sem mudança de estrutura; publicação
+> autorizada pelo operador):** **o alerta de erro no servidor** (Sentry, parte 1 — plano → Fase 7)
+> e **a resposta de "Is there a refund?" com 14 dias** ("Yes, we offer a 14-day money-back
+> guarantee."). O operador já tinha posto a variável `SENTRY_DSN` na Railway, com uma chave nova,
+> e criado no Sentry o monitor de site fora do ar ("Site online", verde).
+> **Provado no site, de fora:** a versão nova (`mv32ckxr-d02f9f62`); o endereço malformado que
+> chega ao servidor (`/api/lessons/%C3%28`) → 400 `EnderecoInvalido` (antes da publicação, 500);
+> conferir assinatura sem login → 401; o corpo malformado → 400 `CorpoInvalido`; o aviso sem
+> assinatura → 400; as páginas públicas seguem no "Em breve".
+> **A confirmar com o operador:** o aviso "[servidor] no ar" no painel do Sentry (é a prova de
+> que o alerta ligou em produção), o e-mail de alerta chegando, e a resposta nova na página em
+> inglês (ela fica atrás do "Em breve": só ele vê).
+> **PUBLICADO em 10/10/2026, antes (`main` = `91cb4dc`, CI verde nos dois jobs, deploy ok;
 > sem migration; publicação autorizada pelo operador: "Publica a 4.4"):** a Fase 4, etapa 4.4 —
 > **sincronizar e perder o acesso.**
 > **Admin → Assinaturas** (o e-mail do aluno e "Conferir na Stripe": a recuperação de quando um
@@ -5163,9 +5168,14 @@ outro aparelho e "daqui a um mês", e o Safari apaga o armazenamento do site em 
         no computador (que tem as chaves de teste da Stripe no `.env.test`) e reprovou no CI,
         que não tem — 503 no lugar de 500. Reproduzido sem as chaves, corrigido, e a suíte
         inteira rodada nessa condição (727). A regra está no `CLAUDE.md` → *Testing*.
-      **ONDE PAROU:** parte 1 pronta no `dev` (CI verde nos dois jobs em `7c31be4`), não
-      publicada. Faltam: a P63 (com o operador), a publicação (decisão dele) e a parte 2 (as
-      telas do aluno).
+      - **A borda da Railway barra parte dos endereços malformados antes de nós**
+        `[MEDIDO em produção, 10/10/2026]`: `%zz`, `%` e `%E0%A4%A` recebem 502 "upstream
+        error" da própria borda (`server: railway-hikari`), sem chegar ao servidor; a sequência
+        com hexadecimal válido e UTF-8 inválido (`%C3%28`) chega — era ela que respondia 500 e
+        passou a responder 400. É a que serve de prova depois de uma publicação.
+      **ONDE PAROU:** parte 1 PUBLICADA em 10/10/2026 (`main` = `354c96a`). Faltam: a
+      confirmação no painel do Sentry com o operador (P63: o aviso de "no ar" e o e-mail) e a
+      parte 2 (as telas do aluno).
 - [ ] **Backlog P2 do `security-vulnerability-reviewer` (7 no relatório; os nº 1, 2 e 6 foram
       movidos e o nº 5 foi **fechado por migration versionada** → **3 pendentes aqui**. Nenhum
       bloqueia merge; todos antes do primeiro aluno pagante.)** A numeração original do relatório é
