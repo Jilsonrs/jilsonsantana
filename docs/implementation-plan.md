@@ -4073,6 +4073,112 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       **o prazo é de 7 dias no Brasil e 14 fora**, pelo país do cartão (a cobrança em dólar
       chega na 4.8; até lá só existe o de 7) · **trocar de plano não recomeça o prazo**: os
       dias contam do primeiro dia da assinatura.
+      **PLANO APROVADO (operador, 11/10/2026: "Aprovado").**
+      - **O que o aluno passa a ter:** em **Faturamento e Assinatura** ele vê o plano, a próxima
+        cobrança e o cartão; trocar o cartão, mudar de plano e cancelar abrem cada um a sua tela.
+      - **Decisões do operador nesta data** (perguntadas com opções; o registro definitivo vai
+        para `billing.md` no passo 6):
+        - **A tela mora no item que JÁ EXISTE no menu, "Faturamento e Assinatura"** (menu da
+          foto e coluna de Minha conta), em **`/aluno/conta/faturamento`** — o item estava no
+          menu sem tela nenhuma (caía no Início). *Reabre se a conta ganhar outra tela de
+          cobrança (recibos, notas) que peça separar "assinatura" de "faturamento".*
+        - **Resumo + uma tela por ação**, cada uma com endereço próprio — `…/faturamento/cartao`,
+          `…/faturamento/plano`, `…/faturamento/cancelar` (entre isso e tudo numa tela só). É o
+          que dá link direto para "trocar o cartão": o painel (4.7b) e o e-mail da cobrança que
+          falhou (4.7) precisam dele. *Reabre se o Antigravity redesenhar a tela.*
+        - **Motivos de cancelamento: a lista curta, e escolher é OPCIONAL** (o botão de cancelar
+          funciona sem motivo) — "Está caro para mim agora" · "Não estou tendo tempo de estudar" ·
+          "Já aprendi o que precisava" · "Não encontrei o conteúdo que procurava" · "Outro
+          motivo" —, mais o campo opcional "Quer contar mais?" (entre a curta, a completa com
+          nove, e só um campo aberto). *Reabre quando houver cancelamentos de verdade e "Outro
+          motivo" for a resposta mais comum.*
+        - **Anual → mensal vale no FIM do ano já pago** (entre isso, na hora com crédito, e não
+          oferecer): a pessoa continua no anual até a data paga e dali em diante é cobrada todo
+          mês; a tela diz "Seu plano muda para Mensal em DD/MM/AAAA" e deixa desistir da troca;
+          nenhum dinheiro volta. *Reabre se um aluno pedir a troca na hora, ou se o agendamento
+          na Stripe der mais manutenção do que vale — aí "não oferecer" volta à mesa.*
+        - **Depois do reembolso pedido pela própria pessoa, ela CONTINUA LOGADA** (entre isso e
+          ser deslogada, como manda a regra de quem perde o acesso): vê a confirmação e segue no
+          site, sem as aulas, com "Reativar assinatura". Vale só para esse caso; nos demais,
+          perder o acesso continua derrubando a sessão. *Reabre se a sessão que fica aberta der
+          algum acesso que o gate não tranca.*
+        - **Os textos da sessão (a), em português e inglês: aprovados** (a tabela mostrada a ele;
+          moram em `app.faturamento.*`). **Os da sessão (b)** — mudar de plano, cancelar e os
+          cinco motivos em inglês — são mostrados a ele na abertura dela, antes de construir.
+      - **O que decorre das decisões já tomadas** (lido de volta a ele e aprovado junto):
+        o reembolso devolve **tudo o que foi pago naquela assinatura** (quem trocou de plano
+        dentro dos 7 dias recebe as duas cobranças) · a assinatura de cortesia (código de 100%)
+        **não mostra** a saída do reembolso — não há dinheiro a devolver · mensal → anual vale
+        **na hora**, com o valor mostrado antes · cartão trocado com o pagamento atrasado → a
+        escola **tenta cobrar na hora** com o cartão novo · o motivo fica guardado **na Stripe**,
+        em cada assinatura (a contagem dentro da escola vem com o painel, 4.7b) · cancelar com
+        reembolso **direto no painel da Stripe** também passa a cortar o acesso.
+      - **Convenções de engenharia (como o código faz):**
+        - **Sem migration e sem dependência nova.** A tela lê a Stripe **na hora** (plano,
+          próxima cobrança, cartão, "vai cancelar", o prazo do reembolso); o espelho continua
+          guardando só o que o gate lê. As colunas de plano e de "vai cancelar" ficam para a
+          4.7b, que é quem lista todas as assinaturas.
+        - **O site nunca diz QUAL assinatura.** A conta é a da sessão; a assinatura é a viva
+          dessa conta, achada no servidor. Nenhum id da Stripe (assinatura, cartão, fatura) vem
+          do navegador.
+        - **Cada ação é uma OPERAÇÃO do servidor** (`server/src/lib/minha-assinatura.ts`), que
+          recebe a assinatura e quem pediu; a rota só resolve a conta e responde. São as mesmas
+          que o painel (4.7b) e o JilsonAI vão chamar.
+        - **Toda operação: a Stripe, e depois `sincronizar` — dentro da trava da assinatura.** O
+          aviso da Stripe que chegar no meio espera a trava e já encontra o espelho gravado.
+          Nada grava o espelho à mão.
+        - **O período devolvido não conta:** o "pago até" do espelho passa a tratar a última
+          fatura **devolvida por inteiro** como não paga. Devolução parcial continua contando.
+          O caminho de ler a devolução na Stripe é **medido na área restrita** antes de escrever.
+        - **O prazo de 7 dias se confere no servidor, na hora da ação**, pela data de início da
+          assinatura na Stripe (constante no `core`; os 14 dias entram na 4.8). A tela só mostra
+          o que o servidor disse.
+        - **"Continua logada":** a rotina de sincronia ganha a opção de não derrubar a sessão,
+          usada **só** pela operação de reembolso pedida pelo dono. `CLAUDE.md` → *Access
+          Architecture* é reconciliado no mesmo commit.
+        - **Trocar o cartão:** o servidor abre na Stripe um pedido de guardar cartão para o
+          cliente da conta; o site confirma com o campo da Stripe (o `CartaoProvider` já sabe
+          "só guardar"); o servidor confere **na Stripe** que o pedido é do cliente desta conta e
+          deu certo, e só então põe o cartão na assinatura.
+        - **Repetir não faz mal:** parar a renovação duas vezes dá no mesmo; a devolução leva
+          chave de repetição por fatura.
+        - **Registro:** o que o aluno causa sozinho (cartão recusado, fora do prazo) é
+          `console.warn`; `console.error`, com etiqueta, só o que precisa de gente (cancelou e a
+          devolução falhou).
+      - **Docs check (context7):** Stripe → `/websites/stripe` → cancelar na hora (`prorate`,
+        `invoice_now`, `cancellation_details`; cancelada é estado final) · cancelar no fim do
+        período é `update` com `cancel_at_period_end`, nunca o `DELETE` · a troca de preço com
+        `proration_behavior` e `payment_behavior` — **3 consultas** (11/10/2026). Conferido nos
+        tipos da `stripe@23.0.0`: a prévia da troca (`invoices.createPreview` com `subscription`
+        e `subscription_details`), a devolução (`refunds.create`), os pagamentos de uma fatura
+        (`Invoice.payments`) e `Charge.refunded`. **A consultar na abertura da sessão (b):** o
+        agendamento da troca para o fim do período (subscription schedule) e a cobrança da
+        fatura em aberto com o cartão novo.
+      - **Passos, um commit cada. SESSÃO (a):** (1) este plano · (2) servidor: ler a assinatura
+        da conta · (3) site: a tela de resumo, com o item do menu abrindo nela · (4) servidor:
+        trocar o cartão · (5) site: a tela de trocar o cartão · (6) prova na área restrita com
+        uma conta descartável, revisão de segurança, `billing.md` e "onde parou".
+        **SESSÃO (b):** (7) servidor: parar a renovação e desfazer, com o motivo · (8) servidor:
+        o reembolso — a operação, o período devolvido deixando de contar, a pessoa continuando
+        logada e o aviso de dinheiro devolvido · (9) site: a tela de cancelar e o "Manter a
+        assinatura" no resumo · (10) servidor: a prévia e a troca de plano · (11) site: a tela de
+        mudar de plano · (12) o item (c) acima: quem cancelou e abre a tela de assinar é levado a
+        "Manter a assinatura"; o caso raro da assinatura encerrada de vez ainda com dias pagos ·
+        (13) prova na área restrita, revisão de segurança, documentos e fechamento.
+        Cada passo fecha com os quatro gates, a suíte do servidor rodada como no CI (sem chave
+        de fornecedor) e a mutação do ramo mais importante.
+      - **SESSÃO (c), pedida pelo operador ao aprovar** (11/10/2026: *"depois inclua sessão (c)
+        para tratar dessa parte"*): na coluna de **Minha conta**, os itens **Preferências**,
+        **Senha e Acesso**, **Sessões ativas** e **Integrações** aparecem como links e não têm
+        tela — quem clica cai no Início (achado do agente ao ler o menu para esta etapa). **O
+        que cada um vira é decisão dele, tomada na abertura da sessão** (pendência P64): ganhar
+        a tela, aparecer como EM BREVE, ou sair do menu. Não é código de cobrança: entra aqui
+        porque é a mesma coluna do "Faturamento e Assinatura", e não segura o fechamento das
+        sessões (a) e (b).
+      - **Fora desta etapa:** o visitante assinar e o e-mail (4.7) · o painel do admin (4.7b) ·
+        o dólar e os 14 dias (4.8) · o Pix (4.9) · o alerta de erro nas telas do aluno · a pausa
+        de um mês · contador ou recusa por reembolso repetido (decisão dele: não existe).
+      **ONDE PAROU:** plano aprovado e escrito (11/10/2026). Próximo: passo 2.
 - [ ] **4.7 — O visitante assina: a conta nasce no pagamento (código, ALTO RISCO).** O checkout
       público: e-mail + pagamento → o webhook cria a conta (o cadastro continua fechado) e manda o
       e-mail de "crie sua senha". **Depende do Resend configurado e da P49** (o remetente). Junto:

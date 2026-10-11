@@ -16,7 +16,7 @@
 > 5. **Item novo ganha o próximo número livre.** Número nunca se reutiliza, para que "P7" queira
 >    dizer sempre a mesma coisa em qualquer conversa.
 >
-> **Próximo número livre: P64** · Atualizada em 10/10/2026
+> **Próximo número livre: P65** · Atualizada em 11/10/2026
 
 ## A. Agora, em sequência *(nascidas da configuração do Bunny, 25/09/2026)*
 
@@ -48,6 +48,7 @@ entra aqui, com o próximo número livre.*
 
 | # | O que falta | Quando | Onde registrar |
 |---|---|---|---|
+| P64 | **Minha conta: os quatro itens do menu que não têm tela** — Preferências, Senha e Acesso, Sessões ativas e Integrações aparecem como links e levam ao Início. Para cada um: ganhar a tela (e o que ela faz), aparecer como EM BREVE, ou sair do menu | abertura da sessão (c) da etapa 4.6 *(operador, 11/10/2026: "depois inclua sessão (c) para tratar dessa parte")* | `implementation-plan.md` → Fase 4, etapa 4.6 → Sessão (c) |
 | P61 | **A cláusula de reembolso abusivo nos termos de uso: escrever o texto**, no modelo da Udemy — você decidiu em 10/10 seguir o que as grandes fazem, sem advogado: "Reservamos o direito, a nosso critério exclusivo, de limitar ou recusar solicitações se acreditarmos que há um abuso de reembolso […] no limite permitido pela lei aplicável". Os termos também dizem o prazo: 7 dias no Brasil, 14 fora, contados do primeiro dia da assinatura | quando os termos de uso forem escritos | `billing.md` → *Reembolso*, e as páginas legais |
 | P60 | **No painel da Stripe, escolher "cancelar a assinatura" para quando as tentativas de cobrança acabam** — nos dois lugares: na área restrita e na conta de verdade (o agente orienta na hora). Você já decidiu isso em 10/10 (cancela, e a escola manda um e-mail com o link para reativar). Enquanto a opção do painel for outra ("marcar como não paga"), a pessoa clica em "Reativar assinatura" e nada acontece | antes de a etapa 4.7 ir ao ar (o primeiro pagante que não é você) | já registrado em `billing.md` → *Régua de inadimplência*; aqui falta só o painel |
 | P58 | **O nome que aparece na fatura do cartão do aluno** (na Stripe, "statement descriptor"): qual vai ser? É por ele que o aluno reconhece a cobrança. Fica nas configurações da conta de verdade; no ambiente de teste não aparece em fatura nenhuma, então o campo do produto ficou em branco | GO-LIVE (Fase 7), ao trocar para a Stripe de verdade | `billing.md` |
