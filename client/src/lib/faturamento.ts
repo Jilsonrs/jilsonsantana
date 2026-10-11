@@ -6,7 +6,7 @@ import type { AppTexts } from "@/lib/language";
 // FATURAMENTO E ASSINATURA (Fase 4, etapa 4.6): os endereços, a leitura da tela e o que ela
 // escreve por extenso (a data e o cartão).
 
-export { TELA_DO_FATURAMENTO, TELA_DE_TROCAR_O_CARTAO, TELA_DE_CANCELAR } from "@jilson/core";
+export { TELA_DO_FATURAMENTO, TELA_DE_TROCAR_O_CARTAO, TELA_DE_CANCELAR, TELA_DE_MUDAR_DE_PLANO } from "@jilson/core";
 
 /** A assinatura da conta, como a Stripe diz agora. Uma chave só: quem muda a assinatura a invalida. */
 export const CHAVE_DA_MINHA_ASSINATURA = ["billing", "minha-assinatura"] as const;

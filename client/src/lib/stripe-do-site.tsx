@@ -104,3 +104,21 @@ export function useCartao(): Cartao {
     },
   };
 }
+
+/** O que deu a confirmação do banco: passou, ou a pessoa não concluiu (fechou a janela, o banco recusou). */
+export type ConfirmacaoDoBanco = "confirmado" | "nao-concluido";
+
+/**
+ * COMPLETA A CONFIRMAÇÃO DO BANCO de uma cobrança que o SERVIDOR já tentou (etapa 4.6, sessão b:
+ * a troca para o plano anual, e a cobrança atrasada paga com o cartão novo). Não há campo de
+ * cartão aqui: a janela do banco abre por cima da tela, com o segredo que o servidor devolveu.
+ * `[FATO — medido na área restrita, 11/10/2026]` o pagamento fica à espera de uma ação que só o
+ * Stripe.js conduz (`requires_action`); passou, a Stripe aplica o que estava pendente sozinha.
+ */
+export async function confirmarNoBanco(chavePublicavel: string, segredo: string): Promise<ConfirmacaoDoBanco> {
+  const stripe = await stripeDoSite(chavePublicavel);
+  if (!stripe) return "nao-concluido";
+  const { paymentIntent, error } = await stripe.handleNextAction({ clientSecret: segredo });
+  if (error || !paymentIntent) return "nao-concluido";
+  return paymentIntent.status === "succeeded" || paymentIntent.status === "processing" ? "confirmado" : "nao-concluido";
+}

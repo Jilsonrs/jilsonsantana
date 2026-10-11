@@ -4575,6 +4575,39 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
         `GEMINI.md` do parceiro de design ganhou a tela no mapa e o item 35 na fila.
         **Não visto em navegador pelo agente** (entrar exige a senha do aluno): a conferência
         visual é do operador.
+      - **Passo 11 — FEITO (11/10/2026): a tela de mudar de plano e a confirmação do banco.**
+        `/aluno/conta/faturamento/plano` (`MudarDePlanoPage`, com `OfertaDePlano` e
+        `TrocaMarcada`; o que a tela lê e faz mora em `lib/troca-de-plano.ts`). Mostra o plano
+        de hoje e o plano novo com o que o SERVIDOR disse: para o Anual, **quanto se paga hoje,
+        ANTES do botão**, e a cobrança seguinte; para o Mensal, quando a troca vale e quanto
+        passa a custar. Ao servidor vão só o plano e o instante da conta mostrada. Cartão
+        recusado: a frase e o caminho para trocar o cartão. A conta que envelheceu: a tela pede
+        outra e avisa que o valor mudou. Quem parou a renovação ou está atrasado lê o porquê.
+        **A confirmação do banco na tela** (`confirmarNoBanco`, em `stripe-do-site.tsx` —
+        `handleNextAction` do Stripe.js, sem campo de cartão): na troca para o Anual, a janela
+        do banco abre por cima; confirmou, a tela espera a assinatura virar Anual e diz que
+        trocou; não concluiu, a troca pendente é desfeita NA HORA e a tela diz que nada foi
+        cobrado. **E na troca de cartão com a cobrança atrasada** (fecha a limitação da sessão
+        a): a janela abre logo depois de o cartão ser posto; não concluída, a tela oferece
+        "Confirmar pagamento". **No resumo:** "Mudar de plano", e a troca marcada com a data e
+        "Continuar no Anual". O `import()` do Stripe.js para a confirmação entrou em
+        `PEDACOS_DO_ALUNO`.
+        **Defeito achado pelos testes, e corrigido:** o botão de trocar aparecia antes de a
+        chave do Stripe.js chegar — quem clicasse nesse instante teria a confirmação do banco
+        pulada e a troca desfeita à toa. O botão passou a esperar a chave.
+        **Testes:** 23 da tela nova + 6 no resumo + 5 na troca de cartão. **Mutação:** 20 de 20
+        reprovaram (a troca com a hora do navegador, a falha dada como troca, a recusa sem o
+        caminho do cartão, a confirmação não concluída sem desfazer e dada como troca, o
+        pagamento já passado dito "nada foi cobrado", a conta velha sem pedir outra, o preço no
+        lugar do valor de hoje, o botão ligado enquanto envia, o botão antes da chave, marcar de
+        novo com a troca marcada, e os do resumo e do cartão) — uma passou de primeira e mostrou
+        um caso sem teste (a nova tentativa que o banco também não confirma), que entrou; e uma
+        guarda que nenhum teste distinguia saiu do código (quem impede dois cliques é o botão
+        desligado). Gates: typecheck, lint, suíte do site (916) e de servidor como o CI (1017),
+        build. O `GEMINI.md` do parceiro de design ganhou a tela no mapa e o item 36 na fila.
+        **Não visto em navegador pelo agente** — e **a janela do banco de verdade nunca abriu
+        num navegador**: é do operador, no computador, com o cartão de teste que exige
+        confirmação (`billing.md` → *Pendências de verificação*).
       **ONDE PAROU:** SESSÃO (a) FECHADA e **PUBLICADA em 11/10/2026 (`main` = `6305077`)**, com
       a autorização do operador (*"pode publicar depois desses ajustes"*): CI verde nos dois jobs
       no `dev` e na `main`, e conferido no ar como visitante — as rotas novas respondem 401 sem
@@ -4587,8 +4620,10 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       português** (três blocos, 11/10/2026; já no dicionário, em `app.faturamento.plano`,
       `.cancelamento` e `.banco` — o inglês é rascunho, a revisar com o Antigravity: P72).
       As duas decisões dele de 11/10/2026 (cancelar com a cobrança atrasada; limpar ao entrar)
-      já estão no código, e o **passo 9** (a tela de cancelar) está feito. **Próximo, nesta
-      ordem:** o passo 11 (a tela de mudar de plano) · o 12 · o 13. A tela
+      já estão no código, e os **passos 9 e 11** (as telas de cancelar e de mudar de plano)
+      estão feitos. **Próximo, nesta ordem:** o passo 12 (quem cancelou e abre a tela de
+      assinar) · o 13 (a prova com conta descartável e o relógio de teste, a revisão de
+      segurança das telas, os documentos e o fechamento). A tela
       de cancelar avisa quem tem a troca para o Mensal marcada de que ela também será desfeita
       (decisão dele, 11/10/2026; `billing.md` → *Minha assinatura*).
       Nas telas: os endereços `…/faturamento/cancelar` e `…/faturamento/plano` (constantes no

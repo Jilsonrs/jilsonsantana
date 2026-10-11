@@ -93,6 +93,7 @@ export type SincroniaDaConta = { temAcesso: boolean; assinaturas: AssinaturaConf
 export const TELA_DO_FATURAMENTO = "/aluno/conta/faturamento";
 export const TELA_DE_TROCAR_O_CARTAO = "/aluno/conta/faturamento/cartao";
 export const TELA_DE_CANCELAR = "/aluno/conta/faturamento/cancelar";
+export const TELA_DE_MUDAR_DE_PLANO = "/aluno/conta/faturamento/plano";
 
 /** O cartão guardado, como a tela o mostra: NUNCA o número — a bandeira, os 4 últimos e a validade. */
 export type CartaoDaAssinatura = { bandeira: string; final: string; mes: number; ano: number };

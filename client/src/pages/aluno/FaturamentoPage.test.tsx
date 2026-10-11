@@ -1,15 +1,17 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { screen, fireEvent, act } from "@testing-library/react";
-import type { MinhaAssinatura } from "@jilson/core";
+import type { MinhaAssinatura, TrocaDesfeita } from "@jilson/core";
 import { renderWithProviders } from "@/test-utils";
 
 const getMinhaAssinatura = vi.fn<() => Promise<MinhaAssinatura>>();
 const manterMinhaAssinatura = vi.fn<() => Promise<void>>();
+const desistirDaTroca = vi.fn<() => Promise<TrocaDesfeita>>();
 vi.mock("@/lib/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/api")>()),
   getMinhaAssinatura: () => getMinhaAssinatura(),
   manterMinhaAssinatura: () => manterMinhaAssinatura(),
+  desistirDaTroca: () => desistirDaTroca(),
 }));
 
 import { FaturamentoPage } from "./FaturamentoPage";
@@ -50,6 +52,7 @@ const abrir = (ui = <FaturamentoPage />) =>
       { path: "/aluno/assinar", element: <p>TELA DE ASSINAR</p> },
       { path: "/aluno/conta/faturamento/cartao", element: <p>TELA DE TROCAR O CARTÃO</p> },
       { path: "/aluno/conta/faturamento/cancelar", element: <p>TELA DE CANCELAR</p> },
+      { path: "/aluno/conta/faturamento/plano", element: <p>TELA DE MUDAR DE PLANO</p> },
     ],
   });
 
@@ -59,6 +62,7 @@ const naTela = () => (document.body.textContent ?? "").replace(/ /g, " ");
 beforeEach(() => {
   getMinhaAssinatura.mockReset().mockResolvedValue(ATIVA);
   manterMinhaAssinatura.mockReset().mockResolvedValue(undefined);
+  desistirDaTroca.mockReset().mockResolvedValue({ trocado: false });
 });
 
 describe("FaturamentoPage — carregando e falha", () => {
@@ -332,5 +336,66 @@ describe("FaturamentoPage — cancelar e manter a assinatura", () => {
     );
     expect(await screen.findByRole("button", { name: "Keep my subscription" })).toBeTruthy();
     expect(screen.getByRole("link", { name: "Cancel subscription" })).toBeTruthy();
+  });
+});
+
+// MUDAR DE PLANO, NO RESUMO (sessão b). O que protege: o caminho só aparece quando o servidor
+// diz que dá para mudar; e a troca MARCADA para o fim do período aparece com a data e com o
+// botão de desistir — que só diz que deu certo quando deu.
+describe("FaturamentoPage — mudar de plano", () => {
+  const ANUAL_COM_TROCA: MinhaAssinatura = { ...ATIVA, plano: "anual", preco: { centavos: 99500, moeda: "brl" }, podeMudarDePlano: false, trocaMarcada: { plano: "mensal", em: MEIO_DIA } };
+  const mudar = () => screen.queryByRole("link", { name: "Mudar de plano" });
+
+  it("quem pode mudar: o caminho para a tela de mudar de plano", async () => {
+    abrir();
+    expect((await screen.findByRole("link", { name: "Mudar de plano" })).getAttribute("href")).toBe("/aluno/conta/faturamento/plano");
+    fireEvent.click(mudar()!);
+    expect(await screen.findByText("TELA DE MUDAR DE PLANO")).toBeTruthy();
+  });
+
+  it("quem NÃO pode (parou a renovação, está atrasado, já marcou a troca): sem o caminho", async () => {
+    getMinhaAssinatura.mockResolvedValue({ ...ATIVA, podeMudarDePlano: false });
+    abrir();
+    await screen.findByText("Seu plano");
+    expect(mudar()).toBeNull();
+  });
+
+  it("com a troca MARCADA: diz para qual plano e quando, e oferece desistir", async () => {
+    getMinhaAssinatura.mockResolvedValue(ANUAL_COM_TROCA);
+    abrir();
+    expect(await screen.findByText("Seu plano muda para Mensal em 10/11/2026.")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Continuar no Anual" })).toBeTruthy();
+    expect(mudar()).toBeNull();
+  });
+
+  it("'Continuar no Anual': pede ao servidor, diz que deu certo e lê a assinatura de novo", async () => {
+    getMinhaAssinatura.mockResolvedValueOnce(ANUAL_COM_TROCA).mockResolvedValue({ ...ANUAL_COM_TROCA, podeMudarDePlano: true, trocaMarcada: null });
+    abrir();
+    fireEvent.click(await screen.findByRole("button", { name: "Continuar no Anual" }));
+    expect((await screen.findByRole("status")).textContent).toBe("Pronto. Você continua no plano Anual.");
+    expect(desistirDaTroca).toHaveBeenCalledTimes(1);
+    // Lida de novo: a troca saiu, e mudar de plano volta a caber.
+    expect(await screen.findByRole("link", { name: "Mudar de plano" })).toBeTruthy();
+    expect(screen.queryByText("Seu plano muda para Mensal em 10/11/2026.")).toBeNull();
+  });
+
+  it("o servidor recusou desistir: a frase da falha — nunca 'você continua no Anual'", async () => {
+    getMinhaAssinatura.mockResolvedValue(ANUAL_COM_TROCA);
+    desistirDaTroca.mockRejectedValue(new Error("500"));
+    abrir();
+    fireEvent.click(await screen.findByRole("button", { name: "Continuar no Anual" }));
+    expect((await screen.findByRole("alert")).textContent).toBe("Não foi possível mudar o plano. Tente de novo.");
+    expect(screen.queryByRole("status")).toBeNull();
+  });
+
+  it("em inglês", async () => {
+    getMinhaAssinatura.mockResolvedValue(ANUAL_COM_TROCA);
+    abrir(
+      <IdiomaProvider idioma="en">
+        <FaturamentoPage />
+      </IdiomaProvider>,
+    );
+    expect(await screen.findByText("Your plan changes to Monthly on Nov 10, 2026.")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Stay on Yearly" })).toBeTruthy();
   });
 });

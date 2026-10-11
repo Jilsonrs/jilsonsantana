@@ -745,9 +745,6 @@ encerrada de vez com dias pagos: tem acesso e o servidor recusa cartão.
 - **A conta que tem acesso pela assinatura de mentira do seed** (o `member@` do banco de dev) vê
   "Não foi possível carregar a sua assinatura": a Stripe não conhece aquela assinatura. Para ver a
   tela no computador, a conta precisa assinar pela tela de assinar, com o cartão de teste.
-- **O botão de mudar de plano chega com a tela dele** (sessão b, passo 11). *(11/10/2026: a
-  tela de cancelar e os botões "Cancelar assinatura" e "Manter a assinatura" do resumo já
-  existem.)*
 - **Depois de uma troca de plano que não se completou** (recusada, ou desistida), a "última
   fatura" da assinatura na Stripe é a anulada, até a próxima renovação. Para a assinatura viva
   não muda nada (ela dá acesso pelo status); se for ENCERRADA NA HORA nesse intervalo — pelo
@@ -779,14 +776,21 @@ encerrada de vez com dias pagos: tem acesso e o servidor recusa cartão.
   até o aviso chegar.
 - **As rotas novas não têm limite de tentativas** — como as outras de cobrança: é pré-requisito
   da etapa 4.7, que agora as cita pelo nome.
-- **O banco pede uma confirmação na cobrança da fatura em aberto** (cartão que exige o código do
-  banco): a troca vale, a tela diz só "Cartão atualizado.", e nada no site completa a
-  confirmação — as tentativas seguintes da Stripe tendem a parar no mesmo ponto. Fica registrado,
-  com a conta e a assinatura. *Completar na tela vem com a troca de plano (sessão b, passos 10 e
-  11), que precisa do mesmo mecanismo; o texto é do operador.*
+- **A confirmação do banco na tela** (sessão b): na troca para o Anual e na cobrança atrasada
+  paga com o cartão novo, a janela do banco abre por cima da tela; não concluída, a troca de
+  plano é desfeita na hora, e a troca de cartão oferece "Confirmar pagamento". *A janela do
+  banco de verdade ainda não abriu num navegador — ver Pendências de verificação.*
 
 ## Pendências de verificação
 
+**Da etapa 4.6, sessão (b) (11/10/2026):** o servidor foi provado na área restrita com as
+funções de verdade (o reembolso, a troca de plano, o cancelamento com a cobrança atrasada — este
+com o relógio de teste). *Não exercitado em navegador:* as telas de cancelar e de mudar de
+plano, e **a janela de confirmação do banco** (o Stripe.js de verdade conduzindo a confirmação
+— nos testes ele é dublê). Para o operador, no computador, com a área restrita: na tela de mudar
+de plano, com o cartão de teste **4000 0027 6000 3184** (o que sempre pede confirmação) na
+assinatura, mudar do Mensal para o Anual — a janela do banco tem que abrir; confirmando, o plano
+vira Anual; fechando a janela, a tela diz que nada foi cobrado e o plano segue Mensal.
 **Da etapa 4.6, sessão (a) (11/10/2026):** a leitura e a troca de cartão foram provadas na área
 restrita, pelo servidor (acima), e **no navegador, pelo operador, no mesmo dia**: como `member@`
 no computador, o resumo abriu ("Mensal · R$ 99,90/mês", "Próxima cobrança: R$ 0,00 em
