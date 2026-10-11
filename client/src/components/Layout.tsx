@@ -1,4 +1,5 @@
 import { Link, Outlet, useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { useSession, signOut } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { AppRail } from "@/components/nav/AppRail";
@@ -47,8 +48,15 @@ function Shell() {
   const t = useT();
   usePreCarregarDoAdmin(session?.user.role === Role.ADMIN);
 
+  const queryClient = useQueryClient();
+
+  // "Sair" ESQUECE O QUE AS TELAS GUARDARAM (decisão do operador, 11/10/2026 — achado da revisão
+  // de segurança da etapa 4.6): as leituras ficam guardadas por alguns minutos depois de a tela
+  // fechar, e a chave delas não leva a conta — sem isto, quem entrasse em seguida na MESMA aba
+  // veria por instantes o que era da conta anterior (o progresso, as trilhas, as notificações).
   async function handleSignOut() {
     await signOut();
+    queryClient.clear();
     navigate("/login", { replace: true });
   }
 

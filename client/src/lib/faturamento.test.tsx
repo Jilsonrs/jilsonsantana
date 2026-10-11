@@ -13,9 +13,9 @@ vi.mock("@/lib/api", async (importOriginal) => ({
 import { comAcesso, useMinhaAssinatura } from "./faturamento";
 
 // O QUE A TELA DE FATURAMENTO LEU NÃO SOBREVIVE A ELA (achado da revisão de segurança,
-// 11/10/2026). A chave da leitura não leva a conta, e "Sair" não limpa o que as telas guardaram:
-// se a leitura ficasse guardada, outra conta que entrasse na MESMA aba veria por um instante o
-// plano e o cartão da anterior. O teste usa UM cliente de leituras para as duas "visitas", como
+// 11/10/2026). A chave da leitura não leva a conta, e a sessão pode acabar sem o "Sair" (que
+// limpa tudo — teste em `Layout.test.tsx`): se a leitura ficasse guardada, outra conta que
+// entrasse na MESMA aba veria por um instante o plano e o cartão da anterior. O teste usa UM cliente de leituras para as duas "visitas", como
 // a aba do navegador.
 
 const DA_ANA: MinhaAssinatura = { situacao: "ativa", plano: "anual", preco: { centavos: 99500, moeda: "brl" }, proximaCobranca: null, acessoAte: null, cartao: { bandeira: "visa", final: "1111", mes: 1, ano: 2030 }, aceitaCartao: true };

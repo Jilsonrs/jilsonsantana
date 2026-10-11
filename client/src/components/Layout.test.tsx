@@ -4,6 +4,7 @@ import { screen, fireEvent, within } from "@testing-library/react";
 import { renderWithProviders } from "@/test-utils";
 import { Role } from "@jilson/core";
 import { Route } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 const useSession = vi.fn();
 const signOut = vi.fn();
@@ -217,6 +218,41 @@ describe("Layout — o menu da conta", () => {
     renderWithProviders(<Layout />, { route: "/aluno/conta" });
 
     expect(screen.getByRole("link", { name: "Seus dados" })).toBeTruthy();
+  });
+});
+
+// "SAIR" ESQUECE O QUE AS TELAS GUARDARAM (decisão do operador, 11/10/2026 — achado da revisão de
+// segurança da etapa 4.6). As leituras ficam guardadas depois de a tela fechar, e a chave delas
+// não leva a conta: sem a limpeza, quem entra em seguida na MESMA aba vê por instantes o que era
+// da conta anterior. O teste usa um cliente de leituras só para as duas telas, como a aba.
+const O_QUE_A_TELA_GUARDOU = ["o-que-a-tela-guardou"];
+
+function TelaQueGuarda() {
+  const { data } = useQuery({ queryKey: O_QUE_A_TELA_GUARDOU, queryFn: () => Promise.resolve("o progresso da Ana") });
+  return <p>{data ?? "lendo"}</p>;
+}
+
+function QuemEntraDepois() {
+  const guardado = useQueryClient().getQueryData<string>(O_QUE_A_TELA_GUARDOU);
+  return <p>{guardado ? `ainda guardado: ${guardado}` : "nada guardado da conta anterior"}</p>;
+}
+
+describe("Layout — Sair", () => {
+  it("esquece o que as telas guardaram: quem entra depois na mesma aba não vê nada da conta anterior", async () => {
+    useSession.mockReturnValue({ data: { user: { role: Role.MEMBER, name: "Ana Souza", email: "ana@exemplo.com" } } });
+    signOut.mockResolvedValue(undefined);
+    renderWithProviders(<Layout />, {
+      route: "/aluno/conta",
+      path: "/aluno",
+      filhas: <Route path="conta" element={<TelaQueGuarda />} />,
+      extraRoutes: [{ path: "/login", element: <QuemEntraDepois /> }],
+    });
+    expect(await screen.findByText("o progresso da Ana")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "Sair" }));
+
+    expect(await screen.findByText("nada guardado da conta anterior")).toBeTruthy();
+    expect(signOut).toHaveBeenCalledTimes(1);
   });
 });
 

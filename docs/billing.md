@@ -522,9 +522,9 @@ Stripe guardou o cartão de teste e o resumo passou a mostrá-lo:
   (P61).*
 - **Quem abre a tela com a assinatura já encerrada na Stripe é deslogado na hora: mantido** — é
   a regra de quem perde o acesso. *Acompanha a regra de Access Architecture.*
-- **"Sair" vai passar a limpar o que as telas guardaram** (achado da revisão de segurança: outra
-  conta na mesma aba via, por instantes, dados da anterior). Entra na abertura da sessão (b).
-  *Sem gatilho: é correção.*
+- **"Sair" limpa o que as telas guardaram** (achado da revisão de segurança: outra conta na
+  mesma aba via, por instantes, dados da anterior). **Feito na abertura da sessão (b),
+  11/10/2026.** *Sem gatilho: é correção.*
 - **A sessão (a) é publicada sozinha**, sem esperar a (b). *Decisão de uma vez só.*
 
 **Convenções de engenharia (como o código faz):**
@@ -544,8 +544,10 @@ Stripe guardou o cartão de teste e o resumo passou a mostrá-lo:
   Se outro já está sincronizando, segue sem sincronizar: o aviso da Stripe vem atrás.
 - **Assinatura que dá acesso e a Stripe não conhece:** 404 na tela; no registro, **erro em
   produção** (lá é sempre acesso sem assinatura de verdade) e aviso fora dela (a do seed).
-- **A leitura não fica guardada no navegador depois de a tela fechar:** "Sair" não limpa o que
-  as telas guardaram, e a conta seguinte na mesma aba veria o plano e o cartão da anterior.
+- **A leitura não fica guardada no navegador depois de a tela fechar:** a conta seguinte na
+  mesma aba veria o plano e o cartão da anterior. "Sair" limpa tudo o que as telas guardaram
+  (sessão b); esquecer ao fechar a tela cobre a sessão que acaba sem o "Sair" — a que o
+  servidor derruba.
 - **As operações moram em `server/src/lib/minha-assinatura.ts`**, e não na rota: o painel (4.7b)
   e o JilsonAI chamam as mesmas. A ida à Stripe mora em `server/src/lib/stripe-assinatura.ts`, a
   segunda metade da fronteira (`stripe.ts` é a de assinar e a do espelho).

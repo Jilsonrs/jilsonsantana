@@ -4306,6 +4306,29 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
         que as telas guardaram (abertura da sessão b) · quem abre a tela com a assinatura já
         encerrada é deslogado (mantido). O `GEMINI.md` do parceiro de design ganhou as duas
         telas no mapa e o item 34 na fila de formatação.
+      - **SESSÃO (b), item 0 — FEITO (11/10/2026): "Sair" esquece o que as telas guardaram.**
+        Ao sair, tudo o que as telas leram e guardaram na aba é apagado antes de a tela de entrar
+        abrir (`Layout`, o único lugar que encerra a sessão): quem entra em seguida na mesma aba
+        não vê nada da conta anterior. A leitura da assinatura continua sendo esquecida ao fechar
+        a tela — é o que cobre a sessão que acaba SEM o "Sair". **Teste:** 1 de tela (a tela
+        guarda, "Sair", a tela seguinte não acha nada). **Mutação:** 1 de 1 reprovou (sem a
+        limpeza, "ainda guardado: o progresso da Ana"). Gates: typecheck, lint, suíte do site
+        (852) e de servidor como o CI (822), build. **Achado, levado ao operador e NÃO
+        construído:** a sessão que o servidor derruba (ou que vence) não passa pelo "Sair"; se
+        outra conta entrar na mesma aba em até 5 minutos, sem recarregar, as outras telas ainda
+        mostram por instantes o que era da anterior — a de faturamento, não.
+        **Os textos da sessão (b)** (mudar de plano, cancelar com os cinco motivos, e o banco
+        pedindo confirmação), em português e inglês, **foram mostrados a ele nesta data e
+        aguardam aprovação**; as telas (passos 9 e 11) esperam por ela.
+        **Docs check (context7):** Stripe → `/websites/stripe` → o agendamento
+        (`subscription_schedules`: criar, soltar com `release`, cancelar), a troca com
+        `payment_behavior` e o segredo de confirmação da fatura, cancelar na hora
+        (`cancellation_details`, `prorate`, `invoice_now`) e `refunds.create` — **3 consultas**.
+        Conferido nos tipos da `stripe@23.0.0`: `from_subscription`, `end_behavior: release`,
+        `Subscription.schedule` e `pending_update`, `pending_if_incomplete`,
+        `Invoice.confirmation_secret`, e a lista FIXA de motivos da Stripe (oito valores; "Já
+        aprendi o que precisava" não tem par — vai como "outro", com o motivo exato guardado
+        junto da assinatura).
       **ONDE PAROU:** SESSÃO (a) FECHADA e **PUBLICADA em 11/10/2026 (`main` = `6305077`)**, com
       a autorização do operador (*"pode publicar depois desses ajustes"*): CI verde nos dois jobs
       no `dev` e na `main`, e conferido no ar como visitante — as rotas novas respondem 401 sem
@@ -4313,12 +4336,11 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       mostra a assinatura de verdade (a do código de 100%); em "Adicionar cartão" a frase da
       Stripe traz o nome público da conta de verdade (P58) — só olhar: salvar ali guarda um
       cartão de verdade.
-      **SESSÃO (b) — por onde começar** (em conversa nova, por escolha dele): (0) "Sair" limpa
-      o que as telas guardaram, com teste · mostrar a ele os textos de mudar de plano e de
-      cancelar, com os cinco motivos em inglês, **antes** de construir · context7 da Stripe: o
-      agendamento da troca para o fim do período e a confirmação do banco na tela · decidir, na
-      abertura do passo 7, tirar da Stripe todos os cartões menos o novo · e então os passos 7
-      a 13. A sessão (c) começa pela pendência P64.
+      **SESSÃO (b) — ABERTA em 11/10/2026.** Feito: o item 0 ("Sair"), a consulta à Stripe e os
+      textos mostrados a ele (aguardam aprovação). **Próximo: o passo 7** — parar a renovação e
+      desfazer, com o motivo; na abertura dele, tirar da Stripe todos os cartões menos o novo.
+      Depois, os passos 8 a 13. Nada desta sessão está publicado. A sessão (c) começa pela
+      pendência P64.
 - [ ] **4.7 — O visitante assina: a conta nasce no pagamento (código, ALTO RISCO).** O checkout
       público: e-mail + pagamento → o webhook cria a conta (o cadastro continua fechado) e manda o
       e-mail de "crie sua senha". **Depende do Resend configurado e da P49** (o remetente). Junto:
