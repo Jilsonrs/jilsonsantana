@@ -4306,8 +4306,13 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
         que as telas guardaram (abertura da sessão b) · quem abre a tela com a assinatura já
         encerrada é deslogado (mantido). O `GEMINI.md` do parceiro de design ganhou as duas
         telas no mapa e o item 34 na fila de formatação.
-      **ONDE PAROU:** SESSÃO (a) FECHADA em 11/10/2026 e **publicação autorizada pelo operador**
-      no mesmo dia (*"pode publicar depois desses ajustes"*).
+      **ONDE PAROU:** SESSÃO (a) FECHADA e **PUBLICADA em 11/10/2026 (`main` = `6305077`)**, com
+      a autorização do operador (*"pode publicar depois desses ajustes"*): CI verde nos dois jobs
+      no `dev` e na `main`, e conferido no ar como visitante — as rotas novas respondem 401 sem
+      login. Sem migration. **Para ele ver no site:** como `member@`, Faturamento e Assinatura
+      mostra a assinatura de verdade (a do código de 100%); em "Adicionar cartão" a frase da
+      Stripe traz o nome público da conta de verdade (P58) — só olhar: salvar ali guarda um
+      cartão de verdade.
       **SESSÃO (b) — por onde começar** (em conversa nova, por escolha dele): (0) "Sair" limpa
       o que as telas guardaram, com teste · mostrar a ele os textos de mudar de plano e de
       cancelar, com os cinco motivos em inglês, **antes** de construir · context7 da Stripe: o
