@@ -4192,7 +4192,22 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
         sem o filtro da conta, a tela sem a regra do gate, a próxima cobrança pedida para
         toda assinatura. Gates: typecheck, lint, suíte de servidor como o CI (761) e do site
         (810), build.
-      **ONDE PAROU:** passo 2 feito (11/10/2026). Próximo: passo 3, a tela de resumo.
+      - **Passo 3 — FEITO (11/10/2026).** A tela `/aluno/conta/faturamento` (o item do menu da
+        conta passa a abrir nela): o plano com o preço, a próxima cobrança com o valor e a data
+        que o servidor mandou, o cartão, a renovação parada com a data do fim, e o alerta da
+        cobrança que falhou; sem assinatura leva a "Assinar", e quem já teve, a "Reativar
+        assinatura". Os textos aprovados em `app.faturamento.*`, PT e EN (a data em inglês sai
+        com o mês por extenso: "Nov 10, 2026"). **Os botões de trocar o cartão, mudar de plano
+        e cancelar entram junto com a tela de cada um** (passos 5, 9 e 11): nenhum link aponta
+        para tela que ainda não existe. **Um texto a mais, rascunho do agente:** "Sua
+        assinatura terminou." / "Your subscription has ended.", para quando a Stripe não tem a
+        data do fim (o aprovado, sem o "em {data}"). **Testes:** 15 de tela (carregando, falha,
+        vazio e cada situação, e o inglês). **Mutação:** 4 de 4 reprovaram — a próxima cobrança
+        com o preço do plano, o alerta sumindo, a falha sumindo, "Assinar" no lugar de
+        "Reativar". Gates: typecheck, lint, suíte do site (825) e de servidor como o CI (761),
+        build. **Não visto em navegador pelo agente** (entrar exige a senha do aluno): a
+        conferência visual é do operador.
+      **ONDE PAROU:** passo 3 feito (11/10/2026). Próximo: passo 4, o servidor trocando o cartão.
 - [ ] **4.7 — O visitante assina: a conta nasce no pagamento (código, ALTO RISCO).** O checkout
       público: e-mail + pagamento → o webhook cria a conta (o cadastro continua fechado) e manda o
       e-mail de "crie sua senha". **Depende do Resend configurado e da P49** (o remetente). Junto:

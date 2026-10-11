@@ -33,6 +33,7 @@ import type {
   AssinaturaCriada,
   SituacaoDaAssinatura,
   SincroniaDaConta,
+  MinhaAssinatura,
 } from "@jilson/core";
 
 // Same-origin by design (mirrors auth-client.ts): in dev the Vite proxy
@@ -952,6 +953,15 @@ export async function criarAssinatura(corpo: AssinarInput): Promise<AssinaturaCr
 /** Esta conta tem acesso agora? (a resposta do gate do servidor) */
 export async function getSituacaoDaAssinatura(): Promise<SituacaoDaAssinatura> {
   const { data } = await client.get<SituacaoDaAssinatura>("/billing/assinatura");
+  return data;
+}
+
+/**
+ * A assinatura da conta, para a tela de Faturamento e Assinatura (etapa 4.6): o plano, a próxima
+ * cobrança e o cartão, como a Stripe diz agora. O pedido não diz de quem nem qual.
+ */
+export async function getMinhaAssinatura(): Promise<MinhaAssinatura> {
+  const { data } = await client.get<MinhaAssinatura>("/billing/minha-assinatura");
   return data;
 }
 

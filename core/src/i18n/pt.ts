@@ -462,6 +462,37 @@ export const pt = {
       comecar: "Começar a estudar",
       demorando: "Está demorando mais que o normal. Seu pagamento não se perde: esta página continua conferindo."
     },
+    // FATURAMENTO E ASSINATURA (Fase 4, etapa 4.6). Textos APROVADOS pelo operador em 11/10/2026,
+    // nos dois idiomas. O título da tela é o rótulo do menu (`nav.faturamento`); os nomes dos
+    // planos e "Assinar" / "Reativar assinatura" são os de `assinar`.
+    faturamento: {
+      descricao: "Seu plano, sua forma de pagamento e a próxima cobrança.",
+      seuPlano: "Seu plano",
+      proximaCobranca: "Próxima cobrança: {valor} em {data}",
+      vaiCancelar: "Sua assinatura termina em {data}. Você continua com acesso até lá.",
+      // Os três abaixo entram com as telas da sessão (b): desfazer, mudar de plano e cancelar.
+      manter: "Manter a assinatura",
+      mudarDePlano: "Mudar de plano",
+      cancelar: "Cancelar assinatura",
+      atrasada: "Não conseguimos cobrar o seu cartão. Troque o cartão para não perder o acesso.",
+      formaDePagamento: "Forma de pagamento",
+      cartao: "{bandeira} •••• {final} · vence em {mes}/{ano}",
+      semCartao: "Nenhum cartão cadastrado.",
+      trocarCartao: "Trocar cartão",
+      adicionarCartao: "Adicionar cartão",
+      semAssinatura: "Você ainda não tem uma assinatura.",
+      terminou: "Sua assinatura terminou em {data}.",
+      // Sem a data (a Stripe não a tem): o texto aprovado, sem o "em {data}". Rascunho do agente.
+      terminouSemData: "Sua assinatura terminou.",
+      erro: "Não foi possível carregar a sua assinatura. Tente de novo.",
+      // A tela de trocar o cartão.
+      cartaoDescricao: "O novo cartão passa a valer na próxima cobrança.",
+      salvarCartao: "Salvar cartão",
+      salvando: "Salvando…",
+      cartaoAtualizado: "Cartão atualizado.",
+      cartaoAtualizadoEPago: "Cartão atualizado e pagamento confirmado.",
+      erroDoCartao: "Não foi possível salvar o cartão. Confira os dados e tente de novo."
+    },
     aula: {
       conteudoDoCurso: "Conteúdo do curso",
       carregando: "Carregando…",
