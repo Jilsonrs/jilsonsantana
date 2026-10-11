@@ -4548,16 +4548,19 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       **passos 7, 8 e 10** (todo o servidor) e **os textos das telas, aprovados por ele em
       português** (três blocos, 11/10/2026; já no dicionário, em `app.faturamento.plano`,
       `.cancelamento` e `.banco` — o inglês é rascunho, a revisar com o Antigravity: P72).
-      **Próximo: o passo 9 e o 11 (as telas)**, depois de ele responder a P67 e a P70, que
-      mudam o que a tela de cancelar mostra.
+      **Decidido por ele em 11/10/2026, e a construir antes das telas:** (i) cancelar com a
+      cobrança atrasada termina a assinatura na hora, para as tentativas e mantém a pessoa
+      logada (servidor: a operação de parar, a resposta e o que a tela recebe; a prova pede o
+      relógio de teste) · (ii) limpar o que as telas guardaram também ao ENTRAR.
+      **Próximo, nesta ordem:** (i) e (ii) · o passo 9 e o 11 (as telas) · o 12 · o 13. A P70
+      (a troca marcada desfeita ao cancelar) só muda uma linha de texto da tela de cancelar.
       Nas telas: os endereços `…/faturamento/cancelar` e `…/faturamento/plano` (constantes no
       `core`), os botões no resumo ("Cancelar assinatura", "Manter a assinatura", "Mudar de
       plano", "Continuar no Anual"), a confirmação do banco pelo site (`handleNextAction`, em
       `stripe-do-site.tsx`) na troca de plano e na troca de cartão, e a tela pedindo outra conta
       quando a resposta é `PreviaVencida`. Depois, o 12 e o 13 (com o relógio de teste para a
       virada do anual para o mensal).
-      **Quando ele responder a P67** (cancelar com a cobrança atrasada), a resposta entra na
-      operação de parar. **Antes de publicar:** a P69 (os avisos de dinheiro devolvido e de
+      **Antes de publicar:** a P69 (os avisos de dinheiro devolvido e de
       devolução que falhou no endereço de avisos da conta de verdade — condição do reembolso) e
       a P71 (a chave de produção e o Sentry). A revisão de segurança do servidor já foi feita e
       corrigida; a do passo 13 cobre as telas. Nada desta sessão está publicado. A sessão (c)
@@ -4580,7 +4583,8 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
         checkout responderia "você já é assinante".
       - **A sessão:** passar dos 3 dias não gera aviso da Stripe; a aula tranca pelo gate e a
         pessoa continua logada (é o que ela precisa para trocar o cartão).
-      - **Cancelar com a cobrança atrasada** (pendência P67), se ainda não tiver entrado.
+      - **Cancelar com a cobrança atrasada** (decidido em 11/10/2026: termina na hora): depois
+        dos 3 dias a pessoa está sem aulas, e a operação tem que achar a assinatura dela.
       - `CLAUDE.md` → *Membership Gating* (a regra do gate) reescrita no MESMO commit; os testes
         do gate e de ponta a ponta com o aviso; a prova com o relógio de teste da Stripe.
 - [ ] **4.7 — O visitante assina: a conta nasce no pagamento (código, ALTO RISCO).** O checkout

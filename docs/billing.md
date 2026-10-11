@@ -231,10 +231,11 @@ cartão — a Stripe diz a data da próxima tentativa) e antes de trancar ("se n
 Y, você perde o acesso"). Entram na etapa 4.7, que traz o envio de e-mail.
 **AINDA NÃO ESTÁ NO CÓDIGO:** hoje `past_due` dá acesso enquanto durar. É passo próprio (plano →
 etapa 4.6b), antes de a etapa 4.7 abrir a assinatura ao público; até lá só o operador assina.
-*Proposta do agente, ainda a confirmar com ele: manter as tentativas da Stripe em 2 semanas (o
-padrão recomendado por ela — `[FATO — context7 /websites/stripe, 11/10/2026]` 8 tentativas em 2
-semanas; as opções são 1, 2 ou 3 semanas, 1 mês e 2 meses), já que com a tolerância separada
-esse prazo deixa de dar dias de aula sem pagar.*
+**A Stripe continua tentando cobrar por 2 SEMANAS** *(decisão do operador, 11/10/2026, sobre a
+proposta do agente)*: é o padrão recomendado por ela — `[FATO — context7 /websites/stripe,
+11/10/2026]` 8 tentativas em 2 semanas; as opções são 1, 2 ou 3 semanas, 1 mês e 2 meses. Com a
+tolerância separada, esse prazo deixa de dar dias de aula sem pagar. Configura-se no painel da
+Stripe, na mesma tela da pendência P60. *Reabre junto com a tolerância.*
 *Reabre se os dados de alunos de verdade mostrarem que 3 dias perde pagante honesto (muita gente
 reativando logo depois de trancar) ou que ainda sobra abuso.*
 
@@ -526,6 +527,18 @@ a assinatura "não paga" (P60). O relato completo está no plano, Fase 4 → eta
 - **Os textos da sessão (a) — o resumo e a troca de cartão —, em português e inglês: aprovados**
   (`app.faturamento.*`). Um a mais é rascunho do agente: "Sua assinatura terminou." / "Your
   subscription has ended.", para quando não há a data do fim (pendência P65).
+- **Cancelar com a cobrança ATRASADA: a assinatura termina na hora, a Stripe para de tentar
+  cobrar, e a pessoa continua logada** para ler a confirmação (decisão do operador, 11/10/2026 —
+  entre isso, terminar e deslogar, e não deixar cancelar enquanto estiver atrasada). Não há
+  período pago a manter: os dias que ela usava eram de tolerância. O texto, aprovado em
+  português: **"Sua assinatura termina agora, e a cobrança em aberto não será mais tentada."**
+  (inglês, rascunho: "Your subscription ends now, and we won't try the pending charge again." —
+  P72). **AINDA NÃO ESTÁ NO CÓDIGO** (hoje o servidor responde "não dá"): entra antes da tela de
+  cancelar. *Reabre se a escola quiser cobrar de quem volta o período que ficou em atraso.*
+- **Os dados que as telas guardaram são limpos também ao ENTRAR** (decisão do operador,
+  11/10/2026): "Sair" já limpa; isto cobre a sessão que acaba sozinha (venceu, ou o site
+  derrubou) com outra conta entrando em seguida no mesmo computador. **AINDA NÃO ESTÁ NO
+  CÓDIGO.** *Sem gatilho: é correção.*
 - **Os textos da sessão (b), em PORTUGUÊS: aprovados** (11/10/2026, em três blocos mostrados a
   ele — a tela de mudar de plano, a de cancelar e o banco pedindo confirmação; moram em
   `app.faturamento.plano`, `.cancelamento` e `.banco`). **O inglês entra como está e será
@@ -742,8 +755,8 @@ encerrada de vez com dias pagos: tem acesso e o servidor recusa cartão.
 - **A chave da Stripe em produção precisa ler pagamentos:** toda sincronia passou a ler a
   cobrança da última fatura. Se a chave for restrita e não puder, todo aviso responde erro e o
   espelho para de ser gravado (pendência P71).
-- **Com a cobrança atrasada, cancelar responde "não dá"** e nada muda: não há período pago a
-  manter, e o que cancelar faz ali é decisão do operador (pendência P67).
+- **Com a cobrança atrasada, cancelar ainda responde "não dá"** e nada muda. A decisão já foi
+  tomada (terminar na hora, continuar logada — acima); falta o código.
 - **Fechar a aba depois de o campo confirmar e antes do último passo:** o cartão fica guardado no
   cliente e não vai para a assinatura; a pessoa repete a troca.
 - **A Stripe já encerrou a assinatura e o espelho ainda não soube:** o resumo diz "terminou" e
