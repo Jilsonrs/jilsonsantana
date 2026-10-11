@@ -30,6 +30,14 @@ export function assinaturaDaAcesso(
 }
 
 /**
+ * Esta assinatura PASSOU do primeiro pagamento? É o que separa "já foi assinante" de "nunca
+ * assinou" (a tentativa que não se completou não conta). Só escolhe texto — nunca decide acesso.
+ */
+export function passouDoPrimeiroPagamento(assinatura: { status: string }): boolean {
+  return !NUNCA_PAGOU.has(assinatura.status);
+}
+
+/**
  * De onde o gate lê: o banco — ou a TRANSAÇÃO de quem está gravando o espelho
  * (`assinaturas.ts`), que precisa comparar o acesso de antes e de depois da gravação
  * com a MESMA regra, sem uma segunda conta de "quem tem acesso".

@@ -1,15 +1,18 @@
 import { Router } from "express";
-import { assinarSchema, previaSchema, type AssinaturaCriada, type PlanosDaAssinatura, type PreviaDaAssinatura, type SituacaoDaAssinatura } from "@jilson/core";
+import { assinarSchema, previaSchema, type AssinaturaCriada, type CartaoTrocado, type PlanosDaAssinatura, type PreviaDaAssinatura, type SituacaoDaAssinatura, type TrocaDeCartaoPreparada } from "@jilson/core";
 import { requireAuth } from "../middleware/auth.js";
 import { validate } from "../lib/http.js";
 import { buscarCodigo, buscarPrecos, calcularPrevia, chavePublicavel, cobrancaConfigurada, FORMAS_DE_PAGAMENTO } from "../lib/stripe.js";
 import { convidaAReativar, temAcessoAtivo } from "../lib/acesso.js";
 import { assinar } from "../lib/checkout.js";
+import { aplicarCartaoNovo, lerMinhaAssinatura, prepararTrocaDeCartao, registrarAssinaturaDesconhecida } from "../lib/minha-assinatura.js";
 
 // ASSINAR COM A CONTA LOGADA (Fase 4, etapa 4.2 — billing.md; CLAUDE.md → Membership Gating).
 // Tudo aqui exige login, e a conta é SEMPRE a da sessão. O site diz só QUAL plano e o código
 // promocional: preço, valor e conta nunca vêm do navegador. Quem grava o espelho da assinatura
 // continua sendo só o aviso da Stripe (`stripe-webhook.ts`).
+// MINHA ASSINATURA (etapa 4.6): o que a tela de Faturamento e Assinatura lê e faz também mora
+// aqui — e o site continua sem dizer de quem nem QUAL assinatura.
 
 const router = Router();
 
@@ -104,6 +107,85 @@ router.post("/billing/assinatura", requireAuth, async (req, res) => {
     return;
   }
   const resposta: AssinaturaCriada = desfecho.resultado === "ativa" ? { estado: "ativa" } : { estado: "pagar", segredo: desfecho.segredo, tipo: desfecho.tipo };
+  res.json(resposta);
+});
+
+// GET /api/billing/minha-assinatura — a assinatura da conta da SESSÃO, para a tela de Faturamento
+// e Assinatura (etapa 4.6): o plano, a próxima cobrança e o cartão, como a Stripe diz agora. O
+// pedido não diz de quem nem qual: a regra mora em `lib/minha-assinatura.ts`.
+router.get("/billing/minha-assinatura", requireAuth, async (req, res) => {
+  const user = req.user;
+  if (!user) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  if (!cobrancaConfigurada()) {
+    console.error("[stripe] minha assinatura recusada: STRIPE_SECRET_KEY ausente");
+    res.status(503).json({ error: "NaoConfigurado" });
+    return;
+  }
+  const leitura = await lerMinhaAssinatura(user.id);
+  if (leitura.resultado === "desconhecida") {
+    registrarAssinaturaDesconhecida(user.id, "minha assinatura");
+    res.status(404).json({ error: "AssinaturaDesconhecida" });
+    return;
+  }
+  res.json(leitura.assinatura);
+});
+
+// TROCAR O CARTÃO (etapa 4.6), em dois tempos — o campo da Stripe fica no meio, e o dado do
+// cartão nunca passa por aqui. Nenhum dos dois pedidos tem corpo: a conta é a da sessão, a
+// assinatura é a dela, e o cartão novo o servidor lê na Stripe.
+
+// POST /api/billing/cartao — abre o pedido de guardar cartão. O segredo vai SÓ na resposta.
+router.post("/billing/cartao", requireAuth, async (req, res) => {
+  const user = req.user;
+  if (!user) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  if (!cobrancaConfigurada()) {
+    console.error("[stripe] troca de cartão recusada: STRIPE_SECRET_KEY ausente");
+    res.status(503).json({ error: "NaoConfigurado" });
+    return;
+  }
+  const preparo = await prepararTrocaDeCartao(user.id);
+  if (preparo.resultado === "desconhecida") registrarAssinaturaDesconhecida(user.id, "trocar cartão");
+  if (preparo.resultado !== "ok") {
+    res.status(preparo.resultado === "desconhecida" ? 404 : 409).json({ error: preparo.resultado === "desconhecida" ? "AssinaturaDesconhecida" : "SemAssinatura" });
+    return;
+  }
+  const resposta: TrocaDeCartaoPreparada = { segredo: preparo.segredo };
+  res.json(resposta);
+});
+
+// POST /api/billing/cartao/aplicar — põe na assinatura o cartão que o site acabou de confirmar.
+router.post("/billing/cartao/aplicar", requireAuth, async (req, res) => {
+  const user = req.user;
+  if (!user) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  if (!cobrancaConfigurada()) {
+    console.error("[stripe] troca de cartão recusada: STRIPE_SECRET_KEY ausente");
+    res.status(503).json({ error: "NaoConfigurado" });
+    return;
+  }
+  const troca = await aplicarCartaoNovo(user.id);
+  if (troca.resultado === "desconhecida") {
+    registrarAssinaturaDesconhecida(user.id, "trocar cartão");
+    res.status(404).json({ error: "AssinaturaDesconhecida" });
+    return;
+  }
+  if (troca.resultado === "sem-assinatura") {
+    res.status(409).json({ error: "SemAssinatura" });
+    return;
+  }
+  if (troca.resultado === "sem-cartao-novo") {
+    res.status(409).json({ error: "CartaoNaoConfirmado" });
+    return;
+  }
+  const resposta: CartaoTrocado = { cartao: troca.cartao, pagou: troca.pagou };
   res.json(resposta);
 });
 

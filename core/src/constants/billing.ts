@@ -84,3 +84,59 @@ export type AssinaturaConferida = { id: string; resultado: ResultadoDaSincronia;
 
 /** Resposta de `POST /api/admin/assinaturas/sincronizar`: o que foi conferido e a resposta do gate depois. */
 export type SincroniaDaConta = { temAcesso: boolean; assinaturas: AssinaturaConferida[] };
+
+/**
+ * "FATURAMENTO E ASSINATURA" (Fase 4, etapa 4.6 — decisões do operador, 11/10/2026): a tela mora
+ * no item que já existia no menu da conta, e cada ação tem a sua tela, com endereço próprio — é o
+ * que dá link direto para "trocar o cartão" (o painel do admin e o e-mail da cobrança que falhou).
+ */
+export const TELA_DO_FATURAMENTO = "/aluno/conta/faturamento";
+export const TELA_DE_TROCAR_O_CARTAO = "/aluno/conta/faturamento/cartao";
+
+/** O cartão guardado, como a tela o mostra: NUNCA o número — a bandeira, os 4 últimos e a validade. */
+export type CartaoDaAssinatura = { bandeira: string; final: string; mes: number; ano: number };
+
+/** Em que pé está a assinatura da conta, para a tela de Faturamento e Assinatura. */
+export const SituacaoDoFaturamento = {
+  /** Nunca assinou. */
+  NENHUMA: "nenhuma",
+  /** Já foi assinante e hoje está sem acesso. */
+  TERMINADA: "terminada",
+  /** Com acesso, e renova. */
+  ATIVA: "ativa",
+  /** Com acesso até uma data, e não renova (a renovação foi parada, ou a assinatura já encerrou com dias pagos). */
+  VAI_CANCELAR: "vai-cancelar",
+  /** Com acesso, e a última cobrança falhou: a Stripe está tentando de novo. */
+  ATRASADA: "atrasada",
+} as const;
+export type SituacaoDoFaturamento = (typeof SituacaoDoFaturamento)[keyof typeof SituacaoDoFaturamento];
+
+/**
+ * Resposta de `GET /api/billing/minha-assinatura`: a assinatura da conta da SESSÃO, como a Stripe
+ * diz agora. Nenhum código da Stripe sai daqui (assinatura, cliente, preço, cartão). As datas vêm
+ * em ISO. `plano` e `preco` vazios: o preço da assinatura não é nenhum dos dois planos de hoje.
+ */
+export type MinhaAssinatura =
+  | { situacao: typeof SituacaoDoFaturamento.NENHUMA }
+  | { situacao: typeof SituacaoDoFaturamento.TERMINADA; terminouEm: string | null }
+  | {
+      situacao: typeof SituacaoDoFaturamento.ATIVA | typeof SituacaoDoFaturamento.VAI_CANCELAR | typeof SituacaoDoFaturamento.ATRASADA;
+      plano: Plano | null;
+      preco: { centavos: number; moeda: string } | null;
+      /** Quanto e quando a Stripe cobra a renovação — a conta é dela. Só quando renova. */
+      proximaCobranca: { centavos: number; moeda: string; em: string } | null;
+      /** Até quando há acesso — só quando não renova. */
+      acessoAte: string | null;
+      cartao: CartaoDaAssinatura | null;
+      /** Esta assinatura ainda pode ser cobrada: aceita cartão novo. A encerrada de vez, com dias pagos, não. */
+      aceitaCartao: boolean;
+    };
+
+/** Resposta de `POST /api/billing/cartao`: o segredo com que o campo da Stripe guarda o cartão novo. */
+export type TrocaDeCartaoPreparada = { segredo: string };
+
+/**
+ * Resposta de `POST /api/billing/cartao/aplicar`: o cartão que passou a valer na assinatura.
+ * `pagou`: a cobrança estava atrasada, e o cartão novo pagou a fatura em aberto na hora.
+ */
+export type CartaoTrocado = { cartao: CartaoDaAssinatura | null; pagou: boolean };

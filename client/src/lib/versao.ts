@@ -106,6 +106,8 @@ export const PEDACOS_DO_ALUNO: ReadonlyArray<Pedaco> = [
   // O formulário de assinar (Fase 4, etapa 4.2). O script da Stripe em si só é baixado quando a
   // tela de assinar abre (`lib/stripe-do-site.tsx`), não aqui.
   () => import("@/components/assinar/FormularioDeAssinatura"),
+  // O formulário de trocar o cartão (etapa 4.6): traz as mesmas bibliotecas da Stripe.
+  () => import("@/components/faturamento/FormularioDoCartao"),
 ];
 
 /**

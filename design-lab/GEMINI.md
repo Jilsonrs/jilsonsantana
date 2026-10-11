@@ -138,6 +138,8 @@ servidores (§5); o React responde em `localhost:5173`, a home pública em `loca
 | `/aluno/minhas-trilhas` | `client/src/pages/MyTrilhasPage.tsx` |
 | `/aluno/minhas-trilhas/:id` | `client/src/pages/MyTrilhaDetailPage.tsx` |
 | `/aluno/conta` | `client/src/pages/AccountPage.tsx` |
+| `/aluno/conta/faturamento` | **Faturamento e Assinatura** (11/10, Fase 4 — o lugar e o desenho são decisões do operador): `client/src/pages/aluno/FaturamentoPage.tsx` + `client/src/components/faturamento/BlocoDoPlano.tsx` e `BlocoDoCartao.tsx`. Abre pelo menu da foto e pela coluna de Minha conta. Estrutura pronta, acabamento seu (fila, item 34). |
+| `/aluno/conta/faturamento/cartao` | **Trocar cartão** (11/10): `client/src/pages/aluno/TrocarCartaoPage.tsx` + `client/src/components/faturamento/FormularioDoCartao.tsx`. O campo do cartão é da Stripe (fila, item 34). |
 | `/aluno/em-andamento` | **Em andamento** (29/09): `client/src/pages/aluno/EmAndamentoPage.tsx` — é onde "Meus estudos" abre. **Só o título**, por decisão do operador, até o progresso chegar (Fase 5). Meus estudos **não tem tela de resumo**: a coluna do nível 2 é o guia. |
 | `/aluno/notificacoes` | **Notificações — Ver todas** (04/10, decisões do operador): `client/src/pages/aluno/NotificacoesPage.tsx` — todas as notificações, com o texto inteiro e a data. Chega-se pelo sino do topo (`components/notificacoes/Sino.tsx`). Estrutura pronta, acabamento seu (fila, item 24). |
 | `/aluno/salvos` | **Salvos** (03/10, decisão do operador, "como no LinkedIn"): `client/src/pages/aluno/SalvosPage.tsx` — os cursos e as aulas salvos para depois, com o botão de tirar (o mesmo `BotaoSalvar`). Estrutura pronta, acabamento seu (fila, item 19). |
@@ -508,6 +510,30 @@ exceto o item 4, que é página pública.
    cartões, `components/content/BarraDeProgresso.tsx`, com as suas classes de antes — acabar uma
    acaba as duas. Estrutura pronta, acabamento seu. O `progressbar` com o valor, o nome que o
    leitor de tela anuncia e o "N% concluído" **têm teste**.
+
+34. **Faturamento e Assinatura, e Trocar cartão** *(11/10, Fase 4, etapa 4.6 — decisões do
+    operador: a tela mora no item que já existia no menu da conta, com um resumo e uma tela por
+    ação)*. **O resumo** (`/aluno/conta/faturamento`): dois blocos — "Seu plano" (o plano com o
+    preço, a próxima cobrança, a data do fim quando a renovação está parada, e o **alerta** de
+    cobrança que falhou) e "Forma de pagamento" (o cartão e o botão Trocar/Adicionar cartão);
+    sem assinatura, uma frase e o botão Assinar ou Reativar assinatura. **Trocar cartão**
+    (`…/faturamento/cartao`): o campo do cartão, o botão Salvar cartão e, depois, a confirmação
+    com o cartão novo e o botão de volta. Estrutura crua, acabamento seu.
+    **O campo do cartão NÃO é nosso:** é da Stripe, dentro de uma moldura dela — o CSS do site
+    não entra ali. O que dá para ajustar (cor, raio, fonte) é a `APARENCIA` em
+    `client/src/lib/stripe-do-site.tsx`, e vale também para a tela de assinar
+    (`/aluno/assinar`, `client/src/pages/aluno/AssinarPage.tsx` + `components/assinar/`), que
+    usa o mesmo campo. **A frase de autorização embaixo do campo também é da Stripe** (decisão
+    do operador, 11/10: fica a dela).
+    **Têm teste, mantenha:** o alerta da cobrança que falhou e as mensagens de erro são
+    `role="alert"`; as confirmações são `role="status"`; o botão do cartão só aparece quando o
+    servidor diz que a assinatura aceita cartão; o botão Salvar trava enquanto envia. **Vêm
+    na próxima sessão** (mesmos arquivos): os botões Mudar de plano, Manter a assinatura e
+    Cancelar assinatura, com a tela de cada um.
+    **Mudou no menu (11/10):** na coluna do nível 2 fica **um item aceso por vez** — o mais
+    específico (`itemAceso`, em `lib/navigation.ts`); antes "Seus dados" ficava aceso junto com
+    "Faturamento e Assinatura". Os itens da coluna da conta ganharam `aria-current`, como os das
+    outras colunas. As suas classes do item aceso não mudaram.
 
 > **Fora do seu trabalho, para não confundir:** o Bunny ganhou **Live Stream** em acesso
 > antecipado (29/09). É só avaliação depois da Fase 3, **não** é tela a desenhar (`docs/bunny.md`

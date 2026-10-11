@@ -33,6 +33,9 @@ import type {
   AssinaturaCriada,
   SituacaoDaAssinatura,
   SincroniaDaConta,
+  MinhaAssinatura,
+  TrocaDeCartaoPreparada,
+  CartaoTrocado,
 } from "@jilson/core";
 
 // Same-origin by design (mirrors auth-client.ts): in dev the Vite proxy
@@ -952,6 +955,34 @@ export async function criarAssinatura(corpo: AssinarInput): Promise<AssinaturaCr
 /** Esta conta tem acesso agora? (a resposta do gate do servidor) */
 export async function getSituacaoDaAssinatura(): Promise<SituacaoDaAssinatura> {
   const { data } = await client.get<SituacaoDaAssinatura>("/billing/assinatura");
+  return data;
+}
+
+/**
+ * A assinatura da conta, para a tela de Faturamento e Assinatura (etapa 4.6): o plano, a próxima
+ * cobrança e o cartão, como a Stripe diz agora. O pedido não diz de quem nem qual.
+ */
+export async function getMinhaAssinatura(): Promise<MinhaAssinatura> {
+  const { data } = await client.get<MinhaAssinatura>("/billing/minha-assinatura");
+  return data;
+}
+
+/**
+ * Trocar o cartão, 1º tempo: o servidor abre o pedido de guardar cartão e devolve o segredo com
+ * que o campo da Stripe o confirma. Sem assinatura que aceite cartão: 409 `SemAssinatura`.
+ * NUNCA tenta de novo sozinho (gravação que cria).
+ */
+export async function prepararTrocaDeCartao(): Promise<TrocaDeCartaoPreparada> {
+  const { data } = await client.post<TrocaDeCartaoPreparada>("/billing/cartao");
+  return data;
+}
+
+/**
+ * Trocar o cartão, 2º tempo: o servidor põe na assinatura o cartão que o campo acabou de
+ * confirmar — ele o lê na Stripe; daqui não vai código nenhum. Repetir não faz mal.
+ */
+export async function aplicarCartaoNovo(): Promise<CartaoTrocado> {
+  const { data } = await client.post<CartaoTrocado>("/billing/cartao/aplicar");
   return data;
 }
 

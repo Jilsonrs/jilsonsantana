@@ -128,6 +128,27 @@ export async function sincronizarAssinatura(assinaturaId: string): Promise<Sincr
   }
 }
 
+/**
+ * A sincronia que NÃO ESPERA a trava (etapa 4.6 — achado da revisão de segurança, 11/10/2026).
+ * Para quem é chamado pelo ALUNO e pode ser repetido à vontade (a tela de Faturamento e
+ * Assinatura): quem espera a trava espera segurando uma conexão do banco, e vários pedidos
+ * juntos esgotariam as conexões e parariam o gate de todo mundo. Se a assinatura já está sendo
+ * sincronizada por outro, devolve nada na hora — o espelho está sendo acertado de qualquer jeito,
+ * e o aviso da Stripe vem atrás. A mesma rotina e a mesma trava; só não fica na fila.
+ */
+export async function sincronizarSeLivre(assinaturaId: string): Promise<Sincronia | null> {
+  try {
+    return await prisma.$transaction(async (tx): Promise<Sincronia | null> => {
+      const [trava] = await tx.$queryRaw<{ livre: boolean }[]>`SELECT pg_try_advisory_xact_lock(hashtext(${assinaturaId})) AS livre`;
+      if (!trava?.livre) return null;
+      return sincronizar(tx, assinaturaId);
+    }, TEMPO_DA_TRANSACAO);
+  } catch (erro) {
+    const motivo = erro instanceof Error ? erro.message : String(erro);
+    throw new Error(`[stripe] a sincronia da assinatura ${assinaturaId} falhou: ${motivo}`, { cause: erro });
+  }
+}
+
 /** O que a sincronia de uma conta encontrou em CADA assinatura dela. */
 export type Conferida = { id: string } & (Sincronia | { resultado: "nao-encontrada" });
 

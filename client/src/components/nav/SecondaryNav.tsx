@@ -9,6 +9,7 @@ import {
   secoesVisiveis,
   secaoAtiva,
   itensSecundarios,
+  itemAceso,
   casaRota,
   type ItemSecundario,
 } from "@/lib/navigation";
@@ -52,6 +53,8 @@ export function SecondaryNav({
   const secoes = secoesVisiveis(papel, t);
   const ativa = secaoAtiva(pathname, secoes);
   const itens = itensSecundarios(pathname, secoes);
+  // Um item aceso por vez — o mais específico (`lib/navigation.ts`).
+  const aceso = itemAceso(pathname, itens);
   const concluidos = useItensConcluidos(pathname, ativa);
 
   const [menuDoCursoFechado, fecharMenuDoCurso] = useMenuDoCursoFechado();
@@ -142,11 +145,12 @@ export function SecondaryNav({
           <>
             <ul className="flex flex-col gap-1 mt-2">
               {itens.map((item) => {
-                const isItemActive = pathname === item.to || pathname.startsWith(`${item.to}/`);
+                const isItemActive = item.to === aceso;
                 return (
                   <li key={item.to}>
                     <Link
                       to={item.to}
+                      aria-current={isItemActive ? "page" : undefined}
                       className={cn(
                         "flex items-center px-4 py-2.5 rounded-md text-[0.95rem] transition-colors font-medium",
                         isItemActive
@@ -197,7 +201,7 @@ export function SecondaryNav({
                   <li key={item.to}>
                     <ItemDoGrupo
                       item={item}
-                      ativo={pathname === item.to || pathname.startsWith(`${item.to}/`)}
+                      ativo={item.to === aceso}
                       concluido={item.chave !== undefined && concluidos.has(item.chave)}
                       emBreve={etiquetaEmBreve(ativa, t)}
                     />

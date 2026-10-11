@@ -473,9 +473,147 @@ a trava do checkout que segura conexão do banco (pré-requisito (b) da etapa 4.
 monitor de erro, sem o qual toda falha de cobrança só existe no registro (Fase 7; será o Sentry) ·
 a assinatura "não paga" (P60). O relato completo está no plano, Fase 4 → etapa 4.4 → Passo 9.
 
+## Minha assinatura: Faturamento e Assinatura *(Fase 4, etapa 4.6 — 11/10/2026)*
+
+**Decisões do operador (11/10/2026)** — perguntadas com opções antes de construir:
+- **A tela mora no item que já existia no menu da conta, "Faturamento e Assinatura"** (menu da
+  foto e coluna de Minha conta), em `/aluno/conta/faturamento` — o item estava no menu e não abria
+  tela nenhuma. *Reabre se a conta ganhar outra tela de cobrança (recibos, notas) que peça
+  separar "assinatura" de "faturamento".*
+- **Resumo + uma tela por ação, cada uma com endereço próprio** (`…/faturamento/cartao`,
+  `…/faturamento/plano`, `…/faturamento/cancelar`), e não tudo numa tela só. É o que dá link
+  direto para "trocar o cartão": o painel do admin (4.7b) e o e-mail da cobrança que falhou (4.7)
+  precisam dele. *Reabre se o Antigravity redesenhar a tela.*
+- **Motivos de cancelamento: a lista curta, e escolher é OPCIONAL** — "Está caro para mim agora" ·
+  "Não estou tendo tempo de estudar" · "Já aprendi o que precisava" · "Não encontrei o conteúdo
+  que procurava" · "Outro motivo" —, mais o campo opcional "Quer contar mais?". *Reabre quando
+  houver cancelamentos de verdade e "Outro motivo" for a resposta mais comum.*
+- **Anual → mensal vale no FIM do ano já pago** (entre isso, na hora com crédito, e não oferecer):
+  a pessoa continua no anual até a data paga e dali em diante é cobrada todo mês; a tela diz "Seu
+  plano muda para Mensal em DD/MM/AAAA" e deixa desistir; nenhum dinheiro volta. **Mensal → anual
+  vale na hora**, com o valor mostrado antes. *Reabre se um aluno pedir a troca na hora, ou se o
+  agendamento na Stripe der mais manutenção do que vale — aí "não oferecer" volta à mesa.*
+- **Depois do reembolso pedido pela própria pessoa, ela CONTINUA LOGADA** (e não deslogada, como
+  manda a regra de quem perde o acesso): vê a confirmação e segue no site, sem as aulas, com
+  "Reativar assinatura". Vale só para esse caso. *Reabre se a sessão que fica aberta der algum
+  acesso que o gate não tranca.*
+- **O que decorre das decisões de reembolso, lido de volta a ele e aprovado:** o reembolso devolve
+  **tudo o que foi pago naquela assinatura** (quem trocou de plano dentro dos 7 dias recebe as
+  duas cobranças) · a assinatura de cortesia (código de 100%) **não mostra** a saída do reembolso ·
+  cartão trocado com o pagamento atrasado → a escola **tenta cobrar na hora** com o cartão novo ·
+  o motivo do cancelamento fica guardado **na Stripe**, em cada assinatura (a contagem dentro da
+  escola vem com o painel, 4.7b) · cancelar com reembolso **direto no painel da Stripe** também
+  passa a cortar o acesso. *Acompanham a regra do reembolso, acima.*
+- **Os textos da sessão (a) — o resumo e a troca de cartão —, em português e inglês: aprovados**
+  (`app.faturamento.*`). Um a mais é rascunho do agente: "Sua assinatura terminou." / "Your
+  subscription has ended.", para quando não há a data do fim (pendência P65). Os da sessão (b)
+  são mostrados a ele na abertura dela.
+
+**Depois do teste dele no navegador (11/10/2026)** — as duas telas abriram, o campo de verdade da
+Stripe guardou o cartão de teste e o resumo passou a mostrá-lo:
+- **A frase de autorização embaixo do campo do cartão fica a da STRIPE** (entre isso, esconder e
+  escrever a nossa, e deixar para os termos de uso). É o próprio campo que a escreve quando um
+  cartão é guardado para cobranças futuras — aparece também na tela de assinar. O nome que ele viu,
+  "Área restrita de JILSON RODRIGUES DE SANTANA", é o da área de teste; no site entra o **nome
+  público da conta de verdade**, que ele confere no painel da Stripe (pendência P58). `[FATO —
+  tipos de `@stripe/stripe-js@10.0.0`]` a frase se esconde com `terms: { card: "never" }`; sem
+  ela, dizer ao aluno que o cartão será cobrado nas renovações passa a ser da escola. *Reabre se
+  o nome público certo ainda deixar a frase estranha, ou quando os termos de uso forem escritos
+  (P61).*
+- **Quem abre a tela com a assinatura já encerrada na Stripe é deslogado na hora: mantido** — é
+  a regra de quem perde o acesso. *Acompanha a regra de Access Architecture.*
+- **"Sair" vai passar a limpar o que as telas guardaram** (achado da revisão de segurança: outra
+  conta na mesma aba via, por instantes, dados da anterior). Entra na abertura da sessão (b).
+  *Sem gatilho: é correção.*
+- **A sessão (a) é publicada sozinha**, sem esperar a (b). *Decisão de uma vez só.*
+
+**Convenções de engenharia (como o código faz):**
+- **O site nunca diz QUAL assinatura, cliente ou cartão.** A conta é a da sessão; a assinatura é a
+  que dá acesso a essa conta, achada no espelho; nenhum código da Stripe vem do navegador nem vai
+  a ele. As três rotas novas não leem corpo nenhum.
+- **A tela lê a Stripe NA HORA** (o plano, a próxima cobrança, o cartão, "vai cancelar"); o
+  espelho continua guardando só o que o gate lê, sem migration. Sem assinatura que dê acesso, a
+  resposta sai do espelho e a Stripe nem é consultada. **Ler não grava nada — com uma exceção:**
+  se o espelho dá acesso e a Stripe diz que a assinatura acabou (o aviso do fim se perdeu), a
+  leitura chama a rotina de sincronia; senão as aulas seguiriam abertas e "Reativar assinatura"
+  responderia "já é assinante". A sessão cai, como em toda perda de acesso.
+- **O dono é o do espelho, e a Stripe confere:** se ela diz que a assinatura é de OUTRA conta,
+  nada é lido nem trocado, e o registro grita (a linha do espelho está errada).
+- **A sincronia que não espera** (`sincronizarSeLivre`): o que o aluno pode repetir à vontade
+  não entra na fila da trava da assinatura — esperar seguraria uma conexão do banco por pedido.
+  Se outro já está sincronizando, segue sem sincronizar: o aviso da Stripe vem atrás.
+- **Assinatura que dá acesso e a Stripe não conhece:** 404 na tela; no registro, **erro em
+  produção** (lá é sempre acesso sem assinatura de verdade) e aviso fora dela (a do seed).
+- **A leitura não fica guardada no navegador depois de a tela fechar:** "Sair" não limpa o que
+  as telas guardaram, e a conta seguinte na mesma aba veria o plano e o cartão da anterior.
+- **As operações moram em `server/src/lib/minha-assinatura.ts`**, e não na rota: o painel (4.7b)
+  e o JilsonAI chamam as mesmas. A ida à Stripe mora em `server/src/lib/stripe-assinatura.ts`, a
+  segunda metade da fronteira (`stripe.ts` é a de assinar e a do espelho).
+- **O plano é lido pelo INTERVALO da cobrança** (por mês, por ano), não pela lookup key: a chave
+  passa para o preço novo quando o valor muda, e quem assinou antes fica no preço antigo, sem ela.
+- **A próxima cobrança é a prévia da fatura da própria Stripe** (já com desconto e saldo), pedida
+  só para a assinatura que renova: o valor mostrado é o cobrado.
+- **Trocar o cartão, em dois tempos.** O servidor abre um pedido de guardar cartão para o cliente
+  DA ASSINATURA, marcado com a conta e a assinatura; o site o confirma com o campo da Stripe,
+  aberto para só guardar (nada é cobrado ali); o servidor lê **na Stripe** o cartão confirmado —
+  só vale o pedido que deu certo, do nosso fluxo, desta conta, deste cliente e desta assinatura,
+  **aberto há até 1 hora** — e o põe na assinatura. O cartão antigo sai da Stripe depois (se não sair, é aviso).
+- **Com a cobrança atrasada, o cartão novo paga a fatura em aberto**, e o espelho é acertado por
+  `sincronizarSeLivre`. Cartão novo recusado não é erro: a troca valeu, e a Stripe segue
+  tentando. Se a fatura foi paga no mesmo instante por outro caminho, a fatura é relida — não
+  vira erro. **A troca do cartão não segura a trava da assinatura** — ela não decide nada pelo
+  espelho; a trava fica para cancelar e reembolsar (sessão b).
+- **"Aceita cartão novo?" é uma regra só** (`aceitaCartaoNovo`): a tela mostra o botão e a
+  operação aceita pelo mesmo critério. A assinatura encerrada de vez, ainda com dias pagos, não
+  aceita: não cobra mais nada.
+
+`[FATO — tipos da `stripe@23.0.0` e medido na área restrita, 11/10/2026]` No pedido de guardar
+cartão, a lista de formas de pagamento é **`allowed_payment_method_types`** — o nome antigo
+(`payment_method_types`) não existe mais nesta versão da API. A Stripe aceitou o pedido assim e
+ele nasce só com `card`.
+`[FATO — medido na área restrita, 11/10/2026, com duas contas descartáveis; 32 pontos]` a prévia
+da fatura de uma assinatura mensal em dia devolve o valor cheio, com a data 31 dias à frente · para
+a assinatura marcada para acabar no fim do período, a prévia responde `invoice_upcoming_none` (o
+servidor trata como "sem próxima cobrança") · aplicar antes de o campo confirmar não muda nada ·
+depois da confirmação, o cartão da assinatura passa a ser o novo e o antigo sai do cliente ·
+repetir a aplicação não tira o cartão novo · **com um relógio de teste da Stripe**, a renovação
+num cartão que falha deixa a assinatura `past_due` com a fatura `open`, a conta segue com acesso,
+e o cartão novo paga a fatura na hora: `active`, fatura `paid`, espelho pago até o fim do período
+novo · cartão novo que também falha: a troca vale, a assinatura segue `past_due`, sem erro ·
+encerrada de vez com dias pagos: tem acesso e o servidor recusa cartão.
+
+**Limitações conhecidas:**
+- **A conta que tem acesso pela assinatura de mentira do seed** (o `member@` do banco de dev) vê
+  "Não foi possível carregar a sua assinatura": a Stripe não conhece aquela assinatura. Para ver a
+  tela no computador, a conta precisa assinar pela tela de assinar, com o cartão de teste.
+- **Os botões de mudar de plano, de cancelar e de "Manter a assinatura" chegam na sessão (b)**,
+  junto com a tela de cada um: até lá o resumo mostra a situação, sem a ação.
+- **Fechar a aba depois de o campo confirmar e antes do último passo:** o cartão fica guardado no
+  cliente e não vai para a assinatura; a pessoa repete a troca.
+- **A Stripe já encerrou a assinatura e o espelho ainda não soube:** o resumo diz "terminou" e
+  oferece "Reativar assinatura", mas a tela de assinar responde pelo gate ("Você já é assinante")
+  até o aviso chegar.
+- **As rotas novas não têm limite de tentativas** — como as outras de cobrança: é pré-requisito
+  da etapa 4.7, que agora as cita pelo nome.
+- **O banco pede uma confirmação na cobrança da fatura em aberto** (cartão que exige o código do
+  banco): a troca vale, a tela diz só "Cartão atualizado.", e nada no site completa a
+  confirmação — as tentativas seguintes da Stripe tendem a parar no mesmo ponto. Fica registrado,
+  com a conta e a assinatura. *Completar na tela vem com a troca de plano (sessão b, passos 10 e
+  11), que precisa do mesmo mecanismo; o texto é do operador.*
+- **Só o cartão que era da assinatura sai da Stripe.** O cartão confirmado e não aplicado (aba
+  fechada, segunda aba) e o padrão do cliente continuam guardados. *Sessão (b), abertura do
+  passo 7: tirar todos menos o novo.*
+
 ## Pendências de verificação
 
-Nenhuma aberta. **Da etapa 4.4 (10/10/2026):** a sincronia do checkout e a do admin foram
+**Da etapa 4.6, sessão (a) (11/10/2026):** a leitura e a troca de cartão foram provadas na área
+restrita, pelo servidor (acima), e **no navegador, pelo operador, no mesmo dia**: como `member@`
+no computador, o resumo abriu ("Mensal · R$ 99,90/mês", "Próxima cobrança: R$ 0,00 em
+10/11/2026", "Nenhum cartão cadastrado."), o campo de VERDADE da Stripe abriu para só guardar o
+cartão, o `4242` foi salvo ("Cartão atualizado.") e o resumo passou a mostrar "Visa •••• 4242".
+*Não exercitado no navegador:* a cobrança atrasada paga pelo cartão novo (só na área restrita,
+com o relógio de teste) e as telas em inglês.
+**Da etapa 4.4 (10/10/2026):** a sincronia do checkout e a do admin foram
 provadas na área restrita (acima). *Não exercitado contra a Stripe, só com ela simulada e sessões
 de verdade:* a assinatura cancelada por falta de pagamento derrubando a sessão. **Na conta de VERDADE (etapa 4.3, 10/10/2026):** o operador assinou no site com um
 código de 100% e o espelho de produção ficou ativo, de verdade — as chaves, os preços, o código e o
