@@ -26,6 +26,8 @@ export type DetalhesDaAssinatura = {
   cartao: CartaoDaAssinatura | null;
   /** O cliente da Stripe que esta assinatura cobra — é dele o cartão novo. Não sai do servidor. */
   clienteId: string | null;
+  /** A conta da escola que a STRIPE diz ser a dona (a que o checkout gravou lá) — ou nenhuma. Não sai do servidor. */
+  userId: string | null;
   /** O cartão que ela cobra hoje, se for o DELA (e não o padrão do cliente). Não sai do servidor. */
   cartaoId: string | null;
   /** A última fatura, se ainda está em aberto (a cobrança falhou): é a que o cartão novo paga. Não sai do servidor. */
@@ -45,7 +47,7 @@ export function paraCartao(forma: string | Stripe.PaymentMethod | null | undefin
  * escolhe qual cobrar.
  */
 export function paraDetalhesDaAssinatura(assinatura: Stripe.Subscription): DetalhesDaAssinatura {
-  const { status, pagoAte, clienteId } = paraAssinaturaNaStripe(assinatura);
+  const { status, pagoAte, clienteId, userId } = paraAssinaturaNaStripe(assinatura);
   const daAssinatura = assinatura.default_payment_method;
   const fatura = assinatura.latest_invoice;
   const itens = assinatura.items.data;
@@ -65,6 +67,7 @@ export function paraDetalhesDaAssinatura(assinatura: Stripe.Subscription): Detal
     acabaEm,
     cartao: paraCartao(daAssinatura) ?? paraCartao(padraoDoCliente),
     clienteId,
+    userId,
     cartaoId: typeof daAssinatura === "string" ? daAssinatura : (daAssinatura?.id ?? null),
     faturaEmAbertoId: typeof fatura === "object" && fatura !== null && fatura.status === "open" ? fatura.id : null,
   };
@@ -134,17 +137,23 @@ export async function criarPedidoDeCartao(pedido: PedidoDeCartao): Promise<strin
   }
 }
 
+/** Por quanto tempo um pedido de guardar cartão vale para ser aplicado: a troca é coisa de minutos. */
+const VALIDADE_DO_PEDIDO_DE_CARTAO = 60 * 60 * 1000;
+
 /**
  * O cartão que o site acabou de confirmar para ESTE pedido — ou nenhum. Função pura, com teste:
  * é ela que impede um cartão de ir para a assinatura errada. Só vale o pedido que DEU CERTO, que
  * é do nosso fluxo e que foi aberto para esta conta, este cliente e esta assinatura. A lista vem
  * da Stripe com o mais novo primeiro: vale o primeiro que servir.
+ * E só o pedido ABERTO HÁ POUCO (achado da revisão de segurança, 11/10/2026): sem prazo, chamar
+ * "aplicar" semanas depois reporia um cartão antigo por cima do atual — e tiraria o atual.
  */
-export function escolherCartaoConfirmado(pedidos: Stripe.SetupIntent[], pedido: PedidoDeCartao): string | null {
+export function escolherCartaoConfirmado(pedidos: Stripe.SetupIntent[], pedido: PedidoDeCartao, agora: number = Date.now()): string | null {
   for (const candidato of pedidos) {
     const doCliente = typeof candidato.customer === "string" ? candidato.customer : candidato.customer?.id;
     const m = candidato.metadata ?? {};
-    const serve = candidato.status === "succeeded" && doCliente === pedido.clienteId && m.para === TROCAR_CARTAO && m.userId === pedido.userId && m.assinatura === pedido.assinaturaId;
+    const recente = candidato.created * 1000 >= agora - VALIDADE_DO_PEDIDO_DE_CARTAO;
+    const serve = recente && candidato.status === "succeeded" && doCliente === pedido.clienteId && m.para === TROCAR_CARTAO && m.userId === pedido.userId && m.assinatura === pedido.assinaturaId;
     if (!serve) continue;
     const forma = candidato.payment_method;
     const formaId = typeof forma === "string" ? forma : forma?.id;
@@ -183,16 +192,33 @@ export async function soltarCartao(formaId: string): Promise<void> {
 }
 
 /**
- * Cobra AGORA a fatura em aberto, com o cartão da assinatura. `true`: pagou. `false`: o cartão
- * foi recusado, ou o banco pede uma confirmação que só a pessoa dá — nada a fazer aqui: a Stripe
- * segue tentando sozinha, já com o cartão novo. Qualquer outra falha sobe.
+ * O que deu a cobrança da fatura em aberto. `recusada`: a Stripe segue tentando sozinha, já com o
+ * cartão novo. `pede-confirmacao`: o banco quer uma confirmação que só a pessoa dá, e nada no
+ * site a completa ainda — as novas tentativas da Stripe tendem a parar no mesmo ponto.
  */
-export async function pagarFatura(faturaId: string): Promise<boolean> {
+export type CobrancaDaFatura = "paga" | "recusada" | "pede-confirmacao";
+
+/**
+ * Cobra AGORA a fatura em aberto, com o cartão da assinatura. Cartão recusado e confirmação
+ * pedida pelo banco não são falha nossa: voltam como desfecho. Qualquer outra recusa pode ser a
+ * fatura PAGA NO MESMO INSTANTE (a tentativa da própria Stripe, ou um segundo pedido): quem diz
+ * é a fatura, relida — pagar duas vezes a mesma fatura a Stripe não deixa. O resto sobe.
+ */
+export async function pagarFatura(faturaId: string): Promise<CobrancaDaFatura> {
   try {
-    return (await stripe().invoices.pay(faturaId)).status === "paid";
+    return (await stripe().invoices.pay(faturaId)).status === "paid" ? "paga" : "recusada";
   } catch (erro) {
-    if (erro instanceof Stripe.errors.StripeCardError) return false;
-    if (erro instanceof Stripe.errors.StripeInvalidRequestError && erro.code === "invoice_payment_intent_requires_action") return false;
+    if (erro instanceof Stripe.errors.StripeCardError) return "recusada";
+    if (erro instanceof Stripe.errors.StripeInvalidRequestError) {
+      if (erro.code === "invoice_payment_intent_requires_action") return "pede-confirmacao";
+      let relida: string | null = null;
+      try {
+        relida = (await stripe().invoices.retrieve(faturaId)).status;
+      } catch {
+        // Nem reler deu: vale o erro da cobrança, abaixo.
+      }
+      if (relida === "paid") return "paga";
+    }
     throw erroSemMensagem(erro, "a cobrança da fatura em aberto");
   }
 }

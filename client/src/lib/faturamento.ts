@@ -11,8 +11,14 @@ export { TELA_DO_FATURAMENTO, TELA_DE_TROCAR_O_CARTAO } from "@jilson/core";
 /** A assinatura da conta, como a Stripe diz agora. Uma chave só: quem muda a assinatura a invalida. */
 export const CHAVE_DA_MINHA_ASSINATURA = ["billing", "minha-assinatura"] as const;
 
+/**
+ * `gcTime: 0`: o que a tela leu (o plano, o cartão) é esquecido assim que ela fecha. A chave não
+ * leva a conta, e "Sair" não limpa o que as telas guardaram: sem isto, outra conta que entrasse
+ * na mesma aba veria por um instante o plano e o cartão da anterior (achado da revisão de
+ * segurança, 11/10/2026). O custo é ler a Stripe de novo a cada visita — que é o que se quer.
+ */
 export function useMinhaAssinatura() {
-  return useQuery({ queryKey: CHAVE_DA_MINHA_ASSINATURA, queryFn: getMinhaAssinatura });
+  return useQuery({ queryKey: CHAVE_DA_MINHA_ASSINATURA, queryFn: getMinhaAssinatura, gcTime: 0 });
 }
 
 /** A assinatura de quem TEM acesso: é a que traz plano, cobrança e cartão. */

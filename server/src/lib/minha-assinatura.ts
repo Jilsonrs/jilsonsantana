@@ -1,7 +1,7 @@
 import { SituacaoDoFaturamento, type CartaoTrocado, type MinhaAssinatura } from "@jilson/core";
 import { prisma } from "./prisma.js";
 import { assinaturaDaAcesso, passouDoPrimeiroPagamento } from "./acesso.js";
-import { sincronizarAssinatura } from "./assinaturas.js";
+import { sincronizarSeLivre } from "./assinaturas.js";
 import { AssinaturaNaoEncontrada } from "./stripe.js";
 import {
   buscarCartaoConfirmado,
@@ -24,7 +24,9 @@ import {
 //   1. O SITE NUNCA DIZ QUAL ASSINATURA. A conta é a da sessão; a assinatura é a que dá acesso a
 //      ESSA conta, achada aqui, no espelho. Nenhum código da Stripe vem do navegador nem vai a ele.
 //   2. A TELA LÊ A STRIPE NA HORA (o plano, a próxima cobrança, o cartão): o espelho guarda só o
-//      que o gate lê, e continua com um escritor só (`assinaturas.ts`). Ler não grava nada.
+//      que o gate lê, e continua com um escritor só (`assinaturas.ts`). Ler não grava nada — a
+//      não ser quando descobre que o espelho dá um acesso que a Stripe diz que acabou: aí chama
+//      a rotina de sincronia, como todo mundo ("em qualquer dúvida, recomputa").
 //   3. "TEM ACESSO?" é a regra do gate (`assinaturaDaAcesso`), a mesma que tranca a aula — a tela
 //      nunca faz uma segunda conta de quem tem acesso.
 
@@ -91,13 +93,34 @@ async function assinaturaDaConta(userId: string): Promise<{ resultado: "ok"; det
   const comAcesso = linhas.filter((linha) => assinaturaDaAcesso(linha));
   if (comAcesso.length === 0) return { resultado: "nenhuma", linhas };
   for (const linha of comAcesso) {
+    let detalhes: DetalhesDaAssinatura;
     try {
-      return { resultado: "ok", detalhes: await buscarDetalhes(linha.stripeSubscriptionId) };
+      detalhes = await buscarDetalhes(linha.stripeSubscriptionId);
     } catch (erro) {
-      if (!(erro instanceof AssinaturaNaoEncontrada)) throw erro;
+      if (erro instanceof AssinaturaNaoEncontrada) continue;
+      throw erro;
     }
+    // O dono é o do espelho — mas se a STRIPE diz que esta assinatura é de OUTRA conta, a linha
+    // do espelho está errada, e ninguém lê nem troca o cartão de outra pessoa por ela (achado da
+    // revisão de segurança, 11/10/2026). Precisa de gente: é erro, com etiqueta.
+    if (detalhes.userId !== null && detalhes.userId !== userId) {
+      console.error(`[stripe] minha assinatura: o espelho diz que a assinatura ${detalhes.id} é da conta ${userId}, e a Stripe diz que é da conta ${detalhes.userId}`);
+      continue;
+    }
+    return { resultado: "ok", detalhes };
   }
   return { resultado: "desconhecida" };
+}
+
+/**
+ * A conta tem acesso por uma assinatura que a Stripe NÃO CONHECE. Em produção isso é sempre
+ * alguém com acesso sem assinatura na fonte canônica (a produção nunca teve chave de teste):
+ * precisa de gente, é ERRO. Fora dela é a assinatura de mentira do seed: conhecido, é aviso.
+ */
+export function registrarAssinaturaDesconhecida(userId: string, onde: string, emProducao: boolean = process.env.NODE_ENV === "production"): void {
+  const linha = `[stripe] ${onde}: a conta ${userId} tem acesso por uma assinatura que a Stripe não conhece`;
+  if (emProducao) console.error(linha);
+  else console.warn(linha);
 }
 
 /** `desconhecida`: a conta tem acesso por uma assinatura que a Stripe não conhece. */
@@ -118,7 +141,20 @@ export async function lerMinhaAssinatura(userId: string): Promise<Leitura> {
   }
   const { detalhes } = achada;
   const proxima = renova(detalhes) ? await buscarProximaCobranca(detalhes.id) : null;
-  return { resultado: "ok", assinatura: paraMinhaAssinatura(detalhes, proxima) };
+  const assinatura = paraMinhaAssinatura(detalhes, proxima);
+  // O ESPELHO dá acesso (foi por isso que chegamos aqui) e a STRIPE diz que acabou: o aviso do
+  // fim se perdeu. Sem acertar agora, as aulas seguiriam abertas e "Reativar assinatura"
+  // responderia "já é assinante" (achado da revisão de segurança, 11/10/2026). Pela rotina de
+  // sempre, sem esperar a trava. Se não der, alguém segue com acesso sem pagar: é ERRO.
+  if (assinatura.situacao === SituacaoDoFaturamento.TERMINADA) {
+    try {
+      await sincronizarSeLivre(detalhes.id);
+      console.info(`[stripe] minha assinatura: o espelho da assinatura ${detalhes.id} (conta ${userId}) dava acesso e a Stripe diz que acabou; sincronizada`);
+    } catch (erro) {
+      console.error(`[stripe] minha assinatura: a conta ${userId} segue com acesso pelo espelho da assinatura ${detalhes.id}, que a Stripe diz que acabou, e a sincronia falhou: ${erro instanceof Error ? erro.message : String(erro)}`);
+    }
+  }
+  return { resultado: "ok", assinatura };
 }
 
 // ── TROCAR O CARTÃO (passo 4) ────────────────────────────────────────────────────────────────
@@ -128,8 +164,9 @@ export async function lerMinhaAssinatura(userId: string): Promise<Leitura> {
 //   2. APLICAR: o servidor lê NA STRIPE o cartão que esse pedido confirmou e o põe na
 //      assinatura. O site não manda código de cartão nenhum — só "apliquei".
 // Com a cobrança atrasada, o cartão novo já paga a fatura em aberto, e o espelho é acertado pela
-// rotina de sempre (`sincronizarAssinatura`). Aqui NADA grava o espelho à mão, e nada segura a
-// trava da assinatura: a troca do cartão não decide nada pelo espelho.
+// rotina de sempre — a que NÃO ESPERA a trava (`sincronizarSeLivre`): este pedido pode ser
+// repetido à vontade, e esperar seguraria conexão do banco. Aqui NADA grava o espelho à mão: a
+// troca do cartão não decide nada pelo espelho.
 // Repetir não faz mal: aplicar duas vezes põe o mesmo cartão, e a fatura já paga não é cobrada.
 
 /** `sem-assinatura`: a conta não tem assinatura que ainda possa ser cobrada. */
@@ -179,9 +216,13 @@ export async function aplicarCartaoNovo(userId: string): Promise<Troca> {
   // próxima tentativa da Stripe (decisão do operador, 11/10/2026).
   let pagou = false;
   if (detalhes.status === "past_due" && detalhes.faturaEmAbertoId) {
-    pagou = await pagarFatura(detalhes.faturaEmAbertoId);
+    const cobranca = await pagarFatura(detalhes.faturaEmAbertoId);
+    pagou = cobranca === "paga";
+    // O banco pede uma confirmação que só a pessoa dá, e a tela ainda não a completa: a
+    // assinatura tende ao cancelamento mesmo com o cartão trocado. Fica registrado, com quem.
+    if (cobranca === "pede-confirmacao") console.warn(`[stripe] trocar cartão: a fatura em aberto da assinatura ${detalhes.id} (conta ${userId}) pede confirmação do banco, e a tela não a completa`);
     try {
-      await sincronizarAssinatura(detalhes.id);
+      await sincronizarSeLivre(detalhes.id);
     } catch (erro) {
       // O cartão está trocado e a cobrança foi tentada: quem acerta o espelho, então, é o aviso
       // da Stripe, que chega de qualquer jeito. Aviso, e não uma falha da troca.

@@ -4244,8 +4244,59 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
         preenchido indo ao servidor, o formulário abrindo para quem não pode, "pagamento
         confirmado" sem ter pago. Gates: typecheck, lint, suíte do site (845) e de servidor
         como o CI (796), build.
-      **ONDE PAROU:** passo 5 feito (11/10/2026). Próximo: passo 6 — a prova na área restrita
-      com uma conta descartável, a revisão de segurança e o `billing.md`.
+      - **Passo 6 — FEITO (11/10/2026): a prova na área restrita, a revisão de segurança e os
+        documentos.**
+        **A prova** (duas contas descartáveis no branch `dev` do Neon, chave `sk_test_`, nenhum
+        segredo impresso; um roteiro fora do repositório, com as duas travas — chave de teste e
+        banco de dev — conferidas antes de começar): **32 pontos, todos passaram**, e de novo
+        depois das correções da revisão. Ler a assinatura de verdade (plano, preço, cartão, a
+        prévia da próxima cobrança 31 dias à frente) · a Stripe aceitou o pedido de guardar
+        cartão · aplicar antes de confirmar não muda nada · confirmado, o cartão da assinatura é
+        o novo e o antigo saiu do cliente · repetir não tira o novo · a renovação parada e a
+        encerrada de vez com dias pagos · e, **com um relógio de teste da Stripe**, a cobrança
+        que falha na renovação, a conta atrasada com acesso, o cartão novo pagando a fatura em
+        aberto e o espelho acertado; o cartão novo que também falha. Limpeza: clientes e relógio
+        apagados na área restrita, as contas apagadas do banco (zero linhas delas).
+        **A revisão de segurança** (`security-vulnerability-reviewer`, sobre o diff da sessão):
+        **nenhum bloqueio.** Os achados e o destino de cada um:
+        - *O espelho dá acesso e a Stripe diz que acabou (aviso perdido): a leitura respondia
+          "terminada" e não fazia nada* → **corrigido**: a leitura chama a rotina de sincronia
+          (o gate tranca; a sessão cai, como em toda perda de acesso); se a sincronia falha, é
+          erro no registro.
+        - *Conta com acesso por assinatura que a Stripe não conhece só gerava aviso* →
+          **corrigido**: erro em produção (lá é sempre acesso sem assinatura de verdade), aviso
+          fora dela (é a de mentira do seed); as três rotas registram.
+        - *As rotas novas sem limite de tentativas* (um assinante poderia testar cartões pelo
+          site) → **etapa 4.7, pré-requisito (a)**, agora com as três rotas pelo nome. Não
+          bloqueia antes: o cadastro é fechado.
+        - *A troca do cartão segurava conexão do banco esperando a trava* → **corrigido**: a
+          sincronia que não espera (`sincronizarSeLivre`).
+        - *O campo de verdade da Stripe em modo "só guardar" nunca abriu num navegador* → **do
+          operador, ANTES de publicar** (`billing.md` → *Pendências de verificação*).
+        - *Pedido de cartão antigo valia para sempre* → **corrigido**: só o aberto há até 1 hora.
+        - *A fatura paga no mesmo instante virava erro 500* → **corrigido**: a fatura é relida.
+        - *O banco pedindo confirmação na cobrança da fatura era tratado como recusa* →
+          **corrigido em parte**: desfecho próprio, registrado com a conta e a assinatura.
+          **Completar a confirmação na tela** (e o texto) fica para a **sessão (b), passos 10 e
+          11**: a troca de plano precisa do mesmo mecanismo, e o texto é do operador.
+        - *Só o cartão da assinatura sai da Stripe* (o confirmado e não aplicado, e o padrão do
+          cliente, ficam) → **sessão (b), abertura do passo 7**: tirar todos menos o novo.
+        - *"Sair" não limpa o que as telas guardaram; a leitura da assinatura era vista por
+          instantes pela conta seguinte na mesma aba* → **corrigido na leitura nova** (ela é
+          esquecida quando a tela fecha); o caso geral, das outras telas, é **achado levado ao
+          operador** — está fora desta etapa.
+        - *O dono se apoiava só no espelho* → **corrigido**: se a Stripe diz que a assinatura é
+          de outra conta, nada dela é lido nem trocado, e o registro grita.
+        - *As idas à Stripe eram dublê em todo teste de rota* → **corrigido**: 16 testes com a
+          biblioteca da Stripe trocada por um dublê do tamanho do que as funções usam.
+        **Depois das correções:** 8 mutações novas, todas reprovaram. Gates: typecheck, lint,
+        suíte de servidor como o CI (822) e do site (847), build. `CLAUDE.md` → *Membership
+        Gating* (o pedido nunca diz qual assinatura; a sincronia que não espera) e `billing.md`
+        (a seção *Minha assinatura*) reconciliados; pendência P65 (um texto rascunho).
+      **ONDE PAROU:** SESSÃO (a) FECHADA em 11/10/2026 — os 6 passos commitados no `dev`, não
+      publicada. **Antes de publicar, o operador abre a tela de trocar o cartão num navegador**
+      (o campo de verdade da Stripe). Próximo: a sessão (b), que começa mostrando a ele os
+      textos de mudar de plano e de cancelar; e a sessão (c), pela pendência P64.
 - [ ] **4.7 — O visitante assina: a conta nasce no pagamento (código, ALTO RISCO).** O checkout
       público: e-mail + pagamento → o webhook cria a conta (o cadastro continua fechado) e manda o
       e-mail de "crie sua senha". **Depende do Resend configurado e da P49** (o remetente). Junto:
@@ -4261,7 +4312,10 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       **Trazido da revisão de segurança da 4.2 (10/10/2026) — pré-requisitos de abrir ao
       visitante:** (a) o limite de tentativas é **por conta e por IP** (`x-real-ip`) e cobre as
       DUAS rotas que conferem código (`/billing/previa` e `/billing/assinatura`), que também são
-      as que chamam a Stripe · (b) **a trava do checkout não pode segurar conexão do banco
+      as que chamam a Stripe — **e as três da etapa 4.6** (revisão de segurança de 11/10/2026):
+      `GET /billing/minha-assinatura`, `POST /billing/cartao` (poucos pedidos por hora: cada um
+      abre um pedido de guardar cartão, e sem limite o site serve para testar cartão roubado) e
+      `POST /billing/cartao/aplicar` (numa conta atrasada, cada chamada tenta uma cobrança) · (b) **a trava do checkout não pode segurar conexão do banco
       esperando**: vários pedidos juntos esgotariam as conexões e parariam a API inteira — a trava
       que não espera (`pg_try_advisory_xact_lock`) ou a Stripe fora da transação *(a revisão da
       4.4 voltou a apontar, como P1: quem tem a trava ainda pede uma SEGUNDA conexão para ler o

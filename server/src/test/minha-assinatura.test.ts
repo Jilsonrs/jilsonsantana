@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeAll, afterAll, afterEach, beforeEach } from "vitest";
 import request from "supertest";
+import type { AssinaturaNaStripe } from "../lib/stripe.js";
 import type { DetalhesDaAssinatura } from "../lib/stripe-assinatura.js";
 
 // A Stripe na NOSSA fronteira: só o que iria à rede vira dublê — a busca dos detalhes da
@@ -13,8 +14,18 @@ vi.mock("../lib/stripe-assinatura.js", async (importOriginal) => ({
   buscarProximaCobranca: (id: string) => buscarProximaCobranca(id),
 }));
 
+// A busca que a SINCRONIA faz na Stripe: a leitura a chama quando descobre que o espelho dá um
+// acesso que a Stripe diz que acabou.
+const buscarAssinatura = vi.fn<(id: string) => Promise<AssinaturaNaStripe>>();
+vi.mock("../lib/stripe.js", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../lib/stripe.js")>()),
+  buscarAssinatura: (id: string) => buscarAssinatura(id),
+}));
+
 import servidor from "./servidor.js";
 import { prisma } from "../lib/prisma.js";
+import { temAcessoAtivo } from "../lib/acesso.js";
+import { registrarAssinaturaDesconhecida } from "../lib/minha-assinatura.js";
 import { AssinaturaNaoEncontrada } from "../lib/stripe.js";
 import { ASSINATURA_DE_TESTE } from "../lib/assinatura-de-teste.js";
 
@@ -26,7 +37,11 @@ import { ASSINATURA_DE_TESTE } from "../lib/assinatura-de-teste.js";
 //   - "tem acesso?" é a regra do gate: o que a tela diz nunca discorda do que a aula faz;
 //   - a próxima cobrança é a conta da STRIPE, e só é pedida para a assinatura que renova;
 //   - a Stripe fora do ar é falha (500), nunca um dado velho; a assinatura que ela não conhece é
-//     um aviso (404), não um erro que acorda o operador.
+//     404 — aviso fora de produção (é a de mentira do seed), ERRO em produção (acesso sem
+//     assinatura na fonte canônica);
+//   - o espelho dá acesso e a Stripe diz que acabou (o aviso do fim se perdeu): a leitura ACERTA
+//     o espelho pela rotina de sempre — senão as aulas seguiriam abertas sem pagar;
+//   - a Stripe diz que a assinatura é de OUTRA conta: nada dela é mostrado, e alguém é avisado.
 
 const S = `${Date.now()}`;
 const DIA = 24 * 60 * 60 * 1000;
@@ -45,10 +60,15 @@ const doSeed = (status: string, currentPeriodEnd: Date | null) => prisma.subscri
 let naStripe: Record<string, Partial<DetalhesDaAssinatura>> = {};
 const ativa = (): Partial<DetalhesDaAssinatura> => ({ status: "active", pagoAte: EM_30_DIAS, fimDoPeriodo: EM_30_DIAS });
 
-beforeAll(async () => {
+async function entrar(): Promise<string[]> {
   const res = await request(servidor).post("/api/auth/sign-in/email").send({ email: process.env.SEED_MEMBER_EMAIL, password: process.env.SEED_MEMBER_PASSWORD });
-  member = (res.headers["set-cookie"] as unknown as string[] | undefined) ?? [];
-  expect(member.length).toBeGreaterThan(0);
+  const cookies = (res.headers["set-cookie"] as unknown as string[] | undefined) ?? [];
+  expect(cookies.length).toBeGreaterThan(0);
+  return cookies;
+}
+
+beforeAll(async () => {
+  member = await entrar();
   memberId = (await prisma.user.findUniqueOrThrow({ where: { email: process.env.SEED_MEMBER_EMAIL }, select: { id: true } })).id;
   await prisma.user.create({ data: { id: outro, email: `${outro}@teste.local` } });
 });
@@ -59,8 +79,9 @@ beforeEach(() => {
   buscarDetalhes.mockReset().mockImplementation(async (id) => {
     const dados = naStripe[id];
     if (!dados) throw new AssinaturaNaoEncontrada(id);
-    return { id, status: "active", pagoAte: null, plano: "mensal", preco: { centavos: 9990, moeda: "brl" }, fimDoPeriodo: null, acabaEm: null, cartao: VISA, clienteId: "cus_da_conta", cartaoId: "pm_atual", faturaEmAbertoId: null, ...dados };
+    return { id, status: "active", pagoAte: null, plano: "mensal", preco: { centavos: 9990, moeda: "brl" }, fimDoPeriodo: null, acabaEm: null, cartao: VISA, clienteId: "cus_da_conta", userId: null, cartaoId: "pm_atual", faturaEmAbertoId: null, ...dados };
   });
+  buscarAssinatura.mockReset().mockRejectedValue(new Error("a sincronia não devia ter sido chamada"));
   buscarProximaCobranca.mockReset().mockResolvedValue({ centavos: 9990, moeda: "brl" });
 });
 
@@ -177,10 +198,6 @@ describe("GET /api/billing/minha-assinatura — a conta com acesso", () => {
     expect((await ler(member)).body).toMatchObject({ situacao: "ativa", cartao: null, proximaCobranca: { centavos: 0 } });
   });
 
-  it("a Stripe já diz que acabou e o espelho ainda não soube: terminada — a tela não mostra o dado velho", async () => {
-    naStripe[ASSINATURA_DE_TESTE] = { status: "canceled", pagoAte: PASSADO };
-    expect((await ler(member)).body).toEqual({ situacao: "terminada", terminouEm: PASSADO.toISOString() });
-  });
 
   it("uma assinatura antiga encerrada e uma nova ativa: a tela mostra a que dá acesso", async () => {
     await doSeed("canceled", PASSADO);
@@ -204,11 +221,100 @@ describe("GET /api/billing/minha-assinatura — a assinatura é a da conta da se
   });
 });
 
+describe("GET /api/billing/minha-assinatura — o espelho dá acesso e a Stripe diz que acabou", () => {
+  const perdida = `sub_${S}_aviso_perdido`;
+  beforeEach(async () => {
+    // A de mentira do seed sai de cena: o acesso da conta vem SÓ da assinatura cujo aviso se perdeu.
+    await doSeed("canceled", PASSADO);
+    await prisma.subscription.create({ data: { ownerUserId: memberId, status: "active", currentPeriodEnd: EM_30_DIAS, stripeSubscriptionId: perdida } });
+    naStripe[perdida] = { status: "canceled", pagoAte: PASSADO };
+  });
+
+  it("a tela diz 'terminada' E o espelho é acertado pela rotina de sempre: o gate tranca e a sessão cai, como em toda perda de acesso", async () => {
+    buscarAssinatura.mockResolvedValue({ id: perdida, status: "canceled", pagoAte: PASSADO, clienteId: null, userId: memberId, livemode: false });
+    expect(await temAcessoAtivo(memberId)).toBe(true);
+    try {
+      const res = await ler(member);
+      expect([res.status, res.body]).toEqual([200, { situacao: "terminada", terminouEm: PASSADO.toISOString() }]);
+      const espelho = await prisma.subscription.findUniqueOrThrow({ where: { stripeSubscriptionId: perdida } });
+      expect([espelho.status, espelho.currentPeriodEnd?.getTime()]).toEqual(["canceled", PASSADO.getTime()]);
+      expect(await temAcessoAtivo(memberId)).toBe(false);
+      // A regra de sempre (CLAUDE.md → Access Architecture): perdeu o acesso, a sessão cai.
+      expect((await ler(member)).status).toBe(401);
+    } finally {
+      member = await entrar();
+    }
+  });
+
+  it("a sincronia falha: a tela responde do mesmo jeito, o espelho fica como estava — e é ERRO no registro (alguém segue com acesso sem pagar)", async () => {
+    buscarAssinatura.mockRejectedValue(new Error("[stripe] a busca da assinatura falhou: StripeConnectionError"));
+    const erro = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      const res = await ler(member);
+      expect([res.status, res.body]).toEqual([200, { situacao: "terminada", terminouEm: PASSADO.toISOString() }]);
+      expect((await prisma.subscription.findUniqueOrThrow({ where: { stripeSubscriptionId: perdida } })).status).toBe("active");
+      expect(erro.mock.calls.flat().join(" ")).toContain(`a conta ${memberId} segue com acesso pelo espelho da assinatura ${perdida}`);
+    } finally {
+      erro.mockRestore();
+    }
+  });
+
+  it("assinatura em dia: a leitura NÃO sincroniza nada (ler não grava)", async () => {
+    naStripe[perdida] = ativa();
+    expect((await ler(member)).body).toMatchObject({ situacao: "ativa" });
+    expect(buscarAssinatura).not.toHaveBeenCalled();
+  });
+});
+
+describe("GET /api/billing/minha-assinatura — a Stripe diz que a assinatura é de OUTRA conta", () => {
+  it("nada dela é mostrado (404) e o registro grita: a linha do espelho está errada", async () => {
+    naStripe[ASSINATURA_DE_TESTE] = { ...ativa(), userId: outro };
+    const erro = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      const res = await ler(member);
+      expect([res.status, res.body]).toEqual([404, { error: "AssinaturaDesconhecida" }]);
+      expect(buscarProximaCobranca).not.toHaveBeenCalled();
+      expect(erro.mock.calls.flat().join(" ")).toContain(`a Stripe diz que é da conta ${outro}`);
+    } finally {
+      erro.mockRestore();
+    }
+  });
+
+  it("a Stripe diz que é desta conta, ou não diz de quem é (vale o dono do espelho): mostra", async () => {
+    naStripe[ASSINATURA_DE_TESTE] = { ...ativa(), userId: memberId };
+    expect((await ler(member)).body).toMatchObject({ situacao: "ativa" });
+    naStripe[ASSINATURA_DE_TESTE] = { ...ativa(), userId: null };
+    expect((await ler(member)).body).toMatchObject({ situacao: "ativa" });
+  });
+});
+
 describe("GET /api/billing/minha-assinatura — quando a Stripe não ajuda", () => {
-  it("a Stripe não conhece a assinatura que dá acesso (a de mentira do seed): 404, sem inventar dado", async () => {
-    const res = await ler(member);
-    expect(res.status).toBe(404);
-    expect(res.body).toEqual({ error: "AssinaturaDesconhecida" });
+  it("a Stripe não conhece a assinatura que dá acesso (a de mentira do seed): 404, sem inventar dado — e fica registrado", async () => {
+    const aviso = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      const res = await ler(member);
+      expect(res.status).toBe(404);
+      expect(res.body).toEqual({ error: "AssinaturaDesconhecida" });
+      expect(aviso.mock.calls.flat().join(" ")).toContain(`a conta ${memberId} tem acesso por uma assinatura que a Stripe não conhece`);
+    } finally {
+      aviso.mockRestore();
+    }
+  });
+
+  it("o registro desse caso: AVISO fora de produção (a de mentira do seed), ERRO em produção (acesso sem assinatura de verdade)", () => {
+    const aviso = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const erro = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      registrarAssinaturaDesconhecida("u-1", "minha assinatura", false);
+      expect([aviso.mock.calls.length, erro.mock.calls.length]).toEqual([1, 0]);
+      registrarAssinaturaDesconhecida("u-1", "minha assinatura", true);
+      expect([aviso.mock.calls.length, erro.mock.calls.length]).toEqual([1, 1]);
+      // Com a etiqueta nossa: sem ela, a linha de erro não vira alerta (CLAUDE.md → Server).
+      expect(String(erro.mock.calls[0]?.[0])).toMatch(/^\[stripe\] minha assinatura: a conta u-1 /);
+    } finally {
+      aviso.mockRestore();
+      erro.mockRestore();
+    }
   });
 
   it("a mais nova ela não conhece, a outra sim: mostra a que ela conhece", async () => {

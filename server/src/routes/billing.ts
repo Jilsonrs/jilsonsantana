@@ -5,7 +5,7 @@ import { validate } from "../lib/http.js";
 import { buscarCodigo, buscarPrecos, calcularPrevia, chavePublicavel, cobrancaConfigurada, FORMAS_DE_PAGAMENTO } from "../lib/stripe.js";
 import { convidaAReativar, temAcessoAtivo } from "../lib/acesso.js";
 import { assinar } from "../lib/checkout.js";
-import { aplicarCartaoNovo, lerMinhaAssinatura, prepararTrocaDeCartao } from "../lib/minha-assinatura.js";
+import { aplicarCartaoNovo, lerMinhaAssinatura, prepararTrocaDeCartao, registrarAssinaturaDesconhecida } from "../lib/minha-assinatura.js";
 
 // ASSINAR COM A CONTA LOGADA (Fase 4, etapa 4.2 — billing.md; CLAUDE.md → Membership Gating).
 // Tudo aqui exige login, e a conta é SEMPRE a da sessão. O site diz só QUAL plano e o código
@@ -126,9 +126,7 @@ router.get("/billing/minha-assinatura", requireAuth, async (req, res) => {
   }
   const leitura = await lerMinhaAssinatura(user.id);
   if (leitura.resultado === "desconhecida") {
-    // Aviso, e não erro: é a assinatura de mentira do seed (fora de produção) ou uma do modo de
-    // teste que ficou no banco de produção até a Fase 7 — conhecido, e ninguém precisa agir.
-    console.warn(`[stripe] minha assinatura: a conta ${user.id} tem acesso por uma assinatura que a Stripe não conhece`);
+    registrarAssinaturaDesconhecida(user.id, "minha assinatura");
     res.status(404).json({ error: "AssinaturaDesconhecida" });
     return;
   }
@@ -152,6 +150,7 @@ router.post("/billing/cartao", requireAuth, async (req, res) => {
     return;
   }
   const preparo = await prepararTrocaDeCartao(user.id);
+  if (preparo.resultado === "desconhecida") registrarAssinaturaDesconhecida(user.id, "trocar cartão");
   if (preparo.resultado !== "ok") {
     res.status(preparo.resultado === "desconhecida" ? 404 : 409).json({ error: preparo.resultado === "desconhecida" ? "AssinaturaDesconhecida" : "SemAssinatura" });
     return;
@@ -174,6 +173,7 @@ router.post("/billing/cartao/aplicar", requireAuth, async (req, res) => {
   }
   const troca = await aplicarCartaoNovo(user.id);
   if (troca.resultado === "desconhecida") {
+    registrarAssinaturaDesconhecida(user.id, "trocar cartão");
     res.status(404).json({ error: "AssinaturaDesconhecida" });
     return;
   }

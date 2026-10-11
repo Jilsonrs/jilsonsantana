@@ -514,8 +514,20 @@ a assinatura "não paga" (P60). O relato completo está no plano, Fase 4 → eta
   que dá acesso a essa conta, achada no espelho; nenhum código da Stripe vem do navegador nem vai
   a ele. As três rotas novas não leem corpo nenhum.
 - **A tela lê a Stripe NA HORA** (o plano, a próxima cobrança, o cartão, "vai cancelar"); o
-  espelho continua guardando só o que o gate lê, sem migration. Ler não grava nada. Sem assinatura
-  que dê acesso, a resposta sai do espelho e a Stripe nem é consultada.
+  espelho continua guardando só o que o gate lê, sem migration. Sem assinatura que dê acesso, a
+  resposta sai do espelho e a Stripe nem é consultada. **Ler não grava nada — com uma exceção:**
+  se o espelho dá acesso e a Stripe diz que a assinatura acabou (o aviso do fim se perdeu), a
+  leitura chama a rotina de sincronia; senão as aulas seguiriam abertas e "Reativar assinatura"
+  responderia "já é assinante". A sessão cai, como em toda perda de acesso.
+- **O dono é o do espelho, e a Stripe confere:** se ela diz que a assinatura é de OUTRA conta,
+  nada é lido nem trocado, e o registro grita (a linha do espelho está errada).
+- **A sincronia que não espera** (`sincronizarSeLivre`): o que o aluno pode repetir à vontade
+  não entra na fila da trava da assinatura — esperar seguraria uma conexão do banco por pedido.
+  Se outro já está sincronizando, segue sem sincronizar: o aviso da Stripe vem atrás.
+- **Assinatura que dá acesso e a Stripe não conhece:** 404 na tela; no registro, **erro em
+  produção** (lá é sempre acesso sem assinatura de verdade) e aviso fora dela (a do seed).
+- **A leitura não fica guardada no navegador depois de a tela fechar:** "Sair" não limpa o que
+  as telas guardaram, e a conta seguinte na mesma aba veria o plano e o cartão da anterior.
 - **As operações moram em `server/src/lib/minha-assinatura.ts`**, e não na rota: o painel (4.7b)
   e o JilsonAI chamam as mesmas. A ida à Stripe mora em `server/src/lib/stripe-assinatura.ts`, a
   segunda metade da fronteira (`stripe.ts` é a de assinar e a do espelho).
@@ -526,11 +538,12 @@ a assinatura "não paga" (P60). O relato completo está no plano, Fase 4 → eta
 - **Trocar o cartão, em dois tempos.** O servidor abre um pedido de guardar cartão para o cliente
   DA ASSINATURA, marcado com a conta e a assinatura; o site o confirma com o campo da Stripe,
   aberto para só guardar (nada é cobrado ali); o servidor lê **na Stripe** o cartão confirmado —
-  só vale o pedido que deu certo, do nosso fluxo, desta conta, deste cliente e desta assinatura —
-  e o põe na assinatura. O cartão antigo sai da Stripe depois (se não sair, é aviso).
+  só vale o pedido que deu certo, do nosso fluxo, desta conta, deste cliente e desta assinatura,
+  **aberto há até 1 hora** — e o põe na assinatura. O cartão antigo sai da Stripe depois (se não sair, é aviso).
 - **Com a cobrança atrasada, o cartão novo paga a fatura em aberto**, e o espelho é acertado por
-  `sincronizarAssinatura`. Cartão novo recusado não é erro: a troca valeu, e a Stripe segue
-  tentando. **A troca do cartão não segura a trava da assinatura** — ela não decide nada pelo
+  `sincronizarSeLivre`. Cartão novo recusado não é erro: a troca valeu, e a Stripe segue
+  tentando. Se a fatura foi paga no mesmo instante por outro caminho, a fatura é relida — não
+  vira erro. **A troca do cartão não segura a trava da assinatura** — ela não decide nada pelo
   espelho; a trava fica para cancelar e reembolsar (sessão b).
 - **"Aceita cartão novo?" é uma regra só** (`aceitaCartaoNovo`): a tela mostra o botão e a
   operação aceita pelo mesmo critério. A assinatura encerrada de vez, ainda com dias pagos, não
@@ -563,7 +576,15 @@ encerrada de vez com dias pagos: tem acesso e o servidor recusa cartão.
   oferece "Reativar assinatura", mas a tela de assinar responde pelo gate ("Você já é assinante")
   até o aviso chegar.
 - **As rotas novas não têm limite de tentativas** — como as outras de cobrança: é pré-requisito
-  da etapa 4.7.
+  da etapa 4.7, que agora as cita pelo nome.
+- **O banco pede uma confirmação na cobrança da fatura em aberto** (cartão que exige o código do
+  banco): a troca vale, a tela diz só "Cartão atualizado.", e nada no site completa a
+  confirmação — as tentativas seguintes da Stripe tendem a parar no mesmo ponto. Fica registrado,
+  com a conta e a assinatura. *Completar na tela vem com a troca de plano (sessão b, passos 10 e
+  11), que precisa do mesmo mecanismo; o texto é do operador.*
+- **Só o cartão que era da assinatura sai da Stripe.** O cartão confirmado e não aplicado (aba
+  fechada, segunda aba) e o padrão do cliente continuam guardados. *Sessão (b), abertura do
+  passo 7: tirar todos menos o novo.*
 
 ## Pendências de verificação
 
