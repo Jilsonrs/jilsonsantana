@@ -1,4 +1,4 @@
-import type { Plano, PlanoMudado, TrocaDePlano, TrocaDesfeita } from "@jilson/core";
+import { VALIDADE_DO_VALOR_MOSTRADO, type Plano, type PlanoMudado, type TrocaDePlano, type TrocaDesfeita } from "@jilson/core";
 import { operarNaAssinatura } from "./assinaturas.js";
 import { assinaturaDaConta, outroPlano } from "./minha-assinatura.js";
 import { buscarPrecos } from "./stripe.js";
@@ -13,16 +13,37 @@ import { agendarTroca, anularFatura, calcularTroca, soltarAgendamento, trocarAgo
 //   - anual → mensal vale NO FIM do ano já pago — nada muda nem é cobrado até lá —, e dá para
 //     desistir;
 //   - trocar de plano não recomeça o prazo do reembolso (a data de início da assinatura não muda).
-// O VALOR MOSTRADO É O COBRADO: a Stripe faz a conta sempre no momento do pedido (com o período
-// recomeçando no dia da troca ela não aceita um instante fixado), e o que sobra do mês diminui
-// com o tempo. Então o site devolve o VALOR que mostrou, e o servidor refaz a conta com a trava,
-// logo antes de trocar: se não bate, NÃO troca — a tela mostra o valor novo e a pessoa confirma
-// de novo. O valor que vem do site nunca é o que se cobra: só pode impedir a troca.
+// O VALOR MOSTRADO É O COBRADO, E VALE POR 10 MINUTOS (decisão do operador, 11/10/2026: "cobra o
+// que mostrou pela primeira vez; se passar uns 10 minutos sem confirmar, expirou"). O que sobra
+// do mês diminui com o tempo — perto de 1 centavo a cada 4 minutos e meio —, e a Stripe faz a
+// conta sempre no momento do pedido. Então a escola ABRE MÃO dos centavos: o site devolve o
+// valor que mostrou e o instante da conta, e a cobrança sai exatamente nesse valor
+// (`trocarAgora`). DUAS CONFERÊNCIAS, porque o valor e o instante vêm do navegador:
+//   - o instante tem que ser recente (`ofertaAindaVale`);
+//   - e o valor tem que estar a poucos centavos da conta refeita AGORA, com a trava
+//     (`FOLGA_DO_VALOR_MOSTRADO`) — nunca acima dela. Um valor inventado, ou um instante
+//     forjado, não passa: o máximo que alguém tira da escola mentindo é a folga.
 // Cada operação é a Stripe e depois a sincronia, com a trava da assinatura (`operarNaAssinatura`)
 // — e, com a trava, os detalhes são RELIDOS: a decisão vale pelo que a Stripe diz AGORA (duas
 // abas: o que já foi desfeito na outra não vira erro, e o que foi criado nela não escapa).
 
 type SemTroca = { resultado: "sem-assinatura" } | { resultado: "desconhecida" } | { resultado: "ocupada" };
+
+/**
+ * Quanto a escola abre mão, no máximo, para cobrar o valor mostrado — em centavos. Em 10 minutos
+ * o mês de R$ 99,90 anda menos de 3 centavos; a folga é pouco mais que isso, e é também o teto do
+ * que um valor forjado consegue tirar. Se um dia o preço mensal for bem maior, a oferta passa a
+ * vencer antes dos 10 minutos (nunca cobra errado): aí se revê este número.
+ */
+export const FOLGA_DO_VALOR_MOSTRADO = 5;
+
+const emSegundos = (data: Date) => Math.floor(data.getTime() / 1000);
+
+/** O valor mostrado ainda vale? Nem velho (passou o prazo), nem do futuro (um minuto de folga de relógio). Função pura. */
+export function ofertaAindaVale(mostradoEm: number | undefined, agora: Date = new Date()): mostradoEm is number {
+  if (typeof mostradoEm !== "number" || !Number.isInteger(mostradoEm)) return false;
+  return mostradoEm >= emSegundos(agora) - VALIDADE_DO_VALOR_MOSTRADO && mostradoEm <= emSegundos(agora) + 60;
+}
 
 /** O preço do plano, lido da Stripe pela lookup key — o mesmo da tela de assinar. */
 async function precoDoPlano(plano: Plano): Promise<{ precoId: string; centavos: number; moeda: string }> {
@@ -48,19 +69,20 @@ export async function lerTrocaDePlano(userId: string): Promise<OfertaDeTroca> {
     if (!detalhes.fimDoPeriodo) return { resultado: "ok", troca: null };
     return { resultado: "ok", troca: { para, quando: "fim-do-periodo", preco, em: detalhes.fimDoPeriodo.toISOString() } };
   }
+  const mostradoEm = emSegundos(new Date());
   const conta = await calcularTroca({ assinaturaId: detalhes.id, itemId: detalhes.itemId, precoId: novo.precoId });
-  return { resultado: "ok", troca: { para, quando: "agora", preco, hoje: { centavos: conta.centavosHoje, moeda: conta.moeda }, proximaEm: conta.proximaEm ? conta.proximaEm.toISOString() : null } };
+  return { resultado: "ok", troca: { para, quando: "agora", preco, hoje: { centavos: conta.centavosHoje, moeda: conta.moeda }, proximaEm: conta.proximaEm ? conta.proximaEm.toISOString() : null, mostradoEm } };
 }
 
 /**
  * `indisponivel`: esta assinatura não pode ir para esse plano agora (já é dele, não renova, está
- * atrasada, ou já tem troca marcada). `previa-vencida`: o valor mostrado já não é o da conta — a tela pede
+ * atrasada, ou já tem troca marcada). `previa-vencida`: o valor mostrado venceu, ou não confere — a tela pede
  * outra. `recusado`: o cartão não passou; o plano continua o mesmo e nada foi cobrado.
  */
 export type Mudanca = ({ resultado: "ok" } & PlanoMudado) | { resultado: "indisponivel" } | { resultado: "previa-vencida" } | { resultado: "recusado" } | SemTroca;
 
 /** Muda o plano da assinatura DESTA conta: para o anual, na hora; para o mensal, no fim do período pago. */
-export async function mudarMeuPlano(userId: string, pedido: { plano: Plano; valorMostrado?: number }): Promise<Mudanca> {
+export async function mudarMeuPlano(userId: string, pedido: { plano: Plano; valorMostrado?: number; mostradoEm?: number }): Promise<Mudanca> {
   const achada = await assinaturaDaConta(userId);
   if (achada.resultado === "desconhecida") return achada;
   if (achada.resultado === "nenhuma") return { resultado: "sem-assinatura" };
@@ -84,9 +106,9 @@ export async function mudarMeuPlano(userId: string, pedido: { plano: Plano; valo
     return { resultado: "ok", estado: "marcado", em: operacao.feito.toISOString() };
   }
 
-  // Sem o valor que a tela mostrou não há o que conferir: nada é trocado, e a tela pede a conta.
+  // Sem o valor que a tela mostrou, ou com ele vencido: nada é trocado, e a tela pede a conta.
   const { valorMostrado } = pedido;
-  if (typeof valorMostrado !== "number") return { resultado: "previa-vencida" };
+  if (typeof valorMostrado !== "number" || !ofertaAindaVale(pedido.mostradoEm)) return { resultado: "previa-vencida" };
   const operacao = await operarNaAssinatura(id, async (): Promise<DesfechoDaTroca | "mudou-o-valor" | null> => {
     const agora = await buscarDetalhes(id);
     if (outroPlano(agora) !== "anual" || !agora.itemId) return null;
@@ -99,10 +121,12 @@ export async function mudarMeuPlano(userId: string, pedido: { plano: Plano; valo
     // é cobrado.
     if (agora.faturaDaTrocaId && (await anularFatura(agora.faturaDaTrocaId)) === "paga") return { estado: "trocado" };
     const troca = { assinaturaId: id, itemId: agora.itemId, precoId: novo.precoId };
-    // A CONTA É REFEITA AGORA, com a trava, logo antes da troca: se o valor já não é o que a tela
-    // mostrou (para mais ou para menos), nada é cobrado — a pessoa vê o valor novo e decide.
-    if ((await calcularTroca(troca)).centavosHoje !== valorMostrado) return "mudou-o-valor";
-    const desfecho = await trocarAgora(troca);
+    // A CONTA É REFEITA AGORA, com a trava: o valor mostrado só é cobrado se estiver até a folga
+    // ABAIXO dela (a escola abre mão desses centavos). Acima (o mês virou, o preço mudou), ou
+    // longe demais (um valor inventado): nada é cobrado — a pessoa vê o valor novo e decide.
+    const abreMao = (await calcularTroca(troca)).centavosHoje - valorMostrado;
+    if (abreMao < 0 || abreMao > FOLGA_DO_VALOR_MOSTRADO) return "mudou-o-valor";
+    const desfecho = await trocarAgora(troca, valorMostrado);
     // RECUSADO: a fatura da troca é anulada JÁ — a tela diz "nada foi cobrado", e uma fatura em
     // aberto ainda poderia ser cobrada depois. Se não anular, precisa de gente.
     if (desfecho.estado === "recusado" && desfecho.faturaId) {

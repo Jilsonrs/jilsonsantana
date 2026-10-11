@@ -4742,9 +4742,26 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       banco pedindo confirmação e o cartão recusado deixam o mês pago como estava, a cortesia
       troca a R$ 0. **Testes:** 3 de rota novos e os existentes reescritos; **mutação:** 7 de 7.
       Gates: typecheck, lint, build, suíte do site (935) e de servidor como o CI (1038).
-      **Limite conhecido** (`billing.md` → Limitações): o que sobra do mês diminui ~1 centavo a
-      cada 4,5 minutos — quem demora na tela confirma de novo; e, perto de uma vez em mil, a
-      cobrança pode sair 1 centavo acima do mostrado.
+      **E O VALOR MOSTRADO FICA CONGELADO POR 10 MINUTOS** (decisão do operador, no mesmo dia:
+      *"prefiro perder 1 centavo a cobrar a mais do que foi mostrado […] cobra o que mostrou
+      pela primeira vez; se passar uns 10 minutos sem confirmar, explica que expirou"*).
+      Substitui a conferência "o valor tem que ser igual" do parágrafo acima: a cobrança sai
+      EXATAMENTE no valor mostrado, e a escola abre mão dos centavos que o tempo levou. Como: o
+      anual entra cheio, sem a conta por tempo da Stripe, e o desconto é uma linha de crédito de
+      valor fixo no mesmo pedido (`paraPedidoDeCobrar`, `trocarAgora(troca, cobrar)`). O site
+      devolve o valor e o instante da conta (`valorMostrado`, `mostradoEm`); o servidor confere
+      os dois, porque vêm do navegador — o instante com até 10 minutos (`ofertaAindaVale`,
+      `VALIDADE_DO_VALOR_MOSTRADO`) e o valor no máximo 5 centavos abaixo da conta refeita com a
+      trava, nunca acima (`FOLGA_DO_VALOR_MOSTRADO`). Passou disso: `PreviaVencida`, e a tela
+      mostra o valor novo com a frase já aprovada. **Prova na área restrita:** 26 de 26 com as
+      funções de verdade — mostrado R$ 956,33, a conta da Stripe 9 minutos depois R$ 956,35,
+      cobrado R$ 956,33; com código de 50% o cobrado é o mostrado (o crédito fica fora do
+      alcance do código); o banco pedindo confirmação, o cartão recusado e a cortesia como
+      antes. **Testes:** 12 de servidor a mais; **mutação:** 17 de 17. Gates: typecheck, lint,
+      build, suíte do site (935) e de servidor como o CI (1050). **Rede de segurança:** a
+      fatura da troca que não der o valor mostrado é anulada (se ainda espera o banco) ou vira
+      alerta (se já foi cobrada). **Antes da etapa 4.8:** o imposto na fatura muda essa conta —
+      rever o crédito e a folga lá.
       **Para a parte 2 do teste:** a assinatura de cortesia do `member@` do computador foi
       encerrada a pedido do operador (11/10/2026). `[FATO — medido]` encerrar uma assinatura de
       100% direto deixa o período inteiro como "pago" (um ano de acesso, no anual); para a

@@ -340,7 +340,7 @@ router.post("/billing/minha-assinatura/plano", requireAuth, async (req, res) => 
     res.status(503).json({ error: "NaoConfigurado" });
     return;
   }
-  const mudanca = await mudarMeuPlano(user.id, { plano: corpo.plano, valorMostrado: corpo.valorMostrado });
+  const mudanca = await mudarMeuPlano(user.id, { plano: corpo.plano, valorMostrado: corpo.valorMostrado, mostradoEm: corpo.mostradoEm });
   if (mudanca.resultado === "desconhecida") registrarAssinaturaDesconhecida(user.id, "mudar de plano");
   if (mudanca.resultado !== "ok") {
     const [status, error] = RECUSAS[mudanca.resultado];

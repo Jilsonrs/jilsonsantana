@@ -35,11 +35,30 @@ export type TrocaNaHora = { assinaturaId: string; itemId: string; precoId: strin
  * sai proporcional aos dias que faltam até lá, e a cobrança seguinte chega antes de um ano.
  * `[FATOS — medidos]` nesta versão da Stripe o campo é um OBJETO (o texto solto `"now"` volta
  * "Invalid object"), e com ele a Stripe RECUSA o instante da conta (`proration_date`): a conta
- * é sempre a do momento do pedido. Por isso quem garante "o cobrado é o mostrado" é a
- * conferência do valor em `mudarMeuPlano`, e não um instante fixado aqui.
+ * é sempre a do momento do pedido. É este o pedido da PRÉVIA — o valor que a tela mostra. A
+ * cobrança vai por `paraPedidoDeCobrar`, que não depende do instante.
  */
 export function paraPedidoDeTroca(troca: TrocaNaHora): Pick<Stripe.SubscriptionUpdateParams, "items" | "proration_behavior" | "billing_cycle_anchor"> {
   return { items: [{ id: troca.itemId, price: troca.precoId }], proration_behavior: "always_invoice", billing_cycle_anchor: { type: "now" } };
+}
+
+/** O crédito de valor fixo que entra na fatura da troca: quanto, em que moeda e sob qual produto. */
+export type CreditoFixo = { centavos: number; moeda: string; produtoId: string };
+
+/**
+ * Como a troca vai à Stripe para COBRAR EXATAMENTE o valor mostrado (decisão do operador,
+ * 11/10/2026: "cobra o que mostrou pela primeira vez"). Função pura, com teste.
+ * SEM a conta por tempo da Stripe (`proration_behavior: "none"`): ela descontaria o que sobra do
+ * mês no instante do pedido, que já não é o da tela. O plano novo entra CHEIO, e o desconto
+ * entra como UMA linha de crédito de valor fixo, no MESMO pedido. `[FATOS — medidos na área
+ * restrita, 11/10/2026]` a fatura sai com o cheio menos o crédito; `discountable: false` é o que
+ * impede o cupom da assinatura de mexer no crédito (sem isso, um cupom de 50% o corta pela
+ * metade); e, anulada a fatura, não sobra item nenhum no cliente.
+ */
+export function paraPedidoDeCobrar(troca: TrocaNaHora, credito: CreditoFixo | null): Pick<Stripe.SubscriptionUpdateParams, "items" | "proration_behavior" | "billing_cycle_anchor" | "add_invoice_items"> {
+  const pedido: Pick<Stripe.SubscriptionUpdateParams, "items" | "proration_behavior" | "billing_cycle_anchor"> = { items: [{ id: troca.itemId, price: troca.precoId }], proration_behavior: "none", billing_cycle_anchor: { type: "now" } };
+  if (!credito) return pedido;
+  return { ...pedido, add_invoice_items: [{ price_data: { currency: credito.moeda, product: credito.produtoId, unit_amount: -credito.centavos }, quantity: 1, discountable: false }] };
 }
 
 /**
@@ -79,14 +98,38 @@ export async function situacaoDoPagamento(faturaId: string): Promise<string | nu
  * Só o pagamento que PEDE A CONFIRMAÇÃO DO BANCO, e com segredo para o site completar, vira
  * `confirmar`; qualquer outra pendência é recusa — na dúvida, nada fica para ser cobrado depois.
  */
-export async function trocarAgora(troca: TrocaNaHora): Promise<DesfechoDaTroca> {
+export async function trocarAgora(troca: TrocaNaHora, cobrar: number): Promise<DesfechoDaTroca> {
+  // O plano novo CHEIO (a conta da Stripe, já com o desconto da assinatura): não depende do
+  // instante. O crédito é o que falta para a fatura dar exatamente o valor a cobrar.
+  let cheio: Stripe.Invoice;
+  let preco: Stripe.Price;
+  try {
+    [cheio, preco] = await Promise.all([stripe().invoices.createPreview({ subscription: troca.assinaturaId, subscription_details: paraPedidoDeCobrar(troca, null) }), stripe().prices.retrieve(troca.precoId)]);
+  } catch (erro) {
+    throw erroSemMensagem(erro, "a conta do plano novo");
+  }
+  const centavos = cheio.amount_due - cobrar;
+  // Nunca se cobra MAIS que o plano novo inteiro: um crédito negativo seria uma cobrança a mais.
+  if (centavos < 0) throw new Error(`[stripe] a troca de plano da assinatura ${troca.assinaturaId}: o valor a cobrar (${cobrar}) é maior que o plano novo inteiro (${cheio.amount_due})`);
+  const credito = centavos > 0 ? { centavos, moeda: cheio.currency, produtoId: typeof preco.product === "string" ? preco.product : preco.product.id } : null;
   let assinatura: Stripe.Subscription;
   try {
-    assinatura = await stripe().subscriptions.update(troca.assinaturaId, { ...paraPedidoDeTroca(troca), payment_behavior: "pending_if_incomplete", expand: ["latest_invoice.confirmation_secret"] });
+    assinatura = await stripe().subscriptions.update(troca.assinaturaId, { ...paraPedidoDeCobrar(troca, credito), payment_behavior: "pending_if_incomplete", expand: ["latest_invoice.confirmation_secret"] });
   } catch (erro) {
     // O cartão recusado costuma voltar como troca pendente (abaixo); se vier como erro, é o mesmo desfecho.
     if (erro instanceof Stripe.errors.StripeCardError) return { estado: "recusado", faturaId: null };
     throw erroSemMensagem(erro, "a troca de plano");
+  }
+  // A FATURA DA TROCA TEM QUE DAR O VALOR MOSTRADO. Se um dia não der (um imposto por cima, uma
+  // regra nova da Stripe), ninguém confirma no banco um valor que não leu: a pendente é anulada
+  // e a troca falha; a que já foi cobrada vira alerta — precisa de gente.
+  const daTroca = typeof assinatura.latest_invoice === "object" && assinatura.latest_invoice?.billing_reason === "subscription_update" ? assinatura.latest_invoice : null;
+  if (daTroca && daTroca.amount_due !== cobrar) {
+    if (assinatura.pending_update) {
+      await anularFatura(daTroca.id).catch(() => {});
+      throw new Error(`[stripe] a troca de plano da assinatura ${troca.assinaturaId}: a fatura saiu com ${daTroca.amount_due} centavos e o valor mostrado era ${cobrar} — nada foi cobrado`);
+    }
+    console.error(`[stripe] mudar de plano: a assinatura ${troca.assinaturaId} foi cobrada em ${daTroca.amount_due} centavos, e o valor mostrado era ${cobrar} — conferir no painel da Stripe`);
   }
   if (!assinatura.pending_update) return { estado: "trocado" };
   const fatura = assinatura.latest_invoice;

@@ -1029,8 +1029,8 @@ export async function getTrocaDePlano(): Promise<TrocaDisponivel> {
 }
 
 /**
- * Muda o plano: o site diz só PARA QUAL e devolve o valor que mostrou (`valorMostrado`), para o
- * servidor conferir. Cartão recusado: 402 `CartaoRecusado`; o valor mudou: 409 `PreviaVencida`. NUNCA tenta de
+ * Muda o plano: o site diz só PARA QUAL e devolve o valor que mostrou e o instante da conta, para
+ * o servidor conferir. Cartão recusado: 402 `CartaoRecusado`; o valor venceu: 409 `PreviaVencida`. NUNCA tenta de
  * novo sozinho (é cobrança).
  */
 export async function mudarDePlano(corpo: MudarDePlanoInput): Promise<PlanoMudado> {

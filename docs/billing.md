@@ -666,10 +666,18 @@ Stripe guardou o cartão de teste e o resumo passou a mostrá-lo:
   pessoa paga o anual inteiro, menos o que sobrou do mês já pago, e a cobrança seguinte vem um
   ano depois. *Reabre se os números mostrarem que o valor cheio na hora afasta quem trocaria
   de plano — aí a conta proporcional até o aniversário da assinatura volta a ser opção.*
-  **O valor mostrado é o cobrado:** o site manda de volta o valor que mostrou, e o servidor
-  refaz a conta com a trava, logo antes de trocar — se não bate, não troca, e a tela mostra o
-  valor novo ("O valor foi atualizado. Confira e confirme de novo."). O valor que vem do site
-  nunca é o que se cobra: só pode impedir a troca.
+  **O valor mostrado fica CONGELADO por 10 minutos, e é exatamente ele que se cobra** *(decisão
+  do operador, 11/10/2026: "prefiro perder 1 centavo a cobrar a mais do que foi mostrado […]
+  cobra o que mostrou pela primeira vez; se passar uns 10 minutos sem confirmar, explica que
+  expirou")*. O que sobra do mês diminui com o tempo, e a escola abre mão desses centavos.
+  Passados os 10 minutos, o servidor não troca: a tela busca o valor de novo e mostra "O valor
+  foi atualizado. Confira e confirme de novo.". *Reabre se a escola passar a vender um plano
+  mensal bem mais caro (os centavos por minuto crescem com o preço) ou se ligar imposto na
+  fatura (etapa 4.8) — nos dois casos, rever a folga e a conta do crédito.*
+  **Como o valor e o instante vêm do navegador, o servidor confere os dois:** o instante tem
+  que ser recente, e o valor tem que estar no máximo 5 centavos ABAIXO da conta refeita na
+  hora, com a trava (`FOLGA_DO_VALOR_MOSTRADO`) — nunca acima. Um valor inventado não é
+  cobrado; o máximo que alguém tira da escola mentindo são esses 5 centavos.
   **Anual → mensal é só marcado** para o fim do período pago (um agendamento com duas fases, que
   leva o desconto junto): até lá nada muda nem é cobrado, e desistir solta o agendamento.
   **Cartão recusado:** a fatura da troca é anulada na hora — nada fica para ser cobrado depois.
@@ -820,12 +828,17 @@ encerrada de vez com dias pagos: tem acesso e o servidor recusa cartão.
   nove meses depois. Com o período recomeçando no dia da troca (a decisão do operador), o mesmo
   caso paga **R$ 956,33** — os R$ 995,00 menos os 12 dias que sobraram do mês — e a cobrança
   seguinte vem em 30/12/2027. A data de início da assinatura não muda (o prazo do reembolso não
-  recomeça). **O limite que isso traz:** com o período recomeçando, a Stripe não aceita fixar o
-  instante da conta — ela é sempre a do momento do pedido, e o que sobra do mês diminui cerca
-  de 1 centavo a cada 4 minutos e meio. Por isso o servidor confere o valor na hora: quem
-  demora na tela pode ler "O valor foi atualizado" e confirmar de novo. Entre essa conferência
-  e a cobrança passa uma fração de segundo; se o centavo virar bem aí (perto de uma vez em mil),
-  a cobrança sai 1 centavo acima do mostrado.
+  recomeça). **Como o valor fica congelado:** com o período recomeçando, a Stripe não aceita fixar
+  o instante da conta — ela desconta o que sobra do mês no momento do pedido, e isso anda cerca
+  de 1 centavo a cada 4 minutos e meio. Então a cobrança NÃO usa essa conta: o anual entra
+  cheio, e o desconto entra como uma linha de crédito de valor fixo, no mesmo pedido, do
+  tamanho exato para a fatura dar o valor mostrado (`paraPedidoDeCobrar`). `[FATOS — medidos]`
+  mostrado R$ 956,33, a conta da Stripe 9 minutos depois R$ 956,35, cobrado R$ 956,33; com um
+  código de 50% o cobrado também é o mostrado, porque o crédito fica fora do alcance do código
+  (`discountable: false` — sem isso ele é cortado pela metade); anulada a fatura, nada sobra no
+  cliente. Na fatura da Stripe o crédito aparece como uma linha negativa com o nome do produto.
+  **A rede de segurança:** se um dia a fatura da troca não der o valor mostrado, a que ainda
+  espera o banco é anulada e a troca falha; a que já foi cobrada vira alerta para o operador.
 - **O reembolso pela tela pode se repetir** — assinar, pedir o dinheiro em 7 dias, assinar de
   novo, pedir de novo. Nada limita hoje; é pergunta ao operador (pendência P75), a responder
   antes da etapa 4.7.
