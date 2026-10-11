@@ -79,7 +79,7 @@ beforeEach(() => {
   buscarDetalhes.mockReset().mockImplementation(async (id) => {
     const dados = naStripe[id];
     if (!dados) throw new AssinaturaNaoEncontrada(id);
-    return { id, status: "active", pagoAte: null, plano: "mensal", preco: { centavos: 9990, moeda: "brl" }, fimDoPeriodo: null, acabaEm: null, acabaNoFimDoPeriodo: false, cartao: VISA, clienteId: "cus_da_conta", userId: null, faturaEmAbertoId: null, ...dados };
+    return { id, status: "active", pagoAte: null, plano: "mensal", preco: { centavos: 9990, moeda: "brl" }, fimDoPeriodo: null, comecouEm: null, acabaEm: null, acabaNoFimDoPeriodo: false, cartao: VISA, clienteId: "cus_da_conta", userId: null, faturaEmAbertoId: null, ...dados };
   });
   buscarAssinatura.mockReset().mockRejectedValue(new Error("a sincronia não devia ter sido chamada"));
   buscarProximaCobranca.mockReset().mockResolvedValue({ centavos: 9990, moeda: "brl" });
@@ -162,6 +162,8 @@ describe("GET /api/billing/minha-assinatura — a conta com acesso", () => {
       // Renova: dá para parar a renovação; não há o que desfazer.
       podeParar: true,
       podeManter: false,
+      // Fora do prazo do reembolso (ou sem a data de início): a saída não existe.
+      reembolso: null,
     });
     expect(buscarProximaCobranca).toHaveBeenCalledWith(ASSINATURA_DE_TESTE);
   });
@@ -193,7 +195,7 @@ describe("GET /api/billing/minha-assinatura — a conta com acesso", () => {
   it("a última cobrança falhou: atrasada, com o acesso mantido — sem próxima cobrança nem data de fim", async () => {
     await doSeed("past_due", PASSADO);
     naStripe[ASSINATURA_DE_TESTE] = { status: "past_due", pagoAte: PASSADO, fimDoPeriodo: EM_30_DIAS };
-    expect((await ler(member)).body).toEqual({ situacao: "atrasada", plano: "mensal", preco: { centavos: 9990, moeda: "brl" }, proximaCobranca: null, acessoAte: null, cartao: VISA, aceitaCartao: true, podeParar: false, podeManter: false });
+    expect((await ler(member)).body).toEqual({ situacao: "atrasada", plano: "mensal", preco: { centavos: 9990, moeda: "brl" }, proximaCobranca: null, acessoAte: null, cartao: VISA, aceitaCartao: true, podeParar: false, podeManter: false, reembolso: null });
     expect(buscarProximaCobranca).not.toHaveBeenCalled();
   });
 

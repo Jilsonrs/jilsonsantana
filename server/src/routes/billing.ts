@@ -1,11 +1,11 @@
 import { Router } from "express";
-import { assinarSchema, cancelarSchema, previaSchema, type AssinaturaCriada, type CartaoTrocado, type PlanosDaAssinatura, type PreviaDaAssinatura, type RenovacaoParada, type SituacaoDaAssinatura, type TrocaDeCartaoPreparada } from "@jilson/core";
+import { assinarSchema, cancelarSchema, previaSchema, type AssinaturaCriada, type CartaoTrocado, type PlanosDaAssinatura, type PreviaDaAssinatura, type ReembolsoFeito, type RenovacaoParada, type SituacaoDaAssinatura, type TrocaDeCartaoPreparada } from "@jilson/core";
 import { requireAuth } from "../middleware/auth.js";
 import { validate } from "../lib/http.js";
 import { buscarCodigo, buscarPrecos, calcularPrevia, chavePublicavel, cobrancaConfigurada, FORMAS_DE_PAGAMENTO } from "../lib/stripe.js";
 import { convidaAReativar, temAcessoAtivo } from "../lib/acesso.js";
 import { assinar } from "../lib/checkout.js";
-import { aplicarCartaoNovo, lerMinhaAssinatura, manterMinhaAssinatura, pararMinhaRenovacao, prepararTrocaDeCartao, registrarAssinaturaDesconhecida } from "../lib/minha-assinatura.js";
+import { aplicarCartaoNovo, lerMinhaAssinatura, manterMinhaAssinatura, pararMinhaRenovacao, prepararTrocaDeCartao, reembolsarMinhaAssinatura, registrarAssinaturaDesconhecida } from "../lib/minha-assinatura.js";
 
 // ASSINAR COM A CONTA LOGADA (Fase 4, etapa 4.2 — billing.md; CLAUDE.md → Membership Gating).
 // Tudo aqui exige login, e a conta é SEMPRE a da sessão. O site diz só QUAL plano e o código
@@ -193,12 +193,18 @@ router.post("/billing/cartao/aplicar", requireAuth, async (req, res) => {
 // acesso continua até o fim do período pago. O corpo de cancelar leva SÓ o motivo, opcional; o de
 // manter, nada. Nenhum dos dois diz qual assinatura: é a da conta da sessão.
 
-/** O que não foi feito, na resposta. `Ocupada` e `CobrancaAtrasada`: nada mudou. */
+/**
+ * O que não foi feito, na resposta. Em todos NADA mudou — menos em `DevolucaoFalhou`: ali a
+ * assinatura foi encerrada e o dinheiro não voltou (alguém já foi avisado pelo registro).
+ */
 const RECUSAS = {
   desconhecida: [404, "AssinaturaDesconhecida"],
   "sem-assinatura": [409, "SemAssinatura"],
   atrasada: [409, "CobrancaAtrasada"],
   ocupada: [409, "Ocupada"],
+  "fora-do-prazo": [409, "ForaDoPrazo"],
+  "nada-a-devolver": [409, "NadaADevolver"],
+  "devolucao-falhou": [502, "DevolucaoFalhou"],
 } as const;
 
 // POST /api/billing/minha-assinatura/cancelar — para a renovação, com o motivo (se a pessoa disse).
@@ -247,6 +253,33 @@ router.post("/billing/minha-assinatura/manter", requireAuth, async (req, res) =>
     return;
   }
   res.status(204).end();
+});
+
+// POST /api/billing/minha-assinatura/reembolso — cancela NA HORA e devolve tudo o que foi pago
+// nesta assinatura (etapa 4.6, sessão b). Só dentro do prazo, conferido no servidor. O corpo leva
+// SÓ o motivo, opcional: quanto devolver e de qual assinatura, quem sabe é o servidor.
+router.post("/billing/minha-assinatura/reembolso", requireAuth, async (req, res) => {
+  const user = req.user;
+  if (!user) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  const corpo = validate(cancelarSchema, req.body ?? {}, res);
+  if (corpo === null) return;
+  if (!cobrancaConfigurada()) {
+    console.error("[stripe] reembolso recusado: STRIPE_SECRET_KEY ausente");
+    res.status(503).json({ error: "NaoConfigurado" });
+    return;
+  }
+  const reembolso = await reembolsarMinhaAssinatura(user.id, { motivo: corpo.motivo, comentario: corpo.comentario });
+  if (reembolso.resultado === "desconhecida") registrarAssinaturaDesconhecida(user.id, "reembolso");
+  if (reembolso.resultado !== "ok") {
+    const [status, error] = RECUSAS[reembolso.resultado];
+    res.status(status).json({ error });
+    return;
+  }
+  const resposta: ReembolsoFeito = { centavos: reembolso.centavos, moeda: reembolso.moeda };
+  res.json(resposta);
 });
 
 export default router;

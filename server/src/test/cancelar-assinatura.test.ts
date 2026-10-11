@@ -61,7 +61,7 @@ const comEspelho = (status: string, currentPeriodEnd: Date | null) => prisma.sub
 /** O que a Stripe diz da assinatura do member@ (os detalhes da tela e o que a sincronia lê). */
 let detalhes: Partial<DetalhesDaAssinatura> = {};
 let naStripe: Partial<AssinaturaNaStripe> = {};
-const daStripe = (id: string): DetalhesDaAssinatura => ({ id, status: "active", pagoAte: EM_30_DIAS, plano: "mensal", preco: { centavos: 9990, moeda: "brl" }, fimDoPeriodo: EM_30_DIAS, acabaEm: null, acabaNoFimDoPeriodo: false, cartao: null, clienteId: CLIENTE, userId: memberId, faturaEmAbertoId: null, ...detalhes });
+const daStripe = (id: string): DetalhesDaAssinatura => ({ id, status: "active", pagoAte: EM_30_DIAS, plano: "mensal", preco: { centavos: 9990, moeda: "brl" }, fimDoPeriodo: EM_30_DIAS, comecouEm: null, acabaEm: null, acabaNoFimDoPeriodo: false, cartao: null, clienteId: CLIENTE, userId: memberId, faturaEmAbertoId: null, ...detalhes });
 const PARADA: Partial<DetalhesDaAssinatura> = { acabaEm: EM_30_DIAS, acabaNoFimDoPeriodo: true };
 
 /** Segura a trava da assinatura, como faz quem a está sincronizando neste instante. */

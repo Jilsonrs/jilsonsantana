@@ -1,6 +1,7 @@
 import Stripe from "stripe";
 import type { CartaoDaAssinatura, MotivoDoCancelamento, Plano } from "@jilson/core";
 import { AssinaturaNaoEncontrada, erroSemMensagem, FORMAS_DE_PAGAMENTO, paraAssinaturaNaStripe, planoDoPreco, stripe } from "./stripe.js";
+import { faturaDevolvida } from "./stripe-devolucao.js";
 
 // GERIR UMA ASSINATURA QUE JÁ EXISTE (Fase 4, etapa 4.6 — billing.md → Minha assinatura). A
 // outra metade da nossa fronteira com a Stripe (`stripe.ts` é a de assinar e a do espelho): o que
@@ -21,6 +22,8 @@ export type DetalhesDaAssinatura = {
   preco: { centavos: number; moeda: string } | null;
   /** O fim do período corrente: é quando a Stripe cobra a renovação. */
   fimDoPeriodo: Date | null;
+  /** O primeiro dia da assinatura: é dele que se conta o prazo do reembolso (trocar de plano não o muda). */
+  comecouEm: Date | null;
   /** Marcada para acabar (no fim do período, ou numa data): não renova. */
   acabaEm: Date | null;
   /** Marcada para acabar NO FIM DO PERÍODO (e não numa data avulsa, posta pelo painel): diz como se desfaz. */
@@ -44,10 +47,11 @@ export function paraCartao(forma: string | Stripe.PaymentMethod | null | undefin
  * A assinatura da Stripe (com `latest_invoice`, `default_payment_method` e o cartão padrão do
  * cliente expandidos) no formato da tela. Função pura.
  * O CARTÃO é o da assinatura; sem ele, o padrão do cliente — é a mesma ordem em que a Stripe
- * escolhe qual cobrar.
+ * escolhe qual cobrar. `devolvida`: a última fatura foi devolvida por inteiro — a mesma conta do
+ * espelho (`paraAssinaturaNaStripe`), para a tela e o gate nunca discordarem.
  */
-export function paraDetalhesDaAssinatura(assinatura: Stripe.Subscription): DetalhesDaAssinatura {
-  const { status, pagoAte, clienteId, userId } = paraAssinaturaNaStripe(assinatura);
+export function paraDetalhesDaAssinatura(assinatura: Stripe.Subscription, devolvida: boolean = false): DetalhesDaAssinatura {
+  const { status, pagoAte, clienteId, userId } = paraAssinaturaNaStripe(assinatura, devolvida);
   const daAssinatura = assinatura.default_payment_method;
   const fatura = assinatura.latest_invoice;
   const itens = assinatura.items.data;
@@ -64,6 +68,7 @@ export function paraDetalhesDaAssinatura(assinatura: Stripe.Subscription): Detal
     plano,
     preco: plano && preco && preco.unit_amount !== null ? { centavos: preco.unit_amount, moeda: preco.currency } : null,
     fimDoPeriodo,
+    comecouEm: typeof assinatura.start_date === "number" ? new Date(assinatura.start_date * 1000) : null,
     acabaEm,
     acabaNoFimDoPeriodo: assinatura.cancel_at_period_end,
     cartao: paraCartao(daAssinatura) ?? paraCartao(padraoDoCliente),
@@ -73,14 +78,21 @@ export function paraDetalhesDaAssinatura(assinatura: Stripe.Subscription): Detal
   };
 }
 
-/** O que toda leitura dos detalhes pede junto: sem isto a tela não teria cartão nem "pago até". */
-const COM_OS_DETALHES = ["latest_invoice", "default_payment_method", "customer.invoice_settings.default_payment_method"];
+/**
+ * O que toda leitura dos detalhes pede junto: sem isto a tela não teria cartão nem "pago até" —
+ * e os pagamentos da última fatura, para saber se ela foi devolvida.
+ */
+const COM_OS_DETALHES = ["latest_invoice.payments", "default_payment_method", "customer.invoice_settings.default_payment_method"];
+
+/** Os detalhes, já sabendo se a última fatura foi devolvida (uma ida a mais à Stripe, só quando há o que conferir). */
+async function comADevolucao(assinatura: Stripe.Subscription): Promise<DetalhesDaAssinatura> {
+  return paraDetalhesDaAssinatura(assinatura, await faturaDevolvida(assinatura.latest_invoice));
+}
 
 /** A assinatura como a Stripe diz AGORA, para a tela. A que ela não conhece: `AssinaturaNaoEncontrada`. */
 export async function buscarDetalhes(id: string): Promise<DetalhesDaAssinatura> {
   try {
-    const assinatura = await stripe().subscriptions.retrieve(id, { expand: COM_OS_DETALHES });
-    return paraDetalhesDaAssinatura(assinatura);
+    return await comADevolucao(await stripe().subscriptions.retrieve(id, { expand: COM_OS_DETALHES }));
   } catch (erro) {
     if (erro instanceof Stripe.errors.StripeInvalidRequestError && erro.code === "resource_missing") throw new AssinaturaNaoEncontrada(id);
     throw erroSemMensagem(erro, "a busca dos detalhes da assinatura");
@@ -301,7 +313,7 @@ export function paraPedidoDeManter(acabaNoFimDoPeriodo: boolean): Stripe.Subscri
 /** Marca a assinatura para acabar no fim do período pago. Devolve-a como a Stripe passou a dizer. */
 export async function pararRenovacao(id: string, dado: MotivoDado): Promise<DetalhesDaAssinatura> {
   try {
-    return paraDetalhesDaAssinatura(await stripe().subscriptions.update(id, { ...paraPedidoDeParar(dado), expand: COM_OS_DETALHES }));
+    return await comADevolucao(await stripe().subscriptions.update(id, { ...paraPedidoDeParar(dado), expand: COM_OS_DETALHES }));
   } catch (erro) {
     throw erroSemMensagem(erro, "a parada da renovação");
   }
@@ -310,7 +322,7 @@ export async function pararRenovacao(id: string, dado: MotivoDado): Promise<Deta
 /** Tira a marca de acabar: a assinatura volta a renovar. Devolve-a como a Stripe passou a dizer. */
 export async function retomarRenovacao(id: string, acabaNoFimDoPeriodo: boolean): Promise<DetalhesDaAssinatura> {
   try {
-    return paraDetalhesDaAssinatura(await stripe().subscriptions.update(id, { ...paraPedidoDeManter(acabaNoFimDoPeriodo), expand: COM_OS_DETALHES }));
+    return await comADevolucao(await stripe().subscriptions.update(id, { ...paraPedidoDeManter(acabaNoFimDoPeriodo), expand: COM_OS_DETALHES }));
   } catch (erro) {
     throw erroSemMensagem(erro, "a retomada da renovação");
   }

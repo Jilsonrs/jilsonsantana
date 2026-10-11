@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import Stripe from "stripe";
+import { pagamentosDaFatura } from "./stripe-devolucao.js";
 import { chavePublicavel, erroSemMensagem, paraAssinaturaNaStripe, paraAssinaturaNoCheckout, paraCodigoPromocional, paraPedidoDeAssinatura, paraPedidoDeCliente, paraPrecosDosPlanos } from "./stripe.js";
 
 // O ESPELHO A PARTIR DA STRIPE (Fase 4, etapa 4.1) — função pura, teste unitário (CLAUDE.md →
@@ -34,6 +35,14 @@ describe("o espelho a partir da assinatura da Stripe", () => {
     for (const fatura of [{ status: "open" }, { status: "uncollectible" }, { status: "void" }, "in_sem_expandir", null]) {
       expect(paraAssinaturaNaStripe(assinatura({ status: "past_due", fatura })).pagoAte?.getTime()).toBe(inicio * 1000);
     }
+  });
+
+  // O REEMBOLSO (etapa 4.6, sessão b): a fatura devolvida continua `paid` na Stripe. Sem esta
+  // regra, quem recebeu o dinheiro de volta seguiria com acesso até o fim do período.
+  it("última fatura paga e DEVOLVIDA POR INTEIRO: o período deixa de contar — pago só até o COMEÇO dele", () => {
+    expect(paraAssinaturaNaStripe(assinatura({ status: "canceled" }), true).pagoAte?.getTime()).toBe(inicio * 1000);
+    // Sem a devolução, o mesmo retrato continua pago até o fim.
+    expect(paraAssinaturaNaStripe(assinatura({ status: "canceled" }), false).pagoAte?.getTime()).toBe(fim * 1000);
   });
 
   it("sem item: sem data", () => {
@@ -72,6 +81,29 @@ function preco({ chave = "assinatura_mensal", centavos = 9990 as number | null, 
   return { id, lookup_key: chave, unit_amount: centavos, currency: "brl", active: ativo, recurring: { interval: intervalo, interval_count: cada } } as unknown as Stripe.Price;
 }
 const anual = preco({ chave: "assinatura_anual", centavos: 99500, intervalo: "year", id: "price_2" });
+
+describe("os pagamentos que quitaram a fatura", () => {
+  // Seguro: só os campos que a função lê; a forma completa é da Stripe.
+  const fatura = (pagamentos: object[] | undefined) => ({ id: "in_1", payments: pagamentos ? { data: pagamentos } : undefined }) as unknown as Stripe.Invoice;
+
+  it("só os pagos, pelo id — venha ele sozinho ou com o pagamento inteiro", () => {
+    const ids = pagamentosDaFatura(
+      fatura([
+        { status: "paid", payment: { type: "payment_intent", payment_intent: "pi_1" } },
+        { status: "paid", payment: { type: "payment_intent", payment_intent: { id: "pi_2" } } },
+        { status: "open", payment: { type: "payment_intent", payment_intent: "pi_que_nao_pagou" } },
+        { status: "canceled", payment: { type: "payment_intent", payment_intent: "pi_cancelado" } },
+      ]),
+    );
+    expect(ids).toEqual(["pi_1", "pi_2"]);
+  });
+
+  it("fatura sem pagamento (a cortesia), paga por outro meio, ou que veio sem os pagamentos: nenhum", () => {
+    expect(pagamentosDaFatura(fatura([]))).toEqual([]);
+    expect(pagamentosDaFatura(fatura([{ status: "paid", payment: { type: "charge", charge: "ch_1" } }]))).toEqual([]);
+    expect(pagamentosDaFatura(fatura(undefined))).toEqual([]);
+  });
+});
 
 describe("os planos a partir dos preços da Stripe", () => {
   it("devolve o mensal e o anual, cada um com o seu valor, na ordem da tela", () => {

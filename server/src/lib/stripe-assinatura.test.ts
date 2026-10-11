@@ -44,6 +44,7 @@ function assinatura({
     cancel_at_period_end: acabaNoFim,
     cancel_at: acabaEm,
     default_payment_method: cartao,
+    start_date: inicio - 3 * DIA,
   } as unknown as Stripe.Subscription;
 }
 
@@ -261,5 +262,18 @@ describe("o pedido de voltar atrás", () => {
     const apagado = { cancellation_details: { feedback: "", comment: "" }, metadata: { motivo: "" } };
     expect(paraPedidoDeManter(true)).toEqual({ cancel_at_period_end: false, ...apagado });
     expect(paraPedidoDeManter(false)).toEqual({ cancel_at: "", ...apagado });
+  });
+});
+
+// O REEMBOLSO (passo 8). O que protege: o prazo conta do primeiro dia da assinatura, e a fatura
+// devolvida por inteiro deixa de contar como paga na TELA do mesmo jeito que no espelho.
+describe("o que a tela precisa saber para o reembolso", () => {
+  it("o primeiro dia da assinatura: é dele que o prazo conta", () => {
+    expect(paraDetalhesDaAssinatura(assinatura()).comecouEm?.getTime()).toBe((inicio - 3 * DIA) * 1000);
+  });
+
+  it("última fatura devolvida por inteiro: 'pago até' é o começo do período — a mesma conta do espelho", () => {
+    expect(paraDetalhesDaAssinatura(assinatura({ status: "canceled" }), true).pagoAte?.getTime()).toBe(inicio * 1000);
+    expect(paraDetalhesDaAssinatura(assinatura({ status: "canceled" })).pagoAte?.getTime()).toBe(fim * 1000);
   });
 });

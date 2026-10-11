@@ -184,11 +184,11 @@ hora · o painel de assinaturas (etapa 4.7b) mostra as cobranças devolvidas de 
 caso a caso.
 *Reabre se o reembolso repetido virar prejuízo medido — aí um limite volta à mesa.*
 
-**Estado do código (10/10/2026): o reembolso ainda NÃO corta o acesso.** A fatura da Stripe não
-tem situação de "reembolsada" (as situações são `draft`, `open`, `paid`, `uncollectible` e `void`
-— tipos da `stripe@23.0.0`): devolvido o dinheiro, ela continua `paid`, e o espelho trata o mês
-como pago. A regra acima entra com o cancelamento (plano → etapa 4.6): o período
-devolvido deixa de contar como pago no espelho. **Precede a primeira venda de verdade.**
+**Estado do código (11/10/2026): o reembolso CORTA o acesso** (etapa 4.6, sessão b, passo 8;
+ainda não publicado). A fatura da Stripe não tem situação de "reembolsada" (as situações são
+`draft`, `open`, `paid`, `uncollectible` e `void` — tipos da `stripe@23.0.0`): devolvido o
+dinheiro, ela continua `paid`. Por isso o "pago até" do espelho passou a ler a COBRANÇA: a última
+fatura devolvida por inteiro não conta como paga. O detalhe está em *Minha assinatura*, abaixo.
 
 ## O plano ANUAL não aparece na home *(decisão do operador, set/2026)*
 
@@ -585,6 +585,40 @@ Stripe guardou o cartão de teste e o resumo passou a mostrá-lo:
   assinatura, o confirmado e nunca aplicado, e o padrão do cliente — depois de o novo estar no
   lugar. Se algum não sair, é aviso: a troca valeu.
 
+- **O reembolso** (sessão b, passo 8). Dentro do prazo, a operação **encerra a assinatura na
+  hora e devolve tudo o que foi pago nela** — o que falta voltar de cada cobrança. O pedido leva
+  só o motivo: quanto devolver e de qual assinatura, quem sabe é o servidor. **O prazo (7 dias do
+  primeiro dia da assinatura) é conferido no servidor na hora da ação, e de novo com a trava.** A
+  cortesia não tem o que devolver, e não é encerrada. **A ordem é encerrar e depois devolver:**
+  se a devolução falha, a tela recebe uma resposta com nome próprio, o registro grita (precisa
+  de gente), a pessoa segue com o acesso do que pagou e pode repetir — repetir não devolve duas
+  vezes (chave de repetição por pagamento; o que a Stripe diz que já voltou conta como feito).
+- **O período devolvido não conta como pago.** Na Stripe a fatura devolvida continua "paga";
+  quem diz que o dinheiro voltou é a cobrança. O "pago até" — do espelho e da tela, pela mesma
+  conta — trata a última fatura devolvida POR INTEIRO como não paga; a devolução parcial continua
+  contando. Custa uma ida a mais à Stripe em cada busca da assinatura cuja última fatura tem
+  pagamento. *Reabre se essa ida a mais pesar (a busca roda dentro da trava do aviso).*
+- **Depois do reembolso pedido pelo dono, a sessão fica** (`manterSessao`, só nessa operação).
+  Se a devolução deu certo e a sincronia falhou, quem acerta o espelho é o aviso da Stripe — e
+  aí a pessoa é deslogada, como em toda perda de acesso.
+- **O aviso de dinheiro devolvido** (`charge.refunded`) traz só a cobrança: o servidor acha a
+  assinatura pelo pagamento e a sincroniza. É o que faz o reembolso dado **direto no painel da
+  Stripe** também cortar o acesso, quando a assinatura já está encerrada. Devolver sem encerrar
+  não tira acesso: a assinatura viva dá acesso pelo status.
+- **A fronteira com a Stripe tem cinco arquivos** (sessão b): `stripe-cliente.ts` (a biblioteca
+  com a chave), `stripe.ts` (assinar e o espelho), `stripe-assinatura.ts` (gerir a assinatura),
+  `stripe-devolucao.ts` (ler se a fatura foi devolvida) e `stripe-reembolso.ts` (encerrar e
+  devolver). Só eles falam com a Stripe.
+
+`[FATO — medido na área restrita, 11/10/2026]` a fatura devolvida continua `paid`, com o mesmo
+valor pago, e o pagamento dela também · a Stripe não deixa expandir da assinatura até a cobrança
+(limite de 4 níveis) · a cobrança não diz de que fatura é: acha-se pelo pagamento · encerrar na
+hora sem crédito não gera fatura nova · a mesma chave de repetição devolve a MESMA devolução, e
+devolver de novo o que já voltou é recusado · a cortesia tem fatura paga de valor zero e nenhum
+pagamento · pagamento que não existe: a lista vem vazia, sem erro · **com as funções de verdade,
+23 pontos**: depois de encerrar e devolver, o espelho fica "pago só até o começo do período" e a
+conta fica sem acesso; com devolução parcial, o período continua contando.
+
 `[FATO — medido na área restrita, 11/10/2026, com dois clientes descartáveis]` Parar a renovação
 deixa a assinatura `active`, com a data de fim igual ao fim do período, e guarda o motivo, o
 comentário e o `metadata.motivo` · parar de novo sem motivo mantém o de antes · voltar atrás com
@@ -614,6 +648,10 @@ encerrada de vez com dias pagos: tem acesso e o servidor recusa cartão.
 - **Os botões de mudar de plano, de cancelar e de "Manter a assinatura" chegam na sessão (b)**,
   junto com a tela de cada um: até lá o resumo mostra a situação, sem a ação. *(11/10/2026: o
   servidor já para a renovação e volta atrás; as telas esperam os textos — pendência P66.)*
+- **O aviso de dinheiro devolvido precisa chegar ao site no ar:** o endereço de avisos da conta
+  de verdade tem que incluir `charge.refunded` (tarefa do operador no painel da Stripe —
+  pendência P69). Sem ele, o reembolso pedido pela tela funciona do mesmo jeito; o que não corta
+  o acesso sozinho é o reembolso dado direto no painel.
 - **Com a cobrança atrasada, cancelar responde "não dá"** e nada muda: não há período pago a
   manter, e o que cancelar faz ali é decisão do operador (pendência P67).
 - **Fechar a aba depois de o campo confirmar e antes do último passo:** o cartão fica guardado no

@@ -134,6 +134,12 @@ export type MinhaAssinatura =
       podeParar: boolean;
       /** A renovação está parada e ainda dá para voltar atrás, sem pagar nada. A encerrada de vez, não. */
       podeManter: boolean;
+      /**
+       * A saída do reembolso: quanto volta e até quando dá para pedir (em ISO). Só dentro do prazo
+       * e com dinheiro a devolver — a assinatura de cortesia nunca tem. Quem confere é o servidor,
+       * de novo, na hora da ação.
+       */
+      reembolso: { centavos: number; moeda: string; ate: string } | null;
     };
 
 /**
@@ -146,6 +152,16 @@ export type MotivoDoCancelamento = (typeof MOTIVOS_DE_CANCELAMENTO)[number];
 
 /** O tamanho do "Quer contar mais?": é uma frase ou duas, não uma carta. */
 export const TAMANHO_DO_COMENTARIO = 500;
+
+/**
+ * O prazo do reembolso, em dias, contados do PRIMEIRO DIA da assinatura — trocar de plano não
+ * recomeça (decisões do operador, 10/10/2026; é o direito de arrependimento do CDC, art. 49).
+ * Os 14 dias de fora do Brasil chegam com a cobrança em dólar (etapa 4.8): até lá só existe este.
+ */
+export const PRAZO_DO_REEMBOLSO_EM_DIAS = 7;
+
+/** Resposta de `POST /api/billing/minha-assinatura/reembolso`: quanto foi devolvido. O acesso terminou. */
+export type ReembolsoFeito = { centavos: number; moeda: string };
 
 /**
  * Resposta de `POST /api/billing/minha-assinatura/cancelar`: a renovação parou, e até quando há

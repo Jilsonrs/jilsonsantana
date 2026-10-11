@@ -85,7 +85,7 @@ beforeEach(async () => {
   naStripe = {};
   buscarDetalhes.mockReset().mockImplementation(async (id) => {
     if (id !== SUB) throw new AssinaturaNaoEncontrada(id);
-    return { id, status: "active", pagoAte: EM_30_DIAS, plano: "mensal", preco: { centavos: 9990, moeda: "brl" }, fimDoPeriodo: EM_30_DIAS, acabaEm: null, acabaNoFimDoPeriodo: false, cartao: { bandeira: "visa", final: "4242", mes: 12, ano: 2028 }, clienteId: CLIENTE, userId: memberId, faturaEmAbertoId: null, ...detalhes };
+    return { id, status: "active", pagoAte: EM_30_DIAS, plano: "mensal", preco: { centavos: 9990, moeda: "brl" }, fimDoPeriodo: EM_30_DIAS, comecouEm: null, acabaEm: null, acabaNoFimDoPeriodo: false, cartao: { bandeira: "visa", final: "4242", mes: 12, ano: 2028 }, clienteId: CLIENTE, userId: memberId, faturaEmAbertoId: null, ...detalhes };
   });
   buscarAssinatura.mockReset().mockImplementation(async (id) => ({ id, status: "active", pagoAte: EM_30_DIAS, clienteId: CLIENTE, userId: memberId, livemode: false, ...naStripe }));
   criarPedidoDeCartao.mockReset().mockResolvedValue("seti_segredo_do_teste");

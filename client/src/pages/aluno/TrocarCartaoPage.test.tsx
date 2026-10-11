@@ -58,6 +58,7 @@ const ATIVA: MinhaAssinatura = {
   aceitaCartao: true,
   podeParar: true,
   podeManter: false,
+  reembolso: null,
 };
 const PLANOS: PlanosDaAssinatura = {
   chavePublicavel: "pk_test_da_tela",

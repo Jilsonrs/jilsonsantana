@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "./prisma.js";
 import { temAcessoAtivo } from "./acesso.js";
 import { AssinaturaNaoEncontrada, assinaturasDoCliente, buscarAssinatura, type AssinaturaNaStripe, type AvisoDaStripe } from "./stripe.js";
+import { assinaturaDoPagamento } from "./stripe-reembolso.js";
 
 // O ESPELHO DA ASSINATURA (Fase 4, etapa 4.1 — CLAUDE.md → Membership Gating). A assinatura da
 // Stripe é a CANÔNICA; a nossa é o espelho que o gate (`temAcessoAtivo()`) lê. Cada aviso:
@@ -33,6 +34,13 @@ import { AssinaturaNaoEncontrada, assinaturasDoCliente, buscarAssinatura, type A
 // assinatura antiga de quem já estava sem acesso, nunca deslogam ninguém. E isto NÃO é a
 // fronteira: quem só deixa o período pago vencer não recebe aviso da Stripe e continua logado —
 // quem tranca a aula é o gate, a cada pedido.
+// UMA EXCEÇÃO, decidida pelo operador (11/10/2026): depois do REEMBOLSO pedido pela própria
+// pessoa, ela continua logada — lê a confirmação e segue no site, sem as aulas. É a opção
+// `manterSessao`, que só a operação de reembolso do dono usa.
+//
+// O AVISO DE DINHEIRO DEVOLVIDO (`charge.refunded`) fala de uma cobrança, não de uma assinatura:
+// a assinatura se acha pelo pagamento, e daí em diante é a sincronia de sempre — é o que faz o
+// reembolso dado direto no painel da Stripe também cortar o acesso.
 
 /** O que a sincronia fez com o espelho de UMA assinatura. */
 export type Sincronia =
@@ -53,8 +61,11 @@ function travar(tx: Prisma.TransactionClient, assinaturaId: string) {
   return tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${assinaturaId}))`;
 }
 
-/** COM a trava desta assinatura já tomada por `tx`: o que a Stripe diz AGORA vira o espelho. */
-async function sincronizar(tx: Prisma.TransactionClient, assinaturaId: string): Promise<Sincronia> {
+/**
+ * COM a trava desta assinatura já tomada por `tx`: o que a Stripe diz AGORA vira o espelho.
+ * `manterSessao`: quem perde o acesso NÃO é deslogado — só o reembolso pedido pelo dono.
+ */
+async function sincronizar(tx: Prisma.TransactionClient, assinaturaId: string, { manterSessao = false }: { manterSessao?: boolean } = {}): Promise<Sincronia> {
   // Na Stripe, AGORA. Se ela não responder, a exceção sobe: nada é gravado.
   const agora = await buscarAssinatura(assinaturaId);
   const espelho = await tx.subscription.findUnique({ where: { stripeSubscriptionId: agora.id }, select: { id: true, ownerUserId: true } });
@@ -73,15 +84,18 @@ async function sincronizar(tx: Prisma.TransactionClient, assinaturaId: string): 
   // `dono` é sempre um id de verdade aqui (`tinhaAcesso` só é sim com um) — nunca um filtro vazio,
   // que no Prisma apagaria as sessões de todo mundo.
   const perdeuAcesso = dono !== null && tinhaAcesso && !(await temAcessoAtivo(dono, tx));
-  if (perdeuAcesso && dono !== null) await tx.session.deleteMany({ where: { userId: dono } });
+  if (perdeuAcesso && dono !== null && !manterSessao) await tx.session.deleteMany({ where: { userId: dono } });
   return { resultado: "atualizada", assinatura: agora, perdeuAcesso };
 }
 
 export async function processarAviso(aviso: AvisoDaStripe): Promise<Desfecho> {
   if (await prisma.stripeEvent.findUnique({ where: { id: aviso.id }, select: { id: true } })) return { resultado: "repetido" };
   const marcar = { id: aviso.id, type: aviso.tipo };
+  // O aviso de dinheiro devolvido só traz o pagamento: a assinatura dele se acha na Stripe. Se a
+  // busca falhar, sobe — nada fica marcado, e a Stripe entrega de novo.
+  const assinaturaId = aviso.assinatura ?? (aviso.pagamento ? await assinaturaDoPagamento(aviso.pagamento) : null);
 
-  if (!aviso.assinatura) {
+  if (!assinaturaId) {
     try {
       await prisma.stripeEvent.create({ data: marcar });
     } catch (erro) {
@@ -92,7 +106,6 @@ export async function processarAviso(aviso: AvisoDaStripe): Promise<Desfecho> {
     return { resultado: "sem-assinatura" };
   }
 
-  const assinaturaId = aviso.assinatura;
   try {
     return await prisma.$transaction(async (tx): Promise<Desfecho> => {
       await travar(tx, assinaturaId);
@@ -159,10 +172,11 @@ export type Operacao<T> = { feito: T; sincronia: Sincronia | null };
  * encontra o espelho gravado; nada grava o espelho à mão.
  * NÃO ESPERA a trava (como `sincronizarSeLivre`, e pelo mesmo motivo): se a assinatura está
  * ocupada, devolve nada na hora, SEM ter ido à Stripe — quem pediu tenta de novo.
+ * `manterSessao`: a exceção do reembolso pedido pelo dono (ver o topo do arquivo).
  * Se a Stripe mudou e a sincronia falhou, a operação VALEU: devolve-a sem a sincronia (é aviso no
  * registro; o aviso da Stripe acerta o espelho). Se a própria mudança falhou, sobe.
  */
-export async function operarNaAssinatura<T>(assinaturaId: string, naStripe: () => Promise<T>): Promise<Operacao<T> | null> {
+export async function operarNaAssinatura<T>(assinaturaId: string, naStripe: () => Promise<T>, opcoes: { manterSessao?: boolean } = {}): Promise<Operacao<T> | null> {
   const feita: { valor?: T; foi: boolean } = { foi: false };
   try {
     return await prisma.$transaction(async (tx): Promise<Operacao<T> | null> => {
@@ -170,7 +184,7 @@ export async function operarNaAssinatura<T>(assinaturaId: string, naStripe: () =
       if (!trava?.livre) return null;
       feita.valor = await naStripe();
       feita.foi = true;
-      return { feito: feita.valor, sincronia: await sincronizar(tx, assinaturaId) };
+      return { feito: feita.valor, sincronia: await sincronizar(tx, assinaturaId, opcoes) };
     }, TEMPO_DA_TRANSACAO);
   } catch (erro) {
     const motivo = erro instanceof Error ? erro.message : String(erro);

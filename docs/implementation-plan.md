@@ -4362,6 +4362,56 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
         os outros cartões limpa também o padrão do cliente, e a assinatura segue `active` com o
         novo. Gates: typecheck, lint, suíte do site (852) e de servidor como o CI (861), build.
         *(A Stripe CLI pede confirmação para apagar: sem `--confirm` o comando fica esperando.)*
+      - **Passo 8 — FEITO (11/10/2026): o reembolso.**
+        `POST /api/billing/minha-assinatura/reembolso` (o corpo leva só o motivo, opcional):
+        dentro do prazo, **encerra a assinatura da conta na hora e devolve tudo o que foi pago
+        nela** — o que FALTA voltar de cada cobrança, as duas de quem trocou de plano — e responde
+        quanto voltou. **O prazo (7 dias do primeiro dia da assinatura; `PRAZO_DO_REEMBOLSO_EM_DIAS`
+        no `core`) é conferido no servidor na hora da ação, e de novo com a trava**, junto com o
+        que foi pago. A cortesia não tem o que devolver (409, e não é encerrada). **O acesso
+        termina na hora e a pessoa continua logada**: a sincronia ganhou `manterSessao`, usada só
+        por esta operação. **A ordem é encerrar e depois devolver:** se a devolução falha, a
+        resposta tem nome próprio (502 `DevolucaoFalhou`), o registro grita (`console.error`, com
+        etiqueta, a conta e a assinatura), a pessoa segue com o acesso do que pagou e pode
+        repetir — a assinatura já encerrada não é encerrada de novo, e repetir não devolve duas
+        vezes (chave de repetição por pagamento; o que a Stripe diz que já voltou conta como
+        feito). **O período devolvido deixou de contar:** a última fatura devolvida POR INTEIRO
+        não conta como paga no "pago até" — do espelho e da tela, pela mesma conta; a devolução
+        parcial continua contando. **O aviso de dinheiro devolvido** (`charge.refunded`) traz só a
+        cobrança: o servidor acha a assinatura pelo pagamento e a sincroniza — é o que faz o
+        reembolso dado direto no painel da Stripe também cortar o acesso (**o endereço de avisos
+        da conta de verdade precisa receber esse aviso: pendência P69**). **A tela** passa a
+        receber `reembolso` (quanto volta e até quando), só dentro do prazo e com dinheiro a
+        devolver; fora do prazo a Stripe nem é consultada.
+        **Mudou a estrutura** (engenharia): a fábrica da biblioteca da Stripe foi para
+        `stripe-cliente.ts` e a leitura da devolução para `stripe-devolucao.ts`, para que a busca
+        que alimenta o espelho rode de verdade nos testes (só a rede é dublê); as idas do
+        reembolso moram em `stripe-reembolso.ts`. Custo: a busca da assinatura faz uma ida a mais
+        à Stripe quando a última fatura tem pagamento.
+        `[FATO — medido na área restrita, 11/10/2026]` a fatura devolvida continua `paid`, com o
+        mesmo valor pago, e o pagamento dela também: quem diz que o dinheiro voltou é a COBRANÇA ·
+        a Stripe não deixa expandir da assinatura até a cobrança (limite de 4 níveis) · a
+        cobrança não diz de que fatura é; acha-se pelo pagamento (`invoice_payments`) · encerrar
+        na hora sem crédito não gera fatura nova · a mesma chave de repetição devolve a MESMA
+        devolução, e devolver de novo o que já voltou é recusado (`charge_already_refunded`) · a
+        cortesia tem fatura paga de valor zero e nenhum pagamento · a data de início é a de
+        criação · pagamento que não existe: a lista vem vazia (nenhuma assinatura), sem erro.
+        **A prova com as funções de verdade** (área restrita, 3 clientes descartáveis e 1 cupom,
+        já apagados; o banco não foi tocado): **23 pontos** — parar e voltar atrás, tirar os
+        outros cartões, encerrar, devolver, repetir sem devolver duas vezes, o espelho sem acesso
+        depois da devolução, a parcial contando, a cortesia sem a saída. 22 passaram de primeira;
+        o 23º era uma suposição errada da própria prova (esperava erro para um pagamento que não
+        existe; a Stripe devolve lista vazia — conferido).
+        **Testes:** 31 de rota + 5 do aviso + 27 com a biblioteca trocada por dublê + 5 unitários.
+        **Mutação:** 21 de 21 reprovaram — a fatura devolvida contando como paga, a busca do
+        espelho sem conferir a devolução, a parcial tirando o acesso, o reembolso fora do prazo
+        (antes e com a trava), o prazo de 8 dias, sem data de início o dinheiro saindo, a
+        cortesia encerrada, devolver antes de encerrar, encerrar duas vezes, a devolução que
+        falha respondendo "devolvido" e sem avisar ninguém, quem pede sendo deslogado, ninguém
+        mais sendo deslogado, a saída mostrada fora do prazo e para a cortesia, o aviso sem achar
+        a assinatura, o valor cheio no lugar do que falta, sem chave de repetição, o crédito
+        proporcional, faturas de qualquer assinatura. Gates: typecheck, lint, suíte do site (852)
+        e de servidor como o CI (929), build.
       **ONDE PAROU:** SESSÃO (a) FECHADA e **PUBLICADA em 11/10/2026 (`main` = `6305077`)**, com
       a autorização do operador (*"pode publicar depois desses ajustes"*): CI verde nos dois jobs
       no `dev` e na `main`, e conferido no ar como visitante — as rotas novas respondem 401 sem
@@ -4370,13 +4420,14 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       Stripe traz o nome público da conta de verdade (P58) — só olhar: salvar ali guarda um
       cartão de verdade.
       **SESSÃO (b) — ABERTA em 11/10/2026.** Feito: o item 0 ("Sair"), a consulta à Stripe, os
-      textos mostrados a ele (aguardam aprovação — pendência P66) e o **passo 7**. **Próximo: o
-      passo 8** — o reembolso (a operação, o período devolvido deixando de contar, a pessoa
-      continuando logada e o aviso de dinheiro devolvido); antes de escrever, medir na área
-      restrita como se lê a devolução (fatura → pagamento → cobrança devolvida). Depois, os
-      passos 9 a 13 — o 9 e o 11 (as telas) só com os textos aprovados. **Quando ele responder
-      a P67** (cancelar com a cobrança atrasada), a resposta entra na operação de parar.
-      Nada desta sessão está publicado. A sessão (c) começa pela pendência P64.
+      textos mostrados a ele (aguardam aprovação — pendência P66) e os **passos 7 e 8**.
+      **Próximo: o passo 10** (servidor: a prévia e a troca de plano — não depende dos textos);
+      nele, parar a renovação e reembolsar precisam soltar o agendamento da troca, se houver.
+      **O passo 9 e o 11 (as telas) só com os textos aprovados.** Depois, o 12 e o 13.
+      **Quando ele responder a P67** (cancelar com a cobrança atrasada), a resposta entra na
+      operação de parar. **Antes de publicar:** a P69 (o aviso de dinheiro devolvido no endereço
+      de avisos da conta de verdade). Nada desta sessão está publicado. A sessão (c) começa
+      pela pendência P64.
 - [ ] **4.7 — O visitante assina: a conta nasce no pagamento (código, ALTO RISCO).** O checkout
       público: e-mail + pagamento → o webhook cria a conta (o cadastro continua fechado) e manda o
       e-mail de "crie sua senha". **Depende do Resend configurado e da P49** (o remetente). Junto:
@@ -4395,7 +4446,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       as que chamam a Stripe — **e as três da etapa 4.6** (revisão de segurança de 11/10/2026):
       `GET /billing/minha-assinatura`, `POST /billing/cartao` (poucos pedidos por hora: cada um
       abre um pedido de guardar cartão, e sem limite o site serve para testar cartão roubado) e
-      `POST /billing/cartao/aplicar` (numa conta atrasada, cada chamada tenta uma cobrança) · (b) **a trava do checkout não pode segurar conexão do banco
+      `POST /billing/cartao/aplicar` (numa conta atrasada, cada chamada tenta uma cobrança) — **e as três da sessão (b)**: `POST /billing/minha-assinatura/cancelar`, `…/manter` e `…/reembolso` (cada uma vai à Stripe; a de reembolso lê as faturas e as cobranças) · (b) **a trava do checkout não pode segurar conexão do banco
       esperando**: vários pedidos juntos esgotariam as conexões e parariam a API inteira — a trava
       que não espera (`pg_try_advisory_xact_lock`) ou a Stripe fora da transação *(a revisão da
       4.4 voltou a apontar, como P1: quem tem a trava ainda pede uma SEGUNDA conexão para ler o

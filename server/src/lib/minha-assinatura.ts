@@ -1,4 +1,4 @@
-import { SituacaoDoFaturamento, type CartaoTrocado, type MinhaAssinatura, type RenovacaoParada } from "@jilson/core";
+import { PRAZO_DO_REEMBOLSO_EM_DIAS, SituacaoDoFaturamento, type CartaoTrocado, type MinhaAssinatura, type ReembolsoFeito, type RenovacaoParada } from "@jilson/core";
 import { prisma } from "./prisma.js";
 import { assinaturaDaAcesso, passouDoPrimeiroPagamento } from "./acesso.js";
 import { operarNaAssinatura, sincronizarSeLivre } from "./assinaturas.js";
@@ -17,6 +17,7 @@ import {
   type MotivoDado,
   type PedidoDeCartao,
 } from "./stripe-assinatura.js";
+import { aDevolver, buscarOQueFoiPago, cancelarNaHora, devolver } from "./stripe-reembolso.js";
 
 // MINHA ASSINATURA (Fase 4, etapa 4.6 — billing.md; CLAUDE.md → Membership Gating). O que a tela
 // de Faturamento e Assinatura lê e — a partir do passo 4 — as OPERAÇÕES sobre a assinatura
@@ -61,6 +62,25 @@ export function podeManter(detalhes: DetalhesDaAssinatura): boolean {
   return RENOVAM.has(detalhes.status) && detalhes.acabaEm !== null;
 }
 
+const DIA = 24 * 60 * 60 * 1000;
+
+/** A saída do reembolso, como a tela a recebe: quanto volta e até quando dá para pedir. */
+type SaidaDoReembolso = { centavos: number; moeda: string; ate: string } | null;
+
+/**
+ * Até quando dá para pedir o reembolso: o prazo conta do PRIMEIRO DIA da assinatura, e trocar de
+ * plano não o recomeça (decisões do operador, 10/10/2026). Função pura.
+ */
+export function prazoDoReembolso(detalhes: Pick<DetalhesDaAssinatura, "comecouEm">): Date | null {
+  return detalhes.comecouEm ? new Date(detalhes.comecouEm.getTime() + PRAZO_DO_REEMBOLSO_EM_DIAS * DIA) : null;
+}
+
+/** Ainda está no prazo? Sem a data de início, NÃO — fecha na dúvida: é dinheiro saindo. Função pura. */
+export function noPrazoDoReembolso(detalhes: Pick<DetalhesDaAssinatura, "comecouEm">, agora: Date = new Date()): boolean {
+  const ate = prazoDoReembolso(detalhes);
+  return ate !== null && agora.getTime() <= ate.getTime();
+}
+
 /**
  * O que a Stripe diz, no formato da tela. Função pura.
  *   - sem acesso pela regra do gate → terminada;
@@ -70,13 +90,13 @@ export function podeManter(detalhes: DetalhesDaAssinatura): boolean {
  *   - o resto tem acesso até uma data e não renova: a renovação parada (`active` com a marca de
  *     acabar) e a assinatura já encerrada, ou com a cobrança pausada, ainda com dias pagos.
  */
-export function paraMinhaAssinatura(detalhes: DetalhesDaAssinatura, proxima: { centavos: number; moeda: string } | null, agora: Date = new Date()): MinhaAssinatura {
+export function paraMinhaAssinatura(detalhes: DetalhesDaAssinatura, proxima: { centavos: number; moeda: string } | null, agora: Date = new Date(), reembolso: SaidaDoReembolso = null): MinhaAssinatura {
   if (!assinaturaDaAcesso({ status: detalhes.status, currentPeriodEnd: detalhes.pagoAte }, agora)) {
     return { situacao: SituacaoDoFaturamento.TERMINADA, terminouEm: iso(detalhes.pagoAte) };
   }
   // `podeParar` e `podeManter`: as MESMAS regras das operações (`renova`, `podeManter`) — a tela
   // nunca mostra um botão que o servidor vai recusar.
-  const comum = { plano: detalhes.plano, preco: detalhes.preco, cartao: detalhes.cartao, aceitaCartao: aceitaCartaoNovo(detalhes), podeParar: renova(detalhes), podeManter: podeManter(detalhes) };
+  const comum = { plano: detalhes.plano, preco: detalhes.preco, cartao: detalhes.cartao, aceitaCartao: aceitaCartaoNovo(detalhes), podeParar: renova(detalhes), podeManter: podeManter(detalhes), reembolso };
   if (detalhes.status === "past_due") return { situacao: SituacaoDoFaturamento.ATRASADA, ...comum, proximaCobranca: null, acessoAte: null };
   if (renova(detalhes)) {
     const em = iso(detalhes.fimDoPeriodo);
@@ -160,7 +180,7 @@ export async function lerMinhaAssinatura(userId: string): Promise<Leitura> {
   }
   const { detalhes } = achada;
   const proxima = renova(detalhes) ? await buscarProximaCobranca(detalhes.id) : null;
-  const assinatura = paraMinhaAssinatura(detalhes, proxima);
+  const assinatura = paraMinhaAssinatura(detalhes, proxima, new Date(), await reembolsoDisponivel(detalhes));
   // O ESPELHO dá acesso (foi por isso que chegamos aqui) e a STRIPE diz que acabou: o aviso do
   // fim se perdeu. Sem acertar agora, as aulas seguiriam abertas e "Reativar assinatura"
   // responderia "já é assinante" (achado da revisão de segurança, 11/10/2026). Pela rotina de
@@ -174,6 +194,20 @@ export async function lerMinhaAssinatura(userId: string): Promise<Leitura> {
     }
   }
   return { resultado: "ok", assinatura };
+}
+
+/**
+ * A saída do reembolso que a tela de cancelar mostra — ou nenhuma. Fora do prazo, a Stripe nem é
+ * consultada; dentro dele, o valor é o que FALTA voltar de tudo o que foi pago nesta assinatura
+ * (o mostrado é o devolvido). A assinatura de cortesia não pagou nada: não tem a saída.
+ */
+async function reembolsoDisponivel(detalhes: DetalhesDaAssinatura): Promise<SaidaDoReembolso> {
+  const ate = prazoDoReembolso(detalhes);
+  if (!ate || !noPrazoDoReembolso(detalhes)) return null;
+  const pago = await buscarOQueFoiPago(detalhes.id);
+  const centavos = aDevolver(pago);
+  if (centavos <= 0 || !pago.moeda) return null;
+  return { centavos, moeda: pago.moeda, ate: ate.toISOString() };
 }
 
 // ── TROCAR O CARTÃO (passo 4) ────────────────────────────────────────────────────────────────
@@ -300,4 +334,67 @@ export async function manterMinhaAssinatura(userId: string): Promise<Mantida> {
   if (!operacao) return { resultado: "ocupada" };
   console.info(`[stripe] manter a assinatura: conta ${userId}, assinatura ${detalhes.id}`);
   return { resultado: "ok" };
+}
+
+// ── O REEMBOLSO (passo 8 — billing.md → Reembolso) ───────────────────────────────────────────
+// Dentro do prazo, a pessoa escolhe: parar a renovação e continuar, ou cancelar e receber o
+// dinheiro de volta. Esta é a segunda saída (decisões do operador, 10 e 11/10/2026):
+//   - devolve TUDO o que foi pago nesta assinatura (quem trocou de plano no prazo recebe as duas
+//     cobranças) — a cortesia não tem o que devolver;
+//   - o acesso termina NA HORA: a assinatura é encerrada, e o período devolvido deixa de contar
+//     como pago no espelho (`faturaDevolvida`, em `stripe.ts`);
+//   - a pessoa CONTINUA LOGADA (`manterSessao`): lê a confirmação e segue no site, sem as aulas;
+//   - sem contador e sem recusa por reembolso repetido (a trava é a cláusula dos termos de uso).
+// O PRAZO SE CONFERE AQUI, NO SERVIDOR, NA HORA DA AÇÃO — e de novo com a trava, junto com o que
+// foi pago: a tela só mostra o que o servidor disse. A ordem é ENCERRAR e depois DEVOLVER: se a
+// devolução falhar, a pessoa segue com o acesso do período que pagou, alguém é avisado
+// (`console.error`, com etiqueta) e ela pode repetir — repetir não devolve duas vezes.
+
+type Devolvido =
+  | ({ resultado: "ok" } & ReembolsoFeito)
+  /** O prazo passou — a pessoa ainda pode parar a renovação. */
+  | { resultado: "fora-do-prazo" }
+  /** Nada foi pago nesta assinatura (a cortesia), ou tudo já voltou. */
+  | { resultado: "nada-a-devolver" }
+  /** A assinatura foi ENCERRADA e a devolução não saiu: precisa de gente. */
+  | { resultado: "devolucao-falhou" };
+
+export type Reembolso = Devolvido | NaoFeita;
+
+/** Encerra a assinatura DESTA conta na hora e devolve tudo o que foi pago nela. Só dentro do prazo. */
+export async function reembolsarMinhaAssinatura(userId: string, dado: MotivoDado): Promise<Reembolso> {
+  const achada = await assinaturaDaConta(userId);
+  if (achada.resultado === "desconhecida") return achada;
+  if (achada.resultado === "nenhuma") return { resultado: "sem-assinatura" };
+  const { id } = achada.detalhes;
+  // Fora do prazo, nem a trava é tomada. O que a pessoa causa sozinha é aviso.
+  if (!noPrazoDoReembolso(achada.detalhes)) {
+    console.warn(`[stripe] reembolso recusado: a assinatura ${id} (conta ${userId}) está fora do prazo`);
+    return { resultado: "fora-do-prazo" };
+  }
+  const operacao = await operarNaAssinatura(
+    id,
+    async (): Promise<Devolvido> => {
+      // COM A TRAVA, relido: o prazo, a situação e o que foi pago valem os de AGORA.
+      const agora = await buscarDetalhes(id);
+      if (!noPrazoDoReembolso(agora)) return { resultado: "fora-do-prazo" };
+      const pago = await buscarOQueFoiPago(id);
+      const centavos = aDevolver(pago);
+      if (centavos <= 0 || !pago.moeda) return { resultado: "nada-a-devolver" };
+      // Já encerrada (a devolução falhou da outra vez, ou foi encerrada pelo painel): só devolve.
+      if (agora.status !== "canceled") await cancelarNaHora(id, dado);
+      try {
+        for (const pagamento of pago.pagamentos) await devolver(pagamento, { userId, assinaturaId: id });
+      } catch (erro) {
+        console.error(`[stripe] reembolso: a assinatura ${id} (conta ${userId}) foi ENCERRADA e a devolução falhou — conferir e devolver pelo painel da Stripe: ${erro instanceof Error ? erro.message : String(erro)}`);
+        return { resultado: "devolucao-falhou" };
+      }
+      return { resultado: "ok", centavos, moeda: pago.moeda };
+    },
+    { manterSessao: true },
+  );
+  if (!operacao) return { resultado: "ocupada" };
+  const feito = operacao.feito;
+  if (feito.resultado === "ok") console.info(`[stripe] reembolso: conta ${userId}, assinatura ${id}, ${feito.centavos} centavos (${feito.moeda}) devolvidos, motivo ${dado.motivo ?? "não dito"}`);
+  return feito;
 }
