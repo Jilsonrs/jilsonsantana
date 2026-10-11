@@ -4018,7 +4018,18 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
         `tech-stack.md` e os checkboxes.
       - **Fora:** as regras de promessa no site (decisão B) · estilo e formatação.
       - `Docs check (context7): not triggered` — a configuração foi verificada rodando.
-      **ONDE PAROU:** plano escrito. Próximo: passo 2.
+      - **Passo 2 — FEITO (10/10/2026).** `eslint.config.mjs` na raiz, `npm run lint`, as duas
+        dependências fixadas. **Reescritas para passar:** o desligar do servidor (`index.ts`) e
+        o fim de um script de senha (`set-db-password.ts`), que usavam `void`; e saiu um
+        comentário antigo que desligava uma regra que não está ligada (`middleware/auth.ts`).
+        **Mutação (um arquivo de prova, criado e apagado):** no servidor o revisor reprovou os
+        seis descuidos — a promessa solta, o `try/catch` sem `await`, o `void`, a função
+        assíncrona onde ninguém espera, o `any` e o comentário que desliga sem precisar —; no
+        site reprovou o `any` e, como decidido, NÃO a promessa solta. Apagados, voltou a passar.
+        **Provado em execução:** o servidor montado, em modo de produção, sai com código 0 ao
+        receber o aviso de desligar, com o alerta ligado e desligado. Gates: typecheck, suíte de
+        servidor (727) e do site (810), build e lint.
+      **ONDE PAROU:** passo 2 feito. Próximo: passo 3 (o passo no CI e a prova de que bloqueia).
 - [ ] **4.6 — Minha assinatura, dentro da escola (código, 2 sessões).** (a) ver o plano e a próxima
       cobrança, trocar o cartão; (b) mudar mensal↔anual com a proração mostrada **antes**, e cancelar
       com o motivo — "cancelar mesmo assim" de 1 clique sempre visível, tom calmo. Sem Customer

@@ -31,5 +31,10 @@ const servidor = app.listen(PORT, () => {
 
 // Na publicação, o servidor antigo termina o que estava atendendo antes de sair
 // (`lib/desligar.ts`; a folga é o `drainingSeconds` do `railway.json`).
-// Antes de sair, espera o envio dos alertas pendentes (`esvaziarMonitor` nunca falha).
-process.on("SIGTERM", () => desligarComCalma(servidor, () => void esvaziarMonitor().finally(() => process.exit(0))));
+// Antes de sair, espera o envio dos alertas pendentes — e sai do mesmo jeito se a espera falhar.
+const sair = () => process.exit(0);
+process.on("SIGTERM", () =>
+  desligarComCalma(servidor, () => {
+    esvaziarMonitor().then(sair, sair);
+  }),
+);

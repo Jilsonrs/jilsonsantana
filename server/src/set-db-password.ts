@@ -105,4 +105,8 @@ async function main(): Promise<void> {
   }
 }
 
-void main();
+// O `main` trata o que pode falhar; isto cobre o que escapar dele (o fechar do banco, no fim).
+main().catch(() => {
+  console.error("✗ falha inesperada ao encerrar");
+  process.exitCode = 1;
+});
