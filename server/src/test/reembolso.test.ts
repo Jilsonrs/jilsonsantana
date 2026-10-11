@@ -138,7 +138,7 @@ beforeEach(async () => {
   pago = UMA_COBRANCA();
   buscarDetalhes.mockReset().mockImplementation(async (id) => {
     if (id !== SUB) throw new AssinaturaNaoEncontrada(id);
-    return { id, status: "active", pagoAte: EM_28_DIAS, plano: "mensal", preco: { centavos: 9990, moeda: "brl" }, fimDoPeriodo: EM_28_DIAS, comecouEm: HA_2_DIAS, acabaEm: null, acabaNoFimDoPeriodo: false, cartao: null, clienteId: CLIENTE, userId: memberId, faturaEmAbertoId: null, itemId: "si_do_teste", agendamentoId: null, trocaMarcada: null, faturaDaTrocaId: null, ...detalhes };
+    return { id, status: "active", pagoAte: EM_28_DIAS, plano: "mensal", preco: { centavos: 9990, moeda: "brl" }, fimDoPeriodo: EM_28_DIAS, comecouEm: HA_2_DIAS, acabaEm: null, acabaNoFimDoPeriodo: false, cartao: null, clienteId: CLIENTE, userId: memberId, faturaEmAbertoId: null, itemId: "si_do_teste", agendamentoId: null, agendamentoNosso: false, trocaMarcada: null, faturaDaTrocaId: null, ...detalhes };
   });
   buscarProximaCobranca.mockReset().mockResolvedValue({ centavos: 9990, moeda: "brl" });
   buscarOQueFoiPago.mockReset().mockImplementation(async () => ({ moeda: pago.moeda, pagamentos: pago.pagamentos.map((p) => ({ ...p })) }));
@@ -319,7 +319,7 @@ describe("POST /api/billing/minha-assinatura/reembolso — quando não devolve",
 
   it("o prazo venceu entre o clique e a trava: vale o de AGORA — 409, nada é encerrado", async () => {
     // A primeira leitura (achar a assinatura da conta) ainda está no prazo; a segunda, com a trava, não.
-    buscarDetalhes.mockImplementationOnce(async (id) => ({ id, status: "active", pagoAte: EM_28_DIAS, plano: "mensal", preco: null, fimDoPeriodo: EM_28_DIAS, comecouEm: HA_2_DIAS, acabaEm: null, acabaNoFimDoPeriodo: false, cartao: null, clienteId: CLIENTE, userId: memberId, faturaEmAbertoId: null, itemId: "si_do_teste", agendamentoId: null, trocaMarcada: null, faturaDaTrocaId: null }));
+    buscarDetalhes.mockImplementationOnce(async (id) => ({ id, status: "active", pagoAte: EM_28_DIAS, plano: "mensal", preco: null, fimDoPeriodo: EM_28_DIAS, comecouEm: HA_2_DIAS, acabaEm: null, acabaNoFimDoPeriodo: false, cartao: null, clienteId: CLIENTE, userId: memberId, faturaEmAbertoId: null, itemId: "si_do_teste", agendamentoId: null, agendamentoNosso: false, trocaMarcada: null, faturaDaTrocaId: null }));
     detalhes = { comecouEm: HA_8_DIAS };
     const res = await reembolsar(member, {});
     expect([res.status, res.body]).toEqual([409, { error: "ForaDoPrazo" }]);
@@ -460,6 +460,27 @@ describe("POST /api/billing/minha-assinatura/reembolso — quando a Stripe falha
     // Encerrada, paga e NÃO devolvida: o período continua contando — e ninguém foi deslogado.
     expect([(await espelho()).status, (await espelho()).currentPeriodEnd?.getTime()]).toEqual(["canceled", EM_28_DIAS.getTime()]);
     expect((await situacao()).body).toMatchObject({ temAcesso: true });
+  });
+
+  // Achado da revisão de segurança (segunda passada, 11/10/2026): se, encerrada, a assinatura
+  // já não dá acesso (a última fatura era a de uma troca de plano que não se completou), a
+  // pessoa perdia a sessão junto — e nunca lia que o dinheiro não tinha voltado.
+  it("encerrou, a devolução falhou E o acesso acabou: a pessoa CONTINUA LOGADA, para ler que o dinheiro não voltou", async () => {
+    cancelarNaHora.mockImplementation(async () => {
+      detalhes = { ...detalhes, status: "canceled" };
+      naStripe = { ...naStripe, status: "canceled", pagoAte: PASSADO };
+    });
+    devolver.mockRejectedValue(new Error("[stripe] a devolução do pagamento falhou: StripeAPIError"));
+    const erro = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      expect((await reembolsar(member, {})).body).toEqual({ error: "DevolucaoFalhou" });
+    } finally {
+      erro.mockRestore();
+    }
+    // O MESMO cookie continua valendo — e o gate já responde que não há acesso.
+    const depois = await situacao();
+    expect([depois.status, depois.body]).toEqual([200, { temAcesso: false, reativar: true }]);
+    expect(await prisma.session.count({ where: { userId: memberId } })).toBeGreaterThan(0);
   });
 
   it("repetir depois da falha: a assinatura já está encerrada — NÃO encerra de novo, devolve, e aí o acesso termina", async () => {

@@ -4650,6 +4650,59 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
         rota, 4 de 4 mutações reprovaram, e a prova na área restrita (4 pontos).
         `[FATO — medido]` o relógio de teste só avança dois intervalos do menor período por vez
         (com o mensal no agendamento, dois meses): a prova avança em etapas.
+      - **Passo 13, parte 2 — FEITO (11/10/2026): a SEGUNDA REVISÃO DE SEGURANÇA**
+        (`security-vulnerability-reviewer`, sobre tudo o que entrou depois da primeira: as
+        telas, a troca de plano, cancelar com a cobrança atrasada). **Nenhum bloqueio. Dois
+        achados para corrigir antes de publicar e uma lista de melhorias — tudo o que não
+        dependia de decisão do operador foi corrigido aqui.**
+        **(1) A tela podia dizer "nada foi cobrado" com o pagamento já feito.** A janela do banco
+        pode dar erro DEPOIS de o pagamento passar; o servidor não achava mais nada a desfazer,
+        e a tela concluía que o plano continuava o mesmo. Agora `desistir` responde em que plano
+        a assinatura está, relido com a trava (`TrocaDesfeita.plano` — campo a mais, API
+        aditiva), e a tela só diz "nada foi cobrado" quando o SERVIDOR diz que o plano continua
+        o mesmo.
+        **(2) A "fatura da troca" podia ser outra.** Era "a última fatura em aberto, havendo
+        troca pendente". Agora é só a fatura cujo motivo é o da troca (`subscription_update`), e
+        desistir nunca anula fatura com a cobrança atrasada. `[FATO — medido com o relógio de
+        teste, 11/10/2026]` quando a renovação chega com uma troca ainda pendente, a Stripe
+        DESCARTA a troca (anula a fatura dela) e a assinatura fica atrasada com a fatura da
+        renovação em aberto: o caso do achado não chega a acontecer, e a correção o fecha de
+        qualquer jeito.
+        **As melhorias, feitas:**
+        · toda saída da janela do banco que não seja "pagamento aprovado" desfaz a troca
+        pendente — inclusive o Stripe.js que quebra ou não carrega; desfazer tenta 3 vezes; e o
+        servidor anula a troca anterior ainda pendente antes de aceitar outra (duas cobranças do
+        plano novo nunca ficam em aberto);
+        · depois de o banco confirmar, a tela espera o SERVIDOR dizer Anual (até 6 leituras)
+        antes de afirmar; e depois de QUALQUER falha ela relê a assinatura — se a troca já foi
+        feita (a resposta se perdeu no caminho), diz que deu certo em vez de pedir de novo;
+        · a tela de cancelar não perde mais a frase da devolução que falhou (a assinatura já
+        aparecia terminada, e a tela ia para o resumo), e a pessoa continua logada nesse caso;
+        · cancelar com a cobrança atrasada: a cobrança que não pôde ser anulada, ou que PASSOU
+        no instante do cancelamento, virou alerta para o operador (era só aviso);
+        · só o agendamento que a ESCOLA criou (a marca `MARCA_DA_TROCA`, gravada por
+        `agendarTroca`) é mostrado como troca marcada e solto ao mudar de plano ou desistir; o
+        que for posto pelo painel da Stripe não é mostrado nem solto — a não ser ao cancelar,
+        que é direito da pessoa (aí sai, com alerta);
+        · pedido que muda cobrança e vem de OUTRO SITE: 403 (`Sec-Fetch-Site`), segunda trava
+        além do cookie — vale para todo `/api/billing`;
+        · a conta da sessão mudou sem "Sair" (entrou com outra em outra aba): o que as telas
+        guardaram é esquecido e relido (`Layout`);
+        · as leituras avulsas da assinatura não voltam a guardar plano e cartão
+        (`CONSULTA_DA_MINHA_ASSINATURA`); o alerta da devolução que falhou sai uma vez por
+        aviso, e não a cada reentrega; `encerradaDeVez` mora em `acesso.ts`.
+        **Testes:** 17 de servidor e 14 de tela a mais. **Mutação:** 31 de 31 reprovaram.
+        **Prova na área restrita:** 9 de 9 (a fatura da troca reconhecida; o agendamento da
+        escola com a marca e o de fora sem ela; a renovação com a troca pendente, no relógio de
+        teste), tudo apagado no fim. **Gates:** typecheck, lint, build, suíte do site (935) e de
+        servidor como o CI (1037).
+        **Ficou registrado, sem código:** o limite de pedidos por conta nas rotas de cobrança
+        (pré-requisito da 4.7, já citado lá) · o reembolso que se repete — assina, pede, assina
+        de novo, pede de novo — é pergunta ao operador (**P75**, antes da 4.7) · o que traduz a
+        resposta do Stripe.js (`confirmarNoBanco`) não tem teste automático: é a nossa fronteira
+        com o fornecedor, e se confere no navegador · se, com o pagamento aprovado, o servidor
+        ainda não disser Anual depois das 6 leituras (~9 s), a tela afirma assim mesmo — o
+        resumo pode mostrar Mensal por instantes.
       **ONDE PAROU:** SESSÃO (a) FECHADA e **PUBLICADA em 11/10/2026 (`main` = `6305077`)**, com
       a autorização do operador (*"pode publicar depois desses ajustes"*): CI verde nos dois jobs
       no `dev` e na `main`, e conferido no ar como visitante — as rotas novas respondem 401 sem
@@ -4657,7 +4710,12 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       mostra a assinatura de verdade (a do código de 100%); em "Adicionar cartão" a frase da
       Stripe traz o nome público da conta de verdade (P58) — só olhar: salvar ali guarda um
       cartão de verdade.
-      **SESSÃO (b) — ABERTA em 11/10/2026.** Feito: o item 0 ("Sair"), a consulta à Stripe, os
+      **SESSÃO (b) — FECHADA NO `dev` em 11/10/2026, NÃO PUBLICADA** (os passos 7 a 13, com as
+      duas revisões de segurança). **Falta, e é do operador:** testar no navegador dele — a
+      janela do banco de verdade ainda não abriu num navegador (`billing.md` → *Pendências de
+      verificação*) —, a **P69** e a **P71** nos painéis, e a decisão de publicar. O histórico
+      da sessão segue abaixo.
+      Feito: o item 0 ("Sair"), a consulta à Stripe, os
       **passos 7, 8 e 10** (todo o servidor) e **os textos das telas, aprovados por ele em
       português** (três blocos, 11/10/2026; já no dicionário, em `app.faturamento.plano`,
       `.cancelamento` e `.banco` — o inglês é rascunho, a revisar com o Antigravity: P72).

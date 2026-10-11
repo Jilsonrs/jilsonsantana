@@ -1,6 +1,6 @@
 import { PRAZO_DO_REEMBOLSO_EM_DIAS, SituacaoDoFaturamento, type CartaoTrocado, type MinhaAssinatura, type ReembolsoFeito, type RenovacaoParada } from "@jilson/core";
 import { prisma } from "./prisma.js";
-import { assinaturaDaAcesso, passouDoPrimeiroPagamento } from "./acesso.js";
+import { assinaturaDaAcesso, encerradaDeVez, passouDoPrimeiroPagamento } from "./acesso.js";
 import { operarNaAssinatura, sincronizarSeLivre } from "./assinaturas.js";
 import { AssinaturaNaoEncontrada } from "./stripe.js";
 import {
@@ -51,7 +51,7 @@ export function renova(detalhes: DetalhesDaAssinatura): boolean {
  * regra só, para a tela (que mostra o botão) e para a operação (que recusa) nunca discordarem.
  */
 export function aceitaCartaoNovo(detalhes: DetalhesDaAssinatura): boolean {
-  return detalhes.status !== "canceled" && detalhes.clienteId !== null;
+  return !encerradaDeVez(detalhes) && detalhes.clienteId !== null;
 }
 
 /**
@@ -73,6 +73,8 @@ export function podeManter(detalhes: DetalhesDaAssinatura): boolean {
  */
 export function outroPlano(detalhes: DetalhesDaAssinatura): "mensal" | "anual" | null {
   if (!renova(detalhes) || !detalhes.plano || !detalhes.itemId || detalhes.trocaMarcada) return null;
+  // Um agendamento que NÃO é nosso (posto pelo painel da Stripe) não é solto pelo aluno: com ele, não há troca.
+  if (detalhes.agendamentoId && !detalhes.agendamentoNosso) return null;
   return detalhes.plano === "mensal" ? "anual" : "mensal";
 }
 
@@ -369,11 +371,16 @@ export async function pararMinhaRenovacao(userId: string, dado: MotivoDado): Pro
         // Stripe já para de cobrar as faturas dela; anular é o que garante o "não será mais
         // tentada", e se não der é só aviso.
         await cancelarNaHora(id, dado);
+        // A tela disse "a cobrança em aberto não será mais tentada": o que foge disso precisa de
+        // gente (achado da revisão de segurança, 11/10/2026) — a cobrança que ficou em aberto, e
+        // a que PASSOU no instante do cancelamento (uma tentativa da Stripe): aí a pessoa pagou
+        // um período que quis cancelar. Nos dois casos a assinatura está encerrada, e o resumo
+        // diz o que o servidor ler (com o período pago, o acesso vai até o fim dele).
         if (agora.faturaEmAbertoId) {
           try {
-            await anularFatura(agora.faturaEmAbertoId);
+            if ((await anularFatura(agora.faturaEmAbertoId)) === "paga") console.error(`[stripe] cancelar: a cobrança em aberto da assinatura ${id} (conta ${userId}) foi PAGA no instante do cancelamento — a pessoa pagou um período que quis cancelar; conferir e devolver pelo painel da Stripe`);
           } catch (erro) {
-            console.warn(`[stripe] cancelar: a assinatura ${id} (conta ${userId}) foi encerrada e a cobrança em aberto não foi anulada: ${erro instanceof Error ? erro.message : String(erro)}`);
+            console.error(`[stripe] cancelar: a assinatura ${id} (conta ${userId}) foi encerrada e a cobrança em aberto NÃO foi anulada — anular pelo painel da Stripe: ${erro instanceof Error ? erro.message : String(erro)}`);
           }
         }
         return { resultado: "ok", terminou: true };
@@ -381,7 +388,12 @@ export async function pararMinhaRenovacao(userId: string, dado: MotivoDado): Pro
       // QUEM ESTÁ SAINDO NÃO TROCA DE PLANO: a troca marcada para o fim do período é solta antes
       // (com ela a Stripe RECUSA parar a renovação — medido, 11/10/2026), e a troca na hora que
       // ficou esperando a confirmação do banco é anulada — senão ainda poderia ser cobrada.
-      if (agora.agendamentoId) await soltarAgendamento(agora.agendamentoId);
+      if (agora.agendamentoId) {
+        // Cancelar é direito da pessoa: o agendamento sai mesmo que não seja nosso — mas aí
+        // alguém fica sabendo (ele foi posto pelo painel da Stripe por algum motivo).
+        if (!agora.agendamentoNosso) console.error(`[stripe] cancelar: a assinatura ${id} (conta ${userId}) tinha um agendamento que não é da escola; ele foi solto para a pessoa poder cancelar`);
+        await soltarAgendamento(agora.agendamentoId);
+      }
       if (agora.faturaDaTrocaId) await anularFatura(agora.faturaDaTrocaId);
       return { resultado: "ok", terminou: false, depois: await pararRenovacao(id, dado) };
     },
@@ -462,7 +474,7 @@ const ENCERRADAS_A_OLHAR = 3;
 async function assinaturaParaReembolso(userId: string): Promise<{ resultado: "ok"; detalhes: DetalhesDaAssinatura } | { resultado: "sem-assinatura" } | { resultado: "desconhecida" }> {
   const achada = await assinaturaDaConta(userId);
   if (achada.resultado !== "nenhuma") return achada;
-  const encerradas = achada.linhas.filter((linha) => linha.status === "canceled").slice(0, ENCERRADAS_A_OLHAR);
+  const encerradas = achada.linhas.filter(encerradaDeVez).slice(0, ENCERRADAS_A_OLHAR);
   for (const linha of encerradas) {
     let detalhes: DetalhesDaAssinatura;
     try {
@@ -506,7 +518,7 @@ export async function reembolsarMinhaAssinatura(userId: string, dado: MotivoDado
       const centavos = aDevolver(pago);
       if (centavos <= 0 || !pago.moeda) return { resultado: "nada-a-devolver" };
       // Já encerrada (a devolução falhou da outra vez, ou foi encerrada pelo painel): só devolve.
-      if (agora.status !== "canceled") await cancelarNaHora(id, dado);
+      if (!encerradaDeVez(agora)) await cancelarNaHora(id, dado);
       try {
         // Da cobrança mais antiga para a mais nova (é a ordem de `buscarOQueFoiPago`).
         for (const pagamento of pago.pagamentos) await devolver(pagamento, { userId, assinaturaId: id });
@@ -516,9 +528,11 @@ export async function reembolsarMinhaAssinatura(userId: string, dado: MotivoDado
       }
       return { resultado: "ok", centavos, moeda: pago.moeda };
     },
-    // A sessão só fica quando o reembolso SAIU: a operação que não devolveu nada e descobre que
-    // o acesso acabou derruba a sessão, como toda perda de acesso.
-    { manterSessao: (feito) => feito.resultado === "ok" },
+    // A sessão fica quando a pessoa PEDIU e a assinatura foi encerrada por isso: o reembolso
+    // que saiu, e o que falhou depois de encerrar (ela precisa ler que a devolução não saiu e
+    // que alguém já foi avisado). A operação que não fez nada e descobre que o acesso acabou
+    // derruba a sessão, como toda perda de acesso.
+    { manterSessao: (feito) => feito.resultado === "ok" || feito.resultado === "devolucao-falhou" },
   );
   if (!operacao) return { resultado: "ocupada" };
   const feito = operacao.feito;

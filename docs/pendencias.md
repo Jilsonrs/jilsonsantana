@@ -16,7 +16,7 @@
 > 5. **Item novo ganha o próximo número livre.** Número nunca se reutiliza, para que "P7" queira
 >    dizer sempre a mesma coisa em qualquer conversa.
 >
-> **Próximo número livre: P75** · Atualizada em 11/10/2026
+> **Próximo número livre: P76** · Atualizada em 11/10/2026
 
 ## A. Agora, em sequência *(nascidas da configuração do Bunny, 25/09/2026)*
 
@@ -56,6 +56,7 @@ precise de resposta rápida entra aqui, com o próximo número livre.*
 
 | # | O que falta | Quando | Onde registrar |
 |---|---|---|---|
+| P75 | **O reembolso pela tela pode se repetir sem limite** (da segunda revisão de segurança, 11/10/2026): a pessoa assina, pede o dinheiro de volta dentro dos 7 dias, assina de novo e pede de novo — estudando de graça. Hoje nada impede. Você quer um limite automático? Por exemplo: **pela tela, uma vez por conta**; da segunda em diante, a tela não oferece o reembolso e a pessoa fala com você (a cláusula da P61 já prevê recusar quando há abuso). Ou fica como está, e você acompanha pelos números | antes da etapa 4.7 (até lá só você assina) | `billing.md` → *Reembolso: 7 dias, por lei*, e o plano, etapa 4.7 |
 | P64 | **Minha conta: os quatro itens do menu que não têm tela** — Preferências, Senha e Acesso, Sessões ativas e Integrações aparecem como links e levam ao Início. Para cada um: ganhar a tela (e o que ela faz), aparecer como EM BREVE, ou sair do menu | abertura da sessão (c) da etapa 4.6 *(operador, 11/10/2026: "depois inclua sessão (c) para tratar dessa parte")* | `implementation-plan.md` → Fase 4, etapa 4.6 → Sessão (c) |
 | P61 | **A cláusula de reembolso abusivo nos termos de uso: escrever o texto**, no modelo da Udemy — você decidiu em 10/10 seguir o que as grandes fazem, sem advogado: "Reservamos o direito, a nosso critério exclusivo, de limitar ou recusar solicitações se acreditarmos que há um abuso de reembolso […] no limite permitido pela lei aplicável". Os termos também dizem o prazo: 7 dias no Brasil, 14 fora, contados do primeiro dia da assinatura | quando os termos de uso forem escritos | `billing.md` → *Reembolso*, e as páginas legais |
 | P60 | **No painel da Stripe, escolher "cancelar a assinatura" para quando as tentativas de cobrança acabam** — nos dois lugares: na área restrita e na conta de verdade (o agente orienta na hora). Você já decidiu isso em 10/10 (cancela, e a escola manda um e-mail com o link para reativar). Enquanto a opção do painel for outra ("marcar como não paga"), a pessoa clica em "Reativar assinatura" e nada acontece. **Na mesma tela, o prazo das tentativas de cobrança: 2 semanas** (você decidiu em 11/10/2026 — é o padrão da Stripe; confira que o painel está assim, nos dois lugares) | antes de a etapa 4.7 ir ao ar (o primeiro pagante que não é você) | já registrado em `billing.md` → *Régua de inadimplência*; aqui falta só o painel |

@@ -327,6 +327,40 @@ describe("o aviso da Stripe — o dinheiro devolvido", () => {
     await prisma.subscription.deleteMany({ where: { stripeSubscriptionId: sub } });
   });
 
+  // A Stripe entrega ao menos uma vez: a reentrega do MESMO aviso não alerta de novo (achado
+  // da revisão de segurança, segunda passada, 11/10/2026).
+  it("o aviso da devolução que falhou, entregue DUAS vezes: o alerta sai uma vez só", async () => {
+    assinaturaDoPagamento.mockReset().mockResolvedValue(null);
+    const erro = vi.spyOn(console, "error").mockImplementation(() => {});
+    const registro = vi.spyOn(console, "info").mockImplementation(() => {});
+    try {
+      const aviso = avisoDaDevolucao("refund.failed", "failed");
+      expect((await enviar(aviso)).status).toBe(200);
+      expect((await enviar(aviso)).status).toBe(200);
+      expect(erro.mock.calls.flat().filter((linha) => String(linha).includes("FALHOU"))).toHaveLength(1);
+    } finally {
+      erro.mockRestore();
+      registro.mockRestore();
+    }
+  });
+
+  // Se o processamento falhar, o aviso não fica marcado e a Stripe entrega de novo: o alerta sai
+  // nessa segunda vez, e não se perde.
+  it("a devolução falhou e a Stripe não respondeu de quem é o pagamento: 500 — e o alerta sai na reentrega", async () => {
+    assinaturaDoPagamento.mockReset().mockRejectedValueOnce(new Error("[stripe] a busca do pagamento falhou: StripeConnectionError")).mockResolvedValue(null);
+    const erro = vi.spyOn(console, "error").mockImplementation(() => {});
+    const registro = vi.spyOn(console, "info").mockImplementation(() => {});
+    try {
+      const aviso = avisoDaDevolucao("refund.failed", "failed");
+      expect((await enviar(aviso)).status).toBe(500);
+      expect((await enviar(aviso)).status).toBe(200);
+      expect(erro.mock.calls.flat().filter((linha) => String(linha).includes("FALHOU"))).toHaveLength(1);
+    } finally {
+      erro.mockRestore();
+      registro.mockRestore();
+    }
+  });
+
   it("a devolução que só mudou de situação SEM falhar: nenhum alerta", async () => {
     assinaturaDoPagamento.mockReset().mockResolvedValue(null);
     const erro = vi.spyOn(console, "error").mockImplementation(() => {});

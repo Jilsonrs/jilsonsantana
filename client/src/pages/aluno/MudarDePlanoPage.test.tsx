@@ -2,6 +2,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { screen, fireEvent, waitFor } from "@testing-library/react";
 import type { MinhaAssinatura, MudarDePlanoInput, PlanoMudado, PlanosDaAssinatura, TrocaDesfeita, TrocaDisponivel } from "@jilson/core";
+import { useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { renderWithProviders } from "@/test-utils";
 
 const getMinhaAssinatura = vi.fn<() => Promise<MinhaAssinatura>>();
@@ -27,6 +28,7 @@ vi.mock("@/lib/stripe-do-site", () => ({
 
 import { MudarDePlanoPage } from "./MudarDePlanoPage";
 import { IdiomaProvider } from "@/lib/language";
+import { RITMO } from "@/lib/troca-de-plano";
 
 // A TELA DE MUDAR DE PLANO (Fase 4, etapa 4.6, sessão b). É COBRANÇA. O que estes testes protegem:
 //   - o valor e as datas na tela são os que o SERVIDOR mandou — a tela não calcula nada —, e o
@@ -34,7 +36,11 @@ import { IdiomaProvider } from "@/lib/language";
 //   - ao servidor vão só PARA QUAL plano e o instante da conta mostrada: nunca preço nem valor;
 //   - "seu plano agora é o Anual" só aparece quando o servidor disse que trocou (ou o banco
 //     confirmou); recusa, confirmação não concluída e falha têm cada uma a sua frase;
-//   - se a confirmação do banco não é concluída, a troca pendente é desfeita na hora;
+//   - se a confirmação do banco não é concluída — por QUALQUER motivo —, a troca pendente é
+//     desfeita na hora; e "nada foi cobrado" só é dito se o SERVIDOR disser que o plano
+//     continua o mesmo (a janela do banco pode dar erro depois de o pagamento ter passado);
+//   - depois de qualquer falha, vale o que o servidor diz agora: se a troca já foi feita, a
+//     tela diz que deu certo em vez de pedir de novo;
 //   - quem não pode mudar (parou, atrasou) lê o porquê; com a troca já marcada, dá para desistir;
 //   - em inglês, tudo em inglês.
 
@@ -79,8 +85,10 @@ beforeEach(() => {
   getTrocaDePlano.mockReset().mockResolvedValue(PARA_O_ANUAL);
   getPlanosDaAssinatura.mockReset().mockResolvedValue(PLANOS);
   mudarDePlano.mockReset().mockResolvedValue({ estado: "trocado" });
-  desistirDaTroca.mockReset().mockResolvedValue({ trocado: false });
+  desistirDaTroca.mockReset().mockResolvedValue({ trocado: false, plano: "mensal" });
   confirmarNoBanco.mockReset().mockResolvedValue("confirmado");
+  // As esperas entre leituras e tentativas, encurtadas: o que se testa é a ORDEM, não o relógio.
+  RITMO.espera = 1;
 });
 
 describe("MudarDePlanoPage — carregando, falha e nada a mostrar", () => {
@@ -177,6 +185,27 @@ describe("MudarDePlanoPage — do Mensal para o Anual, na hora", () => {
     expect(await paraOAnual()).toBeTruthy();
   });
 
+  // DEPOIS DE QUALQUER FALHA VALE O QUE O SERVIDOR DIZ AGORA (achado da revisão de segurança,
+  // segunda passada, 11/10/2026): a resposta de um pedido pode se perder depois de a troca ter
+  // sido feita — e pedir de novo daria "não foi possível" para sempre.
+  it("a resposta se perdeu no caminho, mas a troca FOI feita: a tela lê a assinatura e diz que deu certo — sem erro e sem pedir de novo", async () => {
+    mudarDePlano.mockRejectedValue(new Error("Network Error"));
+    getMinhaAssinatura.mockResolvedValueOnce(MENSAL).mockResolvedValue(ANUAL);
+    abrir();
+    fireEvent.click(await paraOAnual());
+    expect((await screen.findByRole("status")).textContent).toBe("Pronto. Seu plano agora é o Anual.");
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(mudarDePlano).toHaveBeenCalledTimes(1);
+  });
+
+  it("a falha em que o servidor NÃO trocou continua sendo falha: nunca 'seu plano agora é o Anual' por conta própria", async () => {
+    mudarDePlano.mockRejectedValue(new Error("Network Error"));
+    abrir();
+    fireEvent.click(await paraOAnual());
+    expect((await screen.findByRole("alert")).textContent).toBe("Não foi possível mudar o plano. Tente de novo.");
+    expect(screen.queryByText("Pronto. Seu plano agora é o Anual.")).toBeNull();
+  });
+
   it("a conta mostrada envelheceu: a tela pede outra, avisa que o valor mudou — e o novo clique manda o instante NOVO", async () => {
     mudarDePlano.mockRejectedValueOnce(recusa("PreviaVencida"));
     getTrocaDePlano.mockResolvedValueOnce(PARA_O_ANUAL).mockResolvedValue({ troca: { para: "anual", quando: "agora", preco: { centavos: 99500, moeda: "brl" }, hoje: { centavos: 92950, moeda: "brl" }, proximaEm: EM_UM_ANO, previaDe: 1_800_002_400 } });
@@ -205,13 +234,51 @@ describe("MudarDePlanoPage — quando o banco pede confirmação", () => {
     expect(screen.queryByText("Pronto. Seu plano agora é o Anual.")).toBeNull();
   });
 
-  it("confirmou: a tela espera a assinatura virar Anual e só então diz que trocou — sem desistir de nada", async () => {
-    getMinhaAssinatura.mockResolvedValueOnce(MENSAL).mockResolvedValue(ANUAL);
+  it("confirmou: a tela SÓ diz que trocou depois de o servidor dizer Anual — sem desistir de nada", async () => {
+    let responder: (assinatura: MinhaAssinatura) => void = () => {};
+    getMinhaAssinatura.mockResolvedValueOnce(MENSAL).mockReturnValueOnce(new Promise((resolver) => (responder = resolver))).mockResolvedValue(ANUAL);
     abrir();
     fireEvent.click(await paraOAnual());
+    // A leitura de depois do banco saiu e ainda não voltou: a tela espera, sem afirmar nada.
+    await waitFor(() => expect(getMinhaAssinatura).toHaveBeenCalledTimes(2));
+    expect(screen.queryByText("Pronto. Seu plano agora é o Anual.")).toBeNull();
+    responder(ANUAL);
     expect(await screen.findByText("Pronto. Seu plano agora é o Anual.")).toBeTruthy();
     expect(desistirDaTroca).not.toHaveBeenCalled();
-    expect(getMinhaAssinatura.mock.calls.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("confirmou e o servidor ainda diz Mensal por um instante: a tela lê DE NOVO, e espera a resposta", async () => {
+    let responder: (assinatura: MinhaAssinatura) => void = () => {};
+    getMinhaAssinatura.mockResolvedValueOnce(MENSAL).mockResolvedValueOnce(MENSAL).mockReturnValueOnce(new Promise((resolver) => (responder = resolver))).mockResolvedValue(ANUAL);
+    abrir();
+    fireEvent.click(await paraOAnual());
+    await waitFor(() => expect(getMinhaAssinatura).toHaveBeenCalledTimes(3));
+    expect(screen.queryByText("Pronto. Seu plano agora é o Anual.")).toBeNull();
+    responder(ANUAL);
+    expect(await screen.findByText("Pronto. Seu plano agora é o Anual.")).toBeTruthy();
+  });
+
+  // As leituras que a tela faz por conta própria, esperando o plano novo, usam a MESMA consulta
+  // da tela de Faturamento (achado da revisão de segurança, 11/10/2026): uma leitura avulsa
+  // voltaria a guardar o plano e o cartão por minutos depois de a tela fechar.
+  it("as leituras de depois do banco não ficam guardadas: fechada a tela, a assinatura é esquecida", async () => {
+    const aba: { cliente?: QueryClient } = {};
+    function Espia() {
+      aba.cliente = useQueryClient();
+      return null;
+    }
+    getMinhaAssinatura.mockResolvedValueOnce(MENSAL).mockResolvedValue(ANUAL);
+    const { unmount } = abrir(
+      <>
+        <MudarDePlanoPage />
+        <Espia />
+      </>,
+    );
+    fireEvent.click(await paraOAnual());
+    await screen.findByText("Pronto. Seu plano agora é o Anual.");
+    expect(aba.cliente?.getQueryData(["billing", "minha-assinatura"])).toBeTruthy();
+    unmount();
+    await waitFor(() => expect(aba.cliente?.getQueryData(["billing", "minha-assinatura"])).toBeUndefined());
   });
 
   it("NÃO concluiu: a troca pendente é desfeita na hora, e a tela diz que nada foi cobrado", async () => {
@@ -225,10 +292,61 @@ describe("MudarDePlanoPage — quando o banco pede confirmação", () => {
 
   it("não concluiu na tela, mas o servidor diz que o pagamento JÁ tinha passado: o plano mudou — a tela não diz 'nada foi cobrado'", async () => {
     confirmarNoBanco.mockResolvedValue("nao-concluido");
-    desistirDaTroca.mockResolvedValue({ trocado: true });
+    desistirDaTroca.mockResolvedValue({ trocado: true, plano: "mensal" });
     abrir();
     fireEvent.click(await paraOAnual());
     expect(await screen.findByText("Pronto. Seu plano agora é o Anual.")).toBeTruthy();
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
+
+  // O ACHADO MAIS SÉRIO da segunda revisão de segurança (11/10/2026): a janela do banco pode dar
+  // erro DEPOIS de o pagamento ter passado. Aí o servidor não tem mais nada a desfazer — e
+  // responde em que plano a assinatura está. Com o Anual, a tela nunca diz "nada foi cobrado".
+  it("a janela do banco deu erro depois de o pagamento PASSAR: nada a desfazer, o servidor diz Anual — a tela diz que trocou, e NUNCA 'nada foi cobrado'", async () => {
+    confirmarNoBanco.mockResolvedValue("nao-concluido");
+    desistirDaTroca.mockResolvedValue({ trocado: false, plano: "anual" });
+    abrir();
+    fireEvent.click(await paraOAnual());
+    expect(await screen.findByText("Pronto. Seu plano agora é o Anual.")).toBeTruthy();
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(naTela()).not.toContain("nada foi cobrado");
+  });
+
+  it("o Stripe.js quebrou (a janela do banco nem abriu): conta como não concluído — a troca pendente é desfeita do mesmo jeito", async () => {
+    confirmarNoBanco.mockRejectedValue(new Error("o Stripe.js não carregou"));
+    abrir();
+    fireEvent.click(await paraOAnual());
+    expect((await screen.findByRole("alert")).textContent).toBe("A confirmação do banco não foi concluída. O plano continua o mesmo e nada foi cobrado.");
+    expect(desistirDaTroca).toHaveBeenCalledTimes(1);
+  });
+
+  it("desfazer falhou da primeira vez (a assinatura estava ocupada): tenta de novo — a cobrança não fica esperando", async () => {
+    confirmarNoBanco.mockResolvedValue("nao-concluido");
+    desistirDaTroca.mockRejectedValueOnce(recusa("Ocupada")).mockResolvedValue({ trocado: false, plano: "mensal" });
+    abrir();
+    fireEvent.click(await paraOAnual());
+    expect((await screen.findByRole("alert")).textContent).toBe("A confirmação do banco não foi concluída. O plano continua o mesmo e nada foi cobrado.");
+    expect(desistirDaTroca).toHaveBeenCalledTimes(2);
+  });
+
+  it("não deu para desfazer de jeito nenhum: a tela tenta 3 vezes e NÃO diz 'nada foi cobrado' — diz que não deu", async () => {
+    confirmarNoBanco.mockResolvedValue("nao-concluido");
+    desistirDaTroca.mockRejectedValue(recusa("Ocupada"));
+    abrir();
+    fireEvent.click(await paraOAnual());
+    expect((await screen.findByRole("alert")).textContent).toBe("Não foi possível mudar o plano. Tente de novo.");
+    expect(desistirDaTroca).toHaveBeenCalledTimes(3);
+    expect(naTela()).not.toContain("nada foi cobrado");
+  });
+
+  it("…e se, sem conseguir desfazer, o servidor já diz Anual: a tela diz que trocou", async () => {
+    confirmarNoBanco.mockResolvedValue("nao-concluido");
+    desistirDaTroca.mockRejectedValue(new Error("Network Error"));
+    getMinhaAssinatura.mockResolvedValueOnce(MENSAL).mockResolvedValue(ANUAL);
+    abrir();
+    fireEvent.click(await paraOAnual());
+    expect(await screen.findByText("Pronto. Seu plano agora é o Anual.")).toBeTruthy();
+    expect(desistirDaTroca).toHaveBeenCalledTimes(3);
     expect(screen.queryByRole("alert")).toBeNull();
   });
 });
@@ -255,6 +373,15 @@ describe("MudarDePlanoPage — do Anual para o Mensal, no fim do ano pago", () =
     fireEvent.click(await screen.findByRole("button", { name: "Mudar para o Mensal" }));
     expect((await screen.findByRole("status")).textContent).toBe("Seu plano muda para Mensal em 11/10/2027.");
     expect(mudarDePlano.mock.calls).toEqual([[{ plano: "mensal" }]]);
+  });
+
+  it("a resposta se perdeu no caminho, mas a troca FICOU marcada: a tela lê a assinatura e diz para quando", async () => {
+    mudarDePlano.mockRejectedValue(new Error("Network Error"));
+    getMinhaAssinatura.mockResolvedValueOnce(ANUAL).mockResolvedValue({ ...ANUAL, podeMudarDePlano: false, trocaMarcada: { plano: "mensal", em: EM_UM_ANO } });
+    abrir();
+    fireEvent.click(await screen.findByRole("button", { name: "Mudar para o Mensal" }));
+    expect((await screen.findByRole("status")).textContent).toBe("Seu plano muda para Mensal em 11/10/2027.");
+    expect(screen.queryByRole("alert")).toBeNull();
   });
 
   it("com a troca JÁ marcada: a data e o botão de desistir — sem oferecer marcar de novo, e sem pedir conta nenhuma", async () => {

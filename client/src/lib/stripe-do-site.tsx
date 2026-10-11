@@ -120,5 +120,7 @@ export async function confirmarNoBanco(chavePublicavel: string, segredo: string)
   if (!stripe) return "nao-concluido";
   const { paymentIntent, error } = await stripe.handleNextAction({ clientSecret: segredo });
   if (error || !paymentIntent) return "nao-concluido";
-  return paymentIntent.status === "succeeded" || paymentIntent.status === "processing" ? "confirmado" : "nao-concluido";
+  // SÓ o pagamento que PASSOU é "confirmado" (achado da revisão de segurança, 11/10/2026): em
+  // qualquer outro estado quem diz o que aconteceu é o servidor, relendo a assinatura.
+  return paymentIntent.status === "succeeded" ? "confirmado" : "nao-concluido";
 }

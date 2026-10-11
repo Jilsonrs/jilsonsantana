@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { Link, Outlet, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSession, signOut } from "@/lib/auth-client";
@@ -59,6 +60,18 @@ function Shell() {
     queryClient.clear();
     navigate("/login", { replace: true });
   }
+
+  // A CONTA DA SESSÃO MUDOU SEM "SAIR" (a pessoa entrou com outra conta em outra aba): o que as
+  // telas guardaram era da conta anterior — tudo é esquecido, e o que está na tela é lido de
+  // novo (achado da revisão de segurança da etapa 4.6, 11/10/2026).
+  // É efeito porque reage a uma mudança que vem de FORA desta aba (o cookie da sessão), e não a um clique aqui.
+  const contaId = session?.user.id ?? null;
+  const contaAnterior = useRef(contaId);
+  useEffect(() => {
+    const mudou = contaAnterior.current !== null && contaId !== null && contaAnterior.current !== contaId;
+    contaAnterior.current = contaId;
+    if (mudou) void queryClient.resetQueries();
+  }, [contaId, queryClient]);
 
   if (!session) {
     return (

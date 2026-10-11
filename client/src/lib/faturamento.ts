@@ -18,8 +18,11 @@ export const CHAVE_DA_MINHA_ASSINATURA = ["billing", "minha-assinatura"] as cons
  * as telas guardaram (`Layout`); isto cobre a sessão que acaba SEM o "Sair" — a que o servidor
  * derruba. O custo é ler a Stripe de novo a cada visita — que é o que se quer.
  */
+export const CONSULTA_DA_MINHA_ASSINATURA = { queryKey: CHAVE_DA_MINHA_ASSINATURA, queryFn: getMinhaAssinatura, gcTime: 0 } as const;
+
+/** Quem lê a assinatura fora de uma tela (`fetchQuery`) usa a MESMA consulta: uma leitura sem o `gcTime: 0` voltaria a guardar o plano e o cartão por minutos. */
 export function useMinhaAssinatura(ligada: boolean = true) {
-  return useQuery({ queryKey: CHAVE_DA_MINHA_ASSINATURA, queryFn: getMinhaAssinatura, gcTime: 0, enabled: ligada });
+  return useQuery({ ...CONSULTA_DA_MINHA_ASSINATURA, enabled: ligada });
 }
 
 /** A assinatura de quem TEM acesso: é a que traz plano, cobrança e cartão. */

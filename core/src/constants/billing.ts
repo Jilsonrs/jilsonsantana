@@ -209,7 +209,15 @@ export type PlanoMudado = { estado: "trocado" } | { estado: "confirmar"; segredo
  * Resposta de `POST /api/billing/minha-assinatura/plano/desistir`. `trocado: true`: não deu para
  * desistir — o pagamento da troca se completou no mesmo instante, e o plano mudou.
  */
-export type TrocaDesfeita = { trocado: boolean };
+export type TrocaDesfeita = {
+  trocado: boolean;
+  /**
+   * Em que plano a assinatura está AGORA, relido pelo servidor. É por ele que a tela decide o que
+   * dizer depois de uma confirmação do banco que não voltou: se já é o plano pedido, o pagamento
+   * passou — e ela nunca diz "nada foi cobrado".
+   */
+  plano?: Plano | null;
+};
 
 /** Por quanto tempo vale a conta mostrada na tela de mudar de plano, em segundos: depois, a tela pede outra. */
 export const VALIDADE_DA_PREVIA_DA_TROCA = 30 * 60;

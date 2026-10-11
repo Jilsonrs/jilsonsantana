@@ -2,6 +2,7 @@ import Stripe from "stripe";
 import type { CartaoDaAssinatura, MotivoDoCancelamento, Plano } from "@jilson/core";
 import { AssinaturaNaoEncontrada, erroSemMensagem, FORMAS_DE_PAGAMENTO, paraAssinaturaNaStripe, planoDoPreco, stripe } from "./stripe.js";
 import { faturaDevolvida } from "./stripe-devolucao.js";
+import { MARCA_DA_TROCA } from "./stripe-plano.js";
 
 // GERIR UMA ASSINATURA QUE JÁ EXISTE (Fase 4, etapa 4.6 — billing.md → Minha assinatura). A
 // outra metade da nossa fronteira com a Stripe (`stripe.ts` é a de assinar e a do espelho): o que
@@ -39,7 +40,9 @@ export type DetalhesDaAssinatura = {
   itemId: string | null;
   /** O agendamento preso à assinatura (a troca marcada para o fim do período). Não sai do servidor. */
   agendamentoId: string | null;
-  /** A troca de plano MARCADA para o fim do período pago: para qual plano e quando. */
+  /** O agendamento foi criado pelo NOSSO fluxo de mudar de plano (e não pelo painel da Stripe): só esse é solto ao mudar de plano ou desistir. */
+  agendamentoNosso: boolean;
+  /** A troca de plano MARCADA para o fim do período pago: para qual plano e quando. Só a do NOSSO agendamento — é a que a tela deixa desfazer. */
   trocaMarcada: { plano: Plano; em: Date } | null;
   /** A fatura em aberto de uma troca na hora que NÃO se completou (o banco pediu confirmação). Não sai do servidor. */
   faturaDaTrocaId: string | null;
@@ -69,6 +72,10 @@ export function paraDetalhesDaAssinatura(assinatura: Stripe.Subscription, devolv
   const acabaEm = assinatura.cancel_at !== null ? new Date(assinatura.cancel_at * 1000) : assinatura.cancel_at_period_end ? fimDoPeriodo : null;
   const doCliente = assinatura.customer;
   const padraoDoCliente = typeof doCliente === "object" && !doCliente.deleted ? doCliente.invoice_settings.default_payment_method : null;
+  // O agendamento é NOSSO quando leva a marca que `agendarTroca` grava (achado da revisão de
+  // segurança, 11/10/2026): um que foi posto pelo painel da Stripe não é mostrado como "troca
+  // marcada" nem solto quando o aluno muda de plano.
+  const nosso = typeof assinatura.schedule === "object" && assinatura.schedule !== null && assinatura.schedule.metadata?.para === MARCA_DA_TROCA;
   return {
     id: assinatura.id,
     status,
@@ -85,8 +92,12 @@ export function paraDetalhesDaAssinatura(assinatura: Stripe.Subscription, devolv
     faturaEmAbertoId: typeof fatura === "object" && fatura !== null && fatura.status === "open" ? fatura.id : null,
     itemId: itens[0]?.id ?? null,
     agendamentoId: typeof assinatura.schedule === "string" ? assinatura.schedule : (assinatura.schedule?.id ?? null),
-    trocaMarcada: paraTrocaMarcada(assinatura.schedule, plano),
-    faturaDaTrocaId: assinatura.pending_update && typeof fatura === "object" && fatura !== null && fatura.status === "open" ? fatura.id : null,
+    agendamentoNosso: nosso,
+    trocaMarcada: nosso ? paraTrocaMarcada(assinatura.schedule, plano) : null,
+    // SÓ a fatura da própria troca (achado da revisão de segurança, 11/10/2026): se a renovação
+    // falhar com uma troca ainda pendente, a "última fatura em aberto" passa a ser a da
+    // RENOVAÇÃO — e anulá-la com a assinatura viva a devolveria a `active`, sem pagar.
+    faturaDaTrocaId: assinatura.pending_update && typeof fatura === "object" && fatura !== null && fatura.status === "open" && fatura.billing_reason === "subscription_update" ? fatura.id : null,
   };
 }
 

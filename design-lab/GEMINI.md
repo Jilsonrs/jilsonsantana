@@ -547,7 +547,9 @@ exceto o item 4, que é página pública.
     e botão), ou — nos 7 primeiros dias — **dois cartões lado a lado**, cada um com título,
     texto e botão ("Parar a renovação e continuar" e "Cancelar e receber o dinheiro de volta");
     por fim, "Voltar sem cancelar". Depois de cancelar, a tela mostra só a confirmação e o botão
-    de volta ao resumo. Estrutura crua, acabamento seu.
+    de volta ao resumo. **Um caso raro (11/10):** se a assinatura foi cancelada e a devolução
+    falhou, a tela mostra só a frase da falha (`role="alert"`) e o botão de volta ao resumo.
+    Estrutura crua, acabamento seu.
     **Tom calmo, por decisão do operador:** o botão de cancelar fica sempre à vista, e nenhum
     dos dois cartões pode parecer "o errado" — são duas saídas iguais.
     **Têm teste, mantenha:** as falhas são `role="alert"` e as confirmações `role="status"`; os

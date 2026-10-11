@@ -19,7 +19,7 @@ vi.mock("./stripe-cliente.js", async (importOriginal) => ({
   stripe: () => falsa,
 }));
 
-import { agendarTroca, anularFatura, calcularTroca, paraFasesDaTroca, paraPedidoDeTroca, segredoDaFatura, situacaoDoPagamento, soltarAgendamento, trocarAgora } from "./stripe-plano.js";
+import { MARCA_DA_TROCA, agendarTroca, anularFatura, calcularTroca, paraFasesDaTroca, paraPedidoDeTroca, segredoDaFatura, situacaoDoPagamento, soltarAgendamento, trocarAgora } from "./stripe-plano.js";
 
 const TROCA = { assinaturaId: "sub_1", itemId: "si_1", precoId: "price_anual", em: 1_800_000_500 };
 const PEDIDO = { items: [{ id: "si_1", price: "price_anual" }], proration_behavior: "always_invoice", proration_date: 1_800_000_500 };
@@ -180,6 +180,9 @@ describe("marcar a troca para o fim do período", () => {
     expect(id).toBe("sub_sched_1");
     expect(pedido).toMatchObject({ end_behavior: "release", proration_behavior: "none" });
     expect(pedido.phases.map((f: { items: { price: string }[] }) => f.items[0]?.price)).toEqual(["price_anual", "price_mensal"]);
+    // A MARCA de que este agendamento é da escola: só o que a leva é solto pelas operações do aluno.
+    expect(pedido.metadata).toEqual({ para: MARCA_DA_TROCA });
+    expect(MARCA_DA_TROCA).toBe("troca-de-plano");
   });
 
   it("a segunda ida falhou: o agendamento pela metade é SOLTO (ele impediria parar a renovação), e a falha sobe", async () => {

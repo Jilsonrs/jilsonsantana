@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
-import { Plano, type TrocaDePlano } from "@jilson/core";
-import { desistirDaTroca, getMinhaAssinatura, getTrocaDePlano, mudarDePlano } from "@/lib/api";
-import { CHAVE_DA_MINHA_ASSINATURA, codigoDaRecusa } from "@/lib/faturamento";
+import { Plano, type MinhaAssinatura, type TrocaDePlano, type TrocaDesfeita } from "@jilson/core";
+import { desistirDaTroca, getTrocaDePlano, mudarDePlano } from "@/lib/api";
+import { CHAVE_DA_MINHA_ASSINATURA, CONSULTA_DA_MINHA_ASSINATURA, codigoDaRecusa } from "@/lib/faturamento";
 import { semInterromper } from "@/lib/versao";
 
 // MUDAR DE PLANO (Fase 4, etapa 4.6, sessão b): o que a tela de mudar de plano lê e faz. Quem
@@ -26,18 +26,75 @@ export type PlanoMudado = { como: "trocado" } | { como: "marcado"; em: string };
 /** Por que não deu: o cartão foi recusado, a confirmação do banco não foi concluída, ou outra coisa. */
 export type FalhaNaTroca = "recusado" | "banco" | "erro";
 
-/** Entre uma leitura e outra, enquanto a Stripe aplica a troca que o banco acabou de confirmar. */
-const ESPERA = 1500;
+/**
+ * Entre uma leitura e outra (enquanto a Stripe aplica a troca que o banco acabou de confirmar) e
+ * entre uma tentativa e outra de desfazer, em milissegundos. É um objeto para os testes poderem
+ * encurtar a espera sem trocar o relógio de tudo.
+ */
+export const RITMO = { espera: 1500 };
+/** Quantas vezes a tela lê, esperando o servidor dizer "anual" depois de o banco confirmar. */
+const LEITURAS = 6;
+/** Quantas vezes a tela pede para desfazer a troca que não se concluiu (a assinatura pode estar ocupada). */
+const TENTATIVAS_DE_DESFAZER = 3;
+
+const esperar = () => new Promise((resolver) => setTimeout(resolver, RITMO.espera));
+
+/** A assinatura como o SERVIDOR a diz agora — ou nada, se a leitura falhou. */
+function lerAAssinatura(queryClient: QueryClient): Promise<MinhaAssinatura | null> {
+  return queryClient.fetchQuery({ ...CONSULTA_DA_MINHA_ASSINATURA, staleTime: 0 }).catch(() => null);
+}
+
+/**
+ * O que o SERVIDOR diz desta troca agora: já vale, ficou marcada — ou nada disso. É por ele que a
+ * tela afirma (achado da revisão de segurança, 11/10/2026): a resposta de um pedido pode se
+ * perder no caminho depois de a troca ter sido feita.
+ */
+async function comoFicou(queryClient: QueryClient, troca: TrocaDePlano): Promise<PlanoMudado | null> {
+  const assinatura = await lerAAssinatura(queryClient);
+  if (!assinatura || !("plano" in assinatura)) return null;
+  if (troca.quando === "agora") return assinatura.plano === Plano.ANUAL ? { como: "trocado" } : null;
+  return assinatura.trocaMarcada ? { como: "marcado", em: assinatura.trocaMarcada.em } : null;
+}
 
 /**
  * Depois de o banco confirmar, a Stripe aplica a troca sozinha — em instantes. Lê a assinatura
- * até ela dizer "anual" (poucas vezes): assim o resumo já abre com o plano novo.
+ * até o servidor dizer "anual" (poucas vezes): assim o resumo já abre com o plano novo.
  */
-async function esperarOPlanoNovo(queryClient: QueryClient): Promise<void> {
-  for (let tentativa = 0; tentativa < 4; tentativa++) {
-    const assinatura = await queryClient.fetchQuery({ queryKey: CHAVE_DA_MINHA_ASSINATURA, queryFn: getMinhaAssinatura, staleTime: 0 }).catch(() => null);
-    if (assinatura && "plano" in assinatura && assinatura.plano === Plano.ANUAL) return;
-    await new Promise((resolver) => setTimeout(resolver, ESPERA));
+async function esperarOPlanoNovo(queryClient: QueryClient, troca: TrocaDePlano): Promise<void> {
+  for (let leitura = 1; leitura <= LEITURAS; leitura++) {
+    if (await comoFicou(queryClient, troca)) return;
+    if (leitura < LEITURAS) await esperar();
+  }
+}
+
+/**
+ * A janela do banco. Qualquer coisa que não seja "confirmado" — a pessoa fechou, o banco recusou,
+ * o Stripe.js não carregou ou deu erro — é "não concluído": quem decide o que aconteceu é o
+ * servidor, ao desfazer.
+ */
+async function pedirAoBanco(chavePublicavel: string | undefined, segredo: string): Promise<"confirmado" | "nao-concluido"> {
+  if (!chavePublicavel) return "nao-concluido";
+  try {
+    const { confirmarNoBanco } = await import("@/lib/stripe-do-site");
+    return await confirmarNoBanco(chavePublicavel, segredo);
+  } catch {
+    return "nao-concluido";
+  }
+}
+
+/**
+ * Desfaz a troca que ficou esperando o banco: a cobrança dela não pode ficar em aberto. A
+ * assinatura pode estar ocupada por um instante (o aviso da Stripe chegando), e repetir não faz
+ * mal: tenta de novo, poucas vezes.
+ */
+async function desfazerATroca(): Promise<TrocaDesfeita> {
+  for (let tentativa = 1; ; tentativa++) {
+    try {
+      return await desistirDaTroca();
+    } catch (erro) {
+      if (tentativa >= TENTATIVAS_DE_DESFAZER) throw erro;
+      await esperar();
+    }
   }
 }
 
@@ -65,17 +122,15 @@ export function useMudarDePlano(chavePublicavel: string | undefined) {
         // O BANCO PEDIU UMA CONFIRMAÇÃO: a troca só vale depois dela. A janela do banco abre por
         // cima da tela; o segredo fica só na memória deste passo.
         setNoBanco(true);
-        const { confirmarNoBanco } = await import("@/lib/stripe-do-site");
-        const banco = chavePublicavel ? await confirmarNoBanco(chavePublicavel, resposta.segredo) : "nao-concluido";
-        if (banco === "confirmado") {
-          await esperarOPlanoNovo(queryClient);
+        if ((await pedirAoBanco(chavePublicavel, resposta.segredo)) === "confirmado") {
+          await esperarOPlanoNovo(queryClient, troca);
           return setFeito({ como: "trocado" });
         }
-        // NÃO CONCLUIU: a troca pendente é desfeita JÁ — a tela diz "nada foi cobrado", e a
-        // cobrança não pode ficar esperando. Se o servidor disser que o pagamento já tinha
-        // passado, o plano mudou.
-        const desfeita = await desistirDaTroca();
-        if (desfeita.trocado) setFeito({ como: "trocado" });
+        // NÃO CONCLUIU: a troca pendente é desfeita JÁ — a cobrança não pode ficar esperando. E
+        // "nada foi cobrado" só é dito se o SERVIDOR disser que o plano continua o mesmo: a
+        // janela do banco pode dar erro DEPOIS de o pagamento ter passado.
+        const desfeita = await desfazerATroca();
+        if (desfeita.trocado || desfeita.plano === Plano.ANUAL) setFeito({ como: "trocado" });
         else setFalha("banco");
       });
     } catch (erro) {
@@ -83,7 +138,13 @@ export function useMudarDePlano(chavePublicavel: string | undefined) {
       if (codigo === "PreviaVencida") {
         setValorAtualizado(true);
         await queryClient.invalidateQueries({ queryKey: CHAVE_DA_TROCA_DE_PLANO });
-      } else setFalha(codigo === "CartaoRecusado" ? "recusado" : "erro");
+      } else {
+        // QUALQUER outra falha: vale o que o servidor diz AGORA. Se a troca já está feita (a
+        // resposta se perdeu no caminho), a tela diz que deu certo em vez de pedir de novo.
+        const ficou = await comoFicou(queryClient, troca);
+        if (ficou) setFeito(ficou);
+        else setFalha(codigo === "CartaoRecusado" ? "recusado" : "erro");
+      }
     } finally {
       setNoBanco(false);
       setEnviando(false);

@@ -33,7 +33,10 @@ export function CancelarPage() {
   // Terminou na hora (a cobrança estava atrasada): o resumo diz que acabou e oferece reativar.
   // E a renovação parada sem a data do fim (o servidor sempre a manda): o resumo diz o que há.
   if (feito?.como === "terminou" || (feito?.como === "parou" && !feito.acessoAte)) return <Navigate to={TELA_DO_FATURAMENTO} replace />;
-  if (!feito && data && !isError && !cabeCancelar) return <Navigate to={TELA_DO_FATURAMENTO} replace />;
+  // A DEVOLUÇÃO QUE FALHOU fica na tela: a assinatura já foi encerrada (não há mais o que
+  // cancelar), e a pessoa precisa ler que o dinheiro não voltou e que alguém já foi avisado.
+  const devolucaoFalhou = !feito && falha === "devolucao";
+  if (!feito && !devolucaoFalhou && data && !isError && !cabeCancelar) return <Navigate to={TELA_DO_FATURAMENTO} replace />;
 
   // Até quando há acesso: o fim do período pago — é a data da próxima cobrança de quem renova.
   const acessoAte = viva?.proximaCobranca?.em ?? viva?.acessoAte ?? null;
@@ -63,8 +66,18 @@ export function CancelarPage() {
           </Button>
         </div>
       )}
-      {!feito && isLoading && <p className="text-muted-foreground">{t.comum.carregando}</p>}
-      {!feito && isError && (
+      {devolucaoFalhou && !(viva && cabeCancelar) && (
+        <div className="space-y-4">
+          <p role="alert" className="max-w-3xl text-sm text-destructive">
+            {c.devolucaoFalhou}
+          </p>
+          <Button asChild>
+            <Link to={TELA_DO_FATURAMENTO}>{t.nav.faturamento}</Link>
+          </Button>
+        </div>
+      )}
+      {!feito && !devolucaoFalhou && isLoading && <p className="text-muted-foreground">{t.comum.carregando}</p>}
+      {!feito && !devolucaoFalhou && isError && (
         <p role="alert" className="text-sm text-destructive">
           {t.faturamento.erro}
         </p>

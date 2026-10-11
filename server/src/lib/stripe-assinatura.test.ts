@@ -284,7 +284,7 @@ describe("o que a tela precisa saber para o reembolso", () => {
 describe("a troca de plano marcada para o fim do período", () => {
   const fase = (inicio: number, termino: number, intervalo: string | null) => ({ start_date: inicio, end_date: termino, items: [{ price: intervalo ? preco({ intervalo }) : "price_so_o_id" }] });
   // Seguro: só os campos que a função lê; a forma completa é da Stripe.
-  const agendamento = (fases: object[], fimDaAtual: number | null = fim) => ({ id: "sub_sched_1", current_phase: fimDaAtual ? { start_date: inicio, end_date: fimDaAtual } : null, phases: fases }) as unknown as Stripe.SubscriptionSchedule;
+  const agendamento = (fases: object[], fimDaAtual: number | null = fim, metadata: object = { para: "troca-de-plano" }) => ({ id: "sub_sched_1", current_phase: fimDaAtual ? { start_date: inicio, end_date: fimDaAtual } : null, phases: fases, metadata }) as unknown as Stripe.SubscriptionSchedule;
 
   it("a fase que começa quando a atual termina, de OUTRO plano: para qual plano e quando", () => {
     expect(paraTrocaMarcada(agendamento([fase(inicio, fim, "year"), fase(fim, fim + 30 * DIA, "month")]), "anual")).toEqual({ plano: "mensal", em: new Date(fim * 1000) });
@@ -306,15 +306,39 @@ describe("a troca de plano marcada para o fim do período", () => {
     // Seguro: acrescenta ao objeto de teste os campos que só este bloco lê.
     const comAgendamento = { ...assinatura({ doPreco: preco({ intervalo: "year" }), itens: [{ id: "si_1", current_period_start: inicio, current_period_end: fim, price: preco({ intervalo: "year" }) }] }), schedule: agendamento([fase(inicio, fim, "year"), fase(fim, fim + 30 * DIA, "month")]) } as unknown as Stripe.Subscription;
     const detalhes = paraDetalhesDaAssinatura(comAgendamento);
-    expect([detalhes.itemId, detalhes.agendamentoId, detalhes.trocaMarcada]).toEqual(["si_1", "sub_sched_1", { plano: "mensal", em: new Date(fim * 1000) }]);
+    expect([detalhes.itemId, detalhes.agendamentoId, detalhes.agendamentoNosso, detalhes.trocaMarcada]).toEqual(["si_1", "sub_sched_1", true, { plano: "mensal", em: new Date(fim * 1000) }]);
     const comum = paraDetalhesDaAssinatura(assinatura());
-    expect([comum.agendamentoId, comum.trocaMarcada, comum.faturaDaTrocaId]).toEqual([null, null, null]);
+    expect([comum.agendamentoId, comum.agendamentoNosso, comum.trocaMarcada, comum.faturaDaTrocaId]).toEqual([null, false, null, null]);
+  });
+
+  // Achado da revisão de segurança (11/10/2026): só o agendamento que o NOSSO fluxo criou é
+  // tratado como "troca marcada". O que foi posto pelo painel da Stripe continua preso à
+  // assinatura — o servidor sabe que ele existe —, mas a tela não o oferece para desfazer.
+  it("o agendamento SEM a nossa marca (posto pelo painel da Stripe): existe, não é nosso, e não vira 'troca marcada'", () => {
+    const fases = [fase(inicio, fim, "year"), fase(fim, fim + 30 * DIA, "month")];
+    for (const metadata of [{}, { para: "outra-coisa" }]) {
+      // Seguro: acrescenta ao objeto de teste os campos que só este bloco lê.
+      const doPainel = { ...assinatura({ doPreco: preco({ intervalo: "year" }) }), schedule: agendamento(fases, fim, metadata) } as unknown as Stripe.Subscription;
+      const detalhes = paraDetalhesDaAssinatura(doPainel);
+      expect([detalhes.agendamentoId, detalhes.agendamentoNosso, detalhes.trocaMarcada], JSON.stringify(metadata)).toEqual(["sub_sched_1", false, null]);
+    }
   });
 
   it("a fatura da troca que não se completou: só com a troca PENDENTE e a fatura em aberto", () => {
     const pendente = (fatura: object, comPendencia: boolean) => ({ ...assinatura({ fatura }), pending_update: comPendencia ? { expires_at: fim } : null }) as unknown as Stripe.Subscription;
-    expect(paraDetalhesDaAssinatura(pendente({ id: "in_troca", status: "open" }, true)).faturaDaTrocaId).toBe("in_troca");
-    expect(paraDetalhesDaAssinatura(pendente({ id: "in_troca", status: "open" }, false)).faturaDaTrocaId).toBeNull();
-    expect(paraDetalhesDaAssinatura(pendente({ id: "in_paga", status: "paid" }, true)).faturaDaTrocaId).toBeNull();
+    const daTroca = { id: "in_troca", status: "open", billing_reason: "subscription_update" };
+    expect(paraDetalhesDaAssinatura(pendente(daTroca, true)).faturaDaTrocaId).toBe("in_troca");
+    expect(paraDetalhesDaAssinatura(pendente(daTroca, false)).faturaDaTrocaId).toBeNull();
+    expect(paraDetalhesDaAssinatura(pendente({ ...daTroca, id: "in_paga", status: "paid" }, true)).faturaDaTrocaId).toBeNull();
+  });
+
+  // Achado da revisão de segurança (11/10/2026): com a troca ainda pendente, a RENOVAÇÃO pode
+  // falhar — e a "última fatura em aberto" passa a ser a dela. Anulá-la com a assinatura viva a
+  // devolveria a "em dia", sem pagar.
+  it("a fatura em aberto que NÃO é a da troca (a renovação que falhou, a primeira cobrança): nunca é dada como a da troca", () => {
+    const pendente = (fatura: object) => ({ ...assinatura({ fatura }), pending_update: { expires_at: fim } }) as unknown as Stripe.Subscription;
+    for (const motivo of ["subscription_cycle", "subscription_create", "manual", undefined]) {
+      expect(paraDetalhesDaAssinatura(pendente({ id: "in_da_renovacao", status: "open", billing_reason: motivo })).faturaDaTrocaId, String(motivo)).toBeNull();
+    }
   });
 });

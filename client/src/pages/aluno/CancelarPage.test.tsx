@@ -214,13 +214,40 @@ describe("CancelarPage — nos 7 primeiros dias: as duas saídas", () => {
     expect((await screen.findByRole("alert")).textContent).toBe("Sua assinatura foi cancelada, mas não conseguimos devolver o valor agora. Já fomos avisados e vamos resolver. Você não precisa fazer nada.");
   });
 
-  it("depois de qualquer falha, a tela lê a assinatura de novo: o que deixou de caber some", async () => {
+  it("depois de qualquer falha, a tela lê a assinatura de novo: o que deixou de caber SOME — e a frase da falha fica", async () => {
     reembolsarMinhaAssinatura.mockRejectedValue(recusa("ForaDoPrazo"));
+    // A primeira leitura ainda oferece o reembolso; a de depois da falha já não (o prazo acabou).
+    getMinhaAssinatura.mockReset().mockResolvedValueOnce(NO_PRAZO).mockResolvedValue(ATIVA);
     abrir();
     fireEvent.click(await screen.findByRole("button", { name: REEMBOLSAR }));
-    await screen.findByRole("alert");
-    getMinhaAssinatura.mockResolvedValue(ATIVA);
-    await waitFor(() => expect(getMinhaAssinatura.mock.calls.length).toBeGreaterThanOrEqual(2));
+    await waitFor(() => expect(screen.queryByRole("button", { name: REEMBOLSAR })).toBeNull());
+    expect(screen.getByRole("alert").textContent).toBe("O prazo de 7 dias para o reembolso terminou. Você ainda pode parar a renovação.");
+    expect(botao("Cancelar assinatura")).toBeTruthy();
+    expect(naTela()).not.toContain("receber o dinheiro de volta");
+  });
+
+  // Achado da revisão de segurança (segunda passada, 11/10/2026): encerrada a assinatura, a
+  // leitura seguinte já não tem o que cancelar — e a tela ia para o resumo, levando embora a
+  // única frase que diz que o dinheiro NÃO voltou.
+  it("a devolução falhou e a assinatura já aparece TERMINADA: a frase FICA na tela, com o caminho para o resumo — nunca some", async () => {
+    reembolsarMinhaAssinatura.mockRejectedValue(recusa("DevolucaoFalhou", 502));
+    getMinhaAssinatura.mockReset().mockResolvedValueOnce(NO_PRAZO).mockResolvedValue({ situacao: "terminada", terminouEm: FIM_DO_PRAZO });
+    abrir();
+    fireEvent.click(await screen.findByRole("button", { name: REEMBOLSAR }));
+    await waitFor(() => expect(screen.queryByRole("button", { name: REEMBOLSAR })).toBeNull());
+    expect(screen.getByRole("alert").textContent).toBe("Sua assinatura foi cancelada, mas não conseguimos devolver o valor agora. Já fomos avisados e vamos resolver. Você não precisa fazer nada.");
+    expect(screen.queryByText("RESUMO DA ASSINATURA")).toBeNull();
+    expect(screen.getByRole("link", { name: "Faturamento e Assinatura" }).getAttribute("href")).toBe("/aluno/conta/faturamento");
+    expect(screen.queryByRole("radio")).toBeNull();
+  });
+
+  it("…e o mesmo se a leitura seguinte FALHAR: a frase da devolução, e não a de 'não foi possível carregar'", async () => {
+    reembolsarMinhaAssinatura.mockRejectedValue(recusa("DevolucaoFalhou", 502));
+    getMinhaAssinatura.mockReset().mockResolvedValueOnce(NO_PRAZO).mockRejectedValue(recusa("Unauthorized", 401));
+    abrir();
+    fireEvent.click(await screen.findByRole("button", { name: REEMBOLSAR }));
+    await waitFor(() => expect(screen.queryByRole("button", { name: REEMBOLSAR })).toBeNull());
+    expect(screen.getAllByRole("alert").map((alerta) => alerta.textContent)).toEqual(["Sua assinatura foi cancelada, mas não conseguimos devolver o valor agora. Já fomos avisados e vamos resolver. Você não precisa fazer nada."]);
   });
 
   it("com a renovação JÁ parada e ainda no prazo: só a saída do reembolso, e a data em que termina", async () => {

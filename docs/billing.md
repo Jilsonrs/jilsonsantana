@@ -782,9 +782,36 @@ encerrada de vez com dias pagos: tem acesso e o servidor recusa cartão.
 - **As rotas novas não têm limite de tentativas** — como as outras de cobrança: é pré-requisito
   da etapa 4.7, que agora as cita pelo nome.
 - **A confirmação do banco na tela** (sessão b): na troca para o Anual e na cobrança atrasada
-  paga com o cartão novo, a janela do banco abre por cima da tela; não concluída, a troca de
-  plano é desfeita na hora, e a troca de cartão oferece "Confirmar pagamento". *A janela do
-  banco de verdade ainda não abriu num navegador — ver Pendências de verificação.*
+  paga com o cartão novo, a janela do banco abre por cima da tela; não concluída — por qualquer
+  motivo, inclusive o Stripe.js que quebra —, a troca de plano é desfeita na hora, e a troca de
+  cartão oferece "Confirmar pagamento". *A janela do banco de verdade ainda não abriu num
+  navegador — ver Pendências de verificação.*
+- **A tela só AFIRMA o que o servidor disse** (segunda revisão de segurança, 11/10/2026): a
+  janela do banco pode dar erro depois de o pagamento passar. Por isso `desistir` responde em
+  que plano a assinatura ficou, e "nada foi cobrado" só aparece quando o plano continua o mesmo;
+  depois de qualquer falha, a tela relê a assinatura antes de dizer que não deu. *Limite:* com o
+  pagamento aprovado, se o servidor ainda não disser Anual em ~9 segundos, a tela afirma assim
+  mesmo — o resumo pode mostrar Mensal por instantes.
+- **A fatura da troca é só a da troca** (`billing_reason: subscription_update`), e desistir não
+  anula fatura nenhuma com a cobrança atrasada. `[FATO — medido com o relógio de teste,
+  11/10/2026]` se a renovação chega com uma troca ainda pendente, a Stripe descarta a troca
+  (anula a fatura dela) e a assinatura fica atrasada com a fatura da renovação em aberto.
+- **Só o agendamento que a escola criou é "troca marcada"**: `agendarTroca` grava a marca
+  `MARCA_DA_TROCA`, e só o agendamento com ela é mostrado, desfeito por "Continuar no Anual" e
+  solto ao mudar de plano. O que for posto pelo painel da Stripe fica como está, e essa
+  assinatura não muda de plano pela tela — só ao CANCELAR ele é solto (com ele a Stripe recusa
+  parar a renovação), e o operador é avisado.
+- **O que vira alerta para o operador resolver no painel da Stripe:** a devolução que falhou
+  (a pessoa lê a frase aprovada, continua logada, e não tem botão para repetir quando a
+  assinatura já aparece terminada — quem devolve é o operador); a cobrança em aberto que não
+  pôde ser anulada ao cancelar com a cobrança atrasada; e a cobrança que PASSOU no instante
+  desse cancelamento — aí a pessoa pagou um período que quis cancelar.
+- **Pedido que muda cobrança e vem de outro site é recusado** (403 `OutroSite`, pelo
+  `Sec-Fetch-Site` do navegador): segunda trava além do cookie, para todo `/api/billing`.
+  Navegador antigo que não manda o cabeçalho fica só com a primeira.
+- **O reembolso pela tela pode se repetir** — assinar, pedir o dinheiro em 7 dias, assinar de
+  novo, pedir de novo. Nada limita hoje; é pergunta ao operador (pendência P75), a responder
+  antes da etapa 4.7.
 
 ## Pendências de verificação
 

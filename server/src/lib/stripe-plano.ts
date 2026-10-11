@@ -16,6 +16,13 @@ import { erroSemMensagem, stripe } from "./stripe.js";
 //     sobrevive se as fases o levarem. Com agendamento, a Stripe recusa mexer no cancelamento
 //     direto na assinatura: antes, soltar o agendamento.
 
+/**
+ * A marca dos agendamentos que o NOSSO fluxo de mudar de plano cria (achado da revisão de
+ * segurança, 11/10/2026): só eles são soltos pelas operações do aluno. Um agendamento posto pelo
+ * painel da Stripe não some porque o aluno mudou de plano.
+ */
+export const MARCA_DA_TROCA = "troca-de-plano";
+
 /** O que a troca na hora precisa: a assinatura, o item dela, o preço novo e o instante da conta (segundos). */
 export type TrocaNaHora = { assinaturaId: string; itemId: string; precoId: string; em: number };
 
@@ -164,7 +171,7 @@ export async function agendarTroca(assinaturaId: string, precoNovoId: string): P
   const atual = agendamento.phases[0];
   try {
     if (!atual) throw new Error("[stripe] o agendamento da troca veio sem a fase atual");
-    await stripe().subscriptionSchedules.update(agendamento.id, { end_behavior: "release", proration_behavior: "none", phases: paraFasesDaTroca(atual, precoNovoId) });
+    await stripe().subscriptionSchedules.update(agendamento.id, { end_behavior: "release", proration_behavior: "none", phases: paraFasesDaTroca(atual, precoNovoId), metadata: { para: MARCA_DA_TROCA } });
     return new Date(atual.end_date * 1000);
   } catch (erro) {
     try {

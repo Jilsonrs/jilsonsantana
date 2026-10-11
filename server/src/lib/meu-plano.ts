@@ -81,7 +81,8 @@ export async function mudarMeuPlano(userId: string, pedido: { plano: Plano; prev
       const agora = await buscarDetalhes(id);
       if (outroPlano(agora) !== "mensal") return null;
       // O agendamento de uma troca que JÁ aconteceu fica preso por mais um mês: sai antes (com
-      // ele a Stripe não deixa criar outro).
+      // ele a Stripe não deixa criar outro). Só o NOSSO chega aqui: com um que não é da escola,
+      // `outroPlano` já disse que não há troca.
       if (agora.agendamentoId) await soltarAgendamento(agora.agendamentoId);
       return agendarTroca(id, novo.precoId);
     });
@@ -99,6 +100,11 @@ export async function mudarMeuPlano(userId: string, pedido: { plano: Plano; prev
     // O agendamento de uma troca que JÁ aconteceu (a virada para o mensal) sai antes: quem manda
     // no preço da assinatura, enquanto ele está preso, é ele.
     if (agora.agendamentoId) await soltarAgendamento(agora.agendamentoId);
+    // Uma troca anterior ainda ESPERANDO a confirmação do banco é anulada antes de pedir outra
+    // (achado da revisão de segurança): duas cobranças do plano novo nunca ficam em aberto. Se a
+    // resposta for "paga", a pessoa confirmou no mesmo instante — o plano já mudou, e nada mais
+    // é cobrado.
+    if (agora.faturaDaTrocaId && (await anularFatura(agora.faturaDaTrocaId)) === "paga") return { estado: "trocado" };
     const desfecho = await trocarAgora({ assinaturaId: id, itemId: agora.itemId, precoId: novo.precoId, em: previaDe });
     // RECUSADO: a fatura da troca é anulada JÁ — a tela diz "nada foi cobrado", e uma fatura em
     // aberto ainda poderia ser cobrada depois. Se não anular, precisa de gente.
@@ -129,21 +135,32 @@ export type Desistencia = ({ resultado: "ok" } & TrocaDesfeita) | SemTroca;
  * DESISTE da troca: solta a que estava marcada para o fim do período (a assinatura segue no
  * plano de hoje), ou anula a troca na hora que ficou esperando a confirmação do banco (nada mais
  * é cobrado por ela). Sem troca nenhuma, não faz nada: repetir não faz mal.
+ * A RESPOSTA DIZ EM QUE PLANO A ASSINATURA FICOU, relido (achado da revisão de segurança,
+ * 11/10/2026): se a confirmação do banco passou e só a resposta se perdeu, não há mais nada
+ * pendente para desfazer — e a tela só pode dizer "nada foi cobrado" se o plano continua o mesmo.
+ * Só o agendamento NOSSO é solto, e nenhuma fatura é anulada com a cobrança atrasada (anular a
+ * fatura de uma assinatura viva a devolveria a `active`, sem pagar).
  */
 export async function desistirDaTroca(userId: string): Promise<Desistencia> {
   const achada = await assinaturaDaConta(userId);
   if (achada.resultado === "desconhecida") return achada;
   if (achada.resultado === "nenhuma") return { resultado: "sem-assinatura" };
   const { id } = achada.detalhes;
-  if (!achada.detalhes.agendamentoId && !achada.detalhes.faturaDaTrocaId) return { resultado: "ok", trocado: false };
+  // O agendamento que desistir solta: SÓ o que a escola criou.
+  const aSoltar = (d: typeof achada.detalhes) => (d.agendamentoNosso ? d.agendamentoId : null);
+  const nadaADesfazer = (d: typeof achada.detalhes) => !aSoltar(d) && !d.faturaDaTrocaId;
+  if (nadaADesfazer(achada.detalhes)) return { resultado: "ok", trocado: false, plano: achada.detalhes.plano };
   const operacao = await operarNaAssinatura(id, async () => {
     // Relido com a trava: o que a outra aba já desfez não é desfeito de novo (viraria erro).
-    const { agendamentoId, faturaDaTrocaId } = await buscarDetalhes(id);
-    if (agendamentoId) await soltarAgendamento(agendamentoId);
+    const agora = await buscarDetalhes(id);
+    if (nadaADesfazer(agora)) return { trocado: false, plano: agora.plano };
+    const agendamento = aSoltar(agora);
+    if (agendamento) await soltarAgendamento(agendamento);
     // `paga`: a pessoa completou a confirmação no mesmo instante — o plano mudou.
-    return faturaDaTrocaId ? (await anularFatura(faturaDaTrocaId)) === "paga" : false;
+    const trocado = agora.faturaDaTrocaId && agora.status !== "past_due" ? (await anularFatura(agora.faturaDaTrocaId)) === "paga" : false;
+    return { trocado, plano: (await buscarDetalhes(id)).plano };
   });
   if (!operacao) return { resultado: "ocupada" };
-  console.info(`[stripe] desistir da troca de plano: conta ${userId}, assinatura ${id}${operacao.feito ? " — o pagamento já tinha passado: o plano mudou" : ""}`);
-  return { resultado: "ok", trocado: operacao.feito };
+  console.info(`[stripe] desistir da troca de plano: conta ${userId}, assinatura ${id}${operacao.feito.trocado ? " — o pagamento já tinha passado: o plano mudou" : ""}`);
+  return { resultado: "ok", ...operacao.feito };
 }
