@@ -4293,8 +4293,8 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
         suíte de servidor como o CI (822) e do site (847), build. `CLAUDE.md` → *Membership
         Gating* (o pedido nunca diz qual assinatura; a sincronia que não espera) e `billing.md`
         (a seção *Minha assinatura*) reconciliados; pendência P65 (um texto rascunho).
-      **ONDE PAROU:** SESSÃO (a) FECHADA em 11/10/2026 — os 6 passos commitados no `dev`, não
-      publicada. **Antes de publicar, o operador abre a tela de trocar o cartão num navegador**
+      **ONDE PAROU:** SESSÃO (a) FECHADA em 11/10/2026 — os 6 passos commitados no `dev`
+      (`f24cf29`, CI verde nos dois jobs), não publicada. **Antes de publicar, o operador abre a tela de trocar o cartão num navegador**
       (o campo de verdade da Stripe). Próximo: a sessão (b), que começa mostrando a ele os
       textos de mudar de plano e de cancelar; e a sessão (c), pela pendência P64.
 - [ ] **4.7 — O visitante assina: a conta nasce no pagamento (código, ALTO RISCO).** O checkout
