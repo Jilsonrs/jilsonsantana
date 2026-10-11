@@ -1,11 +1,11 @@
 import { Router } from "express";
-import { assinarSchema, previaSchema, type AssinaturaCriada, type CartaoTrocado, type PlanosDaAssinatura, type PreviaDaAssinatura, type SituacaoDaAssinatura, type TrocaDeCartaoPreparada } from "@jilson/core";
+import { assinarSchema, cancelarSchema, previaSchema, type AssinaturaCriada, type CartaoTrocado, type PlanosDaAssinatura, type PreviaDaAssinatura, type RenovacaoParada, type SituacaoDaAssinatura, type TrocaDeCartaoPreparada } from "@jilson/core";
 import { requireAuth } from "../middleware/auth.js";
 import { validate } from "../lib/http.js";
 import { buscarCodigo, buscarPrecos, calcularPrevia, chavePublicavel, cobrancaConfigurada, FORMAS_DE_PAGAMENTO } from "../lib/stripe.js";
 import { convidaAReativar, temAcessoAtivo } from "../lib/acesso.js";
 import { assinar } from "../lib/checkout.js";
-import { aplicarCartaoNovo, lerMinhaAssinatura, prepararTrocaDeCartao, registrarAssinaturaDesconhecida } from "../lib/minha-assinatura.js";
+import { aplicarCartaoNovo, lerMinhaAssinatura, manterMinhaAssinatura, pararMinhaRenovacao, prepararTrocaDeCartao, registrarAssinaturaDesconhecida } from "../lib/minha-assinatura.js";
 
 // ASSINAR COM A CONTA LOGADA (Fase 4, etapa 4.2 — billing.md; CLAUDE.md → Membership Gating).
 // Tudo aqui exige login, e a conta é SEMPRE a da sessão. O site diz só QUAL plano e o código
@@ -187,6 +187,66 @@ router.post("/billing/cartao/aplicar", requireAuth, async (req, res) => {
   }
   const resposta: CartaoTrocado = { cartao: troca.cartao, pagou: troca.pagou };
   res.json(resposta);
+});
+
+// PARAR A RENOVAÇÃO E VOLTAR ATRÁS (etapa 4.6, sessão b). "Cancelar" aqui é parar a renovação: o
+// acesso continua até o fim do período pago. O corpo de cancelar leva SÓ o motivo, opcional; o de
+// manter, nada. Nenhum dos dois diz qual assinatura: é a da conta da sessão.
+
+/** O que não foi feito, na resposta. `Ocupada` e `CobrancaAtrasada`: nada mudou. */
+const RECUSAS = {
+  desconhecida: [404, "AssinaturaDesconhecida"],
+  "sem-assinatura": [409, "SemAssinatura"],
+  atrasada: [409, "CobrancaAtrasada"],
+  ocupada: [409, "Ocupada"],
+} as const;
+
+// POST /api/billing/minha-assinatura/cancelar — para a renovação, com o motivo (se a pessoa disse).
+router.post("/billing/minha-assinatura/cancelar", requireAuth, async (req, res) => {
+  const user = req.user;
+  if (!user) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  // Sem corpo é o mesmo que sem motivo: o botão de cancelar funciona sem nada.
+  const corpo = validate(cancelarSchema, req.body ?? {}, res);
+  if (corpo === null) return;
+  if (!cobrancaConfigurada()) {
+    console.error("[stripe] cancelamento recusado: STRIPE_SECRET_KEY ausente");
+    res.status(503).json({ error: "NaoConfigurado" });
+    return;
+  }
+  const parada = await pararMinhaRenovacao(user.id, { motivo: corpo.motivo, comentario: corpo.comentario });
+  if (parada.resultado === "desconhecida") registrarAssinaturaDesconhecida(user.id, "parar a renovação");
+  if (parada.resultado !== "ok") {
+    const [status, error] = RECUSAS[parada.resultado];
+    res.status(status).json({ error });
+    return;
+  }
+  const resposta: RenovacaoParada = { acessoAte: parada.acessoAte };
+  res.json(resposta);
+});
+
+// POST /api/billing/minha-assinatura/manter — volta atrás: a assinatura torna a renovar.
+router.post("/billing/minha-assinatura/manter", requireAuth, async (req, res) => {
+  const user = req.user;
+  if (!user) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  if (!cobrancaConfigurada()) {
+    console.error("[stripe] manter a assinatura recusado: STRIPE_SECRET_KEY ausente");
+    res.status(503).json({ error: "NaoConfigurado" });
+    return;
+  }
+  const mantida = await manterMinhaAssinatura(user.id);
+  if (mantida.resultado === "desconhecida") registrarAssinaturaDesconhecida(user.id, "manter a assinatura");
+  if (mantida.resultado !== "ok") {
+    const [status, error] = RECUSAS[mantida.resultado];
+    res.status(status).json({ error });
+    return;
+  }
+  res.status(204).end();
 });
 
 export default router;

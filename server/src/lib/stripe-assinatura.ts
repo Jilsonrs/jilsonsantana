@@ -1,5 +1,5 @@
 import Stripe from "stripe";
-import type { CartaoDaAssinatura, Plano } from "@jilson/core";
+import type { CartaoDaAssinatura, MotivoDoCancelamento, Plano } from "@jilson/core";
 import { AssinaturaNaoEncontrada, erroSemMensagem, FORMAS_DE_PAGAMENTO, paraAssinaturaNaStripe, planoDoPreco, stripe } from "./stripe.js";
 
 // GERIR UMA ASSINATURA QUE JÁ EXISTE (Fase 4, etapa 4.6 — billing.md → Minha assinatura). A
@@ -23,13 +23,13 @@ export type DetalhesDaAssinatura = {
   fimDoPeriodo: Date | null;
   /** Marcada para acabar (no fim do período, ou numa data): não renova. */
   acabaEm: Date | null;
+  /** Marcada para acabar NO FIM DO PERÍODO (e não numa data avulsa, posta pelo painel): diz como se desfaz. */
+  acabaNoFimDoPeriodo: boolean;
   cartao: CartaoDaAssinatura | null;
   /** O cliente da Stripe que esta assinatura cobra — é dele o cartão novo. Não sai do servidor. */
   clienteId: string | null;
   /** A conta da escola que a STRIPE diz ser a dona (a que o checkout gravou lá) — ou nenhuma. Não sai do servidor. */
   userId: string | null;
-  /** O cartão que ela cobra hoje, se for o DELA (e não o padrão do cliente). Não sai do servidor. */
-  cartaoId: string | null;
   /** A última fatura, se ainda está em aberto (a cobrança falhou): é a que o cartão novo paga. Não sai do servidor. */
   faturaEmAbertoId: string | null;
 };
@@ -65,18 +65,21 @@ export function paraDetalhesDaAssinatura(assinatura: Stripe.Subscription): Detal
     preco: plano && preco && preco.unit_amount !== null ? { centavos: preco.unit_amount, moeda: preco.currency } : null,
     fimDoPeriodo,
     acabaEm,
+    acabaNoFimDoPeriodo: assinatura.cancel_at_period_end,
     cartao: paraCartao(daAssinatura) ?? paraCartao(padraoDoCliente),
     clienteId,
     userId,
-    cartaoId: typeof daAssinatura === "string" ? daAssinatura : (daAssinatura?.id ?? null),
     faturaEmAbertoId: typeof fatura === "object" && fatura !== null && fatura.status === "open" ? fatura.id : null,
   };
 }
 
+/** O que toda leitura dos detalhes pede junto: sem isto a tela não teria cartão nem "pago até". */
+const COM_OS_DETALHES = ["latest_invoice", "default_payment_method", "customer.invoice_settings.default_payment_method"];
+
 /** A assinatura como a Stripe diz AGORA, para a tela. A que ela não conhece: `AssinaturaNaoEncontrada`. */
 export async function buscarDetalhes(id: string): Promise<DetalhesDaAssinatura> {
   try {
-    const assinatura = await stripe().subscriptions.retrieve(id, { expand: ["latest_invoice", "default_payment_method", "customer.invoice_settings.default_payment_method"] });
+    const assinatura = await stripe().subscriptions.retrieve(id, { expand: COM_OS_DETALHES });
     return paraDetalhesDaAssinatura(assinatura);
   } catch (erro) {
     if (erro instanceof Stripe.errors.StripeInvalidRequestError && erro.code === "resource_missing") throw new AssinaturaNaoEncontrada(id);
@@ -182,13 +185,34 @@ export async function definirCartao(assinaturaId: string, formaId: string): Prom
   }
 }
 
-/** Tira da Stripe o cartão que foi trocado: cartão que a pessoa substituiu não fica guardado. */
-export async function soltarCartao(formaId: string): Promise<void> {
+/**
+ * Tira da Stripe TODOS os cartões do cliente, menos este (abertura do passo 7 — achado da revisão
+ * de segurança, 11/10/2026): o que era da assinatura, o que foi confirmado e nunca aplicado (aba
+ * fechada, segunda aba) e o padrão do cliente. Cartão que a pessoa substituiu não fica guardado.
+ * Um que não saia não segura os outros: tenta todos, e a falha sobe no fim. Devolve quantos saíram.
+ */
+export async function soltarOutrosCartoes(clienteId: string, manter: string): Promise<number> {
+  // FECHA na dúvida: sem saber qual manter, tiraria o cartão que acabou de entrar.
+  if (!clienteId || !manter) throw new Error("[stripe] a remoção dos cartões antigos sem o cliente ou sem o cartão a manter");
+  let outros: string[];
   try {
-    await stripe().paymentMethods.detach(formaId);
+    const lista = await stripe().customers.listPaymentMethods(clienteId, { type: "card", limit: 100 });
+    outros = lista.data.map((forma) => forma.id).filter((id) => id !== manter);
   } catch (erro) {
-    throw erroSemMensagem(erro, "a remoção do cartão antigo");
+    throw erroSemMensagem(erro, "a lista dos cartões do cliente");
   }
+  let falha: unknown = null;
+  let sairam = 0;
+  for (const id of outros) {
+    try {
+      await stripe().paymentMethods.detach(id);
+      sairam += 1;
+    } catch (erro) {
+      falha ??= erro;
+    }
+  }
+  if (falha) throw erroSemMensagem(falha, "a remoção de um cartão antigo");
+  return sairam;
 }
 
 /**
@@ -220,5 +244,74 @@ export async function pagarFatura(faturaId: string): Promise<CobrancaDaFatura> {
       if (relida === "paid") return "paga";
     }
     throw erroSemMensagem(erro, "a cobrança da fatura em aberto");
+  }
+}
+
+// PARAR A RENOVAÇÃO E DESFAZER (passo 7 — billing.md → Reembolso e Cancelamento dentro do site).
+// Parar é MARCAR a assinatura para acabar no fim do período pago (`cancel_at_period_end`), nunca
+// encerrá-la: ela segue `active`, o gate não muda, e dá para voltar atrás sem pagar nada. O MOTIVO
+// fica guardado na Stripe, em cada assinatura: a lista dela é fixa (oito valores), então vai o
+// par mais próximo no campo dela e o NOSSO motivo, exato, em `metadata.motivo` — é o que o painel
+// da escola (etapa 4.7b) vai contar. O comentário é texto livre do aluno: vai à Stripe e NUNCA ao
+// registro.
+
+/** O par de cada motivo na lista fixa da Stripe. "Já aprendi o que precisava" não tem par: é "outro". */
+const MOTIVO_NA_STRIPE: Record<MotivoDoCancelamento, Stripe.SubscriptionUpdateParams.CancellationDetails.Feedback> = {
+  caro: "too_expensive",
+  "sem-tempo": "unused",
+  "ja-aprendi": "other",
+  "sem-conteudo": "missing_features",
+  outro: "other",
+};
+
+/** O que a pessoa disse ao cancelar — os dois são opcionais. */
+export type MotivoDado = { motivo?: MotivoDoCancelamento; comentario?: string };
+
+/** O motivo no formato da Stripe, só com o que foi dito. Função pura. */
+export function paraMotivoNaStripe(dado: MotivoDado): { cancellation_details?: { feedback?: Stripe.SubscriptionUpdateParams.CancellationDetails.Feedback; comment?: string }; metadata?: { motivo: string } } {
+  const comentario = dado.comentario?.trim();
+  if (!dado.motivo && !comentario) return {};
+  return {
+    cancellation_details: { ...(dado.motivo ? { feedback: MOTIVO_NA_STRIPE[dado.motivo] } : {}), ...(comentario ? { comment: comentario } : {}) },
+    ...(dado.motivo ? { metadata: { motivo: dado.motivo } } : {}),
+  };
+}
+
+/**
+ * O pedido de parar a renovação. Função pura, com teste. Só vai o que foi dito: repetir o pedido
+ * sem motivo não apaga o motivo dado antes (repetir não faz mal).
+ */
+export function paraPedidoDeParar(dado: MotivoDado): Stripe.SubscriptionUpdateParams {
+  return { cancel_at_period_end: true, ...paraMotivoNaStripe(dado) };
+}
+
+/**
+ * O pedido de voltar atrás. Função pura, com teste. Desfaz a marca que existe — a do fim do
+ * período, ou a data avulsa (as duas juntas a Stripe recusa) — e APAGA o motivo: quem ficou não
+ * cancelou, e um motivo velho contaria como cancelamento no painel.
+ */
+export function paraPedidoDeManter(acabaNoFimDoPeriodo: boolean): Stripe.SubscriptionUpdateParams {
+  return {
+    ...(acabaNoFimDoPeriodo ? { cancel_at_period_end: false } : { cancel_at: "" }),
+    cancellation_details: { feedback: "", comment: "" },
+    metadata: { motivo: "" },
+  };
+}
+
+/** Marca a assinatura para acabar no fim do período pago. Devolve-a como a Stripe passou a dizer. */
+export async function pararRenovacao(id: string, dado: MotivoDado): Promise<DetalhesDaAssinatura> {
+  try {
+    return paraDetalhesDaAssinatura(await stripe().subscriptions.update(id, { ...paraPedidoDeParar(dado), expand: COM_OS_DETALHES }));
+  } catch (erro) {
+    throw erroSemMensagem(erro, "a parada da renovação");
+  }
+}
+
+/** Tira a marca de acabar: a assinatura volta a renovar. Devolve-a como a Stripe passou a dizer. */
+export async function retomarRenovacao(id: string, acabaNoFimDoPeriodo: boolean): Promise<DetalhesDaAssinatura> {
+  try {
+    return paraDetalhesDaAssinatura(await stripe().subscriptions.update(id, { ...paraPedidoDeManter(acabaNoFimDoPeriodo), expand: COM_OS_DETALHES }));
+  } catch (erro) {
+    throw erroSemMensagem(erro, "a retomada da renovação");
   }
 }

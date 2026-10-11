@@ -130,7 +130,28 @@ export type MinhaAssinatura =
       cartao: CartaoDaAssinatura | null;
       /** Esta assinatura ainda pode ser cobrada: aceita cartão novo. A encerrada de vez, com dias pagos, não. */
       aceitaCartao: boolean;
+      /** Renova, e a pessoa pode PARAR a renovação (o acesso continua até o fim do período pago). */
+      podeParar: boolean;
+      /** A renovação está parada e ainda dá para voltar atrás, sem pagar nada. A encerrada de vez, não. */
+      podeManter: boolean;
     };
+
+/**
+ * Os motivos de cancelamento (decisão do operador, 11/10/2026: a lista curta, e escolher é
+ * OPCIONAL). O valor é o que fica guardado junto da assinatura, na Stripe; o texto que o aluno
+ * lê sai do dicionário.
+ */
+export const MOTIVOS_DE_CANCELAMENTO = ["caro", "sem-tempo", "ja-aprendi", "sem-conteudo", "outro"] as const;
+export type MotivoDoCancelamento = (typeof MOTIVOS_DE_CANCELAMENTO)[number];
+
+/** O tamanho do "Quer contar mais?": é uma frase ou duas, não uma carta. */
+export const TAMANHO_DO_COMENTARIO = 500;
+
+/**
+ * Resposta de `POST /api/billing/minha-assinatura/cancelar`: a renovação parou, e até quando há
+ * acesso (o fim do período já pago). A data vem em ISO.
+ */
+export type RenovacaoParada = { acessoAte: string | null };
 
 /** Resposta de `POST /api/billing/cartao`: o segredo com que o campo da Stripe guarda o cartão novo. */
 export type TrocaDeCartaoPreparada = { segredo: string };

@@ -1,7 +1,7 @@
-import { SituacaoDoFaturamento, type CartaoTrocado, type MinhaAssinatura } from "@jilson/core";
+import { SituacaoDoFaturamento, type CartaoTrocado, type MinhaAssinatura, type RenovacaoParada } from "@jilson/core";
 import { prisma } from "./prisma.js";
 import { assinaturaDaAcesso, passouDoPrimeiroPagamento } from "./acesso.js";
-import { sincronizarSeLivre } from "./assinaturas.js";
+import { operarNaAssinatura, sincronizarSeLivre } from "./assinaturas.js";
 import { AssinaturaNaoEncontrada } from "./stripe.js";
 import {
   buscarCartaoConfirmado,
@@ -10,8 +10,11 @@ import {
   criarPedidoDeCartao,
   definirCartao,
   pagarFatura,
-  soltarCartao,
+  pararRenovacao,
+  retomarRenovacao,
+  soltarOutrosCartoes,
   type DetalhesDaAssinatura,
+  type MotivoDado,
   type PedidoDeCartao,
 } from "./stripe-assinatura.js";
 
@@ -50,6 +53,15 @@ export function aceitaCartaoNovo(detalhes: DetalhesDaAssinatura): boolean {
 }
 
 /**
+ * A renovação está PARADA e ainda dá para voltar atrás? Só a assinatura viva, marcada para acabar:
+ * a encerrada de vez (`canceled`) é estado final na Stripe — quem volta assina de novo. Uma regra
+ * só, para a tela (que mostra "Manter a assinatura") e para a operação (que recusa).
+ */
+export function podeManter(detalhes: DetalhesDaAssinatura): boolean {
+  return RENOVAM.has(detalhes.status) && detalhes.acabaEm !== null;
+}
+
+/**
  * O que a Stripe diz, no formato da tela. Função pura.
  *   - sem acesso pela regra do gate → terminada;
  *   - a última cobrança falhou (`past_due`) → atrasada: o acesso continua, e o que a tela oferece
@@ -62,13 +74,20 @@ export function paraMinhaAssinatura(detalhes: DetalhesDaAssinatura, proxima: { c
   if (!assinaturaDaAcesso({ status: detalhes.status, currentPeriodEnd: detalhes.pagoAte }, agora)) {
     return { situacao: SituacaoDoFaturamento.TERMINADA, terminouEm: iso(detalhes.pagoAte) };
   }
-  const comum = { plano: detalhes.plano, preco: detalhes.preco, cartao: detalhes.cartao, aceitaCartao: aceitaCartaoNovo(detalhes) };
+  // `podeParar` e `podeManter`: as MESMAS regras das operações (`renova`, `podeManter`) — a tela
+  // nunca mostra um botão que o servidor vai recusar.
+  const comum = { plano: detalhes.plano, preco: detalhes.preco, cartao: detalhes.cartao, aceitaCartao: aceitaCartaoNovo(detalhes), podeParar: renova(detalhes), podeManter: podeManter(detalhes) };
   if (detalhes.status === "past_due") return { situacao: SituacaoDoFaturamento.ATRASADA, ...comum, proximaCobranca: null, acessoAte: null };
   if (renova(detalhes)) {
     const em = iso(detalhes.fimDoPeriodo);
     return { situacao: SituacaoDoFaturamento.ATIVA, ...comum, proximaCobranca: proxima && em ? { ...proxima, em } : null, acessoAte: null };
   }
-  return { situacao: SituacaoDoFaturamento.VAI_CANCELAR, ...comum, proximaCobranca: null, acessoAte: iso(detalhes.acabaEm ?? detalhes.pagoAte) };
+  return { situacao: SituacaoDoFaturamento.VAI_CANCELAR, ...comum, proximaCobranca: null, acessoAte: iso(ateQuandoHaAcesso(detalhes)) };
+}
+
+/** Até quando há acesso, para a assinatura que não renova: a data marcada para acabar, ou o fim do que está pago. */
+function ateQuandoHaAcesso(detalhes: DetalhesDaAssinatura): Date | null {
+  return detalhes.acabaEm ?? detalhes.pagoAte;
 }
 
 type LinhaDoEspelho = { stripeSubscriptionId: string; status: string; currentPeriodEnd: Date | null };
@@ -203,13 +222,13 @@ export async function aplicarCartaoNovo(userId: string): Promise<Troca> {
   if (!novo) return { resultado: "sem-cartao-novo" };
   const cartao = await definirCartao(detalhes.id, novo);
 
-  // O cartão que foi trocado sai da Stripe. Se não sair, a troca valeu do mesmo jeito: é aviso.
-  if (detalhes.cartaoId && detalhes.cartaoId !== novo) {
-    try {
-      await soltarCartao(detalhes.cartaoId);
-    } catch (erro) {
-      console.warn(`[stripe] trocar cartão: o cartão antigo da assinatura ${detalhes.id} continuou guardado: ${erro instanceof Error ? erro.message : String(erro)}`);
-    }
+  // TODOS os outros cartões do cliente saem da Stripe, depois de o novo estar no lugar (abertura
+  // do passo 7): o que era da assinatura, o confirmado e nunca aplicado, o padrão do cliente.
+  // Se algum não sair, a troca valeu do mesmo jeito: é aviso.
+  try {
+    await soltarOutrosCartoes(pedido.clienteId, novo);
+  } catch (erro) {
+    console.warn(`[stripe] trocar cartão: um cartão antigo do cliente da assinatura ${detalhes.id} continuou guardado: ${erro instanceof Error ? erro.message : String(erro)}`);
   }
 
   // A cobrança estava atrasada: o cartão novo paga a fatura em aberto agora, sem esperar a
@@ -231,4 +250,54 @@ export async function aplicarCartaoNovo(userId: string): Promise<Troca> {
   }
   console.info(`[stripe] trocar cartão: conta ${userId}, assinatura ${detalhes.id}${detalhes.faturaEmAbertoId && detalhes.status === "past_due" ? (pagou ? ", a fatura em aberto foi paga" : ", a fatura em aberto continua em aberto") : ""}`);
   return { resultado: "ok", cartao, pagou };
+}
+
+// ── PARAR A RENOVAÇÃO E VOLTAR ATRÁS (passo 7) ───────────────────────────────────────────────
+// "Cancelar" é PARAR A RENOVAÇÃO: a assinatura segue viva até o fim do período pago, o gate não
+// muda (ele lê status e data, nunca a marca de acabar — CLAUDE.md → Membership Gating) e ninguém
+// é deslogado. Voltar atrás tira a marca, sem cobrar nada. As duas: a Stripe e depois a sincronia,
+// com a trava da assinatura (`operarNaAssinatura`) — sem esperar por ela.
+// Repetir não faz mal: parar o que já está parado dá no mesmo (e só acrescenta o motivo, se veio
+// um); manter o que já renova não chama nada.
+
+/**
+ * `sem-assinatura`: nada a parar ou a manter (nenhuma com acesso, ou já encerrada de vez).
+ * `atrasada`: a cobrança está em aberto — o que cancelar faz ali é decisão do operador, pendente.
+ * `ocupada`: a assinatura está sendo acertada neste instante; nada foi feito — tentar de novo.
+ */
+type NaoFeita = { resultado: "sem-assinatura" } | { resultado: "desconhecida" } | { resultado: "atrasada" } | { resultado: "ocupada" };
+
+export type Parada = ({ resultado: "ok" } & RenovacaoParada) | NaoFeita;
+
+/** Para a renovação da assinatura DESTA conta, com o motivo (opcional). O acesso continua até o fim do período pago. */
+export async function pararMinhaRenovacao(userId: string, dado: MotivoDado): Promise<Parada> {
+  const achada = await assinaturaDaConta(userId);
+  if (achada.resultado === "desconhecida") return achada;
+  if (achada.resultado === "nenhuma") return { resultado: "sem-assinatura" };
+  const { detalhes } = achada;
+  if (detalhes.status === "past_due") return { resultado: "atrasada" };
+  // Só a que renova, ou a que já está parada e ainda pode voltar atrás (repetir não faz mal).
+  if (!renova(detalhes) && !podeManter(detalhes)) return { resultado: "sem-assinatura" };
+  const operacao = await operarNaAssinatura(detalhes.id, () => pararRenovacao(detalhes.id, dado));
+  if (!operacao) return { resultado: "ocupada" };
+  // O motivo é da lista; o comentário é texto livre da pessoa e nunca vem para o registro.
+  console.info(`[stripe] parar a renovação: conta ${userId}, assinatura ${detalhes.id}, motivo ${dado.motivo ?? "não dito"}`);
+  return { resultado: "ok", acessoAte: iso(ateQuandoHaAcesso(operacao.feito)) };
+}
+
+export type Mantida = { resultado: "ok" } | NaoFeita;
+
+/** Volta atrás: a assinatura DESTA conta, com a renovação parada, torna a renovar. Nada é cobrado. */
+export async function manterMinhaAssinatura(userId: string): Promise<Mantida> {
+  const achada = await assinaturaDaConta(userId);
+  if (achada.resultado === "desconhecida") return achada;
+  if (achada.resultado === "nenhuma") return { resultado: "sem-assinatura" };
+  const { detalhes } = achada;
+  // Já renova: não há o que desfazer (o segundo clique, ou a segunda aba).
+  if (renova(detalhes)) return { resultado: "ok" };
+  if (!podeManter(detalhes)) return { resultado: "sem-assinatura" };
+  const operacao = await operarNaAssinatura(detalhes.id, () => retomarRenovacao(detalhes.id, detalhes.acabaNoFimDoPeriodo));
+  if (!operacao) return { resultado: "ocupada" };
+  console.info(`[stripe] manter a assinatura: conta ${userId}, assinatura ${detalhes.id}`);
+  return { resultado: "ok" };
 }

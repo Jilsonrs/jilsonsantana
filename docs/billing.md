@@ -569,6 +569,29 @@ Stripe guardou o cartão de teste e o resumo passou a mostrá-lo:
   operação aceita pelo mesmo critério. A assinatura encerrada de vez, ainda com dias pagos, não
   aceita: não cobra mais nada.
 
+- **Parar a renovação e voltar atrás** (sessão b, passo 7). "Cancelar" é MARCAR a assinatura
+  para acabar no fim do período pago — ela segue viva, o gate não muda e ninguém é deslogado;
+  voltar atrás tira a marca, sem cobrar. O pedido de cancelar leva só o motivo e o comentário, os
+  dois opcionais; o de manter, nada. **O motivo fica na Stripe**, em cada assinatura: a lista de
+  motivos dela é fixa, então vai o par mais próximo no campo dela ("Já aprendi o que precisava"
+  não tem par: vai como "outro") e o motivo exato da escola em `metadata.motivo`. O comentário é
+  texto livre do aluno e nunca vai para o registro. Voltar atrás apaga o motivo.
+- **Toda operação que MUDA a assinatura passa por `operarNaAssinatura`** (`assinaturas.ts`): a
+  Stripe e depois a sincronia de sempre, com a trava da assinatura — o aviso que a mudança
+  dispara espera a trava e já encontra o espelho gravado. **Não espera a trava:** com a
+  assinatura ocupada, responde 409 sem ter ido à Stripe. Se a Stripe mudou e a sincronia falhou,
+  a operação valeu: é aviso, e o aviso da Stripe acerta o espelho.
+- **Trocar o cartão tira da Stripe TODOS os outros cartões do cliente** (sessão b): o que era da
+  assinatura, o confirmado e nunca aplicado, e o padrão do cliente — depois de o novo estar no
+  lugar. Se algum não sair, é aviso: a troca valeu.
+
+`[FATO — medido na área restrita, 11/10/2026, com dois clientes descartáveis]` Parar a renovação
+deixa a assinatura `active`, com a data de fim igual ao fim do período, e guarda o motivo, o
+comentário e o `metadata.motivo` · parar de novo sem motivo mantém o de antes · voltar atrás com
+os campos vazios apaga os três · a data avulsa de fim (posta pelo painel) se desfaz com `cancel_at`
+vazio, e mandar as duas marcas juntas a Stripe recusa · tirar os outros cartões limpa também o
+cartão padrão do cliente, e a assinatura segue `active` com o novo.
+
 `[FATO — tipos da `stripe@23.0.0` e medido na área restrita, 11/10/2026]` No pedido de guardar
 cartão, a lista de formas de pagamento é **`allowed_payment_method_types`** — o nome antigo
 (`payment_method_types`) não existe mais nesta versão da API. A Stripe aceitou o pedido assim e
@@ -589,7 +612,10 @@ encerrada de vez com dias pagos: tem acesso e o servidor recusa cartão.
   "Não foi possível carregar a sua assinatura": a Stripe não conhece aquela assinatura. Para ver a
   tela no computador, a conta precisa assinar pela tela de assinar, com o cartão de teste.
 - **Os botões de mudar de plano, de cancelar e de "Manter a assinatura" chegam na sessão (b)**,
-  junto com a tela de cada um: até lá o resumo mostra a situação, sem a ação.
+  junto com a tela de cada um: até lá o resumo mostra a situação, sem a ação. *(11/10/2026: o
+  servidor já para a renovação e volta atrás; as telas esperam os textos — pendência P66.)*
+- **Com a cobrança atrasada, cancelar responde "não dá"** e nada muda: não há período pago a
+  manter, e o que cancelar faz ali é decisão do operador (pendência P67).
 - **Fechar a aba depois de o campo confirmar e antes do último passo:** o cartão fica guardado no
   cliente e não vai para a assinatura; a pessoa repete a troca.
 - **A Stripe já encerrou a assinatura e o espelho ainda não soube:** o resumo diz "terminou" e
@@ -602,9 +628,6 @@ encerrada de vez com dias pagos: tem acesso e o servidor recusa cartão.
   confirmação — as tentativas seguintes da Stripe tendem a parar no mesmo ponto. Fica registrado,
   com a conta e a assinatura. *Completar na tela vem com a troca de plano (sessão b, passos 10 e
   11), que precisa do mesmo mecanismo; o texto é do operador.*
-- **Só o cartão que era da assinatura sai da Stripe.** O cartão confirmado e não aplicado (aba
-  fechada, segunda aba) e o padrão do cliente continuam guardados. *Sessão (b), abertura do
-  passo 7: tirar todos menos o novo.*
 
 ## Pendências de verificação
 

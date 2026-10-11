@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { PLANOS } from "../constants/billing.js";
+import { MOTIVOS_DE_CANCELAMENTO, PLANOS, TAMANHO_DO_COMENTARIO } from "../constants/billing.js";
 
 /**
  * Corpo de `POST /api/billing/previa` — quanto fica a assinatura com um código promocional
@@ -22,6 +22,18 @@ export const assinarSchema = z.object({
   codigo: z.string().trim().min(1).max(64).optional(),
 });
 export type AssinarInput = z.infer<typeof assinarSchema>;
+
+/**
+ * Corpo de `POST /api/billing/minha-assinatura/cancelar` — parar a renovação (Fase 4, etapa 4.6).
+ * Só o MOTIVO, e ele é opcional (decisão do operador, 11/10/2026): o botão de cancelar funciona
+ * sem nada. O pedido NÃO diz qual assinatura — é a da conta da sessão. O comentário é aparado nas
+ * pontas; vazio é o mesmo que não mandar.
+ */
+export const cancelarSchema = z.object({
+  motivo: z.enum(MOTIVOS_DE_CANCELAMENTO).optional(),
+  comentario: z.string().trim().max(TAMANHO_DO_COMENTARIO).optional(),
+});
+export type CancelarInput = z.infer<typeof cancelarSchema>;
 
 /**
  * Corpo de `POST /api/admin/assinaturas/sincronizar` — o admin força a sincronia de UMA conta com

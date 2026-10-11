@@ -10,7 +10,7 @@ const buscarDetalhes = vi.fn<(id: string) => Promise<DetalhesDaAssinatura>>();
 const criarPedidoDeCartao = vi.fn<(pedido: PedidoDeCartao) => Promise<string>>();
 const buscarCartaoConfirmado = vi.fn<(pedido: PedidoDeCartao) => Promise<string | null>>();
 const definirCartao = vi.fn<(assinaturaId: string, formaId: string) => Promise<CartaoDaAssinatura | null>>();
-const soltarCartao = vi.fn<(formaId: string) => Promise<void>>();
+const soltarOutrosCartoes = vi.fn<(clienteId: string, manter: string) => Promise<number>>();
 const pagarFatura = vi.fn<(faturaId: string) => Promise<CobrancaDaFatura>>();
 vi.mock("../lib/stripe-assinatura.js", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../lib/stripe-assinatura.js")>()),
@@ -18,7 +18,7 @@ vi.mock("../lib/stripe-assinatura.js", async (importOriginal) => ({
   criarPedidoDeCartao: (pedido: PedidoDeCartao) => criarPedidoDeCartao(pedido),
   buscarCartaoConfirmado: (pedido: PedidoDeCartao) => buscarCartaoConfirmado(pedido),
   definirCartao: (assinaturaId: string, formaId: string) => definirCartao(assinaturaId, formaId),
-  soltarCartao: (formaId: string) => soltarCartao(formaId),
+  soltarOutrosCartoes: (clienteId: string, manter: string) => soltarOutrosCartoes(clienteId, manter),
   pagarFatura: (faturaId: string) => pagarFatura(faturaId),
 }));
 // A busca que a SINCRONIA faz na Stripe, depois de o cartão novo pagar a fatura em aberto.
@@ -85,13 +85,13 @@ beforeEach(async () => {
   naStripe = {};
   buscarDetalhes.mockReset().mockImplementation(async (id) => {
     if (id !== SUB) throw new AssinaturaNaoEncontrada(id);
-    return { id, status: "active", pagoAte: EM_30_DIAS, plano: "mensal", preco: { centavos: 9990, moeda: "brl" }, fimDoPeriodo: EM_30_DIAS, acabaEm: null, cartao: { bandeira: "visa", final: "4242", mes: 12, ano: 2028 }, clienteId: CLIENTE, userId: memberId, cartaoId: "pm_antigo", faturaEmAbertoId: null, ...detalhes };
+    return { id, status: "active", pagoAte: EM_30_DIAS, plano: "mensal", preco: { centavos: 9990, moeda: "brl" }, fimDoPeriodo: EM_30_DIAS, acabaEm: null, acabaNoFimDoPeriodo: false, cartao: { bandeira: "visa", final: "4242", mes: 12, ano: 2028 }, clienteId: CLIENTE, userId: memberId, faturaEmAbertoId: null, ...detalhes };
   });
   buscarAssinatura.mockReset().mockImplementation(async (id) => ({ id, status: "active", pagoAte: EM_30_DIAS, clienteId: CLIENTE, userId: memberId, livemode: false, ...naStripe }));
   criarPedidoDeCartao.mockReset().mockResolvedValue("seti_segredo_do_teste");
   buscarCartaoConfirmado.mockReset().mockResolvedValue("pm_novo");
   definirCartao.mockReset().mockResolvedValue(MASTER);
-  soltarCartao.mockReset().mockResolvedValue(undefined);
+  soltarOutrosCartoes.mockReset().mockResolvedValue(1);
   pagarFatura.mockReset().mockResolvedValue("paga");
 });
 
@@ -107,7 +107,7 @@ afterAll(async () => {
 });
 
 const nadaFoiASStripe = () => {
-  for (const dublê of [buscarDetalhes, criarPedidoDeCartao, buscarCartaoConfirmado, definirCartao, soltarCartao, pagarFatura, buscarAssinatura]) expect(dublê).not.toHaveBeenCalled();
+  for (const dublê of [buscarDetalhes, criarPedidoDeCartao, buscarCartaoConfirmado, definirCartao, soltarOutrosCartoes, pagarFatura, buscarAssinatura]) expect(dublê).not.toHaveBeenCalled();
 };
 
 describe("trocar o cartão — quem entra", () => {
@@ -212,7 +212,7 @@ describe("POST /api/billing/cartao/aplicar — o cartão novo vai para a assinat
     const res = await aplicar(member);
     expect([res.status, res.body]).toEqual([409, { error: "CartaoNaoConfirmado" }]);
     expect(definirCartao).not.toHaveBeenCalled();
-    expect(soltarCartao).not.toHaveBeenCalled();
+    expect(soltarOutrosCartoes).not.toHaveBeenCalled();
     expect(pagarFatura).not.toHaveBeenCalled();
   });
 
@@ -226,24 +226,31 @@ describe("POST /api/billing/cartao/aplicar — o cartão novo vai para a assinat
     expect(definirCartao).not.toHaveBeenCalled();
   });
 
-  it("o cartão antigo sai da Stripe — depois de o novo estar na assinatura", async () => {
+  // TODOS os outros cartões do cliente saem (abertura do passo 7): quem diz quais é a Stripe,
+  // em `soltarOutrosCartoes` (teste em `stripe-assinatura-rede.test.ts`). Aqui: de QUEM, qual
+  // FICA, e que só acontece depois de o novo estar na assinatura.
+  it("os outros cartões do cliente DESTA assinatura saem da Stripe, menos o novo — depois de ele estar na assinatura", async () => {
     await aplicar(member);
-    expect(soltarCartao.mock.calls).toEqual([["pm_antigo"]]);
-    expect(definirCartao.mock.invocationCallOrder[0]).toBeLessThan(soltarCartao.mock.invocationCallOrder[0] ?? 0);
+    expect(soltarOutrosCartoes.mock.calls).toEqual([[CLIENTE, "pm_novo"]]);
+    expect(definirCartao.mock.invocationCallOrder[0]).toBeLessThan(soltarOutrosCartoes.mock.invocationCallOrder[0] ?? 0);
   });
 
-  it("aplicar de novo o MESMO cartão não o tira; assinatura que cobrava o cartão padrão do cliente não tira nenhum", async () => {
-    detalhes = { cartaoId: "pm_novo" };
-    expect((await aplicar(member)).status).toBe(200);
-    detalhes = { cartaoId: null };
-    expect((await aplicar(member)).status).toBe(200);
-    expect(soltarCartao).not.toHaveBeenCalled();
+  it("aplicar de novo: o cartão que fica é sempre o que a Stripe confirmou, nunca outro", async () => {
+    await aplicar(member);
+    await aplicar(member);
+    expect(soltarOutrosCartoes.mock.calls).toEqual([[CLIENTE, "pm_novo"], [CLIENTE, "pm_novo"]]);
   });
 
-  it("o cartão antigo não saiu (a Stripe falhou): a troca valeu do mesmo jeito", async () => {
-    soltarCartao.mockRejectedValue(new Error("[stripe] a remoção do cartão antigo falhou: StripeAPIError"));
-    const res = await aplicar(member);
-    expect([res.status, res.body]).toEqual([200, { cartao: MASTER, pagou: false }]);
+  it("um cartão antigo não saiu (a Stripe falhou): a troca valeu do mesmo jeito, e fica o aviso", async () => {
+    soltarOutrosCartoes.mockRejectedValue(new Error("[stripe] a remoção de um cartão antigo falhou: StripeAPIError"));
+    const aviso = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      const res = await aplicar(member);
+      expect([res.status, res.body]).toEqual([200, { cartao: MASTER, pagou: false }]);
+      expect(aviso.mock.calls.flat().join(" ")).toContain(`um cartão antigo do cliente da assinatura ${SUB} continuou guardado`);
+    } finally {
+      aviso.mockRestore();
+    }
   });
 
   it("a Stripe não conhece a assinatura que dá acesso: 404 nos dois pedidos, sem procurar cartão — e fica registrado", async () => {
@@ -268,7 +275,7 @@ describe("POST /api/billing/cartao/aplicar — o cartão novo vai para a assinat
       expect((await aplicar(member)).status).toBe(404);
       expect(criarPedidoDeCartao).not.toHaveBeenCalled();
       expect(definirCartao).not.toHaveBeenCalled();
-      expect(soltarCartao).not.toHaveBeenCalled();
+      expect(soltarOutrosCartoes).not.toHaveBeenCalled();
     } finally {
       erro.mockRestore();
     }
@@ -278,7 +285,7 @@ describe("POST /api/billing/cartao/aplicar — o cartão novo vai para a assinat
     definirCartao.mockRejectedValue(new Error("[stripe] a troca do cartão da assinatura falhou: StripeConnectionError"));
     const res = await aplicar(member);
     expect([res.status, res.body]).toEqual([500, { error: "ErroInterno" }]);
-    expect(soltarCartao).not.toHaveBeenCalled();
+    expect(soltarOutrosCartoes).not.toHaveBeenCalled();
     expect(pagarFatura).not.toHaveBeenCalled();
   });
 });

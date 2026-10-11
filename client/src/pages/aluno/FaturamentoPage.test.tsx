@@ -32,6 +32,8 @@ const ATIVA: MinhaAssinatura = {
   acessoAte: null,
   cartao: VISA,
   aceitaCartao: true,
+  podeParar: true,
+  podeManter: false,
 };
 
 const abrir = (ui = <FaturamentoPage />) =>

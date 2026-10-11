@@ -16,13 +16,18 @@
 > 5. **Item novo ganha o próximo número livre.** Número nunca se reutiliza, para que "P7" queira
 >    dizer sempre a mesma coisa em qualquer conversa.
 >
-> **Próximo número livre: P66** · Atualizada em 11/10/2026
+> **Próximo número livre: P69** · Atualizada em 11/10/2026
 
 ## A. Agora, em sequência *(nascidas da configuração do Bunny, 25/09/2026)*
 
-*Vazia desde 07/10/2026: a P51, a P52 e a P53 (o script da legenda lembrada, refeito para o player
-novo do Bunny) foram resolvidas — registro em `bunny.md`. Item novo que precise de resposta rápida
-entra aqui, com o próximo número livre.*
+*As três abaixo nasceram na abertura da sessão (b) da etapa 4.6 (11/10/2026). Item novo que
+precise de resposta rápida entra aqui, com o próximo número livre.*
+
+| # | O que falta | Onde registrar |
+|---|---|---|
+| P66 | **Aprovar os textos da sessão (b) da etapa 4.6**, em português e inglês, mostrados a você no chat em 11/10/2026: a tela de **mudar de plano**, a de **cancelar** (com os cinco motivos em inglês) e o que a tela diz **quando o banco pede confirmação**. As duas telas só são construídas depois da sua aprovação. Junto: o motivo "Já aprendi o que precisava" não existe na lista fixa da Stripe — no painel dela aparece como "Outro", e o motivo exato fica guardado junto da assinatura (é o que o painel da escola vai contar); diga se prefere outro encaixe | `core/src/i18n/pt.ts` e `en.ts` (`app.faturamento.*`) e `billing.md` → *Minha assinatura* |
+| P67 | **Cancelar com a cobrança atrasada: o que acontece?** Nesse caso não há período pago a manter. Recomendação do agente: a assinatura termina na hora, a cobrança em aberto não é mais tentada, e a pessoa continua logada para ler a confirmação (como no reembolso). A alternativa é a regra geral: perdeu o acesso, é deslogada, e não lê a confirmação. Hoje o servidor responde "não dá" e nada muda | `billing.md` → *Minha assinatura*, e o plano → etapa 4.6 |
+| P68 | **A sessão que acaba sem o "Sair"** (achado do agente, 11/10/2026): "Sair" já limpa o que as telas guardaram, mas a sessão que o servidor derruba, ou que vence, não passa por ele. Se outra conta entrar na mesma aba em até 5 minutos, sem recarregar a página, as telas mostram por instantes o que era da conta anterior (o progresso, as trilhas, as notificações; a de faturamento, não). Quer que a limpeza aconteça também ao **entrar**? | `billing.md` → *Minha assinatura* |
 
 ## B. Conteúdo e cadastro *(tarefas suas, sem ordem fixa)*
 

@@ -56,6 +56,8 @@ const ATIVA: MinhaAssinatura = {
   acessoAte: null,
   cartao: VISA,
   aceitaCartao: true,
+  podeParar: true,
+  podeManter: false,
 };
 const PLANOS: PlanosDaAssinatura = {
   chavePublicavel: "pk_test_da_tela",

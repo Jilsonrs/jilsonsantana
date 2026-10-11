@@ -4329,6 +4329,39 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
         `Invoice.confirmation_secret`, e a lista FIXA de motivos da Stripe (oito valores; "Já
         aprendi o que precisava" não tem par — vai como "outro", com o motivo exato guardado
         junto da assinatura).
+      - **Passo 7 — FEITO (11/10/2026): parar a renovação e voltar atrás, com o motivo.**
+        `POST /api/billing/minha-assinatura/cancelar` (o corpo leva só o motivo e o "Quer contar
+        mais?", os dois opcionais — sem corpo também funciona) marca a assinatura da conta para
+        acabar no fim do período pago e responde até quando há acesso;
+        `POST …/minha-assinatura/manter` (sem corpo) tira a marca, sem cobrar nada. Quem parou
+        continua com acesso e logado: a assinatura segue viva na Stripe, e o gate lê status e
+        data. **O motivo fica na Stripe:** o par mais próximo na lista fixa dela e o motivo exato
+        da escola junto da assinatura (`metadata.motivo`), que é o que o painel (4.7b) vai contar;
+        o comentário nunca vai para o registro. Voltar atrás apaga o motivo. **Toda operação que
+        muda a assinatura passa por `operarNaAssinatura`** (`assinaturas.ts`): a Stripe e depois
+        a sincronia de sempre, com a trava da assinatura e **sem esperar por ela** — ocupada,
+        responde 409 sem ter ido à Stripe; se a Stripe mudou e a sincronia falhou, a operação
+        valeu (é aviso; o aviso da Stripe acerta o espelho). A tela passa a receber `podeParar` e
+        `podeManter`, pelas mesmas regras das operações. **Com a cobrança atrasada, cancelar
+        responde 409** (`CobrancaAtrasada`) e nada muda: o que cancelar faz ali é decisão do
+        operador (pendência P67). **Na abertura do passo:** trocar o cartão passou a tirar da
+        Stripe TODOS os cartões do cliente menos o novo (o da assinatura, o confirmado e nunca
+        aplicado, o padrão do cliente), depois de o novo estar no lugar; se algum não sair, é
+        aviso. **Testes:** 28 de rota + 9 com a biblioteca da Stripe trocada por dublê + 6
+        unitários novos (e os da troca de cartão refeitos). **Mutação:** 13 de 13 reprovaram —
+        parar encerrando na hora, a assinatura ocupada operada assim mesmo, o espelho acertado
+        antes de a Stripe mudar, a sincronia que falha virando erro, cancelar com a cobrança
+        atrasada, a encerrada de vez sendo parada e voltando atrás, manter mexendo em quem já
+        renova, o comentário no registro, "Manter" oferecido à encerrada, o cartão novo sendo
+        tirado, os antigos saindo antes de o novo entrar, o motivo ficando em quem voltou atrás.
+        `[FATO — medido na área restrita, 11/10/2026, com dois clientes descartáveis, já
+        apagados]` parar deixa a assinatura `active` com a data de fim igual ao fim do período,
+        e guarda o motivo, o comentário e o `metadata.motivo` · parar de novo sem motivo mantém o
+        motivo de antes · voltar atrás com os campos vazios apaga os três · a data avulsa de fim
+        se desfaz com `cancel_at` vazio, e mandar as duas marcas juntas a Stripe recusa · tirar
+        os outros cartões limpa também o padrão do cliente, e a assinatura segue `active` com o
+        novo. Gates: typecheck, lint, suíte do site (852) e de servidor como o CI (861), build.
+        *(A Stripe CLI pede confirmação para apagar: sem `--confirm` o comando fica esperando.)*
       **ONDE PAROU:** SESSÃO (a) FECHADA e **PUBLICADA em 11/10/2026 (`main` = `6305077`)**, com
       a autorização do operador (*"pode publicar depois desses ajustes"*): CI verde nos dois jobs
       no `dev` e na `main`, e conferido no ar como visitante — as rotas novas respondem 401 sem
@@ -4336,11 +4369,14 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       mostra a assinatura de verdade (a do código de 100%); em "Adicionar cartão" a frase da
       Stripe traz o nome público da conta de verdade (P58) — só olhar: salvar ali guarda um
       cartão de verdade.
-      **SESSÃO (b) — ABERTA em 11/10/2026.** Feito: o item 0 ("Sair"), a consulta à Stripe e os
-      textos mostrados a ele (aguardam aprovação). **Próximo: o passo 7** — parar a renovação e
-      desfazer, com o motivo; na abertura dele, tirar da Stripe todos os cartões menos o novo.
-      Depois, os passos 8 a 13. Nada desta sessão está publicado. A sessão (c) começa pela
-      pendência P64.
+      **SESSÃO (b) — ABERTA em 11/10/2026.** Feito: o item 0 ("Sair"), a consulta à Stripe, os
+      textos mostrados a ele (aguardam aprovação — pendência P66) e o **passo 7**. **Próximo: o
+      passo 8** — o reembolso (a operação, o período devolvido deixando de contar, a pessoa
+      continuando logada e o aviso de dinheiro devolvido); antes de escrever, medir na área
+      restrita como se lê a devolução (fatura → pagamento → cobrança devolvida). Depois, os
+      passos 9 a 13 — o 9 e o 11 (as telas) só com os textos aprovados. **Quando ele responder
+      a P67** (cancelar com a cobrança atrasada), a resposta entra na operação de parar.
+      Nada desta sessão está publicado. A sessão (c) começa pela pendência P64.
 - [ ] **4.7 — O visitante assina: a conta nasce no pagamento (código, ALTO RISCO).** O checkout
       público: e-mail + pagamento → o webhook cria a conta (o cadastro continua fechado) e manda o
       e-mail de "crie sua senha". **Depende do Resend configurado e da P49** (o remetente). Junto:

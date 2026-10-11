@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import type Stripe from "stripe";
-import { escolherCartaoConfirmado, paraCartao, paraDetalhesDaAssinatura, paraPedidoDeCartao } from "./stripe-assinatura.js";
+import { escolherCartaoConfirmado, paraCartao, paraDetalhesDaAssinatura, paraMotivoNaStripe, paraPedidoDeCartao, paraPedidoDeManter, paraPedidoDeParar } from "./stripe-assinatura.js";
 import { planoDoPreco } from "./stripe.js";
 
 // A ASSINATURA DA STRIPE NO FORMATO DA TELA (Fase 4, etapa 4.6) — funções puras, teste unitário
@@ -138,15 +138,9 @@ describe("o cartão que a tela mostra", () => {
 // TROCAR O CARTÃO (passo 4). O que protege: o cartão novo só vai para a assinatura de quem o
 // confirmou. Quem escolhe é o servidor, lendo os pedidos de guardar cartão na Stripe.
 describe("o que o servidor guarda da assinatura para trocar o cartão", () => {
-  it("o cliente que a assinatura cobra e o cartão que é DELA", () => {
-    const detalhes = paraDetalhesDaAssinatura(assinatura());
-    expect([detalhes.clienteId, detalhes.cartaoId]).toEqual(["cus_1", "pm_visa"]);
-    expect(paraDetalhesDaAssinatura(assinatura({ cartao: "pm_so_o_id" })).cartaoId).toBe("pm_so_o_id");
-  });
-
-  it("assinatura que cobra o cartão padrão do cliente: não tem cartão DELA para tirar depois", () => {
-    const cliente = { id: "cus_1", metadata: {}, invoice_settings: { default_payment_method: MASTER } };
-    expect(paraDetalhesDaAssinatura(assinatura({ cartao: null, cliente })).cartaoId).toBeNull();
+  it("o cliente que a assinatura cobra — é dele o cartão novo, e são dele os antigos que saem", () => {
+    expect(paraDetalhesDaAssinatura(assinatura()).clienteId).toBe("cus_1");
+    expect(paraDetalhesDaAssinatura(assinatura({ cliente: "cus_so_o_id" })).clienteId).toBe("cus_so_o_id");
   });
 
   it("a fatura em aberto: só a que está aberta — paga, anulada, sem expandir ou ausente, nenhuma", () => {
@@ -220,5 +214,52 @@ describe("qual cartão confirmado vale para este pedido", () => {
   it("deu certo mas veio sem cartão, ou a lista veio vazia: nenhum", () => {
     expect(escolher([guardado({ forma: null })])).toBeNull();
     expect(escolher([])).toBeNull();
+  });
+});
+
+// PARAR A RENOVAÇÃO E VOLTAR ATRÁS (passo 7). O que protege: parar NUNCA encerra na hora (tiraria
+// o acesso de quem já pagou o período); o motivo que fica na Stripe é o que a pessoa disse; e
+// voltar atrás desfaz a marca que existe, sem deixar motivo de cancelamento em quem ficou.
+describe("como a assinatura foi marcada para acabar", () => {
+  it("no fim do período (a tela de cancelar) ou numa data avulsa (o painel da Stripe): diz como se desfaz", () => {
+    expect(paraDetalhesDaAssinatura(assinatura({ acabaNoFim: true, acabaEm: fim })).acabaNoFimDoPeriodo).toBe(true);
+    expect(paraDetalhesDaAssinatura(assinatura({ acabaEm: fim + DIA })).acabaNoFimDoPeriodo).toBe(false);
+    expect(paraDetalhesDaAssinatura(assinatura()).acabaNoFimDoPeriodo).toBe(false);
+  });
+});
+
+describe("o pedido de parar a renovação", () => {
+  it("marca para acabar no FIM DO PERÍODO — sem motivo, vai só a marca", () => {
+    expect(paraPedidoDeParar({})).toEqual({ cancel_at_period_end: true });
+    // Comentário só de espaços é o mesmo que nenhum.
+    expect(paraPedidoDeParar({ comentario: "   " })).toEqual({ cancel_at_period_end: true });
+  });
+
+  it("cada motivo da escola vai com o par dele na lista da Stripe, e o motivo EXATO fica junto da assinatura", () => {
+    const pares = (["caro", "sem-tempo", "ja-aprendi", "sem-conteudo", "outro"] as const).map((motivo) => {
+      const pedido = paraPedidoDeParar({ motivo });
+      return [pedido.cancellation_details?.feedback, pedido.metadata];
+    });
+    expect(pares).toEqual([
+      ["too_expensive", { motivo: "caro" }],
+      ["unused", { motivo: "sem-tempo" }],
+      ["other", { motivo: "ja-aprendi" }],
+      ["missing_features", { motivo: "sem-conteudo" }],
+      ["other", { motivo: "outro" }],
+    ]);
+  });
+
+  it("o comentário vai aparado; só o comentário, sem motivo, também vale — e não inventa motivo", () => {
+    expect(paraMotivoNaStripe({ comentario: "  volto em janeiro  " })).toEqual({ cancellation_details: { comment: "volto em janeiro" } });
+    expect(paraMotivoNaStripe({ motivo: "caro", comentario: "volto em janeiro" })).toEqual({ cancellation_details: { feedback: "too_expensive", comment: "volto em janeiro" }, metadata: { motivo: "caro" } });
+    expect(paraMotivoNaStripe({})).toEqual({});
+  });
+});
+
+describe("o pedido de voltar atrás", () => {
+  it("desfaz a marca que existe — a do fim do período OU a data avulsa, nunca as duas — e apaga o motivo", () => {
+    const apagado = { cancellation_details: { feedback: "", comment: "" }, metadata: { motivo: "" } };
+    expect(paraPedidoDeManter(true)).toEqual({ cancel_at_period_end: false, ...apagado });
+    expect(paraPedidoDeManter(false)).toEqual({ cancel_at: "", ...apagado });
   });
 });

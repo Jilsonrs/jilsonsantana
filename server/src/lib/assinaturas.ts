@@ -149,6 +149,38 @@ export async function sincronizarSeLivre(assinaturaId: string): Promise<Sincroni
   }
 }
 
+/** O que a operação fez na Stripe. `sincronia` vazia: a Stripe mudou, e o espelho ficou para o aviso dela. */
+export type Operacao<T> = { feito: T; sincronia: Sincronia | null };
+
+/**
+ * UMA OPERAÇÃO DO DONO SOBRE A ASSINATURA (etapa 4.6, sessão b — parar a renovação, voltar atrás,
+ * devolver o dinheiro, mudar de plano): a mudança na Stripe e, em seguida, a sincronia de sempre —
+ * as duas COM A TRAVA desta assinatura. O aviso que a própria mudança dispara espera a trava e já
+ * encontra o espelho gravado; nada grava o espelho à mão.
+ * NÃO ESPERA a trava (como `sincronizarSeLivre`, e pelo mesmo motivo): se a assinatura está
+ * ocupada, devolve nada na hora, SEM ter ido à Stripe — quem pediu tenta de novo.
+ * Se a Stripe mudou e a sincronia falhou, a operação VALEU: devolve-a sem a sincronia (é aviso no
+ * registro; o aviso da Stripe acerta o espelho). Se a própria mudança falhou, sobe.
+ */
+export async function operarNaAssinatura<T>(assinaturaId: string, naStripe: () => Promise<T>): Promise<Operacao<T> | null> {
+  const feita: { valor?: T; foi: boolean } = { foi: false };
+  try {
+    return await prisma.$transaction(async (tx): Promise<Operacao<T> | null> => {
+      const [trava] = await tx.$queryRaw<{ livre: boolean }[]>`SELECT pg_try_advisory_xact_lock(hashtext(${assinaturaId})) AS livre`;
+      if (!trava?.livre) return null;
+      feita.valor = await naStripe();
+      feita.foi = true;
+      return { feito: feita.valor, sincronia: await sincronizar(tx, assinaturaId) };
+    }, TEMPO_DA_TRANSACAO);
+  } catch (erro) {
+    const motivo = erro instanceof Error ? erro.message : String(erro);
+    if (!feita.foi) throw new Error(`[stripe] a operação na assinatura ${assinaturaId} falhou: ${motivo}`, { cause: erro });
+    console.warn(`[stripe] a operação na assinatura ${assinaturaId} valeu na Stripe, e a sincronia ficou para o aviso: ${motivo}`);
+    // `as T`: `foi` só é sim depois de `valor` receber o que a operação devolveu.
+    return { feito: feita.valor as T, sincronia: null };
+  }
+}
+
 /** O que a sincronia de uma conta encontrou em CADA assinatura dela. */
 export type Conferida = { id: string } & (Sincronia | { resultado: "nao-encontrada" });
 
