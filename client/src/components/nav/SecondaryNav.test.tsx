@@ -138,3 +138,29 @@ describe("SecondaryNav — Meus estudos", () => {
     expect(screen.getByRole("link", { name: "Em andamento" }).getAttribute("aria-current")).toBe("page");
   });
 });
+
+// UM ITEM ACESO POR VEZ (visto pelo operador, 11/10/2026): "Seus dados" mora em `/aluno/conta`,
+// o começo do endereço de todos os irmãos, e ficava aceso junto com o item da tela aberta.
+describe("SecondaryNav — um item aceso por vez", () => {
+  const acesos = () => screen.getAllByRole("link").filter((l) => l.getAttribute("aria-current") === "page").map((l) => l.textContent);
+
+  it("em Faturamento e Assinatura, só ele fica aceso — 'Seus dados' não", () => {
+    render("/aluno/conta/faturamento");
+    expect(acesos()).toEqual(["Faturamento e Assinatura"]);
+  });
+
+  it("numa tela de DENTRO dele (trocar o cartão), continua sendo ele o aceso", () => {
+    render("/aluno/conta/faturamento/cartao");
+    expect(acesos()).toEqual(["Faturamento e Assinatura"]);
+  });
+
+  it("em Minha conta, o aceso é 'Seus dados'", () => {
+    render("/aluno/conta");
+    expect(acesos()).toEqual(["Seus dados"]);
+  });
+
+  it("nas outras colunas nada muda: a sub-rota de um item continua acendendo o item", () => {
+    render("/aluno/notificacoes/12");
+    expect(acesos()).toEqual(["Notificações"]);
+  });
+});

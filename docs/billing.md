@@ -509,6 +509,24 @@ a assinatura "não paga" (P60). O relato completo está no plano, Fase 4 → eta
   subscription has ended.", para quando não há a data do fim (pendência P65). Os da sessão (b)
   são mostrados a ele na abertura dela.
 
+**Depois do teste dele no navegador (11/10/2026)** — as duas telas abriram, o campo de verdade da
+Stripe guardou o cartão de teste e o resumo passou a mostrá-lo:
+- **A frase de autorização embaixo do campo do cartão fica a da STRIPE** (entre isso, esconder e
+  escrever a nossa, e deixar para os termos de uso). É o próprio campo que a escreve quando um
+  cartão é guardado para cobranças futuras — aparece também na tela de assinar. O nome que ele viu,
+  "Área restrita de JILSON RODRIGUES DE SANTANA", é o da área de teste; no site entra o **nome
+  público da conta de verdade**, que ele confere no painel da Stripe (pendência P58). `[FATO —
+  tipos de `@stripe/stripe-js@10.0.0`]` a frase se esconde com `terms: { card: "never" }`; sem
+  ela, dizer ao aluno que o cartão será cobrado nas renovações passa a ser da escola. *Reabre se
+  o nome público certo ainda deixar a frase estranha, ou quando os termos de uso forem escritos
+  (P61).*
+- **Quem abre a tela com a assinatura já encerrada na Stripe é deslogado na hora: mantido** — é
+  a regra de quem perde o acesso. *Acompanha a regra de Access Architecture.*
+- **"Sair" vai passar a limpar o que as telas guardaram** (achado da revisão de segurança: outra
+  conta na mesma aba via, por instantes, dados da anterior). Entra na abertura da sessão (b).
+  *Sem gatilho: é correção.*
+- **A sessão (a) é publicada sozinha**, sem esperar a (b). *Decisão de uma vez só.*
+
 **Convenções de engenharia (como o código faz):**
 - **O site nunca diz QUAL assinatura, cliente ou cartão.** A conta é a da sessão; a assinatura é a
   que dá acesso a essa conta, achada no espelho; nenhum código da Stripe vem do navegador nem vai
@@ -589,11 +607,12 @@ encerrada de vez com dias pagos: tem acesso e o servidor recusa cartão.
 ## Pendências de verificação
 
 **Da etapa 4.6, sessão (a) (11/10/2026):** a leitura e a troca de cartão foram provadas na área
-restrita, pelo servidor (acima). *Não visto em navegador pelo agente* (entrar exige a senha do
-aluno): o resumo e, principalmente, **a tela de trocar o cartão com o campo de VERDADE da Stripe
-aberto para só guardar o cartão** — nos testes o campo é um dublê, e na etapa 4.2 foi exatamente
-aí que o campo não abria sem nenhum teste acusar. Fica para o operador, no computador, com uma
-conta que tenha assinado com o cartão de teste.
+restrita, pelo servidor (acima), e **no navegador, pelo operador, no mesmo dia**: como `member@`
+no computador, o resumo abriu ("Mensal · R$ 99,90/mês", "Próxima cobrança: R$ 0,00 em
+10/11/2026", "Nenhum cartão cadastrado."), o campo de VERDADE da Stripe abriu para só guardar o
+cartão, o `4242` foi salvo ("Cartão atualizado.") e o resumo passou a mostrar "Visa •••• 4242".
+*Não exercitado no navegador:* a cobrança atrasada paga pelo cartão novo (só na área restrita,
+com o relógio de teste) e as telas em inglês.
 **Da etapa 4.4 (10/10/2026):** a sincronia do checkout e a do admin foram
 provadas na área restrita (acima). *Não exercitado contra a Stripe, só com ela simulada e sessões
 de verdade:* a assinatura cancelada por falta de pagamento derrubando a sessão. **Na conta de VERDADE (etapa 4.3, 10/10/2026):** o operador assinou no site com um

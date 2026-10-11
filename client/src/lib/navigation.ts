@@ -377,6 +377,18 @@ export function itensSecundarios(pathname: string, secoes: Secao[]): ItemSecunda
   }));
 }
 
+/**
+ * Qual item do nível 2 a rota atual ACENDE — o endereço dele, ou nada. Um item fica aceso
+ * também nas sub-rotas dele (`…/faturamento/cartao` acende "Faturamento e Assinatura"), e o
+ * mais ESPECÍFICO vence, como em `secaoAtiva`: "Seus dados" mora em `/aluno/conta`, que é o
+ * começo do endereço de todos os irmãos, e ficava aceso junto com o item da tela aberta
+ * (visto pelo operador, 11/10/2026). Nunca dois itens acesos na mesma coluna.
+ */
+export function itemAceso(pathname: string, itens: ItemSecundario[]): string | null {
+  const candidatos = itens.filter((item) => pathname === item.to || pathname.startsWith(`${item.to}/`));
+  return candidatos.sort((a, b) => b.to.length - a.to.length)[0]?.to ?? null;
+}
+
 /** As abas do nível 3 para a rota atual — vazio quando não há abas. */
 export function abasDaRota(pathname: string, secoes: Secao[]): Aba[] {
   return secaoAtiva(pathname, secoes)?.abas ?? [];

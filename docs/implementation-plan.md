@@ -4293,10 +4293,27 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
         suíte de servidor como o CI (822) e do site (847), build. `CLAUDE.md` → *Membership
         Gating* (o pedido nunca diz qual assinatura; a sincronia que não espera) e `billing.md`
         (a seção *Minha assinatura*) reconciliados; pendência P65 (um texto rascunho).
-      **ONDE PAROU:** SESSÃO (a) FECHADA em 11/10/2026 — os 6 passos commitados no `dev`
-      (`f24cf29`, CI verde nos dois jobs), não publicada. **Antes de publicar, o operador abre a tela de trocar o cartão num navegador**
-      (o campo de verdade da Stripe). Próximo: a sessão (b), que começa mostrando a ele os
-      textos de mudar de plano e de cancelar; e a sessão (c), pela pendência P64.
+      - **O teste do operador no navegador (11/10/2026), e o que saiu dele.** Como `member@`, no
+        computador: o resumo abriu, **o campo de verdade da Stripe abriu para guardar o cartão**
+        (o ponto que faltava provar), o `4242` foi salvo e o resumo passou a mostrá-lo.
+        **Dois apontamentos dele:** (1) *"Seus dados continua realçado"* → **corrigido**: na
+        coluna do nível 2 fica um item aceso por vez, o mais específico (`itemAceso`, em
+        `lib/navigation.ts`; 4 testes, e a mutação reprova) — os itens da coluna da conta
+        ganharam `aria-current` · (2) a frase de autorização embaixo do campo → é da Stripe, e
+        **fica a dela** (decisão dele; `billing.md` → *Minha assinatura*); o nome estranho é o
+        da área de teste — no site entra o nome público da conta de verdade (P58).
+        **Decisões dele no mesmo dia:** publicar a sessão (a) sozinha · "Sair" passa a limpar o
+        que as telas guardaram (abertura da sessão b) · quem abre a tela com a assinatura já
+        encerrada é deslogado (mantido). O `GEMINI.md` do parceiro de design ganhou as duas
+        telas no mapa e o item 34 na fila de formatação.
+      **ONDE PAROU:** SESSÃO (a) FECHADA em 11/10/2026 e **publicação autorizada pelo operador**
+      no mesmo dia (*"pode publicar depois desses ajustes"*).
+      **SESSÃO (b) — por onde começar** (em conversa nova, por escolha dele): (0) "Sair" limpa
+      o que as telas guardaram, com teste · mostrar a ele os textos de mudar de plano e de
+      cancelar, com os cinco motivos em inglês, **antes** de construir · context7 da Stripe: o
+      agendamento da troca para o fim do período e a confirmação do banco na tela · decidir, na
+      abertura do passo 7, tirar da Stripe todos os cartões menos o novo · e então os passos 7
+      a 13. A sessão (c) começa pela pendência P64.
 - [ ] **4.7 — O visitante assina: a conta nasce no pagamento (código, ALTO RISCO).** O checkout
       público: e-mail + pagamento → o webhook cria a conta (o cadastro continua fechado) e manda o
       e-mail de "crie sua senha". **Depende do Resend configurado e da P49** (o remetente). Junto:
