@@ -216,8 +216,9 @@
 > assinatura → 400; as páginas públicas seguem no "Em breve".
 > **Confirmado pelo operador no painel do Sentry (10/10/2026):** o aviso "[servidor] no ar, versão
 > mv32ckxr-d02f9f62" chegou — o alerta está ligado em produção — e o e-mail de teste da regra
-> de alerta chegou na caixa dele. **Ainda a confirmar com ele:** a resposta nova na página em
-> inglês (fica atrás do "Em breve": só ele vê) e a regra de "avisar a cada erro novo" (P63).
+> de alerta chegou na caixa dele. No mesmo dia ele criou a regra "Erro novo no servidor"
+> (e-mail a cada erro novo), e o teste dela chegou: a P63 fechou. **Ainda a confirmar com ele:**
+> a resposta nova na página em inglês (fica atrás do "Em breve": só ele vê).
 > **PUBLICADO em 10/10/2026, antes (`main` = `91cb4dc`, CI verde nos dois jobs, deploy ok;
 > sem migration; publicação autorizada pelo operador: "Publica a 4.4"):** a Fase 4, etapa 4.4 —
 > **sincronizar e perder o acesso.**
@@ -5174,9 +5175,15 @@ outro aparelho e "daqui a um mês", e o Safari apaga o armazenamento do site em 
         error" da própria borda (`server: railway-hikari`), sem chegar ao servidor; a sequência
         com hexadecimal válido e UTF-8 inválido (`%C3%28`) chega — era ela que respondia 500 e
         passou a responder 400. É a que serve de prova depois de uma publicação.
-      **ONDE PAROU:** parte 1 PUBLICADA em 10/10/2026 (`main` = `354c96a`). Faltam: a
-      confirmação no painel do Sentry com o operador (P63: o aviso de "no ar" e o e-mail) e a
-      parte 2 (as telas do aluno).
+      - **No painel, com o operador (10/10/2026 — fecha a P63):** a chave antiga apagada e uma
+        nova na variável `SENTRY_DSN` da Railway · o monitor de site fora do ar "Site online"
+        (a cada 1 minuto em `/api/health`; verde) · a regra "Erro novo no servidor" (problema
+        novo, que piora ou que volta, de nível erro ou maior → e-mail para ele) · a regra de
+        fábrica, de alta prioridade, mantida para o site fora do ar · os dois e-mails de teste
+        chegaram. *Sugerido e não confirmado:* trocar, na regra de fábrica, "membros ativos
+        recentemente" por "todos os membros do projeto".
+      **ONDE PAROU:** parte 1 PUBLICADA e ligada em 10/10/2026 (`main` = `354c96a`). Falta a
+      parte 2 (as telas do aluno), quando o operador escolher.
 - [ ] **Backlog P2 do `security-vulnerability-reviewer` (7 no relatório; os nº 1, 2 e 6 foram
       movidos e o nº 5 foi **fechado por migration versionada** → **3 pendentes aqui**. Nenhum
       bloqueia merge; todos antes do primeiro aluno pagante.)** A numeração original do relatório é
