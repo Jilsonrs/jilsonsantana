@@ -538,6 +538,8 @@ export const pt = {
         parou: "Assinatura cancelada. Você continua com acesso até {data}. Mudou de ideia? Até lá, é só clicar em Manter a assinatura.",
         reembolsado: "Assinatura cancelada. Devolvemos {valor} no cartão que você usou. O valor costuma aparecer na fatura em até 10 dias úteis, conforme o banco.",
         mantida: "Pronto. Sua assinatura continua.",
+        // Rascunho do agente (pendência P73): quando "Manter a assinatura" falha.
+        erroAoManter: "Não foi possível manter a assinatura. Tente de novo.",
         prazoAcabou: "O prazo de 7 dias para o reembolso terminou. Você ainda pode parar a renovação.",
         // Com a cobrança ATRASADA, cancelar termina a assinatura na hora (aprovado em 11/10/2026).
         terminaAgora: "Sua assinatura termina agora, e a cobrança em aberto não será mais tentada.",

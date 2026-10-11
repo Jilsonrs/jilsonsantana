@@ -745,9 +745,9 @@ encerrada de vez com dias pagos: tem acesso e o servidor recusa cartão.
 - **A conta que tem acesso pela assinatura de mentira do seed** (o `member@` do banco de dev) vê
   "Não foi possível carregar a sua assinatura": a Stripe não conhece aquela assinatura. Para ver a
   tela no computador, a conta precisa assinar pela tela de assinar, com o cartão de teste.
-- **Os botões de mudar de plano, de cancelar e de "Manter a assinatura" chegam na sessão (b)**,
-  junto com a tela de cada um: até lá o resumo mostra a situação, sem a ação. *(11/10/2026: o
-  servidor já para a renovação e volta atrás; as telas esperam os textos — pendência P66.)*
+- **O botão de mudar de plano chega com a tela dele** (sessão b, passo 11). *(11/10/2026: a
+  tela de cancelar e os botões "Cancelar assinatura" e "Manter a assinatura" do resumo já
+  existem.)*
 - **Depois de uma troca de plano que não se completou** (recusada, ou desistida), a "última
   fatura" da assinatura na Stripe é a anulada, até a próxima renovação. Para a assinatura viva
   não muda nada (ela dá acesso pelo status); se for ENCERRADA NA HORA nesse intervalo — pelo

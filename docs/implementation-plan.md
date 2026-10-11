@@ -4552,6 +4552,29 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
         dia em que a renovação falhou.
         **(ii) Quem entra começa do zero:** o login limpa o que as telas guardaram (a senha
         errada não limpa nada). **Testes:** 2 de tela. **Mutação:** 2 de 2 reprovaram.
+      - **Passo 9 — FEITO (11/10/2026): a tela de cancelar e os botões no resumo.**
+        `/aluno/conta/faturamento/cancelar` (`CancelarPage`, com `MotivoDoCancelamento` e
+        `SaidaDoCancelamento`; o que a tela guarda e faz mora em `lib/cancelamento.ts`). A tela
+        oferece SÓ o que o servidor disse que cabe: em dia, parar a renovação (um cartão, com a
+        data até quando há acesso); nos 7 primeiros dias e com dinheiro pago, **as duas saídas
+        lado a lado**, com o valor e a data que o servidor mandou; com a cobrança atrasada, o
+        aviso de que termina agora — e, depois do clique, o resumo, que diz que terminou. O
+        motivo é opcional: sem nada, ao servidor vai um corpo vazio. Cada falha tem a frase
+        dela (o prazo que acabou, a devolução que não saiu), e depois de qualquer falha a tela
+        lê a assinatura de novo. Quem tinha a troca para o Mensal marcada lê o aviso. Sem nada a
+        cancelar, a pessoa volta ao resumo. **No resumo** (`AcoesDoPlano`): "Cancelar
+        assinatura" (para quem renova, quem está atrasado e quem ainda está no prazo do
+        reembolso) e "Manter a assinatura" (a renovação parada que ainda volta), cada um só
+        quando o servidor diz que cabe. Os motivos são botões de rádio nativos: não há
+        componente de rádio em `components/ui/`, e um novo seria dependência nova.
+        **Um texto a mais, rascunho do agente:** "Não foi possível manter a assinatura. Tente de
+        novo." (pendência P73). **Testes:** 21 da tela nova + 10 no resumo. **Mutação:** 18 de
+        18 reprovaram — a 16ª passou de primeira e mostrou um caso sem teste (a encerrada ainda
+        no prazo do reembolso não pode ler "Manter"); o teste entrou e ela reprovou. Gates:
+        typecheck, lint, suíte do site (885) e de servidor como o CI (1017), build. O
+        `GEMINI.md` do parceiro de design ganhou a tela no mapa e o item 35 na fila.
+        **Não visto em navegador pelo agente** (entrar exige a senha do aluno): a conferência
+        visual é do operador.
       **ONDE PAROU:** SESSÃO (a) FECHADA e **PUBLICADA em 11/10/2026 (`main` = `6305077`)**, com
       a autorização do operador (*"pode publicar depois desses ajustes"*): CI verde nos dois jobs
       no `dev` e na `main`, e conferido no ar como visitante — as rotas novas respondem 401 sem
@@ -4564,7 +4587,8 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       português** (três blocos, 11/10/2026; já no dicionário, em `app.faturamento.plano`,
       `.cancelamento` e `.banco` — o inglês é rascunho, a revisar com o Antigravity: P72).
       As duas decisões dele de 11/10/2026 (cancelar com a cobrança atrasada; limpar ao entrar)
-      já estão no código. **Próximo, nesta ordem:** o passo 9 e o 11 (as telas) · o 12 · o 13. A tela
+      já estão no código, e o **passo 9** (a tela de cancelar) está feito. **Próximo, nesta
+      ordem:** o passo 11 (a tela de mudar de plano) · o 12 · o 13. A tela
       de cancelar avisa quem tem a troca para o Mensal marcada de que ela também será desfeita
       (decisão dele, 11/10/2026; `billing.md` → *Minha assinatura*).
       Nas telas: os endereços `…/faturamento/cancelar` e `…/faturamento/plano` (constantes no

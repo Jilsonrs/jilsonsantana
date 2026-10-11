@@ -5,9 +5,11 @@ import type { MinhaAssinatura } from "@jilson/core";
 import { renderWithProviders } from "@/test-utils";
 
 const getMinhaAssinatura = vi.fn<() => Promise<MinhaAssinatura>>();
+const manterMinhaAssinatura = vi.fn<() => Promise<void>>();
 vi.mock("@/lib/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/api")>()),
   getMinhaAssinatura: () => getMinhaAssinatura(),
+  manterMinhaAssinatura: () => manterMinhaAssinatura(),
 }));
 
 import { FaturamentoPage } from "./FaturamentoPage";
@@ -47,6 +49,7 @@ const abrir = (ui = <FaturamentoPage />) =>
     extraRoutes: [
       { path: "/aluno/assinar", element: <p>TELA DE ASSINAR</p> },
       { path: "/aluno/conta/faturamento/cartao", element: <p>TELA DE TROCAR O CARTÃO</p> },
+      { path: "/aluno/conta/faturamento/cancelar", element: <p>TELA DE CANCELAR</p> },
     ],
   });
 
@@ -55,6 +58,7 @@ const naTela = () => (document.body.textContent ?? "").replace(/ /g, " ");
 
 beforeEach(() => {
   getMinhaAssinatura.mockReset().mockResolvedValue(ATIVA);
+  manterMinhaAssinatura.mockReset().mockResolvedValue(undefined);
 });
 
 describe("FaturamentoPage — carregando e falha", () => {
@@ -187,7 +191,8 @@ describe("FaturamentoPage — com acesso", () => {
   });
 
   it("assinatura que o servidor diz que NÃO aceita cartão (encerrada de vez, com dias pagos): sem botão", async () => {
-    getMinhaAssinatura.mockResolvedValue({ ...ATIVA, situacao: "vai-cancelar", proximaCobranca: null, acessoAte: MEIO_DIA, aceitaCartao: false });
+    // Como o servidor manda a encerrada de vez: não aceita cartão, não renova (nada a parar) e não muda de plano.
+    getMinhaAssinatura.mockResolvedValue({ ...ATIVA, situacao: "vai-cancelar", proximaCobranca: null, acessoAte: MEIO_DIA, aceitaCartao: false, podeParar: false, podeMudarDePlano: false });
     abrir();
     expect(await screen.findByText("Visa •••• 4242 · vence em 03/2028")).toBeTruthy();
     expect(screen.queryByRole("link")).toBeNull();
@@ -231,5 +236,101 @@ describe("FaturamentoPage — em inglês", () => {
     abrir(emIngles);
     expect(await screen.findByText("Your subscription ended on Nov 10, 2026.")).toBeTruthy();
     expect(screen.getByRole("link", { name: "Reactivate subscription" })).toBeTruthy();
+  });
+});
+
+// CANCELAR E MANTER, NO RESUMO (sessão b). O que protege: cada botão só aparece quando o
+// SERVIDOR diz que a ação cabe — a tela nunca oferece o que ele vai recusar —, e "Manter a
+// assinatura" só diz que deu certo quando deu.
+describe("FaturamentoPage — cancelar e manter a assinatura", () => {
+  const PARADA: MinhaAssinatura = { ...ATIVA, situacao: "vai-cancelar", proximaCobranca: null, acessoAte: MEIO_DIA, podeParar: false, podeManter: true };
+  const cancelar = () => screen.queryByRole("link", { name: "Cancelar assinatura" });
+  const manter = () => screen.queryByRole("button", { name: "Manter a assinatura" });
+
+  it("quem renova: o caminho para a tela de cancelar — e nada de 'Manter a assinatura'", async () => {
+    abrir();
+    expect((await screen.findByRole("link", { name: "Cancelar assinatura" })).getAttribute("href")).toBe("/aluno/conta/faturamento/cancelar");
+    expect(manter()).toBeNull();
+    fireEvent.click(cancelar()!);
+    expect(await screen.findByText("TELA DE CANCELAR")).toBeTruthy();
+  });
+
+  it("a renovação parada, fora do prazo do reembolso: só 'Manter a assinatura' — cancelar de novo não cabe", async () => {
+    getMinhaAssinatura.mockResolvedValue(PARADA);
+    abrir();
+    expect(await screen.findByRole("button", { name: "Manter a assinatura" })).toBeTruthy();
+    expect(cancelar()).toBeNull();
+  });
+
+  it("a renovação parada e ainda no prazo do reembolso: os dois — manter, e o caminho para receber o dinheiro de volta", async () => {
+    getMinhaAssinatura.mockResolvedValue({ ...PARADA, reembolso: { centavos: 9990, moeda: "brl", ate: MEIO_DIA } });
+    abrir();
+    expect(await screen.findByRole("button", { name: "Manter a assinatura" })).toBeTruthy();
+    expect(cancelar()).toBeTruthy();
+  });
+
+  it("com a cobrança atrasada: dá para cancelar (termina na hora)", async () => {
+    getMinhaAssinatura.mockResolvedValue({ ...ATIVA, situacao: "atrasada", proximaCobranca: null, podeParar: false, terminaAoCancelar: true });
+    abrir();
+    expect(await screen.findByRole("link", { name: "Cancelar assinatura" })).toBeTruthy();
+    expect(manter()).toBeNull();
+  });
+
+  it("encerrada de vez, ainda com dias pagos: nem cancelar, nem manter", async () => {
+    getMinhaAssinatura.mockResolvedValue({ ...PARADA, podeManter: false, aceitaCartao: false });
+    abrir();
+    await screen.findByText("Sua assinatura termina em 10/11/2026. Você continua com acesso até lá.");
+    expect(cancelar()).toBeNull();
+    expect(manter()).toBeNull();
+  });
+
+  it("encerrada de vez e ainda no prazo do reembolso (a devolução falhou): o caminho para receber o dinheiro — mas NÃO 'Manter', que ela não volta", async () => {
+    getMinhaAssinatura.mockResolvedValue({ ...PARADA, podeManter: false, aceitaCartao: false, reembolso: { centavos: 9990, moeda: "brl", ate: MEIO_DIA } });
+    abrir();
+    expect(await screen.findByRole("link", { name: "Cancelar assinatura" })).toBeTruthy();
+    expect(manter()).toBeNull();
+  });
+
+  it("'Manter a assinatura': pede ao servidor, diz que deu certo e lê a assinatura de novo — sem mandar nada que escolha qual", async () => {
+    getMinhaAssinatura.mockResolvedValueOnce(PARADA).mockResolvedValue(ATIVA);
+    abrir();
+    fireEvent.click(await screen.findByRole("button", { name: "Manter a assinatura" }));
+    expect((await screen.findByRole("status")).textContent).toBe("Pronto. Sua assinatura continua.");
+    expect(manterMinhaAssinatura).toHaveBeenCalledTimes(1);
+    expect(manterMinhaAssinatura.mock.calls[0]).toEqual([]);
+    // Lida de novo: volta a renovar, com a próxima cobrança — e o botão de manter some.
+    expect(await screen.findByText(/Próxima cobrança:/)).toBeTruthy();
+    expect(manter()).toBeNull();
+  });
+
+  it("o servidor recusou: a frase da falha — nunca 'sua assinatura continua'", async () => {
+    getMinhaAssinatura.mockResolvedValue(PARADA);
+    manterMinhaAssinatura.mockRejectedValue(new Error("409"));
+    abrir();
+    fireEvent.click(await screen.findByRole("button", { name: "Manter a assinatura" }));
+    expect((await screen.findByRole("alert")).textContent).toBe("Não foi possível manter a assinatura. Tente de novo.");
+    expect(screen.queryByRole("status")).toBeNull();
+  });
+
+  it("enquanto envia: o botão fica desligado — um clique a mais não pede duas vezes", async () => {
+    getMinhaAssinatura.mockResolvedValue(PARADA);
+    manterMinhaAssinatura.mockReturnValue(new Promise(() => {}));
+    abrir();
+    fireEvent.click(await screen.findByRole("button", { name: "Manter a assinatura" }));
+    const enviando = await screen.findByRole("button", { name: "Processando…" });
+    expect((enviando as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.click(enviando);
+    expect(manterMinhaAssinatura).toHaveBeenCalledTimes(1);
+  });
+
+  it("em inglês", async () => {
+    getMinhaAssinatura.mockResolvedValue({ ...PARADA, reembolso: { centavos: 9990, moeda: "brl", ate: MEIO_DIA } });
+    abrir(
+      <IdiomaProvider idioma="en">
+        <FaturamentoPage />
+      </IdiomaProvider>,
+    );
+    expect(await screen.findByRole("button", { name: "Keep my subscription" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Cancel subscription" })).toBeTruthy();
   });
 });

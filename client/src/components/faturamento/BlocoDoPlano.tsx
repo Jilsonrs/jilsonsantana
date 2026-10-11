@@ -1,6 +1,7 @@
 import { Plano, SituacaoDoFaturamento } from "@jilson/core";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageSection } from "@/components/layout/PageLayout";
+import { AcoesDoPlano } from "@/components/faturamento/AcoesDoPlano";
 import { dinheiro } from "@/lib/assinar";
 import { dataPorExtenso, type AssinaturaComAcesso } from "@/lib/faturamento";
 import { useIdioma, useT } from "@/lib/language";
@@ -42,6 +43,7 @@ export function BlocoDoPlano({ assinatura }: { assinatura: AssinaturaComAcesso }
               {t.faturamento.atrasada}
             </p>
           )}
+          <AcoesDoPlano assinatura={assinatura} />
         </CardContent>
       </Card>
     </PageSection>

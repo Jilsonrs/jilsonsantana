@@ -16,7 +16,7 @@
 > 5. **Item novo ganha o próximo número livre.** Número nunca se reutiliza, para que "P7" queira
 >    dizer sempre a mesma coisa em qualquer conversa.
 >
-> **Próximo número livre: P73** · Atualizada em 11/10/2026
+> **Próximo número livre: P74** · Atualizada em 11/10/2026
 
 ## A. Agora, em sequência *(nascidas da configuração do Bunny, 25/09/2026)*
 
@@ -32,6 +32,7 @@ precise de resposta rápida entra aqui, com o próximo número livre.*
 
 | # | O que falta | Onde registrar |
 |---|---|---|
+| P73 | **Revisar um texto novo de 11/10 (etapa 4.6), rascunho do agente:** **"Não foi possível manter a assinatura. Tente de novo."** / **"We couldn't keep your subscription. Try again."** — aparece no resumo quando o clique em "Manter a assinatura" falha. Não estava nos blocos que você aprovou | `core/src/i18n/pt.ts` e `en.ts` (`app.faturamento.cancelamento.erroAoManter`) |
 | P72 | **Revisar com o Antigravity o INGLÊS dos textos da sessão (b) da etapa 4.6** — as telas de mudar de plano e de cancelar (com os cinco motivos) e o banco pedindo confirmação. O português você aprovou em 11/10/2026; o inglês é rascunho do agente (*"depois revisamos com o Antigravity a parte do inglês"*) | `core/src/i18n/en.ts` (`app.faturamento.plano`, `.cancelamento` e `.banco`) |
 | P65 | **Revisar o texto novo de 11/10 (etapa 4.6)**, rascunho do agente: **"Sua assinatura terminou."** / **"Your subscription has ended."** — aparece em Faturamento e Assinatura quando a assinatura acabou e não há a data do fim (o texto que você aprovou, sem o "em {data}"). Os outros textos da tela e da troca de cartão você aprovou em 11/10 | `core/src/i18n/pt.ts` e `en.ts` (`app.faturamento.terminouSemData`) |
 | P59 | **Revisar os textos novos de 10/10 (etapa 4.4)**, rascunho do agente. **Admin → Assinaturas:** o título e a descrição da tela, "Conferir na Stripe", "E-mail do aluno", "Esta conta tem acesso." / "Esta conta está sem acesso.", "Esta conta não tem nenhuma assinatura na Stripe.", a situação de cada assinatura ("Ativa", "Pagamento atrasado, em novas tentativas", "Cancelada", "Aguardando o primeiro pagamento"…) e as três frases de erro. **A posição do item "Assinaturas" no menu:** está logo depois de "Alunos"; pode ser outra. **O inglês de "Reativar assinatura":** "Reactivate subscription" (a outra opção é "Resubscribe") — passa pelo ciclo de revisão do `idiomas.md` | `client/src/lib/sincronia.ts`, `client/src/pages/admin/AdminAssinaturasPage.tsx`, `client/src/lib/navigation.ts` e `core/src/i18n/en.ts` |

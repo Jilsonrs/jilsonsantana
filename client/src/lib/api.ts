@@ -36,6 +36,9 @@ import type {
   MinhaAssinatura,
   TrocaDeCartaoPreparada,
   CartaoTrocado,
+  CancelarInput,
+  RenovacaoParada,
+  ReembolsoFeito,
 } from "@jilson/core";
 
 // Same-origin by design (mirrors auth-client.ts): in dev the Vite proxy
@@ -983,6 +986,31 @@ export async function prepararTrocaDeCartao(): Promise<TrocaDeCartaoPreparada> {
  */
 export async function aplicarCartaoNovo(): Promise<CartaoTrocado> {
   const { data } = await client.post<CartaoTrocado>("/billing/cartao/aplicar");
+  return data;
+}
+
+/**
+ * Cancelar (etapa 4.6, sessão b): para a renovação, com o motivo se a pessoa disse — o acesso
+ * continua até o fim do período pago. Com a cobrança atrasada, a assinatura termina na hora
+ * (`terminou`). O pedido não diz qual assinatura. NUNCA tenta de novo sozinho.
+ */
+export async function cancelarMinhaAssinatura(corpo: CancelarInput): Promise<RenovacaoParada> {
+  const { data } = await client.post<RenovacaoParada>("/billing/minha-assinatura/cancelar", corpo);
+  return data;
+}
+
+/** Volta atrás: a assinatura com a renovação parada torna a renovar. Nada é cobrado. */
+export async function manterMinhaAssinatura(): Promise<void> {
+  await client.post("/billing/minha-assinatura/manter");
+}
+
+/**
+ * Cancelar e receber o dinheiro de volta, dentro do prazo: o acesso termina na hora. Fora do
+ * prazo: 409 `ForaDoPrazo`; encerrou e a devolução não saiu: 502 `DevolucaoFalhou`. NUNCA tenta
+ * de novo sozinho.
+ */
+export async function reembolsarMinhaAssinatura(corpo: CancelarInput): Promise<ReembolsoFeito> {
+  const { data } = await client.post<ReembolsoFeito>("/billing/minha-assinatura/reembolso", corpo);
   return data;
 }
 

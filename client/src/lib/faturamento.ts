@@ -6,7 +6,7 @@ import type { AppTexts } from "@/lib/language";
 // FATURAMENTO E ASSINATURA (Fase 4, etapa 4.6): os endereços, a leitura da tela e o que ela
 // escreve por extenso (a data e o cartão).
 
-export { TELA_DO_FATURAMENTO, TELA_DE_TROCAR_O_CARTAO } from "@jilson/core";
+export { TELA_DO_FATURAMENTO, TELA_DE_TROCAR_O_CARTAO, TELA_DE_CANCELAR } from "@jilson/core";
 
 /** A assinatura da conta, como a Stripe diz agora. Uma chave só: quem muda a assinatura a invalida. */
 export const CHAVE_DA_MINHA_ASSINATURA = ["billing", "minha-assinatura"] as const;
@@ -59,4 +59,15 @@ export function descreverCartao(t: AppTexts["faturamento"], cartao: CartaoDaAssi
   const bandeira = BANDEIRAS[cartao.bandeira];
   const frase = bandeira ? t.cartao.replace("{bandeira}", bandeira) : t.cartao.replace("{bandeira} ", "");
   return frase.replace("{final}", cartao.final).replace("{mes}", String(cartao.mes).padStart(2, "0")).replace("{ano}", String(cartao.ano));
+}
+
+/**
+ * O código da recusa que o servidor devolveu (`{ error: "ForaDoPrazo" }`) — ou nada, se a falha
+ * foi outra (rede, servidor fora do ar). Lido pela forma da resposta, sem depender do Axios aqui.
+ */
+export function codigoDaRecusa(erro: unknown): string | null {
+  if (typeof erro !== "object" || erro === null || !("response" in erro)) return null;
+  // Seguro: a linha acima provou que é um objeto com `response`; o resto é opcional.
+  const codigo = (erro as { response?: { data?: { error?: unknown } } }).response?.data?.error;
+  return typeof codigo === "string" ? codigo : null;
 }
