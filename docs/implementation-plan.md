@@ -3985,6 +3985,40 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
 - [ ] **4.5 — ESLint com `no-floating-promises`, bloqueante no CI (código, pequena).** Dependências
       de desenvolvimento novas: `eslint` + `typescript-eslint`. Já decidido para esta fase (item
       abaixo): promessa sem `await` dentro do webhook derruba o servidor sem nenhum teste perceber.
+      **PLANO APROVADO (10/10/2026)** *(operador: "Pode seguir. A")*.
+      - **O que é, em uma frase:** um revisor automático que barra no CI o código que manda
+        fazer uma tarefa e não espera ela terminar — o descuido que passa em todo teste e
+        derruba o servidor quando a tarefa falha.
+      - **Medido antes de planejar** (numa pasta fora do repositório, sem mexer em nada):
+        servidor 131 arquivos, código compartilhado 17 e testes de navegador 3 — **zero achados**
+        nas três regras; o site, 248 arquivos — **zero `any`**, e 20 pontos de "não esperou"
+        (8 + 12), todos em telas do admin.
+      - **Decisões do operador:** (A) **o "sem `any`" vale no projeto inteiro**, site incluído
+        (custo zero hoje; fecha a pendência antiga de a regra valer só por revisão) · (B) **as
+        regras de "não esperou" no SITE ficam para depois** — lá o efeito é um erro na tela, não
+        o servidor caindo, e mais da metade é o padrão normal dos formulários. *Reabre quando um
+        erro de tela do aluno tiver essa causa, ou quando o alerta de erro das telas (Sentry,
+        parte 2) mostrar promessa rejeitada sem tratamento.*
+      - **Dependências de desenvolvimento novas** (previstas neste item): `eslint` **10.11.0** e
+        `typescript-eslint` **8.70.1**, fixadas — as últimas com duas semanas ou mais. Não vão
+        para a imagem de produção (`--omit=dev` no Dockerfile).
+      - **As regras** (servidor, código compartilhado e testes de navegador):
+        `no-floating-promises` **sem aceitar `void` como saída** — toda promessa é esperada ou
+        tem tratamento de falha; medido: custa reescrever 2 linhas — · `no-misused-promises` ·
+        `no-explicit-any`. No site, só a `no-explicit-any`. **Nenhum pacote pronto de regras**
+        (traria dezenas de avisos em código que funciona) e nada de estilo.
+      - **Convenções de engenharia:** um `eslint.config.mjs` na raiz; `npm run lint` passa a ser
+        o quarto gate da raiz; no CI, um passo bloqueante depois do typecheck do servidor (a
+        regra precisa dos tipos); comentário que desliga uma regra sem precisar também reprova.
+      - **Passos, um commit cada:** (1) este plano · (2) as dependências, a configuração, o
+        comando e as 2 linhas reescritas, com a prova por mutação (uma promessa solta, um
+        `try/catch` sem `await`, um `any`) · (3) o passo no CI, com a prova de que ele BLOQUEIA
+        (um ramo descartável com uma violação, CI vermelho, ramo apagado) · (4) os docs —
+        `CLAUDE.md` (o `lint` existe; "sem `any`" com verificação; a trava do `await`),
+        `tech-stack.md` e os checkboxes.
+      - **Fora:** as regras de promessa no site (decisão B) · estilo e formatação.
+      - `Docs check (context7): not triggered` — a configuração foi verificada rodando.
+      **ONDE PAROU:** plano escrito. Próximo: passo 2.
 - [ ] **4.6 — Minha assinatura, dentro da escola (código, 2 sessões).** (a) ver o plano e a próxima
       cobrança, trocar o cartão; (b) mudar mensal↔anual com a proração mostrada **antes**, e cancelar
       com o motivo — "cancelar mesmo assim" de 1 clique sempre visível, tom calmo. Sem Customer
