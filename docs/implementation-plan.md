@@ -204,12 +204,18 @@
 > (aula concluída sozinha, barra na aula e no cartão), o vídeo que não recomeça ao trocar de aba
 > (a apresentação abre pausada, a aula toca sozinha) e o "Salvos". **Primeiro teste com o player de
 > verdade: com o operador** (assistir uma aula até perto do fim e ver a barra andar).
-> **NO `dev`, AINDA NÃO PUBLICADO (10/10/2026): a Fase 4, etapa 4.5 — o revisor automático
-> (ESLint).** `npm run lint` é o quarto gate, bloqueante no CI: reprova a tarefa disparada e não
-> esperada no servidor (o que derruba o servidor sem nenhum teste perceber) e o `any` no projeto
-> inteiro. **Nada muda para o aluno:** são ferramentas de desenvolvimento e duas linhas
-> reescritas no servidor. Vai junto na próxima publicação.
-> **PUBLICADO em 10/10/2026, por último (`main` = `354c96a`, CI verde nos dois jobs, deploy ok;
+> **PUBLICADO em 10/10/2026, por último (`main` = `8d9a364`, CI verde nos dois jobs, deploy ok;
+> sem migration; publicação autorizada pelo operador):** a Fase 4, etapa 4.5 — **o revisor
+> automático (ESLint).** `npm run lint` é o quarto gate, bloqueante no CI: reprova a tarefa
+> disparada e não esperada no servidor e o `any` no projeto inteiro. **Nada muda para o aluno:**
+> são ferramentas de desenvolvimento e duas linhas reescritas no servidor.
+> **Provado no site, de fora:** a versão nova (`mv34iygo-45588dc9`), e as respostas de sempre.
+> **A TROCA DE SERVIDOR NÃO DERRUBOU O SITE** `[MEDIDO nesta publicação, 10/10/2026]`: 480
+> pedidos a `/api/health`, um a cada ~1,7 s, de antes do envio até 12 minutos depois da troca —
+> **480 respostas 200, nenhuma falha**; a versão mudou uma vez só, 1 min 19 s depois do envio.
+> *O que esta medição NÃO cobre:* publicação com migration, e um pedido longo (um envio de vídeo)
+> atravessando a troca.
+> **PUBLICADO em 10/10/2026, antes (`main` = `354c96a`, CI verde nos dois jobs, deploy ok;
 > duas migrations de DADO aplicadas pelo pre-deploy, sem mudança de estrutura; publicação
 > autorizada pelo operador):** **o alerta de erro no servidor** (Sentry, parte 1 — plano → Fase 7)
 > e **a resposta de "Is there a refund?" com 14 dias** ("Yes, we offer a 14-day money-back
@@ -4047,9 +4053,9 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
         `any`" passa a ter verificação; a trava do `await` no e-mail, agora barrada pelo lint;
         o CI), `tech-stack.md` e o `GEMINI.md` do parceiro de design (os quatro gates que ele
         roda antes de publicar).
-      **ONDE PAROU:** etapa FECHADA no `dev` (10/10/2026). Não publicada: nada muda para o
-      aluno — são ferramentas de desenvolvimento, o passo do CI e duas linhas reescritas no
-      servidor (o desligar e um script de senha). Vai junto na próxima publicação.
+      **ONDE PAROU:** etapa FECHADA e PUBLICADA em 10/10/2026 (`main` = `8d9a364`). Nada muda
+      para o aluno: são ferramentas de desenvolvimento, o passo do CI e duas linhas reescritas
+      no servidor (o desligar e um script de senha).
 - [ ] **4.6 — Minha assinatura, dentro da escola (código, 2 sessões).** (a) ver o plano e a próxima
       cobrança, trocar o cartão; (b) mudar mensal↔anual com a proração mostrada **antes**, e cancelar
       com o motivo — "cancelar mesmo assim" de 1 clique sempre visível, tom calmo. Sem Customer
