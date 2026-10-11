@@ -5180,8 +5180,9 @@ outro aparelho e "daqui a um mês", e o Safari apaga o armazenamento do site em 
         (a cada 1 minuto em `/api/health`; verde) · a regra "Erro novo no servidor" (problema
         novo, que piora ou que volta, de nível erro ou maior → e-mail para ele) · a regra de
         fábrica, de alta prioridade, mantida para o site fora do ar · os dois e-mails de teste
-        chegaram. *Sugerido e não confirmado:* trocar, na regra de fábrica, "membros ativos
-        recentemente" por "todos os membros do projeto".
+        chegaram. Na regra de fábrica, o destinatário de reserva passou de "membros ativos
+        recentemente" para "todos os membros do projeto" (o aviso não depende de ele ter
+        aberto o painel há pouco).
       **ONDE PAROU:** parte 1 PUBLICADA e ligada em 10/10/2026 (`main` = `354c96a`). Falta a
       parte 2 (as telas do aluno), quando o operador escolher.
 - [ ] **Backlog P2 do `security-vulnerability-reviewer` (7 no relatório; os nº 1, 2 e 6 foram
