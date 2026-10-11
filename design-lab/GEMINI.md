@@ -683,10 +683,11 @@ caminho é um só, o mesmo que o Claude segue, sem atalho:
 1. **Comece do `dev` atualizado:** `git checkout dev` e `git pull`. Nunca trabalhe na `main`.
 2. **Um commit por ajuste**, no `dev`, com a mensagem dizendo o que mudou na tela
    (ex.: `style(inicio): espaçamento dos blocos do painel`).
-3. **Rode os três gates, UM DE CADA VEZ, e confira que cada um terminou sem erro** (não encadeie
+3. **Rode os quatro gates, UM DE CADA VEZ, e confira que cada um terminou sem erro** (não encadeie
    com `&&` escondendo qual falhou):
    ```bash
    npm run typecheck
+   npm run lint        # o revisor automático (desde 10/10/2026); nas telas ele só reprova `any`
    npm run test        # cliente E servidor; o servidor precisa do Postgres local ligado
    npm run build
    ```
@@ -713,7 +714,7 @@ caminho é um só, o mesmo que o Claude segue, sem atalho:
 - publicar com qualquer gate vermelho, ou com mudança que não seja visual (comportamento, texto,
   rota, dado). Isso é trabalho do Claude, com plano aprovado pelo operador.
 
-**Por que o caminho é este:** é o mesmo "dev primeiro, três gates, CI verde, só então a main" do
+**Por que o caminho é este:** é o mesmo "dev primeiro, quatro gates, CI verde, só então a main" do
 `CLAUDE.md` (*Working Method*). A suíte é o que garante que o acabamento não apagou acessibilidade,
 destino de link ou visibilidade por papel — ela reprova e diz qual.
 

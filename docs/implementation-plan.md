@@ -204,6 +204,11 @@
 > (aula concluída sozinha, barra na aula e no cartão), o vídeo que não recomeça ao trocar de aba
 > (a apresentação abre pausada, a aula toca sozinha) e o "Salvos". **Primeiro teste com o player de
 > verdade: com o operador** (assistir uma aula até perto do fim e ver a barra andar).
+> **NO `dev`, AINDA NÃO PUBLICADO (10/10/2026): a Fase 4, etapa 4.5 — o revisor automático
+> (ESLint).** `npm run lint` é o quarto gate, bloqueante no CI: reprova a tarefa disparada e não
+> esperada no servidor (o que derruba o servidor sem nenhum teste perceber) e o `any` no projeto
+> inteiro. **Nada muda para o aluno:** são ferramentas de desenvolvimento e duas linhas
+> reescritas no servidor. Vai junto na próxima publicação.
 > **PUBLICADO em 10/10/2026, por último (`main` = `354c96a`, CI verde nos dois jobs, deploy ok;
 > duas migrations de DADO aplicadas pelo pre-deploy, sem mudança de estrutura; publicação
 > autorizada pelo operador):** **o alerta de erro no servidor** (Sentry, parte 1 — plano → Fase 7)
@@ -692,6 +697,8 @@ de uma sessão própria antes do launch):**
       **também** não cobria — ele rodava `tsc --noEmit`, que aceita `any` sem reclamar. Ou seja, a
       remoção não perdeu cobertura nenhuma; só parou de simular que havia. Fecha de vez quando
       ESLint + `typescript-eslint` com `no-explicit-any: error` entrarem em bloco próprio.)*
+      **FECHOU em 10/10/2026:** a etapa 4.5 da Fase 4 ligou `no-explicit-any: error` nos quatro
+      workspaces, bloqueante no CI. Medido naquele dia: nenhum `any` no repositório.
 - [ ] **Rate-limit de login — VERIFICAR a borda ANTES de escrever código** (achado do
       `security-vulnerability-reviewer`, Ago 2026). `rateLimit` está ligado em produção
       (`server/src/lib/auth.ts:72`), mas sem `advanced.ipAddress` o Better Auth lê
@@ -3982,7 +3989,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       autorizada pelo operador** no mesmo dia. Ele abriu a tela Admin → Assinaturas no navegador
       e ela conferiu certo. Com ele ficam: a P59 (textos e posição no menu) e a P60 (a opção do
       painel da Stripe). O que ele pediu a mais para a tela virou a etapa 4.7b.
-- [ ] **4.5 — ESLint com `no-floating-promises`, bloqueante no CI (código, pequena).** Dependências
+- [x] **4.5 — ESLint com `no-floating-promises`, bloqueante no CI (código, pequena).** Dependências
       de desenvolvimento novas: `eslint` + `typescript-eslint`. Já decidido para esta fase (item
       abaixo): promessa sem `await` dentro do webhook derruba o servidor sem nenhum teste perceber.
       **PLANO APROVADO (10/10/2026)** *(operador: "Pode seguir. A")*.
@@ -4029,7 +4036,20 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
         **Provado em execução:** o servidor montado, em modo de produção, sai com código 0 ao
         receber o aviso de desligar, com o alerta ligado e desligado. Gates: typecheck, suíte de
         servidor (727) e do site (810), build e lint.
-      **ONDE PAROU:** passo 2 feito. Próximo: passo 3 (o passo no CI e a prova de que bloqueia).
+      - **Passo 3 — FEITO (10/10/2026).** O passo `Lint` entrou no job principal do CI, depois
+        do build do `core` e da geração do cliente do Prisma (as regras de promessa leem os
+        tipos; sem eles o passo ficaria verde sem conferir nada). **A prova de que BLOQUEIA:**
+        no `dev` (`59fdf22`) o CI passou nos dois jobs; num ramo descartável com UMA promessa
+        solta numa chamada ao banco, o job principal **reprovou no passo `Lint`**, apontando a
+        linha. O ramo foi apagado, no computador e no GitHub. *(O job do E2E não roda o lint, e
+        passou nos dois casos: quem bloqueia é o job principal.)*
+      - **Passo 4 — FEITO (10/10/2026).** `CLAUDE.md` (o `lint` existe e é o quarto gate; o "sem
+        `any`" passa a ter verificação; a trava do `await` no e-mail, agora barrada pelo lint;
+        o CI), `tech-stack.md` e o `GEMINI.md` do parceiro de design (os quatro gates que ele
+        roda antes de publicar).
+      **ONDE PAROU:** etapa FECHADA no `dev` (10/10/2026). Não publicada: nada muda para o
+      aluno — são ferramentas de desenvolvimento, o passo do CI e duas linhas reescritas no
+      servidor (o desligar e um script de senha). Vai junto na próxima publicação.
 - [ ] **4.6 — Minha assinatura, dentro da escola (código, 2 sessões).** (a) ver o plano e a próxima
       cobrança, trocar o cartão; (b) mudar mensal↔anual com a proração mostrada **antes**, e cancelar
       com o motivo — "cancelar mesmo assim" de 1 clique sempre visível, tom calmo. Sem Customer
@@ -4179,7 +4199,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
 > Database & Migrations*); e o *follow-up do "Automatic RLS"* ficou **sem objeto** — era do Supabase,
 > que foi apagado.
 
-- [ ] **ESLint entra AQUI** (gatilho registrado em `CLAUDE.md` → changelog Ago 2026 (11)):
+- [x] **ESLint entra AQUI** *(feito em 10/10/2026 — é a etapa 4.5, acima; as três regras valem também no `core` e no `e2e`, e a do `any` nos quatro workspaces)* (gatilho registrado em `CLAUDE.md` → changelog Ago 2026 (11)):
       typescript-eslint, escopo inicial `server/src`, **bloqueante no CI**, 2–3 regras. A que se
       justifica sozinha é **`no-floating-promises`** — promise não aguardada escapa do `try/catch`,
       vira *unhandled rejection* e pode derrubar o Node **dentro do handler de webhook da Stripe**;
