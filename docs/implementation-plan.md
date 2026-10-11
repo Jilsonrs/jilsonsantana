@@ -4621,6 +4621,35 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
         tela deve dizer isso com todas as letras é pergunta ao operador (pendência P74).*
         **Testes:** 5 de tela. **Mutação:** 4 de 4 reprovaram. Gates: typecheck, lint, suíte do
         site (921) e de servidor como o CI (1017), build.
+      - **Passo 13, parte 1 — FEITO (11/10/2026): a prova com CONTAS DESCARTÁVEIS.** As
+        operações de verdade (`minha-assinatura.ts`, `meu-plano.ts`), com contas descartáveis no
+        banco de desenvolvimento e a Stripe de teste; um roteiro fora do repositório, com as duas
+        travas conferidas antes de começar (chave de teste; o banco é o branch de
+        desenvolvimento) e nenhum segredo impresso. **42 pontos, todos passaram.**
+        *A vida inteira de uma conta* (19): mensal no primeiro dia, com a saída do reembolso ·
+        parar (continua com acesso e logada) · manter · a conta da troca e a troca para o anual
+        cobrando EXATAMENTE o mostrado · o reembolso passando a ser das duas cobranças · pedir o
+        plano que já tem · marcar o mensal · cancelar com a troca marcada (a troca é desfeita) ·
+        manter (volta no anual) · o reembolso das duas cobranças, o acesso terminando na hora e
+        a sessão continuando · pedir de novo sem devolver duas vezes · na Stripe, o total
+        devolvido igual ao total pago. *As recusas* (6): a conta de 40 minutos atrás, o cartão
+        recusado sem fatura sobrando, o banco pedindo confirmação com o plano parado no mensal,
+        desistir. *A cortesia* (4): sem a saída do reembolso, sem ser encerrada, a troca a R$ 0
+        e o desconto indo junto. *A cobrança atrasada, com o relógio de teste* (3): cancelar
+        termina na hora, a cobrança é anulada, a sessão continua. ***A VIRADA do anual para o
+        mensal, com o relógio de teste* (5): no fim do ano o plano vira mensal, a primeira
+        cobrança de R$ 99,90 sai paga — com o cartão NOVO, trocado depois de marcar —, e cancelar
+        funciona depois.** *O agendamento que sobra* (4, abaixo).
+        Limpeza: 10 contas apagadas do banco (zero linhas delas), e os clientes, relógios e
+        cupons apagados da área restrita. *Não coube na prova:* o prazo de 7 dias vencendo (o
+        relógio do servidor não é o da Stripe; está nos testes).
+        **Achado da prova, e corrigido:** `[FATO — medido com o relógio de teste]` depois da
+        virada o agendamento continua preso à assinatura por mais um mês, já sem troca nenhuma —
+        e a tela não oferecia mudar de plano nesse mês. Agora o que impede é a troca MARCADA, e
+        não o agendamento; a operação solta o agendamento velho antes de mudar. 3 testes de
+        rota, 4 de 4 mutações reprovaram, e a prova na área restrita (4 pontos).
+        `[FATO — medido]` o relógio de teste só avança dois intervalos do menor período por vez
+        (com o mensal no agendamento, dois meses): a prova avança em etapas.
       **ONDE PAROU:** SESSÃO (a) FECHADA e **PUBLICADA em 11/10/2026 (`main` = `6305077`)**, com
       a autorização do operador (*"pode publicar depois desses ajustes"*): CI verde nos dois jobs
       no `dev` e na `main`, e conferido no ar como visitante — as rotas novas respondem 401 sem

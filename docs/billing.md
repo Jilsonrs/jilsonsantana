@@ -758,8 +758,11 @@ encerrada de vez com dias pagos: tem acesso e o servidor recusa cartão.
   a primeira resposta de cada chave, inclusive a falha — é o que ela documenta; não foi medido.
 - **O cupom de duração limitada** seria copiado para a fase nova da troca marcada. Hoje não
   existe cupom assim; conferir quando o operador criar o primeiro.
-- **A virada do anual para o mensal no fim do ano não foi exercitada** (só a prévia da Stripe a
-  confirma): fica para o relógio de teste da prova final da sessão.
+- **A virada do anual para o mensal foi provada com o relógio de teste** (11/10/2026): no fim do
+  ano o plano vira mensal e a primeira cobrança sai paga, com o cartão que estiver na assinatura
+  naquele dia. Depois da virada, o agendamento continua preso à assinatura por mais um mês, já
+  sem troca nenhuma: o que impede mudar de plano é a troca MARCADA, não o agendamento, e a
+  operação solta o agendamento velho antes de mudar.
 - **O agendamento copia o desconto, e só ele.** Quando a escola ligar o imposto automático
   (etapa 4.8), conferir que as fases da troca marcada o levam.
 - **Os avisos de devolução precisam chegar ao site no ar — é condição de publicar o

@@ -78,7 +78,11 @@ export async function mudarMeuPlano(userId: string, pedido: { plano: Plano; prev
 
   if (pedido.plano === "mensal") {
     const operacao = await operarNaAssinatura(id, async () => {
-      if (outroPlano(await buscarDetalhes(id)) !== "mensal") return null;
+      const agora = await buscarDetalhes(id);
+      if (outroPlano(agora) !== "mensal") return null;
+      // O agendamento de uma troca que JÁ aconteceu fica preso por mais um mês: sai antes (com
+      // ele a Stripe não deixa criar outro).
+      if (agora.agendamentoId) await soltarAgendamento(agora.agendamentoId);
       return agendarTroca(id, novo.precoId);
     });
     if (!operacao) return { resultado: "ocupada" };
@@ -92,6 +96,9 @@ export async function mudarMeuPlano(userId: string, pedido: { plano: Plano; prev
   const operacao = await operarNaAssinatura(id, async (): Promise<DesfechoDaTroca | null> => {
     const agora = await buscarDetalhes(id);
     if (outroPlano(agora) !== "anual" || !agora.itemId) return null;
+    // O agendamento de uma troca que JÁ aconteceu (a virada para o mensal) sai antes: quem manda
+    // no preço da assinatura, enquanto ele está preso, é ele.
+    if (agora.agendamentoId) await soltarAgendamento(agora.agendamentoId);
     const desfecho = await trocarAgora({ assinaturaId: id, itemId: agora.itemId, precoId: novo.precoId, em: previaDe });
     // RECUSADO: a fatura da troca é anulada JÁ — a tela diz "nada foi cobrado", e uma fatura em
     // aberto ainda poderia ser cobrada depois. Se não anular, precisa de gente.

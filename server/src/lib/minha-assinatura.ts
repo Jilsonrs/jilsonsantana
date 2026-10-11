@@ -65,11 +65,14 @@ export function podeManter(detalhes: DetalhesDaAssinatura): boolean {
 
 /**
  * Para qual plano esta assinatura pode MUDAR agora — ou nenhum. Só a que renova (a parada e a
- * atrasada, não), de um dos dois planos da escola, e sem troca já marcada. Uma regra só, para a
+ * atrasada, não), de um dos dois planos da escola, e sem troca já MARCADA. Uma regra só, para a
  * tela (que mostra "Mudar de plano") e para a operação (que recusa).
+ * O que impede é a troca marcada, e não o agendamento em si: `[FATO — medido com o relógio de
+ * teste, 11/10/2026]` depois da virada para o mensal o agendamento continua preso à assinatura
+ * por mais um mês, já sem troca nenhuma — a operação o solta antes de mudar (`meu-plano.ts`).
  */
 export function outroPlano(detalhes: DetalhesDaAssinatura): "mensal" | "anual" | null {
-  if (!renova(detalhes) || !detalhes.plano || !detalhes.itemId || detalhes.agendamentoId) return null;
+  if (!renova(detalhes) || !detalhes.plano || !detalhes.itemId || detalhes.trocaMarcada) return null;
   return detalhes.plano === "mensal" ? "anual" : "mensal";
 }
 

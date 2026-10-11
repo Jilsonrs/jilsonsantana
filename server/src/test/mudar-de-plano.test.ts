@@ -378,6 +378,31 @@ describe("POST /api/billing/minha-assinatura/plano — quando a troca não cabe"
     expect(agendarTroca).not.toHaveBeenCalled();
   });
 
+  // DEPOIS DA VIRADA para o mensal (medido com o relógio de teste, 11/10/2026): o agendamento
+  // antigo fica preso à assinatura por mais um mês, já sem troca nenhuma. Ele não pode impedir a
+  // pessoa de mudar de plano — e sai antes da mudança.
+  it("com o agendamento de uma troca que JÁ aconteceu (sem troca marcada): dá para mudar, e ele é solto ANTES", async () => {
+    detalhes = { agendamentoId: "sub_sched_que_ja_virou", trocaMarcada: null };
+    expect((await oferta(member)).body.troca).toMatchObject({ para: "anual", quando: "agora" });
+    expect((await ler()).body).toMatchObject({ podeMudarDePlano: true, trocaMarcada: null });
+    const res = await mudar(member, { plano: "anual", previaDe: agora() });
+    expect([res.status, res.body]).toEqual([200, { estado: "trocado" }]);
+    expect(soltarAgendamento.mock.calls).toEqual([["sub_sched_que_ja_virou"]]);
+    expect(soltarAgendamento.mock.invocationCallOrder[0]).toBeLessThan(trocarAgora.mock.invocationCallOrder[0] ?? 0);
+  });
+
+  it("o mesmo para marcar o mensal: o agendamento velho sai antes de o novo ser criado", async () => {
+    detalhes = { ...ANUAL, agendamentoId: "sub_sched_que_ja_virou", trocaMarcada: null };
+    expect((await mudar(member, { plano: "mensal" })).body).toEqual({ estado: "marcado", em: EM_UM_ANO.toISOString() });
+    expect(soltarAgendamento.mock.calls).toEqual([["sub_sched_que_ja_virou"]]);
+    expect(soltarAgendamento.mock.invocationCallOrder[0]).toBeLessThan(agendarTroca.mock.invocationCallOrder[0] ?? 0);
+  });
+
+  it("a assinatura comum (sem agendamento): nada é solto", async () => {
+    expect((await mudar(member, { plano: "anual", previaDe: agora() })).status).toBe(200);
+    expect(soltarAgendamento).not.toHaveBeenCalled();
+  });
+
   it("sem assinatura que dê acesso: 409, e a Stripe nem é consultada", async () => {
     await comEspelho("canceled", PASSADO);
     expect((await mudar(member, { plano: "anual", previaDe: agora() })).body).toEqual({ error: "SemAssinatura" });
