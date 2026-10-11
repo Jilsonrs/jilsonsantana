@@ -33,7 +33,8 @@ import { RITMO } from "@/lib/troca-de-plano";
 // A TELA DE MUDAR DE PLANO (Fase 4, etapa 4.6, sessão b). É COBRANÇA. O que estes testes protegem:
 //   - o valor e as datas na tela são os que o SERVIDOR mandou — a tela não calcula nada —, e o
 //     valor é mostrado ANTES do botão;
-//   - ao servidor vão só PARA QUAL plano e o instante da conta mostrada: nunca preço nem valor;
+//   - ao servidor vão só PARA QUAL plano e o valor que a tela MOSTROU (para ele conferir com a
+//     conta refeita na hora): nunca um preço, nem um valor a cobrar;
 //   - "seu plano agora é o Anual" só aparece quando o servidor disse que trocou (ou o banco
 //     confirmou); recusa, confirmação não concluída e falha têm cada uma a sua frase;
 //   - se a confirmação do banco não é concluída — por QUALQUER motivo —, a troca pendente é
@@ -62,7 +63,7 @@ const MENSAL: MinhaAssinatura = {
   trocaMarcada: null,
 };
 const ANUAL: MinhaAssinatura = { ...MENSAL, plano: "anual", preco: { centavos: 99500, moeda: "brl" }, proximaCobranca: { centavos: 99500, moeda: "brl", em: EM_UM_ANO } };
-const PARA_O_ANUAL: TrocaDisponivel = { troca: { para: "anual", quando: "agora", preco: { centavos: 99500, moeda: "brl" }, hoje: { centavos: 92840, moeda: "brl" }, proximaEm: EM_UM_ANO, previaDe: 1_800_000_500 } };
+const PARA_O_ANUAL: TrocaDisponivel = { troca: { para: "anual", quando: "agora", preco: { centavos: 99500, moeda: "brl" }, hoje: { centavos: 92840, moeda: "brl" }, proximaEm: EM_UM_ANO } };
 const PARA_O_MENSAL: TrocaDisponivel = { troca: { para: "mensal", quando: "fim-do-periodo", preco: { centavos: 9990, moeda: "brl" }, em: EM_UM_ANO } };
 const PLANOS: PlanosDaAssinatura = { chavePublicavel: "pk_test_da_tela", planos: [], formasDePagamento: ["card"] };
 const recusa = (error: string, status = 409) => Object.assign(new Error(error), { response: { status, data: { error } } });
@@ -147,11 +148,12 @@ describe("MudarDePlanoPage — do Mensal para o Anual, na hora", () => {
     expect(naTela()).toContain("A troca vale na hora. Hoje você paga R$ 928,40, já descontado o que sobrou do mês que você pagou. A próxima cobrança é em 11/10/2027.");
   });
 
-  it("ao servidor vão só o plano e o instante da conta mostrada — e a tela diz que trocou quando ELE diz", async () => {
+  it("ao servidor vão só o plano e o valor que a tela MOSTROU — e a tela diz que trocou quando ELE diz", async () => {
     abrir();
     fireEvent.click(await paraOAnual());
     expect((await screen.findByRole("status")).textContent).toBe("Pronto. Seu plano agora é o Anual.");
-    expect(mudarDePlano.mock.calls).toEqual([[{ plano: "anual", previaDe: 1_800_000_500 }]]);
+    // R$ 928,40: exatamente o "hoje você paga" que o servidor mandou e a pessoa leu.
+    expect(mudarDePlano.mock.calls).toEqual([[{ plano: "anual", valorMostrado: 92840 }]]);
     expect(screen.queryByRole("button", { name: "Mudar para o Anual" })).toBeNull();
     expect(screen.getByRole("link", { name: "Faturamento e Assinatura" }).getAttribute("href")).toBe("/aluno/conta/faturamento");
     expect(confirmarNoBanco).not.toHaveBeenCalled();
@@ -206,9 +208,9 @@ describe("MudarDePlanoPage — do Mensal para o Anual, na hora", () => {
     expect(screen.queryByText("Pronto. Seu plano agora é o Anual.")).toBeNull();
   });
 
-  it("a conta mostrada envelheceu: a tela pede outra, avisa que o valor mudou — e o novo clique manda o instante NOVO", async () => {
+  it("o valor mudou com a tela aberta: a tela pede outra conta, avisa que o valor mudou — e o novo clique manda o valor NOVO", async () => {
     mudarDePlano.mockRejectedValueOnce(recusa("PreviaVencida"));
-    getTrocaDePlano.mockResolvedValueOnce(PARA_O_ANUAL).mockResolvedValue({ troca: { para: "anual", quando: "agora", preco: { centavos: 99500, moeda: "brl" }, hoje: { centavos: 92950, moeda: "brl" }, proximaEm: EM_UM_ANO, previaDe: 1_800_002_400 } });
+    getTrocaDePlano.mockResolvedValueOnce(PARA_O_ANUAL).mockResolvedValue({ troca: { para: "anual", quando: "agora", preco: { centavos: 99500, moeda: "brl" }, hoje: { centavos: 92950, moeda: "brl" }, proximaEm: EM_UM_ANO } });
     abrir();
     fireEvent.click(await paraOAnual());
     expect(await screen.findByText("O valor foi atualizado. Confira e confirme de novo.")).toBeTruthy();
@@ -216,7 +218,7 @@ describe("MudarDePlanoPage — do Mensal para o Anual, na hora", () => {
     expect(screen.queryByRole("alert")).toBeNull();
     fireEvent.click(await paraOAnual());
     await screen.findByText("Pronto. Seu plano agora é o Anual.");
-    expect(mudarDePlano.mock.calls).toEqual([[{ plano: "anual", previaDe: 1_800_000_500 }], [{ plano: "anual", previaDe: 1_800_002_400 }]]);
+    expect(mudarDePlano.mock.calls).toEqual([[{ plano: "anual", valorMostrado: 92840 }], [{ plano: "anual", valorMostrado: 92950 }]]);
   });
 });
 

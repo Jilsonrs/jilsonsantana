@@ -4713,22 +4713,43 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       **SESSÃO (b) — FECHADA NO `dev` em 11/10/2026, NÃO PUBLICADA** (os passos 7 a 13, com as
       duas revisões de segurança). **Falta, e é do operador:** a parte 2 do teste no navegador
       (com cartão de teste: o reembolso e a janela do banco, que ainda não abriu num navegador —
-      `billing.md` → *Pendências de verificação*), a **P69** e a **P71** nos painéis, a **P76**
-      (abaixo) e a decisão de publicar. O histórico da sessão segue abaixo.
+      `billing.md` → *Pendências de verificação*), a **P69** e a **P71** nos painéis e a
+      decisão de publicar. O histórico da sessão segue abaixo.
       **Teste do operador no navegador, parte 1 — FEITO (11/10/2026)**, com a assinatura de
       cortesia do `member@` do computador, 12 telas conferidas: mudar para o Anual (R$ 0,00, na
       hora), marcar o Mensal para o fim do ano, "Continuar no Anual", cancelar com motivo e
       comentário (uma saída só, sem reembolso), "Manter a assinatura". Tudo como esperado; a
       assinatura ficou anual, renovando, sem troca marcada e sem motivo guardado (conferido na
       Stripe e no espelho).
-      **Achado do teste, medido em seguida na área restrita — é pergunta ao operador (P76):** o
-      ano do Anual termina no ANIVERSÁRIO da assinatura, e não um ano depois da troca.
-      `[FATO — medido com o relógio de teste, 11/10/2026]` mensal assinado em 11/10, trocado em
-      30/12: R$ 738,25 na hora (o anual proporcional aos 285 dias até o aniversário, menos os 12
-      dias que sobraram do mês), e a cobrança seguinte em 11/10/2027. O cobrado é o mostrado, e
-      a data aparece na tela; mas a frase aprovada (e o comentário de `calcularTroca`, a corrigir
-      junto com a decisão) descreve "o plano novo inteiro, menos o que sobrou do mês". As provas
-      anteriores só trocaram no primeiro dia da assinatura, quando as duas contas coincidem.
+      **Achado do teste, e a decisão do operador (P76 → B, 11/10/2026): O ANO DO ANUAL COMEÇA
+      NO DIA DA TROCA.** `[FATO — medido com o relógio de teste]` sem pedir nada, a Stripe
+      mantém o aniversário da assinatura: mensal assinado em 11/10 e trocado em 30/12 pagava
+      R$ 738,25 (o anual proporcional até o aniversário) e era cobrado de novo em 11/10/2027. As
+      provas anteriores só trocaram no primeiro dia, quando as duas contas coincidem.
+      **O que mudou no código** (substitui o "instante da conta" dos passos 10 e 11, abaixo):
+      `paraPedidoDeTroca` pede o período recomeçando (`billing_cycle_anchor: { type: "now" }`);
+      `[FATOS — medidos]` nesta versão da Stripe o campo é um objeto, e com ele ela recusa o
+      instante da conta (`proration_date`). Então saíram `previaDe`, `previaAindaVale` e a
+      validade de 30 minutos, e entrou a conferência do valor: o site devolve o valor que
+      mostrou (`valorMostrado`), o servidor refaz a conta com a trava logo antes de trocar e,
+      se não bate, responde `PreviaVencida` — a tela mostra o valor novo. O valor que vem do
+      site nunca é o que se cobra. **Docs check (context7):** Stripe → `/websites/stripe` →
+      no modo flexível a âncora não recomeça sozinha ao trocar de preço (2 consultas, refeitas
+      porque a sessão foi compactada; a forma do campo e a recusa do instante saíram dos tipos
+      da biblioteca e da medição). **Prova na área restrita:** 18 de 18 com as funções de
+      verdade — mensal há 80 dias paga R$ 956,33 (o anual menos os 12 dias que sobraram), o ano
+      vai do dia da troca a um ano depois, o cobrado é o mostrado, a data de início não muda, o
+      banco pedindo confirmação e o cartão recusado deixam o mês pago como estava, a cortesia
+      troca a R$ 0. **Testes:** 3 de rota novos e os existentes reescritos; **mutação:** 7 de 7.
+      Gates: typecheck, lint, build, suíte do site (935) e de servidor como o CI (1038).
+      **Limite conhecido** (`billing.md` → Limitações): o que sobra do mês diminui ~1 centavo a
+      cada 4,5 minutos — quem demora na tela confirma de novo; e, perto de uma vez em mil, a
+      cobrança pode sair 1 centavo acima do mostrado.
+      **Para a parte 2 do teste:** a assinatura de cortesia do `member@` do computador foi
+      encerrada a pedido do operador (11/10/2026). `[FATO — medido]` encerrar uma assinatura de
+      100% direto deixa o período inteiro como "pago" (um ano de acesso, no anual); para a
+      conta ficar livre, um período de teste de 90 segundos antes de encerrar — só na área
+      restrita, com as travas de sempre.
       Feito: o item 0 ("Sair"), a consulta à Stripe, os
       **passos 7, 8 e 10** (todo o servidor) e **os textos das telas, aprovados por ele em
       português** (três blocos, 11/10/2026; já no dicionário, em `app.faturamento.plano`,

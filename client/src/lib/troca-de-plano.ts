@@ -7,15 +7,15 @@ import { semInterromper } from "@/lib/versao";
 
 // MUDAR DE PLANO (Fase 4, etapa 4.6, sessão b): o que a tela de mudar de plano lê e faz. Quem
 // decide para qual plano dá para ir, quanto custa e quando vale é o SERVIDOR; daqui vão só PARA
-// QUAL plano e, na troca que vale na hora, o instante da conta mostrada — é o que faz o valor
-// cobrado ser exatamente o que a pessoa leu.
+// QUAL plano e, na troca que vale na hora, o valor que a tela MOSTROU — o servidor refaz a conta
+// e só troca se ela ainda for essa: é o que faz o valor cobrado ser o que a pessoa leu.
 
 export const CHAVE_DA_TROCA_DE_PLANO = ["billing", "troca-de-plano"] as const;
 
 /**
  * A troca que a conta pode fazer agora, já com a conta da Stripe. NÃO é relida sozinha (o valor
  * mudaria de centavo em centavo na frente da pessoa) nem fica guardada depois de a tela fechar:
- * cada visita pede uma conta nova. Quando o servidor diz que ela envelheceu, a tela pede outra.
+ * cada visita pede uma conta nova. Quando o servidor diz que o valor mudou, a tela pede outra.
  */
 export function useOfertaDeTroca(ligada: boolean) {
   return useQuery({ queryKey: CHAVE_DA_TROCA_DE_PLANO, queryFn: getTrocaDePlano, enabled: ligada, gcTime: 0, staleTime: Infinity, refetchOnWindowFocus: false });
@@ -105,7 +105,7 @@ export function useMudarDePlano(chavePublicavel: string | undefined) {
   const [enviando, setEnviando] = useState(false);
   /** A janela do banco está aberta: a pessoa precisa concluir a confirmação nela. */
   const [noBanco, setNoBanco] = useState(false);
-  /** A conta mostrada envelheceu e foi pedida de novo: a pessoa confere o valor e confirma outra vez. */
+  /** O valor mostrado já não era o da conta, e ela foi pedida de novo: a pessoa confere o valor e confirma outra vez. */
   const [valorAtualizado, setValorAtualizado] = useState(false);
 
   // Dois cliques, uma troca: enquanto envia, o botão fica desligado (é a tela que garante).
@@ -116,7 +116,7 @@ export function useMudarDePlano(chavePublicavel: string | undefined) {
     try {
       // Carregar a página no meio cortaria a troca — e a confirmação do banco (`lib/versao.ts`).
       await semInterromper(async () => {
-        const resposta = await mudarDePlano(troca.quando === "agora" ? { plano: Plano.ANUAL, previaDe: troca.previaDe } : { plano: Plano.MENSAL });
+        const resposta = await mudarDePlano(troca.quando === "agora" ? { plano: Plano.ANUAL, valorMostrado: troca.hoje.centavos } : { plano: Plano.MENSAL });
         if (resposta.estado === "trocado") return setFeito({ como: "trocado" });
         if (resposta.estado === "marcado") return setFeito({ como: "marcado", em: resposta.em });
         // O BANCO PEDIU UMA CONFIRMAÇÃO: a troca só vale depois dela. A janela do banco abre por

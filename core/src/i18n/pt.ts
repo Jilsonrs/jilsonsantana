@@ -512,7 +512,7 @@ export const pt = {
         atrasada: "Não conseguimos cobrar o seu cartão. Troque o cartão antes de mudar de plano.",
         cartaoRecusado: "Seu cartão foi recusado e o plano continua o mesmo. Troque o cartão e tente de novo.",
         erro: "Não foi possível mudar o plano. Tente de novo.",
-        // A tela ficou aberta por mais de 30 minutos: o valor de "hoje você paga" foi calculado de novo.
+        // O valor de "hoje você paga" mudou entre a tela abrir e o clique (o que sobra do mês diminui com o tempo): foi calculado de novo.
         valorAtualizado: "O valor foi atualizado. Confira e confirme de novo."
       },
       cancelamento: {

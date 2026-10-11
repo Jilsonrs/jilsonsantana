@@ -188,13 +188,14 @@ export type RenovacaoParada = {
 /**
  * Resposta de `GET /api/billing/minha-assinatura/plano`: a troca de plano que esta conta pode
  * fazer AGORA — ou nenhuma (decisões do operador, 11/10/2026).
- *   - para o ANUAL vale na hora: quanto se paga hoje (a conta é da Stripe, já descontado o que
- *     sobrou do mês pago) e quando é a cobrança seguinte. `previaDe` é o instante da conta: o
- *     site o devolve ao confirmar, para o valor cobrado ser EXATAMENTE o mostrado.
+ *   - para o ANUAL vale na hora, e o ANO COMEÇA NO DIA DA TROCA: quanto se paga hoje (a conta é
+ *     da Stripe: o anual inteiro, menos o que sobrou do mês pago) e quando é a cobrança
+ *     seguinte. Ao confirmar, o site devolve o VALOR que mostrou (`hoje.centavos`): o servidor
+ *     refaz a conta na hora e, se ela mudou, não troca — a tela mostra o valor novo.
  *   - para o MENSAL vale no fim do período já pago: quando, e quanto passa a custar por mês.
  */
 export type TrocaDePlano =
-  | { para: "anual"; quando: "agora"; preco: { centavos: number; moeda: string }; hoje: { centavos: number; moeda: string }; proximaEm: string | null; previaDe: number }
+  | { para: "anual"; quando: "agora"; preco: { centavos: number; moeda: string }; hoje: { centavos: number; moeda: string }; proximaEm: string | null }
   | { para: "mensal"; quando: "fim-do-periodo"; preco: { centavos: number; moeda: string }; em: string };
 export type TrocaDisponivel = { troca: TrocaDePlano | null };
 
@@ -218,9 +219,6 @@ export type TrocaDesfeita = {
    */
   plano?: Plano | null;
 };
-
-/** Por quanto tempo vale a conta mostrada na tela de mudar de plano, em segundos: depois, a tela pede outra. */
-export const VALIDADE_DA_PREVIA_DA_TROCA = 30 * 60;
 
 /** Resposta de `POST /api/billing/cartao`: o segredo com que o campo da Stripe guarda o cartão novo. */
 export type TrocaDeCartaoPreparada = { segredo: string };

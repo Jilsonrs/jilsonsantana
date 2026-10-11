@@ -1,4 +1,4 @@
-import { VALIDADE_DA_PREVIA_DA_TROCA, type Plano, type PlanoMudado, type TrocaDePlano, type TrocaDesfeita } from "@jilson/core";
+import type { Plano, PlanoMudado, TrocaDePlano, TrocaDesfeita } from "@jilson/core";
 import { operarNaAssinatura } from "./assinaturas.js";
 import { assinaturaDaConta, outroPlano } from "./minha-assinatura.js";
 import { buscarPrecos } from "./stripe.js";
@@ -9,27 +9,20 @@ import { agendarTroca, anularFatura, calcularTroca, soltarAgendamento, trocarAgo
 // tela `…/faturamento/plano`, na mesma disciplina de `minha-assinatura.ts`: o pedido nunca diz
 // QUAL assinatura (é a da conta da sessão) nem preço ou valor — só PARA QUAL plano. Decisões do
 // operador (11/10/2026):
-//   - mensal → anual vale NA HORA, com o valor mostrado antes;
+//   - mensal → anual vale NA HORA, com o valor mostrado antes — e o ano começa no dia da troca;
 //   - anual → mensal vale NO FIM do ano já pago — nada muda nem é cobrado até lá —, e dá para
 //     desistir;
 //   - trocar de plano não recomeça o prazo do reembolso (a data de início da assinatura não muda).
-// O VALOR MOSTRADO É O COBRADO: a prévia devolve o instante da conta (`previaDe`), o site o manda
-// de volta, e a troca usa o MESMO instante. O servidor só aceita um instante RECENTE: um antigo
-// daria crédito por dias do mês que a pessoa já usou.
+// O VALOR MOSTRADO É O COBRADO: a Stripe faz a conta sempre no momento do pedido (com o período
+// recomeçando no dia da troca ela não aceita um instante fixado), e o que sobra do mês diminui
+// com o tempo. Então o site devolve o VALOR que mostrou, e o servidor refaz a conta com a trava,
+// logo antes de trocar: se não bate, NÃO troca — a tela mostra o valor novo e a pessoa confirma
+// de novo. O valor que vem do site nunca é o que se cobra: só pode impedir a troca.
 // Cada operação é a Stripe e depois a sincronia, com a trava da assinatura (`operarNaAssinatura`)
 // — e, com a trava, os detalhes são RELIDOS: a decisão vale pelo que a Stripe diz AGORA (duas
 // abas: o que já foi desfeito na outra não vira erro, e o que foi criado nela não escapa).
 
 type SemTroca = { resultado: "sem-assinatura" } | { resultado: "desconhecida" } | { resultado: "ocupada" };
-
-const emSegundos = (data: Date) => Math.floor(data.getTime() / 1000);
-
-/** O instante da conta ainda vale? Nem velho (daria crédito por dias já usados), nem do futuro. Função pura. */
-export function previaAindaVale(previaDe: number | undefined, agora: Date = new Date()): previaDe is number {
-  if (typeof previaDe !== "number" || !Number.isInteger(previaDe)) return false;
-  const [limiteVelho, limiteNovo] = [emSegundos(agora) - VALIDADE_DA_PREVIA_DA_TROCA, emSegundos(agora) + 60];
-  return previaDe >= limiteVelho && previaDe <= limiteNovo;
-}
 
 /** O preço do plano, lido da Stripe pela lookup key — o mesmo da tela de assinar. */
 async function precoDoPlano(plano: Plano): Promise<{ precoId: string; centavos: number; moeda: string }> {
@@ -55,20 +48,19 @@ export async function lerTrocaDePlano(userId: string): Promise<OfertaDeTroca> {
     if (!detalhes.fimDoPeriodo) return { resultado: "ok", troca: null };
     return { resultado: "ok", troca: { para, quando: "fim-do-periodo", preco, em: detalhes.fimDoPeriodo.toISOString() } };
   }
-  const previaDe = emSegundos(new Date());
-  const conta = await calcularTroca({ assinaturaId: detalhes.id, itemId: detalhes.itemId, precoId: novo.precoId, em: previaDe });
-  return { resultado: "ok", troca: { para, quando: "agora", preco, hoje: { centavos: conta.centavosHoje, moeda: conta.moeda }, proximaEm: conta.proximaEm ? conta.proximaEm.toISOString() : null, previaDe } };
+  const conta = await calcularTroca({ assinaturaId: detalhes.id, itemId: detalhes.itemId, precoId: novo.precoId });
+  return { resultado: "ok", troca: { para, quando: "agora", preco, hoje: { centavos: conta.centavosHoje, moeda: conta.moeda }, proximaEm: conta.proximaEm ? conta.proximaEm.toISOString() : null } };
 }
 
 /**
  * `indisponivel`: esta assinatura não pode ir para esse plano agora (já é dele, não renova, está
- * atrasada, ou já tem troca marcada). `previa-vencida`: a conta mostrada envelheceu — a tela pede
+ * atrasada, ou já tem troca marcada). `previa-vencida`: o valor mostrado já não é o da conta — a tela pede
  * outra. `recusado`: o cartão não passou; o plano continua o mesmo e nada foi cobrado.
  */
 export type Mudanca = ({ resultado: "ok" } & PlanoMudado) | { resultado: "indisponivel" } | { resultado: "previa-vencida" } | { resultado: "recusado" } | SemTroca;
 
 /** Muda o plano da assinatura DESTA conta: para o anual, na hora; para o mensal, no fim do período pago. */
-export async function mudarMeuPlano(userId: string, pedido: { plano: Plano; previaDe?: number }): Promise<Mudanca> {
+export async function mudarMeuPlano(userId: string, pedido: { plano: Plano; valorMostrado?: number }): Promise<Mudanca> {
   const achada = await assinaturaDaConta(userId);
   if (achada.resultado === "desconhecida") return achada;
   if (achada.resultado === "nenhuma") return { resultado: "sem-assinatura" };
@@ -92,9 +84,10 @@ export async function mudarMeuPlano(userId: string, pedido: { plano: Plano; prev
     return { resultado: "ok", estado: "marcado", em: operacao.feito.toISOString() };
   }
 
-  const { previaDe } = pedido;
-  if (!previaAindaVale(previaDe)) return { resultado: "previa-vencida" };
-  const operacao = await operarNaAssinatura(id, async (): Promise<DesfechoDaTroca | null> => {
+  // Sem o valor que a tela mostrou não há o que conferir: nada é trocado, e a tela pede a conta.
+  const { valorMostrado } = pedido;
+  if (typeof valorMostrado !== "number") return { resultado: "previa-vencida" };
+  const operacao = await operarNaAssinatura(id, async (): Promise<DesfechoDaTroca | "mudou-o-valor" | null> => {
     const agora = await buscarDetalhes(id);
     if (outroPlano(agora) !== "anual" || !agora.itemId) return null;
     // O agendamento de uma troca que JÁ aconteceu (a virada para o mensal) sai antes: quem manda
@@ -105,7 +98,11 @@ export async function mudarMeuPlano(userId: string, pedido: { plano: Plano; prev
     // resposta for "paga", a pessoa confirmou no mesmo instante — o plano já mudou, e nada mais
     // é cobrado.
     if (agora.faturaDaTrocaId && (await anularFatura(agora.faturaDaTrocaId)) === "paga") return { estado: "trocado" };
-    const desfecho = await trocarAgora({ assinaturaId: id, itemId: agora.itemId, precoId: novo.precoId, em: previaDe });
+    const troca = { assinaturaId: id, itemId: agora.itemId, precoId: novo.precoId };
+    // A CONTA É REFEITA AGORA, com a trava, logo antes da troca: se o valor já não é o que a tela
+    // mostrou (para mais ou para menos), nada é cobrado — a pessoa vê o valor novo e decide.
+    if ((await calcularTroca(troca)).centavosHoje !== valorMostrado) return "mudou-o-valor";
+    const desfecho = await trocarAgora(troca);
     // RECUSADO: a fatura da troca é anulada JÁ — a tela diz "nada foi cobrado", e uma fatura em
     // aberto ainda poderia ser cobrada depois. Se não anular, precisa de gente.
     if (desfecho.estado === "recusado" && desfecho.faturaId) {
@@ -120,6 +117,7 @@ export async function mudarMeuPlano(userId: string, pedido: { plano: Plano; prev
   if (!operacao) return { resultado: "ocupada" };
   const desfecho = operacao.feito;
   if (!desfecho) return { resultado: "indisponivel" };
+  if (desfecho === "mudou-o-valor") return { resultado: "previa-vencida" };
   if (desfecho.estado === "recusado") {
     console.warn(`[stripe] mudar de plano: o cartão da assinatura ${id} (conta ${userId}) foi recusado; o plano continua o mesmo`);
     return { resultado: "recusado" };

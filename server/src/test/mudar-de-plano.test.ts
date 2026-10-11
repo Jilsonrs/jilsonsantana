@@ -38,15 +38,16 @@ vi.mock("../lib/stripe.js", async (importOriginal) => ({
 
 import servidor from "./servidor.js";
 import { prisma } from "../lib/prisma.js";
-import { previaAindaVale } from "../lib/meu-plano.js";
 import { AssinaturaNaoEncontrada } from "../lib/stripe.js";
 import { ASSINATURA_DE_TESTE } from "../lib/assinatura-de-teste.js";
 
 // MUDAR DE PLANO (Fase 4, etapa 4.6, sessão b). É COBRANÇA. O que estes testes protegem:
 //   - nada acontece sem login; a assinatura é SEMPRE a da conta da sessão, e o site diz só PARA
 //     QUAL plano: o preço é o que o SERVIDOR acha, e o valor é a conta da Stripe;
-//   - o valor mostrado é o cobrado: a troca usa o instante da prévia, e só se ele for RECENTE —
-//     um instante antigo daria crédito por dias do mês que a pessoa já usou;
+//   - o valor mostrado é o cobrado: o servidor REFAZ a conta com a trava, logo antes de trocar,
+//     e só troca se ela ainda for o valor que a tela mostrou — o valor que vem do site nunca é o
+//     que se cobra, só pode impedir a troca;
+//   - o ano do anual começa no dia da troca (a forma do pedido tem teste em `stripe-plano.test.ts`);
 //   - mensal → anual vale na hora; anual → mensal é só MARCADO para o fim do período pago;
 //   - o cartão recusado não deixa nada para ser cobrado depois; o banco pedindo confirmação
 //     devolve o segredo, e a troca só vale depois;
@@ -62,7 +63,8 @@ const CLIENTE = `cus_${S}_do_member`;
 const outro = `outra-conta-plano-${S}`;
 const ANTES = process.env.STRIPE_SECRET_KEY;
 const PRECOS: PrecoDoPlano[] = [{ plano: "mensal", precoId: "price_mensal_do_teste", centavos: 9990, moeda: "brl" }, { plano: "anual", precoId: "price_anual_do_teste", centavos: 99500, moeda: "brl" }];
-const agora = () => Math.floor(Date.now() / 1000);
+/** O que a conta da "Stripe" dá hoje (o dublê de `calcularTroca`) — e, por isso, o que a tela mostrou. */
+const MOSTRADO = 92840;
 let member: string[] = [];
 let memberId = "";
 
@@ -145,29 +147,10 @@ const nadaMudouNaStripe = () => {
   for (const dublê of [trocarAgora, agendarTroca, soltarAgendamento, anularFatura]) expect(dublê).not.toHaveBeenCalled();
 };
 
-describe("a conta mostrada ainda vale?", () => {
-  const ao = new Date("2026-10-11T12:00:00Z");
-  const s = Math.floor(ao.getTime() / 1000);
-
-  it("só o instante RECENTE: até 30 minutos atrás — um antigo daria crédito por dias que a pessoa já usou", () => {
-    expect(previaAindaVale(s, ao)).toBe(true);
-    expect(previaAindaVale(s - 30 * 60, ao)).toBe(true);
-    expect(previaAindaVale(s - 30 * 60 - 1, ao)).toBe(false);
-    expect(previaAindaVale(s - 20 * 24 * 60 * 60, ao)).toBe(false);
-  });
-
-  it("nem do futuro (além de um minuto de folga de relógio), nem ausente, nem quebrado", () => {
-    expect(previaAindaVale(s + 60, ao)).toBe(true);
-    expect(previaAindaVale(s + 61, ao)).toBe(false);
-    expect(previaAindaVale(undefined, ao)).toBe(false);
-    expect(previaAindaVale(s + 0.5, ao)).toBe(false);
-  });
-});
-
 describe("mudar de plano — quem entra", () => {
   it("sem login: 401 nos três pedidos, e a Stripe nem é chamada", async () => {
     expect((await oferta()).status).toBe(401);
-    expect((await mudar([], { plano: "anual", previaDe: agora() })).status).toBe(401);
+    expect((await mudar([], { plano: "anual", valorMostrado: MOSTRADO })).status).toBe(401);
     expect((await desistir()).status).toBe(401);
     expect(buscarDetalhes).not.toHaveBeenCalled();
     nadaMudouNaStripe();
@@ -175,7 +158,7 @@ describe("mudar de plano — quem entra", () => {
 
   it("sem a chave da Stripe: 503 nos três, sem chamar nada; e as respostas nunca ficam em cache", async () => {
     delete process.env.STRIPE_SECRET_KEY;
-    const respostas = [await oferta(member), await mudar(member, { plano: "anual", previaDe: agora() }), await desistir(member)];
+    const respostas = [await oferta(member), await mudar(member, { plano: "anual", valorMostrado: MOSTRADO }), await desistir(member)];
     expect(respostas.map((r) => [r.status, r.headers["cache-control"]])).toEqual([[503, "private, no-store"], [503, "private, no-store"], [503, "private, no-store"]]);
     expect(buscarDetalhes).not.toHaveBeenCalled();
     nadaMudouNaStripe();
@@ -187,7 +170,7 @@ describe("mudar de plano — quem entra", () => {
   it("pedido que muda alguma coisa, vindo de OUTRO SITE: 403 antes de tudo — do mesmo site, sem o cabeçalho, e a leitura passam", async () => {
     const aviso = vi.spyOn(console, "warn").mockImplementation(() => {});
     try {
-      const deFora = (caminho: string) => request(servidor).post(`/api/billing/minha-assinatura${caminho}`).set("Cookie", member).set("Sec-Fetch-Site", "cross-site").send({ plano: "anual", previaDe: agora() });
+      const deFora = (caminho: string) => request(servidor).post(`/api/billing/minha-assinatura${caminho}`).set("Cookie", member).set("Sec-Fetch-Site", "cross-site").send({ plano: "anual", valorMostrado: MOSTRADO });
       for (const caminho of ["/plano", "/plano/desistir", "/cancelar", "/manter", "/reembolso"]) {
         const res = await deFora(caminho);
         expect([res.status, res.body], caminho).toEqual([403, { error: "OutroSite" }]);
@@ -200,14 +183,14 @@ describe("mudar de plano — quem entra", () => {
     nadaMudouNaStripe();
     for (const origem of ["same-origin", "same-site", "none"]) {
       trocarAgora.mockClear();
-      const res = await mudar(member, { plano: "anual", previaDe: agora() }).set("Sec-Fetch-Site", origem);
+      const res = await mudar(member, { plano: "anual", valorMostrado: MOSTRADO }).set("Sec-Fetch-Site", origem);
       expect([res.status, trocarAgora.mock.calls.length], origem).toEqual([200, 1]);
     }
     expect((await oferta(member).set("Sec-Fetch-Site", "cross-site")).status).toBe(200);
   });
 
   it("plano que não existe: 400, e nada vai à Stripe", async () => {
-    expect((await mudar(member, { plano: "vitalicio", previaDe: agora() })).status).toBe(400);
+    expect((await mudar(member, { plano: "vitalicio", valorMostrado: MOSTRADO })).status).toBe(400);
     expect((await mudar(member, {})).status).toBe(400);
     expect(buscarDetalhes).not.toHaveBeenCalled();
     nadaMudouNaStripe();
@@ -216,15 +199,10 @@ describe("mudar de plano — quem entra", () => {
 
 describe("GET /api/billing/minha-assinatura/plano — a troca que a conta pode fazer", () => {
   it("quem é MENSAL: para o anual, na hora — quanto paga hoje (a conta da Stripe), a cobrança seguinte e o instante da conta", async () => {
-    const antes = agora();
     const res = await oferta(member);
-    expect(res.status).toBe(200);
-    const { troca } = res.body;
-    expect(troca).toMatchObject({ para: "anual", quando: "agora", preco: { centavos: 99500, moeda: "brl" }, hoje: { centavos: 92840, moeda: "brl" }, proximaEm: EM_UM_ANO.toISOString() });
-    expect(troca.previaDe).toBeGreaterThanOrEqual(antes);
-    expect(troca.previaDe).toBeLessThanOrEqual(agora());
+    expect([res.status, res.body]).toEqual([200, { troca: { para: "anual", quando: "agora", preco: { centavos: 99500, moeda: "brl" }, hoje: { centavos: MOSTRADO, moeda: "brl" }, proximaEm: EM_UM_ANO.toISOString() } }]);
     // A conta foi feita para a assinatura e o item DESTA conta, com o preço que o SERVIDOR achou.
-    expect(calcularTroca.mock.calls).toEqual([[{ assinaturaId: SUB, itemId: "si_do_member", precoId: "price_anual_do_teste", em: troca.previaDe }]]);
+    expect(calcularTroca.mock.calls).toEqual([[{ assinaturaId: SUB, itemId: "si_do_member", precoId: "price_anual_do_teste" }]]);
   });
 
   it("quem é ANUAL: para o mensal, no fim do período já pago — sem conta nenhuma a fazer", async () => {
@@ -265,16 +243,20 @@ describe("GET /api/billing/minha-assinatura/plano — a troca que a conta pode f
 });
 
 describe("POST /api/billing/minha-assinatura/plano — para o ANUAL, na hora", () => {
-  it("troca a assinatura DESTA conta, com o preço que o servidor achou e o instante da conta mostrada", async () => {
-    const previaDe = agora() - 120;
-    const res = await mudar(member, { plano: "anual", previaDe });
+  it("troca a assinatura DESTA conta, com o preço que o servidor achou — e a conta é REFEITA com a trava, logo antes de trocar", async () => {
+    const res = await mudar(member, { plano: "anual", valorMostrado: MOSTRADO });
     expect([res.status, res.body]).toEqual([200, { estado: "trocado" }]);
-    expect(trocarAgora.mock.calls).toEqual([[{ assinaturaId: SUB, itemId: "si_do_member", precoId: "price_anual_do_teste", em: previaDe }]]);
+    const troca = { assinaturaId: SUB, itemId: "si_do_member", precoId: "price_anual_do_teste" };
+    expect(trocarAgora.mock.calls).toEqual([[troca]]);
+    expect(calcularTroca.mock.calls).toEqual([[troca]]);
+    const [releu, conferiu, trocou] = [buscarDetalhes.mock.invocationCallOrder[1] ?? 0, calcularTroca.mock.invocationCallOrder[0] ?? 0, trocarAgora.mock.invocationCallOrder[0] ?? 0];
+    expect(releu).toBeLessThan(conferiu);
+    expect(conferiu).toBeLessThan(trocou);
   });
 
   it("a Stripe muda PRIMEIRO, e o espelho é acertado em seguida: o novo 'pago até' é o do ano", async () => {
     naStripe = { pagoAte: EM_UM_ANO };
-    await mudar(member, { plano: "anual", previaDe: agora() });
+    await mudar(member, { plano: "anual", valorMostrado: MOSTRADO });
     expect(trocarAgora.mock.invocationCallOrder[0]).toBeLessThan(buscarAssinatura.mock.invocationCallOrder[0] ?? 0);
     expect((await espelho()).currentPeriodEnd?.getTime()).toBe(EM_UM_ANO.getTime());
   });
@@ -282,19 +264,49 @@ describe("POST /api/billing/minha-assinatura/plano — para o ANUAL, na hora", (
   it("o corpo não escolhe nada: preço, valor, item e assinatura de OUTRA pessoa são ignorados", async () => {
     const alheia = `sub_${S}_alheia`;
     await prisma.subscription.create({ data: { ownerUserId: outro, status: "active", currentPeriodEnd: EM_20_DIAS, stripeSubscriptionId: alheia, stripeCustomerId: "cus_alheio" } });
-    const previaDe = agora();
-    const res = await mudar(member, { plano: "anual", previaDe, precoId: "price_de_um_centavo", price: "price_de_um_centavo", centavos: 1, itemId: "si_alheio", assinaturaId: alheia, userId: outro });
+    const res = await mudar(member, { plano: "anual", valorMostrado: MOSTRADO, precoId: "price_de_um_centavo", price: "price_de_um_centavo", centavos: 1, hoje: 1, itemId: "si_alheio", assinaturaId: alheia, userId: outro });
     expect(res.status).toBe(200);
-    expect(trocarAgora.mock.calls).toEqual([[{ assinaturaId: SUB, itemId: "si_do_member", precoId: "price_anual_do_teste", em: previaDe }]]);
+    // À Stripe vão só a assinatura, o item e o preço que o SERVIDOR achou: valor nenhum.
+    expect(trocarAgora.mock.calls).toEqual([[{ assinaturaId: SUB, itemId: "si_do_member", precoId: "price_anual_do_teste" }]]);
     expect(buscarDetalhes.mock.calls.flat()).not.toContain(alheia);
   });
 
-  it("a conta mostrada envelheceu, é do futuro ou não veio: 409 — a tela pede outra, e NADA é trocado", async () => {
-    for (const previaDe of [agora() - 31 * 60, agora() - 20 * 24 * 60 * 60, agora() + 3600, undefined]) {
-      const res = await mudar(member, { plano: "anual", previaDe });
-      expect([res.status, res.body], String(previaDe)).toEqual([409, { error: "PreviaVencida" }]);
+  // O VALOR QUE VEM DO SITE SÓ PODE IMPEDIR A TROCA. Um centavo a menos (a tela ficou aberta e o
+  // que sobra do mês diminuiu), um centavo a mais, um valor inventado, zero ou nada: 409 — e
+  // quem diz quanto se paga continua sendo a conta da Stripe.
+  it("o valor que a tela mostrou já não é o da conta de AGORA, ou não veio: 409 — a tela pede outra, e NADA é trocado", async () => {
+    for (const valorMostrado of [MOSTRADO - 1, MOSTRADO + 1, 1, 0, undefined]) {
+      const res = await mudar(member, { plano: "anual", valorMostrado });
+      expect([res.status, res.body], String(valorMostrado)).toEqual([409, { error: "PreviaVencida" }]);
     }
     nadaMudouNaStripe();
+  });
+
+  it("valor quebrado ou negativo: 400, e nada vai à Stripe", async () => {
+    for (const valorMostrado of [-1, 928.4, "92840"]) expect((await mudar(member, { plano: "anual", valorMostrado })).status, String(valorMostrado)).toBe(400);
+    expect(buscarDetalhes).not.toHaveBeenCalled();
+    nadaMudouNaStripe();
+  });
+
+  it("a conta mudou enquanto a tela estava aberta: recusa com o valor velho, e com o valor NOVO (que a tela busca de novo) a troca passa", async () => {
+    calcularTroca.mockResolvedValue({ centavosHoje: MOSTRADO + 1, moeda: "brl", proximaEm: EM_UM_ANO });
+    expect((await mudar(member, { plano: "anual", valorMostrado: MOSTRADO })).body).toEqual({ error: "PreviaVencida" });
+    expect(trocarAgora).not.toHaveBeenCalled();
+    expect((await oferta(member)).body.troca.hoje).toEqual({ centavos: MOSTRADO + 1, moeda: "brl" });
+    const res = await mudar(member, { plano: "anual", valorMostrado: MOSTRADO + 1 });
+    expect([res.status, res.body]).toEqual([200, { estado: "trocado" }]);
+    expect(trocarAgora).toHaveBeenCalledTimes(1);
+  });
+
+  it("a Stripe fora do ar ao refazer a conta: 500 — sem a conferência, nada é trocado", async () => {
+    calcularTroca.mockRejectedValue(new Error("[stripe] a prévia da troca de plano falhou: StripeConnectionError"));
+    const erro = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      expect((await mudar(member, { plano: "anual", valorMostrado: MOSTRADO })).status).toBe(500);
+    } finally {
+      erro.mockRestore();
+    }
+    expect(trocarAgora).not.toHaveBeenCalled();
   });
 
   it("o banco pede confirmação: a resposta leva o segredo para o site completar — a fatura NÃO é anulada, e o segredo não vai ao registro", async () => {
@@ -302,7 +314,7 @@ describe("POST /api/billing/minha-assinatura/plano — para o ANUAL, na hora", (
     const linhas: unknown[] = [];
     const espioes = (["info", "warn", "error", "log"] as const).map((nivel) => vi.spyOn(console, nivel).mockImplementation((...args: unknown[]) => void linhas.push(...args)));
     try {
-      const res = await mudar(member, { plano: "anual", previaDe: agora() });
+      const res = await mudar(member, { plano: "anual", valorMostrado: MOSTRADO });
       expect([res.status, res.body]).toEqual([200, { estado: "confirmar", segredo: "pi_7_secret_da_troca" }]);
     } finally {
       espioes.forEach((espiao) => espiao.mockRestore());
@@ -316,7 +328,7 @@ describe("POST /api/billing/minha-assinatura/plano — para o ANUAL, na hora", (
     trocarAgora.mockResolvedValue({ estado: "recusado", faturaId: "in_da_troca" });
     const aviso = vi.spyOn(console, "warn").mockImplementation(() => {});
     try {
-      const res = await mudar(member, { plano: "anual", previaDe: agora() });
+      const res = await mudar(member, { plano: "anual", valorMostrado: MOSTRADO });
       expect([res.status, res.body]).toEqual([402, { error: "CartaoRecusado" }]);
       expect(aviso.mock.calls.flat().join(" ")).toContain(`o cartão da assinatura ${SUB} (conta ${memberId}) foi recusado; o plano continua o mesmo`);
     } finally {
@@ -330,7 +342,7 @@ describe("POST /api/billing/minha-assinatura/plano — para o ANUAL, na hora", (
     anularFatura.mockRejectedValue(new Error("[stripe] a anulação da fatura da troca falhou: StripeConnectionError"));
     const [aviso, erro] = [vi.spyOn(console, "warn").mockImplementation(() => {}), vi.spyOn(console, "error").mockImplementation(() => {})];
     try {
-      expect((await mudar(member, { plano: "anual", previaDe: agora() })).status).toBe(402);
+      expect((await mudar(member, { plano: "anual", valorMostrado: MOSTRADO })).status).toBe(402);
       expect(erro.mock.calls.flat().join(" ")).toContain(`[stripe] mudar de plano: o cartão da assinatura ${SUB} (conta ${memberId}) foi recusado e a fatura da troca continuou em aberto`);
     } finally {
       aviso.mockRestore();
@@ -342,7 +354,7 @@ describe("POST /api/billing/minha-assinatura/plano — para o ANUAL, na hora", (
     trocarAgora.mockResolvedValue({ estado: "recusado", faturaId: null });
     const aviso = vi.spyOn(console, "warn").mockImplementation(() => {});
     try {
-      expect((await mudar(member, { plano: "anual", previaDe: agora() })).status).toBe(402);
+      expect((await mudar(member, { plano: "anual", valorMostrado: MOSTRADO })).status).toBe(402);
     } finally {
       aviso.mockRestore();
     }
@@ -353,13 +365,13 @@ describe("POST /api/billing/minha-assinatura/plano — para o ANUAL, na hora", (
     trocarAgora.mockRejectedValue(new Error("[stripe] a troca de plano falhou: StripeConnectionError"));
     const erro = vi.spyOn(console, "error").mockImplementation(() => {});
     try {
-      expect((await mudar(member, { plano: "anual", previaDe: agora() })).status).toBe(500);
+      expect((await mudar(member, { plano: "anual", valorMostrado: MOSTRADO })).status).toBe(500);
     } finally {
       erro.mockRestore();
     }
     trocarAgora.mockClear();
     await comAAssinaturaOcupada(async () => {
-      const res = await mudar(member, { plano: "anual", previaDe: agora() });
+      const res = await mudar(member, { plano: "anual", valorMostrado: MOSTRADO });
       expect([res.status, res.body]).toEqual([409, { error: "Ocupada" }]);
       expect(trocarAgora).not.toHaveBeenCalled();
     });
@@ -370,18 +382,18 @@ describe("POST /api/billing/minha-assinatura/plano — quando a troca não cabe"
   it("pedir o plano que já tem: 409, e nada muda", async () => {
     expect((await mudar(member, { plano: "mensal" })).body).toEqual({ error: "TrocaIndisponivel" });
     detalhes = ANUAL;
-    expect((await mudar(member, { plano: "anual", previaDe: agora() })).body).toEqual({ error: "TrocaIndisponivel" });
+    expect((await mudar(member, { plano: "anual", valorMostrado: MOSTRADO })).body).toEqual({ error: "TrocaIndisponivel" });
     nadaMudouNaStripe();
   });
 
   it("quem parou a renovação, está com a cobrança atrasada, ou já tem troca marcada: 409 — nada é cobrado nem marcado", async () => {
     detalhes = { acabaEm: EM_20_DIAS, acabaNoFimDoPeriodo: true };
-    expect((await mudar(member, { plano: "anual", previaDe: agora() })).status).toBe(409);
+    expect((await mudar(member, { plano: "anual", valorMostrado: MOSTRADO })).status).toBe(409);
     detalhes = MARCADA;
     expect((await mudar(member, { plano: "mensal" })).body).toEqual({ error: "TrocaIndisponivel" });
     await comEspelho("past_due", PASSADO);
     detalhes = { status: "past_due", pagoAte: PASSADO };
-    expect((await mudar(member, { plano: "anual", previaDe: agora() })).body).toEqual({ error: "TrocaIndisponivel" });
+    expect((await mudar(member, { plano: "anual", valorMostrado: MOSTRADO })).body).toEqual({ error: "TrocaIndisponivel" });
     nadaMudouNaStripe();
   });
 
@@ -390,7 +402,7 @@ describe("POST /api/billing/minha-assinatura/plano — quando a troca não cabe"
     const lidoAntes = { id: SUB, status: "active", pagoAte: EM_20_DIAS, plano: "mensal", preco: { centavos: 9990, moeda: "brl" }, fimDoPeriodo: EM_20_DIAS, comecouEm: null, acabaEm: null, acabaNoFimDoPeriodo: false, cartao: null, clienteId: CLIENTE, userId: memberId, faturaEmAbertoId: null, itemId: "si_do_member", agendamentoId: null, agendamentoNosso: false, trocaMarcada: null, faturaDaTrocaId: null } satisfies DetalhesDaAssinatura;
     buscarDetalhes.mockImplementationOnce(async () => lidoAntes);
     detalhes = ANUAL;
-    const res = await mudar(member, { plano: "anual", previaDe: agora() });
+    const res = await mudar(member, { plano: "anual", valorMostrado: MOSTRADO });
     expect([res.status, res.body]).toEqual([409, { error: "TrocaIndisponivel" }]);
     expect(buscarDetalhes).toHaveBeenCalledTimes(2);
     expect(trocarAgora).not.toHaveBeenCalled();
@@ -410,7 +422,7 @@ describe("POST /api/billing/minha-assinatura/plano — quando a troca não cabe"
     detalhes = { agendamentoId: "sub_sched_que_ja_virou", agendamentoNosso: true, trocaMarcada: null };
     expect((await oferta(member)).body.troca).toMatchObject({ para: "anual", quando: "agora" });
     expect((await ler()).body).toMatchObject({ podeMudarDePlano: true, trocaMarcada: null });
-    const res = await mudar(member, { plano: "anual", previaDe: agora() });
+    const res = await mudar(member, { plano: "anual", valorMostrado: MOSTRADO });
     expect([res.status, res.body]).toEqual([200, { estado: "trocado" }]);
     expect(soltarAgendamento.mock.calls).toEqual([["sub_sched_que_ja_virou"]]);
     expect(soltarAgendamento.mock.invocationCallOrder[0]).toBeLessThan(trocarAgora.mock.invocationCallOrder[0] ?? 0);
@@ -430,7 +442,7 @@ describe("POST /api/billing/minha-assinatura/plano — quando a troca não cabe"
       detalhes = caso;
       expect((await oferta(member)).body, JSON.stringify(caso)).toEqual({ troca: null });
       expect((await ler()).body).toMatchObject({ podeMudarDePlano: false });
-      const pedido = caso.plano === "anual" ? { plano: "mensal" } : { plano: "anual", previaDe: agora() };
+      const pedido = caso.plano === "anual" ? { plano: "mensal" } : { plano: "anual", valorMostrado: MOSTRADO };
       expect((await mudar(member, pedido)).body, JSON.stringify(caso)).toEqual({ error: "TrocaIndisponivel" });
     }
     nadaMudouNaStripe();
@@ -440,7 +452,7 @@ describe("POST /api/billing/minha-assinatura/plano — quando a troca não cabe"
   // de novo não pode deixar duas cobranças do plano novo em aberto.
   it("com uma troca anterior ainda esperando o banco: a fatura dela é ANULADA antes de pedir a nova", async () => {
     detalhes = { faturaDaTrocaId: "in_da_troca_velha" };
-    const res = await mudar(member, { plano: "anual", previaDe: agora() });
+    const res = await mudar(member, { plano: "anual", valorMostrado: MOSTRADO });
     expect([res.status, res.body]).toEqual([200, { estado: "trocado" }]);
     expect(anularFatura.mock.calls).toEqual([["in_da_troca_velha"]]);
     expect(anularFatura.mock.invocationCallOrder[0]).toBeLessThan(trocarAgora.mock.invocationCallOrder[0] ?? 0);
@@ -449,19 +461,19 @@ describe("POST /api/billing/minha-assinatura/plano — quando a troca não cabe"
   it("…e se a anterior foi PAGA no mesmo instante: o plano já mudou — nada é cobrado de novo", async () => {
     detalhes = { faturaDaTrocaId: "in_da_troca_velha" };
     anularFatura.mockResolvedValue("paga");
-    const res = await mudar(member, { plano: "anual", previaDe: agora() });
+    const res = await mudar(member, { plano: "anual", valorMostrado: MOSTRADO });
     expect([res.status, res.body]).toEqual([200, { estado: "trocado" }]);
     expect(trocarAgora).not.toHaveBeenCalled();
   });
 
   it("a assinatura comum (sem agendamento): nada é solto", async () => {
-    expect((await mudar(member, { plano: "anual", previaDe: agora() })).status).toBe(200);
+    expect((await mudar(member, { plano: "anual", valorMostrado: MOSTRADO })).status).toBe(200);
     expect(soltarAgendamento).not.toHaveBeenCalled();
   });
 
   it("sem assinatura que dê acesso: 409, e a Stripe nem é consultada", async () => {
     await comEspelho("canceled", PASSADO);
-    expect((await mudar(member, { plano: "anual", previaDe: agora() })).body).toEqual({ error: "SemAssinatura" });
+    expect((await mudar(member, { plano: "anual", valorMostrado: MOSTRADO })).body).toEqual({ error: "SemAssinatura" });
     expect(buscarDetalhes).not.toHaveBeenCalled();
     nadaMudouNaStripe();
   });

@@ -23,12 +23,23 @@ import { erroSemMensagem, stripe } from "./stripe.js";
  */
 export const MARCA_DA_TROCA = "troca-de-plano";
 
-/** O que a troca na hora precisa: a assinatura, o item dela, o preço novo e o instante da conta (segundos). */
-export type TrocaNaHora = { assinaturaId: string; itemId: string; precoId: string; em: number };
+/** O que a troca na hora precisa: a assinatura, o item dela e o preço novo. */
+export type TrocaNaHora = { assinaturaId: string; itemId: string; precoId: string };
 
-/** Como a troca na hora vai à Stripe — o mesmo na prévia e na troca. Função pura, com teste. */
-export function paraPedidoDeTroca(troca: TrocaNaHora): Pick<Stripe.SubscriptionUpdateParams, "items" | "proration_behavior" | "proration_date"> {
-  return { items: [{ id: troca.itemId, price: troca.precoId }], proration_behavior: "always_invoice", proration_date: troca.em };
+/**
+ * Como a troca na hora vai à Stripe — o mesmo na prévia e na troca. Função pura, com teste.
+ * `billing_cycle_anchor: { type: "now" }` — O PERÍODO DO PLANO NOVO COMEÇA NO DIA DA TROCA
+ * (decisão do operador, 11/10/2026): a pessoa paga o plano novo inteiro, menos o que sobrou do
+ * período já pago, e a cobrança seguinte vem um período inteiro depois. `[FATO — medido com o
+ * relógio de teste, 11/10/2026]` sem isto a Stripe mantém o aniversário da assinatura: o anual
+ * sai proporcional aos dias que faltam até lá, e a cobrança seguinte chega antes de um ano.
+ * `[FATOS — medidos]` nesta versão da Stripe o campo é um OBJETO (o texto solto `"now"` volta
+ * "Invalid object"), e com ele a Stripe RECUSA o instante da conta (`proration_date`): a conta
+ * é sempre a do momento do pedido. Por isso quem garante "o cobrado é o mostrado" é a
+ * conferência do valor em `mudarMeuPlano`, e não um instante fixado aqui.
+ */
+export function paraPedidoDeTroca(troca: TrocaNaHora): Pick<Stripe.SubscriptionUpdateParams, "items" | "proration_behavior" | "billing_cycle_anchor"> {
+  return { items: [{ id: troca.itemId, price: troca.precoId }], proration_behavior: "always_invoice", billing_cycle_anchor: { type: "now" } };
 }
 
 /**

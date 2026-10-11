@@ -37,12 +37,13 @@ export type CancelarInput = z.infer<typeof cancelarSchema>;
 
 /**
  * Corpo de `POST /api/billing/minha-assinatura/plano` — mudar de plano (Fase 4, etapa 4.6). Só
- * PARA QUAL plano e, na troca que vale na hora, o instante da conta mostrada (`previaDe`, que o
- * servidor mandou e confere de novo). Preço, valor e assinatura nunca vêm do site.
+ * PARA QUAL plano e, na troca que vale na hora, o valor que a TELA MOSTROU (`valorMostrado`, em
+ * centavos). Ele serve só para o servidor CONFERIR com a conta refeita na hora — se não bate, a
+ * troca não acontece. NUNCA é o que se cobra: preço, valor e assinatura não vêm do site.
  */
 export const mudarDePlanoSchema = z.object({
   plano: z.enum(PLANOS),
-  previaDe: z.number().int().positive().optional(),
+  valorMostrado: z.number().int().min(0).optional(),
 });
 export type MudarDePlanoInput = z.infer<typeof mudarDePlanoSchema>;
 

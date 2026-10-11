@@ -21,8 +21,11 @@ vi.mock("./stripe-cliente.js", async (importOriginal) => ({
 
 import { MARCA_DA_TROCA, agendarTroca, anularFatura, calcularTroca, paraFasesDaTroca, paraPedidoDeTroca, segredoDaFatura, situacaoDoPagamento, soltarAgendamento, trocarAgora } from "./stripe-plano.js";
 
-const TROCA = { assinaturaId: "sub_1", itemId: "si_1", precoId: "price_anual", em: 1_800_000_500 };
-const PEDIDO = { items: [{ id: "si_1", price: "price_anual" }], proration_behavior: "always_invoice", proration_date: 1_800_000_500 };
+const TROCA = { assinaturaId: "sub_1", itemId: "si_1", precoId: "price_anual" };
+// O PERÍODO RECOMEÇA NO DIA DA TROCA (decisão do operador, 11/10/2026): é o `billing_cycle_anchor`,
+// e nesta versão da Stripe ele é um objeto. Sem `proration_date`: com o período recomeçando, a
+// Stripe recusa o pedido que traz o instante da conta (medido na área restrita).
+const PEDIDO = { items: [{ id: "si_1", price: "price_anual" }], proration_behavior: "always_invoice", billing_cycle_anchor: { type: "now" } };
 const recusa = (code?: string) => new Stripe.errors.StripeInvalidRequestError({ message: "mensagem crua da Stripe, com sk_test_abc", type: "invalid_request_error", code, statusCode: 400 });
 const cartaoRecusado = () => new Stripe.errors.StripeCardError({ message: "Your card was declined, com sk_test_abc", type: "card_error", code: "card_declined", statusCode: 402 });
 const foraDoAr = () => new Stripe.errors.StripeConnectionError({ message: "mensagem crua da Stripe, com sk_test_abc", type: "api_error" });
@@ -34,7 +37,7 @@ beforeEach(() => {
 });
 
 describe("a troca na hora: o pedido", () => {
-  it("troca o preço do item, cobra a diferença AGORA e fixa o instante da conta", () => {
+  it("troca o preço do item, cobra a diferença AGORA e faz o período do plano novo começar no dia da troca — sem instante fixado", () => {
     expect(paraPedidoDeTroca(TROCA)).toEqual(PEDIDO);
   });
 });
