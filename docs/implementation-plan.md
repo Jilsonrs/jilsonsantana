@@ -214,9 +214,10 @@
 > chega ao servidor (`/api/lessons/%C3%28`) → 400 `EnderecoInvalido` (antes da publicação, 500);
 > conferir assinatura sem login → 401; o corpo malformado → 400 `CorpoInvalido`; o aviso sem
 > assinatura → 400; as páginas públicas seguem no "Em breve".
-> **A confirmar com o operador:** o aviso "[servidor] no ar" no painel do Sentry (é a prova de
-> que o alerta ligou em produção), o e-mail de alerta chegando, e a resposta nova na página em
-> inglês (ela fica atrás do "Em breve": só ele vê).
+> **Confirmado pelo operador no painel do Sentry (10/10/2026):** o aviso "[servidor] no ar, versão
+> mv32ckxr-d02f9f62" chegou — o alerta está ligado em produção — e o e-mail de teste da regra
+> de alerta chegou na caixa dele. **Ainda a confirmar com ele:** a resposta nova na página em
+> inglês (fica atrás do "Em breve": só ele vê) e a regra de "avisar a cada erro novo" (P63).
 > **PUBLICADO em 10/10/2026, antes (`main` = `91cb4dc`, CI verde nos dois jobs, deploy ok;
 > sem migration; publicação autorizada pelo operador: "Publica a 4.4"):** a Fase 4, etapa 4.4 —
 > **sincronizar e perder o acesso.**
@@ -5161,9 +5162,9 @@ outro aparelho e "daqui a um mês", e o Safari apaga o armazenamento do site em 
         do Better Auth (linha de terceiro) e o endereço malformado NÃO saíram; do pedido não
         saiu nada (cookie, e-mail do corpo, o que vem depois do "?"); o servidor saiu com
         código 0 ao receber o aviso de desligar.
-      - **Não provado ainda:** a chegada ao Sentry DE VERDADE — depende do DSN novo e da
-        variável na Railway (pendência P63); a prova é o aviso de "no ar" aparecer no painel
-        depois da publicação.
+      - **Provado em PRODUÇÃO (10/10/2026):** depois da publicação, o aviso "[servidor] no
+        ar, versão mv32ckxr-d02f9f62" apareceu no painel do Sentry (o operador conferiu), e o
+        e-mail de teste da regra de alerta chegou na caixa dele.
       - **O CI reprovou a primeira tentativa, e a causa virou regra:** um teste novo passava
         no computador (que tem as chaves de teste da Stripe no `.env.test`) e reprovou no CI,
         que não tem — 503 no lugar de 500. Reproduzido sem as chaves, corrigido, e a suíte
