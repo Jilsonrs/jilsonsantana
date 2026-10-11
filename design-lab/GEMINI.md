@@ -561,7 +561,8 @@ exceto o item 4, que é página pública.
     (`…/faturamento/plano`): o bloco "Seu plano" com o plano de hoje e a etiqueta "Seu plano
     atual"; embaixo, **o cartão do plano novo** (`OfertaDePlano.tsx`) — o nome e o preço, a
     frase com o valor de hoje e as datas, e o botão "Mudar para o Anual" / "Mudar para o
-    Mensal". Quando a troca fica marcada para o fim do ano, aparece `TrocaMarcada.tsx` (a
+    Mensal". No cartão do Anual há mais uma linha, entre a frase e o botão: o aviso de que o
+    valor vale por 10 minutos (11/10). Quando a troca fica marcada para o fim do ano, aparece `TrocaMarcada.tsx` (a
     frase com a data e o botão "Continuar no Anual") — o mesmo bloco aparece no resumo, dentro
     de "Seu plano". No resumo entrou também o botão "Mudar de plano" (`AcoesDoPlano.tsx`).
     Estrutura crua, acabamento seu.

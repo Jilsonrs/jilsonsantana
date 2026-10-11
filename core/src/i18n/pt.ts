@@ -500,6 +500,8 @@ export const pt = {
         descricao: "Escolha como prefere pagar. O acesso é o mesmo nos dois planos.",
         atual: "Seu plano atual",
         paraOAnual: "A troca vale na hora. Hoje você paga {valor}, já descontado o que sobrou do mês que você pagou. A próxima cobrança é em {data}.",
+        // Logo abaixo do valor: ele fica congelado por esse tempo (`VALIDADE_DO_VALOR_MOSTRADO`). Texto do operador, 11/10/2026.
+        valorValePor: "Conclua em até {minutos} minutos, ou o valor poderá ser atualizado.",
         mudarParaOAnual: "Mudar para o Anual",
         agoraAnual: "Pronto. Seu plano agora é o Anual.",
         paraOMensal: "A troca vale em {data}, quando termina o ano que você já pagou. Até lá nada muda e nada é cobrado. Depois, {valor} por mês.",
@@ -513,7 +515,7 @@ export const pt = {
         cartaoRecusado: "Seu cartão foi recusado e o plano continua o mesmo. Troque o cartão e tente de novo.",
         erro: "Não foi possível mudar o plano. Tente de novo.",
         // O valor mostrado vale por 10 minutos (`VALIDADE_DO_VALOR_MOSTRADO`); passado o prazo, a tela busca o valor de novo.
-        valorAtualizado: "O valor foi atualizado. Confira e confirme de novo."
+        valorAtualizado: "Este valor foi atualizado. Confira e clique para concluir."
       },
       cancelamento: {
         descricao: "Você pode cancelar quando quiser. Seu progresso fica guardado: se voltar, continua de onde parou.",

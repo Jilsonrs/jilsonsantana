@@ -670,8 +670,10 @@ Stripe guardou o cartão de teste e o resumo passou a mostrá-lo:
   do operador, 11/10/2026: "prefiro perder 1 centavo a cobrar a mais do que foi mostrado […]
   cobra o que mostrou pela primeira vez; se passar uns 10 minutos sem confirmar, explica que
   expirou")*. O que sobra do mês diminui com o tempo, e a escola abre mão desses centavos.
-  Passados os 10 minutos, o servidor não troca: a tela busca o valor de novo e mostra "O valor
-  foi atualizado. Confira e confirme de novo.". *Reabre se a escola passar a vender um plano
+  A tela avisa antes, logo abaixo do valor: "Conclua em até 10 minutos, ou o valor poderá ser
+  atualizado." *(textos do operador, 11/10/2026)*.
+  Passados os 10 minutos, o servidor não troca: a tela busca o valor de novo e mostra "Este valor
+  foi atualizado. Confira e clique para concluir.". *Reabre se a escola passar a vender um plano
   mensal bem mais caro (os centavos por minuto crescem com o preço) ou se ligar imposto na
   fatura (etapa 4.8) — nos dois casos, rever a folga e a conta do crédito.*
   **Como o valor e o instante vêm do navegador, o servidor confere os dois:** o instante tem

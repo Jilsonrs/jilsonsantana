@@ -4753,7 +4753,10 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       os dois, porque vêm do navegador — o instante com até 10 minutos (`ofertaAindaVale`,
       `VALIDADE_DO_VALOR_MOSTRADO`) e o valor no máximo 5 centavos abaixo da conta refeita com a
       trava, nunca acima (`FOLGA_DO_VALOR_MOSTRADO`). Passou disso: `PreviaVencida`, e a tela
-      mostra o valor novo com a frase já aprovada. **Prova na área restrita:** 26 de 26 com as
+      mostra o valor novo. **Os textos são do operador (11/10/2026):** logo abaixo do valor,
+      "Conclua em até 10 minutos, ou o valor poderá ser atualizado."; e, vencido o prazo, "Este
+      valor foi atualizado. Confira e clique para concluir." (`app.faturamento.plano.valorValePor`
+      e `.valorAtualizado`; o inglês é rascunho, com a P72). **Prova na área restrita:** 26 de 26 com as
       funções de verdade — mostrado R$ 956,33, a conta da Stripe 9 minutos depois R$ 956,35,
       cobrado R$ 956,33; com código de 50% o cobrado é o mostrado (o crédito fica fora do
       alcance do código); o banco pedindo confirmação, o cartão recusado e a cortesia como

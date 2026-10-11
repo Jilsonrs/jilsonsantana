@@ -447,6 +447,7 @@ export const en: Dict = {
         descricao: "Choose how you'd like to pay. Both plans give you the same access.",
         atual: "Your current plan",
         paraOAnual: "The change takes effect right away. Today you pay {valor}, with the rest of your paid month already deducted. Your next charge is on {data}.",
+        valorValePor: "Complete within {minutos} minutes, or the amount may be updated.",
         mudarParaOAnual: "Switch to Yearly",
         agoraAnual: "Done. You're now on the Yearly plan.",
         paraOMensal: "The change takes effect on {data}, when the year you've already paid for ends. Nothing changes and nothing is charged until then. After that, {valor} per month.",
@@ -458,7 +459,7 @@ export const en: Dict = {
         atrasada: "We couldn't charge your card. Update it before changing plans.",
         cartaoRecusado: "Your card was declined, so your plan hasn't changed. Update your card and try again.",
         erro: "We couldn't change your plan. Try again.",
-        valorAtualizado: "The amount has been updated. Please review and confirm again."
+        valorAtualizado: "This amount has been updated. Review it and click to complete."
       },
       cancelamento: {
         descricao: "You can cancel anytime. Your progress is saved: if you come back, you pick up where you left off.",

@@ -1,4 +1,4 @@
-import { Plano, type TrocaDePlano } from "@jilson/core";
+import { Plano, VALIDADE_DO_VALOR_MOSTRADO, type TrocaDePlano } from "@jilson/core";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { dinheiro } from "@/lib/assinar";
@@ -8,7 +8,8 @@ import { useIdioma, useT } from "@/lib/language";
 /**
  * O PLANO PARA O QUAL DÁ PARA MUDAR, com o que o SERVIDOR disse dele: para o Anual, quanto se
  * paga hoje (a conta é da Stripe) e quando é a cobrança seguinte; para o Mensal, quando a troca
- * vale e quanto passa a custar. Só desenha — nenhum valor é calculado aqui.
+ * vale e quanto passa a custar. Só desenha — nenhum valor é calculado aqui. Na troca que cobra
+ * na hora, avisa por quanto tempo o valor mostrado vale (o prazo é o do servidor, no `core`).
  */
 export function OfertaDePlano({ troca, aoMudar, enviando }: { troca: TrocaDePlano; aoMudar: () => void; enviando: boolean }) {
   const t = useT();
@@ -29,6 +30,7 @@ export function OfertaDePlano({ troca, aoMudar, enviando }: { troca: TrocaDePlan
           {paraOAnual ? t.assinar.porAno : t.assinar.porMes}
         </p>
         <p className="text-sm text-muted-foreground">{explicacao}</p>
+        {troca.quando === "agora" && <p className="text-sm text-muted-foreground">{p.valorValePor.replace("{minutos}", String(VALIDADE_DO_VALOR_MOSTRADO / 60))}</p>}
         <Button type="button" onClick={aoMudar} disabled={enviando}>
           {enviando ? t.assinar.processando : paraOAnual ? p.mudarParaOAnual : p.mudarParaOMensal}
         </Button>
