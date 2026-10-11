@@ -4486,6 +4486,57 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
         nova, o agendamento pela metade preso, a fatura paga dada como anulada, "troca marcada"
         para o mesmo plano. Gates: typecheck, lint, suíte do site (852) e de servidor como o CI
         (991), build.
+      - **A revisão de segurança do SERVIDOR da sessão (b) — FEITA (11/10/2026), adiantada do
+        passo 13** (`security-vulnerability-reviewer`, sobre o diff dos quatro commits; o passo
+        13 revê as telas e estas correções). **Nenhum bloqueio (P0); três P1, corrigidos.** Sem
+        achado em: agir sobre a assinatura de outra conta, receber fora do prazo, duas vezes, a
+        mais ou de outra assinatura, pagar menos pela conta mostrada, a troca valer sem o
+        pagamento, o segredo no registro, a sessão mantida dar acesso, e forjar ou repetir o
+        aviso de dinheiro devolvido. Os achados e o destino de cada um:
+        - *P1 — repetir o reembolso dependia de o espelho ainda dar acesso, e o espelho deixa de
+          dar acesso quando a ÚLTIMA fatura volta* (com duas cobranças, a mais nova voltava
+          primeiro; e depois de uma troca de plano que não se completou, a última fatura é a
+          anulada): a pessoa ficava sem acesso, com dinheiro por receber e sem poder repetir. O
+          teste passava porque o dublê só tirava o acesso quando TUDO voltava → **corrigido**: as
+          cobranças voltam da mais antiga para a mais nova; o reembolso acha também a assinatura
+          ENCERRADA mais recente da conta, sem acesso e dentro do prazo (as três mais novas, com
+          as conferências de dono, prazo e valor); e o dublê passou a cortar o acesso como o
+          código de verdade.
+        - *P1 — o reembolso não anulava a troca de plano que esperava a confirmação do banco* →
+          **corrigido**: a fatura da troca é anulada antes de encerrar, e o que foi pago se lê
+          depois (se a troca se completou no mesmo instante, a cobrança dela entra na devolução).
+          `[FATO — medido, 11/10/2026]` ao encerrar na hora a própria Stripe anula essa fatura e
+          cancela o pagamento dela: confirmar depois é recusado.
+        - *P1 — o dinheiro voltava com o espelho não acertado, e só ficava um aviso* (com a
+          assinatura já encerrada, a Stripe não manda mais aviso sobre ela) → **corrigido**: a
+          operação tenta a sincronia mais uma vez; se não der, `console.error` com etiqueta, a
+          conta e a assinatura. **E a P69 passou a ser condição de publicar o reembolso**, não só
+          para o reembolso dado pelo painel.
+        - *A operação com várias idas à Stripe usava o tempo de UMA* (vencido, a trava soltaria
+          no meio) → **corrigido**: 90 s, a mesma conta do checkout.
+        - *A sessão ficava em todo desfecho do reembolso* (também quando nada era devolvido e o
+          acesso acabava) → **corrigido**: só quando o reembolso saiu.
+        - *Se nem ler o pagamento da troca desse, o erro subia com a fatura em aberto* →
+          **corrigido**: é recusa, e a fatura é anulada.
+        - *A devolução que a Stripe aceita e que falha depois não avisava ninguém* →
+          **corrigido**: o aviso de devolução com falha vira `console.error`, e a assinatura é
+          sincronizada (o período volta a contar como pago). Também depende da P69.
+        - *A chave de repetição fixa repetiria a FALHA por um dia* (a Stripe guarda a primeira
+          resposta de cada chave) → **corrigido**: a chave muda a cada 5 minutos. *Não medido*: o
+          comportamento é o documentado por ela.
+        - *Parar, voltar atrás, mudar de plano e desistir decidiam pelo que foi lido ANTES da
+          trava* (duas abas) → **corrigido**: os detalhes são relidos com a trava.
+        - *O cartão trocado depois de marcar a troca de plano* → **medido, sem problema**: a
+          Stripe passa o cartão novo para o agendamento sozinha.
+        - *A virada do anual para o mensal não foi exercitada; o cupom de duração limitada
+          copiado para a fase nova* → **passo 13** (relógio de teste); hoje não existe cupom assim.
+        - *A chave de produção restrita não leria os pagamentos, e todo aviso responderia 500; e
+          os alertas novos só existem com o Sentry configurado na Railway* → **do operador,
+          antes de publicar: pendência P71.**
+        **Depois das correções:** 19 testes novos (servidor: 1010), **21 de 21 mutações
+        reprovaram**, e as duas provas com as funções de verdade rodaram de novo na área restrita
+        (23 de 23 e 25 de 25). Gates: typecheck, lint, suíte do site (852) e de servidor como o
+        CI (1010), build.
       **ONDE PAROU:** SESSÃO (a) FECHADA e **PUBLICADA em 11/10/2026 (`main` = `6305077`)**, com
       a autorização do operador (*"pode publicar depois desses ajustes"*): CI verde nos dois jobs
       no `dev` e na `main`, e conferido no ar como visitante — as rotas novas respondem 401 sem
@@ -4503,9 +4554,11 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       quando a resposta é `PreviaVencida`. Depois, o 12 e o 13 (com o relógio de teste para a
       virada do anual para o mensal).
       **Quando ele responder a P67** (cancelar com a cobrança atrasada), a resposta entra na
-      operação de parar. **Antes de publicar:** a P69 (o aviso de dinheiro devolvido no endereço
-      de avisos da conta de verdade). Nada desta sessão está publicado. A sessão (c) começa
-      pela pendência P64.
+      operação de parar. **Antes de publicar:** a P69 (os avisos de dinheiro devolvido e de
+      devolução que falhou no endereço de avisos da conta de verdade — condição do reembolso) e
+      a P71 (a chave de produção e o Sentry). A revisão de segurança do servidor já foi feita e
+      corrigida; a do passo 13 cobre as telas. Nada desta sessão está publicado. A sessão (c)
+      começa pela pendência P64.
 - [ ] **4.7 — O visitante assina: a conta nasce no pagamento (código, ALTO RISCO).** O checkout
       público: e-mail + pagamento → o webhook cria a conta (o cadastro continua fechado) e manda o
       e-mail de "crie sua senha". **Depende do Resend configurado e da P49** (o remetente). Junto:

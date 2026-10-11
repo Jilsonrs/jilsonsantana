@@ -31,6 +31,8 @@ router.post("/stripe/webhook", express.raw({ type: "application/json" }), async 
     res.status(400).json({ error: "AssinaturaInvalida" });
     return;
   }
+  // Precisa de gente, e não depende do resto: a devolução que falhou é dinheiro que NÃO voltou.
+  if (aviso.devolucaoFalhou) console.error(`[stripe] aviso ${aviso.id} (${aviso.tipo}): uma devolução do pagamento ${aviso.pagamento ?? "?"} FALHOU — o dinheiro não voltou ao aluno; conferir e devolver pelo painel da Stripe`);
   const desfecho = await processarAviso(aviso);
   if (desfecho.resultado === "sem-conta") {
     // Assinatura sem conta na escola: em voz alta. Se ela dá acesso, há alguém PAGANDO e trancado

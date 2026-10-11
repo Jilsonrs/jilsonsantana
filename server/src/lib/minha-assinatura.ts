@@ -312,6 +312,10 @@ export async function aplicarCartaoNovo(userId: string): Promise<Troca> {
 // com a trava da assinatura (`operarNaAssinatura`) — sem esperar por ela.
 // Repetir não faz mal: parar o que já está parado dá no mesmo (e só acrescenta o motivo, se veio
 // um); manter o que já renova não chama nada.
+// COM A TRAVA, OS DETALHES SÃO RELIDOS (achado da revisão de segurança, 11/10/2026): a decisão
+// vale pelo que a Stripe diz AGORA, e não pelo que foi lido antes de a trava ser tomada — com
+// duas abas, a troca de plano criada nesse intervalo escaparia, e o que já foi desfeito viraria
+// erro. A leitura de antes só serve para achar a assinatura e recusar cedo, sem tomar a trava.
 
 /**
  * `sem-assinatura`: nada a parar ou a manter (nenhuma com acesso, ou já encerrada de vez).
@@ -322,27 +326,37 @@ type NaoFeita = { resultado: "sem-assinatura" } | { resultado: "desconhecida" } 
 
 export type Parada = ({ resultado: "ok" } & RenovacaoParada) | NaoFeita;
 
+/** Esta assinatura pode ter a renovação parada? Só a que renova, ou a já parada que ainda pode voltar atrás (repetir não faz mal). */
+function cabeParar(detalhes: DetalhesDaAssinatura): "ok" | "atrasada" | "sem-assinatura" {
+  if (detalhes.status === "past_due") return "atrasada";
+  return renova(detalhes) || podeManter(detalhes) ? "ok" : "sem-assinatura";
+}
+
 /** Para a renovação da assinatura DESTA conta, com o motivo (opcional). O acesso continua até o fim do período pago. */
 export async function pararMinhaRenovacao(userId: string, dado: MotivoDado): Promise<Parada> {
   const achada = await assinaturaDaConta(userId);
   if (achada.resultado === "desconhecida") return achada;
   if (achada.resultado === "nenhuma") return { resultado: "sem-assinatura" };
-  const { detalhes } = achada;
-  if (detalhes.status === "past_due") return { resultado: "atrasada" };
-  // Só a que renova, ou a que já está parada e ainda pode voltar atrás (repetir não faz mal).
-  if (!renova(detalhes) && !podeManter(detalhes)) return { resultado: "sem-assinatura" };
-  const operacao = await operarNaAssinatura(detalhes.id, async () => {
+  const { id } = achada.detalhes;
+  const antes = cabeParar(achada.detalhes);
+  if (antes !== "ok") return { resultado: antes };
+  const operacao = await operarNaAssinatura(id, async (): Promise<{ resultado: "ok"; depois: DetalhesDaAssinatura } | { resultado: "atrasada" } | { resultado: "sem-assinatura" }> => {
+    const agora = await buscarDetalhes(id);
+    const cabe = cabeParar(agora);
+    if (cabe !== "ok") return { resultado: cabe };
     // QUEM ESTÁ SAINDO NÃO TROCA DE PLANO: a troca marcada para o fim do período é solta antes
     // (com ela a Stripe RECUSA parar a renovação — medido, 11/10/2026), e a troca na hora que
     // ficou esperando a confirmação do banco é anulada — senão ainda poderia ser cobrada.
-    if (detalhes.agendamentoId) await soltarAgendamento(detalhes.agendamentoId);
-    if (detalhes.faturaDaTrocaId) await anularFatura(detalhes.faturaDaTrocaId);
-    return pararRenovacao(detalhes.id, dado);
+    if (agora.agendamentoId) await soltarAgendamento(agora.agendamentoId);
+    if (agora.faturaDaTrocaId) await anularFatura(agora.faturaDaTrocaId);
+    return { resultado: "ok", depois: await pararRenovacao(id, dado) };
   });
   if (!operacao) return { resultado: "ocupada" };
+  const feito = operacao.feito;
+  if (feito.resultado !== "ok") return feito;
   // O motivo é da lista; o comentário é texto livre da pessoa e nunca vem para o registro.
-  console.info(`[stripe] parar a renovação: conta ${userId}, assinatura ${detalhes.id}, motivo ${dado.motivo ?? "não dito"}`);
-  return { resultado: "ok", acessoAte: iso(ateQuandoHaAcesso(operacao.feito)) };
+  console.info(`[stripe] parar a renovação: conta ${userId}, assinatura ${id}, motivo ${dado.motivo ?? "não dito"}`);
+  return { resultado: "ok", acessoAte: iso(ateQuandoHaAcesso(feito.depois)) };
 }
 
 export type Mantida = { resultado: "ok" } | NaoFeita;
@@ -353,12 +367,20 @@ export async function manterMinhaAssinatura(userId: string): Promise<Mantida> {
   if (achada.resultado === "desconhecida") return achada;
   if (achada.resultado === "nenhuma") return { resultado: "sem-assinatura" };
   const { detalhes } = achada;
+  const { id } = detalhes;
   // Já renova: não há o que desfazer (o segundo clique, ou a segunda aba).
   if (renova(detalhes)) return { resultado: "ok" };
   if (!podeManter(detalhes)) return { resultado: "sem-assinatura" };
-  const operacao = await operarNaAssinatura(detalhes.id, () => retomarRenovacao(detalhes.id, detalhes.acabaNoFimDoPeriodo));
+  const operacao = await operarNaAssinatura(id, async (): Promise<"mantida" | "ja-renova" | "sem-assinatura"> => {
+    const agora = await buscarDetalhes(id);
+    if (renova(agora)) return "ja-renova";
+    if (!podeManter(agora)) return "sem-assinatura";
+    await retomarRenovacao(id, agora.acabaNoFimDoPeriodo);
+    return "mantida";
+  });
   if (!operacao) return { resultado: "ocupada" };
-  console.info(`[stripe] manter a assinatura: conta ${userId}, assinatura ${detalhes.id}`);
+  if (operacao.feito === "sem-assinatura") return { resultado: "sem-assinatura" };
+  if (operacao.feito === "mantida") console.info(`[stripe] manter a assinatura: conta ${userId}, assinatura ${id}`);
   return { resultado: "ok" };
 }
 
@@ -368,13 +390,14 @@ export async function manterMinhaAssinatura(userId: string): Promise<Mantida> {
 //   - devolve TUDO o que foi pago nesta assinatura (quem trocou de plano no prazo recebe as duas
 //     cobranças) — a cortesia não tem o que devolver;
 //   - o acesso termina NA HORA: a assinatura é encerrada, e o período devolvido deixa de contar
-//     como pago no espelho (`faturaDevolvida`, em `stripe.ts`);
+//     como pago no espelho (`faturaDevolvida`, em `stripe-devolucao.ts`);
 //   - a pessoa CONTINUA LOGADA (`manterSessao`): lê a confirmação e segue no site, sem as aulas;
 //   - sem contador e sem recusa por reembolso repetido (a trava é a cláusula dos termos de uso).
 // O PRAZO SE CONFERE AQUI, NO SERVIDOR, NA HORA DA AÇÃO — e de novo com a trava, junto com o que
-// foi pago: a tela só mostra o que o servidor disse. A ordem é ENCERRAR e depois DEVOLVER: se a
-// devolução falhar, a pessoa segue com o acesso do período que pagou, alguém é avisado
-// (`console.error`, com etiqueta) e ela pode repetir — repetir não devolve duas vezes.
+// foi pago: a tela só mostra o que o servidor disse. A ordem é ENCERRAR e depois DEVOLVER, da
+// cobrança mais antiga para a mais nova: se a devolução falhar, alguém é avisado
+// (`console.error`, com etiqueta) e a pessoa pode repetir — repetir não devolve duas vezes.
+// Enquanto a ÚLTIMA cobrança não voltar, ela segue com o acesso do que pagou.
 
 type Devolvido =
   | ({ resultado: "ok" } & ReembolsoFeito)
@@ -387,11 +410,42 @@ type Devolvido =
 
 export type Reembolso = Devolvido | NaoFeita;
 
+/** Quantas assinaturas encerradas da conta a busca do reembolso olha na Stripe, da mais nova para trás. */
+const ENCERRADAS_A_OLHAR = 3;
+
+/**
+ * A assinatura desta conta sobre a qual o REEMBOLSO age: a que dá acesso — ou, sem nenhuma, a
+ * ENCERRADA mais recente que ainda está dentro do prazo (achado da revisão de segurança,
+ * 11/10/2026). Sem isto, quem teve a assinatura encerrada e a devolução falhada com o espelho já
+ * sem acesso (a última fatura era a de uma troca de plano que não se completou) ficaria sem
+ * acesso, sem o dinheiro e sem poder repetir. As conferências de sempre valem: o dono, o prazo e
+ * o que há a devolver — as duas últimas, de novo, com a trava.
+ */
+async function assinaturaParaReembolso(userId: string): Promise<{ resultado: "ok"; detalhes: DetalhesDaAssinatura } | { resultado: "sem-assinatura" } | { resultado: "desconhecida" }> {
+  const achada = await assinaturaDaConta(userId);
+  if (achada.resultado !== "nenhuma") return achada;
+  const encerradas = achada.linhas.filter((linha) => linha.status === "canceled").slice(0, ENCERRADAS_A_OLHAR);
+  for (const linha of encerradas) {
+    let detalhes: DetalhesDaAssinatura;
+    try {
+      detalhes = await buscarDetalhes(linha.stripeSubscriptionId);
+    } catch (erro) {
+      if (erro instanceof AssinaturaNaoEncontrada) continue;
+      throw erro;
+    }
+    if (detalhes.userId !== null && detalhes.userId !== userId) {
+      console.error(`[stripe] reembolso: o espelho diz que a assinatura ${detalhes.id} é da conta ${userId}, e a Stripe diz que é da conta ${detalhes.userId}`);
+      continue;
+    }
+    if (noPrazoDoReembolso(detalhes)) return { resultado: "ok", detalhes };
+  }
+  return { resultado: "sem-assinatura" };
+}
+
 /** Encerra a assinatura DESTA conta na hora e devolve tudo o que foi pago nela. Só dentro do prazo. */
 export async function reembolsarMinhaAssinatura(userId: string, dado: MotivoDado): Promise<Reembolso> {
-  const achada = await assinaturaDaConta(userId);
-  if (achada.resultado === "desconhecida") return achada;
-  if (achada.resultado === "nenhuma") return { resultado: "sem-assinatura" };
+  const achada = await assinaturaParaReembolso(userId);
+  if (achada.resultado !== "ok") return achada;
   const { id } = achada.detalhes;
   // Fora do prazo, nem a trava é tomada. O que a pessoa causa sozinha é aviso.
   if (!noPrazoDoReembolso(achada.detalhes)) {
@@ -404,12 +458,19 @@ export async function reembolsarMinhaAssinatura(userId: string, dado: MotivoDado
       // COM A TRAVA, relido: o prazo, a situação e o que foi pago valem os de AGORA.
       const agora = await buscarDetalhes(id);
       if (!noPrazoDoReembolso(agora)) return { resultado: "fora-do-prazo" };
+      // A troca na hora que ficou esperando a confirmação do banco é anulada ANTES de tudo: a
+      // fatura dela não pode ser paga depois de a pessoa cancelar (achado da revisão de
+      // segurança). Se a resposta for "paga", a troca se completou — e a leitura abaixo, feita
+      // depois, já inclui essa cobrança na devolução. `[FATO — medido, 11/10/2026]` ao encerrar
+      // na hora a própria Stripe anula essa fatura; anular aqui não depende disso.
+      if (agora.faturaDaTrocaId) await anularFatura(agora.faturaDaTrocaId);
       const pago = await buscarOQueFoiPago(id);
       const centavos = aDevolver(pago);
       if (centavos <= 0 || !pago.moeda) return { resultado: "nada-a-devolver" };
       // Já encerrada (a devolução falhou da outra vez, ou foi encerrada pelo painel): só devolve.
       if (agora.status !== "canceled") await cancelarNaHora(id, dado);
       try {
+        // Da cobrança mais antiga para a mais nova (é a ordem de `buscarOQueFoiPago`).
         for (const pagamento of pago.pagamentos) await devolver(pagamento, { userId, assinaturaId: id });
       } catch (erro) {
         console.error(`[stripe] reembolso: a assinatura ${id} (conta ${userId}) foi ENCERRADA e a devolução falhou — conferir e devolver pelo painel da Stripe: ${erro instanceof Error ? erro.message : String(erro)}`);
@@ -417,10 +478,24 @@ export async function reembolsarMinhaAssinatura(userId: string, dado: MotivoDado
       }
       return { resultado: "ok", centavos, moeda: pago.moeda };
     },
-    { manterSessao: true },
+    // A sessão só fica quando o reembolso SAIU: a operação que não devolveu nada e descobre que
+    // o acesso acabou derruba a sessão, como toda perda de acesso.
+    { manterSessao: (feito) => feito.resultado === "ok" },
   );
   if (!operacao) return { resultado: "ocupada" };
   const feito = operacao.feito;
-  if (feito.resultado === "ok") console.info(`[stripe] reembolso: conta ${userId}, assinatura ${id}, ${feito.centavos} centavos (${feito.moeda}) devolvidos, motivo ${dado.motivo ?? "não dito"}`);
+  if (feito.resultado !== "ok") return feito;
+  console.info(`[stripe] reembolso: conta ${userId}, assinatura ${id}, ${feito.centavos} centavos (${feito.moeda}) devolvidos, motivo ${dado.motivo ?? "não dito"}`);
+  // O DINHEIRO VOLTOU E O ESPELHO NÃO FOI ACERTADO (achado da revisão de segurança): se a
+  // assinatura já estava encerrada, a Stripe não manda mais aviso nenhum sobre ela — só o de
+  // dinheiro devolvido. Tenta mais uma vez; se não der, alguém segue com acesso depois de
+  // receber o dinheiro de volta: precisa de gente.
+  if (operacao.sincronia === null) {
+    try {
+      await sincronizarSeLivre(id, { manterSessao: true });
+    } catch (erro) {
+      console.error(`[stripe] reembolso: a conta ${userId} recebeu o dinheiro de volta e o espelho da assinatura ${id} NÃO foi acertado — ela pode seguir com acesso; conferir em Admin → Assinaturas: ${erro instanceof Error ? erro.message : String(erro)}`);
+    }
+  }
   return feito;
 }

@@ -339,6 +339,24 @@ describe("POST /api/billing/minha-assinatura/cancelar — com uma troca de plano
     expect(anularFatura.mock.invocationCallOrder[0]).toBeLessThan(pararRenovacao.mock.invocationCallOrder[0] ?? 0);
   });
 
+  // DUAS ABAS (achado da revisão de segurança, 11/10/2026): o que vale é o que a Stripe diz COM
+  // A TRAVA, e não o que foi lido antes dela.
+  it("a troca de plano foi criada na outra aba, entre a leitura e a trava: ela é anulada do mesmo jeito", async () => {
+    buscarDetalhes.mockImplementationOnce(async (id) => daStripe(id));
+    detalhes = { faturaDaTrocaId: "in_da_outra_aba" };
+    expect((await cancelar(member, {})).status).toBe(200);
+    expect(buscarDetalhes).toHaveBeenCalledTimes(2);
+    expect(anularFatura.mock.calls).toEqual([["in_da_outra_aba"]]);
+  });
+
+  it("a assinatura foi encerrada na outra aba, entre a leitura e a trava: 409 — e nada é parado", async () => {
+    buscarDetalhes.mockImplementationOnce(async (id) => daStripe(id));
+    detalhes = { status: "canceled" };
+    const res = await cancelar(member, {});
+    expect([res.status, res.body]).toEqual([409, { error: "SemAssinatura" }]);
+    expect(pararRenovacao).not.toHaveBeenCalled();
+  });
+
   it("não deu para soltar o agendamento: 500, e a renovação NÃO é dada como parada", async () => {
     detalhes = { plano: "anual", agendamentoId: "sub_sched_do_teste" };
     soltarAgendamento.mockRejectedValue(new Error("[stripe] a soltura do agendamento da troca falhou: StripeConnectionError"));
@@ -366,6 +384,13 @@ describe("POST /api/billing/minha-assinatura/manter — voltar atrás", () => {
     detalhes = { acabaEm: EM_30_DIAS, acabaNoFimDoPeriodo: false };
     expect((await manter(member)).status).toBe(204);
     expect(retomarRenovacao.mock.calls).toEqual([[SUB, false]]);
+  });
+
+  it("a outra aba já voltou atrás, entre a leitura e a trava: 204, sem mexer de novo na Stripe", async () => {
+    buscarDetalhes.mockImplementationOnce(async (id) => ({ ...daStripe(id), ...PARADA }));
+    expect((await manter(member)).status).toBe(204);
+    expect(buscarDetalhes).toHaveBeenCalledTimes(2);
+    expect(retomarRenovacao).not.toHaveBeenCalled();
   });
 
   it("já renova (o segundo clique, a segunda aba): 204, sem mexer em nada na Stripe", async () => {

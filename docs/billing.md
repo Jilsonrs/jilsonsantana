@@ -589,10 +589,21 @@ Stripe guardou o cartão de teste e o resumo passou a mostrá-lo:
   hora e devolve tudo o que foi pago nela** — o que falta voltar de cada cobrança. O pedido leva
   só o motivo: quanto devolver e de qual assinatura, quem sabe é o servidor. **O prazo (7 dias do
   primeiro dia da assinatura) é conferido no servidor na hora da ação, e de novo com a trava.** A
-  cortesia não tem o que devolver, e não é encerrada. **A ordem é encerrar e depois devolver:**
-  se a devolução falha, a tela recebe uma resposta com nome próprio, o registro grita (precisa
-  de gente), a pessoa segue com o acesso do que pagou e pode repetir — repetir não devolve duas
-  vezes (chave de repetição por pagamento; o que a Stripe diz que já voltou conta como feito).
+  cortesia não tem o que devolver, e não é encerrada. **A ordem é encerrar e depois devolver,
+  da cobrança mais antiga para a mais nova:** se a devolução falha, a tela recebe uma resposta
+  com nome próprio, o registro grita (precisa de gente) e a pessoa pode repetir — repetir não
+  devolve duas vezes (a trava, a chave de repetição, e a Stripe, que não devolve mais do que
+  cobrou). Enquanto a última cobrança não voltar, ela segue com o acesso do que pagou. **O
+  reembolso acha também a assinatura já encerrada e sem acesso**, se ainda está no prazo (as
+  três encerradas mais novas da conta): é o que deixa repetir depois de uma falha. A troca de
+  plano que esperava a confirmação do banco é anulada antes. **A sessão só fica quando o
+  reembolso saiu.** Se o dinheiro voltou e o espelho não foi acertado, a operação tenta mais uma
+  vez e, se não der, alguém é avisado. *(Da revisão de segurança, 11/10/2026.)*
+- **A devolução que falha depois** (a Stripe aceita, e dias depois o banco devolve): o aviso
+  dela vira alerta, e a assinatura é sincronizada — o período volta a contar como pago.
+- **Com a trava, os detalhes são relidos** (parar, voltar atrás, reembolsar, mudar de plano,
+  desistir): a decisão vale pelo que a Stripe diz naquele instante, não pelo que a outra aba
+  deixou. A operação tem 90 s de trava, a mesma conta do checkout.
 - **O período devolvido não conta como pago.** Na Stripe a fatura devolvida continua "paga";
   quem diz que o dinheiro voltou é a cobrança. O "pago até" — do espelho e da tela, pela mesma
   conta — trata a última fatura devolvida POR INTEIRO como não paga; a devolução parcial continua
@@ -646,7 +657,10 @@ hora sem crédito não gera fatura nova · a mesma chave de repetição devolve 
 devolver de novo o que já voltou é recusado · a cortesia tem fatura paga de valor zero e nenhum
 pagamento · pagamento que não existe: a lista vem vazia, sem erro · **com as funções de verdade,
 23 pontos**: depois de encerrar e devolver, o espelho fica "pago só até o começo do período" e a
-conta fica sem acesso; com devolução parcial, o período continua contando.
+conta fica sem acesso; com devolução parcial, o período continua contando · ao encerrar na hora
+uma assinatura com a troca de plano esperando o banco, a Stripe anula a fatura da troca e cancela
+o pagamento dela (confirmar depois é recusado) · trocado o cartão da assinatura, o agendamento da
+troca marcada passa a apontar o cartão novo sozinho.
 
 `[FATO — medido na área restrita, 11/10/2026, com dois clientes descartáveis]` Parar a renovação
 deixa a assinatura `active`, com a data de fim igual ao fim do período, e guarda o motivo, o
@@ -679,16 +693,28 @@ encerrada de vez com dias pagos: tem acesso e o servidor recusa cartão.
   servidor já para a renovação e volta atrás; as telas esperam os textos — pendência P66.)*
 - **Depois de uma troca de plano que não se completou** (recusada, ou desistida), a "última
   fatura" da assinatura na Stripe é a anulada, até a próxima renovação. Para a assinatura viva
-  não muda nada (ela dá acesso pelo status); se for ENCERRADA NA HORA pelo painel nesse
-  intervalo, o período pago deixa de contar.
+  não muda nada (ela dá acesso pelo status); se for ENCERRADA NA HORA nesse intervalo — pelo
+  painel, ou pelo reembolso —, o período pago deixa de contar na hora. No reembolso isso só
+  aparece se a devolução falhar: a pessoa fica sem acesso antes de o dinheiro voltar, alguém é
+  avisado, e ela pode repetir. *Reabre se acontecer de verdade: aí o "pago até" passa a olhar a
+  fatura paga anterior.*
+- **A chave de repetição da devolução muda a cada 5 minutos** porque a Stripe guarda por um dia
+  a primeira resposta de cada chave, inclusive a falha — é o que ela documenta; não foi medido.
+- **O cupom de duração limitada** seria copiado para a fase nova da troca marcada. Hoje não
+  existe cupom assim; conferir quando o operador criar o primeiro.
 - **A virada do anual para o mensal no fim do ano não foi exercitada** (só a prévia da Stripe a
   confirma): fica para o relógio de teste da prova final da sessão.
 - **O agendamento copia o desconto, e só ele.** Quando a escola ligar o imposto automático
   (etapa 4.8), conferir que as fases da troca marcada o levam.
-- **O aviso de dinheiro devolvido precisa chegar ao site no ar:** o endereço de avisos da conta
-  de verdade tem que incluir `charge.refunded` (tarefa do operador no painel da Stripe —
-  pendência P69). Sem ele, o reembolso pedido pela tela funciona do mesmo jeito; o que não corta
-  o acesso sozinho é o reembolso dado direto no painel.
+- **Os avisos de devolução precisam chegar ao site no ar — é condição de publicar o
+  reembolso:** o endereço de avisos da conta de verdade tem que incluir `charge.refunded` e
+  `refund.failed` (tarefa do operador no painel da Stripe — pendência P69). Sem eles: o
+  reembolso dado direto no painel não corta o acesso sozinho; o reembolso pedido pela tela, se a
+  sincronia falhar com a assinatura já encerrada, não tem quem acerte o espelho depois; e a
+  devolução que falha dias depois não avisa ninguém.
+- **A chave da Stripe em produção precisa ler pagamentos:** toda sincronia passou a ler a
+  cobrança da última fatura. Se a chave for restrita e não puder, todo aviso responde erro e o
+  espelho para de ser gravado (pendência P71).
 - **Com a cobrança atrasada, cancelar responde "não dá"** e nada muda: não há período pago a
   manter, e o que cancelar faz ali é decisão do operador (pendência P67).
 - **Fechar a aba depois de o campo confirmar e antes do último passo:** o cartão fica guardado no

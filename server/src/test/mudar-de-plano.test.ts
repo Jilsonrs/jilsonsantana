@@ -360,6 +360,24 @@ describe("POST /api/billing/minha-assinatura/plano — quando a troca não cabe"
     nadaMudouNaStripe();
   });
 
+  // DUAS ABAS (achado da revisão de segurança, 11/10/2026): vale o que a Stripe diz COM A TRAVA.
+  it("o plano já mudou na outra aba, entre a leitura e a trava: 409 — nada é cobrado de novo", async () => {
+    const lidoAntes = { id: SUB, status: "active", pagoAte: EM_20_DIAS, plano: "mensal", preco: { centavos: 9990, moeda: "brl" }, fimDoPeriodo: EM_20_DIAS, comecouEm: null, acabaEm: null, acabaNoFimDoPeriodo: false, cartao: null, clienteId: CLIENTE, userId: memberId, faturaEmAbertoId: null, itemId: "si_do_member", agendamentoId: null, trocaMarcada: null, faturaDaTrocaId: null } satisfies DetalhesDaAssinatura;
+    buscarDetalhes.mockImplementationOnce(async () => lidoAntes);
+    detalhes = ANUAL;
+    const res = await mudar(member, { plano: "anual", previaDe: agora() });
+    expect([res.status, res.body]).toEqual([409, { error: "TrocaIndisponivel" }]);
+    expect(buscarDetalhes).toHaveBeenCalledTimes(2);
+    expect(trocarAgora).not.toHaveBeenCalled();
+  });
+
+  it("a troca já foi marcada na outra aba, entre a leitura e a trava: 409 — não marca duas vezes", async () => {
+    buscarDetalhes.mockImplementationOnce(async (id) => ({ id, status: "active", pagoAte: EM_UM_ANO, plano: "anual", preco: { centavos: 99500, moeda: "brl" }, fimDoPeriodo: EM_UM_ANO, comecouEm: null, acabaEm: null, acabaNoFimDoPeriodo: false, cartao: null, clienteId: CLIENTE, userId: memberId, faturaEmAbertoId: null, itemId: "si_do_member", agendamentoId: null, trocaMarcada: null, faturaDaTrocaId: null }));
+    detalhes = MARCADA;
+    expect((await mudar(member, { plano: "mensal" })).body).toEqual({ error: "TrocaIndisponivel" });
+    expect(agendarTroca).not.toHaveBeenCalled();
+  });
+
   it("sem assinatura que dê acesso: 409, e a Stripe nem é consultada", async () => {
     await comEspelho("canceled", PASSADO);
     expect((await mudar(member, { plano: "anual", previaDe: agora() })).body).toEqual({ error: "SemAssinatura" });
@@ -421,6 +439,14 @@ describe("POST /api/billing/minha-assinatura/plano/desistir", () => {
     detalhes = { faturaDaTrocaId: "in_da_troca" };
     anularFatura.mockResolvedValue("paga");
     expect((await desistir(member)).body).toEqual({ trocado: true });
+  });
+
+  it("a outra aba já desistiu, entre a leitura e a trava: 200, sem soltar de novo (soltar o que já foi solto viraria erro)", async () => {
+    buscarDetalhes.mockImplementationOnce(async (id) => ({ id, status: "active", pagoAte: EM_UM_ANO, plano: "anual", preco: { centavos: 99500, moeda: "brl" }, fimDoPeriodo: EM_UM_ANO, comecouEm: null, acabaEm: null, acabaNoFimDoPeriodo: false, cartao: null, clienteId: CLIENTE, userId: memberId, faturaEmAbertoId: null, itemId: "si_do_member", agendamentoId: "sub_sched_do_teste", trocaMarcada: { plano: "mensal", em: EM_UM_ANO }, faturaDaTrocaId: null }));
+    detalhes = ANUAL;
+    const res = await desistir(member);
+    expect([res.status, res.body]).toEqual([200, { trocado: false }]);
+    expect(soltarAgendamento).not.toHaveBeenCalled();
   });
 
   it("sem troca nenhuma: 200, sem mexer em nada (repetir não faz mal)", async () => {

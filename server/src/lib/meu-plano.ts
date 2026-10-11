@@ -2,6 +2,7 @@ import { VALIDADE_DA_PREVIA_DA_TROCA, type Plano, type PlanoMudado, type TrocaDe
 import { operarNaAssinatura } from "./assinaturas.js";
 import { assinaturaDaConta, outroPlano } from "./minha-assinatura.js";
 import { buscarPrecos } from "./stripe.js";
+import { buscarDetalhes } from "./stripe-assinatura.js";
 import { agendarTroca, anularFatura, calcularTroca, soltarAgendamento, trocarAgora, type DesfechoDaTroca } from "./stripe-plano.js";
 
 // MUDAR DE PLANO (Fase 4, etapa 4.6, sessão b — billing.md → Minha assinatura). As operações da
@@ -15,7 +16,9 @@ import { agendarTroca, anularFatura, calcularTroca, soltarAgendamento, trocarAgo
 // O VALOR MOSTRADO É O COBRADO: a prévia devolve o instante da conta (`previaDe`), o site o manda
 // de volta, e a troca usa o MESMO instante. O servidor só aceita um instante RECENTE: um antigo
 // daria crédito por dias do mês que a pessoa já usou.
-// Cada operação é a Stripe e depois a sincronia, com a trava da assinatura (`operarNaAssinatura`).
+// Cada operação é a Stripe e depois a sincronia, com a trava da assinatura (`operarNaAssinatura`)
+// — e, com a trava, os detalhes são RELIDOS: a decisão vale pelo que a Stripe diz AGORA (duas
+// abas: o que já foi desfeito na outra não vira erro, e o que foi criado nela não escapa).
 
 type SemTroca = { resultado: "sem-assinatura" } | { resultado: "desconhecida" } | { resultado: "ocupada" };
 
@@ -69,22 +72,27 @@ export async function mudarMeuPlano(userId: string, pedido: { plano: Plano; prev
   const achada = await assinaturaDaConta(userId);
   if (achada.resultado === "desconhecida") return achada;
   if (achada.resultado === "nenhuma") return { resultado: "sem-assinatura" };
-  const { detalhes } = achada;
-  const { id, itemId } = detalhes;
-  if (outroPlano(detalhes) !== pedido.plano || !itemId) return { resultado: "indisponivel" };
+  const { id } = achada.detalhes;
+  if (outroPlano(achada.detalhes) !== pedido.plano) return { resultado: "indisponivel" };
   const novo = await precoDoPlano(pedido.plano);
 
   if (pedido.plano === "mensal") {
-    const operacao = await operarNaAssinatura(id, () => agendarTroca(id, novo.precoId));
+    const operacao = await operarNaAssinatura(id, async () => {
+      if (outroPlano(await buscarDetalhes(id)) !== "mensal") return null;
+      return agendarTroca(id, novo.precoId);
+    });
     if (!operacao) return { resultado: "ocupada" };
+    if (!operacao.feito) return { resultado: "indisponivel" };
     console.info(`[stripe] mudar de plano: conta ${userId}, assinatura ${id}, mensal marcado para o fim do período`);
     return { resultado: "ok", estado: "marcado", em: operacao.feito.toISOString() };
   }
 
   const { previaDe } = pedido;
   if (!previaAindaVale(previaDe)) return { resultado: "previa-vencida" };
-  const operacao = await operarNaAssinatura(id, async (): Promise<DesfechoDaTroca> => {
-    const desfecho = await trocarAgora({ assinaturaId: id, itemId, precoId: novo.precoId, em: previaDe });
+  const operacao = await operarNaAssinatura(id, async (): Promise<DesfechoDaTroca | null> => {
+    const agora = await buscarDetalhes(id);
+    if (outroPlano(agora) !== "anual" || !agora.itemId) return null;
+    const desfecho = await trocarAgora({ assinaturaId: id, itemId: agora.itemId, precoId: novo.precoId, em: previaDe });
     // RECUSADO: a fatura da troca é anulada JÁ — a tela diz "nada foi cobrado", e uma fatura em
     // aberto ainda poderia ser cobrada depois. Se não anular, precisa de gente.
     if (desfecho.estado === "recusado" && desfecho.faturaId) {
@@ -98,6 +106,7 @@ export async function mudarMeuPlano(userId: string, pedido: { plano: Plano; prev
   });
   if (!operacao) return { resultado: "ocupada" };
   const desfecho = operacao.feito;
+  if (!desfecho) return { resultado: "indisponivel" };
   if (desfecho.estado === "recusado") {
     console.warn(`[stripe] mudar de plano: o cartão da assinatura ${id} (conta ${userId}) foi recusado; o plano continua o mesmo`);
     return { resultado: "recusado" };
@@ -118,9 +127,11 @@ export async function desistirDaTroca(userId: string): Promise<Desistencia> {
   const achada = await assinaturaDaConta(userId);
   if (achada.resultado === "desconhecida") return achada;
   if (achada.resultado === "nenhuma") return { resultado: "sem-assinatura" };
-  const { id, agendamentoId, faturaDaTrocaId } = achada.detalhes;
-  if (!agendamentoId && !faturaDaTrocaId) return { resultado: "ok", trocado: false };
+  const { id } = achada.detalhes;
+  if (!achada.detalhes.agendamentoId && !achada.detalhes.faturaDaTrocaId) return { resultado: "ok", trocado: false };
   const operacao = await operarNaAssinatura(id, async () => {
+    // Relido com a trava: o que a outra aba já desfez não é desfeito de novo (viraria erro).
+    const { agendamentoId, faturaDaTrocaId } = await buscarDetalhes(id);
     if (agendamentoId) await soltarAgendamento(agendamentoId);
     // `paga`: a pessoa completou a confirmação no mesmo instante — o plano mudou.
     return faturaDaTrocaId ? (await anularFatura(faturaDaTrocaId)) === "paga" : false;

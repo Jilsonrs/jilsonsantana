@@ -301,6 +301,44 @@ describe("o aviso da Stripe — o dinheiro devolvido", () => {
     expect((await espelho(sub))?.status).toBe("active");
   });
 
+  // A DEVOLUÇÃO QUE FALHOU DEPOIS (achado da revisão de segurança, 11/10/2026): a Stripe aceita
+  // a devolução e, dias depois, o banco a devolve — o dinheiro NÃO voltou ao aluno.
+  const avisoDaDevolucao = (type: string, status: string, pagamento: string | null = "pi_da_devolucao"): Aviso => ({ id: novoId("evt"), type, data: { object: { id: novoId("re"), object: "refund", status, amount: 9990, payment_intent: pagamento } } });
+
+  it("a devolução FALHOU: alguém é avisado, com o pagamento — e a assinatura é sincronizada (o período volta a contar como pago)", async () => {
+    const sub = novoId("sub");
+    assinaturaDoPagamento.mockReset().mockResolvedValue(sub);
+    buscarAssinatura.mockResolvedValue(naStripe(sub, { userId: doGate, status: "canceled" }));
+    const erro = vi.spyOn(console, "error").mockImplementation(() => {});
+    const registro = vi.spyOn(console, "info").mockImplementation(() => {});
+    try {
+      for (const tipo of ["refund.failed", "refund.updated", "charge.refund.updated"]) {
+        const aviso = avisoDaDevolucao(tipo, "failed");
+        expect((await enviar(aviso)).status, tipo).toBe(200);
+        expect(erro.mock.calls.flat().join(" "), tipo).toContain(`[stripe] aviso ${aviso.id} (${tipo}): uma devolução do pagamento pi_da_devolucao FALHOU`);
+      }
+    } finally {
+      erro.mockRestore();
+      registro.mockRestore();
+    }
+    expect(assinaturaDoPagamento.mock.calls).toEqual([["pi_da_devolucao"], ["pi_da_devolucao"], ["pi_da_devolucao"]]);
+    expect((await espelho(sub))?.status).toBe("canceled");
+    expect(await temAcessoAtivo(doGate)).toBe(true);
+    await prisma.subscription.deleteMany({ where: { stripeSubscriptionId: sub } });
+  });
+
+  it("a devolução que só mudou de situação SEM falhar: nenhum alerta", async () => {
+    assinaturaDoPagamento.mockReset().mockResolvedValue(null);
+    const erro = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      expect((await enviar(avisoDaDevolucao("refund.updated", "succeeded"))).status).toBe(200);
+      expect((await enviar(avisoDaDevolucao("charge.refund.updated", "pending"))).status).toBe(200);
+      expect(erro).not.toHaveBeenCalled();
+    } finally {
+      erro.mockRestore();
+    }
+  });
+
   it("os outros avisos nunca procuram assinatura por pagamento", async () => {
     const sub = novoId("sub");
     buscarAssinatura.mockResolvedValue(naStripe(sub));

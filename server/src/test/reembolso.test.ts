@@ -23,6 +23,12 @@ vi.mock("../lib/stripe-reembolso.js", async (importOriginal) => ({
   cancelarNaHora: (id: string, dado: MotivoDado) => cancelarNaHora(id, dado),
   devolver: (pagamento: Pagamento, dono: DonoDaDevolucao) => devolver(pagamento, dono),
 }));
+// A troca de plano que ficou esperando a confirmação do banco é anulada antes de encerrar.
+const anularFatura = vi.fn<(faturaId: string) => Promise<"anulada" | "paga">>();
+vi.mock("../lib/stripe-plano.js", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../lib/stripe-plano.js")>()),
+  anularFatura: (faturaId: string) => anularFatura(faturaId),
+}));
 // A busca que a SINCRONIA faz na Stripe, depois da operação.
 const buscarAssinatura = vi.fn<(id: string) => Promise<AssinaturaNaStripe>>();
 vi.mock("../lib/stripe.js", async (importOriginal) => ({
@@ -77,7 +83,22 @@ let detalhes: Partial<DetalhesDaAssinatura> = {};
 let naStripe: Partial<AssinaturaNaStripe> = {};
 let pago: OQueFoiPago = { moeda: null, pagamentos: [] };
 const UMA_COBRANCA = (): OQueFoiPago => ({ moeda: "brl", pagamentos: [{ pagamentoId: "pi_1", centavos: 9990, devolvido: 0 }] });
-const aindaFalta = () => pago.pagamentos.some((p) => p.centavos > p.devolvido);
+/**
+ * Como na Stripe e no `faturaDevolvida` DE VERDADE: o período deixa de contar quando a cobrança da
+ * ÚLTIMA fatura volta por inteiro — e não quando tudo voltou (achado da revisão de segurança,
+ * 11/10/2026: o dublê antigo era mais bonzinho que o código). As cobranças vêm da mais antiga
+ * para a mais nova, como `buscarOQueFoiPago` as entrega: a última da lista é a da última fatura.
+ */
+const aUltimaVoltou = () => {
+  const ultima = pago.pagamentos[pago.pagamentos.length - 1];
+  return ultima !== undefined && ultima.devolvido >= ultima.centavos;
+};
+async function entrar(): Promise<string[]> {
+  const res = await request(servidor).post("/api/auth/sign-in/email").send({ email: process.env.SEED_MEMBER_EMAIL, password: process.env.SEED_MEMBER_PASSWORD });
+  const cookies = (res.headers["set-cookie"] as unknown as string[] | undefined) ?? [];
+  expect(cookies.length).toBeGreaterThan(0);
+  return cookies;
+}
 
 async function comAAssinaturaOcupada(enquanto: () => Promise<void>): Promise<void> {
   let soltar: () => void = () => {};
@@ -101,9 +122,7 @@ async function comAAssinaturaOcupada(enquanto: () => Promise<void>): Promise<voi
 }
 
 beforeAll(async () => {
-  const res = await request(servidor).post("/api/auth/sign-in/email").send({ email: process.env.SEED_MEMBER_EMAIL, password: process.env.SEED_MEMBER_PASSWORD });
-  member = (res.headers["set-cookie"] as unknown as string[] | undefined) ?? [];
-  expect(member.length).toBeGreaterThan(0);
+  member = await entrar();
   memberId = (await prisma.user.findUniqueOrThrow({ where: { email: process.env.SEED_MEMBER_EMAIL }, select: { id: true } })).id;
   await prisma.user.create({ data: { id: outro, email: `${outro}@teste.local` } });
 });
@@ -130,8 +149,9 @@ beforeEach(async () => {
   });
   devolver.mockReset().mockImplementation(async (pagamento) => {
     for (const p of pago.pagamentos) if (p.pagamentoId === pagamento.pagamentoId) p.devolvido = p.centavos;
-    if (!aindaFalta()) naStripe = { ...naStripe, pagoAte: HA_2_DIAS };
+    if (aUltimaVoltou()) naStripe = { ...naStripe, pagoAte: HA_2_DIAS };
   });
+  anularFatura.mockReset().mockResolvedValue("anulada");
   buscarAssinatura.mockReset().mockImplementation(async (id) => ({ id, status: "active", pagoAte: EM_28_DIAS, clienteId: CLIENTE, userId: memberId, livemode: false, ...naStripe }));
 });
 
@@ -230,12 +250,27 @@ describe("POST /api/billing/minha-assinatura/reembolso — dentro do prazo", () 
     expect(buscarOQueFoiPago.mock.calls.flat()).not.toContain(alheia);
   });
 
-  it("quem trocou de plano no prazo recebe as DUAS cobranças — e a resposta é a soma", async () => {
-    pago = { moeda: "brl", pagamentos: [{ pagamentoId: "pi_da_troca", centavos: 89800, devolvido: 0 }, { pagamentoId: "pi_1", centavos: 9990, devolvido: 0 }] };
+  it("quem trocou de plano no prazo recebe as DUAS cobranças, da mais antiga para a mais nova — e a resposta é a soma", async () => {
+    pago = { moeda: "brl", pagamentos: [{ pagamentoId: "pi_1", centavos: 9990, devolvido: 0 }, { pagamentoId: "pi_da_troca", centavos: 89800, devolvido: 0 }] };
     const res = await reembolsar(member, {});
     expect([res.status, res.body]).toEqual([200, { centavos: 99790, moeda: "brl" }]);
-    expect(devolver.mock.calls.map(([pagamento]) => pagamento.pagamentoId)).toEqual(["pi_da_troca", "pi_1"]);
+    expect(devolver.mock.calls.map(([pagamento]) => pagamento.pagamentoId)).toEqual(["pi_1", "pi_da_troca"]);
     expect((await situacao()).body).toMatchObject({ temAcesso: false });
+  });
+
+  it("com uma troca de plano esperando a confirmação do banco: a fatura dela é ANULADA antes de encerrar — não pode ser paga depois do reembolso", async () => {
+    detalhes = { faturaDaTrocaId: "in_da_troca" };
+    expect((await reembolsar(member, {})).status).toBe(200);
+    expect(anularFatura.mock.calls).toEqual([["in_da_troca"]]);
+    const [anulou, leuOPago, encerrou] = [anularFatura, buscarOQueFoiPago, cancelarNaHora].map((dublê) => dublê.mock.invocationCallOrder[0] ?? 0);
+    expect(anulou).toBeLessThan(encerrou);
+    // O que foi pago se lê DEPOIS de anular: se a troca se completou no mesmo instante, a cobrança dela entra na devolução.
+    expect(anulou).toBeLessThan(leuOPago);
+  });
+
+  it("a assinatura comum (sem troca pendente): nenhuma fatura é anulada", async () => {
+    expect((await reembolsar(member, {})).status).toBe(200);
+    expect(anularFatura).not.toHaveBeenCalled();
   });
 
   it("parte já tinha voltado: a resposta é só o que FALTAVA", async () => {
@@ -317,12 +352,58 @@ describe("POST /api/billing/minha-assinatura/reembolso — quando não devolve",
     nadaMudouNaStripe();
   });
 
-  it("conta sem assinatura que dê acesso: 409, e a Stripe nem é consultada", async () => {
-    await comEspelho("canceled", PASSADO);
+  it("a tentativa de assinar que nunca se completou: 409 — ela nem é olhada na Stripe (só as ENCERRADAS são)", async () => {
+    await comEspelho("incomplete_expired", PASSADO);
     const res = await reembolsar(member, {});
     expect([res.status, res.body]).toEqual([409, { error: "SemAssinatura" }]);
-    expect(buscarDetalhes).not.toHaveBeenCalled();
+    // A encerrada de mentira do seed é olhada (e a Stripe não a conhece); a incompleta, não.
+    expect(buscarDetalhes.mock.calls.flat()).toEqual([ASSINATURA_DE_TESTE]);
     nadaMudouNaStripe();
+  });
+
+  it("sem acesso, só se olham as ENCERRADAS mais recentes — três, no máximo", async () => {
+    await comEspelho("canceled", PASSADO);
+    for (const n of [1, 2, 3]) await prisma.subscription.create({ data: { ownerUserId: memberId, status: "canceled", currentPeriodEnd: PASSADO, stripeSubscriptionId: `sub_${S}_velha_${n}`, stripeCustomerId: CLIENTE } });
+    expect((await reembolsar(member, {})).body).toEqual({ error: "SemAssinatura" });
+    // As três mais novas (as recém-criadas); a do teste e a do seed, mais antigas, ficam de fora.
+    expect(buscarDetalhes.mock.calls.flat()).toEqual([`sub_${S}_velha_3`, `sub_${S}_velha_2`, `sub_${S}_velha_1`]);
+    nadaMudouNaStripe();
+  });
+
+  it("assinatura encerrada, sem acesso e FORA do prazo (quem saiu há tempo): 409 — nada é devolvido", async () => {
+    await comEspelho("canceled", PASSADO);
+    detalhes = { status: "canceled", pagoAte: PASSADO, comecouEm: HA_8_DIAS };
+    const res = await reembolsar(member, {});
+    expect([res.status, res.body]).toEqual([409, { error: "SemAssinatura" }]);
+    expect(buscarOQueFoiPago).not.toHaveBeenCalled();
+    nadaMudouNaStripe();
+  });
+
+  it("a encerrada que a Stripe diz ser de OUTRA conta nunca é reembolsada por uma linha errada do espelho — e alguém é avisado", async () => {
+    await comEspelho("canceled", PASSADO);
+    detalhes = { status: "canceled", pagoAte: PASSADO, userId: outro };
+    const erro = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      expect((await reembolsar(member, {})).body).toEqual({ error: "SemAssinatura" });
+      expect(erro.mock.calls.flat().join(" ")).toContain(`reembolso: o espelho diz que a assinatura ${SUB} é da conta ${memberId}, e a Stripe diz que é da conta ${outro}`);
+    } finally {
+      erro.mockRestore();
+    }
+    nadaMudouNaStripe();
+  });
+
+  it("nada a devolver, e a Stripe diz que o acesso ACABOU (encerrada e devolvida pelo painel, o aviso não chegou): a sessão CAI — só o reembolso que saiu a mantém", async () => {
+    pago = { moeda: "brl", pagamentos: [{ pagamentoId: "pi_1", centavos: 9990, devolvido: 9990 }] };
+    naStripe = { status: "canceled", pagoAte: HA_2_DIAS };
+    try {
+      const res = await reembolsar(member, {});
+      expect([res.status, res.body]).toEqual([409, { error: "NadaADevolver" }]);
+      expect((await espelho()).status).toBe("canceled");
+      expect((await situacao()).status).toBe(401);
+      expect(await prisma.session.count({ where: { userId: memberId } })).toBe(0);
+    } finally {
+      member = await entrar();
+    }
   });
 
   it("a Stripe não conhece a assinatura, ou diz que ela é de OUTRA conta: 404, e ninguém recebe o dinheiro dos outros", async () => {
@@ -396,6 +477,48 @@ describe("POST /api/billing/minha-assinatura/reembolso — quando a Stripe falha
     expect((await situacao()).body).toEqual({ temAcesso: false, reativar: true });
   });
 
+  // O CASO DA REVISÃO DE SEGURANÇA (11/10/2026): encerrada, SEM acesso (a última fatura era a de
+  // uma troca de plano que não se completou), com a devolução falhada e dentro do prazo. Sem
+  // achar essa assinatura, a pessoa ficaria sem acesso, sem o dinheiro e sem poder repetir.
+  it("encerrada e já SEM acesso, dentro do prazo e com dinheiro por receber: repetir DEVOLVE — sem encerrar de novo", async () => {
+    await comEspelho("canceled", PASSADO);
+    detalhes = { status: "canceled", pagoAte: PASSADO };
+    naStripe = { status: "canceled", pagoAte: PASSADO };
+    expect((await situacao()).body).toMatchObject({ temAcesso: false });
+    const res = await reembolsar(member, {});
+    expect([res.status, res.body]).toEqual([200, { centavos: 9990, moeda: "brl" }]);
+    expect(cancelarNaHora).not.toHaveBeenCalled();
+    expect(devolver.mock.calls.map(([pagamento, dono]) => [pagamento.pagamentoId, dono.assinaturaId, dono.userId])).toEqual([["pi_1", SUB, memberId]]);
+  });
+
+  it("o dinheiro voltou e a sincronia falhou: tenta acertar o espelho mais uma vez — e acerta", async () => {
+    buscarAssinatura.mockRejectedValueOnce(new Error("[stripe] a busca da assinatura falhou: StripeConnectionError"));
+    const aviso = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      const res = await reembolsar(member, {});
+      expect([res.status, res.body]).toEqual([200, { centavos: 9990, moeda: "brl" }]);
+    } finally {
+      aviso.mockRestore();
+    }
+    expect(buscarAssinatura).toHaveBeenCalledTimes(2);
+    expect((await espelho()).status).toBe("canceled");
+    // Reembolsada: sem acesso, e ainda logada.
+    expect((await situacao()).body).toEqual({ temAcesso: false, reativar: true });
+  });
+
+  it("o dinheiro voltou e o espelho NÃO pôde ser acertado: a resposta continua sendo o reembolso, e alguém é avisado — ela pode seguir com acesso", async () => {
+    buscarAssinatura.mockRejectedValue(new Error("[stripe] a busca da assinatura falhou: StripeConnectionError"));
+    const [aviso, erro] = [vi.spyOn(console, "warn").mockImplementation(() => {}), vi.spyOn(console, "error").mockImplementation(() => {})];
+    try {
+      const res = await reembolsar(member, {});
+      expect([res.status, res.body]).toEqual([200, { centavos: 9990, moeda: "brl" }]);
+      expect(erro.mock.calls.flat().join(" ")).toContain(`[stripe] reembolso: a conta ${memberId} recebeu o dinheiro de volta e o espelho da assinatura ${SUB} NÃO foi acertado`);
+    } finally {
+      aviso.mockRestore();
+      erro.mockRestore();
+    }
+  });
+
   it("duas cobranças, a segunda falha: a primeira voltou, a resposta é a falha — e repetir devolve só a que faltou", async () => {
     pago = { moeda: "brl", pagamentos: [{ pagamentoId: "pi_a", centavos: 5000, devolvido: 0 }, { pagamentoId: "pi_b", centavos: 4990, devolvido: 0 }] };
     const real = devolver.getMockImplementation();
@@ -409,8 +532,11 @@ describe("POST /api/billing/minha-assinatura/reembolso — quando a Stripe falha
     } finally {
       erro.mockRestore();
     }
+    // A mais NOVA não voltou: o período continua contando, e a pessoa segue com acesso para repetir.
+    expect((await situacao()).body).toMatchObject({ temAcesso: true });
     const res = await reembolsar(member, {});
     expect([res.status, res.body]).toEqual([200, { centavos: 4990, moeda: "brl" }]);
+    expect((await situacao()).body).toMatchObject({ temAcesso: false });
   });
 });
 

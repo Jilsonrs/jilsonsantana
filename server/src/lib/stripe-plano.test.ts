@@ -89,6 +89,12 @@ describe("trocar o plano na hora", () => {
     expect(await trocarAgora(TROCA)).toEqual({ estado: "recusado", faturaId: null });
   });
 
+  it("nem ler o pagamento deu (a troca pendente e a fatura JÁ existem): é recusa, com a fatura a anular — o erro não sobe deixando a fatura em aberto", async () => {
+    falsa.subscriptions.update.mockResolvedValue(pendente({ id: "in_troca", status: "open", confirmation_secret: { client_secret: "pi_1_secret_x" } }));
+    falsa.invoices.retrieve.mockRejectedValue(foraDoAr());
+    expect(await trocarAgora(TROCA)).toEqual({ estado: "recusado", faturaId: "in_troca" });
+  });
+
   it("a recusa do cartão que vem como erro: o mesmo desfecho; qualquer outro erro sobe, sem a mensagem da Stripe", async () => {
     falsa.subscriptions.update.mockRejectedValue(cartaoRecusado());
     expect(await trocarAgora(TROCA)).toEqual({ estado: "recusado", faturaId: null });

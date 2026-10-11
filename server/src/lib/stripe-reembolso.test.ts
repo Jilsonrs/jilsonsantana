@@ -25,13 +25,13 @@ vi.mock("./stripe-cliente.js", async (importOriginal) => ({
 
 import { AssinaturaNaoEncontrada, buscarAssinatura } from "./stripe.js";
 import { cobrancaDoPagamento, faturaDevolvida } from "./stripe-devolucao.js";
-import { aDevolver, assinaturaDoPagamento, buscarOQueFoiPago, cancelarNaHora, devolver, paraPedidoDeDevolucao } from "./stripe-reembolso.js";
+import { aDevolver, assinaturaDoPagamento, buscarOQueFoiPago, cancelarNaHora, chaveDaDevolucao, devolver, paraPedidoDeDevolucao } from "./stripe-reembolso.js";
 
 const DONO = { userId: "u-1", assinaturaId: "sub_1" };
 const recusa = (code: string) => new Stripe.errors.StripeInvalidRequestError({ message: "mensagem crua da Stripe, com sk_test_abc", type: "invalid_request_error", code, statusCode: 400 });
 const foraDoAr = () => new Stripe.errors.StripeConnectionError({ message: "mensagem crua da Stripe, com sk_test_abc", type: "api_error" });
 const pago = (pi: string) => ({ status: "paid", payment: { type: "payment_intent", payment_intent: pi } });
-const fatura = (id: string, amount_paid: number, pagamentos: object[], status = "paid") => ({ id, status, amount_paid, currency: "brl", payments: { data: pagamentos } });
+const fatura = (id: string, amount_paid: number, pagamentos: object[], status = "paid", created = 0) => ({ id, status, amount_paid, currency: "brl", created, payments: { data: pagamentos } });
 /** As cobranças, por pagamento: quanto cobrou e quanto já voltou. */
 function comCobrancas(cobrancas: Record<string, { amount: number; amount_refunded: number } | null>) {
   falsa.paymentIntents.retrieve.mockImplementation(async (id: string) => ({ id, latest_charge: cobrancas[id] ?? null }));
@@ -54,10 +54,11 @@ describe("quanto ainda há a devolver", () => {
 });
 
 describe("tudo o que foi pago numa assinatura", () => {
-  it("as faturas PAGAS desta assinatura, com a cobrança de cada pagamento", async () => {
-    falsa.invoices.list.mockResolvedValue({ data: [fatura("in_2", 89800, [pago("pi_2")]), fatura("in_1", 9990, [pago("pi_1")])] });
+  it("as faturas PAGAS desta assinatura, com a cobrança de cada pagamento — DA MAIS ANTIGA PARA A MAIS NOVA, que é a ordem de devolver", async () => {
+    // A Stripe lista da mais nova para a mais antiga.
+    falsa.invoices.list.mockResolvedValue({ data: [fatura("in_2", 89800, [pago("pi_2")], "paid", 200), fatura("in_1", 9990, [pago("pi_1")], "paid", 100)] });
     comCobrancas({ pi_1: { amount: 9990, amount_refunded: 0 }, pi_2: { amount: 89800, amount_refunded: 1000 } });
-    expect(await buscarOQueFoiPago("sub_1")).toEqual({ moeda: "brl", pagamentos: [{ pagamentoId: "pi_2", centavos: 89800, devolvido: 1000 }, { pagamentoId: "pi_1", centavos: 9990, devolvido: 0 }] });
+    expect(await buscarOQueFoiPago("sub_1")).toEqual({ moeda: "brl", pagamentos: [{ pagamentoId: "pi_1", centavos: 9990, devolvido: 0 }, { pagamentoId: "pi_2", centavos: 89800, devolvido: 1000 }] });
     expect(falsa.invoices.list.mock.calls).toEqual([[{ subscription: "sub_1", status: "paid", limit: 100, expand: ["data.payments"] }]]);
   });
 
@@ -114,10 +115,23 @@ describe("devolver um pagamento", () => {
     expect(paraPedidoDeDevolucao({ pagamentoId: "pi_1", centavos: 9990, devolvido: 1000 }, DONO)).toEqual({ payment_intent: "pi_1", amount: 8990, reason: "requested_by_customer", metadata: { para: "reembolso", userId: "u-1", assinatura: "sub_1" } });
   });
 
-  it("vai à Stripe com a chave de repetição do pagamento e do quanto já tinha voltado", async () => {
+  it("vai à Stripe com o pedido e a chave de repetição", async () => {
     falsa.refunds.create.mockResolvedValue({ id: "re_1", status: "succeeded" });
-    await devolver({ pagamentoId: "pi_1", centavos: 9990, devolvido: 0 }, DONO);
-    expect(falsa.refunds.create.mock.calls).toEqual([[{ payment_intent: "pi_1", amount: 9990, reason: "requested_by_customer", metadata: { para: "reembolso", userId: "u-1", assinatura: "sub_1" } }, { idempotencyKey: "reembolso-pi_1-0" }]]);
+    const pagamento = { pagamentoId: "pi_1", centavos: 9990, devolvido: 0 };
+    await devolver(pagamento, DONO);
+    const [pedido, opcoes] = falsa.refunds.create.mock.calls[0] ?? [];
+    expect(pedido).toEqual({ payment_intent: "pi_1", amount: 9990, reason: "requested_by_customer", metadata: { para: "reembolso", userId: "u-1", assinatura: "sub_1" } });
+    expect(opcoes.idempotencyKey).toMatch(/^reembolso-pi_1-0-\d+$/);
+  });
+
+  it("a chave de repetição: a mesma para o pedido repetido em seguida; outra depois de 5 minutos (a Stripe guarda a FALHA de uma chave por um dia), para outro pagamento, ou com outro tanto já devolvido", () => {
+    const pagamento = { pagamentoId: "pi_1", centavos: 9990, devolvido: 0 };
+    const ao = new Date("2026-10-11T12:00:00Z");
+    const chave = chaveDaDevolucao(pagamento, ao);
+    expect(chaveDaDevolucao(pagamento, new Date(ao.getTime() + 4 * 60_000))).toBe(chave);
+    expect(chaveDaDevolucao(pagamento, new Date(ao.getTime() + 5 * 60_000))).not.toBe(chave);
+    expect(chaveDaDevolucao({ ...pagamento, pagamentoId: "pi_2" }, ao)).not.toBe(chave);
+    expect(chaveDaDevolucao({ ...pagamento, devolvido: 1000 }, ao)).not.toBe(chave);
   });
 
   it("nada a devolver deste pagamento: a Stripe nem é chamada", async () => {

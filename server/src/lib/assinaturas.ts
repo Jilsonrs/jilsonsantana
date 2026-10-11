@@ -52,6 +52,14 @@ export type Desfecho = { resultado: "repetido" } | { resultado: "sem-assinatura"
 /** A busca na Stripe roda dentro da transação: o tempo dela (até ~20 s com uma nova tentativa) cabe aqui. */
 const TEMPO_DA_TRANSACAO = { maxWait: 10_000, timeout: 30_000 };
 
+/**
+ * Uma OPERAÇÃO faz várias idas à Stripe com a trava (o reembolso, perto de dez — achado da
+ * revisão de segurança, 11/10/2026): com o tempo de uma ida só, a transação venceria no meio, a
+ * trava soltaria com a operação ainda falando com a Stripe, e o aviso entraria antes da hora. A
+ * mesma conta do checkout (`checkout.ts`).
+ */
+const TEMPO_DA_OPERACAO = { maxWait: 10_000, timeout: 90_000 };
+
 function eRepetido(erro: unknown): boolean {
   return erro instanceof Prisma.PrismaClientKnownRequestError && erro.code === "P2002";
 }
@@ -149,12 +157,12 @@ export async function sincronizarAssinatura(assinaturaId: string): Promise<Sincr
  * sincronizada por outro, devolve nada na hora — o espelho está sendo acertado de qualquer jeito,
  * e o aviso da Stripe vem atrás. A mesma rotina e a mesma trava; só não fica na fila.
  */
-export async function sincronizarSeLivre(assinaturaId: string): Promise<Sincronia | null> {
+export async function sincronizarSeLivre(assinaturaId: string, opcoes: { manterSessao?: boolean } = {}): Promise<Sincronia | null> {
   try {
     return await prisma.$transaction(async (tx): Promise<Sincronia | null> => {
       const [trava] = await tx.$queryRaw<{ livre: boolean }[]>`SELECT pg_try_advisory_xact_lock(hashtext(${assinaturaId})) AS livre`;
       if (!trava?.livre) return null;
-      return sincronizar(tx, assinaturaId);
+      return sincronizar(tx, assinaturaId, opcoes);
     }, TEMPO_DA_TRANSACAO);
   } catch (erro) {
     const motivo = erro instanceof Error ? erro.message : String(erro);
@@ -172,20 +180,23 @@ export type Operacao<T> = { feito: T; sincronia: Sincronia | null };
  * encontra o espelho gravado; nada grava o espelho à mão.
  * NÃO ESPERA a trava (como `sincronizarSeLivre`, e pelo mesmo motivo): se a assinatura está
  * ocupada, devolve nada na hora, SEM ter ido à Stripe — quem pediu tenta de novo.
- * `manterSessao`: a exceção do reembolso pedido pelo dono (ver o topo do arquivo).
+ * `manterSessao`: a exceção do reembolso pedido pelo dono (ver o topo do arquivo) — decidida
+ * pelo RESULTADO da operação, e não por quem a chama: a operação que não devolveu nada e
+ * descobre que o acesso acabou derruba a sessão, como toda perda de acesso.
  * Se a Stripe mudou e a sincronia falhou, a operação VALEU: devolve-a sem a sincronia (é aviso no
  * registro; o aviso da Stripe acerta o espelho). Se a própria mudança falhou, sobe.
  */
-export async function operarNaAssinatura<T>(assinaturaId: string, naStripe: () => Promise<T>, opcoes: { manterSessao?: boolean } = {}): Promise<Operacao<T> | null> {
+export async function operarNaAssinatura<T>(assinaturaId: string, naStripe: () => Promise<T>, opcoes: { manterSessao?: (feito: T) => boolean } = {}): Promise<Operacao<T> | null> {
   const feita: { valor?: T; foi: boolean } = { foi: false };
   try {
     return await prisma.$transaction(async (tx): Promise<Operacao<T> | null> => {
       const [trava] = await tx.$queryRaw<{ livre: boolean }[]>`SELECT pg_try_advisory_xact_lock(hashtext(${assinaturaId})) AS livre`;
       if (!trava?.livre) return null;
-      feita.valor = await naStripe();
+      const feito = await naStripe();
+      feita.valor = feito;
       feita.foi = true;
-      return { feito: feita.valor, sincronia: await sincronizar(tx, assinaturaId, opcoes) };
-    }, TEMPO_DA_TRANSACAO);
+      return { feito, sincronia: await sincronizar(tx, assinaturaId, { manterSessao: opcoes.manterSessao?.(feito) ?? false }) };
+    }, TEMPO_DA_OPERACAO);
   } catch (erro) {
     const motivo = erro instanceof Error ? erro.message : String(erro);
     if (!feita.foi) throw new Error(`[stripe] a operação na assinatura ${assinaturaId} falhou: ${motivo}`, { cause: erro });

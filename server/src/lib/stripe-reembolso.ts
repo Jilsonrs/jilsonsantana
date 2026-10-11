@@ -29,6 +29,10 @@ export function aDevolver(pago: OQueFoiPago): number {
  * Tudo o que foi PAGO nesta assinatura: as faturas pagas dela (até 100 — uma por período, mais a
  * da troca de plano) e a cobrança de cada pagamento. É daqui que saem o valor mostrado na tela e
  * o que a operação devolve: o mostrado é o devolvido.
+ * DA MAIS ANTIGA PARA A MAIS NOVA (achado da revisão de segurança, 11/10/2026): é a ordem em que
+ * a operação devolve. O espelho deixa de dar acesso quando a ÚLTIMA fatura volta por inteiro; se
+ * ela voltasse primeiro e a seguinte falhasse, a pessoa ficaria sem acesso, com dinheiro por
+ * receber e sem poder repetir.
  */
 export async function buscarOQueFoiPago(assinaturaId: string): Promise<OQueFoiPago> {
   let faturas: Stripe.Invoice[];
@@ -39,7 +43,7 @@ export async function buscarOQueFoiPago(assinaturaId: string): Promise<OQueFoiPa
   }
   const pagamentos: Pagamento[] = [];
   let moeda: string | null = null;
-  for (const fatura of faturas) {
+  for (const fatura of [...faturas].sort((a, b) => a.created - b.created)) {
     if (fatura.amount_paid <= 0) continue;
     for (const pagamentoId of pagamentosDaFatura(fatura)) {
       pagamentos.push({ pagamentoId, ...(await cobrancaDoPagamento(pagamentoId)) });
@@ -83,15 +87,30 @@ export function paraPedidoDeDevolucao(pagamento: Pagamento, dono: DonoDaDevoluca
   };
 }
 
+/** De quantos em quantos minutos a chave de repetição muda. */
+const JANELA_DA_CHAVE = 5 * 60 * 1000;
+
 /**
- * Devolve o que falta deste pagamento. REPETIR NÃO DEVOLVE DUAS VEZES: a chave de repetição é do
- * pagamento e do quanto já tinha voltado (o mesmo pedido, de novo, recebe a mesma devolução), e o
- * que a Stripe diz que já voltou por inteiro conta como feito. Devolução que nasce `failed` sobe.
+ * A chave de repetição da devolução: do pagamento, do quanto já tinha voltado e da JANELA de 5
+ * minutos. A Stripe guarda por 24 h a primeira resposta de cada chave — inclusive a FALHA (achado
+ * da revisão de segurança, 11/10/2026): com uma chave fixa, "pode repetir" devolveria o mesmo
+ * erro o dia inteiro. Com a janela, o pedido repetido em seguida recebe a mesma devolução, e o de
+ * minutos depois é um pedido novo — que a Stripe não deixa passar do que foi cobrado. Função pura.
+ */
+export function chaveDaDevolucao(pagamento: Pagamento, agora: Date = new Date()): string {
+  return `reembolso-${pagamento.pagamentoId}-${pagamento.devolvido}-${Math.floor(agora.getTime() / JANELA_DA_CHAVE)}`;
+}
+
+/**
+ * Devolve o que falta deste pagamento. REPETIR NÃO DEVOLVE DUAS VEZES: a chave de repetição
+ * (`chaveDaDevolucao`), a trava da assinatura e a própria Stripe, que não devolve mais do que
+ * cobrou — o que ela diz que já voltou por inteiro conta como feito. Devolução que nasce `failed`
+ * sobe; a que nasce `pending` vale, e se falhar depois quem avisa é o aviso da Stripe.
  */
 export async function devolver(pagamento: Pagamento, dono: DonoDaDevolucao): Promise<void> {
   if (pagamento.centavos - pagamento.devolvido <= 0) return;
   try {
-    const devolucao = await stripe().refunds.create(paraPedidoDeDevolucao(pagamento, dono), { idempotencyKey: `reembolso-${pagamento.pagamentoId}-${pagamento.devolvido}` });
+    const devolucao = await stripe().refunds.create(paraPedidoDeDevolucao(pagamento, dono), { idempotencyKey: chaveDaDevolucao(pagamento) });
     if (devolucao.status === "failed" || devolucao.status === "canceled") throw new Error(`[stripe] a devolução nasceu ${devolucao.status}`);
   } catch (erro) {
     if (erro instanceof Stripe.errors.StripeInvalidRequestError && erro.code === "charge_already_refunded") return;

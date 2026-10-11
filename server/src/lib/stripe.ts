@@ -22,8 +22,9 @@ export { erroSemMensagem, stripe };
 /**
  * O aviso da Stripe, já verificado: só o que o servidor usa. `pagamento`: o aviso de DINHEIRO
  * DEVOLVIDO fala de uma cobrança, não de uma assinatura — a assinatura se acha pelo pagamento.
+ * `devolucaoFalhou`: uma devolução que tinha sido aceita FALHOU depois — o dinheiro não voltou.
  */
-export type AvisoDaStripe = { id: string; tipo: string; assinatura: string | null; pagamento?: string | null };
+export type AvisoDaStripe = { id: string; tipo: string; assinatura: string | null; pagamento?: string | null; devolucaoFalhou?: boolean };
 
 /** A assinatura como a Stripe diz AGORA, no formato que o espelho guarda. */
 export type AssinaturaNaStripe = {
@@ -307,10 +308,25 @@ function assinaturaDoAviso(evento: Stripe.Event): string | null {
  * 11/10/2026]`: quem acha a assinatura é o servidor, pelo pagamento (`stripe-reembolso.ts`).
  */
 function pagamentoDoAviso(evento: Stripe.Event): string | null {
-  if (evento.type !== "charge.refunded") return null;
+  // A devolução que mudou de situação também: se FALHOU, o período volta a contar como pago, e
+  // o espelho tem que saber — pela sincronia de sempre.
+  if (evento.type !== "charge.refunded" && !eAvisoDeDevolucao(evento)) return null;
   const pagamento = evento.data.object.payment_intent;
   if (!pagamento) return null;
   return typeof pagamento === "string" ? pagamento : pagamento.id;
+}
+
+type AvisoDeDevolucao = Extract<Stripe.Event, { type: "refund.failed" | "refund.updated" | "charge.refund.updated" }>;
+function eAvisoDeDevolucao(evento: Stripe.Event): evento is AvisoDeDevolucao {
+  return evento.type === "refund.failed" || evento.type === "refund.updated" || evento.type === "charge.refund.updated";
+}
+
+/**
+ * Uma devolução que a Stripe tinha aceitado FALHOU depois (achado da revisão de segurança,
+ * 11/10/2026): o dinheiro não voltou ao aluno, e sem isto quem descobriria seria ele.
+ */
+function devolucaoQueFalhou(evento: Stripe.Event): boolean {
+  return eAvisoDeDevolucao(evento) && evento.data.object.status === "failed";
 }
 
 /**
@@ -323,7 +339,7 @@ export function verificarAviso(corpo: unknown, cabecalho: string | undefined): A
   if (!segredo) throw new Error("Stripe sem STRIPE_WEBHOOK_SECRET");
   if (!Buffer.isBuffer(corpo) || !cabecalho) throw new Error("aviso sem corpo cru ou sem assinatura");
   const evento = Stripe.webhooks.constructEvent(corpo, cabecalho, segredo);
-  return { id: evento.id, tipo: evento.type, assinatura: assinaturaDoAviso(evento), pagamento: pagamentoDoAviso(evento) };
+  return { id: evento.id, tipo: evento.type, assinatura: assinaturaDoAviso(evento), pagamento: pagamentoDoAviso(evento), devolucaoFalhou: devolucaoQueFalhou(evento) };
 }
 
 /**

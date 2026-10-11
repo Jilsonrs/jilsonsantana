@@ -74,7 +74,15 @@ export async function trocarAgora(troca: TrocaNaHora): Promise<DesfechoDaTroca> 
   const fatura = assinatura.latest_invoice;
   if (!fatura || typeof fatura === "string") return { estado: "recusado", faturaId: typeof fatura === "string" ? fatura : null };
   const segredo = fatura.confirmation_secret?.client_secret;
-  if (segredo && (await situacaoDoPagamento(fatura.id)) === "requires_action") return { estado: "confirmar", segredo, faturaId: fatura.id };
+  let situacao: string | null = null;
+  try {
+    situacao = await situacaoDoPagamento(fatura.id);
+  } catch {
+    // A troca pendente e a fatura JÁ existem na Stripe: se nem ler o pagamento deu, é recusa —
+    // quem chama anula a fatura (achado da revisão de segurança, 11/10/2026). Subir o erro
+    // deixaria a fatura do plano novo em aberto por um dia.
+  }
+  if (segredo && situacao === "requires_action") return { estado: "confirmar", segredo, faturaId: fatura.id };
   return { estado: "recusado", faturaId: fatura.id };
 }
 
