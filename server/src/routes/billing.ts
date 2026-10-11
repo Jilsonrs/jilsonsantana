@@ -192,7 +192,8 @@ router.post("/billing/cartao/aplicar", requireAuth, async (req, res) => {
 });
 
 // PARAR A RENOVAÇÃO E VOLTAR ATRÁS (etapa 4.6, sessão b). "Cancelar" aqui é parar a renovação: o
-// acesso continua até o fim do período pago. O corpo de cancelar leva SÓ o motivo, opcional; o de
+// acesso continua até o fim do período pago — menos com a cobrança ATRASADA, em que a assinatura
+// termina na hora (não há período pago a manter). O corpo de cancelar leva SÓ o motivo, opcional; o de
 // manter, nada. Nenhum dos dois diz qual assinatura: é a da conta da sessão.
 
 /**
@@ -202,7 +203,6 @@ router.post("/billing/cartao/aplicar", requireAuth, async (req, res) => {
 const RECUSAS = {
   desconhecida: [404, "AssinaturaDesconhecida"],
   "sem-assinatura": [409, "SemAssinatura"],
-  atrasada: [409, "CobrancaAtrasada"],
   ocupada: [409, "Ocupada"],
   "fora-do-prazo": [409, "ForaDoPrazo"],
   "nada-a-devolver": [409, "NadaADevolver"],
@@ -234,7 +234,8 @@ router.post("/billing/minha-assinatura/cancelar", requireAuth, async (req, res) 
     res.status(status).json({ error });
     return;
   }
-  const resposta: RenovacaoParada = { acessoAte: parada.acessoAte };
+  // `terminou`: a cobrança estava atrasada, e a assinatura acabou agora (sem data de acesso).
+  const resposta: RenovacaoParada = parada.terminou ? { acessoAte: null, terminou: true } : { acessoAte: parada.acessoAte };
   res.json(resposta);
 });
 

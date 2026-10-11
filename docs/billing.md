@@ -533,12 +533,14 @@ a assinatura "não paga" (P60). O relato completo está no plano, Fase 4 → eta
   período pago a manter: os dias que ela usava eram de tolerância. O texto, aprovado em
   português: **"Sua assinatura termina agora, e a cobrança em aberto não será mais tentada."**
   (inglês, rascunho: "Your subscription ends now, and we won't try the pending charge again." —
-  P72). **AINDA NÃO ESTÁ NO CÓDIGO** (hoje o servidor responde "não dá"): entra antes da tela de
-  cancelar. *Reabre se a escola quiser cobrar de quem volta o período que ficou em atraso.*
+  P72). **No servidor desde 11/10/2026** (a tela vem no passo 9): a operação ENCERRA a
+  assinatura e só depois anula a cobrança em aberto; a resposta diz que terminou, e a tela é
+  avisada antes (`terminaAoCancelar`). *Reabre se a escola quiser cobrar de quem volta o período
+  que ficou em atraso.*
 - **Os dados que as telas guardaram são limpos também ao ENTRAR** (decisão do operador,
   11/10/2026): "Sair" já limpa; isto cobre a sessão que acaba sozinha (venceu, ou o site
-  derrubou) com outra conta entrando em seguida no mesmo computador. **AINDA NÃO ESTÁ NO
-  CÓDIGO.** *Sem gatilho: é correção.*
+  derrubou) com outra conta entrando em seguida no mesmo computador. **Feito em 11/10/2026**
+  (a senha errada não limpa nada). *Sem gatilho: é correção.*
 - **Os textos da sessão (b), em PORTUGUÊS: aprovados** (11/10/2026, em três blocos mostrados a
   ele — a tela de mudar de plano, a de cancelar e o banco pedindo confirmação; moram em
   `app.faturamento.plano`, `.cancelamento` e `.banco`). **O inglês entra como está e será
@@ -708,6 +710,15 @@ uma assinatura com a troca de plano esperando o banco, a Stripe anula a fatura d
 o pagamento dela (confirmar depois é recusado) · trocado o cartão da assinatura, o agendamento da
 troca marcada passa a apontar o cartão novo sozinho.
 
+`[FATO — medido na área restrita com o RELÓGIO DE TESTE, 11/10/2026; 6 pontos com as funções de
+verdade]` Com a renovação num cartão que falha, a assinatura fica `past_due`, a cobrança fica em
+aberto e o "pago até" é o dia em que a renovação falhou · encerrada na hora e com a cobrança
+anulada, não sobra fatura em aberto nem nova tentativa marcada, e o espelho fica sem acesso ·
+**anular a cobrança em aberto com a assinatura AINDA VIVA faz a Stripe dá-la como `active` de
+novo** — com as aulas abertas sem pagar. É por isso que a operação encerra primeiro. **Vale para
+o painel da Stripe também:** anular à mão a fatura em aberto de quem está atrasado dá o mês de
+graça.
+
 `[FATO — medido na área restrita, 11/10/2026, com dois clientes descartáveis]` Parar a renovação
 deixa a assinatura `active`, com a data de fim igual ao fim do período, e guarda o motivo, o
 comentário e o `metadata.motivo` · parar de novo sem motivo mantém o de antes · voltar atrás com
@@ -761,8 +772,6 @@ encerrada de vez com dias pagos: tem acesso e o servidor recusa cartão.
 - **A chave da Stripe em produção precisa ler pagamentos:** toda sincronia passou a ler a
   cobrança da última fatura. Se a chave for restrita e não puder, todo aviso responde erro e o
   espelho para de ser gravado (pendência P71).
-- **Com a cobrança atrasada, cancelar ainda responde "não dá"** e nada muda. A decisão já foi
-  tomada (terminar na hora, continuar logada — acima); falta o código.
 - **Fechar a aba depois de o campo confirmar e antes do último passo:** o cartão fica guardado no
   cliente e não vai para a assinatura; a pessoa repete a troca.
 - **A Stripe já encerrou a assinatura e o espelho ainda não soube:** o resumo diz "terminou" e

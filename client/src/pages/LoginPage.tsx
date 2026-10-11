@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { LANGUAGES, loginSchema, type LanguageCode, type LoginInput } from "@jilson/core";
 import { signIn, useSession } from "@/lib/auth-client";
 import { useT, useTrocarIdioma } from "@/lib/language";
@@ -28,6 +29,7 @@ export function LoginPage() {
   const [params] = useSearchParams();
   const { trocarIdiomaAntes } = useTrocarIdioma();
   const { data: session, isPending } = useSession();
+  const queryClient = useQueryClient();
   // O TIPO da falha, não a frase: a frase sai do dicionário no idioma da tela.
   const [formError, setFormError] = useState<"credenciais" | "falha" | null>(null);
   const {
@@ -68,6 +70,11 @@ export function LoginPage() {
       setFormError("falha");
       return;
     }
+    // QUEM ENTRA COMEÇA DO ZERO (decisão do operador, 11/10/2026): "Sair" já limpa o que as
+    // telas guardaram, mas a sessão que acaba sozinha (venceu, ou o servidor a derrubou) não
+    // passa por ele — sem isto, quem entrasse em seguida na mesma aba veria por instantes o que
+    // era da conta anterior.
+    queryClient.clear();
     // Veio da home em inglês → a conta passa a ser inglês ANTES de abrir o app
     // (decisão do operador, 24/09/2026: o estrangeiro "já entra em inglês").
     // Se isso falhar, entra mesmo assim: o idioma se troca depois no rodapé, e

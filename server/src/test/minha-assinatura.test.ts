@@ -162,6 +162,8 @@ describe("GET /api/billing/minha-assinatura — a conta com acesso", () => {
       // Renova: dá para parar a renovação; não há o que desfazer.
       podeParar: true,
       podeManter: false,
+      // Em dia: cancelar é parar a renovação, não terminar na hora.
+      terminaAoCancelar: false,
       // Fora do prazo do reembolso (ou sem a data de início): a saída não existe.
       reembolso: null,
       // Renova e é de um dos dois planos: dá para mudar; e não há troca marcada.
@@ -198,7 +200,7 @@ describe("GET /api/billing/minha-assinatura — a conta com acesso", () => {
   it("a última cobrança falhou: atrasada, com o acesso mantido — sem próxima cobrança nem data de fim", async () => {
     await doSeed("past_due", PASSADO);
     naStripe[ASSINATURA_DE_TESTE] = { status: "past_due", pagoAte: PASSADO, fimDoPeriodo: EM_30_DIAS };
-    expect((await ler(member)).body).toEqual({ situacao: "atrasada", plano: "mensal", preco: { centavos: 9990, moeda: "brl" }, proximaCobranca: null, acessoAte: null, cartao: VISA, aceitaCartao: true, podeParar: false, podeManter: false, reembolso: null, podeMudarDePlano: false, trocaMarcada: null });
+    expect((await ler(member)).body).toEqual({ situacao: "atrasada", plano: "mensal", preco: { centavos: 9990, moeda: "brl" }, proximaCobranca: null, acessoAte: null, cartao: VISA, aceitaCartao: true, podeParar: false, podeManter: false, terminaAoCancelar: true, reembolso: null, podeMudarDePlano: false, trocaMarcada: null });
     expect(buscarProximaCobranca).not.toHaveBeenCalled();
   });
 

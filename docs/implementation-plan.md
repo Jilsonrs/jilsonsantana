@@ -4537,6 +4537,21 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
         reprovaram**, e as duas provas com as funções de verdade rodaram de novo na área restrita
         (23 de 23 e 25 de 25). Gates: typecheck, lint, suíte do site (852) e de servidor como o
         CI (1010), build.
+      - **As duas decisões de 11/10/2026 que faltavam no código — FEITO (11/10/2026).**
+        **(i) Cancelar com a cobrança atrasada termina na hora.** A mesma rota de cancelar: para
+        quem está em dia, continua sendo parar a renovação; com a cobrança atrasada, ENCERRA a
+        assinatura, anula a cobrança em aberto (nessa ordem) e responde `terminou`. As aulas
+        trancam na hora e a pessoa continua logada. A tela é avisada antes (`terminaAoCancelar`).
+        A recusa `CobrancaAtrasada` deixou de existir. Os dois textos aprovados entraram no
+        dicionário (`cancelamento.terminaAgora` e `.trocaDesfeita`). **Testes:** 8 de rota.
+        **Mutação:** 9 de 9 reprovaram. **A prova com o relógio de teste da Stripe** (as funções
+        de verdade, 2 relógios descartáveis, já apagados): 6 de 6 — a renovação que falha, a
+        atrasada, encerrar, anular, nada em aberto, o espelho sem acesso. `[FATO — medido]`
+        anular a cobrança em aberto com a assinatura ainda viva a devolve a `active`: é por isso
+        que se encerra primeiro. **E, para a etapa 4.6b:** na atrasada, o "pago até" é mesmo o
+        dia em que a renovação falhou.
+        **(ii) Quem entra começa do zero:** o login limpa o que as telas guardaram (a senha
+        errada não limpa nada). **Testes:** 2 de tela. **Mutação:** 2 de 2 reprovaram.
       **ONDE PAROU:** SESSÃO (a) FECHADA e **PUBLICADA em 11/10/2026 (`main` = `6305077`)**, com
       a autorização do operador (*"pode publicar depois desses ajustes"*): CI verde nos dois jobs
       no `dev` e na `main`, e conferido no ar como visitante — as rotas novas respondem 401 sem
@@ -4548,11 +4563,8 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       **passos 7, 8 e 10** (todo o servidor) e **os textos das telas, aprovados por ele em
       português** (três blocos, 11/10/2026; já no dicionário, em `app.faturamento.plano`,
       `.cancelamento` e `.banco` — o inglês é rascunho, a revisar com o Antigravity: P72).
-      **Decidido por ele em 11/10/2026, e a construir antes das telas:** (i) cancelar com a
-      cobrança atrasada termina a assinatura na hora, para as tentativas e mantém a pessoa
-      logada (servidor: a operação de parar, a resposta e o que a tela recebe; a prova pede o
-      relógio de teste) · (ii) limpar o que as telas guardaram também ao ENTRAR.
-      **Próximo, nesta ordem:** (i) e (ii) · o passo 9 e o 11 (as telas) · o 12 · o 13. A tela
+      As duas decisões dele de 11/10/2026 (cancelar com a cobrança atrasada; limpar ao entrar)
+      já estão no código. **Próximo, nesta ordem:** o passo 9 e o 11 (as telas) · o 12 · o 13. A tela
       de cancelar avisa quem tem a troca para o Mensal marcada de que ela também será desfeita
       (decisão dele, 11/10/2026; `billing.md` → *Minha assinatura*).
       Nas telas: os endereços `…/faturamento/cancelar` e `…/faturamento/plano` (constantes no

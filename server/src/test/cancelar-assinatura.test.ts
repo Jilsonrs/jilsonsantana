@@ -14,6 +14,12 @@ vi.mock("../lib/stripe-assinatura.js", async (importOriginal) => ({
   pararRenovacao: (id: string, dado: MotivoDado) => pararRenovacao(id, dado),
   retomarRenovacao: (id: string, acabaNoFimDoPeriodo: boolean) => retomarRenovacao(id, acabaNoFimDoPeriodo),
 }));
+// Com a cobrança atrasada, cancelar ENCERRA a assinatura na hora.
+const cancelarNaHora = vi.fn<(id: string, dado: MotivoDado) => Promise<void>>();
+vi.mock("../lib/stripe-reembolso.js", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../lib/stripe-reembolso.js")>()),
+  cancelarNaHora: (id: string, dado: MotivoDado) => cancelarNaHora(id, dado),
+}));
 // A troca de plano que estava marcada, ou esperando a confirmação do banco, sai antes de parar.
 const soltarAgendamento = vi.fn<(agendamentoId: string) => Promise<void>>();
 const anularFatura = vi.fn<(faturaId: string) => Promise<"anulada" | "paga">>();
@@ -119,6 +125,10 @@ beforeEach(async () => {
   buscarAssinatura.mockReset().mockImplementation(async (id) => ({ id, status: "active", pagoAte: EM_30_DIAS, clienteId: CLIENTE, userId: memberId, livemode: false, ...naStripe }));
   soltarAgendamento.mockReset().mockResolvedValue(undefined);
   anularFatura.mockReset().mockResolvedValue("anulada");
+  // Como na Stripe: encerrada, a assinatura é `canceled`, e a sincronia lê isso.
+  cancelarNaHora.mockReset().mockImplementation(async () => {
+    naStripe = { ...naStripe, status: "canceled" };
+  });
 });
 
 afterEach(async () => {
@@ -135,6 +145,7 @@ afterAll(async () => {
 const nadaMudouNaStripe = () => {
   expect(pararRenovacao).not.toHaveBeenCalled();
   expect(retomarRenovacao).not.toHaveBeenCalled();
+  expect(cancelarNaHora).not.toHaveBeenCalled();
 };
 const nadaFoiAStripe = () => {
   nadaMudouNaStripe();
@@ -234,12 +245,9 @@ describe("POST /api/billing/minha-assinatura/cancelar — parar a renovação", 
     expect(pararRenovacao.mock.calls).toEqual([[SUB, { motivo: "ja-aprendi", comentario: undefined }]]);
   });
 
-  it("com a cobrança atrasada: 409, e nada muda — o que cancelar faz ali é decisão pendente do operador", async () => {
-    await comEspelho("past_due", PASSADO);
-    detalhes = { status: "past_due", pagoAte: PASSADO, faturaEmAbertoId: "in_em_aberto" };
-    const res = await cancelar(member, { motivo: "caro" });
-    expect([res.status, res.body]).toEqual([409, { error: "CobrancaAtrasada" }]);
-    nadaMudouNaStripe();
+  it("quem está em dia nunca é encerrado na hora: cancelar é só parar a renovação", async () => {
+    expect((await cancelar(member, {})).body).toEqual({ acessoAte: EM_30_DIAS.toISOString() });
+    expect(cancelarNaHora).not.toHaveBeenCalled();
   });
 
   it("encerrada de vez, ainda com dias pagos: 409 — não há renovação a parar", async () => {
@@ -313,6 +321,77 @@ describe("POST /api/billing/minha-assinatura/cancelar — parar a renovação", 
     } finally {
       aviso.mockRestore();
     }
+  });
+});
+
+// CANCELAR COM A COBRANÇA ATRASADA (decisão do operador, 11/10/2026): não há período pago a
+// manter — a assinatura TERMINA na hora, a cobrança em aberto não é mais tentada, e a pessoa
+// continua logada para ler a confirmação.
+describe("POST /api/billing/minha-assinatura/cancelar — com a cobrança atrasada", () => {
+  beforeEach(async () => {
+    await comEspelho("past_due", PASSADO);
+    detalhes = { status: "past_due", pagoAte: PASSADO, faturaEmAbertoId: "in_em_aberto" };
+    naStripe = { status: "past_due", pagoAte: PASSADO };
+  });
+
+  it("ENCERRA a assinatura desta conta na hora, com o motivo, e anula a cobrança em aberto — sem 'parar a renovação'", async () => {
+    const res = await cancelar(member, { motivo: "caro", comentario: "sem cartão agora" });
+    expect([res.status, res.body]).toEqual([200, { acessoAte: null, terminou: true }]);
+    expect(cancelarNaHora.mock.calls).toEqual([[SUB, { motivo: "caro", comentario: "sem cartão agora" }]]);
+    expect(anularFatura.mock.calls).toEqual([["in_em_aberto"]]);
+    expect(pararRenovacao).not.toHaveBeenCalled();
+  });
+
+  it("a ordem: ENCERRA, depois anula a cobrança — anulada com a assinatura viva, ela poderia voltar a 'em dia' sem pagar", async () => {
+    await cancelar(member, {});
+    const [encerrou, anulou, sincronizou] = [cancelarNaHora, anularFatura, buscarAssinatura].map((dublê) => dublê.mock.invocationCallOrder[0] ?? 0);
+    expect(encerrou).toBeLessThan(anulou);
+    expect(anulou).toBeLessThan(sincronizou);
+  });
+
+  it("as aulas trancam NA HORA — e a pessoa continua logada, com 'Reativar assinatura'", async () => {
+    expect((await temAcesso()).temAcesso).toBe(true);
+    expect((await cancelar(member, {})).status).toBe(200);
+    expect((await espelho()).status).toBe("canceled");
+    // O MESMO cookie continua valendo, e o gate já responde que não há acesso.
+    const depois = await request(servidor).get("/api/billing/assinatura").set("Cookie", member);
+    expect([depois.status, depois.body]).toEqual([200, { temAcesso: false, reativar: true }]);
+    expect(await prisma.session.count({ where: { userId: memberId } })).toBeGreaterThan(0);
+  });
+
+  it("a cobrança em aberto não pôde ser anulada: o cancelamento VALEU do mesmo jeito (encerrada, a Stripe já não cobra) — é aviso", async () => {
+    anularFatura.mockRejectedValue(new Error("[stripe] a anulação da fatura da troca falhou: StripeConnectionError"));
+    const aviso = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      const res = await cancelar(member, {});
+      expect([res.status, res.body]).toEqual([200, { acessoAte: null, terminou: true }]);
+      expect(aviso.mock.calls.flat().join(" ")).toContain(`a assinatura ${SUB} (conta ${memberId}) foi encerrada e a cobrança em aberto não foi anulada`);
+    } finally {
+      aviso.mockRestore();
+    }
+  });
+
+  it("a Stripe fora do ar ao encerrar: 500 — nunca 'assinatura cancelada' —, nada é anulado e o acesso continua", async () => {
+    cancelarNaHora.mockRejectedValue(new Error("[stripe] o encerramento da assinatura falhou: StripeConnectionError"));
+    const erro = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      expect((await cancelar(member, {})).status).toBe(500);
+    } finally {
+      erro.mockRestore();
+    }
+    expect(anularFatura).not.toHaveBeenCalled();
+    expect((await temAcesso()).temAcesso).toBe(true);
+  });
+
+  it("a cobrança atrasou entre a leitura e a trava (outra aba, ou a renovação que falhou agora): vale o de AGORA — termina na hora", async () => {
+    buscarDetalhes.mockImplementationOnce(async (id) => ({ ...daStripe(id), status: "active", pagoAte: EM_30_DIAS, faturaEmAbertoId: null }));
+    expect((await cancelar(member, {})).body).toEqual({ acessoAte: null, terminou: true });
+    expect(pararRenovacao).not.toHaveBeenCalled();
+  });
+
+  it("a tela é avisada antes: a leitura diz que cancelar aqui termina na hora", async () => {
+    const res = await request(servidor).get("/api/billing/minha-assinatura").set("Cookie", member);
+    expect(res.body).toMatchObject({ situacao: "atrasada", terminaAoCancelar: true, podeParar: false });
   });
 });
 

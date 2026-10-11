@@ -135,6 +135,11 @@ export type MinhaAssinatura =
       /** A renovação está parada e ainda dá para voltar atrás, sem pagar nada. A encerrada de vez, não. */
       podeManter: boolean;
       /**
+       * A cobrança está atrasada: cancelar aqui TERMINA a assinatura na hora (não há período pago a
+       * manter) e a cobrança em aberto não é mais tentada — decisão do operador, 11/10/2026.
+       */
+      terminaAoCancelar: boolean;
+      /**
        * A saída do reembolso: quanto volta e até quando dá para pedir (em ISO). Só dentro do prazo
        * e com dinheiro a devolver — a assinatura de cortesia nunca tem. Quem confere é o servidor,
        * de novo, na hora da ação.
@@ -169,9 +174,14 @@ export type ReembolsoFeito = { centavos: number; moeda: string };
 
 /**
  * Resposta de `POST /api/billing/minha-assinatura/cancelar`: a renovação parou, e até quando há
- * acesso (o fim do período já pago). A data vem em ISO.
+ * acesso (o fim do período já pago). A data vem em ISO. Com a cobrança atrasada, a assinatura
+ * termina na hora: `terminou`, e não há data.
  */
-export type RenovacaoParada = { acessoAte: string | null };
+export type RenovacaoParada = {
+  acessoAte: string | null;
+  /** A cobrança estava atrasada: a assinatura TERMINOU agora, sem acesso — e não "parou de renovar". */
+  terminou?: boolean;
+};
 
 /**
  * Resposta de `GET /api/billing/minha-assinatura/plano`: a troca de plano que esta conta pode

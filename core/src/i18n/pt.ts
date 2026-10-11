@@ -539,6 +539,10 @@ export const pt = {
         reembolsado: "Assinatura cancelada. Devolvemos {valor} no cartão que você usou. O valor costuma aparecer na fatura em até 10 dias úteis, conforme o banco.",
         mantida: "Pronto. Sua assinatura continua.",
         prazoAcabou: "O prazo de 7 dias para o reembolso terminou. Você ainda pode parar a renovação.",
+        // Com a cobrança ATRASADA, cancelar termina a assinatura na hora (aprovado em 11/10/2026).
+        terminaAgora: "Sua assinatura termina agora, e a cobrança em aberto não será mais tentada.",
+        // Para quem tinha a troca para o Mensal marcada: ela é desfeita junto (aprovado em 11/10/2026).
+        trocaDesfeita: "Sua troca para o plano Mensal também será desfeita.",
         devolucaoFalhou: "Sua assinatura foi cancelada, mas não conseguimos devolver o valor agora. Já fomos avisados e vamos resolver. Você não precisa fazer nada.",
         erro: "Não foi possível cancelar. Tente de novo."
       },

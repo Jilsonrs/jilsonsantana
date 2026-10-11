@@ -93,6 +93,19 @@ export function noPrazoDoReembolso(detalhes: Pick<DetalhesDaAssinatura, "comecou
 }
 
 /**
+ * O que "cancelar" faz com esta assinatura. Uma regra só, para a tela e para a operação:
+ *   - `parar`: a que renova (ou a já parada que ainda pode voltar atrás — repetir não faz mal):
+ *     a renovação para, e o acesso continua até o fim do período pago;
+ *   - `terminar`: a cobrança está ATRASADA — não há período pago a manter. A assinatura termina
+ *     na hora e a cobrança em aberto não é mais tentada (decisão do operador, 11/10/2026);
+ *   - `nada`: já encerrada de vez, ou com a cobrança pausada.
+ */
+export function oQueCancelarFaz(detalhes: DetalhesDaAssinatura): "parar" | "terminar" | "nada" {
+  if (detalhes.status === "past_due") return "terminar";
+  return renova(detalhes) || podeManter(detalhes) ? "parar" : "nada";
+}
+
+/**
  * O que a Stripe diz, no formato da tela. Função pura.
  *   - sem acesso pela regra do gate → terminada;
  *   - a última cobrança falhou (`past_due`) → atrasada: o acesso continua, e o que a tela oferece
@@ -107,7 +120,7 @@ export function paraMinhaAssinatura(detalhes: DetalhesDaAssinatura, proxima: { c
   }
   // `podeParar` e `podeManter`: as MESMAS regras das operações (`renova`, `podeManter`) — a tela
   // nunca mostra um botão que o servidor vai recusar.
-  const comum = { plano: detalhes.plano, preco: detalhes.preco, cartao: detalhes.cartao, aceitaCartao: aceitaCartaoNovo(detalhes), podeParar: renova(detalhes), podeManter: podeManter(detalhes), reembolso, podeMudarDePlano: outroPlano(detalhes) !== null, trocaMarcada: detalhes.trocaMarcada ? { plano: detalhes.trocaMarcada.plano, em: detalhes.trocaMarcada.em.toISOString() } : null };
+  const comum = { plano: detalhes.plano, preco: detalhes.preco, cartao: detalhes.cartao, aceitaCartao: aceitaCartaoNovo(detalhes), podeParar: renova(detalhes), podeManter: podeManter(detalhes), terminaAoCancelar: oQueCancelarFaz(detalhes) === "terminar", reembolso, podeMudarDePlano: outroPlano(detalhes) !== null, trocaMarcada: detalhes.trocaMarcada ? { plano: detalhes.trocaMarcada.plano, em: detalhes.trocaMarcada.em.toISOString() } : null };
   if (detalhes.status === "past_due") return { situacao: SituacaoDoFaturamento.ATRASADA, ...comum, proximaCobranca: null, acessoAte: null };
   if (renova(detalhes)) {
     const em = iso(detalhes.fimDoPeriodo);
@@ -319,44 +332,66 @@ export async function aplicarCartaoNovo(userId: string): Promise<Troca> {
 
 /**
  * `sem-assinatura`: nada a parar ou a manter (nenhuma com acesso, ou já encerrada de vez).
- * `atrasada`: a cobrança está em aberto — o que cancelar faz ali é decisão do operador, pendente.
  * `ocupada`: a assinatura está sendo acertada neste instante; nada foi feito — tentar de novo.
  */
-type NaoFeita = { resultado: "sem-assinatura" } | { resultado: "desconhecida" } | { resultado: "atrasada" } | { resultado: "ocupada" };
+type NaoFeita = { resultado: "sem-assinatura" } | { resultado: "desconhecida" } | { resultado: "ocupada" };
 
 export type Parada = ({ resultado: "ok" } & RenovacaoParada) | NaoFeita;
 
-/** Esta assinatura pode ter a renovação parada? Só a que renova, ou a já parada que ainda pode voltar atrás (repetir não faz mal). */
-function cabeParar(detalhes: DetalhesDaAssinatura): "ok" | "atrasada" | "sem-assinatura" {
-  if (detalhes.status === "past_due") return "atrasada";
-  return renova(detalhes) || podeManter(detalhes) ? "ok" : "sem-assinatura";
-}
+/** O que a operação de cancelar fez, com a trava. `depois`: a assinatura como ficou, quando só parou de renovar. */
+type Cancelada = { resultado: "ok"; terminou: false; depois: DetalhesDaAssinatura } | { resultado: "ok"; terminou: true } | { resultado: "sem-assinatura" };
 
-/** Para a renovação da assinatura DESTA conta, com o motivo (opcional). O acesso continua até o fim do período pago. */
+/**
+ * CANCELA a assinatura DESTA conta, com o motivo (opcional). Para quem está em dia, é parar a
+ * renovação: o acesso continua até o fim do período pago. Com a cobrança ATRASADA, a assinatura
+ * termina na hora e a cobrança em aberto não é mais tentada — e a pessoa continua logada, para
+ * ler a confirmação (decisão do operador, 11/10/2026; `oQueCancelarFaz`).
+ */
 export async function pararMinhaRenovacao(userId: string, dado: MotivoDado): Promise<Parada> {
   const achada = await assinaturaDaConta(userId);
   if (achada.resultado === "desconhecida") return achada;
   if (achada.resultado === "nenhuma") return { resultado: "sem-assinatura" };
   const { id } = achada.detalhes;
-  const antes = cabeParar(achada.detalhes);
-  if (antes !== "ok") return { resultado: antes };
-  const operacao = await operarNaAssinatura(id, async (): Promise<{ resultado: "ok"; depois: DetalhesDaAssinatura } | { resultado: "atrasada" } | { resultado: "sem-assinatura" }> => {
-    const agora = await buscarDetalhes(id);
-    const cabe = cabeParar(agora);
-    if (cabe !== "ok") return { resultado: cabe };
-    // QUEM ESTÁ SAINDO NÃO TROCA DE PLANO: a troca marcada para o fim do período é solta antes
-    // (com ela a Stripe RECUSA parar a renovação — medido, 11/10/2026), e a troca na hora que
-    // ficou esperando a confirmação do banco é anulada — senão ainda poderia ser cobrada.
-    if (agora.agendamentoId) await soltarAgendamento(agora.agendamentoId);
-    if (agora.faturaDaTrocaId) await anularFatura(agora.faturaDaTrocaId);
-    return { resultado: "ok", depois: await pararRenovacao(id, dado) };
-  });
+  if (oQueCancelarFaz(achada.detalhes) === "nada") return { resultado: "sem-assinatura" };
+  const operacao = await operarNaAssinatura(
+    id,
+    async (): Promise<Cancelada> => {
+      const agora = await buscarDetalhes(id);
+      const acao = oQueCancelarFaz(agora);
+      if (acao === "nada") return { resultado: "sem-assinatura" };
+      if (acao === "terminar") {
+        // ENCERRA primeiro, e só então anula a cobrança em aberto. `[FATO — medido na área
+        // restrita com o relógio de teste, 11/10/2026]` anulada com a assinatura ainda viva, a
+        // Stripe a dá como `active` de novo — aulas abertas sem pagar. Encerrada, a própria
+        // Stripe já para de cobrar as faturas dela; anular é o que garante o "não será mais
+        // tentada", e se não der é só aviso.
+        await cancelarNaHora(id, dado);
+        if (agora.faturaEmAbertoId) {
+          try {
+            await anularFatura(agora.faturaEmAbertoId);
+          } catch (erro) {
+            console.warn(`[stripe] cancelar: a assinatura ${id} (conta ${userId}) foi encerrada e a cobrança em aberto não foi anulada: ${erro instanceof Error ? erro.message : String(erro)}`);
+          }
+        }
+        return { resultado: "ok", terminou: true };
+      }
+      // QUEM ESTÁ SAINDO NÃO TROCA DE PLANO: a troca marcada para o fim do período é solta antes
+      // (com ela a Stripe RECUSA parar a renovação — medido, 11/10/2026), e a troca na hora que
+      // ficou esperando a confirmação do banco é anulada — senão ainda poderia ser cobrada.
+      if (agora.agendamentoId) await soltarAgendamento(agora.agendamentoId);
+      if (agora.faturaDaTrocaId) await anularFatura(agora.faturaDaTrocaId);
+      return { resultado: "ok", terminou: false, depois: await pararRenovacao(id, dado) };
+    },
+    // Quem cancela com a cobrança atrasada perde as aulas na hora e CONTINUA LOGADO, como no
+    // reembolso: foi a própria pessoa que pediu, e ela precisa ler a confirmação.
+    { manterSessao: (feito) => feito.resultado === "ok" && feito.terminou },
+  );
   if (!operacao) return { resultado: "ocupada" };
   const feito = operacao.feito;
   if (feito.resultado !== "ok") return feito;
   // O motivo é da lista; o comentário é texto livre da pessoa e nunca vem para o registro.
-  console.info(`[stripe] parar a renovação: conta ${userId}, assinatura ${id}, motivo ${dado.motivo ?? "não dito"}`);
-  return { resultado: "ok", acessoAte: iso(ateQuandoHaAcesso(feito.depois)) };
+  console.info(`[stripe] ${feito.terminou ? "cancelar com a cobrança atrasada (terminou na hora)" : "parar a renovação"}: conta ${userId}, assinatura ${id}, motivo ${dado.motivo ?? "não dito"}`);
+  return feito.terminou ? { resultado: "ok", acessoAte: null, terminou: true } : { resultado: "ok", acessoAte: iso(ateQuandoHaAcesso(feito.depois)) };
 }
 
 export type Mantida = { resultado: "ok" } | NaoFeita;

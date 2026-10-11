@@ -58,6 +58,7 @@ const ATIVA: MinhaAssinatura = {
   aceitaCartao: true,
   podeParar: true,
   podeManter: false,
+  terminaAoCancelar: false,
   reembolso: null,
   podeMudarDePlano: true,
   trocaMarcada: null,

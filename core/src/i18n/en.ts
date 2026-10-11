@@ -482,6 +482,8 @@ export const en: Dict = {
         reembolsado: "Subscription canceled. We've refunded {valor} to the card you used. It usually shows up on your statement within 10 business days, depending on your bank.",
         mantida: "Done. Your subscription continues.",
         prazoAcabou: "The 7-day refund period has ended. You can still stop the renewal.",
+        terminaAgora: "Your subscription ends now, and we won't try the pending charge again.",
+        trocaDesfeita: "Your switch to the Monthly plan will also be undone.",
         devolucaoFalhou: "Your subscription was canceled, but we couldn't refund you right now. We've been notified and will sort it out. You don't need to do anything.",
         erro: "We couldn't cancel your subscription. Try again."
       },
