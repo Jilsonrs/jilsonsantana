@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect, type ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { PageContainer, PageHeader } from "@/components/layout/PageLayout";
-import { useIdioma, useT } from "@/lib/language";
+import { useT } from "@/lib/language";
 import { haQuantoTempo, tituloDaNotificacao, useMarcarLida, useNotificacoes } from "@/lib/notificacoes";
 
 // A peça que desenha o Markdown só baixa nesta tela (CLAUDE.md → Client: direta,
@@ -18,7 +18,6 @@ const MarkdownText = lazy(() => import("@/components/content/MarkdownText").then
  */
 export function NotificacaoPage() {
   const t = useT();
-  const idioma = useIdioma();
   const { id } = useParams();
   const { data, isLoading, isError } = useNotificacoes();
   const { mutate: marcar } = useMarcarLida();
@@ -45,7 +44,7 @@ export function NotificacaoPage() {
   return (
     <PageContainer>
       <div className="mb-6">{voltar}</div>
-      <PageHeader title={tituloDaNotificacao(n, t)} description={<time dateTime={n.criadaEm}>{haQuantoTempo(n.criadaEm, idioma)}</time>} />
+      <PageHeader title={tituloDaNotificacao(n, t)} description={<time dateTime={n.criadaEm}>{haQuantoTempo(n.criadaEm)}</time>} />
       <article className="max-w-3xl">
         <Suspense fallback={<p className="whitespace-pre-line text-sm text-foreground">{n.texto}</p>}>
           <MarkdownText texto={n.texto} />

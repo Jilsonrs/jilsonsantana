@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { SituacaoDoFaturamento, type CartaoDaAssinatura, type LanguageCode, type MinhaAssinatura } from "@jilson/core";
+import { SituacaoDoFaturamento, type CartaoDaAssinatura, type MinhaAssinatura } from "@jilson/core";
 import { getMinhaAssinatura } from "@/lib/api";
 import type { AppTexts } from "@/lib/language";
 
@@ -34,13 +34,9 @@ export function comAcesso(assinatura: MinhaAssinatura | undefined): AssinaturaCo
   return assinatura;
 }
 
-/**
- * A data como o aluno lê: "10/11/2026" em português. Em inglês, "Nov 10, 2026" — com o mês por
- * extenso, porque "11/10/2026" quer dizer dias diferentes para um americano e para um europeu.
- */
-export function dataPorExtenso(iso: string, idioma: LanguageCode): string {
-  const data = new Date(iso);
-  return idioma === "en" ? new Intl.DateTimeFormat("en-US", { dateStyle: "medium" }).format(data) : new Intl.DateTimeFormat("pt-BR", { dateStyle: "short" }).format(data);
+/** A data como o aluno lê: "10/11/2026". */
+export function dataPorExtenso(iso: string): string {
+  return new Intl.DateTimeFormat("pt-BR", { dateStyle: "short" }).format(new Date(iso));
 }
 
 // O nome da bandeira é nome próprio, igual nos dois idiomas. A Stripe manda o código dela; o que

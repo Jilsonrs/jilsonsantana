@@ -40,10 +40,9 @@ describe("Novo curso", () => {
     preencher("curso-teste", "Curso Teste");
 
     await waitFor(() => expect(createCourse).toHaveBeenCalled());
-    expect(createCourse.mock.calls[0][0]).toMatchObject({ slug: "curso-teste", title: "Curso Teste", language: "pt" });
+    expect(createCourse.mock.calls[0][0]).toMatchObject({ slug: "curso-teste", title: "Curso Teste" });
     expect(Object.keys(createCourse.mock.calls[0][0]).sort()).toEqual([
       "description",
-      "language",
       "level",
       "slug",
       "subtitle",
@@ -61,7 +60,7 @@ describe("Novo curso", () => {
   });
 
   // A escola é só em português (12/10/2026): não há campo Idioma, e o curso
-  // nasce em português (o primeiro teste confere o que vai no envio).
+  // o envio não leva idioma (o primeiro teste confere as chaves).
   it("não há campo Idioma na criação", () => {
     abrir();
     expect(screen.queryByLabelText("Idioma")).toBeNull();

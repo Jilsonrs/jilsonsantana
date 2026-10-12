@@ -8,7 +8,7 @@ import { OfertaDePlano } from "@/components/faturamento/OfertaDePlano";
 import { TrocaMarcada } from "@/components/faturamento/TrocaMarcada";
 import { dinheiro, usePlanosDaAssinatura } from "@/lib/assinar";
 import { comAcesso, dataPorExtenso, TELA_DE_TROCAR_O_CARTAO, TELA_DO_FATURAMENTO, useMinhaAssinatura } from "@/lib/faturamento";
-import { useIdioma, useT } from "@/lib/language";
+import { useT } from "@/lib/language";
 import { useMudarDePlano, useOfertaDeTroca, useValorVencido } from "@/lib/troca-de-plano";
 
 /**
@@ -22,7 +22,6 @@ import { useMudarDePlano, useOfertaDeTroca, useValorVencido } from "@/lib/troca-
  */
 export function MudarDePlanoPage() {
   const t = useT();
-  const idioma = useIdioma();
   const p = t.faturamento.plano;
   const assinatura = useMinhaAssinatura();
   const viva = comAcesso(assinatura.isError ? undefined : assinatura.data);
@@ -57,7 +56,7 @@ export function MudarDePlanoPage() {
       {feito && (
         <div className="space-y-4">
           <p role="status" className="max-w-3xl text-foreground">
-            {feito.como === "trocado" ? p.agoraAnual : p.mudaParaOMensal.replace("{data}", dataPorExtenso(feito.em, idioma))}
+            {feito.como === "trocado" ? p.agoraAnual : p.mudaParaOMensal.replace("{data}", dataPorExtenso(feito.em))}
           </p>
           {voltar}
         </div>
@@ -75,7 +74,7 @@ export function MudarDePlanoPage() {
               <CardContent className="flex flex-wrap items-center gap-3 pt-6">
                 {viva.plano && viva.preco && (
                   <p className="text-base font-semibold text-foreground">
-                    {viva.plano === Plano.ANUAL ? t.assinar.anual : t.assinar.mensal} · {dinheiro(viva.preco.centavos, viva.preco.moeda, idioma)}
+                    {viva.plano === Plano.ANUAL ? t.assinar.anual : t.assinar.mensal} · {dinheiro(viva.preco.centavos, viva.preco.moeda)}
                     {viva.plano === Plano.ANUAL ? t.assinar.porAno : t.assinar.porMes}
                   </p>
                 )}
@@ -106,7 +105,7 @@ export function MudarDePlanoPage() {
               <OfertaDePlano troca={troca} aoMudar={() => void mudanca.mudar(troca)} enviando={mudanca.enviando} />
             </div>
           )}
-          {!viva.trocaMarcada && !troca && parada && <p className="max-w-3xl text-sm text-muted-foreground">{p.renovacaoParada.replace("{data}", dataPorExtenso(parada, idioma))}</p>}
+          {!viva.trocaMarcada && !troca && parada && <p className="max-w-3xl text-sm text-muted-foreground">{p.renovacaoParada.replace("{data}", dataPorExtenso(parada))}</p>}
           {!viva.trocaMarcada && !troca && atrasada && (
             <div className="max-w-3xl space-y-3">
               <p role="alert" className="text-sm text-destructive">

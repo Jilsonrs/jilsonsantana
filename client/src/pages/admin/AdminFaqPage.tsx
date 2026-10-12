@@ -18,9 +18,8 @@ const config: ConfigDaLista<AdminHomeFaq> = {
   secundario: { rotulo: "Resposta", linhas: 4, max: 3000 },
   ler: (f) => ({ principal: f.question, secundario: f.answer }),
   listar: api.adminGetHomeFaq,
-  // O servidor ainda pede o idioma; ele sai de lá no passo 3 da etapa 4.6c.
   criar: (v) =>
-    api.adminCreateHomeFaq({ language: "pt", question: v.principal, answer: v.secundario, displayOrder: v.displayOrder, status: v.status }),
+    api.adminCreateHomeFaq({ question: v.principal, answer: v.secundario, displayOrder: v.displayOrder, status: v.status }),
   atualizar: (id, v) =>
     api.adminUpdateHomeFaq(id, { question: v.principal, answer: v.secundario, displayOrder: v.displayOrder, status: v.status }),
   excluir: api.adminDeleteHomeFaq,

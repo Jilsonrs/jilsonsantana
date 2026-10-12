@@ -6,7 +6,7 @@ import { SaidaDoCancelamento } from "@/components/faturamento/SaidaDoCancelament
 import { dinheiro } from "@/lib/assinar";
 import { useCancelamento } from "@/lib/cancelamento";
 import { comAcesso, dataPorExtenso, TELA_DO_FATURAMENTO, useMinhaAssinatura } from "@/lib/faturamento";
-import { useIdioma, useT } from "@/lib/language";
+import { useT } from "@/lib/language";
 
 /**
  * CANCELAR A ASSINATURA (Fase 4, etapa 4.6 — tela própria, com endereço próprio; textos
@@ -20,7 +20,6 @@ import { useIdioma, useT } from "@/lib/language";
  */
 export function CancelarPage() {
   const t = useT();
-  const idioma = useIdioma();
   const c = t.faturamento.cancelamento;
   const { data, isLoading, isError } = useMinhaAssinatura();
   const cancelamento = useCancelamento();
@@ -28,7 +27,7 @@ export function CancelarPage() {
   const viva = comAcesso(isError ? undefined : data);
   const reembolso = viva?.reembolso ?? null;
   const cabeCancelar = viva !== null && (viva.podeParar || viva.terminaAoCancelar || reembolso !== null);
-  const quando = (iso: string) => dataPorExtenso(iso, idioma);
+  const quando = (iso: string) => dataPorExtenso(iso);
 
   // Terminou na hora (a cobrança estava atrasada): o resumo diz que acabou e oferece reativar.
   // E a renovação parada sem a data do fim (o servidor sempre a manda): o resumo diz o que há.
@@ -40,7 +39,7 @@ export function CancelarPage() {
 
   // Até quando há acesso: o fim do período pago — é a data da próxima cobrança de quem renova.
   const acessoAte = viva?.proximaCobranca?.em ?? viva?.acessoAte ?? null;
-  const valor = reembolso ? dinheiro(reembolso.centavos, reembolso.moeda, idioma) : "";
+  const valor = reembolso ? dinheiro(reembolso.centavos, reembolso.moeda) : "";
   const ocupado = enviando !== null;
 
   return (
@@ -59,7 +58,7 @@ export function CancelarPage() {
       {feito?.como === "reembolsado" && (
         <div className="space-y-4">
           <p role="status" className="max-w-3xl text-foreground">
-            {c.reembolsado.replace("{valor}", dinheiro(feito.centavos, feito.moeda, idioma))}
+            {c.reembolsado.replace("{valor}", dinheiro(feito.centavos, feito.moeda))}
           </p>
           <Button asChild>
             <Link to={TELA_DO_FATURAMENTO}>{t.nav.faturamento}</Link>

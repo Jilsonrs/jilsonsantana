@@ -5,7 +5,7 @@ import { AcoesDoPlano } from "@/components/faturamento/AcoesDoPlano";
 import { TrocaMarcada } from "@/components/faturamento/TrocaMarcada";
 import { dinheiro } from "@/lib/assinar";
 import { dataPorExtenso, type AssinaturaComAcesso } from "@/lib/faturamento";
-import { useIdioma, useT } from "@/lib/language";
+import { useT } from "@/lib/language";
 
 /**
  * O PLANO da assinatura: qual é, quanto custa e o que vem a seguir — a próxima cobrança, a data
@@ -14,7 +14,6 @@ import { useIdioma, useT } from "@/lib/language";
  */
 export function BlocoDoPlano({ assinatura }: { assinatura: AssinaturaComAcesso }) {
   const t = useT();
-  const idioma = useIdioma();
   const { plano, preco, proximaCobranca, acessoAte } = assinatura;
   const nome = plano === Plano.ANUAL ? t.assinar.anual : t.assinar.mensal;
   const porPeriodo = plano === Plano.ANUAL ? t.assinar.porAno : t.assinar.porMes;
@@ -25,26 +24,26 @@ export function BlocoDoPlano({ assinatura }: { assinatura: AssinaturaComAcesso }
         <CardContent className="space-y-2 pt-6">
           {plano && preco && (
             <p className="text-base font-semibold text-foreground">
-              {nome} · {dinheiro(preco.centavos, preco.moeda, idioma)}
+              {nome} · {dinheiro(preco.centavos, preco.moeda)}
               {porPeriodo}
             </p>
           )}
           {proximaCobranca && (
             <p className="text-sm text-muted-foreground">
               {t.faturamento.proximaCobranca
-                .replace("{valor}", dinheiro(proximaCobranca.centavos, proximaCobranca.moeda, idioma))
-                .replace("{data}", dataPorExtenso(proximaCobranca.em, idioma))}
+                .replace("{valor}", dinheiro(proximaCobranca.centavos, proximaCobranca.moeda))
+                .replace("{data}", dataPorExtenso(proximaCobranca.em))}
             </p>
           )}
           {assinatura.situacao === SituacaoDoFaturamento.VAI_CANCELAR && acessoAte && (
-            <p className="text-sm text-muted-foreground">{t.faturamento.vaiCancelar.replace("{data}", dataPorExtenso(acessoAte, idioma))}</p>
+            <p className="text-sm text-muted-foreground">{t.faturamento.vaiCancelar.replace("{data}", dataPorExtenso(acessoAte))}</p>
           )}
           {assinatura.situacao === SituacaoDoFaturamento.ATRASADA && (
             <p role="alert" className="text-sm text-destructive">
               {assinatura.aulasTrancadas
                 ? t.faturamento.atrasadaSemAulas
                 : assinatura.aulasAte
-                  ? t.faturamento.atrasadaAte.replace("{data}", dataPorExtenso(assinatura.aulasAte, idioma))
+                  ? t.faturamento.atrasadaAte.replace("{data}", dataPorExtenso(assinatura.aulasAte))
                   : t.faturamento.atrasada}
             </p>
           )}

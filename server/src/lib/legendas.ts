@@ -1,8 +1,6 @@
-import type { Language } from "@prisma/client";
 import { ContentStatus, LessonKind } from "@jilson/core";
 import { prisma } from "./prisma.js";
 import { enviarLegenda } from "./bunny-stream.js";
-import { doBanco } from "./language.js";
 
 // A LEGENDA SOBREVIVE À TROCA DE VÍDEO (decisões do operador, 04/10/2026). No
 // Bunny, a legenda fica presa ao VÍDEO: trocar o vídeo da aula (ou da
@@ -10,19 +8,23 @@ import { doBanco } from "./language.js";
 // novo; se o Bunny recusar, a linha fica marcada "envie de novo", em vez de a
 // legenda sumir em silêncio.
 
-/** O que o player mostra no seletor de legenda, no idioma do curso. */
-export const ROTULO_DA_LEGENDA: Record<Language, string> = { PT: "Português", EN: "English" };
+// A escola é só em português (decisão do operador, 12/10/2026 — etapa 4.6c): toda
+// legenda é em português. No Bunny, a faixa de legenda tem o código do idioma no
+// endereço; é este.
+export const IDIOMA_DA_LEGENDA = "pt" as const;
+/** O que o player mostra no seletor de legenda. */
+export const ROTULO_DA_LEGENDA = "Português";
 
 /**
  * Manda a legenda guardada para o vídeo novo. Nunca derruba quem chama: a troca
  * do vídeo já valeu, e uma falha aqui vira a marca `needsResend`.
  */
 export async function reenviarLegenda(onde: { lessonId: number } | { courseId: number }, videoId: string): Promise<void> {
-  const legenda = await prisma.caption.findUnique({ where: onde, select: { id: true, language: true, content: true } });
+  const legenda = await prisma.caption.findUnique({ where: onde, select: { id: true, content: true } });
   if (!legenda) return;
   let aceitou = false;
   try {
-    aceitou = await enviarLegenda(videoId, doBanco(legenda.language), ROTULO_DA_LEGENDA[legenda.language], legenda.content);
+    aceitou = await enviarLegenda(videoId, IDIOMA_DA_LEGENDA, ROTULO_DA_LEGENDA, legenda.content);
   } catch {
     console.error(`[legendas] reenvio da legenda ${legenda.id} caiu na rede`);
   }

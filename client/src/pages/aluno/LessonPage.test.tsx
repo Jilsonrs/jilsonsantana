@@ -70,7 +70,6 @@ function pagina(aula: Partial<PaginaDaAula["aula"]> = {}, rascunho = false): Pag
       id: 1,
       slug: "excel",
       title: "Excel + IA",
-      language: "pt",
       status: "PUBLISHED",
       level: "INTERMEDIARIO",
       description: "Um curso **completo** de fórmulas.",

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { aplicarCartaoNovo, prepararTrocaDeCartao } from "@/lib/api";
 import { codigoDoErro } from "@/lib/course-form";
 import { TELA_DO_FATURAMENTO } from "@/lib/faturamento";
-import { useIdioma, useT } from "@/lib/language";
+import { useT } from "@/lib/language";
 import { CampoDoCartao, CartaoProvider, confirmarNoBanco, useCartao } from "@/lib/stripe-do-site";
 import { semInterromper } from "@/lib/versao";
 
@@ -23,9 +23,8 @@ type Props = {
  * segredo → o servidor põe o cartão na assinatura (ele o lê na Stripe; daqui não vai código).
  */
 export function FormularioDoCartao({ dados, aoTrocar, aoNaoTerOndePor }: Props) {
-  const idioma = useIdioma();
   return (
-    <CartaoProvider pedido={{ chavePublicavel: dados.chavePublicavel, centavos: 0, moeda: dados.moeda, formasDePagamento: dados.formasDePagamento, idioma }}>
+    <CartaoProvider pedido={{ chavePublicavel: dados.chavePublicavel, centavos: 0, moeda: dados.moeda, formasDePagamento: dados.formasDePagamento }}>
       <CampoEBotao chavePublicavel={dados.chavePublicavel} aoTrocar={aoTrocar} aoNaoTerOndePor={aoNaoTerOndePor} />
     </CartaoProvider>
   );

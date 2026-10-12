@@ -141,7 +141,6 @@ describe("admin de depoimentos — o caminho do operador", () => {
     const invalidos = [
       novoDepoimento({ name: "   " }), // só espaço = vazio, depois de aparar
       novoDepoimento({ text: "" }),
-      novoDepoimento({ language: "es" }), // teto de dois idiomas
       novoDepoimento({ status: "NOVO" }),
       novoDepoimento({ displayOrder: 1.5 }),
     ];

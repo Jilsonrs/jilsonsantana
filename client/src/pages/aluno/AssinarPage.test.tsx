@@ -27,7 +27,7 @@ const validar = vi.fn<() => Promise<Desfecho>>();
 const confirmar = vi.fn<(segredo: string, tipo: string, voltarPara: string) => Promise<Desfecho>>();
 vi.mock("@/lib/stripe-do-site", () => ({
   CartaoProvider: ({ pedido, children }: { pedido: PedidoDeCartao; children: ReactNode }) => (
-    <div data-testid="cartao" data-centavos={pedido.centavos} data-moeda={pedido.moeda} data-formas={pedido.formasDePagamento.join(",")} data-chave={pedido.chavePublicavel} data-idioma={pedido.idioma}>
+    <div data-testid="cartao" data-centavos={pedido.centavos} data-moeda={pedido.moeda} data-formas={pedido.formasDePagamento.join(",")} data-chave={pedido.chavePublicavel}>
       {children}
     </div>
   ),
@@ -237,7 +237,7 @@ describe("AssinarPage — o plano e o valor", () => {
     expect(anual.closest("label")?.textContent?.replace(/\u00a0/g, " ")).toBe("Anual17% de descontoR$ 995,00/anoCobrado uma vez por anoequivale a R$ 82,92 por mês");
     // Sem código promocional, o valor não é repetido num bloco à parte.
     expect(naTela()).not.toContain("Hoje você paga");
-    expect(cartao()?.dataset).toMatchObject({ centavos: "9990", moeda: "brl", formas: "card", chave: "pk_test_da_tela", idioma: "pt" });
+    expect(cartao()?.dataset).toMatchObject({ centavos: "9990", moeda: "brl", formas: "card", chave: "pk_test_da_tela" });
     expect(screen.getByText("campo do cartão")).toBeTruthy();
   });
 

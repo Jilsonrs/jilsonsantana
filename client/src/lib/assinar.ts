@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { DuracaoDoDesconto, TELA_DE_CONCLUIDO, type DescontoDoCodigo, type LanguageCode, type Plano } from "@jilson/core";
+import { DuracaoDoDesconto, TELA_DE_CONCLUIDO, type DescontoDoCodigo, type Plano } from "@jilson/core";
 import { getPlanosDaAssinatura, getPreviaDaAssinatura, getSituacaoDaAssinatura } from "@/lib/api";
 import type { AppTexts } from "@/lib/language";
 
@@ -13,16 +13,16 @@ export const REATIVOU = "reativou";
 /** Para onde vai quem acabou de pagar: a tela de confirmação — com a marca de que reativou, para o título continuar "Reativar assinatura" (decisão do operador, 11/10/2026). */
 export const telaDeConcluido = (reativar: boolean | undefined): string => (reativar ? `${TELA_DE_CONCLUIDO}?${REATIVOU}=1` : TELA_DE_CONCLUIDO);
 
-const LOCAL: Record<LanguageCode, string> = { pt: "pt-BR", en: "en-US" };
+const LOCAL = "pt-BR";
 
-/** O valor como o aluno lê: "R$ 99,90" em português, "R$99.90" em inglês. Os centavos vêm do servidor. */
-export function dinheiro(centavos: number, moeda: string, idioma: LanguageCode): string {
-  return new Intl.NumberFormat(LOCAL[idioma], { style: "currency", currency: moeda.toUpperCase() }).format(centavos / 100);
+/** O valor como o aluno lê: "R$ 99,90". Os centavos vêm do servidor. */
+export function dinheiro(centavos: number, moeda: string): string {
+  return new Intl.NumberFormat(LOCAL, { style: "currency", currency: moeda.toUpperCase() }).format(centavos / 100);
 }
 
 /** O desconto do código por extenso: "100% de desconto em todas as cobranças". */
-export function descreverDesconto(t: AppTexts["assinar"], desconto: DescontoDoCodigo, moeda: string, idioma: LanguageCode): string {
-  const quanto = desconto.percentual !== null ? `${new Intl.NumberFormat(LOCAL[idioma], { maximumFractionDigits: 2 }).format(desconto.percentual)}%` : dinheiro(desconto.centavos ?? 0, moeda, idioma);
+export function descreverDesconto(t: AppTexts["assinar"], desconto: DescontoDoCodigo, moeda: string): string {
+  const quanto = desconto.percentual !== null ? `${new Intl.NumberFormat(LOCAL, { maximumFractionDigits: 2 }).format(desconto.percentual)}%` : dinheiro(desconto.centavos ?? 0, moeda);
   const frase = desconto.duracao === DuracaoDoDesconto.PARA_SEMPRE ? t.descontoParaSempre : desconto.duracao === DuracaoDoDesconto.UMA_VEZ ? t.descontoUmaVez : t.descontoPorMeses;
   return frase.replace("{desconto}", quanto).replace("{meses}", String(desconto.meses ?? ""));
 }

@@ -205,6 +205,15 @@
 > (aula concluída sozinha, barra na aula e no cartão), o vídeo que não recomeça ao trocar de aba
 > (a apresentação abre pausada, a aula toca sozinha) e o "Salvos". **Primeiro teste com o player de
 > verdade: com o operador** (assistir uma aula até perto do fim e ver a barra andar).
+> **PUBLICADO em 12/10/2026 (`main` = `d469ae7`, CI verde nos dois jobs, deploy ok; sem migration;
+> publicação autorizada pelo operador: "publica" e, à pergunta sobre a 4.6b ir junto, "Publicar
+> tudo"):** a **etapa 4.6b** (a cobrança atrasada dá as aulas por 3 dias, não mais sem prazo) e os
+> **passos 1 e 2 da etapa 4.6c** — a escola só em português: saíram o seletor PT | EN (home e
+> rodapé do app), a página `/en`, o idioma do login, e no admin o campo Idioma do curso, a
+> etiqueta EN, as abas de idioma de Perguntas e Depoimentos e a coluna de inglês de Textos.
+> **Provado no site, de fora:** a versão nova (`mv5gnft3-0d225eb6`; antes, `mv4kyc92-2fb78ccb`);
+> `/`, `/en` e a tela de assinar, para o público, seguem no "Em breve"; a assinatura sem login →
+> 401. **Ainda NÃO publicado:** o passo 3 da 4.6c (o servidor deixa de aceitar idioma), no `dev`.
 > **PUBLICADO em 10/10/2026, por último (`main` = `8d9a364`, CI verde nos dois jobs, deploy ok;
 > sem migration; publicação autorizada pelo operador):** a Fase 4, etapa 4.5 — **o revisor
 > automático (ESLint).** `npm run lint` é o quarto gate, bloqueante no CI: reprova a tarefa
@@ -4074,7 +4083,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
         dos 3 dias a pessoa está sem aulas, e a operação tem que achar a assinatura dela.
       - `CLAUDE.md` → *Membership Gating* (a regra do gate) reescrita no MESMO commit; os testes
         do gate e de ponta a ponta com o aviso; a prova com o relógio de teste da Stripe.
-      **FEITO em 12/10/2026 — no `dev`, NÃO publicado.** Respostas do operador na abertura
+      **FEITO em 12/10/2026, e PUBLICADO no mesmo dia** (`main` = `d469ae7`, com os passos 1 e 2 da 4.6c; ordem do operador: "Publicar tudo"). Respostas do operador na abertura
       (12/10): o comportamento aprovado; a data no aviso de dentro dos 3 dias; a aula trancada
       com texto próprio e "Trocar cartão"; a frase de depois dos 3 dias foi proposta pelo
       agente e aprovada por ele no mesmo dia (o inglês dos três textos fica na pendência P72).
@@ -4164,9 +4173,10 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             editados no admin 1, em português. **Nada a apagar pelo admin nem no Bunny no
             dev:** o que existe em inglês são 15 perguntas e 4 depoimentos, que a migration do
             passo 4 apaga. **Do site**, o operador disse no mesmo dia: *"só tem um curso
-            cadastrado, quando você remover os campos em inglês a informação some"* — falta só
-            a contagem de lá, que é ele quem vê (só a Railway fala com o banco do site); a
-            migration aborta se achar curso, trilha ou legenda em inglês.
+            cadastrado, quando você remover os campos em inglês a informação some"*; e confirmou
+            depois: *"não tem trilha ou legenda em inglês; e na Stripe, não existe preço em
+            dólar criado"*. A migration do passo 4 aborta, de todo modo, se achar curso, trilha
+            ou legenda em inglês.
       - [x] **Passo 1 — O visitante e o aluno deixam de ver o inglês (site + home).** *(Feito em 12/10/2026, no `dev`; os quatro gates verdes — site 896 testes, servidor 1.073. Mutação: um texto cravado no template reprova o teste novo da home; tirar o filtro de português dos depoimentos reprova o das listas. A "escolha pelo idioma do navegador" nunca chegou a existir no código: nada a tirar. Ficam para o passo 3: o tipo do idioma no `core`, que os formatadores de data e de dinheiro ainda recebem, e a chave `app.footer.erroIdioma` do dicionário, sem uso. Em `public-input.css`, a classe `.lang-atual` ficou sem uso — é do Antigravity.)* Sai o
             seletor PT | EN da home, do rodapé do app e do login (`?lang=`); saem a rota `/en`
             da home e a escolha pelo idioma do navegador; a página passa a dizer sempre
@@ -4183,7 +4193,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             Textos (`SiteTextField.tsx`), as abas de idioma de FAQ e Depoimentos
             (`HomeListEditor.tsx`) e o passo Legendas (conforme a P90). O servidor ainda aceita
             o que a tela deixou de mandar.
-      - [ ] **Passo 3 — O servidor deixa de ler e de aceitar idioma.** Saem `lib/language.ts`
+      - [x] **Passo 3 — O servidor deixa de ler e de aceitar idioma.** *(Feito em 12/10/2026, no `dev`, depois de os passos 1 e 2 irem ao ar; os quatro gates verdes — site 892 testes, servidor 1.057. **O que saiu:** o filtro por idioma do catálogo, das trilhas e da busca · o idioma na criação e na edição de curso, trilha, pergunta, depoimento e texto (o que a versão anterior do site ainda manda é IGNORADO, nunca recusado) · as três recusas de idioma · a rota `PATCH /api/me/language` · o dicionário em inglês (`en.ts`) e o tipo do idioma no `core` · o idioma que os formatadores de data, de dinheiro e de tamanho recebiam no site · o `en` da lista de Admin → Textos. As legendas têm um rótulo só ("Português"). **A migration `20261012170000_idioma_com_valor_padrao`** só põe o padrão `PT` nas seis colunas; aplicada no banco do dev; no de teste, `migrate diff` sem diferença, RLS em todas as tabelas. **Diferente do que este item previa, de propósito (regra da API aditiva):** `lib/language.ts` não saiu inteiro — ficou a conversão que devolve `language` nas respostas de curso, trilha, pergunta e depoimento, porque a versão do site que está no ar ainda lê esse campo; e o endereço antigo `/api/site-text/common/:lang` continua respondendo ao lado do novo, sem idioma. Os dois saem no passo 4. As sobras em inglês do banco (perguntas, depoimentos, textos) não aparecem na home nem no admin. **Testes:** saíram `content-language`, `me-language` e `i18n`; entrou `idioma-saiu.test.ts`. Mutação: tirar o filtro de português da lista do admin, ou do dicionário, reprova. **Chaves que saíram do dicionário, para o operador saber** (duas eram editáveis em Admin → Textos): `home.pricing.priceEn` e `priceEnAnnual` (o preço em dólar), `common.inclui.legendasEn` ("Legendas em inglês") e `app.footer.erroIdioma`. `Docs check (context7): Stripe → /websites/stripe → consultado nesta sessão; no campo do cartão só o idioma foi fixado em "pt-BR", o valor que o português já usava. Bunny → not triggered (o endereço do player não mudou; quem o chama passa "pt" fixo).`)* Saem `lib/language.ts`
             (`idiomaDaLista`), o idioma em `lib/dict.ts`, os filtros em `routes/courses.ts`,
             `trilhas.ts`, `search.ts`, `site-text.ts`, `saved.ts` e `progress.ts`, a troca de
             idioma em `routes/me.ts`, as recusas `LanguageMismatch`, `LanguageLocked` e
@@ -4194,7 +4204,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             padrão `PT` nas colunas** (elas só saem no passo 4). O `seed-content.ts` acompanha.
             Testes de servidor: saem `content-language`, `me-language` e `i18n`; os outros
             perdem o caso do inglês. **Só depois de os passos 1 e 2 estarem publicados.**
-      - [ ] **Passo 4 — O banco perde o idioma (migration; revisão de segurança).** Passo 0:
+      - [ ] **Passo 4 — O banco perde o idioma (migration; revisão de segurança).** *(Trazido do passo 3, 12/10/2026 — sai junto, neste passo: a conversão `comIdioma`/`doBanco` e o `language` das respostas (`lib/language.ts`, e os testes que ainda o esperam); o endereço antigo `/api/site-text/common/:lang`; o filtro `language: "PT"` da home, do dicionário, da lista de Textos e das listas do admin, que perde o sentido quando as linhas em inglês forem apagadas. **Para decidir com o operador na abertura:** enquanto a migration roda, a versão que está no ar ainda lê a coluna — por cerca de um minuto, as páginas de curso e de trilha podem dar erro. Hoje só ele usa o site; se preferir, publica-se com o site em "Em breve" e sem ninguém logado.)* Passo 0:
             contar de novo. A migration **ABORTA se ainda houver curso, trilha ou legenda em
             inglês** (eles saem pelo admin, não por SQL); apaga as linhas em inglês de
             `site_text`, `faq_item` e `testimonial`; troca a chave única de `site_text` para só

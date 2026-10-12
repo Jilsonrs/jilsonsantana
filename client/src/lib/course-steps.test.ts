@@ -28,7 +28,6 @@ const VAZIO: AdminCourseDetail = {
   introVideoEmbedUrl: null,
   displayOrder: 0,
   status: "DRAFT",
-  language: "pt",
   modules: [],
 };
 

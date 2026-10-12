@@ -146,9 +146,6 @@ export function toFormValues(course: AdminCourseDetail): CourseFormValues {
 export function toPayload(values: CourseFormValues): CourseCreateInput {
   return {
     slug: values.slug,
-    // A escola é só em português (12/10/2026). O servidor ainda exige o campo na
-    // criação; ele sai de lá no passo 3 da etapa 4.6c, e daqui junto.
-    language: "pt",
     title: values.title,
     subtitle: values.subtitle.trim() || null,
     description: values.description.trim() || null,

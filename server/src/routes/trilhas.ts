@@ -14,7 +14,7 @@ import {
 import { prisma } from "../lib/prisma.js";
 import { requireAuth, requireAdmin } from "../middleware/auth.js";
 import { validate, parseId } from "../lib/http.js";
-import { paraBanco, comIdioma, idiomaDaLista } from "../lib/language.js";
+import { comIdioma } from "../lib/language.js";
 
 const router = Router();
 const PUBLISHED = ContentStatus.PUBLISHED;
@@ -96,13 +96,10 @@ async function loadEditablePlan(
 
 // ── Public reads (curated templates only) ────────────────────────────────────
 
-// GET /api/trilhas?lang=pt|en — curated catalog. Lista de DESCOBERTA: filtra
-// pelo idioma, como filtra pelo status (CLAUDE.md → Idiomas).
-router.get("/trilhas", async (req, res) => {
-  const language = idiomaDaLista(req.query.lang, res);
-  if (language === null) return;
+// GET /api/trilhas — curated catalog.
+router.get("/trilhas", async (_req, res) => {
   const trilhas = await prisma.learningPlan.findMany({
-    where: { status: PUBLISHED, isTemplate: true, language },
+    where: { status: PUBLISHED, isTemplate: true },
     orderBy: byOrder,
     select: {
       id: true,
@@ -194,9 +191,8 @@ router.post("/trilhas", requireAdmin, async (req, res) => {
     res.status(409).json({ error: "SlugTaken" });
     return;
   }
-  const { language, ...campos } = data;
   const plan = await prisma.learningPlan.create({
-    data: { ...campos, language: paraBanco(language), isTemplate: true, ownerUserId: null },
+    data: { ...data, isTemplate: true, ownerUserId: null },
   });
   res.status(201).json(comIdioma(plan));
 });
@@ -225,30 +221,7 @@ router.patch("/trilhas/:id", requireAuth, async (req, res) => {
       return;
     }
   }
-  // Trocar o idioma: mesma regra do curso — só em RASCUNHO, e só se nenhum item
-  // for do outro idioma (a trilha não mistura idiomas).
-  const { language, ...campos } = data;
-  const novoIdioma = language ? paraBanco(language) : undefined;
-  if (novoIdioma && novoIdioma !== plan.language) {
-    if (plan.status !== ContentStatus.DRAFT) {
-      res.status(409).json({ error: "LanguageLocked" });
-      return;
-    }
-    const itemDeOutroIdioma = await prisma.planItem.findFirst({
-      where: {
-        planModule: { planId: id },
-        OR: [
-          { course: { language: { not: novoIdioma } } },
-          { lesson: { module: { course: { language: { not: novoIdioma } } } } },
-        ],
-      },
-    });
-    if (itemDeOutroIdioma) {
-      res.status(409).json({ error: "LanguageInUse" });
-      return;
-    }
-  }
-  const updated = await prisma.learningPlan.update({ where: { id }, data: { ...campos, language: novoIdioma } });
+  const updated = await prisma.learningPlan.update({ where: { id }, data });
   res.json(comIdioma(updated));
 });
 
@@ -307,9 +280,6 @@ router.post("/trilhas/:id/save", requireAuth, async (req, res) => {
         name: template.name,
         description: template.description,
         skillsCovered: template.skillsCovered,
-        // A cópia HERDA o idioma da trilha — nunca o da conta de quem salva:
-        // salvar trilha do outro idioma é permitido (idioma é filtro, não portão).
-        language: template.language,
         ownerUserId: user.id,
         isTemplate: false,
         sourcePlanId: template.id,
@@ -423,12 +393,6 @@ router.post("/plan-items", requireAuth, async (req, res) => {
       res.status(404).json({ error: "CourseNotFound" });
       return;
     }
-    // A trilha não mistura idiomas (decisão do operador, 14/09/2026). Quem
-    // recusa é o SERVIDOR: a tela esconder a opção não é defesa.
-    if (curso.language !== plan.language) {
-      res.status(400).json({ error: "LanguageMismatch" });
-      return;
-    }
   } else {
     const aula = await prisma.lesson.findFirst({
       where: {
@@ -436,15 +400,10 @@ router.post("/plan-items", requireAuth, async (req, res) => {
         status: PUBLISHED,
         module: { status: PUBLISHED, course: { status: PUBLISHED } },
       },
-      // A aula herda o idioma do curso dela — é de lá que ele vem.
-      select: { module: { select: { course: { select: { language: true } } } } },
+      select: { id: true },
     });
     if (!aula) {
       res.status(404).json({ error: "LessonNotFound" });
-      return;
-    }
-    if (aula.module.course.language !== plan.language) {
-      res.status(400).json({ error: "LanguageMismatch" });
       return;
     }
   }

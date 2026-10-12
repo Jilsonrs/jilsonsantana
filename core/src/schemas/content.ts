@@ -10,7 +10,6 @@ import {
   LessonKind,
   LIMITE_DO_TEXTO_DA_AULA,
 } from "../constants/content.js";
-import { LANGUAGES } from "./site-text.js";
 
 // Shared content contracts (Phase 2). Consumed by the server (request validation
 // in Block 3) AND the client (RHF zodResolver in Block 6) — the single source of
@@ -109,19 +108,14 @@ export const videoUploadStartSchema = z.object({ titulo: z.string().trim().min(1
 export type VideoUploadStartInput = z.infer<typeof videoUploadStartSchema>;
 export type VideoUploadCompleteInput = z.infer<typeof videoUploadCompleteSchema>;
 
-// O idioma do conteúdo: a API fala `pt`/`en` (o código do endereço e do
-// dicionário); o banco guarda o enum `Language` (PT/EN).
-export const contentLanguageSchema = z.enum(LANGUAGES);
-
 // ── Course ───────────────────────────────────────────────────────────────────
 const itemDaListaSchema = z
   .string()
   .min(1)
   .max(LIMITES_DO_CURSO.itemDaLista, `Use no máximo ${LIMITES_DO_CURSO.itemDaLista} caracteres.`);
 
-// `language` é OBRIGATÓRIO na criação (operador, 14/09/2026). Na edição ele pode
-// vir (é `.partial()`), mas o SERVIDOR só aceita trocar enquanto o curso for
-// rascunho (operador, 24/09/2026).
+// Sem idioma: a escola é só em português (decisão do operador, 12/10/2026). Um
+// `language` que a versão anterior do site ainda mande é ignorado.
 //
 // CAMPO AUSENTE ≠ CAMPO VAZIO (achado de 29/09/2026, corrigido no mesmo dia):
 // ausente quer dizer "não mexe" — é o que deixa cada passo do editor salvar só
@@ -129,7 +123,6 @@ const itemDaListaSchema = z
 // ausente, e apagar um campo já salvo não apagava nada (a tela dizia "salvo").
 export const courseCreateSchema = z.object({
   slug: slugSchema,
-  language: contentLanguageSchema,
   title: z.string().min(1).max(LIMITES_DO_CURSO.title),
   subtitle: z.string().max(LIMITES_DO_CURSO.subtitle).nullable().optional(),
   // Markdown (negrito, itálico e listas), guardado como o operador escreveu.
@@ -224,11 +217,8 @@ export type LessonUpdateInput = z.infer<typeof lessonUpdateSchema>;
 // ── LearningPlan (trilha) ──────────────────────────────────────────────────--
 // isTemplate / ownerUserId are NOT client-settable: the server sets them (admin
 // curated => isTemplate true, owner null; member save/clone => owner = the user).
-// `language` obrigatório na criação; trocar depois segue a mesma regra do curso
-// (só enquanto rascunho, e sem itens do outro idioma).
 export const planCreateSchema = z.object({
   slug: slugSchema.optional(),
-  language: contentLanguageSchema,
   name: z.string().min(1),
   description: z.string().optional(),
   skillsCovered: z.array(z.string().min(1)).optional(),

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { FileDown } from "lucide-react";
 import * as api from "@/lib/api";
 import type { ArquivoDaAula } from "@/lib/api";
-import { useIdioma, useT } from "@/lib/language";
+import { useT } from "@/lib/language";
 import { usePaginaDaAula } from "@/lib/pagina-da-aula";
 import { tamanhoLegivel } from "@/lib/tamanho-de-arquivo";
 
@@ -19,7 +19,6 @@ export function ListaDeArquivos({
   arquivos: ArquivoDaAula[];
   comoAdmin: boolean;
 }) {
-  const idioma = useIdioma();
   return (
     <ul className="grid gap-3 sm:grid-cols-2">
       {arquivos.map((arquivo) => (
@@ -36,7 +35,7 @@ export function ListaDeArquivos({
               <span className="truncate text-sm font-medium text-foreground transition-colors group-hover:text-primary">
                 {arquivo.originalName}
               </span>
-              <span className="text-xs text-muted-foreground">{tamanhoLegivel(arquivo.sizeBytes, idioma)}</span>
+              <span className="text-xs text-muted-foreground">{tamanhoLegivel(arquivo.sizeBytes)}</span>
             </div>
           </a>
         </li>
@@ -51,7 +50,6 @@ export function ListaDeArquivos({
  */
 export function RecursosNaLista({ lessonId }: { lessonId: number }) {
   const t = useT();
-  const idioma = useIdioma();
   const [aberto, setAberto] = useState(false);
   const { data, comoAdmin } = usePaginaDaAula(aberto ? lessonId : null);
   const arquivos = data?.aula.arquivos;
@@ -77,7 +75,7 @@ export function RecursosNaLista({ lessonId }: { lessonId: number }) {
                     {arquivo.originalName}
                   </span>
                   <span className="ml-auto shrink-0 text-[0.7rem] text-muted-foreground/60">
-                    {tamanhoLegivel(arquivo.sizeBytes, idioma)}
+                    {tamanhoLegivel(arquivo.sizeBytes)}
                   </span>
                 </a>
               </li>

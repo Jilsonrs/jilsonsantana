@@ -607,7 +607,7 @@ exceto o item 4, que é página pública.
 | `client/src/lib/footer.ts` | Os **itens do rodapé do app** e para onde levam — dado, igual ao mapa de navegação. O visual fica em `components/layout/AppFooter.tsx`. |
 | Qualquer `*.test.tsx` / `*.test.ts` | Se um teste incomodar, **avise** — não edite. Um teste ajustado para passar deixa de proteger. |
 | `client/src/components/ui/sheet.tsx` | Vem da biblioteca (shadcn/Radix). |
-| `core/src/i18n/pt.ts` e `en.ts` | **É o texto do site** — conteúdo, não estilo, e o operador vai editá-lo pelo admin. Ver regra 9. |
+| `core/src/i18n/pt.ts` | **É o texto do site** — conteúdo, não estilo, e o operador vai editá-lo pelo admin. Ver regra 9. |
 | `core/`, `e2e/`, `prisma/`, e o resto de `server/` | Nada de front ali. **A exceção é `server/src/views/`**, que é a marcação das páginas públicas (§2). |
 
 ---

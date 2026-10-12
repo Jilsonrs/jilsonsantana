@@ -1,9 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { Home } from "lucide-react";
-import { Role, en, pt } from "@jilson/core";
+import { Role, pt } from "@jilson/core";
 import {
   NAVEGACAO,
-  navegacao,
   abasDaRota,
   casaRota,
   etiquetaEmBreve,
@@ -96,25 +95,14 @@ describe("secoesVisiveis — quem vê o quê", () => {
     // do "Catálogo" (set/2026). É por menu, e não no mapa inteiro, porque os
     // dois "Início" (29/09/2026) nunca aparecem juntos.
     for (const papel of [Role.MEMBER, Role.ADMIN]) {
-      for (const t of [pt.app, en.app]) {
-        const menu = secoesVisiveis(papel, t);
-        const rotulos = menu.map((s) => s.label);
-        expect(new Set(rotulos).size, `${papel} rótulos`).toBe(rotulos.length);
-        const icones = menu.map((s) => s.icon);
-        expect(new Set(icones).size, `${papel} ícones`).toBe(icones.length);
-      }
+      const menu = secoesVisiveis(papel, pt.app);
+      const rotulos = menu.map((s) => s.label);
+      expect(new Set(rotulos).size, `${papel} rótulos`).toBe(rotulos.length);
+      const icones = menu.map((s) => s.icon);
+      expect(new Set(icones).size, `${papel} ícones`).toBe(icones.length);
     }
   });
 
-  it("em inglês, só os rótulos do ALUNO mudam — os de admin ficam em português", () => {
-    const emIngles = navegacao(en.app);
-    const deAdmin = (m: Secao[]) => m.filter((s) => s.papel === Role.ADMIN).map((s) => s.label);
-    expect(deAdmin(emIngles)).toEqual(deAdmin(NAVEGACAO));
-
-    const doAluno = (m: Secao[]) => m.filter((s) => s.papel !== Role.ADMIN).map((s) => s.label);
-    expect(doAluno(emIngles)).toContain("My learning");
-    expect(doAluno(emIngles)).not.toContain("Meus estudos");
-  });
 });
 
 describe("secaoAtiva — onde estou", () => {
@@ -363,15 +351,11 @@ describe("abasDaRota — o nível 3", () => {
 });
 
 describe("etiquetaEmBreve — a etiqueta de tela que ainda não existe", () => {
-  it("a do aluno segue o idioma do app", () => {
-    const jilsonai = navegacao(en.app).find((s) => s.to === "/aluno/jilsonai");
-    expect(etiquetaEmBreve(jilsonai, en.app)).toBe("COMING SOON");
+  it("a do aluno", () => {
     expect(etiquetaEmBreve(NAVEGACAO.find((s) => s.to === "/aluno/jilsonai"), pt.app)).toBe("EM BREVE");
   });
 
-  // O Admin não muda de idioma (decisão do operador, 23/09/2026).
-  it("a de uma seção de admin fica em português mesmo com o app em inglês", () => {
-    const alunos = navegacao(en.app).find((s) => s.to === "/admin/alunos");
-    expect(etiquetaEmBreve(alunos, en.app)).toBe("EM BREVE");
+  it("a de uma seção de admin", () => {
+    expect(etiquetaEmBreve(NAVEGACAO.find((s) => s.to === "/admin/alunos"), pt.app)).toBe("EM BREVE");
   });
 });

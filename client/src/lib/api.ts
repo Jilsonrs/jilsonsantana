@@ -18,7 +18,6 @@ import type {
   ModuleUpdateInput,
   LessonCreateInput,
   LessonUpdateInput,
-  LanguageCode,
   Dict,
   TestimonialCreateInput,
   TestimonialUpdateInput,
@@ -100,8 +99,6 @@ export type CourseDetail = {
   id: number;
   slug: string;
   title: string;
-  /** O idioma do curso (a legenda do "Este curso inclui" é nesse idioma). */
-  language: LanguageCode;
   subtitle: string | null;
   description: string | null;
   level: Level | null;
@@ -219,7 +216,6 @@ export type AdminCourseCard = {
   title: string;
   level: Level | null;
   status: ContentStatus;
-  language: LanguageCode;
   displayOrder: number;
   moduleCount: number;
   lessonCount: number;
@@ -294,7 +290,6 @@ export type AdminCourseDetail = {
   introVideoEmbedUrl: string | null;
   displayOrder: number;
   status: ContentStatus;
-  language: LanguageCode;
   modules: AdminModule[];
 };
 
@@ -424,7 +419,6 @@ export type PaginaDaAula = {
     id: number;
     slug: string;
     title: string;
-    language: "pt" | "en";
     status: ContentStatus;
     // Os DETALHES do curso, embaixo do player em toda aula (operador, 29/09/2026).
     level: Level | null;
@@ -620,11 +614,10 @@ export function enderecoDoArquivo(lessonId: number, fileId: number, comoAdmin: b
 }
 
 // AS LEGENDAS (passo Legendas do editor — decisões do operador, 04/10/2026):
-// uma `.vtt` por aula de vídeo e uma pela apresentação, no idioma do curso.
+// uma `.vtt` por aula de vídeo e uma pela apresentação.
 export type LegendaNaTela = { enviadaEm: string; nomeDoArquivo: string; precisaReenviar: boolean };
 export type AulaNasLegendas = { id: number; title: string; status: ContentStatus; temVideo: boolean; legenda: LegendaNaTela | null };
 export type LegendasDoCurso = {
-  idioma: LanguageCode;
   apresentacao: { temVideo: boolean; legenda: LegendaNaTela | null };
   modulos: { id: number; title: string; status: ContentStatus; aulas: AulaNasLegendas[] }[];
   contagem: { comLegenda: number; total: number };
@@ -804,7 +797,6 @@ export async function adminGetSiteText(): Promise<SiteTextField[]> {
 
 export async function adminUpdateSiteText(input: {
   key: string;
-  language: LanguageCode;
   value: string;
 }): Promise<void> {
   await client.put("/admin/site-text", input);
@@ -817,21 +809,18 @@ export async function adminUpdateSiteText(input: {
 export type CommonTexts = Dict["common"];
 export const COMMON_TEXTS_QUERY = "site-text-common";
 
-// O endereço ainda leva `pt` porque é assim que o servidor publica a rota; ele
-// muda no passo 3 da etapa 4.6c.
 export async function getCommonTexts(): Promise<CommonTexts> {
-  const { data } = await client.get<CommonTexts>("/site-text/common/pt");
+  const { data } = await client.get<CommonTexts>("/site-text/common");
   return data;
 }
 
 // ---------------------------------------------------------------------------
 // Depoimentos e perguntas frequentes da home (Bloco C3) — admin-only.
-// A lista traz os DOIS idiomas e TODOS os status; a tela filtra o idioma.
+// A lista traz TODOS os status.
 // Excluir apaga a linha de vez (LGPD); esconder é mudar o status.
 
 type ItemDaHome = {
   id: number;
-  language: LanguageCode;
   displayOrder: number;
   status: ContentStatus;
   createdAt: string;

@@ -6,7 +6,7 @@ import { BlocoDoCartao } from "@/components/faturamento/BlocoDoCartao";
 import { BlocoDoPlano } from "@/components/faturamento/BlocoDoPlano";
 import { TELA_DE_ASSINAR } from "@/lib/assinar";
 import { comAcesso, dataPorExtenso, useMinhaAssinatura } from "@/lib/faturamento";
-import { useIdioma, useT } from "@/lib/language";
+import { useT } from "@/lib/language";
 
 /**
  * FATURAMENTO E ASSINATURA (Fase 4, etapa 4.6 — o lugar e o desenho são decisões do operador,
@@ -16,7 +16,6 @@ import { useIdioma, useT } from "@/lib/language";
  */
 export function FaturamentoPage() {
   const t = useT();
-  const idioma = useIdioma();
   const { data, isLoading, isError } = useMinhaAssinatura();
   // A leitura falhou: só a falha. O que a tela tinha lido antes pode não valer mais, e plano,
   // cobrança e cartão velhos ao lado de um erro diriam duas coisas ao mesmo tempo.
@@ -42,7 +41,7 @@ export function FaturamentoPage() {
       )}
       {assinatura?.situacao === SituacaoDoFaturamento.TERMINADA && (
         <div className="space-y-4">
-          <p className="text-foreground">{assinatura.terminouEm ? t.faturamento.terminou.replace("{data}", dataPorExtenso(assinatura.terminouEm, idioma)) : t.faturamento.terminouSemData}</p>
+          <p className="text-foreground">{assinatura.terminouEm ? t.faturamento.terminou.replace("{data}", dataPorExtenso(assinatura.terminouEm)) : t.faturamento.terminouSemData}</p>
           <Button asChild>
             <Link to={TELA_DE_ASSINAR}>{t.assinar.botaoReativar}</Link>
           </Button>

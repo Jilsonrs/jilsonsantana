@@ -4,32 +4,33 @@ import { testimonialCreateSchema, testimonialUpdateSchema } from "@jilson/core";
 import { prisma } from "../lib/prisma.js";
 import { requireAdmin } from "../middleware/auth.js";
 import { validate, parseId } from "../lib/http.js";
-import { paraBanco, doBanco } from "../lib/language.js";
+import { doBanco } from "../lib/language.js";
 
 const router = Router();
 
 // Depoimentos da home — tudo admin-only (Bloco C3, docs/content.md § 16).
 // Leitura pública não passa por aqui: a home é SSR e lê direto do banco,
-// filtrando PUBLICADO + idioma (routes/home.ts).
+// filtrando PUBLICADO (routes/home.ts).
 
 // Mais NOVO primeiro: depoimento não tem ordem (a home sorteia — decisão do
 // operador, 23/09/2026), e o que o operador procura na lista é o que acabou de
 // chegar.
 const byOrder = [{ createdAt: "desc" as const }, { id: "desc" as const }];
+// `language` continua na resposta só porque a versão do site que está no ar ainda
+// o lê (lib/language.ts); sai no passo 4 da etapa 4.6c, com a coluna.
 const saida = (t: Testimonial) => ({ ...t, language: doBanco(t.language) });
 
-// GET /api/admin/testimonials — todos, de qualquer status e dos dois idiomas.
+// GET /api/admin/testimonials — todos, de qualquer status. Só os em português:
+// as linhas em inglês que ainda estão no banco saem no passo 4 da etapa 4.6c.
 router.get("/admin/testimonials", requireAdmin, async (_req, res) => {
-  const lista = await prisma.testimonial.findMany({ orderBy: byOrder });
+  const lista = await prisma.testimonial.findMany({ where: { language: "PT" }, orderBy: byOrder });
   res.json(lista.map(saida));
 });
 
 router.post("/admin/testimonials", requireAdmin, async (req, res) => {
   const data = validate(testimonialCreateSchema, req.body, res);
   if (data === null) return;
-  const criado = await prisma.testimonial.create({
-    data: { ...data, language: paraBanco(data.language) },
-  });
+  const criado = await prisma.testimonial.create({ data });
   res.status(201).json(saida(criado));
 });
 
@@ -42,10 +43,7 @@ router.patch("/admin/testimonials/:id", requireAdmin, async (req, res) => {
     res.status(404).json({ error: "NotFound" });
     return;
   }
-  const atualizado = await prisma.testimonial.update({
-    where: { id },
-    data: { ...data, language: data.language && paraBanco(data.language) },
-  });
+  const atualizado = await prisma.testimonial.update({ where: { id }, data });
   res.json(saida(atualizado));
 });
 

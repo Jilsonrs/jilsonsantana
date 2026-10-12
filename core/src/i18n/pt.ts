@@ -65,7 +65,6 @@ export const pt = {
       aulaGratis: "aula grátis para experimentar",
       aulasGratis: "aulas grátis para experimentar",
       legendasPt: "Legendas em português",
-      legendasEn: "Legendas em inglês",
       // Todo curso dá certificado ao ser concluído (operador, 05/10/2026): linha fixa.
       certificado: "Certificado de conclusão"
     },
@@ -216,8 +215,6 @@ export const pt = {
       discountBadge: "17% DE DESCONTO NO PLANO ANUAL",
       pricePt: "R$ 99,90",
       pricePtAnnual: "R$ 995",
-      priceEn: "US$ 30",
-      priceEnAnnual: "US$ 299",
       period: "/mês",
       desc: "Cobrado todo mês. Cancele quando quiser.",
       btn: "Assinar",
@@ -299,9 +296,6 @@ export const pt = {
       senhaObrigatoria: "Informe sua senha.",
       credenciaisIncorretas: "E-mail ou senha incorretos.",
       falha: "Não foi possível entrar agora. Tente novamente em alguns minutos."
-    },
-    footer: {
-      erroIdioma: "Não foi possível trocar o idioma. Tente de novo."
     },
     comum: {
       carregando: "Carregando…",

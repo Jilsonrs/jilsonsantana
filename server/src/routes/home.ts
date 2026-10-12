@@ -121,7 +121,7 @@ async function botoesDeReativar(sessao: Awaited<ReturnType<typeof loadSession>>)
 
 router.get("/", async (req, res) => {
   const [dict, sessao, [testimonials, faq]] = await Promise.all([
-    getDict("pt"),
+    getDict(),
     loadSession(req),
     listasDaHome(),
   ]);

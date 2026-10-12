@@ -1,4 +1,4 @@
-import { ContentStatus, type LanguageCode } from "@jilson/core";
+import { ContentStatus } from "@jilson/core";
 
 // O editor das listas da home (Bloco C3): depoimentos e perguntas frequentes
 // têm a MESMA forma — dois textos, ordem e status — e só mudam de nome.
@@ -15,7 +15,6 @@ export type ValoresDoItem = {
 
 export type ItemDaLista = {
   id: number;
-  language: LanguageCode;
   displayOrder: number;
   status: ContentStatus;
 };

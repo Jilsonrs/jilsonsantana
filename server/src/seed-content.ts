@@ -42,8 +42,8 @@ async function seedCourse(
   // A escola nasceu em português: todo curso do seed é PT.
   const course = await prisma.course.upsert({
     where: { slug },
-    update: { ...fields, language: "PT" },
-    create: { slug, ...fields, language: "PT" },
+    update: fields,
+    create: { slug, ...fields },
   });
 
   // Reset the subtree (cascade removes lessons) so re-runs stay idempotent.
@@ -134,7 +134,6 @@ async function main(): Promise<void> {
     },
     create: {
       slug: "exemplo-fundamentos",
-      language: "PT",
       name: "Exemplo — Trilha Fundamentos",
       description: "Trilha de exemplo (smoke seed).",
       isTemplate: true,

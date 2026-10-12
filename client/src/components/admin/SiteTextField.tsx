@@ -94,8 +94,7 @@ export function SiteTextField({ campo }: { campo: Campo }) {
         key={campo.pt.override ?? campo.pt.factory}
         campo={campo}
         salvando={salvar.isPending}
-        // O servidor ainda pede o idioma; ele sai de lá no passo 3 da etapa 4.6c.
-        onSalvar={(valor) => salvar.mutate({ key: campo.key, language: "pt", value: valor })}
+        onSalvar={(valor) => salvar.mutate({ key: campo.key, value: valor })}
       />
       {salvar.isError && (
         <p role="alert" className="text-sm text-destructive">

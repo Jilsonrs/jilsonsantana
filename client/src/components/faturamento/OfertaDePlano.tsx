@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { dinheiro } from "@/lib/assinar";
 import { dataPorExtenso } from "@/lib/faturamento";
-import { useIdioma, useT } from "@/lib/language";
+import { useT } from "@/lib/language";
 
 /**
  * O PLANO PARA O QUAL DÁ PARA MUDAR, com o que o SERVIDOR disse dele: para o Anual, quanto se
@@ -12,14 +12,13 @@ import { useIdioma, useT } from "@/lib/language";
  */
 export function OfertaDePlano({ troca, aoMudar, enviando }: { troca: TrocaDePlano; aoMudar: () => void; enviando: boolean }) {
   const t = useT();
-  const idioma = useIdioma();
   const p = t.faturamento.plano;
   const paraOAnual = troca.para === Plano.ANUAL;
-  const preco = dinheiro(troca.preco.centavos, troca.preco.moeda, idioma);
+  const preco = dinheiro(troca.preco.centavos, troca.preco.moeda);
   const explicacao =
     troca.quando === "agora"
-      ? p.paraOAnual.replace("{valor}", dinheiro(troca.hoje.centavos, troca.hoje.moeda, idioma)).replace("{data}", troca.proximaEm ? dataPorExtenso(troca.proximaEm, idioma) : "")
-      : p.paraOMensal.replace("{data}", dataPorExtenso(troca.em, idioma)).replace("{valor}", preco);
+      ? p.paraOAnual.replace("{valor}", dinheiro(troca.hoje.centavos, troca.hoje.moeda)).replace("{data}", troca.proximaEm ? dataPorExtenso(troca.proximaEm) : "")
+      : p.paraOMensal.replace("{data}", dataPorExtenso(troca.em)).replace("{valor}", preco);
 
   return (
     <Card className="max-w-3xl">

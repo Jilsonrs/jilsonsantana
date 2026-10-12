@@ -1,31 +1,19 @@
-import type { Response } from "express";
 import type { Language } from "@prisma/client";
-import type { LanguageCode } from "@jilson/core";
 
-// A API fala "pt"/"en" (o mesmo código do endereço e do dicionário); o banco
-// guarda o enum do Prisma, PT/EN. A conversão mora aqui para as rotas nunca
-// compararem as duas grafias à mão.
-export const paraBanco = (l: LanguageCode): Language => (l === "pt" ? "PT" : "EN");
-export const doBanco = (l: Language): LanguageCode => (l === "PT" ? "pt" : "en");
+// A ESCOLA É SÓ EM PORTUGUÊS (decisão do operador, 12/10/2026 — etapa 4.6c do
+// plano). O servidor não filtra mais lista por idioma, nem aceita idioma em
+// pedido nenhum.
+//
+// Este arquivo fica só até o passo 4 da etapa, por UM motivo: a versão do site
+// que está no ar ainda LÊ `language` na resposta de curso e de trilha (regra da
+// API aditiva, CLAUDE.md → Rendering Boundary: o que a versão anterior usa só
+// sai na publicação seguinte). No passo 4 a coluna sai do banco, e este arquivo
+// sai junto.
+
+/** O `language` do banco (PT/EN) como a API sempre o devolveu (pt/en). */
+export const doBanco = (l: Language): "pt" | "en" => (l === "PT" ? "pt" : "en");
 
 /** Troca o `language` do banco (PT/EN) pelo da API (pt/en) numa resposta. */
-export function comIdioma<T extends { language: Language }>(registro: T): Omit<T, "language"> & { language: LanguageCode } {
+export function comIdioma<T extends { language: Language }>(registro: T): Omit<T, "language"> & { language: "pt" | "en" } {
   return { ...registro, language: doBanco(registro.language) };
-}
-
-/**
- * O idioma de uma LISTA de descoberta (catálogo, trilhas, busca), vindo de
- * `?lang=`. Sem o parâmetro vale português — é o que as telas de antes do app
- * em inglês pedem. Valor fora dos dois idiomas: 400 e `null`, como `parseId`.
- *
- * Só as listas de descoberta filtram por idioma. O que é DO ALUNO (trilhas
- * salvas) e o link direto para um curso ou trilha NÃO filtram: idioma é filtro,
- * não portão (decisão do operador, 14 e 24/09/2026 — CLAUDE.md → Idiomas).
- */
-export function idiomaDaLista(raw: unknown, res: Response): Language | null {
-  const valor = Array.isArray(raw) ? raw[0] : raw;
-  if (valor === undefined) return "PT";
-  if (valor === "pt" || valor === "en") return paraBanco(valor);
-  res.status(400).json({ error: "InvalidLanguage" });
-  return null;
 }

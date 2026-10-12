@@ -1,5 +1,4 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { LanguageCode } from "@jilson/core";
 import * as api from "@/lib/api";
 import { deveTentarDeNovo } from "@/lib/tentar-de-novo";
 import type { AppTexts } from "@/lib/language";
@@ -26,7 +25,7 @@ export function useMarcarLida() {
   });
 }
 
-/** O título da notificação: o do aviso, ou, nas mensagens do curso, "Boas-vindas ao curso X" no idioma do app. */
+/** O título da notificação: o do aviso, ou, nas mensagens do curso, "Boas-vindas ao curso X". */
 export function tituloDaNotificacao(n: api.Notificacao, t: AppTexts): string {
   // O aviso de Comunicação tem o título que o operador escreveu (06/10/2026).
   if (n.titulo) return n.titulo;
@@ -53,10 +52,10 @@ export function previaDoTexto(texto: string): string {
     .trim();
 }
 
-/** "há 3 dias", "agora", "3 days ago" — no idioma do app, pelo próprio navegador. */
-export function haQuantoTempo(iso: string, idioma: LanguageCode, agora: Date = new Date()): string {
+/** "há 3 dias", "agora" — escrito pelo próprio navegador. */
+export function haQuantoTempo(iso: string, agora: Date = new Date()): string {
   const segundos = Math.round((new Date(iso).getTime() - agora.getTime()) / 1000);
-  const local = idioma === "en" ? "en" : "pt-BR";
+  const local = "pt-BR";
   // "always", senão o navegador escreve "anteontem" no lugar de "há 2 dias".
   const formato = new Intl.RelativeTimeFormat(local, { numeric: "always" });
   const passos: [Intl.RelativeTimeFormatUnit, number][] = [
@@ -70,6 +69,6 @@ export function haQuantoTempo(iso: string, idioma: LanguageCode, agora: Date = n
   for (const [unidade, tamanho] of passos) {
     if (Math.abs(segundos) >= tamanho) return formato.format(Math.round(segundos / tamanho), unidade);
   }
-  // Menos de um minuto: "agora" ("now").
+  // Menos de um minuto: "agora".
   return new Intl.RelativeTimeFormat(local, { numeric: "auto" }).format(0, "second");
 }

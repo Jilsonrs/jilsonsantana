@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ContentStatus } from "@jilson/core";
 import type { ConfigDaLista, ItemDaLista, ValoresDoItem } from "@/lib/home-lists";
@@ -12,15 +12,14 @@ import { PageContainer, PageHeader, PageSection } from "@/components/layout/Page
 // lista e item novo. A página só diz QUAL lista é (ConfigDaLista).
 //
 // A escola é só em português (decisão do operador, 12/10/2026 — etapa 4.6c): as
-// abas de idioma saíram. As linhas em inglês que ainda estão no banco (até o
-// passo 4 da etapa) não aparecem aqui — nem na home.
+// abas de idioma saíram, e o servidor só manda as linhas em português.
 
 export function HomeListEditor<T extends ItemDaLista>({ config }: { config: ConfigDaLista<T> }) {
   const queryClient = useQueryClient();
   const [criando, setCriando] = useState(false);
 
   const { data, isLoading, isError } = useQuery({ queryKey: [config.queryKey], queryFn: config.listar });
-  const itens = useMemo(() => (data ?? []).filter((i) => i.language === "pt"), [data]);
+  const itens = data ?? [];
 
   const criar = useMutation({
     mutationFn: (valores: ValoresDoItem) => config.criar(valores),

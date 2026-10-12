@@ -24,6 +24,5 @@ export const CURSO_DE_TESTE: AdminCourseDetail = {
   introVideoEmbedUrl: null,
   displayOrder: 0,
   status: "DRAFT",
-  language: "pt",
   modules: [],
 };

@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Bell } from "lucide-react";
-import { useIdioma, useT } from "@/lib/language";
+import { useT } from "@/lib/language";
 import {
   haQuantoTempo,
   numeroDoSino,
@@ -26,7 +26,6 @@ export const ROTA_DAS_NOTIFICACOES = "/aluno/notificacoes";
  */
 export function Sino() {
   const t = useT();
-  const idioma = useIdioma();
   const { data, isLoading, isError } = useNotificacoes();
   const { mutate: marcar } = useMarcarLida();
   const [aberto, setAberto] = useState(false);
@@ -120,7 +119,7 @@ export function Sino() {
                           {!n.lida && <span className="sr-only"> ({t.notificacoes.naoLida})</span>}
                         </span>
                         <span className="mt-0.5 line-clamp-2 text-sm text-muted-foreground">{previaDoTexto(n.texto)}</span>
-                        <span className="mt-1 block text-xs text-muted-foreground">{haQuantoTempo(n.criadaEm, idioma)}</span>
+                        <span className="mt-1 block text-xs text-muted-foreground">{haQuantoTempo(n.criadaEm)}</span>
                       </span>
                     </Link>
                   </li>
