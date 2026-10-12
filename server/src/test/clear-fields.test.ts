@@ -42,7 +42,7 @@ beforeAll(async () => {
   });
   admin = (login.headers["set-cookie"] as unknown as string[] | undefined) ?? [];
   const curso = await prisma.course.create({
-    data: { slug: SLUG, title: "Curso para esvaziar", language: "PT", status: "DRAFT" },
+    data: { slug: SLUG, title: "Curso para esvaziar", status: "DRAFT" },
   });
   cursoId = curso.id;
   const modulo = await prisma.module.create({ data: { courseId: cursoId, title: "Módulo 1", layer: "IA" } });

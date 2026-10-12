@@ -27,7 +27,6 @@ beforeAll(async () => {
     data: {
       slug: `completo${S}`,
       title: "Completo",
-      language: "PT",
       thumbnailUrl: "https://img.jilsonsantana.com/cursos/completo.webp",
       introVideoId: "eb1c4f77-0cda-46be-b47d-1118ad7c2ffe",
       // Markdown: o marcador de lista e o de negrito não contam como palavra.
@@ -46,7 +45,7 @@ beforeAll(async () => {
     },
   });
   await prisma.course.create({
-    data: { slug: `vazio${S}`, title: "Vazio", language: "PT", description: "   " },
+    data: { slug: `vazio${S}`, title: "Vazio", description: "   " },
   });
 });
 

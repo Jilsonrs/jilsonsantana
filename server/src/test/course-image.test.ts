@@ -27,7 +27,7 @@ async function criar(thumbnailUrl: string) {
   const res = await request(servidor)
     .post("/api/courses")
     .set("Cookie", admin)
-    .send({ slug, title: "Curso", language: "pt", thumbnailUrl });
+    .send({ slug, title: "Curso", thumbnailUrl });
   return { res, slug };
 }
 

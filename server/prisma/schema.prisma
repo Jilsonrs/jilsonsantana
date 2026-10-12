@@ -64,14 +64,6 @@ enum PlanItemType {
   LESSON
 }
 
-// Os dois idiomas da escola. TETO DE DOIS — um terceiro é decisão do operador,
-// não "mais um valor" (docs/idiomas.md). Usado por SiteText, Testimonial,
-// FaqItem, Course e LearningPlan.
-enum Language {
-  PT
-  EN
-}
-
 // Sobrescrita de texto do site, editada pelo operador no /admin.
 //
 // NÃO é "o texto do site": o texto vive no dicionário em código
@@ -84,12 +76,10 @@ enum Language {
 // tabela vira lixeira. O prefixo diz a página: `common.*` sai em toda página.
 model SiteText {
   id        Int      @id @default(autoincrement())
-  key       String
-  language  Language @default(PT)
+  key       String   @unique
   value     String
   updatedAt DateTime @updatedAt
 
-  @@unique([key, language])
   @@map("site_text")
 }
 
@@ -98,13 +88,11 @@ model SiteText {
 // TABELA"), e depoimento sai na hora se a pessoa pedir (docs/content.md) — isso
 // não pode esperar deploy.
 //
-// Cada idioma tem as SUAS linhas: o depoimento em inglês é outra linha, não
-// uma tradução pendurada nesta. `status` esconde; tirar de vez (pedido do
+// `status` esconde; tirar de vez (pedido do
 // titular, LGPD) é APAGAR a linha — o nome não pode ficar guardado.
 // As iniciais do avatar não são coluna: saem do nome na hora de desenhar.
 model Testimonial {
   id           Int           @id @default(autoincrement())
-  language     Language @default(PT)
   text         String
   name         String
   displayOrder Int           @default(0)
@@ -112,13 +100,12 @@ model Testimonial {
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 
-  @@index([language, status, displayOrder])
+  @@index([status, displayOrder])
   @@map("testimonial")
 }
 
 model FaqItem {
   id           Int           @id @default(autoincrement())
-  language     Language @default(PT)
   question     String
   answer       String
   displayOrder Int           @default(0)
@@ -126,7 +113,7 @@ model FaqItem {
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 
-  @@index([language, status, displayOrder])
+  @@index([status, displayOrder])
   @@map("faq_item")
 }
 
@@ -280,7 +267,6 @@ model Course {
   // O idioma do curso (decisão do operador, 14/09/2026). Obrigatório e SEM
   // default: o banco recusa curso sem idioma. Módulo e aula herdam daqui.
   // Troca só enquanto rascunho (operador, 24/09) — regra no servidor.
-  language            Language @default(PT)
   createdAt           DateTime       @default(now())
   updatedAt           DateTime       @updatedAt
   modules             Module[]
@@ -494,7 +480,6 @@ model Caption {
   // A da apresentação do curso.
   courseId     Int?     @unique
   course       Course?  @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  language     Language @default(PT)
   content      String
   originalName String
   // O vídeo foi trocado e o Bunny recusou receber esta legenda no vídeo novo: a
@@ -595,7 +580,6 @@ model LearningPlan {
   status        ContentStatus  @default(DRAFT)
   // A trilha segue o idioma (operador, 14/09): o servidor recusa item de outro
   // idioma. Obrigatório e sem default, como no curso.
-  language      Language @default(PT)
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   planModules   PlanModule[]

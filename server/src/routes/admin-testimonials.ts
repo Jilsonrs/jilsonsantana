@@ -1,10 +1,8 @@
 import { Router } from "express";
-import type { Testimonial } from "@prisma/client";
 import { testimonialCreateSchema, testimonialUpdateSchema } from "@jilson/core";
 import { prisma } from "../lib/prisma.js";
 import { requireAdmin } from "../middleware/auth.js";
 import { validate, parseId } from "../lib/http.js";
-import { doBanco } from "../lib/language.js";
 
 const router = Router();
 
@@ -16,22 +14,17 @@ const router = Router();
 // operador, 23/09/2026), e o que o operador procura na lista é o que acabou de
 // chegar.
 const byOrder = [{ createdAt: "desc" as const }, { id: "desc" as const }];
-// `language` continua na resposta só porque a versão do site que está no ar ainda
-// o lê (lib/language.ts); sai no passo 4 da etapa 4.6c, com a coluna.
-const saida = (t: Testimonial) => ({ ...t, language: doBanco(t.language) });
 
-// GET /api/admin/testimonials — todos, de qualquer status. Só os em português:
-// as linhas em inglês que ainda estão no banco saem no passo 4 da etapa 4.6c.
+// GET /api/admin/testimonials — todos, de qualquer status.
 router.get("/admin/testimonials", requireAdmin, async (_req, res) => {
-  const lista = await prisma.testimonial.findMany({ where: { language: "PT" }, orderBy: byOrder });
-  res.json(lista.map(saida));
+  res.json(await prisma.testimonial.findMany({ orderBy: byOrder }));
 });
 
 router.post("/admin/testimonials", requireAdmin, async (req, res) => {
   const data = validate(testimonialCreateSchema, req.body, res);
   if (data === null) return;
   const criado = await prisma.testimonial.create({ data });
-  res.status(201).json(saida(criado));
+  res.status(201).json(criado);
 });
 
 router.patch("/admin/testimonials/:id", requireAdmin, async (req, res) => {
@@ -44,7 +37,7 @@ router.patch("/admin/testimonials/:id", requireAdmin, async (req, res) => {
     return;
   }
   const atualizado = await prisma.testimonial.update({ where: { id }, data });
-  res.json(saida(atualizado));
+  res.json(atualizado);
 });
 
 // DELETE apaga a LINHA, não só esconde: é o caminho do "sai na hora se a pessoa

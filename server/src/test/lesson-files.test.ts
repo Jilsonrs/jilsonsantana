@@ -37,7 +37,7 @@ beforeAll(async () => {
   admin = await sessao(process.env.SEED_ADMIN_EMAIL, process.env.SEED_ADMIN_PASSWORD);
   member = await sessao(process.env.SEED_MEMBER_EMAIL, process.env.SEED_MEMBER_PASSWORD);
   const curso = await prisma.course.create({
-    data: { slug: `curso${S}`, title: "Curso", language: "PT", modules: { create: { title: "M", lessons: { create: { title: "Aula" } } } } },
+    data: { slug: `curso${S}`, title: "Curso", modules: { create: { title: "M", lessons: { create: { title: "Aula" } } } } },
     include: { modules: { include: { lessons: true } } },
   });
   aulaId = curso.modules[0].lessons[0].id;

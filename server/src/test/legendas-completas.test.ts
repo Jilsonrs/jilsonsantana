@@ -24,7 +24,6 @@ beforeAll(async () => {
     data: {
       slug: `curso${S}`,
       title: "Curso",
-      language: "PT",
       modules: {
         create: [
           {
@@ -52,7 +51,6 @@ beforeAll(async () => {
       data: {
         slug: `sem-video${S}`,
         title: "Só texto",
-        language: "PT",
         modules: { create: { title: "M", status: "PUBLISHED", lessons: { create: { title: "Texto", kind: "TEXT", status: "PUBLISHED" } } } },
       },
     })
@@ -66,7 +64,7 @@ afterAll(async () => {
 const completas = async (id = cursoId) =>
   (await request(servidor).get(`/api/admin/courses/${id}`).set("Cookie", admin)).body.legendasCompletas;
 const legenda = (lessonId: number) =>
-  prisma.caption.create({ data: { lessonId, language: "PT", content: "WEBVTT\n", originalName: "a.vtt" } });
+  prisma.caption.create({ data: { lessonId, content: "WEBVTT\n", originalName: "a.vtt" } });
 
 describe("o ✓ do passo Legendas", () => {
   it("uma aula de vídeo publicada sem legenda: sem ✓", async () => {

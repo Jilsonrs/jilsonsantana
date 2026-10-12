@@ -57,7 +57,6 @@ async function cursoCompleto(comApresentacao = false) {
     data: {
       slug: `c${n}${S}`,
       title: "Curso",
-      language: "PT",
       ...(comApresentacao ? { introVideoId: APRESENTACAO, introVideoPendingId: APRESENTACAO_PENDENTE } : {}),
       modules: { create: { title: "M", lessons: { create: { title: "A", bunnyVideoId: VIDEO, bunnyVideoPendingId: PENDENTE } } } },
     },

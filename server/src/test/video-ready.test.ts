@@ -58,7 +58,6 @@ async function curso() {
     data: {
       slug: `c${n}${S}`,
       title: "Curso",
-      language: "PT",
       modules: {
         create: {
           title: "M",

@@ -224,7 +224,7 @@ describe("Home — nenhum texto fica cravado no template", () => {
   });
 
   it("com TODO texto trocado no banco, não sobra nenhum texto de fábrica na página", async () => {
-    await prisma.siteText.createMany({ data: DA_HOME.map(([chave]) => ({ key: chave, language: "PT" as const, value: marca(chave) })) });
+    await prisma.siteText.createMany({ data: DA_HOME.map(([chave]) => ({ key: chave, value: marca(chave) })) });
     invalidarCacheDeTexto();
     try {
       const res = await request(servidor).get("/");

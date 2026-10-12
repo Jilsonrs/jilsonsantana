@@ -1,10 +1,8 @@
 import { Router } from "express";
-import type { FaqItem } from "@prisma/client";
 import { homeFaqCreateSchema, homeFaqUpdateSchema } from "@jilson/core";
 import { prisma } from "../lib/prisma.js";
 import { requireAdmin } from "../middleware/auth.js";
 import { validate, parseId } from "../lib/http.js";
-import { doBanco } from "../lib/language.js";
 
 const router = Router();
 
@@ -13,22 +11,17 @@ const router = Router();
 // operador escreve.
 
 const byOrder = [{ displayOrder: "asc" as const }, { id: "asc" as const }];
-// `language` continua na resposta só porque a versão do site que está no ar ainda
-// o lê (lib/language.ts); sai no passo 4 da etapa 4.6c, com a coluna.
-const saida = (f: FaqItem) => ({ ...f, language: doBanco(f.language) });
 
-// GET /api/admin/faq — todas, de qualquer status. Só as em português: as linhas
-// em inglês que ainda estão no banco saem no passo 4 da etapa 4.6c.
+// GET /api/admin/faq — todas, de qualquer status.
 router.get("/admin/faq", requireAdmin, async (_req, res) => {
-  const lista = await prisma.faqItem.findMany({ where: { language: "PT" }, orderBy: byOrder });
-  res.json(lista.map(saida));
+  res.json(await prisma.faqItem.findMany({ orderBy: byOrder }));
 });
 
 router.post("/admin/faq", requireAdmin, async (req, res) => {
   const data = validate(homeFaqCreateSchema, req.body, res);
   if (data === null) return;
   const criada = await prisma.faqItem.create({ data });
-  res.status(201).json(saida(criada));
+  res.status(201).json(criada);
 });
 
 router.patch("/admin/faq/:id", requireAdmin, async (req, res) => {
@@ -41,7 +34,7 @@ router.patch("/admin/faq/:id", requireAdmin, async (req, res) => {
     return;
   }
   const atualizada = await prisma.faqItem.update({ where: { id }, data });
-  res.json(saida(atualizada));
+  res.json(atualizada);
 });
 
 // DELETE apaga a linha — mesma regra dos depoimentos (decisão do operador,

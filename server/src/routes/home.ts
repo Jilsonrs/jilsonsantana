@@ -63,11 +63,6 @@ const DESTAQUE_PT: HomeCourse = {
 // mesmo filtro de toda leitura pública. Lista vazia esconde a seção inteira
 // (decisão do operador, 23/09/2026).
 //
-// A escola é só em português (decisão do operador, 12/10/2026 — etapa 4.6c): a
-// página `/en` saiu. O filtro `language = PT` abaixo fica até a coluna sair do
-// banco (passo 4 da etapa): sem ele, as linhas em inglês que ainda existem
-// apareceriam na home.
-//
 // DEPOIMENTOS: 4 SORTEADOS A CADA VISITA, sem ordem e sem carrossel (decisão do
 // operador, 23/09/2026 — "com milhares de depoimentos nunca vão ver igual").
 // Pesquisa que embasou: quase ninguém passa do 1º quadro de um carrossel
@@ -82,11 +77,11 @@ const listasDaHome = () =>
   Promise.all([
     prisma.$queryRaw<{ text: string; name: string }[]>`
       SELECT "text", "name" FROM "testimonial"
-      WHERE "language" = 'PT'::"Language" AND "status" = 'PUBLISHED'::"ContentStatus"
+      WHERE "status" = 'PUBLISHED'::"ContentStatus"
       ORDER BY random()
       LIMIT ${DEPOIMENTOS_NA_HOME}`,
     prisma.faqItem.findMany({
-      where: { language: "PT", status: ContentStatus.PUBLISHED },
+      where: { status: ContentStatus.PUBLISHED },
       orderBy: byOrder,
       select: { question: true, answer: true },
     }),

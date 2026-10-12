@@ -17,7 +17,7 @@ beforeAll(async () => {
     password: process.env.SEED_ADMIN_PASSWORD,
   });
   admin = (res.headers["set-cookie"] as unknown as string[] | undefined) ?? [];
-  cursoId = (await prisma.course.create({ data: { slug: `curso${S}`, title: "Curso", language: "PT" } })).id;
+  cursoId = (await prisma.course.create({ data: { slug: `curso${S}`, title: "Curso" } })).id;
 });
 
 afterAll(async () => {
@@ -61,7 +61,6 @@ describe("o quadro na página do curso", () => {
       data: {
         slug: PUB,
         title: "Publicado",
-        language: "PT",
         status: "PUBLISHED",
         materiais: ["APOSTILA"],
         modules: {

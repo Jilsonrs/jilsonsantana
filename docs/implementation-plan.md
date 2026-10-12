@@ -205,6 +205,13 @@
 > (aula concluída sozinha, barra na aula e no cartão), o vídeo que não recomeça ao trocar de aba
 > (a apresentação abre pausada, a aula toca sozinha) e o "Salvos". **Primeiro teste com o player de
 > verdade: com o operador** (assistir uma aula até perto do fim e ver a barra andar).
+> **PUBLICADO em 12/10/2026, depois (`main` = `7b506b6`, CI verde nos dois jobs, deploy ok; a
+> migration `20261012170000_idioma_com_valor_padrao` aplicada pelo pre-deploy; ordem do operador:
+> "publica o passo 3 e inicia o passo 4"):** o **passo 3 da etapa 4.6c** — o servidor não filtra
+> mais lista por idioma nem aceita idioma em pedido; saíram o dicionário em inglês e a rota de
+> trocar o idioma da conta. **Provado no site, de fora:** a versão nova (`mv5hrmdi-a7421ae7`); o
+> endereço novo dos textos comuns (`/api/site-text/common`) → 200, e o antigo ainda responde; o
+> catálogo pedido com `?lang=en` → 200; o público segue no "Em breve".
 > **PUBLICADO em 12/10/2026 (`main` = `d469ae7`, CI verde nos dois jobs, deploy ok; sem migration;
 > publicação autorizada pelo operador: "publica" e, à pergunta sobre a 4.6b ir junto, "Publicar
 > tudo"):** a **etapa 4.6b** (a cobrança atrasada dá as aulas por 3 dias, não mais sem prazo) e os
@@ -213,7 +220,7 @@
 > etiqueta EN, as abas de idioma de Perguntas e Depoimentos e a coluna de inglês de Textos.
 > **Provado no site, de fora:** a versão nova (`mv5gnft3-0d225eb6`; antes, `mv4kyc92-2fb78ccb`);
 > `/`, `/en` e a tela de assinar, para o público, seguem no "Em breve"; a assinatura sem login →
-> 401. **Ainda NÃO publicado:** o passo 3 da 4.6c (o servidor deixa de aceitar idioma), no `dev`.
+> 401.
 > **PUBLICADO em 10/10/2026, por último (`main` = `8d9a364`, CI verde nos dois jobs, deploy ok;
 > sem migration; publicação autorizada pelo operador):** a Fase 4, etapa 4.5 — **o revisor
 > automático (ESLint).** `npm run lint` é o quarto gate, bloqueante no CI: reprova a tarefa
@@ -4204,15 +4211,53 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             padrão `PT` nas colunas** (elas só saem no passo 4). O `seed-content.ts` acompanha.
             Testes de servidor: saem `content-language`, `me-language` e `i18n`; os outros
             perdem o caso do inglês. **Só depois de os passos 1 e 2 estarem publicados.**
-      - [ ] **Passo 4 — O banco perde o idioma (migration; revisão de segurança).** *(Trazido do passo 3, 12/10/2026 — sai junto, neste passo: a conversão `comIdioma`/`doBanco` e o `language` das respostas (`lib/language.ts`, e os testes que ainda o esperam); o endereço antigo `/api/site-text/common/:lang`; o filtro `language: "PT"` da home, do dicionário, da lista de Textos e das listas do admin, que perde o sentido quando as linhas em inglês forem apagadas. **Para decidir com o operador na abertura:** enquanto a migration roda, a versão que está no ar ainda lê a coluna — por cerca de um minuto, as páginas de curso e de trilha podem dar erro. Hoje só ele usa o site; se preferir, publica-se com o site em "Em breve" e sem ninguém logado.)* Passo 0:
-            contar de novo. A migration **ABORTA se ainda houver curso, trilha ou legenda em
-            inglês** (eles saem pelo admin, não por SQL); apaga as linhas em inglês de
-            `site_text`, `faq_item` e `testimonial`; troca a chave única de `site_text` para só
-            a `key`, e os índices de FAQ e Depoimentos para situação e ordem; tira a coluna
-            `language` das 6 tabelas e o tipo `Language`. **Prova:** `migrate diff` sem
-            diferença · a consulta de RLS · a suíte do servidor do zero · e
-            `SELECT table_name, column_name FROM information_schema.columns WHERE table_schema = 'public' AND column_name ILIKE '%language%'`
-            devolvendo só `preferredLanguage`. **Só depois do passo 3 publicado.**
+      - [x] **Passo 4 — O banco perde o idioma (migration; revisão de segurança).** *(Feito em
+            12/10/2026, no `dev`, depois de o passo 3 ir ao ar; os quatro gates verdes — site
+            892 testes, servidor 1.060. **AINDA NÃO PUBLICADO:** a publicação espera a ordem
+            do operador e a contagem do banco do site — ver "Para publicar", abaixo.)*
+            **A migration `20261012190000_sai_o_idioma`:** PARA se houver curso, trilha ou
+            legenda em inglês; apaga as linhas em inglês de `site_text`, `faq_item` e
+            `testimonial`; tira a coluna `language` das seis tabelas e o tipo `Language`; a
+            chave de `site_text` passa a ser única sozinha, e os índices de perguntas e de
+            depoimentos ficam por situação e ordem. **Provas:** aplicada do zero no banco de
+            teste, `migrate diff` sem diferença · todas as tabelas com RLS · a única coluna de
+            idioma que sobra é `user.preferredLanguage` (passo 5) · a trava, provada com
+            tabelas temporárias: com um curso em inglês ela para; só com português, passa.
+            **No banco do DEV (Passo 0, contado antes e depois):** antes, 2 cursos e 1 trilha
+            em português, nenhuma legenda, 15 perguntas e 4 depoimentos em inglês; depois, os
+            mesmos 2 cursos e a trilha, 15 perguntas e 5 depoimentos (os em português), 1 texto
+            editado e as 2 contas — a migration aplicada, sem diferença para o schema.
+            **O que saiu do código, como o passo 3 tinha deixado anotado:** `lib/language.ts`
+            e o `language` das respostas · o endereço antigo `/api/site-text/common/:lang` · os
+            filtros `language: "PT"`. **Testes:** `idioma-saiu.test.ts` reescrito (as listas
+            ignoram `?lang`; o idioma do pedido é ignorado; nenhuma resposta leva idioma; o
+            banco não tem a coluna nem o tipo). **Achado ao limpar os testes:** "recusa uma
+            legenda sem dono" passava pelo motivo errado — o banco recusava o campo `language`
+            que o próprio teste mandava; agora quem recusa é a regra do dono.
+            **A revisão de segurança (12/10/2026): nada que bloqueie; seis pontos menores, os de
+            código feitos com teste e mutação.** (1) Não havia mais teste da checagem de status
+            da AULA ao adicionar item à trilha — o único tinha saído com os de idioma: entrou em
+            `public-reads.test.ts`, com o controle (a aula de um curso no ar entra); tirar a
+            checagem do curso publicado reprova. (2) A checagem de dono da trilha pronta nunca
+            teve teste: entrou (o aluno não edita, não apaga e não cria módulo — 403). (3) Voltou
+            a asserção de que a conta não muda de idioma, até o passo 5. (4) O cabeçalho da
+            migration passou a dizer o que acontece se a trava disparar na publicação, e que a
+            legenda em inglês apagada pelo admin deixa a faixa "en" no Bunny. **Conferido por
+            ela, sem achado:** as leituras públicas continuam só com o publicado, pela cadeia
+            inteira; as rotas do admin seguem atrás do `requireAdmin`; nenhuma resposta ganhou
+            campo; os esquemas não ficaram mais permissivos; nenhum teste de acesso foi
+            afrouxado.
+            **PARA PUBLICAR — é ordem do operador, com três coisas a saber (P90):**
+            (a) **contar antes, no banco do SITE,** só leitura, curso, trilha e legenda em
+            inglês (as três consultas da trava). Se a trava disparar na publicação, a migration
+            fica marcada como falha lá, e nenhuma publicação seguinte passa até um
+            `prisma migrate resolve --rolled-back`;
+            (b) **enquanto a migration roda, cerca de um minuto,** a versão que está no ar
+            ainda lê a coluna: a home, a página de curso, a de trilha e a de aula dão erro.
+            Hoje o público vê o "Em breve" e só ele usa o site;
+            (c) **não tem volta pela Railway:** depois da migration, a versão anterior do site
+            não funciona mais, e as linhas apagadas só voltam pela janela curta de restauração
+            do Neon.
       - [ ] **Passo 5 — A preferência de idioma sai da conta (Better Auth; revisão de
             segurança).** Tirar `preferredLanguage` dos campos extras em `lib/auth.ts`, rodar
             `auth:generate`, conferir o diff e reaplicar as notas *REAPLICAR*, e a migration que

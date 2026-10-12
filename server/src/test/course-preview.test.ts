@@ -23,7 +23,7 @@ beforeAll(async () => {
   member = await sessao(process.env.SEED_MEMBER_EMAIL, process.env.SEED_MEMBER_PASSWORD);
   semAulas = (
     await prisma.course.create({
-      data: { slug: `vazio${S}`, title: "Curso em preenchimento", language: "PT", status: "DRAFT", description: "Ainda sem aulas.", learnTags: ["PROCX"] },
+      data: { slug: `vazio${S}`, title: "Curso em preenchimento", status: "DRAFT", description: "Ainda sem aulas.", learnTags: ["PROCX"] },
     })
   ).id;
   arquivado = (
@@ -31,7 +31,6 @@ beforeAll(async () => {
       data: {
         slug: `arquivado${S}`,
         title: "Curso arquivado",
-        language: "PT",
         status: "ARCHIVED",
         modules: { create: { title: "Módulo rascunho", status: "DRAFT", lessons: { create: { title: "Aula rascunho", status: "DRAFT" } } } },
       },

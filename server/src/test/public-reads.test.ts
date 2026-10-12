@@ -27,7 +27,6 @@ beforeAll(async () => {
   const arquivado = await prisma.course.create({
     data: {
       slug: `arquivado${SUFIXO}`,
-      language: "PT",
       title: "Curso arquivado",
       status: "ARCHIVED",
       modules: {
@@ -47,14 +46,13 @@ beforeAll(async () => {
   aulaOrfaId = arquivado.modules[0].lessons[0].id;
 
   const draft = await prisma.course.create({
-    data: { slug: `draft${SUFIXO}`, language: "PT", title: "Curso não lançado", status: "DRAFT" },
+    data: { slug: `draft${SUFIXO}`, title: "Curso não lançado", status: "DRAFT" },
   });
   cursoDraftId = draft.id;
 
   const trilha = await prisma.learningPlan.create({
     data: {
       slug: `trilha-draft${SUFIXO}`,
-      language: "PT",
       name: "Trilha em construção",
       isTemplate: true,
       status: "DRAFT",
@@ -68,7 +66,6 @@ beforeAll(async () => {
   const publicada = await prisma.learningPlan.create({
     data: {
       slug: `trilha-ok${SUFIXO}`,
-      language: "PT",
       name: "Trilha publicada",
       isTemplate: true,
       status: "PUBLISHED",
@@ -103,7 +100,6 @@ describe("a trilha pública só devolve os campos escolhidos", () => {
     expect(Object.keys(res.body).sort()).toEqual([
       "description",
       "id",
-      "language",
       "name",
       "planModules",
       "skillsCovered",
@@ -190,5 +186,54 @@ describe("P1-b — o oráculo de enumeração está fechado", () => {
       .send({ planModuleId, itemType: "COURSE", courseId: cursoArquivadoId, order: 1 });
 
     expect(item.status).toBe(404);
+  });
+
+  // A AULA segue a mesma regra, pela cadeia inteira (achado da revisão de segurança da etapa
+  // 4.6c, 12/10/2026: o único teste que passava por aqui saiu junto com os de idioma).
+  it("AULA publicada em curso arquivado é recusada — e a de um curso no ar entra", async () => {
+    const cookies = await sessaoMember();
+    const planModuleId = await moduloDoMembro(cookies);
+
+    const orfa = await request(servidor)
+      .post("/api/plan-items")
+      .set("Cookie", cookies)
+      .send({ planModuleId, itemType: "LESSON", lessonId: aulaOrfaId, order: 1 });
+    expect(orfa.status).toBe(404);
+
+    // O controle: com a cadeia inteira publicada, a mesma chamada passa. Sem ele, um 404
+    // para toda aula também deixaria o teste verde.
+    const noAr = await prisma.course.create({
+      data: {
+        slug: `no-ar${SUFIXO}`,
+        title: "Curso no ar",
+        status: "PUBLISHED",
+        modules: { create: { title: "M", displayOrder: 1, status: "PUBLISHED", lessons: { create: { title: "Aula no ar", displayOrder: 1, status: "PUBLISHED" } } } },
+      },
+      include: { modules: { include: { lessons: true } } },
+    });
+    const ok = await request(servidor)
+      .post("/api/plan-items")
+      .set("Cookie", cookies)
+      .send({ planModuleId, itemType: "LESSON", lessonId: noAr.modules[0].lessons[0].id, order: 2 });
+    expect(ok.status).toBe(201);
+  });
+});
+
+// A CHECAGEM DE DONO (achado da mesma revisão: não tinha teste). A trilha pronta é só do
+// admin: o aluno não a edita, não a apaga e não mexe nos módulos dela.
+describe("a trilha pronta não é do aluno", () => {
+  it("o aluno não edita nem apaga a trilha pronta, nem cria módulo nela: 403, e nada muda", async () => {
+    const cookies = await sessaoMember();
+
+    const editar = await request(servidor).patch(`/api/trilhas/${trilhaPublicadaId}`).set("Cookie", cookies).send({ name: "Invadida" });
+    const modulo = await request(servidor).post("/api/plan-modules").set("Cookie", cookies).send({ planId: trilhaPublicadaId, title: "Intruso", displayOrder: 9 });
+    const apagar = await request(servidor).delete(`/api/trilhas/${trilhaPublicadaId}`).set("Cookie", cookies);
+
+    expect(editar.status).toBe(403);
+    expect(modulo.status).toBe(403);
+    expect(apagar.status).toBe(403);
+    const depois = await prisma.learningPlan.findUniqueOrThrow({ where: { id: trilhaPublicadaId }, include: { planModules: true } });
+    expect(depois.name).toBe("Trilha publicada");
+    expect(depois.planModules.map((m) => m.title)).toEqual(["M1"]);
   });
 });

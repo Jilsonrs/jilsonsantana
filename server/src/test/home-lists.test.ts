@@ -18,8 +18,8 @@ const MARCA = "⟦c3-teste⟧";
 // Depoimentos são SORTEADOS (4 por visita). Os testes que precisam ver um
 // depoimento específico isolam o sorteio primeiro; o afterEach devolve tudo.
 const restauracoes: Array<() => Promise<void>> = [];
-const isolar = async (language: "PT" | "EN") => {
-  restauracoes.push(await isolarDepoimentos(language));
+const isolar = async () => {
+  restauracoes.push(await isolarDepoimentos());
 };
 
 afterEach(async () => {
@@ -29,19 +29,17 @@ afterEach(async () => {
 });
 
 const depoimento = (
-  language: "PT" | "EN",
   status: "DRAFT" | "PUBLISHED" | "ARCHIVED",
   text: string,
   displayOrder = 5,
   name = `Pessoa ${MARCA}`,
-) => prisma.testimonial.create({ data: { language, status, text, name, displayOrder } });
+) => prisma.testimonial.create({ data: { status, text, name, displayOrder } });
 
 const pergunta = (
-  language: "PT" | "EN",
   status: "DRAFT" | "PUBLISHED" | "ARCHIVED",
   question: string,
   answer = "Resposta de teste.",
-) => prisma.faqItem.create({ data: { language, status, question: `${question} ${MARCA}`, answer } });
+) => prisma.faqItem.create({ data: { status, question: `${question} ${MARCA}`, answer } });
 
 /** Os blocos JSON-LD da página, já parseados. */
 function jsonLds(html: string): Array<Record<string, unknown>> {
@@ -51,40 +49,33 @@ function jsonLds(html: string): Array<Record<string, unknown>> {
 }
 
 describe("home — depoimentos e perguntas vêm do banco", () => {
-  // A página em inglês saiu (12/10/2026), mas as linhas em inglês continuam no banco até o
-  // passo 4 da etapa 4.6c: enquanto isso, elas não podem aparecer na home.
-  it("mostra só o PUBLICADO — e nunca o que ainda está em inglês no banco", async () => {
-    await isolar("PT");
-    await isolar("EN");
-    await depoimento("PT", "PUBLISHED", "Depoimento publicado em português.");
-    await depoimento("PT", "DRAFT", "Depoimento ainda em rascunho.");
-    await depoimento("PT", "ARCHIVED", "Depoimento arquivado.");
-    await depoimento("EN", "PUBLISHED", "Published testimonial in English.");
+  it("mostra só o PUBLICADO", async () => {
+    await isolar();
+    await depoimento("PUBLISHED", "Depoimento publicado em português.");
+    await depoimento("DRAFT", "Depoimento ainda em rascunho.");
+    await depoimento("ARCHIVED", "Depoimento arquivado.");
 
     const pt = await request(servidor).get("/");
     expect(pt.text).toContain("Depoimento publicado em português.");
     expect(pt.text).not.toContain("Depoimento ainda em rascunho.");
     expect(pt.text).not.toContain("Depoimento arquivado.");
-    expect(pt.text).not.toContain("Published testimonial in English.");
   });
 
   it("a mesma regra vale para as perguntas frequentes", async () => {
-    await pergunta("PT", "PUBLISHED", "Pergunta publicada?");
-    await pergunta("PT", "DRAFT", "Pergunta em rascunho?");
-    await pergunta("EN", "PUBLISHED", "Published question?");
+    await pergunta("PUBLISHED", "Pergunta publicada?");
+    await pergunta("DRAFT", "Pergunta em rascunho?");
 
     const pt = await request(servidor).get("/");
     expect(pt.text).toContain("Pergunta publicada?");
     expect(pt.text).not.toContain("Pergunta em rascunho?");
-    expect(pt.text).not.toContain("Published question?");
   });
 
   it("mostra no máximo 4, sorteados a cada visita", async () => {
     // Decisão do operador (23/09/2026): 4 por visita, sem ordem — com muitos
     // depoimentos, cada visitante vê um conjunto diferente.
-    await isolar("PT");
+    await isolar();
     for (let n = 1; n <= 6; n++) {
-      await depoimento("PT", "PUBLISHED", `Depoimento número ${n}.`, 0, `Pessoa ${n} ${MARCA}`);
+      await depoimento("PUBLISHED", `Depoimento número ${n}.`, 0, `Pessoa ${n} ${MARCA}`);
     }
 
     const uma = await request(servidor).get("/");
@@ -107,19 +98,19 @@ describe("home — depoimentos e perguntas vêm do banco", () => {
 
     // E chegam ao card de verdade. O último "nome" aqui é a marca do teste,
     // que começa com "⟦".
-    await isolar("PT");
-    await depoimento("PT", "PUBLISHED", "Texto qualquer.", 5, `Ana Maria de Souza ${MARCA}`);
+    await isolar();
+    await depoimento("PUBLISHED", "Texto qualquer.", 5, `Ana Maria de Souza ${MARCA}`);
     const res = await request(servidor).get("/");
     expect(res.text).toContain('aria-hidden="true">A⟦</div>');
   });
 
   it("sem nada publicado, as duas seções somem inteiras — título incluído", async () => {
     const depoimentos = await prisma.testimonial.findMany({
-      where: { language: "PT", status: "PUBLISHED" },
+      where: { status: "PUBLISHED" },
       select: { id: true },
     });
     const perguntas = await prisma.faqItem.findMany({
-      where: { language: "PT", status: "PUBLISHED" },
+      where: { status: "PUBLISHED" },
       select: { id: true },
     });
     const idsD = depoimentos.map((d) => d.id);
@@ -164,8 +155,8 @@ describe("home — depoimentos e perguntas vêm do banco", () => {
 
 describe("home — o que vem do banco nunca vira HTML", () => {
   it("depoimento com marcação aparece como TEXTO", async () => {
-    await isolar("PT");
-    await depoimento("PT", "PUBLISHED", '<img src=x onerror="alert(1)">');
+    await isolar();
+    await depoimento("PUBLISHED", '<img src=x onerror="alert(1)">');
 
     const res = await request(servidor).get("/");
     expect(res.text).toContain("&lt;img src=x onerror=&quot;alert(1)&quot;&gt;");
@@ -173,7 +164,7 @@ describe("home — o que vem do banco nunca vira HTML", () => {
   });
 
   it("pergunta com </script> não fecha o bloco do JSON-LD", async () => {
-    await pergunta("PT", "PUBLISHED", "</script><script>alert(1)</script>");
+    await pergunta("PUBLISHED", "</script><script>alert(1)</script>");
 
     const res = await request(servidor).get("/");
     expect(res.text).not.toContain("</script><script>alert(1)");

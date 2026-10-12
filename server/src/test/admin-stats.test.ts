@@ -47,9 +47,9 @@ beforeAll(async () => {
   await prisma.user.create({ data: { id: outro, email: `${outro}@teste.local` } });
   await prisma.user.create({ data: { id: excluido, email: `${excluido}@teste.local`, deletedAt: new Date() } });
 
-  const curso = await prisma.course.create({ data: { slug: `curso${S}`, title: "Curso", language: "PT", status: "PUBLISHED" } });
+  const curso = await prisma.course.create({ data: { slug: `curso${S}`, title: "Curso", status: "PUBLISHED" } });
   ids.curso = curso.id;
-  ids.cursoVazio = (await prisma.course.create({ data: { slug: `vazio${S}`, title: "Vazio", language: "PT", status: "PUBLISHED" } })).id;
+  ids.cursoVazio = (await prisma.course.create({ data: { slug: `vazio${S}`, title: "Vazio", status: "PUBLISHED" } })).id;
   const modulo = await prisma.module.create({ data: { courseId: curso.id, title: "M", status: "PUBLISHED" } });
   ids.comDuracao = (await prisma.lesson.create({ data: { title: "600 s", status: "PUBLISHED", videoDurationSeconds: 600, moduleId: modulo.id } })).id;
   ids.semDuracao = (await prisma.lesson.create({ data: { title: "Sem duração", status: "PUBLISHED", moduleId: modulo.id } })).id;

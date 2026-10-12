@@ -17,7 +17,6 @@ beforeAll(async () => {
     data: {
       slug: COM_VIDEO,
       title: "Com vídeo",
-      language: "PT",
       status: "PUBLISHED",
       modules: {
         create: [
@@ -47,7 +46,6 @@ beforeAll(async () => {
     data: {
       slug: SEM_VIDEO,
       title: "Sem vídeo",
-      language: "PT",
       status: "PUBLISHED",
       modules: {
         create: { title: "Só texto", status: "PUBLISHED", lessons: { create: { title: "t", kind: "TEXT", status: "PUBLISHED" } } },
@@ -106,7 +104,6 @@ describe("a lista de cursos do admin", () => {
       data: {
         slug: ADMIN_SLUG,
         title: "Admin",
-        language: "PT",
         modules: {
           create: [
             {

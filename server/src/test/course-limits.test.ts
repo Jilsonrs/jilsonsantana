@@ -36,7 +36,7 @@ function criar(campos: Record<string, string>) {
   return request(servidor)
     .post("/api/courses")
     .set("Cookie", admin)
-    .send({ slug: slugCom(30), title: "Curso", language: "pt", ...campos });
+    .send({ slug: slugCom(30), title: "Curso", ...campos });
 }
 
 describe("limites do curso", () => {
@@ -78,7 +78,7 @@ describe("limites do curso", () => {
       .send({
         slug: slugCom(30),
         title: "Curso",
-        language: "pt",
+       
         learnTags: ["a".repeat(160)],
         requirements: ["r".repeat(160)],
         personas: ["p".repeat(160)],

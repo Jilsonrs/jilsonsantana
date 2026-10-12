@@ -50,7 +50,6 @@ beforeAll(async () => {
     data: {
       slug: `curso${S}`,
       title: "Curso",
-      language: "PT",
       introVideoId: INTRO,
       modules: {
         create: {
@@ -165,7 +164,6 @@ describe("legendas — enviar, substituir, baixar e excluir", () => {
     const legenda = await legendaDaAula(ids.aula);
     expect(legenda?.content).toBe(VTT);
     expect(legenda?.originalName).toBe("Aula 1 - Abertura.vtt");
-    expect(legenda?.language).toBe("PT");
   });
 
   it("enviar de novo substitui (uma legenda por aula)", async () => {
@@ -250,7 +248,7 @@ describe("legendas — a tela", () => {
 
 describe("legendas — o banco", () => {
   it("recusa uma legenda sem dono, ou com dois", async () => {
-    const base = { language: "PT" as const, content: VTT, originalName: "x.vtt" };
+    const base = { content: VTT, originalName: "x.vtt" };
     await expect(prisma.caption.create({ data: base })).rejects.toThrow();
     await expect(prisma.caption.create({ data: { ...base, lessonId: ids.semVideo, courseId: ids.curso } })).rejects.toThrow();
   });
