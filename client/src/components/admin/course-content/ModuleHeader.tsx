@@ -43,7 +43,7 @@ export function ModuleHeader({
   return (
     <div className="flex flex-wrap items-center gap-2">
       <AlcaDeArraste rotulo={`Arrastar o módulo ${module.title}`} alca={alca} />
-      <p className="text-base font-semibold">{module.title}</p>
+      <p className="text-base font-semibold break-words">{module.title}</p>
       {module.layer && <span className={CLASSE_DA_ETIQUETA}>{module.layer}</span>}
       <span className={CLASSE_DA_ETIQUETA}>{ROTULO_DO_STATUS[module.status]}</span>
       <Button type="button" variant="ghost" size="icon" aria-label={`Editar o módulo ${module.title}`} onClick={() => setEditando(true)}>

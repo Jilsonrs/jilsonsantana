@@ -34,7 +34,7 @@ export function CoursePreviewPage() {
   return (
     <div className="flex min-h-full flex-col">
       <div className="flex min-h-[60px] items-center border-b border-border/40 bg-card/50 px-4 sm:px-6 md:min-h-[80px] md:px-[50px]">
-        <h1 className="py-3 font-display text-lg font-bold tracking-tight text-foreground md:text-2xl">{data.curso.title}</h1>
+        <h1 className="py-3 font-display text-lg font-bold tracking-tight text-foreground md:text-2xl break-words">{data.curso.title}</h1>
       </div>
       <div className="mx-auto w-full max-w-[1600px] space-y-8 px-4 pb-6 pt-[20px] sm:px-6 sm:pb-8 md:px-[50px]">
         {/* No lugar do player: o curso ainda não tem aula. */}

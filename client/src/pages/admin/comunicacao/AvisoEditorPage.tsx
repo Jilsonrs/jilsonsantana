@@ -7,7 +7,8 @@ import { isAxiosError } from "axios";
 import { announcementSchema } from "@jilson/core";
 import * as api from "@/lib/api";
 import { Button } from "@/components/ui/button";
-import { PageContainer, PageHeader } from "@/components/layout/PageLayout";
+import { Card, CardContent } from "@/components/ui/card";
+import { PageContainer, PageHeader, PageSection } from "@/components/layout/PageLayout";
 import { AvisoForm, type AvisoFormValues } from "@/components/admin/comunicacao/AvisoForm";
 import { fraseDaConfirmacao, paraQuem, quandoFoiEnviado } from "@/lib/avisos";
 import { AVISOS, ROTA_DOS_AVISOS } from "./AvisosPage";
@@ -163,8 +164,17 @@ export function AvisoEditorPage() {
       )}
 
       <FormProvider {...form}>
-        <form onSubmit={(e) => e.preventDefault()} noValidate>
-          <AvisoForm cursos={cursos.data} enviado={enviado} />
+        <form onSubmit={(e) => e.preventDefault()} noValidate className="space-y-12">
+          <PageSection
+            title="Conteúdo da notificação"
+            description="Escreva a mensagem e selecione o público-alvo que irá receber no sino."
+          >
+            <Card>
+              <CardContent className="pt-6">
+                <AvisoForm cursos={cursos.data} enviado={enviado} />
+              </CardContent>
+            </Card>
+          </PageSection>
         </form>
       </FormProvider>
     </PageContainer>
