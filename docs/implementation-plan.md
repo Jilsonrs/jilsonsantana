@@ -4158,6 +4158,15 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             ele que limpa o vídeo e a legenda no Bunny), nos dois bancos, antes do passo 4.
             Conferir na Stripe que não existe preço em dólar criado. Marcar o ponto de volta no
             git (`antes-da-4.6c`). Registrar os números neste item.
+            **A fotografia do banco do DEV** `[MEDIDO em 12/10/2026, só leitura]`: cursos 2,
+            os dois em português · trilhas 1, em português · legendas 0 · perguntas 15 em
+            português e 15 em inglês · depoimentos 5 em português e 4 em inglês · textos
+            editados no admin 1, em português. **Nada a apagar pelo admin nem no Bunny no
+            dev:** o que existe em inglês são 15 perguntas e 4 depoimentos, que a migration do
+            passo 4 apaga. **Do site**, o operador disse no mesmo dia: *"só tem um curso
+            cadastrado, quando você remover os campos em inglês a informação some"* — falta só
+            a contagem de lá, que é ele quem vê (só a Railway fala com o banco do site); a
+            migration aborta se achar curso, trilha ou legenda em inglês.
       - [ ] **Passo 1 — O visitante e o aluno deixam de ver o inglês (site + home).** Sai o
             seletor PT | EN da home, do rodapé do app e do login (`?lang=`); saem a rota `/en`
             da home e a escolha pelo idioma do navegador; a página passa a dizer sempre
