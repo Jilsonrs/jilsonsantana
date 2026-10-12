@@ -208,3 +208,9 @@ no `CLAUDE.md`; quando forem substituídas por entradas mais novas, descem para 
 *(c) **O que custa:** o cartão de teste não funciona no site. Teste de cartão lá é cobrança real; o operador testa no site com um código de 100%. Ninguém além dele assina: o cadastro é fechado, e o visitante é a etapa 4.7.*
 *(d) **O que NÃO mudou:** o que precede a primeira VENDA de verdade (reembolso — P56, nome na fatura — P58, imposto — P22, monitor de erro, cópia do banco) precede a etapa 4.7 ir ao ar, não a 4.3.*
 *(e) **GATILHO DE REABERTURA:** uma etapa precisar simular NO SITE NO AR algo que só o ambiente de teste simula (cartão recusado, renovação adiantada) — aí se cria uma área restrita só para isso, sem tirar as chaves de verdade.*
+
+*Atualizado Out 2026 (23) — **O ALERTA DE ERRO EM PRODUÇÃO É O SENTRY, NO PLANO GRÁTIS. Decisão do operador, 10/10/2026 (fecha a P25, pendente desde Ago 2026).** Detalhe: `tech-stack.md` e o plano, Fase 7.*
+*(a) **O que decidiu:** a revisão de segurança da etapa 4.4 mostrou que toda falha de cobrança só existe no registro da Railway, e a produção já usa as chaves de verdade. O operador escolheu o Sentry contando com o plano grátis (*"espero que o plano gratuito dê conta"*): o plano pago não cabe no custo da escola hoje.*
+*(b) **Ainda NÃO está instalado.** Entra antes de a etapa 4.7 (o visitante assina) ir ao ar — o primeiro pagante que não é o operador. Os pacotes são dependência nova e são nomeados no plano daquele bloco. *(No mesmo dia o operador mandou adiantar: a parte do servidor foi instalada — ver Background Jobs.)**
+*(c) **O limite do plano grátis não está escrito aqui**, de propósito: preço de fornecedor envelhece. Confira na página deles ao instalar.*
+*(d) **GATILHO DE REABERTURA:** o plano grátis deixar de dar conta — o limite mensal estourar com o site funcionando normalmente, ou o plano grátis deixar de existir. Aí se compara com outro serviço **antes** de pagar.*
