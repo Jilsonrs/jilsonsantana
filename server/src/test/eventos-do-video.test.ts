@@ -49,7 +49,7 @@ beforeAll(async () => {
   member = await sessao(process.env.SEED_MEMBER_EMAIL, process.env.SEED_MEMBER_PASSWORD);
   memberId = (await prisma.user.findUniqueOrThrow({ where: { email: process.env.SEED_MEMBER_EMAIL } })).id;
 
-  const curso = await prisma.course.create({ data: { slug: `curso${S}`, title: "Curso", language: "PT", status: "PUBLISHED" } });
+  const curso = await prisma.course.create({ data: { slug: `curso${S}`, title: "Curso", status: "PUBLISHED" } });
   const modulo = await prisma.module.create({ data: { courseId: curso.id, title: "M", status: "PUBLISHED" } });
   const aula = (dados: { title: string; status?: "PUBLISHED" | "DRAFT"; kind?: "VIDEO" | "TEXT"; isFreePreview?: boolean }) =>
     prisma.lesson.create({ data: { status: "PUBLISHED", ...dados, module: { connect: { id: modulo.id } } } }).then((a) => a.id);
@@ -61,7 +61,7 @@ beforeAll(async () => {
   const moduloRascunho = await prisma.module.create({ data: { courseId: curso.id, title: "Escondido", status: "DRAFT" } });
   ids.moduloRascunho = (await prisma.lesson.create({ data: { title: "No módulo escondido", status: "PUBLISHED", moduleId: moduloRascunho.id } })).id;
 
-  const cursoRascunho = await prisma.course.create({ data: { slug: `rascunho${S}`, title: "Rascunho", language: "PT", status: "DRAFT" } });
+  const cursoRascunho = await prisma.course.create({ data: { slug: `rascunho${S}`, title: "Rascunho", status: "DRAFT" } });
   const m = await prisma.module.create({ data: { courseId: cursoRascunho.id, title: "M", status: "PUBLISHED" } });
   ids.cursoRascunho = (await prisma.lesson.create({ data: { title: "No curso rascunho", status: "PUBLISHED", moduleId: m.id } })).id;
 });

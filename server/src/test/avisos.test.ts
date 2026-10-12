@@ -36,7 +36,6 @@ async function curso() {
     data: {
       slug: `c${contador}${S}`,
       title: `Curso ${contador}${S}`,
-      language: "PT",
       status: "PUBLISHED",
       modules: { create: { title: "M", status: "PUBLISHED", lessons: { create: { title: "Aula", status: "PUBLISHED" } } } },
     },

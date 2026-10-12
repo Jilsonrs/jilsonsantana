@@ -38,12 +38,7 @@ export async function getDict(): Promise<Dict> {
   // importasse `pt`.
   const dict = structuredClone(pt);
 
-  // Só o português: as sobrescritas em inglês que ainda estejam no banco saem
-  // com a coluna, no passo 4 da etapa 4.6c.
-  const sobrescritas = await prisma.siteText.findMany({
-    where: { language: "PT" },
-    select: { key: true, value: true },
-  });
+  const sobrescritas = await prisma.siteText.findMany({ select: { key: true, value: true } });
   for (const { key, value } of sobrescritas) {
     setByPath(dict, key, value);
   }

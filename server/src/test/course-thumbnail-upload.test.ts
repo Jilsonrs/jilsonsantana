@@ -37,7 +37,7 @@ async function sessao(email?: string, senha?: string): Promise<string[]> {
 beforeAll(async () => {
   admin = await sessao(process.env.SEED_ADMIN_EMAIL, process.env.SEED_ADMIN_PASSWORD);
   member = await sessao(process.env.SEED_MEMBER_EMAIL, process.env.SEED_MEMBER_PASSWORD);
-  const curso = await prisma.course.create({ data: { slug: SLUG, title: "Curso da capa", language: "PT" } });
+  const curso = await prisma.course.create({ data: { slug: SLUG, title: "Curso da capa" } });
   cursoId = curso.id;
 });
 

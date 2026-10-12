@@ -4,7 +4,6 @@ import { ContentStatus, LessonKind } from "@jilson/core";
 import { prisma } from "../lib/prisma.js";
 import { loadSession, requireActiveMembership, requireAdmin } from "../middleware/auth.js";
 import { parseId } from "../lib/http.js";
-import { doBanco } from "../lib/language.js";
 import { atrasadaSemAcesso, aulaLiberada, convidaAReativar, temAcessoAtivo } from "../lib/acesso.js";
 import { enderecoAssinado } from "../lib/bunny-stream.js";
 import { lerArquivoDaAula } from "../lib/bunny-storage.js";
@@ -61,7 +60,6 @@ async function arvoreDoCurso(courseId: number, soPublicado: boolean) {
       id: true,
       slug: true,
       title: true,
-      language: true,
       status: true,
       level: true,
       description: true,
@@ -94,7 +92,6 @@ async function arvoreDoCurso(courseId: number, soPublicado: boolean) {
     id: curso.id,
     slug: curso.slug,
     title: curso.title,
-    language: doBanco(curso.language),
     status: curso.status,
     level: curso.level,
     description: curso.description,

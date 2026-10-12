@@ -14,7 +14,6 @@ import {
 import { prisma } from "../lib/prisma.js";
 import { requireAuth, requireAdmin } from "../middleware/auth.js";
 import { validate, parseId } from "../lib/http.js";
-import { comIdioma } from "../lib/language.js";
 
 const router = Router();
 const PUBLISHED = ContentStatus.PUBLISHED;
@@ -50,14 +49,13 @@ const publicadoNaCadeia = {
 // A árvore da trilha, com `select` EXPLÍCITO em todo nível (trava da Fase 3, feita
 // no Bloco E, etapa 2 — 28/09/2026): com `include`, toda coluna nova da trilha ou
 // do módulo sairia nas respostas sem ninguém decidir. Só o que `TrilhaDetail`
-// (client) usa, mais o idioma que `comIdioma` converte.
+// (client) usa.
 const planTreeSelect = {
   id: true,
   slug: true,
   name: true,
   description: true,
   skillsCovered: true,
-  language: true,
   planModules: {
     orderBy: byOrder,
     select: {
@@ -138,12 +136,11 @@ router.get("/trilhas/mine", requireAuth, async (req, res) => {
       description: true,
       skillsCovered: true,
       sourcePlanId: true,
-      language: true,
       displayOrder: true,
       _count: { select: { planModules: true } },
     },
   });
-  res.json(trilhas.map(comIdioma));
+  res.json(trilhas);
 });
 
 // GET /api/trilhas/mine/:id — one owned trilha (full tree); 404 if not the owner's.
@@ -163,7 +160,7 @@ router.get("/trilhas/mine/:id", requireAuth, async (req, res) => {
     res.status(404).json({ error: "NotFound" });
     return;
   }
-  res.json(comIdioma(trilha));
+  res.json(trilha);
 });
 
 // GET /api/trilhas/:slug — full tree of a curated trilha (after /mine routes).
@@ -176,7 +173,7 @@ router.get("/trilhas/:slug", async (req, res) => {
     res.status(404).json({ error: "NotFound" });
     return;
   }
-  res.json(comIdioma(trilha));
+  res.json(trilha);
 });
 
 // ── Curated trilha writes ────────────────────────────────────────────────────
@@ -194,7 +191,7 @@ router.post("/trilhas", requireAdmin, async (req, res) => {
   const plan = await prisma.learningPlan.create({
     data: { ...data, isTemplate: true, ownerUserId: null },
   });
-  res.status(201).json(comIdioma(plan));
+  res.status(201).json(plan);
 });
 
 // PATCH /api/trilhas/:id — admin edits a curated trilha; a member edits their own.
@@ -222,7 +219,7 @@ router.patch("/trilhas/:id", requireAuth, async (req, res) => {
     }
   }
   const updated = await prisma.learningPlan.update({ where: { id }, data });
-  res.json(comIdioma(updated));
+  res.json(updated);
 });
 
 // DELETE /api/trilhas/:id — admin (curated) or owner (own). Cascades modules/items.
@@ -270,7 +267,7 @@ router.post("/trilhas/:id/save", requireAuth, async (req, res) => {
     where: { ownerUserId: user.id, sourcePlanId: template.id },
   });
   if (existing) {
-    res.status(200).json(comIdioma(existing));
+    res.status(200).json(existing);
     return;
   }
 
@@ -304,7 +301,7 @@ router.post("/trilhas/:id/save", requireAuth, async (req, res) => {
     }
     return newPlan;
   });
-  res.status(201).json(comIdioma(clone));
+  res.status(201).json(clone);
 });
 
 // ── PlanModule writes (parent-plan authorization) ────────────────────────────

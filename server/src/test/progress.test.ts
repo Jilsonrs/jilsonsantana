@@ -38,7 +38,6 @@ beforeAll(async () => {
     data: {
       slug: `curso${S}`,
       title: "Curso",
-      language: "PT",
       status: "PUBLISHED",
       modules: {
         create: [
@@ -66,7 +65,6 @@ beforeAll(async () => {
     data: {
       slug: `rascunho${S}`,
       title: "Curso rascunho",
-      language: "PT",
       status: "DRAFT",
       modules: { create: { title: "M", status: "PUBLISHED", lessons: { create: { title: "Aula", status: "PUBLISHED" } } } },
     },

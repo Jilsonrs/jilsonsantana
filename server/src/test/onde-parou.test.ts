@@ -56,8 +56,8 @@ async function sessao(email?: string, senha?: string): Promise<string[]> {
 type Modulo = { title: string; status: "PUBLISHED" | "DRAFT"; displayOrder?: number; lessons: Prisma.LessonCreateWithoutModuleInput[] };
 
 /** Cria o curso com os módulos NA ORDEM dada (o id cresce na mesma ordem) e devolve as aulas por título. */
-async function curso(slug: string, status: "PUBLISHED" | "DRAFT", modulos: Modulo[], language: "PT" | "EN" = "PT") {
-  const criado = await prisma.course.create({ data: { slug: `${slug}${S}`, title: slug, language, status } });
+async function curso(slug: string, status: "PUBLISHED" | "DRAFT", modulos: Modulo[]) {
+  const criado = await prisma.course.create({ data: { slug: `${slug}${S}`, title: slug, status } });
   const aulas = new Map<string, number>();
   for (const m of modulos) {
     const modulo = await prisma.module.create({
@@ -105,7 +105,7 @@ beforeAll(async () => {
 
   ids.cursoRascunho = (await curso("rascunho", "DRAFT", [{ title: "M", status: "PUBLISHED", lessons: [{ title: "Aula", status: "PUBLISHED" }] }]))("Aula");
   await curso("vazio", "PUBLISHED", [{ title: "M", status: "PUBLISHED", lessons: [{ title: "Só rascunho", status: "DRAFT" }] }]);
-  ids.ingles = (await curso("ingles", "PUBLISHED", [{ title: "M", status: "PUBLISHED", lessons: [{ title: "Lesson", status: "PUBLISHED" }] }], "EN"))("Lesson");
+  ids.ingles = (await curso("ingles", "PUBLISHED", [{ title: "M", status: "PUBLISHED", lessons: [{ title: "Lesson", status: "PUBLISHED" }] }]))("Lesson");
 
   const fim = await curso("fim", "PUBLISHED", [
     {
@@ -432,7 +432,7 @@ describe("entrar no curso", () => {
     expect((await entrada("ordem", member)).body).toEqual({ aulaId: ids.ordemPrimeira });
   });
 
-  it("logado sem histórico no curso: a primeira; idioma não filtra", async () => {
+  it("logado sem histórico no curso: a primeira", async () => {
     expect((await entrada("ingles", member)).body).toEqual({ aulaId: ids.ingles });
   });
 

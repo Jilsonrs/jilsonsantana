@@ -28,7 +28,7 @@ describe("nível do curso", () => {
     const res = await request(servidor)
       .post("/api/courses")
       .set("Cookie", admin)
-      .send({ slug, title: "Para todos", language: "pt", level: "TODOS_OS_NIVEIS" });
+      .send({ slug, title: "Para todos", level: "TODOS_OS_NIVEIS" });
 
     expect(res.status).toBe(201);
     expect((await prisma.course.findUnique({ where: { slug } }))?.level).toBe("TODOS_OS_NIVEIS");
@@ -38,7 +38,7 @@ describe("nível do curso", () => {
     const res = await request(servidor)
       .post("/api/courses")
       .set("Cookie", admin)
-      .send({ slug: `${slug}-x`, title: "X", language: "pt", level: "EXPERT" });
+      .send({ slug: `${slug}-x`, title: "X", level: "EXPERT" });
 
     expect(res.status).toBe(400);
   });

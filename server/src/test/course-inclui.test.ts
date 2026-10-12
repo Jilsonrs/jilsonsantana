@@ -23,7 +23,6 @@ beforeAll(async () => {
     data: {
       slug: `curso${S}`,
       title: "Curso",
-      language: "PT",
       status: "PUBLISHED",
       modules: {
         create: [
@@ -59,7 +58,7 @@ afterAll(async () => {
 });
 
 const legenda = (lessonId: number, needsResend = false) =>
-  prisma.caption.create({ data: { lessonId, language: "PT", content: "WEBVTT\n", originalName: "a.vtt", needsResend } });
+  prisma.caption.create({ data: { lessonId, content: "WEBVTT\n", originalName: "a.vtt", needsResend } });
 const venda = async () => (await request(servidor).get(`/api/courses/curso${S}`)).body.inclui;
 const aulaDoAluno = async () => (await request(servidor).get(`/api/lessons/${ids.video1}/aula`)).body.curso.inclui;
 const previa = async () => (await request(servidor).get(`/api/admin/courses/${cursoId}/pagina`).set("Cookie", admin)).body.curso.inclui;

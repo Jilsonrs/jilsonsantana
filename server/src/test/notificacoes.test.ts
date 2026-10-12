@@ -33,7 +33,6 @@ async function curso(mensagens: { welcomeMessage?: string; congratsMessage?: str
     data: {
       slug: `c${contador}${S}`,
       title: `Curso ${contador}`,
-      language: "PT",
       status,
       ...mensagens,
       modules: {

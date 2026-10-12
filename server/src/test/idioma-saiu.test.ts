@@ -3,12 +3,12 @@ import request from "supertest";
 import servidor from "./servidor.js";
 import { prisma } from "../lib/prisma.js";
 
-// A ESCOLA É SÓ EM PORTUGUÊS (decisão do operador, 12/10/2026 — etapa 4.6c, passo 3).
+// A ESCOLA É SÓ EM PORTUGUÊS (decisão do operador, 12/10/2026 — etapa 4.6c).
 //
-// O servidor não filtra mais lista por idioma nem aceita idioma em pedido. A
-// versão anterior do site ainda manda `language` e `?lang=`: os dois são
-// IGNORADOS (nunca recusados), e nada nasce em inglês. As sobras em inglês que
-// ficam no banco até o passo 4 não aparecem para ninguém.
+// O banco não tem mais a coluna de idioma (passo 4) e o servidor não lê idioma em
+// lugar nenhum. O que uma versão antiga do site — ou qualquer pessoa — ainda
+// mande (`language` no corpo, `?lang=` no endereço) é IGNORADO, nunca recusado:
+// o pedido vale, e nenhuma resposta leva idioma.
 
 const MARCA = "⟦sem-idioma⟧";
 const SLUG_CURSO = "curso-do-teste-sem-idioma";
@@ -29,76 +29,76 @@ afterAll(async () => {
   await prisma.faqItem.deleteMany({ where: { question: { contains: MARCA } } });
 });
 
-describe("as listas não filtram mais por idioma", () => {
+describe("as listas não filtram por idioma", () => {
   it("o catálogo, as trilhas e a busca respondem igual com ou sem ?lang — e ?lang=en não é recusado", async () => {
-    for (const rota of ["/api/courses", "/api/trilhas", "/api/search?q=exemplo"]) {
+    await prisma.course.create({ data: { slug: SLUG_PUBLICADO, title: "Publicado do teste", status: "PUBLISHED" } });
+    for (const rota of ["/api/courses", "/api/trilhas", "/api/search?q=publicado"]) {
       const sem = await request(servidor).get(rota);
       const com = await request(servidor).get(rota + (rota.includes("?") ? "&" : "?") + "lang=en");
       expect(sem.status, rota).toBe(200);
       expect(com.status, rota).toBe(200);
       expect(com.body, rota).toEqual(sem.body);
     }
-    // Um curso publicado (em português, como todos) aparece mesmo para quem ainda pede inglês:
-    // antes do passo 3, `?lang=en` devolvia a lista vazia.
-    await prisma.course.create({ data: { slug: SLUG_PUBLICADO, title: "Publicado do teste", status: "PUBLISHED" } });
+    // Quem ainda pede inglês recebe o catálogo de sempre — não uma lista vazia.
     const pedindoIngles = (await request(servidor).get("/api/courses?lang=en")).body as { slug: string }[];
     expect(pedindoIngles.map((c) => c.slug)).toContain(SLUG_PUBLICADO);
   });
 });
 
-describe("nada nasce em inglês: o idioma do pedido é ignorado", () => {
-  it("curso", async () => {
-    const res = await request(servidor).post("/api/courses").set("Cookie", await admin()).send({ slug: SLUG_CURSO, title: "Curso do teste", language: "en" });
+describe("o idioma do pedido é ignorado, e nenhuma resposta leva idioma", () => {
+  it("curso: criar e editar", async () => {
+    const cookies = await admin();
+    const res = await request(servidor).post("/api/courses").set("Cookie", cookies).send({ slug: SLUG_CURSO, title: "Curso do teste", language: "en" });
     expect(res.status).toBe(201);
-    expect((await prisma.course.findUniqueOrThrow({ where: { slug: SLUG_CURSO } })).language).toBe("PT");
+    expect(res.body.language).toBeUndefined();
 
-    // Trocar depois também não: o campo é ignorado, e o resto do pedido vale.
-    const troca = await request(servidor).patch(`/api/courses/${res.body.id}`).set("Cookie", await admin()).send({ title: "Curso do teste 2", language: "en" });
+    const troca = await request(servidor).patch(`/api/courses/${res.body.id}`).set("Cookie", cookies).send({ title: "Curso do teste 2", language: "en" });
     expect(troca.status).toBe(200);
-    const depois = await prisma.course.findUniqueOrThrow({ where: { slug: SLUG_CURSO } });
-    expect(depois.title).toBe("Curso do teste 2");
-    expect(depois.language).toBe("PT");
+    expect(troca.body.title).toBe("Curso do teste 2");
+    expect(troca.body.language).toBeUndefined();
   });
 
   it("trilha", async () => {
     const res = await request(servidor).post("/api/trilhas").set("Cookie", await admin()).send({ slug: SLUG_TRILHA, name: "Trilha do teste", language: "en" });
     expect(res.status).toBe(201);
-    expect((await prisma.learningPlan.findUniqueOrThrow({ where: { slug: SLUG_TRILHA } })).language).toBe("PT");
+    expect(res.body.language).toBeUndefined();
   });
 
-  it("depoimento e pergunta", async () => {
+  it("depoimento e pergunta: criar e listar", async () => {
     const cookies = await admin();
     const d = await request(servidor).post("/api/admin/testimonials").set("Cookie", cookies).send({ language: "en", text: "Texto.", name: `Fulano ${MARCA}` });
     const p = await request(servidor).post("/api/admin/faq").set("Cookie", cookies).send({ language: "en", question: `Pergunta ${MARCA}?`, answer: "Resposta." });
     expect(d.status).toBe(201);
     expect(p.status).toBe(201);
-    expect((await prisma.testimonial.findUniqueOrThrow({ where: { id: d.body.id } })).language).toBe("PT");
-    expect((await prisma.faqItem.findUniqueOrThrow({ where: { id: p.body.id } })).language).toBe("PT");
+
+    // O que acabou de ser criado aparece na lista do admin — não some "por ser de outro idioma".
+    const depoimentos = (await request(servidor).get("/api/admin/testimonials").set("Cookie", cookies)).body as Record<string, unknown>[];
+    const perguntas = (await request(servidor).get("/api/admin/faq").set("Cookie", cookies)).body as Record<string, unknown>[];
+    expect(depoimentos.map((x) => x.id)).toContain(d.body.id);
+    expect(perguntas.map((x) => x.id)).toContain(p.body.id);
+    for (const item of [...depoimentos, ...perguntas]) expect(item.language).toBeUndefined();
   });
 });
 
-describe("as sobras em inglês no banco não aparecem no admin", () => {
-  it("depoimentos e perguntas: a lista do admin traz só o português", async () => {
-    const sobraD = await prisma.testimonial.create({ data: { language: "EN", text: "Leftover.", name: `Sobra ${MARCA}`, status: "PUBLISHED" } });
-    const sobraP = await prisma.faqItem.create({ data: { language: "EN", question: `Leftover ${MARCA}?`, answer: "Answer.", status: "PUBLISHED" } });
-    const cookies = await admin();
+describe("o banco não tem mais idioma", () => {
+  it("nenhuma tabela tem coluna de idioma, a não ser a preferência da conta (passo 5 da etapa)", async () => {
+    const colunas = await prisma.$queryRaw<{ table_name: string; column_name: string }[]>`
+      SELECT table_name, column_name FROM information_schema.columns
+      WHERE table_schema = 'public' AND column_name ILIKE '%language%'`;
+    expect(colunas.map((c) => `${c.table_name}.${c.column_name}`)).toEqual(["user.preferredLanguage"]);
+  });
 
-    const depoimentos = (await request(servidor).get("/api/admin/testimonials").set("Cookie", cookies)).body as { id: number; language: string }[];
-    const perguntas = (await request(servidor).get("/api/admin/faq").set("Cookie", cookies)).body as { id: number; language: string }[];
-
-    expect(depoimentos.length).toBeGreaterThan(0);
-    expect(perguntas.length).toBeGreaterThan(0);
-    expect(depoimentos.map((d) => d.id)).not.toContain(sobraD.id);
-    expect(perguntas.map((p) => p.id)).not.toContain(sobraP.id);
-    expect(new Set([...depoimentos, ...perguntas].map((i) => i.language))).toEqual(new Set(["pt"]));
+  it("o tipo Language não existe mais", async () => {
+    const tipos = await prisma.$queryRaw<{ typname: string }[]>`SELECT typname FROM pg_type WHERE typname = 'Language'`;
+    expect(tipos).toEqual([]);
   });
 });
 
 describe("a troca de idioma da conta saiu", () => {
   it("PATCH /api/me/language não existe mais, e a conta não muda", async () => {
-    const cookies = await aluno();
-    const res = await request(servidor).patch("/api/me/language").set("Cookie", cookies).send({ language: "en" });
+    const res = await request(servidor).patch("/api/me/language").set("Cookie", await aluno()).send({ language: "en" });
     expect(res.status).toBe(404);
+    // A coluna só sai no passo 5 da etapa; até lá, ninguém a grava.
     const conta = await prisma.user.findUniqueOrThrow({ where: { email: (process.env.SEED_MEMBER_EMAIL ?? "").toLowerCase() } });
     expect(conta.preferredLanguage).not.toBe("en");
   });

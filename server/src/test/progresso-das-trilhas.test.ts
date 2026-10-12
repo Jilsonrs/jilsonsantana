@@ -23,7 +23,7 @@ async function sessao(email?: string, senha?: string): Promise<string[]> {
 }
 
 async function curso(slug: string, status: "PUBLISHED" | "DRAFT", aulas: { title: string; status: "PUBLISHED" | "DRAFT" }[]) {
-  const c = await prisma.course.create({ data: { slug: `${slug}${S}`, title: slug, language: "PT", status } });
+  const c = await prisma.course.create({ data: { slug: `${slug}${S}`, title: slug, status } });
   const m = await prisma.module.create({ data: { courseId: c.id, title: "M", status: "PUBLISHED" } });
   const criadas: number[] = [];
   for (const a of aulas) criadas.push((await prisma.lesson.create({ data: { ...a, moduleId: m.id } })).id);
@@ -33,7 +33,7 @@ async function curso(slug: string, status: "PUBLISHED" | "DRAFT", aulas: { title
 type Item = { itemType: "COURSE" | "LESSON"; courseId?: number; lessonId?: number };
 const trilha = (nome: string, ownerUserId: string | null, itens: Item[]) =>
   prisma.learningPlan
-    .create({ data: { name: `${nome}${S}`, ownerUserId, language: "PT", planModules: { create: [{ title: "Etapa", items: { create: itens } }] } } })
+    .create({ data: { name: `${nome}${S}`, ownerUserId, planModules: { create: [{ title: "Etapa", items: { create: itens } }] } } })
     .then((t) => t.id);
 const concluir = (lessonId: number) =>
   prisma.lessonProgress.upsert({

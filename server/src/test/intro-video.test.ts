@@ -53,7 +53,7 @@ beforeAll(async () => {
   admin = await sessao(process.env.SEED_ADMIN_EMAIL, process.env.SEED_ADMIN_PASSWORD);
   member = await sessao(process.env.SEED_MEMBER_EMAIL, process.env.SEED_MEMBER_PASSWORD);
   const curso = await prisma.course.create({
-    data: { slug: SLUG, title: "Curso com apresentação", language: "PT", status: "PUBLISHED" },
+    data: { slug: SLUG, title: "Curso com apresentação", status: "PUBLISHED" },
   });
   cursoId = curso.id;
   process.env.BUNNY_STREAM_LESSONS_LIBRARY_ID = "999";

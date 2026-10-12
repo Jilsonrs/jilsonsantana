@@ -33,7 +33,6 @@ beforeAll(async () => {
     data: {
       slug: `a${S}`,
       title: "A",
-      language: "PT",
       modules: {
         create: [
           { title: "M1", displayOrder: 0, lessons: { create: [{ title: "L1", displayOrder: 0 }, { title: "L2", displayOrder: 1 }] } },
@@ -49,7 +48,7 @@ beforeAll(async () => {
   [l1, l2, l3] = aulas.map((l) => l.id);
 
   const b = await prisma.course.create({
-    data: { slug: `b${S}`, title: "B", language: "PT", modules: { create: [{ title: "MB", lessons: { create: [{ title: "LB" }] } }] } },
+    data: { slug: `b${S}`, title: "B", modules: { create: [{ title: "MB", lessons: { create: [{ title: "LB" }] } }] } },
     include: { modules: { include: { lessons: true } } },
   });
   moduloDeOutroCurso = b.modules[0].id;

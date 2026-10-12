@@ -56,7 +56,6 @@ beforeAll(async () => {
     data: {
       slug: `curso${S}`,
       title: "Curso",
-      language: "PT",
       status: "PUBLISHED",
       modules: { create: { title: "M1", status: "PUBLISHED" } },
     },
@@ -309,7 +308,6 @@ describe("o vídeo da aula não sai em rota pública", () => {
       data: {
         slug: `trilha${S}`,
         name: "Trilha",
-        language: "PT",
         isTemplate: true,
         status: "PUBLISHED",
         planModules: { create: { title: "E1", items: { create: { itemType: "LESSON", lessonId: aula.id } } } },
@@ -341,7 +339,6 @@ describe("o quinto item do preenchimento", () => {
       data: {
         slug: `conta${S}`,
         title: "Conta",
-        language: "PT",
         modules: {
           create: [
             {

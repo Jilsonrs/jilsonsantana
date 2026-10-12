@@ -33,7 +33,6 @@ beforeAll(async () => {
       slug: `curso${S}`,
       title: "Curso salvo",
       subtitle: "Um subtítulo",
-      language: "PT",
       status: "PUBLISHED",
       modules: {
         create: [
@@ -54,12 +53,11 @@ beforeAll(async () => {
     aulaRascunho: curso.modules[0].lessons[1].id,
     aulaModuloRascunho: curso.modules[1].lessons[0].id,
   });
-  ids.outroCurso = (await prisma.course.create({ data: { slug: `outro${S}`, title: "Outro curso", language: "EN", status: "PUBLISHED" } })).id;
+  ids.outroCurso = (await prisma.course.create({ data: { slug: `outro${S}`, title: "Outro curso", status: "PUBLISHED" } })).id;
   const rascunho = await prisma.course.create({
     data: {
       slug: `rascunho${S}`,
       title: "Curso rascunho",
-      language: "PT",
       status: "DRAFT",
       modules: { create: { title: "M", status: "PUBLISHED", lessons: { create: { title: "Aula", status: "PUBLISHED" } } } },
     },
@@ -122,7 +120,7 @@ describe("salvos — salvar", () => {
     expect(await linhasDoMember()).toBe(antes);
   });
 
-  it("o mais novo vem primeiro, e curso de outro idioma também aparece", async () => {
+  it("o mais novo vem primeiro", async () => {
     await new Promise((r) => setTimeout(r, 20));
     await salvar("cursos", ids.outroCurso, member);
 

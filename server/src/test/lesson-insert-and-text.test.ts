@@ -29,7 +29,6 @@ beforeAll(async () => {
     data: {
       slug: `curso${S}`,
       title: "Curso",
-      language: "PT",
       status: "PUBLISHED",
       modules: {
         create: {
@@ -106,7 +105,7 @@ describe("o status com que nasce", () => {
   async function cursoCom(status: "DRAFT" | "PUBLISHED" | "ARCHIVED") {
     n += 1;
     return prisma.course.create({
-      data: { slug: `nasce${n}${S}`, title: "C", language: "PT", status, modules: { create: { title: "M", status: "PUBLISHED" } } },
+      data: { slug: `nasce${n}${S}`, title: "C", status, modules: { create: { title: "M", status: "PUBLISHED" } } },
       include: { modules: true },
     });
   }

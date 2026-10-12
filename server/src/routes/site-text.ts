@@ -15,12 +15,4 @@ router.get("/site-text/common", async (_req, res) => {
   res.json((await getDict()).common);
 });
 
-// O ENDEREÇO ANTIGO, com o idioma no fim. A versão do site que está no ar ainda
-// o pede (`/site-text/common/pt`); fica até a publicação seguinte (regra da API
-// aditiva, CLAUDE.md → Rendering Boundary) e sai no passo 4 da etapa 4.6c. O
-// idioma pedido não é lido: a escola é só em português.
-router.get("/site-text/common/:lang", async (_req, res) => {
-  res.json((await getDict()).common);
-});
-
 export default router;

@@ -18,7 +18,7 @@ const MARCA = "⟦c3-admin⟧";
 // graça sempre que o sorteio não o pegasse.
 const restauracoes: Array<() => Promise<void>> = [];
 const isolarPt = async () => {
-  restauracoes.push(await isolarDepoimentos("PT"));
+  restauracoes.push(await isolarDepoimentos());
 };
 
 afterEach(async () => {
@@ -35,14 +35,12 @@ const sessaoAdmin = () => sessao(process.env.SEED_ADMIN_EMAIL, process.env.SEED_
 const sessaoMember = () => sessao(process.env.SEED_MEMBER_EMAIL, process.env.SEED_MEMBER_PASSWORD);
 
 const novoDepoimento = (extra: object = {}) => ({
-  language: "pt",
   text: "Depoimento escrito pelo admin.",
   name: `Aluna Real ${MARCA}`,
   status: "PUBLISHED",
   ...extra,
 });
 const novaPergunta = (extra: object = {}) => ({
-  language: "pt",
   question: `Pergunta escrita pelo admin? ${MARCA}`,
   answer: "Resposta escrita pelo admin.",
   status: "PUBLISHED",
@@ -89,7 +87,6 @@ describe("admin de depoimentos — o caminho do operador", () => {
     const res = await request(servidor).post("/api/admin/testimonials").set("Cookie", cookies).send(novoDepoimento());
 
     expect(res.status).toBe(201);
-    expect(res.body.language).toBe("pt");
     expect((await request(servidor).get("/")).text).toContain("Depoimento escrito pelo admin.");
     expect((await request(servidor).get("/en")).text).not.toContain("Depoimento escrito pelo admin.");
   });

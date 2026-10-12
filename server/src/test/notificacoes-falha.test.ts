@@ -25,7 +25,6 @@ beforeAll(async () => {
     data: {
       slug: `curso${S}`,
       title: "Curso",
-      language: "PT",
       status: "PUBLISHED",
       welcomeMessage: "Oi",
       congratsMessage: "Fim",

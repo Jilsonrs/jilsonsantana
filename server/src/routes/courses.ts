@@ -5,7 +5,6 @@ import { oQueOCursoInclui } from "../lib/inclui.js";
 import { prisma } from "../lib/prisma.js";
 import { requireAdmin } from "../middleware/auth.js";
 import { validate, parseId } from "../lib/http.js";
-import { doBanco, comIdioma } from "../lib/language.js";
 import { apagarVideo, enderecoAssinado } from "../lib/bunny-stream.js";
 import { confirmarVideosProntos } from "../lib/videos-prontos.js";
 import { limparCursoNoBunny } from "../lib/limpeza-no-bunny.js";
@@ -91,7 +90,6 @@ router.get("/courses/:slug", async (req, res) => {
       materiais: true,
       thumbnailUrl: true,
       introVideoId: true,
-      language: true,
       modules: {
         where: { status: PUBLISHED },
         orderBy: byOrder,
@@ -133,7 +131,7 @@ router.get("/courses/:slug", async (req, res) => {
   // "Este curso inclui": as linhas que se calculam sozinhas, só da cadeia
   // publicada (decisões do operador, 04 e 05/10/2026 — `lib/inclui.ts`).
   res.json({
-    ...comIdioma(course),
+    ...course,
     inclui: await oQueOCursoInclui(course.id, true),
     introVideoEmbedUrl: enderecoAssinado(course.introVideoId, { tocarAoAbrir: false }),
     moduleCount: course.modules.length,
@@ -158,7 +156,6 @@ router.get("/admin/courses", requireAdmin, async (_req, res) => {
       title: true,
       level: true,
       status: true,
-      language: true,
       displayOrder: true,
       thumbnailUrl: true,
       introVideoId: true,
@@ -176,7 +173,7 @@ router.get("/admin/courses", requireAdmin, async (_req, res) => {
   // como sim/não e a descrição como NÚMERO DE PALAVRAS (abaixo de 200 ela é
   // "curta" — operador, 28/09/2026): a lista não precisa do texto inteiro.
   const cards = courses.map(({ modules, introVideoId, description, ...course }) => ({
-    ...comIdioma(course),
+    ...course,
     moduleCount: modules.length,
     lessonCount: modules.reduce((sum, m) => sum + m.lessons.length, 0),
     // A duração (operador, 30/09/2026: "2 módulos · 5 aulas · 1h 05min" também
@@ -233,7 +230,8 @@ router.get("/admin/courses/:id", requireAdmin, async (req, res) => {
     }),
   }));
   res.json({
-    ...comIdioma({ ...course, modules }),
+    ...course,
+    modules,
     introVideoEmbedUrl: enderecoAssinado(course.introVideoId, { tocarAoAbrir: false }),
     // O ✓ do passo Legendas (operador, 05/10/2026) — a mesma conta da tela Legendas.
     legendasCompletas: await legendasCompletas(id),
@@ -263,7 +261,7 @@ router.post("/courses", requireAdmin, async (req, res) => {
   const course = await prisma.course.create({
     data: { ...data, ...jsonFields(data) },
   });
-  res.status(201).json(comIdioma(course));
+  res.status(201).json(course);
 });
 
 // PATCH /api/courses/:id — update (404 if missing; 409 if slug taken by another).
@@ -299,7 +297,7 @@ router.patch("/courses/:id", requireAdmin, async (req, res) => {
     where: { id },
     data: { ...data, ...jsonFields(data) },
   });
-  res.json(comIdioma(course));
+  res.json(course);
 });
 
 // DELETE /api/courses/:id — hard delete (cascades modules/lessons + plan_items).

@@ -28,7 +28,7 @@ import { nomeParaDownload } from "../lib/nome-do-download.js";
 //   - bloqueada, a resposta NÃO carrega o vídeo, o token nem o texto;
 //   - o aluno só enxerga a cadeia publicada; o admin vê tudo, por rota de admin;
 //   - o download segue a mesma regra e sai com o NOME ORIGINAL, limpo;
-//   - idioma não é portão: a mesma assinatura abre curso em inglês.
+//   - a mesma assinatura abre qualquer curso.
 
 const S = `-aula-${Date.now()}`;
 const VIDEO_PAGO = "aaaaaaaa-2cda-46be-b47d-1118ad7c2ffe";
@@ -36,7 +36,7 @@ const VIDEO_GRATIS = "bbbbbbbb-2cda-46be-b47d-1118ad7c2ffe";
 const SEGREDO = "Texto só para assinantes";
 let admin: string[] = [];
 let member: string[] = [];
-const ids = { paga: 0, gratis: 0, texto: 0, rascunho: 0, cursoRascunho: 0, ingles: 0, arquivo: 0, arquivoGratis: 0, moduloRascunho: 0, arquivoModuloRascunho: 0, arquivoRascunho: 0 };
+const ids = { paga: 0, gratis: 0, texto: 0, rascunho: 0, cursoRascunho: 0, outro: 0, arquivo: 0, arquivoGratis: 0, moduloRascunho: 0, arquivoModuloRascunho: 0, arquivoRascunho: 0 };
 
 async function sessao(email?: string, senha?: string): Promise<string[]> {
   const res = await request(servidor).post("/api/auth/sign-in/email").send({ email, password: senha });
@@ -46,12 +46,11 @@ async function sessao(email?: string, senha?: string): Promise<string[]> {
 const ENV = ["BUNNY_STREAM_LESSONS_LIBRARY_ID", "BUNNY_STREAM_LESSONS_API_KEY", "BUNNY_STREAM_LESSONS_TOKEN_KEY"] as const;
 const envAntes = Object.fromEntries(ENV.map((n) => [n, process.env[n]]));
 
-async function curso(slug: string, status: "PUBLISHED" | "DRAFT", language: "PT" | "EN", aulas: Prisma.LessonCreateWithoutModuleInput[]) {
+async function curso(slug: string, status: "PUBLISHED" | "DRAFT", aulas: Prisma.LessonCreateWithoutModuleInput[]) {
   return prisma.course.create({
     data: {
       slug: `${slug}${S}`,
       title: slug,
-      language,
       status,
       level: "INTERMEDIARIO",
       description: "Um curso **completo**.",
@@ -73,7 +72,7 @@ beforeAll(async () => {
   process.env.BUNNY_STREAM_LESSONS_API_KEY = "api-de-teste";
   process.env.BUNNY_STREAM_LESSONS_TOKEN_KEY = "token-de-teste";
 
-  const pt = await curso("curso", "PUBLISHED", "PT", [
+  const pt = await curso("curso", "PUBLISHED", [
     { title: "Paga", status: "PUBLISHED", bunnyVideoId: VIDEO_PAGO, videoDurationSeconds: 82, displayOrder: 0 },
     { title: "Grátis", status: "PUBLISHED", bunnyVideoId: VIDEO_GRATIS, isFreePreview: true, displayOrder: 1 },
     // Era vídeo e virou texto: a duração antiga ficou no banco, e não pode aparecer.
@@ -82,10 +81,10 @@ beforeAll(async () => {
   ]);
   const [paga, gratis, texto, rascunho] = pt.modules[0].lessons;
   Object.assign(ids, { paga: paga.id, gratis: gratis.id, texto: texto.id, rascunho: rascunho.id });
-  const emRascunho = await curso("rascunho", "DRAFT", "PT", [{ title: "Publicada em curso rascunho", status: "PUBLISHED" }]);
+  const emRascunho = await curso("rascunho", "DRAFT", [{ title: "Publicada em curso rascunho", status: "PUBLISHED" }]);
   ids.cursoRascunho = emRascunho.modules[0].lessons[0].id;
-  const en = await curso("ingles", "PUBLISHED", "EN", [{ title: "English", status: "PUBLISHED", bunnyVideoId: VIDEO_PAGO }]);
-  ids.ingles = en.modules[0].lessons[0].id;
+  const outro = await curso("outro", "PUBLISHED", [{ title: "Outra aula", status: "PUBLISHED", bunnyVideoId: VIDEO_PAGO }]);
+  ids.outro = outro.modules[0].lessons[0].id;
   // Um MÓDULO em rascunho, dentro do curso publicado, com uma aula publicada e arquivo.
   const modulo = await prisma.module.create({
     data: { courseId: pt.id, title: "Módulo escondido", status: "DRAFT", lessons: { create: { title: "Aula do módulo escondido", status: "PUBLISHED" } } },
@@ -189,10 +188,12 @@ describe("a aula paga", () => {
     expect(res.body.aula.playerUrl).toBeNull();
   });
 
-  it("curso em INGLÊS abre com a mesma assinatura (idioma é filtro, não portão)", async () => {
-    const res = await pagina(ids.ingles, member);
+  // Era o caso do curso em inglês (idioma nunca foi portão); com a escola só em português
+  // (12/10/2026), fica a prova de que UMA assinatura abre os cursos todos.
+  it("outro curso abre com a mesma assinatura", async () => {
+    const res = await pagina(ids.outro, member);
     expect(res.body.aula.liberada).toBe(true);
-    expect(res.body.curso.language).toBe("en");
+    expect(res.body.curso.language).toBeUndefined();
     // Caso 16 da matriz da Fase 4: inclusive o endereço ASSINADO do vídeo — é ele que toca.
     expect(res.body.aula.playerUrl).toMatch(new RegExp(`/${VIDEO_PAGO}\\?token=[0-9a-f]{64}&expires=\\d+`));
   });

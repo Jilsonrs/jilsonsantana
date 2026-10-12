@@ -15,12 +15,7 @@ const router = Router();
 // código, e o banco só diz o que foi mudado. Um campo nunca editado aparece
 // igual — é isso que faz a tela não ter "estado vazio" de verdade.
 router.get("/admin/site-text", requireAdmin, async (_req, res) => {
-  // Só o português: as sobrescritas em inglês que ainda estejam no banco saem no
-  // passo 4 da etapa 4.6c (a escola é só em português — 12/10/2026).
-  const sobrescritas = await prisma.siteText.findMany({
-    where: { language: "PT" },
-    select: { key: true, value: true },
-  });
+  const sobrescritas = await prisma.siteText.findMany({ select: { key: true, value: true } });
   const porChave = new Map(sobrescritas.map((s) => [s.key, s.value]));
 
   // Só o editável: o texto do app (`app.*`) não aparece aqui (DICT_KEYS).
@@ -47,17 +42,14 @@ router.put("/admin/site-text", requireAdmin, async (req, res) => {
   const body = validate(siteTextUpdateSchema, req.body, res);
   if (body === null) return;
 
-  // A coluna `language` sai do banco no passo 4 da etapa 4.6c; até lá a chave
-  // única da tabela é (key, language), e toda sobrescrita é em português.
-  const language = "PT" as const;
   const valor = body.value.trim();
 
   if (valor === "") {
-    await prisma.siteText.deleteMany({ where: { key: body.key, language } });
+    await prisma.siteText.deleteMany({ where: { key: body.key } });
   } else {
     await prisma.siteText.upsert({
-      where: { key_language: { key: body.key, language } },
-      create: { key: body.key, language, value: valor },
+      where: { key: body.key },
+      create: { key: body.key, value: valor },
       update: { value: valor },
     });
   }

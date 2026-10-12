@@ -46,7 +46,7 @@ describe("texto do site — o que o visitante lê", () => {
 
   it("com sobrescrita, a home mostra o texto do operador e NÃO o de fábrica", async () => {
     const cookies = await sessaoAdmin();
-    const put = await editar(cookies, { key: CHAVE, language: "pt", value: EDITADO });
+    const put = await editar(cookies, { key: CHAVE, value: EDITADO });
     expect(put.status).toBe(200);
 
     const res = await request(servidor).get("/");
@@ -54,9 +54,9 @@ describe("texto do site — o que o visitante lê", () => {
     expect(res.text).not.toContain(FABRICA_PT);
   });
 
-  // A escola é só em português (12/10/2026): o servidor não lê mais idioma no pedido.
-  // A versão anterior do site ainda manda `language`; ele é ignorado, e o texto vale.
-  it("o idioma que o pedido ainda mande é ignorado: a edição é sempre a do site", async () => {
+  // A escola é só em português (12/10/2026): um `language` que uma versão antiga do site
+  // ainda mande é ignorado, e o texto vale.
+  it("o idioma que o pedido ainda mande é ignorado", async () => {
     const cookies = await sessaoAdmin();
     const res = await editar(cookies, { key: CHAVE, language: "en", value: EDITADO });
     expect(res.status).toBe(200);
@@ -64,24 +64,23 @@ describe("texto do site — o que o visitante lê", () => {
 
     const home = await request(servidor).get("/");
     expect(home.text).toContain(EDITADO);
-    expect(await prisma.siteText.count({ where: { language: "EN" } })).toBe(0);
+    expect(await prisma.siteText.count({ where: { key: CHAVE } })).toBe(1);
   });
 
-  // As sobras em inglês ficam no banco até o passo 4 da etapa 4.6c: não chegam à home.
-  it("uma sobrescrita em inglês que ainda esteja no banco NÃO aparece na home", async () => {
-    await prisma.siteText.create({ data: { key: CHAVE, language: "EN", value: "Operator wrote this." } });
-    invalidarCacheDeTexto();
+  it("salvar duas vezes o mesmo texto não cria duas linhas: a chave é única", async () => {
+    const cookies = await sessaoAdmin();
+    await editar(cookies, { key: CHAVE, value: "Primeira." });
+    await editar(cookies, { key: CHAVE, value: EDITADO });
 
-    const home = await request(servidor).get("/");
-    expect(home.text).toContain(FABRICA_PT);
-    expect(home.text).not.toContain("Operator wrote this.");
+    expect(await prisma.siteText.count({ where: { key: CHAVE } })).toBe(1);
+    expect((await request(servidor).get("/")).text).toContain(EDITADO);
   });
 
   it("valor vazio APAGA a sobrescrita e a página volta ao valor de fábrica", async () => {
     const cookies = await sessaoAdmin();
-    await editar(cookies, { key: CHAVE, language: "pt", value: EDITADO });
+    await editar(cookies, { key: CHAVE, value: EDITADO });
 
-    const limpar = await editar(cookies, { key: CHAVE, language: "pt", value: "   " });
+    const limpar = await editar(cookies, { key: CHAVE, value: "   " });
     expect(limpar.status).toBe(200);
     expect(limpar.body.usandoFabrica).toBe(true);
     expect(await prisma.siteText.count()).toBe(0);
@@ -94,19 +93,19 @@ describe("texto do site — o que o visitante lê", () => {
 describe("texto do site — o que tem que ser RECUSADO", () => {
   it("sem sessão, não lista e não grava", async () => {
     expect((await request(servidor).get("/api/admin/site-text")).status).toBe(401);
-    expect((await editar([], { key: CHAVE, language: "pt", value: EDITADO })).status).toBe(401);
+    expect((await editar([], { key: CHAVE, value: EDITADO })).status).toBe(401);
   });
 
   it("membro autenticado não é admin — 403, e nada é gravado", async () => {
     const cookies = await sessaoMember();
     expect((await request(servidor).get("/api/admin/site-text").set("Cookie", cookies)).status).toBe(403);
-    expect((await editar(cookies, { key: CHAVE, language: "pt", value: EDITADO })).status).toBe(403);
+    expect((await editar(cookies, { key: CHAVE, value: EDITADO })).status).toBe(403);
     expect(await prisma.siteText.count()).toBe(0);
   });
 
   it("chave que não existe no dicionário é recusada — a tabela não vira lixeira", async () => {
     const cookies = await sessaoAdmin();
-    const res = await editar(cookies, { key: "home.inventada.pelo.atacante", language: "pt", value: "x" });
+    const res = await editar(cookies, { key: "home.inventada.pelo.atacante", value: "x" });
 
     expect(res.status).toBe(400);
     expect(await prisma.siteText.count()).toBe(0);
@@ -117,7 +116,7 @@ describe("texto do site — o que tem que ser RECUSADO", () => {
 describe("texto do site — a lista que a tela de admin consome", () => {
   it("traz TODO campo do dicionário, com fábrica e sobrescrita separadas", async () => {
     const cookies = await sessaoAdmin();
-    await editar(cookies, { key: CHAVE, language: "pt", value: EDITADO });
+    await editar(cookies, { key: CHAVE, value: EDITADO });
 
     const res = await request(servidor).get("/api/admin/site-text").set("Cookie", cookies);
     expect(res.status).toBe(200);
@@ -144,7 +143,7 @@ describe("texto do site — os textos comuns, lidos pelo rodapé do app", () => 
   const FABRICA_CONTATO = pt.common.footer.links[5];
 
   it("sem edição, devolve o texto de fábrica — sem sessão, porque é texto público", async () => {
-    const res = await request(servidor).get("/api/site-text/common/pt");
+    const res = await request(servidor).get("/api/site-text/common");
 
     expect(res.status).toBe(200);
     expect(res.body.footer.links[5]).toBe(FABRICA_CONTATO);
@@ -153,27 +152,23 @@ describe("texto do site — os textos comuns, lidos pelo rodapé do app", () => 
 
   it("depois de o operador editar, devolve o texto EDITADO", async () => {
     const cookies = await sessaoAdmin();
-    await editar(cookies, { key: CHAVE_CONTATO, language: "pt", value: "Fale comigo" });
+    await editar(cookies, { key: CHAVE_CONTATO, value: "Fale comigo" });
 
-    const res = await request(servidor).get("/api/site-text/common/pt");
+    const res = await request(servidor).get("/api/site-text/common");
     expect(res.body.footer.links[5]).toBe("Fale comigo");
   });
 
-  // O endereço novo não leva idioma. O antigo (`…/common/pt`) fica até o passo 4 da
-  // etapa 4.6c, porque a versão anterior do site ainda o pede — e devolve o mesmo texto.
-  it("o endereço sem idioma e o antigo devolvem o mesmo texto, com a edição", async () => {
-    const cookies = await sessaoAdmin();
-    await editar(cookies, { key: CHAVE_CONTATO, value: "Fale comigo" });
-
-    const novo = await request(servidor).get("/api/site-text/common");
-    const antigo = await request(servidor).get("/api/site-text/common/pt");
-    expect(novo.status).toBe(200);
-    expect(novo.body.footer.links[5]).toBe("Fale comigo");
-    expect(antigo.body).toEqual(novo.body);
+  // O endereço antigo, com o idioma no fim, saiu no passo 4 da etapa 4.6c.
+  it("o endereço antigo, com o idioma no fim, não existe mais", async () => {
+    // Fora de produção, endereço que o servidor não conhece é mandado para o app (302);
+    // em produção, cai no app compilado. Em nenhum dos dois sai o texto.
+    const res = await request(servidor).get("/api/site-text/common/pt");
+    expect(res.status).not.toBe(200);
+    expect(res.body.footer).toBeUndefined();
   });
 
   it("só os textos comuns: os de cada página (home.*) não saem por aqui", async () => {
-    const res = await request(servidor).get("/api/site-text/common/pt");
+    const res = await request(servidor).get("/api/site-text/common");
 
     expect(res.body.footer).toBeDefined();
     expect(res.body.hero).toBeUndefined();
@@ -198,7 +193,7 @@ describe("texto do site — o texto do app fica FORA de Textos", () => {
 
   it("gravar uma chave do app é recusado, mesmo pelo admin", async () => {
     const cookies = await sessaoAdmin();
-    const res = await editar(cookies, { key: "app.login.entrar", language: "pt", value: "Entre aqui" });
+    const res = await editar(cookies, { key: "app.login.entrar", value: "Entre aqui" });
 
     expect(res.status).toBe(400);
     expect(await prisma.siteText.count()).toBe(0);
@@ -221,9 +216,9 @@ describe("texto do site — as 3 camadas são editáveis", () => {
 
   it("a edição chega ao app pela rota dos textos comuns", async () => {
     const cookies = await sessaoAdmin();
-    await editar(cookies, { key: CHAVE_CAMADA, language: "pt", value: "Base que não quebra" });
+    await editar(cookies, { key: CHAVE_CAMADA, value: "Base que não quebra" });
 
-    const res = await request(servidor).get("/api/site-text/common/pt");
+    const res = await request(servidor).get("/api/site-text/common");
     expect(res.body.camadas.UNIVERSAL.nome).toBe("Base que não quebra");
   });
 });
