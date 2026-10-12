@@ -457,6 +457,10 @@ pagamento sem ter assinado vê "confirmando" e depois "está demorando", sem cam
   a tela pública parte do MESMO formulário (plano, código, cartão), sem refazê-lo.
 - *"sem esquecer do desconto no plano anual que é um atrativo"* — o anual continua à vista, ao
   lado do mensal, com o selo do desconto.
+- **DECISÃO: a tela leva o menu de cima e o rodapé do site, como as outras páginas públicas.**
+  *"A tela terá menu superior e inferior com rodapé […] e o check out entra no content"* — o
+  formulário de assinar entra no meio da página. Recusa a sugestão do agente de um topo só com
+  o logo e "Voltar". *Reabre se os números mostrarem gente saindo da tela pelo menu, sem pagar.*
 
 **O que a Stripe exige para aprovar o pagamento** `[FATO — context7 /websites/stripe, 12/10/2026:
 "The Payment Element only collects essential billing address details by default. To collect a
@@ -464,8 +468,16 @@ customer's full billing address for tax calculation […] use the Address Elemen
 - **Endereço não é exigido para aprovar o cartão.** O campo de pagamento já pede sozinho o que
   cada cartão precisa. Endereço completo serve para **calcular imposto**: é por isso que o Mosh
   pede (ele cobra "+ taxes") e a Udemy pede só o país.
-- **Para a escola:** nenhum campo a mais na abertura, com a cobrança em reais. *Reabre na etapa
-  4.8:* com o dólar e o imposto de fora (P22), pode ser preciso o país — conferir na doc lá.
+- **Para a escola:** nenhum campo a mais na abertura, com a cobrança em reais.
+- **E quando vender para fora** *(pergunta do operador, 12/10/2026: "será que vou precisar
+  quando a escola for lançada para alunos em inglês?")*: para aprovar o cartão, continua não
+  precisando. Só passa a precisar **se a Stripe for calcular o imposto de fora** (Stripe Tax —
+  é a P22, com o contador), e mesmo assim é pouco `[FATO — context7 /websites/stripe,
+  12/10/2026: "Non-US customers require at least a country-level address, US customers require
+  a 5-digit postal code, and Canadian customers require either a province or postal code."]`:
+  **o país; nos EUA, o CEP; no Canadá, o CEP ou a província.** Nunca o endereço completo que o
+  Mosh pede. **Pode aparecer só para quem precisa** (quem paga com cartão de fora do Brasil) —
+  como mostrar é decisão dele, na abertura da etapa 4.8.
 - **Quem pode pedir um campo a mais não é a Stripe, é a NOTA FISCAL** *(achado, 12/10/2026)*: a
   FAQ da home responde "Sim, emitimos nota fiscal para todos os pagamentos", e a tela pede só
   e-mail e cartão. Se a nota precisar do CPF de quem paga, o campo entra aqui: **P79**, com o
@@ -475,7 +487,7 @@ customer's full billing address for tax calculation […] use the Address Elemen
 
 | Elemento | Udemy | Mosh | A escola hoje | Proposta |
 |---|---|---|---|---|
-| Página só de pagamento, sem menu, com uma saída no canto | sim ("Cancelar") | sim (só o logo) | a tela logada tem o menu do app | **vale ter** |
+| Página só de pagamento, sem menu, com uma saída no canto | sim ("Cancelar") | sim (só o logo) | a tela logada tem o menu do app | **não** (decisão dele, 12/10/2026: leva o menu e o rodapé do site) |
 | Criar a conta ANTES de pagar (nome, e-mail, código de 6 dígitos) | sim | não: o e-mail vai na própria tela | decidido: a conta nasce no pagamento | não se aplica |
 | "Já tem conta? Entrar" | sim | sim | não | **vale ter** |
 | Mensal ou anual na tela de pagamento, com selo no anual | sim (anual vem marcado) | escolhe antes, na página | **já temos** (mensal vem marcado) | fica como está |
@@ -497,8 +509,9 @@ customer's full billing address for tax calculation […] use the Address Elemen
 **A TELA, de cima para baixo** *(o que é novo está marcado; a arrumação visual é do Antigravity —
 sugestão: no computador, o formulário à esquerda e os itens 8 e 9 numa coluna à direita; no
 celular, uma coluna só, nesta ordem)*:
-1. **Topo** *(novo)* — só o logo (leva à home) e "Voltar". Sem menu: nada puxa a pessoa para
-   fora na hora de pagar.
+1. **O menu de cima do site** *(decisão do operador, 12/10/2026)* — o mesmo das outras páginas
+   públicas (Cursos, Trilhas, Assine, Meus estudos, PT | EN). No fim da página, **o rodapé do
+   site**, que já leva a FAQ, Termos e Privacidade.
 2. **Título** — "Assinar" e "Uma assinatura, todos os cursos e trilhas." (os de hoje).
 3. **Seu e-mail** *(novo)* — o campo, uma linha dizendo para que serve e "Já tem conta? Entrar".
 4. **Escolha o plano** — os dois cartões de hoje, sem mudança: Mensal marcado (é o cartão em que
@@ -511,14 +524,15 @@ celular, uma coluna só, nesta ordem)*:
 8. **O que está incluído** *(novo nesta tela)* — a MESMA lista do cartão da home e a frase do
    rodapé dele ("Acesso a tudo desde o primeiro dia…"). Duas linhas dela prometem o que ainda
    não existe (o JilsonAI e o Pix): **P84**.
-9. **Dúvidas** *(novo)* — um link para as perguntas frequentes da home.
+9. **Dúvidas** *(novo)* — um link para as perguntas frequentes da home. *Com o rodapé do site
+   na tela (decisão de 12/10/2026), o link de FAQ já está lá: o agente passa a sugerir tirar
+   este item — P80.*
 
 **Os textos** *(o português é RASCUNHO do agente para o operador aprovar ou reescrever: P81; o
 inglês é rascunho e passa pela revisão do `idiomas.md`)*:
 
 | Onde | Português | Inglês (rascunho) |
 |---|---|---|
-| Topo | Voltar | Back |
 | E-mail, rótulo | Seu e-mail | Your email |
 | E-mail, ajuda | É com ele que você entra na escola. Depois do pagamento, enviamos o link para criar sua senha. | You'll use it to sign in. After payment, we'll email you a link to create your password. |
 | E-mail, atalho | Já tem conta? Entrar | Already have an account? Sign in |
@@ -529,7 +543,7 @@ inglês é rascunho e passa pela revisão do `idiomas.md`)*:
 | Pagamento seguro | Pagamento seguro, processado pela Stripe. A escola não guarda os dados do seu cartão. | Secure payment, processed by Stripe. We never store your card details. |
 | Termos | Ao assinar, você concorda com os Termos de Uso e a Política de Privacidade. | By subscribing, you agree to our Terms of Use and Privacy Policy. |
 | Título da lista | O que está incluído | What's included |
-| Dúvidas | Ficou com dúvida? Veja as perguntas frequentes. | Questions? See the FAQ. |
+| Dúvidas *(se o item 9 ficar)* | Ficou com dúvida? Veja as perguntas frequentes. | Questions? See the FAQ. |
 | Novidades *(se a P82 for sim)* | Quero receber novidades e ofertas da escola por e-mail. | Email me news and offers from the school. |
 | Depois de pagar, título | Assinatura confirmada. | You're subscribed. |
 | Depois de pagar, texto | Enviamos um e-mail para {email} com o link para você criar sua senha e começar a estudar. | We've sent an email to {email} with a link to create your password and start learning. |
@@ -563,7 +577,8 @@ limite de tentativas · o **8** só abre com os Termos de Uso e a Política de P
   tela simples em 10/10/2026. *Reabre com o dólar (4.8) ou o Pix (4.9), como já estava escrito.*
 - **Depoimentos e perguntas frequentes na própria tela** — quem clicou em Assinar acabou de
   passar por eles na home. *Reabre se os números mostrarem gente desistindo nesta tela.*
-- **Campo de país ou endereço** — a Stripe não exige. *Reabre na 4.8, ou pela P79.*
+- **Campo de país ou endereço** — a Stripe não exige para aprovar o cartão. *Reabre na 4.8, se
+  a P22 escolher o Stripe Tax (aí o país, e o CEP nos EUA e no Canadá), ou pela P79.*
 - **Apple Pay, Google Pay e PayPal** — mais formas de pagamento a testar e manter antes de haver
   aluno. *Reabre depois do lançamento, se alunos pedirem ou o celular pesar nas desistências.*
 - **Caixa de novidades já marcada** — marcada de fábrica não vale como consentimento (LGPD).
@@ -571,6 +586,10 @@ limite de tentativas · o **8** só abre com os Termos de Uso e a Política de P
   catálogo crescer; aí o número sai do banco, nunca de texto fixo.*
 - **Anual marcado de início** (como a Udemy) — a pessoa clicou num cartão que diz R$ 99,90 e
   veria R$ 995 primeiro. *Reabre se ele quiser testar.*
+
+**Sugerido pelo agente e RECUSADO pelo operador** *(não propor de novo sem o gatilho)*:
+- **Topo só com o logo e "Voltar", sem menu** (como a Udemy e o Mosh) — recusado em 12/10/2026:
+  a tela leva o menu e o rodapé do site. O gatilho está na decisão, no começo desta seção.
 
 ## Sincronizar e perder o acesso *(Fase 4, etapa 4.4 — 10/10/2026)*
 

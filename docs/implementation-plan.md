@@ -4213,8 +4213,11 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             (endereço não) e o que fica de fora. **Antes de construir: P80 (o que existe na
             tela) e P81 (os textos).** Do operador, no mesmo dia: o formulário de quem está
             logado *"está ótimo porque já está funcionando"* — é a base, sem refazer — e o
-            desconto do anual continua à vista (*"é um atrativo"*). O que a proposta acrescenta
-            ao formulário: topo só com o logo e "Voltar" · "Já tem conta? Entrar" · três linhas
+            desconto do anual continua à vista (*"é um atrativo"*). **DECISÃO dele (12/10/2026):
+            a tela leva o menu de cima e o rodapé do site, como as outras páginas públicas, e o
+            formulário entra no meio** (*"o check out entra no content"*) — recusa o topo só com
+            o logo que o agente tinha sugerido. O que a proposta acrescenta
+            ao formulário: "Já tem conta? Entrar" · três linhas
             junto do botão (a renovação, o reembolso, o pagamento seguro) e a dos Termos ·
             a lista "O que está incluído" · o link para as perguntas frequentes · a tela de
             depois do pagamento para quem ainda não tem senha.
@@ -4317,7 +4320,10 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       sem refazer a tela. **Da proposta da tela pública (agente, 12/10/2026):** a linha do
       reembolso na tela de assinar em inglês (o sistema hoje dá 7 dias a toda cobrança; os 14
       chegam aqui) e se o imposto de fora pede o país na tela — **P85** e `billing.md` → *A tela
-      pública de assinar*.
+      pública de assinar*. **Conferido na doc da Stripe (12/10/2026):** para aprovar o cartão,
+      endereço não é preciso, nem fora do Brasil; se a P22 escolher o Stripe Tax, ele pede o
+      país — nos EUA o CEP, no Canadá o CEP ou a província —, nunca o endereço completo. Pode
+      aparecer só para quem paga com cartão de fora; como mostrar é decisão do operador.
 - [ ] **4.9 — Pix recorrente (código).** O mandato no Payment Element e a régua própria do Pix (falha
       de Pix não se retenta como cartão). **Trazido da 4.2 (10/10/2026):** o Pix é um item a mais na
       lista de formas de pagamento do servidor (na 4.2, só cartão), sem refazer a tela. A home já
