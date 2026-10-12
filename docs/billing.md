@@ -373,7 +373,8 @@ gera mais aviso, o acesso ficaria liberado para sempre. *(Achado P1 da revisão 
   é a régua de inadimplência.*
 - **Os textos da tela estão como RASCUNHO do agente** (`app.assinar.*` e `app.aula.assinar`, nos
   dois idiomas), a revisar por ele (*"isso fazemos depois, é detalhe"*, 10/10/2026) — inclusive
-  se a tela leva uma linha sobre o reembolso de 7 dias. *Fecha quando ele revisar.*
+  se a tela leva uma linha sobre o reembolso de 7 dias. *Fecha quando ele revisar.* **A proposta
+  dessa linha (12/10/2026) está em *A tela pública de assinar*, abaixo — P80 e P81.**
 - **A tela é simples, "como a Anthropic faz"** (10/10/2026, depois do primeiro teste dele): cada
   cartão de plano diz o preço e como é cobrado; o anual leva o selo do desconto (calculado dos
   dois preços, nunca um texto fixo); **"Hoje você paga" só aparece com código promocional**. O
@@ -442,6 +443,134 @@ pagamento sem ter assinado vê "confirmando" e depois "está demorando", sem cam
 - **Uma assinatura paga pode ser cancelada pelo checkout** se o pagamento cair no instante exato em
   que o aluno troca de plano em outra aba: o registro grita e a conta fica com o período pago, sem
   renovação. Com cartão é questão de frações de segundo; o Pix (etapa 4.9) reabre o assunto.
+
+## A tela pública de assinar *(Fase 4, etapa 4.7, passo 6 — PROPOSTA do agente, 12/10/2026)*
+
+> **NADA AQUI ESTÁ DECIDIDO além do que traz data e frase do operador.** É a proposta do agente
+> depois de ele mostrar as telas de pagamento da Udemy e do Code with Mosh. O que existe na tela
+> e os textos são dele: as perguntas estão em `pendencias.md` (**P79 a P85**). Quem construir o
+> passo 6 confere antes o que ele já respondeu, e registra a resposta aqui, com a data e a frase.
+> *A Udemy e o Mosh são referência desta análise, nunca texto do site.*
+
+**O que o operador disse (12/10/2026):**
+- *"como fizemos para os alunos logado que vai assinar está ótimo porque já está funcionando"* —
+  a tela pública parte do MESMO formulário (plano, código, cartão), sem refazê-lo.
+- *"sem esquecer do desconto no plano anual que é um atrativo"* — o anual continua à vista, ao
+  lado do mensal, com o selo do desconto.
+
+**O que a Stripe exige para aprovar o pagamento** `[FATO — context7 /websites/stripe, 12/10/2026:
+"The Payment Element only collects essential billing address details by default. To collect a
+customer's full billing address for tax calculation […] use the Address Element."]`
+- **Endereço não é exigido para aprovar o cartão.** O campo de pagamento já pede sozinho o que
+  cada cartão precisa. Endereço completo serve para **calcular imposto**: é por isso que o Mosh
+  pede (ele cobra "+ taxes") e a Udemy pede só o país.
+- **Para a escola:** nenhum campo a mais na abertura, com a cobrança em reais. *Reabre na etapa
+  4.8:* com o dólar e o imposto de fora (P22), pode ser preciso o país — conferir na doc lá.
+- **Quem pode pedir um campo a mais não é a Stripe, é a NOTA FISCAL** *(achado, 12/10/2026)*: a
+  FAQ da home responde "Sim, emitimos nota fiscal para todos os pagamentos", e a tela pede só
+  e-mail e cartão. Se a nota precisar do CPF de quem paga, o campo entra aqui: **P79**, com o
+  contador.
+
+**O que a Udemy e o Mosh mostram na hora de pagar, e a escola:**
+
+| Elemento | Udemy | Mosh | A escola hoje | Proposta |
+|---|---|---|---|---|
+| Página só de pagamento, sem menu, com uma saída no canto | sim ("Cancelar") | sim (só o logo) | a tela logada tem o menu do app | **vale ter** |
+| Criar a conta ANTES de pagar (nome, e-mail, código de 6 dígitos) | sim | não: o e-mail vai na própria tela | decidido: a conta nasce no pagamento | não se aplica |
+| "Já tem conta? Entrar" | sim | sim | não | **vale ter** |
+| Mensal ou anual na tela de pagamento, com selo no anual | sim (anual vem marcado) | escolhe antes, na página | **já temos** (mensal vem marcado) | fica como está |
+| "O que está incluído" | 3 linhas | 5 a 6 linhas | só na home | **vale ter** (a lista da home) |
+| Dizer que renova sozinha, por quanto, até cancelar | sim | sim | só a frase da Stripe embaixo do cartão, sem valor | **vale ter** (uma linha) |
+| Resumo do pedido numa coluna (total de hoje, próxima cobrança) | sim | sim | "Hoje você paga", só com código (decisão de 10/10) | não: a linha acima basta |
+| Código promocional | sim | sim | **já temos** | — |
+| "Cancele quando quiser" | sim, e diz onde | sim | **já temos** | — |
+| Reembolso | "não concedemos, exceto por lei" | selo de 30 dias | não aparece na tela | **vale ter** (7 dias) |
+| "Pagamento seguro" | sim | sim | não | **vale ter** (uma linha) |
+| "Ao assinar, você concorda com os Termos" | sim | sim | não | **vale ter**, quando os Termos existirem |
+| País ou endereço | só o país | endereço completo | nada | não se aplica hoje (ver acima) |
+| Receber novidades por e-mail | caixa já marcada | caixa desmarcada | não pergunta | **P82** (desmarcada) |
+| Nome completo | sim | sim | o nome é opcional | **P83** (pedir ao criar a senha) |
+| Apple Pay, Google Pay, PayPal | os dois primeiros | Apple Pay e PayPal | só cartão (Pix na 4.9) | não na abertura |
+| Depoimentos na tela de pagamento | não | 2 | só na home | não na abertura |
+| Nota de avaliações, contagem de cursos e de horas | "31.000 cursos" | "52+ courses", nota 4,6 | não | não se aplica hoje |
+
+**A TELA, de cima para baixo** *(o que é novo está marcado; a arrumação visual é do Antigravity —
+sugestão: no computador, o formulário à esquerda e os itens 8 e 9 numa coluna à direita; no
+celular, uma coluna só, nesta ordem)*:
+1. **Topo** *(novo)* — só o logo (leva à home) e "Voltar". Sem menu: nada puxa a pessoa para
+   fora na hora de pagar.
+2. **Título** — "Assinar" e "Uma assinatura, todos os cursos e trilhas." (os de hoje).
+3. **Seu e-mail** *(novo)* — o campo, uma linha dizendo para que serve e "Já tem conta? Entrar".
+4. **Escolha o plano** — os dois cartões de hoje, sem mudança: Mensal marcado (é o cartão em que
+   a pessoa clicou na home) e Anual ao lado com o selo "17% de desconto" e "equivale a R$ 82,92
+   por mês". Embaixo, "Sem fidelidade. Cancele quando quiser."
+5. **Código promocional** — o de hoje, com "Hoje você paga" só quando há código.
+6. **Pagamento** — o campo do cartão de hoje, com a frase da Stripe embaixo dele.
+7. **Junto do botão** *(novo)* — três linhas curtas: a renovação (muda com o plano escolhido), o
+   reembolso e o pagamento seguro. Depois o botão **Assinar** e, embaixo dele, a linha dos Termos.
+8. **O que está incluído** *(novo nesta tela)* — a MESMA lista do cartão da home e a frase do
+   rodapé dele ("Acesso a tudo desde o primeiro dia…"). Duas linhas dela prometem o que ainda
+   não existe (o JilsonAI e o Pix): **P84**.
+9. **Dúvidas** *(novo)* — um link para as perguntas frequentes da home.
+
+**Os textos** *(o português é RASCUNHO do agente para o operador aprovar ou reescrever: P81; o
+inglês é rascunho e passa pela revisão do `idiomas.md`)*:
+
+| Onde | Português | Inglês (rascunho) |
+|---|---|---|
+| Topo | Voltar | Back |
+| E-mail, rótulo | Seu e-mail | Your email |
+| E-mail, ajuda | É com ele que você entra na escola. Depois do pagamento, enviamos o link para criar sua senha. | You'll use it to sign in. After payment, we'll email you a link to create your password. |
+| E-mail, atalho | Já tem conta? Entrar | Already have an account? Sign in |
+| E-mail que já tem conta | Este e-mail já tem conta. Entre para assinar. | This email already has an account. Sign in to subscribe. |
+| Renovação, mensal | Renova todo mês por {valor}, até você cancelar. | Renews every month at {valor} until you cancel. |
+| Renovação, anual | Renova uma vez por ano por {valor}, até você cancelar. | Renews once a year at {valor} until you cancel. |
+| Reembolso | Garantia de 7 dias: se não gostar, você recebe de volta o valor pago. | 14-day money-back guarantee. *(ver "em inglês", abaixo)* |
+| Pagamento seguro | Pagamento seguro, processado pela Stripe. A escola não guarda os dados do seu cartão. | Secure payment, processed by Stripe. We never store your card details. |
+| Termos | Ao assinar, você concorda com os Termos de Uso e a Política de Privacidade. | By subscribing, you agree to our Terms of Use and Privacy Policy. |
+| Título da lista | O que está incluído | What's included |
+| Dúvidas | Ficou com dúvida? Veja as perguntas frequentes. | Questions? See the FAQ. |
+| Novidades *(se a P82 for sim)* | Quero receber novidades e ofertas da escola por e-mail. | Email me news and offers from the school. |
+| Depois de pagar, título | Assinatura confirmada. | You're subscribed. |
+| Depois de pagar, texto | Enviamos um e-mail para {email} com o link para você criar sua senha e começar a estudar. | We've sent an email to {email} with a link to create your password and start learning. |
+| Depois de pagar, não chegou | Não chegou em alguns minutos? Confira a caixa de spam ou peça de novo. | Didn't get it in a few minutes? Check your spam folder or ask for a new one. |
+| Depois de pagar, botão | Enviar de novo | Send it again |
+| Depois de pagar, reenviado | Enviamos de novo. | Sent again. |
+| Depois de pagar, e-mail errado | Digitou o e-mail errado? Escreva para {contato}. | Wrong email? Write to {contato}. |
+
+**Depois do pagamento.** Quem acabou de pagar não tem senha nem está logado: a tela não pode
+dizer "Começar a estudar", como a de hoje. Ela confirma, repete o e-mail digitado (é ali que a
+pessoa percebe um erro de digitação), diz o que fazer a seguir e dá a saída para quando o e-mail
+não chega. Enquanto a confirmação não vem, valem os textos de hoje ("Confirmando sua
+assinatura…", "Está demorando mais que o normal…"). `{contato}` depende da P49.
+
+**Em inglês.** Mesma tela, mesmos blocos. Três diferenças; as duas últimas são a **P85**:
+- **O preço** é o que o servidor manda: reais até a etapa 4.8, como a home em inglês hoje.
+- **O reembolso:** a FAQ em inglês já diz 14 dias, mas o sistema hoje dá 7 a toda cobrança
+  (`PRAZO_DO_REEMBOLSO_EM_DIAS`); os 14 chegam com o dólar, na 4.8. Até lá, a linha em inglês
+  promete mais do que a tela de reembolso entrega sozinha.
+- **O endereço:** proposta `/en/subscribe` (junto da P14). O botão continua só ligando com uma
+  aula publicada em inglês (decisão de 14/09/2026).
+
+**O que isto muda nos passos da 4.7** (detalhe em cada passo, no plano): o **6** ganha os itens
+acima · o **5** pede o nome ao criar a senha (P83) e ganha o "Enviar de novo" · o **4** recebe a
+resposta da caixa de novidades (P82), o CPF se o contador pedir (P79), e precisa dizer à tela de
+depois do pagamento que a assinatura valeu, sem login · o **1** inclui o "Enviar de novo" no
+limite de tentativas · o **8** só abre com os Termos de Uso e a Política de Privacidade no ar.
+
+**O que o agente sugere NÃO ter na abertura** *(para ninguém propor de novo sem o gatilho)*:
+- **Resumo do pedido numa coluna à parte** — repete o que o cartão do plano já diz; ele pediu a
+  tela simples em 10/10/2026. *Reabre com o dólar (4.8) ou o Pix (4.9), como já estava escrito.*
+- **Depoimentos e perguntas frequentes na própria tela** — quem clicou em Assinar acabou de
+  passar por eles na home. *Reabre se os números mostrarem gente desistindo nesta tela.*
+- **Campo de país ou endereço** — a Stripe não exige. *Reabre na 4.8, ou pela P79.*
+- **Apple Pay, Google Pay e PayPal** — mais formas de pagamento a testar e manter antes de haver
+  aluno. *Reabre depois do lançamento, se alunos pedirem ou o celular pesar nas desistências.*
+- **Caixa de novidades já marcada** — marcada de fábrica não vale como consentimento (LGPD).
+- **Contagem de cursos e de horas** — com poucos cursos, o número não vende. *Reabre quando o
+  catálogo crescer; aí o número sai do banco, nunca de texto fixo.*
+- **Anual marcado de início** (como a Udemy) — a pessoa clicou num cartão que diz R$ 99,90 e
+  veria R$ 995 primeiro. *Reabre se ele quiser testar.*
 
 ## Sincronizar e perder o acesso *(Fase 4, etapa 4.4 — 10/10/2026)*
 

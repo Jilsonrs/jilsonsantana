@@ -4171,6 +4171,9 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             do ok para o pacote** (dependência nova: o agente propõe `express-rate-limit`, em
             memória — há um servidor só) **e da frase** que a tela mostra a quem passou do
             limite. Pode ser publicado sozinho: só endurece o que já existe.
+            *(Da proposta da tela pública, 12/10/2026: quando o passo 5 criar o "Enviar de
+            novo" do e-mail de criar a senha, ele entra neste limite — sem isso, o site serve
+            para encher a caixa de e-mail de alguém.)*
       - [ ] **Passo 2 — O checkout aguenta muita gente ao mesmo tempo.** O item (b) acima (a
             trava que não espera, e o gate lido pela transação da trava) e a medição do item
             (d) (a assinatura incompleta gasta um uso do código?), com a correção se gastar.
@@ -4185,13 +4188,42 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             fechado), liga o cliente da Stripe, grava o espelho e a origem (UTM). Os casos: o
             e-mail já tem conta, o pagamento abandonado, o aviso repetido. Revisão de segurança
             e prova na área restrita. **Depende dos passos 1 e 2.** Não vai ao ar sozinho.
+            **Da proposta da tela pública (agente, 12/10/2026 — `billing.md` → *A tela pública
+            de assinar*), a resolver ANTES de fechar o que a rota aceita:** a resposta da caixa
+            "quero receber novidades" (**P82**) e o CPF, se o contador pedir para a nota fiscal
+            (**P79**). **E duas coisas que a tela precisa deste passo:** a tela de depois do
+            pagamento não tem login — precisa saber que a assinatura valeu sem revelar nada de
+            outra pessoa · o que se diz quando o e-mail já tem conta (rascunho: "Este e-mail já
+            tem conta. Entre para assinar."; dizer isso revela quem tem conta — a revisão de
+            segurança do passo pesa).
       - [ ] **Passo 5 — "Crie sua senha".** O e-mail com o link e a tela de definir a senha.
             **Pergunta para a abertura:** "Esqueci minha senha", na tela de entrar, usa o mesmo
             mecanismo — entra junto? **Depende dos passos 3 e 4.**
+            **Da proposta da tela pública (agente, 12/10/2026):** a tela de definir a senha
+            pede também o nome, que vai no certificado (**P83**) · a tela de depois do pagamento
+            tem "Enviar de novo" para quando o e-mail não chega — a rota é deste passo, dentro
+            do limite do passo 1.
       - [ ] **Passo 6 — A tela pública de assinar e os botões da home.** O mesmo formulário da
             4.2 com o campo de e-mail, a confirmação para quem acabou de pagar ("enviamos um
             e-mail para você criar a senha") e os botões Assinar da home sem login, nos dois
             idiomas. Os textos são do operador. **Depende dos passos 4 e 5.**
+            **A PROPOSTA DA TELA** *(agente, 12/10/2026, depois de o operador mostrar as telas
+            de pagamento da Udemy e do Code with Mosh)* **está em `billing.md` → *A tela pública
+            de assinar*:** os blocos em ordem, os textos nos dois idiomas, o que a Stripe exige
+            (endereço não) e o que fica de fora. **Antes de construir: P80 (o que existe na
+            tela) e P81 (os textos).** Do operador, no mesmo dia: o formulário de quem está
+            logado *"está ótimo porque já está funcionando"* — é a base, sem refazer — e o
+            desconto do anual continua à vista (*"é um atrativo"*). O que a proposta acrescenta
+            ao formulário: topo só com o logo e "Voltar" · "Já tem conta? Entrar" · três linhas
+            junto do botão (a renovação, o reembolso, o pagamento seguro) e a dos Termos ·
+            a lista "O que está incluído" · o link para as perguntas frequentes · a tela de
+            depois do pagamento para quem ainda não tem senha.
+            *Convenções de engenharia:* a lista "O que está incluído" lê a MESMA chave do
+            cartão da home (`home.pricing.features`, com as edições do admin) — duas listas
+            divergem · as linhas novas entram no formulário como parte opcional: a tela de quem
+            está logado só muda se ele disser (P80) · o valor da linha de renovação é o do
+            servidor; com código promocional, se a prévia não der o valor da renovação, a linha
+            sai sem valor — nunca conta feita na tela.
       - [ ] **Passo 7 — Os e-mails automáticos da assinatura.** A cobrança que falhou (com a
             data da próxima tentativa), o aviso antes de trancar e a assinatura cancelada (com
             o link para reativar). Os textos são do operador. **Depende só do passo 3** — pode
@@ -4204,6 +4236,10 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             de abrir: as pendências P58 (o nome na fatura), P60 (a opção do painel) e P75 (o
             limite do reembolso), a cópia do banco (Fase 7) e a revisão de segurança da etapa
             inteira. A publicação é ordem dele.
+            **Da proposta da tela pública (agente, 12/10/2026):** antes de abrir, também os
+            Termos de Uso e a Política de Privacidade no ar (a tela de assinar aponta para os
+            dois; hoje são pendência da Fase 7 e a P61) · a **P84** (o cartão promete o JilsonAI
+            e o Pix, que ainda não existem) · a **P79** (a nota fiscal e o CPF).
 - [ ] **4.7b — Admin → Assinaturas vira um PAINEL de assinaturas (código, ALTO RISCO).**
       **MAPA APROVADO pelo operador (10/10/2026: "Aprovo o mapa"), e fica para DEPOIS da 4.7**
       (decisão dele no mesmo dia: *"o Painel pode ficar para depois da 4.7 que é mais
@@ -4278,7 +4314,10 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       primeiro. **Depende da decisão de imposto internacional com o contador (P22)** antes da primeira
       venda fora do Brasil. **Trazido da 4.2 (10/10/2026):** a tela de assinar já recebe o valor e a
       moeda do servidor e já lê o cartão antes de a assinatura existir — o dólar entra no servidor,
-      sem refazer a tela.
+      sem refazer a tela. **Da proposta da tela pública (agente, 12/10/2026):** a linha do
+      reembolso na tela de assinar em inglês (o sistema hoje dá 7 dias a toda cobrança; os 14
+      chegam aqui) e se o imposto de fora pede o país na tela — **P85** e `billing.md` → *A tela
+      pública de assinar*.
 - [ ] **4.9 — Pix recorrente (código).** O mandato no Payment Element e a régua própria do Pix (falha
       de Pix não se retenta como cartão). **Trazido da 4.2 (10/10/2026):** o Pix é um item a mais na
       lista de formas de pagamento do servidor (na 4.2, só cartão), sem refazer a tela. A home já
