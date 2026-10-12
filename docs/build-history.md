@@ -58,8 +58,10 @@
 
 > Desde 11/10/2026 (decisão do operador), numa fase LONGA e ainda aberta as etapas fechadas e
 > publicadas descem para cá em conjuntos de 3 ou 4 — inteiras, com os checkboxes intactos. No
-> plano fica o título de cada uma, marcado, com o ponteiro para cá. Quando a fase fechar, o que
-> restar dela desce junto, e o bloco abaixo passa a ser a fase inteira.
+> plano fica o título de cada uma, marcado, com o ponteiro para cá.
+> **Quando a fase fechar** (condição do operador, 11/10/2026): o que restar dela desce, e as
+> etapas que já estão aqui se juntam às que chegam NUMA seção só, na ordem das etapas, que sobe
+> para *Fases concluídas* — a fase nunca fica em dois pedaços.
 
 ### Phase 4 — Billing & Membership Gate (Stripe) — etapas 4.0 a 4.5  *(movidas em 11/10/2026)*
 
