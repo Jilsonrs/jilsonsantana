@@ -599,7 +599,8 @@ site** · **aceita empresa do Brasil**. E a da escola: **aceita curso gravado po
 |---|---|---|---|---|---|---|
 | **Paddle** | sim | sim: quadro embutido na página; trocar o cartão também dá para fazer dentro do site | não está entre os bloqueados; paga por transferência internacional ou Payoneer, uma vez por mês, a partir de US$ 100 | "courses" aparece entre os produtos na documentação dela, mas a política fala em empresa de software e não cita assinatura de cursos | 5% + US$ 0,50 | **primeira candidata; faltam 2 confirmações por escrito** |
 | **Dodo Payments** | sim (ela se descreve assim) | sim: formulário embutido, com assinatura | o Brasil está na lista de países aceitos | não achado na página oficial (um espelho da doc cita "Ed-Tech") | 4% + US$ 0,40, mais 1,5% de cartão internacional e 0,5% de assinatura | **plano B**; empresa mais nova, menos conferida |
-| **Lemon Squeezy** | sim | sim (janela sobre a página) | só recebe por PayPal: o Brasil não está na lista de bancos | — | por volta de 5% + US$ 0,50 (de terceiros) | fraca: receber só por PayPal |
+| **Lemon Squeezy** | sim | sim (janela sobre a página) | recebe só por PayPal (o Brasil não está na lista de bancos) — o que para ele serve | vídeo é aceito; curso não é citado | por volta de 5% + US$ 0,50 (de terceiros) | fraca por outro motivo: é da Stripe e, segundo terceiros, está sendo levada para o Managed Payments, que não aceita empresa do Brasil |
+| **PayPal** | **não**: só recebe o dinheiro; a vendedora continua sendo a escola, e o imposto de fora também | os campos de cartão dentro da página só existem para empresa de 37 países; **o Brasil não está na lista** | conta do Brasil existe (ele já recebe por ela) | assinatura sem conta PayPal: relatos de terceiros dizem que ela exige a conta | — | **não resolve**: não tira o imposto das mãos dele. Serve como MEIO DE RECEBER de uma vendedora |
 | **Polar** | sim | — | **não**: o Brasil não está na lista de países em que ela paga | cursos aceitos | — | fora |
 | **Teachable** | só dentro de uma escola dela | — | **não** (41 países) | — | — | fora |
 | **Stripe** (Tax ou como vendedora) | — | — | **não** | cursos aceitos | — | fora, enquanto a empresa for do Brasil |
@@ -611,6 +612,19 @@ perguntar primeiro. O que falta não se resolve lendo página — é resposta de
 **(1) uma escola de cursos gravados, por assinatura, é aceita?** (a política dela se diz feita
 para empresa de software) e **(2) uma empresa do Brasil, MEI hoje, abre conta e recebe como?**
 Se as duas forem sim, é ela. Se uma for não, a Dodo é a segunda a perguntar.
+
+**O PayPal** *(pergunta do operador, 12/10/2026: ele já recebe da Udemy por lá e pretende
+receber do YouTube; "se a PayPal puder receber via cartão de crédito internacional sem exigir
+que um cliente tenha que se cadastrar […] e o pagamento puder ser feito dentro do meu site […]
+resolve")*. `[FATO — páginas do PayPal lidas em 12/10/2026]` **Não resolve, por três motivos:**
+(1) o PayPal só transporta o dinheiro — a vendedora continua sendo a escola, e o imposto de
+fora, que ele decidiu não assumir, continua com ela; (2) os campos de cartão dentro da página
+da escola ("Expanded Checkout") só são oferecidos a empresa de 37 países, e **o Brasil não está
+na lista**; (3) para ASSINATURA, relatos de terceiros dizem que o PayPal exige que o cliente
+tenha conta (não achei a regra numa página dele). **Onde o PayPal ajuda:** como meio de RECEBER
+de uma vendedora. A Lemon Squeezy paga empresa do Brasil só por PayPal; a Paddle cita
+transferência internacional e Payoneer, e uma página dela cita também PayPal — vira a terceira
+pergunta para ela.
 
 **O que a fase do exterior custa, com qualquer vendedora de fora** (para ninguém subestimar): são
 **dois sistemas de cobrança lado a lado** — a Stripe para o Brasil, a outra para fora. O aluno de
@@ -788,7 +802,8 @@ antes de decidir): `docs.stripe.com/payments/managed-payments` e `…/managed-pa
 `paddle.com/help/manage/get-paid/when-and-how-do-i-get-paid` ·
 `docs.dodopayments.com/miscellaneous/accepted-countries-and-territories` e
 `…/developer-resources/inline-checkout` · `docs.lemonsqueezy.com/help/getting-started/supported-countries`
-· `polar.sh/docs/merchant-of-record/supported-countries` e `…/acceptable-use`.
+· `polar.sh/docs/merchant-of-record/supported-countries` e `…/acceptable-use` ·
+`developer.paypal.com/docs/checkout/advanced` · `docs.lemonsqueezy.com/help/getting-started/prohibited-products`.
 
 ## Sincronizar e perder o acesso *(Fase 4, etapa 4.4 — 10/10/2026)*
 
