@@ -19,7 +19,12 @@ export function FaqField() {
         <div key={field.id} className="flex gap-2 rounded-md border border-border p-3">
           <div className="flex-1 space-y-2">
             <Input placeholder="pergunta" {...register(`faq.${index}.pergunta`)} />
-            <Textarea placeholder="resposta" rows={2} {...register(`faq.${index}.resposta`)} />
+            <Textarea
+              placeholder="resposta"
+              rows={2}
+              className="min-h-[64px] px-4 py-2.5 resize-y text-base"
+              {...register(`faq.${index}.resposta`)}
+            />
           </div>
           <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}>
             <Trash2 className="h-4 w-4" />
