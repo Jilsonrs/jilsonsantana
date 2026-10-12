@@ -455,7 +455,7 @@ pagamento sem ter assinado vê "confirmando" e depois "está demorando", sem cam
 
 > **NADA AQUI ESTÁ DECIDIDO além do que traz data e frase do operador.** É a proposta do agente
 > depois de ele mostrar as telas de pagamento da Udemy e do Code with Mosh. O que existe na tela
-> e os textos são dele: as perguntas estão em `pendencias.md` (**P80 a P88**; a P79 e a P86 ele respondeu em 12/10/2026). Quem construir o
+> e os textos são dele: as perguntas estão em `pendencias.md` (**P80 a P88**; a P79, a P86 e a P87 ele respondeu em 12/10/2026). Quem construir o
 > passo 6 confere antes o que ele já respondeu, e registra a resposta aqui, com a data e a frase.
 > *A Udemy e o Mosh são referência desta análise, nunca texto do site.*
 
@@ -493,8 +493,11 @@ customer's full billing address for tax calculation […] use the Address Elemen
   começo, para não ficar refazendo a tela toda hora, colocar CPF logo já resolve e quando
   alguém solicitar nota fiscal, se precisar de alguma informação adicional, é só solicitar"*.
   O texto da FAQ continua sendo trocado por ele, no admin (P12): "Sim, emitimos nota fiscal
-  sempre que solicitada." — e a resposta em inglês acompanha. Os detalhes do campo (obrigatório?
-  aceita CNPJ?) são a **P87**. *Reabre se a escola deixar de emitir nota fiscal no Brasil.*
+  sempre que solicitada." — e a resposta em inglês acompanha. **O campo é OBRIGATÓRIO para quem
+  escolhe Brasil, e aceita CNPJ** *(ele, 12/10/2026: "Sim, deixa CPF obrigatório e aceita CNPJ,
+  assim simplificamos as coisas" — fecha a P87)*. A política de privacidade passa a dizer que a
+  escola guarda esse número, e para quê (entra com as páginas legais). *Reabre se a escola
+  deixar de emitir nota fiscal no Brasil.*
 - **O "campo universal" que ele perguntou EXISTE na Stripe** `[FATO — context7 /websites/stripe,
   12/10/2026]`: cada cliente da Stripe guarda um **número fiscal com o tipo do país** — `br_cpf`
   e `br_cnpj` no Brasil, `eu_vat` na Europa, e dezenas de outros. É um campo só, com a legenda
@@ -626,6 +629,39 @@ de uma vendedora. A Lemon Squeezy paga empresa do Brasil só por PayPal; a Paddl
 transferência internacional e Payoneer, e uma página dela cita também PayPal — vira a terceira
 pergunta para ela.
 
+**"SE NÃO ACHAR UMA SOLUÇÃO EU DESISTO AGORA"** *(operador, 12/10/2026, sobre o projeto
+internacional: o canal no YouTube e o esforço de fazer a escola em duas línguas)*. **A resposta
+do agente: há solução, em dois níveis.** **(A) Provável e barata:** uma vendedora por conta de
+terceiros — a Paddle primeiro, a Dodo depois. Depende da resposta dela por escrito, que se pede
+já e chega em dias. **(B) Garantida, com custo:** uma empresa num país que a Stripe aceita (EUA
+e Portugal estão nas duas listas lidas): a tela é a mesma de hoje, e a Stripe calcula, registra
+e entrega a declaração da Europa. O custo de abrir e manter essa empresa não foi pesquisado.
+**O que o agente NÃO pode prometer:** que a Paddle diga sim. **A sugestão, que é decisão dele:**
+mandar a mensagem abaixo agora, e só gravar curso novo em inglês depois da resposta. Nada disso
+segura o lançamento no Brasil.
+
+**A mensagem para a Paddle** *(rascunho do agente, em inglês, para ele ajustar e enviar pelo
+formulário de vendas dela; vale também para a Dodo, trocando o nome)*:
+
+> **Subject:** Online course subscription business based in Brazil — can Paddle support it?
+>
+> Hello, I run an online school (jilsonsantana.com). I sell one subscription that gives access
+> to a library of pre-recorded video courses on data and AI. I create and own all the content.
+> There is no coaching, consulting or live service: access is fully automated.
+>
+> My company is registered in Brazil (today as a MEI, a sole proprietor with a CNPJ). I sell to
+> customers in Brazil through my own checkout, and I am looking for a merchant of record for
+> customers outside Brazil only. Before I plan the integration, could you confirm:
+>
+> 1. Is a subscription to pre-recorded online courses an accepted product on Paddle?
+> 2. Can a company registered in Brazil (MEI) open a seller account? Which documents do you need?
+> 3. How would I receive payouts in Brazil (wire transfer, Payoneer or PayPal), and in which currency?
+> 4. With inline checkout, can customers subscribe, update their card, change plan and cancel
+>    without leaving my website, using your API for cancellations and plan changes?
+> 5. Would the standard 5% + $0.50 fee apply, for plans of about US$30 a month and US$299 a year?
+>
+> Thank you, Jilson Santana
+
 **O que a fase do exterior custa, com qualquer vendedora de fora** (para ninguém subestimar): são
 **dois sistemas de cobrança lado a lado** — a Stripe para o Brasil, a outra para fora. O aluno de
 fora paga num quadro que é dela (o campo do cartão não é o da escola), o servidor passa a ouvir
@@ -675,7 +711,8 @@ celular, uma coluna só, nesta ordem)*:
    site**, que já leva a FAQ, Termos e Privacidade.
 2. **Título** — "Assinar" e "Uma assinatura, todos os cursos e trilhas." (os de hoje).
 3. **Seus dados** *(novo)* — o e-mail (com uma linha dizendo para que serve e "Já tem conta?
-   Entrar"), o **país** e, para quem é do Brasil, o **CPF** (decisão de 12/10/2026; P87).
+   Entrar"), o **país** e, para quem é do Brasil, o **CPF ou CNPJ**, obrigatório (decisões de
+   12/10/2026).
    **Quem escolhe um país que não é o Brasil** (decisão de 12/10/2026) não segue para o plano
    nem para o cartão: no lugar deles, o aviso de que a assinatura ainda não chegou àquele país
    e o botão para ser avisado, que guarda o e-mail já digitado e o país. O que conta como "do
@@ -711,7 +748,7 @@ inglês é rascunho e passa pela revisão do `idiomas.md`)*:
 | País de fora, aviso | A assinatura ainda não está disponível no seu país. Deixe seu e-mail e avisamos quando abrir. | Subscriptions aren't available in your country yet. Leave your email and we'll let you know when they are. |
 | País de fora, botão | Avise-me | Notify me |
 | País de fora, depois | Pronto. Avisaremos você por e-mail. | Done. We'll email you. |
-| CPF *(só para o Brasil; P87)* | CPF ou CNPJ | *(não aparece fora do Brasil)* |
+| CPF *(só para o Brasil; obrigatório)* | CPF ou CNPJ | *(não aparece fora do Brasil)* |
 | CPF, ajuda | Usamos para emitir a nota fiscal. | — |
 | CPF inválido | Confira o número: este CPF ou CNPJ não é válido. | — |
 | Resumo, título | Resumo | Summary |

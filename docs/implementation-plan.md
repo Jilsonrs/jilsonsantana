@@ -4192,8 +4192,8 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             de assinar*), a resolver ANTES de fechar o que a rota aceita:** a resposta da caixa
             "quero receber novidades" (**P82**). **A rota recebe o PAÍS e o CPF** (decisão do
             operador, 12/10/2026, revendo a do mesmo dia: *"colocar CPF logo já resolve"* —
-            `billing.md`; os detalhes do campo são a **P87**, e o que acontece com quem é de
-            fora, a **P86**). *Proposta do agente, a fechar no plano do passo, com context7:* o
+            `billing.md`; o campo é OBRIGATÓRIO para quem escolhe Brasil e aceita CNPJ — decisão
+            dele no mesmo dia; quem é de fora não assina no lançamento). *Proposta do agente, a fechar no plano do passo, com context7:* o
             CPF é conferido no servidor e fica guardado NA STRIPE, junto do cliente (o número
             fiscal dela, `br_cpf`/`br_cnpj`) — um dado pessoal a menos no banco da escola.
             **A rota RECUSA o país que não é o Brasil** (decisão do operador, 12/10/2026: no
