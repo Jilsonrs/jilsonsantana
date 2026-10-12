@@ -86,7 +86,7 @@ export function SiteTextField({ campo }: { campo: Campo }) {
   });
 
   return (
-    <div className="space-y-3 border-t py-4">
+    <div className="space-y-3 border-t border-border/40 py-4 first:border-t-0 first:pt-0">
       {/* `key` é o valor no ar: quando o salvamento recarrega a lista, o campo é
           remontado com o texto novo. Sem isso o `useState` guardaria o valor
           antigo e "Salvar" reapareceria sozinho depois de salvar. */}

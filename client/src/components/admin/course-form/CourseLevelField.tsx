@@ -18,7 +18,7 @@ export const CLASSE_DO_SELECT =
 export function CourseLevelField() {
   const { register } = useFormContext<CourseFormValues>();
   return (
-    <div className="grid gap-4 sm:grid-cols-2">
+    <div className="max-w-md">
       <Field id="level" label="Nível" dica={DICAS_DO_CURSO.level}>
         <select id="level" aria-describedby={descritoPor("level", { dica: true })} {...register("level")} className={CLASSE_DO_SELECT}>
           <option value="">—</option>
