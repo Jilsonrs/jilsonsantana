@@ -32,6 +32,11 @@
 
 ### Fora do Brasil — dólar, pelo país do CARTÃO *(decisão do operador, 14/09/2026)*
 
+> **ADIADO PARA A FASE DO EXTERIOR** *(decisão do operador, 12/10/2026: "dólar sai para a fase
+> do exterior")*. No lançamento a escola vende só para o Brasil, em reais; a venda para fora abre
+> numa fase própria, com outra empresa como vendedora. O que está abaixo continua valendo como
+> regra para essa fase — ver *A tela pública de assinar*. *Reabre com a fase do exterior.*
+
 A escola é bilíngue desde o lançamento (`idiomas.md`). **Cartão do Brasil paga em reais;
 cartão de qualquer outro país paga em dólar** — independente do idioma do site.
 
@@ -580,6 +585,41 @@ customer's full billing address for tax calculation […] use the Address Elemen
     cartão e mudar o plano pelas próprias telas?
   *Reabre a escolha se a resposta dela a qualquer uma das duas primeiras for não — aí sobram
   outra vendedora por conta de terceiros ou a empresa num país que a Stripe aceita.*
+- **DECISÃO: O DÓLAR SAI DE ANTES DO LANÇAMENTO** *(operador, 12/10/2026: "isso, dólar sai para
+  a fase do exterior")*. A etapa 4.8 deixa de ser de antes do lançamento; fica dela só o botão
+  de assinar das páginas em inglês, para quem mora no Brasil.
+
+**A PADDLE ATENDE? E AS ALTERNATIVAS** *(análise pedida pelo operador, 12/10/2026 — páginas
+oficiais de cada uma lidas no dia; as listas de países e as taxas mudam: reler antes de decidir)*
+
+As três exigências dele: **cuida do imposto de fora como vendedora** · **o aluno paga dentro do
+site** · **aceita empresa do Brasil**. E a da escola: **aceita curso gravado por assinatura.**
+
+| Quem | Vendedora, cuida do imposto | Paga dentro do site | Empresa do Brasil | Curso por assinatura | Taxa | Conclusão |
+|---|---|---|---|---|---|---|
+| **Paddle** | sim | sim: quadro embutido na página; trocar o cartão também dá para fazer dentro do site | não está entre os bloqueados; paga por transferência internacional ou Payoneer, uma vez por mês, a partir de US$ 100 | "courses" aparece entre os produtos na documentação dela, mas a política fala em empresa de software e não cita assinatura de cursos | 5% + US$ 0,50 | **primeira candidata; faltam 2 confirmações por escrito** |
+| **Dodo Payments** | sim (ela se descreve assim) | sim: formulário embutido, com assinatura | o Brasil está na lista de países aceitos | não achado na página oficial (um espelho da doc cita "Ed-Tech") | 4% + US$ 0,40, mais 1,5% de cartão internacional e 0,5% de assinatura | **plano B**; empresa mais nova, menos conferida |
+| **Lemon Squeezy** | sim | sim (janela sobre a página) | só recebe por PayPal: o Brasil não está na lista de bancos | — | por volta de 5% + US$ 0,50 (de terceiros) | fraca: receber só por PayPal |
+| **Polar** | sim | — | **não**: o Brasil não está na lista de países em que ela paga | cursos aceitos | — | fora |
+| **Teachable** | só dentro de uma escola dela | — | **não** (41 países) | — | — | fora |
+| **Stripe** (Tax ou como vendedora) | — | — | **não** | cursos aceitos | — | fora, enquanto a empresa for do Brasil |
+| **Hotmart** | recolhe o imposto das vendas para fora (ajuda dela, desde abr/2025) | não achado: o pagamento é na página dela | sim, é brasileira | sim | por volta de 9,9% + R$ 1 (de terceiros) | fora: é plataforma de curso (`tech-stack.md` → o que não usamos) e a taxa é o dobro |
+| **Empresa num país da lista + Stripe Tax** | a Stripe calcula, registra e entrega a declaração; a escola confere e paga | sim, a mesma tela de hoje | exige a empresa de fora | sim | a da Stripe, mais o plano Tax Complete | a que menos muda o site; custa abrir e manter a empresa |
+
+**A leitura do agente:** a Paddle atende no papel às três exigências e é a escolha certa para
+perguntar primeiro. O que falta não se resolve lendo página — é resposta dela por escrito:
+**(1) uma escola de cursos gravados, por assinatura, é aceita?** (a política dela se diz feita
+para empresa de software) e **(2) uma empresa do Brasil, MEI hoje, abre conta e recebe como?**
+Se as duas forem sim, é ela. Se uma for não, a Dodo é a segunda a perguntar.
+
+**O que a fase do exterior custa, com qualquer vendedora de fora** (para ninguém subestimar): são
+**dois sistemas de cobrança lado a lado** — a Stripe para o Brasil, a outra para fora. O aluno de
+fora paga num quadro que é dela (o campo do cartão não é o da escola), o servidor passa a ouvir
+os avisos de pagamento das duas, e a tela de Faturamento de quem é de fora conversa com a outra
+empresa. É uma fase inteira, com plano próprio e revisão de segurança — não um ajuste. **A tela
+de assinar do lançamento não é refeita:** o campo País é o que manda cada pessoa para o seu
+caminho. *Não conferido: se cancelar e mudar de plano dá para fazer pelas telas da escola (a
+troca de cartão dá, pela documentação da Paddle).*
   - **A confirmar com o suporte da Stripe** (ele, pelo painel): se há previsão de o Stripe Tax
     ou o Managed Payments aceitarem empresa do Brasil.
 - **O campo PAÍS** *(pergunta do operador, 12/10/2026: alunos de Portugal e de outros países de
@@ -742,7 +782,13 @@ antes de decidir): `docs.stripe.com/payments/managed-payments` e `…/managed-pa
 `developer.paddle.com/concepts/sell/branded-integrated-inline-checkout` · da Teachable:
 `support.teachable.com/en/articles/15663382-how-teachable-handles-tax`,
 `…/15624639-set-up-teachable-payments-and-start-selling` e `…/11682500-embed-buy-button` ·
-`paddle.com/help/start/intro-to-paddle/what-am-i-not-allowed-to-sell-on-paddle`.
+`paddle.com/help/start/intro-to-paddle/what-am-i-not-allowed-to-sell-on-paddle` ·
+`paddle.com/pricing` · `developer.paddle.com/get-started/how-paddle-works/digital-products` ·
+`developer.paddle.com/build/subscriptions/update-payment-details` ·
+`paddle.com/help/manage/get-paid/when-and-how-do-i-get-paid` ·
+`docs.dodopayments.com/miscellaneous/accepted-countries-and-territories` e
+`…/developer-resources/inline-checkout` · `docs.lemonsqueezy.com/help/getting-started/supported-countries`
+· `polar.sh/docs/merchant-of-record/supported-countries` e `…/acceptable-use`.
 
 ## Sincronizar e perder o acesso *(Fase 4, etapa 4.4 — 10/10/2026)*
 

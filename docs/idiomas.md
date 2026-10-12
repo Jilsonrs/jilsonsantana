@@ -225,6 +225,11 @@ o idioma na home e **entra já em inglês**.
 
 ## 5. Preço e cobrança (Fase 4)
 
+> **REVISTO EM 12/10/2026 (decisões do operador):** no lançamento a escola vende **só para o
+> Brasil**, em reais. O dólar e a venda para quem mora fora foram para a **fase do exterior**,
+> com outra empresa como vendedora. O que está abaixo é a regra que valerá nessa fase. Detalhe:
+> `billing.md` → *A tela pública de assinar*.
+
 `[operador, 14/09]` **A moeda segue o país do cartão, nunca o idioma do site.**
 
 | Cartão | Mensal | Anual |

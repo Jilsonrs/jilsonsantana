@@ -4335,6 +4335,12 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       assinatura mostra as cobranças devolvidas: é o que sustenta a análise caso a caso, já que
       não há bloqueio automático por reembolso repetido (decisão do operador, 10/10/2026).
 - [ ] **4.8 — Dólar pelo país do cartão + o botão das páginas em inglês (código + decisão).**
+      **O DÓLAR FOI ADIADO PARA A FASE DO EXTERIOR** *(decisão do operador, 12/10/2026: "isso,
+      dólar sai para a fase do exterior")* — ver *Post-MVP → Fase do exterior*. **O que fica
+      desta etapa antes do lançamento:** só o botão de assinar das páginas em inglês, para quem
+      mora no Brasil (a regra de 14/09/2026 continua: liga com uma aula publicada em inglês);
+      ele sai junto do passo 6 da etapa 4.7. O texto abaixo é o histórico da etapa e a regra
+      que valerá na fase do exterior.
       *(Decisão do operador, 10/10/2026: fora do Brasil o prazo de reembolso é de 14 dias —
       `billing.md` → Reembolso. Esta etapa liga os 14 dias à cobrança em dólar. A decidir com
       ele aqui: a página em inglês promete 14 dias a todos, e quem paga com cartão do Brasil
@@ -4366,8 +4372,8 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       **DECIDIDO por ele em 12/10/2026 (P86): no lançamento a escola vende SÓ PARA O BRASIL**,
       e quem é de fora deixa o e-mail para ser avisado (etapa 4.7, passo 6). **E o imposto de
       fora não fica com o contador:** *"tem que ser com empresa terceirizada na fase do
-      exterior"*. **Consequência para ESTA etapa, a confirmar com ele** (escopo e ordem são
-      dele): o dólar pelo país do cartão deixa de ter o que fazer antes do lançamento e passa
+      exterior"*. **Consequência para ESTA etapa, CONFIRMADA por ele no mesmo dia**: o dólar
+      pelo país do cartão deixa de ter o que fazer antes do lançamento e passa
       para a fase do exterior, junto da escolha da empresa terceirizada (P22); o que sobra aqui
       é o botão de assinar das páginas em inglês, para quem mora no Brasil.
       **A direção dele para essa fase (12/10/2026):** *"Se a Paddle resolver, utilizo eles em
@@ -4523,7 +4529,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       Deixada como vencida, o aluno fica com acesso para sempre sem pagar, e nenhum código nosso
       percebe. Conferir no painel antes do primeiro aluno pagante.
 - [ ] **Setup no dashboard (sem código):** Payments Plano Padrão (conta MEI/CNPJ, payout Banco do Brasil) + **Stripe Billing ativado**. Produto **"Assinatura"** com **2 `Price`**: Mensal R$99,90 (sem fidelidade) / Anual ~R$995 (~17% off). Sem free trial, sem conteúdo grátis. **Sem Customer Portal.** *(Versão em dólar: próximo item.)*
-- [ ] **Preços em dólar, pelo país do CARTÃO** *(decisão do operador, 14/09/2026 — `billing.md`)*:
+- [ ] **Preços em dólar, pelo país do CARTÃO** *(decisão do operador, 14/09/2026 — `billing.md`)* — **ADIADO para a fase do exterior (decisão dele, 12/10/2026; ver *Post-MVP*)**:
       **US$ 30/mês** + **US$ 299/ano** (confirmado pelo operador em 14/09). **context7 `/websites/stripe` primeiro:** moedas no mesmo
       `Price` ou `Price`s separados, e como saber o país do cartão **antes** de confirmar a cobrança.
       **Trava:** a moeda nunca sai do idioma nem do prefixo `/en` (`CLAUDE.md` → Membership Gating).
@@ -5608,6 +5614,7 @@ outro aparelho e "daqui a um mês", e o Safari apaga o armazenamento do site em 
 - **JilsonAI Fase 4–5 (RAG + montagem de plano por IA):** living KB (`promotedToKb` → `KbArticle`), RAG over transcripts, and **`buildLearningPlan`** (member describes a goal → JilsonAI assembles a custom trilha with free mix of courses+lessons, adapts to level, cert by competencies). See JILSONAI.md.
 - **JilsonAI Fase 6 — Memory + proatividade** (winback engine). See JILSONAI.md.
 - **Phase 11 — Live cohorts** (tier 2, Zoom)
+- **Fase do exterior — vender para quem mora fora do Brasil** *(criada em 12/10/2026, por decisão do operador; sem data)*. No lançamento a escola vende só para o Brasil, e quem é de fora deixa o e-mail (etapa 4.7, passo 6). Esta fase abre quando essa lista mostrar procura que pague o trabalho. **O que já está decidido por ele:** quem é de fora paga DENTRO do site · o imposto de fora não fica com o contador: uma empresa terceirizada é a vendedora · o dólar (que era a etapa 4.8) e os 14 dias de reembolso de fora entram aqui. **A direção:** a Paddle, *"se a Paddle resolver"* — condicional; a segunda a perguntar é a Dodo Payments. **Antes de qualquer código:** a resposta por escrito da vendedora às duas perguntas da P22 (aceita escola de cursos gravados por assinatura? aceita empresa do Brasil e como paga?), e um plano próprio, com revisão de segurança: são dois sistemas de cobrança lado a lado, e o gate continua lendo UM espelho. É peça nova de stack — critério do `CLAUDE.md` e OK dele. Análise completa, com a tabela das alternativas: `billing.md` → *A tela pública de assinar*.
 - **Phase 12 — Corporate/B2B** (tier 3) — `organization` plugin + Stripe quantity-based (per-seat) subscriptions + self-service packages (10, 30, configurable). A corporate student is a NORMAL student (own login, progress, certificate); only the access source (org subscription) and who paid/configured differ. Anti-sharing (emailOtp + session limit) also lands around here.
 
 > **Removidos do roadmap (decisões deste ciclo):**

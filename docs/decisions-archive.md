@@ -214,3 +214,10 @@ no `CLAUDE.md`; quando forem substituídas por entradas mais novas, descem para 
 *(b) **Ainda NÃO está instalado.** Entra antes de a etapa 4.7 (o visitante assina) ir ao ar — o primeiro pagante que não é o operador. Os pacotes são dependência nova e são nomeados no plano daquele bloco. *(No mesmo dia o operador mandou adiantar: a parte do servidor foi instalada — ver Background Jobs.)**
 *(c) **O limite do plano grátis não está escrito aqui**, de propósito: preço de fornecedor envelhece. Confira na página deles ao instalar.*
 *(d) **GATILHO DE REABERTURA:** o plano grátis deixar de dar conta — o limite mensal estourar com o site funcionando normalmente, ou o plano grátis deixar de existir. Aí se compara com outro serviço **antes** de pagar.*
+
+*Atualizado Out 2026 (24) — **A COBRANÇA ATRASADA DEIXA DE DAR ACESSO SEM PRAZO: AS AULAS FICAM ABERTAS POR 3 DIAS. Decisão do operador, 11/10/2026 (*"2 semanas é muito tempo, ele pode estudar os cursos todos e não pagar mais nada […] não quero perder aluno e nem ser vítima de espertinhos"*). Revê a regra do gate de Ago 2026 no que toca `past_due`.** Detalhe: `billing.md` → *Régua de inadimplência*, e o plano → etapa 4.6b.*
+*(a) **O que decidiu:** a Stripe recomenda tentar a cobrança por 2 semanas, e a regra de Ago 2026 mantinha as aulas abertas por todo esse tempo. Ele separou os dois prazos: a Stripe segue tentando, e as aulas trancam 3 dias depois da cobrança que falhou (entre 0, 3 e 7 dias). Quem paga volta a ter as aulas na hora.*
+*(b) **Junto, pedido por ele:** dois e-mails automáticos — na falha, com a data da próxima tentativa, e antes de trancar. Entram na etapa 4.7.*
+*(c) **NO CÓDIGO desde 12/10/2026** (etapa 4.6b, ainda não publicada): a regra do gate em *Membership Gating* já é a nova.*
+*(d) **O que NÃO mudou:** o resto da regra do gate (o período pago conta; `incomplete` nunca dá acesso; a marca de cancelar não é status) e "churn não apaga nada".*
+*(e) **GATILHO DE REABERTURA:** os dados de alunos de verdade mostrarem que 3 dias perde pagante honesto (muita gente reativando logo depois de trancar) ou que ainda sobra abuso.*
