@@ -477,7 +477,7 @@ export const pt = {
       atrasada: "Não conseguimos cobrar o seu cartão. Troque o cartão para não perder o acesso.",
       // Com a data em que as aulas trancam (3 dias depois da cobrança que falhou) — pedido do operador, 12/10/2026.
       atrasadaAte: "Não conseguimos cobrar o seu cartão. Troque o cartão até {data} para não perder o acesso.",
-      // Depois dos 3 dias, com as aulas já trancadas. RASCUNHO do agente: o operador vai mandar a redação dele (pendência P78).
+      // Depois dos 3 dias, com as aulas já trancadas. Texto aprovado pelo operador em 12/10/2026.
       atrasadaSemAulas: "Não conseguimos cobrar o seu cartão, e as aulas estão trancadas. Troque o cartão para voltar a estudar.",
       formaDePagamento: "Forma de pagamento",
       cartao: "{bandeira} •••• {final} · vence em {mes}/{ano}",

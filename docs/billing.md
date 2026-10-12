@@ -236,9 +236,9 @@ O que a pessoa vê *(escolhas do operador, 12/10/2026)*:
 - **Dentro dos 3 dias**, em Faturamento e Assinatura: "Não conseguimos cobrar o seu cartão.
   Troque o cartão até {data} para não perder o acesso." A data é a do dia em que as aulas
   trancam — e elas trancam na mesma hora em que a cobrança falhou, não no fim desse dia.
-- **Depois dos 3 dias**, no mesmo lugar: o alerta diz que as aulas estão trancadas. O texto que
-  está lá é rascunho do agente; a redação é do operador (pendência P78). A assinatura continua
-  na tela, com "Trocar cartão" e "Cancelar assinatura": o cartão novo paga a cobrança em aberto
+- **Depois dos 3 dias**, no mesmo lugar: "Não conseguimos cobrar o seu cartão, e as aulas estão
+  trancadas. Troque o cartão para voltar a estudar." *(aprovado por ele em 12/10/2026)*. A
+  assinatura continua na tela, com "Trocar cartão" e "Cancelar assinatura": o cartão novo paga a cobrança em aberto
   e as aulas voltam na hora.
 - **A aula trancada** diz "Sua assinatura está com a cobrança atrasada.", com o botão "Trocar
   cartão" — no lugar de "Esta aula é para assinantes." e "Reativar assinatura".

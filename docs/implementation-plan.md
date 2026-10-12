@@ -4076,8 +4076,8 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
         do gate e de ponta a ponta com o aviso; a prova com o relógio de teste da Stripe.
       **FEITO em 12/10/2026 — no `dev`, NÃO publicado.** Respostas do operador na abertura
       (12/10): o comportamento aprovado; a data no aviso de dentro dos 3 dias; a aula trancada
-      com texto próprio e "Trocar cartão"; a frase de depois dos 3 dias é dele e ainda não veio
-      (rascunho do agente no lugar — pendência P78).
+      com texto próprio e "Trocar cartão"; a frase de depois dos 3 dias foi proposta pelo
+      agente e aprovada por ele no mesmo dia (o inglês dos três textos fica na pendência P72).
       `Docs check (context7): Stripe → /websites/stripe → a cobrança que falha deixa a
       assinatura em past_due; o que vem depois da última tentativa depende da opção do painel.`
       - **O que entrou:** o gate (`assinaturaDaAcesso`: `past_due` só até 3 dias depois do "pago
@@ -4160,6 +4160,50 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       "Reativar assinatura". **E vale para TODA assinatura cancelada, não só a da cobrança que
       falhou:** *"o sistema envia automaticamente e-mail para o aluno, como a Anthropic faz"*
       (operador, 10/10/2026) — sai sozinho quando o aviso da Stripe chega, sem botão do admin.
+
+      **OS PASSOS DA 4.7** *(divisão do agente, 12/10/2026, a pedido do operador: "divida em
+      passos […] de forma que eu possa ir fazendo 1 por vez")*. Um passo por sessão, um commit
+      por passo no `dev`, cada um fechado com os quatro gates; o que estiver fechado não é
+      refeito na semana seguinte. O escopo é o do texto acima — aqui só a ordem e o corte.
+      Ao abrir cada passo: o plano curto dele, e as perguntas que forem do operador.
+      - [ ] **Passo 1 — Limite de tentativas nas rotas de cobrança.** Por conta e por IP
+            (`x-real-ip`), nas rotas listadas em (a) acima. **Não depende do operador, a não ser
+            do ok para o pacote** (dependência nova: o agente propõe `express-rate-limit`, em
+            memória — há um servidor só) **e da frase** que a tela mostra a quem passou do
+            limite. Pode ser publicado sozinho: só endurece o que já existe.
+      - [ ] **Passo 2 — O checkout aguenta muita gente ao mesmo tempo.** O item (b) acima (a
+            trava que não espera, e o gate lido pela transação da trava) e a medição do item
+            (d) (a assinatura incompleta gasta um uso do código?), com a correção se gastar.
+            **Não depende do operador.** Pode ser publicado sozinho.
+      - [ ] **Passo 3 — O envio de e-mail (Resend).** Com o operador, nos painéis: a conta no
+            Resend, o domínio e o remetente (pendência P49). No código: o pacote `resend`, uma
+            porta única de envio (com `await` e sem derrubar o pedido — CLAUDE.md → *Membership
+            Gating*), o modelo de e-mail nos dois idiomas e um envio de prova para ele. Sozinho,
+            não muda nada para o aluno.
+      - [ ] **Passo 4 — A conta nasce no pagamento (servidor, ALTO RISCO).** A rota pública que
+            recebe e-mail + plano + código; o aviso da Stripe cria a conta (o cadastro continua
+            fechado), liga o cliente da Stripe, grava o espelho e a origem (UTM). Os casos: o
+            e-mail já tem conta, o pagamento abandonado, o aviso repetido. Revisão de segurança
+            e prova na área restrita. **Depende dos passos 1 e 2.** Não vai ao ar sozinho.
+      - [ ] **Passo 5 — "Crie sua senha".** O e-mail com o link e a tela de definir a senha.
+            **Pergunta para a abertura:** "Esqueci minha senha", na tela de entrar, usa o mesmo
+            mecanismo — entra junto? **Depende dos passos 3 e 4.**
+      - [ ] **Passo 6 — A tela pública de assinar e os botões da home.** O mesmo formulário da
+            4.2 com o campo de e-mail, a confirmação para quem acabou de pagar ("enviamos um
+            e-mail para você criar a senha") e os botões Assinar da home sem login, nos dois
+            idiomas. Os textos são do operador. **Depende dos passos 4 e 5.**
+      - [ ] **Passo 7 — Os e-mails automáticos da assinatura.** A cobrança que falhou (com a
+            data da próxima tentativa), o aviso antes de trancar e a assinatura cancelada (com
+            o link para reativar). Os textos são do operador. **Depende só do passo 3** — pode
+            vir antes dos passos 4 a 6. **Questão em aberto, para a abertura:** o aviso "antes
+            de trancar" sai num dia em que a Stripe pode não mandar aviso nenhum, e a escola não
+            tem fila nem agendador (CLAUDE.md → *Background Jobs*); as saídas são dizer as duas
+            datas num e-mail só, na falha, ou pendurá-lo numa nova tentativa da Stripe.
+      - [ ] **Passo 8 — O teste com cartão de verdade e a abertura ao público.** O teste do
+            operador no site no ar (mensal → anual → reembolso), olhando a taxa da Stripe. Antes
+            de abrir: as pendências P58 (o nome na fatura), P60 (a opção do painel) e P75 (o
+            limite do reembolso), a cópia do banco (Fase 7) e a revisão de segurança da etapa
+            inteira. A publicação é ordem dele.
 - [ ] **4.7b — Admin → Assinaturas vira um PAINEL de assinaturas (código, ALTO RISCO).**
       **MAPA APROVADO pelo operador (10/10/2026: "Aprovo o mapa"), e fica para DEPOIS da 4.7**
       (decisão dele no mesmo dia: *"o Painel pode ficar para depois da 4.7 que é mais
