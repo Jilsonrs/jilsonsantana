@@ -271,6 +271,15 @@ exceto o item 4, que é página pública.
 > operador mandou corrigir duas frases que descreviam o que o sistema ainda não faz ("Salva
 > automaticamente": cada campo tem o botão Salvar; "upload das videoaulas": não existe upload).
 
+> **Feitos em 12/10 e publicados (sessão de revisão visual, responsividade e área logada):**
+> - **Responsividade na aula (`LessonHeader.tsx` e `LessonPage.tsx`):** barra fina de progresso no topo adaptada para mobile e prevenção de rolagem horizontal em telas estreitas / iPhone.
+> - **Trilhas na Home pública (`server/src/views/home.ts`):** separadores visuais e espaçamento responsivo dos itens de trilha no celular.
+> - **Faturamento e Assinaturas (`FaturamentoPage.tsx` e `TrocarCartaoPage.tsx`):** destaque visual no link ativo e botão de voltar adicionado na tela de trocar cartão.
+> - **Revisão completa do Admin:** `PageHeader` com quebra flexível de ações (`flex-wrap`), cartão do curso (`AdminCourseCard.tsx`) com 3 números adaptados para mobile, `CaptionRow.tsx` com larguras responsivas para selects e botões, `AvisoEditorPage.tsx` padronizado com `PageSection` e `Card`, além de quebras de texto (`break-words`, `min-w-0`) em títulos e descrições em `AvisosPage.tsx`, `MensagensAutomaticasPage.tsx`, `HomeListItem.tsx` e `CoursePreviewPage.tsx`.
+> - **Campos de Textos do Site (`SiteTextField.tsx`):** altura proporcional e adaptativa ao conteúdo (`dimensaoDoCampo`: 44px para 1 linha, 68px para 2 linhas, 104px para 4 linhas) eliminando as caixas desproporcionais de 120px para textos curtos.
+> - **Campo Pergunta em FAQ (`HomeListItemForm.tsx` e `FaqField.tsx`):** altura proporcional (`min-h-[64px]` com `rows={2}` e redimensionamento vertical), mantendo o campo Resposta com altura ampla.
+> - **Notificações do aluno (`NotificacoesPage.tsx`):** espaçamento interno vertical do card corrigido para `px-6 py-5 sm:py-6`, com respiro visual equilibrado no topo e no rodapé.
+
 3. **A coluna secundária de "Site"** mostra o título **"Geral"** acima dos três itens (é o que o
    `SecondaryNav.tsx` faz com itens sem `grupo`). Se quiser outro visual, combine com o operador —
    mudar o texto é decisão dele.
@@ -845,16 +854,13 @@ Sem essa separação, a décima tela tem dez paletas paralelas e ninguém sabe q
 - **O azul `#238FE8` é o acento ÚNICO.** No rail, é o único sinal de "onde estou" — por isso o
   hover ali é neutro.
 
-- **Já construído, esperando o seu acabamento** *(conferido em 09/10/2026)*: o **editor do curso em
-  7 passos** no nível 2 — **a revisão dele com o operador está marcada** (`docs/pendencias.md`, P54) —,
-  com o **"+" entre aulas** e o **arrastar das aulas** no Conteúdo; o **sino** ao lado da foto; o
-  **painel do aluno** no Início; e a tela da **aula** (vídeo + lista no nível 2). Cada um tem o seu
-  item na fila de formatação acima.
-- **Vem aí, e vai precisar de você** *(decidido pelo operador, ainda não construído; detalhe no
-  plano)*: o **arrastar na ordem dos cursos e das perguntas** (a mesma peça do Conteúdo) e, do lado
-  público, a **página do curso** em HTML de servidor, a **página curta da trilha**, **Quem somos**,
-  **Contato** e a **página de baixar material** (plano → *Páginas públicas que faltam*). As públicas
-  seguem o caminho da home: mock aqui, transposição, acabamento.
+- **Já construído e revisado** *(atualizado em 12/10/2026)*: o **editor do curso em
+  7 passos** no nível 2 (com o "+" entre aulas e arrastar de aulas no Conteúdo); o **sino** e a **lista de notificações**; o **painel do aluno** no Início; a tela da **aula** (vídeo, progresso responsivo sem rolagem horizontal no iPhone); as telas de **Faturamento e Trocar Cartão** (com links de retorno); a **revisão responsiva do Admin**; os **campos de texto do site e FAQ** com alturas compactas e dinâmicas; e o **Item 32 — Player do Bunny calibrado** (cor oficial `#238FE8` no botão central, barra de progresso e volume, com `Duration` ativado no formato `2:41 / 3:16`).
+- **O que ainda falta na sua fila de tarefas visuais (pendências de acabamento):**
+  1. **Item 4 — Depoimentos na home pública (`server/src/views/home.ts`, seção 7):** refinamento com deslize por toque no celular (`scroll-snap` em CSS puro) para a grade de 1 a 4 cards sorteados.
+  2. **Item 23 — Landing page de venda do curso (`/curso/:slug`) e mock na `design-lab/`:** acabamento da página de vendas do curso (cartão de assinar, bloco do autor, diferenciais com ✓ em duas colunas, ferramentas do curso, trilhas e outros cursos) para orientar a transposição para template rápido de servidor (Bloco C5).
+  3. **Item 14/15 — Polimento dos relatórios do Dashboard (`/dashboard`):** os 4 cartões de relatório hoje estão com o selo EM BREVE; recebem o acabamento visual definitivo quando as métricas agregadas chegarem.
+- **Vem aí no produto, e vai precisar de você** *(plano de etapas futuras)*: o **arrastar na ordem dos cursos e das perguntas** (mesma mecânica do Conteúdo), e as novas páginas públicas (a **página curta da trilha**, **Quem somos**, **Contato** e a **página de baixar material**). Elas seguem o fluxo padrão: mock na `design-lab/`, transposição para template de servidor, e acabamento no código.
 
 **A lei visual completa é `docs/design.md`.** Ela é viva: se você tiver algo melhor, proponha e a
 gente reescreve. O que não muda sem conversa são as travas de **acessibilidade** — elas não
