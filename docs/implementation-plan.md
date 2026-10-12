@@ -4234,8 +4234,9 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             sai sem valor — nunca conta feita na tela.
             **Acrescentado em 12/10/2026, na mesma conversa:** o **país** e o **CPF** entram no
             formulário, que é o mesmo das duas telas (a pública e a de quem está logado) · a
-            **coluna de resumo** com o total de hoje, se ele confirmar (P80 — o agente passou a
-            recomendar; revê a decisão de 10/10 de mostrar "Hoje você paga" só com código) ·
+            **coluna de resumo** com o total de hoje, a renovação, o reembolso e o pagamento
+            seguro — **decisão dele, 12/10/2026** ("Certo"); revê, na tela pública, a decisão de
+            10/10 de mostrar "Hoje você paga" só com código (na tela logada, P80) ·
             **antes de desenhar os campos País e CPF, MEDIR na área restrita o que o campo da
             Stripe já pede sozinho**, com um cartão de teste do Brasil: a doc diz que o campo
             de pagamento cuida do número fiscal de comprador da América Latina, e dois campos
@@ -4342,9 +4343,17 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       que puder com a Stripe"* — pesa para o Stripe Managed Payments (a Stripe como vendedora).
       Conferido na doc no mesmo dia: ele só funciona com o Checkout da Stripe e Payment Links, e
       **assinatura já feita não migra para ele** — decide-se ANTES da primeira venda para fora
-      (P86 trata do que fazer até lá). A verificar aqui: se aceita empresa brasileira, e se a
-      página dele abre dentro do site. O desenho proposto: quem é do Brasil paga dentro do
-      site, em reais; quem é de fora, pela Stripe como vendedora. Detalhe em `billing.md`.
+      (P86 trata do que fazer até lá).
+      **PESQUISADO a pedido dele, no mesmo dia — muda esta etapa:** (1) **decisão dele: quem é
+      de fora também não sai do site para pagar** (*"é uma experiência horrível de compra"*);
+      (2) **com a empresa no Brasil, a Stripe não cuida do imposto de fora por nenhum caminho:**
+      o Brasil não está na lista de países do Managed Payments nem na do Stripe Tax (da América
+      Latina, só o México). As "duas opções" que a P22 levava ao contador não existem para a
+      empresa de hoje. O que sobra, sempre com o aluno dentro do site: lançar só para o Brasil ·
+      vender para fora pelo Brasil, com o contador cuidando do imposto · empresa num país da
+      lista, com o Stripe Tax e a mesma tela · a Paddle só para quem é de fora (peça nova de
+      stack). **A escolha é a P86, e esta etapa só abre depois dela.** Fatos, citações e as
+      páginas lidas: `billing.md` → *A tela pública de assinar*.
 - [ ] **4.9 — Pix recorrente (código).** O mandato no Payment Element e a régua própria do Pix (falha
       de Pix não se retenta como cartão). **Trazido da 4.2 (10/10/2026):** o Pix é um item a mais na
       lista de formas de pagamento do servidor (na 4.2, só cartão), sem refazer a tela. A home já

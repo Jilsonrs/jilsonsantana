@@ -259,6 +259,11 @@ site para português e pagaria em real, bem menos que US$ 30.
   Stripe** (Checkout / Payment Links), o que colide com a decisão atual de pagamento **embutido nas
   telas da escola** (Payment Element, sem página hospedada). **Não verificado:** se aceita empresa
   brasileira.
+- **VERIFICADO EM 12/10/2026 — corrige os dois itens acima:** com a empresa no Brasil, **nenhum
+  dos dois existe**. O Brasil não está na lista de países em que a empresa pode estar para usar o
+  Stripe Tax (da América Latina, só o México) nem na do Managed Payments. E o operador decidiu,
+  no mesmo dia, que quem é de fora também não sai do site para pagar. Os caminhos que sobram e
+  as páginas lidas: `billing.md` → *A tela pública de assinar*; a escolha é a P86.
 
 **A escolha**, para a Fase 4 e com o contador: **pagar dentro do site e cuidar da papelada fiscal**
 × **usar a página da Stripe e não ter papelada**. Levar junto ao contador: a conta Stripe está como

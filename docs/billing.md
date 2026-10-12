@@ -377,7 +377,9 @@ gera mais aviso, o acesso ficaria liberado para sempre. *(Achado P1 da revisão 
   dessa linha (12/10/2026) está em *A tela pública de assinar*, abaixo — P80 e P81.**
 - **A tela é simples, "como a Anthropic faz"** (10/10/2026, depois do primeiro teste dele): cada
   cartão de plano diz o preço e como é cobrado; o anual leva o selo do desconto (calculado dos
-  dois preços, nunca um texto fixo); **"Hoje você paga" só aparece com código promocional**. O
+  dois preços, nunca um texto fixo); **"Hoje você paga" só aparece com código promocional**
+  *(revisto em 12/10/2026 para a tela PÚBLICA, que ganha a coluna de resumo com o total de hoje
+  — ver *A tela pública de assinar*; na tela logada, P80)*. O
   acabamento visual é do Antigravity. *Reabre se o dólar (etapa 4.8) ou o Pix (4.9) pedirem
   mostrar de novo o valor final antes de confirmar.*
 - **A home tem que levar à assinatura também quem não tem conta** (10/10/2026): é a etapa 4.7.
@@ -507,11 +509,43 @@ customer's full billing address for tax calculation […] use the Address Elemen
   funcionando com o pagamento embutido de hoje; e *"Managed Payments can only be enabled for
   new subscriptions purchased through a Managed Payments Checkout Session; existing
   subscriptions are not eligible"* — **assinatura já feita não migra: decide-se ANTES da
-  primeira venda para fora.** O desenho que atende às duas vontades dele: quem é do Brasil paga
-  dentro do site, em reais, como hoje; quem é de fora paga pela Stripe como vendedora.
-  **Não verificado:** se o Managed Payments aceita empresa brasileira, e se a página dele pode
-  abrir dentro do site. Tudo isso é da etapa 4.8; **a tela de hoje não precisa ser refeita por
-  causa disso** — o que muda lá é para onde vai quem escolhe um país de fora.
+  primeira venda para fora.**
+- **DECISÃO: QUEM É DE FORA TAMBÉM NÃO SAI DO SITE PARA PAGAR** *(operador, 12/10/2026)*: *"eu
+  não quero que quem é de fora saia do meu site para fazer o check out, é uma experiência
+  horrível de compra"*. Reafirma, para o aluno de fora, a regra de não haver página de pagamento
+  hospedada. *Sem gatilho de reabertura além de decisão dele.*
+- **O QUE A PESQUISA ACHOU, a pedido dele** `[FATO — páginas da Stripe e da Paddle lidas em
+  12/10/2026; endereços no fim desta seção]`. **Com a empresa no Brasil, a Stripe NÃO tira o
+  imposto de fora das mãos da escola, por nenhum dos dois caminhos:**
+  - **Stripe como vendedora (Managed Payments):** a empresa precisa estar num dos países da
+    lista (EUA, Canadá, 31 países da Europa — Portugal entre eles —, Austrália, Hong Kong, Japão,
+    Singapura). **O Brasil não está.** E não serve ao pedido dele: *"Managed Payments doesn't
+    support: […] Payment flows that use embeddable web components […] Creating a subscription
+    outside of Checkout or Payment Links"*. Curso gravado é produto aceito ("Online courses and
+    training").
+  - **Stripe Tax:** a tabela de países diz onde a empresa pode estar ("your business can be
+    based in this location and use Stripe Tax"). **O Brasil não aparece nela**; da América
+    Latina, só o México (*"Stripe can collect tax if your business is based in Mexico"*).
+    **Corrige o que estes documentos supunham desde 14/09/2026** (as "duas opções" da P22).
+  - **Se a empresa estivesse num país da lista**, o Stripe Tax funcionaria com o pagamento
+    embutido de hoje (o aluno não sai do site) e cobriria quase tudo: a Stripe registra
+    ("Register for me", no plano Tax Complete) e entrega a declaração do IVA da União Europeia
+    inteira por um registro só, na Irlanda ("EU Non-Union OSS"), e a do Canadá. Ainda assim a
+    escola confere cada declaração e paga o imposto: *"Using Stripe's filing service doesn't
+    transfer your statutory tax obligations to Stripe."*
+  - **Fora da Stripe:** a Paddle é vendedora (cuida do imposto), aceita empresa de qualquer
+    país fora de uma lista de bloqueados em que o Brasil não está, e tem um quadro de pagamento
+    que abre DENTRO do site (*"embedding a frame with Paddle Checkout into your website"*). O
+    custo: o formulário é o dela, não o da escola; é um segundo sistema de cobrança, só para
+    quem é de fora (um segundo aviso de pagamento para o servidor ouvir); e a taxa é maior que a
+    da Stripe. **É peça nova de stack: só entra por decisão dele, com o critério do `CLAUDE.md`.**
+  - **Os caminhos que sobram, com o aluno de fora dentro do site** (a escolha é a **P86**):
+    (1) lançar só para o Brasil e guardar o e-mail de quem é de fora · (2) vender de fora pelo
+    Brasil, como hoje, com o contador cuidando do imposto de cada país à mão · (3) abrir empresa
+    num país da lista e usar o Stripe Tax com a mesma tela · (4) a Paddle, só para quem é de
+    fora. **A tela de assinar é a mesma nos quatro:** o campo País é o que separa os casos.
+  - **A confirmar com o suporte da Stripe** (ele, pelo painel): se há previsão de o Stripe Tax
+    ou o Managed Payments aceitarem empresa do Brasil.
 - **O campo PAÍS** *(pergunta do operador, 12/10/2026: alunos de Portugal e de outros países de
   língua portuguesa podem querer assinar já; "se incluir país no cadastro talvez seja uma opção
   como a Udemy faz")*: **perguntar o país não tem consequência nenhuma; o que tem consequência
@@ -529,7 +563,7 @@ customer's full billing address for tax calculation […] use the Address Elemen
 | Mensal ou anual na tela de pagamento, com selo no anual | sim (anual vem marcado) | escolhe antes, na página | **já temos** (mensal vem marcado) | fica como está |
 | "O que está incluído" | 3 linhas | 5 a 6 linhas | só na home | **vale ter** (a lista da home) |
 | Dizer que renova sozinha, por quanto, até cancelar | sim | sim | só a frase da Stripe embaixo do cartão, sem valor | **vale ter** (uma linha) |
-| Resumo do pedido numa coluna (total de hoje, próxima cobrança) | sim | sim | "Hoje você paga", só com código (decisão de 10/10) | **vale ter** (recomendação REVISTA em 12/10: ver abaixo) |
+| Resumo do pedido numa coluna (total de hoje, próxima cobrança) | sim | sim | "Hoje você paga", só com código (decisão de 10/10) | **sim** (decisão dele, 12/10/2026) |
 | Código promocional | sim | sim | **já temos** | — |
 | "Cancele quando quiser" | sim, e diz onde | sim | **já temos** | — |
 | Reembolso | "não concedemos, exceto por lei" | selo de 30 dias | não aparece na tela | **vale ter** (7 dias) |
@@ -557,7 +591,9 @@ celular, uma coluna só, nesta ordem)*:
    por mês". Embaixo, "Sem fidelidade. Cancele quando quiser."
 5. **Código promocional** — o de hoje, com "Hoje você paga" só quando há código.
 6. **Pagamento** — o campo do cartão de hoje, com a frase da Stripe embaixo dele.
-7. **O resumo, com o botão** *(novo; recomendação revista em 12/10/2026, à espera dele — P80)* —
+7. **O resumo, com o botão** *(novo; **decisão do operador, 12/10/2026** — à pergunta "fica a
+   coluna de resumo, com o total de hoje e as três linhas dentro dela?", ele respondeu
+   "Certo")* —
    uma coluna ao lado do formulário, como a Udemy e o Mosh: o plano escolhido e o valor, o
    desconto quando há código, **o total de hoje**, a renovação (por quanto, até cancelar), o
    reembolso de 7 dias e o pagamento seguro. Depois o botão **Assinar** e a linha dos Termos.
@@ -636,12 +672,24 @@ limite de tentativas · o **8** só abre com os Termos de Uso e a Política de P
 porque ela repete o que o cartão do plano diz e ele pediu a tela simples em 10/10/2026. O
 operador achou a coluna interessante e disse que não quer refazer a tela a cada novidade. Com o
 país, o CPF e, mais adiante, o dólar e o imposto de fora, o total final precisa de um lugar
-fixo: **o agente passou a recomendar a coluna.** Se ele confirmar, revê a decisão de 10/10 de
-mostrar "Hoje você paga" só com código (o gatilho de reabertura dela já previa isso).
+fixo: **o agente passou a recomendar a coluna, e ele confirmou no mesmo dia ("Certo").** Na
+tela pública, isso revê a decisão de 10/10 de mostrar "Hoje você paga" só com código (o gatilho
+de reabertura dela já previa). Na tela de quem está logado, continua a P80. *Reabre se a coluna
+confundir quem assina — foi o motivo da decisão de 10/10.*
 
 **Sugerido pelo agente e RECUSADO pelo operador** *(não propor de novo sem o gatilho)*:
 - **Topo só com o logo e "Voltar", sem menu** (como a Udemy e o Mosh) — recusado em 12/10/2026:
   a tela leva o menu e o rodapé do site. O gatilho está na decisão, no começo desta seção.
+- **Quem é de fora pagar pela página da Stripe** (a Stripe como vendedora) — recusado em
+  12/10/2026: ninguém sai do site para pagar. E a pesquisa do mesmo dia mostrou que o caminho
+  nem existe para empresa do Brasil.
+
+**As páginas lidas em 12/10/2026** (preço e lista de países de fornecedor envelhecem: reler
+antes de decidir): `docs.stripe.com/payments/managed-payments` e `…/managed-payments/eligibility`
+· `docs.stripe.com/tax/supported-countries` e `…/supported-countries/latin-america-and-caribbean`
+· `docs.stripe.com/tax/filing` e `docs.stripe.com/tax/file-with-stripe-outside-us` ·
+`paddle.com/help/start/intro-to-paddle/which-countries-are-supported-by-paddle` ·
+`developer.paddle.com/concepts/sell/branded-integrated-inline-checkout`.
 
 ## Sincronizar e perder o acesso *(Fase 4, etapa 4.4 — 10/10/2026)*
 
