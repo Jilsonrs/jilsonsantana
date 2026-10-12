@@ -1,5 +1,6 @@
 import { Link, Navigate } from "react-router-dom";
 import { Plano, SituacaoDoFaturamento } from "@jilson/core";
+import { ArrowLeft } from "lucide-react";
 import { PageContainer, PageHeader, PageSection } from "@/components/layout/PageLayout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -45,8 +46,11 @@ export function MudarDePlanoPage() {
   if (!feito && !mudanca.enviando && assinatura.data && !carregando && !falhou && !temOQueMostrar) return <Navigate to={TELA_DO_FATURAMENTO} replace />;
 
   const voltar = (
-    <Button asChild variant={feito ? "default" : "ghost"}>
-      <Link to={TELA_DO_FATURAMENTO}>{t.nav.faturamento}</Link>
+    <Button asChild variant={feito ? "default" : "outline"} className="gap-2">
+      <Link to={TELA_DO_FATURAMENTO}>
+        <ArrowLeft className="size-4" aria-hidden="true" />
+        {t.nav.faturamento}
+      </Link>
     </Button>
   );
 
@@ -54,12 +58,16 @@ export function MudarDePlanoPage() {
     <PageContainer>
       <PageHeader title={t.faturamento.mudarDePlano} description={p.descricao} />
       {feito && (
-        <div className="space-y-4">
-          <p role="status" className="max-w-3xl text-foreground">
-            {feito.como === "trocado" ? p.agoraAnual : p.mudaParaOMensal.replace("{data}", dataPorExtenso(feito.em))}
-          </p>
-          {voltar}
-        </div>
+        <Card className="max-w-xl">
+          <CardContent className="space-y-4 p-6 sm:p-8">
+            <div className="rounded-xl border border-border/60 bg-muted/30 p-4">
+              <p role="status" className="text-sm font-medium text-foreground">
+                {feito.como === "trocado" ? p.agoraAnual : p.mudaParaOMensal.replace("{data}", dataPorExtenso(feito.em))}
+              </p>
+            </div>
+            <div className="pt-2">{voltar}</div>
+          </CardContent>
+        </Card>
       )}
       {!feito && carregando && <p className="text-muted-foreground">{t.comum.carregando}</p>}
       {!feito && !carregando && falhou && (
@@ -71,14 +79,14 @@ export function MudarDePlanoPage() {
         <div className="space-y-8">
           <PageSection title={t.faturamento.seuPlano}>
             <Card className="max-w-3xl">
-              <CardContent className="flex flex-wrap items-center gap-3 pt-6">
+              <CardContent className="flex flex-wrap items-center justify-between gap-3 p-6">
                 {viva.plano && viva.preco && (
                   <p className="text-base font-semibold text-foreground">
                     {viva.plano === Plano.ANUAL ? t.assinar.anual : t.assinar.mensal} · {dinheiro(viva.preco.centavos, viva.preco.moeda)}
                     {viva.plano === Plano.ANUAL ? t.assinar.porAno : t.assinar.porMes}
                   </p>
                 )}
-                <Badge variant="secondary">{p.atual}</Badge>
+                <Badge variant="secondary" className="px-2.5 py-0.5 font-medium">{p.atual}</Badge>
               </CardContent>
             </Card>
           </PageSection>
@@ -86,13 +94,15 @@ export function MudarDePlanoPage() {
           {!viva.trocaMarcada && troca && (
             <div className="space-y-4">
               {mudanca.noBanco && (
-                <p role="status" className="max-w-3xl text-sm text-foreground">
-                  {t.faturamento.banco.confirmando}
-                </p>
+                <div className="max-w-3xl rounded-xl border border-border/60 bg-muted/30 p-4">
+                  <p role="status" className="text-sm font-medium text-foreground">
+                    {t.faturamento.banco.confirmando}
+                  </p>
+                </div>
               )}
               {falha && (
-                <div className="max-w-3xl space-y-3">
-                  <p role="alert" className="text-sm text-destructive">
+                <div className="max-w-3xl space-y-3 rounded-xl border border-destructive/20 bg-destructive/5 p-4">
+                  <p role="alert" className="text-sm font-medium text-destructive">
                     {falha === "recusado" ? p.cartaoRecusado : falha === "banco" ? t.faturamento.banco.naoConcluiuNoPlano : p.erro}
                   </p>
                   {falha === "recusado" && (
@@ -105,10 +115,14 @@ export function MudarDePlanoPage() {
               <OfertaDePlano troca={troca} aoMudar={() => void mudanca.mudar(troca)} enviando={mudanca.enviando} />
             </div>
           )}
-          {!viva.trocaMarcada && !troca && parada && <p className="max-w-3xl text-sm text-muted-foreground">{p.renovacaoParada.replace("{data}", dataPorExtenso(parada))}</p>}
+          {!viva.trocaMarcada && !troca && parada && (
+            <div className="max-w-3xl rounded-xl border border-border/60 bg-muted/30 p-4">
+              <p className="text-sm text-muted-foreground">{p.renovacaoParada.replace("{data}", dataPorExtenso(parada))}</p>
+            </div>
+          )}
           {!viva.trocaMarcada && !troca && atrasada && (
-            <div className="max-w-3xl space-y-3">
-              <p role="alert" className="text-sm text-destructive">
+            <div className="max-w-3xl space-y-3 rounded-xl border border-destructive/20 bg-destructive/5 p-4">
+              <p role="alert" className="text-sm font-medium text-destructive">
                 {p.atrasada}
               </p>
               {viva.aceitaCartao && (
@@ -118,7 +132,7 @@ export function MudarDePlanoPage() {
               )}
             </div>
           )}
-          {voltar}
+          <div className="pt-2">{voltar}</div>
         </div>
       )}
     </PageContainer>

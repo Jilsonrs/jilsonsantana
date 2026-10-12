@@ -24,8 +24,8 @@ export function AcoesDoPlano({ assinatura }: { assinatura: AssinaturaComAcesso }
   if (!podeCancelar && !assinatura.podeManter && !assinatura.podeMudarDePlano && manter.isIdle) return null;
 
   return (
-    <div className="space-y-3 pt-2">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+    <div className="space-y-4 border-t border-border/40 pt-4 mt-2">
+      <div className="flex flex-wrap items-center gap-3">
         {assinatura.podeManter && (
           <Button type="button" onClick={() => manter.mutate()} disabled={manter.isPending}>
             {manter.isPending ? t.assinar.processando : t.faturamento.manter}
@@ -43,14 +43,18 @@ export function AcoesDoPlano({ assinatura }: { assinatura: AssinaturaComAcesso }
         )}
       </div>
       {manter.isSuccess && (
-        <p role="status" className="text-sm text-foreground">
-          {t.faturamento.cancelamento.mantida}
-        </p>
+        <div className="rounded-xl border border-border/60 bg-muted/30 p-3.5">
+          <p role="status" className="text-sm font-medium text-foreground">
+            {t.faturamento.cancelamento.mantida}
+          </p>
+        </div>
       )}
       {manter.isError && (
-        <p role="alert" className="text-sm text-destructive">
-          {t.faturamento.cancelamento.erroAoManter}
-        </p>
+        <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-3.5">
+          <p role="alert" className="text-sm font-medium text-destructive">
+            {t.faturamento.cancelamento.erroAoManter}
+          </p>
+        </div>
       )}
     </div>
   );

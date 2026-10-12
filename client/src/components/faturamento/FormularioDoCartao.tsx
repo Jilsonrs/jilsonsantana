@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { CartaoTrocado } from "@jilson/core";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { aplicarCartaoNovo, prepararTrocaDeCartao } from "@/lib/api";
 import { codigoDoErro } from "@/lib/course-form";
 import { TELA_DO_FATURAMENTO } from "@/lib/faturamento";
@@ -76,27 +77,37 @@ function CampoEBotao({ chavePublicavel, aoTrocar, aoNaoTerOndePor }: Pick<Props,
   }
 
   return (
-    <form
-      className="max-w-2xl space-y-6"
-      onSubmit={(evento) => {
-        evento.preventDefault();
-        void enviar();
-      }}
-    >
-      <CampoDoCartao />
-      {noBanco && (
-        <p role="status" className="text-sm text-foreground">
-          {t.banco.confirmando}
-        </p>
-      )}
-      {erro && (
-        <p role="alert" className="text-sm text-destructive">
-          {erro}
-        </p>
-      )}
-      <Button type="submit" size="lg" disabled={enviando} className="min-h-12 w-full sm:w-auto">
-        {enviando ? t.salvando : t.salvarCartao}
-      </Button>
-    </form>
+    <Card className="max-w-2xl">
+      <CardContent className="p-6 sm:p-8">
+        <form
+          className="space-y-6"
+          onSubmit={(evento) => {
+            evento.preventDefault();
+            void enviar();
+          }}
+        >
+          <CampoDoCartao />
+          {noBanco && (
+            <div className="rounded-xl border border-border/60 bg-muted/30 p-3.5">
+              <p role="status" className="text-sm font-medium text-foreground">
+                {t.banco.confirmando}
+              </p>
+            </div>
+          )}
+          {erro && (
+            <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-3.5">
+              <p role="alert" className="text-sm font-medium text-destructive">
+                {erro}
+              </p>
+            </div>
+          )}
+          <div className="pt-2">
+            <Button type="submit" size="lg" disabled={enviando} className="min-h-12 w-full sm:w-auto">
+              {enviando ? t.salvando : t.salvarCartao}
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
   );
 }

@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { SituacaoDoFaturamento } from "@jilson/core";
 import { PageContainer, PageHeader } from "@/components/layout/PageLayout";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { BlocoDoCartao } from "@/components/faturamento/BlocoDoCartao";
 import { BlocoDoPlano } from "@/components/faturamento/BlocoDoPlano";
 import { TELA_DE_ASSINAR } from "@/lib/assinar";
@@ -32,23 +33,29 @@ export function FaturamentoPage() {
         </p>
       )}
       {assinatura?.situacao === SituacaoDoFaturamento.NENHUMA && (
-        <div className="space-y-4">
-          <p className="text-foreground">{t.faturamento.semAssinatura}</p>
-          <Button asChild>
-            <Link to={TELA_DE_ASSINAR}>{t.assinar.botao}</Link>
-          </Button>
-        </div>
+        <Card className="max-w-xl">
+          <CardContent className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-base font-medium text-foreground">{t.faturamento.semAssinatura}</p>
+            <Button asChild className="shrink-0">
+              <Link to={TELA_DE_ASSINAR}>{t.assinar.botao}</Link>
+            </Button>
+          </CardContent>
+        </Card>
       )}
       {assinatura?.situacao === SituacaoDoFaturamento.TERMINADA && (
-        <div className="space-y-4">
-          <p className="text-foreground">{assinatura.terminouEm ? t.faturamento.terminou.replace("{data}", dataPorExtenso(assinatura.terminouEm)) : t.faturamento.terminouSemData}</p>
-          <Button asChild>
-            <Link to={TELA_DE_ASSINAR}>{t.assinar.botaoReativar}</Link>
-          </Button>
-        </div>
+        <Card className="max-w-xl">
+          <CardContent className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-base font-medium text-foreground">
+              {assinatura.terminouEm ? t.faturamento.terminou.replace("{data}", dataPorExtenso(assinatura.terminouEm)) : t.faturamento.terminouSemData}
+            </p>
+            <Button asChild className="shrink-0">
+              <Link to={TELA_DE_ASSINAR}>{t.assinar.botaoReativar}</Link>
+            </Button>
+          </CardContent>
+        </Card>
       )}
       {viva && (
-        <div className="space-y-12">
+        <div className="space-y-8">
           <BlocoDoPlano assinatura={viva} />
           <BlocoDoCartao cartao={viva.cartao} aceitaCartao={viva.aceitaCartao} />
         </div>

@@ -11,11 +11,13 @@ export function SaidaDoCancelamento({ titulo, texto, botao, aoClicar, enviando, 
   const t = useT();
   return (
     <Card className="max-w-3xl flex-1">
-      <CardContent className="flex h-full flex-col gap-3 pt-6">
-        {titulo && <h2 className="text-base font-semibold text-foreground">{titulo}</h2>}
-        {texto && <p className="text-sm text-muted-foreground">{texto}</p>}
-        <div className="mt-auto pt-1">
-          <Button type="button" variant="outline" onClick={aoClicar} disabled={desligado}>
+      <CardContent className="flex h-full flex-col justify-between gap-5 p-6">
+        <div className="space-y-2">
+          {titulo && <h2 className="text-base font-semibold tracking-tight text-foreground">{titulo}</h2>}
+          {texto && <p className="text-sm leading-relaxed text-muted-foreground">{texto}</p>}
+        </div>
+        <div className="pt-2">
+          <Button type="button" variant="outline" onClick={aoClicar} disabled={desligado} className="w-full sm:w-auto">
             {enviando ? t.assinar.processando : botao}
           </Button>
         </div>

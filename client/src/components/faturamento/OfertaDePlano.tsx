@@ -22,15 +22,19 @@ export function OfertaDePlano({ troca, aoMudar, enviando }: { troca: TrocaDePlan
 
   return (
     <Card className="max-w-3xl">
-      <CardContent className="space-y-3 pt-6">
-        <p className="text-base font-semibold text-foreground">
-          {paraOAnual ? t.assinar.anual : t.assinar.mensal} · {preco}
-          {paraOAnual ? t.assinar.porAno : t.assinar.porMes}
-        </p>
-        <p className="text-sm text-muted-foreground">{explicacao}</p>
-        <Button type="button" onClick={aoMudar} disabled={enviando}>
-          {enviando ? t.assinar.processando : paraOAnual ? p.mudarParaOAnual : p.mudarParaOMensal}
-        </Button>
+      <CardContent className="space-y-4 p-6 sm:p-8">
+        <div className="space-y-1.5">
+          <p className="text-lg font-semibold tracking-tight text-foreground">
+            {paraOAnual ? t.assinar.anual : t.assinar.mensal} · {preco}
+            {paraOAnual ? t.assinar.porAno : t.assinar.porMes}
+          </p>
+          <p className="text-sm leading-relaxed text-muted-foreground">{explicacao}</p>
+        </div>
+        <div className="pt-2">
+          <Button type="button" onClick={aoMudar} disabled={enviando} className="min-h-11 w-full sm:w-auto">
+            {enviando ? t.assinar.processando : paraOAnual ? p.mudarParaOAnual : p.mudarParaOMensal}
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );

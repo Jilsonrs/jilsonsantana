@@ -2,8 +2,10 @@ import { lazy, Suspense, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import type { CartaoTrocado } from "@jilson/core";
+import { CreditCard, ArrowLeft } from "lucide-react";
 import { PageContainer, PageHeader } from "@/components/layout/PageLayout";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { usePlanosDaAssinatura } from "@/lib/assinar";
 import { CHAVE_DA_MINHA_ASSINATURA, comAcesso, descreverCartao, TELA_DO_FATURAMENTO, useMinhaAssinatura } from "@/lib/faturamento";
 import { useT } from "@/lib/language";
@@ -58,20 +60,34 @@ export function TrocarCartaoPage() {
     <PageContainer>
       <PageHeader title={viva?.cartao || trocado ? t.faturamento.trocarCartao : t.faturamento.adicionarCartao} description={t.faturamento.cartaoDescricao} />
       {trocado && (
-        <div className="space-y-4">
-          <p role="status" className="text-foreground">
-            {trocado.pagou ? t.faturamento.cartaoAtualizadoEPago : trocado.confirmar ? t.faturamento.banco.naoConcluiuNoCartao : t.faturamento.cartaoAtualizado}
-          </p>
-          {trocado.confirmar && !trocado.pagou && (
-            <Button type="button" variant="outline" onClick={() => void confirmarPagamento()} disabled={confirmando}>
-              {confirmando ? t.assinar.processando : t.faturamento.banco.confirmar}
-            </Button>
-          )}
-          {trocado.cartao && <p className="text-sm font-semibold text-foreground">{descreverCartao(t.faturamento, trocado.cartao)}</p>}
-          <Button asChild>
-            <Link to={TELA_DO_FATURAMENTO}>{t.nav.faturamento}</Link>
-          </Button>
-        </div>
+        <Card className="max-w-xl">
+          <CardContent className="space-y-4 p-6 sm:p-8">
+            <div className="rounded-xl border border-border/60 bg-muted/30 p-4">
+              <p role="status" className="text-sm font-medium text-foreground">
+                {trocado.pagou ? t.faturamento.cartaoAtualizadoEPago : trocado.confirmar ? t.faturamento.banco.naoConcluiuNoCartao : t.faturamento.cartaoAtualizado}
+              </p>
+            </div>
+            {trocado.confirmar && !trocado.pagou && (
+              <Button type="button" variant="outline" onClick={() => void confirmarPagamento()} disabled={confirmando}>
+                {confirmando ? t.assinar.processando : t.faturamento.banco.confirmar}
+              </Button>
+            )}
+            {trocado.cartao && (
+              <div className="flex items-center gap-3 rounded-xl border border-border/60 bg-card p-4">
+                <CreditCard className="size-5 shrink-0 text-muted-foreground" aria-hidden="true" />
+                <p className="text-sm font-semibold text-foreground">{descreverCartao(t.faturamento, trocado.cartao)}</p>
+              </div>
+            )}
+            <div className="pt-2">
+              <Button asChild className="gap-2">
+                <Link to={TELA_DO_FATURAMENTO}>
+                  <ArrowLeft className="size-4" aria-hidden="true" />
+                  {t.nav.faturamento}
+                </Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       )}
       {!trocado && carregando && <p className="text-muted-foreground">{t.comum.carregando}</p>}
       {!trocado && !carregando && falhou && (
@@ -81,15 +97,25 @@ export function TrocarCartaoPage() {
       )}
       {!trocado && !carregando && !falhou && aceita && planos.data && moeda && (
         <Suspense fallback={<p className="text-muted-foreground">{t.comum.carregando}</p>}>
-          <FormularioDoCartao
-            dados={{ chavePublicavel: planos.data.chavePublicavel, formasDePagamento: planos.data.formasDePagamento, moeda }}
-            aoTrocar={(resultado) => {
-              setTrocado(resultado);
-              // O resumo guardou o cartão antigo (e, se a cobrança estava atrasada, o alerta).
-              void queryClient.invalidateQueries({ queryKey: CHAVE_DA_MINHA_ASSINATURA });
-            }}
-            aoNaoTerOndePor={() => irPara(TELA_DO_FATURAMENTO)}
-          />
+          <div className="space-y-6">
+            <FormularioDoCartao
+              dados={{ chavePublicavel: planos.data.chavePublicavel, formasDePagamento: planos.data.formasDePagamento, moeda }}
+              aoTrocar={(resultado) => {
+                setTrocado(resultado);
+                // O resumo guardou o cartão antigo (e, se a cobrança estava atrasada, o alerta).
+                void queryClient.invalidateQueries({ queryKey: CHAVE_DA_MINHA_ASSINATURA });
+              }}
+              aoNaoTerOndePor={() => irPara(TELA_DO_FATURAMENTO)}
+            />
+            <div className="pt-2">
+              <Button asChild variant="outline" className="gap-2">
+                <Link to={TELA_DO_FATURAMENTO}>
+                  <ArrowLeft className="size-4" aria-hidden="true" />
+                  {t.nav.faturamento}
+                </Link>
+              </Button>
+            </div>
+          </div>
         </Suspense>
       )}
     </PageContainer>

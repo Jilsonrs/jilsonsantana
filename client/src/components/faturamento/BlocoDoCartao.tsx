@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { CreditCard } from "lucide-react";
 import type { CartaoDaAssinatura } from "@jilson/core";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -16,8 +17,15 @@ export function BlocoDoCartao({ cartao, aceitaCartao }: { cartao: CartaoDaAssina
   return (
     <PageSection title={t.formaDePagamento}>
       <Card className="max-w-3xl">
-        <CardContent className="flex flex-col gap-4 pt-6 sm:flex-row sm:items-center sm:justify-between">
-          <p className={cartao ? "text-sm font-semibold text-foreground" : "text-sm text-muted-foreground"}>{cartao ? descreverCartao(t, cartao) : t.semCartao}</p>
+        <CardContent className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-border/60 bg-muted/40 text-muted-foreground" aria-hidden="true">
+              <CreditCard className="size-5" />
+            </div>
+            <p className={cartao ? "text-sm font-semibold text-foreground" : "text-sm text-muted-foreground"}>
+              {cartao ? descreverCartao(t, cartao) : t.semCartao}
+            </p>
+          </div>
           {aceitaCartao && (
             <Button asChild variant="outline">
               <Link to={TELA_DE_TROCAR_O_CARTAO}>{cartao ? t.trocarCartao : t.adicionarCartao}</Link>
