@@ -421,8 +421,8 @@ ${courses.map((c) => `
         <div class="trilhas-bottom-grid">
 
           <!-- Item 1 -->
-          <div style="display: flex; flex-direction: column; gap: 20px;">
-            <div style="display: flex; align-items: center; gap: 10px;">
+          <div class="trilha-feature-item">
+            <div class="trilha-feature-header">
               <div style="color: var(--brand-blue); flex-shrink: 0; display: flex;">
                 <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                   stroke-width="2">
@@ -437,8 +437,8 @@ ${courses.map((c) => `
           </div>
 
           <!-- Item 2 -->
-          <div style="display: flex; flex-direction: column; gap: 20px;">
-            <div style="display: flex; align-items: center; gap: 10px;">
+          <div class="trilha-feature-item">
+            <div class="trilha-feature-header">
               <div style="color: var(--brand-blue); flex-shrink: 0; display: flex;">
                 <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                   stroke-width="2">
@@ -459,16 +459,16 @@ ${courses.map((c) => `
           </div>
 
           <!-- Item 3 -->
-          <div style="display: flex; flex-direction: column; gap: 20px;">
-            <div style="display: flex; align-items: center; min-height: 28px;">
+          <div class="trilha-feature-item">
+            <div class="trilha-feature-header" style="min-height: 28px;">
               <img src="/img/JilsonAI.png" alt="${escapeHtml(dict.home.trilhas.features[2].title)}" style="height: 22px; width: auto; object-fit: contain;">
             </div>
             <p style="color: var(--text-muted); font-size: 1rem; line-height: 1.5; margin: 0;">${escapeHtml(dict.home.trilhas.features[2].desc)}</p>
           </div>
 
           <!-- Item 4 -->
-          <div style="display: flex; flex-direction: column; gap: 20px;">
-            <div style="display: flex; align-items: center; gap: 10px;">
+          <div class="trilha-feature-item">
+            <div class="trilha-feature-header">
               <div style="color: var(--brand-blue); flex-shrink: 0; display: flex;">
                 <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                   stroke-width="2">
