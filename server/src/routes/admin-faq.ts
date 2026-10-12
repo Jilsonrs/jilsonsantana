@@ -4,7 +4,7 @@ import { homeFaqCreateSchema, homeFaqUpdateSchema } from "@jilson/core";
 import { prisma } from "../lib/prisma.js";
 import { requireAdmin } from "../middleware/auth.js";
 import { validate, parseId } from "../lib/http.js";
-import { paraBanco, doBanco } from "../lib/language.js";
+import { doBanco } from "../lib/language.js";
 
 const router = Router();
 
@@ -12,21 +12,22 @@ const router = Router();
 // depoimentos (admin-testimonials.ts): a home lê direto do banco, e aqui só o
 // operador escreve.
 
-const byOrder = [{ language: "asc" as const }, { displayOrder: "asc" as const }, { id: "asc" as const }];
+const byOrder = [{ displayOrder: "asc" as const }, { id: "asc" as const }];
+// `language` continua na resposta só porque a versão do site que está no ar ainda
+// o lê (lib/language.ts); sai no passo 4 da etapa 4.6c, com a coluna.
 const saida = (f: FaqItem) => ({ ...f, language: doBanco(f.language) });
 
-// GET /api/admin/faq — todas, de qualquer status e dos dois idiomas.
+// GET /api/admin/faq — todas, de qualquer status. Só as em português: as linhas
+// em inglês que ainda estão no banco saem no passo 4 da etapa 4.6c.
 router.get("/admin/faq", requireAdmin, async (_req, res) => {
-  const lista = await prisma.faqItem.findMany({ orderBy: byOrder });
+  const lista = await prisma.faqItem.findMany({ where: { language: "PT" }, orderBy: byOrder });
   res.json(lista.map(saida));
 });
 
 router.post("/admin/faq", requireAdmin, async (req, res) => {
   const data = validate(homeFaqCreateSchema, req.body, res);
   if (data === null) return;
-  const criada = await prisma.faqItem.create({
-    data: { ...data, language: paraBanco(data.language) },
-  });
+  const criada = await prisma.faqItem.create({ data });
   res.status(201).json(saida(criada));
 });
 
@@ -39,10 +40,7 @@ router.patch("/admin/faq/:id", requireAdmin, async (req, res) => {
     res.status(404).json({ error: "NotFound" });
     return;
   }
-  const atualizada = await prisma.faqItem.update({
-    where: { id },
-    data: { ...data, language: data.language && paraBanco(data.language) },
-  });
+  const atualizada = await prisma.faqItem.update({ where: { id }, data });
   res.json(saida(atualizada));
 });
 

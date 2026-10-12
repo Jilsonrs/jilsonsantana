@@ -169,7 +169,6 @@ describe("AdminSiteTextPage — salvar", () => {
     await waitFor(() => expect(api.adminUpdateSiteText).toHaveBeenCalled());
     expect(vi.mocked(api.adminUpdateSiteText).mock.calls[0][0]).toEqual({
       key: "home.hero.subtitle",
-      language: "pt",
       value: "Texto novo",
     });
   });
@@ -183,7 +182,6 @@ describe("AdminSiteTextPage — salvar", () => {
     await waitFor(() => expect(api.adminUpdateSiteText).toHaveBeenCalled());
     expect(vi.mocked(api.adminUpdateSiteText).mock.calls[0][0]).toEqual({
       key: "home.cta.title",
-      language: "pt",
       value: "",
     });
   });

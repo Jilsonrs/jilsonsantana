@@ -54,15 +54,27 @@ describe("texto do site — o que o visitante lê", () => {
     expect(res.text).not.toContain(FABRICA_PT);
   });
 
-  // A página em inglês saiu (12/10/2026); a rota do admin ainda aceita gravar o inglês
-  // até o passo 3 da etapa 4.6c. O que for gravado lá não pode chegar à home.
-  it("um texto gravado em inglês NÃO aparece na home", async () => {
+  // A escola é só em português (12/10/2026): o servidor não lê mais idioma no pedido.
+  // A versão anterior do site ainda manda `language`; ele é ignorado, e o texto vale.
+  it("o idioma que o pedido ainda mande é ignorado: a edição é sempre a do site", async () => {
     const cookies = await sessaoAdmin();
-    await editar(cookies, { key: CHAVE, language: "en", value: "Operator wrote this." });
+    const res = await editar(cookies, { key: CHAVE, language: "en", value: EDITADO });
+    expect(res.status).toBe(200);
+    expect(res.body.language).toBeUndefined();
 
-    const ptRes = await request(servidor).get("/");
-    expect(ptRes.text).toContain(FABRICA_PT);
-    expect(ptRes.text).not.toContain("Operator wrote this.");
+    const home = await request(servidor).get("/");
+    expect(home.text).toContain(EDITADO);
+    expect(await prisma.siteText.count({ where: { language: "EN" } })).toBe(0);
+  });
+
+  // As sobras em inglês ficam no banco até o passo 4 da etapa 4.6c: não chegam à home.
+  it("uma sobrescrita em inglês que ainda esteja no banco NÃO aparece na home", async () => {
+    await prisma.siteText.create({ data: { key: CHAVE, language: "EN", value: "Operator wrote this." } });
+    invalidarCacheDeTexto();
+
+    const home = await request(servidor).get("/");
+    expect(home.text).toContain(FABRICA_PT);
+    expect(home.text).not.toContain("Operator wrote this.");
   });
 
   it("valor vazio APAGA a sobrescrita e a página volta ao valor de fábrica", async () => {
@@ -100,13 +112,6 @@ describe("texto do site — o que tem que ser RECUSADO", () => {
     expect(await prisma.siteText.count()).toBe(0);
   });
 
-  it("idioma fora dos dois da escola é recusado", async () => {
-    const cookies = await sessaoAdmin();
-    const res = await editar(cookies, { key: CHAVE, language: "es", value: "Hola" });
-
-    expect(res.status).toBe(400);
-    expect(await prisma.siteText.count()).toBe(0);
-  });
 });
 
 describe("texto do site — a lista que a tela de admin consome", () => {
@@ -120,7 +125,8 @@ describe("texto do site — a lista que a tela de admin consome", () => {
     const campo = res.body.campos.find((c: { key: string }) => c.key === CHAVE);
     expect(campo.section).toBe("home.hero");
     expect(campo.pt).toEqual({ factory: FABRICA_PT, override: EDITADO });
-    expect(campo.en.override).toBeNull();
+    // Um idioma só: o inglês saiu da lista (12/10/2026).
+    expect(campo.en).toBeUndefined();
 
     // A lista sai do DICIONÁRIO: campo nunca editado também aparece, senão a
     // tela só mostraria o que já foi mexido — inútil para editar a primeira vez.
@@ -153,13 +159,17 @@ describe("texto do site — os textos comuns, lidos pelo rodapé do app", () => 
     expect(res.body.footer.links[5]).toBe("Fale comigo");
   });
 
-  it("a edição do português não chega no inglês", async () => {
+  // O endereço novo não leva idioma. O antigo (`…/common/pt`) fica até o passo 4 da
+  // etapa 4.6c, porque a versão anterior do site ainda o pede — e devolve o mesmo texto.
+  it("o endereço sem idioma e o antigo devolvem o mesmo texto, com a edição", async () => {
     const cookies = await sessaoAdmin();
-    await editar(cookies, { key: CHAVE_CONTATO, language: "pt", value: "Fale comigo" });
+    await editar(cookies, { key: CHAVE_CONTATO, value: "Fale comigo" });
 
-    const res = await request(servidor).get("/api/site-text/common/en");
-    expect(res.status).toBe(200);
-    expect(res.body.footer.links[5]).not.toBe("Fale comigo");
+    const novo = await request(servidor).get("/api/site-text/common");
+    const antigo = await request(servidor).get("/api/site-text/common/pt");
+    expect(novo.status).toBe(200);
+    expect(novo.body.footer.links[5]).toBe("Fale comigo");
+    expect(antigo.body).toEqual(novo.body);
   });
 
   it("só os textos comuns: os de cada página (home.*) não saem por aqui", async () => {
@@ -170,9 +180,6 @@ describe("texto do site — os textos comuns, lidos pelo rodapé do app", () => 
     expect(JSON.stringify(res.body)).not.toContain(pt.home.hero.subtitle);
   });
 
-  it("idioma fora dos dois da escola é recusado", async () => {
-    expect((await request(servidor).get("/api/site-text/common/es")).status).toBe(400);
-  });
 });
 
 // O texto do APP (`app.*`) muda por código, não pelo admin (decisão do
@@ -203,14 +210,13 @@ describe("texto do site — o texto do app fica FORA de Textos", () => {
 describe("texto do site — as 3 camadas são editáveis", () => {
   const CHAVE_CAMADA = "common.camadas.UNIVERSAL.nome";
 
-  it("aparecem na lista de Textos, nos dois idiomas", async () => {
+  it("aparecem na lista de Textos", async () => {
     const cookies = await sessaoAdmin();
     const res = await request(servidor).get("/api/admin/site-text").set("Cookie", cookies);
 
     const campo = res.body.campos.find((c: { key: string }) => c.key === CHAVE_CAMADA);
     expect(campo.section).toBe("common.camadas");
     expect(campo.pt.factory).toBe(pt.common.camadas.UNIVERSAL.nome);
-    expect(campo.en.factory).not.toBe("");
   });
 
   it("a edição chega ao app pela rota dos textos comuns", async () => {

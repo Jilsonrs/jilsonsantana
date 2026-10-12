@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { FileDown, FileText, Gift, MonitorPlay, Trophy, type LucideIcon } from "lucide-react";
-import { MATERIAL_CONFIG, type LanguageCode, type Material } from "@jilson/core";
+import { MATERIAL_CONFIG, type Material } from "@jilson/core";
 import type { CursoInclui } from "@/lib/api";
 import { useTextosComuns } from "@/lib/common-texts";
 import { contagem } from "@/lib/contagem";
@@ -23,12 +23,9 @@ type Linha = { chave: string; Icone: LucideIcon | typeof IconeCC; texto: ReactNo
 export function CourseIncludes({
   materiais,
   inclui,
-  idiomaDoCurso,
 }: {
   materiais: Material[];
   inclui: CursoInclui;
-  /** A legenda é no idioma do curso, não no da tela. */
-  idiomaDoCurso: LanguageCode;
 }) {
   const { inclui: t, materiais: nomes } = useTextosComuns();
   const linhas: Linha[] = [];
@@ -41,7 +38,7 @@ export function CourseIncludes({
   }
   if (inclui.arquivos) linhas.push({ chave: "arquivos", Icone: FileDown, texto: t.arquivos });
   if (inclui.legendas) {
-    linhas.push({ chave: "legendas", Icone: IconeCC, texto: idiomaDoCurso === "en" ? t.legendasEn : t.legendasPt });
+    linhas.push({ chave: "legendas", Icone: IconeCC, texto: t.legendasPt });
   }
   for (const material of materiais) {
     linhas.push({ chave: material, Icone: resolveIcon(MATERIAL_CONFIG[material].icon), texto: nomes[material] });

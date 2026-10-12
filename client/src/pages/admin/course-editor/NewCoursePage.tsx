@@ -31,11 +31,9 @@ export function NewCoursePage() {
     mutationFn: (values: CourseFormValues) =>
       api.createCourse({
         ...payloadDoPasso(values, "basico"),
-        // Os três que o servidor exige na criação. O idioma é sempre português
-        // (12/10/2026); o campo sai do servidor no passo 3 da etapa 4.6c.
+        // Os dois que o servidor exige na criação (também estão no passo 1).
         slug: values.slug,
         title: values.title,
-        language: "pt",
       }),
     onSuccess: (novo) => {
       queryClient.invalidateQueries({ queryKey: ["admin-courses"] });

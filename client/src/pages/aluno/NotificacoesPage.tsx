@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { PageContainer, PageHeader } from "@/components/layout/PageLayout";
-import { useIdioma, useT } from "@/lib/language";
+import { useT } from "@/lib/language";
 import { haQuantoTempo, previaDoTexto, tituloDaNotificacao, useMarcarLida, useNotificacoes } from "@/lib/notificacoes";
 
 /**
@@ -11,7 +11,6 @@ import { haQuantoTempo, previaDoTexto, tituloDaNotificacao, useMarcarLida, useNo
  */
 export function NotificacoesPage() {
   const t = useT();
-  const idioma = useIdioma();
   const { data, isLoading, isError } = useNotificacoes();
   const { mutate: marcar } = useMarcarLida();
 
@@ -48,7 +47,7 @@ export function NotificacoesPage() {
                   </span>
                   <span className="mt-0.5 line-clamp-2 text-sm text-muted-foreground">{previaDoTexto(n.texto)}</span>
                   <time dateTime={n.criadaEm} className="mt-1 block text-xs text-muted-foreground">
-                    {haQuantoTempo(n.criadaEm, idioma)}
+                    {haQuantoTempo(n.criadaEm)}
                   </time>
                 </span>
               </Link>

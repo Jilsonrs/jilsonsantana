@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { flattenDict, pt, en, siteTextUpdateSchema, DICT_KEYS } from "@jilson/core";
+import { flattenDict, pt, siteTextUpdateSchema, DICT_KEYS } from "@jilson/core";
 import { prisma } from "../lib/prisma.js";
 import { requireAdmin } from "../middleware/auth.js";
 import { validate } from "../lib/http.js";
@@ -15,12 +15,14 @@ const router = Router();
 // código, e o banco só diz o que foi mudado. Um campo nunca editado aparece
 // igual — é isso que faz a tela não ter "estado vazio" de verdade.
 router.get("/admin/site-text", requireAdmin, async (_req, res) => {
+  // Só o português: as sobrescritas em inglês que ainda estejam no banco saem no
+  // passo 4 da etapa 4.6c (a escola é só em português — 12/10/2026).
   const sobrescritas = await prisma.siteText.findMany({
-    select: { key: true, language: true, value: true },
+    where: { language: "PT" },
+    select: { key: true, value: true },
   });
-  const porChave = new Map(sobrescritas.map((s) => [`${s.key}|${s.language}`, s.value]));
+  const porChave = new Map(sobrescritas.map((s) => [s.key, s.value]));
 
-  const fabricaEn = new Map(flattenDict(en));
   // Só o editável: o texto do app (`app.*`) não aparece aqui (DICT_KEYS).
   const campos = flattenDict(pt)
     .filter(([key]) => DICT_KEYS.has(key))
@@ -29,8 +31,8 @@ router.get("/admin/site-text", requireAdmin, async (_req, res) => {
       // A seção é derivada do caminho ("home.pricing.features[0]" → "home.pricing"), nunca
       // uma coluna: um agrupamento gravado envelhece quando a chave se move.
       section: key.split(/[.[]/).slice(0, 2).join("."),
-      pt: { factory: valorPt, override: porChave.get(`${key}|PT`) ?? null },
-      en: { factory: fabricaEn.get(key) ?? "", override: porChave.get(`${key}|EN`) ?? null },
+      // O formato `pt: {...}` é o que a tela lê desde o começo; fica.
+      pt: { factory: valorPt, override: porChave.get(key) ?? null },
     }));
 
   res.json({ campos });
@@ -45,7 +47,9 @@ router.put("/admin/site-text", requireAdmin, async (req, res) => {
   const body = validate(siteTextUpdateSchema, req.body, res);
   if (body === null) return;
 
-  const language = body.language === "pt" ? "PT" : "EN";
+  // A coluna `language` sai do banco no passo 4 da etapa 4.6c; até lá a chave
+  // única da tabela é (key, language), e toda sobrescrita é em português.
+  const language = "PT" as const;
   const valor = body.value.trim();
 
   if (valor === "") {
@@ -59,7 +63,7 @@ router.put("/admin/site-text", requireAdmin, async (req, res) => {
   }
 
   invalidarCacheDeTexto();
-  res.json({ key: body.key, language: body.language, value: valor, usandoFabrica: valor === "" });
+  res.json({ key: body.key, value: valor, usandoFabrica: valor === "" });
 });
 
 export default router;

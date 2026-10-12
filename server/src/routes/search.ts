@@ -1,7 +1,6 @@
 import { Router } from "express";
 import { ContentStatus } from "@jilson/core";
 import { prisma } from "../lib/prisma.js";
-import { idiomaDaLista } from "../lib/language.js";
 
 const router = Router();
 const PUBLISHED = ContentStatus.PUBLISHED;
@@ -24,11 +23,9 @@ function matchesArray(needle: string, items: string[]): boolean {
   return items.some((item) => item.toLowerCase().includes(needle));
 }
 
-// GET /api/search?q=...&lang=pt|en — public keyword search over curated trilhas,
-// courses and standalone lessons (with course context). Only PUBLISHED content
-// (lessons require their module AND course to also be PUBLISHED), and only the
-// language asked for — a busca é lista de DESCOBERTA (CLAUDE.md → Idiomas). A
-// aula herda o idioma do curso.
+// GET /api/search?q=... — public keyword search over curated trilhas, courses
+// and standalone lessons (with course context). Only PUBLISHED content (lessons
+// require their module AND course to also be PUBLISHED).
 router.get("/search", async (req, res) => {
   const raw = req.query.q;
   if (raw === undefined) {
@@ -41,16 +38,14 @@ router.get("/search", async (req, res) => {
     return;
   }
   const needle = q.toLowerCase();
-  const language = idiomaDaLista(req.query.lang, res);
-  if (language === null) return;
 
   const [plans, courses, lessons] = await Promise.all([
     prisma.learningPlan.findMany({
-      where: { status: PUBLISHED, isTemplate: true, language },
+      where: { status: PUBLISHED, isTemplate: true },
       select: { id: true, slug: true, name: true, description: true, skillsCovered: true },
     }),
     prisma.course.findMany({
-      where: { status: PUBLISHED, language },
+      where: { status: PUBLISHED },
       select: {
         id: true,
         slug: true,
@@ -63,7 +58,7 @@ router.get("/search", async (req, res) => {
       },
     }),
     prisma.lesson.findMany({
-      where: { status: PUBLISHED, module: { status: PUBLISHED, course: { status: PUBLISHED, language } } },
+      where: { status: PUBLISHED, module: { status: PUBLISHED, course: { status: PUBLISHED } } },
       select: {
         id: true,
         title: true,

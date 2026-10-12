@@ -26,7 +26,7 @@ const confirmarNoBanco = vi.fn<(chave: string, segredo: string) => Promise<"conf
 vi.mock("@/lib/stripe-do-site", () => ({
   confirmarNoBanco: (chave: string, segredo: string) => confirmarNoBanco(chave, segredo),
   CartaoProvider: ({ pedido, children }: { pedido: PedidoDeCartao; children: ReactNode }) => (
-    <div data-testid="cartao" data-centavos={pedido.centavos} data-moeda={pedido.moeda} data-formas={pedido.formasDePagamento.join(",")} data-chave={pedido.chavePublicavel} data-idioma={pedido.idioma}>
+    <div data-testid="cartao" data-centavos={pedido.centavos} data-moeda={pedido.moeda} data-formas={pedido.formasDePagamento.join(",")} data-chave={pedido.chavePublicavel}>
       {children}
     </div>
   ),
@@ -144,7 +144,7 @@ describe("TrocarCartaoPage — o campo", () => {
   it("abre para SÓ GUARDAR o cartão (nada a cobrar), com a chave, as formas e a moeda do servidor", async () => {
     abrir();
     const campo = await screen.findByTestId("cartao");
-    expect(campo.dataset).toMatchObject({ centavos: "0", moeda: "brl", formas: "card", chave: "pk_test_da_tela", idioma: "pt" });
+    expect(campo.dataset).toMatchObject({ centavos: "0", moeda: "brl", formas: "card", chave: "pk_test_da_tela" });
     expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Trocar cartão");
     expect(screen.getByText("O novo cartão passa a valer na próxima cobrança.")).toBeTruthy();
     // Só abrir a tela não cria nada no servidor.

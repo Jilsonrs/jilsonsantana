@@ -152,7 +152,7 @@ export function LessonPage() {
                 reativar={data.reativar === true}
                 atrasada={data.atrasada === true}
                 // Logado, a conta SEMPRE diz como a legenda abre: ligada ou `off` (vence a memória do aparelho).
-                legenda={session ? { abrirCom: legendaLigada ? curso.language : "off", aoMudar: aoMudarLegenda } : undefined}
+                legenda={session ? { abrirCom: legendaLigada ? "pt" : "off", aoMudar: aoMudarLegenda } : undefined}
                 // Aba aberta de um dia para o outro: a aula busca um endereço novo do vídeo (06/10/2026).
                 renovarVideo={() => void refetch()}
               />

@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { pontoUtil } from "@jilson/core";
 import { ouvirPlayer } from "@/lib/player-do-bunny";
 import { avisoDeLegenda } from "@/lib/legenda-lembrada";
-import { useIdioma } from "@/lib/language";
 import { FOLGA_DO_VENCIMENTO, enderecoDoPlayer, vencimento, venceu, videoDoEndereco } from "@/lib/endereco-do-player";
 
 /**
@@ -17,6 +16,9 @@ import { FOLGA_DO_VENCIMENTO, enderecoDoPlayer, vencimento, venceu, videoDoEnder
  * "Block Direct URL File Access" ligado na biblioteca, uma política mais estrita
  * no site faz o Bunny ler o acesso como direto e recusar o vídeo (bunny.md §7).
  */
+/** Os botões do player em português: a escola é só em português (12/10/2026). */
+const IDIOMA_DO_PLAYER = "pt";
+
 /** Depois de pedir um endereço novo, quanto esperar antes de pedir outra vez (se o primeiro pedido falhou). */
 const INTERVALO_ENTRE_PEDIDOS = 30_000;
 
@@ -68,7 +70,6 @@ export function BunnyPlayer({
   aoVencer?: () => void;
 }) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const idioma = useIdioma();
   // O último ponto que o player avisou, do vídeo em que avisou: é nele que o player
   // recarrega quando o endereço vence.
   const ultimoPonto = useRef<{ video: string; segundos: number; duracao: number } | null>(null);
@@ -81,11 +82,11 @@ export function BunnyPlayer({
   // aba não pode recomeçar o vídeo). O servidor assina de novo a cada busca, com
   // token e validade novos; trocar o `src` recarregaria o player do zero. Só um
   // vídeo DIFERENTE troca o endereço — começando no ponto que veio com ele.
-  const [endereco, setEndereco] = useState(() => enderecoDoPlayer(src, { comecarEm, legenda, idioma }));
-  if (videoDoEndereco(src) !== videoDoEndereco(endereco)) setEndereco(enderecoDoPlayer(src, { comecarEm, legenda, idioma }));
+  const [endereco, setEndereco] = useState(() => enderecoDoPlayer(src, { comecarEm, legenda, idioma: IDIOMA_DO_PLAYER }));
+  if (videoDoEndereco(src) !== videoDoEndereco(endereco)) setEndereco(enderecoDoPlayer(src, { comecarEm, legenda, idioma: IDIOMA_DO_PLAYER }));
   // O MESMO vídeo só troca de endereço quando o que está no player venceu e o
   // servidor mandou um que vale: recarrega no ponto em que estava.
-  else if (venceu(endereco) && !venceu(src)) setEndereco(enderecoDoPlayer(src, { comecarEm: pontoAtual(src), legenda, idioma }));
+  else if (venceu(endereco) && !venceu(src)) setEndereco(enderecoDoPlayer(src, { comecarEm: pontoAtual(src), legenda, idioma: IDIOMA_DO_PLAYER }));
   // As funções mais recentes, sem voltar a ouvir o player a cada desenho da tela.
   const aoConcluirRef = useRef(aoConcluir);
   aoConcluirRef.current = aoConcluir;

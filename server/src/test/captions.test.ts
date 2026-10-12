@@ -225,7 +225,8 @@ describe("legendas — a tela", () => {
     const res = await lista();
 
     expect(res.status).toBe(200);
-    expect(res.body.idioma).toBe("pt");
+    // A resposta não leva mais idioma: toda legenda é em português (12/10/2026).
+    expect(res.body.idioma).toBeUndefined();
     expect(res.body.apresentacao.temVideo).toBe(true);
     expect(res.body.apresentacao.legenda.nomeDoArquivo).toBe("apresentacao.vtt");
     const aulas = res.body.modulos[0].aulas as { title: string; temVideo: boolean; legenda: unknown }[];

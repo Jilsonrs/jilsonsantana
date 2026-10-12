@@ -1,5 +1,5 @@
 import { Plano, type PlanoDaAssinatura } from "@jilson/core";
-import { useIdioma, useT } from "@/lib/language";
+import { useT } from "@/lib/language";
 import { dinheiro } from "@/lib/assinar";
 import { cn } from "@/lib/utils";
 
@@ -25,7 +25,6 @@ export function descontoDoAnual(planos: PlanoDaAssinatura[]): number | null {
  */
 export function EscolhaDoPlano({ planos, escolhido, aoEscolher, travado }: { planos: PlanoDaAssinatura[]; escolhido: Plano; aoEscolher: (plano: Plano) => void; travado: boolean }) {
   const t = useT().assinar;
-  const idioma = useIdioma();
   const desconto = descontoDoAnual(planos);
   return (
     <fieldset disabled={travado} className="space-y-3">
@@ -51,11 +50,11 @@ export function EscolhaDoPlano({ planos, escolhido, aoEscolher, travado }: { pla
                   )}
                 </span>
                 <span className="mt-1 block">
-                  <span className="text-lg font-semibold text-foreground">{dinheiro(plano.centavos, plano.moeda, idioma)}</span>
+                  <span className="text-lg font-semibold text-foreground">{dinheiro(plano.centavos, plano.moeda)}</span>
                   <span className="text-sm text-muted-foreground">{anual ? t.porAno : t.porMes}</span>
                 </span>
                 <span className="block text-sm text-muted-foreground">{anual ? t.cobradoPorAno : t.cobradoPorMes}</span>
-                {anual && <span className="block text-sm text-muted-foreground">{t.anualEquivale.replace("{valor}", dinheiro(Math.round(plano.centavos / 12), plano.moeda, idioma))}</span>}
+                {anual && <span className="block text-sm text-muted-foreground">{t.anualEquivale.replace("{valor}", dinheiro(Math.round(plano.centavos / 12), plano.moeda))}</span>}
               </span>
             </label>
           );

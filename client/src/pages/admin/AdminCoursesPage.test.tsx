@@ -22,7 +22,6 @@ const course: AdminCourseCard = {
   title: "Exemplo — Fundamentos de Excel + IA",
   level: null,
   status: "DRAFT",
-  language: "pt",
   displayOrder: 0,
   moduleCount: 2,
   lessonCount: 3,
@@ -98,17 +97,13 @@ describe("AdminCoursesPage — quando excluir falha", () => {
   });
 });
 
-// A escola é só em português (12/10/2026): a etiqueta EN saiu do cartão. Um curso
-// que ainda venha marcado como inglês do servidor não ganha etiqueta nenhuma.
+// A escola é só em português (12/10/2026): a etiqueta EN saiu do cartão.
 describe("AdminCoursesPage — sem etiqueta de idioma", () => {
   it("nenhum cartão mostra EN", async () => {
-    adminGetCourses.mockResolvedValue([
-      course,
-      { ...course, id: 2, slug: "curso-en", title: "English course", language: "en" },
-    ]);
+    adminGetCourses.mockResolvedValue([course, { ...course, id: 2, slug: "outro-curso", title: "Outro curso" }]);
     renderWithProviders(<AdminCoursesPage />);
 
-    await screen.findByText("English course");
+    await screen.findByText("Outro curso");
     expect(screen.queryByText("EN")).toBeNull();
   });
 });

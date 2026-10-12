@@ -23,7 +23,6 @@ const CURSO: PaginaDaAula["curso"] = {
   id: 5,
   slug: "excel-ia",
   title: "Excel com IA",
-  language: "pt",
   status: "DRAFT",
   level: null,
   description: "Um curso **prático** de Excel.",

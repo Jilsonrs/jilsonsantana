@@ -1,9 +1,9 @@
-import { pt, en, setByPath, type Dict, type LanguageCode } from "@jilson/core";
+import { pt, setByPath, type Dict } from "@jilson/core";
 import { prisma } from "./prisma.js";
 
 // ── A ÚNICA porta para o texto do site ──────────────────────────────────────
 //
-// Nenhum template importa `pt`/`en` direto: todos pedem `getDict(lang)`. Se
+// Nenhum template importa o dicionário direto: todos pedem `getDict()`. Se
 // importarem o dicionário, a edição do operador no /admin deixa de aparecer
 // naquela tela — sem erro, sem log, sem teste vermelho.
 //
@@ -11,8 +11,6 @@ import { prisma } from "./prisma.js";
 //
 // O raciocínio, as alternativas pesadas e o gatilho de reabertura estão em
 // docs/content.md § 16.
-
-const FABRICA: Record<LanguageCode, Dict> = { pt, en };
 
 /**
  * Cache em memória, limpo ao salvar. Sem ele, a home pública faria uma consulta
@@ -25,30 +23,31 @@ const FABRICA: Record<LanguageCode, Dict> = { pt, en };
  * instância, a invalidação precisa cruzar instâncias (canal do Postgres ou TTL
  * curto) — não é refatoração, é uma linha a mais no caminho de escrita.*
  */
-const cache = new Map<LanguageCode, Dict>();
+let cache: Dict | null = null;
 
 export function invalidarCacheDeTexto(): void {
-  cache.clear();
+  cache = null;
 }
 
-/** O dicionário do idioma, com as sobrescritas do operador já aplicadas. */
-export async function getDict(lang: LanguageCode): Promise<Dict> {
-  const emCache = cache.get(lang);
-  if (emCache) return emCache;
+/** O dicionário, com as sobrescritas do operador já aplicadas. */
+export async function getDict(): Promise<Dict> {
+  if (cache) return cache;
 
   // Clone profundo: `setByPath` escreve no lugar, e o dicionário de fábrica é
-  // um módulo compartilhado — mutá-lo vazaria a edição para o outro idioma e
-  // para o próximo processo que importasse `pt`.
-  const dict = structuredClone(FABRICA[lang]);
+  // um módulo compartilhado — mutá-lo vazaria a edição para o próximo que
+  // importasse `pt`.
+  const dict = structuredClone(pt);
 
+  // Só o português: as sobrescritas em inglês que ainda estejam no banco saem
+  // com a coluna, no passo 4 da etapa 4.6c.
   const sobrescritas = await prisma.siteText.findMany({
-    where: { language: lang === "pt" ? "PT" : "EN" },
+    where: { language: "PT" },
     select: { key: true, value: true },
   });
   for (const { key, value } of sobrescritas) {
     setByPath(dict, key, value);
   }
 
-  cache.set(lang, dict);
+  cache = dict;
   return dict;
 }

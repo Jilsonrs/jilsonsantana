@@ -8,7 +8,7 @@ import type { Dict } from "@jilson/core";
 let cair = false;
 vi.mock("../lib/dict.js", async (importOriginal) => {
   const real = await importOriginal<typeof import("../lib/dict.js")>();
-  return { ...real, getDict: (idioma: Parameters<typeof real.getDict>[0]): Promise<Dict> => (cair ? Promise.reject(new Error("o dicionário caiu")) : real.getDict(idioma)) };
+  return { ...real, getDict: (): Promise<Dict> => (cair ? Promise.reject(new Error("o dicionário caiu")) : real.getDict()) };
 });
 
 import servidor from "./servidor.js";

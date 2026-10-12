@@ -85,7 +85,7 @@ enum Language {
 model SiteText {
   id        Int      @id @default(autoincrement())
   key       String
-  language  Language
+  language  Language @default(PT)
   value     String
   updatedAt DateTime @updatedAt
 
@@ -104,7 +104,7 @@ model SiteText {
 // As iniciais do avatar não são coluna: saem do nome na hora de desenhar.
 model Testimonial {
   id           Int           @id @default(autoincrement())
-  language     Language
+  language     Language @default(PT)
   text         String
   name         String
   displayOrder Int           @default(0)
@@ -118,7 +118,7 @@ model Testimonial {
 
 model FaqItem {
   id           Int           @id @default(autoincrement())
-  language     Language
+  language     Language @default(PT)
   question     String
   answer       String
   displayOrder Int           @default(0)
@@ -280,7 +280,7 @@ model Course {
   // O idioma do curso (decisão do operador, 14/09/2026). Obrigatório e SEM
   // default: o banco recusa curso sem idioma. Módulo e aula herdam daqui.
   // Troca só enquanto rascunho (operador, 24/09) — regra no servidor.
-  language            Language
+  language            Language @default(PT)
   createdAt           DateTime       @default(now())
   updatedAt           DateTime       @updatedAt
   modules             Module[]
@@ -494,7 +494,7 @@ model Caption {
   // A da apresentação do curso.
   courseId     Int?     @unique
   course       Course?  @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  language     Language
+  language     Language @default(PT)
   content      String
   originalName String
   // O vídeo foi trocado e o Bunny recusou receber esta legenda no vídeo novo: a
@@ -595,7 +595,7 @@ model LearningPlan {
   status        ContentStatus  @default(DRAFT)
   // A trilha segue o idioma (operador, 14/09): o servidor recusa item de outro
   // idioma. Obrigatório e sem default, como no curso.
-  language      Language
+  language      Language @default(PT)
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   planModules   PlanModule[]

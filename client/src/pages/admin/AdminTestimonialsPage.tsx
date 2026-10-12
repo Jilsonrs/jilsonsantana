@@ -21,9 +21,8 @@ const config: ConfigDaLista<AdminTestimonial> = {
   secundario: { rotulo: "Nome completo", linhas: 1, max: 120 },
   ler: (t) => ({ principal: t.text, secundario: t.name }),
   listar: api.adminGetTestimonials,
-  // O servidor ainda pede o idioma; ele sai de lá no passo 3 da etapa 4.6c.
   criar: (v) =>
-    api.adminCreateTestimonial({ language: "pt", text: v.principal, name: v.secundario, status: v.status }),
+    api.adminCreateTestimonial({ text: v.principal, name: v.secundario, status: v.status }),
   atualizar: (id, v) =>
     api.adminUpdateTestimonial(id, { text: v.principal, name: v.secundario, status: v.status }),
   excluir: api.adminDeleteTestimonial,

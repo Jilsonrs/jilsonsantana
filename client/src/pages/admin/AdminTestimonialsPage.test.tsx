@@ -12,9 +12,8 @@ vi.mock("@/lib/api");
 
 const base = { createdAt: "2026-09-23T00:00:00Z", updatedAt: "2026-09-23T00:00:00Z" };
 const lista: api.AdminTestimonial[] = [
-  { ...base, id: 1, language: "pt", text: "Curso excelente, muito prático.", name: "Edson Garcia Fernandes", displayOrder: 10, status: "PUBLISHED" },
-  { ...base, id: 2, language: "pt", text: "Ainda estou escrevendo este.", name: "Nicole Silveira Manoel", displayOrder: 20, status: "DRAFT" },
-  { ...base, id: 3, language: "en", text: "Great course, very hands-on.", name: "Beatriz Veloso", displayOrder: 10, status: "PUBLISHED" },
+  { ...base, id: 1, text: "Curso excelente, muito prático.", name: "Edson Garcia Fernandes", displayOrder: 10, status: "PUBLISHED" },
+  { ...base, id: 2, text: "Ainda estou escrevendo este.", name: "Nicole Silveira Manoel", displayOrder: 20, status: "DRAFT" },
 ];
 
 beforeEach(() => {
@@ -40,9 +39,8 @@ describe("Depoimentos — estados", () => {
     expect((await screen.findByRole("alert")).textContent).toMatch(/não foi possível carregar/i);
   });
 
-  // As linhas em inglês continuam no banco até o passo 4 da etapa 4.6c: a tela não as conta.
-  it("sem depoimento (só sobras em inglês no banco) mostra o vazio — e avisa que a seção some da home", async () => {
-    vi.mocked(api.adminGetTestimonials).mockResolvedValue([lista[2]]); // só inglês
+  it("sem depoimento mostra o vazio — e avisa que a seção some da home", async () => {
+    vi.mocked(api.adminGetTestimonials).mockResolvedValue([]);
     renderWithProviders(<AdminTestimonialsPage />);
     expect((await screen.findByText(/nenhum depoimento ainda/i)).textContent).toMatch(/não aparece na home/i);
   });
@@ -53,14 +51,13 @@ describe("Depoimentos — a lista", () => {
     vi.mocked(api.adminGetTestimonials).mockResolvedValue(lista);
   });
 
-  it("mostra os depoimentos, com o status de cada um em palavras — e nunca a sobra em inglês", async () => {
+  it("mostra os depoimentos, com o status de cada um em palavras", async () => {
     renderWithProviders(<AdminTestimonialsPage />);
     const ul = await listaPt();
 
     expect(within(ul).getByText("Curso excelente, muito prático.")).toBeTruthy();
     expect(within(ul).getByText("Publicado")).toBeTruthy();
     expect(within(ul).getByText("Rascunho")).toBeTruthy();
-    expect(within(ul).queryByText("Great course, very hands-on.")).toBeNull();
     // Depoimento não tem ordem: a home sorteia (decisão do operador, 23/09/2026).
     expect(within(ul).queryByText(/^Ordem/)).toBeNull();
   });
@@ -92,7 +89,6 @@ describe("Depoimentos — criar", () => {
 
     await waitFor(() => expect(api.adminCreateTestimonial).toHaveBeenCalledTimes(1));
     expect(vi.mocked(api.adminCreateTestimonial).mock.calls[0][0]).toEqual({
-      language: "pt",
       text: "Aprendi muito.",
       name: "Maria da Silva",
       status: "PUBLISHED",

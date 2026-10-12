@@ -29,7 +29,6 @@ import { ROTAS_DO_EDITOR } from "./steps";
 const UM_DIA = 86_400_000;
 const LEGENDA = { enviadaEm: new Date(Date.now() - 20 * UM_DIA).toISOString(), nomeDoArquivo: "aula.vtt", precisaReenviar: false };
 const TELA: LegendasDoCurso = {
-  idioma: "pt",
   apresentacao: { temVideo: true, legenda: LEGENDA },
   modulos: [
     {

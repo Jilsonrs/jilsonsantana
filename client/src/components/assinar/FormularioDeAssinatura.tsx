@@ -4,7 +4,7 @@ import { PageSection } from "@/components/layout/PageLayout";
 import { criarAssinatura } from "@/lib/api";
 import { descreverDesconto, dinheiro, telaDeConcluido, usePrevia } from "@/lib/assinar";
 import { codigoDoErro } from "@/lib/course-form";
-import { useIdioma, useT } from "@/lib/language";
+import { useT } from "@/lib/language";
 import { CartaoProvider, type Cartao } from "@/lib/stripe-do-site";
 import { semInterromper } from "@/lib/versao";
 import { BotaoDeAssinar } from "./BotaoDeAssinar";
@@ -34,7 +34,6 @@ export function FormularioDeAssinatura({
   reativar?: boolean;
 }) {
   const t = useT().assinar;
-  const idioma = useIdioma();
   const [plano, setPlano] = useState<Plano>(Plano.MENSAL);
   const [codigo, setCodigo] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
@@ -105,9 +104,9 @@ export function FormularioDeAssinatura({
           <div className="space-y-1 rounded-xl border border-border/60 bg-card p-4">
             <p className="flex items-baseline justify-between gap-4">
               <span className="text-sm text-muted-foreground">{t.hoje}</span>
-              <span className="text-xl font-semibold text-foreground">{dinheiro(centavosHoje, escolhido.moeda, idioma)}</span>
+              <span className="text-xl font-semibold text-foreground">{dinheiro(centavosHoje, escolhido.moeda)}</span>
             </p>
-            <p className="text-sm text-muted-foreground">{descreverDesconto(t, comCodigo.desconto, comCodigo.moeda, idioma)}</p>
+            <p className="text-sm text-muted-foreground">{descreverDesconto(t, comCodigo.desconto, comCodigo.moeda)}</p>
           </div>
         )}
       </div>
@@ -122,7 +121,7 @@ export function FormularioDeAssinatura({
         <BotaoDeAssinar enviando={enviando} aoClicar={() => void enviar(null)} reativar={reativar} />
       ) : (
         <PageSection title={t.pagamento} className="pt-0 sm:pt-0">
-          <CartaoProvider pedido={{ chavePublicavel: dados.chavePublicavel, centavos: centavosHoje, moeda: escolhido.moeda, formasDePagamento: dados.formasDePagamento, idioma }}>
+          <CartaoProvider pedido={{ chavePublicavel: dados.chavePublicavel, centavos: centavosHoje, moeda: escolhido.moeda, formasDePagamento: dados.formasDePagamento }}>
             <PagamentoComCartao enviando={enviando} aoEnviar={(cartao) => void enviar(cartao)} reativar={reativar} />
           </CartaoProvider>
         </PageSection>

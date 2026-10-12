@@ -12,7 +12,7 @@ vi.mock("@/lib/api");
 
 const base = { createdAt: "2026-09-23T00:00:00Z", updatedAt: "2026-09-23T00:00:00Z" };
 const lista: api.AdminHomeFaq[] = [
-  { ...base, id: 7, language: "pt", question: "Serve para a minha área?", answer: "Sim.", displayOrder: 10, status: "PUBLISHED" },
+  { ...base, id: 7, question: "Serve para a minha área?", answer: "Sim.", displayOrder: 10, status: "PUBLISHED" },
 ];
 
 beforeEach(() => {
@@ -39,7 +39,6 @@ describe("Perguntas frequentes — fiação", () => {
 
     await waitFor(() => expect(api.adminCreateHomeFaq).toHaveBeenCalledTimes(1));
     expect(vi.mocked(api.adminCreateHomeFaq).mock.calls[0][0]).toEqual({
-      language: "pt",
       question: "Tem certificado?",
       answer: "Tem, ao concluir.",
       displayOrder: 20,

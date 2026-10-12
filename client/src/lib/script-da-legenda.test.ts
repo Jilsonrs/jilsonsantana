@@ -114,7 +114,7 @@ describe("o script da legenda lembrada (o texto do bunny.md)", () => {
     mostrar(PORTUGUES);
     rodarScript();
 
-    pedido("mediadisablesubtitlesrequest", [{ kind: "captions", language: "pt", label: "Português" }]);
+    pedido("mediadisablesubtitlesrequest", [{ kind: "captions", label: "Português" }]);
     esperar(1);
     pedido("mediashowsubtitlesrequest", "off");
     esperar(14);

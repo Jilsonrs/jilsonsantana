@@ -3,7 +3,7 @@ import type { Plano } from "@jilson/core";
 import { Button } from "@/components/ui/button";
 import { desistirDaTroca } from "@/lib/api";
 import { CHAVE_DA_MINHA_ASSINATURA, dataPorExtenso } from "@/lib/faturamento";
-import { useIdioma, useT } from "@/lib/language";
+import { useT } from "@/lib/language";
 
 /**
  * A TROCA DE PLANO MARCADA para o fim do período pago (anual → mensal): quando ela vale, e o
@@ -13,7 +13,6 @@ import { useIdioma, useT } from "@/lib/language";
  */
 export function TrocaMarcada({ troca }: { troca: { plano: Plano; em: string } | null }) {
   const t = useT();
-  const idioma = useIdioma();
   const p = t.faturamento.plano;
   const queryClient = useQueryClient();
   const desistir = useMutation({
@@ -26,7 +25,7 @@ export function TrocaMarcada({ troca }: { troca: { plano: Plano; em: string } | 
     <div className="space-y-3">
       {troca && !desistir.isSuccess && (
         <>
-          <p className="text-sm text-muted-foreground">{p.mudaParaOMensal.replace("{data}", dataPorExtenso(troca.em, idioma))}</p>
+          <p className="text-sm text-muted-foreground">{p.mudaParaOMensal.replace("{data}", dataPorExtenso(troca.em))}</p>
           <Button type="button" variant="outline" onClick={() => desistir.mutate()} disabled={desistir.isPending}>
             {desistir.isPending ? t.assinar.processando : p.continuarNoAnual}
           </Button>

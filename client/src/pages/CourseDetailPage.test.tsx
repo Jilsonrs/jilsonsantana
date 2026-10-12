@@ -40,7 +40,6 @@ const baseCourse: CourseDetail = {
   moduleCount: 1,
   lessonCount: 2,
   videoSeconds: 3900, // 1h 05min
-  language: "pt",
   materiais: [],
   inclui: NADA,
   modules: [
@@ -198,10 +197,9 @@ describe("CourseDetailPage — este curso inclui", () => {
     ]);
   });
 
-  it("um de cada: no singular; curso em inglês: legendas em inglês", async () => {
+  it("um de cada: no singular", async () => {
     getCourseBySlug.mockResolvedValue({
       ...baseCourse,
-      language: "en",
       inclui: { segundosDeVideo: 0, artigos: 1, aulasGratis: 1, arquivos: false, legendas: true },
     });
     renderWithProviders(<CourseDetailPage />, rota);
@@ -209,7 +207,7 @@ describe("CourseDetailPage — este curso inclui", () => {
     expect([...quadro.querySelectorAll("li")].map((li) => li.textContent)).toEqual([
       "1 artigo",
       "1 aula grátis para experimentar",
-      "Legendas em inglês",
+      "Legendas em português",
       "Certificado de conclusão",
     ]);
   });

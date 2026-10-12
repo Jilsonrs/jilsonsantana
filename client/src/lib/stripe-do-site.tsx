@@ -2,7 +2,6 @@ import type { ReactNode } from "react";
 import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js/pure";
 import type { Stripe, StripeElementLocale, StripeElementsOptionsMode, StripeError } from "@stripe/stripe-js";
-import type { LanguageCode } from "@jilson/core";
 
 // A NOSSA FRONTEIRA COM O STRIPE.JS (Fase 4, etapa 4.2). Só este arquivo importa `@stripe/*` no
 // site; as telas usam o que sai daqui, e os testes simulam ESTE módulo (nunca o da Stripe).
@@ -29,7 +28,8 @@ function stripeDoSite(chavePublicavel: string): Promise<Stripe | null> {
   return stripe;
 }
 
-const IDIOMA_DO_CAMPO: Record<LanguageCode, StripeElementLocale> = { pt: "pt-BR", en: "en" };
+/** O idioma do campo do cartão: a escola é só em português (12/10/2026). */
+const IDIOMA_DO_CAMPO: StripeElementLocale = "pt-BR";
 /** A cor da marca (`docs/design.md`); o campo mora numa moldura da Stripe e não herda o CSS do site. */
 const APARENCIA: StripeElementsOptionsMode["appearance"] = { theme: "stripe", variables: { colorPrimary: "#238FE8", borderRadius: "8px" } };
 
@@ -40,7 +40,6 @@ export type PedidoDeCartao = {
   moeda: string;
   /** A lista do servidor — a mesma com que ele cria a assinatura. */
   formasDePagamento: string[];
-  idioma: LanguageCode;
 };
 
 /** Dá o campo do cartão e o `useCartao()` a quem estiver dentro. */
@@ -53,8 +52,8 @@ export function CartaoProvider({ pedido, children }: { pedido: PedidoDeCartao; c
   // por extenso, com o tipo: nome de opção errado volta a quebrar a compilação.
   const opcoes: StripeElementsOptionsMode =
     pedido.centavos > 0
-      ? { mode: "subscription", amount: pedido.centavos, currency: pedido.moeda, allowedPaymentMethodTypes: pedido.formasDePagamento, locale: IDIOMA_DO_CAMPO[pedido.idioma], appearance: APARENCIA }
-      : { mode: "setup", currency: pedido.moeda, allowedPaymentMethodTypes: pedido.formasDePagamento, locale: IDIOMA_DO_CAMPO[pedido.idioma], appearance: APARENCIA };
+      ? { mode: "subscription", amount: pedido.centavos, currency: pedido.moeda, allowedPaymentMethodTypes: pedido.formasDePagamento, locale: IDIOMA_DO_CAMPO, appearance: APARENCIA }
+      : { mode: "setup", currency: pedido.moeda, allowedPaymentMethodTypes: pedido.formasDePagamento, locale: IDIOMA_DO_CAMPO, appearance: APARENCIA };
   // A `key`: trocar entre "cobra hoje" e "só guarda o cartão" monta um campo novo.
   return (
     <Elements key={opcoes.mode} stripe={stripeDoSite(pedido.chavePublicavel)} options={opcoes}>
