@@ -4178,7 +4178,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             Onde: `server/src/views/home.ts`, `routes/home.ts`, `client/src/lib/language.tsx`,
             `Layout.tsx`, `AppFooter.tsx`, `LoginPage.tsx`, `lib/footer.ts`, `lib/navigation.ts`,
             `lib/api.ts`, as páginas de catálogo e `core/src/constants/site.ts`.
-      - [ ] **Passo 2 — O admin deixa de pedir idioma.** O campo Idioma do curso e da trilha
+      - [x] **Passo 2 — O admin deixa de pedir idioma.** *(Feito em 12/10/2026, no `dev`; os quatro gates verdes — site 893 testes, servidor 1.073. Mutação: tirar da tela o filtro de português reprova o teste de Depoimentos. As telas mandam `language: "pt"` fixo, porque o servidor ainda exige na criação. O formulário de TRILHA do admin não tem campo Idioma: não havia o que tirar. O arquivo do campo virou `CourseLevelField.tsx`. **Textos de tela ajustados pelo agente, por consequência — a conferir pelo operador:** o vazio das duas listas perdeu o "neste idioma" ("Nenhuma pergunta ainda.", "Nenhum depoimento ainda."); a seção "Idioma e Cadastro" passou a "Cadastro", sem a descrição; "Itens Cadastrados" perdeu a descrição "Lista de itens em português"; no passo Legendas, "Legendas em Português · 1 de 3 aulas…" passou a "1 de 3 aulas publicadas com legenda".)* O campo Idioma do curso e da trilha
             (`CourseLanguageLevelFields.tsx` fica só com o nível), a coluna de inglês em Admin →
             Textos (`SiteTextField.tsx`), as abas de idioma de FAQ e Depoimentos
             (`HomeListEditor.tsx`) e o passo Legendas (conforme a P90). O servidor ainda aceita

@@ -7,10 +7,9 @@ import { PageSection } from "@/components/layout/PageLayout";
 import { Field, descritoPor } from "./Field";
 import { DICAS_DO_CURSO } from "@/lib/course-hints";
 import { MarkdownField } from "./MarkdownField";
-import { CourseLanguageLevelFields } from "./CourseLanguageLevelFields";
+import { CourseLevelField } from "./CourseLevelField";
 
-// `idiomaTravado`: o curso gravado já não é rascunho (ver CourseLanguageLevelFields).
-export function CourseBasicsSection({ idiomaTravado = false }: { idiomaTravado?: boolean }) {
+export function CourseBasicsSection() {
   const { register, formState, control } = useFormContext<CourseFormValues>();
   const [title, subtitle, slug, description] = useWatch({
     control,
@@ -97,7 +96,7 @@ export function CourseBasicsSection({ idiomaTravado = false }: { idiomaTravado?:
       <PageSection title="Classificação">
         <Card>
           <CardContent className="pt-6">
-            <CourseLanguageLevelFields idiomaTravado={idiomaTravado} />
+            <CourseLevelField />
           </CardContent>
         </Card>
       </PageSection>

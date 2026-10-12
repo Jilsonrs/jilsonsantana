@@ -60,18 +60,11 @@ describe("Novo curso", () => {
     expect(createCourse).not.toHaveBeenCalled();
   });
 
-  // O idioma nasce na criação (decisão do operador, 14/09/2026).
-  it("nasce em Português e pode virar English", async () => {
-    createCourse.mockResolvedValue({ ...CURSO_DE_TESTE, id: 2 });
+  // A escola é só em português (12/10/2026): não há campo Idioma, e o curso
+  // nasce em português (o primeiro teste confere o que vai no envio).
+  it("não há campo Idioma na criação", () => {
     abrir();
-
-    const idioma = screen.getByLabelText("Idioma") as HTMLSelectElement;
-    expect(idioma.value).toBe("pt");
-    fireEvent.change(idioma, { target: { value: "en" } });
-    preencher("curso-en", "English course");
-
-    await waitFor(() => expect(createCourse).toHaveBeenCalled());
-    expect(createCourse.mock.calls[0][0]).toMatchObject({ slug: "curso-en", language: "en" });
+    expect(screen.queryByLabelText("Idioma")).toBeNull();
   });
 
   // A capa e o vídeo vão para um curso que já existe: antes de criar, não há onde enviar.

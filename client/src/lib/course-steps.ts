@@ -36,8 +36,8 @@ export const PASSOS_DO_CURSO: Passo[] = [
   {
     slug: "basico",
     label: "Informações básicas",
-    campos: ["title", "subtitle", "slug", "description", "language", "level"],
-    envia: ["title", "subtitle", "slug", "description", "language", "level"],
+    campos: ["title", "subtitle", "slug", "description", "level"],
+    envia: ["title", "subtitle", "slug", "description", "level"],
   },
   {
     slug: "para-quem-e",

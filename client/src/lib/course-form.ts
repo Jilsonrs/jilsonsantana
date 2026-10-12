@@ -8,7 +8,6 @@ import {
   materialSchema,
   highlightSchema,
   faqItemSchema,
-  contentLanguageSchema,
   enderecoDeImagemValido,
   bunnyVideoIdSchema,
   LIMITES_DO_CURSO,
@@ -33,7 +32,6 @@ const itemDaListaDoFormulario = z.object({
 
 export const courseFormSchema = z.object({
   slug: slugSchema,
-  language: contentLanguageSchema,
   // Os limites são os do servidor (`core`); a tela já trava no número, e o aviso
   // aparece se algo chegar acima (um curso antigo, por exemplo).
   title: z
@@ -82,9 +80,6 @@ export type CourseFormValues = z.infer<typeof courseFormSchema>;
 
 export const blankValues: CourseFormValues = {
   slug: "",
-  // Curso novo nasce em português — a escola nasceu em PT. O operador troca no
-  // campo Idioma enquanto o curso é rascunho.
-  language: "pt",
   title: "",
   subtitle: "",
   description: "",
@@ -120,7 +115,6 @@ function deItens(itens: ItemDaLista[]): string[] {
 export function toFormValues(course: AdminCourseDetail): CourseFormValues {
   return {
     slug: course.slug,
-    language: course.language,
     title: course.title,
     subtitle: course.subtitle ?? "",
     description: course.description ?? "",
@@ -152,7 +146,9 @@ export function toFormValues(course: AdminCourseDetail): CourseFormValues {
 export function toPayload(values: CourseFormValues): CourseCreateInput {
   return {
     slug: values.slug,
-    language: values.language,
+    // A escola é só em português (12/10/2026). O servidor ainda exige o campo na
+    // criação; ele sai de lá no passo 3 da etapa 4.6c, e daqui junto.
+    language: "pt",
     title: values.title,
     subtitle: values.subtitle.trim() || null,
     description: values.description.trim() || null,
@@ -193,10 +189,6 @@ export function mensagemDeErroAoSalvar(erro: unknown): string {
   switch (codigoDoErro(erro)) {
     case "SlugTaken":
       return "Este slug já está em uso por outro curso.";
-    case "LanguageLocked":
-      return "O idioma trava depois que o curso é publicado.";
-    case "LanguageInUse":
-      return "Este curso está numa trilha de outro idioma. Tire-o da trilha antes de trocar o idioma.";
     case "BunnyNaoApagou":
       return "Não foi possível tirar o vídeo de apresentação: o Bunny não apagou. Tente de novo.";
     default:

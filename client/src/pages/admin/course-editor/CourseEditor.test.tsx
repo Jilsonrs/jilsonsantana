@@ -159,7 +159,7 @@ describe("Editor do curso — o nível 2", () => {
 });
 
 describe("Editor do curso — cada passo salva só a parte dele", () => {
-  it("Informações básicas envia título, subtítulo, slug, descrição, idioma e nível", async () => {
+  it("Informações básicas envia título, subtítulo, slug, descrição e nível — sem idioma", async () => {
     updateCourse.mockResolvedValue(CURSO_DE_TESTE);
     abrir("/admin/cursos/1/basico");
     fireEvent.change(await esperarTitulo(), { target: { value: "Título Editado" } });
@@ -167,8 +167,8 @@ describe("Editor do curso — cada passo salva só a parte dele", () => {
 
     await waitFor(() => expect(updateCourse).toHaveBeenCalled());
     expect(updateCourse.mock.calls[0][0]).toBe(1);
-    expect(updateCourse.mock.calls[0][1]).toMatchObject({ title: "Título Editado", language: "pt" });
-    expect(chavesEnviadas()).toEqual(["description", "language", "level", "slug", "subtitle", "title"]);
+    expect(updateCourse.mock.calls[0][1]).toMatchObject({ title: "Título Editado" });
+    expect(chavesEnviadas()).toEqual(["description", "level", "slug", "subtitle", "title"]);
   });
 
   // "Todos os níveis" (operador, 28/09/2026) e o nível em português: o código do
@@ -358,7 +358,7 @@ describe("Editor do curso — Publicar", () => {
     expect(screen.queryByText("Falta a capa")).toBeNull();
   });
 
-  it("o link é o endereço público do curso, no idioma dele", async () => {
+  it("o link é o endereço público do curso", async () => {
     abrir("/admin/cursos/1/publicar");
     expect(await linkDoCurso()).toBe(`${window.location.origin}/curso/exemplo-fundamentos-excel-ia`);
     expect(screen.queryByText(/página dos cursos em inglês/)).toBeNull();
@@ -397,34 +397,19 @@ describe("Editor do curso — Publicar", () => {
   });
 });
 
-// Idioma do curso (decisões do operador: campo na criação, 14/09; troca só
-// enquanto rascunho, 24/09/2026). A criação está em NewCoursePage.test.tsx.
-describe("Editor do curso — idioma", () => {
-  it("rascunho: o idioma troca", async () => {
-    updateCourse.mockResolvedValue(CURSO_DE_TESTE);
-    abrir("/admin/cursos/1/basico");
+// A escola é só em português (decisão do operador, 12/10/2026 — etapa 4.6c): o
+// campo Idioma saiu do editor, no rascunho e no curso publicado.
+describe("Editor do curso — sem campo Idioma", () => {
+  it.each([
+    ["rascunho", CURSO_DE_TESTE],
+    ["publicado", { ...CURSO_DE_TESTE, status: "PUBLISHED" as const }],
+  ])("%s: não há campo nem texto de idioma", async (_nome, curso) => {
+    abrir("/admin/cursos/1/basico", curso);
+    await esperarTitulo();
 
-    const idioma = (await screen.findByLabelText("Idioma")) as HTMLSelectElement;
-    await waitFor(() => expect(idioma.value).toBe("pt"));
-    fireEvent.change(idioma, { target: { value: "en" } });
-    salvar();
-
-    await waitFor(() => expect(updateCourse).toHaveBeenCalled());
-    expect(updateCourse.mock.calls[0][1]).toMatchObject({ language: "en" });
-  });
-
-  it("publicado: o idioma aparece travado, com o motivo, e vai o mesmo no envio", async () => {
-    const publicado = { ...CURSO_DE_TESTE, status: "PUBLISHED" as const, language: "en" as const };
-    updateCourse.mockResolvedValue(publicado);
-    abrir("/admin/cursos/1/basico", publicado);
-
-    expect(await screen.findByText("O idioma trava depois que o curso é publicado.")).toBeTruthy();
-    expect(screen.getByText("English")).toBeTruthy();
     expect(screen.queryByLabelText("Idioma")).toBeNull();
-
-    salvar();
-    await waitFor(() => expect(updateCourse).toHaveBeenCalled());
-    expect(updateCourse.mock.calls[0][1]).toMatchObject({ language: "en" });
+    expect(screen.queryByText("Idioma")).toBeNull();
+    expect(screen.queryByText("O idioma trava depois que o curso é publicado.")).toBeNull();
   });
 });
 
@@ -443,8 +428,6 @@ describe("Editor do curso — quando salvar falha", () => {
 
   it.each([
     ["SlugTaken", "Este slug já está em uso por outro curso."],
-    ["LanguageLocked", "O idioma trava depois que o curso é publicado."],
-    ["LanguageInUse", "Este curso está numa trilha de outro idioma. Tire-o da trilha antes de trocar o idioma."],
     ["BunnyNaoApagou", "Não foi possível tirar o vídeo de apresentação: o Bunny não apagou. Tente de novo."],
     [undefined, "Não foi possível salvar o curso. Tente de novo."],
   ])("recusa %s mostra a frase certa", async (codigo, frase) => {

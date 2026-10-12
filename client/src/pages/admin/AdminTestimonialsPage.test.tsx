@@ -25,7 +25,7 @@ beforeEach(() => {
   vi.mocked(api.adminDeleteTestimonial).mockResolvedValue(undefined);
 });
 
-const listaPt = () => screen.findByRole("list", { name: "Depoimentos em português" });
+const listaPt = () => screen.findByRole("list", { name: "Depoimentos" });
 
 describe("Depoimentos — estados", () => {
   it("mostra carregando enquanto a lista não chega", () => {
@@ -40,19 +40,20 @@ describe("Depoimentos — estados", () => {
     expect((await screen.findByRole("alert")).textContent).toMatch(/não foi possível carregar/i);
   });
 
-  it("idioma sem depoimento mostra o vazio — e avisa que a seção some da home", async () => {
+  // As linhas em inglês continuam no banco até o passo 4 da etapa 4.6c: a tela não as conta.
+  it("sem depoimento (só sobras em inglês no banco) mostra o vazio — e avisa que a seção some da home", async () => {
     vi.mocked(api.adminGetTestimonials).mockResolvedValue([lista[2]]); // só inglês
     renderWithProviders(<AdminTestimonialsPage />);
-    expect((await screen.findByText(/nenhum depoimento neste idioma/i)).textContent).toMatch(/não aparece na home/i);
+    expect((await screen.findByText(/nenhum depoimento ainda/i)).textContent).toMatch(/não aparece na home/i);
   });
 });
 
-describe("Depoimentos — lista por idioma", () => {
+describe("Depoimentos — a lista", () => {
   beforeEach(() => {
     vi.mocked(api.adminGetTestimonials).mockResolvedValue(lista);
   });
 
-  it("mostra só o português, com o status de cada um em palavras", async () => {
+  it("mostra os depoimentos, com o status de cada um em palavras — e nunca a sobra em inglês", async () => {
     renderWithProviders(<AdminTestimonialsPage />);
     const ul = await listaPt();
 
@@ -64,15 +65,13 @@ describe("Depoimentos — lista por idioma", () => {
     expect(within(ul).queryByText(/^Ordem/)).toBeNull();
   });
 
-  it("a aba Inglês troca para as linhas em inglês", async () => {
+  it("não há abas de idioma", async () => {
     renderWithProviders(<AdminTestimonialsPage />);
     await listaPt();
 
-    fireEvent.click(screen.getByRole("button", { name: "Inglês" }));
-
-    const ul = screen.getByRole("list", { name: "Depoimentos em inglês" });
-    expect(within(ul).getByText("Great course, very hands-on.")).toBeTruthy();
-    expect(within(ul).queryByText("Curso excelente, muito prático.")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Inglês" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Português" })).toBeNull();
+    expect(screen.queryByRole("group", { name: "Idioma" })).toBeNull();
   });
 });
 
@@ -81,7 +80,7 @@ describe("Depoimentos — criar", () => {
     vi.mocked(api.adminGetTestimonials).mockResolvedValue(lista);
   });
 
-  it("cria no idioma da aba e manda os campos certos — sem ordem", async () => {
+  it("cria e manda os campos certos — sem ordem", async () => {
     renderWithProviders(<AdminTestimonialsPage />);
     fireEvent.click(await screen.findByRole("button", { name: "Novo depoimento" }));
     expect(screen.queryByLabelText("Ordem")).toBeNull();
@@ -105,20 +104,6 @@ describe("Depoimentos — criar", () => {
     fireEvent.click(await screen.findByRole("button", { name: "Novo depoimento" }));
 
     expect((screen.getByLabelText("Status") as HTMLSelectElement).value).toBe("DRAFT");
-  });
-
-  it("na aba Inglês, o depoimento novo é criado em inglês", async () => {
-    renderWithProviders(<AdminTestimonialsPage />);
-    await listaPt();
-    fireEvent.click(screen.getByRole("button", { name: "Inglês" }));
-    fireEvent.click(screen.getByRole("button", { name: "Novo depoimento" }));
-
-    fireEvent.change(screen.getByLabelText("Depoimento"), { target: { value: "Loved it." } });
-    fireEvent.change(screen.getByLabelText("Nome completo"), { target: { value: "John Smith" } });
-    fireEvent.click(screen.getByRole("button", { name: "Salvar" }));
-
-    await waitFor(() => expect(api.adminCreateTestimonial).toHaveBeenCalledTimes(1));
-    expect(vi.mocked(api.adminCreateTestimonial).mock.calls[0][0]).toMatchObject({ language: "en" });
   });
 
   it("campo vazio (ou só espaço) não é enviado e diz o que falta", async () => {

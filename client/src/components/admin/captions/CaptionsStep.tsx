@@ -5,12 +5,10 @@ import { mensagemDoErroDaLegenda, useAlterarLegenda, useLegendas } from "@/lib/l
 import type { Aviso } from "@/lib/aviso-flutuante";
 import { CaptionRow } from "./CaptionRow";
 
-const NOME_DO_IDIOMA = { pt: "Português", en: "English" } as const;
-
 /**
  * O PASSO LEGENDAS do editor do curso (decisões do operador, 28/09 e 04/10/2026,
  * a partir da tela da Udemy): a apresentação e cada módulo com as suas aulas de
- * vídeo; uma legenda `.vtt` por linha, no idioma do curso; "x de y aulas
+ * vídeo; uma legenda `.vtt` por linha; "x de y aulas
  * publicadas com legenda". Enviou ou falhou: a mensagem flutuante do editor.
  */
 export function CaptionsStep({ courseId, avisar }: { courseId: number; avisar: (tipo: Aviso["tipo"], texto: string) => void }) {
@@ -61,7 +59,7 @@ export function CaptionsStep({ courseId, avisar }: { courseId: number; avisar: (
   return (
     <div className="space-y-2">
       <p className="text-sm text-muted-foreground">
-        Legendas em {NOME_DO_IDIOMA[data.idioma]} · {comLegenda} de {total} aulas publicadas com legenda
+        {comLegenda} de {total} aulas publicadas com legenda
       </p>
       {total > 0 && comLegenda === total && (
         <p className="flex items-center gap-2 text-sm font-medium text-foreground">

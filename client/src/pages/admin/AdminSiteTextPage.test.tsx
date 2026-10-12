@@ -91,6 +91,16 @@ describe("AdminSiteTextPage — o que a tela precisa mostrar", () => {
     expect(campo).toBeTruthy();
   });
 
+  // A escola é só em português (12/10/2026): a coluna de inglês saiu. O servidor
+  // ainda manda o texto em inglês junto (até o passo 3 da etapa 4.6c); a tela não o mostra.
+  it("um campo por texto: o inglês que o servidor ainda manda não aparece", async () => {
+    renderWithProviders(<AdminSiteTextPage />);
+
+    await screen.findByDisplayValue("Texto de fábrica em português.");
+    expect(screen.queryByDisplayValue("Factory text in English.")).toBeNull();
+    expect(screen.queryByText("Inglês")).toBeNull();
+  });
+
   it("campo editado mostra o texto no ar, a marca de editado e o valor de fábrica", async () => {
     renderWithProviders(<AdminSiteTextPage />);
 

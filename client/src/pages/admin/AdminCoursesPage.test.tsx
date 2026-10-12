@@ -98,8 +98,10 @@ describe("AdminCoursesPage — quando excluir falha", () => {
   });
 });
 
-describe("AdminCoursesPage — idioma", () => {
-  it("curso em inglês ganha a etiqueta EN; em português, não", async () => {
+// A escola é só em português (12/10/2026): a etiqueta EN saiu do cartão. Um curso
+// que ainda venha marcado como inglês do servidor não ganha etiqueta nenhuma.
+describe("AdminCoursesPage — sem etiqueta de idioma", () => {
+  it("nenhum cartão mostra EN", async () => {
     adminGetCourses.mockResolvedValue([
       course,
       { ...course, id: 2, slug: "curso-en", title: "English course", language: "en" },
@@ -107,7 +109,7 @@ describe("AdminCoursesPage — idioma", () => {
     renderWithProviders(<AdminCoursesPage />);
 
     await screen.findByText("English course");
-    expect(screen.getAllByText("EN")).toHaveLength(1);
+    expect(screen.queryByText("EN")).toBeNull();
   });
 });
 

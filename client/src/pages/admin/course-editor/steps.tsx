@@ -1,6 +1,5 @@
 import { lazy, Suspense } from "react";
 import { Navigate, Route } from "react-router-dom";
-import { ContentStatus } from "@jilson/core";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageSection } from "@/components/layout/PageLayout";
 import { CourseBasicsSection } from "@/components/admin/course-form/CourseBasicsSection";
@@ -23,11 +22,9 @@ import { CourseMessagesSection } from "@/components/admin/course-form/CourseMess
 // (28/09/2026). Legendas e Mensagens ganharam as suas em 04/10.
 
 function PassoBasico() {
-  const { curso } = useCursoDoEditor();
   return (
     <StepForm passo="basico">
-      {/* Trava pelo status GRAVADO, não pelo do formulário: é ele que o servidor confere. */}
-      <CourseBasicsSection idiomaTravado={curso.status !== ContentStatus.DRAFT} />
+      <CourseBasicsSection />
     </StepForm>
   );
 }

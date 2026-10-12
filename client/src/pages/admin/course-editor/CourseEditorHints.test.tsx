@@ -46,7 +46,6 @@ describe("dicas embaixo dos campos, ligadas a eles", () => {
     ["basico", "Título", DICAS_DO_CURSO.title],
     ["basico", "Subtítulo", DICAS_DO_CURSO.subtitle],
     ["basico", "Slug", DICAS_DO_CURSO.slug],
-    ["basico", "Idioma", DICAS_DO_CURSO.language],
     ["basico", "Nível", DICAS_DO_CURSO.level],
     ["pagina", "Imagem do curso", DICAS_DO_CURSO.thumbnailUrl],
     ["pagina", "Vídeo promocional", DICAS_DO_CURSO.introVideoId],

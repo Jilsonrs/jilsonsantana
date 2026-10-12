@@ -63,13 +63,7 @@ export function AdminCourseCard({ curso, numeros = null, aoExcluir }: { curso: C
                 </Badge>
                 {curso.level && (
                   <Badge variant="secondary" className="rounded-full font-medium">
-                    {/* Em português sempre: o admin não muda de idioma (23/09/2026). */}
                     {pt.app.niveis[curso.level]}
-                  </Badge>
-                )}
-                {curso.language === "en" && (
-                  <Badge variant="outline" className="rounded-full px-2 font-mono text-[10px] tracking-wider uppercase">
-                    EN
                   </Badge>
                 )}
                 <span className="flex items-center gap-2 font-mono text-xs tracking-wide text-muted-foreground before:text-primary before:font-bold before:content-['—']">

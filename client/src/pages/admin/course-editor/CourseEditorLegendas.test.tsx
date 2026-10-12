@@ -79,9 +79,10 @@ describe("Legendas — estados", () => {
 });
 
 describe("Legendas — a lista", () => {
-  it("o idioma, a contagem, a apresentação e as aulas com o estado de cada uma", async () => {
+  it("a contagem, a apresentação e as aulas com o estado de cada uma", async () => {
     abrir();
-    expect(await screen.findByText("Legendas em Português · 1 de 3 aulas publicadas com legenda")).toBeTruthy();
+    expect(await screen.findByText("1 de 3 aulas publicadas com legenda")).toBeTruthy();
+    expect(screen.queryByText(/Legendas em/)).toBeNull();
     expect(screen.getByRole("heading", { name: "Vídeo de apresentação" })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "A Nova Era" })).toBeTruthy();
     expect(screen.getAllByText("Legenda enviada")).toHaveLength(2);

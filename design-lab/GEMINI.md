@@ -18,9 +18,10 @@
 > - **O seletor PT | EN saiu** da home (topo e rodapé) e do rodapé do app. Não o recoloque. No
 >   lugar dele não entra nada: o traço `|` que o separava saiu junto.
 > - **Não existe mais página `/en`.** A home é só `/`.
-> - **O campo Idioma do curso e da trilha, as abas de idioma** de Perguntas e Depoimentos **e a
->   coluna de inglês** de Admin → Textos estão saindo (etapa 4.6c do plano). Não invista
->   acabamento neles; a etiqueta "EN" da lista de cursos também sai.
+> - **O campo Idioma do curso, as abas de idioma** de Perguntas e Depoimentos, **a coluna de
+>   inglês** de Admin → Textos e a etiqueta "EN" da lista de cursos **saíram em 12/10/2026**
+>   (passo 2 da etapa 4.6c). Em Textos, cada texto ficou com um campo só, de largura inteira; em
+>   Perguntas e Depoimentos, a primeira seção chama "Cadastro" e tem só o botão de novo.
 > - **Os textos continuam vindo do dicionário** (`core/src/i18n/pt.ts`): a regra 9 continua
 >   valendo inteira — nenhum texto cravado no HTML —, só que agora há um idioma.
 > - Em `client/src/public-input.css`, a classe `.lang-atual` ficou sem uso: pode sair na sua
@@ -188,7 +189,7 @@ servidores (§5); o React responde em `localhost:5173`, a home pública em `loca
 > 2** (a coluna do meio). Legendas e Mensagens nasceram como **EM BREVE** e **existem desde 04/10**
 > (itens 21 e 24 da fila); cada passo completo ganha um **✓**, os dois desenhados em `client/src/components/nav/SecondaryNavItem.tsx`. **Formate
 > as seções à vontade.** A antiga seção "Organização" se dividiu:
-> - idioma e nível foram para `CourseLanguageLevelFields.tsx`, dentro de Informações básicas;
+> - o nível está em `CourseLevelField.tsx`, dentro de Informações básicas (o campo Idioma, que morava ao lado, saiu em 12/10/2026);
 > - as camadas foram para `CourseLayersSection.tsx`, no passo Mídia e destaques (era "Página do curso");
 > - status e ordem foram para `CoursePublishSection.tsx`, no passo Publicar.
 >
@@ -233,11 +234,11 @@ servidores (§5); o React responde em `localhost:5173`, a home pública em `loca
 
 > **Depoimentos e Perguntas frequentes são a MESMA tela** com nomes diferentes *(Bloco C3,
 > 23/09/2026)*. A marcação mora em três componentes compartilhados — formatar um formata os dois:
-> `client/src/components/admin/HomeListEditor.tsx` (abas de idioma, botão de novo, lista),
+> `client/src/components/admin/HomeListEditor.tsx` (botão de novo e lista — as abas de idioma saíram em 12/10/2026),
 > `HomeListItem.tsx` (o cartão de cada item, com Editar e Excluir) e `HomeListItemForm.tsx` (o
 > formulário). As duas páginas só dizem os nomes dos campos.
 > **Não mexa sem falar com o operador:** o **Excluir em dois cliques** (ele apaga de vez — é o
-> caminho do pedido de remoção por LGPD) e as abas de idioma com `aria-pressed`. Os dois têm teste.
+> caminho do pedido de remoção por LGPD) (as abas de idioma saíram em 12/10/2026). Os dois têm teste.
 > **"Site" ganhou 2º nível** (Textos · Depoimentos · Perguntas frequentes) na coluna secundária
 > (`SecondaryNav.tsx`). Como os itens não têm `grupo`, a coluna mostra o título **"Geral"** — é o
 > comportamento atual do componente; se quiser outro visual ali, é conversa com o operador.
@@ -281,13 +282,12 @@ exceto o item 4, que é página pública.
    no componente virou o token `--surface-vitrine` (regra 2), mesma cor. **O seletor PT | EN
    saiu em 12/10/2026** (a escola é só em português — aviso no topo deste arquivo), com o traço
    `|` que o separava. O resto do rodapé está como você deixou.
-6. **Campo Idioma no formulário de curso** (hoje em `client/src/components/admin/course-form/CourseLanguageLevelFields.tsx`, no passo Informações básicas; era `CourseOrganizationSection.tsx`, que se dividiu em 28/09)
-   — novo em 24/09, na seção Organização. A grade tinha 3 colunas (Nível, Status, Ordem) e agora
-   tem 4 itens, então o quarto desce de linha: o arranjo é seu. Travado (curso publicado), o
-   idioma aparece como texto com o aviso "O idioma trava depois que o curso é publicado." — mude
-   o visual, não o texto (é do operador). Também a etiqueta **"EN"** na lista de cursos
-   (`AdminCoursesPage.tsx`) e o **aviso de erro ao salvar**, logo acima do botão "Salvar" de cada passo (cru: uma linha
-   vermelha; em `course-editor/StepForm.tsx` desde 28/09).
+6. ~~**Campo Idioma no formulário de curso**~~ — **saiu em 12/10/2026** (a escola é só em
+   português), junto com a etiqueta "EN" da lista de cursos. No lugar ficou só o Nível, em
+   `client/src/components/admin/course-form/CourseLevelField.tsx`: a grade da Classificação
+   tem um campo, e o arranjo é seu. Continua valendo o **aviso de erro ao salvar**, logo acima
+   do botão "Salvar" de cada passo (cru: uma linha vermelha; em `course-editor/StepForm.tsx`
+   desde 28/09).
 7. ~~**Menu de conta**~~ — **acabamento feito em 24/09.** Na revisão, o "abrir ao passar o mouse"
    que você pôs ficou, mas **só para mouse**: no celular o toque dispara "entrar" e "clicar" em
    sequência, e o painel abria e fechava na hora; no computador, passar e clicar também fechava.
@@ -301,7 +301,7 @@ exceto o item 4, que é página pública.
    mantenha o fechamento por Esc e por clique fora: **têm teste**.
 
 8. **Cartão do curso na lista do admin** (`AdminCourseCard.tsx`, 27/09) — capa 16:9 (sem capa,
-   "Sem imagem"), status em português, "EN", módulos e aulas, os três números e a barra de
+   "Sem imagem"), status em português, módulos e aulas, os três números e a barra de
    **Preenchimento** com o que falta. **Desde 09/10** (Bloco MEDIR, decisão do operador): Horas
    assistidas e Alunos são **reais** — o total grande e **"N este mês"** na linha pequena, no lugar
    do "em breve"; carregando ou se a busca falhar, "—" sem a linha. A Avaliação continua "—" / "em
