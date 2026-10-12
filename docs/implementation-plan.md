@@ -205,6 +205,17 @@
 > (aula concluída sozinha, barra na aula e no cartão), o vídeo que não recomeça ao trocar de aba
 > (a apresentação abre pausada, a aula toca sozinha) e o "Salvos". **Primeiro teste com o player de
 > verdade: com o operador** (assistir uma aula até perto do fim e ver a barra andar).
+> **PUBLICADO em 12/10/2026, por último (`main` = `011f53a`, CI verde nos dois jobs, deploy ok; a
+> migration `20261012190000_sai_o_idioma` aplicada pelo pre-deploy; publicado pelo Antigravity,
+> por ordem do operador, depois de ele conferir no banco do site que não havia curso, trilha nem
+> legenda em inglês):** o **passo 4 da etapa 4.6c** — o banco perdeu a coluna de idioma das seis
+> tabelas, o tipo `Language` e as linhas em inglês de perguntas, depoimentos e textos.
+> **Provado no site, de fora, pelo Claude Code:** o catálogo responde com o curso cadastrado, e
+> sem o campo de idioma; trilhas e busca → 200; o endereço antigo dos textos comuns deixou de
+> responder, e o novo responde; a assinatura sem login → 401; o público segue no "Em breve".
+> **A versão do app NÃO mudou (`mv5hrmdi-a7421ae7`), e é o esperado:** o passo 4 não tocou em
+> nenhum arquivo do site nem do `core`, e a montagem do site foi reaproveitada. *Para a próxima
+> publicação só de servidor: a versão do app não serve de prova; confira uma rota que mudou.*
 > **PUBLICADO em 12/10/2026, depois (`main` = `7b506b6`, CI verde nos dois jobs, deploy ok; a
 > migration `20261012170000_idioma_com_valor_padrao` aplicada pelo pre-deploy; ordem do operador:
 > "publica o passo 3 e inicia o passo 4"):** o **passo 3 da etapa 4.6c** — o servidor não filtra
@@ -4213,8 +4224,8 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             perdem o caso do inglês. **Só depois de os passos 1 e 2 estarem publicados.**
       - [x] **Passo 4 — O banco perde o idioma (migration; revisão de segurança).** *(Feito em
             12/10/2026, no `dev`, depois de o passo 3 ir ao ar; os quatro gates verdes — site
-            892 testes, servidor 1.060. **AINDA NÃO PUBLICADO:** a publicação espera a ordem
-            do operador e a contagem do banco do site — ver "Para publicar", abaixo.)*
+            892 testes, servidor 1.060. **PUBLICADO em 12/10/2026, `main` = `011f53a`** — pelo Antigravity,
+            por ordem do operador; a prova está no bloco *Estado atual*.)*
             **A migration `20261012190000_sai_o_idioma`:** PARA se houver curso, trilha ou
             legenda em inglês; apaga as linhas em inglês de `site_text`, `faq_item` e
             `testimonial`; tira a coluna `language` das seis tabelas e o tipo `Language`; a
@@ -4247,7 +4258,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             inteira; as rotas do admin seguem atrás do `requireAdmin`; nenhuma resposta ganhou
             campo; os esquemas não ficaram mais permissivos; nenhum teste de acesso foi
             afrouxado.
-            **PARA PUBLICAR — é ordem do operador, com três coisas a saber (P90):**
+            **O que se sabia antes de publicar** *(registro; a publicação já aconteceu)*:
             (a) **contar antes, no banco do SITE,** só leitura, curso, trilha e legenda em
             inglês (as três consultas da trava). Se a trava disparar na publicação, a migration
             fica marcada como falha lá, e nenhuma publicação seguinte passa até um

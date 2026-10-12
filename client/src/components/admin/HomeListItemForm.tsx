@@ -76,7 +76,7 @@ export function HomeListItemForm({
     <form onSubmit={handleSubmit(onSalvar)} className="space-y-4 rounded-lg border bg-background p-4">
       <Campo id={`${idBase}-principal`} campo={principal} erro={errors.principal?.message} registro={register("principal")} />
       <Campo id={`${idBase}-secundario`} campo={secundario} erro={errors.secundario?.message} registro={register("secundario")} />
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className={comOrdem ? "grid gap-4 sm:grid-cols-2" : "max-w-sm"}>
         <div className="space-y-1">
           <Label htmlFor={`${idBase}-status`}>Status</Label>
           <select

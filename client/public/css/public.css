@@ -604,6 +604,10 @@ video {
   display: flex;
 }
 
+.contents {
+  display: contents;
+}
+
 .flex-shrink {
   flex-shrink: 1;
 }
@@ -622,6 +626,10 @@ video {
 
 .italic {
   font-style: italic;
+}
+
+.filter {
+  filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);
 }
 
 .transition {
@@ -845,16 +853,6 @@ button {
 /* "Entrar" / "Meus estudos" na MESMA cor dos outros itens do menu
        (decisão do operador, set/2026). Era cinza-apagado, e cinza lê como
        "desativado" num link que existe justamente para ser clicado. */
-
-/* Seletor de idioma: os dois na cor normal, e o atual marcado por um TRAÇO
-       embaixo (decisão do operador). A cor apagada dizia "indisponível" no
-       idioma para o qual se quer ir. O `aria-current` continua sendo o que o
-       leitor de tela usa — o traço é só a versão visual da mesma informação. */
-
-.lang-atual {
-  border-bottom: 2px solid var(--brand-blue);
-  padding-bottom: 2px;
-}
 
 /* Botões */
 
