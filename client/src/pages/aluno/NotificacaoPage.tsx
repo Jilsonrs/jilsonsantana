@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, type ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { PageContainer, PageHeader } from "@/components/layout/PageLayout";
+import { Card, CardContent } from "@/components/ui/card";
 import { useT } from "@/lib/language";
 import { haQuantoTempo, tituloDaNotificacao, useMarcarLida, useNotificacoes } from "@/lib/notificacoes";
 
@@ -31,7 +32,7 @@ export function NotificacaoPage() {
   }, [aMarcar, marcar]);
 
   const voltar = (
-    <Link to="/aluno/notificacoes" className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground">
+    <Link to="/aluno/notificacoes" className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
       <ArrowLeft className="size-4" aria-hidden="true" />
       {t.notificacoes.titulo}
     </Link>
@@ -45,16 +46,22 @@ export function NotificacaoPage() {
     <PageContainer>
       <div className="mb-6">{voltar}</div>
       <PageHeader title={tituloDaNotificacao(n, t)} description={<time dateTime={n.criadaEm}>{haQuantoTempo(n.criadaEm)}</time>} />
-      <article className="max-w-3xl">
-        <Suspense fallback={<p className="whitespace-pre-line text-sm text-foreground">{n.texto}</p>}>
-          <MarkdownText texto={n.texto} />
-        </Suspense>
-        {n.curso?.slug && (
-          <Link to={`/aluno/curso/${n.curso.slug}`} className="mt-6 inline-block text-sm font-medium text-primary hover:underline">
-            {t.notificacoes.irParaOCurso}
-          </Link>
-        )}
-      </article>
+      <Card className="max-w-3xl">
+        <CardContent className="p-6 sm:p-8">
+          <article className="max-w-none">
+            <Suspense fallback={<p className="whitespace-pre-line text-sm text-foreground">{n.texto}</p>}>
+              <MarkdownText texto={n.texto} />
+            </Suspense>
+            {n.curso?.slug && (
+              <div className="mt-6 border-t border-border/40 pt-6">
+                <Link to={`/aluno/curso/${n.curso.slug}`} className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline">
+                  {t.notificacoes.irParaOCurso}
+                </Link>
+              </div>
+            )}
+          </article>
+        </CardContent>
+      </Card>
     </PageContainer>
   );
 }

@@ -14,7 +14,7 @@ type Atalho = {
 // A mesma forma do card antigo de "Por onde começar", desenhado pelo parceiro
 // de design; só perdeu a legenda.
 const CARTAO =
-  "flex flex-col items-center rounded-2xl border border-border/60 bg-card p-8 text-center " +
+  "flex flex-col items-center justify-center rounded-2xl border border-border/60 bg-card p-8 text-center " +
   "shadow-[0_4px_20px_rgba(0,0,0,0.02)]";
 
 /**
@@ -32,7 +32,7 @@ export function Atalhos() {
 
   return (
     <section aria-labelledby="atalhos" className="mt-14">
-      <h2 id="atalhos" className="text-xl font-semibold">
+      <h2 id="atalhos" className="text-xl font-semibold tracking-tight text-foreground">
         {t.inicio.atalhos}
       </h2>
 
@@ -40,10 +40,10 @@ export function Atalhos() {
         {atalhos.map(({ titulo, icon: Icon, to }) => {
           const conteudo = (
             <>
-              <span className="flex size-12 items-center justify-center rounded-full bg-surface-alt">
-                <Icon className={to ? "size-5 text-primary" : "size-5 text-muted-foreground"} strokeWidth={1.5} />
+              <span className="flex size-14 items-center justify-center rounded-2xl border border-border/40 bg-muted/40 shadow-sm transition-transform duration-200 group-hover:scale-105">
+                <Icon className={to ? "size-6 text-primary" : "size-6 text-muted-foreground"} strokeWidth={1.5} />
               </span>
-              <span className="mt-6 font-display text-lg font-semibold">{titulo}</span>
+              <span className="mt-5 font-display text-lg font-semibold tracking-tight text-foreground">{titulo}</span>
             </>
           );
           return (
@@ -61,7 +61,7 @@ export function Atalhos() {
                   {conteudo}
                 </Link>
               ) : (
-                <div aria-disabled="true" className={`h-full ${CARTAO} text-muted-foreground`}>
+                <div aria-disabled="true" className={`h-full ${CARTAO} text-muted-foreground opacity-75`}>
                   {conteudo}
                   <span className="mt-3">
                     <EmBreve />

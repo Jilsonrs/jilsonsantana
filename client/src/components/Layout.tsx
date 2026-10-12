@@ -91,10 +91,10 @@ function Shell() {
   }
 
   return (
-    <div className="flex min-h-svh bg-background text-foreground">
+    <div className="flex min-h-svh w-full max-w-full overflow-x-hidden bg-background text-foreground">
       <AppRail papel={session.user.role} />
       <SecondaryNav papel={session.user.role} usuario={session.user} onSignOut={handleSignOut} />
-      <div className="flex min-w-0 flex-1 flex-col relative">
+      <div className="flex min-w-0 w-full max-w-full flex-1 flex-col relative overflow-x-hidden">
         {/* No celular, é um cabeçalho real que empurra o conteúdo (como na home pública).
             No desktop (md:), vira invisível estruturalmente (absolute) para não roubar espaço do layout,
             deixando apenas o menu da conta flutuando. */}
@@ -108,7 +108,7 @@ function Shell() {
             <AccountMenu usuario={session.user} onSignOut={handleSignOut} />
           </div>
         </header>
-        <main className="flex-1">
+        <main className="flex-1 min-w-0 w-full max-w-full">
           <TelaAtual />
         </main>
         {/* Só com sessão (aluno e admin): o visitante está na superfície

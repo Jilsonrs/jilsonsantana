@@ -103,6 +103,11 @@
   * {
     @apply border-border;
   }
+  html,
+  body {
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
   body {
     /* Hanken Grotesk é o padrão de tudo; a Outfit entra por classe, com
        restrição (design.md §4) — nunca em corpo de texto. */

@@ -11,7 +11,7 @@ import { useT } from "@/lib/language";
 export function EmBreve({ texto }: { texto?: string }) {
   const t = useT();
   return (
-    <span className="rounded-full border border-border px-1.5 py-0.5 font-mono text-[0.55rem] font-normal tracking-[0.08em] text-muted-foreground">
+    <span className="inline-flex items-center rounded-full border border-border/80 bg-muted/40 px-2 py-0.5 font-mono text-[0.65rem] font-semibold tracking-wider text-muted-foreground uppercase shadow-sm">
       {texto ?? t.nav.emBreve}
     </span>
   );
