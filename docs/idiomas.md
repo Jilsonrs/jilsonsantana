@@ -263,7 +263,12 @@ site para português e pagaria em real, bem menos que US$ 30.
   dos dois existe**. O Brasil não está na lista de países em que a empresa pode estar para usar o
   Stripe Tax (da América Latina, só o México) nem na do Managed Payments. E o operador decidiu,
   no mesmo dia, que quem é de fora também não sai do site para pagar. Os caminhos que sobram e
-  as páginas lidas: `billing.md` → *A tela pública de assinar*; a escolha é a P86.
+  as páginas lidas: `billing.md` → *A tela pública de assinar*.
+- **DECISÃO do operador (12/10/2026): no lançamento a escola vende SÓ PARA O BRASIL**; quem é de
+  fora lê que a assinatura ainda não chegou ao país dele e deixa o e-mail. A venda para fora
+  abre numa **fase do exterior**, com empresa terceirizada como vendedora (P22) — não com o
+  contador. As páginas em inglês continuam: servem a quem mora no Brasil e mostram o aviso a
+  quem é de fora.
 
 **A escolha**, para a Fase 4 e com o contador: **pagar dentro do site e cuidar da papelada fiscal**
 × **usar a página da Stripe e não ter papelada**. Levar junto ao contador: a conta Stripe está como

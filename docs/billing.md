@@ -450,7 +450,7 @@ pagamento sem ter assinado vê "confirmando" e depois "está demorando", sem cam
 
 > **NADA AQUI ESTÁ DECIDIDO além do que traz data e frase do operador.** É a proposta do agente
 > depois de ele mostrar as telas de pagamento da Udemy e do Code with Mosh. O que existe na tela
-> e os textos são dele: as perguntas estão em `pendencias.md` (**P80 a P87**; a P79 ele respondeu em 12/10/2026). Quem construir o
+> e os textos são dele: as perguntas estão em `pendencias.md` (**P80 a P88**; a P79 e a P86 ele respondeu em 12/10/2026). Quem construir o
 > passo 6 confere antes o que ele já respondeu, e registra a resposta aqui, com a data e a frase.
 > *A Udemy e o Mosh são referência desta análise, nunca texto do site.*
 
@@ -539,11 +539,47 @@ customer's full billing address for tax calculation […] use the Address Elemen
     custo: o formulário é o dela, não o da escola; é um segundo sistema de cobrança, só para
     quem é de fora (um segundo aviso de pagamento para o servidor ouvir); e a taxa é maior que a
     da Stripe. **É peça nova de stack: só entra por decisão dele, com o critério do `CLAUDE.md`.**
-  - **Os caminhos que sobram, com o aluno de fora dentro do site** (a escolha é a **P86**):
-    (1) lançar só para o Brasil e guardar o e-mail de quem é de fora · (2) vender de fora pelo
-    Brasil, como hoje, com o contador cuidando do imposto de cada país à mão · (3) abrir empresa
-    num país da lista e usar o Stripe Tax com a mesma tela · (4) a Paddle, só para quem é de
-    fora. **A tela de assinar é a mesma nos quatro:** o campo País é o que separa os casos.
+  - **Os caminhos que sobravam, com o aluno de fora dentro do site:** (1) lançar só para o
+    Brasil e guardar o e-mail de quem é de fora · (2) vender para fora pelo Brasil, como hoje,
+    com o contador cuidando do imposto de cada país à mão · (3) abrir empresa num país da lista
+    e usar o Stripe Tax com a mesma tela · (4) a Paddle, só para quem é de fora.
+- **DECISÃO: NO LANÇAMENTO, A ESCOLA VENDE SÓ PARA O BRASIL** *(operador, 12/10/2026 — fecha a
+  P86)*: *"isso, caminho 1, só Brasil e aviso para os do exterior com e-mail, como você
+  sugeriu"*. Quem escolhe outro país no campo País não vê o formulário de pagamento: lê que a
+  assinatura para lá ainda não está disponível e deixa o e-mail para ser avisado. *Reabre
+  quando a fase do exterior abrir (abaixo).*
+- **DECISÃO: O IMPOSTO DE FORA NÃO FICA COM O CONTADOR** *(operador, 12/10/2026)*: *"eu não vou
+  cuidar de impostos do exterior com contador, vai ser caro e complicado, tem que ser com
+  empresa terceirizada na fase do exterior"*. Recusa o caminho (2). A venda para fora só abre
+  com uma **empresa terceirizada como vendedora**, que cuide do imposto, e sem tirar o aluno do
+  site. A escolha dela é a P22, na fase do exterior. *Reabre se o Stripe Tax ou o Managed
+  Payments passarem a aceitar empresa do Brasil — aí a própria Stripe volta a ser opção.*
+- **O gateway da Teachable, que ele pediu para ver** `[FATO — três páginas de ajuda da
+  Teachable lidas em 12/10/2026]`: **não dá para contratar só o pagamento dela para quem é de
+  fora.** O serviço em que ela cuida do imposto ("Teachable Payments") só existe para vender
+  curso hospedado DENTRO de uma escola da Teachable (é como o Mosh vende), e só para criador de
+  41 países — **o Brasil não está na lista** (ela é feita sobre a Stripe, e a lista é quase a
+  mesma). Criador do Brasil usa a própria Stripe lá dentro, e aí: *"Tax calculation,
+  collection, and remittance not handled by Teachable."* O que existe à venda como "só o
+  pagamento, com o imposto incluído" são as vendedoras por conta de terceiros — a Paddle é a
+  que foi conferida (aceita empresa do Brasil e abre dentro do site).
+- **A DIREÇÃO PARA A FASE DO EXTERIOR: A PADDLE, SE ELA RESOLVER** *(operador, 12/10/2026)*:
+  *"Se a Paddle resolver, utilizo eles em vez de Stripe para clientes do exterior"*. A Stripe
+  continua sendo a cobrança de quem é do Brasil. **Não é decisão de stack ainda: é condicional,
+  e a condição não está provada** `[FATO — páginas da Paddle lidas em 12/10/2026]`:
+  - **Ela se apresenta como feita para empresa de SOFTWARE** (*"Paddle is built to serve
+    software companies (including B2B SaaS, Consumer Software, and Games)"*) e proíbe serviço
+    humano sem software junto (*"Human services that are not related to a software offering"*,
+    com "coaching" entre os exemplos). **Curso gravado por assinatura não aparece nem como
+    aceito nem como proibido** — depende da análise dela. É a primeira pergunta a fazer.
+  - **Como ela paga uma empresa do Brasil não foi achado:** o saldo fica em dólar, euro, libra,
+    dólar australiano ou canadense; o meio de receber no Brasil, não.
+  - **As quatro perguntas para a Paddle, antes de contar com ela:** aceita uma escola de cursos
+    gravados por assinatura? · aceita empresa do Brasil (MEI hoje) e como ela recebe? · qual é a
+    taxa? · o quadro dentro do site faz assinatura, e a escola consegue cancelar, trocar o
+    cartão e mudar o plano pelas próprias telas?
+  *Reabre a escolha se a resposta dela a qualquer uma das duas primeiras for não — aí sobram
+  outra vendedora por conta de terceiros ou a empresa num país que a Stripe aceita.*
   - **A confirmar com o suporte da Stripe** (ele, pelo painel): se há previsão de o Stripe Tax
     ou o Managed Payments aceitarem empresa do Brasil.
 - **O campo PAÍS** *(pergunta do operador, 12/10/2026: alunos de Portugal e de outros países de
@@ -585,7 +621,11 @@ celular, uma coluna só, nesta ordem)*:
    site**, que já leva a FAQ, Termos e Privacidade.
 2. **Título** — "Assinar" e "Uma assinatura, todos os cursos e trilhas." (os de hoje).
 3. **Seus dados** *(novo)* — o e-mail (com uma linha dizendo para que serve e "Já tem conta?
-   Entrar"), o **país** (P80) e, para quem é do Brasil, o **CPF** (decisão de 12/10/2026; P87).
+   Entrar"), o **país** e, para quem é do Brasil, o **CPF** (decisão de 12/10/2026; P87).
+   **Quem escolhe um país que não é o Brasil** (decisão de 12/10/2026) não segue para o plano
+   nem para o cartão: no lugar deles, o aviso de que a assinatura ainda não chegou àquele país
+   e o botão para ser avisado, que guarda o e-mail já digitado e o país. O que conta como "do
+   Brasil" é a **P88**.
 4. **Escolha o plano** — os dois cartões de hoje, sem mudança: Mensal marcado (é o cartão em que
    a pessoa clicou na home) e Anual ao lado com o selo "17% de desconto" e "equivale a R$ 82,92
    por mês". Embaixo, "Sem fidelidade. Cancele quando quiser."
@@ -614,6 +654,9 @@ inglês é rascunho e passa pela revisão do `idiomas.md`)*:
 | E-mail, ajuda | É com ele que você entra na escola. Depois do pagamento, enviamos o link para criar sua senha. | You'll use it to sign in. After payment, we'll email you a link to create your password. |
 | E-mail, atalho | Já tem conta? Entrar | Already have an account? Sign in |
 | País | País | Country |
+| País de fora, aviso | A assinatura ainda não está disponível no seu país. Deixe seu e-mail e avisamos quando abrir. | Subscriptions aren't available in your country yet. Leave your email and we'll let you know when they are. |
+| País de fora, botão | Avise-me | Notify me |
+| País de fora, depois | Pronto. Avisaremos você por e-mail. | Done. We'll email you. |
 | CPF *(só para o Brasil; P87)* | CPF ou CNPJ | *(não aparece fora do Brasil)* |
 | CPF, ajuda | Usamos para emitir a nota fiscal. | — |
 | CPF inválido | Confira o número: este CPF ou CNPJ não é válido. | — |
@@ -622,7 +665,7 @@ inglês é rascunho e passa pela revisão do `idiomas.md`)*:
 | E-mail que já tem conta | Este e-mail já tem conta. Entre para assinar. | This email already has an account. Sign in to subscribe. |
 | Renovação, mensal | Renova todo mês por {valor}, até você cancelar. | Renews every month at {valor} until you cancel. |
 | Renovação, anual | Renova uma vez por ano por {valor}, até você cancelar. | Renews once a year at {valor} until you cancel. |
-| Reembolso | Garantia de 7 dias: se não gostar, você recebe de volta o valor pago. | 14-day money-back guarantee. *(ver "em inglês", abaixo)* |
+| Reembolso | Garantia de 7 dias: se não gostar, você recebe de volta o valor pago. | 7-day money-back guarantee. *(os 14 dias voltam na fase do exterior)* |
 | Pagamento seguro | Pagamento seguro, processado pela Stripe. A escola não guarda os dados do seu cartão. | Secure payment, processed by Stripe. We never store your card details. |
 | Termos | Ao assinar, você concorda com os Termos de Uso e a Política de Privacidade. | By subscribing, you agree to our Terms of Use and Privacy Policy. |
 | Título da lista | O que está incluído | What's included |
@@ -648,11 +691,16 @@ assinatura…", "Está demorando mais que o normal…"). `{contato}` depende da 
   promete mais do que a tela de reembolso entrega sozinha.
 - **O endereço:** proposta `/en/subscribe` (junto da P14). O botão continua só ligando com uma
   aula publicada em inglês (decisão de 14/09/2026).
+- **Com o lançamento só para o Brasil** (decisão de 12/10/2026), a tela em inglês atende quem
+  mora no Brasil e lê inglês; quem é de fora vê o aviso e deixa o e-mail. O reembolso de 14
+  dias e o preço em dólar passam a ser assunto da fase do exterior.
 
 **O que isto muda nos passos da 4.7** (detalhe em cada passo, no plano): o **6** ganha os itens
 acima · o **5** pede o nome ao criar a senha (P83) e ganha o "Enviar de novo" · o **4** recebe a
 resposta da caixa de novidades (P82), o país e o CPF (decisão de 12/10/2026), e precisa dizer à tela de
-depois do pagamento que a assinatura valeu, sem login · o **1** inclui o "Enviar de novo" no
+depois do pagamento que a assinatura valeu, sem login — e **recusa no servidor** o país que não
+é o Brasil (a tela esconder o formulário não é defesa) · o **6** guarda a lista de quem pediu
+para ser avisado · o **1** inclui o "Enviar de novo" e o "Avise-me" no
 limite de tentativas · o **8** só abre com os Termos de Uso e a Política de Privacidade no ar.
 
 **O que o agente sugere NÃO ter na abertura** *(para ninguém propor de novo sem o gatilho)*:
@@ -683,13 +731,18 @@ confundir quem assina — foi o motivo da decisão de 10/10.*
 - **Quem é de fora pagar pela página da Stripe** (a Stripe como vendedora) — recusado em
   12/10/2026: ninguém sai do site para pagar. E a pesquisa do mesmo dia mostrou que o caminho
   nem existe para empresa do Brasil.
+- **Vender para fora pelo Brasil, com o contador cuidando do imposto de cada país** — recusado
+  em 12/10/2026: "vai ser caro e complicado". O gatilho está na decisão, acima.
 
 **As páginas lidas em 12/10/2026** (preço e lista de países de fornecedor envelhecem: reler
 antes de decidir): `docs.stripe.com/payments/managed-payments` e `…/managed-payments/eligibility`
 · `docs.stripe.com/tax/supported-countries` e `…/supported-countries/latin-america-and-caribbean`
 · `docs.stripe.com/tax/filing` e `docs.stripe.com/tax/file-with-stripe-outside-us` ·
 `paddle.com/help/start/intro-to-paddle/which-countries-are-supported-by-paddle` ·
-`developer.paddle.com/concepts/sell/branded-integrated-inline-checkout`.
+`developer.paddle.com/concepts/sell/branded-integrated-inline-checkout` · da Teachable:
+`support.teachable.com/en/articles/15663382-how-teachable-handles-tax`,
+`…/15624639-set-up-teachable-payments-and-start-selling` e `…/11682500-embed-buy-button` ·
+`paddle.com/help/start/intro-to-paddle/what-am-i-not-allowed-to-sell-on-paddle`.
 
 ## Sincronizar e perder o acesso *(Fase 4, etapa 4.4 — 10/10/2026)*
 

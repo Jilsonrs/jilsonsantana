@@ -4196,6 +4196,9 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             fora, a **P86**). *Proposta do agente, a fechar no plano do passo, com context7:* o
             CPF é conferido no servidor e fica guardado NA STRIPE, junto do cliente (o número
             fiscal dela, `br_cpf`/`br_cnpj`) — um dado pessoal a menos no banco da escola.
+            **A rota RECUSA o país que não é o Brasil** (decisão do operador, 12/10/2026: no
+            lançamento a escola vende só para o Brasil) — no servidor: a tela esconder o
+            formulário não é defesa. O que conta como "do Brasil" é a **P88**.
             **E duas coisas que a tela precisa deste passo:** a tela de depois do
             pagamento não tem login — precisa saber que a assinatura valeu sem revelar nada de
             outra pessoa · o que se diz quando o e-mail já tem conta (rascunho: "Este e-mail já
@@ -4241,6 +4244,13 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             Stripe já pede sozinho**, com um cartão de teste do Brasil: a doc diz que o campo
             de pagamento cuida do número fiscal de comprador da América Latina, e dois campos
             de CPF na mesma tela é o erro a evitar.
+            **O AVISO PARA QUEM É DE FORA** (decisão do operador, 12/10/2026: *"só Brasil e
+            aviso para os do exterior com e-mail"*): quem escolhe um país que não é o Brasil
+            não vê o plano nem o cartão — vê o aviso e o botão "Avise-me", que guarda o e-mail
+            e o país. *Do agente, para o plano do passo:* é uma tabela nova (migration, com
+            RLS) e uma rota pública a mais, dentro do limite do passo 1; guarda só o e-mail, o
+            país, o idioma e a data; a pessoa pediu o aviso, então o e-mail de abertura não
+            depende do `marketingConsent` — e leva o link para sair da lista.
       - [ ] **Passo 7 — Os e-mails automáticos da assinatura.** A cobrança que falhou (com a
             data da próxima tentativa), o aviso antes de trancar e a assinatura cancelada (com
             o link para reativar). Os textos são do operador. **Depende só do passo 3** — pode
@@ -4352,8 +4362,19 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       empresa de hoje. O que sobra, sempre com o aluno dentro do site: lançar só para o Brasil ·
       vender para fora pelo Brasil, com o contador cuidando do imposto · empresa num país da
       lista, com o Stripe Tax e a mesma tela · a Paddle só para quem é de fora (peça nova de
-      stack). **A escolha é a P86, e esta etapa só abre depois dela.** Fatos, citações e as
-      páginas lidas: `billing.md` → *A tela pública de assinar*.
+      stack). Fatos, citações e as páginas lidas: `billing.md` → *A tela pública de assinar*.
+      **DECIDIDO por ele em 12/10/2026 (P86): no lançamento a escola vende SÓ PARA O BRASIL**,
+      e quem é de fora deixa o e-mail para ser avisado (etapa 4.7, passo 6). **E o imposto de
+      fora não fica com o contador:** *"tem que ser com empresa terceirizada na fase do
+      exterior"*. **Consequência para ESTA etapa, a confirmar com ele** (escopo e ordem são
+      dele): o dólar pelo país do cartão deixa de ter o que fazer antes do lançamento e passa
+      para a fase do exterior, junto da escolha da empresa terceirizada (P22); o que sobra aqui
+      é o botão de assinar das páginas em inglês, para quem mora no Brasil.
+      **A direção dele para essa fase (12/10/2026):** *"Se a Paddle resolver, utilizo eles em
+      vez de Stripe para clientes do exterior"* — condicional: a Paddle se apresenta como feita
+      para empresa de software, e curso gravado por assinatura não aparece nem como aceito nem
+      como proibido. As quatro perguntas a fazer a ela estão em `billing.md`. É peça nova de
+      stack: só entra com a resposta dela e o OK dele, num plano próprio.
 - [ ] **4.9 — Pix recorrente (código).** O mandato no Payment Element e a régua própria do Pix (falha
       de Pix não se retenta como cartão). **Trazido da 4.2 (10/10/2026):** o Pix é um item a mais na
       lista de formas de pagamento do servidor (na 4.2, só cartão), sem refazer a tela. A home já
