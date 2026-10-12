@@ -33,17 +33,17 @@ export function LessonHeader({
   const t = useT();
   const [menuDoCursoFechado, fecharMenuDoCurso] = useMenuDoCursoFechado();
   return (
-    <div className="relative flex min-h-[60px] md:min-h-[80px] items-center px-4 sm:px-6 md:px-[50px] border-b border-border/40 bg-card/50">
-      <div className="flex items-center gap-5 max-w-[80%]">
+    <div className="relative flex w-full min-h-[60px] md:min-h-[80px] items-center px-4 sm:px-6 md:px-[50px] border-b border-border/40 bg-card/50 overflow-hidden">
+      <div className="flex items-center gap-3 sm:gap-5 w-full min-w-0">
         {/* Botão DESKTOP: reabre a barra lateral se estiver fechada */}
         {menuDoCursoFechado && (
           <button
             type="button"
             onClick={() => fecharMenuDoCurso(false)}
-            className="hidden md:flex items-center gap-2 px-3 py-2 -ml-3 text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-black/5 rounded-md transition-colors"
+            className="hidden md:flex items-center gap-2 px-3 py-2 -ml-3 text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-black/5 rounded-md transition-colors shrink-0"
             aria-label={t.aula.conteudoDoCurso}
           >
-            <List className="size-5" />
+            <List className="size-5 shrink-0" />
             <span>{t.aula.conteudoDoCurso}</span>
           </button>
         )}
@@ -51,15 +51,15 @@ export function LessonHeader({
         {/* Botão MOBILE: abre a gaveta por cima da tela. Uma gaveta por AULA (`key`):
             escolher uma aula nela — ou a passagem automática ao fim do vídeo — fecha a
             gaveta, em vez de deixá-la por cima da aula nova (Bloco AULA, 07/10/2026). */}
-        <div className="md:hidden -ml-3">
+        <div className="md:hidden shrink-0 -ml-1 sm:-ml-3">
           <Sheet key={lessonId}>
             <SheetTrigger asChild>
               <button
-                className="flex items-center gap-2 px-3 py-2 text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-black/5 rounded-md transition-colors"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-black/5 rounded-md transition-colors shrink-0"
                 aria-label={t.aula.conteudoDoCurso}
               >
-                <List className="size-5" />
-                <span>{t.aula.conteudoDoCurso}</span>
+                <List className="size-5 shrink-0" />
+                <span className="hidden sm:inline">{t.aula.conteudoDoCurso}</span>
               </button>
             </SheetTrigger>
             <SheetContent side="left" className="w-[85vw] max-w-[320px] p-0 flex flex-col bg-surface-alt">
@@ -71,17 +71,17 @@ export function LessonHeader({
           </Sheet>
         </div>
 
-        <div className="flex flex-col justify-center py-3 gap-1">
-          <h1 className="text-lg md:text-2xl font-display font-bold tracking-tight text-foreground truncate flex items-center gap-3">
-            {titulo}
+        <div className="flex flex-col justify-center py-2.5 sm:py-3 gap-0.5 sm:gap-1 min-w-0 flex-1">
+          <h1 className="text-base sm:text-lg md:text-2xl font-display font-bold tracking-tight text-foreground flex items-center gap-2 sm:gap-3 min-w-0">
+            <span className="truncate">{titulo}</span>
             {status !== ContentStatus.PUBLISHED && (
-              <span className="inline-flex rounded-full border border-border px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-wider text-muted-foreground">
+              <span className="inline-flex shrink-0 rounded-full border border-border px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-wider text-muted-foreground">
                 {status === ContentStatus.ARCHIVED ? t.aula.arquivado : t.aula.rascunho}
               </span>
             )}
           </h1>
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="text-sm md:text-[0.95rem] text-muted-foreground truncate">
+          <div className="flex items-center gap-2 min-w-0 overflow-hidden">
+            <span className="text-xs sm:text-sm md:text-[0.95rem] text-muted-foreground truncate min-w-0 shrink">
               {curso.title}
             </span>
             {/* Salvar o curso para depois (decisão do operador, 03/10/2026): só logado, só curso publicado. */}
@@ -91,7 +91,7 @@ export function LessonHeader({
             {/* O quanto do curso já foi, como no cartão (operador, 06/10/2026): o
                 mesmo número da barra embaixo. Só para quem está logado. */}
             {logado && (
-              <span className="shrink-0 text-sm text-muted-foreground">
+              <span className="shrink-0 rounded-full border border-border/50 bg-muted/40 px-2 py-0.5 text-[0.7rem] sm:text-xs font-semibold text-muted-foreground">
                 {porcentagem}% {t.curso.concluido}
               </span>
             )}
@@ -108,9 +108,9 @@ export function LessonHeader({
           aria-valuemin={0}
           aria-valuemax={100}
           aria-valuenow={porcentagem}
-          className="absolute bottom-0 left-4 right-4 sm:left-6 sm:right-6 md:left-[50px] md:right-[50px] h-[3px] bg-primary/10"
+          className="absolute bottom-0 left-0 right-0 h-1 overflow-hidden bg-primary/10"
         >
-          <div className="h-full bg-primary rounded-r-full transition-all duration-500" style={{ width: `${porcentagem}%` }} />
+          <div className="h-full bg-primary rounded-r-full transition-all duration-500 ease-out" style={{ width: `${porcentagem}%` }} />
         </div>
       )}
     </div>

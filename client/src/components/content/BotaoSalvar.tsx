@@ -28,17 +28,17 @@ export function BotaoSalvar({
   return (
     <button
       type="button"
-      aria-label={texto ? undefined : nome}
+      aria-label={nome}
       aria-pressed={salvo}
       disabled={isPending}
       onClick={() => mutate({ tipo, id, salvar: !salvo })}
       className={cn(
-        "inline-flex shrink-0 items-center gap-1.5 rounded-md p-1.5 text-sm transition-colors hover:bg-muted disabled:opacity-60",
+        "inline-flex shrink-0 items-center gap-1.5 rounded-lg p-1.5 text-xs sm:text-sm font-medium transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60",
         salvo ? "text-primary" : "text-muted-foreground hover:text-foreground",
       )}
     >
-      <Icone className="size-4" aria-hidden="true" />
-      {texto && <span>{texto}</span>}
+      <Icone className="size-4 shrink-0" aria-hidden="true" />
+      {texto && <span className="hidden sm:inline">{texto}</span>}
     </button>
   );
 }

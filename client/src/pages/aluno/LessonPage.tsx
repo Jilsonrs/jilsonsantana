@@ -124,7 +124,7 @@ export function LessonPage() {
     if (ligada !== legendaLigada) lembrarLegenda(ligada);
   };
   return (
-    <div className="flex min-h-full flex-col">
+    <div className="flex min-h-full w-full min-w-0 flex-col overflow-x-hidden">
       {/* Barra Superior Customizada da Aula (Avatar flutua por cima, à direita) */}
       <LessonHeader
         lessonId={lessonId}

@@ -94,15 +94,15 @@ export function LessonContent({
 
   if (!aula.liberada) {
     return (
-      <div role="status" className={QUADRO}>
-        <div className="mb-4 flex size-16 items-center justify-center rounded-full bg-background shadow-sm border border-border/60">
+      <div role="status" className="flex aspect-video w-full flex-col items-center justify-center rounded-2xl border border-border/60 bg-card p-8 text-center shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
+        <div className="mb-4 flex size-16 items-center justify-center rounded-2xl border border-border/60 bg-muted/40 shadow-sm">
           <Lock className="size-6 text-muted-foreground" aria-hidden="true" />
         </div>
-        <p className="text-lg font-medium tracking-tight text-foreground">
+        <p className="max-w-[42ch] text-lg font-medium tracking-tight text-foreground">
           {atrasada ? t.aula.cobrancaAtrasada : t.aula.paraAssinantes}
         </p>
         {podeAssinar && (
-          <Button asChild className="mt-4">
+          <Button asChild size="lg" className="mt-5 min-h-11">
             {atrasada ? <Link to={TELA_DE_TROCAR_O_CARTAO}>{t.faturamento.trocarCartao}</Link> : <Link to={TELA_DE_ASSINAR}>{reativar ? t.aula.reativar : t.aula.assinar}</Link>}
           </Button>
         )}

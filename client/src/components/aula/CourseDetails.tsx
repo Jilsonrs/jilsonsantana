@@ -77,7 +77,7 @@ export function CourseDetails({ curso }: { curso: PaginaDaAula["curso"] }) {
             <h2 id="sobre-o-curso" className="font-display text-[1.4rem] font-bold tracking-tight text-foreground">
               {t.aula.sobreOCurso}
             </h2>
-            <div className="flex items-center gap-3 pt-1">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3 pt-1">
               {curso.level && <Badge variant="secondary" className="rounded-full font-medium">{t.niveis[curso.level]}</Badge>}
               {(moduleCount > 0 || lessonCount > 0) && (
                 <span className="font-mono text-xs font-medium tracking-wide text-muted-foreground">
