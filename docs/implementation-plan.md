@@ -4819,6 +4819,9 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       **Testes:** 7 de tela e 1 de servidor a mais (site 942, servidor 1058); **mutação:** 11 de 11 — e os testes pegaram
       um defeito antes de ele existir para alguém: um prazo muito distante fazia o relógio do
       navegador disparar na hora. Gates: typecheck, lint, build e as duas suítes.
+      **O operador testou de novo no navegador (11/10/2026): a troca num clique só funcionou.**
+      E pediu um ajuste de texto, feito: no cartão do Anual, "A troca vale na hora." virou "A
+      troca é imediata." (`app.faturamento.plano.paraOAnual`; o inglês segue rascunho, na P72).
       **Para a parte 2 do teste:** a assinatura de cortesia do `member@` do computador foi
       encerrada a pedido do operador (11/10/2026). `[FATO — medido]` encerrar uma assinatura de
       100% direto deixa o período inteiro como "pago" (um ano de acesso, no anual); para a

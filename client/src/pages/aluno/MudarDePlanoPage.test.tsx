@@ -146,7 +146,7 @@ describe("MudarDePlanoPage — do Mensal para o Anual, na hora", () => {
     expect(naTela()).toContain("Mensal · R$ 99,90/mês");
     expect(naTela()).toContain("Anual · R$ 995,00/ano");
     // R$ 928,40 é o que o servidor disse que se paga HOJE — não é o preço do anual, e a tela não o calcula.
-    expect(naTela()).toContain("A troca vale na hora. Hoje você paga R$ 928,40, já descontado o que sobrou do mês que você pagou. A próxima cobrança é em 11/10/2027.");
+    expect(naTela()).toContain("A troca é imediata. Hoje você paga R$ 928,40, já descontado o que sobrou do mês que você pagou. A próxima cobrança é em 11/10/2027.");
     // Sem prazo na tela (decisão do operador, 11/10/2026): o valor é cobrado como foi mostrado.
     expect(naTela()).not.toContain("minutos");
   });

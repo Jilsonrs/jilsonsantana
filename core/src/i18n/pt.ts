@@ -499,7 +499,8 @@ export const pt = {
       plano: {
         descricao: "Escolha como prefere pagar. O acesso é o mesmo nos dois planos.",
         atual: "Seu plano atual",
-        paraOAnual: "A troca vale na hora. Hoje você paga {valor}, já descontado o que sobrou do mês que você pagou. A próxima cobrança é em {data}.",
+        // "A troca é imediata." — redação do operador, 11/10/2026 (era "A troca vale na hora.").
+        paraOAnual: "A troca é imediata. Hoje você paga {valor}, já descontado o que sobrou do mês que você pagou. A próxima cobrança é em {data}.",
         mudarParaOAnual: "Mudar para o Anual",
         agoraAnual: "Pronto. Seu plano agora é o Anual.",
         paraOMensal: "A troca vale em {data}, quando termina o ano que você já pagou. Até lá nada muda e nada é cobrado. Depois, {valor} por mês.",
