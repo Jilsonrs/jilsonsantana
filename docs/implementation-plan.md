@@ -4710,11 +4710,16 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       mostra a assinatura de verdade (a do código de 100%); em "Adicionar cartão" a frase da
       Stripe traz o nome público da conta de verdade (P58) — só olhar: salvar ali guarda um
       cartão de verdade.
-      **SESSÃO (b) — FECHADA NO `dev` em 11/10/2026, NÃO PUBLICADA** (os passos 7 a 13, com as
-      duas revisões de segurança). **Falta, e é do operador:** a parte 2 do teste no navegador
-      (com cartão de teste: o reembolso e a janela do banco, que ainda não abriu num navegador —
-      `billing.md` → *Pendências de verificação*), a **P69** e a **P71** nos painéis e a
-      decisão de publicar. O histórico da sessão segue abaixo.
+      **SESSÃO (b) — FECHADA e PUBLICADA em 11/10/2026 (`main` = `1bacac1`)**, com a autorização
+      do operador (*"Publica o que está feito."*): os passos 7 a 13, três revisões de segurança
+      e as duas partes do teste dele no navegador. CI verde nos dois jobs no `dev` (`899287f`) e
+      na `main`; conferido no ar como visitante — as seis rotas novas respondem 401 sem login, e
+      o pedido vindo de outro site, 403. Sem migration.
+      **Continuam com o operador, nos painéis:** a **P69** (os avisos de devolução no endereço de
+      avisos da conta de verdade) e a **P71** (a chave de produção e o Sentry) — ele mandou
+      publicar com as duas em aberto. *Sintoma se a P71 estiver errada:* os avisos da Stripe
+      passam a falhar no painel dela, e Faturamento e Assinatura diz "não foi possível
+      carregar". Hoje só ele assina no site no ar. O histórico da sessão segue abaixo.
       **Teste do operador no navegador, parte 1 — FEITO (11/10/2026)**, com a assinatura de
       cortesia do `member@` do computador, 12 telas conferidas: mudar para o Anual (R$ 0,00, na
       hora), marcar o Mensal para o fim do ano, "Continuar no Anual", cancelar com motivo e
@@ -4878,6 +4883,12 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       e-mail · **antes de abrir ao visitante, o limite de tentativas do código promocional** (na
       4.2 só conta logada confere código, e o cadastro é fechado) · os botões Assinar da home
       passam a funcionar sem login.
+      **O TESTE COM CARTÃO DE VERDADE é desta etapa** (decisão do operador, 11/10/2026: *"a
+      gente testa no 4.7"*): uma vez, no site no ar, antes de abrir ao público, com uma conta
+      SEM assinatura (o `member@` de produção tem a de cortesia) — assinar o mensal, mudar para
+      o anual e pedir o reembolso dentro dos 7 dias. É o que a área restrita não prova: a
+      configuração da conta de verdade, o banco de verdade e o caminho do cartão no site (que
+      até hoje só viu o código de 100%). Olhar no painel quanto a Stripe reteve de taxa.
       **Dois e-mails da cobrança atrasada, pedidos pelo operador (11/10/2026):** na falha —
       "não conseguimos renovar; vamos tentar de novo no dia X", com o link para trocar o cartão
       (`…/faturamento/cartao`; a data vem da Stripe, no aviso da cobrança que falhou) — e antes
