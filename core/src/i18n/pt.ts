@@ -511,9 +511,7 @@ export const pt = {
         renovacaoParada: "Sua assinatura termina em {data}. Para mudar de plano, mantenha a assinatura primeiro.",
         atrasada: "Não conseguimos cobrar o seu cartão. Troque o cartão antes de mudar de plano.",
         cartaoRecusado: "Seu cartão foi recusado e o plano continua o mesmo. Troque o cartão e tente de novo.",
-        erro: "Não foi possível mudar o plano. Tente de novo.",
-        // Caso raro: a tela ficou aberta por horas (ou o mês virou) e a conta já está longe do valor mostrado — a tela busca o valor de novo. Texto do operador, 11/10/2026.
-        valorAtualizado: "Este valor foi atualizado. Confira e clique para concluir."
+        erro: "Não foi possível mudar o plano. Tente de novo."
       },
       cancelamento: {
         descricao: "Você pode cancelar quando quiser. Seu progresso fica guardado: se voltar, continua de onde parou.",

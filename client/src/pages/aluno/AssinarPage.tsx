@@ -3,7 +3,7 @@ import { Link, Navigate } from "react-router-dom";
 import { SituacaoDoFaturamento } from "@jilson/core";
 import { PageContainer, PageHeader } from "@/components/layout/PageLayout";
 import { Button } from "@/components/ui/button";
-import { TELA_DE_CONCLUIDO, usePlanosDaAssinatura, useSituacaoDaAssinatura } from "@/lib/assinar";
+import { telaDeConcluido, usePlanosDaAssinatura, useSituacaoDaAssinatura } from "@/lib/assinar";
 import { TELA_DO_FATURAMENTO, useMinhaAssinatura } from "@/lib/faturamento";
 import { useT } from "@/lib/language";
 import { useIrPara } from "@/lib/versao";
@@ -59,7 +59,7 @@ export function AssinarPage() {
       )}
       {!carregando && !falhou && !jaAssina && planos.data && (
         <Suspense fallback={<p className="text-muted-foreground">{t.comum.carregando}</p>}>
-          <FormularioDeAssinatura dados={planos.data} aoConcluir={() => irPara(TELA_DE_CONCLUIDO)} aoSaberQueJaAssina={() => void situacao.refetch()} reativar={reativar} />
+          <FormularioDeAssinatura dados={planos.data} aoConcluir={() => irPara(telaDeConcluido(reativar))} aoSaberQueJaAssina={() => void situacao.refetch()} reativar={reativar} />
         </Suspense>
       )}
     </PageContainer>

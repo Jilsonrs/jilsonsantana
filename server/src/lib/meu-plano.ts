@@ -21,9 +21,10 @@ import { agendarTroca, anularFatura, calcularTroca, soltarAgendamento, trocarAgo
 // sai exatamente nesse valor (`trocarAgora`), sem prazo — quem demorou meia hora na tela paga o
 // que leu. UMA CONFERÊNCIA, porque o valor vem do navegador: ele tem que estar no máximo
 // `FOLGA_DO_VALOR_MOSTRADO` ABAIXO da conta refeita AGORA, com a trava — nunca acima dela. Um
-// valor inventado não passa: o máximo que alguém tira da escola mentindo é a folga. Só fora
-// dela (a tela aberta por muitas horas, o mês que virou, o preço que mudou) a troca não
-// acontece, e a tela mostra o valor novo para a pessoa confirmar.
+// valor inventado não passa: o máximo que alguém tira da escola mentindo é a folga. Fora dela
+// (a tela aberta por muitas horas, o mês que virou, o preço que mudou) a troca não acontece e
+// a tela LEVA AO INÍCIO, sem mensagem — "igual banco que expira"; na volta a pessoa vê o valor
+// novo. A tela faz isso sozinha quando o prazo passa (`valeAte`), e também no clique.
 // Cada operação é a Stripe e depois a sincronia, com a trava da assinatura (`operarNaAssinatura`)
 // — e, com a trava, os detalhes são RELIDOS: a decisão vale pelo que a Stripe diz AGORA (duas
 // abas: o que já foi desfeito na outra não vira erro, e o que foi criado nela não escapa).
@@ -33,11 +34,21 @@ type SemTroca = { resultado: "sem-assinatura" } | { resultado: "desconhecida" } 
 /**
  * Quanto a escola abre mão, no máximo, para cobrar o valor mostrado — em centavos. É também o
  * teto do que um valor forjado consegue tirar. R$ 1,00 cobre a tela aberta por umas 7 horas com
- * o mensal de R$ 99,90 (ele anda uns 13 centavos por hora).
- * NÚMERO ESCOLHIDO PELO AGENTE, a confirmar pelo operador (pendência P77): ele pediu a troca
- * num clique só, sem dizer até quanto.
+ * o mensal de R$ 99,90 (ele anda uns 13 centavos por hora). Confirmado pelo operador em
+ * 11/10/2026 ("R$ 1,00 está ok").
  */
 export const FOLGA_DO_VALOR_MOSTRADO = 100;
+
+/**
+ * Por quanto tempo, NO MÍNIMO, o valor mostrado continua dentro da folga — em segundos. É o que a
+ * tela usa para sair sozinha quando o prazo passa; quem decide de verdade continua sendo a
+ * conferência do valor, no clique. A conta usa o mês mais curto (28 dias), o que anda mais
+ * depressa: o prazo dito aqui nunca passa do de verdade. Sem o preço de hoje, 6 horas. Função pura.
+ */
+export function validadeDoValorMostrado(precoDeHojeEmCentavos: number | null | undefined): number {
+  if (!precoDeHojeEmCentavos || precoDeHojeEmCentavos <= 0) return 6 * 60 * 60;
+  return Math.floor((FOLGA_DO_VALOR_MOSTRADO * 28 * 24 * 60 * 60) / precoDeHojeEmCentavos);
+}
 
 /** O preço do plano, lido da Stripe pela lookup key — o mesmo da tela de assinar. */
 async function precoDoPlano(plano: Plano): Promise<{ precoId: string; centavos: number; moeda: string }> {
@@ -64,12 +75,13 @@ export async function lerTrocaDePlano(userId: string): Promise<OfertaDeTroca> {
     return { resultado: "ok", troca: { para, quando: "fim-do-periodo", preco, em: detalhes.fimDoPeriodo.toISOString() } };
   }
   const conta = await calcularTroca({ assinaturaId: detalhes.id, itemId: detalhes.itemId, precoId: novo.precoId });
-  return { resultado: "ok", troca: { para, quando: "agora", preco, hoje: { centavos: conta.centavosHoje, moeda: conta.moeda }, proximaEm: conta.proximaEm ? conta.proximaEm.toISOString() : null } };
+  const valeAte = new Date(Date.now() + validadeDoValorMostrado(detalhes.preco?.centavos) * 1000).toISOString();
+  return { resultado: "ok", troca: { para, quando: "agora", preco, hoje: { centavos: conta.centavosHoje, moeda: conta.moeda }, proximaEm: conta.proximaEm ? conta.proximaEm.toISOString() : null, valeAte } };
 }
 
 /**
  * `indisponivel`: esta assinatura não pode ir para esse plano agora (já é dele, não renova, está
- * atrasada, ou já tem troca marcada). `previa-vencida`: o valor mostrado não confere com a conta — a tela pede
+ * atrasada, ou já tem troca marcada). `previa-vencida`: o valor mostrado não confere com a conta — a tela leva ao Início; antes pedia
  * outra. `recusado`: o cartão não passou; o plano continua o mesmo e nada foi cobrado.
  */
 export type Mudanca = ({ resultado: "ok" } & PlanoMudado) | { resultado: "indisponivel" } | { resultado: "previa-vencida" } | { resultado: "recusado" } | SemTroca;

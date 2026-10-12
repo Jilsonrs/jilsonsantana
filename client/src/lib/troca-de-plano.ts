@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { Plano, type MinhaAssinatura, type TrocaDePlano, type TrocaDesfeita } from "@jilson/core";
 import { desistirDaTroca, getTrocaDePlano, mudarDePlano } from "@/lib/api";
@@ -15,8 +15,8 @@ export const CHAVE_DA_TROCA_DE_PLANO = ["billing", "troca-de-plano"] as const;
 /**
  * A troca que a conta pode fazer agora, já com a conta da Stripe. NÃO é relida sozinha (o valor
  * mudaria de centavo em centavo na frente da pessoa) nem fica guardada depois de a tela fechar:
- * cada visita pede uma conta nova. Só quando o servidor diz que o valor já não confere (a tela
- * aberta por muitas horas, o mês que virou) é que a tela pede outra.
+ * cada visita pede uma conta nova. Quando o valor mostrado deixa de valer (a tela aberta por
+ * muitas horas, o mês que virou), a pessoa é levada ao Início — e na volta vê a conta nova.
  */
 export function useOfertaDeTroca(ligada: boolean) {
   return useQuery({ queryKey: CHAVE_DA_TROCA_DE_PLANO, queryFn: getTrocaDePlano, enabled: ligada, gcTime: 0, staleTime: Infinity, refetchOnWindowFocus: false });
@@ -99,6 +99,40 @@ async function desfazerATroca(): Promise<TrocaDesfeita> {
   }
 }
 
+/** A maior espera que o `setTimeout` do navegador conta (2³¹ − 1 ms, uns 24 dias); acima disso ele dispara na hora. */
+const MAIOR_ESPERA_DO_NAVEGADOR = 2_147_483_647;
+
+/**
+ * O VALOR MOSTRADO VENCEU PELO RELÓGIO (decisão do operador, 11/10/2026: "igual banco que
+ * expira […] aqui redireciona"). A tela aberta por horas mostra um valor que já não é o da
+ * conta; passado o prazo que o servidor disse (`valeAte`), ela sai sozinha para o Início.
+ * Devolve SE venceu — quem navega é a tela.
+ */
+export function useValorVencido(valeAte: string | undefined): boolean {
+  const [venceu, setVenceu] = useState(false);
+  // É efeito porque depende do RELÓGIO (e de a aba voltar a ser vista, depois de o computador
+  // dormir): nenhum dado da tela muda quando o prazo passa.
+  useEffect(() => {
+    if (!valeAte) return;
+    const fim = new Date(valeAte).getTime();
+    let relogio: ReturnType<typeof setTimeout> | undefined;
+    const conferir = () => {
+      clearTimeout(relogio);
+      const falta = fim - Date.now();
+      if (falta <= 0) setVenceu(true);
+      // Em pedaços: o navegador não conta esperas maiores que uns 24 dias — elas disparam NA HORA.
+      else relogio = setTimeout(conferir, Math.min(falta, MAIOR_ESPERA_DO_NAVEGADOR));
+    };
+    conferir();
+    document.addEventListener("visibilitychange", conferir);
+    return () => {
+      clearTimeout(relogio);
+      document.removeEventListener("visibilitychange", conferir);
+    };
+  }, [valeAte]);
+  return venceu;
+}
+
 export function useMudarDePlano(chavePublicavel: string | undefined) {
   const queryClient = useQueryClient();
   const [feito, setFeito] = useState<PlanoMudado | null>(null);
@@ -106,14 +140,13 @@ export function useMudarDePlano(chavePublicavel: string | undefined) {
   const [enviando, setEnviando] = useState(false);
   /** A janela do banco está aberta: a pessoa precisa concluir a confirmação nela. */
   const [noBanco, setNoBanco] = useState(false);
-  /** Caso raro: o valor mostrado já não conferia e a conta foi pedida de novo — a pessoa confere o valor e confirma outra vez. */
-  const [valorAtualizado, setValorAtualizado] = useState(false);
+  /** O servidor disse que o valor mostrado já não confere com a conta: nada foi cobrado, e a tela leva a pessoa ao Início. */
+  const [venceu, setVenceu] = useState(false);
 
   // Dois cliques, uma troca: enquanto envia, o botão fica desligado (é a tela que garante).
   async function mudar(troca: TrocaDePlano) {
     setEnviando(true);
     setFalha(null);
-    setValorAtualizado(false);
     try {
       // Carregar a página no meio cortaria a troca — e a confirmação do banco (`lib/versao.ts`).
       await semInterromper(async () => {
@@ -136,10 +169,8 @@ export function useMudarDePlano(chavePublicavel: string | undefined) {
       });
     } catch (erro) {
       const codigo = codigoDaRecusa(erro);
-      if (codigo === "PreviaVencida") {
-        setValorAtualizado(true);
-        await queryClient.invalidateQueries({ queryKey: CHAVE_DA_TROCA_DE_PLANO });
-      } else {
+      if (codigo === "PreviaVencida") setVenceu(true);
+      else {
         // QUALQUER outra falha: vale o que o servidor diz AGORA. Se a troca já está feita (a
         // resposta se perdeu no caminho), a tela diz que deu certo em vez de pedir de novo.
         const ficou = await comoFicou(queryClient, troca);
@@ -154,5 +185,5 @@ export function useMudarDePlano(chavePublicavel: string | undefined) {
     }
   }
 
-  return { feito, falha, enviando, noBanco, valorAtualizado, mudar };
+  return { feito, falha, enviando, noBanco, venceu, mudar };
 }

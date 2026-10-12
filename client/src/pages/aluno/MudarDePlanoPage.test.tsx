@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { screen, fireEvent, waitFor } from "@testing-library/react";
+import { screen, fireEvent, waitFor, act } from "@testing-library/react";
 import type { MinhaAssinatura, MudarDePlanoInput, PlanoMudado, PlanosDaAssinatura, TrocaDesfeita, TrocaDisponivel } from "@jilson/core";
 import { useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { renderWithProviders } from "@/test-utils";
@@ -63,7 +63,7 @@ const MENSAL: MinhaAssinatura = {
   trocaMarcada: null,
 };
 const ANUAL: MinhaAssinatura = { ...MENSAL, plano: "anual", preco: { centavos: 99500, moeda: "brl" }, proximaCobranca: { centavos: 99500, moeda: "brl", em: EM_UM_ANO } };
-const PARA_O_ANUAL: TrocaDisponivel = { troca: { para: "anual", quando: "agora", preco: { centavos: 99500, moeda: "brl" }, hoje: { centavos: 92840, moeda: "brl" }, proximaEm: EM_UM_ANO } };
+const PARA_O_ANUAL: TrocaDisponivel = { troca: { para: "anual", quando: "agora", preco: { centavos: 99500, moeda: "brl" }, hoje: { centavos: 92840, moeda: "brl" }, proximaEm: EM_UM_ANO, valeAte: "2099-01-01T00:00:00.000Z" } };
 const PARA_O_MENSAL: TrocaDisponivel = { troca: { para: "mensal", quando: "fim-do-periodo", preco: { centavos: 9990, moeda: "brl" }, em: EM_UM_ANO } };
 const PLANOS: PlanosDaAssinatura = { chavePublicavel: "pk_test_da_tela", planos: [], formasDePagamento: ["card"] };
 const recusa = (error: string, status = 409) => Object.assign(new Error(error), { response: { status, data: { error } } });
@@ -74,6 +74,7 @@ const abrir = (ui = <MudarDePlanoPage />) =>
     path: "/aluno/conta/faturamento/plano",
     extraRoutes: [
       { path: "/aluno/conta/faturamento", element: <p>RESUMO DA ASSINATURA</p> },
+      { path: "/inicio", element: <p>TELA DE INÍCIO</p> },
       { path: "/aluno/conta/faturamento/cartao", element: <p>TELA DE TROCAR O CARTÃO</p> },
     ],
   });
@@ -210,17 +211,48 @@ describe("MudarDePlanoPage — do Mensal para o Anual, na hora", () => {
     expect(screen.queryByText("Pronto. Seu plano agora é o Anual.")).toBeNull();
   });
 
-  it("o caso raro — o servidor diz que o valor já não confere (a tela aberta por muitas horas): a tela pede outra conta, avisa que o valor foi atualizado — e o novo clique manda o valor NOVO", async () => {
-    mudarDePlano.mockRejectedValueOnce(recusa("PreviaVencida"));
-    getTrocaDePlano.mockResolvedValueOnce(PARA_O_ANUAL).mockResolvedValue({ troca: { para: "anual", quando: "agora", preco: { centavos: 99500, moeda: "brl" }, hoje: { centavos: 92950, moeda: "brl" }, proximaEm: EM_UM_ANO } });
+  // O VALOR MOSTRADO VENCEU (decisão do operador, 11/10/2026: "passou do tempo, redireciona […]
+  // igual banco que expira"). Sem mensagem e sem segundo clique: a pessoa vai para o Início, e
+  // na volta a tela busca o valor novo.
+  it("o servidor diz que o valor já não confere: nada é cobrado e a pessoa é levada ao INÍCIO — sem mensagem, sem outro pedido", async () => {
+    mudarDePlano.mockRejectedValue(recusa("PreviaVencida"));
     abrir();
     fireEvent.click(await paraOAnual());
-    expect(await screen.findByText("Este valor foi atualizado. Confira e clique para concluir.")).toBeTruthy();
-    await waitFor(() => expect(naTela()).toContain("Hoje você paga R$ 929,50"));
+    expect(await screen.findByText("TELA DE INÍCIO")).toBeTruthy();
+    expect(mudarDePlano).toHaveBeenCalledTimes(1);
     expect(screen.queryByRole("alert")).toBeNull();
-    fireEvent.click(await paraOAnual());
-    await screen.findByText("Pronto. Seu plano agora é o Anual.");
-    expect(mudarDePlano.mock.calls).toEqual([[{ plano: "anual", valorMostrado: 92840 }], [{ plano: "anual", valorMostrado: 92950 }]]);
+  });
+
+  it("a tela ficou aberta até o prazo do valor passar: ela sai SOZINHA para o Início, sem clique nenhum", async () => {
+    getTrocaDePlano.mockImplementation(async () => ({ troca: { ...PARA_O_ANUAL.troca, valeAte: new Date(Date.now() + 250).toISOString() } }) as TrocaDisponivel);
+    abrir();
+    await paraOAnual();
+    expect(await screen.findByText("TELA DE INÍCIO")).toBeTruthy();
+    expect(mudarDePlano).not.toHaveBeenCalled();
+  });
+
+  it("o computador dormiu com a tela aberta: ao voltar a ser vista, com o prazo vencido, ela vai para o Início", async () => {
+    getTrocaDePlano.mockImplementation(async () => ({ troca: { ...PARA_O_ANUAL.troca, valeAte: new Date(Date.now() + 60 * 60 * 1000).toISOString() } }) as TrocaDisponivel);
+    abrir();
+    await paraOAnual();
+    // Dentro do prazo, voltar à aba não tira ninguém da tela.
+    act(() => void document.dispatchEvent(new Event("visibilitychange")));
+    expect(screen.queryByText("TELA DE INÍCIO")).toBeNull();
+    const depois = vi.spyOn(Date, "now").mockReturnValue(Date.now() + 2 * 60 * 60 * 1000);
+    try {
+      act(() => void document.dispatchEvent(new Event("visibilitychange")));
+      expect(await screen.findByText("TELA DE INÍCIO")).toBeTruthy();
+    } finally {
+      depois.mockRestore();
+    }
+  });
+
+  it("com o prazo longe, a pessoa fica na tela — e a troca marcada para o fim do ano nunca vence", async () => {
+    abrir();
+    await paraOAnual();
+    await new Promise((resolver) => setTimeout(resolver, 300));
+    expect(screen.queryByText("TELA DE INÍCIO")).toBeNull();
+    expect(await paraOAnual()).toBeTruthy();
   });
 });
 

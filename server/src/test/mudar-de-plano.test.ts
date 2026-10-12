@@ -38,7 +38,7 @@ vi.mock("../lib/stripe.js", async (importOriginal) => ({
 
 import servidor from "./servidor.js";
 import { prisma } from "../lib/prisma.js";
-import { FOLGA_DO_VALOR_MOSTRADO, mudarMeuPlano } from "../lib/meu-plano.js";
+import { FOLGA_DO_VALOR_MOSTRADO, mudarMeuPlano, validadeDoValorMostrado } from "../lib/meu-plano.js";
 import { AssinaturaNaoEncontrada } from "../lib/stripe.js";
 import { ASSINATURA_DE_TESTE } from "../lib/assinatura-de-teste.js";
 
@@ -203,8 +203,15 @@ describe("mudar de plano — quem entra", () => {
 
 describe("GET /api/billing/minha-assinatura/plano — a troca que a conta pode fazer", () => {
   it("quem é MENSAL: para o anual, na hora — quanto paga hoje (a conta da Stripe), a cobrança seguinte e o instante da conta", async () => {
+    const antes = Date.now();
     const res = await oferta(member);
-    expect([res.status, res.body]).toEqual([200, { troca: { para: "anual", quando: "agora", preco: { centavos: 99500, moeda: "brl" }, hoje: { centavos: MOSTRADO, moeda: "brl" }, proximaEm: EM_UM_ANO.toISOString() } }]);
+    expect(res.status).toBe(200);
+    const { valeAte, ...troca } = res.body.troca;
+    expect(troca).toEqual({ para: "anual", quando: "agora", preco: { centavos: 99500, moeda: "brl" }, hoje: { centavos: MOSTRADO, moeda: "brl" }, proximaEm: EM_UM_ANO.toISOString() });
+    // Até quando o valor mostrado vale: o tempo que o mensal de R$ 99,90 leva para andar R$ 1,00.
+    const prazo = validadeDoValorMostrado(9990) * 1000;
+    expect(new Date(valeAte).getTime()).toBeGreaterThanOrEqual(antes + prazo);
+    expect(new Date(valeAte).getTime()).toBeLessThanOrEqual(Date.now() + prazo);
     // A conta foi feita para a assinatura e o item DESTA conta, com o preço que o SERVIDOR achou.
     expect(calcularTroca.mock.calls).toEqual([[{ assinaturaId: SUB, itemId: "si_do_member", precoId: "price_anual_do_teste" }]]);
   });
@@ -333,6 +340,15 @@ describe("POST /api/billing/minha-assinatura/plano — para o ANUAL, na hora", (
       expect([res.status, res.body], String(valorMostrado)).toEqual([409, { error: "PreviaVencida" }]);
     }
     nadaMudouNaStripe();
+  });
+
+  // O PRAZO QUE A TELA USA PARA SAIR SOZINHA (decisão do operador, 11/10/2026): o tempo que a
+  // conta leva para andar a folga. Com o mês mais curto, para nunca dizer um prazo maior que o
+  // de verdade — quem decide, no clique, continua sendo a conferência do valor.
+  it("o prazo do valor mostrado: R$ 1,00 no mensal de R$ 99,90 são 6 horas e 43 minutos; preço maior, prazo menor; sem preço, 6 horas", () => {
+    expect(validadeDoValorMostrado(9990)).toBe(24216);
+    expect(validadeDoValorMostrado(19980)).toBe(12108);
+    expect([validadeDoValorMostrado(null), validadeDoValorMostrado(undefined), validadeDoValorMostrado(0)]).toEqual([21600, 21600, 21600]);
   });
 
   it("sem o valor que a tela mostrou: 409, sem nem refazer a conta", async () => {

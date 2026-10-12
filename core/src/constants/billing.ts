@@ -192,12 +192,12 @@ export type RenovacaoParada = {
  *     da Stripe: o anual inteiro, menos o que sobrou do mês pago) e quando é a cobrança
  *     seguinte. O VALOR MOSTRADO É O COBRADO: ao confirmar, o site devolve o valor que mostrou
  *     (`hoje.centavos`) e a cobrança sai EXATAMENTE nele, num clique só — mesmo que a pessoa
- *     tenha demorado. Só se a conta de agora já estiver longe dele (a folga é do servidor) é
- *     que o servidor não troca, e a tela mostra o valor novo.
+ *     tenha demorado. `valeAte` (ISO) é até quando isso vale: passou, a tela leva a pessoa ao
+ *     Início, e na volta ela vê o valor novo (decisão do operador, 11/10/2026).
  *   - para o MENSAL vale no fim do período já pago: quando, e quanto passa a custar por mês.
  */
 export type TrocaDePlano =
-  | { para: "anual"; quando: "agora"; preco: { centavos: number; moeda: string }; hoje: { centavos: number; moeda: string }; proximaEm: string | null }
+  | { para: "anual"; quando: "agora"; preco: { centavos: number; moeda: string }; hoje: { centavos: number; moeda: string }; proximaEm: string | null; valeAte: string }
   | { para: "mensal"; quando: "fim-do-periodo"; preco: { centavos: number; moeda: string }; em: string };
 export type TrocaDisponivel = { troca: TrocaDePlano | null };
 

@@ -9,7 +9,7 @@ import { TrocaMarcada } from "@/components/faturamento/TrocaMarcada";
 import { dinheiro, usePlanosDaAssinatura } from "@/lib/assinar";
 import { comAcesso, dataPorExtenso, TELA_DE_TROCAR_O_CARTAO, TELA_DO_FATURAMENTO, useMinhaAssinatura } from "@/lib/faturamento";
 import { useIdioma, useT } from "@/lib/language";
-import { useMudarDePlano, useOfertaDeTroca } from "@/lib/troca-de-plano";
+import { useMudarDePlano, useOfertaDeTroca, useValorVencido } from "@/lib/troca-de-plano";
 
 /**
  * MUDAR DE PLANO (Fase 4, etapa 4.6 — tela própria, com endereço próprio; textos aprovados pelo
@@ -17,6 +17,8 @@ import { useMudarDePlano, useOfertaDeTroca } from "@/lib/troca-de-plano";
  * Mensal fica marcado para o fim do ano já pago, e dá para desistir. O que a tela oferece, e
  * cada valor e data que ela mostra, é o que o SERVIDOR disse. Quem não renova (parou, ou está
  * com a cobrança atrasada) lê o porquê e o caminho; sem nada a mostrar, a pessoa volta ao resumo.
+ * O valor mostrado que VENCEU (a tela aberta por horas) leva a pessoa ao Início, sem mensagem:
+ * na volta ela vê o valor novo (decisão do operador, 11/10/2026).
  */
 export function MudarDePlanoPage() {
   const t = useT();
@@ -33,12 +35,14 @@ export function MudarDePlanoPage() {
   const planos = usePlanosDaAssinatura(cobraNaHora);
   const mudanca = useMudarDePlano(planos.data?.chavePublicavel);
   const { feito, falha } = mudanca;
+  const venceuPeloRelogio = useValorVencido(troca?.quando === "agora" ? troca.valeAte : undefined);
 
   const carregando = assinatura.isLoading || (podeMudar && oferta.isLoading) || (cobraNaHora && planos.isLoading);
   const falhou = assinatura.isError || (podeMudar && oferta.isError) || (cobraNaHora && planos.isError);
   const parada = viva?.situacao === SituacaoDoFaturamento.VAI_CANCELAR && viva.acessoAte ? viva.acessoAte : null;
   const atrasada = viva?.situacao === SituacaoDoFaturamento.ATRASADA;
   const temOQueMostrar = viva !== null && (viva.trocaMarcada !== null || troca !== null || parada !== null || atrasada);
+  if (!feito && !mudanca.enviando && (mudanca.venceu || venceuPeloRelogio)) return <Navigate to="/inicio" replace />;
   if (!feito && !mudanca.enviando && assinatura.data && !carregando && !falhou && !temOQueMostrar) return <Navigate to={TELA_DO_FATURAMENTO} replace />;
 
   const voltar = (
@@ -82,11 +86,6 @@ export function MudarDePlanoPage() {
           <TrocaMarcada troca={viva.trocaMarcada} />
           {!viva.trocaMarcada && troca && (
             <div className="space-y-4">
-              {mudanca.valorAtualizado && (
-                <p role="status" className="max-w-3xl text-sm text-foreground">
-                  {p.valorAtualizado}
-                </p>
-              )}
               {mudanca.noBanco && (
                 <p role="status" className="max-w-3xl text-sm text-foreground">
                   {t.faturamento.banco.confirmando}

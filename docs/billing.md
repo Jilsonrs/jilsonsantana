@@ -676,10 +676,14 @@ Stripe guardou o cartão de teste e o resumo passou a mostrá-lo:
   **Como o valor vem do navegador, o servidor o confere:** tem que estar no máximo R$ 1,00
   ABAIXO da conta refeita na hora, com a trava (`FOLGA_DO_VALOR_MOSTRADO`) — nunca acima. Um
   valor inventado não é cobrado; o máximo que alguém tira da escola mentindo é essa folga.
-  *O R$ 1,00 foi escolhido pelo agente e espera a confirmação do operador (pendência P77):
-  cobre a tela aberta por umas 7 horas.* Só fora da folga (a tela aberta por muitas horas, o
-  mês que virou, o preço que mudou) a troca não acontece: a tela busca o valor de novo e mostra
-  "Este valor foi atualizado. Confira e clique para concluir." *(texto do operador)*.
+  *O R$ 1,00 é decisão do operador (11/10/2026: "R$ 1,00 está ok"): cobre a tela aberta por
+  umas 7 horas.*
+  **Passou disso, a tela leva ao Início** *(decisão do operador, 11/10/2026: "passou do tempo,
+  redireciona; quando for lá novamente já vê o novo valor […] igual banco que expira")* — sem
+  mensagem e sem segundo clique. A tela sai sozinha quando o prazo passa (a oferta traz
+  `valeAte`: o tempo que a conta leva para andar a folga, calculado com o mês mais curto para
+  nunca dizer um prazo maior que o de verdade), e também no clique, se o servidor disser que o
+  valor já não confere (o mês que virou, o preço que mudou). Na volta, a pessoa vê o valor novo.
   *Reabre se a escola passar a vender um plano mensal bem mais caro (os centavos por hora
   crescem com o preço) ou se ligar imposto na fatura (etapa 4.8) — nos dois casos, rever a
   folga e a conta do crédito.*

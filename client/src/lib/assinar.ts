@@ -1,11 +1,17 @@
 import { useQuery } from "@tanstack/react-query";
-import { DuracaoDoDesconto, type DescontoDoCodigo, type LanguageCode, type Plano } from "@jilson/core";
+import { DuracaoDoDesconto, TELA_DE_CONCLUIDO, type DescontoDoCodigo, type LanguageCode, type Plano } from "@jilson/core";
 import { getPlanosDaAssinatura, getPreviaDaAssinatura, getSituacaoDaAssinatura } from "@/lib/api";
 import type { AppTexts } from "@/lib/language";
 
 // ASSINAR (Fase 4, etapa 4.2): os endereços, o dinheiro por extenso e as três leituras da tela.
 
 export { TELA_DE_ASSINAR, TELA_DE_CONCLUIDO } from "@jilson/core";
+
+/** O que o endereço da confirmação leva quando a pessoa REATIVOU a assinatura. Só muda o TÍTULO da tela: quem diz que a assinatura valeu continua sendo o servidor. */
+export const REATIVOU = "reativou";
+
+/** Para onde vai quem acabou de pagar: a tela de confirmação — com a marca de que reativou, para o título continuar "Reativar assinatura" (decisão do operador, 11/10/2026). */
+export const telaDeConcluido = (reativar: boolean | undefined): string => (reativar ? `${TELA_DE_CONCLUIDO}?${REATIVOU}=1` : TELA_DE_CONCLUIDO);
 
 const LOCAL: Record<LanguageCode, string> = { pt: "pt-BR", en: "en-US" };
 

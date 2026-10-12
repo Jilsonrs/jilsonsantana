@@ -4805,6 +4805,20 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       quem segura é a conferência do valor). Testes reescritos; mutação 2 de 2; gates abaixo.
       **Achado do teste, só relatado:** depois de pagar pela tela "Reativar assinatura", a
       confirmação aparece com o título "Assinar".
+      **As respostas dele (11/10/2026), feitas:** (1) **a P77 — "R$ 1,00 está ok"**; (2) **passou
+      da folga, a tela leva ao INÍCIO**, sem a mensagem "valor atualizado" nem segundo clique
+      (*"passou do tempo, redireciona; quando for lá novamente já vê o novo valor […] igual banco
+      que expira"*): a oferta traz `valeAte` (`validadeDoValorMostrado`: o tempo que a conta leva
+      para andar a folga, com o mês mais curto — 6 h 43 min no mensal de R$ 99,90) e a tela sai
+      sozinha quando ele passa (`useValorVencido`: relógio em pedaços, e conferência quando a aba
+      volta a ser vista); no clique, a recusa do servidor (`PreviaVencida`) leva ao mesmo lugar.
+      O texto `valorAtualizado` saiu do dicionário. (3) **a confirmação de quem reativou diz
+      "Reativar assinatura"** (*"deixa 'Reativar assinatura' para ficar igual"*): a marca vai no
+      endereço (`telaDeConcluido`, `?reativou=1`), pelo caminho de dentro do site e pelo
+      endereço de volta da Stripe, e só muda o título — quem confirma continua sendo o servidor.
+      **Testes:** 7 de tela e 1 de servidor a mais (site 942, servidor 1058); **mutação:** 11 de 11 — e os testes pegaram
+      um defeito antes de ele existir para alguém: um prazo muito distante fazia o relógio do
+      navegador disparar na hora. Gates: typecheck, lint, build e as duas suítes.
       **Para a parte 2 do teste:** a assinatura de cortesia do `member@` do computador foi
       encerrada a pedido do operador (11/10/2026). `[FATO — medido]` encerrar uma assinatura de
       100% direto deixa o período inteiro como "pago" (um ano de acesso, no anual); para a
