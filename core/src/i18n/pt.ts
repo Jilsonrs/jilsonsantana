@@ -491,7 +491,69 @@ export const pt = {
       salvando: "Salvando…",
       cartaoAtualizado: "Cartão atualizado.",
       cartaoAtualizadoEPago: "Cartão atualizado e pagamento confirmado.",
-      erroDoCartao: "Não foi possível salvar o cartão. Confira os dados e tente de novo."
+      erroDoCartao: "Não foi possível salvar o cartão. Confira os dados e tente de novo.",
+      // AS TELAS DA SESSÃO (b): mudar de plano, cancelar e a confirmação do banco. Textos em
+      // português APROVADOS pelo operador em 11/10/2026, bloco a bloco. O INGLÊS é rascunho do
+      // agente: ele será revisado com o Antigravity (pendência P72). `{valor}` e `{data}` são
+      // trocados no código.
+      plano: {
+        descricao: "Escolha como prefere pagar. O acesso é o mesmo nos dois planos.",
+        atual: "Seu plano atual",
+        // "A troca é imediata." — redação do operador, 11/10/2026 (era "A troca vale na hora.").
+        paraOAnual: "A troca é imediata. Hoje você paga {valor}, já descontado o que sobrou do mês que você pagou. A próxima cobrança é em {data}.",
+        mudarParaOAnual: "Mudar para o Anual",
+        agoraAnual: "Pronto. Seu plano agora é o Anual.",
+        paraOMensal: "A troca vale em {data}, quando termina o ano que você já pagou. Até lá nada muda e nada é cobrado. Depois, {valor} por mês.",
+        mudarParaOMensal: "Mudar para o Mensal",
+        // No resumo, enquanto a troca está marcada (texto decidido por ele antes, em 11/10/2026).
+        mudaParaOMensal: "Seu plano muda para Mensal em {data}.",
+        continuarNoAnual: "Continuar no Anual",
+        continuaNoAnual: "Pronto. Você continua no plano Anual.",
+        renovacaoParada: "Sua assinatura termina em {data}. Para mudar de plano, mantenha a assinatura primeiro.",
+        atrasada: "Não conseguimos cobrar o seu cartão. Troque o cartão antes de mudar de plano.",
+        cartaoRecusado: "Seu cartão foi recusado e o plano continua o mesmo. Troque o cartão e tente de novo.",
+        erro: "Não foi possível mudar o plano. Tente de novo."
+      },
+      cancelamento: {
+        descricao: "Você pode cancelar quando quiser. Seu progresso fica guardado: se voltar, continua de onde parou.",
+        pergunta: "Por que você está cancelando? (opcional)",
+        // As chaves são as de `MOTIVOS_DE_CANCELAMENTO` (`core/src/constants/billing.ts`).
+        motivos: {
+          caro: "Está caro para mim agora",
+          "sem-tempo": "Não estou tendo tempo de estudar",
+          "ja-aprendi": "Já aprendi o que precisava",
+          "sem-conteudo": "Não encontrei o conteúdo que procurava",
+          outro: "Outro motivo"
+        },
+        contarMais: "Quer contar mais?",
+        // Nos 7 primeiros dias a tela mostra as DUAS saídas; depois, só `acessoAte` e o botão de cancelar.
+        pararTitulo: "Parar a renovação e continuar",
+        acessoAte: "Você continua com acesso até {data}. Depois disso, nada mais é cobrado.",
+        pararBotao: "Parar a renovação",
+        reembolsoTitulo: "Cancelar e receber o dinheiro de volta",
+        reembolsoTexto: "Devolvemos {valor} no cartão que você usou e o seu acesso termina agora. Você pode pedir até {data}.",
+        reembolsoBotao: "Cancelar e receber {valor}",
+        voltar: "Voltar sem cancelar",
+        parou: "Assinatura cancelada. Você continua com acesso até {data}. Mudou de ideia? Até lá, é só clicar em Manter a assinatura.",
+        reembolsado: "Assinatura cancelada. Devolvemos {valor} no cartão que você usou. O valor costuma aparecer na fatura em até 10 dias úteis, conforme o banco.",
+        mantida: "Pronto. Sua assinatura continua.",
+        // Rascunho do agente (pendência P73): quando "Manter a assinatura" falha.
+        erroAoManter: "Não foi possível manter a assinatura. Tente de novo.",
+        prazoAcabou: "O prazo de 7 dias para o reembolso terminou. Você ainda pode parar a renovação.",
+        // Com a cobrança ATRASADA, cancelar termina a assinatura na hora (aprovado em 11/10/2026).
+        terminaAgora: "Sua assinatura termina agora, e a cobrança em aberto não será mais tentada.",
+        // Para quem tinha a troca para o Mensal marcada: ela é desfeita junto (aprovado em 11/10/2026).
+        trocaDesfeita: "Sua troca para o plano Mensal também será desfeita.",
+        devolucaoFalhou: "Sua assinatura foi cancelada, mas não conseguimos devolver o valor agora. Já fomos avisados e vamos resolver. Você não precisa fazer nada.",
+        erro: "Não foi possível cancelar. Tente de novo."
+      },
+      // Quando o banco pede uma confirmação: na troca para o Anual e no cartão novo com a cobrança atrasada.
+      banco: {
+        confirmando: "Seu banco pediu uma confirmação para esta cobrança. Conclua na janela do banco.",
+        naoConcluiuNoPlano: "A confirmação do banco não foi concluída. O plano continua o mesmo e nada foi cobrado.",
+        naoConcluiuNoCartao: "Cartão atualizado. A cobrança em aberto ainda precisa da confirmação do seu banco.",
+        confirmar: "Confirmar pagamento"
+      }
     },
     aula: {
       conteudoDoCurso: "Conteúdo do curso",

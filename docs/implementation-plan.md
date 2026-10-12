@@ -4306,14 +4306,570 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
         que as telas guardaram (abertura da sessão b) · quem abre a tela com a assinatura já
         encerrada é deslogado (mantido). O `GEMINI.md` do parceiro de design ganhou as duas
         telas no mapa e o item 34 na fila de formatação.
-      **ONDE PAROU:** SESSÃO (a) FECHADA em 11/10/2026 e **publicação autorizada pelo operador**
-      no mesmo dia (*"pode publicar depois desses ajustes"*).
-      **SESSÃO (b) — por onde começar** (em conversa nova, por escolha dele): (0) "Sair" limpa
-      o que as telas guardaram, com teste · mostrar a ele os textos de mudar de plano e de
-      cancelar, com os cinco motivos em inglês, **antes** de construir · context7 da Stripe: o
-      agendamento da troca para o fim do período e a confirmação do banco na tela · decidir, na
-      abertura do passo 7, tirar da Stripe todos os cartões menos o novo · e então os passos 7
-      a 13. A sessão (c) começa pela pendência P64.
+      - **SESSÃO (b), item 0 — FEITO (11/10/2026): "Sair" esquece o que as telas guardaram.**
+        Ao sair, tudo o que as telas leram e guardaram na aba é apagado antes de a tela de entrar
+        abrir (`Layout`, o único lugar que encerra a sessão): quem entra em seguida na mesma aba
+        não vê nada da conta anterior. A leitura da assinatura continua sendo esquecida ao fechar
+        a tela — é o que cobre a sessão que acaba SEM o "Sair". **Teste:** 1 de tela (a tela
+        guarda, "Sair", a tela seguinte não acha nada). **Mutação:** 1 de 1 reprovou (sem a
+        limpeza, "ainda guardado: o progresso da Ana"). Gates: typecheck, lint, suíte do site
+        (852) e de servidor como o CI (822), build. **Achado, levado ao operador e NÃO
+        construído:** a sessão que o servidor derruba (ou que vence) não passa pelo "Sair"; se
+        outra conta entrar na mesma aba em até 5 minutos, sem recarregar, as outras telas ainda
+        mostram por instantes o que era da anterior — a de faturamento, não.
+        **Os textos da sessão (b)** (mudar de plano, cancelar com os cinco motivos, e o banco
+        pedindo confirmação), em português e inglês, **foram mostrados a ele nesta data e
+        aguardam aprovação**; as telas (passos 9 e 11) esperam por ela.
+        **Docs check (context7):** Stripe → `/websites/stripe` → o agendamento
+        (`subscription_schedules`: criar, soltar com `release`, cancelar), a troca com
+        `payment_behavior` e o segredo de confirmação da fatura, cancelar na hora
+        (`cancellation_details`, `prorate`, `invoice_now`) e `refunds.create` — **3 consultas**.
+        Conferido nos tipos da `stripe@23.0.0`: `from_subscription`, `end_behavior: release`,
+        `Subscription.schedule` e `pending_update`, `pending_if_incomplete`,
+        `Invoice.confirmation_secret`, e a lista FIXA de motivos da Stripe (oito valores; "Já
+        aprendi o que precisava" não tem par — vai como "outro", com o motivo exato guardado
+        junto da assinatura).
+      - **Passo 7 — FEITO (11/10/2026): parar a renovação e voltar atrás, com o motivo.**
+        `POST /api/billing/minha-assinatura/cancelar` (o corpo leva só o motivo e o "Quer contar
+        mais?", os dois opcionais — sem corpo também funciona) marca a assinatura da conta para
+        acabar no fim do período pago e responde até quando há acesso;
+        `POST …/minha-assinatura/manter` (sem corpo) tira a marca, sem cobrar nada. Quem parou
+        continua com acesso e logado: a assinatura segue viva na Stripe, e o gate lê status e
+        data. **O motivo fica na Stripe:** o par mais próximo na lista fixa dela e o motivo exato
+        da escola junto da assinatura (`metadata.motivo`), que é o que o painel (4.7b) vai contar;
+        o comentário nunca vai para o registro. Voltar atrás apaga o motivo. **Toda operação que
+        muda a assinatura passa por `operarNaAssinatura`** (`assinaturas.ts`): a Stripe e depois
+        a sincronia de sempre, com a trava da assinatura e **sem esperar por ela** — ocupada,
+        responde 409 sem ter ido à Stripe; se a Stripe mudou e a sincronia falhou, a operação
+        valeu (é aviso; o aviso da Stripe acerta o espelho). A tela passa a receber `podeParar` e
+        `podeManter`, pelas mesmas regras das operações. **Com a cobrança atrasada, cancelar
+        responde 409** (`CobrancaAtrasada`) e nada muda: o que cancelar faz ali é decisão do
+        operador (pendência P67). **Na abertura do passo:** trocar o cartão passou a tirar da
+        Stripe TODOS os cartões do cliente menos o novo (o da assinatura, o confirmado e nunca
+        aplicado, o padrão do cliente), depois de o novo estar no lugar; se algum não sair, é
+        aviso. **Testes:** 28 de rota + 9 com a biblioteca da Stripe trocada por dublê + 6
+        unitários novos (e os da troca de cartão refeitos). **Mutação:** 13 de 13 reprovaram —
+        parar encerrando na hora, a assinatura ocupada operada assim mesmo, o espelho acertado
+        antes de a Stripe mudar, a sincronia que falha virando erro, cancelar com a cobrança
+        atrasada, a encerrada de vez sendo parada e voltando atrás, manter mexendo em quem já
+        renova, o comentário no registro, "Manter" oferecido à encerrada, o cartão novo sendo
+        tirado, os antigos saindo antes de o novo entrar, o motivo ficando em quem voltou atrás.
+        `[FATO — medido na área restrita, 11/10/2026, com dois clientes descartáveis, já
+        apagados]` parar deixa a assinatura `active` com a data de fim igual ao fim do período,
+        e guarda o motivo, o comentário e o `metadata.motivo` · parar de novo sem motivo mantém o
+        motivo de antes · voltar atrás com os campos vazios apaga os três · a data avulsa de fim
+        se desfaz com `cancel_at` vazio, e mandar as duas marcas juntas a Stripe recusa · tirar
+        os outros cartões limpa também o padrão do cliente, e a assinatura segue `active` com o
+        novo. Gates: typecheck, lint, suíte do site (852) e de servidor como o CI (861), build.
+        *(A Stripe CLI pede confirmação para apagar: sem `--confirm` o comando fica esperando.)*
+      - **Passo 8 — FEITO (11/10/2026): o reembolso.**
+        `POST /api/billing/minha-assinatura/reembolso` (o corpo leva só o motivo, opcional):
+        dentro do prazo, **encerra a assinatura da conta na hora e devolve tudo o que foi pago
+        nela** — o que FALTA voltar de cada cobrança, as duas de quem trocou de plano — e responde
+        quanto voltou. **O prazo (7 dias do primeiro dia da assinatura; `PRAZO_DO_REEMBOLSO_EM_DIAS`
+        no `core`) é conferido no servidor na hora da ação, e de novo com a trava**, junto com o
+        que foi pago. A cortesia não tem o que devolver (409, e não é encerrada). **O acesso
+        termina na hora e a pessoa continua logada**: a sincronia ganhou `manterSessao`, usada só
+        por esta operação. **A ordem é encerrar e depois devolver:** se a devolução falha, a
+        resposta tem nome próprio (502 `DevolucaoFalhou`), o registro grita (`console.error`, com
+        etiqueta, a conta e a assinatura), a pessoa segue com o acesso do que pagou e pode
+        repetir — a assinatura já encerrada não é encerrada de novo, e repetir não devolve duas
+        vezes (chave de repetição por pagamento; o que a Stripe diz que já voltou conta como
+        feito). **O período devolvido deixou de contar:** a última fatura devolvida POR INTEIRO
+        não conta como paga no "pago até" — do espelho e da tela, pela mesma conta; a devolução
+        parcial continua contando. **O aviso de dinheiro devolvido** (`charge.refunded`) traz só a
+        cobrança: o servidor acha a assinatura pelo pagamento e a sincroniza — é o que faz o
+        reembolso dado direto no painel da Stripe também cortar o acesso (**o endereço de avisos
+        da conta de verdade precisa receber esse aviso: pendência P69**). **A tela** passa a
+        receber `reembolso` (quanto volta e até quando), só dentro do prazo e com dinheiro a
+        devolver; fora do prazo a Stripe nem é consultada.
+        **Mudou a estrutura** (engenharia): a fábrica da biblioteca da Stripe foi para
+        `stripe-cliente.ts` e a leitura da devolução para `stripe-devolucao.ts`, para que a busca
+        que alimenta o espelho rode de verdade nos testes (só a rede é dublê); as idas do
+        reembolso moram em `stripe-reembolso.ts`. Custo: a busca da assinatura faz uma ida a mais
+        à Stripe quando a última fatura tem pagamento.
+        `[FATO — medido na área restrita, 11/10/2026]` a fatura devolvida continua `paid`, com o
+        mesmo valor pago, e o pagamento dela também: quem diz que o dinheiro voltou é a COBRANÇA ·
+        a Stripe não deixa expandir da assinatura até a cobrança (limite de 4 níveis) · a
+        cobrança não diz de que fatura é; acha-se pelo pagamento (`invoice_payments`) · encerrar
+        na hora sem crédito não gera fatura nova · a mesma chave de repetição devolve a MESMA
+        devolução, e devolver de novo o que já voltou é recusado (`charge_already_refunded`) · a
+        cortesia tem fatura paga de valor zero e nenhum pagamento · a data de início é a de
+        criação · pagamento que não existe: a lista vem vazia (nenhuma assinatura), sem erro.
+        **A prova com as funções de verdade** (área restrita, 3 clientes descartáveis e 1 cupom,
+        já apagados; o banco não foi tocado): **23 pontos** — parar e voltar atrás, tirar os
+        outros cartões, encerrar, devolver, repetir sem devolver duas vezes, o espelho sem acesso
+        depois da devolução, a parcial contando, a cortesia sem a saída. 22 passaram de primeira;
+        o 23º era uma suposição errada da própria prova (esperava erro para um pagamento que não
+        existe; a Stripe devolve lista vazia — conferido).
+        **Testes:** 31 de rota + 5 do aviso + 27 com a biblioteca trocada por dublê + 5 unitários.
+        **Mutação:** 21 de 21 reprovaram — a fatura devolvida contando como paga, a busca do
+        espelho sem conferir a devolução, a parcial tirando o acesso, o reembolso fora do prazo
+        (antes e com a trava), o prazo de 8 dias, sem data de início o dinheiro saindo, a
+        cortesia encerrada, devolver antes de encerrar, encerrar duas vezes, a devolução que
+        falha respondendo "devolvido" e sem avisar ninguém, quem pede sendo deslogado, ninguém
+        mais sendo deslogado, a saída mostrada fora do prazo e para a cortesia, o aviso sem achar
+        a assinatura, o valor cheio no lugar do que falta, sem chave de repetição, o crédito
+        proporcional, faturas de qualquer assinatura. Gates: typecheck, lint, suíte do site (852)
+        e de servidor como o CI (929), build.
+      - **Passo 10 — MEDIDO na área restrita antes de escrever (11/10/2026; 8 clientes
+        descartáveis e 1 cupom, já apagados).** `[FATO]`
+        **Mensal → anual na hora** (`subscriptions.update` com o preço novo no item,
+        `proration_behavior: always_invoice` e `payment_behavior: pending_if_incomplete`): a
+        prévia (`invoices.createPreview` com `subscription_details`) dá o valor de hoje — o ano
+        inteiro menos o que sobrou do mês (R$ 895,10 no primeiro dia) — e **o cobrado é o da
+        prévia**; a assinatura vira anual na hora, com o fim do período um ano à frente e a
+        MESMA data de início (o prazo do reembolso não recomeça); ficam duas faturas pagas, e o
+        reembolso devolve as duas. De cortesia: prévia de R$ 0, troca na hora.
+        **O banco pede confirmação:** a resposta vem 200, a assinatura CONTINUA mensal, com a
+        troca pendente (vale ~23 h) e a fatura da troca em aberto; o pagamento fica
+        `requires_action`, e o segredo de confirmação da fatura é o que o site usa. Confirmado o
+        pagamento, a Stripe aplica a troca sozinha (anual, fatura paga).
+        **Cartão recusado:** a mesma forma (200, troca pendente, fatura em aberto), com o
+        pagamento `requires_payment_method` e `card_declined` — distingue-se pelo PAGAMENTO, que
+        se lê com `invoices.retrieve` expandindo `payments.data.payment.payment_intent`.
+        **Desistir da troca pendente = anular a fatura dela:** a pendência some, a assinatura
+        segue mensal, a próxima cobrança segue a do mensal e não sobra crédito no cliente. Uma
+        segunda tentativa substitui a primeira sozinha (a fatura antiga é anulada pela Stripe).
+        *Consequência conhecida:* depois de anulada, a "última fatura" da assinatura é a anulada
+        até a próxima renovação.
+        **Anual → mensal no fim do ano (agendamento):** `subscriptionSchedules.create` com
+        `from_subscription` cria uma fase (o ano pago); `update` com duas fases (a atual e a
+        mensal) e `end_behavior: release` deixa a assinatura intacta até lá, e a prévia da
+        próxima cobrança já diz R$ 99,90 na data do fim do ano; `release` desfaz (a assinatura
+        segue anual, sem agendamento) e dá para agendar de novo. O agendamento se lê junto com a
+        assinatura (`expand: schedule.phases.items.price`). **O desconto só sobrevive se as fases
+        o levarem** (a fase criada traz `discounts`; copiado para as duas, a cortesia segue
+        cortesia). **Com agendamento, a Stripe RECUSA parar a renovação direto na assinatura**
+        ("managed by the subscription schedule"): antes, soltar o agendamento. Trocar o cartão e
+        gravar o motivo continuam aceitos; encerrar na hora também (o agendamento vira cancelado).
+      - **Passo 10 — FEITO (11/10/2026): o servidor mostra a conta e muda o plano.**
+        `GET /api/billing/minha-assinatura/plano` diz a troca que a conta pode fazer agora, já
+        com a conta da Stripe: para o **anual**, quanto se paga hoje, a cobrança seguinte e o
+        instante da conta (`previaDe`); para o **mensal**, quando a troca vale (o fim do período
+        pago) e quanto passa a custar. `POST …/plano` recebe só PARA QUAL plano (e o `previaDe`
+        de volta): **anual vale na hora**, e a assinatura só muda se o pagamento passar;
+        **mensal é só marcado** para o fim do período — nada é cobrado nem trocado até lá.
+        `POST …/plano/desistir` solta a troca marcada, ou anula a que ficou esperando o banco.
+        **O valor mostrado é o cobrado:** a troca usa o MESMO instante da prévia, e o servidor só
+        o aceita com até 30 minutos (`VALIDADE_DA_PREVIA_DA_TROCA`): um instante antigo daria
+        crédito por dias que a pessoa já usou; vencido, responde 409 `PreviaVencida` e a tela
+        pede outra conta. **Cartão recusado:** 402, e a fatura da troca é anulada na hora (se não
+        anular, `console.error` com etiqueta: ela ainda poderia ser cobrada). **O banco pede
+        confirmação:** a resposta leva o segredo para o site completar; a troca só vale depois, e
+        desistir anula a fatura (se o pagamento já tinha passado, a resposta diz que o plano
+        mudou). **A mesma confirmação na troca de cartão:** com a cobrança atrasada e o banco
+        pedindo confirmação, a resposta de aplicar o cartão passou a levar o segredo da fatura em
+        aberto (`confirmar`). **Quem está saindo não troca de plano:** parar a renovação solta
+        antes a troca marcada (com ela a Stripe recusa parar) e anula a que esperava o banco —
+        **o que isso significa para o aluno é pergunta ao operador (pendência P70)**. O reembolso
+        já convive com o agendamento (medido). **A tela** passa a receber `podeMudarDePlano` e
+        `trocaMarcada` (para qual plano e quando). As operações moram em `lib/meu-plano.ts`, e as
+        idas à Stripe em `lib/stripe-plano.ts`.
+        **A prova com as funções de verdade** (área restrita, 6 clientes descartáveis e 1 cupom,
+        já apagados; o banco não foi tocado): **25 de 25 pontos** — a prévia, a troca cobrando
+        exatamente o mostrado mesmo segundos depois, a data de início que não muda, o banco
+        pedindo confirmação (continua mensal; desistir; confirmar e virar anual; desistir depois
+        de pago), o cartão recusado sem fatura sobrando, a troca marcada (continua anual, a
+        próxima cobrança já é a do mensal, a Stripe recusando parar a renovação até soltar),
+        desistir, e a cortesia nos dois sentidos (R$ 0 e o desconto indo junto).
+        **Não exercitado:** a virada de verdade para o mensal no fim do ano (só a prévia da
+        Stripe diz R$ 99,90 naquela data) — fica para o relógio de teste do passo 13.
+        **Testes:** 62 novos (de rota, com a biblioteca da Stripe trocada por dublê e unitários).
+        **Mutação:** 22 de 22 reprovaram — a troca com a hora do servidor no lugar do instante
+        mostrado, a conta velha aceita, a troca sem conferir a conta, o plano que não cabe, a
+        fatura do recusado ficando em aberto, o recusado e o "confirmar" respondendo "trocado",
+        o mensal trocando na hora, quem não renova mudando de plano, duas trocas marcadas,
+        desistir sem soltar e dizendo que desfez o que foi pago, parar a renovação sem soltar nem
+        anular, o segredo que não chega ao site, a troca valendo sem o pagamento, o recusado
+        ficando à espera, a prévia e a troca com contas diferentes, o desconto perdido na fase
+        nova, o agendamento pela metade preso, a fatura paga dada como anulada, "troca marcada"
+        para o mesmo plano. Gates: typecheck, lint, suíte do site (852) e de servidor como o CI
+        (991), build.
+      - **A revisão de segurança do SERVIDOR da sessão (b) — FEITA (11/10/2026), adiantada do
+        passo 13** (`security-vulnerability-reviewer`, sobre o diff dos quatro commits; o passo
+        13 revê as telas e estas correções). **Nenhum bloqueio (P0); três P1, corrigidos.** Sem
+        achado em: agir sobre a assinatura de outra conta, receber fora do prazo, duas vezes, a
+        mais ou de outra assinatura, pagar menos pela conta mostrada, a troca valer sem o
+        pagamento, o segredo no registro, a sessão mantida dar acesso, e forjar ou repetir o
+        aviso de dinheiro devolvido. Os achados e o destino de cada um:
+        - *P1 — repetir o reembolso dependia de o espelho ainda dar acesso, e o espelho deixa de
+          dar acesso quando a ÚLTIMA fatura volta* (com duas cobranças, a mais nova voltava
+          primeiro; e depois de uma troca de plano que não se completou, a última fatura é a
+          anulada): a pessoa ficava sem acesso, com dinheiro por receber e sem poder repetir. O
+          teste passava porque o dublê só tirava o acesso quando TUDO voltava → **corrigido**: as
+          cobranças voltam da mais antiga para a mais nova; o reembolso acha também a assinatura
+          ENCERRADA mais recente da conta, sem acesso e dentro do prazo (as três mais novas, com
+          as conferências de dono, prazo e valor); e o dublê passou a cortar o acesso como o
+          código de verdade.
+        - *P1 — o reembolso não anulava a troca de plano que esperava a confirmação do banco* →
+          **corrigido**: a fatura da troca é anulada antes de encerrar, e o que foi pago se lê
+          depois (se a troca se completou no mesmo instante, a cobrança dela entra na devolução).
+          `[FATO — medido, 11/10/2026]` ao encerrar na hora a própria Stripe anula essa fatura e
+          cancela o pagamento dela: confirmar depois é recusado.
+        - *P1 — o dinheiro voltava com o espelho não acertado, e só ficava um aviso* (com a
+          assinatura já encerrada, a Stripe não manda mais aviso sobre ela) → **corrigido**: a
+          operação tenta a sincronia mais uma vez; se não der, `console.error` com etiqueta, a
+          conta e a assinatura. **E a P69 passou a ser condição de publicar o reembolso**, não só
+          para o reembolso dado pelo painel.
+        - *A operação com várias idas à Stripe usava o tempo de UMA* (vencido, a trava soltaria
+          no meio) → **corrigido**: 90 s, a mesma conta do checkout.
+        - *A sessão ficava em todo desfecho do reembolso* (também quando nada era devolvido e o
+          acesso acabava) → **corrigido**: só quando o reembolso saiu.
+        - *Se nem ler o pagamento da troca desse, o erro subia com a fatura em aberto* →
+          **corrigido**: é recusa, e a fatura é anulada.
+        - *A devolução que a Stripe aceita e que falha depois não avisava ninguém* →
+          **corrigido**: o aviso de devolução com falha vira `console.error`, e a assinatura é
+          sincronizada (o período volta a contar como pago). Também depende da P69.
+        - *A chave de repetição fixa repetiria a FALHA por um dia* (a Stripe guarda a primeira
+          resposta de cada chave) → **corrigido**: a chave muda a cada 5 minutos. *Não medido*: o
+          comportamento é o documentado por ela.
+        - *Parar, voltar atrás, mudar de plano e desistir decidiam pelo que foi lido ANTES da
+          trava* (duas abas) → **corrigido**: os detalhes são relidos com a trava.
+        - *O cartão trocado depois de marcar a troca de plano* → **medido, sem problema**: a
+          Stripe passa o cartão novo para o agendamento sozinha.
+        - *A virada do anual para o mensal não foi exercitada; o cupom de duração limitada
+          copiado para a fase nova* → **passo 13** (relógio de teste); hoje não existe cupom assim.
+        - *A chave de produção restrita não leria os pagamentos, e todo aviso responderia 500; e
+          os alertas novos só existem com o Sentry configurado na Railway* → **do operador,
+          antes de publicar: pendência P71.**
+        **Depois das correções:** 19 testes novos (servidor: 1010), **21 de 21 mutações
+        reprovaram**, e as duas provas com as funções de verdade rodaram de novo na área restrita
+        (23 de 23 e 25 de 25). Gates: typecheck, lint, suíte do site (852) e de servidor como o
+        CI (1010), build.
+      - **As duas decisões de 11/10/2026 que faltavam no código — FEITO (11/10/2026).**
+        **(i) Cancelar com a cobrança atrasada termina na hora.** A mesma rota de cancelar: para
+        quem está em dia, continua sendo parar a renovação; com a cobrança atrasada, ENCERRA a
+        assinatura, anula a cobrança em aberto (nessa ordem) e responde `terminou`. As aulas
+        trancam na hora e a pessoa continua logada. A tela é avisada antes (`terminaAoCancelar`).
+        A recusa `CobrancaAtrasada` deixou de existir. Os dois textos aprovados entraram no
+        dicionário (`cancelamento.terminaAgora` e `.trocaDesfeita`). **Testes:** 8 de rota.
+        **Mutação:** 9 de 9 reprovaram. **A prova com o relógio de teste da Stripe** (as funções
+        de verdade, 2 relógios descartáveis, já apagados): 6 de 6 — a renovação que falha, a
+        atrasada, encerrar, anular, nada em aberto, o espelho sem acesso. `[FATO — medido]`
+        anular a cobrança em aberto com a assinatura ainda viva a devolve a `active`: é por isso
+        que se encerra primeiro. **E, para a etapa 4.6b:** na atrasada, o "pago até" é mesmo o
+        dia em que a renovação falhou.
+        **(ii) Quem entra começa do zero:** o login limpa o que as telas guardaram (a senha
+        errada não limpa nada). **Testes:** 2 de tela. **Mutação:** 2 de 2 reprovaram.
+      - **Passo 9 — FEITO (11/10/2026): a tela de cancelar e os botões no resumo.**
+        `/aluno/conta/faturamento/cancelar` (`CancelarPage`, com `MotivoDoCancelamento` e
+        `SaidaDoCancelamento`; o que a tela guarda e faz mora em `lib/cancelamento.ts`). A tela
+        oferece SÓ o que o servidor disse que cabe: em dia, parar a renovação (um cartão, com a
+        data até quando há acesso); nos 7 primeiros dias e com dinheiro pago, **as duas saídas
+        lado a lado**, com o valor e a data que o servidor mandou; com a cobrança atrasada, o
+        aviso de que termina agora — e, depois do clique, o resumo, que diz que terminou. O
+        motivo é opcional: sem nada, ao servidor vai um corpo vazio. Cada falha tem a frase
+        dela (o prazo que acabou, a devolução que não saiu), e depois de qualquer falha a tela
+        lê a assinatura de novo. Quem tinha a troca para o Mensal marcada lê o aviso. Sem nada a
+        cancelar, a pessoa volta ao resumo. **No resumo** (`AcoesDoPlano`): "Cancelar
+        assinatura" (para quem renova, quem está atrasado e quem ainda está no prazo do
+        reembolso) e "Manter a assinatura" (a renovação parada que ainda volta), cada um só
+        quando o servidor diz que cabe. Os motivos são botões de rádio nativos: não há
+        componente de rádio em `components/ui/`, e um novo seria dependência nova.
+        **Um texto a mais, rascunho do agente:** "Não foi possível manter a assinatura. Tente de
+        novo." (pendência P73). **Testes:** 21 da tela nova + 10 no resumo. **Mutação:** 18 de
+        18 reprovaram — a 16ª passou de primeira e mostrou um caso sem teste (a encerrada ainda
+        no prazo do reembolso não pode ler "Manter"); o teste entrou e ela reprovou. Gates:
+        typecheck, lint, suíte do site (885) e de servidor como o CI (1017), build. O
+        `GEMINI.md` do parceiro de design ganhou a tela no mapa e o item 35 na fila.
+        **Não visto em navegador pelo agente** (entrar exige a senha do aluno): a conferência
+        visual é do operador.
+      - **Passo 11 — FEITO (11/10/2026): a tela de mudar de plano e a confirmação do banco.**
+        `/aluno/conta/faturamento/plano` (`MudarDePlanoPage`, com `OfertaDePlano` e
+        `TrocaMarcada`; o que a tela lê e faz mora em `lib/troca-de-plano.ts`). Mostra o plano
+        de hoje e o plano novo com o que o SERVIDOR disse: para o Anual, **quanto se paga hoje,
+        ANTES do botão**, e a cobrança seguinte; para o Mensal, quando a troca vale e quanto
+        passa a custar. Ao servidor vão só o plano e o instante da conta mostrada. Cartão
+        recusado: a frase e o caminho para trocar o cartão. A conta que envelheceu: a tela pede
+        outra e avisa que o valor mudou. Quem parou a renovação ou está atrasado lê o porquê.
+        **A confirmação do banco na tela** (`confirmarNoBanco`, em `stripe-do-site.tsx` —
+        `handleNextAction` do Stripe.js, sem campo de cartão): na troca para o Anual, a janela
+        do banco abre por cima; confirmou, a tela espera a assinatura virar Anual e diz que
+        trocou; não concluiu, a troca pendente é desfeita NA HORA e a tela diz que nada foi
+        cobrado. **E na troca de cartão com a cobrança atrasada** (fecha a limitação da sessão
+        a): a janela abre logo depois de o cartão ser posto; não concluída, a tela oferece
+        "Confirmar pagamento". **No resumo:** "Mudar de plano", e a troca marcada com a data e
+        "Continuar no Anual". O `import()` do Stripe.js para a confirmação entrou em
+        `PEDACOS_DO_ALUNO`.
+        **Defeito achado pelos testes, e corrigido:** o botão de trocar aparecia antes de a
+        chave do Stripe.js chegar — quem clicasse nesse instante teria a confirmação do banco
+        pulada e a troca desfeita à toa. O botão passou a esperar a chave.
+        **Testes:** 23 da tela nova + 6 no resumo + 5 na troca de cartão. **Mutação:** 20 de 20
+        reprovaram (a troca com a hora do navegador, a falha dada como troca, a recusa sem o
+        caminho do cartão, a confirmação não concluída sem desfazer e dada como troca, o
+        pagamento já passado dito "nada foi cobrado", a conta velha sem pedir outra, o preço no
+        lugar do valor de hoje, o botão ligado enquanto envia, o botão antes da chave, marcar de
+        novo com a troca marcada, e os do resumo e do cartão) — uma passou de primeira e mostrou
+        um caso sem teste (a nova tentativa que o banco também não confirma), que entrou; e uma
+        guarda que nenhum teste distinguia saiu do código (quem impede dois cliques é o botão
+        desligado). Gates: typecheck, lint, suíte do site (916) e de servidor como o CI (1017),
+        build. O `GEMINI.md` do parceiro de design ganhou a tela no mapa e o item 36 na fila.
+        **Não visto em navegador pelo agente** — e **a janela do banco de verdade nunca abriu
+        num navegador**: é do operador, no computador, com o cartão de teste que exige
+        confirmação (`billing.md` → *Pendências de verificação*).
+      - **Passo 12 — FEITO (11/10/2026): quem cancelou e abre a tela de assinar.** A tela de
+        assinar, para quem JÁ tem acesso, passou a ler a assinatura: se ela termina numa data
+        (a renovação parada, ou a encerrada de vez ainda com dias pagos), a pessoa é levada a
+        Faturamento e Assinatura — onde está "Manter a assinatura", que não cobra nada — em vez
+        de ler só "Você já é assinante". Assinar de novo cobraria duas vezes o mesmo período, e
+        o servidor já recusa (409). Quem renova, ou está com a cobrança atrasada, continua
+        lendo "Você já é assinante". Se a leitura falhar, vale o aviso de sempre: a tela não
+        tranca. Quem não assina nem tem a assinatura lida. **O caso raro** (a encerrada de vez,
+        ainda com dias pagos): não dá para manter nem para assinar de novo antes do fim — o
+        resumo diz até quando há acesso, e "Reativar assinatura" aparece depois da data. *Se a
+        tela deve dizer isso com todas as letras é pergunta ao operador (pendência P74).*
+        **Testes:** 5 de tela. **Mutação:** 4 de 4 reprovaram. Gates: typecheck, lint, suíte do
+        site (921) e de servidor como o CI (1017), build.
+      - **Passo 13, parte 1 — FEITO (11/10/2026): a prova com CONTAS DESCARTÁVEIS.** As
+        operações de verdade (`minha-assinatura.ts`, `meu-plano.ts`), com contas descartáveis no
+        banco de desenvolvimento e a Stripe de teste; um roteiro fora do repositório, com as duas
+        travas conferidas antes de começar (chave de teste; o banco é o branch de
+        desenvolvimento) e nenhum segredo impresso. **42 pontos, todos passaram.**
+        *A vida inteira de uma conta* (19): mensal no primeiro dia, com a saída do reembolso ·
+        parar (continua com acesso e logada) · manter · a conta da troca e a troca para o anual
+        cobrando EXATAMENTE o mostrado · o reembolso passando a ser das duas cobranças · pedir o
+        plano que já tem · marcar o mensal · cancelar com a troca marcada (a troca é desfeita) ·
+        manter (volta no anual) · o reembolso das duas cobranças, o acesso terminando na hora e
+        a sessão continuando · pedir de novo sem devolver duas vezes · na Stripe, o total
+        devolvido igual ao total pago. *As recusas* (6): a conta de 40 minutos atrás, o cartão
+        recusado sem fatura sobrando, o banco pedindo confirmação com o plano parado no mensal,
+        desistir. *A cortesia* (4): sem a saída do reembolso, sem ser encerrada, a troca a R$ 0
+        e o desconto indo junto. *A cobrança atrasada, com o relógio de teste* (3): cancelar
+        termina na hora, a cobrança é anulada, a sessão continua. ***A VIRADA do anual para o
+        mensal, com o relógio de teste* (5): no fim do ano o plano vira mensal, a primeira
+        cobrança de R$ 99,90 sai paga — com o cartão NOVO, trocado depois de marcar —, e cancelar
+        funciona depois.** *O agendamento que sobra* (4, abaixo).
+        Limpeza: 10 contas apagadas do banco (zero linhas delas), e os clientes, relógios e
+        cupons apagados da área restrita. *Não coube na prova:* o prazo de 7 dias vencendo (o
+        relógio do servidor não é o da Stripe; está nos testes).
+        **Achado da prova, e corrigido:** `[FATO — medido com o relógio de teste]` depois da
+        virada o agendamento continua preso à assinatura por mais um mês, já sem troca nenhuma —
+        e a tela não oferecia mudar de plano nesse mês. Agora o que impede é a troca MARCADA, e
+        não o agendamento; a operação solta o agendamento velho antes de mudar. 3 testes de
+        rota, 4 de 4 mutações reprovaram, e a prova na área restrita (4 pontos).
+        `[FATO — medido]` o relógio de teste só avança dois intervalos do menor período por vez
+        (com o mensal no agendamento, dois meses): a prova avança em etapas.
+      - **Passo 13, parte 2 — FEITO (11/10/2026): a SEGUNDA REVISÃO DE SEGURANÇA**
+        (`security-vulnerability-reviewer`, sobre tudo o que entrou depois da primeira: as
+        telas, a troca de plano, cancelar com a cobrança atrasada). **Nenhum bloqueio. Dois
+        achados para corrigir antes de publicar e uma lista de melhorias — tudo o que não
+        dependia de decisão do operador foi corrigido aqui.**
+        **(1) A tela podia dizer "nada foi cobrado" com o pagamento já feito.** A janela do banco
+        pode dar erro DEPOIS de o pagamento passar; o servidor não achava mais nada a desfazer,
+        e a tela concluía que o plano continuava o mesmo. Agora `desistir` responde em que plano
+        a assinatura está, relido com a trava (`TrocaDesfeita.plano` — campo a mais, API
+        aditiva), e a tela só diz "nada foi cobrado" quando o SERVIDOR diz que o plano continua
+        o mesmo.
+        **(2) A "fatura da troca" podia ser outra.** Era "a última fatura em aberto, havendo
+        troca pendente". Agora é só a fatura cujo motivo é o da troca (`subscription_update`), e
+        desistir nunca anula fatura com a cobrança atrasada. `[FATO — medido com o relógio de
+        teste, 11/10/2026]` quando a renovação chega com uma troca ainda pendente, a Stripe
+        DESCARTA a troca (anula a fatura dela) e a assinatura fica atrasada com a fatura da
+        renovação em aberto: o caso do achado não chega a acontecer, e a correção o fecha de
+        qualquer jeito.
+        **As melhorias, feitas:**
+        · toda saída da janela do banco que não seja "pagamento aprovado" desfaz a troca
+        pendente — inclusive o Stripe.js que quebra ou não carrega; desfazer tenta 3 vezes; e o
+        servidor anula a troca anterior ainda pendente antes de aceitar outra (duas cobranças do
+        plano novo nunca ficam em aberto);
+        · depois de o banco confirmar, a tela espera o SERVIDOR dizer Anual (até 6 leituras)
+        antes de afirmar; e depois de QUALQUER falha ela relê a assinatura — se a troca já foi
+        feita (a resposta se perdeu no caminho), diz que deu certo em vez de pedir de novo;
+        · a tela de cancelar não perde mais a frase da devolução que falhou (a assinatura já
+        aparecia terminada, e a tela ia para o resumo), e a pessoa continua logada nesse caso;
+        · cancelar com a cobrança atrasada: a cobrança que não pôde ser anulada, ou que PASSOU
+        no instante do cancelamento, virou alerta para o operador (era só aviso);
+        · só o agendamento que a ESCOLA criou (a marca `MARCA_DA_TROCA`, gravada por
+        `agendarTroca`) é mostrado como troca marcada e solto ao mudar de plano ou desistir; o
+        que for posto pelo painel da Stripe não é mostrado nem solto — a não ser ao cancelar,
+        que é direito da pessoa (aí sai, com alerta);
+        · pedido que muda cobrança e vem de OUTRO SITE: 403 (`Sec-Fetch-Site`), segunda trava
+        além do cookie — vale para todo `/api/billing`;
+        · a conta da sessão mudou sem "Sair" (entrou com outra em outra aba): o que as telas
+        guardaram é esquecido e relido (`Layout`);
+        · as leituras avulsas da assinatura não voltam a guardar plano e cartão
+        (`CONSULTA_DA_MINHA_ASSINATURA`); o alerta da devolução que falhou sai uma vez por
+        aviso, e não a cada reentrega; `encerradaDeVez` mora em `acesso.ts`.
+        **Testes:** 17 de servidor e 14 de tela a mais. **Mutação:** 31 de 31 reprovaram.
+        **Prova na área restrita:** 9 de 9 (a fatura da troca reconhecida; o agendamento da
+        escola com a marca e o de fora sem ela; a renovação com a troca pendente, no relógio de
+        teste), tudo apagado no fim. **Gates:** typecheck, lint, build, suíte do site (935) e de
+        servidor como o CI (1037).
+        **Ficou registrado, sem código:** o limite de pedidos por conta nas rotas de cobrança
+        (pré-requisito da 4.7, já citado lá) · o reembolso que se repete — assina, pede, assina
+        de novo, pede de novo — é pergunta ao operador (**P75**, antes da 4.7) · o que traduz a
+        resposta do Stripe.js (`confirmarNoBanco`) não tem teste automático: é a nossa fronteira
+        com o fornecedor, e se confere no navegador · se, com o pagamento aprovado, o servidor
+        ainda não disser Anual depois das 6 leituras (~9 s), a tela afirma assim mesmo — o
+        resumo pode mostrar Mensal por instantes.
+      **ONDE PAROU:** SESSÃO (a) FECHADA e **PUBLICADA em 11/10/2026 (`main` = `6305077`)**, com
+      a autorização do operador (*"pode publicar depois desses ajustes"*): CI verde nos dois jobs
+      no `dev` e na `main`, e conferido no ar como visitante — as rotas novas respondem 401 sem
+      login. Sem migration. **Para ele ver no site:** como `member@`, Faturamento e Assinatura
+      mostra a assinatura de verdade (a do código de 100%); em "Adicionar cartão" a frase da
+      Stripe traz o nome público da conta de verdade (P58) — só olhar: salvar ali guarda um
+      cartão de verdade.
+      **SESSÃO (b) — FECHADA NO `dev` em 11/10/2026, NÃO PUBLICADA** (os passos 7 a 13, com as
+      duas revisões de segurança). **Falta, e é do operador:** a parte 2 do teste no navegador
+      (com cartão de teste: o reembolso e a janela do banco, que ainda não abriu num navegador —
+      `billing.md` → *Pendências de verificação*), a **P69** e a **P71** nos painéis e a
+      decisão de publicar. O histórico da sessão segue abaixo.
+      **Teste do operador no navegador, parte 1 — FEITO (11/10/2026)**, com a assinatura de
+      cortesia do `member@` do computador, 12 telas conferidas: mudar para o Anual (R$ 0,00, na
+      hora), marcar o Mensal para o fim do ano, "Continuar no Anual", cancelar com motivo e
+      comentário (uma saída só, sem reembolso), "Manter a assinatura". Tudo como esperado; a
+      assinatura ficou anual, renovando, sem troca marcada e sem motivo guardado (conferido na
+      Stripe e no espelho).
+      **Achado do teste, e a decisão do operador (P76 → B, 11/10/2026): O ANO DO ANUAL COMEÇA
+      NO DIA DA TROCA.** `[FATO — medido com o relógio de teste]` sem pedir nada, a Stripe
+      mantém o aniversário da assinatura: mensal assinado em 11/10 e trocado em 30/12 pagava
+      R$ 738,25 (o anual proporcional até o aniversário) e era cobrado de novo em 11/10/2027. As
+      provas anteriores só trocaram no primeiro dia, quando as duas contas coincidem.
+      **O que mudou no código** (substitui o "instante da conta" dos passos 10 e 11, abaixo):
+      `paraPedidoDeTroca` pede o período recomeçando (`billing_cycle_anchor: { type: "now" }`);
+      `[FATOS — medidos]` nesta versão da Stripe o campo é um objeto, e com ele ela recusa o
+      instante da conta (`proration_date`). Então saíram `previaDe`, `previaAindaVale` e a
+      validade de 30 minutos, e entrou a conferência do valor: o site devolve o valor que
+      mostrou (`valorMostrado`), o servidor refaz a conta com a trava logo antes de trocar e,
+      se não bate, responde `PreviaVencida` — a tela mostra o valor novo. O valor que vem do
+      site nunca é o que se cobra. **Docs check (context7):** Stripe → `/websites/stripe` →
+      no modo flexível a âncora não recomeça sozinha ao trocar de preço (2 consultas, refeitas
+      porque a sessão foi compactada; a forma do campo e a recusa do instante saíram dos tipos
+      da biblioteca e da medição). **Prova na área restrita:** 18 de 18 com as funções de
+      verdade — mensal há 80 dias paga R$ 956,33 (o anual menos os 12 dias que sobraram), o ano
+      vai do dia da troca a um ano depois, o cobrado é o mostrado, a data de início não muda, o
+      banco pedindo confirmação e o cartão recusado deixam o mês pago como estava, a cortesia
+      troca a R$ 0. **Testes:** 3 de rota novos e os existentes reescritos; **mutação:** 7 de 7.
+      Gates: typecheck, lint, build, suíte do site (935) e de servidor como o CI (1038).
+      **E O VALOR MOSTRADO FICA CONGELADO POR 10 MINUTOS** (decisão do operador, no mesmo dia:
+      *"prefiro perder 1 centavo a cobrar a mais do que foi mostrado […] cobra o que mostrou
+      pela primeira vez; se passar uns 10 minutos sem confirmar, explica que expirou"*).
+      Substitui a conferência "o valor tem que ser igual" do parágrafo acima: a cobrança sai
+      EXATAMENTE no valor mostrado, e a escola abre mão dos centavos que o tempo levou. Como: o
+      anual entra cheio, sem a conta por tempo da Stripe, e o desconto é uma linha de crédito de
+      valor fixo no mesmo pedido (`paraPedidoDeCobrar`, `trocarAgora(troca, cobrar)`). O site
+      devolve o valor e o instante da conta (`valorMostrado`, `mostradoEm`); o servidor confere
+      os dois, porque vêm do navegador — o instante com até 10 minutos (`ofertaAindaVale`,
+      `VALIDADE_DO_VALOR_MOSTRADO`) e o valor no máximo 5 centavos abaixo da conta refeita com a
+      trava, nunca acima (`FOLGA_DO_VALOR_MOSTRADO`). Passou disso: `PreviaVencida`, e a tela
+      mostra o valor novo. **Os textos são do operador (11/10/2026):** logo abaixo do valor,
+      "Conclua em até 10 minutos, ou o valor poderá ser atualizado."; e, vencido o prazo, "Este
+      valor foi atualizado. Confira e clique para concluir." (`app.faturamento.plano.valorValePor`
+      e `.valorAtualizado`; o inglês é rascunho, com a P72). **Prova na área restrita:** 26 de 26 com as
+      funções de verdade — mostrado R$ 956,33, a conta da Stripe 9 minutos depois R$ 956,35,
+      cobrado R$ 956,33; com código de 50% o cobrado é o mostrado (o crédito fica fora do
+      alcance do código); o banco pedindo confirmação, o cartão recusado e a cortesia como
+      antes. **Testes:** 12 de servidor a mais; **mutação:** 17 de 17. Gates: typecheck, lint,
+      build, suíte do site (935) e de servidor como o CI (1050). **Rede de segurança:** a
+      fatura da troca que não der o valor mostrado é anulada (se ainda espera o banco) ou vira
+      alerta (se já foi cobrada). **Antes da etapa 4.8:** o imposto na fatura muda essa conta —
+      rever o crédito e a folga lá.
+      **TERCEIRA REVISÃO DE SEGURANÇA (11/10/2026), sobre o ano do Anual e o valor congelado:**
+      nenhum bloqueio; não há caminho em que um valor forjado tire da escola mais que a folga.
+      **Um achado para corrigir antes de produção, corrigido:** o pedido de troca deixou de ser
+      inofensivo quando repetido. `[FATO — medido em tempo de verdade]` repetido numa assinatura
+      que já virou anual ele não cobra de novo, mas deixa o crédito do mês solto no cliente (a
+      renovação seguinte sairia R$ 99,90 mais barata). Agora `trocarAgora` não manda o pedido se
+      o item já está no preço novo, e manda com chave de repetição (`chaveDaTroca`, que leva a
+      última fatura de antes). **As melhorias, feitas:** a rede de segurança olha a fatura nova
+      sem depender do motivo que a Stripe escreve, e não diz "nada foi cobrado" se a anulação
+      falhou ou se a fatura foi paga no mesmo instante · a operação confere o valor por conta
+      própria (inteiro, não negativo), porque é a porta que o admin e o JilsonAI vão usar · o
+      valor fora da folga deixa rastro no registro · testes: a cortesia a R$ 0 pela rota, o
+      pedido repetido, a anulação que falha, os dublês de troca pendente com fatura realista.
+      **Prova na área restrita:** 31 de 31 (repetir a troca que já valeu não gera fatura; a
+      mesma chave duas vezes, uma cobrança; recusado → trocou o cartão → passa; desistiu no
+      banco → a tentativa seguinte é nova). **Mutação:** 11 de 11. **Registrado, sem código:**
+      o saldo de crédito do cliente na Stripe (`billing.md` → Limitações) · o caminho da troca
+      faz mais idas à Stripe com a trava do que antes; com a Stripe muito lenta o tempo da
+      operação pode estourar — o pedido falha e nada é cobrado em dobro (as duas travas acima).
+      `CLAUDE.md`: a trava "o site nunca escolhe valor" aponta a exceção, e a decisão ganhou a
+      entrada (25) do changelog, com gatilho de reabertura; a (22) desceu para o arquivo.
+      **TESTE DO OPERADOR NO NAVEGADOR, PARTE 2 — FEITO (11/10/2026)**, com cartão de teste e a
+      janela do banco de verdade abrindo pela primeira vez num navegador (14 telas): reativar
+      com o cartão que pede confirmação · mudar para o Anual a R$ 895,11 — "Fail" no banco
+      ("nada foi cobrado"), depois "Complete" ("seu plano agora é o Anual") · o resumo com a
+      cobrança seguinte em um ano · cancelar com as duas saídas, o reembolso de R$ 995,01 (os
+      R$ 99,90 mais os R$ 895,11: o cobrado foi exatamente o mostrado) · parar a renovação e
+      manter · a aula trancada com "Reativar assinatura", e ele ainda logado. Tudo como esperado.
+      **Duas mudanças pedidas por ele depois do teste, feitas:** (1) sai da tela o aviso "Conclua
+      em até 10 minutos…" (*"ninguém demora 10 minutos para decidir"*); (2) a troca acontece NUM
+      CLIQUE SÓ mesmo depois de a pessoa demorar (*"tem que acontecer num passo só […] sem uma
+      segunda confirmação do aluno"*). Para isso o prazo de 10 minutos saiu (`mostradoEm`,
+      `ofertaAindaVale`, `VALIDADE_DO_VALOR_MOSTRADO`): a cobrança continua saindo no valor
+      mostrado, e a única conferência é a folga, que passou de 5 centavos para R$ 1,00
+      (`FOLGA_DO_VALOR_MOSTRADO` — **número escolhido pelo agente, a confirmar: pendência P77**).
+      Só fora dela a tela busca o valor de novo e pede o segundo clique. O prazo nunca foi a
+      proteção contra valor forjado (a terceira revisão já dizia: o instante vem do navegador;
+      quem segura é a conferência do valor). Testes reescritos; mutação 2 de 2; gates abaixo.
+      **Achado do teste, só relatado:** depois de pagar pela tela "Reativar assinatura", a
+      confirmação aparece com o título "Assinar".
+      **As respostas dele (11/10/2026), feitas:** (1) **a P77 — "R$ 1,00 está ok"**; (2) **passou
+      da folga, a tela leva ao INÍCIO**, sem a mensagem "valor atualizado" nem segundo clique
+      (*"passou do tempo, redireciona; quando for lá novamente já vê o novo valor […] igual banco
+      que expira"*): a oferta traz `valeAte` (`validadeDoValorMostrado`: o tempo que a conta leva
+      para andar a folga, com o mês mais curto — 6 h 43 min no mensal de R$ 99,90) e a tela sai
+      sozinha quando ele passa (`useValorVencido`: relógio em pedaços, e conferência quando a aba
+      volta a ser vista); no clique, a recusa do servidor (`PreviaVencida`) leva ao mesmo lugar.
+      O texto `valorAtualizado` saiu do dicionário. (3) **a confirmação de quem reativou diz
+      "Reativar assinatura"** (*"deixa 'Reativar assinatura' para ficar igual"*): a marca vai no
+      endereço (`telaDeConcluido`, `?reativou=1`), pelo caminho de dentro do site e pelo
+      endereço de volta da Stripe, e só muda o título — quem confirma continua sendo o servidor.
+      **Testes:** 7 de tela e 1 de servidor a mais (site 942, servidor 1058); **mutação:** 11 de 11 — e os testes pegaram
+      um defeito antes de ele existir para alguém: um prazo muito distante fazia o relógio do
+      navegador disparar na hora. Gates: typecheck, lint, build e as duas suítes.
+      **O operador testou de novo no navegador (11/10/2026): a troca num clique só funcionou.**
+      E pediu um ajuste de texto, feito: no cartão do Anual, "A troca vale na hora." virou "A
+      troca é imediata." (`app.faturamento.plano.paraOAnual`; o inglês segue rascunho, na P72).
+      **Para a parte 2 do teste:** a assinatura de cortesia do `member@` do computador foi
+      encerrada a pedido do operador (11/10/2026). `[FATO — medido]` encerrar uma assinatura de
+      100% direto deixa o período inteiro como "pago" (um ano de acesso, no anual); para a
+      conta ficar livre, um período de teste de 90 segundos antes de encerrar — só na área
+      restrita, com as travas de sempre.
+      Feito: o item 0 ("Sair"), a consulta à Stripe, os
+      **passos 7, 8 e 10** (todo o servidor) e **os textos das telas, aprovados por ele em
+      português** (três blocos, 11/10/2026; já no dicionário, em `app.faturamento.plano`,
+      `.cancelamento` e `.banco` — o inglês é rascunho, a revisar com o Antigravity: P72).
+      As duas decisões dele de 11/10/2026 (cancelar com a cobrança atrasada; limpar ao entrar)
+      já estão no código, e os **passos 9 e 11** (as telas de cancelar e de mudar de plano)
+      e o **passo 12** estão feitos. **Próximo: o passo 13** — a prova com conta descartável
+      e o relógio de teste, a revisão de segurança das telas, os documentos e o fechamento. A tela
+      de cancelar avisa quem tem a troca para o Mensal marcada de que ela também será desfeita
+      (decisão dele, 11/10/2026; `billing.md` → *Minha assinatura*).
+      Nas telas: os endereços `…/faturamento/cancelar` e `…/faturamento/plano` (constantes no
+      `core`), os botões no resumo ("Cancelar assinatura", "Manter a assinatura", "Mudar de
+      plano", "Continuar no Anual"), a confirmação do banco pelo site (`handleNextAction`, em
+      `stripe-do-site.tsx`) na troca de plano e na troca de cartão, e a tela pedindo outra conta
+      quando a resposta é `PreviaVencida`. Depois, o 12 e o 13 (com o relógio de teste para a
+      virada do anual para o mensal).
+      **Antes de publicar:** a P69 (os avisos de dinheiro devolvido e de
+      devolução que falhou no endereço de avisos da conta de verdade — condição do reembolso) e
+      a P71 (a chave de produção e o Sentry). A revisão de segurança do servidor já foi feita e
+      corrigida; a do passo 13 cobre as telas. Nada desta sessão está publicado. A sessão (c)
+      começa pela pendência P64.
+- [ ] **4.6b — A tolerância de 3 dias na cobrança atrasada (código, ALTO RISCO).** Decisão do
+      operador de 11/10/2026 (`billing.md` → *Régua de inadimplência*): depois da cobrança que
+      falhou, as aulas ficam abertas por **3 dias**, e não mais pela janela inteira de
+      tentativas; a Stripe continua tentando, e quem paga (uma tentativa que passa, ou o cartão
+      novo) volta a ter as aulas na hora. **Revê a regra do gate de Ago 2026** — `past_due`
+      deixa de dar acesso sem prazo. **Antes da etapa 4.7** (até lá só o operador assina).
+      O que o passo mexe, para o plano dele (a escrever e aprovar na abertura):
+      - **O gate:** `past_due` dá acesso só até 3 dias depois do "pago até" — que, na cobrança
+        atrasada, já é o dia em que a renovação falhou (o começo do período não pago). Sem
+        migration; a constante no `core`.
+      - **Faturamento e Assinatura para quem está atrasado e já SEM aulas:** hoje a tela só
+        acha a assinatura que dá acesso — essa pessoa leria "sua assinatura terminou", e não o
+        alerta com "Trocar cartão". A busca da assinatura da conta passa a achar a atrasada.
+      - **"Reativar assinatura" e a tela de assinar:** para a atrasada sem aulas, o caminho é
+        trocar o cartão (que paga a fatura em aberto na hora), não assinar de novo — hoje o
+        checkout responderia "você já é assinante".
+      - **A sessão:** passar dos 3 dias não gera aviso da Stripe; a aula tranca pelo gate e a
+        pessoa continua logada (é o que ela precisa para trocar o cartão).
+      - **Cancelar com a cobrança atrasada** (decidido em 11/10/2026: termina na hora): depois
+        dos 3 dias a pessoa está sem aulas, e a operação tem que achar a assinatura dela.
+      - `CLAUDE.md` → *Membership Gating* (a regra do gate) reescrita no MESMO commit; os testes
+        do gate e de ponta a ponta com o aviso; a prova com o relógio de teste da Stripe.
 - [ ] **4.7 — O visitante assina: a conta nasce no pagamento (código, ALTO RISCO).** O checkout
       público: e-mail + pagamento → o webhook cria a conta (o cadastro continua fechado) e manda o
       e-mail de "crie sua senha". **Depende do Resend configurado e da P49** (o remetente). Junto:
@@ -4322,6 +4878,11 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       e-mail · **antes de abrir ao visitante, o limite de tentativas do código promocional** (na
       4.2 só conta logada confere código, e o cadastro é fechado) · os botões Assinar da home
       passam a funcionar sem login.
+      **Dois e-mails da cobrança atrasada, pedidos pelo operador (11/10/2026):** na falha —
+      "não conseguimos renovar; vamos tentar de novo no dia X", com o link para trocar o cartão
+      (`…/faturamento/cartao`; a data vem da Stripe, no aviso da cobrança que falhou) — e antes
+      de trancar — "se não for pago até o dia Y, você perde o acesso" (Y = 3 dias depois da
+      falha: etapa 4.6b). Os textos são dele.
       **Pedido do operador (10/10/2026, depois de testar a 4.2):** *"tem que funcionar também a
       partir do card da home para quem não é cadastrado no site"* — é esta etapa. **A ordem fica
       a do plano** (decisão dele, no mesmo dia: *"Seguir a ordem do plano"*), e o Resend e o
@@ -4332,7 +4893,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       as que chamam a Stripe — **e as três da etapa 4.6** (revisão de segurança de 11/10/2026):
       `GET /billing/minha-assinatura`, `POST /billing/cartao` (poucos pedidos por hora: cada um
       abre um pedido de guardar cartão, e sem limite o site serve para testar cartão roubado) e
-      `POST /billing/cartao/aplicar` (numa conta atrasada, cada chamada tenta uma cobrança) · (b) **a trava do checkout não pode segurar conexão do banco
+      `POST /billing/cartao/aplicar` (numa conta atrasada, cada chamada tenta uma cobrança) — **e as três da sessão (b)**: `POST /billing/minha-assinatura/cancelar`, `…/manter` e `…/reembolso` (cada uma vai à Stripe; a de reembolso lê as faturas e as cobranças), e `GET`/`POST …/minha-assinatura/plano` e `…/plano/desistir` (a de trocar tenta uma cobrança a cada chamada) · (b) **a trava do checkout não pode segurar conexão do banco
       esperando**: vários pedidos juntos esgotariam as conexões e parariam a API inteira — a trava
       que não espera (`pg_try_advisory_xact_lock`) ou a Stripe fora da transação *(a revisão da
       4.4 voltou a apontar, como P1: quem tem a trava ainda pede uma SEGUNDA conexão para ler o

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { PLANOS } from "../constants/billing.js";
+import { MOTIVOS_DE_CANCELAMENTO, PLANOS, TAMANHO_DO_COMENTARIO } from "../constants/billing.js";
 
 /**
  * Corpo de `POST /api/billing/previa` — quanto fica a assinatura com um código promocional
@@ -22,6 +22,31 @@ export const assinarSchema = z.object({
   codigo: z.string().trim().min(1).max(64).optional(),
 });
 export type AssinarInput = z.infer<typeof assinarSchema>;
+
+/**
+ * Corpo de `POST /api/billing/minha-assinatura/cancelar` — parar a renovação (Fase 4, etapa 4.6).
+ * Só o MOTIVO, e ele é opcional (decisão do operador, 11/10/2026): o botão de cancelar funciona
+ * sem nada. O pedido NÃO diz qual assinatura — é a da conta da sessão. O comentário é aparado nas
+ * pontas; vazio é o mesmo que não mandar.
+ */
+export const cancelarSchema = z.object({
+  motivo: z.enum(MOTIVOS_DE_CANCELAMENTO).optional(),
+  comentario: z.string().trim().max(TAMANHO_DO_COMENTARIO).optional(),
+});
+export type CancelarInput = z.infer<typeof cancelarSchema>;
+
+/**
+ * Corpo de `POST /api/billing/minha-assinatura/plano` — mudar de plano (Fase 4, etapa 4.6). Só
+ * PARA QUAL plano e, na troca que vale na hora, o valor que a TELA MOSTROU (`valorMostrado`, em
+ * centavos). O servidor o confere com a conta refeita na hora — tem que estar dentro da folga,
+ * e nunca acima dela — e só então cobra o valor mostrado. Preço e assinatura nunca vêm do site,
+ * e um valor inventado não passa na conferência.
+ */
+export const mudarDePlanoSchema = z.object({
+  plano: z.enum(PLANOS),
+  valorMostrado: z.number().int().min(0).optional(),
+});
+export type MudarDePlanoInput = z.infer<typeof mudarDePlanoSchema>;
 
 /**
  * Corpo de `POST /api/admin/assinaturas/sincronizar` — o admin força a sincronia de UMA conta com

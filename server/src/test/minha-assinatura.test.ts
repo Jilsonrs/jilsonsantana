@@ -79,7 +79,7 @@ beforeEach(() => {
   buscarDetalhes.mockReset().mockImplementation(async (id) => {
     const dados = naStripe[id];
     if (!dados) throw new AssinaturaNaoEncontrada(id);
-    return { id, status: "active", pagoAte: null, plano: "mensal", preco: { centavos: 9990, moeda: "brl" }, fimDoPeriodo: null, acabaEm: null, cartao: VISA, clienteId: "cus_da_conta", userId: null, cartaoId: "pm_atual", faturaEmAbertoId: null, ...dados };
+    return { id, status: "active", pagoAte: null, plano: "mensal", preco: { centavos: 9990, moeda: "brl" }, fimDoPeriodo: null, comecouEm: null, acabaEm: null, acabaNoFimDoPeriodo: false, cartao: VISA, clienteId: "cus_da_conta", userId: null, faturaEmAbertoId: null, itemId: "si_do_teste", agendamentoId: null, agendamentoNosso: false, trocaMarcada: null, faturaDaTrocaId: null, ...dados };
   });
   buscarAssinatura.mockReset().mockRejectedValue(new Error("a sincronia não devia ter sido chamada"));
   buscarProximaCobranca.mockReset().mockResolvedValue({ centavos: 9990, moeda: "brl" });
@@ -159,6 +159,16 @@ describe("GET /api/billing/minha-assinatura — a conta com acesso", () => {
       acessoAte: null,
       cartao: VISA,
       aceitaCartao: true,
+      // Renova: dá para parar a renovação; não há o que desfazer.
+      podeParar: true,
+      podeManter: false,
+      // Em dia: cancelar é parar a renovação, não terminar na hora.
+      terminaAoCancelar: false,
+      // Fora do prazo do reembolso (ou sem a data de início): a saída não existe.
+      reembolso: null,
+      // Renova e é de um dos dois planos: dá para mudar; e não há troca marcada.
+      podeMudarDePlano: true,
+      trocaMarcada: null,
     });
     expect(buscarProximaCobranca).toHaveBeenCalledWith(ASSINATURA_DE_TESTE);
   });
@@ -172,23 +182,25 @@ describe("GET /api/billing/minha-assinatura — a conta com acesso", () => {
   it("a renovação foi parada: vai cancelar, com acesso até a data — e a próxima cobrança nem é pedida", async () => {
     naStripe[ASSINATURA_DE_TESTE] = { ...ativa(), acabaEm: EM_30_DIAS };
     const res = await ler(member);
-    // A renovação parada pode ser retomada: ela continua aceitando cartão novo.
-    expect(res.body).toMatchObject({ situacao: "vai-cancelar", acessoAte: EM_30_DIAS.toISOString(), proximaCobranca: null, plano: "mensal", aceitaCartao: true });
+    // A renovação parada pode ser retomada: ela continua aceitando cartão novo, e a tela oferece
+    // "Manter a assinatura" — parar de novo, não.
+    expect(res.body).toMatchObject({ situacao: "vai-cancelar", acessoAte: EM_30_DIAS.toISOString(), proximaCobranca: null, plano: "mensal", aceitaCartao: true, podeParar: false, podeManter: true });
     expect(buscarProximaCobranca).not.toHaveBeenCalled();
   });
 
   it("a assinatura já encerrou e ainda tem dias pagos: acesso até o fim deles", async () => {
     await doSeed("canceled", EM_30_DIAS);
     naStripe[ASSINATURA_DE_TESTE] = { status: "canceled", pagoAte: EM_30_DIAS, fimDoPeriodo: EM_30_DIAS };
-    // Encerrada de vez: não cobra mais nada, então a tela não oferece trocar o cartão.
-    expect((await ler(member)).body).toMatchObject({ situacao: "vai-cancelar", acessoAte: EM_30_DIAS.toISOString(), proximaCobranca: null, aceitaCartao: false });
+    // Encerrada de vez: não cobra mais nada, então a tela não oferece trocar o cartão — nem
+    // voltar atrás: cancelada é estado final na Stripe.
+    expect((await ler(member)).body).toMatchObject({ situacao: "vai-cancelar", acessoAte: EM_30_DIAS.toISOString(), proximaCobranca: null, aceitaCartao: false, podeParar: false, podeManter: false });
     expect(buscarProximaCobranca).not.toHaveBeenCalled();
   });
 
   it("a última cobrança falhou: atrasada, com o acesso mantido — sem próxima cobrança nem data de fim", async () => {
     await doSeed("past_due", PASSADO);
     naStripe[ASSINATURA_DE_TESTE] = { status: "past_due", pagoAte: PASSADO, fimDoPeriodo: EM_30_DIAS };
-    expect((await ler(member)).body).toEqual({ situacao: "atrasada", plano: "mensal", preco: { centavos: 9990, moeda: "brl" }, proximaCobranca: null, acessoAte: null, cartao: VISA, aceitaCartao: true });
+    expect((await ler(member)).body).toEqual({ situacao: "atrasada", plano: "mensal", preco: { centavos: 9990, moeda: "brl" }, proximaCobranca: null, acessoAte: null, cartao: VISA, aceitaCartao: true, podeParar: false, podeManter: false, terminaAoCancelar: true, reembolso: null, podeMudarDePlano: false, trocaMarcada: null });
     expect(buscarProximaCobranca).not.toHaveBeenCalled();
   });
 

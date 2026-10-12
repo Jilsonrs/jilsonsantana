@@ -38,6 +38,15 @@ export function passouDoPrimeiroPagamento(assinatura: { status: string }): boole
 }
 
 /**
+ * Esta assinatura está ENCERRADA DE VEZ na Stripe? É estado final: não volta nem cobra mais (quem
+ * retorna assina de novo). Não decide acesso — a encerrada ainda pode ter dias pagos, e quem
+ * diz isso é `assinaturaDaAcesso`.
+ */
+export function encerradaDeVez(assinatura: { status: string }): boolean {
+  return assinatura.status === "canceled";
+}
+
+/**
  * De onde o gate lê: o banco — ou a TRANSAÇÃO de quem está gravando o espelho
  * (`assinaturas.ts`), que precisa comparar o acesso de antes e de depois da gravação
  * com a MESMA regra, sem uma segunda conta de "quem tem acesso".

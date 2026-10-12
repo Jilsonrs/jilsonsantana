@@ -5,7 +5,7 @@ import { aplicarCartaoNovo, prepararTrocaDeCartao } from "@/lib/api";
 import { codigoDoErro } from "@/lib/course-form";
 import { TELA_DO_FATURAMENTO } from "@/lib/faturamento";
 import { useIdioma, useT } from "@/lib/language";
-import { CampoDoCartao, CartaoProvider, useCartao } from "@/lib/stripe-do-site";
+import { CampoDoCartao, CartaoProvider, confirmarNoBanco, useCartao } from "@/lib/stripe-do-site";
 import { semInterromper } from "@/lib/versao";
 
 type Props = {
@@ -26,14 +26,16 @@ export function FormularioDoCartao({ dados, aoTrocar, aoNaoTerOndePor }: Props) 
   const idioma = useIdioma();
   return (
     <CartaoProvider pedido={{ chavePublicavel: dados.chavePublicavel, centavos: 0, moeda: dados.moeda, formasDePagamento: dados.formasDePagamento, idioma }}>
-      <CampoEBotao aoTrocar={aoTrocar} aoNaoTerOndePor={aoNaoTerOndePor} />
+      <CampoEBotao chavePublicavel={dados.chavePublicavel} aoTrocar={aoTrocar} aoNaoTerOndePor={aoNaoTerOndePor} />
     </CartaoProvider>
   );
 }
 
 /** Mora DENTRO do `CartaoProvider`: é daqui que sai o cartão que o envio confere e confirma. */
-function CampoEBotao({ aoTrocar, aoNaoTerOndePor }: Pick<Props, "aoTrocar" | "aoNaoTerOndePor">) {
+function CampoEBotao({ chavePublicavel, aoTrocar, aoNaoTerOndePor }: Pick<Props, "aoTrocar" | "aoNaoTerOndePor"> & { chavePublicavel: string }) {
   const t = useT().faturamento;
+  // A cobrança atrasada pediu a confirmação do banco: a janela dele está aberta por cima da tela.
+  const [noBanco, setNoBanco] = useState(false);
   const cartao = useCartao();
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
@@ -56,12 +58,20 @@ function CampoEBotao({ aoTrocar, aoNaoTerOndePor }: Pick<Props, "aoTrocar" | "ao
           if (!guardado.ok) return setErro(guardado.mensagem ?? t.erroDoCartao);
           setConfirmado(true);
         }
-        aoTrocar(await aplicarCartaoNovo());
+        const trocado = await aplicarCartaoNovo();
+        // O cartão novo foi posto, e a cobrança em aberto pediu a confirmação do banco (sessão
+        // b): a pessoa a completa agora. Passou → pago. Não concluiu → o segredo segue com a
+        // tela, que oferece tentar de novo.
+        if (!trocado.confirmar) return aoTrocar(trocado);
+        setNoBanco(true);
+        const banco = await confirmarNoBanco(chavePublicavel, trocado.confirmar);
+        aoTrocar(banco === "confirmado" ? { ...trocado, pagou: true, confirmar: null } : trocado);
       });
     } catch (falha) {
       if (codigoDoErro(falha) === "SemAssinatura") aoNaoTerOndePor();
       else setErro(t.erroDoCartao);
     } finally {
+      setNoBanco(false);
       setEnviando(false);
     }
   }
@@ -75,6 +85,11 @@ function CampoEBotao({ aoTrocar, aoNaoTerOndePor }: Pick<Props, "aoTrocar" | "ao
       }}
     >
       <CampoDoCartao />
+      {noBanco && (
+        <p role="status" className="text-sm text-foreground">
+          {t.banco.confirmando}
+        </p>
+      )}
       {erro && (
         <p role="alert" className="text-sm text-destructive">
           {erro}

@@ -12,6 +12,13 @@ vi.mock("../lib/stripe.js", async (importOriginal) => ({
   buscarAssinatura: (id: string) => buscarAssinatura(id),
 }));
 
+// O aviso de dinheiro devolvido só traz o pagamento: achar a assinatura dele é uma ida à Stripe.
+const assinaturaDoPagamento = vi.fn<(pagamentoId: string) => Promise<string | null>>();
+vi.mock("../lib/stripe-reembolso.js", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../lib/stripe-reembolso.js")>()),
+  assinaturaDoPagamento: (pagamentoId: string) => assinaturaDoPagamento(pagamentoId),
+}));
+
 import servidor from "./servidor.js";
 import { prisma } from "../lib/prisma.js";
 import { temAcessoAtivo } from "../lib/acesso.js";
@@ -83,6 +90,7 @@ beforeAll(async () => {
 
 beforeEach(() => {
   buscarAssinatura.mockReset();
+  assinaturaDoPagamento.mockReset().mockRejectedValue(new Error("a assinatura do pagamento não devia ter sido procurada"));
 });
 
 afterAll(async () => {
@@ -219,6 +227,158 @@ describe("o aviso da Stripe — o espelho", () => {
     buscarAssinatura.mockResolvedValue(naStripe(sub));
     expect((await enviar(aviso)).status).toBe(200);
     expect((await espelho(sub))?.status).toBe("active");
+  });
+});
+
+// O DINHEIRO DEVOLVIDO (etapa 4.6, sessão b). O aviso `charge.refunded` fala de uma cobrança: a
+// assinatura se acha pelo pagamento, e daí em diante é a sincronia de sempre. É o que faz o
+// reembolso dado DIRETO NO PAINEL da Stripe também cortar o acesso (decisão do operador).
+describe("o aviso da Stripe — o dinheiro devolvido", () => {
+  const avisoDeDevolucao = (pagamento: string | null): Aviso => ({
+    id: novoId("evt"),
+    type: "charge.refunded",
+    data: { object: { id: novoId("ch"), object: "charge", refunded: true, amount: 9990, amount_refunded: 9990, payment_intent: pagamento } },
+  });
+
+  it("acha a assinatura pelo PAGAMENTO e a sincroniza: encerrada e devolvida, o período deixa de contar e o acesso acaba", async () => {
+    const sub = novoId("sub");
+    buscarAssinatura.mockResolvedValue(naStripe(sub, { userId: doGate, status: "canceled" }));
+    expect((await enviar(avisoDaAssinatura(sub, "customer.subscription.deleted"))).status).toBe(200);
+    // Encerrada pelo painel, com o período pago: ainda tem acesso.
+    expect(await temAcessoAtivo(doGate)).toBe(true);
+
+    assinaturaDoPagamento.mockReset().mockResolvedValue(sub);
+    // Devolvido o dinheiro, a Stripe (lida de novo) diz: pago só até o começo do período.
+    buscarAssinatura.mockResolvedValue(naStripe(sub, { userId: doGate, status: "canceled", pagoAte: new Date(Date.now() - DIA) }));
+    const aviso = avisoDeDevolucao("pi_da_devolucao");
+    expect((await enviar(aviso)).status).toBe(200);
+
+    expect(assinaturaDoPagamento.mock.calls).toEqual([["pi_da_devolucao"]]);
+    expect(await temAcessoAtivo(doGate)).toBe(false);
+    expect(await marcado(aviso.id)).not.toBeNull();
+    await prisma.subscription.deleteMany({ where: { stripeSubscriptionId: sub } });
+  });
+
+  it("o aviso repetido não procura a assinatura de novo", async () => {
+    const sub = novoId("sub");
+    assinaturaDoPagamento.mockReset().mockResolvedValue(sub);
+    buscarAssinatura.mockResolvedValue(naStripe(sub));
+    const aviso = avisoDeDevolucao("pi_repetido");
+    await enviar(aviso);
+    await enviar(aviso);
+    expect(assinaturaDoPagamento).toHaveBeenCalledTimes(1);
+    expect(buscarAssinatura).toHaveBeenCalledTimes(1);
+  });
+
+  it("pagamento que não é de assinatura, ou cobrança sem pagamento: 200, marcado, e nenhuma assinatura é sincronizada", async () => {
+    assinaturaDoPagamento.mockReset().mockResolvedValue(null);
+    const [deOutraCoisa, semPagamento] = [avisoDeDevolucao("pi_de_outra_coisa"), avisoDeDevolucao(null)];
+    expect((await enviar(deOutraCoisa)).status).toBe(200);
+    expect((await enviar(semPagamento)).status).toBe(200);
+    expect(assinaturaDoPagamento.mock.calls).toEqual([["pi_de_outra_coisa"]]);
+    expect(buscarAssinatura).not.toHaveBeenCalled();
+    expect(await marcado(deOutraCoisa.id)).not.toBeNull();
+    expect(await marcado(semPagamento.id)).not.toBeNull();
+  });
+
+  it("a Stripe não respondeu de quem é o pagamento: 500, o aviso NÃO fica marcado — e a reentrega dá certo", async () => {
+    const sub = novoId("sub");
+    const aviso = avisoDeDevolucao("pi_que_falha");
+    assinaturaDoPagamento.mockReset().mockRejectedValueOnce(new Error("[stripe] a busca da assinatura do pagamento falhou: StripeConnectionError"));
+    const erro = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      expect((await enviar(aviso)).status).toBe(500);
+    } finally {
+      erro.mockRestore();
+    }
+    expect(await marcado(aviso.id)).toBeNull();
+    expect(buscarAssinatura).not.toHaveBeenCalled();
+
+    assinaturaDoPagamento.mockResolvedValue(sub);
+    buscarAssinatura.mockResolvedValue(naStripe(sub));
+    expect((await enviar(aviso)).status).toBe(200);
+    expect(await marcado(aviso.id)).not.toBeNull();
+    expect((await espelho(sub))?.status).toBe("active");
+  });
+
+  // A DEVOLUÇÃO QUE FALHOU DEPOIS (achado da revisão de segurança, 11/10/2026): a Stripe aceita
+  // a devolução e, dias depois, o banco a devolve — o dinheiro NÃO voltou ao aluno.
+  const avisoDaDevolucao = (type: string, status: string, pagamento: string | null = "pi_da_devolucao"): Aviso => ({ id: novoId("evt"), type, data: { object: { id: novoId("re"), object: "refund", status, amount: 9990, payment_intent: pagamento } } });
+
+  it("a devolução FALHOU: alguém é avisado, com o pagamento — e a assinatura é sincronizada (o período volta a contar como pago)", async () => {
+    const sub = novoId("sub");
+    assinaturaDoPagamento.mockReset().mockResolvedValue(sub);
+    buscarAssinatura.mockResolvedValue(naStripe(sub, { userId: doGate, status: "canceled" }));
+    const erro = vi.spyOn(console, "error").mockImplementation(() => {});
+    const registro = vi.spyOn(console, "info").mockImplementation(() => {});
+    try {
+      for (const tipo of ["refund.failed", "refund.updated", "charge.refund.updated"]) {
+        const aviso = avisoDaDevolucao(tipo, "failed");
+        expect((await enviar(aviso)).status, tipo).toBe(200);
+        expect(erro.mock.calls.flat().join(" "), tipo).toContain(`[stripe] aviso ${aviso.id} (${tipo}): uma devolução do pagamento pi_da_devolucao FALHOU`);
+      }
+    } finally {
+      erro.mockRestore();
+      registro.mockRestore();
+    }
+    expect(assinaturaDoPagamento.mock.calls).toEqual([["pi_da_devolucao"], ["pi_da_devolucao"], ["pi_da_devolucao"]]);
+    expect((await espelho(sub))?.status).toBe("canceled");
+    expect(await temAcessoAtivo(doGate)).toBe(true);
+    await prisma.subscription.deleteMany({ where: { stripeSubscriptionId: sub } });
+  });
+
+  // A Stripe entrega ao menos uma vez: a reentrega do MESMO aviso não alerta de novo (achado
+  // da revisão de segurança, segunda passada, 11/10/2026).
+  it("o aviso da devolução que falhou, entregue DUAS vezes: o alerta sai uma vez só", async () => {
+    assinaturaDoPagamento.mockReset().mockResolvedValue(null);
+    const erro = vi.spyOn(console, "error").mockImplementation(() => {});
+    const registro = vi.spyOn(console, "info").mockImplementation(() => {});
+    try {
+      const aviso = avisoDaDevolucao("refund.failed", "failed");
+      expect((await enviar(aviso)).status).toBe(200);
+      expect((await enviar(aviso)).status).toBe(200);
+      expect(erro.mock.calls.flat().filter((linha) => String(linha).includes("FALHOU"))).toHaveLength(1);
+    } finally {
+      erro.mockRestore();
+      registro.mockRestore();
+    }
+  });
+
+  // Se o processamento falhar, o aviso não fica marcado e a Stripe entrega de novo: o alerta sai
+  // nessa segunda vez, e não se perde.
+  it("a devolução falhou e a Stripe não respondeu de quem é o pagamento: 500 — e o alerta sai na reentrega", async () => {
+    assinaturaDoPagamento.mockReset().mockRejectedValueOnce(new Error("[stripe] a busca do pagamento falhou: StripeConnectionError")).mockResolvedValue(null);
+    const erro = vi.spyOn(console, "error").mockImplementation(() => {});
+    const registro = vi.spyOn(console, "info").mockImplementation(() => {});
+    try {
+      const aviso = avisoDaDevolucao("refund.failed", "failed");
+      expect((await enviar(aviso)).status).toBe(500);
+      expect((await enviar(aviso)).status).toBe(200);
+      expect(erro.mock.calls.flat().filter((linha) => String(linha).includes("FALHOU"))).toHaveLength(1);
+    } finally {
+      erro.mockRestore();
+      registro.mockRestore();
+    }
+  });
+
+  it("a devolução que só mudou de situação SEM falhar: nenhum alerta", async () => {
+    assinaturaDoPagamento.mockReset().mockResolvedValue(null);
+    const erro = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      expect((await enviar(avisoDaDevolucao("refund.updated", "succeeded"))).status).toBe(200);
+      expect((await enviar(avisoDaDevolucao("charge.refund.updated", "pending"))).status).toBe(200);
+      expect(erro).not.toHaveBeenCalled();
+    } finally {
+      erro.mockRestore();
+    }
+  });
+
+  it("os outros avisos nunca procuram assinatura por pagamento", async () => {
+    const sub = novoId("sub");
+    buscarAssinatura.mockResolvedValue(naStripe(sub));
+    expect((await enviar(avisoDaAssinatura(sub))).status).toBe(200);
+    expect((await enviar({ id: novoId("evt"), type: "charge.succeeded", data: { object: { id: "ch_1", object: "charge", payment_intent: "pi_1" } } })).status).toBe(200);
+    expect(assinaturaDoPagamento).not.toHaveBeenCalled();
   });
 });
 

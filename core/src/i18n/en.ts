@@ -441,7 +441,59 @@ export const en: Dict = {
       salvando: "Saving…",
       cartaoAtualizado: "Card updated.",
       cartaoAtualizadoEPago: "Card updated and payment confirmed.",
-      erroDoCartao: "We couldn't save your card. Check the details and try again."
+      erroDoCartao: "We couldn't save your card. Check the details and try again.",
+      // Rascunho do agente: o operador vai revisar o inglês com o Antigravity (pendência P72).
+      plano: {
+        descricao: "Choose how you'd like to pay. Both plans give you the same access.",
+        atual: "Your current plan",
+        paraOAnual: "The change takes effect right away. Today you pay {valor}, with the rest of your paid month already deducted. Your next charge is on {data}.",
+        mudarParaOAnual: "Switch to Yearly",
+        agoraAnual: "Done. You're now on the Yearly plan.",
+        paraOMensal: "The change takes effect on {data}, when the year you've already paid for ends. Nothing changes and nothing is charged until then. After that, {valor} per month.",
+        mudarParaOMensal: "Switch to Monthly",
+        mudaParaOMensal: "Your plan changes to Monthly on {data}.",
+        continuarNoAnual: "Stay on Yearly",
+        continuaNoAnual: "Done. You're staying on the Yearly plan.",
+        renovacaoParada: "Your subscription ends on {data}. To change plans, keep your subscription first.",
+        atrasada: "We couldn't charge your card. Update it before changing plans.",
+        cartaoRecusado: "Your card was declined, so your plan hasn't changed. Update your card and try again.",
+        erro: "We couldn't change your plan. Try again.",
+
+      },
+      cancelamento: {
+        descricao: "You can cancel anytime. Your progress is saved: if you come back, you pick up where you left off.",
+        pergunta: "Why are you canceling? (optional)",
+        motivos: {
+          caro: "It's too expensive for me right now",
+          "sem-tempo": "I don't have time to study",
+          "ja-aprendi": "I've learned what I needed",
+          "sem-conteudo": "I didn't find the content I was looking for",
+          outro: "Another reason"
+        },
+        contarMais: "Want to tell us more?",
+        pararTitulo: "Stop renewal and keep access",
+        acessoAte: "You keep access until {data}. After that, you won't be charged again.",
+        pararBotao: "Stop renewal",
+        reembolsoTitulo: "Cancel and get my money back",
+        reembolsoTexto: "We refund {valor} to the card you used, and your access ends now. You can request this until {data}.",
+        reembolsoBotao: "Cancel and refund {valor}",
+        voltar: "Go back without canceling",
+        parou: "Subscription canceled. You keep access until {data}. Changed your mind? Until then, just click Keep my subscription.",
+        reembolsado: "Subscription canceled. We've refunded {valor} to the card you used. It usually shows up on your statement within 10 business days, depending on your bank.",
+        mantida: "Done. Your subscription continues.",
+        erroAoManter: "We couldn't keep your subscription. Try again.",
+        prazoAcabou: "The 7-day refund period has ended. You can still stop the renewal.",
+        terminaAgora: "Your subscription ends now, and we won't try the pending charge again.",
+        trocaDesfeita: "Your switch to the Monthly plan will also be undone.",
+        devolucaoFalhou: "Your subscription was canceled, but we couldn't refund you right now. We've been notified and will sort it out. You don't need to do anything.",
+        erro: "We couldn't cancel your subscription. Try again."
+      },
+      banco: {
+        confirmando: "Your bank asked you to confirm this charge. Complete it in your bank's window.",
+        naoConcluiuNoPlano: "The bank confirmation wasn't completed. Your plan hasn't changed and you weren't charged.",
+        naoConcluiuNoCartao: "Card updated. The pending charge still needs your bank's confirmation.",
+        confirmar: "Confirm payment"
+      }
     },
     aula: {
       conteudoDoCurso: "Course content",

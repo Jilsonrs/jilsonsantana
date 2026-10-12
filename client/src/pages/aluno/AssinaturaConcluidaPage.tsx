@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { PageContainer, PageHeader } from "@/components/layout/PageLayout";
 import { Button } from "@/components/ui/button";
-import { useSituacaoDaAssinatura } from "@/lib/assinar";
+import { REATIVOU, useSituacaoDaAssinatura } from "@/lib/assinar";
 import { useT } from "@/lib/language";
 
 /**
@@ -11,7 +11,9 @@ import { useT } from "@/lib/language";
  * diz que a assinatura valeu é o SERVIDOR — o gate, que lê o espelho gravado pelo aviso da
  * Stripe —, nunca "o pagamento passou no navegador". Por isso esta tela pergunta de novo até a
  * resposta ser sim. Se demorar, diz com calma que continua conferindo, e continua.
- * O que a Stripe acrescenta ao endereço na volta não é lido: não é ele que libera nada.
+ * O que a Stripe acrescenta ao endereço na volta não é lido: não é ele que libera nada. Do
+ * endereço sai só o TÍTULO — quem veio de "Reativar assinatura" continua lendo isso (decisão do
+ * operador, 11/10/2026).
  */
 export function AssinaturaConcluidaPage({ conferirACada = 2000, demora = 20_000 }: { conferirACada?: number; demora?: number }) {
   const t = useT();
@@ -19,6 +21,8 @@ export function AssinaturaConcluidaPage({ conferirACada = 2000, demora = 20_000 
   const situacao = useSituacaoDaAssinatura(conferirACada);
   const temAcesso = situacao.data?.temAcesso === true;
   const [demorou, setDemorou] = useState(false);
+  const [doEndereco] = useSearchParams();
+  const reativou = doEndereco.get(REATIVOU) === "1";
 
   // Efeito: é um relógio — "está demorando" depende do tempo que passou, não de dado nenhum.
   useEffect(() => {
@@ -34,7 +38,7 @@ export function AssinaturaConcluidaPage({ conferirACada = 2000, demora = 20_000 
 
   return (
     <PageContainer>
-      <PageHeader title={t.assinar.titulo} />
+      <PageHeader title={reativou ? t.assinar.tituloReativar : t.assinar.titulo} />
       {temAcesso ? (
         <div className="space-y-4">
           <p role="status" className="text-foreground">

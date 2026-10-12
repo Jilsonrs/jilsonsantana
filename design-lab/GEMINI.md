@@ -140,6 +140,8 @@ servidores (§5); o React responde em `localhost:5173`, a home pública em `loca
 | `/aluno/conta` | `client/src/pages/AccountPage.tsx` |
 | `/aluno/conta/faturamento` | **Faturamento e Assinatura** (11/10, Fase 4 — o lugar e o desenho são decisões do operador): `client/src/pages/aluno/FaturamentoPage.tsx` + `client/src/components/faturamento/BlocoDoPlano.tsx` e `BlocoDoCartao.tsx`. Abre pelo menu da foto e pela coluna de Minha conta. Estrutura pronta, acabamento seu (fila, item 34). |
 | `/aluno/conta/faturamento/cartao` | **Trocar cartão** (11/10): `client/src/pages/aluno/TrocarCartaoPage.tsx` + `client/src/components/faturamento/FormularioDoCartao.tsx`. O campo do cartão é da Stripe (fila, item 34). |
+| `/aluno/conta/faturamento/plano` | **Mudar de plano** (11/10): `client/src/pages/aluno/MudarDePlanoPage.tsx` + `client/src/components/faturamento/OfertaDePlano.tsx` e `TrocaMarcada.tsx` (esta aparece também no resumo). Estrutura pronta, acabamento seu (fila, item 36). |
+| `/aluno/conta/faturamento/cancelar` | **Cancelar assinatura** (11/10): `client/src/pages/aluno/CancelarPage.tsx` + `client/src/components/faturamento/MotivoDoCancelamento.tsx` e `SaidaDoCancelamento.tsx`. Os botões "Cancelar assinatura" e "Manter a assinatura" do resumo: `components/faturamento/AcoesDoPlano.tsx`. Estrutura pronta, acabamento seu (fila, item 35). |
 | `/aluno/em-andamento` | **Em andamento** (29/09): `client/src/pages/aluno/EmAndamentoPage.tsx` — é onde "Meus estudos" abre. **Só o título**, por decisão do operador, até o progresso chegar (Fase 5). Meus estudos **não tem tela de resumo**: a coluna do nível 2 é o guia. |
 | `/aluno/notificacoes` | **Notificações — Ver todas** (04/10, decisões do operador): `client/src/pages/aluno/NotificacoesPage.tsx` — todas as notificações, com o texto inteiro e a data. Chega-se pelo sino do topo (`components/notificacoes/Sino.tsx`). Estrutura pronta, acabamento seu (fila, item 24). |
 | `/aluno/salvos` | **Salvos** (03/10, decisão do operador, "como no LinkedIn"): `client/src/pages/aluno/SalvosPage.tsx` — os cursos e as aulas salvos para depois, com o botão de tirar (o mesmo `BotaoSalvar`). Estrutura pronta, acabamento seu (fila, item 19). |
@@ -527,13 +529,47 @@ exceto o item 4, que é página pública.
     do operador, 11/10: fica a dela).
     **Têm teste, mantenha:** o alerta da cobrança que falhou e as mensagens de erro são
     `role="alert"`; as confirmações são `role="status"`; o botão do cartão só aparece quando o
-    servidor diz que a assinatura aceita cartão; o botão Salvar trava enquanto envia. **Vêm
-    na próxima sessão** (mesmos arquivos): os botões Mudar de plano, Manter a assinatura e
-    Cancelar assinatura, com a tela de cada um.
+    servidor diz que a assinatura aceita cartão; o botão Salvar trava enquanto envia. **Os
+    botões Manter a assinatura e Cancelar assinatura chegaram (item 35), e Mudar de plano também
+    (item 36).**
     **Mudou no menu (11/10):** na coluna do nível 2 fica **um item aceso por vez** — o mais
     específico (`itemAceso`, em `lib/navigation.ts`); antes "Seus dados" ficava aceso junto com
     "Faturamento e Assinatura". Os itens da coluna da conta ganharam `aria-current`, como os das
     outras colunas. As suas classes do item aceso não mudaram.
+
+35. **Cancelar assinatura, e os botões no resumo** *(11/10, Fase 4, etapa 4.6 — textos
+    aprovados pelo operador em português; o inglês ele vai revisar COM VOCÊ: `core/src/i18n/en.ts`,
+    em `app.faturamento.plano`, `.cancelamento` e `.banco`)*. **No resumo** (bloco "Seu plano"):
+    os botões "Manter a assinatura" e "Cancelar assinatura" (`AcoesDoPlano.tsx`), cada um só
+    quando o servidor diz que cabe. **A tela de cancelar** (`…/faturamento/cancelar`): a
+    descrição, os cinco motivos (opcionais, botões de rádio nativos — não há componente de rádio
+    em `components/ui/`) e o campo "Quer contar mais?"; depois, **a saída**: um cartão só (texto
+    e botão), ou — nos 7 primeiros dias — **dois cartões lado a lado**, cada um com título,
+    texto e botão ("Parar a renovação e continuar" e "Cancelar e receber o dinheiro de volta");
+    por fim, "Voltar sem cancelar". Depois de cancelar, a tela mostra só a confirmação e o botão
+    de volta ao resumo. **Um caso raro (11/10):** se a assinatura foi cancelada e a devolução
+    falhou, a tela mostra só a frase da falha (`role="alert"`) e o botão de volta ao resumo.
+    Estrutura crua, acabamento seu.
+    **Tom calmo, por decisão do operador:** o botão de cancelar fica sempre à vista, e nenhum
+    dos dois cartões pode parecer "o errado" — são duas saídas iguais.
+    **Têm teste, mantenha:** as falhas são `role="alert"` e as confirmações `role="status"`; os
+    títulos dos dois cartões são títulos de verdade (`<h2>`); os motivos são `radio` com o texto
+    no próprio rótulo; os botões travam enquanto envia e mostram "Processando…".
+
+36. **Mudar de plano** *(11/10, Fase 4, etapa 4.6 — textos aprovados pelo operador em
+    português; o inglês ele revisa com você, como no item 35)*. **A tela**
+    (`…/faturamento/plano`): o bloco "Seu plano" com o plano de hoje e a etiqueta "Seu plano
+    atual"; embaixo, **o cartão do plano novo** (`OfertaDePlano.tsx`) — o nome e o preço, a
+    frase com o valor de hoje e as datas, e o botão "Mudar para o Anual" / "Mudar para o
+    Mensal". Quando a troca fica marcada para o fim do ano, aparece `TrocaMarcada.tsx` (a
+    frase com a data e o botão "Continuar no Anual") — o mesmo bloco aparece no resumo, dentro
+    de "Seu plano". No resumo entrou também o botão "Mudar de plano" (`AcoesDoPlano.tsx`).
+    Estrutura crua, acabamento seu.
+    **A janela do banco NÃO é nossa:** quando o banco pede confirmação, quem abre a janela por
+    cima da tela é a Stripe; a tela só mostra uma frase enquanto ela está aberta.
+    **Têm teste, mantenha:** o valor de "hoje você paga" aparece ANTES do botão, no mesmo
+    cartão; as falhas são `role="alert"`, as confirmações e os avisos `role="status"`; o botão
+    trava enquanto envia e mostra "Processando…".
 
 > **Fora do seu trabalho, para não confundir:** o Bunny ganhou **Live Stream** em acesso
 > antecipado (29/09). É só avaliação depois da Fase 3, **não** é tela a desenhar (`docs/bunny.md`

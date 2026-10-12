@@ -1,9 +1,11 @@
 // @vitest-environment jsdom
+import { useSyncExternalStore } from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { screen, fireEvent, within } from "@testing-library/react";
+import { screen, fireEvent, within, act, waitFor } from "@testing-library/react";
 import { renderWithProviders } from "@/test-utils";
 import { Role } from "@jilson/core";
 import { Route } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 const useSession = vi.fn();
 const signOut = vi.fn();
@@ -217,6 +219,96 @@ describe("Layout — o menu da conta", () => {
     renderWithProviders(<Layout />, { route: "/aluno/conta" });
 
     expect(screen.getByRole("link", { name: "Seus dados" })).toBeTruthy();
+  });
+});
+
+// "SAIR" ESQUECE O QUE AS TELAS GUARDARAM (decisão do operador, 11/10/2026 — achado da revisão de
+// segurança da etapa 4.6). As leituras ficam guardadas depois de a tela fechar, e a chave delas
+// não leva a conta: sem a limpeza, quem entra em seguida na MESMA aba vê por instantes o que era
+// da conta anterior. O teste usa um cliente de leituras só para as duas telas, como a aba.
+const O_QUE_A_TELA_GUARDOU = ["o-que-a-tela-guardou"];
+
+function TelaQueGuarda() {
+  const { data } = useQuery({ queryKey: O_QUE_A_TELA_GUARDOU, queryFn: () => Promise.resolve("o progresso da Ana") });
+  return <p>{data ?? "lendo"}</p>;
+}
+
+function QuemEntraDepois() {
+  const guardado = useQueryClient().getQueryData<string>(O_QUE_A_TELA_GUARDOU);
+  return <p>{guardado ? `ainda guardado: ${guardado}` : "nada guardado da conta anterior"}</p>;
+}
+
+describe("Layout — Sair", () => {
+  it("esquece o que as telas guardaram: quem entra depois na mesma aba não vê nada da conta anterior", async () => {
+    useSession.mockReturnValue({ data: { user: { role: Role.MEMBER, name: "Ana Souza", email: "ana@exemplo.com" } } });
+    signOut.mockResolvedValue(undefined);
+    renderWithProviders(<Layout />, {
+      route: "/aluno/conta",
+      path: "/aluno",
+      filhas: <Route path="conta" element={<TelaQueGuarda />} />,
+      extraRoutes: [{ path: "/login", element: <QuemEntraDepois /> }],
+    });
+    expect(await screen.findByText("o progresso da Ana")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "Sair" }));
+
+    expect(await screen.findByText("nada guardado da conta anterior")).toBeTruthy();
+    expect(signOut).toHaveBeenCalledTimes(1);
+  });
+});
+
+// A CONTA DA SESSÃO MUDOU SEM "SAIR" (achado da revisão de segurança da etapa 4.6, 11/10/2026): a
+// pessoa entra com outra conta em OUTRA aba, e esta continua aberta. A sessão daqui é uma coisa
+// viva (muda sem a tela ser montada de novo): o teste a troca como o navegador trocaria.
+describe("Layout — a conta da sessão mudou sem 'Sair'", () => {
+  type Sessao = { user: { id: string; role: string; name: string; email: string } };
+  const ANA: Sessao = { user: { id: "conta-da-ana", role: Role.MEMBER, name: "Ana Souza", email: "ana@exemplo.com" } };
+  const BIA: Sessao = { user: { id: "conta-da-bia", role: Role.MEMBER, name: "Bia Lima", email: "bia@exemplo.com" } };
+  let sessao: Sessao = ANA;
+  const ouvintes = new Set<() => void>();
+  const trocarSessao = (nova: Sessao) =>
+    act(() => {
+      sessao = nova;
+      ouvintes.forEach((avisar) => avisar());
+    });
+  const leituras = vi.fn(() => Promise.resolve(`o progresso de ${sessao.user.name}`));
+  function TelaAberta() {
+    // `staleTime: Infinity`: sozinha, esta leitura NUNCA seria refeita — só a limpeza a refaz.
+    const { data } = useQuery({ queryKey: O_QUE_A_TELA_GUARDOU, queryFn: leituras, staleTime: Infinity });
+    return <p>{data ?? "lendo"}</p>;
+  }
+  const abrir = () => renderWithProviders(<Layout />, { route: "/aluno/conta", path: "/aluno", filhas: <Route path="conta" element={<TelaAberta />} /> });
+
+  beforeEach(() => {
+    sessao = ANA;
+    ouvintes.clear();
+    leituras.mockClear();
+    useSession.mockImplementation(() => ({
+      data: useSyncExternalStore(
+        (avisar) => {
+          ouvintes.add(avisar);
+          return () => ouvintes.delete(avisar);
+        },
+        () => sessao,
+      ),
+    }));
+  });
+
+  it("outra conta entrou: o que era da anterior é esquecido, e a tela aberta lê de novo — o que aparece é da conta NOVA", async () => {
+    abrir();
+    expect(await screen.findByText("o progresso de Ana Souza")).toBeTruthy();
+    trocarSessao(BIA);
+    expect(await screen.findByText("o progresso de Bia Lima")).toBeTruthy();
+    expect(screen.queryByText("o progresso de Ana Souza")).toBeNull();
+  });
+
+  it("a MESMA conta, só relida (a sessão renovada): nada é esquecido nem lido de novo", async () => {
+    abrir();
+    expect(await screen.findByText("o progresso de Ana Souza")).toBeTruthy();
+    trocarSessao({ user: { ...ANA.user, name: "Ana S." } });
+    await waitFor(() => expect(screen.getAllByText("Ana S.").length).toBeGreaterThan(0));
+    expect(screen.getByText("o progresso de Ana Souza")).toBeTruthy();
+    expect(leituras).toHaveBeenCalledTimes(1);
   });
 });
 

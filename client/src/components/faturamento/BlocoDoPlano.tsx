@@ -1,6 +1,8 @@
 import { Plano, SituacaoDoFaturamento } from "@jilson/core";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageSection } from "@/components/layout/PageLayout";
+import { AcoesDoPlano } from "@/components/faturamento/AcoesDoPlano";
+import { TrocaMarcada } from "@/components/faturamento/TrocaMarcada";
 import { dinheiro } from "@/lib/assinar";
 import { dataPorExtenso, type AssinaturaComAcesso } from "@/lib/faturamento";
 import { useIdioma, useT } from "@/lib/language";
@@ -42,6 +44,8 @@ export function BlocoDoPlano({ assinatura }: { assinatura: AssinaturaComAcesso }
               {t.faturamento.atrasada}
             </p>
           )}
+          <TrocaMarcada troca={assinatura.trocaMarcada} />
+          <AcoesDoPlano assinatura={assinatura} />
         </CardContent>
       </Card>
     </PageSection>

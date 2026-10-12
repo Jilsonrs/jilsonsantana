@@ -92,6 +92,8 @@ export type SincroniaDaConta = { temAcesso: boolean; assinaturas: AssinaturaConf
  */
 export const TELA_DO_FATURAMENTO = "/aluno/conta/faturamento";
 export const TELA_DE_TROCAR_O_CARTAO = "/aluno/conta/faturamento/cartao";
+export const TELA_DE_CANCELAR = "/aluno/conta/faturamento/cancelar";
+export const TELA_DE_MUDAR_DE_PLANO = "/aluno/conta/faturamento/plano";
 
 /** O cartão guardado, como a tela o mostra: NUNCA o número — a bandeira, os 4 últimos e a validade. */
 export type CartaoDaAssinatura = { bandeira: string; final: string; mes: number; ano: number };
@@ -130,7 +132,95 @@ export type MinhaAssinatura =
       cartao: CartaoDaAssinatura | null;
       /** Esta assinatura ainda pode ser cobrada: aceita cartão novo. A encerrada de vez, com dias pagos, não. */
       aceitaCartao: boolean;
+      /** Renova, e a pessoa pode PARAR a renovação (o acesso continua até o fim do período pago). */
+      podeParar: boolean;
+      /** A renovação está parada e ainda dá para voltar atrás, sem pagar nada. A encerrada de vez, não. */
+      podeManter: boolean;
+      /**
+       * A cobrança está atrasada: cancelar aqui TERMINA a assinatura na hora (não há período pago a
+       * manter) e a cobrança em aberto não é mais tentada — decisão do operador, 11/10/2026.
+       */
+      terminaAoCancelar: boolean;
+      /**
+       * A saída do reembolso: quanto volta e até quando dá para pedir (em ISO). Só dentro do prazo
+       * e com dinheiro a devolver — a assinatura de cortesia nunca tem. Quem confere é o servidor,
+       * de novo, na hora da ação.
+       */
+      reembolso: { centavos: number; moeda: string; ate: string } | null;
+      /** Dá para mudar de plano agora (renova, não está atrasada e não há troca já marcada). */
+      podeMudarDePlano: boolean;
+      /** A troca de plano MARCADA para o fim do período pago (anual → mensal): para qual plano e quando (ISO). Dá para desistir. */
+      trocaMarcada: { plano: Plano; em: string } | null;
     };
+
+/**
+ * Os motivos de cancelamento (decisão do operador, 11/10/2026: a lista curta, e escolher é
+ * OPCIONAL). O valor é o que fica guardado junto da assinatura, na Stripe; o texto que o aluno
+ * lê sai do dicionário.
+ */
+export const MOTIVOS_DE_CANCELAMENTO = ["caro", "sem-tempo", "ja-aprendi", "sem-conteudo", "outro"] as const;
+export type MotivoDoCancelamento = (typeof MOTIVOS_DE_CANCELAMENTO)[number];
+
+/** O tamanho do "Quer contar mais?": é uma frase ou duas, não uma carta. */
+export const TAMANHO_DO_COMENTARIO = 500;
+
+/**
+ * O prazo do reembolso, em dias, contados do PRIMEIRO DIA da assinatura — trocar de plano não
+ * recomeça (decisões do operador, 10/10/2026; é o direito de arrependimento do CDC, art. 49).
+ * Os 14 dias de fora do Brasil chegam com a cobrança em dólar (etapa 4.8): até lá só existe este.
+ */
+export const PRAZO_DO_REEMBOLSO_EM_DIAS = 7;
+
+/** Resposta de `POST /api/billing/minha-assinatura/reembolso`: quanto foi devolvido. O acesso terminou. */
+export type ReembolsoFeito = { centavos: number; moeda: string };
+
+/**
+ * Resposta de `POST /api/billing/minha-assinatura/cancelar`: a renovação parou, e até quando há
+ * acesso (o fim do período já pago). A data vem em ISO. Com a cobrança atrasada, a assinatura
+ * termina na hora: `terminou`, e não há data.
+ */
+export type RenovacaoParada = {
+  acessoAte: string | null;
+  /** A cobrança estava atrasada: a assinatura TERMINOU agora, sem acesso — e não "parou de renovar". */
+  terminou?: boolean;
+};
+
+/**
+ * Resposta de `GET /api/billing/minha-assinatura/plano`: a troca de plano que esta conta pode
+ * fazer AGORA — ou nenhuma (decisões do operador, 11/10/2026).
+ *   - para o ANUAL vale na hora, e o ANO COMEÇA NO DIA DA TROCA: quanto se paga hoje (a conta é
+ *     da Stripe: o anual inteiro, menos o que sobrou do mês pago) e quando é a cobrança
+ *     seguinte. O VALOR MOSTRADO É O COBRADO: ao confirmar, o site devolve o valor que mostrou
+ *     (`hoje.centavos`) e a cobrança sai EXATAMENTE nele, num clique só — mesmo que a pessoa
+ *     tenha demorado. `valeAte` (ISO) é até quando isso vale: passou, a tela leva a pessoa ao
+ *     Início, e na volta ela vê o valor novo (decisão do operador, 11/10/2026).
+ *   - para o MENSAL vale no fim do período já pago: quando, e quanto passa a custar por mês.
+ */
+export type TrocaDePlano =
+  | { para: "anual"; quando: "agora"; preco: { centavos: number; moeda: string }; hoje: { centavos: number; moeda: string }; proximaEm: string | null; valeAte: string }
+  | { para: "mensal"; quando: "fim-do-periodo"; preco: { centavos: number; moeda: string }; em: string };
+export type TrocaDisponivel = { troca: TrocaDePlano | null };
+
+/**
+ * Resposta de `POST /api/billing/minha-assinatura/plano`: `trocado` (vale agora) · `confirmar`
+ * (o banco pediu uma confirmação: o site a completa com este segredo, e a troca só vale depois) ·
+ * `marcado` (vale no fim do período pago, na data — ISO).
+ */
+export type PlanoMudado = { estado: "trocado" } | { estado: "confirmar"; segredo: string } | { estado: "marcado"; em: string };
+
+/**
+ * Resposta de `POST /api/billing/minha-assinatura/plano/desistir`. `trocado: true`: não deu para
+ * desistir — o pagamento da troca se completou no mesmo instante, e o plano mudou.
+ */
+export type TrocaDesfeita = {
+  trocado: boolean;
+  /**
+   * Em que plano a assinatura está AGORA, relido pelo servidor. É por ele que a tela decide o que
+   * dizer depois de uma confirmação do banco que não voltou: se já é o plano pedido, o pagamento
+   * passou — e ela nunca diz "nada foi cobrado".
+   */
+  plano?: Plano | null;
+};
 
 /** Resposta de `POST /api/billing/cartao`: o segredo com que o campo da Stripe guarda o cartão novo. */
 export type TrocaDeCartaoPreparada = { segredo: string };
@@ -139,4 +229,9 @@ export type TrocaDeCartaoPreparada = { segredo: string };
  * Resposta de `POST /api/billing/cartao/aplicar`: o cartão que passou a valer na assinatura.
  * `pagou`: a cobrança estava atrasada, e o cartão novo pagou a fatura em aberto na hora.
  */
-export type CartaoTrocado = { cartao: CartaoDaAssinatura | null; pagou: boolean };
+export type CartaoTrocado = {
+  cartao: CartaoDaAssinatura | null;
+  pagou: boolean;
+  /** O banco pediu uma confirmação para a cobrança em aberto: o site a completa com este segredo. */
+  confirmar?: string | null;
+};

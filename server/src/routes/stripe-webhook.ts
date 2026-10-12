@@ -32,6 +32,10 @@ router.post("/stripe/webhook", express.raw({ type: "application/json" }), async 
     return;
   }
   const desfecho = await processarAviso(aviso);
+  // Precisa de gente: a devolução que falhou é dinheiro que NÃO voltou. Uma vez por aviso — o
+  // repetido (a reentrega) não alerta de novo; e se o processamento falhar, a Stripe entrega de
+  // novo e o alerta sai então.
+  if (aviso.devolucaoFalhou && desfecho.resultado !== "repetido") console.error(`[stripe] aviso ${aviso.id} (${aviso.tipo}): uma devolução do pagamento ${aviso.pagamento ?? "?"} FALHOU — o dinheiro não voltou ao aluno; conferir e devolver pelo painel da Stripe`);
   if (desfecho.resultado === "sem-conta") {
     // Assinatura sem conta na escola: em voz alta. Se ela dá acesso, há alguém PAGANDO e trancado
     // fora (achado P1 da revisão) — o force-sync (etapa 4.4) conserta depois que a conta existir.

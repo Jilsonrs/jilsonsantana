@@ -1,0 +1,136 @@
+import Stripe from "stripe";
+import { erroSemMensagem, stripe } from "./stripe.js";
+import { cobrancaDoPagamento, pagamentosDaFatura } from "./stripe-devolucao.js";
+import { paraMotivoNaStripe, type MotivoDado } from "./stripe-assinatura.js";
+
+// O REEMBOLSO (Fase 4, etapa 4.6, sessão b — billing.md → Reembolso). A terceira parte da nossa
+// fronteira com a Stripe: o que foi pago numa assinatura, encerrá-la na hora e devolver o
+// dinheiro. Decisões do operador (10 e 11/10/2026): o reembolso devolve TUDO o que foi pago
+// naquela assinatura (quem trocou de plano no prazo recebe as duas cobranças) e corta o acesso na
+// hora. Quem decide SE pode (o prazo, de quem é) é `minha-assinatura.ts`; aqui é só a ida à
+// Stripe, e toda ida sobe por `erroSemMensagem`.
+// `[FATO — medido na área restrita, 11/10/2026]` a fatura devolvida continua `paid`; a cobrança
+// é que diz quanto voltou; devolver de novo o que já voltou é recusado (`charge_already_refunded`);
+// a mesma chave de repetição devolve a MESMA devolução; encerrar na hora sem crédito não gera
+// fatura nova; a assinatura de cortesia tem fatura paga de valor zero e NENHUM pagamento.
+
+/** Um pagamento de uma fatura desta assinatura: quanto cobrou e quanto disso já voltou. */
+export type Pagamento = { pagamentoId: string; centavos: number; devolvido: number };
+
+/** Tudo o que foi pago numa assinatura. `moeda` vazia: nada foi pago (a cortesia). */
+export type OQueFoiPago = { moeda: string | null; pagamentos: Pagamento[] };
+
+/** Quanto ainda há a devolver: o que foi cobrado, menos o que já voltou. Função pura. */
+export function aDevolver(pago: OQueFoiPago): number {
+  return pago.pagamentos.reduce((soma, p) => soma + Math.max(0, p.centavos - p.devolvido), 0);
+}
+
+/**
+ * Tudo o que foi PAGO nesta assinatura: as faturas pagas dela (até 100 — uma por período, mais a
+ * da troca de plano) e a cobrança de cada pagamento. É daqui que saem o valor mostrado na tela e
+ * o que a operação devolve: o mostrado é o devolvido.
+ * DA MAIS ANTIGA PARA A MAIS NOVA (achado da revisão de segurança, 11/10/2026): é a ordem em que
+ * a operação devolve. O espelho deixa de dar acesso quando a ÚLTIMA fatura volta por inteiro; se
+ * ela voltasse primeiro e a seguinte falhasse, a pessoa ficaria sem acesso, com dinheiro por
+ * receber e sem poder repetir.
+ */
+export async function buscarOQueFoiPago(assinaturaId: string): Promise<OQueFoiPago> {
+  let faturas: Stripe.Invoice[];
+  try {
+    faturas = (await stripe().invoices.list({ subscription: assinaturaId, status: "paid", limit: 100, expand: ["data.payments"] })).data;
+  } catch (erro) {
+    throw erroSemMensagem(erro, "a lista das faturas pagas da assinatura");
+  }
+  const pagamentos: Pagamento[] = [];
+  let moeda: string | null = null;
+  for (const fatura of [...faturas].sort((a, b) => a.created - b.created)) {
+    if (fatura.amount_paid <= 0) continue;
+    for (const pagamentoId of pagamentosDaFatura(fatura)) {
+      pagamentos.push({ pagamentoId, ...(await cobrancaDoPagamento(pagamentoId)) });
+      moeda ??= fatura.currency;
+    }
+  }
+  return { moeda, pagamentos };
+}
+
+/**
+ * ENCERRA a assinatura na hora — é o que o reembolso faz, e nunca "parar a renovação": sem
+ * crédito proporcional e sem fatura nova (o dinheiro volta pela devolução, por inteiro). O motivo
+ * vai junto; o motivo exato da escola (`metadata.motivo`) é gravado depois e, se falhar, é só
+ * aviso: a assinatura encerrada ainda aceita essa gravação, e ela não segura um reembolso.
+ */
+export async function cancelarNaHora(assinaturaId: string, dado: MotivoDado): Promise<void> {
+  const { cancellation_details, metadata } = paraMotivoNaStripe(dado);
+  try {
+    await stripe().subscriptions.cancel(assinaturaId, { prorate: false, invoice_now: false, ...(cancellation_details ? { cancellation_details } : {}) });
+  } catch (erro) {
+    throw erroSemMensagem(erro, "o encerramento da assinatura");
+  }
+  if (!metadata) return;
+  try {
+    await stripe().subscriptions.update(assinaturaId, { metadata });
+  } catch (erro) {
+    console.warn(`[stripe] reembolso: o motivo da assinatura ${assinaturaId} não foi gravado: ${erroSemMensagem(erro, "a gravação do motivo").message}`);
+  }
+}
+
+/** De quem é a devolução — vai gravado nela, para quem olhar o painel da Stripe. */
+export type DonoDaDevolucao = { userId: string; assinaturaId: string };
+
+/** O pedido de devolução que vai à Stripe: o que FALTA voltar deste pagamento. Função pura, com teste. */
+export function paraPedidoDeDevolucao(pagamento: Pagamento, dono: DonoDaDevolucao): Stripe.RefundCreateParams {
+  return {
+    payment_intent: pagamento.pagamentoId,
+    amount: pagamento.centavos - pagamento.devolvido,
+    reason: "requested_by_customer",
+    metadata: { para: "reembolso", userId: dono.userId, assinatura: dono.assinaturaId },
+  };
+}
+
+/** De quantos em quantos minutos a chave de repetição muda. */
+const JANELA_DA_CHAVE = 5 * 60 * 1000;
+
+/**
+ * A chave de repetição da devolução: do pagamento, do quanto já tinha voltado e da JANELA de 5
+ * minutos. A Stripe guarda por 24 h a primeira resposta de cada chave — inclusive a FALHA (achado
+ * da revisão de segurança, 11/10/2026): com uma chave fixa, "pode repetir" devolveria o mesmo
+ * erro o dia inteiro. Com a janela, o pedido repetido em seguida recebe a mesma devolução, e o de
+ * minutos depois é um pedido novo — que a Stripe não deixa passar do que foi cobrado. Função pura.
+ */
+export function chaveDaDevolucao(pagamento: Pagamento, agora: Date = new Date()): string {
+  return `reembolso-${pagamento.pagamentoId}-${pagamento.devolvido}-${Math.floor(agora.getTime() / JANELA_DA_CHAVE)}`;
+}
+
+/**
+ * Devolve o que falta deste pagamento. REPETIR NÃO DEVOLVE DUAS VEZES: a chave de repetição
+ * (`chaveDaDevolucao`), a trava da assinatura e a própria Stripe, que não devolve mais do que
+ * cobrou — o que ela diz que já voltou por inteiro conta como feito. Devolução que nasce `failed`
+ * sobe; a que nasce `pending` vale, e se falhar depois quem avisa é o aviso da Stripe.
+ */
+export async function devolver(pagamento: Pagamento, dono: DonoDaDevolucao): Promise<void> {
+  if (pagamento.centavos - pagamento.devolvido <= 0) return;
+  try {
+    const devolucao = await stripe().refunds.create(paraPedidoDeDevolucao(pagamento, dono), { idempotencyKey: chaveDaDevolucao(pagamento) });
+    if (devolucao.status === "failed" || devolucao.status === "canceled") throw new Error(`[stripe] a devolução nasceu ${devolucao.status}`);
+  } catch (erro) {
+    if (erro instanceof Stripe.errors.StripeInvalidRequestError && erro.code === "charge_already_refunded") return;
+    throw erroSemMensagem(erro, "a devolução do pagamento");
+  }
+}
+
+/**
+ * De que ASSINATURA é este pagamento — para o aviso de dinheiro devolvido, que só traz a cobrança.
+ * O caminho é pagamento → fatura → assinatura. Nenhuma: o pagamento não é de fatura de assinatura.
+ */
+export async function assinaturaDoPagamento(pagamentoId: string): Promise<string | null> {
+  try {
+    const lista = await stripe().invoicePayments.list({ payment: { type: "payment_intent", payment_intent: pagamentoId }, limit: 1, expand: ["data.invoice"] });
+    const fatura = lista.data[0]?.invoice;
+    if (!fatura || typeof fatura === "string" || fatura.deleted) return null;
+    const assinatura = fatura.parent?.subscription_details?.subscription;
+    if (!assinatura) return null;
+    return typeof assinatura === "string" ? assinatura : assinatura.id;
+  } catch (erro) {
+    throw erroSemMensagem(erro, "a busca da assinatura do pagamento");
+  }
+}

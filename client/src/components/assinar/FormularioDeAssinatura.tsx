@@ -2,7 +2,7 @@ import { useState } from "react";
 import { DuracaoDoDesconto, Plano, type PlanosDaAssinatura } from "@jilson/core";
 import { PageSection } from "@/components/layout/PageLayout";
 import { criarAssinatura } from "@/lib/api";
-import { descreverDesconto, dinheiro, TELA_DE_CONCLUIDO, usePrevia } from "@/lib/assinar";
+import { descreverDesconto, dinheiro, telaDeConcluido, usePrevia } from "@/lib/assinar";
 import { codigoDoErro } from "@/lib/course-form";
 import { useIdioma, useT } from "@/lib/language";
 import { CartaoProvider, type Cartao } from "@/lib/stripe-do-site";
@@ -69,7 +69,7 @@ export function FormularioDeAssinatura({
             void previa.refetch();
             return setErro(t.erro);
           }
-          const confirmado = await cartao.confirmar(criada.segredo, criada.tipo, TELA_DE_CONCLUIDO);
+          const confirmado = await cartao.confirmar(criada.segredo, criada.tipo, telaDeConcluido(reativar));
           if (!confirmado.ok) return setErro(confirmado.mensagem ?? t.erro);
         }
         aoConcluir();

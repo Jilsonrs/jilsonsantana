@@ -2,6 +2,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { screen, fireEvent, waitFor } from "@testing-library/react";
 import { renderWithProviders } from "@/test-utils";
+import { useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 
 // Mock na NOSSA fronteira (`@/lib/auth-client`), nunca em `better-auth/react`:
 // o teste sobrevive a trocar a biblioteca de auth.
@@ -131,6 +132,55 @@ describe("LoginPage — ramos da tela", () => {
 
     expect(await screen.findByText("HOME DO ALUNO")).toBeTruthy();
     expect(screen.queryByLabelText("Senha")).toBeNull();
+  });
+});
+
+// QUEM ENTRA COMEÇA DO ZERO (decisão do operador, 11/10/2026). "Sair" limpa o que as telas
+// guardaram (teste em `Layout.test.tsx`); a sessão que acaba SOZINHA não passa por ele. O teste
+// usa um cliente de leituras só para as duas contas, como a aba do navegador.
+describe("LoginPage — quem entra não vê nada da conta anterior", () => {
+  const GUARDADO = ["o-que-a-tela-guardou"];
+  function TelaDaContaAnterior() {
+    const { data } = useQuery({ queryKey: GUARDADO, queryFn: () => Promise.resolve("o progresso da Ana") });
+    return <p>{data ?? "lendo"}</p>;
+  }
+  function QuemEntrou() {
+    const guardado = useQueryClient().getQueryData<string>(GUARDADO);
+    return <p>{guardado ? `ainda guardado: ${guardado}` : "nada guardado da conta anterior"}</p>;
+  }
+  // O cliente de leituras da "aba", para olhar o que está GUARDADO (a tela aberta continua
+  // mostrando o que já leu mesmo depois de uma limpeza — olhar a tela não provaria nada).
+  let daAba: QueryClient | null = null;
+  function Captura() {
+    daAba = useQueryClient();
+    return null;
+  }
+  const montar = () =>
+    renderWithProviders(
+      <>
+        <Captura />
+        <TelaDaContaAnterior />
+        <LoginPage />
+      </>,
+      { route: "/login", path: "/login", extraRoutes: [{ path: "/inicio", element: <QuemEntrou /> }] },
+    );
+
+  it("ao entrar, o que as telas tinham guardado é esquecido", async () => {
+    montar();
+    expect(await screen.findByText("o progresso da Ana")).toBeTruthy();
+    preencher({ email: "bia@exemplo.com", senha: "minhasenha" });
+    enviar();
+    expect(await screen.findByText("nada guardado da conta anterior")).toBeTruthy();
+  });
+
+  it("senha errada não limpa nada: quem não entrou não mexe no que está guardado", async () => {
+    signInEmail.mockResolvedValue({ error: { status: 401 } });
+    montar();
+    expect(await screen.findByText("o progresso da Ana")).toBeTruthy();
+    preencher({ email: "bia@exemplo.com", senha: "errada" });
+    enviar();
+    expect(await screen.findByRole("alert")).toBeTruthy();
+    expect(daAba?.getQueryData(GUARDADO)).toBe("o progresso da Ana");
   });
 });
 

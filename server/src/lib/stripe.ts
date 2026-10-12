@@ -1,5 +1,11 @@
 import Stripe from "stripe";
 import { DuracaoDoDesconto, PLANOS, type DescontoDoCodigo, type Plano } from "@jilson/core";
+import { erroSemMensagem, stripe } from "./stripe-cliente.js";
+import { faturaDevolvida } from "./stripe-devolucao.js";
+
+// A biblioteca já com a chave e o erro sem a mensagem dela moram em `stripe-cliente.ts`, e saem
+// por aqui para quem já os importava deste arquivo.
+export { erroSemMensagem, stripe };
 
 // A NOSSA FRONTEIRA COM A STRIPE (Fase 4, etapa 4.1 — billing.md; CLAUDE.md → Membership
 // Gating). Tudo que fala com a Stripe passa por aqui — e, para gerir uma assinatura que já
@@ -13,8 +19,12 @@ import { DuracaoDoDesconto, PLANOS, type DescontoDoCodigo, type Plano } from "@j
 // período fica em CADA ITEM da assinatura (não mais na assinatura), e a fatura aponta a
 // assinatura em `parent.subscription_details.subscription`.
 
-/** O aviso da Stripe, já verificado: só o que o servidor usa. */
-export type AvisoDaStripe = { id: string; tipo: string; assinatura: string | null };
+/**
+ * O aviso da Stripe, já verificado: só o que o servidor usa. `pagamento`: o aviso de DINHEIRO
+ * DEVOLVIDO fala de uma cobrança, não de uma assinatura — a assinatura se acha pelo pagamento.
+ * `devolucaoFalhou`: uma devolução que tinha sido aceita FALHOU depois — o dinheiro não voltou.
+ */
+export type AvisoDaStripe = { id: string; tipo: string; assinatura: string | null; pagamento?: string | null; devolucaoFalhou?: boolean };
 
 /** A assinatura como a Stripe diz AGORA, no formato que o espelho guarda. */
 export type AssinaturaNaStripe = {
@@ -25,7 +35,8 @@ export type AssinaturaNaStripe = {
    * período já foi pago", CLAUDE.md → Membership Gating). Quando uma renovação falha, a Stripe
    * já avançou o período ANTES de cobrar: o fim do período atual seria um mês não pago. Por
    * isso: última fatura paga → o fim do período atual; senão → o COMEÇO dele, que é onde o
-   * último período pago terminou.
+   * último período pago terminou. A fatura DEVOLVIDA POR INTEIRO não conta como paga (etapa
+   * 4.6): na Stripe ela continua `paid`, e quem diz que o dinheiro voltou é a cobrança.
    */
   pagoAte: Date | null;
   clienteId: string | null;
@@ -38,20 +49,6 @@ export type AssinaturaNaStripe = {
    */
   livemode: boolean;
 };
-
-let cliente: Stripe | null = null;
-/**
- * A biblioteca da Stripe, já com a chave. Sai deste arquivo SÓ para a outra metade da fronteira
- * (`stripe-assinatura.ts`, etapa 4.6): rota, regra e tela nunca falam com ela direto.
- */
-export function stripe(): Stripe {
-  const chave = process.env.STRIPE_SECRET_KEY;
-  if (!chave) throw new Error("Stripe sem STRIPE_SECRET_KEY");
-  // Tempo limite curto: a busca roda dentro da transação do aviso (`assinaturas.ts`), que segura
-  // uma conexão do banco enquanto espera. Sem resposta, o aviso falha e a Stripe entrega de novo.
-  cliente ??= new Stripe(chave, { timeout: 10_000, maxNetworkRetries: 1 });
-  return cliente;
-}
 
 /** A Stripe está configurada para cobrar? Sem a chave secreta, a tela de assinar não abre. */
 export function cobrancaConfigurada(): boolean {
@@ -66,17 +63,6 @@ export function cobrancaConfigurada(): boolean {
 export function chavePublicavel(): string | null {
   const chave = process.env.STRIPE_PUBLISHABLE_KEY;
   return chave && chave.startsWith("pk_") ? chave : null;
-}
-
-/**
- * O erro da Stripe SEM a mensagem dela, que pode trazer um pedaço da chave ou dado do cliente —
- * e o que sobe daqui vai para o registro. Ficam o tipo, o código e o status. Função pura.
- */
-export function erroSemMensagem(erro: unknown, oQue: string): Error {
-  if (!(erro instanceof Stripe.errors.StripeError)) return erro instanceof Error ? erro : new Error(`[stripe] ${oQue} falhou`);
-  const codigo = erro.code ? ` (${erro.code})` : "";
-  const status = erro.statusCode ? `, status ${erro.statusCode}` : "";
-  return new Error(`[stripe] ${oQue} falhou: ${erro.type}${codigo}${status}`);
 }
 
 // OS PREÇOS SE ACHAM PELA LOOKUP KEY, nunca por ID nem por nome (convenção da etapa 4.0): não há
@@ -317,6 +303,33 @@ function assinaturaDoAviso(evento: Stripe.Event): string | null {
 }
 
 /**
+ * De que PAGAMENTO o aviso fala — só o de dinheiro devolvido (`charge.refunded`, etapa 4.6). A
+ * cobrança não diz de que fatura nem de que assinatura é `[FATO — medido na área restrita,
+ * 11/10/2026]`: quem acha a assinatura é o servidor, pelo pagamento (`stripe-reembolso.ts`).
+ */
+function pagamentoDoAviso(evento: Stripe.Event): string | null {
+  // A devolução que mudou de situação também: se FALHOU, o período volta a contar como pago, e
+  // o espelho tem que saber — pela sincronia de sempre.
+  if (evento.type !== "charge.refunded" && !eAvisoDeDevolucao(evento)) return null;
+  const pagamento = evento.data.object.payment_intent;
+  if (!pagamento) return null;
+  return typeof pagamento === "string" ? pagamento : pagamento.id;
+}
+
+type AvisoDeDevolucao = Extract<Stripe.Event, { type: "refund.failed" | "refund.updated" | "charge.refund.updated" }>;
+function eAvisoDeDevolucao(evento: Stripe.Event): evento is AvisoDeDevolucao {
+  return evento.type === "refund.failed" || evento.type === "refund.updated" || evento.type === "charge.refund.updated";
+}
+
+/**
+ * Uma devolução que a Stripe tinha aceitado FALHOU depois (achado da revisão de segurança,
+ * 11/10/2026): o dinheiro não voltou ao aluno, e sem isto quem descobriria seria ele.
+ */
+function devolucaoQueFalhou(evento: Stripe.Event): boolean {
+  return eAvisoDeDevolucao(evento) && evento.data.object.status === "failed";
+}
+
+/**
  * Verifica que o aviso veio da Stripe — sobre o CORPO CRU, byte a byte (se ele passar pelo
  * `express.json()` antes, a verificação falha). Lança se a assinatura não confere. NUNCA aceita
  * aviso sem verificar: sem o segredo, quem chama recusa antes (`avisosConfigurados`).
@@ -326,16 +339,20 @@ export function verificarAviso(corpo: unknown, cabecalho: string | undefined): A
   if (!segredo) throw new Error("Stripe sem STRIPE_WEBHOOK_SECRET");
   if (!Buffer.isBuffer(corpo) || !cabecalho) throw new Error("aviso sem corpo cru ou sem assinatura");
   const evento = Stripe.webhooks.constructEvent(corpo, cabecalho, segredo);
-  return { id: evento.id, tipo: evento.type, assinatura: assinaturaDoAviso(evento) };
+  return { id: evento.id, tipo: evento.type, assinatura: assinaturaDoAviso(evento), pagamento: pagamentoDoAviso(evento), devolucaoFalhou: devolucaoQueFalhou(evento) };
 }
 
-/** O formato do espelho, a partir da assinatura da Stripe (com `customer` e `latest_invoice` expandidos). Função pura. */
-export function paraAssinaturaNaStripe(assinatura: Stripe.Subscription): AssinaturaNaStripe {
+/**
+ * O formato do espelho, a partir da assinatura da Stripe (com `customer` e `latest_invoice`
+ * expandidos). Função pura. `devolvida`: a última fatura foi devolvida por inteiro
+ * (`faturaDevolvida`) — o período dela deixa de contar como pago.
+ */
+export function paraAssinaturaNaStripe(assinatura: Stripe.Subscription, devolvida: boolean = false): AssinaturaNaStripe {
   const itens = assinatura.items.data;
   let pagoAte: Date | null = null;
   if (itens.length > 0) {
     const fatura = assinatura.latest_invoice;
-    const paga = typeof fatura === "object" && fatura !== null && fatura.status === "paid";
+    const paga = typeof fatura === "object" && fatura !== null && fatura.status === "paid" && !devolvida;
     const segundos = paga ? Math.max(...itens.map((i) => i.current_period_end)) : Math.min(...itens.map((i) => i.current_period_start));
     pagoAte = new Date(segundos * 1000);
   }
@@ -368,8 +385,8 @@ export class AssinaturaNaoEncontrada extends Error {
 /** A assinatura como a Stripe diz AGORA — o espelho se recalcula daqui, nunca do retrato do aviso. */
 export async function buscarAssinatura(id: string): Promise<AssinaturaNaStripe> {
   try {
-    const assinatura = await stripe().subscriptions.retrieve(id, { expand: ["customer", "latest_invoice"] });
-    return paraAssinaturaNaStripe(assinatura);
+    const assinatura = await stripe().subscriptions.retrieve(id, { expand: ["customer", "latest_invoice.payments"] });
+    return paraAssinaturaNaStripe(assinatura, await faturaDevolvida(assinatura.latest_invoice));
   } catch (erro) {
     if (erro instanceof Stripe.errors.StripeInvalidRequestError && erro.code === "resource_missing") throw new AssinaturaNaoEncontrada(id);
     // Era a única ida à Stripe que subia com a mensagem dela — e o aviso a cola no registro

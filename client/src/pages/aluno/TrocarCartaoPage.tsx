@@ -25,6 +25,7 @@ export function TrocarCartaoPage() {
   const queryClient = useQueryClient();
   const assinatura = useMinhaAssinatura();
   const [trocado, setTrocado] = useState<CartaoTrocado | null>(null);
+  const [confirmando, setConfirmando] = useState(false);
   const dados = assinatura.data;
   const viva = comAcesso(dados);
   const aceita = viva?.aceitaCartao === true;
@@ -36,14 +37,36 @@ export function TrocarCartaoPage() {
 
   if (dados && !aceita && !trocado) return <Navigate to={TELA_DO_FATURAMENTO} replace />;
 
+  // A cobrança em aberto ainda espera a confirmação do banco: tenta de novo, com o segredo que
+  // o servidor devolveu na troca (ele fica só na memória desta tela).
+  async function confirmarPagamento() {
+    const chave = planos.data?.chavePublicavel;
+    if (!trocado?.confirmar || !chave || confirmando) return;
+    setConfirmando(true);
+    try {
+      const { confirmarNoBanco } = await import("@/lib/stripe-do-site");
+      if ((await confirmarNoBanco(chave, trocado.confirmar)) === "confirmado") {
+        setTrocado({ ...trocado, pagou: true, confirmar: null });
+        void queryClient.invalidateQueries({ queryKey: CHAVE_DA_MINHA_ASSINATURA });
+      }
+    } finally {
+      setConfirmando(false);
+    }
+  }
+
   return (
     <PageContainer>
       <PageHeader title={viva?.cartao || trocado ? t.faturamento.trocarCartao : t.faturamento.adicionarCartao} description={t.faturamento.cartaoDescricao} />
       {trocado && (
         <div className="space-y-4">
           <p role="status" className="text-foreground">
-            {trocado.pagou ? t.faturamento.cartaoAtualizadoEPago : t.faturamento.cartaoAtualizado}
+            {trocado.pagou ? t.faturamento.cartaoAtualizadoEPago : trocado.confirmar ? t.faturamento.banco.naoConcluiuNoCartao : t.faturamento.cartaoAtualizado}
           </p>
+          {trocado.confirmar && !trocado.pagou && (
+            <Button type="button" variant="outline" onClick={() => void confirmarPagamento()} disabled={confirmando}>
+              {confirmando ? t.assinar.processando : t.faturamento.banco.confirmar}
+            </Button>
+          )}
           {trocado.cartao && <p className="text-sm font-semibold text-foreground">{descreverCartao(t.faturamento, trocado.cartao)}</p>}
           <Button asChild>
             <Link to={TELA_DO_FATURAMENTO}>{t.nav.faturamento}</Link>

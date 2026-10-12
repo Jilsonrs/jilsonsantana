@@ -41,6 +41,35 @@ const abrir = (demora = 60_000, rota = "/aluno/assinar/concluido", outraTela = <
     extraRoutes: [{ path: "/inicio", element: outraTela }],
   });
 
+// O TÍTULO DE QUEM REATIVOU (decisão do operador, 11/10/2026): a pessoa entrou por "Reativar
+// assinatura" e a confirmação aparecia com o título "Assinar". A marca vem no endereço e só muda
+// o título — quem diz que a assinatura valeu continua sendo o servidor.
+describe("AssinaturaConcluidaPage — o título", () => {
+  it("quem reativou lê 'Reativar assinatura' — esperando a confirmação e depois dela", async () => {
+    abrir(60_000, "/aluno/assinar/concluido?reativou=1");
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Reativar assinatura");
+    expect((await screen.findByRole("status")).textContent).toBe("Confirmando sua assinatura…");
+    getSituacaoDaAssinatura.mockResolvedValue({ temAcesso: true });
+    expect(await screen.findByText("Assinatura confirmada. Bons estudos!")).toBeTruthy();
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Reativar assinatura");
+  });
+
+  it("quem assina pela primeira vez, ou chega com outra coisa no endereço: 'Assinar'", async () => {
+    for (const rota of ["/aluno/assinar/concluido", "/aluno/assinar/concluido?reativou=0", "/aluno/assinar/concluido?redirect_status=succeeded"]) {
+      const { unmount } = abrir(60_000, rota);
+      expect(screen.getByRole("heading", { level: 1 }).textContent, rota).toBe("Assinar");
+      unmount();
+    }
+  });
+
+  it("a marca do endereço NÃO confirma nada: sem o servidor dizer que há acesso, continua 'confirmando'", async () => {
+    abrir(60_000, "/aluno/assinar/concluido?reativou=1");
+    await waitFor(() => expect(getSituacaoDaAssinatura).toHaveBeenCalled());
+    expect(screen.queryByText("Assinatura confirmada. Bons estudos!")).toBeNull();
+    expect(screen.queryByRole("link", { name: "Começar a estudar" })).toBeNull();
+  });
+});
+
 describe("AssinaturaConcluidaPage", () => {
   it("enquanto o servidor não confirma: \"confirmando\", sem o botão de começar", async () => {
     abrir();

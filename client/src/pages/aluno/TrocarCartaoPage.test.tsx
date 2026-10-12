@@ -22,7 +22,9 @@ vi.mock("@/lib/api", async (importOriginal) => ({
 // mostra com o que foi aberto, e o cartão responde o que o teste mandar.
 const validar = vi.fn<() => Promise<Desfecho>>();
 const confirmar = vi.fn<(segredo: string, tipo: string, voltarPara: string) => Promise<Desfecho>>();
+const confirmarNoBanco = vi.fn<(chave: string, segredo: string) => Promise<"confirmado" | "nao-concluido">>();
 vi.mock("@/lib/stripe-do-site", () => ({
+  confirmarNoBanco: (chave: string, segredo: string) => confirmarNoBanco(chave, segredo),
   CartaoProvider: ({ pedido, children }: { pedido: PedidoDeCartao; children: ReactNode }) => (
     <div data-testid="cartao" data-centavos={pedido.centavos} data-moeda={pedido.moeda} data-formas={pedido.formasDePagamento.join(",")} data-chave={pedido.chavePublicavel} data-idioma={pedido.idioma}>
       {children}
@@ -56,6 +58,12 @@ const ATIVA: MinhaAssinatura = {
   acessoAte: null,
   cartao: VISA,
   aceitaCartao: true,
+  podeParar: true,
+  podeManter: false,
+  terminaAoCancelar: false,
+  reembolso: null,
+  podeMudarDePlano: true,
+  trocaMarcada: null,
 };
 const PLANOS: PlanosDaAssinatura = {
   chavePublicavel: "pk_test_da_tela",
@@ -93,6 +101,7 @@ beforeEach(() => {
   aplicarCartaoNovo.mockReset().mockResolvedValue({ cartao: MASTER, pagou: false });
   validar.mockReset().mockResolvedValue({ ok: true });
   confirmar.mockReset().mockResolvedValue({ ok: true });
+  confirmarNoBanco.mockReset().mockResolvedValue("confirmado");
 });
 
 describe("TrocarCartaoPage — carregando, falha e quem não tem o que trocar", () => {
@@ -180,6 +189,59 @@ describe("TrocarCartaoPage — o envio", () => {
     abrir();
     await salvar();
     expect((await screen.findByRole("status")).textContent).toBe("Cartão atualizado e pagamento confirmado.");
+  });
+
+  // O BANCO PEDE CONFIRMAÇÃO na cobrança atrasada (sessão b): o servidor devolve o segredo da
+  // fatura em aberto, e a pessoa completa a confirmação aqui mesmo.
+  it("a cobrança atrasada pediu a confirmação do banco: a janela abre com a chave e o segredo do servidor — confirmou, pago", async () => {
+    aplicarCartaoNovo.mockResolvedValue({ cartao: MASTER, pagou: false, confirmar: "pi_9_secret_da_fatura" });
+    abrir();
+    await salvar();
+    expect(await screen.findByText("Cartão atualizado e pagamento confirmado.")).toBeTruthy();
+    expect(confirmarNoBanco.mock.calls).toEqual([["pk_test_da_tela", "pi_9_secret_da_fatura"]]);
+    expect(screen.queryByRole("button", { name: "Confirmar pagamento" })).toBeNull();
+  });
+
+  it("enquanto a janela do banco está aberta, a tela diz o que fazer", async () => {
+    aplicarCartaoNovo.mockResolvedValue({ cartao: MASTER, pagou: false, confirmar: "pi_9_secret_da_fatura" });
+    confirmarNoBanco.mockReturnValue(new Promise(() => {}));
+    abrir();
+    await salvar();
+    expect((await screen.findByRole("status")).textContent).toBe("Seu banco pediu uma confirmação para esta cobrança. Conclua na janela do banco.");
+  });
+
+  it("a pessoa NÃO concluiu no banco: o cartão valeu, a cobrança segue em aberto — e dá para tentar de novo, sem dizer que pagou", async () => {
+    aplicarCartaoNovo.mockResolvedValue({ cartao: MASTER, pagou: false, confirmar: "pi_9_secret_da_fatura" });
+    confirmarNoBanco.mockResolvedValueOnce("nao-concluido");
+    abrir();
+    await salvar();
+    expect(await screen.findByText("Cartão atualizado. A cobrança em aberto ainda precisa da confirmação do seu banco.")).toBeTruthy();
+    expect(screen.queryByText("Cartão atualizado e pagamento confirmado.")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar pagamento" }));
+    expect(await screen.findByText("Cartão atualizado e pagamento confirmado.")).toBeTruthy();
+    expect(confirmarNoBanco.mock.calls).toEqual([["pk_test_da_tela", "pi_9_secret_da_fatura"], ["pk_test_da_tela", "pi_9_secret_da_fatura"]]);
+    // O cartão não é guardado nem aplicado de novo: só a confirmação se repete.
+    expect(aplicarCartaoNovo).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole("button", { name: "Confirmar pagamento" })).toBeNull();
+  });
+
+  it("tentou de novo e o banco AINDA não confirmou: a tela continua dizendo que a cobrança está em aberto — nunca 'pagamento confirmado'", async () => {
+    aplicarCartaoNovo.mockResolvedValue({ cartao: MASTER, pagou: false, confirmar: "pi_9_secret_da_fatura" });
+    confirmarNoBanco.mockResolvedValue("nao-concluido");
+    abrir();
+    await salvar();
+    fireEvent.click(await screen.findByRole("button", { name: "Confirmar pagamento" }));
+    await waitFor(() => expect(confirmarNoBanco).toHaveBeenCalledTimes(2));
+    expect(await screen.findByRole("button", { name: "Confirmar pagamento" })).toBeTruthy();
+    expect(screen.getByText("Cartão atualizado. A cobrança em aberto ainda precisa da confirmação do seu banco.")).toBeTruthy();
+    expect(screen.queryByText("Cartão atualizado e pagamento confirmado.")).toBeNull();
+  });
+
+  it("sem pedido de confirmação (pago, recusado, ou em dia): a janela do banco nem abre", async () => {
+    abrir();
+    await salvar();
+    expect((await screen.findByRole("status")).textContent).toBe("Cartão atualizado.");
+    expect(confirmarNoBanco).not.toHaveBeenCalled();
   });
 
   it("depois de trocar, o resumo é lido de novo (ele tinha guardado o cartão antigo)", async () => {

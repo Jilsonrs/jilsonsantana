@@ -11,6 +11,8 @@ const falsa = {
   invoices: { createPreview: vi.fn(), pay: vi.fn(), retrieve: vi.fn() },
   setupIntents: { create: vi.fn(), list: vi.fn() },
   paymentMethods: { detach: vi.fn() },
+  customers: { listPaymentMethods: vi.fn() },
+  paymentIntents: { retrieve: vi.fn() },
 };
 vi.mock("./stripe.js", async (importOriginal) => ({
   ...(await importOriginal<typeof import("./stripe.js")>()),
@@ -18,7 +20,7 @@ vi.mock("./stripe.js", async (importOriginal) => ({
 }));
 
 import { AssinaturaNaoEncontrada } from "./stripe.js";
-import { buscarCartaoConfirmado, buscarDetalhes, buscarProximaCobranca, criarPedidoDeCartao, definirCartao, pagarFatura, soltarCartao } from "./stripe-assinatura.js";
+import { buscarCartaoConfirmado, buscarDetalhes, buscarProximaCobranca, criarPedidoDeCartao, definirCartao, pagarFatura, pararRenovacao, retomarRenovacao, soltarOutrosCartoes } from "./stripe-assinatura.js";
 
 const PEDIDO = { clienteId: "cus_1", userId: "u-1", assinaturaId: "sub_1" };
 const recusaDoPedido = (code: string) => new Stripe.errors.StripeInvalidRequestError({ message: "mensagem crua da Stripe, com sk_test_abc", type: "invalid_request_error", code, statusCode: 400 });
@@ -32,7 +34,7 @@ describe("buscar os detalhes da assinatura", () => {
   it("pede a fatura, o cartão da assinatura e o padrão do cliente — sem eles a tela não teria cartão nem 'pago até'", async () => {
     falsa.subscriptions.retrieve.mockRejectedValue(recusaDoPedido("resource_missing"));
     await expect(buscarDetalhes("sub_1")).rejects.toBeInstanceOf(AssinaturaNaoEncontrada);
-    expect(falsa.subscriptions.retrieve.mock.calls).toEqual([["sub_1", { expand: ["latest_invoice", "default_payment_method", "customer.invoice_settings.default_payment_method"] }]]);
+    expect(falsa.subscriptions.retrieve.mock.calls).toEqual([["sub_1", { expand: ["latest_invoice.payments", "default_payment_method", "customer.invoice_settings.default_payment_method", "schedule.phases.items.price"] }]]);
   });
 
   it("a Stripe fora do ar: sobe, sem a mensagem dela", async () => {
@@ -94,12 +96,75 @@ describe("pôr e tirar o cartão", () => {
     expect(falsa.subscriptions.update.mock.calls).toEqual([["sub_1", { default_payment_method: "pm_novo", expand: ["default_payment_method"] }]]);
   });
 
-  it("tirar o antigo: o cartão certo; a falha sobe (quem decide que é só aviso é a operação)", async () => {
+});
+
+// TIRAR OS CARTÕES ANTIGOS (abertura do passo 7). O que protege: sai TUDO o que é do cliente,
+// menos o cartão que acabou de entrar — tirar esse deixaria a assinatura sem ter o que cobrar.
+describe("tirar da Stripe todos os cartões do cliente, menos o novo", () => {
+  const cartoes = (...ids: string[]) => ({ data: ids.map((id) => ({ id })) });
+
+  it("lista os cartões DESTE cliente e tira todos os outros — o novo fica", async () => {
+    falsa.customers.listPaymentMethods.mockResolvedValue(cartoes("pm_novo", "pm_antigo", "pm_esquecido"));
     falsa.paymentMethods.detach.mockResolvedValue({});
-    await soltarCartao("pm_antigo");
-    expect(falsa.paymentMethods.detach.mock.calls).toEqual([["pm_antigo"]]);
-    falsa.paymentMethods.detach.mockRejectedValue(foraDoAr());
-    await expect(soltarCartao("pm_antigo")).rejects.toThrow("[stripe] a remoção do cartão antigo falhou");
+    expect(await soltarOutrosCartoes("cus_1", "pm_novo")).toBe(2);
+    expect(falsa.customers.listPaymentMethods.mock.calls).toEqual([["cus_1", { type: "card", limit: 100 }]]);
+    expect(falsa.paymentMethods.detach.mock.calls).toEqual([["pm_antigo"], ["pm_esquecido"]]);
+  });
+
+  it("só existe o novo: não tira nada", async () => {
+    falsa.customers.listPaymentMethods.mockResolvedValue(cartoes("pm_novo"));
+    expect(await soltarOutrosCartoes("cus_1", "pm_novo")).toBe(0);
+    expect(falsa.paymentMethods.detach).not.toHaveBeenCalled();
+  });
+
+  it("sem saber de quem ou qual manter: falha, sem listar nem tirar nada", async () => {
+    await expect(soltarOutrosCartoes("cus_1", "")).rejects.toThrow("sem o cliente ou sem o cartão a manter");
+    await expect(soltarOutrosCartoes("", "pm_novo")).rejects.toThrow("sem o cliente ou sem o cartão a manter");
+    expect(falsa.customers.listPaymentMethods).not.toHaveBeenCalled();
+    expect(falsa.paymentMethods.detach).not.toHaveBeenCalled();
+  });
+
+  it("um não saiu: os outros saem assim mesmo, e a falha sobe no fim (quem decide que é só aviso é a operação)", async () => {
+    falsa.customers.listPaymentMethods.mockResolvedValue(cartoes("pm_a", "pm_novo", "pm_b"));
+    falsa.paymentMethods.detach.mockRejectedValueOnce(foraDoAr()).mockResolvedValue({});
+    await expect(soltarOutrosCartoes("cus_1", "pm_novo")).rejects.toThrow("[stripe] a remoção de um cartão antigo falhou");
+    expect(falsa.paymentMethods.detach.mock.calls).toEqual([["pm_a"], ["pm_b"]]);
+  });
+
+  it("a lista falhou: sobe, sem a mensagem da Stripe, e nada é tirado", async () => {
+    falsa.customers.listPaymentMethods.mockRejectedValue(foraDoAr());
+    await expect(soltarOutrosCartoes("cus_1", "pm_novo")).rejects.toThrow("[stripe] a lista dos cartões do cliente falhou: StripeConnectionError");
+    expect(falsa.paymentMethods.detach).not.toHaveBeenCalled();
+  });
+});
+
+// PARAR A RENOVAÇÃO E VOLTAR ATRÁS (passo 7). O que protege: parar é MARCAR para acabar no fim do
+// período — nunca encerrar na hora, que tiraria o acesso de quem já pagou — e a resposta da
+// Stripe é a que volta para a operação.
+describe("parar a renovação e voltar atrás, na Stripe", () => {
+  const fim = 1_900_000_000;
+  // Seguro: só os campos que `paraDetalhesDaAssinatura` lê.
+  const daStripe = (marcada: boolean) => ({ id: "sub_1", status: "active", livemode: false, metadata: {}, customer: "cus_1", cancel_at: marcada ? fim : null, cancel_at_period_end: marcada, pause_collection: null, default_payment_method: null, latest_invoice: { id: "in_1", status: "paid" }, items: { data: [{ current_period_start: fim - 100, current_period_end: fim, price: { id: "price_1", unit_amount: 9990, currency: "brl", recurring: { interval: "month", interval_count: 1 } } }] } });
+
+  it("parar: marca para acabar no fim do período, com o motivo — e devolve a assinatura como ficou", async () => {
+    falsa.subscriptions.update.mockResolvedValue(daStripe(true));
+    const depois = await pararRenovacao("sub_1", { motivo: "caro", comentario: "volto em janeiro" });
+    expect(falsa.subscriptions.update.mock.calls).toEqual([["sub_1", { cancel_at_period_end: true, cancellation_details: { feedback: "too_expensive", comment: "volto em janeiro" }, metadata: { motivo: "caro" }, expand: ["latest_invoice.payments", "default_payment_method", "customer.invoice_settings.default_payment_method", "schedule.phases.items.price"] }]]);
+    expect([depois.status, depois.acabaEm?.getTime(), depois.acabaNoFimDoPeriodo]).toEqual(["active", fim * 1000, true]);
+  });
+
+  it("voltar atrás: tira a marca do fim do período e apaga o motivo", async () => {
+    falsa.subscriptions.update.mockResolvedValue(daStripe(false));
+    const depois = await retomarRenovacao("sub_1", true);
+    expect(falsa.subscriptions.update.mock.calls[0]?.[1]).toMatchObject({ cancel_at_period_end: false, cancellation_details: { feedback: "", comment: "" }, metadata: { motivo: "" } });
+    expect(depois.acabaEm).toBeNull();
+  });
+
+  it("a Stripe fora do ar: as duas sobem, sem a mensagem dela", async () => {
+    falsa.subscriptions.update.mockRejectedValue(foraDoAr());
+    await expect(pararRenovacao("sub_1", {})).rejects.toThrow("[stripe] a parada da renovação falhou: StripeConnectionError");
+    await expect(retomarRenovacao("sub_1", true)).rejects.toThrow("[stripe] a retomada da renovação falhou: StripeConnectionError");
+    await expect(pararRenovacao("sub_1", {})).rejects.not.toThrow(/sk_test/);
   });
 });
 
