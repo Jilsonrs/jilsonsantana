@@ -16,7 +16,7 @@
 > 5. **Item novo ganha o próximo número livre.** Número nunca se reutiliza, para que "P7" queira
 >    dizer sempre a mesma coisa em qualquer conversa.
 >
-> **Próximo número livre: P78** · Atualizada em 11/10/2026
+> **Próximo número livre: P78** · Atualizada em 12/10/2026
 
 ## A. Agora, em sequência *(nascidas da configuração do Bunny, 25/09/2026)*
 
@@ -26,7 +26,6 @@ precise de resposta rápida entra aqui, com o próximo número livre.*
 | # | O que falta | Onde registrar |
 |---|---|---|
 | P71 | **Duas conferências antes de publicar a sessão (b), nos painéis** (da revisão de segurança, 11/10/2026): **(1) Stripe, conta de verdade — a chave secreta que está na Railway é a comum (começa com `sk_live_`) ou uma restrita (`rk_live_`)?** Não me diga a chave, só o começo. Toda conferência de assinatura passou a ler também o pagamento; se a chave for restrita e não tiver leitura de pagamentos, faturas, devoluções e agendamentos, todo aviso da Stripe passa a dar erro. **(2) Railway — a variável `SENTRY_DSN` está preenchida?** Os alertas novos (devolução que falhou, espelho não acertado depois do reembolso) só chegam por e-mail com ela | `billing.md` → *Minha assinatura* → Limitações conhecidas |
-| P69 | **No painel da Stripe, na conta de VERDADE: incluir dois avisos no endereço de avisos do site** (Desenvolvedores → Webhooks → o endereço do site → eventos): **dinheiro devolvido (`charge.refunded`)** e **devolução que falhou (`refund.failed`)** — ou me dizer que o endereço já recebe todos os avisos. **É condição de publicar o reembolso** (a revisão de segurança mostrou que não vale só para o reembolso dado pelo painel): sem eles, quem recebe o dinheiro de volta pode seguir com acesso num caso de falha, e a devolução que o banco rejeita dias depois não avisa ninguém | `billing.md` → *Minha assinatura* → Limitações conhecidas |
 
 ## B. Conteúdo e cadastro *(tarefas suas, sem ordem fixa)*
 

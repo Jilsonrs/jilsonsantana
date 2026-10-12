@@ -787,12 +787,14 @@ encerrada de vez com dias pagos: tem acesso e o servidor recusa cartão.
   operação solta o agendamento velho antes de mudar.
 - **O agendamento copia o desconto, e só ele.** Quando a escola ligar o imposto automático
   (etapa 4.8), conferir que as fases da troca marcada o levam.
-- **Os avisos de devolução precisam chegar ao site no ar — é condição de publicar o
-  reembolso:** o endereço de avisos da conta de verdade tem que incluir `charge.refunded` e
-  `refund.failed` (tarefa do operador no painel da Stripe — pendência P69). Sem eles: o
-  reembolso dado direto no painel não corta o acesso sozinho; o reembolso pedido pela tela, se a
-  sincronia falhar com a assinatura já encerrada, não tem quem acerte o espelho depois; e a
-  devolução que falha dias depois não avisa ninguém.
+- **Os avisos de devolução chegam ao site no ar** *(P69, resolvida pelo operador em 12/10/2026)*:
+  o endereço de avisos da conta de verdade (`https://www.jilsonsantana.com/api/stripe/webhook`)
+  passou de 5 para 7 avisos — entraram `charge.refunded` e `refund.failed`, ao lado de
+  `customer.subscription.created`/`updated`/`deleted`, `invoice.paid` e
+  `invoice.payment_failed` (conferido na tela dele antes de salvar). É o que faz o reembolso
+  dado direto no painel cortar o acesso, acerta o espelho quando a sincronia do reembolso pela
+  tela falha, e avisa da devolução que o banco rejeita dias depois. *Se um aviso novo passar a
+  ser tratado no código, ele tem que ser incluído nesse endereço também.*
 - **A chave da Stripe em produção precisa ler pagamentos:** toda sincronia passou a ler a
   cobrança da última fatura. Se a chave for restrita e não puder, todo aviso responde erro e o
   espelho para de ser gravado (pendência P71).
