@@ -455,7 +455,7 @@ pagamento sem ter assinado vê "confirmando" e depois "está demorando", sem cam
 
 > **NADA AQUI ESTÁ DECIDIDO além do que traz data e frase do operador.** É a proposta do agente
 > depois de ele mostrar as telas de pagamento da Udemy e do Code with Mosh. O que existe na tela
-> e os textos são dele: as perguntas estão em `pendencias.md` (**P80 a P88**; a P79, a P86 e a P87 ele respondeu em 12/10/2026). Quem construir o
+> e os textos são dele: as perguntas estão em `pendencias.md` (**P80 a P89**; a P79, a P86 e a P87 ele respondeu em 12/10/2026). Quem construir o
 > passo 6 confere antes o que ele já respondeu, e registra a resposta aqui, com a data e a frase.
 > *A Udemy e o Mosh são referência desta análise, nunca texto do site.*
 
@@ -606,6 +606,7 @@ site** · **aceita empresa do Brasil**. E a da escola: **aceita curso gravado po
 | **PayPal** | **não**: só recebe o dinheiro; a vendedora continua sendo a escola, e o imposto de fora também | os campos de cartão dentro da página só existem para empresa de 37 países; **o Brasil não está na lista** | conta do Brasil existe (ele já recebe por ela) | assinatura sem conta PayPal: relatos de terceiros dizem que ela exige a conta | — | **não resolve**: não tira o imposto das mãos dele. Serve como MEIO DE RECEBER de uma vendedora |
 | **Polar** | sim | — | **não**: o Brasil não está na lista de países em que ela paga | cursos aceitos | — | fora |
 | **Teachable** | só dentro de uma escola dela | — | **não** (41 países) | — | — | fora |
+| **Thinkific** | só nas vendas para EUA e Canadá, e só dentro de uma escola dela; o imposto da Europa fica com o criador (blog e comunicado dela, via busca — a página não abriu) | — | não achado em lista oficial; o padrão é EUA, Canadá e Reino Unido | — | — | fora: é plataforma de curso, como a Teachable, e não cobre a Europa |
 | **Stripe** (Tax ou como vendedora) | — | — | **não** | cursos aceitos | — | fora, enquanto a empresa for do Brasil |
 | **Hotmart** | recolhe o imposto das vendas para fora (ajuda dela, desde abr/2025) | não achado: o pagamento é na página dela | sim, é brasileira | sim | por volta de 9,9% + R$ 1 (de terceiros) | fora: é plataforma de curso (`tech-stack.md` → o que não usamos) e a taxa é o dobro |
 | **Empresa num país da lista + Stripe Tax** | a Stripe calcula, registra e entrega a declaração; a escola confere e paga | sim, a mesma tela de hoje | exige a empresa de fora | sim | a da Stripe, mais o plano Tax Complete | a que menos muda o site; custa abrir e manter a empresa |
@@ -639,6 +640,24 @@ e entrega a declaração da Europa. O custo de abrir e manter essa empresa não 
 **O que o agente NÃO pode prometer:** que a Paddle diga sim. **A sugestão, que é decisão dele:**
 mandar a mensagem abaixo agora, e só gravar curso novo em inglês depois da resposta. Nada disso
 segura o lançamento no Brasil.
+
+**"SE NÃO RESOLVER, EU VOU TIRAR O SUPORTE A OUTROS PAÍSES DO PROJETO"** *(operador,
+12/10/2026, ao perguntar da Thinkific)*: tirar do banco e das telas o que foi feito em dois
+idiomas, o seletor de idioma (home pública e área logada), o campo País, e os documentos — numa
+etapa própria, antes da 4.7 — *"assim eu teria uma escola limpa"*. **Ainda não é decisão: é a
+P89.** O que o agente levou a ele:
+- **A Thinkific não muda o quadro** (é da mesma família da Teachable, já descartada). O que
+  decide é a resposta da Paddle, que ainda não foi pedida.
+- **O tamanho de tirar** `[MEDIDO em 12/10/2026]`: o idioma aparece em **84 arquivos de código e
+  43 de teste**, em **6 tabelas** do banco mais a preferência do aluno, e num dicionário em
+  inglês de 531 linhas. É uma etapa inteira, com risco, e desfazer depois custa mais que fazer.
+- **Existe um meio-termo:** DESLIGAR (sem seletor, sem páginas em inglês, sem campo País — o
+  aluno vê uma escola só em português) em vez de APAGAR do banco e do código. Para o aluno, o
+  resultado é o mesmo; para o projeto, é uma fração do trabalho, e a porta fica encostada.
+- **A ordem importa:** os passos 3, 5, 6 e 7 da etapa 4.7 escrevem texto em dois idiomas. A
+  decisão vem antes deles; os passos 1 e 2 não dependem dela e podem andar enquanto isso.
+- **A numeração:** a etapa nova não renumera a 4.7 (a 4.8, a 4.9 e a 4.10 existem, e os
+  documentos citam esses números às centenas): ela entra como **4.6c**, antes da 4.7.
 
 **A mensagem para a Paddle** *(rascunho do agente, em inglês, para ele ajustar e enviar pelo
 formulário de vendas dela; vale também para a Dodo, trocando o nome)*:

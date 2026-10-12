@@ -4161,6 +4161,13 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       falhou:** *"o sistema envia automaticamente e-mail para o aluno, como a Anthropic faz"*
       (operador, 10/10/2026) — sai sozinho quando o aviso da Stripe chega, sem botão do admin.
 
+      **ANTES DOS PASSOS 3, 5, 6 E 7 — A P89** *(12/10/2026)*: o operador disse que, sem
+      solução para vender fora, tira do projeto o segundo idioma e o suporte a outros países,
+      numa etapa própria antes desta (seria a **4.6c**; esta não muda de número). Esses quatro
+      passos escrevem texto em dois idiomas: **não abrir nenhum deles antes de ele decidir.**
+      Os passos 1, 2 e 4 não dependem do idioma. Detalhe: `billing.md` → *A tela pública de
+      assinar*.
+
       **OS PASSOS DA 4.7** *(divisão do agente, 12/10/2026, a pedido do operador: "divida em
       passos […] de forma que eu possa ir fazendo 1 por vez")*. Um passo por sessão, um commit
       por passo no `dev`, cada um fechado com os quatro gates; o que estiver fechado não é
