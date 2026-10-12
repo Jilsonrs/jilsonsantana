@@ -36,10 +36,10 @@ export function MensagensAutomaticasPage() {
           {data.map((m) => (
             <li key={m.courseId} className="space-y-2 px-5 py-4">
               <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <p className="font-medium text-foreground">
+                <p className="min-w-0 flex-1 font-medium text-foreground break-words">
                   {m.courseTitle} <span className="text-xs text-muted-foreground">({STATUS[m.status]})</span>
                 </p>
-                <Link to={`/admin/cursos/${m.courseId}/mensagens`} className="text-sm font-medium text-primary hover:underline" aria-label={`Editar as mensagens de ${m.courseTitle}`}>
+                <Link to={`/admin/cursos/${m.courseId}/mensagens`} className="shrink-0 text-sm font-medium text-primary hover:underline" aria-label={`Editar as mensagens de ${m.courseTitle}`}>
                   Editar no curso
                 </Link>
               </div>

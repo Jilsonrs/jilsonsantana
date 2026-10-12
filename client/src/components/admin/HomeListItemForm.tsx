@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 
 // Formulário de UM item (novo ou em edição). Os limites de tamanho espelham os
 // do servidor (core/src/schemas/home-lists.ts) para o erro aparecer aqui, no
@@ -30,7 +31,16 @@ function Campo({
     <div className="space-y-1">
       <Label htmlFor={id}>{campo.rotulo}</Label>
       {campo.linhas > 1 ? (
-        <Textarea id={id} rows={campo.linhas} {...registro} />
+        <Textarea
+          id={id}
+          rows={campo.linhas}
+          className={cn(
+            campo.linhas <= 2
+              ? "min-h-[64px] px-6 py-3 resize-y"
+              : "min-h-[120px] px-6 py-4 resize-y"
+          )}
+          {...registro}
+        />
       ) : (
         <Input id={id} {...registro} />
       )}

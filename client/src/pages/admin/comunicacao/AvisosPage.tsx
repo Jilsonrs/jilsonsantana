@@ -52,8 +52,8 @@ export function AvisosPage() {
         <ul className="mt-8 divide-y divide-border rounded-2xl border border-border/60 bg-card">
           {avisos.map((a) => (
             <li key={a.id} className="flex flex-wrap items-center justify-between gap-4 px-5 py-4">
-              <div className="min-w-0">
-                <Link to={`${ROTA_DOS_AVISOS}/${a.id}`} className="font-medium text-foreground hover:underline">
+              <div className="min-w-0 flex-1">
+                <Link to={`${ROTA_DOS_AVISOS}/${a.id}`} className="font-medium text-foreground hover:underline break-words">
                   {a.title}
                 </Link>
                 <p className="mt-1 text-sm text-muted-foreground">
@@ -61,7 +61,7 @@ export function AvisosPage() {
                   {a.sentAt && ` · ${a.lidas} de ${a.recebidas} leram`}
                 </p>
               </div>
-              <div className="flex gap-2">
+              <div className="flex shrink-0 gap-2">
                 <Button asChild variant="outline" size="sm">
                   <Link to={`${ROTA_DOS_AVISOS}/${a.id}`} aria-label={`Editar: ${a.title}`}>
                     Editar

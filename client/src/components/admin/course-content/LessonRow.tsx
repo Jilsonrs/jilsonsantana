@@ -58,7 +58,7 @@ export function LessonRow({
           <LessonEditForm lesson={lesson} aoTerminar={() => setEditando(false)} onChanged={onChanged} />
         ) : (
           <>
-            <p className="text-sm font-medium">{lesson.title}</p>
+            <p className="text-sm font-medium break-words">{lesson.title}</p>
             <span className={CLASSE_DA_ETIQUETA}>{ROTULO_DO_STATUS[lesson.status]}</span>
             {lesson.isFreePreview && <span className={CLASSE_DA_ETIQUETA}>Prévia grátis</span>}
             <Button type="button" variant="ghost" size="icon" aria-label={`Editar a aula ${lesson.title}`} onClick={() => setEditando(true)}>

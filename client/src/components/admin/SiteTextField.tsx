@@ -15,6 +15,21 @@ function rotulo(key: string): string {
   return key.split(".").slice(2).join(".") || key;
 }
 
+/**
+ * Altura proporcional ao conteúdo: evita que palavras curtas ("Cursos", "Trilhas")
+ * ocupem caixas gigantes de 120px, mantendo o campo limpo e proporcional.
+ */
+function dimensaoDoCampo(texto: string) {
+  const quebras = (texto.match(/\n/g) || []).length;
+  if (quebras >= 3 || texto.length > 200) {
+    return { rows: 4, className: "min-h-[104px] py-2.5 px-4 text-base resize-y" };
+  }
+  if (quebras >= 1 || texto.length > 70) {
+    return { rows: 2, className: "min-h-[68px] py-2.5 px-4 text-base resize-y" };
+  }
+  return { rows: 1, className: "min-h-[44px] py-2.5 px-4 text-base resize-y" };
+}
+
 function Texto({
   campo,
   onSalvar,
@@ -29,6 +44,7 @@ function Texto({
   const [valor, setValor] = useState(noAr);
   const mudou = valor !== noAr;
   const id = campo.key;
+  const dim = dimensaoDoCampo(valor);
 
   return (
     <div className="space-y-1">
@@ -42,7 +58,8 @@ function Texto({
       </div>
       <Textarea
         id={id}
-        rows={2}
+        rows={dim.rows}
+        className={dim.className}
         value={valor}
         onChange={(e) => setValor(e.target.value)}
       />

@@ -53,8 +53,8 @@ export function HomeListItem<T extends ItemDaLista>({ item, config }: { item: T;
         <span className="rounded-full border px-2 py-0.5 font-medium">{ROTULO_STATUS[item.status]}</span>
         {config.comOrdem && <span>Ordem {item.displayOrder}</span>}
       </div>
-      <p className="whitespace-pre-line">{principal}</p>
-      <p className="whitespace-pre-line text-sm text-muted-foreground">{secundario}</p>
+      <p className="whitespace-pre-line break-words">{principal}</p>
+      <p className="whitespace-pre-line text-sm text-muted-foreground break-words">{secundario}</p>
 
       {confirmando ? (
         <div className="space-y-2 rounded-md border border-destructive/40 p-3">

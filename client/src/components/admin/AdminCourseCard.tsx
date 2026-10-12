@@ -52,12 +52,12 @@ export function AdminCourseCard({ curso, numeros = null, aoExcluir }: { curso: C
         <div className="flex flex-1 flex-col gap-6 md:py-1">
           {/* Cabeçalho */}
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div className="space-y-3">
-              <h3 className="font-display text-xl font-semibold leading-tight text-foreground transition-colors group-hover:text-primary">
+            <div className="min-w-0 flex-1 space-y-3">
+              <h3 className="font-display text-xl font-semibold leading-tight text-foreground transition-colors group-hover:text-primary break-words">
                 {curso.title}
               </h3>
               
-              <div className="flex flex-wrap items-center gap-3">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                 <Badge variant={curso.status === ContentStatus.PUBLISHED ? "default" : "secondary"} className="rounded-full px-3 font-medium">
                   {ROTULO_DO_STATUS[curso.status]}
                 </Badge>
@@ -72,7 +72,7 @@ export function AdminCourseCard({ curso, numeros = null, aoExcluir }: { curso: C
               </div>
             </div>
 
-            <div className="flex items-center gap-2 pt-1 sm:pt-0">
+            <div className="flex shrink-0 items-center gap-2 pt-1 sm:pt-0">
               <Button asChild variant="outline" size="sm" className="rounded-full hover:border-primary/40 hover:text-primary transition-colors">
                 <Link to={`/admin/cursos/${curso.id}`}>Editar</Link>
               </Button>
@@ -88,12 +88,12 @@ export function AdminCourseCard({ curso, numeros = null, aoExcluir }: { curso: C
           </div>
 
           {/* Grid de Números */}
-          <dl className="grid grid-cols-3 gap-6 pt-1">
+          <dl className="grid grid-cols-3 gap-2 sm:gap-6 pt-1">
             {numerosDoCartao(numeros).map(({ rotulo, total, embaixo }) => (
-              <div key={rotulo} className="flex flex-col gap-1 border-l border-border-fine pl-4 first:border-0 first:pl-0">
+              <div key={rotulo} className="flex flex-col gap-1 border-l border-border-fine pl-2.5 sm:pl-4 first:border-0 first:pl-0">
                 <dt className="text-xs font-medium text-muted-foreground">{rotulo}</dt>
-                <dd className="font-display text-2xl font-light text-foreground">{total}</dd>
-                {embaixo && <dd className="font-mono text-[10px] tracking-widest text-muted-foreground/70 uppercase">{embaixo}</dd>}
+                <dd className="font-display text-xl sm:text-2xl font-light text-foreground">{total}</dd>
+                {embaixo && <dd className="font-mono text-[9px] sm:text-[10px] tracking-widest text-muted-foreground/70 uppercase">{embaixo}</dd>}
               </div>
             ))}
           </dl>

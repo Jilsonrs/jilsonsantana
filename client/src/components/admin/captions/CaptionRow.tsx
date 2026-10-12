@@ -37,13 +37,13 @@ export function CaptionRow({
         : { texto: "Legenda enviada", Icone: CheckCircle2, cor: "text-primary" };
 
   return (
-    <li className="flex flex-wrap items-center gap-x-6 gap-y-2 border-b border-border/60 py-4">
+    <li className="flex flex-wrap items-center gap-x-4 sm:gap-x-6 gap-y-2 border-b border-border/60 py-4">
       <estado.Icone className={`size-5 shrink-0 ${estado.cor}`} aria-hidden="true" />
       <span className="min-w-0 flex-1 font-medium text-foreground">{titulo}</span>
-      <span className={`w-48 text-sm ${estado.cor}`}>{estado.texto}</span>
-      <span className="w-28 text-sm text-muted-foreground">{legenda ? haQuantoTempo(legenda.enviadaEm) : ""}</span>
+      <span className={`w-full sm:w-48 text-sm ${estado.cor}`}>{estado.texto}</span>
+      <span className="w-full sm:w-28 text-sm text-muted-foreground">{legenda ? haQuantoTempo(legenda.enviadaEm) : ""}</span>
       {temVideo && (
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <input
             ref={arquivoRef}
             type="file"
