@@ -4308,8 +4308,9 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             e-mail já tem conta, o pagamento abandonado, o aviso repetido. Revisão de segurança
             e prova na área restrita. **Depende dos passos 1 e 2.** Não vai ao ar sozinho.
             **Da proposta da tela pública (agente, 12/10/2026 — `billing.md` → *A tela pública
-            de assinar*), a resolver ANTES de fechar o que a rota aceita:** a resposta da caixa
-            "quero receber novidades" (**P82**). **A rota recebe o CPF ou CNPJ, obrigatório**
+            de assinar*), a resolver ANTES de fechar o que a rota aceita:** **a rota recebe a resposta da caixa
+            "quero receber novidades"** (decisão do operador, 12/10/2026: a caixa entra,
+            desmarcada) e grava no `marketingConsent` da conta que nasce. **A rota recebe o CPF ou CNPJ, obrigatório**
             (decisões do operador, 12/10/2026: *"colocar CPF logo já resolve"* e *"deixa CPF
             obrigatório e aceita CNPJ"* — `billing.md`). **Não há campo País** (decisão dele no
             mesmo dia, etapa 4.6c: a escola é só para o Brasil); o que restringe é o número

@@ -464,7 +464,7 @@ pagamento sem ter assinado vê "confirmando" e depois "está demorando", sem cam
 
 > **NADA AQUI ESTÁ DECIDIDO além do que traz data e frase do operador.** É a proposta do agente
 > depois de ele mostrar as telas de pagamento da Udemy e do Code with Mosh. O que existe na tela
-> e os textos são dele: as perguntas estão em `pendencias.md` (**P80 a P84, P88 e P90**; a P79, a P86, a P87 e a P89 ele respondeu em 12/10/2026). Quem construir o
+> e os textos são dele: as perguntas estão em `pendencias.md` (**P80, P81, P83, P84, P88 e P90**; a P79, a P82, a P86, a P87 e a P89 ele respondeu em 12/10/2026). Quem construir o
 > passo 6 confere antes o que ele já respondeu, e registra a resposta aqui, com a data e a frase.
 > *A Udemy e o Mosh são referência desta análise, nunca texto do site.*
 
@@ -725,7 +725,7 @@ troca de cartão dá, pela documentação da Paddle).*
 | "Ao assinar, você concorda com os Termos" | sim | sim | não | **vale ter**, quando os Termos existirem |
 | País ou endereço | só o país | endereço completo | nada | **o país, sim; endereço, não** (P80) |
 | CPF ou número fiscal | não pede | só de empresa, opcional | nada | **sim, o CPF** (decisão dele, 12/10/2026) |
-| Receber novidades por e-mail | caixa já marcada | caixa desmarcada | não pergunta | **P82** (desmarcada) |
+| Receber novidades por e-mail | caixa já marcada | caixa desmarcada | não pergunta | **sim, desmarcada** (decisão dele, 12/10/2026) |
 | Nome completo | sim | sim | o nome é opcional | **P83** (pedir ao criar a senha) |
 | Apple Pay, Google Pay, PayPal | os dois primeiros | Apple Pay e PayPal | só cartão (Pix na 4.9) | não na abertura |
 | Depoimentos na tela de pagamento | não | 2 | só na home | não na abertura |
@@ -739,7 +739,9 @@ celular, uma coluna só, nesta ordem)*:
    site**, que já leva a FAQ, Termos e Privacidade.
 2. **Título** — "Assinar" e "Uma assinatura, todos os cursos e trilhas." (os de hoje).
 3. **Seus dados** *(novo)* — o e-mail (com uma linha dizendo para que serve e "Já tem conta?
-   Entrar") e o **CPF ou CNPJ**, obrigatório (decisões de 12/10/2026). *O campo País e o aviso
+   Entrar"), o **CPF ou CNPJ**, obrigatório, e a **caixa de novidades**, desmarcada (decisões de
+   12/10/2026; a caixa: à recomendação do agente, ele respondeu "sim" — fecha a P82; é ela que
+   liga o `marketingConsent` da conta que nasce no pagamento). *O campo País e o aviso
    para quem é de fora chegaram a ser decididos e foram cancelados no mesmo dia (etapa 4.6c).*
 4. **Escolha o plano** — os dois cartões de hoje, sem mudança: Mensal marcado (é o cartão em que
    a pessoa clicou na home) e Anual ao lado com o selo "17% de desconto" e "equivale a R$ 82,92
@@ -781,7 +783,7 @@ desde a decisão de 12/10/2026; a coluna em inglês saiu desta tabela)*:
 | Termos | Ao assinar, você concorda com os Termos de Uso e a Política de Privacidade. |
 | Título da lista | O que está incluído |
 | Dúvidas *(se o item 9 ficar)* | Ficou com dúvida? Veja as perguntas frequentes. |
-| Novidades *(se a P82 for sim)* | Quero receber novidades e ofertas da escola por e-mail. |
+| Novidades *(caixa desmarcada)* | Quero receber novidades e ofertas da escola por e-mail. |
 | Depois de pagar, título | Assinatura confirmada. |
 | Depois de pagar, texto | Enviamos um e-mail para {email} com o link para você criar sua senha e começar a estudar. |
 | Depois de pagar, não chegou | Não chegou em alguns minutos? Confira a caixa de spam ou peça de novo. |

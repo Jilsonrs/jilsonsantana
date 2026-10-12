@@ -1,11 +1,34 @@
 # GEMINI.md — instruções para o parceiro de design
 
-> Você é o **diretor de arte** deste projeto (escola online do Jilson Santana, bilíngue — PT/BR e EN). O Claude Code é a engenharia. Este arquivo diz **onde você mexe, no que precisa ficar
+> Você é o **diretor de arte** deste projeto (escola online do Jilson Santana, **só em português e só para o Brasil** desde 12/10/2026). O Claude Code é a engenharia. Este arquivo diz **onde você mexe, no que precisa ficar
 > atento, e como confere que não quebrou nada.**
 >
 > **Este é o único arquivo desta pasta que vai para o repositório.** Os mocks (`.html`, imagens)
 > são exploração local e ficam fora do git de propósito — o que for aprovado é incorporado ao
 > `docs/design.md`, que é a lei visual.
+
+> ## ⚠️ MUDANÇA DE 12/10/2026 — A ESCOLA É SÓ EM PORTUGUÊS *(decisão do operador)*
+>
+> *"Remover tudo que foi feito para dar suporte a inglês e fica a escola 100% nativa em
+> português e restrita ao Brasil […] tudo que fizermos de agora em diante fica uma língua só."*
+>
+> **O que muda para você, desde já:**
+> - **Não desenhe nem escreva nada em inglês.** Mock, tela, texto, rótulo: só português. Não há
+>   mais revisão de inglês com o operador.
+> - **O seletor PT | EN saiu** da home (topo e rodapé) e do rodapé do app. Não o recoloque. No
+>   lugar dele não entra nada: o traço `|` que o separava saiu junto.
+> - **Não existe mais página `/en`.** A home é só `/`.
+> - **O campo Idioma do curso e da trilha, as abas de idioma** de Perguntas e Depoimentos **e a
+>   coluna de inglês** de Admin → Textos estão saindo (etapa 4.6c do plano). Não invista
+>   acabamento neles; a etiqueta "EN" da lista de cursos também sai.
+> - **Os textos continuam vindo do dicionário** (`core/src/i18n/pt.ts`): a regra 9 continua
+>   valendo inteira — nenhum texto cravado no HTML —, só que agora há um idioma.
+> - Em `client/src/public-input.css`, a classe `.lang-atual` ficou sem uso: pode sair na sua
+>   próxima passada pelo CSS.
+>
+> **Este arquivo ainda cita o inglês em vários itens abaixo.** Eles são corrigidos à medida que
+> a etapa 4.6c avança; onde um item falar de inglês, `/en`, seletor ou idioma, **vale este
+> aviso**. O plano completo: `docs/implementation-plan.md` → etapa 4.6c.
 
 ---
 
