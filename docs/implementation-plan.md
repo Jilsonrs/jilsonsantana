@@ -4190,9 +4190,13 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             e prova na área restrita. **Depende dos passos 1 e 2.** Não vai ao ar sozinho.
             **Da proposta da tela pública (agente, 12/10/2026 — `billing.md` → *A tela pública
             de assinar*), a resolver ANTES de fechar o que a rota aceita:** a resposta da caixa
-            "quero receber novidades" (**P82**). **A rota NÃO recebe CPF** (decisão do operador,
-            12/10/2026: a nota fiscal sai só quando o aluno pede, e o CPF é informado no
-            pedido — `billing.md`). **E duas coisas que a tela precisa deste passo:** a tela de depois do
+            "quero receber novidades" (**P82**). **A rota recebe o PAÍS e o CPF** (decisão do
+            operador, 12/10/2026, revendo a do mesmo dia: *"colocar CPF logo já resolve"* —
+            `billing.md`; os detalhes do campo são a **P87**, e o que acontece com quem é de
+            fora, a **P86**). *Proposta do agente, a fechar no plano do passo, com context7:* o
+            CPF é conferido no servidor e fica guardado NA STRIPE, junto do cliente (o número
+            fiscal dela, `br_cpf`/`br_cnpj`) — um dado pessoal a menos no banco da escola.
+            **E duas coisas que a tela precisa deste passo:** a tela de depois do
             pagamento não tem login — precisa saber que a assinatura valeu sem revelar nada de
             outra pessoa · o que se diz quando o e-mail já tem conta (rascunho: "Este e-mail já
             tem conta. Entre para assinar."; dizer isso revela quem tem conta — a revisão de
@@ -4228,6 +4232,14 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             está logado só muda se ele disser (P80) · o valor da linha de renovação é o do
             servidor; com código promocional, se a prévia não der o valor da renovação, a linha
             sai sem valor — nunca conta feita na tela.
+            **Acrescentado em 12/10/2026, na mesma conversa:** o **país** e o **CPF** entram no
+            formulário, que é o mesmo das duas telas (a pública e a de quem está logado) · a
+            **coluna de resumo** com o total de hoje, se ele confirmar (P80 — o agente passou a
+            recomendar; revê a decisão de 10/10 de mostrar "Hoje você paga" só com código) ·
+            **antes de desenhar os campos País e CPF, MEDIR na área restrita o que o campo da
+            Stripe já pede sozinho**, com um cartão de teste do Brasil: a doc diz que o campo
+            de pagamento cuida do número fiscal de comprador da América Latina, e dois campos
+            de CPF na mesma tela é o erro a evitar.
       - [ ] **Passo 7 — Os e-mails automáticos da assinatura.** A cobrança que falhou (com a
             data da próxima tentativa), o aviso antes de trancar e a assinatura cancelada (com
             o link para reativar). Os textos são do operador. **Depende só do passo 3** — pode
@@ -4326,6 +4338,13 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       endereço não é preciso, nem fora do Brasil; se a P22 escolher o Stripe Tax, ele pede o
       país — nos EUA o CEP, no Canadá o CEP ou a província —, nunca o endereço completo. Pode
       aparecer só para quem paga com cartão de fora; como mostrar é decisão do operador.
+      **A direção dele para o imposto de fora (12/10/2026):** *"eu quero terceirizar o máximo
+      que puder com a Stripe"* — pesa para o Stripe Managed Payments (a Stripe como vendedora).
+      Conferido na doc no mesmo dia: ele só funciona com o Checkout da Stripe e Payment Links, e
+      **assinatura já feita não migra para ele** — decide-se ANTES da primeira venda para fora
+      (P86 trata do que fazer até lá). A verificar aqui: se aceita empresa brasileira, e se a
+      página dele abre dentro do site. O desenho proposto: quem é do Brasil paga dentro do
+      site, em reais; quem é de fora, pela Stripe como vendedora. Detalhe em `billing.md`.
 - [ ] **4.9 — Pix recorrente (código).** O mandato no Payment Element e a régua própria do Pix (falha
       de Pix não se retenta como cartão). **Trazido da 4.2 (10/10/2026):** o Pix é um item a mais na
       lista de formas de pagamento do servidor (na 4.2, só cartão), sem refazer a tela. A home já

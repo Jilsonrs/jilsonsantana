@@ -448,7 +448,7 @@ pagamento sem ter assinado vê "confirmando" e depois "está demorando", sem cam
 
 > **NADA AQUI ESTÁ DECIDIDO além do que traz data e frase do operador.** É a proposta do agente
 > depois de ele mostrar as telas de pagamento da Udemy e do Code with Mosh. O que existe na tela
-> e os textos são dele: as perguntas estão em `pendencias.md` (**P80 a P85**; a P79 ele respondeu em 12/10/2026). Quem construir o
+> e os textos são dele: as perguntas estão em `pendencias.md` (**P80 a P87**; a P79 ele respondeu em 12/10/2026). Quem construir o
 > passo 6 confere antes o que ele já respondeu, e registra a resposta aqui, com a data e a frase.
 > *A Udemy e o Mosh são referência desta análise, nunca texto do site.*
 
@@ -468,7 +468,8 @@ customer's full billing address for tax calculation […] use the Address Elemen
 - **Endereço não é exigido para aprovar o cartão.** O campo de pagamento já pede sozinho o que
   cada cartão precisa. Endereço completo serve para **calcular imposto**: é por isso que o Mosh
   pede (ele cobra "+ taxes") e a Udemy pede só o país.
-- **Para a escola:** nenhum campo a mais na abertura, com a cobrança em reais.
+- **Para a escola:** a Stripe não pede campo a mais na abertura, com a cobrança em reais. O
+  país e o CPF entram na tela por outro motivo: a nota fiscal e o imposto de fora (abaixo).
 - **E quando vender para fora** *(pergunta do operador, 12/10/2026: "será que vou precisar
   quando a escola for lançada para alunos em inglês?")*: para aprovar o cartão, continua não
   precisando. Só passa a precisar **se a Stripe for calcular o imposto de fora** (Stripe Tax —
@@ -478,15 +479,45 @@ customer's full billing address for tax calculation […] use the Address Elemen
   **o país; nos EUA, o CEP; no Canadá, o CEP ou a província.** Nunca o endereço completo que o
   Mosh pede. **Pode aparecer só para quem precisa** (quem paga com cartão de fora do Brasil) —
   como mostrar é decisão dele, na abertura da etapa 4.8.
-- **NOTA FISCAL: só quando o aluno pede, e a tela de assinar NÃO pede CPF** *(decisão do
-  operador, 12/10/2026 — fecha a P79)*. O agente tinha apontado que a FAQ da home prometia
-  "emitimos nota fiscal para todos os pagamentos" e a tela pede só e-mail e cartão. A resposta
-  dele: *"vou ajustar o texto 'Sim, emitimos nota fiscal sempre que solicitada.' aí na hora de
-  solicitar informa CPF e o que mais for necessário"*. O CPF é pedido no pedido da nota, não na
-  hora de pagar. **Quem troca o texto da FAQ é ele**, no admin (P12) — e a resposta em inglês
-  acompanha (hoje: "we issue an invoice for every payment"). Por onde o aluno pede a nota não
-  foi definido. *Reabre se o contador disser que, no regime da empresa, a nota é obrigatória em
-  toda venda: aí o CPF volta a ser pedido na hora de assinar.*
+- **DECISÃO: A TELA DE ASSINAR PEDE O CPF DESDE O COMEÇO** *(operador, 12/10/2026 — fecha a
+  P79)*. O agente tinha apontado que a FAQ da home promete "emitimos nota fiscal para todos os
+  pagamentos" e a tela pede só e-mail e cartão. A primeira resposta dele, no mesmo dia, foi
+  pedir o CPF só no pedido da nota; **ele reviu em seguida:** *"eu penso em crescer, MEI é só o
+  começo, para não ficar refazendo a tela toda hora, colocar CPF logo já resolve e quando
+  alguém solicitar nota fiscal, se precisar de alguma informação adicional, é só solicitar"*.
+  O texto da FAQ continua sendo trocado por ele, no admin (P12): "Sim, emitimos nota fiscal
+  sempre que solicitada." — e a resposta em inglês acompanha. Os detalhes do campo (obrigatório?
+  aceita CNPJ?) são a **P87**. *Reabre se a escola deixar de emitir nota fiscal no Brasil.*
+- **O "campo universal" que ele perguntou EXISTE na Stripe** `[FATO — context7 /websites/stripe,
+  12/10/2026]`: cada cliente da Stripe guarda um **número fiscal com o tipo do país** — `br_cpf`
+  e `br_cnpj` no Brasil, `eu_vat` na Europa, e dezenas de outros. É um campo só, com a legenda
+  que muda conforme o país. E a doc diz que o próprio campo de pagamento cuida disso para
+  comprador da América Latina: *"The `tax_id` field on the Payment Method `billing_details`
+  hash is used to collect and store Latin American buyers' tax identifiers. Stripe Checkout and
+  the Payment Element automatically handle `tax_id` collection."* **Não medido:** em que
+  situação o campo da Stripe mostra o CPF sozinho (o cartão de teste usado até hoje é dos EUA).
+  **Fora do Brasil, pessoa física não informa número nenhum**; o número fiscal de fora (VAT) é
+  de empresa, e é opcional — é o "Add a business tax ID" do Mosh.
+- **IMPOSTO DE FORA — a direção do operador (12/10/2026):** *"eu quero terceirizar o máximo que
+  puder com a Stripe para essa parte de impostos de clientes do exterior quando for ter"*. É a
+  P22, e pesa para o **Stripe Managed Payments** (a Stripe vira a vendedora: registra, declara
+  e recolhe em mais de 80 países), não para o Stripe Tax (calcula e cobra, mas o registro e a
+  declaração em cada país ficam com a escola). `[FATO — context7 /websites/stripe, 12/10/2026]`
+  *"Checkout compatibility is limited to Stripe Checkout and Payment Links"* — continua não
+  funcionando com o pagamento embutido de hoje; e *"Managed Payments can only be enabled for
+  new subscriptions purchased through a Managed Payments Checkout Session; existing
+  subscriptions are not eligible"* — **assinatura já feita não migra: decide-se ANTES da
+  primeira venda para fora.** O desenho que atende às duas vontades dele: quem é do Brasil paga
+  dentro do site, em reais, como hoje; quem é de fora paga pela Stripe como vendedora.
+  **Não verificado:** se o Managed Payments aceita empresa brasileira, e se a página dele pode
+  abrir dentro do site. Tudo isso é da etapa 4.8; **a tela de hoje não precisa ser refeita por
+  causa disso** — o que muda lá é para onde vai quem escolhe um país de fora.
+- **O campo PAÍS** *(pergunta do operador, 12/10/2026: alunos de Portugal e de outros países de
+  língua portuguesa podem querer assinar já; "se incluir país no cadastro talvez seja uma opção
+  como a Udemy faz")*: **perguntar o país não tem consequência nenhuma; o que tem consequência
+  é VENDER para quem mora fora** — na União Europeia o imposto é devido desde a primeira venda
+  (`idiomas.md` §5), com ou sem campo. O campo é o que deixa a escola escolher: mostrar o CPF só
+  para o Brasil, e decidir o que acontece com quem é de fora (**P86**). O agente recomenda ter.
 
 **O que a Udemy e o Mosh mostram na hora de pagar, e a escola:**
 
@@ -498,13 +529,14 @@ customer's full billing address for tax calculation […] use the Address Elemen
 | Mensal ou anual na tela de pagamento, com selo no anual | sim (anual vem marcado) | escolhe antes, na página | **já temos** (mensal vem marcado) | fica como está |
 | "O que está incluído" | 3 linhas | 5 a 6 linhas | só na home | **vale ter** (a lista da home) |
 | Dizer que renova sozinha, por quanto, até cancelar | sim | sim | só a frase da Stripe embaixo do cartão, sem valor | **vale ter** (uma linha) |
-| Resumo do pedido numa coluna (total de hoje, próxima cobrança) | sim | sim | "Hoje você paga", só com código (decisão de 10/10) | não: a linha acima basta |
+| Resumo do pedido numa coluna (total de hoje, próxima cobrança) | sim | sim | "Hoje você paga", só com código (decisão de 10/10) | **vale ter** (recomendação REVISTA em 12/10: ver abaixo) |
 | Código promocional | sim | sim | **já temos** | — |
 | "Cancele quando quiser" | sim, e diz onde | sim | **já temos** | — |
 | Reembolso | "não concedemos, exceto por lei" | selo de 30 dias | não aparece na tela | **vale ter** (7 dias) |
 | "Pagamento seguro" | sim | sim | não | **vale ter** (uma linha) |
 | "Ao assinar, você concorda com os Termos" | sim | sim | não | **vale ter**, quando os Termos existirem |
-| País ou endereço | só o país | endereço completo | nada | não se aplica hoje (ver acima) |
+| País ou endereço | só o país | endereço completo | nada | **o país, sim; endereço, não** (P80) |
+| CPF ou número fiscal | não pede | só de empresa, opcional | nada | **sim, o CPF** (decisão dele, 12/10/2026) |
 | Receber novidades por e-mail | caixa já marcada | caixa desmarcada | não pergunta | **P82** (desmarcada) |
 | Nome completo | sim | sim | o nome é opcional | **P83** (pedir ao criar a senha) |
 | Apple Pay, Google Pay, PayPal | os dois primeiros | Apple Pay e PayPal | só cartão (Pix na 4.9) | não na abertura |
@@ -518,14 +550,18 @@ celular, uma coluna só, nesta ordem)*:
    públicas (Cursos, Trilhas, Assine, Meus estudos, PT | EN). No fim da página, **o rodapé do
    site**, que já leva a FAQ, Termos e Privacidade.
 2. **Título** — "Assinar" e "Uma assinatura, todos os cursos e trilhas." (os de hoje).
-3. **Seu e-mail** *(novo)* — o campo, uma linha dizendo para que serve e "Já tem conta? Entrar".
+3. **Seus dados** *(novo)* — o e-mail (com uma linha dizendo para que serve e "Já tem conta?
+   Entrar"), o **país** (P80) e, para quem é do Brasil, o **CPF** (decisão de 12/10/2026; P87).
 4. **Escolha o plano** — os dois cartões de hoje, sem mudança: Mensal marcado (é o cartão em que
    a pessoa clicou na home) e Anual ao lado com o selo "17% de desconto" e "equivale a R$ 82,92
    por mês". Embaixo, "Sem fidelidade. Cancele quando quiser."
 5. **Código promocional** — o de hoje, com "Hoje você paga" só quando há código.
 6. **Pagamento** — o campo do cartão de hoje, com a frase da Stripe embaixo dele.
-7. **Junto do botão** *(novo)* — três linhas curtas: a renovação (muda com o plano escolhido), o
-   reembolso e o pagamento seguro. Depois o botão **Assinar** e, embaixo dele, a linha dos Termos.
+7. **O resumo, com o botão** *(novo; recomendação revista em 12/10/2026, à espera dele — P80)* —
+   uma coluna ao lado do formulário, como a Udemy e o Mosh: o plano escolhido e o valor, o
+   desconto quando há código, **o total de hoje**, a renovação (por quanto, até cancelar), o
+   reembolso de 7 dias e o pagamento seguro. Depois o botão **Assinar** e a linha dos Termos.
+   No celular, o resumo vem logo antes do botão.
 8. **O que está incluído** *(novo nesta tela)* — a MESMA lista do cartão da home e a frase do
    rodapé dele ("Acesso a tudo desde o primeiro dia…"). Duas linhas dela prometem o que ainda
    não existe (o JilsonAI e o Pix): **P84**.
@@ -541,6 +577,12 @@ inglês é rascunho e passa pela revisão do `idiomas.md`)*:
 | E-mail, rótulo | Seu e-mail | Your email |
 | E-mail, ajuda | É com ele que você entra na escola. Depois do pagamento, enviamos o link para criar sua senha. | You'll use it to sign in. After payment, we'll email you a link to create your password. |
 | E-mail, atalho | Já tem conta? Entrar | Already have an account? Sign in |
+| País | País | Country |
+| CPF *(só para o Brasil; P87)* | CPF ou CNPJ | *(não aparece fora do Brasil)* |
+| CPF, ajuda | Usamos para emitir a nota fiscal. | — |
+| CPF inválido | Confira o número: este CPF ou CNPJ não é válido. | — |
+| Resumo, título | Resumo | Summary |
+| Resumo, total | Total de hoje | Due today |
 | E-mail que já tem conta | Este e-mail já tem conta. Entre para assinar. | This email already has an account. Sign in to subscribe. |
 | Renovação, mensal | Renova todo mês por {valor}, até você cancelar. | Renews every month at {valor} until you cancel. |
 | Renovação, anual | Renova uma vez por ano por {valor}, até você cancelar. | Renews once a year at {valor} until you cancel. |
@@ -573,18 +615,15 @@ assinatura…", "Está demorando mais que o normal…"). `{contato}` depende da 
 
 **O que isto muda nos passos da 4.7** (detalhe em cada passo, no plano): o **6** ganha os itens
 acima · o **5** pede o nome ao criar a senha (P83) e ganha o "Enviar de novo" · o **4** recebe a
-resposta da caixa de novidades (P82) e precisa dizer à tela de
+resposta da caixa de novidades (P82), o país e o CPF (decisão de 12/10/2026), e precisa dizer à tela de
 depois do pagamento que a assinatura valeu, sem login · o **1** inclui o "Enviar de novo" no
 limite de tentativas · o **8** só abre com os Termos de Uso e a Política de Privacidade no ar.
 
 **O que o agente sugere NÃO ter na abertura** *(para ninguém propor de novo sem o gatilho)*:
-- **Resumo do pedido numa coluna à parte** — repete o que o cartão do plano já diz; ele pediu a
-  tela simples em 10/10/2026. *Reabre com o dólar (4.8) ou o Pix (4.9), como já estava escrito.*
 - **Depoimentos e perguntas frequentes na própria tela** — quem clicou em Assinar acabou de
   passar por eles na home. *Reabre se os números mostrarem gente desistindo nesta tela.*
-- **Campo de país ou endereço** — a Stripe não exige para aprovar o cartão. *Reabre na 4.8, se
-  a P22 escolher o Stripe Tax (aí o país, e o CEP nos EUA e no Canadá), ou se a nota fiscal
-  passar a ser emitida em toda venda (ver a decisão de 12/10/2026, acima).*
+- **Endereço completo** (rua, cidade, CEP), como o Mosh — a Stripe não exige para aprovar o
+  cartão. *Reabre na 4.8, se a P22 escolher o Stripe Tax (aí o CEP nos EUA e no Canadá).*
 - **Apple Pay, Google Pay e PayPal** — mais formas de pagamento a testar e manter antes de haver
   aluno. *Reabre depois do lançamento, se alunos pedirem ou o celular pesar nas desistências.*
 - **Caixa de novidades já marcada** — marcada de fábrica não vale como consentimento (LGPD).
@@ -592,6 +631,13 @@ limite de tentativas · o **8** só abre com os Termos de Uso e a Política de P
   catálogo crescer; aí o número sai do banco, nunca de texto fixo.*
 - **Anual marcado de início** (como a Udemy) — a pessoa clicou num cartão que diz R$ 99,90 e
   veria R$ 995 primeiro. *Reabre se ele quiser testar.*
+
+**Recomendação que o agente REVIU** *(12/10/2026)*: tinha sugerido NÃO ter a coluna de resumo,
+porque ela repete o que o cartão do plano diz e ele pediu a tela simples em 10/10/2026. O
+operador achou a coluna interessante e disse que não quer refazer a tela a cada novidade. Com o
+país, o CPF e, mais adiante, o dólar e o imposto de fora, o total final precisa de um lugar
+fixo: **o agente passou a recomendar a coluna.** Se ele confirmar, revê a decisão de 10/10 de
+mostrar "Hoje você paga" só com código (o gatilho de reabertura dela já previa isso).
 
 **Sugerido pelo agente e RECUSADO pelo operador** *(não propor de novo sem o gatilho)*:
 - **Topo só com o logo e "Voltar", sem menu** (como a Udemy e o Mosh) — recusado em 12/10/2026:
