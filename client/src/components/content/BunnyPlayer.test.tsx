@@ -12,7 +12,6 @@ vi.mock("@/lib/player-do-bunny", () => ({
 const avisos = () => ouvirPlayer.mock.calls[0][1] as Required<OuvintesDoPlayer>;
 
 import { BunnyPlayer } from "./BunnyPlayer";
-import { IdiomaProvider } from "@/lib/language";
 
 /** O endereço com o idioma dos botões do player, que vai SEMPRE (o do app — operador, 07/10/2026). */
 const comBotoesEm = (endereco: string, idioma = "pt") => `${endereco}&lang=${idioma}`;
@@ -84,18 +83,11 @@ describe("BunnyPlayer — onde a aula começa", () => {
     expect(document.querySelector("iframe")?.getAttribute("src")).toBe(comBotoesEm(AULA));
   });
 
-  // OS BOTÕES DO PLAYER NO IDIOMA DO APP (decisão do operador, 07/10/2026): o player novo do
+  // OS BOTÕES DO PLAYER EM PORTUGUÊS (decisão do operador, 07/10/2026): o player novo do
   // Bunny tem a tradução; vale para a aula e para o vídeo de apresentação.
-  it("os botões do player no idioma do app: português por padrão, inglês no app em inglês", () => {
-    const { unmount } = render(<BunnyPlayer src={AULA} title="Aula" />);
+  it("os botões do player em português", () => {
+    render(<BunnyPlayer src={AULA} title="Aula" />);
     expect(params().get("lang")).toBe("pt");
-    unmount();
-    render(
-      <IdiomaProvider idioma="en">
-        <BunnyPlayer src={ENDERECO("aaa", "t1")} title="Intro" />
-      </IdiomaProvider>,
-    );
-    expect(params().get("lang")).toBe("en");
   });
 
   it("o player nunca muda o tocar sozinho: nem na aula com ponto, nem na apresentação", () => {

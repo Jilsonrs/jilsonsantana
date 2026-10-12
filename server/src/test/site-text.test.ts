@@ -54,22 +54,13 @@ describe("texto do site — o que o visitante lê", () => {
     expect(res.text).not.toContain(FABRICA_PT);
   });
 
-  it("editar o português NÃO mexe no inglês", async () => {
-    const cookies = await sessaoAdmin();
-    await editar(cookies, { key: CHAVE, language: "pt", value: EDITADO });
-
-    const en = await request(servidor).get("/en");
-    expect(en.text).not.toContain(EDITADO);
-    expect(en.text).toContain("Courses and guided learning paths");
-  });
-
-  it("editar o inglês NÃO mexe no português", async () => {
+  // A página em inglês saiu (12/10/2026); a rota do admin ainda aceita gravar o inglês
+  // até o passo 3 da etapa 4.6c. O que for gravado lá não pode chegar à home.
+  it("um texto gravado em inglês NÃO aparece na home", async () => {
     const cookies = await sessaoAdmin();
     await editar(cookies, { key: CHAVE, language: "en", value: "Operator wrote this." });
 
-    const en = await request(servidor).get("/en");
     const ptRes = await request(servidor).get("/");
-    expect(en.text).toContain("Operator wrote this.");
     expect(ptRes.text).toContain(FABRICA_PT);
     expect(ptRes.text).not.toContain("Operator wrote this.");
   });

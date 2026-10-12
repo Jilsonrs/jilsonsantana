@@ -14,7 +14,6 @@ vi.mock("@/lib/api", () => ({
 }));
 
 import { AdminCoursesPage } from "./AdminCoursesPage";
-import { IdiomaProvider } from "@/lib/language";
 
 // Um curso vazio: nada preenchido ainda.
 const course: AdminCourseCard = {
@@ -99,8 +98,10 @@ describe("AdminCoursesPage — quando excluir falha", () => {
   });
 });
 
-describe("AdminCoursesPage — idioma", () => {
-  it("curso em inglês ganha a etiqueta EN; em português, não", async () => {
+// A escola é só em português (12/10/2026): a etiqueta EN saiu do cartão. Um curso
+// que ainda venha marcado como inglês do servidor não ganha etiqueta nenhuma.
+describe("AdminCoursesPage — sem etiqueta de idioma", () => {
+  it("nenhum cartão mostra EN", async () => {
     adminGetCourses.mockResolvedValue([
       course,
       { ...course, id: 2, slug: "curso-en", title: "English course", language: "en" },
@@ -108,7 +109,7 @@ describe("AdminCoursesPage — idioma", () => {
     renderWithProviders(<AdminCoursesPage />);
 
     await screen.findByText("English course");
-    expect(screen.getAllByText("EN")).toHaveLength(1);
+    expect(screen.queryByText("EN")).toBeNull();
   });
 });
 
@@ -130,15 +131,11 @@ describe("AdminCoursesPage — o cartão do curso", () => {
 
   const cartao = (titulo: string) => screen.findByRole("article", { name: titulo });
 
-  // O nível ao lado do status (acabamento do Antigravity, 30/09/2026), pelo nome
-  // em português, mesmo com o app em inglês; sem nível, nada.
-  it("o nível aparece pelo nome, em português; sem nível, não aparece", async () => {
+  // O nível ao lado do status (acabamento do Antigravity, 30/09/2026), pelo nome;
+  // sem nível, nada.
+  it("o nível aparece pelo nome; sem nível, não aparece", async () => {
     adminGetCourses.mockResolvedValue([{ ...completo, level: "INTERMEDIARIO" }, course]);
-    renderWithProviders(
-      <IdiomaProvider idioma="en">
-        <AdminCoursesPage />
-      </IdiomaProvider>,
-    );
+    renderWithProviders(<AdminCoursesPage />);
     expect(within(await cartao("Curso completo")).getByText("Intermediário")).toBeTruthy();
     const vazio = await cartao("Exemplo — Fundamentos de Excel + IA");
     for (const nivel of ["Iniciante", "Intermediário", "Avançado"]) expect(within(vazio).queryByText(nivel)).toBeNull();

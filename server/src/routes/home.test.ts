@@ -1,12 +1,16 @@
 import { describe, it, expect } from "vitest";
 import request from "supertest";
+import { flattenDict, pt as fabrica } from "@jilson/core";
 import servidor from "../test/servidor.js";
 import { prisma } from "../lib/prisma.js";
+import { invalidarCacheDeTexto } from "../lib/dict.js";
 import { ASSINATURA_DE_TESTE } from "../lib/assinatura-de-teste.js";
 
 // Testa o app REAL (nada de dublê de Prisma): o que importa aqui é que a rota
-// esteja registrada, que o HTML venha inteiro na primeira resposta e que as
-// duas versões de idioma se apontem uma para a outra.
+// esteja registrada e que o HTML venha inteiro na primeira resposta.
+//
+// A ESCOLA É SÓ EM PORTUGUÊS (decisão do operador, 12/10/2026 — etapa 4.6c do
+// plano): a página `/en`, o seletor PT | EN e o `hreflang` saíram.
 describe("Home pública (SSR)", () => {
   it("GET / responde HTML em português, completo na primeira resposta", async () => {
     const res = await request(servidor).get("/");
@@ -20,22 +24,34 @@ describe("Home pública (SSR)", () => {
     expect(res.text).not.toContain('<div id="root"></div>');
   });
 
-  it("GET /en responde HTML em inglês", async () => {
+  it("a página em inglês NÃO existe mais: /en não é a home", async () => {
+    // Fora de produção, endereço que o servidor não conhece vai para o app (Vite); em
+    // produção, para o app compilado — que leva ao Início. Em nenhum dos dois é a home.
     const res = await request(servidor).get("/en");
 
-    expect(res.status).toBe(200);
-    expect(res.text).toContain('<html lang="en"');
+    expect(res.status).toBe(302);
+    expect(res.text).not.toContain("<html");
   });
 
-  it("sem sessão, o botão leva ao login — nos dois idiomas", async () => {
+  it("não sobra nada do segundo idioma na página", async () => {
+    const res = await request(servidor).get("/");
+
+    // O seletor PT | EN (topo e rodapé), o endereço em inglês e as marcas para o buscador.
+    expect(res.text).not.toContain('class="lang-atual"');
+    expect(res.text).not.toContain(">EN</a>");
+    expect(res.text).not.toContain('href="/en');
+    expect(res.text).not.toContain("hreflang");
+    expect(res.text).not.toContain("lang=en");
+    expect(res.text).toContain('<meta property="og:locale" content="pt_BR">');
+    expect(res.text).toMatch(/<link rel="canonical" href="[^"]+">/);
+  });
+
+  it("sem sessão, o botão leva ao login", async () => {
     // Nasceu com href="#" e ficou assim até o operador clicar. Link morto não
     // quebra teste, typecheck nem build — só decepciona quem clica.
-    // Cada idioma leva ao login no SEU idioma (decisão do operador, 24/09/2026).
-    for (const [rota, login] of [["/", "/login"], ["/en", "/login?lang=en"]]) {
-      const res = await request(servidor).get(rota);
-      expect(res.text, rota).toContain(`<a href="${login}" class="btn-login">`);
-      expect(res.text, rota).not.toContain('href="/inicio"');
-    }
+    const res = await request(servidor).get("/");
+    expect(res.text).toContain('<a href="/login" class="btn-login">');
+    expect(res.text).not.toContain('href="/inicio"');
   });
 
   it("COM sessão, o botão vira Meus estudos e leva ao app", async () => {
@@ -107,14 +123,6 @@ describe("Home pública (SSR)", () => {
         });
       });
 
-      it("na página em inglês o texto é o do dicionário em inglês — nunca o português", async () => {
-        await naSituacao("canceled", PASSADO, async () => {
-          const res = await request(servidor).get("/en").set("Cookie", await entrar());
-          expect(res.text.split(">Reactivate subscription</button>").length - 1).toBe(2);
-          expect(res.text).not.toContain("Reativar assinatura");
-        });
-      });
-
       it("logado e só TENTOU pagar (nunca foi assinante): continua Assinar", async () => {
         await naSituacao("incomplete_expired", PASSADO, async () => {
           const res = await request(servidor).get("/").set("Cookie", await entrar());
@@ -132,20 +140,13 @@ describe("Home pública (SSR)", () => {
 
       it("SEM login nunca: o visitante e o Google veem Assinar, mesmo com ex-assinante no banco", async () => {
         await naSituacao("canceled", PASSADO, async () => {
-          for (const [rota, texto] of [["/", "Reativar assinatura"], ["/en", "Reactivate subscription"]]) {
-            const res = await request(servidor).get(rota);
-            expect(res.text, rota).not.toContain(texto);
-            expect(res.headers["cache-control"], rota).toBeUndefined();
-          }
+          const res = await request(servidor).get("/");
+          expect(res.text).not.toContain("Reativar assinatura");
+          expect(res.headers["cache-control"]).toBeUndefined();
         });
       });
     });
 
-    it("na página em INGLÊS, com o botão desligado (sem aula em inglês): continua desligado, mesmo com sessão", async () => {
-      const res = await request(servidor).get("/en").set("Cookie", await entrar());
-      expect(res.text).not.toContain("/aluno/assinar");
-      expect(res.text).toContain('<button disabled class="btn" style="width: 100%;">');
-    });
   });
 
   it("não sobra NENHUM link morto na vitrine", async () => {
@@ -153,62 +154,27 @@ describe("Home pública (SSR)", () => {
     // clica, e foi assim que o "Entrar" passou semanas sem levar a lugar nenhum.
     // Os destinos apontam para a página final mesmo onde ela ainda não existe
     // (decisão do operador): link no lugar certo desde o começo.
-    for (const rota of ["/", "/en"]) {
-      const res = await request(servidor).get(rota);
-      expect(res.text, rota).not.toContain('href="#"');
-    }
+    const res = await request(servidor).get("/");
+    expect(res.text).not.toContain('href="#"');
   });
 
-  it("cada idioma aponta para os endereços DELE", async () => {
-    const pt = await request(servidor).get("/");
-    const en = await request(servidor).get("/en");
+  it("os links da vitrine e o canal do YouTube", async () => {
+    const res = await request(servidor).get("/");
 
-    expect(pt.text).toContain('href="/cursos"');
-    expect(pt.text).toContain('href="/quem-somos"');
-    expect(pt.text).not.toContain('href="/en/about"');
-
-    expect(en.text).toContain('href="/en/courses"');
-    expect(en.text).toContain('href="/en/about"');
-    // Um endereço por idioma: a página em inglês não empurra ninguém para o
-    // catálogo em português (CLAUDE.md → Idiomas).
-    expect(en.text).not.toContain('href="/cursos"');
+    expect(res.text).toContain('href="/cursos"');
+    expect(res.text).toContain('href="/quem-somos"');
+    expect(res.text).toContain('href="https://www.youtube.com/@JilsonSantanaBI/"');
   });
 
-  // O estrangeiro escolhe o idioma na home e ENTRA já em inglês (decisão do
-  // operador, 24/09/2026): o "Entrar" de /en leva o idioma para o login.
-  it("o Entrar leva o idioma da página para o login", async () => {
-    const pt = await request(servidor).get("/");
-    const en = await request(servidor).get("/en");
-
-    expect(pt.text).toContain('href="/login"');
-    expect(pt.text).not.toContain("/login?lang=en");
-    expect(en.text).toContain('href="/login?lang=en"');
-  });
-
-  // Um canal por idioma (decisão do operador, 24/09/2026): o visitante em
-  // inglês não cai no canal em português.
-  it("o YouTube leva ao canal do idioma da página", async () => {
-    const pt = await request(servidor).get("/");
-    const en = await request(servidor).get("/en");
-
-    expect(pt.text).toContain('href="https://www.youtube.com/@JilsonSantanaBI/"');
-    expect(pt.text).not.toContain("@jilsonen");
-    expect(en.text).toContain('href="https://www.youtube.com/@jilsonen"');
-    expect(en.text).not.toContain("@JilsonSantanaBI");
-  });
-
-  it("as duas versões declaram o favicon", async () => {
+  it("a página declara o favicon", async () => {
     // O template do servidor não herda nada do index.html do React: o que não
     // estiver escrito aqui simplesmente não existe na página pública.
-    for (const rota of ["/", "/en"]) {
-      const res = await request(servidor).get(rota);
-      expect(res.text, rota).toContain('<link rel="icon" type="image/svg+xml" href="/favicon.svg">');
-    }
+    const res = await request(servidor).get("/");
+    expect(res.text).toContain('<link rel="icon" type="image/svg+xml" href="/favicon.svg">');
   });
 
   it("a imagem de cada curso se chama como o slug do curso", async () => {
-    // Convenção do operador (docs/idiomas.md): o arquivo leva o nome do curso, e
-    // é isso que faz a versão em inglês ter arquivo próprio sem convenção extra.
+    // Convenção do operador: o arquivo leva o nome do curso.
     // Vale a pena testar porque o erro é INVISÍVEL: a página renderiza a imagem
     // de outro curso e parece certa. Já aconteceu uma vez, em 22/09.
     const res = await request(servidor).get("/");
@@ -220,72 +186,66 @@ describe("Home pública (SSR)", () => {
     expect(new Set(imagens)).toEqual(new Set(slugs));
   });
 
-  it("o seletor PT | EN leva ao endereço do outro idioma e marca o atual", async () => {
-    const pt = await request(servidor).get("/");
-    const en = await request(servidor).get("/en");
-
-    // Um endereço por idioma: o seletor é dois links, nunca um botão que troca
-    // o idioma no mesmo endereço (CLAUDE.md → Idiomas).
-    // O idioma atual é marcado por `aria-current` (leitor de tela) + a classe
-    // do traço (visual). O outro fica na cor NORMAL, não apagada: cinza lia
-    // como "indisponível" justamente no link para onde a pessoa quer ir
-    // (decisão do operador, set/2026).
-    expect(pt.text).toContain('<a href="/" aria-current="page" class="lang-atual">PT</a>');
-    expect(pt.text).toContain('<a href="/en">EN</a>');
-    expect(en.text).toContain('<a href="/en" aria-current="page" class="lang-atual">EN</a>');
-    expect(en.text).toContain('<a href="/">PT</a>');
-    // Nenhum dos dois pode voltar a ser apagado.
-    expect(pt.text + en.text).not.toContain('style="color: var(--text-muted);">EN');
-  });
-
-  it("as duas versões declaram canonical e hreflang recíprocos", async () => {
-    const pt = await request(servidor).get("/");
-    const en = await request(servidor).get("/en");
-
-    expect(pt.text).toMatch(/<link rel="canonical" href="[^"]+">/);
-    expect(pt.text).toContain('hreflang="en"');
-    expect(en.text).toContain('hreflang="pt-BR"');
-  });
-
-  it("sem curso em inglês, a home /en não quebra e não mostra card de curso", async () => {
-    const res = await request(servidor).get("/en");
-
-    expect(res.status).toBe(200);
-    expect(res.text).not.toContain("Agentic AI na Prática");
-  });
 });
 
-// Um trecho por seção, tirado do dicionário em português. Se algum deles voltar
-// a ser literal no template, ele aparece na página /en — que é justamente o
-// defeito que este teste existe para pegar. Inclui um rótulo de acessibilidade,
+// NENHUM TEXTO FICA CRAVADO NO TEMPLATE (CLAUDE.md → Rendering Boundary).
+//
+// Antes, a prova era a página em inglês: um texto em português cravado no HTML
+// aparecia em `/en`. Sem `/en`, a prova passa a ser o próprio caminho do
+// operador: TODO texto editável da home é trocado no banco por uma marca, e a
+// página tem que mostrar as marcas e nenhum texto de fábrica. O que estiver
+// escrito direto no template continua aparecendo — e reprova aqui.
+//
+// Um trecho por seção, tirado do dicionário. Inclui um rótulo de acessibilidade,
 // que o olho não vê mas o leitor de tela lê.
-const TRECHOS_PT = [
+// (Depoimentos e perguntas não entram: vêm de tabelas, não do dicionário.)
+const TRECHOS = [
   "Navegação Principal",
   "A IA está redefinindo o mundo",
   "Atualize-se continuamente",
   "Um certificado por trilha",
   "conhece o curso que você está fazendo",
   "Vou te guiar para que você",
-  "muito acima de qualquer expectativa",
   "Sem fidelidade e sem multa",
-  "profissionais de negócios",
   "Todos os direitos reservados",
 ];
 
+// Os textos que a home usa: `common.*` (menu e rodapé) e `home.*`.
+const DA_HOME = flattenDict(fabrica).filter(([chave]) => chave.startsWith("home.") || chave.startsWith("common."));
+const marca = (chave: string) => `«${chave}»`;
+
 describe("Home — nenhum texto fica cravado no template", () => {
-  it("a home em português mostra todos os trechos (o dicionário está ligado)", async () => {
+  it("de fábrica, a home mostra todos os trechos (o dicionário está ligado)", async () => {
     const res = await request(servidor).get("/");
 
-    for (const trecho of TRECHOS_PT) {
+    for (const trecho of TRECHOS) {
       expect(res.text, `faltou em /: ${trecho}`).toContain(trecho);
     }
   });
 
-  it("a home em inglês NÃO vaza nenhum deles", async () => {
-    const res = await request(servidor).get("/en");
+  it("com TODO texto trocado no banco, não sobra nenhum texto de fábrica na página", async () => {
+    await prisma.siteText.createMany({ data: DA_HOME.map(([chave]) => ({ key: chave, language: "PT" as const, value: marca(chave) })) });
+    invalidarCacheDeTexto();
+    try {
+      const res = await request(servidor).get("/");
+      expect(res.status).toBe(200);
 
-    for (const trecho of TRECHOS_PT) {
-      expect(res.text, `vazou em /en: ${trecho}`).not.toContain(trecho);
+      // Cada trecho de seção deu lugar à marca da chave dele.
+      for (const trecho of TRECHOS) {
+        const dono = DA_HOME.find(([, texto]) => texto.includes(trecho));
+        expect(dono, `trecho sem chave no dicionário: ${trecho}`).toBeDefined();
+        expect(res.text, `vazou na home: ${trecho}`).not.toContain(trecho);
+        if (dono) expect(res.text, `a marca não chegou: ${dono[0]}`).toContain(marca(dono[0]));
+      }
+      // E nenhuma frase do dicionário sobrou escrita no HTML. Só as de 25 letras ou
+      // mais: palavra curta ("Cursos", "IA") aparece também no nome de um curso.
+      for (const [chave, texto] of DA_HOME) {
+        if (texto.length >= 25) expect(res.text, `texto cravado no template (${chave})`).not.toContain(texto);
+      }
+    } finally {
+      // A suíte compartilha UM banco: sobrescrita esquecida aqui quebra os outros testes.
+      await prisma.siteText.deleteMany({});
+      invalidarCacheDeTexto();
     }
   });
 });

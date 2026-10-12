@@ -468,6 +468,8 @@ export type PaginaDaAula = {
    * assinatura" (decisão do operador, 10/10/2026). Não vem na página do admin.
    */
   reativar?: boolean;
+  /** Quem pede está com a cobrança atrasada há mais de 3 dias: a aula trancada diz isso, com "Trocar cartão" (etapa 4.6b). */
+  atrasada?: boolean;
 };
 
 /**
@@ -735,10 +737,10 @@ export async function deleteLesson(id: number): Promise<void> {
 
 // ── Calls ─────────────────────────────────────────────────────────────────────
 
-// As listas de DESCOBERTA pedem o idioma do app (`?lang=`); sem ele o servidor
-// devolve português. O link direto (por slug) não leva idioma: abre sempre.
-export async function getCourses(lang: LanguageCode = "pt"): Promise<CourseCard[]> {
-  const { data } = await client.get<CourseCard[]>("/courses", { params: { lang } });
+// As listas de DESCOBERTA. A escola é só em português (12/10/2026): o site não
+// manda mais idioma, e o servidor devolve português.
+export async function getCourses(): Promise<CourseCard[]> {
+  const { data } = await client.get<CourseCard[]>("/courses");
   return data;
 }
 
@@ -747,8 +749,8 @@ export async function getCourseBySlug(slug: string): Promise<CourseDetail> {
   return data;
 }
 
-export async function getTrilhas(lang: LanguageCode = "pt"): Promise<TrilhaCard[]> {
-  const { data } = await client.get<TrilhaCard[]>("/trilhas", { params: { lang } });
+export async function getTrilhas(): Promise<TrilhaCard[]> {
+  const { data } = await client.get<TrilhaCard[]>("/trilhas");
   return data;
 }
 
@@ -772,8 +774,8 @@ export async function getMyTrilha(id: number): Promise<TrilhaDetail> {
   return data;
 }
 
-export async function search(q: string, lang: LanguageCode = "pt"): Promise<SearchResult> {
-  const { data } = await client.get<SearchResult>("/search", { params: { q, lang } });
+export async function search(q: string): Promise<SearchResult> {
+  const { data } = await client.get<SearchResult>("/search", { params: { q } });
   return data;
 }
 
@@ -815,14 +817,11 @@ export async function adminUpdateSiteText(input: {
 export type CommonTexts = Dict["common"];
 export const COMMON_TEXTS_QUERY = "site-text-common";
 
-export async function getCommonTexts(lang: LanguageCode): Promise<CommonTexts> {
-  const { data } = await client.get<CommonTexts>(`/site-text/common/${lang}`);
+// O endereço ainda leva `pt` porque é assim que o servidor publica a rota; ele
+// muda no passo 3 da etapa 4.6c.
+export async function getCommonTexts(): Promise<CommonTexts> {
+  const { data } = await client.get<CommonTexts>("/site-text/common/pt");
   return data;
-}
-
-// O idioma do app, gravado na CONTA de quem está logado.
-export async function updateMyLanguage(language: LanguageCode): Promise<void> {
-  await client.patch("/me/language", { language });
 }
 
 // ---------------------------------------------------------------------------

@@ -544,7 +544,7 @@ describe("o aviso da Stripe — perder o acesso derruba a sessão", () => {
     await prisma.subscription.update({ where: { stripeSubscriptionId: ASSINATURA_DE_TESTE }, data: { status: "active", currentPeriodEnd: new Date("2100-01-01T00:00:00Z") } });
   });
 
-  it("a assinatura acabou (as cobranças falharam e a Stripe cancelou): o cookie de antes deixa de valer", async () => {
+  it("a assinatura que dava acesso acabou de uma vez (encerrada, com o período vencido): o cookie de antes deixa de valer", async () => {
     const sub = novoId("sub");
     await avisar(sub);
     const cookies = await entrarComoAluno();
@@ -560,6 +560,82 @@ describe("o aviso da Stripe — perder o acesso derruba a sessão", () => {
     expect(await temAcessoAtivo(memberId)).toBe(false);
     expect((await eu(cookies)).status).toBe(401);
     expect(await prisma.session.count({ where: { userId: memberId } })).toBe(0);
+  });
+
+  // A COBRANÇA ATRASADA (etapa 4.6b): as aulas ficam por 3 dias depois da falha, e trancam pelo
+  // RELÓGIO — sem gravação nenhuma. Por isso ninguém é deslogado ao passar dos 3 dias, nem
+  // quando a Stripe cancela depois: a pessoa precisa estar logada para trocar o cartão.
+  it("a cobrança falhou e ainda está nos 3 dias: continua assistindo E logado", async () => {
+    const sub = novoId("sub");
+    await avisar(sub);
+    const cookies = await entrarComoAluno();
+    await avisar(sub, { status: "past_due", pagoAte: new Date(Date.now() - DIA) });
+    expect(await temAcessoAtivo(memberId)).toBe(true);
+    expect((await eu(cookies)).status).toBe(200);
+  });
+
+  it("passaram os 3 dias: as aulas trancam, e nem a nova tentativa que falha nem o cancelamento automático deslogam", async () => {
+    const sub = novoId("sub");
+    await avisar(sub);
+    const cookies = await entrarComoAluno();
+    const falhou = new Date(Date.now() - DIA);
+    await avisar(sub, { status: "past_due", pagoAte: falhou });
+    // O tempo passa: a cobrança falhou há 5 dias. Ninguém gravou nada — é o relógio.
+    const haCincoDias = new Date(Date.now() - 5 * DIA);
+    await prisma.subscription.update({ where: { stripeSubscriptionId: sub }, data: { currentPeriodEnd: haCincoDias } });
+    expect(await temAcessoAtivo(memberId)).toBe(false);
+    expect((await eu(cookies)).status).toBe(200);
+    // A Stripe tenta de novo e falha (outra sincronia), e duas semanas depois cancela.
+    await avisar(sub, { status: "past_due", pagoAte: haCincoDias });
+    await avisar(sub, { status: "canceled", pagoAte: haCincoDias });
+    expect(await temAcessoAtivo(memberId)).toBe(false);
+    expect((await eu(cookies)).status).toBe(200);
+    expect(await prisma.session.count({ where: { userId: memberId } })).toBeGreaterThan(0);
+  });
+
+  it("atrasada ainda nos 3 dias e a assinatura é encerrada: perde as aulas ali, e a sessão cai (a regra de sempre)", async () => {
+    const sub = novoId("sub");
+    await avisar(sub);
+    const cookies = await entrarComoAluno();
+    const ontem = new Date(Date.now() - DIA);
+    await avisar(sub, { status: "past_due", pagoAte: ontem });
+    expect((await eu(cookies)).status).toBe(200);
+    await avisar(sub, { status: "canceled", pagoAte: ontem });
+    expect(await temAcessoAtivo(memberId)).toBe(false);
+    expect((await eu(cookies)).status).toBe(401);
+  });
+
+  // OS 3 DIAS CONTAM DA PRIMEIRA COBRANÇA QUE FALHOU (achado da revisão de segurança, 12/10/2026).
+  // Atrasada por mais de um ciclo, a Stripe abre um período novo: se o espelho aceitasse a data
+  // nova, as aulas reabririam por 3 dias a cada ciclo, sem pagamento.
+  it("a atrasada que atravessa um ciclo NÃO ganha data nova: o gate continua fechado — e, quando paga, a data volta a andar", async () => {
+    const sub = novoId("sub");
+    const primeiraFalha = new Date(Date.now() - 35 * DIA);
+    await avisar(sub, { status: "past_due", pagoAte: primeiraFalha });
+    expect(await temAcessoAtivo(memberId)).toBe(false);
+    // O ciclo virou e ela continua atrasada: a Stripe diz o começo do período NOVO, de ontem.
+    await avisar(sub, { status: "past_due", pagoAte: new Date(Date.now() - DIA) });
+    expect((await espelho(sub))?.currentPeriodEnd?.getTime()).toBe(primeiraFalha.getTime());
+    expect(await temAcessoAtivo(memberId)).toBe(false);
+    // Pagou: em dia, com a data que a Stripe diz.
+    const fim = new Date(Date.now() + 30 * DIA);
+    await avisar(sub, { status: "active", pagoAte: fim });
+    expect((await espelho(sub))?.currentPeriodEnd?.getTime()).toBe(fim.getTime());
+    expect(await temAcessoAtivo(memberId)).toBe(true);
+    // Falhou de novo, tempos depois: os 3 dias contam da falha NOVA.
+    const outraFalha = new Date(Date.now() - DIA);
+    await avisar(sub, { status: "past_due", pagoAte: outraFalha });
+    expect((await espelho(sub))?.currentPeriodEnd?.getTime()).toBe(outraFalha.getTime());
+    expect(await temAcessoAtivo(memberId)).toBe(true);
+  });
+
+  it("a data só fica presa enquanto o ESPELHO já era atrasada: vindo de outro estado, vale a que a Stripe diz", async () => {
+    const sub = novoId("sub");
+    await avisar(sub, { status: "paused", pagoAte: new Date(Date.now() - 40 * DIA) });
+    const falhou = new Date(Date.now() - DIA);
+    await avisar(sub, { status: "past_due", pagoAte: falhou });
+    expect((await espelho(sub))?.currentPeriodEnd?.getTime()).toBe(falhou.getTime());
+    expect(await temAcessoAtivo(memberId)).toBe(true);
   });
 
   it("cancelou e ainda tem dias pagos: continua assistindo E logado, até o fim deles", async () => {

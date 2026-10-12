@@ -1,14 +1,13 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import type { LanguageCode } from "@jilson/core";
 import * as api from "@/lib/api";
 import type { SiteTextField as Campo } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 
-// UM campo do dicionário, nos dois idiomas. Componente próprio porque cada
-// campo salva SOZINHO: um formulário único com 155 campos e um botão no fim
+// UM campo do dicionário. A escola é só em português (12/10/2026): a coluna de
+// inglês saiu. Componente próprio porque cada campo salva SOZINHO: um formulário único com 155 campos e um botão no fim
 // obrigaria a reenviar tudo para corrigir uma vírgula.
 
 /** "home.pricing.features[0]" → "features[0]" — a seção já é o título do grupo. */
@@ -16,28 +15,26 @@ function rotulo(key: string): string {
   return key.split(".").slice(2).join(".") || key;
 }
 
-function Idioma({
+function Texto({
   campo,
-  language,
   onSalvar,
   salvando,
 }: {
   campo: Campo;
-  language: LanguageCode;
-  onSalvar: (language: LanguageCode, valor: string) => void;
+  onSalvar: (valor: string) => void;
   salvando: boolean;
 }) {
-  const { factory, override } = campo[language];
+  const { factory, override } = campo.pt;
   const noAr = override ?? factory;
   const [valor, setValor] = useState(noAr);
   const mudou = valor !== noAr;
-  const id = `${campo.key}-${language}`;
+  const id = campo.key;
 
   return (
     <div className="space-y-1">
       <div className="flex items-center justify-between gap-2">
-        <Label htmlFor={id} className="text-xs uppercase text-muted-foreground">
-          {language === "pt" ? "Português" : "Inglês"}
+        <Label htmlFor={id} className="font-mono text-xs text-muted-foreground">
+          {rotulo(campo.key)}
         </Label>
         {override !== null && (
           <span className="text-xs text-muted-foreground">editado por você</span>
@@ -48,7 +45,6 @@ function Idioma({
         rows={2}
         value={valor}
         onChange={(e) => setValor(e.target.value)}
-        aria-label={`${rotulo(campo.key)} em ${language === "pt" ? "português" : "inglês"}`}
       />
       {/* O valor de fábrica fica VISÍVEL ao lado do atual: depois da primeira
           edição o texto do código fica velho, e é essa diferença que o operador
@@ -60,7 +56,7 @@ function Idioma({
       )}
       {mudou && (
         <div className="flex gap-2">
-          <Button size="sm" disabled={salvando} onClick={() => onSalvar(language, valor)}>
+          <Button size="sm" disabled={salvando} onClick={() => onSalvar(valor)}>
             Salvar
           </Button>
           <Button size="sm" variant="ghost" onClick={() => setValor(noAr)}>
@@ -69,7 +65,7 @@ function Idioma({
         </div>
       )}
       {!mudou && override !== null && (
-        <Button size="sm" variant="ghost" disabled={salvando} onClick={() => onSalvar(language, "")}>
+        <Button size="sm" variant="ghost" disabled={salvando} onClick={() => onSalvar("")}>
           Voltar ao padrão
         </Button>
       )}
@@ -91,21 +87,16 @@ export function SiteTextField({ campo }: { campo: Campo }) {
 
   return (
     <div className="space-y-3 border-t py-4">
-      <p className="font-mono text-xs text-muted-foreground">{rotulo(campo.key)}</p>
-      <div className="grid gap-4 sm:grid-cols-2">
-        {(["pt", "en"] as const).map((language) => (
-          // `key` inclui o valor no ar: quando o salvamento recarrega a lista, o
-          // campo é remontado com o texto novo. Sem isso o `useState` guardaria
-          // o valor antigo e "Salvar" reapareceria sozinho depois de salvar.
-          <Idioma
-            key={`${language}-${campo[language].override ?? campo[language].factory}`}
-            campo={campo}
-            language={language}
-            salvando={salvar.isPending}
-            onSalvar={(lang, valor) => salvar.mutate({ key: campo.key, language: lang, value: valor })}
-          />
-        ))}
-      </div>
+      {/* `key` é o valor no ar: quando o salvamento recarrega a lista, o campo é
+          remontado com o texto novo. Sem isso o `useState` guardaria o valor
+          antigo e "Salvar" reapareceria sozinho depois de salvar. */}
+      <Texto
+        key={campo.pt.override ?? campo.pt.factory}
+        campo={campo}
+        salvando={salvar.isPending}
+        // O servidor ainda pede o idioma; ele sai de lá no passo 3 da etapa 4.6c.
+        onSalvar={(valor) => salvar.mutate({ key: campo.key, language: "pt", value: valor })}
+      />
       {salvar.isError && (
         <p role="alert" className="text-sm text-destructive">
           Não foi possível salvar. Tente de novo.

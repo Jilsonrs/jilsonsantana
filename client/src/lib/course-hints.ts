@@ -9,7 +9,6 @@ export const DICAS_DO_CURSO = {
   subtitle: "Uma frase que completa o título com o que o aluno consegue fazer no fim.",
   slug: "É o endereço do curso. Não mude depois de publicado: quem já compartilhou o link e a posição no Google se perdem.",
   description: "Use pelo menos 200 palavras: o que o aluno aprende, como o curso é, e o que ele faz no fim.",
-  language: "O idioma das aulas. Ele só troca enquanto o curso é rascunho.",
   level: "Para quem o curso foi pensado. Use Todos os níveis quando ele serve do iniciante ao avançado.",
   learnTags: "Frases curtas que começam com um verbo, como \"Criar\" ou \"Automatizar\".",
   requirements: "O que o aluno precisa saber ou ter antes de começar. Se não precisa de nada, diga isso.",

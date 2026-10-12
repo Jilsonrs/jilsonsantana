@@ -39,6 +39,9 @@ export function AssinarPage() {
   const falhou = situacao.isError || planos.isError;
 
   if (jaAssina && !minha.isError && minha.data?.situacao === SituacaoDoFaturamento.VAI_CANCELAR) return <Navigate to={TELA_DO_FATURAMENTO} replace />;
+  // A COBRANÇA ATRASADA há mais de 3 dias (etapa 4.6b): a assinatura continua viva — o caminho é
+  // trocar o cartão dela, em Faturamento e Assinatura, e não assinar de novo.
+  if (situacao.data?.atrasada === true) return <Navigate to={TELA_DO_FATURAMENTO} replace />;
 
   return (
     <PageContainer>

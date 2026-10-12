@@ -1,11 +1,35 @@
 # GEMINI.md — instruções para o parceiro de design
 
-> Você é o **diretor de arte** deste projeto (escola online do Jilson Santana, bilíngue — PT/BR e EN). O Claude Code é a engenharia. Este arquivo diz **onde você mexe, no que precisa ficar
+> Você é o **diretor de arte** deste projeto (escola online do Jilson Santana, **só em português e só para o Brasil** desde 12/10/2026). O Claude Code é a engenharia. Este arquivo diz **onde você mexe, no que precisa ficar
 > atento, e como confere que não quebrou nada.**
 >
 > **Este é o único arquivo desta pasta que vai para o repositório.** Os mocks (`.html`, imagens)
 > são exploração local e ficam fora do git de propósito — o que for aprovado é incorporado ao
 > `docs/design.md`, que é a lei visual.
+
+> ## ⚠️ MUDANÇA DE 12/10/2026 — A ESCOLA É SÓ EM PORTUGUÊS *(decisão do operador)*
+>
+> *"Remover tudo que foi feito para dar suporte a inglês e fica a escola 100% nativa em
+> português e restrita ao Brasil […] tudo que fizermos de agora em diante fica uma língua só."*
+>
+> **O que muda para você, desde já:**
+> - **Não desenhe nem escreva nada em inglês.** Mock, tela, texto, rótulo: só português. Não há
+>   mais revisão de inglês com o operador.
+> - **O seletor PT | EN saiu** da home (topo e rodapé) e do rodapé do app. Não o recoloque. No
+>   lugar dele não entra nada: o traço `|` que o separava saiu junto.
+> - **Não existe mais página `/en`.** A home é só `/`.
+> - **O campo Idioma do curso, as abas de idioma** de Perguntas e Depoimentos, **a coluna de
+>   inglês** de Admin → Textos e a etiqueta "EN" da lista de cursos **saíram em 12/10/2026**
+>   (passo 2 da etapa 4.6c). Em Textos, cada texto ficou com um campo só, de largura inteira; em
+>   Perguntas e Depoimentos, a primeira seção chama "Cadastro" e tem só o botão de novo.
+> - **Os textos continuam vindo do dicionário** (`core/src/i18n/pt.ts`): a regra 9 continua
+>   valendo inteira — nenhum texto cravado no HTML —, só que agora há um idioma.
+> - Em `client/src/public-input.css`, a classe `.lang-atual` ficou sem uso: pode sair na sua
+>   próxima passada pelo CSS.
+>
+> **Este arquivo ainda cita o inglês em vários itens abaixo.** Eles são corrigidos à medida que
+> a etapa 4.6c avança; onde um item falar de inglês, `/en`, seletor ou idioma, **vale este
+> aviso**. O plano completo: `docs/implementation-plan.md` → etapa 4.6c.
 
 ---
 
@@ -74,7 +98,7 @@ endereço, o arquivo e o que vale (ou não vale) acabamento.
 
 ### A parte PÚBLICA saiu do React *(set/2026 — leia antes de abrir a home)*
 
-A home (`/` e `/en`) **não é mais React**. É HTML montado no servidor, sem hidratação, porque
+A home (`/`) **não é mais React**. É HTML montado no servidor, sem hidratação, porque
 página de marketing é buscar do banco e desenhar — e assim ela carrega sem bundle de JS. O que
 isso muda para você:
 
@@ -105,7 +129,7 @@ servidores (§5); o React responde em `localhost:5173`, a home pública em `loca
 
 | Endereço | Arquivo |
 |---|---|
-| `/` · `/en` | `server/src/views/home.ts` + `client/src/public-input.css` |
+| `/` | `server/src/views/home.ts` + `client/src/public-input.css` |
 
 **Públicas e do aluno ao mesmo tempo — hoje em React** *(porta 5173)*
 
@@ -165,7 +189,7 @@ servidores (§5); o React responde em `localhost:5173`, a home pública em `loca
 > 2** (a coluna do meio). Legendas e Mensagens nasceram como **EM BREVE** e **existem desde 04/10**
 > (itens 21 e 24 da fila); cada passo completo ganha um **✓**, os dois desenhados em `client/src/components/nav/SecondaryNavItem.tsx`. **Formate
 > as seções à vontade.** A antiga seção "Organização" se dividiu:
-> - idioma e nível foram para `CourseLanguageLevelFields.tsx`, dentro de Informações básicas;
+> - o nível está em `CourseLevelField.tsx`, dentro de Informações básicas (o campo Idioma, que morava ao lado, saiu em 12/10/2026);
 > - as camadas foram para `CourseLayersSection.tsx`, no passo Mídia e destaques (era "Página do curso");
 > - status e ordem foram para `CoursePublishSection.tsx`, no passo Publicar.
 >
@@ -210,11 +234,11 @@ servidores (§5); o React responde em `localhost:5173`, a home pública em `loca
 
 > **Depoimentos e Perguntas frequentes são a MESMA tela** com nomes diferentes *(Bloco C3,
 > 23/09/2026)*. A marcação mora em três componentes compartilhados — formatar um formata os dois:
-> `client/src/components/admin/HomeListEditor.tsx` (abas de idioma, botão de novo, lista),
+> `client/src/components/admin/HomeListEditor.tsx` (botão de novo e lista — as abas de idioma saíram em 12/10/2026),
 > `HomeListItem.tsx` (o cartão de cada item, com Editar e Excluir) e `HomeListItemForm.tsx` (o
 > formulário). As duas páginas só dizem os nomes dos campos.
 > **Não mexa sem falar com o operador:** o **Excluir em dois cliques** (ele apaga de vez — é o
-> caminho do pedido de remoção por LGPD) e as abas de idioma com `aria-pressed`. Os dois têm teste.
+> caminho do pedido de remoção por LGPD) (as abas de idioma saíram em 12/10/2026). Os dois têm teste.
 > **"Site" ganhou 2º nível** (Textos · Depoimentos · Perguntas frequentes) na coluna secundária
 > (`SecondaryNav.tsx`). Como os itens não têm `grupo`, a coluna mostra o título **"Geral"** — é o
 > comportamento atual do componente; se quiser outro visual ali, é conversa com o operador.
@@ -255,17 +279,15 @@ exceto o item 4, que é página pública.
    no celular (CSS `scroll-snap`, sem JavaScript) é opção sua, com o ok do operador. Mexeu no CSS?
    `npm run css:publico` (regra 10).
 5. ~~**Rodapé do app**~~ — **feito em 24/09 e publicado.** Na revisão, a cor `#F5F5F7` escrita
-   no componente virou o token `--surface-vitrine` (regra 2), mesma cor. O seletor PT | EN que
-   você desenhou fica. **Em 24/09 o Claude o ligou ao idioma do app:** virou botão (troca o
-   idioma sem sair da tela), com `aria-pressed` no idioma atual. As classes que você escreveu
-   continuam as mesmas.
-6. **Campo Idioma no formulário de curso** (hoje em `client/src/components/admin/course-form/CourseLanguageLevelFields.tsx`, no passo Informações básicas; era `CourseOrganizationSection.tsx`, que se dividiu em 28/09)
-   — novo em 24/09, na seção Organização. A grade tinha 3 colunas (Nível, Status, Ordem) e agora
-   tem 4 itens, então o quarto desce de linha: o arranjo é seu. Travado (curso publicado), o
-   idioma aparece como texto com o aviso "O idioma trava depois que o curso é publicado." — mude
-   o visual, não o texto (é do operador). Também a etiqueta **"EN"** na lista de cursos
-   (`AdminCoursesPage.tsx`) e o **aviso de erro ao salvar**, logo acima do botão "Salvar" de cada passo (cru: uma linha
-   vermelha; em `course-editor/StepForm.tsx` desde 28/09).
+   no componente virou o token `--surface-vitrine` (regra 2), mesma cor. **O seletor PT | EN
+   saiu em 12/10/2026** (a escola é só em português — aviso no topo deste arquivo), com o traço
+   `|` que o separava. O resto do rodapé está como você deixou.
+6. ~~**Campo Idioma no formulário de curso**~~ — **saiu em 12/10/2026** (a escola é só em
+   português), junto com a etiqueta "EN" da lista de cursos. No lugar ficou só o Nível, em
+   `client/src/components/admin/course-form/CourseLevelField.tsx`: a grade da Classificação
+   tem um campo, e o arranjo é seu. Continua valendo o **aviso de erro ao salvar**, logo acima
+   do botão "Salvar" de cada passo (cru: uma linha vermelha; em `course-editor/StepForm.tsx`
+   desde 28/09).
 7. ~~**Menu de conta**~~ — **acabamento feito em 24/09.** Na revisão, o "abrir ao passar o mouse"
    que você pôs ficou, mas **só para mouse**: no celular o toque dispara "entrar" e "clicar" em
    sequência, e o painel abria e fechava na hora; no computador, passar e clicar também fechava.
@@ -279,7 +301,7 @@ exceto o item 4, que é página pública.
    mantenha o fechamento por Esc e por clique fora: **têm teste**.
 
 8. **Cartão do curso na lista do admin** (`AdminCourseCard.tsx`, 27/09) — capa 16:9 (sem capa,
-   "Sem imagem"), status em português, "EN", módulos e aulas, os três números e a barra de
+   "Sem imagem"), status em português, módulos e aulas, os três números e a barra de
    **Preenchimento** com o que falta. **Desde 09/10** (Bloco MEDIR, decisão do operador): Horas
    assistidas e Alunos são **reais** — o total grande e **"N este mês"** na linha pequena, no lugar
    do "em breve"; carregando ou se a busca falhar, "—" sem a linha. A Avaliação continua "—" / "em
@@ -644,9 +666,9 @@ dicionário (`core/src/i18n/`), **inclusive `aria-label`, `alt` e `title`**:
 ```
 
 **Por quê:** o operador edita esses textos pelo painel, sem deploy — texto cravado no HTML ele
-não alcança. E a versão em inglês (`/en`) lê o mesmo dicionário: literal em português aparece
-**na página em inglês**. Em set/2026 havia 55 textos assim; hoje há zero, e **a suíte reprova se
-um voltar** (o teste compara `/` com `/en`).
+não alcança. Em set/2026 havia 55 textos assim; hoje há zero, e **a suíte reprova se um
+voltar** (desde 12/10/2026 o teste troca todo texto da home no banco e confere que nenhuma frase
+de fábrica sobrou na página).
 
 Corolários que já quebraram coisa aqui:
 - **Texto de dicionário nunca vira caminho de arquivo.** `src="/img/${dict...title}.png"`
@@ -808,7 +830,7 @@ Sem essa separação, a décima tela tem dez paletas paralelas e ninguém sabe q
     (Publicados · Rascunhos · Arquivados) que hoje não aparecem em lugar nenhum.
     *(A linha anterior deste documento dizia que os níveis 2 e 3 não existiam — estava
     desatualizada quanto ao nível 2.)*
-- **A home pública está no ar**, em HTML de servidor (`/` e `/en`), sem React e sem hidratação.
+- **A home pública está no ar**, em HTML de servidor (`/`), sem React e sem hidratação.
   Ela é o mock `design-lab/home-lab.html` transposto. **Mock aprovado se TRANSPÕE, não se
   reinterpreta:** a primeira tentativa reescreveu a marcação com classes inventadas e metade da
   página ficou sem estilo — o typecheck e os testes passaram, porque nenhum dos dois olha CSS.

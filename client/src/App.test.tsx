@@ -14,7 +14,6 @@ vi.mock("@/lib/auth-client", () => ({
 vi.mock("@/lib/api", async (original) => ({
   ...(await original<typeof import("@/lib/api")>()),
   getCommonTexts: () => new Promise(() => {}),
-  updateMyLanguage: () => Promise.resolve(),
   getNotificacoes: () => Promise.resolve({ naoLidas: 0, itens: [] }),
   getMyTrilhas: () => Promise.resolve([]),
 }));

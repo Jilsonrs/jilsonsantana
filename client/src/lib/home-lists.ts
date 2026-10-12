@@ -1,7 +1,7 @@
 import { ContentStatus, type LanguageCode } from "@jilson/core";
 
 // O editor das listas da home (Bloco C3): depoimentos e perguntas frequentes
-// têm a MESMA forma — dois textos, idioma, ordem e status — e só mudam de nome.
+// têm a MESMA forma — dois textos, ordem e status — e só mudam de nome.
 // Um editor só, configurado por página, em vez de duas telas copiadas que um
 // dia divergem.
 
@@ -35,7 +35,7 @@ export type ConfigDaLista<T extends ItemDaLista> = {
   secundario: CampoDaLista;
   ler: (item: T) => { principal: string; secundario: string };
   listar: () => Promise<T[]>;
-  criar: (language: LanguageCode, valores: ValoresDoItem) => Promise<unknown>;
+  criar: (valores: ValoresDoItem) => Promise<unknown>;
   atualizar: (id: number, valores: ValoresDoItem) => Promise<unknown>;
   excluir: (id: number) => Promise<void>;
 };
@@ -47,9 +47,7 @@ export const ROTULO_STATUS: Record<ContentStatus, string> = {
   [ContentStatus.ARCHIVED]: "Arquivado",
 };
 
-export const ROTULO_IDIOMA: Record<LanguageCode, string> = { pt: "Português", en: "Inglês" };
-
-/** Item novo entra no FIM da lista do idioma: maior ordem + 10 (os passos de 10
+/** Item novo entra no FIM da lista: maior ordem + 10 (os passos de 10
  *  deixam espaço para encaixar um item entre dois sem renumerar). */
 export function proximaOrdem(itens: ItemDaLista[]): number {
   return itens.reduce((maior, i) => Math.max(maior, i.displayOrder), 0) + 10;

@@ -1,5 +1,12 @@
 # Plataforma bilíngue (PT + EN) — a especificação
 
+> **REVOGADO EM 12/10/2026.** Decisão do operador: *"remover tudo que foi feito para dar suporte
+> a inglês e fica a escola 100% nativa em português e restrita ao Brasil"*. A etapa **4.6c** do
+> plano tira o segundo idioma do código, do banco e dos documentos. **Trabalho novo nasce só em
+> português.** Este documento descreve o que ainda está no código até a 4.6c terminar; no passo
+> 6 dela ele sai do repo (proposta do agente), e a decisão fica no `decisions-archive.md`.
+> *Reabre só por decisão dele — e seria projeto novo.*
+
 > **O QUE É ISTO:** a especificação de produto da escola em dois idiomas. Cobre quem vê o quê,
 > como o visitante cai no idioma certo, o que muda no conteúdo, o preço fora do Brasil, o imposto
 > e o que ainda vai nascer com idioma. **NÃO é lido por sessão.**
@@ -225,6 +232,11 @@ o idioma na home e **entra já em inglês**.
 
 ## 5. Preço e cobrança (Fase 4)
 
+> **REVISTO EM 12/10/2026 (decisões do operador):** no lançamento a escola vende **só para o
+> Brasil**, em reais. O dólar e a venda para quem mora fora foram para a **fase do exterior**,
+> com outra empresa como vendedora. O que está abaixo é a regra que valerá nessa fase. Detalhe:
+> `billing.md` → *A tela pública de assinar*.
+
 `[operador, 14/09]` **A moeda segue o país do cartão, nunca o idioma do site.**
 
 | Cartão | Mensal | Anual |
@@ -259,6 +271,16 @@ site para português e pagaria em real, bem menos que US$ 30.
   Stripe** (Checkout / Payment Links), o que colide com a decisão atual de pagamento **embutido nas
   telas da escola** (Payment Element, sem página hospedada). **Não verificado:** se aceita empresa
   brasileira.
+- **VERIFICADO EM 12/10/2026 — corrige os dois itens acima:** com a empresa no Brasil, **nenhum
+  dos dois existe**. O Brasil não está na lista de países em que a empresa pode estar para usar o
+  Stripe Tax (da América Latina, só o México) nem na do Managed Payments. E o operador decidiu,
+  no mesmo dia, que quem é de fora também não sai do site para pagar. Os caminhos que sobram e
+  as páginas lidas: `billing.md` → *A tela pública de assinar*.
+- **DECISÃO do operador (12/10/2026): no lançamento a escola vende SÓ PARA O BRASIL**; quem é de
+  fora lê que a assinatura ainda não chegou ao país dele e deixa o e-mail. A venda para fora
+  abre numa **fase do exterior**, com empresa terceirizada como vendedora (P22) — não com o
+  contador. As páginas em inglês continuam: servem a quem mora no Brasil e mostram o aviso a
+  quem é de fora.
 
 **A escolha**, para a Fase 4 e com o contador: **pagar dentro do site e cuidar da papelada fiscal**
 × **usar a página da Stripe e não ter papelada**. Levar junto ao contador: a conta Stripe está como

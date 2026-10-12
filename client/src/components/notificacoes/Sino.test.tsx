@@ -4,7 +4,6 @@ import { screen, fireEvent, waitFor, within } from "@testing-library/react";
 import { Route, Routes, useLocation } from "react-router-dom";
 import { renderWithProviders } from "@/test-utils";
 import type { Notificacao, Notificacoes } from "@/lib/api";
-import { IdiomaProvider } from "@/lib/language";
 
 const getNotificacoes = vi.fn();
 const marcarNotificacaoLida = vi.fn();
@@ -38,14 +37,14 @@ function OndeEstou() {
   return <p data-testid="onde">{pathname + hash}</p>;
 }
 
-function abrir(idioma: "pt" | "en" = "pt") {
+function abrir() {
   renderWithProviders(
-    <IdiomaProvider idioma={idioma}>
+    <>
       <Sino />
       <Routes>
         <Route path="*" element={<OndeEstou />} />
       </Routes>
-    </IdiomaProvider>,
+    </>,
   );
 }
 
@@ -125,14 +124,6 @@ describe("Sino — a lista", () => {
     abrir();
     fireEvent.click(await screen.findByRole("button", { name: "Notificações, 7 não lidas" }));
     expect(painel().getAllByRole("listitem")).toHaveLength(5);
-  });
-
-  it("em inglês", async () => {
-    abrir("en");
-    fireEvent.click(await screen.findByRole("button", { name: "Notifications, 2 unread" }));
-    expect(screen.getByText("Welcome to Excel 1")).toBeTruthy();
-    expect(screen.getAllByText("2 days ago")).toHaveLength(2);
-    expect(screen.getByRole("button", { name: "Mark all as read" })).toBeTruthy();
   });
 
   it("Esc fecha e devolve o foco ao sino", async () => {

@@ -368,13 +368,17 @@ describe("POST /api/billing/cartao/aplicar — com a cobrança atrasada", () => 
       { timeout: 20_000 },
     );
     await comATrava;
+    const alarme = vi.spyOn(console, "error").mockImplementation(() => {});
     try {
       const res = await aplicar(member);
       expect([res.status, res.body]).toEqual([200, { cartao: MASTER, pagou: true, confirmar: null }]);
       // Não entrou na fila: a Stripe nem foi consultada pela sincronia, e o espelho fica para quem tem a trava (e para o aviso).
       expect(buscarAssinatura).not.toHaveBeenCalled();
       expect((await espelho()).status).toBe("past_due");
+      // Trava ocupada não é alarme: quem a tem está acertando o espelho.
+      expect(alarme).not.toHaveBeenCalled();
     } finally {
+      alarme.mockRestore();
       soltar();
       await segurando;
     }
@@ -388,11 +392,52 @@ describe("POST /api/billing/cartao/aplicar — com a cobrança atrasada", () => 
     expect((await espelho()).status).toBe("past_due");
   });
 
-  it("a sincronia falhou depois de pagar: a troca valeu (quem acerta o espelho é o aviso da Stripe)", async () => {
+  // Com a cobrança atrasada há mais de 3 dias a conta está SEM as aulas (etapa 4.6b): pagou e a
+  // sincronia falhou é alguém pagando e trancado fora até o aviso chegar — precisa de gente.
+  it("a sincronia falhou depois de pagar: a troca valeu — e, com a conta ainda sem aulas, é ERRO no registro (pagou e está trancado fora)", async () => {
     buscarAssinatura.mockRejectedValue(new Error("[stripe] a busca da assinatura falhou: StripeConnectionError"));
-    const res = await aplicar(member);
-    expect([res.status, res.body]).toEqual([200, { cartao: MASTER, pagou: true, confirmar: null }]);
-    expect((await espelho()).status).toBe("past_due");
+    const alarme = vi.spyOn(console, "error").mockImplementation(() => {});
+    const aviso = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      const res = await aplicar(member);
+      expect([res.status, res.body]).toEqual([200, { cartao: MASTER, pagou: true, confirmar: null }]);
+      expect((await espelho()).status).toBe("past_due");
+      const linhas = alarme.mock.calls.flat().join(" ");
+      expect(linhas).toContain(`[stripe] trocar cartão: a conta ${memberId} pagou a fatura em aberto da assinatura ${SUB}`);
+      expect(linhas).toContain("trancado fora");
+    } finally {
+      alarme.mockRestore();
+      aviso.mockRestore();
+    }
+  });
+
+  it("a sincronia falhou depois de pagar, mas a conta TEM as aulas (ainda nos 3 dias): só o aviso — ninguém está trancado", async () => {
+    await comEspelho("past_due", new Date(Date.now() - 24 * 60 * 60 * 1000));
+    buscarAssinatura.mockRejectedValue(new Error("[stripe] a busca da assinatura falhou: StripeConnectionError"));
+    const alarme = vi.spyOn(console, "error").mockImplementation(() => {});
+    const aviso = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      expect((await aplicar(member)).body).toMatchObject({ pagou: true });
+      expect(aviso.mock.calls.flat().join(" ")).toContain("ficou para o aviso");
+      expect(alarme).not.toHaveBeenCalled();
+    } finally {
+      alarme.mockRestore();
+      aviso.mockRestore();
+    }
+  });
+
+  it("o cartão novo foi recusado e a sincronia falhou: ninguém pagou — só o aviso, sem alarme", async () => {
+    pagarFatura.mockResolvedValue("recusada");
+    buscarAssinatura.mockRejectedValue(new Error("[stripe] a busca da assinatura falhou: StripeConnectionError"));
+    const alarme = vi.spyOn(console, "error").mockImplementation(() => {});
+    const aviso = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      expect((await aplicar(member)).body).toMatchObject({ pagou: false });
+      expect(alarme).not.toHaveBeenCalled();
+    } finally {
+      alarme.mockRestore();
+      aviso.mockRestore();
+    }
   });
 
   it("a cobrança da fatura falhou por outro motivo (a Stripe fora do ar): 500, e não 'pagamento confirmado'", async () => {

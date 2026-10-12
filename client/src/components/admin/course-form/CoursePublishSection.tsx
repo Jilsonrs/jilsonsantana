@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { PageSection } from "@/components/layout/PageLayout";
 import { Field, descritoPor } from "./Field";
 import { DICAS_DO_CURSO } from "@/lib/course-hints";
-import { CLASSE_DO_SELECT } from "./CourseLanguageLevelFields";
+import { CLASSE_DO_SELECT } from "./CourseLevelField";
 
 /** Status e ordem no catálogo — no passo Publicar (operador, 28/09/2026). */
 export function CoursePublishSection() {

@@ -15,14 +15,15 @@ const config: ConfigDaLista<AdminTestimonial> = {
   titulo: "Depoimentos",
   descricao: "O que aparece na seção de depoimentos da home. Só os publicados vão para o site.",
   rotuloNovo: "Novo depoimento",
-  vazio: "Nenhum depoimento neste idioma ainda. Enquanto não houver um publicado, a seção não aparece na home.",
+  vazio: "Nenhum depoimento ainda. Enquanto não houver um publicado, a seção não aparece na home.",
   comOrdem: false,
   principal: { rotulo: "Depoimento", linhas: 4, max: 1000 },
   secundario: { rotulo: "Nome completo", linhas: 1, max: 120 },
   ler: (t) => ({ principal: t.text, secundario: t.name }),
   listar: api.adminGetTestimonials,
-  criar: (language, v) =>
-    api.adminCreateTestimonial({ language, text: v.principal, name: v.secundario, status: v.status }),
+  // O servidor ainda pede o idioma; ele sai de lá no passo 3 da etapa 4.6c.
+  criar: (v) =>
+    api.adminCreateTestimonial({ language: "pt", text: v.principal, name: v.secundario, status: v.status }),
   atualizar: (id, v) =>
     api.adminUpdateTestimonial(id, { text: v.principal, name: v.secundario, status: v.status }),
   excluir: api.adminDeleteTestimonial,

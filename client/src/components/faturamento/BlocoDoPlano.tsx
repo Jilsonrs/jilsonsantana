@@ -41,7 +41,11 @@ export function BlocoDoPlano({ assinatura }: { assinatura: AssinaturaComAcesso }
           )}
           {assinatura.situacao === SituacaoDoFaturamento.ATRASADA && (
             <p role="alert" className="text-sm text-destructive">
-              {t.faturamento.atrasada}
+              {assinatura.aulasTrancadas
+                ? t.faturamento.atrasadaSemAulas
+                : assinatura.aulasAte
+                  ? t.faturamento.atrasadaAte.replace("{data}", dataPorExtenso(assinatura.aulasAte, idioma))
+                  : t.faturamento.atrasada}
             </p>
           )}
           <TrocaMarcada troca={assinatura.trocaMarcada} />

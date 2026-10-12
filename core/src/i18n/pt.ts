@@ -475,6 +475,10 @@ export const pt = {
       mudarDePlano: "Mudar de plano",
       cancelar: "Cancelar assinatura",
       atrasada: "Não conseguimos cobrar o seu cartão. Troque o cartão para não perder o acesso.",
+      // Com a data em que as aulas trancam (3 dias depois da cobrança que falhou) — pedido do operador, 12/10/2026.
+      atrasadaAte: "Não conseguimos cobrar o seu cartão. Troque o cartão até {data} para não perder o acesso.",
+      // Depois dos 3 dias, com as aulas já trancadas. Texto aprovado pelo operador em 12/10/2026.
+      atrasadaSemAulas: "Não conseguimos cobrar o seu cartão, e as aulas estão trancadas. Troque o cartão para voltar a estudar.",
       formaDePagamento: "Forma de pagamento",
       cartao: "{bandeira} •••• {final} · vence em {mes}/{ano}",
       semCartao: "Nenhum cartão cadastrado.",
@@ -561,6 +565,8 @@ export const pt = {
       erro: "Não foi possível abrir a aula. Tente de novo.",
       naoEncontrada: "Aula não encontrada.",
       paraAssinantes: "Esta aula é para assinantes.",
+      // A aula trancada de quem está com a cobrança atrasada há mais de 3 dias: o botão é "Trocar cartão" (escolha do operador, 12/10/2026).
+      cobrancaAtrasada: "Sua assinatura está com a cobrança atrasada.",
       // O botão embaixo, só para quem está logado (Fase 4, etapa 4.2). Rascunho.
       assinar: "Assinar",
       // O mesmo botão para quem já foi assinante (decisão do operador, 10/10/2026).

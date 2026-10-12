@@ -15,7 +15,6 @@ vi.mock("@/lib/api", async (importOriginal) => ({
 }));
 
 import { CancelarPage } from "./CancelarPage";
-import { IdiomaProvider } from "@/lib/language";
 
 // A TELA DE CANCELAR (Fase 4, etapa 4.6, sessão b). O que estes testes protegem:
 //   - a tela oferece SÓ o que o servidor disse que cabe: parar a renovação; nos 7 primeiros dias,
@@ -280,31 +279,3 @@ describe("CancelarPage — com a cobrança atrasada", () => {
   });
 });
 
-describe("CancelarPage — em inglês", () => {
-  const emIngles = () =>
-    abrir(
-      <IdiomaProvider idioma="en">
-        <CancelarPage />
-      </IdiomaProvider>,
-    );
-
-  it("as duas saídas, os motivos e as datas em inglês, sem sobra de português", async () => {
-    getMinhaAssinatura.mockResolvedValue(NO_PRAZO);
-    emIngles();
-    expect(await screen.findByRole("heading", { name: "Stop renewal and keep access" })).toBeTruthy();
-    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Cancel subscription");
-    expect(screen.getByLabelText("It's too expensive for me right now")).toBeTruthy();
-    expect(screen.getByLabelText("Want to tell us more?")).toBeTruthy();
-    expect(naTela()).toContain("You keep access until Nov 10, 2026.");
-    expect(naTela()).toContain("You can request this until Oct 18, 2026.");
-    expect(screen.getByRole("link", { name: "Go back without canceling" })).toBeTruthy();
-    for (const portugues of ["Cancelar", "renovação", "motivo", "Voltar", "acesso"]) expect(naTela(), portugues).not.toContain(portugues);
-  });
-
-  it("o reembolso, em inglês", async () => {
-    getMinhaAssinatura.mockResolvedValue(NO_PRAZO);
-    emIngles();
-    fireEvent.click(await screen.findByRole("button", { name: /Cancel and refund/ }));
-    expect((await screen.findByRole("status")).textContent).toContain("Subscription canceled. We've refunded");
-  });
-});

@@ -11,7 +11,6 @@ const getProgressoDasTrilhas = vi.fn();
 vi.mock("@/lib/api", () => ({ getMyTrilhas: () => getMyTrilhas(), getProgressoDasTrilhas: () => getProgressoDasTrilhas() }));
 
 import { StudentHomePage } from "./StudentHomePage";
-import { IdiomaProvider } from "@/lib/language";
 
 function trilha(id: number): MyTrilhaSummary {
   return {
@@ -145,22 +144,3 @@ describe("StudentHomePage — Minhas trilhas", () => {
   });
 });
 
-// O app do aluno existe em inglês (decisão do operador, 24/09/2026).
-describe("StudentHomePage — em inglês", () => {
-  it("o painel fala inglês, sem sobra de português", async () => {
-    useSession.mockReturnValue({ data: { user: { name: "Ana Souza" } }, isPending: false });
-    renderWithProviders(
-      <IdiomaProvider idioma="en">
-        <StudentHomePage />
-      </IdiomaProvider>,
-    );
-
-    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Hi, Ana");
-    const titulos = screen.getAllByRole("heading", { level: 2 }).map((h) => h.textContent);
-    expect(titulos).toEqual(["Keep learning", "My learning paths", "Shortcuts"]);
-    expect(screen.getAllByText("COMING SOON")).toHaveLength(3);
-    expect(await screen.findByText("You haven't saved any learning paths yet.")).toBeTruthy();
-    expect(screen.queryByText("EM BREVE")).toBeNull();
-    expect(screen.queryByText("Continue estudando")).toBeNull();
-  });
-});

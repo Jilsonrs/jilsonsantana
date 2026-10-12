@@ -2,7 +2,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { screen, fireEvent } from "@testing-library/react";
 import { renderWithProviders } from "@/test-utils";
-import { IdiomaProvider } from "@/lib/language";
 import { AccountMenu } from "./AccountMenu";
 
 // O menu da conta no canto superior direito (decisão do operador, 24/09/2026):
@@ -83,18 +82,6 @@ describe("AccountMenu", () => {
     expect(container.querySelector("img")?.getAttribute("src")).toBe("/img/ana.webp");
   });
 
-  it("em inglês, o menu fala inglês", () => {
-    renderWithProviders(
-      <IdiomaProvider idioma="en">
-        <AccountMenu usuario={ana} onSignOut={onSignOut} />
-      </IdiomaProvider>,
-    );
-    fireEvent.click(screen.getByRole("button", { name: "Open account menu" }));
-
-    expect(screen.getByRole("link", { name: "My account" })).toBeTruthy();
-    expect(screen.getByRole("link", { name: "Billing and subscription" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Sign out" })).toBeTruthy();
-  });
 });
 
 // Abrir ao passar o mouse (acabamento do Antigravity, 24/09) vale só para MOUSE.

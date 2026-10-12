@@ -4,7 +4,6 @@ import { screen } from "@testing-library/react";
 import { renderWithProviders } from "@/test-utils";
 import { Role } from "@jilson/core";
 import { AppRail } from "./AppRail";
-import { IdiomaProvider } from "@/lib/language";
 
 function render(papel?: string, route = "/inicio") {
   return renderWithProviders(<AppRail papel={papel} />, {
@@ -86,18 +85,6 @@ describe("AppRail — quem vê o quê", () => {
     expect(screen.queryByText("Certificados")).toBeNull();
   });
 
-  it("em inglês, a etiqueta do aluno traduz — a do admin fica em português", () => {
-    renderWithProviders(
-      <IdiomaProvider idioma="en">
-        <AppRail papel={Role.ADMIN} />
-      </IdiomaProvider>,
-      { route: "/inicio", path: "*" },
-    );
-
-    // JilsonAI é do aluno; Alunos, Dados e Trilhas Admin são do admin.
-    expect(screen.getAllByText("COMING SOON")).toHaveLength(1);
-    expect(screen.getAllByText("EM BREVE").length).toBeGreaterThan(0);
-  });
 });
 
 describe("AppRail — onde estou", () => {

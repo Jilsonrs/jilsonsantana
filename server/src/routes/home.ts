@@ -1,5 +1,4 @@
 import { Router, type Response } from "express";
-import type { Language } from "@prisma/client";
 import { ContentStatus } from "@jilson/core";
 import { prisma } from "../lib/prisma.js";
 import { getDict } from "../lib/dict.js";
@@ -14,12 +13,11 @@ const BASE_URL = process.env.BASE_URL || "http://localhost:3000";
 /**
  * PASSO 1 — conteúdo fixo, igual ao mock aprovado.
  *
- * Os cursos ainda NÃO vêm do banco: falta a migration do campo `language`
- * (e os cursos cadastrados). Enquanto isso, a home real roda com esta lista,
- * que é exatamente a do mock.
+ * Os cursos ainda NÃO vêm do banco: faltam os cursos cadastrados. Enquanto
+ * isso, a home real roda com esta lista, que é exatamente a do mock.
  *
  * PASSO 2 (próximo) — trocar esta constante por leitura do Prisma, filtrando
- * `status: PUBLISHED` + idioma da página e ordenando por `displayOrder`.
+ * `status: PUBLISHED` e ordenando por `displayOrder`.
  */
 const CURSOS_PT: HomeCourse[] = [
   {
@@ -61,15 +59,14 @@ const DESTAQUE_PT: HomeCourse = {
   camadas: ["UNIVERSAL", "MODERNO", "IA"],
 };
 
-// Inglês ainda não tem curso publicado — a página renderiza sem cards, e o
-// botão de assinar fica desligado até existir a primeira aula em inglês.
-const CURSOS_EN: HomeCourse[] = [];
-const DESTAQUE_EN: HomeCourse | null = null;
-const CAN_SUBSCRIBE_EN = false;
-
-// Depoimentos e perguntas frequentes vêm do BANCO (Bloco C3): só PUBLICADOS e
-// só do idioma da página — mesmo filtro de toda leitura pública. Lista vazia
-// esconde a seção inteira (decisão do operador, 23/09/2026).
+// Depoimentos e perguntas frequentes vêm do BANCO (Bloco C3): só PUBLICADOS —
+// mesmo filtro de toda leitura pública. Lista vazia esconde a seção inteira
+// (decisão do operador, 23/09/2026).
+//
+// A escola é só em português (decisão do operador, 12/10/2026 — etapa 4.6c): a
+// página `/en` saiu. O filtro `language = PT` abaixo fica até a coluna sair do
+// banco (passo 4 da etapa): sem ele, as linhas em inglês que ainda existem
+// apareceriam na home.
 //
 // DEPOIMENTOS: 4 SORTEADOS A CADA VISITA, sem ordem e sem carrossel (decisão do
 // operador, 23/09/2026 — "com milhares de depoimentos nunca vão ver igual").
@@ -81,21 +78,21 @@ const CAN_SUBSCRIBE_EN = false;
 // na API tipada. Perguntas frequentes continuam na ordem do operador.
 const DEPOIMENTOS_NA_HOME = 4;
 const byOrder = [{ displayOrder: "asc" as const }, { id: "asc" as const }];
-const listasDaHome = (language: Language) =>
+const listasDaHome = () =>
   Promise.all([
     prisma.$queryRaw<{ text: string; name: string }[]>`
       SELECT "text", "name" FROM "testimonial"
-      WHERE "language" = ${language}::"Language" AND "status" = 'PUBLISHED'::"ContentStatus"
+      WHERE "language" = 'PT'::"Language" AND "status" = 'PUBLISHED'::"ContentStatus"
       ORDER BY random()
       LIMIT ${DEPOIMENTOS_NA_HOME}`,
     prisma.faqItem.findMany({
-      where: { language, status: ContentStatus.PUBLISHED },
+      where: { language: "PT", status: ContentStatus.PUBLISHED },
       orderBy: byOrder,
       select: { question: true, answer: true },
     }),
   ]);
 
-// O texto vem do `getDict`, NUNCA de um import de `pt`/`en`: é ele que aplica o
+// O texto vem do `getDict`, NUNCA de um import direto do dicionário: é ele que aplica o
 // que o operador editou no /admin (server/src/lib/dict.ts).
 // A sessão é lida para UMA coisa só: trocar "Entrar" por "Meus estudos" no
 // cabeçalho. Visitante anônimo não tem cookie, então nem chega ao banco — e o
@@ -126,39 +123,15 @@ router.get("/", async (req, res) => {
   const [dict, sessao, [testimonials, faq]] = await Promise.all([
     getDict("pt"),
     loadSession(req),
-    listasDaHome("PT"),
+    listasDaHome(),
   ]);
   paginaDeQuemEstaLogado(res, sessao !== null);
   res.send(
     renderHome({
       dict,
-      lang: "pt",
       courses: CURSOS_PT,
       featuredCourse: DESTAQUE_PT,
       canSubscribe: true,
-      baseUrl: BASE_URL,
-      logado: sessao !== null,
-      reativar: await botoesDeReativar(sessao),
-      testimonials,
-      faq,
-    }),
-  );
-});
-
-router.get("/en", async (req, res) => {
-  const [dict, sessao, [testimonials, faq]] = await Promise.all([
-    getDict("en"),
-    loadSession(req),
-    listasDaHome("EN"),
-  ]);
-  paginaDeQuemEstaLogado(res, sessao !== null);
-  res.send(
-    renderHome({
-      dict,
-      lang: "en",
-      courses: CURSOS_EN,
-      featuredCourse: DESTAQUE_EN,
-      canSubscribe: CAN_SUBSCRIBE_EN,
       baseUrl: BASE_URL,
       logado: sessao !== null,
       reativar: await botoesDeReativar(sessao),

@@ -15,7 +15,6 @@ vi.mock("@/lib/api", async (importOriginal) => ({
 }));
 
 import { FaturamentoPage } from "./FaturamentoPage";
-import { IdiomaProvider } from "@/lib/language";
 
 // FATURAMENTO E ASSINATURA — o resumo (Fase 4, etapa 4.6). O que estes testes protegem:
 //   - a tela diz o que o SERVIDOR disse da assinatura, em cada situação — e nunca mostra um
@@ -173,6 +172,22 @@ describe("FaturamentoPage — com acesso", () => {
     expect(screen.queryByText(/termina em/)).toBeNull();
   });
 
+  // A TOLERÂNCIA DE 3 DIAS (etapa 4.6b — decisão do operador, 11 e 12/10/2026): dentro dela, o
+  // alerta diz até quando; depois, que as aulas trancaram. Quem diz as duas coisas é o servidor.
+  it("a cobrança falhou há menos de 3 dias: o alerta traz a data em que as aulas trancam", async () => {
+    getMinhaAssinatura.mockResolvedValue({ ...ATIVA, situacao: "atrasada", proximaCobranca: null, aulasAte: MEIO_DIA, aulasTrancadas: false });
+    abrir();
+    expect((await screen.findByRole("alert")).textContent).toBe("Não conseguimos cobrar o seu cartão. Troque o cartão até 10/11/2026 para não perder o acesso.");
+  });
+
+  it("a cobrança falhou há mais de 3 dias: o alerta diz que as aulas estão trancadas — sem prometer data —, e o cartão continua trocável", async () => {
+    getMinhaAssinatura.mockResolvedValue({ ...ATIVA, situacao: "atrasada", proximaCobranca: null, aulasAte: MEIO_DIA, aulasTrancadas: true });
+    abrir();
+    expect((await screen.findByRole("alert")).textContent).toBe("Não conseguimos cobrar o seu cartão, e as aulas estão trancadas. Troque o cartão para voltar a estudar.");
+    expect(naTela()).not.toContain("10/11/2026");
+    expect(screen.getByRole("link", { name: "Trocar cartão" }).getAttribute("href")).toBe("/aluno/conta/faturamento/cartao");
+  });
+
   it("sem cartão guardado: diz que não há cartão, em vez de um cartão em branco", async () => {
     getMinhaAssinatura.mockResolvedValue({ ...ATIVA, cartao: null });
     abrir();
@@ -214,32 +229,6 @@ describe("FaturamentoPage — com acesso", () => {
     expect(await screen.findByText("Seu plano")).toBeTruthy();
     expect(naTela()).not.toContain("Mensal");
     expect(naTela()).toContain("Próxima cobrança: R$ 99,90 em 10/11/2026");
-  });
-});
-
-describe("FaturamentoPage — em inglês", () => {
-  const emIngles = (
-    <IdiomaProvider idioma="en">
-      <FaturamentoPage />
-    </IdiomaProvider>
-  );
-
-  it("o título, o plano, a próxima cobrança (com o mês por extenso) e o cartão em inglês", async () => {
-    abrir(emIngles);
-    expect(await screen.findByText("Your plan")).toBeTruthy();
-    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Billing and subscription");
-    expect(naTela()).toContain("Monthly · R$99.90/month");
-    expect(naTela()).toContain("Next charge: R$99.90 on Nov 10, 2026");
-    expect(screen.getByText("Visa •••• 4242 · expires 03/2028")).toBeTruthy();
-    expect(screen.queryByText("Seu plano")).toBeNull();
-    expect(screen.queryByText("Forma de pagamento")).toBeNull();
-  });
-
-  it("sem assinatura e terminada: o convite em inglês", async () => {
-    getMinhaAssinatura.mockResolvedValue({ situacao: "terminada", terminouEm: MEIO_DIA });
-    abrir(emIngles);
-    expect(await screen.findByText("Your subscription ended on Nov 10, 2026.")).toBeTruthy();
-    expect(screen.getByRole("link", { name: "Reactivate subscription" })).toBeTruthy();
   });
 });
 
@@ -327,16 +316,6 @@ describe("FaturamentoPage — cancelar e manter a assinatura", () => {
     expect(manterMinhaAssinatura).toHaveBeenCalledTimes(1);
   });
 
-  it("em inglês", async () => {
-    getMinhaAssinatura.mockResolvedValue({ ...PARADA, reembolso: { centavos: 9990, moeda: "brl", ate: MEIO_DIA } });
-    abrir(
-      <IdiomaProvider idioma="en">
-        <FaturamentoPage />
-      </IdiomaProvider>,
-    );
-    expect(await screen.findByRole("button", { name: "Keep my subscription" })).toBeTruthy();
-    expect(screen.getByRole("link", { name: "Cancel subscription" })).toBeTruthy();
-  });
 });
 
 // MUDAR DE PLANO, NO RESUMO (sessão b). O que protege: o caminho só aparece quando o servidor
@@ -388,14 +367,4 @@ describe("FaturamentoPage — mudar de plano", () => {
     expect(screen.queryByRole("status")).toBeNull();
   });
 
-  it("em inglês", async () => {
-    getMinhaAssinatura.mockResolvedValue(ANUAL_COM_TROCA);
-    abrir(
-      <IdiomaProvider idioma="en">
-        <FaturamentoPage />
-      </IdiomaProvider>,
-    );
-    expect(await screen.findByText("Your plan changes to Monthly on Nov 10, 2026.")).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Stay on Yearly" })).toBeTruthy();
-  });
 });

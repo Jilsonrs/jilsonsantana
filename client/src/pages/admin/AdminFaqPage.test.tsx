@@ -25,7 +25,7 @@ beforeEach(() => {
 describe("Perguntas frequentes — fiação", () => {
   it("lista as perguntas com a resposta embaixo", async () => {
     renderWithProviders(<AdminFaqPage />);
-    const ul = await screen.findByRole("list", { name: "Perguntas frequentes em português" });
+    const ul = await screen.findByRole("list", { name: "Perguntas frequentes" });
     expect(within(ul).getByText("Serve para a minha área?")).toBeTruthy();
     expect(within(ul).getByText("Sim.")).toBeTruthy();
   });

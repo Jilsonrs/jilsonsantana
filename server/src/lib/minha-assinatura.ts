@@ -1,6 +1,6 @@
 import { PRAZO_DO_REEMBOLSO_EM_DIAS, SituacaoDoFaturamento, type CartaoTrocado, type MinhaAssinatura, type ReembolsoFeito, type RenovacaoParada } from "@jilson/core";
 import { prisma } from "./prisma.js";
-import { assinaturaDaAcesso, encerradaDeVez, passouDoPrimeiroPagamento } from "./acesso.js";
+import { assinaturaDaAcesso, aulasAbertasAte, cobrancaAtrasada, encerradaDeVez, passouDoPrimeiroPagamento, temAcessoAtivo } from "./acesso.js";
 import { operarNaAssinatura, sincronizarSeLivre } from "./assinaturas.js";
 import { AssinaturaNaoEncontrada } from "./stripe.js";
 import {
@@ -106,7 +106,7 @@ export function noPrazoDoReembolso(detalhes: Pick<DetalhesDaAssinatura, "comecou
  *   - `nada`: já encerrada de vez, ou com a cobrança pausada.
  */
 export function oQueCancelarFaz(detalhes: DetalhesDaAssinatura): "parar" | "terminar" | "nada" {
-  if (detalhes.status === "past_due") return "terminar";
+  if (cobrancaAtrasada(detalhes)) return "terminar";
   return renova(detalhes) || podeManter(detalhes) ? "parar" : "nada";
 }
 
@@ -120,13 +120,19 @@ export function oQueCancelarFaz(detalhes: DetalhesDaAssinatura): "parar" | "term
  *     acabar) e a assinatura já encerrada, ou com a cobrança pausada, ainda com dias pagos.
  */
 export function paraMinhaAssinatura(detalhes: DetalhesDaAssinatura, proxima: { centavos: number; moeda: string } | null, agora: Date = new Date(), reembolso: SaidaDoReembolso = null): MinhaAssinatura {
-  if (!assinaturaDaAcesso({ status: detalhes.status, currentPeriodEnd: detalhes.pagoAte }, agora)) {
+  // A ATRASADA continua sendo "a assinatura da conta" mesmo depois de as aulas trancarem (etapa
+  // 4.6b): é nela que a pessoa troca o cartão — e a tela diz isso, em vez de "terminou".
+  const atrasada = cobrancaAtrasada(detalhes);
+  if (!atrasada && !assinaturaDaAcesso({ status: detalhes.status, currentPeriodEnd: detalhes.pagoAte }, agora)) {
     return { situacao: SituacaoDoFaturamento.TERMINADA, terminouEm: iso(detalhes.pagoAte) };
   }
   // `podeParar` e `podeManter`: as MESMAS regras das operações (`renova`, `podeManter`) — a tela
   // nunca mostra um botão que o servidor vai recusar.
   const comum = { plano: detalhes.plano, preco: detalhes.preco, cartao: detalhes.cartao, aceitaCartao: aceitaCartaoNovo(detalhes), podeParar: renova(detalhes), podeManter: podeManter(detalhes), terminaAoCancelar: oQueCancelarFaz(detalhes) === "terminar", reembolso, podeMudarDePlano: outroPlano(detalhes) !== null, trocaMarcada: detalhes.trocaMarcada ? { plano: detalhes.trocaMarcada.plano, em: detalhes.trocaMarcada.em.toISOString() } : null };
-  if (detalhes.status === "past_due") return { situacao: SituacaoDoFaturamento.ATRASADA, ...comum, proximaCobranca: null, acessoAte: null };
+  if (atrasada) {
+    const ate = aulasAbertasAte({ currentPeriodEnd: detalhes.pagoAte });
+    return { situacao: SituacaoDoFaturamento.ATRASADA, ...comum, proximaCobranca: null, acessoAte: null, aulasAte: iso(ate), aulasTrancadas: !(ate !== null && ate > agora) };
+  }
   if (renova(detalhes)) {
     const em = iso(detalhes.fimDoPeriodo);
     return { situacao: SituacaoDoFaturamento.ATIVA, ...comum, proximaCobranca: proxima && em ? { ...proxima, em } : null, acessoAte: null };
@@ -142,10 +148,11 @@ function ateQuandoHaAcesso(detalhes: DetalhesDaAssinatura): Date | null {
 type LinhaDoEspelho = { stripeSubscriptionId: string; status: string; currentPeriodEnd: Date | null };
 
 /**
- * A assinatura que dá acesso a ESTA conta, como a Stripe diz agora. É por aqui que a leitura e
- * toda operação acham "a assinatura da conta": o espelho diz QUAIS são dela e quais dão acesso
- * (a regra do gate); a Stripe diz como está a mais recente que ela conhece.
- *   - `nenhuma`: nada no espelho dá acesso (vão as linhas, para a tela dizer "nunca" ou "terminou");
+ * A assinatura DESTA conta, como a Stripe diz agora: a que dá acesso — ou a que está com a
+ * COBRANÇA ATRASADA, mesmo já sem as aulas (etapa 4.6b: é nela que a pessoa troca o cartão ou
+ * cancela). É por aqui que a leitura e toda operação acham "a assinatura da conta": o espelho
+ * diz QUAIS são dela; a Stripe diz como está a mais recente que ela conhece.
+ *   - `nenhuma`: nada no espelho dá acesso nem está atrasado (vão as linhas, para a tela dizer "nunca" ou "terminou");
  *   - `desconhecida`: dá acesso, e a Stripe não a conhece (a de mentira do seed, ou uma do modo
  *     de teste pedida com a chave de verdade).
  * A Stripe fora do ar SOBE: ninguém decide nada com dado velho.
@@ -158,9 +165,10 @@ export async function assinaturaDaConta(userId: string): Promise<{ resultado: "o
     select: { stripeSubscriptionId: true, status: true, currentPeriodEnd: true },
     orderBy: { id: "desc" },
   });
-  const comAcesso = linhas.filter((linha) => assinaturaDaAcesso(linha));
-  if (comAcesso.length === 0) return { resultado: "nenhuma", linhas };
-  for (const linha of comAcesso) {
+  // Primeiro as que DÃO acesso (como sempre foi); a atrasada sem aulas só quando não há outra.
+  const dela = [...linhas.filter((linha) => assinaturaDaAcesso(linha)), ...linhas.filter((linha) => !assinaturaDaAcesso(linha) && cobrancaAtrasada(linha))];
+  if (dela.length === 0) return { resultado: "nenhuma", linhas };
+  for (const linha of dela) {
     let detalhes: DetalhesDaAssinatura;
     try {
       detalhes = await buscarDetalhes(linha.stripeSubscriptionId);
@@ -209,7 +217,7 @@ export async function lerMinhaAssinatura(userId: string): Promise<Leitura> {
   }
   const { detalhes } = achada;
   const proxima = renova(detalhes) ? await buscarProximaCobranca(detalhes.id) : null;
-  const assinatura = paraMinhaAssinatura(detalhes, proxima, new Date(), await reembolsoDisponivel(detalhes));
+  let assinatura = paraMinhaAssinatura(detalhes, proxima, new Date(), await reembolsoDisponivel(detalhes));
   // O ESPELHO dá acesso (foi por isso que chegamos aqui) e a STRIPE diz que acabou: o aviso do
   // fim se perdeu. Sem acertar agora, as aulas seguiriam abertas e "Reativar assinatura"
   // responderia "já é assinante" (achado da revisão de segurança, 11/10/2026). Pela rotina de
@@ -220,6 +228,23 @@ export async function lerMinhaAssinatura(userId: string): Promise<Leitura> {
       console.info(`[stripe] minha assinatura: o espelho da assinatura ${detalhes.id} (conta ${userId}) dava acesso e a Stripe diz que acabou; sincronizada`);
     } catch (erro) {
       console.error(`[stripe] minha assinatura: a conta ${userId} segue com acesso pelo espelho da assinatura ${detalhes.id}, que a Stripe diz que acabou, e a sincronia falhou: ${erro instanceof Error ? erro.message : String(erro)}`);
+    }
+  } else if (assinatura.situacao === SituacaoDoFaturamento.ATRASADA) {
+    // Quem diz se as aulas estão trancadas é o GATE (o espelho), não a data que a Stripe diz
+    // agora: a tela e o gate nunca discordam. (Atrasada por mais de um ciclo, a Stripe abre um
+    // período novo, e o espelho guarda a data da primeira falha — `sincronizar`.) E aqui não há
+    // o que acertar: ninguém pagou.
+    assinatura = { ...assinatura, aulasTrancadas: !(await temAcessoAtivo(userId)) };
+  } else if (assinaturaDaAcesso({ status: detalhes.status, currentPeriodEnd: detalhes.pagoAte }) && !(await temAcessoAtivo(userId))) {
+    // O contrário (etapa 4.6b): o ESPELHO não dá as aulas — a atrasada há mais de 3 dias — e a
+    // STRIPE diz que a assinatura está em dia: a pessoa PAGOU (uma nova tentativa passou) e o
+    // aviso atrasou ou se perdeu. A tela de assinar manda quem está atrasado para cá, então é
+    // aqui que se acerta. Se não der, é alguém pagando e trancado fora: é ERRO.
+    try {
+      await sincronizarSeLivre(detalhes.id);
+      console.info(`[stripe] minha assinatura: o espelho da assinatura ${detalhes.id} (conta ${userId}) não dava acesso e a Stripe diz que dá; sincronizada`);
+    } catch (erro) {
+      console.error(`[stripe] minha assinatura: a conta ${userId} está sem acesso pelo espelho da assinatura ${detalhes.id}, que a Stripe diz que dá acesso, e a sincronia falhou — o assinante está trancado fora: ${erro instanceof Error ? erro.message : String(erro)}`);
     }
   }
   return { resultado: "ok", assinatura };
@@ -298,7 +323,7 @@ export async function aplicarCartaoNovo(userId: string): Promise<Troca> {
   // próxima tentativa da Stripe (decisão do operador, 11/10/2026).
   let pagou = false;
   let confirmar: string | null = null;
-  if (detalhes.status === "past_due" && detalhes.faturaEmAbertoId) {
+  if (cobrancaAtrasada(detalhes) && detalhes.faturaEmAbertoId) {
     const cobranca = await pagarFatura(detalhes.faturaEmAbertoId);
     pagou = cobranca === "paga";
     // O banco pede uma confirmação que só a pessoa dá: o site a completa com o segredo da fatura
@@ -311,15 +336,23 @@ export async function aplicarCartaoNovo(userId: string): Promise<Troca> {
       }
       if (!confirmar) console.warn(`[stripe] trocar cartão: a fatura em aberto da assinatura ${detalhes.id} (conta ${userId}) pede confirmação do banco, e a tela não tem como completá-la`);
     }
+    let semSincronia = false;
     try {
       await sincronizarSeLivre(detalhes.id);
     } catch (erro) {
       // O cartão está trocado e a cobrança foi tentada: quem acerta o espelho, então, é o aviso
       // da Stripe, que chega de qualquer jeito. Aviso, e não uma falha da troca.
+      semSincronia = true;
       console.warn(`[stripe] trocar cartão: a sincronia da assinatura ${detalhes.id} ficou para o aviso: ${erro instanceof Error ? erro.message : String(erro)}`);
     }
+    // PAGOU, a sincronia falhou e a conta segue SEM as aulas (a atrasada há mais de 3 dias —
+    // etapa 4.6b): é alguém que pagou e está trancado fora até o aviso chegar. Precisa de gente.
+    // (Trava ocupada não entra aqui: quem a tem — o aviso do próprio pagamento — está acertando.)
+    if (pagou && semSincronia && !(await temAcessoAtivo(userId))) {
+      console.error(`[stripe] trocar cartão: a conta ${userId} pagou a fatura em aberto da assinatura ${detalhes.id}, a sincronia falhou e ela segue sem acesso — o assinante está trancado fora até o aviso da Stripe chegar`);
+    }
   }
-  console.info(`[stripe] trocar cartão: conta ${userId}, assinatura ${detalhes.id}${detalhes.faturaEmAbertoId && detalhes.status === "past_due" ? (pagou ? ", a fatura em aberto foi paga" : ", a fatura em aberto continua em aberto") : ""}`);
+  console.info(`[stripe] trocar cartão: conta ${userId}, assinatura ${detalhes.id}${detalhes.faturaEmAbertoId && cobrancaAtrasada(detalhes) ? (pagou ? ", a fatura em aberto foi paga" : ", a fatura em aberto continua em aberto") : ""}`);
   return { resultado: "ok", cartao, pagou, confirmar };
 }
 

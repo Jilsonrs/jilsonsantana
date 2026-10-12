@@ -76,7 +76,8 @@ export function FormularioDeAssinatura({
       });
     } catch (falha) {
       const motivo = codigoDoErro(falha);
-      if (motivo === "JaAssinante") aoSaberQueJaAssina();
+      // "CobrancaAtrasada" (etapa 4.6b): a situação relida diz `atrasada`, e a tela de assinar leva ao Faturamento.
+      if (motivo === "JaAssinante" || motivo === "CobrancaAtrasada") aoSaberQueJaAssina();
       else if (motivo === "CodigoInvalido") void previa.refetch();
       else setErro(t.erro);
     } finally {

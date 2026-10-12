@@ -57,7 +57,16 @@ export type PreviaDaAssinatura = { centavosHoje: number; moeda: string; desconto
  * `reativar` (etapa 4.4 — decisão do operador, 10/10/2026): a conta JÁ FOI assinante e hoje está
  * sem acesso — o convite dela é "Reativar assinatura", e não "Assinar". Só muda o texto.
  */
-export type SituacaoDaAssinatura = { temAcesso: boolean; reativar: boolean };
+export type SituacaoDaAssinatura = {
+  temAcesso: boolean;
+  reativar: boolean;
+  /**
+   * A conta está com a cobrança ATRASADA e já sem as aulas (etapa 4.6b, 12/10/2026): o caminho
+   * dela é trocar o cartão em Faturamento e Assinatura, e não assinar de novo. Só muda o texto e
+   * o destino — quem decide acesso é `temAcesso`.
+   */
+  atrasada?: boolean;
+};
 
 /**
  * Resposta de `POST /api/billing/assinatura`. `ativa`: a Stripe já ativou (nada a pagar, hoje nem
@@ -151,6 +160,13 @@ export type MinhaAssinatura =
       podeMudarDePlano: boolean;
       /** A troca de plano MARCADA para o fim do período pago (anual → mensal): para qual plano e quando (ISO). Dá para desistir. */
       trocaMarcada: { plano: Plano; em: string } | null;
+      /**
+       * Só com a cobrança ATRASADA (etapa 4.6b): até quando as aulas ficam abertas (ISO) — 3 dias
+       * depois da cobrança que falhou — e se já trancaram. Trancadas, a assinatura continua aqui:
+       * é nela que a pessoa troca o cartão, e pagar reabre as aulas na hora.
+       */
+      aulasAte?: string | null;
+      aulasTrancadas?: boolean;
     };
 
 /**
@@ -163,6 +179,13 @@ export type MotivoDoCancelamento = (typeof MOTIVOS_DE_CANCELAMENTO)[number];
 
 /** O tamanho do "Quer contar mais?": é uma frase ou duas, não uma carta. */
 export const TAMANHO_DO_COMENTARIO = 500;
+
+/**
+ * Por quantos dias as aulas ficam abertas depois da COBRANÇA QUE FALHOU (decisão do operador,
+ * 11/10/2026: "2 semanas é muito tempo […] não quero perder aluno e nem ser vítima de
+ * espertinhos"). A Stripe continua tentando cobrar pela janela dela; o acesso é que tem este prazo.
+ */
+export const TOLERANCIA_DA_COBRANCA_ATRASADA_EM_DIAS = 3;
 
 /**
  * O prazo do reembolso, em dias, contados do PRIMEIRO DIA da assinatura — trocar de plano não

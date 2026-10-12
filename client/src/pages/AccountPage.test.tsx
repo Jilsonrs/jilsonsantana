@@ -11,7 +11,6 @@ vi.mock("@/lib/auth-client", () => ({
 }));
 
 import { AccountPage } from "./AccountPage";
-import { IdiomaProvider } from "@/lib/language";
 
 // Minha conta mostra os dados da SESSÃO e o botão de sair. Não busca nada —
 // por isso não tem estado de carregando nem de erro próprio.
@@ -55,16 +54,4 @@ describe("AccountPage", () => {
     expect(screen.queryByRole("button", { name: /sair/i })).toBeNull();
   });
 
-  // O app do aluno existe em inglês (decisão do operador, 24/09/2026).
-  it("em inglês: títulos, rótulos e o botão de sair em inglês", () => {
-    renderConta(
-      <IdiomaProvider idioma="en">
-        <AccountPage />
-      </IdiomaProvider>,
-    );
-
-    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("My account");
-    expect(screen.getByText("Name")).toBeTruthy();
-    expect(screen.queryByText("Nome")).toBeNull();
-  });
 });

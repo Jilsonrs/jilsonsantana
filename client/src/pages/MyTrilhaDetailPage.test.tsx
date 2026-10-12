@@ -8,7 +8,6 @@ const getMyTrilha = vi.fn();
 vi.mock("@/lib/api", () => ({ getMyTrilha: (id: number) => getMyTrilha(id) }));
 
 import { MyTrilhaDetailPage } from "./MyTrilhaDetailPage";
-import { IdiomaProvider } from "@/lib/language";
 
 const minhaTrilha: TrilhaDetail = {
   id: 7,
@@ -87,20 +86,3 @@ describe("MyTrilhaDetailPage", () => {
   });
 });
 
-// O app do aluno existe em inglês (decisão do operador, 24/09/2026). O nome e a
-// descrição da trilha NÃO mudam: são conteúdo, no idioma da própria trilha.
-describe("MyTrilhaDetailPage — em inglês", () => {
-  it("a volta e o vazio em inglês; o conteúdo da trilha fica como é", async () => {
-    getMyTrilha.mockResolvedValue({ ...minhaTrilha, planModules: [] });
-    renderWithProviders(
-      <IdiomaProvider idioma="en">
-        <MyTrilhaDetailPage />
-      </IdiomaProvider>,
-      rota,
-    );
-
-    expect(await screen.findByRole("link", { name: "← Back to My learning paths" })).toBeTruthy();
-    expect(screen.getByText("This learning path has no content yet.")).toBeTruthy();
-    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe(minhaTrilha.name);
-  });
-});

@@ -197,11 +197,25 @@ describe("GET /api/billing/minha-assinatura — a conta com acesso", () => {
     expect(buscarProximaCobranca).not.toHaveBeenCalled();
   });
 
-  it("a última cobrança falhou: atrasada, com o acesso mantido — sem próxima cobrança nem data de fim", async () => {
+  // A COBRANÇA ATRASADA (etapa 4.6b — decisão do operador, 11/10/2026): as aulas ficam abertas
+  // por 3 dias depois da cobrança que falhou. O "pago até" de uma atrasada é esse dia.
+  it("a última cobrança falhou há menos de 3 dias: atrasada, com a data em que as aulas trancam — sem próxima cobrança nem data de fim", async () => {
+    const falhou = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    await doSeed("past_due", falhou);
+    naStripe[ASSINATURA_DE_TESTE] = { status: "past_due", pagoAte: falhou, fimDoPeriodo: EM_30_DIAS };
+    const tresDiasDepois = new Date(falhou.getTime() + 3 * 24 * 60 * 60 * 1000).toISOString();
+    expect((await ler(member)).body).toEqual({ situacao: "atrasada", plano: "mensal", preco: { centavos: 9990, moeda: "brl" }, proximaCobranca: null, acessoAte: null, cartao: VISA, aceitaCartao: true, podeParar: false, podeManter: false, terminaAoCancelar: true, reembolso: null, podeMudarDePlano: false, trocaMarcada: null, aulasAte: tresDiasDepois, aulasTrancadas: false });
+    expect(buscarProximaCobranca).not.toHaveBeenCalled();
+  });
+
+  // Passados os 3 dias a conta fica SEM as aulas — e a assinatura continua sendo "a da conta":
+  // é nela que a pessoa troca o cartão. Dizer "terminou" a mandaria assinar de novo, por cima.
+  it("a cobrança falhou há mais de 3 dias: continua 'atrasada' (nunca 'terminada'), com as aulas trancadas e o cartão para trocar", async () => {
     await doSeed("past_due", PASSADO);
     naStripe[ASSINATURA_DE_TESTE] = { status: "past_due", pagoAte: PASSADO, fimDoPeriodo: EM_30_DIAS };
-    expect((await ler(member)).body).toEqual({ situacao: "atrasada", plano: "mensal", preco: { centavos: 9990, moeda: "brl" }, proximaCobranca: null, acessoAte: null, cartao: VISA, aceitaCartao: true, podeParar: false, podeManter: false, terminaAoCancelar: true, reembolso: null, podeMudarDePlano: false, trocaMarcada: null });
-    expect(buscarProximaCobranca).not.toHaveBeenCalled();
+    const res = await ler(member);
+    expect(res.body).toMatchObject({ situacao: "atrasada", aulasAte: "2020-01-04T00:00:00.000Z", aulasTrancadas: true, cartao: VISA, aceitaCartao: true, terminaAoCancelar: true });
+    expect((await request(servidor).get("/api/billing/assinatura").set("Cookie", member)).body).toMatchObject({ temAcesso: false, atrasada: true });
   });
 
   it("sem cartão guardado (a assinatura de cortesia): o cartão vem vazio", async () => {
@@ -230,6 +244,78 @@ describe("GET /api/billing/minha-assinatura — a assinatura é a da conta da se
     const res = await request(servidor).get(`/api/billing/minha-assinatura?assinatura=${alheia}&userId=${outro}`).set("Cookie", member);
     expect(res.body).toEqual({ situacao: "terminada", terminouEm: PASSADO.toISOString() });
     expect(buscarDetalhes).not.toHaveBeenCalled();
+  });
+});
+
+// O CONTRÁRIO do bloco de baixo (etapa 4.6b): quem está atrasado há mais de 3 dias fica sem as
+// aulas pelo espelho. Se uma nova tentativa da Stripe PASSA e o aviso se perde, é alguém pagando
+// e trancado fora — e a tela de assinar manda essa pessoa para cá. É aqui que se acerta.
+describe("GET /api/billing/minha-assinatura — o espelho NÃO dá acesso (atrasada há mais de 3 dias) e a Stripe diz que dá", () => {
+  const paga = { id: ASSINATURA_DE_TESTE, status: "active", pagoAte: EM_30_DIAS, clienteId: null, userId: null, livemode: false };
+  beforeEach(async () => {
+    await doSeed("past_due", PASSADO);
+    naStripe[ASSINATURA_DE_TESTE] = ativa();
+  });
+
+  it("a tela diz 'ativa' E o espelho é acertado na hora: as aulas voltam, e a pessoa continua logada", async () => {
+    buscarAssinatura.mockResolvedValue(paga);
+    expect(await temAcessoAtivo(memberId)).toBe(false);
+    const res = await ler(member);
+    expect([res.status, res.body.situacao]).toEqual([200, "ativa"]);
+    const espelho = await prisma.subscription.findUniqueOrThrow({ where: { stripeSubscriptionId: ASSINATURA_DE_TESTE } });
+    expect([espelho.status, espelho.currentPeriodEnd?.getTime()]).toEqual(["active", EM_30_DIAS.getTime()]);
+    expect(await temAcessoAtivo(memberId)).toBe(true);
+    expect((await ler(member)).status).toBe(200);
+  });
+
+  it("a sincronia falha: a tela responde do mesmo jeito, o espelho fica como estava — e é ERRO no registro (alguém pagando e trancado fora)", async () => {
+    buscarAssinatura.mockRejectedValue(new Error("a Stripe caiu"));
+    const erro = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      const res = await ler(member);
+      expect([res.status, res.body.situacao]).toEqual([200, "ativa"]);
+      expect((await prisma.subscription.findUniqueOrThrow({ where: { stripeSubscriptionId: ASSINATURA_DE_TESTE } })).status).toBe("past_due");
+      const linhas = erro.mock.calls.flat().join(" ");
+      expect(linhas).toContain(`[stripe] minha assinatura: a conta ${memberId} está sem acesso pelo espelho da assinatura ${ASSINATURA_DE_TESTE}`);
+      expect(linhas).toContain("trancado fora");
+    } finally {
+      erro.mockRestore();
+    }
+  });
+
+  it("a Stripe TAMBÉM diz atrasada (ninguém pagou): nada a acertar — nenhuma sincronia, e as aulas seguem trancadas", async () => {
+    naStripe[ASSINATURA_DE_TESTE] = { status: "past_due", pagoAte: PASSADO };
+    expect((await ler(member)).body).toMatchObject({ situacao: "atrasada", aulasTrancadas: true });
+    expect(buscarAssinatura).not.toHaveBeenCalled();
+    expect(await temAcessoAtivo(memberId)).toBe(false);
+  });
+
+  // Atrasada por mais de um ciclo: a Stripe diz o começo do período NOVO, e o espelho guarda a
+  // primeira falha. Quem diz se as aulas estão trancadas é o GATE — a tela não promete data.
+  it("a Stripe diz atrasada com data NOVA (o ciclo virou) e o espelho guarda a primeira falha: a tela diz 'aulas trancadas', sem sincronizar", async () => {
+    naStripe[ASSINATURA_DE_TESTE] = { status: "past_due", pagoAte: new Date(Date.now() - 24 * 60 * 60 * 1000) };
+    expect((await ler(member)).body).toMatchObject({ situacao: "atrasada", aulasTrancadas: true });
+    expect(buscarAssinatura).not.toHaveBeenCalled();
+    expect(await temAcessoAtivo(memberId)).toBe(false);
+  });
+
+  it("o espelho e a Stripe de acordo, com acesso: nenhuma sincronia", async () => {
+    await doSeed("active", FUTURO);
+    expect((await ler(member)).body.situacao).toBe("ativa");
+    expect(buscarAssinatura).not.toHaveBeenCalled();
+  });
+});
+
+// A conta com DUAS linhas: a que dá acesso vem primeiro, como sempre foi. A atrasada sem aulas
+// só é "a assinatura da conta" quando não há outra (etapa 4.6b).
+describe("GET /api/billing/minha-assinatura — a atrasada sem aulas não passa na frente da que dá acesso", () => {
+  it("uma linha com acesso e outra, mais nova, atrasada há mais de 3 dias: a tela mostra a que dá acesso", async () => {
+    const atrasada = `sub_${S}_atrasada_mais_nova`;
+    await prisma.subscription.create({ data: { ownerUserId: memberId, status: "past_due", currentPeriodEnd: PASSADO, stripeSubscriptionId: atrasada } });
+    naStripe[atrasada] = { status: "past_due", pagoAte: PASSADO };
+    naStripe[ASSINATURA_DE_TESTE] = ativa();
+    expect((await ler(member)).body.situacao).toBe("ativa");
+    expect(buscarDetalhes.mock.calls).toEqual([[ASSINATURA_DE_TESTE]]);
   });
 });
 

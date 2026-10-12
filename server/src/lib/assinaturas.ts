@@ -1,6 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "./prisma.js";
-import { temAcessoAtivo } from "./acesso.js";
+import { cobrancaAtrasada, temAcessoAtivo } from "./acesso.js";
 import { AssinaturaNaoEncontrada, assinaturasDoCliente, buscarAssinatura, type AssinaturaNaStripe, type AvisoDaStripe } from "./stripe.js";
 import { assinaturaDoPagamento } from "./stripe-reembolso.js";
 
@@ -75,8 +75,16 @@ function travar(tx: Prisma.TransactionClient, assinaturaId: string) {
  */
 async function sincronizar(tx: Prisma.TransactionClient, assinaturaId: string, { manterSessao = false }: { manterSessao?: boolean } = {}): Promise<Sincronia> {
   // Na Stripe, AGORA. Se ela não responder, a exceção sobe: nada é gravado.
-  const agora = await buscarAssinatura(assinaturaId);
-  const espelho = await tx.subscription.findUnique({ where: { stripeSubscriptionId: agora.id }, select: { id: true, ownerUserId: true } });
+  const naStripe = await buscarAssinatura(assinaturaId);
+  const espelho = await tx.subscription.findUnique({ where: { stripeSubscriptionId: naStripe.id }, select: { id: true, ownerUserId: true, status: true, currentPeriodEnd: true } });
+  // A ATRASADA QUE CONTINUA ATRASADA NÃO GANHA DATA NOVA (etapa 4.6b — achado da revisão de
+  // segurança, 12/10/2026): os 3 dias de aula contam da PRIMEIRA cobrança que falhou. Se a
+  // assinatura atravessa um ciclo ainda atrasada (o painel em "deixar atrasada", ou tentativas
+  // por um mês ou mais), a Stripe abre um período novo, e o começo dele reabriria as aulas por 3
+  // dias a cada ciclo, sem pagamento. Pagou, o status deixa de ser atrasada e a data volta a andar.
+  const continuaAtrasada = espelho !== null && cobrancaAtrasada(espelho) && cobrancaAtrasada(naStripe);
+  const desde = continuaAtrasada && espelho.currentPeriodEnd && naStripe.pagoAte && espelho.currentPeriodEnd < naStripe.pagoAte ? espelho.currentPeriodEnd : naStripe.pagoAte;
+  const agora: AssinaturaNaStripe = { ...naStripe, pagoAte: desde };
   const conta = !espelho && agora.userId ? await tx.user.findUnique({ where: { id: agora.userId }, select: { id: true } }) : null;
   // O dono de um espelho nunca muda: vale o que já está gravado, mesmo se a Stripe disser outro.
   const dono = espelho ? espelho.ownerUserId : (conta?.id ?? null);

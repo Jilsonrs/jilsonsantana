@@ -12,14 +12,15 @@ const config: ConfigDaLista<AdminHomeFaq> = {
   titulo: "Perguntas frequentes",
   descricao: "As perguntas da home. Só as publicadas vão para o site.",
   rotuloNovo: "Nova pergunta",
-  vazio: "Nenhuma pergunta neste idioma ainda. Enquanto não houver uma publicada, a seção não aparece na home.",
+  vazio: "Nenhuma pergunta ainda. Enquanto não houver uma publicada, a seção não aparece na home.",
   comOrdem: true,
   principal: { rotulo: "Pergunta", linhas: 2, max: 300 },
   secundario: { rotulo: "Resposta", linhas: 4, max: 3000 },
   ler: (f) => ({ principal: f.question, secundario: f.answer }),
   listar: api.adminGetHomeFaq,
-  criar: (language, v) =>
-    api.adminCreateHomeFaq({ language, question: v.principal, answer: v.secundario, displayOrder: v.displayOrder, status: v.status }),
+  // O servidor ainda pede o idioma; ele sai de lá no passo 3 da etapa 4.6c.
+  criar: (v) =>
+    api.adminCreateHomeFaq({ language: "pt", question: v.principal, answer: v.secundario, displayOrder: v.displayOrder, status: v.status }),
   atualizar: (id, v) =>
     api.adminUpdateHomeFaq(id, { question: v.principal, answer: v.secundario, displayOrder: v.displayOrder, status: v.status }),
   excluir: api.adminDeleteHomeFaq,
