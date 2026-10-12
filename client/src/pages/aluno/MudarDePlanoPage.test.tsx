@@ -27,7 +27,6 @@ vi.mock("@/lib/stripe-do-site", () => ({
 }));
 
 import { MudarDePlanoPage } from "./MudarDePlanoPage";
-import { IdiomaProvider } from "@/lib/language";
 import { RITMO } from "@/lib/troca-de-plano";
 
 // A TELA DE MUDAR DE PLANO (Fase 4, etapa 4.6, sessão b). É COBRANÇA. O que estes testes protegem:
@@ -450,19 +449,3 @@ describe("MudarDePlanoPage — quem não pode mudar agora", () => {
   });
 });
 
-describe("MudarDePlanoPage — em inglês", () => {
-  it("o plano, a conta e a confirmação em inglês, sem sobra de português", async () => {
-    abrir(
-      <IdiomaProvider idioma="en">
-        <MudarDePlanoPage />
-      </IdiomaProvider>,
-    );
-    const botao = await screen.findByRole("button", { name: "Switch to Yearly" });
-    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Change plan");
-    expect(naTela()).toContain("Your current plan");
-    expect(naTela()).toContain("Your next charge is on Oct 11, 2027.");
-    for (const portugues of ["Mudar", "troca", "plano atual", "cobrança"]) expect(naTela(), portugues).not.toContain(portugues);
-    fireEvent.click(botao);
-    expect((await screen.findByRole("status")).textContent).toBe("Done. You're now on the Yearly plan.");
-  });
-});

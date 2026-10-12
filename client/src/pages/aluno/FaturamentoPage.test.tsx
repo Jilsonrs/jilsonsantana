@@ -15,7 +15,6 @@ vi.mock("@/lib/api", async (importOriginal) => ({
 }));
 
 import { FaturamentoPage } from "./FaturamentoPage";
-import { IdiomaProvider } from "@/lib/language";
 
 // FATURAMENTO E ASSINATURA — o resumo (Fase 4, etapa 4.6). O que estes testes protegem:
 //   - a tela diz o que o SERVIDOR disse da assinatura, em cada situação — e nunca mostra um
@@ -233,32 +232,6 @@ describe("FaturamentoPage — com acesso", () => {
   });
 });
 
-describe("FaturamentoPage — em inglês", () => {
-  const emIngles = (
-    <IdiomaProvider idioma="en">
-      <FaturamentoPage />
-    </IdiomaProvider>
-  );
-
-  it("o título, o plano, a próxima cobrança (com o mês por extenso) e o cartão em inglês", async () => {
-    abrir(emIngles);
-    expect(await screen.findByText("Your plan")).toBeTruthy();
-    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Billing and subscription");
-    expect(naTela()).toContain("Monthly · R$99.90/month");
-    expect(naTela()).toContain("Next charge: R$99.90 on Nov 10, 2026");
-    expect(screen.getByText("Visa •••• 4242 · expires 03/2028")).toBeTruthy();
-    expect(screen.queryByText("Seu plano")).toBeNull();
-    expect(screen.queryByText("Forma de pagamento")).toBeNull();
-  });
-
-  it("sem assinatura e terminada: o convite em inglês", async () => {
-    getMinhaAssinatura.mockResolvedValue({ situacao: "terminada", terminouEm: MEIO_DIA });
-    abrir(emIngles);
-    expect(await screen.findByText("Your subscription ended on Nov 10, 2026.")).toBeTruthy();
-    expect(screen.getByRole("link", { name: "Reactivate subscription" })).toBeTruthy();
-  });
-});
-
 // CANCELAR E MANTER, NO RESUMO (sessão b). O que protege: cada botão só aparece quando o
 // SERVIDOR diz que a ação cabe — a tela nunca oferece o que ele vai recusar —, e "Manter a
 // assinatura" só diz que deu certo quando deu.
@@ -343,16 +316,6 @@ describe("FaturamentoPage — cancelar e manter a assinatura", () => {
     expect(manterMinhaAssinatura).toHaveBeenCalledTimes(1);
   });
 
-  it("em inglês", async () => {
-    getMinhaAssinatura.mockResolvedValue({ ...PARADA, reembolso: { centavos: 9990, moeda: "brl", ate: MEIO_DIA } });
-    abrir(
-      <IdiomaProvider idioma="en">
-        <FaturamentoPage />
-      </IdiomaProvider>,
-    );
-    expect(await screen.findByRole("button", { name: "Keep my subscription" })).toBeTruthy();
-    expect(screen.getByRole("link", { name: "Cancel subscription" })).toBeTruthy();
-  });
 });
 
 // MUDAR DE PLANO, NO RESUMO (sessão b). O que protege: o caminho só aparece quando o servidor
@@ -404,14 +367,4 @@ describe("FaturamentoPage — mudar de plano", () => {
     expect(screen.queryByRole("status")).toBeNull();
   });
 
-  it("em inglês", async () => {
-    getMinhaAssinatura.mockResolvedValue(ANUAL_COM_TROCA);
-    abrir(
-      <IdiomaProvider idioma="en">
-        <FaturamentoPage />
-      </IdiomaProvider>,
-    );
-    expect(await screen.findByText("Your plan changes to Monthly on Nov 10, 2026.")).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Stay on Yearly" })).toBeTruthy();
-  });
 });

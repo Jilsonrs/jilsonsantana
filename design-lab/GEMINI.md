@@ -97,7 +97,7 @@ endereço, o arquivo e o que vale (ou não vale) acabamento.
 
 ### A parte PÚBLICA saiu do React *(set/2026 — leia antes de abrir a home)*
 
-A home (`/` e `/en`) **não é mais React**. É HTML montado no servidor, sem hidratação, porque
+A home (`/`) **não é mais React**. É HTML montado no servidor, sem hidratação, porque
 página de marketing é buscar do banco e desenhar — e assim ela carrega sem bundle de JS. O que
 isso muda para você:
 
@@ -128,7 +128,7 @@ servidores (§5); o React responde em `localhost:5173`, a home pública em `loca
 
 | Endereço | Arquivo |
 |---|---|
-| `/` · `/en` | `server/src/views/home.ts` + `client/src/public-input.css` |
+| `/` | `server/src/views/home.ts` + `client/src/public-input.css` |
 
 **Públicas e do aluno ao mesmo tempo — hoje em React** *(porta 5173)*
 
@@ -278,10 +278,9 @@ exceto o item 4, que é página pública.
    no celular (CSS `scroll-snap`, sem JavaScript) é opção sua, com o ok do operador. Mexeu no CSS?
    `npm run css:publico` (regra 10).
 5. ~~**Rodapé do app**~~ — **feito em 24/09 e publicado.** Na revisão, a cor `#F5F5F7` escrita
-   no componente virou o token `--surface-vitrine` (regra 2), mesma cor. O seletor PT | EN que
-   você desenhou fica. **Em 24/09 o Claude o ligou ao idioma do app:** virou botão (troca o
-   idioma sem sair da tela), com `aria-pressed` no idioma atual. As classes que você escreveu
-   continuam as mesmas.
+   no componente virou o token `--surface-vitrine` (regra 2), mesma cor. **O seletor PT | EN
+   saiu em 12/10/2026** (a escola é só em português — aviso no topo deste arquivo), com o traço
+   `|` que o separava. O resto do rodapé está como você deixou.
 6. **Campo Idioma no formulário de curso** (hoje em `client/src/components/admin/course-form/CourseLanguageLevelFields.tsx`, no passo Informações básicas; era `CourseOrganizationSection.tsx`, que se dividiu em 28/09)
    — novo em 24/09, na seção Organização. A grade tinha 3 colunas (Nível, Status, Ordem) e agora
    tem 4 itens, então o quarto desce de linha: o arranjo é seu. Travado (curso publicado), o
@@ -667,9 +666,9 @@ dicionário (`core/src/i18n/`), **inclusive `aria-label`, `alt` e `title`**:
 ```
 
 **Por quê:** o operador edita esses textos pelo painel, sem deploy — texto cravado no HTML ele
-não alcança. E a versão em inglês (`/en`) lê o mesmo dicionário: literal em português aparece
-**na página em inglês**. Em set/2026 havia 55 textos assim; hoje há zero, e **a suíte reprova se
-um voltar** (o teste compara `/` com `/en`).
+não alcança. Em set/2026 havia 55 textos assim; hoje há zero, e **a suíte reprova se um
+voltar** (desde 12/10/2026 o teste troca todo texto da home no banco e confere que nenhuma frase
+de fábrica sobrou na página).
 
 Corolários que já quebraram coisa aqui:
 - **Texto de dicionário nunca vira caminho de arquivo.** `src="/img/${dict...title}.png"`
@@ -831,7 +830,7 @@ Sem essa separação, a décima tela tem dez paletas paralelas e ninguém sabe q
     (Publicados · Rascunhos · Arquivados) que hoje não aparecem em lugar nenhum.
     *(A linha anterior deste documento dizia que os níveis 2 e 3 não existiam — estava
     desatualizada quanto ao nível 2.)*
-- **A home pública está no ar**, em HTML de servidor (`/` e `/en`), sem React e sem hidratação.
+- **A home pública está no ar**, em HTML de servidor (`/`), sem React e sem hidratação.
   Ela é o mock `design-lab/home-lab.html` transposto. **Mock aprovado se TRANSPÕE, não se
   reinterpreta:** a primeira tentativa reescreveu a marcação com classes inventadas e metade da
   página ficou sem estilo — o typecheck e os testes passaram, porque nenhum dos dois olha CSS.

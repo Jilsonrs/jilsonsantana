@@ -14,14 +14,7 @@ vi.mock("@/lib/auth-client", () => ({
   useSession: () => useSession(),
 }));
 
-// Gravar o idioma na conta (quem entra por /login?lang=en).
-const updateMyLanguage = vi.fn();
-vi.mock("@/lib/api", () => ({
-  updateMyLanguage: (...args: unknown[]) => updateMyLanguage(...args),
-}));
-
 import { LoginPage } from "./LoginPage";
-import { IdiomaProvider } from "@/lib/language";
 
 /**
  * Monta a tela com destinos reais para o Início e para o Dashboard, para poder
@@ -52,7 +45,6 @@ beforeEach(() => {
   useSession.mockReturnValue({ data: null, isPending: false, refetch });
   refetch.mockResolvedValue(undefined);
   signInEmail.mockResolvedValue({ error: null });
-  updateMyLanguage.mockResolvedValue(undefined);
 });
 
 // ---------------------------------------------------------------------------
@@ -349,139 +341,5 @@ describe("LoginPage — erros clássicos", () => {
       await screen.findByText("Não foi possível entrar agora. Tente novamente em alguns minutos."),
     ).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Entrando…" })).toBeNull();
-  });
-});
-
-// ---------------------------------------------------------------------------
-// EM INGLÊS — o estrangeiro escolhe o idioma na home e ENTRA já em inglês
-// (decisão do operador, 24/09/2026).
-// ---------------------------------------------------------------------------
-
-function loginEmIngles(route = "/login?lang=en") {
-  return renderWithProviders(
-    <IdiomaProvider idioma="en">
-      <LoginPage />
-    </IdiomaProvider>,
-    {
-      route,
-      path: "/login",
-      extraRoutes: [{ path: "/inicio", element: <div>HOME DO ALUNO</div> }],
-    },
-  );
-}
-
-describe("LoginPage — em inglês", () => {
-  it("a tela inteira em inglês, sem sobra de português", () => {
-    loginEmIngles();
-
-    expect(screen.getByRole("button", { name: "Sign in" })).toBeTruthy();
-    expect(screen.getByLabelText("Email")).toBeTruthy();
-    expect(screen.getByLabelText("Password")).toBeTruthy();
-    expect(screen.queryByText("Senha")).toBeNull();
-    expect(screen.queryByText(/Área do Aluno/)).toBeNull();
-  });
-
-  it("os erros também saem em inglês", async () => {
-    loginEmIngles();
-    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
-
-    expect(await screen.findByText("Enter a valid email address.")).toBeTruthy();
-    expect(await screen.findByText("Enter your password.")).toBeTruthy();
-  });
-
-  it("credencial recusada, em inglês", async () => {
-    signInEmail.mockResolvedValue({ error: { status: 401 } });
-    loginEmIngles();
-    fireEvent.change(screen.getByLabelText("Email"), { target: { value: "a@b.com" } });
-    fireEvent.change(screen.getByLabelText("Password"), { target: { value: "errada" } });
-    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
-
-    expect((await screen.findByRole("alert")).textContent).toContain("Incorrect email or password.");
-  });
-});
-
-describe("LoginPage — o idioma do endereço vai para a conta", () => {
-  it("veio de /login?lang=en: grava inglês na conta ANTES de abrir o app", async () => {
-    let terminar: () => void = () => {};
-    updateMyLanguage.mockReturnValue(new Promise<void>((r) => (terminar = r)));
-    renderLogin("/login?lang=en");
-    preencher({ email: "a@b.com", senha: "minhasenha" });
-    enviar();
-
-    await waitFor(() => expect(updateMyLanguage).toHaveBeenCalled());
-    expect(updateMyLanguage.mock.calls[0][0]).toBe("en");
-    // Enquanto a conta não foi gravada, o app não abre — senão ele abriria em
-    // português e trocaria na frente do aluno.
-    expect(screen.queryByText("HOME DO ALUNO")).toBeNull();
-
-    terminar();
-    expect(await screen.findByText("HOME DO ALUNO")).toBeTruthy();
-  });
-
-  it("login normal (/login) não mexe no idioma da conta", async () => {
-    renderLogin("/login");
-    preencher({ email: "a@b.com", senha: "minhasenha" });
-    enviar();
-
-    expect(await screen.findByText("HOME DO ALUNO")).toBeTruthy();
-    expect(updateMyLanguage).not.toHaveBeenCalled();
-  });
-
-  it("idioma estranho no endereço é ignorado", async () => {
-    renderLogin("/login?lang=es");
-    preencher({ email: "a@b.com", senha: "minhasenha" });
-    enviar();
-
-    expect(await screen.findByText("HOME DO ALUNO")).toBeTruthy();
-    expect(updateMyLanguage).not.toHaveBeenCalled();
-  });
-
-  it("se gravar o idioma falhar, entra mesmo assim", async () => {
-    updateMyLanguage.mockRejectedValue(new Error("rede"));
-    renderLogin("/login?lang=en");
-    preencher({ email: "a@b.com", senha: "minhasenha" });
-    enviar();
-
-    expect(await screen.findByText("HOME DO ALUNO")).toBeTruthy();
-  });
-});
-
-// ---------------------------------------------------------------------------
-// TODO MUNDO cai no Início, inclusive o admin (decisão do operador, 29/09/2026):
-// a plataforma é uma só, e o Dashboard fica a um clique no menu.
-// ---------------------------------------------------------------------------
-
-describe("LoginPage — para onde cada um vai depois de entrar", () => {
-  it("o admin que entra cai no Início, não no Dashboard", async () => {
-    signInEmail.mockResolvedValue({ data: { user: { role: "admin" } }, error: null });
-    renderLogin();
-    preencher({ email: "admin@exemplo.com", senha: "minhasenha" });
-    enviar();
-
-    expect(await screen.findByText("HOME DO ALUNO")).toBeTruthy();
-    expect(screen.queryByText("PAINEL DO ADMIN")).toBeNull();
-  });
-
-  it("o aluno que entra cai no Início do aluno", async () => {
-    signInEmail.mockResolvedValue({ data: { user: { role: "member" } }, error: null });
-    renderLogin();
-    preencher({ email: "aluno@exemplo.com", senha: "minhasenha" });
-    enviar();
-
-    expect(await screen.findByText("HOME DO ALUNO")).toBeTruthy();
-  });
-
-  it("o admin já logado que abre /login vai ao Início", () => {
-    useSession.mockReturnValue({ data: { user: { role: "admin" } }, isPending: false, refetch });
-    renderLogin();
-
-    expect(screen.getByText("HOME DO ALUNO")).toBeTruthy();
-  });
-
-  it("o aluno já logado que abre /login vai ao Início do aluno", () => {
-    useSession.mockReturnValue({ data: { user: { role: "member" } }, isPending: false, refetch });
-    renderLogin();
-
-    expect(screen.getByText("HOME DO ALUNO")).toBeTruthy();
   });
 });

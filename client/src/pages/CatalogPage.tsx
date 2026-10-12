@@ -6,7 +6,7 @@ import { SearchBar } from "@/components/content/SearchBar";
 import { TrilhaCard } from "@/components/content/TrilhaCard";
 import { CourseCard } from "@/components/content/CourseCard";
 import { PageContainer, PageHeader } from "@/components/layout/PageLayout";
-import { useIdioma, useT } from "@/lib/language";
+import { useT } from "@/lib/language";
 import { useSession } from "@/lib/auth-client";
 import { useProgressoDosCursos } from "@/lib/progresso";
 
@@ -17,15 +17,10 @@ import { useProgressoDosCursos } from "@/lib/progresso";
 // Um componente com `tipo` e não dois arquivos: o que difere entre as duas é a
 // lista e o título; busca, estados e layout são os mesmos, e duplicá-los faria
 // as duas telas divergirem na primeira correção feita em só uma.
-//
-// As listas e a busca seguem o IDIOMA DO APP (decisão do operador, 24/09/2026):
-// são listas de descoberta. O idioma entra na chave da consulta, então trocar o
-// idioma no rodapé refaz a busca sozinho.
 
 type Tipo = "cursos" | "trilhas";
 
 export function CatalogPage({ tipo }: { tipo: Tipo }) {
-  const idioma = useIdioma();
   const t = useT();
   const [query, setQuery] = useState("");
   const onSearch = useCallback((q: string) => setQuery(q), []);
@@ -40,18 +35,18 @@ export function CatalogPage({ tipo }: { tipo: Tipo }) {
   // Duas consultas em vez de uma que devolve os dois: estando em /cursos, não
   // há por que buscar trilhas que ninguém vai ver.
   const cursos = useQuery({
-    queryKey: ["catalogo", "cursos", idioma],
-    queryFn: () => api.getCourses(idioma),
+    queryKey: ["catalogo", "cursos"],
+    queryFn: () => api.getCourses(),
     enabled: !buscando && tipo === "cursos",
   });
   const trilhas = useQuery({
-    queryKey: ["catalogo", "trilhas", idioma],
-    queryFn: () => api.getTrilhas(idioma),
+    queryKey: ["catalogo", "trilhas"],
+    queryFn: () => api.getTrilhas(),
     enabled: !buscando && tipo === "trilhas",
   });
   const busca = useQuery({
-    queryKey: ["search", query, idioma],
-    queryFn: () => api.search(query, idioma),
+    queryKey: ["search", query],
+    queryFn: () => api.search(query),
     enabled: buscando,
   });
 

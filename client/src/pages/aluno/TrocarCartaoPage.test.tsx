@@ -35,7 +35,6 @@ vi.mock("@/lib/stripe-do-site", () => ({
 }));
 
 import { TrocarCartaoPage } from "./TrocarCartaoPage";
-import { IdiomaProvider } from "@/lib/language";
 
 // TROCAR O CARTÃO — a tela (Fase 4, etapa 4.6). O que estes testes protegem:
 //   - carregando e falha: sem campo de cartão e sem botão;
@@ -318,19 +317,3 @@ describe("TrocarCartaoPage — o envio", () => {
   });
 });
 
-describe("TrocarCartaoPage — em inglês", () => {
-  it("o título, a descrição, o botão e a confirmação em inglês; o campo da Stripe abre em inglês", async () => {
-    abrir(
-      <IdiomaProvider idioma="en">
-        <TrocarCartaoPage />
-      </IdiomaProvider>,
-    );
-    expect((await screen.findByTestId("cartao")).dataset.idioma).toBe("en");
-    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Update card");
-    expect(screen.getByText("The new card will be used for your next charge.")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Save card" }));
-    expect((await screen.findByRole("status")).textContent).toBe("Card updated.");
-    expect(screen.getByText("Mastercard •••• 4444 · expires 01/2030")).toBeTruthy();
-    expect(screen.getByRole("link", { name: "Billing and subscription" })).toBeTruthy();
-  });
-});

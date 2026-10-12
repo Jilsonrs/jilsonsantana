@@ -14,7 +14,6 @@ vi.mock("@/lib/api", () => ({
 }));
 
 import { AdminCoursesPage } from "./AdminCoursesPage";
-import { IdiomaProvider } from "@/lib/language";
 
 // Um curso vazio: nada preenchido ainda.
 const course: AdminCourseCard = {
@@ -130,15 +129,11 @@ describe("AdminCoursesPage — o cartão do curso", () => {
 
   const cartao = (titulo: string) => screen.findByRole("article", { name: titulo });
 
-  // O nível ao lado do status (acabamento do Antigravity, 30/09/2026), pelo nome
-  // em português, mesmo com o app em inglês; sem nível, nada.
-  it("o nível aparece pelo nome, em português; sem nível, não aparece", async () => {
+  // O nível ao lado do status (acabamento do Antigravity, 30/09/2026), pelo nome;
+  // sem nível, nada.
+  it("o nível aparece pelo nome; sem nível, não aparece", async () => {
     adminGetCourses.mockResolvedValue([{ ...completo, level: "INTERMEDIARIO" }, course]);
-    renderWithProviders(
-      <IdiomaProvider idioma="en">
-        <AdminCoursesPage />
-      </IdiomaProvider>,
-    );
+    renderWithProviders(<AdminCoursesPage />);
     expect(within(await cartao("Curso completo")).getByText("Intermediário")).toBeTruthy();
     const vazio = await cartao("Exemplo — Fundamentos de Excel + IA");
     for (const nivel of ["Iniciante", "Intermediário", "Avançado"]) expect(within(vazio).queryByText(nivel)).toBeNull();

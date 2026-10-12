@@ -3,7 +3,6 @@ import { describe, it, expect } from "vitest";
 import { screen, within } from "@testing-library/react";
 import { renderWithProviders } from "@/test-utils";
 import { AdminPage } from "./AdminPage";
-import { IdiomaProvider } from "@/lib/language";
 
 /** O cartão de um título — achado pelo nome acessível, não pelo visual. */
 function cartao(titulo: string) {
@@ -43,15 +42,4 @@ describe("AdminPage — o Dashboard", () => {
     expect(within(trilhas).queryByRole("link")).toBeNull();
   });
 
-  // O Admin não muda de idioma (decisão do operador, 23/09/2026).
-  it("fica em português mesmo com o app em inglês", () => {
-    renderWithProviders(
-      <IdiomaProvider idioma="en">
-        <AdminPage />
-      </IdiomaProvider>,
-    );
-
-    expect(screen.getAllByText("EM BREVE")).toHaveLength(5);
-    expect(screen.queryByText("COMING SOON")).toBeNull();
-  });
 });

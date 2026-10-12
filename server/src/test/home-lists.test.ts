@@ -1,6 +1,6 @@
 import { describe, it, expect, afterEach } from "vitest";
 import request from "supertest";
-import { en } from "@jilson/core";
+import { pt as fabrica } from "@jilson/core";
 import servidor from "./servidor.js";
 import { prisma } from "../lib/prisma.js";
 import { iniciais } from "../views/home.js";
@@ -51,7 +51,9 @@ function jsonLds(html: string): Array<Record<string, unknown>> {
 }
 
 describe("home — depoimentos e perguntas vêm do banco", () => {
-  it("mostra só o PUBLICADO do idioma da página", async () => {
+  // A página em inglês saiu (12/10/2026), mas as linhas em inglês continuam no banco até o
+  // passo 4 da etapa 4.6c: enquanto isso, elas não podem aparecer na home.
+  it("mostra só o PUBLICADO — e nunca o que ainda está em inglês no banco", async () => {
     await isolar("PT");
     await isolar("EN");
     await depoimento("PT", "PUBLISHED", "Depoimento publicado em português.");
@@ -64,10 +66,6 @@ describe("home — depoimentos e perguntas vêm do banco", () => {
     expect(pt.text).not.toContain("Depoimento ainda em rascunho.");
     expect(pt.text).not.toContain("Depoimento arquivado.");
     expect(pt.text).not.toContain("Published testimonial in English.");
-
-    const enPage = await request(servidor).get("/en");
-    expect(enPage.text).toContain("Published testimonial in English.");
-    expect(enPage.text).not.toContain("Depoimento publicado em português.");
   });
 
   it("a mesma regra vale para as perguntas frequentes", async () => {
@@ -115,13 +113,13 @@ describe("home — depoimentos e perguntas vêm do banco", () => {
     expect(res.text).toContain('aria-hidden="true">A⟦</div>');
   });
 
-  it("sem nada publicado no idioma, as duas seções somem inteiras — título incluído", async () => {
+  it("sem nada publicado, as duas seções somem inteiras — título incluído", async () => {
     const depoimentos = await prisma.testimonial.findMany({
-      where: { language: "EN", status: "PUBLISHED" },
+      where: { language: "PT", status: "PUBLISHED" },
       select: { id: true },
     });
     const perguntas = await prisma.faqItem.findMany({
-      where: { language: "EN", status: "PUBLISHED" },
+      where: { language: "PT", status: "PUBLISHED" },
       select: { id: true },
     });
     const idsD = depoimentos.map((d) => d.id);
@@ -129,21 +127,21 @@ describe("home — depoimentos e perguntas vêm do banco", () => {
     expect(idsD.length).toBeGreaterThan(0);
     expect(idsP.length).toBeGreaterThan(0);
 
+    // Com as seções no lugar, a página as mostra — é o que dá sentido ao "somem" abaixo.
+    const antes = await request(servidor).get("/");
+    expect(antes.text).toContain("testimonials-grid");
+    expect(antes.text).toContain('id="faq"');
+
     await prisma.testimonial.updateMany({ where: { id: { in: idsD } }, data: { status: "ARCHIVED" } });
     await prisma.faqItem.updateMany({ where: { id: { in: idsP } }, data: { status: "ARCHIVED" } });
     try {
-      const res = await request(servidor).get("/en");
+      const res = await request(servidor).get("/");
       expect(res.status).toBe(200);
-      expect(res.text).not.toContain(en.home.testimonials.title);
+      expect(res.text).not.toContain(fabrica.home.testimonials.title);
       expect(res.text).not.toContain("testimonials-grid");
-      expect(res.text).not.toContain(en.home.faq.title);
+      expect(res.text).not.toContain(fabrica.home.faq.title);
       expect(res.text).not.toContain('id="faq"');
       expect(jsonLds(res.text).some((b) => b["@type"] === "FAQPage")).toBe(false);
-
-      // O português não foi tocado e continua com as duas seções.
-      const pt = await request(servidor).get("/");
-      expect(pt.text).toContain("testimonials-grid");
-      expect(pt.text).toContain('id="faq"');
     } finally {
       await prisma.testimonial.updateMany({ where: { id: { in: idsD } }, data: { status: "PUBLISHED" } });
       await prisma.faqItem.updateMany({ where: { id: { in: idsP } }, data: { status: "PUBLISHED" } });

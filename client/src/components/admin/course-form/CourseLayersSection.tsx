@@ -13,7 +13,7 @@ import { useTextosComuns } from "@/lib/common-texts";
  */
 export function CourseLayersSection() {
   const { register } = useFormContext<CourseFormValues>();
-  const textos = useTextosComuns("pt");
+  const textos = useTextosComuns();
   return (
     <PageSection title="Camadas">
       <Card>

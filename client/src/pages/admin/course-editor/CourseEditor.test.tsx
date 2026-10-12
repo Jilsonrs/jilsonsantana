@@ -286,7 +286,7 @@ describe("Editor do curso — cada passo salva só a parte dele", () => {
     getCommonTexts.mockResolvedValue({ ...pt.common, materiais: { ...pt.common.materiais, APOSTILA: "Apostila em PDF" } });
     abrir("/admin/cursos/1/publicar");
     expect(await screen.findByLabelText("Apostila em PDF")).toBeTruthy();
-    expect(getCommonTexts).toHaveBeenCalledWith("pt");
+    expect(getCommonTexts).toHaveBeenCalled();
   });
 
   it("o que foi digitado e não salvo continua lá depois de trocar de passo, e não vai junto no salvar de outro", async () => {
@@ -362,12 +362,6 @@ describe("Editor do curso — Publicar", () => {
     abrir("/admin/cursos/1/publicar");
     expect(await linkDoCurso()).toBe(`${window.location.origin}/curso/exemplo-fundamentos-excel-ia`);
     expect(screen.queryByText(/página dos cursos em inglês/)).toBeNull();
-  });
-
-  it("curso em inglês: link em /en/course, com o aviso de que a página ainda não existe", async () => {
-    abrir("/admin/cursos/1/publicar", { ...CURSO_DE_TESTE, language: "en", slug: "excel-and-ai" });
-    expect(await linkDoCurso()).toBe(`${window.location.origin}/en/course/excel-and-ai`);
-    expect(screen.getByText(/página dos cursos em inglês ainda não existe/)).toBeTruthy();
   });
 
   it("copiar põe o link na área de transferência, avisa, e não salva nada", async () => {

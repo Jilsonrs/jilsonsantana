@@ -1,4 +1,4 @@
-import { ROTAS_PUBLICAS, type LanguageCode } from "@jilson/core";
+import { ROTAS_PUBLICAS } from "@jilson/core";
 import type { CommonTexts } from "@/lib/api";
 
 // O rodapé do app logado, no aluno e no admin (decisão do operador, 24/09/2026).
@@ -10,9 +10,7 @@ import type { CommonTexts } from "@/lib/api";
 // nos dois lugares. O número é a posição na lista `common.footer.links` do
 // dicionário — a mesma que `server/src/views/home.ts` usa.
 //
-// OS DESTINOS seguem o idioma do app e vêm de `ROTAS_PUBLICAS` (core), a mesma
-// lista da home: em inglês, o aluno vai para os endereços em inglês e para o
-// canal do YouTube em inglês.
+// OS DESTINOS vêm de `ROTAS_PUBLICAS` (core), a mesma lista da home.
 //
 // Várias páginas ainda não existem (Quem somos, Contato, Termos, Privacidade) e
 // dão tela vazia até existirem: o operador decidiu (24/09) que o link entra
@@ -24,8 +22,8 @@ export type ItemDoRodape =
   | { tipo: "pagina"; href: string; texto: (t: CommonTexts) => string }
   | { tipo: "youtube"; href: string };
 
-export function itensDoRodape(idioma: LanguageCode): ItemDoRodape[] {
-  const r = ROTAS_PUBLICAS[idioma];
+export function itensDoRodape(): ItemDoRodape[] {
+  const r = ROTAS_PUBLICAS;
   return [
     { tipo: "pagina", href: r.faq, texto: (t) => t.footer.links[3] },
     { tipo: "pagina", href: r.quemSomos, texto: (t) => t.footer.links[4] },

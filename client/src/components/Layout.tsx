@@ -12,7 +12,7 @@ import { Sino } from "@/components/notificacoes/Sino";
 import { ProtecaoDoApp } from "@/components/ErroDaTela";
 import { ROTAS_PUBLICAS, Role } from "@jilson/core";
 import { usePreCarregarDoAdmin } from "@/lib/versao";
-import { IdiomaProvider, useIdioma, useIdiomaDoShell, useT } from "@/lib/language";
+import { useT } from "@/lib/language";
 
 /**
  * O shell do app. DUAS gramáticas, escolhidas pela sessão:
@@ -25,27 +25,20 @@ import { IdiomaProvider, useIdioma, useIdiomaDoShell, useT } from "@/lib/languag
  *
  * O cromo segue a PESSOA, não a rota: o aluno logado que abre o catálogo — que
  * é rota pública — continua com o rail.
- *
- * É AQUI que se decide o idioma do app, uma vez só (`useIdiomaDoShell`): todas
- * as telas abaixo leem o mesmo valor pelo `IdiomaProvider`.
  */
 export function Layout() {
-  const idioma = useIdiomaDoShell();
   return (
-    <IdiomaProvider idioma={idioma}>
-      {/* Se a moldura quebrar (menu, sino, topo), a tela de erro no lugar da
-          página em branco (06/10/2026). A tela tem a proteção dela, abaixo. */}
-      <ProtecaoDoApp>
-        <Shell />
-      </ProtecaoDoApp>
-    </IdiomaProvider>
+    // Se a moldura quebrar (menu, sino, topo), a tela de erro no lugar da
+    // página em branco (06/10/2026). A tela tem a proteção dela, abaixo.
+    <ProtecaoDoApp>
+      <Shell />
+    </ProtecaoDoApp>
   );
 }
 
 function Shell() {
   const { data: session } = useSession();
   const navigate = useNavigate();
-  const idioma = useIdioma();
   const t = useT();
   usePreCarregarDoAdmin(session?.user.role === Role.ADMIN);
 
@@ -77,9 +70,8 @@ function Shell() {
     return (
       <div className="flex min-h-svh flex-col bg-background text-foreground">
         <header className="flex items-center justify-between border-b border-border px-6 py-4">
-          {/* Link de verdade, não <Link>: a home é página do servidor. Vai para a
-              home do idioma de quem está no login. */}
-          <a href={ROTAS_PUBLICAS[idioma].home} className="font-semibold tracking-tight">
+          {/* Link de verdade, não <Link>: a home é página do servidor. */}
+          <a href={ROTAS_PUBLICAS.home} className="font-semibold tracking-tight">
             <span className="text-primary">#</span>Jilson Santana
           </a>
           <nav className="flex items-center gap-2">
@@ -87,8 +79,7 @@ function Shell() {
               <Link to="/cursos">{t.header.catalogo}</Link>
             </Button>
             <Button asChild variant="ghost" size="sm">
-              {/* O login continua no idioma de quem chegou em inglês. */}
-              <Link to={idioma === "en" ? "/login?lang=en" : "/login"}>{t.header.entrar}</Link>
+              <Link to="/login">{t.header.entrar}</Link>
             </Button>
           </nav>
         </header>

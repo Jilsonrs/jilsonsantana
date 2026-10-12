@@ -16,7 +16,6 @@ vi.mock("@/lib/api", () => ({
 
 import { pt } from "@jilson/core";
 import { CourseDetailPage } from "./CourseDetailPage";
-import { IdiomaProvider } from "@/lib/language";
 
 const rota = { route: "/curso/exemplo-fundamentos-excel-ia", path: "/curso/:slug" };
 
@@ -108,27 +107,6 @@ describe("CourseDetailPage", () => {
 // O texto da TELA segue o idioma do app; o CONTEÚDO do curso fica como o operador
 // escreveu (decisão do operador, 24/09/2026).
 describe("CourseDetailPage — idioma e textos", () => {
-  it("em inglês: a tela em inglês, o conteúdo do curso intacto", async () => {
-    getCourseBySlug.mockResolvedValue(baseCourse);
-    renderWithProviders(
-      <IdiomaProvider idioma="en">
-        <CourseDetailPage />
-      </IdiomaProvider>,
-      rota,
-    );
-
-    expect(await screen.findByText("Exemplo — Fundamentos de Excel + IA")).toBeTruthy();
-    expect(screen.getByRole("heading", { name: "Course content" })).toBeTruthy();
-    expect(screen.getByRole("heading", { name: "What you'll learn" })).toBeTruthy();
-    expect(screen.getByText("Intermediate")).toBeTruthy();
-    expect(screen.getByText("1 module · 2 lessons · 1h 05min")).toBeTruthy();
-    expect(screen.getByText("Solid foundations")).toBeTruthy();
-    // O título do quadro das camadas sai do dicionário, não fica em português.
-    expect(screen.getByRole("heading", { name: /^Our method/ })).toBeTruthy();
-    // Conteúdo não é traduzido: o módulo e a tag saem como foram escritos.
-    expect(screen.getByText("Base Lógica Inquebrável")).toBeTruthy();
-    expect(screen.queryByText("Conteúdo do curso")).toBeNull();
-  });
 
   it("o nível aparece pelo nome, não pelo valor do sistema", async () => {
     getCourseBySlug.mockResolvedValue(baseCourse);
@@ -147,7 +125,7 @@ describe("CourseDetailPage — idioma e textos", () => {
     expect(await screen.findByText("Base que não quebra")).toBeTruthy();
     expect(screen.getByText("Frase editada.")).toBeTruthy();
     expect(screen.queryByText("Fundamentos sólidos")).toBeNull();
-    expect(getCommonTexts).toHaveBeenCalledWith("pt");
+    expect(getCommonTexts).toHaveBeenCalled();
   });
 
   it("curso publicado com 0 aulas: mostra 0 aulas e não quebra", async () => {
@@ -181,17 +159,6 @@ describe("CourseDetailPage — vídeo de apresentação", () => {
     expect(screen.queryByTitle("Vídeo de apresentação do curso")).toBeNull();
   });
 
-  it("em inglês: o nome do player sai do dicionário", async () => {
-    getCourseBySlug.mockResolvedValue({ ...baseCourse, introVideoEmbedUrl: EMBED });
-    renderWithProviders(
-      <IdiomaProvider idioma="en">
-        <CourseDetailPage />
-      </IdiomaProvider>,
-      rota,
-    );
-
-    expect(await screen.findByTitle("Course introduction video")).toBeTruthy();
-  });
 });
 
 // "ESTE CURSO INCLUI" (decisões do operador, 04/10/2026): os arquivos aparecem
@@ -247,24 +214,6 @@ describe("CourseDetailPage — este curso inclui", () => {
     ]);
   });
 
-  it("as linhas calculadas em inglês", async () => {
-    getCourseBySlug.mockResolvedValue({ ...baseCourse, inclui: { segundosDeVideo: 3900, artigos: 2, aulasGratis: 1, arquivos: false, legendas: true } });
-    renderWithProviders(
-      <IdiomaProvider idioma="en">
-        <CourseDetailPage />
-      </IdiomaProvider>,
-      rota,
-    );
-    const quadro = (await screen.findByRole("heading", { name: "This course includes:" })).closest("section") as HTMLElement;
-    expect([...quadro.querySelectorAll("li")].map((li) => li.textContent)).toEqual([
-      "1h 05min of video",
-      "2 articles",
-      "1 free lesson to try",
-      "Portuguese subtitles",
-      "Certificate of completion",
-    ]);
-  });
-
   // Todo curso dá certificado (operador, 05/10/2026): sem nenhuma outra linha, o
   // quadro aparece só com ele — nunca mais escondido.
   it("sem nenhuma outra linha: o quadro aparece só com o certificado", async () => {
@@ -297,15 +246,4 @@ describe("CourseDetailPage — este curso inclui", () => {
     expect(await screen.findByText("Apostila completa em PDF")).toBeTruthy();
   });
 
-  it("em inglês", async () => {
-    getCourseBySlug.mockResolvedValue({ ...baseCourse, inclui: { ...NADA, arquivos: true }, materiais: ["APOSTILA"] });
-    renderWithProviders(
-      <IdiomaProvider idioma="en">
-        <CourseDetailPage />
-      </IdiomaProvider>,
-      rota,
-    );
-    expect(await screen.findByRole("heading", { name: "This course includes:" })).toBeTruthy();
-    expect(screen.getByText("Files to follow along with the lessons")).toBeTruthy();
-  });
 });

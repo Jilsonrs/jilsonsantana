@@ -13,7 +13,7 @@ import { useTextosComuns } from "@/lib/common-texts";
  */
 export function CourseMaterialsSection() {
   const { register } = useFormContext<CourseFormValues>();
-  const textos = useTextosComuns("pt");
+  const textos = useTextosComuns();
   return (
     <PageSection title="Materiais exclusivos">
       <Card>

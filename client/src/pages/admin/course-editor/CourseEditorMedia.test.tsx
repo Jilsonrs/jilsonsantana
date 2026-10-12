@@ -397,6 +397,6 @@ describe("Mídia e destaques — as camadas", () => {
     await abrirPagina();
 
     expect(await screen.findByLabelText("Recursos novos")).toBeTruthy();
-    expect(getCommonTexts).toHaveBeenCalledWith("pt");
+    expect(getCommonTexts).toHaveBeenCalled();
   });
 });

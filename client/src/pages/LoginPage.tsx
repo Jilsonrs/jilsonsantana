@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import { LANGUAGES, loginSchema, type LanguageCode, type LoginInput } from "@jilson/core";
+import { loginSchema, type LoginInput } from "@jilson/core";
 import { signIn, useSession } from "@/lib/auth-client";
-import { useT, useTrocarIdioma } from "@/lib/language";
+import { useT } from "@/lib/language";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,20 +17,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 // operador, 29/09/2026). Este é o único lugar que aponta para lá.
 const POS_LOGIN = "/inicio";
 
-// O idioma que veio no ENDEREÇO (`/login?lang=en`, o "Entrar" da home em
-// inglês). Só ele muda a conta: quem entra pelo /login normal não muda de idioma.
-function idiomaDoEndereco(valor: string | null): LanguageCode | null {
-  return (LANGUAGES as readonly string[]).includes(valor ?? "") ? (valor as LanguageCode) : null;
-}
-
 export function LoginPage() {
   const navigate = useNavigate();
   const t = useT();
-  const [params] = useSearchParams();
-  const { trocarIdiomaAntes } = useTrocarIdioma();
   const { data: session, isPending } = useSession();
   const queryClient = useQueryClient();
-  // O TIPO da falha, não a frase: a frase sai do dicionário no idioma da tela.
+  // O TIPO da falha, não a frase: a frase sai do dicionário.
   const [formError, setFormError] = useState<"credenciais" | "falha" | null>(null);
   const {
     register,
@@ -75,18 +67,6 @@ export function LoginPage() {
     // passa por ele — sem isto, quem entrasse em seguida na mesma aba veria por instantes o que
     // era da conta anterior.
     queryClient.clear();
-    // Veio da home em inglês → a conta passa a ser inglês ANTES de abrir o app
-    // (decisão do operador, 24/09/2026: o estrangeiro "já entra em inglês").
-    // Se isso falhar, entra mesmo assim: o idioma se troca depois no rodapé, e
-    // barrar o login por causa dele seria pior.
-    const idioma = idiomaDoEndereco(params.get("lang"));
-    if (idioma) {
-      try {
-        await trocarIdiomaAntes(idioma);
-      } catch (err) {
-        console.error("Falha ao gravar o idioma no login:", err);
-      }
-    }
     navigate(POS_LOGIN, { replace: true });
   }
 

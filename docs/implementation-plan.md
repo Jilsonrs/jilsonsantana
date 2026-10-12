@@ -4152,7 +4152,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       passos 4 e 5 · **antes de mexer em `components/nav/**`, `components/layout/**` e na
       home, ler o `design-lab/GEMINI.md`**: o seletor de idioma mora em arquivos do
       Antigravity. **Antes de abrir: a P90** (o que existe cadastrado em inglês, e as legendas).
-      - [ ] **Passo 0 — A fotografia, com o operador (sem código).** Contar o que existe em
+      - [x] **Passo 0 — A fotografia, com o operador (sem código).** *(Feito em 12/10/2026: a contagem do dev está abaixo; o ponto de volta `antes-da-4.6c` está marcado no git. Do site, falta só o operador olhar no admin antes do passo 4, e conferir na Stripe que não há preço em dólar.)* Contar o que existe em
             inglês em cada banco (o do dev e o do site): cursos, trilhas, legendas, depoimentos,
             perguntas e textos. **Curso, trilha e legenda em inglês se apagam PELO ADMIN** (é
             ele que limpa o vídeo e a legenda no Bunny), nos dois bancos, antes do passo 4.
@@ -4167,7 +4167,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             cadastrado, quando você remover os campos em inglês a informação some"* — falta só
             a contagem de lá, que é ele quem vê (só a Railway fala com o banco do site); a
             migration aborta se achar curso, trilha ou legenda em inglês.
-      - [ ] **Passo 1 — O visitante e o aluno deixam de ver o inglês (site + home).** Sai o
+      - [x] **Passo 1 — O visitante e o aluno deixam de ver o inglês (site + home).** *(Feito em 12/10/2026, no `dev`; os quatro gates verdes — site 896 testes, servidor 1.073. Mutação: um texto cravado no template reprova o teste novo da home; tirar o filtro de português dos depoimentos reprova o das listas. A "escolha pelo idioma do navegador" nunca chegou a existir no código: nada a tirar. Ficam para o passo 3: o tipo do idioma no `core`, que os formatadores de data e de dinheiro ainda recebem, e a chave `app.footer.erroIdioma` do dicionário, sem uso. Em `public-input.css`, a classe `.lang-atual` ficou sem uso — é do Antigravity.)* Sai o
             seletor PT | EN da home, do rodapé do app e do login (`?lang=`); saem a rota `/en`
             da home e a escolha pelo idioma do navegador; a página passa a dizer sempre
             `lang="pt-BR"`, sem `hreflang`. `useT()` e `useIdioma()` passam a devolver sempre o

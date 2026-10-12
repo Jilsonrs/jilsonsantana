@@ -1,7 +1,5 @@
-import type { LanguageCode } from "../schemas/site-text.js";
-
-// OS ENDEREÇOS DA VITRINE, por idioma — um endereço por idioma, com segmentos em
-// inglês sob /en (CLAUDE.md → Idiomas).
+// OS ENDEREÇOS DA VITRINE. A escola é só em português (decisão do operador,
+// 12/10/2026 — etapa 4.6c): há um endereço por página, sem `/en`.
 //
 // Moram no `core` porque DOIS lugares apontam para eles: a home pública
 // (`server/src/views/home.ts`) e o rodapé do app logado
@@ -11,55 +9,20 @@ import type { LanguageCode } from "../schemas/site-text.js";
 // Os links apontam para o DESTINO FINAL mesmo onde a página ainda não existe
 // (decisão do operador, set/2026): é melhor o link já nascer no lugar certo do
 // que virar `#` e alguém esquecer de trocar depois.
-//
-// YouTube: um canal por idioma (decisão do operador, 24/09/2026 — `idiomas.md` §7).
-export const ROTAS_PUBLICAS: Record<
-  LanguageCode,
-  {
-    home: string;
-    cursos: string;
-    trilhas: string;
-    assinar: string;
-    faq: string;
-    quemSomos: string;
-    contato: string;
-    termos: string;
-    privacidade: string;
-    youtube: string;
-  }
-> = {
-  pt: {
-    home: "/",
-    cursos: "/cursos",
-    trilhas: "/trilhas",
-    assinar: "/assinar",
-    faq: "/#faq",
-    quemSomos: "/quem-somos",
-    contato: "/contato",
-    termos: "/termos",
-    privacidade: "/privacidade",
-    youtube: "https://www.youtube.com/@JilsonSantanaBI/",
-  },
-  en: {
-    home: "/en",
-    cursos: "/en/courses",
-    trilhas: "/en/learning-paths",
-    assinar: "/en/pricing",
-    faq: "/en#faq",
-    quemSomos: "/en/about",
-    contato: "/en/contact",
-    termos: "/en/terms",
-    privacidade: "/en/privacy",
-    youtube: "https://www.youtube.com/@jilsonen",
-  },
-};
+export const ROTAS_PUBLICAS = {
+  home: "/",
+  cursos: "/cursos",
+  trilhas: "/trilhas",
+  assinar: "/assinar",
+  faq: "/#faq",
+  quemSomos: "/quem-somos",
+  contato: "/contato",
+  termos: "/termos",
+  privacidade: "/privacidade",
+  youtube: "https://www.youtube.com/@JilsonSantanaBI/",
+} as const;
 
-/**
- * O endereço público de UM curso, no idioma dele (decisão do operador, 14/09/2026:
- * `/curso/:slug` em português, `/en/course/:slug` em inglês). Aponta para o
- * destino final mesmo antes de a página em inglês existir — mesma regra dos
- * links acima.
- */
-export function enderecoDoCurso(idioma: LanguageCode, slug: string): string {
-  return idioma === "en" ? `/en/course/${slug}` : `/curso/${slug}`;
+/** O endereço público de UM curso (decisão do operador, 14/09/2026: `/curso/:slug`). */
+export function enderecoDoCurso(slug: string): string {
+  return `/curso/${slug}`;
 }

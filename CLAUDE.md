@@ -324,7 +324,7 @@ teste e o `server` não tem suíte. Não faltou regra; ficou pra depois, e depoi
 - **O ACABAMENTO VISUAL TEM OUTRO AUTOR — agente parceiro de design (Antigravity), que edita `.tsx` de verdade.** Você constrói estrutura, lógica e testes; ele formata. **Não desfaça escolha visual dele achando que é descuido** (espaçamento incomum, sombra, ordem de classe): se estiver errado, é conversa com o operador, não correção de passagem. **GATILHO (mecânico):** antes de editar `client/src/index.css`, `client/tailwind.config.ts`, `client/src/components/nav/**`, `client/src/components/ui/**` ou `client/src/components/layout/**` → ler [`design-lab/GEMINI.md`](design-lab/GEMINI.md) (os arquivos que ele toca e as regras dele) + `docs/design.md`. **Os mocks dele NÃO são versionados** — `design-lab/` chega vazia num clone, só com o `GEMINI.md`; não é defeito.
   **ELE PUBLICA O PRÓPRIO TRABALHO VISUAL** *(autorização do operador, 30/09/2026)*, pelo mesmo caminho que você segue — `dev`, os quatro gates, CI verde nos dois jobs, merge `--no-ff` para a `main` quando o operador pedir (`GEMINI.md` §5, *Publicar*). **Consequência para você:** ao começar uma sessão, `git log` pode mostrar commits e merges dele que você não fez; leia o diff antes de construir em cima. Mudança que não seja visual (comportamento, texto, rota, dado) continua sendo sua, com plano aprovado.
 - **Tela nova do app (React, atrás de login) nasce com o LAYOUT PADRÃO:** `PageContainer` + `PageHeader` + `PageSection`, de `client/src/components/layout/PageLayout.tsx` *(decisão do operador, 23–24/09/2026, desenhado com o Antigravity)*. Sem ele, a tela nasce no formato antigo (`mx-auto max-w-3xl px-6 py-16`) e o parceiro tem que refazer. Exemplo e regras de uso: [`.agents/rules/page_layout.md`](.agents/rules/page_layout.md). Você monta a estrutura com esses três; o acabamento fino continua sendo dele. **Rota pública não usa** — é template de servidor (Rendering Boundary).
-- **Texto de tela do ALUNO sai de `useT()`, nunca escrito no `.tsx`** *(decisão do operador, 24/09/2026: tudo depois do login existe em inglês)*. `useT()` devolve a parte `app` do dicionário (`core/src/i18n/`) no idioma do app, que o `Layout` decide uma vez só (conta, ou `?lang=` no login) — `client/src/lib/language.tsx`. **Por quê:** literal numa tela do aluno aparece em português para o aluno estrangeiro, e nenhum teste, typecheck ou build acusa. **O Admin é a exceção** (decisão dele, 23/09): fica em português, com o texto na própria tela. `app.*` **não** entra em *Admin → Textos* (`ehTextoEditavel`); o rodapé do app usa `common.*`, que entra.
+- **Texto de tela do ALUNO sai de `useT()`, nunca escrito no `.tsx`** *(decisão do operador, 24/09/2026; mantida em 12/10/2026, com a escola só em português)*. `useT()` devolve a parte `app` do dicionário (`core/src/i18n/pt.ts`) — `client/src/lib/language.tsx`. **Por quê:** é num arquivo só que o operador revisa os textos do app; texto espalhado pelas telas ninguém revisa. **O Admin é a exceção** (decisão dele, 23/09): o texto fica na própria tela. `app.*` **não** entra em *Admin → Textos* (`ehTextoEditavel`); o rodapé do app usa `common.*`, que entra.
 - **Corolário — a suíte é o que torna isso seguro, então não a enfraqueça:** o que impede o parceiro de apagar acessibilidade sem perceber é o teste reprovar. Expansão por teclado (`focus-within:`), `aria-current`, rótulo do rail recolhido (escondido por **opacidade**, nunca `hidden`), visibilidade por papel e destino de link **têm teste de propósito**. Afrouxar qualquer um deles remove a única rede que existe nessa fronteira.
 
 ### Database & Migrations
@@ -413,7 +413,7 @@ NEVER pass a secret as a CLI argument or read one back into the transcript. Comm
   - `email` required (unique). `name` **optional** (a future corporate manager may invite with email only). `image` (avatar — free in Better Auth).
   - `role` (`member` default; `admin` seeded).
   - `birthday` **optional**, day+month only (e.g. `"06-15"`) — never the year (LGPD / sensitive-data minimization).
-  - `preferredLanguage` default `"pt"` — **ativo desde Set 2026** (deixou de ser costura dormente): é o idioma da interface do aluno **logado** (`"pt"` | `"en"`), gravado quando ele troca pelo seletor. Visitante anônimo não tem coluna — o idioma dele é o do **endereço**. Ver *Idiomas*.
+  - `preferredLanguage` — **não é mais lido nem gravado pelo site** (12/10/2026: o seletor de idioma saiu, passo 1 da etapa 4.6c). A coluna e a rota `PATCH /api/me/language` saem nos passos 3 e 5 da etapa; **não use em código novo.**
   - `marketingConsent` default `false` (LGPD) — gates promotional email only; transactional email (receipt, password reset) ignores it.
   - `acquisitionSource` / `acquisitionCampaign` **optional** — UTM capture. Read on first visit (cookie/localStorage), persisted at user creation (seed in P1, Stripe webhook in P4). Lets the YouTube→site funnel be measured (which video converts). Must be live before the channel sends traffic.
   - `deletedAt` (soft-delete). `requireAuth` rejects soft-deleted users.
@@ -430,7 +430,7 @@ NEVER pass a secret as a CLI argument or read one back into the transcript. Comm
 - **Todo `import()` do client entra em `PEDACOS_DO_ALUNO` ou `PEDACOS_DO_ADMIN`** (baixados em segundo plano logo depois de abrir; os do admin, só para admin) **ou nas exceções de `client/src/lib/pedacos.test.ts`, com o motivo** — senão, uma aba aberta antes de uma publicação pede um arquivo que não existe mais. **O teste reprova** um `import()` novo fora das listas. Exceção hoje: os desenhos do Lucide (381 KB) — o `HighlightIcon` mostra o Brilho se eles não vierem.
 - **Trabalho que carregar a página cortaria passa por `semInterromper()`** (mesmo arquivo) — hoje, os dois envios de vídeo. Enquanto ele corre, a troca de tela fica dentro do app e o recarregar-uma-vez não dispara; a versão nova entra no primeiro clique depois que ele termina. *(Regra do operador de 29/09: trocar de passo no meio de um envio não interrompe nada.)*
 
-- **Rotas públicas (template no servidor, ZERO React, zero hidratação):** `/` · `/cursos` · `/curso/:slug` · `/trilha/:slug` · `/certificado/:publicId` · `/assinar` (topo informativo; o Payment Element em si é React) · páginas legais — **e o equivalente de cada uma sob `/en`** (ver *Idiomas*).
+- **Rotas públicas (template no servidor, ZERO React, zero hidratação):** `/` · `/cursos` · `/curso/:slug` · `/trilha/:slug` · `/certificado/:publicId` · `/assinar` (topo informativo; o Payment Element em si é React) · páginas legais. **Não existe `/en`** (a escola é só em português — 12/10/2026).
 - **Rotas privadas (React SPA como hoje):** tudo sob `/aluno/*` e `/admin/*`, **mais `/inicio` e `/dashboard`** (decisão do operador, 29/09/2026) — player, JilsonAI, progresso, gestão de assinatura. Esses dois são endereços curtos **atrás de login**, não vitrine.
 - **Por que sem React no lado público:** hidratação é a principal fonte de dor em SSR de React, e uma página de curso não é app — é buscar do banco e desenhar. FAQ é `<details>/<summary>`, card é `div`, vídeo de intro é iframe do Bunny, "assinar" é link. Sem React ali essa classe inteira de bug não existe, e as páginas de marketing carregam **sem bundle JS**.
 - **A consistência visual mora no Tailwind, não nos componentes** — mesmo config, mesmos tokens, mesma marca. shadcn continua valendo do lado privado, onde há interação de verdade.
@@ -523,8 +523,8 @@ Texto que só aparece depois de um clique, um scroll ou um fetch é **invisível
 
 Todo texto que o visitante lê — **inclusive `aria-label`, `alt` e `title`** — sai do dicionário
 (`core/src/i18n/`). Literal no HTML falha **duas vezes em silêncio**: o operador não consegue
-editar pelo admin, e a página `/en` mostra português. Nenhum dos dois quebra teste, typecheck ou
-build. *(Medido em Set 2026: 55 textos estavam cravados no template da home **mesmo já tendo
+editar pelo admin, e o texto deixa de morar no lugar que ele revisa. Nenhum dos dois quebra
+typecheck ou build. *(Medido em Set 2026: 55 textos estavam cravados no template da home **mesmo já tendo
 chave** no dicionário.)*
 
 - **O dicionário em código é VALOR DE FÁBRICA, não "o texto do site".** O que está no ar é
@@ -537,9 +537,10 @@ chave** no dicionário.)*
   operador não digita HTML no admin, e nada precisa escapar do `escapeHtml()`.
 - **Lista que cresce (depoimento, FAQ) é TABELA, não chave de dicionário.** Lista de tamanho fixo
   presa ao layout (3 passos, 4 colunas) é dicionário: acrescentar item ali é mudança de desenho.
-- **O teste que sustenta isto** compara as duas páginas: um trecho em português por seção tem que
-  aparecer em `/` e **não** aparecer em `/en` (`server/src/routes/home.test.ts`). Cravar um
-  literal de volta reprova a suíte — verificado por mutação.
+- **O teste que sustenta isto** troca no banco TODO texto editável da home por uma marca e
+  confere a página: as marcas aparecem, e nenhuma frase de fábrica sobra
+  (`server/src/routes/home.test.ts`). Cravar um literal de volta reprova a suíte — verificado
+  por mutação em 12/10/2026, quando o teste antigo (que comparava `/` com `/en`) saiu.
 
 O mapa por seção (o que é entidade, o que é texto, o que é derivado) mora em
 [`docs/content.md`](docs/content.md) § 16. **GATILHO (mecânico):** antes de escrever ou editar
@@ -552,11 +553,11 @@ qualquer template em `server/src/views/**` → ler aquela seção.
 - **`sitemap.xml` é gerado do banco** (rota do servidor, não arquivo estático) e **respeita o mesmo filtro das leituras públicas** — `DRAFT`/`ARCHIVED` nunca entram.
 - **`robots.txt` — POLÍTICA DECIDIDA: permitir crawler de busca E de treino.** Os de busca (`OAI-SearchBot`, `Claude-SearchBot`, `PerplexityBot`) respondem em tempo real, e bloqueá-los tira a escola das respostas de IA — que é o canal desejado. Bloquear os de treino **protege nada**: o ativo é o **vídeo**, que vive no Bunny. *Raciocínio e gatilho: `decisions-archive.md`, Ago 2026 (12d).*
 - **Botão de compartilhar depende das metas acima.** Share sem OG tags compartilha card genérico — **as metas vêm primeiro, sempre.**
-- **Dois idiomas no HTML da primeira resposta:** `<html lang>` e `og:locale` do idioma da página, `hreflang` recíproco quando a página tem par no outro idioma, e o `sitemap.xml` com as URLs dos dois idiomas.
+- **Um idioma no HTML da primeira resposta:** `<html lang="pt-BR">` e `og:locale` `pt_BR`. **Sem `hreflang`** — não há outra versão da página (12/10/2026).
 
 ## Idiomas — escola bilíngue PT + EN (decisão do operador, Set 2026)
 
-> **REVOGADO EM 12/10/2026 — A ESCOLA PASSA A SER SÓ EM PORTUGUÊS E SÓ PARA O BRASIL** *(decisão do operador: "remover tudo que foi feito para dar suporte a inglês […] tudo que fizermos de agora em diante fica uma língua só")*. **O que vale DESDE JÁ: trabalho novo nasce só em português — nenhum texto, rota, campo, e-mail ou teste novo em inglês**, e nada de `language`, `/en` ou `preferredLanguage` em código novo. O código do segundo idioma continua existindo até a **etapa 4.6c** do plano tirá-lo, passo a passo; **até lá, as travas abaixo descrevem o que ainda está no código, não o que se constrói.** Quem mexer em arquivo que ainda tem inglês segue o passo da 4.6c que trata dele, sem "aproveitar a viagem". **O que continua de pé:** o texto de tela sai do dicionário em português (`pt.ts`, `useT()`), e nenhum texto visível fica literal no template.
+> **REVOGADO EM 12/10/2026 — A ESCOLA PASSA A SER SÓ EM PORTUGUÊS E SÓ PARA O BRASIL** *(decisão do operador: "remover tudo que foi feito para dar suporte a inglês […] tudo que fizermos de agora em diante fica uma língua só")*. **O que vale DESDE JÁ: trabalho novo nasce só em português — nenhum texto, rota, campo, e-mail ou teste novo em inglês**, e nada de `language`, `/en` ou `preferredLanguage` em código novo. O código do segundo idioma continua existindo até a **etapa 4.6c** do plano tirá-lo, passo a passo; **até lá, as travas abaixo descrevem o que ainda está no código, não o que se constrói.** Quem mexer em arquivo que ainda tem inglês segue o passo da 4.6c que trata dele, sem "aproveitar a viagem". **Feito até aqui — passo 1 (12/10/2026):** saíram o seletor PT | EN (home, rodapé do app), a página `/en`, o `?lang=` do login e o idioma nas listas que o site pede; `useT()` devolve sempre o português. **O que continua de pé:** o texto de tela sai do dicionário em português (`pt.ts`, `useT()`), e nenhum texto visível fica literal no template.
 
 > **A especificação (quem vê o quê, preço fora do Brasil, imposto internacional, o que ainda nasce com idioma, pendências) mora em [`docs/idiomas.md`](docs/idiomas.md).**
 > **GATILHO (mecânico):** antes do primeiro write/edit que toque o campo `language`, `User.preferredLanguage`, o dicionário de textos, rota ou template **público** do servidor, `sitemap.xml`/`robots.txt`, ou o formulário de curso/trilha do admin → **ler `idiomas.md`**.

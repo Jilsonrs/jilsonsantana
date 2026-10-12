@@ -33,7 +33,6 @@ export interface HomeFaqItem {
 // posições, e trocar duas do mesmo tipo de lugar passaria no typecheck.
 export interface HomeView {
   dict: Dict;
-  lang: "pt" | "en";
   courses: HomeCourse[];
   featuredCourse: HomeCourse | null;
   canSubscribe: boolean;
@@ -44,9 +43,9 @@ export interface HomeView {
   /** Quem está logado já foi assinante e hoje está sem acesso: os botões dizem "Reativar
    *  assinatura" (decisão do operador, 10/10/2026). Sem login, nunca. */
   reativar: boolean;
-  /** Só os PUBLICADOS do idioma da página. Vazia = a seção não aparece. */
+  /** Só os PUBLICADOS. Vazia = a seção não aparece. */
   testimonials: HomeTestimonial[];
-  /** Só os PUBLICADOS do idioma da página. Vazia = a seção não aparece. */
+  /** Só os PUBLICADOS. Vazia = a seção não aparece. */
   faq: HomeFaqItem[];
 }
 
@@ -63,7 +62,6 @@ export const iniciais = (nome: string): string => {
 
 export function renderHome({
   dict,
-  lang,
   courses,
   featuredCourse,
   canSubscribe,
@@ -73,19 +71,18 @@ export function renderHome({
   testimonials,
   faq,
 }: HomeView): string {
-  const isPt = lang === "pt";
-  const currentUrl = isPt ? baseUrl : `${baseUrl}/en`;
-  const alternateUrl = isPt ? `${baseUrl}/en` : baseUrl;
+  // A escola é só em português (decisão do operador, 12/10/2026): a home tem um endereço só.
+  const currentUrl = baseUrl;
   const title = `${dict.home.hero.titlePrefix} ${dict.home.hero.titleEmphasis} ${dict.home.hero.titleSuffix}`;
 
-  // Os endereços da vitrine, por idioma — compartilhados com o rodapé do app
+  // Os endereços da vitrine — compartilhados com o rodapé do app
   // (`core/src/constants/site.ts`, onde está o porquê).
-  const rotas = ROTAS_PUBLICAS[lang];
+  const rotas = ROTAS_PUBLICAS;
 
   // O BOTÃO ASSINAR (decisão do operador, 09/10/2026): com login, leva à tela de assinar; sem
   // login continua sem ação, até a etapa 4.7. É o MESMO botão do mock aprovado — só passa a
   // estar dentro de um formulário que apenas navega (`display: contents`: ele não entra no
-  // desenho). Onde o botão está desligado (a página em inglês sem aula em inglês), continua.
+  // desenho). Onde o botão está desligado, continua.
   // Quem já foi assinante e está sem acesso lê "Reativar assinatura" (decisão dele, 10/10/2026);
   // "Assinar" fica para a primeira vez — e para o visitante sem login, sempre.
   const botaoAssinar = (textos: { btn: string; btnReactivate: string }, estilo: string): string => {
@@ -94,17 +91,8 @@ export function renderHome({
     return logado && canSubscribe ? `<form method="get" action="${TELA_DE_ASSINAR}" style="display: contents;">${botao}</form>` : botao;
   };
 
-  // Seletor PT | EN: dois links, um por endereço — sem cookie e sem negociação
-  // por cabeçalho ("UM ENDEREÇO POR IDIOMA", CLAUDE.md → Idiomas). O idioma
-  // atual leva `aria-current`; o outro fica em cinza, como no mock. Aparece no
-  // topo e no rodapé, por isso é função: só a indentação muda.
-  const seletorIdioma = (recuo: string) => `<div style="display: flex; gap: 16px; align-items: center;">
-${recuo}  <a href="/"${isPt ? ' aria-current="page" class="lang-atual"' : ""}>PT</a>
-${recuo}  <a href="/en"${isPt ? "" : ' aria-current="page" class="lang-atual"'}>EN</a>
-${recuo}</div>`;
-
   return `<!DOCTYPE html>
-<html lang="${isPt ? "pt-BR" : "en"}">
+<html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
@@ -112,12 +100,9 @@ ${recuo}</div>`;
   <title>${escapeHtml(title)} | Jilson Santana</title>
   <meta name="description" content="${escapeHtml(dict.home.hero.subtitle)}">
   <link rel="canonical" href="${escapeHtml(currentUrl)}">
-  <link rel="alternate" hreflang="${isPt ? "en" : "pt-BR"}" href="${escapeHtml(alternateUrl)}">
-  <link rel="alternate" hreflang="${isPt ? "pt-BR" : "en"}" href="${escapeHtml(currentUrl)}">
-  <link rel="alternate" hreflang="x-default" href="${escapeHtml(baseUrl)}">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Jilson Santana">
-  <meta property="og:locale" content="${isPt ? "pt_BR" : "en_US"}">
+  <meta property="og:locale" content="pt_BR">
   <meta property="og:title" content="${escapeHtml(title)}">
   <meta property="og:description" content="${escapeHtml(dict.home.hero.subtitle)}">
   <meta property="og:url" content="${escapeHtml(currentUrl)}">
@@ -157,9 +142,7 @@ ${recuo}</div>`;
         <a href="#assine">${escapeHtml(dict.common.nav.assine)}</a>
         ${logado
           ? `<a href="/inicio" class="btn-login">${escapeHtml(dict.common.nav.meusEstudos)}</a>`
-          : `<a href="${isPt ? "/login" : "/login?lang=en"}" class="btn-login">${escapeHtml(dict.common.nav.entrar)}</a>`}
-        <span style="color: var(--border-color);">|</span>
-        ${seletorIdioma("        ")}
+          : `<a href="/login" class="btn-login">${escapeHtml(dict.common.nav.entrar)}</a>`}
       </div>
     </div>
   </nav>
@@ -618,7 +601,7 @@ ${dict.home.ai.features.map((f) => `            <li>
       </div>
     </section>
 
-    <!-- 7. Prova Social (some inteira se o idioma não tiver depoimento publicado) -->
+    <!-- 7. Prova Social (some inteira se não houver depoimento publicado) -->
 ${testimonials.length > 0 ? `    <section class="section container">
       <div class="section-header">
         <span class="tag tag-box" style="margin-bottom: 16px;">${escapeHtml(dict.home.testimonials.tag)}</span>
@@ -680,7 +663,7 @@ ${testimonials.map((t) => `        <div class="test-card">
       </div>
     </section>
 
-    <!-- 9. FAQ (some inteira se o idioma não tiver pergunta publicada) -->
+    <!-- 9. FAQ (some inteira se não houver pergunta publicada) -->
 ${faq.length > 0 ? `    <section id="faq" class="section container">
       <div class="section-header">
         <h2>${escapeHtml(dict.home.faq.title)}</h2>
@@ -726,8 +709,6 @@ ${faq.map((item) => `        <details>
           </a>
           <a href="${rotas.termos}">${escapeHtml(dict.common.footer.links[6])}</a>
           <a href="${rotas.privacidade}">${escapeHtml(dict.common.footer.links[7])}</a>
-          <span style="color: var(--border-color);">|</span>
-          ${seletorIdioma("          ")}
         </div>
       </div>
       <div class="footer-bottom">

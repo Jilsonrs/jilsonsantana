@@ -116,7 +116,7 @@ function PassoPublicar() {
       </PageSection>
       <CoursePublishSection />
       <CourseMaterialsSection />
-      <CourseLinkField slug={curso.slug} idioma={curso.language} />
+      <CourseLinkField slug={curso.slug} />
     </StepForm>
   );
 }
