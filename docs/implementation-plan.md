@@ -4190,8 +4190,9 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             e prova na área restrita. **Depende dos passos 1 e 2.** Não vai ao ar sozinho.
             **Da proposta da tela pública (agente, 12/10/2026 — `billing.md` → *A tela pública
             de assinar*), a resolver ANTES de fechar o que a rota aceita:** a resposta da caixa
-            "quero receber novidades" (**P82**) e o CPF, se o contador pedir para a nota fiscal
-            (**P79**). **E duas coisas que a tela precisa deste passo:** a tela de depois do
+            "quero receber novidades" (**P82**). **A rota NÃO recebe CPF** (decisão do operador,
+            12/10/2026: a nota fiscal sai só quando o aluno pede, e o CPF é informado no
+            pedido — `billing.md`). **E duas coisas que a tela precisa deste passo:** a tela de depois do
             pagamento não tem login — precisa saber que a assinatura valeu sem revelar nada de
             outra pessoa · o que se diz quando o e-mail já tem conta (rascunho: "Este e-mail já
             tem conta. Entre para assinar."; dizer isso revela quem tem conta — a revisão de
@@ -4242,7 +4243,8 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             **Da proposta da tela pública (agente, 12/10/2026):** antes de abrir, também os
             Termos de Uso e a Política de Privacidade no ar (a tela de assinar aponta para os
             dois; hoje são pendência da Fase 7 e a P61) · a **P84** (o cartão promete o JilsonAI
-            e o Pix, que ainda não existem) · a **P79** (a nota fiscal e o CPF).
+            e o Pix, que ainda não existem) · a resposta da FAQ sobre nota fiscal já trocada por
+            ele no admin, nos dois idiomas (decisão de 12/10/2026: "sempre que solicitada").
 - [ ] **4.7b — Admin → Assinaturas vira um PAINEL de assinaturas (código, ALTO RISCO).**
       **MAPA APROVADO pelo operador (10/10/2026: "Aprovo o mapa"), e fica para DEPOIS da 4.7**
       (decisão dele no mesmo dia: *"o Painel pode ficar para depois da 4.7 que é mais

@@ -448,7 +448,7 @@ pagamento sem ter assinado vê "confirmando" e depois "está demorando", sem cam
 
 > **NADA AQUI ESTÁ DECIDIDO além do que traz data e frase do operador.** É a proposta do agente
 > depois de ele mostrar as telas de pagamento da Udemy e do Code with Mosh. O que existe na tela
-> e os textos são dele: as perguntas estão em `pendencias.md` (**P79 a P85**). Quem construir o
+> e os textos são dele: as perguntas estão em `pendencias.md` (**P80 a P85**; a P79 ele respondeu em 12/10/2026). Quem construir o
 > passo 6 confere antes o que ele já respondeu, e registra a resposta aqui, com a data e a frase.
 > *A Udemy e o Mosh são referência desta análise, nunca texto do site.*
 
@@ -478,10 +478,15 @@ customer's full billing address for tax calculation […] use the Address Elemen
   **o país; nos EUA, o CEP; no Canadá, o CEP ou a província.** Nunca o endereço completo que o
   Mosh pede. **Pode aparecer só para quem precisa** (quem paga com cartão de fora do Brasil) —
   como mostrar é decisão dele, na abertura da etapa 4.8.
-- **Quem pode pedir um campo a mais não é a Stripe, é a NOTA FISCAL** *(achado, 12/10/2026)*: a
-  FAQ da home responde "Sim, emitimos nota fiscal para todos os pagamentos", e a tela pede só
-  e-mail e cartão. Se a nota precisar do CPF de quem paga, o campo entra aqui: **P79**, com o
-  contador.
+- **NOTA FISCAL: só quando o aluno pede, e a tela de assinar NÃO pede CPF** *(decisão do
+  operador, 12/10/2026 — fecha a P79)*. O agente tinha apontado que a FAQ da home prometia
+  "emitimos nota fiscal para todos os pagamentos" e a tela pede só e-mail e cartão. A resposta
+  dele: *"vou ajustar o texto 'Sim, emitimos nota fiscal sempre que solicitada.' aí na hora de
+  solicitar informa CPF e o que mais for necessário"*. O CPF é pedido no pedido da nota, não na
+  hora de pagar. **Quem troca o texto da FAQ é ele**, no admin (P12) — e a resposta em inglês
+  acompanha (hoje: "we issue an invoice for every payment"). Por onde o aluno pede a nota não
+  foi definido. *Reabre se o contador disser que, no regime da empresa, a nota é obrigatória em
+  toda venda: aí o CPF volta a ser pedido na hora de assinar.*
 
 **O que a Udemy e o Mosh mostram na hora de pagar, e a escola:**
 
@@ -568,7 +573,7 @@ assinatura…", "Está demorando mais que o normal…"). `{contato}` depende da 
 
 **O que isto muda nos passos da 4.7** (detalhe em cada passo, no plano): o **6** ganha os itens
 acima · o **5** pede o nome ao criar a senha (P83) e ganha o "Enviar de novo" · o **4** recebe a
-resposta da caixa de novidades (P82), o CPF se o contador pedir (P79), e precisa dizer à tela de
+resposta da caixa de novidades (P82) e precisa dizer à tela de
 depois do pagamento que a assinatura valeu, sem login · o **1** inclui o "Enviar de novo" no
 limite de tentativas · o **8** só abre com os Termos de Uso e a Política de Privacidade no ar.
 
@@ -578,7 +583,8 @@ limite de tentativas · o **8** só abre com os Termos de Uso e a Política de P
 - **Depoimentos e perguntas frequentes na própria tela** — quem clicou em Assinar acabou de
   passar por eles na home. *Reabre se os números mostrarem gente desistindo nesta tela.*
 - **Campo de país ou endereço** — a Stripe não exige para aprovar o cartão. *Reabre na 4.8, se
-  a P22 escolher o Stripe Tax (aí o país, e o CEP nos EUA e no Canadá), ou pela P79.*
+  a P22 escolher o Stripe Tax (aí o país, e o CEP nos EUA e no Canadá), ou se a nota fiscal
+  passar a ser emitida em toda venda (ver a decisão de 12/10/2026, acima).*
 - **Apple Pay, Google Pay e PayPal** — mais formas de pagamento a testar e manter antes de haver
   aluno. *Reabre depois do lançamento, se alunos pedirem ou o celular pesar nas desistências.*
 - **Caixa de novidades já marcada** — marcada de fábrica não vale como consentimento (LGPD).
