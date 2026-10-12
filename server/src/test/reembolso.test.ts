@@ -236,7 +236,7 @@ describe("POST /api/billing/minha-assinatura/reembolso — dentro do prazo", () 
     expect([(await espelho()).status, (await espelho()).currentPeriodEnd?.getTime()]).toEqual(["canceled", HA_2_DIAS.getTime()]);
     // O MESMO cookie continua valendo (a sessão não caiu), e o gate já responde que não há acesso.
     const depois = await situacao();
-    expect([depois.status, depois.body]).toEqual([200, { temAcesso: false, reativar: true }]);
+    expect([depois.status, depois.body]).toEqual([200, { temAcesso: false, reativar: true, atrasada: false }]);
     expect(await prisma.session.count({ where: { userId: memberId } })).toBeGreaterThan(0);
   });
 
@@ -479,7 +479,7 @@ describe("POST /api/billing/minha-assinatura/reembolso — quando a Stripe falha
     }
     // O MESMO cookie continua valendo — e o gate já responde que não há acesso.
     const depois = await situacao();
-    expect([depois.status, depois.body]).toEqual([200, { temAcesso: false, reativar: true }]);
+    expect([depois.status, depois.body]).toEqual([200, { temAcesso: false, reativar: true, atrasada: false }]);
     expect(await prisma.session.count({ where: { userId: memberId } })).toBeGreaterThan(0);
   });
 
@@ -495,7 +495,7 @@ describe("POST /api/billing/minha-assinatura/reembolso — quando a Stripe falha
     expect([res.status, res.body]).toEqual([200, { centavos: 9990, moeda: "brl" }]);
     expect(cancelarNaHora).toHaveBeenCalledTimes(1);
     expect(devolver).toHaveBeenCalledTimes(2);
-    expect((await situacao()).body).toEqual({ temAcesso: false, reativar: true });
+    expect((await situacao()).body).toEqual({ temAcesso: false, reativar: true, atrasada: false });
   });
 
   // O CASO DA REVISÃO DE SEGURANÇA (11/10/2026): encerrada, SEM acesso (a última fatura era a de
@@ -524,7 +524,7 @@ describe("POST /api/billing/minha-assinatura/reembolso — quando a Stripe falha
     expect(buscarAssinatura).toHaveBeenCalledTimes(2);
     expect((await espelho()).status).toBe("canceled");
     // Reembolsada: sem acesso, e ainda logada.
-    expect((await situacao()).body).toEqual({ temAcesso: false, reativar: true });
+    expect((await situacao()).body).toEqual({ temAcesso: false, reativar: true, atrasada: false });
   });
 
   it("o dinheiro voltou e o espelho NÃO pôde ser acertado: a resposta continua sendo o reembolso, e alguém é avisado — ela pode seguir com acesso", async () => {

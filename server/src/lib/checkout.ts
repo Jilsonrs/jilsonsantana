@@ -1,6 +1,6 @@
 import { DuracaoDoDesconto, type AssinarInput } from "@jilson/core";
 import { prisma } from "./prisma.js";
-import { temAcessoAtivo } from "./acesso.js";
+import { assinaturaDaAcesso, cobrancaAtrasada, temAcessoAtivo } from "./acesso.js";
 import { sincronizarAssinatura } from "./assinaturas.js";
 import { assinaturasDoCliente, buscarCodigo, buscarPrecos, cancelarIncompleta, criarAssinatura, criarCliente, type AssinaturaNoCheckout } from "./stripe.js";
 
@@ -25,6 +25,8 @@ export type Conta = { id: string; email: string; nome: string | null };
 
 export type Desfecho =
   | { resultado: "ja-assinante" }
+  /** A conta tem uma assinatura com a cobrança atrasada, já sem as aulas: não se assina de novo — troca-se o cartão dela. */
+  | { resultado: "atrasada" }
   | { resultado: "codigo-invalido" }
   | { resultado: "ativa" }
   | { resultado: "pagar"; segredo: string; tipo: "pagamento" | "cartao" };
@@ -43,9 +45,6 @@ async function clienteDaConta(conta: Conta): Promise<string> {
   await prisma.stripeCustomer.create({ data: { userId: conta.id, stripeCustomerId: novo.id, livemode: novo.livemode } });
   return novo.id;
 }
-
-/** Na Stripe a assinatura está DANDO acesso: se o espelho não dá, há alguém pagando e trancado fora. */
-const DA_ACESSO_NA_STRIPE: ReadonlySet<string> = new Set(["active", "trialing", "past_due"]);
 
 /** O que se decide COM a trava da conta. A assinatura viva sai da trava para ser sincronizada fora dela. */
 type NaTrava = Desfecho | { resultado: "viva-na-stripe"; assinaturaId: string };
@@ -66,6 +65,15 @@ async function sincronizarAViva(conta: Conta, assinaturaId: string): Promise<Des
     console.info(`[stripe] checkout: a conta ${conta.id} estava sem o espelho da assinatura ${assinaturaId} (${status}); sincronizada, com acesso`);
     return { resultado: "ja-assinante" };
   }
+  // A COBRANÇA ATRASADA há mais de 3 dias (etapa 4.6b): o espelho TEM a assinatura, ela é DESTA
+  // conta e não dá aulas — é o esperado, não um defeito. Ela continua viva na Stripe: o caminho é
+  // trocar o cartão dela, em Faturamento e Assinatura. (Sem o espelho para esta conta, o caso é
+  // o de baixo: precisa de gente.)
+  const noEspelho = await prisma.subscription.findUnique({ where: { stripeSubscriptionId: assinaturaId }, select: { ownerUserId: true, status: true } });
+  if (noEspelho?.ownerUserId === conta.id && cobrancaAtrasada(noEspelho)) {
+    console.info(`[stripe] checkout: a conta ${conta.id} tem a assinatura ${assinaturaId} com a cobrança atrasada e já sem aulas; o caminho é trocar o cartão`);
+    return { resultado: "atrasada" };
+  }
   // Sincronizou e a conta segue sem acesso — e sem poder assinar de novo, porque a assinatura
   // continua aberta na Stripe. Precisa de gente nos dois casos, em voz alta:
   //   - ela dá acesso na Stripe: o espelho não nasceu para ESTA conta (sem `userId` lá, ou é de
@@ -73,7 +81,8 @@ async function sincronizarAViva(conta: Conta, assinaturaId: string): Promise<Des
   //   - ela não dá (não paga, ou pausada com o período vencido): a pessoa quer pagar e este
   //     caminho não deixa (achado da revisão de segurança da etapa 4.4 — pendência P60).
   const linha = `[stripe] checkout: a conta ${conta.id} tem a assinatura ${assinaturaId} (${status}) na Stripe e segue sem acesso depois da sincronia (${sincronia.resultado})`;
-  console.error(`${linha}: ${DA_ACESSO_NA_STRIPE.has(status) ? "o assinante está trancado fora" : "quer assinar e não consegue"}`);
+  // "Dá acesso" é a regra do GATE, aplicada ao que a Stripe diz — nunca uma lista de status à parte.
+  console.error(`${linha}: ${assinaturaDaAcesso({ status, currentPeriodEnd: sincronia.assinatura.pagoAte }) ? "o assinante está trancado fora" : "quer assinar e não consegue"}`);
   return { resultado: "ja-assinante" };
 }
 

@@ -308,6 +308,29 @@ describe("a aula trancada diz se o convite é reativar", () => {
     expect(comAcesso.body.reativar).toBe(false);
     expect(comAcesso.body.aula.liberada).toBe(true);
   });
+
+  // A COBRANÇA ATRASADA (etapa 4.6b — decisão do operador, 11/10/2026): as aulas ficam abertas
+  // por 3 dias depois da cobrança que falhou; depois, a aula tranca e diz por quê.
+  it("cobrança atrasada: até 3 dias a aula abre; depois tranca, sem conteúdo, e diz `atrasada` — para quem não está atrasado, nunca", async () => {
+    const HA_DIAS = (dias: number) => new Date(Date.now() - dias * 24 * 60 * 60 * 1000);
+    try {
+      await com("past_due", HA_DIAS(2));
+      const dentro = await pagina(ids.paga, member);
+      expect([dentro.body.aula.liberada, dentro.body.atrasada]).toEqual([true, false]);
+
+      await com("past_due", HA_DIAS(4));
+      const fora = await pagina(ids.paga, member);
+      expect([fora.body.aula.liberada, fora.body.atrasada]).toEqual([false, true]);
+      semConteudo(fora.body);
+      // O visitante sem login nunca: ninguém sabe quem ele é.
+      expect((await pagina(ids.paga)).body.atrasada).toBe(false);
+
+      await com("canceled", PASSADO);
+      expect((await pagina(ids.paga, member)).body.atrasada).toBe(false);
+    } finally {
+      await com("active", FUTURO);
+    }
+  });
 });
 
 describe("o download", () => {
@@ -333,11 +356,13 @@ describe("o download", () => {
     expect(lerArquivoDaAula).not.toHaveBeenCalled();
   });
 
-  it("a regra é a do GATE: pagamento atrasado (em novas tentativas) e cancelada com dias pagos baixam; cancelada e vencida, não", async () => {
+  it("a regra é a do GATE: cobrança atrasada há menos de 3 dias e cancelada com dias pagos baixam; atrasada há mais de 3 dias e cancelada vencida, não", async () => {
     const com = (status: string, currentPeriodEnd: Date) => prisma.subscription.update({ where: { stripeSubscriptionId: ASSINATURA_DE_TESTE }, data: { status, currentPeriodEnd } });
     try {
-      await com("past_due", new Date("2020-01-01T00:00:00Z"));
+      await com("past_due", new Date(Date.now() - 24 * 60 * 60 * 1000));
       expect((await baixar(ids.paga, ids.arquivo, member)).status).toBe(200);
+      await com("past_due", new Date(Date.now() - 4 * 24 * 60 * 60 * 1000));
+      expect((await baixar(ids.paga, ids.arquivo, member)).status).toBe(403);
       await com("canceled", new Date("2100-01-01T00:00:00Z"));
       expect((await baixar(ids.paga, ids.arquivo, member)).status).toBe(200);
       await com("canceled", new Date("2020-01-01T00:00:00Z"));

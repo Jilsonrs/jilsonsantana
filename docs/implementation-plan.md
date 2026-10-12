@@ -4052,7 +4052,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       a P71 (a chave de produção e o Sentry). A revisão de segurança do servidor já foi feita e
       corrigida; a do passo 13 cobre as telas. Nada desta sessão está publicado. A sessão (c)
       começa pela pendência P64.
-- [ ] **4.6b — A tolerância de 3 dias na cobrança atrasada (código, ALTO RISCO).** Decisão do
+- [x] **4.6b — A tolerância de 3 dias na cobrança atrasada (código, ALTO RISCO).** Decisão do
       operador de 11/10/2026 (`billing.md` → *Régua de inadimplência*): depois da cobrança que
       falhou, as aulas ficam abertas por **3 dias**, e não mais pela janela inteira de
       tentativas; a Stripe continua tentando, e quem paga (uma tentativa que passa, ou o cartão
@@ -4074,6 +4074,45 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
         dos 3 dias a pessoa está sem aulas, e a operação tem que achar a assinatura dela.
       - `CLAUDE.md` → *Membership Gating* (a regra do gate) reescrita no MESMO commit; os testes
         do gate e de ponta a ponta com o aviso; a prova com o relógio de teste da Stripe.
+      **FEITO em 12/10/2026 — no `dev`, NÃO publicado.** Respostas do operador na abertura
+      (12/10): o comportamento aprovado; a data no aviso de dentro dos 3 dias; a aula trancada
+      com texto próprio e "Trocar cartão"; a frase de depois dos 3 dias é dele e ainda não veio
+      (rascunho do agente no lugar — pendência P78).
+      `Docs check (context7): Stripe → /websites/stripe → a cobrança que falha deixa a
+      assinatura em past_due; o que vem depois da última tentativa depende da opção do painel.`
+      - **O que entrou:** o gate (`assinaturaDaAcesso`: `past_due` só até 3 dias depois do "pago
+        até"), a constante no `core`, `cobrancaAtrasada`, `aulasAbertasAte` e
+        `atrasadaSemAcesso` em `acesso.ts` · `assinaturaDaConta` acha a atrasada sem aulas, e a
+        leitura devolve `aulasAte` e `aulasTrancadas` (nunca "terminada") · a tela de assinar e
+        o servidor (409 `CobrancaAtrasada`) mandam essa pessoa trocar o cartão · a situação e a
+        página da aula ganham `atrasada` (resposta só acrescenta campo) · três textos novos no
+        dicionário, nos dois idiomas. Sem migration. Cancelar e trocar o cartão acham a
+        assinatura depois dos 3 dias sem mudança própria: usam `assinaturaDaConta`.
+      - **Testes:** servidor 1080 (eram 1058), site 947 (eram 942). **Mutação:** 39 de 39
+        reprovaram. **Duas provas na área restrita**, com o relógio de teste da Stripe e tudo
+        apagado ao fim: (i) as funções de verdade — 11 de 11: falha, 2 dias com acesso, 4 dias
+        sem acesso com a Stripe ainda tentando, cartão novo paga e o acesso volta na hora;
+        (ii) de ponta a ponta, com contas descartáveis no banco de desenvolvimento — 19 pontos:
+        o espelho, a sessão, a tela, a recusa de assinar de novo, o acerto de quem pagou, e
+        cancelar sem aulas. *(Na primeira rodada um ponto reprovou por comparar a data do
+        relógio de teste, um mês à frente, com o relógio de verdade; refeito na hora do relógio
+        de teste, passou.)*
+      - **A revisão de segurança (12/10/2026): 1 achado importante e 3 menores, os quatro
+        corrigidos com teste e mutação.** (1) Os 3 dias contavam do começo do período corrente:
+        atrasada por mais de um ciclo, voltariam a cada ciclo. Agora a rotina que grava o
+        espelho não aceita data nova de uma atrasada que continua atrasada, e na tela quem diz
+        "aulas trancadas" é o gate. (2) O cancelamento automático depois dos 3 dias não desloga
+        mais (a pessoa já estava sem aulas): é o esperado, e ganhou testes. (3) Pagou com o
+        cartão novo, a sincronia falhou e a conta segue sem aulas: agora é alerta para o
+        operador. (4) A frase do alarme do checkout sai da regra do gate, e não de uma lista de
+        status à parte. **Achado meu, na releitura:** quem está atrasado, paga numa nova
+        tentativa da Stripe e o aviso se perde ficaria trancado — abrir Faturamento e
+        Assinatura agora acerta.
+      - **Não mudou, de propósito:** o botão da home continua "Reativar assinatura" para essa
+        pessoa (leva à tela de assinar, que leva ao Faturamento) · a sessão não cai ao passar
+        dos 3 dias · os dois e-mails são da etapa 4.7.
+      - **Para saber:** a data do aviso é a do dia em que as aulas trancam, e elas trancam na
+        mesma hora em que a cobrança falhou — não no fim desse dia.
 - [ ] **4.7 — O visitante assina: a conta nasce no pagamento (código, ALTO RISCO).** O checkout
       público: e-mail + pagamento → o webhook cria a conta (o cadastro continua fechado) e manda o
       e-mail de "crie sua senha". **Depende do Resend configurado e da P49** (o remetente). Junto:

@@ -413,6 +413,27 @@ describe("AssinarPage — o envio", () => {
     expect(confirmar).not.toHaveBeenCalled();
   });
 
+  // A COBRANÇA ATRASADA há mais de 3 dias (etapa 4.6b): não se assina de novo por cima — a
+  // assinatura continua viva, e o caminho é trocar o cartão dela, em Faturamento e Assinatura.
+  it("a conta está com a cobrança atrasada e sem aulas: vai para Faturamento e Assinatura, sem mostrar plano nem botão de assinar", async () => {
+    getSituacaoDaAssinatura.mockResolvedValue({ temAcesso: false, reativar: true, atrasada: true });
+    abrir();
+    expect(await screen.findByText("tela de faturamento e assinatura")).toBeTruthy();
+    expect(screen.queryByRole("radio")).toBeNull();
+    expect(criarAssinatura).not.toHaveBeenCalled();
+  });
+
+  it("o servidor recusa por cobrança atrasada (409) no clique: a tela relê a situação e vai para Faturamento e Assinatura", async () => {
+    criarAssinatura.mockRejectedValue(erroDoServidor("CobrancaAtrasada"));
+    abrir();
+    await screen.findByRole("radio", { name: /Mensal/ });
+    getSituacaoDaAssinatura.mockResolvedValue({ temAcesso: false, reativar: true, atrasada: true });
+    assinar();
+    expect(await screen.findByText("tela de faturamento e assinatura")).toBeTruthy();
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(confirmar).not.toHaveBeenCalled();
+  });
+
   it("o servidor falha: a frase de erro, e nada é confirmado", async () => {
     criarAssinatura.mockRejectedValue(new Error("500"));
     abrir();

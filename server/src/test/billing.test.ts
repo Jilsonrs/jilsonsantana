@@ -237,7 +237,7 @@ describe("GET /api/billing/assinatura", () => {
   it("conta com assinatura ativa: tem acesso", async () => {
     const res = await situacao(member);
     expect(res.status).toBe(200);
-    expect(res.body).toEqual({ temAcesso: true, reativar: false });
+    expect(res.body).toEqual({ temAcesso: true, reativar: false, atrasada: false });
   });
 
   it("conta sem assinatura que dê acesso: não tem", async () => {
@@ -252,14 +252,18 @@ describe("GET /api/billing/assinatura", () => {
     const com = (status: string, currentPeriodEnd: Date) => prisma.subscription.update({ where: { stripeSubscriptionId: ASSINATURA_DE_TESTE }, data: { status, currentPeriodEnd } });
     const [PASSADO, FUTURO] = [new Date("2020-01-01T00:00:00Z"), new Date("2100-01-01T00:00:00Z")];
     try {
-      const casos: [string, Date, { temAcesso: boolean; reativar: boolean }][] = [
-        ["canceled", PASSADO, { temAcesso: false, reativar: true }],
-        ["unpaid", PASSADO, { temAcesso: false, reativar: true }],
-        ["incomplete", FUTURO, { temAcesso: false, reativar: false }],
-        ["incomplete_expired", PASSADO, { temAcesso: false, reativar: false }],
+      const HA_DIAS = (dias: number) => new Date(Date.now() - dias * 24 * 60 * 60 * 1000);
+      const casos: [string, Date, { temAcesso: boolean; reativar: boolean; atrasada: boolean }][] = [
+        ["canceled", PASSADO, { temAcesso: false, reativar: true, atrasada: false }],
+        ["unpaid", PASSADO, { temAcesso: false, reativar: true, atrasada: false }],
+        ["incomplete", FUTURO, { temAcesso: false, reativar: false, atrasada: false }],
+        ["incomplete_expired", PASSADO, { temAcesso: false, reativar: false, atrasada: false }],
         // Cancelou e ainda tem dias pagos: continua assistindo — não há o que reativar.
-        ["canceled", FUTURO, { temAcesso: true, reativar: false }],
-        ["past_due", PASSADO, { temAcesso: true, reativar: false }],
+        ["canceled", FUTURO, { temAcesso: true, reativar: false, atrasada: false }],
+        // A COBRANÇA ATRASADA (etapa 4.6b): as aulas ficam por 3 dias; depois trancam, e a
+        // situação diz `atrasada` — o caminho é trocar o cartão, e as telas dão a ele a vez.
+        ["past_due", HA_DIAS(1), { temAcesso: true, reativar: false, atrasada: false }],
+        ["past_due", HA_DIAS(4), { temAcesso: false, reativar: true, atrasada: true }],
       ];
       for (const [status, fim, esperado] of casos) {
         await com(status, fim);
@@ -499,6 +503,50 @@ describe("POST /api/billing/assinatura", () => {
         expect((await doEspelho(id))?.status).toBe("past_due");
         expect(await acesso()).toBe(true);
       });
+    });
+
+    // A COBRANÇA ATRASADA há mais de 3 dias (etapa 4.6b): não se assina de novo — a assinatura
+    // continua viva, e o caminho é trocar o cartão dela. É o esperado: ninguém é acordado.
+    it("a assinatura da conta está com a cobrança atrasada e já sem aulas: 409 'CobrancaAtrasada', sem criar outra e sem alarme", async () => {
+      const grito = vi.spyOn(console, "error").mockImplementation(() => {});
+      try {
+        await semAssinatura(async () => {
+          const id = `sub_viva_${S}_sem_aulas`;
+          const falhou = new Date(Date.now() - 4 * DIA);
+          await prisma.subscription.create({ data: { ownerUserId: memberId, status: "past_due", currentPeriodEnd: falhou, stripeSubscriptionId: id } });
+          naStripe = [encerrada(id, "past_due")];
+          buscarAssinatura.mockResolvedValue(dizAStripe(id, { status: "past_due", pagoAte: falhou }));
+          const res = await assinarComo({ plano: "mensal" }, member);
+          expect([res.status, res.body]).toEqual([409, { error: "CobrancaAtrasada" }]);
+          expect(await acesso()).toBe(false);
+          expect(criarAssinatura).not.toHaveBeenCalled();
+          expect(cancelarIncompleta).not.toHaveBeenCalled();
+          expect(grito).not.toHaveBeenCalled();
+        });
+      } finally {
+        grito.mockRestore();
+      }
+    });
+
+    // A frase do alarme sai da REGRA DO GATE aplicada ao que a Stripe diz — e não de uma lista
+    // de status à parte (achado da revisão de segurança, 12/10/2026).
+    it("a atrasada há mais de 3 dias que a Stripe não diz de quem é: o espelho não nasce, e o alarme NÃO diz 'trancado fora' (ela já não dá acesso)", async () => {
+      const grito = vi.spyOn(console, "error").mockImplementation(() => {});
+      try {
+        await semAssinatura(async () => {
+          const id = `sub_viva_${S}_atrasada_sem_dono`;
+          naStripe = [encerrada(id, "past_due")];
+          buscarAssinatura.mockResolvedValue(dizAStripe(id, { status: "past_due", userId: null, pagoAte: new Date(Date.now() - 10 * DIA) }));
+          expect((await assinarComo({ plano: "anual" }, member)).body).toEqual({ error: "JaAssinante" });
+          expect(await doEspelho(id)).toBeNull();
+          const gritos = grito.mock.calls.map(([linha]) => String(linha));
+          expect(gritos).toHaveLength(1);
+          expect(gritos[0]).toContain("quer assinar e não consegue");
+          expect(gritos[0]).not.toContain("trancado fora");
+        });
+      } finally {
+        grito.mockRestore();
+      }
     });
 
     it("sincronizou e a conta segue sem acesso: 409 — e GRITA nos dois casos (precisa de gente): pagando e trancado fora, ou querendo assinar sem conseguir", async () => {

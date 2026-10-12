@@ -468,6 +468,8 @@ export type PaginaDaAula = {
    * assinatura" (decisão do operador, 10/10/2026). Não vem na página do admin.
    */
   reativar?: boolean;
+  /** Quem pede está com a cobrança atrasada há mais de 3 dias: a aula trancada diz isso, com "Trocar cartão" (etapa 4.6b). */
+  atrasada?: boolean;
 };
 
 /**

@@ -1,7 +1,7 @@
 import { lazy, Suspense } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, Lock } from "lucide-react";
-import { LessonKind } from "@jilson/core";
+import { LessonKind, TELA_DE_TROCAR_O_CARTAO } from "@jilson/core";
 import type { PaginaDaAula } from "@/lib/api";
 import { useT } from "@/lib/language";
 import { TELA_DE_ASSINAR } from "@/lib/assinar";
@@ -56,6 +56,7 @@ export function LessonContent({
   renovarVideo,
   podeAssinar,
   reativar,
+  atrasada,
 }: {
   aula: PaginaDaAula["aula"];
   comoAdmin: boolean;
@@ -86,6 +87,8 @@ export function LessonContent({
   podeAssinar?: boolean;
   /** Quem já foi assinante lê "Reativar assinatura" no botão (decisão do operador, 10/10/2026). */
   reativar?: boolean;
+  /** A cobrança falhou há mais de 3 dias: em vez de "para assinantes", a aula diz isso e leva a trocar o cartão (escolha do operador, 12/10/2026). */
+  atrasada?: boolean;
 }) {
   const t = useT();
 
@@ -96,11 +99,11 @@ export function LessonContent({
           <Lock className="size-6 text-muted-foreground" aria-hidden="true" />
         </div>
         <p className="text-lg font-medium tracking-tight text-foreground">
-          {t.aula.paraAssinantes}
+          {atrasada ? t.aula.cobrancaAtrasada : t.aula.paraAssinantes}
         </p>
         {podeAssinar && (
           <Button asChild className="mt-4">
-            <Link to={TELA_DE_ASSINAR}>{reativar ? t.aula.reativar : t.aula.assinar}</Link>
+            {atrasada ? <Link to={TELA_DE_TROCAR_O_CARTAO}>{t.faturamento.trocarCartao}</Link> : <Link to={TELA_DE_ASSINAR}>{reativar ? t.aula.reativar : t.aula.assinar}</Link>}
           </Button>
         )}
       </div>

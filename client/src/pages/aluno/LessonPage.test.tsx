@@ -222,6 +222,20 @@ describe("página da aula — o conteúdo", () => {
     expect(screen.queryByRole("link", { name: "Assinar" })).toBeNull();
   });
 
+  // A COBRANÇA ATRASADA há mais de 3 dias (etapa 4.6b — escolha do operador, 12/10/2026): a aula
+  // trancada diz por quê, e o botão leva a trocar o cartão — a assinatura continua viva.
+  it("bloqueada, com a cobrança atrasada: diz isso no lugar de 'para assinantes', e o botão é Trocar cartão — sem Assinar nem Reativar", async () => {
+    useSessionMock.mockReturnValue({ data: { user: { role: Role.MEMBER } }, isPending: false });
+    getLessonPage.mockResolvedValue({ ...pagina({ liberada: false, arquivosLiberados: false, playerUrl: undefined, arquivos: undefined }), reativar: true, atrasada: true });
+    abrir();
+    const aviso = await screen.findByRole("status");
+    expect(aviso.textContent).toContain("Sua assinatura está com a cobrança atrasada.");
+    expect(aviso.textContent).not.toContain("Esta aula é para assinantes.");
+    expect(screen.getByRole("link", { name: "Trocar cartão" }).getAttribute("href")).toBe("/aluno/conta/faturamento/cartao");
+    expect(screen.queryByRole("link", { name: "Reativar assinatura" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "Assinar" })).toBeNull();
+  });
+
   it("o visitante sem login não vê botão nenhum, nem o de reativar", async () => {
     getLessonPage.mockResolvedValue({ ...pagina({ liberada: false, arquivosLiberados: false, playerUrl: undefined, arquivos: undefined }), reativar: true });
     abrir();

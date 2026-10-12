@@ -328,10 +328,25 @@ describe("POST /api/billing/minha-assinatura/cancelar — parar a renovação", 
 // manter — a assinatura TERMINA na hora, a cobrança em aberto não é mais tentada, e a pessoa
 // continua logada para ler a confirmação.
 describe("POST /api/billing/minha-assinatura/cancelar — com a cobrança atrasada", () => {
+  // A cobrança falhou ONTEM: dentro dos 3 dias em que as aulas ainda ficam abertas (etapa 4.6b).
+  const ONTEM = new Date(Date.now() - DIA);
   beforeEach(async () => {
+    await comEspelho("past_due", ONTEM);
+    detalhes = { status: "past_due", pagoAte: ONTEM, faturaEmAbertoId: "in_em_aberto" };
+    naStripe = { status: "past_due", pagoAte: ONTEM };
+  });
+
+  // Depois dos 3 dias as aulas já trancaram — e a pessoa AINDA cancela: a assinatura continua
+  // viva na Stripe, tentando cobrar. Sem achá-la, o site diria "sem assinatura" a quem quer sair.
+  it("com as aulas JÁ TRANCADAS (mais de 3 dias): cancela do mesmo jeito — encerra e anula a cobrança em aberto", async () => {
     await comEspelho("past_due", PASSADO);
     detalhes = { status: "past_due", pagoAte: PASSADO, faturaEmAbertoId: "in_em_aberto" };
-    naStripe = { status: "past_due", pagoAte: PASSADO };
+    expect((await temAcesso()).temAcesso).toBe(false);
+    const res = await cancelar(member, { motivo: "caro" });
+    expect([res.status, res.body]).toEqual([200, { acessoAte: null, terminou: true }]);
+    expect(cancelarNaHora.mock.calls).toEqual([[SUB, { motivo: "caro" }]]);
+    expect(anularFatura.mock.calls).toEqual([["in_em_aberto"]]);
+    expect((await espelho()).status).toBe("canceled");
   });
 
   it("ENCERRA a assinatura desta conta na hora, com o motivo, e anula a cobrança em aberto — sem 'parar a renovação'", async () => {
@@ -355,7 +370,7 @@ describe("POST /api/billing/minha-assinatura/cancelar — com a cobrança atrasa
     expect((await espelho()).status).toBe("canceled");
     // O MESMO cookie continua valendo, e o gate já responde que não há acesso.
     const depois = await request(servidor).get("/api/billing/assinatura").set("Cookie", member);
-    expect([depois.status, depois.body]).toEqual([200, { temAcesso: false, reativar: true }]);
+    expect([depois.status, depois.body]).toEqual([200, { temAcesso: false, reativar: true, atrasada: false }]);
     expect(await prisma.session.count({ where: { userId: memberId } })).toBeGreaterThan(0);
   });
 

@@ -229,8 +229,49 @@ trocou o cartão —, as aulas reabrem na hora. **Dois e-mails automáticos, ped
 falha ("não conseguimos renovar; vamos tentar de novo no dia X", com o link para trocar o
 cartão — a Stripe diz a data da próxima tentativa) e antes de trancar ("se não for pago até o dia
 Y, você perde o acesso"). Entram na etapa 4.7, que traz o envio de e-mail.
-**AINDA NÃO ESTÁ NO CÓDIGO:** hoje `past_due` dá acesso enquanto durar. É passo próprio (plano →
-etapa 4.6b), antes de a etapa 4.7 abrir a assinatura ao público; até lá só o operador assina.
+**NO CÓDIGO desde 12/10/2026 (etapa 4.6b).** A regra mora em `assinaturaDaAcesso`
+(`server/src/lib/acesso.ts`); o prazo, em `TOLERANCIA_DA_COBRANCA_ATRASADA_EM_DIAS` (`core`).
+Os 3 dias contam do "pago até" do espelho, que numa atrasada é o instante da renovação não paga.
+O que a pessoa vê *(escolhas do operador, 12/10/2026)*:
+- **Dentro dos 3 dias**, em Faturamento e Assinatura: "Não conseguimos cobrar o seu cartão.
+  Troque o cartão até {data} para não perder o acesso." A data é a do dia em que as aulas
+  trancam — e elas trancam na mesma hora em que a cobrança falhou, não no fim desse dia.
+- **Depois dos 3 dias**, no mesmo lugar: o alerta diz que as aulas estão trancadas. O texto que
+  está lá é rascunho do agente; a redação é do operador (pendência P78). A assinatura continua
+  na tela, com "Trocar cartão" e "Cancelar assinatura": o cartão novo paga a cobrança em aberto
+  e as aulas voltam na hora.
+- **A aula trancada** diz "Sua assinatura está com a cobrança atrasada.", com o botão "Trocar
+  cartão" — no lugar de "Esta aula é para assinantes." e "Reativar assinatura".
+- **A tela de assinar** leva essa pessoa a Faturamento e Assinatura: não se assina de novo por
+  cima de uma assinatura viva (o servidor recusa com 409 `CobrancaAtrasada`). O botão da home
+  continua dizendo "Reativar assinatura" e chega ao mesmo lugar.
+- **Passar dos 3 dias não desloga ninguém:** a aula tranca pelo gate, e a pessoa continua
+  logada, que é o que ela precisa para trocar o cartão. O cancelamento automático que vem
+  depois (as tentativas acabaram) também não desloga: ela já estava sem as aulas.
+
+`[FATO — medido na área restrita com o relógio de teste da Stripe, 12/10/2026; 11 pontos]` a
+renovação que falha deixa a assinatura `past_due` com o "pago até" no instante da renovação · as
+novas tentativas da Stripe não mexem nele · 2 dias depois há acesso; 4 dias depois não há, e a
+Stripe continua tentando · o cartão novo paga a cobrança em aberto e o acesso volta na hora, com
+o "pago até" no fim do período novo · na área restrita, 16 dias depois da falha a assinatura já
+estava `canceled` (lá a opção do painel já é "cancelar").
+**Os 3 dias contam da PRIMEIRA cobrança que falhou, e isso não depende do painel** *(achado da
+revisão de segurança, 12/10/2026)*: os 3 dias contam do começo do período não pago, e uma
+assinatura que ficasse atrasada por mais de um ciclo — o painel em "deixar atrasada" (pendência
+P60) ou tentativas por 1 mês ou mais — ganharia um período novo na Stripe, com 3 dias de aula a
+cada ciclo sem pagamento. Por isso a rotina que grava o espelho **não aceita data nova de uma
+atrasada que continua atrasada**; pagou, a data volta a andar. (Que a Stripe abre o período
+novo não foi medido: na área restrita ela cancela antes. A guarda vale nos dois casos.)
+**Quem pagou e ficou trancado se acerta sozinho:** se uma nova tentativa da Stripe passa e o
+aviso se perde, abrir Faturamento e Assinatura confere com a Stripe e reabre as aulas; se o
+acerto falhar — ali ou depois de pagar com o cartão novo —, vai um alerta para o operador
+(alguém pagando e trancado fora).
+`[FATO — prova de ponta a ponta, 12/10/2026: contas descartáveis no banco de desenvolvimento, as
+operações de verdade e o relógio de teste da Stripe; 19 pontos]` a falha deixa a conta atrasada,
+com aulas e logada · passados os 3 dias fica sem aulas e logada, e a tela diz "atrasada" com as
+aulas trancadas · uma nova sincronia com data mais nova na Stripe não reabre nada · tentar
+assinar de novo é recusado e a Stripe continua com uma assinatura só · o cartão novo paga, e
+abrir a tela reabre as aulas · cancelar sem aulas encerra na hora, sem cobrança em aberto.
 **A Stripe continua tentando cobrar por 2 SEMANAS** *(decisão do operador, 11/10/2026, sobre a
 proposta do agente)*: é o padrão recomendado por ela — `[FATO — context7 /websites/stripe,
 11/10/2026]` 8 tentativas em 2 semanas; as opções são 1, 2 ou 3 semanas, 1 mês e 2 meses. Com a

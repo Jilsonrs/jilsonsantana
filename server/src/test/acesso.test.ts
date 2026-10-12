@@ -14,12 +14,20 @@ import { ASSINATURA_DE_TESTE, podeTerAssinaturaDeTeste } from "../lib/assinatura
 const AGORA = new Date("2026-09-29T12:00:00Z");
 const FUTURO = new Date("2026-10-29T12:00:00Z");
 const PASSADO = new Date("2026-08-29T12:00:00Z");
+const DIA = 24 * 60 * 60 * 1000;
+const HA = (ms: number) => new Date(AGORA.getTime() - ms);
 
 describe("a regra do gate", () => {
   const casos: [string, string, Date | null, boolean][] = [
     ["active", "active", PASSADO, true],
     ["trialing", "trialing", null, true],
-    ["past_due mantém o acesso (janela de novas tentativas)", "past_due", PASSADO, true],
+    // A COBRANÇA ATRASADA dá as aulas só por 3 DIAS depois da falha (decisão do operador,
+    // 11/10/2026). O "pago até" de uma atrasada é o dia em que a cobrança falhou.
+    ["past_due, a cobrança falhou há 2 dias", "past_due", HA(2 * DIA), true],
+    ["past_due, a cobrança falhou há 3 dias menos 1 segundo", "past_due", HA(3 * DIA - 1000), true],
+    ["past_due, a cobrança falhou há exatos 3 dias", "past_due", HA(3 * DIA), false],
+    ["past_due, a cobrança falhou há um mês", "past_due", PASSADO, false],
+    ["past_due sem data nenhuma", "past_due", null, false],
     ["canceled com o período ainda pago", "canceled", FUTURO, true],
     ["canceled com o período vencido", "canceled", PASSADO, false],
     ["paused com o período pago", "paused", FUTURO, true],

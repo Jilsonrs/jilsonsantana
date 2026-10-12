@@ -173,6 +173,22 @@ describe("FaturamentoPage — com acesso", () => {
     expect(screen.queryByText(/termina em/)).toBeNull();
   });
 
+  // A TOLERÂNCIA DE 3 DIAS (etapa 4.6b — decisão do operador, 11 e 12/10/2026): dentro dela, o
+  // alerta diz até quando; depois, que as aulas trancaram. Quem diz as duas coisas é o servidor.
+  it("a cobrança falhou há menos de 3 dias: o alerta traz a data em que as aulas trancam", async () => {
+    getMinhaAssinatura.mockResolvedValue({ ...ATIVA, situacao: "atrasada", proximaCobranca: null, aulasAte: MEIO_DIA, aulasTrancadas: false });
+    abrir();
+    expect((await screen.findByRole("alert")).textContent).toBe("Não conseguimos cobrar o seu cartão. Troque o cartão até 10/11/2026 para não perder o acesso.");
+  });
+
+  it("a cobrança falhou há mais de 3 dias: o alerta diz que as aulas estão trancadas — sem prometer data —, e o cartão continua trocável", async () => {
+    getMinhaAssinatura.mockResolvedValue({ ...ATIVA, situacao: "atrasada", proximaCobranca: null, aulasAte: MEIO_DIA, aulasTrancadas: true });
+    abrir();
+    expect((await screen.findByRole("alert")).textContent).toBe("Não conseguimos cobrar o seu cartão, e as aulas estão trancadas. Troque o cartão para voltar a estudar.");
+    expect(naTela()).not.toContain("10/11/2026");
+    expect(screen.getByRole("link", { name: "Trocar cartão" }).getAttribute("href")).toBe("/aluno/conta/faturamento/cartao");
+  });
+
   it("sem cartão guardado: diz que não há cartão, em vez de um cartão em branco", async () => {
     getMinhaAssinatura.mockResolvedValue({ ...ATIVA, cartao: null });
     abrir();

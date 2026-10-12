@@ -3,7 +3,7 @@ import { assinarSchema, cancelarSchema, mudarDePlanoSchema, previaSchema, type A
 import { requireAuth } from "../middleware/auth.js";
 import { validate } from "../lib/http.js";
 import { buscarCodigo, buscarPrecos, calcularPrevia, chavePublicavel, cobrancaConfigurada, FORMAS_DE_PAGAMENTO } from "../lib/stripe.js";
-import { convidaAReativar, temAcessoAtivo } from "../lib/acesso.js";
+import { atrasadaSemAcesso, convidaAReativar, temAcessoAtivo } from "../lib/acesso.js";
 import { assinar } from "../lib/checkout.js";
 import { desistirDaTroca, lerTrocaDePlano, mudarMeuPlano } from "../lib/meu-plano.js";
 import { aplicarCartaoNovo, lerMinhaAssinatura, manterMinhaAssinatura, pararMinhaRenovacao, prepararTrocaDeCartao, reembolsarMinhaAssinatura, registrarAssinaturaDesconhecida } from "../lib/minha-assinatura.js";
@@ -87,7 +87,8 @@ router.get("/billing/assinatura", requireAuth, async (req, res) => {
   }
   const temAcesso = await temAcessoAtivo(user.id);
   // `reativar`: só o texto do convite ("Reativar assinatura" × "Assinar") — não decide nada.
-  const resposta: SituacaoDaAssinatura = { temAcesso, reativar: await convidaAReativar(user.id, temAcesso) };
+  // `atrasada`: a cobrança falhou há mais de 3 dias — o caminho é trocar o cartão, não assinar de novo.
+  const resposta: SituacaoDaAssinatura = { temAcesso, reativar: await convidaAReativar(user.id, temAcesso), atrasada: await atrasadaSemAcesso(user.id, temAcesso) };
   res.json(resposta);
 });
 
@@ -110,6 +111,10 @@ router.post("/billing/assinatura", requireAuth, async (req, res) => {
   const desfecho = await assinar({ id: user.id, email: user.email, nome: user.name ?? null }, corpo);
   if (desfecho.resultado === "ja-assinante") {
     res.status(409).json({ error: "JaAssinante" });
+    return;
+  }
+  if (desfecho.resultado === "atrasada") {
+    res.status(409).json({ error: "CobrancaAtrasada" });
     return;
   }
   if (desfecho.resultado === "codigo-invalido") {

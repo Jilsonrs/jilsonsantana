@@ -5,7 +5,7 @@ import { prisma } from "../lib/prisma.js";
 import { loadSession, requireActiveMembership, requireAdmin } from "../middleware/auth.js";
 import { parseId } from "../lib/http.js";
 import { doBanco } from "../lib/language.js";
-import { aulaLiberada, convidaAReativar, temAcessoAtivo } from "../lib/acesso.js";
+import { atrasadaSemAcesso, aulaLiberada, convidaAReativar, temAcessoAtivo } from "../lib/acesso.js";
 import { enderecoAssinado } from "../lib/bunny-stream.js";
 import { lerArquivoDaAula } from "../lib/bunny-storage.js";
 import { nomeParaDownload } from "../lib/nome-do-download.js";
@@ -217,6 +217,9 @@ router.get("/lessons/:id/aula", async (req, res) => {
     // O botão da aula trancada diz "Reativar assinatura" para quem já foi assinante (decisão do
     // operador, 10/10/2026). Só texto: quem abre a aula é `liberada`, acima.
     reativar: sessao ? await convidaAReativar(sessao.user.id, assinante) : false,
+    // A cobrança falhou há mais de 3 dias (etapa 4.6b): a aula trancada diz isso, com "Trocar
+    // cartão". Só texto e destino, como o `reativar`.
+    atrasada: sessao ? await atrasadaSemAcesso(sessao.user.id, assinante) : false,
   });
 });
 
