@@ -1,5 +1,12 @@
 # Plataforma bilíngue (PT + EN) — a especificação
 
+> **REVOGADO EM 12/10/2026.** Decisão do operador: *"remover tudo que foi feito para dar suporte
+> a inglês e fica a escola 100% nativa em português e restrita ao Brasil"*. A etapa **4.6c** do
+> plano tira o segundo idioma do código, do banco e dos documentos. **Trabalho novo nasce só em
+> português.** Este documento descreve o que ainda está no código até a 4.6c terminar; no passo
+> 6 dela ele sai do repo (proposta do agente), e a decisão fica no `decisions-archive.md`.
+> *Reabre só por decisão dele — e seria projeto novo.*
+
 > **O QUE É ISTO:** a especificação de produto da escola em dois idiomas. Cobre quem vê o quê,
 > como o visitante cai no idioma certo, o que muda no conteúdo, o preço fora do Brasil, o imposto
 > e o que ainda vai nascer com idioma. **NÃO é lido por sessão.**

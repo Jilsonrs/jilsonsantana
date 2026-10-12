@@ -4113,6 +4113,109 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
         dos 3 dias · os dois e-mails são da etapa 4.7.
       - **Para saber:** a data do aviso é a do dia em que as aulas trancam, e elas trancam na
         mesma hora em que a cobrança falhou — não no fim desse dia.
+- [ ] **4.6c — A escola só em português e só para o Brasil: sai o segundo idioma (código + banco + documentos; RISCO ALTO: mexe no banco, na conta e em quase toda tela).**
+      **Decisão do operador (12/10/2026):** *"Eu vou implementar a 4.6c […] remover tudo que foi
+      feito para dar suporte a inglês e fica a escola 100% nativa em português e restrita ao
+      Brasil, assim uma dor de cabeça a menos, e tudo que fizermos de agora em diante fica uma
+      língua só"*. Vem de a pesquisa do mesmo dia não ter achado, para empresa do Brasil, quem
+      cuide do imposto da venda para fora sem tirar o aluno do site (`billing.md` → *A tela
+      pública de assinar*). **Reverte a escola bilíngue de 14/09/2026.** O agente tinha
+      recomendado esperar a resposta da Paddle e, se fosse não, só desligar; ele escolheu
+      apagar. *Reabre só por decisão dele — e aí é projeto novo, não "religar".*
+      **Vem ANTES dos passos 3, 5, 6 e 7 da etapa 4.7** (eles escrevem texto de tela e de
+      e-mail); os passos 1, 2 e 4 da 4.7 e o Pix (4.9) não dependem dela.
+      **O tamanho** `[MEDIDO em 12/10/2026]`: o idioma aparece em 84 arquivos de código (55 do
+      site, 20 do servidor, 7 do `core`) e em cerca de 45 de teste; no banco, a coluna
+      `language` em 6 tabelas (`SiteText`, `Testimonial`, `FaqItem`, `Course`, `LearningPlan`,
+      `Caption`), o tipo `Language` e `User.preferredLanguage`; o dicionário em inglês tem 531
+      linhas.
+      **O QUE SAI:** o seletor PT | EN (home, rodapé do app, login) · as páginas `/en` e a
+      escolha de idioma pelo navegador · o campo Idioma de curso e de trilha, e as três recusas
+      de idioma do servidor · a coluna de inglês em Admin → Textos, FAQ e Depoimentos · o
+      filtro por idioma nas listas · o dicionário em inglês (`en.ts`) e a trava de tradução
+      faltando · a preferência de idioma da conta · a coluna `language` e o tipo `Language` do
+      banco, com as linhas em inglês · o canal do YouTube em inglês no rodapé · `hreflang` e
+      `og:locale` do outro idioma · os testes do inglês · as regras do inglês nos documentos.
+      **O QUE NÃO SAI** (para a etapa não crescer): **o dicionário em português (`pt.ts`) e o
+      `useT()`** — é onde os textos moram e o que Admin → Textos edita; tirar o texto de 100+
+      telas de lá não muda nada para o aluno · as migrations antigas (histórico não se edita;
+      elas continuam replicando do zero) · o `decisions-archive.md` e o `build-history.md` · o
+      canal do YouTube em si (é fora do site).
+      **Sem redirecionamento:** os endereços `/en/…` deixam de existir (regra dele de
+      29/09/2026: o que não se usa sai; o site nunca abriu ao público, não há link a preservar).
+      **As regras da etapa** (do `CLAUDE.md`, aplicadas aqui): um passo por sessão e por commit
+      no `dev`, cada um fechado com os quatro gates e publicável sozinho · **a tela para de
+      usar antes de o servidor deixar de aceitar, e o servidor para de ler antes de o banco
+      perder a coluna** (API aditiva; a versão que está no ar durante a migration não pode ler
+      coluna que sumiu) · toda mudança de banco com o Passo 0 (o estado antes e depois) · a
+      mutação em cada passo · revisão de segurança (`security-vulnerability-reviewer`) nos
+      passos 4 e 5 · **antes de mexer em `components/nav/**`, `components/layout/**` e na
+      home, ler o `design-lab/GEMINI.md`**: o seletor de idioma mora em arquivos do
+      Antigravity. **Antes de abrir: a P90** (o que existe cadastrado em inglês, e as legendas).
+      - [ ] **Passo 0 — A fotografia, com o operador (sem código).** Contar o que existe em
+            inglês em cada banco (o do dev e o do site): cursos, trilhas, legendas, depoimentos,
+            perguntas e textos. **Curso, trilha e legenda em inglês se apagam PELO ADMIN** (é
+            ele que limpa o vídeo e a legenda no Bunny), nos dois bancos, antes do passo 4.
+            Conferir na Stripe que não existe preço em dólar criado. Marcar o ponto de volta no
+            git (`antes-da-4.6c`). Registrar os números neste item.
+      - [ ] **Passo 1 — O visitante e o aluno deixam de ver o inglês (site + home).** Sai o
+            seletor PT | EN da home, do rodapé do app e do login (`?lang=`); saem a rota `/en`
+            da home e a escolha pelo idioma do navegador; a página passa a dizer sempre
+            `lang="pt-BR"`, sem `hreflang`. `useT()` e `useIdioma()` passam a devolver sempre o
+            português; `ROTAS_PUBLICAS` fica com um endereço só. As listas param de MANDAR o
+            idioma (o servidor ainda aceita). **O teste que segurava "nenhum texto literal no
+            template" compara `/` com `/en`** (`home.test.ts`): trocar por um que muda um texto
+            no banco e confere a página — sem isso a trava do `CLAUDE.md` fica sem rede.
+            Onde: `server/src/views/home.ts`, `routes/home.ts`, `client/src/lib/language.tsx`,
+            `Layout.tsx`, `AppFooter.tsx`, `LoginPage.tsx`, `lib/footer.ts`, `lib/navigation.ts`,
+            `lib/api.ts`, as páginas de catálogo e `core/src/constants/site.ts`.
+      - [ ] **Passo 2 — O admin deixa de pedir idioma.** O campo Idioma do curso e da trilha
+            (`CourseLanguageLevelFields.tsx` fica só com o nível), a coluna de inglês em Admin →
+            Textos (`SiteTextField.tsx`), as abas de idioma de FAQ e Depoimentos
+            (`HomeListEditor.tsx`) e o passo Legendas (conforme a P90). O servidor ainda aceita
+            o que a tela deixou de mandar.
+      - [ ] **Passo 3 — O servidor deixa de ler e de aceitar idioma.** Saem `lib/language.ts`
+            (`idiomaDaLista`), o idioma em `lib/dict.ts`, os filtros em `routes/courses.ts`,
+            `trilhas.ts`, `search.ts`, `site-text.ts`, `saved.ts` e `progress.ts`, a troca de
+            idioma em `routes/me.ts`, as recusas `LanguageMismatch`, `LanguageLocked` e
+            `LanguageInUse`, o `CAN_SUBSCRIBE_EN`, e o idioma dos esquemas do `core`
+            (`schemas/content.ts`, `site-text.ts`, `me.ts`). Saem o `core/src/i18n/en.ts` e o
+            tipo que obrigava a tradução; `keys.ts` continua. As legendas passam a ter um
+            rótulo só. **Para o banco aceitar gravação sem idioma, uma migration põe o valor
+            padrão `PT` nas colunas** (elas só saem no passo 4). O `seed-content.ts` acompanha.
+            Testes de servidor: saem `content-language`, `me-language` e `i18n`; os outros
+            perdem o caso do inglês. **Só depois de os passos 1 e 2 estarem publicados.**
+      - [ ] **Passo 4 — O banco perde o idioma (migration; revisão de segurança).** Passo 0:
+            contar de novo. A migration **ABORTA se ainda houver curso, trilha ou legenda em
+            inglês** (eles saem pelo admin, não por SQL); apaga as linhas em inglês de
+            `site_text`, `faq_item` e `testimonial`; troca a chave única de `site_text` para só
+            a `key`, e os índices de FAQ e Depoimentos para situação e ordem; tira a coluna
+            `language` das 6 tabelas e o tipo `Language`. **Prova:** `migrate diff` sem
+            diferença · a consulta de RLS · a suíte do servidor do zero · e
+            `SELECT table_name, column_name FROM information_schema.columns WHERE table_schema = 'public' AND column_name ILIKE '%language%'`
+            devolvendo só `preferredLanguage`. **Só depois do passo 3 publicado.**
+      - [ ] **Passo 5 — A preferência de idioma sai da conta (Better Auth; revisão de
+            segurança).** Tirar `preferredLanguage` dos campos extras em `lib/auth.ts`, rodar
+            `auth:generate`, conferir o diff e reaplicar as notas *REAPLICAR*, e a migration que
+            tira a coluna. Passo 0: o admin e o aluno de teste entram antes e depois. context7
+            `/better-auth/better-auth` primeiro.
+      - [ ] **Passo 6 — Os documentos e a lei de build.** Cada passo acima já corrige, no mesmo
+            commit, a linha do `CLAUDE.md` que ele invalida; aqui fica a varredura final: o
+            `CLAUDE.md` (a seção *Idiomas* vira um parágrafo — uma língua, um país —, e saem as
+            regras do inglês de *Rendering Boundary*, *Auth*, *Indexação*, *Access*,
+            *Membership Gating*, *Testing* e do *Document Map*) · o `idiomas.md` (proposta do
+            agente: sai do repo, e a decisão fica no `decisions-archive.md`) · `billing.md` (o
+            dólar, os 14 dias, os textos em inglês e o registro da pesquisa de 12/10) ·
+            `content.md`, `courses.md` ("15 cursos por idioma"), `bunny.md`, `jilsonai.md`,
+            `design.md` · **os textos de posicionamento são dele:** `project-description.md`,
+            `strategy.md` e `project-scope.md` dizem "bilíngue" e "global" — o agente propõe,
+            ele aprova · `design-lab/GEMINI.md` (o Antigravity deixa de produzir inglês) ·
+            `pendencias.md` (sai a parte em inglês de cada item) · os itens abertos deste plano
+            que citam idioma (o Bloco I, a superfície pública em dois idiomas, o certificado
+            no idioma da trilha, o JilsonAI no idioma do aluno). **Fecha com:** a busca por
+            `Language`, `/en` e `idioma` no código devolvendo só o esperado, a suíte inteira, e
+            o operador conferindo no site: home sem seletor, `/en` fora do ar, admin sem campo
+            de idioma.
 - [ ] **4.7 — O visitante assina: a conta nasce no pagamento (código, ALTO RISCO).** O checkout
       público: e-mail + pagamento → o webhook cria a conta (o cadastro continua fechado) e manda o
       e-mail de "crie sua senha". **Depende do Resend configurado e da P49** (o remetente). Junto:
@@ -4161,12 +4264,12 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       falhou:** *"o sistema envia automaticamente e-mail para o aluno, como a Anthropic faz"*
       (operador, 10/10/2026) — sai sozinho quando o aviso da Stripe chega, sem botão do admin.
 
-      **ANTES DOS PASSOS 3, 5, 6 E 7 — A P89** *(12/10/2026)*: o operador disse que, sem
-      solução para vender fora, tira do projeto o segundo idioma e o suporte a outros países,
-      numa etapa própria antes desta (seria a **4.6c**; esta não muda de número). Esses quatro
-      passos escrevem texto em dois idiomas: **não abrir nenhum deles antes de ele decidir.**
-      Os passos 1, 2 e 4 não dependem do idioma. Detalhe: `billing.md` → *A tela pública de
-      assinar*.
+      **REVISTO PELA ETAPA 4.6c** *(decisão do operador, 12/10/2026: a escola fica só em
+      português e só para o Brasil)*: **os passos 3, 5, 6 e 7 só abrem depois dela**, e
+      escrevem texto SÓ EM PORTUGUÊS. Onde um passo abaixo disser "nos dois idiomas", não vale
+      mais. Não há campo País, aviso para quem é de fora nem lista de espera. O que continua:
+      o CPF ou CNPJ obrigatório, a coluna de resumo, o menu e o rodapé do site. Os passos 1, 2
+      e 4 não dependem do idioma e podem andar em paralelo com a 4.6c.
 
       **OS PASSOS DA 4.7** *(divisão do agente, 12/10/2026, a pedido do operador: "divida em
       passos […] de forma que eu possa ir fazendo 1 por vez")*. Um passo por sessão, um commit
@@ -4197,15 +4300,14 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             e prova na área restrita. **Depende dos passos 1 e 2.** Não vai ao ar sozinho.
             **Da proposta da tela pública (agente, 12/10/2026 — `billing.md` → *A tela pública
             de assinar*), a resolver ANTES de fechar o que a rota aceita:** a resposta da caixa
-            "quero receber novidades" (**P82**). **A rota recebe o PAÍS e o CPF** (decisão do
-            operador, 12/10/2026, revendo a do mesmo dia: *"colocar CPF logo já resolve"* —
-            `billing.md`; o campo é OBRIGATÓRIO para quem escolhe Brasil e aceita CNPJ — decisão
-            dele no mesmo dia; quem é de fora não assina no lançamento). *Proposta do agente, a fechar no plano do passo, com context7:* o
-            CPF é conferido no servidor e fica guardado NA STRIPE, junto do cliente (o número
-            fiscal dela, `br_cpf`/`br_cnpj`) — um dado pessoal a menos no banco da escola.
-            **A rota RECUSA o país que não é o Brasil** (decisão do operador, 12/10/2026: no
-            lançamento a escola vende só para o Brasil) — no servidor: a tela esconder o
-            formulário não é defesa. O que conta como "do Brasil" é a **P88**.
+            "quero receber novidades" (**P82**). **A rota recebe o CPF ou CNPJ, obrigatório**
+            (decisões do operador, 12/10/2026: *"colocar CPF logo já resolve"* e *"deixa CPF
+            obrigatório e aceita CNPJ"* — `billing.md`). **Não há campo País** (decisão dele no
+            mesmo dia, etapa 4.6c: a escola é só para o Brasil); o que restringe é o número
+            fiscal brasileiro — o cartão emitido fora é a **P88**. *Proposta do agente, a
+            fechar no plano do passo, com context7:* o número é conferido no servidor e fica
+            guardado NA STRIPE, junto do cliente (o número fiscal dela, `br_cpf`/`br_cnpj`) —
+            um dado pessoal a menos no banco da escola.
             **E duas coisas que a tela precisa deste passo:** a tela de depois do
             pagamento não tem login — precisa saber que a assinatura valeu sem revelar nada de
             outra pessoa · o que se diz quando o e-mail já tem conta (rascunho: "Este e-mail já
@@ -4242,22 +4344,17 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             está logado só muda se ele disser (P80) · o valor da linha de renovação é o do
             servidor; com código promocional, se a prévia não der o valor da renovação, a linha
             sai sem valor — nunca conta feita na tela.
-            **Acrescentado em 12/10/2026, na mesma conversa:** o **país** e o **CPF** entram no
-            formulário, que é o mesmo das duas telas (a pública e a de quem está logado) · a
-            **coluna de resumo** com o total de hoje, a renovação, o reembolso e o pagamento
-            seguro — **decisão dele, 12/10/2026** ("Certo"); revê, na tela pública, a decisão de
-            10/10 de mostrar "Hoje você paga" só com código (na tela logada, P80) ·
-            **antes de desenhar os campos País e CPF, MEDIR na área restrita o que o campo da
-            Stripe já pede sozinho**, com um cartão de teste do Brasil: a doc diz que o campo
-            de pagamento cuida do número fiscal de comprador da América Latina, e dois campos
-            de CPF na mesma tela é o erro a evitar.
-            **O AVISO PARA QUEM É DE FORA** (decisão do operador, 12/10/2026: *"só Brasil e
-            aviso para os do exterior com e-mail"*): quem escolhe um país que não é o Brasil
-            não vê o plano nem o cartão — vê o aviso e o botão "Avise-me", que guarda o e-mail
-            e o país. *Do agente, para o plano do passo:* é uma tabela nova (migration, com
-            RLS) e uma rota pública a mais, dentro do limite do passo 1; guarda só o e-mail, o
-            país, o idioma e a data; a pessoa pediu o aviso, então o e-mail de abertura não
-            depende do `marketingConsent` — e leva o link para sair da lista.
+            **Acrescentado em 12/10/2026, na mesma conversa:** o **CPF ou CNPJ**, obrigatório,
+            entra no formulário, que é o mesmo das duas telas (a pública e a de quem está
+            logado) · a **coluna de resumo** com o total de hoje, a renovação, o reembolso e o
+            pagamento seguro — **decisão dele, 12/10/2026** ("Certo"); revê, na tela pública, a
+            decisão de 10/10 de mostrar "Hoje você paga" só com código (na tela logada, P80) ·
+            **antes de desenhar o campo do CPF, MEDIR na área restrita o que o campo da Stripe
+            já pede sozinho**, com um cartão de teste do Brasil: a doc diz que o campo de
+            pagamento cuida do número fiscal de comprador da América Latina, e dois campos de
+            CPF na mesma tela é o erro a evitar. **CANCELADOS no mesmo dia, pela etapa 4.6c:**
+            o campo País e o aviso com "Avise-me" para quem é de fora (chegaram a ser decididos
+            e saíram quando ele tirou a venda para fora do projeto). **Só em português.**
       - [ ] **Passo 7 — Os e-mails automáticos da assinatura.** A cobrança que falhou (com a
             data da próxima tentativa), o aviso antes de trancar e a assinatura cancelada (com
             o link para reativar). Os textos são do operador. **Depende só do passo 3** — pode
@@ -4341,13 +4438,11 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       **Em aberto:** P61 (a cláusula de reembolso abusivo nos termos de uso). O detalhe de cada
       assinatura mostra as cobranças devolvidas: é o que sustenta a análise caso a caso, já que
       não há bloqueio automático por reembolso repetido (decisão do operador, 10/10/2026).
-- [ ] **4.8 — Dólar pelo país do cartão + o botão das páginas em inglês (código + decisão).**
-      **O DÓLAR FOI ADIADO PARA A FASE DO EXTERIOR** *(decisão do operador, 12/10/2026: "isso,
-      dólar sai para a fase do exterior")* — ver *Post-MVP → Fase do exterior*. **O que fica
-      desta etapa antes do lançamento:** só o botão de assinar das páginas em inglês, para quem
-      mora no Brasil (a regra de 14/09/2026 continua: liga com uma aula publicada em inglês);
-      ele sai junto do passo 6 da etapa 4.7. O texto abaixo é o histórico da etapa e a regra
-      que valerá na fase do exterior.
+- **4.8 — CANCELADA em 12/10/2026** *(era: dólar pelo país do cartão + o botão das páginas em
+      inglês)*. Decisão do operador no mesmo dia: a escola fica só em português e só para o
+      Brasil (etapa 4.6c); não há dólar, venda para fora nem página em inglês. **O número 4.8
+      não se reaproveita.** O texto abaixo é o histórico da etapa, e sai na varredura do passo
+      6 da 4.6c. *Reabre só com a decisão de voltar a vender para fora.*
       *(Decisão do operador, 10/10/2026: fora do Brasil o prazo de reembolso é de 14 dias —
       `billing.md` → Reembolso. Esta etapa liga os 14 dias à cobrança em dólar. A decidir com
       ele aqui: a página em inglês promete 14 dias a todos, e quem paga com cartão do Brasil
@@ -4536,7 +4631,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       Deixada como vencida, o aluno fica com acesso para sempre sem pagar, e nenhum código nosso
       percebe. Conferir no painel antes do primeiro aluno pagante.
 - [ ] **Setup no dashboard (sem código):** Payments Plano Padrão (conta MEI/CNPJ, payout Banco do Brasil) + **Stripe Billing ativado**. Produto **"Assinatura"** com **2 `Price`**: Mensal R$99,90 (sem fidelidade) / Anual ~R$995 (~17% off). Sem free trial, sem conteúdo grátis. **Sem Customer Portal.** *(Versão em dólar: próximo item.)*
-- [ ] **Preços em dólar, pelo país do CARTÃO** *(decisão do operador, 14/09/2026 — `billing.md`)* — **ADIADO para a fase do exterior (decisão dele, 12/10/2026; ver *Post-MVP*)**:
+- [ ] **Preços em dólar, pelo país do CARTÃO** *(decisão do operador, 14/09/2026 — `billing.md`)* — **CANCELADO em 12/10/2026 (etapa 4.6c: a escola cobra só em reais)**:
       **US$ 30/mês** + **US$ 299/ano** (confirmado pelo operador em 14/09). **context7 `/websites/stripe` primeiro:** moedas no mesmo
       `Price` ou `Price`s separados, e como saber o país do cartão **antes** de confirmar a cobrança.
       **Trava:** a moeda nunca sai do idioma nem do prefixo `/en` (`CLAUDE.md` → Membership Gating).
@@ -5621,10 +5716,10 @@ outro aparelho e "daqui a um mês", e o Safari apaga o armazenamento do site em 
 - **JilsonAI Fase 4–5 (RAG + montagem de plano por IA):** living KB (`promotedToKb` → `KbArticle`), RAG over transcripts, and **`buildLearningPlan`** (member describes a goal → JilsonAI assembles a custom trilha with free mix of courses+lessons, adapts to level, cert by competencies). See JILSONAI.md.
 - **JilsonAI Fase 6 — Memory + proatividade** (winback engine). See JILSONAI.md.
 - **Phase 11 — Live cohorts** (tier 2, Zoom)
-- **Fase do exterior — vender para quem mora fora do Brasil** *(criada em 12/10/2026, por decisão do operador; sem data)*. No lançamento a escola vende só para o Brasil, e quem é de fora deixa o e-mail (etapa 4.7, passo 6). Esta fase abre quando essa lista mostrar procura que pague o trabalho. **O que já está decidido por ele:** quem é de fora paga DENTRO do site · o imposto de fora não fica com o contador: uma empresa terceirizada é a vendedora · o dólar (que era a etapa 4.8) e os 14 dias de reembolso de fora entram aqui. **A direção:** a Paddle, *"se a Paddle resolver"* — condicional; a segunda a perguntar é a Dodo Payments. **Antes de qualquer código:** a resposta por escrito da vendedora às duas perguntas da P22 (aceita escola de cursos gravados por assinatura? aceita empresa do Brasil e como paga?), e um plano próprio, com revisão de segurança: são dois sistemas de cobrança lado a lado, e o gate continua lendo UM espelho. É peça nova de stack — critério do `CLAUDE.md` e OK dele. Análise completa, com a tabela das alternativas: `billing.md` → *A tela pública de assinar*.
 - **Phase 12 — Corporate/B2B** (tier 3) — `organization` plugin + Stripe quantity-based (per-seat) subscriptions + self-service packages (10, 30, configurable). A corporate student is a NORMAL student (own login, progress, certificate); only the access source (org subscription) and who paid/configured differ. Anti-sharing (emailOtp + session limit) also lands around here.
 
 > **Removidos do roadmap (decisões deste ciclo):**
+> - *Segundo idioma (inglês) e venda para fora do Brasil* — **removidos em 12/10/2026** (decisão do operador; etapa 4.6c). A "fase do exterior", criada e cancelada no mesmo dia, não existe. O registro da pesquisa que levou a isso está em `billing.md` → *A tela pública de assinar*.
 > - *Community como fórum de pares* — **dissolvido no JilsonAI** (suporte inteligente + escalação) + anúncios. Não há fórum a construir. (Um `Profile` social só nasce se/quando houver feature social futura.)
 > - *Certificados* — **puxados pro MVP** (Phase 6.5), a escola nasce completa.
 > - ~~*EN phase / canal YouTube EN* — **removido.** Escola e YouTube ficam PT; inglês só via tentativa LinkedIn Learning (quando C1). O seam `User.preferredLanguage="pt"` fica dormente (custo zero), mas não há expansão EN planejada para a escola.~~ **REVERTIDO em 14/09/2026 (decisão do operador):** a escola é bilíngue desde o lançamento (Fase 3 → Bloco I) e o canal do YouTube em inglês volta, separado do PT. Ver `idiomas.md`.

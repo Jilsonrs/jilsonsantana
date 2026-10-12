@@ -32,10 +32,10 @@
 
 ### Fora do Brasil — dólar, pelo país do CARTÃO *(decisão do operador, 14/09/2026)*
 
-> **ADIADO PARA A FASE DO EXTERIOR** *(decisão do operador, 12/10/2026: "dólar sai para a fase
-> do exterior")*. No lançamento a escola vende só para o Brasil, em reais; a venda para fora abre
-> numa fase própria, com outra empresa como vendedora. O que está abaixo continua valendo como
-> regra para essa fase — ver *A tela pública de assinar*. *Reabre com a fase do exterior.*
+> **SAIU DO PROJETO em 12/10/2026** *(decisão do operador: a escola fica só em português e só
+> para o Brasil — etapa 4.6c; antes, no mesmo dia, o dólar tinha sido adiado para uma "fase do
+> exterior", que foi cancelada)*. A escola cobra só em reais. O texto abaixo é histórico e sai
+> na varredura do passo 6 da 4.6c.
 
 A escola é bilíngue desde o lançamento (`idiomas.md`). **Cartão do Brasil paga em reais;
 cartão de qualquer outro país paga em dólar** — independente do idioma do site.
@@ -453,9 +453,18 @@ pagamento sem ter assinado vê "confirmando" e depois "está demorando", sem cam
 
 ## A tela pública de assinar *(Fase 4, etapa 4.7, passo 6 — PROPOSTA do agente, 12/10/2026)*
 
+> **A DECISÃO FINAL DE 12/10/2026, QUE VALE SOBRE TUDO ABAIXO:** *"remover tudo que foi feito
+> para dar suporte a inglês e fica a escola 100% nativa em português e restrita ao Brasil"*
+> (operador; etapa **4.6c** do plano). **Para esta tela:** só em português · sem campo País,
+> sem aviso para quem é de fora, sem lista de espera · CPF ou CNPJ obrigatório · coluna de
+> resumo · menu e rodapé do site. **Não há fase do exterior:** o que está abaixo sobre vender
+> para fora (Stripe, Paddle, PayPal, Teachable, Thinkific, a mensagem em inglês) fica como
+> REGISTRO da pesquisa que levou à decisão — nada daquilo será construído. A limpeza deste
+> texto é do passo 6 da 4.6c.
+
 > **NADA AQUI ESTÁ DECIDIDO além do que traz data e frase do operador.** É a proposta do agente
 > depois de ele mostrar as telas de pagamento da Udemy e do Code with Mosh. O que existe na tela
-> e os textos são dele: as perguntas estão em `pendencias.md` (**P80 a P89**; a P79, a P86 e a P87 ele respondeu em 12/10/2026). Quem construir o
+> e os textos são dele: as perguntas estão em `pendencias.md` (**P80 a P84, P88 e P90**; a P79, a P86, a P87 e a P89 ele respondeu em 12/10/2026). Quem construir o
 > passo 6 confere antes o que ele já respondeu, e registra a resposta aqui, com a data e a frase.
 > *A Udemy e o Mosh são referência desta análise, nunca texto do site.*
 
@@ -730,12 +739,8 @@ celular, uma coluna só, nesta ordem)*:
    site**, que já leva a FAQ, Termos e Privacidade.
 2. **Título** — "Assinar" e "Uma assinatura, todos os cursos e trilhas." (os de hoje).
 3. **Seus dados** *(novo)* — o e-mail (com uma linha dizendo para que serve e "Já tem conta?
-   Entrar"), o **país** e, para quem é do Brasil, o **CPF ou CNPJ**, obrigatório (decisões de
-   12/10/2026).
-   **Quem escolhe um país que não é o Brasil** (decisão de 12/10/2026) não segue para o plano
-   nem para o cartão: no lugar deles, o aviso de que a assinatura ainda não chegou àquele país
-   e o botão para ser avisado, que guarda o e-mail já digitado e o país. O que conta como "do
-   Brasil" é a **P88**.
+   Entrar") e o **CPF ou CNPJ**, obrigatório (decisões de 12/10/2026). *O campo País e o aviso
+   para quem é de fora chegaram a ser decididos e foram cancelados no mesmo dia (etapa 4.6c).*
 4. **Escolha o plano** — os dois cartões de hoje, sem mudança: Mensal marcado (é o cartão em que
    a pessoa clicou na home) e Anual ao lado com o selo "17% de desconto" e "equivale a R$ 82,92
    por mês". Embaixo, "Sem fidelidade. Cancele quando quiser."
@@ -755,38 +760,34 @@ celular, uma coluna só, nesta ordem)*:
    na tela (decisão de 12/10/2026), o link de FAQ já está lá: o agente passa a sugerir tirar
    este item — P80.*
 
-**Os textos** *(o português é RASCUNHO do agente para o operador aprovar ou reescrever: P81; o
-inglês é rascunho e passa pela revisão do `idiomas.md`)*:
+**Os textos** *(RASCUNHO do agente para o operador aprovar ou reescrever: P81. Só em português,
+desde a decisão de 12/10/2026; a coluna em inglês saiu desta tabela)*:
 
-| Onde | Português | Inglês (rascunho) |
-|---|---|---|
-| E-mail, rótulo | Seu e-mail | Your email |
-| E-mail, ajuda | É com ele que você entra na escola. Depois do pagamento, enviamos o link para criar sua senha. | You'll use it to sign in. After payment, we'll email you a link to create your password. |
-| E-mail, atalho | Já tem conta? Entrar | Already have an account? Sign in |
-| País | País | Country |
-| País de fora, aviso | A assinatura ainda não está disponível no seu país. Deixe seu e-mail e avisamos quando abrir. | Subscriptions aren't available in your country yet. Leave your email and we'll let you know when they are. |
-| País de fora, botão | Avise-me | Notify me |
-| País de fora, depois | Pronto. Avisaremos você por e-mail. | Done. We'll email you. |
-| CPF *(só para o Brasil; obrigatório)* | CPF ou CNPJ | *(não aparece fora do Brasil)* |
-| CPF, ajuda | Usamos para emitir a nota fiscal. | — |
-| CPF inválido | Confira o número: este CPF ou CNPJ não é válido. | — |
-| Resumo, título | Resumo | Summary |
-| Resumo, total | Total de hoje | Due today |
-| E-mail que já tem conta | Este e-mail já tem conta. Entre para assinar. | This email already has an account. Sign in to subscribe. |
-| Renovação, mensal | Renova todo mês por {valor}, até você cancelar. | Renews every month at {valor} until you cancel. |
-| Renovação, anual | Renova uma vez por ano por {valor}, até você cancelar. | Renews once a year at {valor} until you cancel. |
-| Reembolso | Garantia de 7 dias: se não gostar, você recebe de volta o valor pago. | 7-day money-back guarantee. *(os 14 dias voltam na fase do exterior)* |
-| Pagamento seguro | Pagamento seguro, processado pela Stripe. A escola não guarda os dados do seu cartão. | Secure payment, processed by Stripe. We never store your card details. |
-| Termos | Ao assinar, você concorda com os Termos de Uso e a Política de Privacidade. | By subscribing, you agree to our Terms of Use and Privacy Policy. |
-| Título da lista | O que está incluído | What's included |
-| Dúvidas *(se o item 9 ficar)* | Ficou com dúvida? Veja as perguntas frequentes. | Questions? See the FAQ. |
-| Novidades *(se a P82 for sim)* | Quero receber novidades e ofertas da escola por e-mail. | Email me news and offers from the school. |
-| Depois de pagar, título | Assinatura confirmada. | You're subscribed. |
-| Depois de pagar, texto | Enviamos um e-mail para {email} com o link para você criar sua senha e começar a estudar. | We've sent an email to {email} with a link to create your password and start learning. |
-| Depois de pagar, não chegou | Não chegou em alguns minutos? Confira a caixa de spam ou peça de novo. | Didn't get it in a few minutes? Check your spam folder or ask for a new one. |
-| Depois de pagar, botão | Enviar de novo | Send it again |
-| Depois de pagar, reenviado | Enviamos de novo. | Sent again. |
-| Depois de pagar, e-mail errado | Digitou o e-mail errado? Escreva para {contato}. | Wrong email? Write to {contato}. |
+| Onde | Texto |
+|---|---|
+| E-mail, rótulo | Seu e-mail |
+| E-mail, ajuda | É com ele que você entra na escola. Depois do pagamento, enviamos o link para criar sua senha. |
+| E-mail, atalho | Já tem conta? Entrar |
+| CPF *(obrigatório)* | CPF ou CNPJ |
+| CPF, ajuda | Usamos para emitir a nota fiscal. |
+| CPF inválido | Confira o número: este CPF ou CNPJ não é válido. |
+| Resumo, título | Resumo |
+| Resumo, total | Total de hoje |
+| E-mail que já tem conta | Este e-mail já tem conta. Entre para assinar. |
+| Renovação, mensal | Renova todo mês por {valor}, até você cancelar. |
+| Renovação, anual | Renova uma vez por ano por {valor}, até você cancelar. |
+| Reembolso | Garantia de 7 dias: se não gostar, você recebe de volta o valor pago. |
+| Pagamento seguro | Pagamento seguro, processado pela Stripe. A escola não guarda os dados do seu cartão. |
+| Termos | Ao assinar, você concorda com os Termos de Uso e a Política de Privacidade. |
+| Título da lista | O que está incluído |
+| Dúvidas *(se o item 9 ficar)* | Ficou com dúvida? Veja as perguntas frequentes. |
+| Novidades *(se a P82 for sim)* | Quero receber novidades e ofertas da escola por e-mail. |
+| Depois de pagar, título | Assinatura confirmada. |
+| Depois de pagar, texto | Enviamos um e-mail para {email} com o link para você criar sua senha e começar a estudar. |
+| Depois de pagar, não chegou | Não chegou em alguns minutos? Confira a caixa de spam ou peça de novo. |
+| Depois de pagar, botão | Enviar de novo |
+| Depois de pagar, reenviado | Enviamos de novo. |
+| Depois de pagar, e-mail errado | Digitou o e-mail errado? Escreva para {contato}. |
 
 **Depois do pagamento.** Quem acabou de pagar não tem senha nem está logado: a tela não pode
 dizer "Começar a estudar", como a de hoje. Ela confirma, repete o e-mail digitado (é ali que a
@@ -794,24 +795,14 @@ pessoa percebe um erro de digitação), diz o que fazer a seguir e dá a saída 
 não chega. Enquanto a confirmação não vem, valem os textos de hoje ("Confirmando sua
 assinatura…", "Está demorando mais que o normal…"). `{contato}` depende da P49.
 
-**Em inglês.** Mesma tela, mesmos blocos. Três diferenças; as duas últimas são a **P85**:
-- **O preço** é o que o servidor manda: reais até a etapa 4.8, como a home em inglês hoje.
-- **O reembolso:** a FAQ em inglês já diz 14 dias, mas o sistema hoje dá 7 a toda cobrança
-  (`PRAZO_DO_REEMBOLSO_EM_DIAS`); os 14 chegam com o dólar, na 4.8. Até lá, a linha em inglês
-  promete mais do que a tela de reembolso entrega sozinha.
-- **O endereço:** proposta `/en/subscribe` (junto da P14). O botão continua só ligando com uma
-  aula publicada em inglês (decisão de 14/09/2026).
-- **Com o lançamento só para o Brasil** (decisão de 12/10/2026), a tela em inglês atende quem
-  mora no Brasil e lê inglês; quem é de fora vê o aviso e deixa o e-mail. O reembolso de 14
-  dias e o preço em dólar passam a ser assunto da fase do exterior.
+**Em inglês: não existe mais** (decisão de 12/10/2026, etapa 4.6c). A tela é só em português.
 
 **O que isto muda nos passos da 4.7** (detalhe em cada passo, no plano): o **6** ganha os itens
 acima · o **5** pede o nome ao criar a senha (P83) e ganha o "Enviar de novo" · o **4** recebe a
-resposta da caixa de novidades (P82), o país e o CPF (decisão de 12/10/2026), e precisa dizer à tela de
-depois do pagamento que a assinatura valeu, sem login — e **recusa no servidor** o país que não
-é o Brasil (a tela esconder o formulário não é defesa) · o **6** guarda a lista de quem pediu
-para ser avisado · o **1** inclui o "Enviar de novo" e o "Avise-me" no
-limite de tentativas · o **8** só abre com os Termos de Uso e a Política de Privacidade no ar.
+resposta da caixa de novidades (P82) e o CPF ou CNPJ, e precisa dizer à tela de depois do
+pagamento que a assinatura valeu, sem login · o **1** inclui o "Enviar de novo" no limite de
+tentativas · o **8** só abre com os Termos de Uso e a Política de Privacidade no ar. **Os
+passos 3, 5, 6 e 7 só abrem depois da etapa 4.6c.**
 
 **O que o agente sugere NÃO ter na abertura** *(para ninguém propor de novo sem o gatilho)*:
 - **Depoimentos e perguntas frequentes na própria tela** — quem clicou em Assinar acabou de
