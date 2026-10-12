@@ -28,7 +28,11 @@ export function SalvosPage() {
           {t.salvos.erro}
         </p>
       )}
-      {vazio && <p className="text-muted-foreground">{t.salvos.vazio}</p>}
+      {vazio && (
+        <div className="max-w-xl rounded-2xl border border-border/60 bg-card p-8 text-center">
+          <p className="text-sm text-muted-foreground">{t.salvos.vazio}</p>
+        </div>
+      )}
 
       {data && data.cursos.length > 0 && (
         <PageSection title={t.catalogo.cursos}>
@@ -36,7 +40,7 @@ export function SalvosPage() {
             {data.cursos.map((curso) => (
               <li key={curso.id} className="relative">
                 <CourseCard {...curso} destino={`/aluno/curso/${curso.slug}`} />
-                <div className="absolute right-3 top-3 rounded-md bg-background/90">
+                <div className="absolute right-3 top-3 rounded-full border border-border/40 bg-background/85 backdrop-blur-sm shadow-sm">
                   <BotaoSalvar tipo="cursos" id={curso.id} salvo nome={`${t.aula.salvarCurso}: ${curso.title}`} />
                 </div>
               </li>
@@ -47,13 +51,15 @@ export function SalvosPage() {
 
       {data && data.aulas.length > 0 && (
         <PageSection title={t.catalogo.aulas}>
-          <ul className="space-y-2">
+          <ul className="max-w-3xl space-y-3">
             {data.aulas.map((aula) => {
               const Icone = aula.kind === LessonKind.TEXT ? FileText : PlayCircle;
               return (
-                <li key={aula.id} className="flex items-start gap-2 rounded-xl border border-border/60 bg-card p-4">
-                  <Link to={`/aluno/aula/${aula.id}`} className="flex min-w-0 flex-1 items-start gap-3">
-                    <Icone className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                <li key={aula.id} className="flex items-center justify-between gap-3 rounded-2xl border border-border/60 bg-card p-4 shadow-[0_4px_20px_rgba(0,0,0,0.02)] transition-colors hover:bg-muted/40">
+                  <Link to={`/aluno/aula/${aula.id}`} className="flex min-w-0 flex-1 items-center gap-3.5">
+                    <div className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-border/60 bg-muted/40 text-muted-foreground" aria-hidden="true">
+                      <Icone className="size-5" />
+                    </div>
                     <span className="min-w-0">
                       <span className="block font-medium text-foreground">{aula.title}</span>
                       <span className="block text-sm text-muted-foreground">{aula.curso.title}</span>

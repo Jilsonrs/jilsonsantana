@@ -1457,6 +1457,19 @@
       gap: 24px;
     }
 
+    .trilha-feature-item {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .trilha-feature-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 28px;
+    }
+
     @media (max-width: 992px) {
       .trilhas-top-grid {
         grid-template-columns: 1fr;
@@ -1465,6 +1478,7 @@
 
       .trilhas-bottom-grid {
         grid-template-columns: repeat(2, 1fr);
+        gap: 32px 24px;
       }
     }
 
@@ -1480,6 +1494,22 @@
 
       .trilhas-bottom-grid {
         grid-template-columns: 1fr;
+        gap: 0;
+      }
+
+      .trilha-feature-item {
+        padding: 24px 0;
+        border-bottom: 1px solid var(--border-color);
+        gap: 8px;
+      }
+
+      .trilha-feature-item:first-child {
+        padding-top: 10px;
+      }
+
+      .trilha-feature-item:last-child {
+        border-bottom: none;
+        padding-bottom: 10px;
       }
 
       .trilhas-card {

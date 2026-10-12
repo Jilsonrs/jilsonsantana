@@ -6,18 +6,18 @@
  */
 export function BarraDeProgresso({ porcentagem, rotulo, concluido }: { porcentagem: number; rotulo: string; concluido: string }) {
   return (
-    <div className="space-y-1.5">
+    <div className="space-y-2">
       <div
         role="progressbar"
         aria-label={rotulo}
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={porcentagem}
-        className="h-1.5 w-full overflow-hidden rounded-full bg-primary/10"
+        className="h-2 w-full overflow-hidden rounded-full bg-primary/15"
       >
-        <div className="h-full rounded-full bg-primary" style={{ width: `${porcentagem}%` }} />
+        <div className="h-full rounded-full bg-primary transition-all duration-500 ease-out" style={{ width: `${porcentagem}%` }} />
       </div>
-      <p className="text-xs font-medium text-muted-foreground">
+      <p className="text-xs font-semibold text-muted-foreground">
         {porcentagem}% {concluido}
       </p>
     </div>

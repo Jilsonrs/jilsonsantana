@@ -21,9 +21,9 @@ export function BlocoDoPlano({ assinatura }: { assinatura: AssinaturaComAcesso }
   return (
     <PageSection title={t.faturamento.seuPlano}>
       <Card className="max-w-3xl">
-        <CardContent className="space-y-2 pt-6">
+        <CardContent className="space-y-4 p-6">
           {plano && preco && (
-            <p className="text-base font-semibold text-foreground">
+            <p className="text-lg font-semibold tracking-tight text-foreground">
               {nome} · {dinheiro(preco.centavos, preco.moeda)}
               {porPeriodo}
             </p>
@@ -36,16 +36,20 @@ export function BlocoDoPlano({ assinatura }: { assinatura: AssinaturaComAcesso }
             </p>
           )}
           {assinatura.situacao === SituacaoDoFaturamento.VAI_CANCELAR && acessoAte && (
-            <p className="text-sm text-muted-foreground">{t.faturamento.vaiCancelar.replace("{data}", dataPorExtenso(acessoAte))}</p>
+            <div className="rounded-xl border border-border/60 bg-muted/30 p-3.5">
+              <p className="text-sm text-muted-foreground">{t.faturamento.vaiCancelar.replace("{data}", dataPorExtenso(acessoAte))}</p>
+            </div>
           )}
           {assinatura.situacao === SituacaoDoFaturamento.ATRASADA && (
-            <p role="alert" className="text-sm text-destructive">
-              {assinatura.aulasTrancadas
-                ? t.faturamento.atrasadaSemAulas
-                : assinatura.aulasAte
-                  ? t.faturamento.atrasadaAte.replace("{data}", dataPorExtenso(assinatura.aulasAte))
-                  : t.faturamento.atrasada}
-            </p>
+            <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-3.5">
+              <p role="alert" className="text-sm font-medium text-destructive">
+                {assinatura.aulasTrancadas
+                  ? t.faturamento.atrasadaSemAulas
+                  : assinatura.aulasAte
+                    ? t.faturamento.atrasadaAte.replace("{data}", dataPorExtenso(assinatura.aulasAte))
+                    : t.faturamento.atrasada}
+              </p>
+            </div>
           )}
           <TrocaMarcada troca={assinatura.trocaMarcada} />
           <AcoesDoPlano assinatura={assinatura} />

@@ -32,21 +32,25 @@ export function NotificacoesPage() {
           {t.notificacoes.erro}
         </p>
       )}
-      {data && data.itens.length === 0 && <p className="text-muted-foreground">{t.notificacoes.vazio}</p>}
+      {data && data.itens.length === 0 && (
+        <div className="max-w-xl rounded-2xl border border-border/60 bg-card p-8 text-center">
+          <p className="text-sm text-muted-foreground">{t.notificacoes.vazio}</p>
+        </div>
+      )}
 
       {data && data.itens.length > 0 && (
-        <ul className="max-w-3xl divide-y divide-border rounded-2xl border border-border/60 bg-card">
+        <ul className="max-w-3xl divide-y divide-border/40 overflow-hidden rounded-2xl border border-border/60 bg-card shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
           {data.itens.map((n) => (
             <li key={n.id}>
-              <Link to={`/aluno/notificacoes/${n.id}`} className="flex gap-3 px-5 py-4 hover:bg-muted focus-visible:bg-muted focus-visible:outline-none">
+              <Link to={`/aluno/notificacoes/${n.id}`} className="flex gap-3.5 px-6 py-4.5 transition-colors hover:bg-muted/40 focus-visible:bg-muted/40 focus-visible:outline-none">
                 <span className={`mt-1.5 size-2 shrink-0 rounded-full ${n.lida ? "bg-transparent" : "bg-primary"}`} aria-hidden="true" />
                 <span className="min-w-0">
                   <span className="block font-medium text-foreground">
                     {tituloDaNotificacao(n, t)}
                     {!n.lida && <span className="sr-only"> ({t.notificacoes.naoLida})</span>}
                   </span>
-                  <span className="mt-0.5 line-clamp-2 text-sm text-muted-foreground">{previaDoTexto(n.texto)}</span>
-                  <time dateTime={n.criadaEm} className="mt-1 block text-xs text-muted-foreground">
+                  <span className="mt-1 line-clamp-2 text-sm text-muted-foreground">{previaDoTexto(n.texto)}</span>
+                  <time dateTime={n.criadaEm} className="mt-1.5 block text-xs text-muted-foreground">
                     {haQuantoTempo(n.criadaEm)}
                   </time>
                 </span>

@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { CheckCircle2, FileText, PlayCircle } from "lucide-react";
+import { CheckCircle2, ChevronRight, FileText, PlayCircle } from "lucide-react";
 import { ContentStatus, LessonKind } from "@jilson/core";
 import type { AulaNaLista } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -44,12 +44,22 @@ function AulaDaLista({
           aria-current={atual ? "page" : undefined}
           className={cn(
             "flex min-w-0 flex-1 items-start gap-3 px-3 py-2.5 text-sm transition-all duration-200 border-l-[3px]",
-            atual 
-              ? "border-primary bg-muted/60 font-semibold text-foreground rounded-r-lg" 
-              : "border-transparent rounded-lg text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+            atual
+              ? "border-primary bg-primary/5 font-semibold text-foreground rounded-r-xl"
+              : "border-transparent rounded-xl text-muted-foreground hover:bg-muted/40 hover:text-foreground",
           )}
         >
-          <Icone className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+          <div
+            className={cn(
+              "mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-md border",
+              atual
+                ? "border-primary/40 bg-primary/10 text-primary"
+                : "border-border/40 bg-muted/40 text-muted-foreground",
+            )}
+            aria-hidden="true"
+          >
+            <Icone className="size-3.5" />
+          </div>
           <span className="sr-only">{aula.kind === LessonKind.TEXT ? t.aula.aulaDeTexto : t.aula.aulaDeVideo}:</span>
           <span className="flex flex-1 flex-col gap-0.5">
             <span className="leading-snug">{aula.title}</span>
@@ -60,10 +70,10 @@ function AulaDaLista({
           </span>
           {/* A aula concluída (Fase 5, 03/10/2026); o leitor de tela ouve "Concluída". */}
           {concluida && (
-            <>
-              <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
+            <span className="flex items-center shrink-0 pt-0.5">
+              <CheckCircle2 className="size-4 text-primary fill-primary/15" aria-hidden="true" />
               <span className="sr-only">{t.aula.concluida}</span>
-            </>
+            </span>
           )}
           <EtiquetaDeStatus status={aula.status} />
         </Link>
@@ -100,6 +110,7 @@ export function CourseContentsNav({ lessonId }: { lessonId: number }) {
         {curso.modulos.map((modulo) => (
           <details key={modulo.id} open={modulo.aulas.some((a) => a.id === lessonId)} className="group rounded-2xl border border-border/50 bg-card overflow-hidden shadow-sm transition-all hover:border-border">
             <summary className="flex cursor-pointer list-none items-center gap-3 bg-muted/20 px-5 py-4 font-semibold text-foreground transition-colors hover:bg-muted/40 [&::-webkit-details-marker]:hidden">
+              <ChevronRight className="size-4 shrink-0 text-muted-foreground transition-transform duration-200 group-open:rotate-90" aria-hidden="true" />
               <span className="flex-1 font-display tracking-tight text-[1.05rem]">{modulo.title}</span>
               <EtiquetaDeStatus status={modulo.status} />
             </summary>

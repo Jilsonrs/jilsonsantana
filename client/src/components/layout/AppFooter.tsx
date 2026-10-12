@@ -20,14 +20,14 @@ export function AppFooter() {
 
   return (
     <footer className="mt-auto pb-10">
-      <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-6 md:pr-[50px]">
+      <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-6 md:pr-[50px] overflow-hidden">
         
         {/* Barra estilo "Menu da Home" (footer-top) */}
         <div className="flex flex-col gap-4 bg-gradient-to-r from-background/95 to-surface-vitrine/95 px-4 py-4 backdrop-blur-xl md:h-[55px] md:flex-row md:items-center md:justify-between md:rounded-r-[24px] md:py-0 md:pl-[50px] md:pr-6">
           <p className="font-brand text-2xl font-bold tracking-tighter">
             <span className="text-primary">#</span>Jilson Santana
           </p>
-          <ul className="flex flex-wrap items-center gap-x-8 gap-y-2 text-[15px] font-medium text-foreground">
+          <ul className="flex flex-wrap items-center gap-x-4 sm:gap-x-8 gap-y-2 text-[15px] font-medium text-foreground">
             {itensDoRodape().map((item) => (
               <li key={item.href}>
                 {item.tipo === "youtube" ? (

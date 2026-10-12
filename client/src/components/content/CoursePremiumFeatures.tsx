@@ -20,10 +20,10 @@ export function CourseHighlights({ destaques }: { destaques: PaginaDaAula["curso
   if (safeDestaques.length === 0) return null;
 
   return (
-    <div className={cn("grid gap-8 pt-4", getGridColsClass(safeDestaques.length))}>
+    <div className={cn("grid gap-8 pt-4 overflow-hidden", getGridColsClass(safeDestaques.length))}>
       {safeDestaques.map((h, i) => {
         return (
-          <div key={i} className="group relative flex flex-col gap-5">
+          <div key={i} className="group relative flex flex-col gap-5 overflow-hidden">
             <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-primary/10 blur-2xl transition-all group-hover:bg-primary/20 pointer-events-none" />
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-sm ring-1 ring-primary/20">
               <HighlightIcon token={h.icon} className="h-6 w-6 stroke-[1.5px]" />

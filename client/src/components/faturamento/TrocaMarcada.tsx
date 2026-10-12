@@ -24,22 +24,26 @@ export function TrocaMarcada({ troca }: { troca: { plano: Plano; em: string } | 
   return (
     <div className="space-y-3">
       {troca && !desistir.isSuccess && (
-        <>
+        <div className="space-y-3 rounded-xl border border-border/60 bg-muted/30 p-4">
           <p className="text-sm text-muted-foreground">{p.mudaParaOMensal.replace("{data}", dataPorExtenso(troca.em))}</p>
-          <Button type="button" variant="outline" onClick={() => desistir.mutate()} disabled={desistir.isPending}>
+          <Button type="button" variant="outline" size="sm" onClick={() => desistir.mutate()} disabled={desistir.isPending}>
             {desistir.isPending ? t.assinar.processando : p.continuarNoAnual}
           </Button>
-        </>
+        </div>
       )}
       {desistir.isSuccess && (
-        <p role="status" className="text-sm text-foreground">
-          {p.continuaNoAnual}
-        </p>
+        <div className="rounded-xl border border-border/60 bg-muted/30 p-3.5">
+          <p role="status" className="text-sm font-medium text-foreground">
+            {p.continuaNoAnual}
+          </p>
+        </div>
       )}
       {desistir.isError && (
-        <p role="alert" className="text-sm text-destructive">
-          {p.erro}
-        </p>
+        <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-3.5">
+          <p role="alert" className="text-sm font-medium text-destructive">
+            {p.erro}
+          </p>
+        </div>
       )}
     </div>
   );
