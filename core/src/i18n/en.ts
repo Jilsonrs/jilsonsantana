@@ -447,7 +447,6 @@ export const en: Dict = {
         descricao: "Choose how you'd like to pay. Both plans give you the same access.",
         atual: "Your current plan",
         paraOAnual: "The change takes effect right away. Today you pay {valor}, with the rest of your paid month already deducted. Your next charge is on {data}.",
-        valorValePor: "Complete within {minutos} minutes, or the amount may be updated.",
         mudarParaOAnual: "Switch to Yearly",
         agoraAnual: "Done. You're now on the Yearly plan.",
         paraOMensal: "The change takes effect on {data}, when the year you've already paid for ends. Nothing changes and nothing is charged until then. After that, {valor} per month.",

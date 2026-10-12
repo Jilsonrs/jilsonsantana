@@ -38,17 +38,17 @@ vi.mock("../lib/stripe.js", async (importOriginal) => ({
 
 import servidor from "./servidor.js";
 import { prisma } from "../lib/prisma.js";
-import { FOLGA_DO_VALOR_MOSTRADO, mudarMeuPlano, ofertaAindaVale } from "../lib/meu-plano.js";
+import { FOLGA_DO_VALOR_MOSTRADO, mudarMeuPlano } from "../lib/meu-plano.js";
 import { AssinaturaNaoEncontrada } from "../lib/stripe.js";
 import { ASSINATURA_DE_TESTE } from "../lib/assinatura-de-teste.js";
 
 // MUDAR DE PLANO (Fase 4, etapa 4.6, sessão b). É COBRANÇA. O que estes testes protegem:
 //   - nada acontece sem login; a assinatura é SEMPRE a da conta da sessão, e o site diz só PARA
 //     QUAL plano: o preço é o que o SERVIDOR acha, e o valor é a conta da Stripe;
-//   - o valor mostrado é o cobrado, e vale por 10 minutos: a cobrança sai EXATAMENTE no valor
-//     que a tela mostrou (a escola abre mão dos centavos que o tempo levou). Como o valor e o
-//     instante vêm do navegador, o servidor confere os dois: o instante recente, e o valor a
-//     poucos centavos da conta refeita com a trava — um valor inventado nunca é cobrado;
+//   - o valor mostrado é o cobrado, num clique só, mesmo que a pessoa tenha demorado: a
+//     cobrança sai EXATAMENTE no valor que a tela mostrou (a escola abre mão do que o tempo
+//     levou). Como o valor vem do navegador, o servidor o confere: tem que estar dentro da folga
+//     da conta refeita com a trava, e nunca acima dela — um valor inventado nunca é cobrado;
 //   - o ano do anual começa no dia da troca (a forma do pedido tem teste em `stripe-plano.test.ts`);
 //   - mensal → anual vale na hora; anual → mensal é só MARCADO para o fim do período pago;
 //   - o cartão recusado não deixa nada para ser cobrado depois; o banco pedindo confirmação
@@ -67,9 +67,8 @@ const ANTES = process.env.STRIPE_SECRET_KEY;
 const PRECOS: PrecoDoPlano[] = [{ plano: "mensal", precoId: "price_mensal_do_teste", centavos: 9990, moeda: "brl" }, { plano: "anual", precoId: "price_anual_do_teste", centavos: 99500, moeda: "brl" }];
 /** O que a conta da "Stripe" dá hoje (o dublê de `calcularTroca`) — e, por isso, o que a tela mostrou. */
 const MOSTRADO = 92840;
-const agora = () => Math.floor(Date.now() / 1000);
-/** O pedido de ir para o anual como a tela o manda: o valor que mostrou e o instante da conta, de agora há pouco. */
-const anual = (extra: object = {}) => ({ plano: "anual", valorMostrado: MOSTRADO, mostradoEm: agora() - 30, ...extra });
+/** O pedido de ir para o anual como a tela o manda: o plano e o valor que ela mostrou. */
+const anual = (extra: object = {}) => ({ plano: "anual", valorMostrado: MOSTRADO, ...extra });
 let member: string[] = [];
 let memberId = "";
 
@@ -204,14 +203,8 @@ describe("mudar de plano — quem entra", () => {
 
 describe("GET /api/billing/minha-assinatura/plano — a troca que a conta pode fazer", () => {
   it("quem é MENSAL: para o anual, na hora — quanto paga hoje (a conta da Stripe), a cobrança seguinte e o instante da conta", async () => {
-    const antes = agora();
     const res = await oferta(member);
-    expect(res.status).toBe(200);
-    const { mostradoEm, ...troca } = res.body.troca;
-    expect(troca).toEqual({ para: "anual", quando: "agora", preco: { centavos: 99500, moeda: "brl" }, hoje: { centavos: MOSTRADO, moeda: "brl" }, proximaEm: EM_UM_ANO.toISOString() });
-    // O instante da conta é o do SERVIDOR: é dele que os 10 minutos contam.
-    expect(mostradoEm).toBeGreaterThanOrEqual(antes);
-    expect(mostradoEm).toBeLessThanOrEqual(agora());
+    expect([res.status, res.body]).toEqual([200, { troca: { para: "anual", quando: "agora", preco: { centavos: 99500, moeda: "brl" }, hoje: { centavos: MOSTRADO, moeda: "brl" }, proximaEm: EM_UM_ANO.toISOString() } }]);
     // A conta foi feita para a assinatura e o item DESTA conta, com o preço que o SERVIDOR achou.
     expect(calcularTroca.mock.calls).toEqual([[{ assinaturaId: SUB, itemId: "si_do_member", precoId: "price_anual_do_teste" }]]);
   });
@@ -283,12 +276,13 @@ describe("POST /api/billing/minha-assinatura/plano — para o ANUAL, na hora", (
     expect(buscarDetalhes.mock.calls.flat()).not.toContain(alheia);
   });
 
-  // O VALOR CONGELADO (decisão do operador, 11/10/2026): "cobra o que mostrou pela primeira vez".
-  // O que sobra do mês diminui com o tempo, então a conta de AGORA fica alguns centavos acima
-  // do que a tela mostrou; a escola abre mão deles, até a folga.
-  it("a conta de agora subiu alguns centavos desde que a tela mostrou o valor: cobra EXATAMENTE o mostrado, até a folga", async () => {
-    expect(FOLGA_DO_VALOR_MOSTRADO).toBe(5);
-    for (let subiu = 0; subiu <= FOLGA_DO_VALOR_MOSTRADO; subiu++) {
+  // NUM CLIQUE SÓ, NO VALOR MOSTRADO (decisões do operador, 11/10/2026: "cobra o que mostrou" e
+  // "tem que acontecer num passo só, sem uma segunda confirmação do aluno"). O que sobra do mês
+  // diminui com o tempo, então a conta de AGORA fica acima do que a tela mostrou — 3 centavos em
+  // 10 minutos, uns 13 por hora. A escola abre mão da diferença, até a folga, e não pede outro clique.
+  it("a pessoa demorou na tela (minutos, meia hora, horas) e a conta de agora subiu: UM clique, e cobra EXATAMENTE o valor mostrado", async () => {
+    expect(FOLGA_DO_VALOR_MOSTRADO).toBe(100);
+    for (const subiu of [0, 1, 3, 7, 40, FOLGA_DO_VALOR_MOSTRADO]) {
       trocarAgora.mockClear();
       calcularTroca.mockResolvedValue({ centavosHoje: MOSTRADO + subiu, moeda: "brl", proximaEm: EM_UM_ANO });
       const res = await mudar(member, anual());
@@ -297,8 +291,8 @@ describe("POST /api/billing/minha-assinatura/plano — para o ANUAL, na hora", (
     }
   });
 
-  // O VALOR E O INSTANTE VÊM DO NAVEGADOR: o máximo que um valor forjado tira da escola é a folga.
-  it("além da folga — a conta de agora 6 centavos acima, ou um valor inventado: 409, NADA é cobrado — e fica o rastro, com os dois valores", async () => {
+  // O VALOR VEM DO NAVEGADOR: o máximo que um valor forjado tira da escola é a folga.
+  it("além da folga — a conta de agora 1 centavo além dela, ou um valor inventado: 409, NADA é cobrado — e fica o rastro, com os dois valores", async () => {
     const aviso = vi.spyOn(console, "warn").mockImplementation(() => {});
     try {
       calcularTroca.mockResolvedValue({ centavosHoje: MOSTRADO + FOLGA_DO_VALOR_MOSTRADO + 1, moeda: "brl", proximaEm: EM_UM_ANO });
@@ -327,7 +321,7 @@ describe("POST /api/billing/minha-assinatura/plano — para o ANUAL, na hora", (
   // conta própria, e não só pelo formato da rota. Um `NaN` passaria por toda comparação de folga.
   it("chamada direto, fora da rota, com um valor que não é um inteiro de centavos: nada é trocado", async () => {
     for (const valorMostrado of [Number.NaN, -1, 928.4, Number.POSITIVE_INFINITY]) {
-      expect(await mudarMeuPlano(memberId, { plano: "anual", valorMostrado, mostradoEm: agora() }), String(valorMostrado)).toEqual({ resultado: "previa-vencida" });
+      expect(await mudarMeuPlano(memberId, { plano: "anual", valorMostrado }), String(valorMostrado)).toEqual({ resultado: "previa-vencida" });
     }
     expect(calcularTroca).not.toHaveBeenCalled();
     nadaMudouNaStripe();
@@ -341,39 +335,29 @@ describe("POST /api/billing/minha-assinatura/plano — para o ANUAL, na hora", (
     nadaMudouNaStripe();
   });
 
-  it("o valor mostrado vale 10 MINUTOS: mostrado há mais tempo, com o instante no futuro, ou sem valor ou sem instante — 409, sem nem refazer a conta", async () => {
-    for (const pedido of [anual({ mostradoEm: agora() - 601 }), anual({ mostradoEm: agora() - 3600 }), anual({ mostradoEm: agora() + 3600 }), { plano: "anual", valorMostrado: MOSTRADO }, { plano: "anual", mostradoEm: agora() }, { plano: "anual" }]) {
-      const res = await mudar(member, pedido);
-      expect([res.status, res.body], JSON.stringify(pedido)).toEqual([409, { error: "PreviaVencida" }]);
-    }
+  it("sem o valor que a tela mostrou: 409, sem nem refazer a conta", async () => {
+    const res = await mudar(member, { plano: "anual" });
+    expect([res.status, res.body]).toEqual([409, { error: "PreviaVencida" }]);
     expect(calcularTroca).not.toHaveBeenCalled();
     nadaMudouNaStripe();
-    // Dentro do prazo, até o último minuto: vale.
-    expect((await mudar(member, anual({ mostradoEm: agora() - 590 }))).status).toBe(200);
   });
 
-  it("o prazo, como função: 10 minutos, com o último segundo valendo; nem do futuro (além de um minuto de folga de relógio), nem quebrado", () => {
-    const ao = new Date("2026-10-11T12:00:00Z");
-    const t = Math.floor(ao.getTime() / 1000);
-    expect([ofertaAindaVale(t, ao), ofertaAindaVale(t - 600, ao), ofertaAindaVale(t + 60, ao)]).toEqual([true, true, true]);
-    expect([ofertaAindaVale(t - 601, ao), ofertaAindaVale(t + 61, ao), ofertaAindaVale(undefined, ao), ofertaAindaVale(t + 0.5, ao)]).toEqual([false, false, false, false]);
-  });
-
-  it("valor ou instante quebrados ou negativos: 400, e nada vai à Stripe", async () => {
-    for (const extra of [{ valorMostrado: -1 }, { valorMostrado: 928.4 }, { valorMostrado: "92840" }, { mostradoEm: -5 }, { mostradoEm: 1.5 }, { mostradoEm: "agora" }]) expect((await mudar(member, anual(extra))).status, JSON.stringify(extra)).toBe(400);
+  it("valor quebrado ou negativo: 400, e nada vai à Stripe", async () => {
+    for (const extra of [{ valorMostrado: -1 }, { valorMostrado: 928.4 }, { valorMostrado: "92840" }]) expect((await mudar(member, anual(extra))).status, JSON.stringify(extra)).toBe(400);
     expect(buscarDetalhes).not.toHaveBeenCalled();
     nadaMudouNaStripe();
   });
 
-  it("o valor venceu com a tela aberta: recusa — e com o valor NOVO (que a tela busca de novo) a troca passa, cobrando o novo", async () => {
-    calcularTroca.mockResolvedValue({ centavosHoje: MOSTRADO + 9, moeda: "brl", proximaEm: EM_UM_ANO });
+  it("o caso raro — a tela aberta por muitas horas, a conta já longe do valor mostrado: recusa; e com o valor NOVO (que a tela busca de novo) a troca passa, cobrando o novo", async () => {
+    const longe = FOLGA_DO_VALOR_MOSTRADO + 50;
+    calcularTroca.mockResolvedValue({ centavosHoje: MOSTRADO + longe, moeda: "brl", proximaEm: EM_UM_ANO });
     expect((await mudar(member, anual())).body).toEqual({ error: "PreviaVencida" });
     expect(trocarAgora).not.toHaveBeenCalled();
     const nova = (await oferta(member)).body.troca;
-    expect(nova.hoje).toEqual({ centavos: MOSTRADO + 9, moeda: "brl" });
-    const res = await mudar(member, { plano: "anual", valorMostrado: nova.hoje.centavos, mostradoEm: nova.mostradoEm });
+    expect(nova.hoje).toEqual({ centavos: MOSTRADO + longe, moeda: "brl" });
+    const res = await mudar(member, { plano: "anual", valorMostrado: nova.hoje.centavos });
     expect([res.status, res.body]).toEqual([200, { estado: "trocado" }]);
-    expect(trocarAgora.mock.calls.map((chamada) => chamada[1])).toEqual([MOSTRADO + 9]);
+    expect(trocarAgora.mock.calls.map((chamada) => chamada[1])).toEqual([MOSTRADO + longe]);
   });
 
   it("a Stripe fora do ar ao refazer a conta: 500 — sem a conferência, nada é trocado", async () => {

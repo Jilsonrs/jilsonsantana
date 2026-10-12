@@ -190,13 +190,14 @@ export type RenovacaoParada = {
  * fazer AGORA — ou nenhuma (decisões do operador, 11/10/2026).
  *   - para o ANUAL vale na hora, e o ANO COMEÇA NO DIA DA TROCA: quanto se paga hoje (a conta é
  *     da Stripe: o anual inteiro, menos o que sobrou do mês pago) e quando é a cobrança
- *     seguinte. O VALOR MOSTRADO FICA VALENDO por `VALIDADE_DO_VALOR_MOSTRADO`: ao confirmar, o
- *     site devolve o valor e o instante da conta (`mostradoEm`), e a cobrança é EXATAMENTE a
- *     mostrada. Passado o prazo, o servidor não troca — a tela mostra o valor novo.
+ *     seguinte. O VALOR MOSTRADO É O COBRADO: ao confirmar, o site devolve o valor que mostrou
+ *     (`hoje.centavos`) e a cobrança sai EXATAMENTE nele, num clique só — mesmo que a pessoa
+ *     tenha demorado. Só se a conta de agora já estiver longe dele (a folga é do servidor) é
+ *     que o servidor não troca, e a tela mostra o valor novo.
  *   - para o MENSAL vale no fim do período já pago: quando, e quanto passa a custar por mês.
  */
 export type TrocaDePlano =
-  | { para: "anual"; quando: "agora"; preco: { centavos: number; moeda: string }; hoje: { centavos: number; moeda: string }; proximaEm: string | null; mostradoEm: number }
+  | { para: "anual"; quando: "agora"; preco: { centavos: number; moeda: string }; hoje: { centavos: number; moeda: string }; proximaEm: string | null }
   | { para: "mensal"; quando: "fim-do-periodo"; preco: { centavos: number; moeda: string }; em: string };
 export type TrocaDisponivel = { troca: TrocaDePlano | null };
 
@@ -220,13 +221,6 @@ export type TrocaDesfeita = {
    */
   plano?: Plano | null;
 };
-
-/**
- * Por quanto tempo vale o valor mostrado na tela de mudar de plano, em segundos (decisão do
- * operador, 11/10/2026: "se passar uns 10 minutos sem confirmar, explica que expirou"). Dentro
- * dele a cobrança é exatamente a mostrada; depois, a tela busca o valor de novo.
- */
-export const VALIDADE_DO_VALOR_MOSTRADO = 10 * 60;
 
 /** Resposta de `POST /api/billing/cartao`: o segredo com que o campo da Stripe guarda o cartão novo. */
 export type TrocaDeCartaoPreparada = { segredo: string };

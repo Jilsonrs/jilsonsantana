@@ -299,8 +299,8 @@ router.post("/billing/minha-assinatura/reembolso", requireAuth, async (req, res)
 
 // MUDAR DE PLANO (etapa 4.6, sessão b). Mensal → anual vale na hora, com o valor mostrado antes;
 // anual → mensal vale no fim do período já pago, e dá para desistir. O site diz PARA QUAL plano
-// e devolve o valor que mostrou e o instante da conta; preço e assinatura são do servidor, e o
-// valor só é cobrado depois de conferido lá (`lib/meu-plano.ts`).
+// e devolve o valor que mostrou; preço e assinatura são do servidor, e o valor só é cobrado
+// depois de conferido lá (`lib/meu-plano.ts`).
 
 // GET /api/billing/minha-assinatura/plano — a troca que esta conta pode fazer agora, já com a
 // conta da Stripe (quanto se paga hoje, ou quando a troca vale). Não muda nada.
@@ -341,7 +341,7 @@ router.post("/billing/minha-assinatura/plano", requireAuth, async (req, res) => 
     res.status(503).json({ error: "NaoConfigurado" });
     return;
   }
-  const mudanca = await mudarMeuPlano(user.id, { plano: corpo.plano, valorMostrado: corpo.valorMostrado, mostradoEm: corpo.mostradoEm });
+  const mudanca = await mudarMeuPlano(user.id, { plano: corpo.plano, valorMostrado: corpo.valorMostrado });
   if (mudanca.resultado === "desconhecida") registrarAssinaturaDesconhecida(user.id, "mudar de plano");
   if (mudanca.resultado !== "ok") {
     const [status, error] = RECUSAS[mudanca.resultado];

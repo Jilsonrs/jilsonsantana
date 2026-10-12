@@ -33,8 +33,8 @@ import { RITMO } from "@/lib/troca-de-plano";
 // A TELA DE MUDAR DE PLANO (Fase 4, etapa 4.6, sessão b). É COBRANÇA. O que estes testes protegem:
 //   - o valor e as datas na tela são os que o SERVIDOR mandou — a tela não calcula nada —, e o
 //     valor é mostrado ANTES do botão;
-//   - ao servidor vão só PARA QUAL plano, o valor que a tela MOSTROU e o instante dessa conta
-//     (ele confere os dois e cobra exatamente o mostrado): nunca um preço;
+//   - ao servidor vão só PARA QUAL plano e o valor que a tela MOSTROU (ele o confere e cobra
+//     exatamente o mostrado, num clique só): nunca um preço;
 //   - "seu plano agora é o Anual" só aparece quando o servidor disse que trocou (ou o banco
 //     confirmou); recusa, confirmação não concluída e falha têm cada uma a sua frase;
 //   - se a confirmação do banco não é concluída — por QUALQUER motivo —, a troca pendente é
@@ -63,7 +63,7 @@ const MENSAL: MinhaAssinatura = {
   trocaMarcada: null,
 };
 const ANUAL: MinhaAssinatura = { ...MENSAL, plano: "anual", preco: { centavos: 99500, moeda: "brl" }, proximaCobranca: { centavos: 99500, moeda: "brl", em: EM_UM_ANO } };
-const PARA_O_ANUAL: TrocaDisponivel = { troca: { para: "anual", quando: "agora", preco: { centavos: 99500, moeda: "brl" }, hoje: { centavos: 92840, moeda: "brl" }, proximaEm: EM_UM_ANO, mostradoEm: 1_800_000_500 } };
+const PARA_O_ANUAL: TrocaDisponivel = { troca: { para: "anual", quando: "agora", preco: { centavos: 99500, moeda: "brl" }, hoje: { centavos: 92840, moeda: "brl" }, proximaEm: EM_UM_ANO } };
 const PARA_O_MENSAL: TrocaDisponivel = { troca: { para: "mensal", quando: "fim-do-periodo", preco: { centavos: 9990, moeda: "brl" }, em: EM_UM_ANO } };
 const PLANOS: PlanosDaAssinatura = { chavePublicavel: "pk_test_da_tela", planos: [], formasDePagamento: ["card"] };
 const recusa = (error: string, status = 409) => Object.assign(new Error(error), { response: { status, data: { error } } });
@@ -146,17 +146,16 @@ describe("MudarDePlanoPage — do Mensal para o Anual, na hora", () => {
     expect(naTela()).toContain("Anual · R$ 995,00/ano");
     // R$ 928,40 é o que o servidor disse que se paga HOJE — não é o preço do anual, e a tela não o calcula.
     expect(naTela()).toContain("A troca vale na hora. Hoje você paga R$ 928,40, já descontado o que sobrou do mês que você pagou. A próxima cobrança é em 11/10/2027.");
-    // O valor fica congelado por 10 minutos, e a pessoa é avisada disso ANTES do botão.
-    const aviso = screen.getByText("Conclua em até 10 minutos, ou o valor poderá ser atualizado.");
-    expect(aviso.compareDocumentPosition(await paraOAnual()) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    // Sem prazo na tela (decisão do operador, 11/10/2026): o valor é cobrado como foi mostrado.
+    expect(naTela()).not.toContain("minutos");
   });
 
-  it("ao servidor vão só o plano, o valor que a tela MOSTROU e o instante da conta — e a tela diz que trocou quando ELE diz", async () => {
+  it("ao servidor vão só o plano e o valor que a tela MOSTROU — e a tela diz que trocou quando ELE diz, num clique só", async () => {
     abrir();
     fireEvent.click(await paraOAnual());
     expect((await screen.findByRole("status")).textContent).toBe("Pronto. Seu plano agora é o Anual.");
     // R$ 928,40: exatamente o "hoje você paga" que o servidor mandou e a pessoa leu.
-    expect(mudarDePlano.mock.calls).toEqual([[{ plano: "anual", valorMostrado: 92840, mostradoEm: 1_800_000_500 }]]);
+    expect(mudarDePlano.mock.calls).toEqual([[{ plano: "anual", valorMostrado: 92840 }]]);
     expect(screen.queryByRole("button", { name: "Mudar para o Anual" })).toBeNull();
     expect(screen.getByRole("link", { name: "Faturamento e Assinatura" }).getAttribute("href")).toBe("/aluno/conta/faturamento");
     expect(confirmarNoBanco).not.toHaveBeenCalled();
@@ -211,9 +210,9 @@ describe("MudarDePlanoPage — do Mensal para o Anual, na hora", () => {
     expect(screen.queryByText("Pronto. Seu plano agora é o Anual.")).toBeNull();
   });
 
-  it("o valor venceu com a tela aberta (10 minutos): a tela pede outra conta, avisa que o valor foi atualizado — e o novo clique manda o valor e o instante NOVOS", async () => {
+  it("o caso raro — o servidor diz que o valor já não confere (a tela aberta por muitas horas): a tela pede outra conta, avisa que o valor foi atualizado — e o novo clique manda o valor NOVO", async () => {
     mudarDePlano.mockRejectedValueOnce(recusa("PreviaVencida"));
-    getTrocaDePlano.mockResolvedValueOnce(PARA_O_ANUAL).mockResolvedValue({ troca: { para: "anual", quando: "agora", preco: { centavos: 99500, moeda: "brl" }, hoje: { centavos: 92950, moeda: "brl" }, proximaEm: EM_UM_ANO, mostradoEm: 1_800_002_400 } });
+    getTrocaDePlano.mockResolvedValueOnce(PARA_O_ANUAL).mockResolvedValue({ troca: { para: "anual", quando: "agora", preco: { centavos: 99500, moeda: "brl" }, hoje: { centavos: 92950, moeda: "brl" }, proximaEm: EM_UM_ANO } });
     abrir();
     fireEvent.click(await paraOAnual());
     expect(await screen.findByText("Este valor foi atualizado. Confira e clique para concluir.")).toBeTruthy();
@@ -221,7 +220,7 @@ describe("MudarDePlanoPage — do Mensal para o Anual, na hora", () => {
     expect(screen.queryByRole("alert")).toBeNull();
     fireEvent.click(await paraOAnual());
     await screen.findByText("Pronto. Seu plano agora é o Anual.");
-    expect(mudarDePlano.mock.calls).toEqual([[{ plano: "anual", valorMostrado: 92840, mostradoEm: 1_800_000_500 }], [{ plano: "anual", valorMostrado: 92950, mostradoEm: 1_800_002_400 }]]);
+    expect(mudarDePlano.mock.calls).toEqual([[{ plano: "anual", valorMostrado: 92840 }], [{ plano: "anual", valorMostrado: 92950 }]]);
   });
 });
 
@@ -371,8 +370,6 @@ describe("MudarDePlanoPage — do Anual para o Mensal, no fim do ano pago", () =
     expect(naTela()).toContain("A troca vale em 11/10/2027, quando termina o ano que você já pagou. Até lá nada muda e nada é cobrado. Depois, R$ 99,90 por mês.");
     // A chave do Stripe.js só é pedida para a troca que cobra na hora.
     expect(getPlanosDaAssinatura).not.toHaveBeenCalled();
-    // E o prazo do valor também: a troca marcada não cobra nada agora, não há valor a vencer.
-    expect(naTela()).not.toContain("10 minutos");
   });
 
   it("ao servidor vai só o plano; e a tela diz para quando a troca ficou marcada", async () => {
@@ -432,7 +429,6 @@ describe("MudarDePlanoPage — em inglês", () => {
     expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Change plan");
     expect(naTela()).toContain("Your current plan");
     expect(naTela()).toContain("Your next charge is on Oct 11, 2027.");
-    expect(naTela()).toContain("Complete within 10 minutes, or the amount may be updated.");
     for (const portugues of ["Mudar", "troca", "plano atual", "cobrança"]) expect(naTela(), portugues).not.toContain(portugues);
     fireEvent.click(botao);
     expect((await screen.findByRole("status")).textContent).toBe("Done. You're now on the Yearly plan.");

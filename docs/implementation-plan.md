@@ -4786,6 +4786,25 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       operação pode estourar — o pedido falha e nada é cobrado em dobro (as duas travas acima).
       `CLAUDE.md`: a trava "o site nunca escolhe valor" aponta a exceção, e a decisão ganhou a
       entrada (25) do changelog, com gatilho de reabertura; a (22) desceu para o arquivo.
+      **TESTE DO OPERADOR NO NAVEGADOR, PARTE 2 — FEITO (11/10/2026)**, com cartão de teste e a
+      janela do banco de verdade abrindo pela primeira vez num navegador (14 telas): reativar
+      com o cartão que pede confirmação · mudar para o Anual a R$ 895,11 — "Fail" no banco
+      ("nada foi cobrado"), depois "Complete" ("seu plano agora é o Anual") · o resumo com a
+      cobrança seguinte em um ano · cancelar com as duas saídas, o reembolso de R$ 995,01 (os
+      R$ 99,90 mais os R$ 895,11: o cobrado foi exatamente o mostrado) · parar a renovação e
+      manter · a aula trancada com "Reativar assinatura", e ele ainda logado. Tudo como esperado.
+      **Duas mudanças pedidas por ele depois do teste, feitas:** (1) sai da tela o aviso "Conclua
+      em até 10 minutos…" (*"ninguém demora 10 minutos para decidir"*); (2) a troca acontece NUM
+      CLIQUE SÓ mesmo depois de a pessoa demorar (*"tem que acontecer num passo só […] sem uma
+      segunda confirmação do aluno"*). Para isso o prazo de 10 minutos saiu (`mostradoEm`,
+      `ofertaAindaVale`, `VALIDADE_DO_VALOR_MOSTRADO`): a cobrança continua saindo no valor
+      mostrado, e a única conferência é a folga, que passou de 5 centavos para R$ 1,00
+      (`FOLGA_DO_VALOR_MOSTRADO` — **número escolhido pelo agente, a confirmar: pendência P77**).
+      Só fora dela a tela busca o valor de novo e pede o segundo clique. O prazo nunca foi a
+      proteção contra valor forjado (a terceira revisão já dizia: o instante vem do navegador;
+      quem segura é a conferência do valor). Testes reescritos; mutação 2 de 2; gates abaixo.
+      **Achado do teste, só relatado:** depois de pagar pela tela "Reativar assinatura", a
+      confirmação aparece com o título "Assinar".
       **Para a parte 2 do teste:** a assinatura de cortesia do `member@` do computador foi
       encerrada a pedido do operador (11/10/2026). `[FATO — medido]` encerrar uma assinatura de
       100% direto deixa o período inteiro como "pago" (um ano de acesso, no anual); para a

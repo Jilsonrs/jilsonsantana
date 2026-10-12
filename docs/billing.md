@@ -666,20 +666,23 @@ Stripe guardou o cartão de teste e o resumo passou a mostrá-lo:
   pessoa paga o anual inteiro, menos o que sobrou do mês já pago, e a cobrança seguinte vem um
   ano depois. *Reabre se os números mostrarem que o valor cheio na hora afasta quem trocaria
   de plano — aí a conta proporcional até o aniversário da assinatura volta a ser opção.*
-  **O valor mostrado fica CONGELADO por 10 minutos, e é exatamente ele que se cobra** *(decisão
-  do operador, 11/10/2026: "prefiro perder 1 centavo a cobrar a mais do que foi mostrado […]
-  cobra o que mostrou pela primeira vez; se passar uns 10 minutos sem confirmar, explica que
-  expirou")*. O que sobra do mês diminui com o tempo, e a escola abre mão desses centavos.
-  A tela avisa antes, logo abaixo do valor: "Conclua em até 10 minutos, ou o valor poderá ser
-  atualizado." *(textos do operador, 11/10/2026)*.
-  Passados os 10 minutos, o servidor não troca: a tela busca o valor de novo e mostra "Este valor
-  foi atualizado. Confira e clique para concluir.". *Reabre se a escola passar a vender um plano
-  mensal bem mais caro (os centavos por minuto crescem com o preço) ou se ligar imposto na
-  fatura (etapa 4.8) — nos dois casos, rever a folga e a conta do crédito.*
-  **Como o valor e o instante vêm do navegador, o servidor confere os dois:** o instante tem
-  que ser recente, e o valor tem que estar no máximo 5 centavos ABAIXO da conta refeita na
-  hora, com a trava (`FOLGA_DO_VALOR_MOSTRADO`) — nunca acima. Um valor inventado não é
-  cobrado; o máximo que alguém tira da escola mentindo são esses 5 centavos.
+  **O valor mostrado é exatamente o que se cobra, num clique só** *(decisões do operador,
+  11/10/2026: "prefiro perder 1 centavo a cobrar a mais do que foi mostrado" e, depois de
+  testar no navegador, "tem que acontecer num passo só […] sem uma segunda confirmação do
+  aluno")*. O que sobra do mês diminui com o tempo, e a escola abre mão da diferença: quem
+  demora na tela paga o que leu, sem aviso e sem segundo clique. *O prazo de 10 minutos e o
+  aviso dele na tela, decididos mais cedo no mesmo dia, saíram depois do teste: "ninguém demora
+  10 minutos para decidir".*
+  **Como o valor vem do navegador, o servidor o confere:** tem que estar no máximo R$ 1,00
+  ABAIXO da conta refeita na hora, com a trava (`FOLGA_DO_VALOR_MOSTRADO`) — nunca acima. Um
+  valor inventado não é cobrado; o máximo que alguém tira da escola mentindo é essa folga.
+  *O R$ 1,00 foi escolhido pelo agente e espera a confirmação do operador (pendência P77):
+  cobre a tela aberta por umas 7 horas.* Só fora da folga (a tela aberta por muitas horas, o
+  mês que virou, o preço que mudou) a troca não acontece: a tela busca o valor de novo e mostra
+  "Este valor foi atualizado. Confira e clique para concluir." *(texto do operador)*.
+  *Reabre se a escola passar a vender um plano mensal bem mais caro (os centavos por hora
+  crescem com o preço) ou se ligar imposto na fatura (etapa 4.8) — nos dois casos, rever a
+  folga e a conta do crédito.*
   **Anual → mensal é só marcado** para o fim do período pago (um agendamento com duas fases, que
   leva o desconto junto): até lá nada muda nem é cobrado, e desistir solta o agendamento.
   **Cartão recusado:** a fatura da troca é anulada na hora — nada fica para ser cobrado depois.
