@@ -3915,8 +3915,8 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       na `main`; conferido no ar como visitante — as seis rotas novas respondem 401 sem login, e
       o pedido vindo de outro site, 403. Sem migration.
       **A P69 foi resolvida por ele em 12/10/2026** (os avisos de devolução no endereço de avisos
-      da conta de verdade: 7 avisos). **Continua com o operador:** a **P71** (a chave de produção
-      e o Sentry) — ele mandou publicar com as duas em aberto. *Sintoma se a P71 estiver errada:* os avisos da Stripe
+      da conta de verdade: 7 avisos), **e a P71 também** (a chave de produção é a comum,
+      `sk_live_`, e a `SENTRY_DSN` está preenchida) — as duas estavam em aberto na publicação. *Sintoma se a P71 estiver errada:* os avisos da Stripe
       passam a falhar no painel dela, e Faturamento e Assinatura diz "não foi possível
       carregar". Hoje só ele assina no site no ar. O histórico da sessão segue abaixo.
       **Teste do operador no navegador, parte 1 — FEITO (11/10/2026)**, com a assinatura de

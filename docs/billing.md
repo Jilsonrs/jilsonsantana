@@ -795,9 +795,11 @@ encerrada de vez com dias pagos: tem acesso e o servidor recusa cartão.
   dado direto no painel cortar o acesso, acerta o espelho quando a sincronia do reembolso pela
   tela falha, e avisa da devolução que o banco rejeita dias depois. *Se um aviso novo passar a
   ser tratado no código, ele tem que ser incluído nesse endereço também.*
-- **A chave da Stripe em produção precisa ler pagamentos:** toda sincronia passou a ler a
-  cobrança da última fatura. Se a chave for restrita e não puder, todo aviso responde erro e o
-  espelho para de ser gravado (pendência P71).
+- **A chave da Stripe em produção lê tudo o que a sincronia precisa** *(P71, respondida pelo
+  operador em 12/10/2026)*: a chave que está na Railway é a comum (`sk_live_`), e não uma
+  restrita — pagamentos, faturas, devoluções e agendamentos. E a `SENTRY_DSN` está preenchida:
+  os alertas de cobrança chegam por e-mail. *Se um dia a chave for trocada por uma restrita
+  (`rk_live_`), ela precisa dessas quatro leituras — sem elas todo aviso da Stripe responde erro.*
 - **Fechar a aba depois de o campo confirmar e antes do último passo:** o cartão fica guardado no
   cliente e não vai para a assinatura; a pessoa repete a troca.
 - **A Stripe já encerrou a assinatura e o espelho ainda não soube:** o resumo diz "terminou" e
