@@ -1599,6 +1599,29 @@ button {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 24px;
+  width: 100%;
+}
+
+.testimonials-grid.count-1 {
+  grid-template-columns: 1fr;
+  max-width: 620px;
+  margin: 0 auto;
+}
+
+.testimonials-grid.count-2 {
+  grid-template-columns: repeat(2, 1fr);
+  max-width: 880px;
+  margin: 0 auto;
+}
+
+.testimonials-grid.count-3 {
+  grid-template-columns: repeat(3, 1fr);
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.testimonials-grid.count-4 {
+  grid-template-columns: repeat(4, 1fr);
 }
 
 .test-card {
@@ -1609,26 +1632,50 @@ button {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+@media (hover: hover) {
+  .test-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.06);
+    border-color: rgba(35, 143, 232, 0.35);
+  }
+}
+
+.test-stars {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  color: #F59E0B;
 }
 
 .test-card p {
-  font-size: 1rem;
+  font-size: 0.975rem;
   flex-grow: 1;
-  color: var(--text-muted);
-  line-height: 1.6;
+  color: var(--text-color);
+  line-height: 1.65;
   margin: 0;
+}
+
+.testimonials-grid.count-1 .test-card p {
+  font-size: 1.05rem;
+  line-height: 1.7;
 }
 
 .test-author-box {
   display: flex;
-  gap: 16px;
+  gap: 14px;
   align-items: center;
-  margin-top: 16px;
+  margin-top: 8px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border-fine);
 }
 
 .test-avatar {
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   background: #e2e8f0;
   /* placeholder cinza enquanto aluno não coloca foto */
@@ -1638,6 +1685,7 @@ button {
   align-items: center;
   justify-content: center;
   color: #94a3b8;
+  box-shadow: 0 1px 4px rgba(35, 143, 232, 0.12);
 }
 
 .test-avatar svg {
@@ -1648,11 +1696,12 @@ button {
 .test-author {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
 }
 
 .test-author h4 {
   font-size: 0.95rem;
+  font-weight: 600;
   margin: 0;
   color: var(--text-main);
 }
@@ -1948,8 +1997,14 @@ details p {
     grid-template-columns: 1fr;
   }
 
-  .testimonials-grid {
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  .testimonials-grid.count-4 {
+    grid-template-columns: repeat(2, 1fr);
+    max-width: 860px;
+    margin: 0 auto;
+  }
+
+  .testimonials-grid.count-3 {
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   }
 
   .nav-container {
@@ -2166,5 +2221,51 @@ details p {
 
   .step-card {
     padding: 40px 0;
+  }
+
+  /* Depoimentos Mobile — Carrossel por toque com CSS scroll-snap nativo (sem JS) */
+
+  .testimonials-grid {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    gap: 16px;
+    padding-top: 8px;
+    padding-bottom: 20px;
+    padding-left: 24px;
+    padding-right: 24px;
+    margin-left: -24px;
+    margin-right: -24px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .testimonials-grid::-webkit-scrollbar {
+    display: none;
+  }
+
+  .testimonials-grid .test-card {
+    flex: 0 0 84%;
+    max-width: 340px;
+    min-width: 260px;
+    scroll-snap-align: center;
+    scroll-snap-stop: always;
+    padding: 24px;
+  }
+
+  .testimonials-grid.count-1 {
+    display: flex;
+    justify-content: center;
+    overflow-x: visible;
+    padding-left: 0;
+    padding-right: 0;
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  .testimonials-grid.count-1 .test-card {
+    flex: 1 1 100%;
+    max-width: 100%;
   }
 }
