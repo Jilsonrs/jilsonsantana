@@ -608,7 +608,7 @@ ${testimonials.length > 0 ? `    <section class="section container">
         <h2>${escapeHtml(dict.home.testimonials.title)}</h2>
       </div>
 
-      <div class="testimonials-grid">
+      <div class="testimonials-grid count-${testimonials.length}">
 ${testimonials.map((t) => `        <div class="test-card">
           <p>${escapeHtml(t.text)}</p>
           <div class="test-author-box">
