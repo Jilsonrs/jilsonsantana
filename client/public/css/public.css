@@ -1644,13 +1644,6 @@ button {
   }
 }
 
-.test-stars {
-  display: flex;
-  align-items: center;
-  gap: 3px;
-  color: #F59E0B;
-}
-
 .test-card p {
   font-size: 0.975rem;
   flex-grow: 1;
