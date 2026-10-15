@@ -56,9 +56,9 @@ export function CourseDetails({ curso }: { curso: PaginaDaAula["curso"] }) {
       {curso.learnTags.length > 0 && (
         <section className="space-y-5">
           <h3 className="font-display text-[1.4rem] font-bold tracking-tight text-foreground">{t.curso.aprender}</h3>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2.5">
             {curso.learnTags.map((tag) => (
-              <Badge key={tag} variant="secondary" className="rounded-md px-3.5 py-1.5 font-medium text-sm text-foreground bg-muted/60 hover:bg-muted">
+              <Badge key={tag} variant="secondary" className="rounded-lg px-4 py-2 font-medium text-[0.95rem] sm:text-base text-foreground bg-muted/60 hover:bg-muted transition-colors">
                 {tag}
               </Badge>
             ))}
@@ -77,10 +77,14 @@ export function CourseDetails({ curso }: { curso: PaginaDaAula["curso"] }) {
             <h2 id="sobre-o-curso" className="font-display text-[1.4rem] font-bold tracking-tight text-foreground">
               {t.aula.sobreOCurso}
             </h2>
-            <div className="flex flex-wrap items-center gap-2 sm:gap-3 pt-1">
-              {curso.level && <Badge variant="secondary" className="rounded-full font-medium">{t.niveis[curso.level]}</Badge>}
+            <div className="flex flex-wrap items-center gap-2.5 sm:gap-3.5 pt-1">
+              {curso.level && (
+                <Badge variant="secondary" className="rounded-full px-3.5 py-1 text-sm sm:text-[0.925rem] font-semibold text-foreground bg-muted/80">
+                  {t.niveis[curso.level]}
+                </Badge>
+              )}
               {(moduleCount > 0 || lessonCount > 0) && (
-                <span className="font-mono text-xs sm:text-sm font-medium tracking-wide text-muted-foreground">
+                <span className="font-mono text-sm sm:text-[0.95rem] font-medium tracking-wide text-muted-foreground">
                   {contagem(moduleCount, t.curso.modulo, t.curso.modulos)} · {contagem(lessonCount, t.curso.aula, t.curso.aulas)} · {horasEMinutos(curso.videoSeconds)}
                 </span>
               )}
