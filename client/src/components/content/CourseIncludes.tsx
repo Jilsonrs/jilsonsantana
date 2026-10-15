@@ -48,12 +48,12 @@ export function CourseIncludes({
   linhas.push({ chave: "certificado", Icone: Trophy, texto: t.certificado });
   return (
     <section className="rounded-2xl border border-border/40 bg-card p-6 shadow-sm">
-      <h2 className="text-lg font-semibold">{t.titulo}</h2>
+      <h2 className="font-display text-[1.4rem] font-bold tracking-tight text-foreground">{t.titulo}</h2>
       <ul className="mt-4 space-y-3">
         {linhas.map(({ chave, Icone, texto }) => (
-          <li key={chave} className="flex items-center gap-3 text-sm text-foreground">
-            <Icone className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-            {texto}
+          <li key={chave} className="flex items-center gap-3 text-[0.95rem] leading-relaxed text-foreground">
+            <Icone className="size-4.5 shrink-0 text-primary" aria-hidden="true" />
+            <span>{texto}</span>
           </li>
         ))}
       </ul>
