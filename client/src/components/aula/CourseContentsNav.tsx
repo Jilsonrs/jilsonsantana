@@ -61,11 +61,13 @@ function AulaDaLista({
             <Icone className="size-3.5" />
           </div>
           <span className="sr-only">{aula.kind === LessonKind.TEXT ? t.aula.aulaDeTexto : t.aula.aulaDeVideo}:</span>
-          <span className="flex flex-1 flex-col gap-0.5">
-            <span className="leading-snug">{aula.title}</span>
-            {/* A duração do vídeo, como no LinkedIn (operador, 06/10/2026); texto não tem. */}
+          <span className="flex-1 leading-snug">
+            <span>{aula.title}</span>
+            {/* A duração do vídeo ao lado do título (economiza 1 linha); texto não tem. */}
             {typeof aula.duracaoSegundos === "number" && (
-              <span className="text-xs font-normal text-muted-foreground">{minutosESegundos(aula.duracaoSegundos)}</span>
+              <span className="ml-1.5 text-xs font-normal text-muted-foreground whitespace-nowrap">
+                - {minutosESegundos(aula.duracaoSegundos)}
+              </span>
             )}
           </span>
           {/* A aula concluída (Fase 5, 03/10/2026); o leitor de tela ouve "Concluída". */}
