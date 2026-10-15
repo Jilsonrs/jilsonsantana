@@ -43,7 +43,11 @@ export function CourseDetailPage() {
     <PageContainer>
       <div className="space-y-12">
         <header className="space-y-4 border-b border-border/40 pb-8">
-          {course.level && <Badge variant="secondary" className="px-3 py-1">{t.niveis[course.level]}</Badge>}
+          {course.level && (
+            <Badge variant="secondary" className="rounded-full px-3.5 py-1 text-sm sm:text-[0.925rem] font-semibold text-foreground bg-muted/80">
+              {t.niveis[course.level]}
+            </Badge>
+          )}
           <h1 className="text-4xl font-bold tracking-tight text-foreground">{course.title}</h1>
           {course.subtitle && <p className="text-xl text-muted-foreground max-w-[80ch]">{course.subtitle}</p>}
           <p className="text-sm font-medium text-muted-foreground pt-2">
@@ -108,9 +112,9 @@ export function CourseDetailPage() {
             {course.learnTags.length > 0 && (
               <section className="rounded-2xl border border-border/40 bg-card p-6 shadow-sm">
                 <h2 className="text-lg font-semibold">{t.curso.aprender}</h2>
-                <div className="mt-4 flex flex-wrap gap-2">
+                <div className="mt-4 flex flex-wrap gap-2.5">
                   {course.learnTags.map((tag) => (
-                    <Badge key={tag} variant="secondary">
+                    <Badge key={tag} variant="secondary" className="rounded-lg px-3.5 py-1.5 font-medium text-[0.95rem] text-foreground bg-muted/60 hover:bg-muted transition-colors">
                       {tag}
                     </Badge>
                   ))}
