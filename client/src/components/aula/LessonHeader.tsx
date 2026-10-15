@@ -91,7 +91,7 @@ export function LessonHeader({
             {/* O quanto do curso já foi, como no cartão (operador, 06/10/2026): o
                 mesmo número da barra embaixo. Só para quem está logado. */}
             {logado && (
-              <span className="shrink-0 rounded-full border border-border/50 bg-muted/40 px-2 py-0.5 text-[0.7rem] sm:text-xs font-semibold text-muted-foreground">
+              <span className="inline-flex shrink-0 items-center rounded-full border border-border/50 bg-muted/40 px-2.5 py-0.5 text-xs sm:text-sm font-medium text-muted-foreground">
                 {porcentagem}% {t.curso.concluido}
               </span>
             )}
