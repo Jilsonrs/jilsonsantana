@@ -62,11 +62,11 @@ function AulaDaLista({
           </div>
           <span className="sr-only">{aula.kind === LessonKind.TEXT ? t.aula.aulaDeTexto : t.aula.aulaDeVideo}:</span>
           <span className="flex-1 leading-snug">
-            <span>{aula.title}</span>
-            {/* A duração do vídeo ao lado do título (economiza 1 linha); texto não tem. */}
+            {aula.title}
+            {/* A duração do vídeo ao lado do título com exatamente 1 espaço antes do hífen */}
             {typeof aula.duracaoSegundos === "number" && (
-              <span className="ml-1.5 text-xs font-normal text-muted-foreground whitespace-nowrap">
-                - {minutosESegundos(aula.duracaoSegundos)}
+              <span className="text-xs font-normal text-muted-foreground whitespace-nowrap">
+                {" "}- {minutosESegundos(aula.duracaoSegundos)}
               </span>
             )}
           </span>
