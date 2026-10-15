@@ -24,8 +24,8 @@ function Lista({ titulo, itens, icon: Icon }: { titulo: string; itens: string[];
         <h3 className="font-display text-[1.4rem] font-bold tracking-tight text-foreground mb-6">{titulo}</h3>
         <ul className="space-y-4">
           {itens.map((item) => (
-            <li key={item} className="flex items-start gap-3 text-[0.95rem] leading-relaxed text-muted-foreground">
-              <span className="mt-2 flex size-1.5 shrink-0 rounded-full bg-primary/40" />
+            <li key={item} className="flex items-start gap-3 text-base leading-relaxed text-foreground">
+              <span className="mt-2.5 flex size-2 shrink-0 rounded-full bg-primary" />
               <span>{item}</span>
             </li>
           ))}
@@ -58,7 +58,7 @@ export function CourseDetails({ curso }: { curso: PaginaDaAula["curso"] }) {
           <h3 className="font-display text-[1.4rem] font-bold tracking-tight text-foreground">{t.curso.aprender}</h3>
           <div className="flex flex-wrap gap-2">
             {curso.learnTags.map((tag) => (
-              <Badge key={tag} variant="secondary" className="rounded-md px-3 py-1 font-normal text-sm bg-muted/50 hover:bg-muted">
+              <Badge key={tag} variant="secondary" className="rounded-md px-3.5 py-1.5 font-medium text-sm text-foreground bg-muted/60 hover:bg-muted">
                 {tag}
               </Badge>
             ))}
@@ -80,7 +80,7 @@ export function CourseDetails({ curso }: { curso: PaginaDaAula["curso"] }) {
             <div className="flex flex-wrap items-center gap-2 sm:gap-3 pt-1">
               {curso.level && <Badge variant="secondary" className="rounded-full font-medium">{t.niveis[curso.level]}</Badge>}
               {(moduleCount > 0 || lessonCount > 0) && (
-                <span className="font-mono text-xs font-medium tracking-wide text-muted-foreground">
+                <span className="font-mono text-xs sm:text-sm font-medium tracking-wide text-muted-foreground">
                   {contagem(moduleCount, t.curso.modulo, t.curso.modulos)} · {contagem(lessonCount, t.curso.aula, t.curso.aulas)} · {horasEMinutos(curso.videoSeconds)}
                 </span>
               )}
@@ -89,7 +89,7 @@ export function CourseDetails({ curso }: { curso: PaginaDaAula["curso"] }) {
 
           {curso.description && (
             <Suspense fallback={null}>
-              <MarkdownText texto={curso.description} className="text-base leading-relaxed" />
+              <MarkdownText texto={curso.description} className="text-base leading-relaxed text-foreground" />
             </Suspense>
           )}
         </div>
@@ -110,13 +110,17 @@ export function CourseDetails({ curso }: { curso: PaginaDaAula["curso"] }) {
       </div>
 
       {perguntas.length > 0 && (
-        <section className="space-y-6">
+        <section className="space-y-6 pt-4">
           <h3 className="font-display text-[1.4rem] font-bold tracking-tight text-foreground">{t.curso.faq}</h3>
-          <Accordion type="multiple" className="rounded-xl border border-border/40 bg-card px-4">
+          <Accordion type="multiple" className="rounded-2xl border border-border/40 bg-card px-5 sm:px-6">
             {perguntas.map((item, i) => (
-              <AccordionItem key={i} value={String(i)} className="border-border/40 last:border-0">
-                <AccordionTrigger className="text-left font-medium hover:no-underline hover:text-primary transition-colors">{item.pergunta}</AccordionTrigger>
-                <AccordionContent className="text-muted-foreground leading-relaxed">{item.resposta}</AccordionContent>
+              <AccordionItem key={i} value={String(i)} className="border-border/40 last:border-0 py-1">
+                <AccordionTrigger className="text-left text-base sm:text-[1.1rem] font-semibold text-foreground hover:no-underline hover:text-primary transition-colors py-4 sm:py-5 leading-snug">
+                  {item.pergunta}
+                </AccordionTrigger>
+                <AccordionContent className="text-[0.975rem] sm:text-base leading-relaxed text-foreground/90 pb-5 pt-0">
+                  {item.resposta}
+                </AccordionContent>
               </AccordionItem>
             ))}
           </Accordion>

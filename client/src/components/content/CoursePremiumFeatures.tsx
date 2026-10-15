@@ -30,7 +30,7 @@ export function CourseHighlights({ destaques }: { destaques: PaginaDaAula["curso
             </div>
             <div className="space-y-2">
               <h4 className="font-display text-[1.15rem] font-bold tracking-tight text-foreground">{h.title}</h4>
-              <p className="text-[0.95rem] leading-relaxed text-muted-foreground">{h.text}</p>
+              <p className="text-[0.975rem] leading-relaxed text-foreground">{h.text}</p>
             </div>
           </div>
         );
@@ -72,7 +72,7 @@ export function CourseLayers({ camadas = [] }: { camadas: Layer[] }) {
               </div>
               <div className="space-y-1 pt-1">
                 <p className="font-display text-[1rem] font-bold tracking-tight text-foreground">{textos.camadas[layer].nome}</p>
-                <p className="text-sm leading-relaxed text-muted-foreground">{textos.camadas[layer].texto}</p>
+                <p className="text-[0.925rem] leading-relaxed text-foreground">{textos.camadas[layer].texto}</p>
               </div>
             </div>
           );
