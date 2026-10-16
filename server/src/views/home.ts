@@ -135,7 +135,7 @@ export function renderHome({
 <!-- 0. Header / Nav -->
   <nav class="navbar" aria-label="${escapeHtml(dict.common.a11y.mainNav)}">
     <div class="nav-container container">
-      <div class="nav-logo" aria-label="Jilson Santana"><span>#</span>Jilson Santana</div>
+      <div class="nav-logo" aria-label="Jilson Santana"><img src="/img/Logomarca.png" alt="Jilson Santana"></div>
       <div class="nav-links">
         <a href="#cursos">${escapeHtml(dict.common.nav.cursos)}</a>
         <a href="#trilhas">${escapeHtml(dict.common.nav.trilhas)}</a>
@@ -689,7 +689,7 @@ ${faq.map((item) => `        <details>
   <footer class="site-footer">
     <div class="footer-inner">
       <div class="footer-top">
-        <div class="nav-logo"><span>#</span>Jilson Santana</div>
+        <div class="nav-logo"><img src="/img/Logomarca.png" alt="Jilson Santana"></div>
         <div class="footer-links">
           <a href="${rotas.cursos}">${escapeHtml(dict.common.footer.links[0])}</a>
           <a href="${rotas.trilhas}">${escapeHtml(dict.common.footer.links[1])}</a>
