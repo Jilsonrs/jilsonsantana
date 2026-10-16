@@ -58,7 +58,11 @@ export function CourseDetails({ curso }: { curso: PaginaDaAula["curso"] }) {
           <h3 className="font-display text-[1.4rem] font-bold tracking-tight text-foreground">{t.curso.aprender}</h3>
           <div className="flex flex-wrap gap-2.5">
             {curso.learnTags.map((tag) => (
-              <Badge key={tag} variant="secondary" className="rounded-lg px-4 py-2 font-medium text-[0.95rem] sm:text-base text-foreground bg-muted/60 hover:bg-muted transition-colors">
+              <Badge
+                key={tag}
+                variant="secondary"
+                className="relative overflow-hidden rounded-[10px] border border-black/[0.08] bg-white px-[18px] py-[9px] font-medium text-[0.95rem] sm:text-[0.96rem] text-foreground shadow-[0_1px_2px_rgba(0,0,0,0.03)] transition-all duration-200 cursor-default hover:-translate-y-[1px] hover:bg-gradient-to-br hover:from-white hover:to-[#F0F7FF] hover:shadow-[0_6px_20px_-4px_rgba(35,143,232,0.22)] before:pointer-events-none before:absolute before:top-0 before:right-0 before:bottom-0 before:left-0 before:-translate-x-full before:bg-[linear-gradient(110deg,transparent_20%,rgba(35,143,232,0.09)_50%,transparent_80%)] before:transition-transform before:duration-500 hover:before:translate-x-full"
+              >
                 {tag}
               </Badge>
             ))}
