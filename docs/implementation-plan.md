@@ -205,6 +205,16 @@
 > (aula concluída sozinha, barra na aula e no cartão), o vídeo que não recomeça ao trocar de aba
 > (a apresentação abre pausada, a aula toca sozinha) e o "Salvos". **Primeiro teste com o player de
 > verdade: com o operador** (assistir uma aula até perto do fim e ver a barra andar).
+> **PUBLICADO em 18/10/2026 (`main` = `80c4478`, CI verde nos dois jobs, deploy ok às 20:32;
+> sem migration; ordem do operador: "sim pode publicar em duas etapas"):** o **passo 5a da etapa
+> 4.6c** — o login deixou de usar a preferência de idioma da conta; a coluna ficou no banco para
+> o 5b. **Provado no site, de fora:** a versão nova (`mvea5i2y-3a00b6df`; antes,
+> `mvars26z-d04be514`); catálogo, trilhas, textos comuns e sessão → 200; a assinatura sem login →
+> 401; o login com um e-mail que não existe → 401 (antes e depois — sem erro de servidor); o
+> público segue no "Em breve". *O site responde em `www.jilsonsantana.com`; o endereço sem `www`
+> devolve 404 e não é o da Railway.* **Para saber quando uma publicação só de servidor terminou:**
+> a Railway registra cada uma no GitHub (`gh api repos/{owner}/{repo}/deployments`, e os
+> `statuses` de cada uma: `success` ou `failure`).
 > **PUBLICADO em 12/10/2026, por último (`main` = `011f53a`, CI verde nos dois jobs, deploy ok; a
 > migration `20261012190000_sai_o_idioma` aplicada pelo pre-deploy; publicado pelo Antigravity,
 > por ordem do operador, depois de ele conferir no banco do site que não havia curso, trilha nem
