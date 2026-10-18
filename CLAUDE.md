@@ -558,8 +558,7 @@ qualquer template em `server/src/views/**` → ler aquela seção.
 
 **As travas que produzem um diff ERRADO se ignoradas:**
 - **Nada nasce em inglês.** Nenhum texto, rota, campo, e-mail ou teste em inglês. Não existe `/en`, seletor de idioma, `hreflang` nem dicionário em inglês.
-- **O banco não tem idioma** (desde o passo 4 da etapa 4.6c): nenhuma tabela tem coluna `language`, e o tipo `Language` não existe. **Não recrie** — nem "só um campo", nem como costura para o futuro. O que uma versão antiga do site ainda mande (`language` no corpo, `?lang=` no endereço) é **ignorado, nunca recusado** — há teste (`server/src/test/idioma-saiu.test.ts`).
-- **`user.preferredLanguage` é a única sobra, e só no banco:** saiu do código (Better Auth e `schema.prisma`) no passo 5a; a coluna sai no 5b, na publicação seguinte. Não leia, não grave, não devolva ao `schema.prisma`.
+- **O banco não tem idioma** (desde os passos 4 e 5b da etapa 4.6c): nenhuma tabela tem coluna de idioma — nem a conta, que perdeu o `preferredLanguage` —, e o tipo `Language` não existe. **Não recrie** — nem "só um campo", nem como costura para o futuro. O que uma versão antiga do site ainda mande (`language` no corpo, `?lang=` no endereço) é **ignorado, nunca recusado** — há teste (`server/src/test/idioma-saiu.test.ts`).
 - **O texto continua saindo do dicionário** — `core/src/i18n/pt.ts`, por `getDict()` no servidor e `useT()` no app. Um idioma só não é licença para cravar texto na tela: é pelo dicionário que o operador edita (Admin → Textos) e revisa. As travas estão em *Rendering Boundary* e em *Key Conventions → Client*.
 - **A escola cobra só em reais e não vende para fora** (*Membership Gating*): a tela de assinar não tem campo País, e o CPF ou CNPJ é obrigatório.
 - **Gatilho de reabertura:** só por decisão dele, com dado novo — o Stripe Tax ou o Managed Payments aceitarem empresa do Brasil, ou a empresa mudar de país. Voltar ao inglês é projeto novo, não "religar".

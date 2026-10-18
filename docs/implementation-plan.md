@@ -4269,7 +4269,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             (c) **não tem volta pela Railway:** depois da migration, a versão anterior do site
             não funciona mais, e as linhas apagadas só voltam pela janela curta de restauração
             do Neon.
-      - [ ] **Passo 5 — A preferência de idioma sai da conta (Better Auth; revisão de
+      - [x] **Passo 5 — A preferência de idioma sai da conta (Better Auth; revisão de
             segurança).** Tirar `preferredLanguage` dos campos extras em `lib/auth.ts`, rodar
             `auth:generate`, conferir o diff e reaplicar as notas *REAPLICAR*, e a migration que
             tira a coluna. Passo 0: o admin e o aluno de teste entram antes e depois. context7
@@ -4298,9 +4298,9 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                   quatro gates verdes. `Docs check (context7): Better Auth →
                   /better-auth/better-auth → additionalFields e o generate (a doc não diz se ele
                   apaga campo; medido).`
-            - [ ] **5b — o banco perde a coluna** (migration
-                  `20261018170000_sai_o_idioma_da_conta`, no ramo `passo-5b`; vai para o `dev`
-                  e é publicada **depois** de o 5a estar no ar). Já aplicada no banco do DEV,
+            - [x] **5b — o banco perde a coluna** (migration
+                  `20261018170000_sai_o_idioma_da_conta`, feita no ramo `passo-5b`; vai para o
+                  `dev` e é publicada **depois** de o 5a estar no ar). Já aplicada no banco do DEV,
                   com o Passo 0: antes e depois, o admin e o aluno entram (200, sessão, papel
                   certo), 2 contas, RLS em todas as tabelas, `migrate diff` sem diferença. No
                   banco de teste, do zero: sem diferença e nenhuma coluna de idioma. Mutação:
