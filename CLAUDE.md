@@ -412,11 +412,10 @@ NEVER pass a secret as a CLI argument or read one back into the transcript. Comm
   - `email` required (unique). `name` **optional** (a future corporate manager may invite with email only). `image` (avatar — free in Better Auth).
   - `role` (`member` default; `admin` seeded).
   - `birthday` **optional**, day+month only (e.g. `"06-15"`) — never the year (LGPD / sensitive-data minimization).
-  - `preferredLanguage` — **não é mais lido nem gravado** (12/10/2026: o seletor de idioma saiu no passo 1 da etapa 4.6c, e a rota `PATCH /api/me/language`, no passo 3). A coluna sai no passo 5; **não use em código novo.**
   - `marketingConsent` default `false` (LGPD) — gates promotional email only; transactional email (receipt, password reset) ignores it.
   - `acquisitionSource` / `acquisitionCampaign` **optional** — UTM capture. Read on first visit (cookie/localStorage), persisted at user creation (seed in P1, Stripe webhook in P4). Lets the YouTube→site funnel be measured (which video converts). Must be live before the channel sends traffic.
   - `deletedAt` (soft-delete). `requireAuth` rejects soft-deleted users.
-- These extras are Better Auth `additionalFields` (mark `input: false` where users shouldn't set them directly, e.g. `role`). Re-run the Better Auth migration after adding fields: **`npm --workspace server run auth:generate`** — o pacote `auth`, sucessor oficial do `@better-auth/cli` (que parou na 1.4.21 e geraria o esquema de OUTRA versão, sem erro). O `auth` fica na **mesma versão** do `better-auth`: atualize os dois juntos (`better-auth-cli.test.ts` reprova se divergirem). O comando reescreve o `schema.prisma`: confira o diff e reaplique as notas *REAPLICAR* de lá.
+- These extras are Better Auth `additionalFields` (mark `input: false` where users shouldn't set them directly, e.g. `role`) — **o `input: false` é a ÚNICA coisa que impede o aluno logado de se promover a admin** pela rota pronta `POST /api/auth/update-user` (`login.test.ts` reprova sem ele — 18/10/2026). Re-run the Better Auth migration after adding fields: **`npm --workspace server run auth:generate`** — o pacote `auth`, sucessor oficial do `@better-auth/cli` (que parou na 1.4.21 e geraria o esquema de OUTRA versão, sem erro). O `auth` fica na **mesma versão** do `better-auth`: atualize os dois juntos (`better-auth-cli.test.ts` reprova se divergirem). O comando reescreve o `schema.prisma`: confira o diff e reaplique as notas *REAPLICAR* de lá. **Ele NÃO apaga campo que saiu do `auth.ts`** `[MEDIDO em 18/10/2026]` — só acrescenta: tirar um campo extra é à mão, no `schema.prisma` e numa migration.
 
 ## Rendering Boundary (a fronteira de renderização)
 
@@ -560,7 +559,7 @@ qualquer template em `server/src/views/**` → ler aquela seção.
 **As travas que produzem um diff ERRADO se ignoradas:**
 - **Nada nasce em inglês.** Nenhum texto, rota, campo, e-mail ou teste em inglês. Não existe `/en`, seletor de idioma, `hreflang` nem dicionário em inglês.
 - **O banco não tem idioma** (desde o passo 4 da etapa 4.6c): nenhuma tabela tem coluna `language`, e o tipo `Language` não existe. **Não recrie** — nem "só um campo", nem como costura para o futuro. O que uma versão antiga do site ainda mande (`language` no corpo, `?lang=` no endereço) é **ignorado, nunca recusado** — há teste (`server/src/test/idioma-saiu.test.ts`).
-- **`User.preferredLanguage` é a única sobra**, e sai no passo 5 da etapa: não leia nem grave.
+- **`user.preferredLanguage` é a única sobra, e só no banco:** saiu do código (Better Auth e `schema.prisma`) no passo 5a; a coluna sai no 5b, na publicação seguinte. Não leia, não grave, não devolva ao `schema.prisma`.
 - **O texto continua saindo do dicionário** — `core/src/i18n/pt.ts`, por `getDict()` no servidor e `useT()` no app. Um idioma só não é licença para cravar texto na tela: é pelo dicionário que o operador edita (Admin → Textos) e revisa. As travas estão em *Rendering Boundary* e em *Key Conventions → Client*.
 - **A escola cobra só em reais e não vende para fora** (*Membership Gating*): a tela de assinar não tem campo País, e o CPF ou CNPJ é obrigatório.
 - **Gatilho de reabertura:** só por decisão dele, com dado novo — o Stripe Tax ou o Managed Payments aceitarem empresa do Brasil, ou a empresa mudar de país. Voltar ao inglês é projeto novo, não "religar".

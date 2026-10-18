@@ -125,14 +125,6 @@ export const auth = betterAuth({
         required: false,
         input: true,
       },
-      // Dormant seam: everything is PT today; no multi-language UI is built.
-      // Set server-side, not user input.
-      preferredLanguage: {
-        type: "string",
-        required: false,
-        defaultValue: "pt",
-        input: false,
-      },
       // LGPD: gates promotional email only (transactional ignores it). No public
       // consent form in P1, so it is set server-side, not user input.
       marketingConsent: {

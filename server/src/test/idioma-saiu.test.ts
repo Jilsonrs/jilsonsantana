@@ -5,8 +5,8 @@ import { prisma } from "../lib/prisma.js";
 
 // A ESCOLA É SÓ EM PORTUGUÊS (decisão do operador, 12/10/2026 — etapa 4.6c).
 //
-// O banco não tem mais a coluna de idioma (passo 4) e o servidor não lê idioma em
-// lugar nenhum. O que uma versão antiga do site — ou qualquer pessoa — ainda
+// O banco não tem mais coluna de idioma (passo 4; a da conta sai no passo 5b) e o
+// servidor não lê idioma em lugar nenhum. O que uma versão antiga do site — ou qualquer pessoa — ainda
 // mande (`language` no corpo, `?lang=` no endereço) é IGNORADO, nunca recusado:
 // o pedido vale, e nenhuma resposta leva idioma.
 
@@ -81,7 +81,7 @@ describe("o idioma do pedido é ignorado, e nenhuma resposta leva idioma", () =>
 });
 
 describe("o banco não tem mais idioma", () => {
-  it("nenhuma tabela tem coluna de idioma, a não ser a preferência da conta (passo 5 da etapa)", async () => {
+  it("nenhuma tabela tem coluna de idioma, a não ser a da conta — que o código já não lê (sai no passo 5b)", async () => {
     const colunas = await prisma.$queryRaw<{ table_name: string; column_name: string }[]>`
       SELECT table_name, column_name FROM information_schema.columns
       WHERE table_schema = 'public' AND column_name ILIKE '%language%'`;
@@ -94,12 +94,20 @@ describe("o banco não tem mais idioma", () => {
   });
 });
 
-describe("a troca de idioma da conta saiu", () => {
-  it("PATCH /api/me/language não existe mais, e a conta não muda", async () => {
+describe("a conta não tem mais idioma", () => {
+  it("PATCH /api/me/language não existe mais", async () => {
     const res = await request(servidor).patch("/api/me/language").set("Cookie", await aluno()).send({ language: "en" });
     expect(res.status).toBe(404);
-    // A coluna só sai no passo 5 da etapa; até lá, ninguém a grava.
-    const conta = await prisma.user.findUniqueOrThrow({ where: { email: (process.env.SEED_MEMBER_EMAIL ?? "").toLowerCase() } });
-    expect(conta.preferredLanguage).not.toBe("en");
+  });
+
+  it("o aluno e o admin entram, e a sessão não leva idioma (passo 5a: saiu do Better Auth)", async () => {
+    for (const entrar of [aluno, admin]) {
+      const cookies = await entrar();
+      const res = await request(servidor).get("/api/auth/get-session").set("Cookie", cookies);
+      expect(res.status).toBe(200);
+      const user = (res.body as { user?: Record<string, unknown> } | null)?.user;
+      expect(user?.email).toBeTruthy();
+      expect(user).not.toHaveProperty("preferredLanguage");
+    }
   });
 });

@@ -125,6 +125,8 @@ model FaqItem {
 // `better-auth-cli.test.ts` reprova se divergirem). Reescreve este arquivo: confira
 // o diff e reaplique as notas "REAPLICAR" abaixo. Conferido em 05/10/2026 com a
 // 1.7.5: gerado a partir do nosso `auth.ts`, o esquema não muda nenhum campo.
+// MEDIDO em 18/10/2026: o comando NÃO apaga campo que saiu do `auth.ts` — só
+// acrescenta. Tirar um campo extra é à mão, aqui e numa migration.
 // Legacy tables (users, sessions) live only in the DB and are dropped in this
 // phase's migration.
 
@@ -169,7 +171,6 @@ model User {
   stripeCustomer StripeCustomer?
 
   birthday            String?
-  preferredLanguage   String?   @default("pt")
   marketingConsent    Boolean?  @default(false)
   acquisitionSource   String?
   acquisitionCampaign String?
