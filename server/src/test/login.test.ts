@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import request from "supertest";
 import servidor from "./servidor.js";
+import { Role } from "@jilson/core";
 import { prisma } from "../lib/prisma.js";
 
 // Suíte de SERVIDOR do login — a fronteira de acesso, que NÃO TEM TELA.
@@ -184,5 +185,44 @@ describe("login — o cookie de sessão", () => {
     expect(sessionCookie).toBeDefined();
     expect(sessionCookie!.toLowerCase()).toContain("httponly");
     expect(sessionCookie!.toLowerCase()).toContain("samesite");
+  });
+});
+
+describe("a conta — o que o aluno NÃO muda sozinho", () => {
+  // `POST /api/auth/update-user` é rota pronta do Better Auth: grava qualquer campo
+  // extra que chegue no corpo, MENOS os marcados com `input: false` em `lib/auth.ts`.
+  // É só essa marca que impede um aluno logado de se promover a admin — por isso o
+  // teste (revisão de segurança da etapa 4.6c, passo 5, 18/10/2026).
+  const UPDATE_USER = "/api/auth/update-user";
+  const MEMBER_EMAIL = () => requireEnv("SEED_MEMBER_EMAIL");
+
+  async function alunoLogado(): Promise<string[]> {
+    const res = await request(servidor)
+      .post(SIGN_IN)
+      .send({ email: MEMBER_EMAIL(), password: requireEnv("SEED_MEMBER_PASSWORD") });
+    expect(res.status).toBe(200);
+    return cookiesFrom(res);
+  }
+
+  it("a rota funciona para o que é dele (controle: sem isto, o 400 abaixo não prova nada)", async () => {
+    const cookies = await alunoLogado();
+    const antes = await prisma.user.findUniqueOrThrow({ where: { email: MEMBER_EMAIL().toLowerCase() } });
+    const res = await request(servidor).post(UPDATE_USER).set("Cookie", cookies).send({ name: antes.name ?? "Aluno" });
+    expect(res.status).toBe(200);
+  });
+
+  it.each([
+    ["se promover a admin", { role: Role.ADMIN }],
+    ["se marcar como excluído", { deletedAt: "2026-01-01T00:00:00Z" }],
+    ["ligar o aceite de e-mail promocional por fora", { marketingConsent: true }],
+  ])("não consegue %s", async (_, corpo) => {
+    const cookies = await alunoLogado();
+    const antes = await prisma.user.findUniqueOrThrow({ where: { email: MEMBER_EMAIL().toLowerCase() } });
+    const res = await request(servidor).post(UPDATE_USER).set("Cookie", cookies).send(corpo);
+    expect(res.status).toBe(400);
+    const depois = await prisma.user.findUniqueOrThrow({ where: { email: MEMBER_EMAIL().toLowerCase() } });
+    expect(depois.role).toBe(Role.MEMBER);
+    expect(depois.deletedAt).toEqual(antes.deletedAt);
+    expect(depois.marketingConsent).toEqual(antes.marketingConsent);
   });
 });

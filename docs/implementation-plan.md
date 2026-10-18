@@ -4274,6 +4274,38 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             `auth:generate`, conferir o diff e reaplicar as notas *REAPLICAR*, e a migration que
             tira a coluna. Passo 0: o admin e o aluno de teste entram antes e depois. context7
             `/better-auth/better-auth` primeiro.
+            **Feito em 18/10/2026, em DUAS publicações** (achado da revisão de segurança: com
+            tudo junto, uma publicação que falhe depois de apagar a coluna, ou a volta para a
+            versão anterior pela Railway, deixaria o login de todos fora do ar até sair outra
+            publicação — a versão anterior lê a coluna em toda leitura de conta).
+            - [x] **5a — o código para de ler** (no `dev`). Saiu `preferredLanguage` do
+                  `auth.ts`, do `auth-client.ts` e do `schema.prisma`; a coluna continua no
+                  banco (aceita vazio e tem valor padrão: criar conta segue funcionando, e o
+                  Prisma ignora coluna que não declara). `migrate diff` mostra a diferença
+                  dessa coluna até o 5b — esperado. **Medido:** o `auth generate` NÃO apaga
+                  campo que saiu do `auth.ts` (só acrescenta linhas em branco); a remoção é à
+                  mão. **Achado de ferramenta, para o operador:** `npm --workspace server run
+                  auth:generate` hoje FALHA (*"createJiti is not a function"*): o `c12`, que lê
+                  a configuração, acha na raiz o `jiti` 1 (do Tailwind e do ESLint) e precisa
+                  do 2, que só existe dentro do pacote `auth`. Rodado aqui por um desvio fora do
+                  repo; o conserto é na instalação dos pacotes (`package.json` da raiz) e espera
+                  o OK dele. **Teste novo, da revisão de segurança:** o aluno não consegue se
+                  promover a admin, se marcar como excluído nem ligar o aceite de e-mail pela
+                  rota pronta `POST /api/auth/update-user` (`login.test.ts`, com o controle de
+                  que a rota funciona para o nome); tirar o `input: false` do `role` reprova.
+                  **Provas:** os dois entram e a sessão não leva idioma (teste novo); com o
+                  campo de volta no `auth.ts` e sem a coluna, o login dá 500 (mutação). Os
+                  quatro gates verdes. `Docs check (context7): Better Auth →
+                  /better-auth/better-auth → additionalFields e o generate (a doc não diz se ele
+                  apaga campo; medido).`
+            - [ ] **5b — o banco perde a coluna** (migration
+                  `20261018170000_sai_o_idioma_da_conta`, no ramo `passo-5b`; vai para o `dev`
+                  e é publicada **depois** de o 5a estar no ar). Já aplicada no banco do DEV,
+                  com o Passo 0: antes e depois, o admin e o aluno entram (200, sessão, papel
+                  certo), 2 contas, RLS em todas as tabelas, `migrate diff` sem diferença. No
+                  banco de teste, do zero: sem diferença e nenhuma coluna de idioma. Mutação:
+                  sem o `DROP`, o teste de colunas reprova. A revisão de segurança não achou
+                  nada que bloqueie.
       - [ ] **Passo 6 — Os documentos e a lei de build.** Cada passo acima já corrige, no mesmo
             commit, a linha do `CLAUDE.md` que ele invalida; aqui fica a varredura final: o
             `CLAUDE.md` (a seção *Idiomas* vira um parágrafo — uma língua, um país —, e saem as
