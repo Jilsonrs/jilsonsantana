@@ -205,6 +205,14 @@
 > (aula concluída sozinha, barra na aula e no cartão), o vídeo que não recomeça ao trocar de aba
 > (a apresentação abre pausada, a aula toca sozinha) e o "Salvos". **Primeiro teste com o player de
 > verdade: com o operador** (assistir uma aula até perto do fim e ver a barra andar).
+> **PUBLICADO em 18/10/2026, por último (`main` = `d61962c`, CI verde nos dois jobs, deploy ok
+> às 20:40; a migration `20261018170000_sai_o_idioma_da_conta` aplicada pelo pre-deploy — a
+> publicação só termina com sucesso se ela passar; mesma ordem do operador):** o **passo 5b da
+> etapa 4.6c** — a conta perdeu a coluna `preferredLanguage`, a última de idioma do banco.
+> **Provado no site, de fora:** catálogo, trilhas, textos comuns e sessão → 200; a assinatura sem
+> login → 401; o login com um e-mail que não existe → 401 (a leitura de conta funciona sem a
+> coluna); o público segue no "Em breve". A versão do app não mudou (`mvea5i2y-3a00b6df`): o 5b
+> não toca no site.
 > **PUBLICADO em 18/10/2026 (`main` = `80c4478`, CI verde nos dois jobs, deploy ok às 20:32;
 > sem migration; ordem do operador: "sim pode publicar em duas etapas"):** o **passo 5a da etapa
 > 4.6c** — o login deixou de usar a preferência de idioma da conta; a coluna ficou no banco para
@@ -4309,8 +4317,9 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                   /better-auth/better-auth → additionalFields e o generate (a doc não diz se ele
                   apaga campo; medido).`
             - [x] **5b — o banco perde a coluna** (migration
-                  `20261018170000_sai_o_idioma_da_conta`, feita no ramo `passo-5b`; vai para o
-                  `dev` e é publicada **depois** de o 5a estar no ar). Já aplicada no banco do DEV,
+                  `20261018170000_sai_o_idioma_da_conta`). **Os dois PUBLICADOS em 18/10/2026,
+                  nesta ordem:** o 5a em `main` = `80c4478`, o 5b em `main` = `d61962c` (prova
+                  no bloco *Estado atual*). Já aplicada no banco do DEV,
                   com o Passo 0: antes e depois, o admin e o aluno entram (200, sessão, papel
                   certo), 2 contas, RLS em todas as tabelas, `migrate diff` sem diferença. No
                   banco de teste, do zero: sem diferença e nenhuma coluna de idioma. Mutação:
