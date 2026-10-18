@@ -205,6 +205,16 @@
 > (aula concluída sozinha, barra na aula e no cartão), o vídeo que não recomeça ao trocar de aba
 > (a apresentação abre pausada, a aula toca sozinha) e o "Salvos". **Primeiro teste com o player de
 > verdade: com o operador** (assistir uma aula até perto do fim e ver a barra andar).
+> **PUBLICADO em 18/10/2026 (`main` = `80c4478`, CI verde nos dois jobs, deploy ok às 20:32;
+> sem migration; ordem do operador: "sim pode publicar em duas etapas"):** o **passo 5a da etapa
+> 4.6c** — o login deixou de usar a preferência de idioma da conta; a coluna ficou no banco para
+> o 5b. **Provado no site, de fora:** a versão nova (`mvea5i2y-3a00b6df`; antes,
+> `mvars26z-d04be514`); catálogo, trilhas, textos comuns e sessão → 200; a assinatura sem login →
+> 401; o login com um e-mail que não existe → 401 (antes e depois — sem erro de servidor); o
+> público segue no "Em breve". *O site responde em `www.jilsonsantana.com`; o endereço sem `www`
+> devolve 404 e não é o da Railway.* **Para saber quando uma publicação só de servidor terminou:**
+> a Railway registra cada uma no GitHub (`gh api repos/{owner}/{repo}/deployments`, e os
+> `statuses` de cada uma: `success` ou `failure`).
 > **PUBLICADO em 12/10/2026, por último (`main` = `011f53a`, CI verde nos dois jobs, deploy ok; a
 > migration `20261012190000_sai_o_idioma` aplicada pelo pre-deploy; publicado pelo Antigravity,
 > por ordem do operador, depois de ele conferir no banco do site que não havia curso, trilha nem
@@ -4269,7 +4279,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             (c) **não tem volta pela Railway:** depois da migration, a versão anterior do site
             não funciona mais, e as linhas apagadas só voltam pela janela curta de restauração
             do Neon.
-      - [ ] **Passo 5 — A preferência de idioma sai da conta (Better Auth; revisão de
+      - [x] **Passo 5 — A preferência de idioma sai da conta (Better Auth; revisão de
             segurança).** Tirar `preferredLanguage` dos campos extras em `lib/auth.ts`, rodar
             `auth:generate`, conferir o diff e reaplicar as notas *REAPLICAR*, e a migration que
             tira a coluna. Passo 0: o admin e o aluno de teste entram antes e depois. context7
@@ -4298,9 +4308,9 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                   quatro gates verdes. `Docs check (context7): Better Auth →
                   /better-auth/better-auth → additionalFields e o generate (a doc não diz se ele
                   apaga campo; medido).`
-            - [ ] **5b — o banco perde a coluna** (migration
-                  `20261018170000_sai_o_idioma_da_conta`, no ramo `passo-5b`; vai para o `dev`
-                  e é publicada **depois** de o 5a estar no ar). Já aplicada no banco do DEV,
+            - [x] **5b — o banco perde a coluna** (migration
+                  `20261018170000_sai_o_idioma_da_conta`, feita no ramo `passo-5b`; vai para o
+                  `dev` e é publicada **depois** de o 5a estar no ar). Já aplicada no banco do DEV,
                   com o Passo 0: antes e depois, o admin e o aluno entram (200, sessão, papel
                   certo), 2 contas, RLS em todas as tabelas, `migrate diff` sem diferença. No
                   banco de teste, do zero: sem diferença e nenhuma coluna de idioma. Mutação:

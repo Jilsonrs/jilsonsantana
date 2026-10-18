@@ -1,0 +1,12 @@
+-- A ESCOLA É SÓ EM PORTUGUÊS (decisão do operador, 12/10/2026 — etapa 4.6c, passo 5).
+--
+-- A conta perde a preferência de idioma, a última coluna de idioma do banco. Ninguém
+-- a lia nem gravava desde o passo 3 (saiu a rota PATCH /api/me/language); neste passo
+-- ela sai também da configuração do Better Auth (`lib/auth.ts`).
+--
+-- NÃO É REVERSÍVEL, e não há o que perder: desde o passo 3 nenhum código lê o valor.
+--
+-- ENQUANTO ESTA MIGRATION RODA NA PUBLICAÇÃO, a versão que está no ar ainda lê a
+-- coluna em toda leitura de conta: o login e as telas logadas dão erro até a versão
+-- nova entrar (cerca de um minuto). Hoje só o operador usa o site.
+ALTER TABLE "user" DROP COLUMN "preferredLanguage";

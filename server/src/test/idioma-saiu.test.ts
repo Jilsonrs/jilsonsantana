@@ -5,8 +5,8 @@ import { prisma } from "../lib/prisma.js";
 
 // A ESCOLA É SÓ EM PORTUGUÊS (decisão do operador, 12/10/2026 — etapa 4.6c).
 //
-// O banco não tem mais coluna de idioma (passo 4; a da conta sai no passo 5b) e o
-// servidor não lê idioma em lugar nenhum. O que uma versão antiga do site — ou qualquer pessoa — ainda
+// O banco não tem mais coluna de idioma (passos 4 e 5b) e o servidor não lê idioma em
+// lugar nenhum. O que uma versão antiga do site — ou qualquer pessoa — ainda
 // mande (`language` no corpo, `?lang=` no endereço) é IGNORADO, nunca recusado:
 // o pedido vale, e nenhuma resposta leva idioma.
 
@@ -81,11 +81,11 @@ describe("o idioma do pedido é ignorado, e nenhuma resposta leva idioma", () =>
 });
 
 describe("o banco não tem mais idioma", () => {
-  it("nenhuma tabela tem coluna de idioma, a não ser a da conta — que o código já não lê (sai no passo 5b)", async () => {
+  it("nenhuma tabela tem coluna de idioma — nem a conta (passo 5b)", async () => {
     const colunas = await prisma.$queryRaw<{ table_name: string; column_name: string }[]>`
       SELECT table_name, column_name FROM information_schema.columns
       WHERE table_schema = 'public' AND column_name ILIKE '%language%'`;
-    expect(colunas.map((c) => `${c.table_name}.${c.column_name}`)).toEqual(["user.preferredLanguage"]);
+    expect(colunas.map((c) => `${c.table_name}.${c.column_name}`)).toEqual([]);
   });
 
   it("o tipo Language não existe mais", async () => {
