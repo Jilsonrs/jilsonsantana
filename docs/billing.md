@@ -591,6 +591,13 @@ confundir quem assina — foi o motivo da decisão de 10/10.*
   visitante sem login lê sempre "Assinar". *Reabre na etapa 4.6 (quem cancelou e ainda tem dias
   pagos tem acesso, e hoje não vê botão nenhum para voltar) e na 4.7 (o visitante que já foi
   assinante só é reconhecido depois de entrar).*
+- **O link "Assine" do menu da home some para quem TEM assinatura ativa** *(decisão do operador,
+  19/10/2026: "depois de logado não precisa aparecer assine porque já é aluno"; e, à pergunta
+  sobre quem está logado sem assinatura: "só some para quem paga")*. Quem decide é
+  `temAcessoAtivo()`, o mesmo do gate. Quem está logado sem assinatura (cancelou, a cobrança
+  venceu, nunca assinou — e o admin, que não tem) continua vendo "Assine", que leva aos botões de
+  assinar ou de reativar. A seção de preço da página não muda para ninguém. *Reabre se o menu das
+  outras páginas públicas, quando virarem template do servidor, pedir a mesma regra.*
 - **Quem cancela e ainda tem dias pagos continua assistindo até o fim deles** — *"enquanto for
   válida a assinatura nos dias restantes"*. É a regra do gate de Ago 2026, confirmada; nesse caso
   a pessoa também não é deslogada. *Sem gatilho próprio: é a regra do gate. O reembolso, em que o

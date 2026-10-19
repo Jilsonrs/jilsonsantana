@@ -105,13 +105,18 @@ function paginaDeQuemEstaLogado(res: Response, logado: boolean): void {
 }
 
 /**
- * Os botões desta pessoa dizem "Reativar assinatura"? Só para quem está logado, já foi assinante
- * e hoje está sem acesso (decisão do operador, 10/10/2026). O visitante sem login — e o robô do
- * Google — nem chega ao banco por isto: a resposta é sempre não.
+ * O que a home muda para quem está logado, pela assinatura. **Assinante** (tem acesso agora, por
+ * `temAcessoAtivo()`): o menu não mostra "Assine" (decisão do operador, 19/10/2026: "já é
+ * aluno"). **Reativar**: os botões dizem "Reativar assinatura" — só para quem já foi assinante e
+ * hoje está sem acesso (decisão do operador, 10/10/2026). O visitante sem login — e o robô do
+ * Google — nem chega ao banco por isto: as duas respostas são sempre não.
  */
-async function botoesDeReativar(sessao: Awaited<ReturnType<typeof loadSession>>): Promise<boolean> {
-  if (!sessao) return false;
-  return convidaAReativar(sessao.user.id, await temAcessoAtivo(sessao.user.id));
+async function situacaoDaConta(
+  sessao: Awaited<ReturnType<typeof loadSession>>,
+): Promise<{ assinante: boolean; reativar: boolean }> {
+  if (!sessao) return { assinante: false, reativar: false };
+  const assinante = await temAcessoAtivo(sessao.user.id);
+  return { assinante, reativar: await convidaAReativar(sessao.user.id, assinante) };
 }
 
 router.get("/", async (req, res) => {
@@ -121,6 +126,7 @@ router.get("/", async (req, res) => {
     listasDaHome(),
   ]);
   paginaDeQuemEstaLogado(res, sessao !== null);
+  const { assinante, reativar } = await situacaoDaConta(sessao);
   res.send(
     renderHome({
       dict,
@@ -129,7 +135,8 @@ router.get("/", async (req, res) => {
       canSubscribe: true,
       baseUrl: BASE_URL,
       logado: sessao !== null,
-      reativar: await botoesDeReativar(sessao),
+      assinante,
+      reativar,
       testimonials,
       faq,
     }),
