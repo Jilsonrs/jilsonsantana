@@ -120,7 +120,7 @@ frente do site, por exemplo), ou se o Enterprise DRM entrar só para as aulas.*
   começa desligada; o aluno liga **no CC do próprio player**, e ela continua ligada nas próximas
   aulas e ao sair e voltar, em qualquer aparelho, até ele desligar no mesmo CC. **Quem decide é a
   CONTA do aluno:** a página grava a escolha (`/api/me/preferences`) e, para quem está logado, abre
-  **toda** aula com `captions=<idioma do curso>` (ligada) ou **`captions=off`** (desligada) —
+  **toda** aula com `captions=pt` (ligada) ou **`captions=off`** (desligada) —
   `client/src/lib/legenda-lembrada.ts`. **Medido no player novo (07/10/2026):** com `captions`, a
   página vem com `captions-forced`, e o player **ignora a memória dele no aparelho** (a chave
   `bunny_stream_settings_<biblioteca>`); com `off`, nenhuma faixa abre. Sem o parâmetro (visitante),
@@ -236,9 +236,6 @@ porque ele é cobrado por biblioteca.
 *Secrets*). Com a chave de produção no computador, um vazamento no ambiente menos protegido seria
 um vazamento de produção.
 
-**Idioma não pede biblioteca própria:** curso em inglês é outro curso, com os seus próprios
-vídeos (`CLAUDE.md` → *Idiomas*). Os vídeos dele ficam na mesma `jilsonsantana-stream`.
-
 ### 3.2 `jilsonsantana-stream` — como está *(configurada pelo operador em 25/09/2026)*
 
 **Encoding:**
@@ -262,8 +259,7 @@ vídeos (`CLAUDE.md` → *Idiomas*). Os vídeos dele ficam na mesma `jilsonsanta
   **Compromisso do operador (27/09/2026):** manter as cópias originais dos vídeos no **Descript** e
   no **HD externo**.
 - **Multi-audio: desligar** *(decisão do operador, 27/09/2026)*. Ele permite mais de uma faixa de
-  áudio no mesmo vídeo, e a escola não usa isso: curso em inglês é **outro curso**, com vídeos
-  próprios (`CLAUDE.md` → *Idiomas*). **Desligado no painel pelo operador em 28/09/2026.**
+  áudio no mesmo vídeo, e a escola não usa isso: ela é só em português (decisão do operador, 12/10/2026). **Desligado no painel pelo operador em 28/09/2026.**
 
 **Segurança (painel → Security):**
 - [x] **Enable direct play:** desligado.
@@ -650,8 +646,8 @@ O Bunny gera estes tipos de chave:
   endereço antigo, `iframe.mediadelivery.net`, **continuava entregando o player antigo** (Plyr) —
   quem escolhe o player é o **endereço**, não o painel. A doc do Bunny: o player antigo está
   **descontinuado e sai do ar no começo de 2027**. **Decisão do operador (07/10/2026): trocar
-  agora**, e os **botões do player no idioma do app do aluno** (`lang=pt`/`en`; o player novo
-  tem a tradução em português). O mesmo token vale no endereço novo, e ele recusa sem token (403);
+  agora**, e os **botões do player em português** (`lang=pt`; o inglês saiu em 12/10/2026 — o player
+  novo tem a tradução em português). O mesmo token vale no endereço novo, e ele recusa sem token (403);
   **e recusa (403) o endereço assinado aberto de outro site ou sem origem — o antigo ABRIA o player
   nos dois casos** (medido em 07/10/2026, na página do player, com o endereço do vídeo de
   apresentação: a trava de *Allowed domains* não valia no endereço antigo; um endereço de aula que

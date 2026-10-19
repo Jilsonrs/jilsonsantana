@@ -4361,7 +4361,14 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                   *Registros de pesquisa* (o porquê da entrada (28)) — conferido linha a linha:
                   nenhuma linha que saiu ficou sem cópia lá. No código, o comentário de
                   `PRAZO_DO_REEMBOLSO_EM_DIAS` deixou de prometer os 14 dias.
-            - [ ] **6c — `content.md`, `courses.md`, `bunny.md`, `jilsonai.md`, `design.md`.**
+            - [x] **6c — `content.md`, `courses.md`, `bunny.md`, `jilsonai.md`, `design.md`**
+                  *(19/10/2026)*: o `courses.md` perdeu o teto "por idioma" (fica o teto de 15), o
+                  curso em inglês e o preço em dólar, e a §16 virou *Um idioma só* (a linha do
+                  LinkedIn Learning, que é fora do site, ficou como estava); o `content.md`, a
+                  copy em inglês e o preço em dólar da página em inglês; o `bunny.md`, a legenda
+                  "no idioma do curso" (é `captions=pt`) e os botões em inglês do player; o
+                  `jilsonai.md`, a resposta "no idioma do aluno"; o `design.md`, o seletor do
+                  rodapé do app.
             - [ ] **6d — os itens abertos deste plano que citam idioma, e a `pendencias.md`.**
             - [ ] **6e — os textos de posicionamento** (`project-description.md`,
                   `strategy.md`, `project-scope.md`): o agente propõe, o operador aprova.

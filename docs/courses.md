@@ -3,8 +3,8 @@
 > **O que é este doc.** A fonte única sobre **cursos** da escola jilsonsantana.com: por que cada
 > curso existe, como ele vira uma página que vende a assinatura sem enganar ninguém, como um curso
 > da Udemy é transposto para a escola, como um curso novo nasce, como a demanda é medida e o que o
-> catálogo tem hoje. Serve para os cursos que já existem **e** como base para todo curso futuro,
-> em português e em inglês.
+> catálogo tem hoje. Serve para os cursos que já existem **e** como base para todo curso futuro
+> — todos em português (a escola é só em português desde 12/10/2026).
 >
 > **Para quem.** O operador (Jilson) e qualquer sessão nova do Claude. Um chat novo que leia a
 > **Leitura rápida** e o **Playbook de transposição** (§12) precisa conseguir entregar o mesmo nível
@@ -12,7 +12,7 @@
 >
 > **Docs vizinhos.** Estratégia: `project-description.md` · Voz e concorrência: `strategy.md` · Copy
 > da landing e da página de curso: `content.md` (§15) · Build: `implementation-plan.md` · Invariantes
-> de código da página de curso: `CLAUDE.md` · Idiomas: `idiomas.md` · Decisões com gatilho de
+> de código da página de curso: `CLAUDE.md` · Decisões com gatilho de
 > reabertura: `decisions-archive.md`. **Edit owner:** Project.
 >
 > **Reescrito do zero em 05/10/2026** a partir da versão de Set 2026 (fusão de `courses.md` +
@@ -41,9 +41,8 @@ faz X" porque parece certo: ou é decisão datada, ou é `[PROPOSTA]`.
 ## Leitura rápida (o mínimo que um chat novo precisa saber)
 
 1. **A escola vende uma assinatura, nunca curso avulso.** R$ 99,90/mês sem fidelidade, ou ~R$ 995/ano.
-   Fora do Brasil: US$ 30/mês ou US$ 299/ano. `[FATO]`
-2. **Cada curso é um iPhone.** O catálogo é pequeno de propósito (teto de **15 cursos por
-   idioma**), então cada curso precisa justificar a assinatura sozinho e levar o aluno a descobrir
+   Só em reais, só para o Brasil (12/10/2026). `[FATO]`
+2. **Cada curso é um iPhone.** O catálogo é pequeno de propósito (teto de **15 cursos**), então cada curso precisa justificar a assinatura sozinho e levar o aluno a descobrir
    os outros, como o iPhone leva ao Mac. `[FATO, operador, 04–05/10/2026]` → §1
 3. **Venda otimizada, mas honesta, no padrão Apple.** Premium e irresistível, sem exagero, sem
    escassez falsa, sem promessa que o curso não cumpre. → §2
@@ -58,8 +57,8 @@ faz X" porque parece certo: ou é decisão datada, ou é `[PROPOSTA]`.
 8. **O vidIQ mede antes de escrever ou gravar.** Três consultas por curso. → §14
 9. **Dados é o centro; IA é a camada que atravessa tudo.** Cursos *sobre* IA são o menor pilar e os
    primeiros a sair na rotação. → §4, §7
-10. **Inglês é outra escola dentro da mesma assinatura:** curso em inglês é outro curso, regravado,
-    com teto próprio de 15. → §16
+10. **Um idioma só:** a escola é só em português e só para o Brasil (decisão do operador,
+    12/10/2026). → §16
 11. **Energia do operador é restrição de projeto.** Um curso por vez, não regravar para transpor,
     nada vira câmera antes de a distribuição andar. ⚠️ Sinalize risco de burnout sempre que couber.
 12. **Datas e números mudam.** O estado vivo do catálogo está na Parte V; confira antes de afirmar.
@@ -153,8 +152,8 @@ O que o texto novo **não** resolve, registrado para não haver ilusão `[INFER]
 
 ## 4. Os 5 princípios do catálogo
 
-1. **Teto de 15 cursos por idioma, de 2h a 5h cada; no máximo 2 idiomas (PT e EN).**
-   `[FATO, operador, Set 2026; "por idioma" em 14/09]` É teto, não meta: existe para dizer quando
+1. **Teto de 15 cursos, de 2h a 5h cada.**
+   `[FATO, operador, Set 2026; o "por idioma" de 14/09 saiu em 12/10/2026, com a escola só em português]` É teto, não meta: existe para dizer quando
    **parar**. Slate comprometido em PT: 12. Folga: 3 slots, que são amortecedor da rotação (D9),
    não convite a expandir.
    - *Por que 15 e não 20:* os 20 foram calibrados contra o `analystbuilder.com` (1,42M inscritos).
@@ -291,7 +290,7 @@ uma fila sem fim competindo com o build.
 - Nem todo curso tem as três (o N8N pode ter só a IA). `Course.camadas[]` marca quais.
 - **Internos, nunca na tela do aluno:** os percentuais, a palavra "reaproveitado" e o jargão "3
   camadas". O aluno vê a promessa.
-- **Textos e ícones globais**, escritos uma vez por idioma, editáveis em Admin → Textos
+- **Textos e ícones globais**, escritos uma vez, editáveis em Admin → Textos
   (`common.camadas`, decisão de 24/09/2026):
 
   | Enum | Ícone | Nome | Texto |
@@ -361,7 +360,7 @@ com a opção de assinar ao lado, rota **pública montada no servidor**, e **cad
 venda**.
 
 **Mas é montada de campos estruturados, nunca de texto livre.** `[FATO — trava no CLAUDE.md]`
-Com até 15 cursos por idioma em dois idiomas, são até 30 páginas para manter. Campos mantêm o custo
+Com até 15 cursos, são até 15 páginas para manter. Campos mantêm o custo
 por curso baixo. **Um campo de copy livre (tipo `salesCopy`) ressuscita o problema.**
 *Gatilho de reabertura:* dado real de conversão mostrando que a página estruturada converte pior.
 
@@ -494,8 +493,7 @@ Diretrizes `[PROPOSTA, 05/10]`:
 - Aparece na página de venda **e** no "Sobre o curso" da página da aula.
 - **Derivado, nesta ordem** *(operador: arquivos em 04/10; as outras quatro em 05/10/2026)*: horas
   de vídeo ("3h 20min de vídeo") · artigos (aulas de texto) · aulas grátis ("2 aulas grátis para
-  experimentar") · arquivos para acompanhar as aulas · "Legendas em português" (ou em inglês, pelo
-  idioma do curso), só quando **todas** as aulas de vídeo têm legenda em dia. Cada linha só
+  experimentar") · arquivos para acompanhar as aulas · "Legendas em português", só quando **todas** as aulas de vídeo têm legenda em dia. Cada linha só
   aparece quando existe. O aluno conta a cadeia publicada; o admin, na prévia, tudo. O número
   quem põe é o código; a palavra é editável em Admin → Textos. Legendas com o ícone **CC**.
 - **Fixo, em todo curso** *(operador, 05/10/2026: "todos os cursos terão certificados")*:
@@ -571,8 +569,6 @@ Diretrizes `[PROPOSTA, 05/10]`:
   fechamento. Só entra se o operador pedir.
 - **Entrega:** os dois textos completos, cada um num bloco de código, prontos para colar. O operador
   cola e confere na aba **Visualizar**.
-- **Curso em inglês** `[PROPOSTA]`: mesmo esqueleto, escrito direto em inglês (não traduzido), com a
-  voz do professor.
 
 > ⚠️ **Burnout:** são duas mensagens por curso; com o esqueleto, ~10 minutos. Se virar muitas
 > rodadas de ajuste fino, entregue a versão do esqueleto e deixe o retoque final para o operador.
@@ -585,7 +581,7 @@ Sete passos em ordem de preenchimento, cada um com ✓:
 
 | Passo | Campos | ✓ quando |
 |---|---|---|
-| Informações básicas | título, subtítulo, slug, descrição, idioma, nível | título, subtítulo, nível e descrição ≥ 200 palavras |
+| Informações básicas | título, subtítulo, slug, descrição, nível | título, subtítulo, nível e descrição ≥ 200 palavras |
 | Para quem é | o que vai aprender, pré-requisitos, para quem é | ≥ 1 item em cada lista |
 | Conteúdo | módulos e aulas | ≥ 1 aula publicada em módulo publicado |
 | Legendas | uma `.vtt` por aula e pela apresentação | todas as aulas de vídeo publicadas com legenda em dia — a mesma conta do "x de y" da tela; a apresentação não conta *(operador, 05/10/2026)* |
@@ -598,7 +594,6 @@ Sete passos em ordem de preenchimento, cada um com ✓:
 - O aluno entra no curso pela **primeira aula** (a de boas-vindas, que o operador sobe como as
   outras).
 - Arquivos: na prática, **um .zip por curso**, numa aula qualquer; só assinantes baixam.
-- Idioma do curso só muda enquanto está em rascunho.
 - **Ficou fora, de propósito:** preço e cupom por curso · categoria · baixar vídeo · descrição na
   aula de vídeo · envio em lote · legenda em outro idioma · liberação programada · tarefas,
   simulados, laboratório, número de alunos e "Atualizado em".
@@ -777,27 +772,19 @@ só vira curso pela regra de entrada (§4).
 **Fonte de ideias além do vidIQ** `[FATO]`: o Q&A real da Udemy (dúvida repetida = título validado
 e alimenta o golden set do JilsonAI), alunos corporativos, análises próprias do Jilson.
 
-## 16. Inglês: a escola bilíngue `[FATO, operador, 14/09/2026]`
+## 16. Um idioma só *(decisão do operador, 12/10/2026)*
 
-- **No máximo 2 idiomas.** Teto de **15 cursos por idioma**; rotação e regra de entrada valem para
-  cada idioma separadamente.
-- **Curso em inglês é outro curso:** vídeos próprios, slug próprio, **regravado**, nunca tradução
-  do mesmo registro. O idioma do curso é obrigatório na criação.
-- **Idioma é filtro, nunca portão:** uma assinatura dá acesso aos cursos dos dois idiomas.
-- Uma URL por idioma: PT sem prefixo, EN em `/en` com segmentos em inglês.
-- Trilha só aceita itens do mesmo idioma (o servidor recusa).
-- Dois canais de YouTube, nunca misturados: o canal EN é `@jilsonen`.
-- O lado EN nasceu ligado mesmo sem curso; o botão de assinar nas páginas em inglês só acende com
-  ≥ 1 aula em inglês publicada.
-- **Estado** `[FATO, Ago 2026]`: o plano do PL-300 em inglês foi abandonado; a produção em inglês
-  ficou condicionada à aceitação no LinkedIn Learning.
+> *"Remover tudo que foi feito para dar suporte a inglês e fica a escola 100% nativa em português
+> e restrita ao Brasil […] tudo que fizermos de agora em diante fica uma língua só."*
 
-**Transposição para o inglês** `[PROPOSTA, 05/10]`:
-- O playbook da §12 vale igual, com o vidIQ em `country: US` / `language: en`.
-- **A copy é escrita em inglês para o público em inglês, não traduzida:** outro vocabulário de
-  busca, outras dúvidas, outros concorrentes.
-- Critério de ordem: NÚCLEO e EXTENSÃO evergreen primeiro (Excel, Power BI, SQL), PRATELEIRA por
-  último. Demanda EN medida antes de gravar.
+**A escola é só em português e só para o Brasil.** Reverte a escola bilíngue de 14/09/2026 (que
+estava nesta seção). Saíram, para o catálogo: o teto por idioma (fica o teto de 15), o curso em
+inglês, a página `/en`, o canal do YouTube em inglês no site, o botão de assinar das páginas em
+inglês e a transposição de curso para o inglês. O texto antigo desta seção está no histórico do
+git. *Voltar ao inglês é projeto novo, não "religar" — o gatilho está no `CLAUDE.md` → Idioma.*
+
+**Fora do site, como estava** `[FATO, Ago 2026]`: o plano do PL-300 em inglês foi abandonado; a
+produção em inglês ficou condicionada à aceitação no LinkedIn Learning.
 
 ---
 
@@ -1278,3 +1265,4 @@ Mesmo conceito, mesmo nome, em todo o catálogo. Cresce a cada transposição.
 | 04/10/2026 | Página de curso = landing de venda da assinatura; "Este curso inclui" |
 | **05/10/2026** | **Reescrita do zero.** Novos: filosofia de produto (princípio iPhone, venda honesta), Udemy × escola (§3), padrão de campos com diretrizes, tags no lugar das frases com ✓, playbook de transposição, vidIQ por situação e cuidados de leitura, radar de tendências, transposição para o inglês, fila de transposição, demanda de Out/2026, tensões T9–T15, Anexo A (Antigravity) |
 | 05/10/2026 (tarde) | §10.11 Mensagens do curso (padrão aprovado pelo operador: parágrafos, voz do professor, JilsonAI); mensagens do Antigravity no Anexo A; Etapas 6 e 9 e Anexo B atualizados |
+| 12/10/2026 | **A escola fica só em português e só para o Brasil** (decisão do operador): saem o teto por idioma, o curso em inglês e a §16 bilíngue; a §16 vira *Um idioma só* (etapa 4.6c, passo 6c, 19/10/2026) |

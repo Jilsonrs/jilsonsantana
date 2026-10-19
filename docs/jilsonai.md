@@ -207,10 +207,9 @@ Internamente, sempre nesta ordem:
   tema, cada um com providers/tools próprios — sem tocar o gateway.
 - Contexto corporativo (org-scoped) — casa com Corporate/B2B (Fase 12 do plano geral).
 - Reservado: voz. Tudo encaixa nos mesmos registros.
-- **EN deixou de ser reservado (Set 2026 — escola bilíngue, `idiomas.md`).** Consequências a
-  detalhar quando cada fase abrir: o JilsonAI **responde no idioma do aluno** (Fase 0–1: persona e
-  prompt), e a base de conhecimento **busca no idioma do curso** (Fases 4–5: o `LessonChunk` herda o
-  idioma do curso, junto com modelo + dimensão do vetor).
+- **Um idioma só (12/10/2026):** a escola é só em português (decisão do operador), e o JilsonAI
+  responde em português. Saiu a nota de Set 2026 sobre responder no idioma do aluno e buscar no
+  idioma do curso — o `LessonChunk` não leva idioma.
 
 ---
 
