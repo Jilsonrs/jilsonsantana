@@ -7,8 +7,8 @@ import { SaveTrilhaButton } from "@/components/content/SaveTrilhaButton";
 import { PageContainer } from "@/components/layout/PageLayout";
 import { useT } from "@/lib/language";
 
-// O texto da tela segue o idioma do app; nome, descrição e itens da trilha são
-// conteúdo, no idioma da própria trilha.
+// O texto da tela sai do dicionário (`useT()`); nome, descrição e itens da trilha
+// são conteúdo.
 export function TrilhaDetailPage() {
   const t = useT();
   const { slug } = useParams<{ slug: string }>();

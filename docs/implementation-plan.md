@@ -4185,9 +4185,25 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                   aqui e o gatilho de reabertura; *Quem serve* só o Brasil; saem a frase de marca
                   em inglês, o preço em dólar e o canal do YouTube em inglês como frente da escola
                   (o canal em si é decisão dele — P90); o LinkedIn Learning ficou como estava.
-            - [ ] **6f — sai o `idiomas.md`** (o registro fica no `decisions-archive.md`; o texto
-                  inteiro, no histórico do git), e o mapa de documentos do `CLAUDE.md`; a busca
-                  final no código, a suíte, e a conferência do operador no site.
+            - [x] **6f — sai o `idiomas.md`** *(19/10/2026)*: apagado do repo; o registro está
+                  no `decisions-archive.md` → *Registros de pesquisa*, e o texto inteiro em
+                  `git show 8bf1f12:docs/idiomas.md`. Saiu também do mapa de documentos do
+                  `CLAUDE.md`. **A única regra que ainda valia lá** — o valor de enum é código e
+                  o nome que a tela mostra vem do dicionário (`app.niveis`) — foi para o
+                  `CLAUDE.md` → *Key Conventions → Client*. **A busca final no código:** sobram
+                  só o código `pt` que o Bunny e a Stripe pedem, comentários que registram o que
+                  saiu, os nomes de ícone em inglês (vêm do Lucide e servem à busca do admin) e
+                  uma linha de comentário num arquivo do Antigravity (`nav/SecondaryNavItem.tsx`,
+                  não está errada). Ao fazer a busca: as funções de legenda do Bunny aceitavam
+                  o código `"en"` no tipo — agora só `"pt"` (`Docs check (context7): Bunny →
+                  /bunnyway/documentation → Stream, o `srclang` da legenda é texto livre: o
+                  tipo é só nosso`); uns 25 comentários deixaram de falar em "dois idiomas".
+                  **Achado, não mexido:** com um idioma só, `etiquetaEmBreve` (`lib/navigation`)
+                  e o `texto` do `EmBreve` escolhem entre duas etiquetas que agora são iguais —
+                  código que dá para simplificar, se o operador quiser. Os quatro gates verdes
+                  (site 892, servidor 1.066).
+            - [ ] **Fecha a etapa: o operador confere no site** — a home sem seletor, `/en` fora do
+                  ar, o admin sem campo de idioma.
 - [ ] **4.7 — O visitante assina: a conta nasce no pagamento (código, ALTO RISCO).** O checkout
       público: e-mail + pagamento → o webhook cria a conta (o cadastro continua fechado) e manda o
       e-mail de "crie sua senha". **Depende do Resend configurado e da P49** (o remetente). Junto:

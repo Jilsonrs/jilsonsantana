@@ -547,3 +547,14 @@ purchases made in Brazil)"; ele escolheu o texto sem o parêntese, e a segunda t
 **Consequência conhecida:** quem lê a página em inglês e paga com cartão do Brasil lê 14 dias,
 e a regra do cartão dá 7 — a decidir quando a cobrança em dólar for construída (etapa 4.8). *Reabre se a escola vender num lugar em que a lei exija mais de 14 dias — a tabela da
 Udemy cita Quebec e Turquia, "a qualquer momento".*
+
+### O `idiomas.md` — a especificação da escola bilíngue *(Set–Out 2026)*
+
+> **Saiu do repo em 19/10/2026** (etapa 4.6c, passo 6f; proposta do agente no plano da etapa,
+> que o operador mandou executar). Era a especificação de produto da escola em dois idiomas:
+> quem vê o quê, como o visitante caía no idioma certo, o conteúdo por idioma, o preço fora do
+> Brasil, o imposto, o ciclo de revisão do inglês e o YouTube. **Revogado inteiro em
+> 12/10/2026** (entrada Out 2026 (28)). **O texto completo:** `git show 8bf1f12:docs/idiomas.md`.
+> **A única regra que ainda valia** — o valor de enum é código e o nome que a tela mostra vem do
+> dicionário (`app.niveis`) — foi para o `CLAUDE.md` → *Key Conventions → Client*.
+

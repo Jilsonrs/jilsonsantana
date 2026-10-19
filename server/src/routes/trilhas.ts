@@ -116,11 +116,6 @@ router.get("/trilhas", async (_req, res) => {
 // "mine") ────────────────────────────────────────────────────────────────────
 
 // GET /api/trilhas/mine — the requester's saved/cloned trilhas.
-//
-// NÃO FILTRA POR IDIOMA, e é de propósito (decisão do operador, 24/09/2026 —
-// como no LinkedIn Learning): o que é DO ALUNO aparece nos dois idiomas. Quem
-// sabe as duas línguas salva trilhas das duas, e trocar o idioma do app não pode
-// esconder o que ele já salvou. Idioma é filtro de DESCOBERTA, não portão.
 router.get("/trilhas/mine", requireAuth, async (req, res) => {
   const user = req.user;
   if (!user) {

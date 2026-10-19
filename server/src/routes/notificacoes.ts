@@ -9,7 +9,7 @@ const router = Router();
 // O SINO DE NOTIFICAÇÕES (Bloco E, etapa 4 — decisões do operador, 04/10/2026).
 // Tudo exige login e é sempre da PRÓPRIA pessoa: o id vem da sessão, nunca do
 // pedido. Quem cria as notificações é `lib/notificacoes.ts`; aqui só se lê e se
-// marca como lida. Não filtra por idioma: o que é do aluno aparece nos dois.
+// marca como lida.
 
 /** As mais recentes que o sino e a página "Ver todas" mostram. */
 export const LIMITE_DA_LISTA = 50;

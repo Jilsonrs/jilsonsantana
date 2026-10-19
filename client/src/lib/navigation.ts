@@ -88,11 +88,11 @@ export type Secao = {
 };
 
 /**
- * O mapa, com os rótulos no idioma do app.
+ * O mapa, com os rótulos.
  *
- * RÓTULO DO ALUNO sai do dicionário (`t.nav`), porque o app do aluno existe em
- * inglês (decisão do operador, 24/09/2026). RÓTULO DE ADMIN é texto escrito
- * aqui, em português: o Admin não muda de idioma (decisão dele, 23/09).
+ * RÓTULO DO ALUNO sai do dicionário (`t.nav`): é onde o operador revisa os
+ * textos do app (decisão dele, 24/09/2026). RÓTULO DE ADMIN é texto escrito
+ * aqui: o texto do Admin fica na tela (decisão dele, 23/09).
  */
 export function navegacao(t: AppTexts): Secao[] {
   return [
@@ -315,9 +315,9 @@ export function secoesVisiveis(papel: string | undefined, t: AppTexts = pt.app):
 }
 
 /**
- * A etiqueta de tela que ainda não existe. Seção de admin fica em português,
- * qualquer que seja o idioma do app (o Admin não muda de idioma — decisão do
- * operador, 23/09/2026); a do aluno segue o idioma dele.
+ * A etiqueta de tela que ainda não existe. A do aluno sai do `useT()`; a de
+ * admin, do `pt` direto, porque o Admin fica fora do `useT()` (decisão do
+ * operador, 23/09/2026). Com um idioma só (12/10/2026), as duas saem iguais.
  */
 export function etiquetaEmBreve(secao: Secao | undefined, t: AppTexts): string {
   return secao?.papel === Role.ADMIN ? pt.app.nav.emBreve : t.nav.emBreve;

@@ -274,7 +274,7 @@ export const pt = {
       jilsonai: "JilsonAI",
       certificados: "Certificados",
       // A etiqueta de tela que ainda não existe (rail, gaveta, nível 2). Seção de
-      // admin usa sempre a de português (o Admin não muda de idioma).
+      // admin usa a mesma.
       emBreve: "EM BREVE",
       minhaConta: "Minha conta",
       seusDados: "Seus dados",
@@ -456,8 +456,7 @@ export const pt = {
       comecar: "Começar a estudar",
       demorando: "Está demorando mais que o normal. Seu pagamento não se perde: esta página continua conferindo."
     },
-    // FATURAMENTO E ASSINATURA (Fase 4, etapa 4.6). Textos APROVADOS pelo operador em 11/10/2026,
-    // nos dois idiomas. O título da tela é o rótulo do menu (`nav.faturamento`); os nomes dos
+    // FATURAMENTO E ASSINATURA (Fase 4, etapa 4.6). Textos APROVADOS pelo operador em 11/10/2026. O título da tela é o rótulo do menu (`nav.faturamento`); os nomes dos
     // planos e "Assinar" / "Reativar assinatura" são os de `assinar`.
     faturamento: {
       descricao: "Seu plano, sua forma de pagamento e a próxima cobrança.",

@@ -10,7 +10,7 @@ import { deveTentarDeNovo } from "@/lib/tentar-de-novo";
 // Como: o player.js não avisa quando o CC muda, então um script NOSSO, colado no HTML
 // personalizado do player do Bunny (o texto está no `bunny.md`), avisa a página da
 // aula com `{ origem: "jilsonsantana-legenda", ligada }`. A página grava a escolha na
-// conta e abre cada aula com `captions=<idioma do curso>` (ligada) ou `captions=off`
+// conta e abre cada aula com `captions=pt` (ligada) ou `captions=off`
 // (desligada) — parâmetro de embed do Bunny Player que vence a memória do próprio player
 // no aparelho (medido, `bunny.md`).
 

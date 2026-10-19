@@ -83,7 +83,7 @@ export type PlanItemType = (typeof PlanItemType)[keyof typeof PlanItemType];
 // is true ONLY for the IA layer — the single colored one.
 //
 // OS TEXTOS (nome e frase de cada camada) NÃO moram mais aqui: estão no
-// dicionário, em `common.camadas`, nos dois idiomas e editáveis em Admin →
+// dicionário, em `common.camadas`, editáveis em Admin →
 // Textos (decisão do operador, 24/09/2026). Aqui ficam só o ícone e a cor.
 export type LayerConfig = {
   icon: string;

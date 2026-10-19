@@ -8,7 +8,7 @@ import { FOLGA_DO_VENCIMENTO, enderecoDoPlayer, vencimento, venceu, videoDoEnder
  * O player do Bunny Stream, num quadro 16:9. O endereço vem SEMPRE do servidor
  * (derivado lá, nunca montado aqui), então este componente não conhece chave,
  * biblioteca nem token. A tela só acrescenta ONDE COMEÇAR (`t`), a LEGENDA que a conta
- * escolheu (`captions`) e o IDIOMA dos botões (`lang`, o do app) — parâmetros de embed
+ * escolheu (`captions`) e o IDIOMA dos botões (`lang`, sempre `pt`) — parâmetros de embed
  * do Bunny Player, fora do token (`lib/endereco-do-player.ts`). Tocar sozinho ou não vem do servidor: a aula toca, a
  * apresentação abre pausada (03/10/2026) — aqui nunca se muda isso.
  *
@@ -43,7 +43,7 @@ export function BunnyPlayer({
    */
   comecarEm?: number | null;
   /**
-   * A legenda que a CONTA escolheu (Bloco AULA, etapa 6, 07/10/2026): o idioma do curso
+   * A legenda que a CONTA escolheu (Bloco AULA, etapa 6, 07/10/2026): `pt`
    * (abre ligada) ou `off` (abre desligada, mesmo que o aparelho lembre o contrário).
    * Vazio (visitante), o player decide.
    */

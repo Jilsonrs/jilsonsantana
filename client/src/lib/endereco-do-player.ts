@@ -17,7 +17,7 @@ export function videoDoEndereco(src: string): string {
  * - `captions=<idioma>` ou `captions=off`: a legenda que a CONTA do aluno escolheu (Bloco AULA,
  *   etapa 6, 07/10/2026). Vence a memória do próprio player no aparelho (medido, `bunny.md`). Sem
  *   ela (visitante), o player decide;
- * - `lang=<idioma do app>`: os botões do player no idioma do app (decisão do operador, 07/10/2026).
+ * - `lang=<idioma>`: o idioma dos botões do player — a escola manda sempre `pt` (12/10/2026).
  */
 export function enderecoDoPlayer(
   src: string,

@@ -11,9 +11,8 @@ import { contagem } from "@/lib/contagem";
 import { horasEMinutos } from "@/lib/duracao-do-curso";
 import { CourseIncludes } from "@/components/content/CourseIncludes";
 
-// O TEXTO DA TELA segue o idioma do app; o CONTEÚDO do curso (título, descrição,
-// aulas, FAQ) sai como o operador escreveu, no idioma do próprio curso. O link
-// direto não filtra por idioma: abre em qualquer um (decisão do operador, 24/09).
+// O TEXTO DA TELA sai do dicionário (`useT()`); o CONTEÚDO do curso (título,
+// descrição, aulas, FAQ) sai como o operador escreveu.
 export function CourseDetailPage() {
   const t = useT();
   const { slug } = useParams<{ slug: string }>();

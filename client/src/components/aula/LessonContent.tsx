@@ -74,8 +74,8 @@ export function LessonContent({
   /** A próxima aula da lista: na aula de texto, o botão "Próxima aula" leva a ela (06/10/2026). Na última, nenhum. */
   proximaAulaId?: number;
   /**
-   * A legenda lembrada (Bloco AULA, etapa 6, 07/10/2026): como ela abre — o idioma do
-   * curso (ligada) ou `off` (desligada) —, e o que grava quando o aluno muda no CC do player.
+   * A legenda lembrada (Bloco AULA, etapa 6, 07/10/2026): como ela abre — `pt` (ligada)
+   * ou `off` (desligada) —, e o que grava quando o aluno muda no CC do player.
    */
   legenda?: { abrirCom: string; aoMudar: (ligada: boolean) => void };
   /** O endereço do vídeo está vencendo: buscar a aula de novo, com um endereço novo (06/10/2026). */
