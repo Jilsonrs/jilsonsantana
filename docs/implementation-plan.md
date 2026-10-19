@@ -4178,8 +4178,13 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                   *Estado atual* diz que a escola é só em português. Na `pendencias.md`, cada
                   item perdeu a parte em inglês (o texto, o arquivo `en.ts`, o "Reactivate
                   subscription").
-            - [ ] **6e — os textos de posicionamento** (`project-description.md`,
-                  `strategy.md`, `project-scope.md`): o agente propõe, o operador aprova.
+            - [x] **6e — os textos de posicionamento** (`project-description.md`,
+                  `strategy.md`, `project-scope.md`) *(19/10/2026 — texto proposto pelo agente,
+                  **aprovado pelo operador no mesmo dia**)*: *Idioma & foco* e o §9 da
+                  estratégia reescritos com a frase dele de 12/10/2026, o que pesou, o caminho até
+                  aqui e o gatilho de reabertura; *Quem serve* só o Brasil; saem a frase de marca
+                  em inglês, o preço em dólar e o canal do YouTube em inglês como frente da escola
+                  (o canal em si é decisão dele — P90); o LinkedIn Learning ficou como estava.
             - [ ] **6f — sai o `idiomas.md`** (o registro fica no `decisions-archive.md`; o texto
                   inteiro, no histórico do git), e o mapa de documentos do `CLAUDE.md`; a busca
                   final no código, a suíte, e a conferência do operador no site.
