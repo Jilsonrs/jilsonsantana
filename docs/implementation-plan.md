@@ -4346,6 +4346,23 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             `Language`, `/en` e `idioma` no código devolvendo só o esperado, a suíte inteira, e
             o operador conferindo no site: home sem seletor, `/en` fora do ar, admin sem campo
             de idioma.
+            **Em partes, um commit cada** (o passo é grande — 15 documentos):
+            - [x] **6a — a lei de build** *(19/10/2026)*: o `CLAUDE.md` já estava em dia (cada
+                  passo corrigiu a sua linha; falta só o `idiomas.md` no mapa, que sai na 6f);
+                  o `GEMINI.md` perdeu as menções ao inglês nos itens; o `tech-stack.md`, o
+                  preço em dólar; saiu o script da revisão do inglês
+                  (`scripts/gerar-revisao-ingles.mjs` e o `npm run revisao:ingles`), que lia o
+                  dicionário em inglês.
+            - [ ] **6b — `billing.md`**: o dólar, os 14 dias e os textos em inglês; o registro
+                  da pesquisa de 12/10 desce para o `decisions-archive.md` (é o porquê da
+                  entrada (28)).
+            - [ ] **6c — `content.md`, `courses.md`, `bunny.md`, `jilsonai.md`, `design.md`.**
+            - [ ] **6d — os itens abertos deste plano que citam idioma, e a `pendencias.md`.**
+            - [ ] **6e — os textos de posicionamento** (`project-description.md`,
+                  `strategy.md`, `project-scope.md`): o agente propõe, o operador aprova.
+            - [ ] **6f — sai o `idiomas.md`** (o registro fica no `decisions-archive.md`; o texto
+                  inteiro, no histórico do git), e o mapa de documentos do `CLAUDE.md`; a busca
+                  final no código, a suíte, e a conferência do operador no site.
 - [ ] **4.7 — O visitante assina: a conta nasce no pagamento (código, ALTO RISCO).** O checkout
       público: e-mail + pagamento → o webhook cria a conta (o cadastro continua fechado) e manda o
       e-mail de "crie sua senha". **Depende do Resend configurado e da P49** (o remetente). Junto:
