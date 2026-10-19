@@ -4302,12 +4302,16 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                   Prisma ignora coluna que não declara). `migrate diff` mostra a diferença
                   dessa coluna até o 5b — esperado. **Medido:** o `auth generate` NÃO apaga
                   campo que saiu do `auth.ts` (só acrescenta linhas em branco); a remoção é à
-                  mão. **Achado de ferramenta, para o operador:** `npm --workspace server run
-                  auth:generate` hoje FALHA (*"createJiti is not a function"*): o `c12`, que lê
-                  a configuração, acha na raiz o `jiti` 1 (do Tailwind e do ESLint) e precisa
-                  do 2, que só existe dentro do pacote `auth`. Rodado aqui por um desvio fora do
-                  repo; o conserto é na instalação dos pacotes (`package.json` da raiz) e espera
-                  o OK dele. **Teste novo, da revisão de segurança:** o aluno não consegue se
+                  mão. **Achado de ferramenta:** `npm --workspace server run auth:generate` FALHAVA
+                  (*"createJiti is not a function"*): o `c12`, que lê a configuração, achava na
+                  raiz o `jiti` 1 (do Tailwind) e precisa do 2, que só existia dentro do pacote
+                  `auth`. Rodado aqui por um desvio fora do repo. **CONSERTADO em 19/10/2026**
+                  (ordem do operador: *"conserta o que for necessário"*): o `jiti` 2 entrou nas
+                  `devDependencies` da raiz, e o Tailwind ficou com a cópia 1 dele; o comando
+                  roda sem desvio, e o schema que ele gera é igual ao nosso. Um ajuste só para o
+                  `c12` (`overrides`) não pegou: o `npm` não o aplica a dependência opcional.
+                  `better-auth-cli.test.ts` reprova se o `c12` voltar a achar o 1 (mutação: com
+                  o lockfile de antes, reprova). O CSS público compilado saiu idêntico. **Teste novo, da revisão de segurança:** o aluno não consegue se
                   promover a admin, se marcar como excluído nem ligar o aceite de e-mail pela
                   rota pronta `POST /api/auth/update-user` (`login.test.ts`, com o controle de
                   que a rota funciona para o nome); tirar o `input: false` do `role` reprova.
