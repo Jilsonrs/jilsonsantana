@@ -4353,9 +4353,14 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                   preço em dólar; saiu o script da revisão do inglês
                   (`scripts/gerar-revisao-ingles.mjs` e o `npm run revisao:ingles`), que lia o
                   dicionário em inglês.
-            - [ ] **6b — `billing.md`**: o dólar, os 14 dias e os textos em inglês; o registro
-                  da pesquisa de 12/10 desce para o `decisions-archive.md` (é o porquê da
-                  entrada (28)).
+            - [x] **6b — `billing.md`** *(19/10/2026)*: as seções do dólar e do imposto de
+                  fora viraram uma só, *Só em reais, só para o Brasil*; os 14 dias de reembolso
+                  e a promessa "ao mundo" saíram (o código sempre teve só os 7 dias); os
+                  rascunhos de texto em inglês saíram dos registros. **A pesquisa de 12/10 e o
+                  texto antigo dessas seções desceram verbatim** para o `decisions-archive.md` →
+                  *Registros de pesquisa* (o porquê da entrada (28)) — conferido linha a linha:
+                  nenhuma linha que saiu ficou sem cópia lá. No código, o comentário de
+                  `PRAZO_DO_REEMBOLSO_EM_DIAS` deixou de prometer os 14 dias.
             - [ ] **6c — `content.md`, `courses.md`, `bunny.md`, `jilsonai.md`, `design.md`.**
             - [ ] **6d — os itens abertos deste plano que citam idioma, e a `pendencias.md`.**
             - [ ] **6e — os textos de posicionamento** (`project-description.md`,
