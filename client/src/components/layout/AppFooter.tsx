@@ -24,9 +24,16 @@ export function AppFooter() {
         
         {/* Barra estilo "Menu da Home" (footer-top) */}
         <div className="flex flex-col gap-4 bg-gradient-to-r from-background/95 to-surface-vitrine/95 px-4 py-4 backdrop-blur-xl md:h-[55px] md:flex-row md:items-center md:justify-between md:rounded-r-[24px] md:py-0 md:pl-[50px] md:pr-6">
-          <p className="font-brand text-2xl font-bold tracking-tighter">
-            <span className="text-primary">#</span>Jilson Santana
-          </p>
+          {/* A MESMA logomarca do rodapé da home (pedido do operador, 19/10/2026), com o mesmo
+              recorte: o PNG é quadrado, e a moldura de 44px mostra só a faixa do nome
+              (`.nav-logo` em `public-input.css`). */}
+          <div className="inline-flex h-[44px] shrink-0 items-center overflow-hidden">
+            <img
+              src="/img/Logomarca.png"
+              alt="Jilson Santana"
+              className="-ml-[3px] block h-[136px] w-[136px] max-w-none object-contain"
+            />
+          </div>
           <ul className="flex flex-wrap items-center gap-x-4 sm:gap-x-8 gap-y-2 text-[15px] font-medium text-foreground">
             {itensDoRodape().map((item) => (
               <li key={item.href}>

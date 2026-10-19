@@ -102,3 +102,15 @@ describe("AppFooter — sem seletor de idioma", () => {
     expect(screen.queryAllByRole("button")).toHaveLength(0);
   });
 });
+
+// A logomarca do rodapé é a MESMA imagem do rodapé da home (pedido do operador,
+// 19/10/2026) — e o nome continua acessível a quem usa leitor de tela.
+describe("AppFooter — a logomarca", () => {
+  it("mostra a imagem da logomarca da home, com o nome da escola", () => {
+    vi.mocked(api.getCommonTexts).mockResolvedValue(pt.common);
+    renderWithProviders(<AppFooter />);
+
+    const logo = screen.getByRole("img", { name: "Jilson Santana" });
+    expect(logo.getAttribute("src")).toBe("/img/Logomarca.png");
+  });
+});
