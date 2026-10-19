@@ -202,6 +202,15 @@
 > (aula concluída sozinha, barra na aula e no cartão), o vídeo que não recomeça ao trocar de aba
 > (a apresentação abre pausada, a aula toca sozinha) e o "Salvos". **Primeiro teste com o player de
 > verdade: com o operador** (assistir uma aula até perto do fim e ver a barra andar).
+> **PUBLICADO em 19/10/2026 (`main` = `1ee7c0c`, CI verde nos dois jobs, deploy ok; sem
+> migration; ordem do operador: "publica"):** o **passo 6 da etapa 4.6c** (os documentos num
+> idioma só; saíram o `idiomas.md` e o script da revisão do inglês; a legenda do Bunny só aceita
+> `"pt"` no tipo), o conserto do `auth:generate` (o `jiti` 2 na raiz), **a logomarca da home no
+> rodapé do app** e **o "Assine" do menu da home some para quem tem assinatura ativa** (decisão
+> do operador, 19/10/2026; o "Assine" do rodapé da home ficou como estava, sem decisão).
+> **Provado no site, de fora:** a versão nova (`mvfpyhz2-a2d42ffc`; antes, `mvea5i2y-3a00b6df`);
+> catálogo, trilhas, textos comuns e sessão → 200; a assinatura sem login → 401; o login com um
+> e-mail que não existe → 401; a imagem da logomarca → 200; o público segue no "Em breve".
 > **PUBLICADO em 18/10/2026, por último (`main` = `d61962c`, CI verde nos dois jobs, deploy ok
 > às 20:40; a migration `20261018170000_sai_o_idioma_da_conta` aplicada pelo pre-deploy — a
 > publicação só termina com sucesso se ela passar; mesma ordem do operador):** o **passo 5b da
