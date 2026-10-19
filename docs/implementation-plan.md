@@ -3956,7 +3956,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
         dos 3 dias · os dois e-mails são da etapa 4.7.
       - **Para saber:** a data do aviso é a do dia em que as aulas trancam, e elas trancam na
         mesma hora em que a cobrança falhou — não no fim desse dia.
-- [ ] **4.6c — A escola só em português e só para o Brasil: sai o segundo idioma (código + banco + documentos; RISCO ALTO: mexe no banco, na conta e em quase toda tela).**
+- [x] **4.6c — A escola só em português e só para o Brasil: sai o segundo idioma (código + banco + documentos; RISCO ALTO: mexe no banco, na conta e em quase toda tela).**
       **Decisão do operador (12/10/2026):** *"Eu vou implementar a 4.6c […] remover tudo que foi
       feito para dar suporte a inglês e fica a escola 100% nativa em português e restrita ao
       Brasil, assim uma dor de cabeça a menos, e tudo que fizermos de agora em diante fica uma
@@ -4195,15 +4195,18 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                   saiu, os nomes de ícone em inglês (vêm do Lucide e servem à busca do admin) e
                   uma linha de comentário num arquivo do Antigravity (`nav/SecondaryNavItem.tsx`,
                   não está errada). Ao fazer a busca: as funções de legenda do Bunny aceitavam
-                  o código `"en"` no tipo — agora só `"pt"` (`Docs check (context7): Bunny →
-                  /bunnyway/documentation → Stream, o `srclang` da legenda é texto livre: o
-                  tipo é só nosso`); uns 25 comentários deixaram de falar em "dois idiomas".
+                  o código `"en"` no tipo — agora só `"pt"` (*Docs check (context7): Bunny →
+                  `/bunnyway/documentation` → Stream, o `srclang` da legenda é texto livre: o
+                  tipo é só nosso*); uns 25 comentários deixaram de falar em "dois idiomas".
                   **Achado, não mexido:** com um idioma só, `etiquetaEmBreve` (`lib/navigation`)
                   e o `texto` do `EmBreve` escolhem entre duas etiquetas que agora são iguais —
                   código que dá para simplificar, se o operador quiser. Os quatro gates verdes
                   (site 892, servidor 1.066).
-            - [ ] **Fecha a etapa: o operador confere no site** — a home sem seletor, `/en` fora do
-                  ar, o admin sem campo de idioma.
+            - [x] **Fecha a etapa: o operador confere no site** *(19/10/2026)* — o operador,
+                  logado: *"não encontrei o idioma na home logada, está correto"*. De fora, o
+                  agente: a home diz `lang="pt-BR"`, sem `hreflang` nem link para `/en`, e `/en`
+                  mostra o mesmo "Em breve" de qualquer endereço. O formulário de curso sem campo
+                  de idioma é garantido pelos testes do admin (`CourseLevelField`).
 - [ ] **4.7 — O visitante assina: a conta nasce no pagamento (código, ALTO RISCO).** O checkout
       público: e-mail + pagamento → o webhook cria a conta (o cadastro continua fechado) e manda o
       e-mail de "crie sua senha". **Depende do Resend configurado e da P49** (o remetente). Junto:
