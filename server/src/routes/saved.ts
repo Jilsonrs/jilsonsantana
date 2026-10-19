@@ -15,8 +15,7 @@ const router = Router();
 // Salvar confere a CADEIA PUBLICADA inteira (CLAUDE.md → Server: "escrita também
 // confere status do que REFERENCIA"): rascunho dá 404, igual ao que não existe —
 // senão a rota viraria um jeito de descobrir o catálogo não publicado. A lista
-// também só mostra o que continua publicado. Não filtra por idioma: o que é do
-// aluno aparece nos dois (CLAUDE.md → Idiomas).
+// também só mostra o que continua publicado.
 
 const PUBLISHED = ContentStatus.PUBLISHED;
 const cursoPublicado = { status: PUBLISHED };

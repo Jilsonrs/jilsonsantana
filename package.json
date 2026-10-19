@@ -15,7 +15,6 @@
     "lint": "eslint server/src core/src e2e client/src",
     "test": "npm --workspace client run test && npm --workspace server run test",
     "test:changed": "npm --workspace client run test:changed && npm --workspace server run test:changed",
-    "revisao:ingles": "npm --workspace core run build && node scripts/gerar-revisao-ingles.mjs",
     "css:publico": "npm --workspace client run build:css",
     "checar:player": "node scripts/checar-legenda-no-player.mjs"
   },
@@ -25,6 +24,7 @@
   },
   "devDependencies": {
     "eslint": "10.11.0",
+    "jiti": "^2.7.0",
     "typescript-eslint": "8.70.1"
   }
 }

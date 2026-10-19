@@ -40,6 +40,9 @@ export interface HomeView {
   /** Há sessão válida? Muda SÓ o cabeçalho — o resto da vitrine é igual para
    *  todo mundo, inclusive para o robô do Google, que nunca tem cookie. */
   logado: boolean;
+  /** Quem está logado tem assinatura ativa (`temAcessoAtivo()`): o menu não mostra "Assine"
+   *  (decisão do operador, 19/10/2026). Sem login, nunca. A seção de preço continua igual. */
+  assinante: boolean;
   /** Quem está logado já foi assinante e hoje está sem acesso: os botões dizem "Reativar
    *  assinatura" (decisão do operador, 10/10/2026). Sem login, nunca. */
   reativar: boolean;
@@ -67,6 +70,7 @@ export function renderHome({
   canSubscribe,
   baseUrl,
   logado,
+  assinante,
   reativar,
   testimonials,
   faq,
@@ -139,7 +143,7 @@ export function renderHome({
       <div class="nav-links">
         <a href="#cursos">${escapeHtml(dict.common.nav.cursos)}</a>
         <a href="#trilhas">${escapeHtml(dict.common.nav.trilhas)}</a>
-        <a href="#assine">${escapeHtml(dict.common.nav.assine)}</a>
+        ${assinante ? "" : `<a href="#assine">${escapeHtml(dict.common.nav.assine)}</a>`}
         ${logado
           ? `<a href="/inicio" class="btn-login">${escapeHtml(dict.common.nav.meusEstudos)}</a>`
           : `<a href="/login" class="btn-login">${escapeHtml(dict.common.nav.entrar)}</a>`}

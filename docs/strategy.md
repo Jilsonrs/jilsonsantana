@@ -20,9 +20,8 @@ virou a referência contra a qual os outros se comparam. "AI-nativa" é termo de
 na **nossa** categoria — atrasados por definição. Custo: zero (é copy).
 
 **Quem serve:** profissional/estudante BR que quer aprender dados de forma prática e aplicada
-(Excel, Power BI, SQL, Python, IA aplicada) — do iniciante ao que quer subir de nível. PT primeiro.
-**Desde Set 2026, também quem aprende em inglês** (escola bilíngue — §9); o posicionamento em
-inglês ainda está a definir.
+(Excel, Power BI, SQL, Python, IA aplicada) — do iniciante ao que quer subir de nível. Só em
+português, só no Brasil (12/10/2026 — §9).
 
 **Problema que resolve:** cursos avulsos não dão caminho, não tiram dúvida na hora, e ninguém
 aplica o que assistiu. A escola entrega **caminho (trilhas) + tutor 24/7 (JilsonAI) + sempre
@@ -86,8 +85,6 @@ tutor 24/7) + autoridade pessoal + simplicidade Apple — combinação que nenhu
 - **YouTube "Jilson Santana"** = **rebuild PT, compounding de médio/longo prazo** (1 vídeo/semana).
   Base pequena hoje → não é o motor no curto prazo; cresce alimentado pela própria campanha Udemy.
   AdSense **bônus** (RPM PT/BR baixo).
-- **YouTube em inglês (Set 2026)** = **canal separado, depois**, com os cursos regravados em inglês;
-  alimenta o lado EN da escola (§9).
 - **Site** = conversão (assinatura R$99,90) + entrega de valor recorrente.
 - **Ferramentas gratuitas — "comoditize o complemento" (pós-launch, 1 piloto):** [FATO] estratégia
   formalizada por Joel Spolsky (Strategy Letter V) e executada pelas big techs — Google deu o
@@ -107,12 +104,8 @@ tutor 24/7) + autoridade pessoal + simplicidade Apple — combinação que nenhu
 
 - **Mensal R$99,90 sem fidelidade** (motor de aquisição) + **anual ~R$995** (~17% off). Sem trial,
   sem grátis na escola, sem lock vitalício.
-- **Fora do Brasil (Set 2026): US$ 30/mês + US$ 299/ano (mesmo cálculo do anual em real).**
-  Moeda pelo **país do cartão**. ⚠️ **Toda a conta abaixo (ARPU, a conta, 500, o teto de 1.000) está
-  só em reais** — o teto assume 1.000 × R$ 99,90, o cenário conservador; o assinante em dólar, quando
-  houver, entra **por cima** desse número, nunca dentro dele.
-  Cartão estrangeiro tem outra taxa na Stripe (a verificar na Fase 4), então o assinante em dólar
-  precisa de conta própria antes de entrar na meta.
+- **Só em reais** (12/10/2026 — §9): a conta abaixo (ARPU, 500, o teto de 1.000) é toda em reais,
+  e não há assinante em dólar a somar.
 - *Validação (Gemini ~95% convergência):* mensal-sem-fidelidade ganha de anual-12x-travado em
   conversão × LTV; fidelidade carrega risco Procon/CDC/chargeback pra operador solo.
 - **META DE RECEITA (B2C-first, atualizada Jun 2026): US$ 6.000 líquidos/mês.** O motor é a
@@ -306,25 +299,19 @@ objetivo dele, não da técnica. ("Construa o dashboard que seu chefe vai amar" 
 
 ---
 
-## 9. EN — escola bilíngue desde o lançamento (Set 2026)
+## 9. Um idioma só — português, para o Brasil (12/10/2026)
 
-> **REVERTIDO em 14/09/2026 `[decisão do operador]`.** O texto anterior dizia *"Escola + YouTube
-> ficam PT pra sempre. Sem canal EN, sem conteúdo EN na escola."* Especificação em
-> [`idiomas.md`](idiomas.md).
+> **REVERTIDO de novo em 12/10/2026 `[decisão do operador]`:** *"Remover tudo que foi feito para dar suporte a inglês e fica a escola 100% nativa em português e restrita ao Brasil, assim uma dor de cabeça a menos, e tudo que fizermos de agora em diante fica uma língua só."* A escola
+> bilíngue de 14/09/2026 saiu (etapa 4.6c).
 
-- **A escola é bilíngue desde o primeiro dia**, como a Udemy: estrutura em português e inglês,
-  inglês **ligado no lançamento** mesmo sem curso em inglês, para o Google já indexar.
-- **Duas fontes de renda com um roteiro só:** cada curso PT pode ser **regravado em inglês**. Roteiro,
-  pesquisa e estrutura já existem; o custo é o tempo de regravar.
-- **YouTube: canal separado em inglês**, nunca misturado com o canal PT.
-- **Preço fora do Brasil: US$ 30/mês**, anual pelo mesmo cálculo; **moeda pelo país do cartão**.
-- **Ordem de mercado não mudou:** o português segue sendo o primeiro mercado (base Udemy + canal) e
-  é onde a meta de receita (§6) foi calculada. O inglês entra como **segunda frente**, sem conta de
-  receita própria até existir dado.
-- **Pendente:** posicionamento e nome de categoria em inglês (o §1 "AI-nativa do Brasil" é o lado
-  PT); imposto internacional (Fase 4, com contador — `idiomas.md` §5).
-- *LinkedIn Learning (tentativa única quando C1): **não foi rediscutido** em Set 2026. Segue como
-  projeto à parte até o operador dizer o contrário.*
+- **A escola é só em português e vende só para o Brasil**, em reais. O §1 ("AI-nativa do Brasil")
+  volta a ser o posicionamento inteiro.
+- **O que pesou:** sem quem cuide do imposto da venda para fora com a empresa no Brasil, vender
+  fora seria imposto de cada país na mão do operador (`decisions-archive.md` → *Registros de
+  pesquisa*).
+- *LinkedIn Learning (tentativa única quando C1): segue como projeto à parte, fora do site, até o
+  operador dizer o contrário. O canal do YouTube em inglês é decisão dele (P90).*
+- **Gatilho de reabertura:** só por decisão dele, com dado novo — o Stripe Tax ou o Managed Payments aceitarem empresa do Brasil, ou a empresa mudar de país. Voltar ao inglês é projeto novo, não "religar".
 
 ---
 
@@ -367,3 +354,5 @@ fases novas.*
 *Atualização Set 2026 (14/09) — **ESCOLA BILÍNGUE** `[decisão do operador]`. §9 reescrita (era "EN & LinkedIn Learning — fora deste ciclo"; agora "EN — escola bilíngue desde o lançamento"). §1 amplia *Quem serve*; §5 ganha o canal do YouTube separado em inglês; §6 ganha o preço fora do Brasil (US$ 30/mês, moeda pelo país do cartão) **e um alerta**: ARPU, 363 e 500 seguem calculados só em reais, sem o assinante em dólar. **Nenhum número da derivação foi alterado.** Especificação e gatilho de reabertura: `idiomas.md`.*
 
 *Atualização Set 2026 (18/09) — **TETO DE 1.000 ASSINANTES PAGANDO MENSAL** `[decisão do operador]`, **+ duas correções na derivação da §6**. **O que NÃO mudou: o método.** A conta por plano de ago/2026 (R$ 0,50 por transação, imposto sobre o bruto) continua correta e intacta — as correções abaixo entram **dentro** dela, não no lugar dela. **A escada passa de três para quatro números:** ~378–469 = a conta · ~400 = o piso · 500 = a meta · **1.000 = o TETO**. **O teto vale R$ 99.900/mês bruto (R$ 1,2M/ano), R$ 72–82k/mês líquido ≈ US$ 14–16k** — **~2,3× a renda-objetivo mesmo na conta mais pessimista** — e segue em **território EPP** (limite do Simples: R$ 4,8M/ano), sem mudar enquadramento. **É no plano MENSAL** `[decisão do operador]`, não no mix 75/25: mensal puro fatura **~R$ 51k/ano a mais** que o mesmo número de assinantes no mix, porque o anual dá 17% de desconto — e a conta **sobrevive à troca**, porque a alíquota progressiva come exatamente a diferença. **CORREÇÃO (1) — o Simples é PROGRESSIVO, não 6% fixo.** Os ~6% são a alíquota da 1ª faixa do Anexo III (até R$ 180k/ano); a efetiva sobe com a RBT12, isto é, **sobe junto com a base**: ~9,4% na conta · ~10,4% na meta · **~13,0% no teto**. Custa **~R$ 2,3 mil/mês aos 500** e **~R$ 7 mil/mês (R$ 84k/ano) aos 1.000** — o erro escala com a meta. O alerta que existia na §6 era **só** Anexo III × Anexo V; **o problema acontece mesmo ficando no III**, e isso nunca esteve escrito. ⚠️ A estrutura progressiva é certa; **os valores de faixa são [A CONFIRMAR COM O CONTADOR]**, agora com três perguntas em vez de uma: valores do Anexo III · III × V · **Simples × Lucro Presumido** (a ~13% efetiva ele merece comparação). **CORREÇÃO (2) — faltava o custo de API do JilsonAI no ARPU.** É custo variável por assinante (R$ 5–9 leve, R$ 25–45 heavy — `jilsonai.md`), **maior que a taxa da Stripe** (a R$ 10/aluno = ~10,5% do bruto, o dobro dos 5,2%), e não estava descontado em lugar nenhum. Incluindo-o, **o "piso" de ~400 vira a CONTA** e a margem que ele representava some. **Consequência de forma:** o ARPU deixa de ser número único (R$ 85,04) e vira **faixa R$ 67–82** — depende do tamanho da base (a alíquota) e do consumo de cada aluno (a API). **Sobre a churn:** os 7% são **hipótese, nunca medida** `[enquadramento do operador]`; a tabela de trajetória do teto fica como **referência de esforço, não restrição à meta** — não se usa número inventado para decidir se 1.000 é alcançável. **GATILHO DE REABERTURA (vale para a meta E para o teto):** 12 meses de churn **medida**, **ou** câmbio/enquadramento movendo o ARPU líquido mais de ~10% — o que inclui o contador fechar a questão do Anexo/regime. **NÃO é gatilho:** ritmo de crescimento abaixo do esperado no começo — **teto é destino, não previsão.***
+
+*Atualização Out 2026 (12/10) — **UM IDIOMA SÓ: PORTUGUÊS, PARA O BRASIL** `[decisão do operador]`, revertendo a escola bilíngue de 14/09. §9 reescrita ("Um idioma só"); §1 *Quem serve* volta a ser só o Brasil; §5 perde o canal do YouTube em inglês como frente da escola (o canal em si é decisão dele — P90); §6 perde o preço em dólar. **Gatilho de reabertura:** só por decisão dele, com dado novo — o Stripe Tax ou o Managed Payments aceitarem empresa do Brasil, ou a empresa mudar de país. Voltar ao inglês é projeto novo, não "religar".*

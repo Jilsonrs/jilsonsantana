@@ -95,8 +95,8 @@ async function assinaturaIndividualAtiva(userId: string, db: Leitor): Promise<bo
 }
 
 /**
- * Esta pessoa pode ver o conteúdo pago? Não lê idioma (uma assinatura vale para
- * os dois — decisão do operador, 14/09/2026) nem papel. Pós-MVP, o corporativo
+ * Esta pessoa pode ver o conteúdo pago? Não lê papel: o admin assiste pelas
+ * rotas do admin. Pós-MVP, o corporativo
  * entra aqui como `|| membroDeOrgComLugarLivre(userId)`, sem tocar em quem chama.
  */
 export async function temAcessoAtivo(userId: string, db: Leitor = prisma): Promise<boolean> {

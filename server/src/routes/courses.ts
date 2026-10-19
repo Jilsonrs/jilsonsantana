@@ -64,8 +64,7 @@ router.get("/courses", async (_req, res) => {
 });
 
 // GET /api/courses/:slug — full detail tree for the course page (by slug, which
-// is the public URL). 404 if missing or not published. NÃO filtra por idioma:
-// link direto nunca é barrado, e a assinatura vale nos dois idiomas.
+// is the public URL). 404 if missing or not published.
 router.get("/courses/:slug", async (req, res) => {
   const course = await prisma.course.findFirst({
     where: { slug: req.params.slug, status: PUBLISHED },

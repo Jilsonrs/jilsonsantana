@@ -2,10 +2,8 @@
 
 > Texto, headlines, CTAs e direção de copy de cada seção da landing.
 > Fonte de estratégia/produto: **PROJECT_DESCRIPTION.md** · Estrutura: **implementation-plan.md** + **CLAUDE.md**.
-> Idioma: **PT-BR — a fonte.** Desde Set 2026 a escola é **bilíngue** (`idiomas.md`): a copy em
-> inglês é **tradução desta** (o agente traduz, o operador revisa antes de publicar) e **ainda não
-> foi escrita**. Tagline em inglês (operador, 14/09): *"Become a data expert in the AI era."* Nome
-> de categoria em inglês: a definir.
+> Idioma: **só português** *(decisão do operador, 12/10/2026: a escola é só em português e só
+> para o Brasil — reverte a escola bilíngue de 14/09/2026)*.
 >
 > **STATUS:** consolidado com as decisões deste ciclo (preço, pilares, suporte AI-nativo,
 > trilhas, certificado/comunidade no lançamento). **NÃO é a copy final de go-live** —
@@ -296,7 +294,8 @@ quiser trilha, tutor 24/7 e certificado, a escola te espera."
 Consultoria (6 serviços/Service 6/$100hr/Process/Portfolio), ContactForm de consultoria,
 cursos a $119 avulsos, membership $29.99, free trial, conteúdo grátis na escola, fórum de
 pares, "cursos escondidos até 10K subs", ataque direto à Udemy.
-*(A "copy em inglês" saiu desta lista em Set 2026: a escola passou a ser bilíngue — `idiomas.md`.)*
+*(A "copy em inglês" saiu desta lista em Set 2026, quando a escola passou a ser bilíngue; desde
+12/10/2026 a escola é só em português.)*
 
 ---
 
@@ -315,8 +314,7 @@ promessa mensal e humilde). Nenhuma seção nova na landing.*
 
 *Atualizado: Set 2026 — **a copy da HOME está fechada e saiu deste documento para o código.**
 O mock foi aprovado (`design-lab/home-lab.html`) e transposto para a home real, servida pelo
-Express. **O texto vivo da home mora em `core/src/i18n/pt.ts`** (o inglês espelha em `en.ts` e
-ainda está vazio); este documento continua sendo a direção de mensagem, não o texto literal.
+Express. **O texto vivo da home mora em `core/src/i18n/pt.ts`**; este documento continua sendo a direção de mensagem, não o texto literal.
 O que mudou em relação ao que estava escrito aqui:*
 *(a) **Hero sem botão de assinar** — decisão do operador: não vender de cara; o visitante clica
 no curso em destaque e assina na página do curso.*
@@ -379,7 +377,7 @@ nas duas. Duplicar é como as duas versões passam a divergir sem ninguém ver.
 **Por que foi renomeado ANTES da tabela de sobrescrita existir:** a chave é a chave primária da
 linha no banco. Renomear depois significa que cada texto já editado pelo operador aponta para um
 nome que não existe mais — migração de dados, em vez de um `sed`. Feito em 22/09, com prova de que
-o HTML renderizado ficou **byte a byte idêntico** nos dois idiomas.
+o HTML renderizado ficou **byte a byte idêntico** (nos dois idiomas que a escola tinha então).
 
 ### Como o texto de página funciona: valor de fábrica + sobrescrita
 
@@ -424,7 +422,7 @@ mudança de desenho, não de conteúdo. E depoimento tem uma obrigação própri
 (§ acima: *"se a pessoa pedir, o depoimento sai na hora"*) — isso não pode depender de deploy.
 
 **Decisões do operador sobre as duas listas (23/09/2026, ao aprovar o Bloco C3):**
-- **Lista vazia esconde a seção inteira**, título incluído — num idioma sem depoimento publicado,
+- **Lista vazia esconde a seção inteira**, título incluído — sem depoimento publicado,
   a página não mostra um título com espaço vazio embaixo.
 - **Tirar do ar tem dois jeitos:** o status (rascunho / publicado / arquivado) esconde, e o botão
   **Excluir apaga de vez**. É o Excluir que cumpre o *"sai na hora se a pessoa pedir"*: pelo LGPD o
@@ -437,8 +435,7 @@ mudança de desenho, não de conteúdo. E depoimento tem uma obrigação própri
   23/09/2026: *"com milhares de depoimentos nunca vão ver igual"*). A pesquisa que embasou: quase
   ninguém passa do 1º quadro de um carrossel (Notre Dame / Nielsen Norman), e setas feitas só com
   CSS funcionam apenas no Chrome/Edge — sem script, a página segue leve e funciona em aparelho
-  antigo. Por isso **depoimento não tem campo Ordem** no admin (a lista vem do mais novo). O inglês
-  começa com os 4 traduzidos; os novos em inglês entram no mesmo sorteio e se misturam a eles.
+  antigo. Por isso **depoimento não tem campo Ordem** no admin (a lista vem do mais novo).
   Perguntas frequentes **continuam na ordem do operador** — e passam a arrastar junto com os cursos
   (C4).
 
@@ -452,7 +449,7 @@ para a home com a **autorização do aluno para o nome completo**. Detalhe no pl
 ### Regra que passa a valer para toda página pública
 
 **Nenhum texto visível fica literal no template.** Se está no HTML, o operador não consegue
-editar e o `/en` mostra português. A trava mecânica e o teste que a sustenta estão no
+editar pelo admin. A trava mecânica e o teste que a sustenta estão no
 `CLAUDE.md` → *Rendering Boundary*.
 
 ### Pendências (nesta ordem)
@@ -462,12 +459,11 @@ editar e o `/en` mostra português. A trava mecânica e o teste que a sustenta e
 2. ~~Mecanismo de sobrescrita + tela de admin.~~ **Feito em 23/09** (Bloco C2, `/admin/site`).
 3. ~~Depoimentos e FAQ viram tabela com CRUD no admin.~~ **Feito em 23/09** (Bloco C3):
    `/admin/site/depoimentos` e `/admin/site/faq`.
-4. Os 5 cursos saem da constante e passam a vir do banco (depende da migration de `language`).
-5. ~~Escrever o inglês.~~ **Feito e revisado em 22/09** (155 chaves; ciclo de revisão em
-   `idiomas.md`). **Fica aberto:** o operador quer revisar **as 15 perguntas do FAQ uma a uma** —
-   o conteúdo delas, nos dois idiomas, não a tradução. Ele decide quando. Desde o C3 a revisão é
+4. Os 5 cursos saem da constante e passam a vir do banco.
+5. ~~Escrever o inglês.~~ Feito em 22/09 e **apagado em 12/10/2026** (a escola é só em
+   português). **Fica aberto:** o operador quer revisar **as 15 perguntas do FAQ uma a uma** — o
+   conteúdo delas. Ele decide quando. Desde o C3 a revisão é
    feita **direto no admin**, sem passar pelo código.
-6. **Preço em dólar na página em inglês:** as chaves `priceEn` e `priceEnAnnual` existem e **não
-   são usadas** — a página em inglês mostra o preço em real. Isso é a questão *preço mostrado ×
-   preço cobrado*, que é **decisão da Fase 4** (`billing.md`), não de fiação.
+6. ~~Preço em dólar na página em inglês~~ — **saiu em 12/10/2026**, com as chaves `priceEn` e
+   `priceEnAnnual`: a escola cobra só em reais.
 

@@ -1,12 +1,12 @@
 import { useT } from "@/lib/language";
 
 /**
- * A etiqueta EM BREVE das telas de fundo claro, no idioma do app. É a mesma que
- * o menu mostra; o menu desenha a dele à parte porque, lá, as seções de admin
- * ficam sempre em português (`etiquetaEmBreve`, lib/navigation).
+ * A etiqueta EM BREVE das telas de fundo claro. É a mesma que o menu mostra; o
+ * menu desenha a dele à parte (`etiquetaEmBreve`, lib/navigation).
  *
- * `texto` fixa a etiqueta: as telas do ADMIN passam a de português, porque o
- * Admin não muda de idioma (decisão do operador, 23/09/2026).
+ * `texto` fixa a etiqueta: as telas do ADMIN passam a do `pt` direto, porque o
+ * Admin fica fora do `useT()` (decisão do operador, 23/09/2026). Com um idioma
+ * só (12/10/2026), as duas saem iguais.
  */
 export function EmBreve({ texto }: { texto?: string }) {
   const t = useT();

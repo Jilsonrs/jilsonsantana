@@ -61,7 +61,6 @@ sobre crescimento rápido.
 
 - **Tagline oficial (guiada por identidade, não por preço):**
   - PT (primária): *"Torne-se um especialista em dados na era da IA."*
-  - EN: *"Become a data expert in the AI era."* (a escola é bilíngue desde Set 2026).
 - **Coerência de marca (ativo existente):** os cursos do Jilson na Udemy já são "**Formação
   Especialista**". A tagline nomeia e amplifica uma promessa que já existe no catálogo — Udemy,
   YouTube e site agora apontam pra mesma palavra: *especialista*. Reduz atrito no funil
@@ -85,7 +84,8 @@ sobre crescimento rápido.
 - 12+ anos como analista de dados e desenvolvedor full-stack
 - YouTube "Jilson Santana" — canal de dados + IA aplicada, em **rebuild de inglês → português**
   (~1.580 inscritos em jun/2026, base a reconstruir; o número "177K" era incorreto e foi descartado).
-  **Canal separado em inglês planejado** (Set 2026 — ver *Idioma & foco*)
+  *(O canal em inglês planejado em Set 2026 era para o lado EN da escola, que saiu em 12/10/2026;
+  o que fazer com ele é decisão do operador — P90.)*
 - Catálogo "Formação Especialista" na Udemy (marca estabelecida)
 - Certificação PL-300
 
@@ -100,7 +100,7 @@ sobre crescimento rápido.
 
 | Tier | O quê | Preço | Papel |
 |------|-------|-------|-------|
-| 1 — Assinatura (base) | Cursos + JilsonAI + sempre atualizado | **R$99,90/mês** ou **~R$995/ano** · fora do Brasil **US$ 30/mês** | Base & missão — acessível a todos |
+| 1 — Assinatura (base) | Cursos + JilsonAI + sempre atualizado | **R$99,90/mês** ou **~R$995/ano** | Base & missão — acessível a todos |
 | 2 — Cohorts ao vivo ("escola") | Aulas ao vivo (Zoom) p/ quem não quer gravado | Ticket maior (TBD) | Pós-MVP |
 | 3 — Corporativo (B2B) | Treinamento de equipes | Ticket alto | **Horizonte** (ver abaixo) |
 
@@ -108,10 +108,8 @@ sobre crescimento rápido.
 - **Mensal R$99,90/mês — sem fidelidade** (padrão, motor de aquisição).
 - **Anual ~R$995/ano** (~17% de desconto, cobrança única recorrente anual). Troca mensal↔anual
   usa **proração nativa do Stripe Billing**, previsualizada antes de o aluno confirmar.
-- **Fora do Brasil (Set 2026, `[decisão do operador]`): US$ 30/mês + anual com o mesmo cálculo**
-  (~17% de desconto → **US$ 299/ano**, confirmado em 14/09). **A moeda segue o país do
-  cartão, nunca o idioma do site**: senão, qualquer estrangeiro troca para português e paga em
-  real. Imposto internacional: decisão pendente da Fase 4 (`idiomas.md` §5).
+- **Só em reais, só para o Brasil** *(12/10/2026, `[decisão do operador]`)*: não há preço em
+  dólar nem venda para fora (o dólar de 14/09/2026 saiu — ver *Idioma & foco*).
 - **Sem free trial. Sem conteúdo grátis dentro da escola** (o grátis vive no YouTube).
 - **Sem oferta de fundador** *(decisão do operador, set/2026)*: não haverá founding member, em
   nenhuma forma — nem preço travado, nem bônus temporário.
@@ -253,9 +251,8 @@ Automação & IA). Fio condutor: **dados na era da IA** ("X + Claude").
 - **YouTube "Jilson Santana" — em rebuild PT (~1.580 inscritos), compounding de médio/longo prazo.**
   Era inglês, está virando PT. 1 vídeo/semana. **Não é o motor no curto prazo** (base pequena, ainda
   a reconstruir) — vira motor à medida que cresce. AdSense é **bônus** (RPM PT/BR baixo).
-- **YouTube em inglês — canal SEPARADO, depois** (Set 2026, `[decisão do operador]`). Recebe os
-  cursos regravados em inglês e alimenta o lado EN da escola. Nunca misturar os dois idiomas no
-  mesmo canal.
+- **YouTube em inglês:** o canal separado de Set 2026 existia para alimentar o lado EN da escola,
+  que saiu em 12/10/2026. **O que fazer com ele é decisão do operador** (P90), fora do site.
 - **Táticas de captura aprovadas:** **campanha de e-mail pra base Udemy** (convite pro canal + site);
   lição "Próximos passos" no fim dos cursos; 1–2 e-mails educativos/mês; trailer do canal; CTA guiada
   por identidade (tagline oficial); escassez de founding member (sem lock vitalício) pros alunos Udemy.
@@ -264,35 +261,22 @@ Automação & IA). Fio condutor: **dados na era da IA** ("X + Claude").
 
 ## Idioma & foco
 
-> **REVERTIDO em Set 2026 (14/09) `[decisão do operador]`: a escola é BILÍNGUE — português e
-> inglês — desde o lançamento.** Especificação completa em [`idiomas.md`](idiomas.md).
+> **REVERTIDO de novo em 12/10/2026 `[decisão do operador]`: a escola é SÓ EM PORTUGUÊS e SÓ
+> PARA O BRASIL.** *"Remover tudo que foi feito para dar suporte a inglês e fica a escola 100% nativa em português e restrita ao Brasil, assim uma dor de cabeça a menos, e tudo que fizermos de agora em diante fica uma língua só."*
 
-- **Plataforma mundial, não mais só local.** Estrutura como a da Udemy: o site existe nos dois
-  idiomas desde o primeiro dia, mesmo sem nenhum curso em inglês no lançamento. O inglês fica
-  **ligado desde já**, para a escola nascer em inglês e o Google começar a indexar.
-- **Quem vê o quê:** o **idioma do navegador** leva o visitante ao português ou ao inglês. Quem entra
-  em inglês vê **só os cursos em inglês**, mesmo que sejam poucos no começo.
-- **Cada curso nasce num idioma** (campo Idioma na criação, como na Udemy). A versão em inglês de um
-  curso é **outro curso**, regravado. **A trilha segue o idioma.**
-- **Idioma é filtro, não portão** (como no LinkedIn Learning): **uma assinatura vale para os cursos
-  dos dois idiomas**. Quem assina em inglês vê os cursos em inglês; se trocar o idioma, vê e estuda
-  os do outro na mesma assinatura.
-- **Teto do catálogo: 15 cursos por idioma, no máximo 2 idiomas.** No lançamento, o lado inglês
-  nasce com **um ou dois cursos cadastrados, ainda sem aulas** (a página mostra "0 aulas"), e **o
-  botão de assinar em inglês só liga com a primeira aula em inglês**.
-- **Tagline EN:** *"Become a data expert in the AI era."*
-- **Sem data para reavaliar:** PT e EN são construídos em paralelo, como estrutura permanente.
-- **Preço pelo país do cartão:** cartão do Brasil paga em reais; cartão de fora paga **US$ 30/mês**,
-  com anual pelo mesmo cálculo do real. Detalhe em *Pricing da assinatura*.
-- **YouTube: dois canais separados.** O atual segue o rebuild em português; um **canal em inglês**
-  vem depois, recebendo os cursos regravados em inglês — *"dois trabalhos, mas duas fontes de
-  renda"*.
-- **Português segue sendo o primeiro mercado**: é onde está a base (Udemy, canal) e onde a meta de
-  receita foi calculada. **A meta abaixo está só em reais**; a receita em dólar ainda não entra
-  na conta.
-- *O que foi revertido (Jun 2026): "EN removido da escola, PT pra sempre; inglês só via LinkedIn
-  Learning quando C1". A tentativa no LinkedIn Learning **não foi rediscutida** em Set 2026 e segue
-  como projeto à parte até o operador dizer o contrário.*
+- **Um idioma, um país, uma moeda.** O site é só em português, a escola vende só para o Brasil e
+  cobra só em reais. Sem `/en`, sem seletor de idioma, sem curso em inglês. Teto do catálogo:
+  **15 cursos**.
+- **O que pesou:** com a empresa no Brasil, a pesquisa de 12/10/2026 não achou quem cuidasse do
+  imposto da venda para fora sem tirar o aluno do site — e na União Europeia esse imposto é devido
+  desde a primeira venda (`decisions-archive.md` → *Registros de pesquisa*).
+- **O caminho até aqui:** Jun 2026 — "EN removido da escola, PT pra sempre; inglês só via LinkedIn
+  Learning quando C1" · 14/09/2026 — a escola bilíngue desde o lançamento (chegou a ser
+  construída) · 12/10/2026 — só português, só Brasil (a etapa 4.6c tirou o inglês do site e do
+  banco).
+- **Fora do site, sem mudança:** a tentativa no LinkedIn Learning segue como projeto à parte até o
+  operador dizer o contrário. **O canal do YouTube em inglês é decisão dele** (P90).
+- **Gatilho de reabertura:** só por decisão dele, com dado novo — o Stripe Tax ou o Managed Payments aceitarem empresa do Brasil, ou a empresa mudar de país. Voltar ao inglês é projeto novo, não "religar".
 - LinkedIn (rede) deprioritizado.
 
 ---
@@ -391,8 +375,8 @@ GitHub Actions.**
 - **MVP = Fases 0 → 7.** **~70% do risco está nas Fases 3 (Bunny) e 4 (Stripe).**
 - **Pós-MVP:** Analytics · JilsonAI Fase 4–6 (RAG + `buildLearningPlan` + memória) · cohorts ao
   vivo · **corporativo (Fase 12)**. **Removido:** fórum de pares (JilsonAI absorve). *(A fase EN,
-  removida em Jun 2026, voltou em Set 2026 como estrutura bilíngue desde o lançamento — ver
-  Idioma & foco.)*
+  removida em Jun 2026, voltou em Set 2026 como estrutura bilíngue e saiu de novo em 12/10/2026 —
+  ver Idioma & foco.)*
 
 ---
 
@@ -428,8 +412,7 @@ GitHub Actions.**
 - **PROJECT-SCOPE.md** — escopo MVP vs pós-MVP.
 - **CLAUDE.md / TECH-STACK.md** — convenções de repo + stack (engenharia).
 - **DESIGN.md** — direção visual & design system (a reescrever: Apple-claro + #238FE8).
-- **CONTENT.md** — copy da landing (PT-BR; a versão em inglês ainda não existe).
-- **IDIOMAS.md** — a escola em dois idiomas: quem vê o quê, preço fora do Brasil, imposto.
+- **CONTENT.md** — copy da landing (PT-BR).
 - **STRATEGY.md** (a criar) — concorrentes BR, voz, evergreen, ângulo corporativo. Depois disso,
   depreciar positioning.md / service_analysis.md / roadmap.md (antigos, modelo consultoria).
 
@@ -477,3 +460,5 @@ ferramenta"). Nada infla o MVP (0–7) — são lentes, filtros e seams, não fa
 *Atualizado Set 2026 (14/09) — **ESCOLA BILÍNGUE (PT + EN) desde o lançamento** `[decisão do operador]`, revertendo o "EN removido da escola, PT pra sempre" de Jun 2026. Reescritos: *Idioma & foco*; *Pricing* ganha o preço fora do Brasil (US$ 30/mês, anual pelo mesmo cálculo, **moeda pelo país do cartão**); *Canais* ganha o canal do YouTube separado em inglês; tagline EN fica a definir; o roadmap deixa de listar a "fase EN" como removida. **O que NÃO mudou:** a meta de receita e a derivação dela, que seguem só em reais — a receita em dólar ainda não tem conta. Especificação, pendências e gatilho de reabertura em `idiomas.md`.*
 
 *Atualizado Set 2026 (18/09) — **TETO DE 1.000 ASSINANTES PAGANDO MENSAL** `[decisão do operador]`, + **duas correções na derivação**. A escada de números passa de três para quatro: **~378–469 = a conta · ~400 = o piso · 500 = a meta · 1.000 = o TETO**. **O que o teto vale:** R$ 99.900/mês bruto, **R$ 1,2M/ano**, **R$ 72–82k/mês líquido ≈ US$ 14–16k** — **~2,3× a renda-objetivo de US$ 6k mesmo na conta mais pessimista**, e **dentro do EPP** (limite do Simples é R$ 4,8M/ano), então não muda enquadramento. **O teto é no plano MENSAL** `[decisão do operador]`, não no mix 75/25 das linhas acima: mensal puro fatura **~R$ 51k/ano a mais** que o mesmo número de assinantes no mix, porque o anual dá 17% de desconto — e a conta dos ~378 **sobrevive à troca**, porque a alíquota progressiva come a diferença. **CORREÇÃO 1 — o Simples é PROGRESSIVO, não 6% fixo:** os 6% são a alíquota de quem fatura até R$ 180k/ano; a efetiva sobe com o faturamento (**~9,5% na conta · ~10,4% aos 500 · ~13% aos 1.000**), custando **~R$ 2,3 mil/mês aos 500** e **~R$ 7 mil/mês (R$ 84k/ano) aos 1.000**. O alerta que existia aqui era só *Anexo III × Anexo V* — o problema acontece **mesmo ficando no Anexo III**. ⚠️ A estrutura progressiva é certa; **os valores de faixa são [A CONFIRMAR COM O CONTADOR]**, junto da comparação com **Lucro Presumido** (a ~13% efetiva ele merece ser comparado). **CORREÇÃO 2 — faltava o custo de API do JilsonAI no ARPU:** é custo variável por assinante (R$ 5–15/mês), **maior que a taxa da Stripe**, e não estava descontado em lugar nenhum; incluindo-o, **o "piso" de ~400 vira a conta**. Por isso o ARPU deixa de ser um número único (R$ 85,04) e vira **faixa: R$ 67–82**. **Sobre a churn:** os 7% são **hipótese, nunca medida** `[enquadramento do operador]` — números de reposição ficam como referência, **não como restrição à meta**. **GATILHO DE REABERTURA:** o teto se revisa se o contador fechar um enquadramento que mova o ARPU líquido em mais de ~10%, **ou** quando houver **12 meses de churn medida** (mesmo gatilho que já vale para a meta de 500). **Não é gatilho:** ritmo de crescimento abaixo do esperado no começo — teto é destino, não previsão. Análise completa e derivação em `strategy.md` §6.*
+
+*Atualizado Out 2026 (12/10) — **A ESCOLA É SÓ EM PORTUGUÊS E SÓ PARA O BRASIL** `[decisão do operador]`, revertendo a escola bilíngue de 14/09/2026. Reescrito: *Idioma & foco*. Saíram: a tagline em inglês, o preço em dólar (tier 1 e *Pricing*), o canal do YouTube em inglês como parte da escola (o canal em si é decisão dele — P90) e o `IDIOMAS.md` da lista de documentos. **Gatilho de reabertura:** só por decisão dele, com dado novo — o Stripe Tax ou o Managed Payments aceitarem empresa do Brasil, ou a empresa mudar de país. Voltar ao inglês é projeto novo, não "religar".*

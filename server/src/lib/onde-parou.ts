@@ -68,8 +68,7 @@ export async function esquecerPontosDaAula(lessonId: number): Promise<void> {
 
 /**
  * Em que aula a pessoa entra quando abre o curso (decisões do operador,
- * 06/10/2026). Só a cadeia PUBLICADA, na ordem do Conteúdo, e sem filtro de idioma
- * (link direto não filtra):
+ * 06/10/2026). Só a cadeia PUBLICADA, na ordem do Conteúdo:
  *   - visitante, ou quem nunca abriu uma aula do curso: a primeira aula;
  *   - quem já abriu: a última aula em que esteve — aula que saiu do ar é pulada;
  *   - quem viu até o fim a ÚLTIMA aula (de vídeo) do curso: a primeira que ainda

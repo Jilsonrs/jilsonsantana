@@ -359,8 +359,8 @@ não código espalhado: uma tela nova declara seus níveis e o cromo se monta so
   toda tela depois do login, **do aluno e do admin**. Marca + © · FAQ · Quem somos · Contato ·
   YouTube · Termos · Privacidade. Fica de fora o que o menu lateral já leva (Cursos, Trilhas,
   Assine). **Os textos são os mesmos do rodapé da home** e se editam juntos em *Admin → Textos*.
-  Também leva a frase da marca e o **seletor PT | EN** (24/09): provisório até o app do aluno ter
-  inglês, quando passa a trocar o idioma do próprio app.
+  Também leva a frase da marca. *(O seletor PT | EN de 24/09 saiu em 12/10/2026: a escola é só
+  em português.)*
   **Links para páginas que ainda não existem entram assim mesmo**, por decisão dele — não é
   descuido, e não se "conserta" com a regra 12 do `GEMINI.md` (que vale para o menu).
 

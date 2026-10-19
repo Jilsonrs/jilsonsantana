@@ -24,12 +24,10 @@
 >   Perguntas e Depoimentos, a primeira seção chama "Cadastro" e tem só o botão de novo.
 > - **Os textos continuam vindo do dicionário** (`core/src/i18n/pt.ts`): a regra 9 continua
 >   valendo inteira — nenhum texto cravado no HTML —, só que agora há um idioma.
-> - Em `client/src/public-input.css`, a classe `.lang-atual` ficou sem uso: pode sair na sua
->   próxima passada pelo CSS.
 >
-> **Este arquivo ainda cita o inglês em vários itens abaixo.** Eles são corrigidos à medida que
-> a etapa 4.6c avança; onde um item falar de inglês, `/en`, seletor ou idioma, **vale este
-> aviso**. O plano completo: `docs/implementation-plan.md` → etapa 4.6c.
+> **Os itens abaixo já foram corrigidos** (etapa 4.6c, passo 6, 19/10/2026). Se ainda achar
+> menção a inglês, `/en`, seletor ou idioma, **vale este aviso**. O plano completo:
+> `docs/implementation-plan.md` → etapa 4.6c.
 
 ---
 
@@ -242,7 +240,7 @@ servidores (§5); o React responde em `localhost:5173`, a home pública em `loca
 > **"Site" ganhou 2º nível** (Textos · Depoimentos · Perguntas frequentes) na coluna secundária
 > (`SecondaryNav.tsx`). Como os itens não têm `grupo`, a coluna mostra o título **"Geral"** — é o
 > comportamento atual do componente; se quiser outro visual ali, é conversa com o operador.
-> **Na home**, as seções de depoimentos e de perguntas **somem inteiras** quando o idioma não tem
+> **Na home**, as seções de depoimentos e de perguntas **somem inteiras** quando não há
 > item publicado (decisão do operador). Ao formatar, não conte com elas sempre presentes.
 > **Depoimentos na home: no máximo 4 cards, sorteados a cada visita** (decisão do operador,
 > 23/09/2026) — pode haver 1, 2, 3 ou 4. **Sem carrossel e sem script.** No celular, deixar os 4
@@ -256,7 +254,7 @@ estudos**, Concluídos · Certificados.
 Elas existem só no mapa de navegação. **Não procure o arquivo: não há.**
 **Desde 29/09 o ALUNO também as vê** (as dele: JilsonAI e as duas de Meus estudos), por decisão do
 operador: *"o que ainda não existe aparece como EM BREVE"*. A etiqueta sai do dicionário
-(`app.nav.emBreve` — "COMING SOON" em inglês); nas seções de admin fica sempre em português.
+(`app.nav.emBreve`).
 *(28/09/2026: o operador decidiu o que cada uma tem dentro — plano, Fase 2, "o que cada seção
 PLANEJADA vai ter dentro" — e criou uma nova, **Comunicação** (fila de dúvidas, anúncios). Ela
 entra no mapa de navegação numa etapa próxima; "Escalações" sai do JilsonAI Admin e vai para lá.)*
@@ -382,7 +380,7 @@ exceto o item 4, que é página pública.
    você não desfazer: **(a)** cada ícone tem **nome em português** (`nomes-dos-icones.ts`; ícone
    novo no registro sem nome ali reprova um teste) e a grade funciona por teclado — Enter abre,
    Esc fecha; **(b)** "Nosso método." saiu do `.tsx` para o dicionário (`app.curso.metodo`),
-   porque texto escrito na tela aparece em português para o aluno em inglês; **(c)** o menu do
+   porque texto do aluno mora no dicionário (regra 9); **(c)** o menu do
    curso fechado **continua fechado** nas próximas aulas (decisão do operador, 03/10), guardado
    no navegador, e não mais no endereço (`?sidebar=0` saiu); **(d)** as caixas das Camadas no
    editor mostram o nome que o aluno vê. **Achado para você:** o quadro "Nosso método" usa cores
@@ -527,8 +525,8 @@ exceto o item 4, que é página pública.
    moldura (iframe) do Bunny** — o nosso CSS **não alcança** os controles dele. Cor, botões e o que
    aparece na barra se ajustam no **painel do Bunny** (Stream → `jilsonsantana-stream` → **Player**),
    e mexer lá é decisão do operador. O nosso lado desenha **só a moldura**: o quadro 16:9 em
-   `components/content/BunnyPlayer.tsx` e o "Carregando…" do item 31. **Os botões do player saem no
-   idioma do app** (decisão do operador) — não há texto nosso dentro dele. **No `BunnyPlayer.tsx`, não
+   `components/content/BunnyPlayer.tsx` e o "Carregando…" do item 31. **Os botões do player saem em
+   português** — não há texto nosso dentro dele. **No `BunnyPlayer.tsx`, não
    tire do iframe:** o `referrerPolicy` (item 9), o `key` (uma moldura nova a cada vídeo — sem ele, o
    Voltar do navegador troca só o vídeo) e o `allow` com `autoplay` (sem ele a aula não toca
    sozinha). **No painel, aba Player, o "Custom HTML head" tem o script da legenda lembrada** (o
@@ -567,8 +565,7 @@ exceto o item 4, que é página pública.
     outras colunas. As suas classes do item aceso não mudaram.
 
 35. **Cancelar assinatura, e os botões no resumo** *(11/10, Fase 4, etapa 4.6 — textos
-    aprovados pelo operador em português; o inglês ele vai revisar COM VOCÊ: `core/src/i18n/en.ts`,
-    em `app.faturamento.plano`, `.cancelamento` e `.banco`)*. **No resumo** (bloco "Seu plano"):
+    aprovados pelo operador, em `app.faturamento.plano`, `.cancelamento` e `.banco`)*. **No resumo** (bloco "Seu plano"):
     os botões "Manter a assinatura" e "Cancelar assinatura" (`AcoesDoPlano.tsx`), cada um só
     quando o servidor diz que cabe. **A tela de cancelar** (`…/faturamento/cancelar`): a
     descrição, os cinco motivos (opcionais, botões de rádio nativos — não há componente de rádio
@@ -585,8 +582,8 @@ exceto o item 4, que é página pública.
     títulos dos dois cartões são títulos de verdade (`<h2>`); os motivos são `radio` com o texto
     no próprio rótulo; os botões travam enquanto envia e mostram "Processando…".
 
-36. **Mudar de plano** *(11/10, Fase 4, etapa 4.6 — textos aprovados pelo operador em
-    português; o inglês ele revisa com você, como no item 35)*. **A tela**
+36. **Mudar de plano** *(11/10, Fase 4, etapa 4.6 — textos aprovados pelo
+    operador)*. **A tela**
     (`…/faturamento/plano`): o bloco "Seu plano" com o plano de hoje e a etiqueta "Seu plano
     atual"; embaixo, **o cartão do plano novo** (`OfertaDePlano.tsx`) — o nome e o preço, a
     frase com o valor de hoje e as datas, e o botão "Mudar para o Anual" / "Mudar para o
@@ -610,7 +607,7 @@ exceto o item 4, que é página pública.
 |---|---|
 | `client/src/lib/navigation.ts` | É o **mapa de navegação** — dado, não estilo. Ele decide o que aparece e para quem; você decide como aparece. |
 | `client/src/lib/versao.ts` e `recarregar.ts` | A **troca de versão sem atrapalhar o aluno** (regra 13) — lógica, não estilo. |
-| `client/src/lib/endereco-do-player.ts`, `legenda-lembrada.ts`, `player-do-bunny.ts`, `ponto-da-aula.ts`, `eventos-da-aula.ts` | A **lógica do player** (item 32): onde a aula abre, a legenda da conta, o idioma dos botões, o ponto gravado e a próxima aula. Comportamento, não estilo — e tudo tem teste. |
+| `client/src/lib/endereco-do-player.ts`, `legenda-lembrada.ts`, `player-do-bunny.ts`, `ponto-da-aula.ts`, `eventos-da-aula.ts` | A **lógica do player** (item 32): onde a aula abre, a legenda da conta, o ponto gravado e a próxima aula. Comportamento, não estilo — e tudo tem teste. |
 | `client/src/lib/footer.ts` | Os **itens do rodapé do app** e para onde levam — dado, igual ao mapa de navegação. O visual fica em `components/layout/AppFooter.tsx`. |
 | Qualquer `*.test.tsx` / `*.test.ts` | Se um teste incomodar, **avise** — não edite. Um teste ajustado para passar deixa de proteger. |
 | `client/src/components/ui/sheet.tsx` | Vem da biblioteca (shadcn/Radix). |
@@ -683,9 +680,9 @@ Corolários que já quebraram coisa aqui:
 - **Negrito no meio de um texto = dois campos** (`label` + `text`), nunca `<strong>` dentro da
   string. O operador não digita HTML no painel.
 - Precisa de um texto que não existe no dicionário? **Peça a chave**, não escreva no template.
-- **Vale também para as telas do ALUNO no React** *(desde 24/09 — o app do aluno existe em
-  inglês)*: o texto delas vem de `useT()` (parte `app` do dicionário). Texto escrito direto no
-  `.tsx` de uma tela do aluno aparece em português para o aluno estrangeiro. **O Admin é a
+- **Vale também para as telas do ALUNO no React** *(desde 24/09; mantido com a escola só em
+  português, 12/10/2026)*: o texto delas vem de `useT()` (parte `app` do dicionário), que é onde o
+  operador revisa os textos do app. Texto escrito direto no `.tsx` fica fora dessa revisão. **O Admin é a
   exceção**: fica em português, com o texto na própria tela.
 - **A primeira parte da chave diz onde o texto aparece:** `common.*` sai em TODA página pública
   (menu, rodapé) **e no rodapé do app logado**, `home.*` só na home. Mexer num `common.*` muda
@@ -700,7 +697,7 @@ versionado**, então ele entra no commit junto com a sua mudança.
 itens indistinguíveis no rail **recolhido**, onde só o ícone aparece. Já aconteceu duas vezes em
 uma semana: "Site" nasceu com o ícone do "Catálogo", e "JilsonAI" existia duas vezes (aluno e
 admin) com o mesmo ícone e o mesmo nome. **Tem teste** — `navigation.test.ts` reprova rótulo ou
-ícone repetido **em cada menu** (o do aluno e o do admin, nos dois idiomas). Se precisar de um
+ícone repetido **em cada menu** (o do aluno e o do admin). Se precisar de um
 ícone novo, pegue no `lucide-react`.
 
 **12. Seção PLANEJADA é TEXTO, nunca `<a>`.** O rail mostra as telas que ainda não existem, em
@@ -739,7 +736,7 @@ npm --workspace server run test     # se você tocou em server/src/views/
 **Isto é a rede de segurança de verdade.** Se você apagar sem querer a expansão por teclado, o
 `aria-current`, o rótulo do rail, a checagem de papel do admin ou o destino de um link, **a suíte
 reprova e diz exatamente qual**. A suíte do servidor cobre as páginas públicas: texto cravado no
-template, favicon, `canonical`, `hreflang` e as seções de depoimentos e perguntas (só as
+template, favicon, `canonical`, a página sem `hreflang` (um idioma só) e as seções de depoimentos e perguntas (só as
 publicadas, no máximo 4 depoimentos, seção some quando vazia). Dentro disso, formate à vontade.
 
 **Se você mexeu no CSS da vitrine**, recompile antes de olhar (regra 10):
@@ -842,7 +839,7 @@ Sem essa separação, a décima tela tem dez paletas paralelas e ninguém sabe q
   reinterpreta:** a primeira tentativa reescreveu a marcação com classes inventadas e metade da
   página ficou sem estilo — o typecheck e os testes passaram, porque nenhum dos dois olha CSS.
 - **Navegação é dado**, não código: cada tela declara seus níveis em `navigation.ts` e o cromo se
-  monta sozinho. (Nota: UI bilingue usa textos num dicionário global na implementação).
+  monta sozinho.
 - **Texto vem do dicionário e JÁ é editável pelo painel** *(desde 23/09)*. O texto em
   `core/src/i18n/` é o **valor de fábrica**; o operador sobrescreve em `/admin/site/textos` sem
   deploy. Por isso a regra 9 não é preferência de organização — é o que faz o painel dele

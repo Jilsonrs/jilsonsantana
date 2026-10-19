@@ -80,6 +80,17 @@ describe("Home pública (SSR)", () => {
       const login = await request(servidor).post("/api/auth/sign-in/email").send({ email: process.env.SEED_MEMBER_EMAIL, password: process.env.SEED_MEMBER_PASSWORD });
       return (login.headers["set-cookie"] as unknown as string[] | undefined) ?? [];
     };
+    const com = (status: string, currentPeriodEnd: Date) => prisma.subscription.update({ where: { stripeSubscriptionId: ASSINATURA_DE_TESTE }, data: { status, currentPeriodEnd } });
+    const [PASSADO, FUTURO] = [new Date("2020-01-01T00:00:00Z"), new Date("2100-01-01T00:00:00Z")];
+    /** Roda o bloco com a assinatura de teste do member@ nesta situação, e devolve ela ao fim. */
+    async function naSituacao(status: string, fim: Date, fn: () => Promise<void>) {
+      await com(status, fim);
+      try {
+        await fn();
+      } finally {
+        await com("active", FUTURO);
+      }
+    }
 
     it("COM sessão: os dois botões Assinar levam à tela de assinar — e são os mesmos botões do mock", async () => {
       const res = await request(servidor).get("/").set("Cookie", await entrar());
@@ -102,18 +113,6 @@ describe("Home pública (SSR)", () => {
     // "REATIVAR ASSINATURA" (etapa 4.4 — decisão do operador, 10/10/2026): quem está logado, já
     // foi assinante e hoje está sem acesso lê "Reativar assinatura"; "Assinar" é só a primeira vez.
     describe("para quem já foi assinante", () => {
-      const com = (status: string, currentPeriodEnd: Date) => prisma.subscription.update({ where: { stripeSubscriptionId: ASSINATURA_DE_TESTE }, data: { status, currentPeriodEnd } });
-      const [PASSADO, FUTURO] = [new Date("2020-01-01T00:00:00Z"), new Date("2100-01-01T00:00:00Z")];
-      /** Roda o bloco com a assinatura de teste do member@ nesta situação, e devolve ela ao fim. */
-      async function naSituacao(status: string, fim: Date, fn: () => Promise<void>) {
-        await com(status, fim);
-        try {
-          await fn();
-        } finally {
-          await com("active", FUTURO);
-        }
-      }
-
       it("logado, já foi assinante e sem acesso: os DOIS botões dizem Reativar assinatura, e seguem levando à tela de assinar", async () => {
         await naSituacao("canceled", PASSADO, async () => {
           const res = await request(servidor).get("/").set("Cookie", await entrar());
@@ -144,6 +143,44 @@ describe("Home pública (SSR)", () => {
           expect(res.text).not.toContain("Reativar assinatura");
           expect(res.headers["cache-control"]).toBeUndefined();
         });
+      });
+    });
+
+    // O LINK "ASSINE" DO MENU (decisão do operador, 19/10/2026: "depois de logado não precisa
+    // aparecer assine porque já é aluno"): some só para quem TEM assinatura ativa, pela mesma
+    // `temAcessoAtivo()` do gate. Quem está logado sem assinatura continua vendo — o link leva
+    // aos botões, que dizem "Reativar assinatura" a quem já foi assinante.
+    describe("o link Assine do menu", () => {
+      const menu = (html: string): string => html.slice(html.indexOf('<nav class="navbar"'), html.indexOf("</nav>"));
+      const ASSINE = `<a href="#assine">${fabrica.common.nav.assine}</a>`;
+      const comoAdmin = async (): Promise<string[]> => {
+        const login = await request(servidor).post("/api/auth/sign-in/email").send({ email: process.env.SEED_ADMIN_EMAIL, password: process.env.SEED_ADMIN_PASSWORD });
+        return (login.headers["set-cookie"] as unknown as string[] | undefined) ?? [];
+      };
+
+      it("o visitante vê Assine", async () => {
+        const res = await request(servidor).get("/");
+        expect(menu(res.text)).toContain(ASSINE);
+      });
+
+      it("o ASSINANTE logado não vê Assine — e a seção de preço continua na página", async () => {
+        const res = await request(servidor).get("/").set("Cookie", await entrar());
+        expect(menu(res.text)).toContain(fabrica.common.nav.meusEstudos);
+        expect(menu(res.text)).not.toContain('href="#assine"');
+        expect(res.text).toContain('<section id="assine"');
+      });
+
+      it("logado SEM assinatura ativa (cancelou e acabou o período) continua vendo Assine", async () => {
+        await naSituacao("canceled", PASSADO, async () => {
+          const res = await request(servidor).get("/").set("Cookie", await entrar());
+          expect(menu(res.text)).toContain(ASSINE);
+        });
+      });
+
+      it("o admin, que não tem assinatura, continua vendo Assine", async () => {
+        const res = await request(servidor).get("/").set("Cookie", await comoAdmin());
+        expect(menu(res.text)).toContain(fabrica.common.nav.meusEstudos);
+        expect(menu(res.text)).toContain(ASSINE);
       });
     });
 

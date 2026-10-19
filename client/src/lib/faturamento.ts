@@ -39,7 +39,7 @@ export function dataPorExtenso(iso: string): string {
   return new Intl.DateTimeFormat("pt-BR", { dateStyle: "short" }).format(new Date(iso));
 }
 
-// O nome da bandeira é nome próprio, igual nos dois idiomas. A Stripe manda o código dela; o que
+// O nome da bandeira é nome próprio. A Stripe manda o código dela; o que
 // não estiver aqui (bandeira nova, ou "unknown") sai sem nome — só os 4 últimos e a validade.
 const BANDEIRAS: Partial<Record<string, string>> = {
   visa: "Visa",

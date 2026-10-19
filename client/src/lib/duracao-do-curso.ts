@@ -18,7 +18,7 @@ export function segundosDeVideo(modulos: AdminModule[]): number {
 }
 
 /**
- * "2h 35min", "45min", "0min" — o formato curto, igual nos dois idiomas (o
+ * "2h 35min", "45min", "0min" — o formato curto (o
  * cartão do catálogo e a página do curso: "2 módulos · 4 aulas · 1h 05min",
  * operador, 30/09/2026). Arredonda para o minuto mais próximo; com qualquer
  * vídeo, nunca diz "0min": um vídeo curto conta como 1min.

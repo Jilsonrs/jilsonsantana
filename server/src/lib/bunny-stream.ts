@@ -164,7 +164,7 @@ export async function apagarVideo(biblioteca: Biblioteca, videoId: string): Prom
 // mesmo com a opção desligada na biblioteca (bunny.md §3.5).
 
 /** Envia (ou substitui) a legenda do vídeo. `false` se o Bunny recusou ou não há biblioteca. */
-export async function enviarLegenda(videoId: string, idioma: "pt" | "en", rotulo: string, conteudo: string): Promise<boolean> {
+export async function enviarLegenda(videoId: string, idioma: "pt", rotulo: string, conteudo: string): Promise<boolean> {
   const c = config("aulas");
   if (!c) return false;
   const resposta = await fetch(`https://video.bunnycdn.com/library/${c.id}/videos/${videoId}/captions/${idioma}`, {
@@ -178,7 +178,7 @@ export async function enviarLegenda(videoId: string, idioma: "pt" | "en", rotulo
 }
 
 /** Apaga a legenda do vídeo. 404 conta como apagada (o vídeo ou a legenda já não existem). */
-export async function apagarLegenda(videoId: string, idioma: "pt" | "en"): Promise<boolean> {
+export async function apagarLegenda(videoId: string, idioma: "pt"): Promise<boolean> {
   const c = config("aulas");
   if (!c) return false;
   const resposta = await fetch(`https://video.bunnycdn.com/library/${c.id}/videos/${videoId}/captions/${idioma}`, {
@@ -201,7 +201,7 @@ export async function apagarLegenda(videoId: string, idioma: "pt" | "en"): Promi
  * chave ou o CDN da biblioteca, ou se o Bunny recusar: quem chama avisa que a
  * legenda pode demorar a aparecer.
  */
-export async function limparCacheDaLegenda(videoId: string, idioma: "pt" | "en"): Promise<boolean> {
+export async function limparCacheDaLegenda(videoId: string, idioma: "pt"): Promise<boolean> {
   const chaveDaConta = process.env.BUNNY_ACCOUNT_API_KEY;
   const cdn = process.env.BUNNY_STREAM_LESSONS_CDN_HOST?.trim();
   if (!chaveDaConta || !cdn) return false;

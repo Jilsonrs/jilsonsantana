@@ -190,8 +190,7 @@ router.get("/cursos/:slug/entrada", async (req, res) => {
 // GET /api/progresso/cursos — o progresso de quem pede em cada curso que ele
 // COMEÇOU (a barra no cartão do curso — pedido do operador de 30/09/2026). Conta só
 // a cadeia publicada, nos dois lados da conta: aulas concluídas ÷ aulas
-// publicadas. Curso não começado não entra. Não filtra por idioma: o que é do
-// aluno aparece nos dois (CLAUDE.md → Idiomas).
+// publicadas. Curso não começado não entra.
 router.get("/progresso/cursos", requireAuth, async (req, res) => {
   const user = req.user;
   if (!user) {

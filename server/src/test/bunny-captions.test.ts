@@ -46,15 +46,15 @@ describe("enviarLegenda", () => {
 
 describe("apagarLegenda", () => {
   it("DELETE no vídeo e no idioma; 404 conta como apagada", async () => {
-    expect(await apagarLegenda("vid-1", "en")).toBe(true);
+    expect(await apagarLegenda("vid-1", "pt")).toBe(true);
     const [url, pedido] = fetchFalso.mock.calls[0] as [string, RequestInit];
-    expect(url).toBe("https://video.bunnycdn.com/library/762605/videos/vid-1/captions/en");
+    expect(url).toBe("https://video.bunnycdn.com/library/762605/videos/vid-1/captions/pt");
     expect(pedido.method).toBe("DELETE");
 
     fetchFalso.mockResolvedValue(new Response("{}", { status: 404 }));
-    expect(await apagarLegenda("vid-1", "en")).toBe(true);
+    expect(await apagarLegenda("vid-1", "pt")).toBe(true);
     fetchFalso.mockResolvedValue(new Response("{}", { status: 500 }));
-    expect(await apagarLegenda("vid-1", "en")).toBe(false);
+    expect(await apagarLegenda("vid-1", "pt")).toBe(false);
   });
 });
 

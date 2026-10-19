@@ -190,7 +190,7 @@ export const TOLERANCIA_DA_COBRANCA_ATRASADA_EM_DIAS = 3;
 /**
  * O prazo do reembolso, em dias, contados do PRIMEIRO DIA da assinatura — trocar de plano não
  * recomeça (decisões do operador, 10/10/2026; é o direito de arrependimento do CDC, art. 49).
- * Os 14 dias de fora do Brasil chegam com a cobrança em dólar (etapa 4.8): até lá só existe este.
+ * É o único prazo: a escola vende só para o Brasil (decisão do operador, 12/10/2026).
  */
 export const PRAZO_DO_REEMBOLSO_EM_DIAS = 7;
 
