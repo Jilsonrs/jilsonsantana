@@ -42,13 +42,10 @@
 > produção pelo operador em duas redes) · CI verde nos dois jobs (testes e E2E).
 > **O público segue vendo a coming-soon** (`COMING_SOON=true`).
 >
-> **🌍 ESCOLA BILÍNGUE (PT + EN) — decisão do operador em 14/09/2026, PARCIALMENTE construída.** A
-> escola nasce em português e inglês, com o inglês ligado no lançamento mesmo sem curso em inglês
-> (spec: [`idiomas.md`](idiomas.md); travas: `CLAUDE.md` → *Idiomas*). **Já existe:** a home nos
-> dois idiomas, o dicionário tipado em `core/src/i18n/` (inglês escrito e revisado em 22/09), o
-> enum `Language` no banco (nasceu com `SiteText`) e depoimentos/FAQ por idioma. **Falta (Bloco I):**
-> `Course.language` e `LearningPlan.language`, o filtro por idioma nas leituras de catálogo, e as
-> telas React no dicionário. Preço em dólar e **decisão de imposto internacional** na Fase 4.
+> **🇧🇷 A ESCOLA É SÓ EM PORTUGUÊS E SÓ PARA O BRASIL** *(decisão do operador, 12/10/2026 — reverte
+> a escola bilíngue de 14/09/2026)*. A etapa 4.6c tirou o segundo idioma do site, do banco e dos
+> documentos (passos 1 a 6). Travas: `CLAUDE.md` → *Idioma*. O texto continua no dicionário
+> (`core/src/i18n/pt.ts`), que é o que o admin edita.
 >
 > **Infra de banco (atualizado Set 2026 — MIGRADA DO SUPABASE PARA O NEON) — TRÊS ambientes, um por
 > papel, agora com DOIS deles no MESMO projeto:**
@@ -524,9 +521,9 @@
 
 **Rotating catalog — `ARCHIVED` read semantics (Ago 2026 · `courses.md` D9 / §1.3):**
 
-The school runs a **rotating catalog capped at 15 courses per language, 2 languages max** *(was
-"20" here — stale since `courses.md` Set 2026 (13) lowered it to 15; per-language cap is the
-operator's decision of 14/09/2026, see `idiomas.md`)*: a new course enters when another
+The school runs a **rotating catalog capped at 15 courses** *(was
+"20" here — stale since `courses.md` Set 2026 (13) lowered it to 15; the "per language" of
+14/09/2026 left on 12/10/2026, when the school became Portuguese-only)*: a new course enters when another
 leaves. `Course.status` already carries `ARCHIVED` — the enum exists, **the read semantics do not**.
 No new model, no entitlement table: the operator chose the simple rule (access while the
 subscription is active), which the existing enum covers.
@@ -2296,7 +2293,7 @@ própria**.*
 
 **Etapa 3 — Legendas:**
 - [ ] **Tela própria** no passo 4: "x de y aulas com legenda"; enviar, baixar e excluir o `.vtt`
-      por vídeo. Legenda só no idioma do curso. A regra do nome do arquivo (`bunny.md` §7.1)
+      por vídeo. Legenda só em português. A regra do nome do arquivo (`bunny.md` §7.1)
       continua valendo.
 - **Decisões do operador, 04/10/2026** (a partir da tela da Udemy): **uma legenda por aula**, sem
   envio em lote; **a apresentação também tem legenda**; **sem editor de texto na tela** — corrigir
@@ -2663,203 +2660,14 @@ própria**.*
 - **Fora, por decisão:** a lista, com o porquê de cada item, está em `courses.md` → *O admin do
   curso*.
 
-### Bloco I — Escola bilíngue: idioma no conteúdo + dicionário de textos  *(Set 2026 · decisão do operador · spec em `idiomas.md`)*
+### Bloco I — ~~Escola bilíngue: idioma no conteúdo + dicionário de textos~~ — SAIU em 12/10/2026
 
-> **ESTADO EM 23/09/2026 — parte adiantada por outros blocos, checkboxes abaixo seguem valendo:**
-> o enum `Language` **já existe** no banco (nasceu com `SiteText`, C2), e o dicionário **já serve os
-> templates do servidor** (`core/src/i18n/`, tipado, com o teste de chave vazia/idêntica). **Ainda
-> falta tudo o que é deste bloco de fato:** `Course.language` e `LearningPlan.language`, o filtro por
-> idioma nas leituras de catálogo/busca/trilha, a recusa de item de outro idioma, as telas React no
-> dicionário e o seletor para quem está logado. O seletor PT | EN da vitrine **já existe** (dois
-> links, um por endereço) — o "Passo 0" abaixo passa a ser só o do app logado.
-
-> **DECISÕES DO OPERADOR EM 23/09/2026 (mudam o tamanho deste bloco):**
-> - O **admin fica em português** — não ganha versão em inglês.
-> - Os textos do app do aluno **não** entram em *Admin → Site → Textos*: lá ficam só as páginas
->   públicas. (Quando o React usar o dicionário, a tela de Textos filtra — ver C2, Passo 0.)
->   **Exceção, 24/09:** o rodapé do app usa os textos do rodapé da home (`common.footer`), então
->   ele se edita em Textos junto com a home — ver Bloco S → *Rodapé do app*.
-> - **O seletor PT | EN da home basta por agora.** Traduzir o app do aluno (dicionário no React,
->   seletor dentro do app, `User.preferredLanguage`) vira **bloco próprio, depois** — os itens
->   *Dicionário*, *Migrar os textos* e *Seletor* abaixo, e os itens 3 e 4 do *Done when*, esperam
->   esse bloco. O Passo 0 (posição do seletor) fica resolvido por isso.
->   **ATUALIZADO em 24/09 (operador):** *"toda [tela] depois do login vai precisar ficar em inglês
->   também, por causa dos alunos internacionais"* — o seletor vai trocar o sistema todo, catálogo
->   incluído. O bloco **"app do aluno em inglês" vem ANTES do C4**. O seletor já existe, no
->   **rodapé do app** (desenho do Antigravity), hoje provisório: leva à home pública PT/EN até o
->   bloco fazê-lo trocar o idioma do próprio app. **O Admin continua em português** (os alunos
->   internacionais não o usam).
-> - As páginas provisórias (`/cursos`, `/trilhas`, `/curso/…`, `/trilha/…`): **não mexer** — ele
->   ainda vai pensar nelas; foco na home.
->   *(30/09/2026, operador: não são mais "provisórias" — o que está atrás do login é definitivo, e o
->   desenho da vitrine é transposto para o template, nada se perde. Ver Bloco C5.)*
-> - `Course.language` entra pela **etapa 2 do C4**, que precisa dele. O resto da parte de dados
->   (`LearningPlan.language`, filtro nas listas e na busca, recusa de item de outro idioma na
->   trilha, clone herdando) continua neste bloco. O campo Idioma no formulário de **trilha** espera
->   o Bloco 6b, porque esse formulário ainda não existe.
-
-> **APP DO ALUNO EM INGLÊS — 5 ETAPAS, uma por vez** *(plano aprovado pelo operador em 24/09/2026;
-> vem ANTES do C4)*. Cada etapa é discutida, aprovada e vira um commit. Decisões dele que o bloco
-> segue: Admin em português · o estrangeiro escolhe o idioma na home e **entra já em inglês** ·
-> **um canal do YouTube por idioma** (`@jilsonen` para o inglês) · catálogo e páginas de curso e
-> trilha entram, mesmo provisórias · textos do app fora de *Admin → Textos* (o rodapé é a exceção).
->
-> - [x] **Etapa 1 — o seletor funciona** *(24/09)*. `PATCH /api/me/language` grava
->       `User.preferredLanguage` na conta **da sessão** (só `pt`/`en`); o React lê o idioma da
->       sessão (`client/src/lib/language.ts`, `useAppLanguage`) e, ao trocar, espera o `refetch()`
->       da sessão — tudo muda junto, sem recarregar. O seletor do rodapé virou **botão**
->       (`aria-pressed`), e o rodapé segue o idioma: textos, destinos em inglês e canal do YouTube.
->       Os endereços públicos e os dois canais moram em `core/src/constants/site.ts`
->       (`ROTAS_PUBLICAS`), usados pela home e pelo rodapé — a home `/en` passou a levar ao canal
->       em inglês. Testes: 5 de servidor + 1 na home; 9 no rodapé. **Mutação:** rota sem gravar,
->       home com o canal fixo, idioma fixo em PT e troca sem atualizar a sessão → 6 reprovaram.
->       *Pendente para a etapa 2:* aviso na tela se a troca falhar (é texto novo, entra com o
->       dicionário do app); hoje o idioma simplesmente não muda.
-> - [x] **Etapa 2 — telas do aluno em inglês:** parte `app` no dicionário (fora de Textos), menu,
->       início, conta, minhas trilhas e login (quem vem de `/en` vê o login em inglês e a conta
->       passa a ser inglês). Em dois commits:
->   - [x] **2a — a base, o menu e o login** *(24/09)*. Parte `app` em `core/src/i18n/` (tipada:
->         frase faltando no inglês quebra a compilação); `ehTextoEditavel()` tira `app.*` da tela
->         de Textos **e** da gravação (`DICT_KEYS`). O idioma é decidido UMA vez, no shell
->         (`useIdiomaDoShell`: logado → conta; sem login → `?lang=`), e desce por contexto
->         (`useIdioma`, `useT` em `client/src/lib/language.tsx`). Menu: `navegacao(t)` — rótulo do
->         aluno do dicionário, de admin escrito em português. Login em inglês; o "Entrar" de `/en`
->         leva a `/login?lang=en`, e entrar por ali grava o idioma na conta **antes** de abrir o
->         app (falhar não barra o login). Aviso no rodapé se a troca falhar. Testes: 3 de
->         servidor novos/ajustados, 7 no login, 3 no shell, 1 no mapa, 1 no rodapé. **Mutação:**
->         trava de `app.*` aberta, idioma fixo em PT e login sem gravar → 7 reprovaram. Revertido.
->   - [x] **2b — início, minha conta e minhas trilhas** *(24/09)*, e a regra no `CLAUDE.md` →
->         Client (*texto de tela do aluno sai de `useT()`*). Início, Minha conta, Minhas trilhas
->         (lista e detalhe) e o vazio da árvore de trilha nos dois idiomas; o português ficou
->         idêntico (os testes antigos passaram sem mexer). Minha conta ganhou o primeiro arquivo
->         de teste dela. **Mutação:** textos fixos em português → 11 reprovaram; um rótulo escrito
->         à mão → 1 reprovou. Revertido.
-> - [x] **Etapa 3 — cursos e trilhas ganham idioma:** a antiga etapa 2 do C4 + a parte de dados
->       deste bloco (migration, campo Idioma e etiqueta "EN" no admin, filtro nas listas, recusa
->       de item de outro idioma na trilha). Antes: dividir o formulário de curso.
->       **Decisões do operador (24/09, ao aprovar):** idioma trocável **enquanto rascunho**, trava
->       depois de publicado · **idioma é filtro, não portão** — só as listas de descoberta filtram;
->       o que é do aluno (trilhas salvas, cursos iniciados) aparece nos dois idiomas.
->   - [x] **3a — formulário de curso dividido** *(24/09)*: 375 → 129 linhas. Lógica em
->         `client/src/lib/course-form.ts`; seções em `client/src/components/admin/course-form/`.
->         Mesmas classes, mesma tela: os testes passaram sem mexer.
->   - [x] **3b — banco e servidor** *(24/09)*. Migration `20260924150000_course_and_plan_language`
->         (as linhas existentes viram PT e o DEFAULT sai: o banco recusa curso ou trilha sem
->         idioma). Passo 0 no dev antes/depois: 2 cursos, 1 trilha, 2 módulos, 3 aulas, 2 usuários,
->         logins de admin e membro OK nas duas vezes; `migrate diff` *No difference*; zero tabela
->         sem RLS. **Aplicada no dev; em produção roda no pre-deploy do próximo publish.**
->         `?lang=pt|en` em catálogo, trilhas e busca (`idiomaDaLista`); link direto e "minhas
->         trilhas" não filtram; `LanguageMismatch` na trilha; `LanguageLocked`/`LanguageInUse` na
->         troca; a cópia herda o idioma da trilha. A API fala `pt`/`en` (`comIdioma`). 14 testes
->         novos (`content-language.test.ts`). **Mutação:** sem filtro, sem trava, sem recusa e
->         "minhas trilhas" filtrando → 4 reprovaram. Revertido.
->   - [x] **3c — campo Idioma e etiqueta "EN" no admin** *(24/09)*. Campo **Idioma** (Português /
->         English) na seção Organização; curso novo nasce Português. Curso GRAVADO fora de rascunho
->         mostra o idioma como texto, com "O idioma trava depois que o curso é publicado." (texto
->         aprovado pelo operador no plano) — texto e não campo desabilitado, porque campo
->         desabilitado sai do envio do formulário. Etiqueta "EN" na lista. **Mutação:** trava
->         desligada, idioma fixo no envio e etiqueta removida → 4 reprovaram. Revertido.
-> - [x] **Etapa 4 — catálogo e cursos no idioma escolhido:** catálogo, busca, páginas de curso e
->       trilha; nível e textos das 3 camadas nos dois idiomas; catálogo EN vazio; curso com 0 aulas.
->       **Decisões do operador (24/09):** o nível aparece pelo NOME ("Intermediário" /
->       "Intermediate"), não pelo valor cru — o Admin segue com o cru · os textos das 3 camadas
->       ficam **editáveis em Textos** · junto, o conserto do achado da 3c (formulário de curso sem
->       aviso quando o salvamento falha).
->   - [x] **4a — catálogo e busca** *(24/09)*. `/cursos`, `/trilhas` e a busca pedem a lista no
->         idioma do app (`?lang=`); o idioma está na chave da consulta, então trocar no rodapé refaz
->         a lista. Textos da tela, da busca e do cartão (contagem e nível) no dicionário. Vazio em
->         inglês próprio; curso com 0 aulas mostra "0 aulas". **Mutação:** lista ignorando o idioma
->         e nível cru → 4 reprovaram. Revertido.
->         *Para a revisão do inglês (etapa 5):* a contagem não tem singular — "1 módulos" em PT
->         (já era assim) e "1 modules" em EN.
->   - [x] **4b — páginas de curso e trilha** *(24/09)*, com as 3 camadas editáveis em Textos. Texto da
->         tela no idioma do app; o conteúdo do curso (título, aulas, FAQ) fica como foi escrito.
->         Nome e frase das camadas saíram de `LAYER_CONFIG` (que ficou só com ícone e cor) para
->         `common.camadas`, lidos já com as edições por `useTextosComuns()` — o mesmo hook do rodapé.
->         Em Textos: aba "Toda página", seção "3 camadas". "Entrar para salvar" leva ao login no
->         idioma da tela. `CLAUDE.md`, `courses.md` e `idiomas.md` reconciliados. **Mutação:** selo
->         ignorando as edições e título escrito à mão → 2 reprovaram. Revertido.
->   - [x] **4c — aviso de erro ao salvar o curso** no admin *(24/09 — o achado da 3c, consertado a
->         pedido do operador)*. O formulário mostra, com `role="alert"`, a frase de cada recusa: slug
->         repetido, idioma travado, curso numa trilha de outro idioma e falha genérica (inclusive
->         queda de rede). O aviso some quando o próximo salvamento dá certo. Lógica em
->         `lib/course-form.ts` (`mensagemDeErroAoSalvar`). **Mutação:** todas as falhas com a mesma
->         frase → 3 reprovaram; aviso removido → 6 reprovaram. Revertido.
-> - [x] **Etapa 5 — revisão do inglês** pelo operador com o Antigravity, e publicação.
->       **Publicado em 24/09** (`main` = `81a1ae5`, CI verde nos dois jobs). Prova em produção, sem
->       tocar no banco: `/api/courses?lang=es` → 400; `?lang=pt` → o curso de exemplo (PT pela
->       migration); `?lang=en` → vazio. O filtro só responde com a coluna de idioma existindo.
->       *24/09:* arquivo gerado (`design-lab/revisao-ingles.md`, só o texto novo: 98 frases de
->       `app.*` e `common.camadas`) com 11 pontos de dúvida no topo.
->       **Revisão do Antigravity aplicada (24/09):** contagem com singular nos dois idiomas
->       ("1 módulo · 1 aula", "1 module · 2 lessons"; zero segue plural) · "Prerequisites" ·
->       "Your basic account information." · "Lessons in progress show up here once…" · camadas
->       UNIVERSAL ("— apply it with…") e IA ("fix errors, and save time"). **Aplicada em parte:**
->       MODERNO — tirei a vírgula, mas mantive o segundo "that" ("…speed up your work and that few
->       people master"): sem ele a frase lê "your work and few people" como um bloco antes de
->       chegar ao verbo. Os outros 9 pontos de dúvida: manter.
->       **2ª rodada (24/09), revisão completa linha por linha pelo Antigravity, a pedido do
->       operador:** das 10 sugestões do Claude, 9 aceitas; a da camada MODERNO ganhou a versão dele
->       ("The latest features that speed up your work, mastered by few."), que mantém o formato de
->       fragmento das outras duas camadas. Nenhuma outra linha mudou. *Registro:* na 1ª tentativa
->       desta rodada o Antigravity regerou o arquivo com um prompt próprio (as 10 sugestões não
->       chegaram a ele) e editou uma frase do `en.ts`, que entrou sem ser notada no commit do menu
->       de conta — substituída agora. **Falta só publicar** (o `publica` do operador).
-
-> **SEQUENCIAMENTO:** fecha **antes** do bloco *Superfície pública indexável*. Se as páginas
-> públicas forem montadas antes, nascem só em português e são refeitas. Não depende do Bunny;
-> **a posição exata dentro da Fase 3 é decisão do operador.** Risco baixo–médio (uma migration +
-> os textos de todas as telas), **não** é HIGH RISK.
-> **FORA deste bloco, de propósito:** os endereços `/en`, o redirecionamento pelo navegador e o
-> `hreflang` (nascem com as páginas públicas no servidor, no bloco seguinte, para não serem
-> construídos no React e jogados fora); curso em inglês (é produção de conteúdo, não build); preço
-> em dólar (Fase 4); e-mail e páginas legais em inglês (Fase 7); ligação entre a versão PT e a EN
-> do mesmo curso (entra quando existir o primeiro par).
-
-- [ ] **Passo 0 — a pendência de produto que muda o diff** (operador): **a posição do seletor
-      PT | EN** na tela, com o parceiro de design (`design-lab/GEMINI.md`). Sem ela, o bloco não
-      começa.
-- [ ] **Migration:** enum `Language` + `Course.language` + `LearningPlan.language`, **obrigatórios**;
-      linhas existentes = português. `Module` e `Lesson` **herdam** do curso, sem coluna. Sem tabela
-      nova ⇒ sem RLS nova, mas a **consulta de RLS roda mesmo assim** (`CLAUDE.md` → Database &
-      Migrations). **Passo 0 da migration:** contar cursos/trilhas e provar login de admin e membro
-      antes; conferir o mesmo depois.
-- [ ] **`core/`:** constante `Language` + schemas Zod exigindo `language` na criação de curso e trilha.
-- [ ] **Admin: campo "Idioma" no formulário de curso e de trilha** *(operador, 14/09 — como o da
-      Udemy)*. Na trilha, a busca de itens só oferece conteúdo do idioma dela — **e o servidor recusa
-      mesmo assim** (próximo item).
-- [ ] **Servidor — idioma nas leituras e na escrita.** Leitura pública (catálogo, busca, lista e
-      detalhe de trilha) **filtra por idioma do mesmo jeito que filtra por status**; escrita de trilha
-      **recusa item de outro idioma**; clonar trilha **herda** o idioma. **Testes de servidor**
-      (supertest): curso EN fora da listagem PT e vice-versa · busca respeita idioma · curso EN numa
-      trilha PT → 4xx · clone herda. *Não é rota de acesso nem de dinheiro, mas é escrita que confere
-      o registro que referencia — mesma família do "oráculo de enumeração"; por isso entra teste.*
-- [ ] **Dicionário de textos — UM para servidor e React**, com a garantia de que **chave faltando no
-      inglês quebra o typecheck**. **Biblioteca de i18n, se houver, é dependência nova:** entra no
-      plano do bloco com o problema que resolve e o OK do operador. `react-i18next` sozinho não serve
-      (não cobre os templates do servidor).
-- [ ] **Migrar os textos das telas existentes** (24 arquivos com texto em português hoje, medido em
-      14/09) para o dicionário, incluindo os rótulos de enum (`Level`, `Layer`) e os textos globais
-      das 3 camadas. **O agente traduz para o inglês; o operador revisa antes de publicar** (texto de
-      interface é dele — *DE QUEM É A DECISÃO*).
-- [ ] **Seletor PT | EN** grava a escolha (cookie para visitante; `User.preferredLanguage` para quem
-      está logado), e a interface lê dali até o bloco seguinte trocar o visitante para o endereço.
-      Estados de loading/erro + **teste de componente**.
-- [ ] **Curso publicado com ZERO aulas** *(operador, 14/09: os primeiros cursos em inglês nascem
-      cadastrados e sem aulas, sem mock)*. **A página mostra "0 aulas" normalmente**, sem estado
-      especial (decisão do operador). O que o bloco garante: catálogo e página de curso renderizam com
-      a lista de aulas vazia **sem quebrar**. Catálogo em inglês vazio tem estado próprio (Definição de
-      pronto). **Teste de componente:** curso com zero módulos renderiza e mostra "0 aulas"; catálogo
-      vazio mostra o estado vazio.
-- [ ] **Passo 8 — mutação:** remover o filtro de idioma da leitura pública e remover a recusa de item
-      de outro idioma na trilha → a suíte de servidor **tem que reprovar** nos dois casos; reverter.
-- **Done when:**
-  1. Curso criado no admin com Idioma = English aparece **só** na listagem em inglês; a listagem em
-     português não muda.
-  2. Trilha em português **recusa** um curso em inglês **pela API**, não só pela tela.
-  3. Toda tela existente renderiza nos dois idiomas, e apagar uma chave do inglês **quebra o
-     typecheck**.
-  4. A escolha feita no seletor sobrevive a reload, logado e deslogado.
+> **A escola é só em português** *(decisão do operador, 12/10/2026)*. O bloco era de Set 2026: o
+> idioma no conteúdo, o dicionário de textos e o seletor PT | EN. Boa parte foi construída sem que
+> as caixas fossem marcadas, e a etapa 4.6c (Fase 4) tirou tudo o que era do segundo idioma.
+> **Ficou, e é usado:** o dicionário de textos (`core/src/i18n/pt.ts`), servido ao servidor por
+> `getDict()` e ao React por `useT()`, com os textos das telas do aluno. O texto do bloco:
+> `git show e62ec0c:docs/implementation-plan.md`, seção *Bloco I*.
 
 ### Bloco — Superfície pública indexável  *(Ago 2026 · política em `CLAUDE.md` → Rendering Boundary)*
 
@@ -2993,11 +2801,11 @@ própria**.*
       (mesma marcação, mesmas classes) → **formatação** pelo parceiro. É o caminho que a home já
       percorreu inteiro.
 - [ ] `/cursos` e `/trilhas` viram template de servidor, com o payload de indexação que a home já
-      tem (title, description, canonical, OG, `hreflang`, JSON-LD) e **os dois idiomas**.
+      tem (title, description, canonical, OG, JSON-LD), em português — sem `hreflang`: há um idioma só.
 - [ ] Catálogo do aluno nasce em **`/aluno/cursos`** e **`/aluno/trilhas`** (React, dentro do
       shell). `CatalogPage.tsx` é a base — o que muda é o que ele mostra a mais.
 - [ ] O rail do aluno passa a apontar para `/aluno/*`; a vitrine fica com o endereço curto.
-- [ ] Testes: servidor para a vitrine (responde, indexa, filtra por idioma e status) + componente
+- [ ] Testes: servidor para a vitrine (responde, indexa, filtra por status) + componente
       para a do aluno (os estados + o que ela tem a mais).
 - [ ] **Passo 8 — mutação:** remover o filtro de status da vitrine → a suíte de servidor reprova.
 - **Done when:** o visitante e o Google veem a mesma vitrine, sem barra; o aluno logado tem a
@@ -3137,9 +2945,7 @@ servidor → acabamento. Cada uma em PT e EN.
       ~200) — é nele que o campo entra.
 - [ ] *(operador)* **Cadastrar os 5 cursos da home** no admin.
 - [ ] **Etapa 3 — a home lê os cursos do banco** (`server/src/routes/home.ts`, que hoje usa uma
-      constante): `PUBLISHED` + idioma da página + `displayOrder`. O botão de assinar das páginas
-      em inglês passa a ser **derivado do banco** (≥ 1 aula publicada em inglês, pela cadeia
-      inteira — `CLAUDE.md` → *Idiomas*). *A decidir na etapa:* **qual curso é o destaque** (o
+      constante): `PUBLISHED` + `displayOrder`. *A decidir na etapa:* **qual curso é o destaque** (o
       primeiro da ordem, ou o que tiver a etiqueta Destaque — nesse caso a etapa 4 vem antes) e o
       que fazer com os 2 cursos `exemplo-*`, que estão **publicados em produção** e apareceriam na
       home.
@@ -3224,16 +3030,8 @@ servidor → acabamento. Cada uma em PT e EN.
 - [ ] **`sitemap.xml` gerado do banco** (rota do servidor, não arquivo estático): cursos e trilhas
       `PUBLISHED`, certificados com `isPublic=true`. `DRAFT`/`ARCHIVED` **nunca** entram — o sitemap
       respeita o mesmo filtro das leituras públicas.
-- [ ] **Os dois idiomas na superfície pública** *(Set 2026 — depende do Bloco I; spec em
-      `idiomas.md` §2, trava em `CLAUDE.md` → Idiomas)*. Caminhos em inglês **decididos** (operador, 14/09):
-      `/en/courses`, `/en/course/:slug`, `/en/learning-path/:slug`, `/en/certificate/:publicId`.
-      Então: cada rota pública também sob `/en`
-      · redirecionamento **só na primeira visita à raiz**, pelo navegador (`pt*` fica, qualquer
-      outro vai para `/en`), **nunca** em link direto nem sem `Accept-Language` · `<html lang>`,
-      `og:locale` e `hreflang` recíproco quando houver par · `sitemap.xml` com os dois idiomas.
-      **Teste de servidor dos quatro casos do redirecionamento** (pt-BR na raiz fica · en-US na raiz
-      vai para `/en` · en-US em link direto fica · sem cabeçalho fica) e o teste de aceitação do
-      `curl` abaixo repetido numa URL `/en`.
+- [x] ~~**Os dois idiomas na superfície pública**~~ — **CANCELADO em 12/10/2026** (a escola é só
+      em português — etapa 4.6c). O texto antigo: `git show e62ec0c:docs/implementation-plan.md`.
 - [ ] **`robots.txt`** conforme a política decidida (permite busca **e** treino) + **`noindex`** em
       `/aluno/*` e `/admin/*`, via meta **e** via `robots.txt`.
 - [ ] **Botão de compartilhar** em curso, trilha e certificado — `navigator.share` quando existir,
@@ -3314,8 +3112,8 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       bloqueio automático** (decisão dele no mesmo dia, que substituiu o "no máximo 2
       reembolsos"): a trava é a cláusula de reembolso abusivo nos termos de uso (P61) e a
       análise caso a caso — esta etapa NÃO constrói contador nem recusa de assinatura ·
-      **o prazo é de 7 dias no Brasil e 14 fora**, pelo país do cartão (a cobrança em dólar
-      chega na 4.8; até lá só existe o de 7) · **trocar de plano não recomeça o prazo**: os
+      **o prazo é de 7 dias** (os 14 dias de fora do Brasil saíram com a 4.8, cancelada em
+      12/10/2026) · **trocar de plano não recomeça o prazo**: os
       dias contam do primeiro dia da assinatura.
       **PLANO APROVADO (operador, 11/10/2026: "Aprovado").**
       - **O que o aluno passa a ter:** em **Faturamento e Assinatura** ele vê o plano, a próxima
@@ -4005,7 +3803,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       mostra o valor novo. **Os textos são do operador (11/10/2026):** logo abaixo do valor,
       "Conclua em até 10 minutos, ou o valor poderá ser atualizado."; e, vencido o prazo, "Este
       valor foi atualizado. Confira e clique para concluir." (`app.faturamento.plano.valorValePor`
-      e `.valorAtualizado`; o inglês é rascunho, com a P72). **Prova na área restrita:** 26 de 26 com as
+      e `.valorAtualizado`). **Prova na área restrita:** 26 de 26 com as
       funções de verdade — mostrado R$ 956,33, a conta da Stripe 9 minutos depois R$ 956,35,
       cobrado R$ 956,33; com código de 50% o cobrado é o mostrado (o crédito fica fora do
       alcance do código); o banco pedindo confirmação, o cartão recusado e a cortesia como
@@ -4070,7 +3868,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       navegador disparar na hora. Gates: typecheck, lint, build e as duas suítes.
       **O operador testou de novo no navegador (11/10/2026): a troca num clique só funcionou.**
       E pediu um ajuste de texto, feito: no cartão do Anual, "A troca vale na hora." virou "A
-      troca é imediata." (`app.faturamento.plano.paraOAnual`; o inglês segue rascunho, na P72).
+      troca é imediata." (`app.faturamento.plano.paraOAnual`).
       **Para a parte 2 do teste:** a assinatura de cortesia do `member@` do computador foi
       encerrada a pedido do operador (11/10/2026). `[FATO — medido]` encerrar uma assinatura de
       100% direto deixa o período inteiro como "pago" (um ano de acesso, no anual); para a
@@ -4079,7 +3877,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       Feito: o item 0 ("Sair"), a consulta à Stripe, os
       **passos 7, 8 e 10** (todo o servidor) e **os textos das telas, aprovados por ele em
       português** (três blocos, 11/10/2026; já no dicionário, em `app.faturamento.plano`,
-      `.cancelamento` e `.banco` — o inglês é rascunho, a revisar com o Antigravity: P72).
+      `.cancelamento` e `.banco`).
       As duas decisões dele de 11/10/2026 (cancelar com a cobrança atrasada; limpar ao entrar)
       já estão no código, e os **passos 9 e 11** (as telas de cancelar e de mudar de plano)
       e o **passo 12** estão feitos. **Próximo: o passo 13** — a prova com conta descartável
@@ -4369,7 +4167,17 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                   "no idioma do curso" (é `captions=pt`) e os botões em inglês do player; o
                   `jilsonai.md`, a resposta "no idioma do aluno"; o `design.md`, o seletor do
                   rodapé do app.
-            - [ ] **6d — os itens abertos deste plano que citam idioma, e a `pendencias.md`.**
+            - [x] **6d — os itens abertos deste plano que citam idioma, e a `pendencias.md`**
+                  *(19/10/2026)*: o Bloco I virou uma lápide (o que ficou e é usado: o dicionário
+                  em português); cancelados, com o título riscado, os dois idiomas na superfície
+                  pública, os seis itens do dólar e do imposto de fora da Fase 4, o JilsonAI no
+                  idioma do aluno e o certificado no idioma da trilha; a vitrine, a home, a
+                  legenda, o e-mail e as páginas legais ficaram só em português; os passos da 4.7
+                  perderam o "nos dois idiomas"; o caso (16) da matriz de testes saiu. O texto
+                  antigo de cada item: `git show e62ec0c:docs/implementation-plan.md`. O bloco
+                  *Estado atual* diz que a escola é só em português. Na `pendencias.md`, cada
+                  item perdeu a parte em inglês (o texto, o arquivo `en.ts`, o "Reactivate
+                  subscription").
             - [ ] **6e — os textos de posicionamento** (`project-description.md`,
                   `strategy.md`, `project-scope.md`): o agente propõe, o operador aprova.
             - [ ] **6f — sai o `idiomas.md`** (o registro fica no `decisions-archive.md`; o texto
@@ -4425,8 +4233,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
 
       **REVISTO PELA ETAPA 4.6c** *(decisão do operador, 12/10/2026: a escola fica só em
       português e só para o Brasil)*: **os passos 3, 5, 6 e 7 só abrem depois dela**, e
-      escrevem texto SÓ EM PORTUGUÊS. Onde um passo abaixo disser "nos dois idiomas", não vale
-      mais. Não há campo País, aviso para quem é de fora nem lista de espera. O que continua:
+      escrevem texto SÓ EM PORTUGUÊS. Não há campo País, aviso para quem é de fora nem lista de espera. O que continua:
       o CPF ou CNPJ obrigatório, a coluna de resumo, o menu e o rodapé do site. Os passos 1, 2
       e 4 não dependem do idioma e podem andar em paralelo com a 4.6c.
 
@@ -4450,7 +4257,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       - [ ] **Passo 3 — O envio de e-mail (Resend).** Com o operador, nos painéis: a conta no
             Resend, o domínio e o remetente (pendência P49). No código: o pacote `resend`, uma
             porta única de envio (com `await` e sem derrubar o pedido — CLAUDE.md → *Membership
-            Gating*), o modelo de e-mail nos dois idiomas e um envio de prova para ele. Sozinho,
+            Gating*), o modelo de e-mail e um envio de prova para ele. Sozinho,
             não muda nada para o aluno.
       - [ ] **Passo 4 — A conta nasce no pagamento (servidor, ALTO RISCO).** A rota pública que
             recebe e-mail + plano + código; o aviso da Stripe cria a conta (o cadastro continua
@@ -4482,11 +4289,11 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             do limite do passo 1.
       - [ ] **Passo 6 — A tela pública de assinar e os botões da home.** O mesmo formulário da
             4.2 com o campo de e-mail, a confirmação para quem acabou de pagar ("enviamos um
-            e-mail para você criar a senha") e os botões Assinar da home sem login, nos dois
-            idiomas. Os textos são do operador. **Depende dos passos 4 e 5.**
+            e-mail para você criar a senha") e os botões Assinar da home sem login.
+            Os textos são do operador. **Depende dos passos 4 e 5.**
             **A PROPOSTA DA TELA** *(agente, 12/10/2026, depois de o operador mostrar as telas
             de pagamento da Udemy e do Code with Mosh)* **está em `billing.md` → *A tela pública
-            de assinar*:** os blocos em ordem, os textos nos dois idiomas, o que a Stripe exige
+            de assinar*:** os blocos em ordem, os textos, o que a Stripe exige
             (endereço não) e o que fica de fora. **Antes de construir: P80 (o que existe na
             tela) e P81 (os textos).** Do operador, no mesmo dia: o formulário de quem está
             logado *"está ótimo porque já está funcionando"* — é a base, sem refazer — e o
@@ -4531,7 +4338,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             Termos de Uso e a Política de Privacidade no ar (a tela de assinar aponta para os
             dois; hoje são pendência da Fase 7 e a P61) · a **P84** (o cartão promete o JilsonAI
             e o Pix, que ainda não existem) · a resposta da FAQ sobre nota fiscal já trocada por
-            ele no admin, nos dois idiomas (decisão de 12/10/2026: "sempre que solicitada").
+            ele no admin (decisão de 12/10/2026: "sempre que solicitada").
 - [ ] **4.7b — Admin → Assinaturas vira um PAINEL de assinaturas (código, ALTO RISCO).**
       **MAPA APROVADO pelo operador (10/10/2026: "Aprovo o mapa"), e fica para DEPOIS da 4.7**
       (decisão dele no mesmo dia: *"o Painel pode ficar para depois da 4.7 que é mais
@@ -4790,40 +4597,16 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       tentativas, decisão de Ago 2026); ela só acaba se a Stripe tirar a assinatura de `past_due`.
       Deixada como vencida, o aluno fica com acesso para sempre sem pagar, e nenhum código nosso
       percebe. Conferir no painel antes do primeiro aluno pagante.
-- [ ] **Setup no dashboard (sem código):** Payments Plano Padrão (conta MEI/CNPJ, payout Banco do Brasil) + **Stripe Billing ativado**. Produto **"Assinatura"** com **2 `Price`**: Mensal R$99,90 (sem fidelidade) / Anual ~R$995 (~17% off). Sem free trial, sem conteúdo grátis. **Sem Customer Portal.** *(Versão em dólar: próximo item.)*
-- [ ] **Preços em dólar, pelo país do CARTÃO** *(decisão do operador, 14/09/2026 — `billing.md`)* — **CANCELADO em 12/10/2026 (etapa 4.6c: a escola cobra só em reais)**:
-      **US$ 30/mês** + **US$ 299/ano** (confirmado pelo operador em 14/09). **context7 `/websites/stripe` primeiro:** moedas no mesmo
-      `Price` ou `Price`s separados, e como saber o país do cartão **antes** de confirmar a cobrança.
-      **Trava:** a moeda nunca sai do idioma nem do prefixo `/en` (`CLAUDE.md` → Membership Gating).
-      **Teste de servidor:** cartão do Brasil → preço em real; cartão estrangeiro → preço em dólar
-      (usar cartões de teste por país, se a Stripe oferecer — verificar).
-- [ ] **Preço mostrado × cobrado:** quando o cartão levar a uma moeda diferente da que a página
-      mostrou, **a tela de pagamento mostra o valor final antes da confirmação**. O desenho da tela
-      é do operador.
-- [ ] **DECISÃO DE IMPOSTO INTERNACIONAL — recomendado fechar ANTES da primeira venda para cartão
-      estrangeiro** (`idiomas.md` §5). **Stripe Tax** + registro e declaração com o contador **×**
-      **Stripe Managed Payments** (a Stripe vira a vendedora; exige a página de pagamento dela e
-      reabre a decisão do Payment Element embutido — *dado novo* legítimo). Levar ao contador: conta
-      MEI, faturamento já em território EPP, e **IVA europeu desde a 1ª venda, que já pega aluno de
-      Portugal**. `[FATO — context7, 14/09/2026]` · aceite de empresa brasileira no Managed Payments:
-      **não verificado**.
-- [ ] **IDIOMA É FILTRO, NÃO PORTÃO** *(decisão do operador, 14/09/2026 — modelo LinkedIn Learning,
-      `idiomas.md` §3)*: uma assinatura dá acesso aos cursos **dos dois idiomas**. `temAcessoAtivo()`
-      **não lê idioma**; `Subscription` **não tem** idioma. Caso 16 da matriz abaixo prova isso.
-- [ ] **Botão de assinar nas páginas em inglês só liga com ≥ 1 aula publicada em inglês**
-      *(operador, 14/09)*. Condição **derivada do banco pela cadeia inteira** (aula publicada → módulo
-      publicado → curso em inglês publicado), **nunca** interruptor manual. **Regra de exibição, não
-      de acesso:** o checkout não recusa ninguém por ela (a assinatura não tem idioma). **Antes de
-      codar, o operador fecha** a aparência do botão desligado. **Teste de servidor:** página em
-      inglês sem aula em inglês → sem botão ativo; publicar uma aula → botão ativo; aula publicada
-      dentro de **curso em rascunho** → continua sem botão (a cadeia).
-- [ ] **Conta de receita em dólar** em `strategy.md` §6 (é doc, não código): taxa da Stripe para
-      cartão estrangeiro (verificar no painel) e como o assinante em dólar entra na meta, que hoje
-      está só em reais.
+- [ ] **Setup no dashboard (sem código):** Payments Plano Padrão (conta MEI/CNPJ, payout Banco do Brasil) + **Stripe Billing ativado**. Produto **"Assinatura"** com **2 `Price`**: Mensal R$99,90 (sem fidelidade) / Anual ~R$995 (~17% off). Sem free trial, sem conteúdo grátis. **Sem Customer Portal.**
+- [x] ~~**Preços em dólar pelo país do cartão · preço mostrado × cobrado em outra moeda · decisão
+      de imposto internacional · "idioma é filtro, não portão" · botão de assinar das páginas em
+      inglês · conta de receita em dólar**~~ — **CANCELADOS em 12/10/2026** (decisão do operador:
+      a escola é só em português e só para o Brasil; cobra só em reais — etapa 4.6c). O texto
+      antigo: `git show e62ec0c:docs/implementation-plan.md`.
 - [ ] **Configurar Smart Retries + automações de recuperação** conforme a política de produto abaixo. Isto é **configuração, não código**.
 - [ ] **Política de dunning (decisão NOSSA, executada pela Stripe):** falha na renovação → retries automáticos → corte. **Acesso MANTIDO durante toda a janela de retry** (`past_due`) — churn involuntário é a maior alavanca (strategy.md §6). Corte no fim da janela → `unpaid`/`canceled` + `session.deleteMany`. Ajustar a janela é mudança de configuração. *Confirmar os intervalos exatos que a Stripe expõe na abertura da fase, via context7.*
 - [ ] **Checkout embutido (Payment Element).** Cria `Customer` + `Subscription` na Stripe e confirma o primeiro pagamento na própria página. O dado do cartão vai direto pro Stripe (não toca nosso servidor). **`requires_action`/3DS é tratado pelo Element no fluxo de assinatura.**
-- [ ] `Subscription` model = **espelho local** (o gate lê daqui) com growth seams: `ownerUserId?`, `organizationId?` (nullable), `seats` (default 1), `status`, `currentPeriodEnd`, `stripeCustomerId`, **`stripeSubscriptionId` (obrigatório — é a chave do objeto canônico)** (+ RLS); migration — **sem coluna de idioma** (idioma é filtro, não acesso — Set 2026)
+- [ ] `Subscription` model = **espelho local** (o gate lê daqui) com growth seams: `ownerUserId?`, `organizationId?` (nullable), `seats` (default 1), `status`, `currentPeriodEnd`, `stripeCustomerId`, **`stripeSubscriptionId` (obrigatório — é a chave do objeto canônico)** (+ RLS); migration — **sem coluna de idioma** (a escola não tem idioma no banco desde 12/10/2026)
 - [ ] `temAcessoAtivo(userId)` lib — caminho individual (`assinaturaIndividualAtiva`); **fonte única de verdade do acesso para a aplicação**, lida do espelho local. *(A verdade canônica é a `Subscription` da Stripe; o espelho é o que o gate consulta em tempo de request.)*
 - [ ] **Webhook handler** dos eventos de assinatura (`customer.subscription.created/updated/deleted`, `invoice.paid`, `invoice.payment_failed`) — **TUDO INLINE, SEM FILA** (pg-boss removido do MVP em Ago 2026; ver CLAUDE.md → Background Jobs). A ordem é: **verifica assinatura do Stripe → grava o `event.id` → atualiza o espelho local → responde 200**, tudo na mesma request (milissegundos). CRIA user+subscription no primeiro pagamento (substitui o seed). **A confiabilidade vem da Stripe:** devolvemos 5xx e ela reentrega — era isso que a fila duplicava. E-mail (Resend) sai na mesma request, dentro de `try/catch`: falha de e-mail **nunca** derruba o 200 de um evento já processado.
 - [ ] **TRAVA de montagem (achado do `security-vulnerability-reviewer`, Ago 2026):** a rota do
@@ -4939,9 +4722,8 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       **Billing bypass** — (13) force-sync **sem auth → 401**; (14) force-sync como member comum →
       403.
       **Rate limit** — (15) o limite do Bloco 0 (Fase 3) **liga e bloqueia** de verdade.
-      **Idioma** *(Set 2026)* — (16) assinatura feita em português → curso em **inglês liberado**,
-      inclusive a URL assinada de vídeo. Existe para ninguém "proteger" o acesso por idioma no futuro
-      e trancar quem pagou (idioma é filtro — `CLAUDE.md` → Idiomas).
+      ~~**Idioma** — (16) assinatura em português → curso em inglês liberado~~ — saiu em 12/10/2026:
+      não há mais idioma.
       *Requer o banco de teste (projeto `mvaobzypsiuhqzipcelw` + trava por **REF** no `globalSetup`)
       — CLAUDE.md → Database & Migrations.*
 - [ ] `requireActiveMembership` middleware (wraps `temAcessoAtivo`) gating content + video URLs
@@ -4983,7 +4765,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       nota POR CURSO)*. Depende deste bloco: "concluiu um curso" só existe com o `LessonProgress`.
       - **A avaliação, a cada curso concluído:** nota de **1 a 5 estrelas** daquele curso + um
         **comentário, se o aluno quiser**. Serve **só ao operador** — *"para eu entender se estou
-        ensinando do jeito que os alunos gostam ou não"* — e **nunca é publicada**, em nenhum idioma.
+        ensinando do jeito que os alunos gostam ou não"* — e **nunca é publicada**.
         Teste de servidor garante que nem a nota nem o comentário saem no site. É ela que vira a
         **Avaliação do cartão do admin** (a média do curso).
       - **O depoimento, um por aluno:** o testemunho que pode ir para o **site**. Aparece **abaixo da
@@ -5529,9 +5311,8 @@ outro aparelho e "daqui a um mês", e o Safari apaga o armazenamento do site em 
       semanas depois. Seletor sozinho é um botão para piorar o produto às cegas.
 - [ ] **Reconferir preço de API na abertura desta fase** — os números do `jilsonai.md` são de
       set/2026 e preço de fornecedor envelhece sozinho. Não copiar do doc; conferir.
-- [ ] **O JilsonAI responde no idioma do aluno** (escola bilíngue, Set 2026 — `idiomas.md` §6):
-      persona e prompt preparados para PT e EN; o contexto de curso vem do idioma do curso. O
-      desenho (uma persona com instrução de idioma × duas personas) se decide na abertura da fase.
+- [x] ~~**O JilsonAI responde no idioma do aluno**~~ — **CANCELADO em 12/10/2026**: a escola é só
+      em português, e o JilsonAI responde em português.
 - [x] *(Resolvido em 27/09/2026: `react-markdown`, que entrou pela descrição do curso — Bloco B
       da Fase 3 e `tech-stack.md`. Fica para esta fase só **o que o chat aceita**: a lista de
       `permitidos` do `MarkdownText` e se entra plugin para bloco de código.)*
@@ -5563,7 +5344,7 @@ outro aparelho e "daqui a um mês", e o Safari apaga o armazenamento do site em 
   dele** (vídeo aos 90%, texto ao abrir — decisão de 03/10), **sem** prova extra no servidor de que
   o vídeo chegou aos 90%. *Gatilho de reabertura (proposto pelo agente): certificado emitido para
   quem marcou aulas sem assistir, medido — aí o servidor passa a exigir a prova.*
-- [ ] **Certificate in the trilha/course language** (bilingual school, Sep 2026 — `idiomas.md`): fixed PDF/page text comes from the shared dictionary; `/certificado/:publicId` gets its `/en` counterpart like every public route.
+- [x] ~~**Certificate in the trilha/course language**~~ — **CANCELLED on 12/10/2026**: the school is Portuguese-only. The certificate's fixed text still comes from the shared dictionary (`pt.ts`).
 - [ ] **Public verifiable URL.** Route **`/certificado/:publicId`** (`publicId` cuid — **nunca a PK sequencial**; ver `CLAUDE.md` → Database & Migrations) listing the `skillsCovered`, with Open Graph optimized for LinkedIn sharing → each graduate becomes an organic marketing vector and feeds the "emprego em empresa" angle (cert by competencies). **TRAVA:** student opt-in (`isPublic`, default false). The cert always exists; the public route is private/404 unless the student allows it (LGPD). ✅ **O requisito de OG passa a ser CUMPRÍVEL desde Ago 2026** — esta rota é pública e montada no servidor (`CLAUDE.md` → Rendering Boundary); enquanto o site era SPA puro, este checkbox pedia algo que a arquitetura não entregava, porque o crawler do LinkedIn lê HTML cru.
 - [ ] **Certificate-as-media upgrade (same phase, small):** dedicated **OG image** rendered
       server-side alongside the PDF (wordmark + student name + trilha + skills — Apple-clean, spec
@@ -5583,9 +5364,9 @@ outro aparelho e "daqui a um mês", e o Safari apaga o armazenamento do site em 
 ## Phase 7 — Launch Prep  *(medium risk)*
 
 - [ ] Transactional emails (Resend): welcome, receipt, password reset (transactional ignores `marketingConsent`)
-      — **in the student's language** (`preferredLanguage`; bilingual school, Sep 2026)
-- [ ] LGPD: privacy policy, terms, consent, data export/delete path — **plus English versions of
-      the legal pages** (the English side is live from launch — `idiomas.md`)
+      — in Portuguese (the school is Portuguese-only since 12/10/2026)
+- [ ] LGPD: privacy policy, terms, consent, data export/delete path (in Portuguese only — the
+      English versions left on 12/10/2026)
 - [ ] Error/loading states everywhere; security review (subagent) on auth/billing/video
 - [ ] **⚠️ REVISTO em 10/10/2026: a Stripe de verdade entra na etapa 4.3, não aqui.** Com isso, a
       troca de chaves e a limpeza descritas abaixo **deixam de existir** (o banco de produção nunca
