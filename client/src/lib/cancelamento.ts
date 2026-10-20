@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { CancelarInput, MotivoDoCancelamento, ReembolsoFeito } from "@jilson/core";
 import { cancelarMinhaAssinatura, reembolsarMinhaAssinatura } from "@/lib/api";
-import { CHAVE_DA_MINHA_ASSINATURA, codigoDaRecusa } from "@/lib/faturamento";
+import { CHAVE_DA_MINHA_ASSINATURA, codigoDaRecusa, passouDoLimite } from "@/lib/faturamento";
 
 // CANCELAR A ASSINATURA (Fase 4, etapa 4.6, sessão b): o que a tela de cancelar guarda e faz.
 // Quem decide o que cabe (parar a renovação, o reembolso, terminar na hora) é o SERVIDOR; aqui
@@ -17,13 +17,17 @@ export type Cancelado =
   /** O dinheiro foi devolvido, e o acesso terminou agora. */
   | ({ como: "reembolsado" } & ReembolsoFeito);
 
-/** Por que não deu: o prazo do reembolso acabou, a devolução falhou depois de encerrar, ou outra coisa. */
-export type FalhaAoCancelar = "prazo" | "devolucao" | "erro";
+/**
+ * Por que não deu: o prazo do reembolso acabou, a devolução falhou depois de encerrar, muitas
+ * tentativas seguidas (o limite das rotas de cobrança — etapa 4.7, passo 1), ou outra coisa.
+ */
+export type FalhaAoCancelar = "prazo" | "devolucao" | "limite" | "erro";
 
 function paraFalha(erro: unknown): FalhaAoCancelar {
   const codigo = codigoDaRecusa(erro);
   if (codigo === "ForaDoPrazo") return "prazo";
   if (codigo === "DevolucaoFalhou") return "devolucao";
+  if (passouDoLimite(erro)) return "limite";
   return "erro";
 }
 

@@ -32,9 +32,22 @@ export function usePlanosDaAssinatura(ligado: boolean) {
   return useQuery({ queryKey: ["billing", "planos"], queryFn: getPlanosDaAssinatura, enabled: ligado });
 }
 
-/** Quanto fica hoje com o código — a conta é da Stripe. Sem código, nada é pedido. Trocar de plano pede de novo. */
+/**
+ * Quanto fica hoje com o código — a conta é da Stripe. Sem código, nada é pedido. Trocar para um
+ * plano ainda não visto pede de novo; o que já veio fica: **nada de pedir sozinha** ao voltar para a
+ * aba ou ao reconectar (achado P1 da revisão de segurança da etapa 4.7, passo 1, 19/10/2026) — cada
+ * pedido gasta uma das 10 tentativas de 15 minutos, e quem só comparou os planos pararia no limite.
+ * Não perde nada: o servidor confere o código de novo ao assinar, e o `CodigoInvalido` relê a prévia.
+ */
 export function usePrevia(plano: Plano, codigo: string | null) {
-  return useQuery({ queryKey: ["billing", "previa", plano, codigo], queryFn: () => getPreviaDaAssinatura({ plano, codigo: codigo ?? "" }), enabled: codigo !== null });
+  return useQuery({
+    queryKey: ["billing", "previa", plano, codigo],
+    queryFn: () => getPreviaDaAssinatura({ plano, codigo: codigo ?? "" }),
+    enabled: codigo !== null,
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+  });
 }
 
 /**

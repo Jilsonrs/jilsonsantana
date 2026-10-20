@@ -282,6 +282,16 @@ describe("TrocarCartaoPage — o envio", () => {
     expect(screen.queryByRole("status")).toBeNull();
   });
 
+  // O LIMITE DE TENTATIVAS (etapa 4.7, passo 1 — a frase é do operador, 19/10/2026).
+  it("muitas tentativas: a frase de esperar — nunca 'cartão atualizado', e o campo nem confirma", async () => {
+    prepararTrocaDeCartao.mockRejectedValue(erroDoServidor("MuitasTentativas"));
+    abrir();
+    await salvar();
+    expect((await screen.findByRole("alert")).textContent).toBe("Muitas tentativas seguidas. Por segurança, espere alguns minutos e tente de novo.");
+    expect(confirmar).not.toHaveBeenCalled();
+    expect(screen.queryByRole("status")).toBeNull();
+  });
+
   it("o servidor diz que a conta não tem assinatura que aceite cartão: volta ao resumo", async () => {
     prepararTrocaDeCartao.mockRejectedValue(erroDoServidor("SemAssinatura"));
     abrir();

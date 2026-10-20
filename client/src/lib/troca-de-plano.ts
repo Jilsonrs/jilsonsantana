@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { Plano, type MinhaAssinatura, type TrocaDePlano, type TrocaDesfeita } from "@jilson/core";
 import { desistirDaTroca, getTrocaDePlano, mudarDePlano } from "@/lib/api";
-import { CHAVE_DA_MINHA_ASSINATURA, CONSULTA_DA_MINHA_ASSINATURA, codigoDaRecusa } from "@/lib/faturamento";
+import { CHAVE_DA_MINHA_ASSINATURA, CONSULTA_DA_MINHA_ASSINATURA, codigoDaRecusa, passouDoLimite } from "@/lib/faturamento";
 import { semInterromper } from "@/lib/versao";
 
 // MUDAR DE PLANO (Fase 4, etapa 4.6, sessão b): o que a tela de mudar de plano lê e faz. Quem
@@ -24,8 +24,11 @@ export function useOfertaDeTroca(ligada: boolean) {
 
 /** O que a tela mostra depois de dar certo: vale agora, ou ficou marcado para a data. */
 export type PlanoMudado = { como: "trocado" } | { como: "marcado"; em: string };
-/** Por que não deu: o cartão foi recusado, a confirmação do banco não foi concluída, ou outra coisa. */
-export type FalhaNaTroca = "recusado" | "banco" | "erro";
+/**
+ * Por que não deu: o cartão foi recusado, a confirmação do banco não foi concluída, muitas
+ * tentativas seguidas (o limite das rotas de cobrança — etapa 4.7, passo 1), ou outra coisa.
+ */
+export type FalhaNaTroca = "recusado" | "banco" | "limite" | "erro";
 
 /**
  * Entre uma leitura e outra (enquanto a Stripe aplica a troca que o banco acabou de confirmar) e
@@ -86,14 +89,16 @@ async function pedirAoBanco(chavePublicavel: string | undefined, segredo: string
 /**
  * Desfaz a troca que ficou esperando o banco: a cobrança dela não pode ficar em aberto. A
  * assinatura pode estar ocupada por um instante (o aviso da Stripe chegando), e repetir não faz
- * mal: tenta de novo, poucas vezes.
+ * mal: tenta de novo, poucas vezes. **Menos quando o servidor manda esperar** (o limite de
+ * tentativas — achado da revisão de segurança da etapa 4.7, passo 1): insistir só gastaria o resto
+ * da cota; a troca seguinte anula a que ficou pendente.
  */
 async function desfazerATroca(): Promise<TrocaDesfeita> {
   for (let tentativa = 1; ; tentativa++) {
     try {
       return await desistirDaTroca();
     } catch (erro) {
-      if (tentativa >= TENTATIVAS_DE_DESFAZER) throw erro;
+      if (passouDoLimite(erro) || tentativa >= TENTATIVAS_DE_DESFAZER) throw erro;
       await esperar();
     }
   }
@@ -175,7 +180,7 @@ export function useMudarDePlano(chavePublicavel: string | undefined) {
         // resposta se perdeu no caminho), a tela diz que deu certo em vez de pedir de novo.
         const ficou = await comoFicou(queryClient, troca);
         if (ficou) setFeito(ficou);
-        else setFalha(codigo === "CartaoRecusado" ? "recusado" : "erro");
+        else setFalha(codigo === "CartaoRecusado" ? "recusado" : codigo === "MuitasTentativas" ? "limite" : "erro");
       }
     } finally {
       setNoBanco(false);

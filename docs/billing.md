@@ -22,10 +22,16 @@
 **2 objetos `Price` da Stripe sob um produto "Assinatura":** mensal **R$ 99,90**
 (sem fidelidade, é o padrão) + anual **~R$ 995** (~17% de desconto).
 
-- **Sem teste grátis. Sem conteúdo grátis dentro da escola** — o grátis mora no
-  YouTube.
-- Troca mensal↔anual = `subscriptions.update`; **a proração é da Stripe**, e é
-  previsualizável antes de mostrar o número ao aluno.
+- **Sem teste grátis.** O conteúdo da escola é para assinantes, com uma exceção: **a prévia
+  grátis** — as aulas que o admin marca como prévia (`Lesson.isFreePreview`) tocam para qualquer
+  visitante, sem login, e os arquivos delas continuam só para assinantes *(decisões do operador,
+  27 e 29/09/2026 — `CLAUDE.md` → Access Architecture)*. Fora isso, o grátis mora no YouTube.
+- **Trocar de plano** *(decisões do operador, 11/10/2026 — o detalhe em *Minha assinatura*,
+  abaixo)*: **mensal → anual vale na hora**, com o ano começando no dia da troca, e a pessoa paga
+  o anual menos o que sobrou do mês já pago — **o valor cobrado é exatamente o mostrado**, num
+  clique só; **anual → mensal vale no fim do ano já pago**. A conta mostrada é a prévia da própria
+  Stripe; a cobrança não usa a proração dela, que anda com o relógio, e sim o anual cheio com um
+  crédito de valor fixo.
 - `temAcessoAtivo()` **ignora qual plano** o membro tem.
 - **Não existe oferta de fundador** *(decisão do operador, set/2026)* — nem bônus temporário,
   nem preço travado. A home não usa escassez fabricada.
@@ -352,7 +358,15 @@ gera mais aviso, o acesso ficaria liberado para sempre. *(Achado P1 da revisão 
 - **Uma conta é sempre UM cliente na Stripe** (tabela `stripe_customer`).
 - **Uma tentativa de cada vez por conta, e a nova tentativa usa a MESMA assinatura**: cartão
   recusado e novo clique não criam outra; trocar de plano ou de código cancela a tentativa
-  anterior antes de criar a nova.
+  anterior antes de criar a nova. **A trava NÃO ESPERA** *(etapa 4.7, passo 2, 19/10/2026 —
+  plano aprovado pelo operador)*: o pedido que chega com outro da mesma conta em andamento
+  (outra aba) responde 409 `Ocupada` na hora, sem ir à Stripe — a tela diz "Não foi possível
+  concluir a assinatura. Confira os dados e tente de novo.", e o novo clique segue com a mesma
+  assinatura. Esperar seguraria uma ligação com o banco, e vários pedidos juntos parariam o site
+  de todo mundo. **Com a trava na mão, tudo pela MESMA ligação** (o gate, a lista da Stripe, a
+  decisão): pedir outra ali dentro podia esperar uma que não vinha. O cliente novo da Stripe é
+  gravado antes, numa transação curta só dele — continua gravado se o resto falhar. A sincronia
+  que o checkout chama também não espera.
 - **Só o aviso da Stripe grava o espelho.** A tela de depois do pagamento pergunta ao gate até a
   resposta ser sim; nada no navegador libera acesso. *(Revisto na etapa 4.4: quem grava é a
   ROTINA do aviso, que o checkout e o admin também chamam quando o aviso atrasa ou se perde — ver
@@ -380,8 +394,8 @@ fora de produção.*
 **Limitações conhecidas:** código promocional preso a UM cliente aparece como inválido na tela
 (a prévia não manda o cliente; hoje não existe código assim) · quem abre a tela de depois do
 pagamento sem ter assinado vê "confirmando" e depois "está demorando", sem caminho de volta nela ·
-**o limite de tentativas do código promocional não existe** — precisa existir antes de a etapa
-4.7 abrir a conferência ao visitante.
+~~**o limite de tentativas do código promocional não existe**~~ — **existe desde 19/10/2026**
+(etapa 4.7, passo 1: *Limite de tentativas nas rotas de cobrança*, abaixo).
 
 **Da revisão de segurança da etapa (10/10/2026):**
 - **Código promocional que NÃO é "para sempre"** (100% só na primeira cobrança, ou por alguns
@@ -598,6 +612,10 @@ confundir quem assina — foi o motivo da decisão de 10/10.*
   venceu, nunca assinou — e o admin, que não tem) continua vendo "Assine", que leva aos botões de
   assinar ou de reativar. A seção de preço da página não muda para ninguém. *Reabre se o menu das
   outras páginas públicas, quando virarem template do servidor, pedir a mesma regra.*
+  **O "Assine" do RODAPÉ da home segue a mesma regra** *(decisão do operador, 19/10/2026, à
+  pergunta do agente: "Sim, some também")*: some para quem tem assinatura ativa, e o visitante,
+  quem está logado sem assinatura e o admin continuam vendo. Ele leva à tela de assinar
+  (`/assinar`), e o do menu à seção de preço. *Acompanha a regra do menu, e reabre junto.*
 - **Quem cancela e ainda tem dias pagos continua assistindo até o fim deles** — *"enquanto for
   válida a assinatura nos dias restantes"*. É a regra do gate de Ago 2026, confirmada; nesse caso
   a pessoa também não é deslogada. *Sem gatilho próprio: é a regra do gate. O reembolso, em que o
@@ -983,8 +1001,9 @@ encerrada de vez com dias pagos: tem acesso e o servidor recusa cartão.
 - **A Stripe já encerrou a assinatura e o espelho ainda não soube:** o resumo diz "terminou" e
   oferece "Reativar assinatura", mas a tela de assinar responde pelo gate ("Você já é assinante")
   até o aviso chegar.
-- **As rotas novas não têm limite de tentativas** — como as outras de cobrança: é pré-requisito
-  da etapa 4.7, que agora as cita pelo nome.
+- ~~**As rotas novas não têm limite de tentativas**~~ — **têm desde 19/10/2026**, como todas as
+  de cobrança que vão à Stripe (etapa 4.7, passo 1: *Limite de tentativas nas rotas de cobrança*,
+  abaixo).
 - **A confirmação do banco na tela** (sessão b): na troca para o Anual e na cobrança atrasada
   paga com o cartão novo, a janela do banco abre por cima da tela; não concluída — por qualquer
   motivo, inclusive o Stripe.js que quebra —, a troca de plano é desfeita na hora, e a troca de
@@ -1048,6 +1067,136 @@ encerrada de vez com dias pagos: tem acesso e o servidor recusa cartão.
 - **O reembolso pela tela pode se repetir** — assinar, pedir o dinheiro em 7 dias, assinar de
   novo, pedir de novo. Nada limita hoje; é pergunta ao operador (pendência P75), a responder
   antes da etapa 4.7.
+
+## Códigos promocionais — como criar na Stripe *(decisão do operador, 19/10/2026)*
+
+**A regra:** **limite de usos, só em código de 100%** (cortesia, presente): ele ativa a assinatura
+no próprio clique, então o uso é gasto em acesso de verdade. **Código de desconto parcial**
+(campanha, como "50% na Black Friday") **vai sem limite de usos, só com data de validade** —
+ninguém consegue esgotá-lo. *(À pergunta da etapa 4.7, passo 2, com o exemplo explicado, ele
+escolheu "Sem limite de usos", entre isso, uma trava no servidor e só registrar.)* *Reabre se a
+escola precisar de um código parcial com poucas vagas — aí volta à mesa a trava no servidor (a
+mesma conta não gasta mais de 2 usos do mesmo código sem pagar), com texto novo dele.*
+**E o código de 100% que NÃO é "para sempre"** (só a primeira cobrança, ou alguns meses) tem um
+cuidado próprio, já anotado e ainda em aberto (*Assinar com a conta logada* → *Da revisão de
+segurança da etapa*): ele libera o acesso antes de o cartão ser guardado, e nada impede a mesma
+conta de usá-lo de novo quando a assinatura cair. Antes de criar o primeiro: com a restrição "só
+na primeira compra" da Stripe, conferida na área restrita — e a decisão dele sobre recusar o código
+repetido pela mesma conta.
+
+**Por quê** `[FATO — medido na área restrita em 19/10/2026, com as funções de verdade do
+checkout]`: criar a assinatura incompleta com o código **gasta um uso** (do código e do cupom),
+antes de qualquer pagamento · cancelá-la — o que o checkout faz quando a pessoa troca de plano e
+clica de novo — **não devolve** · a abandonada, que expira sozinha em 23 h (relógio de teste),
+**também não** · esgotado, o código fica inativo (`active: false`), e a nossa conferência já diz
+"não é válido" · criar com o código esgotado é recusado com `param: promotion_code` (sem `code`) —
+o checkout passou a tratar isso como "código não vale" (antes, sairia "não foi possível
+concluir"). A prévia (`invoices.createPreview`) **não** gasta uso (medido em 10/10/2026).
+`[FATO — context7 /websites/stripe, 19/10/2026]` *"Applying a coupon means attaching it directly
+to a subscription […] Both actions count toward the same `max_redemptions` limit on the coupon."*
+Com desconto parcial, a incompleta nasce a cada clique em "Assinar" com outro plano: um código de
+100 usos se esgotaria em 100 cliques, sem ninguém pagar.
+
+## Limite de tentativas nas rotas de cobrança *(Fase 4, etapa 4.7, passo 1 — 19/10/2026)*
+
+**Decisões do operador (19/10/2026):**
+- **O plano do passo, com o pacote `express-rate-limit`** (à pergunta "posso seguir este plano,
+  com o pacote?": *"Sim, com o pacote"*), fixo na **8.7.0** — a mais nova com duas semanas ou
+  mais, sem correção de segurança nas duas seguintes. Os tetos abaixo estavam no plano que ele
+  aprovou. *Reabre se um aluno honesto parar num teto, ou se o registro mostrar teste de cartão
+  passando por baixo dele.*
+- **A frase de quem passou do limite:** **"Muitas tentativas seguidas. Por segurança, espere
+  alguns minutos e tente de novo."** (`app.comum.muitasTentativas`). Aparece no lugar do erro, nos
+  pontos em que a pessoa clica — assinar, aplicar o código promocional, trocar o cartão, cancelar,
+  manter, mudar de plano e desistir da troca. As telas que só carregam seguem com "não foi
+  possível carregar": para chegar ao teto de leitura é preciso recarregar dezenas de vezes.
+  *Reabre se alguém chegar ao teto de leitura sem estar atacando — aí a frase vai também para as
+  telas que carregam.*
+
+**Os tetos** — por conta, e o dobro por endereço de internet (quem divide o endereço, como a rede
+de uma operadora de celular, não paga pelo vizinho); **cada rota conta separado**:
+
+| Grupo | Rotas | Por conta | Por endereço |
+|---|---|---|---|
+| Guardar cartão ou cobrar | `POST` assinatura, cartao, cartao/aplicar, minha-assinatura/plano | 5 a cada 15 min, e 20 por dia | 10 e 40 |
+| Outras ações | `POST` previa, minha-assinatura/cancelar, …/manter, …/reembolso, …/plano/desistir | 10 a cada 15 min | 20 |
+| Leituras que vão à Stripe | `GET` planos, minha-assinatura, minha-assinatura/plano | 60 a cada 15 min | 120 |
+
+**Sem limite, de propósito:** `GET /billing/assinatura` ("já tenho acesso?") — a tela de depois do
+pagamento a repete a cada 2 s, e ela só lê o banco. `GET /billing/planos` não estava na lista do
+plano e entrou: também vai à Stripe a cada vez.
+
+`[FATO — context7 /websites/stripe, 19/10/2026, a página de prevenção de teste de cartão]`
+*"Endpoints targeted by card testers typically allow them to […] Save card. Make a payment."* — e,
+entre as sugestões dela: *"Limit the number of cards that can be added to an account"* e limitar
+quantos clientes um mesmo endereço cria *"in 1 day"*. É o porquê do teto do dia nas rotas de
+cartão e de cobrança.
+
+**Convenções de engenharia (como o código faz):**
+- **Um arquivo, `server/src/lib/limite-de-tentativas.ts`**, e o limite entra em cada rota
+  **depois do `requireAuth`**: sem sessão continua 401, e quem não entrou não gasta a cota de
+  ninguém. **Rota nova de `/billing` que vá à Stripe entra num dos grupos.**
+- **A chave:** a rota pelo DESENHO dela, como foi declarada (`/billing/cartao`) — nunca o endereço
+  como foi digitado: o Express aceita `/API/…`, `/Api/…` e a barra no fim, e cada grafia abriria
+  uma contagem (achado P1 da revisão de segurança, corrigido no mesmo dia); sem o método, então o
+  `HEAD` conta junto com o `GET` — + a conta da sessão, ou o endereço: o `x-real-ip`, o mesmo do
+  limite do login (`CLAUDE.md` → *Quality Gates*). **O IPv6 conta pela faixa /56**: quem recebe
+  uma faixa inteira da operadora trocaria de endereço a cada pedido.
+- **O endereço tem que ser um IP.** Em produção, sem o `x-real-ip` ou com um que não é IP (a
+  borda deixou de reescrevê-lo), o pedido **não conta por endereço** — contar pela conexão
+  juntaria a escola inteira na contagem do proxy da Railway —, o teto da conta continua, e vai
+  **um alerta** por processo. Fora de produção, vale a conexão.
+- **O limite por conta só existe depois do `requireAuth`:** montado sem sessão é erro (500, e o
+  alerta), nunca uma contagem de todo mundo junto — um robô trancaria a escola inteira. **Rota
+  pública ganha grupo próprio**, por endereço (e, no "Enviar de novo", também por e-mail).
+- **Os tetos da conta (a janela e o dia) antes dos do endereço:** quem já passou de um teto da
+  própria conta não gasta a cota do endereço, que outras pessoas dividem.
+- **A prévia do código não se repete sozinha** (achado P1 da revisão, 19/10/2026): voltar a um
+  plano já visto, à aba ou à rede usa o que já veio — sem isso, quem só comparou os planos
+  pararia no limite. O servidor confere o código de novo ao assinar. **E o "desistir da troca"**
+  que a tela de mudar de plano repete sozinha **para quando o servidor manda esperar**.
+- **Nunca ligar `DEBUG=express-rate-limit` em produção:** o registro do próprio pacote imprime a
+  chave, que leva o endereço.
+- **A janela é de cada pessoa** e começa no primeiro pedido: quem parou espera no máximo 15
+  minutos (o teto do dia, até 24 horas).
+- **A recusa:** 429 `MuitasTentativas`, com o `Retry-After` (em quantos segundos a contagem zera),
+  **antes** da rota — o pedido nem chega à Stripe. Uma linha de aviso (`console.warn`, não alerta),
+  só na primeira recusa da janela, com a conta e **sem o endereço**.
+- **Nenhum cabeçalho de contagem** nas respostas que passam.
+- **Nos testes o limite fica LIGADO, como em produção**; o `server/src/test/setup.ts` zera as
+  contagens antes de cada teste (sem isso, o quinto teste de um arquivo pararia pelo que os
+  anteriores gastaram).
+
+`[FATO — medido no código da `express-rate-limit@8.7.0`, 19/10/2026]` as conferências de endereço
+do pacote (o `trust proxy`, o `X-Forwarded-For`) só rodam na chave padrão dele — com a nossa, não
+disparam · os cabeçalhos antigos de contagem vêm ligados de fábrica (desligados aqui) · o
+`Retry-After` só sai com os cabeçalhos ligados (a recusa põe o nosso) · na contagem em memória a
+janela de cada chave começa no primeiro pedido dela · `ipKeyGenerator`: IPv4 fica como está, o
+IPv4 "embrulhado" (`::ffff:127.0.0.1`) vira IPv4, e o IPv6 vira a faixa (`2001:db8:1:2::1` e
+`2001:db8:1:2:ffff::9` → `2001:db8:1::/56`).
+
+**Limitações conhecidas:**
+- **A contagem é em memória:** publicar zera, e com dois servidores cada um contaria o seu.
+  *Gatilho: subir um segundo servidor — aí a contagem vai para um lugar comum.*
+- **O endereço depende de a Railway reescrever o `x-real-ip`**, como o limite do login. *Gatilho:
+  trocar de hospedagem ou pôr uma CDN na frente — o mesmo do login.*
+- **Confirmar o cartão no campo da Stripe vai do navegador DIRETO para ela**, sem passar por aqui:
+  o que este limite segura é abrir o pedido de guardar cartão e criar a assinatura. Um pedido já
+  aberto pode ser confirmado de novo com outro cartão, e quem segura essa parte é a proteção da
+  própria Stripe (o Radar). **Conferir o Radar no painel é a pendência P91**, antes de a tela
+  pública abrir (passo 8); se a Stripe não tiver um teto de confirmações por pedido, o passo 4
+  decide se o servidor cancela o pedido depois de algumas recusas.
+- **O teto por endereço é o único que recusa quem não fez nada**: numa sala com o mesmo Wi-Fi, a
+  11ª pessoa a assinar em 15 minutos (ou a 21ª a aplicar um código) para no limite; a faixa IPv6
+  também pode juntar aparelhos de uma operadora. *Reabre se a escola vender ao vivo num evento
+  presencial — aí os tetos por endereço ficam ajustáveis, ou se aceita o risco.*
+- **A prévia do código não tem teto por dia** (10 a cada 15 minutos por conta): quem a adivinha
+  esbarra no próprio código, que precisa ser difícil e com poucos usos. *Decide-se na abertura do
+  passo 4, antes de a prévia abrir ao visitante: um teto por dia, ou todo código assim.*
+- **O "desistir da troca" tem o teto das outras ações (10)**: a tela de mudar de plano o pede uma
+  vez a cada confirmação do banco não concluída, e só repete quando a assinatura está ocupada —
+  nunca no limite. Se ele for recusado, a troca pendente vence sozinha em ~23 h, e a troca seguinte
+  a anula.
 
 ## Pendências de verificação
 

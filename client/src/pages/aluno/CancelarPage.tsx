@@ -121,7 +121,7 @@ export function CancelarPage() {
           {falha && (
             <div className="max-w-3xl rounded-xl border border-destructive/20 bg-destructive/5 p-4">
               <p role="alert" className="text-sm font-medium text-destructive">
-                {falha === "prazo" ? c.prazoAcabou : falha === "devolucao" ? c.devolucaoFalhou : c.erro}
+                {falha === "prazo" ? c.prazoAcabou : falha === "devolucao" ? c.devolucaoFalhou : falha === "limite" ? t.comum.muitasTentativas : c.erro}
               </p>
             </div>
           )}

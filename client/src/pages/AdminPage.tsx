@@ -1,6 +1,5 @@
 import { useId, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { pt } from "@jilson/core";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { PageContainer, PageHeader, PageSection } from "@/components/layout/PageLayout";
 import { EmBreve } from "@/components/content/EmBreve";
@@ -19,8 +18,6 @@ import { EmBreve } from "@/components/content/EmBreve";
  *
  * Texto do Admin fica em português, escrito aqui (decisão do operador, 23/09).
  */
-
-const EM_BREVE = pt.app.nav.emBreve;
 
 const RELATORIOS = [
   {
@@ -71,7 +68,7 @@ export function AdminPage() {
         <PageSection title="Relatórios" description="Cada bloco acende quando os dados dele existirem.">
           <div className="grid gap-6 sm:grid-cols-2">
             {RELATORIOS.map(({ titulo, texto, quando }) => (
-              <Cartao key={titulo} titulo={<>{titulo} <EmBreve texto={EM_BREVE} /></>}>
+              <Cartao key={titulo} titulo={<>{titulo} <EmBreve /></>}>
                 <p>{texto}</p>
                 <p className="mt-2 text-xs">{quando}</p>
               </Cartao>
@@ -92,7 +89,7 @@ export function AdminPage() {
                     </Link>
                   ) : (
                     <>
-                      {titulo} <EmBreve texto={EM_BREVE} />
+                      {titulo} <EmBreve />
                     </>
                   )
                 }

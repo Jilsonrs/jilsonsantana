@@ -17,7 +17,7 @@ A subscription learning platform — a single, accessible membership that bundle
 ## Core Features (MVP — launch in 2–3 months)
 
 - Sign up / log in (email + password)
-- Single membership subscription via **Stripe Payments + Stripe Billing, with the Payment Element embedded in our own checkout page** — **Mensal R$99,90 (sem fidelidade) + Anual ~R$995 (~17% off); sem free trial; sem conteúdo grátis na escola.** **Brazilian reais only** (operator decision, 12 Oct 2026). **One subscription covers every course.** Access gated by active subscription.
+- Single membership subscription via **Stripe Payments + Stripe Billing, with the Payment Element embedded in our own checkout page** — **Mensal R$99,90 (sem fidelidade) + Anual ~R$995 (~17% off); sem free trial; dentro da escola, o grátis é só a prévia grátis** (as aulas marcadas como prévia tocam para qualquer visitante, sem login, e os arquivos delas continuam só para assinantes — decisões do operador, 27 e 29/09/2026; fora isso, o grátis vive no YouTube). **Brazilian reais only** (operator decision, 12 Oct 2026). **One subscription covers every course.** Access gated by active subscription.
 - **Portuguese only, Brazil only** (operator decision, 12 Oct 2026 — reverses the bilingual platform of 14 Sep 2026): no `/en`, no language selector, no English courses; sales only to Brazil. Catalog cap: **15 courses**.
 - Course catalog → course → module → lesson structure; **lessons are first-class & searchable**
 - **Trilhas (curadas):** Jilson curates a few guided tracks (a `LearningPlan` = ordered mix of courses + standalone lessons). A member can save a curated trilha as their own; it tracks progress and issues a certificate on completion. (AI-assembled personalized plans = post-MVP / JilsonAI Fase 4–5.)

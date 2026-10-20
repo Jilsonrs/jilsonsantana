@@ -40,8 +40,8 @@ export interface HomeView {
   /** Há sessão válida? Muda SÓ o cabeçalho — o resto da vitrine é igual para
    *  todo mundo, inclusive para o robô do Google, que nunca tem cookie. */
   logado: boolean;
-  /** Quem está logado tem assinatura ativa (`temAcessoAtivo()`): o menu não mostra "Assine"
-   *  (decisão do operador, 19/10/2026). Sem login, nunca. A seção de preço continua igual. */
+  /** Quem está logado tem assinatura ativa (`temAcessoAtivo()`): nem o menu nem o rodapé mostram
+   *  "Assine" (decisões do operador, 19/10/2026). Sem login, nunca. A seção de preço continua igual. */
   assinante: boolean;
   /** Quem está logado já foi assinante e hoje está sem acesso: os botões dizem "Reativar
    *  assinatura" (decisão do operador, 10/10/2026). Sem login, nunca. */
@@ -697,7 +697,7 @@ ${faq.map((item) => `        <details>
         <div class="footer-links">
           <a href="${rotas.cursos}">${escapeHtml(dict.common.footer.links[0])}</a>
           <a href="${rotas.trilhas}">${escapeHtml(dict.common.footer.links[1])}</a>
-          <a href="${rotas.assinar}">${escapeHtml(dict.common.footer.links[2])}</a>
+          ${assinante ? "" : `<a href="${rotas.assinar}">${escapeHtml(dict.common.footer.links[2])}</a>`}
           <a href="${rotas.faq}">${escapeHtml(dict.common.footer.links[3])}</a>
           <a href="${rotas.quemSomos}">${escapeHtml(dict.common.footer.links[4])}</a>
           <a href="${rotas.contato}">${escapeHtml(dict.common.footer.links[5])}</a>

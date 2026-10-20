@@ -189,6 +189,16 @@ describe("MudarDePlanoPage — do Mensal para o Anual, na hora", () => {
     expect(await paraOAnual()).toBeTruthy();
   });
 
+  // O LIMITE DE TENTATIVAS (etapa 4.7, passo 1 — a frase é do operador, 19/10/2026).
+  it("muitas tentativas: a frase de esperar — sem o caminho do cartão e nunca 'seu plano agora é o Anual'", async () => {
+    mudarDePlano.mockRejectedValue(recusa("MuitasTentativas", 429));
+    abrir();
+    fireEvent.click(await paraOAnual());
+    expect((await screen.findByRole("alert")).textContent).toBe("Muitas tentativas seguidas. Por segurança, espere alguns minutos e tente de novo.");
+    expect(screen.queryByRole("link", { name: "Trocar cartão" })).toBeNull();
+    expect(screen.queryByText("Pronto. Seu plano agora é o Anual.")).toBeNull();
+  });
+
   // DEPOIS DE QUALQUER FALHA VALE O QUE O SERVIDOR DIZ AGORA (achado da revisão de segurança,
   // segunda passada, 11/10/2026): a resposta de um pedido pode se perder depois de a troca ter
   // sido feita — e pedir de novo daria "não foi possível" para sempre.
@@ -362,6 +372,18 @@ describe("MudarDePlanoPage — quando o banco pede confirmação", () => {
     fireEvent.click(await paraOAnual());
     expect((await screen.findByRole("alert")).textContent).toBe("A confirmação do banco não foi concluída. O plano continua o mesmo e nada foi cobrado.");
     expect(desistirDaTroca).toHaveBeenCalledTimes(2);
+  });
+
+  // O limite de tentativas (etapa 4.7, passo 1 — achado da revisão de segurança): insistir só
+  // gastaria o resto da cota. A troca seguinte anula a que ficou pendente.
+  it("desfazer recebeu 'muitas tentativas': NÃO insiste — e a tela diz para esperar", async () => {
+    confirmarNoBanco.mockResolvedValue("nao-concluido");
+    desistirDaTroca.mockRejectedValue(recusa("MuitasTentativas", 429));
+    abrir();
+    fireEvent.click(await paraOAnual());
+    expect((await screen.findByRole("alert")).textContent).toBe("Muitas tentativas seguidas. Por segurança, espere alguns minutos e tente de novo.");
+    expect(desistirDaTroca).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText("Pronto. Seu plano agora é o Anual.")).toBeNull();
   });
 
   it("não deu para desfazer de jeito nenhum: a tela tenta 3 vezes e NÃO diz 'nada foi cobrado' — diz que não deu", async () => {

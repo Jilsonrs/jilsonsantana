@@ -315,15 +315,6 @@ export function secoesVisiveis(papel: string | undefined, t: AppTexts = pt.app):
 }
 
 /**
- * A etiqueta de tela que ainda não existe. A do aluno sai do `useT()`; a de
- * admin, do `pt` direto, porque o Admin fica fora do `useT()` (decisão do
- * operador, 23/09/2026). Com um idioma só (12/10/2026), as duas saem iguais.
- */
-export function etiquetaEmBreve(secao: Secao | undefined, t: AppTexts): string {
-  return secao?.papel === Role.ADMIN ? pt.app.nav.emBreve : t.nav.emBreve;
-}
-
-/**
  * A rota casa com o endereço da seção (ela mesma ou uma sub-rota)? Devolve os
  * parâmetros (`{ id: "12" }`), ou `null` se não casa.
  *

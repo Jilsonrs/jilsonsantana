@@ -103,7 +103,7 @@ export function MudarDePlanoPage() {
               {falha && (
                 <div className="max-w-3xl space-y-3 rounded-xl border border-destructive/20 bg-destructive/5 p-4">
                   <p role="alert" className="text-sm font-medium text-destructive">
-                    {falha === "recusado" ? p.cartaoRecusado : falha === "banco" ? t.faturamento.banco.naoConcluiuNoPlano : p.erro}
+                    {falha === "recusado" ? p.cartaoRecusado : falha === "banco" ? t.faturamento.banco.naoConcluiuNoPlano : falha === "limite" ? t.comum.muitasTentativas : p.erro}
                   </p>
                   {falha === "recusado" && (
                     <Button asChild variant="outline">

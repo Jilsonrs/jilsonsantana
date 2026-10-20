@@ -305,6 +305,16 @@ describe("FaturamentoPage — cancelar e manter a assinatura", () => {
     expect(screen.queryByRole("status")).toBeNull();
   });
 
+  // O LIMITE DE TENTATIVAS (etapa 4.7, passo 1 — a frase é do operador, 19/10/2026).
+  it("muitas tentativas ao manter: a frase de esperar — nunca 'sua assinatura continua'", async () => {
+    getMinhaAssinatura.mockResolvedValue(PARADA);
+    manterMinhaAssinatura.mockRejectedValue({ response: { status: 429, data: { error: "MuitasTentativas" } } });
+    abrir();
+    fireEvent.click(await screen.findByRole("button", { name: "Manter a assinatura" }));
+    expect((await screen.findByRole("alert")).textContent).toBe("Muitas tentativas seguidas. Por segurança, espere alguns minutos e tente de novo.");
+    expect(screen.queryByRole("status")).toBeNull();
+  });
+
   it("enquanto envia: o botão fica desligado — um clique a mais não pede duas vezes", async () => {
     getMinhaAssinatura.mockResolvedValue(PARADA);
     manterMinhaAssinatura.mockReturnValue(new Promise(() => {}));
@@ -364,6 +374,15 @@ describe("FaturamentoPage — mudar de plano", () => {
     abrir();
     fireEvent.click(await screen.findByRole("button", { name: "Continuar no Anual" }));
     expect((await screen.findByRole("alert")).textContent).toBe("Não foi possível mudar o plano. Tente de novo.");
+    expect(screen.queryByRole("status")).toBeNull();
+  });
+
+  it("muitas tentativas ao desistir da troca: a frase de esperar — nunca 'você continua no Anual'", async () => {
+    getMinhaAssinatura.mockResolvedValue(ANUAL_COM_TROCA);
+    desistirDaTroca.mockRejectedValue({ response: { status: 429, data: { error: "MuitasTentativas" } } });
+    abrir();
+    fireEvent.click(await screen.findByRole("button", { name: "Continuar no Anual" }));
+    expect((await screen.findByRole("alert")).textContent).toBe("Muitas tentativas seguidas. Por segurança, espere alguns minutos e tente de novo.");
     expect(screen.queryByRole("status")).toBeNull();
   });
 

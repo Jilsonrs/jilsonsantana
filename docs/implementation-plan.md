@@ -202,6 +202,17 @@
 > (aula concluída sozinha, barra na aula e no cartão), o vídeo que não recomeça ao trocar de aba
 > (a apresentação abre pausada, a aula toca sozinha) e o "Salvos". **Primeiro teste com o player de
 > verdade: com o operador** (assistir uma aula até perto do fim e ver a barra andar).
+> **PUBLICADO em 19/10/2026 (`main` = `1ee7c0c`, CI verde nos dois jobs, deploy ok; sem
+> migration; ordem do operador: "publica"):** o **passo 6 da etapa 4.6c** (os documentos num
+> idioma só; saíram o `idiomas.md` e o script da revisão do inglês; a legenda do Bunny só aceita
+> `"pt"` no tipo), o conserto do `auth:generate` (o `jiti` 2 na raiz), **a logomarca da home no
+> rodapé do app** e **o "Assine" do menu da home some para quem tem assinatura ativa** (decisão
+> do operador, 19/10/2026; o "Assine" do rodapé da home ficou como estava, sem decisão).
+> *Depois, no mesmo dia, ele decidiu que o do rodapé também some para quem tem assinatura ativa
+> (`billing.md` → *Sincronizar e perder o acesso*): feito no `dev`, a publicar.*
+> **Provado no site, de fora:** a versão nova (`mvfpyhz2-a2d42ffc`; antes, `mvea5i2y-3a00b6df`);
+> catálogo, trilhas, textos comuns e sessão → 200; a assinatura sem login → 401; o login com um
+> e-mail que não existe → 401; a imagem da logomarca → 200; o público segue no "Em breve".
 > **PUBLICADO em 18/10/2026, por último (`main` = `d61962c`, CI verde nos dois jobs, deploy ok
 > às 20:40; a migration `20261018170000_sai_o_idioma_da_conta` aplicada pelo pre-deploy — a
 > publicação só termina com sucesso se ela passar; mesma ordem do operador):** o **passo 5b da
@@ -4202,6 +4213,12 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                   e o `texto` do `EmBreve` escolhem entre duas etiquetas que agora são iguais —
                   código que dá para simplificar, se o operador quiser. Os quatro gates verdes
                   (site 892, servidor 1.066).
+                  **Simplificado em 19/10/2026, a pedido dele:** saíram a função e o `texto`; o
+                  rail, a gaveta e o nível 2 leem `app.nav.emBreve` direto, e o `EmBreve` também
+                  no Dashboard. Nada mudou na tela. O teste que provava "a do admin fica em
+                  português" deu lugar a dois de tela (rail e gaveta: a seção planejada do admin
+                  leva a etiqueta) — sem eles, a etiqueta podia sumir só das seções de admin.
+                  Mutação: 4 de 4 reprovaram.
             - [x] **Fecha a etapa: o operador confere no site** *(19/10/2026)* — o operador,
                   logado: *"não encontrei o idioma na home logada, está correto"*. De fora, o
                   agente: a home diz `lang="pt-BR"`, sem `hreflang` nem link para `/en`, e `/en`
@@ -4266,7 +4283,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       por passo no `dev`, cada um fechado com os quatro gates; o que estiver fechado não é
       refeito na semana seguinte. O escopo é o do texto acima — aqui só a ordem e o corte.
       Ao abrir cada passo: o plano curto dele, e as perguntas que forem do operador.
-      - [ ] **Passo 1 — Limite de tentativas nas rotas de cobrança.** Por conta e por IP
+      - [x] **Passo 1 — Limite de tentativas nas rotas de cobrança.** Por conta e por IP
             (`x-real-ip`), nas rotas listadas em (a) acima. **Não depende do operador, a não ser
             do ok para o pacote** (dependência nova: o agente propõe `express-rate-limit`, em
             memória — há um servidor só) **e da frase** que a tela mostra a quem passou do
@@ -4274,10 +4291,77 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             *(Da proposta da tela pública, 12/10/2026: quando o passo 5 criar o "Enviar de
             novo" do e-mail de criar a senha, ele entra neste limite — sem isso, o site serve
             para encher a caixa de e-mail de alguém.)*
-      - [ ] **Passo 2 — O checkout aguenta muita gente ao mesmo tempo.** O item (b) acima (a
+            **FEITO (19/10/2026), no `dev`.** **Decisões do operador no mesmo dia:** o plano, com
+            o pacote (*"Sim, com o pacote"*) — `express-rate-limit@8.7.0`, fixo — e a frase
+            *"Muitas tentativas seguidas. Por segurança, espere alguns minutos e tente de
+            novo."* (`app.comum.muitasTentativas`), onde a pessoa clica.
+            **O que entrou:** `server/src/lib/limite-de-tentativas.ts`, posto nas 12 rotas de
+            `/billing` que vão à Stripe, depois do `requireAuth` — as 11 da lista (a) e
+            `GET /billing/planos`, que também vai à Stripe a cada vez; o "já tenho acesso?"
+            fica de fora. Por conta e o dobro por endereço, cada rota contando à parte: cartão
+            e cobrança 5 a cada 15 min e 20 por dia; as outras ações 10; as leituras 60. A
+            recusa é 429 `MuitasTentativas` com `Retry-After`, antes de a rota ir à Stripe. No
+            site, a frase em 7 lugares (assinar e o código, o cartão, cancelar, manter, mudar
+            de plano, desistir da troca). Detalhe: `billing.md` → *Limite de tentativas*.
+            **A revisão de segurança** (`security-vulnerability-reviewer`, sobre o diff): **nenhum
+            bloqueio; dois P1, corrigidos** — (1) as grafias de `/api` (`/API/…`, `/Api/…`)
+            abriam uma contagem cada, até 8× o teto: a chave passou a ser o desenho da rota ·
+            (2) a prévia do código se repetia sozinha (voltar à aba, reconectar, voltar a um
+            plano visto), e um aluno honesto pararia no limite: não se repete mais. **Os P2:**
+            corrigidos — sem um `x-real-ip` válido em produção, não conta por endereço e alerta
+            uma vez · o limite por conta montado sem sessão vira erro (não uma contagem de
+            todos) · o teto do dia da conta antes dos do endereço · o "desistir da troca" não
+            insiste no limite · três testes que faltavam e um que não provava o que dizia ·
+            uma guarda para o "zerar as contagens" nunca sair dos testes. **Com destino:** o
+            Radar (P91, passo 8) · o teto do dia na prévia e os códigos difíceis de adivinhar
+            (passo 4) · o evento com o mesmo Wi-Fi (`billing.md` → *Limitações*) · a tela que
+            deixa assinar sem o código quando ele falha (pergunta na P80).
+            **Testes:** 23 de servidor e 9 de tela. **Mutação:** 31 de 31 reprovaram (20 do
+            passo, o `HEAD` e 10 das correções da revisão). Uma suíte de cobrança mudou: um laço de
+            `mudar-de-plano.test.ts` (6 trocas num teste) zera a contagem a cada volta. Nos
+            testes o limite fica ligado, como em produção; o `test/setup.ts` zera antes de cada
+            teste.
+      - [x] **Passo 2 — O checkout aguenta muita gente ao mesmo tempo.** O item (b) acima (a
             trava que não espera, e o gate lido pela transação da trava) e a medição do item
             (d) (a assinatura incompleta gasta um uso do código?), com a correção se gastar.
             **Não depende do operador.** Pode ser publicado sozinho.
+            **FEITO (19–20/10/2026), no `dev`.** **Decisões do operador:** o plano (*"Sim, pode
+            seguir"*, depois de duas explicações com exemplo) e, para o item (d), **a regra dos
+            códigos**: desconto parcial sem limite de usos, só com data de validade; limite de
+            usos só em código de 100% (`billing.md` → *Códigos promocionais*).
+            **O item (d), medido na área restrita com as funções de verdade:** criar a
+            incompleta com o código GASTA um uso; cancelá-la (trocar de plano) e deixá-la
+            expirar (relógio de teste, 25 h) NÃO devolvem; esgotado, o código fica inativo e a
+            tela já diz "não é válido"; criar com ele esgotado é recusado com `param:
+            promotion_code` — que o checkout tratava como erro (500) e passou a tratar como
+            "código não vale".
+            **O item (b):** a trava da conta não espera (`pg_try_advisory_xact_lock`): ocupada →
+            409 `Ocupada`, sem ir à Stripe; com a trava, o gate e a decisão pela MESMA ligação
+            (`temAcessoAtivo(id, tx)`); o cliente novo da Stripe gravado antes, numa transação
+            curta só dele; e a sincronia que o checkout chama passou a não esperar
+            (`sincronizarSeLivre`). Para o aluno, só muda o caso das duas abas no mesmo
+            instante: a segunda lê "Não foi possível concluir…", e o novo clique segue com a
+            mesma assinatura.
+            **A revisão de segurança** (`security-vulnerability-reviewer`, sobre o diff): **nenhum
+            bloqueio, nenhum P1.** Os P2, corrigidos: (1) a sincronia ocupada respondia
+            "ocupada", e a tela diria "não foi possível" a quem pode ter acabado de pagar — agora
+            é "já é assinante", que é o que a Stripe disse, e a tela relê o gate · (2) o teste de
+            uma ligação só passou a provar a própria premissa, a cobrir a sincronia (a terceira
+            transação com trava) e a devolver o endereço do banco · (3) a segunda leitura do
+            cliente, já com a trava, ganhou teste (a leitura sem trava "chega atrasada") ·
+            (4) a recusa do código na criação deixa uma linha de aviso, com o id do código ·
+            (5) a seção dos códigos no `billing.md` lembra o cuidado com o de 100% que não é
+            "para sempre". `[FATO — medido]` no Prisma, desfazer um `vi.spyOn` num método do
+            banco o deixa vazio para os testes seguintes: o teste troca e devolve a função
+            original.
+            **Testes:** 4 de rota (os dois cliques, determinístico — o primeiro fica parado com a
+            trava; a conta ocupada; a sincronia ocupada; a leitura atrasada), 3 com o banco
+            aceitando UMA ligação só (`checkout-uma-ligacao.test.ts`: a premissa, as duas
+            transações da conta e a sincronia — com o código antigo, ele reprova) e 5 da recusa
+            do código com a biblioteca da Stripe trocada por dublê. **Mutação:** 12 de 12
+            reprovaram — inclusive a volta do código antigo (o gate lido fora da trava) e o `tx`
+            tirado de dentro da sincronia.
+            Gates: build, typecheck, lint, site 902, servidor como o CI 1108.
       - [ ] **Passo 3 — O envio de e-mail (Resend).** Com o operador, nos painéis: a conta no
             Resend, o domínio e o remetente (pendência P49). No código: o pacote `resend`, uma
             porta única de envio (com `await` e sem derrubar o pedido — CLAUDE.md → *Membership
@@ -4304,6 +4388,14 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             outra pessoa · o que se diz quando o e-mail já tem conta (rascunho: "Este e-mail já
             tem conta. Entre para assinar."; dizer isso revela quem tem conta — a revisão de
             segurança do passo pesa).
+            **Da revisão de segurança do passo 1 (19/10/2026), a resolver neste passo:** a rota
+            pública ganha um grupo PRÓPRIO no limite de tentativas, por endereço — o grupo por
+            conta lança erro sem sessão, de propósito · **pergunta ao operador, antes de a
+            prévia abrir ao visitante:** um teto por dia na prévia do código, ou todo código
+            difícil de adivinhar e com poucos usos (`billing.md` → *Limite de tentativas*) ·
+            conferir no context7 se a Stripe tem um teto de confirmações por pedido de pagamento
+            ou de guardar cartão; se não tiver, decidir se o servidor cancela o pedido depois de
+            algumas recusas (o teste de cartão pelo campo da Stripe não passa pelo limite).
       - [ ] **Passo 5 — "Crie sua senha".** O e-mail com o link e a tela de definir a senha.
             **Pergunta para a abertura:** "Esqueci minha senha", na tela de entrar, usa o mesmo
             mecanismo — entra junto? **Depende dos passos 3 e 4.**
@@ -4355,9 +4447,9 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             datas num e-mail só, na falha, ou pendurá-lo numa nova tentativa da Stripe.
       - [ ] **Passo 8 — O teste com cartão de verdade e a abertura ao público.** O teste do
             operador no site no ar (mensal → anual → reembolso), olhando a taxa da Stripe. Antes
-            de abrir: as pendências P58 (o nome na fatura), P60 (a opção do painel) e P75 (o
-            limite do reembolso), a cópia do banco (Fase 7) e a revisão de segurança da etapa
-            inteira. A publicação é ordem dele.
+            de abrir: as pendências P58 (o nome na fatura), P60 (a opção do painel), P75 (o
+            limite do reembolso) e P91 (o Radar ligado contra teste de cartão), a cópia do banco
+            (Fase 7) e a revisão de segurança da etapa inteira. A publicação é ordem dele.
             **Da proposta da tela pública (agente, 12/10/2026):** antes de abrir, também os
             Termos de Uso e a Política de Privacidade no ar (a tela de assinar aponta para os
             dois; hoje são pendência da Fase 7 e a P61) · a **P84** (o cartão promete o JilsonAI
@@ -4486,10 +4578,18 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
 - [ ] **4.10 — Fechamento da fase (código + painel).** **O E2E de assinar abre o campo DE VERDADE
       da Stripe e paga com o cartão de teste** — na 4.2 o campo não abria e nenhum teste acusou,
       porque todos usam um dublê; o roteiro que provou está descrito no item 4.2 (passo 6). E2E de ponta a ponta (assinar, renovar, cancelar,
-      pagamento falho com acesso mantido na janela) · a régua de inadimplência no painel (Smart
-      Retries) · revisão de segurança da fase inteira. *(Revisto em 10/10/2026: as chaves de
-      verdade entram já na etapa 4.3 — não há mais troca no lançamento.)* **A troca para as chaves de verdade fica no
-      GO-LIVE (Fase 7).**
+      pagamento falho com as aulas abertas por 3 dias e trancadas depois — etapa 4.6b) · a régua de
+      inadimplência no painel (Smart Retries e as automações de recuperação) · revisão de segurança
+      da fase inteira. *(Revisto em 10/10/2026: as chaves de verdade entram já na etapa 4.3 — não há
+      mais troca no lançamento.)* ~~**A troca para as chaves de verdade fica no GO-LIVE (Fase
+      7).**~~ *(Frase de antes da revisão de 10/10/2026, logo acima.)*
+      **Da lista antiga do fim da fase (reconciliada em 19/10/2026), o que faltava e entra aqui:**
+      - [ ] os E2E de assinar, renovar, cancelar e do pagamento que falha (a caixa "E2E: assinar →
+            acesso liberado…", abaixo) e os dois que faltam do "E2E full-stack": o checkout com o
+            cartão de teste e o cancelamento;
+      - [ ] no painel da Stripe, as novas tentativas e as automações de recuperação (a caixa
+            "Configurar Smart Retries…", abaixo): as tentativas por 2 semanas (com a P60) e se os
+            e-mails de cobrança da própria Stripe, desligados desde a 4.3, continuam assim.
 
 > **Os itens abaixo continuam sendo a ESPECIFICAÇÃO da fase** (as travas, os casos de teste, as
 > decisões); as etapas acima dizem em que ordem e em que sessão cada um entra. **Reconciliado em
@@ -4497,6 +4597,11 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
 > mudança para o Neon (Set 2026 — produção, dev e teste em bancos diferentes, *CLAUDE.md →
 > Database & Migrations*); e o *follow-up do "Automatic RLS"* ficou **sem objeto** — era do Supabase,
 > que foi apagado.
+> **Reconciliado de novo em 19/10/2026, caixa por caixa** (conferido no código e no
+> `build-history.md`): cada caixa feita está marcada com a etapa que a fez; o que faltava entrou na
+> **etapa 4.10** (os E2E da cobrança e a configuração das novas tentativas no painel) ou já estava
+> na **4.7** (a conta que nasce no pagamento, o e-mail). **Nenhuma caixa aberta ficou nesta lista**;
+> o texto de cada uma continua aqui, como especificação e registro.
 
 - [x] **ESLint entra AQUI** *(feito em 10/10/2026 — é a etapa 4.5, acima; as três regras valem também no `core` e no `e2e`, e a do `any` nos quatro workspaces)* (gatilho registrado em `CLAUDE.md` → changelog Ago 2026 (11)):
       typescript-eslint, escopo inicial `server/src`, **bloqueante no CI**, 2–3 regras. A que se
@@ -4506,7 +4611,11 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       **Por que não antes:** trazer o ESLint agora seria limpar avisos em código que já funciona,
       com zero aluno — não passa no critério de decisão de stack. Aqui ele entra junto do código
       que a regra protege.
-- [ ] **PRÉ-REQUISITO DA FASE — separar o banco de DEV do banco de PRODUÇÃO.**
+- [x] **PRÉ-REQUISITO DA FASE — separar o banco de DEV do banco de PRODUÇÃO.** *(CUMPRIDO desde
+      Set 2026, na mudança para o Neon: produção no branch `production`, dev no branch `dev`, teste
+      no Postgres local — `CLAUDE.md` → *Database & Migrations*, que guarda também a regra dos três
+      caminhos até o banco. O texto abaixo é o registro de Ago 2026, com os projetos do Supabase,
+      apagado em Set 2026.)*
       **[FATO, Ago 2026] O ambiente local aponta hoje para o MESMO projeto que o Railway serve.**
       Evidência: os usuários semeados na Fase 1 (admin + member) e as **39 sessões de
       desenvolvimento** deles vivem no banco de produção `gaxmbnhwltljlkukdwba`. *As sessões em si
@@ -4594,7 +4703,9 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             re-rodar o seed: ele havia rodado antes, e de todo modo `seed.ts` é **create-only para
             senha** (retorna cedo se o usuário existe), então quem troca credencial é o
             `rotate-credentials.ts`, não ele.
-      - [ ] **(follow-up, decisão do operador) O "Automatic RLS" está LIGADO em produção e DESLIGADO
+      - [x] **SEM OBJETO desde Set 2026:** era uma chave do Supabase, que foi apagado (nota acima
+            da lista, 09/10/2026). O texto, como registro:
+            **(follow-up, decisão do operador) O "Automatic RLS" está LIGADO em produção e DESLIGADO
             no teste — isso é divergência viva, não histórica.** Ela não afeta tabela nossa (toda
             migration nossa liga o RLS explicitamente), mas afeta qualquer tabela criada **fora** das
             migrations — que foi exatamente o caso da `_prisma_migrations`. Enquanto os dois projetos
@@ -4603,7 +4714,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             dois passam a depender só do versionamento, que é a convenção) ou ligar no teste (os dois
             mentem juntos). **Recomendo desligar em produção**; é mudança de configuração no
             fornecedor, então é chamada do operador.
-- [ ] **DECISÃO REGISTRADA — usuários semeados (admin + member de teste) são PERMANENTES e existem
+- [x] **DECISÃO REGISTRADA — usuários semeados (admin + member de teste) são PERMANENTES e existem
       em TODOS os ambientes, produção inclusive.** O **admin é obrigatório** (`disableSignUp: true`
       — não há outro caminho para criar o primeiro usuário). O **member de teste em produção recebe
       acesso via assinatura REAL na Stripe com cupom de 100%** — **NUNCA** via bypass no
@@ -4615,39 +4726,84 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       **assinaturas cortesia** e para **promoções** (Black Friday, founding member) — não é
       concessão, é o caminho normal.
       *Sem gatilho de reabertura — arquitetural.*
-- [ ] **Na Stripe, "quando todas as tentativas de cobrança falharem" = CANCELAR a assinatura (ou
+      **Cumprida na etapa 4.3 (10/10/2026):** o `member@` de produção assina com um código de
+      100% da conta de verdade, e o gate não tem desvio nenhum (`build-history.md` → 4.3).
+- [x] **Na Stripe, "quando todas as tentativas de cobrança falharem" = CANCELAR a assinatura (ou
       marcar como `unpaid`), NUNCA "deixar como vencida"** *(achado da revisão de segurança,
       29/09/2026)*. A regra do gate libera `past_due` sem olhar a data (é a janela de novas
       tentativas, decisão de Ago 2026); ela só acaba se a Stripe tirar a assinatura de `past_due`.
       Deixada como vencida, o aluno fica com acesso para sempre sem pagar, e nenhum código nosso
       percebe. Conferir no painel antes do primeiro aluno pagante.
-- [ ] **Setup no dashboard (sem código):** Payments Plano Padrão (conta MEI/CNPJ, payout Banco do Brasil) + **Stripe Billing ativado**. Produto **"Assinatura"** com **2 `Price`**: Mensal R$99,90 (sem fidelidade) / Anual ~R$995 (~17% off). Sem free trial, sem conteúdo grátis. **Sem Customer Portal.**
+      **Configurado pelo operador** na área restrita (etapa 4.0) e na conta de verdade (etapa 4.3),
+      pelos prints dele; a decisão de 10/10/2026 fechou em **cancelar** — nunca "marcar como não
+      paga" (`billing.md` → *Régua de inadimplência*). **A conferência final no painel** —
+      "cancelar" nos dois lugares e as tentativas por 2 semanas — **é a P60**, condição do passo 8
+      da etapa 4.7. *(Desde 12/10/2026 o gate não libera mais `past_due` sem olhar a data: são 3
+      dias depois da cobrança que falhou, e a atrasada que continua atrasada não ganha data nova —
+      etapa 4.6b. A opção do painel continua importando: é ela que faz "Reativar assinatura"
+      funcionar.)*
+- [x] **Setup no dashboard (sem código):** Payments Plano Padrão (conta MEI/CNPJ, payout Banco do Brasil) + **Stripe Billing ativado**. Produto **"Assinatura"** com **2 `Price`**: Mensal R$99,90 (sem fidelidade) / Anual ~R$995 (~17% off). Sem free trial *(conteúdo grátis, só a prévia grátis de aula — decisão do operador, 27/09/2026; não é configuração da Stripe)*. **Sem Customer Portal.**
+      *(FEITO pelo operador: na área restrita na etapa 4.0 e na conta de verdade na etapa 4.3 — o
+      produto "Assinatura Jilson Santana", os 2 preços com as lookup keys `assinatura_mensal` e
+      `assinatura_anual`, R$ 99,90 e R$ 995; `build-history.md` → 4.0 e 4.3.)*
 - [x] ~~**Preços em dólar pelo país do cartão · preço mostrado × cobrado em outra moeda · decisão
       de imposto internacional · "idioma é filtro, não portão" · botão de assinar das páginas em
       inglês · conta de receita em dólar**~~ — **CANCELADOS em 12/10/2026** (decisão do operador:
       a escola é só em português e só para o Brasil; cobra só em reais — etapa 4.6c). O texto
       antigo: `git show e62ec0c:docs/implementation-plan.md`.
-- [ ] **Configurar Smart Retries + automações de recuperação** conforme a política de produto abaixo. Isto é **configuração, não código**.
-- [ ] **Política de dunning (decisão NOSSA, executada pela Stripe):** falha na renovação → retries automáticos → corte. **Acesso MANTIDO durante toda a janela de retry** (`past_due`) — churn involuntário é a maior alavanca (strategy.md §6). Corte no fim da janela → `unpaid`/`canceled` + `session.deleteMany`. Ajustar a janela é mudança de configuração. *Confirmar os intervalos exatos que a Stripe expõe na abertura da fase, via context7.*
-- [ ] **Checkout embutido (Payment Element).** Cria `Customer` + `Subscription` na Stripe e confirma o primeiro pagamento na própria página. O dado do cartão vai direto pro Stripe (não toca nosso servidor). **`requires_action`/3DS é tratado pelo Element no fluxo de assinatura.**
-- [ ] `Subscription` model = **espelho local** (o gate lê daqui) com growth seams: `ownerUserId?`, `organizationId?` (nullable), `seats` (default 1), `status`, `currentPeriodEnd`, `stripeCustomerId`, **`stripeSubscriptionId` (obrigatório — é a chave do objeto canônico)** (+ RLS); migration — **sem coluna de idioma** (a escola não tem idioma no banco desde 12/10/2026)
-- [ ] `temAcessoAtivo(userId)` lib — caminho individual (`assinaturaIndividualAtiva`); **fonte única de verdade do acesso para a aplicação**, lida do espelho local. *(A verdade canônica é a `Subscription` da Stripe; o espelho é o que o gate consulta em tempo de request.)*
-- [ ] **Webhook handler** dos eventos de assinatura (`customer.subscription.created/updated/deleted`, `invoice.paid`, `invoice.payment_failed`) — **TUDO INLINE, SEM FILA** (pg-boss removido do MVP em Ago 2026; ver CLAUDE.md → Background Jobs). A ordem é: **verifica assinatura do Stripe → grava o `event.id` → atualiza o espelho local → responde 200**, tudo na mesma request (milissegundos). CRIA user+subscription no primeiro pagamento (substitui o seed). **A confiabilidade vem da Stripe:** devolvemos 5xx e ela reentrega — era isso que a fila duplicava. E-mail (Resend) sai na mesma request, dentro de `try/catch`: falha de e-mail **nunca** derruba o 200 de um evento já processado.
-- [ ] **TRAVA de montagem (achado do `security-vulnerability-reviewer`, Ago 2026):** a rota do
+- **→ Na etapa 4.10 (reconciliado em 19/10/2026):** **Configurar Smart Retries + automações de recuperação** conforme a política de produto abaixo. Isto é **configuração, não código**.
+      *(Já decidido: as tentativas por 2 semanas — `billing.md` → *Régua de inadimplência*, com a
+      conferência na P60. Os e-mails de cobrança da própria Stripe estão desligados desde a 4.3, e
+      ficou para a 4.10 decidir se continuam assim — `build-history.md` → 4.3.)*
+- [x] **Política de dunning — REVISTA pelo operador em 11/10/2026 e no código desde 12/10/2026
+      (etapa 4.6b): o acesso NÃO é mais mantido pela janela inteira.** São **3 dias** depois da
+      cobrança que falhou (o prazo é constante no `core`; a janela de tentativas da Stripe, de 2
+      semanas, continua sendo do painel), e nem passar dos 3 dias nem o cancelamento automático
+      deslogam — a pessoa precisa estar logada para trocar o cartão. A régua viva: `billing.md` →
+      *Régua de inadimplência* e `CLAUDE.md` → *Membership Gating*. Os intervalos da Stripe: 8
+      tentativas em 2 semanas (context7, 11/10/2026). **O texto de Ago 2026, como registro:**
+      **Política de dunning (decisão NOSSA, executada pela Stripe):** falha na renovação → retries automáticos → corte. **Acesso MANTIDO durante toda a janela de retry** (`past_due`) — churn involuntário é a maior alavanca (strategy.md §6). Corte no fim da janela → `unpaid`/`canceled` + `session.deleteMany`. Ajustar a janela é mudança de configuração. *Confirmar os intervalos exatos que a Stripe expõe na abertura da fase, via context7.*
+- [x] **Checkout embutido (Payment Element).** Cria `Customer` + `Subscription` na Stripe e confirma o primeiro pagamento na própria página. O dado do cartão vai direto pro Stripe (não toca nosso servidor). **`requires_action`/3DS é tratado pelo Element no fluxo de assinatura.**
+      *(FEITO para quem está logado na etapa 4.2 (10/10/2026); a confirmação do banco (3DS) no
+      checkout provada pelo operador no navegador, com o cartão que pede confirmação — etapa 4.6,
+      sessão (b), parte 2 do teste dele (11/10/2026). O visitante sem conta é a etapa 4.7.)*
+- [x] `Subscription` model = **espelho local** (o gate lê daqui) com growth seams: `ownerUserId?`, `organizationId?` (nullable), `seats` (default 1), `status`, `currentPeriodEnd`, `stripeCustomerId`, **`stripeSubscriptionId` (obrigatório — é a chave do objeto canônico)** (+ RLS); migration — **sem coluna de idioma** (a escola não tem idioma no banco desde 12/10/2026)
+      *(FEITO: a migration `20260929160000_subscription` — Fase 3, Bloco U, etapa 4, 29/09/2026 —,
+      a coluna `livemode` na etapa 4.1 e a tabela `stripe_customer` (o cliente da Stripe de cada
+      conta) na 4.2. Conferido no `schema.prisma` em 19/10/2026: as costuras e o
+      `stripeSubscriptionId` obrigatório.)*
+- [x] `temAcessoAtivo(userId)` lib — caminho individual (`assinaturaIndividualAtiva`); **fonte única de verdade do acesso para a aplicação**, lida do espelho local. *(A verdade canônica é a `Subscription` da Stripe; o espelho é o que o gate consulta em tempo de request.)*
+      *(FEITO: `server/src/lib/acesso.ts` — Fase 3, Bloco U, etapa 4, 29/09/2026; a regra com a
+      tolerância de 3 dias, etapa 4.6b.)*
+- [x] **Webhook handler** dos eventos de assinatura (`customer.subscription.created/updated/deleted`, `invoice.paid`, `invoice.payment_failed`) — **TUDO INLINE, SEM FILA** (pg-boss removido do MVP em Ago 2026; ver CLAUDE.md → Background Jobs). A ordem é: **verifica assinatura do Stripe → grava o `event.id` → atualiza o espelho local → responde 200**, tudo na mesma request (milissegundos). CRIA user+subscription no primeiro pagamento (substitui o seed). **A confiabilidade vem da Stripe:** devolvemos 5xx e ela reentrega — era isso que a fila duplicava. E-mail (Resend) sai na mesma request, dentro de `try/catch`: falha de e-mail **nunca** derruba o 200 de um evento já processado.
+      *(FEITO na etapa 4.1 (09/10/2026; `routes/stripe-webhook.ts`), com os avisos de devolução
+      acrescentados na 4.6 — 7 tipos hoje (`billing.md` → *Minha assinatura*). **O que faltava
+      dele já está na etapa 4.7:** criar a conta no primeiro pagamento (passo 4) e o e-mail
+      (passos 3 e 7).)*
+- [x] **TRAVA de montagem (achado do `security-vulnerability-reviewer`, Ago 2026):** a rota do
       webhook Stripe é montada **ACIMA** de `express.json()` (`server/src/index.ts:38`) — junto do
       handler do Better Auth, que já vive lá por essa mesma razão — ou com `express.raw`. Se o body
       chegar já parseado, a verificação de assinatura (`constructEvent`) falha **em silêncio**: o
       raw body não é mais recuperável e a checagem passa a validar algo que não é o payload
       original. Hoje os routers de API são montados depois da linha 38 (`:41-50`), então o padrão
       default do repo é o errado para esta rota.
-- [ ] **Idempotência + order-safety (TRAVA):** registrar `event.id` processados (repetido = no-op); eventos podem chegar fora de ordem → em qualquer dúvida, `subscriptions.retrieve` e **recomputar** o espelho, nunca confiar no snapshot do payload.
-- [ ] **"Force sync" fallback.** `subscriptions.retrieve` + recomputa o espelho, caso um webhook falhe até esgotar as reentregas da Stripe — evita o pior caso de suporte: assinante pagante trancado pra fora. **TRAVA:** admin-only OU escopo de servidor seguro. NUNCA um GET não autenticado que libere acesso — seria bypass de billing.
-- [ ] **Detecção de falha = monitor de erro externo, NÃO uma fila nossa.** O desenho antigo
+      *(FEITO na etapa 4.1: o `app.ts` monta o aviso acima do `express.json()`, e a rota lê o corpo
+      cru com `express.raw` — a linha de `index.ts` citada acima é de antes de o app sair para o
+      `app.ts`. A trava continua em `CLAUDE.md` → *Membership Gating*.)*
+- [x] **Idempotência + order-safety (TRAVA):** registrar `event.id` processados (repetido = no-op); eventos podem chegar fora de ordem → em qualquer dúvida, `subscriptions.retrieve` e **recomputar** o espelho, nunca confiar no snapshot do payload.
+      *(FEITO na etapa 4.1: a tabela `stripe_event` guarda cada aviso processado, e o espelho se
+      recalcula buscando a assinatura na Stripe, com a trava da assinatura.)*
+- [x] **"Force sync" fallback.** `subscriptions.retrieve` + recomputa o espelho, caso um webhook falhe até esgotar as reentregas da Stripe — evita o pior caso de suporte: assinante pagante trancado pra fora. **TRAVA:** admin-only OU escopo de servidor seguro. NUNCA um GET não autenticado que libere acesso — seria bypass de billing.
+      *(FEITO na etapa 4.4: `POST /api/admin/assinaturas/sincronizar`, só admin, e a tela Admin →
+      Assinaturas; o painel completo é a etapa 4.7b.)*
+- [x] **Detecção de falha = monitor de erro externo, NÃO uma fila nossa.** O desenho antigo
       (alerta via fila `admin-alerts` do pg-boss) tinha um defeito de raiz: **a detecção dependia
       exatamente da coisa que deveria detectar.** Com a fila fora, o webhook que estourar cai no
       **monitor externo gerenciado** — item de pré-requisito do primeiro aluno pagante na Fase 7
       (fornecedor ainda **PENDENTE**). O force-sync continua sendo a *recuperação*; o monitor é a
       *detecção*. (Convenção no CLAUDE.md → Background Jobs.)
+      *(FEITO no servidor em 10/10/2026: o Sentry, em `server/src/lib/monitor.ts` — Fase 7, parte 1,
+      publicada e ligada em produção. As telas do aluno são a parte 2, na Fase 7.)*
 - [x] **INFRAESTRUTURA da suíte de servidor — PRONTA (Ago 2026).** Entrega o encanamento, não os
       testes de negócio. **`app.ts` novo**: monta e exporta o app **sem** `listen()`, que ficou em
       `index.ts` — enquanto `index.ts` escutava porta no import, supertest não tinha o que importar.
@@ -4728,8 +4884,12 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       **A prova que fecha o item:** rodar `npm test` (que executa `migrate reset --force`) e
       confirmar em seguida, via MCP, que o banco de **dev** seguia com 2 cursos, 2 módulos, 3 aulas,
       1 trilha e 2 usuários — **intacto**. Era exatamente esse comando que destruía o trabalho.
-- [ ] **TESTES DE SERVIDOR (~16, supertest, sem browser) — escritos JUNTO com o handler acima, não
-      depois.** Este é o item que fecha a fase; não é polish de fim de ciclo. **Justificativa
+- [x] **TESTES DE SERVIDOR (~16, supertest, sem browser) — escritos JUNTO com o handler acima, não
+      depois.** *(FEITO — a matriz fechou na etapa 4.4, passo 7, 10/10/2026. Onde mora cada caso:
+      1–3 `stripe-webhook.test.ts` · 4–6 `acesso.test.ts` · 7–10 `matriz-http.test.ts` · 11–12
+      `public-reads.test.ts` · 13–14 `admin-assinaturas.test.ts` · 15 `login-limite.test.ts`. O
+      banco de teste é o Postgres local, com a trava de hostname — não mais o projeto do Supabase
+      citado no fim deste item.)* Este é o item que fecha a fase; não é polish de fim de ciclo. **Justificativa
       (Ago 2026):** 100% do risco catastrófico do projeto é servidor — *assinante pagante trancado
       pra fora* e *acesso liberado sem pagar* — e **nada disso é observável por browser: webhook não
       tem tela.** Casos mínimos:
@@ -4750,12 +4910,33 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       não há mais idioma.
       *Requer o banco de teste (projeto `mvaobzypsiuhqzipcelw` + trava por **REF** no `globalSetup`)
       — CLAUDE.md → Database & Migrations.*
-- [ ] `requireActiveMembership` middleware (wraps `temAcessoAtivo`) gating content + video URLs
-- [ ] On access loss: `session.deleteMany({ userId })` to force logout
-- [ ] Client: pricing page + **checkout embutido (Payment Element)** + **tela de gestão de assinatura DENTRO da escola** (trocar cartão, ver próxima cobrança, mudar mensal↔anual, cancelar) — substitui o Customer Portal, chamando a Subscriptions API. *Mostrar a proração da Stripe **previsualizada** antes de confirmar a troca de plano.*
-- [ ] **Tela de offboarding antes do cancelamento (seam).** Intercepta "cancelar", coleta o motivo, depois executa `cancel_at_period_end` (não recobra; acesso segue até o fim do período pago). **TRAVA (anti roach-motel — sensibilidade Procon/CDC já levantada no pricing):** "cancelar mesmo assim" sempre visível, 1 clique; tom calmo, não retentivo. **Faseamento:** captura de motivo = **launch**; **"pausar 1 mês" (pause collection da Stripe) = fast-follow.** Não construir a pausa no launch.
-- [ ] E2E: assinar → acesso liberado; renovação → período estende; cancelar → acesso revogado no fim do período; **pagamento falhado → `past_due` com acesso MANTIDO → corte no fim da janela**. *(Os três casos de webhook — duplicado, fora de ordem, assinatura inválida — saem daqui e viram **teste de servidor** no item acima: são mais baratos, mais rápidos e não precisam de browser.)*
-- [ ] **E2E full-stack habilitado (6–8 testes) — DEPOIS dos testes de servidor.** **Correção de
+- [x] `requireActiveMembership` middleware (wraps `temAcessoAtivo`) gating content + video URLs
+      *(FEITO na etapa 4.4, passo 5: `middleware/auth.ts`; a primeira rota é o download dos arquivos
+      da aula. A página da aula, por causa da prévia grátis, chama `temAcessoAtivo()` direto —
+      `CLAUDE.md` → *Access Architecture*.)*
+- [x] On access loss: `session.deleteMany({ userId })` to force logout
+      *(FEITO na etapa 4.4, passo 1, dentro da rotina que grava o espelho, e só quando a conta tinha
+      acesso e deixou de ter; a exceção do reembolso pedido pela própria pessoa é da etapa 4.6.)*
+- [x] Client: pricing page + **checkout embutido (Payment Element)** + **tela de gestão de assinatura DENTRO da escola** (trocar cartão, ver próxima cobrança, mudar mensal↔anual, cancelar) — substitui o Customer Portal, chamando a Subscriptions API. *Mostrar a proração da Stripe **previsualizada** antes de confirmar a troca de plano.*
+      *(FEITO para quem está logado: a tela de assinar na etapa 4.2, e Faturamento e Assinatura —
+      o cartão, a próxima cobrança, o plano e cancelar — na 4.6, sessões (a) e (b). A proração da
+      Stripe mostrada antes deu lugar, em 11/10/2026, ao valor mostrado igual ao cobrado, num
+      clique só (decisões do operador; `billing.md` → *Minha assinatura*). A tela pública de
+      assinar é a etapa 4.7, passo 6.)*
+- [x] **Tela de offboarding antes do cancelamento (seam).** Intercepta "cancelar", coleta o motivo, depois executa `cancel_at_period_end` (não recobra; acesso segue até o fim do período pago). **TRAVA (anti roach-motel — sensibilidade Procon/CDC já levantada no pricing):** "cancelar mesmo assim" sempre visível, 1 clique; tom calmo, não retentivo. **Faseamento:** captura de motivo = **launch**; **"pausar 1 mês" (pause collection da Stripe) = fast-follow.** Não construir a pausa no launch.
+      *(FEITO na etapa 4.6, sessão (b), passo 9: a tela de cancelar, com o motivo opcional e só as
+      saídas que o servidor diz que cabem; o motivo fica na Stripe. A pausa continua fora do
+      lançamento.)*
+- **→ Na etapa 4.10 (reconciliado em 19/10/2026):** E2E: assinar → acesso liberado; renovação → período estende; cancelar → acesso revogado no fim do período; **pagamento falhado → `past_due` com acesso MANTIDO → corte no fim da janela**. *(Os três casos de webhook — duplicado, fora de ordem, assinatura inválida — saem daqui e viram **teste de servidor** no item acima: são mais baratos, mais rápidos e não precisam de browser.)*
+      *(Desde a etapa 4.6b o pagamento falhado mantém as aulas por 3 dias, não pela janela
+      inteira: é isso que o E2E confere.)*
+- [x] **E2E full-stack habilitado (6–8 testes) — DEPOIS dos testes de servidor.** *(FEITO EM
+      PARTE na Fase 3, Bloco T (T1): o `globalSetup` com o banco de teste local e a MESMA trava do
+      servidor, e 7 testes em `e2e/tests/auth.spec.ts` — entrar e senha errada, rota protegida e
+      de admin sem login, a sessão que sobrevive ao recarregar, sair. **O que falta:** o checkout
+      com o cartão de teste e o cancelamento estão na **etapa 4.10**; o gate de vídeo membro ×
+      não-membro é a caixa da Fase 3 → *Vídeo* ("E2E: non-member cannot get a playable URL").)*
+      **Correção de
       diagnóstico (Ago 2026):** o E2E atual só assere redirect do React Router **porque falta o
       `globalSetup` com banco de teste** — não porque Playwright seja a ferramenta errada;
       **Playwright fica na stack**. Primeiro o `globalSetup` (banco de teste travado por **REF**,

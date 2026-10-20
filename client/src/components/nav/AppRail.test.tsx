@@ -73,6 +73,19 @@ describe("AppRail — quem vê o quê", () => {
     expect(screen.queryByRole("link", { name: "Alunos" })).toBeNull();
   });
 
+  // A etiqueta é a MESMA para o admin e para o aluno: a do dicionário
+  // (`app.nav.emBreve`). Até 12/10/2026 a do admin era escolhida à parte — ficava
+  // em português com o app em inglês. Com um idioma só a escolha saiu, e esta
+  // conferência fica: sem ela, a etiqueta podia sumir só das seções de admin.
+  it("a seção planejada do admin leva a etiqueta EM BREVE", () => {
+    render(Role.ADMIN);
+
+    for (const rotulo of ["Trilhas Admin", "Alunos"]) {
+      const item = screen.getByText(rotulo).closest("[aria-disabled]");
+      expect(item?.textContent, rotulo).toContain("EM BREVE");
+    }
+  });
+
   // Desde 29/09/2026 o aluno também vê o que é DELE e ainda não existe (decisão
   // do operador: "o que ainda não existe aparece como EM BREVE") — como texto.
   it("o aluno vê o JilsonAI como EM BREVE, e NUNCA como link", () => {

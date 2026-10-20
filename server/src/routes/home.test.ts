@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import request from "supertest";
-import { flattenDict, pt as fabrica } from "@jilson/core";
+import { ROTAS_PUBLICAS, flattenDict, pt as fabrica } from "@jilson/core";
 import servidor from "../test/servidor.js";
 import { prisma } from "../lib/prisma.js";
 import { invalidarCacheDeTexto } from "../lib/dict.js";
@@ -181,6 +181,36 @@ describe("Home pública (SSR)", () => {
         const res = await request(servidor).get("/").set("Cookie", await comoAdmin());
         expect(menu(res.text)).toContain(fabrica.common.nav.meusEstudos);
         expect(menu(res.text)).toContain(ASSINE);
+      });
+
+      // O "Assine" do RODAPÉ segue a mesma regra (decisão do operador, 19/10/2026: "Sim, some
+      // também"), e leva à tela de assinar — não à seção de preço, como o do menu.
+      describe("e o do rodapé", () => {
+        const rodape = (html: string): string => html.slice(html.indexOf('<footer class="site-footer"'), html.indexOf("</footer>"));
+        const ASSINE_NO_RODAPE = `<a href="${ROTAS_PUBLICAS.assinar}">${fabrica.common.footer.links[2]}</a>`;
+
+        it("o visitante vê Assine no rodapé", async () => {
+          const res = await request(servidor).get("/");
+          expect(rodape(res.text)).toContain(ASSINE_NO_RODAPE);
+        });
+
+        it("o ASSINANTE logado não vê Assine no rodapé — e os outros links continuam", async () => {
+          const res = await request(servidor).get("/").set("Cookie", await entrar());
+          expect(rodape(res.text)).not.toContain(`href="${ROTAS_PUBLICAS.assinar}"`);
+          expect(rodape(res.text)).toContain(`<a href="${ROTAS_PUBLICAS.faq}">${fabrica.common.footer.links[3]}</a>`);
+        });
+
+        it("logado SEM assinatura ativa continua vendo Assine no rodapé", async () => {
+          await naSituacao("canceled", PASSADO, async () => {
+            const res = await request(servidor).get("/").set("Cookie", await entrar());
+            expect(rodape(res.text)).toContain(ASSINE_NO_RODAPE);
+          });
+        });
+
+        it("o admin, que não tem assinatura, continua vendo Assine no rodapé", async () => {
+          const res = await request(servidor).get("/").set("Cookie", await comoAdmin());
+          expect(rodape(res.text)).toContain(ASSINE_NO_RODAPE);
+        });
       });
     });
 

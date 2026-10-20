@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { ReactNode } from "react";
-import { screen, fireEvent, waitFor } from "@testing-library/react";
+import { act, screen, fireEvent, waitFor } from "@testing-library/react";
+import { focusManager, onlineManager } from "@tanstack/react-query";
 import { useLocation } from "react-router-dom";
 import type { AssinaturaCriada, PlanosDaAssinatura, PreviaDaAssinatura } from "@jilson/core";
 import { renderWithProviders } from "@/test-utils";
@@ -299,6 +300,17 @@ describe("AssinarPage — o código promocional", () => {
     expect(screen.getByLabelText("Código promocional").getAttribute("aria-invalid")).toBe("true");
   });
 
+  // O LIMITE DE TENTATIVAS (etapa 4.7, passo 1 — a frase é do operador, 19/10/2026): no lugar do
+  // erro de sempre, que mandaria tentar de novo na hora.
+  it("muitas tentativas ao aplicar o código: a frase de esperar — e o valor e o cartão continuam os mesmos", async () => {
+    getPreviaDaAssinatura.mockRejectedValue(erroDoServidor("MuitasTentativas"));
+    abrir();
+    await aplicar("QUALQUER");
+    expect((await screen.findByRole("alert")).textContent).toBe("Muitas tentativas seguidas. Por segurança, espere alguns minutos e tente de novo.");
+    expect(naTela()).not.toContain("Hoje você paga");
+    expect(cartao()?.dataset.centavos).toBe("9990");
+  });
+
   it("remover o código: voltam o valor cheio e o cartão", async () => {
     abrir();
     await aplicar("TESTE100");
@@ -334,6 +346,27 @@ describe("AssinarPage — o código promocional", () => {
     await screen.findByText("TESTE100");
     fireEvent.click(screen.getByRole("radio", { name: /Anual/ }));
     await waitFor(() => expect(getPreviaDaAssinatura).toHaveBeenCalledWith({ plano: "anual", codigo: "TESTE100" }));
+  });
+
+  // Cada prévia gasta uma das 10 tentativas de 15 minutos (etapa 4.7, passo 1 — achado P1 da
+  // revisão de segurança): quem só compara os planos, ou vai ao app do banco e volta, não pode
+  // parar no limite. O que já veio fica; o servidor confere o código de novo ao assinar.
+  it("a prévia não é pedida de novo sozinha: voltar a um plano já visto, à aba ou à rede não gasta tentativa", async () => {
+    abrir();
+    await aplicar("TESTE100");
+    await screen.findByText("TESTE100");
+    fireEvent.click(screen.getByRole("radio", { name: /Anual/ }));
+    await waitFor(() => expect(getPreviaDaAssinatura).toHaveBeenCalledTimes(2));
+    fireEvent.click(screen.getByRole("radio", { name: /Mensal/ }));
+    act(() => {
+      focusManager.setFocused(false);
+      focusManager.setFocused(true);
+      onlineManager.setOnline(false);
+      onlineManager.setOnline(true);
+    });
+    await new Promise((pronto) => setTimeout(pronto, 50));
+    expect(getPreviaDaAssinatura).toHaveBeenCalledTimes(2);
+    focusManager.setFocused(undefined);
   });
 });
 
@@ -440,6 +473,15 @@ describe("AssinarPage — o envio", () => {
     await screen.findByRole("radio", { name: /Mensal/ });
     assinar();
     expect((await screen.findByRole("alert")).textContent).toBe("Não foi possível concluir a assinatura. Confira os dados e tente de novo.");
+    expect(confirmar).not.toHaveBeenCalled();
+  });
+
+  it("muitas tentativas ao assinar: a frase de esperar, e nada é confirmado", async () => {
+    criarAssinatura.mockRejectedValue(erroDoServidor("MuitasTentativas"));
+    abrir();
+    await screen.findByRole("radio", { name: /Mensal/ });
+    assinar();
+    expect((await screen.findByRole("alert")).textContent).toBe("Muitas tentativas seguidas. Por segurança, espere alguns minutos e tente de novo.");
     expect(confirmar).not.toHaveBeenCalled();
   });
 

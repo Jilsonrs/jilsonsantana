@@ -5,7 +5,6 @@ import {
   NAVEGACAO,
   abasDaRota,
   casaRota,
-  etiquetaEmBreve,
   itensSecundarios,
   secaoAtiva,
   secoesVisiveis,
@@ -347,15 +346,5 @@ describe("abasDaRota — o nível 3", () => {
   it("o catálogo do aluno não tem mais abas — Cursos e Trilhas são seções", () => {
     expect(abasDaRota("/cursos", doAluno)).toEqual([]);
     expect(doAluno.map((s) => s.label)).toContain("Cursos");
-  });
-});
-
-describe("etiquetaEmBreve — a etiqueta de tela que ainda não existe", () => {
-  it("a do aluno", () => {
-    expect(etiquetaEmBreve(NAVEGACAO.find((s) => s.to === "/aluno/jilsonai"), pt.app)).toBe("EM BREVE");
-  });
-
-  it("a de uma seção de admin", () => {
-    expect(etiquetaEmBreve(NAVEGACAO.find((s) => s.to === "/admin/alunos"), pt.app)).toBe("EM BREVE");
   });
 });
