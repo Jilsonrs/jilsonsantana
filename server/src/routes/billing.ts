@@ -116,6 +116,12 @@ router.post("/billing/assinatura", requireAuth, ...limiteDeTentativas.cobranca, 
     res.status(409).json({ error: "JaAssinante" });
     return;
   }
+  // Outro pedido desta conta está assinando agora (outra aba): nada foi feito; o novo clique segue
+  // com a mesma assinatura (etapa 4.7, passo 2 — a trava que não espera).
+  if (desfecho.resultado === "ocupada") {
+    res.status(409).json({ error: "Ocupada" });
+    return;
+  }
   if (desfecho.resultado === "atrasada") {
     res.status(409).json({ error: "CobrancaAtrasada" });
     return;

@@ -358,7 +358,15 @@ gera mais aviso, o acesso ficaria liberado para sempre. *(Achado P1 da revisão 
 - **Uma conta é sempre UM cliente na Stripe** (tabela `stripe_customer`).
 - **Uma tentativa de cada vez por conta, e a nova tentativa usa a MESMA assinatura**: cartão
   recusado e novo clique não criam outra; trocar de plano ou de código cancela a tentativa
-  anterior antes de criar a nova.
+  anterior antes de criar a nova. **A trava NÃO ESPERA** *(etapa 4.7, passo 2, 19/10/2026 —
+  plano aprovado pelo operador)*: o pedido que chega com outro da mesma conta em andamento
+  (outra aba) responde 409 `Ocupada` na hora, sem ir à Stripe — a tela diz "Não foi possível
+  concluir a assinatura. Confira os dados e tente de novo.", e o novo clique segue com a mesma
+  assinatura. Esperar seguraria uma ligação com o banco, e vários pedidos juntos parariam o site
+  de todo mundo. **Com a trava na mão, tudo pela MESMA ligação** (o gate, a lista da Stripe, a
+  decisão): pedir outra ali dentro podia esperar uma que não vinha. O cliente novo da Stripe é
+  gravado antes, numa transação curta só dele — continua gravado se o resto falhar. A sincronia
+  que o checkout chama também não espera.
 - **Só o aviso da Stripe grava o espelho.** A tela de depois do pagamento pergunta ao gate até a
   resposta ser sim; nada no navegador libera acesso. *(Revisto na etapa 4.4: quem grava é a
   ROTINA do aviso, que o checkout e o admin também chamam quando o aviso atrasa ou se perde — ver
@@ -1059,6 +1067,35 @@ encerrada de vez com dias pagos: tem acesso e o servidor recusa cartão.
 - **O reembolso pela tela pode se repetir** — assinar, pedir o dinheiro em 7 dias, assinar de
   novo, pedir de novo. Nada limita hoje; é pergunta ao operador (pendência P75), a responder
   antes da etapa 4.7.
+
+## Códigos promocionais — como criar na Stripe *(decisão do operador, 19/10/2026)*
+
+**A regra:** **limite de usos, só em código de 100%** (cortesia, presente): ele ativa a assinatura
+no próprio clique, então o uso é gasto em acesso de verdade. **Código de desconto parcial**
+(campanha, como "50% na Black Friday") **vai sem limite de usos, só com data de validade** —
+ninguém consegue esgotá-lo. *(À pergunta da etapa 4.7, passo 2, com o exemplo explicado, ele
+escolheu "Sem limite de usos", entre isso, uma trava no servidor e só registrar.)* *Reabre se a
+escola precisar de um código parcial com poucas vagas — aí volta à mesa a trava no servidor (a
+mesma conta não gasta mais de 2 usos do mesmo código sem pagar), com texto novo dele.*
+**E o código de 100% que NÃO é "para sempre"** (só a primeira cobrança, ou alguns meses) tem um
+cuidado próprio, já anotado e ainda em aberto (*Assinar com a conta logada* → *Da revisão de
+segurança da etapa*): ele libera o acesso antes de o cartão ser guardado, e nada impede a mesma
+conta de usá-lo de novo quando a assinatura cair. Antes de criar o primeiro: com a restrição "só
+na primeira compra" da Stripe, conferida na área restrita — e a decisão dele sobre recusar o código
+repetido pela mesma conta.
+
+**Por quê** `[FATO — medido na área restrita em 19/10/2026, com as funções de verdade do
+checkout]`: criar a assinatura incompleta com o código **gasta um uso** (do código e do cupom),
+antes de qualquer pagamento · cancelá-la — o que o checkout faz quando a pessoa troca de plano e
+clica de novo — **não devolve** · a abandonada, que expira sozinha em 23 h (relógio de teste),
+**também não** · esgotado, o código fica inativo (`active: false`), e a nossa conferência já diz
+"não é válido" · criar com o código esgotado é recusado com `param: promotion_code` (sem `code`) —
+o checkout passou a tratar isso como "código não vale" (antes, sairia "não foi possível
+concluir"). A prévia (`invoices.createPreview`) **não** gasta uso (medido em 10/10/2026).
+`[FATO — context7 /websites/stripe, 19/10/2026]` *"Applying a coupon means attaching it directly
+to a subscription […] Both actions count toward the same `max_redemptions` limit on the coupon."*
+Com desconto parcial, a incompleta nasce a cada clique em "Assinar" com outro plano: um código de
+100 usos se esgotaria em 100 cliques, sem ninguém pagar.
 
 ## Limite de tentativas nas rotas de cobrança *(Fase 4, etapa 4.7, passo 1 — 19/10/2026)*
 

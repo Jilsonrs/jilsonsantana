@@ -626,14 +626,123 @@ describe("POST /api/billing/assinatura", () => {
     });
   });
 
-  it("DOIS CLIQUES ao mesmo tempo: UMA assinatura, um cliente, e as duas respostas com o mesmo segredo", async () => {
+  // A TRAVA QUE NÃO ESPERA (etapa 4.7, passo 2 — achados P1 das revisões da 4.2 e da 4.4): quem
+  // esperasse a trava esperaria segurando uma ligação com o banco. O segundo clique ouve
+  // "ocupada" NA HORA; o clique seguinte segue com a MESMA assinatura.
+  it("DOIS CLIQUES ao mesmo tempo: o segundo ouve 'ocupada' sem esperar — e o seguinte segue com a MESMA assinatura; um cliente, uma assinatura", async () => {
     await semAssinatura(async () => {
-      const [a, b] = await Promise.all([assinarComo({ plano: "mensal" }, member), assinarComo({ plano: "mensal" }, member)]);
+      // O primeiro pedido fica PARADO com a trava na mão (a Stripe de mentira segura a lista).
+      let dentro!: () => void;
+      let soltar!: () => void;
+      const entrou = new Promise<void>((ok) => (dentro = ok));
+      const segura = new Promise<void>((ok) => (soltar = ok));
+      assinaturasDoCliente.mockImplementationOnce(async (clienteId) => {
+        dentro();
+        await segura;
+        return naStripe.filter((a) => a.cliente === undefined || a.cliente === clienteId);
+      });
+      const primeiro = assinarComo({ plano: "mensal" }, member).then((res) => res);
+      await entrou;
+
+      const segundo = await assinarComo({ plano: "mensal" }, member);
+      expect([segundo.status, segundo.body]).toEqual([409, { error: "Ocupada" }]);
+      expect(criarAssinatura).not.toHaveBeenCalled();
+
+      soltar();
+      const a = await primeiro;
       expect(a.status).toBe(200);
-      expect(b.status).toBe(200);
-      expect(a.body.segredo).toBe(b.body.segredo);
+      const depois = await assinarComo({ plano: "mensal" }, member);
+      expect(depois.status).toBe(200);
+      expect(depois.body.segredo).toBe(a.body.segredo);
       expect(criarAssinatura).toHaveBeenCalledTimes(1);
       expect(criarCliente).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  // UMA CONTA, UM CLIENTE, na corrida (achado da revisão de segurança do passo 2): a leitura sem
+  // trava não achou o cliente, e a outra aba o gravou antes de este pedido pegar a trava. Quem
+  // segura é a SEGUNDA leitura, já com a trava — sem ela, nasceria outro cliente na Stripe.
+  it("a leitura sem trava chegou atrasada (a outra aba acabou de gravar o cliente): a leitura COM a trava acha — nenhum cliente novo", async () => {
+    await semAssinatura(async () => {
+      await prisma.stripeCustomer.create({ data: { userId: memberId, stripeCustomerId: `cus_${S}_da_outra_aba`, livemode: false } });
+      // A leitura SEM trava (a do `prisma`, fora da transação) chega atrasada: devolve "nada" uma
+      // vez. Não é `vi.spyOn`: no Prisma o método vem de um intermediário, e desfazer o espião (ou
+      // apagar a troca) o deixaria vazio para os testes seguintes (medido) — no fim, a função
+      // ORIGINAL, guardada antes da troca, volta para o lugar.
+      // Seguro: só para trocar e apagar esta propriedade; o resto do objeto não é tocado.
+      const delegado = prisma.stripeCustomer as unknown as Record<string, unknown>;
+      const original = prisma.stripeCustomer.findUnique;
+      let leituras = 0;
+      Object.defineProperty(delegado, "findUnique", { configurable: true, writable: true, value: (...args: Parameters<typeof original>) => (++leituras === 1 ? Promise.resolve(null) : original(...args)) });
+      try {
+        const res = await assinarComo({ plano: "mensal" }, member);
+        expect(res.status).toBe(200);
+        expect(leituras).toBe(1);
+        expect(criarCliente).not.toHaveBeenCalled();
+        expect(await prisma.stripeCustomer.count({ where: { userId: memberId } })).toBe(1);
+        expect(criarAssinatura.mock.calls[0]?.[0].clienteId).toBe(`cus_${S}_da_outra_aba`);
+      } finally {
+        Object.defineProperty(delegado, "findUnique", { configurable: true, writable: true, value: original });
+      }
+      // De volta ao normal: a leitura de verdade acha o cliente.
+      expect((await prisma.stripeCustomer.findUnique({ where: { userId: memberId } }))?.stripeCustomerId).toBe(`cus_${S}_da_outra_aba`);
+    });
+  });
+
+  it("a conta ocupada (outro pedido dela assinando): 409 'ocupada' na hora, e NADA vai à Stripe — com cliente ainda por criar e com cliente já gravado", async () => {
+    await semAssinatura(async () => {
+      let soltar!: () => void;
+      let travou!: () => void;
+      const segura = new Promise<void>((ok) => (soltar = ok));
+      const travada = new Promise<void>((ok) => (travou = ok));
+      const outro = prisma.$transaction(async (tx) => {
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`assinar:${memberId}`}))`;
+        travou();
+        await segura;
+      }, { timeout: 20_000 });
+      await travada;
+      try {
+        const semCliente = await assinarComo({ plano: "mensal" }, member);
+        expect([semCliente.status, semCliente.body]).toEqual([409, { error: "Ocupada" }]);
+        await prisma.stripeCustomer.create({ data: { userId: memberId, stripeCustomerId: `cus_${S}_guardado`, livemode: false } });
+        const comCliente = await assinarComo({ plano: "mensal" }, member);
+        expect([comCliente.status, comCliente.body]).toEqual([409, { error: "Ocupada" }]);
+        expect(criarCliente).not.toHaveBeenCalled();
+        expect(assinaturasDoCliente).not.toHaveBeenCalled();
+        expect(criarAssinatura).not.toHaveBeenCalled();
+      } finally {
+        soltar();
+        await outro;
+      }
+    });
+  });
+
+  // A Stripe JÁ DISSE que há assinatura viva desta conta (muitas vezes paga): responder "ocupada"
+  // faria a tela dizer "não foi possível" a quem pode ter acabado de pagar (achado da revisão de
+  // segurança do passo 2). É "já é assinante" — e a tela relê o gate.
+  it("a Stripe diz que há assinatura e a sincronia dela está ocupada (o aviso chegando): 409 'já é assinante' na hora, sem esperar a trava dela", async () => {
+    await semAssinatura(async () => {
+      const id = `sub_viva_${S}_ocupada`;
+      naStripe = [encerrada(id, "active")];
+      let soltar!: () => void;
+      let travou!: () => void;
+      const segura = new Promise<void>((ok) => (soltar = ok));
+      const travada = new Promise<void>((ok) => (travou = ok));
+      const aviso = prisma.$transaction(async (tx) => {
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${id}))`;
+        travou();
+        await segura;
+      }, { timeout: 20_000 });
+      await travada;
+      try {
+        const res = await assinarComo({ plano: "mensal" }, member);
+        expect([res.status, res.body]).toEqual([409, { error: "JaAssinante" }]);
+        expect(buscarAssinatura).not.toHaveBeenCalled();
+        expect(criarAssinatura).not.toHaveBeenCalled();
+      } finally {
+        soltar();
+        await aviso;
+      }
     });
   });
 

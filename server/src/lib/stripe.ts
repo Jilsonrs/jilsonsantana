@@ -274,7 +274,15 @@ export async function criarAssinatura(pedido: PedidoDeAssinatura): Promise<Assin
     // A Stripe recusou o DESCONTO nesta compra (o código esgotou entre a prévia e o clique, é de
     // outro cliente, só vale na primeira compra): nada, como na prévia — e não um erro 500, que
     // diria ao navegador que o código existe (achado da revisão de segurança, 10/10/2026).
-    if (pedido.codigoId && erro instanceof Stripe.errors.StripeInvalidRequestError && erro.param?.startsWith("discounts")) return null;
+    // `[FATO — medido na área restrita, 19/10/2026]` o código ESGOTADO vem com `param` =
+    // `promotion_code` (e sem `code`), não com o `discounts…` das outras recusas.
+    if (pedido.codigoId && erro instanceof Stripe.errors.StripeInvalidRequestError && (erro.param?.startsWith("discounts") || erro.param === "promotion_code")) {
+      // Um rastro, que não alerta: um código de campanha mal configurado (produto errado, só na
+      // primeira compra) passa na prévia e é recusado aqui — sem esta linha, ninguém descobriria.
+      // O id do código, nunca o que o aluno digitou nem a mensagem da Stripe.
+      console.warn(`[stripe] checkout: a Stripe recusou o código ${pedido.codigoId} ao criar a assinatura (campo ${erro.param ?? "-"}, código ${erro.code ?? "-"})`);
+      return null;
+    }
     throw erroSemMensagem(erro, "a criação da assinatura");
   }
 }

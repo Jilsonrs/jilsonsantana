@@ -4321,10 +4321,47 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             `mudar-de-plano.test.ts` (6 trocas num teste) zera a contagem a cada volta. Nos
             testes o limite fica ligado, como em produção; o `test/setup.ts` zera antes de cada
             teste.
-      - [ ] **Passo 2 — O checkout aguenta muita gente ao mesmo tempo.** O item (b) acima (a
+      - [x] **Passo 2 — O checkout aguenta muita gente ao mesmo tempo.** O item (b) acima (a
             trava que não espera, e o gate lido pela transação da trava) e a medição do item
             (d) (a assinatura incompleta gasta um uso do código?), com a correção se gastar.
             **Não depende do operador.** Pode ser publicado sozinho.
+            **FEITO (19–20/10/2026), no `dev`.** **Decisões do operador:** o plano (*"Sim, pode
+            seguir"*, depois de duas explicações com exemplo) e, para o item (d), **a regra dos
+            códigos**: desconto parcial sem limite de usos, só com data de validade; limite de
+            usos só em código de 100% (`billing.md` → *Códigos promocionais*).
+            **O item (d), medido na área restrita com as funções de verdade:** criar a
+            incompleta com o código GASTA um uso; cancelá-la (trocar de plano) e deixá-la
+            expirar (relógio de teste, 25 h) NÃO devolvem; esgotado, o código fica inativo e a
+            tela já diz "não é válido"; criar com ele esgotado é recusado com `param:
+            promotion_code` — que o checkout tratava como erro (500) e passou a tratar como
+            "código não vale".
+            **O item (b):** a trava da conta não espera (`pg_try_advisory_xact_lock`): ocupada →
+            409 `Ocupada`, sem ir à Stripe; com a trava, o gate e a decisão pela MESMA ligação
+            (`temAcessoAtivo(id, tx)`); o cliente novo da Stripe gravado antes, numa transação
+            curta só dele; e a sincronia que o checkout chama passou a não esperar
+            (`sincronizarSeLivre`). Para o aluno, só muda o caso das duas abas no mesmo
+            instante: a segunda lê "Não foi possível concluir…", e o novo clique segue com a
+            mesma assinatura.
+            **A revisão de segurança** (`security-vulnerability-reviewer`, sobre o diff): **nenhum
+            bloqueio, nenhum P1.** Os P2, corrigidos: (1) a sincronia ocupada respondia
+            "ocupada", e a tela diria "não foi possível" a quem pode ter acabado de pagar — agora
+            é "já é assinante", que é o que a Stripe disse, e a tela relê o gate · (2) o teste de
+            uma ligação só passou a provar a própria premissa, a cobrir a sincronia (a terceira
+            transação com trava) e a devolver o endereço do banco · (3) a segunda leitura do
+            cliente, já com a trava, ganhou teste (a leitura sem trava "chega atrasada") ·
+            (4) a recusa do código na criação deixa uma linha de aviso, com o id do código ·
+            (5) a seção dos códigos no `billing.md` lembra o cuidado com o de 100% que não é
+            "para sempre". `[FATO — medido]` no Prisma, desfazer um `vi.spyOn` num método do
+            banco o deixa vazio para os testes seguintes: o teste troca e devolve a função
+            original.
+            **Testes:** 4 de rota (os dois cliques, determinístico — o primeiro fica parado com a
+            trava; a conta ocupada; a sincronia ocupada; a leitura atrasada), 3 com o banco
+            aceitando UMA ligação só (`checkout-uma-ligacao.test.ts`: a premissa, as duas
+            transações da conta e a sincronia — com o código antigo, ele reprova) e 5 da recusa
+            do código com a biblioteca da Stripe trocada por dublê. **Mutação:** 12 de 12
+            reprovaram — inclusive a volta do código antigo (o gate lido fora da trava) e o `tx`
+            tirado de dentro da sincronia.
+            Gates: build, typecheck, lint, site 902, servidor como o CI 1108.
       - [ ] **Passo 3 — O envio de e-mail (Resend).** Com o operador, nos painéis: a conta no
             Resend, o domínio e o remetente (pendência P49). No código: o pacote `resend`, uma
             porta única de envio (com `await` e sem derrubar o pedido — CLAUDE.md → *Membership
