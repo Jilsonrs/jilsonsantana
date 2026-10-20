@@ -436,6 +436,11 @@ pagamento sem ter assinado vê "confirmando" e depois "está demorando", sem cam
   *"A tela terá menu superior e inferior com rodapé […] e o check out entra no content"* — o
   formulário de assinar entra no meio da página. Recusa a sugestão do agente de um topo só com
   o logo e "Voltar". *Reabre se os números mostrarem gente saindo da tela pelo menu, sem pagar.*
+- **Com o código recusado — ou a conferência dele falhando (sem rede, muitas tentativas) —, a tela
+  deixa assinar pelo preço cheio, sem o código** *(decisão do operador, 20/10/2026, à pergunta da
+  revisão de segurança da etapa 4.7, passo 1: "fica assim")*. O erro aparece embaixo do código, e
+  o valor na tela é o cobrado. Vale para as duas telas: o formulário é o mesmo. *Reabre se alguém
+  reclamar de ter pago o preço cheio achando que o código valia.*
 
 **O que a Stripe exige para aprovar o pagamento** `[FATO — context7 /websites/stripe, 12/10/2026:
 "The Payment Element only collects essential billing address details by default. To collect a
@@ -1186,6 +1191,13 @@ IPv4 "embrulhado" (`::ffff:127.0.0.1`) vira IPv4, e o IPv6 vira a faixa (`2001:d
   própria Stripe (o Radar). **Conferir o Radar no painel é a pendência P91**, antes de a tela
   pública abrir (passo 8); se a Stripe não tiver um teto de confirmações por pedido, o passo 4
   decide se o servidor cancela o pedido depois de algumas recusas.
+  `[FATO — context7 /websites/stripe, 20/10/2026]` com o Payment Element, *"we have many automated
+  and manual controls in place to mitigate card testing, including rate limiters, AI models,
+  CAPTCHA triggers"* — ligados de fábrica (para tirar o CAPTCHA, só pedindo ao suporte) —, e o
+  bloqueado aparece como *"Blocked by Stripe"*; a regra `Block if :risk_level: = 'highest'` vale
+  *"regardless of your configured rules"*. E o sinal de maior peso para esses modelos é a
+  *"Advanced fraud detection"* do Stripe.js — que a escola só carrega nas telas de pagamento
+  (`@stripe/stripe-js/pure`, escolha de peso da etapa 4.2): rever na revisão da etapa 4.10.
 - **O teto por endereço é o único que recusa quem não fez nada**: numa sala com o mesmo Wi-Fi, a
   11ª pessoa a assinar em 15 minutos (ou a 21ª a aplicar um código) para no limite; a faixa IPv6
   também pode juntar aparelhos de uma operadora. *Reabre se a escola vender ao vivo num evento

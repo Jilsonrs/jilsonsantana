@@ -4326,7 +4326,8 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             uma guarda para o "zerar as contagens" nunca sair dos testes. **Com destino:** o
             Radar (P91, passo 8) · o teto do dia na prévia e os códigos difíceis de adivinhar
             (passo 4) · o evento com o mesmo Wi-Fi (`billing.md` → *Limitações*) · a tela que
-            deixa assinar sem o código quando ele falha (pergunta na P80).
+            deixa assinar sem o código quando ele falha (decidido pelo operador em 20/10/2026:
+            fica assim — `billing.md` → *A tela pública de assinar*).
             **Testes:** 23 de servidor e 9 de tela. **Mutação:** 31 de 31 reprovaram (20 do
             passo, o `HEAD` e 10 das correções da revisão). Uma suíte de cobrança mudou: um laço de
             `mudar-de-plano.test.ts` (6 trocas num teste) zera a contagem a cada volta. Nos
