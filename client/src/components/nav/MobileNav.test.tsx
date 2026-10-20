@@ -5,8 +5,8 @@ import { renderWithProviders } from "@/test-utils";
 import { Role } from "@jilson/core";
 import { MobileNav } from "./MobileNav";
 
-function abrirGaveta() {
-  renderWithProviders(<MobileNav papel={Role.MEMBER} onSignOut={vi.fn()} />, {
+function abrirGaveta(papel: string = Role.MEMBER) {
+  renderWithProviders(<MobileNav papel={papel} onSignOut={vi.fn()} />, {
     route: "/inicio",
     path: "*",
   });
@@ -34,5 +34,15 @@ describe("MobileNav — o menu do aluno no celular", () => {
     expect(screen.getByText("JilsonAI")).toBeTruthy();
     expect(screen.getByText("EM BREVE")).toBeTruthy();
     expect(screen.queryByRole("link", { name: /JilsonAI/ })).toBeNull();
+  });
+
+  // A mesma etiqueta nas seções planejadas do admin (até 12/10/2026 a dele era
+  // escolhida à parte; com um idioma só, é a do dicionário para todo mundo).
+  it("a seção planejada do admin leva a etiqueta EM BREVE, sem link", () => {
+    abrirGaveta(Role.ADMIN);
+
+    const item = screen.getByText("Alunos").closest("[aria-disabled]");
+    expect(item?.textContent).toContain("EM BREVE");
+    expect(screen.queryByRole("link", { name: /Alunos/ })).toBeNull();
   });
 });

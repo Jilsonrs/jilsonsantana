@@ -4211,6 +4211,12 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                   e o `texto` do `EmBreve` escolhem entre duas etiquetas que agora são iguais —
                   código que dá para simplificar, se o operador quiser. Os quatro gates verdes
                   (site 892, servidor 1.066).
+                  **Simplificado em 19/10/2026, a pedido dele:** saíram a função e o `texto`; o
+                  rail, a gaveta e o nível 2 leem `app.nav.emBreve` direto, e o `EmBreve` também
+                  no Dashboard. Nada mudou na tela. O teste que provava "a do admin fica em
+                  português" deu lugar a dois de tela (rail e gaveta: a seção planejada do admin
+                  leva a etiqueta) — sem eles, a etiqueta podia sumir só das seções de admin.
+                  Mutação: 4 de 4 reprovaram.
             - [x] **Fecha a etapa: o operador confere no site** *(19/10/2026)* — o operador,
                   logado: *"não encontrei o idioma na home logada, está correto"*. De fora, o
                   agente: a home diz `lang="pt-BR"`, sem `hreflang` nem link para `/en`, e `/en`

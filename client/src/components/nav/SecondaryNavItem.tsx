@@ -5,7 +5,7 @@ import type { ItemSecundario } from "@/lib/navigation";
 
 /**
  * Um item de grupo do nível 2: link, ou texto quando a tela ainda não existe.
- * `emBreve` é a etiqueta já no idioma certo (`etiquetaEmBreve`, lib/navigation).
+ * `emBreve` é a etiqueta do dicionário (`app.nav.emBreve`), a mesma do rail e da gaveta.
  */
 export function ItemDoGrupo({
   item,
