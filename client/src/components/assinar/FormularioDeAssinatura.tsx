@@ -4,6 +4,7 @@ import { PageSection } from "@/components/layout/PageLayout";
 import { criarAssinatura } from "@/lib/api";
 import { descreverDesconto, dinheiro, telaDeConcluido, usePrevia } from "@/lib/assinar";
 import { codigoDoErro } from "@/lib/course-form";
+import { passouDoLimite } from "@/lib/faturamento";
 import { useT } from "@/lib/language";
 import { CartaoProvider, type Cartao } from "@/lib/stripe-do-site";
 import { semInterromper } from "@/lib/versao";
@@ -33,7 +34,7 @@ export function FormularioDeAssinatura({
   /** Quem já foi assinante REATIVA: só muda o texto do botão (decisão do operador, 10/10/2026). */
   reativar?: boolean;
 }) {
-  const t = useT().assinar;
+  const { assinar: t, comum } = useT();
   const [plano, setPlano] = useState<Plano>(Plano.MENSAL);
   const [codigo, setCodigo] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
@@ -44,7 +45,7 @@ export function FormularioDeAssinatura({
   if (!escolhido) return null;
   const comCodigo = codigo !== null && previa.data ? previa.data : null;
   const conferindo = codigo !== null && previa.isFetching;
-  const recusado = codigo !== null && previa.isError ? (codigoDoErro(previa.error) === "CodigoInvalido" ? t.codigoInvalido : t.erro) : null;
+  const recusado = codigo !== null && previa.isError ? (codigoDoErro(previa.error) === "CodigoInvalido" ? t.codigoInvalido : passouDoLimite(previa.error) ? comum.muitasTentativas : t.erro) : null;
   const centavosHoje = comCodigo ? comCodigo.centavosHoje : escolhido.centavos;
   // Nada a pagar, hoje nem depois: sem cartão. Se o desconto acaba, o cartão é pedido mesmo com
   // zero hoje — a cobrança seguinte precisa dele.
@@ -78,7 +79,7 @@ export function FormularioDeAssinatura({
       // "CobrancaAtrasada" (etapa 4.6b): a situação relida diz `atrasada`, e a tela de assinar leva ao Faturamento.
       if (motivo === "JaAssinante" || motivo === "CobrancaAtrasada") aoSaberQueJaAssina();
       else if (motivo === "CodigoInvalido") void previa.refetch();
-      else setErro(t.erro);
+      else setErro(passouDoLimite(falha) ? comum.muitasTentativas : t.erro);
     } finally {
       setEnviando(false);
     }

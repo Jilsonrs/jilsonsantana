@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { manterMinhaAssinatura } from "@/lib/api";
-import { CHAVE_DA_MINHA_ASSINATURA, TELA_DE_CANCELAR, TELA_DE_MUDAR_DE_PLANO, type AssinaturaComAcesso } from "@/lib/faturamento";
+import { CHAVE_DA_MINHA_ASSINATURA, TELA_DE_CANCELAR, TELA_DE_MUDAR_DE_PLANO, passouDoLimite, type AssinaturaComAcesso } from "@/lib/faturamento";
 import { useT } from "@/lib/language";
 
 /**
@@ -52,7 +52,7 @@ export function AcoesDoPlano({ assinatura }: { assinatura: AssinaturaComAcesso }
       {manter.isError && (
         <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-3.5">
           <p role="alert" className="text-sm font-medium text-destructive">
-            {t.faturamento.cancelamento.erroAoManter}
+            {passouDoLimite(manter.error) ? t.comum.muitasTentativas : t.faturamento.cancelamento.erroAoManter}
           </p>
         </div>
       )}

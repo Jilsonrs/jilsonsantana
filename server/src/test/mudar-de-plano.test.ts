@@ -41,6 +41,7 @@ import { prisma } from "../lib/prisma.js";
 import { FOLGA_DO_VALOR_MOSTRADO, mudarMeuPlano, validadeDoValorMostrado } from "../lib/meu-plano.js";
 import { AssinaturaNaoEncontrada } from "../lib/stripe.js";
 import { ASSINATURA_DE_TESTE } from "../lib/assinatura-de-teste.js";
+import { zerarLimitesDeTentativas } from "../lib/limite-de-tentativas.js";
 
 // MUDAR DE PLANO (Fase 4, etapa 4.6, sessão b). É COBRANÇA. O que estes testes protegem:
 //   - nada acontece sem login; a assinatura é SEMPRE a da conta da sessão, e o site diz só PARA
@@ -290,6 +291,9 @@ describe("POST /api/billing/minha-assinatura/plano — para o ANUAL, na hora", (
   it("a pessoa demorou na tela (minutos, meia hora, horas) e a conta de agora subiu: UM clique, e cobra EXATAMENTE o valor mostrado", async () => {
     expect(FOLGA_DO_VALOR_MOSTRADO).toBe(100);
     for (const subiu of [0, 1, 3, 7, 40, FOLGA_DO_VALOR_MOSTRADO]) {
+      // Cada volta é um caso à parte, como outra pessoa: sem zerar, a 6ª troca seguida desta
+      // conta pararia no limite de tentativas (5 a cada 15 minutos — etapa 4.7, passo 1).
+      await zerarLimitesDeTentativas();
       trocarAgora.mockClear();
       calcularTroca.mockResolvedValue({ centavosHoje: MOSTRADO + subiu, moeda: "brl", proximaEm: EM_UM_ANO });
       const res = await mudar(member, anual());

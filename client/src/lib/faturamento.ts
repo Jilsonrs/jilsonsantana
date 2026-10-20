@@ -70,3 +70,12 @@ export function codigoDaRecusa(erro: unknown): string | null {
   const codigo = (erro as { response?: { data?: { error?: unknown } } }).response?.data?.error;
   return typeof codigo === "string" ? codigo : null;
 }
+
+/**
+ * O servidor recusou por excesso de tentativas (etapa 4.7, passo 1 — o limite das rotas de
+ * cobrança): onde a pessoa clicou, a tela mostra `app.comum.muitasTentativas` no lugar do erro de
+ * sempre, que mandaria tentar de novo na hora.
+ */
+export function passouDoLimite(erro: unknown): boolean {
+  return codigoDaRecusa(erro) === "MuitasTentativas";
+}

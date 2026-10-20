@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Plano } from "@jilson/core";
 import { Button } from "@/components/ui/button";
 import { desistirDaTroca } from "@/lib/api";
-import { CHAVE_DA_MINHA_ASSINATURA, dataPorExtenso } from "@/lib/faturamento";
+import { CHAVE_DA_MINHA_ASSINATURA, dataPorExtenso, passouDoLimite } from "@/lib/faturamento";
 import { useT } from "@/lib/language";
 
 /**
@@ -41,7 +41,7 @@ export function TrocaMarcada({ troca }: { troca: { plano: Plano; em: string } | 
       {desistir.isError && (
         <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-3.5">
           <p role="alert" className="text-sm font-medium text-destructive">
-            {p.erro}
+            {passouDoLimite(desistir.error) ? t.comum.muitasTentativas : p.erro}
           </p>
         </div>
       )}

@@ -7,6 +7,7 @@ import { atrasadaSemAcesso, convidaAReativar, temAcessoAtivo } from "../lib/aces
 import { assinar } from "../lib/checkout.js";
 import { desistirDaTroca, lerTrocaDePlano, mudarMeuPlano } from "../lib/meu-plano.js";
 import { aplicarCartaoNovo, lerMinhaAssinatura, manterMinhaAssinatura, pararMinhaRenovacao, prepararTrocaDeCartao, reembolsarMinhaAssinatura, registrarAssinaturaDesconhecida } from "../lib/minha-assinatura.js";
+import { limiteDeTentativas } from "../lib/limite-de-tentativas.js";
 
 // ASSINAR COM A CONTA LOGADA (Fase 4, etapa 4.2 — billing.md; CLAUDE.md → Membership Gating).
 // Tudo aqui exige login, e a conta é SEMPRE a da sessão. O site diz só QUAL plano e o código
@@ -14,6 +15,8 @@ import { aplicarCartaoNovo, lerMinhaAssinatura, manterMinhaAssinatura, pararMinh
 // continua sendo só o aviso da Stripe (`stripe-webhook.ts`).
 // MINHA ASSINATURA (etapa 4.6): o que a tela de Faturamento e Assinatura lê e faz também mora
 // aqui — e o site continua sem dizer de quem nem QUAL assinatura.
+// O LIMITE DE TENTATIVAS (etapa 4.7, passo 1): toda rota que vai à Stripe passa por um, logo
+// depois do `requireAuth` — rota nova daqui que vá à Stripe também (`lib/limite-de-tentativas.ts`).
 
 const router = Router();
 
@@ -35,7 +38,7 @@ router.use("/billing", (req, res, next) => {
 
 // GET /api/billing/planos — os dois planos com o valor lido da Stripe (o mostrado é o cobrado) e
 // a chave que o site usa para abrir o campo do cartão.
-router.get("/billing/planos", requireAuth, async (_req, res) => {
+router.get("/billing/planos", requireAuth, ...limiteDeTentativas.leitura, async (_req, res) => {
   const chave = chavePublicavel();
   if (!chave || !cobrancaConfigurada()) {
     // Em voz alta, e sem o valor: a variável pode estar com a chave errada dentro.
@@ -55,7 +58,7 @@ router.get("/billing/planos", requireAuth, async (_req, res) => {
 // POST /api/billing/previa — quanto fica HOJE com o código promocional, pela conta da Stripe.
 // Código que não existe, venceu, esgotou ou não vale para esta compra: a mesma resposta, sem
 // dizer qual dos casos. O código digitado não vai para o registro.
-router.post("/billing/previa", requireAuth, async (req, res) => {
+router.post("/billing/previa", requireAuth, ...limiteDeTentativas.acao, async (req, res) => {
   const corpo = validate(previaSchema, req.body, res);
   if (corpo === null) return;
   if (!cobrancaConfigurada()) {
@@ -95,7 +98,7 @@ router.get("/billing/assinatura", requireAuth, async (req, res) => {
 // POST /api/billing/assinatura — assinar. A regra inteira mora em `lib/checkout.ts`; aqui, só a
 // conta da SESSÃO (o corpo não diz de quem é) e a resposta. O segredo do pagamento vai SÓ na
 // resposta — nunca para o registro.
-router.post("/billing/assinatura", requireAuth, async (req, res) => {
+router.post("/billing/assinatura", requireAuth, ...limiteDeTentativas.cobranca, async (req, res) => {
   const user = req.user;
   if (!user) {
     res.status(401).json({ error: "Unauthorized" });
@@ -128,7 +131,7 @@ router.post("/billing/assinatura", requireAuth, async (req, res) => {
 // GET /api/billing/minha-assinatura — a assinatura da conta da SESSÃO, para a tela de Faturamento
 // e Assinatura (etapa 4.6): o plano, a próxima cobrança e o cartão, como a Stripe diz agora. O
 // pedido não diz de quem nem qual: a regra mora em `lib/minha-assinatura.ts`.
-router.get("/billing/minha-assinatura", requireAuth, async (req, res) => {
+router.get("/billing/minha-assinatura", requireAuth, ...limiteDeTentativas.leitura, async (req, res) => {
   const user = req.user;
   if (!user) {
     res.status(401).json({ error: "Unauthorized" });
@@ -153,7 +156,7 @@ router.get("/billing/minha-assinatura", requireAuth, async (req, res) => {
 // assinatura é a dela, e o cartão novo o servidor lê na Stripe.
 
 // POST /api/billing/cartao — abre o pedido de guardar cartão. O segredo vai SÓ na resposta.
-router.post("/billing/cartao", requireAuth, async (req, res) => {
+router.post("/billing/cartao", requireAuth, ...limiteDeTentativas.cobranca, async (req, res) => {
   const user = req.user;
   if (!user) {
     res.status(401).json({ error: "Unauthorized" });
@@ -175,7 +178,7 @@ router.post("/billing/cartao", requireAuth, async (req, res) => {
 });
 
 // POST /api/billing/cartao/aplicar — põe na assinatura o cartão que o site acabou de confirmar.
-router.post("/billing/cartao/aplicar", requireAuth, async (req, res) => {
+router.post("/billing/cartao/aplicar", requireAuth, ...limiteDeTentativas.cobranca, async (req, res) => {
   const user = req.user;
   if (!user) {
     res.status(401).json({ error: "Unauthorized" });
@@ -227,7 +230,7 @@ const RECUSAS = {
 } as const;
 
 // POST /api/billing/minha-assinatura/cancelar — para a renovação, com o motivo (se a pessoa disse).
-router.post("/billing/minha-assinatura/cancelar", requireAuth, async (req, res) => {
+router.post("/billing/minha-assinatura/cancelar", requireAuth, ...limiteDeTentativas.acao, async (req, res) => {
   const user = req.user;
   if (!user) {
     res.status(401).json({ error: "Unauthorized" });
@@ -254,7 +257,7 @@ router.post("/billing/minha-assinatura/cancelar", requireAuth, async (req, res) 
 });
 
 // POST /api/billing/minha-assinatura/manter — volta atrás: a assinatura torna a renovar.
-router.post("/billing/minha-assinatura/manter", requireAuth, async (req, res) => {
+router.post("/billing/minha-assinatura/manter", requireAuth, ...limiteDeTentativas.acao, async (req, res) => {
   const user = req.user;
   if (!user) {
     res.status(401).json({ error: "Unauthorized" });
@@ -278,7 +281,7 @@ router.post("/billing/minha-assinatura/manter", requireAuth, async (req, res) =>
 // POST /api/billing/minha-assinatura/reembolso — cancela NA HORA e devolve tudo o que foi pago
 // nesta assinatura (etapa 4.6, sessão b). Só dentro do prazo, conferido no servidor. O corpo leva
 // SÓ o motivo, opcional: quanto devolver e de qual assinatura, quem sabe é o servidor.
-router.post("/billing/minha-assinatura/reembolso", requireAuth, async (req, res) => {
+router.post("/billing/minha-assinatura/reembolso", requireAuth, ...limiteDeTentativas.acao, async (req, res) => {
   const user = req.user;
   if (!user) {
     res.status(401).json({ error: "Unauthorized" });
@@ -309,7 +312,7 @@ router.post("/billing/minha-assinatura/reembolso", requireAuth, async (req, res)
 
 // GET /api/billing/minha-assinatura/plano — a troca que esta conta pode fazer agora, já com a
 // conta da Stripe (quanto se paga hoje, ou quando a troca vale). Não muda nada.
-router.get("/billing/minha-assinatura/plano", requireAuth, async (req, res) => {
+router.get("/billing/minha-assinatura/plano", requireAuth, ...limiteDeTentativas.leitura, async (req, res) => {
   const user = req.user;
   if (!user) {
     res.status(401).json({ error: "Unauthorized" });
@@ -333,7 +336,7 @@ router.get("/billing/minha-assinatura/plano", requireAuth, async (req, res) => {
 
 // POST /api/billing/minha-assinatura/plano — muda o plano. O segredo da confirmação do banco,
 // quando há, vai SÓ na resposta.
-router.post("/billing/minha-assinatura/plano", requireAuth, async (req, res) => {
+router.post("/billing/minha-assinatura/plano", requireAuth, ...limiteDeTentativas.cobranca, async (req, res) => {
   const user = req.user;
   if (!user) {
     res.status(401).json({ error: "Unauthorized" });
@@ -359,7 +362,7 @@ router.post("/billing/minha-assinatura/plano", requireAuth, async (req, res) => 
 
 // POST /api/billing/minha-assinatura/plano/desistir — desfaz a troca marcada, ou a que ficou
 // esperando a confirmação do banco. Sem corpo.
-router.post("/billing/minha-assinatura/plano/desistir", requireAuth, async (req, res) => {
+router.post("/billing/minha-assinatura/plano/desistir", requireAuth, ...limiteDeTentativas.acao, async (req, res) => {
   const user = req.user;
   if (!user) {
     res.status(401).json({ error: "Unauthorized" });

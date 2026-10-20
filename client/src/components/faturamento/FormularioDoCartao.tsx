@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { aplicarCartaoNovo, prepararTrocaDeCartao } from "@/lib/api";
 import { codigoDoErro } from "@/lib/course-form";
-import { TELA_DO_FATURAMENTO } from "@/lib/faturamento";
+import { TELA_DO_FATURAMENTO, passouDoLimite } from "@/lib/faturamento";
 import { useT } from "@/lib/language";
 import { CampoDoCartao, CartaoProvider, confirmarNoBanco, useCartao } from "@/lib/stripe-do-site";
 import { semInterromper } from "@/lib/versao";
@@ -33,7 +33,7 @@ export function FormularioDoCartao({ dados, aoTrocar, aoNaoTerOndePor }: Props) 
 
 /** Mora DENTRO do `CartaoProvider`: é daqui que sai o cartão que o envio confere e confirma. */
 function CampoEBotao({ chavePublicavel, aoTrocar, aoNaoTerOndePor }: Pick<Props, "aoTrocar" | "aoNaoTerOndePor"> & { chavePublicavel: string }) {
-  const t = useT().faturamento;
+  const { faturamento: t, comum } = useT();
   // A cobrança atrasada pediu a confirmação do banco: a janela dele está aberta por cima da tela.
   const [noBanco, setNoBanco] = useState(false);
   const cartao = useCartao();
@@ -69,7 +69,7 @@ function CampoEBotao({ chavePublicavel, aoTrocar, aoNaoTerOndePor }: Pick<Props,
       });
     } catch (falha) {
       if (codigoDoErro(falha) === "SemAssinatura") aoNaoTerOndePor();
-      else setErro(t.erroDoCartao);
+      else setErro(passouDoLimite(falha) ? comum.muitasTentativas : t.erroDoCartao);
     } finally {
       setNoBanco(false);
       setEnviando(false);

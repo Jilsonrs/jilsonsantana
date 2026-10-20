@@ -4283,7 +4283,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       por passo no `dev`, cada um fechado com os quatro gates; o que estiver fechado não é
       refeito na semana seguinte. O escopo é o do texto acima — aqui só a ordem e o corte.
       Ao abrir cada passo: o plano curto dele, e as perguntas que forem do operador.
-      - [ ] **Passo 1 — Limite de tentativas nas rotas de cobrança.** Por conta e por IP
+      - [x] **Passo 1 — Limite de tentativas nas rotas de cobrança.** Por conta e por IP
             (`x-real-ip`), nas rotas listadas em (a) acima. **Não depende do operador, a não ser
             do ok para o pacote** (dependência nova: o agente propõe `express-rate-limit`, em
             memória — há um servidor só) **e da frase** que a tela mostra a quem passou do
@@ -4291,6 +4291,36 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             *(Da proposta da tela pública, 12/10/2026: quando o passo 5 criar o "Enviar de
             novo" do e-mail de criar a senha, ele entra neste limite — sem isso, o site serve
             para encher a caixa de e-mail de alguém.)*
+            **FEITO (19/10/2026), no `dev`.** **Decisões do operador no mesmo dia:** o plano, com
+            o pacote (*"Sim, com o pacote"*) — `express-rate-limit@8.7.0`, fixo — e a frase
+            *"Muitas tentativas seguidas. Por segurança, espere alguns minutos e tente de
+            novo."* (`app.comum.muitasTentativas`), onde a pessoa clica.
+            **O que entrou:** `server/src/lib/limite-de-tentativas.ts`, posto nas 12 rotas de
+            `/billing` que vão à Stripe, depois do `requireAuth` — as 11 da lista (a) e
+            `GET /billing/planos`, que também vai à Stripe a cada vez; o "já tenho acesso?"
+            fica de fora. Por conta e o dobro por endereço, cada rota contando à parte: cartão
+            e cobrança 5 a cada 15 min e 20 por dia; as outras ações 10; as leituras 60. A
+            recusa é 429 `MuitasTentativas` com `Retry-After`, antes de a rota ir à Stripe. No
+            site, a frase em 7 lugares (assinar e o código, o cartão, cancelar, manter, mudar
+            de plano, desistir da troca). Detalhe: `billing.md` → *Limite de tentativas*.
+            **A revisão de segurança** (`security-vulnerability-reviewer`, sobre o diff): **nenhum
+            bloqueio; dois P1, corrigidos** — (1) as grafias de `/api` (`/API/…`, `/Api/…`)
+            abriam uma contagem cada, até 8× o teto: a chave passou a ser o desenho da rota ·
+            (2) a prévia do código se repetia sozinha (voltar à aba, reconectar, voltar a um
+            plano visto), e um aluno honesto pararia no limite: não se repete mais. **Os P2:**
+            corrigidos — sem um `x-real-ip` válido em produção, não conta por endereço e alerta
+            uma vez · o limite por conta montado sem sessão vira erro (não uma contagem de
+            todos) · o teto do dia da conta antes dos do endereço · o "desistir da troca" não
+            insiste no limite · três testes que faltavam e um que não provava o que dizia ·
+            uma guarda para o "zerar as contagens" nunca sair dos testes. **Com destino:** o
+            Radar (P91, passo 8) · o teto do dia na prévia e os códigos difíceis de adivinhar
+            (passo 4) · o evento com o mesmo Wi-Fi (`billing.md` → *Limitações*) · a tela que
+            deixa assinar sem o código quando ele falha (pergunta na P80).
+            **Testes:** 23 de servidor e 9 de tela. **Mutação:** 31 de 31 reprovaram (20 do
+            passo, o `HEAD` e 10 das correções da revisão). Uma suíte de cobrança mudou: um laço de
+            `mudar-de-plano.test.ts` (6 trocas num teste) zera a contagem a cada volta. Nos
+            testes o limite fica ligado, como em produção; o `test/setup.ts` zera antes de cada
+            teste.
       - [ ] **Passo 2 — O checkout aguenta muita gente ao mesmo tempo.** O item (b) acima (a
             trava que não espera, e o gate lido pela transação da trava) e a medição do item
             (d) (a assinatura incompleta gasta um uso do código?), com a correção se gastar.
@@ -4321,6 +4351,14 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             outra pessoa · o que se diz quando o e-mail já tem conta (rascunho: "Este e-mail já
             tem conta. Entre para assinar."; dizer isso revela quem tem conta — a revisão de
             segurança do passo pesa).
+            **Da revisão de segurança do passo 1 (19/10/2026), a resolver neste passo:** a rota
+            pública ganha um grupo PRÓPRIO no limite de tentativas, por endereço — o grupo por
+            conta lança erro sem sessão, de propósito · **pergunta ao operador, antes de a
+            prévia abrir ao visitante:** um teto por dia na prévia do código, ou todo código
+            difícil de adivinhar e com poucos usos (`billing.md` → *Limite de tentativas*) ·
+            conferir no context7 se a Stripe tem um teto de confirmações por pedido de pagamento
+            ou de guardar cartão; se não tiver, decidir se o servidor cancela o pedido depois de
+            algumas recusas (o teste de cartão pelo campo da Stripe não passa pelo limite).
       - [ ] **Passo 5 — "Crie sua senha".** O e-mail com o link e a tela de definir a senha.
             **Pergunta para a abertura:** "Esqueci minha senha", na tela de entrar, usa o mesmo
             mecanismo — entra junto? **Depende dos passos 3 e 4.**
@@ -4372,9 +4410,9 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             datas num e-mail só, na falha, ou pendurá-lo numa nova tentativa da Stripe.
       - [ ] **Passo 8 — O teste com cartão de verdade e a abertura ao público.** O teste do
             operador no site no ar (mensal → anual → reembolso), olhando a taxa da Stripe. Antes
-            de abrir: as pendências P58 (o nome na fatura), P60 (a opção do painel) e P75 (o
-            limite do reembolso), a cópia do banco (Fase 7) e a revisão de segurança da etapa
-            inteira. A publicação é ordem dele.
+            de abrir: as pendências P58 (o nome na fatura), P60 (a opção do painel), P75 (o
+            limite do reembolso) e P91 (o Radar ligado contra teste de cartão), a cópia do banco
+            (Fase 7) e a revisão de segurança da etapa inteira. A publicação é ordem dele.
             **Da proposta da tela pública (agente, 12/10/2026):** antes de abrir, também os
             Termos de Uso e a Política de Privacidade no ar (a tela de assinar aponta para os
             dois; hoje são pendência da Fase 7 e a P61) · a **P84** (o cartão promete o JilsonAI

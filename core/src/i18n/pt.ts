@@ -301,7 +301,10 @@ export const pt = {
       carregando: "Carregando…",
       // A tela de erro no lugar da página em branco (05/10/2026). Rascunho (P38).
       algoDeuErrado: "Algo deu errado ao abrir esta tela.",
-      recarregar: "Recarregar a página"
+      recarregar: "Recarregar a página",
+      // O limite de tentativas nas ações de cobrança (etapa 4.7, passo 1): no lugar do erro,
+      // onde a pessoa clicou. Texto do operador, 19/10/2026.
+      muitasTentativas: "Muitas tentativas seguidas. Por segurança, espere alguns minutos e tente de novo."
     },
     inicio: {
       ola: "Olá",

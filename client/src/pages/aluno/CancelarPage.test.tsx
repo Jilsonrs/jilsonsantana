@@ -145,6 +145,16 @@ describe("CancelarPage — em dia, depois dos 7 dias", () => {
     expect(botao("Cancelar assinatura")).toBeTruthy();
   });
 
+  // O LIMITE DE TENTATIVAS (etapa 4.7, passo 1 — a frase é do operador, 19/10/2026).
+  it("muitas tentativas: a frase de esperar — e a tela NÃO diz 'assinatura cancelada'", async () => {
+    cancelarMinhaAssinatura.mockRejectedValue(recusa("MuitasTentativas", 429));
+    abrir();
+    fireEvent.click(await screen.findByRole("button", { name: "Cancelar assinatura" }));
+    expect((await screen.findByRole("alert")).textContent).toBe("Muitas tentativas seguidas. Por segurança, espere alguns minutos e tente de novo.");
+    expect(screen.queryByRole("status")).toBeNull();
+    expect(botao("Cancelar assinatura")).toBeTruthy();
+  });
+
   it("quem tinha a troca para o Mensal marcada é avisado de que ela também será desfeita — e só quem tinha", async () => {
     getMinhaAssinatura.mockResolvedValue({ ...ATIVA, plano: "anual", trocaMarcada: { plano: "mensal", em: FIM_DO_MES } });
     const { unmount } = abrir();
