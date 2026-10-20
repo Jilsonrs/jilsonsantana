@@ -208,6 +208,8 @@
 > `"pt"` no tipo), o conserto do `auth:generate` (o `jiti` 2 na raiz), **a logomarca da home no
 > rodapé do app** e **o "Assine" do menu da home some para quem tem assinatura ativa** (decisão
 > do operador, 19/10/2026; o "Assine" do rodapé da home ficou como estava, sem decisão).
+> *Depois, no mesmo dia, ele decidiu que o do rodapé também some para quem tem assinatura ativa
+> (`billing.md` → *Sincronizar e perder o acesso*): feito no `dev`, a publicar.*
 > **Provado no site, de fora:** a versão nova (`mvfpyhz2-a2d42ffc`; antes, `mvea5i2y-3a00b6df`);
 > catálogo, trilhas, textos comuns e sessão → 200; a assinatura sem login → 401; o login com um
 > e-mail que não existe → 401; a imagem da logomarca → 200; o público segue no "Em breve".

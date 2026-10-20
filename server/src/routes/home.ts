@@ -106,8 +106,8 @@ function paginaDeQuemEstaLogado(res: Response, logado: boolean): void {
 
 /**
  * O que a home muda para quem está logado, pela assinatura. **Assinante** (tem acesso agora, por
- * `temAcessoAtivo()`): o menu não mostra "Assine" (decisão do operador, 19/10/2026: "já é
- * aluno"). **Reativar**: os botões dizem "Reativar assinatura" — só para quem já foi assinante e
+ * `temAcessoAtivo()`): nem o menu nem o rodapé mostram "Assine" (decisões do operador,
+ * 19/10/2026: "já é aluno"). **Reativar**: os botões dizem "Reativar assinatura" — só para quem já foi assinante e
  * hoje está sem acesso (decisão do operador, 10/10/2026). O visitante sem login — e o robô do
  * Google — nem chega ao banco por isto: as duas respostas são sempre não.
  */

@@ -604,6 +604,10 @@ confundir quem assina — foi o motivo da decisão de 10/10.*
   venceu, nunca assinou — e o admin, que não tem) continua vendo "Assine", que leva aos botões de
   assinar ou de reativar. A seção de preço da página não muda para ninguém. *Reabre se o menu das
   outras páginas públicas, quando virarem template do servidor, pedir a mesma regra.*
+  **O "Assine" do RODAPÉ da home segue a mesma regra** *(decisão do operador, 19/10/2026, à
+  pergunta do agente: "Sim, some também")*: some para quem tem assinatura ativa, e o visitante,
+  quem está logado sem assinatura e o admin continuam vendo. Ele leva à tela de assinar
+  (`/assinar`), e o do menu à seção de preço. *Acompanha a regra do menu, e reabre junto.*
 - **Quem cancela e ainda tem dias pagos continua assistindo até o fim deles** — *"enquanto for
   válida a assinatura nos dias restantes"*. É a regra do gate de Ago 2026, confirmada; nesse caso
   a pessoa também não é deslogada. *Sem gatilho próprio: é a regra do gate. O reembolso, em que o
