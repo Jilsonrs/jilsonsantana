@@ -202,6 +202,17 @@
 > (aula concluída sozinha, barra na aula e no cartão), o vídeo que não recomeça ao trocar de aba
 > (a apresentação abre pausada, a aula toca sozinha) e o "Salvos". **Primeiro teste com o player de
 > verdade: com o operador** (assistir uma aula até perto do fim e ver a barra andar).
+> **PUBLICADO em 20/10/2026 (`main` = `ac64077`, CI verde nos dois jobs, deploy ok; sem
+> migration; ordem do operador: "Publica"):** a **etapa 4.7, passos 1 e 2** — o limite de
+> tentativas nas rotas de cobrança (dependência nova: `express-rate-limit@8.7.0`), com a frase dele,
+> e a trava de assinar que não espera —, o **"Assine" do rodapé da home** sumindo para quem tem
+> assinatura ativa (decisão dele, 19/10), a etiqueta EM BREVE simplificada e os documentos
+> reconciliados (a lista antiga do fim da Fase 4, as frases velhas). **Provado no site, de fora:** a
+> versão nova (`mvgi4xc7-4a18c331`; antes, `mvfpyhz2-a2d42ffc`); catálogo, trilhas, textos comuns e
+> sessão → 200; a assinatura, os planos e a troca de cartão sem login → 401 (o limite vem depois do
+> login: quem não entrou não gasta cota de ninguém); o login com um e-mail que não existe → 401; o
+> público segue no "Em breve". *O limite em si só se vê com login: a prova é a suíte (23 testes de
+> servidor e 9 de tela).*
 > **PUBLICADO em 19/10/2026 (`main` = `1ee7c0c`, CI verde nos dois jobs, deploy ok; sem
 > migration; ordem do operador: "publica"):** o **passo 6 da etapa 4.6c** (os documentos num
 > idioma só; saíram o `idiomas.md` e o script da revisão do inglês; a legenda do Bunny só aceita
@@ -209,7 +220,7 @@
 > rodapé do app** e **o "Assine" do menu da home some para quem tem assinatura ativa** (decisão
 > do operador, 19/10/2026; o "Assine" do rodapé da home ficou como estava, sem decisão).
 > *Depois, no mesmo dia, ele decidiu que o do rodapé também some para quem tem assinatura ativa
-> (`billing.md` → *Sincronizar e perder o acesso*): feito no `dev`, a publicar.*
+> (`billing.md` → *Sincronizar e perder o acesso*): publicado em 20/10/2026 (`main` = `ac64077`).*
 > **Provado no site, de fora:** a versão nova (`mvfpyhz2-a2d42ffc`; antes, `mvea5i2y-3a00b6df`);
 > catálogo, trilhas, textos comuns e sessão → 200; a assinatura sem login → 401; o login com um
 > e-mail que não existe → 401; a imagem da logomarca → 200; o público segue no "Em breve".
