@@ -4324,7 +4324,8 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             todos) · o teto do dia da conta antes dos do endereço · o "desistir da troca" não
             insiste no limite · três testes que faltavam e um que não provava o que dizia ·
             uma guarda para o "zerar as contagens" nunca sair dos testes. **Com destino:** o
-            Radar (P91, passo 8) · o teto do dia na prévia e os códigos difíceis de adivinhar
+            Radar (P91 — conferido pelo operador em 20/10/2026: ativo; a chave dos cartões
+            guardados fica desligada) · o teto do dia na prévia e os códigos difíceis de adivinhar
             (passo 4) · o evento com o mesmo Wi-Fi (`billing.md` → *Limitações*) · a tela que
             deixa assinar sem o código quando ele falha (decidido pelo operador em 20/10/2026:
             fica assim — `billing.md` → *A tela pública de assinar*).
@@ -4460,7 +4461,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       - [ ] **Passo 8 — O teste com cartão de verdade e a abertura ao público.** O teste do
             operador no site no ar (mensal → anual → reembolso), olhando a taxa da Stripe. Antes
             de abrir: as pendências P58 (o nome na fatura), P60 (a opção do painel), P75 (o
-            limite do reembolso) e P91 (o Radar ligado contra teste de cartão), a cópia do banco
+            limite do reembolso) — a P91 (o Radar) fechou em 20/10/2026 —, a cópia do banco
             (Fase 7) e a revisão de segurança da etapa inteira. A publicação é ordem dele.
             **Da proposta da tela pública (agente, 12/10/2026):** antes de abrir, também os
             Termos de Uso e a Política de Privacidade no ar (a tela de assinar aponta para os

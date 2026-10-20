@@ -1188,9 +1188,17 @@ IPv4 "embrulhado" (`::ffff:127.0.0.1`) vira IPv4, e o IPv6 vira a faixa (`2001:d
 - **Confirmar o cartão no campo da Stripe vai do navegador DIRETO para ela**, sem passar por aqui:
   o que este limite segura é abrir o pedido de guardar cartão e criar a assinatura. Um pedido já
   aberto pode ser confirmado de novo com outro cartão, e quem segura essa parte é a proteção da
-  própria Stripe (o Radar). **Conferir o Radar no painel é a pendência P91**, antes de a tela
-  pública abrir (passo 8); se a Stripe não tiver um teto de confirmações por pedido, o passo 4
-  decide se o servidor cancela o pedido depois de algumas recusas.
+  própria Stripe (o Radar). **O Radar está ativo na conta de verdade** *(conferido pelo operador
+  em 20/10/2026, no painel: Configurações → Radar — "Screening all renewals"; fecha a P91)*. Se a
+  Stripe não tiver um teto de confirmações por pedido, o passo 4 decide se o servidor cancela o
+  pedido depois de algumas recusas.
+  **"Use Radar on payment methods saved for future use" fica DESLIGADO** *(decisão do operador,
+  20/10/2026, entre deixar desligado e ligar)*: é a chave que passa o filtro do Radar também
+  quando o cartão é GUARDADO sem cobrança na hora — na escola, a tela "Trocar cartão" e os códigos
+  de 100% só no primeiro mês —, e a Stripe cobra por tentativa. O risco ali é pequeno: só quem já
+  assina chega à troca de cartão, e o limite deixa 5 tentativas a cada 15 minutos e 20 por dia.
+  *Reabre se o painel mostrar muitas tentativas de guardar cartão recusadas (sinal de teste de
+  cartão), ou se nascer uma tela pública que guarde cartão sem cobrar.*
   `[FATO — context7 /websites/stripe, 20/10/2026]` com o Payment Element, *"we have many automated
   and manual controls in place to mitigate card testing, including rate limiters, AI models,
   CAPTCHA triggers"* — ligados de fábrica (para tirar o CAPTCHA, só pedindo ao suporte) —, e o
