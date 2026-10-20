@@ -4659,7 +4659,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       dias depois da cobrança que falhou, e a atrasada que continua atrasada não ganha data nova —
       etapa 4.6b. A opção do painel continua importando: é ela que faz "Reativar assinatura"
       funcionar.)*
-- [x] **Setup no dashboard (sem código):** Payments Plano Padrão (conta MEI/CNPJ, payout Banco do Brasil) + **Stripe Billing ativado**. Produto **"Assinatura"** com **2 `Price`**: Mensal R$99,90 (sem fidelidade) / Anual ~R$995 (~17% off). Sem free trial, sem conteúdo grátis. **Sem Customer Portal.**
+- [x] **Setup no dashboard (sem código):** Payments Plano Padrão (conta MEI/CNPJ, payout Banco do Brasil) + **Stripe Billing ativado**. Produto **"Assinatura"** com **2 `Price`**: Mensal R$99,90 (sem fidelidade) / Anual ~R$995 (~17% off). Sem free trial *(conteúdo grátis, só a prévia grátis de aula — decisão do operador, 27/09/2026; não é configuração da Stripe)*. **Sem Customer Portal.**
       *(FEITO pelo operador: na área restrita na etapa 4.0 e na conta de verdade na etapa 4.3 — o
       produto "Assinatura Jilson Santana", os 2 preços com as lookup keys `assinatura_mensal` e
       `assinatura_anual`, R$ 99,90 e R$ 995; `build-history.md` → 4.0 e 4.3.)*

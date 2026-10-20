@@ -169,10 +169,14 @@ custa um curso avulso por mês."
 - Inclui: todas as trilhas e cursos · JilsonAI · certificados · suporte direto · atualizações contínuas
 - Microcopy: "Sem fidelidade. Pague pelo tempo que precisar. Volte quando quiser."
 
-> Build (Fase 4): 2 *prices* Stripe sobre o mesmo produto "Membership" (mensal + anual). Upgrade
-> mensal->anual usa proration nativo do Stripe (crédito do tempo não usado). `temAcessoAtivo()`
-> só olha se a assinatura está ativa — não liga pra qual price. **Sem free trial. Sem conteúdo
-> grátis na escola** (o grátis vive no YouTube).
+> Build (Fase 4): 2 *prices* Stripe sobre o mesmo produto "Membership" (mensal + anual).
+> **Mensal → anual vale na hora:** o ano começa no dia da troca, a pessoa paga o anual menos o que
+> sobrou do mês já pago, e **o valor cobrado é o mostrado**, num clique só. **Anual → mensal vale
+> no fim do ano já pago** *(decisões do operador, 11/10/2026)*. `temAcessoAtivo()` só olha se a
+> assinatura está ativa — não liga pra qual price. **Sem free trial.** Dentro da escola, o grátis
+> é só a **prévia grátis**: as aulas marcadas como prévia tocam para qualquer visitante, sem
+> login, e os arquivos delas continuam só para assinantes *(decisões do operador, 27 e
+> 29/09/2026)*. Fora isso, o grátis vive no YouTube.
 
 ### Founding Member — **NÃO VAI EXISTIR** *(decisão do operador, set/2026)*
 Não há oferta de fundador, nem "vagas limitadas". A regra de conteúdo da home passou a proibir
@@ -292,8 +296,8 @@ quiser trilha, tutor 24/7 e certificado, a escola te espera."
 
 ## Removido nesta versão (não reintroduzir)
 Consultoria (6 serviços/Service 6/$100hr/Process/Portfolio), ContactForm de consultoria,
-cursos a $119 avulsos, membership $29.99, free trial, conteúdo grátis na escola, fórum de
-pares, "cursos escondidos até 10K subs", ataque direto à Udemy.
+cursos a $119 avulsos, membership $29.99, free trial, conteúdo grátis na escola (fora a prévia
+grátis de aula, que voltou por decisão do operador em 27/09/2026), fórum de pares, "cursos escondidos até 10K subs", ataque direto à Udemy.
 *(A "copy em inglês" saiu desta lista em Set 2026, quando a escola passou a ser bilíngue; desde
 12/10/2026 a escola é só em português.)*
 

@@ -106,11 +106,15 @@ sobre crescimento rápido.
 
 ### Pricing da assinatura (TRAVADO)
 - **Mensal R$99,90/mês — sem fidelidade** (padrão, motor de aquisição).
-- **Anual ~R$995/ano** (~17% de desconto, cobrança única recorrente anual). Troca mensal↔anual
-  usa **proração nativa do Stripe Billing**, previsualizada antes de o aluno confirmar.
+- **Anual ~R$995/ano** (~17% de desconto, cobrança única recorrente anual). **Mensal → anual vale
+  na hora:** o ano começa no dia da troca, a pessoa paga o anual menos o que sobrou do mês já
+  pago, e **o valor cobrado é o mostrado**, num clique só. **Anual → mensal vale no fim do ano já
+  pago** *(decisões do operador, 11/10/2026)*.
 - **Só em reais, só para o Brasil** *(12/10/2026, `[decisão do operador]`)*: não há preço em
   dólar nem venda para fora (o dólar de 14/09/2026 saiu — ver *Idioma & foco*).
-- **Sem free trial. Sem conteúdo grátis dentro da escola** (o grátis vive no YouTube).
+- **Sem free trial.** Dentro da escola, o grátis é só a **prévia grátis**: as aulas marcadas como
+  prévia tocam para qualquer visitante, sem login, e os arquivos delas continuam só para
+  assinantes *(decisões do operador, 27 e 29/09/2026)*. Fora isso, o grátis vive no YouTube.
 - **Sem oferta de fundador** *(decisão do operador, set/2026)*: não haverá founding member, em
   nenhuma forma — nem preço travado, nem bônus temporário.
 - Build = **2 objetos `Price` da Stripe num produto "Assinatura"**; `temAcessoAtivo()` ignora qual price o aluno tem.

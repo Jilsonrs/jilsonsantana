@@ -22,10 +22,16 @@
 **2 objetos `Price` da Stripe sob um produto "Assinatura":** mensal **R$ 99,90**
 (sem fidelidade, é o padrão) + anual **~R$ 995** (~17% de desconto).
 
-- **Sem teste grátis. Sem conteúdo grátis dentro da escola** — o grátis mora no
-  YouTube.
-- Troca mensal↔anual = `subscriptions.update`; **a proração é da Stripe**, e é
-  previsualizável antes de mostrar o número ao aluno.
+- **Sem teste grátis.** O conteúdo da escola é para assinantes, com uma exceção: **a prévia
+  grátis** — as aulas que o admin marca como prévia (`Lesson.isFreePreview`) tocam para qualquer
+  visitante, sem login, e os arquivos delas continuam só para assinantes *(decisões do operador,
+  27 e 29/09/2026 — `CLAUDE.md` → Access Architecture)*. Fora isso, o grátis mora no YouTube.
+- **Trocar de plano** *(decisões do operador, 11/10/2026 — o detalhe em *Minha assinatura*,
+  abaixo)*: **mensal → anual vale na hora**, com o ano começando no dia da troca, e a pessoa paga
+  o anual menos o que sobrou do mês já pago — **o valor cobrado é exatamente o mostrado**, num
+  clique só; **anual → mensal vale no fim do ano já pago**. A conta mostrada é a prévia da própria
+  Stripe; a cobrança não usa a proração dela, que anda com o relógio, e sim o anual cheio com um
+  crédito de valor fixo.
 - `temAcessoAtivo()` **ignora qual plano** o membro tem.
 - **Não existe oferta de fundador** *(decisão do operador, set/2026)* — nem bônus temporário,
   nem preço travado. A home não usa escassez fabricada.
