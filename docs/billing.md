@@ -140,6 +140,12 @@ ela serve para dizer o que a escola considera abuso e para sustentar a análise 
 hora · o painel de assinaturas (etapa 4.7b) mostra as cobranças devolvidas de cada aluno, para o
 caso a caso.
 *Reabre se o reembolso repetido virar prejuízo medido — aí um limite volta à mesa.*
+**CONFIRMADO em 21/10/2026** *(fecha a P75, que a segunda revisão de segurança de 11/10 tinha
+levantado de novo)*: na abertura da etapa 4.7, passo 4, à pergunta "mantém?", ele respondeu
+**"Mantém como decidido"** — entre isso e "uma vez por conta, pela tela" (do segundo reembolso em
+diante a tela não ofereceria mais). O que pesou na pergunta: cada volta exige pagar de novo, o
+reembolso tranca as aulas na hora, e um limite por conta seria driblado com outro e-mail, agora que
+o visitante assina sem conta. *O gatilho de reabertura é o de cima.*
 
 **Estado do código (11/10/2026): o reembolso CORTA o acesso** (etapa 4.6, sessão b, passo 8;
 ainda não publicado). A fatura da Stripe não tem situação de "reembolsada" (as situações são
@@ -423,7 +429,7 @@ pagamento sem ter assinado vê "confirmando" e depois "está demorando", sem cam
 
 > **NADA AQUI ESTÁ DECIDIDO além do que traz data e frase do operador.** É a proposta do agente
 > depois de ele mostrar as telas de pagamento da Udemy e do Code with Mosh. O que existe na tela
-> e os textos são dele: as perguntas estão em `pendencias.md` (**P80, P81, P83, P84, P88 e P90**; a P79, a P82, a P86, a P87 e a P89 ele respondeu em 12/10/2026). Quem construir o
+> e os textos são dele: as perguntas estão em `pendencias.md` (**P80, P81, P83, P84 e P90**; a P79, a P82, a P86, a P87 e a P89 ele respondeu em 12/10/2026, e a P88 em 21/10/2026). Quem construir o
 > passo 6 confere antes o que ele já respondeu, e registra a resposta aqui, com a data e a frase.
 > *A Udemy e o Mosh são referência desta análise, nunca texto do site.*
 
@@ -441,6 +447,20 @@ pagamento sem ter assinado vê "confirmando" e depois "está demorando", sem cam
   revisão de segurança da etapa 4.7, passo 1: "fica assim")*. O erro aparece embaixo do código, e
   o valor na tela é o cobrado. Vale para as duas telas: o formulário é o mesmo. *Reabre se alguém
   reclamar de ter pago o preço cheio achando que o código valia.*
+- **O e-mail que JÁ TEM CONTA: a tela avisa e manda entrar** *(decisão do operador, 21/10/2026, à
+  pergunta da abertura da etapa 4.7, passo 4)*: "Este e-mail já tem conta. Entre para assinar." (o
+  texto continua rascunho — P81), e a pessoa assina pela tela de quem está logado, que já
+  funciona. **Recusada:** não avisar e ligar o pagamento à conta que existe — quem errasse um
+  dígito do e-mail pagaria a assinatura de outra pessoa, sem conseguir entrar. **O custo aceito:**
+  quem digita um e-mail descobre se ele tem conta na escola, dentro do limite de tentativas.
+  *Reabre se o registro mostrar alguém varrendo e-mails pela tela (muitas recusas "já tem conta"
+  vindas do mesmo endereço).*
+- **Cartão emitido fora do Brasil: ACEITO** *(decisão do operador, 21/10/2026 — fecha a P88)*: a
+  tela aceita qualquer cartão; o que restringe a venda ao Brasil é o CPF ou CNPJ obrigatório. Atende
+  o brasileiro que tem cartão de banco de fora. Nada a construir; acompanhar no painel da Stripe
+  quantos cartões de fora aparecem. **Recusada:** só cartão emitido no Brasil (recusaria esse mesmo
+  brasileiro, e pediria uma regra na Stripe ou uma conferência a construir). *Reabre se o painel
+  mostrar fraude ou contestação vinda de cartões de fora.*
 
 **O que a Stripe exige para aprovar o pagamento** `[FATO — context7 /websites/stripe, 12/10/2026:
 "The Payment Element only collects essential billing address details by default. To collect a
@@ -1070,8 +1090,8 @@ encerrada de vez com dias pagos: tem acesso e o servidor recusa cartão.
   fluxo da escola cria saldo. *Reabre se a escola passar a dar saldo a alunos: aí o crédito da
   troca se calcula sobre o total da fatura, e não sobre o valor devido.*
 - **O reembolso pela tela pode se repetir** — assinar, pedir o dinheiro em 7 dias, assinar de
-  novo, pedir de novo. Nada limita hoje; é pergunta ao operador (pendência P75), a responder
-  antes da etapa 4.7.
+  novo, pedir de novo. Nada limita, por decisão do operador (10/10/2026, confirmada em 21/10/2026
+  — fecha a P75): *Reembolso: 7 dias, por lei*, acima.
 
 ## Códigos promocionais — como criar na Stripe *(decisão do operador, 19/10/2026)*
 
@@ -1088,6 +1108,11 @@ segurança da etapa*): ele libera o acesso antes de o cartão ser guardado, e na
 conta de usá-lo de novo quando a assinatura cair. Antes de criar o primeiro: com a restrição "só
 na primeira compra" da Stripe, conferida na área restrita — e a decisão dele sobre recusar o código
 repetido pela mesma conta.
+**Código de 100% nasce DIFÍCIL DE ADIVINHAR** *(decisão do operador, 21/10/2026, junto do teto por
+dia — Limite de tentativas, abaixo)*: letras e números sem sentido, como `PRESENTE-K7Q2X9` — nunca
+uma palavra (`CORTESIA`, `PRESENTE`) —, e com poucos usos. Na tela sem login (etapa 4.7, passo 4)
+qualquer pessoa confere código; o teto por dia só atrasa quem tenta adivinhar, e quem acha um
+código de 100% ganha acesso. *Reabre se a escola quiser um código de cortesia fácil de divulgar.*
 
 **Por quê** `[FATO — medido na área restrita em 19/10/2026, com as funções de verdade do
 checkout]`: criar a assinatura incompleta com o código **gasta um uso** (do código e do cupom),
@@ -1210,9 +1235,12 @@ IPv4 "embrulhado" (`::ffff:127.0.0.1`) vira IPv4, e o IPv6 vira a faixa (`2001:d
   11ª pessoa a assinar em 15 minutos (ou a 21ª a aplicar um código) para no limite; a faixa IPv6
   também pode juntar aparelhos de uma operadora. *Reabre se a escola vender ao vivo num evento
   presencial — aí os tetos por endereço ficam ajustáveis, ou se aceita o risco.*
-- **A prévia do código não tem teto por dia** (10 a cada 15 minutos por conta): quem a adivinha
-  esbarra no próprio código, que precisa ser difícil e com poucos usos. *Decide-se na abertura do
-  passo 4, antes de a prévia abrir ao visitante: um teto por dia, ou todo código assim.*
+- ~~**A prévia do código não tem teto por dia**~~ — **decidido em 21/10/2026: teto por dia E
+  código difícil** *(operador, à pergunta da abertura do passo 4: "Teto por dia + código difícil",
+  entre isso e só a regra dos códigos)*. **Sem login**, a conferência do código tem **20 a cada 15
+  minutos e 40 por dia por endereço** (quem é honesto usa de 1 a 3); com login, continua 10 a cada
+  15 minutos por conta. E todo código de 100% é criado difícil de adivinhar e com poucos usos
+  (*Códigos promocionais*, acima). *Reabre se uma pessoa honesta chegar ao teto do dia.*
 - **O "desistir da troca" tem o teto das outras ações (10)**: a tela de mudar de plano o pede uma
   vez a cada confirmação do banco não concluída, e só repete quando a assinatura está ocupada —
   nunca no limite. Se ele for recusado, a troca pendente vence sozinha em ~23 h, e a troca seguinte

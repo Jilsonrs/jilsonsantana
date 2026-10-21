@@ -4435,7 +4435,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             (decisões do operador, 12/10/2026: *"colocar CPF logo já resolve"* e *"deixa CPF
             obrigatório e aceita CNPJ"* — `billing.md`). **Não há campo País** (decisão dele no
             mesmo dia, etapa 4.6c: a escola é só para o Brasil); o que restringe é o número
-            fiscal brasileiro — o cartão emitido fora é a **P88**. *Proposta do agente, a
+            fiscal brasileiro — o cartão emitido fora era a **P88** (respondida em 21/10/2026: aceito). *Proposta do agente, a
             fechar no plano do passo, com context7:* o número é conferido no servidor e fica
             guardado NA STRIPE, junto do cliente (o número fiscal dela, `br_cpf`/`br_cnpj`) —
             um dado pessoal a menos no banco da escola.
@@ -4452,6 +4452,22 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             conferir no context7 se a Stripe tem um teto de confirmações por pedido de pagamento
             ou de guardar cartão; se não tiver, decidir se o servidor cancela o pedido depois de
             algumas recusas (o teste de cartão pelo campo da Stripe não passa pelo limite).
+            **ABERTURA (21/10/2026) — plano aprovado pelo operador ("Sim, pode seguir"), em três
+            partes, um commit cada:** **(A)** a ficha de espera do visitante (tabela nova) e a
+            conta que nasce dela quando a Stripe diz que o pagamento passou, na mesma transação do
+            espelho; o "Conferir na Stripe" do admin passa a achar também quem pagou e não tem
+            conta · **(B)** as rotas sem login (planos, prévia do código, assinar, "o pagamento já
+            valeu?" — só sim ou não, e só a quem fez aquele pedido), o CPF ou CNPJ conferido pelo
+            dígito (inclusive o CNPJ com letras) e guardado só na Stripe, e os limites por
+            endereço (10 a cada 15 min e 40 por dia), por e-mail (5 e 20) e de e-mails novos (10
+            por dia por endereço); **as rotas ficam fora do ar no site até o passo 8**, por uma
+            variável na Railway que o operador liga · **(C)** a prova na área restrita, a revisão
+            de segurança, a mutação e os documentos. O teste de cartão direto no campo da Stripe
+            fica com a proteção dela (já registrada em `billing.md` → *Limite de tentativas*).
+            **As respostas da abertura (operador, 21/10/2026):** e-mail que já tem conta → a tela
+            avisa e manda entrar · a prévia do código sem login → teto por dia (40 por endereço) e
+            código de 100% difícil de adivinhar · **P88** → aceita qualquer cartão · **P75** → fica
+            como decidido em 10/10 (sem bloqueio automático). Registro em `billing.md`.
       - [ ] **Passo 5 — "Crie sua senha".** O e-mail com o link e a tela de definir a senha.
             **Pergunta para a abertura:** "Esqueci minha senha", na tela de entrar, usa o mesmo
             mecanismo — entra junto? **Depende dos passos 3 e 4.**
@@ -4515,8 +4531,8 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             datas num e-mail só, na falha, ou pendurá-lo numa nova tentativa da Stripe.
       - [ ] **Passo 8 — O teste com cartão de verdade e a abertura ao público.** O teste do
             operador no site no ar (mensal → anual → reembolso), olhando a taxa da Stripe. Antes
-            de abrir: as pendências P58 (o nome na fatura), P60 (a opção do painel), P75 (o
-            limite do reembolso) — a P91 (o Radar) fechou em 20/10/2026 —, a cópia do banco
+            de abrir: as pendências P58 (o nome na fatura) e P60 (a opção do painel) — a P91 (o
+            Radar) fechou em 20/10/2026, e a P75 (o limite do reembolso) em 21/10/2026 —, a cópia do banco
             (Fase 7) e a revisão de segurança da etapa inteira. A publicação é ordem dele.
             **Da proposta da tela pública (agente, 12/10/2026):** antes de abrir, também os
             Termos de Uso e a Política de Privacidade no ar (a tela de assinar aponta para os
