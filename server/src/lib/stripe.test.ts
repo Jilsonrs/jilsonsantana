@@ -234,10 +234,21 @@ function doCheckout({ status = "incomplete", fatura = { status: "open", confirma
 
 describe("a assinatura como o checkout a vê", () => {
   it("incompleta com a fatura aberta: o segredo do pagamento, o plano e nenhum código", () => {
-    expect(paraAssinaturaNoCheckout(doCheckout())).toEqual({ id: "sub_1", status: "incomplete", precoId: "price_mensal", codigoId: null, segredoDoPagamento: "pi_1_secret_x", segredoDoCartao: null, tentativa: null });
+    expect(paraAssinaturaNoCheckout(doCheckout())).toEqual({ id: "sub_1", status: "incomplete", precoId: "price_mensal", codigoId: null, segredoDoPagamento: "pi_1_secret_x", segredoDoCartao: null, tentativa: null, pagamentoCancelado: false });
   });
 
   // ASSINAR SEM CONTA (etapa 4.7, passo 4): só quem traz o código da tentativa segue com ela.
+  // A STRIPE CANCELA o pagamento depois de 10 recusas (medido na área restrita, 21/10/2026): a
+  // fatura segue aberta e o segredo, morto. O checkout tem que saber, para não o entregar de novo.
+  it("o pagamento de hoje cancelado pela Stripe: marcado — e outro pagamento cancelado da fatura não conta", () => {
+    const comPagamentos = (pagamentos: { status: string; payment: { payment_intent: string } }[]) =>
+      doCheckout({ fatura: { status: "open", confirmation_secret: { client_secret: "pi_1_secret_x", type: "payment_intent" }, payments: { data: pagamentos } } });
+    expect(paraAssinaturaNoCheckout(comPagamentos([{ status: "canceled", payment: { payment_intent: "pi_1" } }])).pagamentoCancelado).toBe(true);
+    expect(paraAssinaturaNoCheckout(comPagamentos([{ status: "open", payment: { payment_intent: "pi_1" } }])).pagamentoCancelado).toBe(false);
+    expect(paraAssinaturaNoCheckout(comPagamentos([{ status: "canceled", payment: { payment_intent: "pi_antigo" } }])).pagamentoCancelado).toBe(false);
+    expect(paraAssinaturaNoCheckout(comPagamentos([])).pagamentoCancelado).toBe(false);
+  });
+
   it("a tentativa do visitante com que foi criada; a de quem está logado não tem", () => {
     expect(paraAssinaturaNoCheckout(doCheckout({ metadata: { pedido: "p1", tentativa: "t-1", plano: "mensal" } })).tentativa).toBe("t-1");
     expect(paraAssinaturaNoCheckout(doCheckout()).tentativa).toBeNull();
@@ -279,7 +290,7 @@ describe("o pedido de assinatura que vai à Stripe", () => {
       payment_settings: { save_default_payment_method: "on_subscription", payment_method_types: ["card"] },
       discounts: [{ promotion_code: "promo_1" }],
       metadata: { userId: "u1", plano: "anual", codigo: "promo_1" },
-      expand: ["latest_invoice.confirmation_secret", "pending_setup_intent"],
+      expand: ["latest_invoice.confirmation_secret", "latest_invoice.payments", "pending_setup_intent"],
     });
   });
 

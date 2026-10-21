@@ -4,7 +4,7 @@ import { validate } from "../lib/http.js";
 import { cobrancaConfigurada } from "../lib/stripe.js";
 import { lerPlanos, lerPrevia } from "../lib/vitrine-da-assinatura.js";
 import { assinarComoVisitante, pagamentoConfirmado } from "../lib/checkout-do-visitante.js";
-import { contarClienteNovo, limiteSemLogin } from "../lib/limite-de-tentativas.js";
+import { contarClienteNovo, cotaDeClientesNovosEsgotada, limiteSemLogin } from "../lib/limite-de-tentativas.js";
 import { protecaoDaCobranca } from "../lib/protecao-da-cobranca.js";
 
 // ASSINAR SEM LOGIN (Fase 4, etapa 4.7, passo 4 — billing.md → *Assinar sem conta*; CLAUDE.md →
@@ -22,6 +22,19 @@ import { protecaoDaCobranca } from "../lib/protecao-da-cobranca.js";
 // O registro leva ids — nunca o e-mail, o CPF ou CNPJ, o código digitado ou o segredo do pagamento.
 
 const router = Router();
+
+/**
+ * QUANTOS "assinar sem login" PODEM ESTAR EM ANDAMENTO AO MESMO TEMPO, somando todos os endereços
+ * (achado P1 da revisão de segurança do passo 4, 21/10/2026): cada um segura uma ligação com o banco
+ * enquanto a Stripe responde, e sem conta nada os limita — uma dúzia de endereços disparando juntos
+ * esgotaria as ligações que o gate usa, e a aula de quem paga ficaria esperando. Cheio, a resposta é
+ * "ocupada" na hora, antes de abrir qualquer transação; o novo clique segue normalmente. Contagem em
+ * memória: há um servidor só (a mesma premissa dos limites de tentativas).
+ */
+export const ASSINATURAS_SEM_LOGIN_AO_MESMO_TEMPO = 3;
+let emAndamento = 0;
+/** A última linha de aviso do "cheio": no máximo uma por minuto, para um ataque não encher o registro. */
+let avisouEm = 0;
 
 /** As rotas sem login estão no ar? Em produção, só com a chave ligada na Railway (o operador liga no passo 8). */
 export function assinaturaSemLoginNoAr(env: NodeJS.ProcessEnv = process.env): boolean {
@@ -75,8 +88,30 @@ router.post("/billing/visitante/assinatura", ...limiteSemLogin.assinar, async (r
     res.status(503).json({ error: "NaoConfigurado" });
     return;
   }
-  // O teto dos e-mails novos do dia conta só quando um cliente novo vai mesmo nascer na Stripe.
-  const desfecho = await assinarComoVisitante(corpo, { antesDeCriarCliente: () => contarClienteNovo(req) });
+  // O endereço que já trouxe os e-mails novos do dia: a MESMA recusa para qualquer e-mail dele.
+  const esgotada = await cotaDeClientesNovosEsgotada(req);
+  if (esgotada !== null) {
+    res.set("Retry-After", String(esgotada));
+    res.status(429).json({ error: "MuitasTentativas" });
+    return;
+  }
+  if (emAndamento >= ASSINATURAS_SEM_LOGIN_AO_MESMO_TEMPO) {
+    if (Date.now() - avisouEm > 60_000) {
+      avisouEm = Date.now();
+      console.warn(`[api] assinar sem login: ${emAndamento} em andamento — os pedidos seguintes ouvem "ocupada"`);
+    }
+    res.set("Retry-After", "2");
+    res.status(409).json({ error: "Ocupada" });
+    return;
+  }
+  emAndamento++;
+  let desfecho: Awaited<ReturnType<typeof assinarComoVisitante>>;
+  try {
+    // O teto dos e-mails novos do dia conta só quando um cliente novo vai mesmo nascer na Stripe.
+    desfecho = await assinarComoVisitante(corpo, { antesDeCriarCliente: () => contarClienteNovo(req) });
+  } finally {
+    emAndamento--;
+  }
   if (desfecho.resultado === "ja-tem-conta") {
     // A tela avisa e manda entrar (decisão do operador, 21/10/2026).
     res.status(409).json({ error: "JaTemConta" });

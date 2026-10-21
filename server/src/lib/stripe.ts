@@ -200,6 +200,13 @@ export type AssinaturaNoCheckout = {
    * pagamento dessa pessoa.
    */
   tentativa?: string | null;
+  /**
+   * A Stripe CANCELOU o pagamento de hoje desta assinatura (etapa 4.7, passo 4). `[FATO — medido na
+   * área restrita, 21/10/2026]` depois de 10 recusas no mesmo pagamento ela o cancela sozinha, e a
+   * assinatura continua incompleta, com a fatura aberta e o segredo do pagamento morto: entregar esse
+   * segredo de novo deixaria a pessoa presa num pagamento que não aceita mais cartão nenhum.
+   */
+  pagamentoCancelado?: boolean;
 };
 
 /** A assinatura da Stripe (com a fatura e o pedido de cartão expandidos) no formato do checkout. Função pura. */
@@ -207,18 +214,26 @@ export function paraAssinaturaNoCheckout(assinatura: Stripe.Subscription): Assin
   const fatura = assinatura.latest_invoice;
   const aberta = typeof fatura === "object" && fatura !== null && fatura.status === "open";
   const cartao = assinatura.pending_setup_intent;
+  const segredo = aberta ? (fatura.confirmation_secret?.client_secret ?? null) : null;
+  const pagamentoDeHoje = segredo?.split("_secret_")[0] ?? null;
+  const cancelado = (aberta ? (fatura.payments?.data ?? []) : []).some((p) => {
+    const doPagamento = p.payment.payment_intent;
+    return p.status === "canceled" && (typeof doPagamento === "string" ? doPagamento : doPagamento?.id) === pagamentoDeHoje;
+  });
   return {
     id: assinatura.id,
     status: assinatura.status,
     precoId: assinatura.items.data[0]?.price.id ?? null,
     codigoId: assinatura.metadata.codigo || null,
-    segredoDoPagamento: aberta ? (fatura.confirmation_secret?.client_secret ?? null) : null,
+    segredoDoPagamento: segredo,
     segredoDoCartao: typeof cartao === "object" && cartao !== null ? cartao.client_secret : null,
     tentativa: assinatura.metadata[METADADOS_DO_VISITANTE.tentativa] || null,
+    pagamentoCancelado: pagamentoDeHoje !== null && cancelado,
   };
 }
 
-const DO_CHECKOUT = ["latest_invoice.confirmation_secret", "pending_setup_intent"];
+// Os pagamentos da fatura vêm junto para o checkout saber se a Stripe cancelou o de hoje (`pagamentoCancelado`).
+const DO_CHECKOUT = ["latest_invoice.confirmation_secret", "latest_invoice.payments", "pending_setup_intent"];
 
 export type ContaDoCliente = { userId: string; email: string; nome: string | null };
 

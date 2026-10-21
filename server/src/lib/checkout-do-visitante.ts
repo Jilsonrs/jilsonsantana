@@ -21,6 +21,12 @@ import { acertarNumeroFiscal, assinaturasDoCliente, buscarCodigo, buscarPrecos, 
 //      dessa pessoa — e o cartão de um pagamento recusado aparece nele.
 // Quem soubesse o e-mail de alguém ainda pode CANCELAR a tentativa dessa pessoa (ela clica de novo e
 // segue): é o preço de não exigir conta, limitado pelo limite de tentativas por e-mail.
+//
+// DA REVISÃO DE SEGURANÇA DO PASSO (21/10/2026): o número fiscal só muda DENTRO da decisão, com a
+// trava e depois de conferir que o cliente não tem assinatura viva — senão um terceiro trocaria o
+// CPF de quem acabou de pagar, ou dois pedidos intercalados deixariam a fatura de uma pessoa com o
+// número da outra; a ficha que já virou conta é tratada como conta (`userId`), e não só pelo e-mail;
+// e o pagamento que a Stripe cancelou (10 recusas) nunca é reaproveitado.
 
 export type DesfechoDoVisitante =
   /** O e-mail já tem conta — ou acabou de ganhar uma, com um pagamento que já tinha passado. */
@@ -35,7 +41,8 @@ export type DesfechoDoVisitante =
   | { resultado: "ativa"; tentativa: string }
   | { resultado: "pagar"; segredo: string; tipo: "pagamento" | "cartao"; tentativa: string };
 
-type Ficha = { id: string; stripeCustomerId: string; documentoMudou: boolean };
+/** A ficha do e-mail. `nova`: o cliente da Stripe acabou de nascer, já com o número fiscal desta tentativa. */
+type Ficha = { id: string; stripeCustomerId: string; nova: boolean };
 
 /**
  * O que a ROTA passa: `antesDeCriarCliente` conta um cliente novo do endereço de quem pediu
@@ -47,10 +54,10 @@ export type OpcoesDoVisitante = { antesDeCriarCliente?: () => Promise<number | n
 /** Encerradas: não cobram mais e não impedem uma assinatura nova. */
 const ENCERRADAS: ReadonlySet<string> = new Set(["incomplete_expired", "canceled"]);
 
-/** Até 4 idas à Stripe dentro da trava (10 s cada, com uma nova tentativa) — a mesma conta do checkout. */
-const TEMPO_DA_TRANSACAO = { maxWait: 10_000, timeout: 90_000 };
-/** Até 3 idas à Stripe na ficha: criar o cliente, ou ler e trocar o número fiscal. */
-const TEMPO_DA_FICHA = { maxWait: 10_000, timeout: 90_000 };
+/** Até 7 idas à Stripe dentro da trava (10 s cada, com uma nova tentativa): o número fiscal, a lista, cancelar e criar. */
+const TEMPO_DA_TRANSACAO = { maxWait: 10_000, timeout: 120_000 };
+/** Uma ida à Stripe na ficha: criar o cliente. */
+const TEMPO_DA_FICHA = { maxWait: 10_000, timeout: 30_000 };
 
 /** O código público de uma tentativa: 32 caracteres que ninguém adivinha. */
 function novaTentativa(): string {
@@ -69,16 +76,30 @@ async function temConta(db: Pick<Prisma.TransactionClient, "user">, email: strin
 }
 
 /**
- * A ficha de espera deste e-mail, com o número fiscal desta tentativa no cliente da Stripe — a que
- * já existe, ou uma nova, com o cliente novo, numa transação curta só dela, com a trava do e-mail:
- * se o resto falhar, ela fica, e um e-mail é sempre UM cliente.
+ * A ficha deste e-mail JÁ VIROU CONTA? A conta pode ter mudado de e-mail depois de nascer (quando
+ * houver troca de e-mail): quem souber o e-mail antigo nunca opera no cliente da Stripe dela.
+ */
+async function fichaComConta(db: Pick<Prisma.TransactionClient, "guestCheckout">, fichaId: string): Promise<boolean> {
+  return (await db.guestCheckout.findUnique({ where: { id: fichaId }, select: { userId: true } }))?.userId != null;
+}
+
+/**
+ * A ficha de espera deste e-mail — a que já existe (sem mexer no cliente da Stripe: o número fiscal
+ * só muda na decisão, com a trava), ou uma nova, com o cliente novo já com o número fiscal, numa
+ * transação curta só dela, com a trava do e-mail: se o resto falhar, ela fica, e um e-mail é sempre
+ * UM cliente. Se a ficha já virou conta, quem diz é a decisão (`fichaComConta`).
  */
 async function fichaDoEmail(email: string, pedido: AssinarSemLoginInput, opcoes: OpcoesDoVisitante): Promise<Ficha | "ocupada" | "ja-tem-conta" | { espera: number }> {
+  // A que já existe volta como está — inclusive a que já virou conta: quem decide isso é a decisão,
+  // com a trava (`fichaComConta`), num lugar só.
+  const guardada = await prisma.guestCheckout.findUnique({ where: { email }, select: { id: true, stripeCustomerId: true } });
+  if (guardada) return { ...guardada, nova: false };
   return prisma.$transaction(async (tx): Promise<Ficha | "ocupada" | "ja-tem-conta" | { espera: number }> => {
     if (!(await travarSeLivre(tx, email))) return "ocupada";
     if (await temConta(tx, email)) return "ja-tem-conta";
-    const guardada = await tx.guestCheckout.findUnique({ where: { email }, select: { id: true, stripeCustomerId: true } });
-    if (guardada) return { ...guardada, documentoMudou: await acertarNumeroFiscal(guardada.stripeCustomerId, pedido.documento) };
+    // De novo, com a trava: o pedido que a tinha pode ter acabado de criar a ficha.
+    const criada = await tx.guestCheckout.findUnique({ where: { email }, select: { id: true, stripeCustomerId: true } });
+    if (criada) return { ...criada, nova: false };
     // Um e-mail novo é um cliente novo na Stripe: conta no teto do dia do endereço — só agora.
     const espera = opcoes.antesDeCriarCliente ? await opcoes.antesDeCriarCliente() : null;
     if (espera !== null) return { espera };
@@ -86,7 +107,7 @@ async function fichaDoEmail(email: string, pedido: AssinarSemLoginInput, opcoes:
     const cliente = await criarClienteDoVisitante({ pedido: id, email, documento: pedido.documento });
     await tx.guestCheckout.create({ data: { id, email, stripeCustomerId: cliente.id, livemode: cliente.livemode } });
     console.info(`[stripe] visitante: ficha ${id} criada, cliente ${cliente.id}`);
-    return { id, stripeCustomerId: cliente.id, documentoMudou: false };
+    return { id, stripeCustomerId: cliente.id, nova: true };
   }, TEMPO_DA_FICHA);
 }
 
@@ -114,6 +135,74 @@ async function sincronizarAViva(email: string, assinaturaId: string): Promise<De
   return { resultado: "ja-tem-conta" };
 }
 
+/** A decisão, COM a trava do e-mail: o que a Stripe diz do cliente, o número fiscal, e a tentativa. */
+async function decidir(email: string, pedido: AssinarSemLoginInput, ficha: Ficha, precoId: string, codigoId: string | null, acaba: boolean): Promise<NaTrava> {
+  return prisma.$transaction(async (tx): Promise<NaTrava> => {
+    if (!(await travarSeLivre(tx, email))) return { resultado: "ocupada" };
+    // De novo, com a trava e pela MESMA ligação: a conta pode ter nascido no meio.
+    if ((await temConta(tx, email)) || (await fichaComConta(tx, ficha.id))) return { resultado: "ja-tem-conta" };
+
+    const existentes = (await assinaturasDoCliente(ficha.stripeCustomerId)).filter((a) => !ENCERRADAS.has(a.status));
+    // Viva: alguém já pagou. Nada aqui mexe no cliente dela — nem o número fiscal.
+    const viva = existentes.find((a) => a.status !== "incomplete");
+    if (viva) return { resultado: "viva-na-stripe", assinaturaId: viva.id };
+
+    // O número fiscal desta tentativa, agora — com a trava, e antes de a assinatura (e a primeira
+    // fatura dela) nascer. A ficha nova já nasceu com ele.
+    const documentoMudou = ficha.nova ? false : await acertarNumeroFiscal(ficha.stripeCustomerId, pedido.documento);
+
+    let assinatura: AssinaturaNoCheckout | null = null;
+    for (const incompleta of existentes) {
+      // A MESMA: o código da tentativa que ESTE navegador recebeu, o mesmo preço, o mesmo código
+      // promocional, o mesmo número fiscal (a fatura dela leva o número de quando nasceu) — e um
+      // pagamento que a Stripe ainda aceita.
+      const aMesma =
+        typeof pedido.tentativa === "string" &&
+        incompleta.tentativa === pedido.tentativa &&
+        incompleta.precoId === precoId &&
+        incompleta.codigoId === codigoId &&
+        !documentoMudou &&
+        incompleta.pagamentoCancelado !== true &&
+        incompleta.segredoDoPagamento !== null;
+      if (aMesma && !assinatura) {
+        assinatura = incompleta;
+        continue;
+      }
+      const ficou = await cancelarIncompleta(incompleta.id);
+      if (ficou !== "incomplete_expired") {
+        // Ela foi PAGA entre a lista e o cancelamento (outra aba, no mesmo instante): o
+        // cancelamento encerrou uma assinatura paga. Precisa de gente: reembolso ou reativação.
+        console.error(`[stripe] visitante: a assinatura ${incompleta.id} da ficha ${ficha.id} foi cancelada já PAGA (ficou ${ficou}) — conferir no painel`);
+        return { resultado: "ja-tem-conta" };
+      }
+    }
+
+    const reaproveitada = assinatura !== null;
+    const tentativa = reaproveitada && pedido.tentativa ? pedido.tentativa : novaTentativa();
+    assinatura ??= await criarAssinatura({
+      clienteId: ficha.stripeCustomerId,
+      precoId,
+      plano: pedido.plano,
+      codigoId,
+      visitante: { pedido: ficha.id, tentativa, escolha: { novidades: pedido.novidades, origem: pedido.origem ?? null, campanha: pedido.campanha ?? null } },
+    });
+    // A Stripe recusou o desconto na criação (o código esgotou entre a prévia e o clique).
+    if (!assinatura) return { resultado: "codigo-invalido" };
+    // A tentativa nova passa a ser a da ficha: é com o código dela que a tela de depois do pagamento pergunta.
+    if (!reaproveitada) await tx.guestCheckout.update({ where: { id: ficha.id }, data: { tentativa } });
+    console.info(`[stripe] visitante: ficha ${ficha.id}, plano ${pedido.plano} → assinatura ${assinatura.id} (${assinatura.status})${reaproveitada ? ", a mesma tentativa" : ""}`);
+
+    if (assinatura.status === "incomplete" && assinatura.segredoDoPagamento) return { resultado: "pagar", segredo: assinatura.segredoDoPagamento, tipo: "pagamento", tentativa };
+    if (assinatura.status === "active") {
+      // Nada a pagar hoje (o código de 100%). Se o desconto acaba, a cobrança seguinte precisa de
+      // um cartão: o site o guarda agora — a mesma regra do checkout de quem está logado.
+      if (acaba && assinatura.segredoDoCartao) return { resultado: "pagar", segredo: assinatura.segredoDoCartao, tipo: "cartao", tentativa };
+      return { resultado: "ativa", tentativa };
+    }
+    throw new Error(`[stripe] visitante: a assinatura ${assinatura.id} nasceu ${assinatura.status}, sem o que confirmar`);
+  }, TEMPO_DA_TRANSACAO);
+}
+
 export async function assinarComoVisitante(pedido: AssinarSemLoginInput, opcoes: OpcoesDoVisitante = {}): Promise<DesfechoDoVisitante> {
   const email = pedido.email.toLowerCase();
   // Quem já tem conta nem chega à Stripe: a tela avisa e manda entrar (decisão do operador, 21/10/2026).
@@ -125,78 +214,19 @@ export async function assinarComoVisitante(pedido: AssinarSemLoginInput, opcoes:
   if (!preco) throw new Error(`[stripe] plano ${pedido.plano} sem preço`);
   if (pedido.codigo && !codigo) return { resultado: "codigo-invalido" };
   const codigoId = codigo?.id ?? null;
+  const acaba = codigo !== null && codigo.desconto.duracao !== DuracaoDoDesconto.PARA_SEMPRE;
 
-  let ficha: Awaited<ReturnType<typeof fichaDoEmail>>;
+  let decisao: NaTrava;
   try {
-    ficha = await fichaDoEmail(email, pedido, opcoes);
+    const ficha = await fichaDoEmail(email, pedido, opcoes);
+    if (ficha === "ocupada" || ficha === "ja-tem-conta") return { resultado: ficha };
+    if ("espera" in ficha) return { resultado: "muitos-emails-novos", segundos: ficha.espera };
+    decisao = await decidir(email, pedido, ficha, preco.precoId, codigoId, acaba);
   } catch (erro) {
     if (!(erro instanceof DocumentoRecusado)) throw erro;
     console.error(`${erro.message} — conferir o formato do número fiscal na Stripe`);
     return { resultado: "documento-recusado" };
   }
-  if (ficha === "ocupada" || ficha === "ja-tem-conta") return { resultado: ficha };
-  if ("espera" in ficha) return { resultado: "muitos-emails-novos", segundos: ficha.espera };
-  const { id: pedidoId, stripeCustomerId: clienteId, documentoMudou } = ficha;
-
-  const decisao = await prisma.$transaction(async (tx): Promise<NaTrava> => {
-    if (!(await travarSeLivre(tx, email))) return { resultado: "ocupada" };
-    // De novo, com a trava e pela MESMA ligação: a conta pode ter nascido no meio.
-    if (await temConta(tx, email)) return { resultado: "ja-tem-conta" };
-
-    const existentes = (await assinaturasDoCliente(clienteId)).filter((a) => !ENCERRADAS.has(a.status));
-    const viva = existentes.find((a) => a.status !== "incomplete");
-    if (viva) return { resultado: "viva-na-stripe", assinaturaId: viva.id };
-
-    let assinatura: AssinaturaNoCheckout | null = null;
-    for (const incompleta of existentes) {
-      // A MESMA: o código da tentativa que ESTE navegador recebeu, o mesmo preço, o mesmo código
-      // promocional e o mesmo número fiscal (a fatura dela leva o número de quando nasceu).
-      const aMesma =
-        typeof pedido.tentativa === "string" &&
-        incompleta.tentativa === pedido.tentativa &&
-        incompleta.precoId === preco.precoId &&
-        incompleta.codigoId === codigoId &&
-        !documentoMudou &&
-        incompleta.segredoDoPagamento !== null;
-      if (aMesma && !assinatura) {
-        assinatura = incompleta;
-        continue;
-      }
-      const ficou = await cancelarIncompleta(incompleta.id);
-      if (ficou !== "incomplete_expired") {
-        // Ela foi PAGA entre a lista e o cancelamento (outra aba, no mesmo instante): o
-        // cancelamento encerrou uma assinatura paga. Precisa de gente: reembolso ou reativação.
-        console.error(`[stripe] visitante: a assinatura ${incompleta.id} da ficha ${pedidoId} foi cancelada já PAGA (ficou ${ficou}) — conferir no painel`);
-        return { resultado: "ja-tem-conta" };
-      }
-    }
-
-    const reaproveitada = assinatura !== null;
-    const tentativa = reaproveitada && pedido.tentativa ? pedido.tentativa : novaTentativa();
-    assinatura ??= await criarAssinatura({
-      clienteId,
-      precoId: preco.precoId,
-      plano: pedido.plano,
-      codigoId,
-      visitante: { pedido: pedidoId, tentativa, escolha: { novidades: pedido.novidades, origem: pedido.origem ?? null, campanha: pedido.campanha ?? null } },
-    });
-    // A Stripe recusou o desconto na criação (o código esgotou entre a prévia e o clique).
-    if (!assinatura) return { resultado: "codigo-invalido" };
-    // A tentativa nova passa a ser a da ficha: é com o código dela que a tela de depois do pagamento pergunta.
-    if (!reaproveitada) await tx.guestCheckout.update({ where: { id: pedidoId }, data: { tentativa } });
-    console.info(`[stripe] visitante: ficha ${pedidoId}, plano ${pedido.plano} → assinatura ${assinatura.id} (${assinatura.status})${reaproveitada ? ", a mesma tentativa" : ""}`);
-
-    if (assinatura.status === "incomplete" && assinatura.segredoDoPagamento) return { resultado: "pagar", segredo: assinatura.segredoDoPagamento, tipo: "pagamento", tentativa };
-    if (assinatura.status === "active") {
-      // Nada a pagar hoje (o código de 100%). Se o desconto acaba, a cobrança seguinte precisa de
-      // um cartão: o site o guarda agora — a mesma regra do checkout de quem está logado.
-      const acaba = codigo !== null && codigo.desconto.duracao !== DuracaoDoDesconto.PARA_SEMPRE;
-      if (acaba && assinatura.segredoDoCartao) return { resultado: "pagar", segredo: assinatura.segredoDoCartao, tipo: "cartao", tentativa };
-      return { resultado: "ativa", tentativa };
-    }
-    throw new Error(`[stripe] visitante: a assinatura ${assinatura.id} nasceu ${assinatura.status}, sem o que confirmar`);
-  }, TEMPO_DA_TRANSACAO);
-
   return decisao.resultado === "viva-na-stripe" ? sincronizarAViva(email, decisao.assinaturaId) : decisao;
 }
 

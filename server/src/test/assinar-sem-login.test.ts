@@ -33,7 +33,7 @@ import { prisma } from "../lib/prisma.js";
 import { DocumentoRecusado } from "../lib/stripe.js";
 import { sincronizarAssinatura } from "../lib/assinaturas.js";
 import { LIMITES_DO_VISITANTE } from "../lib/limite-de-tentativas.js";
-import { assinaturaSemLoginNoAr } from "../routes/billing-sem-login.js";
+import { ASSINATURAS_SEM_LOGIN_AO_MESMO_TEMPO, assinaturaSemLoginNoAr } from "../routes/billing-sem-login.js";
 
 // ASSINAR SEM LOGIN (Fase 4, etapa 4.7, passo 4 — billing.md → *Assinar sem conta*). O que estes
 // testes protegem — é a fronteira de dinheiro, aberta a quem não entrou:
@@ -168,6 +168,27 @@ describe("fora do ar no site até o dia de abrir (passo 8)", () => {
   });
 });
 
+describe("em produção, sem o endereço de quem pede", () => {
+  // DA REVISÃO DE SEGURANÇA DO PASSO (21/10/2026): com login, o pedido sem `x-real-ip` não conta por
+  // endereço porque o teto da CONTA continua (passo 1). Sem login não há conta: não contar deixaria
+  // as rotas sem limite nenhum. Contam todos juntos, numa contagem só — e o alerta de sempre.
+  it("as rotas sem login contam todos juntos (o 21º pedido de prévia, de quem for, é recusado) — e o alerta sai uma vez", async () => {
+    process.env.NODE_ENV = "production";
+    process.env.ASSINAR_SEM_LOGIN = "true";
+    const alerta = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      const previa = () => request(servidor).post("/api/billing/visitante/previa").send({ plano: "mensal", codigo: "ADIVINHA" });
+      for (let i = 0; i < 20; i++) expect((await previa()).status, `prévia ${i + 1}`).toBe(200);
+      expect((await previa()).status).toBe(429);
+      expect(alerta.mock.calls.filter(([linha]) => String(linha).includes("x-real-ip")).length).toBe(1);
+    } finally {
+      if (antes.NODE_ENV === undefined) delete process.env.NODE_ENV;
+      else process.env.NODE_ENV = antes.NODE_ENV;
+      delete process.env.ASSINAR_SEM_LOGIN;
+    }
+  });
+});
+
 describe("os planos e a prévia, sem login", () => {
   it("os planos: o valor da Stripe e a chave publicável — o código do preço e a chave secreta não saem", async () => {
     const res = await request(servidor).get("/api/billing/visitante/planos");
@@ -240,14 +261,33 @@ describe("assinar sem login — antes da Stripe", () => {
   it("a conta nasce no meio, depois da ficha: 'já tem conta', sem assinatura nova", async () => {
     const email = novoEmail();
     await assinar(pedido(email));
-    acertarNumeroFiscal.mockImplementationOnce(async () => {
+    // A ficha já existe: o que segura agora é a conferência COM a trava, na decisão.
+    buscarPrecos.mockImplementationOnce(async () => {
       await prisma.user.create({ data: { id: `conta-${S}-meio-2`, email } });
-      return false;
+      return PRECOS;
     });
     const res = await assinar(pedido(email));
     expect([res.status, res.body]).toEqual([409, { error: "JaTemConta" }]);
     expect(criarAssinatura).toHaveBeenCalledTimes(1);
     expect(assinaturasDoCliente).toHaveBeenCalledTimes(1);
+  });
+
+  // DA REVISÃO DE SEGURANÇA DO PASSO (21/10/2026): a ficha que já virou conta é tratada como conta,
+  // e não só pelo e-mail — no dia em que a conta puder trocar de e-mail, quem souber o antigo nunca
+  // opera no cliente da Stripe dela.
+  it("a ficha que já virou conta (e a conta trocou de e-mail): 'já tem conta', e nada vai à Stripe", async () => {
+    const email = novoEmail();
+    await assinar(pedido(email));
+    const conta = await prisma.user.create({ data: { id: `conta-${S}-trocou`, email: novoEmail() } });
+    await prisma.guestCheckout.update({ where: { email }, data: { userId: conta.id } });
+    criarAssinatura.mockClear();
+    assinaturasDoCliente.mockClear();
+    acertarNumeroFiscal.mockClear();
+    const res = await assinar(pedido(email, { documento: OUTRO_CPF }));
+    expect([res.status, res.body]).toEqual([409, { error: "JaTemConta" }]);
+    expect(assinaturasDoCliente).not.toHaveBeenCalled();
+    expect(acertarNumeroFiscal).not.toHaveBeenCalled();
+    expect(criarAssinatura).not.toHaveBeenCalled();
   });
 
   it("o código promocional que não vale: 400, e nenhum cliente nasce na Stripe", async () => {
@@ -334,6 +374,32 @@ describe("assinar sem login — a ficha e a tentativa", () => {
     expect(criarClienteDoVisitante).toHaveBeenCalledTimes(1);
   });
 
+  it("o número fiscal só muda COM a trava: depois de conferir que ninguém pagou, e antes de a assinatura nascer", async () => {
+    const email = novoEmail();
+    await assinar(pedido(email));
+    assinaturasDoCliente.mockClear();
+    acertarNumeroFiscal.mockClear();
+    criarAssinatura.mockClear();
+    await assinar(pedido(email, { documento: OUTRO_CPF }));
+    const [lista, numero, criar] = [assinaturasDoCliente, acertarNumeroFiscal, criarAssinatura].map((f) => f.mock.invocationCallOrder[0] ?? 0);
+    expect(lista).toBeGreaterThan(0);
+    expect(numero).toBeGreaterThan(lista);
+    expect(criar).toBeGreaterThan(numero);
+  });
+
+  // A STRIPE CANCELA o pagamento depois de 10 recusas (medido na área restrita, 21/10/2026), e a
+  // tentativa continua aberta: entregar o mesmo segredo prenderia a pessoa num pagamento morto.
+  it("o pagamento que a Stripe cancelou (10 recusas): o novo clique, mesmo com o código, ganha OUTRA tentativa", async () => {
+    const email = novoEmail();
+    const primeiro = await assinar(pedido(email));
+    naStripe = naStripe.map((a) => ({ ...a, pagamentoCancelado: true }));
+    const depois = await assinar(pedido(email, { tentativa: primeiro.body.tentativa }));
+    expect(depois.status).toBe(200);
+    expect(depois.body.segredo).not.toBe(primeiro.body.segredo);
+    expect(depois.body.tentativa).not.toBe(primeiro.body.tentativa);
+    expect(cancelarIncompleta).toHaveBeenCalledTimes(1);
+  });
+
   it("o código de 100% para sempre: a assinatura já nasce ativa — 'ativa', com o código da tentativa, e nada a pagar", async () => {
     criarAssinatura.mockImplementation(async (p) => ({ id: `sub_${S}_cem_${n}`, status: "active", precoId: p.precoId, codigoId: p.codigoId, segredoDoPagamento: null, segredoDoCartao: null }));
     const res = await assinar(pedido(novoEmail(), { codigo: "CORTESIA-K7Q2X9" }));
@@ -364,8 +430,10 @@ describe("assinar sem login — quem já pagou, e os dois cliques", () => {
     naStripe = naStripe.map((a) => ({ ...a, status: "active", segredoDoPagamento: null }));
     buscarAssinatura.mockResolvedValue(paga(sub.id, f));
 
-    const res = await assinar(pedido(email));
+    // Outra pessoa, que sabe o e-mail, manda OUTRO CPF: o número fiscal de quem pagou não muda.
+    const res = await assinar(pedido(email, { documento: OUTRO_CPF }));
     expect([res.status, res.body]).toEqual([409, { error: "JaTemConta" }]);
+    expect(acertarNumeroFiscal).not.toHaveBeenCalled();
     expect(criarAssinatura).toHaveBeenCalledTimes(1);
     expect(cancelarIncompleta).not.toHaveBeenCalled();
     // A conta NASCEU (e não só "nada aconteceu"): ela existe, e o espelho é dela.
@@ -400,6 +468,32 @@ describe("assinar sem login — quem já pagou, e os dois cliques", () => {
     expect(depois.body.segredo).toBe(a.body.segredo);
     expect(criarAssinatura).toHaveBeenCalledTimes(1);
     expect(criarClienteDoVisitante).toHaveBeenCalledTimes(1);
+  });
+
+  it(`no máximo ${ASSINATURAS_SEM_LOGIN_AO_MESMO_TEMPO} em andamento, somando todos os endereços: o seguinte ouve 'ocupada' na hora, sem ir à Stripe nem abrir transação`, async () => {
+    expect(ASSINATURAS_SEM_LOGIN_AO_MESMO_TEMPO).toBe(3);
+    let soltar!: () => void;
+    const segura = new Promise<void>((ok) => (soltar = ok));
+    let entraram = 0;
+    let todos!: () => void;
+    const cheios = new Promise<void>((ok) => (todos = ok));
+    // Os três primeiros ficam PARADOS na primeira ida à Stripe (os preços).
+    buscarPrecos.mockImplementation(async () => {
+      if (++entraram === 3) todos();
+      await segura;
+      return PRECOS;
+    });
+    const parados = [1, 2, 3].map((i) => assinar(pedido(novoEmail()), `198.51.100.${80 + i}`).then((res) => res));
+    await cheios;
+    const quarto = await assinar(pedido(novoEmail()), "198.51.100.89");
+    expect([quarto.status, quarto.body]).toEqual([409, { error: "Ocupada" }]);
+    expect(Number(quarto.headers["retry-after"])).toBeGreaterThan(0);
+    expect(buscarPrecos).toHaveBeenCalledTimes(3);
+    soltar();
+    expect((await Promise.all(parados)).map((r) => r.status)).toEqual([200, 200, 200]);
+    // Terminados, a vaga volta.
+    buscarPrecos.mockResolvedValue(PRECOS);
+    expect((await assinar(pedido(novoEmail()), "198.51.100.89")).status).toBe(200);
   });
 
   it("o e-mail ocupado (outro pedido dele assinando): 409 'ocupada' na hora, e NADA vai à Stripe — com a ficha ainda por criar e com a ficha já criada", async () => {
@@ -473,12 +567,23 @@ describe("o pagamento já valeu? — sem login", () => {
 });
 
 describe("os limites sem login", () => {
-  it("por E-MAIL: o 6º pedido em 15 minutos é recusado — e trocar de endereço não escapa", async () => {
+  it("por E-MAIL, no mesmo endereço: o 6º pedido em 15 minutos é recusado — maiúsculas e espaços contam junto", async () => {
     const email = novoEmail();
-    for (let i = 0; i < 5; i++) expect((await assinar(pedido(email), `198.51.100.${40 + i}`)).status, `pedido ${i + 1}`).toBe(200);
-    const recusa = await assinar(pedido(email), "198.51.100.99");
+    const grafias = [email, email.toUpperCase(), ` ${email} `, email.replace("visitante", "VISITANTE"), `\t${email}`];
+    for (let i = 0; i < 5; i++) expect((await assinar(pedido(grafias[i] ?? email), "198.51.100.40")).status, `pedido ${i + 1}`).toBe(200);
+    const recusa = await assinar(pedido(email.toUpperCase()), "198.51.100.40");
     expect([recusa.status, recusa.body]).toEqual([429, { error: "MuitasTentativas" }]);
     expect(Number(recusa.headers["retry-after"])).toBeGreaterThan(0);
+  });
+
+  // DA REVISÃO DE SEGURANÇA DO PASSO (21/10/2026): contado só pelo e-mail, quem soubesse o de alguém
+  // o trancaria de qualquer lugar, com pedidos de propósito. Com o endereço junto, trancar exige estar
+  // no endereço da pessoa.
+  it("pedidos de propósito com o e-mail de outra pessoa, de outro endereço, NÃO trancam esse e-mail para ela", async () => {
+    const vitima = novoEmail();
+    for (let i = 0; i < 6; i++) await assinar({ email: vitima }, "198.51.100.41");
+    expect((await assinar({ email: vitima }, "198.51.100.41")).status).toBe(429);
+    expect((await assinar(pedido(vitima), "198.51.100.42")).status).toBe(200);
   });
 
   it("por ENDEREÇO: e-mails diferentes do mesmo endereço param juntos no 11º pedido; de outro endereço, passa", async () => {
@@ -488,7 +593,7 @@ describe("os limites sem login", () => {
     expect((await assinar(pedido(novoEmail()), "198.51.100.51")).status).toBe(200);
   });
 
-  it("os E-MAILS NOVOS do dia (10 por endereço): contam clientes criados, nunca pedidos — quem erra o CPF ou volta com o mesmo e-mail não gasta nada", async () => {
+  it("os E-MAILS NOVOS do dia (10 por endereço): contam clientes criados, nunca pedidos — quem erra o CPF ou volta com o mesmo e-mail não gasta nada; cheio, a recusa é a mesma para todos", async () => {
     expect(LIMITES_DO_VISITANTE.emailsNovosPorDia).toBe(10);
     vi.useFakeTimers({ toFake: ["Date"], now: Date.now() });
     const endereco = "198.51.100.60";
@@ -507,9 +612,30 @@ describe("os limites sem login", () => {
     expect([recusa.status, recusa.body]).toEqual([429, { error: "MuitasTentativas" }]);
     expect(Number(recusa.headers["retry-after"])).toBeGreaterThan(15 * 60);
     expect(await ficha(decimoPrimeiro)).toBeNull();
-    // Um e-mail que JÁ tem ficha, do mesmo endereço: não cria cliente — passa.
-    expect((await assinar(pedido(emails[0] ?? ""), endereco)).status).toBe(200);
+    // Um e-mail que JÁ tem ficha, do mesmo endereço: a MESMA recusa — recusar só o novo diria a quem
+    // sonda que aquele e-mail começou uma assinatura (achado da revisão de segurança do passo).
+    const comFicha = await assinar(pedido(emails[0] ?? ""), endereco);
+    expect([comFicha.status, comFicha.body]).toEqual([429, { error: "MuitasTentativas" }]);
     expect(criarClienteDoVisitante).toHaveBeenCalledTimes(10);
+    // De outro endereço, o mesmo e-mail com ficha segue: quem parou foi o dia do endereço.
+    expect((await assinar(pedido(emails[0] ?? ""), "198.51.100.61")).status).toBe(200);
+  });
+
+  it("o assinar que traz código conta no MESMO teto do dia da prévia (40 conferências por endereço, não 80)", async () => {
+    vi.useFakeTimers({ toFake: ["Date"], now: Date.now() });
+    const endereco = "198.51.100.75";
+    const previa = () => request(servidor).post("/api/billing/visitante/previa").set("x-real-ip", endereco).send({ plano: "mensal", codigo: "ADIVINHA" });
+    for (let i = 0; i < 20; i++) expect((await previa()).status, `prévia ${i + 1}`).toBe(200);
+    vi.setSystemTime(Date.now() + 16 * 60_000);
+    for (let i = 0; i < 15; i++) expect((await previa()).status, `prévia ${21 + i}`).toBe(200);
+    const comCodigo = Array.from({ length: 6 }, novoEmail);
+    for (let i = 0; i < 5; i++) expect((await assinar(pedido(comCodigo[i] ?? "", { codigo: "ADIVINHA" }), endereco)).status, `assinar com código ${i + 1}`).toBe(200);
+    // 35 prévias + 5 assinar com código = 40: o dia acabou para conferir código — nas duas rotas.
+    vi.setSystemTime(Date.now() + 16 * 60_000);
+    expect((await assinar(pedido(comCodigo[5] ?? "", { codigo: "ADIVINHA" }), endereco)).status).toBe(429);
+    expect((await previa()).status).toBe(429);
+    // Sem código, assinar não confere código nenhum: segue.
+    expect((await assinar(pedido(comCodigo[0] ?? ""), endereco)).status).toBe(200);
   });
 
   it("a PRÉVIA do código: 20 a cada 15 minutos e 40 POR DIA por endereço (decisão do operador, 21/10/2026)", async () => {

@@ -215,7 +215,12 @@
 > servidor e 9 de tela).*
 > **Na `dev`, ainda NÃO publicado (21/10/2026):** a **etapa 4.7, passo 3** — o balcão de e-mail
 > (Resend) e o modelo do e-mail. Nada o chama ainda, então não muda nada para o aluno; o logo do
-> e-mail (`/img/Logomarca-email.png`) só existe no site depois da próxima publicação.
+> e-mail (`/img/Logomarca-email.png`) só existe no site depois da próxima publicação. **E o passo
+> 4** — a ficha de espera e a conta que nasce no pagamento (a migration
+> `20261021120000_ficha_de_espera_do_visitante`, já aplicada no banco do dev; o pre-deploy a aplica
+> em produção na publicação) e as rotas para assinar sem login, **que no site ficam fora do ar até
+> o operador ligar `ASSINAR_SEM_LOGIN=true`** (passo 8). Publicado sozinho, também não muda nada
+> para o aluno.
 > **PUBLICADO em 19/10/2026 (`main` = `1ee7c0c`, CI verde nos dois jobs, deploy ok; sem
 > migration; ordem do operador: "publica"):** o **passo 6 da etapa 4.6c** (os documentos num
 > idioma só; saíram o `idiomas.md` e o script da revisão do inglês; a legenda do Bunny só aceita
@@ -4423,7 +4428,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
               quarentena (`CAT:HPHISH`, com SPF, DKIM, DMARC e compauth todos `pass`);
               mail-tester **10/10**. **A configuração está certa; o que falta é reputação do
               domínio novo** → passo 8.
-      - [ ] **Passo 4 — A conta nasce no pagamento (servidor, ALTO RISCO).** A rota pública que
+      - [x] **Passo 4 — A conta nasce no pagamento (servidor, ALTO RISCO).** A rota pública que
             recebe e-mail + plano + código; o aviso da Stripe cria a conta (o cadastro continua
             fechado), liga o cliente da Stripe, grava o espelho e a origem (UTM). Os casos: o
             e-mail já tem conta, o pagamento abandonado, o aviso repetido. Revisão de segurança
@@ -4507,8 +4512,47 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                   reprovaram** — uma delas (a viva sem sincronizar) passou na primeira rodada e
                   mostrou um teste que comparava dois vazios; ele e dois iguais da parte A foram
                   reforçados, e ela passou a reprovar.
-            - [ ] **Parte C — a prova na área restrita, a revisão de segurança e os documentos.**
+            - [x] **Parte C — a prova na área restrita, a revisão de segurança e os documentos.**
+                  FEITA (21/10/2026), no `dev`. **A prova** (roteiro fora do repositório, chave de
+                  teste, clientes descartáveis apagados no fim): a Stripe aceita o CPF e o CNPJ com
+                  ou sem pontuação, **inclusive o CNPJ com letras**, aceita CPF com o dígito errado
+                  (o dígito só a nossa conferência pega) e recusa o que não tem forma de número; o
+                  fluxo inteiro passou com as funções de verdade (a ficha, reaproveitar com o código,
+                  outra tentativa sem ele, o CPF trocado na primeira fatura, pagar com o cartão de
+                  teste, a conta nascendo sem senha, o gate, o "já valeu?", o mesmo e-mail depois →
+                  já tem conta). **Medido também:** a Stripe CANCELA o pagamento depois de 10 recusas
+                  — o servidor não acrescenta teto seu, e o checkout sem login nunca reaproveita o
+                  pagamento morto. **A revisão de segurança** (`security-vulnerability-reviewer`,
+                  sobre as partes A e B): nenhum P0; **o P1 corrigido** (no máximo 3 "assinar sem
+                  login" em andamento: cada um segurava uma ligação do banco enquanto a Stripe
+                  respondia, sem teto nenhum); **sete P2 corrigidos** (o número fiscal só muda com a
+                  trava e depois de conferir que ninguém pagou · o limite por e-mail conta com o
+                  endereço · o assinar com código no mesmo teto do dia da prévia · sem endereço em
+                  produção, todos juntos · a mesma recusa com os e-mails novos esgotados · a ficha
+                  que virou conta é conta · o teste das grafias do e-mail); **com destino:** a cota
+                  da Stripe sob ataque (`billing.md` → *Assinar sem conta*, com gatilho), o RLS no
+                  banco de produção e o caixa de ligações (passo 8), as notas do e-mail (passo 5).
+                  Detalhe: `billing.md` → *Assinar sem conta* e *Limite de tentativas*. **Testes
+                  novos da revisão:** 11 de rota e 1 da leitura da Stripe. **Mutação: 13 rodadas nas
+                  correções; duas passaram e mostraram a mesma conferência em dois lugares** — ficou
+                  num lugar só, o da trava, e a mutação dela reprova. **Achado FORA do passo,
+                  reportado ao operador:** o pagamento morto (10 recusas) também prenderia quem
+                  assina LOGADO (`checkout.ts`, desde a 4.2) até trocar de plano ou a tentativa
+                  vencer. `Docs check (context7): Stripe → /websites/stripe → o número fiscal do
+                  cliente (tax_id_data; a Stripe só confere o formato) e o teto de confirmações de um
+                  pagamento (não documentado; medido) · Better Auth → /better-auth/better-auth →
+                  criar conta pelo servidor com o cadastro fechado, e a troca de senha cria a senha de
+                  quem não tem (conferido também no código da 1.7.5). 3 consultas no passo.`
+                  Gates: typecheck, lint, build; site 902, servidor 1209 (como o CI).
       - [ ] **Passo 5 — "Crie sua senha".** O e-mail com o link e a tela de definir a senha.
+            **Da revisão de segurança do passo 4 (21/10/2026), para este passo:** não depender só
+            do `contaNova` da sincronia — ele sai uma vez, e se o servidor cair entre a gravação e
+            o envio, ninguém recebe o e-mail e nada alerta (a reentrega do aviso já não diz
+            "conta nova") · o link: de uso único e curto, só para o `User.email` lido do banco,
+            enviado depois do commit, nunca no registro · marcar `emailVerified` quando a pessoa
+            criar a senha · o `reset-password` do Better Auth 1.7.5 já cria a conta de senha que
+            falta (`password.mjs:163`) · **as novidades só depois de o e-mail verificado**: quem
+            marcou a caixa foi quem pagou, que pode não ser o dono do e-mail.
             **Pergunta para a abertura:** "Esqueci minha senha", na tela de entrar, usa o mesmo
             mecanismo — entra junto? **Depende dos passos 3 e 4.**
             **Da proposta da tela pública (agente, 12/10/2026):** a tela de definir a senha
@@ -4576,6 +4620,11 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             (Fase 7) e a revisão de segurança da etapa inteira. A publicação é ordem dele.
             **No dia de abrir, o operador liga `ASSINAR_SEM_LOGIN=true` na Railway** (do passo 4,
             21/10/2026): sem ela, as rotas sem login respondem 404 no site, e a tela pública não assina.
+            **Da revisão de segurança do passo 4:** depois de publicar, rodar no banco de produção
+            o SQL de RLS do `CLAUDE.md` (a tabela `guest_checkout` é nova — esperado: zero linhas) ·
+            conferir com o operador o tamanho do caixa de ligações do banco na Railway
+            (`connection_limit` na `DATABASE_URL`, que hoje não tem): é dele que depende quanto
+            os 3 "assinar sem login" em andamento ocupam.
             **Da proposta da tela pública (agente, 12/10/2026):** antes de abrir, também os
             Termos de Uso e a Política de Privacidade no ar (a tela de assinar aponta para os
             dois; hoje são pendência da Fase 7 e a P61) · a **P84** (o cartão promete o JilsonAI
