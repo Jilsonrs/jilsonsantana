@@ -295,7 +295,36 @@ export const pt = {
       emailInvalido: "Informe um e-mail válido.",
       senhaObrigatoria: "Informe sua senha.",
       credenciaisIncorretas: "E-mail ou senha incorretos.",
-      falha: "Não foi possível entrar agora. Tente novamente em alguns minutos."
+      falha: "Não foi possível entrar agora. Tente novamente em alguns minutos.",
+      // O CÓDIGO NO E-MAIL na tela de entrar (etapa 4.7, passo 5 — decisões do operador, 21/10/2026).
+      // RASCUNHO do agente, para o operador revisar. `{minutos}` é a validade do código.
+      esqueciSenha: "Esqueci minha senha",
+      receberCodigo: "Receber código de acesso",
+      enviandoCodigo: "Enviando o código…",
+      codigoEnviado: "Se este e-mail tiver conta, enviamos para ele um código de 6 números. O código vale por {minutos} minutos.",
+      codigo: "Código",
+      codigoInvalido: "Informe os 6 números do código.",
+      codigoRecusado: "Código incorreto ou vencido. Confira os números ou peça outro.",
+      naoChegou: "Não chegou? Confira a caixa de spam.",
+      pedirOutro: "Pedir outro código",
+      outroEnviado: "Enviamos outro código.",
+      entrarComSenha: "Entrar com senha"
+    },
+    // "ESQUECI MINHA SENHA" — a tela do código e da senha nova (etapa 4.7, passo 5). RASCUNHO do
+    // agente, para o operador revisar.
+    senhaNova: {
+      tituloPrefixo: "Senha",
+      tituloEnfase: "Nova",
+      descricao: "Informe o e-mail da sua conta. Enviamos um código para você criar uma senha nova.",
+      enviarCodigo: "Enviar código",
+      senha: "Senha nova",
+      regra: "Pelo menos 8 caracteres.",
+      senhaCurta: "A senha precisa ter pelo menos 8 caracteres.",
+      senhaLonga: "A senha pode ter no máximo 128 caracteres.",
+      senhaVazia: "A senha não pode ser só de espaços.",
+      criar: "Criar senha",
+      criando: "Criando…",
+      voltar: "Voltar para entrar"
     },
     comum: {
       carregando: "Carregando…",

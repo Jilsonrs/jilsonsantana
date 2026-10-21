@@ -42,6 +42,8 @@ import type {
   PlanoMudado,
   TrocaDesfeita,
   TrocaDisponivel,
+  PedirCodigoInput,
+  CodigoPedido,
 } from "@jilson/core";
 
 // Same-origin by design (mirrors auth-client.ts): in dev the Vite proxy
@@ -928,6 +930,15 @@ export async function adminGetMensagensDosCursos(): Promise<MensagensDoCurso[]> 
 
 // ── Assinar (Fase 4, etapa 4.2) ──────────────────────────────────────────────
 // O site diz só QUAL plano e o código promocional: preço, valor e conta são do servidor.
+
+/**
+ * Pede o código de 6 números no e-mail (etapa 4.7, passo 5): para ENTRAR sem senha, ou para criar
+ * uma SENHA nova. A resposta é a mesma exista a conta ou não. Excesso de pedidos: 429 `MuitasTentativas`.
+ */
+export async function pedirCodigo(corpo: PedirCodigoInput): Promise<CodigoPedido> {
+  const { data } = await client.post<CodigoPedido>("/conta/codigo", corpo);
+  return data;
+}
 
 /** Os dois planos com o valor lido da Stripe, a chave publicável e as formas de pagamento. */
 export async function getPlanosDaAssinatura(): Promise<PlanosDaAssinatura> {

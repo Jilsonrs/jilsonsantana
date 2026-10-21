@@ -4610,6 +4610,24 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                   das boas-vindas e 1 do código (a senha curta). **Mutação: 17 de 18 reprovaram**; a
                   que passou é equivalente (a leitura antecipada da marca só poupa consultas — quem
                   impede o segundo envio é a tomada da marca).
+            - [x] **Parte 3 — as telas.** FEITA (21/10/2026), no `dev`. **A tela de entrar**
+                  (`LoginPage`, recomposta: a moldura `MolduraDeAcesso` com as MESMAS classes de
+                  antes, e as formas de entrar em `components/acesso/`): e-mail e senha como antes,
+                  **"Receber código de acesso"** (pede o código para ENTRAR — só com o e-mail válido
+                  —, e o campo da senha dá lugar ao do código, com "Pedir outro código" e "Entrar com
+                  senha") e **"Esqueci minha senha"**, que leva o e-mail já digitado (no estado da
+                  navegação, nunca no endereço). **A tela da senha nova** (`/esqueci-minha-senha`,
+                  `EsqueciMinhaSenhaPage`): o e-mail; depois o código e a senha nova (nunca aparada;
+                  8 a 128, do `core`); criada a senha, a pessoa entra com ela e vai para o Início (se
+                  a entrada não abrir, para a tela de entrar). Quem entra pelo código também começa
+                  do zero (o cache limpo). As falhas: o código recusado (400/403), o excesso (429, a
+                  frase das tentativas) e a queda de rede dizem coisas diferentes. O cliente do
+                  Better Auth ganhou o `emailOTPClient`; pedir o código é pela nossa rota
+                  (`pedirCodigo`). Os textos são **rascunho do agente: P93**. **Testes:** 23 de tela
+                  (`LoginPage.codigo.test.tsx`, `EsqueciMinhaSenhaPage.test.tsx`), e os 22 de antes da
+                  tela de entrar passam sem mudar. **Mutação: 14 de 16 na primeira rodada** — uma é
+                  equivalente (o campo de e-mail do navegador já tira os espaços das pontas) e a outra
+                  mostrou dois testes que achavam a frase da vez anterior; separados, ela reprova.
             **Da revisão de segurança do passo 4 (21/10/2026), para este passo:** não depender só
             do `contaNova` da sincronia — ele sai uma vez, e se o servidor cair entre a gravação e
             o envio, ninguém recebe o e-mail e nada alerta (a reentrega do aviso já não diz
