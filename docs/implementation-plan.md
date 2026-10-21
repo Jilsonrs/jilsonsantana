@@ -4468,6 +4468,25 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             avisa e manda entrar · a prévia do código sem login → teto por dia (40 por endereço) e
             código de 100% difícil de adivinhar · **P88** → aceita qualquer cartão · **P75** → fica
             como decidido em 10/10 (sem bloqueio automático). Registro em `billing.md`.
+            - [x] **Parte A — a ficha de espera e a conta que nasce no pagamento.** FEITA
+                  (21/10/2026), no `dev`. A migration `20261021120000_ficha_de_espera_do_visitante`
+                  (tabela `guest_checkout`, com RLS) — aplicada no banco do dev por `migrate
+                  deploy`, com o Passo 0 conferido antes e depois (2 contas com senha, 5 assinaturas,
+                  1 cliente, 75 sessões; 27 tabelas, nenhuma sem RLS; `migrate diff` sem diferença).
+                  A conta nasce em `pedido-do-visitante.ts`, chamado SÓ pela rotina do espelho, na
+                  transação dele; o aviso registra a conta nova pelo id; a tentativa não paga é
+                  informação, não aviso; a sincronia devolve `contaNova` (o passo 5 manda o e-mail
+                  por ela); o "Conferir na Stripe" do admin confere a ficha do e-mail sem conta.
+                  O como e as limitações: `billing.md` → *Assinar sem conta*. **Testes:** 11 de
+                  servidor (`conta-do-visitante.test.ts`) e 2 da leitura da Stripe. **Mutação: 14 de
+                  14 reprovaram** (sem conferir o pagamento, o cliente, a conta já nascida, o e-mail
+                  com conta; o e-mail sem minúsculas; sem ligar o cliente ou marcar a ficha; as
+                  novidades com qualquer marca; o admin sem a ficha; "aguardando" como aviso;
+                  `contaNova` vazia; nascer admin; o consentimento fixo; o pedido só da assinatura).
+                  Gates: typecheck, lint, build; site 902, servidor 1145 (como o CI, sem chave de
+                  fornecedor).
+            - [ ] **Parte B — as rotas sem login.**
+            - [ ] **Parte C — a prova na área restrita, a revisão de segurança e os documentos.**
       - [ ] **Passo 5 — "Crie sua senha".** O e-mail com o link e a tela de definir a senha.
             **Pergunta para a abertura:** "Esqueci minha senha", na tela de entrar, usa o mesmo
             mecanismo — entra junto? **Depende dos passos 3 e 4.**

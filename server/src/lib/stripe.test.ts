@@ -57,6 +57,27 @@ describe("o espelho a partir da assinatura da Stripe", () => {
     expect([soOId.userId, soOId.clienteId]).toEqual([null, "cus_9"]);
   });
 
+  // A CONTA QUE NASCE NO PAGAMENTO (etapa 4.7, passo 4): o pedido do visitante e o que ele
+  // escolheu vêm da assinatura — a escolha presa à tentativa que foi paga.
+  it("o pedido do visitante: o da assinatura; sem ele, o do cliente; cliente apagado ou só o id, nenhum", () => {
+    expect(paraAssinaturaNaStripe(assinatura({ metadata: { pedido: "p-assinatura" }, cliente: { id: "cus_1", metadata: { pedido: "p-cliente" } } })).pedido).toBe("p-assinatura");
+    expect(paraAssinaturaNaStripe(assinatura({ cliente: { id: "cus_1", metadata: { pedido: "p-cliente" } } })).pedido).toBe("p-cliente");
+    expect(paraAssinaturaNaStripe(assinatura({ cliente: { id: "cus_1", metadata: { pedido: "p" }, deleted: true } })).pedido).toBeNull();
+    expect(paraAssinaturaNaStripe(assinatura({ cliente: "cus_9" })).pedido).toBeNull();
+  });
+
+  it("novidades e origem: só da ASSINATURA, nunca do cliente; novidades só com a marca exata (LGPD: na dúvida, não)", () => {
+    const escolheu = paraAssinaturaNaStripe(assinatura({ metadata: { novidades: "sim", origem: "youtube", campanha: "video-excel" } }));
+    expect(escolheu.doVisitante).toEqual({ novidades: true, origem: "youtube", campanha: "video-excel" });
+    for (const marca of [undefined, "", "nao", "Sim", "true", "1"]) {
+      const metadata: Record<string, string> = marca === undefined ? {} : { novidades: marca };
+      expect(paraAssinaturaNaStripe(assinatura({ metadata })).doVisitante?.novidades).toBe(false);
+    }
+    // O que estiver no CLIENTE não vale: o cliente é do e-mail, e cada tentativa leva a escolha de quem a fez.
+    const doCliente = paraAssinaturaNaStripe(assinatura({ cliente: { id: "cus_1", metadata: { novidades: "sim", origem: "x", campanha: "y" } } }));
+    expect(doCliente.doVisitante).toEqual({ novidades: false, origem: null, campanha: null });
+  });
+
   it("o status vai como a Stripe diz (texto: o gate não quebra com status novo)", () => {
     expect(paraAssinaturaNaStripe(assinatura({ status: "algum_status_novo" })).status).toBe("algum_status_novo");
   });

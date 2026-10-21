@@ -42,12 +42,17 @@ router.post("/stripe/webhook", express.raw({ type: "application/json" }), async 
     const { id, clienteId, status, pagoAte } = desfecho.assinatura;
     const linha = `[stripe] aviso ${aviso.id} (${aviso.tipo}): assinatura ${id} do cliente ${clienteId} (${status}) SEM CONTA — ${desfecho.motivo}`;
     if (assinaturaDaAcesso({ status, currentPeriodEnd: pagoAte })) console.error(`${linha}; ela dá acesso: o assinante está trancado fora`);
+    // A tentativa do visitante que ainda não foi paga (etapa 4.7, passo 4): o normal de toda
+    // assinatura dele até o pagamento passar — a conta nasce no aviso seguinte. Não é aviso.
+    else if (desfecho.motivo === "aguardando o pagamento") console.info(linha);
     else console.warn(linha);
   } else {
     const qual = "assinatura" in desfecho ? ` — assinatura ${desfecho.assinatura.id} (${desfecho.assinatura.status})` : "";
     // A conta tinha acesso e deixou de ter: as sessões dela caíram junto (etapa 4.4).
     const caiu = desfecho.resultado === "atualizada" && desfecho.perdeuAcesso ? "; a conta perdeu o acesso: sessões encerradas" : "";
-    console.info(`[stripe] aviso ${aviso.id} (${aviso.tipo}): ${desfecho.resultado}${qual}${caiu}`);
+    // A conta do visitante nasceu agora, do pagamento (etapa 4.7, passo 4) — o id, nunca o e-mail.
+    const nasceu = desfecho.resultado === "atualizada" && desfecho.contaNova ? `; a conta ${desfecho.contaNova} nasceu da ficha ${desfecho.assinatura.pedido ?? "?"}` : "";
+    console.info(`[stripe] aviso ${aviso.id} (${aviso.tipo}): ${desfecho.resultado}${qual}${caiu}${nasceu}`);
   }
   res.json({ recebido: true });
 });

@@ -3,6 +3,7 @@ import { prisma } from "./prisma.js";
 import { cobrancaAtrasada, temAcessoAtivo } from "./acesso.js";
 import { AssinaturaNaoEncontrada, assinaturasDoCliente, buscarAssinatura, type AssinaturaNaStripe, type AvisoDaStripe } from "./stripe.js";
 import { assinaturaDoPagamento } from "./stripe-reembolso.js";
+import { contaDoPedido, type SemContaDoVisitante } from "./pedido-do-visitante.js";
 
 // O ESPELHO DA ASSINATURA (Fase 4, etapa 4.1 — CLAUDE.md → Membership Gating). A assinatura da
 // Stripe é a CANÔNICA; a nossa é o espelho que o gate (`temAcessoAtivo()`) lê. Cada aviso:
@@ -20,9 +21,10 @@ import { assinaturaDoPagamento } from "./stripe-reembolso.js";
 //      fica marcado, a rota responde 5xx e a Stripe entrega de novo — é ela quem insiste (sem
 //      fila nossa, CLAUDE.md → Background Jobs).
 // A assinatura se liga à conta pelo `userId` que o NOSSO checkout grava na Stripe (etapa 4.2).
-// Sem ele, e sem espelho anterior, o aviso fica registrado e o espelho não nasce — e a rota
-// registra o caso em voz alta (o visitante que assina sem conta é a etapa 4.7). O dono de um
-// espelho nunca muda.
+// A do VISITANTE, que assinou sem conta, leva a ficha de espera dele (`metadata.pedido`), e é aqui,
+// na mesma transação do espelho, que a conta NASCE quando o pagamento passa (etapa 4.7, passo 4 —
+// `pedido-do-visitante.ts`). Sem nenhum dos dois, e sem espelho anterior, o aviso fica registrado e
+// o espelho não nasce — e a rota registra o caso em voz alta. O dono de um espelho nunca muda.
 //
 // A SINCRONIA É UMA ROTINA SÓ (etapa 4.4, 10/10/2026): o aviso, o checkout (a Stripe diz que há
 // assinatura e o espelho não dá acesso) e o admin (o aviso que se perdeu) passam todos por
@@ -42,10 +44,18 @@ import { assinaturaDoPagamento } from "./stripe-reembolso.js";
 // a assinatura se acha pelo pagamento, e daí em diante é a sincronia de sempre — é o que faz o
 // reembolso dado direto no painel da Stripe também cortar o acesso.
 
-/** O que a sincronia fez com o espelho de UMA assinatura. */
+/** Por que o espelho não nasceu: a Stripe não diz de quem é a assinatura, ou diz alguém que não tem conta. */
+export type MotivoSemConta = "sem userId" | "conta inexistente" | SemContaDoVisitante;
+
+/**
+ * O que a sincronia fez com o espelho de UMA assinatura. `contaNova`: o id da conta do visitante
+ * que NASCEU nesta gravação (etapa 4.7, passo 4), ou nada — quem chama manda o e-mail de criar a
+ * senha DEPOIS de a transação terminar (CLAUDE.md → Membership Gating: e-mail nunca dentro de
+ * transação nem de trava), com o endereço lido do NOSSO banco por este id.
+ */
 export type Sincronia =
-  | { resultado: "atualizada"; assinatura: AssinaturaNaStripe; perdeuAcesso: boolean }
-  | { resultado: "sem-conta"; assinatura: AssinaturaNaStripe; motivo: "sem userId" | "conta inexistente" };
+  | { resultado: "atualizada"; assinatura: AssinaturaNaStripe; perdeuAcesso: boolean; contaNova: string | null }
+  | { resultado: "sem-conta"; assinatura: AssinaturaNaStripe; motivo: MotivoSemConta };
 
 export type Desfecho = { resultado: "repetido" } | { resultado: "sem-assinatura" } | Sincronia;
 
@@ -85,15 +95,15 @@ async function sincronizar(tx: Prisma.TransactionClient, assinaturaId: string, {
   const continuaAtrasada = espelho !== null && cobrancaAtrasada(espelho) && cobrancaAtrasada(naStripe);
   const desde = continuaAtrasada && espelho.currentPeriodEnd && naStripe.pagoAte && espelho.currentPeriodEnd < naStripe.pagoAte ? espelho.currentPeriodEnd : naStripe.pagoAte;
   const agora: AssinaturaNaStripe = { ...naStripe, pagoAte: desde };
-  const conta = !espelho && agora.userId ? await tx.user.findUnique({ where: { id: agora.userId }, select: { id: true } }) : null;
   // O dono de um espelho nunca muda: vale o que já está gravado, mesmo se a Stripe disser outro.
-  const dono = espelho ? espelho.ownerUserId : (conta?.id ?? null);
+  const quem = espelho ? { dono: espelho.ownerUserId, contaNova: null } : await donoDaAssinaturaNova(tx, agora);
+  if ("motivo" in quem) return { resultado: "sem-conta", assinatura: agora, motivo: quem.motivo };
+  const { dono, contaNova } = quem;
   const dados = { status: agora.status, currentPeriodEnd: agora.pagoAte, stripeCustomerId: agora.clienteId, livemode: agora.livemode };
   const tinhaAcesso = dono !== null && (await temAcessoAtivo(dono, tx));
 
   if (espelho) await tx.subscription.update({ where: { id: espelho.id }, data: dados });
-  else if (conta) await tx.subscription.create({ data: { ...dados, stripeSubscriptionId: agora.id, ownerUserId: conta.id } });
-  else return { resultado: "sem-conta", assinatura: agora, motivo: agora.userId ? "conta inexistente" : "sem userId" };
+  else await tx.subscription.create({ data: { ...dados, stripeSubscriptionId: agora.id, ownerUserId: dono } });
 
   // O acesso de depois se lê pela TRANSAÇÃO (a gravação acima ainda não está no banco para mais
   // ninguém), e pela conta inteira: outra assinatura dela que ainda dê acesso segura a sessão.
@@ -101,7 +111,24 @@ async function sincronizar(tx: Prisma.TransactionClient, assinaturaId: string, {
   // que no Prisma apagaria as sessões de todo mundo.
   const perdeuAcesso = dono !== null && tinhaAcesso && !(await temAcessoAtivo(dono, tx));
   if (perdeuAcesso && dono !== null && !manterSessao) await tx.session.deleteMany({ where: { userId: dono } });
-  return { resultado: "atualizada", assinatura: agora, perdeuAcesso };
+  return { resultado: "atualizada", assinatura: agora, perdeuAcesso, contaNova };
+}
+
+/**
+ * O dono de uma assinatura que AINDA NÃO TEM espelho: a conta que o nosso checkout gravou nela
+ * (`userId`); senão, a da ficha do visitante — que NASCE aqui, na transação do espelho, quando o
+ * pagamento passou (`pedido-do-visitante.ts`); senão, ninguém (o motivo vai para o registro).
+ */
+async function donoDaAssinaturaNova(tx: Prisma.TransactionClient, agora: AssinaturaNaStripe): Promise<{ dono: string; contaNova: string | null } | { motivo: MotivoSemConta }> {
+  if (agora.userId) {
+    const conta = await tx.user.findUnique({ where: { id: agora.userId }, select: { id: true } });
+    return conta ? { dono: conta.id, contaNova: null } : { motivo: "conta inexistente" };
+  }
+  if (agora.pedido) {
+    const doPedido = await contaDoPedido(tx, agora.pedido, agora);
+    return "motivo" in doPedido ? doPedido : { dono: doPedido.id, contaNova: doPedido.nova ? doPedido.id : null };
+  }
+  return { motivo: "sem userId" };
 }
 
 export async function processarAviso(aviso: AvisoDaStripe): Promise<Desfecho> {
@@ -234,10 +261,27 @@ export async function sincronizarConta(userId: string): Promise<Conferida[]> {
     prisma.subscription.findMany({ where: { ownerUserId: userId }, select: { stripeSubscriptionId: true }, orderBy: { id: "asc" } }),
   ]);
   const naStripe = cliente ? await assinaturasDoCliente(cliente.stripeCustomerId) : [];
-  const ids = [...new Set([...naStripe.map((a) => a.id), ...noEspelho.map((a) => a.stripeSubscriptionId)])];
+  return conferirUmaAUma([...naStripe.map((a) => a.id), ...noEspelho.map((a) => a.stripeSubscriptionId)]);
+}
 
+/**
+ * A SINCRONIA DE UMA FICHA DE ESPERA (etapa 4.7, passo 4): o mesmo "Conferir na Stripe" do admin,
+ * com o e-mail de quem pagou SEM CONTA e ficou sem ela — o aviso da Stripe se perdeu, e não há
+ * conta para `sincronizarConta` achar. Confere, pela rotina de sempre, as assinaturas que a Stripe
+ * lista para o cliente da ficha: se o pagamento passou, a conta NASCE ali. Sem ficha para este
+ * e-mail (já em minúsculas): nada.
+ */
+export async function sincronizarPedido(email: string): Promise<Conferida[] | null> {
+  if (typeof email !== "string" || email.length === 0) throw new Error("[stripe] sincronia de ficha sem o e-mail");
+  const pedido = await prisma.guestCheckout.findUnique({ where: { email }, select: { stripeCustomerId: true } });
+  if (!pedido) return null;
+  return conferirUmaAUma((await assinaturasDoCliente(pedido.stripeCustomerId)).map((a) => a.id));
+}
+
+/** Cada assinatura pela rotina de sempre; a que a Stripe não conhece é relatada, e qualquer outra falha sobe. */
+async function conferirUmaAUma(assinaturas: string[]): Promise<Conferida[]> {
   const conferidas: Conferida[] = [];
-  for (const id of ids) {
+  for (const id of new Set(assinaturas)) {
     try {
       conferidas.push({ id, ...(await sincronizarAssinatura(id)) });
     } catch (erro) {

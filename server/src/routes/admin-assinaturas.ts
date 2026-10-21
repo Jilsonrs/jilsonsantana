@@ -5,7 +5,7 @@ import { validate } from "../lib/http.js";
 import { prisma } from "../lib/prisma.js";
 import { cobrancaConfigurada } from "../lib/stripe.js";
 import { temAcessoAtivo } from "../lib/acesso.js";
-import { sincronizarConta } from "../lib/assinaturas.js";
+import { sincronizarConta, sincronizarPedido, type Conferida } from "../lib/assinaturas.js";
 
 // FORÇAR A SINCRONIA COM A STRIPE (Fase 4, etapa 4.4 — billing.md; CLAUDE.md → Membership Gating,
 // "Force-sync"). É a RECUPERAÇÃO de quando um aviso da Stripe se perde: o assinante pagando e
@@ -31,12 +31,23 @@ router.post("/admin/assinaturas/sincronizar", requireAdmin, async (req, res) => 
   // e-mail assim). A busca "sem diferenciar maiúsculas" do banco NÃO serve: nela o "_" vale por
   // qualquer caractere, e um e-mail parecido conferiria a conta de outra pessoa (achado da
   // revisão de segurança da etapa 4.4, medido).
-  const conta = await prisma.user.findUnique({ where: { email: corpo.email.toLowerCase() }, select: { id: true } });
-  if (!conta) {
-    res.status(404).json({ error: "ContaNaoEncontrada" });
-    return;
+  const email = corpo.email.toLowerCase();
+  let conta = await prisma.user.findUnique({ where: { email }, select: { id: true } });
+  let conferidas: Conferida[];
+  if (conta) conferidas = await sincronizarConta(conta.id);
+  else {
+    // QUEM PAGOU SEM CONTA e ficou sem ela (etapa 4.7, passo 4): o aviso da Stripe se perdeu, e a
+    // conta só nasce na sincronia. Confere a ficha de espera deste e-mail — se o pagamento passou,
+    // a conta nasce aqui. Sem ficha, ou sem pagamento, continua não existindo conta com o e-mail.
+    const daFicha = await sincronizarPedido(email);
+    conta = daFicha ? await prisma.user.findUnique({ where: { email }, select: { id: true } }) : null;
+    if (!daFicha || !conta) {
+      if (daFicha) console.info(`[stripe] sincronia pelo admin ${req.user?.id}: a ficha de espera conferida segue sem conta → ${daFicha.map((a) => `${a.id} ${a.resultado}`).join(", ") || "nenhuma assinatura"}`);
+      res.status(404).json({ error: "ContaNaoEncontrada" });
+      return;
+    }
+    conferidas = daFicha;
   }
-  const conferidas = await sincronizarConta(conta.id);
   const temAcesso = await temAcessoAtivo(conta.id);
   const resumo = conferidas.map((a) => `${a.id} ${"assinatura" in a ? `${a.resultado} (${a.assinatura.status})` : a.resultado}`).join(", ") || "nenhuma assinatura";
   console.info(`[stripe] sincronia pelo admin ${req.user?.id}: conta ${conta.id} → ${resumo}; acesso: ${temAcesso ? "sim" : "não"}`);

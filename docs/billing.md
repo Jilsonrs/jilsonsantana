@@ -291,7 +291,9 @@ isso o espelho guarda o **pago até**: última fatura **paga** → o fim do per�
 **começo** dele, que é onde o último período pago terminou. `[FATO — context7 /websites/stripe e os
 tipos da `stripe@23.0.0`, 09/10/2026: o período fica em `items.data[].current_period_end`.]`
 O espelho se recalcula **buscando a assinatura na Stripe a cada aviso** (nunca o retrato do aviso), e
-liga a assinatura à conta pelo `userId` que o NOSSO checkout grava na Stripe.
+liga a assinatura à conta pelo `userId` que o NOSSO checkout grava na Stripe — ou, na do visitante
+que assinou sem conta, pela ficha de espera dele, e a conta nasce ali (etapa 4.7, passo 4: *Assinar
+sem conta*, abaixo).
 
 **As chaves:** `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` e `STRIPE_PUBLISHABLE_KEY` (esta não é
 segredo, mas mora junto: o servidor a entrega ao site, e trocar de ambiente é trocar as variáveis
@@ -616,6 +618,62 @@ confundir quem assina — foi o motivo da decisão de 10/10.*
 - **Topo só com o logo e "Voltar", sem menu** (como a Udemy e o Mosh) — recusado em 12/10/2026:
   a tela leva o menu e o rodapé do site. O gatilho está na decisão, no começo desta seção.
 
+## Assinar sem conta: a conta nasce no pagamento *(Fase 4, etapa 4.7, passo 4 — 21/10/2026)*
+
+**Decisões do operador (21/10/2026):** o plano do passo, em três partes (*"Sim, pode seguir"*) —
+a ficha de espera e a conta que nasce dela; as rotas sem login; a prova e a revisão. As respostas
+da abertura estão nas seções de cada assunto: o e-mail que já tem conta e o cartão de fora (*A tela
+pública de assinar*), o teto da prévia (*Limite de tentativas*), o código de 100% difícil
+(*Códigos promocionais*) e o reembolso repetido (*Reembolso*).
+
+**Convenções de engenharia (como o código faz) — a parte A:**
+- **A FICHA DE ESPERA** (`GuestCheckout`, tabela `guest_checkout`): quem assina sem conta deixa o
+  e-mail, em minúsculas, ligado a UM cliente da Stripe. Uma ficha por e-mail. O CPF ou CNPJ não
+  mora nela: fica no cliente da Stripe. `tentativa` é o código público da tentativa em andamento
+  (parte B). A ficha some com a conta (cascade).
+- **A CONTA NASCE SÓ NA ROTINA DO ESPELHO** (`sincronizar`, `server/src/lib/assinaturas.ts` — a
+  única que grava o espelho), em `server/src/lib/pedido-do-visitante.ts`: a assinatura sem espelho
+  e sem conta que leva a ficha (`metadata.pedido`, da assinatura ou do cliente) ganha a conta da
+  ficha — **na MESMA transação do espelho**, com a trava da assinatura. A conta, a ligação com o
+  cliente da Stripe (`stripe_customer`: uma conta é sempre um cliente), a ficha marcada e o espelho
+  entram juntos ou não entram; se algo falha, a rota do aviso responde 5xx e a Stripe entrega de
+  novo. **Quem a chama:** o aviso da Stripe, o checkout e o "Conferir na Stripe" do admin — os
+  mesmos de sempre.
+- **Só com o PAGAMENTO feito:** a assinatura tem que dar acesso pela regra do GATE
+  (`assinaturaDaAcesso`). A incompleta (a tentativa ainda não paga) não cria conta, e o registro dela
+  é informação, não aviso: é o normal de toda tentativa. O código de 100% ativa a assinatura no
+  clique, e a conta nasce dele (é a cortesia).
+- **A conta nasce:** com o e-mail da ficha em minúsculas (o Better Auth busca assim — com outra
+  grafia, o login nunca a acharia), papel de aluno, sem nome (P83, passo 5), **sem senha** — o login
+  dela responde "e-mail ou senha inválidos", como numa senha errada, até a pessoa criar a senha pelo
+  e-mail (passo 5) — e com o que o visitante escolheu **na tentativa que foi paga**: a caixa de
+  novidades (`marketingConsent`; sem a marca exata, é não) e a origem (`acquisitionSource` e
+  `acquisitionCampaign`, o UTM do primeiro acesso). Essas escolhas vão na `metadata` da ASSINATURA,
+  e não na ficha: cada tentativa leva a escolha de quem a fez. O id da conta sai do gerador do
+  próprio Better Auth (`generateId`).
+- **A ficha só vale para o cliente dela:** a assinatura de outro cliente da Stripe que diga ser da
+  ficha não ganha conta (só o nosso servidor escreve a ficha na Stripe; isto é a segunda trava).
+- **O e-mail que ganhou conta entre a ficha e o pagamento NÃO é ligado à conta que existe:** o
+  espelho não nasce e o registro grita (há alguém pagando sem acesso). A tela recusa antes de ir à
+  Stripe o e-mail que já tem conta (decisão de 21/10), então isto só acontece numa corrida rara.
+- **A sincronia diz qual conta nasceu** (`contaNova`, o id) — só na vez em que ela nasce. É por ela
+  que o passo 5 manda o e-mail de criar a senha, **depois** de a transação terminar.
+- **O aviso que se perdeu:** o "Conferir na Stripe" do admin, com o e-mail de quem pagou e ficou
+  sem conta, confere as assinaturas do cliente da ficha (`sincronizarPedido`) — e a conta nasce ali,
+  se o pagamento passou. Sem pagamento, a tela continua dizendo "Não existe conta com esse e-mail."
+  (que é verdade); nenhuma frase do admin mudou.
+
+**Limitações conhecidas (parte A):**
+- **O e-mail que ganhou conta entre a ficha e o pagamento** precisa de gente: o "Conferir na
+  Stripe" com esse e-mail acha a conta que existe, e não a assinatura da ficha. O destino é o painel
+  de assinaturas (etapa 4.7b → *Paga e sem conta na escola → Ligar a uma conta*); até lá, pelo painel
+  da Stripe (reembolsar, e a pessoa assina logada).
+- **A ficha de quem desistiu fica guardada** (o e-mail aqui; o e-mail e o CPF no cliente da
+  Stripe), sem prazo para sair. *Gatilho: a exclusão de dados a pedido (Fase 7, LGPD) — ela apaga a
+  ficha junto; e, se as fichas sem pagamento passarem de algumas centenas, uma limpeza das antigas.*
+- **A conta apagada com `deletedAt` (exclusão a pedido) continua com o e-mail**, e a tela diria
+  "já tem conta". *Gatilho: a exclusão de conta, quando for construída.*
+
 
 ## Sincronizar e perder o acesso *(Fase 4, etapa 4.4 — 10/10/2026)*
 
@@ -714,6 +772,8 @@ por mais 31 dias, com acesso.
   demorando" até ele chegar, ou até a pessoa voltar à tela de assinar e clicar de novo.
 - **A sincronia do admin olha as últimas 20 assinaturas** do cliente na Stripe.
 - **Assinatura paga sem conta** (a Stripe não diz de quem é) não se resolve por aqui: é a etapa 4.7.
+  *(Para a do VISITANTE, resolvida na etapa 4.7, passo 4: com o e-mail da ficha de espera, a
+  conferência faz a conta nascer — *Assinar sem conta*, acima.)*
 
 **Da revisão de segurança da etapa (10/10/2026) — nenhum bloqueio.** Corrigidos na hora, com
 teste: a busca do admin por e-mail (acima) e a recusa de corpo sem registro. Com destino marcado:

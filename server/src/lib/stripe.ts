@@ -43,12 +43,33 @@ export type AssinaturaNaStripe = {
   /** A conta da escola, que o NOSSO checkout grava na assinatura e no cliente da Stripe. */
   userId: string | null;
   /**
+   * A ficha de espera do VISITANTE (etapa 4.7, passo 4): quem assinou sem conta. É por ela que a
+   * conta nasce quando o pagamento passa (`pedido-do-visitante.ts`). Vazio: não veio de um
+   * visitante (ou a assinatura já tem conta).
+   */
+  pedido?: string | null;
+  /** O que o visitante escolheu NAQUELA tentativa — vai na assinatura, presa à que foi paga. */
+  doVisitante?: DadosDoVisitante;
+  /**
    * Assinatura de verdade (`true`) ou do MODO DE TESTE (`false`). Até o lançamento o site no
    * ar usa as chaves de teste (plano, Fase 4, etapa 4.3); no GO-LIVE, as de teste saem do banco
    * de produção (Fase 7) — senão dariam acesso para sempre (achado P2 da revisão, 09/10/2026).
    */
   livemode: boolean;
 };
+
+/**
+ * O que a assinatura de um VISITANTE carrega para a conta que vai nascer dela (etapa 4.7, passo 4):
+ * a caixa "quero receber novidades" (desmarcada de fábrica — LGPD: sem a marca, é não) e de onde
+ * a pessoa veio (o UTM do primeiro acesso). Vai na assinatura, e não na ficha de espera, porque
+ * cada tentativa leva a escolha de quem a fez: vale a da tentativa que foi PAGA.
+ */
+export type DadosDoVisitante = { novidades: boolean; origem: string | null; campanha: string | null };
+
+/** As chaves desses dados na `metadata` da assinatura — quem escreve (o checkout do visitante) e quem lê usam as mesmas. */
+export const METADADOS_DO_VISITANTE = { pedido: "pedido", tentativa: "tentativa", novidades: "novidades", origem: "origem", campanha: "campanha" } as const;
+/** O valor de "quero receber novidades" marcado. Qualquer outro (ou nenhum) é NÃO. */
+export const NOVIDADES_SIM = "sim";
 
 /** A Stripe está configurada para cobrar? Sem a chave secreta, a tela de assinar não abre. */
 export function cobrancaConfigurada(): boolean {
@@ -366,15 +387,24 @@ export function paraAssinaturaNaStripe(assinatura: Stripe.Subscription, devolvid
   }
   const doCliente = assinatura.customer;
   const clienteId = typeof doCliente === "string" ? doCliente : doCliente.id;
-  const userIdDoCliente = typeof doCliente === "object" && !doCliente.deleted ? doCliente.metadata.userId : undefined;
-  const userId = assinatura.metadata.userId || userIdDoCliente || null;
+  const metadadosDoCliente = typeof doCliente === "object" && !doCliente.deleted ? doCliente.metadata : undefined;
+  const userId = assinatura.metadata.userId || metadadosDoCliente?.userId || null;
+  // A ficha do visitante vai na assinatura e no cliente (etapa 4.7, passo 4): a do cliente cobre a
+  // assinatura que alguém crie para ele no painel da Stripe antes de a conta nascer.
+  const M = METADADOS_DO_VISITANTE;
+  const pedido = assinatura.metadata[M.pedido] || metadadosDoCliente?.[M.pedido] || null;
+  const doVisitante: DadosDoVisitante = {
+    novidades: assinatura.metadata[M.novidades] === NOVIDADES_SIM,
+    origem: assinatura.metadata[M.origem] || null,
+    campanha: assinatura.metadata[M.campanha] || null,
+  };
   // A COBRANÇA PAUSADA vira `paused` no espelho (achado P1 da revisão, 09/10/2026): a Stripe
   // mantém `status: active` durante a pausa (os tipos da `stripe@23.0.0` dizem isso), e o gate
   // libera `active` sem olhar data — seria acesso de graça a pausa inteira. Como `paused`, vale a
   // segunda metade do gate: o acesso vai até o fim do período pago, como a regra já diz
   // ("cobre cancelamento e pausa com uma regra só" — CLAUDE.md → Membership Gating).
   const status = assinatura.pause_collection ? "paused" : assinatura.status;
-  return { id: assinatura.id, status, pagoAte, clienteId, userId, livemode: assinatura.livemode };
+  return { id: assinatura.id, status, pagoAte, clienteId, userId, pedido, doVisitante, livemode: assinatura.livemode };
 }
 
 /**
