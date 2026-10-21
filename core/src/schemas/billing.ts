@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { MOTIVOS_DE_CANCELAMENTO, PLANOS, TAMANHO_DO_COMENTARIO } from "../constants/billing.js";
+import { documentoFiscalSchema } from "./documento-fiscal.js";
 
 /**
  * Corpo de `POST /api/billing/previa` — quanto fica a assinatura com um código promocional
@@ -54,6 +55,47 @@ export type MudarDePlanoInput = z.infer<typeof mudarDePlanoSchema>;
  * o destinatário tem de chegar já limpo.
  */
 export const enderecoDeEmailSchema = z.string().trim().email().max(254);
+
+/**
+ * A origem do visitante (o UTM do primeiro acesso, `utm_source`/`utm_campaign`): NUNCA recusa o
+ * pedido — ela é conveniência de medição, e um valor estranho não pode impedir ninguém de assinar.
+ * Aparada, cortada em 100 caracteres; vazia ou ausente, nada.
+ */
+const campoDeOrigem = z
+  .string()
+  .nullish()
+  .catch(undefined)
+  .transform((valor) => valor?.trim().slice(0, 100) || undefined);
+
+/**
+ * Corpo de `POST /api/billing/visitante/assinatura` — assinar SEM CONTA (Fase 4, etapa 4.7, passo 4
+ * — billing.md → *Assinar sem conta*). O site diz: o e-mail (com ele a conta nasce no pagamento), o
+ * CPF ou CNPJ (obrigatório — conferido pelo dígito e guardado só na Stripe), o plano e o código, a
+ * caixa "quero receber novidades" (desmarcada de fábrica) e a origem. `tentativa`: o código que o
+ * servidor devolveu no clique anterior — com ele, o novo clique segue com a MESMA tentativa (o
+ * cartão recusado e a nova tentativa não criam outra); sem ele, a tentativa anterior deste e-mail é
+ * cancelada e nasce outra. Preço, valor e conta nunca vêm do navegador.
+ */
+export const assinarSemLoginSchema = z.object({
+  email: enderecoDeEmailSchema,
+  documento: documentoFiscalSchema,
+  plano: z.enum(PLANOS),
+  codigo: z.string().trim().min(1).max(64).optional(),
+  novidades: z.boolean(),
+  origem: campoDeOrigem,
+  campanha: campoDeOrigem,
+  tentativa: z.string().trim().min(1).max(64).nullish().catch(undefined),
+});
+export type AssinarSemLoginInput = z.infer<typeof assinarSemLoginSchema>;
+
+/**
+ * Corpo de `POST /api/billing/visitante/confirmacao` — "o pagamento já valeu?", a pergunta da tela de
+ * depois do pagamento, que não tem login. Só o código da tentativa, que só quem a fez recebeu.
+ */
+export const confirmacaoSemLoginSchema = z.object({
+  tentativa: z.string().trim().min(1).max(64),
+});
+export type ConfirmacaoSemLoginInput = z.infer<typeof confirmacaoSemLoginSchema>;
 
 /**
  * Corpo de `POST /api/admin/assinaturas/sincronizar` — o admin força a sincronia de UMA conta com

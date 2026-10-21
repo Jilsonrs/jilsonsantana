@@ -168,7 +168,9 @@ describe("a conta nasce no pagamento", () => {
     const paga = novoId("sub");
     buscarAssinatura.mockResolvedValue(doVisitante(paga, ficha));
     await enviar(avisoDaAssinatura(paga, "customer.subscription.created"));
-    expect((await espelho(paga))?.ownerUserId).toBe((await contaDoEmail(ficha.email))?.id);
+    const nascida = await contaDoEmail(ficha.email);
+    expect(nascida).not.toBeNull();
+    expect((await espelho(paga))?.ownerUserId).toBe(nascida?.id);
   });
 
   it("o aviso repetido e os outros avisos da mesma assinatura: UMA conta só", async () => {
@@ -275,6 +277,7 @@ describe("tudo ou nada", () => {
     await prisma.stripeCustomer.delete({ where: { userId: outra.id } });
     expect((await enviar(aviso)).status).toBe(200);
     const conta = await contaDoEmail(ficha.email);
+    expect(conta).not.toBeNull();
     expect((await espelho(sub))?.ownerUserId).toBe(conta?.id);
   });
 });
@@ -305,6 +308,7 @@ describe("o aviso que se perdeu — o admin confere a ficha", () => {
     expect(res.body.temAcesso).toBe(true);
     expect(assinaturasDoCliente).toHaveBeenCalledWith(pagou.stripeCustomerId);
     const conta = await contaDoEmail(pagou.email);
+    expect(conta).not.toBeNull();
     expect((await espelho(sub))?.ownerUserId).toBe(conta?.id);
   });
 

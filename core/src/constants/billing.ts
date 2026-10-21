@@ -76,6 +76,19 @@ export type SituacaoDaAssinatura = {
 export type AssinaturaCriada = { estado: "ativa" } | { estado: "pagar"; segredo: string; tipo: "pagamento" | "cartao" };
 
 /**
+ * Resposta de `POST /api/billing/visitante/assinatura` — assinar SEM CONTA (etapa 4.7, passo 4). A
+ * mesma da conta logada, e mais a `tentativa`: o código desta tentativa, que o site devolve no
+ * próximo clique (para seguir com ela) e com que a tela de depois do pagamento pergunta se valeu.
+ */
+export type AssinaturaSemLogin = { estado: "ativa"; tentativa: string } | { estado: "pagar"; segredo: string; tipo: "pagamento" | "cartao"; tentativa: string };
+
+/**
+ * Resposta de `POST /api/billing/visitante/confirmacao`: o pagamento desta tentativa já valeu — a
+ * conta nasceu e tem acesso? Só sim ou não: nada sobre a conta, o e-mail ou a assinatura.
+ */
+export type ConfirmacaoSemLogin = { confirmada: boolean };
+
+/**
  * O que a sincronia fez com UMA assinatura (Fase 4, etapa 4.4). `atualizada`: o espelho ficou
  * igual à Stripe. `sem-conta`: a Stripe não diz de que conta ela é (ou diz uma que não existe),
  * e o espelho não nasceu. `nao-encontrada`: a Stripe não conhece esta assinatura — o espelho

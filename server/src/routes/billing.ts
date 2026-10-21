@@ -2,7 +2,9 @@ import { Router } from "express";
 import { assinarSchema, cancelarSchema, mudarDePlanoSchema, previaSchema, type AssinaturaCriada, type CartaoTrocado, type PlanosDaAssinatura, type PreviaDaAssinatura, type PlanoMudado, type ReembolsoFeito, type RenovacaoParada, type SituacaoDaAssinatura, type TrocaDeCartaoPreparada, type TrocaDesfeita, type TrocaDisponivel } from "@jilson/core";
 import { requireAuth } from "../middleware/auth.js";
 import { validate } from "../lib/http.js";
-import { buscarCodigo, buscarPrecos, calcularPrevia, chavePublicavel, cobrancaConfigurada, FORMAS_DE_PAGAMENTO } from "../lib/stripe.js";
+import { cobrancaConfigurada } from "../lib/stripe.js";
+import { lerPlanos, lerPrevia } from "../lib/vitrine-da-assinatura.js";
+import { protecaoDaCobranca } from "../lib/protecao-da-cobranca.js";
 import { atrasadaSemAcesso, convidaAReativar, temAcessoAtivo } from "../lib/acesso.js";
 import { assinar } from "../lib/checkout.js";
 import { desistirDaTroca, lerTrocaDePlano, mudarMeuPlano } from "../lib/meu-plano.js";
@@ -20,38 +22,20 @@ import { limiteDeTentativas } from "../lib/limite-de-tentativas.js";
 
 const router = Router();
 
-// Tudo aqui é por conta — e uma das respostas leva o segredo do pagamento: nada fica em cache
-// (a mesma linha de toda rota por conta do repo; achado da revisão de segurança, 10/10/2026).
-router.use("/billing", (req, res, next) => {
-  res.set("Cache-Control", "private, no-store");
-  // PEDIDO QUE MUDA ALGUMA COISA E VEM DE OUTRO SITE é recusado (achado da revisão de segurança,
-  // 11/10/2026). O cookie da sessão já não viaja nesses pedidos (`sameSite`), e esta é a segunda
-  // trava: cancelar pode encerrar na hora e o reembolso não volta atrás. O navegador diz de onde
-  // o pedido veio (`Sec-Fetch-Site`); o site da escola é sempre a mesma origem.
-  if (req.method !== "GET" && req.get("sec-fetch-site") === "cross-site") {
-    console.warn(`[api] ${req.method} ${req.baseUrl}${req.path} recusado: o pedido veio de outro site`);
-    res.status(403).json({ error: "OutroSite" });
-    return;
-  }
-  next();
-});
+// Nada em cache, e o pedido que muda alguma coisa vindo de outro site é recusado — a mesma
+// proteção das rotas sem login (`lib/protecao-da-cobranca.ts`).
+router.use("/billing", protecaoDaCobranca);
 
 // GET /api/billing/planos — os dois planos com o valor lido da Stripe (o mostrado é o cobrado) e
 // a chave que o site usa para abrir o campo do cartão.
 router.get("/billing/planos", requireAuth, ...limiteDeTentativas.leitura, async (_req, res) => {
-  const chave = chavePublicavel();
-  if (!chave || !cobrancaConfigurada()) {
+  const resposta: PlanosDaAssinatura | null = cobrancaConfigurada() ? await lerPlanos() : null;
+  if (!resposta) {
     // Em voz alta, e sem o valor: a variável pode estar com a chave errada dentro.
     console.error("[stripe] planos recusados: STRIPE_SECRET_KEY ou STRIPE_PUBLISHABLE_KEY ausente ou trocada");
     res.status(503).json({ error: "NaoConfigurado" });
     return;
   }
-  const precos = await buscarPrecos();
-  const resposta: PlanosDaAssinatura = {
-    chavePublicavel: chave,
-    planos: precos.map(({ plano, centavos, moeda }) => ({ plano, centavos, moeda })),
-    formasDePagamento: [...FORMAS_DE_PAGAMENTO],
-  };
   res.json(resposta);
 });
 
@@ -66,16 +50,11 @@ router.post("/billing/previa", requireAuth, ...limiteDeTentativas.acao, async (r
     res.status(503).json({ error: "NaoConfigurado" });
     return;
   }
-  const [precos, codigo] = await Promise.all([buscarPrecos(), buscarCodigo(corpo.codigo)]);
-  // O preço é o do PLANO pedido, achado aqui: o corpo não tem como apontar outro.
-  const preco = precos.find((p) => p.plano === corpo.plano);
-  if (!preco) throw new Error(`[stripe] plano ${corpo.plano} sem preço`);
-  const previa = codigo ? await calcularPrevia(preco.precoId, codigo.id) : null;
-  if (!codigo || !previa) {
+  const resposta: PreviaDaAssinatura | null = await lerPrevia(corpo);
+  if (!resposta) {
     res.status(400).json({ error: "CodigoInvalido" });
     return;
   }
-  const resposta: PreviaDaAssinatura = { centavosHoje: previa.centavosHoje, moeda: previa.moeda, desconto: codigo.desconto };
   res.json(resposta);
 });
 

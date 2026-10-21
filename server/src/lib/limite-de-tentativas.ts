@@ -1,6 +1,6 @@
 import { isIP } from "node:net";
 import type { Request, RequestHandler, Response } from "express";
-import { MemoryStore, ipKeyGenerator, rateLimit } from "express-rate-limit";
+import { MemoryStore, ipKeyGenerator, rateLimit, type Options } from "express-rate-limit";
 
 // O LIMITE DE TENTATIVAS NAS ROTAS DE COBRANÇA (Fase 4, etapa 4.7, passo 1 — billing.md →
 // *Limite de tentativas*; plano e frase aprovados pelo operador em 19/10/2026). Toda rota de
@@ -36,6 +36,26 @@ export const LIMITES = {
   /** As leituras que vão à Stripe: os planos, a minha assinatura, a troca de plano. */
   leitura: { conta: { porJanela: 60 }, endereco: { porJanela: 120 } },
 } as const satisfies Record<string, { conta: Teto; endereco: Teto }>;
+
+/**
+ * Os tetos SEM LOGIN (etapa 4.7, passo 4 — billing.md → *Limite de tentativas*; no plano aprovado
+ * pelo operador em 21/10/2026). Não há conta: conta-se por ENDEREÇO e, ao assinar, também por
+ * E-MAIL (o mesmo teto da conta) — é o que impede de encher a tentativa de alguém, que a pessoa
+ * dona do e-mail sentiria. E a Stripe recomenda limitar quantos CLIENTES novos um mesmo endereço
+ * cria por dia: cada e-mail novo é um cliente novo lá.
+ */
+export const LIMITES_DO_VISITANTE = {
+  /** Assinar: guardar cartão ou cobrar. */
+  assinar: { email: { porJanela: 5, porDia: 20 }, endereco: { porJanela: 10, porDia: 40 } },
+  /** Os clientes novos na Stripe (um por e-mail novo) que um mesmo endereço pode criar por dia. */
+  emailsNovosPorDia: 10,
+  /** A conferência do código promocional — com teto por dia (decisão do operador, 21/10/2026). */
+  previa: { endereco: { porJanela: 20, porDia: 40 } },
+  /** Os planos, que vão à Stripe. */
+  leitura: { endereco: { porJanela: 120 } },
+  /** "O pagamento já valeu?" — só lê o banco, e a tela repete a cada 2 s (duas abas cabem). */
+  confirmacao: { endereco: { porJanela: 900 } },
+} as const satisfies Record<string, { endereco: Teto; email?: Teto } | number>;
 
 /** Já avisamos que a contagem por endereço parou? Uma vez por processo basta (zera nos testes). */
 let avisouSemEndereco = false;
@@ -88,7 +108,19 @@ function contaDoPedido(req: Request): string {
   return `conta:${id}`;
 }
 
-type Quem = "conta" | "endereco";
+/**
+ * O e-mail do pedido SEM LOGIN, como a conta o guarda (aparado, em minúsculas). O limite vem antes
+ * da validação: sem um texto de tamanho de e-mail, o pedido não conta por e-mail — e a validação o
+ * recusa logo depois. Nunca vai para o registro.
+ */
+function emailDoPedido(req: Request): string | null {
+  const bruto: unknown = (req.body as { email?: unknown } | undefined)?.email;
+  if (typeof bruto !== "string") return null;
+  const email = bruto.trim().toLowerCase();
+  return email.length > 0 && email.length <= 254 ? email : null;
+}
+
+type Quem = "conta" | "endereco" | "email";
 
 /** O que o pacote anota no pedido (`req.rateLimit`): a contagem e quando ela zera. */
 type Contagem = { used: number; limit: number; resetTime?: Date };
@@ -105,13 +137,31 @@ function recusar(req: Request, res: Response, quem: Quem, janelaMs: number): voi
   const restam = contagem?.resetTime ? contagem.resetTime.getTime() - Date.now() : janelaMs;
   res.set("Retry-After", String(Math.max(1, Math.ceil(restam / 1000))));
   if (contagem && contagem.used === contagem.limit + 1) {
-    console.warn(`[api] ${req.method} ${req.baseUrl.toLowerCase()}${rotaDoPedido(req)} passou do limite de tentativas (${quem === "conta" ? `conta ${req.user?.id ?? "?"}` : "endereço"})`);
+    const deQuem = quem === "conta" ? `conta ${req.user?.id ?? "?"}` : quem === "email" ? "e-mail" : "endereço";
+    console.warn(`[api] ${req.method} ${req.baseUrl.toLowerCase()}${rotaDoPedido(req)} passou do limite de tentativas (${deQuem})`);
   }
   res.status(429).json({ error: "MuitasTentativas" });
 }
 
 /** As contagens, para os testes zerarem (cada teste começa como quem chega agora). */
 const contagens: MemoryStore[] = [];
+
+/** A parte da chave de QUEM pediu: a conta da sessão, o endereço, ou o e-mail do pedido sem login. */
+function chaveDeQuem(req: Request, quem: Quem): string {
+  if (quem === "conta") return contaDoPedido(req);
+  if (quem === "email") return `email:${emailDoPedido(req) ?? "-"}`;
+  return `endereco:${enderecoDoPedido(req) ?? "-"}`;
+}
+
+/**
+ * Este pedido NÃO conta? Sem endereço válido em produção, não conta por endereço (o teto da conta
+ * continua); sem um e-mail no corpo, não conta por e-mail (a validação o recusa em seguida).
+ */
+function semContagem(req: Request, quem: Quem): boolean {
+  if (quem === "endereco") return enderecoDoPedido(req) === null;
+  if (quem === "email") return emailDoPedido(req) === null;
+  return false;
+}
 
 function limitador(quem: Quem, janelaMs: number, limite: number): RequestHandler {
   const loja = new MemoryStore();
@@ -123,9 +173,8 @@ function limitador(quem: Quem, janelaMs: number, limite: number): RequestHandler
     // Nada de cabeçalho de contagem em toda resposta: só o `Retry-After`, na recusa.
     legacyHeaders: false,
     standardHeaders: false,
-    // Sem endereço válido em produção, o pedido não conta por endereço (o teto da conta continua).
-    skip: (req) => quem === "endereco" && enderecoDoPedido(req) === null,
-    keyGenerator: (req) => `${rotaDoPedido(req)} ${quem === "conta" ? contaDoPedido(req) : `endereco:${enderecoDoPedido(req) ?? "-"}`}`,
+    skip: (req) => semContagem(req, quem),
+    keyGenerator: (req) => `${rotaDoPedido(req)} ${chaveDeQuem(req, quem)}`,
     handler: (req, res) => recusar(req, res, quem, janelaMs),
   });
 }
@@ -149,6 +198,52 @@ export const limiteDeTentativas = {
   acao: tetos(LIMITES.acao),
   leitura: tetos(LIMITES.leitura),
 };
+
+/** Os passos de um grupo SEM LOGIN, na ordem: os do E-MAIL antes dos do endereço, que outras pessoas dividem. */
+function tetosSemLogin(grupo: { endereco: Teto; email?: Teto }): RequestHandler[] {
+  const passos: RequestHandler[] = [];
+  if (grupo.email) {
+    passos.push(limitador("email", JANELA, grupo.email.porJanela));
+    if (grupo.email.porDia) passos.push(limitador("email", DIA, grupo.email.porDia));
+  }
+  passos.push(limitador("endereco", JANELA, grupo.endereco.porJanela));
+  if (grupo.endereco.porDia) passos.push(limitador("endereco", DIA, grupo.endereco.porDia));
+  return passos;
+}
+
+/**
+ * O limite de cada rota SEM LOGIN (etapa 4.7, passo 4) — por endereço e, ao assinar, também por
+ * e-mail. Rota pública de `/billing` que vá à Stripe entra num destes.
+ */
+export const limiteSemLogin = {
+  assinar: tetosSemLogin(LIMITES_DO_VISITANTE.assinar),
+  previa: tetosSemLogin(LIMITES_DO_VISITANTE.previa),
+  leitura: tetosSemLogin(LIMITES_DO_VISITANTE.leitura),
+  confirmacao: tetosSemLogin(LIMITES_DO_VISITANTE.confirmacao),
+};
+
+/** A contagem dos clientes novos do dia, por endereço (zera nos testes, como as outras). */
+const clientesNovos = new MemoryStore();
+// Seguro: a loja só lê a janela das opções do pacote; o resto não se aplica a uma contagem avulsa.
+clientesNovos.init({ windowMs: DIA } as Options);
+contagens.push(clientesNovos);
+
+/**
+ * OS E-MAILS NOVOS DO DIA (a Stripe recomenda limitar quantos CLIENTES um mesmo endereço cria por
+ * dia): conta UM cliente novo deste endereço — e só é chamada no instante em que o cliente vai
+ * mesmo ser criado (`checkout-do-visitante.ts`), nunca por pedido: quem erra o CPF, ou tenta de
+ * novo com o mesmo e-mail, não gasta nada. Devolve em quantos segundos tentar de novo, quando o
+ * dia já está cheio; nada, quando pode. Sem endereço válido em produção, não conta (como os outros).
+ */
+export async function contarClienteNovo(req: Request): Promise<number | null> {
+  const endereco = enderecoDoPedido(req);
+  if (endereco === null) return null;
+  const { totalHits, resetTime } = await clientesNovos.increment(`clientes-novos endereco:${endereco}`);
+  const limite = LIMITES_DO_VISITANTE.emailsNovosPorDia;
+  if (totalHits <= limite) return null;
+  if (totalHits === limite + 1) console.warn(`[api] ${req.method} ${req.baseUrl.toLowerCase()}${rotaDoPedido(req)} passou do limite de e-mails novos do dia (endereço)`);
+  return Math.max(1, Math.ceil(((resetTime?.getTime() ?? Date.now() + DIA) - Date.now()) / 1000));
+}
 
 /**
  * Zera todas as contagens (e o aviso de endereço). SÓ os testes chamam — numa rota, destravaria

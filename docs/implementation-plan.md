@@ -4485,7 +4485,28 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                   `contaNova` vazia; nascer admin; o consentimento fixo; o pedido só da assinatura).
                   Gates: typecheck, lint, build; site 902, servidor 1145 (como o CI, sem chave de
                   fornecedor).
-            - [ ] **Parte B — as rotas sem login.**
+            - [x] **Parte B — as rotas sem login.** FEITA (21/10/2026), no `dev`. Em
+                  `/api/billing/visitante/`: `planos`, `previa`, `assinatura` e `confirmacao`
+                  (`routes/billing-sem-login.ts`), **fora do ar em produção sem
+                  `ASSINAR_SEM_LOGIN=true`** (o operador liga no passo 8). O CPF ou CNPJ conferido
+                  no `core` (`lerDocumentoFiscal`, inclusive o CNPJ com letras) e guardado só no
+                  cliente da Stripe, antes da assinatura. A regra de assinar em
+                  `lib/checkout-do-visitante.ts`: o e-mail com conta → `JaTemConta` antes da Stripe;
+                  a trava por e-mail que não espera; a tentativa só é reaproveitada com o código
+                  dela; a viva na Stripe é sincronizada (a conta nasce) e responde `JaTemConta`.
+                  Os limites sem login (por e-mail, por endereço, a prévia com teto por dia e os
+                  e-mails novos do dia, que contam clientes criados) e as duas peças que as rotas
+                  de quem está logado passaram a dividir (`protecao-da-cobranca.ts`,
+                  `vitrine-da-assinatura.ts`). O como e as limitações: `billing.md` → *Assinar sem
+                  conta* e *Limite de tentativas*. **Achado no caminho, corrigido antes do
+                  commit:** o teto dos e-mails novos, contado na entrada da rota, gastaria o dia do
+                  endereço com CPFs errados — passou a contar só o cliente criado. **Testes:** 27
+                  de rota (`assinar-sem-login.test.ts`), 8 com a rede da Stripe trocada
+                  (`stripe-visitante-rede.test.ts`), 21 do CPF/CNPJ e do pedido
+                  (`documento-fiscal.test.ts`) e 5 do que vai à Stripe. **Mutação: 25 de 25
+                  reprovaram** — uma delas (a viva sem sincronizar) passou na primeira rodada e
+                  mostrou um teste que comparava dois vazios; ele e dois iguais da parte A foram
+                  reforçados, e ela passou a reprovar.
             - [ ] **Parte C — a prova na área restrita, a revisão de segurança e os documentos.**
       - [ ] **Passo 5 — "Crie sua senha".** O e-mail com o link e a tela de definir a senha.
             **Pergunta para a abertura:** "Esqueci minha senha", na tela de entrar, usa o mesmo
@@ -4553,6 +4574,8 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             de abrir: as pendências P58 (o nome na fatura) e P60 (a opção do painel) — a P91 (o
             Radar) fechou em 20/10/2026, e a P75 (o limite do reembolso) em 21/10/2026 —, a cópia do banco
             (Fase 7) e a revisão de segurança da etapa inteira. A publicação é ordem dele.
+            **No dia de abrir, o operador liga `ASSINAR_SEM_LOGIN=true` na Railway** (do passo 4,
+            21/10/2026): sem ela, as rotas sem login respondem 404 no site, e a tela pública não assina.
             **Da proposta da tela pública (agente, 12/10/2026):** antes de abrir, também os
             Termos de Uso e a Política de Privacidade no ar (a tela de assinar aponta para os
             dois; hoje são pendência da Fase 7 e a P61) · a **P84** (o cartão promete o JilsonAI

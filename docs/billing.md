@@ -674,6 +674,64 @@ pública de assinar*), o teto da prévia (*Limite de tentativas*), o código de 
 - **A conta apagada com `deletedAt` (exclusão a pedido) continua com o e-mail**, e a tela diria
   "já tem conta". *Gatilho: a exclusão de conta, quando for construída.*
 
+**Convenções de engenharia — a parte B (as rotas sem login):**
+- **As rotas** (`server/src/routes/billing-sem-login.ts`, sob `/api/billing/visitante/`): `GET
+  planos`, `POST previa`, `POST assinatura` e `POST confirmacao`. A mesma proteção das de quem está
+  logado (`lib/protecao-da-cobranca.ts`: nada em cache; pedido que muda alguma coisa e vem de outro
+  site, recusado); os planos e a prévia saem das mesmas funções (`lib/vitrine-da-assinatura.ts`).
+- **FORA DO AR NO SITE ATÉ O PASSO 8** *(no plano aprovado pelo operador em 21/10/2026)*: em
+  produção, sem `ASSINAR_SEM_LOGIN=true` na Railway, as quatro respondem 404 (`NaoEncontrado`), sem
+  ir à Stripe nem ao banco; fora de produção, ligadas. É o que impede, se a `dev` for publicada
+  antes da hora, o site de vender sem o e-mail de criar a senha (passo 5) e sem a tela (passo 6).
+  **O operador liga a variável no passo 8.**
+- **O pedido de assinar** (`assinarSemLoginSchema`, no `core`): o e-mail, o CPF ou CNPJ, o plano, o
+  código, a resposta da caixa de novidades (obrigatória, sim ou não), a origem (`origem` e
+  `campanha`, o UTM do primeiro acesso — **nunca recusa o pedido**: valor estranho vira nada, e o
+  texto é cortado em 100 caracteres) e o código da tentativa anterior. Preço, valor, cliente e conta
+  nunca vêm do navegador.
+- **O CPF ou CNPJ é conferido no `core`** (`lerDocumentoFiscal`, que a tela do passo 6 também vai
+  usar): o dígito verificador, com ou sem pontuação; **o CNPJ com letras** que a Receita emite desde
+  julho de 2026 (12 posições de letras ou números e 2 dígitos; o valor de cada posição é o código
+  ASCII − 48); o número de um caractere só repetido é recusado. Errado → 400 antes da Stripe, sem
+  repetir o número na resposta. Certo → vai ao cliente da Stripe (`tax_id_data`, `br_cpf` ou
+  `br_cnpj`, com a pontuação de costume) **antes** da assinatura: a primeira fatura é fechada quando
+  a assinatura nasce, e leva o número que o cliente tiver naquela hora. Se a Stripe recusar um
+  número que nós aceitamos (`tax_id_invalid`): 400 `DocumentoInvalido`, e o alerta.
+- **A ordem de assinar** (`server/src/lib/checkout-do-visitante.ts`, irmão do `checkout.ts`): (1) o
+  e-mail que já tem conta → 409 `JaTemConta`, antes da Stripe; (2) o preço do plano e o código; (3)
+  a ficha do e-mail, com a **trava por e-mail que não espera** (`assinar-email:`; ocupada → 409
+  `Ocupada`): a nova nasce com o cliente da Stripe numa transação curta só dela; a que já existe
+  recebe o número fiscal desta tentativa (`acertarNumeroFiscal`: igual, nada; diferente, entra o
+  novo e saem os do Brasil que estavam); (4) com a trava, o que a Stripe diz do cliente — a
+  assinatura **viva** (pagou, e o aviso atrasou) é sincronizada fora da trava, a conta nasce ali, e
+  a resposta é `JaTemConta`; a incompleta só é reaproveitada com o **código da tentativa**, o mesmo
+  preço, o mesmo código promocional e o mesmo número fiscal; as outras são canceladas; (5) a
+  assinatura nova leva a ficha, um código de tentativa novo (32 caracteres) e a escolha do
+  visitante, e a ficha passa a guardar esse código. As conferências de "já tem conta" se repetem
+  com a trava, nas duas transações: a conta pode nascer no meio.
+- **Por que só com o código da tentativa:** o e-mail não é segredo. Quem soubesse o de alguém e
+  pudesse seguir com a tentativa dessa pessoa receberia o segredo do pagamento dela — e, num
+  pagamento recusado, a bandeira e o fim do cartão aparecem nele. Sem o código, a tentativa anterior
+  é cancelada e nasce outra.
+- **"O pagamento já valeu?"** (`POST confirmacao`, com o código da tentativa no corpo — não no
+  endereço, que fica no registro da hospedagem): sim quando a conta da ficha nasceu e o gate a
+  libera; código desconhecido ou antigo, a mesma resposta de "ainda não". Nada sobre a conta, o
+  e-mail ou a assinatura.
+- **Os limites sem login:** *Limite de tentativas*, abaixo.
+- **O registro** leva ids (a ficha, o cliente, a assinatura) — nunca o e-mail, o número fiscal, o
+  código digitado ou o segredo do pagamento.
+
+**Limitações conhecidas (parte B):**
+- **Quem sabe o e-mail de alguém pode cancelar a tentativa em andamento dessa pessoa** (ela clica
+  de novo e segue) **e trocar o número fiscal da ficha antes de ela pagar** (a fatura sai com o
+  número da última tentativa; a dona do e-mail, ao clicar de novo, põe o dela de volta). É o preço
+  de não exigir conta antes de pagar; o limite por e-mail segura a insistência. *Reabre se o
+  registro mostrar tentativas canceladas em série no mesmo e-mail.*
+- **A tela de depois do pagamento não chama a sincronia** (como a de quem está logado): se o aviso
+  da Stripe se perder, a conta nasce quando a pessoa clica em assinar de novo, ou quando o admin
+  confere o e-mail dela.
+- **O CNPJ com letras na Stripe** — se ela aceita o formato novo: medido na parte C.
+
 
 ## Sincronizar e perder o acesso *(Fase 4, etapa 4.4 — 10/10/2026)*
 
@@ -1212,6 +1270,29 @@ de uma operadora de celular, não paga pelo vizinho); **cada rota conta separado
 | Outras ações | `POST` previa, minha-assinatura/cancelar, …/manter, …/reembolso, …/plano/desistir | 10 a cada 15 min | 20 |
 | Leituras que vão à Stripe | `GET` planos, minha-assinatura, minha-assinatura/plano | 60 a cada 15 min | 120 |
 
+**SEM LOGIN** *(etapa 4.7, passo 4 — os tetos estavam no plano aprovado pelo operador em
+21/10/2026; o da prévia por dia é decisão dele, no mesmo dia)*: não há conta, então conta-se por
+**endereço** e, ao assinar, também por **e-mail** — o mesmo teto da conta, para ninguém encher a
+tentativa de outra pessoa:
+
+| Rota (`/billing/visitante/…`) | Por e-mail | Por endereço |
+|---|---|---|
+| `POST assinatura` | 5 a cada 15 min, e 20 por dia | 10 e 40 |
+| E-mails novos — cada um, um cliente novo na Stripe | — | **10 por dia** |
+| `POST previa` | — | 20 a cada 15 min, e **40 por dia** |
+| `GET planos` | — | 120 a cada 15 min |
+| `POST confirmacao` ("o pagamento já valeu?") | — | 900 a cada 15 min (a tela pergunta a cada 2 s; duas abas cabem) |
+
+- **Os e-mails novos contam CLIENTES CRIADOS, nunca pedidos** (`contarClienteNovo`): a regra de
+  assinar a chama no instante em que um cliente novo vai nascer na Stripe — quem erra o CPF, ou
+  volta com o mesmo e-mail, não gasta nada. *(Foi pego antes do commit: contado na entrada da rota,
+  dez CPFs errados gastariam o dia do endereço.)* É a recomendação da Stripe de limitar quantos
+  clientes um endereço cria por dia (acima).
+- **Os tetos do e-mail antes dos do endereço**, como os da conta: quem já passou do teto do próprio
+  e-mail não gasta a cota do endereço, que outras pessoas dividem. O e-mail se lê do corpo, aparado
+  e em minúsculas; sem um, o pedido não conta por e-mail (e a validação o recusa logo depois). Nunca
+  vai para o registro.
+
 **Sem limite, de propósito:** `GET /billing/assinatura` ("já tenho acesso?") — a tela de depois do
 pagamento a repete a cada 2 s, e ela só lê o banco. `GET /billing/planos` não estava na lista do
 plano e entrou: também vai à Stripe a cada vez.
@@ -1238,7 +1319,8 @@ cartão e de cobrança.
   **um alerta** por processo. Fora de produção, vale a conexão.
 - **O limite por conta só existe depois do `requireAuth`:** montado sem sessão é erro (500, e o
   alerta), nunca uma contagem de todo mundo junto — um robô trancaria a escola inteira. **Rota
-  pública ganha grupo próprio**, por endereço (e, no "Enviar de novo", também por e-mail).
+  pública ganha grupo próprio**, por endereço (e, no "Enviar de novo", também por e-mail) — existe
+  desde o passo 4: `limiteSemLogin` (a tabela *Sem login*, acima).
 - **Os tetos da conta (a janela e o dia) antes dos do endereço:** quem já passou de um teto da
   própria conta não gasta a cota do endereço, que outras pessoas dividem.
 - **A prévia do código não se repete sozinha** (achado P1 da revisão, 19/10/2026): voltar a um
