@@ -768,20 +768,30 @@ pública de assinar*), o teto da prévia (*Limite de tentativas*), o código de 
   esperar (dois cliques nunca criam duas senhas). A senha é embaralhada pelo próprio Better Auth e
   **nunca aparada**; de 8 a 128 caracteres (os mesmos números do Better Auth e da tela, no `core`). A
   sessão abre na hora, como no login; se não abrir, a senha fica, a resposta diz "não entrou", e é
-  alerta. **O e-mail não fica confirmado por aqui** (quem digitou pode não ser o dono dele). As
-  recusas: `NaoConfirmado` (tentativa desconhecida, sem conta ou sem acesso — a mesma),
-  `PrazoVencido`, `EmailConfirmado`, `JaTemSenha`, `Ocupada`. Limite: 10 a cada 15 minutos por
-  endereço.
-- **A primeira entrada pelo código apaga a senha de antes da confirmação** `[FATO — Better Auth
-  1.7.5, no código e no guia da 1.7, medido em teste em 21/10/2026]`: numa conta com o e-mail não
-  confirmado, entrar pelo código apaga a senha e desconecta todos os aparelhos, e só então confirma o
-  e-mail — a caixa provada vale mais que o que veio antes dela. Não há opção para desligar. É o que
-  derruba quem pagou com o e-mail de outra pessoa e criou a senha; por isso, depois dela, a tentativa
-  não cria outra (`EmailConfirmado`). O efeito em quem é dono: quem criou a senha logo depois de pagar
-  e um dia entra pelo código perde aquela senha e cria outra em "Esqueci minha senha" (o caminho que
-  a doc do Better Auth indica). *A escolha entre manter assim e pedir o código antes da senha é do
-  operador: P94.* As contas do seed nascem confirmadas (a de admin no ar, pela migration
-  `20261021220100_admin_com_email_confirmado`): o código nunca apaga a senha de admin.
+  alerta. **O e-mail fica confirmado ao criar a senha** (decisão do operador, P94 — item seguinte).
+  As recusas: `NaoConfirmado` (tentativa desconhecida, sem conta ou sem acesso — a mesma),
+  `PrazoVencido`, `JaTemSenha` (a tentativa já criou a senha), `EmailConfirmado` (o e-mail foi
+  confirmado antes por outro caminho — a dona entrou pelo código), `Ocupada`. Limite: 10 a cada 15
+  minutos por endereço.
+- **O CÓDIGO É SÓ MAIS UMA FORMA DE ENTRAR, E A SENHA CONTINUA VALENDO** *(decisão do operador, P94,
+  21/10/2026: "a pessoa cria a senha normal e quando entrar com o código é só mais uma opção de acesso
+  caso não tenha a senha na hora ou mesmo não se lembre" · "se tem a senha é porque foi a pessoa que
+  criou, e se tem o código a mesma coisa" · "se eu não tivesse risco de cair em spam os e-mails eu
+  deixava entrar só por código, mas o mix fica melhor")*. **O fato que levou à pergunta**
+  `[FATO — Better Auth 1.7.5, no código e no guia da 1.7, medido em teste em 21/10/2026]`: numa conta
+  com o e-mail não confirmado, entrar pelo código apaga a senha e desconecta todos os aparelhos, e
+  só então confirma o e-mail; não há opção para desligar. **Como a decisão foi feita:** toda forma de
+  criar senha deixa o e-mail confirmado — a senha depois de pagar (aqui), o "Esqueci minha senha" (o
+  Better Auth) e as contas do seed (a de admin no ar, pela migration
+  `20261021220100_admin_com_email_confirmado`) —, e aí a entrada pelo código não apaga nada.
+  **O risco que ele aceitou** (*"isso é como no LinkedIn ou em qualquer lugar"*): quem pagou com o
+  e-mail de outra pessoa e criou a senha continua entrando até a dona do e-mail trocar a senha pelo
+  "Esqueci minha senha", que derruba os outros aparelhos. Se a dona entrar pelo código antes de a
+  senha ser criada, a tentativa não cria mais senha (`EmailConfirmado`). **Consequência para as
+  novidades:** o "e-mail confirmado" do login deixa de provar que a caixa é da pessoa, e as novidades
+  (só para e-mail confirmado, decisão (4) do passo 5) precisam de confirmação própria — P96. *Reabre
+  se um dono de e-mail reclamar de conta criada no nome dele, ou quando o e-mail da escola deixar de
+  correr risco de cair no spam (aí ele prefere entrar só por código).*
 - **As boas-vindas** (`lib/boas-vindas.ts`): saem depois de **qualquer** sincronia da assinatura de
   quem assinou sem conta — o aviso da Stripe (inclusive o repetido), o novo clique de quem já pagou,
   a conferência do admin —, sempre **depois do commit**, e só com a conta com acesso. **Uma vez:** a
@@ -807,10 +817,6 @@ pública de assinar*), o teto da prévia (*Limite de tentativas*), o código de 
 - **Se o servidor cair entre tomar a marca das boas-vindas e enviar**, o e-mail não sai e nada
   alerta. A pessoa entra do mesmo jeito (a senha da tela, ou o código). *Reabre se um aluno disser que
   não recebeu as boas-vindas.*
-- **A senha criada no mesmo instante em que a dona do e-mail entra pelo código** pode sobreviver: a
-  limpeza do Better Auth e a nossa trava não se coordenam. Exige acertar o milissegundo de uma entrada
-  que quem guardou a tentativa não enxerga. *Reabre se uma conta de visitante aparecer com duas senhas
-  ou com senha criada depois da confirmação.*
 
 **A REVISÃO DE SEGURANÇA DO PASSO** (`security-vulnerability-reviewer`, sobre os commits das partes
 A e B, 21/10/2026): **nenhum bloqueio (P0)**. **O P1, corrigido:** o teto de 3 "assinar sem login" em

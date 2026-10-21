@@ -155,7 +155,9 @@ describe("entrar com o código", () => {
 // A PRIMEIRA ENTRADA PELO CÓDIGO NUMA CONTA DE E-MAIL NÃO CONFIRMADO (Better Auth 1.7, sem opção para
 // desligar — revisão de segurança, 21/10/2026): a prova de que a caixa é da pessoa vale mais que o
 // que veio antes dela, então a senha e as sessões de antes saem. Com o e-mail já confirmado, nada sai.
-// É por isso que as contas do seed nascem confirmadas: o código nunca apaga a senha de admin.
+// É por isso que TODA forma de criar senha da escola deixa o e-mail confirmado — o seed (o código nunca
+// apaga a senha de admin), o "Esqueci minha senha" e a senha depois de pagar (decisão do operador,
+// P94: o código é só mais uma forma de entrar, e a senha continua valendo).
 describe("a primeira entrada pelo código — a senha de antes da confirmação", () => {
   it("e-mail NÃO confirmado: a senha de antes deixa de valer, e quem estava dentro sai", async () => {
     const conta = await contaComSenha();

@@ -4546,7 +4546,10 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                   criar conta pelo servidor com o cadastro fechado, e a troca de senha cria a senha de
                   quem não tem (conferido também no código da 1.7.5). 3 consultas no passo.`
                   Gates: typecheck, lint, build; site 902, servidor 1209 (como o CI).
-      - [ ] **Passo 5 — "Crie sua senha".** O e-mail com o link e a tela de definir a senha.
+      - [x] **Passo 5 — "Crie sua senha".** **FEITO (21/10/2026), no `dev`** — as quatro partes
+            abaixo. Com o operador: os textos (P93) e onde os e-mails da prova caíram (P95).
+            *(Nasceu como "o e-mail com o link e a tela de definir a senha"; virou o código no
+            e-mail na abertura.)*
             **ABERTURA (21/10/2026) — as decisões do operador, uma a uma, e o plano aprovado
             ("Sim, pode seguir"). O passo deixa de ser "o link no e-mail" e passa a ser o CÓDIGO no
             e-mail, "como a Apple e os grandes fazem, mas levando em conta que o meu e-mail como é
@@ -4560,7 +4563,11 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             minutos, 3 tentativas; digitado na mesma tela, com a senha nova (o antivírus de e-mail
             das empresas não estraga código, e estraga link de uso único). (4) **O e-mail não é
             confirmado na hora de pagar**: fica confirmado na primeira vez que a pessoa usa um código;
-            **novidades e ofertas só vão para e-mail confirmado**. (5) **Trocar a senha pelo código
+            **novidades e ofertas só vão para e-mail confirmado**. *(Ajustada pela P94, no mesmo
+            dia: a senha criada logo depois de pagar também deixa o e-mail confirmado — o código é
+            só mais uma forma de entrar, e a senha continua valendo. Com isso, o "e-mail confirmado"
+            do login não prova mais que a caixa é da pessoa, e as novidades precisam de confirmação
+            própria: P96.)* (5) **Trocar a senha pelo código
             desconecta os outros aparelhos.** (6) **Na tela de entrar, além de e-mail e senha, o botão
             "Receber código de acesso"**: o campo da senha vira o campo do código, a pessoa recebe o
             código e entra — sem criar senha nova na hora. **Entrar por código nunca cria conta** (a
@@ -4646,10 +4653,12 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                   Better Auth 1.7, documentado, sem opção para desligar. O que é de engenharia,
                   corrigido: as contas do seed nascem confirmadas, e a de admin que já existe fica
                   confirmada pela migration `20261021220100_admin_com_email_confirmado` (só dados; no
-                  ar, roda na publicação) — sem isso, o primeiro código apagaria a senha de admin. O
-                  efeito no aluno (quem criou a senha depois de pagar e um dia entra pelo código perde
-                  aquela senha e cria outra em "Esqueci minha senha", o caminho que a doc do Better
-                  Auth indica) é decisão do operador: **P94**; (3) a chave das boas-vindas é por conta
+                  ar, roda na publicação) — sem isso, o primeiro código apagaria a senha de admin. **O
+                  efeito no aluno foi ao operador (P94), e ele decidiu no mesmo dia:** *"a pessoa cria a
+                  senha normal e quando entrar com o código é só mais uma opção de acesso"* — **a senha
+                  continua valendo**. Por isso a senha criada depois de pagar também deixa o e-mail
+                  confirmado, e a entrada pelo código não apaga nada (o risco que ele aceitou e o
+                  gatilho: `billing.md` → *Depois de pagar*); (3) a chave das boas-vindas é por conta
                   (`boas-vindas/<conta>`), não por evento — a regra (2) do `CLAUDE.md` foi emendada: o
                   mesmo e-mail sai de três gatilhos, e uma chave por evento não seguraria a repetição
                   entre avisos diferentes. **Os P2:** corrigidos — a senha criada com a sessão que não

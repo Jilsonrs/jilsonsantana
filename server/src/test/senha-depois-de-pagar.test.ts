@@ -25,11 +25,13 @@ import { PRAZO_DA_SENHA_DEPOIS_DE_PAGAR_EM_HORAS } from "../lib/senha-depois-de-
 //     nenhuma senha nasce; depois de 24 horas, também não;
 //   - a senha nunca é aparada (espaço nas pontas é parte dela); curta, só de espaços ou longa demais,
 //     recusada;
-//   - dois pedidos juntos nunca criam duas senhas; e o e-mail não fica confirmado por aqui;
-//   - DEPOIS QUE O DONO DO E-MAIL ENTRA PELO CÓDIGO (revisão de segurança, 21/10/2026): o Better Auth
-//     apaga a senha criada antes da confirmação, e a tentativa não cria outra ("e-mail confirmado") —
-//     quem guardou a tentativa pode não ser o dono do e-mail; e a marca da vez fica na ficha, mesmo
-//     que a linha de senha suma;
+//   - dois pedidos juntos nunca criam duas senhas;
+//   - O E-MAIL FICA CONFIRMADO ao criar a senha (decisão do operador, P94, 21/10/2026: o código é só
+//     mais uma forma de entrar): entrar pelo código depois NÃO apaga a senha nem tira ninguém — o
+//     Better Auth faz isso com toda conta de e-mail não confirmado;
+//   - o e-mail confirmado por OUTRO caminho antes (o dono entrou pelo código): a tentativa não cria
+//     senha ("e-mail confirmado" — revisão de segurança, 21/10/2026); e a marca da vez fica na
+//     ficha, mesmo que a linha de senha suma;
 //   - a senha criada e a sessão que não abre: a resposta diz "não entrou", e é ALERTA.
 
 const S = `${Date.now()}`;
@@ -159,10 +161,11 @@ describe("a senha logo depois de pagar", () => {
     }
   });
 
-  it("o e-mail NÃO fica confirmado por aqui (quem digitou pode não ser o dono dele)", async () => {
+  it("o e-mail fica confirmado ao criar a senha (decisão do operador, P94) — e não antes", async () => {
     const conta = await nascida();
-    await criarSenha(conta.tentativa, SENHA);
     expect((await prisma.user.findUnique({ where: { id: conta.id } }))?.emailVerified).toBe(false);
+    await criarSenha(conta.tentativa, SENHA);
+    expect((await prisma.user.findUnique({ where: { id: conta.id } }))?.emailVerified).toBe(true);
   });
 
   it("o pedido de outro site é recusado, e nenhuma senha nasce", async () => {
@@ -178,24 +181,28 @@ describe("a senha logo depois de pagar", () => {
   });
 });
 
-// QUEM GUARDOU A TENTATIVA NÃO VOLTA À CONTA DEPOIS QUE O DONO DO E-MAIL A CONFIRMOU (revisão de
-// segurança, 21/10/2026). O cenário: alguém paga com o e-mail de outra pessoa e guarda a tentativa;
-// a dona do e-mail entra pelo código — o Better Auth apaga a senha e as sessões de antes da
-// confirmação —, e a tentativa NÃO pode criar outra senha.
-describe("depois que o dono do e-mail entra pelo código", () => {
-  it("a senha criada pela tentativa deixa de existir, e a MESMA tentativa não cria outra: 'e-mail confirmado'", async () => {
+// O CÓDIGO É SÓ MAIS UMA FORMA DE ENTRAR (decisão do operador, P94, 21/10/2026: "entra com senha ou
+// código") — e a tentativa não passa por cima de quem confirmou o e-mail ANTES por outro caminho
+// (revisão de segurança, 21/10/2026: alguém pode ter pago com o e-mail de outra pessoa).
+describe("a senha da tentativa e o código no e-mail", () => {
+  it("a senha criada pela tentativa CONTINUA valendo depois de entrar pelo código, e quem estava dentro continua", async () => {
     const conta = await nascida();
-    expect((await criarSenha(conta.tentativa, SENHA)).status).toBe(200);
-    expect((await entrarComCodigo(conta.email, await codigoParaEntrar(conta.email))).status).toBe(200);
-    expect(await senhasDa(conta.id)).toBe(0);
+    const criada = await criarSenha(conta.tentativa, SENHA);
+    expect(criada.status).toBe(200);
+    const dentro = (criada.headers["set-cookie"] as unknown as string[] | undefined) ?? [];
 
+    expect((await entrarComCodigo(conta.email, await codigoParaEntrar(conta.email))).status).toBe(200);
+    expect(await senhasDa(conta.id)).toBe(1);
+    expect((await entrar(conta.email, SENHA)).status).toBe(200);
+    expect((await request(servidor).get("/api/me").set("Cookie", dentro)).status).toBe(200);
+
+    // E a tentativa não cria outra: a vez já foi.
     const deNovo = await criarSenha(conta.tentativa, `outra-senha-${S}`);
-    expect([deNovo.status, deNovo.body]).toEqual([409, { error: "EmailConfirmado" }]);
-    expect(deNovo.headers["set-cookie"]).toBeUndefined();
-    expect(await senhasDa(conta.id)).toBe(0);
+    expect([deNovo.status, deNovo.body]).toEqual([409, { error: "JaTemSenha" }]);
+    expect((await entrar(conta.email, SENHA)).status).toBe(200);
   });
 
-  it("a dona entrou pelo código ANTES: a tentativa não cria senha nenhuma", async () => {
+  it("a dona entrou pelo código ANTES: a tentativa não cria senha nenhuma ('e-mail confirmado')", async () => {
     const conta = await nascida();
     expect((await entrarComCodigo(conta.email, await codigoParaEntrar(conta.email))).status).toBe(200);
     const res = await criarSenha(conta.tentativa, SENHA);
@@ -203,11 +210,12 @@ describe("depois que o dono do e-mail entra pelo código", () => {
     expect(await senhasDa(conta.id)).toBe(0);
   });
 
-  it("a marca da vez fica na ficha: mesmo que a linha de senha suma sem o e-mail confirmado, a tentativa não cria outra", async () => {
+  it("a marca da vez fica na ficha: mesmo que a linha de senha suma e o e-mail volte a não confirmado, a tentativa não cria outra", async () => {
     const conta = await nascida();
     expect((await criarSenha(conta.tentativa, SENHA)).status).toBe(200);
     expect((await prisma.guestCheckout.findUnique({ where: { tentativa: conta.tentativa } }))?.senhaCriadaEm).toBeInstanceOf(Date);
     await prisma.account.deleteMany({ where: { userId: conta.id, providerId: "credential" } });
+    await prisma.user.update({ where: { id: conta.id }, data: { emailVerified: false } });
 
     const deNovo = await criarSenha(conta.tentativa, `outra-senha-${S}`);
     expect([deNovo.status, deNovo.body]).toEqual([409, { error: "JaTemSenha" }]);
