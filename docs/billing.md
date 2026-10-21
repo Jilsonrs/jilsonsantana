@@ -758,6 +758,28 @@ pública de assinar*), o teto da prévia (*Limite de tentativas*), o código de 
   registro, ou o tráfego esperado da abertura (passo 8) justificar — aí os preços ficam guardados em
   memória por um minuto e as leituras sem login ganham um teto somando os endereços.*
 
+**DEPOIS DE PAGAR: A SENHA E AS BOAS-VINDAS** *(etapa 4.7, passo 5, parte 2 — decisões do operador,
+21/10/2026: a senha nasce na própria tela; o e-mail de boas-vindas confirma e diz como entrar)*:
+- **A senha na tela** (`POST /billing/visitante/senha`, `lib/senha-depois-de-pagar.ts`, fora do ar em
+  produção como as outras rotas sem login): com o **código da tentativa** — que só o navegador que
+  pagou recebeu —, só para a conta que nasceu daquele pagamento e que tem acesso, **só enquanto ela
+  não tem senha** (a primeira, uma vez; depois, "Esqueci minha senha") e **até 24 horas** depois de a
+  conta nascer. Uma de cada vez por conta, sem esperar (dois cliques nunca criam duas senhas). A
+  senha é embaralhada pelo próprio Better Auth e **nunca aparada**; de 8 a 128 caracteres (os mesmos
+  números do Better Auth e da tela, no `core`). A sessão abre na hora, como no login. **O e-mail não
+  fica confirmado por aqui** (quem digitou pode não ser o dono dele). As recusas:
+  `NaoConfirmado` (tentativa desconhecida, sem conta ou sem acesso — a mesma), `PrazoVencido`,
+  `JaTemSenha`, `Ocupada`. Limite: 10 a cada 15 minutos por endereço.
+- **As boas-vindas** (`lib/boas-vindas.ts`): saem depois de **qualquer** sincronia da assinatura de
+  quem assinou sem conta — o aviso da Stripe (inclusive o repetido), o novo clique de quem já pagou,
+  a conferência do admin —, sempre **depois do commit**, e só com a conta com acesso. **Uma vez:** a
+  ficha guarda quando ela foi tomada (`boasVindasEnviadaEm`, migration
+  `20261021180000_boas_vindas_da_ficha`); se o envio falha, a marca volta, e o aviso seguinte tenta;
+  a chave `boas-vindas/<conta>` segura as duas pontas no Resend. **Nunca derruba o aviso** (a falha
+  vira alerta `[email]`). O botão "Entrar na escola" leva a `/login`, pelo `BETTER_AUTH_URL` — **em
+  produção, só https**: sem isso o e-mail sai sem o botão, e a subida do servidor alerta. Os textos
+  são **rascunho do agente** (`app.email.boasVindas`).
+
 **A REVISÃO DE SEGURANÇA DO PASSO** (`security-vulnerability-reviewer`, sobre os commits das partes
 A e B, 21/10/2026): **nenhum bloqueio (P0)**. **O P1, corrigido:** o teto de 3 "assinar sem login" em
 andamento (acima). **Os P2:** corrigidos — o número fiscal só muda na decisão, com a trava e depois de

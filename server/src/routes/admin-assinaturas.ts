@@ -6,6 +6,7 @@ import { prisma } from "../lib/prisma.js";
 import { cobrancaConfigurada } from "../lib/stripe.js";
 import { temAcessoAtivo } from "../lib/acesso.js";
 import { sincronizarConta, sincronizarPedido, type Conferida } from "../lib/assinaturas.js";
+import { mandarBoasVindasDaAssinatura } from "../lib/boas-vindas.js";
 
 // FORÇAR A SINCRONIA COM A STRIPE (Fase 4, etapa 4.4 — billing.md; CLAUDE.md → Membership Gating,
 // "Force-sync"). É a RECUPERAÇÃO de quando um aviso da Stripe se perde: o assinante pagando e
@@ -47,6 +48,8 @@ router.post("/admin/assinaturas/sincronizar", requireAdmin, async (req, res) => 
       return;
     }
     conferidas = daFicha;
+    // A conta nasceu nesta conferência: as boas-vindas saem daqui (depois do commit; uma vez só).
+    for (const a of daFicha) if (a.resultado === "atualizada") await mandarBoasVindasDaAssinatura(a.id);
   }
   const temAcesso = await temAcessoAtivo(conta.id);
   const resumo = conferidas.map((a) => `${a.id} ${"assinatura" in a ? `${a.resultado} (${a.assinatura.status})` : a.resultado}`).join(", ") || "nenhuma assinatura";

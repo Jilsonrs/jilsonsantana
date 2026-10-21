@@ -323,6 +323,15 @@ export const pt = {
         textoSenha: "Use este código para criar uma senha nova:",
         validade: "O código vale por {minutos} minutos e só pode ser usado uma vez.",
         naoFoiVoce: "Se não foi você que pediu, ignore este e-mail: ninguém entra na sua conta sem este código."
+      },
+      // O E-MAIL DE BOAS-VINDAS de quem assinou sem conta (etapa 4.7, passo 5 — decisão do
+      // operador, 21/10/2026): RASCUNHO do agente, para o operador revisar.
+      boasVindas: {
+        assunto: "Sua assinatura está confirmada",
+        titulo: "Boas-vindas à escola",
+        confirmada: "Sua assinatura foi confirmada: você já tem acesso a todos os cursos e trilhas.",
+        comoEntrar: "Para entrar, use seu e-mail e sua senha. Se ainda não criou a senha, ou não lembra dela, use \"Receber código de acesso\" na tela de entrar.",
+        botao: "Entrar na escola"
       }
     },
     inicio: {

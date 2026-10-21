@@ -2,7 +2,7 @@ import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { emailOTP } from "better-auth/plugins";
 import { PrismaClient } from "@prisma/client";
-import { Role, TENTATIVAS_DO_CODIGO, VALIDADE_DO_CODIGO_EM_MINUTOS } from "@jilson/core";
+import { Role, TAMANHO_MAXIMO_DA_SENHA, TAMANHO_MINIMO_DA_SENHA, TENTATIVAS_DO_CODIGO, VALIDADE_DO_CODIGO_EM_MINUTOS } from "@jilson/core";
 import { enviarCodigo } from "./codigo-por-email.js";
 
 // Better Auth instance (Phase 1). The HTTP handler is mounted on Express in
@@ -59,6 +59,9 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     disableSignUp: true,
+    // O tamanho da senha, dos mesmos números da tela (`core` → `senhaNovaSchema`).
+    minPasswordLength: TAMANHO_MINIMO_DA_SENHA,
+    maxPasswordLength: TAMANHO_MAXIMO_DA_SENHA,
     // Trocar a senha pelo código desconecta os outros aparelhos (decisão do operador, 21/10/2026,
     // "como Google e Apple"): quem tinha entrado com a senha antiga perde o acesso na hora.
     revokeSessionsOnPasswordReset: true,

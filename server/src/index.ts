@@ -4,6 +4,7 @@ import { versaoNoAr } from "./monitor-no-ar.js";
 import app from "./app.js";
 import { desligarComCalma } from "./lib/desligar.js";
 import { avisarQueSubiu, esvaziarMonitor } from "./lib/monitor.js";
+import { enderecoDoSite } from "./lib/endereco-do-site.js";
 
 // Entrada de PRODUÇÃO (`dist/index.js` — o que Dockerfile e Railway executam).
 // A montagem do app vive em `app.ts`, que não escuta porta, para que supertest
@@ -19,6 +20,13 @@ if (process.env.NODE_ENV === "production" && !process.env.BETTER_AUTH_SECRET) {
     "FATAL: BETTER_AUTH_SECRET must be set in production. Aborting startup.",
   );
   process.exit(1);
+}
+
+// O ENDEREÇO DOS LINKS DOS E-MAILS (etapa 4.7, passo 5): em produção, `BETTER_AUTH_URL` tem que ser
+// https. Não derruba a subida (o site segue no ar): alerta, e o e-mail sai sem o botão até alguém
+// corrigir a variável na Railway (`lib/endereco-do-site.ts`).
+if (process.env.NODE_ENV === "production" && enderecoDoSite("/") === null) {
+  console.error("[email] BETTER_AUTH_URL ausente ou sem https em produção: os e-mails saem sem o botão de entrar");
 }
 
 const PORT = process.env.PORT ?? 3000;

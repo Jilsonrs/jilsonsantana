@@ -54,3 +54,30 @@ export type PedirCodigoInput = z.infer<typeof pedirCodigoSchema>;
 
 /** Resposta de `POST /api/conta/codigo`: sempre a mesma — o código foi enviado, SE o e-mail tiver conta. */
 export type CodigoPedido = { ok: true };
+
+/**
+ * A SENHA NOVA (etapa 4.7, passo 5): de 8 a 128 caracteres — os mesmos números do Better Auth
+ * (`lib/auth.ts` os fixa daqui). NUNCA aparada: espaço nas pontas é parte da senha (CLAUDE.md →
+ * Client: trimar senha tranca gente para fora); só a senha feita só de espaços é recusada.
+ */
+export const TAMANHO_MINIMO_DA_SENHA = 8;
+export const TAMANHO_MAXIMO_DA_SENHA = 128;
+export const senhaNovaSchema = z
+  .string()
+  .min(TAMANHO_MINIMO_DA_SENHA)
+  .max(TAMANHO_MAXIMO_DA_SENHA)
+  .refine((valor) => valor.trim().length > 0, "SenhaVazia");
+
+/**
+ * Corpo de `POST /api/billing/visitante/senha` — criar a senha LOGO DEPOIS DE PAGAR, na própria tela
+ * (decisão do operador, 21/10/2026). O código da tentativa — que só quem pagou naquela tela recebeu
+ * — e a senha. A conta é a que nasceu daquele pagamento; nada mais vem do navegador.
+ */
+export const senhaDepoisDePagarSchema = z.object({
+  tentativa: z.string().trim().min(1).max(64),
+  senha: senhaNovaSchema,
+});
+export type SenhaDepoisDePagarInput = z.infer<typeof senhaDepoisDePagarSchema>;
+
+/** Resposta de `POST /api/billing/visitante/senha`: a senha foi criada; `entrou`, a sessão já está aberta. */
+export type SenhaCriada = { entrou: boolean };

@@ -424,6 +424,9 @@ model GuestCheckout {
   tentativa        String?  @unique
   userId           String?  @unique
   user             User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // O e-mail de boas-vindas (etapa 4.7, passo 5): quando ele foi tomado para sair — UMA vez. Se o
+  // envio falha, volta a vazio, e o próximo aviso da Stripe tenta de novo.
+  boasVindasEnviadaEm DateTime?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 

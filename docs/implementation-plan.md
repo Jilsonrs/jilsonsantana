@@ -4597,6 +4597,19 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                   gerado); o teste passou a enxergá-lo, e ela reprova. Uma é equivalente (o destino
                   pelo e-mail digitado ou pelo do banco é o mesmo texto, porque a busca é exata em
                   minúsculas).
+            - [x] **Parte 2 — a senha logo depois de pagar e as boas-vindas (servidor).** FEITA
+                  (21/10/2026), no `dev`. `POST /billing/visitante/senha` (com o código da tentativa;
+                  só a conta que nasceu daquele pagamento, com acesso, sem senha, até 24 h; abre a
+                  sessão; o e-mail não fica confirmado) e o e-mail de boas-vindas (depois de qualquer
+                  sincronia, uma vez, com a marca na ficha — migration
+                  `20261021180000_boas_vindas_da_ficha`, aplicada no banco do dev com o Passo 0
+                  conferido antes e depois; nunca derruba o aviso; o botão só com https em produção,
+                  e a subida do servidor alerta). O tamanho da senha (8 a 128) no `core`, o mesmo do
+                  Better Auth. Os textos das boas-vindas são rascunho do agente. Detalhe:
+                  `billing.md` → *Assinar sem conta* → *Depois de pagar*. **Testes:** 9 da senha, 7
+                  das boas-vindas e 1 do código (a senha curta). **Mutação: 17 de 18 reprovaram**; a
+                  que passou é equivalente (a leitura antecipada da marca só poupa consultas — quem
+                  impede o segundo envio é a tomada da marca).
             **Da revisão de segurança do passo 4 (21/10/2026), para este passo:** não depender só
             do `contaNova` da sincronia — ele sai uma vez, e se o servidor cair entre a gravação e
             o envio, ninguém recebe o e-mail e nada alerta (a reentrega do aviso já não diz

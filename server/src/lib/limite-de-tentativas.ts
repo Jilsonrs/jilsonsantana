@@ -56,6 +56,8 @@ export const LIMITES_DO_VISITANTE = {
   leitura: { endereco: { porJanela: 120 } },
   /** "O pagamento já valeu?" — só lê o banco, e a tela repete a cada 2 s (duas abas cabem). */
   confirmacao: { endereco: { porJanela: 900 } },
+  /** Criar a senha logo depois de pagar (passo 5): uma vez por conta; o teto segura quem insiste. */
+  senha: { endereco: { porJanela: 10 } },
 } as const satisfies Record<string, { endereco: Teto; email?: Teto } | number>;
 
 /** Já avisamos que a contagem por endereço parou? Uma vez por processo basta (zera nos testes). */
@@ -261,6 +263,7 @@ export const limiteSemLogin = {
   previa: [...tetosSemLogin(LIMITES_DO_VISITANTE.previa, { semODiaDoEndereco: true }), conferenciasDeCodigoDoDia],
   leitura: tetosSemLogin(LIMITES_DO_VISITANTE.leitura),
   confirmacao: tetosSemLogin(LIMITES_DO_VISITANTE.confirmacao),
+  senha: tetosSemLogin(LIMITES_DO_VISITANTE.senha),
 };
 
 /**

@@ -1,5 +1,8 @@
 import { Router } from "express";
-import { assinarSemLoginSchema, confirmacaoSemLoginSchema, previaSchema, type AssinaturaSemLogin, type ConfirmacaoSemLogin, type PlanosDaAssinatura, type PreviaDaAssinatura } from "@jilson/core";
+import { fromNodeHeaders } from "better-auth/node";
+import { assinarSemLoginSchema, confirmacaoSemLoginSchema, previaSchema, senhaDepoisDePagarSchema, type AssinaturaSemLogin, type ConfirmacaoSemLogin, type PlanosDaAssinatura, type PreviaDaAssinatura, type SenhaCriada } from "@jilson/core";
+import { auth } from "../lib/auth.js";
+import { criarSenhaDepoisDePagar } from "../lib/senha-depois-de-pagar.js";
 import { validate } from "../lib/http.js";
 import { cobrancaConfigurada } from "../lib/stripe.js";
 import { lerPlanos, lerPrevia } from "../lib/vitrine-da-assinatura.js";
@@ -148,6 +151,43 @@ router.post("/billing/visitante/confirmacao", ...limiteSemLogin.confirmacao, asy
   const corpo = validate(confirmacaoSemLoginSchema, req.body, res);
   if (corpo === null) return;
   const resposta: ConfirmacaoSemLogin = { confirmada: await pagamentoConfirmado(corpo.tentativa) };
+  res.json(resposta);
+});
+
+// POST /api/billing/visitante/senha — criar a senha LOGO DEPOIS DE PAGAR, na própria tela (etapa
+// 4.7, passo 5 — decisão do operador, 21/10/2026). A regra mora em `lib/senha-depois-de-pagar.ts`;
+// aqui, abrir a sessão — a pessoa já entra para estudar — e a resposta. A senha nunca vai para o
+// registro, nem o código da tentativa.
+const RECUSAS_DA_SENHA = {
+  "nao-confirmado": "NaoConfirmado",
+  "prazo-vencido": "PrazoVencido",
+  "ja-tem-senha": "JaTemSenha",
+  ocupada: "Ocupada",
+} as const;
+
+router.post("/billing/visitante/senha", ...limiteSemLogin.senha, async (req, res) => {
+  const corpo = validate(senhaDepoisDePagarSchema, req.body, res);
+  if (corpo === null) return;
+  const desfecho = await criarSenhaDepoisDePagar(corpo.tentativa, corpo.senha);
+  if (desfecho.resultado !== "criada") {
+    res.status(409).json({ error: RECUSAS_DA_SENHA[desfecho.resultado] });
+    return;
+  }
+  console.info(`[api] a conta ${desfecho.contaId} criou a senha na tela de depois do pagamento`);
+  // A sessão, como o login abre (o cookie do Better Auth, com as mesmas regras). Se ela falhar, a
+  // senha já está criada: a tela manda para a tela de entrar.
+  let entrou = false;
+  try {
+    const { headers } = await auth.api.signInEmail({ body: { email: desfecho.email, password: corpo.senha }, headers: fromNodeHeaders(req.headers), returnHeaders: true });
+    const cookies = headers.getSetCookie();
+    if (cookies.length > 0) {
+      res.append("Set-Cookie", cookies);
+      entrou = true;
+    }
+  } catch (erro) {
+    console.warn(`[api] a conta ${desfecho.contaId} criou a senha, e a sessão não abriu: ${erro instanceof Error ? erro.name : "?"}`);
+  }
+  const resposta: SenhaCriada = { entrou };
   res.json(resposta);
 });
 

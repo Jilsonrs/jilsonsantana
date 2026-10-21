@@ -179,6 +179,13 @@ describe("Esqueci minha senha — o código e a senha nova", () => {
     expect(await prisma.account.count({ where: { userId: conta.id, providerId: "credential" } })).toBe(1);
   });
 
+  it("a senha nova curta demais (menos de 8): recusada — os mesmos números da tela", async () => {
+    const conta = await contaComSenha();
+    await pedirCodigo(conta.email, "senha");
+    expect((await trocarSenha(conta.email, ultimoCodigo(), "1234567")).status).toBe(400);
+    expect((await entrarComSenha(conta.email, SENHA)).status).toBe(200);
+  });
+
   it("o código de entrar não troca a senha, e o de senha não entra", async () => {
     const conta = await contaComSenha();
     await pedirCodigo(conta.email, "entrar");

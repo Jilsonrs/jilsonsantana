@@ -4,6 +4,7 @@ import { DuracaoDoDesconto, type AssinarSemLoginInput } from "@jilson/core";
 import { prisma } from "./prisma.js";
 import { sincronizarSeLivre } from "./assinaturas.js";
 import { temAcessoAtivo } from "./acesso.js";
+import { mandarBoasVindasDaAssinatura } from "./boas-vindas.js";
 import { acertarNumeroFiscal, assinaturasDoCliente, buscarCodigo, buscarPrecos, cancelarIncompleta, criarAssinatura, criarClienteDoVisitante, DocumentoRecusado, type AssinaturaNoCheckout } from "./stripe.js";
 
 // ASSINAR SEM CONTA (Fase 4, etapa 4.7, passo 4 — billing.md → *Assinar sem conta*; CLAUDE.md →
@@ -128,6 +129,8 @@ async function sincronizarAViva(email: string, assinaturaId: string): Promise<De
   const conta = await prisma.user.findUnique({ where: { email }, select: { id: true } });
   if (conta && (await temAcessoAtivo(conta.id))) {
     console.info(`[stripe] visitante: a assinatura ${assinaturaId} estava paga e sem o espelho; sincronizada, a conta ${conta.id} tem acesso`);
+    // A conta pode ter nascido agora, nesta sincronia: as boas-vindas saem daqui (depois do commit).
+    await mandarBoasVindasDaAssinatura(assinaturaId);
     return { resultado: "ja-tem-conta" };
   }
   // Viva e sem conta com acesso depois da sincronia: há alguém que pagou e não entra. Precisa de gente.

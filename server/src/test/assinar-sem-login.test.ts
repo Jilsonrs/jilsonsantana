@@ -140,7 +140,7 @@ describe("fora do ar no site até o dia de abrir (passo 8)", () => {
     expect(assinaturaSemLoginNoAr({ NODE_ENV: "development" })).toBe(true);
   });
 
-  it("em produção, sem a chave: as quatro rotas respondem 404, e nada vai à Stripe nem ao banco", async () => {
+  it("em produção, sem a chave: as cinco rotas respondem 404, e nada vai à Stripe nem ao banco", async () => {
     process.env.NODE_ENV = "production";
     delete process.env.ASSINAR_SEM_LOGIN;
     try {
@@ -150,8 +150,9 @@ describe("fora do ar no site até o dia de abrir (passo 8)", () => {
         await request(servidor).post("/api/billing/visitante/previa").set("x-real-ip", "198.51.100.30").send({ plano: "mensal", codigo: "X" }),
         await assinar(pedido(email), "198.51.100.30"),
         await confirmar("qualquer"),
+        await request(servidor).post("/api/billing/visitante/senha").set("x-real-ip", "198.51.100.30").send({ tentativa: "qualquer", senha: "senha-qualquer-1" }),
       ];
-      expect(respostas.map((r) => [r.status, r.body])).toEqual(Array(4).fill([404, { error: "NaoEncontrado" }]));
+      expect(respostas.map((r) => [r.status, r.body])).toEqual(Array(5).fill([404, { error: "NaoEncontrado" }]));
       expect(buscarPrecos).not.toHaveBeenCalled();
       expect(criarClienteDoVisitante).not.toHaveBeenCalled();
       expect(await ficha(email)).toBeNull();
