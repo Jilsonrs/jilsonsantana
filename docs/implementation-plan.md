@@ -213,6 +213,9 @@
 > login: quem não entrou não gasta cota de ninguém); o login com um e-mail que não existe → 401; o
 > público segue no "Em breve". *O limite em si só se vê com login: a prova é a suíte (23 testes de
 > servidor e 9 de tela).*
+> **Na `dev`, ainda NÃO publicado (21/10/2026):** a **etapa 4.7, passo 3** — o balcão de e-mail
+> (Resend) e o modelo do e-mail. Nada o chama ainda, então não muda nada para o aluno; o logo do
+> e-mail (`/img/Logomarca-email.png`) só existe no site depois da próxima publicação.
 > **PUBLICADO em 19/10/2026 (`main` = `1ee7c0c`, CI verde nos dois jobs, deploy ok; sem
 > migration; ordem do operador: "publica"):** o **passo 6 da etapa 4.6c** (os documentos num
 > idioma só; saíram o `idiomas.md` e o script da revisão do inglês; a legenda do Bunny só aceita
@@ -4375,11 +4378,51 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             reprovaram — inclusive a volta do código antigo (o gate lido fora da trava) e o `tx`
             tirado de dentro da sincronia.
             Gates: build, typecheck, lint, site 902, servidor como o CI 1108.
-      - [ ] **Passo 3 — O envio de e-mail (Resend).** Com o operador, nos painéis: a conta no
+      - [x] **Passo 3 — O envio de e-mail (Resend).** Com o operador, nos painéis: a conta no
             Resend, o domínio e o remetente (pendência P49). No código: o pacote `resend`, uma
             porta única de envio (com `await` e sem derrubar o pedido — CLAUDE.md → *Membership
             Gating*), o modelo de e-mail e um envio de prova para ele. Sozinho,
             não muda nada para o aluno.
+            **FEITO em 20–21/10/2026** (o operador nos painéis do Resend, da GoDaddy e da
+            Microsoft, com o agente):
+            - **O remetente (P49 — decisões do operador, 20/10/2026):** `Jilson Santana
+              <suporte@alunos.jilsonsantana.com>`, e as respostas vão para
+              `suporte@jilsonsantana.com` (caixa compartilhada do Microsoft 365, sem custo —
+              criá-la é a **P92**). Por um **subdomínio**, para que a fama de spam da escola não
+              atinja o e-mail pessoal dele. Domínio, região (São Paulo), registros, DMARC
+              (`p=quarantine` só no subdomínio, 21/10), rastreamento desligado e as chaves:
+              `tech-stack.md` → *Email*. **A chave de produção nasce no dia de publicar o passo 5**
+              (só envio, só o domínio) e vai direto para a Railway.
+            - **No código:** `resend@6.32.1`, fixada (ok do operador; a mais nova tinha 4 dias) ·
+              o balcão `enviarEmail()` (`server/src/lib/email.ts`, o único que importa `resend`):
+              nunca lança, nem ao montar o e-mail · 10 s e desiste · alerta `[email]` com
+              `referencia` (ids nossos) e sem destinatário nem conteúdo · só um endereço válido,
+              em minúsculas · o endereço da API fixo · `chave` contra e-mail repetido (24 h) ·
+              `motivo: "duplicado"` · o modelo `montarEmail()` (`server/src/views/email.ts`) · o
+              topo e o rodapé em `app.email` no dicionário (fora de Admin → Textos) · a prévia
+              `npm --workspace server run email:previa` · o logo do e-mail,
+              `client/public/img/Logomarca-email.png` (recorte do logo do menu da home; só
+              aparece no e-mail depois de publicado) · as três regras de chamada no CLAUDE.md →
+              *Membership Gating*.
+            - **O desenho (decisões do operador, 21/10/2026):** o do site, com o e-mail da Apple
+              como referência — o logo oficial centralizado DENTRO do cartão branco, com 120 de
+              largura; 660 de largura; as fontes e as cores do site; o botão em pílula azul. O
+              rodapé ("Jilson Santana · jilsonsantana.com") foi aprovado junto. **O acabamento
+              fino fica com o Antigravity**, quando o operador quiser: instruções no
+              `design-lab/GEMINI.md` → *O MODELO DE E-MAIL* (fila, item 37).
+            - **Revisão de segurança (20/10/2026):** sem P0. Os dois P1 corrigidos (o alerta não
+              dizia QUEM ficou sem o e-mail; a montagem do e-mail podia lançar e derrubar o
+              pedido), e os P2 (destinatário validado, assunto sem quebra de linha, endereço da
+              API fixo, `tipo` como lista fechada, testes do tempo limite e da porta única). Os
+              que são de quem vai chamar o balcão estão no passo 5 e nas regras do CLAUDE.md.
+            - **Testes:** 14 do balcão (a biblioteca de verdade, com só a rede trocada por dublê)
+              e 10 do modelo. **Mutação: 22/22 reprovaram.** Gates: build, typecheck e lint ok;
+              site 902, servidor 1132 (como o CI, sem chave de fornecedor).
+            - **A entrega, medida com o e-mail de prova:** iCloud → caixa de entrada; Yahoo →
+              lixo eletrônico (o operador marcou "não é spam"); a Microsoft da empresa dele →
+              quarentena (`CAT:HPHISH`, com SPF, DKIM, DMARC e compauth todos `pass`);
+              mail-tester **10/10**. **A configuração está certa; o que falta é reputação do
+              domínio novo** → passo 8.
       - [ ] **Passo 4 — A conta nasce no pagamento (servidor, ALTO RISCO).** A rota pública que
             recebe e-mail + plano + código; o aviso da Stripe cria a conta (o cadastro continua
             fechado), liga o cliente da Stripe, grava o espelho e a origem (UTM). Os casos: o
@@ -4416,6 +4459,18 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             pede também o nome, que vai no certificado (**P83**) · a tela de depois do pagamento
             tem "Enviar de novo" para quando o e-mail não chega — a rota é deste passo, dentro
             do limite do passo 1.
+            **Do passo 3 (20–21/10/2026):** o e-mail sai por `enviarEmail()` com as três regras
+            de chamada do CLAUDE.md (depois do commit e fora de trava; `chave` =
+            `<tipo>/<event.id>`, com o token do link gravado antes e REAPROVEITADO na reentrega;
+            `para` lido do nosso banco e `referencia` com os ids) · o tipo do e-mail entra na
+            lista `TipoDeEmail` · **o endereço base do link é conferido na SUBIDA do servidor**
+            (https em produção — a revisão de segurança lembrou que um `BETTER_AUTH_URL` sem
+            `https://` faria o e-mail não sair) · a chave de produção do Resend vai para a
+            Railway na publicação deste passo · **pergunta ao operador na abertura:** o aluno
+            cria a senha **na própria tela de depois do pagamento**, sem depender do e-mail para
+            entrar? O e-mail viraria confirmação, e cair no spam deixaria de impedir a matrícula
+            (o que o passo 3 mediu no Yahoo e na Microsoft). Tem prós e contras a pesar com ele,
+            com a revisão de segurança.
       - [ ] **Passo 6 — A tela pública de assinar e os botões da home.** O mesmo formulário da
             4.2 com o campo de e-mail, a confirmação para quem acabou de pagar ("enviamos um
             e-mail para você criar a senha") e os botões Assinar da home sem login.
@@ -4468,6 +4523,12 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             dois; hoje são pendência da Fase 7 e a P61) · a **P84** (o cartão promete o JilsonAI
             e o Pix, que ainda não existem) · a resposta da FAQ sobre nota fiscal já trocada por
             ele no admin (decisão de 12/10/2026: "sempre que solicitada").
+            **A entrega dos e-mails (do passo 3, 21/10/2026):** antes de abrir, medir de novo
+            onde o e-mail cai — no **Gmail e no Hotmail/Outlook.com de OUTRA pessoa** (os testes
+            do passo 3 foram para caixas do próprio operador, com o nome dele no remetente e no
+            destinatário), no Yahoo e no mail-tester (o DMARC do subdomínio deve sair verde; em
+            21/10 o verificador dele ainda lia o registro antigo). Até lá, **aquecer o domínio**:
+            e-mails de verdade para quem abre e responde, e "não é spam" quando cair no lixo.
 - [ ] **4.7b — Admin → Assinaturas vira um PAINEL de assinaturas (código, ALTO RISCO).**
       **MAPA APROVADO pelo operador (10/10/2026: "Aprovo o mapa"), e fica para DEPOIS da 4.7**
       (decisão dele no mesmo dia: *"o Painel pode ficar para depois da 4.7 que é mais

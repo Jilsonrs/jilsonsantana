@@ -306,6 +306,13 @@ export const pt = {
       // onde a pessoa clicou. Texto do operador, 19/10/2026.
       muitasTentativas: "Muitas tentativas seguidas. Por segurança, espere alguns minutos e tente de novo."
     },
+    // O topo e o rodapé de TODO e-mail da escola (etapa 4.7, passo 3 — `server/src/views/email.ts`).
+    // Ficam em `app.*` para NÃO entrarem em Admin → Textos (editar e-mail pelo admin ficou de fora
+    // do passo 3). Rascunho do agente: o operador aprova vendo o e-mail de prova.
+    email: {
+      topo: "Jilson Santana",
+      rodape: "Jilson Santana · jilsonsantana.com"
+    },
     inicio: {
       ola: "Olá",
       intro: "Aqui é o seu ponto de partida. O que você começar a estudar aparece nesta tela, para você continuar de onde parou.",

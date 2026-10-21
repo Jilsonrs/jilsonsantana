@@ -16,7 +16,7 @@
 > 5. **Item novo ganha o próximo número livre.** Número nunca se reutiliza, para que "P7" queira
 >    dizer sempre a mesma coisa em qualquer conversa.
 >
-> **Próximo número livre: P92** · Atualizada em 20/10/2026
+> **Próximo número livre: P93** · Atualizada em 21/10/2026
 >
 > **DESDE 12/10/2026 A ESCOLA É SÓ EM PORTUGUÊS E SÓ PARA O BRASIL** (decisão do operador; etapa
 > 4.6c do plano). A parte em inglês de qualquer item abaixo deixou de existir: revise só o
@@ -31,6 +31,7 @@
 
 | # | O que falta | Onde registrar |
 |---|---|---|
+| P92 | **Criar a caixa compartilhada `suporte@jilsonsantana.com` no Microsoft 365** (sem custo até 50 GB): admin.microsoft.com → Equipes e grupos → Caixas de correio compartilhadas → Adicionar; nome "Suporte", e-mail `suporte@jilsonsantana.com`; depois, em Membros, você (`jilson@`). **É para onde vai a resposta do aluno a todo e-mail da escola** (decisão sua, 20/10/2026); sem a caixa, a resposta volta como não entregue. Se já criou, é só me avisar | `tech-stack.md` → Email |
 
 ## B. Conteúdo e cadastro *(tarefas suas, sem ordem fixa)*
 
@@ -45,7 +46,6 @@
 | P45 | **Revisar os textos novos de 06/10**, rascunho do agente: "Notificação não encontrada." (mensagem aberta que não está mais na lista) | `core/src/i18n/pt.ts` |
 | P47 | **O e-mail educacional também aparece no sino?** (a Udemy põe nos dois). Recomendação do agente: sim | `implementation-plan.md` → 4d, antes do C4 |
 | P48 | **Limite de envios por mês?** (a Udemy: 4 educacionais e 2 promocionais). Recomendação do agente: sem limite no sistema | `implementation-plan.md` → 4d, antes do C4 |
-| P49 | **O remetente dos e-mails:** nome e endereço (ex.: "Jilson Santana <jilson@jilsonsantana.com>") e o e-mail que recebe as respostas | `implementation-plan.md` → 4d, antes do C2 |
 | P50 | **Revisar os textos novos do admin em Comunicação (06/10)**, rascunho do agente: "Nova notificação", "Todo mundo com conta", "Os alunos de um curso (quem já começou)", "Já enviada: o 'para quem' não muda.", "Vai para N pessoas.", "Confirmar envio", "x de y leram", "Nenhuma notificação ainda. Escreva a primeira em Nova notificação.", "Editar no curso", "sem mensagem (nada é enviado)" | nas próprias telas (`client/src/pages/admin/comunicacao/`, `components/admin/comunicacao/`) |
 | P12 | Revisar as **15 perguntas da FAQ**, que já estão no admin. **Inclui trocar a resposta de "Emitem nota fiscal?"** para "Sim, emitimos nota fiscal sempre que solicitada." (decisão sua de 12/10/2026) | no próprio admin |
 | P16 | **Cadastrar os 5 cursos da home** no admin. Tudo o que o cadastro precisa **já está no ar**: o envio da capa e do vídeo promocional, a descrição com negrito e listas, e os limites de caracteres | `implementation-plan.md` → Bloco C4 |

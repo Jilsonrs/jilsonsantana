@@ -49,11 +49,18 @@ export const mudarDePlanoSchema = z.object({
 export type MudarDePlanoInput = z.infer<typeof mudarDePlanoSchema>;
 
 /**
+ * UM endereço de e-mail, aparado nas pontas, até 254 caracteres (o limite do padrão). É também o
+ * que o balcão de e-mail (`server/src/lib/email.ts`) confere antes de enviar — lá, sem aparar:
+ * o destinatário tem de chegar já limpo.
+ */
+export const enderecoDeEmailSchema = z.string().trim().email().max(254);
+
+/**
  * Corpo de `POST /api/admin/assinaturas/sincronizar` — o admin força a sincronia de UMA conta com
  * a Stripe (Fase 4, etapa 4.4). Só o e-mail do aluno: quais assinaturas conferir é o servidor
  * que acha. Aparado nas pontas (colado de e-mail, vem com espaço).
  */
 export const sincronizarContaSchema = z.object({
-  email: z.string().trim().email().max(254),
+  email: enderecoDeEmailSchema,
 });
 export type SincronizarContaInput = z.infer<typeof sincronizarContaSchema>;

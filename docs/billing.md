@@ -558,7 +558,7 @@ desde a decisão de 12/10/2026; a coluna em inglês saiu desta tabela)*:
 dizer "Começar a estudar", como a de hoje. Ela confirma, repete o e-mail digitado (é ali que a
 pessoa percebe um erro de digitação), diz o que fazer a seguir e dá a saída para quando o e-mail
 não chega. Enquanto a confirmação não vem, valem os textos de hoje ("Confirmando sua
-assinatura…", "Está demorando mais que o normal…"). `{contato}` depende da P49.
+assinatura…", "Está demorando mais que o normal…"). `{contato}` é `suporte@jilsonsantana.com` — a caixa de suporte que o operador escolheu na P49 (20/10/2026; `tech-stack.md` → Email).
 
 **Em inglês: não existe mais** (decisão de 12/10/2026, etapa 4.6c). A tela é só em português.
 
