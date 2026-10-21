@@ -28,8 +28,10 @@ const router = Router();
  * (achado P1 da revisão de segurança do passo 4, 21/10/2026): cada um segura uma ligação com o banco
  * enquanto a Stripe responde, e sem conta nada os limita — uma dúzia de endereços disparando juntos
  * esgotaria as ligações que o gate usa, e a aula de quem paga ficaria esperando. Cheio, a resposta é
- * "ocupada" na hora, antes de abrir qualquer transação; o novo clique segue normalmente. Contagem em
- * memória: há um servidor só (a mesma premissa dos limites de tentativas).
+ * 409 `MuitosAoMesmoTempo` na hora, antes de abrir qualquer transação — um código próprio, para a
+ * tela dizer "Aguarde um instante e tente novamente." (decisão do operador, 21/10/2026: para a
+ * pessoa não clicar de novo em seguida e esbarrar no mesmo cheio). Contagem em memória: há um
+ * servidor só (a mesma premissa dos limites de tentativas).
  */
 export const ASSINATURAS_SEM_LOGIN_AO_MESMO_TEMPO = 3;
 let emAndamento = 0;
@@ -98,10 +100,10 @@ router.post("/billing/visitante/assinatura", ...limiteSemLogin.assinar, async (r
   if (emAndamento >= ASSINATURAS_SEM_LOGIN_AO_MESMO_TEMPO) {
     if (Date.now() - avisouEm > 60_000) {
       avisouEm = Date.now();
-      console.warn(`[api] assinar sem login: ${emAndamento} em andamento — os pedidos seguintes ouvem "ocupada"`);
+      console.warn(`[api] assinar sem login: ${emAndamento} em andamento — os pedidos seguintes ouvem "muitos ao mesmo tempo"`);
     }
     res.set("Retry-After", "2");
-    res.status(409).json({ error: "Ocupada" });
+    res.status(409).json({ error: "MuitosAoMesmoTempo" });
     return;
   }
   emAndamento++;

@@ -565,6 +565,7 @@ desde a decisão de 12/10/2026; a coluna em inglês saiu desta tabela)*:
 | Resumo, título | Resumo |
 | Resumo, total | Total de hoje |
 | E-mail que já tem conta | Este e-mail já tem conta. Entre para assinar. |
+| Muita gente assinando no mesmo instante (`MuitosAoMesmoTempo`) — **texto do operador, 21/10/2026** | Aguarde um instante e tente novamente. |
 | Renovação, mensal | Renova todo mês por {valor}, até você cancelar. |
 | Renovação, anual | Renova uma vez por ano por {valor}, até você cancelar. |
 | Reembolso | Garantia de 7 dias: se não gostar, você recebe de volta o valor pago. |
@@ -719,9 +720,11 @@ pública de assinar*), o teto da prévia (*Limite de tentativas*), o código de 
 - **No máximo 3 "assinar sem login" em andamento ao mesmo tempo**, somando todos os endereços
   (`ASSINATURAS_SEM_LOGIN_AO_MESMO_TEMPO`, achado P1 da revisão de segurança do passo): cada um
   segura uma ligação com o banco enquanto a Stripe responde, e sem conta nada os limitava — uma
-  dúzia de endereços disparando juntos deixaria a aula de quem paga esperando. Cheio, 409 `Ocupada`
-  com `Retry-After` na hora, antes de abrir qualquer transação; o novo clique segue. Contagem em
-  memória (um servidor só). *Reabre se um pico de gente honesta assinando ao mesmo tempo ouvir
+  dúzia de endereços disparando juntos deixaria a aula de quem paga esperando. Cheio, 409
+  `MuitosAoMesmoTempo` com `Retry-After` na hora, antes de abrir qualquer transação — um código
+  próprio, separado do `Ocupada` das duas abas —, e a tela diz **"Aguarde um instante e tente
+  novamente."** *(texto do operador, 21/10/2026: "para evitar que ele fique tentando em seguida e
+  fique travado"; `app.assinar.aguardeUmInstante`)*. Contagem em memória (um servidor só). *Reabre se um pico de gente honesta assinando ao mesmo tempo ouvir
   "ocupada" com frequência — aí o número sobe, junto com o tamanho do caixa de ligações do banco.*
 - **Por que só com o código da tentativa:** o e-mail não é segredo. Quem soubesse o de alguém e
   pudesse seguir com a tentativa dessa pessoa receberia o segredo do pagamento dela — e, num

@@ -470,7 +470,7 @@ describe("assinar sem login — quem já pagou, e os dois cliques", () => {
     expect(criarClienteDoVisitante).toHaveBeenCalledTimes(1);
   });
 
-  it(`no máximo ${ASSINATURAS_SEM_LOGIN_AO_MESMO_TEMPO} em andamento, somando todos os endereços: o seguinte ouve 'ocupada' na hora, sem ir à Stripe nem abrir transação`, async () => {
+  it(`no máximo ${ASSINATURAS_SEM_LOGIN_AO_MESMO_TEMPO} em andamento, somando todos os endereços: o seguinte ouve 'muitos ao mesmo tempo' na hora (a tela pede para aguardar), sem ir à Stripe nem abrir transação`, async () => {
     expect(ASSINATURAS_SEM_LOGIN_AO_MESMO_TEMPO).toBe(3);
     let soltar!: () => void;
     const segura = new Promise<void>((ok) => (soltar = ok));
@@ -486,7 +486,8 @@ describe("assinar sem login — quem já pagou, e os dois cliques", () => {
     const parados = [1, 2, 3].map((i) => assinar(pedido(novoEmail()), `198.51.100.${80 + i}`).then((res) => res));
     await cheios;
     const quarto = await assinar(pedido(novoEmail()), "198.51.100.89");
-    expect([quarto.status, quarto.body]).toEqual([409, { error: "Ocupada" }]);
+    // Um código próprio, e não o "ocupada" das duas abas: a tela diz "Aguarde um instante e tente novamente."
+    expect([quarto.status, quarto.body]).toEqual([409, { error: "MuitosAoMesmoTempo" }]);
     expect(Number(quarto.headers["retry-after"])).toBeGreaterThan(0);
     expect(buscarPrecos).toHaveBeenCalledTimes(3);
     soltar();

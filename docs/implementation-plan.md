@@ -4577,6 +4577,10 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             4.2 com o campo de e-mail, a confirmação para quem acabou de pagar ("enviamos um
             e-mail para você criar a senha") e os botões Assinar da home sem login.
             Os textos são do operador. **Depende dos passos 4 e 5.**
+            **Do passo 4 (21/10/2026):** a resposta `MuitosAoMesmoTempo` (o servidor atende 3
+            "assinar sem login" de cada vez) mostra **"Aguarde um instante e tente novamente."**
+            (`app.assinar.aguardeUmInstante` — texto do operador, no mesmo dia, para a pessoa não
+            clicar de novo em seguida); o `Ocupada` (o mesmo e-mail em duas abas) é outro caso.
             **A PROPOSTA DA TELA** *(agente, 12/10/2026, depois de o operador mostrar as telas
             de pagamento da Udemy e do Code with Mosh)* **está em `billing.md` → *A tela pública
             de assinar*:** os blocos em ordem, os textos, o que a Stripe exige

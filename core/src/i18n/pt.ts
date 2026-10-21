@@ -459,6 +459,10 @@ export const pt = {
       processando: "Processando…",
       erroPlanos: "Não foi possível carregar os planos. Tente de novo.",
       erro: "Não foi possível concluir a assinatura. Confira os dados e tente de novo.",
+      // Muita gente assinando sem login no mesmo instante (o servidor atende 3 de cada vez — etapa
+      // 4.7, passo 4): o pedido volta com `MuitosAoMesmoTempo`. Texto do operador (21/10/2026), para
+      // a pessoa esperar antes de clicar de novo. Quem o mostra é a tela pública (passo 6).
+      aguardeUmInstante: "Aguarde um instante e tente novamente.",
       jaAssinante: "Você já é assinante.",
       irParaInicio: "Ir para o Início",
       confirmando: "Confirmando sua assinatura…",
