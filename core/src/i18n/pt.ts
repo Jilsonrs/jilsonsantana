@@ -311,7 +311,19 @@ export const pt = {
     // do passo 3). Rascunho do agente: o operador aprova vendo o e-mail de prova.
     email: {
       topo: "Jilson Santana",
-      rodape: "Jilson Santana · jilsonsantana.com"
+      rodape: "Jilson Santana · jilsonsantana.com",
+      // O E-MAIL DO CÓDIGO (etapa 4.7, passo 5): RASCUNHO do agente (21/10/2026), para o operador
+      // revisar. `{codigo}` são os 6 números; `{minutos}`, a validade.
+      codigo: {
+        assuntoEntrar: "Seu código de acesso: {codigo}",
+        tituloEntrar: "Seu código de acesso",
+        textoEntrar: "Use este código para entrar na escola:",
+        assuntoSenha: "Seu código para criar uma senha nova: {codigo}",
+        tituloSenha: "Crie uma senha nova",
+        textoSenha: "Use este código para criar uma senha nova:",
+        validade: "O código vale por {minutos} minutos e só pode ser usado uma vez.",
+        naoFoiVoce: "Se não foi você que pediu, ignore este e-mail: ninguém entra na sua conta sem este código."
+      }
     },
     inicio: {
       ola: "Olá",

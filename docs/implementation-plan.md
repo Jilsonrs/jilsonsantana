@@ -4577,6 +4577,26 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             na tela de entrar, e a tela do código com a senha nova; os textos são rascunho do agente
             · **(4)** a prova, a revisão de segurança, a mutação e os documentos, com um e-mail de
             cada tipo para o operador ver.
+            - [x] **Parte 1 — o código no e-mail (servidor).** FEITA (21/10/2026), no `dev`. O
+                  `emailOTP` do Better Auth 1.7.5 (sem pacote novo): 6 números, 10 minutos, 3
+                  tentativas, guardado só o resumo (`hashed`), **`disableSignUp: true` também nele**
+                  (sem isso, entrar com código criaria a conta de qualquer e-mail — medido no código);
+                  trocar a senha pelo código desconecta os outros aparelhos
+                  (`revokeSessionsOnPasswordReset`) e confirma o e-mail; o código cria a primeira
+                  senha de quem não tem. **Pedir código só por `POST /api/conta/codigo`**
+                  (`routes/conta-codigo.ts`), a mesma resposta exista a conta ou não, com os limites
+                  do plano (por e-mail, de qualquer endereço, 3 por hora e 6 por dia; por endereço,
+                  10 a cada 15 min); as rotas do recurso de pedir código, e as de link e de troca de
+                  e-mail, desligadas (`disabledPaths`); gastam o código as do Better Auth
+                  (`/sign-in/email-otp`, `/email-otp/reset-password`). O e-mail do código
+                  (`lib/codigo-por-email.ts`) pelo balcão, para o endereço do banco; os textos são
+                  **rascunho do agente** (`app.email.codigo`), para o operador revisar com os das
+                  telas (parte 3). **Testes:** 15 (`codigo-por-email.test.ts`). **Mutação: 12 de 13
+                  reprovaram na primeira rodada** — a que passou era a trava de não criar conta (o
+                  nosso e-mail já não saía para e-mail sem conta, e o teste não enxergava o código
+                  gerado); o teste passou a enxergá-lo, e ela reprova. Uma é equivalente (o destino
+                  pelo e-mail digitado ou pelo do banco é o mesmo texto, porque a busca é exata em
+                  minúsculas).
             **Da revisão de segurança do passo 4 (21/10/2026), para este passo:** não depender só
             do `contaNova` da sincronia — ele sai uma vez, e se o servidor cair entre a gravação e
             o envio, ninguém recebe o e-mail e nada alerta (a reentrega do aviso já não diz

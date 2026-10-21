@@ -44,7 +44,7 @@ const API_DO_RESEND = "https://api.resend.com";
 const TEMPO_LIMITE_MS = 10_000;
 
 /** Os e-mails que existem. Cada passo que cria um e-mail acrescenta o dele aqui. */
-export type TipoDeEmail = "prova";
+export type TipoDeEmail = "prova" | "codigo";
 
 export type PedidoDeEmail = {
   /** O `User.email` lido do NOSSO banco. */

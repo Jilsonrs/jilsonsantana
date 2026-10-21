@@ -63,7 +63,8 @@ function enderecoDoBotao(endereco: string): string {
 }
 
 /** O e-mail pronto para o `enviarEmail()`: as duas versões, com o logo e o rodapé da escola. */
-export function montarEmail(mensagem: MensagemDeEmail, textos: Dict["app"]["email"]): EmailMontado {
+// Só o topo e o rodapé: os outros textos de `app.email` (os do código, etapa 4.7, passo 5) são de quem monta a mensagem.
+export function montarEmail(mensagem: MensagemDeEmail, textos: Pick<Dict["app"]["email"], "topo" | "rodape">): EmailMontado {
   // O assunto vira cabeçalho do e-mail: quebra de linha ali nunca é texto.
   const assunto = mensagem.assunto.replace(/[\r\n]+/g, " ");
   const botao = mensagem.botao ? { texto: mensagem.botao.texto, endereco: enderecoDoBotao(mensagem.botao.endereco) } : null;

@@ -21,6 +21,7 @@ import { MemoryStore, ipKeyGenerator, rateLimit, type Options } from "express-ra
 // - **A conta é a da sessão** (o `requireAuth` vem antes); o endereço, o `x-real-ip`.
 
 const MINUTO = 60_000;
+const HORA = 60 * MINUTO;
 const DIA = 24 * 60 * MINUTO;
 const JANELA = 15 * MINUTO;
 
@@ -261,6 +262,22 @@ export const limiteSemLogin = {
   leitura: tetosSemLogin(LIMITES_DO_VISITANTE.leitura),
   confirmacao: tetosSemLogin(LIMITES_DO_VISITANTE.confirmacao),
 };
+
+/**
+ * PEDIR O CÓDIGO NO E-MAIL (etapa 4.7, passo 5 — os tetos estavam no plano aprovado pelo operador em
+ * 21/10/2026). Por E-MAIL, de qualquer endereço — é o que protege a caixa de e-mail de alguém e a cota
+ * de e-mails da escola no Resend — e por endereço. Aqui o e-mail conta SOZINHO (e não com o endereço,
+ * como no assinar): quem quisesse encher a caixa de outra pessoa usaria muitos endereços. O preço:
+ * quem pede de propósito os códigos de outra pessoa a deixa sem código por até um dia — ela continua
+ * entrando com a senha.
+ */
+export const LIMITES_DO_CODIGO = { email: { porHora: 3, porDia: 6 }, endereco: { porJanela: 10 } } as const;
+
+export const limiteDoCodigo: RequestHandler[] = [
+  limitador("email", HORA, LIMITES_DO_CODIGO.email.porHora, { semLogin: true, chave: (req) => `codigo-hora email:${emailDoPedido(req) ?? "-"}` }),
+  limitador("email", DIA, LIMITES_DO_CODIGO.email.porDia, { semLogin: true, chave: (req) => `codigo-dia email:${emailDoPedido(req) ?? "-"}` }),
+  limitador("endereco", JANELA, LIMITES_DO_CODIGO.endereco.porJanela, { semLogin: true }),
+];
 
 /** A contagem dos clientes novos do dia, por endereço (zera nos testes, como as outras). */
 const clientesNovos = new MemoryStore();
