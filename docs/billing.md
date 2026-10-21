@@ -366,7 +366,11 @@ gera mais aviso, o acesso ficaria liberado para sempre. *(Achado P1 da revisão 
 - **Uma conta é sempre UM cliente na Stripe** (tabela `stripe_customer`).
 - **Uma tentativa de cada vez por conta, e a nova tentativa usa a MESMA assinatura**: cartão
   recusado e novo clique não criam outra; trocar de plano ou de código cancela a tentativa
-  anterior antes de criar a nova. **A trava NÃO ESPERA** *(etapa 4.7, passo 2, 19/10/2026 —
+  anterior antes de criar a nova. **Menos quando a Stripe cancelou o pagamento** (depois de 10
+  recusas — medido em 21/10/2026, *Assinar sem conta*): aí a antiga é cancelada e nasce outra; sem
+  isso, o aluno ficaria preso no pagamento morto até trocar de plano ou a tentativa vencer
+  *(achado do passo 4 da etapa 4.7; correção autorizada pelo operador em 21/10/2026: "Sim,
+  corrija")*. **A trava NÃO ESPERA** *(etapa 4.7, passo 2, 19/10/2026 —
   plano aprovado pelo operador)*: o pedido que chega com outro da mesma conta em andamento
   (outra aba) responde 409 `Ocupada` na hora, sem ir à Stripe — a tela diz "Não foi possível
   concluir a assinatura. Confira os dados e tente de novo.", e o novo clique segue com a mesma

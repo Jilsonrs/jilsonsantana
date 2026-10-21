@@ -4538,7 +4538,9 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                   num lugar só, o da trava, e a mutação dela reprova. **Achado FORA do passo,
                   reportado ao operador:** o pagamento morto (10 recusas) também prenderia quem
                   assina LOGADO (`checkout.ts`, desde a 4.2) até trocar de plano ou a tentativa
-                  vencer. `Docs check (context7): Stripe → /websites/stripe → o número fiscal do
+                  vencer. **Corrigido com a autorização dele, no mesmo dia** (*"Sim, corrija"*), num
+                  commit à parte: o novo clique ganha outra tentativa (teste em `billing.test.ts`;
+                  a mutação reprova). `Docs check (context7): Stripe → /websites/stripe → o número fiscal do
                   cliente (tax_id_data; a Stripe só confere o formato) e o teto de confirmações de um
                   pagamento (não documentado; medido) · Better Auth → /better-auth/better-auth →
                   criar conta pelo servidor com o cadastro fechado, e a troca de senha cria a senha de
