@@ -515,7 +515,7 @@ customer's full billing address for tax calculation […] use the Address Elemen
 | País ou endereço | só o país | endereço completo | nada | **o país, sim; endereço, não** (P80) |
 | CPF ou número fiscal | não pede | só de empresa, opcional | nada | **sim, o CPF** (decisão dele, 12/10/2026) |
 | Receber novidades por e-mail | caixa já marcada | caixa desmarcada | não pergunta | **sim, desmarcada** (decisão dele, 12/10/2026) |
-| Nome completo | sim | sim | o nome é opcional | **P83** (pedir ao criar a senha) |
+| Nome completo | sim | sim | o nome é opcional | **não se pede** (decisão dele, 21/10/2026: em Minha conta, ou na hora do certificado — fecha a P83) |
 | Apple Pay, Google Pay, PayPal | os dois primeiros | Apple Pay e PayPal | só cartão (Pix na 4.9) | não na abertura |
 | Depoimentos na tela de pagamento | não | 2 | só na home | não na abertura |
 | Nota de avaliações, contagem de cursos e de horas | "31.000 cursos" | "52+ courses", nota 4,6 | não | não se aplica hoje |
@@ -557,7 +557,7 @@ desde a decisão de 12/10/2026; a coluna em inglês saiu desta tabela)*:
 | Onde | Texto |
 |---|---|
 | E-mail, rótulo | Seu e-mail |
-| E-mail, ajuda | É com ele que você entra na escola. Depois do pagamento, enviamos o link para criar sua senha. |
+| E-mail, ajuda *(vencido em 21/10: a senha nasce na tela)* | É com ele que você entra na escola. Depois do pagamento, enviamos o link para criar sua senha. |
 | E-mail, atalho | Já tem conta? Entrar |
 | CPF *(obrigatório)* | CPF ou CNPJ |
 | CPF, ajuda | Usamos para emitir a nota fiscal. |
@@ -575,16 +575,18 @@ desde a decisão de 12/10/2026; a coluna em inglês saiu desta tabela)*:
 | Dúvidas *(se o item 9 ficar)* | Ficou com dúvida? Veja as perguntas frequentes. |
 | Novidades *(caixa desmarcada)* | Quero receber novidades e ofertas da escola por e-mail. |
 | Depois de pagar, título | Assinatura confirmada. |
-| Depois de pagar, texto | Enviamos um e-mail para {email} com o link para você criar sua senha e começar a estudar. |
-| Depois de pagar, não chegou | Não chegou em alguns minutos? Confira a caixa de spam ou peça de novo. |
-| Depois de pagar, botão | Enviar de novo |
-| Depois de pagar, reenviado | Enviamos de novo. |
+| Depois de pagar, texto *(vencido em 21/10)* | Enviamos um e-mail para {email} com o link para você criar sua senha e começar a estudar. |
+| Depois de pagar, não chegou *(saiu em 21/10)* | Não chegou em alguns minutos? Confira a caixa de spam ou peça de novo. |
+| Depois de pagar, botão *(saiu em 21/10)* | Enviar de novo |
+| Depois de pagar, reenviado *(saiu em 21/10)* | Enviamos de novo. |
 | Depois de pagar, e-mail errado | Digitou o e-mail errado? Escreva para {contato}. |
 
-**Depois do pagamento.** Quem acabou de pagar não tem senha nem está logado: a tela não pode
-dizer "Começar a estudar", como a de hoje. Ela confirma, repete o e-mail digitado (é ali que a
-pessoa percebe um erro de digitação), diz o que fazer a seguir e dá a saída para quando o e-mail
-não chega. Enquanto a confirmação não vem, valem os textos de hoje ("Confirmando sua
+**Depois do pagamento.** *(REVISTO pelas decisões do operador de 21/10/2026, na abertura do passo
+5: **a senha nasce na própria tela**, e o e-mail é de boas-vindas — não é preciso para começar. Os
+rascunhos de texto abaixo que falam do link ou do "Enviar de novo" estão VENCIDOS: os novos vêm com
+o passo 6, na P81.)* Quem acabou de pagar ainda não tem senha nem está logado: a tela confirma,
+repete o e-mail digitado (é ali que a pessoa percebe um erro de digitação) e pede a senha — com
+ela, a pessoa já entra para estudar. Enquanto a confirmação não vem, valem os textos de hoje ("Confirmando sua
 assinatura…", "Está demorando mais que o normal…"). `{contato}` é `suporte@jilsonsantana.com` — a caixa de suporte que o operador escolheu na P49 (20/10/2026; `tech-stack.md` → Email).
 
 **Em inglês: não existe mais** (decisão de 12/10/2026, etapa 4.6c). A tela é só em português.

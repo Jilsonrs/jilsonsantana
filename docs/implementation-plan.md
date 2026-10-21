@@ -4547,6 +4547,36 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                   quem não tem (conferido também no código da 1.7.5). 3 consultas no passo.`
                   Gates: typecheck, lint, build; site 902, servidor 1209 (como o CI).
       - [ ] **Passo 5 — "Crie sua senha".** O e-mail com o link e a tela de definir a senha.
+            **ABERTURA (21/10/2026) — as decisões do operador, uma a uma, e o plano aprovado
+            ("Sim, pode seguir"). O passo deixa de ser "o link no e-mail" e passa a ser o CÓDIGO no
+            e-mail, "como a Apple e os grandes fazem, mas levando em conta que o meu e-mail como é
+            novo ainda pode ser considerado spam […] um misto de velho com novo":** o antigo (entrar
+            com e-mail e senha, sem depender de e-mail chegar) e o novo (o código de 6 números).
+            (1) **A senha nasce na própria tela de depois do pagamento** — a pessoa já entra para
+            estudar; o e-mail não é preciso para começar (o servidor deste passo; a tela, no passo
+            6). (2) **O nome não é pedido aqui** (fecha a P83): a pessoa preenche em Minha conta
+            quando quiser e, ao pedir o certificado sem nome, aparece na hora a tela para preencher
+            (Fase 6.5). (3) **"Esqueci minha senha" entra junto, com CÓDIGO de 6 números** — vale 10
+            minutos, 3 tentativas; digitado na mesma tela, com a senha nova (o antivírus de e-mail
+            das empresas não estraga código, e estraga link de uso único). (4) **O e-mail não é
+            confirmado na hora de pagar**: fica confirmado na primeira vez que a pessoa usa um código;
+            **novidades e ofertas só vão para e-mail confirmado**. (5) **Trocar a senha pelo código
+            desconecta os outros aparelhos.** (6) **Na tela de entrar, além de e-mail e senha, o botão
+            "Receber código de acesso"**: o campo da senha vira o campo do código, a pessoa recebe o
+            código e entra — sem criar senha nova na hora. **Entrar por código nunca cria conta** (a
+            conta continua nascendo só no pagamento). (7) **O e-mail de boas-vindas** sai quando a
+            conta do visitante nasce: confirma a assinatura e diz como entrar.
+            **Sai da proposta:** o "Enviar de novo" na tela de depois do pagamento (o "Receber código
+            de acesso" cobre quem fechou a tela) e o link de criar a senha.
+            **As partes, um commit cada:** **(1)** o código no e-mail (servidor): o recurso pronto do
+            Better Auth (`emailOTP`, sem pacote novo), o e-mail do código pelo nosso balcão, os
+            limites (por e-mail 3 por hora e 6 por dia; por endereço 10 a cada 15 min) · **(2)** a
+            senha logo depois de pagar (só quem pagou naquela tela, só sem senha, até 24 h depois de
+            a conta nascer; já entra) e o e-mail de boas-vindas (tenta de novo no próximo aviso da
+            Stripe se falhar) · **(3)** as telas: "Esqueci minha senha" e "Receber código de acesso"
+            na tela de entrar, e a tela do código com a senha nova; os textos são rascunho do agente
+            · **(4)** a prova, a revisão de segurança, a mutação e os documentos, com um e-mail de
+            cada tipo para o operador ver.
             **Da revisão de segurança do passo 4 (21/10/2026), para este passo:** não depender só
             do `contaNova` da sincronia — ele sai uma vez, e se o servidor cair entre a gravação e
             o envio, ninguém recebe o e-mail e nada alerta (a reentrega do aviso já não diz
@@ -5730,6 +5760,10 @@ outro aparelho e "daqui a um mês", e o Safari apaga o armazenamento do site em 
 - [ ] `Certificate` (user, planId/courseId, issuedAt, `nameSnapshot`, `skillsCovered[]`, **`isPublic` default false**) + RLS ; migration
 - [ ] Server-side PDF on 100% completion of a trilha (or course). Name = trilha name; lists skills covered.
 - [ ] If `User.name` missing at issue time, prompt the student for the name to print.
+      **Decisão do operador (21/10/2026 — fecha a P83):** o nome não é pedido ao assinar nem ao
+      criar a senha; a pessoa preenche em Minha conta quando quiser e, *"quando for emitir o
+      certificado se estiver sem nome aparece a tela para preencher na hora, salva no banco e gera
+      o certificado"*.
 - **Decisão do operador, 09/10/2026 (a P39 — o que o certificado atesta):** *"o certificado é só para
   assinante, e o cálculo para emissão só com as aulas concluídas do aluno logado"*. Emite só para
   quem tem assinatura ativa, contando as aulas que a plataforma marcou como concluídas **na conta
@@ -5756,6 +5790,8 @@ outro aparelho e "daqui a um mês", e o Safari apaga o armazenamento do site em 
 ## Phase 7 — Launch Prep  *(medium risk)*
 
 - [ ] Transactional emails (Resend): welcome, receipt, password reset (transactional ignores `marketingConsent`)
+      *(As boas-vindas de quem assina sem conta e a recuperação de senha — por CÓDIGO no e-mail —
+      são da etapa 4.7, passo 5, decisões do operador de 21/10/2026.)*
       — in Portuguese (the school is Portuguese-only since 12/10/2026)
 - [ ] LGPD: privacy policy, terms, consent, data export/delete path (in Portuguese only — the
       English versions left on 12/10/2026)
