@@ -4628,6 +4628,45 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                   tela de entrar passam sem mudar. **Mutação: 14 de 16 na primeira rodada** — uma é
                   equivalente (o campo de e-mail do navegador já tira os espaços das pontas) e a outra
                   mostrou dois testes que achavam a frase da vez anterior; separados, ela reprova.
+            - [x] **Parte 4 — a prova, a revisão de segurança e os documentos.** FEITA
+                  (21/10/2026), no `dev`. **A prova dos e-mails:** um de cada tipo (o código de
+                  entrar, o da senha nova e as boas-vindas) para os três endereços do operador
+                  (Yahoo, iCloud e Microsoft), pelo caminho de verdade (`auth.api.sendVerificationOTP`
+                  e `mandarBoasVindasDaAssinatura`, com contas, fichas e assinaturas descartáveis no
+                  banco do dev, apagadas no fim — o banco igual antes e depois): os 9 entregues ao
+                  Resend. Onde caíram: **P95**. **A revisão de segurança**
+                  (`security-vulnerability-reviewer`, sobre as partes 1 a 3): nenhum P0. **Os P1:**
+                  (1) **corrigido** — quem guardasse a tentativa voltaria à conta depois que a dona do
+                  e-mail a confirmasse (o Better Auth apaga a senha de antes da confirmação na
+                  primeira entrada pelo código, e a rota deduzia o "uma vez" da linha de senha):
+                  agora a tentativa não cria senha com o e-mail confirmado (`EmailConfirmado`), e a
+                  vez fica marcada na ficha (`senhaCriadaEm`, migration
+                  `20261021220000_senha_da_ficha_uma_vez`); (2) **a primeira entrada pelo código numa
+                  conta de e-mail não confirmado APAGA a senha e desconecta os aparelhos** — do
+                  Better Auth 1.7, documentado, sem opção para desligar. O que é de engenharia,
+                  corrigido: as contas do seed nascem confirmadas, e a de admin que já existe fica
+                  confirmada pela migration `20261021220100_admin_com_email_confirmado` (só dados; no
+                  ar, roda na publicação) — sem isso, o primeiro código apagaria a senha de admin. O
+                  efeito no aluno (quem criou a senha depois de pagar e um dia entra pelo código perde
+                  aquela senha e cria outra em "Esqueci minha senha", o caminho que a doc do Better
+                  Auth indica) é decisão do operador: **P94**; (3) a chave das boas-vindas é por conta
+                  (`boas-vindas/<conta>`), não por evento — a regra (2) do `CLAUDE.md` foi emendada: o
+                  mesmo e-mail sai de três gatilhos, e uma chave por evento não seguraria a repetição
+                  entre avisos diferentes. **Os P2:** corrigidos — a senha criada com a sessão que não
+                  abre vira alerta (`console.error`), e o teste do "começa do zero" depois da senha
+                  nova · com destino — o resumo da tentativa e as regras dela no navegador (passo 6),
+                  a cota do Resend (passo 8) · aceitos, com gatilho: `billing.md` → *Depois de pagar*.
+                  `Docs check (context7): Better Auth → /better-auth/better-auth → a entrada pelo
+                  código numa conta de e-mail não confirmado apaga a senha e as sessões (plugin
+                  email-otp e guia da 1.7), e o caminho indicado é a senha nova pelo "esqueci minha
+                  senha" (conferido também no código da 1.7.5). 1 consulta, refeita depois do resumo
+                  da sessão.` **Passo 0 das migrations no banco do dev:** antes e depois, as 2 contas,
+                  as senhas (conferidas com o `.env`), as sessões, as fichas e as assinaturas iguais;
+                  a de admin com o e-mail confirmado; 27 tabelas, nenhuma sem RLS; `migrate diff` sem
+                  diferença. **Testes:** 8 de servidor e 1 de tela. **Mutação: 5 de 5 reprovaram**
+                  (sem as duas conferências do e-mail confirmado; sem a marca da vez; o alerta como
+                  aviso; o seed sem confirmar; a tela sem limpar o cache). Gates: typecheck, lint,
+                  build; site 928, servidor 1250 (e os 3 arquivos do passo como o CI, sem chave).
             **Da revisão de segurança do passo 4 (21/10/2026), para este passo:** não depender só
             do `contaNova` da sincronia — ele sai uma vez, e se o servidor cair entre a gravação e
             o envio, ninguém recebe o e-mail e nada alerta (a reentrega do aviso já não diz
@@ -4662,6 +4701,18 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             "assinar sem login" de cada vez) mostra **"Aguarde um instante e tente novamente."**
             (`app.assinar.aguardeUmInstante` — texto do operador, no mesmo dia, para a pessoa não
             clicar de novo em seguida); o `Ocupada` (o mesmo e-mail em duas abas) é outro caso.
+            **Da revisão de segurança do passo 5 (21/10/2026):** (a) **a tentativa abre a conta**
+            (cria a primeira senha e a sessão, por até 24 h): nunca vai no endereço — nem
+            `?tentativa=`, nem no `return_url` da Stripe —, fica só na memória da página ou no
+            `sessionStorage`, sai dali depois de criada a senha, e a senha se cria só por POST;
+            (b) **guardar só o resumo da tentativa** (SHA-256) na ficha e no `metadata` da
+            assinatura da Stripe, e buscar e comparar pelo resumo — hoje ela vai inteira, legível no
+            painel da Stripe e em todo aviso; antes de ligar a venda sem login (passo 8). *Sobe de
+            prioridade se alguém além do operador tiver acesso ao painel ou às chaves da Stripe, ou
+            se um app for ligado a ela;* (c) **as recusas da senha** que a tela mostra:
+            `NaoConfirmado`, `PrazoVencido`, `EmailConfirmado` (a dona do e-mail já entrou pelo
+            código: a senha agora é pelo "Esqueci minha senha"), `JaTemSenha`, `Ocupada` — os textos
+            são do operador.
             **A PROPOSTA DA TELA** *(agente, 12/10/2026, depois de o operador mostrar as telas
             de pagamento da Udemy e do Code with Mosh)* **está em `billing.md` → *A tela pública
             de assinar*:** os blocos em ordem, os textos, o que a Stripe exige
@@ -4712,6 +4763,13 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             conferir com o operador o tamanho do caixa de ligações do banco na Railway
             (`connection_limit` na `DATABASE_URL`, que hoje não tem): é dele que depende quanto
             os 3 "assinar sem login" em andamento ocupam.
+            **Da revisão de segurança do passo 5 (21/10/2026):** depois de publicar, conferir no
+            mesmo banco que a conta de admin ficou com o e-mail confirmado (a migration
+            `20261021220100_admin_com_email_confirmado` roda na publicação) — antes disso, não usar
+            "Receber código de acesso" com ela · **a cota do plano do Resend contra o pior caso**: o
+            teto de códigos é por caixa (6 por dia), não da escola — N contas somam N × 6, e com a
+            cota esgotada códigos e boas-vindas falham para todos até o dia seguinte (só os alertas
+            `[email]` mostram).
             **Da proposta da tela pública (agente, 12/10/2026):** antes de abrir, também os
             Termos de Uso e a Política de Privacidade no ar (a tela de assinar aponta para os
             dois; hoje são pendência da Fase 7 e a P61) · a **P84** (o cartão promete o JilsonAI

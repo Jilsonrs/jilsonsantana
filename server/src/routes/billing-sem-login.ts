@@ -161,6 +161,7 @@ router.post("/billing/visitante/confirmacao", ...limiteSemLogin.confirmacao, asy
 const RECUSAS_DA_SENHA = {
   "nao-confirmado": "NaoConfirmado",
   "prazo-vencido": "PrazoVencido",
+  "email-confirmado": "EmailConfirmado",
   "ja-tem-senha": "JaTemSenha",
   ocupada: "Ocupada",
 } as const;
@@ -175,7 +176,9 @@ router.post("/billing/visitante/senha", ...limiteSemLogin.senha, async (req, res
   }
   console.info(`[api] a conta ${desfecho.contaId} criou a senha na tela de depois do pagamento`);
   // A sessão, como o login abre (o cookie do Better Auth, com as mesmas regras). Se ela falhar, a
-  // senha já está criada: a tela manda para a tela de entrar.
+  // senha já está criada: a tela manda para a tela de entrar. A falha é ALERTA (`console.error`): não
+  // é coisa que o aluno causa, e se ela se repetir (o login mudou), todo aluno novo cai num login que
+  // também falha — quem tem que descobrir somos nós (revisão de segurança, 21/10/2026).
   let entrou = false;
   try {
     const { headers } = await auth.api.signInEmail({ body: { email: desfecho.email, password: corpo.senha }, headers: fromNodeHeaders(req.headers), returnHeaders: true });
@@ -183,9 +186,11 @@ router.post("/billing/visitante/senha", ...limiteSemLogin.senha, async (req, res
     if (cookies.length > 0) {
       res.append("Set-Cookie", cookies);
       entrou = true;
+    } else {
+      console.error(`[api] a conta ${desfecho.contaId} criou a senha, e a sessão não abriu: o login não devolveu o cookie`);
     }
   } catch (erro) {
-    console.warn(`[api] a conta ${desfecho.contaId} criou a senha, e a sessão não abriu: ${erro instanceof Error ? erro.name : "?"}`);
+    console.error(`[api] a conta ${desfecho.contaId} criou a senha, e a sessão não abriu: ${erro instanceof Error ? erro.name : "falha sem tipo"}`);
   }
   const resposta: SenhaCriada = { entrou };
   res.json(resposta);

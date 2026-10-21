@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { screen, fireEvent } from "@testing-library/react";
+import { screen, fireEvent, waitFor } from "@testing-library/react";
+import { useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { renderWithProviders } from "@/test-utils";
 
 // Mock na NOSSA fronteira (`@/lib/auth-client` e `@/lib/api`), nunca na biblioteca.
@@ -165,6 +166,37 @@ describe("o segundo tempo: o código e a senha nova", () => {
     fireEvent.click(screen.getByRole("button", { name: "Pedir outro código" }));
     expect(await screen.findByText("Enviamos outro código.")).toBeTruthy();
     expect(pedirCodigo).toHaveBeenLastCalledWith({ email: "ana@exemplo.com", motivo: "senha" });
+  });
+});
+
+// QUEM CRIA A SENHA NOVA E ENTRA TAMBÉM COMEÇA DO ZERO (a mesma regra da tela de entrar — decisão do
+// operador, 11/10/2026; o teste que faltava, apontado pela revisão de segurança de 21/10/2026).
+describe("criar a senha nova — nada da conta anterior", () => {
+  const GUARDADO = ["o-que-a-tela-guardou"];
+  let daAba: QueryClient | null = null;
+  function TelaDaContaAnterior() {
+    const { data } = useQuery({ queryKey: GUARDADO, queryFn: () => Promise.resolve("o progresso da Ana") });
+    return <p>{data ?? "lendo"}</p>;
+  }
+  function Captura() {
+    daAba = useQueryClient();
+    return null;
+  }
+
+  it("ao criar a senha e entrar, o que as telas tinham guardado é esquecido", async () => {
+    renderWithProviders(
+      <>
+        <Captura />
+        <TelaDaContaAnterior />
+        <EsqueciMinhaSenhaPage />
+      </>,
+      { route: "/esqueci-minha-senha", path: "/esqueci-minha-senha", extraRoutes: [{ path: "/inicio", element: <div>HOME DO ALUNO</div> }] },
+    );
+    expect(await screen.findByText("o progresso da Ana")).toBeTruthy();
+    await irParaASenhaNova();
+    criar("654321", SENHA);
+    expect(await screen.findByText("HOME DO ALUNO")).toBeTruthy();
+    await waitFor(() => expect(daAba?.getQueryData(GUARDADO)).toBeUndefined());
   });
 });
 

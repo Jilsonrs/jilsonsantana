@@ -1,7 +1,18 @@
-import { describe, it, expect, afterAll } from "vitest";
+import { describe, it, expect, vi, afterAll, afterEach, beforeEach } from "vitest";
 import request from "supertest";
+import type { PedidoDeEmail, Envio } from "../lib/email.js";
+
+// O balcão de e-mail na NOSSA fronteira: vira dublê, para o teste ler o código de entrar que sairia.
+// O recurso de código do Better Auth, a sessão e o banco rodam de verdade.
+const enviarEmail = vi.fn<(pedido: PedidoDeEmail) => Promise<Envio>>();
+vi.mock("../lib/email.js", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../lib/email.js")>()),
+  enviarEmail: (pedido: PedidoDeEmail) => enviarEmail(pedido),
+}));
+
 import servidor from "./servidor.js";
 import { prisma } from "../lib/prisma.js";
+import { auth } from "../lib/auth.js";
 import { LIMITES_DO_VISITANTE } from "../lib/limite-de-tentativas.js";
 import { PRAZO_DA_SENHA_DEPOIS_DE_PAGAR_EM_HORAS } from "../lib/senha-depois-de-pagar.js";
 
@@ -14,7 +25,12 @@ import { PRAZO_DA_SENHA_DEPOIS_DE_PAGAR_EM_HORAS } from "../lib/senha-depois-de-
 //     nenhuma senha nasce; depois de 24 horas, também não;
 //   - a senha nunca é aparada (espaço nas pontas é parte dela); curta, só de espaços ou longa demais,
 //     recusada;
-//   - dois pedidos juntos nunca criam duas senhas; e o e-mail não fica confirmado por aqui.
+//   - dois pedidos juntos nunca criam duas senhas; e o e-mail não fica confirmado por aqui;
+//   - DEPOIS QUE O DONO DO E-MAIL ENTRA PELO CÓDIGO (revisão de segurança, 21/10/2026): o Better Auth
+//     apaga a senha criada antes da confirmação, e a tentativa não cria outra ("e-mail confirmado") —
+//     quem guardou a tentativa pode não ser o dono do e-mail; e a marca da vez fica na ficha, mesmo
+//     que a linha de senha suma;
+//   - a senha criada e a sessão que não abre: a resposta diz "não entrou", e é ALERTA.
 
 const S = `${Date.now()}`;
 const DIA = 24 * 60 * 60 * 1000;
@@ -42,10 +58,28 @@ const criarSenha = (tentativa: string, senha: string, endereco = "198.51.100.200
 const entrar = (email: string, password: string) => request(servidor).post("/api/auth/sign-in/email").send({ email, password });
 const senhasDa = (id: string) => prisma.account.count({ where: { userId: id, providerId: "credential" } });
 
+let enderecoDoCodigo = 0;
+/** Pede o código de ENTRAR (pela nossa rota) e devolve o número que o e-mail levaria. */
+async function codigoParaEntrar(email: string): Promise<string> {
+  const res = await request(servidor).post("/api/conta/codigo").set("x-real-ip", `198.51.100.${220 + ++enderecoDoCodigo}`).send({ email, motivo: "entrar" });
+  expect(res.status).toBe(200);
+  return enviarEmail.mock.calls.at(-1)?.[0].mensagem.paragrafos[1] ?? "";
+}
+const entrarComCodigo = (email: string, otp: string) => request(servidor).post("/api/auth/sign-in/email-otp").send({ email, otp });
+
+beforeEach(() => {
+  enviarEmail.mockReset().mockResolvedValue({ enviado: true, id: "re_teste" });
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
 afterAll(async () => {
   await prisma.subscription.deleteMany({ where: { stripeSubscriptionId: { contains: S } } });
   await prisma.user.deleteMany({ where: { email: { endsWith: `-${S}@teste.local` } } });
   await prisma.guestCheckout.deleteMany({ where: { id: { contains: S } } });
+  await prisma.verification.deleteMany({ where: { identifier: { contains: `-${S}@teste.local` } } });
 });
 
 describe("a senha logo depois de pagar", () => {
@@ -141,5 +175,68 @@ describe("a senha logo depois de pagar", () => {
   it(`o limite por endereço: ${LIMITES_DO_VISITANTE.senha.endereco.porJanela} a cada 15 minutos`, async () => {
     for (let i = 0; i < 10; i++) expect((await criarSenha(`desconhecida-${S}-${i}`, SENHA, "198.51.100.210")).status).toBe(409);
     expect((await criarSenha(`desconhecida-${S}-x`, SENHA, "198.51.100.210")).status).toBe(429);
+  });
+});
+
+// QUEM GUARDOU A TENTATIVA NÃO VOLTA À CONTA DEPOIS QUE O DONO DO E-MAIL A CONFIRMOU (revisão de
+// segurança, 21/10/2026). O cenário: alguém paga com o e-mail de outra pessoa e guarda a tentativa;
+// a dona do e-mail entra pelo código — o Better Auth apaga a senha e as sessões de antes da
+// confirmação —, e a tentativa NÃO pode criar outra senha.
+describe("depois que o dono do e-mail entra pelo código", () => {
+  it("a senha criada pela tentativa deixa de existir, e a MESMA tentativa não cria outra: 'e-mail confirmado'", async () => {
+    const conta = await nascida();
+    expect((await criarSenha(conta.tentativa, SENHA)).status).toBe(200);
+    expect((await entrarComCodigo(conta.email, await codigoParaEntrar(conta.email))).status).toBe(200);
+    expect(await senhasDa(conta.id)).toBe(0);
+
+    const deNovo = await criarSenha(conta.tentativa, `outra-senha-${S}`);
+    expect([deNovo.status, deNovo.body]).toEqual([409, { error: "EmailConfirmado" }]);
+    expect(deNovo.headers["set-cookie"]).toBeUndefined();
+    expect(await senhasDa(conta.id)).toBe(0);
+  });
+
+  it("a dona entrou pelo código ANTES: a tentativa não cria senha nenhuma", async () => {
+    const conta = await nascida();
+    expect((await entrarComCodigo(conta.email, await codigoParaEntrar(conta.email))).status).toBe(200);
+    const res = await criarSenha(conta.tentativa, SENHA);
+    expect([res.status, res.body]).toEqual([409, { error: "EmailConfirmado" }]);
+    expect(await senhasDa(conta.id)).toBe(0);
+  });
+
+  it("a marca da vez fica na ficha: mesmo que a linha de senha suma sem o e-mail confirmado, a tentativa não cria outra", async () => {
+    const conta = await nascida();
+    expect((await criarSenha(conta.tentativa, SENHA)).status).toBe(200);
+    expect((await prisma.guestCheckout.findUnique({ where: { tentativa: conta.tentativa } }))?.senhaCriadaEm).toBeInstanceOf(Date);
+    await prisma.account.deleteMany({ where: { userId: conta.id, providerId: "credential" } });
+
+    const deNovo = await criarSenha(conta.tentativa, `outra-senha-${S}`);
+    expect([deNovo.status, deNovo.body]).toEqual([409, { error: "JaTemSenha" }]);
+    expect(await senhasDa(conta.id)).toBe(0);
+  });
+});
+
+describe("a senha criada e a sessão que não abre", () => {
+  const alertou = (alerta: { mock: { calls: unknown[][] } }, contaId: string) =>
+    alerta.mock.calls.some(([linha]) => String(linha).startsWith(`[api] a conta ${contaId} criou a senha, e a sessão não abriu`));
+
+  it("o login falhou: a senha fica, a resposta diz 'não entrou' — e é ALERTA", async () => {
+    const conta = await nascida();
+    vi.spyOn(auth.api, "signInEmail").mockRejectedValueOnce(new Error("o login quebrou"));
+    const alerta = vi.spyOn(console, "error").mockImplementation(() => {});
+    const res = await criarSenha(conta.tentativa, SENHA);
+    expect([res.status, res.body]).toEqual([200, { entrou: false }]);
+    expect(res.headers["set-cookie"]).toBeUndefined();
+    expect(await senhasDa(conta.id)).toBe(1);
+    expect(alertou(alerta, conta.id)).toBe(true);
+  });
+
+  it("o login não devolveu o cookie: 'não entrou' — e o mesmo alerta", async () => {
+    const conta = await nascida();
+    // O formato que a rota lê do login (`headers`), sem cookie nenhum: o tipo completo da resposta não importa aqui.
+    vi.spyOn(auth.api, "signInEmail").mockResolvedValueOnce({ headers: new Headers() } as never);
+    const alerta = vi.spyOn(console, "error").mockImplementation(() => {});
+    const res = await criarSenha(conta.tentativa, SENHA);
+    expect([res.status, res.body]).toEqual([200, { entrou: false }]);
+    expect(alertou(alerta, conta.id)).toBe(true);
   });
 });

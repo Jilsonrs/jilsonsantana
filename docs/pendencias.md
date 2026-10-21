@@ -16,7 +16,7 @@
 > 5. **Item novo ganha o próximo número livre.** Número nunca se reutiliza, para que "P7" queira
 >    dizer sempre a mesma coisa em qualquer conversa.
 >
-> **Próximo número livre: P94** · Atualizada em 21/10/2026
+> **Próximo número livre: P96** · Atualizada em 21/10/2026
 >
 > **DESDE 12/10/2026 A ESCOLA É SÓ EM PORTUGUÊS E SÓ PARA O BRASIL** (decisão do operador; etapa
 > 4.6c do plano). A parte em inglês de qualquer item abaixo deixou de existir: revise só o
@@ -31,6 +31,8 @@
 
 | # | O que falta | Onde registrar |
 |---|---|---|
+| P94 | **A primeira entrada pelo código apaga a senha criada antes de o e-mail ser confirmado** (achado da revisão de segurança, 21/10/2026; é do sistema de login, documentado, e não dá para desligar). É o que derruba quem pagou com o e-mail de outra pessoa. O efeito em quem é dono do e-mail: quem criou a senha logo depois de pagar e um dia entra pelo código perde aquela senha e cria outra em "Esqueci minha senha". **Manter assim**, ou **pedir o código do e-mail antes de criar a senha depois de pagar** (sem a surpresa depois, mas quem tiver o e-mail no spam fica parado logo depois de pagar — revê a sua decisão (4) do passo 5)? | `billing.md` → *Depois de pagar* e o plano → etapa 4.7, passo 5 |
+| P95 | **Onde caíram os 9 e-mails da prova** (21/10/2026: o código de entrar, o da senha nova e as boas-vindas, para o Yahoo, o iCloud e o jilson@ da Microsoft): na caixa de entrada ou no spam, em cada um | o plano → etapa 4.7, passo 5, parte 4 |
 
 ## B. Conteúdo e cadastro *(tarefas suas, sem ordem fixa)*
 

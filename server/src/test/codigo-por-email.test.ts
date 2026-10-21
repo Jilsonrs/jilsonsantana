@@ -59,10 +59,10 @@ function ultimoCodigo(): string {
 }
 
 /** Uma conta COM senha — a mesma senha do member@ (o cadastro é fechado: o cifrado vem dele). */
-async function contaComSenha(email = novoEmail()) {
+async function contaComSenha(email = novoEmail(), { confirmado = false } = {}) {
   const daMember = await prisma.account.findFirst({ where: { user: { email: process.env.SEED_MEMBER_EMAIL }, providerId: "credential" }, select: { password: true } });
   const id = `conta-${S}-${++n}`;
-  await prisma.user.create({ data: { id, email, accounts: { create: { id: `${id}-senha`, accountId: id, providerId: "credential", password: daMember?.password } } } });
+  await prisma.user.create({ data: { id, email, emailVerified: confirmado, accounts: { create: { id: `${id}-senha`, accountId: id, providerId: "credential", password: daMember?.password } } } });
   return { id, email };
 }
 
@@ -149,6 +149,44 @@ describe("entrar com o código", () => {
     const guardados = await prisma.verification.findMany({ where: { identifier: { contains: conta.email } } });
     expect(guardados.length).toBeGreaterThan(0);
     expect(guardados.some((v) => v.value.includes(ultimoCodigo()))).toBe(false);
+  });
+});
+
+// A PRIMEIRA ENTRADA PELO CÓDIGO NUMA CONTA DE E-MAIL NÃO CONFIRMADO (Better Auth 1.7, sem opção para
+// desligar — revisão de segurança, 21/10/2026): a prova de que a caixa é da pessoa vale mais que o
+// que veio antes dela, então a senha e as sessões de antes saem. Com o e-mail já confirmado, nada sai.
+// É por isso que as contas do seed nascem confirmadas: o código nunca apaga a senha de admin.
+describe("a primeira entrada pelo código — a senha de antes da confirmação", () => {
+  it("e-mail NÃO confirmado: a senha de antes deixa de valer, e quem estava dentro sai", async () => {
+    const conta = await contaComSenha();
+    const antes = cookies(await entrarComSenha(conta.email, SENHA));
+    expect(await estaDentro(antes)).toBe(true);
+    await pedirCodigo(conta.email, "entrar");
+    const entrou = await entrarComCodigo(conta.email, ultimoCodigo());
+    expect(await estaDentro(cookies(entrou))).toBe(true);
+    expect(await estaDentro(antes)).toBe(false);
+    expect((await entrarComSenha(conta.email, SENHA)).status).toBe(401);
+  });
+
+  it("e-mail JÁ confirmado: a senha continua valendo, e quem estava dentro continua", async () => {
+    const conta = await contaComSenha(novoEmail(), { confirmado: true });
+    const antes = cookies(await entrarComSenha(conta.email, SENHA));
+    await pedirCodigo(conta.email, "entrar");
+    expect((await entrarComCodigo(conta.email, ultimoCodigo())).status).toBe(200);
+    expect(await estaDentro(antes)).toBe(true);
+    expect((await entrarComSenha(conta.email, SENHA)).status).toBe(200);
+  });
+
+  it("as contas do seed nascem com o e-mail confirmado: entrar pelo código não apaga a senha de admin", async () => {
+    const email = (process.env.SEED_ADMIN_EMAIL ?? "").toLowerCase();
+    const senha = process.env.SEED_ADMIN_PASSWORD ?? "";
+    expect(senha.length).toBeGreaterThan(0);
+    for (const semeada of [email, (process.env.SEED_MEMBER_EMAIL ?? "").toLowerCase()]) {
+      expect((await prisma.user.findUnique({ where: { email: semeada } }))?.emailVerified, semeada).toBe(true);
+    }
+    await pedirCodigo(email, "entrar", "198.51.100.160");
+    expect((await entrarComCodigo(email, ultimoCodigo())).status).toBe(200);
+    expect((await entrarComSenha(email, senha)).status).toBe(200);
   });
 });
 

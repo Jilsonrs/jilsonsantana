@@ -427,6 +427,10 @@ model GuestCheckout {
   // O e-mail de boas-vindas (etapa 4.7, passo 5): quando ele foi tomado para sair — UMA vez. Se o
   // envio falha, volta a vazio, e o próximo aviso da Stripe tenta de novo.
   boasVindasEnviadaEm DateTime?
+  // A senha logo depois de pagar (etapa 4.7, passo 5 — revisão de segurança, 21/10/2026): quando a
+  // tentativa criou a senha — UMA vez. Não se deduz da linha de senha: o Better Auth a apaga quando o
+  // dono do e-mail entra pelo código pela primeira vez.
+  senhaCriadaEm    DateTime?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 

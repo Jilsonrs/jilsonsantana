@@ -268,11 +268,13 @@ export const limiteSemLogin = {
 
 /**
  * PEDIR O CÓDIGO NO E-MAIL (etapa 4.7, passo 5 — os tetos estavam no plano aprovado pelo operador em
- * 21/10/2026). Por E-MAIL, de qualquer endereço — é o que protege a caixa de e-mail de alguém e a cota
- * de e-mails da escola no Resend — e por endereço. Aqui o e-mail conta SOZINHO (e não com o endereço,
- * como no assinar): quem quisesse encher a caixa de outra pessoa usaria muitos endereços. O preço:
- * quem pede de propósito os códigos de outra pessoa a deixa sem código por até um dia — ela continua
- * entrando com a senha.
+ * 21/10/2026). Por E-MAIL, de qualquer endereço — é o que protege a caixa de e-mail de CADA pessoa —
+ * e por endereço. Aqui o e-mail conta SOZINHO (e não com o endereço, como no assinar): quem quisesse
+ * encher a caixa de outra pessoa usaria muitos endereços. O preço: quem pede de propósito os códigos
+ * de outra pessoa a deixa sem código por até um dia — ela continua entrando com a senha.
+ * NÃO protege a cota de e-mails da escola no Resend (revisão de segurança, 21/10/2026): o teto é por
+ * caixa, e só conta de verdade recebe código — N contas × 6 por dia, de endereços espalhados, somam
+ * N × 6. A cota do plano do Resend se confere contra esse pior caso no passo 8 (`billing.md`).
  */
 export const LIMITES_DO_CODIGO = { email: { porHora: 3, porDia: 6 }, endereco: { porJanela: 10 } } as const;
 

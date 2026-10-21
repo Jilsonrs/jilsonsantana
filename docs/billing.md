@@ -762,14 +762,26 @@ pública de assinar*), o teto da prévia (*Limite de tentativas*), o código de 
 21/10/2026: a senha nasce na própria tela; o e-mail de boas-vindas confirma e diz como entrar)*:
 - **A senha na tela** (`POST /billing/visitante/senha`, `lib/senha-depois-de-pagar.ts`, fora do ar em
   produção como as outras rotas sem login): com o **código da tentativa** — que só o navegador que
-  pagou recebeu —, só para a conta que nasceu daquele pagamento e que tem acesso, **só enquanto ela
-  não tem senha** (a primeira, uma vez; depois, "Esqueci minha senha") e **até 24 horas** depois de a
-  conta nascer. Uma de cada vez por conta, sem esperar (dois cliques nunca criam duas senhas). A
-  senha é embaralhada pelo próprio Better Auth e **nunca aparada**; de 8 a 128 caracteres (os mesmos
-  números do Better Auth e da tela, no `core`). A sessão abre na hora, como no login. **O e-mail não
-  fica confirmado por aqui** (quem digitou pode não ser o dono dele). As recusas:
-  `NaoConfirmado` (tentativa desconhecida, sem conta ou sem acesso — a mesma), `PrazoVencido`,
-  `JaTemSenha`, `Ocupada`. Limite: 10 a cada 15 minutos por endereço.
+  pagou recebeu —, só para a conta que nasceu daquele pagamento e que tem acesso, **uma vez** (a
+  marca fica na ficha, `senhaCriadaEm`; depois, "Esqueci minha senha"), **só enquanto o e-mail não
+  foi confirmado** e **até 24 horas** depois de a conta nascer. Uma de cada vez por conta, sem
+  esperar (dois cliques nunca criam duas senhas). A senha é embaralhada pelo próprio Better Auth e
+  **nunca aparada**; de 8 a 128 caracteres (os mesmos números do Better Auth e da tela, no `core`). A
+  sessão abre na hora, como no login; se não abrir, a senha fica, a resposta diz "não entrou", e é
+  alerta. **O e-mail não fica confirmado por aqui** (quem digitou pode não ser o dono dele). As
+  recusas: `NaoConfirmado` (tentativa desconhecida, sem conta ou sem acesso — a mesma),
+  `PrazoVencido`, `EmailConfirmado`, `JaTemSenha`, `Ocupada`. Limite: 10 a cada 15 minutos por
+  endereço.
+- **A primeira entrada pelo código apaga a senha de antes da confirmação** `[FATO — Better Auth
+  1.7.5, no código e no guia da 1.7, medido em teste em 21/10/2026]`: numa conta com o e-mail não
+  confirmado, entrar pelo código apaga a senha e desconecta todos os aparelhos, e só então confirma o
+  e-mail — a caixa provada vale mais que o que veio antes dela. Não há opção para desligar. É o que
+  derruba quem pagou com o e-mail de outra pessoa e criou a senha; por isso, depois dela, a tentativa
+  não cria outra (`EmailConfirmado`). O efeito em quem é dono: quem criou a senha logo depois de pagar
+  e um dia entra pelo código perde aquela senha e cria outra em "Esqueci minha senha" (o caminho que
+  a doc do Better Auth indica). *A escolha entre manter assim e pedir o código antes da senha é do
+  operador: P94.* As contas do seed nascem confirmadas (a de admin no ar, pela migration
+  `20261021220100_admin_com_email_confirmado`): o código nunca apaga a senha de admin.
 - **As boas-vindas** (`lib/boas-vindas.ts`): saem depois de **qualquer** sincronia da assinatura de
   quem assinou sem conta — o aviso da Stripe (inclusive o repetido), o novo clique de quem já pagou,
   a conferência do admin —, sempre **depois do commit**, e só com a conta com acesso. **Uma vez:** a
@@ -778,7 +790,27 @@ pública de assinar*), o teto da prévia (*Limite de tentativas*), o código de 
   a chave `boas-vindas/<conta>` segura as duas pontas no Resend. **Nunca derruba o aviso** (a falha
   vira alerta `[email]`). O botão "Entrar na escola" leva a `/login`, pelo `BETTER_AUTH_URL` — **em
   produção, só https**: sem isso o e-mail sai sem o botão, e a subida do servidor alerta. Os textos
-  são **rascunho do agente** (`app.email.boasVindas`).
+  são **rascunho do agente** (`app.email.boasVindas`). **A chave é por conta, e não por evento** (a
+  regra (2) do `CLAUDE.md`, emendada em 21/10/2026): o mesmo e-mail sai de três gatilhos — dois sem
+  `event.id` —, e se o Resend aceitar o envio e a resposta se perder, o gatilho seguinte manda com a
+  MESMA chave e o Resend não repete.
+
+**A REVISÃO DE SEGURANÇA DO PASSO 5** (`security-vulnerability-reviewer`, sobre as partes 1 a 3,
+21/10/2026): **nenhum bloqueio (P0)**. Os P1, os P2 corrigidos e os que têm destino estão no plano
+(etapa 4.7, passo 5, parte 4). **Aceitos, com gatilho (engenharia):**
+- **Dá para descobrir se um e-mail tem conta pelo pedir código** — pelo tempo da resposta (só para
+  conta de verdade o pedido espera o envio ao Resend) e pelo 4º palpite do código (403 em vez de 400,
+  só onde houve código). É a mesma informação que a tela de assinar já dá com o `JaTemConta` (decisão
+  do operador no passo 4), e cada sonda manda um e-mail ao dono; igualar as respostas não fecharia
+  nada enquanto aquele aviso existir. *Reabre se o aviso de "este e-mail já tem conta" sair da tela
+  de assinar.*
+- **Se o servidor cair entre tomar a marca das boas-vindas e enviar**, o e-mail não sai e nada
+  alerta. A pessoa entra do mesmo jeito (a senha da tela, ou o código). *Reabre se um aluno disser que
+  não recebeu as boas-vindas.*
+- **A senha criada no mesmo instante em que a dona do e-mail entra pelo código** pode sobreviver: a
+  limpeza do Better Auth e a nossa trava não se coordenam. Exige acertar o milissegundo de uma entrada
+  que quem guardou a tentativa não enxerga. *Reabre se uma conta de visitante aparecer com duas senhas
+  ou com senha criada depois da confirmação.*
 
 **A REVISÃO DE SEGURANÇA DO PASSO** (`security-vulnerability-reviewer`, sobre os commits das partes
 A e B, 21/10/2026): **nenhum bloqueio (P0)**. **O P1, corrigido:** o teto de 3 "assinar sem login" em
