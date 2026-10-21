@@ -202,6 +202,25 @@
 > (aula concluída sozinha, barra na aula e no cartão), o vídeo que não recomeça ao trocar de aba
 > (a apresentação abre pausada, a aula toca sozinha) e o "Salvos". **Primeiro teste com o player de
 > verdade: com o operador** (assistir uma aula até perto do fim e ver a barra andar).
+> **PUBLICADO em 20/10/2026 (`main` = `ac64077`, CI verde nos dois jobs, deploy ok; sem
+> migration; ordem do operador: "Publica"):** a **etapa 4.7, passos 1 e 2** — o limite de
+> tentativas nas rotas de cobrança (dependência nova: `express-rate-limit@8.7.0`), com a frase dele,
+> e a trava de assinar que não espera —, o **"Assine" do rodapé da home** sumindo para quem tem
+> assinatura ativa (decisão dele, 19/10), a etiqueta EM BREVE simplificada e os documentos
+> reconciliados (a lista antiga do fim da Fase 4, as frases velhas). **Provado no site, de fora:** a
+> versão nova (`mvgi4xc7-4a18c331`; antes, `mvfpyhz2-a2d42ffc`); catálogo, trilhas, textos comuns e
+> sessão → 200; a assinatura, os planos e a troca de cartão sem login → 401 (o limite vem depois do
+> login: quem não entrou não gasta cota de ninguém); o login com um e-mail que não existe → 401; o
+> público segue no "Em breve". *O limite em si só se vê com login: a prova é a suíte (23 testes de
+> servidor e 9 de tela).*
+> **Na `dev`, ainda NÃO publicado (21/10/2026):** a **etapa 4.7, passo 3** — o balcão de e-mail
+> (Resend) e o modelo do e-mail. Nada o chama ainda, então não muda nada para o aluno; o logo do
+> e-mail (`/img/Logomarca-email.png`) só existe no site depois da próxima publicação. **E o passo
+> 4** — a ficha de espera e a conta que nasce no pagamento (a migration
+> `20261021120000_ficha_de_espera_do_visitante`, já aplicada no banco do dev; o pre-deploy a aplica
+> em produção na publicação) e as rotas para assinar sem login, **que no site ficam fora do ar até
+> o operador ligar `ASSINAR_SEM_LOGIN=true`** (passo 8). Publicado sozinho, também não muda nada
+> para o aluno.
 > **PUBLICADO em 19/10/2026 (`main` = `1ee7c0c`, CI verde nos dois jobs, deploy ok; sem
 > migration; ordem do operador: "publica"):** o **passo 6 da etapa 4.6c** (os documentos num
 > idioma só; saíram o `idiomas.md` e o script da revisão do inglês; a legenda do Bunny só aceita
@@ -209,7 +228,7 @@
 > rodapé do app** e **o "Assine" do menu da home some para quem tem assinatura ativa** (decisão
 > do operador, 19/10/2026; o "Assine" do rodapé da home ficou como estava, sem decisão).
 > *Depois, no mesmo dia, ele decidiu que o do rodapé também some para quem tem assinatura ativa
-> (`billing.md` → *Sincronizar e perder o acesso*): feito no `dev`, a publicar.*
+> (`billing.md` → *Sincronizar e perder o acesso*): publicado em 20/10/2026 (`main` = `ac64077`).*
 > **Provado no site, de fora:** a versão nova (`mvfpyhz2-a2d42ffc`; antes, `mvea5i2y-3a00b6df`);
 > catálogo, trilhas, textos comuns e sessão → 200; a assinatura sem login → 401; o login com um
 > e-mail que não existe → 401; a imagem da logomarca → 200; o público segue no "Em breve".
@@ -4313,9 +4332,11 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             todos) · o teto do dia da conta antes dos do endereço · o "desistir da troca" não
             insiste no limite · três testes que faltavam e um que não provava o que dizia ·
             uma guarda para o "zerar as contagens" nunca sair dos testes. **Com destino:** o
-            Radar (P91, passo 8) · o teto do dia na prévia e os códigos difíceis de adivinhar
+            Radar (P91 — conferido pelo operador em 20/10/2026: ativo; a chave dos cartões
+            guardados fica desligada) · o teto do dia na prévia e os códigos difíceis de adivinhar
             (passo 4) · o evento com o mesmo Wi-Fi (`billing.md` → *Limitações*) · a tela que
-            deixa assinar sem o código quando ele falha (pergunta na P80).
+            deixa assinar sem o código quando ele falha (decidido pelo operador em 20/10/2026:
+            fica assim — `billing.md` → *A tela pública de assinar*).
             **Testes:** 23 de servidor e 9 de tela. **Mutação:** 31 de 31 reprovaram (20 do
             passo, o `HEAD` e 10 das correções da revisão). Uma suíte de cobrança mudou: um laço de
             `mudar-de-plano.test.ts` (6 trocas num teste) zera a contagem a cada volta. Nos
@@ -4362,12 +4383,52 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             reprovaram — inclusive a volta do código antigo (o gate lido fora da trava) e o `tx`
             tirado de dentro da sincronia.
             Gates: build, typecheck, lint, site 902, servidor como o CI 1108.
-      - [ ] **Passo 3 — O envio de e-mail (Resend).** Com o operador, nos painéis: a conta no
+      - [x] **Passo 3 — O envio de e-mail (Resend).** Com o operador, nos painéis: a conta no
             Resend, o domínio e o remetente (pendência P49). No código: o pacote `resend`, uma
             porta única de envio (com `await` e sem derrubar o pedido — CLAUDE.md → *Membership
             Gating*), o modelo de e-mail e um envio de prova para ele. Sozinho,
             não muda nada para o aluno.
-      - [ ] **Passo 4 — A conta nasce no pagamento (servidor, ALTO RISCO).** A rota pública que
+            **FEITO em 20–21/10/2026** (o operador nos painéis do Resend, da GoDaddy e da
+            Microsoft, com o agente):
+            - **O remetente (P49 — decisões do operador, 20/10/2026):** `Jilson Santana
+              <suporte@alunos.jilsonsantana.com>`, e as respostas vão para
+              `suporte@jilsonsantana.com` (caixa compartilhada do Microsoft 365, sem custo —
+              criada por ele em 21/10/2026, a **P92**). Por um **subdomínio**, para que a fama de spam da escola não
+              atinja o e-mail pessoal dele. Domínio, região (São Paulo), registros, DMARC
+              (`p=quarantine` só no subdomínio, 21/10), rastreamento desligado e as chaves:
+              `tech-stack.md` → *Email*. **A chave de produção nasce no dia de publicar o passo 5**
+              (só envio, só o domínio) e vai direto para a Railway.
+            - **No código:** `resend@6.32.1`, fixada (ok do operador; a mais nova tinha 4 dias) ·
+              o balcão `enviarEmail()` (`server/src/lib/email.ts`, o único que importa `resend`):
+              nunca lança, nem ao montar o e-mail · 10 s e desiste · alerta `[email]` com
+              `referencia` (ids nossos) e sem destinatário nem conteúdo · só um endereço válido,
+              em minúsculas · o endereço da API fixo · `chave` contra e-mail repetido (24 h) ·
+              `motivo: "duplicado"` · o modelo `montarEmail()` (`server/src/views/email.ts`) · o
+              topo e o rodapé em `app.email` no dicionário (fora de Admin → Textos) · a prévia
+              `npm --workspace server run email:previa` · o logo do e-mail,
+              `client/public/img/Logomarca-email.png` (recorte do logo do menu da home; só
+              aparece no e-mail depois de publicado) · as três regras de chamada no CLAUDE.md →
+              *Membership Gating*.
+            - **O desenho (decisões do operador, 21/10/2026):** o do site, com o e-mail da Apple
+              como referência — o logo oficial centralizado DENTRO do cartão branco, com 120 de
+              largura; 660 de largura; as fontes e as cores do site; o botão em pílula azul. O
+              rodapé ("Jilson Santana · jilsonsantana.com") foi aprovado junto. **O acabamento
+              fino fica com o Antigravity**, quando o operador quiser: instruções no
+              `design-lab/GEMINI.md` → *O MODELO DE E-MAIL* (fila, item 37).
+            - **Revisão de segurança (20/10/2026):** sem P0. Os dois P1 corrigidos (o alerta não
+              dizia QUEM ficou sem o e-mail; a montagem do e-mail podia lançar e derrubar o
+              pedido), e os P2 (destinatário validado, assunto sem quebra de linha, endereço da
+              API fixo, `tipo` como lista fechada, testes do tempo limite e da porta única). Os
+              que são de quem vai chamar o balcão estão no passo 5 e nas regras do CLAUDE.md.
+            - **Testes:** 14 do balcão (a biblioteca de verdade, com só a rede trocada por dublê)
+              e 10 do modelo. **Mutação: 22/22 reprovaram.** Gates: build, typecheck e lint ok;
+              site 902, servidor 1132 (como o CI, sem chave de fornecedor).
+            - **A entrega, medida com o e-mail de prova:** iCloud → caixa de entrada; Yahoo →
+              lixo eletrônico (o operador marcou "não é spam"); a Microsoft da empresa dele →
+              quarentena (`CAT:HPHISH`, com SPF, DKIM, DMARC e compauth todos `pass`);
+              mail-tester **10/10**. **A configuração está certa; o que falta é reputação do
+              domínio novo** → passo 8.
+      - [x] **Passo 4 — A conta nasce no pagamento (servidor, ALTO RISCO).** A rota pública que
             recebe e-mail + plano + código; o aviso da Stripe cria a conta (o cadastro continua
             fechado), liga o cliente da Stripe, grava o espelho e a origem (UTM). Os casos: o
             e-mail já tem conta, o pagamento abandonado, o aviso repetido. Revisão de segurança
@@ -4379,7 +4440,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             (decisões do operador, 12/10/2026: *"colocar CPF logo já resolve"* e *"deixa CPF
             obrigatório e aceita CNPJ"* — `billing.md`). **Não há campo País** (decisão dele no
             mesmo dia, etapa 4.6c: a escola é só para o Brasil); o que restringe é o número
-            fiscal brasileiro — o cartão emitido fora é a **P88**. *Proposta do agente, a
+            fiscal brasileiro — o cartão emitido fora era a **P88** (respondida em 21/10/2026: aceito). *Proposta do agente, a
             fechar no plano do passo, com context7:* o número é conferido no servidor e fica
             guardado NA STRIPE, junto do cliente (o número fiscal dela, `br_cpf`/`br_cnpj`) —
             um dado pessoal a menos no banco da escola.
@@ -4396,17 +4457,271 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             conferir no context7 se a Stripe tem um teto de confirmações por pedido de pagamento
             ou de guardar cartão; se não tiver, decidir se o servidor cancela o pedido depois de
             algumas recusas (o teste de cartão pelo campo da Stripe não passa pelo limite).
-      - [ ] **Passo 5 — "Crie sua senha".** O e-mail com o link e a tela de definir a senha.
+            **ABERTURA (21/10/2026) — plano aprovado pelo operador ("Sim, pode seguir"), em três
+            partes, um commit cada:** **(A)** a ficha de espera do visitante (tabela nova) e a
+            conta que nasce dela quando a Stripe diz que o pagamento passou, na mesma transação do
+            espelho; o "Conferir na Stripe" do admin passa a achar também quem pagou e não tem
+            conta · **(B)** as rotas sem login (planos, prévia do código, assinar, "o pagamento já
+            valeu?" — só sim ou não, e só a quem fez aquele pedido), o CPF ou CNPJ conferido pelo
+            dígito (inclusive o CNPJ com letras) e guardado só na Stripe, e os limites por
+            endereço (10 a cada 15 min e 40 por dia), por e-mail (5 e 20) e de e-mails novos (10
+            por dia por endereço); **as rotas ficam fora do ar no site até o passo 8**, por uma
+            variável na Railway que o operador liga · **(C)** a prova na área restrita, a revisão
+            de segurança, a mutação e os documentos. O teste de cartão direto no campo da Stripe
+            fica com a proteção dela (já registrada em `billing.md` → *Limite de tentativas*).
+            **As respostas da abertura (operador, 21/10/2026):** e-mail que já tem conta → a tela
+            avisa e manda entrar · a prévia do código sem login → teto por dia (40 por endereço) e
+            código de 100% difícil de adivinhar · **P88** → aceita qualquer cartão · **P75** → fica
+            como decidido em 10/10 (sem bloqueio automático). Registro em `billing.md`.
+            - [x] **Parte A — a ficha de espera e a conta que nasce no pagamento.** FEITA
+                  (21/10/2026), no `dev`. A migration `20261021120000_ficha_de_espera_do_visitante`
+                  (tabela `guest_checkout`, com RLS) — aplicada no banco do dev por `migrate
+                  deploy`, com o Passo 0 conferido antes e depois (2 contas com senha, 5 assinaturas,
+                  1 cliente, 75 sessões; 27 tabelas, nenhuma sem RLS; `migrate diff` sem diferença).
+                  A conta nasce em `pedido-do-visitante.ts`, chamado SÓ pela rotina do espelho, na
+                  transação dele; o aviso registra a conta nova pelo id; a tentativa não paga é
+                  informação, não aviso; a sincronia devolve `contaNova` (o passo 5 manda o e-mail
+                  por ela); o "Conferir na Stripe" do admin confere a ficha do e-mail sem conta.
+                  O como e as limitações: `billing.md` → *Assinar sem conta*. **Testes:** 11 de
+                  servidor (`conta-do-visitante.test.ts`) e 2 da leitura da Stripe. **Mutação: 14 de
+                  14 reprovaram** (sem conferir o pagamento, o cliente, a conta já nascida, o e-mail
+                  com conta; o e-mail sem minúsculas; sem ligar o cliente ou marcar a ficha; as
+                  novidades com qualquer marca; o admin sem a ficha; "aguardando" como aviso;
+                  `contaNova` vazia; nascer admin; o consentimento fixo; o pedido só da assinatura).
+                  Gates: typecheck, lint, build; site 902, servidor 1145 (como o CI, sem chave de
+                  fornecedor).
+            - [x] **Parte B — as rotas sem login.** FEITA (21/10/2026), no `dev`. Em
+                  `/api/billing/visitante/`: `planos`, `previa`, `assinatura` e `confirmacao`
+                  (`routes/billing-sem-login.ts`), **fora do ar em produção sem
+                  `ASSINAR_SEM_LOGIN=true`** (o operador liga no passo 8). O CPF ou CNPJ conferido
+                  no `core` (`lerDocumentoFiscal`, inclusive o CNPJ com letras) e guardado só no
+                  cliente da Stripe, antes da assinatura. A regra de assinar em
+                  `lib/checkout-do-visitante.ts`: o e-mail com conta → `JaTemConta` antes da Stripe;
+                  a trava por e-mail que não espera; a tentativa só é reaproveitada com o código
+                  dela; a viva na Stripe é sincronizada (a conta nasce) e responde `JaTemConta`.
+                  Os limites sem login (por e-mail, por endereço, a prévia com teto por dia e os
+                  e-mails novos do dia, que contam clientes criados) e as duas peças que as rotas
+                  de quem está logado passaram a dividir (`protecao-da-cobranca.ts`,
+                  `vitrine-da-assinatura.ts`). O como e as limitações: `billing.md` → *Assinar sem
+                  conta* e *Limite de tentativas*. **Achado no caminho, corrigido antes do
+                  commit:** o teto dos e-mails novos, contado na entrada da rota, gastaria o dia do
+                  endereço com CPFs errados — passou a contar só o cliente criado. **Testes:** 27
+                  de rota (`assinar-sem-login.test.ts`), 8 com a rede da Stripe trocada
+                  (`stripe-visitante-rede.test.ts`), 21 do CPF/CNPJ e do pedido
+                  (`documento-fiscal.test.ts`) e 5 do que vai à Stripe. **Mutação: 25 de 25
+                  reprovaram** — uma delas (a viva sem sincronizar) passou na primeira rodada e
+                  mostrou um teste que comparava dois vazios; ele e dois iguais da parte A foram
+                  reforçados, e ela passou a reprovar.
+            - [x] **Parte C — a prova na área restrita, a revisão de segurança e os documentos.**
+                  FEITA (21/10/2026), no `dev`. **A prova** (roteiro fora do repositório, chave de
+                  teste, clientes descartáveis apagados no fim): a Stripe aceita o CPF e o CNPJ com
+                  ou sem pontuação, **inclusive o CNPJ com letras**, aceita CPF com o dígito errado
+                  (o dígito só a nossa conferência pega) e recusa o que não tem forma de número; o
+                  fluxo inteiro passou com as funções de verdade (a ficha, reaproveitar com o código,
+                  outra tentativa sem ele, o CPF trocado na primeira fatura, pagar com o cartão de
+                  teste, a conta nascendo sem senha, o gate, o "já valeu?", o mesmo e-mail depois →
+                  já tem conta). **Medido também:** a Stripe CANCELA o pagamento depois de 10 recusas
+                  — o servidor não acrescenta teto seu, e o checkout sem login nunca reaproveita o
+                  pagamento morto. **A revisão de segurança** (`security-vulnerability-reviewer`,
+                  sobre as partes A e B): nenhum P0; **o P1 corrigido** (no máximo 3 "assinar sem
+                  login" em andamento: cada um segurava uma ligação do banco enquanto a Stripe
+                  respondia, sem teto nenhum); **sete P2 corrigidos** (o número fiscal só muda com a
+                  trava e depois de conferir que ninguém pagou · o limite por e-mail conta com o
+                  endereço · o assinar com código no mesmo teto do dia da prévia · sem endereço em
+                  produção, todos juntos · a mesma recusa com os e-mails novos esgotados · a ficha
+                  que virou conta é conta · o teste das grafias do e-mail); **com destino:** a cota
+                  da Stripe sob ataque (`billing.md` → *Assinar sem conta*, com gatilho), o RLS no
+                  banco de produção e o caixa de ligações (passo 8), as notas do e-mail (passo 5).
+                  Detalhe: `billing.md` → *Assinar sem conta* e *Limite de tentativas*. **Testes
+                  novos da revisão:** 11 de rota e 1 da leitura da Stripe. **Mutação: 13 rodadas nas
+                  correções; duas passaram e mostraram a mesma conferência em dois lugares** — ficou
+                  num lugar só, o da trava, e a mutação dela reprova. **Achado FORA do passo,
+                  reportado ao operador:** o pagamento morto (10 recusas) também prenderia quem
+                  assina LOGADO (`checkout.ts`, desde a 4.2) até trocar de plano ou a tentativa
+                  vencer. **Corrigido com a autorização dele, no mesmo dia** (*"Sim, corrija"*), num
+                  commit à parte: o novo clique ganha outra tentativa (teste em `billing.test.ts`;
+                  a mutação reprova). `Docs check (context7): Stripe → /websites/stripe → o número fiscal do
+                  cliente (tax_id_data; a Stripe só confere o formato) e o teto de confirmações de um
+                  pagamento (não documentado; medido) · Better Auth → /better-auth/better-auth →
+                  criar conta pelo servidor com o cadastro fechado, e a troca de senha cria a senha de
+                  quem não tem (conferido também no código da 1.7.5). 3 consultas no passo.`
+                  Gates: typecheck, lint, build; site 902, servidor 1209 (como o CI).
+      - [x] **Passo 5 — "Crie sua senha".** **FEITO (21/10/2026), no `dev`** — as quatro partes
+            abaixo. Com o operador: os textos (P93) e onde os e-mails da prova caíram (P95).
+            *(Nasceu como "o e-mail com o link e a tela de definir a senha"; virou o código no
+            e-mail na abertura.)*
+            **ABERTURA (21/10/2026) — as decisões do operador, uma a uma, e o plano aprovado
+            ("Sim, pode seguir"). O passo deixa de ser "o link no e-mail" e passa a ser o CÓDIGO no
+            e-mail, "como a Apple e os grandes fazem, mas levando em conta que o meu e-mail como é
+            novo ainda pode ser considerado spam […] um misto de velho com novo":** o antigo (entrar
+            com e-mail e senha, sem depender de e-mail chegar) e o novo (o código de 6 números).
+            (1) **A senha nasce na própria tela de depois do pagamento** — a pessoa já entra para
+            estudar; o e-mail não é preciso para começar (o servidor deste passo; a tela, no passo
+            6). (2) **O nome não é pedido aqui** (fecha a P83): a pessoa preenche em Minha conta
+            quando quiser e, ao pedir o certificado sem nome, aparece na hora a tela para preencher
+            (Fase 6.5). (3) **"Esqueci minha senha" entra junto, com CÓDIGO de 6 números** — vale 10
+            minutos, 3 tentativas; digitado na mesma tela, com a senha nova (o antivírus de e-mail
+            das empresas não estraga código, e estraga link de uso único). (4) **O e-mail não é
+            confirmado na hora de pagar**: fica confirmado na primeira vez que a pessoa usa um código;
+            **novidades e ofertas só vão para e-mail confirmado**. *(Ajustada pela P94, no mesmo
+            dia: a senha criada logo depois de pagar também deixa o e-mail confirmado — o código é
+            só mais uma forma de entrar, e a senha continua valendo. Com isso, o "e-mail confirmado"
+            do login não prova mais que a caixa é da pessoa, e as novidades precisam de confirmação
+            própria: P96.)* (5) **Trocar a senha pelo código
+            desconecta os outros aparelhos.** (6) **Na tela de entrar, além de e-mail e senha, o botão
+            "Receber código de acesso"**: o campo da senha vira o campo do código, a pessoa recebe o
+            código e entra — sem criar senha nova na hora. **Entrar por código nunca cria conta** (a
+            conta continua nascendo só no pagamento). (7) **O e-mail de boas-vindas** sai quando a
+            conta do visitante nasce: confirma a assinatura e diz como entrar.
+            **Sai da proposta:** o "Enviar de novo" na tela de depois do pagamento (o "Receber código
+            de acesso" cobre quem fechou a tela) e o link de criar a senha.
+            **As partes, um commit cada:** **(1)** o código no e-mail (servidor): o recurso pronto do
+            Better Auth (`emailOTP`, sem pacote novo), o e-mail do código pelo nosso balcão, os
+            limites (por e-mail 3 por hora e 6 por dia; por endereço 10 a cada 15 min) · **(2)** a
+            senha logo depois de pagar (só quem pagou naquela tela, só sem senha, até 24 h depois de
+            a conta nascer; já entra) e o e-mail de boas-vindas (tenta de novo no próximo aviso da
+            Stripe se falhar) · **(3)** as telas: "Esqueci minha senha" e "Receber código de acesso"
+            na tela de entrar, e a tela do código com a senha nova; os textos são rascunho do agente
+            · **(4)** a prova, a revisão de segurança, a mutação e os documentos, com um e-mail de
+            cada tipo para o operador ver.
+            - [x] **Parte 1 — o código no e-mail (servidor).** FEITA (21/10/2026), no `dev`. O
+                  `emailOTP` do Better Auth 1.7.5 (sem pacote novo): 6 números, 10 minutos, 3
+                  tentativas, guardado só o resumo (`hashed`), **`disableSignUp: true` também nele**
+                  (sem isso, entrar com código criaria a conta de qualquer e-mail — medido no código);
+                  trocar a senha pelo código desconecta os outros aparelhos
+                  (`revokeSessionsOnPasswordReset`) e confirma o e-mail; o código cria a primeira
+                  senha de quem não tem. **Pedir código só por `POST /api/conta/codigo`**
+                  (`routes/conta-codigo.ts`), a mesma resposta exista a conta ou não, com os limites
+                  do plano (por e-mail, de qualquer endereço, 3 por hora e 6 por dia; por endereço,
+                  10 a cada 15 min); as rotas do recurso de pedir código, e as de link e de troca de
+                  e-mail, desligadas (`disabledPaths`); gastam o código as do Better Auth
+                  (`/sign-in/email-otp`, `/email-otp/reset-password`). O e-mail do código
+                  (`lib/codigo-por-email.ts`) pelo balcão, para o endereço do banco; os textos são
+                  **rascunho do agente** (`app.email.codigo`), para o operador revisar com os das
+                  telas (parte 3). **Testes:** 15 (`codigo-por-email.test.ts`). **Mutação: 12 de 13
+                  reprovaram na primeira rodada** — a que passou era a trava de não criar conta (o
+                  nosso e-mail já não saía para e-mail sem conta, e o teste não enxergava o código
+                  gerado); o teste passou a enxergá-lo, e ela reprova. Uma é equivalente (o destino
+                  pelo e-mail digitado ou pelo do banco é o mesmo texto, porque a busca é exata em
+                  minúsculas).
+            - [x] **Parte 2 — a senha logo depois de pagar e as boas-vindas (servidor).** FEITA
+                  (21/10/2026), no `dev`. `POST /billing/visitante/senha` (com o código da tentativa;
+                  só a conta que nasceu daquele pagamento, com acesso, sem senha, até 24 h; abre a
+                  sessão; o e-mail não fica confirmado) e o e-mail de boas-vindas (depois de qualquer
+                  sincronia, uma vez, com a marca na ficha — migration
+                  `20261021180000_boas_vindas_da_ficha`, aplicada no banco do dev com o Passo 0
+                  conferido antes e depois; nunca derruba o aviso; o botão só com https em produção,
+                  e a subida do servidor alerta). O tamanho da senha (8 a 128) no `core`, o mesmo do
+                  Better Auth. Os textos das boas-vindas são rascunho do agente. Detalhe:
+                  `billing.md` → *Assinar sem conta* → *Depois de pagar*. **Testes:** 9 da senha, 7
+                  das boas-vindas e 1 do código (a senha curta). **Mutação: 17 de 18 reprovaram**; a
+                  que passou é equivalente (a leitura antecipada da marca só poupa consultas — quem
+                  impede o segundo envio é a tomada da marca).
+            - [x] **Parte 3 — as telas.** FEITA (21/10/2026), no `dev`. **A tela de entrar**
+                  (`LoginPage`, recomposta: a moldura `MolduraDeAcesso` com as MESMAS classes de
+                  antes, e as formas de entrar em `components/acesso/`): e-mail e senha como antes,
+                  **"Receber código de acesso"** (pede o código para ENTRAR — só com o e-mail válido
+                  —, e o campo da senha dá lugar ao do código, com "Pedir outro código" e "Entrar com
+                  senha") e **"Esqueci minha senha"**, que leva o e-mail já digitado (no estado da
+                  navegação, nunca no endereço). **A tela da senha nova** (`/esqueci-minha-senha`,
+                  `EsqueciMinhaSenhaPage`): o e-mail; depois o código e a senha nova (nunca aparada;
+                  8 a 128, do `core`); criada a senha, a pessoa entra com ela e vai para o Início (se
+                  a entrada não abrir, para a tela de entrar). Quem entra pelo código também começa
+                  do zero (o cache limpo). As falhas: o código recusado (400/403), o excesso (429, a
+                  frase das tentativas) e a queda de rede dizem coisas diferentes. O cliente do
+                  Better Auth ganhou o `emailOTPClient`; pedir o código é pela nossa rota
+                  (`pedirCodigo`). Os textos são **rascunho do agente: P93**. **Testes:** 23 de tela
+                  (`LoginPage.codigo.test.tsx`, `EsqueciMinhaSenhaPage.test.tsx`), e os 22 de antes da
+                  tela de entrar passam sem mudar. **Mutação: 14 de 16 na primeira rodada** — uma é
+                  equivalente (o campo de e-mail do navegador já tira os espaços das pontas) e a outra
+                  mostrou dois testes que achavam a frase da vez anterior; separados, ela reprova.
+            - [x] **Parte 4 — a prova, a revisão de segurança e os documentos.** FEITA
+                  (21/10/2026), no `dev`. **A prova dos e-mails:** um de cada tipo (o código de
+                  entrar, o da senha nova e as boas-vindas) para os três endereços do operador
+                  (Yahoo, iCloud e Microsoft), pelo caminho de verdade (`auth.api.sendVerificationOTP`
+                  e `mandarBoasVindasDaAssinatura`, com contas, fichas e assinaturas descartáveis no
+                  banco do dev, apagadas no fim — o banco igual antes e depois): os 9 entregues ao
+                  Resend. Onde caíram: **P95**. **A revisão de segurança**
+                  (`security-vulnerability-reviewer`, sobre as partes 1 a 3): nenhum P0. **Os P1:**
+                  (1) **corrigido** — quem guardasse a tentativa voltaria à conta depois que a dona do
+                  e-mail a confirmasse (o Better Auth apaga a senha de antes da confirmação na
+                  primeira entrada pelo código, e a rota deduzia o "uma vez" da linha de senha):
+                  agora a tentativa não cria senha com o e-mail confirmado (`EmailConfirmado`), e a
+                  vez fica marcada na ficha (`senhaCriadaEm`, migration
+                  `20261021220000_senha_da_ficha_uma_vez`); (2) **a primeira entrada pelo código numa
+                  conta de e-mail não confirmado APAGA a senha e desconecta os aparelhos** — do
+                  Better Auth 1.7, documentado, sem opção para desligar. O que é de engenharia,
+                  corrigido: as contas do seed nascem confirmadas, e a de admin que já existe fica
+                  confirmada pela migration `20261021220100_admin_com_email_confirmado` (só dados; no
+                  ar, roda na publicação) — sem isso, o primeiro código apagaria a senha de admin. **O
+                  efeito no aluno foi ao operador (P94), e ele decidiu no mesmo dia:** *"a pessoa cria a
+                  senha normal e quando entrar com o código é só mais uma opção de acesso"* — **a senha
+                  continua valendo**. Por isso a senha criada depois de pagar também deixa o e-mail
+                  confirmado, e a entrada pelo código não apaga nada (o risco que ele aceitou e o
+                  gatilho: `billing.md` → *Depois de pagar*); (3) a chave das boas-vindas é por conta
+                  (`boas-vindas/<conta>`), não por evento — a regra (2) do `CLAUDE.md` foi emendada: o
+                  mesmo e-mail sai de três gatilhos, e uma chave por evento não seguraria a repetição
+                  entre avisos diferentes. **Os P2:** corrigidos — a senha criada com a sessão que não
+                  abre vira alerta (`console.error`), e o teste do "começa do zero" depois da senha
+                  nova · com destino — o resumo da tentativa e as regras dela no navegador (passo 6),
+                  a cota do Resend (passo 8) · aceitos, com gatilho: `billing.md` → *Depois de pagar*.
+                  `Docs check (context7): Better Auth → /better-auth/better-auth → a entrada pelo
+                  código numa conta de e-mail não confirmado apaga a senha e as sessões (plugin
+                  email-otp e guia da 1.7), e o caminho indicado é a senha nova pelo "esqueci minha
+                  senha" (conferido também no código da 1.7.5). 1 consulta, refeita depois do resumo
+                  da sessão.` **Passo 0 das migrations no banco do dev:** antes e depois, as 2 contas,
+                  as senhas (conferidas com o `.env`), as sessões, as fichas e as assinaturas iguais;
+                  a de admin com o e-mail confirmado; 27 tabelas, nenhuma sem RLS; `migrate diff` sem
+                  diferença. **Testes:** 8 de servidor e 1 de tela. **Mutação: 5 de 5 reprovaram**
+                  (sem as duas conferências do e-mail confirmado; sem a marca da vez; o alerta como
+                  aviso; o seed sem confirmar; a tela sem limpar o cache). Gates: typecheck, lint,
+                  build; site 928, servidor 1250 (e os 3 arquivos do passo como o CI, sem chave).
+            **Da revisão de segurança do passo 4 (21/10/2026), para este passo:** não depender só
+            do `contaNova` da sincronia — ele sai uma vez, e se o servidor cair entre a gravação e
+            o envio, ninguém recebe o e-mail e nada alerta (a reentrega do aviso já não diz
+            "conta nova") · o link: de uso único e curto, só para o `User.email` lido do banco,
+            enviado depois do commit, nunca no registro · marcar `emailVerified` quando a pessoa
+            criar a senha · o `reset-password` do Better Auth 1.7.5 já cria a conta de senha que
+            falta (`password.mjs:163`) · **as novidades só depois de o e-mail verificado**: quem
+            marcou a caixa foi quem pagou, que pode não ser o dono do e-mail.
             **Pergunta para a abertura:** "Esqueci minha senha", na tela de entrar, usa o mesmo
             mecanismo — entra junto? **Depende dos passos 3 e 4.**
             **Da proposta da tela pública (agente, 12/10/2026):** a tela de definir a senha
             pede também o nome, que vai no certificado (**P83**) · a tela de depois do pagamento
             tem "Enviar de novo" para quando o e-mail não chega — a rota é deste passo, dentro
             do limite do passo 1.
+            **Do passo 3 (20–21/10/2026):** o e-mail sai por `enviarEmail()` com as três regras
+            de chamada do CLAUDE.md (depois do commit e fora de trava; `chave` =
+            `<tipo>/<event.id>`, com o token do link gravado antes e REAPROVEITADO na reentrega;
+            `para` lido do nosso banco e `referencia` com os ids) · o tipo do e-mail entra na
+            lista `TipoDeEmail` · **o endereço base do link é conferido na SUBIDA do servidor**
+            (https em produção — a revisão de segurança lembrou que um `BETTER_AUTH_URL` sem
+            `https://` faria o e-mail não sair) · a chave de produção do Resend vai para a
+            Railway na publicação deste passo · **pergunta ao operador na abertura:** o aluno
+            cria a senha **na própria tela de depois do pagamento**, sem depender do e-mail para
+            entrar? O e-mail viraria confirmação, e cair no spam deixaria de impedir a matrícula
+            (o que o passo 3 mediu no Yahoo e na Microsoft). Tem prós e contras a pesar com ele,
+            com a revisão de segurança.
       - [ ] **Passo 6 — A tela pública de assinar e os botões da home.** O mesmo formulário da
             4.2 com o campo de e-mail, a confirmação para quem acabou de pagar ("enviamos um
             e-mail para você criar a senha") e os botões Assinar da home sem login.
             Os textos são do operador. **Depende dos passos 4 e 5.**
+            **Do passo 4 (21/10/2026):** a resposta `MuitosAoMesmoTempo` (o servidor atende 3
+            "assinar sem login" de cada vez) mostra **"Aguarde um instante e tente novamente."**
+            (`app.assinar.aguardeUmInstante` — texto do operador, no mesmo dia, para a pessoa não
+            clicar de novo em seguida); o `Ocupada` (o mesmo e-mail em duas abas) é outro caso.
+            **Da revisão de segurança do passo 5 (21/10/2026):** (a) **a tentativa abre a conta**
+            (cria a primeira senha e a sessão, por até 24 h): nunca vai no endereço — nem
+            `?tentativa=`, nem no `return_url` da Stripe —, fica só na memória da página ou no
+            `sessionStorage`, sai dali depois de criada a senha, e a senha se cria só por POST;
+            (b) **guardar só o resumo da tentativa** (SHA-256) na ficha e no `metadata` da
+            assinatura da Stripe, e buscar e comparar pelo resumo — hoje ela vai inteira, legível no
+            painel da Stripe e em todo aviso; antes de ligar a venda sem login (passo 8). *Sobe de
+            prioridade se alguém além do operador tiver acesso ao painel ou às chaves da Stripe, ou
+            se um app for ligado a ela;* (c) **as recusas da senha** que a tela mostra:
+            `NaoConfirmado`, `PrazoVencido`, `EmailConfirmado` (a dona do e-mail já entrou pelo
+            código: a senha agora é pelo "Esqueci minha senha"), `JaTemSenha`, `Ocupada` — os textos
+            são do operador.
             **A PROPOSTA DA TELA** *(agente, 12/10/2026, depois de o operador mostrar as telas
             de pagamento da Udemy e do Code with Mosh)* **está em `billing.md` → *A tela pública
             de assinar*:** os blocos em ordem, os textos, o que a Stripe exige
@@ -4447,14 +4762,34 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             datas num e-mail só, na falha, ou pendurá-lo numa nova tentativa da Stripe.
       - [ ] **Passo 8 — O teste com cartão de verdade e a abertura ao público.** O teste do
             operador no site no ar (mensal → anual → reembolso), olhando a taxa da Stripe. Antes
-            de abrir: as pendências P58 (o nome na fatura), P60 (a opção do painel), P75 (o
-            limite do reembolso) e P91 (o Radar ligado contra teste de cartão), a cópia do banco
+            de abrir: as pendências P58 (o nome na fatura) e P60 (a opção do painel) — a P91 (o
+            Radar) fechou em 20/10/2026, e a P75 (o limite do reembolso) em 21/10/2026 —, a cópia do banco
             (Fase 7) e a revisão de segurança da etapa inteira. A publicação é ordem dele.
+            **No dia de abrir, o operador liga `ASSINAR_SEM_LOGIN=true` na Railway** (do passo 4,
+            21/10/2026): sem ela, as rotas sem login respondem 404 no site, e a tela pública não assina.
+            **Da revisão de segurança do passo 4:** depois de publicar, rodar no banco de produção
+            o SQL de RLS do `CLAUDE.md` (a tabela `guest_checkout` é nova — esperado: zero linhas) ·
+            conferir com o operador o tamanho do caixa de ligações do banco na Railway
+            (`connection_limit` na `DATABASE_URL`, que hoje não tem): é dele que depende quanto
+            os 3 "assinar sem login" em andamento ocupam.
+            **Da revisão de segurança do passo 5 (21/10/2026):** depois de publicar, conferir no
+            mesmo banco que a conta de admin ficou com o e-mail confirmado (a migration
+            `20261021220100_admin_com_email_confirmado` roda na publicação) — antes disso, não usar
+            "Receber código de acesso" com ela · **a cota do plano do Resend contra o pior caso**: o
+            teto de códigos é por caixa (6 por dia), não da escola — N contas somam N × 6, e com a
+            cota esgotada códigos e boas-vindas falham para todos até o dia seguinte (só os alertas
+            `[email]` mostram).
             **Da proposta da tela pública (agente, 12/10/2026):** antes de abrir, também os
             Termos de Uso e a Política de Privacidade no ar (a tela de assinar aponta para os
             dois; hoje são pendência da Fase 7 e a P61) · a **P84** (o cartão promete o JilsonAI
             e o Pix, que ainda não existem) · a resposta da FAQ sobre nota fiscal já trocada por
             ele no admin (decisão de 12/10/2026: "sempre que solicitada").
+            **A entrega dos e-mails (do passo 3, 21/10/2026):** antes de abrir, medir de novo
+            onde o e-mail cai — no **Gmail e no Hotmail/Outlook.com de OUTRA pessoa** (os testes
+            do passo 3 foram para caixas do próprio operador, com o nome dele no remetente e no
+            destinatário), no Yahoo e no mail-tester (o DMARC do subdomínio deve sair verde; em
+            21/10 o verificador dele ainda lia o registro antigo). Até lá, **aquecer o domínio**:
+            e-mails de verdade para quem abre e responde, e "não é spam" quando cair no lixo.
 - [ ] **4.7b — Admin → Assinaturas vira um PAINEL de assinaturas (código, ALTO RISCO).**
       **MAPA APROVADO pelo operador (10/10/2026: "Aprovo o mapa"), e fica para DEPOIS da 4.7**
       (decisão dele no mesmo dia: *"o Painel pode ficar para depois da 4.7 que é mais
@@ -5543,6 +5878,10 @@ outro aparelho e "daqui a um mês", e o Safari apaga o armazenamento do site em 
 - [ ] `Certificate` (user, planId/courseId, issuedAt, `nameSnapshot`, `skillsCovered[]`, **`isPublic` default false**) + RLS ; migration
 - [ ] Server-side PDF on 100% completion of a trilha (or course). Name = trilha name; lists skills covered.
 - [ ] If `User.name` missing at issue time, prompt the student for the name to print.
+      **Decisão do operador (21/10/2026 — fecha a P83):** o nome não é pedido ao assinar nem ao
+      criar a senha; a pessoa preenche em Minha conta quando quiser e, *"quando for emitir o
+      certificado se estiver sem nome aparece a tela para preencher na hora, salva no banco e gera
+      o certificado"*.
 - **Decisão do operador, 09/10/2026 (a P39 — o que o certificado atesta):** *"o certificado é só para
   assinante, e o cálculo para emissão só com as aulas concluídas do aluno logado"*. Emite só para
   quem tem assinatura ativa, contando as aulas que a plataforma marcou como concluídas **na conta
@@ -5569,6 +5908,8 @@ outro aparelho e "daqui a um mês", e o Safari apaga o armazenamento do site em 
 ## Phase 7 — Launch Prep  *(medium risk)*
 
 - [ ] Transactional emails (Resend): welcome, receipt, password reset (transactional ignores `marketingConsent`)
+      *(As boas-vindas de quem assina sem conta e a recuperação de senha — por CÓDIGO no e-mail —
+      são da etapa 4.7, passo 5, decisões do operador de 21/10/2026.)*
       — in Portuguese (the school is Portuguese-only since 12/10/2026)
 - [ ] LGPD: privacy policy, terms, consent, data export/delete path (in Portuguese only — the
       English versions left on 12/10/2026)

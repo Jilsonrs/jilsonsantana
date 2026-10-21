@@ -1,7 +1,9 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
+import { emailOTP } from "better-auth/plugins";
 import { PrismaClient } from "@prisma/client";
-import { Role } from "@jilson/core";
+import { Role, TAMANHO_MAXIMO_DA_SENHA, TAMANHO_MINIMO_DA_SENHA, TENTATIVAS_DO_CODIGO, VALIDADE_DO_CODIGO_EM_MINUTOS } from "@jilson/core";
+import { enviarCodigo } from "./codigo-por-email.js";
 
 // Better Auth instance (Phase 1). The HTTP handler is mounted on Express in
 // index.ts via toNodeHandler — see the middleware-order note there.
@@ -57,7 +59,50 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     disableSignUp: true,
+    // O tamanho da senha, dos mesmos números da tela (`core` → `senhaNovaSchema`).
+    minPasswordLength: TAMANHO_MINIMO_DA_SENHA,
+    maxPasswordLength: TAMANHO_MAXIMO_DA_SENHA,
+    // Trocar a senha pelo código desconecta os outros aparelhos (decisão do operador, 21/10/2026,
+    // "como Google e Apple"): quem tinha entrado com a senha antiga perde o acesso na hora.
+    revokeSessionsOnPasswordReset: true,
   },
+
+  // O CÓDIGO NO E-MAIL (etapa 4.7, passo 5 — decisões do operador, 21/10/2026): 6 números, 10
+  // minutos, 3 tentativas, para ENTRAR sem senha e para criar uma SENHA nova. Guardado só o resumo
+  // (`hashed`), nunca o número.
+  // TRAVA — `disableSignUp: true` AQUI TAMBÉM: sem ela, entrar com código para um e-mail que não
+  // tem conta CRIA a conta na hora (medido no código da 1.7.5, `sign-in/email-otp`) — o cadastro
+  // aberto que o `disableSignUp` de cima fecha. A conta só nasce no pagamento (`pedido-do-visitante.ts`).
+  plugins: [
+    emailOTP({
+      otpLength: 6,
+      expiresIn: VALIDADE_DO_CODIGO_EM_MINUTOS * 60,
+      allowedAttempts: TENTATIVAS_DO_CODIGO,
+      storeOTP: "hashed",
+      disableSignUp: true,
+      sendVerificationOTP: async ({ email, otp, type }) => {
+        await enviarCodigo({ email, otp, type });
+      },
+    }),
+  ],
+
+  // As rotas do Better Auth que a escola NÃO abre por fora (etapa 4.7, passo 5). Pedir código só pela
+  // NOSSA rota (`routes/conta-codigo.ts`), que tem os limites por e-mail e por endereço — senão o site
+  // serviria para encher a caixa de e-mail de alguém. E nada de link de senha nem de troca de e-mail:
+  // a escola usa o código. Ficam abertas as que GASTAM o código (`/sign-in/email-otp` e
+  // `/email-otp/reset-password`), com 3 tentativas por código. O servidor continua chamando as
+  // desligadas por dentro (`auth.api.*`): o desligamento vale só para o pedido que vem de fora.
+  disabledPaths: [
+    "/email-otp/send-verification-otp",
+    "/email-otp/request-password-reset",
+    "/forget-password/email-otp",
+    "/email-otp/check-verification-otp",
+    "/email-otp/verify-email",
+    "/email-otp/request-email-change",
+    "/email-otp/change-email",
+    "/request-password-reset",
+    "/reset-password",
+  ],
 
   // `secure` do cookie FIXADO NO AMBIENTE, nunca inferido da URL.
   //

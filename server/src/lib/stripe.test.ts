@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import Stripe from "stripe";
 import { pagamentosDaFatura } from "./stripe-devolucao.js";
-import { chavePublicavel, erroSemMensagem, paraAssinaturaNaStripe, paraAssinaturaNoCheckout, paraCodigoPromocional, paraPedidoDeAssinatura, paraPedidoDeCliente, paraPrecosDosPlanos } from "./stripe.js";
+import { chavePublicavel, erroSemMensagem, paraAssinaturaNaStripe, paraAssinaturaNoCheckout, paraCodigoPromocional, paraNumeroFiscal, paraPedidoDeAssinatura, paraPedidoDeCliente, paraPedidoDeClienteDoVisitante, paraPrecosDosPlanos } from "./stripe.js";
 
 // O ESPELHO A PARTIR DA STRIPE (Fase 4, etapa 4.1) — função pura, teste unitário (CLAUDE.md →
 // Testing: só função pura, sem I/O). O que protege é o "PAGO ATÉ": quando a renovação falha, a
@@ -55,6 +55,27 @@ describe("o espelho a partir da assinatura da Stripe", () => {
     expect(paraAssinaturaNaStripe(assinatura({ cliente: { id: "cus_1", metadata: { userId: "u" }, deleted: true } })).userId).toBeNull();
     const soOId = paraAssinaturaNaStripe(assinatura({ cliente: "cus_9" }));
     expect([soOId.userId, soOId.clienteId]).toEqual([null, "cus_9"]);
+  });
+
+  // A CONTA QUE NASCE NO PAGAMENTO (etapa 4.7, passo 4): o pedido do visitante e o que ele
+  // escolheu vêm da assinatura — a escolha presa à tentativa que foi paga.
+  it("o pedido do visitante: o da assinatura; sem ele, o do cliente; cliente apagado ou só o id, nenhum", () => {
+    expect(paraAssinaturaNaStripe(assinatura({ metadata: { pedido: "p-assinatura" }, cliente: { id: "cus_1", metadata: { pedido: "p-cliente" } } })).pedido).toBe("p-assinatura");
+    expect(paraAssinaturaNaStripe(assinatura({ cliente: { id: "cus_1", metadata: { pedido: "p-cliente" } } })).pedido).toBe("p-cliente");
+    expect(paraAssinaturaNaStripe(assinatura({ cliente: { id: "cus_1", metadata: { pedido: "p" }, deleted: true } })).pedido).toBeNull();
+    expect(paraAssinaturaNaStripe(assinatura({ cliente: "cus_9" })).pedido).toBeNull();
+  });
+
+  it("novidades e origem: só da ASSINATURA, nunca do cliente; novidades só com a marca exata (LGPD: na dúvida, não)", () => {
+    const escolheu = paraAssinaturaNaStripe(assinatura({ metadata: { novidades: "sim", origem: "youtube", campanha: "video-excel" } }));
+    expect(escolheu.doVisitante).toEqual({ novidades: true, origem: "youtube", campanha: "video-excel" });
+    for (const marca of [undefined, "", "nao", "Sim", "true", "1"]) {
+      const metadata: Record<string, string> = marca === undefined ? {} : { novidades: marca };
+      expect(paraAssinaturaNaStripe(assinatura({ metadata })).doVisitante?.novidades).toBe(false);
+    }
+    // O que estiver no CLIENTE não vale: o cliente é do e-mail, e cada tentativa leva a escolha de quem a fez.
+    const doCliente = paraAssinaturaNaStripe(assinatura({ cliente: { id: "cus_1", metadata: { novidades: "sim", origem: "x", campanha: "y" } } }));
+    expect(doCliente.doVisitante).toEqual({ novidades: false, origem: null, campanha: null });
   });
 
   it("o status vai como a Stripe diz (texto: o gate não quebra com status novo)", () => {
@@ -213,7 +234,24 @@ function doCheckout({ status = "incomplete", fatura = { status: "open", confirma
 
 describe("a assinatura como o checkout a vê", () => {
   it("incompleta com a fatura aberta: o segredo do pagamento, o plano e nenhum código", () => {
-    expect(paraAssinaturaNoCheckout(doCheckout())).toEqual({ id: "sub_1", status: "incomplete", precoId: "price_mensal", codigoId: null, segredoDoPagamento: "pi_1_secret_x", segredoDoCartao: null });
+    expect(paraAssinaturaNoCheckout(doCheckout())).toEqual({ id: "sub_1", status: "incomplete", precoId: "price_mensal", codigoId: null, segredoDoPagamento: "pi_1_secret_x", segredoDoCartao: null, tentativa: null, pagamentoCancelado: false });
+  });
+
+  // ASSINAR SEM CONTA (etapa 4.7, passo 4): só quem traz o código da tentativa segue com ela.
+  // A STRIPE CANCELA o pagamento depois de 10 recusas (medido na área restrita, 21/10/2026): a
+  // fatura segue aberta e o segredo, morto. O checkout tem que saber, para não o entregar de novo.
+  it("o pagamento de hoje cancelado pela Stripe: marcado — e outro pagamento cancelado da fatura não conta", () => {
+    const comPagamentos = (pagamentos: { status: string; payment: { payment_intent: string } }[]) =>
+      doCheckout({ fatura: { status: "open", confirmation_secret: { client_secret: "pi_1_secret_x", type: "payment_intent" }, payments: { data: pagamentos } } });
+    expect(paraAssinaturaNoCheckout(comPagamentos([{ status: "canceled", payment: { payment_intent: "pi_1" } }])).pagamentoCancelado).toBe(true);
+    expect(paraAssinaturaNoCheckout(comPagamentos([{ status: "open", payment: { payment_intent: "pi_1" } }])).pagamentoCancelado).toBe(false);
+    expect(paraAssinaturaNoCheckout(comPagamentos([{ status: "canceled", payment: { payment_intent: "pi_antigo" } }])).pagamentoCancelado).toBe(false);
+    expect(paraAssinaturaNoCheckout(comPagamentos([])).pagamentoCancelado).toBe(false);
+  });
+
+  it("a tentativa do visitante com que foi criada; a de quem está logado não tem", () => {
+    expect(paraAssinaturaNoCheckout(doCheckout({ metadata: { pedido: "p1", tentativa: "t-1", plano: "mensal" } })).tentativa).toBe("t-1");
+    expect(paraAssinaturaNoCheckout(doCheckout()).tentativa).toBeNull();
   });
 
   it("o código promocional com que foi criada", () => {
@@ -252,7 +290,7 @@ describe("o pedido de assinatura que vai à Stripe", () => {
       payment_settings: { save_default_payment_method: "on_subscription", payment_method_types: ["card"] },
       discounts: [{ promotion_code: "promo_1" }],
       metadata: { userId: "u1", plano: "anual", codigo: "promo_1" },
-      expand: ["latest_invoice.confirmation_secret", "pending_setup_intent"],
+      expand: ["latest_invoice.confirmation_secret", "latest_invoice.payments", "pending_setup_intent"],
     });
   });
 
@@ -264,6 +302,50 @@ describe("o pedido de assinatura que vai à Stripe", () => {
 
   it("nunca cobra na criação: a assinatura nasce incompleta, até o site confirmar", () => {
     expect(paraPedidoDeAssinatura({ ...pedido, codigoId: null }).payment_behavior).toBe("default_incomplete");
+  });
+});
+
+// A ASSINATURA DO VISITANTE (etapa 4.7, passo 4): sem a ficha e a tentativa, a conta não nasceria
+// do pagamento; sem a escolha, nasceria com o consentimento errado — e NUNCA um `userId`.
+describe("o pedido de assinatura do visitante", () => {
+  const base = { clienteId: "cus_1", precoId: "price_mensal", plano: "mensal", codigoId: null } as const;
+
+  it("leva a ficha, a tentativa, as novidades e a origem — e nenhum userId", () => {
+    const pedido = paraPedidoDeAssinatura({ ...base, visitante: { pedido: "p1", tentativa: "t-1", escolha: { novidades: true, origem: "youtube", campanha: "video-excel" } } });
+    expect(pedido.metadata).toEqual({ pedido: "p1", tentativa: "t-1", novidades: "sim", origem: "youtube", campanha: "video-excel", plano: "mensal" });
+    expect(pedido.payment_behavior).toBe("default_incomplete");
+    expect(pedido.customer).toBe("cus_1");
+  });
+
+  it("sem a marca das novidades vai \"nao\"; sem origem, os campos dela não vão", () => {
+    const pedido = paraPedidoDeAssinatura({ ...base, codigoId: "promo_1", visitante: { pedido: "p1", tentativa: "t-1", escolha: { novidades: false, origem: null, campanha: null } } });
+    expect(pedido.metadata).toEqual({ pedido: "p1", tentativa: "t-1", novidades: "nao", plano: "mensal", codigo: "promo_1" });
+    expect(pedido.discounts).toEqual([{ promotion_code: "promo_1" }]);
+  });
+
+  it("o que vai é o que volta: a leitura da Stripe acha a ficha e a escolha que o pedido gravou", () => {
+    const metadata = paraPedidoDeAssinatura({ ...base, visitante: { pedido: "p9", tentativa: "t-9", escolha: { novidades: true, origem: "instagram", campanha: null } } }).metadata as Record<string, string>;
+    const lida = paraAssinaturaNaStripe(assinatura({ metadata }));
+    expect([lida.pedido, lida.doVisitante]).toEqual(["p9", { novidades: true, origem: "instagram", campanha: null }]);
+    expect(paraAssinaturaNoCheckout(doCheckout({ metadata })).tentativa).toBe("t-9");
+  });
+});
+
+// O CLIENTE DO VISITANTE (etapa 4.7, passo 4): nasce com o e-mail e o CPF ou CNPJ — o número só na
+// Stripe, com o tipo do Brasil e a pontuação de costume — e a ficha, nunca um userId.
+describe("o cliente do visitante e o número fiscal", () => {
+  it("CPF → br_cpf; CNPJ (inclusive com letras) → br_cnpj, com a pontuação de costume", () => {
+    expect(paraNumeroFiscal({ tipo: "cpf", numero: "52998224725" })).toEqual({ type: "br_cpf", value: "529.982.247-25" });
+    expect(paraNumeroFiscal({ tipo: "cnpj", numero: "11222333000181" })).toEqual({ type: "br_cnpj", value: "11.222.333/0001-81" });
+    expect(paraNumeroFiscal({ tipo: "cnpj", numero: "12ABC34501DE35" })).toEqual({ type: "br_cnpj", value: "12.ABC.345/01DE-35" });
+  });
+
+  it("o pedido de cliente: o e-mail, o número fiscal e a ficha — sem userId e sem nome", () => {
+    expect(paraPedidoDeClienteDoVisitante({ pedido: "p1", email: "ana@b.c", documento: { tipo: "cpf", numero: "52998224725" } })).toEqual({
+      email: "ana@b.c",
+      tax_id_data: [{ type: "br_cpf", value: "529.982.247-25" }],
+      metadata: { pedido: "p1" },
+    });
   });
 });
 

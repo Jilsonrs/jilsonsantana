@@ -151,8 +151,11 @@ export async function assinar(conta: Conta, pedido: AssinarInput): Promise<Desfe
 
     let assinatura: AssinaturaNoCheckout | null = null;
     for (const incompleta of existentes) {
-      // A MESMA: o mesmo PREÇO (o de verdade, não um rótulo) e o mesmo código.
-      const aMesma = incompleta.precoId === preco.precoId && incompleta.codigoId === codigoId && incompleta.segredoDoPagamento !== null;
+      // A MESMA: o mesmo PREÇO (o de verdade, não um rótulo), o mesmo código — e um pagamento que a
+      // Stripe ainda aceita: depois de 10 recusas ela o cancela, e a assinatura continua aberta com o
+      // segredo morto (medido na área restrita, 21/10/2026 — achado do passo 4 da etapa 4.7;
+      // correção autorizada pelo operador no mesmo dia). Entregá-lo de novo prenderia o aluno.
+      const aMesma = incompleta.precoId === preco.precoId && incompleta.codigoId === codigoId && incompleta.pagamentoCancelado !== true && incompleta.segredoDoPagamento !== null;
       if (aMesma && !assinatura) {
         assinatura = incompleta;
         continue;

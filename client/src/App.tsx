@@ -3,6 +3,7 @@ import { Layout } from "@/components/Layout";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { AdminRoute } from "@/components/auth/AdminRoute";
 import { LoginPage } from "@/pages/LoginPage";
+import { EsqueciMinhaSenhaPage } from "@/pages/EsqueciMinhaSenhaPage";
 import { StudentHomePage } from "@/pages/StudentHomePage";
 import { AccountPage } from "@/pages/AccountPage";
 import { AdminPage } from "@/pages/AdminPage";
@@ -46,6 +47,8 @@ export default function App() {
             Declarar "/" no React criaria uma segunda home que ninguém alcança —
             foi o que aconteceu com a antiga HomePage.tsx, apagada em set/2026. */}
         <Route path="/login" element={<LoginPage />} />
+        {/* "Esqueci minha senha" — o código no e-mail e a senha nova (etapa 4.7, passo 5). */}
+        <Route path="/esqueci-minha-senha" element={<EsqueciMinhaSenhaPage />} />
         <Route path="/cursos" element={<CatalogPage tipo="cursos" />} />
         <Route path="/trilhas" element={<CatalogPage tipo="trilhas" />} />
         <Route path="/curso/:slug" element={<CourseDetailPage />} />

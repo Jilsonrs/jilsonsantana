@@ -1,5 +1,5 @@
 import Stripe from "stripe";
-import { DuracaoDoDesconto, PLANOS, type DescontoDoCodigo, type Plano } from "@jilson/core";
+import { DuracaoDoDesconto, PLANOS, formatarDocumentoFiscal, type DescontoDoCodigo, type DocumentoFiscal, type Plano, type TipoDeDocumento } from "@jilson/core";
 import { erroSemMensagem, stripe } from "./stripe-cliente.js";
 import { faturaDevolvida } from "./stripe-devolucao.js";
 
@@ -43,12 +43,33 @@ export type AssinaturaNaStripe = {
   /** A conta da escola, que o NOSSO checkout grava na assinatura e no cliente da Stripe. */
   userId: string | null;
   /**
+   * A ficha de espera do VISITANTE (etapa 4.7, passo 4): quem assinou sem conta. É por ela que a
+   * conta nasce quando o pagamento passa (`pedido-do-visitante.ts`). Vazio: não veio de um
+   * visitante (ou a assinatura já tem conta).
+   */
+  pedido?: string | null;
+  /** O que o visitante escolheu NAQUELA tentativa — vai na assinatura, presa à que foi paga. */
+  doVisitante?: DadosDoVisitante;
+  /**
    * Assinatura de verdade (`true`) ou do MODO DE TESTE (`false`). Até o lançamento o site no
    * ar usa as chaves de teste (plano, Fase 4, etapa 4.3); no GO-LIVE, as de teste saem do banco
    * de produção (Fase 7) — senão dariam acesso para sempre (achado P2 da revisão, 09/10/2026).
    */
   livemode: boolean;
 };
+
+/**
+ * O que a assinatura de um VISITANTE carrega para a conta que vai nascer dela (etapa 4.7, passo 4):
+ * a caixa "quero receber novidades" (desmarcada de fábrica — LGPD: sem a marca, é não) e de onde
+ * a pessoa veio (o UTM do primeiro acesso). Vai na assinatura, e não na ficha de espera, porque
+ * cada tentativa leva a escolha de quem a fez: vale a da tentativa que foi PAGA.
+ */
+export type DadosDoVisitante = { novidades: boolean; origem: string | null; campanha: string | null };
+
+/** As chaves desses dados na `metadata` da assinatura — quem escreve (o checkout do visitante) e quem lê usam as mesmas. */
+export const METADADOS_DO_VISITANTE = { pedido: "pedido", tentativa: "tentativa", novidades: "novidades", origem: "origem", campanha: "campanha" } as const;
+/** O valor de "quero receber novidades" marcado. Qualquer outro (ou nenhum) é NÃO. */
+export const NOVIDADES_SIM = "sim";
 
 /** A Stripe está configurada para cobrar? Sem a chave secreta, a tela de assinar não abre. */
 export function cobrancaConfigurada(): boolean {
@@ -173,6 +194,19 @@ export type AssinaturaNoCheckout = {
   segredoDoPagamento: string | null;
   /** O segredo para o site guardar o cartão quando hoje não há o que pagar. */
   segredoDoCartao: string | null;
+  /**
+   * O código da tentativa do VISITANTE com que ela nasceu (etapa 4.7, passo 4). Só quem traz esse
+   * código segue com ela: sem isso, quem soubesse o e-mail de alguém receberia o segredo do
+   * pagamento dessa pessoa.
+   */
+  tentativa?: string | null;
+  /**
+   * A Stripe CANCELOU o pagamento de hoje desta assinatura (etapa 4.7, passo 4). `[FATO — medido na
+   * área restrita, 21/10/2026]` depois de 10 recusas no mesmo pagamento ela o cancela sozinha, e a
+   * assinatura continua incompleta, com a fatura aberta e o segredo do pagamento morto: entregar esse
+   * segredo de novo deixaria a pessoa presa num pagamento que não aceita mais cartão nenhum.
+   */
+  pagamentoCancelado?: boolean;
 };
 
 /** A assinatura da Stripe (com a fatura e o pedido de cartão expandidos) no formato do checkout. Função pura. */
@@ -180,17 +214,26 @@ export function paraAssinaturaNoCheckout(assinatura: Stripe.Subscription): Assin
   const fatura = assinatura.latest_invoice;
   const aberta = typeof fatura === "object" && fatura !== null && fatura.status === "open";
   const cartao = assinatura.pending_setup_intent;
+  const segredo = aberta ? (fatura.confirmation_secret?.client_secret ?? null) : null;
+  const pagamentoDeHoje = segredo?.split("_secret_")[0] ?? null;
+  const cancelado = (aberta ? (fatura.payments?.data ?? []) : []).some((p) => {
+    const doPagamento = p.payment.payment_intent;
+    return p.status === "canceled" && (typeof doPagamento === "string" ? doPagamento : doPagamento?.id) === pagamentoDeHoje;
+  });
   return {
     id: assinatura.id,
     status: assinatura.status,
     precoId: assinatura.items.data[0]?.price.id ?? null,
     codigoId: assinatura.metadata.codigo || null,
-    segredoDoPagamento: aberta ? (fatura.confirmation_secret?.client_secret ?? null) : null,
+    segredoDoPagamento: segredo,
     segredoDoCartao: typeof cartao === "object" && cartao !== null ? cartao.client_secret : null,
+    tentativa: assinatura.metadata[METADADOS_DO_VISITANTE.tentativa] || null,
+    pagamentoCancelado: pagamentoDeHoje !== null && cancelado,
   };
 }
 
-const DO_CHECKOUT = ["latest_invoice.confirmation_secret", "pending_setup_intent"];
+// Os pagamentos da fatura vêm junto para o checkout saber se a Stripe cancelou o de hoje (`pagamentoCancelado`).
+const DO_CHECKOUT = ["latest_invoice.confirmation_secret", "latest_invoice.payments", "pending_setup_intent"];
 
 export type ContaDoCliente = { userId: string; email: string; nome: string | null };
 
@@ -211,6 +254,72 @@ export async function criarCliente(conta: ContaDoCliente): Promise<{ id: string;
     return { id: cliente.id, livemode: cliente.livemode };
   } catch (erro) {
     throw erroSemMensagem(erro, "a criação do cliente");
+  }
+}
+
+// O CLIENTE DO VISITANTE (etapa 4.7, passo 4 — billing.md → *Assinar sem conta*): nasce com o
+// e-mail e o CPF ou CNPJ, ANTES da assinatura — a primeira fatura é fechada quando a assinatura
+// nasce, e leva o número fiscal que o cliente tiver naquela hora. O número fica SÓ na Stripe
+// (decisão do operador, 12/10/2026). A Stripe confere só o formato (`tax_id_invalid`), nunca na
+// Receita: o dígito quem confere é o `core` (`lerDocumentoFiscal`), antes de chegar aqui.
+
+/** O tipo do número fiscal do Brasil na Stripe. */
+const TIPO_NA_STRIPE: Record<TipoDeDocumento, Stripe.CustomerCreateParams.TaxIdDatum.Type> = { cpf: "br_cpf", cnpj: "br_cnpj" };
+
+/** O número fiscal como vai à Stripe: o tipo dela e o número com a pontuação de costume. Função pura. */
+export function paraNumeroFiscal(documento: DocumentoFiscal): { type: Stripe.CustomerCreateParams.TaxIdDatum.Type; value: string } {
+  return { type: TIPO_NA_STRIPE[documento.tipo], value: formatarDocumentoFiscal(documento) };
+}
+
+export type ClienteDoVisitante = { pedido: string; email: string; documento: DocumentoFiscal };
+
+/** O pedido de cliente do visitante. Função pura, com teste: sem a ficha aqui, a conta não nasceria da assinatura criada no painel. */
+export function paraPedidoDeClienteDoVisitante(cliente: ClienteDoVisitante): Stripe.CustomerCreateParams {
+  return { email: cliente.email, tax_id_data: [paraNumeroFiscal(cliente.documento)], metadata: { [METADADOS_DO_VISITANTE.pedido]: cliente.pedido } };
+}
+
+/**
+ * A Stripe recusou o número fiscal (`tax_id_invalid`) — que o `core` já tinha conferido. Precisa de
+ * gente (o formato mudou? o CNPJ com letras?), e quem assina lê "confira o número". Só o tipo na mensagem.
+ */
+export class DocumentoRecusado extends Error {
+  constructor(tipo: TipoDeDocumento) {
+    super(`[stripe] a Stripe recusou o ${tipo.toUpperCase()} que o core aceitou`);
+    this.name = "DocumentoRecusado";
+  }
+}
+
+function recusouODocumento(erro: unknown): boolean {
+  return erro instanceof Stripe.errors.StripeInvalidRequestError && erro.code === "tax_id_invalid";
+}
+
+/** Um cliente novo na Stripe para a ficha do visitante, com o e-mail e o número fiscal. */
+export async function criarClienteDoVisitante(cliente: ClienteDoVisitante): Promise<{ id: string; livemode: boolean }> {
+  try {
+    const criado = await stripe().customers.create(paraPedidoDeClienteDoVisitante(cliente));
+    return { id: criado.id, livemode: criado.livemode };
+  } catch (erro) {
+    if (recusouODocumento(erro)) throw new DocumentoRecusado(cliente.documento.tipo);
+    throw erroSemMensagem(erro, "a criação do cliente do visitante");
+  }
+}
+
+/**
+ * Deixa no cliente o número fiscal desta tentativa (quem corrigiu o CPF entre um clique e outro):
+ * igual ao que já está, nada; diferente, entra o novo e saem os do Brasil que estavam. Devolve se
+ * MUDOU — e aí a tentativa anterior não serve mais, porque a fatura dela leva o número antigo.
+ */
+export async function acertarNumeroFiscal(clienteId: string, documento: DocumentoFiscal): Promise<boolean> {
+  const novo = paraNumeroFiscal(documento);
+  try {
+    const guardados = (await stripe().customers.listTaxIds(clienteId, { limit: 20 })).data.filter((t) => t.type === "br_cpf" || t.type === "br_cnpj");
+    if (guardados.length === 1 && guardados[0]?.type === novo.type && guardados[0].value === novo.value) return false;
+    await stripe().customers.createTaxId(clienteId, novo);
+    for (const antigo of guardados) await stripe().customers.deleteTaxId(clienteId, antigo.id);
+    return true;
+  } catch (erro) {
+    if (recusouODocumento(erro)) throw new DocumentoRecusado(documento.tipo);
+    throw erroSemMensagem(erro, "a troca do número fiscal do cliente");
   }
 }
 
@@ -242,21 +351,42 @@ export async function cancelarIncompleta(id: string): Promise<string> {
 // para abrir o campo de pagamento: as duas pontas nunca discordam.
 export const FORMAS_DE_PAGAMENTO: Stripe.SubscriptionCreateParams.PaymentSettings.PaymentMethodType[] = ["card"];
 
-export type PedidoDeAssinatura = { clienteId: string; userId: string; precoId: string; plano: Plano; codigoId: string | null };
+/**
+ * A tentativa do VISITANTE (etapa 4.7, passo 4): a ficha de espera, o código desta tentativa e o
+ * que ele escolheu — tudo na assinatura, para a conta nascer dela com a escolha de quem PAGOU.
+ */
+export type TentativaDoVisitante = { pedido: string; tentativa: string; escolha: DadosDoVisitante };
+
+/** De quem é a assinatura: a conta logada (`userId`) ou a tentativa do visitante, que ainda não tem conta. */
+export type PedidoDeAssinatura = { clienteId: string; precoId: string; plano: Plano; codigoId: string | null } & ({ userId: string } | { visitante: TentativaDoVisitante });
+
+/** O que a tentativa do visitante grava na assinatura. Valor vazio não vai (a Stripe não o guarda). */
+function metadadosDoVisitante({ pedido, tentativa, escolha }: TentativaDoVisitante): Record<string, string> {
+  const M = METADADOS_DO_VISITANTE;
+  return {
+    [M.pedido]: pedido,
+    [M.tentativa]: tentativa,
+    [M.novidades]: escolha.novidades ? NOVIDADES_SIM : "nao",
+    ...(escolha.origem ? { [M.origem]: escolha.origem } : {}),
+    ...(escolha.campanha ? { [M.campanha]: escolha.campanha } : {}),
+  };
+}
 
 /**
- * O pedido de assinatura que vai à Stripe. Função pura, com teste — é aqui que moram as duas
- * linhas que nenhum outro teste veria sumir: o DESCONTO (sem ele, o aluno paga o valor cheio com
- * o código aplicado na tela) e o `userId` (sem ele, quem pagou fica sem conta).
+ * O pedido de assinatura que vai à Stripe. Função pura, com teste — é aqui que moram as linhas que
+ * nenhum outro teste veria sumir: o DESCONTO (sem ele, o aluno paga o valor cheio com o código
+ * aplicado na tela), o `userId` (sem ele, quem pagou fica sem conta) e, na do visitante, a ficha e
+ * a escolha dele (sem elas, a conta não nasce, ou nasce com o consentimento errado).
  */
 export function paraPedidoDeAssinatura(pedido: PedidoDeAssinatura): Stripe.SubscriptionCreateParams {
+  const deQuem = "visitante" in pedido ? metadadosDoVisitante(pedido.visitante) : { userId: pedido.userId };
   return {
     customer: pedido.clienteId,
     items: [{ price: pedido.precoId, quantity: 1 }],
     payment_behavior: "default_incomplete",
     payment_settings: { save_default_payment_method: "on_subscription", payment_method_types: FORMAS_DE_PAGAMENTO },
     discounts: pedido.codigoId ? [{ promotion_code: pedido.codigoId }] : undefined,
-    metadata: { userId: pedido.userId, plano: pedido.plano, ...(pedido.codigoId ? { codigo: pedido.codigoId } : {}) },
+    metadata: { ...deQuem, plano: pedido.plano, ...(pedido.codigoId ? { codigo: pedido.codigoId } : {}) },
     expand: DO_CHECKOUT,
   };
 }
@@ -366,15 +496,24 @@ export function paraAssinaturaNaStripe(assinatura: Stripe.Subscription, devolvid
   }
   const doCliente = assinatura.customer;
   const clienteId = typeof doCliente === "string" ? doCliente : doCliente.id;
-  const userIdDoCliente = typeof doCliente === "object" && !doCliente.deleted ? doCliente.metadata.userId : undefined;
-  const userId = assinatura.metadata.userId || userIdDoCliente || null;
+  const metadadosDoCliente = typeof doCliente === "object" && !doCliente.deleted ? doCliente.metadata : undefined;
+  const userId = assinatura.metadata.userId || metadadosDoCliente?.userId || null;
+  // A ficha do visitante vai na assinatura e no cliente (etapa 4.7, passo 4): a do cliente cobre a
+  // assinatura que alguém crie para ele no painel da Stripe antes de a conta nascer.
+  const M = METADADOS_DO_VISITANTE;
+  const pedido = assinatura.metadata[M.pedido] || metadadosDoCliente?.[M.pedido] || null;
+  const doVisitante: DadosDoVisitante = {
+    novidades: assinatura.metadata[M.novidades] === NOVIDADES_SIM,
+    origem: assinatura.metadata[M.origem] || null,
+    campanha: assinatura.metadata[M.campanha] || null,
+  };
   // A COBRANÇA PAUSADA vira `paused` no espelho (achado P1 da revisão, 09/10/2026): a Stripe
   // mantém `status: active` durante a pausa (os tipos da `stripe@23.0.0` dizem isso), e o gate
   // libera `active` sem olhar data — seria acesso de graça a pausa inteira. Como `paused`, vale a
   // segunda metade do gate: o acesso vai até o fim do período pago, como a regra já diz
   // ("cobre cancelamento e pausa com uma regra só" — CLAUDE.md → Membership Gating).
   const status = assinatura.pause_collection ? "paused" : assinatura.status;
-  return { id: assinatura.id, status, pagoAte, clienteId, userId, livemode: assinatura.livemode };
+  return { id: assinatura.id, status, pagoAte, clienteId, userId, pedido, doVisitante, livemode: assinatura.livemode };
 }
 
 /**

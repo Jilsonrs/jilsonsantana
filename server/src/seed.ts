@@ -55,12 +55,16 @@ type SeedUser = {
 };
 
 // Idempotent: keyed by email. Re-running never duplicates; it reconciles role.
+// E o E-MAIL CONFIRMADO (etapa 4.7, passo 5 — revisão de segurança, 21/10/2026): entrar pelo código
+// numa conta com o e-mail NÃO confirmado apaga a senha dela e todas as sessões (Better Auth 1.7). As
+// contas do seed são do operador — o e-mail é dele —, então nascem (ou ficam) confirmadas, e o código
+// nunca apaga a senha de admin. Há teste (`codigo-por-email.test.ts`).
 async function ensureUser({ email, password, name, role }: SeedUser): Promise<void> {
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
-    if (existing.role !== role) {
-      await prisma.user.update({ where: { email }, data: { role } });
-      console.log(`~ ${email} already existed — role reconciled to "${role}"`);
+    if (existing.role !== role || !existing.emailVerified) {
+      await prisma.user.update({ where: { email }, data: { role, emailVerified: true } });
+      console.log(`~ ${email} já existia — acertada (role="${role}", e-mail confirmado)`);
     } else {
       console.log(`= ${email} already exists (role="${role}") — skipped`);
     }
@@ -69,8 +73,8 @@ async function ensureUser({ email, password, name, role }: SeedUser): Promise<vo
 
   // Better Auth creates user + account (correct password hash).
   await seedAuth.api.signUpEmail({ body: { email, password, name } });
-  // Promote role (sign-up always lands on the "member" default).
-  await prisma.user.update({ where: { email }, data: { role } });
+  // Promote role (sign-up always lands on the "member" default) — e o e-mail confirmado (acima).
+  await prisma.user.update({ where: { email }, data: { role, emailVerified: true } });
   console.log(`+ created ${email} (role="${role}")`);
 }
 

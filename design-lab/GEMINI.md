@@ -118,6 +118,63 @@ template do servidor** gera CSS normalmente. O que NÃO vale é contar com uma c
 existe em alguma tela do React — a vitrine não a enxerga mais. Se precisar, escreva a regra no
 `public-input.css`, que é onde o CSS do mock já mora.
 
+### O MODELO DE E-MAIL *(21/10/2026 — Fase 4, etapa 4.7, passo 3)*
+
+Todo e-mail que a escola manda (criar a senha, cobrança que falhou, assinatura cancelada…) sai de
+**um modelo só**: `server/src/views/email.ts`, função `montarEmail`. Está dentro de
+`server/src/views/`, então é seu para formatar, como a home. **O operador vai ajustar o
+acabamento com você.**
+
+**O desenho que ele aprovou em 21/10/2026** (a referência foi o e-mail da Apple; a regra dele é
+*"a mesma identidade visual do site em tudo"*):
+- **o logo oficial do menu da home, centralizado no topo, DENTRO do cartão branco**, com 120 de
+  largura (*"dentro da área branca e um pouco menor"*);
+- **corpo com 660 de largura**, fundo cinza-claro (`#F5F5F7`) e o cartão branco arredondado (24px);
+- **as fontes do site**: Outfit no título, Hanken Grotesk no texto; título grande e centralizado,
+  texto centralizado;
+- **o botão em pílula azul**, o mesmo `.btn` da home (`#238FE8`, raio 99px, `14px 28px`);
+- o rodapé cinza, pequeno, abaixo de uma linha fina.
+
+**E-mail NÃO é página — o que muda para você** (cada item é o que faz o e-mail quebrar em algum
+programa, sem nenhum teste perceber):
+1. **Não existe CSS de arquivo nem classe.** Nem Tailwind, nem `public-input.css`, nem bloco
+   `<style>` (o Gmail apaga parte dele). **O estilo vai escrito em cada elemento** (`style="…"`),
+   como já está no modelo.
+2. **A estrutura é de TABELA** (`<table role="presentation">`), não `div` com flex ou grid. É o que
+   o Outlook do computador desenha; com flex ou grid o e-mail desmonta nele.
+3. **Fontes:** o Mail da Apple e o do iPhone carregam as do site (o `<link>` do Google Fonts no
+   topo do modelo). **O Gmail e o Outlook não carregam fonte de fora** e caem na fonte do sistema,
+   que é a segunda da lista. Desenhe contando com as duas.
+4. **Imagem:** sempre PNG ou JPG, com **endereço completo do site no ar**
+   (`https://www.jilsonsantana.com/img/…`). SVG não aparece no Gmail. O logo do e-mail é
+   `client/public/img/Logomarca-email.png`: um recorte da `Logomarca.png` do menu, sem a sobra
+   transparente, com 284×88 (mais que o dobro do tamanho mostrado, para ficar nítido em tela de
+   retina). **Arquivo novo só aparece no e-mail depois de publicado**, porque o e-mail o busca no
+   site no ar.
+5. **Muitos programas bloqueiam imagem até o aluno liberar.** Por isso o logo tem `alt` (o nome
+   "Jilson Santana", que vem do dicionário) e cor de texto no próprio `<img>`: sem a imagem,
+   aparece o nome escrito.
+
+**O que você NÃO muda no modelo** (são travas, e têm teste):
+- **nenhum texto escrito no modelo:** o `alt` do logo e o rodapé vêm de `app.email` no
+  dicionário; o título, os parágrafos e o botão vêm de quem manda cada e-mail;
+- **todo texto passa por `escapeHtml()`**, e o endereço do botão só aceita `http(s)`;
+- as **duas versões** que o modelo devolve: a desenhada e a de **texto puro** (`texto`), que os
+  provedores leem para decidir se é spam;
+- o **remetente** e o **"responder para"** não moram aqui: são do balcão de envio
+  (`server/src/lib/email.ts`), que não é seu.
+
+**Para ver sem mandar nada:**
+```bash
+npm --workspace server run email:previa
+```
+Ele grava `design-lab/email/previa.html` (fora do git), com uma mensagem de exemplo e o logo ao
+lado. Abra o arquivo no navegador; a cada mudança, rode de novo e recarregue. **Para ver num
+e-mail de verdade** (Gmail, iPhone, Outlook), peça ao Claude um envio de prova: só ele envia.
+
+**Confira antes de entregar:** `npm --workspace server run test`. Os testes do modelo estão em
+`server/src/views/email.test.ts`.
+
 ### O MAPA DAS TELAS — o que existe, onde abrir, qual arquivo *(set/2026)*
 
 Toda tela do produto, para você não precisar procurar. **Abrir:** o operador sobe os dois
@@ -596,6 +653,11 @@ exceto o item 4, que é página pública.
     **Têm teste, mantenha:** o valor de "hoje você paga" aparece ANTES do botão, no mesmo
     cartão; as falhas são `role="alert"`, as confirmações e os avisos `role="status"`; o botão
     trava enquanto envia e mostra "Processando…".
+
+37. **O modelo de e-mail** *(21/10, Fase 4, etapa 4.7, passo 3 — desenho aprovado pelo
+    operador)* — `server/src/views/email.ts`. Ele quer **ajustar o acabamento com você**; as
+    regras de e-mail (estilo escrito no elemento, tabela, imagem com endereço do site no ar) e a
+    prévia estão na §2, em *O MODELO DE E-MAIL*.
 
 > **Fora do seu trabalho, para não confundir:** o Bunny ganhou **Live Stream** em acesso
 > antecipado (29/09). É só avaliação depois da Fase 3, **não** é tela a desenhar (`docs/bunny.md`

@@ -30,6 +30,8 @@ import notificacoesRouter from "./routes/notificacoes.js";
 import adminCaptionsRouter from "./routes/admin-captions.js";
 import adminStatsRouter from "./routes/admin-stats.js";
 import stripeWebhookRouter from "./routes/stripe-webhook.js";
+import billingSemLoginRouter from "./routes/billing-sem-login.js";
+import contaCodigoRouter from "./routes/conta-codigo.js";
 import billingRouter from "./routes/billing.js";
 import adminAssinaturasRouter from "./routes/admin-assinaturas.js";
 import { tratarErroDaApi } from "./lib/erro-da-api.js";
@@ -124,6 +126,10 @@ app.use("/api", adminCaptionsRouter);
 // Os números do cartão do curso no admin (Fase 5, Bloco MEDIR, etapa 2 — 09/10/2026):
 // estatística, em rota própria (CLAUDE.md → Analytics Convention).
 app.use("/api", adminStatsRouter);
+// Pedir o código no e-mail (etapa 4.7, passo 5): para entrar sem senha e para criar uma senha nova.
+app.use("/api", contaCodigoRouter);
+// Assinar SEM login (etapa 4.7, passo 4): fora do ar em produção até o operador ligar (passo 8).
+app.use("/api", billingSemLoginRouter);
 // Assinar com a conta logada (Fase 4, etapa 4.2): depois do `express.json()` — só o AVISO da
 // Stripe, lá em cima, precisa do corpo cru.
 app.use("/api", billingRouter);

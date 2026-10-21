@@ -421,6 +421,20 @@ describe("POST /api/billing/assinatura", () => {
     });
   });
 
+  // A STRIPE CANCELA o pagamento depois de 10 recusas (medido na área restrita, 21/10/2026), e a
+  // assinatura continua aberta com o segredo morto: o novo clique ganha outra, em vez de ficar preso.
+  it("o pagamento que a Stripe cancelou (10 recusas): o novo clique cancela a antiga e ganha OUTRA — não o segredo morto", async () => {
+    await semAssinatura(async () => {
+      const primeira = await assinarComo({ plano: "mensal" }, member);
+      naStripe = naStripe.map((a) => ({ ...a, pagamentoCancelado: true }));
+      const depois = await assinarComo({ plano: "mensal" }, member);
+      expect(depois.status).toBe(200);
+      expect(depois.body.segredo).not.toBe(primeira.body.segredo);
+      expect(cancelarIncompleta).toHaveBeenCalledTimes(1);
+      expect(criarAssinatura).toHaveBeenCalledTimes(2);
+    });
+  });
+
   it("trocou de plano (ou de código) depois de tentar: a incompleta antiga é cancelada, e nasce a nova", async () => {
     await semAssinatura(async () => {
       const mensal = await assinarComo({ plano: "mensal" }, member);
