@@ -31,7 +31,6 @@
 
 | # | O que falta | Onde registrar |
 |---|---|---|
-| P92 | **Criar a caixa compartilhada `suporte@jilsonsantana.com` no Microsoft 365** (sem custo até 50 GB): admin.microsoft.com → Equipes e grupos → Caixas de correio compartilhadas → Adicionar; nome "Suporte", e-mail `suporte@jilsonsantana.com`; depois, em Membros, você (`jilson@`). **É para onde vai a resposta do aluno a todo e-mail da escola** (decisão sua, 20/10/2026); sem a caixa, a resposta volta como não entregue. Se já criou, é só me avisar | `tech-stack.md` → Email |
 
 ## B. Conteúdo e cadastro *(tarefas suas, sem ordem fixa)*
 

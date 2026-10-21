@@ -4388,7 +4388,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             - **O remetente (P49 — decisões do operador, 20/10/2026):** `Jilson Santana
               <suporte@alunos.jilsonsantana.com>`, e as respostas vão para
               `suporte@jilsonsantana.com` (caixa compartilhada do Microsoft 365, sem custo —
-              criá-la é a **P92**). Por um **subdomínio**, para que a fama de spam da escola não
+              criada por ele em 21/10/2026, a **P92**). Por um **subdomínio**, para que a fama de spam da escola não
               atinja o e-mail pessoal dele. Domínio, região (São Paulo), registros, DMARC
               (`p=quarantine` só no subdomínio, 21/10), rastreamento desligado e as chaves:
               `tech-stack.md` → *Email*. **A chave de produção nasce no dia de publicar o passo 5**
