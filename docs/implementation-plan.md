@@ -213,14 +213,25 @@
 > login: quem não entrou não gasta cota de ninguém); o login com um e-mail que não existe → 401; o
 > público segue no "Em breve". *O limite em si só se vê com login: a prova é a suíte (23 testes de
 > servidor e 9 de tela).*
-> **Na `dev`, ainda NÃO publicado (21/10/2026):** a **etapa 4.7, passo 3** — o balcão de e-mail
-> (Resend) e o modelo do e-mail. Nada o chama ainda, então não muda nada para o aluno; o logo do
-> e-mail (`/img/Logomarca-email.png`) só existe no site depois da próxima publicação. **E o passo
-> 4** — a ficha de espera e a conta que nasce no pagamento (a migration
-> `20261021120000_ficha_de_espera_do_visitante`, já aplicada no banco do dev; o pre-deploy a aplica
-> em produção na publicação) e as rotas para assinar sem login, **que no site ficam fora do ar até
-> o operador ligar `ASSINAR_SEM_LOGIN=true`** (passo 8). Publicado sozinho, também não muda nada
-> para o aluno.
+> **NA `main` DESDE 21/10/2026, MAS AINDA NÃO NO AR (`main` = `2820406`, CI verde nos dois jobs;
+> ordem do operador: "publica"):** a **etapa 4.7, passos 3, 4 e 5** — o balcão de e-mail (Resend) e
+> o modelo do e-mail; a ficha de espera e a conta que nasce no pagamento, com as rotas para assinar
+> sem login, **fora do ar no site até o operador ligar `ASSINAR_SEM_LOGIN=true`** (passo 8); o
+> código de 6 números no e-mail para entrar ("Receber código de acesso") e para a senha nova
+> ("Esqueci minha senha"), a senha logo depois de pagar e o e-mail de boas-vindas. As quatro
+> migrations entram pelo pre-deploy: `20261021120000_ficha_de_espera_do_visitante`,
+> `20261021180000_boas_vindas_da_ficha`, `20261021220000_senha_da_ficha_uma_vez` e
+> `20261021220100_admin_com_email_confirmado`. **A Railway não publicou:** ela está com as
+> publicações pausadas desde 21/10, 07:24 UTC (incidente "Railway Platform Outage",
+> status.railway.com; o plano Hobby está entre os últimos a voltar), e nenhum deploy de `2820406`
+> foi criado. Na pausa do dia anterior, a página dela avisou que o enviado durante a pausa não começa
+> sozinho depois. O site segue em `ac64077` (versão `mvgi4xc7-4a18c331`). **Falta:** quando a
+> Railway voltar, conferir se o deploy saiu — se não, o operador publica pelo painel (P98) —; provar
+> no site, de fora (a versão nova, as rotas de sempre, `POST /api/conta/codigo` → 200 e
+> `/api/billing/visitante/planos` → 404, a venda sem login desligada); com a autorização dele, a
+> consulta só de leitura no banco de produção (RLS: zero linhas, a `guest_checkout` com RLS; a conta
+> de admin com o e-mail confirmado); e a chave do Resend na Railway (P97), sem a qual os códigos não
+> chegam no site no ar.
 > **PUBLICADO em 19/10/2026 (`main` = `1ee7c0c`, CI verde nos dois jobs, deploy ok; sem
 > migration; ordem do operador: "publica"):** o **passo 6 da etapa 4.6c** (os documentos num
 > idioma só; saíram o `idiomas.md` e o script da revisão do inglês; a legenda do Bunny só aceita

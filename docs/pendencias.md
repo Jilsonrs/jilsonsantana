@@ -16,7 +16,7 @@
 > 5. **Item novo ganha o próximo número livre.** Número nunca se reutiliza, para que "P7" queira
 >    dizer sempre a mesma coisa em qualquer conversa.
 >
-> **Próximo número livre: P97** · Atualizada em 21/10/2026
+> **Próximo número livre: P99** · Atualizada em 21/10/2026
 >
 > **DESDE 12/10/2026 A ESCOLA É SÓ EM PORTUGUÊS E SÓ PARA O BRASIL** (decisão do operador; etapa
 > 4.6c do plano). A parte em inglês de qualquer item abaixo deixou de existir: revise só o
@@ -31,6 +31,8 @@
 
 | # | O que falta | Onde registrar |
 |---|---|---|
+| P98 | **A publicação de 21/10/2026 está na `main`, mas a Railway não a pôs no ar** (pane geral da Railway nesse dia: as publicações pausadas desde a manhã; o site no ar continua funcionando, com a versão de 20/10). Quando ela voltar, ver no painel dela, em *Deployments*, se o commit `2820406` subiu; se não, mandar publicar o último commit da `main`. O agente confere o site de fora depois | o plano → *Estado atual* (a publicação de 21/10/2026) |
+| P97 | **Na Railway, para o site no ar mandar os e-mails da escola** (a publicação de 21/10/2026 põe no ar o "Receber código de acesso" e o "Esqueci minha senha"): (1) **criar no Resend uma chave nova, só para o site no ar** (permissão de envio, no domínio `alunos.jilsonsantana.com`), e gravá-la na Railway como `RESEND_API_KEY` — sem ela, os códigos não chegam no site no ar, e cada pedido vira um alerta por e-mail para você. Não use a chave do computador: cada ambiente tem a sua · (2) **conferir que `BETTER_AUTH_URL` é exatamente `https://www.jilsonsantana.com`** — é ele que o botão do e-mail de boas-vindas usa, e o endereço sem "www" leva a uma página de erro (P57) | o plano → *Estado atual* (a publicação de 21/10/2026) |
 | P95 | **Onde caíram os 9 e-mails da prova** (21/10/2026: o código de entrar, o da senha nova e as boas-vindas, para o Yahoo, o iCloud e o jilson@ da Microsoft): na caixa de entrada ou no spam, em cada um | o plano → etapa 4.7, passo 5, parte 4 |
 
 ## B. Conteúdo e cadastro *(tarefas suas, sem ordem fixa)*
