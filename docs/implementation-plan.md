@@ -44,7 +44,7 @@
 > gravados com `version 1 enabled` no Secret Manager do Google Cloud**.
 > **O plano da mudança: [Bloco G](#bloco-g--a-casa-nova-google-cloud-run)** — quatro etapas, uma por
 > sessão; no fim da G4 o site volta ao ar, no mesmo endereço, com a publicação de 21/10 junto. As
-> decisões da G2 fechadas em 22/10/2026: o mapeamento de domínio (P100), o servidor ligado, esperando, e o arquivo de aula até 1 GB, enviado em partes (P101).
+> decisões da G2 fechadas em 22/10/2026: o mapeamento de domínio (P100), o servidor ligado, esperando, e o arquivo de aula enviado em partes, sem limite de tamanho (P101).
 >
 > **Fases fechadas:** 0 (fundação/deploy) · 1 (auth/shell) — checkboxes completos em
 > [`build-history.md`](build-history.md). **Também lá, desde 11/10/2026:** as etapas 4.0 a 4.5 da
@@ -594,8 +594,13 @@ limites do Cloud Run e a de preços de rede, lidas em 21/10/2026]`:
   Pega **o envio de arquivo de aula**, que hoje não tem limite (decisão do operador de 29/09/2026 —
   `admin-lesson-files.ts`), e **o download** (`lesson-view.ts`), que sai em fluxo mas manda o tamanho
   (`Content-Length`) — se isso conta como "em fluxo" para o Google, se mede na G3.
-  **Decisão do operador (22/10/2026 — fecha a P101): até 1 GB por arquivo** (*"eu posso ter aulas de
-  até uns 500 MB cada arquivo; acho que 1 GB de limite seria suficiente"*). **O caminho (engenharia):
+  **Decisão do operador (22/10/2026 — fecha a P101): SEM LIMITE de tamanho, como estava** (*"eu posso
+  ter aulas de até uns 500 MB cada arquivo"*; e, no mesmo dia, ao ver que o limite pedia uma frase nova
+  na tela: *"não precisa desse limite de 1 GB, deixa como estava"* — revê o "1 GB" que ele tinha
+  dito minutos antes). **O teto que sobra é o do download:** o Google corta um pedido depois de 60
+  minutos (era 15 na Railway), então um arquivo muito grande numa internet lenta pode não terminar.
+  *Gatilho: um aluno relatar download cortado — aí entra o link assinado e temporário direto do Bunny
+  (`bunny.md` §4.5).* **O caminho (engenharia):
   o envio EM PARTES pelo nosso servidor** — o navegador do admin manda o arquivo em pedaços de até
   30 MB, cada um guardado no Bunny como um objeto, e o download do aluno os entrega em sequência.
   **Por que não o envio direto do navegador ao Bunny** `[FATO — context7 /bunnyway/documentation,
@@ -694,8 +699,9 @@ os arquivos e comandos do Bloco G:**
    segredo = conferir que o NOME existe (`gcloud secrets list`), nunca o valor. **Não abra arquivo
    `.env`.**
 4. **O banco de produção:** nenhuma consulta e nenhuma migration à mão. As migrations só pelo Job da
-   publicação. A leitura do Passo 0 (G3) só com a autorização do operador, declarando o banco antes —
-   e é melhor deixá-la para o Claude.
+   publicação. **O Antigravity nunca se conecta ao banco de produção:** as leituras da G3 (antes e
+   depois) o OPERADOR roda no console do Neon (*SQL Editor*, branch `production`), com as consultas
+   prontas da G3, e cola o resultado no relatório — são só leitura e não mostram segredo.
 5. **O IP de quem acessa não se adivinha:** codifique pela doc do mapeamento de domínio, com teste
    de valor forjado, e **meça em produção na G4** antes de dar a regra por certa. A rota de diagnóstico
    é temporária, não mostra nada além dos cabeçalhos de endereço, e sai na mesma etapa. Nunca use
@@ -803,17 +809,17 @@ os arquivos e comandos do Bloco G:**
       `Docs check`: Cloud Run → `/websites/cloud_google_run` (o cabeçalho do IP no mapeamento de
       domínio; a publicação pelo GitHub) · Bunny → `/bunnyway/documentation`, perguntando por
       **"Storage"** (gravar, ler e apagar objeto — o envio em partes).
-      **O arquivo de aula em partes, até 1 GB** (decisão da P101, acima): o navegador do admin manda
+      **O arquivo de aula em partes, sem limite de tamanho** (decisão da P101, acima): o navegador do admin manda
       pedaços de até 30 MB, um de cada vez, tentando de novo o que falhar na rede; cada um vira um
       objeto na zona dos arquivos; o banco guarda quantas partes o arquivo tem (migration, com o
-      Passo 0) e **o arquivo só aparece para o aluno quando todas chegaram**; o limite de 1 GB fica no
-      `core` e é conferido no começo e a cada parte; o download entrega as partes em sequência, em
+      Passo 0) e **o arquivo só aparece para o aluno quando todas chegaram**; **nenhum limite de
+      tamanho e nenhuma frase nova na tela**; o download entrega as partes em sequência, em
       fluxo, com a MESMA trava de hoje (só assinante, a prévia grátis não libera arquivo); apagar
       apaga todas as partes, e a trava que só aceita caminho de arquivo continua estrita (apagar pasta
       apaga tudo, `bunny.md` §4.5); o arquivo já guardado inteiro vale como uma parte só. **A tela do
       admin não muda** (o que o operador vê é o mesmo envio, com o andamento). Testes de servidor (o
-      assinante baixa o arquivo inteiro e igual; quem não assina, 403; parte faltando não aparece;
-      acima de 1 GB, recusa) e mutação no download e no apagar. O `bunny.md` §4.5 reconciliado.
+      assinante baixa o arquivo inteiro e igual; quem não assina, 403; parte faltando não aparece) e
+      mutação no download e no apagar. O `bunny.md` §4.5 reconciliado.
       **O endereço sem "www" leva ao `www`, com o resto do endereço** (fecha a P57 na G4): um desvio
       301 no servidor, só quando o pedido chega por `jilsonsantana.com` exato — o endereço provisório
       do Google (`*.run.app`) não desvia, para a G3 poder provar por ele. Com teste.
@@ -830,8 +836,20 @@ os arquivos e comandos do Bloco G:**
 - [ ] **G3 — A casa nova no ar, no endereço provisório do Google.**
       O agente monta com o `gcloud`, o operador acompanhando: as APIs, o Artifact Registry, as duas
       contas de serviço, a ligação com o GitHub, o serviço (com a conta mínima de *A forma*) e o Job.
-      **Passo 0 no banco de produção** (com a autorização dele, só leitura, declarando o banco antes):
-      o retrato — as contas, as migrations já aplicadas, a contagem dos cursos. **Publicar** (a ordem é
+      **Passo 0 no banco de produção** (o operador, no console do Neon, branch `production` — regra
+      4), o retrato ANTES de publicar, e as mesmas consultas DEPOIS:
+      `SELECT migration_name, finished_at FROM _prisma_migrations ORDER BY finished_at DESC LIMIT 6;` ·
+      `SELECT (SELECT count(*) FROM "user") AS contas, (SELECT count(*) FROM course) AS cursos, (SELECT count(*) FROM subscription) AS assinaturas, (SELECT count(*) FROM session) AS sessoes;` ·
+      `SELECT email, "emailVerified" FROM "user" WHERE role = 'admin';` · e a de RLS do `CLAUDE.md`
+      (*Database & Migrations*). **Esperado depois:** as quatro migrations de 21/10 (e as da G2) no
+      topo da lista; contas, cursos e assinaturas iguais ao antes (as sessões podem cair: o segredo
+      das sessões é novo); o admin com `emailVerified = true`; o RLS com zero linhas.
+      **A ligação com o GitHub:** o que o arquivo da publicação precisa (o projeto, a região, o
+      provedor do Workload Identity e a conta de serviço de publicação) entra como **variável** do
+      repositório no GitHub, não como segredo — nenhum deles é chave.
+      **Quem publica:** com o "publica" do operador, o Antigravity faz o merge `--no-ff` da `dev` na
+      `main` e envia (o mesmo caminho do `GEMINI.md` §5); a publicação sai pelo GitHub Actions. O
+      Claude confere depois. **Publicar** (a ordem é
       dele: "publica"): merge `--no-ff` da `dev` na `main` → as migrations (as quatro de 21/10, que
       nunca chegaram ao ar, mais as da G2) → o serviço. **A prova no endereço provisório
       (`*.run.app`):** `/api/health`, o catálogo, a versão nova no `x-versao-do-app`, o "Em breve"; o
@@ -854,7 +872,16 @@ os arquivos e comandos do Bloco G:**
       GoDaddy pelos registros A e AAAA que o mapeamento indicar; sai o TXT `_railway-verify.www`.
       **NÃO SE TOCAM:** os registros de e-mail — o MX e os outros do e-mail `jilson@` (Microsoft) e os
       do `alunos.jilsonsantana.com` (Resend). Antes de mudar, um retrato de todos os registros (print ou
-      lista) para poder voltar. O certificado do Google (15 min a 24 h). **A
+      lista) para poder voltar. **O HTTPS:** o mapeamento emite e renova sozinho um certificado do
+      Google, grátis (`[FATO — context7, 21/10/2026]`: *"A Google-managed certificate for HTTPS
+      connections is automatically issued and renewed"*); leva de 15 min a 24 h depois de a GoDaddy
+      apontar para o Google. Conferir: `https://www.jilsonsantana.com` abre com o cadeado, e
+      `http://` leva ao `https://` — se não levar, **pare e conte** (regra 6), não contorne.
+      **A rota de diagnóstico do IP:** `GET /api/diagnostico-ip`, que devolve SÓ os cabeçalhos de
+      endereço que chegam ao servidor (`x-forwarded-for`, `x-real-ip` e `forwarded`),
+      sem cookie e sem nada mais; publicada, medida (o operador abre de duas redes, e uma vez com
+      um `x-forwarded-for` forjado num `curl`), e **apagada numa segunda publicação na mesma etapa**.
+      A regra do porteiro do IP é conferida contra a medição antes de a etapa fechar. **A
       medição do IP** em produção (rota temporária de diagnóstico, apagada na mesma etapa, como em
       23/09/2026), a regra conferida e o limite de login provado pelo operador em duas redes. **A
       prova de fora:** a versão nova; catálogo, trilhas, textos comuns e sessão → 200;
