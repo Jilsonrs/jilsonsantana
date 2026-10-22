@@ -626,15 +626,55 @@ limites do Cloud Run e a de preços de rede, lidas em 21/10/2026]`:
 - **Duas contas de serviço:** a do site, que só lê os segredos dele; a da publicação, que só publica.
 - **Teto de gasto:** alerta de orçamento na conta e `max-instances=1`. O Google não tem teto
   automático.
-- **A conta Google:** própria da escola, separada da do YouTube, com chave de acesso (passkey). **P99.**
+- **A conta Google: `jilson@jilsonsantana.com`** *(decisão do operador, 21/10/2026 — fecha a P99: "vou
+  utilizar o meu e-mail da empresa […] que é o mesmo e-mail do meu canal, mas tomaremos as medidas de
+  segurança como autenticador ou o que for necessário")*. O agente tinha recomendado uma conta
+  separada da do YouTube; ele decidiu pela mesma, com proteção reforçada. **Na G1, antes de tudo:**
+  verificação em duas etapas com chave de acesso (passkey) e app autenticador, os códigos de reserva
+  guardados fora do computador, e o telefone e o e-mail de recuperação conferidos. *Reabre se a conta
+  sofrer tentativa de invasão, ou se mais alguém precisar entrar no Google Cloud — aí a escola ganha
+  uma conta ou organização própria.*
 - **Segredo nunca passa pelo chat nem por argumento de comando** (`CLAUDE.md` → *Secrets in agent
   sessions*): o que o operador recebe de um fornecedor, ele digita no console do Google; o que nós
   geramos (segredo das sessões, token da prévia) vai por um comando que gera e grava sem mostrar.
 
+**QUEM EXECUTA: O ANTIGRAVITY, E O CLAUDE CONFERE** *(decisão do operador, 21/10/2026: "o antigravity
+consegue fazer essa mudança? […] você deixaria registrado o que ele deve seguir e você ficaria para
+verificar e continuar com a Stripe")*. O Claude Code segue com a Stripe (etapa 4.7, passo 6) na `dev`
+enquanto isso. **As regras do Antigravity neste bloco — valem SOBRE o `design-lab/GEMINI.md`, só para
+os arquivos e comandos do Bloco G:**
+1. **Leia antes:** o `CLAUDE.md` inteiro (sobretudo *Secrets in agent sessions*, *Block Execution
+   Protocol*, *DE QUEM É A DECISÃO*, *Database & Migrations* e o *Rate-limit de login* em *Quality
+   Gates*), este Bloco G inteiro e as pendências P100, P101, P103 e P97.
+2. **Branch próprio: `bloco-g`**, saído da `dev`. Um commit por etapa, com o checkbox e os documentos
+   no mesmo commit. **Nunca faça merge na `dev` nem na `main`:** o Claude lê o diff, roda o
+   `security-vulnerability-reviewer` e faz o merge na `dev`; a `main` só com o "publica" do operador.
+3. **Segredo nunca aparece:** nem no chat, nem como argumento de comando, nem na saída de um comando.
+   O que vem de fornecedor, o operador digita no console do Google. O que nós geramos vai por pipe,
+   sem mostrar: `openssl rand -base64 32 | gcloud secrets create NOME --data-file=-`. Conferir
+   segredo = conferir que o NOME existe (`gcloud secrets list`), nunca o valor. **Não abra arquivo
+   `.env`.**
+4. **O banco de produção:** nenhuma consulta e nenhuma migration à mão. As migrations só pelo Job da
+   publicação. A leitura do Passo 0 (G3) só com a autorização do operador, declarando o banco antes —
+   e é melhor deixá-la para o Claude.
+5. **O IP de quem acessa não se adivinha:** codifique pela doc da frente escolhida (P100), com teste
+   de valor forjado, e **meça em produção na G4** antes de dar a regra por certa. A rota de diagnóstico
+   é temporária, não mostra nada além dos cabeçalhos de endereço, e sai na mesma etapa. Nunca use
+   `fastly-client-ip`, `true-client-ip` nem `cf-connecting-ip`.
+6. **Só o que o plano manda:** nenhuma tela, nenhum texto, nenhuma regra de produto muda neste
+   bloco. Achado fora do plano se REPORTA ao operador, não se conserta. Surpresa (permissão negada,
+   comportamento diferente da doc) = **pare e conte**, não contorne.
+7. **Antes de cada commit, os quatro gates:** `npm run typecheck`, `npm run lint`, `npm run test` (a
+   suíte inteira) e `npm run build`.
+8. **Teto de gasto desde o primeiro serviço:** alerta de orçamento ligado, `max-instances=1`, a
+   região perto do banco.
+9. **No fim de cada etapa, um relatório** no checkbox dela: o que mudou, os comandos rodados (sem
+   segredo) e as provas. É por ele que o Claude confere.
+
 **AS ETAPAS — uma por sessão; cada uma termina num estado seguro, sem nada pela metade no ar:**
 
 - [ ] **G1 — As contas e as chaves** *(painéis; o operador, com o agente guiando tela a tela)*.
-      A conta Google da escola (**P99**) · o projeto, o faturamento e o **alerta de orçamento** · o
+      A conta `jilson@jilsonsantana.com` com a proteção reforçada (acima) · o projeto, o faturamento e o **alerta de orçamento** · o
       `gcloud` no Mac (o instalador do próprio Google: o Mac não tem Homebrew) · **trocar as chaves
       vazadas (P103)** — a senha do banco de produção (Neon → `production` → *Roles* → *Reset
       password*; o `dev` tem outra senha e não muda), a `sk_live_` da Stripe (vencendo na hora) e o
