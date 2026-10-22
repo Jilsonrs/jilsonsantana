@@ -18,6 +18,28 @@
 
 ## Estado atual  *(atualizar ao fechar cada bloco)*
 
+> **🔴 O SITE ESTÁ FORA DO AR DESDE 21/10/2026 — A HOSPEDAGEM ESTÁ MUDANDO DA RAILWAY PARA O GOOGLE
+> CLOUD RUN** *(decisão do operador, 21/10/2026; `CLAUDE.md`, entrada Out 2026 (29))*. Em 21/10 a
+> Railway avisou que alguém de fora acessou os sistemas em que ela guarda as variáveis dos clientes
+> e, de parte delas, obteve o conteúdo decifrado
+> ([aviso dela](https://blog.railway.com/p/security-disclosure-wednesday-october-21st)); recomendou
+> trocar todas as chaves, e as publicações ficaram paradas o dia inteiro. **O operador cancelou o
+> plano, apagou a conta da Railway e a tirou do GitHub no mesmo dia.** Desde então
+> `www.jilsonsantana.com` responde 404 (a borda da Railway, sem serviço atrás). **Nenhum aluno
+> afetado:** não há aluno, e o público via o "Em breve".
+> **Feito em 21/10:** (1) **a cópia do banco de produção** no Neon — o branch
+> `copia-incidente-railway-2026-10-21` (`br-withered-art-aew8cgv2`), feito do `production` às 23:39
+> UTC, **sem ponto de conexão**: ninguém entra nele, nem com a senha antiga; ligar um exige trocar a
+> senha antes, porque ele nasce com a de produção. É hoje a única segunda cópia dos dados · (2) **a
+> chave da conta do Bunny trocada** pelo operador (a nova guardada por ele, fora do computador).
+> **As chaves que estavam na Railway e ainda valem nos fornecedores** (trocar na etapa G1 — P103): a
+> senha do banco de produção, a `sk_live_` da Stripe e o segredo do aviso dela, as chaves da
+> biblioteca de aulas e do token, as senhas das duas pastas do Bunny. As nossas (segredo das sessões,
+> token da prévia) só valiam para o servidor que não existe mais: ganham valor novo na montagem.
+> **O plano da mudança: [Bloco G](#bloco-g--a-casa-nova-google-cloud-run)** — quatro etapas, uma por
+> sessão; no fim da G4 o site volta ao ar, no mesmo endereço, com a publicação de 21/10 junto. As
+> decisões que ele espera: `pendencias.md`, seção A.
+>
 > **Fases fechadas:** 0 (fundação/deploy) · 1 (auth/shell) — checkboxes completos em
 > [`build-history.md`](build-history.md). **Também lá, desde 11/10/2026:** as etapas 4.0 a 4.5 da
 > Fase 4 (Stripe), fechadas e publicadas — aqui ficou só o título de cada uma. **Fase 2** (conteúdo/trilhas) segue **aberta**: ver
@@ -231,7 +253,9 @@
 > `/api/billing/visitante/planos` → 404, a venda sem login desligada); com a autorização dele, a
 > consulta só de leitura no banco de produção (RLS: zero linhas, a `guest_checkout` com RLS; a conta
 > de admin com o e-mail confirmado); e a chave do Resend na Railway (P97), sem a qual os códigos não
-> chegam no site no ar.
+> chegam no site no ar. **Atualização (21/10, à noite): a Railway não volta mais** (conta apagada — ver o topo).
+> Estas quatro migrations entram em produção na primeira publicação no Cloud Run (etapa G3), a prova
+> de fora passa para a G4, e a chave do Resend vai para o cofre do Google (G1).
 > **PUBLICADO em 19/10/2026 (`main` = `1ee7c0c`, CI verde nos dois jobs, deploy ok; sem
 > migration; ordem do operador: "publica"):** o **passo 6 da etapa 4.6c** (os documentos num
 > idioma só; saíram o `idiomas.md` e o script da revisão do inglês; a legenda do Bunny só aceita
@@ -539,6 +563,143 @@
 > **Pendências do operador: a lista única está em [`docs/pendencias.md`](pendencias.md)** *(desde
 > 25/09/2026, a pedido do operador)*. As que moravam aqui foram para lá (P12–P16). Item resolvido
 > sai daquela lista no mesmo commit em que a resposta é registrada no destino.
+
+---
+
+## Bloco G — A casa nova: Google Cloud Run  *(21/10/2026 · decisão do operador · ALTO RISCO: toca o login, a cobrança e o banco de produção)*
+
+**Por que existe:** o incidente da Railway (ver *Estado atual*). **Decisão do operador, 21/10/2026:**
+*"perdi a confiança nesses provedores pequenos, quero algo que possa me acompanhar para o resto da
+vida e como meu canal no YouTube já é Google fico logo lá"* — o **Google Cloud Run**, que o agente
+recomendou: o site já é um contêiner, as chaves passam a morar num cofre, o custo começa perto de
+zero e o contêiner continua portátil. **O pedido dele para o bloco:** *"em um chat faça uma etapa e
+quando terminar está tudo funcionando novamente"*.
+**Passa no critério de stack** (`CLAUDE.md` → *Working Method*): a falha que a peça nova evita tem
+nome — as chaves de produção guardadas como variáveis numa plataforma que as deixou vazar. O cofre do
+Google (Secret Manager) guarda cifrado, controla quem pode ler e registra cada leitura.
+**O que NÃO muda:** o banco (Neon), o vídeo e os arquivos (Bunny), a cobrança (Stripe), o e-mail
+(Resend), o código no GitHub, o Docker, o endereço `www.jilsonsantana.com` e a regra de publicar
+(`dev` → `main` só com a ordem dele).
+
+**OS FATOS DO GOOGLE QUE MUDAM O DESENHO** `[FATO — context7 /websites/cloud_google_run, a página de
+limites do Cloud Run e a de preços de rede, lidas em 21/10/2026]`:
+- **Um pedido comum (HTTP/1) passa de no máximo 32 MiB, e uma resposta também** — *"Limit applies if
+  not using Transfer-Encoding: chunked or streaming"*; com servidor HTTP/2, o pedido não tem limite.
+  Pega **o envio de arquivo de aula**, que hoje não tem limite (decisão do operador de 29/09/2026 —
+  `admin-lesson-files.ts`), e **o download** (`lesson-view.ts`), que sai em fluxo mas manda o tamanho
+  (`Content-Length`) — se isso conta como "em fluxo" para o Google, se mede na G3. **P101.**
+- **O endereço próprio, três jeitos:** **o balanceador** (*"Recommended"* pelo Google: certificado,
+  regras por endereço, proteção contra ataque; **~US$ 18 por mês fixos** — US$ 0,025 por hora a regra
+  de entrada —, mais US$ 0,008 por GiB que passa por ele) · **o mapeamento de domínio** (grátis, mas em
+  *Preview*: *"not production-ready […] not recommended for production services"*, por atraso; só em
+  algumas regiões, entre elas `us-east4` e `us-east1`) · **o Firebase Hosting** (barato; mas
+  `[CONHECIDO, não conferido nesta sessão]` só repassa ao servidor o cookie `__session`, o que derruba
+  o login — fora, a menos que alguém confira o contrário). **P100.**
+- **Desligar:** o pedido em andamento termina antes de o servidor sair, e depois do aviso (SIGTERM) há
+  10 s até o desligamento à força. O `desligarComCalma` continua servindo; o `drainingSeconds` da
+  Railway deixa de existir.
+- **A cobrança padrão dá processador só durante um pedido** (*request-based billing*): trabalho depois
+  da resposta corre devagar ou para. O lint já não deixa promessa solta, mas o envio do alerta ao
+  Sentry é assíncrono — **provar na G3 que o alerta chega**. *Se não chegar: o alerta espera o envio
+  (`flush`) antes de a resposta sair, ou o serviço passa à cobrança por instância (mais cara).*
+- **Os contadores em memória supõem UM servidor só**, como a Railway rodava: o limite de tentativas, os
+  3 "assinar sem login" ao mesmo tempo, o cache do dicionário (`dict.ts`). **O serviço fica com no
+  máximo 1 instância** (`max-instances=1`), o que também segura o custo. *Gatilho: um servidor não dar
+  mais conta — aí os contadores vão para o banco antes de subir o máximo.*
+- **O IP de quem acessa muda de cabeçalho.** A regra do `x-real-ip` foi MEDIDA na Railway e não vale
+  no Google (`CLAUDE.md` → *Rate-limit de login*, gatilho "trocar de hospedagem"). Lá, a frente do
+  Google acrescenta o endereço ao `X-Forwarded-For`, e a posição depende da frente escolhida (P100).
+  **A regra nova sai de MEDIÇÃO em produção** (G4), como em 23/09/2026 — a doc não decide sozinha.
+
+**A FORMA** *(convenções de engenharia, propostas pelo agente; o que é do operador está nas P)*:
+- **Região perto do banco**, que está em Ohio (Neon, AWS `us-east-2`): `us-east5` (Columbus, Ohio) se
+  a frente for o balanceador; `us-east4` (Virgínia do Norte) se for o mapeamento. Em São Paulo, cada
+  página atravessaria o continente várias vezes. *O vídeo continua saindo do Bunny, perto do aluno.*
+- **As chaves no cofre** (Secret Manager), lidas pelo serviço por referência. O que não é segredo
+  (`COMING_SOON`, `BETTER_AUTH_URL`, `NODE_ENV`, os endereços e nomes do Bunny) num arquivo
+  **versionado** no repositório, para a configuração da casa ser reproduzível. **Chave nenhuma no
+  GitHub.**
+- **Publicar = GitHub Actions, depois do CI verde na `main`:** monta a imagem, guarda no Artifact
+  Registry, roda as migrations num **Cloud Run Job** com a mesma imagem (o papel do pre-deploy da
+  Railway: se falhar, não publica) e só então troca o serviço. O GitHub entra no Google **sem chave
+  guardada** (Workload Identity Federation). A publicação **espera o CI verde** da mesma `main`.
+- **Duas contas de serviço:** a do site, que só lê os segredos dele; a da publicação, que só publica.
+- **Teto de gasto:** alerta de orçamento na conta e `max-instances=1`. O Google não tem teto
+  automático.
+- **A conta Google:** própria da escola, separada da do YouTube, com chave de acesso (passkey). **P99.**
+- **Segredo nunca passa pelo chat nem por argumento de comando** (`CLAUDE.md` → *Secrets in agent
+  sessions*): o que o operador recebe de um fornecedor, ele digita no console do Google; o que nós
+  geramos (segredo das sessões, token da prévia) vai por um comando que gera e grava sem mostrar.
+
+**AS ETAPAS — uma por sessão; cada uma termina num estado seguro, sem nada pela metade no ar:**
+
+- [ ] **G1 — As contas e as chaves** *(painéis; o operador, com o agente guiando tela a tela)*.
+      A conta Google da escola (**P99**) · o projeto, o faturamento e o **alerta de orçamento** · o
+      `gcloud` no Mac (o instalador do próprio Google: o Mac não tem Homebrew) · **trocar as chaves
+      vazadas (P103)** — a senha do banco de produção (Neon → `production` → *Roles* → *Reset
+      password*; o `dev` tem outra senha e não muda), a `sk_live_` da Stripe (vencendo na hora) e o
+      segredo do aviso, as chaves da biblioteca de aulas e do token, as senhas das duas pastas do
+      Bunny · **cada valor novo direto para o cofre**, e a chave da conta do Bunny que ele já trocou
+      também · a chave de produção do Resend (**P97**) · os nossos gerados (segredo das sessões, token
+      da prévia).
+      **Pronto quando:** cada segredo existe no cofre (conferido pelo NOME, nunca pelo valor), as
+      chaves antigas foram canceladas nos fornecedores e o alerta de orçamento está ligado.
+- [ ] **G2 — O código se adapta** *(no `dev`, testado no computador; nada publicado)*.
+      **Antes:** a P100 (a frente) e a P101 (o arquivo de aula). `Docs check`: Cloud Run →
+      `/websites/cloud_google_run` (o cabeçalho do IP na frente escolhida; a publicação pelo GitHub).
+      **O porteiro do IP:** uma função só decide o endereço de quem pediu, conforme a frente, e as duas
+      leituras que hoje usam o `x-real-ip` (o Better Auth, em `auth.ts`, e o nosso limite, em
+      `limite-de-tentativas.ts`) passam a confiar nela — com teste de valor forjado e mutação · o
+      arquivo da publicação (`.github/workflows/deploy.yml`) e o Job das migrations · o arquivo da
+      configuração sem segredo · sai o `railway.json` · o download em fluxo, se a P101 pedir · os
+      comentários que citam a Railway (`desligar.ts`, `limite-de-tentativas.ts`, `auth.ts`, `dict.ts`,
+      `admin-lesson-files.ts`) · **o `CLAUDE.md` reescrito onde a regra era da Railway** (o IP, o
+      pre-deploy, o `drainingSeconds`, *Separação de ambientes*, *Costs*, a nota provisória em *Tech
+      Stack*) e o `tech-stack.md`. `security-vulnerability-reviewer` sobre o diff; os quatro gates.
+      **Pronto quando:** o `dev` verde, com o plano e os documentos no mesmo commit.
+- [ ] **G3 — A casa nova no ar, no endereço provisório do Google.**
+      O agente monta com o `gcloud`, o operador acompanhando: as APIs, o Artifact Registry, as duas
+      contas de serviço, a ligação com o GitHub, o serviço (a região, no máximo 1 instância) e o Job.
+      **Passo 0 no banco de produção** (com a autorização dele, só leitura, declarando o banco antes):
+      o retrato — as contas, as migrations já aplicadas, a contagem dos cursos. **Publicar** (a ordem é
+      dele: "publica"): merge `--no-ff` da `dev` na `main` → as migrations (as quatro de 21/10, que
+      nunca chegaram ao ar, mais as da G2) → o serviço. **A prova no endereço provisório
+      (`*.run.app`):** `/api/health`, o catálogo, a versão nova no `x-versao-do-app`, o "Em breve"; o
+      banco igual ao retrato mais as migrations; a consulta de RLS do `CLAUDE.md` (zero linhas; a
+      `guest_checkout` com RLS); a conta de admin com o e-mail confirmado; um download acima de 32 MiB
+      (P101); um alerta de teste chegando ao e-mail (Sentry). *O login no endereço provisório pode
+      recusar — o `BETTER_AUTH_URL` é o `www`: ele se prova na G4.*
+      **Pronto quando:** o serviço responde no endereço do Google, ligado ao banco de produção, e o
+      `www` ainda não aponta para ele.
+- [ ] **G4 — O endereço de volta, e tudo funcionando.**
+      A frente escolhida (P100) e a GoDaddy (o operador, guiado: os registros do `www` e do domínio
+      sem "www"; **os do e-mail, `alunos.jilsonsantana.com`, não se tocam**); o certificado. **A
+      medição do IP** em produção (rota temporária de diagnóstico, apagada na mesma etapa, como em
+      23/09/2026), a regra conferida e o limite de login provado pelo operador em duas redes. **A
+      prova de fora:** a versão nova; catálogo, trilhas, textos comuns e sessão → 200;
+      `/api/billing/minha-assinatura` → 401; login com e-mail inexistente → 401; `POST
+      /api/conta/codigo` com e-mail inexistente → 200 `{ ok: true }`; `/api/billing/visitante/planos`
+      → 404 (a venda sem login segue desligada); o público vê o "Em breve"; o domínio sem "www" leva
+      ao `www` com o resto do endereço (fecha a P57, se a frente for o balanceador). **Com o
+      operador:** entrar no admin pelo `/__preview`; uma aula tocando (a chave do token nova); uma
+      capa enviada (a senha da pasta nova); um código de acesso chegando (o Resend); o aviso de teste
+      da Stripe → 200 (o segredo novo); os avisos que a Stripe não conseguiu entregar com o site fora,
+      reenviados pelo painel dela ou acertados pelo "Conferir na Stripe" do admin. O *Estado atual*
+      registra o site de volta, e a memória "Conferir publicação" passa a olhar a publicação no
+      GitHub Actions.
+      **Pronto quando:** o site está como estava em 20/10, mais a publicação de 21/10, na casa nova.
+
+**Depois do Bloco G** volta a fila de antes: a etapa 4.7, passo 6 (a tela pública de assinar). *A
+cópia do banco de 21/10 fica até o backup frio da Fase 7; apagá-la é decisão do operador.*
+**Fica de fora** (não é desta mudança): levar o banco para o Google, CDN na frente das páginas,
+proteção contra ataque além do que a frente traz, e mais de uma instância.
+
+`Docs check (context7): Cloud Run → /websites/cloud_google_run → o limite de 32 MiB (HTTP/1) e a
+resposta em fluxo; o desligamento (SIGTERM, 10 s, os pedidos em andamento terminam); as três formas
+de endereço próprio e os limites do mapeamento; a cobrança por pedido. 8 chamadas (a busca do ID e 7
+consultas, duas sem resultado) — acima de 2 porque é uma mudança de casa inteira; o resto se confere
+na etapa que precisar. Lidas também, direto do Google: a página de limites do Cloud Run e a de preços
+de rede.`
 
 ---
 
