@@ -44,7 +44,7 @@
 > gravados com `version 1 enabled` no Secret Manager do Google Cloud**.
 > **O plano da mudança: [Bloco G](#bloco-g--a-casa-nova-google-cloud-run)** — quatro etapas, uma por
 > sessão; no fim da G4 o site volta ao ar, no mesmo endereço, com a publicação de 21/10 junto. As
-> decisões que ele espera para a G2: `pendencias.md`, seção A (a P101; a P100 fechou em 22/10/2026 — o mapeamento de domínio, com o servidor ligado, esperando).
+> decisões da G2 fechadas em 22/10/2026: o mapeamento de domínio (P100), o servidor ligado, esperando, e o arquivo de aula até 1 GB, enviado em partes (P101).
 >
 > **Fases fechadas:** 0 (fundação/deploy) · 1 (auth/shell) — checkboxes completos em
 > [`build-history.md`](build-history.md). **Também lá, desde 11/10/2026:** as etapas 4.0 a 4.5 da
@@ -593,7 +593,17 @@ limites do Cloud Run e a de preços de rede, lidas em 21/10/2026]`:
   not using Transfer-Encoding: chunked or streaming"*; com servidor HTTP/2, o pedido não tem limite.
   Pega **o envio de arquivo de aula**, que hoje não tem limite (decisão do operador de 29/09/2026 —
   `admin-lesson-files.ts`), e **o download** (`lesson-view.ts`), que sai em fluxo mas manda o tamanho
-  (`Content-Length`) — se isso conta como "em fluxo" para o Google, se mede na G3. **P101.**
+  (`Content-Length`) — se isso conta como "em fluxo" para o Google, se mede na G3.
+  **Decisão do operador (22/10/2026 — fecha a P101): até 1 GB por arquivo** (*"eu posso ter aulas de
+  até uns 500 MB cada arquivo; acho que 1 GB de limite seria suficiente"*). **O caminho (engenharia):
+  o envio EM PARTES pelo nosso servidor** — o navegador do admin manda o arquivo em pedaços de até
+  30 MB, cada um guardado no Bunny como um objeto, e o download do aluno os entrega em sequência.
+  **Por que não o envio direto do navegador ao Bunny** `[FATO — context7 /bunnyway/documentation,
+  Storage, 22/10/2026]`: só pela função S3 do Bunny, que *"can only be enabled when creating a new
+  storage zone"*, *"cannot be changed after"*, está em *Preview* e **não existe em São Paulo** — a
+  zona dos arquivos foi criada em São Paulo, sem ela (`bunny.md` §4.5). **Por que não o HTTP/2 de
+  ponta a ponta** (que tira o limite no Google): o Express não roda sobre o servidor HTTP/2 do Node.
+  O download continua saindo pelo nosso servidor (decisão do operador de 29/09/2026, `bunny.md` §4.5).
 - **O endereço próprio: O MAPEAMENTO DE DOMÍNIO** *(decisão do operador, 22/10/2026 — fecha a P100:
   "fico com o mapeamento")*. Grátis; em *Preview* (*"not production-ready […] not recommended for
   production services"*, por atraso); certificado do Google, que leva de 15 min a 24 h para sair; só
@@ -644,6 +654,11 @@ limites do Cloud Run e a de preços de rede, lidas em 21/10/2026]`:
   20/01/2027; a cota grátis mensal do Cloud Run continua depois dele.
 - **Teto de gasto:** o alerta de orçamento (R$ 100 por mês, já ligado na G1) e `max-instances=1`. O
   Google não tem teto automático.
+- **Tempo máximo de um pedido: 60 minutos** (o padrão do Cloud Run é 5): um download de 500 MB numa
+  internet lenta passa de 5 minutos. *Custo aceito:* enquanto um download corre, o servidor conta como
+  "trabalhando" (tarifa cheia) — centavos por download.
+- **O mapa do que mais existe no Google, quando ligar e quanto custa:** `tech-stack.md` → *Google
+  Cloud — o que a escola usa, e o mapa do que pode contratar depois*.
 - **A conta Google: `jilson@jilsonsantana.com`** *(decisão do operador, 21/10/2026 — fecha a P99: "vou
   utilizar o meu e-mail da empresa […] que é o mesmo e-mail do meu canal, mas tomaremos as medidas de
   segurança como autenticador ou o que for necessário")*. O agente tinha recomendado uma conta
@@ -777,8 +792,20 @@ os arquivos e comandos do Bloco G:**
         janela · os quatro gates de novo (site 928, servidor 1250). *O `security-vulnerability-reviewer`
         não rodou nesta etapa: ela não tem código; ele roda a partir da G2.*
 - [ ] **G2 — O código se adapta** *(no `dev`, testado no computador; nada publicado)*.
-      **Antes:** a P101 (o arquivo de aula). `Docs check`: Cloud Run → `/websites/cloud_google_run`
-      (o cabeçalho do IP no mapeamento de domínio; a publicação pelo GitHub).
+      `Docs check`: Cloud Run → `/websites/cloud_google_run` (o cabeçalho do IP no mapeamento de
+      domínio; a publicação pelo GitHub) · Bunny → `/bunnyway/documentation`, perguntando por
+      **"Storage"** (gravar, ler e apagar objeto — o envio em partes).
+      **O arquivo de aula em partes, até 1 GB** (decisão da P101, acima): o navegador do admin manda
+      pedaços de até 30 MB, um de cada vez, tentando de novo o que falhar na rede; cada um vira um
+      objeto na zona dos arquivos; o banco guarda quantas partes o arquivo tem (migration, com o
+      Passo 0) e **o arquivo só aparece para o aluno quando todas chegaram**; o limite de 1 GB fica no
+      `core` e é conferido no começo e a cada parte; o download entrega as partes em sequência, em
+      fluxo, com a MESMA trava de hoje (só assinante, a prévia grátis não libera arquivo); apagar
+      apaga todas as partes, e a trava que só aceita caminho de arquivo continua estrita (apagar pasta
+      apaga tudo, `bunny.md` §4.5); o arquivo já guardado inteiro vale como uma parte só. **A tela do
+      admin não muda** (o que o operador vê é o mesmo envio, com o andamento). Testes de servidor (o
+      assinante baixa o arquivo inteiro e igual; quem não assina, 403; parte faltando não aparece;
+      acima de 1 GB, recusa) e mutação no download e no apagar. O `bunny.md` §4.5 reconciliado.
       **O endereço sem "www" leva ao `www`, com o resto do endereço** (fecha a P57 na G4): um desvio
       301 no servidor, só quando o pedido chega por `jilsonsantana.com` exato — o endereço provisório
       do Google (`*.run.app`) não desvia, para a G3 poder provar por ele. Com teste.
@@ -802,7 +829,9 @@ os arquivos e comandos do Bloco G:**
       (`*.run.app`):** `/api/health`, o catálogo, a versão nova no `x-versao-do-app`, o "Em breve"; o
       banco igual ao retrato mais as migrations; a consulta de RLS do `CLAUDE.md` (zero linhas; a
       `guest_checkout` com RLS); a conta de admin com o e-mail confirmado; um download acima de 32 MiB
-      (P101); um alerta de teste chegando ao e-mail (Sentry). *O login no endereço provisório pode
+      — e, com o operador, **um arquivo de ~500 MB enviado pelo admin e baixado inteiro, igual ao
+      original** (o envio em partes); um alerta de teste chegando ao e-mail (Sentry); **a memória do
+      servidor** no painel (se passar de ~70% dos 512 MB, sobe para 1 GB). *O login no endereço provisório pode
       recusar — o `BETTER_AUTH_URL` é o `www`: ele se prova na G4.*
       **Pronto quando:** o serviço responde no endereço do Google, ligado ao banco de produção, e o
       `www` ainda não aponta para ele.

@@ -116,6 +116,7 @@ O terceiro caso da tabela é raro e tem um exemplo canônico neste arquivo: o pa
 |---|---|---|
 | Propor **adicionar ou remover peça de stack** | `decisions-archive` | Pode já ter sido decidido. A proposta precisa trazer **DADO NOVO**, não repetir um argumento já vencido. |
 | **Reabrir** item marcado *"não reabrir"*, *"decisão do operador"* ou *"PROPOSTO e REJEITADO"* | `decisions-archive` | Idem — e esses rótulos existem porque já foram reabertos antes. |
+| Propor **contratar ou ligar recurso do Google Cloud** | `tech-stack.md` → *Google Cloud — o mapa* | O operador quer só o necessário; cada recurso já tem lá o gatilho e o custo. Proposta sem o gatilho cumprido não entra. |
 | Afirmar que algo **"não existe"** ou **"não foi feito"** | `build-history` | Dezenas de checkboxes fechados moram lá. Supor que falta é como se re-implementa o que já existe. |
 
 O arquivo guarda justamente as decisões **contraintuitivas** — pg-boss removido, Stripe Billing
