@@ -751,6 +751,18 @@ os arquivos e comandos do Bloco G:**
         `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`), todos com `version 1` em estado `enabled`
         conferido por `gcloud secrets versions list`. Quatro gates (`typecheck`, `lint`, `test`,
         `build`) verdes antes do commit.
+      - **CONFERIDO PELO CLAUDE (22/10/2026), antes do merge na `dev`:** o diff é só de documento, sem
+        segredo nenhum (busca por formatos de chave: zero achados) · os 13 segredos no cofre, cada um
+        com a versão 1 ativa · **o formato de cada valor conferido sem mostrá-lo** (um roteiro que lê
+        do cofre e responde só sim ou não): nenhum com espaço ou quebra de linha nas pontas; a
+        `DATABASE_URL` com `-pooler` e a `DIRECT_URL` sem, as duas no endpoint de produção e no banco
+        `neondb`; a chave da Stripe `sk_live_`, o segredo do aviso `whsec_`, a do Resend `re_`, o DSN
+        `https://`, o token da prévia com 64 caracteres hexadecimais e o segredo das sessões com 32 ou
+        mais · **no Neon, pelo registro de operações (sem ler dado):** a mudança de configuração no
+        ponto de conexão de produção às 08:27 UTC de 22/10 (a troca da senha), e **nenhuma conexão ao
+        banco de produção entre 23:55 UTC de 21/10 e a troca** — a senha antiga não foi usada nessa
+        janela · os quatro gates de novo (site 928, servidor 1250). *O `security-vulnerability-reviewer`
+        não rodou nesta etapa: ela não tem código; ele roda a partir da G2.*
 - [ ] **G2 — O código se adapta** *(no `dev`, testado no computador; nada publicado)*.
       **Antes:** a P100 (a frente) e a P101 (o arquivo de aula). `Docs check`: Cloud Run →
       `/websites/cloud_google_run` (o cabeçalho do IP na frente escolhida; a publicação pelo GitHub).
