@@ -44,7 +44,7 @@
 > gravados com `version 1 enabled` no Secret Manager do Google Cloud**.
 > **O plano da mudança: [Bloco G](#bloco-g--a-casa-nova-google-cloud-run)** — quatro etapas, uma por
 > sessão; no fim da G4 o site volta ao ar, no mesmo endereço, com a publicação de 21/10 junto. As
-> decisões que ele espera para a G2: `pendencias.md`, seção A (P100 e P101).
+> decisões que ele espera para a G2: `pendencias.md`, seção A (a P101; a P100 fechou em 22/10/2026 — o mapeamento de domínio, com o servidor ligado, esperando).
 >
 > **Fases fechadas:** 0 (fundação/deploy) · 1 (auth/shell) — checkboxes completos em
 > [`build-history.md`](build-history.md). **Também lá, desde 11/10/2026:** as etapas 4.0 a 4.5 da
@@ -594,13 +594,14 @@ limites do Cloud Run e a de preços de rede, lidas em 21/10/2026]`:
   Pega **o envio de arquivo de aula**, que hoje não tem limite (decisão do operador de 29/09/2026 —
   `admin-lesson-files.ts`), e **o download** (`lesson-view.ts`), que sai em fluxo mas manda o tamanho
   (`Content-Length`) — se isso conta como "em fluxo" para o Google, se mede na G3. **P101.**
-- **O endereço próprio, três jeitos:** **o balanceador** (*"Recommended"* pelo Google: certificado,
-  regras por endereço, proteção contra ataque; **~US$ 18 por mês fixos** — US$ 0,025 por hora a regra
-  de entrada —, mais US$ 0,008 por GiB que passa por ele) · **o mapeamento de domínio** (grátis, mas em
-  *Preview*: *"not production-ready […] not recommended for production services"*, por atraso; só em
-  algumas regiões, entre elas `us-east4` e `us-east1`) · **o Firebase Hosting** (barato; mas
-  `[CONHECIDO, não conferido nesta sessão]` só repassa ao servidor o cookie `__session`, o que derruba
-  o login — fora, a menos que alguém confira o contrário). **P100.**
+- **O endereço próprio: O MAPEAMENTO DE DOMÍNIO** *(decisão do operador, 22/10/2026 — fecha a P100:
+  "fico com o mapeamento")*. Grátis; em *Preview* (*"not production-ready […] not recommended for
+  production services"*, por atraso); certificado do Google, que leva de 15 min a 24 h para sair; só
+  em algumas regiões, entre elas `us-east4`. **Recusado por agora: o balanceador** (o recomendado pelo
+  Google; ~US$ 18 por mês fixos — US$ 0,025/h a regra de entrada, mais US$ 0,008 por GiB). *Gatilho:
+  a escola ter receita que o pague, ou atraso medido no mapeamento — a troca não mexe no código, só na
+  regra do IP, que se mede de novo.* **Fora:** o Firebase Hosting (`[CONHECIDO, não conferido]` só
+  repassa ao servidor o cookie `__session`, o que derrubaria o login).
 - **Desligar:** o pedido em andamento termina antes de o servidor sair, e depois do aviso (SIGTERM) há
   10 s até o desligamento à força. O `desligarComCalma` continua servindo; o `drainingSeconds` da
   Railway deixa de existir.
@@ -614,13 +615,12 @@ limites do Cloud Run e a de preços de rede, lidas em 21/10/2026]`:
   mais conta — aí os contadores vão para o banco antes de subir o máximo.*
 - **O IP de quem acessa muda de cabeçalho.** A regra do `x-real-ip` foi MEDIDA na Railway e não vale
   no Google (`CLAUDE.md` → *Rate-limit de login*, gatilho "trocar de hospedagem"). Lá, a frente do
-  Google acrescenta o endereço ao `X-Forwarded-For`, e a posição depende da frente escolhida (P100).
+  Google acrescenta o endereço ao `X-Forwarded-For`, e a posição depende da frente (o mapeamento).
   **A regra nova sai de MEDIÇÃO em produção** (G4), como em 23/09/2026 — a doc não decide sozinha.
 
 **A FORMA** *(convenções de engenharia, propostas pelo agente; o que é do operador está nas P)*:
-- **Região perto do banco**, que está em Ohio (Neon, AWS `us-east-2`): `us-east5` (Columbus, Ohio) se
-  a frente for o balanceador; `us-east4` (Virgínia do Norte) se for o mapeamento. Em São Paulo, cada
-  página atravessaria o continente várias vezes. *O vídeo continua saindo do Bunny, perto do aluno.*
+- **A região: `us-east4` (Virgínia do Norte)**, perto do banco em Ohio (Neon, AWS `us-east-2`) e com
+  o mapeamento de domínio. Em São Paulo, cada página atravessaria o continente várias vezes. *O vídeo continua saindo do Bunny, perto do aluno.*
 - **As chaves no cofre** (Secret Manager), lidas pelo serviço por referência. O que não é segredo
   (`COMING_SOON`, `BETTER_AUTH_URL`, `NODE_ENV`, os endereços e nomes do Bunny) num arquivo
   **versionado** no repositório, para a configuração da casa ser reproduzível. **Chave nenhuma no
@@ -630,8 +630,20 @@ limites do Cloud Run e a de preços de rede, lidas em 21/10/2026]`:
   Railway: se falhar, não publica) e só então troca o serviço. O GitHub entra no Google **sem chave
   guardada** (Workload Identity Federation). A publicação **espera o CI verde** da mesma `main`.
 - **Duas contas de serviço:** a do site, que só lê os segredos dele; a da publicação, que só publica.
-- **Teto de gasto:** alerta de orçamento na conta e `max-instances=1`. O Google não tem teto
-  automático.
+- **O servidor: LIGADO, ESPERANDO** *(decisão do operador, 22/10/2026, depois da conta com os preços
+  do Google: "Ligado, esperando")* — `min-instances=1` e `max-instances=1`, com a **cobrança por pedido**
+  (o processador fica reduzido entre os pedidos; o tempo parado sai pela tarifa de espera), 1
+  processador e 512 MB: **~US$ 10 por mês** (talvez menos, se a cota grátis descontar parte — conferir
+  na primeira fatura). Ninguém espera o servidor ligar. **Recusados:** o que desliga sozinho (~R$ 0, mas
+  o primeiro visitante espera alguns segundos) e o processador cheio o tempo todo (~US$ 45).
+- **O resto da conta mínima** *(o operador, 22/10/2026: "prefiro fazer a configuração só do que
+  realmente vou precisar, assim quando os créditos expirarem não fico com um custo alto")*: o cofre com
+  as 13 chaves (6 grátis; ~US$ 0,40 por mês o resto) · o registro de imagens guardando **só as últimas**
+  (regra de limpeza), para caber na cota grátis · nada de balanceador, CDN, proteção extra contra ataque
+  ou montagem de imagem no Google (a imagem se monta no GitHub Actions). O crédito de R$ 1.779 vence em
+  20/01/2027; a cota grátis mensal do Cloud Run continua depois dele.
+- **Teto de gasto:** o alerta de orçamento (R$ 100 por mês, já ligado na G1) e `max-instances=1`. O
+  Google não tem teto automático.
 - **A conta Google: `jilson@jilsonsantana.com`** *(decisão do operador, 21/10/2026 — fecha a P99: "vou
   utilizar o meu e-mail da empresa […] que é o mesmo e-mail do meu canal, mas tomaremos as medidas de
   segurança como autenticador ou o que for necessário")*. O agente tinha recomendado uma conta
@@ -663,7 +675,7 @@ os arquivos e comandos do Bloco G:**
 4. **O banco de produção:** nenhuma consulta e nenhuma migration à mão. As migrations só pelo Job da
    publicação. A leitura do Passo 0 (G3) só com a autorização do operador, declarando o banco antes —
    e é melhor deixá-la para o Claude.
-5. **O IP de quem acessa não se adivinha:** codifique pela doc da frente escolhida (P100), com teste
+5. **O IP de quem acessa não se adivinha:** codifique pela doc do mapeamento de domínio, com teste
    de valor forjado, e **meça em produção na G4** antes de dar a regra por certa. A rota de diagnóstico
    é temporária, não mostra nada além dos cabeçalhos de endereço, e sai na mesma etapa. Nunca use
    `fastly-client-ip`, `true-client-ip` nem `cf-connecting-ip`.
@@ -672,8 +684,9 @@ os arquivos e comandos do Bloco G:**
    comportamento diferente da doc) = **pare e conte**, não contorne.
 7. **Antes de cada commit, os quatro gates:** `npm run typecheck`, `npm run lint`, `npm run test` (a
    suíte inteira) e `npm run build`.
-8. **Teto de gasto desde o primeiro serviço:** alerta de orçamento ligado, `max-instances=1`, a
-   região perto do banco.
+8. **A conta mínima desde o primeiro serviço:** `us-east4`, `min-instances=1`, `max-instances=1`,
+   cobrança por pedido, 1 processador e 512 MB, o registro de imagens com regra de limpeza. Nada que
+   não esteja em *A forma* (balanceador, CDN, proteção extra) — e nada de crédito "para testar".
 9. **No fim de cada etapa, um relatório** no checkbox dela: o que mudou, os comandos rodados (sem
    segredo) e as provas. É por ele que o Claude confere.
 
@@ -764,8 +777,11 @@ os arquivos e comandos do Bloco G:**
         janela · os quatro gates de novo (site 928, servidor 1250). *O `security-vulnerability-reviewer`
         não rodou nesta etapa: ela não tem código; ele roda a partir da G2.*
 - [ ] **G2 — O código se adapta** *(no `dev`, testado no computador; nada publicado)*.
-      **Antes:** a P100 (a frente) e a P101 (o arquivo de aula). `Docs check`: Cloud Run →
-      `/websites/cloud_google_run` (o cabeçalho do IP na frente escolhida; a publicação pelo GitHub).
+      **Antes:** a P101 (o arquivo de aula). `Docs check`: Cloud Run → `/websites/cloud_google_run`
+      (o cabeçalho do IP no mapeamento de domínio; a publicação pelo GitHub).
+      **O endereço sem "www" leva ao `www`, com o resto do endereço** (fecha a P57 na G4): um desvio
+      301 no servidor, só quando o pedido chega por `jilsonsantana.com` exato — o endereço provisório
+      do Google (`*.run.app`) não desvia, para a G3 poder provar por ele. Com teste.
       **O porteiro do IP:** uma função só decide o endereço de quem pediu, conforme a frente, e as duas
       leituras que hoje usam o `x-real-ip` (o Better Auth, em `auth.ts`, e o nosso limite, em
       `limite-de-tentativas.ts`) passam a confiar nela — com teste de valor forjado e mutação · o
@@ -778,7 +794,7 @@ os arquivos e comandos do Bloco G:**
       **Pronto quando:** o `dev` verde, com o plano e os documentos no mesmo commit.
 - [ ] **G3 — A casa nova no ar, no endereço provisório do Google.**
       O agente monta com o `gcloud`, o operador acompanhando: as APIs, o Artifact Registry, as duas
-      contas de serviço, a ligação com o GitHub, o serviço (a região, no máximo 1 instância) e o Job.
+      contas de serviço, a ligação com o GitHub, o serviço (com a conta mínima de *A forma*) e o Job.
       **Passo 0 no banco de produção** (com a autorização dele, só leitura, declarando o banco antes):
       o retrato — as contas, as migrations já aplicadas, a contagem dos cursos. **Publicar** (a ordem é
       dele: "publica"): merge `--no-ff` da `dev` na `main` → as migrations (as quatro de 21/10, que
@@ -791,15 +807,21 @@ os arquivos e comandos do Bloco G:**
       **Pronto quando:** o serviço responde no endereço do Google, ligado ao banco de produção, e o
       `www` ainda não aponta para ele.
 - [ ] **G4 — O endereço de volta, e tudo funcionando.**
-      A frente escolhida (P100) e a GoDaddy (o operador, guiado: os registros do `www` e do domínio
-      sem "www"; **os do e-mail, `alunos.jilsonsantana.com`, não se tocam**); o certificado. **A
+      **O mapeamento** (o Antigravity, com o `gcloud`): provar ao Google que o domínio é da escola (o
+      registro TXT que ele pede, na GoDaddy) e mapear o `www.jilsonsantana.com` e o `jilsonsantana.com`
+      ao serviço. **A GoDaddy** (o operador, guiado): o `www` deixa de apontar para a Railway e aponta
+      para o Google (o CNAME que o mapeamento indicar); o domínio sem "www" troca o encaminhamento da
+      GoDaddy pelos registros A e AAAA que o mapeamento indicar; sai o TXT `_railway-verify.www`.
+      **NÃO SE TOCAM:** os registros de e-mail — o MX e os outros do e-mail `jilson@` (Microsoft) e os
+      do `alunos.jilsonsantana.com` (Resend). Antes de mudar, um retrato de todos os registros (print ou
+      lista) para poder voltar. O certificado do Google (15 min a 24 h). **A
       medição do IP** em produção (rota temporária de diagnóstico, apagada na mesma etapa, como em
       23/09/2026), a regra conferida e o limite de login provado pelo operador em duas redes. **A
       prova de fora:** a versão nova; catálogo, trilhas, textos comuns e sessão → 200;
       `/api/billing/minha-assinatura` → 401; login com e-mail inexistente → 401; `POST
       /api/conta/codigo` com e-mail inexistente → 200 `{ ok: true }`; `/api/billing/visitante/planos`
       → 404 (a venda sem login segue desligada); o público vê o "Em breve"; o domínio sem "www" leva
-      ao `www` com o resto do endereço (fecha a P57, se a frente for o balanceador). **Com o
+      ao `www` com o resto do endereço (fecha a P57). **Com o
       operador:** entrar no admin pelo `/__preview`; uma aula tocando (a chave do token nova); uma
       capa enviada (a senha da pasta nova); um código de acesso chegando (o Resend); o aviso de teste
       da Stripe → 200 (o segredo novo); os avisos que a Stripe não conseguiu entregar com o site fora,
@@ -810,8 +832,9 @@ os arquivos e comandos do Bloco G:**
 
 **Depois do Bloco G** volta a fila de antes: a etapa 4.7, passo 6 (a tela pública de assinar). *A
 cópia do banco de 21/10 fica até o backup frio da Fase 7; apagá-la é decisão do operador.*
-**Fica de fora** (não é desta mudança): levar o banco para o Google, CDN na frente das páginas,
-proteção contra ataque além do que a frente traz, e mais de uma instância.
+**Fica de fora** (não é desta mudança): levar o banco para o Google, o balanceador (o gatilho está em
+*A forma*), CDN na frente das páginas, proteção contra ataque além do que o Google já traz, e mais de
+uma instância.
 
 `Docs check (context7): Cloud Run → /websites/cloud_google_run → o limite de 32 MiB (HTTP/1) e a
 resposta em fluxo; o desligamento (SIGTERM, 10 s, os pedidos em andamento terminam); as três formas
