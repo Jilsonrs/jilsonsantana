@@ -4,6 +4,7 @@ import { emailOTP } from "better-auth/plugins";
 import { PrismaClient } from "@prisma/client";
 import { Role, TAMANHO_MAXIMO_DA_SENHA, TAMANHO_MINIMO_DA_SENHA, TENTATIVAS_DO_CODIGO, VALIDADE_DO_CODIGO_EM_MINUTOS } from "@jilson/core";
 import { enviarCodigo } from "./codigo-por-email.js";
+import { CABECALHO_DO_IP, ipDoPedido } from "./limite-de-tentativas.js";
 
 // Better Auth instance (Phase 1). The HTTP handler is mounted on Express in
 // index.ts via toNodeHandler — see the middleware-order note there.
@@ -45,7 +46,7 @@ const trustedOrigins = [
   ),
 ];
 
-export const auth = betterAuth({
+const baseAuth = betterAuth({
   // Runtime secrets/URLs come from env — never hardcoded. Better Auth also reads
   // BETTER_AUTH_SECRET / BETTER_AUTH_URL implicitly; set explicitly for clarity.
   secret: process.env.BETTER_AUTH_SECRET,
@@ -122,23 +123,25 @@ export const auth = betterAuth({
     useSecureCookies: process.env.NODE_ENV === "production",
     // DE ONDE vem o IP que o rate-limit usa para separar uma pessoa da outra.
     //
-    // `x-real-ip`, e SÓ ele. MEDIDO em produção (23/09/2026, rota temporária de
-    // diagnóstico): a borda da Railway SOBRESCREVE esse cabeçalho — um valor
-    // forjado pelo visitante foi ignorado — e o valor é o IP público real de
-    // quem acessa (conferido contra um serviço externo).
+    // A decisão é de UMA função só — `ipDoPedido`, em `lib/limite-de-tentativas.ts`
+    // (Bloco G, etapa G2 — regra PROVISÓRIA até a medição em produção na G4, com
+    // `GET /api/diagnostico-ip`, como em 23/09/2026). No mapeamento de domínio do
+    // Cloud Run, a frente do Google acrescenta o IP de quem conectou ao fim do
+    // `x-forwarded-for`.
     //
-    // Por que não o default (`x-forwarded-for`): na Railway ele chega com DOIS
-    // elementos (o cliente + um proxy interno que muda a cada requisição), e a
-    // 1.7.5 recusa cadeia com mais de um. Sem esta linha o IP não resolve e o
-    // login cai num BALDE ÚNICO: três tentativas de qualquer pessoa em 10
-    // segundos travam a escola inteira, o admin junto (implementation-plan →
-    // BLOQUEIO DO GO-LIVE). `fastly-client-ip`, `true-client-ip` e
-    // `cf-connecting-ip` repassam o que o visitante manda: NUNCA usar.
+    // Por que `pedidoComIpDoPorteiro` (abaixo) normaliza o cabeçalho antes de
+    // entregar o pedido ao Better Auth: o `getIPFromHeader` do Better Auth 1.7.5
+    // recusa qualquer cabeçalho com mais de um elemento (`forwardedIps.length !== 1`)
+    // quando não há `trustedProxies` fixos. Bastaria um visitante mandar um
+    // `X-Forwarded-For` forjado (que chega como `forjado, real`) para o IP virar
+    // `null` e cair no balde único. `fastly-client-ip`, `true-client-ip`,
+    // `cf-connecting-ip` e `x-real-ip` repassam o que o visitante manda no Cloud Run:
+    // NUNCA usar.
     //
-    // Gatilho de reabertura: trocar de hospedagem, ou pôr uma CDN na frente da
-    // Railway — os dois mudam quem escreve este cabeçalho.
+    // Gatilho de reabertura: a medição na G4 mostrar um salto interno depois do IP
+    // do cliente, ou trocar a frente do Cloud Run (pôr um balanceador ou CDN).
     ipAddress: {
-      ipAddressHeaders: ["x-real-ip"],
+      ipAddressHeaders: [CABECALHO_DO_IP],
     },
   },
 
@@ -200,3 +203,22 @@ export const auth = betterAuth({
     },
   },
 });
+
+/**
+ * Passa o cabeçalho de endereço pelo porteiro único (`ipDoPedido`) antes de o Better Auth ler:
+ * reduz a cadeia do `x-forwarded-for` ao IP decidido pela nossa função (ou remove o cabeçalho se
+ * não houver IP válido). Assim o Better Auth e `limite-de-tentativas.ts` obedecem exatamente à
+ * mesma regra, e um `x-forwarded-for` forjado pelo visitante nunca derruba a resolução do IP.
+ */
+function pedidoComIpDoPorteiro(pedido: Request): Request {
+  const ip = ipDoPedido(pedido.headers.get(CABECALHO_DO_IP));
+  if (ip) pedido.headers.set(CABECALHO_DO_IP, ip);
+  else pedido.headers.delete(CABECALHO_DO_IP);
+  return pedido;
+}
+
+const atender = baseAuth.handler;
+baseAuth.handler = (pedido: Request) => atender(pedidoComIpDoPorteiro(pedido));
+baseAuth.fetch = baseAuth.handler;
+
+export const auth = baseAuth;

@@ -51,6 +51,19 @@ import { anotarErroDoSite } from "./lib/erro-do-site.js";
 
 const app = express();
 
+// O DOMÍNIO SEM "WWW" LEVA AO "WWW" COM O RESTO DO ENDEREÇO (Bloco G, etapa G2 — fecha a P57 na G4):
+// no mapeamento de domínio do Cloud Run, `jilsonsantana.com` aponta para este mesmo serviço por
+// registros A e AAAA (sem o encaminhamento da GoDaddy). Só desvia quando o `Host` é `jilsonsantana.com`
+// exato: o endereço provisório do Google (`*.run.app`) e o `localhost` não desviam.
+app.use((req, res, next) => {
+  if (req.hostname.toLowerCase() === "jilsonsantana.com") {
+    const resto = req.originalUrl.startsWith("/") ? req.originalUrl : "/";
+    res.redirect(301, `https://www.jilsonsantana.com${resto}`);
+    return;
+  }
+  next();
+});
+
 // Better Auth HTTP handler — MUST be mounted BEFORE express.json(). If JSON
 // parsing runs first it consumes the request body and breaks auth (known
 // pitfall). toNodeHandler returns a promise; Express 5 does NOT auto-catch

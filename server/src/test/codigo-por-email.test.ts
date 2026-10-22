@@ -45,7 +45,7 @@ const novoEmail = () => `codigo-${++n}-${S}@teste.local`;
 const SENHA = process.env.SEED_MEMBER_PASSWORD ?? "";
 
 const pedirCodigo = (email: string, motivo: "entrar" | "senha", endereco = "198.51.100.120") =>
-  request(servidor).post("/api/conta/codigo").set("x-real-ip", endereco).send({ email, motivo });
+  request(servidor).post("/api/conta/codigo").set("x-forwarded-for", endereco).send({ email, motivo });
 const entrarComCodigo = (email: string, otp: string) => request(servidor).post("/api/auth/sign-in/email-otp").send({ email, otp });
 const trocarSenha = (email: string, otp: string, password: string) => request(servidor).post("/api/auth/email-otp/reset-password").send({ email, otp, password });
 const entrarComSenha = (email: string, password: string) => request(servidor).post("/api/auth/sign-in/email").send({ email, password });

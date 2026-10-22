@@ -56,14 +56,14 @@ async function nascida({ criadaHa = 0, acesso = true, comConta = true } = {}) {
 }
 
 const criarSenha = (tentativa: string, senha: string, endereco = "198.51.100.200") =>
-  request(servidor).post("/api/billing/visitante/senha").set("x-real-ip", endereco).send({ tentativa, senha });
+  request(servidor).post("/api/billing/visitante/senha").set("x-forwarded-for", endereco).send({ tentativa, senha });
 const entrar = (email: string, password: string) => request(servidor).post("/api/auth/sign-in/email").send({ email, password });
 const senhasDa = (id: string) => prisma.account.count({ where: { userId: id, providerId: "credential" } });
 
 let enderecoDoCodigo = 0;
 /** Pede o código de ENTRAR (pela nossa rota) e devolve o número que o e-mail levaria. */
 async function codigoParaEntrar(email: string): Promise<string> {
-  const res = await request(servidor).post("/api/conta/codigo").set("x-real-ip", `198.51.100.${220 + ++enderecoDoCodigo}`).send({ email, motivo: "entrar" });
+  const res = await request(servidor).post("/api/conta/codigo").set("x-forwarded-for", `198.51.100.${220 + ++enderecoDoCodigo}`).send({ email, motivo: "entrar" });
   expect(res.status).toBe(200);
   return enviarEmail.mock.calls.at(-1)?.[0].mensagem.paragrafos[1] ?? "";
 }
