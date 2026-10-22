@@ -858,7 +858,9 @@ os arquivos e comandos do Bloco G:**
       — e, com o operador, **um arquivo de ~500 MB enviado pelo admin e baixado inteiro, igual ao
       original** (o envio em partes); um alerta de teste chegando ao e-mail (Sentry); **a memória do
       servidor** no painel, anotada no relatório — é ela que decide, na P104, se a volta é para 512 MB
-      ou 1 GB · **o alerta de orçamento**: conferir se ele conta o gasto antes ou depois do crédito —
+      ou 1 GB · **o tempo de resposta das páginas** no painel, anotado no relatório: se o banco pesar,
+      a escolha de levar o Neon para a Virgínia vai ao operador ANTES de haver aluno (`tech-stack.md` →
+      *Google Cloud*, *O que não se liga*) · **o alerta de orçamento**: conferir se ele conta o gasto antes ou depois do crédito —
       com 2 processadores o gasto antes do crédito passa dos R$ 100 todo mês, e o alerta dispararia
       sem haver cobrança. *O login no endereço provisório pode
       recusar — o `BETTER_AUTH_URL` é o `www`: ele se prova na G4.*
