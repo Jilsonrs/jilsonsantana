@@ -157,19 +157,19 @@ describe("onde a assinatura de teste pode nascer", () => {
     "postgresql://u:p@localhost:5432/jilsonsantana_test",
     "postgresql://u:p@127.0.0.1:5432/x",
     "postgresql://u:p@[::1]:5432/x",
-    "postgresql://u:p@ep-lingering-morning-aehqd81z-pooler.c-2.us-east-2.aws.neon.tech/neondb",
-    "postgresql://u:p@ep-lingering-morning-aehqd81z.c-2.us-east-2.aws.neon.tech/neondb",
+    "postgresql://u:p@ep-soft-base-b8waj57h-pooler.c-4.us-east-1.aws.neon.tech/neondb",
+    "postgresql://u:p@ep-soft-base-b8waj57h.c-4.us-east-1.aws.neon.tech/neondb",
   ])("sim: %s", (url) => {
     expect(podeTerAssinaturaDeTeste(url)).toBe(true);
   });
 
   it.each([
     // o endpoint de PRODUÇÃO
-    "postgresql://u:p@ep-still-breeze-aebrui0f-pooler.c-2.us-east-2.aws.neon.tech/neondb",
+    "postgresql://u:p@ep-muddy-hill-b8oromcw-pooler.c-4.us-east-1.aws.neon.tech/neondb",
     // "localhost" só no texto, não no host
     "postgresql://u:p@evil.com:5432/localhost",
     // o id do branch dev como prefixo de outro host
-    "postgresql://u:p@ep-lingering-morning-aehqd81z-evil.com/x",
+    "postgresql://u:p@ep-soft-base-b8waj57h-evil.com/x",
     "não é url",
     undefined,
   ])("não: %s", (url) => {
