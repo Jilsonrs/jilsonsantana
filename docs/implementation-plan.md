@@ -32,13 +32,19 @@
 > UTC, **sem ponto de conexão**: ninguém entra nele, nem com a senha antiga; ligar um exige trocar a
 > senha antes, porque ele nasce com a de produção. É hoje a única segunda cópia dos dados · (2) **a
 > chave da conta do Bunny trocada** pelo operador (a nova guardada por ele, fora do computador).
-> **As chaves que estavam na Railway e ainda valem nos fornecedores** (trocar na etapa G1 — P103): a
-> senha do banco de produção, a `sk_live_` da Stripe e o segredo do aviso dela, as chaves da
-> biblioteca de aulas e do token, as senhas das duas pastas do Bunny. As nossas (segredo das sessões,
-> token da prévia) só valiam para o servidor que não existe mais: ganham valor novo na montagem.
+> **Feito em 22/10 (etapa G1, no branch `bloco-g`):** a conta `jilson@jilsonsantana.com` reforçada com
+> app autenticador e códigos de backup fora do Mac · o projeto `jilsonsantana` criado no Google Cloud
+> com faturamento e alerta de orçamento mensal (R$ 100) ligados · o `gcloud 590.0.0` instalado no Mac ·
+> **todas as chaves que estavam na Railway rotacionadas/canceladas nos fornecedores (fecha a P103)** —
+> a senha do banco de produção no Neon (`DATABASE_URL` e `DIRECT_URL`), a `sk_live_` (vencendo na hora,
+> `now`) e o segredo do aviso da Stripe, as chaves da biblioteca de aulas e do token e as senhas das
+> duas pastas do Bunny, mais o DSN do Sentry (chave nova gerada e a antiga apagada) —, a chave da
+> conta do Bunny trocada em 21/10, **a chave de produção `Production` do Resend criada (fecha a P97)**
+> e os dois segredos gerados via pipe (`BETTER_AUTH_SECRET` e `PREVIEW_TOKEN`): **os 13 segredos estão
+> gravados com `version 1 enabled` no Secret Manager do Google Cloud**.
 > **O plano da mudança: [Bloco G](#bloco-g--a-casa-nova-google-cloud-run)** — quatro etapas, uma por
 > sessão; no fim da G4 o site volta ao ar, no mesmo endereço, com a publicação de 21/10 junto. As
-> decisões que ele espera: `pendencias.md`, seção A.
+> decisões que ele espera para a G2: `pendencias.md`, seção A (P100 e P101).
 >
 > **Fases fechadas:** 0 (fundação/deploy) · 1 (auth/shell) — checkboxes completos em
 > [`build-history.md`](build-history.md). **Também lá, desde 11/10/2026:** as etapas 4.0 a 4.5 da
@@ -673,7 +679,7 @@ os arquivos e comandos do Bloco G:**
 
 **AS ETAPAS — uma por sessão; cada uma termina num estado seguro, sem nada pela metade no ar:**
 
-- [ ] **G1 — As contas e as chaves** *(painéis; o operador, com o agente guiando tela a tela)*.
+- [x] **G1 — As contas e as chaves** *(painéis; o operador, com o agente guiando tela a tela)*.
       A conta `jilson@jilsonsantana.com` com a proteção reforçada (acima) · o projeto, o faturamento e o **alerta de orçamento** · o
       `gcloud` no Mac (o instalador do próprio Google: o Mac não tem Homebrew) · **trocar as chaves
       vazadas (P103)** — a senha do banco de produção (Neon → `production` → *Roles* → *Reset
@@ -684,6 +690,67 @@ os arquivos e comandos do Bloco G:**
       da prévia).
       **Pronto quando:** cada segredo existe no cofre (conferido pelo NOME, nunca pelo valor), as
       chaves antigas foram canceladas nos fornecedores e o alerta de orçamento está ligado.
+      *(22/10/2026, no branch `bloco-g`.)* **Relatório da etapa G1 (Regra 9):**
+      - **Conta Google (`jilson@jilsonsantana.com`):** verificação em duas etapas reforçada com app
+        autenticador (`Etapa de login adicionada: app Google Authenticator`) e códigos de backup
+        gerados e guardados fora do Mac; telefone e e-mail de recuperação conferidos. *Decisão do
+        operador (21/10/2026): sem chave de acesso (passkey) no iMac (`x86_64`, sem Touch ID), ficando
+        com o app autenticador e os códigos de backup.*
+      - **Projeto, faturamento e alerta de orçamento:** projeto `jilsonsantana` (ID `jilsonsantana`)
+        criado no Google Cloud, conta de faturamento vinculada (com US$ 300 / R$ 1.779 de créditos de
+        teste gratuito por 90 dias) e **alerta de orçamento mensal de R$ 100** criado e ativo (50%,
+        90% e 100%, com envio de alerta por e-mail).
+      - **`gcloud` no Mac (`x86_64`):** na versão `590.0.0`, o arquivo oficial
+        `google-cloud-cli-darwin-x86_64.tar.gz` trouxe o manifesto de Python embutido vazio e recusou
+        o Python 3.9 do Command Line Tools da Apple; reportada a surpresa ao operador (Regra 6), que
+        escolheu instalar o Python `3.12.8` oficial (`python-3.12.8-macos11.pkg`, `python.org`) e
+        apagar os instaladores temporários de `/tmp`. `Google Cloud SDK 590.0.0` instalado em
+        `/Users/jilson/google-cloud-sdk`, autenticado em `jilson@jilsonsantana.com`, projeto padrão
+        `jilsonsantana` configurado e API `secretmanager.googleapis.com` ativada.
+      - **Chaves trocadas nos fornecedores (fecha a P103), chave do Resend (fecha a P97) e segredos no
+        cofre:** todos os valores vindos de fornecedores foram colados pelo operador direto no painel
+        do Secret Manager (nenhum segredo passou pelo chat ou por argumento de comando; nenhum arquivo
+        `.env` foi aberto):
+        1. **Neon (`production`, `ep-still-breeze-aebrui0f`):** senha de `neondb_owner` resetada pelo
+           operador (apenas no branch `production`; o `dev` e a cópia de 21/10 permaneceram intocados)
+           → gravados `DATABASE_URL` (com `-pooler`) e `DIRECT_URL` (sem `-pooler`).
+        2. **Stripe (modo de produção):** `sk_live_` rotacionada (*Rotate key*) com expiração
+           imediata (`now`) → gravada em `STRIPE_SECRET_KEY`; `Signing secret` do destino de webhook
+           `https://www.jilsonsantana.com/api/stripe/webhook` rotacionado com expiração imediata
+           (`now`) → gravado em `STRIPE_WEBHOOK_SECRET`.
+        3. **Bunny:** chave geral da conta (trocada em 21/10) gravada em `BUNNY_ACCOUNT_API_KEY`; na
+           biblioteca `jilsonsantana-stream` (`762605`), `API Key` e `Token Authentication Key`
+           resetadas e gravadas em `BUNNY_STREAM_LESSONS_API_KEY` e `BUNNY_STREAM_LESSONS_TOKEN_KEY`;
+           nas Storage Zones `jilsonsantana-storage` e `jilsonsantana-arquivos`, senhas de escrita
+           resetadas e gravadas em `BUNNY_STORAGE_PASSWORD` e `BUNNY_FILES_STORAGE_PASSWORD`.
+        4. **Resend (fecha a P97):** chave nova `Production` criada pelo operador (`Sending access`,
+           restrita ao domínio `alunos.jilsonsantana.com`, mantendo a chave `dev` separada para o
+           computador) → gravada em `RESEND_API_KEY`.
+        5. **Sentry:** chave nova gerada em *Client Keys (DSN)*, a antiga (que estava na Railway)
+           excluída pelo operador, e a nova gravada em `SENTRY_DSN`.
+        6. **Gerados por nós via pipe (sem exibir valor):** `BETTER_AUTH_SECRET` (`openssl rand
+           -base64 32 | tr -d '\n'`) e `PREVIEW_TOKEN` (`openssl rand -hex 32 | tr -d '\n'`, em
+           hexadecimal sem `+`/`=`/`\n` para não quebrar na query string `/__preview?token=`).
+      - **Comandos rodados (sem segredo):**
+        - `git checkout -b bloco-g`
+        - `curl -fsSL https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-darwin-x86_64.tar.gz -o /tmp/google-cloud-cli-darwin-x86_64.tar.gz`
+        - `tar -xzf /tmp/google-cloud-cli-darwin-x86_64.tar.gz -C /Users/jilson`
+        - `curl -fsSL https://www.python.org/ftp/python/3.12.8/python-3.12.8-macos11.pkg -o /tmp/python-3.12.8-macos11.pkg && open /tmp/python-3.12.8-macos11.pkg`
+        - `rm -rf /tmp/google-cloud-cli-darwin-x86_64.tar.gz /tmp/google-cloud-sdk /tmp/python-3.12.8-macos11.pkg`
+        - `/Users/jilson/google-cloud-sdk/install.sh --quiet --path-update=true --command-completion=true --usage-reporting=false`
+        - `/Users/jilson/google-cloud-sdk/bin/gcloud auth login jilson@jilsonsantana.com --project=jilsonsantana --quiet`
+        - `/Users/jilson/google-cloud-sdk/bin/gcloud services enable secretmanager.googleapis.com --project=jilsonsantana`
+        - `openssl rand -base64 32 | tr -d '\n' | /Users/jilson/google-cloud-sdk/bin/gcloud secrets create BETTER_AUTH_SECRET --replication-policy=automatic --data-file=- --project=jilsonsantana`
+        - `openssl rand -hex 32 | tr -d '\n' | /Users/jilson/google-cloud-sdk/bin/gcloud secrets create PREVIEW_TOKEN --replication-policy=automatic --data-file=- --project=jilsonsantana`
+        - `/Users/jilson/google-cloud-sdk/bin/gcloud secrets create <NOME> --replication-policy=automatic --project=jilsonsantana` (para os 11 segredos de fornecedores)
+        - `/Users/jilson/google-cloud-sdk/bin/gcloud secrets list --project=jilsonsantana` e `gcloud secrets versions list <NOME> --project=jilsonsantana`
+      - **Provas:** `gcloud secrets list --project=jilsonsantana` lista os 13 segredos
+        (`BETTER_AUTH_SECRET`, `BUNNY_ACCOUNT_API_KEY`, `BUNNY_FILES_STORAGE_PASSWORD`,
+        `BUNNY_STORAGE_PASSWORD`, `BUNNY_STREAM_LESSONS_API_KEY`, `BUNNY_STREAM_LESSONS_TOKEN_KEY`,
+        `DATABASE_URL`, `DIRECT_URL`, `PREVIEW_TOKEN`, `RESEND_API_KEY`, `SENTRY_DSN`,
+        `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`), todos com `version 1` em estado `enabled`
+        conferido por `gcloud secrets versions list`. Quatro gates (`typecheck`, `lint`, `test`,
+        `build`) verdes antes do commit.
 - [ ] **G2 — O código se adapta** *(no `dev`, testado no computador; nada publicado)*.
       **Antes:** a P100 (a frente) e a P101 (o arquivo de aula). `Docs check`: Cloud Run →
       `/websites/cloud_google_run` (o cabeçalho do IP na frente escolhida; a publicação pelo GitHub).
