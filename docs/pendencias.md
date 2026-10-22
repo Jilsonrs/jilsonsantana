@@ -16,7 +16,7 @@
 > 5. **Item novo ganha o próximo número livre.** Número nunca se reutiliza, para que "P7" queira
 >    dizer sempre a mesma coisa em qualquer conversa.
 >
-> **Próximo número livre: P104** · Atualizada em 21/10/2026
+> **Próximo número livre: P104** · Atualizada em 22/10/2026
 >
 > **DESDE 12/10/2026 A ESCOLA É SÓ EM PORTUGUÊS E SÓ PARA O BRASIL** (decisão do operador; etapa
 > 4.6c do plano). A parte em inglês de qualquer item abaixo deixou de existir: revise só o
@@ -31,8 +31,6 @@
 
 | # | O que falta | Onde registrar |
 |---|---|---|
-| P103 | **Trocar as chaves que estavam na Railway** (G1, com o agente guiando tela a tela; cada valor novo vai direto para o cofre do Google, digitado por você — nunca no chat): (1) a senha do banco de produção, no Neon · (2) a chave secreta de verdade da Stripe (com a antiga vencendo na hora) e o segredo do aviso · (3) no Bunny, a chave da biblioteca de aulas, a chave do token e as senhas das duas pastas. **Já feito por você em 21/10/2026:** a chave da conta do Bunny. Enquanto não forem trocadas, as antigas continuam valendo nos fornecedores | o plano → Bloco G, G1 |
-| P97 | **A chave de produção do Resend** (para o site mandar os e-mails da escola: os códigos de acesso, as boas-vindas): criar no Resend uma chave nova, só para o site no ar (permissão de envio, no domínio `alunos.jilsonsantana.com`), e gravá-la **no cofre do Google** na G1 — não mais na Railway. Não use a chave do computador: cada ambiente tem a sua. *O `BETTER_AUTH_URL` = `https://www.jilsonsantana.com` entra na configuração do serviço, na G2 — o agente cuida* | o plano → Bloco G, G1 |
 | P100 | **Como o endereço `www.jilsonsantana.com` chega ao Google** (antes da G2): **(a) o balanceador** — o jeito que o Google recomenda para produção; cerca de **US$ 18 por mês fixos**, mais centavos pelo tráfego; resolve também o endereço sem "www" (a P57) · **(b) o mapeamento de domínio** — grátis, mas o próprio Google diz que **não está pronto para produção** (atrasos). Recomendação do agente: **(a)** | o plano → Bloco G |
 | P101 | **O arquivo de aula acima de 32 MB** (antes da G2): o Google não aceita um envio maior que 32 MB pelo caminho comum, e hoje o admin aceita arquivo de qualquer tamanho (decisão sua de 29/09/2026). **(a) limite de 32 MB no envio**, com aviso no admin — simples · **(b) mudar a forma de envio** para passar do limite — mais trabalho e mais risco. Recomendação do agente: (a), até aparecer um arquivo maior. *O download do aluno: se o teste da G3 mostrar o mesmo limite, ele passa a sair sem o tamanho total, e o navegador mostra o download sem a porcentagem* | o plano → Bloco G |
 | P102 | **A sua assinatura de teste no site no ar continua cobrando o seu cartão** todo mês, com o site fora. Manter (para o teste do passo 8 da etapa 4.7) ou cancelar pelo painel da Stripe? | o plano → etapa 4.7, passo 8 |
