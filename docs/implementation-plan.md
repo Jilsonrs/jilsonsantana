@@ -32,7 +32,7 @@
 > UTC, **sem ponto de conexão**: ninguém entra nele, nem com a senha antiga; ligar um exige trocar a
 > senha antes, porque ele nasce com a de produção. É hoje a única segunda cópia dos dados · (2) **a
 > chave da conta do Bunny trocada** pelo operador (a nova guardada por ele, fora do computador).
-> **Feito em 22/10 (etapa G1, no branch `bloco-g`):** a conta `jilson@jilsonsantana.com` reforçada com
+> **Feito em 22/10 (etapas G1a e G1b, no branch `bloco-g`):** (G1a) a conta `jilson@jilsonsantana.com` reforçada com
 > app autenticador e códigos de backup fora do Mac · o projeto `jilsonsantana` criado no Google Cloud
 > com faturamento e alerta de orçamento mensal (R$ 100) ligados · o `gcloud 590.0.0` instalado no Mac ·
 > **todas as chaves que estavam na Railway rotacionadas/canceladas nos fornecedores (fecha a P103)** —
@@ -40,8 +40,17 @@
 > `now`) e o segredo do aviso da Stripe, as chaves da biblioteca de aulas e do token e as senhas das
 > duas pastas do Bunny, mais o DSN do Sentry (chave nova gerada e a antiga apagada) —, a chave da
 > conta do Bunny trocada em 21/10, **a chave de produção `Production` do Resend criada (fecha a P97)**
-> e os dois segredos gerados via pipe (`BETTER_AUTH_SECRET` e `PREVIEW_TOKEN`): **os 13 segredos estão
-> gravados com `version 1 enabled` no Secret Manager do Google Cloud**.
+> e os dois segredos gerados via pipe (`BETTER_AUTH_SECRET` e `PREVIEW_TOKEN`): **os 13 segredos
+> gravados no Secret Manager do Google Cloud**.
+> (G1b) **o banco no Neon movido de Ohio (`falling-snow-79489296`, `aws-us-east-2`) para a Virgínia
+> (`rough-meadow-05608403`, `jilsonsantana-prod`, `aws-us-east-1`, PG18)** pelo *Import Data Assistant*,
+> com retrato ANTES/DEPOIS idêntico nas 26 tabelas, 18 sequências e 34 migrations de `production`
+> (`ep-muddy-hill-b8oromcw`, protegido, janela de restauração de 7 dias); o projeto antigo de Ohio
+> apagado por decisão do operador; o branch `dev` (`ep-soft-base-b8waj57h`) criado a partir do
+> `production` com senha própria rotacionada na hora, as 4 migrations de 21/10 aplicadas nele (38 no
+> total) e o seed sincronizado; `DATABASE_URL` e `DIRECT_URL` atualizados no Secret Manager (`version 3
+> enabled`, anteriores destruídas) e no `server/.env`, e o endpoint `dev` atualizado em
+> `assinatura-de-teste.ts`.
 > **O plano da mudança: [Bloco G](#bloco-g--a-casa-nova-google-cloud-run)** — quatro etapas, uma por
 > sessão; no fim da G4 o site volta ao ar, no mesmo endereço, com a publicação de 21/10 junto. As
 > decisões da G2 fechadas em 22/10/2026: o mapeamento de domínio (P100), o servidor ligado, esperando, e o arquivo de aula enviado em partes, sem limite de tamanho (P101).
@@ -75,11 +84,11 @@
 > documentos (passos 1 a 6). Travas: `CLAUDE.md` → *Idioma*. O texto continua no dicionário
 > (`core/src/i18n/pt.ts`), que é o que o admin edita.
 >
-> **Infra de banco (atualizado Set 2026 — MIGRADA DO SUPABASE PARA O NEON) — TRÊS ambientes, um por
+> **Infra de banco (atualizado Set 2026 — MIGRADA DO SUPABASE PARA O NEON; e movido de Ohio para a Virgínia em 22/10/2026, etapa G1b) — TRÊS ambientes, um por
 > papel, agora com DOIS deles no MESMO projeto:**
-> Neon `falling-snow-79489296` (aws-us-east-2, **PG18.6**), branch **`production`**
-> (`ep-still-breeze-aebrui0f`) = **produção**, só o Railway · branch **`dev`**
-> (`ep-lingering-morning-aehqd81z`) = **dev / a escola**, **nunca apagado** ·
+> Neon `rough-meadow-05608403` (`jilsonsantana-prod`, **aws-us-east-1** — N. Virginia, **PG18**), branch **`production`**
+> (`ep-muddy-hill-b8oromcw`) = **produção**, só o Cloud Run · branch **`dev`**
+> (`ep-soft-base-b8waj57h`) = **dev / a escola**, **nunca apagado** ·
 > **`localhost:5432/jilsonsantana_test`** (PostgreSQL 17.11 local) = **teste**, apagado a cada
 > execução da suíte. Plano **Free**, US$ 0 — o 2º ambiente virou **branch**, não um 2º projeto, e é
 > isso que zerou os US$ 10/mês que o Supabase cobraria.
@@ -809,7 +818,7 @@ os arquivos e comandos do Bloco G:**
         banco de produção entre 23:55 UTC de 21/10 e a troca** — a senha antiga não foi usada nessa
         janela · os quatro gates de novo (site 928, servidor 1250). *O `security-vulnerability-reviewer`
         não rodou nesta etapa: ela não tem código; ele roda a partir da G2.*
-- [ ] **G1b — O banco na Virgínia** *(painéis do Neon e do Google; o operador, com o Antigravity
+- [x] **G1b — O banco na Virgínia** *(painéis do Neon e do Google; o operador, com o Antigravity
       guiando; antes da G3, antes ou depois da G2)*. `[FATO — doc do Neon, "Migrate to another Neon
       region", 22/10/2026: o **Import Data Assistant** do console cria o projeto novo na região escolhida
       e copia os dados, para bancos de até ~10 GB; o nosso tem ~34 MB.]`
@@ -844,6 +853,30 @@ os arquivos e comandos do Bloco G:**
       operador.
       **Pronto quando:** o projeto novo na Virgínia tem os mesmos dados (provado tabela por tabela), o
       `dev` novo com senha própria, o cofre e o computador apontando para ele.
+      - **Relatório de execução (22/10/2026 — branch `bloco-g`):**
+        - **Modo de operação escolhido pelo operador:** 100% pelo painel da Neon (sem usar o MCP da Neon sobre `production`, respeitando a Regra 4 do Bloco G).
+        - **Retrato ANTES (projeto antigo `falling-snow-79489296`, Ohio, branch `production`) vs. Retrato DEPOIS (projeto novo `rough-meadow-05608403`, Virgínia `aws-us-east-1`, branch `production`) — 100% idênticos nas 7 consultas:**
+          1. **Últimas 6 migrations (34 no total em `production`):** `20261018170000_sai_o_idioma_da_conta`, `20261012190000_sai_o_idioma`, `20261012170000_idioma_com_valor_padrao`, `20261010233000_resposta_do_reembolso_em_ingles_sem_o_parentese`, `20261010230000_reembolso_de_14_dias_na_resposta_em_ingles`, `20261010120000_cliente_da_stripe` (mesmos carimbos de `finished_at`).
+          2. **Resumo:** `contas = 2`, `cursos = 2`, `assinaturas = 1`, `sessoes = 7`.
+          3. **Admin:** `email = jilson@jilsonsantana.com`, `emailVerified = f`.
+          4. **Tabelas em `public` sem RLS (`NOT relrowsecurity`):** `0` linhas (`No result`).
+          5. **Todas as 26 tabelas de `public` e respectivas linhas:** `_prisma_migrations` (34), `account` (2), `announcement` (0), `caption` (15), `course` (2), `course_start` (2), `faq_item` (14), `learning_plan` (1), `lesson` (15), `lesson_event` (14), `lesson_file` (1), `lesson_progress` (10), `module` (7), `notification` (2), `plan_item` (0), `plan_module` (1), `saved_item` (1), `session` (7), `site_text` (0), `stripe_customer` (1), `stripe_event` (2), `student_preference` (1), `subscription` (1), `testimonial` (4), `user` (2), `verification` (0).
+          6. **Todas as 18 sequências de `public` (`last_value`):** `announcement_id_seq` (`null`), `caption_id_seq` (22), `course_id_seq` (12), `course_start_id_seq` (245), `faq_item_id_seq` (30), `learning_plan_id_seq` (8), `lesson_event_id_seq` (14), `lesson_file_id_seq` (2), `lesson_id_seq` (29), `lesson_progress_id_seq` (362), `module_id_seq` (20), `notification_id_seq` (306), `plan_item_id_seq` (9), `plan_module_id_seq` (9), `saved_item_id_seq` (1), `site_text_id_seq` (`null`), `subscription_id_seq` (1), `testimonial_id_seq` (8).
+          7. **Contas além das duas de teste (`contas_extras`):** `0`.
+        - **O que foi feito nos painéis (Neon e Google Cloud):**
+          - **Neon (`rough-meadow-05608403`, renomeado para `jilsonsantana-prod`):** criado via *Import Data Assistant* usando a `DIRECT_URL` (sem `-pooler`) do `production` antigo, região **AWS US East 1 (N. Virginia)** (`aws-us-east-1`), **PostgreSQL 18**, *Enable Neon Auth* desmarcado, janela de restauração (*History retention*) de **7 dias**. Como o assistente da Neon importa os dados num branch separado (`import-...`) e deixa o branch inicial vazio, o branch com os dados importados foi promovido a `Default` e `Protected` com o nome **`production`** (endpoint `ep-muddy-hill-b8oromcw`) e o branch vazio inicial foi excluído. **Decisão explícita do operador:** apagar já o projeto antigo de Ohio (`falling-snow-79489296`) para reutilizar o nome `jilsonsantana-prod` no projeto novo.
+          - **Branch `dev` (`ep-soft-base-b8waj57h`):** criado a partir de `production` (*Branch data and schema*, *Auto-delete: Never*, já que `contas_extras = 0`) e com a senha de `neondb_owner` resetada imediatamente (*Reset password*). Em seguida, aplicadas no `dev` as 4 migrations de 21/10 (`20261021120000_ficha_de_espera_do_visitante`, `20261021180000_boas_vindas_da_ficha`, `20261021220000_senha_da_ficha_uma_vez`, `20261021220100_admin_com_email_confirmado`, totalizando **38 migrations** no `dev`), sincronizados os hashes de senha de `jilson@jilsonsantana.com` e `member@jilsonsantana.com` no `dev` com `SEED_ADMIN_PASSWORD` / `SEED_MEMBER_PASSWORD` do `server/.env`, e executado `npm --workspace server run db:seed` (que confirmou `+ assinatura de teste ativa para member@jilsonsantana.com (banco local ou dev)`).
+          - **Achado técnico registrado no `CLAUDE.md`:** o diálogo *Connect* da Neon anexa `&channel_binding=require` ao final da query string (`?sslmode=require&channel_binding=require`), o que faz o motor Rust do Prisma (`quaint`) falhar com `P1001: Can't reach database server`. Tanto no Secret Manager quanto no `server/.env` as URLs foram gravadas terminando apenas em `?sslmode=require`.
+          - **Achado de código autorizado pelo operador (Regra 6):** [`server/src/lib/assinatura-de-teste.ts`](server/src/lib/assinatura-de-teste.ts) e [`server/src/test/acesso.test.ts`](server/src/test/acesso.test.ts) traziam o ID do endpoint antigo (`ep-lingering-morning-aehqd81z`) e foram atualizados para o novo endpoint de `dev` (`ep-soft-base-b8waj57h`).
+          - **Google Cloud Secret Manager:** `DATABASE_URL` (`ep-muddy-hill-b8oromcw-pooler`) e `DIRECT_URL` (`ep-muddy-hill-b8oromcw`) atualizados na `version 3` (`enabled`), com as versões `1` e `2` em estado `destroyed`. Conferido sem exibir segredo: sem espaços/quebras nas pontas, `search: '?sslmode=require'`, `pathname: '/neondb'`, e `prodPwd !== devPwd` (`true`).
+        - **Comandos rodados (sem segredo):**
+          - `git status` / `git branch --show-current`
+          - `npm --workspace server exec prisma migrate deploy` (aplicou as 4 migrations de 21/10 no branch `dev`)
+          - `npm --workspace server run db:seed`
+          - `/Users/jilson/google-cloud-sdk/bin/gcloud secrets versions list DATABASE_URL --project=jilsonsantana`
+          - `/Users/jilson/google-cloud-sdk/bin/gcloud secrets versions list DIRECT_URL --project=jilsonsantana`
+          - `npm run typecheck`, `npm run lint`, `npm run test`, `npm run build`
+        - **Provas:** retrato ANTES vs. DEPOIS 100% idêntico nas 7 consultas em `production` · `gcloud secrets versions list` confirma `version 3 enabled` e versões anteriores `destroyed` em `DATABASE_URL` e `DIRECT_URL`, com senha de `production` distinta da de `dev` · `POST /api/auth/sign-in/email` em `http://localhost:3000` e `http://localhost:5173` retornando `HTTP 200` (`role: 'admin'`) · quatro gates (`typecheck`, `lint`, `test`, `build`) verdes.
 - [ ] **G2 — O código se adapta** *(no `dev`, testado no computador; nada publicado)*.
       `Docs check`: Cloud Run → `/websites/cloud_google_run` (o cabeçalho do IP no mapeamento de
       domínio; a publicação pelo GitHub) · Bunny → `/bunnyway/documentation`, perguntando por
