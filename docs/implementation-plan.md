@@ -644,7 +644,13 @@ limites do Cloud Run e a de preços de rede, lidas em 21/10/2026]`:
   do Google: "Ligado, esperando")* — `min-instances=1` e `max-instances=1`, com a **cobrança por pedido**
   (o processador fica reduzido entre os pedidos; o tempo parado sai pela tarifa de espera), 1
   processador e 512 MB: **~US$ 10 por mês** (talvez menos, se a cota grátis descontar parte — conferir
-  na primeira fatura). Ninguém espera o servidor ligar. **Recusados:** o que desliga sozinho (~R$ 0, mas
+  na primeira fatura). Ninguém espera o servidor ligar.
+  **ENQUANTO DURAR O CRÉDITO: 2 processadores e 2 GB** *(decisão do operador, 22/10/2026: "como vai
+  utilizar meus créditos nesses 90 dias, deixa 2 processadores e 2 GB; quando acabarem os créditos eu
+  mudo para uma configuração menor")* — ~US$ 26 por mês parado (`[medido 22/10]`), ~US$ 80 nos três
+  meses, dentro do crédito de R$ 1.779. **Antes de 20/01/2027, volta ao tamanho de cima** (1
+  processador; 512 MB ou 1 GB, conforme a memória medida) — P104. *Nota de engenharia:* o Node roda
+  o código num processador só; o segundo ajuda o banco (Prisma) e a compressão, e o ganho é modesto. **Recusados:** o que desliga sozinho (~R$ 0, mas
   o primeiro visitante espera alguns segundos) e o processador cheio o tempo todo (~US$ 45).
 - **O resto da conta mínima** *(o operador, 22/10/2026: "prefiro fazer a configuração só do que
   realmente vou precisar, assim quando os créditos expirarem não fico com um custo alto")*: o cofre com
@@ -700,7 +706,9 @@ os arquivos e comandos do Bloco G:**
 7. **Antes de cada commit, os quatro gates:** `npm run typecheck`, `npm run lint`, `npm run test` (a
    suíte inteira) e `npm run build`.
 8. **A conta mínima desde o primeiro serviço:** `us-east4`, `min-instances=1`, `max-instances=1`,
-   cobrança por pedido, 1 processador e 512 MB, o registro de imagens com regra de limpeza. Nada que
+   cobrança por pedido, **2 processadores e 2 GB enquanto durar o crédito** (decisão do operador,
+   22/10/2026; volta a 1 processador antes de 20/01/2027 — P104), o registro de imagens com regra de
+   limpeza. Nada que
    não esteja em *A forma* (balanceador, CDN, proteção extra) — e nada de crédito "para testar".
 9. **No fim de cada etapa, um relatório** no checkbox dela: o que mudou, os comandos rodados (sem
    segredo) e as provas. É por ele que o Claude confere.
@@ -831,7 +839,10 @@ os arquivos e comandos do Bloco G:**
       `guest_checkout` com RLS); a conta de admin com o e-mail confirmado; um download acima de 32 MiB
       — e, com o operador, **um arquivo de ~500 MB enviado pelo admin e baixado inteiro, igual ao
       original** (o envio em partes); um alerta de teste chegando ao e-mail (Sentry); **a memória do
-      servidor** no painel (se passar de ~70% dos 512 MB, sobe para 1 GB). *O login no endereço provisório pode
+      servidor** no painel, anotada no relatório — é ela que decide, na P104, se a volta é para 512 MB
+      ou 1 GB · **o alerta de orçamento**: conferir se ele conta o gasto antes ou depois do crédito —
+      com 2 processadores o gasto antes do crédito passa dos R$ 100 todo mês, e o alerta dispararia
+      sem haver cobrança. *O login no endereço provisório pode
       recusar — o `BETTER_AUTH_URL` é o `www`: ele se prova na G4.*
       **Pronto quando:** o serviço responde no endereço do Google, ligado ao banco de produção, e o
       `www` ainda não aponta para ele.

@@ -163,7 +163,7 @@ acima (proteção, cache, certificado próprio), e por isso é opcional.
 
 | Recurso | Para quê | Custo |
 |---|---|---|
-| Cloud Run (serviço) | o site: o mesmo contêiner da Railway | ligado, esperando, 1 processador e 512 MB: ~US$ 10/mês `[medido 22/10]` |
+| Cloud Run (serviço) | o site: o mesmo contêiner da Railway | ligado, esperando: **2 processadores e 2 GB enquanto durar o crédito** (~US$ 26/mês), depois 1 processador e 512 MB (~US$ 10/mês) `[medido 22/10]` — P104 |
 | Cloud Run (Job) | as migrations, antes de cada publicação | centavos (roda segundos por publicação) |
 | Mapeamento de domínio | `www.jilsonsantana.com` e o domínio sem "www" | grátis (em *Preview*) |
 | Secret Manager | o cofre das 13 chaves | 6 grátis; ~US$ 0,06/mês cada outra `[medido 22/10]` |
