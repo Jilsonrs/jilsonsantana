@@ -634,8 +634,12 @@ limites do Cloud Run e a de preços de rede, lidas em 21/10/2026]`:
   **A regra nova sai de MEDIÇÃO em produção** (G4), como em 23/09/2026 — a doc não decide sozinha.
 
 **A FORMA** *(convenções de engenharia, propostas pelo agente; o que é do operador está nas P)*:
-- **A região: `us-east4` (Virgínia do Norte)**, perto do banco em Ohio (Neon, AWS `us-east-2`) e com
-  o mapeamento de domínio. Em São Paulo, cada página atravessaria o continente várias vezes. *O vídeo continua saindo do Bunny, perto do aluno.*
+- **A região: `us-east4` (Virgínia do Norte)**, com o mapeamento de domínio — **e o banco vai para
+  a Virgínia também** *(decisão do operador, 22/10/2026: "eu quero mudar a Neon para a Virgínia (AWS):
+  é mais perto, e a AWS também é confiável; se um dia eu tiver problema com a Neon, mudamos para o
+  Google")*: um projeto novo do Neon em `aws-us-east-1` (Virgínia do Norte), vizinho do servidor —
+  etapa G1b. *O Neon não roda dentro do Google* `[FATO — lista de regiões da conta, 22/10/2026: só
+  AWS e Azure]`. *Gatilho: problema com o Neon → o banco vai para o Google (Cloud SQL).* Em São Paulo, cada página atravessaria o continente várias vezes. *O vídeo continua saindo do Bunny, perto do aluno.*
 - **As chaves no cofre** (Secret Manager), lidas pelo serviço por referência. O que não é segredo
   (`COMING_SOON`, `BETTER_AUTH_URL`, `NODE_ENV`, os endereços e nomes do Bunny) num arquivo
   **versionado** no repositório, para a configuração da casa ser reproduzível. **Chave nenhuma no
@@ -805,6 +809,41 @@ os arquivos e comandos do Bloco G:**
         banco de produção entre 23:55 UTC de 21/10 e a troca** — a senha antiga não foi usada nessa
         janela · os quatro gates de novo (site 928, servidor 1250). *O `security-vulnerability-reviewer`
         não rodou nesta etapa: ela não tem código; ele roda a partir da G2.*
+- [ ] **G1b — O banco na Virgínia** *(painéis do Neon e do Google; o operador, com o Antigravity
+      guiando; antes da G3, antes ou depois da G2)*. `[FATO — doc do Neon, "Migrate to another Neon
+      region", 22/10/2026: o **Import Data Assistant** do console cria o projeto novo na região escolhida
+      e copia os dados, para bancos de até ~10 GB; o nosso tem ~34 MB.]`
+      1. **O retrato ANTES** (o operador, no *SQL Editor* do projeto atual, branch `production`): as
+         consultas do Passo 0 da G3 e mais estas duas, de todas as tabelas —
+         `SELECT table_name, (xpath('/row/c/text()', query_to_xml(format('select count(*) as c from %I.%I', table_schema, table_name), false, true, '')))[1]::text::int AS linhas FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE' ORDER BY 1;` ·
+         `SELECT sequencename, last_value FROM pg_sequences WHERE schemaname='public' ORDER BY 1;` ·
+         e quantas contas não são as duas de teste: `SELECT count(*) FROM "user" WHERE email NOT IN ('jilson@jilsonsantana.com','member@jilsonsantana.com');`
+      2. **O projeto novo** (o operador, no console: *Projects* → *Import Data Assistant*): a origem é a
+         ligação **direta** (sem `-pooler`) do branch `production` atual, colada no assistente —
+         nunca no chat; o destino é **AWS US East 1 (N. Virginia)**, com o **mesmo Postgres (18)**. No
+         projeto novo: o branch principal se chama `production`, fica **protegido**, e a **janela de
+         restauração é a mesma do atual (7 dias)**.
+      3. **O retrato DEPOIS**, as mesmas consultas no projeto novo: **cada tabela com o mesmo número de
+         linhas, as sequências com os mesmos valores, as migrations iguais, a consulta de RLS com zero
+         linhas.** Qualquer diferença: **pare e conte** (regra 6) — o projeto atual continua intacto.
+      4. **O branch `dev` no projeto novo**, feito do `production` — **e a senha dele trocada na hora**
+         (*Reset password*: o branch nasce com a senha de produção — `CLAUDE.md` → *BRANCH NOVO HERDA A
+         SENHA*). **Se a consulta das contas (passo 1) der mais que zero, o `dev` é schema-only** (sem as
+         linhas) — mesma seção do `CLAUDE.md`. Depois, o seed no `dev` (as contas de teste com as senhas
+         do computador).
+      5. **O cofre:** versões novas de `DATABASE_URL` (com `-pooler`) e `DIRECT_URL` (sem), do
+         `production` NOVO, coladas pelo operador no console do Google; as versões antigas,
+         **desativadas**. **O computador:** o operador troca as duas ligações do `server/.env` pelas do
+         `dev` novo, **com o arquivo FECHADO no editor**; prova: `npm run dev:server` sobe e o login com
+         a conta de teste funciona.
+      6. **Os documentos, no mesmo commit:** o `CLAUDE.md` (*Database & Migrations*: o id do projeto,
+         os endpoints do `production` e do `dev`, a região), o `tech-stack.md` (*Database*) e o *Estado
+         atual*.
+      **O projeto antigo (Ohio) NÃO se apaga nesta etapa:** fica parado como volta atrás (com a cópia
+      de 21/10 e o `dev` antigo dentro) até a G4 provar o site no ar; apagá-lo depois é decisão do
+      operador.
+      **Pronto quando:** o projeto novo na Virgínia tem os mesmos dados (provado tabela por tabela), o
+      `dev` novo com senha própria, o cofre e o computador apontando para ele.
 - [ ] **G2 — O código se adapta** *(no `dev`, testado no computador; nada publicado)*.
       `Docs check`: Cloud Run → `/websites/cloud_google_run` (o cabeçalho do IP no mapeamento de
       domínio; a publicação pelo GitHub) · Bunny → `/bunnyway/documentation`, perguntando por
@@ -859,8 +898,7 @@ os arquivos e comandos do Bloco G:**
       original** (o envio em partes); um alerta de teste chegando ao e-mail (Sentry); **a memória do
       servidor** no painel, anotada no relatório — é ela que decide, na P104, se a volta é para 512 MB
       ou 1 GB · **o tempo de resposta das páginas** no painel, anotado no relatório: se o banco pesar,
-      a escolha de levar o Neon para a Virgínia vai ao operador ANTES de haver aluno (`tech-stack.md` →
-      *Google Cloud*, *O que não se liga*) · **o alerta de orçamento**: conferir se ele conta o gasto antes ou depois do crédito —
+      com o banco já na Virgínia (G1b) · **o alerta de orçamento**: conferir se ele conta o gasto antes ou depois do crédito —
       com 2 processadores o gasto antes do crédito passa dos R$ 100 todo mês, e o alerta dispararia
       sem haver cobrança. *O login no endereço provisório pode
       recusar — o `BETTER_AUTH_URL` é o `www`: ele se prova na G4.*
