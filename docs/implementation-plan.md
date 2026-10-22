@@ -30,7 +30,8 @@
 > **Feito em 21/10:** (1) **a cópia do banco de produção** no Neon — o branch
 > `copia-incidente-railway-2026-10-21` (`br-withered-art-aew8cgv2`), feito do `production` às 23:39
 > UTC, **sem ponto de conexão**: ninguém entra nele, nem com a senha antiga; ligar um exige trocar a
-> senha antes, porque ele nasce com a de produção. É hoje a única segunda cópia dos dados · (2) **a
+> senha antes, porque ele nasce com a de produção. *Saiu em 22/10, junto com o projeto de Ohio
+> (apagado na G1b por decisão do operador; recuperável até 29/10/2026).* · (2) **a
 > chave da conta do Bunny trocada** pelo operador (a nova guardada por ele, fora do computador).
 > **Feito em 22/10 (etapas G1a e G1b, no branch `bloco-g`):** (G1a) a conta `jilson@jilsonsantana.com` reforçada com
 > app autenticador e códigos de backup fora do Mac · o projeto `jilsonsantana` criado no Google Cloud
@@ -848,9 +849,20 @@ os arquivos e comandos do Bloco G:**
       6. **Os documentos, no mesmo commit:** o `CLAUDE.md` (*Database & Migrations*: o id do projeto,
          os endpoints do `production` e do `dev`, a região), o `tech-stack.md` (*Database*) e o *Estado
          atual*.
-      **O projeto antigo (Ohio) NÃO se apaga nesta etapa:** fica parado como volta atrás (com a cópia
-      de 21/10 e o `dev` antigo dentro) até a G4 provar o site no ar; apagá-lo depois é decisão do
-      operador.
+      **O projeto antigo (Ohio):** o plano o mantinha até a G4; **o operador decidiu apagá-lo na própria
+      G1b** (22/10/2026, 17:53 UTC), e com ele a cópia de 21/10 e o `dev` antigo. **O Neon o guarda
+      para recuperação até 29/10/2026** (`[FATO — Neon, lista de projetos recuperáveis, 22/10/2026]`);
+      depois disso, a volta atrás é a janela de 7 dias do projeto novo.
+      **CONFERIDO PELO CLAUDE (22/10/2026), antes do merge na `dev`:** o diff sem segredo (zero
+      achados); a única mudança de código é a trava da assinatura de teste apontando para o `dev`
+      novo, com o teste recusando a produção nova · o cofre, sem mostrar valores: `DATABASE_URL` e
+      `DIRECT_URL` na versão 3, no endpoint da produção nova, na Virgínia, com e sem `-pooler`,
+      `sslmode=require` e sem `channel_binding` · o Neon: o projeto novo em `aws-us-east-1`, com o
+      `production` principal e protegido e 7 dias de restauração, e o `dev` · **só lendo a produção
+      nova:** 26 tabelas, nenhuma sem RLS; 34 migrations (a última, de 18/10 — as quatro de 21/10 entram
+      na G3); 2 contas, 2 cursos e 1 assinatura; a conta de admin ainda sem o e-mail confirmado
+      (esperado: é a migration de 21/10 que confirma) · **o projeto de Ohio apagado** (recuperável até
+      29/10), então a comparação de antes e depois fica com o retrato do operador · os quatro gates.
       **Pronto quando:** o projeto novo na Virgínia tem os mesmos dados (provado tabela por tabela), o
       `dev` novo com senha própria, o cofre e o computador apontando para ele.
       - **Relatório de execução (22/10/2026 — branch `bloco-g`):**
