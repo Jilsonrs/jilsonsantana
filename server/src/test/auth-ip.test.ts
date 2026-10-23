@@ -34,6 +34,18 @@ describe("rate-limit do login — de onde vem o IP", () => {
     expect(ipDoPedido(undefined)).toBeNull();
     expect(ipDoPedido(null)).toBeNull();
   });
+
+  it("ipDoPedido recusa endereço que não é de visitante no fim da lista (rede privada, a própria máquina, as faixas internas do Google) — vira 'sem IP', que alerta, em vez de juntar todos numa contagem", () => {
+    for (const interno of [
+      "10.1.2.3", "172.16.0.9", "192.168.1.1", "100.64.0.1", "127.0.0.1", "169.254.169.254",
+      "35.191.10.20", "130.211.0.5", "::1", "fd00::1", "fe80::1", "::ffff:10.0.0.1",
+    ]) {
+      expect(ipDoPedido(`203.0.113.10, ${interno}`), interno).toBeNull();
+    }
+    // A faixa interna do Google é 35.191.0.0/16 e 130.211.0.0/22 — o vizinho de fora continua valendo.
+    expect(ipDoPedido("35.192.0.1")).toBe("35.192.0.1");
+    expect(ipDoPedido("130.211.4.1")).toBe("130.211.4.1");
+  });
 });
 
 describe("domínio sem www (jilsonsantana.com → https://www.jilsonsantana.com)", () => {

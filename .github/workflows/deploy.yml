@@ -13,10 +13,24 @@ on:
     branches: ["main"]
     types: ["completed"]
 
+# Duas publicações nunca correm juntas (dois merges seguidos): a segunda espera a primeira.
+concurrency:
+  group: publicar-producao
+  cancel-in-progress: false
+
 jobs:
   deploy:
     name: Publicar no Google Cloud Run
-    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' }}
+    # SÓ o CI de um ENVIO (push) à `main` DESTE repositório publica. O CI também roda em pull
+    # request — inclusive de cópia (fork) feita por qualquer pessoa, porque o repositório é
+    # público —, e o `head_branch` de um fork pode se chamar `main`: sem as duas conferências
+    # abaixo, o código de um estranho seria montado e publicado com acesso ao cofre
+    # (revisão do Claude, 22/10/2026). Não tire nenhuma das quatro condições.
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -76,7 +90,7 @@ jobs:
       # - cobrança por pedido: --cpu-throttling
       # - 2 CPUs e 2 GB enquanto durar o crédito (--cpu=2 --memory=2Gi, P104)
       # - tempo máximo do pedido: 3600 s (--timeout=3600)
-      # - variáveis não-secretas pelo arquivo versionado deploy/cloud-run.env
+      # - variáveis não-secretas pelo arquivo versionado deploy/cloud-run.yaml
       # - segredos por referência ao Secret Manager (--set-secrets)
       - name: Atualizar serviço no Cloud Run
         run: |
@@ -90,6 +104,6 @@ jobs:
             --memory=2Gi \
             --cpu-throttling \
             --timeout=3600 \
-            --env-vars-file=deploy/cloud-run.env \
-            --set-secrets=DATABASE_URL=DATABASE_URL:latest,DIRECT_URL=DIRECT_URL:latest,BETTER_AUTH_SECRET=BETTER_AUTH_SECRET:latest,PREVIEW_TOKEN=PREVIEW_TOKEN:latest,STRIPE_SECRET_KEY=STRIPE_SECRET_KEY:latest,STRIPE_WEBHOOK_SECRET=STRIPE_WEBHOOK_SECRET:latest,RESEND_API_KEY=RESEND_API_KEY:latest,SENTRY_DSN=SENTRY_DSN:latest,BUNNY_ACCOUNT_API_KEY=BUNNY_ACCOUNT_API_KEY:latest,BUNNY_STREAM_LESSONS_API_KEY=BUNNY_STREAM_LESSONS_API_KEY:latest,BUNNY_STREAM_LESSONS_TOKEN_KEY=BUNNY_STREAM_LESSONS_TOKEN_KEY:latest,BUNNY_STORAGE_PASSWORD=BUNNY_STORAGE_PASSWORD:latest,BUNNY_FILES_STORAGE_PASSWORD=BUNNY_FILES_STORAGE_PASSWORD:latest \
+            --env-vars-file=deploy/cloud-run.yaml \
+            --set-secrets=DATABASE_URL=DATABASE_URL:latest,DIRECT_URL=DIRECT_URL:latest,BETTER_AUTH_SECRET=BETTER_AUTH_SECRET:latest,PREVIEW_TOKEN=PREVIEW_TOKEN:latest,STRIPE_SECRET_KEY=STRIPE_SECRET_KEY:latest,STRIPE_WEBHOOK_SECRET=STRIPE_WEBHOOK_SECRET:latest,RESEND_API_KEY=RESEND_API_KEY:latest,SENTRY_DSN=SENTRY_DSN:latest,STRIPE_PUBLISHABLE_KEY=STRIPE_PUBLISHABLE_KEY:latest,BUNNY_ACCOUNT_API_KEY=BUNNY_ACCOUNT_API_KEY:latest,BUNNY_STREAM_LESSONS_API_KEY=BUNNY_STREAM_LESSONS_API_KEY:latest,BUNNY_STREAM_LESSONS_TOKEN_KEY=BUNNY_STREAM_LESSONS_TOKEN_KEY:latest,BUNNY_STORAGE_PASSWORD=BUNNY_STORAGE_PASSWORD:latest,BUNNY_FILES_STORAGE_PASSWORD=BUNNY_FILES_STORAGE_PASSWORD:latest \
             --quiet

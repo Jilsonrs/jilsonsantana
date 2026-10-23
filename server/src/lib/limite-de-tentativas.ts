@@ -1,4 +1,4 @@
-import { isIP } from "node:net";
+import { BlockList, isIP } from "node:net";
 import type { Request, RequestHandler, Response } from "express";
 import { MemoryStore, ipKeyGenerator, rateLimit, type Options } from "express-rate-limit";
 
@@ -74,6 +74,25 @@ let avisouSemEndereco = false;
 export const CABECALHO_DO_IP = "x-forwarded-for";
 
 /**
+ * Endereços que nunca são de um visitante na internet: rede privada, a própria máquina, e as faixas
+ * internas do Google (35.191.0.0/16 e 130.211.0.0/22, as da frente e da checagem de saúde). Se um
+ * deles aparecer no fim do `x-forwarded-for`, a frente acrescentou um salto interno, e aceitá-lo
+ * juntaria a escola inteira numa contagem só — sem alerta (revisão de segurança da G2, 22/10/2026).
+ * Vira "sem IP", que alerta.
+ */
+const FAIXAS_QUE_NAO_SAO_VISITANTE = (() => {
+  const lista = new BlockList();
+  for (const [rede, prefixo] of [
+    ["0.0.0.0", 8], ["10.0.0.0", 8], ["100.64.0.0", 10], ["127.0.0.0", 8], ["169.254.0.0", 16],
+    ["172.16.0.0", 12], ["192.168.0.0", 16], ["35.191.0.0", 16], ["130.211.0.0", 22],
+  ] as const) lista.addSubnet(rede, prefixo, "ipv4");
+  for (const [rede, prefixo] of [["::", 127], ["fc00::", 7], ["fe80::", 10]] as const) {
+    lista.addSubnet(rede, prefixo, "ipv6");
+  }
+  return lista;
+})();
+
+/**
  * O PORTEIRO DO IP (Bloco G, etapa G2 — regra PROVISÓRIA até a medição em produção na G4):
  * a ÚNICA função que decide o IP de quem pediu, tanto para o login (`lib/auth.ts`) quanto para os
  * limites de tentativas da escola (`enderecoDoPedido`, abaixo).
@@ -85,7 +104,14 @@ export const CABECALHO_DO_IP = "x-forwarded-for";
  */
 export function ipDoPedido(cabecalho: string | null | undefined): string | null {
   const ultimo = cabecalho?.split(",").at(-1)?.trim();
-  return ultimo && isIP(ultimo) ? ultimo : null;
+  if (!ultimo) return null;
+  const versao = isIP(ultimo);
+  if (versao === 0) return null;
+  // O IPv4 escrito dentro de IPv6 (`::ffff:a.b.c.d`) não é como a frente escreve um visitante.
+  // Conferido pelo texto, e não na lista: no `BlockList`, a faixa `::ffff:0:0/96` casa com TODO IPv4.
+  if (versao === 6 && ultimo.toLowerCase().startsWith("::ffff:")) return null;
+  if (FAIXAS_QUE_NAO_SAO_VISITANTE.check(ultimo, versao === 6 ? "ipv6" : "ipv4")) return null;
+  return ultimo;
 }
 
 /**

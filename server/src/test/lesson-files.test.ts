@@ -197,6 +197,39 @@ describe("enviar", () => {
     expect(enviarArquivoDaAula).not.toHaveBeenCalled();
   });
 
+  it("a parte que já chegou, mandada de novo (repetição da rede): 200 com o estado de hoje, sem tocar no Bunny nem somar o tamanho; arquivo completo não se reescreve (409)", async () => {
+    const inicio = await request(servidor)
+      .post(`/api/admin/lessons/${aulaId}/files`)
+      .set("Cookie", admin)
+      .set("Content-Type", "application/octet-stream")
+      .set("X-Nome-Do-Arquivo", encodeURIComponent("tres-partes.zip"))
+      .set("X-Total-De-Partes", "3")
+      .send(Buffer.from("parte-1"));
+    expect(inicio.status).toBe(201);
+    const id = inicio.body.id as number;
+    const parte = (n: number, corpo: string) =>
+      request(servidor).put(`/api/admin/lesson-files/${id}/partes/${n}`).set("Cookie", admin).set("Content-Type", "application/octet-stream").send(Buffer.from(corpo));
+
+    expect((await parte(2, "parte-2")).status).toBe(200);
+    enviarArquivoDaAula.mockClear();
+    const repetida = await parte(2, "parte-2-de-novo");
+    expect(repetida.status).toBe(200);
+    expect(enviarArquivoDaAula).not.toHaveBeenCalled();
+    const depoisDaRepeticao = await prisma.lessonFile.findUniqueOrThrow({ where: { id } });
+    expect(depoisDaRepeticao.partesEnviadas).toBe(2);
+    expect(Number(depoisDaRepeticao.sizeBytes)).toBe("parte-1".length + "parte-2".length);
+
+    expect((await parte(3, "parte-3")).status).toBe(200);
+    enviarArquivoDaAula.mockClear();
+    const sobreOCompleto = await parte(3, "outra-coisa");
+    expect(sobreOCompleto.status).toBe(409);
+    expect(sobreOCompleto.body.error).toBe("ArquivoCompleto");
+    expect(enviarArquivoDaAula).not.toHaveBeenCalled();
+    const pronto = await prisma.lessonFile.findUniqueOrThrow({ where: { id } });
+    expect(pronto.completo).toBe(true);
+    expect(Number(pronto.sizeBytes)).toBe("parte-1".length + "parte-2".length + "parte-3".length);
+  });
+
   it("pular parte (mandar a 3 antes da 2): 400", async () => {
     const inicio = await request(servidor)
       .post(`/api/admin/lessons/${aulaId}/files`)

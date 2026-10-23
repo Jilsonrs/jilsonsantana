@@ -210,10 +210,20 @@ const baseAuth = betterAuth({
  * não houver IP válido). Assim o Better Auth e `limite-de-tentativas.ts` obedecem exatamente à
  * mesma regra, e um `x-forwarded-for` forjado pelo visitante nunca derruba a resolução do IP.
  */
+let avisouLoginSemIp = false;
+
 function pedidoComIpDoPorteiro(pedido: Request): Request {
   const ip = ipDoPedido(pedido.headers.get(CABECALHO_DO_IP));
   if (ip) pedido.headers.set(CABECALHO_DO_IP, ip);
-  else pedido.headers.delete(CABECALHO_DO_IP);
+  else {
+    pedido.headers.delete(CABECALHO_DO_IP);
+    // Sem IP, o Better Auth junta todo mundo num balde só (três erros de qualquer pessoa travam o
+    // login da escola) e avisa só no log. Aqui vira alerta, uma vez (revisão de segurança da G2).
+    if (process.env.NODE_ENV === "production" && !avisouLoginSemIp) {
+      avisouLoginSemIp = true;
+      console.error(`[api] login: pedido sem um ${CABECALHO_DO_IP} válido — o limite do login juntou todos num balde só (a frente do Cloud Run mudou o cabeçalho?)`);
+    }
+  }
   return pedido;
 }
 

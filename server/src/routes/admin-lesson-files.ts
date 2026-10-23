@@ -157,6 +157,22 @@ router.put("/admin/lesson-files/:id/partes/:parte", requireAdmin, async (req, re
     res.status(400).json({ error: "ParteInvalida" });
     return;
   }
+  // O arquivo pronto não se reescreve: trocar uma parte dele mudaria os bytes sem mudar o
+  // tamanho gravado, e o download do aluno mandaria um Content-Length falso (revisão de
+  // segurança da G2, 22/10/2026).
+  if (arquivo.completo) {
+    req.resume();
+    res.status(409).json({ error: "ArquivoCompleto" });
+    return;
+  }
+  // A parte que já chegou não se envia de novo: é a repetição de quem não ouviu a resposta
+  // (a rede caiu depois de gravar). Responde o estado de hoje, sem tocar no Bunny.
+  if (parte <= arquivo.partesEnviadas) {
+    req.resume();
+    const { id: fileId, originalName, sizeBytes, createdAt } = arquivo;
+    res.json(paraTela({ id: fileId, originalName, sizeBytes, createdAt }));
+    return;
+  }
   if (!req.is("application/octet-stream")) {
     res.status(400).json({ error: "EnvioInvalido" });
     return;
@@ -178,18 +194,18 @@ router.put("/admin/lesson-files/:id/partes/:parte", requireAdmin, async (req, re
     return;
   }
 
-  const novaParte = parte === arquivo.partesEnviadas + 1;
-  const partesEnviadas = novaParte ? parte : arquivo.partesEnviadas;
-  const atualizado = await prisma.lessonFile.update({
-    where: { id },
-    data: {
-      sizeBytes: novaParte ? arquivo.sizeBytes + BigInt(tamanho) : arquivo.sizeBytes,
-      partesEnviadas,
-      completo: partesEnviadas === arquivo.partes,
-    },
-    select: campos,
+  // Conta a parte UMA vez, mesmo com dois pedidos iguais correndo juntos (a repetição de rede
+  // chega antes de o primeiro terminar): só soma quem ainda vê o número anterior.
+  const contada = await prisma.lessonFile.updateMany({
+    where: { id, partesEnviadas: parte - 1 },
+    data: { partesEnviadas: parte, sizeBytes: { increment: BigInt(tamanho) }, completo: parte === arquivo.partes },
   });
-  res.json(paraTela(atualizado));
+  const atual = await prisma.lessonFile.findUnique({ where: { id }, select: campos });
+  if (contada.count === 0 || !atual) {
+    res.status(409).json({ error: "Ocupada" });
+    return;
+  }
+  res.json(paraTela(atual));
 });
 
 // DELETE /api/admin/lesson-files/:id — apaga todas as partes no Bunny e depois
