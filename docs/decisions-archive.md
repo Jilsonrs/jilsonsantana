@@ -228,6 +228,12 @@ no `CLAUDE.md`; quando forem substituídas por entradas mais novas, descem para 
 *(c) **O que NÃO mudou:** preço, assinatura, cliente e conta continuam sem vir do site, em toda rota de cobrança; a exceção é só o valor mostrado da troca de plano.*
 *(d) **GATILHO DE REABERTURA:** a escola ligar imposto na fatura (etapa 4.8) ou passar a vender um plano mensal bem mais caro — os dois mudam a conta do crédito e a folga —; ou os números mostrarem que o valor cheio na hora afasta quem trocaria de plano (aí a conta proporcional até o aniversário volta a ser opção).*
 
+*Atualizado Out 2026 (26) — **AS ETAPAS FECHADAS DE UMA FASE LONGA DESCEM PARA O `build-history.md` EM CONJUNTOS DE 3 OU 4, sem esperar a fase fechar. Decisão do operador, 11/10/2026 (*"vai movendo no momento certo […] no final de uma fase ou um conjunto 3, 4"*). Amplia a regra de rotação, que só movia a fase inteira.** Detalhe: *Arquivos de memória* → ROTAÇÃO.*
+*(a) **O motivo:** as fases 3 e 4 nunca fecham por inteiro, e o plano chegou a 570 KB — ler um item só (o 4.6) custava 71 KB. Arquivo novo não foi preciso: o `build-history.md` já existia para isso.*
+*(b) **O que NÃO mudou:** checkbox solto não se move, etapa em andamento não se move, e o movimento continua sem perda (chega inteiro ao destino antes de sair da origem).*
+*(c) **Ao fechar a fase** (condição dele, no mesmo dia): as etapas que desceram antes e as que chegam com o fechamento se juntam numa seção só, em ordem — o histórico tem que continuar útil para consulta.*
+*(d) **GATILHO DE REABERTURA:** o título que fica no plano passar a esconder contexto de que a etapa seguinte precisa — uma sessão refazer, ou contradizer, algo que estava numa etapa movida.*
+
 ---
 
 ## Registros de pesquisa — o porquê de uma decisão, guardado inteiro

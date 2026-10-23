@@ -1,0 +1,18 @@
+# Configurações não-secretas do serviço de produção no Google Cloud Run (Bloco G).
+# Formato YAML — é o que o `--env-vars-file` do gcloud lê (o formato CHAVE=valor faria a
+# publicação falhar). Chave nenhuma vive aqui: segredos moram no Secret Manager (CLAUDE.md).
+
+NODE_ENV: "production"
+# PORT NÃO entra aqui: é reservado pelo Cloud Run, que o define sozinho (8080) e recusa a
+# publicação se ele aparecer; o servidor já lê process.env.PORT.
+BETTER_AUTH_URL: "https://www.jilsonsantana.com"
+# O endereço do site nas páginas públicas (canonical, Open Graph, sitemap) — server/src/routes/home.ts.
+BASE_URL: "https://www.jilsonsantana.com"
+COMING_SOON: "true"
+BUNNY_STREAM_LESSONS_LIBRARY_ID: "762605"
+BUNNY_STREAM_LESSONS_CDN_HOST: "vz-0925232d-209.b-cdn.net"
+BUNNY_STORAGE_ZONE: "jilsonsantana-storage"
+BUNNY_STORAGE_HOST: "br.storage.bunnycdn.com"
+BUNNY_IMG_BASE_URL: "https://img.jilsonsantana.com"
+BUNNY_FILES_STORAGE_ZONE: "jilsonsantana-arquivos"
+BUNNY_FILES_STORAGE_HOST: "br.storage.bunnycdn.com"

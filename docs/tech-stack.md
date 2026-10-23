@@ -44,10 +44,10 @@
 
 ## Database
 
-- **Neon (PostgreSQL serverless)** — projeto `falling-snow-79489296` (`jilsonsantana-prod`), região **aws-us-east-2**, **PostgreSQL 18.6**. Plano **Free** hoje; custo **US$ 0**. *(Migrado do Supabase em Set 2026 — o porquê, a verificação e os gatilhos estão no changelog do `CLAUDE.md`, entrada (15).)*
-- **UM projeto, DOIS branches — não dois projetos.** `production` (endpoint `ep-still-breeze-aebrui0f`) = **produção**, alcançável só pelo Railway · `dev` (endpoint `ep-lingering-morning-aehqd81z`) = **dev / a escola**, nunca apagado. O banco de **teste** é local (ver *Testing*). **Isto é o que derrubou o custo:** no Supabase o 2º ambiente era um 2º projeto (US$ 10/mês no plano pago); aqui é um branch copy-on-write, que custa ~zero e nasce com os dados do pai.
+- **Neon (PostgreSQL serverless)** — projeto `rough-meadow-05608403` (`jilsonsantana-prod`), região **aws-us-east-1** (N. Virginia), **PostgreSQL 18**. **Plano pago, por uso** *(o operador, Out 2026: a mesma configuração do grátis, sem o limite de restauração — **7 dias** em vez de 6 horas; até 22/10, 2,36 horas de processamento e US$ 0,25)*. *(Migrado do Supabase em Set 2026 — o porquê, a verificação e os gatilhos estão no changelog do `CLAUDE.md`, entrada (15); movido de Ohio `falling-snow-79489296` para a Virgínia em 22/10/2026, etapa G1b.)*
+- **UM projeto, DOIS branches — não dois projetos.** `production` (endpoint `ep-muddy-hill-b8oromcw`) = **produção**, alcançável só pelo Cloud Run · `dev` (endpoint `ep-soft-base-b8waj57h`) = **dev / a escola**, nunca apagado. O banco de **teste** é local (ver *Testing*). **Isto é o que derrubou o custo:** no Supabase o 2º ambiente era um 2º projeto (US$ 10/mês no plano pago); aqui é um branch copy-on-write, que custa ~zero e nasce com os dados do pai.
 - **Branch é isolado em DADOS, não em CREDENCIAL.** Branch novo herda a senha da role do pai — rotacionar antes de usar. Regra e o incidente que a produziu: `CLAUDE.md` → Database & Migrations.
-- **REGIÃO us-east-2, e não recriar projeto por causa disso.** A latência extra pro Brasil (~150 ms por query) **não é o gargalo**: o **vídeo** domina o tempo do aluno e vem do **Bunny com PoP local**, e a meta de carregamento é **< 3 s** — 0,15 s é **5%** desse orçamento. Consultas em **paralelo** não somam latência; o que custa é consulta em **cascata**, e isso é **decisão de código, não de região**. *Gatilho de reabertura: reclamação real de lentidão de aluno, **OU** outro motivo que exija recriar o projeto.*
+- **REGIÃO aws-us-east-1 (N. Virginia), movida de us-east-2 (Ohio) em 22/10/2026 (etapa G1b).** Em Set 2026 o projeto nasceu em `aws-us-east-2` com o gatilho de só recriar quando houvesse *"outro motivo que exija recriar o projeto"*. Na saída da Railway para o Google Cloud Run (`us-east1`, junto da costa leste e do Bunny em NY), o operador decidiu trazer o banco para **aws-us-east-1** via *Import Data Assistant* (zero alunos no ar, cópia conferida tabela por tabela e sequência por sequência), deixando aplicação e banco na mesma região. A análise original continua válida: a latência de rede não é o gargalo perto do vídeo (Bunny com PoP local) nem do cold start.
 - **O que come o orçamento de 3 s não é a região — é o COLD START.** `[FATO — Set 2026, medido em produção: COLD **1,544 s**, warm **~0,377 s** ⇒ acordar o compute ≈ **1,2 s**; autosuspend em ~5 min de ociosidade.]` Ou seja: **~8× o custo da região.** Otimizar região ou cascata de query antes de considerar o cold start é olhar para o lugar errado. O número acima é da **chamada de API**; página completa soma assets em cima. Detalhe e gatilho: `CLAUDE.md` → changelog (15), item (i).
 - Accessed **only via Prisma** through `DATABASE_URL` (pooled) / `DIRECT_URL` (direta). As duas **mudam juntas** — ver `CLAUDE.md`.
 - **RLS convention:** every `public` table has Row Level Security ENABLED (without policies) in the same migration that creates it. Prisma conecta como a role dona e é o único acessor. **O alvo mudou de fornecedor:** era a Data API do Supabase, agora é a **Data API do Neon** (aba do diálogo *Connect*, hoje desligada). Verificação após cada migration de DDL = **SQL sobre `pg_class.relrowsecurity`**, não o `get_advisors` do MCP do Supabase, que não existe aqui. NOT used: Neon Auth, Data API, Storage.
@@ -91,8 +91,8 @@
   [`docs/bunny.md`](bunny.md). **Enterprise DRM fica fora do lançamento**: são US$ 99/mês fixos
   por biblioteca *(doc do Bunny, 25/09/2026)*.
 - **Arquivos enviados pelo site (foto do aluno etc.): Bunny Storage + Pull Zone** *(decisão do
-  operador, 25/09/2026)*, servidos em `img.jilsonsantana.com`. Nunca no disco do container da
-  Railway, que é zerado a cada publicação. Configuração e estado: `bunny.md` §4.
+  operador, 25/09/2026)*, servidos em `img.jilsonsantana.com`. Nunca no disco do container do
+  Cloud Run, que é efêmero e zerado a cada reinício ou publicação. Configuração e estado: `bunny.md` §4.
 
 ## AI (JilsonAI)
 
@@ -111,7 +111,7 @@
   - **Configuração no Resend (20/10/2026):** domínio `alunos.jilsonsantana.com`, região **São Paulo** (`sa-east-1`); os registros na GoDaddy foram postos pelo "Auto configure" (`resend._domainkey.alunos`, `rsend.alunos`, `send.alunos`) e conferidos na internet, com os da Microsoft intactos; **DMARC:** `v=DMARC1; p=none;` em `_dmarc.jilsonsantana.com` (o domínio principal, que é o do e-mail da Microsoft: só declara, não bloqueia nada) e **`v=DMARC1; p=quarantine;` em `_dmarc.alunos.jilsonsantana.com`** (21/10/2026, ok do operador: o que disser vir do subdomínio da escola e não passar na assinatura vai para o spam — só o Resend envia por ali, e ele passa; não toca no e-mail da Microsoft, e **ninguém responde aluno de um endereço `@alunos`**); **rastreamento de abertura e de clique DESLIGADO** (trocar o link de um e-mail de senha por um endereço do Resend só aumenta o risco de spam); TLS *Opportunistic* ("Enforced" deixaria sem e-mail quem usa servidor antigo); recebimento pelo Resend desligado (a resposta vai para a Microsoft). *Gatilho do DMARC do domínio principal: endurecer para `quarantine` quando houver volume e os relatórios mostrarem que só a Microsoft (e o Resend, pelo subdomínio) enviam pelo domínio.*
   - **A entrega, MEDIDA com o e-mail de prova (20–21/10/2026):** iCloud → caixa de entrada; Yahoo → lixo eletrônico; Microsoft 365 da empresa do operador → quarentena (`CAT:HPHISH`, SCL 8) **com SPF, DKIM, DMARC e compauth todos `pass`** — a configuração está certa; pesam o domínio criado no mesmo dia e, nos testes, o remetente com o nome do próprio destinatário; mail-tester **10/10** (sem lista de bloqueio, conteúdo aprovado). **Trocar o Resend pela AWS não muda nada:** o Resend envia pelo Amazon SES (o cabeçalho mostra `smtp-out.sa-east-1.amazonses.com` e uma assinatura `d=amazonses.com`). O que falta é **reputação do domínio novo**: o aquecimento e o novo teste ficam no plano → etapa 4.7, passo 8.
   - **Sem `List-Unsubscribe` nos e-mails de serviço** (criar senha, cobrança): ele é obrigatório em e-mail de **divulgação** em massa, e um "cancelar inscrição" no e-mail de senha não faz sentido. *Entra junto com o primeiro e-mail de novidades ou promoção da escola.*
-  - **Uma chave por ambiente**, só com permissão de **envio** e só para o domínio. A de desenvolvimento está no `server/.env`; **a de produção nasce no dia de publicar** e vai direto para a Railway (`RESEND_API_KEY`) — ela só aparece uma vez, e pô-la antes publicaria o site sem necessidade. Teste e CI não têm chave: o envio é testado com a rede trocada por dublê (`email-rede.test.ts`).
+  - **Uma chave por ambiente**, só com permissão de **envio** e só para o domínio. A de desenvolvimento está no `server/.env`; **a de produção nasce no dia de publicar** e vai direto para o Secret Manager do Google Cloud (`RESEND_API_KEY`) — ela só aparece uma vez, e pô-la antes publicaria o site sem necessidade. Teste e CI não têm chave: o envio é testado com a rede trocada por dublê (`email-rede.test.ts`).
     **Como pôr a chave no `server/.env` sem abri-lo no editor** (arquivo aberto no VS Code vai para o contexto do agente — `CLAUDE.md` → Secrets), no terminal, da raiz do repo: `read -s "K?Cole a chave do Resend e aperte Enter: " && printf '\nRESEND_API_KEY=%s\n' "$K" >> server/.env && unset K && echo ok` — a chave não aparece na tela nem fica no histórico.
 
 ## Certificates
@@ -138,10 +138,79 @@
 ## Deployment & CI
 
 - **Docker** — multi-stage build (client + server)
-- **Railway** — hosting; auto-deploy on push to `main` (railway.toml + Dockerfile). Health check at `/api/health`.
+- **Google Cloud Run** — hosting (região `us-east4`, plano → *Bloco G*; decisão do operador, 21/10/2026). A Railway saiu em 21/10/2026 após incidente de segurança dela. O serviço roda contêiner Docker (Node.js/Express) com `min-instances 1`, `max-instances 1`, timeout de 3600 s e variáveis protegidas no Secret Manager e `deploy/cloud-run.yaml`. Health check at `/api/health`.
 - **GitHub Actions** — `npm ci` + build do core + typecheck (client/server) + **`Lint`** + **`Test client`** + **`Test server`** + build (client/server) + `npm audit` informativo.
 - **ESLint + typescript-eslint** (dependências de desenvolvimento, fixadas em `10.11.0` e `8.70.1`; etapa 4.5, 10/10/2026) — **três regras e só elas**: a tarefa disparada e não esperada (`no-floating-promises`, sem aceitar `void`), a função assíncrona onde ninguém espera (`no-misused-promises`) e o `any` (`no-explicit-any`). A falha que impedem: a promessa rejeitada sem tratamento que derruba o servidor, e que nenhum teste percebe. No site vale só a do `any`. Não vão para a imagem de produção. *Reabre para acrescentar regra só com uma falha descritível em uma frase; pacote pronto de regras fica fora.* *(A frase antiga aqui — "não roda teste e não roda lint" — ficou obsoleta em duas etapas: o Bloco 0 da Fase 3 ligou o teste de client e apagou o `lint`, e a fatia do `globalSetup` ligou o de servidor. Não há ESLint no repo; o nome `lint` segue livre.)* O step de servidor **não precisa de secret nenhum** desde Ago 2026: o banco é um **service container `postgres:17`** em `localhost`, e todo segredo do run (`BETTER_AUTH_SECRET`, senhas de seed) é gerado no próprio job — o `globalSetup` reseta o banco a cada execução, então nada precisa sobreviver. *(Antes eram dois secrets, `TEST_DATABASE_URL` e `TEST_DIRECT_URL`, apontando para um banco de nuvem; saíram junto com a mudança para banco local — connection string de nuvem em secret é superfície, `localhost` não é segredo.)* Claude code review on PRs: pendente.
 - **Monitor de erro em produção** — **Sentry, no plano grátis** *(decisão do operador, 10/10/2026; **no servidor desde 10/10/2026**, ligado em produção — as telas do aluno são a parte 2, ainda não feita. Reabre se o plano grátis deixar de dar conta: aí se compara com outro serviço antes de pagar)*. **O plano grátis, pela página de preços que o operador conferiu em 10/10/2026:** 1 usuário, 5 mil erros por mês, alerta por e-mail, 30 dias de histórico. **O pago (Team, US$ 29/mês; US$ 26 no anual) só passa a valer quando acontecer uma destas três coisas:** uma segunda pessoa precisar entrar no painel · os 5 mil erros do mês acabarem mesmo com os filtros ligados (no grátis, o que passa do limite deixa de ser registrado até o mês virar — confirmar ao criar a conta) · ser preciso olhar um erro com mais de 30 dias. **Conta criada pelo operador em 10/10/2026** (organização `jilson-santana`), com o primeiro projeto para o servidor (Express) e só o monitoramento de erros marcado; a tela diz que o volume é ilimitado por 14 dias e depois valem os limites do grátis, sem cartão. **Instalado no SERVIDOR em 10/10/2026:** `@sentry/node` fixada em `10.75.3` (a linha 10, madura e com 21 pacotes; a 11 tinha 17 dias e 42 — medido), atrás de um arquivo só (`server/src/lib/monitor.ts`). Vira alerta a linha de erro com etiqueta nossa e o que derrubaria o processo; não sai cabeçalho, cookie, corpo, usuário, IP nem rastro anterior, e e-mail, chave e segredo num texto são mascarados; no máximo 30 envios em 10 minutos e 150 por dia, para um defeito repetido não gastar a cota. Sem medição de desempenho. Liga só em produção, com `SENTRY_DSN`. **Monitor de site fora do ar** (o único do plano grátis) criado pelo operador em 10/10/2026: "Site online", a cada 1 minuto em `/api/health`, com aviso depois de 3 falhas seguidas. **As regras de e-mail no painel (operador, 10/10/2026):** "Erro novo no servidor" — problema novo, que piora ou que volta, com nível de erro ou maior, e-mail direto para ele (o aviso de "no ar" de cada publicação é informativo e não vira e-mail) — e a regra de fábrica, para o que o Sentry marca como alta prioridade (é a que cobre o site fora do ar), com "todos os membros do projeto" como destinatário de reserva. Os dois e-mails de teste chegaram. **Falta a parte 2, as telas do aluno** (com a medição do peso no carregamento). *Reabre a escolha da versão quando a linha 10 parar de receber correção, ou com a 11 madura.* Não é opcional: é pré-requisito do primeiro aluno pagante (`implementation-plan.md` → Fase 7).
+
+### Google Cloud — o que a escola usa, e o mapa do que pode contratar depois *(22/10/2026)*
+
+> **Pedido do operador (22/10/2026):** *"não quero pagar pelo que não é necessário nem deixar de
+> utilizar o que pode ser importante no futuro […] quando eu falar num chat sobre Google Cloud e os
+> recursos que ainda podem ser contratados, apareçam as opções"*. **Regra dele para a conta:** só o
+> necessário — o crédito de R$ 1.779 vence em 20/01/2027, e o que for ligado "para testar" vira
+> conta depois. **Quem propõe ligar um recurso daqui traz o gatilho cumprido**, não "seria bom ter".
+> Preço marcado `[medido]` foi lido na página do Google na data; `[a conferir]` é ordem de grandeza —
+> confira no painel antes de orçar (`CLAUDE.md` → *Costs*: preço de fornecedor envelhece).
+
+**O que a Railway tinha, e o que temos no Google sem pagar a mais:** a Railway tinha uma **borda**
+dela (o endereço, o certificado e o encaminhamento até o servidor), incluída no preço, sem proteção
+contra ataque nem cache de página. **No Google, o equivalente incluído é a frente do Cloud Run com o
+mapeamento de domínio** — o mesmo nível. O **balanceador** não é o que a Railway tinha: é um degrau
+acima (proteção, cache, certificado próprio), e por isso é opcional.
+
+**EM USO (Bloco G):**
+
+| Recurso | Para quê | Custo |
+|---|---|---|
+| Cloud Run (serviço) | o site: o contêiner da aplicação | ligado, esperando: **2 processadores e 2 GB enquanto durar o crédito** (~US$ 26/mês), depois 1 processador e 512 MB (~US$ 10/mês) `[medido 22/10]` — P104 |
+| Cloud Run (Job) | as migrations, antes de cada publicação | centavos (roda segundos por publicação) |
+| Mapeamento de domínio | `www.jilsonsantana.com` e o domínio sem "www" | grátis (em *Preview*) |
+| Secret Manager | o cofre das 13 chaves | 6 grátis; ~US$ 0,06/mês cada outra `[medido 22/10]` |
+| Artifact Registry | as versões montadas do site (só as últimas) | cota grátis pequena `[a conferir]` |
+| IAM + Workload Identity Federation | quem pode o quê; o GitHub publica sem chave guardada | grátis |
+| Cloud Logging | os registros do servidor | cota grátis mensal `[a conferir]` |
+| Orçamento e alertas | o aviso de gasto (R$ 100/mês) | grátis |
+
+**O MAPA — o que pode servir à escola, e QUANDO** *(ordenado pelo que deve chegar primeiro)*:
+
+| Recurso | O que faz pela escola | Quando ligar (o gatilho) | Custo |
+|---|---|---|---|
+| **Cloud Storage + Cloud Scheduler** (cópia do banco) | um `pg_dump` noturno do banco, guardado fora do Neon — a cópia fria que a Fase 7 pede e que hoje não existe | **antes do primeiro aluno pagante** (Fase 7) | centavos por mês `[a conferir]` |
+| **Cloud Scheduler** (tarefas com hora marcada) | e-mail com data marcada, como o "aviso antes de trancar" do passo 7 da etapa 4.7 — hoje a escola não tem agendador | quando o passo 7 precisar de envio com hora marcada | algumas tarefas grátis por conta `[a conferir]` |
+| **Uptime check** (Cloud Monitoring) | testa o site a cada minuto e manda e-mail se ele cair — o Sentry só vê erro de quem chegou ao servidor | barato e útil já; ligar na abertura ao público (passo 8 da 4.7) | cota grátis `[a conferir]` |
+| **Mais processador e memória** no Cloud Run | página mais rápida sob carga | o painel do Cloud Run mostrar processador acima de ~70% por bastante tempo, ou o tempo de resposta subindo | linear: 1 → 2 processadores e 2 GB ≈ US$ 26/mês parado `[medido 22/10]` |
+| **Mais de uma instância** | atender muita gente ao mesmo tempo | um servidor não der conta — **antes**, os contadores em memória (limite de tentativas, cache do dicionário) vão para o banco | o dobro por instância a mais |
+| **Balanceador** (Application Load Balancer) | o caminho que o Google recomenda para produção; necessário para os três itens abaixo | a escola ter receita que o pague, ou atraso medido no mapeamento | ~US$ 18/mês + US$ 0,008/GiB `[medido 21/10]` |
+| **Cloud Armor** (exige o balanceador) | barra ataque e robô antes de chegar ao site; limite de pedidos na borda | ataque medido (enxurrada de pedidos, teste de cartão em massa) | dezenas de US$/mês `[a conferir]` |
+| **Cloud CDN** (exige o balanceador) | guarda as páginas públicas perto do visitante | tráfego da vitrine crescer; o vídeo e as imagens já vêm do Bunny, perto do aluno | por GB `[a conferir]` |
+| **reCAPTCHA** | prova que é gente no "assinar sem login" | teste de cartão ou cadastro por robô medido na tela pública | cota grátis mensal `[a conferir]` |
+| **Gemini (Vertex AI ou API)** | a segunda IA do JilsonAI (a primeira é a Claude) — sempre atrás do `llm.complete()` | Fase 6 (JilsonAI) | por uso `[a conferir]` |
+| **Cloud Tasks ou Pub/Sub** (fila) | trabalho demorado que tenta de novo sozinho | JilsonAI Fases 4–5 (o gatilho de volta da fila, `CLAUDE.md` → *Background Jobs*) | centavos `[a conferir]` |
+| **Speech-to-Text** | transcrever as aulas para a base do JilsonAI | JilsonAI Fases 4–5 — conferir antes se o próprio Bunny já transcreve | por minuto de áudio `[a conferir]` |
+| **BigQuery + Looker Studio** | relatórios de estudo (horas assistidas, onde o aluno desiste) sobre os `LessonEvent` | quando o Postgres não der conta das análises (a convenção de *Analytics*: leitura em módulo à parte) | cota grátis mensal `[a conferir]` |
+| **Error Reporting** | erros agrupados, sem o Sentry | só se o plano grátis do Sentry não bastar | grátis `[a conferir]` |
+| **Memorystore (Redis)** | memória compartilhada entre instâncias | mais de uma instância **e** o banco lento para os contadores | dezenas de US$/mês `[a conferir]` |
+| **Cloud DNS** | o domínio sair da GoDaddy | se a GoDaddy atrapalhar; não há ganho hoje | centavos `[a conferir]` |
+
+**O QUE NÃO SE LIGA, mesmo existindo no Google:**
+- **Cloud SQL / AlloyDB** (banco no Google): o Neon atende, custa centavos, **desliga sozinho quando ninguém usa** e tem o branch de dev (cópia instantânea). O Cloud SQL fica sempre ligado (parado à mão, não liga sozinho) e cada cópia é um banco pago à parte. *Pergunta do operador (22/10/2026, sem alunos ainda): "ficar tudo num lugar só evitaria migrar com a escola funcionando". Resposta registrada:* trocar o banco depois não mexe no código (o Prisma fala com qualquer Postgres) — é copiar os dados e trocar as duas ligações no cofre, numa janela de minutos. *Gatilho: problema no Neon, ou o operador decidir juntar tudo num fornecedor.*
+- **O Neon dentro do Google: não existe** `[FATO — Neon, lista de regiões da conta, 22/10/2026: só AWS e Azure]`. **DECIDIDO (operador, 22/10/2026): o projeto do Neon vai para a AWS da Virgínia** (`aws-us-east-1`), vizinha do `us-east4` do Google — *"é mais perto, e a AWS também é confiável; se um dia eu tiver problema com a Neon, mudamos para o Google"*. Plano → Bloco G, etapa G1b. *Gatilho: problema com o Neon → Cloud SQL.*
+- **Identity Platform / Firebase Auth**: a identidade é nossa, no Better Auth (`CLAUDE.md` → *Tech Stack*). Sem gatilho: arquitetural.
+- **Firebase Hosting** na frente do site: só repassa ao servidor o cookie `__session` `[conhecido, não conferido]`, o que derrubaria o login.
+- **Cloud Build**: a imagem se monta no GitHub Actions. *Gatilho: os minutos do GitHub acabarem.*
+- **Processador cheio o tempo todo** (cobrança por instância, ~US$ 45/mês): o "ligado, esperando" já tira a espera. *Gatilho: trabalho em segundo plano entre pedidos.*
+
+**DESEMPENHO — para quem vem de hospedagem compartilhada e VPS:** o serviço "ligado, esperando" com
+1 processador e 512 MB equivale a um **VPS pequeno, só para a escola** — o mesmo tamanho de uso
+antes planejado. O que pesa na página não é o tamanho: é a **distância** (o servidor fica na
+Virgínia, perto do banco em Ohio; o aluno no Brasil soma ~0,1 s por pedido) e o **banco** (cada
+consulta Virgínia → Ohio leva milissegundos). O pesado — vídeo e imagens — já sai do Bunny, com
+servidor no Brasil. **Subir de desempenho é uma configuração**, aplicada numa publicação nova sem
+tirar o site do ar, em cerca de um minuto, e volta atrás do mesmo jeito: processador (1, 2, 4…) e
+memória (512 MB, 1 GB, 2 GB…). **O sinal para subir** está no painel do Cloud Run (processador,
+memória e tempo de resposta). A única mudança que precisa de código antes é ter **mais de uma
+instância** (os contadores em memória).
 
 ## AI-Assisted Dev (quality gates)
 
@@ -155,7 +224,7 @@
 ## Public Surface (SEO)
 
 - **Rotas públicas = HTML montado no servidor** (Express + template + Tailwind, **sem React**). O app privado (`/aluno/*`, `/admin/*`) continua React SPA. Lista de rotas, trava do conteúdo-atrás-de-interação e política de `robots.txt`: `CLAUDE.md` → **Rendering Boundary**.
-- **Nenhum provedor muda por causa disto.** Railway, Neon, Bunny, Stripe e Resend seguem. Registrado de propósito: *"vamos fazer certo"* é o clima em que se troca infraestrutura que estava boa. Nada se troca sem uma falha nomeável. *(A troca Supabase → Neon em Set 2026 foi decisão do operador, não um caso de "melhorar por melhorar" — está no changelog do `CLAUDE.md`, entrada (15).)*
+- **Nenhum provedor muda por causa disto.** Google Cloud, Neon, Bunny, Stripe e Resend seguem. Registrado de propósito: *"vamos fazer certo"* é o clima em que se troca infraestrutura que estava boa. Nada se troca sem uma falha nomeável. *(A troca Supabase → Neon em Set 2026 foi decisão do operador, não um caso de "melhorar por melhorar" — está no changelog do `CLAUDE.md`, entrada (15).)*
 - **Google Search Console** — conectar **agora** (a verificação demora e queremos histórico desde o dia um), mas **só produz dado ~30–60 dias depois do catálogo ir ao ar**. GSC mede **o nosso** desempenho no que já existe; ele **não substitui** ferramenta de pesquisa de mercado (volume, dificuldade de termo, tráfego de concorrente), que responde perguntas de **antes** de existir site.
 
 ## What We Do NOT Use (and why)

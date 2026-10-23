@@ -69,7 +69,7 @@ const novoEmail = () => `visitante-${++n}-${S}@teste.local`;
 type NaStripe = AssinaturaNoCheckout & { cliente: string };
 let naStripe: NaStripe[] = [];
 
-const assinar = (corpo: object, endereco = "198.51.100.20") => request(servidor).post("/api/billing/visitante/assinatura").set("x-real-ip", endereco).send(corpo);
+const assinar = (corpo: object, endereco = "198.51.100.20") => request(servidor).post("/api/billing/visitante/assinatura").set("x-forwarded-for", endereco).send(corpo);
 const confirmar = (tentativa: unknown) => request(servidor).post("/api/billing/visitante/confirmacao").send({ tentativa });
 const pedido = (email: string, extra: object = {}) => ({ email, documento: CPF, plano: "mensal", novidades: false, ...extra });
 const ficha = (email: string) => prisma.guestCheckout.findUnique({ where: { email: email.toLowerCase() } });
@@ -146,11 +146,11 @@ describe("fora do ar no site até o dia de abrir (passo 8)", () => {
     try {
       const email = novoEmail();
       const respostas = [
-        await request(servidor).get("/api/billing/visitante/planos").set("x-real-ip", "198.51.100.30"),
-        await request(servidor).post("/api/billing/visitante/previa").set("x-real-ip", "198.51.100.30").send({ plano: "mensal", codigo: "X" }),
+        await request(servidor).get("/api/billing/visitante/planos").set("x-forwarded-for", "198.51.100.30"),
+        await request(servidor).post("/api/billing/visitante/previa").set("x-forwarded-for", "198.51.100.30").send({ plano: "mensal", codigo: "X" }),
         await assinar(pedido(email), "198.51.100.30"),
         await confirmar("qualquer"),
-        await request(servidor).post("/api/billing/visitante/senha").set("x-real-ip", "198.51.100.30").send({ tentativa: "qualquer", senha: "senha-qualquer-1" }),
+        await request(servidor).post("/api/billing/visitante/senha").set("x-forwarded-for", "198.51.100.30").send({ tentativa: "qualquer", senha: "senha-qualquer-1" }),
       ];
       expect(respostas.map((r) => [r.status, r.body])).toEqual(Array(5).fill([404, { error: "NaoEncontrado" }]));
       expect(buscarPrecos).not.toHaveBeenCalled();
@@ -159,7 +159,7 @@ describe("fora do ar no site até o dia de abrir (passo 8)", () => {
 
       // Ligada a chave, a mesma rota responde.
       process.env.ASSINAR_SEM_LOGIN = "true";
-      expect((await request(servidor).get("/api/billing/visitante/planos").set("x-real-ip", "198.51.100.30")).status).toBe(200);
+      expect((await request(servidor).get("/api/billing/visitante/planos").set("x-forwarded-for", "198.51.100.30")).status).toBe(200);
     } finally {
       // `process.env.X = undefined` gravaria o TEXTO "undefined": devolve o valor, ou apaga.
       if (antes.NODE_ENV === undefined) delete process.env.NODE_ENV;
@@ -170,7 +170,7 @@ describe("fora do ar no site até o dia de abrir (passo 8)", () => {
 });
 
 describe("em produção, sem o endereço de quem pede", () => {
-  // DA REVISÃO DE SEGURANÇA DO PASSO (21/10/2026): com login, o pedido sem `x-real-ip` não conta por
+  // DA REVISÃO DE SEGURANÇA DO PASSO (21/10/2026): com login, o pedido sem `x-forwarded-for` válido não conta por
   // endereço porque o teto da CONTA continua (passo 1). Sem login não há conta: não contar deixaria
   // as rotas sem limite nenhum. Contam todos juntos, numa contagem só — e o alerta de sempre.
   it("as rotas sem login contam todos juntos (o 21º pedido de prévia, de quem for, é recusado) — e o alerta sai uma vez", async () => {
@@ -181,7 +181,7 @@ describe("em produção, sem o endereço de quem pede", () => {
       const previa = () => request(servidor).post("/api/billing/visitante/previa").send({ plano: "mensal", codigo: "ADIVINHA" });
       for (let i = 0; i < 20; i++) expect((await previa()).status, `prévia ${i + 1}`).toBe(200);
       expect((await previa()).status).toBe(429);
-      expect(alerta.mock.calls.filter(([linha]) => String(linha).includes("x-real-ip")).length).toBe(1);
+      expect(alerta.mock.calls.filter(([linha]) => String(linha).includes("x-forwarded-for")).length).toBe(1);
     } finally {
       if (antes.NODE_ENV === undefined) delete process.env.NODE_ENV;
       else process.env.NODE_ENV = antes.NODE_ENV;
@@ -626,7 +626,7 @@ describe("os limites sem login", () => {
   it("o assinar que traz código conta no MESMO teto do dia da prévia (40 conferências por endereço, não 80)", async () => {
     vi.useFakeTimers({ toFake: ["Date"], now: Date.now() });
     const endereco = "198.51.100.75";
-    const previa = () => request(servidor).post("/api/billing/visitante/previa").set("x-real-ip", endereco).send({ plano: "mensal", codigo: "ADIVINHA" });
+    const previa = () => request(servidor).post("/api/billing/visitante/previa").set("x-forwarded-for", endereco).send({ plano: "mensal", codigo: "ADIVINHA" });
     for (let i = 0; i < 20; i++) expect((await previa()).status, `prévia ${i + 1}`).toBe(200);
     vi.setSystemTime(Date.now() + 16 * 60_000);
     for (let i = 0; i < 15; i++) expect((await previa()).status, `prévia ${21 + i}`).toBe(200);
@@ -643,7 +643,7 @@ describe("os limites sem login", () => {
   it("a PRÉVIA do código: 20 a cada 15 minutos e 40 POR DIA por endereço (decisão do operador, 21/10/2026)", async () => {
     expect(LIMITES_DO_VISITANTE.previa.endereco).toEqual({ porJanela: 20, porDia: 40 });
     vi.useFakeTimers({ toFake: ["Date"], now: Date.now() });
-    const previa = () => request(servidor).post("/api/billing/visitante/previa").set("x-real-ip", "198.51.100.70").send({ plano: "mensal", codigo: "ADIVINHA" });
+    const previa = () => request(servidor).post("/api/billing/visitante/previa").set("x-forwarded-for", "198.51.100.70").send({ plano: "mensal", codigo: "ADIVINHA" });
     for (let rodada = 0; rodada < 2; rodada++) {
       for (let i = 0; i < 20; i++) expect((await previa()).status, `rodada ${rodada}, ${i + 1}`).toBe(200);
       expect((await previa()).status, `rodada ${rodada}, a 21ª`).toBe(429);

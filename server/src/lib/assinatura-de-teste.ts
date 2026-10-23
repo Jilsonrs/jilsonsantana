@@ -13,7 +13,7 @@
  */
 const HOSTS_LOCAIS = ["localhost", "127.0.0.1", "::1"];
 /** O endpoint do branch `dev` do Neon (CLAUDE.md → Database & Migrations). */
-const ENDPOINT_DO_BRANCH_DEV = "ep-lingering-morning-aehqd81z";
+const ENDPOINT_DO_BRANCH_DEV = "ep-soft-base-b8waj57h";
 
 export function podeTerAssinaturaDeTeste(url: string | undefined): boolean {
   if (!url) return false;
