@@ -2,7 +2,7 @@ import * as Sentry from "@sentry/node";
 
 // O ALERTA DE ERRO EM PRODUÇÃO (Sentry — decisão do operador, 10/10/2026; plano → Fase 7).
 // Sem isto, a única forma de descobrir um erro no site era o aluno reclamar: a falha ficava
-// numa linha do registro da Railway que ninguém lê. Com isto, ela vira um e-mail.
+// numa linha do registro do servidor que ninguém lê. Com isto, ela vira um e-mail.
 // Este é o ÚNICO arquivo que importa `@sentry/node` (trocar de fornecedor custa um arquivo; há
 // um teste que reprova o import em outro lugar).
 //

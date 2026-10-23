@@ -10,7 +10,7 @@ import { mandarBoasVindasDaAssinatura } from "../lib/boas-vindas.js";
 // aviso e atualiza o espelho (uma transação, uma assinatura de cada vez) → responde 200. Falha
 // no meio → 5xx, e a Stripe entrega de novo.
 // O REGISTRO leva ids e status — nunca o corpo do aviso nem segredo. E nenhuma recusa fica muda
-// (achado P2 da revisão de segurança, 09/10/2026): o segredo ausente ou trocado no Railway
+// (achado P2 da revisão de segurança, 09/10/2026): o segredo ausente ou trocado no Secret Manager
 // recusaria TODO aviso, e só o painel da Stripe mostraria.
 
 const router = Router();

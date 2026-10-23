@@ -43,7 +43,7 @@ import { anotarErroDoSite } from "./lib/erro-do-site.js";
 // nele. Enquanto `index.ts` chamava `app.listen()` no topo do módulo, qualquer
 // import subia um servidor de verdade — o que torna teste de servidor
 // impossível de escrever sem efeito colateral. A entrada de produção continua
-// sendo `dist/index.js`; Dockerfile e Railway não mudam.
+// sendo `dist/index.js`; Dockerfile e deploy não mudam.
 //
 // A checagem de BETTER_AUTH_SECRET em produção NÃO vem para cá de propósito:
 // ela chama `process.exit(1)`, e um import em contexto de teste derrubaria o
@@ -184,7 +184,7 @@ if (process.env.NODE_ENV === "production") {
   // Public visitors see a standalone "Em breve" page; the operator bypasses it
   // by visiting /__preview?token=<PREVIEW_TOKEN> once, which sets a long-lived
   // cookie. Toggled at REQUEST time by the COMING_SOON env var, so launch day
-  // is just flipping the Railway variable (service restart) — no code change.
+  // is just flipping the variable (service restart) — no code change.
 
   // Operator bypass: validate the token, drop the preview cookie, land on the
   // real app. Registered BEFORE the gate (it has no extension, so the gate
@@ -204,7 +204,7 @@ if (process.env.NODE_ENV === "production") {
   });
 
   // The gate sits AFTER the /api routers, so the API (incl. /api/health used by
-  // the Railway healthcheck) is never blocked.
+  // the healthcheck) is never blocked.
   app.use((req, res, next) => {
     if (process.env.COMING_SOON !== "true") return next();
     if (hasPreviewCookie(req)) return next();

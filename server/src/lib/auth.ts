@@ -25,7 +25,7 @@ const prisma = new PrismaClient();
 // Dev-only trusted origins for Better Auth's CSRF check. The browser may reach
 // the Vite client via localhost, 127.0.0.1, or (in a GitHub Codespace) the
 // forwarded HTTPS URL — all distinct origins. None of this runs in production
-// (Railway): there NODE_ENV=production, the client is served same-origin by
+// (Cloud Run): there NODE_ENV=production, the client is served same-origin by
 // Express, and baseURL is trusted implicitly.
 function devOrigins(): string[] {
   if (process.env.NODE_ENV === "production") return [];
@@ -117,8 +117,8 @@ const baseAuth = betterAuth({
   //
   // A dependência não some — ela MUDA de lugar: sai de uma string de painel não
   // versionada para o `ENV NODE_ENV=production` do Dockerfile, que o git enxerga
-  // e o diff revisa. Corolário: NUNCA declarar NODE_ENV nas variáveis do
-  // Railway; variável de serviço sobrepõe o ENV da imagem.
+  // e o diff revisa. Corolário: no Cloud Run, NODE_ENV é mantido em produção pelo
+  // arquivo versionado e pelo Dockerfile.
   advanced: {
     useSecureCookies: process.env.NODE_ENV === "production",
     // DE ONDE vem o IP que o rate-limit usa para separar uma pessoa da outra.

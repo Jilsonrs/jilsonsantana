@@ -1,0 +1,95 @@
+name: Deploy
+
+# A publicação no Google Cloud Run (Bloco G, etapa G2 / G3):
+# - Roda só na `main` e só DEPOIS de o CI terminar com sucesso (verde);
+# - Entra no Google por Workload Identity Federation (WIF), sem chave guardada no GitHub;
+# - Monta a imagem Docker e guarda no Artifact Registry;
+# - Roda as migrations num Cloud Run Job com a mesma imagem (se falhar, não publica);
+# - Só então atualiza o serviço no Cloud Run com a "conta mínima" do plano.
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    branches: ["main"]
+    types: ["completed"]
+
+jobs:
+  deploy:
+    name: Publicar no Google Cloud Run
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # Exigido pelo Workload Identity Federation (WIF)
+
+    steps:
+      - name: Baixar código
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Autenticar no Google Cloud via Workload Identity Federation
+        uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
+
+      - name: Configurar Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Autenticar Docker no Artifact Registry
+        run: |
+          gcloud auth configure-docker ${{ vars.GCP_REGION }}-docker.pkg.dev --quiet
+
+      - name: Configurar Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Montar e enviar imagem para o Artifact Registry
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_ARTIFACT_REPOSITORY }}/app:${{ github.event.workflow_run.head_sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # O PAPEL DO PRE-DEPLOY: roda as migrations num Cloud Run Job com a mesma imagem.
+      # Se a migration falhar (exit code != 0), o step falha, a publicação é abortada
+      # e o serviço em produção NÃO é atualizado.
+      - name: Executar migrations no Cloud Run Job
+        run: |
+          IMAGE="${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_ARTIFACT_REPOSITORY }}/app:${{ github.event.workflow_run.head_sha }}"
+          gcloud run jobs update ${{ vars.GCP_MIGRATE_JOB_NAME }} \
+            --image="$IMAGE" \
+            --region="${{ vars.GCP_REGION }}" \
+            --quiet
+          gcloud run jobs execute ${{ vars.GCP_MIGRATE_JOB_NAME }} \
+            --region="${{ vars.GCP_REGION }}" \
+            --wait \
+            --quiet
+
+      # Só atualiza o serviço se as migrations rodaram com sucesso.
+      # A configuração segue a "conta mínima" do Bloco G:
+      # - região: us-east4
+      # - min-instances: 1, max-instances: 1
+      # - cobrança por pedido: --cpu-throttling
+      # - 2 CPUs e 2 GB enquanto durar o crédito (--cpu=2 --memory=2Gi, P104)
+      # - tempo máximo do pedido: 3600 s (--timeout=3600)
+      # - variáveis não-secretas pelo arquivo versionado deploy/cloud-run.env
+      # - segredos por referência ao Secret Manager (--set-secrets)
+      - name: Atualizar serviço no Cloud Run
+        run: |
+          IMAGE="${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_ARTIFACT_REPOSITORY }}/app:${{ github.event.workflow_run.head_sha }}"
+          gcloud run services update ${{ vars.GCP_SERVICE_NAME }} \
+            --image="$IMAGE" \
+            --region="${{ vars.GCP_REGION }}" \
+            --min-instances=1 \
+            --max-instances=1 \
+            --cpu=2 \
+            --memory=2Gi \
+            --cpu-throttling \
+            --timeout=3600 \
+            --env-vars-file=deploy/cloud-run.env \
+            --set-secrets=DATABASE_URL=DATABASE_URL:latest,DIRECT_URL=DIRECT_URL:latest,BETTER_AUTH_SECRET=BETTER_AUTH_SECRET:latest,PREVIEW_TOKEN=PREVIEW_TOKEN:latest,STRIPE_SECRET_KEY=STRIPE_SECRET_KEY:latest,STRIPE_WEBHOOK_SECRET=STRIPE_WEBHOOK_SECRET:latest,RESEND_API_KEY=RESEND_API_KEY:latest,SENTRY_DSN=SENTRY_DSN:latest,BUNNY_ACCOUNT_API_KEY=BUNNY_ACCOUNT_API_KEY:latest,BUNNY_STREAM_LESSONS_API_KEY=BUNNY_STREAM_LESSONS_API_KEY:latest,BUNNY_STREAM_LESSONS_TOKEN_KEY=BUNNY_STREAM_LESSONS_TOKEN_KEY:latest,BUNNY_STORAGE_PASSWORD=BUNNY_STORAGE_PASSWORD:latest,BUNNY_FILES_STORAGE_PASSWORD=BUNNY_FILES_STORAGE_PASSWORD:latest \
+            --quiet

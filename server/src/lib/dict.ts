@@ -17,10 +17,10 @@ import { prisma } from "./prisma.js";
  * ao banco a cada visita só para montar texto que quase nunca muda — e o banco
  * dorme por ociosidade (o cold start do Neon já custa ~1,2 s na primeira).
  *
- * LIMITE CONHECIDO: o cache é POR INSTÂNCIA. Hoje o Railway roda uma só, então
- * limpar aqui basta. Com duas instâncias, a que não recebeu o PUT continuaria
- * servindo o texto velho até reiniciar. *Gatilho: quando houver mais de uma
- * instância, a invalidação precisa cruzar instâncias (canal do Postgres ou TTL
+ * LIMITE CONHECIDO: o cache é POR INSTÂNCIA. Hoje o Cloud Run roda com no máximo
+ * uma instância (`max-instances=1`), então limpar aqui basta. Com duas instâncias, a que
+ * não recebeu o PUT continuaria servindo o texto velho até reiniciar. *Gatilho: quando houver
+ * mais de uma instância, a invalidação precisa cruzar instâncias (canal do Postgres ou TTL
  * curto) — não é refatoração, é uma linha a mais no caminho de escrita.*
  */
 let cache: Dict | null = null;
