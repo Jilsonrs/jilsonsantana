@@ -1,3 +1,4 @@
+import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import { Router, type Response } from "express";
 import { ContentStatus, LessonKind } from "@jilson/core";
@@ -6,7 +7,7 @@ import { loadSession, requireActiveMembership, requireAdmin } from "../middlewar
 import { parseId } from "../lib/http.js";
 import { atrasadaSemAcesso, aulaLiberada, convidaAReativar, temAcessoAtivo } from "../lib/acesso.js";
 import { enderecoAssinado } from "../lib/bunny-stream.js";
-import { lerArquivoDaAula } from "../lib/bunny-storage.js";
+import { caminhoDaParte, lerArquivoDaAula } from "../lib/bunny-storage.js";
 import { nomeParaDownload } from "../lib/nome-do-download.js";
 import { aulasConcluidas } from "../lib/progresso.js";
 import { pontoDaAula } from "../lib/onde-parou.js";
@@ -81,7 +82,15 @@ async function arvoreDoCurso(courseId: number, soPublicado: boolean) {
           lessons: {
             where: filtro,
             orderBy: byOrder,
-            select: { id: true, title: true, kind: true, isFreePreview: true, status: true, videoDurationSeconds: true, _count: { select: { files: true } } },
+            select: {
+              id: true,
+              title: true,
+              kind: true,
+              isFreePreview: true,
+              status: true,
+              videoDurationSeconds: true,
+              files: { where: { completo: true }, select: { partes: true, partesEnviadas: true } },
+            },
           },
         },
       },
@@ -118,9 +127,9 @@ async function arvoreDoCurso(courseId: number, soPublicado: boolean) {
       // A duração ao lado de cada aula, como no LinkedIn (operador, 06/10/2026): só
       // a de VÍDEO, pela mesma regra da soma acima; texto e vídeo ainda
       // processando vêm sem (`null`).
-      aulas: m.lessons.map(({ _count, videoDurationSeconds, ...aula }) => ({
+      aulas: m.lessons.map(({ files, videoDurationSeconds, ...aula }) => ({
         ...aula,
-        temArquivos: _count.files > 0,
+        temArquivos: files.some((f) => f.partesEnviadas === f.partes),
         duracaoSegundos: aula.kind === LessonKind.VIDEO ? (videoDurationSeconds ?? null) : null,
       })),
     })),
@@ -165,12 +174,17 @@ async function aulaParaAPagina(aula: Aula, liberada: boolean, arquivosLiberados:
     ponto: aula.kind === LessonKind.VIDEO ? await pontoDaAula(userId, aula.id, aula.videoDurationSeconds) : null,
   };
   if (!arquivosLiberados) return conteudo;
-  const arquivos = await prisma.lessonFile.findMany({
-    where: { lessonId: aula.id },
-    orderBy: { id: "asc" },
-    select: { id: true, originalName: true, sizeBytes: true },
-  });
-  return { ...conteudo, arquivos: arquivos.map((a) => ({ ...a, sizeBytes: Number(a.sizeBytes) })) };
+  const arquivos = (
+    await prisma.lessonFile.findMany({
+      where: { lessonId: aula.id, completo: true },
+      orderBy: { id: "asc" },
+      select: { id: true, originalName: true, sizeBytes: true, partes: true, partesEnviadas: true },
+    })
+  ).filter((a) => a.partesEnviadas === a.partes);
+  return {
+    ...conteudo,
+    arquivos: arquivos.map(({ id, originalName, sizeBytes }) => ({ id, originalName, sizeBytes: Number(sizeBytes) })),
+  };
 }
 
 /**
@@ -254,12 +268,15 @@ router.get("/admin/courses/:id/pagina", requireAdmin, async (req, res) => {
   res.json({ curso });
 });
 
-/** Entrega o arquivo do Storage, em fluxo, com o NOME ORIGINAL limpo. */
-async function entregarArquivo(res: Response, arquivo: { id: number; storagePath: string; originalName: string }) {
-  const leitura = await lerArquivoDaAula(arquivo.storagePath);
-  if (!leitura.ok) {
-    const status = leitura.motivo === "NaoConfigurado" ? 503 : leitura.motivo === "NaoEncontrado" ? 404 : 502;
-    res.status(status).json({ error: `Storage${leitura.motivo}` });
+/** Entrega o arquivo do Storage, em fluxo (todas as partes em sequência), com o NOME ORIGINAL limpo. */
+async function entregarArquivo(
+  res: Response,
+  arquivo: { id: number; storagePath: string; originalName: string; sizeBytes: bigint; partes: number },
+) {
+  const primeira = await lerArquivoDaAula(caminhoDaParte(arquivo.storagePath, 0));
+  if (!primeira.ok) {
+    const status = primeira.motivo === "NaoConfigurado" ? 503 : primeira.motivo === "NaoEncontrado" ? 404 : 502;
+    res.status(status).json({ error: `Storage${primeira.motivo}` });
     return;
   }
   // `attachment()` escreve o Content-Disposition com o nome em UTF-8 (RFC 5987)
@@ -267,13 +284,38 @@ async function entregarArquivo(res: Response, arquivo: { id: number; storagePath
   res.attachment(nomeParaDownload(arquivo.originalName));
   res.set("X-Content-Type-Options", "nosniff");
   res.set("Cache-Control", "private, no-store");
-  if (leitura.tamanho) res.set("Content-Length", leitura.tamanho);
+  if (arquivo.partes > 1) res.set("Content-Length", String(arquivo.sizeBytes));
+  else if (primeira.tamanho) res.set("Content-Length", primeira.tamanho);
   // `pipeline`, nunca `.pipe()`: se o Bunny cair no meio, o erro vem para cá em
   // vez de virar "Unhandled 'error' event" e derrubar o servidor inteiro; e se o
   // aluno desistir, o fluxo do Bunny é fechado junto (achado P1 da revisão de
-  // segurança, 29/09/2026).
+  // segurança, 29/09/2026). Em várias partes, cada parte é entregue em sequência
+  // e só a última fecha a resposta (`end: true`).
+  let corpoAtual: Readable | null = primeira.corpo;
+  const aoFechar = () => {
+    if (!res.writableEnded) corpoAtual?.destroy();
+  };
+  res.once("close", aoFechar);
   try {
-    await pipeline(leitura.corpo, res);
+    if (arquivo.partes === 1) {
+      await pipeline(primeira.corpo, res);
+    } else {
+      await pipeline(
+        async function* () {
+          for (let indice = 0; indice < arquivo.partes; indice++) {
+            const leitura = indice === 0 ? primeira : await lerArquivoDaAula(caminhoDaParte(arquivo.storagePath, indice));
+            if (!leitura.ok) {
+              throw Object.assign(new Error(`Storage${leitura.motivo}`), { code: `Storage${leitura.motivo}` });
+            }
+            corpoAtual = leitura.corpo;
+            for await (const pedaco of leitura.corpo) {
+              yield pedaco;
+            }
+          }
+        },
+        res,
+      );
+    }
   } catch (erro) {
     const codigo = erro instanceof Error && "code" in erro ? String((erro as NodeJS.ErrnoException).code) : "sem-codigo";
     // "Fechou antes da hora" é o ALUNO indo embora (fechou a aba, cancelou): não é falha, e não
@@ -282,6 +324,9 @@ async function entregarArquivo(res: Response, arquivo: { id: number; storagePath
     if (codigo === "ERR_STREAM_PREMATURE_CLOSE") console.warn(`[download] arquivo ${arquivo.id}: o aluno desistiu no meio`);
     else console.error(`[download] arquivo ${arquivo.id} interrompido: ${codigo}`);
     if (!res.headersSent && !res.destroyed) res.status(502).json({ error: "StorageFalhou" });
+    else if (!res.destroyed) res.destroy(erro instanceof Error ? erro : undefined);
+  } finally {
+    res.off("close", aoFechar);
   }
 }
 
@@ -294,21 +339,21 @@ router.get("/lessons/:id/files/:fileId", requireActiveMembership, async (req, re
   const fileId = parseId(req.params.fileId, res);
   if (fileId === null) return;
   const aula = await prisma.lesson.findFirst({ where: { id, ...cadeiaPublicada }, select: { id: true } });
-  // O arquivo tem que ser DESTA aula: o id de outra aula não passa por aqui.
-  const arquivo = aula ? await prisma.lessonFile.findFirst({ where: { id: fileId, lessonId: id } }) : null;
-  if (!aula || !arquivo) {
+  // O arquivo tem que ser DESTA aula e ter todas as partes prontas.
+  const arquivo = aula ? await prisma.lessonFile.findFirst({ where: { id: fileId, lessonId: id, completo: true } }) : null;
+  if (!aula || !arquivo || arquivo.partesEnviadas < arquivo.partes) {
     res.status(404).json({ error: "NotFound" });
     return;
   }
   await entregarArquivo(res, arquivo);
 });
 
-// GET /api/admin/lesson-files/:id/download — o download do ADMIN, qualquer status.
+// GET /api/admin/lesson-files/:id/download — o download do ADMIN, qualquer status (desde que completo).
 router.get("/admin/lesson-files/:id/download", requireAdmin, async (req, res) => {
   const id = parseId(req.params.id, res);
   if (id === null) return;
   const arquivo = await prisma.lessonFile.findUnique({ where: { id } });
-  if (!arquivo) {
+  if (!arquivo || !arquivo.completo || arquivo.partesEnviadas < arquivo.partes) {
     res.status(404).json({ error: "NotFound" });
     return;
   }

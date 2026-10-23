@@ -33,7 +33,7 @@ export async function oQueOCursoInclui(courseId: number, soPublicado: boolean): 
       isFreePreview: true,
       videoDurationSeconds: true,
       caption: { select: { needsResend: true } },
-      _count: { select: { files: true } },
+      files: { where: { completo: true }, select: { partes: true, partesEnviadas: true } },
     },
   });
   const videos = aulas.filter((a) => a.kind === LessonKind.VIDEO);
@@ -41,7 +41,7 @@ export async function oQueOCursoInclui(courseId: number, soPublicado: boolean): 
     segundosDeVideo: videos.reduce((total, a) => total + (a.videoDurationSeconds ?? 0), 0),
     artigos: aulas.filter((a) => a.kind === LessonKind.TEXT).length,
     aulasGratis: aulas.filter((a) => a.isFreePreview).length,
-    arquivos: aulas.some((a) => a._count.files > 0),
+    arquivos: aulas.some((a) => a.files.some((f) => f.partesEnviadas === f.partes)),
     legendas: videos.length > 0 && videos.every((a) => a.caption !== null && !a.caption.needsResend),
   };
 }

@@ -1,4 +1,4 @@
-import { isIP } from "node:net";
+import { BlockList, isIP } from "node:net";
 import type { Request, RequestHandler, Response } from "express";
 import { MemoryStore, ipKeyGenerator, rateLimit, type Options } from "express-rate-limit";
 
@@ -18,7 +18,8 @@ import { MemoryStore, ipKeyGenerator, rateLimit, type Options } from "express-ra
 // - **Contagem em memória**: há um servidor só; cada publicação zera as contagens.
 // - **Quem fica de fora:** `GET /billing/assinatura` ("já tenho acesso?"), que a tela de depois do
 //   pagamento repete a cada 2 s — lê só o banco.
-// - **A conta é a da sessão** (o `requireAuth` vem antes); o endereço, o `x-real-ip`.
+// - **A conta é a da sessão** (o `requireAuth` vem antes); o endereço vem de `ipDoPedido`
+//   (`x-forwarded-for`, na frente do Cloud Run — provisório até a medição em produção na G4).
 
 const MINUTO = 60_000;
 const HORA = 60 * MINUTO;
@@ -64,21 +65,71 @@ export const LIMITES_DO_VISITANTE = {
 let avisouSemEndereco = false;
 
 /**
- * O endereço de quem pediu: o `x-real-ip`, que a borda da Railway reescreve (medido em produção
- * em 23/09/2026 — o mesmo do limite do login, `lib/auth.ts`). O IPv6 vira a faixa /56: quem recebe
+ * O cabeçalho em que a frente do Cloud Run (Google Front End, no mapeamento de domínio e em
+ * `*.run.app`) entrega a cadeia de endereços. PROVISÓRIO até a medição em produção na etapa G4
+ * (`GET /api/diagnostico-ip`), como foi feito em 23/09/2026: a documentação do Google diz que a
+ * frente acrescenta o IP de quem conectou ao fim do `x-forwarded-for`, mas só a medição no ar
+ * confirma se o mapeamento de domínio acrescenta um salto interno depois dele.
+ */
+export const CABECALHO_DO_IP = "x-forwarded-for";
+
+/**
+ * Endereços que nunca são de um visitante na internet: rede privada, a própria máquina, e as faixas
+ * internas do Google (35.191.0.0/16 e 130.211.0.0/22, as da frente e da checagem de saúde). Se um
+ * deles aparecer no fim do `x-forwarded-for`, a frente acrescentou um salto interno, e aceitá-lo
+ * juntaria a escola inteira numa contagem só — sem alerta (revisão de segurança da G2, 22/10/2026).
+ * Vira "sem IP", que alerta.
+ */
+const FAIXAS_QUE_NAO_SAO_VISITANTE = (() => {
+  const lista = new BlockList();
+  for (const [rede, prefixo] of [
+    ["0.0.0.0", 8], ["10.0.0.0", 8], ["100.64.0.0", 10], ["127.0.0.0", 8], ["169.254.0.0", 16],
+    ["172.16.0.0", 12], ["192.168.0.0", 16], ["35.191.0.0", 16], ["130.211.0.0", 22],
+  ] as const) lista.addSubnet(rede, prefixo, "ipv4");
+  for (const [rede, prefixo] of [["::", 127], ["fc00::", 7], ["fe80::", 10]] as const) {
+    lista.addSubnet(rede, prefixo, "ipv6");
+  }
+  return lista;
+})();
+
+/**
+ * O PORTEIRO DO IP (Bloco G, etapa G2 — regra PROVISÓRIA até a medição em produção na G4):
+ * a ÚNICA função que decide o IP de quem pediu, tanto para o login (`lib/auth.ts`) quanto para os
+ * limites de tentativas da escola (`enderecoDoPedido`, abaixo).
+ *
+ * No Cloud Run sem balanceador externo (mapeamento de domínio e `*.run.app`), a frente do Google
+ * acrescenta ao fim do `x-forwarded-for` o IP real de quem abriu a conexão. O que vier antes da
+ * última vírgula foi escrito pelo próprio visitante (forjado) e é ignorado. Se o último item não
+ * for um IP válido, devolve `null` — nunca recua para um item anterior, que seria do visitante.
+ */
+export function ipDoPedido(cabecalho: string | null | undefined): string | null {
+  const ultimo = cabecalho?.split(",").at(-1)?.trim();
+  if (!ultimo) return null;
+  const versao = isIP(ultimo);
+  if (versao === 0) return null;
+  // O IPv4 escrito dentro de IPv6 (`::ffff:a.b.c.d`) não é como a frente escreve um visitante.
+  // Conferido pelo texto, e não na lista: no `BlockList`, a faixa `::ffff:0:0/96` casa com TODO IPv4.
+  if (versao === 6 && ultimo.toLowerCase().startsWith("::ffff:")) return null;
+  if (FAIXAS_QUE_NAO_SAO_VISITANTE.check(ultimo, versao === 6 ? "ipv6" : "ipv4")) return null;
+  return ultimo;
+}
+
+/**
+ * O endereço de quem pediu: lido por `ipDoPedido` (`x-forwarded-for`, provisório até a medição em
+ * produção na G4 — o mesmo do limite do login, `lib/auth.ts`). O IPv6 vira a faixa /56: quem recebe
  * uma faixa inteira da operadora trocaria de endereço a cada pedido e nunca passaria do teto.
  * **Em produção ele tem que ser um IP** (achado da revisão de segurança, 19/10/2026): ausente ou
- * estranho, a borda deixou de reescrevê-lo — contar pela conexão juntaria a escola inteira numa
- * contagem só (a do proxy da Railway), e um texto qualquer viraria chave. Então o pedido NÃO
+ * estranho, a frente deixou de escrevê-lo — contar pela conexão juntaria a escola inteira numa
+ * contagem só (a do proxy interno), e um texto qualquer viraria chave. Então o pedido NÃO
  * conta por endereço (o teto da conta continua), e vai UM alerta. Fora de produção, a conexão.
  */
 export function enderecoDoPedido(req: Request, emProducao = process.env.NODE_ENV === "production"): string | null {
-  const cabecalho = req.get("x-real-ip")?.trim();
-  if (cabecalho && isIP(cabecalho)) return ipKeyGenerator(cabecalho, 56);
+  const ip = ipDoPedido(req.get(CABECALHO_DO_IP));
+  if (ip) return ipKeyGenerator(ip, 56);
   if (emProducao) {
     if (!avisouSemEndereco) {
       avisouSemEndereco = true;
-      console.error("[api] limite de tentativas: pedido sem um x-real-ip válido — a contagem por endereço está parada (a borda da Railway deixou de reescrever o cabeçalho?)");
+      console.error(`[api] limite de tentativas: pedido sem um ${CABECALHO_DO_IP} válido — a contagem por endereço está parada (a frente do Cloud Run deixou de preencher o cabeçalho?)`);
     }
     return null;
   }

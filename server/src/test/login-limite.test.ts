@@ -9,10 +9,11 @@ import { describe, it, expect, vi, afterAll } from "vitest";
 // O que protege, por COMPORTAMENTO — o `auth-ip.test.ts` só confere a configuração:
 //   - o limite liga e barra: 3 tentativas em 10 s, a 4ª é 429 — e barrado é barrado, nem a
 //     senha certa entra;
-//   - CADA PESSOA TEM O SEU: o IP vem do `x-real-ip`, que a Railway sobrescreve; sem isso a
-//     escola inteira dividiria um limite só, e três erros de um travariam o login de todos
-//     (CLAUDE.md → Quality Gates);
-//   - o que o visitante consegue escrever (`x-forwarded-for`) não muda de quem é a tentativa.
+//   - CADA PESSOA TEM O SEU: o IP vem de `ipDoPedido` (o fim do `x-forwarded-for`, na frente do
+//     Cloud Run — provisório até a medição na G4); sem isso a escola inteira dividiria um limite só,
+//     e três erros de um travariam o login de todos (CLAUDE.md → Quality Gates);
+//   - o que o visitante consegue escrever (forjar o começo do `x-forwarded-for`, `x-real-ip` ou
+//     `cf-connecting-ip`) não muda de quem é a tentativa.
 // `[MEDIDO em 10/10/2026, better-auth do repo]` do mesmo IP: 401, 401, 401, 429, 429.
 const ANTES = vi.hoisted(() => {
   const antes = process.env.NODE_ENV;
@@ -29,9 +30,9 @@ afterAll(() => {
 const ORIGEM = new URL(process.env.BETTER_AUTH_URL ?? "http://localhost:3000").origin;
 const ALUNO = { email: process.env.SEED_MEMBER_EMAIL ?? "", senha: process.env.SEED_MEMBER_PASSWORD ?? "" };
 
-/** Uma tentativa de login vinda deste IP (o `x-real-ip`, como a Railway entrega). */
+/** Uma tentativa de login vinda deste IP (o fim do `x-forwarded-for`, como a frente do Cloud Run entrega). */
 async function tentar(ip: string, senha = "senha-errada", extras: Record<string, string> = {}): Promise<number> {
-  const headers = { "content-type": "application/json", origin: ORIGEM, "x-real-ip": ip, ...extras };
+  const headers = { "content-type": "application/json", origin: ORIGEM, "x-forwarded-for": ip, ...extras };
   const pedido = new Request(`${ORIGEM}/api/auth/sign-in/email`, { method: "POST", headers, body: JSON.stringify({ email: ALUNO.email, password: senha }) });
   return (await auth.handler(pedido)).status;
 }
@@ -55,10 +56,20 @@ describe("o limite de tentativas de login, ligado", () => {
     expect(await tentar("203.0.113.21", ALUNO.senha)).toBe(200);
   });
 
-  it("o que o visitante escreve não muda de quem é a tentativa: trocar o x-forwarded-for a cada pedido não escapa do limite", async () => {
+  it("o que o visitante escreve não muda de quem é a tentativa: forjar o começo do x-forwarded-for (ou x-real-ip / cf-connecting-ip) a cada pedido não escapa do limite", async () => {
     const ip = "203.0.113.30";
     const status: number[] = [];
-    for (let i = 0; i < 4; i++) status.push(await tentar(ip, "senha-errada", { "x-forwarded-for": `198.51.100.${i + 1}`, "cf-connecting-ip": `198.51.100.${i + 50}` }));
+    for (let i = 0; i < 4; i++) {
+      status.push(
+        await tentar(ip, "senha-errada", {
+          "x-forwarded-for": `198.51.100.${i + 1}, ${ip}`,
+          "x-real-ip": `198.51.100.${i + 20}`,
+          "cf-connecting-ip": `198.51.100.${i + 50}`,
+        }),
+      );
+    }
     expect(status).toEqual([401, 401, 401, 429]);
+    // E outra pessoa (mesmo se também mandar lixo antes do IP dela) não cai no balde de quem forjou.
+    expect(await tentar("203.0.113.31", ALUNO.senha, { "x-forwarded-for": "198.51.100.99, 203.0.113.31" })).toBe(200);
   });
 });

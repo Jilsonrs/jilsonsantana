@@ -50,7 +50,7 @@ import type {
 // forwards /api -> :3000; in prod Express serves the client from the same
 // origin. withCredentials so the better-auth session cookie rides along on
 // member-only writes (e.g. saveTrilha).
-const client = axios.create({ baseURL: "/api", withCredentials: true });
+export const client = axios.create({ baseURL: "/api", withCredentials: true });
 
 // Toda resposta do servidor diz qual versão ele é (`X-Versao-Do-App`, 06/10/2026):
 // é assim que uma aba aberta antes de uma publicação percebe a versão nova e passa
@@ -659,9 +659,34 @@ export function enderecoDaLegenda(dono: DonoDaLegenda): string {
   return `/api${rotaDaLegenda(dono)}`;
 }
 
-// OS ARQUIVOS PARA BAIXAR de cada aula (Bloco E, etapa 2, parte 2e): o admin
-// envia e exclui. O arquivo vai CRU no corpo, e o nome original no cabeçalho.
+// OS ARQUIVOS PARA BAIXAR de cada aula (Bloco E, etapa 2, parte 2e; em partes na
+// etapa G2 do Bloco G): o admin envia e exclui. O arquivo vai CRU no corpo, em
+// pedaços de até 30 MB (com nova tentativa automática se um pedaço falhar), e o
+// nome original vai no cabeçalho.
 export type AdminLessonFile = { id: number; originalName: string; sizeBytes: number; createdAt: string };
+
+export const TAMANHO_DA_PARTE_DO_ARQUIVO = 30 * 1024 * 1024;
+const TENTATIVAS_POR_PARTE = 3;
+
+function erroTemporarioNoEnvio(erro: unknown): boolean {
+  const status = (erro as { response?: { status?: number } })?.response?.status;
+  // Sem resposta (rede caiu) ou falha temporária do servidor/limite: tenta de novo.
+  // Recusa de regra (400, 401, 403, 404, 413) ou Storage não configurado (503) para na hora.
+  return status === undefined || status === 408 || status === 429 || (status >= 500 && status !== 503);
+}
+
+async function enviarComNovaTentativa<T>(acao: () => Promise<T>): Promise<T> {
+  let ultimoErro: unknown;
+  for (let tentativa = 1; tentativa <= TENTATIVAS_POR_PARTE; tentativa++) {
+    try {
+      return await acao();
+    } catch (erro) {
+      ultimoErro = erro;
+      if (tentativa === TENTATIVAS_POR_PARTE || !erroTemporarioNoEnvio(erro)) throw erro;
+    }
+  }
+  throw ultimoErro;
+}
 
 export async function listLessonFiles(lessonId: number): Promise<AdminLessonFile[]> {
   const { data } = await client.get<AdminLessonFile[]>(`/admin/lessons/${lessonId}/files`);
@@ -673,14 +698,60 @@ export async function uploadLessonFile(
   arquivo: File,
   aoProgredir: (porcentagem: number) => void = () => {},
 ): Promise<AdminLessonFile> {
-  const { data } = await client.post<AdminLessonFile>(`/admin/lessons/${lessonId}/files`, arquivo, {
-    headers: { "Content-Type": "application/octet-stream", "X-Nome-Do-Arquivo": encodeURIComponent(arquivo.name) },
-    // Sem limite de tamanho (operador, 29/09/2026): um .zip grande sem porcentagem parece travado.
-    onUploadProgress: (e) => {
-      if (e.total) aoProgredir(Math.round((e.loaded * 100) / e.total));
-    },
+  const tamanhoTotal = arquivo.size;
+  const totalDePartes = Math.max(1, Math.ceil(tamanhoTotal / TAMANHO_DA_PARTE_DO_ARQUIVO));
+
+  if (totalDePartes === 1) {
+    return enviarComNovaTentativa(async () => {
+      const { data } = await client.post<AdminLessonFile>(`/admin/lessons/${lessonId}/files`, arquivo, {
+        headers: { "Content-Type": "application/octet-stream", "X-Nome-Do-Arquivo": encodeURIComponent(arquivo.name) },
+        // Sem limite de tamanho (operador, 29/09/2026): um .zip grande sem porcentagem parece travado.
+        onUploadProgress: (e) => {
+          if (e.total) aoProgredir(Math.round((e.loaded * 100) / e.total));
+        },
+      });
+      return data;
+    });
+  }
+
+  const primeiraParte = arquivo.slice(0, TAMANHO_DA_PARTE_DO_ARQUIVO);
+  let criado = await enviarComNovaTentativa(async () => {
+    const { data } = await client.post<AdminLessonFile>(`/admin/lessons/${lessonId}/files`, primeiraParte, {
+      headers: {
+        "Content-Type": "application/octet-stream",
+        "X-Nome-Do-Arquivo": encodeURIComponent(arquivo.name),
+        "X-Total-De-Partes": String(totalDePartes),
+      },
+      onUploadProgress: (e) => {
+        if (tamanhoTotal > 0) aoProgredir(Math.min(100, Math.round((e.loaded * 100) / tamanhoTotal)));
+      },
+    });
+    return data;
   });
-  return data;
+
+  try {
+    for (let parte = 2; parte <= totalDePartes; parte++) {
+      const inicio = (parte - 1) * TAMANHO_DA_PARTE_DO_ARQUIVO;
+      const fim = Math.min(parte * TAMANHO_DA_PARTE_DO_ARQUIVO, tamanhoTotal);
+      const pedaco = arquivo.slice(inicio, fim);
+      criado = await enviarComNovaTentativa(async () => {
+        const { data } = await client.put<AdminLessonFile>(`/admin/lesson-files/${criado.id}/partes/${parte}`, pedaco, {
+          headers: { "Content-Type": "application/octet-stream" },
+          onUploadProgress: (e) => {
+            if (tamanhoTotal > 0) {
+              aoProgredir(Math.min(100, Math.round(((inicio + e.loaded) * 100) / tamanhoTotal)));
+            }
+          },
+        });
+        return data;
+      });
+    }
+  } catch (erro) {
+    await client.delete(`/admin/lesson-files/${criado.id}`).catch(() => undefined);
+    throw erro;
+  }
+
+  return criado;
 }
 
 export async function deleteLessonFile(fileId: number): Promise<void> {

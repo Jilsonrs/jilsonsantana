@@ -19,7 +19,7 @@ import { protecaoDaCobranca } from "../lib/protecao-da-cobranca.js";
 //   cliente e conta nunca vêm do navegador (`lib/checkout-do-visitante.ts`);
 // - toda rota passa pelo limite de tentativas SEM LOGIN (por endereço; ao assinar, também por
 //   e-mail e pelos e-mails novos do dia), antes de ir à Stripe;
-// - FORA DO AR NO SITE até o dia de abrir (passo 8): sem `ASSINAR_SEM_LOGIN=true` na Railway, as
+// - FORA DO AR NO SITE até o dia de abrir (passo 8): sem `ASSINAR_SEM_LOGIN=true` no Cloud Run, as
 //   rotas respondem 404 em produção. Se a `dev` for publicada antes, o site não começa a vender
 //   sem o e-mail de criar a senha (passo 5) e sem a tela (passo 6). Fora de produção, ligadas.
 // O registro leva ids — nunca o e-mail, o CPF ou CNPJ, o código digitado ou o segredo do pagamento.
@@ -41,7 +41,7 @@ let emAndamento = 0;
 /** A última linha de aviso do "cheio": no máximo uma por minuto, para um ataque não encher o registro. */
 let avisouEm = 0;
 
-/** As rotas sem login estão no ar? Em produção, só com a chave ligada na Railway (o operador liga no passo 8). */
+/** As rotas sem login estão no ar? Em produção, só com a chave ligada no Cloud Run (o operador liga no passo 8). */
 export function assinaturaSemLoginNoAr(env: NodeJS.ProcessEnv = process.env): boolean {
   return env.NODE_ENV !== "production" || env.ASSINAR_SEM_LOGIN === "true";
 }

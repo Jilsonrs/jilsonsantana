@@ -889,7 +889,7 @@ os arquivos e comandos do Bloco G:**
           - `/Users/jilson/google-cloud-sdk/bin/gcloud secrets versions list DIRECT_URL --project=jilsonsantana`
           - `npm run typecheck`, `npm run lint`, `npm run test`, `npm run build`
         - **Provas:** retrato ANTES vs. DEPOIS 100% idêntico nas 7 consultas em `production` · `gcloud secrets versions list` confirma `version 3 enabled` e versões anteriores `destroyed` em `DATABASE_URL` e `DIRECT_URL`, com senha de `production` distinta da de `dev` · `POST /api/auth/sign-in/email` em `http://localhost:3000` e `http://localhost:5173` retornando `HTTP 200` (`role: 'admin'`) · quatro gates (`typecheck`, `lint`, `test`, `build`) verdes.
-- [ ] **G2 — O código se adapta** *(no `dev`, testado no computador; nada publicado)*.
+- [x] **G2 — O código se adapta** *(no `dev`, testado no computador; nada publicado)*.
       `Docs check`: Cloud Run → `/websites/cloud_google_run` (o cabeçalho do IP no mapeamento de
       domínio; a publicação pelo GitHub) · Bunny → `/bunnyway/documentation`, perguntando por
       **"Storage"** (gravar, ler e apagar objeto — o envio em partes).
@@ -917,6 +917,67 @@ os arquivos e comandos do Bloco G:**
       pre-deploy, o `drainingSeconds`, *Separação de ambientes*, *Costs*, a nota provisória em *Tech
       Stack*) e o `tech-stack.md`. `security-vulnerability-reviewer` sobre o diff; os quatro gates.
       **Pronto quando:** o `dev` verde, com o plano e os documentos no mesmo commit.
+      - **Execução detalhada da G2 (Antigravity no branch `bloco-g`, 22/10/2026):**
+        - **Parte 1 (commit `d9b3b6d`): O endereço de quem acessa e o domínio sem "www"**
+          - Criada a função `ipDoPedido` (`server/src/lib/limite-de-tentativas.ts`) centralizando a determinação do IP do cliente a partir do último elemento de `x-forwarded-for` (padrão documentado da borda do Cloud Run com mapeamento de domínio), provisória até medição em produção na G4.
+          - Better Auth (`server/src/lib/auth.ts`, pelo embrulho do handler, `pedidoComIpDoPorteiro`) e limite de tentativas (`enderecoDoPedido`) integrados a `ipDoPedido`.
+          - Adicionado middleware de redirecionamento 301 no Express (`server/src/app.ts`) para requisições com host exato `jilsonsantana.com`, preservando URL e query para `https://www.jilsonsantana.com`. Requisições `*.run.app` não sofrem desvio.
+          - Provas *(nomes corrigidos pelo Claude na conferência)*: `server/src/test/auth-ip.test.ts` (o `ipDoPedido` com cabeçalho forjado, IPv6, vazio e inválido; o desvio 301 com caminho e query, e o `*.run.app` sem desvio) e `server/src/test/login-limite.test.ts` (cada pessoa com o seu limite; forjar o começo do cabeçalho não escapa). O recuo para o endereço da conexão vale **só fora de produção**.
+          - Mutação provada: forçar a leitura do primeiro elemento do cabeçalho quebrou a suíte com `expected '203.0.113.195' to be '198.51.100.1'`.
+        - **Parte 2 (commit `b843cdb`): O arquivo de aula em partes, sem limite de tamanho**
+          - Model `LessonFile` atualizado em `server/prisma/schema.prisma` com `partes Int @default(1)`, `partesEnviadas Int @default(1)` e `completo Boolean @default(true)`.
+          - Migration escrita à mão `server/prisma/migrations/20261022210000_arquivo_da_aula_em_partes/migration.sql`.
+          - Passo 0 no branch `dev` da Neon: retrato ANTES vs. DEPOIS idêntico nas contagens (`user: 2`, `course: 2`, `lesson: 15`, `lesson_file: 1`, `subscription: 2`), `prisma migrate deploy` executado com sucesso no `dev`, `prisma migrate diff` atestando nenhuma diferença e RLS zerado.
+          - Chunked upload (`client/src/lib/api.ts`): arquivos acima de 30 MB são fatiados em partes de 30 MB (`TAMANHO_MAXIMO_DA_PARTE`), enviados sequencialmente (`POST` inicial com `X-Total-De-Partes`, seguido de `PUT /api/admin/lesson-files/:id/partes/:parte`), com 3 retentativas automáticas para falhas transientes e limpeza completa no storage e no banco se a falha for definitiva. A interface do admin não muda nenhuma linha visual nem frase.
+          - Visibilidade do aluno: arquivo só aparece quando `completo = true` (`partesEnviadas === partes`).
+          - Download em fluxo (`server/src/routes/lesson-view.ts`): streaming sequencial das partes do Bunny Storage via pipeline Node.js, `Content-Length` total, com trava estrita de assinante ativo (403 para não-assinantes e prévia grátis sem download).
+          - Exclusão (`server/src/routes/admin-lesson-files.ts` e `server/src/lib/limpeza-no-bunny.ts`): exclusão de todas as partes no Bunny Storage mantendo a validação estrita de caminho de arquivo. Arquivos legados com 1 parte continuam totalmente funcionais.
+          - Reconciliada a §4.5 do `docs/bunny.md`.
+          - Provas *(nomes corrigidos pelo Claude na conferência)*: `server/src/test/lesson-files.test.ts`, `server/src/test/lesson-view.test.ts` e `client/src/components/admin/course-editor/CourseEditorLessonFiles.test.tsx`.
+          - Mutações provadas: alteração no loop de download quebrou testes com `Error: aborted`; alteração na exclusão das partes quebrou o spy de chamadas (`expected 3, got 1`).
+        - **Parte 3: A publicação no Google e os documentos**
+          - Criado `.github/workflows/deploy.yml`: acionado apenas na `main` após sucesso do workflow de CI (`workflow_run`), autentica no Google Cloud via Workload Identity Federation, compila e armazena imagem Docker no Artifact Registry, executa o Cloud Run Job de migrations (`prisma migrate deploy`) com `--wait` (falha bloqueia o deploy), e atualiza o serviço Cloud Run.
+          - Especificação da conta mínima do serviço: `us-east4`, `min-instances 1`, `max-instances 1`, cobrança por pedido (`--cpu-throttling`), 2 processadores e 2 GB de memória, tempo máximo de requisição 3600 s (`--timeout=3600`), variáveis públicas em `deploy/cloud-run.yaml` e segredos via Secret Manager (`--set-secrets`).
+          - Criado `deploy/cloud-run.yaml` versionado com variáveis não confidenciais.
+          - Removido `railway.json`.
+          - Comentários que citavam a Railway atualizados em `server/src/lib/desligar.ts`, `server/src/lib/dict.ts`, `server/src/lib/auth.ts`, `server/src/index.ts`, `server/src/app.ts`, `server/src/lib/monitor.ts`, `server/src/routes/billing-sem-login.ts`, `server/src/routes/stripe-webhook.ts` e `server/src/test/test-env.ts`.
+          - Reescreveu-se no `CLAUDE.md` e em `docs/tech-stack.md` as regras da Railway (IP, pre-deploy de migrations via Job, desligamento gracioso com SIGTERM no Cloud Run, separação de ambientes, custos e nota provisória de stack).
+          - Docs check do Cloud Run e Bunny consultados e documentados.
+        - **Comandos executados (sem segredo):**
+          - `npm --workspace server exec prisma migrate deploy`
+          - `npm --workspace server exec prisma migrate diff --from-schema-datamodel prisma/schema.prisma --to-url "$DIRECT_URL"`
+          - `npm run typecheck`
+          - `npm run lint`
+          - `npm run test`
+          - `npm run test -- --workspace=server src/test/billing-webhook.test.ts src/test/billing-checkout.test.ts src/test/billing-cartao.test.ts`
+          - `npm run build`
+          - `git rm railway.json`
+        - **Provas finais:** 4 gates verdes (`typecheck`, `lint`, `test` com 80 arquivos/929 testes no cliente e 80 arquivos/1262 testes no servidor, e `build`). Branch `bloco-g` pronto para revisão de segurança e merge do Claude Code na `dev`.
+      **CONFERIDO PELO CLAUDE (22/10/2026), com o `security-vulnerability-reviewer`:** nenhum P0.
+      **Corrigido pelo Claude antes do merge:** (1) **a publicação podia sair de código de fora** — o
+      repositório é público, o CI roda em pull request, e o `head_branch` de uma cópia (fork) pode se
+      chamar `main`: o `deploy.yml` passou a exigir `event == 'push'` e o repositório deste projeto, e
+      ganhou fila (duas publicações não correm juntas) · (2) o arquivo de configuração estava em
+      `CHAVE=valor`, e o `--env-vars-file` do gcloud lê YAML: virou `deploy/cloud-run.yaml` · (3) o
+      `PORT` saiu dele (reservado pelo Cloud Run) · (4) faltavam o `BASE_URL` (as páginas públicas
+      sairiam com `localhost` no canonical) e a chave pública da Stripe (no cofre, G3) · (5) **o IP de
+      rede interna** (privada, a própria máquina, as faixas da frente do Google) deixa de valer como
+      visitante e vira "sem IP" — que agora **alerta também no login** (antes, só nas rotas de
+      cobrança) · (6) **a parte já contada não se reenvia** (200 sem tocar no Bunny), o arquivo
+      completo não se reescreve (409), e a parte é contada uma vez só mesmo com dois pedidos iguais
+      juntos — é o que mantém o tamanho declarado no download igual aos bytes. *A trava extra que a
+      revisão sugeriu no download (`strictContentLength`) foi testada e SAIU: com o tamanho gravado como
+      texto, o Node acusa "5 diferente de 5" e lança um erro solto que derrubaria o servidor.* · (7) os
+      nomes de teste errados nos documentos. **Testes novos:** 2 (as faixas internas; a repetição e o
+      completo). **Mutação: 3 de 3 reprovaram.** Gates: site 929, servidor 1264.
+      **Dívida registrada, com gatilho (P2 da revisão):** (a) **um assinante abrindo dezenas de
+      downloads lentos** ocupa o servidor único por até 60 min — limite de downloads ao mesmo tempo por
+      conta e `--concurrency` maior; *gatilho: o primeiro aluno pagante, ou 429 no registro* · (b)
+      **a publicação segue a ordem em que os CI terminam**, e um CI antigo que acabe depois publica por
+      cima do novo — pular quando o commit não for mais o topo da `main`; *gatilho: dois "publica"
+      seguidos* · (c) **as ferramentas da publicação fixadas por versão móvel** (`@v4`), num passo que
+      pode publicar — fixar pelo código do commit; *gatilho: antes da abertura ao público (passo 8 da
+      4.7)*.
 - [ ] **G3 — A casa nova no ar, no endereço provisório do Google.**
       O agente monta com o `gcloud`, o operador acompanhando: as APIs, o Artifact Registry, as duas
       contas de serviço, a ligação com o GitHub, o serviço (com a conta mínima de *A forma*) e o Job.
@@ -931,6 +992,17 @@ os arquivos e comandos do Bloco G:**
       **A ligação com o GitHub:** o que o arquivo da publicação precisa (o projeto, a região, o
       provedor do Workload Identity e a conta de serviço de publicação) entra como **variável** do
       repositório no GitHub, não como segredo — nenhum deles é chave.
+      **Antes da primeira publicação (achados da revisão da G2, 22/10/2026):** o operador cria no
+      cofre o segredo `STRIPE_PUBLISHABLE_KEY` (a chave PÚBLICA `pk_live_` da Stripe — o servidor a
+      lê em `lib/stripe.ts` e a publicação já a referencia); o Job das migrations recebe
+      `DATABASE_URL` e `DIRECT_URL` (o Prisma exige as duas); e o provedor do Workload Identity aceita
+      **só a publicação da `main` deste repositório** (revisão de segurança da G2: o nome do
+      repositório sozinho aceitaria qualquer workflow de qualquer branch dele) — condição
+      `assertion.repository_id=='<id>' && assertion.repository_owner_id=='<id>' && assertion.event_name=='workflow_run' && assertion.ref=='refs/heads/main' && assertion.workflow_ref=='Jilsonrs/jilsonsantana/.github/workflows/deploy.yml@refs/heads/main'`
+      (os ids saem de `gh api repos/Jilsonrs/jilsonsantana --jq '.id,.owner.id'`). **A conta de
+      publicação** fica com `run.developer` no serviço e no Job, `iam.serviceAccountUser` na conta do
+      site e a escrita no Artifact Registry — **sem** acesso aos segredos (quem lê o cofre é a conta do
+      site).
       **Quem publica:** com o "publica" do operador, o Antigravity faz o merge `--no-ff` da `dev` na
       `main` e envia (o mesmo caminho do `GEMINI.md` §5); a publicação sai pelo GitHub Actions. O
       Claude confere depois. **Publicar** (a ordem é
@@ -940,7 +1012,11 @@ os arquivos e comandos do Bloco G:**
       banco igual ao retrato mais as migrations; a consulta de RLS do `CLAUDE.md` (zero linhas; a
       `guest_checkout` com RLS); a conta de admin com o e-mail confirmado; um download acima de 32 MiB
       — e, com o operador, **um arquivo de ~500 MB enviado pelo admin e baixado inteiro, igual ao
-      original** (o envio em partes); um alerta de teste chegando ao e-mail (Sentry); **a memória do
+      original** (o envio em partes); um alerta de teste chegando ao e-mail (Sentry) **com o servidor parado** — provocar o erro e não
+      mandar mais nenhum pedido: a cobrança por pedido reduz o processador depois da resposta, e o
+      alerta do webhook da Stripe é a detecção do assinante pagante trancado. *Se não chegar:* o
+      caminho de erro espera o envio (`Sentry.flush`, até 2 s) antes de responder, ou o serviço passa
+      a `--no-cpu-throttling`; **a memória do
       servidor** no painel, anotada no relatório — é ela que decide, na P104, se a volta é para 512 MB
       ou 1 GB · **o tempo de resposta das páginas** no painel, anotado no relatório: se o banco pesar,
       com o banco já na Virgínia (G1b) · **o alerta de orçamento**: conferir se ele conta o gasto antes ou depois do crédito —
@@ -964,8 +1040,11 @@ os arquivos e comandos do Bloco G:**
       `http://` leva ao `https://` — se não levar, **pare e conte** (regra 6), não contorne.
       **A rota de diagnóstico do IP:** `GET /api/diagnostico-ip`, que devolve SÓ os cabeçalhos de
       endereço que chegam ao servidor (`x-forwarded-for`, `x-real-ip` e `forwarded`),
-      sem cookie e sem nada mais; publicada, medida (o operador abre de duas redes, e uma vez com
-      um `x-forwarded-for` forjado num `curl`), e **apagada numa segunda publicação na mesma etapa**.
+      sem cookie e sem nada mais; publicada, medida (o operador abre de duas redes; um `curl` com um
+      `x-forwarded-for` forjado; **e outro com DUAS linhas `X-Forwarded-For` separadas** — revisão de
+      segurança da G2: se a frente juntar uma linha do visitante depois da dela, ele escolheria o
+      próprio IP), e **apagada numa segunda publicação na mesma etapa**. A G4 só fecha se o último
+      item for o IP público do operador em todos os casos e nas duas redes.
       A regra do porteiro do IP é conferida contra a medição antes de a etapa fechar. **A
       medição do IP** em produção (rota temporária de diagnóstico, apagada na mesma etapa, como em
       23/09/2026), a regra conferida e o limite de login provado pelo operador em duas redes. **A

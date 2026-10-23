@@ -41,7 +41,7 @@ async function entrar(email?: string, senha?: string): Promise<string[]> {
 
 /** Um pedido de cobrança, como o navegador faria, do endereço dado. */
 function pedir(metodo: "get" | "post", caminho: string, cookies: string[], endereco = ENDERECO, corpo?: object) {
-  const req = request(servidor)[metodo](`/api${caminho}`).set("Cookie", cookies).set("x-real-ip", endereco);
+  const req = request(servidor)[metodo](`/api${caminho}`).set("Cookie", cookies).set("x-forwarded-for", endereco);
   return corpo ? req.send(corpo) : req;
 }
 
@@ -110,7 +110,7 @@ describe("o teto por CONTA — guardar cartão ou cobrar: 5 a cada 15 minutos", 
   it("maiúsculas no endereço e a barra no fim contam junto com o endereço de sempre", async () => {
     await status(5, () => cartao(member));
     for (const grafia of ["/API/billing/cartao", "/Api/billing/cartao", "/api/BILLING/Cartao", "/api/billing/cartao/"]) {
-      const res = await request(servidor).post(grafia).set("Cookie", member).set("x-real-ip", ENDERECO);
+      const res = await request(servidor).post(grafia).set("Cookie", member).set("x-forwarded-for", ENDERECO);
       expect(res.status, grafia).toBe(429);
     }
   });
@@ -151,6 +151,13 @@ describe("o teto por ENDEREÇO — o dobro do da conta", () => {
     // Outra faixa é outra pessoa.
     expect((await cartao(terceira, "2001:db8:1:200::1")).status).toBe(503);
   });
+
+  it("forjar o começo do x-forwarded-for a cada pedido não escapa do teto do endereço real no fim", async () => {
+    for (let i = 0; i < 5; i++) expect((await cartao(member, `198.51.100.${10 + i}, ${ENDERECO}`)).status).toBe(503);
+    for (let i = 0; i < 5; i++) expect((await cartao(admin, `lixo-${i}, 198.51.100.${50 + i}, ${ENDERECO}`)).status).toBe(503);
+    expect((await cartao(terceira, `198.51.100.99, ${ENDERECO}`)).status).toBe(429);
+    expect((await cartao(terceira, `198.51.100.99, ${OUTRO_ENDERECO}`)).status).toBe(503);
+  });
 });
 
 describe("as outras ações e as leituras", () => {
@@ -176,7 +183,7 @@ describe("as outras ações e as leituras", () => {
 
   it("o HEAD conta junto com o GET da mesma rota — não abre uma segunda cota", async () => {
     await status(60, () => pedir("get", "/billing/minha-assinatura", member));
-    const head = await request(servidor).head("/api/billing/minha-assinatura").set("Cookie", member).set("x-real-ip", ENDERECO);
+    const head = await request(servidor).head("/api/billing/minha-assinatura").set("Cookie", member).set("x-forwarded-for", ENDERECO);
     expect(head.status).toBe(429);
   });
 
@@ -230,36 +237,36 @@ describe("a janela e o dia", () => {
 });
 
 describe("o endereço que não é um endereço", () => {
-  it("fora de produção, sem cabeçalho (ou com um que não é IP) vale a conexão — todos aqui são 127.0.0.1", async () => {
+  it("fora de produção, sem cabeçalho (ou com um que não termina em IP) vale a conexão — todos aqui são 127.0.0.1", async () => {
     const semCabecalho = (cookies: string[], valor?: string) => {
       const req = request(servidor).post("/api/billing/cartao").set("Cookie", cookies);
-      return valor === undefined ? req : req.set("x-real-ip", valor);
+      return valor === undefined ? req : req.set("x-forwarded-for", valor);
     };
     expect(await status(5, () => semCabecalho(member))).toEqual([503, 503, 503, 503, 503]);
     expect(await status(5, () => semCabecalho(admin, "abc"))).toEqual([503, 503, 503, 503, 503]);
-    expect((await semCabecalho(terceira, "1.2.3.4, 5.6.7.8")).status).toBe(429);
+    expect((await semCabecalho(terceira, "1.2.3.4, abc")).status).toBe(429);
   });
 
-  // EM PRODUÇÃO o `x-real-ip` vem da borda da Railway. Sem ele (ou com um que não é IP), contar
-  // pela conexão juntaria a escola inteira na contagem do proxy: o pedido não conta por endereço,
-  // o teto da CONTA continua, e vai UM alerta (achado da revisão de segurança, 19/10/2026).
-  it("em produção, sem um x-real-ip válido: não conta por endereço, a conta continua contando, e UM alerta", async () => {
+  // EM PRODUÇÃO o `x-forwarded-for` vem da frente do Cloud Run. Sem ele (ou com um que não termina
+  // em IP válido), contar pela conexão juntaria a escola inteira na contagem do proxy: o pedido não
+  // conta por endereço, o teto da CONTA continua, e vai UM alerta (achado da revisão de segurança, 19/10/2026).
+  it("em produção, sem um x-forwarded-for válido: não conta por endereço, a conta continua contando, e UM alerta", async () => {
     const erro = vi.spyOn(console, "error").mockImplementation(() => {});
     const antesDoAmbiente = process.env.NODE_ENV;
     process.env.NODE_ENV = "production";
     try {
       const estranho = (cookies: string[], valor?: string) => {
         const req = request(servidor).post("/api/billing/cartao").set("Cookie", cookies);
-        return valor === undefined ? req : req.set("x-real-ip", valor);
+        return valor === undefined ? req : req.set("x-forwarded-for", valor);
       };
       expect(await status(5, () => estranho(member))).toEqual([503, 503, 503, 503, 503]);
       expect(await status(5, () => estranho(admin, "abc"))).toEqual([503, 503, 503, 503, 503]);
-      // A terceira passa: não houve contagem por endereço.
-      expect((await estranho(terceira, "1.2.3.4, 5.6.7.8")).status).toBe(503);
+      // A terceira passa: não houve contagem por endereço (o último item não é IP).
+      expect((await estranho(terceira, "1.2.3.4, abc")).status).toBe(503);
       // A conta continua: o 6º do member@ para.
       expect((await estranho(member)).status).toBe(429);
-      const alertas = erro.mock.calls.map((chamada) => chamada.join(" ")).filter((linha) => linha.includes("x-real-ip"));
-      expect(alertas).toEqual(["[api] limite de tentativas: pedido sem um x-real-ip válido — a contagem por endereço está parada (a borda da Railway deixou de reescrever o cabeçalho?)"]);
+      const alertas = erro.mock.calls.map((chamada) => chamada.join(" ")).filter((linha) => linha.includes("x-forwarded-for"));
+      expect(alertas).toEqual(["[api] limite de tentativas: pedido sem um x-forwarded-for válido — a contagem por endereço está parada (a frente do Cloud Run deixou de preencher o cabeçalho?)"]);
     } finally {
       process.env.NODE_ENV = antesDoAmbiente;
       erro.mockRestore();

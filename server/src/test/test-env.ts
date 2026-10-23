@@ -84,7 +84,7 @@ export function assertTestDatabase(): void {
       `TRAVA DE BANCO DE TESTE: DATABASE_URL aponta para o host "${host}", que não ` +
         `é local (aceitos: ${ALLOWED_TEST_HOSTS.join(", ")}). A suíte roda ` +
         `\`prisma migrate reset --force\`, que apaga todas as tabelas — em produção ` +
-        `isso destrói o banco que o Railway serve. Abortando antes de qualquer conexão.`,
+        `isso destrói o banco que a nuvem serve. Abortando antes de qualquer conexão.`,
     );
   }
   // Sem BETTER_AUTH_SECRET o Better Auth falha de forma obscura no meio do seed;

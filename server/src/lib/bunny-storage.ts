@@ -1,7 +1,8 @@
 import { Readable } from "node:stream";
 // O Bunny Storage: onde mora o arquivo que o site RECEBE (capa de curso hoje;
-// foto do aluno depois). Nunca o disco do container: a Railway zera o disco a
-// cada publicação (CLAUDE.md → Video; decisão do operador, 25/09/2026).
+// foto do aluno depois). Nunca o disco do container: o Cloud Run usa disco em
+// memória que some quando a instância fecha (CLAUDE.md → Video; decisão do
+// operador, 25/09/2026).
 //
 // A senha da Storage Zone vive SÓ aqui, no servidor. O navegador manda o
 // arquivo para a nossa rota, e a rota manda para o Bunny — o contrário
@@ -63,12 +64,24 @@ function configDosArquivos() {
 }
 
 /**
- * O caminho de um arquivo de aula: `aulas/<id da aula>/<24 caracteres>.<ext>`.
+ * O caminho de um arquivo de aula (ou de uma parte dele, a partir da 2ª):
+ * `aulas/<id da aula>/<24 caracteres>.<ext>` ou
+ * `aulas/<id da aula>/<24 caracteres>.parte-<2+>.<ext>`.
  * Função pura. É a TRAVA contra o apagar recursivo do Bunny: um caminho vazio,
  * uma pasta (`aulas/12/`) ou um `..` nunca passa daqui.
  */
 export function caminhoDeArquivoDaAula(caminho: string): boolean {
-  return /^aulas\/\d+\/[0-9a-f]{24}\.[a-z0-9]{1,5}$/.test(caminho);
+  return /^aulas\/\d+\/[0-9a-f]{24}(\.parte-(?:[2-9]|[1-9]\d+))?\.[a-z0-9]{1,5}$/.test(caminho);
+}
+
+/**
+ * O caminho da parte `indice` (`0` = a 1ª parte, no próprio `caminhoBase`;
+ * `1` = `.parte-2`, `2` = `.parte-3`, etc.). O arquivo de 1 parte só usa
+ * sempre o `caminhoBase` original.
+ */
+export function caminhoDaParte(caminhoBase: string, indice: number): string {
+  if (indice <= 0) return caminhoBase;
+  return caminhoBase.replace(/(\.[a-z0-9]{1,5})$/, `.parte-${indice + 1}$1`);
 }
 
 export type ResultadoDoArquivo = { ok: true } | { ok: false; motivo: "NaoConfigurado" | "Falhou" };
@@ -102,7 +115,7 @@ export async function enviarArquivoDaAula(
   try {
     resposta = await fetch(`https://${c.host}/${c.zona}/${caminho}`, pedido);
   } catch {
-    // O envio caiu no meio (o navegador fechou, a rede caiu, o Railway cortou).
+    // O envio caiu no meio (o navegador fechou ou a rede caiu).
     console.error("[bunny-storage] envio de arquivo interrompido");
     return { ok: false, motivo: "Falhou" };
   }
