@@ -658,16 +658,25 @@ model PlanItem {
 // operador, 28/09/2026). O arquivo mora numa Storage Zone PRÓPRIA do Bunny, sem
 // CDN: nada lá é público, e só o nosso servidor entrega — para o assinante, na
 // etapa 4 do Bloco U. O caminho tem nome aleatório (`aulas/<aula>/<código>.<ext>`).
+//
+// Bloco G, etapa G2: o envio pelo admin vai em partes de até 30 MB para caber
+// no limite de pedido do Cloud Run; cada parte vira um objeto no Bunny Storage
+// (`aulas/<aula>/<código>.<ext>` na primeira e `.parte-2`, `.parte-3`... nas
+// seguintes). O arquivo já guardado inteiro vale como 1 parte pronta, e o
+// arquivo novo só aparece para o aluno quando todas as partes chegaram (`completo`).
 model LessonFile {
-  id           Int      @id @default(autoincrement())
-  lessonId     Int
-  lesson       Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  id             Int      @id @default(autoincrement())
+  lessonId       Int
+  lesson         Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
   // O nome com que o operador enviou (o aluno baixa com este nome).
-  originalName String
-  storagePath  String   @unique
+  originalName   String
+  storagePath    String   @unique
   // BigInt: arquivo sem limite de tamanho (operador, 29/09/2026); Int para em 2 GB.
-  sizeBytes    BigInt
-  createdAt    DateTime @default(now())
+  sizeBytes      BigInt
+  partes         Int      @default(1)
+  partesEnviadas Int      @default(1)
+  completo       Boolean  @default(true)
+  createdAt      DateTime @default(now())
 
   @@index([lessonId])
   @@map("lesson_file")

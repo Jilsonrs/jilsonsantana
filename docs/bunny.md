@@ -494,7 +494,7 @@ desligado** (é pago).
   qualquer um que visse o endereço baixaria.
 - **Tier e réplica são IRREVERSÍVEIS** (§4.1): a escolha é do operador. Recomendação do agente:
   **Standard (HDD), São Paulo, sem réplica** — réplica só se acrescenta, e os arquivos saem pelo
-  nosso servidor (na Railway), então a réplica não aproxima nada do aluno.
+  nosso servidor (no Cloud Run), então a réplica não aproxima nada do aluno.
 - **Criada pelo operador em 29/09/2026:** `jilsonsantana-arquivos` · **Standard (HDD)** ·
   principal **São Paulo (BR)** · **sem réplica** · **S3 desligado** · **sem Pull Zone** · endpoint
   `br.storage.bunnycdn.com`. O painel sugeriu ligar réplica ("sem réplica, pode haver perda de
@@ -506,23 +506,31 @@ desligado** (é pago).
   inteiro em `aulas/<aula>/<código>.zip`. **Baixar pelo painel do Bunny não é o caminho do
   aluno:** o painel junta a pasta num `download.zip`, com a pasta da aula e o arquivo com nome de
   código dentro. O aluno baixa pelo site, com o nome original (etapa 4 do Bloco U).
-- **Sem limite de tamanho** *(operador, 29/09/2026: em geral um .zip por curso)*. O arquivo passa
-  **em fluxo** pelo nosso servidor até o Bunny, sem ficar inteiro na memória, e o tamanho vai no
-  cabeçalho do `PUT` (medido: sem ele, o fetch do Node manda "em pedaços"). **O único teto é do
-  Railway** *(doc via context7, 29/09)*: o envio precisa terminar em **5 minutos**. O tamanho no
-  banco é `BigInt` (o `Int` parava em 2 GB).
+- **Sem limite de tamanho, enviado em partes de até 30 MB** *(operador, 29/09/2026: em geral um
+  .zip por curso; adaptado em partes na etapa G2 do Bloco G, 22/10/2026)*. O pedido HTTP/1.1 no
+  Cloud Run tem teto de **32 MB**: o navegador do admin (`uploadLessonFile` em `client/src/lib/api.ts`)
+  corta o arquivo em pedaços de até **30 MB**, envia um de cada vez com nova tentativa automática se
+  um pedaço falhar, e cada pedaço segue **em fluxo** pelo nosso servidor até virar um objeto no
+  Bunny Storage (`aulas/<aula>/<código>.<ext>` na 1ª parte e `.parte-2.<ext>`, `.parte-3.<ext>`… nas
+  seguintes), com o tamanho de cada parte no cabeçalho do `PUT` (medido: sem ele, o fetch do Node
+  manda "em pedaços"). O banco (`LessonFile`) guarda quantas partes o arquivo tem (`partes`),
+  quantas já chegaram (`partesEnviadas`) e se todas já chegaram (`completo`), e o arquivo só aparece
+  para o aluno quando todas chegaram; o arquivo já guardado inteiro vale como uma parte só (`partes = 1`).
+  O tamanho no banco é `BigInt` (o `Int` parava em 2 GB).
 - **A entrega ao aluno SAI PELO NOSSO SERVIDOR** *(decisão do operador, 29/09/2026, na etapa 4)*:
-  `GET /api/lessons/:id/files/:fileId` lê o arquivo do Storage **em fluxo** e entrega com o **nome
-  original** (`Content-Disposition`), **só para assinante** — a prévia grátis não libera arquivo,
-  o visitante só assiste *(operador, 29/09/2026)*. Mais simples, e o nome
-  original sai sem esforço. **Limites aceitos:** o Railway corta um download que dure mais de 15
-  minutos, e cobra o tráfego de saída. *Gatilho de reabertura: download cortado no meio (arquivo
-  grande em internet lenta) ou a conta de saída do Railway pesar — aí a alternativa é o link
-  assinado e temporário direto do Bunny, com uma Pull Zone com token nesta zona.*
+  `GET /api/lessons/:id/files/:fileId` lê as partes do arquivo no Storage **em sequência e em fluxo**
+  e entrega como um arquivo só, com o **nome original** (`Content-Disposition`), **só para
+  assinante** — a prévia grátis não libera arquivo, o visitante só assiste *(operador, 29/09/2026)*.
+  Mais simples, e o nome original sai sem esforço. **Limites aceitos:** o Cloud Run corta um pedido
+  que dure mais de 60 minutos (o máximo configurável no serviço), e cobra o tráfego de saída depois
+  dos 100 GB grátis por mês na América do Norte. *Gatilho de reabertura: download cortado no meio
+  (arquivo grande em internet lenta) ou a conta de saída pesar — aí a alternativa é o link assinado
+  e temporário direto do Bunny (para arquivos de uma parte) ou juntar em arquivo único.*
 - **Regras de build que já valem** *(código em `server/src/lib/bunny-storage.ts`)*: nome
-  aleatório no Storage (`aulas/<aula>/<24 caracteres>.<ext>`); o nome original fica só no banco;
-  **apagar só aceita caminho de arquivo nesse formato**, porque, pela doc (context7, 28/09),
-  **apagar uma PASTA apaga tudo dentro dela, sem aviso**.
+  aleatório no Storage (`aulas/<aula>/<24 caracteres>.<ext>` e `.parte-<2+>.<ext>` para as partes
+  seguintes); o nome original fica só no banco; **apagar remove todas as partes e só aceita caminho
+  de arquivo nesse formato**, porque, pela doc (context7, 28/09), **apagar uma PASTA apaga tudo
+  dentro dela, sem aviso**.
 
 ## 5. Chaves e senhas — leia antes do passo a passo
 

@@ -64,7 +64,10 @@ async function cursoCompleto(comApresentacao = false) {
   });
   const aula = curso.modules[0].lessons[0];
   await prisma.lessonFile.createMany({
-    data: [1, 2].map((i) => ({ lessonId: aula.id, originalName: `f${i}.pdf`, storagePath: caminho(aula.id, i), sizeBytes: 1 })),
+    data: [
+      { lessonId: aula.id, originalName: "f1.pdf", storagePath: caminho(aula.id, 1), sizeBytes: 1, partes: 1, partesEnviadas: 1, completo: true },
+      { lessonId: aula.id, originalName: "f2.pdf", storagePath: caminho(aula.id, 2), sizeBytes: 3, partes: 3, partesEnviadas: 3, completo: true },
+    ],
   });
   return { cursoId: curso.id, moduloId: curso.modules[0].id, aulaId: aula.id };
 }
@@ -79,6 +82,8 @@ describe("excluir aula", () => {
 
     expect(apagarArquivoDaAula).toHaveBeenCalledWith(caminho(aulaId, 1));
     expect(apagarArquivoDaAula).toHaveBeenCalledWith(caminho(aulaId, 2));
+    expect(apagarArquivoDaAula).toHaveBeenCalledWith(caminho(aulaId, 2).replace(/\.pdf$/, ".parte-2.pdf"));
+    expect(apagarArquivoDaAula).toHaveBeenCalledWith(caminho(aulaId, 2).replace(/\.pdf$/, ".parte-3.pdf"));
     expect(apagarVideo).toHaveBeenCalledWith("aulas", PENDENTE);
     expect(apagarVideo).toHaveBeenCalledWith("aulas", VIDEO);
     expect(await prisma.lesson.findUnique({ where: { id: aulaId } })).toBeNull();

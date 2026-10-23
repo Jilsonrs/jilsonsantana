@@ -388,6 +388,82 @@ describe("o download", () => {
     expect((res.body as Buffer).toString()).toBe("zip!!");
   });
 
+  it("arquivo em partes (Bloco G, etapa G2): o assinante baixa o arquivo inteiro e igual ao original; quem não assina recebe 403", async () => {
+    const caminhoBase = `aulas/${ids.paga}/${"e".repeat(24)}.zip`;
+    const p1 = Buffer.from("primeira-parte-do-arquivo::");
+    const p2 = Buffer.from("segunda-parte-no-meio::");
+    const p3 = Buffer.from("terceira-e-ultima-parte!");
+    const original = Buffer.concat([p1, p2, p3]);
+    const mapa = new Map<string, Buffer>([
+      [caminhoBase, p1],
+      [`aulas/${ids.paga}/${"e".repeat(24)}.parte-2.zip`, p2],
+      [`aulas/${ids.paga}/${"e".repeat(24)}.parte-3.zip`, p3],
+    ]);
+    const emPartes = await prisma.lessonFile.create({
+      data: {
+        lessonId: ids.paga,
+        originalName: "Curso-Inteiro.zip",
+        storagePath: caminhoBase,
+        sizeBytes: original.length,
+        partes: 3,
+        partesEnviadas: 3,
+        completo: true,
+      },
+    });
+    try {
+      lerArquivoDaAula.mockImplementation(async (caminho: string) => {
+        const bytesDaParte = mapa.get(caminho);
+        if (!bytesDaParte) return { ok: false, motivo: "NaoEncontrado" };
+        return { ok: true, corpo: Readable.from([bytesDaParte]), tamanho: String(bytesDaParte.length) };
+      });
+
+      const res = await baixar(ids.paga, emPartes.id, member);
+      expect(res.status).toBe(200);
+      expect(res.headers["content-disposition"]).toContain('filename="Curso-Inteiro.zip"');
+      expect(res.headers["content-length"]).toBe(String(original.length));
+      expect(Buffer.compare(res.body as Buffer, original)).toBe(0);
+
+      lerArquivoDaAula.mockClear();
+      await semAssinatura(async () => {
+        const negado = await baixar(ids.paga, emPartes.id, member);
+        expect(negado.status).toBe(403);
+      });
+      expect(lerArquivoDaAula).not.toHaveBeenCalled();
+    } finally {
+      await prisma.lessonFile.delete({ where: { id: emPartes.id } });
+    }
+  });
+
+  it("parte faltando não aparece para o aluno (nem na aula, nem na árvore, nem em 'inclui') e dá 404 no download", async () => {
+    const incompleto = await prisma.lessonFile.create({
+      data: {
+        lessonId: ids.outro,
+        originalName: "Pela-Metade.zip",
+        storagePath: `aulas/${ids.outro}/${"f".repeat(24)}.zip`,
+        sizeBytes: 100,
+        partes: 2,
+        partesEnviadas: 1,
+        completo: false,
+      },
+    });
+    try {
+      const pag = await pagina(ids.outro, member);
+      expect(pag.status).toBe(200);
+      expect(pag.body.aula.arquivos).toEqual([]);
+      expect(pag.body.curso.inclui.arquivos).toBe(false);
+      expect(pag.body.curso.modulos[0].aulas[0].temArquivos).toBe(false);
+      expect(JSON.stringify(pag.body)).not.toContain("Pela-Metade.zip");
+
+      const dlAluno = await baixar(ids.outro, incompleto.id, member);
+      expect(dlAluno.status).toBe(404);
+      const dlAdmin = await request(servidor).get(`/api/admin/lesson-files/${incompleto.id}/download`).set("Cookie", admin);
+      expect(dlAdmin.status).toBe(404);
+      expect(lerArquivoDaAula).not.toHaveBeenCalled();
+    } finally {
+      await prisma.lessonFile.delete({ where: { id: incompleto.id } });
+    }
+  });
+
   it("aluno sem assinatura: 403", async () => {
     await semAssinatura(async () => {
       expect((await baixar(ids.paga, ids.arquivo, member)).status).toBe(403);

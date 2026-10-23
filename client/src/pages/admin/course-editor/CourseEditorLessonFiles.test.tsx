@@ -151,3 +151,71 @@ describe("arquivos da aula", () => {
     expect(screen.queryByRole("button", { name: "Enviar vídeo" })).toBeNull();
   });
 });
+
+describe("uploadLessonFile em partes de até 30 MB com nova tentativa", () => {
+  it("corta arquivo maior que 30 MB em partes sequenciais e tenta de novo a parte que falhar", async () => {
+    const apiReal = await vi.importActual<typeof import("@/lib/api")>("@/lib/api");
+    const { client, TAMANHO_DA_PARTE_DO_ARQUIVO } = apiReal;
+
+    const postSpy = vi.spyOn(client, "post").mockResolvedValueOnce({
+      data: { id: 42, originalName: "grande.zip", sizeBytes: TAMANHO_DA_PARTE_DO_ARQUIVO, createdAt: "2026-10-22" },
+    } as never);
+    let tentativasDaParte2 = 0;
+    const putSpy = vi.spyOn(client, "put").mockImplementation(async (url, corpo) => {
+      if (url === "/admin/lesson-files/42/partes/2") {
+        tentativasDaParte2 += 1;
+        if (tentativasDaParte2 === 1) {
+          throw { response: { status: 502 } };
+        }
+      }
+      return {
+        data: {
+          id: 42,
+          originalName: "grande.zip",
+          sizeBytes: TAMANHO_DA_PARTE_DO_ARQUIVO + (corpo as Blob).size,
+          createdAt: "2026-10-22",
+        },
+      } as never;
+    });
+
+    try {
+      const arquivoGrande = new File(["abc"], "grande.zip");
+      const tamanhoSimulado = TAMANHO_DA_PARTE_DO_ARQUIVO * 2 + 1234;
+      Object.defineProperty(arquivoGrande, "size", { value: tamanhoSimulado });
+      const fatias: Array<[number, number]> = [];
+      arquivoGrande.slice = ((inicio = 0, fim = tamanhoSimulado) => {
+        fatias.push([inicio, fim]);
+        const b = new Blob(["x"]);
+        Object.defineProperty(b, "size", { value: fim - inicio });
+        return b;
+      }) as typeof arquivoGrande.slice;
+
+      const resultado = await apiReal.uploadLessonFile(11, arquivoGrande);
+
+      expect(resultado.id).toBe(42);
+      expect(postSpy).toHaveBeenCalledTimes(1);
+      expect(postSpy.mock.calls[0]?.[0]).toBe("/admin/lessons/11/files");
+      expect(postSpy.mock.calls[0]?.[2]?.headers).toMatchObject({
+        "Content-Type": "application/octet-stream",
+        "X-Nome-Do-Arquivo": "grande.zip",
+        "X-Total-De-Partes": "3",
+      });
+      // Parte 2 falhou 1 vez com 502 e passou na 2ª tentativa; parte 3 passou de primeira.
+      expect(tentativasDaParte2).toBe(2);
+      expect(putSpy).toHaveBeenCalledTimes(3);
+      expect(putSpy.mock.calls.map((c) => c[0])).toEqual([
+        "/admin/lesson-files/42/partes/2",
+        "/admin/lesson-files/42/partes/2",
+        "/admin/lesson-files/42/partes/3",
+      ]);
+      expect(fatias).toEqual([
+        [0, TAMANHO_DA_PARTE_DO_ARQUIVO],
+        [TAMANHO_DA_PARTE_DO_ARQUIVO, TAMANHO_DA_PARTE_DO_ARQUIVO * 2],
+        [TAMANHO_DA_PARTE_DO_ARQUIVO * 2, tamanhoSimulado],
+      ]);
+    } finally {
+      postSpy.mockRestore();
+      putSpy.mockRestore();
+    }
+  });
+});

@@ -1,6 +1,6 @@
 import { prisma } from "./prisma.js";
 import { apagarVideo } from "./bunny-stream.js";
-import { apagarArquivoDaAula } from "./bunny-storage.js";
+import { apagarArquivoDaAula, caminhoDaParte } from "./bunny-storage.js";
 
 // EXCLUIR APAGA NO BUNNY TAMBÉM (decisão do operador, 28/09/2026: "deveria
 // excluir o vídeo, já que ele ficaria perdido no Bunny"). Excluir aula, módulo ou
@@ -20,12 +20,18 @@ import { apagarArquivoDaAula } from "./bunny-storage.js";
 export async function limparAulaNoBunny(aulaId: number): Promise<boolean> {
   const aula = await prisma.lesson.findUnique({
     where: { id: aulaId },
-    select: { bunnyVideoId: true, bunnyVideoPendingId: true, files: { select: { id: true, storagePath: true } } },
+    select: {
+      bunnyVideoId: true,
+      bunnyVideoPendingId: true,
+      files: { select: { id: true, storagePath: true, partes: true } },
+    },
   });
   if (!aula) return true;
 
   for (const arquivo of aula.files) {
-    if (!(await apagarArquivoDaAula(arquivo.storagePath)).ok) return false;
+    for (let indice = 0; indice < arquivo.partes; indice++) {
+      if (!(await apagarArquivoDaAula(caminhoDaParte(arquivo.storagePath, indice))).ok) return false;
+    }
     await prisma.lessonFile.delete({ where: { id: arquivo.id } });
   }
   if (aula.bunnyVideoPendingId) {
