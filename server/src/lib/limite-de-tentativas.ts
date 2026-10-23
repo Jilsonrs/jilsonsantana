@@ -66,10 +66,10 @@ let avisouSemEndereco = false;
 
 /**
  * O cabeçalho em que a frente do Cloud Run (Google Front End, no mapeamento de domínio e em
- * `*.run.app`) entrega a cadeia de endereços. PROVISÓRIO até a medição em produção na etapa G4
- * (`GET /api/diagnostico-ip`), como foi feito em 23/09/2026: a documentação do Google diz que a
- * frente acrescenta o IP de quem conectou ao fim do `x-forwarded-for`, mas só a medição no ar
- * confirma se o mapeamento de domínio acrescenta um salto interno depois dele.
+ * `*.run.app`) entrega a cadeia de endereços. MEDIDO E CONFIRMADO em produção na etapa G4
+ * (`GET /api/diagnostico-ip`, 23/10/2026): a frente do Google acrescenta o IP real de quem
+ * conectou ao fim de `x-forwarded-for` (inclusive com cabeçalhos forjados e múltiplas linhas),
+ * enquanto `x-real-ip` chega nulo.
  */
 export const CABECALHO_DO_IP = "x-forwarded-for";
 
@@ -93,7 +93,7 @@ const FAIXAS_QUE_NAO_SAO_VISITANTE = (() => {
 })();
 
 /**
- * O PORTEIRO DO IP (Bloco G, etapa G2 — regra PROVISÓRIA até a medição em produção na G4):
+ * O PORTEIRO DO IP (Bloco G, etapa G2 — MEDIDO E CONFIRMADO em produção na G4, 23/10/2026):
  * a ÚNICA função que decide o IP de quem pediu, tanto para o login (`lib/auth.ts`) quanto para os
  * limites de tentativas da escola (`enderecoDoPedido`, abaixo).
  *
