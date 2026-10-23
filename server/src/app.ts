@@ -34,7 +34,6 @@ import billingSemLoginRouter from "./routes/billing-sem-login.js";
 import contaCodigoRouter from "./routes/conta-codigo.js";
 import billingRouter from "./routes/billing.js";
 import adminAssinaturasRouter from "./routes/admin-assinaturas.js";
-import diagnosticoIpRouter from "./routes/diagnostico-ip.js";
 import { tratarErroDaApi } from "./lib/erro-da-api.js";
 import { anotarErroDoSite } from "./lib/erro-do-site.js";
 
@@ -149,8 +148,6 @@ app.use("/api", billingSemLoginRouter);
 app.use("/api", billingRouter);
 // O admin força a sincronia de uma conta com a Stripe (etapa 4.4) — só admin, nunca rota aberta.
 app.use("/api", adminAssinaturasRouter);
-// Rota temporária de diagnóstico do IP (Bloco G, etapa G4):
-app.use("/api", diagnosticoIpRouter);
 
 // O TRATADOR DE ERRO DA API — o ÚLTIMO de `/api`, depois de todas as rotas (etapa 4.4): o erro
 // que escapar de qualquer uma delas (inclusive do login e do aviso da Stripe, montados lá em
