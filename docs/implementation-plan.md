@@ -52,9 +52,10 @@
 > total) e o seed sincronizado; `DATABASE_URL` e `DIRECT_URL` atualizados no Secret Manager (`version 3
 > enabled`, anteriores destruídas) e no `server/.env`, e o endpoint `dev` atualizado em
 > `assinatura-de-teste.ts`.
+> **Feito em 22/10 (etapa G2, no branch `bloco-g`):** o código adaptado ao Cloud Run (envio e download de arquivo de aula em partes de até 30 MB sem limite de tamanho total, desvio 301 de `jilsonsantana.com` para `www`, porteiro único de IP via `x-forwarded-for`, pipeline de deploy no GitHub Actions e remoção da Railway).
+> **Feito em 23/10 (etapa G3, no branch `bloco-g` e publicado na `main`):** a infraestrutura montada no Google Cloud (APIs, Artifact Registry com regra de limpeza para 5 imagens, contas de serviço `jilson-site` e `jilson-publicacao`, Workload Identity Federation restrito à `main` deste repositório, segredo `STRIPE_PUBLISHABLE_KEY` com chave pública colada no cofre pelo operador, 7 variáveis no GitHub), primeira publicação automática via GitHub Actions após CI verde na `main`, Cloud Run Job `jilson-prod-migration` executado com sucesso aplicando 39 migrations no banco de produção Neon na Virgínia, e o serviço `jilson-prod` no ar no endereço provisório `https://jilson-prod-873389611774.us-east4.run.app` (`*.run.app`) com todas as provas validadas.
 > **O plano da mudança: [Bloco G](#bloco-g--a-casa-nova-google-cloud-run)** — quatro etapas, uma por
-> sessão; no fim da G4 o site volta ao ar, no mesmo endereço, com a publicação de 21/10 junto. As
-> decisões da G2 fechadas em 22/10/2026: o mapeamento de domínio (P100), o servidor ligado, esperando, e o arquivo de aula enviado em partes, sem limite de tamanho (P101).
+> sessão; no fim da G4 o site volta ao ar no endereço definitivo (`www.jilsonsantana.com`), com o mapeamento de domínio.
 >
 > **Fases fechadas:** 0 (fundação/deploy) · 1 (auth/shell) — checkboxes completos em
 > [`build-history.md`](build-history.md). **Também lá, desde 11/10/2026:** as etapas 4.0 a 4.5 da
@@ -978,7 +979,7 @@ os arquivos e comandos do Bloco G:**
       seguidos* · (c) **as ferramentas da publicação fixadas por versão móvel** (`@v4`), num passo que
       pode publicar — fixar pelo código do commit; *gatilho: antes da abertura ao público (passo 8 da
       4.7)*.
-- [ ] **G3 — A casa nova no ar, no endereço provisório do Google.**
+- [x] **G3 — A casa nova no ar, no endereço provisório do Google.**
       O agente monta com o `gcloud`, o operador acompanhando: as APIs, o Artifact Registry, as duas
       contas de serviço, a ligação com o GitHub, o serviço (com a conta mínima de *A forma*) e o Job.
       **Passo 0 no banco de produção** (o operador, no console do Neon, branch `production` — regra
@@ -1025,6 +1026,44 @@ os arquivos e comandos do Bloco G:**
       recusar — o `BETTER_AUTH_URL` é o `www`: ele se prova na G4.*
       **Pronto quando:** o serviço responde no endereço do Google, ligado ao banco de produção, e o
       `www` ainda não aponta para ele.
+      - **Relatório de execução da G3 (Antigravity no branch `bloco-g`, 23/10/2026):**
+        - **Infraestrutura montada no Google Cloud (`jilsonsantana`, número `873389611774`):**
+          - APIs habilitadas: `run.googleapis.com`, `artifactregistry.googleapis.com`, `iam.googleapis.com`, `iamcredentials.googleapis.com`, `sts.googleapis.com`.
+          - **Artifact Registry:** repositório Docker `jilsonsantana` em `us-east4`, com política de limpeza estrita ativa mantendo apenas as 5 imagens mais recentes (`keepCount: 5`) para garantir consumo dentro da cota gratuita.
+          - **Contas de serviço com privilégio mínimo:** `jilson-site` (conta de execução do Cloud Run, que lê apenas os 14 segredos atribuídos individualmente via `roles/secretmanager.secretAccessor`, sem nenhuma role no projeto) e `jilson-publicacao` (conta de CI/CD do GitHub Actions, que possui apenas `roles/artifactregistry.writer` no repositório Docker, `roles/iam.serviceAccountUser` na conta `jilson-site`, e `roles/run.developer` restrito ao serviço `jilson-prod` e ao Job `jilson-prod-migration`, **sem** acesso aos segredos do Secret Manager).
+          - **Workload Identity Federation:** pool `github` e provedor `github-actions` criados com mapeamento e condição estrita exigindo `assertion.repository_id == '1110554640'`, `assertion.repository_owner_id == '186621656'`, `assertion.event_name == 'workflow_run'`, `assertion.ref == 'refs/heads/main'` e `assertion.workflow_ref == 'Jilsonrs/jilsonsantana/.github/workflows/deploy.yml@refs/heads/main'`. Vínculo `roles/iam.workloadIdentityUser` aplicado na conta `jilson-publicacao` restrito a este principal.
+          - **Variáveis do repositório no GitHub:** 7 variáveis cadastradas em *Settings → Secrets and variables → Actions → Variables* (`GCP_PROJECT_ID=jilsonsantana`, `GCP_REGION=us-east4`, `GCP_WORKLOAD_IDENTITY_PROVIDER=projects/873389611774/locations/global/workloadIdentityPools/github/providers/github-actions`, `GCP_DEPLOY_SERVICE_ACCOUNT=jilson-publicacao@jilsonsantana.iam.gserviceaccount.com`, `GCP_ARTIFACT_REPOSITORY=jilsonsantana`, `GCP_MIGRATE_JOB_NAME=jilson-prod-migration`, `GCP_SERVICE_NAME=jilson-prod`).
+          - **Secret Manager:** criado o segredo `STRIPE_PUBLISHABLE_KEY`, com versão 1 ativada pelo operador colando a chave pública `pk_live_` diretamente no console do Google (chave nunca trafegou no chat nem em linha de comando), totalizando 14 segredos no cofre com leitura atribuída a `jilson-site`.
+          - **Serviço Cloud Run inicial:** criado `jilson-prod` na região `us-east4`, com imagem provisória inicial, `min-instances=1`, `max-instances=1`, `cpu=2`, `memory=2Gi`, `--cpu-throttling`, `--timeout=3600`, variáveis versionadas via `deploy/cloud-run.yaml` e 14 segredos via `--set-secrets`.
+          - **Cloud Run Job de migrations:** criado `jilson-prod-migration` em `us-east4` com `--service-account=jilson-site`, `command=npx`, `args=prisma,migrate,deploy,--schema,server/prisma/schema.prisma`, segredos `DATABASE_URL` e `DIRECT_URL`, e timeout de 10 min.
+        - **Retrato ANTES (Neon `rough-meadow-05608403`, branch `production`, registrado pelo operador via SQL Editor):**
+          1. Últimas 6 migrations: 34 migrations no total, topo `20261018170000_sai_o_idioma_da_conta` (18/10/2026).
+          2. Contagens: `contas = 2`, `cursos = 2`, `assinaturas = 1`, `sessoes = 7`.
+          3. Admin: `email = jilson@jilsonsantana.com`, `emailVerified = f`.
+          4. RLS: `0` linhas sem RLS (`No result`).
+        - **Publicação na `main` autorizada pelo operador ("Publica"):**
+          - Merge `--no-ff` da `dev` na `main` (commit `6de3c67`) e envio com `git push origin main`.
+          - GitHub Actions executou o CI completo (`Typecheck, test & build` e `E2E Playwright`), aprovado com sucesso (run `39951337388`).
+          - Acionado o workflow `Deploy` (run `39953157040`): autenticação via WIF, compilação de imagem Docker enviada para o Artifact Registry (`app:6de3c67`), execução do Cloud Run Job `jilson-prod-migration-255tj` (concluído com sucesso em 25,4 segundos aplicando as migrations em produção) e atualização do serviço `jilson-prod` para a revisão `jilson-prod-00002-k96`.
+        - **Retrato DEPOIS (Neon `rough-meadow-05608403`, branch `production`, registrado pelo operador via SQL Editor):**
+          1. Últimas 6 migrations (39 no total): `20261022210000_arquivo_da_aula_em_partes` (23/10 12:28:49 UTC), `20261021220100_admin_com_email_confirmado` (12:28:49 UTC), `20261021220000_senha_da_ficha_uma_vez` (12:28:49 UTC), `20261021180000_boas_vindas_da_ficha` (12:28:49 UTC), `20261021120000_ficha_de_espera_do_visitante` (12:28:49 UTC), seguidas por `20261018170000_sai_o_idioma_da_conta`.
+          2. Contagens: `contas = 2`, `cursos = 2`, `assinaturas = 1`, `sessoes = 7` (dados 100% preservados).
+          3. Admin: `email = jilson@jilsonsantana.com`, `emailVerified = t` (confirmado automaticamente pela migration `20261021220100`).
+          4. RLS: `0` linhas sem RLS (`No result`, mantendo proteção integral em todas as tabelas).
+        - **Provas no endereço provisório do Cloud Run (`https://jilson-prod-873389611774.us-east4.run.app` / `https://jilson-prod-igv4d7nfba-uk.a.run.app`):**
+          - `GET /api/health`: HTTP 200 `{"status":"ok"}`.
+          - Cabeçalho de versão: `x-versao-do-app: mvky237l-d267b74a`.
+          - Home (`GET /`): HTTP 200, título `<title>Em breve — Jilson Santana</title>`, `robots: noindex`.
+          - Catálogo (`GET /api/courses` e `GET /api/trilhas`): HTTP 200 com dados reais do banco de produção.
+          - Aula (`GET /api/lessons/18/aula`): HTTP 200 com estrutura da aula e indicação de arquivo.
+          - Trava de arquivo de aula sem sessão (`GET /api/lessons/18/files/1`): HTTP 401 `{"error":"Unauthorized"}`.
+          - Trava de assinatura sem sessão (`GET /api/billing/minha-assinatura`): HTTP 401 `{"error":"Unauthorized"}`.
+          - Pedido de código por e-mail (`POST /api/conta/codigo`): HTTP 200 `{"ok":true}`.
+          - Venda sem login (`GET /api/billing/visitante/planos`): HTTP 404 `{"error":"NaoEncontrado"}` (desligada em produção até ativação deliberada).
+          - Medição de tempos de resposta (Cloud Run `us-east4` ↔ Neon `aws-us-east-1`): Home **279 ms**, `/api/trilhas` **28 ms**, `/api/courses` **30 ms**, `/api/billing/minha-assinatura` **68 ms**, `/api/conta/codigo` **203 ms**.
+          - Sentry: evento de inicialização `[servidor] no ar, versão mvky237l-d267b74a` registrado no painel do Sentry (`jilson-santana.sentry.io/issues`) 33 minutos após o deploy da revisão.
+          - Proteção de autenticação: login de navegador no endereço provisório `*.run.app` recusado com `403 INVALID_ORIGIN` pelo Better Auth conforme especificado no plano (pois `BETTER_AUTH_URL` aponta para o domínio canônico `www`), ficando a validação visual do fluxo de upload/download de aula de ~500 MB no painel do admin para a etapa G4.
+        - **Quatro gates locais no branch `bloco-g`:** `npm run typecheck`, `npm run lint`, `npm run test` (80 arquivos/929 testes no cliente e 80 arquivos/1264 testes no servidor com banco local PG17) e `npm run build` (core, client e server) 100% verdes.
 - [ ] **G4 — O endereço de volta, e tudo funcionando.**
       **O mapeamento** (o Antigravity, com o `gcloud`): provar ao Google que o domínio é da escola (o
       registro TXT que ele pede, na GoDaddy) e mapear o `www.jilsonsantana.com` e o `jilsonsantana.com`
