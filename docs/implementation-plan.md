@@ -18,46 +18,16 @@
 
 ## Estado atual  *(atualizar ao fechar cada bloco)*
 
-> **🔴 O SITE ESTÁ FORA DO AR DESDE 21/10/2026 — A HOSPEDAGEM ESTÁ MUDANDO DA RAILWAY PARA O GOOGLE
-> CLOUD RUN** *(decisão do operador, 21/10/2026; `CLAUDE.md`, entrada Out 2026 (29))*. Em 21/10 a
-> Railway avisou que alguém de fora acessou os sistemas em que ela guarda as variáveis dos clientes
-> e, de parte delas, obteve o conteúdo decifrado
-> ([aviso dela](https://blog.railway.com/p/security-disclosure-wednesday-october-21st)); recomendou
-> trocar todas as chaves, e as publicações ficaram paradas o dia inteiro. **O operador cancelou o
-> plano, apagou a conta da Railway e a tirou do GitHub no mesmo dia.** Desde então
-> `www.jilsonsantana.com` responde 404 (a borda da Railway, sem serviço atrás). **Nenhum aluno
-> afetado:** não há aluno, e o público via o "Em breve".
-> **Feito em 21/10:** (1) **a cópia do banco de produção** no Neon — o branch
-> `copia-incidente-railway-2026-10-21` (`br-withered-art-aew8cgv2`), feito do `production` às 23:39
-> UTC, **sem ponto de conexão**: ninguém entra nele, nem com a senha antiga; ligar um exige trocar a
-> senha antes, porque ele nasce com a de produção. *Saiu em 22/10, junto com o projeto de Ohio
-> (apagado na G1b por decisão do operador; recuperável até 29/10/2026).* · (2) **a
-> chave da conta do Bunny trocada** pelo operador (a nova guardada por ele, fora do computador).
-> **Feito em 22/10 (etapas G1a e G1b, no branch `bloco-g`):** (G1a) a conta `jilson@jilsonsantana.com` reforçada com
-> app autenticador e códigos de backup fora do Mac · o projeto `jilsonsantana` criado no Google Cloud
-> com faturamento e alerta de orçamento mensal (R$ 100) ligados · o `gcloud 590.0.0` instalado no Mac ·
-> **todas as chaves que estavam na Railway rotacionadas/canceladas nos fornecedores (fecha a P103)** —
-> a senha do banco de produção no Neon (`DATABASE_URL` e `DIRECT_URL`), a `sk_live_` (vencendo na hora,
-> `now`) e o segredo do aviso da Stripe, as chaves da biblioteca de aulas e do token e as senhas das
-> duas pastas do Bunny, mais o DSN do Sentry (chave nova gerada e a antiga apagada) —, a chave da
-> conta do Bunny trocada em 21/10, **a chave de produção `Production` do Resend criada (fecha a P97)**
-> e os dois segredos gerados via pipe (`BETTER_AUTH_SECRET` e `PREVIEW_TOKEN`): **os 13 segredos
-> gravados no Secret Manager do Google Cloud**.
-> (G1b) **o banco no Neon movido de Ohio (`falling-snow-79489296`, `aws-us-east-2`) para a Virgínia
-> (`rough-meadow-05608403`, `jilsonsantana-prod`, `aws-us-east-1`, PG18)** pelo *Import Data Assistant*,
-> com retrato ANTES/DEPOIS idêntico nas 26 tabelas, 18 sequências e 34 migrations de `production`
-> (`ep-muddy-hill-b8oromcw`, protegido, janela de restauração de 7 dias); o projeto antigo de Ohio
-> apagado por decisão do operador; o branch `dev` (`ep-soft-base-b8waj57h`) criado a partir do
-> `production` com senha própria rotacionada na hora, as 4 migrations de 21/10 aplicadas nele (38 no
-> total) e o seed sincronizado; `DATABASE_URL` e `DIRECT_URL` atualizados no Secret Manager (`version 3
-> enabled`, anteriores destruídas) e no `server/.env`, e o endpoint `dev` atualizado em
-> `assinatura-de-teste.ts`.
-> **Feito em 22/10 (etapa G2, no branch `bloco-g`):** o código adaptado ao Cloud Run (envio e download de arquivo de aula em partes de até 30 MB sem limite de tamanho total, desvio 301 de `jilsonsantana.com` para `www`, porteiro único de IP via `x-forwarded-for`, pipeline de deploy no GitHub Actions e remoção da Railway).
-> **Feito em 23/10 (etapa G3, no branch `bloco-g` e publicado na `main`):** a infraestrutura montada no Google Cloud (APIs, Artifact Registry com regra de limpeza para 5 imagens, contas de serviço `jilson-site` e `jilson-publicacao`, Workload Identity Federation restrito à `main` deste repositório, segredo `STRIPE_PUBLISHABLE_KEY` com chave pública colada no cofre pelo operador, 7 variáveis no GitHub), primeira publicação automática via GitHub Actions após CI verde na `main`, Cloud Run Job `jilson-prod-migration` executado com sucesso aplicando 39 migrations no banco de produção Neon na Virgínia, e o serviço `jilson-prod` no ar no endereço provisório `https://jilson-prod-873389611774.us-east4.run.app` (`*.run.app`) com todas as provas validadas.
-> **O plano da mudança: [Bloco G](#bloco-g--a-casa-nova-google-cloud-run)** — quatro etapas, uma por
-> sessão; no fim da G4 o site volta ao ar no endereço definitivo (`www.jilsonsantana.com`), com o mapeamento de domínio.
+> **🟢 O SITE ESTÁ DE VOLTA AO AR NO GOOGLE CLOUD RUN (23/10/2026) — BLOCO G CONCLUÍDO COM SUCESSO** *(decisão do operador, 21/10/2026; `CLAUDE.md`, entrada Out 2026 (29))*. Em 21/10 a
+> Railway avisou do incidente em seus sistemas de variáveis, recomendando a rotação de chaves. O operador cancelou o plano e apagou a conta da Railway no mesmo dia.
+> **A mudança para o Google Cloud Run foi executada em quatro etapas (21 a 23/10/2026):**
+> - **G1:** Reforço da conta Google com app autenticador e códigos de backup fora do Mac; projeto `jilsonsantana` e alerta de orçamento de R$ 100/mês criados; todas as chaves vazadas na Railway rotacionadas nos fornecedores (Neon, Stripe, Bunny, Resend e Sentry) e 13 segredos guardados no Google Cloud Secret Manager.
+> - **G1b:** Banco de produção no Neon migrado de Ohio para AWS US East 1 (N. Virgínia, `rough-meadow-05608403`), com retrato ANTES/DEPOIS 100% idêntico nas 26 tabelas, 18 sequências e 34 migrations; branch `dev` com senha própria e seed sincronizado; projeto de Ohio apagado pelo operador.
+> - **G2:** Código adaptado ao Cloud Run: envio e download de arquivos de aula em partes de até 30 MB sem limite total, desvio 301 de `jilsonsantana.com` para `www`, porteiro único de IP via `x-forwarded-for`, pipeline de deploy no GitHub Actions via Workload Identity Federation e remoção definitiva da Railway.
+> - **G3:** Infraestrutura criada no Google Cloud (APIs, Artifact Registry com regra de retenção para 5 imagens, contas de serviço de privilégio mínimo `jilson-site` e `jilson-publicacao`), primeira publicação automática via GitHub Actions com Cloud Run Job aplicando migrations com sucesso e serviço no ar no endereço provisório `*.run.app`.
+> - **G4:** Mapeamento de domínio definitivo no Cloud Run (`www.jilsonsantana.com` e `jilsonsantana.com`) com certificados HTTPS automáticos do Google Trust Services; DNS da GoDaddy atualizado (CNAME e registros Anycast A/AAAA, remoção do encaminhamento legado e do TXT da Railway); rota temporária de diagnóstico de IP publicada, medida em duas redes e com cabeçalhos forjados, confirmando a regra de `ipDoPedido`, e removida em seguida; todas as provas externas (login de admin, código Resend, vídeo Bunny, envio de capa, upload de 300 MB em partes e webhook da Stripe com resposta 200 OK) validadas com sucesso.
 >
-> **Fases fechadas:** 0 (fundação/deploy) · 1 (auth/shell) — checkboxes completos em
+> **Fases fechadas:** 0 (fundação/deploy) · 1 (auth/shell) · **Bloco G (Google Cloud Run)** — checkboxes completos abaixo e em
 > [`build-history.md`](build-history.md). **Também lá, desde 11/10/2026:** as etapas 4.0 a 4.5 da
 > Fase 4 (Stripe), fechadas e publicadas — aqui ficou só o título de cada uma. **Fase 2** (conteúdo/trilhas) segue **aberta**: ver
 > "Estado real da Fase 2" abaixo.
@@ -1064,7 +1034,7 @@ os arquivos e comandos do Bloco G:**
           - Sentry: evento de inicialização `[servidor] no ar, versão mvky237l-d267b74a` registrado no painel do Sentry (`jilson-santana.sentry.io/issues`) 33 minutos após o deploy da revisão.
           - Proteção de autenticação: login de navegador no endereço provisório `*.run.app` recusado com `403 INVALID_ORIGIN` pelo Better Auth conforme especificado no plano (pois `BETTER_AUTH_URL` aponta para o domínio canônico `www`), ficando a validação visual do fluxo de upload/download de aula de ~500 MB no painel do admin para a etapa G4.
         - **Quatro gates locais no branch `bloco-g`:** `npm run typecheck`, `npm run lint`, `npm run test` (80 arquivos/929 testes no cliente e 80 arquivos/1264 testes no servidor com banco local PG17) e `npm run build` (core, client e server) 100% verdes.
-- [ ] **G4 — O endereço de volta, e tudo funcionando.**
+- [x] **G4 — O endereço de volta, e tudo funcionando.**
       **O mapeamento** (o Antigravity, com o `gcloud`): provar ao Google que o domínio é da escola (o
       registro TXT que ele pede, na GoDaddy) e mapear o `www.jilsonsantana.com` e o `jilsonsantana.com`
       ao serviço. **A GoDaddy** (o operador, guiado): o `www` deixa de apontar para a Railway e aponta
@@ -1099,6 +1069,39 @@ os arquivos e comandos do Bloco G:**
       registra o site de volta, e a memória "Conferir publicação" passa a olhar a publicação no
       GitHub Actions.
       **Pronto quando:** o site está como estava em 20/10, mais a publicação de 21/10, na casa nova.
+      - **Relatório de execução da G4 (Antigravity no branch `bloco-g`, 23/10/2026):**
+        - **Retrato de DNS e preparação na GoDaddy (passo 1):**
+          - Capturado retrato prévio completo (23 registros): registros essenciais de e-mail corporativo (Microsoft 365: MX, SPF, CNAMEs e SRVs) e de e-mail de alunos (Resend: CNAMEs `rsend.alunos`, `send.alunos`, DKIM e DMARC) identificados e mantidos estritamente intocados.
+          - Desativado o encaminhamento HTTP legado da GoDaddy (`jilsonsantana.com` -> `https://www.jilsonsantana.com`), liberando a edição dos registros A no ápice `@`.
+          - Removido o registro TXT legado `_railway-verify.www`.
+          - CNAME `www` apontado para `ghs.googlehosted.com.`.
+          - Configurados no ápice `@`: 4 registros Anycast IPv4 (`216.239.32.21`, `216.239.34.21`, `216.239.36.21`, `216.239.38.21`) e 4 registros IPv6 (`2001:4860:4802:32::15`, `2001:4860:4802:34::15`, `2001:4860:4802:36::15`, `2001:4860:4802:38::15`), todos conferidos diretamente nos nameservers autoritativos (`ns59.domaincontrol.com`).
+        - **Validação de propriedade e mapeamento no Cloud Run (passo 2):**
+          - Domínio validado com sucesso no Google Search Console via GoDaddy Domain Connect (`google-site-verification=udBGlkYikbfO4Te-xnyVcitk07g90atwiEMNx9_cLd4`), habilitando o projeto `jilsonsantana` a mapear domínios da zona.
+          - Executado `gcloud beta run domain-mappings create` mapeando `www.jilsonsantana.com` e `jilsonsantana.com` para o serviço `jilson-prod` em `us-east4`.
+          - Certificados HTTPS gerenciados pelo Google (Google Trust Services `WR3`) emitidos e ativos para ambos os domínios (`Ready: True`, `CertificateProvisioned: True`, `DomainRoutable: True`).
+        - **Medição do porteiro de IP em produção (passo 3):**
+          - Rota temporária `GET /api/diagnostico-ip` criada (retornando apenas `x-forwarded-for`, `x-real-ip` e `forwarded`), testada com 4 gates verdes e publicada na `main` via GitHub Actions (run `39975573440`).
+          - Medição empírica realizada em produção:
+            1. Conexão fixa (Mac / Wi-Fi): IPv6 `2804:14d:7238:86be:f4ee:f7fb:d57e:b392` e IPv4 `179.105.131.114`.
+            2. Conexão móvel (Celular 4G/5G): IPv6 `2a02:26f7:e52c:5808:0:2000:0:7`.
+            3. Teste de segurança com cabeçalho forjado (`X-Forwarded-For: 1.2.3.4`): a borda do Google colocou o valor forjado no início e anexou o IP real no final (`1.2.3.4, 2804:14d:...`).
+            4. Teste de segurança com duas linhas separadas (`1.2.3.4` e `5.6.7.8`): Google Frontend anexou o IP real estritamente no último elemento (`1.2.3.4, 5.6.7.8, 2804:14d:...`).
+            5. `x-real-ip`: `null` em todas as requisições no Cloud Run.
+          - Comprovada a exatidão da função `ipDoPedido` (`server/src/lib/limite-de-tentativas.ts`), que extrai o último elemento de `x-forwarded-for` e valida IPv4/IPv6 ignorando as faixas internas.
+          - Rota temporária apagada do código, testes e comentários atualizados e enviada nova publicação definitiva para a `main` via GitHub Actions (run `39986251754`).
+        - **Provas externas no domínio definitivo `www.jilsonsantana.com` (passo 4):**
+          - Desvio 301 completo: `http://jilsonsantana.com/curso/teste?a=1` redireciona 302 para `https://` e 301 para `https://www.jilsonsantana.com/curso/teste?a=1` preservando rota e query string.
+          - Visitante comum acessando `https://www.jilsonsantana.com` recebe HTTP 200 com a página **"Em breve"** (`<title>Em breve — Jilson Santana</title>`).
+          - Rotas de catálogo e trilhas (`/api/courses` e `/api/trilhas`) respondendo HTTP 200 com os dados do banco Neon na Virgínia.
+          - Gating de segurança: `/api/billing/minha-assinatura` 401; login inexistente 401; venda sem login 404.
+          - Login no admin com o cookie de prévia (`/__preview?token=...`) funcionando perfeitamente.
+          - Upload de arquivo de aula grande em fatias sequenciais de 30 MB (testado pelo operador com arquivo de ~300 MB) e download completo com integridade preservada.
+          - Aula tocando vídeo normalmente com URL assinada do Bunny Stream (`BUNNY_STREAM_LESSONS_TOKEN_KEY`).
+          - Envio e gravação de capa de curso no Bunny Storage (`jilsonsantana-storage`).
+          - Código de acesso solicitado e entregue na caixa de entrada via Resend (`Production API Key`).
+          - Webhook da Stripe: evento `invoice.paid` reenviado manualmente pelo painel Stripe Workbench e respondido com **HTTP 200 OK** (`{ "recebido": true }`) às 20:55:36 BRT de 23/10/2026, comprovando o `STRIPE_WEBHOOK_SECRET` ativo no Secret Manager.
+        - **Quatro gates locais no branch `bloco-g`:** `npm run typecheck`, `npm run lint`, `npm run test` (80 arquivos/929 testes no cliente e 80 arquivos/1264 testes no servidor com banco local PG17, total 2.193 testes passando) e `npm run build` 100% verdes.
 
 **Depois do Bloco G** volta a fila de antes: a etapa 4.7, passo 6 (a tela pública de assinar). *A
 cópia do banco de 21/10 fica até o backup frio da Fase 7; apagá-la é decisão do operador.*
