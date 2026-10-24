@@ -560,9 +560,21 @@
 > usar, quando e quanto custa) continua no `tech-stack.md` → *Google Cloud*.
 
 ### Depois do Bloco G — o que ficou aberto *(23–24/10/2026)*
-- [ ] **O Bunny no ar** — o operador viu funções do Bunny que não funcionam direito depois da mudança
-      (P105): ele lista o que viu; a revisão começa por elas.
-- [ ] **Os dois e-mails do Sentry** (P105): ler o que alertaram e tratar a causa.
+- [x] **O Bunny no ar** *(24/10/2026)* — o operador viu a miniatura do vídeo sumir no passo Conteúdo
+      do editor de aulas (P105). **Causa:** na G2 o `BUNNY_STREAM_LESSONS_CDN_HOST` do
+      `deploy/cloud-run.yaml` foi reescrito à mão com um endereço que o Bunny não conhece
+      (`vz-0925232d-209`); o certo, lido na API da conta, é `vz-6996efe9-374.b-cdn.net`. Na Railway o
+      valor morava só no painel e sumiu com a conta. Medido: miniatura de um vídeo pronto, 200 no
+      endereço certo e 403 no errado. O resto do Bunny conferido na conta e certo (a biblioteca, as
+      duas zonas de arquivos, `img.jilsonsantana.com`, os domínios permitidos, as chaves da G1).
+      **Contra a volta** *(decisão do operador)*: `deploy/conferir-bunny.sh`, primeiro passo do CI,
+      pergunta ao Bunny se o endereço existe e aceita o site — mutação: endereço errado, site fora dos
+      domínios permitidos e linha apagada, os três reprovam.
+- [x] **Os dois e-mails do Sentry** (P105) — eram UM erro (`NODE-EXPRESS-5`, `[bunny-stream] limpar
+      cache recusado: 404`, 23/10 18:26), mesma causa do item acima: o Bunny recusa limpar o cache de
+      um endereço que não é dele. Dois e-mails porque duas regras de alerta dispararam (a nossa, "Erro
+      novo no servidor", e a padrão do Sentry, "high priority"); desligar a padrão é escolha do operador.
+      *Prova no ar depois do "publica":* a miniatura aparece, e salvar uma legenda não alerta.
 - [ ] **O alerta do Sentry com o servidor parado** — provocar um erro `[stripe]` e não mandar mais
       pedido nenhum: o e-mail tem que chegar (o registro de 23/10 só mostra o aviso de que o servidor
       ligou). *Se não chegar:* o caminho de erro espera o envio (`Sentry.flush`, até 2 s), ou o serviço

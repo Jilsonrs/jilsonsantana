@@ -38,6 +38,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # O endereço do CDN do Bunny no cloud-run.yaml, conferido no próprio Bunny
+      # (P105, 24/10/2026): na G2 ele entrou errado e nada reprovou. Primeiro de
+      # tudo porque é rápido; se o Bunny estiver fora do ar, é rodar de novo.
+      - name: Bunny CDN host
+        run: bash deploy/conferir-bunny.sh deploy/cloud-run.yaml
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:

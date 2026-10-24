@@ -203,9 +203,9 @@ acima (proteção, cache, certificado próprio), e por isso é opcional.
 
 **DESEMPENHO — para quem vem de hospedagem compartilhada e VPS:** o serviço "ligado, esperando" com
 1 processador e 512 MB equivale a um **VPS pequeno, só para a escola** — o mesmo tamanho de uso
-antes planejado. O que pesa na página não é o tamanho: é a **distância** (o servidor fica na
-Virgínia, perto do banco em Ohio; o aluno no Brasil soma ~0,1 s por pedido) e o **banco** (cada
-consulta Virgínia → Ohio leva milissegundos). O pesado — vídeo e imagens — já sai do Bunny, com
+antes planejado. O que pesa na página não é o tamanho: é a **distância** (o servidor e o banco
+ficam os dois na Virgínia desde a G1b; o aluno no Brasil soma ~0,1 s por pedido) e o **banco**
+(cada consulta, na mesma região, leva poucos milissegundos). O pesado — vídeo e imagens — já sai do Bunny, com
 servidor no Brasil. **Subir de desempenho é uma configuração**, aplicada numa publicação nova sem
 tirar o site do ar, em cerca de um minuto, e volta atrás do mesmo jeito: processador (1, 2, 4…) e
 memória (512 MB, 1 GB, 2 GB…). **O sinal para subir** está no painel do Cloud Run (processador,
