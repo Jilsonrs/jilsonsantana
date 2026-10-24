@@ -7,15 +7,6 @@
 > são exploração local e ficam fora do git de propósito — o que for aprovado é incorporado ao
 > `docs/design.md`, que é a lei visual.
 
-> ## 🔧 TRABALHO FORA DO VISUAL: O BLOCO G — A MUDANÇA DE HOSPEDAGEM *(decisão do operador, 21/10/2026)*
->
-> A Railway saiu (incidente de segurança dela) e o site vai para o **Google Cloud Run**. O operador
-> pediu que **você** execute essa mudança. **Para este trabalho, e só para ele, as regras são as do
-> plano:** `docs/implementation-plan.md` → *Bloco G* → *Quem executa* (nove regras) e as quatro
-> etapas. Elas valem sobre a §3 (*Onde você NÃO mexe*) apenas para os arquivos e comandos do Bloco G.
-> Em resumo: branch `bloco-g` · segredo nunca aparece · nada no banco de produção à mão · nenhuma
-> tela nem texto muda · o Claude confere e faz o merge na `dev` · a `main` só com o "publica" dele.
-
 > ## ⚠️ MUDANÇA DE 12/10/2026 — A ESCOLA É SÓ EM PORTUGUÊS *(decisão do operador)*
 >
 > *"Remover tudo que foi feito para dar suporte a inglês e fica a escola 100% nativa em

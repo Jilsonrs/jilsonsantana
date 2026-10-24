@@ -580,7 +580,7 @@ O Bunny gera estes tipos de chave:
   | 3 | `BUNNY_STREAM_LESSONS_LIBRARY_ID` | ID da biblioteca (762605, a `jilsonsantana-stream`) — aulas **e** apresentação desde 28/09 | não |
   | 3 | `BUNNY_STREAM_LESSONS_API_KEY` | API key da biblioteca de aulas | **sim** |
   | 3 | `BUNNY_STREAM_LESSONS_TOKEN_KEY` | token authentication key da biblioteca de aulas | **sim** |
-  | 3 | `BUNNY_STREAM_LESSONS_CDN_HOST` | o *CDN Hostname* da aba **API** da `jilsonsantana-stream` (`vz-….b-cdn.net`): de onde vem a miniatura que o editor mostra (28/09). Sem ela, a aula aberta mostra o nome e a duração, sem a miniatura | não |
+  | 3 | `BUNNY_STREAM_LESSONS_CDN_HOST` | o *CDN Hostname* da aba **API** da `jilsonsantana-stream` (`vz-….b-cdn.net`): de onde vem a miniatura que o editor mostra (28/09). **No ar, o valor está em `deploy/cloud-run.yaml`, e o CI confere no próprio Bunny que ele existe** (`deploy/conferir-bunny.sh` — P105, 24/10/2026). Sem ela, a aula aberta mostra o nome e a duração, sem a miniatura | não |
   | arquivos | `BUNNY_FILES_STORAGE_ZONE` | nome da Storage Zone dos arquivos (§4.5) | não |
   | arquivos | `BUNNY_FILES_STORAGE_HOST` | o endpoint da zona (ex.: `br.storage.bunnycdn.com`) | não |
   | arquivos | `BUNNY_FILES_STORAGE_PASSWORD` | a senha da zona dos arquivos (a de escrita) | **sim** |
