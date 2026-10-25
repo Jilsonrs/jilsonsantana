@@ -624,14 +624,20 @@
       pedido nenhum: o e-mail tem que chegar (o registro de 23/10 só mostra o aviso de que o servidor
       ligou). *Se não chegar:* o caminho de erro espera o envio (`Sentry.flush`, até 2 s), ou o serviço
       passa a `--no-cpu-throttling`.
-- [ ] **A memória e o tempo de resposta** no painel do Cloud Run, anotados aqui — decidem a volta da
-      P104 (512 MB ou 1 GB) antes de 20/01/2027.
+- [x] **A memória e o tempo de resposta** *(medidos em 25/10/2026)* — decidem a volta da P104. Nas 46 h
+      antes do teste: memória no pico de 160 a 220 MB (8 a 11% dos 2 GB), processador até 7%. No teste
+      de tamanhos (512 MB a 8 GB): a escola usa 140 a 215 MB em qualquer tamanho, e a memória não muda
+      o tempo de resposta; 1 processador deixa a rajada de 100 pedidos 0,5 s mais lenta. **Para a
+      P104: 512 MB bastam** (o pico usa ~30–40%); a escolha final é do operador. Tabela e gatilhos:
+      `tech-stack.md` → *O teste de tamanhos*.
 - [ ] **O alerta de orçamento (R$ 100):** conta o gasto antes ou depois do crédito?
-- [ ] **"O Google Cloud explicado"** *(pedido do operador, 24/10/2026: "é a primeira vez que utilizo
+- [x] **"O Google Cloud explicado"** *(pedido do operador, 24/10/2026: "é a primeira vez que utilizo
       […] preciso saber o essencial para entender como funciona e testar configurações maiores e
       menores e analisar o que fez diferença ou não")*: o que foi montado e por quê, e um teste de
       tamanhos do servidor medindo o tempo de resposta — sempre dentro da conta mínima, e voltando ao
-      tamanho decidido no fim.
+      tamanho decidido no fim. **Feito em 25/10/2026:** `tech-stack.md` → *O que foi montado, em
+      linguagem simples* e *O teste de tamanhos* (11 configurações, de volta a 2 processadores e 2 GB
+      no fim — revisão `jilson-prod-00020`).
 - [ ] **A conta padrão do Google (`…-compute@developer`) tem papel de editor no projeto inteiro** —
       nada a usa (o site e o Job usam `jilson-site`; a publicação, `jilson-publicacao`): tirar o papel
       (P106).

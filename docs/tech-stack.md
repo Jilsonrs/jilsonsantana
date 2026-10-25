@@ -212,6 +212,57 @@ memória (512 MB, 1 GB, 2 GB…). **O sinal para subir** está no painel do Clou
 memória e tempo de resposta). A única mudança que precisa de código antes é ter **mais de uma
 instância** (os contadores em memória).
 
+**O TESTE DE TAMANHOS — MEDIDO em 25/10/2026** *(pedido do operador: "testar 512 MB a 8 GB para
+entender quando faz diferença")*. Em cada tamanho: 50 pedidos seguidos à rota do curso (banco +
+endereço assinado), 40 à rota de saúde (sem banco) e uma rajada de 100 pedidos, 20 ao mesmo tempo.
+Tempo **dentro do servidor** (registro do Cloud Run, sem a viagem pela internet); a rajada, medida de
+casa; a memória, no Cloud Monitoring. No fim, o serviço voltou a 2 processadores e 2 GB.
+
+| Processadores · memória | Rota do curso, mediana | Rajada de 100 (20 juntos) | Memória usada no pico |
+|---|---|---|---|
+| 2 · 512 MB | 55 ms | 1,9 s | — |
+| 2 · 1 GB | 37 ms | 1,8 s | 143 MB |
+| 2 · 2 GB | 56 ms | 1,8 s | 164 MB |
+| 2 · 3 GB | 40 ms | 1,8 s | — |
+| 2 · 4 GB | 34 ms | 1,7 s | 163 MB |
+| 2 · 5 GB | 52 ms | 1,8 s | 204 MB |
+| 2 · 6 GB | 56 ms | 1,9 s | 184 MB |
+| 2 · 7 GB | 64 ms | 2,0 s | 214 MB |
+| 2 · 8 GB | 36 ms | 1,7 s | — |
+| **1 · 512 MB** | 71 ms | 2,5 s | 154 MB |
+| 1 · 1 GB | 127 ms | 2,2 s | 153 MB |
+
+*(— : o Monitoring não guardou amostra daquela versão.)* A rota de saúde levou **2 a 3 ms em todos**.
+**O que os números dizem:**
+- **Memória não muda nada hoje.** A escola usa 140 a 215 MB em qualquer tamanho; o resto fica
+  reservado sem uso. A variação de 34 a 64 ms não segue o tamanho: é o banco e a rede oscilando.
+- **Processador muda pouco, e só com gente junta.** Com 1 processador, cada pedido levou uns 20 a 70 ms
+  a mais, e a rajada, 0,5 s a mais. Para um aluno de cada vez, não se percebe.
+- **O que se sente de casa (~0,4 a 0,5 s por pedido) é quase todo a viagem Brasil → Virgínia** e o
+  aperto de mão da conexão segura — não o tamanho do servidor.
+- **Gatilhos para subir** (painel do Cloud Run, aba *Métricas*): memória acima de ~70% do limite (no
+  teto, o servidor reinicia); processador acima de ~70% por bastante tempo, ou o tempo de resposta
+  subindo quando há alunos ao mesmo tempo.
+
+**O QUE FOI MONTADO, EM LINGUAGEM SIMPLES** *(pedido do operador, 24/10/2026)* — uma publicação passa
+por todas as peças, nesta ordem:
+1. **GitHub Actions** monta o site (a "imagem") e entra no Google **sem senha guardada** (Workload
+   Identity Federation: o Google confere que o pedido vem deste repositório, da `main`).
+2. **Artifact Registry** guarda a imagem montada — o depósito das versões.
+3. **Cloud Run Job** (`jilson-prod-migration`) atualiza o banco com a mesma imagem; se falha, a
+   publicação para ali.
+4. **Cloud Run** (serviço `jilson-prod`) passa a usar a imagem nova. Cada publicação, ou mudança de
+   tamanho, vira uma **revisão** numerada; o tráfego passa para ela sem tirar o site do ar, e as
+   antigas ficam guardadas — dá para voltar a uma delas na aba *Revisões*.
+5. **Secret Manager** entrega as chaves ao servidor quando ele liga; só a conta do site lê, e cada
+   leitura fica registrada.
+
+E em volta: as **contas de serviço** são os "crachás" — `jilson-site` (o site e o Job: leem o cofre) e
+`jilson-publicacao` (o GitHub: publica); a conta padrão `…-compute@` sobrou do Google (P106). O
+**mapeamento de domínio** liga `www.jilsonsantana.com` ao serviço e renova o cadeado sozinho. O
+**Cloud Logging** é o registro de cada pedido; o **Cloud Monitoring**, os gráficos de memória,
+processador e tempo; o **Orçamento**, o aviso de gasto.
+
 ## AI-Assisted Dev (quality gates)
 
 - **Claude subagents** (`.claude/agents/` — versionado; ver a exceção de ignore no `CLAUDE.md`): `security-vulnerability-reviewer` (existe; tools read-only, sem Edit/Write — reporta, nunca corrige). `e2e-test-writer` — **PENDENTE e ADIADO** (não existe; adapted from the Mosh reference): gerar teste numa camada que hoje nem roda no CI é dívida, não cobertura — só faz sentido depois do bloco Gates. Duas restrições já decididas pra quando nascer: Write/Edit **restrito a `e2e/**`** (sem acesso a `server/src`/`client/src`) e **só a mecânica** vai pro arquivo do agente. Detalhe em `CLAUDE.md` → Testing.
