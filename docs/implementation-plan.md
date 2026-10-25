@@ -648,8 +648,10 @@
         linha, a pessoa volta a tentar. Mutação (`storage: "memory"`): reprova. *As linhas de IPs
         antigos ficam na tabela (uma por IP e rota) — gatilho para limpar: a tabela passar de alguns
         milhares de linhas.*
-  - [ ] **Os textos do site relidos a cada 1 minuto** em cada cópia (Admin → Textos aparece em todas em
-        até 1 minuto).
+  - [x] **Os textos do site relidos a cada 1 minuto** em cada cópia (`VALIDADE_DO_CACHE_DE_TEXTO`,
+        `lib/dict.ts`): a cópia que recebe a edição limpa o cache na hora; as outras, em até 1 minuto.
+        Teste: a edição de "outra cópia" (gravada direto no banco) não aparece antes de 1 minuto e
+        aparece depois. Mutação (cache sem validade): reprova.
   - [ ] **A publicação com 1 processador, 512 MB e de 1 a 3 cópias** (`deploy.yml`), a revisão de
         segurança, publicar, e o teste de carga de novo nessa configuração, com os custos.
 - [ ] **O alerta de orçamento (R$ 100):** conta o gasto antes ou depois do crédito?

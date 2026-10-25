@@ -1,9 +1,9 @@
-import { describe, it, expect, afterEach } from "vitest";
+import { describe, it, expect, afterEach, vi } from "vitest";
 import request from "supertest";
 import { pt } from "@jilson/core";
 import servidor from "./servidor.js";
 import { prisma } from "../lib/prisma.js";
-import { invalidarCacheDeTexto } from "../lib/dict.js";
+import { VALIDADE_DO_CACHE_DE_TEXTO, invalidarCacheDeTexto } from "../lib/dict.js";
 
 // Texto de página editável pelo operador (docs/content.md § 16).
 //
@@ -52,6 +52,27 @@ describe("texto do site — o que o visitante lê", () => {
     const res = await request(servidor).get("/");
     expect(res.text).toContain(EDITADO);
     expect(res.text).not.toContain(FABRICA_PT);
+  });
+
+  // O SERVIDOR TEM ATÉ 3 CÓPIAS (25/10/2026): a edição chega por UMA delas, que limpa o próprio
+  // cache; as outras só a veem quando o cache delas passa de 1 minuto. Aqui, a edição de "outra
+  // cópia" é a linha gravada direto no banco, sem limpar o cache desta.
+  it("edição feita em OUTRA cópia do servidor aparece aqui em até 1 minuto — e não antes", async () => {
+    vi.useFakeTimers({ toFake: ["Date"], now: Date.now() });
+    try {
+      expect((await request(servidor).get("/")).text).toContain(FABRICA_PT);
+      await prisma.siteText.create({ data: { key: CHAVE, value: EDITADO } });
+
+      vi.setSystemTime(Date.now() + VALIDADE_DO_CACHE_DE_TEXTO - 1000);
+      expect((await request(servidor).get("/")).text).toContain(FABRICA_PT);
+
+      vi.setSystemTime(Date.now() + 2000);
+      const depois = (await request(servidor).get("/")).text;
+      expect(depois).toContain(EDITADO);
+      expect(depois).not.toContain(FABRICA_PT);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   // A escola é só em português (12/10/2026): um `language` que uma versão antiga do site
