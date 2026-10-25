@@ -244,6 +244,65 @@ casa; a memória, no Cloud Monitoring. No fim, o serviço voltou a 2 processador
   teto, o servidor reinicia); processador acima de ~70% por bastante tempo, ou o tempo de resposta
   subindo quando há alunos ao mesmo tempo.
 
+**O TESTE DE CARGA — 100, 500 E 1.000 ALUNOS, MEDIDO em 25/10/2026** *(pedido do operador: "se minha
+meta de 1k alunos for atingida e todos entrarem para estudar ao mesmo tempo, qual configuração
+preciso", com os custos)*. Rota do curso (banco + endereço assinado), saindo de um computador no
+Brasil: rajadas de 100, 500 e 1.000 pedidos ao mesmo tempo e um fluxo de 200 pedidos por segundo
+durante 20 s. Sentry desligado durante o teste e religado no fim; o serviço voltou a 2 processadores,
+2 GB e 1 cópia (revisão `jilson-prod-00027`). **Nenhum pedido falhou em nenhuma configuração.**
+
+| Configuração | Rajada de 1.000 (mediana · pior) | Fluxo: aguenta por segundo | Processador no pico | Memória no pico |
+|---|---|---|---|---|
+| 1 cópia · 1 proc · 512 MB | 9,2 s · 16,1 s | ~68 pedidos | 30% | 154 MB |
+| 1 cópia · 1 proc · 2 GB | 8,1 s · 14,2 s | ~77 | 58% | 184 MB |
+| 1 cópia · 2 proc · 2 GB (hoje) | 6,9 s · 11,6 s | ~95 | 45% | 205 MB |
+| 1 cópia · 4 proc · 4 GB | 5,5 s · 9,3 s | ~115 | 47% | 204 MB |
+| 3 cópias · 2 proc · 2 GB | 2,5 s · 3,8 s | 200 com folga (mediana 0,3 s) | 19% | 204 MB |
+| 10 cópias · 2 proc · 2 GB | 2,7 s · 4,0 s | 200 com folga (mediana 0,35 s) | 13% | 184 MB |
+
+*8 processadores não foi testado: o projeto tem um teto de **20 processadores por região** (cota do
+Google; aumentar é pedido gratuito no painel) — ou seja, hoje cabem no máximo 10 cópias de 2.*
+**O que os números dizem:**
+- **Uma cópia não cresce com o tamanho.** De 1 para 4 processadores, ela passa de ~68 para ~115
+  pedidos por segundo, e o processador nunca enche: o programa do servidor usa um processador por vez,
+  e as conexões com o banco de cada cópia são poucas. **Quem multiplica a capacidade é o número de
+  cópias** — 3 cópias atenderam o fluxo inteiro com 0,3 s de mediana.
+- **Memória continua indiferente:** 150 a 205 MB mesmo sob a carga máxima.
+- **A partir de 3 cópias, o limite passou a ser o computador que gerava a carga** (3 e 10 cópias deram
+  o mesmo resultado): a capacidade real de 3 cópias é maior que a medida.
+
+**Quanto pedido um aluno faz:** o vídeo sai do Bunny, não do servidor. Quem assiste manda o "estou
+neste segundo" a cada 5 s (0,2 pedido por segundo) — **1.000 alunos assistindo ≈ 200 pedidos por
+segundo**; abrir a aula são uns 6 a 8 pedidos de uma vez. *(Com a gravação a cada 15 s, como era até
+25/10, a carga seria um terço — é a troca que se fez pela precisão do ponto.)*
+
+| Alunos assistindo ao mesmo tempo | Pedidos por segundo | Configuração que aguenta (medido) |
+|---|---|---|
+| **100** | ~20 | 1 cópia · 1 processador · 512 MB (sobra 3 vezes) |
+| **500** | ~100 | 1 cópia · 2 processadores fica no limite → **2 cópias** de 2 processadores e 2 GB |
+| **1.000** | ~200 | **3 cópias** de 2 processadores e 2 GB (medido com folga) |
+
+**ANTES de mais de uma cópia, uma mudança de código:** os contadores que hoje moram na memória de cada
+cópia (limite de tentativas de login e de cobrança, o dicionário de textos) vão para o banco — senão,
+cada cópia conta sozinha. É o gatilho que já está no mapa (*Mais de uma instância*).
+
+**CUSTOS PREVISTOS por mês** *(US$; Google: preços da cobrança por pedido na região us-east4 — a
+parte "ligado, esperando" bate com a conta medida em 22/10; os preços com o servidor ocupado e o pedido
+`[a conferir]` na página de preços. Bunny: tabela da doc, `[medido 25/10]`. Neon: `[a conferir]`.)*
+- **Servidor (Google)**, cada cópia sempre ligada: 1 proc · 512 MB ≈ **US$ 10**; 2 proc · 2 GB ≈
+  **US$ 26**. Ocupada, a cópia de 2 proc · 2 GB custa ~US$ 0,19 por hora (US$ 0,000053 por segundo);
+  pedidos, US$ 0,40 por milhão depois de 2 milhões grátis. O jeito barato de crescer é **1 cópia sempre
+  ligada e as outras ligando só com carga** (máximo de 3 a 5): paga-se a cópia extra só nas horas de pico.
+  - 100 alunos: ~US$ 10–15 · 500 alunos: ~US$ 30–50 · 1.000 alunos: ~US$ 50–110 *(estudando ~4 h por dia
+    no pico; com as 3 cópias sempre ligadas, ~US$ 80 só paradas).*
+- **Vídeo (Bunny) — o maior custo.** Entrega para a América do Sul: **US$ 0,045 por GB**. Os vídeos da
+  escola (gravação de tela) somam 1,86 GB por hora em todas as resoluções; quem assiste baixa uma só —
+  **~0,5 a 1 GB por hora assistida ≈ US$ 0,02 a 0,045 por hora**. Com 10 h por aluno no mês: 100 alunos
+  ≈ US$ 22–45 · 500 ≈ US$ 110–225 · 1.000 ≈ US$ 225–450.
+- **Banco (Neon):** cresce sozinho de 0,25 a 2 unidades de processamento e dorme após 5 min sem uso; no
+  teste aguentou tudo sem erro. Com 1.000 alunos, ~120 a 240 unidades-hora por mês nas horas de pico —
+  preço por unidade-hora `[a conferir no painel do Neon]`.
+
 **O QUE FOI MONTADO, EM LINGUAGEM SIMPLES** *(pedido do operador, 24/10/2026)* — uma publicação passa
 por todas as peças, nesta ordem:
 1. **GitHub Actions** monta o site (a "imagem") e entra no Google **sem senha guardada** (Workload

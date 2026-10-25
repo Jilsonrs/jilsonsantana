@@ -638,6 +638,15 @@
       tamanho decidido no fim. **Feito em 25/10/2026:** `tech-stack.md` → *O que foi montado, em
       linguagem simples* e *O teste de tamanhos* (11 configurações, de volta a 2 processadores e 2 GB
       no fim — revisão `jilson-prod-00020`).
+- [x] **O teste de carga — 100, 500 e 1.000 alunos, com os custos** *(pedido do operador, 25/10/2026)*:
+      7 configurações (tamanhos com 1 cópia; 3 e 10 cópias), rajadas de até 1.000 pedidos e fluxo de
+      200 por segundo — nenhum erro. **Diagnóstico:** uma cópia aguenta de ~70 a ~115 pedidos por
+      segundo, qualquer que seja o tamanho; **100 alunos = 1 cópia de 1 processador e 512 MB; 500 = 2
+      cópias; 1.000 = 3 cópias** de 2 processadores e 2 GB. Antes de mais de uma cópia, os contadores
+      em memória vão para o banco. O maior custo com muitos alunos é o **vídeo** (Bunny, ~US$ 0,02 a
+      0,045 por hora assistida). Achado: o projeto tem teto de 20 processadores por região. Tabelas e
+      custos: `tech-stack.md` → *O teste de carga*. Servidor de volta a 2 processadores, 2 GB e 1 cópia
+      (revisão `jilson-prod-00027`), Sentry religado.
 - [ ] **A conta padrão do Google (`…-compute@developer`) tem papel de editor no projeto inteiro** —
       nada a usa (o site e o Job usam `jilson-site`; a publicação, `jilson-publicacao`): tirar o papel
       (P106).
