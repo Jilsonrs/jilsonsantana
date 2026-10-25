@@ -284,8 +284,11 @@ async function entregarArquivo(
   res.attachment(nomeParaDownload(arquivo.originalName));
   res.set("X-Content-Type-Options", "nosniff");
   res.set("Cache-Control", "private, no-store");
-  if (arquivo.partes > 1) res.set("Content-Length", String(arquivo.sizeBytes));
-  else if (primeira.tamanho) res.set("Content-Length", primeira.tamanho);
+  // SEM `Content-Length`, de propósito: a resposta vai EM PEDAÇOS (`Transfer-Encoding: chunked`).
+  // Com o tamanho avisado, o Cloud Run segura a resposta inteira e recusa (500, "Response size
+  // was too large") acima de 32 MB — medido no ar em 24/10/2026; a doc do Google pede `chunked`
+  // para resposta grande. O preço, aceito pelo operador: o navegador mostra os MB que chegaram,
+  // sem a porcentagem.
   // `pipeline`, nunca `.pipe()`: se o Bunny cair no meio, o erro vem para cá em
   // vez de virar "Unhandled 'error' event" e derrubar o servidor inteiro; e se o
   // aluno desistir, o fluxo do Bunny é fechado junto (achado P1 da revisão de

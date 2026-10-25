@@ -25,6 +25,9 @@
 > de fora, a trava da publicação (só a `main` deste repositório), as contas de serviço (só a do site lê
 > o cofre), o servidor (ligado e esperando, 1 instância, 2 processadores e 2 GB) e o banco de produção
 > (39 migrations, nenhuma pela metade; nenhuma tabela sem RLS; o admin com o e-mail confirmado).
+> **Publicado em 24/10/2026 (`d6c2906`):** o endereço do CDN do Bunny corrigido (P105) e a
+> conferência dele no CI. Conferido de fora: o site responde 200, e o servidor no ar recebeu o
+> endereço certo. Falta o operador ver a miniatura no editor de aulas.
 > **O que ficou aberto:** o plano → *Bloco G* → *Depois do Bloco G*.
 >
 > **Fases fechadas:** 0 (fundação/deploy) · 1 (auth/shell) · **Bloco G (Google Cloud Run)** — checkboxes completos em
@@ -575,6 +578,20 @@
       um endereço que não é dele. Dois e-mails porque duas regras de alerta dispararam (a nossa, "Erro
       novo no servidor", e a padrão do Sentry, "high priority"); desligar a padrão é escolha do operador.
       *Prova no ar depois do "publica":* a miniatura aparece, e salvar uma legenda não alerta.
+- [x] **A prova do Bunny no ar** *(24/10/2026, pedido do operador: "o coração da escola")* — de fora,
+      sem gravar nada: os 15 vídeos do banco existem no Bunny, prontos, as 14 aulas com legenda; as 4
+      chaves aceitas; capas e arquivo da aula 18 no Bunny; o vídeo de apresentação assinado toca pelo
+      site e é recusado sem origem e com token trocado; aula paga sem vídeo para visitante; download e
+      rotas de admin sem login, 401. Os envios, pelo operador no admin: vídeo, legenda (trocada),
+      arquivo em 4 partes — todos 200.
+- [x] **O download de arquivo grande no ar** *(achado na prova acima)* — 500 *"Response size was too
+      large"*: com `Content-Length`, o Cloud Run segura a resposta e recusa acima de 32 MB. Agora vai em
+      pedaços (`chunked`, o que a doc do Google pede); o navegador mostra os MB, sem a porcentagem
+      *(decisão do operador)*. Teste: `vaiEmPedacos` nos três downloads; mutação (o tamanho de volta)
+      reprova os três. *Prova no ar depois do "publica":* o arquivo de 4 partes baixa inteiro.
+      **Não era defeito:** o "continuar de onde parou" foi para outra aula porque a aula "Teste" estava
+      em **rascunho** — a entrada do curso só considera aulas publicadas (`onde-parou.ts`); o segundo
+      foi gravado (87 s).
 - [ ] **O alerta do Sentry com o servidor parado** — provocar um erro `[stripe]` e não mandar mais
       pedido nenhum: o e-mail tem que chegar (o registro de 23/10 só mostra o aviso de que o servidor
       ligou). *Se não chegar:* o caminho de erro espera o envio (`Sentry.flush`, até 2 s), ou o serviço
