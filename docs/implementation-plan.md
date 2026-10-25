@@ -694,6 +694,29 @@
       bibliotecas atrasadas (`lembrete-do-stack.yml`, `scripts/lembrete-do-stack.mjs`); a rotina mora no
       `tech-stack.md` → *Atualizações*, e o `CLAUDE.md` manda lê-la antes de mexer em versão. Conferido
       rodando o roteiro: Node 24 em dia; 18 bibliotecas com versão grande nova (nenhuma urgente).
+- **A atualização de todas as bibliotecas** *(pedido do operador, 25/10/2026: "atualiza logo todas as
+  bibliotecas"; plano em 7 etapas aprovado por ele, publicando a cada etapa)*. A rotina: `tech-stack.md` →
+  *Atualizações*.
+  - [x] **Etapa 1 — as 22 pequenas** (correção ou versão pequena): Better Auth e `auth` 1.7.13 (notas da
+        1.7.6 à 1.7.13 lidas: nada muda no nosso uso; a 1.7.7 corrige uma falha crítica do link mágico,
+        que a escola não usa; o cookie de sessão reconferido no código novo — `httpOnly` e `sameSite: lax`
+        fixos, `secure` preso pela nossa configuração), Stripe 23.0.1 e Stripe.js 10.1.0 (notas lidas:
+        mesma versão da API), Express 5.3.0, express-rate-limit 8.7.1, Resend 6.34.1, Vite 8.3.5,
+        Playwright 1.64.1, ESLint 10.13.0, typescript-eslint 8.72.0, React Query, React Hook Form, Axios,
+        Radix, PostCSS, autoprefixer, supertest e tsx. **Achado:** o Express 5.3 escreve o nome do arquivo
+        baixado sem aspas quando ele não tem espaço (`filename=Curso-Inteiro.zip`) — válido pela norma;
+        o teste passou a conferir o nome, e a mutação (nome trocado) reprova. Falta publicar.
+  - [ ] **Etapa 2 — ferramentas de teste e o servidor sem tela:** Vitest 5, jsdom 30, `@types/supertest`
+        7, dotenv 18, Sentry 11.
+  - [ ] **Etapa 3 — React 19**, com `@types/react` 19, React Router 7, `@hookform/resolvers` 6 e
+        `@vitejs/plugin-react` 6.
+  - [ ] **Etapa 4 — Zod 4** (o `core`, o site e o servidor): as mensagens que o aluno vê ficam iguais.
+  - [ ] **Etapa 5 — o visual: Tailwind 4, `tailwind-merge` 3 e os ícones (`lucide-react` 1)** — área do
+        Antigravity; prints antes e depois das telas principais, e o operador confere antes de publicar.
+  - [ ] **Etapa 6 — Prisma 7** (a ligação com o banco, o `Dockerfile` e as migrations do Cloud Run Job):
+        prova nos bancos de dev e de teste, e a revisão de segurança. O Better Auth 1.7.13 aceita o Prisma 7.
+  - [ ] **Etapa 7 — TypeScript 6.0.** *O 7 fica travado:* o `typescript-eslint` (8.72) só aceita até o 6.0,
+        e subir desligaria o revisor automático. *Gatilho: o `typescript-eslint` aceitar o TypeScript 7.*
 - [ ] **O alerta de orçamento (R$ 100):** conta o gasto antes ou depois do crédito?
 - [x] **"O Google Cloud explicado"** *(pedido do operador, 24/10/2026: "é a primeira vez que utilizo
       […] preciso saber o essencial para entender como funciona e testar configurações maiores e
