@@ -25,6 +25,9 @@
 > de fora, a trava da publicação (só a `main` deste repositório), as contas de serviço (só a do site lê
 > o cofre), o servidor (ligado e esperando, 1 instância, 2 processadores e 2 GB) e o banco de produção
 > (39 migrations, nenhuma pela metade; nenhuma tabela sem RLS; o admin com o e-mail confirmado).
+> **Publicado em 24/10/2026 (`d6c2906`):** o endereço do CDN do Bunny corrigido (P105) e a
+> conferência dele no CI. Conferido de fora: o site responde 200, e o servidor no ar recebeu o
+> endereço certo. Falta o operador ver a miniatura no editor de aulas.
 > **O que ficou aberto:** o plano → *Bloco G* → *Depois do Bloco G*.
 >
 > **Fases fechadas:** 0 (fundação/deploy) · 1 (auth/shell) · **Bloco G (Google Cloud Run)** — checkboxes completos em
