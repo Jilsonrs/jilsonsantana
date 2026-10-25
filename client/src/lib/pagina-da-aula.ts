@@ -3,8 +3,9 @@ import { Role } from "@jilson/core";
 import * as api from "@/lib/api";
 import { useSession } from "@/lib/auth-client";
 import { NOTIFICACOES } from "@/lib/notificacoes";
+import { gravacaoPendente } from "@/lib/ponto-da-aula";
 
-/** A chave da página de UMA aula na memória da tela (o ponto gravado entra nela — Bloco AULA). */
+/** A chave da página de UMA aula na memória da tela. */
 export function chaveDaPaginaDaAula(lessonId: number | null, comoAdmin: boolean) {
   return ["pagina-da-aula", lessonId, comoAdmin] as const;
 }
@@ -23,6 +24,10 @@ export function usePaginaDaAula(lessonId: number | null) {
     queryKey: chaveDaPaginaDaAula(lessonId, comoAdmin),
     // Seguro: `enabled` abaixo só liga a consulta com um id de verdade.
     queryFn: async () => {
+      // O ponto que vem com a página é o do servidor: a gravação que ESTE aparelho ainda
+      // está enviando desta aula chega antes (25/10/2026 — o segundo mais novo vence).
+      const pendente = gravacaoPendente(lessonId as number);
+      if (pendente) await pendente;
       const pagina = await api.getLessonPage(lessonId as number, comoAdmin);
       // Abrir a aula pode ter mandado a boas-vindas do curso: o sino confere.
       void queryClient.invalidateQueries({ queryKey: [NOTIFICACOES] });

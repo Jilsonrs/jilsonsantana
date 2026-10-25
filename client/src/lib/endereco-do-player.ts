@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { PONTO_COMECO } from "@jilson/core";
 
 // O ENDEREÇO DO PLAYER do Bunny Stream: o que a tela acrescenta ao endereço ASSINADO que
@@ -61,4 +62,39 @@ export function vencimento(endereco: string): number | null {
 export function venceu(endereco: string, agora = Date.now()): boolean {
   const expira = vencimento(endereco);
   return expira !== null && agora / 1000 >= expira - FOLGA_DO_VENCIMENTO;
+}
+
+/** Depois de pedir um endereço novo, quanto esperar antes de pedir outra vez (se o primeiro pedido falhou). */
+const INTERVALO_ENTRE_PEDIDOS = 30_000;
+
+/**
+ * O RELÓGIO DO VENCIMENTO (saiu do `BunnyPlayer` em 25/10/2026, quando ele chegou ao limite
+ * de ~200 linhas — sem mudar o que faz): pede um endereço novo ao servidor um pouco antes de
+ * o atual vencer, e devolve o pedido para quem também precisa dele (o play num endereço
+ * vencido — o relógio pode atrasar com a aba em segundo plano). Um pedido por vez: o play
+ * avisa várias vezes por segundo, e cada pedido novo cancelaria o anterior antes de ele
+ * chegar. Sem `aoVencer`, nada é renovado.
+ */
+export function useRenovarNoVencimento(endereco: string, aoVencer: (() => void) | undefined): () => void {
+  const aoVencerRef = useRef(aoVencer);
+  aoVencerRef.current = aoVencer;
+  const ultimoPedido = useRef(0);
+  const pedir = useRef(() => {
+    if (Date.now() - ultimoPedido.current < INTERVALO_ENTRE_PEDIDOS) return;
+    ultimoPedido.current = Date.now();
+    aoVencerRef.current?.();
+  }).current;
+  const renova = aoVencer !== undefined;
+
+  // Efeito: o relógio até o endereço vencer é do navegador, fora do React.
+  useEffect(() => {
+    const expira = vencimento(endereco);
+    if (!renova || expira === null) return;
+    const espera = Math.max(0, (expira - FOLGA_DO_VENCIMENTO) * 1000 - Date.now());
+    // O `setTimeout` não aceita mais que ~24,8 dias; o endereço vale 24 h.
+    const relogio = window.setTimeout(pedir, Math.min(espera, 2 ** 31 - 1));
+    return () => window.clearTimeout(relogio);
+  }, [endereco, renova, pedir]);
+
+  return pedir;
 }

@@ -592,6 +592,25 @@
       **Não era defeito:** o "continuar de onde parou" foi para outra aula porque a aula "Teste" estava
       em **rascunho** — a entrada do curso só considera aulas publicadas (`onde-parou.ts`); o segundo
       foi gravado (87 s).
+- [x] **A volta no mesmo segundo entre aparelhos** *(25/10/2026 — achado do operador na prova do Bunny;
+      plano aprovado por ele, com o item 4)*. **Causa, medida no registro do servidor:** (a) a aba
+      que já tinha a aula aberta antes reabria no segundo da **memória dela** e, ao abrir, gravava
+      esse segundo velho por cima do mais novo de outro aparelho (iPhone voltou em 1:45 com o
+      servidor em 1:41); (b) no iPhone, a pausa às vezes não chega ao servidor (o computador abriu
+      em 1:35, o último ponto gravado). Não veio da mudança para o Google. **O que mudou:** a aula
+      abre no ponto do servidor, buscado na hora e depois da gravação pendente deste aparelho
+      (`isFetchedAfterMount`, `gravacaoPendente`); a aba parada na aula pula para o ponto de outro
+      aparelho se o vídeo estiver pausado (`irParaSePausado`, player.js); a gravação a cada 5 s
+      (era 15). O relógio de renovação do endereço saiu do `BunnyPlayer` para
+      `useRenovarNoVencimento` (o componente chegava a 200 linhas; sem mudar o que faz).
+      **Mutação** (6): abrir pela memória, não esperar a gravação, nunca perceber outro aparelho, o
+      player não repassar o pulo, pular tocando, voltar aos 15 s — todas reprovam.
+      *Prova no ar depois do "publica":* parar no computador, abrir no iPhone (e o contrário) — o
+      mesmo segundo; e a aba parada no computador, pausada, pula ao voltar a ela.
+- [ ] **No iPhone, a pausa às vezes não chega ao servidor** — depois de publicar, o operador pausa no
+      iPhone e eu leio no registro se o pedido chegou na hora. Se não chegar, a causa é o player do
+      Bunny no iPhone (o aviso `pause` do player.js): investigar na doc do Stream. Hoje a perda máxima
+      é de 5 s.
 - [ ] **O alerta do Sentry com o servidor parado** — provocar um erro `[stripe]` e não mandar mais
       pedido nenhum: o e-mail tem que chegar (o registro de 23/10 só mostra o aviso de que o servidor
       ligou). *Se não chegar:* o caminho de erro espera o envio (`Sentry.flush`, até 2 s), ou o serviço

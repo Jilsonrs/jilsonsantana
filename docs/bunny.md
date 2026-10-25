@@ -104,9 +104,18 @@ frente do site, por exemplo), ou se o Enterprise DRM entrar só para as aulas.*
   refeito no Bloco AULA, 06/10/2026)*: o ponto de cada aula e a aula em que a pessoa está ficam
   **na conta** (`lesson_progress`), não mais no navegador — valem em outro aparelho e não somem com
   os 7 dias do Safari. A tela ouve `timeupdate`, `pause`, `play` e `ended` do player.js, grava o
-  ponto (a cada 15 s de vídeo, na pausa, ao sair; ao fechar a aba, pelo envio na saída da página)
+  ponto (a cada 5 s de vídeo, na pausa, ao sair; ao fechar a aba, pelo envio na saída da página)
   e, ao reabrir, acrescenta ao endereço só `t=<segundos>s` — parâmetro de embed do Stream, fora do
-  token. **A aula sempre volta tocando:** o `autoplay=false` de quem tinha pausado saiu (o operador
+  token. **O segundo mais novo vence, entre aparelhos** *(25/10/2026 — achado do operador, que
+  aprovou o plano: o iPhone abria no segundo que a aba dele lembrava e apagava o do computador)*:
+  a aula abre no ponto do **servidor**, buscado na hora, depois de a gravação que este aparelho
+  ainda está enviando chegar (`gravacaoPendente`, até 3 s); a aba não guarda mais o ponto na
+  memória. E a aba que ficou **parada na aula**, ao voltar a ser vista, pula para o ponto de outro
+  aparelho se o vídeo estiver pausado — pelo player.js, `getPaused` e `setCurrentTime` (doc do
+  Stream via context7, 25/10/2026); quem decide se está pausado é o próprio player, não os avisos
+  de pausa, que no iPhone às vezes não chegam. Tocando, o aparelho em que se está assistindo vence.
+  A gravação passou de 15 s para 5 s pelo mesmo motivo: sem o aviso de pausa, perde-se no máximo
+  5 s. **A aula sempre volta tocando:** o `autoplay=false` de quem tinha pausado saiu (o operador
   revogou o "volta pausado" em 06/10/2026); o `autoplay` é só o que o servidor manda. O `ended`
   grava "viu até o fim" e abre a próxima aula da lista. Só a aula: o vídeo de apresentação não
   guarda ponto (`ponto-da-aula.ts`, `envio-na-saida.ts`, `player-do-bunny.ts`).
