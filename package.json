@@ -23,8 +23,8 @@
     "npm": ">=10.0.0"
   },
   "devDependencies": {
-    "eslint": "10.11.0",
+    "eslint": "10.13.0",
     "jiti": "^2.7.0",
-    "typescript-eslint": "8.70.1"
+    "typescript-eslint": "8.72.0"
   }
 }

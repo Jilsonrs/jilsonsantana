@@ -429,7 +429,9 @@ describe("o download", () => {
 
       const res = await baixar(ids.paga, emPartes.id, member);
       expect(res.status).toBe(200);
-      expect(res.headers["content-disposition"]).toContain('filename="Curso-Inteiro.zip"');
+      // Com ou sem aspas: o Express 5.3 tira as aspas de nome sem espaço nem caractere especial — as duas
+      // formas valem (RFC 6266); o que importa é o nome original.
+      expect(res.headers["content-disposition"]).toMatch(/^attachment; filename="?Curso-Inteiro\.zip"?(;|$)/);
       vaiEmPedacos(res);
       expect(Buffer.compare(res.body as Buffer, original)).toBe(0);
 
