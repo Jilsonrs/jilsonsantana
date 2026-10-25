@@ -630,6 +630,22 @@
       o tempo de resposta; 1 processador deixa a rajada de 100 pedidos 0,5 s mais lenta. **Para a
       P104: 512 MB bastam** (o pico usa ~30–40%); a escolha final é do operador. Tabela e gatilhos:
       `tech-stack.md` → *O teste de tamanhos*.
+- **O servidor pronto para até 3 cópias, no tamanho de depois do crédito** *(plano aprovado pelo
+  operador em 25/10/2026: 1 processador e 512 MB, de 1 a 3 cópias; o Neon com teto de 4 unidades,
+  ajustado por ele no painel)*. Com mais de uma cópia, o que mora na memória de cada uma deixa de valer
+  para as outras — as travas da cobrança já são do banco (`pg_advisory_xact_lock`).
+  - [x] **O limite de tentativas conta no banco** (cobrança, assinar sem login, código por e-mail e os
+        clientes novos do dia): `lib/loja-de-tentativas.ts`, tabela `limite_de_tentativa` (migration
+        `20261025140000`, com RLS), uma instrução atômica por pedido. Testes: duas cópias somam a mesma
+        contagem, 20 pedidos simultâneos de duas cópias dão 20, a janela zera, limites não se misturam.
+        Mutação (cada cópia conta sozinha · a janela nunca zera · desfazer negativo): reprovam. O
+        "máximo de 3 assinaturas sem login ao mesmo tempo" fica por cópia, de propósito (protege as
+        ligações com o banco, que são de cada cópia).
+  - [ ] **As tentativas de login contam no banco** (`rateLimit.storage: "database"` do Better Auth).
+  - [ ] **Os textos do site relidos a cada 1 minuto** em cada cópia (Admin → Textos aparece em todas em
+        até 1 minuto).
+  - [ ] **A publicação com 1 processador, 512 MB e de 1 a 3 cópias** (`deploy.yml`), a revisão de
+        segurança, publicar, e o teste de carga de novo nessa configuração, com os custos.
 - [ ] **O alerta de orçamento (R$ 100):** conta o gasto antes ou depois do crédito?
 - [x] **"O Google Cloud explicado"** *(pedido do operador, 24/10/2026: "é a primeira vez que utilizo
       […] preciso saber o essencial para entender como funciona e testar configurações maiores e

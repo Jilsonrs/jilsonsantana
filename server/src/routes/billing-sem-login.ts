@@ -33,8 +33,9 @@ const router = Router();
  * esgotaria as ligações que o gate usa, e a aula de quem paga ficaria esperando. Cheio, a resposta é
  * 409 `MuitosAoMesmoTempo` na hora, antes de abrir qualquer transação — um código próprio, para a
  * tela dizer "Aguarde um instante e tente novamente." (decisão do operador, 21/10/2026: para a
- * pessoa não clicar de novo em seguida e esbarrar no mesmo cheio). Contagem em memória: há um
- * servidor só (a mesma premissa dos limites de tentativas).
+ * pessoa não clicar de novo em seguida e esbarrar no mesmo cheio). Contagem em memória, POR CÓPIA do
+ * servidor, de propósito (25/10/2026, até 3 cópias): o que ela protege são as ligações com o banco,
+ * e cada cópia tem as suas — com 3 cópias, até 9 ao mesmo tempo no total.
  */
 export const ASSINATURAS_SEM_LOGIN_AO_MESMO_TEMPO = 3;
 let emAndamento = 0;

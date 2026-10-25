@@ -1,6 +1,7 @@
 import { BlockList, isIP } from "node:net";
 import type { Request, RequestHandler, Response } from "express";
-import { MemoryStore, ipKeyGenerator, rateLimit, type Options } from "express-rate-limit";
+import { ipKeyGenerator, rateLimit, type Options } from "express-rate-limit";
+import { LojaNoBanco } from "./loja-de-tentativas.js";
 
 // O LIMITE DE TENTATIVAS NAS ROTAS DE COBRANÇA (Fase 4, etapa 4.7, passo 1 — billing.md →
 // *Limite de tentativas*; plano e frase aprovados pelo operador em 19/10/2026). Toda rota de
@@ -15,7 +16,8 @@ import { MemoryStore, ipKeyGenerator, rateLimit, type Options } from "express-ra
 // - **A janela é de cada pessoa** e começa no primeiro pedido dela: quem passou do teto espera no
 //   máximo 15 minutos — é o que a frase da tela promete ("espere alguns minutos").
 // - **Recusado aqui, o pedido nem chega à Stripe** — o limite vem antes da rota.
-// - **Contagem em memória**: há um servidor só; cada publicação zera as contagens.
+// - **Contagem no BANCO** (`lib/loja-de-tentativas.ts`, 25/10/2026): o servidor tem até 3 cópias, e
+//   todas contam juntas; publicar não zera mais as contagens.
 // - **Quem fica de fora:** `GET /billing/assinatura` ("já tenho acesso?"), que a tela de depois do
 //   pagamento repete a cada 2 s — lê só o banco.
 // - **A conta é a da sessão** (o `requireAuth` vem antes); o endereço vem de `ipDoPedido`
@@ -198,7 +200,7 @@ function recusar(req: Request, res: Response, quem: Quem, janelaMs: number): voi
 }
 
 /** As contagens, para os testes zerarem (cada teste começa como quem chega agora). */
-const contagens: MemoryStore[] = [];
+const contagens: LojaNoBanco[] = [];
 
 /**
  * O endereço para contar. SEM LOGIN e sem um endereço válido em produção, todos contam JUNTOS numa
@@ -237,7 +239,8 @@ type OpcoesDoLimitador = { semLogin?: boolean; chave?: (req: Request) => string;
 
 function limitador(quem: Quem, janelaMs: number, limite: number, opcoes: OpcoesDoLimitador = {}): RequestHandler {
   const semLogin = opcoes.semLogin ?? false;
-  const loja = new MemoryStore();
+  // O nome na frente de cada chave no banco: o mesmo em todas as cópias (sai da configuração, não da ordem).
+  const loja = new LojaNoBanco(`${quem}-${Math.round(janelaMs / MINUTO)}min-${limite}${semLogin ? "-sem-login" : ""}${opcoes.chave ? "-chave-propria" : ""}`);
   contagens.push(loja);
   return rateLimit({
     windowMs: janelaMs,
@@ -336,7 +339,7 @@ export const limiteDoCodigo: RequestHandler[] = [
 ];
 
 /** A contagem dos clientes novos do dia, por endereço (zera nos testes, como as outras). */
-const clientesNovos = new MemoryStore();
+const clientesNovos = new LojaNoBanco("clientes-novos-dia");
 // Seguro: a loja só lê a janela das opções do pacote; o resto não se aplica a uma contagem avulsa.
 clientesNovos.init({ windowMs: DIA } as Options);
 contagens.push(clientesNovos);

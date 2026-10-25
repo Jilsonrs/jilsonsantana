@@ -1,6 +1,5 @@
 import { beforeEach } from "vitest";
 import { loadTestEnv, assertTestDatabase } from "./test-env.js";
-import { zerarLimitesDeTentativas } from "../lib/limite-de-tentativas.js";
 
 // setupFiles do Vitest — roda em CADA worker, ANTES de os módulos do app serem
 // importados. É aqui que `lib/auth.ts` e o PrismaClient passam a enxergar o
@@ -16,10 +15,14 @@ import { zerarLimitesDeTentativas } from "../lib/limite-de-tentativas.js";
 loadTestEnv();
 assertTestDatabase();
 
-// O LIMITE DE TENTATIVAS das rotas de cobrança (etapa 4.7, passo 1) conta em memória, e os
-// testes de um arquivo dividem a memória: sem zerar, o quinto teste que troca o cartão do
+// O LIMITE DE TENTATIVAS das rotas de cobrança (etapa 4.7, passo 1) conta no banco (desde
+// 25/10/2026), e os testes dividem o banco: sem zerar, o quinto teste que troca o cartão do
 // member@ receberia 429 por causa dos quatro anteriores — e passaria ou reprovaria pela ordem.
 // O limite continua LIGADO em todo teste, como em produção; só a contagem recomeça.
+// IMPORTADO AQUI DENTRO, e não no topo: o limite agora fala com o banco, e importá-lo antes do
+// arquivo de teste criaria o cliente do Prisma com o endereço de sempre — o teste que liga o banco
+// com UMA conexão (`checkout-uma-ligacao.test.ts`) troca o endereço antes de importar o app.
 beforeEach(async () => {
+  const { zerarLimitesDeTentativas } = await import("../lib/limite-de-tentativas.js");
   await zerarLimitesDeTentativas();
 });
