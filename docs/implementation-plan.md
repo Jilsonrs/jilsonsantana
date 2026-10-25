@@ -690,7 +690,7 @@
       25/10/2026** (`950e63a` — a imagem montada de `node:24-alpine`), e no ar: o site, o login (401 com
       senha errada) e os dados do curso respondem. O computador do operador também no 24.22.1.
 - [x] **O lembrete de atualizar o stack** *(pedido do operador, 25/10/2026: "me lembrar todo janeiro ou a
-      cada 6 meses")* — o GitHub abre um aviso por e-mail em 1º de janeiro e 1º de julho, com o Node e as
+      cada 6 meses")* — o GitHub abre um aviso por e-mail em 1º de janeiro e 1º de junho, com o Node e as
       bibliotecas atrasadas (`lembrete-do-stack.yml`, `scripts/lembrete-do-stack.mjs`); a rotina mora no
       `tech-stack.md` → *Atualizações*, e o `CLAUDE.md` manda lê-la antes de mexer em versão. Conferido
       rodando o roteiro: Node 24 em dia; 18 bibliotecas com versão grande nova (nenhuma urgente).
