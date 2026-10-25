@@ -25,7 +25,8 @@
 > de fora, a trava da publicação (só a `main` deste repositório), as contas de serviço (só a do site lê
 > o cofre), o servidor (ligado e esperando, 1 instância, 2 processadores e 2 GB — hoje, 1 processador e 512 MB, de 1 a 3 cópias) e o banco de produção
 > (39 migrations, nenhuma pela metade; nenhuma tabela sem RLS; o admin com o e-mail confirmado).
-> **No ar desde 25/10/2026: 1 processador por cópia, de 1 a 3 cópias** — com 512 MB (`6b9a5a6`, revisão
+> **No ar desde 25/10/2026: 1 processador e 1 GB por cópia, de 1 a 3 cópias, no Node.js 24** (`950e63a`,
+> revisão `jilson-prod-00029`); antes, com 512 MB (`6b9a5a6`, revisão
 > `jilson-prod-00028`) — as tentativas de cobrança e de login contando no banco, os textos relidos a cada
 > minuto; teste de carga no ar sem erro (o plano → *Depois do Bloco G*).
 > **Publicado em 24–25/10/2026:** `d6c2906` — o endereço do CDN do Bunny corrigido (P105) e a
@@ -678,16 +679,16 @@
         de 1.000 em 3,7 s (pior 6,4 s). **Para 1.000 alunos ao mesmo tempo, esta configuração fica no
         limite** — gatilho: com uns 500 alunos ao mesmo tempo, subir o máximo para 5 cópias. Custos:
         `tech-stack.md` → *O teste de carga*. A P104 saiu da lista, decidida.
-- [ ] **1 GB por cópia** *(decisão do operador, 25/10/2026: "deixa default 1G e 1 processador na cópia
-      sempre ligada e nas cópias reservas")* — `deploy.yml` com `--memory=1Gi`, no commit; falta
-      publicar. ~US$ 3/mês a mais na cópia sempre ligada. *O operador pensava numa principal maior e
+- [x] **1 GB por cópia** *(decisão do operador, 25/10/2026: "deixa default 1G e 1 processador na cópia
+      sempre ligada e nas cópias reservas")* — `deploy.yml` com `--memory=1Gi`; **publicado em 25/10/2026**
+      (`950e63a`, revisão `jilson-prod-00029`), conferido de fora. ~US$ 3/mês a mais na cópia sempre ligada. *O operador pensava numa principal maior e
       reservas menores: o Cloud Run não permite — todas as cópias têm o mesmo tamanho (registrado no
       `tech-stack.md`).*
-- [ ] **O Node.js 24 no contêiner e no CI** *(pedido do operador, 25/10/2026 — o 20 saiu de suporte em
+- [x] **O Node.js 24 no contêiner e no CI** *(pedido do operador, 25/10/2026 — o 20 saiu de suporte em
       abril de 2026)*: `Dockerfile` (as 4 etapas), `ci.yml` (os 2 jobs e a chave do cache), a checagem do
-      player, `@types/node` 24 e `engines` a partir do 22. Os quatro gates verdes no Node 22 local; o CI
-      prova no 24 — falta publicar (a imagem só se monta na publicação: se falhar, o site fica na versão
-      anterior).
+      player, `@types/node` 24 e `engines` a partir do 22. CI verde no Node v24.21.0; **publicado em
+      25/10/2026** (`950e63a` — a imagem montada de `node:24-alpine`), e no ar: o site, o login (401 com
+      senha errada) e os dados do curso respondem. O computador do operador também no 24.22.1.
 - [x] **O lembrete de atualizar o stack** *(pedido do operador, 25/10/2026: "me lembrar todo janeiro ou a
       cada 6 meses")* — o GitHub abre um aviso por e-mail em 1º de janeiro e 1º de julho, com o Node e as
       bibliotecas atrasadas (`lembrete-do-stack.yml`, `scripts/lembrete-do-stack.mjs`); a rotina mora no
