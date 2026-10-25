@@ -5,6 +5,7 @@ import type { OuvintesDoPlayer } from "@/lib/player-do-bunny";
 
 // O player do Bunny é ouvido pelo NOSSO módulo; aqui ele vira dublê.
 const ouvirPlayer = vi.fn();
+const irParaSePausado = vi.fn();
 vi.mock("@/lib/player-do-bunny", () => ({
   ouvirPlayer: (...args: unknown[]) => ouvirPlayer(...args),
 }));
@@ -25,7 +26,8 @@ const ENDERECO = (video: string, token: string) =>
   `https://player.mediadelivery.net/embed/762605/${video}?token=${token}&expires=${ATE_2100}&autoplay=false`;
 
 beforeEach(() => {
-  ouvirPlayer.mockReset().mockReturnValue(() => {});
+  ouvirPlayer.mockReset().mockReturnValue({ parar: () => {}, irParaSePausado });
+  irParaSePausado.mockReset();
 });
 
 describe("BunnyPlayer — o endereço", () => {
@@ -276,5 +278,34 @@ describe("BunnyPlayer — o endereço vencido", () => {
     avisos().aoAndar(5, 600);
     vi.advanceTimersByTime(60 * 60 * 1000);
     expect(aoVencer).not.toHaveBeenCalled();
+  });
+});
+
+// OUTRO APARELHO ANDOU COM A AULA (25/10/2026): a página pede o pulo; o player o repassa ao
+// Bunny (que só pula pausado), sem trocar de endereço — nada recarrega.
+describe("BunnyPlayer — pular para o ponto de outro aparelho", () => {
+  const aula = (saltarPara: { segundos: number; vez: number } | null) => (
+    <BunnyPlayer src={ENDERECO("aaa", "t1")} title="Aula" comecarEm={125} aoAndar={() => {}} saltarPara={saltarPara} />
+  );
+
+  it("o pedido que chega DEPOIS de abrir vai ao player, uma vez por pedido, no mesmo quadro", async () => {
+    const { rerender } = render(aula(null));
+    await waitFor(() => expect(ouvirPlayer).toHaveBeenCalled());
+    const quadro = document.querySelector("iframe");
+
+    rerender(aula({ segundos: 230, vez: 1 }));
+    expect(irParaSePausado).toHaveBeenCalledWith(230);
+    rerender(aula({ segundos: 230, vez: 1 }));
+    expect(irParaSePausado).toHaveBeenCalledTimes(1);
+    rerender(aula({ segundos: 230, vez: 2 }));
+    expect(irParaSePausado).toHaveBeenCalledTimes(2);
+
+    expect(document.querySelector("iframe")).toBe(quadro);
+  });
+
+  it("o pedido que já existia quando o player abriu não pula: ele já abriu no ponto certo", async () => {
+    render(aula({ segundos: 230, vez: 1 }));
+    await waitFor(() => expect(ouvirPlayer).toHaveBeenCalled());
+    expect(irParaSePausado).not.toHaveBeenCalled();
   });
 });

@@ -36,7 +36,8 @@ export function LessonPage() {
   const lessonId = /^\d+$/.test(id ?? "") ? Number(id) : null;
   const t = useT();
   const { data: session } = useSession();
-  const { data, isPlaceholderData, isError, error, comoAdmin, carregandoSessao, refetch } = usePaginaDaAula(lessonId);
+  const { data, isPlaceholderData, isFetchedAfterMount, dataUpdatedAt, isError, error, comoAdmin, carregandoSessao, refetch } =
+    usePaginaDaAula(lessonId);
   const [iaAberta, setIaAberta] = useState(false);
   const { mutate: concluir } = useConcluirAula();
   // Com versão nova no servidor, a próxima aula abre carregando a página (06/10/2026).
@@ -47,8 +48,10 @@ export function LessonPage() {
   const lembrarLegenda = useLembrarLegenda();
   // Os dados DESTA aula. Enquanto a próxima carrega, a tela mostra os da anterior
   // (mesmo curso — Bloco AULA, 07/10/2026): o topo e a lista ficam, e nada da aula
-  // anterior — conteúdo, conclusão, ponto — pode valer para esta.
-  const daAula = data && !isPlaceholderData ? data : undefined;
+  // anterior — conteúdo, conclusão, ponto — pode valer para esta. E a guardada na memória de
+  // uma visita anterior também não: o ponto vale o do servidor, buscado AO ABRIR (25/10/2026 —
+  // outro aparelho pode ter andado com a aula).
+  const daAula = data && !isPlaceholderData && isFetchedAfterMount ? data : undefined;
 
   // A aula que esta pessoa pode concluir agora: logada, liberada e ainda não
   // concluída (Fase 5, 03/10/2026). O visitante da prévia grátis não tem progresso.
@@ -62,12 +65,14 @@ export function LessonPage() {
   }, [textoParaConcluir, comoAdmin, concluir]);
 
   // ONDE A PESSOA PAROU, na conta (Bloco AULA, 06/10/2026): só logado e com a aula liberada.
-  const ponto = usePontoDaAula({
+  const { ouvintes: ponto, salto } = usePontoDaAula({
     lessonId,
     comoAdmin,
     ativo: Boolean(session && daAula?.aula.id === lessonId && daAula.aula.liberada),
     video: daAula?.aula.kind === LessonKind.VIDEO,
     comecarEm: daAula?.aula.ponto ?? null,
+    pontoDoServidor: daAula?.aula.ponto ?? null,
+    atualizadoEm: dataUpdatedAt,
   });
   // OS EVENTOS DO VÍDEO (Bloco MEDIR, 09/10/2026): só do aluno — o admin não grava.
   const eventos = useEventosDaAula({
@@ -155,6 +160,7 @@ export function LessonPage() {
                 legenda={session ? { abrirCom: legendaLigada ? "pt" : "off", aoMudar: aoMudarLegenda } : undefined}
                 // Aba aberta de um dia para o outro: a aula busca um endereço novo do vídeo (06/10/2026).
                 renovarVideo={() => void refetch()}
+                saltarPara={salto}
               />
             ) : (
               <LessonContentCarregando video={(aula?.kind ?? naLista?.kind) !== LessonKind.TEXT} />

@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { pontoUtil } from "@jilson/core";
-import { ouvirPlayer } from "@/lib/player-do-bunny";
+import { ouvirPlayer, type ControleDoPlayer } from "@/lib/player-do-bunny";
 import { avisoDeLegenda } from "@/lib/legenda-lembrada";
-import { FOLGA_DO_VENCIMENTO, enderecoDoPlayer, vencimento, venceu, videoDoEndereco } from "@/lib/endereco-do-player";
+import { enderecoDoPlayer, useRenovarNoVencimento, venceu, videoDoEndereco } from "@/lib/endereco-do-player";
 
 /**
  * O player do Bunny Stream, num quadro 16:9. O endereço vem SEMPRE do servidor
@@ -19,9 +19,6 @@ import { FOLGA_DO_VENCIMENTO, enderecoDoPlayer, vencimento, venceu, videoDoEnder
 /** Os botões do player em português: a escola é só em português (12/10/2026). */
 const IDIOMA_DO_PLAYER = "pt";
 
-/** Depois de pedir um endereço novo, quanto esperar antes de pedir outra vez (se o primeiro pedido falhou). */
-const INTERVALO_ENTRE_PEDIDOS = 30_000;
-
 export function BunnyPlayer({
   src,
   title,
@@ -34,6 +31,7 @@ export function BunnyPlayer({
   aoPausar,
   aoTocar,
   aoVencer,
+  saltarPara = null,
 }: {
   src: string;
   title: string;
@@ -68,6 +66,8 @@ export function BunnyPlayer({
    * chegar no `src`, o player troca, no mesmo ponto. Sem ele, nada é renovado.
    */
   aoVencer?: () => void;
+  /** Outro aparelho andou com a aula: leve o vídeo a este segundo, se estiver pausado (25/10/2026). */
+  saltarPara?: { segundos: number; vez: number } | null;
 }) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   // O último ponto que o player avisou, do vídeo em que avisou: é nele que o player
@@ -98,12 +98,14 @@ export function BunnyPlayer({
   aoPausarRef.current = aoPausar;
   const aoTocarRef = useRef(aoTocar);
   aoTocarRef.current = aoTocar;
-  const aoVencerRef = useRef(aoVencer);
-  aoVencerRef.current = aoVencer;
   const aoMudarLegendaRef = useRef(aoMudarLegenda);
   aoMudarLegendaRef.current = aoMudarLegenda;
   const ouvirLegenda = aoMudarLegenda !== undefined;
   const renova = aoVencer !== undefined;
+  const pedirEnderecoNovo = useRenovarNoVencimento(endereco, aoVencer);
+  const controle = useRef<ControleDoPlayer | null>(null);
+  // O pulo que já existia quando o player abriu não é para ele: abriu no ponto certo.
+  const pulouAoAbrir = useRef(saltarPara?.vez);
 
   // Efeito: o aviso de legenda chega por mensagem do navegador, vinda da moldura do
   // player — só a desta moldura vale (`avisoDeLegenda` confere a janela e a origem).
@@ -116,26 +118,13 @@ export function BunnyPlayer({
     window.addEventListener("message", aoReceber);
     return () => window.removeEventListener("message", aoReceber);
   }, [ouvirLegenda]);
-  // Um pedido por vez: o play avisa várias vezes por segundo, e cada pedido novo
-  // cancelaria o anterior antes de ele chegar.
-  const ultimoPedido = useRef(0);
-  const pedirEnderecoNovo = () => {
-    if (Date.now() - ultimoPedido.current < INTERVALO_ENTRE_PEDIDOS) return;
-    ultimoPedido.current = Date.now();
-    aoVencerRef.current?.();
-  };
-  const pedirRef = useRef(pedirEnderecoNovo);
-  pedirRef.current = pedirEnderecoNovo;
-
-  // Efeito: o relógio até o endereço vencer é do navegador, fora do React.
+  // Efeito: pular é um comando ao player, no iframe do Bunny, fora do React — uma vez por pedido.
+  const vezDoPulo = saltarPara?.vez;
+  const segundosDoPulo = saltarPara?.segundos;
   useEffect(() => {
-    const expira = vencimento(endereco);
-    if (!renova || expira === null) return;
-    const espera = Math.max(0, (expira - FOLGA_DO_VENCIMENTO) * 1000 - Date.now());
-    // O `setTimeout` não aceita mais que ~24,8 dias; o endereço vale 24 h.
-    const relogio = window.setTimeout(() => pedirRef.current(), Math.min(espera, 2 ** 31 - 1));
-    return () => window.clearTimeout(relogio);
-  }, [endereco, renova]);
+    if (vezDoPulo === undefined || segundosDoPulo === undefined || vezDoPulo === pulouAoAbrir.current) return;
+    controle.current?.irParaSePausado(segundosDoPulo);
+  }, [vezDoPulo, segundosDoPulo]);
   const ouvir = aoConcluir !== undefined || aoTerminar !== undefined || aoAndar !== undefined || aoPausar !== undefined || renova;
 
   // Efeito: ouvir o player é conversar com o iframe do Bunny, fora do React.
@@ -148,9 +137,9 @@ export function BunnyPlayer({
     let terminou = false;
     // Play (ou o vídeo andando) num endereço vencido: o relógio pode atrasar com a aba em segundo plano.
     const conferirVencimento = () => {
-      if (venceu(endereco)) pedirRef.current();
+      if (venceu(endereco)) pedirEnderecoNovo();
     };
-    return ouvirPlayer(iframeRef.current, {
+    const ouvindo = ouvirPlayer(iframeRef.current, {
       aoConcluir: () => aoConcluirRef.current?.(),
       aoTerminar: () => {
         terminou = true;
@@ -171,7 +160,12 @@ export function BunnyPlayer({
         aoTocarRef.current?.();
       },
     });
-  }, [endereco, ouvir]);
+    controle.current = ouvindo;
+    return () => {
+      controle.current = null;
+      ouvindo.parar();
+    };
+  }, [endereco, ouvir, pedirEnderecoNovo]);
 
   return (
     <div className="aspect-video w-full overflow-hidden bg-muted">

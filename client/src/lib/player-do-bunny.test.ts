@@ -4,6 +4,8 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 // pacote vira dublê: um player que guarda os ouvintes para o teste disparar.
 const ouvintes = new Map<string, (dados?: unknown) => void>();
 const off = vi.fn();
+const pausado = { agora: true };
+const setCurrentTime = vi.fn();
 vi.mock("player.js", () => ({
   default: {
     Player: class {
@@ -13,6 +15,12 @@ vi.mock("player.js", () => ({
       off(evento: string) {
         off(evento);
         ouvintes.delete(evento);
+      }
+      getPaused(resposta: (p: boolean) => void) {
+        resposta(pausado.agora);
+      }
+      setCurrentTime(segundos: number) {
+        setCurrentTime(segundos);
       }
     },
   },
@@ -28,6 +36,8 @@ const assistiu = (seconds: number, duration: number) => ouvintes.get("timeupdate
 beforeEach(() => {
   ouvintes.clear();
   off.mockReset();
+  setCurrentTime.mockReset();
+  pausado.agora = true;
 });
 
 describe("chegouAoFim", () => {
@@ -106,7 +116,7 @@ describe("ouvirPlayer — o fim, o ponto e a pausa", () => {
     const aoAndar = vi.fn();
     const aoPausar = vi.fn();
     const aoTocar = vi.fn();
-    const parar = ouvirPlayer(iframe, { aoConcluir, aoTerminar, aoAndar, aoPausar, aoTocar });
+    const { parar } = ouvirPlayer(iframe, { aoConcluir, aoTerminar, aoAndar, aoPausar, aoTocar });
     const [tempo, fim, pausa, play] = [ouvintes.get("timeupdate"), ouvintes.get("ended"), ouvintes.get("pause"), ouvintes.get("play")];
 
     parar();
@@ -124,5 +134,41 @@ describe("ouvirPlayer — o fim, o ponto e a pausa", () => {
     expect(aoAndar).not.toHaveBeenCalled();
     expect(aoPausar).not.toHaveBeenCalled();
     expect(aoTocar).not.toHaveBeenCalled();
+  });
+});
+
+// OUTRO APARELHO ANDOU COM A AULA (25/10/2026): a tela pede para pular; quem decide se pula
+// é o próprio player — só pausado. Pulando, o ponto novo é avisado como se o vídeo andasse.
+describe("ouvirPlayer — pular se pausado", () => {
+  it("pausado: vai ao segundo pedido e avisa o ponto novo, com a duração que o player deu", () => {
+    const aoAndar = vi.fn();
+    const { irParaSePausado } = ouvirPlayer(iframe, { aoAndar });
+    assistiu(40, 600);
+    aoAndar.mockClear();
+
+    irParaSePausado(101);
+
+    expect(setCurrentTime).toHaveBeenCalledWith(101);
+    expect(aoAndar).toHaveBeenCalledWith(101, 600);
+  });
+
+  it("tocando: não mexe no vídeo nem avisa nada (quem está assistindo neste aparelho vence)", () => {
+    const aoAndar = vi.fn();
+    const { irParaSePausado } = ouvirPlayer(iframe, { aoAndar });
+    assistiu(40, 600);
+    aoAndar.mockClear();
+    pausado.agora = false;
+
+    irParaSePausado(101);
+
+    expect(setCurrentTime).not.toHaveBeenCalled();
+    expect(aoAndar).not.toHaveBeenCalled();
+  });
+
+  it("depois de parar de ouvir, não pula", () => {
+    const { parar, irParaSePausado } = ouvirPlayer(iframe, {});
+    parar();
+    irParaSePausado(101);
+    expect(setCurrentTime).not.toHaveBeenCalled();
   });
 });

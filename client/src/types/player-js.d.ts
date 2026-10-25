@@ -6,6 +6,8 @@ declare module "player.js" {
     constructor(iframe: HTMLIFrameElement);
     on(evento: string, ouvinte: Ouvinte): void;
     off(evento: string, ouvinte?: Ouvinte): void;
+    getPaused(resposta: (pausado: boolean) => void): void;
+    setCurrentTime(segundos: number): void;
   }
   const playerjs: { Player: typeof Player };
   export default playerjs;

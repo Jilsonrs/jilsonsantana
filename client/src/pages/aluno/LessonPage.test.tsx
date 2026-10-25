@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { screen, fireEvent, waitFor, within } from "@testing-library/react";
+import { act, screen, fireEvent, waitFor, within } from "@testing-library/react";
+import { focusManager } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { AxiosError, AxiosHeaders } from "axios";
 import { Role } from "@jilson/core";
@@ -30,6 +31,7 @@ vi.mock("@/lib/api", async (importOriginal) => ({
 // O player do Bunny é ouvido pelo NOSSO módulo; aqui ele vira dublê, e o teste
 // "chega aos 90%" chamando o aviso que a página entregou.
 const ouvirPlayer = vi.fn();
+const irParaSePausado = vi.fn();
 vi.mock("@/lib/player-do-bunny", () => ({
   ouvirPlayer: (...args: unknown[]) => ouvirPlayer(...args),
 }));
@@ -124,7 +126,8 @@ beforeEach(() => {
   concluirAula.mockReset().mockResolvedValue(undefined);
   getSalvos.mockReset().mockResolvedValue({ cursos: [], aulas: [] });
   alternarSalvo.mockReset().mockResolvedValue(undefined);
-  ouvirPlayer.mockReset().mockReturnValue(() => {});
+  ouvirPlayer.mockReset().mockReturnValue({ parar: () => {}, irParaSePausado });
+  irParaSePausado.mockReset();
   gravarPonto.mockReset().mockResolvedValue(undefined);
   getPreferencias.mockReset().mockResolvedValue({ legendas: false });
   salvarPreferencias.mockReset().mockResolvedValue(undefined);
@@ -727,23 +730,25 @@ describe("página da aula — onde a pessoa parou", () => {
   // O player do Bunny avisa o tempo com CASAS DECIMAIS (defeito achado no teste do
   // operador, 07/10/2026: o servidor recusava, e o ponto nunca chegava ao banco). Os
   // tempos daqui imitam o player de verdade; o que sai da tela é o segundo inteiro.
-  it("o vídeo andando grava a cada 15 s; a PAUSA grava na hora; o envio da saída fica sempre com o último ponto — em segundos inteiros", async () => {
+  it("o vídeo andando grava a cada 5 s; a PAUSA grava na hora; o envio da saída fica sempre com o último ponto — em segundos inteiros", async () => {
     const player = await abrirAssistindo();
     await waitFor(() => expect(gravarPonto).toHaveBeenCalledTimes(1));
 
-    player.aoAndar(10.41, 600.5);
-    player.aoAndar(16.73, 600.5);
-    player.aoAndar(20.2, 600.5);
-    expect(ultimoAgendado()[1]).toEqual({ segundos: 20 });
-    player.aoPausar(22.96);
+    player.aoAndar(3.41, 600.5);
+    player.aoAndar(5.73, 600.5);
+    player.aoAndar(8.2, 600.5);
+    expect(ultimoAgendado()[1]).toEqual({ segundos: 8 });
+    player.aoAndar(12.02, 600.5);
+    player.aoPausar(13.96);
 
-    await waitFor(() => expect(gravarPonto).toHaveBeenCalledTimes(3));
+    await waitFor(() => expect(gravarPonto).toHaveBeenCalledTimes(4));
     expect(gravarPonto.mock.calls).toEqual([
       [11, 0, false],
-      [11, 16, false],
-      [11, 22, false],
+      [11, 5, false],
+      [11, 12, false],
+      [11, 13, false],
     ]);
-    expect(ultimoAgendado()[1]).toEqual({ segundos: 22 });
+    expect(ultimoAgendado()[1]).toEqual({ segundos: 13 });
   });
 
   it("o fim grava 'viu até o fim' (vazio) ANTES de abrir a próxima, que avisa que a pessoa está nela", async () => {
@@ -778,16 +783,18 @@ describe("página da aula — onde a pessoa parou", () => {
     expect(screen.getByTitle("Leitura")).toBeTruthy();
   });
 
-  it("sair para outra tela grava o último ponto e desfaz o envio da saída; quem volta na mesma visita abre nele", async () => {
-    const enviados: EnvioFalso[] = [];
-    agendarNaSaida.mockImplementation((): EnvioFalso => {
-      const envio = { cancelar: vi.fn(), enviado: vi.fn(() => false) };
-      enviados.push(envio);
-      return envio;
+  /** O servidor de mentira: guarda o último ponto gravado e o devolve com a página. */
+  function servidorDoPonto(inicial: number | null) {
+    const servidor = { ponto: inicial };
+    gravarPonto.mockImplementation((_id: number, segundos: number | null) => {
+      servidor.ponto = segundos;
+      return Promise.resolve();
     });
-    comoMembro();
-    getLessonPage.mockResolvedValue(pagina({ ponto: 125 }));
-    renderWithProviders(
+    getLessonPage.mockImplementation(() => Promise.resolve(pagina({ ponto: servidor.ponto })));
+    return servidor;
+  }
+  function comSaidaEVolta() {
+    return renderWithProviders(
       <>
         <LessonPage />
         <Link to="/inicio">sair</Link>
@@ -798,21 +805,105 @@ describe("página da aula — onde a pessoa parou", () => {
         extraRoutes: [{ path: "/inicio", element: <Link to="/aluno/aula/11">voltar à aula</Link> }],
       },
     );
+  }
+
+  it("sair para outra tela grava o último ponto e desfaz o envio da saída; quem volta ESPERA essa gravação chegar e abre no ponto do servidor", async () => {
+    const enviados: EnvioFalso[] = [];
+    agendarNaSaida.mockImplementation((): EnvioFalso => {
+      const envio = { cancelar: vi.fn(), enviado: vi.fn(() => false) };
+      enviados.push(envio);
+      return envio;
+    });
+    comoMembro();
+    const servidor = servidorDoPonto(125);
+    // A gravação da saída demora a chegar: a volta não pode buscar o ponto antes dela.
+    let soltarSaida: () => void = () => {};
+    let segurou = false;
+    gravarPonto.mockImplementation((_id: number, segundos: number | null) => {
+      if (segundos !== 143 || segurou) {
+        servidor.ponto = segundos;
+        return Promise.resolve();
+      }
+      segurou = true;
+      return new Promise<void>((pronto) => {
+        soltarSaida = () => {
+          servidor.ponto = segundos;
+          pronto();
+        };
+      });
+    });
+    comSaidaEVolta();
     await screen.findByTitle("Abertura");
     await waitFor(() => expect(ouvirPlayer).toHaveBeenCalled());
     const player = avisosDoPlayer();
     player.aoAndar(140.25, 600.5);
-    player.aoAndar(147.81, 600.5);
+    player.aoAndar(143.81, 600.5);
 
     fireEvent.click(screen.getByText("sair"));
-    await waitFor(() => expect(gravarPonto).toHaveBeenLastCalledWith(11, 147, false));
-    // Gravado pelo caminho normal, o envio da saída não precisa mais sair.
-    const ultimoEnvio = enviados[enviados.length - 1];
-    await waitFor(() => expect(ultimoEnvio.cancelar).toHaveBeenCalled());
+    await waitFor(() => expect(gravarPonto).toHaveBeenLastCalledWith(11, 143, false));
+    const envioDaSaida = enviados[enviados.length - 1];
+    const buscasAntes = getLessonPage.mock.calls.length;
 
     fireEvent.click(await screen.findByText("voltar à aula"));
+    await new Promise((r) => setTimeout(r, 30));
+    expect(getLessonPage.mock.calls.length).toBe(buscasAntes);
+
+    soltarSaida();
+    // Gravado pelo caminho normal, o envio da saída não precisa mais sair.
+    await waitFor(() => expect(envioDaSaida.cancelar).toHaveBeenCalled());
     await screen.findByTitle("Abertura");
-    expect(params().get("t")).toBe("147s");
+    expect(params().get("t")).toBe("143s");
+  });
+
+  // O ACHADO DO OPERADOR (25/10/2026): o iPhone abria no segundo que a aba dele lembrava e
+  // apagava, ao abrir, o que o computador tinha gravado depois.
+  it("outro aparelho gravou depois: quem volta abre no ponto do SERVIDOR, não no que esta aba viu — e não o apaga", async () => {
+    comoMembro();
+    const servidor = servidorDoPonto(125);
+    comSaidaEVolta();
+    await screen.findByTitle("Abertura");
+    await waitFor(() => expect(ouvirPlayer).toHaveBeenCalled());
+    avisosDoPlayer().aoPausar(147.81);
+    fireEvent.click(screen.getByText("sair"));
+    await waitFor(() => expect(servidor.ponto).toBe(147));
+
+    servidor.ponto = 101; // o computador parou em 1:41
+
+    fireEvent.click(await screen.findByText("voltar à aula"));
+    await waitFor(() => expect(params().get("t")).toBe("101s"));
+    await waitFor(() => expect(gravarPonto).toHaveBeenLastCalledWith(11, 101, false));
+    expect(servidor.ponto).toBe(101);
+  });
+
+  it("aba parada na aula: ao voltar a ser vista, se OUTRO aparelho andou, o player é mandado ao ponto dele; se não, nada", async () => {
+    comoMembro();
+    const servidor = servidorDoPonto(125);
+    abrir();
+    await screen.findByTitle("Abertura");
+    await waitFor(() => expect(gravarPonto).toHaveBeenCalledWith(11, 125, false));
+    const voltarParaAAba = async () => {
+      const buscas = getLessonPage.mock.calls.length;
+      act(() => {
+        focusManager.setFocused(false);
+        focusManager.setFocused(true);
+      });
+      await waitFor(() => expect(getLessonPage.mock.calls.length).toBe(buscas + 1));
+      await new Promise((r) => setTimeout(r, 20));
+    };
+
+    try {
+      // Ninguém mais andou: o ponto do servidor é o que esta aba gravou.
+      await voltarParaAAba();
+      expect(irParaSePausado).not.toHaveBeenCalled();
+
+      servidor.ponto = 230; // o celular andou até 3:50
+      await voltarParaAAba();
+      expect(irParaSePausado).toHaveBeenCalledWith(230);
+      // O player continua o MESMO: pular não recarrega o vídeo.
+      expect(params().get("t")).toBe("125s");
+    } finally {
+      focusManager.setFocused(undefined);
+    }
   });
 
   it("o envio da saída já saiu (Safari e Firefox, ao esconder a aba): ao voltar, é agendado de novo, com o último ponto", async () => {

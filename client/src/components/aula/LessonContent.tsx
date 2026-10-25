@@ -54,6 +54,7 @@ export function LessonContent({
   proximaAulaId,
   legenda,
   renovarVideo,
+  saltarPara,
   podeAssinar,
   reativar,
   atrasada,
@@ -80,6 +81,8 @@ export function LessonContent({
   legenda?: { abrirCom: string; aoMudar: (ligada: boolean) => void };
   /** O endereço do vídeo está vencendo: buscar a aula de novo, com um endereço novo (06/10/2026). */
   renovarVideo?: () => void;
+  /** Outro aparelho andou com esta aula: o vídeo pausado pula para o segundo dele (25/10/2026). */
+  saltarPara?: { segundos: number; vez: number } | null;
   /**
    * Na aula trancada, o botão Assinar (decisão do operador, 09/10/2026) — só para quem está
    * logado: a tela de assinar exige a conta, e o visitante sem login é a etapa 4.7.
@@ -128,6 +131,7 @@ export function LessonContent({
           aoPausar={ouvintes?.aoPausar}
           aoTocar={ouvintes?.aoTocar}
           aoVencer={renovarVideo}
+          saltarPara={saltarPara}
         />
       </div>
     ) : (

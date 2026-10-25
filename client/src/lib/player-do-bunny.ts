@@ -39,12 +39,26 @@ export type OuvintesDoPlayer = {
   aoTocar?: () => void;
 };
 
-/** Ouve o player no iframe. Devolve a função que para de ouvir. */
-export function ouvirPlayer(iframe: HTMLIFrameElement, ouvintes: OuvintesDoPlayer): () => void {
+/** O que a tela pode fazer com o player que está ouvindo. */
+export type ControleDoPlayer = {
+  /** Para de ouvir. */
+  parar: () => void;
+  /**
+   * Leva o vídeo a este segundo, SÓ se ele estiver pausado (25/10/2026: outro aparelho andou
+   * com a aula enquanto esta aba esperava). Quem decide é o próprio player (`getPaused`), não
+   * os avisos de pausa, que no iPhone falharam. Pulando, avisa o ponto novo como se o vídeo
+   * tivesse andado: é o que leva a gravação e o envio da saída para ele.
+   */
+  irParaSePausado: (segundos: number) => void;
+};
+
+/** Ouve o player no iframe. Devolve o controle (parar de ouvir, pular se pausado). */
+export function ouvirPlayer(iframe: HTMLIFrameElement, ouvintes: OuvintesDoPlayer): ControleDoPlayer {
   const player = new playerjs.Player(iframe);
   let parado = false;
   let concluiu = false;
   let segundos = 0;
+  let duracao = 0;
   const concluir = () => {
     if (parado || concluiu) return;
     concluiu = true;
@@ -54,6 +68,7 @@ export function ouvirPlayer(iframe: HTMLIFrameElement, ouvintes: OuvintesDoPlaye
     const tempo = tempoAssistido(dados);
     if (!tempo || parado) return;
     segundos = tempo.segundos;
+    duracao = tempo.duracao;
     ouvintes.aoAndar?.(tempo.segundos, tempo.duracao);
     if (chegouAoFim(tempo.segundos, tempo.duracao)) concluir();
   };
@@ -72,7 +87,16 @@ export function ouvirPlayer(iframe: HTMLIFrameElement, ouvintes: OuvintesDoPlaye
   player.on("pause", aoPausar);
   player.on("play", aoTocar);
   player.on("ended", aoFim);
-  return () => {
+  const irParaSePausado = (alvo: number) => {
+    if (parado) return;
+    player.getPaused((pausado) => {
+      if (parado || !pausado) return;
+      player.setCurrentTime(alvo);
+      segundos = alvo;
+      if (duracao > 0) ouvintes.aoAndar?.(alvo, duracao);
+    });
+  };
+  const parar = () => {
     parado = true;
     // A pessoa saiu da aula (a passagem automática, ou o clique em outra): o iframe
     // JÁ SAIU da página quando isto roda, e o `player.js`, ao parar de ouvir, manda
@@ -89,4 +113,5 @@ export function ouvirPlayer(iframe: HTMLIFrameElement, ouvintes: OuvintesDoPlaye
       // O iframe pode sair da página no meio; parar de ouvir nunca derruba a tela.
     }
   };
+  return { parar, irParaSePausado };
 }
