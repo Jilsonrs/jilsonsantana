@@ -641,13 +641,26 @@
         Mutação (cada cópia conta sozinha · a janela nunca zera · desfazer negativo): reprovam. O
         "máximo de 3 assinaturas sem login ao mesmo tempo" fica por cópia, de propósito (protege as
         ligações com o banco, que são de cada cópia).
-  - [x] **As tentativas de login contam no banco** (`rateLimit.storage: "database"` do Better Auth —
-        context7 `/better-auth/better-auth`): tabela `rateLimit` do próprio Better Auth (migration
-        `20261025150000`, com RLS; o `auth:generate` reescreveu o `schema.prisma` inteiro só com
-        formatação — entrou só o modelo novo). Teste: barrado, a contagem está na tabela; apagada a
-        linha, a pessoa volta a tentar. Mutação (`storage: "memory"`): reprova. *As linhas de IPs
-        antigos ficam na tabela (uma por IP e rota) — gatilho para limpar: a tabela passar de alguns
-        milhares de linhas.*
+  - [x] **As tentativas de login contam no banco** — pelo `rateLimit.customStorage` do Better Auth 1.7.5
+        (`consumirTentativaDeLogin`, `lib/loja-de-tentativas.ts`): UMA instrução por pedido, na mesma
+        tabela do limite de tentativas, com o nome `login|`. *A primeira forma* (`storage: "database"`,
+        tabela `rateLimit` própria, migration `20261025150000`) *saiu na revisão de segurança*: fazia de
+        2 a 6 consultas, com transação, a cada pedido a `/api/auth/*`, no caixa de ligações da sessão —
+        a tabela some na migration `20261025160000` (nunca teve uso em produção). Teste: barrado, a
+        contagem está no banco; apagada, a pessoa volta a tentar; o teto e o "tente em N s". Mutação
+        (login nunca barra): reprova.
+  - [x] **A revisão de segurança** (agente `security-vulnerability-reviewer`, 25/10/2026) — 0 P0, 3 P1,
+        5 P2, todos tratados: (P1) a chave vai CIFRADA (HMAC com o segredo do servidor) — um `\u0000`
+        no e-mail virava 500 e esgotava os alertas, e o e-mail ficava em claro no banco; o cliente novo
+        do visitante conta pela transação de quem segura a trava (`contarClienteNovo(req, tx)`); o login
+        de uma instrução (acima). (P2) quem já passou do teto do endereço é recusado ANTES dos limites
+        por e-mail, sem gravar linha (`enderecoJaBarrado`); linhas vencidas saem depois de 1 hora;
+        `passOnStoreError: false` escrito, com teste (a contagem que falha recusa com 500); cada limite
+        com nome fixo e único, sem o teto. Testes novos e mutação (chave em claro · cliente fora da
+        transação · contagem que falha deixa passar · sem a checagem do endereço · login nunca barra):
+        todas reprovam. *Fica de fora, com o motivo:* filtrar as rotas de `/api/auth` antes do Better
+        Auth — com a contagem de uma instrução, um caminho inventado custa o mesmo que qualquer rota
+        pública; proteção contra enxurrada é do Cloud Armor (mapa, `tech-stack.md`).
   - [x] **Os textos do site relidos a cada 1 minuto** em cada cópia (`VALIDADE_DO_CACHE_DE_TEXTO`,
         `lib/dict.ts`): a cópia que recebe a edição limpa o cache na hora; as outras, em até 1 minuto.
         Teste: a edição de "outra cópia" (gravada direto no banco) não aparece antes de 1 minuto e

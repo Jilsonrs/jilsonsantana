@@ -23,6 +23,7 @@ const ANTES = vi.hoisted(() => {
 
 const { auth } = await import("../lib/auth.js");
 const { prisma } = await import("../lib/prisma.js");
+const { PREFIXO_DO_LOGIN } = await import("../lib/loja-de-tentativas.js");
 
 afterAll(() => {
   process.env.NODE_ENV = ANTES;
@@ -80,10 +81,12 @@ describe("o limite de tentativas de login, ligado", () => {
   it("a contagem mora no BANCO, que todas as cópias do servidor leem", async () => {
     const ip = "203.0.113.40";
     expect([await tentar(ip), await tentar(ip), await tentar(ip), await tentar(ip)]).toEqual([401, 401, 401, 429]);
-    const linhas = await prisma.rateLimit.findMany({ where: { key: { contains: ip } }, select: { key: true, count: true } });
-    expect(linhas.length).toBeGreaterThan(0);
+    // A chave vai cifrada (não se acha pelo endereço): conta-se pelo nome do login, na frente dela.
+    const [{ linhas }] = await prisma.$queryRaw<{ linhas: number }[]>`
+      SELECT count(*)::int AS linhas FROM limite_de_tentativa WHERE starts_with(chave, ${PREFIXO_DO_LOGIN})`;
+    expect(linhas).toBeGreaterThan(0);
 
-    await prisma.rateLimit.deleteMany({ where: { key: { contains: ip } } });
+    await prisma.$executeRaw`DELETE FROM limite_de_tentativa WHERE starts_with(chave, ${PREFIXO_DO_LOGIN})`;
 
     expect(await tentar(ip, ALUNO.senha)).toBe(200);
   });

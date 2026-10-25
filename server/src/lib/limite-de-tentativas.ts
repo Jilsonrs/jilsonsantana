@@ -1,5 +1,6 @@
 import { BlockList, isIP } from "node:net";
-import type { Request, RequestHandler, Response } from "express";
+import type { NextFunction, Request, RequestHandler, Response } from "express";
+import type { Prisma } from "@prisma/client";
 import { ipKeyGenerator, rateLimit, type Options } from "express-rate-limit";
 import { LojaNoBanco } from "./loja-de-tentativas.js";
 
@@ -237,22 +238,73 @@ function semContagem(req: Request, quem: Quem, semLogin: boolean): boolean {
 /** O que muda num limitador: sem login (o endereço que falta conta junto), outra chave, ou um pedido que não conta. */
 type OpcoesDoLimitador = { semLogin?: boolean; chave?: (req: Request) => string; naoConta?: (req: Request) => boolean };
 
-function limitador(quem: Quem, janelaMs: number, limite: number, opcoes: OpcoesDoLimitador = {}): RequestHandler {
-  const semLogin = opcoes.semLogin ?? false;
-  // O nome na frente de cada chave no banco: o mesmo em todas as cópias (sai da configuração, não da ordem).
-  const loja = new LojaNoBanco(`${quem}-${Math.round(janelaMs / MINUTO)}min-${limite}${semLogin ? "-sem-login" : ""}${opcoes.chave ? "-chave-propria" : ""}`);
+/** Um passo de limite: o que vai na rota, e a contagem dele (para quem só precisa LER, antes). */
+type Passo = { contar: RequestHandler; loja: LojaNoBanco; chave: (req: Request) => string; pula: (req: Request) => boolean; limite: number };
+
+/** Os nomes já usados: dois limites com o mesmo nome dividiriam a contagem no banco, em silêncio. */
+const nomesUsados = new Set<string>();
+
+/**
+ * A loja de um limite, no banco, com um NOME FIXO e único (revisão de segurança, 25/10/2026): o nome
+ * vai na frente de cada chave e é o mesmo em todas as cópias; não leva o teto, para uma publicação que
+ * mude o teto não fazer a cópia velha e a nova contarem em lugares diferentes.
+ */
+function lojaNova(nome: string): LojaNoBanco {
+  if (nomesUsados.has(nome)) throw new Error(`[api] limite de tentativas com nome repetido: ${nome}`);
+  nomesUsados.add(nome);
+  const loja = new LojaNoBanco(nome);
   contagens.push(loja);
-  return rateLimit({
+  return loja;
+}
+
+function passo(nome: string, quem: Quem, janelaMs: number, limite: number, opcoes: OpcoesDoLimitador = {}): Passo {
+  const semLogin = opcoes.semLogin ?? false;
+  const loja = lojaNova(nome);
+  const pula = (req: Request) => semContagem(req, quem, semLogin) || (opcoes.naoConta?.(req) ?? false);
+  const chave = (req: Request) => (opcoes.chave ? opcoes.chave(req) : `${rotaDoPedido(req)} ${chaveDeQuem(req, quem, semLogin)}`);
+  const contar = rateLimit({
     windowMs: janelaMs,
     limit: limite,
     store: loja,
     // Nada de cabeçalho de contagem em toda resposta: só o `Retry-After`, na recusa.
     legacyHeaders: false,
     standardHeaders: false,
-    skip: (req) => semContagem(req, quem, semLogin) || (opcoes.naoConta?.(req) ?? false),
-    keyGenerator: (req) => (opcoes.chave ? opcoes.chave(req) : `${rotaDoPedido(req)} ${chaveDeQuem(req, quem, semLogin)}`),
+    // A contagem falhou (o banco caiu): o pedido NÃO passa — vira 500 e nunca chega à Stripe. É o
+    // padrão da biblioteca, escrito aqui para ninguém o inverter achando que é detalhe (revisão de
+    // segurança, 25/10/2026): `true` deixaria a cobrança sem teto justo quando o banco falha.
+    passOnStoreError: false,
+    skip: pula,
+    keyGenerator: chave,
     handler: (req, res) => recusar(req, res, quem, janelaMs),
   });
+  return { contar, loja, chave, pula, limite };
+}
+
+function limitador(nome: string, quem: Quem, janelaMs: number, limite: number, opcoes: OpcoesDoLimitador = {}): RequestHandler {
+  return passo(nome, quem, janelaMs, limite, opcoes).contar;
+}
+
+/**
+ * SÓ LÊ a contagem do endereço e recusa quem já passou do teto dele, ANTES dos limites por e-mail
+ * (revisão de segurança, 25/10/2026): sem isto, cada e-mail novo vindo de um endereço já barrado
+ * ainda gravaria linhas no banco — a tabela cresceria na velocidade de quem ataca. Não conta nada:
+ * a ordem decidida (os do e-mail antes dos do endereço) continua.
+ */
+function enderecoJaBarrado(endereco: Passo): RequestHandler {
+  return (req: Request, res: Response, next: NextFunction) => {
+    if (endereco.pula(req)) {
+      next();
+      return;
+    }
+    endereco.loja.get(endereco.chave(req)).then((contagem) => {
+      if (!contagem || contagem.totalHits < endereco.limite) {
+        next();
+        return;
+      }
+      res.set("Retry-After", String(segundosAte(contagem.resetTime)));
+      res.status(429).json({ error: "MuitasTentativas" });
+    }, next);
+  };
 }
 
 /**
@@ -260,33 +312,37 @@ function limitador(quem: Quem, janelaMs: number, limite: number, opcoes: OpcoesD
  * já passou de um teto da própria conta não gasta mais a cota do endereço, que outras pessoas
  * podem dividir (a ordem do dia: achado da revisão de segurança, 19/10/2026).
  */
-function tetos(grupo: { conta: Teto; endereco: Teto }): RequestHandler[] {
-  const passos = [limitador("conta", JANELA, grupo.conta.porJanela)];
-  if (grupo.conta.porDia) passos.push(limitador("conta", DIA, grupo.conta.porDia));
-  passos.push(limitador("endereco", JANELA, grupo.endereco.porJanela));
-  if (grupo.endereco.porDia) passos.push(limitador("endereco", DIA, grupo.endereco.porDia));
+function tetos(nome: string, grupo: { conta: Teto; endereco: Teto }): RequestHandler[] {
+  const passos = [limitador(`${nome}:conta:15min`, "conta", JANELA, grupo.conta.porJanela)];
+  if (grupo.conta.porDia) passos.push(limitador(`${nome}:conta:dia`, "conta", DIA, grupo.conta.porDia));
+  passos.push(limitador(`${nome}:endereco:15min`, "endereco", JANELA, grupo.endereco.porJanela));
+  if (grupo.endereco.porDia) passos.push(limitador(`${nome}:endereco:dia`, "endereco", DIA, grupo.endereco.porDia));
   return passos;
 }
 
 /** O limite de cada grupo, para pôr na rota DEPOIS do `requireAuth`. */
 export const limiteDeTentativas = {
-  cobranca: tetos(LIMITES.cobranca),
-  acao: tetos(LIMITES.acao),
-  leitura: tetos(LIMITES.leitura),
+  cobranca: tetos("cobranca", LIMITES.cobranca),
+  acao: tetos("acao", LIMITES.acao),
+  leitura: tetos("leitura", LIMITES.leitura),
 };
 
 /**
  * Os passos de um grupo SEM LOGIN, na ordem: os do E-MAIL (com o endereço) antes dos do endereço,
  * que outras pessoas dividem. `semODiaDoEndereco`: o dia do endereço é contado à parte (a prévia).
  */
-function tetosSemLogin(grupo: { endereco: Teto; email?: Teto }, { semODiaDoEndereco = false } = {}): RequestHandler[] {
+function tetosSemLogin(nome: string, grupo: { endereco: Teto; email?: Teto }, { semODiaDoEndereco = false } = {}): RequestHandler[] {
+  const doEndereco = [passo(`${nome}:endereco:15min`, "endereco", JANELA, grupo.endereco.porJanela, { semLogin: true })];
+  if (grupo.endereco.porDia && !semODiaDoEndereco) {
+    doEndereco.push(passo(`${nome}:endereco:dia`, "endereco", DIA, grupo.endereco.porDia, { semLogin: true }));
+  }
   const passos: RequestHandler[] = [];
   if (grupo.email) {
-    passos.push(limitador("email", JANELA, grupo.email.porJanela, { semLogin: true }));
-    if (grupo.email.porDia) passos.push(limitador("email", DIA, grupo.email.porDia, { semLogin: true }));
+    passos.push(...doEndereco.map(enderecoJaBarrado));
+    passos.push(limitador(`${nome}:email:15min`, "email", JANELA, grupo.email.porJanela, { semLogin: true }));
+    if (grupo.email.porDia) passos.push(limitador(`${nome}:email:dia`, "email", DIA, grupo.email.porDia, { semLogin: true }));
   }
-  passos.push(limitador("endereco", JANELA, grupo.endereco.porJanela, { semLogin: true }));
-  if (grupo.endereco.porDia && !semODiaDoEndereco) passos.push(limitador("endereco", DIA, grupo.endereco.porDia, { semLogin: true }));
+  passos.push(...doEndereco.map((p) => p.contar));
   return passos;
 }
 
@@ -302,7 +358,7 @@ function temCodigo(req: Request): boolean {
  * com contagens separadas o teto de 40 por dia que o operador decidiu viraria 80. É o MESMO passo nas
  * duas rotas, e a chave não leva a rota.
  */
-const conferenciasDeCodigoDoDia = limitador("endereco", DIA, LIMITES_DO_VISITANTE.previa.endereco.porDia, {
+const conferenciasDeCodigoDoDia = limitador("visitante-conferencias-de-codigo:endereco:dia", "endereco", DIA, LIMITES_DO_VISITANTE.previa.endereco.porDia, {
   semLogin: true,
   chave: (req) => `conferencias-de-codigo endereco:${enderecoParaContar(req, true) ?? "-"}`,
   naoConta: (req) => !temCodigo(req),
@@ -313,11 +369,11 @@ const conferenciasDeCodigoDoDia = limitador("endereco", DIA, LIMITES_DO_VISITANT
  * e-mail (com o endereço). Rota pública de `/billing` que vá à Stripe entra num destes.
  */
 export const limiteSemLogin = {
-  assinar: [...tetosSemLogin(LIMITES_DO_VISITANTE.assinar), conferenciasDeCodigoDoDia],
-  previa: [...tetosSemLogin(LIMITES_DO_VISITANTE.previa, { semODiaDoEndereco: true }), conferenciasDeCodigoDoDia],
-  leitura: tetosSemLogin(LIMITES_DO_VISITANTE.leitura),
-  confirmacao: tetosSemLogin(LIMITES_DO_VISITANTE.confirmacao),
-  senha: tetosSemLogin(LIMITES_DO_VISITANTE.senha),
+  assinar: [...tetosSemLogin("visitante-assinar", LIMITES_DO_VISITANTE.assinar), conferenciasDeCodigoDoDia],
+  previa: [...tetosSemLogin("visitante-previa", LIMITES_DO_VISITANTE.previa, { semODiaDoEndereco: true }), conferenciasDeCodigoDoDia],
+  leitura: tetosSemLogin("visitante-leitura", LIMITES_DO_VISITANTE.leitura),
+  confirmacao: tetosSemLogin("visitante-confirmacao", LIMITES_DO_VISITANTE.confirmacao),
+  senha: tetosSemLogin("visitante-senha", LIMITES_DO_VISITANTE.senha),
 };
 
 /**
@@ -332,14 +388,17 @@ export const limiteSemLogin = {
  */
 export const LIMITES_DO_CODIGO = { email: { porHora: 3, porDia: 6 }, endereco: { porJanela: 10 } } as const;
 
+const enderecoDoCodigo = passo("codigo:endereco:15min", "endereco", JANELA, LIMITES_DO_CODIGO.endereco.porJanela, { semLogin: true });
+
 export const limiteDoCodigo: RequestHandler[] = [
-  limitador("email", HORA, LIMITES_DO_CODIGO.email.porHora, { semLogin: true, chave: (req) => `codigo-hora email:${emailDoPedido(req) ?? "-"}` }),
-  limitador("email", DIA, LIMITES_DO_CODIGO.email.porDia, { semLogin: true, chave: (req) => `codigo-dia email:${emailDoPedido(req) ?? "-"}` }),
-  limitador("endereco", JANELA, LIMITES_DO_CODIGO.endereco.porJanela, { semLogin: true }),
+  enderecoJaBarrado(enderecoDoCodigo),
+  limitador("codigo:email:hora", "email", HORA, LIMITES_DO_CODIGO.email.porHora, { semLogin: true, chave: (req) => `codigo-hora email:${emailDoPedido(req) ?? "-"}` }),
+  limitador("codigo:email:dia", "email", DIA, LIMITES_DO_CODIGO.email.porDia, { semLogin: true, chave: (req) => `codigo-dia email:${emailDoPedido(req) ?? "-"}` }),
+  enderecoDoCodigo.contar,
 ];
 
 /** A contagem dos clientes novos do dia, por endereço (zera nos testes, como as outras). */
-const clientesNovos = new LojaNoBanco("clientes-novos-dia");
+const clientesNovos = lojaNova("visitante-clientes-novos:dia");
 // Seguro: a loja só lê a janela das opções do pacote; o resto não se aplica a uma contagem avulsa.
 clientesNovos.init({ windowMs: DIA } as Options);
 contagens.push(clientesNovos);
@@ -351,8 +410,10 @@ contagens.push(clientesNovos);
  * novo com o mesmo e-mail, não gasta nada. Devolve em quantos segundos tentar de novo, quando o
  * dia já está cheio; nada, quando pode. Sem endereço válido em produção, não conta (como os outros).
  */
-export async function contarClienteNovo(req: Request): Promise<number | null> {
-  const { totalHits, resetTime } = await clientesNovos.increment(chaveDosClientesNovos(req));
+export async function contarClienteNovo(req: Request, tx: Prisma.TransactionClient): Promise<number | null> {
+  // Pela transação de quem já segura a trava do e-mail (revisão de segurança, 25/10/2026): pedir
+  // outra ligação com a trava na mão esgota o caixa de ligações da cópia (CLAUDE.md → Membership Gating).
+  const { totalHits, resetTime } = await clientesNovos.increment(chaveDosClientesNovos(req), tx);
   const limite = LIMITES_DO_VISITANTE.emailsNovosPorDia;
   if (totalHits <= limite) return null;
   if (totalHits === limite + 1) console.warn(`[api] ${req.method} ${req.baseUrl.toLowerCase()}${rotaDoPedido(req)} passou do limite de e-mails novos do dia (endereço)`);

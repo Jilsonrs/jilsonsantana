@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Options } from "express-rate-limit";
 import { prisma } from "../lib/prisma.js";
-import { LojaNoBanco } from "../lib/loja-de-tentativas.js";
+import { LojaNoBanco, PREFIXO_DO_LOGIN, consumirTentativaDeLogin } from "../lib/loja-de-tentativas.js";
 
 // A CONTAGEM DO LIMITE DE TENTATIVAS NO BANCO (25/10/2026 — o servidor passa a ter até 3 cópias). O
 // que ela promete, contra o banco de verdade: as cópias CONTAM JUNTAS — cada cópia do servidor monta
@@ -19,7 +19,7 @@ function copia(nome = "teste-cobranca"): LojaNoBanco {
 
 afterEach(async () => {
   vi.useRealTimers();
-  await prisma.$executeRaw`DELETE FROM limite_de_tentativa WHERE starts_with(chave, 'teste-')`;
+  await prisma.$executeRaw`DELETE FROM limite_de_tentativa WHERE starts_with(chave, 'teste-') OR starts_with(chave, ${PREFIXO_DO_LOGIN})`;
 });
 
 describe("a contagem do limite de tentativas no banco", () => {
@@ -76,5 +76,38 @@ describe("a contagem do limite de tentativas no banco", () => {
     await loja.decrement("conta:duda");
     await loja.decrement("conta:duda");
     expect((await loja.get("conta:duda"))?.totalHits).toBe(0);
+  });
+
+  // A chave vai CIFRADA (revisão de segurança, 25/10/2026): o que o visitante digita não chega ao
+  // banco — nem o e-mail em claro, nem um `\u0000`, que o Postgres recusa e virava 500.
+  it("a chave vai cifrada: um e-mail com caractere que o Postgres recusa conta normalmente, e não fica em claro", async () => {
+    const loja = copia();
+    expect((await loja.increment("email:a\u0000b@x.com endereco:1.2.3.4")).totalHits).toBe(1);
+    const linhas = await prisma.$queryRaw<{ chave: string }[]>`SELECT chave FROM limite_de_tentativa WHERE starts_with(chave, 'teste-cobranca|')`;
+    expect(linhas).toHaveLength(1);
+    expect(linhas[0].chave).not.toContain("@x.com");
+    expect(linhas[0].chave).toMatch(/^teste-cobranca\|[0-9a-f]{64}$/);
+  });
+});
+
+// AS TENTATIVAS DE LOGIN (`rateLimit.customStorage` do Better Auth): UMA instrução por pedido — a
+// tabela pronta do Better Auth abria uma transação por pedido no caixa de ligações da sessão.
+describe("as tentativas de login no banco", () => {
+  it("até o teto passa; acima, recusa e diz em quantos segundos a janela libera", async () => {
+    const regra = { window: 10, max: 3 };
+    const respostas = [];
+    for (let i = 0; i < 4; i++) respostas.push(await consumirTentativaDeLogin("203.0.113.70|/sign-in/email", regra));
+    expect(respostas.slice(0, 3)).toEqual([{ allowed: true, retryAfter: null }, { allowed: true, retryAfter: null }, { allowed: true, retryAfter: null }]);
+    expect(respostas[3].allowed).toBe(false);
+    expect(respostas[3].retryAfter).toBeGreaterThanOrEqual(1);
+    expect(respostas[3].retryAfter).toBeLessThanOrEqual(10);
+  });
+
+  it("cada endereço e rota tem a sua contagem", async () => {
+    const regra = { window: 10, max: 1 };
+    expect((await consumirTentativaDeLogin("203.0.113.71|/sign-in/email", regra)).allowed).toBe(true);
+    expect((await consumirTentativaDeLogin("203.0.113.72|/sign-in/email", regra)).allowed).toBe(true);
+    expect((await consumirTentativaDeLogin("203.0.113.71|/forget-password", regra)).allowed).toBe(true);
+    expect((await consumirTentativaDeLogin("203.0.113.71|/sign-in/email", regra)).allowed).toBe(false);
   });
 });

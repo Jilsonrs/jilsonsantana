@@ -50,7 +50,7 @@ type Ficha = { id: string; stripeCustomerId: string; nova: boolean };
  * (`contarClienteNovo`) e devolve em quantos segundos tentar de novo quando o dia já está cheio —
  * chamada só no instante em que um cliente novo vai mesmo nascer na Stripe.
  */
-export type OpcoesDoVisitante = { antesDeCriarCliente?: () => Promise<number | null> };
+export type OpcoesDoVisitante = { antesDeCriarCliente?: (tx: Prisma.TransactionClient) => Promise<number | null> };
 
 /** Encerradas: não cobram mais e não impedem uma assinatura nova. */
 const ENCERRADAS: ReadonlySet<string> = new Set(["incomplete_expired", "canceled"]);
@@ -102,7 +102,8 @@ async function fichaDoEmail(email: string, pedido: AssinarSemLoginInput, opcoes:
     const criada = await tx.guestCheckout.findUnique({ where: { email }, select: { id: true, stripeCustomerId: true } });
     if (criada) return { ...criada, nova: false };
     // Um e-mail novo é um cliente novo na Stripe: conta no teto do dia do endereço — só agora.
-    const espera = opcoes.antesDeCriarCliente ? await opcoes.antesDeCriarCliente() : null;
+    // Pela MESMA transação (a trava está na mão): outra ligação aqui esgotaria o caixa da cópia.
+    const espera = opcoes.antesDeCriarCliente ? await opcoes.antesDeCriarCliente(tx) : null;
     if (espera !== null) return { espera };
     const id = randomUUID();
     const cliente = await criarClienteDoVisitante({ pedido: id, email, documento: pedido.documento });

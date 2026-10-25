@@ -726,15 +726,3 @@ model LimiteDeTentativa {
   @@map("limite_de_tentativa")
 }
 
-// AS TENTATIVAS DE LOGIN, NO BANCO (25/10/2026 — o servidor passa a ter até 3 cópias): a tabela é a
-// do próprio Better Auth (`rateLimit.storage: "database"` em `lib/auth.ts`, gerada por
-// `npm --workspace server run auth:generate`). Na memória, cada cópia contaria sozinha.
-model RateLimit {
-  id          String @id
-  key         String
-  count       Int
-  lastRequest BigInt
-
-  @@unique([key])
-  @@map("rateLimit")
-}

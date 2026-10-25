@@ -8,7 +8,8 @@ import request from "supertest";
 import servidor from "./servidor.js";
 import { prisma } from "../lib/prisma.js";
 import { tratarErroDaApi } from "../lib/erro-da-api.js";
-import { LIMITES, limiteDeTentativas } from "../lib/limite-de-tentativas.js";
+import { LIMITES, LIMITES_DO_CODIGO, limiteDeTentativas } from "../lib/limite-de-tentativas.js";
+import { LojaNoBanco } from "../lib/loja-de-tentativas.js";
 
 // O LIMITE DE TENTATIVAS NAS ROTAS DE COBRANÇA (Fase 4, etapa 4.7, passo 1 — billing.md →
 // *Limite de tentativas*). O que estes testes protegem:
@@ -326,5 +327,36 @@ describe("o que a recusa NÃO faz", () => {
       aviso.mockRestore();
       erro.mockRestore();
     }
+  });
+});
+
+// A CONTAGEM NO BANCO (25/10/2026, revisão de segurança): o que acontece quando ela falha, e o que o
+// visitante consegue escrever na chave.
+describe("a contagem no banco — falhas e o que o visitante escreve", () => {
+  it("a contagem falhou (o banco caiu): o pedido é recusado com 500 e nem chega à rota", async () => {
+    const espiao = vi.spyOn(LojaNoBanco.prototype, "increment").mockRejectedValueOnce(new Error("banco fora do ar"));
+    try {
+      // A rota responderia 503 (a cobrança não está configurada neste arquivo): 500 é a recusa do limite.
+      expect((await cartao(member)).status).toBe(500);
+    } finally {
+      espiao.mockRestore();
+    }
+  });
+
+  it("pedir o código com um e-mail que o Postgres não grava (\\u0000): recusa normal (400), nunca 500", async () => {
+    const res = await request(servidor).post("/api/conta/codigo").set("x-forwarded-for", "198.51.100.150").send({ email: "a\u0000b@teste.local", motivo: "entrar" });
+    expect(res.status).toBe(400);
+  });
+
+  it("endereço já barrado: e-mails novos dele são recusados SEM gravar linha nova no banco", async () => {
+    const endereco = "198.51.100.151";
+    const pedirCom = (i: number) => request(servidor).post("/api/conta/codigo").set("x-forwarded-for", endereco).send({ email: `barrado-${i}@teste.local`, motivo: "entrar" });
+    for (let i = 0; i < LIMITES_DO_CODIGO.endereco.porJanela; i++) expect((await pedirCom(i)).status).not.toBe(429);
+    const contarLinhas = async () => (await prisma.$queryRaw<{ n: number }[]>`SELECT count(*)::int AS n FROM limite_de_tentativa`)[0].n;
+    const antes = await contarLinhas();
+
+    for (let i = 100; i < 105; i++) expect((await pedirCom(i)).status).toBe(429);
+
+    expect(await contarLinhas()).toBe(antes);
   });
 });

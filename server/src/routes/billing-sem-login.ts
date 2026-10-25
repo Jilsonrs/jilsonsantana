@@ -114,7 +114,7 @@ router.post("/billing/visitante/assinatura", ...limiteSemLogin.assinar, async (r
   let desfecho: Awaited<ReturnType<typeof assinarComoVisitante>>;
   try {
     // O teto dos e-mails novos do dia conta só quando um cliente novo vai mesmo nascer na Stripe.
-    desfecho = await assinarComoVisitante(corpo, { antesDeCriarCliente: () => contarClienteNovo(req) });
+    desfecho = await assinarComoVisitante(corpo, { antesDeCriarCliente: (tx) => contarClienteNovo(req, tx) });
   } finally {
     emAndamento--;
   }
