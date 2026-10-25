@@ -641,7 +641,13 @@
         Mutação (cada cópia conta sozinha · a janela nunca zera · desfazer negativo): reprovam. O
         "máximo de 3 assinaturas sem login ao mesmo tempo" fica por cópia, de propósito (protege as
         ligações com o banco, que são de cada cópia).
-  - [ ] **As tentativas de login contam no banco** (`rateLimit.storage: "database"` do Better Auth).
+  - [x] **As tentativas de login contam no banco** (`rateLimit.storage: "database"` do Better Auth —
+        context7 `/better-auth/better-auth`): tabela `rateLimit` do próprio Better Auth (migration
+        `20261025150000`, com RLS; o `auth:generate` reescreveu o `schema.prisma` inteiro só com
+        formatação — entrou só o modelo novo). Teste: barrado, a contagem está na tabela; apagada a
+        linha, a pessoa volta a tentar. Mutação (`storage: "memory"`): reprova. *As linhas de IPs
+        antigos ficam na tabela (uma por IP e rota) — gatilho para limpar: a tabela passar de alguns
+        milhares de linhas.*
   - [ ] **Os textos do site relidos a cada 1 minuto** em cada cópia (Admin → Textos aparece em todas em
         até 1 minuto).
   - [ ] **A publicação com 1 processador, 512 MB e de 1 a 3 cópias** (`deploy.yml`), a revisão de

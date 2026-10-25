@@ -156,6 +156,10 @@ const baseAuth = betterAuth({
   // limiter is on by default in production; stated explicitly for visibility.
   rateLimit: {
     enabled: process.env.NODE_ENV === "production",
+    // NO BANCO, não na memória (25/10/2026 — o servidor passa a ter até 3 cópias): na memória, cada
+    // cópia contaria sozinha, e quem tenta adivinhar uma senha teria 3 vezes as tentativas. A tabela
+    // `rateLimit` é a do próprio Better Auth (`npm --workspace server run auth:generate`).
+    storage: "database",
   },
 
   user: {
