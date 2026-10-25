@@ -304,11 +304,12 @@ parte "ligado, esperando" bate com a conta medida em 22/10; os preços com o ser
   escola (gravação de tela) somam 1,86 GB por hora em todas as resoluções; quem assiste baixa uma só —
   **~0,5 a 1 GB por hora assistida ≈ US$ 0,02 a 0,045 por hora**. Com 10 h por aluno no mês: 100 alunos
   ≈ US$ 22–45 · 500 ≈ US$ 110–225 · 1.000 ≈ US$ 225–450.
-- **Banco (Neon):** cresce sozinho de 0,25 a 2 unidades de processamento (1 unidade = 1 processador e
+- **Banco (Neon):** cresce sozinho de 0,25 a 4 unidades de processamento (era 2 no teste) (1 unidade = 1 processador e
   ~4 GB) e dorme após 5 min sem uso. **No teste, nem saiu do mínimo** *(painel Monitoring do Neon, lido
   pelo operador em 25/10/2026)*: usou no máximo ~0,09 de processador (dos 0,25), ~0,35 GB de memória,
   27 conexões no pooler (de 10.000) com **espera zero**, ~20 no Postgres (de 905), nenhum deadlock.
-  **Subir o teto de 2 para 8 não muda nada** — fica em 2. Com 1.000 alunos, a carga do banco seria a do
+  **Subir o teto de 2 para 8 não muda nada hoje.** *O operador subiu para 4 em 25/10/2026, por folga* (só se
+  paga o que for usado; o painel mostra 0,25 a 4 unidades, ~16 GB no teto). Com 1.000 alunos, a carga do banco seria a do
   teste: o custo deve ficar perto do mínimo (preço por unidade-hora `[a conferir no painel do Neon]`).
   *A decidir na abertura da escola (Fase 7):* o "dormir após 5 min" faz o primeiro visitante depois de
   um silêncio esperar ~0,5 s a mais; deixá-lo sempre acordado custa o mínimo (0,25) o mês inteiro.
