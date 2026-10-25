@@ -91,8 +91,9 @@ jobs:
       #   tentativas e relê os textos no banco, então as cópias concordam entre si)
       # - até 160 pedidos ao mesmo tempo por cópia (o valor que já estava no serviço desde a G3)
       # - cobrança por pedido: --cpu-throttling
-      # - 1 processador e 512 MB por cópia — o tamanho de depois do crédito, adotado já em
-      #   25/10/2026 pelo operador (P104): o teste de tamanhos mostrou que a escola usa ~150–210 MB
+      # - 1 processador e 1 GB por cópia (decisão do operador, 25/10/2026: folga sobre os ~150–210 MB
+      #   medidos, por ~US$ 3/mês a mais). TODAS as cópias têm o mesmo tamanho — o Cloud Run não
+      #   deixa uma cópia maior que as outras
       # - tempo máximo do pedido: 3600 s (--timeout=3600)
       # - variáveis não-secretas pelo arquivo versionado deploy/cloud-run.yaml
       # - segredos por referência ao Secret Manager (--set-secrets)
@@ -106,7 +107,7 @@ jobs:
             --max-instances=3 \
             --concurrency=160 \
             --cpu=1 \
-            --memory=512Mi \
+            --memory=1Gi \
             --cpu-throttling \
             --timeout=3600 \
             --env-vars-file=deploy/cloud-run.yaml \

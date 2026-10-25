@@ -35,6 +35,7 @@
 ## Backend
 
 - **Node.js + Express + TypeScript** — runtime is Node (not Bun), npm workspaces
+- **Node.js 24** (LTS, com correções até abril de 2028) no contêiner (`Dockerfile`), no CI e na checagem diária do player, desde 25/10/2026 *(pedido do operador: "as versões do meu stack sincronizadas com o Google")* — o 20 saiu de suporte em abril de 2026 e não recebe mais correção de segurança. `engines` aceita a partir do 22 (o computador do operador está no 22.14; atualizar para o 24 é opcional). **Quem cuida de quê:** a máquina, o sistema e a rede são do Google; o que vai DENTRO do contêiner (o Node, as bibliotecas, o código) é nosso. *Gatilho para a próxima troca: o Node 24 entrar em fim de suporte (abril de 2028), ou uma biblioteca exigir versão mais nova.*
 - **Prisma** — ORM, type-safe queries, schema as code
 - **Express 5** — async errors caught automatically (no try/catch in route handlers)
 
@@ -138,7 +139,7 @@
 ## Deployment & CI
 
 - **Docker** — multi-stage build (client + server)
-- **Google Cloud Run** — hosting (região `us-east4`, plano → *Bloco G*; decisão do operador, 21/10/2026). A Railway saiu em 21/10/2026 após incidente de segurança dela. O serviço roda contêiner Docker (Node.js/Express) com **1 processador e 512 MB por cópia, de 1 a 3 cópias** (`min-instances 1`, `max-instances 3`, até 160 pedidos ao mesmo tempo por cópia — decisão do operador, 25/10/2026, depois do teste de carga), timeout de 3600 s e variáveis protegidas no Secret Manager e `deploy/cloud-run.yaml`. Health check at `/api/health`.
+- **Google Cloud Run** — hosting (região `us-east4`, plano → *Bloco G*; decisão do operador, 21/10/2026). A Railway saiu em 21/10/2026 após incidente de segurança dela. O serviço roda contêiner Docker (Node.js/Express) com **1 processador e 1 GB por cópia, de 1 a 3 cópias** (`min-instances 1`, `max-instances 3`, até 160 pedidos ao mesmo tempo por cópia — decisões do operador, 25/10/2026, depois do teste de carga; o 1 GB é folga sobre os ~150–210 MB medidos). **Todas as cópias têm sempre o mesmo tamanho** — o Cloud Run não deixa uma "principal" maior e "reservas" menores no mesmo serviço: subir o tamanho sobe o de todas, timeout de 3600 s e variáveis protegidas no Secret Manager e `deploy/cloud-run.yaml`. Health check at `/api/health`.
 - **GitHub Actions** — `npm ci` + build do core + typecheck (client/server) + **`Lint`** + **`Test client`** + **`Test server`** + build (client/server) + `npm audit` informativo.
 - **ESLint + typescript-eslint** (dependências de desenvolvimento, fixadas em `10.11.0` e `8.70.1`; etapa 4.5, 10/10/2026) — **três regras e só elas**: a tarefa disparada e não esperada (`no-floating-promises`, sem aceitar `void`), a função assíncrona onde ninguém espera (`no-misused-promises`) e o `any` (`no-explicit-any`). A falha que impedem: a promessa rejeitada sem tratamento que derruba o servidor, e que nenhum teste percebe. No site vale só a do `any`. Não vão para a imagem de produção. *Reabre para acrescentar regra só com uma falha descritível em uma frase; pacote pronto de regras fica fora.* *(A frase antiga aqui — "não roda teste e não roda lint" — ficou obsoleta em duas etapas: o Bloco 0 da Fase 3 ligou o teste de client e apagou o `lint`, e a fatia do `globalSetup` ligou o de servidor. Não há ESLint no repo; o nome `lint` segue livre.)* O step de servidor **não precisa de secret nenhum** desde Ago 2026: o banco é um **service container `postgres:17`** em `localhost`, e todo segredo do run (`BETTER_AUTH_SECRET`, senhas de seed) é gerado no próprio job — o `globalSetup` reseta o banco a cada execução, então nada precisa sobreviver. *(Antes eram dois secrets, `TEST_DATABASE_URL` e `TEST_DIRECT_URL`, apontando para um banco de nuvem; saíram junto com a mudança para banco local — connection string de nuvem em secret é superfície, `localhost` não é segredo.)* Claude code review on PRs: pendente.
 - **Monitor de erro em produção** — **Sentry, no plano grátis** *(decisão do operador, 10/10/2026; **no servidor desde 10/10/2026**, ligado em produção — as telas do aluno são a parte 2, ainda não feita. Reabre se o plano grátis deixar de dar conta: aí se compara com outro serviço antes de pagar)*. **O plano grátis, pela página de preços que o operador conferiu em 10/10/2026:** 1 usuário, 5 mil erros por mês, alerta por e-mail, 30 dias de histórico. **O pago (Team, US$ 29/mês; US$ 26 no anual) só passa a valer quando acontecer uma destas três coisas:** uma segunda pessoa precisar entrar no painel · os 5 mil erros do mês acabarem mesmo com os filtros ligados (no grátis, o que passa do limite deixa de ser registrado até o mês virar — confirmar ao criar a conta) · ser preciso olhar um erro com mais de 30 dias. **Conta criada pelo operador em 10/10/2026** (organização `jilson-santana`), com o primeiro projeto para o servidor (Express) e só o monitoramento de erros marcado; a tela diz que o volume é ilimitado por 14 dias e depois valem os limites do grátis, sem cartão. **Instalado no SERVIDOR em 10/10/2026:** `@sentry/node` fixada em `10.75.3` (a linha 10, madura e com 21 pacotes; a 11 tinha 17 dias e 42 — medido), atrás de um arquivo só (`server/src/lib/monitor.ts`). Vira alerta a linha de erro com etiqueta nossa e o que derrubaria o processo; não sai cabeçalho, cookie, corpo, usuário, IP nem rastro anterior, e e-mail, chave e segredo num texto são mascarados; no máximo 30 envios em 10 minutos e 150 por dia, para um defeito repetido não gastar a cota. Sem medição de desempenho. Liga só em produção, com `SENTRY_DSN`. **Monitor de site fora do ar** (o único do plano grátis) criado pelo operador em 10/10/2026: "Site online", a cada 1 minuto em `/api/health`, com aviso depois de 3 falhas seguidas. **As regras de e-mail no painel (operador, 10/10/2026):** "Erro novo no servidor" — problema novo, que piora ou que volta, com nível de erro ou maior, e-mail direto para ele (o aviso de "no ar" de cada publicação é informativo e não vira e-mail) — e a regra de fábrica, para o que o Sentry marca como alta prioridade (é a que cobre o site fora do ar), com "todos os membros do projeto" como destinatário de reserva. Os dois e-mails de teste chegaram. **Falta a parte 2, as telas do aluno** (com a medição do peso no carregamento). *Reabre a escolha da versão quando a linha 10 parar de receber correção, ou com a 11 madura.* Não é opcional: é pré-requisito do primeiro aluno pagante (`implementation-plan.md` → Fase 7).
@@ -163,7 +164,7 @@ acima (proteção, cache, certificado próprio), e por isso é opcional.
 
 | Recurso | Para quê | Custo |
 |---|---|---|
-| Cloud Run (serviço) | o site: o contêiner da aplicação | **1 processador e 512 MB por cópia, de 1 a 3 cópias** (desde 25/10/2026 — o operador adotou já o tamanho de depois do crédito): a cópia sempre ligada ~US$ 10/mês `[medido 22/10]`; as outras só nas horas de carga |
+| Cloud Run (serviço) | o site: o contêiner da aplicação | **1 processador e 1 GB por cópia, de 1 a 3 cópias** (desde 25/10/2026 — decisões do operador): a cópia sempre ligada ~US$ 13/mês (512 MB seriam ~US$ 10, 2 GB ~US$ 19); as outras só nas horas de carga, do mesmo tamanho |
 | Cloud Run (Job) | as migrations, antes de cada publicação | centavos (roda segundos por publicação) |
 | Mapeamento de domínio | `www.jilsonsantana.com` e o domínio sem "www" | grátis (em *Preview*) |
 | Secret Manager | o cofre das 13 chaves | 6 grátis; ~US$ 0,06/mês cada outra `[medido 22/10]` |
@@ -180,7 +181,7 @@ acima (proteção, cache, certificado próprio), e por isso é opcional.
 | **Cloud Scheduler** (tarefas com hora marcada) | e-mail com data marcada, como o "aviso antes de trancar" do passo 7 da etapa 4.7 — hoje a escola não tem agendador | quando o passo 7 precisar de envio com hora marcada | algumas tarefas grátis por conta `[a conferir]` |
 | **Uptime check** (Cloud Monitoring) | testa o site a cada minuto e manda e-mail se ele cair — o Sentry só vê erro de quem chegou ao servidor | barato e útil já; ligar na abertura ao público (passo 8 da 4.7) | cota grátis `[a conferir]` |
 | **Mais processador e memória** no Cloud Run | página mais rápida sob carga | o painel do Cloud Run mostrar processador acima de ~70% por bastante tempo, ou o tempo de resposta subindo | linear: 1 → 2 processadores e 2 GB ≈ US$ 26/mês parado `[medido 22/10]` |
-| **Mais de uma instância** | atender muita gente ao mesmo tempo | **LIGADO em 25/10/2026: até 3 cópias** (os contadores e o cache dos textos já no banco). *Subir o máximo:* o teste de carga mostra ~200 pedidos por segundo por 3 cópias — passar disso, ou o processador das 3 ficar acima de ~70% | só nas horas de carga, ~US$ 0,07 por hora por cópia de 1 processador e 512 MB `[a conferir]` |
+| **Mais de uma instância** | atender muita gente ao mesmo tempo | **LIGADO em 25/10/2026: até 3 cópias** (os contadores e o cache dos textos já no banco). *Subir o máximo:* o teste de carga mostra ~200 pedidos por segundo por 3 cópias — passar disso, ou o processador das 3 ficar acima de ~70% | só nas horas de carga, ~US$ 0,09 por hora por cópia ocupada de 1 processador e 512 MB `[a conferir]` |
 | **Balanceador** (Application Load Balancer) | o caminho que o Google recomenda para produção; necessário para os três itens abaixo | a escola ter receita que o pague, ou atraso medido no mapeamento | ~US$ 18/mês + US$ 0,008/GiB `[medido 21/10]` |
 | **Cloud Armor** (exige o balanceador) | barra ataque e robô antes de chegar ao site; limite de pedidos na borda | ataque medido (enxurrada de pedidos, teste de cartão em massa) | dezenas de US$/mês `[a conferir]` |
 | **Cloud CDN** (exige o balanceador) | guarda as páginas públicas perto do visitante | tráfego da vitrine crescer; o vídeo e as imagens já vêm do Bunny, perto do aluno | por GB `[a conferir]` |
@@ -240,7 +241,7 @@ casa; a memória, no Cloud Monitoring. No fim, o serviço voltou a 2 processador
   a mais, e a rajada, 0,5 s a mais. Para um aluno de cada vez, não se percebe.
 - **O que se sente de casa (~0,4 a 0,5 s por pedido) é quase todo a viagem Brasil → Virgínia** e o
   aperto de mão da conexão segura — não o tamanho do servidor.
-- **Gatilhos para subir** (painel do Cloud Run, aba *Métricas*): memória acima de ~70% do limite (no
+- **As cópias se veem** na aba *Observabilidade → Métricas*, gráfico *Contagem de instâncias do contêiner* (`active` atendendo, `idle` ligada e esperando). **Gatilhos para subir** (painel do Cloud Run, aba *Métricas*): memória acima de ~70% do limite (no
   teto, o servidor reinicia); processador acima de ~70% por bastante tempo, ou o tempo de resposta
   subindo quando há alunos ao mesmo tempo.
 
@@ -259,6 +260,7 @@ durante 20 s. Sentry desligado durante o teste e religado no fim; o serviço vol
 | 1 cópia · 4 proc · 4 GB | 5,5 s · 9,3 s | ~115 | 47% | 204 MB |
 | 3 cópias · 2 proc · 2 GB | 2,5 s · 3,8 s | 200 com folga (mediana 0,3 s) | 19% | 204 MB |
 | 10 cópias · 2 proc · 2 GB | 2,7 s · 4,0 s | 200 com folga (mediana 0,35 s) | 13% | 184 MB |
+| **A CONFIGURAÇÃO ADOTADA** — de 1 a 3 cópias · 1 proc · 512 MB *(revisão `00028`, medida no ar em 25/10/2026, com o Sentry ligado)* | 3,7 s · 6,4 s | ~145 nos primeiros 60 s (ligando as cópias) e ~190 com as 3 ligadas (mediana 0,5 a 0,7 s) | **93%** | 179 MB de 512 |
 
 *8 processadores não foi testado: o projeto tem um teto de **20 processadores por região** (cota do
 Google; aumentar é pedido gratuito no painel) — ou seja, hoje cabem no máximo 10 cópias de 2.*
@@ -276,11 +278,11 @@ neste segundo" a cada 5 s (0,2 pedido por segundo) — **1.000 alunos assistindo
 segundo**; abrir a aula são uns 6 a 8 pedidos de uma vez. *(Com a gravação a cada 15 s, como era até
 25/10, a carga seria um terço — é a troca que se fez pela precisão do ponto.)*
 
-| Alunos assistindo ao mesmo tempo | Pedidos por segundo | Configuração que aguenta (medido) |
-|---|---|---|
-| **100** | ~20 | 1 cópia · 1 processador · 512 MB (sobra 3 vezes) |
-| **500** | ~100 | 1 cópia · 2 processadores fica no limite → **2 cópias** de 2 processadores e 2 GB |
-| **1.000** | ~200 | **3 cópias** de 2 processadores e 2 GB (medido com folga) |
+| Alunos assistindo ao mesmo tempo | Pedidos por segundo | Configuração que aguenta (medido) | Com a adotada (1 proc · 512 MB · até 3 cópias) |
+|---|---|---|---|
+| **100** | ~20 | 1 cópia · 1 processador · 512 MB (sobra 3 vezes) | 1 cópia, com folga |
+| **500** | ~100 | 1 cópia · 2 processadores fica no limite → **2 cópias** de 2 processadores e 2 GB | 2 cópias, com folga |
+| **1.000** | ~200 | **3 cópias** de 2 processadores e 2 GB (medido com folga) | 3 cópias **no limite** (processador a 93%, 0,5 a 0,7 s por pedido) — *gatilho: com uns 500 alunos ao mesmo tempo, (1) subir o máximo para 5 cópias, o mais barato — as extras só ligam no pico; ou (2) 2 processadores por cópia (a de sempre ligada ~US$ 19/mês com 1 GB), cada pedido mais rápido — e as cópias de reserva sobem junto: todas têm o mesmo tamanho. Só configuração* |
 
 **A mudança de código para mais de uma cópia — FEITA em 25/10/2026:** o limite de tentativas da
 cobrança, do assinar sem login, do código por e-mail e do login conta no banco (`limite_de_tentativa`,
@@ -291,7 +293,10 @@ travas da cobrança já eram do banco. O serviço passou a ter de 1 a 3 cópias.
 parte "ligado, esperando" bate com a conta medida em 22/10; os preços com o servidor ocupado e o pedido
 `[a conferir]` na página de preços. Bunny: tabela da doc, `[medido 25/10]`. Neon: `[a conferir]`.)*
 - **Servidor (Google)**, cada cópia sempre ligada: 1 proc · 512 MB ≈ **US$ 10**; 2 proc · 2 GB ≈
-  **US$ 26**. Ocupada, a cópia de 2 proc · 2 GB custa ~US$ 0,19 por hora (US$ 0,000053 por segundo);
+  **US$ 26**. **Com a configuração adotada** (1 proc · 1 GB, 1 sempre ligada e até 3), a cópia
+  ocupada custa ~US$ 0,095 por hora: 100 alunos ≈ **US$ 13–23/mês** · 500 ≈ **US$ 23–38** · 1.000 ≈
+  **US$ 38–55** (estudando ~4 h por dia no pico; os pedidos, ~US$ 2 a mais com 1.000). *O gasto real
+  se acompanha em **Faturamento → Relatórios**, filtrando o serviço Cloud Run.* Ocupada, a cópia de 2 proc · 2 GB custa ~US$ 0,19 por hora (US$ 0,000053 por segundo);
   pedidos, US$ 0,40 por milhão depois de 2 milhões grátis. O jeito barato de crescer é **1 cópia sempre
   ligada e as outras ligando só com carga** (máximo de 3 a 5): paga-se a cópia extra só nas horas de pico.
   - 100 alunos: ~US$ 10–15 · 500 alunos: ~US$ 30–50 · 1.000 alunos: ~US$ 50–110 *(estudando ~4 h por dia
@@ -300,11 +305,12 @@ parte "ligado, esperando" bate com a conta medida em 22/10; os preços com o ser
   escola (gravação de tela) somam 1,86 GB por hora em todas as resoluções; quem assiste baixa uma só —
   **~0,5 a 1 GB por hora assistida ≈ US$ 0,02 a 0,045 por hora**. Com 10 h por aluno no mês: 100 alunos
   ≈ US$ 22–45 · 500 ≈ US$ 110–225 · 1.000 ≈ US$ 225–450.
-- **Banco (Neon):** cresce sozinho de 0,25 a 2 unidades de processamento (1 unidade = 1 processador e
+- **Banco (Neon):** cresce sozinho de 0,25 a 4 unidades de processamento (era 2 no teste) (1 unidade = 1 processador e
   ~4 GB) e dorme após 5 min sem uso. **No teste, nem saiu do mínimo** *(painel Monitoring do Neon, lido
   pelo operador em 25/10/2026)*: usou no máximo ~0,09 de processador (dos 0,25), ~0,35 GB de memória,
   27 conexões no pooler (de 10.000) com **espera zero**, ~20 no Postgres (de 905), nenhum deadlock.
-  **Subir o teto de 2 para 8 não muda nada** — fica em 2. Com 1.000 alunos, a carga do banco seria a do
+  **Subir o teto de 2 para 8 não muda nada hoje.** *O operador subiu para 4 em 25/10/2026, por folga* (só se
+  paga o que for usado; o painel mostra 0,25 a 4 unidades, ~16 GB no teto). Com 1.000 alunos, a carga do banco seria a do
   teste: o custo deve ficar perto do mínimo (preço por unidade-hora `[a conferir no painel do Neon]`).
   *A decidir na abertura da escola (Fase 7):* o "dormir após 5 min" faz o primeiro visitante depois de
   um silêncio esperar ~0,5 s a mais; deixá-lo sempre acordado custa o mínimo (0,25) o mês inteiro.
