@@ -726,7 +726,7 @@ pública de assinar*), o teto da prévia (*Limite de tentativas*), o código de 
   `MuitosAoMesmoTempo` com `Retry-After` na hora, antes de abrir qualquer transação — um código
   próprio, separado do `Ocupada` das duas abas —, e a tela diz **"Aguarde um instante e tente
   novamente."** *(texto do operador, 21/10/2026: "para evitar que ele fique tentando em seguida e
-  fique travado"; `app.assinar.aguardeUmInstante`)*. Contagem em memória (um servidor só). *Reabre se um pico de gente honesta assinando ao mesmo tempo ouvir
+  fique travado"; `app.assinar.aguardeUmInstante`)*. Contagem em memória, **por cópia** do servidor (até 3 desde 25/10/2026), de propósito: protege as ligações com o banco, que são de cada cópia. *Reabre se um pico de gente honesta assinando ao mesmo tempo ouvir
   "ocupada" com frequência — aí o número sobe, junto com o tamanho do caixa de ligações do banco.*
 - **Por que só com o código da tentativa:** o e-mail não é segredo. Quem soubesse o de alguém e
   pudesse seguir com a tentativa dessa pessoa receberia o segredo do pagamento dela — e, num

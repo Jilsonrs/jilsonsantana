@@ -86,9 +86,13 @@ jobs:
       # Só atualiza o serviço se as migrations rodaram com sucesso.
       # A configuração segue a "conta mínima" do Bloco G:
       # - região: us-east4
-      # - min-instances: 1, max-instances: 1
+      # - de 1 a 3 cópias (min-instances 1, max-instances 3 — decisão do operador, 25/10/2026,
+      #   depois do teste de carga: 1.000 alunos assistindo ≈ 3 cópias; o código já conta as
+      #   tentativas e relê os textos no banco, então as cópias concordam entre si)
+      # - até 160 pedidos ao mesmo tempo por cópia (o valor que já estava no serviço desde a G3)
       # - cobrança por pedido: --cpu-throttling
-      # - 2 CPUs e 2 GB enquanto durar o crédito (--cpu=2 --memory=2Gi, P104)
+      # - 1 processador e 512 MB por cópia — o tamanho de depois do crédito, adotado já em
+      #   25/10/2026 pelo operador (P104): o teste de tamanhos mostrou que a escola usa ~150–210 MB
       # - tempo máximo do pedido: 3600 s (--timeout=3600)
       # - variáveis não-secretas pelo arquivo versionado deploy/cloud-run.yaml
       # - segredos por referência ao Secret Manager (--set-secrets)
@@ -99,9 +103,10 @@ jobs:
             --image="$IMAGE" \
             --region="${{ vars.GCP_REGION }}" \
             --min-instances=1 \
-            --max-instances=1 \
-            --cpu=2 \
-            --memory=2Gi \
+            --max-instances=3 \
+            --concurrency=160 \
+            --cpu=1 \
+            --memory=512Mi \
             --cpu-throttling \
             --timeout=3600 \
             --env-vars-file=deploy/cloud-run.yaml \
