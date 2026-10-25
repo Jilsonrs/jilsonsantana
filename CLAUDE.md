@@ -274,6 +274,7 @@ teste e o `server` não tem suíte. Não faltou regra; ficou pra depois, e depoi
 - TypeScript strict. No `any` (use `unknown` + narrowing) — **o `npm run lint` reprova**, nos quatro workspaces, desde 10/10/2026; an `as` cast needs a 1-line justification comment.
 - Use shadcn/ui for all UI **behind auth** (`@/components/ui/*`) — rotas públicas são template no servidor, sem React (ver **Rendering Boundary**); use semantic tokens (`bg-background`, `text-muted-foreground`, `text-destructive`), never hardcoded Tailwind colors.
 - Use the `@/` path alias (maps to `./src/`) in the client.
+- **Mudar a versão do Node ou de uma biblioteca → ler antes `docs/tech-stack.md` → *Atualizações*** (o gatilho é o diff tocar `Dockerfile`, `.github/workflows/*` ou um `package.json`). O Node vive em seis lugares que mudam JUNTOS; versão grande de biblioteca é um bloco por vez. O lembrete semestral do GitHub (`lembrete-do-stack.yml`) é o que puxa a rotina.
 
 ### Shared `core/` package
 - Define shared Zod schemas in `core/src/schemas/` (e.g. `core/src/schemas/content.ts`) and import in BOTH client and server.

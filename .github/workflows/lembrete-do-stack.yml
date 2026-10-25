@@ -1,0 +1,53 @@
+name: Lembrete de atualizar o stack
+
+# DUAS VEZES POR ANO (pedido do operador, 25/10/2026: "me lembrar todo janeiro ou a cada 6 meses de
+# atualizar o stack para manter sempre sincronizado com o Google"): em 1º de janeiro e 1º de julho, o
+# GitHub abre um aviso (issue) — que chega por e-mail — com a versão do Node no contêiner, quando ela
+# sai de suporte, a LTS mais nova e as bibliotecas atrasadas (`scripts/lembrete-do-stack.mjs`). Só
+# lê e avisa: quem atualiza é o Claude, com o OK do operador (docs/tech-stack.md → *Atualizações*).
+#
+# Em repositório público, o GitHub desliga o agendado depois de 60 dias sem nenhum commit — aí ele
+# precisa ser religado na aba Actions (o mesmo da checagem do player).
+
+on:
+  schedule:
+    # 12:17 UTC = 09:17 em Brasília (minuto quebrado: no minuto cheio a fila do GitHub atrasa).
+    - cron: "17 12 1 1,7 *"
+  # À mão, na aba Actions ("Run workflow"): por padrão só MOSTRA o aviso no registro, sem abrir.
+  workflow_dispatch:
+    inputs:
+      abrir:
+        description: "Abrir o aviso de verdade (senão, só mostra no registro)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  lembrar:
+    name: Montar o aviso de atualização
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+
+      # Sem as bibliotecas instaladas, o `npm outdated` não sabe as versões em uso.
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Montar o aviso
+        run: node scripts/lembrete-do-stack.mjs > aviso.md && cat aviso.md
+
+      - name: Abrir o aviso
+        if: github.event_name == 'schedule' || inputs.abrir
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh issue create --title "Hora de atualizar o stack — $(date -u +%m/%Y)" --body-file aviso.md
