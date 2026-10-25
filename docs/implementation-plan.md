@@ -23,8 +23,11 @@
 > mudança (as chaves trocadas, o banco na Virgínia, o código e a publicação pelo GitHub Actions) e está
 > no [`build-history.md`](build-history.md). **Conferido pelo Claude em 24/10/2026**, só lendo: o site
 > de fora, a trava da publicação (só a `main` deste repositório), as contas de serviço (só a do site lê
-> o cofre), o servidor (ligado e esperando, 1 instância, 2 processadores e 2 GB) e o banco de produção
+> o cofre), o servidor (ligado e esperando, 1 instância, 2 processadores e 2 GB — hoje, 1 processador e 512 MB, de 1 a 3 cópias) e o banco de produção
 > (39 migrations, nenhuma pela metade; nenhuma tabela sem RLS; o admin com o e-mail confirmado).
+> **No ar desde 25/10/2026: 1 processador e 512 MB por cópia, de 1 a 3 cópias** (`6b9a5a6`, revisão
+> `jilson-prod-00028`) — as tentativas de cobrança e de login contando no banco, os textos relidos a cada
+> minuto; teste de carga no ar sem erro (o plano → *Depois do Bloco G*).
 > **Publicado em 24–25/10/2026:** `d6c2906` — o endereço do CDN do Bunny corrigido (P105) e a
 > conferência dele no CI; `f09a903` — o download do arquivo da aula em pedaços (o Cloud Run recusava
 > acima de 32 MB); `294b106` — o segundo mais novo vence entre aparelhos. Conferidos de fora (o site
@@ -665,8 +668,16 @@
         `lib/dict.ts`): a cópia que recebe a edição limpa o cache na hora; as outras, em até 1 minuto.
         Teste: a edição de "outra cópia" (gravada direto no banco) não aparece antes de 1 minuto e
         aparece depois. Mutação (cache sem validade): reprova.
-  - [ ] **A publicação com 1 processador, 512 MB e de 1 a 3 cópias** (`deploy.yml`), a revisão de
-        segurança, publicar, e o teste de carga de novo nessa configuração, com os custos.
+  - [x] **A publicação com 1 processador, 512 MB e de 1 a 3 cópias** (`deploy.yml`, com
+        `--concurrency=160` escrito) — **publicada em 25/10/2026** (`6b9a5a6`, revisão `jilson-prod-00028`).
+        Conferido no ar: as 3 migrations do dia aplicadas, `limite_de_tentativa` com RLS, a `rateLimit`
+        fora, nenhuma tabela sem RLS; o login barrou na 4ª tentativa de fora (401, 401, 401, 429), com a
+        contagem no banco de produção e a chave cifrada. **Teste de carga nesta configuração** (Sentry
+        ligado): nenhum erro; o Google ligou as 3 cópias no primeiro minuto; processador a 93% no pico,
+        memória 179 MB de 512; ~190 pedidos por segundo com as 3 ligadas (mediana 0,5 a 0,7 s); rajada
+        de 1.000 em 3,7 s (pior 6,4 s). **Para 1.000 alunos ao mesmo tempo, esta configuração fica no
+        limite** — gatilho: com uns 500 alunos ao mesmo tempo, subir o máximo para 5 cópias. Custos:
+        `tech-stack.md` → *O teste de carga*. A P104 saiu da lista, decidida.
 - [ ] **O alerta de orçamento (R$ 100):** conta o gasto antes ou depois do crédito?
 - [x] **"O Google Cloud explicado"** *(pedido do operador, 24/10/2026: "é a primeira vez que utilizo
       […] preciso saber o essencial para entender como funciona e testar configurações maiores e

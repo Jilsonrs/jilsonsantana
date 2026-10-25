@@ -180,7 +180,7 @@ acima (proteção, cache, certificado próprio), e por isso é opcional.
 | **Cloud Scheduler** (tarefas com hora marcada) | e-mail com data marcada, como o "aviso antes de trancar" do passo 7 da etapa 4.7 — hoje a escola não tem agendador | quando o passo 7 precisar de envio com hora marcada | algumas tarefas grátis por conta `[a conferir]` |
 | **Uptime check** (Cloud Monitoring) | testa o site a cada minuto e manda e-mail se ele cair — o Sentry só vê erro de quem chegou ao servidor | barato e útil já; ligar na abertura ao público (passo 8 da 4.7) | cota grátis `[a conferir]` |
 | **Mais processador e memória** no Cloud Run | página mais rápida sob carga | o painel do Cloud Run mostrar processador acima de ~70% por bastante tempo, ou o tempo de resposta subindo | linear: 1 → 2 processadores e 2 GB ≈ US$ 26/mês parado `[medido 22/10]` |
-| **Mais de uma instância** | atender muita gente ao mesmo tempo | **LIGADO em 25/10/2026: até 3 cópias** (os contadores e o cache dos textos já no banco). *Subir o máximo:* o teste de carga mostra ~200 pedidos por segundo por 3 cópias — passar disso, ou o processador das 3 ficar acima de ~70% | só nas horas de carga, ~US$ 0,07 por hora por cópia de 1 processador e 512 MB `[a conferir]` |
+| **Mais de uma instância** | atender muita gente ao mesmo tempo | **LIGADO em 25/10/2026: até 3 cópias** (os contadores e o cache dos textos já no banco). *Subir o máximo:* o teste de carga mostra ~200 pedidos por segundo por 3 cópias — passar disso, ou o processador das 3 ficar acima de ~70% | só nas horas de carga, ~US$ 0,09 por hora por cópia ocupada de 1 processador e 512 MB `[a conferir]` |
 | **Balanceador** (Application Load Balancer) | o caminho que o Google recomenda para produção; necessário para os três itens abaixo | a escola ter receita que o pague, ou atraso medido no mapeamento | ~US$ 18/mês + US$ 0,008/GiB `[medido 21/10]` |
 | **Cloud Armor** (exige o balanceador) | barra ataque e robô antes de chegar ao site; limite de pedidos na borda | ataque medido (enxurrada de pedidos, teste de cartão em massa) | dezenas de US$/mês `[a conferir]` |
 | **Cloud CDN** (exige o balanceador) | guarda as páginas públicas perto do visitante | tráfego da vitrine crescer; o vídeo e as imagens já vêm do Bunny, perto do aluno | por GB `[a conferir]` |
@@ -259,6 +259,7 @@ durante 20 s. Sentry desligado durante o teste e religado no fim; o serviço vol
 | 1 cópia · 4 proc · 4 GB | 5,5 s · 9,3 s | ~115 | 47% | 204 MB |
 | 3 cópias · 2 proc · 2 GB | 2,5 s · 3,8 s | 200 com folga (mediana 0,3 s) | 19% | 204 MB |
 | 10 cópias · 2 proc · 2 GB | 2,7 s · 4,0 s | 200 com folga (mediana 0,35 s) | 13% | 184 MB |
+| **A CONFIGURAÇÃO ADOTADA** — de 1 a 3 cópias · 1 proc · 512 MB *(revisão `00028`, medida no ar em 25/10/2026, com o Sentry ligado)* | 3,7 s · 6,4 s | ~145 nos primeiros 60 s (ligando as cópias) e ~190 com as 3 ligadas (mediana 0,5 a 0,7 s) | **93%** | 179 MB de 512 |
 
 *8 processadores não foi testado: o projeto tem um teto de **20 processadores por região** (cota do
 Google; aumentar é pedido gratuito no painel) — ou seja, hoje cabem no máximo 10 cópias de 2.*
@@ -276,11 +277,11 @@ neste segundo" a cada 5 s (0,2 pedido por segundo) — **1.000 alunos assistindo
 segundo**; abrir a aula são uns 6 a 8 pedidos de uma vez. *(Com a gravação a cada 15 s, como era até
 25/10, a carga seria um terço — é a troca que se fez pela precisão do ponto.)*
 
-| Alunos assistindo ao mesmo tempo | Pedidos por segundo | Configuração que aguenta (medido) |
-|---|---|---|
-| **100** | ~20 | 1 cópia · 1 processador · 512 MB (sobra 3 vezes) |
-| **500** | ~100 | 1 cópia · 2 processadores fica no limite → **2 cópias** de 2 processadores e 2 GB |
-| **1.000** | ~200 | **3 cópias** de 2 processadores e 2 GB (medido com folga) |
+| Alunos assistindo ao mesmo tempo | Pedidos por segundo | Configuração que aguenta (medido) | Com a adotada (1 proc · 512 MB · até 3 cópias) |
+|---|---|---|---|
+| **100** | ~20 | 1 cópia · 1 processador · 512 MB (sobra 3 vezes) | 1 cópia, com folga |
+| **500** | ~100 | 1 cópia · 2 processadores fica no limite → **2 cópias** de 2 processadores e 2 GB | 2 cópias, com folga |
+| **1.000** | ~200 | **3 cópias** de 2 processadores e 2 GB (medido com folga) | 3 cópias **no limite** (processador a 93%, 0,5 a 0,7 s por pedido) — *gatilho: com uns 500 alunos ao mesmo tempo, subir o máximo para 5 cópias (só configuração)* |
 
 **A mudança de código para mais de uma cópia — FEITA em 25/10/2026:** o limite de tentativas da
 cobrança, do assinar sem login, do código por e-mail e do login conta no banco (`limite_de_tentativa`,
@@ -291,7 +292,10 @@ travas da cobrança já eram do banco. O serviço passou a ter de 1 a 3 cópias.
 parte "ligado, esperando" bate com a conta medida em 22/10; os preços com o servidor ocupado e o pedido
 `[a conferir]` na página de preços. Bunny: tabela da doc, `[medido 25/10]`. Neon: `[a conferir]`.)*
 - **Servidor (Google)**, cada cópia sempre ligada: 1 proc · 512 MB ≈ **US$ 10**; 2 proc · 2 GB ≈
-  **US$ 26**. Ocupada, a cópia de 2 proc · 2 GB custa ~US$ 0,19 por hora (US$ 0,000053 por segundo);
+  **US$ 26**. **Com a configuração adotada** (1 proc · 512 MB, 1 sempre ligada e até 3), a cópia
+  ocupada custa ~US$ 0,09 por hora: 100 alunos ≈ **US$ 10–20/mês** · 500 ≈ **US$ 20–35** · 1.000 ≈
+  **US$ 35–50** (estudando ~4 h por dia no pico; os pedidos, ~US$ 2 a mais com 1.000). *O gasto real
+  se acompanha em **Faturamento → Relatórios**, filtrando o serviço Cloud Run.* Ocupada, a cópia de 2 proc · 2 GB custa ~US$ 0,19 por hora (US$ 0,000053 por segundo);
   pedidos, US$ 0,40 por milhão depois de 2 milhões grátis. O jeito barato de crescer é **1 cópia sempre
   ligada e as outras ligando só com carga** (máximo de 3 a 5): paga-se a cópia extra só nas horas de pico.
   - 100 alunos: ~US$ 10–15 · 500 alunos: ~US$ 30–50 · 1.000 alunos: ~US$ 50–110 *(estudando ~4 h por dia
