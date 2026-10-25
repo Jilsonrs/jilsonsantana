@@ -146,6 +146,15 @@ const bytes = (res: request.Response, pronto: (erro: Error | null, corpo: unknow
 const baixar = (aula: number, arquivo: number, cookies: string[] = []) =>
   request(servidor).get(`/api/lessons/${aula}/files/${arquivo}`).set("Cookie", cookies).buffer(true).parse(bytes);
 
+/**
+ * O download vai EM PEDAÇOS, sem o tamanho avisado: com `Content-Length`, o Cloud Run segura a
+ * resposta inteira e recusa acima de 32 MB (medido no ar em 24/10/2026 — `lesson-view.ts`).
+ */
+function vaiEmPedacos(res: { headers: Record<string, string | undefined> }) {
+  expect(res.headers["content-length"]).toBeUndefined();
+  expect(res.headers["transfer-encoding"]).toBe("chunked");
+}
+
 /** Bloqueada: a resposta não pode carregar nada do conteúdo. */
 function semConteudo(corpo: unknown) {
   const texto = JSON.stringify(corpo);
@@ -385,6 +394,7 @@ describe("o download", () => {
     expect(res.status).toBe(200);
     expect(res.headers["content-disposition"]).toContain('filename="Planilha de Vendas.zip"');
     expect(res.headers["x-content-type-options"]).toBe("nosniff");
+    vaiEmPedacos(res);
     expect((res.body as Buffer).toString()).toBe("zip!!");
   });
 
@@ -420,7 +430,7 @@ describe("o download", () => {
       const res = await baixar(ids.paga, emPartes.id, member);
       expect(res.status).toBe(200);
       expect(res.headers["content-disposition"]).toContain('filename="Curso-Inteiro.zip"');
-      expect(res.headers["content-length"]).toBe(String(original.length));
+      vaiEmPedacos(res);
       expect(Buffer.compare(res.body as Buffer, original)).toBe(0);
 
       lerArquivoDaAula.mockClear();
@@ -577,5 +587,6 @@ describe("a porta do admin", () => {
     const res = await request(servidor).get(`/api/admin/lesson-files/${ids.arquivo}/download`).set("Cookie", admin).buffer(true).parse(bytes);
     expect(res.status).toBe(200);
     expect(res.headers["content-disposition"]).toContain("Planilha de Vendas.zip");
+    vaiEmPedacos(res);
   });
 });
