@@ -115,6 +115,9 @@ describe("quando o alerta liga", () => {
   it("em produção com o endereço: liga", () => {
     expect(ligar()).toBe(true);
     expect(monitorLigado()).toBe(true);
+    // E não põe gancho no carregamento das bibliotecas (o padrão da versão 11 é reescrevê-las
+    // para medir desempenho). A marca é a que o próprio Sentry cria ao instalar os ganchos.
+    expect("__SENTRY_ORCHESTRION__" in globalThis).toBe(false);
   });
 });
 
@@ -129,6 +132,9 @@ describe("o que vira alerta", () => {
     expect(evento.release).toBe("versao-de-teste");
     expect(evento.server_name).toBe("servidor");
     expect(evento.tags?.origem).toBe("stripe");
+    // Sem rastro de código: o alerta se agrupa pelo TEXTO (padrão novo da versão 11 desligado).
+    expect(tudoQueSaiu()).not.toContain("stacktrace");
+    expect(tudoQueSaiu()).not.toContain("monitor.test");
   });
 
   it("a linha de erro de uma biblioteca de terceiro NÃO vai (senha errada no Better Auth não pode gastar a cota)", async () => {
