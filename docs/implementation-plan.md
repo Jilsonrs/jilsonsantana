@@ -586,7 +586,8 @@
       chaves aceitas; capas e arquivo da aula 18 no Bunny; o vídeo de apresentação assinado toca pelo
       site e é recusado sem origem e com token trocado; aula paga sem vídeo para visitante; download e
       rotas de admin sem login, 401. Os envios, pelo operador no admin: vídeo, legenda (trocada),
-      arquivo em 4 partes — todos 200.
+      arquivo em 4 partes — todos 200. A troca de vídeo apagou o antigo no Bunny, e apagar a aula de
+      teste tirou de lá o vídeo e as 4 partes do arquivo (conferido na API do Bunny, 25/10/2026).
 - [x] **O download de arquivo grande no ar** *(achado na prova acima)* — 500 *"Response size was too
       large"*: com `Content-Length`, o Cloud Run segura a resposta e recusa acima de 32 MB. Agora vai em
       pedaços (`chunked`, o que a doc do Google pede); o navegador mostra os MB, sem a porcentagem
@@ -613,8 +614,8 @@
       o computador abriu em 0:31; o computador em 0:51 → o iPhone abriu em 0:51; e entre navegadores
       do computador. *A primeira tentativa no iPhone rodou a versão ANTIGA* (a aba do Safari aberta
       desde antes da publicação: a versão nova só entra na próxima troca de tela) e gravou o segundo
-      velho dela — não é defeito da correção. *A aba parada que pula* tem teste e mutação; não foi
-      exercida no ar.
+      velho dela — não é defeito da correção. *A aba parada que pula* também provada no ar pelo
+      operador no mesmo dia (a aula pausada no computador pulou para o segundo do iPhone).
 - [x] **No iPhone, a pausa às vezes não chega ao servidor** — no teste de 25/10/2026, a pausa em 0:31
       chegou (o computador abriu nela). *Gatilho de reabertura: um aparelho voltar a abrir alguns
       segundos antes do ponto em que parou — aí, investigar o aviso `pause` do player.js no iPhone
