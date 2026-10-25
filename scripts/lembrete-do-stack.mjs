@@ -1,6 +1,6 @@
 // O LEMBRETE DE ATUALIZAR O STACK (pedido do operador, 25/10/2026: "me lembrar todo janeiro ou a
 // cada 6 meses de atualizar o stack para manter sempre sincronizado com o Google"). O GitHub roda
-// isto em 1º de janeiro e 1º de junho (`.github/workflows/lembrete-do-stack.yml`) e abre um aviso,
+// isto em 1º de janeiro e 1º de julho (`.github/workflows/lembrete-do-stack.yml`) e abre um aviso,
 // que chega por e-mail ao operador, com o que está velho: a versão do Node no contêiner e quando ela
 // sai de suporte, a LTS mais nova, e as bibliotecas atrasadas. SÓ LÊ: quem atualiza é o Claude, com
 // o OK do operador (`docs/tech-stack.md` → *Atualizações*).
@@ -50,7 +50,7 @@ const grandes = unicas.filter((a) => major(a.nova) > major(a.atual));
 const pequenas = unicas.filter((a) => major(a.nova) === major(a.atual));
 
 const linhas = [];
-linhas.push(`Lembrete semestral (1º de janeiro e 1º de junho). **O Google cuida da máquina; o que vai dentro do contêiner — o Node, as bibliotecas e o código — é nosso.**`, "");
+linhas.push(`Lembrete semestral (1º de janeiro e 1º de julho). **O Google cuida da máquina; o que vai dentro do contêiner — o Node, as bibliotecas e o código — é nosso.**`, "");
 linhas.push("### Node.js");
 if (doUsado) {
   const dias = diasAte(doUsado.end);

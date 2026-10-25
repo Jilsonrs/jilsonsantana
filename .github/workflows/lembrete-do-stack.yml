@@ -1,7 +1,7 @@
 name: Lembrete de atualizar o stack
 
 # DUAS VEZES POR ANO (pedido do operador, 25/10/2026: "me lembrar todo janeiro ou a cada 6 meses de
-# atualizar o stack para manter sempre sincronizado com o Google"): em 1º de janeiro e 1º de junho, o
+# atualizar o stack para manter sempre sincronizado com o Google"): em 1º de janeiro e 1º de julho, o
 # GitHub abre um aviso (issue) — que chega por e-mail — com a versão do Node no contêiner, quando ela
 # sai de suporte, a LTS mais nova e as bibliotecas atrasadas (`scripts/lembrete-do-stack.mjs`). Só
 # lê e avisa: quem atualiza é o Claude, com o OK do operador (docs/tech-stack.md → *Atualizações*).
@@ -12,7 +12,7 @@ name: Lembrete de atualizar o stack
 on:
   schedule:
     # 12:17 UTC = 09:17 em Brasília (minuto quebrado: no minuto cheio a fila do GitHub atrasa).
-    - cron: "17 12 1 1,6 *"
+    - cron: "17 12 1 1,7 *"
   # À mão, na aba Actions ("Run workflow"): por padrão só MOSTRA o aviso no registro, sem abrir.
   workflow_dispatch:
     inputs:
