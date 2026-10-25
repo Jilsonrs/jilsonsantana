@@ -47,7 +47,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "24"
           cache: "npm"
 
       # As bibliotecas instaladas ficam guardadas entre uma execução e outra
@@ -64,7 +64,7 @@ jobs:
           path: |
             node_modules
             */node_modules
-          key: modules-${{ runner.os }}-node20-${{ hashFiles('package-lock.json') }}
+          key: modules-${{ runner.os }}-node24-${{ hashFiles('package-lock.json') }}
 
       - name: Install dependencies
         if: steps.cache-modules.outputs.cache-hit != 'true'
@@ -177,7 +177,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "24"
           cache: "npm"
 
       # As bibliotecas instaladas ficam guardadas entre uma execução e outra
@@ -194,7 +194,7 @@ jobs:
           path: |
             node_modules
             */node_modules
-          key: modules-${{ runner.os }}-node20-${{ hashFiles('package-lock.json') }}
+          key: modules-${{ runner.os }}-node24-${{ hashFiles('package-lock.json') }}
 
       - name: Install dependencies
         if: steps.cache-modules.outputs.cache-hit != 'true'

@@ -1,5 +1,5 @@
 # ─── Stage 1: Build @jilson/core ──────────────────────────────────────────────
-FROM node:20-alpine AS core-build
+FROM node:24-alpine AS core-build
 WORKDIR /app
 
 # Copy workspace root manifests
@@ -18,7 +18,7 @@ RUN npm --workspace core run build
 
 
 # ─── Stage 2: Build client ────────────────────────────────────────────────────
-FROM node:20-alpine AS client-build
+FROM node:24-alpine AS client-build
 WORKDIR /app
 
 COPY package.json package-lock.json ./
@@ -38,7 +38,7 @@ RUN npm --workspace client run build
 
 
 # ─── Stage 3: Build server ────────────────────────────────────────────────────
-FROM node:20-alpine AS server-build
+FROM node:24-alpine AS server-build
 WORKDIR /app
 
 # Prisma needs OpenSSL (+ libc6-compat on alpine) to detect and run its engine
@@ -65,7 +65,7 @@ RUN npm --workspace server run build
 
 
 # ─── Stage 4: Production image ────────────────────────────────────────────────
-FROM node:20-alpine AS production
+FROM node:24-alpine AS production
 WORKDIR /app
 
 ENV NODE_ENV=production

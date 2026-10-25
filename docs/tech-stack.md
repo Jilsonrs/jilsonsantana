@@ -35,6 +35,7 @@
 ## Backend
 
 - **Node.js + Express + TypeScript** — runtime is Node (not Bun), npm workspaces
+- **Node.js 24** (LTS, com correções até abril de 2028) no contêiner (`Dockerfile`), no CI e na checagem diária do player, desde 25/10/2026 *(pedido do operador: "as versões do meu stack sincronizadas com o Google")* — o 20 saiu de suporte em abril de 2026 e não recebe mais correção de segurança. `engines` aceita a partir do 22 (o computador do operador está no 22.14; atualizar para o 24 é opcional). **Quem cuida de quê:** a máquina, o sistema e a rede são do Google; o que vai DENTRO do contêiner (o Node, as bibliotecas, o código) é nosso. *Gatilho para a próxima troca: o Node 24 entrar em fim de suporte (abril de 2028), ou uma biblioteca exigir versão mais nova.*
 - **Prisma** — ORM, type-safe queries, schema as code
 - **Express 5** — async errors caught automatically (no try/catch in route handlers)
 

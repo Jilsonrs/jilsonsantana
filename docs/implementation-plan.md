@@ -683,6 +683,11 @@
       publicar. ~US$ 3/mês a mais na cópia sempre ligada. *O operador pensava numa principal maior e
       reservas menores: o Cloud Run não permite — todas as cópias têm o mesmo tamanho (registrado no
       `tech-stack.md`).*
+- [ ] **O Node.js 24 no contêiner e no CI** *(pedido do operador, 25/10/2026 — o 20 saiu de suporte em
+      abril de 2026)*: `Dockerfile` (as 4 etapas), `ci.yml` (os 2 jobs e a chave do cache), a checagem do
+      player, `@types/node` 24 e `engines` a partir do 22. Os quatro gates verdes no Node 22 local; o CI
+      prova no 24 — falta publicar (a imagem só se monta na publicação: se falhar, o site fica na versão
+      anterior).
 - [ ] **O alerta de orçamento (R$ 100):** conta o gasto antes ou depois do crédito?
 - [x] **"O Google Cloud explicado"** *(pedido do operador, 24/10/2026: "é a primeira vez que utilizo
       […] preciso saber o essencial para entender como funciona e testar configurações maiores e
