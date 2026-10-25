@@ -25,9 +25,12 @@
 > de fora, a trava da publicação (só a `main` deste repositório), as contas de serviço (só a do site lê
 > o cofre), o servidor (ligado e esperando, 1 instância, 2 processadores e 2 GB) e o banco de produção
 > (39 migrations, nenhuma pela metade; nenhuma tabela sem RLS; o admin com o e-mail confirmado).
-> **Publicado em 24/10/2026 (`d6c2906`):** o endereço do CDN do Bunny corrigido (P105) e a
-> conferência dele no CI. Conferido de fora: o site responde 200, e o servidor no ar recebeu o
-> endereço certo. Falta o operador ver a miniatura no editor de aulas.
+> **Publicado em 24–25/10/2026:** `d6c2906` — o endereço do CDN do Bunny corrigido (P105) e a
+> conferência dele no CI; `f09a903` — o download do arquivo da aula em pedaços (o Cloud Run recusava
+> acima de 32 MB); `294b106` — o segundo mais novo vence entre aparelhos. Conferidos de fora (o site
+> responde 200; a revisão no ar é a da imagem publicada) e **provados no ar pelo operador**: a
+> miniatura e a troca de vídeo no editor, a legenda, o arquivo grande e a volta no mesmo segundo entre
+> computador e iPhone (o plano → *Depois do Bloco G*).
 > **O que ficou aberto:** o plano → *Bloco G* → *Depois do Bloco G*.
 >
 > **Fases fechadas:** 0 (fundação/deploy) · 1 (auth/shell) · **Bloco G (Google Cloud Run)** — checkboxes completos em
@@ -588,7 +591,8 @@
       large"*: com `Content-Length`, o Cloud Run segura a resposta e recusa acima de 32 MB. Agora vai em
       pedaços (`chunked`, o que a doc do Google pede); o navegador mostra os MB, sem a porcentagem
       *(decisão do operador)*. Teste: `vaiEmPedacos` nos três downloads; mutação (o tamanho de volta)
-      reprova os três. *Prova no ar depois do "publica":* o arquivo de 4 partes baixa inteiro.
+      reprova os três. **Provado no ar pelo operador em 25/10/2026** (publicação `f09a903`): o arquivo
+      de 4 partes (uma aula compactada) baixou inteiro e, descompactado, tocou normalmente.
       **Não era defeito:** o "continuar de onde parou" foi para outra aula porque a aula "Teste" estava
       em **rascunho** — a entrada do curso só considera aulas publicadas (`onde-parou.ts`); o segundo
       foi gravado (87 s).
@@ -605,12 +609,16 @@
       `useRenovarNoVencimento` (o componente chegava a 200 linhas; sem mudar o que faz).
       **Mutação** (6): abrir pela memória, não esperar a gravação, nunca perceber outro aparelho, o
       player não repassar o pulo, pular tocando, voltar aos 15 s — todas reprovam.
-      *Prova no ar depois do "publica":* parar no computador, abrir no iPhone (e o contrário) — o
-      mesmo segundo; e a aba parada no computador, pausada, pula ao voltar a ela.
-- [ ] **No iPhone, a pausa às vezes não chega ao servidor** — depois de publicar, o operador pausa no
-      iPhone e eu leio no registro se o pedido chegou na hora. Se não chegar, a causa é o player do
-      Bunny no iPhone (o aviso `pause` do player.js): investigar na doc do Stream. Hoje a perda máxima
-      é de 5 s.
+      **Provado no ar pelo operador em 25/10/2026** (publicação `294b106`): iPhone parado em 0:31 →
+      o computador abriu em 0:31; o computador em 0:51 → o iPhone abriu em 0:51; e entre navegadores
+      do computador. *A primeira tentativa no iPhone rodou a versão ANTIGA* (a aba do Safari aberta
+      desde antes da publicação: a versão nova só entra na próxima troca de tela) e gravou o segundo
+      velho dela — não é defeito da correção. *A aba parada que pula* tem teste e mutação; não foi
+      exercida no ar.
+- [x] **No iPhone, a pausa às vezes não chega ao servidor** — no teste de 25/10/2026, a pausa em 0:31
+      chegou (o computador abriu nela). *Gatilho de reabertura: um aparelho voltar a abrir alguns
+      segundos antes do ponto em que parou — aí, investigar o aviso `pause` do player.js no iPhone
+      (doc do Stream). Enquanto isso, a gravação a cada 5 s limita a perda a 5 s.*
 - [ ] **O alerta do Sentry com o servidor parado** — provocar um erro `[stripe]` e não mandar mais
       pedido nenhum: o e-mail tem que chegar (o registro de 23/10 só mostra o aviso de que o servidor
       ligou). *Se não chegar:* o caminho de erro espera o envio (`Sentry.flush`, até 2 s), ou o serviço
