@@ -25,7 +25,7 @@
 > de fora, a trava da publicação (só a `main` deste repositório), as contas de serviço (só a do site lê
 > o cofre), o servidor (ligado e esperando, 1 instância, 2 processadores e 2 GB — hoje, 1 processador e 512 MB, de 1 a 3 cópias) e o banco de produção
 > (39 migrations, nenhuma pela metade; nenhuma tabela sem RLS; o admin com o e-mail confirmado).
-> **No ar desde 25/10/2026: 1 processador e 512 MB por cópia, de 1 a 3 cópias** (`6b9a5a6`, revisão
+> **No ar desde 25/10/2026: 1 processador por cópia, de 1 a 3 cópias** — com 512 MB (`6b9a5a6`, revisão
 > `jilson-prod-00028`) — as tentativas de cobrança e de login contando no banco, os textos relidos a cada
 > minuto; teste de carga no ar sem erro (o plano → *Depois do Bloco G*).
 > **Publicado em 24–25/10/2026:** `d6c2906` — o endereço do CDN do Bunny corrigido (P105) e a
@@ -678,6 +678,11 @@
         de 1.000 em 3,7 s (pior 6,4 s). **Para 1.000 alunos ao mesmo tempo, esta configuração fica no
         limite** — gatilho: com uns 500 alunos ao mesmo tempo, subir o máximo para 5 cópias. Custos:
         `tech-stack.md` → *O teste de carga*. A P104 saiu da lista, decidida.
+- [ ] **1 GB por cópia** *(decisão do operador, 25/10/2026: "deixa default 1G e 1 processador na cópia
+      sempre ligada e nas cópias reservas")* — `deploy.yml` com `--memory=1Gi`, no commit; falta
+      publicar. ~US$ 3/mês a mais na cópia sempre ligada. *O operador pensava numa principal maior e
+      reservas menores: o Cloud Run não permite — todas as cópias têm o mesmo tamanho (registrado no
+      `tech-stack.md`).*
 - [ ] **O alerta de orçamento (R$ 100):** conta o gasto antes ou depois do crédito?
 - [x] **"O Google Cloud explicado"** *(pedido do operador, 24/10/2026: "é a primeira vez que utilizo
       […] preciso saber o essencial para entender como funciona e testar configurações maiores e
