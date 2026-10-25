@@ -22,6 +22,8 @@ const ANTES = vi.hoisted(() => {
 });
 
 const { auth } = await import("../lib/auth.js");
+const { prisma } = await import("../lib/prisma.js");
+const { PREFIXO_DO_LOGIN } = await import("../lib/loja-de-tentativas.js");
 
 afterAll(() => {
   process.env.NODE_ENV = ANTES;
@@ -71,5 +73,21 @@ describe("o limite de tentativas de login, ligado", () => {
     expect(status).toEqual([401, 401, 401, 429]);
     // E outra pessoa (mesmo se também mandar lixo antes do IP dela) não cai no balde de quem forjou.
     expect(await tentar("203.0.113.31", ALUNO.senha, { "x-forwarded-for": "198.51.100.99, 203.0.113.31" })).toBe(200);
+  });
+
+  // NO BANCO, não na memória (25/10/2026 — o servidor passa a ter até 3 cópias): é a tabela que
+  // todas as cópias leem. A prova de que a contagem mora ali: barrado, a linha está na tabela; apagada
+  // a linha, a mesma pessoa volta a poder tentar — se a contagem morasse na memória, continuaria barrada.
+  it("a contagem mora no BANCO, que todas as cópias do servidor leem", async () => {
+    const ip = "203.0.113.40";
+    expect([await tentar(ip), await tentar(ip), await tentar(ip), await tentar(ip)]).toEqual([401, 401, 401, 429]);
+    // A chave vai cifrada (não se acha pelo endereço): conta-se pelo nome do login, na frente dela.
+    const [{ linhas }] = await prisma.$queryRaw<{ linhas: number }[]>`
+      SELECT count(*)::int AS linhas FROM limite_de_tentativa WHERE starts_with(chave, ${PREFIXO_DO_LOGIN})`;
+    expect(linhas).toBeGreaterThan(0);
+
+    await prisma.$executeRaw`DELETE FROM limite_de_tentativa WHERE starts_with(chave, ${PREFIXO_DO_LOGIN})`;
+
+    expect(await tentar(ip, ALUNO.senha)).toBe(200);
   });
 });

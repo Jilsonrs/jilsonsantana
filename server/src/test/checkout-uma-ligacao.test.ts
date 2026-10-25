@@ -41,6 +41,7 @@ process.env.DATABASE_URL = endereco.toString();
 const { default: servidor } = (await import("./servidor.js")) as { default: Server };
 const { prisma } = await import("../lib/prisma.js");
 const { ASSINATURA_DE_TESTE } = await import("../lib/assinatura-de-teste.js");
+const { contarClienteNovo } = await import("../lib/limite-de-tentativas.js");
 
 const CHAVES = { STRIPE_SECRET_KEY: "sk_test_da_suite_local", STRIPE_PUBLISHABLE_KEY: "pk_test_da_suite_local" } as const;
 const antes = Object.fromEntries(Object.keys(CHAVES).map((nome) => [nome, process.env[nome]]));
@@ -118,5 +119,18 @@ describe("assinar com o banco aceitando UMA ligação", () => {
     const res = await request(servidor).post("/api/billing/assinatura").set("Cookie", member).send({ plano: "mensal" });
     expect([res.status, res.body]).toEqual([409, { error: "JaAssinante" }]);
     expect(await prisma.subscription.findUnique({ where: { stripeSubscriptionId: VIVA }, select: { ownerUserId: true, status: true } })).toEqual({ ownerUserId: memberId, status: "active" });
+  });
+
+  // O ASSINAR SEM LOGIN conta o cliente novo do endereço COM a trava do e-mail na mão (revisão de
+  // segurança, 25/10/2026): a contagem foi para o banco, e pelo cliente de sempre ela pediria uma
+  // segunda ligação — com uma só, esperaria a que a própria trava segura até estourar o prazo.
+  it("o cliente novo do visitante conta pela transação de quem segura a trava — nenhuma segunda ligação", async () => {
+    // Seguro: a contagem só lê o cabeçalho do endereço e a conexão; o resto do pedido não se aplica.
+    const pedido = { get: (nome: string) => (nome.toLowerCase() === "x-forwarded-for" ? "198.51.100.77" : undefined), socket: {} } as unknown as import("express").Request;
+    const espera = await prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT 1`;
+      return contarClienteNovo(pedido, tx);
+    }, { timeout: 20_000 });
+    expect(espera).toBeNull();
   });
 });

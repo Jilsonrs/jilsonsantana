@@ -5,6 +5,7 @@ import { PrismaClient } from "@prisma/client";
 import { Role, TAMANHO_MAXIMO_DA_SENHA, TAMANHO_MINIMO_DA_SENHA, TENTATIVAS_DO_CODIGO, VALIDADE_DO_CODIGO_EM_MINUTOS } from "@jilson/core";
 import { enviarCodigo } from "./codigo-por-email.js";
 import { CABECALHO_DO_IP, ipDoPedido } from "./limite-de-tentativas.js";
+import { consumirTentativaDeLogin } from "./loja-de-tentativas.js";
 
 // Better Auth instance (Phase 1). The HTTP handler is mounted on Express in
 // index.ts via toNodeHandler — see the middleware-order note there.
@@ -156,6 +157,12 @@ const baseAuth = betterAuth({
   // limiter is on by default in production; stated explicitly for visibility.
   rateLimit: {
     enabled: process.env.NODE_ENV === "production",
+    // NO BANCO, não na memória (25/10/2026 — o servidor passa a ter até 3 cópias): na memória, cada
+    // cópia contaria sozinha, e quem tenta adivinhar uma senha teria 3 vezes as tentativas. UMA
+    // instrução por pedido, na tabela do limite de tentativas (`lib/loja-de-tentativas.ts`) — e não o
+    // `storage: "database"` pronto, que abria uma transação por pedido no caixa de ligações da sessão
+    // (revisão de segurança, 25/10/2026).
+    customStorage: { consume: consumirTentativaDeLogin },
   },
 
   user: {

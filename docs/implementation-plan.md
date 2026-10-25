@@ -25,9 +25,12 @@
 > de fora, a trava da publicação (só a `main` deste repositório), as contas de serviço (só a do site lê
 > o cofre), o servidor (ligado e esperando, 1 instância, 2 processadores e 2 GB) e o banco de produção
 > (39 migrations, nenhuma pela metade; nenhuma tabela sem RLS; o admin com o e-mail confirmado).
-> **Publicado em 24/10/2026 (`d6c2906`):** o endereço do CDN do Bunny corrigido (P105) e a
-> conferência dele no CI. Conferido de fora: o site responde 200, e o servidor no ar recebeu o
-> endereço certo. Falta o operador ver a miniatura no editor de aulas.
+> **Publicado em 24–25/10/2026:** `d6c2906` — o endereço do CDN do Bunny corrigido (P105) e a
+> conferência dele no CI; `f09a903` — o download do arquivo da aula em pedaços (o Cloud Run recusava
+> acima de 32 MB); `294b106` — o segundo mais novo vence entre aparelhos. Conferidos de fora (o site
+> responde 200; a revisão no ar é a da imagem publicada) e **provados no ar pelo operador**: a
+> miniatura e a troca de vídeo no editor, a legenda, o arquivo grande e a volta no mesmo segundo entre
+> computador e iPhone (o plano → *Depois do Bloco G*).
 > **O que ficou aberto:** o plano → *Bloco G* → *Depois do Bloco G*.
 >
 > **Fases fechadas:** 0 (fundação/deploy) · 1 (auth/shell) · **Bloco G (Google Cloud Run)** — checkboxes completos em
@@ -583,12 +586,14 @@
       chaves aceitas; capas e arquivo da aula 18 no Bunny; o vídeo de apresentação assinado toca pelo
       site e é recusado sem origem e com token trocado; aula paga sem vídeo para visitante; download e
       rotas de admin sem login, 401. Os envios, pelo operador no admin: vídeo, legenda (trocada),
-      arquivo em 4 partes — todos 200.
+      arquivo em 4 partes — todos 200. A troca de vídeo apagou o antigo no Bunny, e apagar a aula de
+      teste tirou de lá o vídeo e as 4 partes do arquivo (conferido na API do Bunny, 25/10/2026).
 - [x] **O download de arquivo grande no ar** *(achado na prova acima)* — 500 *"Response size was too
       large"*: com `Content-Length`, o Cloud Run segura a resposta e recusa acima de 32 MB. Agora vai em
       pedaços (`chunked`, o que a doc do Google pede); o navegador mostra os MB, sem a porcentagem
       *(decisão do operador)*. Teste: `vaiEmPedacos` nos três downloads; mutação (o tamanho de volta)
-      reprova os três. *Prova no ar depois do "publica":* o arquivo de 4 partes baixa inteiro.
+      reprova os três. **Provado no ar pelo operador em 25/10/2026** (publicação `f09a903`): o arquivo
+      de 4 partes (uma aula compactada) baixou inteiro e, descompactado, tocou normalmente.
       **Não era defeito:** o "continuar de onde parou" foi para outra aula porque a aula "Teste" estava
       em **rascunho** — a entrada do curso só considera aulas publicadas (`onde-parou.ts`); o segundo
       foi gravado (87 s).
@@ -605,24 +610,80 @@
       `useRenovarNoVencimento` (o componente chegava a 200 linhas; sem mudar o que faz).
       **Mutação** (6): abrir pela memória, não esperar a gravação, nunca perceber outro aparelho, o
       player não repassar o pulo, pular tocando, voltar aos 15 s — todas reprovam.
-      *Prova no ar depois do "publica":* parar no computador, abrir no iPhone (e o contrário) — o
-      mesmo segundo; e a aba parada no computador, pausada, pula ao voltar a ela.
-- [ ] **No iPhone, a pausa às vezes não chega ao servidor** — depois de publicar, o operador pausa no
-      iPhone e eu leio no registro se o pedido chegou na hora. Se não chegar, a causa é o player do
-      Bunny no iPhone (o aviso `pause` do player.js): investigar na doc do Stream. Hoje a perda máxima
-      é de 5 s.
+      **Provado no ar pelo operador em 25/10/2026** (publicação `294b106`): iPhone parado em 0:31 →
+      o computador abriu em 0:31; o computador em 0:51 → o iPhone abriu em 0:51; e entre navegadores
+      do computador. *A primeira tentativa no iPhone rodou a versão ANTIGA* (a aba do Safari aberta
+      desde antes da publicação: a versão nova só entra na próxima troca de tela) e gravou o segundo
+      velho dela — não é defeito da correção. *A aba parada que pula* também provada no ar pelo
+      operador no mesmo dia (a aula pausada no computador pulou para o segundo do iPhone).
+- [x] **No iPhone, a pausa às vezes não chega ao servidor** — no teste de 25/10/2026, a pausa em 0:31
+      chegou (o computador abriu nela). *Gatilho de reabertura: um aparelho voltar a abrir alguns
+      segundos antes do ponto em que parou — aí, investigar o aviso `pause` do player.js no iPhone
+      (doc do Stream). Enquanto isso, a gravação a cada 5 s limita a perda a 5 s.*
 - [ ] **O alerta do Sentry com o servidor parado** — provocar um erro `[stripe]` e não mandar mais
       pedido nenhum: o e-mail tem que chegar (o registro de 23/10 só mostra o aviso de que o servidor
       ligou). *Se não chegar:* o caminho de erro espera o envio (`Sentry.flush`, até 2 s), ou o serviço
       passa a `--no-cpu-throttling`.
-- [ ] **A memória e o tempo de resposta** no painel do Cloud Run, anotados aqui — decidem a volta da
-      P104 (512 MB ou 1 GB) antes de 20/01/2027.
+- [x] **A memória e o tempo de resposta** *(medidos em 25/10/2026)* — decidem a volta da P104. Nas 46 h
+      antes do teste: memória no pico de 160 a 220 MB (8 a 11% dos 2 GB), processador até 7%. No teste
+      de tamanhos (512 MB a 8 GB): a escola usa 140 a 215 MB em qualquer tamanho, e a memória não muda
+      o tempo de resposta; 1 processador deixa a rajada de 100 pedidos 0,5 s mais lenta. **Para a
+      P104: 512 MB bastam** (o pico usa ~30–40%); a escolha final é do operador. Tabela e gatilhos:
+      `tech-stack.md` → *O teste de tamanhos*.
+- **O servidor pronto para até 3 cópias, no tamanho de depois do crédito** *(plano aprovado pelo
+  operador em 25/10/2026: 1 processador e 512 MB, de 1 a 3 cópias; o Neon com teto de 4 unidades,
+  ajustado por ele no painel)*. Com mais de uma cópia, o que mora na memória de cada uma deixa de valer
+  para as outras — as travas da cobrança já são do banco (`pg_advisory_xact_lock`).
+  - [x] **O limite de tentativas conta no banco** (cobrança, assinar sem login, código por e-mail e os
+        clientes novos do dia): `lib/loja-de-tentativas.ts`, tabela `limite_de_tentativa` (migration
+        `20261025140000`, com RLS), uma instrução atômica por pedido. Testes: duas cópias somam a mesma
+        contagem, 20 pedidos simultâneos de duas cópias dão 20, a janela zera, limites não se misturam.
+        Mutação (cada cópia conta sozinha · a janela nunca zera · desfazer negativo): reprovam. O
+        "máximo de 3 assinaturas sem login ao mesmo tempo" fica por cópia, de propósito (protege as
+        ligações com o banco, que são de cada cópia).
+  - [x] **As tentativas de login contam no banco** — pelo `rateLimit.customStorage` do Better Auth 1.7.5
+        (`consumirTentativaDeLogin`, `lib/loja-de-tentativas.ts`): UMA instrução por pedido, na mesma
+        tabela do limite de tentativas, com o nome `login|`. *A primeira forma* (`storage: "database"`,
+        tabela `rateLimit` própria, migration `20261025150000`) *saiu na revisão de segurança*: fazia de
+        2 a 6 consultas, com transação, a cada pedido a `/api/auth/*`, no caixa de ligações da sessão —
+        a tabela some na migration `20261025160000` (nunca teve uso em produção). Teste: barrado, a
+        contagem está no banco; apagada, a pessoa volta a tentar; o teto e o "tente em N s". Mutação
+        (login nunca barra): reprova.
+  - [x] **A revisão de segurança** (agente `security-vulnerability-reviewer`, 25/10/2026) — 0 P0, 3 P1,
+        5 P2, todos tratados: (P1) a chave vai CIFRADA (HMAC com o segredo do servidor) — um `\u0000`
+        no e-mail virava 500 e esgotava os alertas, e o e-mail ficava em claro no banco; o cliente novo
+        do visitante conta pela transação de quem segura a trava (`contarClienteNovo(req, tx)`); o login
+        de uma instrução (acima). (P2) quem já passou do teto do endereço é recusado ANTES dos limites
+        por e-mail, sem gravar linha (`enderecoJaBarrado`); linhas vencidas saem depois de 1 hora;
+        `passOnStoreError: false` escrito, com teste (a contagem que falha recusa com 500); cada limite
+        com nome fixo e único, sem o teto. Testes novos e mutação (chave em claro · cliente fora da
+        transação · contagem que falha deixa passar · sem a checagem do endereço · login nunca barra):
+        todas reprovam. *Fica de fora, com o motivo:* filtrar as rotas de `/api/auth` antes do Better
+        Auth — com a contagem de uma instrução, um caminho inventado custa o mesmo que qualquer rota
+        pública; proteção contra enxurrada é do Cloud Armor (mapa, `tech-stack.md`).
+  - [x] **Os textos do site relidos a cada 1 minuto** em cada cópia (`VALIDADE_DO_CACHE_DE_TEXTO`,
+        `lib/dict.ts`): a cópia que recebe a edição limpa o cache na hora; as outras, em até 1 minuto.
+        Teste: a edição de "outra cópia" (gravada direto no banco) não aparece antes de 1 minuto e
+        aparece depois. Mutação (cache sem validade): reprova.
+  - [ ] **A publicação com 1 processador, 512 MB e de 1 a 3 cópias** (`deploy.yml`), a revisão de
+        segurança, publicar, e o teste de carga de novo nessa configuração, com os custos.
 - [ ] **O alerta de orçamento (R$ 100):** conta o gasto antes ou depois do crédito?
-- [ ] **"O Google Cloud explicado"** *(pedido do operador, 24/10/2026: "é a primeira vez que utilizo
+- [x] **"O Google Cloud explicado"** *(pedido do operador, 24/10/2026: "é a primeira vez que utilizo
       […] preciso saber o essencial para entender como funciona e testar configurações maiores e
       menores e analisar o que fez diferença ou não")*: o que foi montado e por quê, e um teste de
       tamanhos do servidor medindo o tempo de resposta — sempre dentro da conta mínima, e voltando ao
-      tamanho decidido no fim.
+      tamanho decidido no fim. **Feito em 25/10/2026:** `tech-stack.md` → *O que foi montado, em
+      linguagem simples* e *O teste de tamanhos* (11 configurações, de volta a 2 processadores e 2 GB
+      no fim — revisão `jilson-prod-00020`).
+- [x] **O teste de carga — 100, 500 e 1.000 alunos, com os custos** *(pedido do operador, 25/10/2026)*:
+      7 configurações (tamanhos com 1 cópia; 3 e 10 cópias), rajadas de até 1.000 pedidos e fluxo de
+      200 por segundo — nenhum erro. **Diagnóstico:** uma cópia aguenta de ~70 a ~115 pedidos por
+      segundo, qualquer que seja o tamanho; **100 alunos = 1 cópia de 1 processador e 512 MB; 500 = 2
+      cópias; 1.000 = 3 cópias** de 2 processadores e 2 GB. Antes de mais de uma cópia, os contadores
+      em memória vão para o banco. O maior custo com muitos alunos é o **vídeo** (Bunny, ~US$ 0,02 a
+      0,045 por hora assistida). Achado: o projeto tem teto de 20 processadores por região. Tabelas e
+      custos: `tech-stack.md` → *O teste de carga*. Servidor de volta a 2 processadores, 2 GB e 1 cópia
+      (revisão `jilson-prod-00027`), Sentry religado.
 - [ ] **A conta padrão do Google (`…-compute@developer`) tem papel de editor no projeto inteiro** —
       nada a usa (o site e o Job usam `jilson-site`; a publicação, `jilson-publicacao`): tirar o papel
       (P106).
