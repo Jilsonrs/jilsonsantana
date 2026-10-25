@@ -240,7 +240,7 @@ casa; a memória, no Cloud Monitoring. No fim, o serviço voltou a 2 processador
   a mais, e a rajada, 0,5 s a mais. Para um aluno de cada vez, não se percebe.
 - **O que se sente de casa (~0,4 a 0,5 s por pedido) é quase todo a viagem Brasil → Virgínia** e o
   aperto de mão da conexão segura — não o tamanho do servidor.
-- **Gatilhos para subir** (painel do Cloud Run, aba *Métricas*): memória acima de ~70% do limite (no
+- **As cópias se veem** na aba *Observabilidade → Métricas*, gráfico *Contagem de instâncias do contêiner* (`active` atendendo, `idle` ligada e esperando). **Gatilhos para subir** (painel do Cloud Run, aba *Métricas*): memória acima de ~70% do limite (no
   teto, o servidor reinicia); processador acima de ~70% por bastante tempo, ou o tempo de resposta
   subindo quando há alunos ao mesmo tempo.
 
@@ -281,7 +281,7 @@ segundo**; abrir a aula são uns 6 a 8 pedidos de uma vez. *(Com a gravação a 
 |---|---|---|---|
 | **100** | ~20 | 1 cópia · 1 processador · 512 MB (sobra 3 vezes) | 1 cópia, com folga |
 | **500** | ~100 | 1 cópia · 2 processadores fica no limite → **2 cópias** de 2 processadores e 2 GB | 2 cópias, com folga |
-| **1.000** | ~200 | **3 cópias** de 2 processadores e 2 GB (medido com folga) | 3 cópias **no limite** (processador a 93%, 0,5 a 0,7 s por pedido) — *gatilho: com uns 500 alunos ao mesmo tempo, subir o máximo para 5 cópias (só configuração)* |
+| **1.000** | ~200 | **3 cópias** de 2 processadores e 2 GB (medido com folga) | 3 cópias **no limite** (processador a 93%, 0,5 a 0,7 s por pedido) — *gatilho: com uns 500 alunos ao mesmo tempo, (1) subir o máximo para 5 cópias, o mais barato — as extras só ligam no pico; ou (2) 2 processadores por cópia com a memória em 512 MB (o Google permite; a de sempre ligada ~US$ 16/mês), cada pedido mais rápido. Só configuração* |
 
 **A mudança de código para mais de uma cópia — FEITA em 25/10/2026:** o limite de tentativas da
 cobrança, do assinar sem login, do código por e-mail e do login conta no banco (`limite_de_tentativa`,
