@@ -184,7 +184,7 @@ acima (proteção, cache, certificado próprio), e por isso é opcional.
 | Artifact Registry | as versões montadas do site (só as últimas) | cota grátis pequena `[a conferir]` |
 | IAM + Workload Identity Federation | quem pode o quê; o GitHub publica sem chave guardada | grátis |
 | Cloud Logging | os registros do servidor | cota grátis mensal `[a conferir]` |
-| Orçamento e alertas | o aviso de gasto (R$ 100/mês) | grátis |
+| Orçamento e alertas | o aviso de gasto (R$ 100/mês; avisos em 50%, 90%, 100% e 150%). **Conta o gasto DEPOIS do crédito** (o padrão do Google; conferido no painel em 26/10/2026: "R$ 0,00 — inclui uma economia de −R$ 13,88"): enquanto o crédito de teste durar, marca zero e não dispara. **Fica assim** *(decisão do operador, 26/10/2026)*: o aviso é para cobrança de verdade; o consumo do crédito se vê em *Faturamento → Créditos*. *Reabre se o crédito sumir mais rápido que o previsto, ou se o operador quiser aviso de consumo durante o crédito (um segundo orçamento, sem descontar o crédito)* | grátis |
 
 **O MAPA — o que pode servir à escola, e QUANDO** *(ordenado pelo que deve chegar primeiro)*:
 

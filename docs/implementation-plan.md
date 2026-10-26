@@ -641,6 +641,12 @@
       pedido, mesmo com o processador cobrado só nos pedidos (`--cpu-throttling`). O `Sentry.flush` no
       caminho de erro e o `--no-cpu-throttling` ficam sem uso. *Gatilho de reabertura: um alerta que só
       chegue depois do pedido seguinte (no Sentry, o "Received" bem depois do "Occurred").*
+- [x] **O alerta de orçamento conta o gasto antes ou depois do crédito?** *(26/10/2026, pelo painel —
+      a API de faturamento continua desligada)* — **depois**: o padrão do Google desconta os créditos, e
+      o painel mostra "R$ 0,00 / R$ 100,00 — inclui uma economia de −R$ 13,88". O alarme falso que se
+      temia (o gasto antes do crédito passar dos R$ 100) não acontece; em troca, durante o crédito ele
+      não avisa nada. **Fica como está** *(decisão do operador)*. Registro e gatilho: `tech-stack.md` →
+      *Google Cloud*, linha *Orçamento e alertas*.
 - [x] **A memória e o tempo de resposta** *(medidos em 25/10/2026)* — decidem a volta da P104. Nas 46 h
       antes do teste: memória no pico de 160 a 220 MB (8 a 11% dos 2 GB), processador até 7%. No teste
       de tamanhos (512 MB a 8 GB): a escola usa 140 a 215 MB em qualquer tamanho, e a memória não muda
