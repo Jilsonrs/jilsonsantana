@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { Link, Outlet, useNavigate } from "react-router-dom";
+import { Link, Outlet, useNavigate } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSession, signOut } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";

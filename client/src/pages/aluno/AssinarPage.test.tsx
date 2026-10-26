@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { ReactNode } from "react";
 import { act, screen, fireEvent, waitFor } from "@testing-library/react";
 import { focusManager, onlineManager } from "@tanstack/react-query";
-import { useLocation } from "react-router-dom";
+import { useLocation } from "react-router";
 import type { AssinaturaCriada, PlanosDaAssinatura, PreviaDaAssinatura } from "@jilson/core";
 import { renderWithProviders } from "@/test-utils";
 import type { Desfecho, PedidoDeCartao } from "@/lib/stripe-do-site";

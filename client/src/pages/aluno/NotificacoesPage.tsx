@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { PageContainer, PageHeader } from "@/components/layout/PageLayout";
 import { useT } from "@/lib/language";
 import { haQuantoTempo, previaDoTexto, tituloDaNotificacao, useMarcarLida, useNotificacoes } from "@/lib/notificacoes";

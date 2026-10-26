@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { FileText, PlayCircle } from "lucide-react";
 import { LessonKind } from "@jilson/core";
 import { PageContainer, PageHeader, PageSection } from "@/components/layout/PageLayout";

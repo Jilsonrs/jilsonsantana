@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { Navigate, Route } from "react-router-dom";
+import { Navigate, Route } from "react-router";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageSection } from "@/components/layout/PageLayout";
 import { CourseBasicsSection } from "@/components/admin/course-form/CourseBasicsSection";

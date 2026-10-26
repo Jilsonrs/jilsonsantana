@@ -4,7 +4,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { screen, fireEvent, within, act, waitFor } from "@testing-library/react";
 import { renderWithProviders } from "@/test-utils";
 import { Role } from "@jilson/core";
-import { Route } from "react-router-dom";
+import { Route } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 const useSession = vi.fn();

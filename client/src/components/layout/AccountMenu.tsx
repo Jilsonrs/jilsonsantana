@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { LogOut } from "lucide-react";
 import { useT } from "@/lib/language";
 import { iniciais } from "@/components/nav/SecondaryNav";

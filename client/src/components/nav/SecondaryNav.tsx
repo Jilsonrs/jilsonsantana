@@ -1,4 +1,4 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router";
 import { LogOut, Plus, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMenuDoCursoFechado } from "@/lib/menu-do-curso";

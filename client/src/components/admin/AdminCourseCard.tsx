@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import type { AdminCourseCard as Curso, NumerosDoCurso } from "@/lib/api";
 import { preenchimentoDoCurso, ROTULO_DO_STATUS } from "@/lib/course-completeness";
 import { horasEMinutos } from "@/lib/duracao-do-curso";

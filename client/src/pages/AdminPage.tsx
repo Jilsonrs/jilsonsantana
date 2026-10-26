@@ -1,5 +1,5 @@
 import { useId, type ReactNode } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { PageContainer, PageHeader, PageSection } from "@/components/layout/PageLayout";
 import { EmBreve } from "@/components/content/EmBreve";

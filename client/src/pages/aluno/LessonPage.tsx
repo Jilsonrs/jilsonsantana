@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams } from "react-router";
 import { ContentStatus, LessonKind } from "@jilson/core";
 import { useSession } from "@/lib/auth-client";
 import { useT } from "@/lib/language";

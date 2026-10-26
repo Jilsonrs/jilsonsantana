@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate } from "react-router";
 import { useSession } from "@/lib/auth-client";
 import { useT } from "@/lib/language";
 import { POS_LOGIN } from "@/lib/acesso-por-codigo";

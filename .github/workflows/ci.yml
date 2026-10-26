@@ -142,7 +142,7 @@ jobs:
         run: npm --workspace @jilson/server run build
 
       # Informative only — NEVER blocks the gate (CLAUDE.md → Quality Gates).
-      # Expected to report findings today (transitive react-router advisory);
+      # Expected to report findings today (transitive: zod, Tailwind 3, vite);
       # if it becomes permanent noise, it degrades to a monthly manual check.
       - name: Audit dependencies (informative)
         run: npm audit --audit-level=high

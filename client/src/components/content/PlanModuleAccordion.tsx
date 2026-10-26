@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import type { PlanModuleDetail, PlanItemDetail } from "@/lib/api";
 import { useT } from "@/lib/language";

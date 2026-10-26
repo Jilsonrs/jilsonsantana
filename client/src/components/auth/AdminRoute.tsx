@@ -1,4 +1,4 @@
-import { Navigate, Outlet } from "react-router-dom";
+import { Navigate, Outlet } from "react-router";
 import { Role } from "@jilson/core";
 import { useSession } from "@/lib/auth-client";
 import { TelaDeErro } from "@/components/ErroDaTela";

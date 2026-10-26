@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { ArrowRight, Lock } from "lucide-react";
 import { LessonKind, TELA_DE_TROCAR_O_CARTAO } from "@jilson/core";
 import type { PaginaDaAula } from "@/lib/api";
