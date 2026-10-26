@@ -19,7 +19,11 @@ export function podeTerAssinaturaDeTeste(url: string | undefined): boolean {
   if (!url) return false;
   let host: string;
   try {
-    host = new URL(url).hostname.replace(/^\[|\]$/g, "");
+    const endereco = new URL(url);
+    // `?host=` (ou `hostaddr`) ganha do servidor escrito antes: o `pg` liga lá, e o nome que
+    // parece local enganaria a conferência (revisão de segurança, 26/10/2026).
+    if (endereco.searchParams.has("host") || endereco.searchParams.has("hostaddr")) return false;
+    host = endereco.hostname.replace(/^\[|\]$/g, "");
   } catch {
     return false;
   }

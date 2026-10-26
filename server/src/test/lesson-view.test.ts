@@ -3,7 +3,7 @@ import { Readable } from "node:stream";
 import http from "node:http";
 import type { AddressInfo } from "node:net";
 import request from "supertest";
-import type { Prisma } from "@prisma/client";
+import type { Prisma } from "../lib/prisma.js";
 
 // O CI não fala com o Bunny: só a leitura do Storage vira dublê, na NOSSA
 // fronteira. A assinatura do player continua a de verdade.

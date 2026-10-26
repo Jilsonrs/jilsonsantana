@@ -29,9 +29,10 @@
 > revisão `jilson-prod-00029`); antes, com 512 MB (`6b9a5a6`, revisão
 > `jilson-prod-00028`) — as tentativas de cobrança e de login contando no banco, os textos relidos a cada
 > minuto; teste de carga no ar sem erro (o plano → *Depois do Bloco G*).
-> **A atualização das bibliotecas, etapas 1 a 4, no ar desde 25–26/10/2026** (`f5e8cd1`, revisão
+> **A atualização das bibliotecas, etapas 1 a 5, no ar desde 25–26/10/2026** (`f5e8cd1`, revisão
 > `jilson-prod-00030`; `fc4a018`, revisão `jilson-prod-00031`; `bcd6bbc` — React 19 e React Router 7 —,
-> revisão `jilson-prod-00032`; `bff55eb` — Zod 4 —, revisão `jilson-prod-00033`), conferidas de fora: o site, o login (401 com senha errada), os dados do
+> revisão `jilson-prod-00032`; `bff55eb` — Zod 4 —, revisão `jilson-prod-00033`; `6cddb68` — os ícones no
+> Lucide 1 —, revisão `jilson-prod-00034`), conferidas de fora: o site, o login (401 com senha errada), os dados do
 > curso e a cobrança sem login (401); o alerta do Sentry 11 ligou no ar. As etapas seguintes: o plano → *A atualização de todas as bibliotecas*.
 > **Publicado em 24–25/10/2026:** `d6c2906` — o endereço do CDN do Bunny corrigido (P105) e a
 > conferência dele no CI; `f09a903` — o download do arquivo da aula em pedaços (o Cloud Run recusava
@@ -775,9 +776,43 @@
         catálogo reprovam. O ícone sem rótulo próprio agora sai escondido do leitor de tela (padrão do
         Lucide 1); o que tem `aria-label` continua sendo lido. **O arquivo com todos os ícones** (só
         carrega na página de curso com destaque fora dos 55, e no seletor do admin) foi de 100 para 160 KB
-        compactado; o pacote de toda página não mudou. Nenhuma função nova do navegador. Falta publicar.
-  - [ ] **Etapa 6 — Prisma 7** (a ligação com o banco, o `Dockerfile` e as migrations do Cloud Run Job):
+        compactado; o pacote de toda página não mudou. Nenhuma função nova do navegador. **No ar desde
+        26/10/2026** (`6cddb68`, revisão `jilson-prod-00034`), conferida de fora.
+  - [x] **Etapa 6 — Prisma 7** (a ligação com o banco, o `Dockerfile` e as migrations do Cloud Run Job):
         prova nos bancos de dev e de teste, e a revisão de segurança. O Better Auth 1.7.13 aceita o Prisma 7.
+        *(26/10/2026.)* **Prisma 7.10.1, com o `pg` e o `@prisma/adapter-pg`** *(as duas bibliotecas novas
+        aprovadas pelo operador; o Prisma 8 fica para um projeto próprio, decisão dele: versão de teste em
+        26/10, o Better Auth só aceita até o 7, e ele mudaria as 222 chamadas ao banco — `tech-stack.md`)*.
+        Guia do 5 ao 7 lido; **Docs check (context7):** Better Auth → `/better-auth/better-auth` → o
+        `prismaAdapter` aceita o cliente do Prisma 7 (gerado + `PrismaPg`) com o mesmo import, e o adaptador
+        declara Prisma 5 a 7 (2 consultas). **O que mudou:** o cliente é gerado em `server/src/generated/prisma`
+        (fora do git) e todo o servidor importa de `lib/prisma.ts`; o endereço das migrations foi para o
+        `server/prisma.config.ts` (o `DIRECT_URL`); as ligações (`lib/ligacoes.ts`) repetem o padrão do Prisma 5
+        (processadores × 2 + 1 por cliente, 10 s de espera, `connection_limit`/`pool_timeout` no endereço); o
+        job das migrations passou a ter o comando versionado (`npx --no-install prisma migrate deploy --config
+        …`, no `deploy.yml`) e a imagem baixa o motor das migrations na montagem. **Achados:** (1) **o adaptador
+        do `pg` lê toda data com fuso como UTC** — no banco de teste do computador (horário de Brasília) uma data
+        saiu 3 h errada; o Neon está em GMT (dev e produção, conferido); o preparo dos testes põe o banco local
+        em UTC (`fuso-utc.ts`) e o servidor confere ao subir e alerta (`conferirFusoDoBanco`), com teste;
+        (2) **o Prisma 7 recusa o `migrate reset` pedido por um agente** sem o OK do operador — ele autorizou,
+        para o banco de teste local; a regra está no `CLAUDE.md`; (3) **a trava do banco de teste só conferia a
+        `DATABASE_URL`**, e o reset apaga o da `DIRECT_URL`: agora confere as duas; (4) o código do erro de
+        ligação mudou (P2024 → a mensagem do `pg`; senha errada P2010/28P01) — só o teste de uma ligação
+        dependia; (5) o `--skip-seed` deixou de existir. **Medido de novo no 7:** o `mode: "insensitive"`
+        continua virando `ILIKE`, e migration aplicada editada continua aceita (as regras do `CLAUDE.md` ficam).
+        **Revisão de segurança** (0 P0, 2 P1, 6 P2 — todos tratados, cada um com teste e mutação): o
+        `import "dotenv/config"` deixava um `DOTENV_CONFIG_OVERRIDE` no terminal fazer o reset da suíte ler — e
+        apagar — o banco de dev (medido; agora as opções vão escritas, `src/ambiente.ts`, e o `childEnv()` não
+        passa `DOTENV_*`); um endereço malformado punha a senha do banco no erro (medido; agora o erro não leva o
+        endereço); `?host=` no endereço enganava a trava e a assinatura de teste; em produção a ligação passou a
+        conferir o certificado sempre; número estranho no endereço não derruba nem destrava o pool; os roteiros de
+        troca de senha voltaram a abrir sem o banco no ambiente; e o alerta da conferência do fuso sairia sem a
+        etiqueta (medido: com o erro como segundo argumento, o Sentry o descarta). **Provas:** os quatro gates
+        (936 de tela, 1.311 de servidor), o E2E no computador (7 de 7), a instalação só de produção (como a
+        imagem) com o comando do job (`migrate status`) e o servidor no modo de produção (login e sessão), e o
+        banco de **dev**: 42 migrations em dia, nenhuma diferença do esquema, e o servidor ligado a ele (login,
+        sessão, assinatura e cursos). **A imagem ficou maior** (~150 MB do comando `prisma` do 7, só para o job
+        das migrations; gatilho no `tech-stack.md`). Falta publicar — e conferir no ar o job das migrations.
   - [ ] **Etapa 7 — TypeScript 6.0.** *O 7 fica travado:* o `typescript-eslint` (8.72) só aceita até o 6.0,
         e subir desligaria o revisor automático. *Gatilho: o `typescript-eslint` aceitar o TypeScript 7.*
 - [ ] **O alerta de orçamento (R$ 100):** conta o gasto antes ou depois do crédito?

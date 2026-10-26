@@ -1,5 +1,5 @@
 import { createHmac } from "node:crypto";
-import type { Prisma } from "@prisma/client";
+import type { Prisma } from "./prisma.js";
 import type { ClientRateLimitInfo, Options, Store } from "express-rate-limit";
 import { prisma } from "./prisma.js";
 

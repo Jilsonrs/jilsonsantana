@@ -1,5 +1,7 @@
 node_modules/
 dist/
+# O cliente do Prisma 7, gerado a partir do schema.prisma (`prisma generate`): nunca versionado.
+server/src/generated/
 # `.env` sozinho NÃO cobre `.env.test`/`.env.local` — o padrão precisa do glob.
 # `.env.example` é versionado de propósito (é o contrato de variáveis), daí a negação.
 .env

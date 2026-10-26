@@ -3,7 +3,7 @@ import { randomBytes } from "node:crypto";
 import { readFileSync, writeFileSync } from "node:fs";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
-import { PrismaClient } from "@prisma/client";
+import { novoPrisma } from "./lib/ligacoes.js";
 import { Role } from "@jilson/core";
 
 // Rotação de credencial de usuário semeado (admin / member de teste).
@@ -53,7 +53,7 @@ if (!databaseUrl.includes(expectedRef)) {
 }
 console.log(`✓ alvo confirmado: ${envFile} → ref ${expectedRef}`);
 
-const prisma = new PrismaClient();
+const prisma = novoPrisma();
 
 // Espelha a config do runtime no que importa para hash e sign-in. Sem
 // `disableSignUp` (não criamos usuário aqui) e sem rateLimit (chamada direta na

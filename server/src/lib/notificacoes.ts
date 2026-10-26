@@ -1,5 +1,5 @@
 import { ContentStatus } from "@jilson/core";
-import type { NotificationKind } from "@prisma/client";
+import type { NotificationKind } from "./prisma.js";
 import { prisma } from "./prisma.js";
 import { aulasConcluidas } from "./progresso.js";
 

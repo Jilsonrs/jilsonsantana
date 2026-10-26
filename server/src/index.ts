@@ -1,10 +1,11 @@
-import "dotenv/config";
+import "./ambiente.js";
 // O alerta de erro liga AQUI, antes do app: uma falha ao montar o app já o encontra ligado.
 import { versaoNoAr } from "./monitor-no-ar.js";
 import app from "./app.js";
 import { desligarComCalma } from "./lib/desligar.js";
 import { avisarQueSubiu, esvaziarMonitor } from "./lib/monitor.js";
 import { enderecoDoSite } from "./lib/endereco-do-site.js";
+import { conferirFusoDoBanco } from "./lib/prisma.js";
 
 // Entrada de PRODUÇÃO (`dist/index.js` — o que Dockerfile e Cloud Run executam).
 // A montagem do app vive em `app.ts`, que não escuta porta, para que supertest
@@ -35,6 +36,12 @@ const servidor = app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   // Um aviso por subida: é a prova, em produção, de que o alerta chega ao Sentry.
   avisarQueSubiu(versaoNoAr);
+  // O fuso do banco (Prisma 7: o adaptador do `pg` lê as datas como UTC — `lib/prisma.ts`).
+  // O motivo vai DENTRO do texto: com o erro como segundo argumento, o Sentry guardaria só o erro,
+  // sem a etiqueta `[api]`, e o alerta seria descartado.
+  conferirFusoDoBanco().catch((erro: unknown) =>
+    console.error(`[api] não consegui conferir o fuso do banco: ${erro instanceof Error ? erro.message : String(erro)}`),
+  );
 });
 
 // Na publicação, o servidor antigo termina o que estava atendendo antes de sair

@@ -39,9 +39,9 @@ export default defineConfig({
 
   // Auth precisa da API (3000) E do client Vite (5173, que proxeia /api -> 3000).
   //
-  // `--env-file` é o ponto: o servidor faz `import "dotenv/config"`, que carrega
-  // `server/.env` (o banco de DEV). Como o dotenv NÃO sobrescreve variável já
-  // presente no ambiente, o que o Node injeta por `--env-file` VENCE. Sem isso o
+  // `--env-file` é o ponto: o servidor carrega `server/.env` (o banco de DEV) pelo
+  // `src/ambiente.ts`, com `override: false` escrito. Como o dotenv NÃO sobrescreve
+  // variável já presente no ambiente, o que o Node injeta por `--env-file` VENCE. Sem isso o
   // Playwright resetaria o banco local e depois dirigiria um servidor conectado
   // a outro banco — testando um mundo que não é o que ele preparou.
   webServer: [

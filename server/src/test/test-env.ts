@@ -60,33 +60,44 @@ export function loadTestEnv(): void {
 }
 
 /**
- * TRAVA. Lança se a `DATABASE_URL` não for a do banco de teste.
+ * TRAVA. Lança se a `DATABASE_URL` ou a `DIRECT_URL` não forem do banco de teste local.
  *
- * Chamada ANTES de qualquer conexão e antes de qualquer comando destrutivo.
+ * Chamada ANTES de qualquer conexão e antes de qualquer comando destrutivo. As DUAS: o site usa a
+ * `DATABASE_URL`, mas o `prisma migrate reset` apaga o banco da `DIRECT_URL` (a do
+ * `prisma.config.ts`; no Prisma 5, o `directUrl`) — conferir só a primeira deixava o reset livre
+ * para apagar outro banco (26/10/2026).
  */
 export function assertTestDatabase(): void {
-  const url = process.env.DATABASE_URL;
-  if (!url) {
-    throw new Error("DATABASE_URL não está definida após carregar .env.test — abortando.");
-  }
-  let hostname: string;
-  try {
-    hostname = new URL(url).hostname;
-  } catch {
-    throw new Error(
-      "TRAVA DE BANCO DE TESTE: DATABASE_URL não é uma URL parseável — abortando " +
-        "antes de qualquer conexão.",
-    );
-  }
-  // O parser devolve IPv6 entre colchetes (`[::1]`); a lista guarda a forma nua.
-  const host = hostname.replace(/^\[|\]$/g, "");
-  if (!(ALLOWED_TEST_HOSTS as readonly string[]).includes(host)) {
-    throw new Error(
-      `TRAVA DE BANCO DE TESTE: DATABASE_URL aponta para o host "${host}", que não ` +
-        `é local (aceitos: ${ALLOWED_TEST_HOSTS.join(", ")}). A suíte roda ` +
-        `\`prisma migrate reset --force\`, que apaga todas as tabelas — em produção ` +
-        `isso destrói o banco que a nuvem serve. Abortando antes de qualquer conexão.`,
-    );
+  for (const nome of ["DATABASE_URL", "DIRECT_URL"] as const) {
+    const url = process.env[nome];
+    if (!url) {
+      throw new Error(`${nome} não está definida após carregar .env.test — abortando.`);
+    }
+    let parsed: URL;
+    try {
+      parsed = new URL(url);
+    } catch {
+      throw new Error(
+        `TRAVA DE BANCO DE TESTE: ${nome} não é uma URL parseável — abortando ` +
+          "antes de qualquer conexão.",
+      );
+    }
+    // `?host=` (ou `hostaddr`) no endereço ganha do servidor escrito antes dele: o `pg` liga lá
+    // (revisão de segurança, 26/10/2026). Sem isto, `localhost?host=outro-banco` passaria.
+    if (parsed.searchParams.has("host") || parsed.searchParams.has("hostaddr")) {
+      throw new Error(`TRAVA DE BANCO DE TESTE: ${nome} tem host nos parâmetros do endereço — abortando.`);
+    }
+    const hostname = parsed.hostname;
+    // O parser devolve IPv6 entre colchetes (`[::1]`); a lista guarda a forma nua.
+    const host = hostname.replace(/^\[|\]$/g, "");
+    if (!(ALLOWED_TEST_HOSTS as readonly string[]).includes(host)) {
+      throw new Error(
+        `TRAVA DE BANCO DE TESTE: ${nome} aponta para o host "${host}", que não ` +
+          `é local (aceitos: ${ALLOWED_TEST_HOSTS.join(", ")}). A suíte roda ` +
+          `\`prisma migrate reset --force\`, que apaga todas as tabelas — em produção ` +
+          `isso destrói o banco que a nuvem serve. Abortando antes de qualquer conexão.`,
+      );
+    }
   }
   // Sem BETTER_AUTH_SECRET o Better Auth falha de forma obscura no meio do seed;
   // falhar aqui, com a causa dita, custa segundos em vez de uma sessão.
@@ -101,8 +112,12 @@ export function childEnv(): NodeJS.ProcessEnv {
   // `server/.env` (produção!) por conta própria via dotenv. Como dotenv NÃO
   // sobrescreve variável já presente no ambiente, o que passamos aqui vence.
   // Herdar seria o caminho até produção.
+  // Sem nenhuma variável DOTENV_*: um DOTENV_CONFIG_OVERRIDE (ou DOTENV_CONFIG_PATH) herdado do
+  // terminal faria o reset e o seed lerem o `server/.env` — o banco de DEV — por cima do de teste,
+  // depois de a trava já ter conferido (revisão de segurança, 26/10/2026).
+  const semDotenv = Object.fromEntries(Object.entries(process.env).filter(([nome]) => !nome.startsWith("DOTENV_")));
   return {
-    ...process.env,
+    ...semDotenv,
     DATABASE_URL: process.env.DATABASE_URL,
     DIRECT_URL: process.env.DIRECT_URL,
     BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
