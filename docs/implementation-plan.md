@@ -29,6 +29,9 @@
 > revisão `jilson-prod-00029`); antes, com 512 MB (`6b9a5a6`, revisão
 > `jilson-prod-00028`) — as tentativas de cobrança e de login contando no banco, os textos relidos a cada
 > minuto; teste de carga no ar sem erro (o plano → *Depois do Bloco G*).
+> **A atualização das bibliotecas, etapa 1, no ar desde 25/10/2026** (`f5e8cd1`, revisão
+> `jilson-prod-00030`), conferida de fora: o site, o login (401 com senha errada), os dados do curso e a
+> cobrança sem login (401). As etapas seguintes: o plano → *A atualização de todas as bibliotecas*.
 > **Publicado em 24–25/10/2026:** `d6c2906` — o endereço do CDN do Bunny corrigido (P105) e a
 > conferência dele no CI; `f09a903` — o download do arquivo da aula em pedaços (o Cloud Run recusava
 > acima de 32 MB); `294b106` — o segundo mais novo vence entre aparelhos. Conferidos de fora (o site
@@ -705,9 +708,21 @@
         Playwright 1.64.1, ESLint 10.13.0, typescript-eslint 8.72.0, React Query, React Hook Form, Axios,
         Radix, PostCSS, autoprefixer, supertest e tsx. **Achado:** o Express 5.3 escreve o nome do arquivo
         baixado sem aspas quando ele não tem espaço (`filename=Curso-Inteiro.zip`) — válido pela norma;
-        o teste passou a conferir o nome, e a mutação (nome trocado) reprova. Falta publicar.
-  - [ ] **Etapa 2 — ferramentas de teste e o servidor sem tela:** Vitest 5, jsdom 30, `@types/supertest`
-        7, dotenv 18, Sentry 11.
+        o teste passou a conferir o nome, e a mutação (nome trocado) reprova. **No ar desde 25/10/2026**
+        (`f5e8cd1`, revisão `jilson-prod-00030`), conferida de fora.
+  - [x] **Etapa 2 — ferramentas de teste e o servidor sem tela:** Vitest 5, jsdom 30, `@types/supertest`
+        7, dotenv 18, Sentry 11 (`11.9.0`, fixada como antes). Notas de versão lidas (Vitest 4 e 5,
+        Sentry 11, dotenv 17 e 18). **Achados:** (1) o **Sentry 11 mudou três padrões**, e os três ficam
+        desligados em `monitor.ts`: a coleta de dados (`dataCollection`, cada categoria `false` — deixar em
+        branco passou a COLETAR cabeçalhos, cookies, corpo e usuário), o rastro de código na linha de erro
+        (`attachStacktrace: false` — com ele, o alerta se agruparia pelo lugar do código, e erros
+        diferentes da mesma linha virariam um alerta só) e os ganchos que reescrevem as bibliotecas ao
+        carregar (`enableRuntimeChannelInjection: false`, o antigo `registerEsmLoaderHooks: false`); os
+        dois últimos têm teste, e a mutação de cada um reprova; (2) o **Vitest 5 usa `Object.hasOwn`** para
+        carregar arquivos, então o teste do iPhone antigo (`compat.test.tsx`) passou a escondê-la só do
+        código do app — as três mutações do reforço reprovam; (3) o dotenv 18 avisa a cada carga, e o
+        `test-env.ts` o silencia. O Vitest 5 limpa o registro dos dublês entre testes: nenhum teste
+        dependia disso. Os quatro gates verdes (936 testes de tela, 1.278 de servidor). Falta publicar.
   - [ ] **Etapa 3 — React 19**, com `@types/react` 19, React Router 7, `@hookform/resolvers` 6 e
         `@vitejs/plugin-react` 6.
   - [ ] **Etapa 4 — Zod 4** (o `core`, o site e o servidor): as mensagens que o aluno vê ficam iguais.

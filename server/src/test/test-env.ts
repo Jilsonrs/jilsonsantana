@@ -49,7 +49,8 @@ export const TEST_ENV_FILE = path.join(SERVER_ROOT, ".env.test");
  * a suíte não pode depender de o operador ter feito `set -a` no terminal.
  */
 export function loadTestEnv(): void {
-  const result = loadEnv({ path: TEST_ENV_FILE, override: true });
+  // `quiet`: o dotenv 18 avisa a cada carga ("injected env (11)…"), uma linha por arquivo de teste.
+  const result = loadEnv({ path: TEST_ENV_FILE, override: true, quiet: true });
   if (result.error) {
     throw new Error(
       `Não consegui ler ${TEST_ENV_FILE}. A suíte de servidor exige esse arquivo ` +

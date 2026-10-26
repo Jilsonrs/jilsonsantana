@@ -116,10 +116,35 @@ export function ligarMonitor(ambiente: Ambiente, opcoes: Opcoes = {}): boolean {
       Sentry.onUncaughtExceptionIntegration(),
       Sentry.onUnhandledRejectionIntegration({ mode: "warn" }),
     ],
-    // Sem medição de desempenho: nada de OpenTelemetry nem de ganchos no carregamento de módulos.
-    skipOpenTelemetrySetup: true,
-    registerEsmLoaderHooks: false,
-    sendDefaultPii: false,
+    // Sem medição de desempenho: sem `tracesSampleRate`, e o OpenTelemetry fica desligado (o
+    // padrão da versão 11, escrito para ninguém o ligar sem perceber).
+    enableOpenTelemetrySetup: false,
+    // Sem ganchos no carregamento: na versão 11 o Sentry, por padrão, passa a REESCREVER as
+    // bibliotecas (Express, banco…) quando elas carregam, para medir desempenho. Nada disso é
+    // preciso para o alerta de erro (era o `registerEsmLoaderHooks: false` da versão 10).
+    enableRuntimeChannelInjection: false,
+    // TUDO DESLIGADO, uma categoria por vez. Na versão 11, deixar isto em branco passou a
+    // COLETAR cabeçalhos, cookies, corpo dos pedidos, usuário e consultas ao banco — o oposto da
+    // versão 10 (era o `sendDefaultPii: false`). As peças que juntariam isso nem são ligadas
+    // (acima), e `limparEvento` ainda tira o que sobrar: são três travas para a mesma coisa.
+    dataCollection: {
+      userInfo: false,
+      cookies: false,
+      httpHeaders: false,
+      httpBodies: [],
+      urlQueryParams: false,
+      graphQL: { document: false, variables: false },
+      genAI: { inputs: false, outputs: false },
+      mcp: { inputs: false, outputs: false },
+      databaseQueryData: false,
+      queues: false,
+      stackFrameVariables: false,
+      frameContextLines: 0,
+    },
+    // Na versão 11 o padrão virou `true`: a linha de erro passaria a levar um rastro de código, e
+    // o Sentry a agruparia pelo LUGAR do código, não pelo texto — erros diferentes que saem da
+    // mesma linha (o `[email]` de qualquer conta) virariam um alerta só. Fica como era.
+    attachStacktrace: false,
     sendClientReports: false,
     maxBreadcrumbs: 0,
     beforeSend: (evento) => {
