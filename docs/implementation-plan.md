@@ -29,10 +29,11 @@
 > revisão `jilson-prod-00029`); antes, com 512 MB (`6b9a5a6`, revisão
 > `jilson-prod-00028`) — as tentativas de cobrança e de login contando no banco, os textos relidos a cada
 > minuto; teste de carga no ar sem erro (o plano → *Depois do Bloco G*).
-> **A atualização das bibliotecas, etapas 1 a 5, no ar desde 25–26/10/2026** (`f5e8cd1`, revisão
+> **A atualização das bibliotecas, etapas 1 a 6, no ar desde 25–26/10/2026** (`f5e8cd1`, revisão
 > `jilson-prod-00030`; `fc4a018`, revisão `jilson-prod-00031`; `bcd6bbc` — React 19 e React Router 7 —,
 > revisão `jilson-prod-00032`; `bff55eb` — Zod 4 —, revisão `jilson-prod-00033`; `6cddb68` — os ícones no
-> Lucide 1 —, revisão `jilson-prod-00034`), conferidas de fora: o site, o login (401 com senha errada), os dados do
+> Lucide 1 —, revisão `jilson-prod-00034`; `82f0670` — Prisma 7 —, revisão `jilson-prod-00035`, com o job das
+> migrations conferido no registro), conferidas de fora: o site, o login (401 com senha errada), os dados do
 > curso e a cobrança sem login (401); o alerta do Sentry 11 ligou no ar. As etapas seguintes: o plano → *A atualização de todas as bibliotecas*.
 > **Publicado em 24–25/10/2026:** `d6c2906` — o endereço do CDN do Bunny corrigido (P105) e a
 > conferência dele no CI; `f09a903` — o download do arquivo da aula em pedaços (o Cloud Run recusava
@@ -812,9 +813,25 @@
         imagem) com o comando do job (`migrate status`) e o servidor no modo de produção (login e sessão), e o
         banco de **dev**: 42 migrations em dia, nenhuma diferença do esquema, e o servidor ligado a ele (login,
         sessão, assinatura e cursos). **A imagem ficou maior** (~150 MB do comando `prisma` do 7, só para o job
-        das migrations; gatilho no `tech-stack.md`). Falta publicar — e conferir no ar o job das migrations.
-  - [ ] **Etapa 7 — TypeScript 6.0.** *O 7 fica travado:* o `typescript-eslint` (8.72) só aceita até o 6.0,
+        das migrations; gatilho no `tech-stack.md`). **No ar desde 26/10/2026** (`82f0670`, revisão
+        `jilson-prod-00035`): o job das migrations rodou o comando novo (o Prisma 7, o banco de produção, 42
+        migrations, nenhuma pendente, nada baixado); o site, o login e a cobrança respondem, e o registro não tem
+        erro nem alerta de fuso. **Os cartões, provados de verdade** (pergunta do operador, 26/10/2026): o
+        servidor local no banco de dev e a área restrita da Stripe, pelas mesmas rotas da tela — assinar com Visa,
+        ganhar acesso, trocar para Mastercard, parar a renovação (o acesso segue até o fim do mês pago) e voltar
+        atrás —, com conta e cliente descartáveis apagados no fim (o banco de dev ficou igual).
+  - [x] **Etapa 7 — TypeScript 6.0.** *O 7 fica travado:* o `typescript-eslint` (8.72) só aceita até o 6.0,
         e subir desligaria o revisor automático. *Gatilho: o `typescript-eslint` aceitar o TypeScript 7.*
+        *(26/10/2026.)* TypeScript 6.0.3 nos quatro pacotes. Notas lidas (o 6.0 prepara o 7 e muda padrões).
+        **O que mudou:** os tipos globais deixaram de entrar sozinhos — agora escritos: `vite/client` no site
+        (é o que declara o `import "./index.css"`, que o 6 passou a conferir) e `node` no servidor e no E2E; o
+        `core` fica sem, de propósito (ele também roda no navegador); o `baseUrl` do site saiu (obsoleto; o
+        atalho `@/` funciona sem ele). **Achado:** o lint NÃO estava rodando no computador — um `npm install`
+        feito por pacote (`-w`) tirou o `typescript-eslint` da pasta local, e a conferência que olhava o texto
+        da saída não viu o erro; o CI, que instala do zero, seguia certo (verde nas etapas 1 a 6). Corrigido
+        com `npm install` na raiz; agora os gates são conferidos pelo código de saída, e o lint reprova uma
+        promessa solta de propósito (as regras leem os tipos no 6). Os quatro gates e o E2E (7 de 7) verdes.
+        Falta publicar.
 - [ ] **O alerta de orçamento (R$ 100):** conta o gasto antes ou depois do crédito?
 - [x] **"O Google Cloud explicado"** *(pedido do operador, 24/10/2026: "é a primeira vez que utilizo
       […] preciso saber o essencial para entender como funciona e testar configurações maiores e
