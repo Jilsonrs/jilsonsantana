@@ -726,9 +726,12 @@
       0,045 por hora assistida). Achado: o projeto tem teto de 20 processadores por região. Tabelas e
       custos: `tech-stack.md` → *O teste de carga*. Servidor de volta a 2 processadores, 2 GB e 1 cópia
       (revisão `jilson-prod-00027`), Sentry religado.
-- [ ] **A conta padrão do Google (`…-compute@developer`) tem papel de editor no projeto inteiro** —
+- [x] **A conta padrão do Google (`…-compute@developer`) tem papel de editor no projeto inteiro** —
       nada a usa (o site e o Job usam `jilson-site`; a publicação, `jilson-publicacao`): tirar o papel
-      (P106).
+      (P106). *(26/10/2026, com o OK do operador.)* Conferido antes: nada roda com ela e não há chave dela.
+      O papel saiu (`remove-iam-policy-binding`); a conta segue existindo, sem papel nenhum — desfazer é um
+      comando. Conferido de fora depois: o site, o login, os cursos e a cobrança respondem, e a revisão no
+      ar segue pronta.
 - [ ] **As dívidas da revisão da G2, com gatilho** (detalhe no histórico): limite de downloads ao mesmo
       tempo por conta e concorrência maior *(o primeiro aluno pagante, ou 429 no registro)* · publicar
       só o topo da `main` *(dois "publica" seguidos)* · fixar as ferramentas da publicação pelo código do

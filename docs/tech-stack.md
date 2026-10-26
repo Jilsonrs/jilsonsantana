@@ -342,7 +342,7 @@ por todas as peças, nesta ordem:
    leitura fica registrada.
 
 E em volta: as **contas de serviço** são os "crachás" — `jilson-site` (o site e o Job: leem o cofre) e
-`jilson-publicacao` (o GitHub: publica); a conta padrão `…-compute@` sobrou do Google (P106). O
+`jilson-publicacao` (o GitHub: publica); a conta padrão `…-compute@` sobrou do Google e está **sem papel nenhum** desde 26/10/2026 (P106, decisão do operador): se algo um dia precisar dela, ganha só a permissão específica. O
 **mapeamento de domínio** liga `www.jilsonsantana.com` ao serviço e renova o cadeado sozinho. O
 **Cloud Logging** é o registro de cada pedido; o **Cloud Monitoring**, os gráficos de memória,
 processador e tempo; o **Orçamento**, o aviso de gasto.
