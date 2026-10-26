@@ -35,6 +35,8 @@
 > Lucide 1 —, revisão `jilson-prod-00034`; `82f0670` — Prisma 7 —, revisão `jilson-prod-00035`, com o job das
 > migrations conferido no registro; `7f5976f` — TypeScript 6 —, revisão `jilson-prod-00036`), conferidas de fora: o site, o login (401 com senha errada), os dados do
 > curso e a cobrança sem login (401); o alerta do Sentry 11 ligou no ar. O detalhe: `build-history.md` → *A atualização de todas as bibliotecas*; o que ficou para depois: o plano → *Depois do Bloco G*.
+> **A revisão no ar desde 26/10/2026 é a `jilson-prod-00038`**: a mesma imagem da `00036`, recriada
+> pelo teste do alerta do Sentry com o servidor parado (o plano → *Depois do Bloco G*).
 > **Publicado em 24–25/10/2026:** `d6c2906` — o endereço do CDN do Bunny corrigido (P105) e a
 > conferência dele no CI; `f09a903` — o download do arquivo da aula em pedaços (o Cloud Run recusava
 > acima de 32 MB); `294b106` — o segundo mais novo vence entre aparelhos. Conferidos de fora (o site
@@ -630,10 +632,15 @@
       chegou (o computador abriu nela). *Gatilho de reabertura: um aparelho voltar a abrir alguns
       segundos antes do ponto em que parou — aí, investigar o aviso `pause` do player.js no iPhone
       (doc do Stream). Enquanto isso, a gravação a cada 5 s limita a perda a 5 s.*
-- [ ] **O alerta do Sentry com o servidor parado** — provocar um erro `[stripe]` e não mandar mais
-      pedido nenhum: o e-mail tem que chegar (o registro de 23/10 só mostra o aviso de que o servidor
-      ligou). *Se não chegar:* o caminho de erro espera o envio (`Sentry.flush`, até 2 s), ou o serviço
-      passa a `--no-cpu-throttling`.
+- [x] **O alerta do Sentry com o servidor parado** *(provado no ar em 26/10/2026, com o OK do
+      operador)* — o erro `[stripe] aviso recusado: STRIPE_WEBHOOK_SECRET não configurado`, provocado
+      tirando por 4 minutos o segredo do aviso da Stripe (revisão `jilson-prod-00037`; devolvido na
+      `00038`, a mesma imagem — o aviso sem assinatura voltou a dar 400), com o monitor "Site online"
+      pausado e um pedido só. **O Sentry recebeu o erro no mesmo segundo (15:47:25) e disparou o
+      e-mail às 15:47:51**, antes do pedido seguinte (um robô, às 15:48:16): o envio não espera outro
+      pedido, mesmo com o processador cobrado só nos pedidos (`--cpu-throttling`). O `Sentry.flush` no
+      caminho de erro e o `--no-cpu-throttling` ficam sem uso. *Gatilho de reabertura: um alerta que só
+      chegue depois do pedido seguinte (no Sentry, o "Received" bem depois do "Occurred").*
 - [x] **A memória e o tempo de resposta** *(medidos em 25/10/2026)* — decidem a volta da P104. Nas 46 h
       antes do teste: memória no pico de 160 a 220 MB (8 a 11% dos 2 GB), processador até 7%. No teste
       de tamanhos (512 MB a 8 GB): a escola usa 140 a 215 MB em qualquer tamanho, e a memória não muda
