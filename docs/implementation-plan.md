@@ -29,9 +29,9 @@
 > revisão `jilson-prod-00029`); antes, com 512 MB (`6b9a5a6`, revisão
 > `jilson-prod-00028`) — as tentativas de cobrança e de login contando no banco, os textos relidos a cada
 > minuto; teste de carga no ar sem erro (o plano → *Depois do Bloco G*).
-> **A atualização das bibliotecas, etapa 1, no ar desde 25/10/2026** (`f5e8cd1`, revisão
-> `jilson-prod-00030`), conferida de fora: o site, o login (401 com senha errada), os dados do curso e a
-> cobrança sem login (401). As etapas seguintes: o plano → *A atualização de todas as bibliotecas*.
+> **A atualização das bibliotecas, etapas 1 e 2, no ar desde 25/10/2026** (`f5e8cd1`, revisão
+> `jilson-prod-00030`; `fc4a018`, revisão `jilson-prod-00031`), conferidas de fora: o site, o login (401
+> com senha errada), os dados do curso e a cobrança sem login (401); o alerta do Sentry 11 ligou no ar. As etapas seguintes: o plano → *A atualização de todas as bibliotecas*.
 > **Publicado em 24–25/10/2026:** `d6c2906` — o endereço do CDN do Bunny corrigido (P105) e a
 > conferência dele no CI; `f09a903` — o download do arquivo da aula em pedaços (o Cloud Run recusava
 > acima de 32 MB); `294b106` — o segundo mais novo vence entre aparelhos. Conferidos de fora (o site
@@ -722,7 +722,8 @@
         carregar arquivos, então o teste do iPhone antigo (`compat.test.tsx`) passou a escondê-la só do
         código do app — as três mutações do reforço reprovam; (3) o dotenv 18 avisa a cada carga, e o
         `test-env.ts` o silencia. O Vitest 5 limpa o registro dos dublês entre testes: nenhum teste
-        dependia disso. Os quatro gates verdes (936 testes de tela, 1.278 de servidor). Falta publicar.
+        dependia disso. Os quatro gates verdes (936 testes de tela, 1.278 de servidor). **No ar desde
+        25/10/2026** (`fc4a018`, revisão `jilson-prod-00031`), conferida de fora; o alerta do Sentry ligou.
   - [ ] **Etapa 3 — React 19**, com `@types/react` 19, React Router 7, `@hookform/resolvers` 6 e
         `@vitejs/plugin-react` 6.
   - [ ] **Etapa 4 — Zod 4** (o `core`, o site e o servidor): as mensagens que o aluno vê ficam iguais.
