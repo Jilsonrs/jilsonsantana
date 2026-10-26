@@ -72,7 +72,8 @@ export const courseFormSchema = z.object({
       (v) => v.trim() === "" || bunnyVideoIdSchema.safeParse(v.trim()).success,
       "Cole o ID do vídeo como aparece no Bunny (ex.: eb1c4f77-0cda-46be-b47d-1118ad7c2ffe)",
     ),
-  displayOrder: z.coerce.number().int(),
+  // `<number>`: no Zod 4 a entrada de um `coerce` é "qualquer coisa"; o formulário a trata como número, como no Zod 3.
+  displayOrder: z.coerce.number<number>().int(),
   status: contentStatusSchema,
 });
 

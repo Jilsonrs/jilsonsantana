@@ -73,7 +73,8 @@ export function HomeListItemForm({
   const esquema = z.object({
     principal: texto(principal.max),
     secundario: texto(secundario.max),
-    displayOrder: z.coerce.number().int("Use um número inteiro."),
+    // `<number>`: no Zod 4 a entrada de um `coerce` é "qualquer coisa"; o formulário a trata como número, como no Zod 3.
+    displayOrder: z.coerce.number<number>().int("Use um número inteiro."),
     status: contentStatusSchema,
   });
   const {

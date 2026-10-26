@@ -48,6 +48,7 @@
 ## Shared
 
 - **`core/` package** (npm workspace) — Zod schemas + domain constants shared by client and server. Single source of truth for shapes and types end to end.
+- **Zod 4** (desde 26/10/2026; uma cópia só, a mesma do Better Auth). Três diferenças do 3 que mudam código: o `z.record` com um enum como chave EXIGE todas as chaves — para "qualquer uma delas", `z.partialRecord` (é o `camadaOverride`, com teste); a entrada de um `z.coerce` é "qualquer coisa" — no formulário, `z.coerce.number<number>()`; e as mensagens de fábrica mudaram (em inglês, como antes): as telas do aluno mostram os textos do dicionário, não os do Zod. **O Zod 4 gera código na hora (`Function`) quando o navegador deixa;** se um dia o site ganhar uma política de segurança (CSP) sem `unsafe-eval`, ligar `z.config({ jitless: true })` — sem isso ele recua sozinho, mas o navegador registra a recusa.
 
 ## Database
 

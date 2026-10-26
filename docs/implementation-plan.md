@@ -29,9 +29,10 @@
 > revisão `jilson-prod-00029`); antes, com 512 MB (`6b9a5a6`, revisão
 > `jilson-prod-00028`) — as tentativas de cobrança e de login contando no banco, os textos relidos a cada
 > minuto; teste de carga no ar sem erro (o plano → *Depois do Bloco G*).
-> **A atualização das bibliotecas, etapas 1 e 2, no ar desde 25/10/2026** (`f5e8cd1`, revisão
-> `jilson-prod-00030`; `fc4a018`, revisão `jilson-prod-00031`), conferidas de fora: o site, o login (401
-> com senha errada), os dados do curso e a cobrança sem login (401); o alerta do Sentry 11 ligou no ar. As etapas seguintes: o plano → *A atualização de todas as bibliotecas*.
+> **A atualização das bibliotecas, etapas 1 a 3, no ar desde 25–26/10/2026** (`f5e8cd1`, revisão
+> `jilson-prod-00030`; `fc4a018`, revisão `jilson-prod-00031`; `bcd6bbc` — React 19 e React Router 7 —,
+> revisão `jilson-prod-00032`), conferidas de fora: o site, o login (401 com senha errada), os dados do
+> curso e a cobrança sem login (401); o alerta do Sentry 11 ligou no ar. As etapas seguintes: o plano → *A atualização de todas as bibliotecas*.
 > **Publicado em 24–25/10/2026:** `d6c2906` — o endereço do CDN do Bunny corrigido (P105) e a
 > conferência dele no CI; `f09a903` — o download do arquivo da aula em pedaços (o Cloud Run recusava
 > acima de 32 MB); `294b106` — o segundo mais novo vence entre aparelhos. Conferidos de fora (o site
@@ -741,8 +742,19 @@
         existe — nada para o `compat.ts`. Os dois avisos de segurança do `react-router` saíram do
         `npm audit`. Os quatro gates verdes (936 de tela, 1.278 de servidor), o E2E no computador (7 de
         7), e as mutações dos formulários (sem a conferência, o login e o editor de avisos reprovam).
-        Falta publicar.
-  - [ ] **Etapa 4 — Zod 4** (o `core`, o site e o servidor): as mensagens que o aluno vê ficam iguais.
+        **No ar desde 26/10/2026** (`bcd6bbc`, revisão `jilson-prod-00032`), conferida de fora.
+  - [x] **Etapa 4 — Zod 4** (o `core`, o site e o servidor): as mensagens que o aluno vê ficam iguais.
+        *(26/10/2026.)* Zod 4.6.7, uma cópia só (antes eram duas: o 3 no `core` e o 4 do Better Auth).
+        Notas lidas (o guia do 3 para o 4, inteiro). **As mensagens do aluno não mudam:** as telas de
+        entrar, código e senha mostram os textos do dicionário, e nenhuma tela lê a mensagem que o
+        servidor devolve na validação. **Achados:** (1) o `z.record` com as camadas como chave passou a
+        EXIGIR as três — o texto sobrescrito de uma camada só (`camadaOverride`) seria recusado; virou
+        `z.partialRecord`, com teste novo (`course-camada-override.test.ts`; a mutação reprova); (2) a
+        entrada do `z.coerce` passou a ser "qualquer coisa": os dois formulários do admin com ordem
+        (curso e listas da home) declaram `z.coerce.number<number>()`, a mesma tipagem do Zod 3;
+        (3) o `z.string().url()` continua aceitando `javascript:` e `data:` (medido de novo; a regra do
+        `CLAUDE.md` fica). **O pacote do aluno cresceu 12,5 KB compactado (+2,7%)**; nenhuma função nova
+        do navegador. Os quatro gates verdes (936 de tela, 1.280 de servidor). Falta publicar.
   - [ ] **Etapa 5 — o visual: Tailwind 4, `tailwind-merge` 3 e os ícones (`lucide-react` 1)** — área do
         Antigravity; prints antes e depois das telas principais, e o operador confere antes de publicar.
   - [ ] **Etapa 6 — Prisma 7** (a ligação com o banco, o `Dockerfile` e as migrations do Cloud Run Job):

@@ -6,11 +6,11 @@ import type { Response } from "express";
 // and return null, so the caller does `const x = validate(...); if (x === null) return;`.
 
 // Structural shape of a Zod schema's safeParse — intentionally NOT importing a
-// `ZodSchema` type from "zod". The server tree carries two Zod majors (core uses
-// zod 3; better-auth pulls zod 4 into server/node_modules), so a `import { ZodSchema }
-// from "zod"` here would resolve to a DIFFERENT zod than the one that built the
-// core/ schemas, breaking generic inference. Typing structurally decouples this
-// helper from the version entirely — any Zod schema satisfies it.
+// `ZodSchema` type from "zod". Until 26/10/2026 the server tree carried two Zod
+// majors (core on zod 3, better-auth on zod 4), and an import here resolved to a
+// DIFFERENT zod than the one that built the core/ schemas. Today there is one (4),
+// but typing structurally keeps this helper independent of the version — any Zod
+// schema satisfies it.
 interface SafeParser<T> {
   safeParse(data: unknown): { success: true; data: T } | { success: false; error: { issues: unknown[] } };
 }

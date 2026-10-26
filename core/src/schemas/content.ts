@@ -55,7 +55,9 @@ export type FaqItem = z.infer<typeof faqItemSchema>;
 
 // per-course override of the GLOBAL 3-camadas text — the exception (e.g. N8N),
 // never the routine. A partial override of any layer's name/blurb/icon.
-export const camadaOverrideSchema = z.record(
+// `partialRecord`, não `record`: no Zod 4, o `record` com as camadas como chave EXIGE as três
+// (no Zod 3 eram opcionais); aqui o curso sobrescreve só a camada que quiser.
+export const camadaOverrideSchema = z.partialRecord(
   layerSchema,
   z.object({
     name: z.string().min(1).optional(),
