@@ -29,9 +29,9 @@
 > revisão `jilson-prod-00029`); antes, com 512 MB (`6b9a5a6`, revisão
 > `jilson-prod-00028`) — as tentativas de cobrança e de login contando no banco, os textos relidos a cada
 > minuto; teste de carga no ar sem erro (o plano → *Depois do Bloco G*).
-> **A atualização das bibliotecas, etapas 1 a 3, no ar desde 25–26/10/2026** (`f5e8cd1`, revisão
+> **A atualização das bibliotecas, etapas 1 a 4, no ar desde 25–26/10/2026** (`f5e8cd1`, revisão
 > `jilson-prod-00030`; `fc4a018`, revisão `jilson-prod-00031`; `bcd6bbc` — React 19 e React Router 7 —,
-> revisão `jilson-prod-00032`), conferidas de fora: o site, o login (401 com senha errada), os dados do
+> revisão `jilson-prod-00032`; `bff55eb` — Zod 4 —, revisão `jilson-prod-00033`), conferidas de fora: o site, o login (401 com senha errada), os dados do
 > curso e a cobrança sem login (401); o alerta do Sentry 11 ligou no ar. As etapas seguintes: o plano → *A atualização de todas as bibliotecas*.
 > **Publicado em 24–25/10/2026:** `d6c2906` — o endereço do CDN do Bunny corrigido (P105) e a
 > conferência dele no CI; `f09a903` — o download do arquivo da aula em pedaços (o Cloud Run recusava
@@ -754,9 +754,28 @@
         (curso e listas da home) declaram `z.coerce.number<number>()`, a mesma tipagem do Zod 3;
         (3) o `z.string().url()` continua aceitando `javascript:` e `data:` (medido de novo; a regra do
         `CLAUDE.md` fica). **O pacote do aluno cresceu 12,5 KB compactado (+2,7%)**; nenhuma função nova
-        do navegador. Os quatro gates verdes (936 de tela, 1.280 de servidor). Falta publicar.
-  - [ ] **Etapa 5 — o visual: Tailwind 4, `tailwind-merge` 3 e os ícones (`lucide-react` 1)** — área do
+        do navegador. Os quatro gates verdes (936 de tela, 1.280 de servidor). **No ar desde 26/10/2026**
+        (`bff55eb`, revisão `jilson-prod-00033`), conferida de fora (um pedido inválido devolve 400).
+  - [x] **Etapa 5 — o visual: Tailwind 4, `tailwind-merge` 3 e os ícones (`lucide-react` 1)** — área do
         Antigravity; prints antes e depois das telas principais, e o operador confere antes de publicar.
+        *(26/10/2026.)* **O Tailwind fica no 3.4, e o `tailwind-merge` no 2** *(decisão do operador)*: o
+        Tailwind 4 não funciona abaixo de Safari 16.4, Chrome 111 e Firefox 128, e o piso do site é iOS 15,
+        Chrome 91 e Firefox 90 (`tech-stack.md`, com o gatilho). **Os ícones foram para o Lucide 1.61**
+        *(decisão do operador, depois de ver os 95 ícones usados lado a lado — 46 mudaram de desenho; no
+        lugar dos prints, porque na etapa só os ícones mudam)*. **Achados:** (1) o YouTube do rodapé do app
+        saiu (a versão 1 tirou os logotipos de marca): o mesmo desenho, copiado, em `IconeDoYoutube.tsx`;
+        (2) a versão 1 juntou o `layers-3` ao `layers`, e a "Pilha" dos Destaques ficaria igual ao
+        "Camadas": ela ficou com o traço antigo (`icon-registry.ts`); (3) o seletor de ícones: 70 nomes
+        trocados pelo nome novo do Lucide, 4 juntados ao que já existia, 18 marcas fora e **440 ícones
+        novos com nome em português escrito pelo agente** (revisão na P38) — os cursos gravados (`bolt`,
+        `boxes`, `wallet`, no dev e no ar) continuam com desenho; (4) o teste do catálogo passou a contar
+        por desenho (o Lucide 1 traz os nomes antigos como apelidos) e achou o que já faltava antes: o
+        gráfico `chart-no-axes-column-increasing` sem nome (ganhou), e o `bolt` e o `wand` do Lucide
+        escondidos atrás dos nossos nomes antigos (de propósito; escrito no teste). As três mutações do
+        catálogo reprovam. O ícone sem rótulo próprio agora sai escondido do leitor de tela (padrão do
+        Lucide 1); o que tem `aria-label` continua sendo lido. **O arquivo com todos os ícones** (só
+        carrega na página de curso com destaque fora dos 55, e no seletor do admin) foi de 100 para 160 KB
+        compactado; o pacote de toda página não mudou. Nenhuma função nova do navegador. Falta publicar.
   - [ ] **Etapa 6 — Prisma 7** (a ligação com o banco, o `Dockerfile` e as migrations do Cloud Run Job):
         prova nos bancos de dev e de teste, e a revisão de segurança. O Better Auth 1.7.13 aceita o Prisma 7.
   - [ ] **Etapa 7 — TypeScript 6.0.** *O 7 fica travado:* o `typescript-eslint` (8.72) só aceita até o 6.0,

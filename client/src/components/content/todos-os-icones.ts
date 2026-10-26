@@ -2,7 +2,7 @@ import { icons, type LucideIcon } from "lucide-react";
 
 // TODOS os desenhos do Lucide. Só entra por `import()` (HighlightIcon) ou pelo
 // seletor do admin, que já é preguiçoso: importar isto direto numa tela põe os
-// 1.488 desenhos no pacote que todo aluno baixa.
+// 1.903 desenhos (Lucide 1, 26/10/2026) no pacote que todo aluno baixa.
 // (Por que não o `lucide-react/dynamicIconImports`, um arquivo por ícone: medido
 // em 05/10/2026, ele põe a lista dos 1.488 arquivos no pacote principal —
 // +16 KB compactados em TODA página, para servir poucos cursos.)
