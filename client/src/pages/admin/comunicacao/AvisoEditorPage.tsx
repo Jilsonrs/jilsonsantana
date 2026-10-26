@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { FormProvider, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { isAxiosError } from "axios";
-import { announcementSchema } from "@jilson/core";
+import { announcementSchema, type AnnouncementInput } from "@jilson/core";
 import * as api from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -39,7 +39,8 @@ export function AvisoEditorPage() {
   const [salvo, setSalvo] = useState(false);
   const [aConfirmar, setAConfirmar] = useState<{ id: number; quantos: number } | null>(null);
 
-  const form = useForm<AvisoFormValues>({
+  // O que se digita (AvisoFormValues) e o que a conferência devolve, já aparado (AnnouncementInput).
+  const form = useForm<AvisoFormValues, unknown, AnnouncementInput>({
     resolver: zodResolver(announcementSchema),
     values: aviso.data
       ? { title: aviso.data.title, body: aviso.data.body, audience: aviso.data.audience, courseId: aviso.data.course?.id ?? null }
@@ -48,7 +49,7 @@ export function AvisoEditorPage() {
   });
 
   const salvar = useMutation({
-    mutationFn: (v: AvisoFormValues) => (avisoId ? api.adminSalvarAviso(avisoId, v) : api.adminCriarAviso(v)),
+    mutationFn: (v: AnnouncementInput) => (avisoId ? api.adminSalvarAviso(avisoId, v) : api.adminCriarAviso(v)),
     onSuccess: (salvoNoServidor) => {
       void queryClient.invalidateQueries({ queryKey: [AVISOS] });
       queryClient.setQueryData([AVISOS, salvoNoServidor.id], salvoNoServidor);
@@ -77,7 +78,7 @@ export function AvisoEditorPage() {
       return; // a mensagem do erro aparece pela própria gravação
     }
     try {
-      setAConfirmar({ id: gravado.id, quantos: await api.adminContarDestinatarios(v.audience, v.courseId) });
+      setAConfirmar({ id: gravado.id, quantos: await api.adminContarDestinatarios(v.audience, v.courseId ?? null) });
     } catch {
       setErroAoContar(true);
     }

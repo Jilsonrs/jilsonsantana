@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, type ReactNode } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router";
 import { ArrowLeft } from "lucide-react";
 import { PageContainer, PageHeader } from "@/components/layout/PageLayout";
 import { Card, CardContent } from "@/components/ui/card";

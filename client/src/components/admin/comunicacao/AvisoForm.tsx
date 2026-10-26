@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Field, descritoPor } from "@/components/admin/course-form/Field";
 import { MarkdownField } from "@/components/admin/course-form/MarkdownField";
 
-export type AvisoFormValues = { title: string; body: string; audience: AnnouncementInput["audience"]; courseId: number | null };
+// O curso é opcional como na conferência (`announcementSchema`): o formulário sempre o preenche, nem que seja com `null`.
+export type AvisoFormValues = { title: string; body: string; audience: AnnouncementInput["audience"]; courseId?: number | null };
 
 /**
  * Os campos do AVISO (bloco C1 — decisões do operador, 06/10/2026): título, texto

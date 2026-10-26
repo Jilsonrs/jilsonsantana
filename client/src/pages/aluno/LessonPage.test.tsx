@@ -2,7 +2,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { act, screen, fireEvent, waitFor, within } from "@testing-library/react";
 import { focusManager } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { AxiosError, AxiosHeaders } from "axios";
 import { Role } from "@jilson/core";
 import { renderWithProviders } from "@/test-utils";

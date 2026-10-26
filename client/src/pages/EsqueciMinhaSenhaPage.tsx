@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router";
 import { useT } from "@/lib/language";
 import { MolduraDeAcesso } from "@/components/acesso/MolduraDeAcesso";
 import { PedirCodigoDaSenha } from "@/components/acesso/PedirCodigoDaSenha";

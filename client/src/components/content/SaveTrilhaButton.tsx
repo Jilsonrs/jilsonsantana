@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { useMutation } from "@tanstack/react-query";
 import { useSession } from "@/lib/auth-client";
 import { saveTrilha } from "@/lib/api";

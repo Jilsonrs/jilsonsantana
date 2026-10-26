@@ -1,6 +1,6 @@
 import type { ReactElement } from "react";
 import { render } from "@testing-library/react";
-import { MemoryRouter, Routes, Route } from "react-router-dom";
+import { MemoryRouter, Routes, Route } from "react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 // Shared by content-page tests (Catalog/CourseDetail/TrilhaDetail) — each

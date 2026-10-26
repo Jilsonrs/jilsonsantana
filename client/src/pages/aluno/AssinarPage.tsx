@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { Link, Navigate } from "react-router-dom";
+import { Link, Navigate } from "react-router";
 import { SituacaoDoFaturamento } from "@jilson/core";
 import { PageContainer, PageHeader } from "@/components/layout/PageLayout";
 import { Button } from "@/components/ui/button";

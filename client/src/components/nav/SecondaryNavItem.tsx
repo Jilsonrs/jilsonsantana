@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ItemSecundario } from "@/lib/navigation";

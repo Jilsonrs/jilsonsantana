@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 
 // ATUALIZAR O SITE SEM ATRAPALHAR QUEM ESTÁ ESTUDANDO (decisão do operador,
 // 06/10/2026 — "recarrega só se houver versão nova", como o Next.js faz).

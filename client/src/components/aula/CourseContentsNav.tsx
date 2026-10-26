@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { CheckCircle2, ChevronRight, FileText, PlayCircle } from "lucide-react";
 import { ContentStatus, LessonKind } from "@jilson/core";
 import type { AulaNaLista } from "@/lib/api";

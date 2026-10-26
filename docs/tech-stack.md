@@ -5,12 +5,12 @@
 
 ## Frontend
 
-- **React + TypeScript + Vite** — SPA
+- **React 19 + TypeScript + Vite** — SPA (React 19 desde 26/10/2026)
 - **Tailwind CSS + shadcn/ui** — UI; use shadcn semantic tokens (`bg-background`, `text-muted-foreground`), not hardcoded colors. **Aesthetic: Apple — light, airy, creative, beautiful imagery, light transitions.** Brand accent = blue **#238FE8** (`--primary`), with black text + gray #838383 secondary; **MuseoModerno** for the brand wordmark only, **Outfit** for H1/H2 (Sep 2026), neutral sans (Hanken Grotesk) for body and H3. See DESIGN.md.
-- **React Router** — routing
+- **React Router 7** — routing; o pacote é `react-router` (o `react-router-dom` saiu em 26/10/2026). A troca de tela fica como no 6 (`useTransitions={false}` no `main.tsx`): aparece o "carregando" da tela nova, em vez de segurar a antiga.
 - **TanStack React Query** — server state (`useQuery` / `useMutation`), not `useEffect` + `useState`
 - **Axios** — HTTP client (not `fetch`)
-- **React Hook Form + Zod resolver** — form validation
+- **React Hook Form + Zod resolver** — form validation. `@hookform/resolvers` na **5.9**: a 6 só muda o suporte ao Effect (que não usamos), e a lista de peças opcionais dela trava a instalação do npm (ERESOLVE). *Reabre quando a 6 instalar sem conflito, ou quando a 5 parar de receber correção.*
 - **`react-markdown`** (client) — mostra Markdown **sem HTML cru**: HTML digitado aparece como
   texto (padrão da biblioteca, conferido no context7 em 27/09/2026), e `allowedElements` diz
   exatamente o que vale. Entrou para a **descrição do curso** (negrito, itálico e listas, decisão

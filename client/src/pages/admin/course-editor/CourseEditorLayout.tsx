@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, Outlet, useLocation, useOutletContext, useParams } from "react-router-dom";
+import { Link, Outlet, useLocation, useOutletContext, useParams } from "react-router";
 import { Eye } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { FormProvider, useForm } from "react-hook-form";

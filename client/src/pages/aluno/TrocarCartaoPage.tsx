@@ -1,5 +1,5 @@
 import { lazy, Suspense, useState } from "react";
-import { Link, Navigate } from "react-router-dom";
+import { Link, Navigate } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import type { CartaoTrocado } from "@jilson/core";
 import { CreditCard, ArrowLeft } from "lucide-react";

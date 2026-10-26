@@ -2,7 +2,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, renderHook, screen, fireEvent } from "@testing-library/react";
 import { AxiosError, AxiosHeaders } from "axios";
-import { Link, MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
+import { Link, MemoryRouter, Route, Routes, useLocation } from "react-router";
 import {
   VERSAO_DESTE_APP,
   anotarVersaoDoServidor,

@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { Award, Bot, Route } from "lucide-react";
 import { MockGrid } from "@/components/nav/MockIcons";
 import { EmBreve } from "@/components/content/EmBreve";

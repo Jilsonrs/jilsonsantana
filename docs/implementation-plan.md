@@ -29,9 +29,9 @@
 > revisão `jilson-prod-00029`); antes, com 512 MB (`6b9a5a6`, revisão
 > `jilson-prod-00028`) — as tentativas de cobrança e de login contando no banco, os textos relidos a cada
 > minuto; teste de carga no ar sem erro (o plano → *Depois do Bloco G*).
-> **A atualização das bibliotecas, etapa 1, no ar desde 25/10/2026** (`f5e8cd1`, revisão
-> `jilson-prod-00030`), conferida de fora: o site, o login (401 com senha errada), os dados do curso e a
-> cobrança sem login (401). As etapas seguintes: o plano → *A atualização de todas as bibliotecas*.
+> **A atualização das bibliotecas, etapas 1 e 2, no ar desde 25/10/2026** (`f5e8cd1`, revisão
+> `jilson-prod-00030`; `fc4a018`, revisão `jilson-prod-00031`), conferidas de fora: o site, o login (401
+> com senha errada), os dados do curso e a cobrança sem login (401); o alerta do Sentry 11 ligou no ar. As etapas seguintes: o plano → *A atualização de todas as bibliotecas*.
 > **Publicado em 24–25/10/2026:** `d6c2906` — o endereço do CDN do Bunny corrigido (P105) e a
 > conferência dele no CI; `f09a903` — o download do arquivo da aula em pedaços (o Cloud Run recusava
 > acima de 32 MB); `294b106` — o segundo mais novo vence entre aparelhos. Conferidos de fora (o site
@@ -722,9 +722,26 @@
         carregar arquivos, então o teste do iPhone antigo (`compat.test.tsx`) passou a escondê-la só do
         código do app — as três mutações do reforço reprovam; (3) o dotenv 18 avisa a cada carga, e o
         `test-env.ts` o silencia. O Vitest 5 limpa o registro dos dublês entre testes: nenhum teste
-        dependia disso. Os quatro gates verdes (936 testes de tela, 1.278 de servidor). Falta publicar.
-  - [ ] **Etapa 3 — React 19**, com `@types/react` 19, React Router 7, `@hookform/resolvers` 6 e
-        `@vitejs/plugin-react` 6.
+        dependia disso. Os quatro gates verdes (936 testes de tela, 1.278 de servidor). **No ar desde
+        25/10/2026** (`fc4a018`, revisão `jilson-prod-00031`), conferida de fora; o alerta do Sentry ligou.
+  - [x] **Etapa 3 — React 19**, com `@types/react` 19, React Router 7, `@hookform/resolvers` 6 e
+        `@vitejs/plugin-react` 6. *(26/10/2026.)* Notas lidas (React Router 6→7, `@hookform/resolvers`
+        4, 5 e 6). React 19.3, React Router 7.18 e plugin-react 6.1 entraram. **Achados:** (1) o npm
+        deixou **dois Reacts** instalados (o 18 velho na pasta comum, usado pelo arrastar-e-soltar e
+        outras peças) — tirados do registro das bibliotecas, reinstalado: um React só; (2) o
+        **`@hookform/resolvers` ficou na 5.9.2**: a 6 só muda o suporte ao Effect (que não usamos), e
+        a lista de peças opcionais dela trava a instalação do npm (ERESOLVE); (3) o pacote do React
+        Router passou a ser `react-router` (65 arquivos trocados; o `react-router-dom` saiu); (4) o
+        React Router 7 segura a tela antiga até a nova carregar — **desligado** (`useTransitions={false}`
+        no `main.tsx`), para a troca de tela ficar como era; (5) a conferência nova do formulário de
+        avisos separa o digitado do conferido: os tipos do editor de avisos foram acertados, o
+        comportamento é o mesmo. **O pacote que o aluno baixa cresceu 28,6 KB compactado (+6,6%),** do
+        React 19 e do React Router 7. **Aparelho antigo, medido no pacote montado:** a única função nova
+        do navegador que entrou é o `reportError` (iOS 15.4), e as duas chamadas conferem antes se ela
+        existe — nada para o `compat.ts`. Os dois avisos de segurança do `react-router` saíram do
+        `npm audit`. Os quatro gates verdes (936 de tela, 1.278 de servidor), o E2E no computador (7 de
+        7), e as mutações dos formulários (sem a conferência, o login e o editor de avisos reprovam).
+        Falta publicar.
   - [ ] **Etapa 4 — Zod 4** (o `core`, o site e o servidor): as mensagens que o aluno vê ficam iguais.
   - [ ] **Etapa 5 — o visual: Tailwind 4, `tailwind-merge` 3 e os ícones (`lucide-react` 1)** — área do
         Antigravity; prints antes e depois das telas principais, e o operador confere antes de publicar.

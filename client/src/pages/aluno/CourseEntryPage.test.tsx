@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { fireEvent, screen } from "@testing-library/react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router";
 import { renderWithProviders } from "@/test-utils";
 
 const getEntradaDoCurso = vi.fn();

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { screen } from "@testing-library/react";
-import { useParams } from "react-router-dom";
+import { useParams } from "react-router";
 import { renderWithProviders } from "@/test-utils";
 import type { PaginaDaAula } from "@/lib/api";
 

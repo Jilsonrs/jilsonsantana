@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { CreditCard } from "lucide-react";
 import type { CartaoDaAssinatura } from "@jilson/core";
 import { Button } from "@/components/ui/button";

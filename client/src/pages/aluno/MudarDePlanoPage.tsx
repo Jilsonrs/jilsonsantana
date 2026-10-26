@@ -1,4 +1,4 @@
-import { Link, Navigate } from "react-router-dom";
+import { Link, Navigate } from "react-router";
 import { Plano, SituacaoDoFaturamento } from "@jilson/core";
 import { ArrowLeft } from "lucide-react";
 import { PageContainer, PageHeader, PageSection } from "@/components/layout/PageLayout";
