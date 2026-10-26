@@ -16,7 +16,7 @@ export const REPETIDOS_DO_REGISTRO: Record<string, string> = {
   layers: "stack-2",
   zap: "bolt",
   "wand-sparkles": "wand",
-  "bar-chart-3": "bar-chart",
+  "chart-column": "bar-chart",
   "circle-check": "check-circle",
 };
 

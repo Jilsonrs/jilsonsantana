@@ -1,6 +1,6 @@
-import { Youtube } from "lucide-react";
 import { itensDoRodape } from "@/lib/footer";
 import { useTextosComuns } from "@/lib/common-texts";
+import { IconeDoYoutube } from "./IconeDoYoutube";
 
 /**
  * Rodapé do app logado — aluno e admin (decisão do operador, 24/09/2026).
@@ -45,7 +45,7 @@ export function AppFooter() {
                     aria-label="YouTube"
                     className="block rounded-sm transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
-                    <Youtube className="size-5" aria-hidden="true" />
+                    <IconeDoYoutube className="size-5" />
                   </a>
                 ) : (
                   <a

@@ -14,7 +14,7 @@ const VERSAO = join(SRC, "lib", "versao.ts");
 
 /** Os que ficam fora das listas, cada um com o motivo. */
 const EXCECOES: Record<string, string> = {
-  // 381 KB para todo aluno, para servir poucos cursos: não compensa. Se não vier,
+  // 613 KB (Lucide 1, 26/10/2026) para todo aluno, para servir poucos cursos: não compensa. Se não vier,
   // o HighlightIcon mostra o Brilho e a página segue (tem teste). Para o admin, ele
   // vem junto do seletor de ícones, que está na lista do admin.
   "components/content/todos-os-icones": "o ícone tem reserva",

@@ -541,7 +541,7 @@ exceto o item 4, que é página pública.
    `role="listbox"`/`role="option"` na lista e o `aria-activedescendant` — as **setas andam na
    lista sem tirar o cursor da busca**, Enter escolhe, Esc fecha e devolve o foco ao botão. **Tem
    teste.** E não importe `todos-os-icones.ts` nem `catalogo-de-icones.ts` direto numa tela:
-   eles trazem os 1.488 desenhos, que só entram por `lazy()`.
+   eles trazem os 1.903 desenhos (Lucide 1, 26/10/2026), que só entram por `lazy()`.
 
 27. **A tela de erro** *(05/10, achado do operador: a aula ficava em branco)*:
    `components/ErroDaTela.tsx`, em volta de toda tela, no `Layout`. Se uma tela quebra, o menu
