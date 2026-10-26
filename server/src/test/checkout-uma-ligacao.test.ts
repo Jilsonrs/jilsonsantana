@@ -84,7 +84,8 @@ describe("assinar com o banco aceitando UMA ligação", () => {
     }, { timeout: 20_000 });
     await ligacaoPresa;
     try {
-      await expect(prisma.user.count()).rejects.toMatchObject({ code: "P2024" });
+      // A recusa do `pg` por falta de ligação livre (no Prisma 5, o código P2024).
+      await expect(prisma.user.count()).rejects.toThrow("timeout exceeded when trying to connect");
     } finally {
       soltar();
       await transacao;

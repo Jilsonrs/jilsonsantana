@@ -1,7 +1,7 @@
-import "dotenv/config";
+import "./ambiente.js";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
-import { PrismaClient } from "@prisma/client";
+import { novoPrisma } from "./lib/ligacoes.js";
 import { Role } from "@jilson/core";
 import { ASSINATURA_DE_TESTE, podeTerAssinaturaDeTeste } from "./lib/assinatura-de-teste.js";
 
@@ -16,7 +16,7 @@ import { ASSINATURA_DE_TESTE, podeTerAssinaturaDeTeste } from "./lib/assinatura-
 // a hash risks a mismatch where the row exists but the admin can't sign in).
 // Role is then promoted to admin via Prisma (the column defaults to "member").
 
-const prisma = new PrismaClient();
+const prisma = novoPrisma();
 
 const seedAuth = betterAuth({
   secret: process.env.BETTER_AUTH_SECRET,

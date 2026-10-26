@@ -1,6 +1,6 @@
 import { BlockList, isIP } from "node:net";
 import type { NextFunction, Request, RequestHandler, Response } from "express";
-import type { Prisma } from "@prisma/client";
+import type { Prisma } from "./prisma.js";
 import { ipKeyGenerator, rateLimit, type Options } from "express-rate-limit";
 import { LojaNoBanco } from "./loja-de-tentativas.js";
 

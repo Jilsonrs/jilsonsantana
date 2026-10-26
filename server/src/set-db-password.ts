@@ -1,6 +1,6 @@
 import { config as loadEnv } from "dotenv";
 import { readFileSync, writeFileSync } from "node:fs";
-import { PrismaClient } from "@prisma/client";
+import { novoPrisma } from "./lib/ligacoes.js";
 
 // Grava a senha do Postgres nas connection strings de um arquivo de env e
 // PROVA que ela conecta — em vez de anunciar sucesso.
@@ -70,10 +70,12 @@ if (!url) {
   process.exit(1);
 }
 
-const prisma = new PrismaClient({ datasourceUrl: url });
-
-async function main(): Promise<void> {
+async function main(endereco: string): Promise<void> {
+  // Dentro do try: um endereço que nem se lê também restaura o arquivo (revisão de segurança,
+  // 26/10/2026); e o erro do `novoPrisma` não leva o endereço.
+  let prisma: ReturnType<typeof novoPrisma> | undefined;
   try {
+    prisma = novoPrisma(endereco);
     await prisma.$queryRaw`select 1`;
     console.log(`✓ conexão VERIFICADA — ${envFile} atualizado (ref ${expectedRef}).`);
   } catch (err: unknown) {
@@ -84,8 +86,9 @@ async function main(): Promise<void> {
     // linhas, depois do code frame. Pegar a linha 0 devolvia string vazia — foi
     // o que apagou o diagnóstico na primeira tentativa.
     if (err instanceof Error) {
-      // O código (P1000 = auth recusada, P1001 = servidor inalcançável,
-      // P1002 = timeout) distingue "senha errada" de "rede/endpoint errado".
+      // O código distingue "senha errada" de "rede/endpoint errado". No Prisma 7, pelo `pg`
+      // (medido em 26/10/2026): senha errada = P2010, com o 28P01 do Postgres na mensagem;
+      // servidor que não responde = ECONNREFUSED. (P1000/P1001 são do comando `prisma`.)
       const code = (err as { errorCode?: string; code?: string }).errorCode
         ?? (err as { code?: string }).code;
       if (code) console.error(`  código: ${code}`);
@@ -101,12 +104,12 @@ async function main(): Promise<void> {
     }
     process.exitCode = 1;
   } finally {
-    await prisma.$disconnect();
+    await prisma?.$disconnect();
   }
 }
 
 // O `main` trata o que pode falhar; isto cobre o que escapar dele (o fechar do banco, no fim).
-main().catch(() => {
+main(url).catch(() => {
   console.error("✗ falha inesperada ao encerrar");
   process.exitCode = 1;
 });

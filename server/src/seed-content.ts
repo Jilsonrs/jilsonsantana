@@ -1,4 +1,4 @@
-import "dotenv/config";
+import "./ambiente.js";
 import { prisma } from "./lib/prisma.js";
 
 // ── SMOKE SEED — disposable example content (Phase 2 / Block 2) ───────────────

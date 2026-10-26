@@ -46,7 +46,8 @@ export default function globalSetup(): void {
   // 2. Reset + 3. seed: os MESMOS comandos da suíte de servidor, não um seed
   //    "parecido". Seed duplicado faz o E2E testar um mundo que o servidor não
   //    tem, e a divergência aparece meses depois como falha intermitente.
-  run("npx", ["prisma", "migrate", "reset", "--force", "--skip-seed"], "migrate reset");
+  run("npx", ["prisma", "migrate", "reset", "--force"], "migrate reset");
+  run("npx", ["tsx", "src/test/fuso-utc.ts"], "fuso UTC");
   run("npx", ["tsx", "src/seed.ts"], "seed");
 
   process.stdout.write("[e2e-setup] pronto\n");

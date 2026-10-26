@@ -1,7 +1,7 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { emailOTP } from "better-auth/plugins";
-import { PrismaClient } from "@prisma/client";
+import { novoPrisma } from "./ligacoes.js";
 import { Role, TAMANHO_MAXIMO_DA_SENHA, TAMANHO_MINIMO_DA_SENHA, TENTATIVAS_DO_CODIGO, VALIDADE_DO_CODIGO_EM_MINUTOS } from "@jilson/core";
 import { enviarCodigo } from "./codigo-por-email.js";
 import { CABECALHO_DO_IP, ipDoPedido } from "./limite-de-tentativas.js";
@@ -21,7 +21,7 @@ import { consumirTentativaDeLogin } from "./loja-de-tentativas.js";
 //   native Prisma enum — avoids friction on BA CLI regen). `input: false` keeps
 //   role out of user-settable signup input.
 
-const prisma = new PrismaClient();
+const prisma = novoPrisma();
 
 // Dev-only trusted origins for Better Auth's CSRF check. The browser may reach
 // the Vite client via localhost, 127.0.0.1, or (in a GitHub Codespace) the

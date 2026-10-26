@@ -2,14 +2,19 @@
 // Run "npm --workspace server run db:pull" (with DATABASE_URL set) to sync from the database.
 // Run "npm --workspace server run db:generate" after any schema change.
 
+// Prisma 7 (26/10/2026): o cliente é gerado DENTRO do código (`src/generated/prisma`, fora do
+// git) e não mais em node_modules; importe de `lib/prisma.ts`. O endereço do banco não mora mais
+// aqui: o das migrations está no `prisma.config.ts` (o DIRECT_URL), e o do site vai pelo adaptador
+// do `pg` em `lib/prisma.ts` (o DATABASE_URL).
 generator client {
-  provider = "prisma-client-js"
+  provider            = "prisma-client"
+  output              = "../src/generated/prisma"
+  moduleFormat        = "esm"
+  importFileExtension = "js"
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider = "postgresql"
 }
 
 // Phase 2 — content-model enums. Mirror core/src/constants/content.ts 1:1 (the

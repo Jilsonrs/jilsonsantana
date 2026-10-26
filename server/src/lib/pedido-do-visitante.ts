@@ -1,4 +1,4 @@
-import type { Prisma } from "@prisma/client";
+import type { Prisma } from "./prisma.js";
 import { generateId } from "better-auth";
 import { Role } from "@jilson/core";
 import { assinaturaDaAcesso } from "./acesso.js";

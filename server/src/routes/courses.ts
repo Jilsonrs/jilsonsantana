@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "../lib/prisma.js";
 import { ContentStatus, LessonKind, contarPalavras, courseCreateSchema, courseUpdateSchema } from "@jilson/core";
 import { oQueOCursoInclui } from "../lib/inclui.js";
 import { prisma } from "../lib/prisma.js";

@@ -74,9 +74,15 @@ jobs:
       - name: Executar migrations no Cloud Run Job
         run: |
           IMAGE="${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_ARTIFACT_REPOSITORY }}/app:${{ github.event.workflow_run.head_sha }}"
+          # O comando do job mora AQUI, versionado (Prisma 7, 26/10/2026): o Prisma 7 lê o banco
+          # da configuração (`server/prisma.config.ts`, o DIRECT_URL do cofre). E é o `prisma`
+          # instalado na imagem (o 7) que roda: um `npx prisma` sem ele baixaria o mais novo do
+          # npm, que hoje é o Prisma 8 e não lê o nosso esquema.
           gcloud run jobs update ${{ vars.GCP_MIGRATE_JOB_NAME }} \
             --image="$IMAGE" \
             --region="${{ vars.GCP_REGION }}" \
+            --command=npx \
+            --args=--no-install,prisma,migrate,deploy,--config,server/prisma.config.ts \
             --quiet
           gcloud run jobs execute ${{ vars.GCP_MIGRATE_JOB_NAME }} \
             --region="${{ vars.GCP_REGION }}" \

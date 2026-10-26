@@ -1,4 +1,4 @@
-import type { Prisma } from "@prisma/client";
+import type { Prisma } from "./prisma.js";
 import { DuracaoDoDesconto, type AssinarInput } from "@jilson/core";
 import { prisma } from "./prisma.js";
 import { assinaturaDaAcesso, cobrancaAtrasada, temAcessoAtivo } from "./acesso.js";

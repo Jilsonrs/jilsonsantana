@@ -1,5 +1,5 @@
 import { Router, type Response } from "express";
-import type { Prisma } from "@prisma/client";
+import type { Prisma } from "../lib/prisma.js";
 import { announcementSchema, type AnnouncementInput } from "@jilson/core";
 import { prisma } from "../lib/prisma.js";
 import { requireAdmin } from "../middleware/auth.js";

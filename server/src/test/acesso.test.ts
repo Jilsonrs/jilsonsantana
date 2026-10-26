@@ -170,6 +170,9 @@ describe("onde a assinatura de teste pode nascer", () => {
     "postgresql://u:p@evil.com:5432/localhost",
     // o id do branch dev como prefixo de outro host
     "postgresql://u:p@ep-soft-base-b8waj57h-evil.com/x",
+    // "localhost" no servidor, mas o `?host=` manda o `pg` para produção (26/10/2026)
+    "postgresql://u:p@localhost:5432/x?host=ep-muddy-hill-b8oromcw-pooler.c-4.us-east-1.aws.neon.tech",
+    "postgresql://u:p@localhost:5432/x?hostaddr=203.0.113.9",
     "não é url",
     undefined,
   ])("não: %s", (url) => {

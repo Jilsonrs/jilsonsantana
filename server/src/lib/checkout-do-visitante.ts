@@ -1,5 +1,5 @@
 import { randomBytes, randomUUID } from "node:crypto";
-import type { Prisma } from "@prisma/client";
+import type { Prisma } from "./prisma.js";
 import { DuracaoDoDesconto, type AssinarSemLoginInput } from "@jilson/core";
 import { prisma } from "./prisma.js";
 import { sincronizarSeLivre } from "./assinaturas.js";

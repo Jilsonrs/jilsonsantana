@@ -26,7 +26,8 @@ const PROMESSAS = {
 };
 
 export default tseslint.config(
-  { ignores: ["**/dist/**", "**/node_modules/**", "e2e/playwright-report/**", "e2e/test-results/**"] },
+  // `server/src/generated`: o cliente que o Prisma 7 gera (não é código nosso, nem fica no git).
+  { ignores: ["**/dist/**", "**/node_modules/**", "e2e/playwright-report/**", "e2e/test-results/**", "server/src/generated/**"] },
   { linterOptions: { reportUnusedDisableDirectives: "error" } },
   {
     // As regras de promessa leem os TIPOS: cada arquivo usa o `tsconfig.json` do seu pacote.

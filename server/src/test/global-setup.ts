@@ -35,9 +35,11 @@ export default function setup(): void {
     `[test-setup] trava ok — banco local em ${new URL(process.env.DATABASE_URL!).host}\n`,
   );
 
-  // 2. Reset. `--skip-seed` é explícito: hoje não há `prisma.seed` configurado,
-  //    mas se alguém adicionar depois, o seed rodaria duas vezes sem isto.
-  run("npx", ["prisma", "migrate", "reset", "--force", "--skip-seed"], "migrate reset");
+  // 2. Reset. Desde o Prisma 7 o reset nunca semeia (o `--skip-seed` deixou de existir) nem
+  //    gera o cliente: o seed vem logo abaixo, e o cliente já foi gerado (`db:generate`).
+  run("npx", ["prisma", "migrate", "reset", "--force"], "migrate reset");
+  // O banco de teste em UTC, como o Neon (`lib/prisma.ts` → conferirFusoDoBanco).
+  run("npx", ["tsx", "src/test/fuso-utc.ts"], "fuso UTC");
 
   // 3. Migrations já vêm com o reset (ele reaplica o histórico inteiro), então o
   //    que falta é semear: admin + member, lidos do .env.test.
