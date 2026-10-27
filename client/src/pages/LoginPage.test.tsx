@@ -343,3 +343,41 @@ describe("LoginPage — erros clássicos", () => {
     expect(screen.queryByRole("button", { name: "Entrando…" })).toBeNull();
   });
 });
+
+// "JÁ TEM CONTA? ENTRAR" (etapa 4.7, passo 6e — decisão do operador, 27/10/2026): da tela pública de
+// assinar, a pessoa entra e vai à tela de assinar do app. LISTA FECHADA: o endereço nunca escolhe um
+// destino de fora dela — o que não está na lista vai para o Início.
+describe("LoginPage — para onde ir depois de entrar", () => {
+  function renderComDestinos(route: string) {
+    return renderWithProviders(<LoginPage />, {
+      route,
+      path: "/login",
+      extraRoutes: [
+        { path: "/inicio", element: <div>HOME DO ALUNO</div> },
+        { path: "/aluno/assinar", element: <div>TELA DE ASSINAR</div> },
+      ],
+    });
+  }
+
+  it("com ?depois=assinar: depois de entrar, a tela de assinar do app", async () => {
+    renderComDestinos("/login?depois=assinar");
+    preencher({ email: "aluno@exemplo.com", senha: "minhasenha" });
+    enviar();
+    expect(await screen.findByText("TELA DE ASSINAR")).toBeTruthy();
+  });
+
+  it("já logado e com ?depois=assinar: direto para a tela de assinar", async () => {
+    useSession.mockReturnValue({ data: { user: { id: "u1" } }, isPending: false, refetch });
+    renderComDestinos("/login?depois=assinar");
+    expect(await screen.findByText("TELA DE ASSINAR")).toBeTruthy();
+  });
+
+  for (const depois of ["https://outro-site.com", "//outro-site.com", "/admin", "assinar2", ""]) {
+    it(`com ?depois=${depois || "(vazio)"}: o Início — nunca outro destino`, async () => {
+      renderComDestinos(`/login?depois=${encodeURIComponent(depois)}`);
+      preencher({ email: "aluno@exemplo.com", senha: "minhasenha" });
+      enviar();
+      expect(await screen.findByText("HOME DO ALUNO")).toBeTruthy();
+    });
+  }
+});

@@ -19,6 +19,8 @@ export const PLANOS = [Plano.MENSAL, Plano.ANUAL] as const;
  */
 export const TELA_DE_ASSINAR = "/aluno/assinar";
 export const TELA_DE_CONCLUIDO = "/aluno/assinar/concluido";
+/** A tela de depois do pagamento de quem assinou SEM CONTA (etapa 4.7, passo 6e): página do servidor com o app no meio. */
+export const TELA_DE_CONCLUIDO_SEM_LOGIN = "/assinar/concluido";
 
 /** Um plano como a tela de assinar o mostra. O valor vem em CENTAVOS, como a Stripe guarda. */
 export type PlanoDaAssinatura = { plano: Plano; centavos: number; moeda: string };

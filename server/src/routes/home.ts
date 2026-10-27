@@ -5,6 +5,7 @@ import { getDict } from "../lib/dict.js";
 import { loadSession } from "../middleware/auth.js";
 import { convidaAReativar, temAcessoAtivo } from "../lib/acesso.js";
 import { renderHome, type HomeCourse } from "../views/home.js";
+import { assinaturaSemLoginNoAr } from "./billing-sem-login.js";
 
 const router = Router();
 
@@ -137,6 +138,7 @@ router.get("/", async (req, res) => {
       logado: sessao !== null,
       assinante,
       reativar,
+      vendaSemLogin: assinaturaSemLoginNoAr(),
       testimonials,
       faq,
     }),

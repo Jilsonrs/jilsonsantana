@@ -94,6 +94,8 @@ export const assinarSemLoginSchema = z.object({
   tentativa: z.string().trim().min(1).max(64).nullish().catch(undefined),
 });
 export type AssinarSemLoginInput = z.infer<typeof assinarSemLoginSchema>;
+/** O corpo como a TELA PÚBLICA o manda (o CPF ou CNPJ é o texto digitado; o servidor o confere). */
+export type CorpoDeAssinarSemLogin = z.input<typeof assinarSemLoginSchema>;
 
 /**
  * Corpo de `POST /api/billing/visitante/confirmacao` — "o pagamento já valeu?", a pergunta da tela de

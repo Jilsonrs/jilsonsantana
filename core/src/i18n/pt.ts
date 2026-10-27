@@ -533,6 +533,17 @@ export const pt = {
       termosDeUso: "Termos de Uso",
       politicaDePrivacidade: "Política de Privacidade",
       incluidoTitulo: "O que está incluído",
+      // SÓ DA TELA PÚBLICA (etapa 4.7, passo 6e): o visitante, sem conta. Textos APROVADOS pelo operador
+      // em 27/10/2026 (P81). O aviso de e-mail inválido é o da tela de entrar (`login.emailInvalido`).
+      email: "Seu e-mail",
+      emailAjuda: "É com ele que você entra na escola.",
+      // "Já tem conta? Entrar" — "Entrar" é o link (leva ao login e, depois, à tela de assinar do app).
+      jaTemConta: "Já tem conta?",
+      entrar: "Entrar",
+      emailJaTemConta: "Este e-mail já tem conta. Entre para assinar.",
+      novidades: "Quero receber novidades e ofertas da escola por e-mail.",
+      // O mesmo e-mail assinando em outra aba (`Ocupada`).
+      ocupadaOutraAba: "Este e-mail já tem uma assinatura em andamento em outra aba. Termine por lá ou aguarde um instante.",
       jaAssinante: "Você já é assinante.",
       irParaInicio: "Ir para o Início",
       confirmando: "Confirmando sua assinatura…",

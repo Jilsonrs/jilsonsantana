@@ -5056,9 +5056,26 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                   pedido · a renovação com valor mesmo com código · o total ignorando o código · a
                   recusa do servidor virando erro geral · os Termos na mesma aba · a lista que nunca
                   aparece · a lista sem as edições do admin): as oito reprovam.
-            - [ ] **6e — O visitante assina e cria a senha**: a tentativa só na memória e no
-                  `sessionStorage`; `/assinar/concluido`; "Já tem conta? Entrar"
-                  (`/login?depois=assinar`, destinos numa lista fechada); os botões da home.
+            - [x] **6e1 — O visitante assina** *(a 6e foi em duas partes, para caber)*: na
+                  `/assinar`, o formulário inteiro no modo sem login (o e-mail com "Já tem conta?
+                  Entrar", o CPF, as novidades desmarcadas, os planos e a prévia pelas rotas do
+                  visitante, a origem do UTM quando guardada); **a tentativa só na memória e no
+                  `sessionStorage`** (`lib/tentativa-de-assinar.ts`), guardada ANTES de o cartão
+                  confirmar, nunca no endereço de volta da Stripe; a do mesmo e-mail segue no novo
+                  clique; as recusas (`JaTemConta` embaixo do e-mail, `Ocupada`,
+                  `MuitosAoMesmoTempo`, `DocumentoInvalido`); depois do pagamento, a tela de
+                  concluído carrega inteira. "Já tem conta? Entrar" → `/login?depois=assinar` →
+                  `/aluno/assinar` (`destinoDepoisDeEntrar`: lista fechada; o resto vai ao Início).
+                  Os botões Assinar da home, para o visitante, levam à `/assinar` — só com a venda
+                  sem login ligada. Testes: `AssinarSemLoginPage.test.tsx` (12), `LoginPage.test.tsx`
+                  (8 novos, com destinos de fora indo ao Início) e `home.test.ts`. Mutação (a
+                  tentativa não guardada · a tentativa no endereço de volta · a tentativa de outro
+                  e-mail seguindo · sem conferir o e-mail · o "já tem conta" virando erro geral · a
+                  prévia pela rota logada · o destino vindo do endereço · o botão da home sem a trava
+                  da venda): as oito reprovam.
+            - [ ] **6e2 — A tela de depois do pagamento** (`/assinar/concluido`): confirma, pede
+                  a senha, entra e vai ao Início; as recusas; sem tentativa guardada, a tela de
+                  entrar.
             - [ ] **6f — Prova e revisão**: `security-vulnerability-reviewer`, mutação, prova no
                   banco de dev com conta descartável e cartões de teste, a tela olhada em dev.
             - [ ] **Depois da publicação com a 6a:** o CPF passa a ser OBRIGATÓRIO no servidor

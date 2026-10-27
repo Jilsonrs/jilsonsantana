@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { DuracaoDoDesconto, TELA_DE_CONCLUIDO, type DescontoDoCodigo, type Plano } from "@jilson/core";
-import { getPlanosDaAssinatura, getPlanosSemLogin, getPreviaDaAssinatura, getSituacaoDaAssinatura } from "@/lib/api";
+import { getPlanosDaAssinatura, getPlanosSemLogin, getPreviaDaAssinatura, getPreviaSemLogin, getSituacaoDaAssinatura } from "@/lib/api";
 import type { AppTexts } from "@/lib/language";
 
 // ASSINAR (Fase 4, etapa 4.2): os endereços, o dinheiro por extenso e as três leituras da tela.
@@ -44,10 +44,11 @@ export function usePlanosSemLogin() {
  * pedido gasta uma das 10 tentativas de 15 minutos, e quem só comparou os planos pararia no limite.
  * Não perde nada: o servidor confere o código de novo ao assinar, e o `CodigoInvalido` relê a prévia.
  */
-export function usePrevia(plano: Plano, codigo: string | null) {
+export function usePrevia(plano: Plano, codigo: string | null, semLogin = false) {
   return useQuery({
-    queryKey: ["billing", "previa", plano, codigo],
-    queryFn: () => getPreviaDaAssinatura({ plano, codigo: codigo ?? "" }),
+    // `semLogin`: a tela pública pergunta pela rota do visitante (etapa 4.7, passo 6e).
+    queryKey: ["billing", "previa", semLogin ? "sem-login" : "logado", plano, codigo],
+    queryFn: () => (semLogin ? getPreviaSemLogin : getPreviaDaAssinatura)({ plano, codigo: codigo ?? "" }),
     enabled: codigo !== null,
     staleTime: Infinity,
     refetchOnWindowFocus: false,

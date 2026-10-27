@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Navigate } from "react-router";
 import { useSession } from "@/lib/auth-client";
 import { useT } from "@/lib/language";
-import { POS_LOGIN } from "@/lib/acesso-por-codigo";
+import { useDestinoDepoisDeEntrar } from "@/lib/acesso-por-codigo";
 import { MolduraDeAcesso } from "@/components/acesso/MolduraDeAcesso";
 import { EntrarComSenha } from "@/components/acesso/EntrarComSenha";
 import { EntrarComCodigo } from "@/components/acesso/EntrarComCodigo";
@@ -17,10 +17,13 @@ export function LoginPage() {
   const t = useT();
   const { data: session, isPending } = useSession();
   const [modo, setModo] = useState<Modo>({ tipo: "senha" });
+  // Depois de entrar: o Início, ou a tela de assinar quando se chegou pelo "Já tem conta? Entrar"
+  // (lista fechada — `lib/acesso-por-codigo.ts`).
+  const destino = useDestinoDepoisDeEntrar();
 
   // Already signed in -> skip the form.
   if (!isPending && session) {
-    return <Navigate to={POS_LOGIN} replace />;
+    return <Navigate to={destino} replace />;
   }
 
   return (

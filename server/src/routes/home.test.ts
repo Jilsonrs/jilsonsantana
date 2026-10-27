@@ -73,7 +73,7 @@ describe("Home pública (SSR)", () => {
   });
 
   // OS BOTÕES ASSINAR (Fase 4, etapa 4.2 — decisão do operador, 09/10/2026): com login, levam
-  // à tela de assinar; sem login continuam como no mock, sem ação (o visitante é a etapa 4.7).
+  // à tela de assinar do app; sem login, à tela pública (etapa 4.7, passo 6e), com a venda ligada.
   describe("os botões Assinar", () => {
     const paraATelaDeAssinar = '<form method="get" action="/aluno/assinar" style="display: contents;"><button  class="btn"';
     const entrar = async (): Promise<string[]> => {
@@ -101,13 +101,34 @@ describe("Home pública (SSR)", () => {
       expect(res.text).toContain(`${paraATelaDeAssinar} style="padding: 24px 64px; font-size: 1.35rem;">Assinar</button></form>`);
     });
 
-    it("SEM sessão: nenhum botão leva a lugar nenhum — a vitrine do visitante e do Google não muda", async () => {
+    // O VISITANTE (etapa 4.7, passo 6e): com a venda sem login ligada, os botões levam à tela
+    // PÚBLICA de assinar; desligada (produção, até o passo 8), continuam sem ação, como no mock.
+    const paraATelaPublica = '<form method="get" action="/assinar" style="display: contents;"><button  class="btn"';
+    it("SEM sessão, com a venda sem login ligada: os dois botões levam à tela pública de assinar — os mesmos botões do mock", async () => {
       const res = await request(servidor).get("/");
+      expect(res.text.split(paraATelaPublica).length - 1).toBe(2);
       expect(res.text).not.toContain("/aluno/assinar");
-      expect(res.text).toContain('<button  class="btn" style="width: 100%;">Assinar</button>');
+      expect(res.text).toContain(`${paraATelaPublica} style="width: 100%;">Assinar</button></form>`);
+      expect(res.text).toContain(`${paraATelaPublica} style="padding: 24px 64px; font-size: 1.35rem;">Assinar</button></form>`);
       // Para o visitante e o robô do Google, a resposta não ganha cabeçalho nenhum.
       expect(res.headers["cache-control"]).toBeUndefined();
-      expect(res.text).toContain('<button  class="btn" style="padding: 24px 64px; font-size: 1.35rem;">Assinar</button>');
+    });
+
+    it("SEM sessão, em produção com a venda desligada: nenhum botão leva a lugar nenhum — como antes", async () => {
+      const antes = { NODE_ENV: process.env.NODE_ENV, ASSINAR_SEM_LOGIN: process.env.ASSINAR_SEM_LOGIN };
+      process.env.NODE_ENV = "production";
+      delete process.env.ASSINAR_SEM_LOGIN;
+      try {
+        const res = await request(servidor).get("/");
+        expect(res.text).not.toContain('action="/assinar"');
+        expect(res.text).not.toContain("/aluno/assinar");
+        expect(res.text).toContain('<button  class="btn" style="width: 100%;">Assinar</button>');
+        expect(res.text).toContain('<button  class="btn" style="padding: 24px 64px; font-size: 1.35rem;">Assinar</button>');
+      } finally {
+        process.env.NODE_ENV = antes.NODE_ENV;
+        if (antes.ASSINAR_SEM_LOGIN === undefined) delete process.env.ASSINAR_SEM_LOGIN;
+        else process.env.ASSINAR_SEM_LOGIN = antes.ASSINAR_SEM_LOGIN;
+      }
     });
 
     // "REATIVAR ASSINATURA" (etapa 4.4 — decisão do operador, 10/10/2026): quem está logado, já

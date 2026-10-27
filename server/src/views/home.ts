@@ -47,6 +47,9 @@ export interface HomeView {
   /** Quem está logado já foi assinante e hoje está sem acesso: os botões dizem "Reativar
    *  assinatura" (decisão do operador, 10/10/2026). Sem login, nunca. */
   reativar: boolean;
+  /** A venda sem login está no ar (`assinaturaSemLoginNoAr()`): os botões do VISITANTE levam à tela
+   *  pública de assinar. Desligada (produção, até o passo 8 da etapa 4.7), ficam sem ação. */
+  vendaSemLogin: boolean;
   /** Só os PUBLICADOS. Vazia = a seção não aparece. */
   testimonials: HomeTestimonial[];
   /** Só os PUBLICADOS. Vazia = a seção não aparece. */
@@ -73,6 +76,7 @@ export function renderHome({
   logado,
   assinante,
   reativar,
+  vendaSemLogin,
   testimonials,
   faq,
 }: HomeView): string {
@@ -84,16 +88,18 @@ export function renderHome({
   // (`core/src/constants/site.ts`, onde está o porquê).
   const rotas = ROTAS_PUBLICAS;
 
-  // O BOTÃO ASSINAR (decisão do operador, 09/10/2026): com login, leva à tela de assinar; sem
-  // login continua sem ação, até a etapa 4.7. É o MESMO botão do mock aprovado — só passa a
-  // estar dentro de um formulário que apenas navega (`display: contents`: ele não entra no
-  // desenho). Onde o botão está desligado, continua.
+  // O BOTÃO ASSINAR (decisão do operador, 09/10/2026): com login, leva à tela de assinar do app;
+  // sem login, à tela PÚBLICA de assinar (etapa 4.7, passo 6e) — só com a venda sem login ligada;
+  // desligada (produção, até o passo 8), continua sem ação, como no mock. É o MESMO botão do mock
+  // aprovado — só passa a estar dentro de um formulário que apenas navega (`display: contents`: ele
+  // não entra no desenho). Onde o botão está desligado, continua.
   // Quem já foi assinante e está sem acesso lê "Reativar assinatura" (decisão dele, 10/10/2026);
   // "Assinar" fica para a primeira vez — e para o visitante sem login, sempre.
   const botaoAssinar = (textos: { btn: string; btnReactivate: string }, estilo: string): string => {
     const rotulo = logado && reativar ? textos.btnReactivate : textos.btn;
     const botao = `<button ${canSubscribe ? "" : "disabled"} class="btn" style="${estilo}">${escapeHtml(rotulo)}</button>`;
-    return logado && canSubscribe ? `<form method="get" action="${TELA_DE_ASSINAR}" style="display: contents;">${botao}</form>` : botao;
+    const destino = logado ? TELA_DE_ASSINAR : vendaSemLogin ? ROTAS_PUBLICAS.assinar : null;
+    return canSubscribe && destino ? `<form method="get" action="${destino}" style="display: contents;">${botao}</form>` : botao;
   };
 
   return `<!DOCTYPE html>

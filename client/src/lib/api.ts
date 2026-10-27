@@ -29,6 +29,8 @@ import type {
   PreviaInput,
   PreviaDaAssinatura,
   CorpoDeAssinar,
+  CorpoDeAssinarSemLogin,
+  AssinaturaSemLogin,
   AssinaturaCriada,
   SituacaoDaAssinatura,
   SincroniaDaConta,
@@ -1014,6 +1016,22 @@ export async function pedirCodigo(corpo: PedirCodigoInput): Promise<CodigoPedido
 /** Os dois planos com o valor lido da Stripe, a chave publicável e as formas de pagamento. */
 export async function getPlanosDaAssinatura(): Promise<PlanosDaAssinatura> {
   const { data } = await client.get<PlanosDaAssinatura>("/billing/planos");
+  return data;
+}
+
+/** A prévia do código para o VISITANTE, sem login (etapa 4.7, passo 6e). Código que não vale: 400 `CodigoInvalido`. */
+export async function getPreviaSemLogin(corpo: PreviaInput): Promise<PreviaDaAssinatura> {
+  const { data } = await client.post<PreviaDaAssinatura>("/billing/visitante/previa", corpo);
+  return data;
+}
+
+/**
+ * Assinar SEM CONTA (etapa 4.7, passo 6e): devolve a TENTATIVA — que abre a conta depois do pagamento —
+ * e, se há o que pagar, o segredo. A tentativa vai só para a memória da página e o `sessionStorage`
+ * (`lib/tentativa-de-assinar.ts`), nunca para o endereço.
+ */
+export async function assinarSemLogin(corpo: CorpoDeAssinarSemLogin): Promise<AssinaturaSemLogin> {
+  const { data } = await client.post<AssinaturaSemLogin>("/billing/visitante/assinatura", corpo);
   return data;
 }
 
