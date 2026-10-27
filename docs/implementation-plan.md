@@ -6156,6 +6156,9 @@ outro aparelho e "daqui a um mês", e o Safari apaga o armazenamento do site em 
 - [ ] LGPD: privacy policy, terms, consent, data export/delete path (in Portuguese only — the
       English versions left on 12/10/2026)
 - [ ] Error/loading states everywhere; security review (subagent) on auth/billing/video
+- [ ] **A proteção na entrada, revista antes da abertura** *(pedido do operador, 27/10/2026)* — conferir
+      com o operador os sinais de ataque e a escada do que ligar (`tech-stack.md` → *Proteção na
+      entrada*), e se algum gatilho já se cumpriu. Nada se liga sem gatilho.
 - [ ] **⚠️ REVISTO em 10/10/2026: a Stripe de verdade entra na etapa 4.3, não aqui.** Com isso, a
       troca de chaves e a limpeza descritas abaixo **deixam de existir** (o banco de produção nunca
       recebe assinatura nem cliente do modo de teste). **O que continua sendo deste item, antes da

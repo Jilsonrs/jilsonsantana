@@ -213,6 +213,49 @@ acima (proteção, cache, certificado próprio), e por isso é opcional.
 | **Memorystore (Redis)** | memória compartilhada entre instâncias | mais de uma instância **e** o banco lento para os contadores | dezenas de US$/mês `[a conferir]` |
 | **Cloud DNS** | o domínio sair da GoDaddy | se a GoDaddy atrapalhar; não há ganho hoje | centavos `[a conferir]` |
 
+**PROTEÇÃO NA ENTRADA — o que já protege, como perceber um ataque e o que ligar, em ordem** *(pedido do
+operador, 27/10/2026: "ficarmos atentos a essa parte e ligarmos o que for necessário quando for
+necessário")*. Nada daqui se liga sem o gatilho cumprido; o detalhe de cada recurso está no mapa acima.
+
+*O que já protege hoje, sem custo a mais:*
+- **A frente do Google** (Cloud Run com o mapeamento de domínio): o cadeado e a primeira barreira contra
+  enxurrada de rede `[conhecido, não medido]`.
+- **Os limites no código, contando no banco** (valem entre as cópias): o login, por endereço; as rotas de
+  cobrança com login, por conta e por endereço; o assinar sem login, por e-mail e por endereço (e no
+  máximo 3 ao mesmo tempo por cópia); o código no e-mail. Os tetos: `server/src/lib/limite-de-tentativas.ts`
+  e `billing.md` → *Limite de tentativas*.
+- **O assinar sem login fica fora do ar** em produção até o `ASSINAR_SEM_LOGIN=true` (passo 8 da etapa
+  4.7) — é a porta mais visada por quem testa cartão roubado.
+- **A Stripe** tem a própria proteção contra fraude no pagamento (o Radar) `[conhecido, não conferido no
+  painel]`.
+- **Tetos de gasto:** no máximo 3 cópias do servidor e 4 unidades no banco — um ataque deixa o site lento
+  antes de deixar a conta alta; e os avisos de gasto (Google, R$ 100; Neon, US$ 20).
+
+*Como perceber um ataque (os sinais):*
+1. E-mail do Sentry **"Site online"**: o site caiu ou parou de responder (3 falhas seguidas).
+2. E-mail do **aviso de gasto do Neon** antes do esperado (o banco acordado ou crescido sem alunos que
+   expliquem).
+3. Na **Stripe**, muitos pagamentos recusados em sequência (teste de cartão).
+4. No painel do **Cloud Run** (aba *Métricas*): as 3 cópias ocupadas por muito tempo, ou a contagem de
+   pedidos disparando, sem alunos que expliquem.
+5. No registro, muitas respostas **429** (os limites do código recusando).
+*A conferência — de onde vêm os pedidos, em quais rotas, de quais endereços — o Claude faz no registro do
+Google, só lendo; é ela que diz qual degrau abaixo serve.*
+
+*O que ligar, em ordem (cada degrau só se o anterior não bastar):*
+
+| Degrau | Gatilho | Custo | Para ligar |
+|---|---|---|---|
+| **1. Ajustar no código** — apertar o teto da rota atacada, barrar o caminho abusado | abuso medido numa rota | zero | horas (uma publicação) |
+| **2. reCAPTCHA** no assinar sem login | teste de cartão ou cadastro por robô medido na tela pública | cota grátis mensal `[a conferir]` | um bloco de código |
+| **3. Balanceador + Cloud Armor** — limite por endereço na borda, bloqueio por país ou endereço, regras prontas contra ataques comuns | enxurrada que os limites do código não seguram (o site lento ou fora por minutos, com as 3 cópias no máximo), ou ataque que se repete | ~US$ 18/mês do balanceador + o Cloud Armor por regra e por pedido `[a conferir]` | uma etapa planejada: endereço do domínio, certificado — de horas a um dia |
+| *Proteção paga contra ataques grandes (Cloud Armor Enterprise)* | só com receita que pague e ataque grande medido | centenas de dólares por mês ou mais `[a conferir]` | — |
+
+**Atenção ao degrau 3:** com o balanceador na frente, o endereço de quem acessa chega por outro caminho —
+a leitura do IP (`ipDoPedido`) precisa ser **medida de novo antes de ligar** (é o gatilho de reabertura
+escrito no `CLAUDE.md` → *Quality Gates*). Sem isso, os limites por endereço juntam todo mundo numa
+contagem só e travam a escola inteira.
+
 **O QUE NÃO SE LIGA, mesmo existindo no Google:**
 - **Cloud SQL / AlloyDB** (banco no Google): o Neon atende, custa centavos, **desliga sozinho quando ninguém usa** e tem o branch de dev (cópia instantânea). O Cloud SQL fica sempre ligado (parado à mão, não liga sozinho) e cada cópia é um banco pago à parte. *Pergunta do operador (22/10/2026, sem alunos ainda): "ficar tudo num lugar só evitaria migrar com a escola funcionando". Resposta registrada:* trocar o banco depois não mexe no código (o Prisma fala com qualquer Postgres) — é copiar os dados e trocar as duas ligações no cofre, numa janela de minutos. *Gatilho: problema no Neon, ou o operador decidir juntar tudo num fornecedor.*
 - **O Neon dentro do Google: não existe** `[FATO — Neon, lista de regiões da conta, 22/10/2026: só AWS e Azure]`. **DECIDIDO (operador, 22/10/2026): o projeto do Neon vai para a AWS da Virgínia** (`aws-us-east-1`), vizinha do `us-east4` do Google — *"é mais perto, e a AWS também é confiável; se um dia eu tiver problema com a Neon, mudamos para o Google"*. Plano → Bloco G, etapa G1b. *Gatilho: problema com o Neon → Cloud SQL.*
