@@ -48,6 +48,16 @@
 > **Publicado em 27/10/2026: `0116461`** (só documentos — a proteção na entrada), **revisão
 > `jilson-prod-00041`**, conferida de fora: o site, a saúde e o curso (200), o login com senha errada
 > (401), o aviso da Stripe sem assinatura (400), o job das migrations com sucesso.
+> **Publicado em 27/10/2026: `4951b03`** (a etapa 4.7, passo 6 — a tela de assinar, de 6a a 6f; ordem do
+> operador: *"ficou bom pode publicar depois ajustamos com o Antigravity"*), **revisão
+> `jilson-prod-00042`**, conferida de fora: a versão nova do app (`mvr43nr8-51a660b2`; antes,
+> `mvpgar4m-f9774573`); o site, a saúde, o curso, as trilhas, os textos comuns e a sessão (200); a
+> assinatura sem login (401); o login com um e-mail que não existe (401); o aviso da Stripe sem
+> assinatura (400); **a venda sem login segue desligada** (`/api/billing/visitante/planos` → 404); o
+> público vê o "Em breve" também na `/assinar` e na `/assinar/concluido`; o job das migrations com
+> sucesso, aplicando a `20261027130000_resumo_da_tentativa` (só dados, sem mudar a estrutura).
+> **Falta:** o operador abrir a `/assinar` no ar (pelo `/__preview`) — só ele vê a página atrás do
+> "Em breve". **Destravado por esta publicação:** o CPF obrigatório no servidor (etapa 4.7, passo 6).
 > **Publicado em 24–25/10/2026:** `d6c2906` — o endereço do CDN do Bunny corrigido (P105) e a
 > conferência dele no CI; `f09a903` — o download do arquivo da aula em pedaços (o Cloud Run recusava
 > acima de 32 MB); `294b106` — o segundo mais novo vence entre aparelhos. Conferidos de fora (o site
@@ -5090,8 +5100,10 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                   encerra guardando a tentativa · o "não confirmado" virando falha geral · sem
                   perguntar de novo · o concluído no Google · o logado indo à tela errada): as oito
                   reprovam.
-            - [ ] **6f — Prova e revisão**: `security-vulnerability-reviewer`, mutação, prova no
+            - [x] **6f — Prova e revisão**: `security-vulnerability-reviewer`, mutação, prova no
                   banco de dev com conta descartável e cartões de teste, a tela olhada em dev.
+                  **FECHADA em 27/10/2026, e o passo 6 publicado no mesmo dia** (`4951b03`, revisão
+                  `jilson-prod-00042` — o *Estado atual*).
                   - [x] **A revisão de segurança** (27/10/2026): nenhum P0; um P1 e três P2.
                   - [x] **O P1 corrigido** *(decisão do operador, no mesmo dia: "10 por cópia")*: com 1
                         processador, cada cópia tinha 3 ligações com o banco, e 3 assinaturas esperando
@@ -5132,6 +5144,8 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                         conta nascendo pela sincronia, a confirmação, a senha criada e o acesso, a
                         repetição recusada (`JaTemSenha`), e o logado com CNPJ (`br_cnpj`); o banco
                         voltou ao retrato de antes.
+                  - [x] **A tela olhada em dev pelo operador** (27/10/2026: *"ficou bom pode publicar
+                        depois ajustamos com o Antigravity"*): o acabamento visual fica para a 6g.
             - [ ] **6g — O ACABAMENTO VISUAL das telas de assinar, pelo Antigravity** *(pedido do
                   operador, 27/10/2026: passar ao Antigravity com um passo a passo; o Claude confere)*.
                   **Só visual** — nada de texto, comportamento, rota ou teste.
