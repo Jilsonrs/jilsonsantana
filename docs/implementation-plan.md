@@ -5003,6 +5003,35 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             CPF na mesma tela é o erro a evitar. **CANCELADOS no mesmo dia, pela etapa 4.6c:**
             o campo País e o aviso com "Avise-me" para quem é de fora (chegaram a ser decididos
             e saíram quando ele tirou a venda para fora do projeto). **Só em português.**
+            **O PLANO DO PASSO 6, APROVADO pelo operador em 27/10/2026** (um commit por parte;
+            *Docs check (context7):* Stripe → `/websites/stripe` → o campo de pagamento não pede
+            o CPF numa conta do Brasil, e mandá-lo nos dados do cartão é proibido — o CPF vai na
+            ficha do cliente (medido, `billing.md`); Better Auth → `/better-auth/better-auth` →
+            antes de mexer na tela de entrar, na 6e):
+            - [x] **6a — O CPF também na assinatura de quem está logado (servidor).**
+                  `POST /api/billing/assinatura` recebe o CPF ou CNPJ e o grava na ficha do
+                  cliente da Stripe com a trava, antes de a assinatura nascer (`checkout.ts`,
+                  reaproveitando `acertarNumeroFiscal`); se o número mudou, a incompleta antiga
+                  não é reaproveitada; a recusa da Stripe é 400 `DocumentoInvalido`; quem a Stripe
+                  diz que já assina não tem a ficha mexida. 7 testes novos em `billing.test.ts`;
+                  mutação (reaproveitar com o CPF trocado · não gravar · recusa virar 500 · mexer
+                  na ficha de quem já assina): as quatro reprovam. **Opcional no servidor nesta
+                  publicação** (a API só acrescenta), e a tela sempre manda.
+            - [ ] **6b — Só o resumo (SHA-256) da tentativa no banco e na Stripe** (servidor +
+                  migration).
+            - [ ] **6c — A página `/assinar` do servidor**, com o menu e o rodapé da home (sem
+                  mudar o HTML dela) e o app montado no meio só com o formulário; com a venda sem
+                  login desligada, nada muda para o visitante.
+            - [ ] **6d — As partes novas do formulário, nas duas telas**: Seus dados, a coluna de
+                  resumo, "O que está incluído" e os textos aprovados no `pt.ts`.
+            - [ ] **6e — O visitante assina e cria a senha**: a tentativa só na memória e no
+                  `sessionStorage`; `/assinar/concluido`; "Já tem conta? Entrar"
+                  (`/login?depois=assinar`, destinos numa lista fechada); os botões da home.
+            - [ ] **6f — Prova e revisão**: `security-vulnerability-reviewer`, mutação, prova no
+                  banco de dev com conta descartável e cartões de teste, a tela olhada em dev.
+            - [ ] **Depois da publicação com a 6a:** o CPF passa a ser OBRIGATÓRIO no servidor
+                  (`assinarSchema`, `core/src/schemas/billing.ts`) — tira o "sem o CPF ainda
+                  assina" e o teste dele.
       - [ ] **Passo 7 — Os e-mails automáticos da assinatura.** A cobrança que falhou (com a
             data da próxima tentativa), o aviso antes de trancar e a assinatura cancelada (com
             o link para reativar). Os textos são do operador. **Depende só do passo 3** — pode

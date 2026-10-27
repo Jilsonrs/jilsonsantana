@@ -21,6 +21,11 @@ export type PreviaInput = z.infer<typeof previaSchema>;
 export const assinarSchema = z.object({
   plano: z.enum(PLANOS),
   codigo: z.string().trim().min(1).max(64).optional(),
+  // O CPF ou CNPJ (etapa 4.7, passo 6 — as duas telas iguais, decisão do operador de 27/10/2026):
+  // vai para a FICHA DO CLIENTE na Stripe, nunca para os dados do cartão. A tela sempre manda.
+  // OPCIONAL só nesta publicação: a aba aberta antes dela ainda assina sem ele (a API só acrescenta
+  // — CLAUDE.md → Rendering Boundary). Vira obrigatório na publicação seguinte (o plano, passo 6).
+  documento: documentoFiscalSchema.optional(),
 });
 export type AssinarInput = z.infer<typeof assinarSchema>;
 

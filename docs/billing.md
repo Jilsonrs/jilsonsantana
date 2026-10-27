@@ -515,8 +515,18 @@ customer's full billing address for tax calculation […] use the Address Elemen
   que muda conforme o país. E a doc diz que o próprio campo de pagamento cuida disso para
   comprador da América Latina: *"The `tax_id` field on the Payment Method `billing_details`
   hash is used to collect and store Latin American buyers' tax identifiers. Stripe Checkout and
-  the Payment Element automatically handle `tax_id` collection."* **Não medido:** em que
-  situação o campo da Stripe mostra o CPF sozinho (o cartão de teste usado até hoje é dos EUA).
+  the Payment Element automatically handle `tax_id` collection."*
+- **MEDIDO em 27/10/2026 (etapa 4.7, passo 6): o campo de pagamento NÃO pede o CPF nesta
+  escola.** `[FATO — context7 /websites/stripe, 27/10/2026: ele só pede o número fiscal quando o
+  comprador da América Latina paga a quem vende FORA da América Latina; "If you set the tax_id value
+  for a transaction that doesn't require it, the API returns the tax_id_prohibited error."]` Medido no
+  campo de verdade, montado como o site o monta (modo `subscription`, R$ 99,90, só cartão, `pt-BR`),
+  com o cartão de teste do Brasil (4000 0007 6000 0002): pede só número, validade, código de
+  segurança e país — e fica completo sem CPF. **Consequência:** o CPF é campo NOSSO (sem risco de
+  dois na tela), e **nunca** vai nos dados do cartão (`billing_details.tax_id`, proibido numa conta
+  do Brasil): vai na **ficha do cliente** (`tax_id_data`, `br_cpf`/`br_cnpj`) — o visitante desde o
+  passo 4, quem está logado desde o passo 6 (`acertarNumeroFiscal`, `server/src/lib/stripe.ts`).
+  *Reabre se a escola passar a vender com uma conta da Stripe fora da América Latina.*
 
 **O que a Udemy e o Mosh mostram na hora de pagar, e a escola:**
 
