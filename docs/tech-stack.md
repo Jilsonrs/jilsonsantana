@@ -164,6 +164,12 @@
 > recursos que ainda podem ser contratados, apareçam as opções"*. **Regra dele para a conta:** só o
 > necessário — o crédito de R$ 1.779 vence em 20/01/2027, e o que for ligado "para testar" vira
 > conta depois. **Quem propõe ligar um recurso daqui traz o gatilho cumprido**, não "seria bom ter".
+> **A conta de faturamento é PAGA desde 26/10/2026** *(decisão do operador)*: era de teste gratuito, e
+> no fim do teste o Google interrompe todos os recursos — o site sairia do ar em 20/01/2027. O crédito
+> que sobrou continua valendo até essa data. *Medido no painel em 26/10/2026:* de R$ 14,30 de uso em
+> outubro (todo do Cloud Run), R$ 12,81 saíram da cota grátis do Cloud Run ("descontos com base em
+> gastos") e R$ 1,49 do crédito. *A verificação de pagamento (R$ 125 retidos e devolvidos) não ficou
+> pendente: se o Google voltar a pedi-la, conferir antes de fazer.*
 > Preço marcado `[medido]` foi lido na página do Google na data; `[a conferir]` é ordem de grandeza —
 > confira no painel antes de orçar (`CLAUDE.md` → *Costs*: preço de fornecedor envelhece).
 

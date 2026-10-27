@@ -647,6 +647,13 @@
       temia (o gasto antes do crédito passar dos R$ 100) não acontece; em troca, durante o crédito ele
       não avisa nada. **Fica como está** *(decisão do operador)*. Registro e gatilho: `tech-stack.md` →
       *Google Cloud*, linha *Orçamento e alertas*.
+- [x] **A conta do Google passa a paga** *(26/10/2026, achado ao conferir o orçamento; decisão do
+      operador)* — era de teste gratuito, e no fim do teste o Google interrompe todos os recursos: o site
+      sairia do ar em 20/01/2027. O operador fez o upgrade pelo painel; a Visão geral diz "Conta paga", sem
+      aviso pendente, e o crédito que sobrou segue valendo até 20/01/2027. O assistente "Get
+      production-ready" que o Google abre em seguida **não foi usado** (cria projetos e permissões novos).
+      O site seguiu no ar durante tudo (conferido de fora: 200). Registro: `tech-stack.md` → *Google
+      Cloud*.
 - [x] **A memória e o tempo de resposta** *(medidos em 25/10/2026)* — decidem a volta da P104. Nas 46 h
       antes do teste: memória no pico de 160 a 220 MB (8 a 11% dos 2 GB), processador até 7%. No teste
       de tamanhos (512 MB a 8 GB): a escola usa 140 a 215 MB em qualquer tamanho, e a memória não muda
