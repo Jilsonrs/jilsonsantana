@@ -1,26 +1,30 @@
-import { useState } from "react";
-import { DuracaoDoDesconto, Plano, type PlanosDaAssinatura } from "@jilson/core";
+import { useState, type ReactNode } from "react";
+import { DuracaoDoDesconto, lerDocumentoFiscal, Plano, type PlanosDaAssinatura } from "@jilson/core";
 import { PageSection } from "@/components/layout/PageLayout";
 import { criarAssinatura } from "@/lib/api";
-import { descreverDesconto, dinheiro, telaDeConcluido, usePrevia } from "@/lib/assinar";
+import { telaDeConcluido, usePrevia } from "@/lib/assinar";
 import { codigoDoErro } from "@/lib/course-form";
 import { passouDoLimite } from "@/lib/faturamento";
 import { useT } from "@/lib/language";
-import { CartaoProvider, type Cartao } from "@/lib/stripe-do-site";
+import { CampoDoCartao, CartaoProvider, type Cartao } from "@/lib/stripe-do-site";
 import { semInterromper } from "@/lib/versao";
 import { BotaoDeAssinar } from "./BotaoDeAssinar";
+import { CampoDoDocumento } from "./CampoDoDocumento";
 import { CodigoPromocional } from "./CodigoPromocional";
 import { EscolhaDoPlano } from "./EscolhaDoPlano";
-import { PagamentoComCartao } from "./PagamentoComCartao";
+import { OQueEstaIncluido } from "./OQueEstaIncluido";
+import { BotaoComCartao } from "./PagamentoComCartao";
+import { ResumoDaAssinatura } from "./ResumoDaAssinatura";
 
 /**
- * ASSINAR — o plano, o código promocional e o cartão (Fase 4, etapa 4.2). Separado da página
- * de propósito: o visitante sem conta (etapa 4.7) vai usar este mesmo formulário.
+ * ASSINAR — os dados, o plano, o código promocional e o cartão (Fase 4, etapa 4.2), com a coluna de
+ * resumo e "O que está incluído" (etapa 4.7, passo 6d). Separado da página de propósito: as duas
+ * telas, a pública e a de quem está logado, são IGUAIS (decisão do operador, 27/10/2026, P80).
  *
- * O site manda ao servidor só QUAL plano e o código. O valor de hoje, com código, é o que a
- * Stripe calculou (`usePrevia`). O envio: confere o cartão → o servidor cria a assinatura → o
- * cartão confirma com o segredo que ele devolveu. Com desconto de 100% PARA SEMPRE não há
- * cartão: a assinatura já nasce ativa (decisão do operador, 09/10/2026).
+ * O site manda ao servidor só QUAL plano, o código e o CPF ou CNPJ. O valor de hoje, com código, é o
+ * que a Stripe calculou (`usePrevia`). O envio: confere o CPF ou CNPJ → confere o cartão → o servidor
+ * cria a assinatura → o cartão confirma com o segredo que ele devolveu. Com desconto de 100% PARA
+ * SEMPRE não há cartão: a assinatura já nasce ativa (decisão do operador, 09/10/2026).
  */
 export function FormularioDeAssinatura({
   dados,
@@ -37,10 +41,11 @@ export function FormularioDeAssinatura({
   const { assinar: t, comum } = useT();
   const [plano, setPlano] = useState<Plano>(Plano.MENSAL);
   const [codigo, setCodigo] = useState<string | null>(null);
+  const [documento, setDocumento] = useState("");
+  const [erroDoDocumento, setErroDoDocumento] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const previa = usePrevia(plano, codigo);
-
   const escolhido = dados.planos.find((p) => p.plano === plano) ?? dados.planos[0];
   if (!escolhido) return null;
   const comCodigo = codigo !== null && previa.data ? previa.data : null;
@@ -53,6 +58,8 @@ export function FormularioDeAssinatura({
 
   async function enviar(cartao: Cartao | null) {
     if (enviando || conferindo) return;
+    // O CPF ou CNPJ primeiro: errado, nada vai ao servidor nem ao cartão.
+    if (!lerDocumentoFiscal(documento)) return setErroDoDocumento(t.documentoInvalido);
     setEnviando(true);
     setErro(null);
     try {
@@ -62,7 +69,7 @@ export function FormularioDeAssinatura({
           const preenchido = await cartao.validar();
           if (!preenchido.ok) return setErro(preenchido.mensagem ?? t.erro);
         }
-        const criada = await criarAssinatura(comCodigo && codigo ? { plano, codigo } : { plano });
+        const criada = await criarAssinatura(comCodigo && codigo ? { plano, codigo, documento } : { plano, documento });
         if (criada.estado === "pagar") {
           // O servidor pede pagamento e a tela não tinha cartão: o código mudou no meio do caminho.
           if (!cartao) {
@@ -79,54 +86,55 @@ export function FormularioDeAssinatura({
       // "CobrancaAtrasada" (etapa 4.6b): a situação relida diz `atrasada`, e a tela de assinar leva ao Faturamento.
       if (motivo === "JaAssinante" || motivo === "CobrancaAtrasada") aoSaberQueJaAssina();
       else if (motivo === "CodigoInvalido") void previa.refetch();
+      // A Stripe recusou o número que o `core` aceitou (o servidor responde 400 `DocumentoInvalido`).
+      else if (motivo === "DocumentoInvalido") setErroDoDocumento(t.documentoInvalido);
       else setErro(passouDoLimite(falha) ? comum.muitasTentativas : t.erro);
     } finally {
       setEnviando(false);
     }
   }
 
-  return (
-    <div className="max-w-2xl space-y-8">
-      <EscolhaDoPlano planos={dados.planos} escolhido={plano} aoEscolher={setPlano} travado={enviando} />
-      <CodigoPromocional
-        aplicado={comCodigo ? codigo : null}
-        recusado={recusado}
-        conferindo={conferindo}
-        travado={enviando}
-        aoAplicar={setCodigo}
-        aoRemover={() => setCodigo(null)}
-      />
-
-      {/* SÓ com código promocional (pedido do operador, 10/10/2026): sem código, o cartão do plano
-          já diz o preço e como é cobrado, e repetir o valor aqui confundia. Com código, o valor
-          de hoje muda — e é o que a Stripe calculou. */}
-      <div aria-live="polite">
-        {comCodigo && (
-          <div className="space-y-1 rounded-xl border border-border/60 bg-card p-4">
-            <p className="flex items-baseline justify-between gap-4">
-              <span className="text-sm text-muted-foreground">{t.hoje}</span>
-              <span className="text-xl font-semibold text-foreground">{dinheiro(centavosHoje, escolhido.moeda)}</span>
-            </p>
-            <p className="text-sm text-muted-foreground">{descreverDesconto(t, comCodigo.desconto, comCodigo.moeda)}</p>
-          </div>
+  // À esquerda, o que se preenche; à direita (no celular, embaixo), o resumo com o botão e a lista.
+  const tela = (botao: ReactNode) => (
+    <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
+      <div className="space-y-8">
+        <PageSection title={t.seusDados} className="pt-0 sm:pt-0">
+          <CampoDoDocumento
+            valor={documento}
+            aoMudar={(valor) => {
+              setDocumento(valor);
+              setErroDoDocumento(null);
+            }}
+            erro={erroDoDocumento}
+            travado={enviando}
+          />
+        </PageSection>
+        <EscolhaDoPlano planos={dados.planos} escolhido={plano} aoEscolher={setPlano} travado={enviando} />
+        <CodigoPromocional
+          aplicado={comCodigo ? codigo : null}
+          recusado={recusado}
+          conferindo={conferindo}
+          travado={enviando}
+          aoAplicar={setCodigo}
+          aoRemover={() => setCodigo(null)}
+        />
+        {!semCartao && (
+          <PageSection title={t.pagamento} className="pt-0 sm:pt-0">
+            <CampoDoCartao />
+          </PageSection>
         )}
       </div>
-
-      {erro && (
-        <p role="alert" className="text-sm text-destructive">
-          {erro}
-        </p>
-      )}
-
-      {semCartao ? (
-        <BotaoDeAssinar enviando={enviando} aoClicar={() => void enviar(null)} reativar={reativar} />
-      ) : (
-        <PageSection title={t.pagamento} className="pt-0 sm:pt-0">
-          <CartaoProvider pedido={{ chavePublicavel: dados.chavePublicavel, centavos: centavosHoje, moeda: escolhido.moeda, formasDePagamento: dados.formasDePagamento }}>
-            <PagamentoComCartao enviando={enviando} aoEnviar={(cartao) => void enviar(cartao)} reativar={reativar} />
-          </CartaoProvider>
-        </PageSection>
-      )}
+      <div className="space-y-8">
+        <ResumoDaAssinatura plano={escolhido} comCodigo={comCodigo} erro={erro} botao={botao} />
+        <OQueEstaIncluido incluido={dados.incluido} />
+      </div>
     </div>
+  );
+
+  if (semCartao) return tela(<BotaoDeAssinar enviando={enviando} aoClicar={() => void enviar(null)} reativar={reativar} />);
+  return (
+    <CartaoProvider pedido={{ chavePublicavel: dados.chavePublicavel, centavos: centavosHoje, moeda: escolhido.moeda, formasDePagamento: dados.formasDePagamento }}>
+      {tela(<BotaoComCartao enviando={enviando} aoEnviar={(cartao) => void enviar(cartao)} reativar={reativar} />)}
+    </CartaoProvider>
   );
 }

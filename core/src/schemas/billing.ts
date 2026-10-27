@@ -28,6 +28,8 @@ export const assinarSchema = z.object({
   documento: documentoFiscalSchema.optional(),
 });
 export type AssinarInput = z.infer<typeof assinarSchema>;
+/** O corpo como a TELA o manda (o CPF ou CNPJ é o texto digitado; o servidor o confere e converte). */
+export type CorpoDeAssinar = z.input<typeof assinarSchema>;
 
 /**
  * Corpo de `POST /api/billing/minha-assinatura/cancelar` — parar a renovação (Fase 4, etapa 4.6).

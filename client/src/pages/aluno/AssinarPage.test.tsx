@@ -42,10 +42,13 @@ import { AssinarPage } from "./AssinarPage";
 //   - carregando, erro e "já é assinante" (quem já assina não vê formulário);
 //   - o valor na tela é o que o SERVIDOR mandou, e o campo do cartão abre com ele; cada plano diz
 //     o preço e como é cobrado, e o anual leva o selo do desconto, CALCULADO dos dois preços;
-//   - "Hoje você paga" só aparece com código promocional (sem código, repetia o preço do plano);
+//   - a COLUNA DE RESUMO (etapa 4.7, passo 6d — as duas telas iguais, decisão do operador de
+//     27/10/2026): o total de hoje é o do servidor; a renovação diz o valor sem código, e sai sem
+//     ele com código (nunca conta feita na tela); o reembolso, o pagamento seguro e os Termos;
+//   - o CPF OU CNPJ, obrigatório: errado, nada vai ao servidor nem ao cartão; vai no pedido;
 //   - o código promocional: o valor de hoje é o da prévia do servidor; código que não vale
 //     avisa e não muda nada; com 100% PARA SEMPRE o cartão some — e só nesse caso;
-//   - o envio, na ordem: confere o cartão → cria no servidor (só plano e código) → confirma com
+//   - o envio, na ordem: confere o cartão → cria no servidor (só plano, código e CPF) → confirma com
 //     o segredo → vai para a tela de concluído; qualquer falha fica na tela, com a frase;
 //   - dois cliques, um pedido.
 
@@ -91,7 +94,13 @@ const abrir = () =>
 /** O texto da tela, com o espaço do "R$ 99,90" (que não quebra linha) trocado por um comum. */
 const naTela = () => (document.body.textContent ?? "").replace(/ /g, " ");
 const cartao = () => screen.queryByTestId("cartao");
-const assinar = () => fireEvent.click(screen.getByRole("button", { name: "Assinar" }));
+const CPF = "529.982.247-25";
+const preencherCpf = (valor = CPF) => fireEvent.change(screen.getByLabelText("CPF ou CNPJ"), { target: { value: valor } });
+/** Preenche o CPF (obrigatório desde o passo 6d) e clica em Assinar. */
+const assinar = (botao = "Assinar") => {
+  preencherCpf();
+  fireEvent.click(screen.getByRole("button", { name: botao }));
+};
 async function aplicar(codigo: string) {
   fireEvent.change(await screen.findByLabelText("Código promocional"), { target: { value: codigo } });
   fireEvent.click(screen.getByRole("button", { name: "Aplicar" }));
@@ -122,8 +131,8 @@ describe("AssinarPage — quem já foi assinante", () => {
     await aplicar("TESTE100");
     await screen.findByText("TESTE100");
     await waitFor(() => expect(cartao()).toBeNull());
-    fireEvent.click(screen.getByRole("button", { name: "Reativar assinatura" }));
-    await waitFor(() => expect(criarAssinatura).toHaveBeenCalledWith({ plano: "mensal", codigo: "TESTE100" }));
+    assinar("Reativar assinatura");
+    await waitFor(() => expect(criarAssinatura).toHaveBeenCalledWith({ plano: "mensal", codigo: "TESTE100", documento: CPF }));
   });
 
   // O TÍTULO CONTINUA "Reativar assinatura" na confirmação (decisão do operador, 11/10/2026):
@@ -133,7 +142,8 @@ describe("AssinarPage — quem já foi assinante", () => {
     getSituacaoDaAssinatura.mockResolvedValue({ temAcesso: false, reativar: true });
     criarAssinatura.mockResolvedValue(PAGAR);
     const { unmount } = abrir();
-    fireEvent.click(await screen.findByRole("button", { name: "Reativar assinatura" }));
+    await screen.findByRole("button", { name: "Reativar assinatura" });
+    assinar("Reativar assinatura");
     expect(await screen.findByText("tela de concluído?reativou=1")).toBeTruthy();
     expect(confirmar).toHaveBeenCalledWith("pi_1_secret_x", "pagamento", "/aluno/assinar/concluido?reativou=1");
     unmount();
@@ -236,8 +246,9 @@ describe("AssinarPage — o plano e o valor", () => {
     // Cada cartão diz o preço e como é cobrado; o anual leva o selo do desconto.
     expect(mensal.closest("label")?.textContent?.replace(/\u00a0/g, " ")).toBe("MensalR$ 99,90/mêsCobrado todo mês");
     expect(anual.closest("label")?.textContent?.replace(/\u00a0/g, " ")).toBe("Anual17% de descontoR$ 995,00/anoCobrado uma vez por anoequivale a R$ 82,92 por mês");
-    // Sem código promocional, o valor não é repetido num bloco à parte.
-    expect(naTela()).not.toContain("Hoje você paga");
+    // O resumo: o total de hoje é o preço do plano, e a renovação diz o valor.
+    expect(naTela()).toContain("Total de hojeR$ 99,90");
+    expect(naTela()).toContain("Renova todo mês por R$ 99,90, até você cancelar.");
     expect(cartao()?.dataset).toMatchObject({ centavos: "9990", moeda: "brl", formas: "card", chave: "pk_test_da_tela" });
     expect(screen.getByText("campo do cartão")).toBeTruthy();
   });
@@ -284,7 +295,9 @@ describe("AssinarPage — o código promocional", () => {
     await aplicar("  TESTE100 ");
     expect(await screen.findByText("TESTE100")).toBeTruthy();
     expect(getPreviaDaAssinatura).toHaveBeenCalledWith({ plano: "mensal", codigo: "TESTE100" });
-    expect(naTela()).toContain("Hoje você pagaR$ 0,00");
+    expect(naTela()).toContain("Total de hojeR$ 0,00");
+    // Com código, a renovação sai SEM valor (a prévia não o diz — nunca conta feita na tela).
+    expect(naTela()).toContain("Renova todo mês, até você cancelar.");
     expect(naTela()).toContain("100% de desconto em todas as cobranças");
     expect(cartao()).toBeNull();
     expect(screen.getByRole("button", { name: "Assinar" })).toBeTruthy();
@@ -295,7 +308,7 @@ describe("AssinarPage — o código promocional", () => {
     abrir();
     await aplicar("NAOEXISTE");
     expect((await screen.findByRole("alert")).textContent).toBe("Este código não é válido.");
-    expect(naTela()).not.toContain("Hoje você paga");
+    expect(naTela()).toContain("Total de hojeR$ 99,90");
     expect(cartao()?.dataset.centavos).toBe("9990");
     expect(screen.getByLabelText("Código promocional").getAttribute("aria-invalid")).toBe("true");
   });
@@ -307,7 +320,7 @@ describe("AssinarPage — o código promocional", () => {
     abrir();
     await aplicar("QUALQUER");
     expect((await screen.findByRole("alert")).textContent).toBe("Muitas tentativas seguidas. Por segurança, espere alguns minutos e tente de novo.");
-    expect(naTela()).not.toContain("Hoje você paga");
+    expect(naTela()).toContain("Total de hojeR$ 99,90");
     expect(cartao()?.dataset.centavos).toBe("9990");
   });
 
@@ -315,7 +328,8 @@ describe("AssinarPage — o código promocional", () => {
     abrir();
     await aplicar("TESTE100");
     fireEvent.click(await screen.findByRole("button", { name: "Remover" }));
-    expect(naTela()).not.toContain("Hoje você paga");
+    expect(naTela()).toContain("Total de hojeR$ 99,90");
+    expect(naTela()).toContain("Renova todo mês por R$ 99,90, até você cancelar.");
     expect(naTela()).not.toContain("100% de desconto em todas as cobranças");
     expect(cartao()?.dataset.centavos).toBe("9990");
     expect(screen.getByLabelText("Código promocional")).toBeTruthy();
@@ -335,7 +349,8 @@ describe("AssinarPage — o código promocional", () => {
     abrir();
     await aplicar("METADE");
     expect(await screen.findByText("METADE")).toBeTruthy();
-    expect(naTela()).toContain("Hoje você pagaR$ 49,95");
+    expect(naTela()).toContain("Total de hojeR$ 49,95");
+    expect(naTela()).toContain("Renova todo mês, até você cancelar.");
     expect(naTela()).toContain("50% de desconto por 3 meses");
     expect(cartao()?.dataset.centavos).toBe("4995");
   });
@@ -370,6 +385,74 @@ describe("AssinarPage — o código promocional", () => {
   });
 });
 
+// AS PARTES NOVAS (etapa 4.7, passo 6d): as duas telas iguais — decisão do operador, 27/10/2026 (P80);
+// os textos, aprovados por ele no mesmo dia (P81).
+describe("AssinarPage — o CPF ou CNPJ, o resumo e o que está incluído", () => {
+  it("sem o CPF, ou com o dígito errado: o aviso embaixo do campo — e nada vai ao cartão nem ao servidor", async () => {
+    abrir();
+    await screen.findByRole("radio", { name: /Mensal/ });
+    fireEvent.click(screen.getByRole("button", { name: "Assinar" }));
+    expect((await screen.findByRole("alert")).textContent).toBe("Confira o número: este CPF ou CNPJ não é válido.");
+    preencherCpf("529.982.247-24");
+    fireEvent.click(screen.getByRole("button", { name: "Assinar" }));
+    expect((await screen.findByRole("alert")).textContent).toBe("Confira o número: este CPF ou CNPJ não é válido.");
+    expect(screen.getByLabelText("CPF ou CNPJ").getAttribute("aria-invalid")).toBe("true");
+    expect(validar).not.toHaveBeenCalled();
+    expect(criarAssinatura).not.toHaveBeenCalled();
+  });
+
+  it("o CNPJ também vale, e vai no pedido como foi digitado (quem confere e converte é o servidor)", async () => {
+    abrir();
+    await screen.findByRole("radio", { name: /Mensal/ });
+    preencherCpf("11.222.333/0001-81");
+    fireEvent.click(screen.getByRole("button", { name: "Assinar" }));
+    await waitFor(() => expect(criarAssinatura).toHaveBeenCalledWith({ plano: "mensal", documento: "11.222.333/0001-81" }));
+  });
+
+  it("o servidor recusou o número (a Stripe não aceitou): o aviso embaixo do campo, e o cartão não confirma", async () => {
+    criarAssinatura.mockRejectedValue(erroDoServidor("DocumentoInvalido"));
+    abrir();
+    await screen.findByRole("radio", { name: /Mensal/ });
+    assinar();
+    expect((await screen.findByRole("alert")).textContent).toBe("Confira o número: este CPF ou CNPJ não é válido.");
+    expect(screen.getByLabelText("CPF ou CNPJ").getAttribute("aria-invalid")).toBe("true");
+    expect(confirmar).not.toHaveBeenCalled();
+  });
+
+  it("o anual no resumo: o plano, o total de hoje e a renovação de uma vez por ano, com o valor", async () => {
+    abrir();
+    fireEvent.click(await screen.findByRole("radio", { name: /Anual/ }));
+    expect(naTela()).toContain("Total de hojeR$ 995,00");
+    expect(naTela()).toContain("Renova uma vez por ano por R$ 995,00, até você cancelar.");
+  });
+
+  it("o reembolso, o pagamento seguro e os Termos — os dois links abrem em outra aba (quem lê não perde o que preencheu)", async () => {
+    abrir();
+    await screen.findByRole("radio", { name: /Mensal/ });
+    expect(naTela()).toContain("Garantia de 7 dias: se não gostar, você recebe de volta o valor pago.");
+    expect(naTela()).toContain("Pagamento seguro, processado pela Stripe. A escola não guarda os dados do seu cartão.");
+    expect(naTela()).toContain("Ao assinar, você concorda com os Termos de Uso e a Política de Privacidade.");
+    const termos = screen.getByRole("link", { name: "Termos de Uso" });
+    const privacidade = screen.getByRole("link", { name: "Política de Privacidade" });
+    expect([termos.getAttribute("href"), privacidade.getAttribute("href")]).toEqual(["/termos", "/privacidade"]);
+    expect([termos.getAttribute("target"), privacidade.getAttribute("rel")]).toEqual(["_blank", "noopener noreferrer"]);
+  });
+
+  it("\"O que está incluído\": a lista e a frase que o servidor mandou; sem elas, a parte não aparece", async () => {
+    getPlanosDaAssinatura.mockResolvedValue({ ...PLANOS, incluido: { itens: ["Item A", "Item B"], frase: "A frase de baixo." } });
+    const { unmount } = abrir();
+    expect(await screen.findByRole("heading", { name: "O que está incluído" })).toBeTruthy();
+    expect(screen.getAllByRole("listitem").map((li) => li.textContent)).toEqual(expect.arrayContaining(["Item A", "Item B"]));
+    expect(screen.getByText("A frase de baixo.")).toBeTruthy();
+    unmount();
+
+    getPlanosDaAssinatura.mockResolvedValue(PLANOS);
+    abrir();
+    await screen.findByRole("radio", { name: /Mensal/ });
+    expect(screen.queryByRole("heading", { name: "O que está incluído" })).toBeNull();
+  });
+});
+
 describe("AssinarPage — o envio", () => {
   it("no cartão: confere o cartão → cria com SÓ o plano → confirma com o segredo do servidor → tela de concluído", async () => {
     const ordem: string[] = [];
@@ -381,7 +464,7 @@ describe("AssinarPage — o envio", () => {
     assinar();
     expect(await screen.findByText("tela de concluído")).toBeTruthy();
     expect(ordem).toEqual(["confere", "cria", "confirma"]);
-    expect(criarAssinatura).toHaveBeenCalledWith({ plano: "anual" });
+    expect(criarAssinatura).toHaveBeenCalledWith({ plano: "anual", documento: CPF });
     expect(confirmar).toHaveBeenCalledWith("pi_1_secret_x", "pagamento", "/aluno/assinar/concluido");
   });
 
@@ -421,7 +504,7 @@ describe("AssinarPage — o envio", () => {
     await screen.findByText("TESTE100");
     assinar();
     expect(await screen.findByText("tela de concluído")).toBeTruthy();
-    expect(criarAssinatura).toHaveBeenCalledWith({ plano: "mensal", codigo: "TESTE100" });
+    expect(criarAssinatura).toHaveBeenCalledWith({ plano: "mensal", codigo: "TESTE100", documento: CPF });
     expect(validar).not.toHaveBeenCalled();
     expect(confirmar).not.toHaveBeenCalled();
   });

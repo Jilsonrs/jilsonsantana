@@ -501,8 +501,6 @@ export const pt = {
       descontoParaSempre: "{desconto} de desconto em todas as cobranças",
       descontoUmaVez: "{desconto} de desconto na primeira cobrança",
       descontoPorMeses: "{desconto} de desconto por {meses} meses",
-      // Só aparece com código promocional aplicado: sem código, o cartão do plano já diz tudo.
-      hoje: "Hoje você paga",
       pagamento: "Pagamento",
       botao: "Assinar",
       botaoReativar: "Reativar assinatura",
@@ -513,6 +511,28 @@ export const pt = {
       // 4.7, passo 4): o pedido volta com `MuitosAoMesmoTempo`. Texto do operador (21/10/2026), para
       // a pessoa esperar antes de clicar de novo. Quem o mostra é a tela pública (passo 6).
       aguardeUmInstante: "Aguarde um instante e tente novamente.",
+      // AS PARTES NOVAS DA TELA DE ASSINAR (etapa 4.7, passo 6d), nas DUAS telas — a pública e a de quem
+      // está logado (decisão do operador, 27/10/2026, P80). Textos APROVADOS por ele no mesmo dia (P81 —
+      // billing.md → *A tela pública de assinar*). O "Total de hoje" substitui o "Hoje você paga".
+      seusDados: "Seus dados",
+      documento: "CPF ou CNPJ",
+      documentoAjuda: "Usamos para emitir a nota fiscal.",
+      documentoInvalido: "Confira o número: este CPF ou CNPJ não é válido.",
+      resumo: "Resumo",
+      totalDeHoje: "Total de hoje",
+      renovaMensal: "Renova todo mês por {valor}, até você cancelar.",
+      renovaAnual: "Renova uma vez por ano por {valor}, até você cancelar.",
+      // Com código promocional, quando a prévia não diz o valor da renovação: a linha sai sem ele —
+      // nunca conta feita na tela.
+      renovaMensalSemValor: "Renova todo mês, até você cancelar.",
+      renovaAnualSemValor: "Renova uma vez por ano, até você cancelar.",
+      reembolso: "Garantia de 7 dias: se não gostar, você recebe de volta o valor pago.",
+      pagamentoSeguro: "Pagamento seguro, processado pela Stripe. A escola não guarda os dados do seu cartão.",
+      // `{termos}` e `{privacidade}` viram os dois links.
+      termos: "Ao assinar, você concorda com os {termos} e a {privacidade}.",
+      termosDeUso: "Termos de Uso",
+      politicaDePrivacidade: "Política de Privacidade",
+      incluidoTitulo: "O que está incluído",
       jaAssinante: "Você já é assinante.",
       irParaInicio: "Ir para o Início",
       confirmando: "Confirmando sua assinatura…",

@@ -344,10 +344,9 @@ gera mais aviso, o acesso ficaria liberado para sempre. *(Achado P1 da revisão 
   rascunho.**
 - **A tela é simples, "como a Anthropic faz"** (10/10/2026, depois do primeiro teste dele): cada
   cartão de plano diz o preço e como é cobrado; o anual leva o selo do desconto (calculado dos
-  dois preços, nunca um texto fixo); **"Hoje você paga" só aparece com código promocional**
-  *(revisto em 12/10/2026 para a tela PÚBLICA, que ganha a coluna de resumo com o total de hoje
-  — ver *A tela pública de assinar*; e, desde 27/10/2026, também na tela logada: as duas telas
-  iguais, P80)*. O
+  dois preços, nunca um texto fixo); ~~"Hoje você paga" só com código promocional~~ — **desde o
+  passo 6d da etapa 4.7 (27/10/2026), nas duas telas, a coluna de resumo diz sempre o "Total de
+  hoje"** (decisões de 12/10 e 27/10/2026, P80: as duas telas iguais). O
   acabamento visual é do Antigravity. *Reabre se o Pix (4.9) pedir mostrar de novo o
   valor final antes de confirmar.*
 - **A home tem que levar à assinatura também quem não tem conta** (10/10/2026): é a etapa 4.7.
@@ -567,7 +566,7 @@ celular, uma coluna só, nesta ordem)*:
 4. **Escolha o plano** — os dois cartões de hoje, sem mudança: Mensal marcado (é o cartão em que
    a pessoa clicou na home) e Anual ao lado com o selo "17% de desconto" e "equivale a R$ 82,92
    por mês". Embaixo, "Sem fidelidade. Cancele quando quiser."
-5. **Código promocional** — o de hoje, com "Hoje você paga" só quando há código.
+5. **Código promocional** — o de hoje; o total sai na coluna de resumo (o "Hoje você paga" saiu no passo 6d).
 6. **Pagamento** — o campo do cartão de hoje, com a frase da Stripe embaixo dele.
 7. **O resumo, com o botão** *(novo; **decisão do operador, 12/10/2026** — à pergunta "fica a
    coluna de resumo, com o total de hoje e as três linhas dentro dela?", ele respondeu

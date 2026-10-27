@@ -5040,8 +5040,22 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                   app · o menu sem o caminho da home · o menu sem escape · dev sem desvio para o
                   Vite · o app trocando por dentro): as sete reprovam. *O menu na `/assinar` leva
                   às seções da home (`/#cursos`…), o mesmo destino do menu dela.*
-            - [ ] **6d — As partes novas do formulário, nas duas telas**: Seus dados, a coluna de
-                  resumo, "O que está incluído" e os textos aprovados no `pt.ts`.
+            - [x] **6d — As partes novas do formulário, nas duas telas**: Seus dados, a coluna de
+                  resumo, "O que está incluído" e os textos aprovados no `pt.ts`. O formulário
+                  dividido (`FormularioDeAssinatura` + `CampoDoDocumento`, `ResumoDaAssinatura`,
+                  `OQueEstaIncluido`, `BotaoComCartao`): o CPF ou CNPJ conferido pelo `core` antes
+                  do cartão e do servidor, e no pedido; o "Total de hoje" sempre na coluna (sai o
+                  "Hoje você paga"), a renovação com o valor do servidor — com código, sem valor —,
+                  o reembolso, o pagamento seguro, o botão e os Termos (links em outra aba); a lista
+                  e a frase da home vêm com os planos (`incluido`, com as edições do admin —
+                  `vitrine-da-assinatura.ts`). A tela logada já tem tudo; a pública ganha o
+                  formulário na 6e. *Nesta parte só entra o que é das DUAS telas: o e-mail, o
+                  atalho "Já tem conta? Entrar" e as novidades são do visitante (6e).* Testes: 6
+                  novos e os de antes ajustados (`AssinarPage.test.tsx`, 43) e o da lista com as
+                  edições do admin (`billing.test.ts`). Mutação (sem conferir o CPF · o CPF fora do
+                  pedido · a renovação com valor mesmo com código · o total ignorando o código · a
+                  recusa do servidor virando erro geral · os Termos na mesma aba · a lista que nunca
+                  aparece · a lista sem as edições do admin): as oito reprovam.
             - [ ] **6e — O visitante assina e cria a senha**: a tentativa só na memória e no
                   `sessionStorage`; `/assinar/concluido`; "Já tem conta? Entrar"
                   (`/login?depois=assinar`, destinos numa lista fechada); os botões da home.

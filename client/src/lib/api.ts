@@ -28,7 +28,7 @@ import type {
   PlanosDaAssinatura,
   PreviaInput,
   PreviaDaAssinatura,
-  AssinarInput,
+  CorpoDeAssinar,
   AssinaturaCriada,
   SituacaoDaAssinatura,
   SincroniaDaConta,
@@ -1030,7 +1030,7 @@ export async function getPreviaDaAssinatura(corpo: PreviaInput): Promise<PreviaD
 }
 
 /** Cria a assinatura. Quem já assina: 409 `JaAssinante`. NUNCA tenta de novo sozinho (gravação que cria). */
-export async function criarAssinatura(corpo: AssinarInput): Promise<AssinaturaCriada> {
+export async function criarAssinatura(corpo: CorpoDeAssinar): Promise<AssinaturaCriada> {
   const { data } = await client.post<AssinaturaCriada>("/billing/assinatura", corpo);
   return data;
 }

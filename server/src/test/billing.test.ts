@@ -35,6 +35,8 @@ import servidor from "./servidor.js";
 import { DocumentoRecusado } from "../lib/stripe.js";
 import { prisma } from "../lib/prisma.js";
 import { ASSINATURA_DE_TESTE } from "../lib/assinatura-de-teste.js";
+import { invalidarCacheDeTexto } from "../lib/dict.js";
+import { pt as fabrica } from "@jilson/core";
 
 // ASSINAR COM A CONTA LOGADA (Fase 4, etapa 4.2). O que estes testes protegem — é a fronteira
 // de dinheiro:
@@ -111,7 +113,29 @@ describe("GET /api/billing/planos", () => {
       ],
       // A mesma lista com que o servidor cria a assinatura (nesta etapa, só cartão).
       formasDePagamento: ["card"],
+      // "O que está incluído": a lista do cartão de preço da home (passo 6d).
+      incluido: { itens: [...fabrica.home.pricing.features], frase: fabrica.home.pricing.footer },
     });
+  });
+
+  // A LISTA É UM TEXTO SÓ COM A HOME (decisão do operador, 27/10/2026): mudou no admin, muda nos dois.
+  it("\"O que está incluído\" vem com as edições do admin — o mesmo texto do cartão da home", async () => {
+    await prisma.siteText.createMany({
+      data: [
+        { key: "home.pricing.features[0]", value: "Item editado no admin" },
+        { key: "home.pricing.footer", value: "Frase editada no admin" },
+      ],
+    });
+    invalidarCacheDeTexto();
+    try {
+      const res = await planos(member);
+      expect(res.body.incluido.itens[0]).toBe("Item editado no admin");
+      expect(res.body.incluido.itens.slice(1)).toEqual(fabrica.home.pricing.features.slice(1));
+      expect(res.body.incluido.frase).toBe("Frase editada no admin");
+    } finally {
+      await prisma.siteText.deleteMany({});
+      invalidarCacheDeTexto();
+    }
   });
 
   it("o código do preço e a chave secreta não vão ao navegador", async () => {
