@@ -35,8 +35,11 @@
 > Lucide 1 —, revisão `jilson-prod-00034`; `82f0670` — Prisma 7 —, revisão `jilson-prod-00035`, com o job das
 > migrations conferido no registro; `7f5976f` — TypeScript 6 —, revisão `jilson-prod-00036`), conferidas de fora: o site, o login (401 com senha errada), os dados do
 > curso e a cobrança sem login (401); o alerta do Sentry 11 ligou no ar. O detalhe: `build-history.md` → *A atualização de todas as bibliotecas*; o que ficou para depois: o plano → *Depois do Bloco G*.
-> **A revisão no ar desde 26/10/2026 é a `jilson-prod-00038`**: a mesma imagem da `00036`, recriada
-> pelo teste do alerta do Sentry com o servidor parado (o plano → *Depois do Bloco G*).
+> **Publicado em 26/10/2026: `8085d26`** (só documentos — o alerta do Sentry com o servidor parado,
+> provado; o orçamento conta depois do crédito; a conta do Google paga; P106), **revisão
+> `jilson-prod-00039`**, conferida de fora: o site e a saúde (200), o login com senha errada (401), o
+> aviso da Stripe sem assinatura (400 — o segredo no lugar), o job das migrations com sucesso. *(As
+> revisões `00037` e `00038` foram do teste do alerta: o plano → *Depois do Bloco G*.)*
 > **Publicado em 24–25/10/2026:** `d6c2906` — o endereço do CDN do Bunny corrigido (P105) e a
 > conferência dele no CI; `f09a903` — o download do arquivo da aula em pedaços (o Cloud Run recusava
 > acima de 32 MB); `294b106` — o segundo mais novo vence entre aparelhos. Conferidos de fora (o site

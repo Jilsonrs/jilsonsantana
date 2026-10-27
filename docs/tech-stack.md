@@ -330,9 +330,14 @@ parte "ligado, esperando" bate com a conta medida em 22/10; os preços com o ser
   27 conexões no pooler (de 10.000) com **espera zero**, ~20 no Postgres (de 905), nenhum deadlock.
   **Subir o teto de 2 para 8 não muda nada hoje.** *O operador subiu para 4 em 25/10/2026, por folga* (só se
   paga o que for usado; o painel mostra 0,25 a 4 unidades, ~16 GB no teto). Com 1.000 alunos, a carga do banco seria a do
-  teste: o custo deve ficar perto do mínimo (preço por unidade-hora `[a conferir no painel do Neon]`).
+  teste: o custo deve ficar perto do mínimo. **Preço medido na fatura do plano Launch** *(26/10/2026)*:
+  7,71 unidades-hora = US$ 0,81, **~US$ 0,105 por unidade-hora** (cobrado só com o banco acordado) — no
+  mês, com o uso de hoje, ~US$ 2. Subir o mínimo encarece cada hora acordada (0,5 ≈ US$ 4/mês, 1 ≈
+  US$ 8/mês) sem ganho medido: **fica 0,25 a 4** *(decisão do operador, 26/10/2026; reabre se o painel
+  do Neon mostrar o banco preso no mínimo — processador ou memória perto do teto de 0,25 — com alunos)*.
   *A decidir na abertura da escola (Fase 7):* o "dormir após 5 min" faz o primeiro visitante depois de
-  um silêncio esperar ~0,5 s a mais; deixá-lo sempre acordado custa o mínimo (0,25) o mês inteiro.
+  um silêncio esperar ~0,5 s a mais; deixá-lo sempre acordado custa o mínimo (0,25) o mês inteiro —
+  ~US$ 19/mês.
 
 **O QUE FOI MONTADO, EM LINGUAGEM SIMPLES** *(pedido do operador, 24/10/2026)* — uma publicação passa
 por todas as peças, nesta ordem:
