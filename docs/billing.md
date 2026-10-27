@@ -339,12 +339,14 @@ gera mais aviso, o acesso ficaria liberado para sempre. *(Achado P1 da revisão 
 - **Os textos da tela estão como RASCUNHO do agente** (`app.assinar.*` e `app.aula.assinar`),
   a revisar por ele (*"isso fazemos depois, é detalhe"*, 10/10/2026) — inclusive
   se a tela leva uma linha sobre o reembolso de 7 dias. *Fecha quando ele revisar.* **A proposta
-  dessa linha (12/10/2026) está em *A tela pública de assinar*, abaixo — P80 e P81.**
+  dessa linha (12/10/2026) está em *A tela pública de assinar*, abaixo — a linha entra (P80,
+  27/10/2026), com o texto aprovado na P81 (27/10/2026). Os demais textos de 10/10 continuam
+  rascunho.**
 - **A tela é simples, "como a Anthropic faz"** (10/10/2026, depois do primeiro teste dele): cada
   cartão de plano diz o preço e como é cobrado; o anual leva o selo do desconto (calculado dos
-  dois preços, nunca um texto fixo); **"Hoje você paga" só aparece com código promocional**
-  *(revisto em 12/10/2026 para a tela PÚBLICA, que ganha a coluna de resumo com o total de hoje
-  — ver *A tela pública de assinar*; na tela logada, P80)*. O
+  dois preços, nunca um texto fixo); ~~"Hoje você paga" só com código promocional~~ — **desde o
+  passo 6d da etapa 4.7 (27/10/2026), nas duas telas, a coluna de resumo diz sempre o "Total de
+  hoje"** (decisões de 12/10 e 27/10/2026, P80: as duas telas iguais). O
   acabamento visual é do Antigravity. *Reabre se o Pix (4.9) pedir mostrar de novo o
   valor final antes de confirmar.*
 - **A home tem que levar à assinatura também quem não tem conta** (10/10/2026): é a etapa 4.7.
@@ -435,7 +437,7 @@ pagamento sem ter assinado vê "confirmando" e depois "está demorando", sem cam
 
 > **NADA AQUI ESTÁ DECIDIDO além do que traz data e frase do operador.** É a proposta do agente
 > depois de ele mostrar as telas de pagamento da Udemy e do Code with Mosh. O que existe na tela
-> e os textos são dele: as perguntas estão em `pendencias.md` (**P80, P81, P83, P84 e P90**; a P79, a P82, a P86, a P87 e a P89 ele respondeu em 12/10/2026, e a P88 em 21/10/2026). Quem construir o
+> e os textos são dele: as perguntas estão em `pendencias.md` (**P84 e P90**; a P79, a P82, a P86, a P87 e a P89 ele respondeu em 12/10/2026, a P83 e a P88 em 21/10/2026, e a P80 e a P81 em 27/10/2026). Quem construir o
 > passo 6 confere antes o que ele já respondeu, e registra a resposta aqui, com a data e a frase.
 > *A Udemy e o Mosh são referência desta análise, nunca texto do site.*
 
@@ -455,18 +457,40 @@ pagamento sem ter assinado vê "confirmando" e depois "está demorando", sem cam
   reclamar de ter pago o preço cheio achando que o código valia.*
 - **O e-mail que JÁ TEM CONTA: a tela avisa e manda entrar** *(decisão do operador, 21/10/2026, à
   pergunta da abertura da etapa 4.7, passo 4)*: "Este e-mail já tem conta. Entre para assinar." (o
-  texto continua rascunho — P81), e a pessoa assina pela tela de quem está logado, que já
+  texto aprovado na P81, 27/10/2026), e a pessoa assina pela tela de quem está logado, que já
   funciona. **Recusada:** não avisar e ligar o pagamento à conta que existe — quem errasse um
   dígito do e-mail pagaria a assinatura de outra pessoa, sem conseguir entrar. **O custo aceito:**
   quem digita um e-mail descobre se ele tem conta na escola, dentro do limite de tentativas.
   *Reabre se o registro mostrar alguém varrendo e-mails pela tela (muitas recusas "já tem conta"
-  vindas do mesmo endereço).*
+  vindas do mesmo endereço).* **Desde o passo 6 (27/10/2026) cada recusa deixa no registro a linha
+  `[api] assinar sem login: e-mail com conta, recusado (endereço <marca>)`** — a marca é o endereço
+  cifrado (`marcaDoEndereco`), a mesma para o mesmo endereço, sem IP nem e-mail: é com ela que se
+  conta (P2 da revisão de segurança do passo 6).
 - **Cartão emitido fora do Brasil: ACEITO** *(decisão do operador, 21/10/2026 — fecha a P88)*: a
   tela aceita qualquer cartão; o que restringe a venda ao Brasil é o CPF ou CNPJ obrigatório. Atende
   o brasileiro que tem cartão de banco de fora. Nada a construir; acompanhar no painel da Stripe
   quantos cartões de fora aparecem. **Recusada:** só cartão emitido no Brasil (recusaria esse mesmo
   brasileiro, e pediria uma regra na Stripe ou uma conferência a construir). *Reabre se o painel
   mostrar fraude ou contestação vinda de cartões de fora.*
+
+**O QUE EXISTE NA TELA — decisões do operador, 27/10/2026 (fecha a P80)**, cada uma à pergunta do
+agente, com a recomendação dele:
+1. **"Já tem conta? Entrar", junto do campo de e-mail: sim.** O link leva ao login e, depois de
+   entrar, à tela de assinar de quem está logado.
+2. **"Ao assinar, você concorda com os Termos de Uso e a Política de Privacidade", com os dois
+   links, junto do botão: sim.** As duas páginas ainda não existem; o passo 8 já exige as duas no
+   ar antes de abrir ao público.
+3. **A lista "O que está incluído", a MESMA do cartão de preço da home: sim** — um texto só
+   (`home.pricing.features`, com as edições do admin). As duas linhas que prometem o que ainda não
+   existe continuam na P84.
+4. **O link para as perguntas frequentes: não** — o rodapé do site já tem. O item 9 da lista
+   abaixo saiu.
+5. **As duas telas iguais: sim.** A tela de quem está logado ganha o mesmo que a pública: a coluna
+   de resumo (o total de hoje, a renovação, o reembolso, o pagamento seguro e a linha dos Termos)
+   e a lista "O que está incluído", além do CPF ou CNPJ. Ela só não pede o e-mail (é o da conta) e
+   continua dentro do app, com o menu lateral. Revê, também na tela logada, o "Hoje você paga" só
+   com código (10/10/2026).
+*Reabre se os números mostrarem gente desistindo nesta tela, ou se a coluna confundir quem assina.*
 
 **O que a Stripe exige para aprovar o pagamento** `[FATO — context7 /websites/stripe, 12/10/2026:
 "The Payment Element only collects essential billing address details by default. To collect a
@@ -493,8 +517,23 @@ customer's full billing address for tax calculation […] use the Address Elemen
   que muda conforme o país. E a doc diz que o próprio campo de pagamento cuida disso para
   comprador da América Latina: *"The `tax_id` field on the Payment Method `billing_details`
   hash is used to collect and store Latin American buyers' tax identifiers. Stripe Checkout and
-  the Payment Element automatically handle `tax_id` collection."* **Não medido:** em que
-  situação o campo da Stripe mostra o CPF sozinho (o cartão de teste usado até hoje é dos EUA).
+  the Payment Element automatically handle `tax_id` collection."*
+- **MEDIDO em 27/10/2026 (etapa 4.7, passo 6): o campo de pagamento NÃO pede o CPF nesta
+  escola.** `[FATO — context7 /websites/stripe, 27/10/2026: ele só pede o número fiscal quando o
+  comprador da América Latina paga a quem vende FORA da América Latina; "If you set the tax_id value
+  for a transaction that doesn't require it, the API returns the tax_id_prohibited error."]` Medido no
+  campo de verdade, montado como o site o monta (modo `subscription`, R$ 99,90, só cartão, `pt-BR`),
+  com o cartão de teste do Brasil (4000 0007 6000 0002): pede só número, validade, código de
+  segurança e país — e fica completo sem CPF. **Consequência:** o CPF é campo NOSSO (sem risco de
+  dois na tela), e **nunca** vai nos dados do cartão (`billing_details.tax_id`, proibido numa conta
+  do Brasil): vai na **ficha do cliente** (`tax_id_data`, `br_cpf`/`br_cnpj`) — o visitante desde o
+  passo 4, quem está logado desde o passo 6 (`acertarNumeroFiscal`, `server/src/lib/stripe.ts`).
+  **Sem o CPF no pedido de quem está logado, só segue quem já tem um na ficha** (400
+  `DocumentoInvalido` se não tiver — até o CPF virar obrigatório no servidor), e **a incompleta só é
+  reaproveitada se a FATURA dela saiu com o mesmo número do pedido** (`numeroFiscalDaFatura`) — não
+  basta a ficha de agora: um clique que trocou o número e falhou no meio deixaria uma fatura com o
+  número antigo (P2 da revisão de segurança do passo 6, 27/10/2026).
+  *Reabre se a escola passar a vender com uma conta da Stripe fora da América Latina.*
 
 **O que a Udemy e o Mosh mostram na hora de pagar, e a escola:**
 
@@ -502,17 +541,17 @@ customer's full billing address for tax calculation […] use the Address Elemen
 |---|---|---|---|---|
 | Página só de pagamento, sem menu, com uma saída no canto | sim ("Cancelar") | sim (só o logo) | a tela logada tem o menu do app | **não** (decisão dele, 12/10/2026: leva o menu e o rodapé do site) |
 | Criar a conta ANTES de pagar (nome, e-mail, código de 6 dígitos) | sim | não: o e-mail vai na própria tela | decidido: a conta nasce no pagamento | não se aplica |
-| "Já tem conta? Entrar" | sim | sim | não | **vale ter** |
+| "Já tem conta? Entrar" | sim | sim | não | **sim** (decisão dele, 27/10/2026) |
 | Mensal ou anual na tela de pagamento, com selo no anual | sim (anual vem marcado) | escolhe antes, na página | **já temos** (mensal vem marcado) | fica como está |
-| "O que está incluído" | 3 linhas | 5 a 6 linhas | só na home | **vale ter** (a lista da home) |
+| "O que está incluído" | 3 linhas | 5 a 6 linhas | só na home | **sim, a lista da home** (decisão dele, 27/10/2026) |
 | Dizer que renova sozinha, por quanto, até cancelar | sim | sim | só a frase da Stripe embaixo do cartão, sem valor | **vale ter** (uma linha) |
 | Resumo do pedido numa coluna (total de hoje, próxima cobrança) | sim | sim | "Hoje você paga", só com código (decisão de 10/10) | **sim** (decisão dele, 12/10/2026) |
 | Código promocional | sim | sim | **já temos** | — |
 | "Cancele quando quiser" | sim, e diz onde | sim | **já temos** | — |
 | Reembolso | "não concedemos, exceto por lei" | selo de 30 dias | não aparece na tela | **vale ter** (7 dias) |
 | "Pagamento seguro" | sim | sim | não | **vale ter** (uma linha) |
-| "Ao assinar, você concorda com os Termos" | sim | sim | não | **vale ter**, quando os Termos existirem |
-| País ou endereço | só o país | endereço completo | nada | **o país, sim; endereço, não** (P80) |
+| "Ao assinar, você concorda com os Termos" | sim | sim | não | **sim** (decisão dele, 27/10/2026; as páginas no ar antes de abrir — passo 8) |
+| País ou endereço | só o país | endereço completo | nada | **sem País** (etapa 4.6c, 12/10/2026); **endereço, não** (sugestão do agente, abaixo) |
 | CPF ou número fiscal | não pede | só de empresa, opcional | nada | **sim, o CPF** (decisão dele, 12/10/2026) |
 | Receber novidades por e-mail | caixa já marcada | caixa desmarcada | não pergunta | **sim, desmarcada** (decisão dele, 12/10/2026) |
 | Nome completo | sim | sim | o nome é opcional | **não se pede** (decisão dele, 21/10/2026: em Minha conta, ou na hora do certificado — fecha a P83) |
@@ -535,7 +574,7 @@ celular, uma coluna só, nesta ordem)*:
 4. **Escolha o plano** — os dois cartões de hoje, sem mudança: Mensal marcado (é o cartão em que
    a pessoa clicou na home) e Anual ao lado com o selo "17% de desconto" e "equivale a R$ 82,92
    por mês". Embaixo, "Sem fidelidade. Cancele quando quiser."
-5. **Código promocional** — o de hoje, com "Hoje você paga" só quando há código.
+5. **Código promocional** — o de hoje; o total sai na coluna de resumo (o "Hoje você paga" saiu no passo 6d).
 6. **Pagamento** — o campo do cartão de hoje, com a frase da Stripe embaixo dele.
 7. **O resumo, com o botão** *(novo; **decisão do operador, 12/10/2026** — à pergunta "fica a
    coluna de resumo, com o total de hoje e as três linhas dentro dela?", ele respondeu
@@ -547,44 +586,62 @@ celular, uma coluna só, nesta ordem)*:
 8. **O que está incluído** *(novo nesta tela)* — a MESMA lista do cartão da home e a frase do
    rodapé dele ("Acesso a tudo desde o primeiro dia…"). Duas linhas dela prometem o que ainda
    não existe (o JilsonAI e o Pix): **P84**.
-9. **Dúvidas** *(novo)* — um link para as perguntas frequentes da home. *Com o rodapé do site
-   na tela (decisão de 12/10/2026), o link de FAQ já está lá: o agente passa a sugerir tirar
-   este item — P80.*
+9. ~~Dúvidas~~ — **saiu** *(decisão do operador, 27/10/2026: o rodapé do site já leva o link das
+   perguntas frequentes)*.
 
-**Os textos** *(RASCUNHO do agente para o operador aprovar ou reescrever: P81. Só em português,
-desde a decisão de 12/10/2026; a coluna em inglês saiu desta tabela)*:
+**Os textos — APROVADOS pelo operador em 27/10/2026 (fecha a P81)**, em quatro grupos, cada um à
+pergunta do agente com a lista inteira ("Aprovo todos"). Entram no dicionário (`core/src/i18n/pt.ts`,
+`app.assinar`) com a construção do passo 6. Só em português.
 
 | Onde | Texto |
 |---|---|
+| **Seus dados** — título | Seus dados |
 | E-mail, rótulo | Seu e-mail |
-| E-mail, ajuda *(vencido em 21/10: a senha nasce na tela)* | É com ele que você entra na escola. Depois do pagamento, enviamos o link para criar sua senha. |
+| E-mail, ajuda | É com ele que você entra na escola. |
 | E-mail, atalho | Já tem conta? Entrar |
-| CPF *(obrigatório)* | CPF ou CNPJ |
+| E-mail que já tem conta (`JaTemConta`) | Este e-mail já tem conta. Entre para assinar. |
+| CPF, rótulo *(obrigatório)* | CPF ou CNPJ |
 | CPF, ajuda | Usamos para emitir a nota fiscal. |
-| CPF inválido | Confira o número: este CPF ou CNPJ não é válido. |
-| Resumo, título | Resumo |
-| Resumo, total | Total de hoje |
-| E-mail que já tem conta | Este e-mail já tem conta. Entre para assinar. |
-| Muita gente assinando no mesmo instante (`MuitosAoMesmoTempo`) — **texto do operador, 21/10/2026** | Aguarde um instante e tente novamente. |
+| CPF inválido (`DocumentoInvalido`) | Confira o número: este CPF ou CNPJ não é válido. |
+| Novidades *(caixa desmarcada)* | Quero receber novidades e ofertas da escola por e-mail. |
+| **Resumo** — título | Resumo |
+| Total | Total de hoje |
 | Renovação, mensal | Renova todo mês por {valor}, até você cancelar. |
 | Renovação, anual | Renova uma vez por ano por {valor}, até você cancelar. |
+| Renovação, mensal, sem valor *(com código, se a prévia não der o valor da renovação)* | Renova todo mês, até você cancelar. |
+| Renovação, anual, sem valor | Renova uma vez por ano, até você cancelar. |
 | Reembolso | Garantia de 7 dias: se não gostar, você recebe de volta o valor pago. |
 | Pagamento seguro | Pagamento seguro, processado pela Stripe. A escola não guarda os dados do seu cartão. |
-| Termos | Ao assinar, você concorda com os Termos de Uso e a Política de Privacidade. |
+| Termos *(os dois nomes são links)* | Ao assinar, você concorda com os Termos de Uso e a Política de Privacidade. |
 | Título da lista | O que está incluído |
-| Dúvidas *(se o item 9 ficar)* | Ficou com dúvida? Veja as perguntas frequentes. |
-| Novidades *(caixa desmarcada)* | Quero receber novidades e ofertas da escola por e-mail. |
-| Depois de pagar, título | Assinatura confirmada. |
-| Depois de pagar, texto *(vencido em 21/10)* | Enviamos um e-mail para {email} com o link para você criar sua senha e começar a estudar. |
-| Depois de pagar, não chegou *(saiu em 21/10)* | Não chegou em alguns minutos? Confira a caixa de spam ou peça de novo. |
-| Depois de pagar, botão *(saiu em 21/10)* | Enviar de novo |
-| Depois de pagar, reenviado *(saiu em 21/10)* | Enviamos de novo. |
-| Depois de pagar, e-mail errado | Digitou o e-mail errado? Escreva para {contato}. |
+| Embaixo da lista | a frase do cartão da home (`home.pricing.footer`), a mesma, editável no admin |
+| **Depois de pagar** — título | Assinatura confirmada. |
+| Texto | Agora crie sua senha. É com ela e com o e-mail {email} que você entra na escola. |
+| Campo | Crie uma senha |
+| Regra | Pelo menos 8 caracteres. *(o de hoje, `senhaNova.regra`)* |
+| Botão | Criar senha e começar a estudar |
+| Enquanto cria | Criando… *(o de hoje)* |
+| E-mail errado | Digitou o e-mail errado? Escreva para {contato}. |
+| A entrada automática falhou *(raro)* | Sua senha foi criada. Entre com seu e-mail e a senha nova. — botão "Entrar" |
+| **Quando algo dá errado** — o mesmo e-mail em outra aba (`Ocupada`, ao assinar) | Este e-mail já tem uma assinatura em andamento em outra aba. Termine por lá ou aguarde um instante. |
+| Pagamento ainda não confirmado (`NaoConfirmado`) | Seu pagamento ainda está sendo confirmado. Aguarde um instante e tente de novo. |
+| Passou o prazo, 24 h depois de pagar (`PrazoVencido`) | O prazo para criar a senha por aqui terminou. Na tela de entrar, use "Esqueci minha senha". |
+| Já entrou pelo código do e-mail (`EmailConfirmado`) | Você já entrou na escola pelo código enviado ao seu e-mail. Para criar a senha, use "Esqueci minha senha" na tela de entrar. |
+| Já criou a senha (`JaTemSenha`) | Sua senha já foi criada. Entre com seu e-mail e a senha. |
+| Dois cliques ao criar a senha (`Ocupada`, na senha) | Aguarde um instante e tente novamente. *(o texto do operador de 21/10, `aguardeUmInstante`)* |
+| Botão dessas mensagens | Ir para a tela de entrar |
+| Muita gente assinando no mesmo instante (`MuitosAoMesmoTempo`) — **texto do operador, 21/10/2026** | Aguarde um instante e tente novamente. |
 
-**Depois do pagamento.** *(REVISTO pelas decisões do operador de 21/10/2026, na abertura do passo
+**Continuam os de hoje** (`app.assinar`, `comum.muitasTentativas`): enquanto confirma ("Confirmando
+sua assinatura…", "Está demorando mais que o normal…"), o código inválido, as muitas tentativas e o
+erro geral; os avisos de senha curta, longa ou só de espaços são os de `senhaNova` (um texto por
+aviso). *Se a medição na área restrita mostrar que o campo de pagamento da Stripe já pede o CPF
+sozinho, os três textos do CPF voltam ao operador antes de construir.*
+
+**Depois do pagamento** *(construída no passo 6e2, 27/10/2026: `/assinar/concluido`)*. *(REVISTO pelas decisões do operador de 21/10/2026, na abertura do passo
 5: **a senha nasce na própria tela**, e o e-mail é de boas-vindas — não é preciso para começar. Os
-rascunhos de texto abaixo que falam do link ou do "Enviar de novo" estão VENCIDOS: os novos vêm com
-o passo 6, na P81.)* Quem acabou de pagar ainda não tem senha nem está logado: a tela confirma,
+rascunhos de 12/10 que falavam do link ou do "Enviar de novo" saíram: os textos desta tela foram
+aprovados na P81, 27/10/2026, na tabela acima.)* Quem acabou de pagar ainda não tem senha nem está logado: a tela confirma,
 repete o e-mail digitado (é ali que a pessoa percebe um erro de digitação) e pede a senha — com
 ela, a pessoa já entra para estudar. Enquanto a confirmação não vem, valem os textos de hoje ("Confirmando sua
 assinatura…", "Está demorando mais que o normal…"). `{contato}` é `suporte@jilsonsantana.com` — a caixa de suporte que o operador escolheu na P49 (20/10/2026; `tech-stack.md` → Email).
@@ -618,7 +675,8 @@ país, o CPF e, mais adiante, o dólar e o imposto de fora *(o país e o dólar 
 com a etapa 4.6c; a coluna ficou)*, o total final precisa de um lugar
 fixo: **o agente passou a recomendar a coluna, e ele confirmou no mesmo dia ("Certo").** Na
 tela pública, isso revê a decisão de 10/10 de mostrar "Hoje você paga" só com código (o gatilho
-de reabertura dela já previa). Na tela de quem está logado, continua a P80. *Reabre se a coluna
+de reabertura dela já previa). Na tela de quem está logado também, desde 27/10/2026 (P80: as duas
+telas iguais). *Reabre se a coluna
 confundir quem assina — foi o motivo da decisão de 10/10.*
 
 **Sugerido pelo agente e RECUSADO pelo operador** *(não propor de novo sem o gatilho)*:
@@ -719,8 +777,18 @@ pública de assinar*), o teto da prévia (*Limite de tentativas*), o código de 
   um código de tentativa novo (32 caracteres) e a escolha do visitante, e a ficha passa a guardar
   esse código. O número fiscal e a assinatura nascem na MESMA trava: a primeira fatura sai com o
   número de quem criou aquela tentativa.
-- **No máximo 3 "assinar sem login" em andamento ao mesmo tempo**, somando todos os endereços
-  (`ASSINATURAS_SEM_LOGIN_AO_MESMO_TEMPO`, achado P1 da revisão de segurança do passo): cada um
+  **Desde o passo 6b (27/10/2026), a ficha e a assinatura na Stripe guardam SÓ O RESUMO da
+  tentativa** (SHA-256, hexadecimal — `server/src/lib/tentativa-do-visitante.ts`; a migration
+  `20261027130000_resumo_da_tentativa` trocou as linhas que existiam): a tentativa abre a conta (a
+  primeira senha e a sessão), e o painel da Stripe, os avisos dela e uma cópia do banco não podem
+  levá-la. O código vai só ao navegador; toda busca e toda comparação são pelo resumo (revisão de
+  segurança do passo 5, 21/10/2026). *Sem gatilho — é como se guarda o que vale como senha.*
+- **No máximo 3 "assinar sem login" em andamento ao mesmo tempo** *(REVISTO no passo 6, 27/10/2026 —
+  achado P1 da revisão de segurança: com 1 processador por cópia, o banco tinha 3 ligações, e as 3
+  assinaturas ocupavam todas. Agora cada cópia tem **10 ligações** (decisão do operador) e o teto é
+  de TODAS as assinaturas, com e sem login: **as ligações menos 2**, que ficam livres para as aulas —
+  8 por cópia; `lib/assinaturas-em-andamento.ts`. O resto deste item continua valendo)*, somando
+  todos os endereços (achado P1 da revisão de segurança do passo 4): cada um
   segura uma ligação com o banco enquanto a Stripe responde, e sem conta nada os limitava — uma
   dúzia de endereços disparando juntos deixaria a aula de quem paga esperando. Cheio, 409
   `MuitosAoMesmoTempo` com `Retry-After` na hora, antes de abrir qualquer transação — um código

@@ -14,6 +14,7 @@ import trilhasRouter from "./routes/trilhas.js";
 import lessonsRouter from "./routes/lessons.js";
 import searchRouter from "./routes/search.js";
 import homeRouter from "./routes/home.js";
+import assinarRouter from "./routes/assinar.js";
 import adminSiteTextRouter from "./routes/admin-site-text.js";
 import siteTextRouter from "./routes/site-text.js";
 import adminTestimonialsRouter from "./routes/admin-testimonials.js";
@@ -159,7 +160,12 @@ app.use("/api", tratarErroDaApi);
 // Registrada em TODOS os ambientes (em dev o operador abre localhost:3000).
 // Em produção ela fica DEPOIS do portão "Em breve", que é aplicado abaixo —
 // por isso o portão precisa continuar antes do express.static e do fallback.
-const registrarHome = () => app.use("/", homeRouter);
+// A tela pública de assinar (`/assinar`, etapa 4.7, passo 6c) entra junto: também é página do
+// servidor, e também fica atrás do portão.
+const registrarHome = () => {
+  app.use("/", homeRouter);
+  app.use("/", assinarRouter);
+};
 
 // Serve client static files in production
 const __dirname = path.dirname(fileURLToPath(import.meta.url));

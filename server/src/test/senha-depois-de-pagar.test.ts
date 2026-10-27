@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, afterAll, afterEach, beforeEach } from "vitest";
 import request from "supertest";
+import { createHash } from "node:crypto";
 import type { PedidoDeEmail, Envio } from "../lib/email.js";
 
 // O balcão de e-mail na NOSSA fronteira: vira dublê, para o teste ler o código de entrar que sairia.
@@ -38,6 +39,8 @@ const S = `${Date.now()}`;
 const DIA = 24 * 60 * 60 * 1000;
 let n = 0;
 const SENHA = `senha-da-tela-${S}`;
+/** O resumo que a ficha guarda (passo 6b): o SHA-256 da tentativa, em hexadecimal — calculado aqui, à parte. */
+const sha256 = (texto: string) => createHash("sha256").update(texto, "utf8").digest("hex");
 
 /** Uma conta que nasceu de um pagamento sem conta: a ficha com a tentativa, o espelho, e sem senha. */
 async function nascida({ criadaHa = 0, acesso = true, comConta = true } = {}) {
@@ -51,7 +54,7 @@ async function nascida({ criadaHa = 0, acesso = true, comConta = true } = {}) {
       data: { ownerUserId: id, status: acesso ? "active" : "canceled", currentPeriodEnd: new Date(Date.now() + (acesso ? 30 : -1) * DIA), stripeSubscriptionId: `sub_${S}_${k}` },
     });
   }
-  await prisma.guestCheckout.create({ data: { id: `ficha-${S}-${k}`, email, stripeCustomerId: `cus_${S}_${k}`, livemode: false, tentativa, userId: comConta ? id : null } });
+  await prisma.guestCheckout.create({ data: { id: `ficha-${S}-${k}`, email, stripeCustomerId: `cus_${S}_${k}`, livemode: false, tentativa: sha256(tentativa), userId: comConta ? id : null } });
   return { id, email, tentativa };
 }
 
@@ -213,7 +216,7 @@ describe("a senha da tentativa e o código no e-mail", () => {
   it("a marca da vez fica na ficha: mesmo que a linha de senha suma e o e-mail volte a não confirmado, a tentativa não cria outra", async () => {
     const conta = await nascida();
     expect((await criarSenha(conta.tentativa, SENHA)).status).toBe(200);
-    expect((await prisma.guestCheckout.findUnique({ where: { tentativa: conta.tentativa } }))?.senhaCriadaEm).toBeInstanceOf(Date);
+    expect((await prisma.guestCheckout.findUnique({ where: { tentativa: sha256(conta.tentativa) } }))?.senhaCriadaEm).toBeInstanceOf(Date);
     await prisma.account.deleteMany({ where: { userId: conta.id, providerId: "credential" } });
     await prisma.user.update({ where: { id: conta.id }, data: { emailVerified: false } });
 

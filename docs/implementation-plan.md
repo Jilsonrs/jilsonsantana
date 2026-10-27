@@ -45,6 +45,9 @@
 > curso (200), o login com senha errada (401), o aviso da Stripe sem assinatura (400), o job das
 > migrations com sucesso. **O banco de produção está em 0,5 a 4 desde 27/10/2026** (mudado pelo
 > operador no painel do Neon).
+> **Publicado em 27/10/2026: `0116461`** (só documentos — a proteção na entrada), **revisão
+> `jilson-prod-00041`**, conferida de fora: o site, a saúde e o curso (200), o login com senha errada
+> (401), o aviso da Stripe sem assinatura (400), o job das migrations com sucesso.
 > **Publicado em 24–25/10/2026:** `d6c2906` — o endereço do CDN do Bunny corrigido (P105) e a
 > conferência dele no CI; `f09a903` — o download do arquivo da aula em pedaços (o Cloud Run recusava
 > acima de 32 MB); `294b106` — o segundo mais novo vence entre aparelhos. Conferidos de fora (o site
@@ -743,7 +746,6 @@
     lembrete de janeiro puxa: **Tailwind 4** (exige aparelhos mais novos que o piso do site) · **Prisma 8**
     (em teste, e o login ainda não aceita) · **TypeScript 7** (o revisor automático ainda não aceita) ·
     **`@hookform/resolvers` 6** (trava a instalação do npm; só muda uma peça que não usamos).
-- [ ] **O alerta de orçamento (R$ 100):** conta o gasto antes ou depois do crédito?
 - [x] **"O Google Cloud explicado"** *(pedido do operador, 24/10/2026: "é a primeira vez que utilizo
       […] preciso saber o essencial para entender como funciona e testar configurações maiores e
       menores e analisar o que fez diferença ou não")*: o que foi montado e por quê, e um teste de
@@ -4957,10 +4959,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             `?tentativa=`, nem no `return_url` da Stripe —, fica só na memória da página ou no
             `sessionStorage`, sai dali depois de criada a senha, e a senha se cria só por POST;
             (b) **guardar só o resumo da tentativa** (SHA-256) na ficha e no `metadata` da
-            assinatura da Stripe, e buscar e comparar pelo resumo — hoje ela vai inteira, legível no
-            painel da Stripe e em todo aviso; antes de ligar a venda sem login (passo 8). *Sobe de
-            prioridade se alguém além do operador tiver acesso ao painel ou às chaves da Stripe, ou
-            se um app for ligado a ela;* (c) **as recusas da senha** que a tela mostra:
+            assinatura da Stripe, e buscar e comparar pelo resumo — **FEITO na 6b (27/10/2026)**; (c) **as recusas da senha** que a tela mostra:
             `NaoConfirmado`, `PrazoVencido`, `EmailConfirmado` (a dona do e-mail já entrou pelo
             código: a senha agora é pelo "Esqueci minha senha"), `JaTemSenha`, `Ocupada` — os textos
             são do operador.
@@ -4968,7 +4967,12 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             de pagamento da Udemy e do Code with Mosh)* **está em `billing.md` → *A tela pública
             de assinar*:** os blocos em ordem, os textos, o que a Stripe exige
             (endereço não) e o que fica de fora. **Antes de construir: P80 (o que existe na
-            tela) e P81 (os textos).** Do operador, no mesmo dia: o formulário de quem está
+            tela) e P81 (os textos).** **A P80 foi respondida em 27/10/2026** (`billing.md` →
+            *O que existe na tela*): entram o "Já tem conta? Entrar", a linha dos Termos e a lista
+            "O que está incluído"; o link para as perguntas frequentes não (o rodapé já tem); e as
+            duas telas ficam iguais. **A P81 também, no mesmo dia:** os textos aprovados (os da
+            tela, os de depois do pagamento e as recusas da senha do item (c) acima) estão na
+            tabela de `billing.md` e entram no `pt.ts` com a construção. Do operador, em 12/10: o formulário de quem está
             logado *"está ótimo porque já está funcionando"* — é a base, sem refazer — e o
             desconto do anual continua à vista (*"é um atrativo"*). **DECISÃO dele (12/10/2026):
             a tela leva o menu de cima e o rodapé do site, como as outras páginas públicas, e o
@@ -4980,21 +4984,181 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             depois do pagamento para quem ainda não tem senha.
             *Convenções de engenharia:* a lista "O que está incluído" lê a MESMA chave do
             cartão da home (`home.pricing.features`, com as edições do admin) — duas listas
-            divergem · as linhas novas entram no formulário como parte opcional: a tela de quem
-            está logado só muda se ele disser (P80) · o valor da linha de renovação é o do
+            divergem · as linhas novas valem para as duas telas, porque o formulário é um só (P80,
+            27/10/2026) · o valor da linha de renovação é o do
             servidor; com código promocional, se a prévia não der o valor da renovação, a linha
             sai sem valor — nunca conta feita na tela.
             **Acrescentado em 12/10/2026, na mesma conversa:** o **CPF ou CNPJ**, obrigatório,
             entra no formulário, que é o mesmo das duas telas (a pública e a de quem está
             logado) · a **coluna de resumo** com o total de hoje, a renovação, o reembolso e o
             pagamento seguro — **decisão dele, 12/10/2026** ("Certo"); revê, na tela pública, a
-            decisão de 10/10 de mostrar "Hoje você paga" só com código (na tela logada, P80) ·
+            decisão de 10/10 de mostrar "Hoje você paga" só com código (e na tela logada também:
+            P80, 27/10/2026) ·
             **antes de desenhar o campo do CPF, MEDIR na área restrita o que o campo da Stripe
             já pede sozinho**, com um cartão de teste do Brasil: a doc diz que o campo de
             pagamento cuida do número fiscal de comprador da América Latina, e dois campos de
             CPF na mesma tela é o erro a evitar. **CANCELADOS no mesmo dia, pela etapa 4.6c:**
             o campo País e o aviso com "Avise-me" para quem é de fora (chegaram a ser decididos
             e saíram quando ele tirou a venda para fora do projeto). **Só em português.**
+            **O PLANO DO PASSO 6, APROVADO pelo operador em 27/10/2026** (um commit por parte;
+            *Docs check (context7):* Stripe → `/websites/stripe` → o campo de pagamento não pede
+            o CPF numa conta do Brasil, e mandá-lo nos dados do cartão é proibido — o CPF vai na
+            ficha do cliente (medido, `billing.md`); Better Auth → `/better-auth/better-auth` →
+            antes de mexer na tela de entrar, na 6e):
+            - [x] **6a — O CPF também na assinatura de quem está logado (servidor).**
+                  `POST /api/billing/assinatura` recebe o CPF ou CNPJ e o grava na ficha do
+                  cliente da Stripe com a trava, antes de a assinatura nascer (`checkout.ts`,
+                  reaproveitando `acertarNumeroFiscal`); se o número mudou, a incompleta antiga
+                  não é reaproveitada; a recusa da Stripe é 400 `DocumentoInvalido`; quem a Stripe
+                  diz que já assina não tem a ficha mexida. 7 testes novos em `billing.test.ts`;
+                  mutação (reaproveitar com o CPF trocado · não gravar · recusa virar 500 · mexer
+                  na ficha de quem já assina): as quatro reprovam. **Opcional no servidor nesta
+                  publicação** (a API só acrescenta), e a tela sempre manda.
+            - [x] **6b — Só o resumo (SHA-256) da tentativa no banco e na Stripe** (servidor +
+                  migration). `lib/tentativa-do-visitante.ts` (gera e resume); a ficha
+                  (`GuestCheckout.tentativa`) e os dados da assinatura na Stripe guardam o resumo;
+                  a confirmação e a senha buscam pelo resumo; a migration
+                  `20261027130000_resumo_da_tentativa` troca as linhas que existiam (sem DDL —
+                  `migrate diff`: *No difference detected*, no banco de teste recriado do zero).
+                  Testes: `resumo-da-tentativa.test.ts` (a migration, e a ficha em claro que não
+                  abre nada) e os do visitante e da senha comparando com o SHA-256 calculado à
+                  parte. Mutação (a ficha em claro · a Stripe em claro · a confirmação e a senha
+                  buscando em claro · a migration sem efeito): as cinco reprovam.
+            - [x] **6c — A página `/assinar` do servidor**, com o menu e o rodapé da home (sem
+                  mudar o HTML dela) e o app montado no meio só com o formulário; com a venda sem
+                  login desligada, nada muda para o visitante. O menu, o rodapé e as fontes saíram
+                  de `home.ts` para `views/partes-do-site.ts` (a home renderizada nas 4 variantes
+                  saiu IGUAL, caractere a caractere); `views/assinar.ts` + `routes/assinar.ts`
+                  (logado → `/aluno/assinar`; venda desligada → `/login`; em dev, só pelo Vite);
+                  `lib/etiquetas-do-app.ts` (as etiquetas do `index.html` do app: o montado em
+                  produção, o do Vite em dev); o proxy do Vite ganhou `/assinar`; no app, a rota
+                  fora do `Layout` e `naPaginaDoServidor()` (todo link vira carregamento normal, e
+                  os pedaços do aluno não são baixados ali). Nesta parte a tela mostra os planos
+                  (carregando, erro e sem planos). Testes: `pagina-de-assinar.test.ts`,
+                  `etiquetas-do-app.test.ts`, `AssinarSemLoginPage.test.tsx` e os de `versao`.
+                  Mutação (logado sem desvio · venda desligada abrindo · o CSS do site antes do
+                  app · o menu sem o caminho da home · o menu sem escape · dev sem desvio para o
+                  Vite · o app trocando por dentro): as sete reprovam. *O menu na `/assinar` leva
+                  às seções da home (`/#cursos`…), o mesmo destino do menu dela.*
+            - [x] **6d — As partes novas do formulário, nas duas telas**: Seus dados, a coluna de
+                  resumo, "O que está incluído" e os textos aprovados no `pt.ts`. O formulário
+                  dividido (`FormularioDeAssinatura` + `CampoDoDocumento`, `ResumoDaAssinatura`,
+                  `OQueEstaIncluido`, `BotaoComCartao`): o CPF ou CNPJ conferido pelo `core` antes
+                  do cartão e do servidor, e no pedido; o "Total de hoje" sempre na coluna (sai o
+                  "Hoje você paga"), a renovação com o valor do servidor — com código, sem valor —,
+                  o reembolso, o pagamento seguro, o botão e os Termos (links em outra aba); a lista
+                  e a frase da home vêm com os planos (`incluido`, com as edições do admin —
+                  `vitrine-da-assinatura.ts`). A tela logada já tem tudo; a pública ganha o
+                  formulário na 6e. *Nesta parte só entra o que é das DUAS telas: o e-mail, o
+                  atalho "Já tem conta? Entrar" e as novidades são do visitante (6e).* Testes: 6
+                  novos e os de antes ajustados (`AssinarPage.test.tsx`, 43) e o da lista com as
+                  edições do admin (`billing.test.ts`). Mutação (sem conferir o CPF · o CPF fora do
+                  pedido · a renovação com valor mesmo com código · o total ignorando o código · a
+                  recusa do servidor virando erro geral · os Termos na mesma aba · a lista que nunca
+                  aparece · a lista sem as edições do admin): as oito reprovam.
+            - [x] **6e1 — O visitante assina** *(a 6e foi em duas partes, para caber)*: na
+                  `/assinar`, o formulário inteiro no modo sem login (o e-mail com "Já tem conta?
+                  Entrar", o CPF, as novidades desmarcadas, os planos e a prévia pelas rotas do
+                  visitante, a origem do UTM quando guardada); **a tentativa só na memória e no
+                  `sessionStorage`** (`lib/tentativa-de-assinar.ts`), guardada ANTES de o cartão
+                  confirmar, nunca no endereço de volta da Stripe; a do mesmo e-mail segue no novo
+                  clique; as recusas (`JaTemConta` embaixo do e-mail, `Ocupada`,
+                  `MuitosAoMesmoTempo`, `DocumentoInvalido`); depois do pagamento, a tela de
+                  concluído carrega inteira. "Já tem conta? Entrar" → `/login?depois=assinar` →
+                  `/aluno/assinar` (`destinoDepoisDeEntrar`: lista fechada; o resto vai ao Início).
+                  Os botões Assinar da home, para o visitante, levam à `/assinar` — só com a venda
+                  sem login ligada. Testes: `AssinarSemLoginPage.test.tsx` (12), `LoginPage.test.tsx`
+                  (8 novos, com destinos de fora indo ao Início) e `home.test.ts`. Mutação (a
+                  tentativa não guardada · a tentativa no endereço de volta · a tentativa de outro
+                  e-mail seguindo · sem conferir o e-mail · o "já tem conta" virando erro geral · a
+                  prévia pela rota logada · o destino vindo do endereço · o botão da home sem a trava
+                  da venda): as oito reprovam.
+            - [x] **6e2 — A tela de depois do pagamento** (`/assinar/concluido`): confirma, pede
+                  a senha, entra e vai ao Início; as recusas; sem tentativa guardada, a tela de
+                  entrar. A página do servidor é a mesma da `/assinar` (`pagina: "concluido"`: fora
+                  do Google, sem o título "Assinar"; logado → `/aluno/assinar/concluido`), e o proxy
+                  do Vite a cobre. No app, `AssinaturaConcluidaSemLoginPage` + `CriarSenhaDepoisDePagar`:
+                  a confirmação pela tentativa desta aba a cada 2 s, com o "demorando"; a senha
+                  (`senhaNovaSchema`, os avisos de `senhaNova`) por POST com a tentativa; entrou → a
+                  tentativa esquecida e o Início; a entrada automática falhou → o botão Entrar; as
+                  recusas com os textos aprovados (as que encerram esquecem a tentativa e levam à tela
+                  de entrar; `NaoConfirmado` e `Ocupada` mantêm o formulário); falha sem motivo → a
+                  frase da tela de entrar; o contato do suporte (`EMAIL_DE_SUPORTE`, no `core` — o
+                  e-mail usa o mesmo). Testes: `AssinaturaConcluidaSemLoginPage.test.tsx` (11) e
+                  `pagina-de-assinar.test.ts` (3 novos). Mutação (sem tentativa e sem ir ao login · a
+                  senha antes de confirmar · a tentativa guardada depois de entrar · a recusa que
+                  encerra guardando a tentativa · o "não confirmado" virando falha geral · sem
+                  perguntar de novo · o concluído no Google · o logado indo à tela errada): as oito
+                  reprovam.
+            - [ ] **6f — Prova e revisão**: `security-vulnerability-reviewer`, mutação, prova no
+                  banco de dev com conta descartável e cartões de teste, a tela olhada em dev.
+                  - [x] **A revisão de segurança** (27/10/2026): nenhum P0; um P1 e três P2.
+                  - [x] **O P1 corrigido** *(decisão do operador, no mesmo dia: "10 por cópia")*: com 1
+                        processador, cada cópia tinha 3 ligações com o banco, e 3 assinaturas esperando
+                        a Stripe ocupavam todas (a aula de quem paga esperava). Agora 10 ligações por
+                        cópia (`LIGACOES_POR_COPIA`, `lib/ligacoes.ts`), e um teto único de assinaturas
+                        em andamento — com e sem login —, as ligações menos 2 (`lib/assinaturas-em-
+                        andamento.ts`; cheio → 409 `MuitosAoMesmoTempo`, e a tela logada também diz
+                        "Aguarde um instante e tente novamente."). Testes (o teto do visitante, o do
+                        logado, as ligações) e mutação (o teto que nunca enche · o logado fora do teto ·
+                        nenhuma ligação livre · de volta a 3 ligações · a tela logada sem a frase): as
+                        cinco reprovam.
+                  - [x] **Os três P2 corrigidos** *(decisão do operador, 27/10/2026: "Corrijo os três
+                        agora")*: (1) o pedido de quem está logado SEM o CPF só segue se a ficha do
+                        cliente já tiver um (`temNumeroFiscalDoBrasil`); sem nenhum, 400
+                        `DocumentoInvalido` — fecha o "assinar sem CPF chamando o servidor direto" até
+                        o CPF virar obrigatório no servidor (o checkbox abaixo continua); (2) reaproveitar
+                        a incompleta compara o número com que a FATURA dela foi fechada
+                        (`numeroFiscalDaFatura`, lido de `latest_invoice.customer_tax_ids`), não o da
+                        ficha de agora — nos dois caminhos, logado e visitante; (3) a recusa "já tem
+                        conta" deixa uma linha `[api]` no registro com o endereço só como marca
+                        (`marcaDoEndereco`, a mesma cifra das contagens — sem IP nem e-mail), o que torna
+                        visível o gatilho de reabertura do oráculo de e-mail. Testes novos nos dois
+                        caminhos e na função pura; mutação (sem CPF e sem ficha assinando · o logado e o
+                        visitante reaproveitando sem olhar a fatura · a leitura sem o número da fatura ·
+                        a recusa sem linha · o IP em claro · a rota sem a recusa): as sete reprovam.
+                  - [x] **Os dois achados reportados no plano, corrigidos** *(pedido do operador,
+                        27/10/2026)*: (1) **a origem do visitante (UTM) se perdia na home** — página do
+                        servidor, sem o app; agora a home grava a origem com o MESMO registro do app
+                        (`SCRIPT_DA_ORIGEM` e `CHAVE_DA_ORIGEM`, `core/src/constants/origem.ts`; o
+                        `attribution.ts` usa a mesma chave), e o teste do app executa o script e confere
+                        que o app lê o que ele gravou; (2) **o proxy do Vite** perdeu o `/en` e passou a
+                        aceitar a raiz com `?utm_…` (antes, em dev, a home com a origem caía no React).
+                        Mutação (outra chave · outro formato · sobrescrever o primeiro acesso · a home sem
+                        o script): as quatro reprovam.
+                  - [x] **A prova no banco de dev** (27/10/2026, a migration da 6b aplicada lá antes):
+                        16 de 16 — o visitante assina com CPF, a tentativa só como resumo na ficha e na
+                        Stripe, o CPF na ficha do cliente (`br_cpf`), o pagamento com cartão de teste, a
+                        conta nascendo pela sincronia, a confirmação, a senha criada e o acesso, a
+                        repetição recusada (`JaTemSenha`), e o logado com CNPJ (`br_cnpj`); o banco
+                        voltou ao retrato de antes.
+            - [ ] **6g — O ACABAMENTO VISUAL das telas de assinar, pelo Antigravity** *(pedido do
+                  operador, 27/10/2026: passar ao Antigravity com um passo a passo; o Claude confere)*.
+                  **Só visual** — nada de texto, comportamento, rota ou teste.
+                  1. Da `dev`, abrir o branch `acabamento-assinar`. Ligar `npm run dev:server` e
+                     `npm run dev:client` e abrir pelo Vite: `http://localhost:5173/assinar`
+                     (visitante) e `http://localhost:5173/aluno/assinar` (logado com o member@).
+                     Para ver a `/assinar/concluido`: no DevTools, em `sessionStorage`, gravar
+                     `jilson.assinar.tentativa` = `{"tentativa":"x","email":"a@b.com"}` — aparece o
+                     "Confirmando sua assinatura…".
+                  2. Acabar as duas colunas (formulário à esquerda; o resumo, o botão e "O que está
+                     incluído" à direita; no celular, uma coluna só, nesta ordem) e os componentes
+                     novos: `client/src/components/assinar/` (`FormularioDeAssinatura`,
+                     `CampoDoDocumento`, `DadosDoVisitante`, `ResumoDaAssinatura`, `OQueEstaIncluido`,
+                     `CriarSenhaDepoisDePagar`) e `client/src/pages/AssinaturaConcluidaSemLoginPage.tsx`.
+                  3. Na página do servidor (`server/src/views/assinar.ts`) mexer só nas classes da
+                     parte do título; texto sai do dicionário e passa por `escapeHtml` (não trocar).
+                     **Atenção:** ali o CSS do site (`/css/public.css`) vem DEPOIS do CSS do app, e vence
+                     nas regras do `body` e dos títulos — se o formulário sair com cara errada, ajustar
+                     em `client/src/public-input.css`, só para `body[data-pagina-do-servidor]`, e
+                     remontar com `npm --workspace client run build:css`.
+                  4. Não mudar: textos, o que é botão ou link e para onde leva, `aria-*`, a ordem dos
+                     campos. Os quatro gates verdes (`typecheck`, `lint`, `test`, `build`), conferidos
+                     pelo código de saída. Commit no branch e **parar**: sem merge na `dev` nem na
+                     `main` — o Claude confere o diff e faz o merge na `dev`.
+            - [ ] **Depois da publicação com a 6a:** o CPF passa a ser OBRIGATÓRIO no servidor
+                  (`assinarSchema`, `core/src/schemas/billing.ts`) — tira o "sem o CPF ainda
+                  assina" e o teste dele.
       - [ ] **Passo 7 — Os e-mails automáticos da assinatura.** A cobrança que falhou (com a
             data da próxima tentativa), o aviso antes de trancar e a assinatura cancelada (com
             o link para reativar). Os textos são do operador. **Depende só do passo 3** — pode

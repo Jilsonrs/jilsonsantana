@@ -501,8 +501,6 @@ export const pt = {
       descontoParaSempre: "{desconto} de desconto em todas as cobranças",
       descontoUmaVez: "{desconto} de desconto na primeira cobrança",
       descontoPorMeses: "{desconto} de desconto por {meses} meses",
-      // Só aparece com código promocional aplicado: sem código, o cartão do plano já diz tudo.
-      hoje: "Hoje você paga",
       pagamento: "Pagamento",
       botao: "Assinar",
       botaoReativar: "Reativar assinatura",
@@ -513,6 +511,56 @@ export const pt = {
       // 4.7, passo 4): o pedido volta com `MuitosAoMesmoTempo`. Texto do operador (21/10/2026), para
       // a pessoa esperar antes de clicar de novo. Quem o mostra é a tela pública (passo 6).
       aguardeUmInstante: "Aguarde um instante e tente novamente.",
+      // AS PARTES NOVAS DA TELA DE ASSINAR (etapa 4.7, passo 6d), nas DUAS telas — a pública e a de quem
+      // está logado (decisão do operador, 27/10/2026, P80). Textos APROVADOS por ele no mesmo dia (P81 —
+      // billing.md → *A tela pública de assinar*). O "Total de hoje" substitui o "Hoje você paga".
+      seusDados: "Seus dados",
+      documento: "CPF ou CNPJ",
+      documentoAjuda: "Usamos para emitir a nota fiscal.",
+      documentoInvalido: "Confira o número: este CPF ou CNPJ não é válido.",
+      resumo: "Resumo",
+      totalDeHoje: "Total de hoje",
+      renovaMensal: "Renova todo mês por {valor}, até você cancelar.",
+      renovaAnual: "Renova uma vez por ano por {valor}, até você cancelar.",
+      // Com código promocional, quando a prévia não diz o valor da renovação: a linha sai sem ele —
+      // nunca conta feita na tela.
+      renovaMensalSemValor: "Renova todo mês, até você cancelar.",
+      renovaAnualSemValor: "Renova uma vez por ano, até você cancelar.",
+      reembolso: "Garantia de 7 dias: se não gostar, você recebe de volta o valor pago.",
+      pagamentoSeguro: "Pagamento seguro, processado pela Stripe. A escola não guarda os dados do seu cartão.",
+      // `{termos}` e `{privacidade}` viram os dois links.
+      termos: "Ao assinar, você concorda com os {termos} e a {privacidade}.",
+      termosDeUso: "Termos de Uso",
+      politicaDePrivacidade: "Política de Privacidade",
+      incluidoTitulo: "O que está incluído",
+      // SÓ DA TELA PÚBLICA (etapa 4.7, passo 6e): o visitante, sem conta. Textos APROVADOS pelo operador
+      // em 27/10/2026 (P81). O aviso de e-mail inválido é o da tela de entrar (`login.emailInvalido`).
+      email: "Seu e-mail",
+      emailAjuda: "É com ele que você entra na escola.",
+      // "Já tem conta? Entrar" — "Entrar" é o link (leva ao login e, depois, à tela de assinar do app).
+      jaTemConta: "Já tem conta?",
+      entrar: "Entrar",
+      emailJaTemConta: "Este e-mail já tem conta. Entre para assinar.",
+      novidades: "Quero receber novidades e ofertas da escola por e-mail.",
+      // O mesmo e-mail assinando em outra aba (`Ocupada`).
+      ocupadaOutraAba: "Este e-mail já tem uma assinatura em andamento em outra aba. Termine por lá ou aguarde um instante.",
+      // DEPOIS DO PAGAMENTO, SEM CONTA (etapa 4.7, passo 6e2): a senha nasce na tela (decisão do operador,
+      // 21/10/2026). Textos APROVADOS por ele em 27/10/2026 (P81). Enquanto confirma, valem os de cima
+      // (`confirmando`, `demorando`); os avisos de senha curta, longa ou só de espaços são os de `senhaNova`;
+      // a falha sem motivo é a da tela de entrar (`login.falha`).
+      confirmadaSemLogin: "Assinatura confirmada.",
+      crieSuaSenha: "Agora crie sua senha. É com ela e com o e-mail {email} que você entra na escola.",
+      campoDaSenha: "Crie uma senha",
+      criarSenhaEComecar: "Criar senha e começar a estudar",
+      emailErrado: "Digitou o e-mail errado? Escreva para {contato}.",
+      // A senha foi criada e a entrada automática falhou (raro): a pessoa entra pela tela de entrar.
+      senhaCriadaEntre: "Sua senha foi criada. Entre com seu e-mail e a senha nova.",
+      // As recusas da senha (`POST /api/billing/visitante/senha`).
+      naoConfirmado: "Seu pagamento ainda está sendo confirmado. Aguarde um instante e tente de novo.",
+      prazoVencido: "O prazo para criar a senha por aqui terminou. Na tela de entrar, use \"Esqueci minha senha\".",
+      emailJaConfirmado: "Você já entrou na escola pelo código enviado ao seu e-mail. Para criar a senha, use \"Esqueci minha senha\" na tela de entrar.",
+      jaTemSenha: "Sua senha já foi criada. Entre com seu e-mail e a senha.",
+      irParaEntrar: "Ir para a tela de entrar",
       jaAssinante: "Você já é assinante.",
       irParaInicio: "Ir para o Início",
       confirmando: "Confirmando sua assinatura…",

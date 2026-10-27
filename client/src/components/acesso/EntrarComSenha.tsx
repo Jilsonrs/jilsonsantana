@@ -6,7 +6,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { loginSchema, type LoginInput } from "@jilson/core";
 import { signIn } from "@/lib/auth-client";
 import { pedirCodigo } from "@/lib/api";
-import { falhaAoPedirCodigo, POS_LOGIN } from "@/lib/acesso-por-codigo";
+import { falhaAoPedirCodigo, useDestinoDepoisDeEntrar } from "@/lib/acesso-por-codigo";
 import { useT } from "@/lib/language";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +22,7 @@ type Props = { emailInicial?: string; aoEnviarCodigo: (email: string) => void };
 
 export function EntrarComSenha({ emailInicial, aoEnviarCodigo }: Props) {
   const navigate = useNavigate();
+  const destino = useDestinoDepoisDeEntrar();
   const t = useT();
   const queryClient = useQueryClient();
   // O TIPO da falha, não a frase: a frase sai do dicionário.
@@ -66,7 +67,7 @@ export function EntrarComSenha({ emailInicial, aoEnviarCodigo }: Props) {
     // passa por ele — sem isto, quem entrasse em seguida na mesma aba veria por instantes o que
     // era da conta anterior.
     queryClient.clear();
-    navigate(POS_LOGIN, { replace: true });
+    navigate(destino, { replace: true });
   }
 
   // "Receber código de acesso": só o e-mail precisa estar certo — a senha, aqui, não importa.

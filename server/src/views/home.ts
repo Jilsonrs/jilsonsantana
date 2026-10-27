@@ -1,5 +1,7 @@
 import { escapeHtml, jsonLd } from "../lib/html.js";
 import { ROTAS_PUBLICAS, TELA_DE_ASSINAR, type Dict } from "@jilson/core";
+import { FONTES_DO_SITE, rodapeDoSite, topoDoSite } from "./partes-do-site.js";
+import { SCRIPT_DA_ORIGEM } from "@jilson/core";
 
 export interface HomeCourse {
   slug: string;
@@ -46,6 +48,9 @@ export interface HomeView {
   /** Quem está logado já foi assinante e hoje está sem acesso: os botões dizem "Reativar
    *  assinatura" (decisão do operador, 10/10/2026). Sem login, nunca. */
   reativar: boolean;
+  /** A venda sem login está no ar (`assinaturaSemLoginNoAr()`): os botões do VISITANTE levam à tela
+   *  pública de assinar. Desligada (produção, até o passo 8 da etapa 4.7), ficam sem ação. */
+  vendaSemLogin: boolean;
   /** Só os PUBLICADOS. Vazia = a seção não aparece. */
   testimonials: HomeTestimonial[];
   /** Só os PUBLICADOS. Vazia = a seção não aparece. */
@@ -72,6 +77,7 @@ export function renderHome({
   logado,
   assinante,
   reativar,
+  vendaSemLogin,
   testimonials,
   faq,
 }: HomeView): string {
@@ -83,16 +89,18 @@ export function renderHome({
   // (`core/src/constants/site.ts`, onde está o porquê).
   const rotas = ROTAS_PUBLICAS;
 
-  // O BOTÃO ASSINAR (decisão do operador, 09/10/2026): com login, leva à tela de assinar; sem
-  // login continua sem ação, até a etapa 4.7. É o MESMO botão do mock aprovado — só passa a
-  // estar dentro de um formulário que apenas navega (`display: contents`: ele não entra no
-  // desenho). Onde o botão está desligado, continua.
+  // O BOTÃO ASSINAR (decisão do operador, 09/10/2026): com login, leva à tela de assinar do app;
+  // sem login, à tela PÚBLICA de assinar (etapa 4.7, passo 6e) — só com a venda sem login ligada;
+  // desligada (produção, até o passo 8), continua sem ação, como no mock. É o MESMO botão do mock
+  // aprovado — só passa a estar dentro de um formulário que apenas navega (`display: contents`: ele
+  // não entra no desenho). Onde o botão está desligado, continua.
   // Quem já foi assinante e está sem acesso lê "Reativar assinatura" (decisão dele, 10/10/2026);
   // "Assinar" fica para a primeira vez — e para o visitante sem login, sempre.
   const botaoAssinar = (textos: { btn: string; btnReactivate: string }, estilo: string): string => {
     const rotulo = logado && reativar ? textos.btnReactivate : textos.btn;
     const botao = `<button ${canSubscribe ? "" : "disabled"} class="btn" style="${estilo}">${escapeHtml(rotulo)}</button>`;
-    return logado && canSubscribe ? `<form method="get" action="${TELA_DE_ASSINAR}" style="display: contents;">${botao}</form>` : botao;
+    const destino = logado ? TELA_DE_ASSINAR : vendaSemLogin ? ROTAS_PUBLICAS.assinar : null;
+    return canSubscribe && destino ? `<form method="get" action="${destino}" style="display: contents;">${botao}</form>` : botao;
   };
 
   return `<!DOCTYPE html>
@@ -113,11 +121,7 @@ export function renderHome({
   <meta property="og:image" content="${escapeHtml(baseUrl)}/img/og-home.jpg">
   <meta name="twitter:card" content="summary_large_image">
   <link rel="stylesheet" href="/css/public.css">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link
-    href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&family=MuseoModerno:wght@600;700&family=Outfit:wght@500;600;700&display=swap"
-    rel="stylesheet">
+${FONTES_DO_SITE}
   <script type="application/ld+json">${jsonLd({
     "@context": "https://schema.org",
     "@type": "EducationalOrganization",
@@ -137,19 +141,7 @@ export function renderHome({
 </head>
 <body>
 <!-- 0. Header / Nav -->
-  <nav class="navbar" aria-label="${escapeHtml(dict.common.a11y.mainNav)}">
-    <div class="nav-container container">
-      <div class="nav-logo" aria-label="Jilson Santana"><img src="/img/Logomarca.png" alt="Jilson Santana"></div>
-      <div class="nav-links">
-        <a href="#cursos">${escapeHtml(dict.common.nav.cursos)}</a>
-        <a href="#trilhas">${escapeHtml(dict.common.nav.trilhas)}</a>
-        ${assinante ? "" : `<a href="#assine">${escapeHtml(dict.common.nav.assine)}</a>`}
-        ${logado
-          ? `<a href="/inicio" class="btn-login">${escapeHtml(dict.common.nav.meusEstudos)}</a>`
-          : `<a href="/login" class="btn-login">${escapeHtml(dict.common.nav.entrar)}</a>`}
-      </div>
-    </div>
-  </nav>
+  ${topoDoSite({ dict, logado, assinante, naHome: true })}
 
   <main id="conteudo-principal">
 
@@ -690,38 +682,10 @@ ${faq.map((item) => `        <details>
     <!-- Footer -->
   </main>
 
-  <footer class="site-footer">
-    <div class="footer-inner">
-      <div class="footer-top">
-        <div class="nav-logo"><img src="/img/Logomarca.png" alt="Jilson Santana"></div>
-        <div class="footer-links">
-          <a href="${rotas.cursos}">${escapeHtml(dict.common.footer.links[0])}</a>
-          <a href="${rotas.trilhas}">${escapeHtml(dict.common.footer.links[1])}</a>
-          ${assinante ? "" : `<a href="${rotas.assinar}">${escapeHtml(dict.common.footer.links[2])}</a>`}
-          <a href="${rotas.faq}">${escapeHtml(dict.common.footer.links[3])}</a>
-          <a href="${rotas.quemSomos}">${escapeHtml(dict.common.footer.links[4])}</a>
-          <a href="${rotas.contato}">${escapeHtml(dict.common.footer.links[5])}</a>
-          <a href="${rotas.youtube}" target="_blank" rel="noopener noreferrer"
-            aria-label="YouTube">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-              style="display: block;">
-              <path
-                d="M2.5 17a24.12 24.12 0 0 1 0-10 2.41 2.41 0 0 1 2.67-1.77 28.11 28.11 0 0 1 13.66 0 2.41 2.41 0 0 1 2.67 1.77 24.12 24.12 0 0 1 0 10 2.41 2.41 0 0 1-2.67 1.77 28.11 28.11 0 0 1-13.66 0A2.41 2.41 0 0 1 2.5 17" />
-              <path d="m10 15 5-3-5-3v6z" />
-            </svg>
-          </a>
-          <a href="${rotas.termos}">${escapeHtml(dict.common.footer.links[6])}</a>
-          <a href="${rotas.privacidade}">${escapeHtml(dict.common.footer.links[7])}</a>
-        </div>
-      </div>
-      <div class="footer-bottom">
-        <div>${escapeHtml(dict.common.footer.tagline)}</div>
-        <div>${escapeHtml(dict.common.footer.copyright)}</div>
-      </div>
-    </div>
-  </footer>
+  ${rodapeDoSite({ dict, assinante })}
 
+  <!-- A origem do visitante (o UTM do YouTube): a home não roda o app, então grava ela mesma (core/src/constants/origem.ts). -->
+  <script>${SCRIPT_DA_ORIGEM}</script>
   <script>
     // IntersectionObserver para todos os browsers (garante que anima apenas 1 vez e não reverte)
     const observer = new IntersectionObserver((entries) => {

@@ -28,7 +28,11 @@ import type {
   PlanosDaAssinatura,
   PreviaInput,
   PreviaDaAssinatura,
-  AssinarInput,
+  CorpoDeAssinar,
+  CorpoDeAssinarSemLogin,
+  AssinaturaSemLogin,
+  ConfirmacaoSemLogin,
+  SenhaCriada,
   AssinaturaCriada,
   SituacaoDaAssinatura,
   SincroniaDaConta,
@@ -1017,6 +1021,40 @@ export async function getPlanosDaAssinatura(): Promise<PlanosDaAssinatura> {
   return data;
 }
 
+/** A prévia do código para o VISITANTE, sem login (etapa 4.7, passo 6e). Código que não vale: 400 `CodigoInvalido`. */
+export async function getPreviaSemLogin(corpo: PreviaInput): Promise<PreviaDaAssinatura> {
+  const { data } = await client.post<PreviaDaAssinatura>("/billing/visitante/previa", corpo);
+  return data;
+}
+
+/**
+ * Assinar SEM CONTA (etapa 4.7, passo 6e): devolve a TENTATIVA — que abre a conta depois do pagamento —
+ * e, se há o que pagar, o segredo. A tentativa vai só para a memória da página e o `sessionStorage`
+ * (`lib/tentativa-de-assinar.ts`), nunca para o endereço.
+ */
+export async function assinarSemLogin(corpo: CorpoDeAssinarSemLogin): Promise<AssinaturaSemLogin> {
+  const { data } = await client.post<AssinaturaSemLogin>("/billing/visitante/assinatura", corpo);
+  return data;
+}
+
+/** "O pagamento já valeu?" — a tela de depois do pagamento de quem assinou sem conta (etapa 4.7, passo 6e2). POST: a tentativa nunca vai no endereço. */
+export async function confirmarSemLogin(tentativa: string): Promise<ConfirmacaoSemLogin> {
+  const { data } = await client.post<ConfirmacaoSemLogin>("/billing/visitante/confirmacao", { tentativa });
+  return data;
+}
+
+/** Criar a senha logo depois de pagar (etapa 4.7, passo 6e2); a sessão vem no cookie. Recusas: 409 com o motivo. */
+export async function criarSenhaSemLogin(corpo: { tentativa: string; senha: string }): Promise<SenhaCriada> {
+  const { data } = await client.post<SenhaCriada>("/billing/visitante/senha", corpo);
+  return data;
+}
+
+/** Os mesmos planos para o VISITANTE, sem login (a tela pública de assinar — etapa 4.7, passo 6c). */
+export async function getPlanosSemLogin(): Promise<PlanosDaAssinatura> {
+  const { data } = await client.get<PlanosDaAssinatura>("/billing/visitante/planos");
+  return data;
+}
+
 /** Quanto se paga hoje com o código promocional. Código que não vale: 400 `CodigoInvalido`. */
 export async function getPreviaDaAssinatura(corpo: PreviaInput): Promise<PreviaDaAssinatura> {
   const { data } = await client.post<PreviaDaAssinatura>("/billing/previa", corpo);
@@ -1024,7 +1062,7 @@ export async function getPreviaDaAssinatura(corpo: PreviaInput): Promise<PreviaD
 }
 
 /** Cria a assinatura. Quem já assina: 409 `JaAssinante`. NUNCA tenta de novo sozinho (gravação que cria). */
-export async function criarAssinatura(corpo: AssinarInput): Promise<AssinaturaCriada> {
+export async function criarAssinatura(corpo: CorpoDeAssinar): Promise<AssinaturaCriada> {
   const { data } = await client.post<AssinaturaCriada>("/billing/assinatura", corpo);
   return data;
 }

@@ -7,7 +7,7 @@ import { z } from "zod";
 import { VALIDADE_DO_CODIGO_EM_MINUTOS } from "@jilson/core";
 import { signIn } from "@/lib/auth-client";
 import { pedirCodigo } from "@/lib/api";
-import { CODIGO_DE_6_NUMEROS, falhaAoGastarCodigo, falhaAoPedirCodigo, POS_LOGIN, type FalhaDoCodigo } from "@/lib/acesso-por-codigo";
+import { CODIGO_DE_6_NUMEROS, falhaAoGastarCodigo, falhaAoPedirCodigo, useDestinoDepoisDeEntrar, type FalhaDoCodigo } from "@/lib/acesso-por-codigo";
 import { useT } from "@/lib/language";
 import { Button } from "@/components/ui/button";
 import { CampoDeCodigo } from "./CampoDeCodigo";
@@ -26,6 +26,7 @@ type Props = { email: string; aoVoltar: () => void };
 export function EntrarComCodigo({ email, aoVoltar }: Props) {
   const t = useT();
   const navigate = useNavigate();
+  const destino = useDestinoDepoisDeEntrar();
   const queryClient = useQueryClient();
   const [falha, setFalha] = useState<FalhaDoCodigo | null>(null);
   const [outro, setOutro] = useState<"enviando" | "enviado" | "limite" | "falha" | null>(null);
@@ -51,7 +52,7 @@ export function EntrarComCodigo({ email, aoVoltar }: Props) {
     }
     // Quem entra começa do zero (o mesmo da senha — decisão do operador, 11/10/2026).
     queryClient.clear();
-    navigate(POS_LOGIN, { replace: true });
+    navigate(destino, { replace: true });
   }
 
   async function pedirOutro() {

@@ -3,7 +3,7 @@ import { DuracaoDoDesconto, type AssinarInput } from "@jilson/core";
 import { prisma } from "./prisma.js";
 import { assinaturaDaAcesso, cobrancaAtrasada, temAcessoAtivo } from "./acesso.js";
 import { sincronizarSeLivre } from "./assinaturas.js";
-import { assinaturasDoCliente, buscarCodigo, buscarPrecos, cancelarIncompleta, criarAssinatura, criarCliente, type AssinaturaNoCheckout } from "./stripe.js";
+import { acertarNumeroFiscal, assinaturasDoCliente, buscarCodigo, buscarPrecos, cancelarIncompleta, chaveDoNumeroFiscal, criarAssinatura, criarCliente, DocumentoRecusado, temNumeroFiscalDoBrasil, type AssinaturaNoCheckout, type CodigoPromocional } from "./stripe.js";
 
 // ASSINAR COM A CONTA LOGADA (Fase 4, etapa 4.2 — billing.md; CLAUDE.md → Membership Gating).
 // A regra, na ordem — e tudo dentro de UMA TRAVA POR CONTA (dois cliques, ou duas abas, nunca
@@ -38,14 +38,18 @@ export type Desfecho =
   /** A conta tem uma assinatura com a cobrança atrasada, já sem as aulas: não se assina de novo — troca-se o cartão dela. */
   | { resultado: "atrasada" }
   | { resultado: "codigo-invalido" }
+  /** A Stripe recusou o CPF ou CNPJ que o `core` aceitou: nada foi criado. */
+  | { resultado: "documento-recusado" }
+  /** O pedido veio sem o CPF ou CNPJ, e a ficha do cliente não tem nenhum: nada foi criado. */
+  | { resultado: "sem-documento" }
   | { resultado: "ativa" }
   | { resultado: "pagar"; segredo: string; tipo: "pagamento" | "cartao" };
 
 /** Encerradas: não cobram mais e não impedem uma assinatura nova. */
 const ENCERRADAS: ReadonlySet<string> = new Set(["incomplete_expired", "canceled"]);
 
-/** Até 4 idas à Stripe dentro da trava (10 s cada, com uma nova tentativa). */
-const TEMPO_DA_TRANSACAO = { maxWait: 10_000, timeout: 90_000 };
+/** Até 7 idas à Stripe dentro da trava (10 s cada, com uma nova tentativa): a lista, o número fiscal, cancelar e criar — o mesmo do visitante. */
+const TEMPO_DA_TRANSACAO = { maxWait: 10_000, timeout: 120_000 };
 /** Uma ida à Stripe (criar o cliente), com uma nova tentativa. */
 const TEMPO_DO_CLIENTE = { maxWait: 10_000, timeout: 30_000 };
 
@@ -138,7 +142,20 @@ export async function assinar(conta: Conta, pedido: AssinarInput): Promise<Desfe
   const clienteId = await clienteDaConta(conta);
   if (clienteId === null) return { resultado: "ocupada" };
 
-  const decisao = await prisma.$transaction(async (tx): Promise<NaTrava> => {
+  let decisao: NaTrava;
+  try {
+    decisao = await decidir(conta, pedido, clienteId, preco.precoId, codigoId, codigo);
+  } catch (erro) {
+    if (!(erro instanceof DocumentoRecusado)) throw erro;
+    console.error(`${erro.message} — conferir o formato do número fiscal na Stripe (conta ${conta.id})`);
+    return { resultado: "documento-recusado" };
+  }
+  return decisao.resultado === "viva-na-stripe" ? sincronizarAViva(conta, decisao.assinaturaId) : decisao;
+}
+
+/** A decisão, COM a trava da conta: o que a Stripe diz do cliente, o número fiscal, e a assinatura. */
+async function decidir(conta: Conta, pedido: AssinarInput, clienteId: string, precoId: string, codigoId: string | null, codigo: CodigoPromocional | null): Promise<NaTrava> {
+  return prisma.$transaction(async (tx): Promise<NaTrava> => {
     if (!(await travarSeLivre(tx, conta.id))) return { resultado: "ocupada" };
     // De novo, com a trava, e pela MESMA ligação: o aviso da Stripe pode ter chegado no meio.
     if (await temAcessoAtivo(conta.id, tx)) return { resultado: "ja-assinante" };
@@ -147,15 +164,28 @@ export async function assinar(conta: Conta, pedido: AssinarInput): Promise<Desfe
     const viva = existentes.find((a) => a.status !== "incomplete");
     // A Stripe diz que há assinatura; o espelho, que não dá acesso: sem criar outra — e a
     // sincronia, que conserta o espelho, roda depois de soltar esta trava (`sincronizarAViva`).
+    // Nada aqui mexe no cliente dela — nem o número fiscal.
     if (viva) return { resultado: "viva-na-stripe", assinaturaId: viva.id };
+
+    // O CPF ou CNPJ, na FICHA DO CLIENTE (nunca nos dados do cartão: numa conta do Brasil a Stripe
+    // proíbe — context7 /websites/stripe, 27/10/2026), com a trava e antes de a assinatura (e a
+    // primeira fatura dela) nascer. Sem ele no pedido (a tela de antes desta publicação, ou alguém
+    // chamando o servidor direto), só segue quem já tem um na ficha — achado P2 da revisão de
+    // segurança do passo 6: é o CPF obrigatório que restringe a venda ao Brasil.
+    if (pedido.documento) await acertarNumeroFiscal(clienteId, pedido.documento);
+    else if (!(await temNumeroFiscalDoBrasil(clienteId))) return { resultado: "sem-documento" };
+    const numeroDoPedido = pedido.documento ? chaveDoNumeroFiscal(pedido.documento) : null;
 
     let assinatura: AssinaturaNoCheckout | null = null;
     for (const incompleta of existentes) {
-      // A MESMA: o mesmo PREÇO (o de verdade, não um rótulo), o mesmo código — e um pagamento que a
-      // Stripe ainda aceita: depois de 10 recusas ela o cancela, e a assinatura continua aberta com o
-      // segredo morto (medido na área restrita, 21/10/2026 — achado do passo 4 da etapa 4.7;
-      // correção autorizada pelo operador no mesmo dia). Entregá-lo de novo prenderia o aluno.
-      const aMesma = incompleta.precoId === preco.precoId && incompleta.codigoId === codigoId && incompleta.pagamentoCancelado !== true && incompleta.segredoDoPagamento !== null;
+      // A MESMA: o mesmo PREÇO (o de verdade, não um rótulo), o mesmo código, o mesmo número fiscal
+      // NA FATURA DELA (que leva o número de quando nasceu — não o que a ficha tem agora) — e um
+      // pagamento que a Stripe ainda aceita:
+      // depois de 10 recusas ela o cancela, e a assinatura continua aberta com o segredo morto
+      // (medido na área restrita, 21/10/2026 — achado do passo 4 da etapa 4.7; correção autorizada
+      // pelo operador no mesmo dia). Entregá-lo de novo prenderia o aluno.
+      const mesmoNumero = numeroDoPedido === null || incompleta.numeroFiscalDaFatura === numeroDoPedido;
+      const aMesma = incompleta.precoId === precoId && incompleta.codigoId === codigoId && mesmoNumero && incompleta.pagamentoCancelado !== true && incompleta.segredoDoPagamento !== null;
       if (aMesma && !assinatura) {
         assinatura = incompleta;
         continue;
@@ -169,7 +199,7 @@ export async function assinar(conta: Conta, pedido: AssinarInput): Promise<Desfe
       }
     }
 
-    assinatura ??= await criarAssinatura({ clienteId, userId: conta.id, precoId: preco.precoId, plano: pedido.plano, codigoId });
+    assinatura ??= await criarAssinatura({ clienteId, userId: conta.id, precoId, plano: pedido.plano, codigoId });
     // A Stripe recusou o desconto na criação (o código esgotou entre a prévia e o clique).
     if (!assinatura) return { resultado: "codigo-invalido" };
     console.info(`[stripe] checkout: conta ${conta.id}, plano ${pedido.plano} → assinatura ${assinatura.id} (${assinatura.status})`);
@@ -185,6 +215,4 @@ export async function assinar(conta: Conta, pedido: AssinarInput): Promise<Desfe
     }
     throw new Error(`[stripe] checkout: a assinatura ${assinatura.id} nasceu ${assinatura.status}, sem o que confirmar`);
   }, TEMPO_DA_TRANSACAO);
-
-  return decisao.resultado === "viva-na-stripe" ? sincronizarAViva(conta, decisao.assinaturaId) : decisao;
 }

@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { inspect } from "node:util";
-import { availableParallelism } from "node:os";
-import { configuracaoDasLigacoes } from "../lib/ligacoes.js";
+import { configuracaoDasLigacoes, LIGACOES_POR_COPIA, limiteDeLigacoes } from "../lib/ligacoes.js";
+import { assinaturasAoMesmoTempo, LIGACOES_SEMPRE_LIVRES } from "../lib/assinaturas-em-andamento.js";
 
 // AS LIGAÇÕES COM O BANCO (Prisma 7, 26/10/2026): `configuracaoDasLigacoes` é função pura — recebe o
 // endereço, devolve a configuração do `pg`. O que estes testes protegem (revisão de segurança):
@@ -23,10 +23,24 @@ function erroDe(chamada: () => unknown): { mensagem: string; tudo: string } {
 }
 
 describe("as ligações com o banco", () => {
-  it("o padrão do Prisma 5: processadores × 2 + 1 ligações e 10 s de espera", () => {
+  // 10 POR CÓPIA (decisão do operador, 27/10/2026 — achado P1 da revisão de segurança do passo 6):
+  // o "processadores × 2 + 1" do Prisma 5 dava 3 com 1 processador.
+  it("10 ligações por cópia, qualquer que seja o número de processadores, e 10 s de espera", () => {
     const config = configuracaoDasLigacoes(`${BASE}?sslmode=require`, false);
-    expect(config.max).toBe(availableParallelism() * 2 + 1);
+    expect(LIGACOES_POR_COPIA).toBe(10);
+    expect(config.max).toBe(10);
     expect(config.connectionTimeoutMillis).toBe(10_000);
+  });
+
+  // O TETO DAS ASSINATURAS EM ANDAMENTO sai das ligações e deixa SEMPRE 2 livres para as aulas.
+  it("o teto de assinaturas ao mesmo tempo é o das ligações menos 2 — nunca todas, e pelo menos 1", () => {
+    expect(LIGACOES_SEMPRE_LIVRES).toBe(2);
+    expect(limiteDeLigacoes(`${BASE}?sslmode=require`)).toBe(10);
+    expect(limiteDeLigacoes(`${BASE}?connection_limit=1`)).toBe(1);
+    // O do site (o banco da suíte, sem connection_limit): 10 ligações, 8 assinaturas.
+    expect(assinaturasAoMesmoTempo()).toBe(limiteDeLigacoes() - 2);
+    expect(assinaturasAoMesmoTempo()).toBeLessThanOrEqual(limiteDeLigacoes() - LIGACOES_SEMPRE_LIVRES);
+    expect(assinaturasAoMesmoTempo()).toBeGreaterThanOrEqual(1);
   });
 
   it("connection_limit e pool_timeout do endereço valem, e saem do endereço que vai ao pg", () => {

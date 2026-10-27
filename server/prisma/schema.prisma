@@ -418,9 +418,10 @@ model StripeCustomer {
 // e então `userId` deixa de ser vazio. O CPF ou CNPJ NÃO mora aqui: fica no cliente da Stripe
 // (decisão de 12/10/2026 — um dado pessoal a menos no banco da escola). O consentimento de
 // novidades e a origem (UTM) vão na ASSINATURA da Stripe, presos à tentativa que foi paga.
-// `tentativa`: o código público da tentativa de assinar em andamento — volta ao navegador de quem
-// a criou, e é só com ele que a tela de depois do pagamento pergunta se valeu. Muda a cada
-// tentativa nova. `livemode`: como em `StripeCustomer`. Some com a conta (cascade).
+// `tentativa`: o RESUMO (SHA-256, hexadecimal) do código da tentativa de assinar em andamento —
+// o código vai só ao navegador de quem a criou, e é só com ele que a tela de depois do pagamento
+// pergunta se valeu; aqui fica só o resumo (etapa 4.7, passo 6b — `lib/tentativa-do-visitante.ts`).
+// Muda a cada tentativa nova. `livemode`: como em `StripeCustomer`. Some com a conta (cascade).
 model GuestCheckout {
   id               String   @id
   email            String   @unique

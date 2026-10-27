@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeAll, afterAll, afterEach, beforeEach } from "vitest";
 import request from "supertest";
+import type { DocumentoFiscal } from "@jilson/core";
 import type { AssinaturaNaStripe, AssinaturaNoCheckout, CodigoPromocional, PrecoDoPlano } from "../lib/stripe.js";
 
 // A Stripe na NOSSA fronteira: só o que iria à rede vira dublê. O resto de `lib/stripe.ts` (a
@@ -12,6 +13,10 @@ const criarCliente = vi.fn<(conta: { userId: string; email: string; nome: string
 const assinaturasDoCliente = vi.fn<(clienteId: string) => Promise<AssinaturaNoCheckout[]>>();
 const cancelarIncompleta = vi.fn<(id: string) => Promise<string>>();
 const criarAssinatura = vi.fn<(pedido: PedidoDeAssinatura) => Promise<AssinaturaNoCheckout | null>>();
+// O CPF ou CNPJ na FICHA DO CLIENTE (etapa 4.7, passo 6): devolve se o número MUDOU.
+const acertarNumeroFiscal = vi.fn<(clienteId: string, documento: DocumentoFiscal) => Promise<boolean>>();
+// "A ficha do cliente já tem um CPF ou CNPJ?" — para o pedido que vem sem o número (P2 da revisão do passo 6).
+const temNumeroFiscalDoBrasil = vi.fn<(clienteId: string) => Promise<boolean>>();
 // A busca que a SINCRONIA faz na Stripe (etapa 4.4): o checkout a chama quando a Stripe diz que
 // a conta já assina e o espelho não dá acesso.
 const buscarAssinatura = vi.fn<(id: string) => Promise<AssinaturaNaStripe>>();
@@ -24,12 +29,18 @@ vi.mock("../lib/stripe.js", async (importOriginal) => ({
   assinaturasDoCliente: (clienteId: string) => assinaturasDoCliente(clienteId),
   cancelarIncompleta: (id: string) => cancelarIncompleta(id),
   criarAssinatura: (pedido: PedidoDeAssinatura) => criarAssinatura(pedido),
+  acertarNumeroFiscal: (clienteId: string, documento: DocumentoFiscal) => acertarNumeroFiscal(clienteId, documento),
+  temNumeroFiscalDoBrasil: (clienteId: string) => temNumeroFiscalDoBrasil(clienteId),
   buscarAssinatura: (id: string) => buscarAssinatura(id),
 }));
 
 import servidor from "./servidor.js";
+import { chaveDoNumeroFiscal, DocumentoRecusado } from "../lib/stripe.js";
+import { assinaturasAoMesmoTempo, comVaga } from "../lib/assinaturas-em-andamento.js";
 import { prisma } from "../lib/prisma.js";
 import { ASSINATURA_DE_TESTE } from "../lib/assinatura-de-teste.js";
+import { invalidarCacheDeTexto } from "../lib/dict.js";
+import { pt as fabrica } from "@jilson/core";
 
 // ASSINAR COM A CONTA LOGADA (Fase 4, etapa 4.2). O que estes testes protegem — é a fronteira
 // de dinheiro:
@@ -106,7 +117,29 @@ describe("GET /api/billing/planos", () => {
       ],
       // A mesma lista com que o servidor cria a assinatura (nesta etapa, só cartão).
       formasDePagamento: ["card"],
+      // "O que está incluído": a lista do cartão de preço da home (passo 6d).
+      incluido: { itens: [...fabrica.home.pricing.features], frase: fabrica.home.pricing.footer },
     });
+  });
+
+  // A LISTA É UM TEXTO SÓ COM A HOME (decisão do operador, 27/10/2026): mudou no admin, muda nos dois.
+  it("\"O que está incluído\" vem com as edições do admin — o mesmo texto do cartão da home", async () => {
+    await prisma.siteText.createMany({
+      data: [
+        { key: "home.pricing.features[0]", value: "Item editado no admin" },
+        { key: "home.pricing.footer", value: "Frase editada no admin" },
+      ],
+    });
+    invalidarCacheDeTexto();
+    try {
+      const res = await planos(member);
+      expect(res.body.incluido.itens[0]).toBe("Item editado no admin");
+      expect(res.body.incluido.itens.slice(1)).toEqual(fabrica.home.pricing.features.slice(1));
+      expect(res.body.incluido.frase).toBe("Frase editada no admin");
+    } finally {
+      await prisma.siteText.deleteMany({});
+      invalidarCacheDeTexto();
+    }
   });
 
   it("o código do preço e a chave secreta não vão ao navegador", async () => {
@@ -299,6 +332,8 @@ describe("POST /api/billing/assinatura", () => {
   // Cada assinatura criada fica com o cliente que a pediu; as postas à mão num teste (sem
   // `cliente`) valem para quem perguntar.
   let naStripe: (AssinaturaNoCheckout & { cliente?: string })[] = [];
+  // A ficha de cada cliente na Stripe (o número fiscal de agora), e a fatura de cada assinatura nasce com ele.
+  let fichas = new Map<string, string>();
   const incompleta = (id: string, precoId: string, codigoId: string | null = null): AssinaturaNoCheckout => ({ id, status: "incomplete", precoId, codigoId, segredoDoPagamento: `pi_${id}_secret_x`, segredoDoCartao: null });
   const encerrada = (id: string, status: string): AssinaturaNoCheckout => ({ id, status, precoId: "price_mensal", codigoId: null, segredoDoPagamento: null, segredoDoCartao: null });
 
@@ -330,13 +365,23 @@ describe("POST /api/billing/assinatura", () => {
       naStripe = naStripe.map((a) => (a.id === id ? { ...a, status: "incomplete_expired", segredoDoPagamento: null } : a));
       return "incomplete_expired";
     });
+    fichas = new Map<string, string>();
     criarAssinatura.mockReset().mockImplementation(async (pedido) => {
       // Um instante, como a rede: sem a trava por conta, dois pedidos juntos passariam os dois da lista.
       await new Promise((ok) => setTimeout(ok, 30));
-      const nova = incompleta(`sub_${S}_${++n}`, pedido.precoId, pedido.codigoId);
+      // A primeira fatura sai com o número que a ficha tem naquela hora — como na Stripe.
+      const nova = { ...incompleta(`sub_${S}_${++n}`, pedido.precoId, pedido.codigoId), numeroFiscalDaFatura: fichas.get(pedido.clienteId) ?? null };
       naStripe.push({ ...nova, cliente: pedido.clienteId });
       return nova;
     });
+    // A ficha com memória, como a Stripe: o número igual ao guardado não muda nada.
+    acertarNumeroFiscal.mockReset().mockImplementation(async (clienteId, documento) => {
+      const antes = fichas.get(clienteId);
+      fichas.set(clienteId, chaveDoNumeroFiscal(documento));
+      return antes !== chaveDoNumeroFiscal(documento);
+    });
+    // Sem o número no pedido, as contas destes testes já têm um na ficha — o caso sem nenhum tem teste próprio.
+    temNumeroFiscalDoBrasil.mockReset().mockResolvedValue(true);
   });
 
   afterAll(async () => {
@@ -470,6 +515,140 @@ describe("POST /api/billing/assinatura", () => {
   });
 
   // QUEM PAGOU E FICOU TRANCADO (etapa 4.4 — o achado P1 da revisão de segurança da 4.2).
+  // O MESMO TETO DAS ASSINATURAS SEM LOGIN (achado P1 da revisão de segurança do passo 6, 27/10/2026):
+  // cada assinatura segura uma ligação com o banco enquanto a Stripe responde; ficam sempre 2 livres.
+  it("o assinar logado conta no mesmo teto: cheio, 409 'muitos ao mesmo tempo' na hora — e nada vai à Stripe", async () => {
+    let soltar!: () => void;
+    const segura = new Promise<void>((ok) => (soltar = ok));
+    const ocupadas = Array.from({ length: assinaturasAoMesmoTempo() }, () => comVaga(() => segura));
+    try {
+      await semAssinatura(async () => {
+        const res = await assinarComo({ plano: "mensal", documento: "529.982.247-25" }, member);
+        expect([res.status, res.body]).toEqual([409, { error: "MuitosAoMesmoTempo" }]);
+        expect(Number(res.headers["retry-after"])).toBeGreaterThan(0);
+      });
+      expect(criarCliente).not.toHaveBeenCalled();
+      expect(acertarNumeroFiscal).not.toHaveBeenCalled();
+      expect(criarAssinatura).not.toHaveBeenCalled();
+    } finally {
+      soltar();
+      await Promise.all(ocupadas);
+    }
+    // Soltas as vagas, assina.
+    await semAssinatura(async () => {
+      expect((await assinarComo({ plano: "mensal" }, member)).status).toBe(200);
+    });
+  });
+
+  // O CPF OU CNPJ (etapa 4.7, passo 6 — as duas telas iguais, decisão do operador de 27/10/2026): vai
+  // para a FICHA DO CLIENTE na Stripe (nunca para os dados do cartão), com a trava, antes de a
+  // assinatura — e a primeira fatura dela — nascer.
+  describe("o CPF ou CNPJ", () => {
+    const CPF = "529.982.247-25";
+    const OUTRO_CPF = "111.444.777-35";
+
+    it("vai para a ficha do cliente da conta — o tipo e o número —, ANTES de a assinatura nascer", async () => {
+      await semAssinatura(async () => {
+        const res = await assinarComo({ plano: "mensal", documento: CPF }, member);
+        expect(res.status).toBe(200);
+        const guardado = await prisma.stripeCustomer.findUniqueOrThrow({ where: { userId: memberId } });
+        expect(acertarNumeroFiscal).toHaveBeenCalledWith(guardado.stripeCustomerId, { tipo: "cpf", numero: "52998224725" });
+        const [numeroFiscal] = acertarNumeroFiscal.mock.invocationCallOrder;
+        const [assinatura] = criarAssinatura.mock.invocationCallOrder;
+        expect(numeroFiscal).toBeLessThan(assinatura ?? 0);
+      });
+    });
+
+    it("o CNPJ também", async () => {
+      await semAssinatura(async () => {
+        expect((await assinarComo({ plano: "mensal", documento: "11.222.333/0001-81" }, member)).status).toBe(200);
+      });
+      expect(acertarNumeroFiscal).toHaveBeenCalledWith(expect.any(String), { tipo: "cnpj", numero: "11222333000181" });
+    });
+
+    it("com o dígito errado, vazio ou que não é número: 400, nada vai à Stripe, e o número não volta na resposta", async () => {
+      await semAssinatura(async () => {
+        for (const documento of ["529.982.247-24", "11.222.333/0001-82", "", "abc"]) {
+          const res = await assinarComo({ plano: "mensal", documento }, member);
+          expect(res.status, documento).toBe(400);
+          expect(res.body.error).toBe("ValidationError");
+          if (documento.length > 3) expect(res.text).not.toContain(documento.slice(0, 7));
+        }
+      });
+      expect(criarCliente).not.toHaveBeenCalled();
+      expect(acertarNumeroFiscal).not.toHaveBeenCalled();
+      expect(criarAssinatura).not.toHaveBeenCalled();
+    });
+
+    it("a Stripe recusou o número que o core aceitou: 400 DocumentoInvalido, nada é criado — e o alerta, sem o número", async () => {
+      const erros = vi.spyOn(console, "error").mockImplementation(() => {});
+      try {
+        acertarNumeroFiscal.mockRejectedValue(new DocumentoRecusado("cpf"));
+        await semAssinatura(async () => {
+          const res = await assinarComo({ plano: "mensal", documento: CPF }, member);
+          expect([res.status, res.body]).toEqual([400, { error: "DocumentoInvalido" }]);
+        });
+        expect(criarAssinatura).not.toHaveBeenCalled();
+        const alertas = erros.mock.calls.map(([texto]) => String(texto)).filter((texto) => texto.startsWith("[stripe]"));
+        expect(alertas.some((texto) => texto.includes(memberId))).toBe(true);
+        expect(alertas.join(" ")).not.toContain("52998224725");
+        expect(alertas.join(" ")).not.toContain(CPF);
+      } finally {
+        erros.mockRestore();
+      }
+    });
+
+    it("corrigiu o CPF depois de tentar: a incompleta antiga é cancelada e nasce outra — a fatura dela levava o número antigo", async () => {
+      await semAssinatura(async () => {
+        const primeira = await assinarComo({ plano: "mensal", documento: CPF }, member);
+        // O mesmo número: a MESMA assinatura, o mesmo segredo.
+        expect((await assinarComo({ plano: "mensal", documento: CPF }, member)).body).toEqual(primeira.body);
+        expect(cancelarIncompleta).not.toHaveBeenCalled();
+
+        const corrigido = await assinarComo({ plano: "mensal", documento: OUTRO_CPF }, member);
+        expect(corrigido.status).toBe(200);
+        expect(corrigido.body.segredo).not.toBe(primeira.body.segredo);
+        expect(cancelarIncompleta).toHaveBeenCalledWith(naStripe[0]?.id);
+        expect(criarAssinatura).toHaveBeenCalledTimes(2);
+        expect(naStripe.filter((a) => a.status === "incomplete")).toHaveLength(1);
+      });
+    });
+
+    it("sem o CPF, com um número já na ficha (a tela de antes desta publicação): assina como antes, e a ficha não é mexida", async () => {
+      await semAssinatura(async () => {
+        expect((await assinarComo({ plano: "mensal" }, member)).status).toBe(200);
+      });
+      expect(temNumeroFiscalDoBrasil).toHaveBeenCalled();
+      expect(acertarNumeroFiscal).not.toHaveBeenCalled();
+      expect(criarAssinatura).toHaveBeenCalledTimes(1);
+    });
+
+    // P2 DA REVISÃO DE SEGURANÇA DO PASSO 6: é o CPF obrigatório que restringe a venda ao Brasil.
+    it("sem o CPF e sem número na ficha (alguém chamando o servidor direto): 400 DocumentoInvalido, e nada nasce", async () => {
+      temNumeroFiscalDoBrasil.mockResolvedValue(false);
+      await semAssinatura(async () => {
+        const res = await assinarComo({ plano: "mensal" }, member);
+        expect([res.status, res.body]).toEqual([400, { error: "DocumentoInvalido" }]);
+      });
+      expect(criarAssinatura).not.toHaveBeenCalled();
+    });
+
+    // P2 DA REVISÃO DE SEGURANÇA DO PASSO 6: um clique anterior trocou o número na ficha e falhou antes de
+    // cancelar a incompleta — a ficha diz "não mudou", mas a fatura dela saiu com o número antigo.
+    it("a incompleta cuja FATURA saiu com outro número não é reaproveitada, mesmo com a ficha já igual ao pedido", async () => {
+      await semAssinatura(async () => {
+        const antiga = await assinarComo({ plano: "mensal", documento: OUTRO_CPF }, member);
+        const { stripeCustomerId } = await prisma.stripeCustomer.findUniqueOrThrow({ where: { userId: memberId } });
+        fichas.set(stripeCustomerId, chaveDoNumeroFiscal({ tipo: "cpf", numero: "52998224725" }));
+        const nova = await assinarComo({ plano: "mensal", documento: CPF }, member);
+        expect(nova.status).toBe(200);
+        expect(nova.body.segredo).not.toBe(antiga.body.segredo);
+        expect(cancelarIncompleta).toHaveBeenCalledWith(naStripe[0]?.id);
+        expect(criarAssinatura).toHaveBeenCalledTimes(2);
+      });
+    });
+  });
+
   describe("a Stripe diz que a conta já assina, e o espelho não dá acesso", () => {
     const DIA = 24 * 60 * 60 * 1000;
     const acesso = async () => (await request(servidor).get("/api/billing/assinatura").set("Cookie", member)).body.temAcesso;
@@ -504,6 +683,17 @@ describe("POST /api/billing/assinatura", () => {
         expect(await acesso()).toBe(true);
         expect(criarAssinatura).not.toHaveBeenCalled();
         expect(cancelarIncompleta).not.toHaveBeenCalled();
+      });
+    });
+
+    it("com o CPF: a ficha do cliente que já assina NÃO é mexida — só a sincronia roda", async () => {
+      await semAssinatura(async () => {
+        const id = `sub_viva_${S}_com_cpf`;
+        naStripe = [encerrada(id, "active")];
+        buscarAssinatura.mockResolvedValue(dizAStripe(id));
+        const res = await assinarComo({ plano: "mensal", documento: "529.982.247-25" }, member);
+        expect([res.status, res.body]).toEqual([409, { error: "JaAssinante" }]);
+        expect(acertarNumeroFiscal).not.toHaveBeenCalled();
       });
     });
 

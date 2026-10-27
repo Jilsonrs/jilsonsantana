@@ -195,11 +195,11 @@ export type AssinaturaNoCheckout = {
   /** O segredo para o site guardar o cartão quando hoje não há o que pagar. */
   segredoDoCartao: string | null;
   /**
-   * O código da tentativa do VISITANTE com que ela nasceu (etapa 4.7, passo 4). Só quem traz esse
-   * código segue com ela: sem isso, quem soubesse o e-mail de alguém receberia o segredo do
-   * pagamento dessa pessoa.
+   * O RESUMO da tentativa do VISITANTE com que ela nasceu (etapa 4.7, passo 4; só o resumo desde o
+   * passo 6b — `tentativa-do-visitante.ts`). Só quem traz a tentativa segue com ela: sem isso, quem
+   * soubesse o e-mail de alguém receberia o segredo do pagamento dessa pessoa.
    */
-  tentativa?: string | null;
+  resumoDaTentativa?: string | null;
   /**
    * A Stripe CANCELOU o pagamento de hoje desta assinatura (etapa 4.7, passo 4). `[FATO — medido na
    * área restrita, 21/10/2026]` depois de 10 recusas no mesmo pagamento ela o cancela sozinha, e a
@@ -207,7 +207,21 @@ export type AssinaturaNoCheckout = {
    * segredo de novo deixaria a pessoa presa num pagamento que não aceita mais cartão nenhum.
    */
   pagamentoCancelado?: boolean;
+  /**
+   * O número fiscal do Brasil com que a FATURA desta assinatura foi fechada (`chaveDoNumeroFiscal`), ou
+   * nada. É com ele — e não com o que a ficha do cliente tem agora — que se decide reaproveitar uma
+   * incompleta (achado P2 da revisão de segurança do passo 6, 27/10/2026): um clique que trocou o
+   * número na ficha e falhou antes de cancelar a incompleta antiga deixaria a fatura dela com o número
+   * antigo, e o clique seguinte, com o número novo, ouviria "não mudou".
+   */
+  numeroFiscalDaFatura?: string | null;
 };
+
+/** O número fiscal como chave de comparação: o tipo da Stripe e o número com a pontuação de costume. Função pura. */
+export function chaveDoNumeroFiscal(documento: DocumentoFiscal): string {
+  const numero = paraNumeroFiscal(documento);
+  return `${numero.type}:${numero.value}`;
+}
 
 /** A assinatura da Stripe (com a fatura e o pedido de cartão expandidos) no formato do checkout. Função pura. */
 export function paraAssinaturaNoCheckout(assinatura: Stripe.Subscription): AssinaturaNoCheckout {
@@ -227,8 +241,9 @@ export function paraAssinaturaNoCheckout(assinatura: Stripe.Subscription): Assin
     codigoId: assinatura.metadata.codigo || null,
     segredoDoPagamento: segredo,
     segredoDoCartao: typeof cartao === "object" && cartao !== null ? cartao.client_secret : null,
-    tentativa: assinatura.metadata[METADADOS_DO_VISITANTE.tentativa] || null,
+    resumoDaTentativa: assinatura.metadata[METADADOS_DO_VISITANTE.tentativa] || null,
     pagamentoCancelado: pagamentoDeHoje !== null && cancelado,
+    numeroFiscalDaFatura: numeroFiscalDoBrasil(typeof fatura === "object" && fatura !== null ? fatura.customer_tax_ids : null),
   };
 }
 
@@ -309,6 +324,26 @@ export async function criarClienteDoVisitante(cliente: ClienteDoVisitante): Prom
  * igual ao que já está, nada; diferente, entra o novo e saem os do Brasil que estavam. Devolve se
  * MUDOU — e aí a tentativa anterior não serve mais, porque a fatura dela leva o número antigo.
  */
+/** O número do Brasil entre os números fiscais (de uma fatura), como `chaveDoNumeroFiscal`. Função pura. */
+function numeroFiscalDoBrasil(numeros: ReadonlyArray<{ type: string; value: string | null }> | null | undefined): string | null {
+  const doBrasil = (numeros ?? []).find((n) => (n.type === "br_cpf" || n.type === "br_cnpj") && n.value);
+  return doBrasil ? `${doBrasil.type}:${doBrasil.value}` : null;
+}
+
+/**
+ * A ficha do cliente já tem um CPF ou CNPJ? Para o pedido de quem está logado que vem SEM o número
+ * (achado P2 da revisão de segurança do passo 6): sem número em lugar nenhum, não se assina — é o
+ * CPF obrigatório que restringe a venda ao Brasil (`billing.md`).
+ */
+export async function temNumeroFiscalDoBrasil(clienteId: string): Promise<boolean> {
+  try {
+    const guardados = (await stripe().customers.listTaxIds(clienteId, { limit: 20 })).data;
+    return guardados.some((t) => t.type === "br_cpf" || t.type === "br_cnpj");
+  } catch (erro) {
+    throw erroSemMensagem(erro, "a leitura do número fiscal do cliente");
+  }
+}
+
 export async function acertarNumeroFiscal(clienteId: string, documento: DocumentoFiscal): Promise<boolean> {
   const novo = paraNumeroFiscal(documento);
   try {
@@ -355,17 +390,18 @@ export const FORMAS_DE_PAGAMENTO: Stripe.SubscriptionCreateParams.PaymentSetting
  * A tentativa do VISITANTE (etapa 4.7, passo 4): a ficha de espera, o código desta tentativa e o
  * que ele escolheu — tudo na assinatura, para a conta nascer dela com a escolha de quem PAGOU.
  */
-export type TentativaDoVisitante = { pedido: string; tentativa: string; escolha: DadosDoVisitante };
+export type TentativaDoVisitante = { pedido: string; resumoDaTentativa: string; escolha: DadosDoVisitante };
 
 /** De quem é a assinatura: a conta logada (`userId`) ou a tentativa do visitante, que ainda não tem conta. */
 export type PedidoDeAssinatura = { clienteId: string; precoId: string; plano: Plano; codigoId: string | null } & ({ userId: string } | { visitante: TentativaDoVisitante });
 
 /** O que a tentativa do visitante grava na assinatura. Valor vazio não vai (a Stripe não o guarda). */
-function metadadosDoVisitante({ pedido, tentativa, escolha }: TentativaDoVisitante): Record<string, string> {
+function metadadosDoVisitante({ pedido, resumoDaTentativa, escolha }: TentativaDoVisitante): Record<string, string> {
   const M = METADADOS_DO_VISITANTE;
   return {
     [M.pedido]: pedido,
-    [M.tentativa]: tentativa,
+    // Só o RESUMO (passo 6b): o painel e os avisos da Stripe nunca levam a tentativa.
+    [M.tentativa]: resumoDaTentativa,
     [M.novidades]: escolha.novidades ? NOVIDADES_SIM : "nao",
     ...(escolha.origem ? { [M.origem]: escolha.origem } : {}),
     ...(escolha.campanha ? { [M.campanha]: escolha.campanha } : {}),

@@ -118,6 +118,38 @@ describe("os links", () => {
     fireEvent.click(screen.getByRole("link", { name: "Próxima aula" }), { ctrlKey: true });
     expect(screen.getByTestId("onde").textContent).toBe("/aluno/aula/1");
   });
+
+  // A TELA PÚBLICA DE ASSINAR (etapa 4.7, passo 6c): o app no meio de uma página do servidor. Trocar
+  // de tela por dentro abriria a seguinte dentro do menu e do rodapé do site.
+  describe("numa página do servidor", () => {
+    beforeEach(() => {
+      document.body.dataset.paginaDoServidor = "assinar";
+    });
+    afterEach(() => {
+      delete document.body.dataset.paginaDoServidor;
+    });
+
+    it("mesmo sem versão nova, o clique não chega ao app: o navegador carrega a página", () => {
+      abrirComUmLink();
+      const seguiu = fireEvent.click(screen.getByRole("link", { name: "Próxima aula" }));
+      expect(seguiu).toBe(true);
+      expect(screen.getByTestId("onde").textContent).toBe("/aluno/aula/1");
+      expect(trocarDeVersaoAgora()).toBe(true);
+    });
+
+    it("com um pagamento em andamento, a troca fica por dentro — nada é cortado", async () => {
+      let terminar: () => void = () => {};
+      const pagamento = semInterromper(() => new Promise<void>((r) => (terminar = r)));
+      expect(trocarDeVersaoAgora()).toBe(false);
+      terminar();
+      await pagamento;
+      expect(trocarDeVersaoAgora()).toBe(true);
+    });
+  });
+
+  it("fora de uma página do servidor e sem versão nova, a troca é por dentro", () => {
+    expect(trocarDeVersaoAgora()).toBe(false);
+  });
 });
 
 describe("o pré-carregamento do que o aluno usa", () => {

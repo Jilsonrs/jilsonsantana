@@ -19,6 +19,8 @@ export const PLANOS = [Plano.MENSAL, Plano.ANUAL] as const;
  */
 export const TELA_DE_ASSINAR = "/aluno/assinar";
 export const TELA_DE_CONCLUIDO = "/aluno/assinar/concluido";
+/** A tela de depois do pagamento de quem assinou SEM CONTA (etapa 4.7, passo 6e): página do servidor com o app no meio. */
+export const TELA_DE_CONCLUIDO_SEM_LOGIN = "/assinar/concluido";
 
 /** Um plano como a tela de assinar o mostra. O valor vem em CENTAVOS, como a Stripe guarda. */
 export type PlanoDaAssinatura = { plano: Plano; centavos: number; moeda: string };
@@ -27,7 +29,17 @@ export type PlanoDaAssinatura = { plano: Plano; centavos: number; moeda: string 
  * Resposta de `GET /api/billing/planos`. `formasDePagamento`: a lista do servidor (hoje só
  * `card`), a MESMA com que ele cria a assinatura — o site abre o campo de pagamento com ela.
  */
-export type PlanosDaAssinatura = { chavePublicavel: string; planos: PlanoDaAssinatura[]; formasDePagamento: string[] };
+export type PlanosDaAssinatura = {
+  chavePublicavel: string;
+  planos: PlanoDaAssinatura[];
+  formasDePagamento: string[];
+  /**
+   * "O que está incluído" (etapa 4.7, passo 6d — decisão do operador, 27/10/2026, P80): a MESMA lista
+   * do cartão de preço da home, com as edições do admin, e a frase de baixo dele. Opcional porque a
+   * API só acrescenta: sem ele, a tela não mostra a lista.
+   */
+  incluido?: { itens: string[]; frase: string };
+};
 
 /** Por quanto tempo o desconto de um código promocional vale. */
 export const DuracaoDoDesconto = {

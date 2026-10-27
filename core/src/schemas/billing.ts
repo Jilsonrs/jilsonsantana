@@ -21,8 +21,15 @@ export type PreviaInput = z.infer<typeof previaSchema>;
 export const assinarSchema = z.object({
   plano: z.enum(PLANOS),
   codigo: z.string().trim().min(1).max(64).optional(),
+  // O CPF ou CNPJ (etapa 4.7, passo 6 — as duas telas iguais, decisão do operador de 27/10/2026):
+  // vai para a FICHA DO CLIENTE na Stripe, nunca para os dados do cartão. A tela sempre manda.
+  // OPCIONAL só nesta publicação: a aba aberta antes dela ainda assina sem ele (a API só acrescenta
+  // — CLAUDE.md → Rendering Boundary). Vira obrigatório na publicação seguinte (o plano, passo 6).
+  documento: documentoFiscalSchema.optional(),
 });
 export type AssinarInput = z.infer<typeof assinarSchema>;
+/** O corpo como a TELA o manda (o CPF ou CNPJ é o texto digitado; o servidor o confere e converte). */
+export type CorpoDeAssinar = z.input<typeof assinarSchema>;
 
 /**
  * Corpo de `POST /api/billing/minha-assinatura/cancelar` — parar a renovação (Fase 4, etapa 4.6).
@@ -87,6 +94,8 @@ export const assinarSemLoginSchema = z.object({
   tentativa: z.string().trim().min(1).max(64).nullish().catch(undefined),
 });
 export type AssinarSemLoginInput = z.infer<typeof assinarSemLoginSchema>;
+/** O corpo como a TELA PÚBLICA o manda (o CPF ou CNPJ é o texto digitado; o servidor o confere). */
+export type CorpoDeAssinarSemLogin = z.input<typeof assinarSemLoginSchema>;
 
 /**
  * Corpo de `POST /api/billing/visitante/confirmacao` — "o pagamento já valeu?", a pergunta da tela de

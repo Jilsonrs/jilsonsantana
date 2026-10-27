@@ -1,5 +1,5 @@
 import { Resend } from "resend";
-import { enderecoDeEmailSchema } from "@jilson/core";
+import { EMAIL_DE_SUPORTE, enderecoDeEmailSchema } from "@jilson/core";
 import { montarEmail, type MensagemDeEmail } from "../views/email.js";
 import { getDict } from "./dict.js";
 
@@ -39,7 +39,7 @@ import { getDict } from "./dict.js";
 //     mandando o mesmo e-mail agora: não tente de novo, e não responda erro por isso.
 
 export const REMETENTE = "Jilson Santana <suporte@alunos.jilsonsantana.com>";
-export const RESPONDER_PARA = "suporte@jilsonsantana.com";
+export const RESPONDER_PARA = EMAIL_DE_SUPORTE;
 const API_DO_RESEND = "https://api.resend.com";
 const TEMPO_LIMITE_MS = 10_000;
 

@@ -1,3 +1,5 @@
+import { useLocation } from "react-router";
+import { TELA_DE_ASSINAR } from "@jilson/core";
 import { codigoDaRecusa } from "@/lib/faturamento";
 
 // O CÓDIGO NO E-MAIL nas telas de acesso (etapa 4.7, passo 5): as regras que as telas dividem.
@@ -7,6 +9,26 @@ import { codigoDaRecusa } from "@/lib/faturamento";
 // clique no menu (decisão do operador, 29/09/2026). Este é o único lugar que aponta para lá — com
 // senha, com o código, ou depois de criar a senha nova.
 export const POS_LOGIN = "/inicio";
+
+/**
+ * A ÚNICA EXCEÇÃO, e por endereço: o "Já tem conta? Entrar" da tela pública de assinar leva a
+ * `ENTRAR_PARA_ASSINAR`, e depois de entrar a pessoa vai à tela de assinar do app (decisão do
+ * operador, 27/10/2026, P80). LISTA FECHADA: o destino nunca vem do endereço — `?depois=` só escolhe
+ * um nome desta lista, e o que não está nela vai para o Início (nada de levar a outro site).
+ */
+const DESTINOS_DEPOIS_DE_ENTRAR: ReadonlyMap<string, string> = new Map([["assinar", TELA_DE_ASSINAR]]);
+export const ENTRAR_PARA_ASSINAR = "/login?depois=assinar";
+
+/** Para onde ir depois de entrar, pela busca do endereço da tela de entrar. Função pura. */
+export function destinoDepoisDeEntrar(busca: string): string {
+  const nome = new URLSearchParams(busca).get("depois");
+  return (nome !== null && DESTINOS_DEPOIS_DE_ENTRAR.get(nome)) || POS_LOGIN;
+}
+
+/** O destino depois de entrar, para a tela aberta agora. */
+export function useDestinoDepoisDeEntrar(): string {
+  return destinoDepoisDeEntrar(useLocation().search);
+}
 
 /** Os 6 números do código — a conferência da tela, antes de gastar uma das 3 tentativas. */
 export const CODIGO_DE_6_NUMEROS = /^\d{6}$/;

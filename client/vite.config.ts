@@ -60,12 +60,23 @@ export default defineConfig({
       // PÁGINA FICA EM BRANCO. Aconteceu em set/2026 — o proxy nasceu cobrindo
       // só a raiz e o `/en` ficou de fora, descoberto por clique.
       //
-      // A chave começa com `^`, então o Vite a trata como expressão regular.
-      // Hoje: a raiz e o inglês. Quando `/cursos`, `/curso/:slug`, `/trilhas`,
-      // `/trilha/:slug` e as legais saírem do React (Bloco C5), elas vêm junto.
-      "^/(en)?$": {
+      // A chave começa com `^`, então o Vite a trata como expressão regular, e o
+      // que ela testa é o endereço COM a busca: a raiz entra também com `?utm_…`
+      // (a origem do YouTube — sem isto, a home com a origem caía no React).
+      // O `/en` saiu com a escola só em português (12/10/2026). Quando `/cursos`,
+      // `/curso/:slug`, `/trilhas`, `/trilha/:slug` e as legais saírem do React
+      // (Bloco C5), elas vêm junto.
+      "^/(\\?.*)?$": {
         target: "http://localhost:3000",
         changeOrigin: true,
+      },
+      // A TELA PÚBLICA DE ASSINAR (etapa 4.7, passo 6c): página do servidor com o app no meio. O
+      // cabeçalho diz ao Express que ela foi aberta pelo Vite — é aqui que moram os scripts do app em
+      // dev (server/src/routes/assinar.ts); aberta direto no Express (3000), ela vem para cá.
+      "^/assinar(/concluido)?(\\?.*)?$": {
+        target: "http://localhost:3000",
+        changeOrigin: true,
+        headers: { "x-pagina-pelo-vite": "1" },
       },
     },
   },

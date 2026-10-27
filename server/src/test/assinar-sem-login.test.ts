@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeAll, afterAll, afterEach, beforeEach } from "vitest";
 import request from "supertest";
+import { createHash } from "node:crypto";
 import type { DocumentoFiscal } from "@jilson/core";
 import type { AssinaturaNaStripe, AssinaturaNoCheckout, CodigoPromocional, PedidoDeAssinatura, PrecoDoPlano } from "../lib/stripe.js";
 
@@ -30,10 +31,11 @@ vi.mock("../lib/stripe.js", async (importOriginal) => ({
 
 import servidor from "./servidor.js";
 import { prisma } from "../lib/prisma.js";
-import { DocumentoRecusado } from "../lib/stripe.js";
+import { chaveDoNumeroFiscal, DocumentoRecusado } from "../lib/stripe.js";
 import { sincronizarAssinatura } from "../lib/assinaturas.js";
 import { LIMITES_DO_VISITANTE } from "../lib/limite-de-tentativas.js";
-import { ASSINATURAS_SEM_LOGIN_AO_MESMO_TEMPO, assinaturaSemLoginNoAr } from "../routes/billing-sem-login.js";
+import { assinaturaSemLoginNoAr } from "../routes/billing-sem-login.js";
+import { assinaturasAoMesmoTempo } from "../lib/assinaturas-em-andamento.js";
 
 // ASSINAR SEM LOGIN (Fase 4, etapa 4.7, passo 4 — billing.md → *Assinar sem conta*). O que estes
 // testes protegem — é a fronteira de dinheiro, aberta a quem não entrou:
@@ -67,6 +69,8 @@ const novoEmail = () => `visitante-${++n}-${S}@teste.local`;
 
 /** A "Stripe de mentira": as assinaturas de cada cliente, como a Stripe as listaria. */
 type NaStripe = AssinaturaNoCheckout & { cliente: string };
+/** O resumo que a ficha e a Stripe guardam (passo 6b): o SHA-256 da tentativa, em hexadecimal — calculado aqui, à parte. */
+const sha256 = (texto: string) => createHash("sha256").update(texto, "utf8").digest("hex");
 let naStripe: NaStripe[] = [];
 
 const assinar = (corpo: object, endereco = "198.51.100.20") => request(servidor).post("/api/billing/visitante/assinatura").set("x-forwarded-for", endereco).send(corpo);
@@ -91,15 +95,26 @@ beforeAll(() => {
   process.env.STRIPE_PUBLISHABLE_KEY = "pk_test_da_suite_local";
 });
 
+// O número fiscal de cada cliente na Stripe agora; a fatura de cada assinatura nasce com ele (como na Stripe).
+let numeros = new Map<string, string>();
+
 beforeEach(() => {
   naStripe = [];
+  numeros = new Map<string, string>();
   let cliente = 0;
   let sub = 0;
   buscarPrecos.mockReset().mockResolvedValue(PRECOS);
   buscarCodigo.mockReset().mockResolvedValue(CEM_PARA_SEMPRE);
   calcularPrevia.mockReset().mockResolvedValue({ centavosHoje: 0, moeda: "brl" });
-  criarClienteDoVisitante.mockReset().mockImplementation(async () => ({ id: `cus_${S}_${++cliente}_${n}`, livemode: false }));
-  acertarNumeroFiscal.mockReset().mockResolvedValue(false);
+  criarClienteDoVisitante.mockReset().mockImplementation(async (c) => {
+    const id = `cus_${S}_${++cliente}_${n}`;
+    numeros.set(id, chaveDoNumeroFiscal(c.documento));
+    return { id, livemode: false };
+  });
+  acertarNumeroFiscal.mockReset().mockImplementation(async (clienteId, documento) => {
+    numeros.set(clienteId, chaveDoNumeroFiscal(documento));
+    return false;
+  });
   assinaturasDoCliente.mockReset().mockImplementation(async (clienteId) => naStripe.filter((a) => a.cliente === clienteId));
   cancelarIncompleta.mockReset().mockImplementation(async (id) => {
     naStripe = naStripe.map((a) => (a.id === id ? { ...a, status: "incomplete_expired", segredoDoPagamento: null } : a));
@@ -107,8 +122,8 @@ beforeEach(() => {
   });
   criarAssinatura.mockReset().mockImplementation(async (p) => {
     const id = `sub_${S}_${++sub}_${n}`;
-    const tentativa = "visitante" in p ? p.visitante.tentativa : null;
-    const nova: NaStripe = { id, status: "incomplete", precoId: p.precoId, codigoId: p.codigoId, segredoDoPagamento: `pi_${id}_secret_x`, segredoDoCartao: null, tentativa, cliente: p.clienteId };
+    const resumoDaTentativa = "visitante" in p ? p.visitante.resumoDaTentativa : null;
+    const nova: NaStripe = { id, status: "incomplete", precoId: p.precoId, codigoId: p.codigoId, segredoDoPagamento: `pi_${id}_secret_x`, segredoDoCartao: null, resumoDaTentativa, numeroFiscalDaFatura: numeros.get(p.clienteId) ?? null, cliente: p.clienteId };
     naStripe.push(nova);
     return nova;
   });
@@ -225,6 +240,26 @@ describe("assinar sem login — antes da Stripe", () => {
     expect(criarClienteDoVisitante).not.toHaveBeenCalled();
   });
 
+  // O GATILHO DE REABERTURA do "quem digita um e-mail descobre se ele tem conta" (decisão do operador,
+  // 21/10/2026) só pode ser visto com a recusa no registro — P2 da revisão de segurança do passo 6.
+  it("cada recusa \"já tem conta\" deixa uma linha no registro, com o endereço só como MARCA: a mesma para o mesmo endereço, sem IP nem e-mail", async () => {
+    const linhas = vi.spyOn(console, "info").mockImplementation(() => {});
+    try {
+      const email = String(process.env.SEED_MEMBER_EMAIL);
+      for (const endereco of ["198.51.100.171", "198.51.100.171", "198.51.100.172"]) await assinar(pedido(email), endereco);
+      const recusas = linhas.mock.calls.map(([texto]) => String(texto)).filter((texto) => texto.startsWith("[api] assinar sem login: e-mail com conta, recusado"));
+      expect(recusas).toHaveLength(3);
+      const marcas = recusas.map((texto) => /endereço ([0-9a-f]{16})\)$/.exec(texto)?.[1]);
+      expect(marcas.every(Boolean)).toBe(true);
+      expect(marcas[0]).toBe(marcas[1]);
+      expect(marcas[2]).not.toBe(marcas[0]);
+      expect(recusas.join(" ")).not.toContain("198.51.100");
+      expect(recusas.join(" ")).not.toContain(email);
+    } finally {
+      linhas.mockRestore();
+    }
+  });
+
   it("o CPF ou CNPJ errado: 400, sem repetir o número, e nada vai à Stripe nem ao banco", async () => {
     const email = novoEmail();
     for (const documento of ["529.982.247-24", "11.222.333/0001-82", "", "abc"]) {
@@ -311,13 +346,17 @@ describe("assinar sem login — a ficha e a tentativa", () => {
 
     const f = await ficha(email);
     expect(f?.email).toBe(email.toLowerCase());
-    expect(f?.tentativa).toBe(res.body.tentativa);
+    // A FICHA GUARDA SÓ O RESUMO (passo 6b): a tentativa, que abre a conta, não fica no banco.
+    expect(f?.tentativa).toBe(sha256(res.body.tentativa));
+    expect(f?.tentativa).not.toContain(res.body.tentativa);
     expect(f?.userId).toBeNull();
     expect(criarClienteDoVisitante).toHaveBeenCalledWith({ pedido: f?.id, email: email.toLowerCase(), documento: { tipo: "cpf", numero: "52998224725" } });
     expect(f?.stripeCustomerId).toBe((await criarClienteDoVisitante.mock.results[0]?.value)?.id);
     // A assinatura leva a ficha, a tentativa e a escolha de quem a fez — e nenhum userId.
     const enviado = criarAssinatura.mock.calls[0]?.[0];
-    expect(enviado && "visitante" in enviado ? enviado.visitante : null).toEqual({ pedido: f?.id, tentativa: res.body.tentativa, escolha: { novidades: true, origem: "youtube", campanha: "video-excel" } });
+    // E a Stripe também só o resumo: o painel e os avisos dela nunca levam a tentativa.
+    expect(enviado && "visitante" in enviado ? enviado.visitante : null).toEqual({ pedido: f?.id, resumoDaTentativa: sha256(res.body.tentativa), escolha: { novidades: true, origem: "youtube", campanha: "video-excel" } });
+    expect(JSON.stringify(enviado)).not.toContain(res.body.tentativa);
     expect(enviado && "userId" in enviado).toBe(false);
     // Nada da Stripe além do segredo vai ao navegador.
     expect(res.text).not.toContain("cus_");
@@ -356,7 +395,7 @@ describe("assinar sem login — a ficha e a tentativa", () => {
     expect(cancelarIncompleta).toHaveBeenCalledTimes(1);
     expect(criarClienteDoVisitante).toHaveBeenCalledTimes(1);
     // O código antigo não serve mais para nada: nem para seguir, nem para perguntar.
-    expect((await ficha(email))?.tentativa).toBe(outra.body.tentativa);
+    expect((await ficha(email))?.tentativa).toBe(sha256(outra.body.tentativa));
     const comOAntigo = await assinar(pedido(email, { tentativa: dona.body.tentativa }));
     expect(comOAntigo.body.segredo).not.toBe(outra.body.segredo);
   });
@@ -373,6 +412,20 @@ describe("assinar sem login — a ficha e a tentativa", () => {
     expect(acertarNumeroFiscal).toHaveBeenLastCalledWith((await ficha(email))?.stripeCustomerId, { tipo: "cpf", numero: "11144477735" });
     expect(cancelarIncompleta).toHaveBeenCalledTimes(2);
     expect(criarClienteDoVisitante).toHaveBeenCalledTimes(1);
+  });
+
+  // P2 DA REVISÃO DE SEGURANÇA DO PASSO 6: um clique anterior trocou o número na ficha e falhou antes de
+  // cancelar a incompleta — a ficha diz "não mudou" (o dublê de `acertarNumeroFiscal` responde `false`),
+  // mas a fatura dela saiu com o número antigo. Quem decide é o número DA FATURA.
+  it("a tentativa cuja FATURA saiu com outro número não segue, mesmo com a ficha já igual ao pedido — é cancelada e nasce outra", async () => {
+    const email = novoEmail();
+    const antiga = await assinar(pedido(email, { documento: OUTRO_CPF }));
+    expect(antiga.status).toBe(200);
+    const nova = await assinar(pedido(email, { tentativa: antiga.body.tentativa }));
+    expect(nova.status).toBe(200);
+    expect(nova.body.segredo).not.toBe(antiga.body.segredo);
+    expect(nova.body.tentativa).not.toBe(antiga.body.tentativa);
+    expect(cancelarIncompleta).toHaveBeenCalledTimes(1);
   });
 
   it("o número fiscal só muda COM a trava: depois de conferir que ninguém pagou, e antes de a assinatura nascer", async () => {
@@ -471,28 +524,30 @@ describe("assinar sem login — quem já pagou, e os dois cliques", () => {
     expect(criarClienteDoVisitante).toHaveBeenCalledTimes(1);
   });
 
-  it(`no máximo ${ASSINATURAS_SEM_LOGIN_AO_MESMO_TEMPO} em andamento, somando todos os endereços: o seguinte ouve 'muitos ao mesmo tempo' na hora (a tela pede para aguardar), sem ir à Stripe nem abrir transação`, async () => {
-    expect(ASSINATURAS_SEM_LOGIN_AO_MESMO_TEMPO).toBe(3);
+  // O TETO é o de todas as assinaturas da cópia: as ligações menos 2 (passo 6 — 10 ligações, 8 assinaturas).
+  it("no máximo o teto em andamento, somando todos os endereços: o seguinte ouve 'muitos ao mesmo tempo' na hora (a tela pede para aguardar), sem ir à Stripe nem abrir transação", async () => {
+    const TETO = assinaturasAoMesmoTempo();
+    expect(TETO).toBe(8);
     let soltar!: () => void;
     const segura = new Promise<void>((ok) => (soltar = ok));
     let entraram = 0;
     let todos!: () => void;
     const cheios = new Promise<void>((ok) => (todos = ok));
-    // Os três primeiros ficam PARADOS na primeira ida à Stripe (os preços).
+    // Os do teto ficam PARADOS na primeira ida à Stripe (os preços).
     buscarPrecos.mockImplementation(async () => {
-      if (++entraram === 3) todos();
+      if (++entraram === TETO) todos();
       await segura;
       return PRECOS;
     });
-    const parados = [1, 2, 3].map((i) => assinar(pedido(novoEmail()), `198.51.100.${80 + i}`).then((res) => res));
+    const parados = Array.from({ length: TETO }, (_, i) => assinar(pedido(novoEmail()), `198.51.100.${121 + i}`).then((res) => res));
     await cheios;
     const quarto = await assinar(pedido(novoEmail()), "198.51.100.89");
     // Um código próprio, e não o "ocupada" das duas abas: a tela diz "Aguarde um instante e tente novamente."
     expect([quarto.status, quarto.body]).toEqual([409, { error: "MuitosAoMesmoTempo" }]);
     expect(Number(quarto.headers["retry-after"])).toBeGreaterThan(0);
-    expect(buscarPrecos).toHaveBeenCalledTimes(3);
+    expect(buscarPrecos).toHaveBeenCalledTimes(TETO);
     soltar();
-    expect((await Promise.all(parados)).map((r) => r.status)).toEqual([200, 200, 200]);
+    expect((await Promise.all(parados)).map((r) => r.status)).toEqual(Array.from({ length: TETO }, () => 200));
     // Terminados, a vaga volta.
     buscarPrecos.mockResolvedValue(PRECOS);
     expect((await assinar(pedido(novoEmail()), "198.51.100.89")).status).toBe(200);

@@ -26,3 +26,9 @@ export const ROTAS_PUBLICAS = {
 export function enderecoDoCurso(slug: string): string {
   return `/curso/${slug}`;
 }
+
+/**
+ * A caixa de SUPORTE da escola (decisão do operador, P49, 20/10/2026): o "responder para" de todo
+ * e-mail e o contato que a tela de depois do pagamento mostra a quem digitou o e-mail errado.
+ */
+export const EMAIL_DE_SUPORTE = "suporte@jilsonsantana.com";

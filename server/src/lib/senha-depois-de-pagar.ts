@@ -2,6 +2,7 @@ import { generateId } from "better-auth";
 import { prisma } from "./prisma.js";
 import { auth } from "./auth.js";
 import { temAcessoAtivo } from "./acesso.js";
+import { resumoDaTentativa } from "./tentativa-do-visitante.js";
 
 // A SENHA LOGO DEPOIS DE PAGAR (Fase 4, etapa 4.7, passo 5 — decisão do operador, 21/10/2026: "na
 // própria tela, logo após pagar"; a pessoa já entra para estudar, e o e-mail não é preciso para
@@ -39,7 +40,7 @@ export type DesfechoDaSenha =
   | { resultado: "ocupada" };
 
 export async function criarSenhaDepoisDePagar(tentativa: string, senha: string): Promise<DesfechoDaSenha> {
-  const ficha = await prisma.guestCheckout.findUnique({ where: { tentativa }, select: { id: true, userId: true, senhaCriadaEm: true } });
+  const ficha = await prisma.guestCheckout.findUnique({ where: { tentativa: resumoDaTentativa(tentativa) }, select: { id: true, userId: true, senhaCriadaEm: true } });
   if (!ficha?.userId) return { resultado: "nao-confirmado" };
   const conta = await prisma.user.findUnique({ where: { id: ficha.userId }, select: { id: true, email: true, createdAt: true, emailVerified: true } });
   if (!conta || !(await temAcessoAtivo(conta.id))) return { resultado: "nao-confirmado" };

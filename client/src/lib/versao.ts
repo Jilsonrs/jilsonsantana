@@ -54,9 +54,21 @@ export function haTrabalhoEmAndamento(): boolean {
   return trabalhosEmAndamento > 0;
 }
 
-/** A próxima troca de tela carrega a página inteira: há versão nova, e nada em andamento seria cortado. */
+/**
+ * O app está montado no meio de uma PÁGINA DO SERVIDOR (a tela pública de assinar, `/assinar` —
+ * etapa 4.7, passo 6c): o menu e o rodapé são dela, marcada no `<body>` (`server/src/views/assinar.ts`).
+ * Ali, trocar de tela por dentro abriria a tela seguinte DENTRO do menu e do rodapé do site.
+ */
+export function naPaginaDoServidor(): boolean {
+  return document.body.dataset.paginaDoServidor !== undefined;
+}
+
+/**
+ * A próxima troca de tela carrega a página inteira: há versão nova — ou o app está numa página do
+ * servidor —, e nada em andamento seria cortado.
+ */
 export function trocarDeVersaoAgora(): boolean {
-  return haVersaoNova() && !haTrabalhoEmAndamento();
+  return (haVersaoNova() || naPaginaDoServidor()) && !haTrabalhoEmAndamento();
 }
 
 /** Carregar um endereço do jeito normal do navegador — num objeto, para o teste observar. */

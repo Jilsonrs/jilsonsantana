@@ -31,6 +31,15 @@ type Linha = { contagem: number; zera_em: Date };
 /** Agora, para o banco: um instante com fuso, sem depender do fuso de quem lê. */
 const agora = (): string => new Date().toISOString();
 
+/**
+ * Uma MARCA do endereço para o registro (achado P2 da revisão de segurança do passo 6, 27/10/2026): o
+ * mesmo endereço dá sempre a mesma marca, e a marca não devolve o endereço — dá para contar recusas
+ * por endereço no registro sem guardar IP. Cifrada pelo mesmo segredo das chaves abaixo.
+ */
+export function marcaDoEndereco(endereco: string): string {
+  return chaveGuardada("", `endereco-no-registro\u001f${endereco}`).slice(0, 16);
+}
+
 /** A chave como o banco a guarda: o nome do limite, em claro, e quem pediu, cifrado. */
 function chaveGuardada(prefixo: string, chave: string): string {
   const segredo = process.env.BETTER_AUTH_SECRET;
