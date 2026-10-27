@@ -40,6 +40,11 @@
 > `jilson-prod-00039`**, conferida de fora: o site e a saúde (200), o login com senha errada (401), o
 > aviso da Stripe sem assinatura (400 — o segredo no lugar), o job das migrations com sucesso. *(As
 > revisões `00037` e `00038` foram do teste do alerta: o plano → *Depois do Bloco G*.)*
+> **Publicado em 27/10/2026: `b2ef17c`** (só documentos — o banco no Neon com mínimo 0,5, medido no
+> ar; o aviso de gasto do Neon), **revisão `jilson-prod-00040`**, conferida de fora: o site, a saúde e o
+> curso (200), o login com senha errada (401), o aviso da Stripe sem assinatura (400), o job das
+> migrations com sucesso. **O banco de produção está em 0,5 a 4 desde 27/10/2026** (mudado pelo
+> operador no painel do Neon).
 > **Publicado em 24–25/10/2026:** `d6c2906` — o endereço do CDN do Bunny corrigido (P105) e a
 > conferência dele no CI; `f09a903` — o download do arquivo da aula em pedaços (o Cloud Run recusava
 > acima de 32 MB); `294b106` — o segundo mais novo vence entre aparelhos. Conferidos de fora (o site
@@ -6151,6 +6156,9 @@ outro aparelho e "daqui a um mês", e o Safari apaga o armazenamento do site em 
 - [ ] LGPD: privacy policy, terms, consent, data export/delete path (in Portuguese only — the
       English versions left on 12/10/2026)
 - [ ] Error/loading states everywhere; security review (subagent) on auth/billing/video
+- [ ] **A proteção na entrada, revista antes da abertura** *(pedido do operador, 27/10/2026)* — conferir
+      com o operador os sinais de ataque e a escada do que ligar (`tech-stack.md` → *Proteção na
+      entrada*), e se algum gatilho já se cumpriu. Nada se liga sem gatilho.
 - [ ] **⚠️ REVISTO em 10/10/2026: a Stripe de verdade entra na etapa 4.3, não aqui.** Com isso, a
       troca de chaves e a limpeza descritas abaixo **deixam de existir** (o banco de produção nunca
       recebe assinatura nem cliente do modo de teste). **O que continua sendo deste item, antes da
