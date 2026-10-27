@@ -462,7 +462,10 @@ pagamento sem ter assinado vê "confirmando" e depois "está demorando", sem cam
   dígito do e-mail pagaria a assinatura de outra pessoa, sem conseguir entrar. **O custo aceito:**
   quem digita um e-mail descobre se ele tem conta na escola, dentro do limite de tentativas.
   *Reabre se o registro mostrar alguém varrendo e-mails pela tela (muitas recusas "já tem conta"
-  vindas do mesmo endereço).*
+  vindas do mesmo endereço).* **Desde o passo 6 (27/10/2026) cada recusa deixa no registro a linha
+  `[api] assinar sem login: e-mail com conta, recusado (endereço <marca>)`** — a marca é o endereço
+  cifrado (`marcaDoEndereco`), a mesma para o mesmo endereço, sem IP nem e-mail: é com ela que se
+  conta (P2 da revisão de segurança do passo 6).
 - **Cartão emitido fora do Brasil: ACEITO** *(decisão do operador, 21/10/2026 — fecha a P88)*: a
   tela aceita qualquer cartão; o que restringe a venda ao Brasil é o CPF ou CNPJ obrigatório. Atende
   o brasileiro que tem cartão de banco de fora. Nada a construir; acompanhar no painel da Stripe
@@ -525,6 +528,11 @@ customer's full billing address for tax calculation […] use the Address Elemen
   dois na tela), e **nunca** vai nos dados do cartão (`billing_details.tax_id`, proibido numa conta
   do Brasil): vai na **ficha do cliente** (`tax_id_data`, `br_cpf`/`br_cnpj`) — o visitante desde o
   passo 4, quem está logado desde o passo 6 (`acertarNumeroFiscal`, `server/src/lib/stripe.ts`).
+  **Sem o CPF no pedido de quem está logado, só segue quem já tem um na ficha** (400
+  `DocumentoInvalido` se não tiver — até o CPF virar obrigatório no servidor), e **a incompleta só é
+  reaproveitada se a FATURA dela saiu com o mesmo número do pedido** (`numeroFiscalDaFatura`) — não
+  basta a ficha de agora: um clique que trocou o número e falhou no meio deixaria uma fatura com o
+  número antigo (P2 da revisão de segurança do passo 6, 27/10/2026).
   *Reabre se a escola passar a vender com uma conta da Stripe fora da América Latina.*
 
 **O que a Udemy e o Mosh mostram na hora de pagar, e a escola:**

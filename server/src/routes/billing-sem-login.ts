@@ -7,7 +7,8 @@ import { validate } from "../lib/http.js";
 import { cobrancaConfigurada } from "../lib/stripe.js";
 import { lerPlanos, lerPrevia } from "../lib/vitrine-da-assinatura.js";
 import { assinarComoVisitante, pagamentoConfirmado } from "../lib/checkout-do-visitante.js";
-import { contarClienteNovo, cotaDeClientesNovosEsgotada, limiteSemLogin } from "../lib/limite-de-tentativas.js";
+import { CABECALHO_DO_IP, contarClienteNovo, cotaDeClientesNovosEsgotada, ipDoPedido, limiteSemLogin } from "../lib/limite-de-tentativas.js";
+import { marcaDoEndereco } from "../lib/loja-de-tentativas.js";
 import { protecaoDaCobranca } from "../lib/protecao-da-cobranca.js";
 import { comVaga } from "../lib/assinaturas-em-andamento.js";
 
@@ -99,7 +100,12 @@ router.post("/billing/visitante/assinatura", ...limiteSemLogin.assinar, async (r
   }
   const desfecho = vaga.resultado;
   if (desfecho.resultado === "ja-tem-conta") {
-    // A tela avisa e manda entrar (decisão do operador, 21/10/2026).
+    // A tela avisa e manda entrar (decisão do operador, 21/10/2026). E o registro guarda a recusa, com
+    // o endereço só como MARCA (sem IP nem e-mail): é o que deixa ver o gatilho de reabertura que o
+    // operador aceitou — "muitas recusas 'já tem conta' vindas do mesmo endereço" (P2 da revisão de
+    // segurança do passo 6, 27/10/2026). `info`, não `error`: é o visitante, não precisa de gente.
+    const ip = ipDoPedido(req.get(CABECALHO_DO_IP));
+    console.info(`[api] assinar sem login: e-mail com conta, recusado (endereço ${ip ? marcaDoEndereco(ip) : "sem endereço"})`);
     res.status(409).json({ error: "JaTemConta" });
     return;
   }

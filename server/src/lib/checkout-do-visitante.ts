@@ -6,7 +6,7 @@ import { sincronizarSeLivre } from "./assinaturas.js";
 import { temAcessoAtivo } from "./acesso.js";
 import { mandarBoasVindasDaAssinatura } from "./boas-vindas.js";
 import { novaTentativa, resumoDaTentativa } from "./tentativa-do-visitante.js";
-import { acertarNumeroFiscal, assinaturasDoCliente, buscarCodigo, buscarPrecos, cancelarIncompleta, criarAssinatura, criarClienteDoVisitante, DocumentoRecusado, type AssinaturaNoCheckout } from "./stripe.js";
+import { acertarNumeroFiscal, assinaturasDoCliente, chaveDoNumeroFiscal, buscarCodigo, buscarPrecos, cancelarIncompleta, criarAssinatura, criarClienteDoVisitante, DocumentoRecusado, type AssinaturaNoCheckout } from "./stripe.js";
 
 // ASSINAR SEM CONTA (Fase 4, etapa 4.7, passo 4 — billing.md → *Assinar sem conta*; CLAUDE.md →
 // Membership Gating). A regra é a do checkout de quem está logado (`checkout.ts`), com três
@@ -149,19 +149,20 @@ async function decidir(email: string, pedido: AssinarSemLoginInput, ficha: Ficha
 
     // O número fiscal desta tentativa, agora — com a trava, e antes de a assinatura (e a primeira
     // fatura dela) nascer. A ficha nova já nasceu com ele.
-    const documentoMudou = ficha.nova ? false : await acertarNumeroFiscal(ficha.stripeCustomerId, pedido.documento);
+    if (!ficha.nova) await acertarNumeroFiscal(ficha.stripeCustomerId, pedido.documento);
+    const numeroDoPedido = chaveDoNumeroFiscal(pedido.documento);
 
     let assinatura: AssinaturaNoCheckout | null = null;
     for (const incompleta of existentes) {
       // A MESMA: o código da tentativa que ESTE navegador recebeu, o mesmo preço, o mesmo código
-      // promocional, o mesmo número fiscal (a fatura dela leva o número de quando nasceu) — e um
-      // pagamento que a Stripe ainda aceita.
+      // promocional, o mesmo número fiscal NA FATURA DELA (o de quando nasceu — não o que a ficha tem
+      // agora: achado P2 da revisão de segurança do passo 6) — e um pagamento que a Stripe ainda aceita.
       const aMesma =
         typeof pedido.tentativa === "string" &&
         incompleta.resumoDaTentativa === resumoDaTentativa(pedido.tentativa) &&
         incompleta.precoId === precoId &&
         incompleta.codigoId === codigoId &&
-        !documentoMudou &&
+        incompleta.numeroFiscalDaFatura === numeroDoPedido &&
         incompleta.pagamentoCancelado !== true &&
         incompleta.segredoDoPagamento !== null;
       if (aMesma && !assinatura) {

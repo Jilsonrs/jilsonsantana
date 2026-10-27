@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import Stripe from "stripe";
 import { pagamentosDaFatura } from "./stripe-devolucao.js";
-import { chavePublicavel, erroSemMensagem, paraAssinaturaNaStripe, paraAssinaturaNoCheckout, paraCodigoPromocional, paraNumeroFiscal, paraPedidoDeAssinatura, paraPedidoDeCliente, paraPedidoDeClienteDoVisitante, paraPrecosDosPlanos } from "./stripe.js";
+import { chaveDoNumeroFiscal, chavePublicavel, erroSemMensagem, paraAssinaturaNaStripe, paraAssinaturaNoCheckout, paraCodigoPromocional, paraNumeroFiscal, paraPedidoDeAssinatura, paraPedidoDeCliente, paraPedidoDeClienteDoVisitante, paraPrecosDosPlanos } from "./stripe.js";
 
 // O ESPELHO A PARTIR DA STRIPE (Fase 4, etapa 4.1) — função pura, teste unitário (CLAUDE.md →
 // Testing: só função pura, sem I/O). O que protege é o "PAGO ATÉ": quando a renovação falha, a
@@ -234,7 +234,17 @@ function doCheckout({ status = "incomplete", fatura = { status: "open", confirma
 
 describe("a assinatura como o checkout a vê", () => {
   it("incompleta com a fatura aberta: o segredo do pagamento, o plano e nenhum código", () => {
-    expect(paraAssinaturaNoCheckout(doCheckout())).toEqual({ id: "sub_1", status: "incomplete", precoId: "price_mensal", codigoId: null, segredoDoPagamento: "pi_1_secret_x", segredoDoCartao: null, resumoDaTentativa: null, pagamentoCancelado: false });
+    expect(paraAssinaturaNoCheckout(doCheckout())).toEqual({ id: "sub_1", status: "incomplete", precoId: "price_mensal", codigoId: null, segredoDoPagamento: "pi_1_secret_x", segredoDoCartao: null, resumoDaTentativa: null, pagamentoCancelado: false, numeroFiscalDaFatura: null });
+  });
+
+  // O NÚMERO DA FATURA (P2 da revisão de segurança do passo 6): é com ele — não com a ficha de agora —
+  // que o checkout decide reaproveitar a incompleta.
+  it("o CPF ou CNPJ com que a fatura foi fechada, no formato de chaveDoNumeroFiscal — e nada sem número do Brasil", () => {
+    const comNumeros = (numeros: { type: string; value: string }[]) => doCheckout({ fatura: { status: "open", confirmation_secret: { client_secret: "pi_1_secret_x" }, customer_tax_ids: numeros } });
+    expect(paraAssinaturaNoCheckout(comNumeros([{ type: "eu_vat", value: "DE123" }, { type: "br_cpf", value: "529.982.247-25" }])).numeroFiscalDaFatura).toBe("br_cpf:529.982.247-25");
+    expect(paraAssinaturaNoCheckout(comNumeros([{ type: "br_cnpj", value: "11.222.333/0001-81" }])).numeroFiscalDaFatura).toBe(chaveDoNumeroFiscal({ tipo: "cnpj", numero: "11222333000181" }));
+    expect(paraAssinaturaNoCheckout(comNumeros([{ type: "eu_vat", value: "DE123" }])).numeroFiscalDaFatura).toBeNull();
+    expect(paraAssinaturaNoCheckout(doCheckout({ fatura: "in_1" })).numeroFiscalDaFatura).toBeNull();
   });
 
   // ASSINAR SEM CONTA (etapa 4.7, passo 4): só quem traz o código da tentativa segue com ela.

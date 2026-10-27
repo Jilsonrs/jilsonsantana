@@ -5103,6 +5103,20 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                         logado, as ligações) e mutação (o teto que nunca enche · o logado fora do teto ·
                         nenhuma ligação livre · de volta a 3 ligações · a tela logada sem a frase): as
                         cinco reprovam.
+                  - [x] **Os três P2 corrigidos** *(decisão do operador, 27/10/2026: "Corrijo os três
+                        agora")*: (1) o pedido de quem está logado SEM o CPF só segue se a ficha do
+                        cliente já tiver um (`temNumeroFiscalDoBrasil`); sem nenhum, 400
+                        `DocumentoInvalido` — fecha o "assinar sem CPF chamando o servidor direto" até
+                        o CPF virar obrigatório no servidor (o checkbox abaixo continua); (2) reaproveitar
+                        a incompleta compara o número com que a FATURA dela foi fechada
+                        (`numeroFiscalDaFatura`, lido de `latest_invoice.customer_tax_ids`), não o da
+                        ficha de agora — nos dois caminhos, logado e visitante; (3) a recusa "já tem
+                        conta" deixa uma linha `[api]` no registro com o endereço só como marca
+                        (`marcaDoEndereco`, a mesma cifra das contagens — sem IP nem e-mail), o que torna
+                        visível o gatilho de reabertura do oráculo de e-mail. Testes novos nos dois
+                        caminhos e na função pura; mutação (sem CPF e sem ficha assinando · o logado e o
+                        visitante reaproveitando sem olhar a fatura · a leitura sem o número da fatura ·
+                        a recusa sem linha · o IP em claro · a rota sem a recusa): as sete reprovam.
                   - [x] **A prova no banco de dev** (27/10/2026, a migration da 6b aplicada lá antes):
                         16 de 16 — o visitante assina com CPF, a tentativa só como resumo na ficha e na
                         Stripe, o CPF na ficha do cliente (`br_cpf`), o pagamento com cartão de teste, a

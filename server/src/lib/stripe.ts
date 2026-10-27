@@ -207,7 +207,21 @@ export type AssinaturaNoCheckout = {
    * segredo de novo deixaria a pessoa presa num pagamento que não aceita mais cartão nenhum.
    */
   pagamentoCancelado?: boolean;
+  /**
+   * O número fiscal do Brasil com que a FATURA desta assinatura foi fechada (`chaveDoNumeroFiscal`), ou
+   * nada. É com ele — e não com o que a ficha do cliente tem agora — que se decide reaproveitar uma
+   * incompleta (achado P2 da revisão de segurança do passo 6, 27/10/2026): um clique que trocou o
+   * número na ficha e falhou antes de cancelar a incompleta antiga deixaria a fatura dela com o número
+   * antigo, e o clique seguinte, com o número novo, ouviria "não mudou".
+   */
+  numeroFiscalDaFatura?: string | null;
 };
+
+/** O número fiscal como chave de comparação: o tipo da Stripe e o número com a pontuação de costume. Função pura. */
+export function chaveDoNumeroFiscal(documento: DocumentoFiscal): string {
+  const numero = paraNumeroFiscal(documento);
+  return `${numero.type}:${numero.value}`;
+}
 
 /** A assinatura da Stripe (com a fatura e o pedido de cartão expandidos) no formato do checkout. Função pura. */
 export function paraAssinaturaNoCheckout(assinatura: Stripe.Subscription): AssinaturaNoCheckout {
@@ -229,6 +243,7 @@ export function paraAssinaturaNoCheckout(assinatura: Stripe.Subscription): Assin
     segredoDoCartao: typeof cartao === "object" && cartao !== null ? cartao.client_secret : null,
     resumoDaTentativa: assinatura.metadata[METADADOS_DO_VISITANTE.tentativa] || null,
     pagamentoCancelado: pagamentoDeHoje !== null && cancelado,
+    numeroFiscalDaFatura: numeroFiscalDoBrasil(typeof fatura === "object" && fatura !== null ? fatura.customer_tax_ids : null),
   };
 }
 
@@ -309,6 +324,26 @@ export async function criarClienteDoVisitante(cliente: ClienteDoVisitante): Prom
  * igual ao que já está, nada; diferente, entra o novo e saem os do Brasil que estavam. Devolve se
  * MUDOU — e aí a tentativa anterior não serve mais, porque a fatura dela leva o número antigo.
  */
+/** O número do Brasil entre os números fiscais (de uma fatura), como `chaveDoNumeroFiscal`. Função pura. */
+function numeroFiscalDoBrasil(numeros: ReadonlyArray<{ type: string; value: string | null }> | null | undefined): string | null {
+  const doBrasil = (numeros ?? []).find((n) => (n.type === "br_cpf" || n.type === "br_cnpj") && n.value);
+  return doBrasil ? `${doBrasil.type}:${doBrasil.value}` : null;
+}
+
+/**
+ * A ficha do cliente já tem um CPF ou CNPJ? Para o pedido de quem está logado que vem SEM o número
+ * (achado P2 da revisão de segurança do passo 6): sem número em lugar nenhum, não se assina — é o
+ * CPF obrigatório que restringe a venda ao Brasil (`billing.md`).
+ */
+export async function temNumeroFiscalDoBrasil(clienteId: string): Promise<boolean> {
+  try {
+    const guardados = (await stripe().customers.listTaxIds(clienteId, { limit: 20 })).data;
+    return guardados.some((t) => t.type === "br_cpf" || t.type === "br_cnpj");
+  } catch (erro) {
+    throw erroSemMensagem(erro, "a leitura do número fiscal do cliente");
+  }
+}
+
 export async function acertarNumeroFiscal(clienteId: string, documento: DocumentoFiscal): Promise<boolean> {
   const novo = paraNumeroFiscal(documento);
   try {

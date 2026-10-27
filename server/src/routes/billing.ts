@@ -119,7 +119,7 @@ router.post("/billing/assinatura", requireAuth, ...limiteDeTentativas.cobranca, 
     return;
   }
   // A Stripe recusou o CPF ou CNPJ que o `core` aceitou (a mesma resposta do visitante).
-  if (desfecho.resultado === "documento-recusado") {
+  if (desfecho.resultado === "documento-recusado" || desfecho.resultado === "sem-documento") {
     res.status(400).json({ error: "DocumentoInvalido" });
     return;
   }

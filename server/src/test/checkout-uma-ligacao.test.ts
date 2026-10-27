@@ -29,6 +29,8 @@ vi.mock("../lib/stripe.js", async (importOriginal) => ({
   assinaturasDoCliente: () => assinaturasDoCliente(),
   criarAssinatura: () => criarAssinatura(),
   buscarAssinatura: (id: string) => buscarAssinatura(id),
+  // O pedido destes testes vem sem o CPF: a ficha já tem um (passo 6 — o caso sem nenhum é de billing.test.ts).
+  temNumeroFiscalDoBrasil: async () => true,
 }));
 
 // UMA ligação, e o prazo curto: o pedido que esperasse uma segunda falharia em 3 s, não em 10.

@@ -31,7 +31,7 @@ vi.mock("../lib/stripe.js", async (importOriginal) => ({
 
 import servidor from "./servidor.js";
 import { prisma } from "../lib/prisma.js";
-import { DocumentoRecusado } from "../lib/stripe.js";
+import { chaveDoNumeroFiscal, DocumentoRecusado } from "../lib/stripe.js";
 import { sincronizarAssinatura } from "../lib/assinaturas.js";
 import { LIMITES_DO_VISITANTE } from "../lib/limite-de-tentativas.js";
 import { assinaturaSemLoginNoAr } from "../routes/billing-sem-login.js";
@@ -95,15 +95,26 @@ beforeAll(() => {
   process.env.STRIPE_PUBLISHABLE_KEY = "pk_test_da_suite_local";
 });
 
+// O número fiscal de cada cliente na Stripe agora; a fatura de cada assinatura nasce com ele (como na Stripe).
+let numeros = new Map<string, string>();
+
 beforeEach(() => {
   naStripe = [];
+  numeros = new Map<string, string>();
   let cliente = 0;
   let sub = 0;
   buscarPrecos.mockReset().mockResolvedValue(PRECOS);
   buscarCodigo.mockReset().mockResolvedValue(CEM_PARA_SEMPRE);
   calcularPrevia.mockReset().mockResolvedValue({ centavosHoje: 0, moeda: "brl" });
-  criarClienteDoVisitante.mockReset().mockImplementation(async () => ({ id: `cus_${S}_${++cliente}_${n}`, livemode: false }));
-  acertarNumeroFiscal.mockReset().mockResolvedValue(false);
+  criarClienteDoVisitante.mockReset().mockImplementation(async (c) => {
+    const id = `cus_${S}_${++cliente}_${n}`;
+    numeros.set(id, chaveDoNumeroFiscal(c.documento));
+    return { id, livemode: false };
+  });
+  acertarNumeroFiscal.mockReset().mockImplementation(async (clienteId, documento) => {
+    numeros.set(clienteId, chaveDoNumeroFiscal(documento));
+    return false;
+  });
   assinaturasDoCliente.mockReset().mockImplementation(async (clienteId) => naStripe.filter((a) => a.cliente === clienteId));
   cancelarIncompleta.mockReset().mockImplementation(async (id) => {
     naStripe = naStripe.map((a) => (a.id === id ? { ...a, status: "incomplete_expired", segredoDoPagamento: null } : a));
@@ -112,7 +123,7 @@ beforeEach(() => {
   criarAssinatura.mockReset().mockImplementation(async (p) => {
     const id = `sub_${S}_${++sub}_${n}`;
     const resumoDaTentativa = "visitante" in p ? p.visitante.resumoDaTentativa : null;
-    const nova: NaStripe = { id, status: "incomplete", precoId: p.precoId, codigoId: p.codigoId, segredoDoPagamento: `pi_${id}_secret_x`, segredoDoCartao: null, resumoDaTentativa, cliente: p.clienteId };
+    const nova: NaStripe = { id, status: "incomplete", precoId: p.precoId, codigoId: p.codigoId, segredoDoPagamento: `pi_${id}_secret_x`, segredoDoCartao: null, resumoDaTentativa, numeroFiscalDaFatura: numeros.get(p.clienteId) ?? null, cliente: p.clienteId };
     naStripe.push(nova);
     return nova;
   });
@@ -227,6 +238,26 @@ describe("assinar sem login — antes da Stripe", () => {
     expect([res.status, res.body]).toEqual([409, { error: "JaTemConta" }]);
     expect(buscarPrecos).not.toHaveBeenCalled();
     expect(criarClienteDoVisitante).not.toHaveBeenCalled();
+  });
+
+  // O GATILHO DE REABERTURA do "quem digita um e-mail descobre se ele tem conta" (decisão do operador,
+  // 21/10/2026) só pode ser visto com a recusa no registro — P2 da revisão de segurança do passo 6.
+  it("cada recusa \"já tem conta\" deixa uma linha no registro, com o endereço só como MARCA: a mesma para o mesmo endereço, sem IP nem e-mail", async () => {
+    const linhas = vi.spyOn(console, "info").mockImplementation(() => {});
+    try {
+      const email = String(process.env.SEED_MEMBER_EMAIL);
+      for (const endereco of ["198.51.100.171", "198.51.100.171", "198.51.100.172"]) await assinar(pedido(email), endereco);
+      const recusas = linhas.mock.calls.map(([texto]) => String(texto)).filter((texto) => texto.startsWith("[api] assinar sem login: e-mail com conta, recusado"));
+      expect(recusas).toHaveLength(3);
+      const marcas = recusas.map((texto) => /endereço ([0-9a-f]{16})\)$/.exec(texto)?.[1]);
+      expect(marcas.every(Boolean)).toBe(true);
+      expect(marcas[0]).toBe(marcas[1]);
+      expect(marcas[2]).not.toBe(marcas[0]);
+      expect(recusas.join(" ")).not.toContain("198.51.100");
+      expect(recusas.join(" ")).not.toContain(email);
+    } finally {
+      linhas.mockRestore();
+    }
   });
 
   it("o CPF ou CNPJ errado: 400, sem repetir o número, e nada vai à Stripe nem ao banco", async () => {
@@ -381,6 +412,20 @@ describe("assinar sem login — a ficha e a tentativa", () => {
     expect(acertarNumeroFiscal).toHaveBeenLastCalledWith((await ficha(email))?.stripeCustomerId, { tipo: "cpf", numero: "11144477735" });
     expect(cancelarIncompleta).toHaveBeenCalledTimes(2);
     expect(criarClienteDoVisitante).toHaveBeenCalledTimes(1);
+  });
+
+  // P2 DA REVISÃO DE SEGURANÇA DO PASSO 6: um clique anterior trocou o número na ficha e falhou antes de
+  // cancelar a incompleta — a ficha diz "não mudou" (o dublê de `acertarNumeroFiscal` responde `false`),
+  // mas a fatura dela saiu com o número antigo. Quem decide é o número DA FATURA.
+  it("a tentativa cuja FATURA saiu com outro número não segue, mesmo com a ficha já igual ao pedido — é cancelada e nasce outra", async () => {
+    const email = novoEmail();
+    const antiga = await assinar(pedido(email, { documento: OUTRO_CPF }));
+    expect(antiga.status).toBe(200);
+    const nova = await assinar(pedido(email, { tentativa: antiga.body.tentativa }));
+    expect(nova.status).toBe(200);
+    expect(nova.body.segredo).not.toBe(antiga.body.segredo);
+    expect(nova.body.tentativa).not.toBe(antiga.body.tentativa);
+    expect(cancelarIncompleta).toHaveBeenCalledTimes(1);
   });
 
   it("o número fiscal só muda COM a trava: depois de conferir que ninguém pagou, e antes de a assinatura nascer", async () => {

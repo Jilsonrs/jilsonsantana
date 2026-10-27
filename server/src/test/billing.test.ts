@@ -15,6 +15,8 @@ const cancelarIncompleta = vi.fn<(id: string) => Promise<string>>();
 const criarAssinatura = vi.fn<(pedido: PedidoDeAssinatura) => Promise<AssinaturaNoCheckout | null>>();
 // O CPF ou CNPJ na FICHA DO CLIENTE (etapa 4.7, passo 6): devolve se o número MUDOU.
 const acertarNumeroFiscal = vi.fn<(clienteId: string, documento: DocumentoFiscal) => Promise<boolean>>();
+// "A ficha do cliente já tem um CPF ou CNPJ?" — para o pedido que vem sem o número (P2 da revisão do passo 6).
+const temNumeroFiscalDoBrasil = vi.fn<(clienteId: string) => Promise<boolean>>();
 // A busca que a SINCRONIA faz na Stripe (etapa 4.4): o checkout a chama quando a Stripe diz que
 // a conta já assina e o espelho não dá acesso.
 const buscarAssinatura = vi.fn<(id: string) => Promise<AssinaturaNaStripe>>();
@@ -28,11 +30,12 @@ vi.mock("../lib/stripe.js", async (importOriginal) => ({
   cancelarIncompleta: (id: string) => cancelarIncompleta(id),
   criarAssinatura: (pedido: PedidoDeAssinatura) => criarAssinatura(pedido),
   acertarNumeroFiscal: (clienteId: string, documento: DocumentoFiscal) => acertarNumeroFiscal(clienteId, documento),
+  temNumeroFiscalDoBrasil: (clienteId: string) => temNumeroFiscalDoBrasil(clienteId),
   buscarAssinatura: (id: string) => buscarAssinatura(id),
 }));
 
 import servidor from "./servidor.js";
-import { DocumentoRecusado } from "../lib/stripe.js";
+import { chaveDoNumeroFiscal, DocumentoRecusado } from "../lib/stripe.js";
 import { assinaturasAoMesmoTempo, comVaga } from "../lib/assinaturas-em-andamento.js";
 import { prisma } from "../lib/prisma.js";
 import { ASSINATURA_DE_TESTE } from "../lib/assinatura-de-teste.js";
@@ -329,6 +332,8 @@ describe("POST /api/billing/assinatura", () => {
   // Cada assinatura criada fica com o cliente que a pediu; as postas à mão num teste (sem
   // `cliente`) valem para quem perguntar.
   let naStripe: (AssinaturaNoCheckout & { cliente?: string })[] = [];
+  // A ficha de cada cliente na Stripe (o número fiscal de agora), e a fatura de cada assinatura nasce com ele.
+  let fichas = new Map<string, string>();
   const incompleta = (id: string, precoId: string, codigoId: string | null = null): AssinaturaNoCheckout => ({ id, status: "incomplete", precoId, codigoId, segredoDoPagamento: `pi_${id}_secret_x`, segredoDoCartao: null });
   const encerrada = (id: string, status: string): AssinaturaNoCheckout => ({ id, status, precoId: "price_mensal", codigoId: null, segredoDoPagamento: null, segredoDoCartao: null });
 
@@ -360,20 +365,23 @@ describe("POST /api/billing/assinatura", () => {
       naStripe = naStripe.map((a) => (a.id === id ? { ...a, status: "incomplete_expired", segredoDoPagamento: null } : a));
       return "incomplete_expired";
     });
+    fichas = new Map<string, string>();
     criarAssinatura.mockReset().mockImplementation(async (pedido) => {
       // Um instante, como a rede: sem a trava por conta, dois pedidos juntos passariam os dois da lista.
       await new Promise((ok) => setTimeout(ok, 30));
-      const nova = incompleta(`sub_${S}_${++n}`, pedido.precoId, pedido.codigoId);
+      // A primeira fatura sai com o número que a ficha tem naquela hora — como na Stripe.
+      const nova = { ...incompleta(`sub_${S}_${++n}`, pedido.precoId, pedido.codigoId), numeroFiscalDaFatura: fichas.get(pedido.clienteId) ?? null };
       naStripe.push({ ...nova, cliente: pedido.clienteId });
       return nova;
     });
     // A ficha com memória, como a Stripe: o número igual ao guardado não muda nada.
-    const fichas = new Map<string, string>();
     acertarNumeroFiscal.mockReset().mockImplementation(async (clienteId, documento) => {
       const antes = fichas.get(clienteId);
-      fichas.set(clienteId, `${documento.tipo}:${documento.numero}`);
-      return antes !== `${documento.tipo}:${documento.numero}`;
+      fichas.set(clienteId, chaveDoNumeroFiscal(documento));
+      return antes !== chaveDoNumeroFiscal(documento);
     });
+    // Sem o número no pedido, as contas destes testes já têm um na ficha — o caso sem nenhum tem teste próprio.
+    temNumeroFiscalDoBrasil.mockReset().mockResolvedValue(true);
   });
 
   afterAll(async () => {
@@ -606,12 +614,38 @@ describe("POST /api/billing/assinatura", () => {
       });
     });
 
-    it("sem o CPF (a tela de antes desta publicação): assina como antes, e a ficha não é mexida", async () => {
+    it("sem o CPF, com um número já na ficha (a tela de antes desta publicação): assina como antes, e a ficha não é mexida", async () => {
       await semAssinatura(async () => {
         expect((await assinarComo({ plano: "mensal" }, member)).status).toBe(200);
       });
+      expect(temNumeroFiscalDoBrasil).toHaveBeenCalled();
       expect(acertarNumeroFiscal).not.toHaveBeenCalled();
       expect(criarAssinatura).toHaveBeenCalledTimes(1);
+    });
+
+    // P2 DA REVISÃO DE SEGURANÇA DO PASSO 6: é o CPF obrigatório que restringe a venda ao Brasil.
+    it("sem o CPF e sem número na ficha (alguém chamando o servidor direto): 400 DocumentoInvalido, e nada nasce", async () => {
+      temNumeroFiscalDoBrasil.mockResolvedValue(false);
+      await semAssinatura(async () => {
+        const res = await assinarComo({ plano: "mensal" }, member);
+        expect([res.status, res.body]).toEqual([400, { error: "DocumentoInvalido" }]);
+      });
+      expect(criarAssinatura).not.toHaveBeenCalled();
+    });
+
+    // P2 DA REVISÃO DE SEGURANÇA DO PASSO 6: um clique anterior trocou o número na ficha e falhou antes de
+    // cancelar a incompleta — a ficha diz "não mudou", mas a fatura dela saiu com o número antigo.
+    it("a incompleta cuja FATURA saiu com outro número não é reaproveitada, mesmo com a ficha já igual ao pedido", async () => {
+      await semAssinatura(async () => {
+        const antiga = await assinarComo({ plano: "mensal", documento: OUTRO_CPF }, member);
+        const { stripeCustomerId } = await prisma.stripeCustomer.findUniqueOrThrow({ where: { userId: memberId } });
+        fichas.set(stripeCustomerId, chaveDoNumeroFiscal({ tipo: "cpf", numero: "52998224725" }));
+        const nova = await assinarComo({ plano: "mensal", documento: CPF }, member);
+        expect(nova.status).toBe(200);
+        expect(nova.body.segredo).not.toBe(antiga.body.segredo);
+        expect(cancelarIncompleta).toHaveBeenCalledWith(naStripe[0]?.id);
+        expect(criarAssinatura).toHaveBeenCalledTimes(2);
+      });
     });
   });
 
