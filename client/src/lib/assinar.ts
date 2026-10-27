@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { DuracaoDoDesconto, TELA_DE_CONCLUIDO, type DescontoDoCodigo, type Plano } from "@jilson/core";
-import { getPlanosDaAssinatura, getPlanosSemLogin, getPreviaDaAssinatura, getPreviaSemLogin, getSituacaoDaAssinatura } from "@/lib/api";
+import { confirmarSemLogin, getPlanosDaAssinatura, getPlanosSemLogin, getPreviaDaAssinatura, getPreviaSemLogin, getSituacaoDaAssinatura } from "@/lib/api";
 import type { AppTexts } from "@/lib/language";
 
 // ASSINAR (Fase 4, etapa 4.2): os endereços, o dinheiro por extenso e as três leituras da tela.
@@ -30,6 +30,19 @@ export function descreverDesconto(t: AppTexts["assinar"], desconto: DescontoDoCo
 /** Os dois planos, com o valor que a Stripe diz. Só para quem ainda não assina. */
 export function usePlanosDaAssinatura(ligado: boolean) {
   return useQuery({ queryKey: ["billing", "planos"], queryFn: getPlanosDaAssinatura, enabled: ligado });
+}
+
+/**
+ * "O pagamento já valeu?" para quem assinou SEM CONTA (etapa 4.7, passo 6e2): pergunta a cada
+ * `conferirACada` até a resposta ser sim — o aviso da Stripe é que faz a conta nascer. Sem tentativa, nada.
+ */
+export function useConfirmacaoSemLogin(tentativa: string | null, conferirACada = 2000) {
+  return useQuery({
+    queryKey: ["billing", "visitante", "confirmacao", tentativa],
+    queryFn: () => confirmarSemLogin(tentativa ?? ""),
+    enabled: tentativa !== null,
+    refetchInterval: (consulta) => (consulta.state.data?.confirmada ? false : conferirACada),
+  });
 }
 
 /** Os dois planos para o VISITANTE, sem login (a tela pública de assinar — etapa 4.7, passo 6c). */

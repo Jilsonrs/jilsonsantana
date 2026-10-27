@@ -630,7 +630,7 @@ erro geral; os avisos de senha curta, longa ou só de espaços são os de `senha
 aviso). *Se a medição na área restrita mostrar que o campo de pagamento da Stripe já pede o CPF
 sozinho, os três textos do CPF voltam ao operador antes de construir.*
 
-**Depois do pagamento.** *(REVISTO pelas decisões do operador de 21/10/2026, na abertura do passo
+**Depois do pagamento** *(construída no passo 6e2, 27/10/2026: `/assinar/concluido`)*. *(REVISTO pelas decisões do operador de 21/10/2026, na abertura do passo
 5: **a senha nasce na própria tela**, e o e-mail é de boas-vindas — não é preciso para começar. Os
 rascunhos de 12/10 que falavam do link ou do "Enviar de novo" saíram: os textos desta tela foram
 aprovados na P81, 27/10/2026, na tabela acima.)* Quem acabou de pagar ainda não tem senha nem está logado: a tela confirma,

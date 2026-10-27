@@ -14,12 +14,18 @@ export interface AssinarView {
   baseUrl: string;
   /** As etiquetas do app (`lib/etiquetas-do-app.ts`) — o nosso próprio `index.html`, nunca dado de fora. */
   etiquetasDoApp: string;
+  /**
+   * `concluido`: a tela de depois do pagamento (etapa 4.7, passo 6e2) — fora do Google (`noindex`), e
+   * sem o título "Assinar": quem diz o que está acontecendo (confirmando, confirmada) é o app.
+   */
+  pagina?: "assinar" | "concluido";
 }
 
-export function renderAssinar({ dict, baseUrl, etiquetasDoApp }: AssinarView): string {
+export function renderAssinar({ dict, baseUrl, etiquetasDoApp, pagina = "assinar" }: AssinarView): string {
   const t = dict.app.assinar;
   const titulo = `${t.titulo} | Jilson Santana`;
   const endereco = `${baseUrl}${ROTAS_PUBLICAS.assinar}`;
+  const concluido = pagina === "concluido";
   return `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -28,7 +34,7 @@ export function renderAssinar({ dict, baseUrl, etiquetasDoApp }: AssinarView): s
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${escapeHtml(titulo)}</title>
   <meta name="description" content="${escapeHtml(t.descricao)}">
-  <link rel="canonical" href="${escapeHtml(endereco)}">
+  ${concluido ? '<meta name="robots" content="noindex">' : `<link rel="canonical" href="${escapeHtml(endereco)}">`}
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Jilson Santana">
   <meta property="og:locale" content="pt_BR">
@@ -41,15 +47,19 @@ export function renderAssinar({ dict, baseUrl, etiquetasDoApp }: AssinarView): s
   <link rel="stylesheet" href="/css/public.css">
   ${FONTES_DO_SITE}
 </head>
-<body data-pagina-do-servidor="assinar">
+<body data-pagina-do-servidor="${pagina}">
   ${topoDoSite({ dict, logado: false, assinante: false, naHome: false })}
 
   <main id="conteudo-principal">
     <section class="section container">
-      <div class="section-header">
+      ${
+        concluido
+          ? ""
+          : `<div class="section-header">
         <h1>${escapeHtml(t.titulo)}</h1>
         <p>${escapeHtml(t.descricao)}</p>
-      </div>
+      </div>`
+      }
       <div id="root"></div>
     </section>
   </main>

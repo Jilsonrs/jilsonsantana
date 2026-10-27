@@ -21,6 +21,7 @@ import { NotificacoesPage } from "@/pages/aluno/NotificacoesPage";
 import { NotificacaoPage } from "@/pages/aluno/NotificacaoPage";
 import { AssinarPage } from "@/pages/aluno/AssinarPage";
 import { AssinarSemLoginPage } from "@/pages/AssinarSemLoginPage";
+import { AssinaturaConcluidaSemLoginPage } from "@/pages/AssinaturaConcluidaSemLoginPage";
 import { ProtecaoDoApp } from "@/components/ErroDaTela";
 import { AssinaturaConcluidaPage } from "@/pages/aluno/AssinaturaConcluidaPage";
 import { FaturamentoPage } from "@/pages/aluno/FaturamentoPage";
@@ -50,6 +51,15 @@ export default function App() {
         element={
           <ProtecaoDoApp>
             <AssinarSemLoginPage />
+          </ProtecaoDoApp>
+        }
+      />
+      {/* Depois do pagamento, sem conta (passo 6e2): também página do servidor com o app no meio. */}
+      <Route
+        path="/assinar/concluido"
+        element={
+          <ProtecaoDoApp>
+            <AssinaturaConcluidaSemLoginPage />
           </ProtecaoDoApp>
         }
       />

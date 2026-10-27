@@ -5073,9 +5073,23 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                   e-mail seguindo · sem conferir o e-mail · o "já tem conta" virando erro geral · a
                   prévia pela rota logada · o destino vindo do endereço · o botão da home sem a trava
                   da venda): as oito reprovam.
-            - [ ] **6e2 — A tela de depois do pagamento** (`/assinar/concluido`): confirma, pede
+            - [x] **6e2 — A tela de depois do pagamento** (`/assinar/concluido`): confirma, pede
                   a senha, entra e vai ao Início; as recusas; sem tentativa guardada, a tela de
-                  entrar.
+                  entrar. A página do servidor é a mesma da `/assinar` (`pagina: "concluido"`: fora
+                  do Google, sem o título "Assinar"; logado → `/aluno/assinar/concluido`), e o proxy
+                  do Vite a cobre. No app, `AssinaturaConcluidaSemLoginPage` + `CriarSenhaDepoisDePagar`:
+                  a confirmação pela tentativa desta aba a cada 2 s, com o "demorando"; a senha
+                  (`senhaNovaSchema`, os avisos de `senhaNova`) por POST com a tentativa; entrou → a
+                  tentativa esquecida e o Início; a entrada automática falhou → o botão Entrar; as
+                  recusas com os textos aprovados (as que encerram esquecem a tentativa e levam à tela
+                  de entrar; `NaoConfirmado` e `Ocupada` mantêm o formulário); falha sem motivo → a
+                  frase da tela de entrar; o contato do suporte (`EMAIL_DE_SUPORTE`, no `core` — o
+                  e-mail usa o mesmo). Testes: `AssinaturaConcluidaSemLoginPage.test.tsx` (11) e
+                  `pagina-de-assinar.test.ts` (3 novos). Mutação (sem tentativa e sem ir ao login · a
+                  senha antes de confirmar · a tentativa guardada depois de entrar · a recusa que
+                  encerra guardando a tentativa · o "não confirmado" virando falha geral · sem
+                  perguntar de novo · o concluído no Google · o logado indo à tela errada): as oito
+                  reprovam.
             - [ ] **6f — Prova e revisão**: `security-vulnerability-reviewer`, mutação, prova no
                   banco de dev com conta descartável e cartões de teste, a tela olhada em dev.
             - [ ] **Depois da publicação com a 6a:** o CPF passa a ser OBRIGATÓRIO no servidor

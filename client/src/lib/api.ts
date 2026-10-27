@@ -31,6 +31,8 @@ import type {
   CorpoDeAssinar,
   CorpoDeAssinarSemLogin,
   AssinaturaSemLogin,
+  ConfirmacaoSemLogin,
+  SenhaCriada,
   AssinaturaCriada,
   SituacaoDaAssinatura,
   SincroniaDaConta,
@@ -1032,6 +1034,18 @@ export async function getPreviaSemLogin(corpo: PreviaInput): Promise<PreviaDaAss
  */
 export async function assinarSemLogin(corpo: CorpoDeAssinarSemLogin): Promise<AssinaturaSemLogin> {
   const { data } = await client.post<AssinaturaSemLogin>("/billing/visitante/assinatura", corpo);
+  return data;
+}
+
+/** "O pagamento já valeu?" — a tela de depois do pagamento de quem assinou sem conta (etapa 4.7, passo 6e2). POST: a tentativa nunca vai no endereço. */
+export async function confirmarSemLogin(tentativa: string): Promise<ConfirmacaoSemLogin> {
+  const { data } = await client.post<ConfirmacaoSemLogin>("/billing/visitante/confirmacao", { tentativa });
+  return data;
+}
+
+/** Criar a senha logo depois de pagar (etapa 4.7, passo 6e2); a sessão vem no cookie. Recusas: 409 com o motivo. */
+export async function criarSenhaSemLogin(corpo: { tentativa: string; senha: string }): Promise<SenhaCriada> {
+  const { data } = await client.post<SenhaCriada>("/billing/visitante/senha", corpo);
   return data;
 }
 

@@ -106,6 +106,36 @@ describe("GET /assinar — a tela pública de assinar", () => {
     expect(res.text).toContain('<div id="root"></div>');
   });
 
+  // A TELA DE DEPOIS DO PAGAMENTO de quem assinou sem conta (passo 6e2): a mesma página, com o app.
+  describe("GET /assinar/concluido", () => {
+    const concluido = () => request(servidor).get("/assinar/concluido").set(CABECALHO_DO_VITE, "1");
+
+    it("o visitante: o menu, o rodapé e o app — fora do Google, e sem o título de assinar (quem diz o que acontece é o app)", async () => {
+      const res = await concluido();
+      expect(res.status).toBe(200);
+      expect(res.headers["cache-control"]).toBe("no-cache");
+      expect(res.text).toContain('<body data-pagina-do-servidor="concluido">');
+      expect(res.text).toContain('<meta name="robots" content="noindex">');
+      expect(res.text).not.toContain('rel="canonical"');
+      expect(res.text).not.toContain("<h1>");
+      expect(res.text).toContain('<div id="root"></div>');
+      expect(res.text).toContain('<nav class="navbar"');
+      expect(res.text).toContain('<footer class="site-footer">');
+    });
+
+    it("quem está logado vai para a de depois do pagamento do app", async () => {
+      const res = await concluido().set("Cookie", member);
+      expect([res.status, res.headers.location]).toEqual([302, "/aluno/assinar/concluido"]);
+    });
+
+    it("em produção, com a venda sem login desligada: a tela de entrar", async () => {
+      process.env.NODE_ENV = "production";
+      delete process.env.ASSINAR_SEM_LOGIN;
+      const res = await request(servidor).get("/assinar/concluido");
+      expect([res.status, res.headers.location]).toEqual([302, "/login"]);
+    });
+  });
+
   it("em dev, aberta direto no Express (sem o proxy do Vite): vai para o Vite, com o endereço inteiro", async () => {
     const res = await request(servidor).get("/assinar?utm_source=youtube");
     expect(res.status).toBe(302);

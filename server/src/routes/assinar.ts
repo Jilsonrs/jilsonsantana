@@ -1,5 +1,6 @@
 import { Router } from "express";
-import { ROTAS_PUBLICAS, TELA_DE_ASSINAR } from "@jilson/core";
+import { ROTAS_PUBLICAS, TELA_DE_ASSINAR, TELA_DE_CONCLUIDO, TELA_DE_CONCLUIDO_SEM_LOGIN } from "@jilson/core";
+import type { Request, Response } from "express";
 import { getDict } from "../lib/dict.js";
 import { etiquetasDaPagina } from "../lib/etiquetas-do-app.js";
 import { loadSession } from "../middleware/auth.js";
@@ -21,9 +22,15 @@ const BASE_URL = process.env.BASE_URL || "http://localhost:3000";
 /** O cabeçalho que o proxy do Vite põe nas páginas do servidor (`client/vite.config.ts`). */
 export const CABECALHO_DO_VITE = "x-pagina-pelo-vite";
 
-router.get(ROTAS_PUBLICAS.assinar, async (req, res) => {
+/** As duas páginas: a de assinar e a de depois do pagamento (passo 6e2). Logado, cada uma tem a sua no app. */
+const PAGINAS = {
+  assinar: { endereco: ROTAS_PUBLICAS.assinar, doApp: TELA_DE_ASSINAR },
+  concluido: { endereco: TELA_DE_CONCLUIDO_SEM_LOGIN, doApp: TELA_DE_CONCLUIDO },
+} as const;
+
+async function responder(pagina: keyof typeof PAGINAS, req: Request, res: Response): Promise<void> {
   if (await loadSession(req)) {
-    res.redirect(302, TELA_DE_ASSINAR);
+    res.redirect(302, PAGINAS[pagina].doApp);
     return;
   }
   if (!assinaturaSemLoginNoAr()) {
@@ -37,7 +44,10 @@ router.get(ROTAS_PUBLICAS.assinar, async (req, res) => {
   const [dict, etiquetasDoApp] = await Promise.all([getDict(), etiquetasDaPagina()]);
   // Os arquivos do app mudam de nome a cada versão: a página nunca fica guardada (como o `index.html`).
   res.set("Cache-Control", "no-cache");
-  res.send(renderAssinar({ dict, baseUrl: BASE_URL, etiquetasDoApp }));
-});
+  res.send(renderAssinar({ dict, baseUrl: BASE_URL, etiquetasDoApp, pagina }));
+}
+
+router.get(PAGINAS.assinar.endereco, (req, res) => responder("assinar", req, res));
+router.get(PAGINAS.concluido.endereco, (req, res) => responder("concluido", req, res));
 
 export default router;

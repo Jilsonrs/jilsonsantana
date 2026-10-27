@@ -544,6 +544,23 @@ export const pt = {
       novidades: "Quero receber novidades e ofertas da escola por e-mail.",
       // O mesmo e-mail assinando em outra aba (`Ocupada`).
       ocupadaOutraAba: "Este e-mail já tem uma assinatura em andamento em outra aba. Termine por lá ou aguarde um instante.",
+      // DEPOIS DO PAGAMENTO, SEM CONTA (etapa 4.7, passo 6e2): a senha nasce na tela (decisão do operador,
+      // 21/10/2026). Textos APROVADOS por ele em 27/10/2026 (P81). Enquanto confirma, valem os de cima
+      // (`confirmando`, `demorando`); os avisos de senha curta, longa ou só de espaços são os de `senhaNova`;
+      // a falha sem motivo é a da tela de entrar (`login.falha`).
+      confirmadaSemLogin: "Assinatura confirmada.",
+      crieSuaSenha: "Agora crie sua senha. É com ela e com o e-mail {email} que você entra na escola.",
+      campoDaSenha: "Crie uma senha",
+      criarSenhaEComecar: "Criar senha e começar a estudar",
+      emailErrado: "Digitou o e-mail errado? Escreva para {contato}.",
+      // A senha foi criada e a entrada automática falhou (raro): a pessoa entra pela tela de entrar.
+      senhaCriadaEntre: "Sua senha foi criada. Entre com seu e-mail e a senha nova.",
+      // As recusas da senha (`POST /api/billing/visitante/senha`).
+      naoConfirmado: "Seu pagamento ainda está sendo confirmado. Aguarde um instante e tente de novo.",
+      prazoVencido: "O prazo para criar a senha por aqui terminou. Na tela de entrar, use \"Esqueci minha senha\".",
+      emailJaConfirmado: "Você já entrou na escola pelo código enviado ao seu e-mail. Para criar a senha, use \"Esqueci minha senha\" na tela de entrar.",
+      jaTemSenha: "Sua senha já foi criada. Entre com seu e-mail e a senha.",
+      irParaEntrar: "Ir para a tela de entrar",
       jaAssinante: "Você já é assinante.",
       irParaInicio: "Ir para o Início",
       confirmando: "Confirmando sua assinatura…",
