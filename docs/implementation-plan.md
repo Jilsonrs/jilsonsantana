@@ -5132,6 +5132,30 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                         conta nascendo pela sincronia, a confirmação, a senha criada e o acesso, a
                         repetição recusada (`JaTemSenha`), e o logado com CNPJ (`br_cnpj`); o banco
                         voltou ao retrato de antes.
+            - [ ] **6g — O ACABAMENTO VISUAL das telas de assinar, pelo Antigravity** *(pedido do
+                  operador, 27/10/2026: passar ao Antigravity com um passo a passo; o Claude confere)*.
+                  **Só visual** — nada de texto, comportamento, rota ou teste.
+                  1. Da `dev`, abrir o branch `acabamento-assinar`. Ligar `npm run dev:server` e
+                     `npm run dev:client` e abrir pelo Vite: `http://localhost:5173/assinar`
+                     (visitante) e `http://localhost:5173/aluno/assinar` (logado com o member@).
+                     Para ver a `/assinar/concluido`: no DevTools, em `sessionStorage`, gravar
+                     `jilson.assinar.tentativa` = `{"tentativa":"x","email":"a@b.com"}` — aparece o
+                     "Confirmando sua assinatura…".
+                  2. Acabar as duas colunas (formulário à esquerda; o resumo, o botão e "O que está
+                     incluído" à direita; no celular, uma coluna só, nesta ordem) e os componentes
+                     novos: `client/src/components/assinar/` (`FormularioDeAssinatura`,
+                     `CampoDoDocumento`, `DadosDoVisitante`, `ResumoDaAssinatura`, `OQueEstaIncluido`,
+                     `CriarSenhaDepoisDePagar`) e `client/src/pages/AssinaturaConcluidaSemLoginPage.tsx`.
+                  3. Na página do servidor (`server/src/views/assinar.ts`) mexer só nas classes da
+                     parte do título; texto sai do dicionário e passa por `escapeHtml` (não trocar).
+                     **Atenção:** ali o CSS do site (`/css/public.css`) vem DEPOIS do CSS do app, e vence
+                     nas regras do `body` e dos títulos — se o formulário sair com cara errada, ajustar
+                     em `client/src/public-input.css`, só para `body[data-pagina-do-servidor]`, e
+                     remontar com `npm --workspace client run build:css`.
+                  4. Não mudar: textos, o que é botão ou link e para onde leva, `aria-*`, a ordem dos
+                     campos. Os quatro gates verdes (`typecheck`, `lint`, `test`, `build`), conferidos
+                     pelo código de saída. Commit no branch e **parar**: sem merge na `dev` nem na
+                     `main` — o Claude confere o diff e faz o merge na `dev`.
             - [ ] **Depois da publicação com a 6a:** o CPF passa a ser OBRIGATÓRIO no servidor
                   (`assinarSchema`, `core/src/schemas/billing.ts`) — tira o "sem o CPF ainda
                   assina" e o teste dele.
