@@ -1476,6 +1476,143 @@ de rede.`
 
 ---
 
+### A atualização de todas as bibliotecas (25 e 26/10/2026)  *(movida do plano em 26/10/2026, com as 7 etapas no ar)*
+
+- **A atualização de todas as bibliotecas** *(pedido do operador, 25/10/2026: "atualiza logo todas as
+  bibliotecas"; plano em 7 etapas aprovado por ele, publicando a cada etapa)*. A rotina: `tech-stack.md` →
+  *Atualizações*.
+  - [x] **Etapa 1 — as 22 pequenas** (correção ou versão pequena): Better Auth e `auth` 1.7.13 (notas da
+        1.7.6 à 1.7.13 lidas: nada muda no nosso uso; a 1.7.7 corrige uma falha crítica do link mágico,
+        que a escola não usa; o cookie de sessão reconferido no código novo — `httpOnly` e `sameSite: lax`
+        fixos, `secure` preso pela nossa configuração), Stripe 23.0.1 e Stripe.js 10.1.0 (notas lidas:
+        mesma versão da API), Express 5.3.0, express-rate-limit 8.7.1, Resend 6.34.1, Vite 8.3.5,
+        Playwright 1.64.1, ESLint 10.13.0, typescript-eslint 8.72.0, React Query, React Hook Form, Axios,
+        Radix, PostCSS, autoprefixer, supertest e tsx. **Achado:** o Express 5.3 escreve o nome do arquivo
+        baixado sem aspas quando ele não tem espaço (`filename=Curso-Inteiro.zip`) — válido pela norma;
+        o teste passou a conferir o nome, e a mutação (nome trocado) reprova. **No ar desde 25/10/2026**
+        (`f5e8cd1`, revisão `jilson-prod-00030`), conferida de fora.
+  - [x] **Etapa 2 — ferramentas de teste e o servidor sem tela:** Vitest 5, jsdom 30, `@types/supertest`
+        7, dotenv 18, Sentry 11 (`11.9.0`, fixada como antes). Notas de versão lidas (Vitest 4 e 5,
+        Sentry 11, dotenv 17 e 18). **Achados:** (1) o **Sentry 11 mudou três padrões**, e os três ficam
+        desligados em `monitor.ts`: a coleta de dados (`dataCollection`, cada categoria `false` — deixar em
+        branco passou a COLETAR cabeçalhos, cookies, corpo e usuário), o rastro de código na linha de erro
+        (`attachStacktrace: false` — com ele, o alerta se agruparia pelo lugar do código, e erros
+        diferentes da mesma linha virariam um alerta só) e os ganchos que reescrevem as bibliotecas ao
+        carregar (`enableRuntimeChannelInjection: false`, o antigo `registerEsmLoaderHooks: false`); os
+        dois últimos têm teste, e a mutação de cada um reprova; (2) o **Vitest 5 usa `Object.hasOwn`** para
+        carregar arquivos, então o teste do iPhone antigo (`compat.test.tsx`) passou a escondê-la só do
+        código do app — as três mutações do reforço reprovam; (3) o dotenv 18 avisa a cada carga, e o
+        `test-env.ts` o silencia. O Vitest 5 limpa o registro dos dublês entre testes: nenhum teste
+        dependia disso. Os quatro gates verdes (936 testes de tela, 1.278 de servidor). **No ar desde
+        25/10/2026** (`fc4a018`, revisão `jilson-prod-00031`), conferida de fora; o alerta do Sentry ligou.
+  - [x] **Etapa 3 — React 19**, com `@types/react` 19, React Router 7, `@hookform/resolvers` 6 e
+        `@vitejs/plugin-react` 6. *(26/10/2026.)* Notas lidas (React Router 6→7, `@hookform/resolvers`
+        4, 5 e 6). React 19.3, React Router 7.18 e plugin-react 6.1 entraram. **Achados:** (1) o npm
+        deixou **dois Reacts** instalados (o 18 velho na pasta comum, usado pelo arrastar-e-soltar e
+        outras peças) — tirados do registro das bibliotecas, reinstalado: um React só; (2) o
+        **`@hookform/resolvers` ficou na 5.9.2**: a 6 só muda o suporte ao Effect (que não usamos), e
+        a lista de peças opcionais dela trava a instalação do npm (ERESOLVE); (3) o pacote do React
+        Router passou a ser `react-router` (65 arquivos trocados; o `react-router-dom` saiu); (4) o
+        React Router 7 segura a tela antiga até a nova carregar — **desligado** (`useTransitions={false}`
+        no `main.tsx`), para a troca de tela ficar como era; (5) a conferência nova do formulário de
+        avisos separa o digitado do conferido: os tipos do editor de avisos foram acertados, o
+        comportamento é o mesmo. **O pacote que o aluno baixa cresceu 28,6 KB compactado (+6,6%),** do
+        React 19 e do React Router 7. **Aparelho antigo, medido no pacote montado:** a única função nova
+        do navegador que entrou é o `reportError` (iOS 15.4), e as duas chamadas conferem antes se ela
+        existe — nada para o `compat.ts`. Os dois avisos de segurança do `react-router` saíram do
+        `npm audit`. Os quatro gates verdes (936 de tela, 1.278 de servidor), o E2E no computador (7 de
+        7), e as mutações dos formulários (sem a conferência, o login e o editor de avisos reprovam).
+        **No ar desde 26/10/2026** (`bcd6bbc`, revisão `jilson-prod-00032`), conferida de fora.
+  - [x] **Etapa 4 — Zod 4** (o `core`, o site e o servidor): as mensagens que o aluno vê ficam iguais.
+        *(26/10/2026.)* Zod 4.6.7, uma cópia só (antes eram duas: o 3 no `core` e o 4 do Better Auth).
+        Notas lidas (o guia do 3 para o 4, inteiro). **As mensagens do aluno não mudam:** as telas de
+        entrar, código e senha mostram os textos do dicionário, e nenhuma tela lê a mensagem que o
+        servidor devolve na validação. **Achados:** (1) o `z.record` com as camadas como chave passou a
+        EXIGIR as três — o texto sobrescrito de uma camada só (`camadaOverride`) seria recusado; virou
+        `z.partialRecord`, com teste novo (`course-camada-override.test.ts`; a mutação reprova); (2) a
+        entrada do `z.coerce` passou a ser "qualquer coisa": os dois formulários do admin com ordem
+        (curso e listas da home) declaram `z.coerce.number<number>()`, a mesma tipagem do Zod 3;
+        (3) o `z.string().url()` continua aceitando `javascript:` e `data:` (medido de novo; a regra do
+        `CLAUDE.md` fica). **O pacote do aluno cresceu 12,5 KB compactado (+2,7%)**; nenhuma função nova
+        do navegador. Os quatro gates verdes (936 de tela, 1.280 de servidor). **No ar desde 26/10/2026**
+        (`bff55eb`, revisão `jilson-prod-00033`), conferida de fora (um pedido inválido devolve 400).
+  - [x] **Etapa 5 — o visual: Tailwind 4, `tailwind-merge` 3 e os ícones (`lucide-react` 1)** — área do
+        Antigravity; prints antes e depois das telas principais, e o operador confere antes de publicar.
+        *(26/10/2026.)* **O Tailwind fica no 3.4, e o `tailwind-merge` no 2** *(decisão do operador)*: o
+        Tailwind 4 não funciona abaixo de Safari 16.4, Chrome 111 e Firefox 128, e o piso do site é iOS 15,
+        Chrome 91 e Firefox 90 (`tech-stack.md`, com o gatilho). **Os ícones foram para o Lucide 1.61**
+        *(decisão do operador, depois de ver os 95 ícones usados lado a lado — 46 mudaram de desenho; no
+        lugar dos prints, porque na etapa só os ícones mudam)*. **Achados:** (1) o YouTube do rodapé do app
+        saiu (a versão 1 tirou os logotipos de marca): o mesmo desenho, copiado, em `IconeDoYoutube.tsx`;
+        (2) a versão 1 juntou o `layers-3` ao `layers`, e a "Pilha" dos Destaques ficaria igual ao
+        "Camadas": ela ficou com o traço antigo (`icon-registry.ts`); (3) o seletor de ícones: 70 nomes
+        trocados pelo nome novo do Lucide, 4 juntados ao que já existia, 18 marcas fora e **440 ícones
+        novos com nome em português escrito pelo agente** (revisão na P38) — os cursos gravados (`bolt`,
+        `boxes`, `wallet`, no dev e no ar) continuam com desenho; (4) o teste do catálogo passou a contar
+        por desenho (o Lucide 1 traz os nomes antigos como apelidos) e achou o que já faltava antes: o
+        gráfico `chart-no-axes-column-increasing` sem nome (ganhou), e o `bolt` e o `wand` do Lucide
+        escondidos atrás dos nossos nomes antigos (de propósito; escrito no teste). As três mutações do
+        catálogo reprovam. O ícone sem rótulo próprio agora sai escondido do leitor de tela (padrão do
+        Lucide 1); o que tem `aria-label` continua sendo lido. **O arquivo com todos os ícones** (só
+        carrega na página de curso com destaque fora dos 55, e no seletor do admin) foi de 100 para 160 KB
+        compactado; o pacote de toda página não mudou. Nenhuma função nova do navegador. **No ar desde
+        26/10/2026** (`6cddb68`, revisão `jilson-prod-00034`), conferida de fora.
+  - [x] **Etapa 6 — Prisma 7** (a ligação com o banco, o `Dockerfile` e as migrations do Cloud Run Job):
+        prova nos bancos de dev e de teste, e a revisão de segurança. O Better Auth 1.7.13 aceita o Prisma 7.
+        *(26/10/2026.)* **Prisma 7.10.1, com o `pg` e o `@prisma/adapter-pg`** *(as duas bibliotecas novas
+        aprovadas pelo operador; o Prisma 8 fica para um projeto próprio, decisão dele: versão de teste em
+        26/10, o Better Auth só aceita até o 7, e ele mudaria as 222 chamadas ao banco — `tech-stack.md`)*.
+        Guia do 5 ao 7 lido; **Docs check (context7):** Better Auth → `/better-auth/better-auth` → o
+        `prismaAdapter` aceita o cliente do Prisma 7 (gerado + `PrismaPg`) com o mesmo import, e o adaptador
+        declara Prisma 5 a 7 (2 consultas). **O que mudou:** o cliente é gerado em `server/src/generated/prisma`
+        (fora do git) e todo o servidor importa de `lib/prisma.ts`; o endereço das migrations foi para o
+        `server/prisma.config.ts` (o `DIRECT_URL`); as ligações (`lib/ligacoes.ts`) repetem o padrão do Prisma 5
+        (processadores × 2 + 1 por cliente, 10 s de espera, `connection_limit`/`pool_timeout` no endereço); o
+        job das migrations passou a ter o comando versionado (`npx --no-install prisma migrate deploy --config
+        …`, no `deploy.yml`) e a imagem baixa o motor das migrations na montagem. **Achados:** (1) **o adaptador
+        do `pg` lê toda data com fuso como UTC** — no banco de teste do computador (horário de Brasília) uma data
+        saiu 3 h errada; o Neon está em GMT (dev e produção, conferido); o preparo dos testes põe o banco local
+        em UTC (`fuso-utc.ts`) e o servidor confere ao subir e alerta (`conferirFusoDoBanco`), com teste;
+        (2) **o Prisma 7 recusa o `migrate reset` pedido por um agente** sem o OK do operador — ele autorizou,
+        para o banco de teste local; a regra está no `CLAUDE.md`; (3) **a trava do banco de teste só conferia a
+        `DATABASE_URL`**, e o reset apaga o da `DIRECT_URL`: agora confere as duas; (4) o código do erro de
+        ligação mudou (P2024 → a mensagem do `pg`; senha errada P2010/28P01) — só o teste de uma ligação
+        dependia; (5) o `--skip-seed` deixou de existir. **Medido de novo no 7:** o `mode: "insensitive"`
+        continua virando `ILIKE`, e migration aplicada editada continua aceita (as regras do `CLAUDE.md` ficam).
+        **Revisão de segurança** (0 P0, 2 P1, 6 P2 — todos tratados, cada um com teste e mutação): o
+        `import "dotenv/config"` deixava um `DOTENV_CONFIG_OVERRIDE` no terminal fazer o reset da suíte ler — e
+        apagar — o banco de dev (medido; agora as opções vão escritas, `src/ambiente.ts`, e o `childEnv()` não
+        passa `DOTENV_*`); um endereço malformado punha a senha do banco no erro (medido; agora o erro não leva o
+        endereço); `?host=` no endereço enganava a trava e a assinatura de teste; em produção a ligação passou a
+        conferir o certificado sempre; número estranho no endereço não derruba nem destrava o pool; os roteiros de
+        troca de senha voltaram a abrir sem o banco no ambiente; e o alerta da conferência do fuso sairia sem a
+        etiqueta (medido: com o erro como segundo argumento, o Sentry o descarta). **Provas:** os quatro gates
+        (936 de tela, 1.311 de servidor), o E2E no computador (7 de 7), a instalação só de produção (como a
+        imagem) com o comando do job (`migrate status`) e o servidor no modo de produção (login e sessão), e o
+        banco de **dev**: 42 migrations em dia, nenhuma diferença do esquema, e o servidor ligado a ele (login,
+        sessão, assinatura e cursos). **A imagem ficou maior** (~150 MB do comando `prisma` do 7, só para o job
+        das migrations; gatilho no `tech-stack.md`). **No ar desde 26/10/2026** (`82f0670`, revisão
+        `jilson-prod-00035`): o job das migrations rodou o comando novo (o Prisma 7, o banco de produção, 42
+        migrations, nenhuma pendente, nada baixado); o site, o login e a cobrança respondem, e o registro não tem
+        erro nem alerta de fuso. **Os cartões, provados de verdade** (pergunta do operador, 26/10/2026): o
+        servidor local no banco de dev e a área restrita da Stripe, pelas mesmas rotas da tela — assinar com Visa,
+        ganhar acesso, trocar para Mastercard, parar a renovação (o acesso segue até o fim do mês pago) e voltar
+        atrás —, com conta e cliente descartáveis apagados no fim (o banco de dev ficou igual).
+  - [x] **Etapa 7 — TypeScript 6.0.** *O 7 fica travado:* o `typescript-eslint` (8.72) só aceita até o 6.0,
+        e subir desligaria o revisor automático. *Gatilho: o `typescript-eslint` aceitar o TypeScript 7.*
+        *(26/10/2026.)* TypeScript 6.0.3 nos quatro pacotes. Notas lidas (o 6.0 prepara o 7 e muda padrões).
+        **O que mudou:** os tipos globais deixaram de entrar sozinhos — agora escritos: `vite/client` no site
+        (é o que declara o `import "./index.css"`, que o 6 passou a conferir) e `node` no servidor e no E2E; o
+        `core` fica sem, de propósito (ele também roda no navegador); o `baseUrl` do site saiu (obsoleto; o
+        atalho `@/` funciona sem ele). **Achado:** o lint NÃO estava rodando no computador — um `npm install`
+        feito por pacote (`-w`) tirou o `typescript-eslint` da pasta local, e a conferência que olhava o texto
+        da saída não viu o erro; o CI, que instala do zero, seguia certo (verde nas etapas 1 a 6). Corrigido
+        com `npm install` na raiz; agora os gates são conferidos pelo código de saída, e o lint reprova uma
+        promessa solta de propósito (as regras leem os tipos no 6). Os quatro gates e o E2E (7 de 7) verdes.
+        **No ar desde 26/10/2026** (`7f5976f`, revisão `jilson-prod-00036`), conferida de fora.
+
+---
+
 ## Changelog histórico do plano (Jun 2026 → Ago 2026 (6))
 
 *(Texto preservado integralmente. As 3 entradas mais recentes — Ago 2026 (7), (8) e (9) — seguem no

@@ -42,7 +42,12 @@
   3. **As com versão GRANDE: uma por vez, com plano** — elas mudam o jeito de usar. As de login, cobrança e vídeo (Better Auth, Stripe, Bunny) passam pelo context7 e pela revisão de segurança, como qualquer mudança nessas superfícies; o Prisma muda o banco (migrations) e vem sozinho.
   4. Publicar com o OK do operador e conferir no ar.
   5. **Conferir cada gate pelo CÓDIGO DE SAÍDA, nunca procurando texto na saída** — e, depois de instalar por pacote (`npm install -w …`), rodar `npm install` na raiz. Em 26/10/2026 um `npm install -w` tirou o `typescript-eslint` da pasta local: o lint quebrava ("Error … Cannot find package"), a conferência por texto não viu, e só o CI, que instala do zero, seguia conferindo.
-  *Em 25/10/2026 havia 18 bibliotecas com versão grande nova — React 19, Prisma 7, Tailwind 4, Zod 4, TypeScript 7, entre outras; o operador pediu todas, em 7 etapas, publicando cada uma (o plano → *A atualização de todas as bibliotecas*).*
+  *Em 25/10/2026 havia 18 bibliotecas com versão grande nova; o operador pediu todas, e as 7 etapas foram ao ar em 25 e 26/10/2026 (`build-history.md` → *A atualização de todas as bibliotecas*).*
+  **OS ADIADOS DE PROPÓSITO — a regra** *(decisão do operador, 26/10/2026: "em janeiro analisamos se vale a pena ou não; o que não valer a pena troco quando acabar o suporte, assim mantenho a compatibilidade com aparelhos antigos por mais tempo")*: **no lembrete de janeiro, cada um é analisado com ele — vale a pena agora? O que não valer espera o FIM DO SUPORTE da versão em uso.** Lembrete dele: trocar com a escola vazia é mais tranquilo do que com alunos. A lista, com o motivo e o que reabre:
+  - **Tailwind 4** — exige Safari 16.4, Chrome 111 e Firefox 128; o piso do site é iOS 15, Chrome 91 e Firefox 90. *Reabre:* o operador subir o piso de aparelhos, o Tailwind lançar o modo de compatibilidade que promete, ou o fim do suporte do 3. Vem junto o `tailwind-merge` 3 (só serve ao 4).
+  - **Prisma 8** — em 26/10 era versão de teste, o Better Auth só aceita até o 7, e ele muda o jeito de escrever as 222 chamadas ao banco. O Prisma 7 recebe correções por 18 meses depois que o 8 sair. *Reabre:* o 8 final E o Better Auth aceitando o 8.
+  - **TypeScript 7** — o `typescript-eslint` (o revisor automático) aceita só até o 6.0. *Reabre:* o `typescript-eslint` aceitar o 7.
+  - **`@hookform/resolvers` 6** — só muda o suporte ao Effect (que não usamos), e a lista de peças opcionais dele trava a instalação do npm. *Reabre:* a 6 instalar sem conflito, ou a 5 parar de receber correção.
 - **Prisma 7** (`prisma` e `@prisma/client` 7.10.1, desde 26/10/2026; antes, 5.22) — ORM, type-safe queries, schema as code. **Com o `pg` e o `@prisma/adapter-pg`** *(aprovados pelo operador, 26/10/2026)*: a falha que impedem é o Prisma 7 não ligar ao banco, porque sem um adaptador ele não conecta (o motor em Rust do 5 saiu do site; só as migrations ainda usam um). O cliente é gerado em `server/src/generated/prisma` (fora do git); a configuração do comando `prisma` mora em `server/prisma.config.ts`. **O banco tem de estar em UTC** (o adaptador lê as datas assim — `CLAUDE.md`). A imagem do site ficou maior (o comando `prisma` do 7 traz o seu estúdio e um banco de teste, ~150 MB; só o job das migrations o usa). *Gatilho: separar a imagem das migrations se o tamanho atrasar a subida das cópias.* **O Prisma 8 fica para um projeto próprio** *(decisão do operador, 26/10/2026)*: em 26/10 era versão de teste (a final estava prevista para outubro de 2026), o Better Auth só aceita o Prisma 5, 6 e 7, e o 8 muda o jeito de escrever as 222 chamadas ao banco (e ainda não tem o código de erro de chave repetida, o contador atômico nem as gravações aninhadas). O Prisma 7 recebe correções por 18 meses depois que o 8 sair. *Reabre quando o 8 for final E o Better Auth aceitar o 8.*
 - **Express 5** — async errors caught automatically (no try/catch in route handlers)
 
@@ -159,6 +164,12 @@
 > recursos que ainda podem ser contratados, apareçam as opções"*. **Regra dele para a conta:** só o
 > necessário — o crédito de R$ 1.779 vence em 20/01/2027, e o que for ligado "para testar" vira
 > conta depois. **Quem propõe ligar um recurso daqui traz o gatilho cumprido**, não "seria bom ter".
+> **A conta de faturamento é PAGA desde 26/10/2026** *(decisão do operador)*: era de teste gratuito, e
+> no fim do teste o Google interrompe todos os recursos — o site sairia do ar em 20/01/2027. O crédito
+> que sobrou continua valendo até essa data. *Medido no painel em 26/10/2026:* de R$ 14,30 de uso em
+> outubro (todo do Cloud Run), R$ 12,81 saíram da cota grátis do Cloud Run ("descontos com base em
+> gastos") e R$ 1,49 do crédito. *A verificação de pagamento (R$ 125 retidos e devolvidos) não ficou
+> pendente: se o Google voltar a pedi-la, conferir antes de fazer.*
 > Preço marcado `[medido]` foi lido na página do Google na data; `[a conferir]` é ordem de grandeza —
 > confira no painel antes de orçar (`CLAUDE.md` → *Costs*: preço de fornecedor envelhece).
 
@@ -179,7 +190,7 @@ acima (proteção, cache, certificado próprio), e por isso é opcional.
 | Artifact Registry | as versões montadas do site (só as últimas) | cota grátis pequena `[a conferir]` |
 | IAM + Workload Identity Federation | quem pode o quê; o GitHub publica sem chave guardada | grátis |
 | Cloud Logging | os registros do servidor | cota grátis mensal `[a conferir]` |
-| Orçamento e alertas | o aviso de gasto (R$ 100/mês) | grátis |
+| Orçamento e alertas | o aviso de gasto (R$ 100/mês; avisos em 50%, 90%, 100% e 150%). **Conta o gasto DEPOIS do crédito** (o padrão do Google; conferido no painel em 26/10/2026: "R$ 0,00 — inclui uma economia de −R$ 13,88"): enquanto o crédito de teste durar, marca zero e não dispara. **Fica assim** *(decisão do operador, 26/10/2026)*: o aviso é para cobrança de verdade; o consumo do crédito se vê em *Faturamento → Créditos*. *Reabre se o crédito sumir mais rápido que o previsto, ou se o operador quiser aviso de consumo durante o crédito (um segundo orçamento, sem descontar o crédito)* | grátis |
 
 **O MAPA — o que pode servir à escola, e QUANDO** *(ordenado pelo que deve chegar primeiro)*:
 
@@ -337,7 +348,7 @@ por todas as peças, nesta ordem:
    leitura fica registrada.
 
 E em volta: as **contas de serviço** são os "crachás" — `jilson-site` (o site e o Job: leem o cofre) e
-`jilson-publicacao` (o GitHub: publica); a conta padrão `…-compute@` sobrou do Google (P106). O
+`jilson-publicacao` (o GitHub: publica); a conta padrão `…-compute@` sobrou do Google e está **sem papel nenhum** desde 26/10/2026 (P106, decisão do operador): se algo um dia precisar dela, ganha só a permissão específica. O
 **mapeamento de domínio** liga `www.jilsonsantana.com` ao serviço e renova o cadeado sozinho. O
 **Cloud Logging** é o registro de cada pedido; o **Cloud Monitoring**, os gráficos de memória,
 processador e tempo; o **Orçamento**, o aviso de gasto.
