@@ -4973,7 +4973,9 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             tela) e P81 (os textos).** **A P80 foi respondida em 27/10/2026** (`billing.md` →
             *O que existe na tela*): entram o "Já tem conta? Entrar", a linha dos Termos e a lista
             "O que está incluído"; o link para as perguntas frequentes não (o rodapé já tem); e as
-            duas telas ficam iguais. Do operador, em 12/10: o formulário de quem está
+            duas telas ficam iguais. **A P81 também, no mesmo dia:** os textos aprovados (os da
+            tela, os de depois do pagamento e as recusas da senha do item (c) acima) estão na
+            tabela de `billing.md` e entram no `pt.ts` com a construção. Do operador, em 12/10: o formulário de quem está
             logado *"está ótimo porque já está funcionando"* — é a base, sem refazer — e o
             desconto do anual continua à vista (*"é um atrativo"*). **DECISÃO dele (12/10/2026):
             a tela leva o menu de cima e o rodapé do site, como as outras páginas públicas, e o

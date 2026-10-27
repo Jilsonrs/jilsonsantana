@@ -340,7 +340,8 @@ gera mais aviso, o acesso ficaria liberado para sempre. *(Achado P1 da revisão 
   a revisar por ele (*"isso fazemos depois, é detalhe"*, 10/10/2026) — inclusive
   se a tela leva uma linha sobre o reembolso de 7 dias. *Fecha quando ele revisar.* **A proposta
   dessa linha (12/10/2026) está em *A tela pública de assinar*, abaixo — a linha entra (P80,
-  27/10/2026); os textos são a P81.**
+  27/10/2026), com o texto aprovado na P81 (27/10/2026). Os demais textos de 10/10 continuam
+  rascunho.**
 - **A tela é simples, "como a Anthropic faz"** (10/10/2026, depois do primeiro teste dele): cada
   cartão de plano diz o preço e como é cobrado; o anual leva o selo do desconto (calculado dos
   dois preços, nunca um texto fixo); **"Hoje você paga" só aparece com código promocional**
@@ -437,7 +438,7 @@ pagamento sem ter assinado vê "confirmando" e depois "está demorando", sem cam
 
 > **NADA AQUI ESTÁ DECIDIDO além do que traz data e frase do operador.** É a proposta do agente
 > depois de ele mostrar as telas de pagamento da Udemy e do Code with Mosh. O que existe na tela
-> e os textos são dele: as perguntas estão em `pendencias.md` (**P81, P84 e P90**; a P79, a P82, a P86, a P87 e a P89 ele respondeu em 12/10/2026, a P83 e a P88 em 21/10/2026, e a P80 em 27/10/2026). Quem construir o
+> e os textos são dele: as perguntas estão em `pendencias.md` (**P84 e P90**; a P79, a P82, a P86, a P87 e a P89 ele respondeu em 12/10/2026, a P83 e a P88 em 21/10/2026, e a P80 e a P81 em 27/10/2026). Quem construir o
 > passo 6 confere antes o que ele já respondeu, e registra a resposta aqui, com a data e a frase.
 > *A Udemy e o Mosh são referência desta análise, nunca texto do site.*
 
@@ -457,7 +458,7 @@ pagamento sem ter assinado vê "confirmando" e depois "está demorando", sem cam
   reclamar de ter pago o preço cheio achando que o código valia.*
 - **O e-mail que JÁ TEM CONTA: a tela avisa e manda entrar** *(decisão do operador, 21/10/2026, à
   pergunta da abertura da etapa 4.7, passo 4)*: "Este e-mail já tem conta. Entre para assinar." (o
-  texto continua rascunho — P81), e a pessoa assina pela tela de quem está logado, que já
+  texto aprovado na P81, 27/10/2026), e a pessoa assina pela tela de quem está logado, que já
   funciona. **Recusada:** não avisar e ligar o pagamento à conta que existe — quem errasse um
   dígito do e-mail pagaria a assinatura de outra pessoa, sem conseguir entrar. **O custo aceito:**
   quem digita um e-mail descobre se ele tem conta na escola, dentro do limite de tentativas.
@@ -571,39 +572,59 @@ celular, uma coluna só, nesta ordem)*:
 9. ~~Dúvidas~~ — **saiu** *(decisão do operador, 27/10/2026: o rodapé do site já leva o link das
    perguntas frequentes)*.
 
-**Os textos** *(RASCUNHO do agente para o operador aprovar ou reescrever: P81. Só em português,
-desde a decisão de 12/10/2026; a coluna em inglês saiu desta tabela)*:
+**Os textos — APROVADOS pelo operador em 27/10/2026 (fecha a P81)**, em quatro grupos, cada um à
+pergunta do agente com a lista inteira ("Aprovo todos"). Entram no dicionário (`core/src/i18n/pt.ts`,
+`app.assinar`) com a construção do passo 6. Só em português.
 
 | Onde | Texto |
 |---|---|
+| **Seus dados** — título | Seus dados |
 | E-mail, rótulo | Seu e-mail |
-| E-mail, ajuda *(vencido em 21/10: a senha nasce na tela)* | É com ele que você entra na escola. Depois do pagamento, enviamos o link para criar sua senha. |
+| E-mail, ajuda | É com ele que você entra na escola. |
 | E-mail, atalho | Já tem conta? Entrar |
-| CPF *(obrigatório)* | CPF ou CNPJ |
+| E-mail que já tem conta (`JaTemConta`) | Este e-mail já tem conta. Entre para assinar. |
+| CPF, rótulo *(obrigatório)* | CPF ou CNPJ |
 | CPF, ajuda | Usamos para emitir a nota fiscal. |
-| CPF inválido | Confira o número: este CPF ou CNPJ não é válido. |
-| Resumo, título | Resumo |
-| Resumo, total | Total de hoje |
-| E-mail que já tem conta | Este e-mail já tem conta. Entre para assinar. |
-| Muita gente assinando no mesmo instante (`MuitosAoMesmoTempo`) — **texto do operador, 21/10/2026** | Aguarde um instante e tente novamente. |
+| CPF inválido (`DocumentoInvalido`) | Confira o número: este CPF ou CNPJ não é válido. |
+| Novidades *(caixa desmarcada)* | Quero receber novidades e ofertas da escola por e-mail. |
+| **Resumo** — título | Resumo |
+| Total | Total de hoje |
 | Renovação, mensal | Renova todo mês por {valor}, até você cancelar. |
 | Renovação, anual | Renova uma vez por ano por {valor}, até você cancelar. |
+| Renovação, mensal, sem valor *(com código, se a prévia não der o valor da renovação)* | Renova todo mês, até você cancelar. |
+| Renovação, anual, sem valor | Renova uma vez por ano, até você cancelar. |
 | Reembolso | Garantia de 7 dias: se não gostar, você recebe de volta o valor pago. |
 | Pagamento seguro | Pagamento seguro, processado pela Stripe. A escola não guarda os dados do seu cartão. |
-| Termos | Ao assinar, você concorda com os Termos de Uso e a Política de Privacidade. |
+| Termos *(os dois nomes são links)* | Ao assinar, você concorda com os Termos de Uso e a Política de Privacidade. |
 | Título da lista | O que está incluído |
-| Novidades *(caixa desmarcada)* | Quero receber novidades e ofertas da escola por e-mail. |
-| Depois de pagar, título | Assinatura confirmada. |
-| Depois de pagar, texto *(vencido em 21/10)* | Enviamos um e-mail para {email} com o link para você criar sua senha e começar a estudar. |
-| Depois de pagar, não chegou *(saiu em 21/10)* | Não chegou em alguns minutos? Confira a caixa de spam ou peça de novo. |
-| Depois de pagar, botão *(saiu em 21/10)* | Enviar de novo |
-| Depois de pagar, reenviado *(saiu em 21/10)* | Enviamos de novo. |
-| Depois de pagar, e-mail errado | Digitou o e-mail errado? Escreva para {contato}. |
+| Embaixo da lista | a frase do cartão da home (`home.pricing.footer`), a mesma, editável no admin |
+| **Depois de pagar** — título | Assinatura confirmada. |
+| Texto | Agora crie sua senha. É com ela e com o e-mail {email} que você entra na escola. |
+| Campo | Crie uma senha |
+| Regra | Pelo menos 8 caracteres. *(o de hoje, `senhaNova.regra`)* |
+| Botão | Criar senha e começar a estudar |
+| Enquanto cria | Criando… *(o de hoje)* |
+| E-mail errado | Digitou o e-mail errado? Escreva para {contato}. |
+| A entrada automática falhou *(raro)* | Sua senha foi criada. Entre com seu e-mail e a senha nova. — botão "Entrar" |
+| **Quando algo dá errado** — o mesmo e-mail em outra aba (`Ocupada`, ao assinar) | Este e-mail já tem uma assinatura em andamento em outra aba. Termine por lá ou aguarde um instante. |
+| Pagamento ainda não confirmado (`NaoConfirmado`) | Seu pagamento ainda está sendo confirmado. Aguarde um instante e tente de novo. |
+| Passou o prazo, 24 h depois de pagar (`PrazoVencido`) | O prazo para criar a senha por aqui terminou. Na tela de entrar, use "Esqueci minha senha". |
+| Já entrou pelo código do e-mail (`EmailConfirmado`) | Você já entrou na escola pelo código enviado ao seu e-mail. Para criar a senha, use "Esqueci minha senha" na tela de entrar. |
+| Já criou a senha (`JaTemSenha`) | Sua senha já foi criada. Entre com seu e-mail e a senha. |
+| Dois cliques ao criar a senha (`Ocupada`, na senha) | Aguarde um instante e tente novamente. *(o texto do operador de 21/10, `aguardeUmInstante`)* |
+| Botão dessas mensagens | Ir para a tela de entrar |
+| Muita gente assinando no mesmo instante (`MuitosAoMesmoTempo`) — **texto do operador, 21/10/2026** | Aguarde um instante e tente novamente. |
+
+**Continuam os de hoje** (`app.assinar`, `comum.muitasTentativas`): enquanto confirma ("Confirmando
+sua assinatura…", "Está demorando mais que o normal…"), o código inválido, as muitas tentativas e o
+erro geral; os avisos de senha curta, longa ou só de espaços são os de `senhaNova` (um texto por
+aviso). *Se a medição na área restrita mostrar que o campo de pagamento da Stripe já pede o CPF
+sozinho, os três textos do CPF voltam ao operador antes de construir.*
 
 **Depois do pagamento.** *(REVISTO pelas decisões do operador de 21/10/2026, na abertura do passo
 5: **a senha nasce na própria tela**, e o e-mail é de boas-vindas — não é preciso para começar. Os
-rascunhos de texto abaixo que falam do link ou do "Enviar de novo" estão VENCIDOS: os novos vêm com
-o passo 6, na P81.)* Quem acabou de pagar ainda não tem senha nem está logado: a tela confirma,
+rascunhos de 12/10 que falavam do link ou do "Enviar de novo" saíram: os textos desta tela foram
+aprovados na P81, 27/10/2026, na tabela acima.)* Quem acabou de pagar ainda não tem senha nem está logado: a tela confirma,
 repete o e-mail digitado (é ali que a pessoa percebe um erro de digitação) e pede a senha — com
 ela, a pessoa já entra para estudar. Enquanto a confirmação não vem, valem os textos de hoje ("Confirmando sua
 assinatura…", "Está demorando mais que o normal…"). `{contato}` é `suporte@jilsonsantana.com` — a caixa de suporte que o operador escolheu na P49 (20/10/2026; `tech-stack.md` → Email).
