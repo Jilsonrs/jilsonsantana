@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import request from "supertest";
-import { ROTAS_PUBLICAS, flattenDict, pt as fabrica } from "@jilson/core";
+import { ROTAS_PUBLICAS, SCRIPT_DA_ORIGEM, flattenDict, pt as fabrica } from "@jilson/core";
 import servidor from "../test/servidor.js";
 import { prisma } from "../lib/prisma.js";
 import { invalidarCacheDeTexto } from "../lib/dict.js";
@@ -70,6 +70,14 @@ describe("Home pública (SSR)", () => {
     expect(res.text).toContain('<a href="/inicio" class="btn-login">');
     expect(res.text).toContain("Meus estudos");
     expect(res.text).not.toContain('href="/login"');
+  });
+
+  // A ORIGEM DO VISITANTE (o UTM do YouTube — passo 6 da etapa 4.7, pedido do operador de 27/10/2026): a
+  // home não roda o app, então grava ela mesma, com o script que o app lê (o teste dele está no client).
+  it("a home grava a origem do visitante (o UTM): leva o script da origem, o mesmo do core", async () => {
+    const res = await request(servidor).get("/?utm_source=youtube&utm_campaign=video-excel");
+    expect(res.status).toBe(200);
+    expect(res.text).toContain(`<script>${SCRIPT_DA_ORIGEM}</script>`);
   });
 
   // OS BOTÕES ASSINAR (Fase 4, etapa 4.2 — decisão do operador, 09/10/2026): com login, levam

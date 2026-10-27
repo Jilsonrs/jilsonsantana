@@ -5117,6 +5117,15 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                         caminhos e na função pura; mutação (sem CPF e sem ficha assinando · o logado e o
                         visitante reaproveitando sem olhar a fatura · a leitura sem o número da fatura ·
                         a recusa sem linha · o IP em claro · a rota sem a recusa): as sete reprovam.
+                  - [x] **Os dois achados reportados no plano, corrigidos** *(pedido do operador,
+                        27/10/2026)*: (1) **a origem do visitante (UTM) se perdia na home** — página do
+                        servidor, sem o app; agora a home grava a origem com o MESMO registro do app
+                        (`SCRIPT_DA_ORIGEM` e `CHAVE_DA_ORIGEM`, `core/src/constants/origem.ts`; o
+                        `attribution.ts` usa a mesma chave), e o teste do app executa o script e confere
+                        que o app lê o que ele gravou; (2) **o proxy do Vite** perdeu o `/en` e passou a
+                        aceitar a raiz com `?utm_…` (antes, em dev, a home com a origem caía no React).
+                        Mutação (outra chave · outro formato · sobrescrever o primeiro acesso · a home sem
+                        o script): as quatro reprovam.
                   - [x] **A prova no banco de dev** (27/10/2026, a migration da 6b aplicada lá antes):
                         16 de 16 — o visitante assina com CPF, a tentativa só como resumo na ficha e na
                         Stripe, o CPF na ficha do cliente (`br_cpf`), o pagamento com cartão de teste, a

@@ -1,4 +1,7 @@
-const STORAGE_KEY = "jilson.attribution";
+import { CHAVE_DA_ORIGEM } from "@jilson/core";
+
+// A mesma chave da home, que grava a origem por `SCRIPT_DA_ORIGEM` (`core/src/constants/origem.ts`).
+const STORAGE_KEY = CHAVE_DA_ORIGEM;
 
 export type Attribution = {
   source: string | null;

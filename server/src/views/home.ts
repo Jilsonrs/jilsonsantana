@@ -1,6 +1,7 @@
 import { escapeHtml, jsonLd } from "../lib/html.js";
 import { ROTAS_PUBLICAS, TELA_DE_ASSINAR, type Dict } from "@jilson/core";
 import { FONTES_DO_SITE, rodapeDoSite, topoDoSite } from "./partes-do-site.js";
+import { SCRIPT_DA_ORIGEM } from "@jilson/core";
 
 export interface HomeCourse {
   slug: string;
@@ -683,6 +684,8 @@ ${faq.map((item) => `        <details>
 
   ${rodapeDoSite({ dict, assinante })}
 
+  <!-- A origem do visitante (o UTM do YouTube): a home não roda o app, então grava ela mesma (core/src/constants/origem.ts). -->
+  <script>${SCRIPT_DA_ORIGEM}</script>
   <script>
     // IntersectionObserver para todos os browsers (garante que anima apenas 1 vez e não reverte)
     const observer = new IntersectionObserver((entries) => {
