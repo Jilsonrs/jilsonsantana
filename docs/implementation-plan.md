@@ -746,7 +746,6 @@
     lembrete de janeiro puxa: **Tailwind 4** (exige aparelhos mais novos que o piso do site) · **Prisma 8**
     (em teste, e o login ainda não aceita) · **TypeScript 7** (o revisor automático ainda não aceita) ·
     **`@hookform/resolvers` 6** (trava a instalação do npm; só muda uma peça que não usamos).
-- [ ] **O alerta de orçamento (R$ 100):** conta o gasto antes ou depois do crédito?
 - [x] **"O Google Cloud explicado"** *(pedido do operador, 24/10/2026: "é a primeira vez que utilizo
       […] preciso saber o essencial para entender como funciona e testar configurações maiores e
       menores e analisar o que fez diferença ou não")*: o que foi montado e por quê, e um teste de
