@@ -45,6 +45,9 @@
 > curso (200), o login com senha errada (401), o aviso da Stripe sem assinatura (400), o job das
 > migrations com sucesso. **O banco de produção está em 0,5 a 4 desde 27/10/2026** (mudado pelo
 > operador no painel do Neon).
+> **Publicado em 27/10/2026: `0116461`** (só documentos — a proteção na entrada), **revisão
+> `jilson-prod-00041`**, conferida de fora: o site, a saúde e o curso (200), o login com senha errada
+> (401), o aviso da Stripe sem assinatura (400), o job das migrations com sucesso.
 > **Publicado em 24–25/10/2026:** `d6c2906` — o endereço do CDN do Bunny corrigido (P105) e a
 > conferência dele no CI; `f09a903` — o download do arquivo da aula em pedaços (o Cloud Run recusava
 > acima de 32 MB); `294b106` — o segundo mais novo vence entre aparelhos. Conferidos de fora (o site
