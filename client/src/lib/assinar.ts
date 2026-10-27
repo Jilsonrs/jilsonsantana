@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { DuracaoDoDesconto, TELA_DE_CONCLUIDO, type DescontoDoCodigo, type Plano } from "@jilson/core";
-import { getPlanosDaAssinatura, getPreviaDaAssinatura, getSituacaoDaAssinatura } from "@/lib/api";
+import { getPlanosDaAssinatura, getPlanosSemLogin, getPreviaDaAssinatura, getSituacaoDaAssinatura } from "@/lib/api";
 import type { AppTexts } from "@/lib/language";
 
 // ASSINAR (Fase 4, etapa 4.2): os endereços, o dinheiro por extenso e as três leituras da tela.
@@ -30,6 +30,11 @@ export function descreverDesconto(t: AppTexts["assinar"], desconto: DescontoDoCo
 /** Os dois planos, com o valor que a Stripe diz. Só para quem ainda não assina. */
 export function usePlanosDaAssinatura(ligado: boolean) {
   return useQuery({ queryKey: ["billing", "planos"], queryFn: getPlanosDaAssinatura, enabled: ligado });
+}
+
+/** Os dois planos para o VISITANTE, sem login (a tela pública de assinar — etapa 4.7, passo 6c). */
+export function usePlanosSemLogin() {
+  return useQuery({ queryKey: ["billing", "visitante", "planos"], queryFn: getPlanosSemLogin });
 }
 
 /**

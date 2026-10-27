@@ -1017,6 +1017,12 @@ export async function getPlanosDaAssinatura(): Promise<PlanosDaAssinatura> {
   return data;
 }
 
+/** Os mesmos planos para o VISITANTE, sem login (a tela pública de assinar — etapa 4.7, passo 6c). */
+export async function getPlanosSemLogin(): Promise<PlanosDaAssinatura> {
+  const { data } = await client.get<PlanosDaAssinatura>("/billing/visitante/planos");
+  return data;
+}
+
 /** Quanto se paga hoje com o código promocional. Código que não vale: 400 `CodigoInvalido`. */
 export async function getPreviaDaAssinatura(corpo: PreviaInput): Promise<PreviaDaAssinatura> {
   const { data } = await client.post<PreviaDaAssinatura>("/billing/previa", corpo);

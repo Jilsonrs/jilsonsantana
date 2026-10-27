@@ -67,6 +67,14 @@ export default defineConfig({
         target: "http://localhost:3000",
         changeOrigin: true,
       },
+      // A TELA PÚBLICA DE ASSINAR (etapa 4.7, passo 6c): página do servidor com o app no meio. O
+      // cabeçalho diz ao Express que ela foi aberta pelo Vite — é aqui que moram os scripts do app em
+      // dev (server/src/routes/assinar.ts); aberta direto no Express (3000), ela vem para cá.
+      "^/assinar(\\?.*)?$": {
+        target: "http://localhost:3000",
+        changeOrigin: true,
+        headers: { "x-pagina-pelo-vite": "1" },
+      },
     },
   },
   test: {

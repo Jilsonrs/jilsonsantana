@@ -1,5 +1,6 @@
 import { escapeHtml, jsonLd } from "../lib/html.js";
 import { ROTAS_PUBLICAS, TELA_DE_ASSINAR, type Dict } from "@jilson/core";
+import { FONTES_DO_SITE, rodapeDoSite, topoDoSite } from "./partes-do-site.js";
 
 export interface HomeCourse {
   slug: string;
@@ -113,11 +114,7 @@ export function renderHome({
   <meta property="og:image" content="${escapeHtml(baseUrl)}/img/og-home.jpg">
   <meta name="twitter:card" content="summary_large_image">
   <link rel="stylesheet" href="/css/public.css">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link
-    href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&family=MuseoModerno:wght@600;700&family=Outfit:wght@500;600;700&display=swap"
-    rel="stylesheet">
+${FONTES_DO_SITE}
   <script type="application/ld+json">${jsonLd({
     "@context": "https://schema.org",
     "@type": "EducationalOrganization",
@@ -137,19 +134,7 @@ export function renderHome({
 </head>
 <body>
 <!-- 0. Header / Nav -->
-  <nav class="navbar" aria-label="${escapeHtml(dict.common.a11y.mainNav)}">
-    <div class="nav-container container">
-      <div class="nav-logo" aria-label="Jilson Santana"><img src="/img/Logomarca.png" alt="Jilson Santana"></div>
-      <div class="nav-links">
-        <a href="#cursos">${escapeHtml(dict.common.nav.cursos)}</a>
-        <a href="#trilhas">${escapeHtml(dict.common.nav.trilhas)}</a>
-        ${assinante ? "" : `<a href="#assine">${escapeHtml(dict.common.nav.assine)}</a>`}
-        ${logado
-          ? `<a href="/inicio" class="btn-login">${escapeHtml(dict.common.nav.meusEstudos)}</a>`
-          : `<a href="/login" class="btn-login">${escapeHtml(dict.common.nav.entrar)}</a>`}
-      </div>
-    </div>
-  </nav>
+  ${topoDoSite({ dict, logado, assinante, naHome: true })}
 
   <main id="conteudo-principal">
 
@@ -690,37 +675,7 @@ ${faq.map((item) => `        <details>
     <!-- Footer -->
   </main>
 
-  <footer class="site-footer">
-    <div class="footer-inner">
-      <div class="footer-top">
-        <div class="nav-logo"><img src="/img/Logomarca.png" alt="Jilson Santana"></div>
-        <div class="footer-links">
-          <a href="${rotas.cursos}">${escapeHtml(dict.common.footer.links[0])}</a>
-          <a href="${rotas.trilhas}">${escapeHtml(dict.common.footer.links[1])}</a>
-          ${assinante ? "" : `<a href="${rotas.assinar}">${escapeHtml(dict.common.footer.links[2])}</a>`}
-          <a href="${rotas.faq}">${escapeHtml(dict.common.footer.links[3])}</a>
-          <a href="${rotas.quemSomos}">${escapeHtml(dict.common.footer.links[4])}</a>
-          <a href="${rotas.contato}">${escapeHtml(dict.common.footer.links[5])}</a>
-          <a href="${rotas.youtube}" target="_blank" rel="noopener noreferrer"
-            aria-label="YouTube">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-              style="display: block;">
-              <path
-                d="M2.5 17a24.12 24.12 0 0 1 0-10 2.41 2.41 0 0 1 2.67-1.77 28.11 28.11 0 0 1 13.66 0 2.41 2.41 0 0 1 2.67 1.77 24.12 24.12 0 0 1 0 10 2.41 2.41 0 0 1-2.67 1.77 28.11 28.11 0 0 1-13.66 0A2.41 2.41 0 0 1 2.5 17" />
-              <path d="m10 15 5-3-5-3v6z" />
-            </svg>
-          </a>
-          <a href="${rotas.termos}">${escapeHtml(dict.common.footer.links[6])}</a>
-          <a href="${rotas.privacidade}">${escapeHtml(dict.common.footer.links[7])}</a>
-        </div>
-      </div>
-      <div class="footer-bottom">
-        <div>${escapeHtml(dict.common.footer.tagline)}</div>
-        <div>${escapeHtml(dict.common.footer.copyright)}</div>
-      </div>
-    </div>
-  </footer>
+  ${rodapeDoSite({ dict, assinante })}
 
   <script>
     // IntersectionObserver para todos os browsers (garante que anima apenas 1 vez e não reverte)

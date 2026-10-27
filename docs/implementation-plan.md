@@ -5024,9 +5024,22 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                   abre nada) e os do visitante e da senha comparando com o SHA-256 calculado à
                   parte. Mutação (a ficha em claro · a Stripe em claro · a confirmação e a senha
                   buscando em claro · a migration sem efeito): as cinco reprovam.
-            - [ ] **6c — A página `/assinar` do servidor**, com o menu e o rodapé da home (sem
+            - [x] **6c — A página `/assinar` do servidor**, com o menu e o rodapé da home (sem
                   mudar o HTML dela) e o app montado no meio só com o formulário; com a venda sem
-                  login desligada, nada muda para o visitante.
+                  login desligada, nada muda para o visitante. O menu, o rodapé e as fontes saíram
+                  de `home.ts` para `views/partes-do-site.ts` (a home renderizada nas 4 variantes
+                  saiu IGUAL, caractere a caractere); `views/assinar.ts` + `routes/assinar.ts`
+                  (logado → `/aluno/assinar`; venda desligada → `/login`; em dev, só pelo Vite);
+                  `lib/etiquetas-do-app.ts` (as etiquetas do `index.html` do app: o montado em
+                  produção, o do Vite em dev); o proxy do Vite ganhou `/assinar`; no app, a rota
+                  fora do `Layout` e `naPaginaDoServidor()` (todo link vira carregamento normal, e
+                  os pedaços do aluno não são baixados ali). Nesta parte a tela mostra os planos
+                  (carregando, erro e sem planos). Testes: `pagina-de-assinar.test.ts`,
+                  `etiquetas-do-app.test.ts`, `AssinarSemLoginPage.test.tsx` e os de `versao`.
+                  Mutação (logado sem desvio · venda desligada abrindo · o CSS do site antes do
+                  app · o menu sem o caminho da home · o menu sem escape · dev sem desvio para o
+                  Vite · o app trocando por dentro): as sete reprovam. *O menu na `/assinar` leva
+                  às seções da home (`/#cursos`…), o mesmo destino do menu dela.*
             - [ ] **6d — As partes novas do formulário, nas duas telas**: Seus dados, a coluna de
                   resumo, "O que está incluído" e os textos aprovados no `pt.ts`.
             - [ ] **6e — O visitante assina e cria a senha**: a tentativa só na memória e no

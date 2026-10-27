@@ -20,6 +20,8 @@ import { SalvosPage } from "@/pages/aluno/SalvosPage";
 import { NotificacoesPage } from "@/pages/aluno/NotificacoesPage";
 import { NotificacaoPage } from "@/pages/aluno/NotificacaoPage";
 import { AssinarPage } from "@/pages/aluno/AssinarPage";
+import { AssinarSemLoginPage } from "@/pages/AssinarSemLoginPage";
+import { ProtecaoDoApp } from "@/components/ErroDaTela";
 import { AssinaturaConcluidaPage } from "@/pages/aluno/AssinaturaConcluidaPage";
 import { FaturamentoPage } from "@/pages/aluno/FaturamentoPage";
 import { TrocarCartaoPage } from "@/pages/aluno/TrocarCartaoPage";
@@ -40,6 +42,17 @@ import { MensagensAutomaticasPage } from "@/pages/admin/comunicacao/MensagensAut
 export default function App() {
   return (
     <Routes>
+      {/* A TELA PÚBLICA DE ASSINAR (etapa 4.7, passo 6c): o app montado no MEIO de uma página do
+          servidor, que já traz o menu e o rodapé do site — por isso FORA do Layout. Só o visitante
+          chega aqui: o servidor leva quem está logado a /aluno/assinar. */}
+      <Route
+        path="/assinar"
+        element={
+          <ProtecaoDoApp>
+            <AssinarSemLoginPage />
+          </ProtecaoDoApp>
+        }
+      />
       <Route element={<Layout />}>
         {/* NÃO existe rota "/" aqui, e é de propósito: a raiz é a home PÚBLICA,
             servida pelo Express. Em produção ele responde antes de o React
