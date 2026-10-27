@@ -339,12 +339,14 @@ gera mais aviso, o acesso ficaria liberado para sempre. *(Achado P1 da revisão 
 - **Os textos da tela estão como RASCUNHO do agente** (`app.assinar.*` e `app.aula.assinar`),
   a revisar por ele (*"isso fazemos depois, é detalhe"*, 10/10/2026) — inclusive
   se a tela leva uma linha sobre o reembolso de 7 dias. *Fecha quando ele revisar.* **A proposta
-  dessa linha (12/10/2026) está em *A tela pública de assinar*, abaixo — P80 e P81.**
+  dessa linha (12/10/2026) está em *A tela pública de assinar*, abaixo — a linha entra (P80,
+  27/10/2026); os textos são a P81.**
 - **A tela é simples, "como a Anthropic faz"** (10/10/2026, depois do primeiro teste dele): cada
   cartão de plano diz o preço e como é cobrado; o anual leva o selo do desconto (calculado dos
   dois preços, nunca um texto fixo); **"Hoje você paga" só aparece com código promocional**
   *(revisto em 12/10/2026 para a tela PÚBLICA, que ganha a coluna de resumo com o total de hoje
-  — ver *A tela pública de assinar*; na tela logada, P80)*. O
+  — ver *A tela pública de assinar*; e, desde 27/10/2026, também na tela logada: as duas telas
+  iguais, P80)*. O
   acabamento visual é do Antigravity. *Reabre se o Pix (4.9) pedir mostrar de novo o
   valor final antes de confirmar.*
 - **A home tem que levar à assinatura também quem não tem conta** (10/10/2026): é a etapa 4.7.
@@ -435,7 +437,7 @@ pagamento sem ter assinado vê "confirmando" e depois "está demorando", sem cam
 
 > **NADA AQUI ESTÁ DECIDIDO além do que traz data e frase do operador.** É a proposta do agente
 > depois de ele mostrar as telas de pagamento da Udemy e do Code with Mosh. O que existe na tela
-> e os textos são dele: as perguntas estão em `pendencias.md` (**P80, P81, P83, P84 e P90**; a P79, a P82, a P86, a P87 e a P89 ele respondeu em 12/10/2026, e a P88 em 21/10/2026). Quem construir o
+> e os textos são dele: as perguntas estão em `pendencias.md` (**P81, P84 e P90**; a P79, a P82, a P86, a P87 e a P89 ele respondeu em 12/10/2026, a P83 e a P88 em 21/10/2026, e a P80 em 27/10/2026). Quem construir o
 > passo 6 confere antes o que ele já respondeu, e registra a resposta aqui, com a data e a frase.
 > *A Udemy e o Mosh são referência desta análise, nunca texto do site.*
 
@@ -467,6 +469,25 @@ pagamento sem ter assinado vê "confirmando" e depois "está demorando", sem cam
   quantos cartões de fora aparecem. **Recusada:** só cartão emitido no Brasil (recusaria esse mesmo
   brasileiro, e pediria uma regra na Stripe ou uma conferência a construir). *Reabre se o painel
   mostrar fraude ou contestação vinda de cartões de fora.*
+
+**O QUE EXISTE NA TELA — decisões do operador, 27/10/2026 (fecha a P80)**, cada uma à pergunta do
+agente, com a recomendação dele:
+1. **"Já tem conta? Entrar", junto do campo de e-mail: sim.** O link leva ao login e, depois de
+   entrar, à tela de assinar de quem está logado.
+2. **"Ao assinar, você concorda com os Termos de Uso e a Política de Privacidade", com os dois
+   links, junto do botão: sim.** As duas páginas ainda não existem; o passo 8 já exige as duas no
+   ar antes de abrir ao público.
+3. **A lista "O que está incluído", a MESMA do cartão de preço da home: sim** — um texto só
+   (`home.pricing.features`, com as edições do admin). As duas linhas que prometem o que ainda não
+   existe continuam na P84.
+4. **O link para as perguntas frequentes: não** — o rodapé do site já tem. O item 9 da lista
+   abaixo saiu.
+5. **As duas telas iguais: sim.** A tela de quem está logado ganha o mesmo que a pública: a coluna
+   de resumo (o total de hoje, a renovação, o reembolso, o pagamento seguro e a linha dos Termos)
+   e a lista "O que está incluído", além do CPF ou CNPJ. Ela só não pede o e-mail (é o da conta) e
+   continua dentro do app, com o menu lateral. Revê, também na tela logada, o "Hoje você paga" só
+   com código (10/10/2026).
+*Reabre se os números mostrarem gente desistindo nesta tela, ou se a coluna confundir quem assina.*
 
 **O que a Stripe exige para aprovar o pagamento** `[FATO — context7 /websites/stripe, 12/10/2026:
 "The Payment Element only collects essential billing address details by default. To collect a
@@ -502,17 +523,17 @@ customer's full billing address for tax calculation […] use the Address Elemen
 |---|---|---|---|---|
 | Página só de pagamento, sem menu, com uma saída no canto | sim ("Cancelar") | sim (só o logo) | a tela logada tem o menu do app | **não** (decisão dele, 12/10/2026: leva o menu e o rodapé do site) |
 | Criar a conta ANTES de pagar (nome, e-mail, código de 6 dígitos) | sim | não: o e-mail vai na própria tela | decidido: a conta nasce no pagamento | não se aplica |
-| "Já tem conta? Entrar" | sim | sim | não | **vale ter** |
+| "Já tem conta? Entrar" | sim | sim | não | **sim** (decisão dele, 27/10/2026) |
 | Mensal ou anual na tela de pagamento, com selo no anual | sim (anual vem marcado) | escolhe antes, na página | **já temos** (mensal vem marcado) | fica como está |
-| "O que está incluído" | 3 linhas | 5 a 6 linhas | só na home | **vale ter** (a lista da home) |
+| "O que está incluído" | 3 linhas | 5 a 6 linhas | só na home | **sim, a lista da home** (decisão dele, 27/10/2026) |
 | Dizer que renova sozinha, por quanto, até cancelar | sim | sim | só a frase da Stripe embaixo do cartão, sem valor | **vale ter** (uma linha) |
 | Resumo do pedido numa coluna (total de hoje, próxima cobrança) | sim | sim | "Hoje você paga", só com código (decisão de 10/10) | **sim** (decisão dele, 12/10/2026) |
 | Código promocional | sim | sim | **já temos** | — |
 | "Cancele quando quiser" | sim, e diz onde | sim | **já temos** | — |
 | Reembolso | "não concedemos, exceto por lei" | selo de 30 dias | não aparece na tela | **vale ter** (7 dias) |
 | "Pagamento seguro" | sim | sim | não | **vale ter** (uma linha) |
-| "Ao assinar, você concorda com os Termos" | sim | sim | não | **vale ter**, quando os Termos existirem |
-| País ou endereço | só o país | endereço completo | nada | **o país, sim; endereço, não** (P80) |
+| "Ao assinar, você concorda com os Termos" | sim | sim | não | **sim** (decisão dele, 27/10/2026; as páginas no ar antes de abrir — passo 8) |
+| País ou endereço | só o país | endereço completo | nada | **sem País** (etapa 4.6c, 12/10/2026); **endereço, não** (sugestão do agente, abaixo) |
 | CPF ou número fiscal | não pede | só de empresa, opcional | nada | **sim, o CPF** (decisão dele, 12/10/2026) |
 | Receber novidades por e-mail | caixa já marcada | caixa desmarcada | não pergunta | **sim, desmarcada** (decisão dele, 12/10/2026) |
 | Nome completo | sim | sim | o nome é opcional | **não se pede** (decisão dele, 21/10/2026: em Minha conta, ou na hora do certificado — fecha a P83) |
@@ -547,9 +568,8 @@ celular, uma coluna só, nesta ordem)*:
 8. **O que está incluído** *(novo nesta tela)* — a MESMA lista do cartão da home e a frase do
    rodapé dele ("Acesso a tudo desde o primeiro dia…"). Duas linhas dela prometem o que ainda
    não existe (o JilsonAI e o Pix): **P84**.
-9. **Dúvidas** *(novo)* — um link para as perguntas frequentes da home. *Com o rodapé do site
-   na tela (decisão de 12/10/2026), o link de FAQ já está lá: o agente passa a sugerir tirar
-   este item — P80.*
+9. ~~Dúvidas~~ — **saiu** *(decisão do operador, 27/10/2026: o rodapé do site já leva o link das
+   perguntas frequentes)*.
 
 **Os textos** *(RASCUNHO do agente para o operador aprovar ou reescrever: P81. Só em português,
 desde a decisão de 12/10/2026; a coluna em inglês saiu desta tabela)*:
@@ -572,7 +592,6 @@ desde a decisão de 12/10/2026; a coluna em inglês saiu desta tabela)*:
 | Pagamento seguro | Pagamento seguro, processado pela Stripe. A escola não guarda os dados do seu cartão. |
 | Termos | Ao assinar, você concorda com os Termos de Uso e a Política de Privacidade. |
 | Título da lista | O que está incluído |
-| Dúvidas *(se o item 9 ficar)* | Ficou com dúvida? Veja as perguntas frequentes. |
 | Novidades *(caixa desmarcada)* | Quero receber novidades e ofertas da escola por e-mail. |
 | Depois de pagar, título | Assinatura confirmada. |
 | Depois de pagar, texto *(vencido em 21/10)* | Enviamos um e-mail para {email} com o link para você criar sua senha e começar a estudar. |
@@ -618,7 +637,8 @@ país, o CPF e, mais adiante, o dólar e o imposto de fora *(o país e o dólar 
 com a etapa 4.6c; a coluna ficou)*, o total final precisa de um lugar
 fixo: **o agente passou a recomendar a coluna, e ele confirmou no mesmo dia ("Certo").** Na
 tela pública, isso revê a decisão de 10/10 de mostrar "Hoje você paga" só com código (o gatilho
-de reabertura dela já previa). Na tela de quem está logado, continua a P80. *Reabre se a coluna
+de reabertura dela já previa). Na tela de quem está logado também, desde 27/10/2026 (P80: as duas
+telas iguais). *Reabre se a coluna
 confundir quem assina — foi o motivo da decisão de 10/10.*
 
 **Sugerido pelo agente e RECUSADO pelo operador** *(não propor de novo sem o gatilho)*:

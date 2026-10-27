@@ -4970,7 +4970,10 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             de pagamento da Udemy e do Code with Mosh)* **está em `billing.md` → *A tela pública
             de assinar*:** os blocos em ordem, os textos, o que a Stripe exige
             (endereço não) e o que fica de fora. **Antes de construir: P80 (o que existe na
-            tela) e P81 (os textos).** Do operador, no mesmo dia: o formulário de quem está
+            tela) e P81 (os textos).** **A P80 foi respondida em 27/10/2026** (`billing.md` →
+            *O que existe na tela*): entram o "Já tem conta? Entrar", a linha dos Termos e a lista
+            "O que está incluído"; o link para as perguntas frequentes não (o rodapé já tem); e as
+            duas telas ficam iguais. Do operador, em 12/10: o formulário de quem está
             logado *"está ótimo porque já está funcionando"* — é a base, sem refazer — e o
             desconto do anual continua à vista (*"é um atrativo"*). **DECISÃO dele (12/10/2026):
             a tela leva o menu de cima e o rodapé do site, como as outras páginas públicas, e o
@@ -4982,15 +4985,16 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             depois do pagamento para quem ainda não tem senha.
             *Convenções de engenharia:* a lista "O que está incluído" lê a MESMA chave do
             cartão da home (`home.pricing.features`, com as edições do admin) — duas listas
-            divergem · as linhas novas entram no formulário como parte opcional: a tela de quem
-            está logado só muda se ele disser (P80) · o valor da linha de renovação é o do
+            divergem · as linhas novas valem para as duas telas, porque o formulário é um só (P80,
+            27/10/2026) · o valor da linha de renovação é o do
             servidor; com código promocional, se a prévia não der o valor da renovação, a linha
             sai sem valor — nunca conta feita na tela.
             **Acrescentado em 12/10/2026, na mesma conversa:** o **CPF ou CNPJ**, obrigatório,
             entra no formulário, que é o mesmo das duas telas (a pública e a de quem está
             logado) · a **coluna de resumo** com o total de hoje, a renovação, o reembolso e o
             pagamento seguro — **decisão dele, 12/10/2026** ("Certo"); revê, na tela pública, a
-            decisão de 10/10 de mostrar "Hoje você paga" só com código (na tela logada, P80) ·
+            decisão de 10/10 de mostrar "Hoje você paga" só com código (e na tela logada também:
+            P80, 27/10/2026) ·
             **antes de desenhar o campo do CPF, MEDIR na área restrita o que o campo da Stripe
             já pede sozinho**, com um cartão de teste do Brasil: a doc diz que o campo de
             pagamento cuida do número fiscal de comprador da América Latina, e dois campos de
