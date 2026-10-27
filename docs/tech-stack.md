@@ -333,7 +333,13 @@ parte "ligado, esperando" bate com a conta medida em 22/10; os preços com o ser
   teste: o custo deve ficar perto do mínimo. **Preço medido na fatura do plano Launch** *(26/10/2026)*:
   7,71 unidades-hora = US$ 0,81, **~US$ 0,105 por unidade-hora** (cobrado só com o banco acordado) — no
   mês, com o uso de hoje, ~US$ 2. Subir o mínimo encarece cada hora acordada (0,5 ≈ US$ 4/mês, 1 ≈
-  US$ 8/mês) sem ganho medido: **fica 0,25 a 4** *(decisão do operador, 26/10/2026; reabre se o painel
+  US$ 8/mês) sem ganho medido. *(1 unidade = 1 processador + 4 GB; 0,25 = um quarto de processador +
+  1 GB.)* **MEDIDO no ar em 27/10/2026, a pedido do operador** — o mesmo teste com o mínimo em 1 e em
+  0,25, minutos de diferença, 5.950 pedidos cada, nenhum erro; tempo dentro do servidor (registro do
+  Cloud Run): um aluno de cada vez, **22 ms com 1 e 27 ms com 0,25**; nas rajadas de até 1.000 e no
+  fluxo de 200 por segundo, o 0,25 ficou igual ou melhor (a segunda rodada pegou as cópias do servidor
+  já ligadas) — com muita gente, quem limita é o servidor do site, não o banco. **Fica 0,25 a 4**
+  *(decisão do operador, 26/10/2026, mantida depois da medição; reabre se o painel
   do Neon mostrar o banco preso no mínimo — processador ou memória perto do teto de 0,25 — com alunos)*.
   *A decidir na abertura da escola (Fase 7):* o "dormir após 5 min" faz o primeiro visitante depois de
   um silêncio esperar ~0,5 s a mais; deixá-lo sempre acordado custa o mínimo (0,25) o mês inteiro —
