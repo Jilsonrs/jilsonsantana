@@ -324,26 +324,50 @@ parte "ligado, esperando" bate com a conta medida em 22/10; os preços com o ser
   escola (gravação de tela) somam 1,86 GB por hora em todas as resoluções; quem assiste baixa uma só —
   **~0,5 a 1 GB por hora assistida ≈ US$ 0,02 a 0,045 por hora**. Com 10 h por aluno no mês: 100 alunos
   ≈ US$ 22–45 · 500 ≈ US$ 110–225 · 1.000 ≈ US$ 225–450.
-- **Banco (Neon):** cresce sozinho de 0,25 a 4 unidades de processamento (era 2 no teste) (1 unidade = 1 processador e
-  ~4 GB) e dorme após 5 min sem uso. **No teste, nem saiu do mínimo** *(painel Monitoring do Neon, lido
-  pelo operador em 25/10/2026)*: usou no máximo ~0,09 de processador (dos 0,25), ~0,35 GB de memória,
-  27 conexões no pooler (de 10.000) com **espera zero**, ~20 no Postgres (de 905), nenhum deadlock.
-  **Subir o teto de 2 para 8 não muda nada hoje.** *O operador subiu para 4 em 25/10/2026, por folga* (só se
-  paga o que for usado; o painel mostra 0,25 a 4 unidades, ~16 GB no teto). Com 1.000 alunos, a carga do banco seria a do
-  teste: o custo deve ficar perto do mínimo. **Preço medido na fatura do plano Launch** *(26/10/2026)*:
-  7,71 unidades-hora = US$ 0,81, **~US$ 0,105 por unidade-hora** (cobrado só com o banco acordado) — no
-  mês, com o uso de hoje, ~US$ 2. Subir o mínimo encarece cada hora acordada (0,5 ≈ US$ 4/mês, 1 ≈
-  US$ 8/mês) sem ganho medido. *(1 unidade = 1 processador + 4 GB; 0,25 = um quarto de processador +
-  1 GB.)* **MEDIDO no ar em 27/10/2026, a pedido do operador** — o mesmo teste com o mínimo em 1 e em
-  0,25, minutos de diferença, 5.950 pedidos cada, nenhum erro; tempo dentro do servidor (registro do
-  Cloud Run): um aluno de cada vez, **22 ms com 1 e 27 ms com 0,25**; nas rajadas de até 1.000 e no
-  fluxo de 200 por segundo, o 0,25 ficou igual ou melhor (a segunda rodada pegou as cópias do servidor
-  já ligadas) — com muita gente, quem limita é o servidor do site, não o banco. **Fica 0,25 a 4**
-  *(decisão do operador, 26/10/2026, mantida depois da medição; reabre se o painel
-  do Neon mostrar o banco preso no mínimo — processador ou memória perto do teto de 0,25 — com alunos)*.
+- **Banco (Neon):** cresce sozinho de **0,5 a 4** unidades de processamento (1 unidade = 1 processador +
+  4 GB; 0,5 = meio processador + 2 GB) e dorme após 5 min sem uso. **Mínimo 0,5 desde 27/10/2026**
+  *(decisão do operador, depois das medições abaixo; antes, 0,25)*; *o teto subiu de 2 para 4 em
+  25/10/2026, por folga* (só se paga o que for usado). **No teste de 25/10, nem saiu do mínimo**
+  *(painel Monitoring do Neon, lido pelo operador)*: usou no máximo ~0,09 de processador (dos 0,25),
+  ~0,35 GB de memória, 27 conexões no pooler (de 10.000) com **espera zero**, ~20 no Postgres (de 905),
+  nenhum deadlock. **Preço medido na fatura do plano Launch** *(26/10/2026)*: 7,71 unidades-hora =
+  US$ 0,81, **~US$ 0,105 por unidade-hora**, cobrado só com o banco acordado — e o mínimo é o que se
+  paga em cada hora acordada.
+  **O MÍNIMO MEDIDO NO AR em 27/10/2026, a pedido do operador** — o mesmo teste (rota do curso: 50
+  seguidos, rajadas de 100, 500 e 1.000, fluxo de 200 por segundo por 20 s), 5.950 pedidos por rodada,
+  **nenhum erro**; tempo dentro do servidor (registro do Cloud Run):
+
+  | Mínimo | Um aluno de cada vez | Rajada de 1.000 (mediana) | Fluxo de 200/s (mediana) |
+  |---|---|---|---|
+  | 1 | 22 ms | 1.125 ms | 747 ms |
+  | **0,5 (adotado)** | 26 ms | 1.043 ms | 232 ms |
+  | 0,25 | 27 ms | 887 ms | 488 ms |
+
+  A diferença entre os três fica dentro da variação de uma rodada para outra (o estado das cópias do
+  servidor pesa mais que o banco): com muita gente, quem limita é o servidor do site. *No painel do Neon
+  (lido pelo operador), nas rodadas de 1 e 0,25:* processador usado no pico ~0,08 e ~0,12, sem o banco
+  crescer de tamanho; memória usada abaixo de 0,5 GB; até ~19 ligações no pooler, espera zero; o banco
+  do site tem ~10 MB.
+  **Custo por mês do mínimo** (horas acordado × mínimo × US$ 0,105): com o uso de hoje, 0,25 ≈ US$ 2 ·
+  **0,5 ≈ US$ 4** · 1 ≈ US$ 8; com alunos (~16 h acordado por dia — de uns 100 alunos em diante, porque
+  um só estudando já o mantém acordado), 0,25 ≈ US$ 13 · **0,5 ≈ US$ 25** · 1 ≈ US$ 50; sempre
+  acordado, 0,25 ≈ US$ 19 · **0,5 ≈ US$ 38** · 1 ≈ US$ 77. *Subir além de 0,5 reabre se: (1) o painel do
+  Neon mostrar o banco preso no mínimo — processador ou memória perto do teto de 0,5 — no uso normal
+  com alunos, não só em pico; (2) o banco passar de ~1 GB — acima do que o Neon guarda na memória,
+  parte das consultas lê do disco (no painel: ~0,6 GB guardados com 0,25, ~3,4 GB com 1); (3) o
+  JilsonAI (Fase 6) trouxer a busca nos textos das aulas. O sinal no dia a dia: páginas lentas com o
+  servidor do site folgado.*
+  **O aviso de gasto do Neon** *(Billing → Spending notifications; ligado pelo operador em 27/10/2026)*:
+  e-mail quando o gasto do mês da organização chegar a **US$ 20** (conferido a cada 15 min). Com o
+  mínimo em 0,5, um robô que mantenha o banco acordado o mês inteiro (~US$ 38) o dispara. *Na abertura
+  da escola (Fase 7), subir para ~US$ 40–50: com alunos, o normal vai a ~US$ 25.* **O que acorda o banco** (conferido no código em 27/10/2026): as rotas de
+  dados de `/api` (catálogo, busca, login, cobrança — inclusive a tentativa barrada pelo limite, que é
+  uma instrução); **não** o acordam `/api/health` (o monitor do Sentry), a página "Em breve", os
+  arquivos e os endereços inexistentes. Depois da abertura, a home e as páginas de curso também leem o
+  banco.
   *A decidir na abertura da escola (Fase 7):* o "dormir após 5 min" faz o primeiro visitante depois de
-  um silêncio esperar ~0,5 s a mais; deixá-lo sempre acordado custa o mínimo (0,25) o mês inteiro —
-  ~US$ 19/mês.
+  um silêncio esperar ~0,5 s a mais; deixá-lo sempre acordado custa o mínimo o mês inteiro — ~US$ 38/mês
+  com 0,5.
 
 **O QUE FOI MONTADO, EM LINGUAGEM SIMPLES** *(pedido do operador, 24/10/2026)* — uma publicação passa
 por todas as peças, nesta ordem:

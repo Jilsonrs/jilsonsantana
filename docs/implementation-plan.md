@@ -657,6 +657,12 @@
       production-ready" que o Google abre em seguida **não foi usado** (cria projetos e permissões novos).
       O site seguiu no ar durante tudo (conferido de fora: 200). Registro: `tech-stack.md` → *Google
       Cloud*.
+- [x] **O banco no Neon: mínimo 0,5** *(27/10/2026, decisão do operador)* — o mesmo teste de carga com o
+      mínimo em 1, 0,25 e 0,5 (o operador trocou no painel), 5.950 pedidos por rodada, nenhum erro: um
+      aluno de cada vez, 22, 27 e 26 ms dentro do servidor; com muita gente, quem limita é o servidor do
+      site. Custo do mínimo 0,5: ~US$ 4/mês hoje, ~US$ 25 com alunos. Ligado também o **aviso de gasto
+      do Neon em US$ 20** (subir na abertura). Tabela, custos e gatilhos: `tech-stack.md` → *Banco
+      (Neon)*.
 - [x] **A memória e o tempo de resposta** *(medidos em 25/10/2026)* — decidem a volta da P104. Nas 46 h
       antes do teste: memória no pico de 160 a 220 MB (8 a 11% dos 2 GB), processador até 7%. No teste
       de tamanhos (512 MB a 8 GB): a escola usa 140 a 215 MB em qualquer tamanho, e a memória não muda
