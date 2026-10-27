@@ -770,6 +770,12 @@ pública de assinar*), o teto da prévia (*Limite de tentativas*), o código de 
   um código de tentativa novo (32 caracteres) e a escolha do visitante, e a ficha passa a guardar
   esse código. O número fiscal e a assinatura nascem na MESMA trava: a primeira fatura sai com o
   número de quem criou aquela tentativa.
+  **Desde o passo 6b (27/10/2026), a ficha e a assinatura na Stripe guardam SÓ O RESUMO da
+  tentativa** (SHA-256, hexadecimal — `server/src/lib/tentativa-do-visitante.ts`; a migration
+  `20261027130000_resumo_da_tentativa` trocou as linhas que existiam): a tentativa abre a conta (a
+  primeira senha e a sessão), e o painel da Stripe, os avisos dela e uma cópia do banco não podem
+  levá-la. O código vai só ao navegador; toda busca e toda comparação são pelo resumo (revisão de
+  segurança do passo 5, 21/10/2026). *Sem gatilho — é como se guarda o que vale como senha.*
 - **No máximo 3 "assinar sem login" em andamento ao mesmo tempo**, somando todos os endereços
   (`ASSINATURAS_SEM_LOGIN_AO_MESMO_TEMPO`, achado P1 da revisão de segurança do passo): cada um
   segura uma ligação com o banco enquanto a Stripe responde, e sem conta nada os limitava — uma

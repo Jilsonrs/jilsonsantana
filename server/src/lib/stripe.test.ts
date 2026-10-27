@@ -234,7 +234,7 @@ function doCheckout({ status = "incomplete", fatura = { status: "open", confirma
 
 describe("a assinatura como o checkout a vê", () => {
   it("incompleta com a fatura aberta: o segredo do pagamento, o plano e nenhum código", () => {
-    expect(paraAssinaturaNoCheckout(doCheckout())).toEqual({ id: "sub_1", status: "incomplete", precoId: "price_mensal", codigoId: null, segredoDoPagamento: "pi_1_secret_x", segredoDoCartao: null, tentativa: null, pagamentoCancelado: false });
+    expect(paraAssinaturaNoCheckout(doCheckout())).toEqual({ id: "sub_1", status: "incomplete", precoId: "price_mensal", codigoId: null, segredoDoPagamento: "pi_1_secret_x", segredoDoCartao: null, resumoDaTentativa: null, pagamentoCancelado: false });
   });
 
   // ASSINAR SEM CONTA (etapa 4.7, passo 4): só quem traz o código da tentativa segue com ela.
@@ -249,9 +249,9 @@ describe("a assinatura como o checkout a vê", () => {
     expect(paraAssinaturaNoCheckout(comPagamentos([])).pagamentoCancelado).toBe(false);
   });
 
-  it("a tentativa do visitante com que foi criada; a de quem está logado não tem", () => {
-    expect(paraAssinaturaNoCheckout(doCheckout({ metadata: { pedido: "p1", tentativa: "t-1", plano: "mensal" } })).tentativa).toBe("t-1");
-    expect(paraAssinaturaNoCheckout(doCheckout()).tentativa).toBeNull();
+  it("o resumo da tentativa do visitante com que foi criada; a de quem está logado não tem", () => {
+    expect(paraAssinaturaNoCheckout(doCheckout({ metadata: { pedido: "p1", tentativa: "r-1", plano: "mensal" } })).resumoDaTentativa).toBe("r-1");
+    expect(paraAssinaturaNoCheckout(doCheckout()).resumoDaTentativa).toBeNull();
   });
 
   it("o código promocional com que foi criada", () => {
@@ -310,24 +310,24 @@ describe("o pedido de assinatura que vai à Stripe", () => {
 describe("o pedido de assinatura do visitante", () => {
   const base = { clienteId: "cus_1", precoId: "price_mensal", plano: "mensal", codigoId: null } as const;
 
-  it("leva a ficha, a tentativa, as novidades e a origem — e nenhum userId", () => {
-    const pedido = paraPedidoDeAssinatura({ ...base, visitante: { pedido: "p1", tentativa: "t-1", escolha: { novidades: true, origem: "youtube", campanha: "video-excel" } } });
-    expect(pedido.metadata).toEqual({ pedido: "p1", tentativa: "t-1", novidades: "sim", origem: "youtube", campanha: "video-excel", plano: "mensal" });
+  it("leva a ficha, o resumo da tentativa, as novidades e a origem — e nenhum userId", () => {
+    const pedido = paraPedidoDeAssinatura({ ...base, visitante: { pedido: "p1", resumoDaTentativa: "r-1", escolha: { novidades: true, origem: "youtube", campanha: "video-excel" } } });
+    expect(pedido.metadata).toEqual({ pedido: "p1", tentativa: "r-1", novidades: "sim", origem: "youtube", campanha: "video-excel", plano: "mensal" });
     expect(pedido.payment_behavior).toBe("default_incomplete");
     expect(pedido.customer).toBe("cus_1");
   });
 
   it("sem a marca das novidades vai \"nao\"; sem origem, os campos dela não vão", () => {
-    const pedido = paraPedidoDeAssinatura({ ...base, codigoId: "promo_1", visitante: { pedido: "p1", tentativa: "t-1", escolha: { novidades: false, origem: null, campanha: null } } });
-    expect(pedido.metadata).toEqual({ pedido: "p1", tentativa: "t-1", novidades: "nao", plano: "mensal", codigo: "promo_1" });
+    const pedido = paraPedidoDeAssinatura({ ...base, codigoId: "promo_1", visitante: { pedido: "p1", resumoDaTentativa: "r-1", escolha: { novidades: false, origem: null, campanha: null } } });
+    expect(pedido.metadata).toEqual({ pedido: "p1", tentativa: "r-1", novidades: "nao", plano: "mensal", codigo: "promo_1" });
     expect(pedido.discounts).toEqual([{ promotion_code: "promo_1" }]);
   });
 
   it("o que vai é o que volta: a leitura da Stripe acha a ficha e a escolha que o pedido gravou", () => {
-    const metadata = paraPedidoDeAssinatura({ ...base, visitante: { pedido: "p9", tentativa: "t-9", escolha: { novidades: true, origem: "instagram", campanha: null } } }).metadata as Record<string, string>;
+    const metadata = paraPedidoDeAssinatura({ ...base, visitante: { pedido: "p9", resumoDaTentativa: "r-9", escolha: { novidades: true, origem: "instagram", campanha: null } } }).metadata as Record<string, string>;
     const lida = paraAssinaturaNaStripe(assinatura({ metadata }));
     expect([lida.pedido, lida.doVisitante]).toEqual(["p9", { novidades: true, origem: "instagram", campanha: null }]);
-    expect(paraAssinaturaNoCheckout(doCheckout({ metadata })).tentativa).toBe("t-9");
+    expect(paraAssinaturaNoCheckout(doCheckout({ metadata })).resumoDaTentativa).toBe("r-9");
   });
 });
 

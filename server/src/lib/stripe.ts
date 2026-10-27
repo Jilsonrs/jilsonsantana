@@ -195,11 +195,11 @@ export type AssinaturaNoCheckout = {
   /** O segredo para o site guardar o cartão quando hoje não há o que pagar. */
   segredoDoCartao: string | null;
   /**
-   * O código da tentativa do VISITANTE com que ela nasceu (etapa 4.7, passo 4). Só quem traz esse
-   * código segue com ela: sem isso, quem soubesse o e-mail de alguém receberia o segredo do
-   * pagamento dessa pessoa.
+   * O RESUMO da tentativa do VISITANTE com que ela nasceu (etapa 4.7, passo 4; só o resumo desde o
+   * passo 6b — `tentativa-do-visitante.ts`). Só quem traz a tentativa segue com ela: sem isso, quem
+   * soubesse o e-mail de alguém receberia o segredo do pagamento dessa pessoa.
    */
-  tentativa?: string | null;
+  resumoDaTentativa?: string | null;
   /**
    * A Stripe CANCELOU o pagamento de hoje desta assinatura (etapa 4.7, passo 4). `[FATO — medido na
    * área restrita, 21/10/2026]` depois de 10 recusas no mesmo pagamento ela o cancela sozinha, e a
@@ -227,7 +227,7 @@ export function paraAssinaturaNoCheckout(assinatura: Stripe.Subscription): Assin
     codigoId: assinatura.metadata.codigo || null,
     segredoDoPagamento: segredo,
     segredoDoCartao: typeof cartao === "object" && cartao !== null ? cartao.client_secret : null,
-    tentativa: assinatura.metadata[METADADOS_DO_VISITANTE.tentativa] || null,
+    resumoDaTentativa: assinatura.metadata[METADADOS_DO_VISITANTE.tentativa] || null,
     pagamentoCancelado: pagamentoDeHoje !== null && cancelado,
   };
 }
@@ -355,17 +355,18 @@ export const FORMAS_DE_PAGAMENTO: Stripe.SubscriptionCreateParams.PaymentSetting
  * A tentativa do VISITANTE (etapa 4.7, passo 4): a ficha de espera, o código desta tentativa e o
  * que ele escolheu — tudo na assinatura, para a conta nascer dela com a escolha de quem PAGOU.
  */
-export type TentativaDoVisitante = { pedido: string; tentativa: string; escolha: DadosDoVisitante };
+export type TentativaDoVisitante = { pedido: string; resumoDaTentativa: string; escolha: DadosDoVisitante };
 
 /** De quem é a assinatura: a conta logada (`userId`) ou a tentativa do visitante, que ainda não tem conta. */
 export type PedidoDeAssinatura = { clienteId: string; precoId: string; plano: Plano; codigoId: string | null } & ({ userId: string } | { visitante: TentativaDoVisitante });
 
 /** O que a tentativa do visitante grava na assinatura. Valor vazio não vai (a Stripe não o guarda). */
-function metadadosDoVisitante({ pedido, tentativa, escolha }: TentativaDoVisitante): Record<string, string> {
+function metadadosDoVisitante({ pedido, resumoDaTentativa, escolha }: TentativaDoVisitante): Record<string, string> {
   const M = METADADOS_DO_VISITANTE;
   return {
     [M.pedido]: pedido,
-    [M.tentativa]: tentativa,
+    // Só o RESUMO (passo 6b): o painel e os avisos da Stripe nunca levam a tentativa.
+    [M.tentativa]: resumoDaTentativa,
     [M.novidades]: escolha.novidades ? NOVIDADES_SIM : "nao",
     ...(escolha.origem ? { [M.origem]: escolha.origem } : {}),
     ...(escolha.campanha ? { [M.campanha]: escolha.campanha } : {}),

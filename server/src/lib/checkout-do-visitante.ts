@@ -1,10 +1,11 @@
-import { randomBytes, randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import type { Prisma } from "./prisma.js";
 import { DuracaoDoDesconto, type AssinarSemLoginInput } from "@jilson/core";
 import { prisma } from "./prisma.js";
 import { sincronizarSeLivre } from "./assinaturas.js";
 import { temAcessoAtivo } from "./acesso.js";
 import { mandarBoasVindasDaAssinatura } from "./boas-vindas.js";
+import { novaTentativa, resumoDaTentativa } from "./tentativa-do-visitante.js";
 import { acertarNumeroFiscal, assinaturasDoCliente, buscarCodigo, buscarPrecos, cancelarIncompleta, criarAssinatura, criarClienteDoVisitante, DocumentoRecusado, type AssinaturaNoCheckout } from "./stripe.js";
 
 // ASSINAR SEM CONTA (Fase 4, etapa 4.7, passo 4 — billing.md → *Assinar sem conta*; CLAUDE.md →
@@ -59,11 +60,6 @@ const ENCERRADAS: ReadonlySet<string> = new Set(["incomplete_expired", "canceled
 const TEMPO_DA_TRANSACAO = { maxWait: 10_000, timeout: 120_000 };
 /** Uma ida à Stripe na ficha: criar o cliente. */
 const TEMPO_DA_FICHA = { maxWait: 10_000, timeout: 30_000 };
-
-/** O código público de uma tentativa: 32 caracteres que ninguém adivinha. */
-function novaTentativa(): string {
-  return randomBytes(24).toString("base64url");
-}
 
 /** A trava deste e-mail, SEM ESPERAR — a mesma família da trava da conta (`checkout.ts`). */
 async function travarSeLivre(tx: Prisma.TransactionClient, email: string): Promise<boolean> {
@@ -162,7 +158,7 @@ async function decidir(email: string, pedido: AssinarSemLoginInput, ficha: Ficha
       // pagamento que a Stripe ainda aceita.
       const aMesma =
         typeof pedido.tentativa === "string" &&
-        incompleta.tentativa === pedido.tentativa &&
+        incompleta.resumoDaTentativa === resumoDaTentativa(pedido.tentativa) &&
         incompleta.precoId === precoId &&
         incompleta.codigoId === codigoId &&
         !documentoMudou &&
@@ -183,17 +179,19 @@ async function decidir(email: string, pedido: AssinarSemLoginInput, ficha: Ficha
 
     const reaproveitada = assinatura !== null;
     const tentativa = reaproveitada && pedido.tentativa ? pedido.tentativa : novaTentativa();
+    // A tentativa vai SÓ ao navegador; a ficha e a assinatura na Stripe guardam o resumo dela.
+    const resumo = resumoDaTentativa(tentativa);
     assinatura ??= await criarAssinatura({
       clienteId: ficha.stripeCustomerId,
       precoId,
       plano: pedido.plano,
       codigoId,
-      visitante: { pedido: ficha.id, tentativa, escolha: { novidades: pedido.novidades, origem: pedido.origem ?? null, campanha: pedido.campanha ?? null } },
+      visitante: { pedido: ficha.id, resumoDaTentativa: resumo, escolha: { novidades: pedido.novidades, origem: pedido.origem ?? null, campanha: pedido.campanha ?? null } },
     });
     // A Stripe recusou o desconto na criação (o código esgotou entre a prévia e o clique).
     if (!assinatura) return { resultado: "codigo-invalido" };
-    // A tentativa nova passa a ser a da ficha: é com o código dela que a tela de depois do pagamento pergunta.
-    if (!reaproveitada) await tx.guestCheckout.update({ where: { id: ficha.id }, data: { tentativa } });
+    // A tentativa nova passa a ser a da ficha (pelo resumo): é com o código dela que a tela de depois do pagamento pergunta.
+    if (!reaproveitada) await tx.guestCheckout.update({ where: { id: ficha.id }, data: { tentativa: resumo } });
     console.info(`[stripe] visitante: ficha ${ficha.id}, plano ${pedido.plano} → assinatura ${assinatura.id} (${assinatura.status})${reaproveitada ? ", a mesma tentativa" : ""}`);
 
     if (assinatura.status === "incomplete" && assinatura.segredoDoPagamento) return { resultado: "pagar", segredo: assinatura.segredoDoPagamento, tipo: "pagamento", tentativa };
@@ -240,6 +238,6 @@ export async function assinarComoVisitante(pedido: AssinarSemLoginInput, opcoes:
  * libera. Código desconhecido ou antigo, a mesma resposta de "ainda não": nada sobre ninguém.
  */
 export async function pagamentoConfirmado(tentativa: string): Promise<boolean> {
-  const ficha = await prisma.guestCheckout.findUnique({ where: { tentativa }, select: { userId: true } });
+  const ficha = await prisma.guestCheckout.findUnique({ where: { tentativa: resumoDaTentativa(tentativa) }, select: { userId: true } });
   return ficha?.userId ? temAcessoAtivo(ficha.userId) : false;
 }

@@ -4959,10 +4959,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             `?tentativa=`, nem no `return_url` da Stripe —, fica só na memória da página ou no
             `sessionStorage`, sai dali depois de criada a senha, e a senha se cria só por POST;
             (b) **guardar só o resumo da tentativa** (SHA-256) na ficha e no `metadata` da
-            assinatura da Stripe, e buscar e comparar pelo resumo — hoje ela vai inteira, legível no
-            painel da Stripe e em todo aviso; antes de ligar a venda sem login (passo 8). *Sobe de
-            prioridade se alguém além do operador tiver acesso ao painel ou às chaves da Stripe, ou
-            se um app for ligado a ela;* (c) **as recusas da senha** que a tela mostra:
+            assinatura da Stripe, e buscar e comparar pelo resumo — **FEITO na 6b (27/10/2026)**; (c) **as recusas da senha** que a tela mostra:
             `NaoConfirmado`, `PrazoVencido`, `EmailConfirmado` (a dona do e-mail já entrou pelo
             código: a senha agora é pelo "Esqueci minha senha"), `JaTemSenha`, `Ocupada` — os textos
             são do operador.
@@ -5017,8 +5014,16 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                   mutação (reaproveitar com o CPF trocado · não gravar · recusa virar 500 · mexer
                   na ficha de quem já assina): as quatro reprovam. **Opcional no servidor nesta
                   publicação** (a API só acrescenta), e a tela sempre manda.
-            - [ ] **6b — Só o resumo (SHA-256) da tentativa no banco e na Stripe** (servidor +
-                  migration).
+            - [x] **6b — Só o resumo (SHA-256) da tentativa no banco e na Stripe** (servidor +
+                  migration). `lib/tentativa-do-visitante.ts` (gera e resume); a ficha
+                  (`GuestCheckout.tentativa`) e os dados da assinatura na Stripe guardam o resumo;
+                  a confirmação e a senha buscam pelo resumo; a migration
+                  `20261027130000_resumo_da_tentativa` troca as linhas que existiam (sem DDL —
+                  `migrate diff`: *No difference detected*, no banco de teste recriado do zero).
+                  Testes: `resumo-da-tentativa.test.ts` (a migration, e a ficha em claro que não
+                  abre nada) e os do visitante e da senha comparando com o SHA-256 calculado à
+                  parte. Mutação (a ficha em claro · a Stripe em claro · a confirmação e a senha
+                  buscando em claro · a migration sem efeito): as cinco reprovam.
             - [ ] **6c — A página `/assinar` do servidor**, com o menu e o rodapé da home (sem
                   mudar o HTML dela) e o app montado no meio só com o formulário; com a venda sem
                   login desligada, nada muda para o visitante.
