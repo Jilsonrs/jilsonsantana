@@ -107,7 +107,8 @@ export function FormularioDeAssinatura({
       // assinar (decisão do operador, 21/10/2026); o mesmo e-mail noutra aba; muita gente ao mesmo tempo.
       else if (semLogin && motivo === "JaTemConta") setErroDoEmail(t.emailJaTemConta);
       else if (semLogin && motivo === "Ocupada") setErro(t.ocupadaOutraAba);
-      else if (semLogin && motivo === "MuitosAoMesmoTempo") setErro(t.aguardeUmInstante);
+      // Muitas assinaturas ao mesmo tempo nesta cópia do site (com e sem login): esperar e tentar de novo.
+      else if (motivo === "MuitosAoMesmoTempo") setErro(t.aguardeUmInstante);
       else setErro(passouDoLimite(falha) ? comum.muitasTentativas : t.erro);
     } finally {
       setEnviando(false);

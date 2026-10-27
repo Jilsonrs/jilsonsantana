@@ -419,6 +419,15 @@ describe("AssinarPage — o CPF ou CNPJ, o resumo e o que está incluído", () =
     expect(confirmar).not.toHaveBeenCalled();
   });
 
+  // Muitas assinaturas ao mesmo tempo nesta cópia do site (achado P1 da revisão do passo 6): o texto do operador.
+  it("muitas assinaturas ao mesmo tempo (409 MuitosAoMesmoTempo): a frase de esperar", async () => {
+    criarAssinatura.mockRejectedValue(erroDoServidor("MuitosAoMesmoTempo"));
+    abrir();
+    await screen.findByRole("radio", { name: /Mensal/ });
+    assinar();
+    expect((await screen.findByRole("alert")).textContent).toBe("Aguarde um instante e tente novamente.");
+  });
+
   it("o anual no resumo: o plano, o total de hoje e a renovação de uma vez por ano, com o valor", async () => {
     abrir();
     fireEvent.click(await screen.findByRole("radio", { name: /Anual/ }));

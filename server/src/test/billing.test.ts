@@ -33,6 +33,7 @@ vi.mock("../lib/stripe.js", async (importOriginal) => ({
 
 import servidor from "./servidor.js";
 import { DocumentoRecusado } from "../lib/stripe.js";
+import { assinaturasAoMesmoTempo, comVaga } from "../lib/assinaturas-em-andamento.js";
 import { prisma } from "../lib/prisma.js";
 import { ASSINATURA_DE_TESTE } from "../lib/assinatura-de-teste.js";
 import { invalidarCacheDeTexto } from "../lib/dict.js";
@@ -506,6 +507,31 @@ describe("POST /api/billing/assinatura", () => {
   });
 
   // QUEM PAGOU E FICOU TRANCADO (etapa 4.4 — o achado P1 da revisão de segurança da 4.2).
+  // O MESMO TETO DAS ASSINATURAS SEM LOGIN (achado P1 da revisão de segurança do passo 6, 27/10/2026):
+  // cada assinatura segura uma ligação com o banco enquanto a Stripe responde; ficam sempre 2 livres.
+  it("o assinar logado conta no mesmo teto: cheio, 409 'muitos ao mesmo tempo' na hora — e nada vai à Stripe", async () => {
+    let soltar!: () => void;
+    const segura = new Promise<void>((ok) => (soltar = ok));
+    const ocupadas = Array.from({ length: assinaturasAoMesmoTempo() }, () => comVaga(() => segura));
+    try {
+      await semAssinatura(async () => {
+        const res = await assinarComo({ plano: "mensal", documento: "529.982.247-25" }, member);
+        expect([res.status, res.body]).toEqual([409, { error: "MuitosAoMesmoTempo" }]);
+        expect(Number(res.headers["retry-after"])).toBeGreaterThan(0);
+      });
+      expect(criarCliente).not.toHaveBeenCalled();
+      expect(acertarNumeroFiscal).not.toHaveBeenCalled();
+      expect(criarAssinatura).not.toHaveBeenCalled();
+    } finally {
+      soltar();
+      await Promise.all(ocupadas);
+    }
+    // Soltas as vagas, assina.
+    await semAssinatura(async () => {
+      expect((await assinarComo({ plano: "mensal" }, member)).status).toBe(200);
+    });
+  });
+
   // O CPF OU CNPJ (etapa 4.7, passo 6 — as duas telas iguais, decisão do operador de 27/10/2026): vai
   // para a FICHA DO CLIENTE na Stripe (nunca para os dados do cartão), com a trava, antes de a
   // assinatura — e a primeira fatura dela — nascer.

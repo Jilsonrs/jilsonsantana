@@ -1,4 +1,3 @@
-import { availableParallelism } from "node:os";
 import { PrismaPg } from "@prisma/adapter-pg";
 import type { PoolConfig } from "pg";
 import { PrismaClient } from "../generated/prisma/client.js";
@@ -18,11 +17,21 @@ const TLS_EM_PRODUCAO = ["require", "verify-full"];
 const ESTA_MAQUINA = ["localhost", "127.0.0.1", "[::1]"];
 
 /**
- * As ligações com o banco como o Prisma 5 fazia sozinho. No 7 quem liga é o `pg`, que tem outros
- * padrões — 10 ligações e espera SEM prazo por uma ligação livre. Aqui ficam os do Prisma 5:
- * `processadores × 2 + 1` ligações por cliente (no Cloud Run, 1 processador = 3) e 10 s de espera; e,
- * como no 5, o endereço pode trocá-los com `connection_limit` e `pool_timeout` (o teste do checkout
- * com uma ligação só usa isso). Os dois saem do endereço antes de ele ir ao `pg`.
+ * AS LIGAÇÕES DE CADA CÓPIA DO SITE: 10 (decisão do operador, 27/10/2026 — achado P1 da revisão de
+ * segurança do passo 6 da etapa 4.7). Antes era o padrão do Prisma 5, `processadores × 2 + 1`, que no
+ * Cloud Run, com 1 processador, dava 3 — e 3 assinaturas esperando a Stripe ocupavam todas, travando
+ * a aula de quem paga. Num guichê, cada consulta leva milésimos; o que esgota as ligações são as que
+ * ficam paradas (as assinaturas — `assinaturas-em-andamento.ts`). Mais que isso não ajuda: uma cópia
+ * atende até 160 pedidos ao mesmo tempo, e abrir centenas de ligações num pico gasta o processador.
+ */
+export const LIGACOES_POR_COPIA = 10;
+
+/**
+ * As ligações com o banco. No Prisma 7 quem liga é o `pg`, que tem outros padrões — 10 ligações e
+ * espera SEM prazo por uma ligação livre. Aqui: `LIGACOES_POR_COPIA` ligações por cliente e 10 s de
+ * espera (o do Prisma 5); e, como no 5, o endereço pode trocá-los com `connection_limit` e
+ * `pool_timeout` (o teste do checkout com uma ligação só usa isso). Os dois saem do endereço antes de
+ * ele ir ao `pg`.
  *
  * O TLS: o `sslmode=require` vira `verify-full`, que é o que o `pg` já faz com ele (confere o
  * certificado e o nome do servidor). Em PRODUÇÃO ele é obrigatório: sem `sslmode` o `pg` ligaria sem
@@ -65,13 +74,18 @@ export function configuracaoDasLigacoes(endereco: string, emProducao = process.e
   }
   return {
     connectionString: url.toString(),
-    max: limite ?? availableParallelism() * 2 + 1,
+    max: limite ?? LIGACOES_POR_COPIA,
     connectionTimeoutMillis: (esperaEmSegundos ?? 10) * 1000,
     idleTimeoutMillis: 300_000,
   };
 }
 
 /** Um cliente do banco, com as ligações acima. Sem o endereço, para na hora — e diz por quê. */
+/** Quantas ligações o cliente do site abre: o `connection_limit` do endereço, ou as `LIGACOES_POR_COPIA`. */
+export function limiteDeLigacoes(endereco = process.env.DATABASE_URL): number {
+  return (endereco ? configuracaoDasLigacoes(endereco).max : undefined) ?? LIGACOES_POR_COPIA;
+}
+
 export function novoPrisma(endereco = process.env.DATABASE_URL): PrismaClient {
   if (!endereco) throw erroNoEndereco("não configurado: o servidor não tem banco");
   return new PrismaClient({ adapter: new PrismaPg(configuracaoDasLigacoes(endereco)) });

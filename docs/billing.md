@@ -775,8 +775,12 @@ pública de assinar*), o teto da prévia (*Limite de tentativas*), o código de 
   primeira senha e a sessão), e o painel da Stripe, os avisos dela e uma cópia do banco não podem
   levá-la. O código vai só ao navegador; toda busca e toda comparação são pelo resumo (revisão de
   segurança do passo 5, 21/10/2026). *Sem gatilho — é como se guarda o que vale como senha.*
-- **No máximo 3 "assinar sem login" em andamento ao mesmo tempo**, somando todos os endereços
-  (`ASSINATURAS_SEM_LOGIN_AO_MESMO_TEMPO`, achado P1 da revisão de segurança do passo): cada um
+- **No máximo 3 "assinar sem login" em andamento ao mesmo tempo** *(REVISTO no passo 6, 27/10/2026 —
+  achado P1 da revisão de segurança: com 1 processador por cópia, o banco tinha 3 ligações, e as 3
+  assinaturas ocupavam todas. Agora cada cópia tem **10 ligações** (decisão do operador) e o teto é
+  de TODAS as assinaturas, com e sem login: **as ligações menos 2**, que ficam livres para as aulas —
+  8 por cópia; `lib/assinaturas-em-andamento.ts`. O resto deste item continua valendo)*, somando
+  todos os endereços (achado P1 da revisão de segurança do passo 4): cada um
   segura uma ligação com o banco enquanto a Stripe responde, e sem conta nada os limitava — uma
   dúzia de endereços disparando juntos deixaria a aula de quem paga esperando. Cheio, 409
   `MuitosAoMesmoTempo` com `Retry-After` na hora, antes de abrir qualquer transação — um código

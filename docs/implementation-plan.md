@@ -5092,6 +5092,23 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                   reprovam.
             - [ ] **6f — Prova e revisão**: `security-vulnerability-reviewer`, mutação, prova no
                   banco de dev com conta descartável e cartões de teste, a tela olhada em dev.
+                  - [x] **A revisão de segurança** (27/10/2026): nenhum P0; um P1 e três P2.
+                  - [x] **O P1 corrigido** *(decisão do operador, no mesmo dia: "10 por cópia")*: com 1
+                        processador, cada cópia tinha 3 ligações com o banco, e 3 assinaturas esperando
+                        a Stripe ocupavam todas (a aula de quem paga esperava). Agora 10 ligações por
+                        cópia (`LIGACOES_POR_COPIA`, `lib/ligacoes.ts`), e um teto único de assinaturas
+                        em andamento — com e sem login —, as ligações menos 2 (`lib/assinaturas-em-
+                        andamento.ts`; cheio → 409 `MuitosAoMesmoTempo`, e a tela logada também diz
+                        "Aguarde um instante e tente novamente."). Testes (o teto do visitante, o do
+                        logado, as ligações) e mutação (o teto que nunca enche · o logado fora do teto ·
+                        nenhuma ligação livre · de volta a 3 ligações · a tela logada sem a frase): as
+                        cinco reprovam.
+                  - [x] **A prova no banco de dev** (27/10/2026, a migration da 6b aplicada lá antes):
+                        16 de 16 — o visitante assina com CPF, a tentativa só como resumo na ficha e na
+                        Stripe, o CPF na ficha do cliente (`br_cpf`), o pagamento com cartão de teste, a
+                        conta nascendo pela sincronia, a confirmação, a senha criada e o acesso, a
+                        repetição recusada (`JaTemSenha`), e o logado com CNPJ (`br_cnpj`); o banco
+                        voltou ao retrato de antes.
             - [ ] **Depois da publicação com a 6a:** o CPF passa a ser OBRIGATÓRIO no servidor
                   (`assinarSchema`, `core/src/schemas/billing.ts`) — tira o "sem o CPF ainda
                   assina" e o teste dele.

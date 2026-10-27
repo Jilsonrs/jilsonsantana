@@ -34,7 +34,8 @@ import { prisma } from "../lib/prisma.js";
 import { DocumentoRecusado } from "../lib/stripe.js";
 import { sincronizarAssinatura } from "../lib/assinaturas.js";
 import { LIMITES_DO_VISITANTE } from "../lib/limite-de-tentativas.js";
-import { ASSINATURAS_SEM_LOGIN_AO_MESMO_TEMPO, assinaturaSemLoginNoAr } from "../routes/billing-sem-login.js";
+import { assinaturaSemLoginNoAr } from "../routes/billing-sem-login.js";
+import { assinaturasAoMesmoTempo } from "../lib/assinaturas-em-andamento.js";
 
 // ASSINAR SEM LOGIN (Fase 4, etapa 4.7, passo 4 — billing.md → *Assinar sem conta*). O que estes
 // testes protegem — é a fronteira de dinheiro, aberta a quem não entrou:
@@ -478,28 +479,30 @@ describe("assinar sem login — quem já pagou, e os dois cliques", () => {
     expect(criarClienteDoVisitante).toHaveBeenCalledTimes(1);
   });
 
-  it(`no máximo ${ASSINATURAS_SEM_LOGIN_AO_MESMO_TEMPO} em andamento, somando todos os endereços: o seguinte ouve 'muitos ao mesmo tempo' na hora (a tela pede para aguardar), sem ir à Stripe nem abrir transação`, async () => {
-    expect(ASSINATURAS_SEM_LOGIN_AO_MESMO_TEMPO).toBe(3);
+  // O TETO é o de todas as assinaturas da cópia: as ligações menos 2 (passo 6 — 10 ligações, 8 assinaturas).
+  it("no máximo o teto em andamento, somando todos os endereços: o seguinte ouve 'muitos ao mesmo tempo' na hora (a tela pede para aguardar), sem ir à Stripe nem abrir transação", async () => {
+    const TETO = assinaturasAoMesmoTempo();
+    expect(TETO).toBe(8);
     let soltar!: () => void;
     const segura = new Promise<void>((ok) => (soltar = ok));
     let entraram = 0;
     let todos!: () => void;
     const cheios = new Promise<void>((ok) => (todos = ok));
-    // Os três primeiros ficam PARADOS na primeira ida à Stripe (os preços).
+    // Os do teto ficam PARADOS na primeira ida à Stripe (os preços).
     buscarPrecos.mockImplementation(async () => {
-      if (++entraram === 3) todos();
+      if (++entraram === TETO) todos();
       await segura;
       return PRECOS;
     });
-    const parados = [1, 2, 3].map((i) => assinar(pedido(novoEmail()), `198.51.100.${80 + i}`).then((res) => res));
+    const parados = Array.from({ length: TETO }, (_, i) => assinar(pedido(novoEmail()), `198.51.100.${121 + i}`).then((res) => res));
     await cheios;
     const quarto = await assinar(pedido(novoEmail()), "198.51.100.89");
     // Um código próprio, e não o "ocupada" das duas abas: a tela diz "Aguarde um instante e tente novamente."
     expect([quarto.status, quarto.body]).toEqual([409, { error: "MuitosAoMesmoTempo" }]);
     expect(Number(quarto.headers["retry-after"])).toBeGreaterThan(0);
-    expect(buscarPrecos).toHaveBeenCalledTimes(3);
+    expect(buscarPrecos).toHaveBeenCalledTimes(TETO);
     soltar();
-    expect((await Promise.all(parados)).map((r) => r.status)).toEqual([200, 200, 200]);
+    expect((await Promise.all(parados)).map((r) => r.status)).toEqual(Array.from({ length: TETO }, () => 200));
     // Terminados, a vaga volta.
     buscarPrecos.mockResolvedValue(PRECOS);
     expect((await assinar(pedido(novoEmail()), "198.51.100.89")).status).toBe(200);

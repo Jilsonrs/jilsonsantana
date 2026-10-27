@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { comVaga } from "../lib/assinaturas-em-andamento.js";
 import { assinarSchema, cancelarSchema, mudarDePlanoSchema, previaSchema, type AssinaturaCriada, type CartaoTrocado, type PlanosDaAssinatura, type PreviaDaAssinatura, type PlanoMudado, type ReembolsoFeito, type RenovacaoParada, type SituacaoDaAssinatura, type TrocaDeCartaoPreparada, type TrocaDesfeita, type TrocaDisponivel } from "@jilson/core";
 import { requireAuth } from "../middleware/auth.js";
 import { validate } from "../lib/http.js";
@@ -90,7 +91,15 @@ router.post("/billing/assinatura", requireAuth, ...limiteDeTentativas.cobranca, 
     res.status(503).json({ error: "NaoConfigurado" });
     return;
   }
-  const desfecho = await assinar({ id: user.id, email: user.email, nome: user.name ?? null }, corpo);
+  // O MESMO teto das assinaturas sem login (`lib/assinaturas-em-andamento.ts`): cada uma segura uma
+  // ligação com o banco enquanto a Stripe responde, e sempre ficam 2 livres para as aulas.
+  const vaga = await comVaga(() => assinar({ id: user.id, email: user.email, nome: user.name ?? null }, corpo));
+  if (vaga.cheio) {
+    res.set("Retry-After", "2");
+    res.status(409).json({ error: "MuitosAoMesmoTempo" });
+    return;
+  }
+  const desfecho = vaga.resultado;
   if (desfecho.resultado === "ja-assinante") {
     res.status(409).json({ error: "JaAssinante" });
     return;
