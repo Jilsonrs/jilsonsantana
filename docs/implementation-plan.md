@@ -67,6 +67,14 @@
 > aviso da Stripe sem assinatura (400); o job das migrations com sucesso, sem migration nova. A versão
 > do app não mudou (`mvr43nr8-51a660b2`): só a configuração mudou. **Falta: o teste do operador no
 > ar**, como visitante, pela prévia.
+> **Publicado em 28/10/2026 (UTC; noite de 27/10 no Brasil): `d1d85fa`** — o botão Assinar por último,
+> como a Udemy (etapa 4.7, 6h), e o vigia contra a página em branco de antes de uma publicação (Fase 7);
+> ordem do operador: "Publica". **Revisão `jilson-prod-00044`**, conferida de fora: a versão nova do
+> app (`mvrh8d0t-b7ff4103`; antes, `mvr43nr8-51a660b2`); o vigia é o primeiro script da página do app,
+> e o arquivo principal que ela cita responde 200; a venda sem login (200); a saúde e o curso (200); a
+> assinatura sem login (401); o login com um e-mail que não existe (401); o aviso da Stripe sem
+> assinatura (400); o público no "Em breve", também na `/assinar` e na aula; o job das migrations com
+> sucesso, sem migration nova. **O vigia protege as páginas abertas depois desta publicação.**
 > **Publicado em 24–25/10/2026:** `d6c2906` — o endereço do CDN do Bunny corrigido (P105) e a
 > conferência dele no CI; `f09a903` — o download do arquivo da aula em pedaços (o Cloud Run recusava
 > acima de 32 MB); `294b106` — o segundo mais novo vence entre aparelhos. Conferidos de fora (o site
