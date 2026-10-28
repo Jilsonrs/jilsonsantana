@@ -5,6 +5,7 @@ import { randomUUID } from "node:crypto";
 import { defineConfig } from "vitest/config";
 import type { Plugin } from "vite";
 import react from "@vitejs/plugin-react";
+import { vigiaDoArquivoQueSumiu } from "./src/lib/arquivo-que-sumiu";
 
 // A IDENTIDADE DESTA VERSÃO do app (decisão do operador, 06/10/2026: atualizar o
 // site sem atrapalhar quem está estudando). Nasce a cada montagem e vai para dois
@@ -25,7 +26,9 @@ function arquivoDaVersao(versao: string): Plugin {
 }
 
 export default defineConfig({
-  plugins: [react(), arquivoDaVersao(VERSAO_DO_APP)],
+  // O vigia escrito na página (27/10/2026): a página guardada de antes de uma publicação pede um
+  // arquivo do app que já não existe, e recarrega uma vez em vez de ficar em branco (`src/lib/arquivo-que-sumiu.ts`).
+  plugins: [react(), arquivoDaVersao(VERSAO_DO_APP), vigiaDoArquivoQueSumiu()],
   define: {
     __VERSAO_DO_APP__: JSON.stringify(VERSAO_DO_APP),
   },

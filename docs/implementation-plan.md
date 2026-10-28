@@ -6353,6 +6353,23 @@ outro aparelho e "daqui a um mês", e o Safari apaga o armazenamento do site em 
 - [ ] LGPD: privacy policy, terms, consent, data export/delete path (in Portuguese only — the
       English versions left on 12/10/2026)
 - [ ] Error/loading states everywhere; security review (subagent) on auth/billing/video
+      - [x] **A página em branco ao reabrir uma página de antes de uma publicação** *(achado do
+            operador, 27/10/2026: "Eu abro uma aula para assistir e mudo de guia […] quando volto
+            fica tudo em branco")*. **Medido no registro do Google:** às 00:58:53 o Safari reabriu
+            uma página de 26/10 e pediu o arquivo PRINCIPAL do app daquela versão (404) — sem ele o
+            app nem começa, e a proteção de `recarregar.ts`, que mora no app, nunca roda. **O
+            conserto:** um vigia escrito no começo da página do app (`client/src/lib/arquivo-que-sumiu.ts`,
+            ligado pelo `vite.config.ts`; a `/assinar` o recebe pelas etiquetas do app): script ou
+            folha de estilo do app que não chega recarrega a página uma vez, com a MESMA trava de 30 s
+            do app. Testes executam o vigia de verdade; mutação (nunca reconhece o arquivo · sem a
+            trava · qualquer arquivo recarrega · o vigia no fim da página · o Vite sem o plugin): as
+            cinco reprovam.
+            **Em aberto:** a aba da aula no Chrome (por volta de 01:27) ficou em branco SEM fazer
+            pedido nenhum ao site — não é este caso. Na próxima vez: o Console do navegador
+            (botão direito → Inspecionar → Console) com o que estiver em vermelho.
+            *(Achado junto, reportado e não consertado: a home aponta `og:image` para
+            `/img/og-home.jpg`, que não existe — 404 no registro; o cartão do link compartilhado sai
+            sem foto.)*
 - [ ] **A proteção na entrada, revista antes da abertura** *(pedido do operador, 27/10/2026)* — conferir
       com o operador os sinais de ataque e a escada do que ligar (`tech-stack.md` → *Proteção na
       entrada*), e se algum gatilho já se cumpriu. Nada se liga sem gatilho.

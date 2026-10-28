@@ -9,10 +9,12 @@
 // sozinho (não há como travar o ciclo): a tela de erro oferece o botão.
 // Com um envio de vídeo em andamento também não: recarregar o cortaria.
 
+import { CHAVE_DA_TRAVA, JANELA_DA_TRAVA } from "@/lib/arquivo-que-sumiu";
 import { haTrabalhoEmAndamento } from "@/lib/versao";
 
-const CHAVE = "jilson:recarregou-por-versao";
-export const JANELA_DA_TRAVA = 30_000;
+// A trava é UMA só, com o vigia escrito na página (`arquivo-que-sumiu.ts`): os dois não recarregam em ciclo.
+const CHAVE = CHAVE_DA_TRAVA;
+export { JANELA_DA_TRAVA };
 
 /** Recarregar a página — num objeto, para o teste poder observar (o jsdom não deixa trocar `location.reload`). */
 export const pagina = { recarregar: (): void => window.location.reload() };
