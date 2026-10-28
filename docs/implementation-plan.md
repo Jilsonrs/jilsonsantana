@@ -58,6 +58,15 @@
 > sucesso, aplicando a `20261027130000_resumo_da_tentativa` (só dados, sem mudar a estrutura).
 > **Falta:** o operador abrir a `/assinar` no ar (pelo `/__preview`) — só ele vê a página atrás do
 > "Em breve". **Destravado por esta publicação:** o CPF obrigatório no servidor (etapa 4.7, passo 6).
+> **Publicado em 27/10/2026, depois: `76f5f43` — A VENDA SEM LOGIN LIGADA, antes da abertura**
+> (decisão do operador: `ASSINAR_SEM_LOGIN: "true"` em `deploy/cloud-run.yaml`; o risco aceito por
+> ele em `billing.md` → *Assinar sem conta*), **revisão `jilson-prod-00043`**, conferida de fora: a
+> chave no serviço (`ASSINAR_SEM_LOGIN=true`, com `COMING_SOON=true`); `/api/billing/visitante/planos`
+> → 200, com o mensal e o anual (antes, 404); o público segue no "Em breve", também na `/assinar`; a
+> saúde e o curso (200); a assinatura sem login (401); o login com um e-mail que não existe (401); o
+> aviso da Stripe sem assinatura (400); o job das migrations com sucesso, sem migration nova. A versão
+> do app não mudou (`mvr43nr8-51a660b2`): só a configuração mudou. **Falta: o teste do operador no
+> ar**, como visitante, pela prévia.
 > **Publicado em 24–25/10/2026:** `d6c2906` — o endereço do CDN do Bunny corrigido (P105) e a
 > conferência dele no CI; `f09a903` — o download do arquivo da aula em pedaços (o Cloud Run recusava
 > acima de 32 MB); `294b106` — o segundo mais novo vence entre aparelhos. Conferidos de fora (o site
