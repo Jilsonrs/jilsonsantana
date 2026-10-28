@@ -5185,8 +5185,11 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             de abrir: as pendências P58 (o nome na fatura) e P60 (a opção do painel) — a P91 (o
             Radar) fechou em 20/10/2026, e a P75 (o limite do reembolso) em 21/10/2026 —, a cópia do banco
             (Fase 7) e a revisão de segurança da etapa inteira. A publicação é ordem dele.
-            **No dia de abrir, o operador liga `ASSINAR_SEM_LOGIN=true` na Railway** (do passo 4,
-            21/10/2026): sem ela, as rotas sem login respondem 404 no site, e a tela pública não assina.
+            **A venda sem login foi LIGADA em 27/10/2026, antes da abertura** *(decisão do operador:
+            "quando a escola estiver pronta é só tirar o aviso")*: `ASSINAR_SEM_LOGIN: "true"` em
+            `deploy/cloud-run.yaml`, para ele testar tudo no site no ar, atrás do "Em breve". No dia de
+            abrir, basta tirar o aviso. A API não fica atrás do aviso — o risco, aceito por ele, e o
+            gatilho estão em `billing.md` → *Assinar sem conta*.
             **Da revisão de segurança do passo 4:** depois de publicar, rodar no banco de produção
             o SQL de RLS do `CLAUDE.md` (a tabela `guest_checkout` é nova — esperado: zero linhas) ·
             conferir com o operador o tamanho do caixa de ligações do banco na Railway

@@ -224,8 +224,9 @@ necessário")*. Nada daqui se liga sem o gatilho cumprido; o detalhe de cada rec
   cobrança com login, por conta e por endereço; o assinar sem login, por e-mail e por endereço (e no
   máximo 3 ao mesmo tempo por cópia); o código no e-mail. Os tetos: `server/src/lib/limite-de-tentativas.ts`
   e `billing.md` → *Limite de tentativas*.
-- **O assinar sem login fica fora do ar** em produção até o `ASSINAR_SEM_LOGIN=true` (passo 8 da etapa
-  4.7) — é a porta mais visada por quem testa cartão roubado.
+- **O assinar sem login só funciona** em produção com o `ASSINAR_SEM_LOGIN=true` — é a porta mais visada
+  por quem testa cartão roubado. **Ligado desde 27/10/2026**, antes da abertura (decisão do operador:
+  `billing.md` → *Assinar sem conta*); desligar a variável fecha a venda sem fechar o site.
 - **A Stripe** tem a própria proteção contra fraude no pagamento (o Radar) `[conhecido, não conferido no
   painel]`.
 - **Tetos de gasto:** no máximo 3 cópias do servidor e 4 unidades no banco — um ataque deixa o site lento
