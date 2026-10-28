@@ -5358,7 +5358,8 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             tentativa (decisão (a)) · o aviso de renovação do plano anual.
       - [ ] **Passo 8 — O teste com cartão de verdade e a abertura ao público.** O teste do
             operador no site no ar (mensal → anual → reembolso), olhando a taxa da Stripe. Antes
-            de abrir: as pendências P58 (o nome na fatura) e P60 (a opção do painel) — a P91 (o
+            de abrir: as pendências P58 (o nome na fatura — **fechada em 28/10/2026**:
+            `JILSONSANTANA.COM`, `billing.md` → *O nome na fatura*) e P60 (a opção do painel) — a P91 (o
             Radar) fechou em 20/10/2026, a P75 (o limite do reembolso) em 21/10/2026 **e a P60 em
             28/10/2026** (a conta de verdade em "cancelar", Smart Retries 8× em 2 semanas, os e-mails
             da Stripe desligados — `billing.md` → *Régua de inadimplência*) —, a cópia do banco
@@ -5424,7 +5425,9 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             `[email]` mostram).
             **Da proposta da tela pública (agente, 12/10/2026):** antes de abrir, também os
             Termos de Uso e a Política de Privacidade no ar (a tela de assinar aponta para os
-            dois; hoje são pendência da Fase 7 e a P61) · a **P84** (o cartão promete o JilsonAI
+            dois; hoje são pendência da Fase 7 e a P61) — **e a página de contato (`/contato`):
+            desde 28/10/2026 o painel da Stripe aponta o suporte para ela, e os termos e a
+            privacidade para `/termos` e `/privacidade`** (`billing.md` → *O nome na fatura*) · a **P84** (o cartão promete o JilsonAI
             e o Pix, que ainda não existem) · a resposta da FAQ sobre nota fiscal já trocada por
             ele no admin (decisão de 12/10/2026: "sempre que solicitada").
             **A entrega dos e-mails (do passo 3, 21/10/2026):** antes de abrir, medir de novo

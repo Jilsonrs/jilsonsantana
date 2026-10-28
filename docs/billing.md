@@ -46,6 +46,29 @@ na entrada Out 2026 (28) do changelog do `CLAUDE.md`; o texto antigo destas seç
 dado novo — o Stripe Tax ou o Managed Payments aceitarem empresa do Brasil, ou a empresa mudar
 de país.*
 
+## O nome na fatura do cartão e o nome público *(decisão do operador, 28/10/2026 — P58)*
+
+- **Na fatura do cartão do aluno** (o *statement descriptor* da conta de verdade): **`JILSONSANTANA.COM`**
+  — o aluno reconhece o site na hora, que é o que mais evita contestação. *(Recomendação do agente,
+  escolhida entre "JILSON SANTANA" e outro nome.)* O descritor curto (o prefixo que a Stripe usa quando
+  um produto tem descritor próprio): **`JILSON`**. **Aplicados pelo operador no painel da conta de
+  verdade em 28/10/2026 — P58 fechada.**
+- **O nome público da empresa** (o que a Stripe escreve embaixo do campo do cartão: "…você permite que
+  **Jilson Santana** faça a cobrança para pagamentos futuros…"): **`Jilson Santana`** — o mesmo nome do
+  remetente dos e-mails da escola.
+- Onde: painel da Stripe, conta de verdade, *Settings → Business → Business details*. A área restrita não
+  mostra fatura nenhuma, então lá o campo fica como está. **Nenhum código:** o site não escreve
+  descritor por cobrança.
+- **Os dados de suporte na mesma tela** *(preenchidos pelo operador em 28/10/2026)*: o nome
+  `Jilson Santana`; o e-mail `suporte@jilsonsantana.com`; o site `https://www.jilsonsantana.com` (com
+  `www` — sem ele, 404); e três páginas que **ainda não existem**, com o endereço final já escrito
+  (*a regra de `ROTAS_PUBLICAS`, `core/src/constants/site.ts` — decisão do operador, set/2026: o link
+  nasce no lugar certo*): suporte `…/contato`, privacidade `…/privacidade` e termos `…/termos`. **As
+  três precisam estar no ar antes de abrir ao público** (o passo 8); até lá, quem as abre vê o "Em
+  breve". O telefone fica cadastrado e fora dos recibos.
+*Reabre se a escola mudar de nome ou de endereço, ou se contestações mostrarem que o aluno não
+reconhece a cobrança.*
+
 ## Formas de pagamento: cartão E Pix *(decisão do operador, set/2026)*
 
 A escola aceita **cartão e Pix**, e o Pix é **recorrente**: o aluno autoriza uma vez no
