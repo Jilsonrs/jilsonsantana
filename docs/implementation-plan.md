@@ -5643,8 +5643,80 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       fora, o PaymentIntent gravado nos metadados dela — e o espelho nasce como hoje; no fim do período
       ela termina (o e-mail "terminou — reative" já existe); a rodada ganha o aviso "seu acesso acaba
       em X dias — pague de novo"; a troca de plano e a troca de cartão não valem para o pré-pago; o
-      reembolso dos 7 dias devolve o Pix. O plano detalhado, com as telas e os textos (dele), vem
-      depois do OK. **Trazido da 4.2 (10/10/2026):** o Pix é um item a mais na
+      reembolso dos 7 dias devolve o Pix. **A direção foi APROVADA pelo operador em 28/10/2026, com
+      o Apple Pay e o Google Pay juntos** (*"Aprovo, com Apple Pay e Google Pay juntos"*).
+      **O PLANO DA 4.9 — proposta do agente, 28/10/2026 (um passo por sessão, um commit por passo,
+      os quatro gates; a aprovar pelo operador).** *Docs check (context7):* Stripe →
+      `/websites/stripe` → as 4 consultas acima; o passo 2 abre com UMA consulta a mais (a opção
+      `paymentMethodConfiguration` do Payment Element com intenção adiada). O que é do operador vem
+      como pergunta na abertura de cada passo: os textos, a validade do QR (proposta: 1 hora), os
+      dias do aviso antes de acabar (proposta: 3), e a decisão abaixo.
+      **Decisões de produto propostas (valem se ele não disser o contrário ao aprovar):** (a) **pagar
+      de novo só DEPOIS de o período acabar** — o pré-pago não soma tempo por cima do que está correndo
+      (somar exige uma segunda assinatura começando no fim da primeira e a fatura dela paga por fora na
+      hora certa: mais código e mais erro; reabre se os números mostrarem gente querendo renovar antes);
+      (b) **sem código promocional no Pix, na primeira versão** — o desconto da Stripe é da assinatura,
+      e no Pix o valor é de um pagamento solto (o campo do código some quando o Pix é escolhido; reabre
+      se houver campanha com Pix); (c) os preços são os mesmos dos planos no cartão.
+      - [ ] **Passo 1 — A fundação (servidor + migration, ALTO RISCO).** A configuração de formas de
+            pagamento **só com Pix** na Stripe (uma por modo, criada pela API com o OK do operador; o
+            id em `deploy/cloud-run.yaml` e no `server/.env` — `STRIPE_PIX_CONFIGURATION`; não é
+            segredo). A coluna `Subscription.pixPaymentIntentId` (migration; nula = recorrente): é ela
+            que diz "pré-pago" às telas, à rodada e ao reembolso. `paraAssinaturaNaStripe` lê
+            `metadata.pix_payment_intent`. O novo `lib/pix-pre-pago.ts`: `criarPagamentoPix` (um
+            PaymentIntent com `automatic_payment_methods` + a configuração só-Pix, o valor do plano,
+            `expires_after_seconds`, e nos metadados o plano e QUEM paga — `userId`, ou a ficha e a
+            tentativa do visitante, como a assinatura leva hoje) e, no aviso `payment_intent.succeeded`
+            de um pagamento NOSSO (`verificarAviso` passa a devolvê-lo), a rotina que **cria a
+            assinatura pré-paga** — `cancel_at_period_end: true`, `default_incomplete`, os metadados
+            copiados mais `pix_payment_intent` — e **paga a primeira fatura por fora**
+            (`invoices.pay(paid_out_of_band)`), **idempotente pelo id do pagamento** (a trava
+            `pg_advisory_xact_lock` no id do pagamento; antes de criar, procura o espelho pela coluna e
+            a Stripe pelos metadados), e então a sincronia de sempre grava o espelho (e a conta do
+            visitante nasce ali, como hoje). O aviso repetido e dois ao mesmo tempo não criam duas.
+            Testes de servidor com a Stripe de dublê: a assinatura nasce paga e ativa, o espelho, a
+            conta do visitante, o repetido, a corrida, o pagamento que não é nosso (ignorado), a
+            migration do zero. Mutação.
+      - [ ] **Passo 2 — Pagar com Pix nas duas telas (rotas + site).** `POST /billing/pix` (login,
+            `limiteDeTentativas.cobranca`, `comVaga`, o CPF obrigatório como no cartão) e
+            `POST /billing/visitante/pix` (`limiteSemLogin.assinar` — e-mail e endereço —, a ficha e a
+            tentativa como hoje, `contarClienteNovo`): respondem `{ estado: "pagar", segredo, tipo: "pix"
+            }`; quem já tem acesso recebe 409 `JaAssinante` (decisão (a)). `GET /billing/planos` e o do
+            visitante passam a dizer `pix: { configuracao }`. No site: a escolha **"Cartão — renova
+            sozinho" / "Pix — você paga e estuda por 1 mês ou 1 ano, sem renovação automática"** antes
+            do campo de pagamento (texto do operador); com Pix, o campo abre em `mode: "payment"` com a
+            configuração só-Pix e o código promocional some; `confirmPayment` → a própria Stripe.js
+            mostra o QR (imagem e "copia e cola") e fecha quando o Pix cai; a tela de concluído já
+            pergunta ao gate a cada 2 s; **se a pessoa fechar o QR sem pagar, um botão "Mostrar o QR de
+            novo"** (`handleNextAction`, que já existe). Testes de tela: a escolha, o campo no modo
+            certo, o código escondido, o QR de novo; de servidor: as duas rotas, os limites, o teto, o
+            409. Mutação.
+      - [ ] **Passo 3 — O pré-pago nas telas do aluno e nas operações.** `minha-assinatura.ts`:
+            a pré-paga vem com `prePago: true` e `acessoAte`, sem parar/manter/mudar de plano/trocar
+            cartão (a renovação não existe); Faturamento mostra "Seu acesso vai até DD/MM; para
+            continuar, é só pagar de novo quando acabar" (texto dele). **O reembolso dos 7 dias
+            devolve o Pix**: `stripe-reembolso.ts` ganha o ramo do pagamento solto (`refunds.create` pelo
+            `pixPaymentIntentId`) e `cancelarNaHora`; o aviso `charge.refunded` de um Pix acha a
+            assinatura **pela coluna do espelho**, não pela fatura (hoje só a fatura). As rotas de
+            cartão e de plano recusam a pré-paga (409 `PrePago`). Testes nos dois lados; mutação.
+      - [ ] **Passo 4 — Os e-mails do pré-pago.** `emailDevido`: ativa + pré-paga + acaba em N dias
+            (proposta: 3) → `PREPAGO_TERMINANDO` ("seu acesso acaba dia X; depois, é só pagar de novo" —
+            texto dele), pela rodada de hora em hora (a consulta ganha as pré-pagas perto do fim); no
+            fim, a Stripe cancela e sai o "terminou — reative" que já existe (com uma frase própria
+            para o pré-pago, se ele quiser). Testes e mutação como no passo 7.
+      - [ ] **Passo 5 — Apple Pay e Google Pay.** O arquivo da Apple servido em
+            `/.well-known/apple-developer-merchantid-domain-association` (o `express.static` ignora
+            pasta com ponto por padrão: rota própria, com teste); o operador registra o domínio
+            `www.jilsonsantana.com` em *Payment method domains* (modo de teste e de verdade) e baixa o
+            arquivo de lá; nada muda no código do campo (as carteiras aparecem sozinhas com `card`).
+            A prova é no aparelho (iPhone/Safari e Chrome com Google Pay), pelo operador.
+      - [ ] **Passo 6 — Prova e revisão.** Na área restrita: como se confirma um Pix de teste (a
+            página de instruções da Stripe em teste), o pré-pago de ponta a ponta com o relógio de
+            teste (nasce, avisa 3 dias antes, termina, "terminou"), o reembolso do Pix, o QR vencido;
+            no banco de dev; a revisão de segurança (`security-vulnerability-reviewer`); o Pix de
+            verdade (R$ 99,90 e o reembolso) é do teste do operador no passo 8 da 4.7.
+      **Fora da 4.9:** somar tempo pagando antes de acabar (decisão (a)) · código promocional no Pix
+      (decisão (b)) · Pix na troca de plano · o Pix Automático (quando a Stripe liberar para o Brasil). **Trazido da 4.2 (10/10/2026):** o Pix é um item a mais na
       lista de formas de pagamento do servidor (na 4.2, só cartão), sem refazer a tela. A home já
       diz "Pagamento no cartão ou no Pix": esta etapa fecha antes do lançamento.
       **Trazido da revisão de segurança da 4.2 (10/10/2026):** com o Pix o pagamento chega minutos
