@@ -116,7 +116,7 @@ describe("a cobrança que falhou", () => {
     expect([pedido?.para, pedido?.chave, pedido?.referencia]).toEqual([conta.email, `cobranca-falhou/${espelho.id}/${falha.toISOString()}`, `conta:${conta.id} assinatura:${sub}`]);
     const texto = pedido?.mensagem.paragrafos.join(" ") ?? "";
     expect(texto).toContain(`Vamos tentar de novo no dia ${diaNoEmail(proxima)}.`);
-    expect(texto).toContain(`abertas até o dia ${diaNoEmail(new Date(falha.getTime() + 3 * DIA))}`);
+    expect(texto).toContain(`acesso às aulas até o dia ${diaNoEmail(new Date(falha.getTime() + 3 * DIA))}`);
     expect(pedido?.mensagem.botao).toEqual({ texto: "Trocar cartão", endereco: enderecoDoSite(entrarPara("cartao")) });
     expect(pedido?.mensagem.botao?.endereco).toMatch(/\/login\?depois=cartao$/);
     expect(await marcas(sub)).toEqual([{ kind: "COBRANCA_FALHOU", reference: falha.toISOString() }]);
@@ -138,7 +138,7 @@ describe("a cobrança que falhou", () => {
       await enviar(avisoDaAssinatura(sub, "invoice.payment_failed"));
       const [pedido] = doTipo("cobranca-falhou");
       expect(pedido?.mensagem.paragrafos.join(" ")).not.toContain("Vamos tentar de novo");
-      expect(pedido?.mensagem.paragrafos.join(" ")).toContain("abertas até o dia");
+      expect(pedido?.mensagem.paragrafos.join(" ")).toContain("acesso às aulas até o dia");
     }
   });
 

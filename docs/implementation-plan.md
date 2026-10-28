@@ -5257,8 +5257,9 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                   na assinatura buscada (`proximaTentativa`, `encerradaSemPagamento`), o destino
                   `cartao` na lista do `core` (`DESTINOS_DEPOIS_DE_ENTRAR`, que a tela de entrar e os
                   e-mails usam) e o aviso da Stripe chamando a regra depois do commit. **Os textos:**
-                  rascunho do agente; o operador pediu para conferir depois (P107) — a prévia
-                  (`email:previa`) grava os quatro e-mails. Testes: `avisos-da-assinatura.test.ts`
+                  rascunho do agente, **conferidos pelo operador em 28/10/2026 nos e-mails de verdade da
+                  prova 7c — uma frase trocada por ele** (a do e-mail da falha: "Você continua tendo
+                  acesso às aulas até o dia…"); P107 fechada. A prévia (`email:previa`) grava os quatro. Testes: `avisos-da-assinatura.test.ts`
                   (16), `stripe.test.ts` (2) e `LoginPage.test.tsx` (2, e os nomes que não viram
                   destino). Mutação: 14 de 14 reprovaram (o último dia que nunca chega · a trancada
                   que manda · sem a marca · a marca que não volta · a cancelada com dias pagos · a

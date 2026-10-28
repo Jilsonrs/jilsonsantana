@@ -362,8 +362,9 @@ export const pt = {
         comoEntrar: "Para entrar, use seu e-mail e sua senha. Se ainda não criou a senha, ou não lembra dela, use \"Receber código de acesso\" na tela de entrar.",
         botao: "Entrar na escola"
       },
-      // OS E-MAILS DA COBRANÇA (etapa 4.7, passo 7 — decisões do operador, 28/10/2026): RASCUNHO do
-      // agente, que o operador confere depois, vendo os e-mails de verdade (pedido dele, 28/10/2026).
+      // OS E-MAILS DA COBRANÇA (etapa 4.7, passo 7 — decisões do operador, 28/10/2026): rascunho do
+      // agente, revisto pelo operador vendo os e-mails de verdade (28/10/2026, P107 — as frases dele
+      // estão marcadas).
       // `{data}` é o dia, no horário de Brasília.
       // Na cobrança que falhou: a próxima tentativa (sem ela, a frase sai) e até quando as aulas ficam abertas.
       cobrancaFalhou: {
@@ -371,7 +372,8 @@ export const pt = {
         titulo: "Não conseguimos renovar sua assinatura",
         naoPassou: "O pagamento da renovação não passou no seu cartão.",
         novaTentativa: "Vamos tentar de novo no dia {data}.",
-        abertasAte: "Suas aulas continuam abertas até o dia {data}. Para não perder o acesso, troque o cartão:",
+        // Texto do operador (28/10/2026).
+        abertasAte: "Você continua tendo acesso às aulas até o dia {data}. Para não perder o acesso, troque o cartão:",
         botao: "Trocar cartão"
       },
       // No último dia antes de as aulas trancarem.

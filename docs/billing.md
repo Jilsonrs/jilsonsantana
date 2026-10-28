@@ -202,8 +202,9 @@ do agendador, passo 7b); cada e-mail sai uma vez (a marca em `subscription_email
 fica pendente até o Resend confirmar e, pendente há mais de 15 minutos, é retomada pela vez seguinte —
 quem a tomou caiu no meio; a chave do Resend impede o dobro (revisão da etapa, 28/10/2026).* **Quem
 cancelou e já assinou de novo, e a conta excluída, não recebem o de cancelada** (a marca é consumida sem
-envio — "reative" seria errado); a cancelada com dias pagos recebe quando o período acaba. Os
-textos são rascunho do agente, que o operador confere (P107).
+envio — "reative" seria errado); a cancelada com dias pagos recebe quando o período acaba. **Os
+textos foram conferidos pelo operador em 28/10/2026**, nos e-mails de verdade (uma frase dele, no da
+falha); moram em `pt.ts` (`app.email`), fora de Admin → Textos.
 *Reabre se os números mostrarem gente perdendo as aulas sem ter lido os dois e-mails, ou reclamando
 de e-mail demais.*
 **NO CÓDIGO desde 12/10/2026 (etapa 4.6b).** A regra mora em `assinaturaDaAcesso`
