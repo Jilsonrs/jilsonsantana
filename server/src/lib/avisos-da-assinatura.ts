@@ -18,7 +18,10 @@ import { montarAvisoDaCobranca, type EmailDevido } from "../views/email-da-cobra
 //   - CANCELADA (`canceled` — a assinatura que foi paga; a que expirou sem o primeiro pagamento é
 //     `incomplete_expired` e não recebe nada: decisão (b)) e JÁ SEM DIAS PAGOS → "sua assinatura
 //     terminou", com o botão de reativar. Com dias pagos (o cancelamento na hora, pelo painel), nada
-//     até o período acabar — o texto diz que o acesso acabou.
+//     até o período acabar — o texto diz que o acesso acabou;
+//   - a PRÉ-PAGA (Pix, etapa 4.9, passo 4 — decisão do operador, 28/10/2026: "3 dias antes"), ativa e
+//     a até 3 dias do fim do acesso → "está acabando", sem botão (pagar de novo é só depois de acabar);
+//     quando acaba, a Stripe a encerra e sai o "terminou" de sempre, com o botão de reativar.
 // QUEM CHAMA: o aviso da Stripe, depois do commit, em todo aviso da assinatura (`stripe-webhook.ts`),
 // e a rodada de hora em hora do agendador (etapa 4.7, passo 7b), que é quem manda o "antes de trancar"
 // e o que ficou para trás. Fora de transação e de trava (CLAUDE.md → *Membership Gating*).
@@ -34,6 +37,8 @@ import { montarAvisoDaCobranca, type EmailDevido } from "../views/email-da-cobra
 const DIA_EM_MS = 24 * 60 * 60 * 1000;
 /** O "antes de trancar" sai no último dia antes de as aulas trancarem (decisão do operador, 28/10/2026: "1 dia antes"). */
 export const ANTECEDENCIA_DO_AVISO_EM_MS = DIA_EM_MS;
+/** O "está acabando" da pré-paga sai quando faltam até 3 dias para o fim do acesso (decisão do operador, 28/10/2026). */
+export const ANTECEDENCIA_DO_PREPAGO_EM_MS = 3 * DIA_EM_MS;
 /** Uma marca PENDENTE há mais que isto é retomada: quem a tomou caiu entre tomar e confirmar o envio. */
 export const PRAZO_DA_MARCA_PENDENTE_EM_MS = 15 * 60 * 1000;
 /** A rodada para de pegar assinaturas depois disto: o job tem 5 minutos, e cada uma pode levar ~40 s. */
@@ -52,12 +57,19 @@ const FIM = "fim";
  * que não muda enquanto ela continua atrasada — `assinaturas.ts`): uma falha nova é outro e-mail.
  * A cancelada que ainda tem dias pagos não deve nada AINDA: deve quando o período acabar.
  */
-export function emailDevido(espelho: { status: string; currentPeriodEnd: Date | null }, agora: Date = new Date()): EmailDevido | null {
+export function emailDevido(espelho: { status: string; currentPeriodEnd: Date | null; pixPaymentIntentId?: string | null }, agora: Date = new Date()): EmailDevido | null {
   if (cobrancaAtrasada(espelho)) {
     const trancaEm = aulasAbertasAte(espelho);
     if (!espelho.currentPeriodEnd || !trancaEm || trancaEm <= agora) return null;
     const ultimoDia = trancaEm.getTime() - agora.getTime() <= ANTECEDENCIA_DO_AVISO_EM_MS;
     return { tipo: ultimoDia ? SubscriptionEmailKind.ANTES_DE_TRANCAR : SubscriptionEmailKind.COBRANCA_FALHOU, referencia: espelho.currentPeriodEnd.toISOString(), trancaEm };
+  }
+  // A PRÉ-PAGA ativa (etapa 4.9): a até 3 dias do fim do acesso, "está acabando" — a referência é o fim
+  // (um período, um e-mail). Antes disso, nada; acabou, quem fala é a cancelada.
+  if (espelho.status === "active" && espelho.pixPaymentIntentId && espelho.currentPeriodEnd) {
+    const falta = espelho.currentPeriodEnd.getTime() - agora.getTime();
+    if (falta <= 0 || falta > ANTECEDENCIA_DO_PREPAGO_EM_MS) return null;
+    return { tipo: SubscriptionEmailKind.PREPAGO_TERMINANDO, referencia: espelho.currentPeriodEnd.toISOString(), trancaEm: espelho.currentPeriodEnd };
   }
   if (encerradaDeVez(espelho) && !assinaturaDaAcesso(espelho, agora)) return { tipo: SubscriptionEmailKind.CANCELADA, referencia: FIM, trancaEm: null };
   return null;
@@ -67,6 +79,7 @@ const TIPO_DO_ENVIO: Record<SubscriptionEmailKind, TipoDeEmail> = {
   COBRANCA_FALHOU: "cobranca-falhou",
   ANTES_DE_TRANCAR: "antes-de-trancar",
   CANCELADA: "assinatura-cancelada",
+  PREPAGO_TERMINANDO: "prepago-terminando",
 };
 
 type MarcaGravada = { kind: SubscriptionEmailKind; reference: string; sentAt: Date | null; createdAt: Date };
@@ -118,7 +131,7 @@ async function consumir(assinaturaId: number, devido: EmailDevido, motivo: strin
  */
 export async function avisarSobreAAssinatura(naStripe: AssinaturaNaStripe, agora: Date = new Date()): Promise<void> {
   try {
-    const espelho = await prisma.subscription.findUnique({ where: { stripeSubscriptionId: naStripe.id }, select: { id: true, ownerUserId: true, status: true, currentPeriodEnd: true } });
+    const espelho = await prisma.subscription.findUnique({ where: { stripeSubscriptionId: naStripe.id }, select: { id: true, ownerUserId: true, status: true, currentPeriodEnd: true, pixPaymentIntentId: true } });
     if (!espelho?.ownerUserId) return;
     const devido = emailDevido(espelho, agora);
     if (!devido) return;
@@ -157,8 +170,8 @@ export type Rodada = { conferidas: number; ocupadas: number; desconhecidas: numb
 /**
  * A RODADA DO AGENDADOR (etapa 4.7, passo 7b — de hora em hora, pelo job `jilson-prod-avisos`,
  * `tarefas/avisos-da-cobranca.ts`). Procura as assinaturas com um e-mail da cobrança devido que ainda
- * não saiu — a atrasada com as aulas ainda abertas, a cancelada há pouco, e a cancelada com dias pagos
- * cujo período acabou agora — e passa cada uma à regra:
+ * não saiu — a atrasada com as aulas ainda abertas, a cancelada há pouco, a cancelada com dias pagos
+ * cujo período acabou agora, e a PRÉ-PAGA a até 3 dias do fim (etapa 4.9) — e passa cada uma à regra:
  *   - a ATRASADA é conferida na Stripe AGORA (`sincronizarSeLivre`: o pagamento pode ter passado e o
  *     aviso dele ter se perdido; ocupada, fica para a próxima rodada, sem esperar a trava);
  *   - a CANCELADA é estado final na Stripe: só se LÊ (`buscarAssinatura`, para o motivo do fim), sem
@@ -177,9 +190,11 @@ export async function rodadaDosAvisos(agora: Date = new Date(), prazoEmMs: numbe
       OR: [
         { status: "past_due", currentPeriodEnd: { gt: desde } },
         { status: "canceled", OR: [{ updatedAt: { gt: desde } }, { currentPeriodEnd: { gt: desde, lte: agora } }] },
+        // A pré-paga perto do fim: conferida na Stripe como a atrasada (o Pix pode ter sido devolvido).
+        { status: "active", pixPaymentIntentId: { not: null }, currentPeriodEnd: { gt: agora, lte: new Date(agora.getTime() + ANTECEDENCIA_DO_PREPAGO_EM_MS) } },
       ],
     },
-    select: { stripeSubscriptionId: true, status: true, currentPeriodEnd: true, emails: { select: { kind: true, reference: true, sentAt: true, createdAt: true } } },
+    select: { stripeSubscriptionId: true, status: true, currentPeriodEnd: true, pixPaymentIntentId: true, emails: { select: { kind: true, reference: true, sentAt: true, createdAt: true } } },
     orderBy: { id: "asc" },
   });
   const rodada: Rodada = { conferidas: 0, ocupadas: 0, desconhecidas: 0, adiadas: 0, falhas: 0 };

@@ -396,6 +396,16 @@ export const pt = {
         terminou: "Sua assinatura terminou, e o acesso às aulas foi encerrado.",
         progressoSeVoltar: "Seu progresso continua guardado: se voltar, você continua de onde parou.",
         botao: "Reativar assinatura"
+      },
+      // O E-MAIL DO PRÉ-PAGO (etapa 4.9, passo 4 — decisão do operador, 28/10/2026: 3 dias antes de acabar):
+      // RASCUNHO do agente, para o operador revisar (P111). Sem botão: pagar de novo é só depois de acabar
+      // (decisão (a) da etapa) — o botão "Reativar assinatura" vem no e-mail de "terminou", que já existe.
+      // `{data}` é o dia em que o acesso acaba, no horário de Brasília.
+      prePagoTerminando: {
+        assunto: "Seu acesso às aulas termina no dia {data}",
+        titulo: "Seu acesso está acabando",
+        acaba: "Você pagou com Pix, e o seu acesso às aulas vai até o dia {data}.",
+        depois: "Quando acabar, é só pagar de novo para continuar: seu progresso fica guardado, e você segue de onde parou."
       }
     },
     inicio: {

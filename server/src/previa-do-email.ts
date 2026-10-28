@@ -49,6 +49,7 @@ const exemplos: Array<[string, MensagemDeEmail]> = [
   ["previa-antes-de-trancar.html", montarAvisoDaCobranca(noUltimoDia, {}, falha, pt.app.email, site)],
   ["previa-cancelada-sem-pagamento.html", montarAvisoDaCobranca(fim, { encerradaSemPagamento: true }, falha, pt.app.email, site)],
   ["previa-cancelada.html", montarAvisoDaCobranca(fim, {}, falha, pt.app.email, site)],
+  ["previa-prepago-terminando.html", montarAvisoDaCobranca({ tipo: "PREPAGO_TERMINANDO", referencia: trancaEm.toISOString(), trancaEm }, {}, falha, pt.app.email, site)],
 ];
 for (const [nome, mensagem] of exemplos) {
   const caminho = join(pasta, nome);

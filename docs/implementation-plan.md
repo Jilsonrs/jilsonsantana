@@ -5812,11 +5812,26 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             o Pix devolvido por inteiro), `FaturamentoPage` (+3). **Mutação: 9 de 9 reprovaram.** Gates:
             typecheck, lint, build; site e servidor como o CI. *Docs check (context7): not triggered* (nenhuma
             chamada nova à Stripe; `refunds.create` por `payment_intent` já existia).
-      - [ ] **Passo 4 — Os e-mails do pré-pago.** `emailDevido`: ativa + pré-paga + acaba em N dias
+      - [x] **Passo 4 — Os e-mails do pré-pago.** `emailDevido`: ativa + pré-paga + acaba em N dias
             (proposta: 3) → `PREPAGO_TERMINANDO` ("seu acesso acaba dia X; depois, é só pagar de novo" —
             texto dele), pela rodada de hora em hora (a consulta ganha as pré-pagas perto do fim); no
             fim, a Stripe cancela e sai o "terminou — reative" que já existe (com uma frase própria
             para o pré-pago, se ele quiser). Testes e mutação como no passo 7.
+            **FEITO (28/10/2026), no `dev`.** Decisão do operador na abertura: **3 dias antes, um e-mail só**
+            (`ANTECEDENCIA_DO_PREPAGO_EM_MS`). **Como ficou:** o tipo `PREPAGO_TERMINANDO` no enum dos e-mails
+            (migration `20261028230000_prepago_terminando`, escrita à mão — só o `ALTER TYPE … ADD VALUE` —,
+            provada pelo `migrate diff` sem diferença e pela suíte, que a aplica do zero); `emailDevido`: a
+            ativa do Pix com o fim do acesso a até 3 dias → "está acabando", com a referência no fim do
+            período (um período, um e-mail); a rodada escolhe as pré-pagas nessa janela e as confere na
+            Stripe como a atrasada (o Pix pode ter sido devolvido — aí o espelho é acertado e nada sai); o
+            aviso da Stripe passa o `pixPaymentIntentId` do espelho à regra. **O e-mail não tem botão:** pagar
+            de novo é só depois de acabar (decisão (a)) — "Reativar assinatura" vem no "terminou" de sempre,
+            que a pré-paga recebe quando a Stripe a encerra no fim do período (testado). **O texto é RASCUNHO
+            do agente** (`app.email.prePagoTerminando`; a prévia em `npm --workspace server run email:previa`)
+            — revisão dele: **P111**. **Testes:** `avisos-da-assinatura.test.ts` (+3: a rodada com a pré-paga a
+            2 dias, a de 10 dias e a que terminou; o Pix devolvido; a regra pura). **Mutação: 5 de 5
+            reprovaram.** Gates: typecheck, lint, build; site e servidor como o CI. *Docs check (context7):
+            not triggered.*
       - [ ] **Passo 5 — Apple Pay e Google Pay.** O arquivo da Apple servido em
             `/.well-known/apple-developer-merchantid-domain-association` (o `express.static` ignora
             pasta com ponto por padrão: rota própria, com teste); o operador registra o domínio

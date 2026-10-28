@@ -153,7 +153,14 @@ no PaymentIntent/SetupIntent/Checkout Session; suporte anunciado em 22/abr/2026.
 > pagou, pela Stripe), e encerra a assinatura na hora. **O período pago da pré-paga é o do Pix:** devolvido
 > por inteiro — pelo reembolso ou pelo painel —, ele deixa de contar, e o aviso de devolução acha a
 > assinatura pela coluna do espelho (o Pix não tem fatura). Quando o período acaba, a Stripe encerra a
-> assinatura e sai o e-mail "terminou — reative" de sempre; o aviso "está acabando" é o passo 4.
+> assinatura e sai o e-mail "terminou — reative" de sempre.
+>
+> **A RÉGUA DO PRÉ-PAGO (passo 4 — no código desde 28/10/2026; decisão do operador do mesmo dia: "3 dias
+> antes", um e-mail só):** quando faltam até **3 dias** para o fim do acesso, a rodada de hora em hora
+> manda **"Seu acesso está acabando"** (o dia em que acaba; que é só pagar de novo quando acabar; **sem
+> botão**, porque pagar de novo é só depois de acabar — o botão "Reativar assinatura" vem no e-mail de
+> "terminou", que a pré-paga recebe quando a Stripe a encerra no fim do período). O Pix devolvido antes
+> disso não recebe nada. O texto é rascunho do agente (P111).
 
 **O que isso acrescenta à Fase 4:** o Payment Element precisa das opções de mandato, e a régua de
 inadimplência ganha um caminho próprio — **falha de Pix não se retenta como cartão** (não existe
