@@ -5746,9 +5746,10 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                   **Mutação: 9 de 9 reprovaram** (sem o "já tem acesso" · um QR por vez sem cancelar · o
                   visitante sem conferir a tentativa · o Pix sem cancelar a incompleta · a viva sem sincronia ·
                   o cartão sem cancelar o Pix, logado e visitante · a rota sem a configuração · o CPF depois do
-                  QR). Gates: typecheck, lint, build; site e servidor como o CI. **Pendente do operador: P109**
-                  (a configuração só-Pix da conta de verdade → `deploy/cloud-run.yaml`); até lá, em produção o
-                  Pix responde 503 e a vitrine diz `pix: null` — a tela não oferece.
+                  QR). Gates: typecheck, lint, build; site e servidor como o CI. **P109 feita pelo operador em
+                  28/10/2026:** a configuração só-Pix da conta de verdade ("Pix pré-pago", só o Pix ligado), o id
+                  em `deploy/cloud-run.yaml` (`STRIPE_PIX_CONFIGURATION`) — o Pix entra no ar na próxima
+                  publicação; até lá, em produção ele responde 503 e a vitrine diz `pix: null`.
             - [x] **2b — o site. FEITO (28/10/2026), no `dev`.** A escolha antes do campo de pagamento, com os
                   textos APROVADOS pelo operador (28/10/2026): título **"Como você quer pagar?"**; **"Cartão —
                   Renova sozinho todo mês (ou todo ano). Cancele quando quiser."**; **"Pix — Você paga uma vez e

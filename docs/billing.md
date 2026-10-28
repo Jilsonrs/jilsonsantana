@@ -126,9 +126,10 @@ no PaymentIntent/SetupIntent/Checkout Session; suporte anunciado em 22/abr/2026.
 > anterior morre e nasce outro). **Um pagamento aberto por vez, nos dois sentidos:** o Pix cancela o
 > cartão começado e não pago, e o checkout por cartão cancela o Pix à espera — senão o QR copiado no app
 > do banco e o cartão podiam ser pagos os dois. A validade do QR é **1 hora** (decisão do operador,
-> 28/10/2026). **Em produção o Pix fica desligado até a configuração só-Pix da conta de verdade existir**
-> (`STRIPE_PIX_CONFIGURATION` — pendência P109): sem ela, as rotas respondem 503, a vitrine diz
-> `pix: null`, e a tela não oferece o Pix.
+> 28/10/2026). **Em produção o Pix só existe com a configuração só-Pix da conta de verdade**
+> (`STRIPE_PIX_CONFIGURATION`, em `deploy/cloud-run.yaml` — criada pelo operador no painel em 28/10/2026,
+> P109; entra no ar na publicação seguinte): sem ela, as rotas respondem 503, a vitrine diz `pix: null`,
+> e a tela não oferece o Pix.
 >
 > **A TELA (passo 2b — no código desde 28/10/2026; textos aprovados pelo operador no mesmo dia):** nas duas
 > telas de assinar, quando os planos trazem `pix`, a escolha **"Como você quer pagar?"** vem antes do campo —
