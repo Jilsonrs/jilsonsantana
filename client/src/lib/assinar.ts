@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { DuracaoDoDesconto, TELA_DE_CONCLUIDO, type DescontoDoCodigo, type Plano } from "@jilson/core";
+import { DuracaoDoDesconto, Plano, TELA_DE_CONCLUIDO, type DescontoDoCodigo } from "@jilson/core";
 import { confirmarSemLogin, getPlanosDaAssinatura, getPlanosSemLogin, getPreviaDaAssinatura, getPreviaSemLogin, getSituacaoDaAssinatura } from "@/lib/api";
 import type { AppTexts } from "@/lib/language";
 
@@ -18,6 +18,27 @@ const LOCAL = "pt-BR";
 /** O valor como o aluno lê: "R$ 99,90". Os centavos vêm do servidor. */
 export function dinheiro(centavos: number, moeda: string): string {
   return new Intl.NumberFormat(LOCAL, { style: "currency", currency: moeda.toUpperCase() }).format(centavos / 100);
+}
+
+/** Como se paga (etapa 4.9): o cartão renova sozinho; o Pix é pré-pago. */
+export type FormaDePagamento = "cartao" | "pix";
+
+/**
+ * O fim do período PRÉ-PAGO se o Pix cair hoje (etapa 4.9, passo 2b): um mês (ou um ano) à frente, como
+ * a Stripe conta — o mesmo dia do mês; se ele não existir (31 → fevereiro), o último dia do mês. É a
+ * PREVISÃO do resumo, antes de pagar; a data de verdade é a da assinatura que nasce quando o Pix cai.
+ */
+export function fimDoPeriodoPrePago(hoje: Date, plano: Plano): Date {
+  const meses = plano === Plano.ANUAL ? 12 : 1;
+  const fim = new Date(hoje.getFullYear(), hoje.getMonth() + meses, 1, hoje.getHours(), hoje.getMinutes(), hoje.getSeconds());
+  const ultimoDia = new Date(fim.getFullYear(), fim.getMonth() + 1, 0).getDate();
+  fim.setDate(Math.min(hoje.getDate(), ultimoDia));
+  return fim;
+}
+
+/** A data como o aluno lê, no resumo: "28/11/2026". */
+export function dataDoResumo(data: Date): string {
+  return new Intl.DateTimeFormat(LOCAL, { dateStyle: "short" }).format(data);
 }
 
 /** O desconto do código por extenso: "100% de desconto em todas as cobranças". */

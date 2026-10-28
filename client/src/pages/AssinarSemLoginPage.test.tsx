@@ -11,6 +11,7 @@ const getPlanosSemLogin = vi.fn();
 const getPreviaSemLogin = vi.fn();
 const getPreviaDaAssinatura = vi.fn();
 const assinarSemLogin = vi.fn();
+const pagarComPixSemLogin = vi.fn();
 const criarAssinatura = vi.fn();
 vi.mock("@/lib/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/api")>()),
@@ -18,6 +19,7 @@ vi.mock("@/lib/api", async (importOriginal) => ({
   getPreviaSemLogin: (...args: unknown[]) => getPreviaSemLogin(...args),
   getPreviaDaAssinatura: (...args: unknown[]) => getPreviaDaAssinatura(...args),
   assinarSemLogin: (...args: unknown[]) => assinarSemLogin(...args),
+  pagarComPixSemLogin: (...args: unknown[]) => pagarComPixSemLogin(...args),
   criarAssinatura: (...args: unknown[]) => criarAssinatura(...args),
 }));
 // A NOSSA fronteira com o Stripe.js vira dublê (nunca `@stripe/*`), como no teste da tela logada.
@@ -25,7 +27,7 @@ const validar = vi.fn<() => Promise<Desfecho>>();
 const confirmar = vi.fn<(segredo: string, tipo: string, voltarPara: string) => Promise<Desfecho>>();
 vi.mock("@/lib/stripe-do-site", () => ({
   CartaoProvider: ({ pedido, children }: { pedido: PedidoDeCartao; children: ReactNode }) => (
-    <div data-testid="cartao" data-centavos={pedido.centavos}>
+    <div data-testid="cartao" data-centavos={pedido.centavos} data-pix={pedido.pix?.configuracao ?? ""}>
       {children}
     </div>
   ),
@@ -34,6 +36,7 @@ vi.mock("@/lib/stripe-do-site", () => ({
 }));
 
 import { navegador } from "@/lib/versao";
+import { esquecerPix, lerPix } from "@/lib/pix-pendente";
 import { lerTentativa, esquecerTentativa } from "@/lib/tentativa-de-assinar";
 import { AssinarSemLoginPage } from "./AssinarSemLoginPage";
 
@@ -58,6 +61,9 @@ const PLANOS: PlanosDaAssinatura = {
 };
 const TENTATIVA = "TentativaDoServidor_24bytesAAAAAA";
 const PAGAR: AssinaturaSemLogin = { estado: "pagar", segredo: "pi_1_secret_x", tipo: "pagamento", tentativa: TENTATIVA };
+// O Pix pré-pago no ar (etapa 4.9): o servidor manda a configuração só-Pix.
+const COM_PIX: PlanosDaAssinatura = { ...PLANOS, pix: { configuracao: "pmc_so_pix" } };
+const PAGAR_PIX: AssinaturaSemLogin = { estado: "pagar", segredo: "pi_pix_secret_x", tipo: "pix", tentativa: TENTATIVA };
 const EMAIL = "Visitante@Exemplo.com";
 const CPF = "529.982.247-25";
 const erroDoServidor = (codigo: string, status = 409) =>
@@ -65,9 +71,11 @@ const erroDoServidor = (codigo: string, status = 409) =>
 
 let ir: ReturnType<typeof vi.spyOn>;
 beforeEach(() => {
-  for (const f of [getPlanosSemLogin, getPreviaSemLogin, getPreviaDaAssinatura, assinarSemLogin, criarAssinatura, validar, confirmar]) f.mockReset();
+  for (const f of [getPlanosSemLogin, getPreviaSemLogin, getPreviaDaAssinatura, assinarSemLogin, pagarComPixSemLogin, criarAssinatura, validar, confirmar]) f.mockReset();
   getPlanosSemLogin.mockResolvedValue(PLANOS);
   assinarSemLogin.mockResolvedValue(PAGAR);
+  pagarComPixSemLogin.mockResolvedValue(PAGAR_PIX);
+  esquecerPix();
   validar.mockResolvedValue({ ok: true });
   confirmar.mockResolvedValue({ ok: true });
   ir = vi.spyOn(navegador, "ir").mockImplementation(() => {});
@@ -214,5 +222,53 @@ describe("a tela pública de assinar — o envio e a tentativa", () => {
     assinar();
     expect((await screen.findByRole("alert")).textContent).toBe("Confira o número: este CPF ou CNPJ não é válido.");
     expect(screen.getByLabelText("CPF ou CNPJ").getAttribute("aria-invalid")).toBe("true");
+  });
+});
+
+// O PIX PRÉ-PAGO sem conta (etapa 4.9, passo 2b): a mesma escolha da tela logada, pelas rotas do visitante.
+describe("a tela pública de assinar — o Pix pré-pago", () => {
+  const escolherPix = async () => fireEvent.click(await screen.findByRole("radio", { name: /^Pix/ }));
+
+  it("pede pela rota do visitante com e-mail, CPF, plano e novidades — sem código —, guarda a tentativa e o segredo do Pix ANTES de confirmar, confirma com o tipo pix, e carrega a tela de concluído", async () => {
+    getPlanosSemLogin.mockResolvedValue(COM_PIX);
+    let guardados: unknown = null;
+    confirmar.mockImplementation(async () => ((guardados = [lerTentativa(), lerPix()]), { ok: true }));
+    abrir();
+    await screen.findByLabelText("Seu e-mail");
+    preencher();
+    await escolherPix();
+    expect(screen.queryByLabelText("Código promocional")).toBeNull();
+    expect(screen.getByTestId("cartao").dataset.pix).toBe("pmc_so_pix");
+    fireEvent.click(screen.getByRole("button", { name: "Pagar com Pix" }));
+    await waitFor(() => expect(ir).toHaveBeenCalledWith("/assinar/concluido"));
+    expect(pagarComPixSemLogin).toHaveBeenCalledWith({ email: EMAIL, documento: CPF, plano: "mensal", novidades: false });
+    expect(assinarSemLogin).not.toHaveBeenCalled();
+    expect(guardados).toEqual([
+      { tentativa: TENTATIVA, email: EMAIL },
+      { segredo: "pi_pix_secret_x", chavePublicavel: "pk_test_da_tela" },
+    ]);
+    expect(confirmar).toHaveBeenCalledWith("pi_pix_secret_x", "pix", "/assinar/concluido");
+    expect(confirmar.mock.calls.flat().join(" ")).not.toContain(TENTATIVA);
+  });
+
+  it("o novo clique do mesmo e-mail segue com a tentativa (o servidor devolve o mesmo QR)", async () => {
+    getPlanosSemLogin.mockResolvedValue(COM_PIX);
+    confirmar.mockResolvedValueOnce({ ok: false, mensagem: null });
+    abrir();
+    await screen.findByLabelText("Seu e-mail");
+    preencher();
+    await escolherPix();
+    fireEvent.click(screen.getByRole("button", { name: "Pagar com Pix" }));
+    await screen.findByRole("alert");
+    fireEvent.click(screen.getByRole("button", { name: "Pagar com Pix" }));
+    await waitFor(() => expect(pagarComPixSemLogin).toHaveBeenCalledTimes(2));
+    expect(pagarComPixSemLogin.mock.calls[1]?.[0]).toMatchObject({ email: EMAIL, tentativa: TENTATIVA });
+  });
+
+  it("sem o Pix no ar (os planos sem `pix`): a escolha não aparece, e tudo segue pelo cartão", async () => {
+    abrir();
+    await screen.findByLabelText("Seu e-mail");
+    expect(screen.queryByText("Como você quer pagar?")).toBeNull();
+    expect(screen.getByTestId("cartao").dataset.pix).toBe("");
   });
 });

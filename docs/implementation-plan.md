@@ -5749,20 +5749,40 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                   QR). Gates: typecheck, lint, build; site e servidor como o CI. **Pendente do operador: P109**
                   (a configuração só-Pix da conta de verdade → `deploy/cloud-run.yaml`); até lá, em produção o
                   Pix responde 503 e a vitrine diz `pix: null` — a tela não oferece.
-            - [ ] **2b — o site.** A escolha antes do campo de pagamento, com os textos APROVADOS pelo operador
-                  (28/10/2026): título **"Como você quer pagar?"**; **"Cartão — Renova sozinho todo mês (ou todo
-                  ano). Cancele quando quiser."**; **"Pix — Você paga uma vez e estuda por 1 mês ou 1 ano. Não
-                  renova sozinho: quando acabar, é só pagar de novo."**; no resumo, **"Acesso até DD/MM/AAAA"**
-                  (o fim do período pago, calculado do dia de hoje); o botão **"Pagar com Pix"**; e **"Mostrar o
-                  QR de novo"** (`handleNextAction`) nas telas de concluído, para quem fechou o QR sem pagar — o
-                  segredo do Pix guardado em `sessionStorage` só até o gate dizer que sim. Com Pix, o
-                  `CartaoProvider` abre em `mode: "payment"` com `paymentMethodConfiguration` (o `pix` dos
-                  planos) e o campo do código promocional some; a escolha só aparece quando os planos trazem
-                  `pix`. **A tela NUNCA pede um QR novo sozinha** (nem ao voltar para a aba, nem ao repetir a
-                  pergunta "já valeu?"): quem acabou de pagar e clicasse de novo ganharia outro QR do mesmo
-                  plano. Textos em `pt.ts` (`app.assinar.pix.*`); testes de tela (a escolha, o modo do campo, o
-                  código escondido, o resumo, o QR de novo); mutação. *Docs check (context7):* Stripe →
-                  `/websites/stripe` → `paymentMethodConfiguration` no Payment Element com intenção adiada.
+            - [x] **2b — o site. FEITO (28/10/2026), no `dev`.** A escolha antes do campo de pagamento, com os
+                  textos APROVADOS pelo operador (28/10/2026): título **"Como você quer pagar?"**; **"Cartão —
+                  Renova sozinho todo mês (ou todo ano). Cancele quando quiser."**; **"Pix — Você paga uma vez e
+                  estuda por 1 mês ou 1 ano. Não renova sozinho: quando acabar, é só pagar de novo."**; no resumo,
+                  **"Acesso até DD/MM/AAAA"** no lugar da renovação (a previsão do fim do período, contada de
+                  hoje — `fimDoPeriodoPrePago`, com o dia que não existe virando o último do mês, como a Stripe
+                  conta); o botão **"Pagar com Pix"**; e **"Mostrar o QR de novo"** nas duas telas de concluído
+                  (`QrDeNovo` → `mostrarQrDeNovo`, o `handleNextAction` do Stripe.js, carregado por `import()`:
+                  as telas de concluído estão no pacote de todo aluno). **Como ficou:** a escolha
+                  (`EscolhaDaFormaDePagamento`) só aparece quando os planos trazem `pix` (sem a P109, em produção
+                  nada muda); com o Pix, o código promocional some e o aplicado é esquecido, o `CartaoProvider`
+                  abre em `mode: "payment"` com `paymentMethodConfiguration` + `allowedPaymentMethodTypes:
+                  ["pix"]` e o valor do plano, e o `confirmar` confirma como pagamento (a própria Stripe.js mostra
+                  o QR); o pedido ao servidor, nas quatro combinações (logado ou sem conta × cartão ou Pix), saiu
+                  do formulário para `lib/pedido-de-assinatura.ts` (o formulário ficou em 191 linhas); o segredo
+                  do Pix e a chave publicável ficam em `lib/pix-pendente.ts` (memória + `sessionStorage` da aba,
+                  guardados ANTES de confirmar; esquecidos quando o servidor confirma). **A tela NUNCA pede um
+                  QR novo sozinha** — só o clique pede; quem acabou de pagar e clicasse de novo ganharia outro
+                  QR. Textos em `pt.ts` (`app.assinar.pix.*`). **Testes:** `AssinarPage.test.tsx` (+7: sem o
+                  Pix no ar; a escolha e os textos; o código some, "Acesso até" com o fim do mês, o botão e o
+                  campo só-Pix; o código aplicado esquecido; o envio na ordem com o segredo guardado antes; o
+                  cartão não guarda nada; o 409), `AssinarSemLoginPage.test.tsx` (+3), as duas telas de concluído
+                  (+2 cada: o QR de novo com o que foi guardado; esquecido ao confirmar), `assinar.test.ts` (4,
+                  a função pura da data). **Mutação: 11 de 11 reprovaram.** Gates: typecheck, lint, build; site
+                  (1014) e servidor como o CI. *Docs check (context7):* Stripe → `/websites/stripe` →
+                  `paymentMethodConfiguration` nas opções do Elements com intenção adiada (`mode: "payment"`,
+                  `amount`, `currency`); a confirmação do Pix pelo `confirmPayment` do Payment Element; o
+                  `handleNextAction` para o QR de novo. **Fica para a prova no navegador (passo 6):** o que o
+                  `confirmPayment` devolve quando a pessoa FECHA a janela do QR sem pagar (a tela segue para a de
+                  concluído em qualquer caso sem erro; se vier erro, ela fica com a frase de sempre e o novo
+                  clique recebe o mesmo QR); o QR vencido depois de 1 h (o pagamento volta a `requires_payment_
+                  method`, e o novo clique gera outro QR no mesmo pagamento); e a janela do QR no celular.
+                  **Pergunta ao operador (P110):** a frase "Pagamento seguro… A escola não guarda os dados do seu
+                  cartão" continua no resumo com o Pix escolhido.
       - [ ] **Passo 3 — O pré-pago nas telas do aluno e nas operações.** `minha-assinatura.ts`:
             a pré-paga vem com `prePago: true` e `acessoAte`, sem parar/manter/mudar de plano/trocar
             cartão (a renovação não existe); Faturamento mostra "Seu acesso vai até DD/MM; para

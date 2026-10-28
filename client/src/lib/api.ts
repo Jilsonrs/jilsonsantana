@@ -30,6 +30,8 @@ import type {
   PreviaDaAssinatura,
   CorpoDeAssinar,
   CorpoDeAssinarSemLogin,
+  CorpoDePix,
+  CorpoDePixSemLogin,
   AssinaturaSemLogin,
   ConfirmacaoSemLogin,
   SenhaCriada,
@@ -1064,6 +1066,22 @@ export async function getPreviaDaAssinatura(corpo: PreviaInput): Promise<PreviaD
 /** Cria a assinatura. Quem já assina: 409 `JaAssinante`. NUNCA tenta de novo sozinho (gravação que cria). */
 export async function criarAssinatura(corpo: CorpoDeAssinar): Promise<AssinaturaCriada> {
   const { data } = await client.post<AssinaturaCriada>("/billing/assinatura", corpo);
+  return data;
+}
+
+/**
+ * PAGAR COM PIX, pré-pago, com a conta logada (etapa 4.9, passo 2): só o plano e o CPF ou CNPJ — sem
+ * código promocional. O servidor devolve o segredo do pagamento Pix; o site abre o QR com ele, e a
+ * assinatura nasce quando o Pix cai (o gate é quem diz).
+ */
+export async function pagarComPix(corpo: CorpoDePix): Promise<AssinaturaCriada> {
+  const { data } = await client.post<AssinaturaCriada>("/billing/pix", corpo);
+  return data;
+}
+
+/** PAGAR COM PIX, pré-pago, SEM CONTA (etapa 4.9, passo 2): o mesmo pedido do assinar sem login, sem o código; devolve também a tentativa. */
+export async function pagarComPixSemLogin(corpo: CorpoDePixSemLogin): Promise<AssinaturaSemLogin> {
+  const { data } = await client.post<AssinaturaSemLogin>("/billing/visitante/pix", corpo);
   return data;
 }
 

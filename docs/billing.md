@@ -129,6 +129,18 @@ no PaymentIntent/SetupIntent/Checkout Session; suporte anunciado em 22/abr/2026.
 > 28/10/2026). **Em produção o Pix fica desligado até a configuração só-Pix da conta de verdade existir**
 > (`STRIPE_PIX_CONFIGURATION` — pendência P109): sem ela, as rotas respondem 503, a vitrine diz
 > `pix: null`, e a tela não oferece o Pix.
+>
+> **A TELA (passo 2b — no código desde 28/10/2026; textos aprovados pelo operador no mesmo dia):** nas duas
+> telas de assinar, quando os planos trazem `pix`, a escolha **"Como você quer pagar?"** vem antes do campo —
+> *Cartão: "Renova sozinho todo mês (ou todo ano). Cancele quando quiser."* · *Pix: "Você paga uma vez e
+> estuda por 1 mês ou 1 ano. Não renova sozinho: quando acabar, é só pagar de novo."* Com o Pix: o código
+> promocional some (e o aplicado é esquecido), o resumo diz **"Acesso até DD/MM/AAAA"** no lugar da
+> renovação (a previsão do fim do período, contada de hoje), o botão diz **"Pagar com Pix"**, e o campo da
+> Stripe abre em modo pagamento só com o Pix; a confirmação abre o QR da própria Stripe (imagem e "copia e
+> cola"). Depois, a tela de concluído de sempre, que pergunta ao servidor até a assinatura valer — com o
+> botão **"Mostrar o QR de novo"** para quem fechou a janela sem pagar (o segredo do Pix fica só na aba,
+> até o servidor confirmar). **A tela nunca pede um QR novo sozinha**: só o clique em "Pagar com Pix" pede
+> — e o servidor devolve o MESMO QR enquanto ele estiver à espera.
 
 **O que isso acrescenta à Fase 4:** o Payment Element precisa das opções de mandato, e a régua de
 inadimplência ganha um caminho próprio — **falha de Pix não se retenta como cartão** (não existe

@@ -601,7 +601,21 @@ export const pt = {
       confirmando: "Confirmando sua assinatura…",
       confirmada: "Assinatura confirmada. Bons estudos!",
       comecar: "Começar a estudar",
-      demorando: "Está demorando mais que o normal. Seu pagamento não se perde: esta página continua conferindo."
+      demorando: "Está demorando mais que o normal. Seu pagamento não se perde: esta página continua conferindo.",
+      // O PIX PRÉ-PAGO (etapa 4.9, passo 2b). Textos APROVADOS pelo operador em 28/10/2026: a escolha
+      // antes do campo de pagamento (só aparece quando o servidor diz que o Pix está no ar), a linha do
+      // resumo no lugar da renovação (`{data}` é o fim do período pago, contado de hoje), o botão, e o
+      // "QR de novo" das telas de concluído, para quem fechou o QR sem pagar.
+      pix: {
+        comoPagar: "Como você quer pagar?",
+        cartao: "Cartão",
+        cartaoDescricao: "Renova sozinho todo mês (ou todo ano). Cancele quando quiser.",
+        pix: "Pix",
+        pixDescricao: "Você paga uma vez e estuda por 1 mês ou 1 ano. Não renova sozinho: quando acabar, é só pagar de novo.",
+        acessoAte: "Acesso até {data}",
+        botao: "Pagar com Pix",
+        qrDeNovo: "Mostrar o QR de novo",
+      },
     },
     // FATURAMENTO E ASSINATURA (Fase 4, etapa 4.6). Textos APROVADOS pelo operador em 11/10/2026. O título da tela é o rótulo do menu (`nav.faturamento`); os nomes dos
     // planos e "Assinar" / "Reativar assinatura" são os de `assinar`.

@@ -10,7 +10,11 @@ vi.mock("@/lib/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/api")>()),
   getSituacaoDaAssinatura: (...args: unknown[]) => getSituacaoDaAssinatura(...args),
 }));
+// A fronteira com o Stripe.js (o QR do Pix de novo — etapa 4.9) vira dublê; a tela a carrega por `import()`.
+const mostrarQrDeNovo = vi.fn<(chavePublicavel: string, segredo: string) => Promise<boolean>>();
+vi.mock("@/lib/stripe-do-site", () => ({ mostrarQrDeNovo: (chavePublicavel: string, segredo: string) => mostrarQrDeNovo(chavePublicavel, segredo) }));
 
+import { esquecerPix, guardarPix, lerPix } from "@/lib/pix-pendente";
 import { AssinaturaConcluidaPage } from "./AssinaturaConcluidaPage";
 
 // DEPOIS DE ASSINAR (Fase 4, etapa 4.2). O que estes testes protegem:
@@ -21,6 +25,8 @@ import { AssinaturaConcluidaPage } from "./AssinaturaConcluidaPage";
 
 beforeEach(() => {
   getSituacaoDaAssinatura.mockReset().mockResolvedValue({ temAcesso: false });
+  mostrarQrDeNovo.mockReset().mockResolvedValue(true);
+  esquecerPix();
 });
 
 /** Uma tela qualquer da escola, que guarda o que leu do servidor (como a aula guarda "trancada"). */
@@ -127,5 +133,32 @@ describe("AssinaturaConcluidaPage", () => {
     // O texto velho NÃO aparece nem por um instante: a tela abre lendo, e mostra o novo.
     expect(screen.queryByText("aula trancada")).toBeNull();
     expect(await screen.findByText("aula liberada")).toBeTruthy();
+  });
+});
+
+// O QR DO PIX DE NOVO (etapa 4.9, passo 2b): quem pagou com Pix e fechou a janela do QR sem pagar
+// reabre o QR daqui, com o segredo que a aba guardou. Confirmada, o segredo é esquecido.
+describe("AssinaturaConcluidaPage — o QR do Pix de novo", () => {
+  it("sem um Pix guardado nesta aba: sem o botão", async () => {
+    abrir();
+    await screen.findByRole("status");
+    expect(screen.queryByRole("button", { name: "Mostrar o QR de novo" })).toBeNull();
+  });
+
+  it("com um Pix guardado: o botão enquanto o servidor não confirma; o clique abre o QR com o segredo e a chave guardados; confirmada, o botão some e o Pix é esquecido", async () => {
+    guardarPix({ segredo: "pi_pix_secret_x", chavePublicavel: "pk_test_da_tela" });
+    getSituacaoDaAssinatura.mockResolvedValue({ temAcesso: false });
+    abrir();
+    const botao = await screen.findByRole("button", { name: "Mostrar o QR de novo" });
+    fireEvent.click(botao);
+    await waitFor(() => expect(mostrarQrDeNovo).toHaveBeenCalledWith("pk_test_da_tela", "pi_pix_secret_x"));
+    // Enquanto o servidor não confirma, o Pix continua guardado — a pessoa pode precisar do QR de novo.
+    expect(lerPix()).toEqual({ segredo: "pi_pix_secret_x", chavePublicavel: "pk_test_da_tela" });
+
+    getSituacaoDaAssinatura.mockResolvedValue({ temAcesso: true });
+    expect(await screen.findByText("Assinatura confirmada. Bons estudos!")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Mostrar o QR de novo" })).toBeNull();
+    expect(lerPix()).toBeNull();
+    expect(window.sessionStorage.getItem("jilson.assinar.pix")).toBeNull();
   });
 });

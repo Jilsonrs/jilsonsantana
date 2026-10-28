@@ -16,7 +16,7 @@
 > 5. **Item novo ganha o próximo número livre.** Número nunca se reutiliza, para que "P7" queira
 >    dizer sempre a mesma coisa em qualquer conversa.
 >
-> **Próximo número livre: P110** · Atualizada em 28/10/2026
+> **Próximo número livre: P111** · Atualizada em 28/10/2026
 >
 > **DESDE 12/10/2026 A ESCOLA É SÓ EM PORTUGUÊS E SÓ PARA O BRASIL** (decisão do operador; etapa
 > 4.6c do plano). A parte em inglês de qualquer item abaixo deixou de existir: revise só o
@@ -31,6 +31,7 @@
 
 | # | O que falta | Onde registrar |
 |---|---|---|
+| P110 | **Uma frase do resumo quando o Pix está escolhido** (etapa 4.9, passo 2b, 28/10/2026): a linha "Pagamento seguro, processado pela Stripe. A escola não guarda os dados do seu cartão." continua aparecendo com o Pix. Manter como está, ou uma frase só para o Pix (rascunho do agente: "Pagamento seguro, processado pela Stripe.")? Texto é seu; até a resposta, fica como está. | `core/src/i18n/pt.ts` (`app.assinar.pix`); o plano → etapa 4.9, passo 2b |
 | P109 | **A configuração de formas de pagamento SÓ COM PIX na conta de VERDADE da Stripe** (etapa 4.9, passo 2a, 28/10/2026): no painel, em modo de verdade, *Settings → Payments → Payment methods → Add configuration*, nome "Pix pré-pago", **só o Pix ligado** (cartão, Link, Apple Pay e Google Pay desligados), e me passar o id (`pmc_…` — não é segredo): ele entra em `deploy/cloud-run.yaml` como `STRIPE_PIX_CONFIGURATION`. Até lá, em produção o Pix fica desligado (as rotas respondem 503 e a tela não oferece). A da área restrita já existe (criada pela API no passo 1, no `server/.env`). Pode esperar o 2b (a tela) ficar pronto. | `deploy/cloud-run.yaml`; o plano → etapa 4.9, passo 2a |
 | P108 | **A tela de depois do pagamento (`/assinar/concluido`) quando o servidor recusa a pergunta "já valeu?"** (achado A2 da revisão da etapa 4.7, 28/10/2026): hoje ela insiste a cada 2 s mesmo com 429 (três pessoas no mesmo Wi-Fi pagando juntas) ou erro do servidor, e só mostra "Confirmando…" / "Está demorando…". Precisa de UMA frase sua para esse caso (sugestão: "Não conseguimos confirmar agora. Seu pagamento não se perde: entre com \"Receber código de acesso\" ou tente de novo em alguns minutos."), e aí a tela passa a respeitar o `Retry-After` e a mostrá-la depois de algumas falhas seguidas | `pt.ts` (`app.assinar`) e o plano → etapa 4.7, passo 8 (revisão) |
 | P102 | **A sua assinatura de teste no site no ar continua cobrando o seu cartão** todo mês, com o site fora. Manter (para o teste do passo 8 da etapa 4.7) ou cancelar pelo painel da Stripe? *28/10/2026, à pergunta do agente: "Eu não cheguei a testar com o cartão real, estou esperando terminar tudo antes de testar" — fica até o passo 8; na hora, conferir no painel da Stripe (modo de verdade) se existe alguma assinatura cobrando o seu cartão, antes do teste.* | o plano → etapa 4.7, passo 8 |
