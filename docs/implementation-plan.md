@@ -5411,6 +5411,11 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             destinatário), no Yahoo e no mail-tester (o DMARC do subdomínio deve sair verde; em
             21/10 o verificador dele ainda lia o registro antigo). Até lá, **aquecer o domínio**:
             e-mails de verdade para quem abre e responde, e "não é spam" quando cair no lixo.
+            **Medido em 28/10/2026, nos 3 e-mails da cobrança da prova 7c, no Yahoo:** "não
+            conseguimos renovar" e "ainda não foi paga" na **entrada**; "foi cancelada" no **spam**
+            (o operador marcou "não é spam"; os três ficaram na entrada). Mesmo remetente, mesmo
+            domínio, um minuto entre eles — a diferença é o conteúdo ("cancelada", "reativar"), não a
+            configuração. O do iCloud ("terminou"): a confirmar com o operador.
 - [ ] **4.7b — Admin → Assinaturas vira um PAINEL de assinaturas (código, ALTO RISCO).**
       **MAPA APROVADO pelo operador (10/10/2026: "Aprovo o mapa"), e fica para DEPOIS da 4.7**
       (decisão dele no mesmo dia: *"o Painel pode ficar para depois da 4.7 que é mais
