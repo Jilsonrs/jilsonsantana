@@ -625,6 +625,42 @@
 
 ---
 
+## O PLANO DE LANÇAMENTO — a escola no ar *(decisões do operador, 28/10/2026)*
+
+> **A meta do operador (28/10/2026):** a escola no ar em 1 mês. **O que entra no dia da abertura**
+> (decisões dele no mesmo dia, uma pergunta por vez): **o JilsonAI** (Fase 6 — o agente recomendou logo
+> depois), **o Pix recorrente** (4.9), **os certificados** (6.5 — o agente recomendou logo depois),
+> **as trilhas** (a tela de montar no admin, Bloco 6b, e a Trilha 1) e **a página Quem somos**
+> (simples, com o texto e a foto dele). **Depois da abertura:** o painel de assinaturas (4.7b), os E2E
+> da cobrança (4.10) e a vitrine fora do React (C5).
+> **O risco, dito sem rodeio:** com o JilsonAI na abertura, o mês fica apertado — é o maior bloco e o
+> mais incerto. Por isso ele começa primeiro, pelas decisões de produto. *Proposta do agente, a
+> confirmar pelo operador: um ponto de checagem em 11/11/2026 — se o JilsonAI não estiver respondendo
+> no chat do aluno, ele decide se a abertura espera ou se o JilsonAI entra logo depois (a linha do
+> cartão muda em Admin → Textos).*
+
+**A ordem — proposta do agente, a aprovar pelo operador** (o código é do agente; o que é do operador
+corre em paralelo):
+
+| # | Bloco | De quem | Depende de |
+|---|---|---|---|
+| 1 | **JilsonAI**: as decisões de produto (`jilsonai.md`), depois as Fases 0–3 (o chat com o contexto do curso, a escalação para o Jilson, o medidor de uso) | agente + operador (decisões, persona) | — |
+| 2 | **Pix recorrente** (4.9) — alto risco | agente | — |
+| 3 | **Trilhas**: a tela de montar no admin (Bloco 6b) | agente | — |
+| 4 | **Certificados** (6.5): ao concluir o curso e a trilha | agente | 3 |
+| 5 | **A home lendo os cursos do banco** (C4) | agente | os cursos cadastrados (P16) |
+| 6 | **As páginas**: Termos (com a cláusula da P61), Privacidade, Contato, Quem somos — e o caminho de excluir a conta (LGPD) | agente (páginas) + operador (textos) | os textos dele |
+| 7 | **A cópia do banco fora do Neon**, com teste de restauração (Cloud Storage + o agendador que já existe) | agente, com o OK do operador para o recurso | — |
+| 8 | **O aviso de erro nas telas do aluno** (Sentry, parte 2) | agente | — |
+| 9 | **Indexação**: robots.txt, noindex na área do aluno, sitemap.xml — e o `og:image` da home, hoje 404 (achado de 27/10, se o operador aprovar) | agente | — |
+| 10 | **Fechamento**: a revisão de segurança final, a proteção na entrada revista, onde os e-mails caem (Gmail e Outlook de outra pessoa, mail-tester), o teste com cartão de verdade e tirar o "Em breve" | agente + operador | tudo acima |
+
+**Do operador, em paralelo (sem esperar o código):** a 6g com o Antigravity · cadastrar os 5 cursos
+(P16) e montar a Trilha 1 · revisar a FAQ (P12) e os textos do código no e-mail (P93) · os textos das
+páginas (Termos, Privacidade, Contato, Quem somos) e a foto · a persona do JilsonAI.
+
+---
+
 ## Bloco G — A casa nova: Google Cloud Run  ✅ CONCLUÍDO em 23/10/2026
 > **Movido para o [`build-history.md`](build-history.md) → *Infraestrutura* em 24/10/2026**, inteiro: os
 > fatos do Google, *A forma* (a conta mínima e as decisões do operador), as regras de *Quem executa*,
@@ -958,7 +994,8 @@ fecham com ela.** Os dois furam a mesma convenção (CLAUDE.md → Server: "publ
       `where` do template (ou `findFirst`), 404 caso contrário.
 
 **O que falta na Fase 2 depois do Bloco 5 fechado:**
-- [ ] Bloco 6b — UI de montagem de trilha curada (admin): `GET /api/admin/trilhas` +
+- [ ] Bloco 6b — **ENTRA NA ABERTURA** *(decisão do operador, 28/10/2026, com a Trilha 1 montada por
+      ele pela tela)*. UI de montagem de trilha curada (admin): `GET /api/admin/trilhas` +
       `GET /api/admin/trilhas/:id` novos (espelho admin, qualquer status, mesmo padrão do Bloco
       6a); `/admin/trilhas`, `/admin/trilhas/novo`, `/admin/trilhas/:id`; árvore inline
       PlanModule→PlanItem com reordenar ↑/↓; ao adicionar um PlanItem tipo LESSON, dois selects
@@ -3149,9 +3186,11 @@ própria**.*
 #### Páginas públicas que faltam *(decididas na sessão da home, set/2026; trazidas do `design-lab` em 28/09)*
 
 Mesmo caminho da home: conteúdo definido → mock na `design-lab/` → transposição para template de
-servidor → acabamento. Cada uma em PT e EN.
+servidor → acabamento. Só em português (12/10/2026).
 
 - [ ] **Quem somos** — explica a escola (que é uma escola, que tem certificado…). Conteúdo: P30.
+      **ENTRA NA ABERTURA, simples** *(decisão do operador, 28/10/2026)*: página do servidor, com o
+      texto e a foto dele, os textos em Admin → Textos.
 - [ ] **Contato** — página própria. Conteúdo e onde ficam os dados da empresa: P30.
 - [ ] **Página para baixar material** — uma página só, para quem chega de fora (ex.: do YouTube)
       baixar planilha ou arquivo; pede **nome e e-mail**, e a pessoa entra na base de contatos.
@@ -6532,6 +6571,11 @@ outro aparelho e "daqui a um mês", e o Safari apaga o armazenamento do site em 
       suggests a curated trilha by goal. (RAG, KB, montagem de plano por IA = JILSONAI Fase 4–5, pós-launch.)
 
 ## Phase 6.5 — Certificates (trilha + course completion)  *(low–medium risk — MVP: "escola nasce completa")*
+
+> **OS CERTIFICADOS ENTRAM NO DIA DA ABERTURA** *(decisão do operador, 28/10/2026 — o agente recomendou
+> logo depois, antes de alguém concluir um curso)*. A home promete "Certificado de conclusão" em todo
+> curso e "um certificado por trilha concluída". *Reabre se esta fase atrasar a abertura além do que o
+> operador aceitar.*
 
 - [ ] `Certificate` (user, planId/courseId, issuedAt, `nameSnapshot`, `skillsCovered[]`, **`isPublic` default false**) + RLS ; migration
 - [ ] Server-side PDF on 100% completion of a trilha (or course). Name = trilha name; lists skills covered.
