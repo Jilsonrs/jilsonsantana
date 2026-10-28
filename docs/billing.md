@@ -98,6 +98,18 @@ no PaymentIntent/SetupIntent/Checkout Session; suporte anunciado em 22/abr/2026.
 > antes de qualquer código, como manda a receita.
 > *Reabre se a Stripe liberar o Pix Automático para empresa do Brasil (aí o Pix pode voltar a ser
 > recorrente, como opção), ou se os números mostrarem que o pré-pago não renova.*
+>
+> **COMO É NA STRIPE (etapa 4.9, passo 1 — no código desde 28/10/2026, `server/src/lib/stripe-pix.ts`
+> e `assinaturas.ts`):** o Pix é um **pagamento solto** (`PaymentIntent`), numa configuração de formas de
+> pagamento **só com Pix** (`STRIPE_PIX_CONFIGURATION` — a conta exige formas dinâmicas, e sem ela o
+> campo mostraria o cartão como cobrança avulsa), com o plano, o preço e quem paga nos metadados; quando
+> ele cai (`payment_intent.succeeded`), a rotina do espelho cria a **assinatura pré-paga** — a mesma de
+> sempre, `cancel_at_period_end: true`, a primeira fatura **paga por fora** (`paid_out_of_band`; a
+> Stripe a deixa ativa sem cartão, medido) — e grava o espelho com o id do Pix
+> (`Subscription.pixPaymentIntentId`). **Um Pix, uma assinatura:** a trava no id do pagamento, o
+> espelho pela coluna, a chave de idempotência da criação (24 h) e a busca pelos metadados. A conta do
+> visitante nasce como no cartão (os mesmos metadados). O gate, as telas e os e-mails continuam lendo só
+> o espelho; o que muda para o pré-pago nas telas e no reembolso é o passo 3.
 
 **O que isso acrescenta à Fase 4:** o Payment Element precisa das opções de mandato, e a régua de
 inadimplência ganha um caminho próprio — **falha de Pix não se retenta como cartão** (não existe

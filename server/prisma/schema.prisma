@@ -713,6 +713,11 @@ model Subscription {
   // de teste saem do banco de produção (Fase 7), senão dariam acesso para sempre. Sem saber
   // (a assinatura de teste do seed), FALSO.
   livemode             Boolean   @default(false)
+  // O PIX PRÉ-PAGO (etapa 4.9, 28/10/2026): o pagamento Pix (solto, na Stripe) que esta assinatura
+  // nasceu para representar — paga por fora, cancela no fim do período, nunca renova. Vazio =
+  // assinatura recorrente (cartão). É por esta coluna que as telas, a rodada e o reembolso sabem
+  // que ela é pré-paga; e é única: um Pix vira UMA assinatura (a idempotência do aviso).
+  pixPaymentIntentId   String?   @unique
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
   // Os e-mails da cobrança já tomados para esta assinatura (etapa 4.7, passo 7).

@@ -1,8 +1,9 @@
 import { Prisma } from "./prisma.js";
 import { prisma } from "./prisma.js";
 import { cobrancaAtrasada, temAcessoAtivo } from "./acesso.js";
-import { AssinaturaNaoEncontrada, assinaturasDoCliente, buscarAssinatura, type AssinaturaNaStripe, type AvisoDaStripe } from "./stripe.js";
+import { AssinaturaNaoEncontrada, assinaturasDoCliente, buscarAssinatura, type AssinaturaNaStripe, type AvisoDaStripe, type PagamentoPrePago } from "./stripe.js";
 import { assinaturaDoPagamento } from "./stripe-reembolso.js";
+import { assinaturaDoPagamentoPrePago, criarAssinaturaPrePaga } from "./stripe-pix.js";
 import { contaDoPedido, type SemContaDoVisitante } from "./pedido-do-visitante.js";
 
 // O ESPELHO DA ASSINATURA (Fase 4, etapa 4.1 — CLAUDE.md → Membership Gating). A assinatura da
@@ -99,7 +100,7 @@ async function sincronizar(tx: Prisma.TransactionClient, assinaturaId: string, {
   const quem = espelho ? { dono: espelho.ownerUserId, contaNova: null } : await donoDaAssinaturaNova(tx, agora);
   if ("motivo" in quem) return { resultado: "sem-conta", assinatura: agora, motivo: quem.motivo };
   const { dono, contaNova } = quem;
-  const dados = { status: agora.status, currentPeriodEnd: agora.pagoAte, stripeCustomerId: agora.clienteId, livemode: agora.livemode };
+  const dados = { status: agora.status, currentPeriodEnd: agora.pagoAte, stripeCustomerId: agora.clienteId, livemode: agora.livemode, pixPaymentIntentId: agora.pixPaymentIntentId ?? null };
   const tinhaAcesso = dono !== null && (await temAcessoAtivo(dono, tx));
 
   if (espelho) await tx.subscription.update({ where: { id: espelho.id }, data: dados });
@@ -133,6 +134,9 @@ async function donoDaAssinaturaNova(tx: Prisma.TransactionClient, agora: Assinat
 
 export async function processarAviso(aviso: AvisoDaStripe): Promise<Desfecho> {
   if (await prisma.stripeEvent.findUnique({ where: { id: aviso.id }, select: { id: true } })) return { resultado: "repetido" };
+  // O PIX PRÉ-PAGO que caiu (etapa 4.9): a assinatura ainda não existe — nasce aqui, e daí em diante é
+  // a sincronia de sempre.
+  if (aviso.pagamentoPrePago) return processarPixPrePago(aviso, aviso.pagamentoPrePago);
   const marcar = { id: aviso.id, type: aviso.tipo };
   // O aviso de dinheiro devolvido só traz o pagamento: a assinatura dele se acha na Stripe. Se a
   // busca falhar, sobe — nada fica marcado, e a Stripe entrega de novo.
@@ -164,6 +168,37 @@ export async function processarAviso(aviso: AvisoDaStripe): Promise<Desfecho> {
     // sem o corpo do aviso, que nunca vai para o registro.
     const motivo = erro instanceof Error ? erro.message : String(erro);
     throw new Error(`[stripe] aviso ${aviso.id} (assinatura ${assinaturaId}) falhou: ${motivo}`, { cause: erro });
+  }
+}
+
+/**
+ * O PIX PRÉ-PAGO QUE CAIU (etapa 4.9 — billing.md → *Formas de pagamento*): o pagamento solto não é
+ * assinatura; a assinatura pré-paga NASCE aqui, uma por pagamento — `cancel_at_period_end`, a
+ * primeira fatura paga por fora (`stripe-pix.ts`) —, e então é a sincronia de sempre, com a trava
+ * dela, que grava o espelho (e faz a conta do visitante nascer). UM PIX, UMA ASSINATURA, em três
+ * camadas: a trava no id do pagamento (dois avisos do mesmo Pix ao mesmo tempo esperam um ao
+ * outro); o espelho pela coluna `pixPaymentIntentId` (o aviso que chega de novo acha a assinatura
+ * sem ir à Stripe); e, na Stripe, a chave de idempotência da criação (24 h) mais a busca pelos
+ * metadados (o aviso que chegar depois disso). O aviso fica marcado na MESMA transação: se algo
+ * falhar, nada fica, a rota responde 5xx e a Stripe entrega de novo — e a criação repetida devolve
+ * a mesma assinatura.
+ */
+async function processarPixPrePago(aviso: AvisoDaStripe, pagamento: PagamentoPrePago): Promise<Desfecho> {
+  const marcar = { id: aviso.id, type: aviso.tipo };
+  try {
+    return await prisma.$transaction(async (tx): Promise<Desfecho> => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`pix:${pagamento.id}`}))`;
+      if (await tx.stripeEvent.findUnique({ where: { id: aviso.id }, select: { id: true } })) return { resultado: "repetido" };
+      const noEspelho = await tx.subscription.findUnique({ where: { pixPaymentIntentId: pagamento.id }, select: { stripeSubscriptionId: true } });
+      const assinaturaId = noEspelho?.stripeSubscriptionId ?? (await assinaturaDoPagamentoPrePago(pagamento.id)) ?? (await criarAssinaturaPrePaga(pagamento));
+      await travar(tx, assinaturaId);
+      const sincronia = await sincronizar(tx, assinaturaId);
+      await tx.stripeEvent.create({ data: marcar });
+      return sincronia;
+    }, TEMPO_DA_OPERACAO);
+  } catch (erro) {
+    const motivo = erro instanceof Error ? erro.message : String(erro);
+    throw new Error(`[stripe] aviso ${aviso.id} (pagamento pré-pago ${pagamento.id}) falhou: ${motivo}`, { cause: erro });
   }
 }
 

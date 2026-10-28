@@ -57,8 +57,10 @@ router.post("/stripe/webhook", express.raw({ type: "application/json" }), async 
     console.info(`[stripe] aviso ${aviso.id} (${aviso.tipo}): ${desfecho.resultado}${qual}${caiu}${nasceu}`);
   }
   // As boas-vindas de quem assinou sem conta (etapa 4.7, passo 5): DEPOIS do commit, e em todo aviso
-  // da assinatura — inclusive o repetido —, até sair uma vez. Nunca derruba este 200.
-  if (aviso.assinatura) await mandarBoasVindasDaAssinatura(aviso.assinatura);
+  // da assinatura — inclusive o repetido —, até sair uma vez. Nunca derruba este 200. A assinatura que
+  // NASCEU de um Pix pré-pago (etapa 4.9) só é conhecida depois de processar o aviso.
+  const assinaturaDoAviso = aviso.assinatura ?? ("assinatura" in desfecho ? desfecho.assinatura.id : null);
+  if (assinaturaDoAviso) await mandarBoasVindasDaAssinatura(assinaturaDoAviso);
   // Os e-mails da cobrança (etapa 4.7, passo 7): a cobrança que falhou, o aviso antes de trancar, a
   // assinatura que terminou — com o que a Stripe acabou de dizer, DEPOIS do commit, uma vez cada. O
   // aviso repetido não traz a assinatura de agora: o que ficar para trás, a rodada do agendador manda.

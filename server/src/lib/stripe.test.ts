@@ -1,7 +1,7 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import Stripe from "stripe";
 import { pagamentosDaFatura } from "./stripe-devolucao.js";
-import { chaveDoNumeroFiscal, chavePublicavel, erroSemMensagem, paraAssinaturaNaStripe, paraAssinaturaNoCheckout, paraCodigoPromocional, paraNumeroFiscal, paraPedidoDeAssinatura, paraPedidoDeCliente, paraPedidoDeClienteDoVisitante, paraPrecosDosPlanos } from "./stripe.js";
+import { chaveDoNumeroFiscal, chavePublicavel, erroSemMensagem, pagamentoPrePagoDoAviso, paraAssinaturaNaStripe, paraAssinaturaNoCheckout, paraCodigoPromocional, paraNumeroFiscal, paraPedidoDeAssinatura, paraPedidoDeCliente, paraPedidoDeClienteDoVisitante, paraPrecosDosPlanos } from "./stripe.js";
 
 // O ESPELHO A PARTIR DA STRIPE (Fase 4, etapa 4.1) — função pura, teste unitário (CLAUDE.md →
 // Testing: só função pura, sem I/O). O que protege é o "PAGO ATÉ": quando a renovação falha, a
@@ -58,6 +58,12 @@ describe("o espelho a partir da assinatura da Stripe", () => {
     expect(comFatura({ status: "open", next_payment_attempt: null })).toBeNull();
     expect(comFatura({ status: "paid", next_payment_attempt: quando })).toBeNull();
     expect(comFatura("in_sem_expandir")).toBeNull();
+  });
+
+  // O PIX PRÉ-PAGO (etapa 4.9): a assinatura que nasceu de um Pix guarda o id dele nos metadados.
+  it("o id do Pix pré-pago: dos metadados; sem ele, nenhum (a recorrente)", () => {
+    expect(paraAssinaturaNaStripe(assinatura({ metadata: { pix_payment_intent: "pi_1" } })).pixPaymentIntentId).toBe("pi_1");
+    expect(paraAssinaturaNaStripe(assinatura()).pixPaymentIntentId).toBeNull();
   });
 
   it("encerrada sem pagamento: só quando o motivo do fim é a cobrança que falhou", () => {
@@ -384,5 +390,43 @@ describe("o pedido de cliente que vai à Stripe", () => {
 
   it("conta sem nome: o cliente nasce sem nome, com o userId", () => {
     expect(paraPedidoDeCliente({ userId: "u1", email: "a@b.c", nome: null })).toEqual({ email: "a@b.c", name: undefined, metadata: { userId: "u1" } });
+  });
+});
+
+// O AVISO DO PIX PRÉ-PAGO QUE CAIU (etapa 4.9, passo 1): só o `payment_intent.succeeded` de um
+// pagamento NOSSO — com o plano na marca `prepago` —, com o preço e o cliente. Função pura.
+describe("o aviso do Pix pré-pago", () => {
+  const avisoDePagamento = (metadata: Record<string, string>, extra: Record<string, unknown> = {}, type = "payment_intent.succeeded") =>
+    // Seguro: o objeto de teste tem só os campos que a função lê; a forma completa é da Stripe.
+    ({ id: "evt_1", type, data: { object: { id: "pi_1", object: "payment_intent", amount: 9990, currency: "brl", customer: "cus_1", livemode: true, metadata, ...extra } } }) as unknown as Stripe.Event;
+
+  it("da conta logada: o plano, o preço, o cliente, o valor, o modo e a conta", () => {
+    expect(pagamentoPrePagoDoAviso(avisoDePagamento({ prepago: "anual", precoId: "price_anual", userId: "conta-1" }))).toEqual({
+      id: "pi_1", plano: "anual", precoId: "price_anual", clienteId: "cus_1", livemode: true, centavos: 9990, userId: "conta-1", visitante: null,
+    });
+  });
+
+  it("do visitante: a ficha, o resumo da tentativa e a escolha; o cliente expandido vale pelo id", () => {
+    const aviso = avisoDePagamento({ prepago: "mensal", precoId: "price_mensal", pedido: "pedido-1", tentativa: "resumo", novidades: "sim", origem: "youtube", campanha: "aula-1" }, { customer: { id: "cus_2" } });
+    expect(pagamentoPrePagoDoAviso(aviso)).toMatchObject({ clienteId: "cus_2", userId: null, visitante: { pedido: "pedido-1", resumoDaTentativa: "resumo", escolha: { novidades: true, origem: "youtube", campanha: "aula-1" } } });
+  });
+
+  it("não é nosso: sem a marca, com um plano que não existe, ou outro tipo de aviso → nada", () => {
+    expect(pagamentoPrePagoDoAviso(avisoDePagamento({ precoId: "price_mensal", userId: "conta-1" }))).toBeNull();
+    expect(pagamentoPrePagoDoAviso(avisoDePagamento({ prepago: "vitalicio", precoId: "price_x", userId: "conta-1" }))).toBeNull();
+    expect(pagamentoPrePagoDoAviso(avisoDePagamento({ prepago: "mensal", precoId: "price_mensal", userId: "conta-1" }, {}, "payment_intent.created"))).toBeNull();
+  });
+
+  it("nosso, mas incompleto (sem preço, ou sem cliente): nada, com um aviso no registro", () => {
+    const avisos = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      expect(pagamentoPrePagoDoAviso(avisoDePagamento({ prepago: "mensal", userId: "conta-1" }))).toBeNull();
+      expect(pagamentoPrePagoDoAviso(avisoDePagamento({ prepago: "mensal", precoId: "price_mensal", userId: "conta-1" }, { customer: null }))).toBeNull();
+      expect(avisos).toHaveBeenCalledTimes(2);
+      expect(String(avisos.mock.calls[0]?.[0])).toContain("sem preço");
+      expect(String(avisos.mock.calls[1]?.[0])).toContain("sem cliente");
+    } finally {
+      avisos.mockRestore();
+    }
   });
 });

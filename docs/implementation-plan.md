@@ -5659,7 +5659,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       (b) **sem código promocional no Pix, na primeira versão** — o desconto da Stripe é da assinatura,
       e no Pix o valor é de um pagamento solto (o campo do código some quando o Pix é escolhido; reabre
       se houver campanha com Pix); (c) os preços são os mesmos dos planos no cartão.
-      - [ ] **Passo 1 — A fundação (servidor + migration, ALTO RISCO).** A configuração de formas de
+      - [x] **Passo 1 — A fundação (servidor + migration, ALTO RISCO).** A configuração de formas de
             pagamento **só com Pix** na Stripe (uma por modo, criada pela API com o OK do operador; o
             id em `deploy/cloud-run.yaml` e no `server/.env` — `STRIPE_PIX_CONFIGURATION`; não é
             segredo). A coluna `Subscription.pixPaymentIntentId` (migration; nula = recorrente): é ela
@@ -5678,6 +5678,29 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             Testes de servidor com a Stripe de dublê: a assinatura nasce paga e ativa, o espelho, a
             conta do visitante, o repetido, a corrida, o pagamento que não é nosso (ignorado), a
             migration do zero. Mutação.
+            **FEITO (28/10/2026), no `dev`.** A configuração só-Pix da área restrita criada pela API
+            (`pmc_1UVZtxCynmmEXrpbuDF6o2GV`: pix ligado, o resto desligado — um pagamento com ela nasce
+            só com `pix`, medido) e posta no `server/.env` (`STRIPE_PIX_CONFIGURATION`; a da conta de
+            verdade o operador cria no painel, passo 2, e vai no `deploy/cloud-run.yaml`). A coluna
+            `Subscription.pixPaymentIntentId` (migration `20261028200000_pix_pre_pago`, única). Em
+            `stripe.ts`: `PagamentoPrePago`, `pagamentoPrePagoDoAviso` (só o `payment_intent.succeeded`
+            com a marca `prepago` = plano, o preço e o cliente), `verificarAviso` o devolve, e
+            `paraAssinaturaNaStripe` lê o id do Pix. O novo `stripe-pix.ts`: `paraPedidoDePix`,
+            `criarPagamentoPix`, `paraPedidoDeAssinaturaPrePaga`, `criarAssinaturaPrePaga` (idempotente
+            pelo id do Pix; a fatura paga por fora, sem pagar duas vezes), `assinaturaDoPagamentoPrePago`
+            (a busca pelos metadados, com o id conferido antes de entrar na consulta) e a validade do QR
+            (1 h, proposta). Em `assinaturas.ts`: `processarPixPrePago` — a trava no id do pagamento, o
+            espelho pela coluna, a busca, a criação, a sincronia de sempre e o aviso marcado na mesma
+            transação; o espelho grava o id do Pix. A rota do webhook manda as boas-vindas e os
+            e-mails também para a assinatura que nasceu do Pix. **Testes:** `pix-pre-pago.test.ts` (7,
+            contra o banco: a conta logada, o repetido, dois ao mesmo tempo, a já existente na Stripe,
+            a criação que falha e volta, o visitante com a conta nascendo e as boas-vindas, o que não é
+            nosso), `stripe-pix-rede.test.ts` (12, a Stripe de dublê) e `stripe.test.ts` (5). **Mutação:
+            12 de 12 reprovaram** (sem a marca · sem olhar o espelho · sem a trava · sem
+            `cancel_at_period_end` · sem pagar por fora · o espelho sem o id · a assinatura sem o id ·
+            sem a configuração só-Pix · o aviso sem marca · `verificarAviso` sem o pagamento · a rota
+            sem a assinatura nova · o id do Pix não lido). Gates: typecheck, lint, build; site e
+            servidor como o CI.
       - [ ] **Passo 2 — Pagar com Pix nas duas telas (rotas + site).** `POST /billing/pix` (login,
             `limiteDeTentativas.cobranca`, `comVaga`, o CPF obrigatório como no cartão) e
             `POST /billing/visitante/pix` (`limiteSemLogin.assinar` — e-mail e endereço —, a ficha e a

@@ -24,7 +24,28 @@ export { erroSemMensagem, stripe };
  * DEVOLVIDO fala de uma cobrança, não de uma assinatura — a assinatura se acha pelo pagamento.
  * `devolucaoFalhou`: uma devolução que tinha sido aceita FALHOU depois — o dinheiro não voltou.
  */
-export type AvisoDaStripe = { id: string; tipo: string; assinatura: string | null; pagamento?: string | null; devolucaoFalhou?: boolean };
+export type AvisoDaStripe = { id: string; tipo: string; assinatura: string | null; pagamento?: string | null; devolucaoFalhou?: boolean; pagamentoPrePago?: PagamentoPrePago | null };
+
+/**
+ * O PIX PRÉ-PAGO que CAIU (etapa 4.9 — billing.md → *Formas de pagamento*): o aviso
+ * `payment_intent.succeeded` de um pagamento NOSSO, marcado nos metadados com o plano
+ * (`MARCA_DO_PREPAGO`). É dele que a assinatura pré-paga nasce (`stripe-pix.ts`, `assinaturas.ts`).
+ */
+export type PagamentoPrePago = {
+  id: string;
+  plano: Plano;
+  precoId: string;
+  clienteId: string;
+  livemode: boolean;
+  centavos: number;
+  /** A conta logada que pagou — ou a tentativa do visitante (a ficha, o resumo e a escolha), como na assinatura. */
+  userId: string | null;
+  visitante: TentativaDoVisitante | null;
+};
+/** Nos metadados do pagamento Pix: a chave cujo valor é o PLANO. Pagamento sem ela não é nosso. */
+export const MARCA_DO_PREPAGO = "prepago";
+/** Nos metadados da assinatura pré-paga: o id do pagamento Pix de que ela nasceu. */
+export const METADADO_DO_PIX = "pix_payment_intent";
 
 /** A assinatura como a Stripe diz AGORA, no formato que o espelho guarda. */
 export type AssinaturaNaStripe = {
@@ -64,6 +85,8 @@ export type AssinaturaNaStripe = {
   proximaTentativa?: Date | null;
   /** Encerrada porque as tentativas de cobrança acabaram (`cancellation_details.reason`). Só escolhe o texto do e-mail. */
   encerradaSemPagamento?: boolean;
+  /** O Pix pré-pago de que ela nasceu (etapa 4.9), pelos metadados; vazio = recorrente. */
+  pixPaymentIntentId?: string | null;
 };
 
 /**
@@ -389,8 +412,8 @@ export type TentativaDoVisitante = { pedido: string; resumoDaTentativa: string; 
 /** De quem é a assinatura: a conta logada (`userId`) ou a tentativa do visitante, que ainda não tem conta. */
 export type PedidoDeAssinatura = { clienteId: string; precoId: string; plano: Plano; codigoId: string | null } & ({ userId: string } | { visitante: TentativaDoVisitante });
 
-/** O que a tentativa do visitante grava na assinatura. Valor vazio não vai (a Stripe não o guarda). */
-function metadadosDoVisitante({ pedido, resumoDaTentativa, escolha }: TentativaDoVisitante): Record<string, string> {
+/** O que a tentativa do visitante grava na assinatura (e no pagamento Pix, etapa 4.9). Valor vazio não vai (a Stripe não o guarda). */
+export function metadadosDoVisitante({ pedido, resumoDaTentativa, escolha }: TentativaDoVisitante): Record<string, string> {
   const M = METADADOS_DO_VISITANTE;
   return {
     [M.pedido]: pedido,
@@ -498,6 +521,32 @@ function devolucaoQueFalhou(evento: Stripe.Event): boolean {
 }
 
 /**
+ * O Pix PRÉ-PAGO que caiu — só o `payment_intent.succeeded` de um pagamento NOSSO, com o plano nos
+ * metadados (`MARCA_DO_PREPAGO`); qualquer outro pagamento é de outra coisa e não é nosso. Função
+ * pura, com teste. O que vem incompleto (sem preço ou sem cliente) é ignorado em voz alta: a
+ * assinatura não nasceria certa.
+ */
+export function pagamentoPrePagoDoAviso(evento: Stripe.Event): PagamentoPrePago | null {
+  if (evento.type !== "payment_intent.succeeded") return null;
+  const pagamento = evento.data.object;
+  const m = pagamento.metadata ?? {};
+  const plano = m[MARCA_DO_PREPAGO];
+  if (!plano || !(PLANOS as readonly string[]).includes(plano)) return null;
+  const clienteId = typeof pagamento.customer === "string" ? pagamento.customer : (pagamento.customer?.id ?? null);
+  const precoId = m.precoId || null;
+  if (!clienteId || !precoId) {
+    console.warn(`[stripe] aviso ${evento.id}: o pagamento pré-pago ${pagamento.id} veio sem ${clienteId ? "preço" : "cliente"} — ignorado`);
+    return null;
+  }
+  const M = METADADOS_DO_VISITANTE;
+  const visitante: TentativaDoVisitante | null = m[M.pedido] && m[M.tentativa]
+    ? { pedido: m[M.pedido], resumoDaTentativa: m[M.tentativa], escolha: { novidades: m[M.novidades] === NOVIDADES_SIM, origem: m[M.origem] || null, campanha: m[M.campanha] || null } }
+    : null;
+  // Seguro: `plano` acabou de ser conferido contra a lista dos planos.
+  return { id: pagamento.id, plano: plano as Plano, precoId, clienteId, livemode: pagamento.livemode, centavos: pagamento.amount, userId: m.userId || null, visitante };
+}
+
+/**
  * Verifica que o aviso veio da Stripe — sobre o CORPO CRU, byte a byte (se ele passar pelo
  * `express.json()` antes, a verificação falha). Lança se a assinatura não confere. NUNCA aceita
  * aviso sem verificar: sem o segredo, quem chama recusa antes (`avisosConfigurados`).
@@ -507,7 +556,7 @@ export function verificarAviso(corpo: unknown, cabecalho: string | undefined): A
   if (!segredo) throw new Error("Stripe sem STRIPE_WEBHOOK_SECRET");
   if (!Buffer.isBuffer(corpo) || !cabecalho) throw new Error("aviso sem corpo cru ou sem assinatura");
   const evento = Stripe.webhooks.constructEvent(corpo, cabecalho, segredo);
-  return { id: evento.id, tipo: evento.type, assinatura: assinaturaDoAviso(evento), pagamento: pagamentoDoAviso(evento), devolucaoFalhou: devolucaoQueFalhou(evento) };
+  return { id: evento.id, tipo: evento.type, assinatura: assinaturaDoAviso(evento), pagamento: pagamentoDoAviso(evento), devolucaoFalhou: devolucaoQueFalhou(evento), pagamentoPrePago: pagamentoPrePagoDoAviso(evento) };
 }
 
 /**
@@ -549,7 +598,9 @@ export function paraAssinaturaNaStripe(assinatura: Stripe.Subscription, devolvid
   const proxima = typeof ultima === "object" && ultima !== null && ultima.status === "open" ? ultima.next_payment_attempt : null;
   const proximaTentativa = proxima ? new Date(proxima * 1000) : null;
   const encerradaSemPagamento = assinatura.cancellation_details?.reason === "payment_failed";
-  return { id: assinatura.id, status, pagoAte, clienteId, userId, pedido, doVisitante, livemode: assinatura.livemode, proximaTentativa, encerradaSemPagamento };
+  // O Pix pré-pago de que ela nasceu (etapa 4.9): vazio na recorrente.
+  const pixPaymentIntentId = assinatura.metadata[METADADO_DO_PIX] || null;
+  return { id: assinatura.id, status, pagoAte, clienteId, userId, pedido, doVisitante, livemode: assinatura.livemode, proximaTentativa, encerradaSemPagamento, pixPaymentIntentId };
 }
 
 /**
