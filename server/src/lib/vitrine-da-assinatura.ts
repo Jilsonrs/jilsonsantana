@@ -1,3 +1,4 @@
+import { configuracaoDoPixOuNada } from "./stripe-pix.js";
 import type { PlanosDaAssinatura, PreviaDaAssinatura, PreviaInput } from "@jilson/core";
 import { buscarCodigo, buscarPrecos, calcularPrevia, chavePublicavel, FORMAS_DE_PAGAMENTO } from "./stripe.js";
 import { getDict } from "./dict.js";
@@ -11,6 +12,7 @@ import { getDict } from "./dict.js";
 export async function lerPlanos(): Promise<PlanosDaAssinatura | null> {
   const chave = chavePublicavel();
   if (!chave) return null;
+  const pix = configuracaoDoPixOuNada();
   const [precos, dict] = await Promise.all([buscarPrecos(), getDict()]);
   return {
     chavePublicavel: chave,
@@ -19,6 +21,8 @@ export async function lerPlanos(): Promise<PlanosDaAssinatura | null> {
     // A lista do cartão de preço da home, com as edições do admin (o `getDict`): um texto só para os
     // dois lugares — mudou no admin, muda nos dois (decisão do operador, 27/10/2026).
     incluido: { itens: [...dict.home.pricing.features], frase: dict.home.pricing.footer },
+    // O Pix pré-pago (etapa 4.9): só quando a configuração só-Pix existe — senão a tela não oferece.
+    pix: pix ? { configuracao: pix } : null,
   };
 }
 

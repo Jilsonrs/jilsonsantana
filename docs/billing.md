@@ -110,6 +110,25 @@ no PaymentIntent/SetupIntent/Checkout Session; suporte anunciado em 22/abr/2026.
 > espelho pela coluna, a chave de idempotência da criação (24 h) e a busca pelos metadados. A conta do
 > visitante nasce como no cartão (os mesmos metadados). O gate, as telas e os e-mails continuam lendo só
 > o espelho; o que muda para o pré-pago nas telas e no reembolso é o passo 3.
+>
+> **AS DUAS PORTAS DO PIX (passo 2a — no código desde 28/10/2026, `server/src/lib/pix-pre-pago.ts`; a
+> tela é o passo 2b):** `POST /api/billing/pix` (logado) e `POST /api/billing/visitante/pix` (sem conta)
+> criam o pagamento Pix e devolvem só o segredo dele ao site — com as mesmas peças do checkout por cartão:
+> a conta é a da sessão (ou a ficha do e-mail), o preço é o do plano no servidor, o CPF ou CNPJ é
+> obrigatório e vai para a ficha do cliente antes do QR (também no QR reaproveitado: a fatura só nasce
+> quando o Pix cai, e leva o número de então), os mesmos limites de tentativas e o mesmo teto de "ao mesmo
+> tempo". **Sem código promocional** (decisão (b)): o campo não existe nessas rotas. As regras que o cartão
+> já tinha valem no Pix: quem já tem acesso não paga (409 `JaAssinante`; pagar de novo é só depois de
+> acabar — decisão (a)); a assinatura VIVA na Stripe com o espelho atrasado é sincronizada, sem QR (a
+> cobrança do cartão atrasada há mais de 3 dias manda trocar o cartão — 409 `CobrancaAtrasada`); o e-mail
+> que já tem conta é mandado entrar. **Um QR por vez:** o novo clique do mesmo plano recebe o MESMO QR; o
+> de outro plano cancela o anterior; o visitante só reaproveita o QR com o código da tentativa (sem ele, o
+> anterior morre e nasce outro). **Um pagamento aberto por vez, nos dois sentidos:** o Pix cancela o
+> cartão começado e não pago, e o checkout por cartão cancela o Pix à espera — senão o QR copiado no app
+> do banco e o cartão podiam ser pagos os dois. A validade do QR é **1 hora** (decisão do operador,
+> 28/10/2026). **Em produção o Pix fica desligado até a configuração só-Pix da conta de verdade existir**
+> (`STRIPE_PIX_CONFIGURATION` — pendência P109): sem ela, as rotas respondem 503, a vitrine diz
+> `pix: null`, e a tela não oferece o Pix.
 
 **O que isso acrescenta à Fase 4:** o Payment Element precisa das opções de mandato, e a régua de
 inadimplência ganha um caminho próprio — **falha de Pix não se retenta como cartão** (não existe

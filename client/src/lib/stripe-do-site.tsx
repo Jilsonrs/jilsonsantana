@@ -74,7 +74,7 @@ export type Cartao = {
   /** Confere o que o aluno preencheu, antes de criar qualquer coisa no servidor. */
   validar: () => Promise<Desfecho>;
   /** Confirma com o segredo que o servidor devolveu: `pagamento` cobra hoje; `cartao` só guarda o cartão. */
-  confirmar: (segredo: string, tipo: "pagamento" | "cartao", voltarPara: string) => Promise<Desfecho>;
+  confirmar: (segredo: string, tipo: "pagamento" | "cartao" | "pix", voltarPara: string) => Promise<Desfecho>;
 };
 
 /** Só os erros de cartão e de preenchimento trazem frase para o aluno; o resto vira a frase da escola. */
@@ -98,7 +98,8 @@ export function useCartao(): Cartao {
       // `if_required`: o cartão confirma sem sair da tela (a conferência do banco abre por cima);
       // só forma de pagamento que precise sair volta pelo endereço abaixo.
       const pedido = { elements, clientSecret: segredo, confirmParams: { return_url: new URL(voltarPara, window.location.origin).toString() }, redirect: "if_required" as const };
-      const { error } = tipo === "pagamento" ? await stripe.confirmPayment(pedido) : await stripe.confirmSetup(pedido);
+      // O Pix pré-pago (etapa 4.9) confirma como pagamento: a própria Stripe.js mostra o QR e espera o Pix cair.
+      const { error } = tipo === "cartao" ? await stripe.confirmSetup(pedido) : await stripe.confirmPayment(pedido);
       return error ? falhou(error) : { ok: true };
     },
   };

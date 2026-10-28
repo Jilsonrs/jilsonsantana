@@ -5715,6 +5715,54 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             novo"** (`handleNextAction`, que já existe). Testes de tela: a escolha, o campo no modo
             certo, o código escondido, o QR de novo; de servidor: as duas rotas, os limites, o teto, o
             409. Mutação.
+            **Em duas partes (28/10/2026): 2a, o servidor; 2b, o site.** Decisões do operador na abertura:
+            **o QR vale 1 hora** (`VALIDADE_DO_PIX_EM_SEGUNDOS`) e **os textos da escolha** (abaixo, na 2b).
+            - [x] **2a — o servidor. FEITO (28/10/2026), no `dev`.** `POST /billing/pix` (`requireAuth`,
+                  `limiteDeTentativas.cobranca`, `comVaga`, o CPF obrigatório — `pixSchema`, no `core`) e
+                  `POST /billing/visitante/pix` (`limiteSemLogin.assinar`, a cota de clientes novos do dia, a
+                  ficha e a tentativa como no cartão — `pixSemLoginSchema`, SEM `codigo`): 503 `NaoConfigurado`
+                  sem `STRIPE_PIX_CONFIGURATION`; `{ estado: "pagar", segredo, tipo: "pix" }` (o visitante leva a
+                  `tentativa`); 409 `JaAssinante` / `JaTemConta` / `Ocupada` / `MuitosAoMesmoTempo` /
+                  `CobrancaAtrasada`; 400 `DocumentoInvalido`. `GET /billing/planos` e o do visitante dizem
+                  `pix: { configuracao } | null` (`lerPlanos`). A regra em `lib/pix-pre-pago.ts` (`pagarComPix`,
+                  `pagarComPixSemLogin`), com as peças do checkout exportadas (`clienteDaConta`, `travarSeLivre`,
+                  `fichaDoEmail`, `sincronizarAViva`): quem já tem acesso não paga; a assinatura VIVA na Stripe é
+                  sincronizada, sem QR (a atrasada há mais de 3 dias → trocar o cartão); **um QR por vez** — o
+                  mesmo plano é o MESMO QR, outro plano cancela o anterior, o visitante só reaproveita com o
+                  código da tentativa (`pagamentosPixPendentes`, `cancelarPagamentoPix`, em `stripe-pix.ts`);
+                  **um pagamento aberto por vez, nos dois sentidos** — o Pix cancela a incompleta do cartão
+                  (`cancelarIncompleta`) e o checkout por cartão, logado e sem login, cancela o Pix à espera
+                  (`cancelarPagamentosPixPendentes`, que não vai à Stripe sem o Pix configurado); o CPF vai para
+                  a ficha antes do QR, também no reaproveitado (a fatura só nasce quando o Pix cai); nada grava o
+                  espelho. No `core`: `pixSchema`, `pixSemLoginSchema`, `PlanosDaAssinatura.pix` e o `tipo: "pix"`
+                  em `AssinaturaCriada`/`AssinaturaSemLogin`; no site, só o tipo (`confirmar` aceita `"pix"`,
+                  tratado como pagamento). **Testes:** `pagar-com-pix.test.ts` (25, contra o banco: as duas
+                  portas — o corpo, sem configuração, quem já tem acesso, o caminho feliz, o código ignorado, um
+                  QR por vez, o cartão aberto cancelado e o pago no meio, a viva sincronizada, a atrasada, dois
+                  cliques, o teto, o CPF recusado, a tentativa, a conta que nasce na sincronia, os limites por
+                  e-mail e os e-mails novos do dia, o cartão cancelando o Pix nas duas portas, o `pix` nas duas
+                  vitrines), `stripe-pix-rede.test.ts` (+3: os pendentes, o cancelar, o cancelar todos),
+                  `limite-de-tentativas.test.ts` (a rota no grupo da cobrança), `billing.test.ts` (`pix: null`).
+                  **Mutação: 9 de 9 reprovaram** (sem o "já tem acesso" · um QR por vez sem cancelar · o
+                  visitante sem conferir a tentativa · o Pix sem cancelar a incompleta · a viva sem sincronia ·
+                  o cartão sem cancelar o Pix, logado e visitante · a rota sem a configuração · o CPF depois do
+                  QR). Gates: typecheck, lint, build; site e servidor como o CI. **Pendente do operador: P109**
+                  (a configuração só-Pix da conta de verdade → `deploy/cloud-run.yaml`); até lá, em produção o
+                  Pix responde 503 e a vitrine diz `pix: null` — a tela não oferece.
+            - [ ] **2b — o site.** A escolha antes do campo de pagamento, com os textos APROVADOS pelo operador
+                  (28/10/2026): título **"Como você quer pagar?"**; **"Cartão — Renova sozinho todo mês (ou todo
+                  ano). Cancele quando quiser."**; **"Pix — Você paga uma vez e estuda por 1 mês ou 1 ano. Não
+                  renova sozinho: quando acabar, é só pagar de novo."**; no resumo, **"Acesso até DD/MM/AAAA"**
+                  (o fim do período pago, calculado do dia de hoje); o botão **"Pagar com Pix"**; e **"Mostrar o
+                  QR de novo"** (`handleNextAction`) nas telas de concluído, para quem fechou o QR sem pagar — o
+                  segredo do Pix guardado em `sessionStorage` só até o gate dizer que sim. Com Pix, o
+                  `CartaoProvider` abre em `mode: "payment"` com `paymentMethodConfiguration` (o `pix` dos
+                  planos) e o campo do código promocional some; a escolha só aparece quando os planos trazem
+                  `pix`. **A tela NUNCA pede um QR novo sozinha** (nem ao voltar para a aba, nem ao repetir a
+                  pergunta "já valeu?"): quem acabou de pagar e clicasse de novo ganharia outro QR do mesmo
+                  plano. Textos em `pt.ts` (`app.assinar.pix.*`); testes de tela (a escolha, o modo do campo, o
+                  código escondido, o resumo, o QR de novo); mutação. *Docs check (context7):* Stripe →
+                  `/websites/stripe` → `paymentMethodConfiguration` no Payment Element com intenção adiada.
       - [ ] **Passo 3 — O pré-pago nas telas do aluno e nas operações.** `minha-assinatura.ts`:
             a pré-paga vem com `prePago: true` e `acessoAte`, sem parar/manter/mudar de plano/trocar
             cartão (a renovação não existe); Faturamento mostra "Seu acesso vai até DD/MM; para
@@ -5746,7 +5794,8 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       **Trazido da revisão de segurança da 4.2 (10/10/2026):** com o Pix o pagamento chega minutos
       depois do pedido — conferir na área restrita que trocar de plano com um Pix pendente
       invalida o Pix antigo (hoje o checkout cancela a incompleta e só GRITA se ela tiver sido
-      paga nesse instante) · se entrar forma de pagamento que saia do site e volte, tirar do
+      paga nesse instante) *(feito no código no passo 2a, 28/10/2026 — um QR por vez e um pagamento
+      aberto por vez; a prova na área restrita fica no passo 6)* · se entrar forma de pagamento que saia do site e volte, tirar do
       endereço da volta o segredo que a Stripe acrescenta.
 - [ ] **4.10 — Fechamento da fase (código + painel).** **O E2E de assinar abre o campo DE VERDADE
       da Stripe e paga com o cartão de teste** — na 4.2 o campo não abria e nenhum teste acusou,

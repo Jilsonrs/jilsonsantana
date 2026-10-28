@@ -119,6 +119,7 @@ describe("o teto por CONTA — guardar cartão ou cobrar: 5 a cada 15 minutos", 
   it("o mesmo teto nas outras rotas de cartão e de cobrança: assinar, aplicar o cartão, mudar de plano", async () => {
     const rotas: Array<[string, object | undefined]> = [
       ["/billing/assinatura", { plano: "mensal", documento: "529.982.247-25" }],
+      ["/billing/pix", { plano: "mensal", documento: "529.982.247-25" }],
       ["/billing/cartao/aplicar", undefined],
       ["/billing/minha-assinatura/plano", { plano: "anual", valorMostrado: 89510 }],
     ];

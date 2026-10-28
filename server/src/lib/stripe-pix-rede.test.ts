@@ -8,7 +8,7 @@ import type { PagamentoPrePago } from "./stripe.js";
 // período, com o id do Pix, e a primeira fatura é paga por fora — uma vez; e nenhum erro leva a
 // mensagem crua da Stripe.
 const falsa = {
-  paymentIntents: { create: vi.fn() },
+  paymentIntents: { create: vi.fn(), list: vi.fn(), cancel: vi.fn() },
   subscriptions: { create: vi.fn(), search: vi.fn() },
   invoices: { pay: vi.fn(), retrieve: vi.fn() },
 };
@@ -17,7 +17,7 @@ vi.mock("./stripe-cliente.js", async (importOriginal) => ({
   stripe: () => falsa,
 }));
 
-import { assinaturaDoPagamentoPrePago, criarAssinaturaPrePaga, criarPagamentoPix, paraPedidoDeAssinaturaPrePaga, paraPedidoDePix, pixConfigurado, VALIDADE_DO_PIX_EM_SEGUNDOS } from "./stripe-pix.js";
+import { assinaturaDoPagamentoPrePago, cancelarPagamentoPix, cancelarPagamentosPixPendentes, criarAssinaturaPrePaga, criarPagamentoPix, pagamentosPixPendentes, paraPedidoDeAssinaturaPrePaga, paraPedidoDePix, pixConfigurado, VALIDADE_DO_PIX_EM_SEGUNDOS } from "./stripe-pix.js";
 
 const recusa = () => new Stripe.errors.StripeInvalidRequestError({ message: "mensagem crua da Stripe, com sk_test_abc", type: "invalid_request_error", statusCode: 400 });
 const PAGAMENTO: PagamentoPrePago = { id: "pi_1", plano: "mensal", precoId: "price_mensal", clienteId: "cus_1", livemode: false, centavos: 9990, userId: "conta-1", visitante: null };
@@ -135,5 +135,54 @@ describe("a assinatura que um Pix já virou (a busca pelos metadados)", () => {
   it("um id que não é de pagamento não vai à busca (nada entra na consulta sem conferir)", async () => {
     expect(await assinaturaDoPagamentoPrePago("pi_x' OR metadata['a']:'b")).toBeNull();
     expect(falsa.subscriptions.search).not.toHaveBeenCalled();
+  });
+});
+
+describe("os pagamentos Pix à espera de um cliente", () => {
+  it("só os NOSSOS (com a marca), só os que ainda podem ser pagos, com o segredo, o plano e o resumo da tentativa", async () => {
+    falsa.paymentIntents.list.mockResolvedValue({
+      data: [
+        { id: "pi_a", status: "requires_action", client_secret: "pi_a_secret_x", metadata: { prepago: "mensal", tentativa: "resumo-1" } },
+        { id: "pi_b", status: "requires_payment_method", client_secret: "pi_b_secret_x", metadata: { prepago: "anual" } },
+        { id: "pi_c", status: "succeeded", client_secret: "pi_c_secret_x", metadata: { prepago: "mensal" } },
+        { id: "pi_d", status: "processing", client_secret: "pi_d_secret_x", metadata: { prepago: "mensal" } },
+        { id: "pi_e", status: "requires_action", client_secret: "pi_e_secret_x", metadata: {} },
+        { id: "pi_f", status: "canceled", client_secret: "pi_f_secret_x", metadata: { prepago: "mensal" } },
+      ],
+    });
+    expect(await pagamentosPixPendentes("cus_1")).toEqual([
+      { id: "pi_a", segredo: "pi_a_secret_x", plano: "mensal", resumoDaTentativa: "resumo-1" },
+      { id: "pi_b", segredo: "pi_b_secret_x", plano: "anual", resumoDaTentativa: null },
+    ]);
+    expect(falsa.paymentIntents.list).toHaveBeenCalledWith({ customer: "cus_1", limit: 20 });
+  });
+
+  it("cancelar um pagamento à espera; a recusa sobe sem a mensagem crua", async () => {
+    falsa.paymentIntents.cancel.mockResolvedValueOnce({ id: "pi_a", status: "canceled" });
+    await cancelarPagamentoPix("pi_a");
+    expect(falsa.paymentIntents.cancel).toHaveBeenCalledWith("pi_a");
+    falsa.paymentIntents.cancel.mockRejectedValueOnce(recusa());
+    const erro = await cancelarPagamentoPix("pi_c").catch((e: unknown) => e);
+    expect(String(erro)).toContain("[stripe] o cancelamento do pagamento Pix falhou");
+    expect(String(erro)).not.toContain("sk_test");
+  });
+
+  it("quem segue por CARTÃO: todos os nossos à espera são cancelados (os pagos e os de outros, não) — e sem o Pix configurado não vai à Stripe", async () => {
+    falsa.paymentIntents.list.mockResolvedValue({
+      data: [
+        { id: "pi_a", status: "requires_action", client_secret: "pi_a_secret_x", metadata: { prepago: "mensal" } },
+        { id: "pi_b", status: "requires_payment_method", client_secret: "pi_b_secret_x", metadata: { prepago: "anual" } },
+        { id: "pi_c", status: "succeeded", client_secret: "pi_c_secret_x", metadata: { prepago: "mensal" } },
+        { id: "pi_e", status: "requires_action", client_secret: "pi_e_secret_x", metadata: {} },
+      ],
+    });
+    falsa.paymentIntents.cancel.mockResolvedValue({ status: "canceled" });
+    expect(await cancelarPagamentosPixPendentes("cus_1")).toBe(2);
+    expect(falsa.paymentIntents.cancel.mock.calls).toEqual([["pi_a"], ["pi_b"]]);
+
+    delete process.env.STRIPE_PIX_CONFIGURATION;
+    falsa.paymentIntents.list.mockClear();
+    expect(await cancelarPagamentosPixPendentes("cus_1")).toBe(0);
+    expect(falsa.paymentIntents.list).not.toHaveBeenCalled();
   });
 });

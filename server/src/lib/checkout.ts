@@ -3,6 +3,7 @@ import { DuracaoDoDesconto, type AssinarInput } from "@jilson/core";
 import { prisma } from "./prisma.js";
 import { assinaturaDaAcesso, cobrancaAtrasada, temAcessoAtivo } from "./acesso.js";
 import { sincronizarSeLivre } from "./assinaturas.js";
+import { cancelarPagamentosPixPendentes } from "./stripe-pix.js";
 import { acertarNumeroFiscal, assinaturasDoCliente, buscarCodigo, buscarPrecos, cancelarIncompleta, chaveDoNumeroFiscal, criarAssinatura, criarCliente, DocumentoRecusado, type AssinaturaNoCheckout, type CodigoPromocional } from "./stripe.js";
 
 // ASSINAR COM A CONTA LOGADA (Fase 4, etapa 4.2 — billing.md; CLAUDE.md → Membership Gating).
@@ -46,13 +47,13 @@ export type Desfecho =
 /** Encerradas: não cobram mais e não impedem uma assinatura nova. */
 const ENCERRADAS: ReadonlySet<string> = new Set(["incomplete_expired", "canceled"]);
 
-/** Até 7 idas à Stripe dentro da trava (10 s cada, com uma nova tentativa): a lista, o número fiscal, cancelar e criar — o mesmo do visitante. */
+/** Até 9 idas à Stripe dentro da trava (10 s cada, com uma nova tentativa): a lista, o Pix à espera (etapa 4.9), o número fiscal, cancelar e criar — o mesmo do visitante. */
 const TEMPO_DA_TRANSACAO = { maxWait: 10_000, timeout: 120_000 };
 /** Uma ida à Stripe (criar o cliente), com uma nova tentativa. */
 const TEMPO_DO_CLIENTE = { maxWait: 10_000, timeout: 30_000 };
 
-/** A trava desta conta, SEM ESPERAR: livre, fica com este pedido até a transação acabar; ocupada, devolve não. */
-async function travarSeLivre(tx: Prisma.TransactionClient, contaId: string): Promise<boolean> {
+/** A trava desta conta, SEM ESPERAR: livre, fica com este pedido até a transação acabar; ocupada, devolve não. (O Pix pré-pago usa a mesma.) */
+export async function travarSeLivre(tx: Prisma.TransactionClient, contaId: string): Promise<boolean> {
   const [trava] = await tx.$queryRaw<{ livre: boolean }[]>`SELECT pg_try_advisory_xact_lock(hashtext(${`assinar:${contaId}`})) AS livre`;
   return trava?.livre === true;
 }
@@ -62,7 +63,7 @@ async function travarSeLivre(tx: Prisma.TransactionClient, contaId: string): Pro
  * CURTA SÓ DELE, com a trava da conta: se o resto do checkout falhar, ele fica gravado, e uma
  * conta é sempre UM cliente. Nada: outro pedido desta conta está assinando agora.
  */
-async function clienteDaConta(conta: Conta): Promise<string | null> {
+export async function clienteDaConta(conta: Conta): Promise<string | null> {
   const guardado = await prisma.stripeCustomer.findUnique({ where: { userId: conta.id }, select: { stripeCustomerId: true } });
   if (guardado) return guardado.stripeCustomerId;
   return prisma.$transaction(async (tx): Promise<string | null> => {
@@ -94,7 +95,7 @@ type NaTrava = Desfecho | { resultado: "viva-na-stripe"; assinaturaId: string };
  * Se a Stripe não responder, o erro SOBE (500): "tente de novo" é mais honesto que "já é
  * assinante" com a aula trancada — e a nova tentativa é o que conserta.
  */
-async function sincronizarAViva(conta: Conta, assinaturaId: string): Promise<Desfecho> {
+export async function sincronizarAViva(conta: Conta, assinaturaId: string): Promise<Desfecho> {
   const sincronia = await sincronizarSeLivre(assinaturaId);
   if (!sincronia) {
     console.info(`[stripe] checkout: a conta ${conta.id} tem a assinatura ${assinaturaId} viva na Stripe, e o espelho dela está sendo acertado agora`);
@@ -164,6 +165,11 @@ async function decidir(conta: Conta, pedido: AssinarInput, clienteId: string, pr
     // sincronia, que conserta o espelho, roda depois de soltar esta trava (`sincronizarAViva`).
     // Nada aqui mexe no cliente dela — nem o número fiscal.
     if (viva) return { resultado: "viva-na-stripe", assinaturaId: viva.id };
+
+    // UM PAGAMENTO ABERTO POR VEZ (etapa 4.9): o Pix à espera desta conta morre quando ela segue por
+    // cartão — o QR copiado no app do banco podia ser pago depois, e nasceriam duas assinaturas. (O
+    // caminho do Pix faz o mesmo com o cartão começado e não pago: `pix-pre-pago.ts`.)
+    await cancelarPagamentosPixPendentes(clienteId);
 
     // O CPF ou CNPJ do pedido (obrigatório — `assinarSchema`: é ele que restringe a venda ao Brasil),
     // na forma em que a fatura o guarda. Vai para a ficha do cliente só DEPOIS do laço (abaixo).

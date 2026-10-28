@@ -1,7 +1,7 @@
 import type Stripe from "stripe";
 import type { Plano } from "@jilson/core";
 import { erroSemMensagem, stripe } from "./stripe-cliente.js";
-import { MARCA_DO_PREPAGO, METADADO_DO_PIX, metadadosDoVisitante, type PagamentoPrePago, type TentativaDoVisitante } from "./stripe.js";
+import { MARCA_DO_PREPAGO, METADADO_DO_PIX, METADADOS_DO_VISITANTE, metadadosDoVisitante, type PagamentoPrePago, type TentativaDoVisitante } from "./stripe.js";
 
 // O PIX PRÉ-PAGO (Fase 4, etapa 4.9 — billing.md → *Formas de pagamento*; decisão do operador,
 // 28/10/2026). Numa conta do Brasil a Stripe não cobra Pix de novo sozinha (sem Pix Automático) e
@@ -23,7 +23,7 @@ import { MARCA_DO_PREPAGO, METADADO_DO_PIX, metadadosDoVisitante, type Pagamento
 // consultada mora em `assinaturas.ts` (`processarPixPrePago`).
 // Pagar de novo é SÓ depois de o período acabar (decisão do operador, 28/10/2026): não há soma de tempo.
 
-/** Quanto tempo o QR do Pix vale (proposta do agente; a decisão do operador vem na abertura do passo 2). */
+/** Quanto tempo o QR do Pix vale: 1 hora (decisão do operador, 28/10/2026, na abertura do passo 2 da etapa 4.9). */
 export const VALIDADE_DO_PIX_EM_SEGUNDOS = 60 * 60;
 
 /** O Pix está configurado? Sem a configuração só-Pix, as rotas do Pix respondem 503 — nunca abrem o campo com cartão. */
@@ -35,6 +35,11 @@ function configuracaoDoPix(): string {
   const configuracao = process.env.STRIPE_PIX_CONFIGURATION;
   if (!configuracao) throw new Error("[stripe] Pix sem STRIPE_PIX_CONFIGURATION");
   return configuracao;
+}
+
+/** A configuração só-Pix, para o site abrir o campo com ela — ou nada, quando o Pix não está configurado. */
+export function configuracaoDoPixOuNada(): string | null {
+  return process.env.STRIPE_PIX_CONFIGURATION || null;
 }
 
 /** De quem é o pagamento: a conta logada (`userId`) ou a tentativa do visitante, que ainda não tem conta. */
@@ -112,6 +117,49 @@ export async function criarAssinaturaPrePaga(pagamento: PagamentoPrePago): Promi
   } catch (erro) {
     throw erroSemMensagem(erro, "a assinatura pré-paga do Pix");
   }
+}
+
+/** Um pagamento Pix NOSSO ainda à espera (o QR aberto, ou vencido sem pagar). */
+export type PixPendente = { id: string; segredo: string; plano: string; resumoDaTentativa: string | null };
+/** Os estados em que o pagamento ainda pode ser pago ou cancelado — nunca `processing` nem `succeeded`. */
+const PENDENTES: ReadonlySet<string> = new Set(["requires_payment_method", "requires_confirmation", "requires_action"]);
+
+/**
+ * Os pagamentos Pix NOSSOS deste cliente ainda à espera: o novo clique segue com o do mesmo plano (o
+ * mesmo QR), e cancela os outros — como o checkout cancela a incompleta de outro plano. Sem isto, dois
+ * QRs abertos podiam ser pagos os dois.
+ */
+export async function pagamentosPixPendentes(clienteId: string): Promise<PixPendente[]> {
+  try {
+    const lista = await stripe().paymentIntents.list({ customer: clienteId, limit: 20 });
+    return lista.data
+      .filter((p) => PENDENTES.has(p.status) && Boolean(p.metadata[MARCA_DO_PREPAGO]) && Boolean(p.client_secret))
+      .map((p) => ({ id: p.id, segredo: p.client_secret ?? "", plano: p.metadata[MARCA_DO_PREPAGO] ?? "", resumoDaTentativa: p.metadata[METADADOS_DO_VISITANTE.tentativa] || null }));
+  } catch (erro) {
+    throw erroSemMensagem(erro, "a lista dos pagamentos Pix do cliente");
+  }
+}
+
+/** Cancela um pagamento Pix à espera. O que já foi pago (ou está em processamento) não se cancela: a Stripe recusa, e o erro sobe. */
+export async function cancelarPagamentoPix(id: string): Promise<void> {
+  try {
+    await stripe().paymentIntents.cancel(id);
+  } catch (erro) {
+    throw erroSemMensagem(erro, "o cancelamento do pagamento Pix");
+  }
+}
+
+/**
+ * UM PAGAMENTO ABERTO POR VEZ, no sentido do cartão: quando a pessoa segue por CARTÃO (o checkout,
+ * logado ou sem login), todo Pix NOSSO à espera deste cliente é cancelado — o QR copiado no app do
+ * banco podia ser pago depois do cartão, e nasceriam duas assinaturas. Devolve quantos cancelou.
+ * Sem o Pix configurado não há QR nenhum, e não vai à Stripe.
+ */
+export async function cancelarPagamentosPixPendentes(clienteId: string): Promise<number> {
+  if (!pixConfigurado()) return 0;
+  const pendentes = await pagamentosPixPendentes(clienteId);
+  for (const pendente of pendentes) await cancelarPagamentoPix(pendente.id);
+  return pendentes.length;
 }
 
 const ID_DE_PAGAMENTO = /^pi_[A-Za-z0-9]+$/;

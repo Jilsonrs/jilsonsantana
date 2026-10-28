@@ -97,6 +97,26 @@ export type AssinarSemLoginInput = z.infer<typeof assinarSemLoginSchema>;
 export type CorpoDeAssinarSemLogin = z.input<typeof assinarSemLoginSchema>;
 
 /**
+ * Corpo de `POST /api/billing/pix` — pagar com PIX, pré-pago (etapa 4.9, passo 2; decisão do operador,
+ * 28/10/2026). Só o plano e o CPF ou CNPJ: a conta é a da sessão, o preço se acha no servidor. SEM
+ * código promocional (decisão (b) da etapa: o desconto é da assinatura, e o Pix é pagamento solto).
+ */
+export const pixSchema = z.object({
+  plano: z.enum(PLANOS),
+  documento: documentoFiscalSchema,
+});
+export type PixInput = z.infer<typeof pixSchema>;
+export type CorpoDePix = z.input<typeof pixSchema>;
+
+/**
+ * Corpo de `POST /api/billing/visitante/pix` — pagar com Pix SEM CONTA: o mesmo pedido de assinar sem
+ * login, sem o código promocional. `tentativa`: com ela, o novo clique segue com o MESMO Pix.
+ */
+export const pixSemLoginSchema = assinarSemLoginSchema.omit({ codigo: true });
+export type PixSemLoginInput = z.infer<typeof pixSemLoginSchema>;
+export type CorpoDePixSemLogin = z.input<typeof pixSemLoginSchema>;
+
+/**
  * Corpo de `POST /api/billing/visitante/confirmacao` — "o pagamento já valeu?", a pergunta da tela de
  * depois do pagamento, que não tem login. Só o código da tentativa, que só quem a fez recebeu.
  */
