@@ -5267,6 +5267,13 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                   sem o fuso, em UTC como o CI · a tela de entrar sem o cartão). Gates: typecheck,
                   lint, build; site 993, servidor 1361 (como o CI). **Até a 7b, o "antes de trancar"
                   só sai se um aviso da Stripe chegar no último dia.**
+                  **Revisto na revisão da etapa (28/10/2026 — os achados, abaixo do passo 8):** a
+                  cancelada com dias pagos não deve nada AINDA (na função pura — deve quando o período
+                  acaba); a marca fica PENDENTE até o Resend confirmar (`sentAt`) e, pendente há mais de
+                  15 min, é retomada pela vez seguinte (A7 — quem a tomou caiu no meio; a chave do Resend
+                  impede o dobro); a conta que cancelou e já assinou de novo, e a excluída, CONSOMEM a
+                  marca sem e-mail (P1 — senão a rodada voltaria a elas toda hora, e a antiga mandaria
+                  "reative" no dia em que a nova atrasasse).
             - [x] **7b — A rodada de hora em hora (o agendador).** Um comando do servidor
                   (`server/src/tarefas/avisos-da-cobranca.ts`): as assinaturas atrasadas e as
                   canceladas nos últimos 3 dias que ainda não receberam o e-mail devido, conferidas uma
@@ -5303,6 +5310,16 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                   (`gcloud scheduler jobs resume jilson-prod-avisos-de-hora-em-hora --location=us-east4`),
                   forçar uma rodada (`gcloud scheduler jobs run …`) e conferir no registro do job a linha
                   `[avisos] a rodada terminou`.
+                  **Revisto na revisão da etapa (28/10/2026):** a rodada só LÊ a cancelada na Stripe
+                  (`buscarAssinatura`), sem regravar o espelho — regravar renovava o `updatedAt` que a
+                  escolheu, e ela voltava toda hora (P1); a consulta ignora a conta excluída; a
+                  assinatura que a Stripe não conhece é aviso, contada em `desconhecidas`, não alerta a
+                  cada hora (P2); e a rodada para pelo prazo (`PRAZO_DA_RODADA_EM_MS`, 240 s dos 300 do
+                  job), adiando o resto para a próxima hora com um aviso (P2). Testes: 7 novos
+                  (`avisos-da-assinatura.test.ts`, 31). Mutação: 10 de 10 reprovaram (a cancelada com
+                  dias pagos já devendo · sem consumir, nos dois casos · a rodada regravando a cancelada ·
+                  qualquer marca resolvendo · tomar sem retomar · o envio sem confirmar a marca · a
+                  desconhecida virando alerta · sem o prazo · a consulta sem excluir a conta excluída).
             - [ ] **7c — Prova e revisão:** na área restrita, com o relógio de teste da Stripe (a
                   falha e a data da próxima tentativa, o dia antes de trancar, o cancelamento depois das
                   tentativas, a expirada sem e-mail); no banco de dev; os e-mails olhados pelo operador

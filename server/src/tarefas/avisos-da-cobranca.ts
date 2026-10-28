@@ -20,7 +20,7 @@ try {
   const { prisma } = await import("../lib/prisma.js");
   try {
     const rodada = await rodadaDosAvisos();
-    console.info(`[avisos] a rodada terminou: ${rodada.conferidas} conferida(s) na Stripe, ${rodada.ocupadas} ocupada(s), ${rodada.falhas} com falha`);
+    console.info(`[avisos] a rodada terminou: ${rodada.conferidas} conferida(s) na Stripe, ${rodada.ocupadas} ocupada(s), ${rodada.desconhecidas} que a Stripe não conhece, ${rodada.adiadas} adiada(s) para a próxima, ${rodada.falhas} com falha`);
     if (rodada.falhas > 0) codigo = 1;
   } finally {
     await prisma.$disconnect();

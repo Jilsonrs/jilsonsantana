@@ -198,7 +198,11 @@ data da próxima tentativa, lida na fatura buscada na Stripe, e o dia em que as 
 o agente tinha recomendado um e-mail só, com as duas datas; ele escolheu os dois). As outras
 tentativas da Stripe não mandam e-mail. **No código desde 28/10/2026:** a regra de qual e-mail é
 devido mora em `server/src/lib/avisos-da-assinatura.ts`, chamada pelo aviso da Stripe (e pela rodada
-do agendador, passo 7b); cada e-mail sai uma vez (a marca em `subscription_email`, por falha). Os
+do agendador, passo 7b); cada e-mail sai uma vez (a marca em `subscription_email`, por falha). *A marca
+fica pendente até o Resend confirmar e, pendente há mais de 15 minutos, é retomada pela vez seguinte —
+quem a tomou caiu no meio; a chave do Resend impede o dobro (revisão da etapa, 28/10/2026).* **Quem
+cancelou e já assinou de novo, e a conta excluída, não recebem o de cancelada** (a marca é consumida sem
+envio — "reative" seria errado); a cancelada com dias pagos recebe quando o período acaba. Os
 textos são rascunho do agente, que o operador confere (P107).
 *Reabre se os números mostrarem gente perdendo as aulas sem ter lido os dois e-mails, ou reclamando
 de e-mail demais.*

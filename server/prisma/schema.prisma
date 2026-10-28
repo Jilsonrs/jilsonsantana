@@ -734,7 +734,12 @@ model SubscriptionEmail {
   // A que o e-mail se refere: nos da cobrança que falhou, o instante da falha (o "pago até" da
   // atrasada, em ISO) — uma falha nova é outro e-mail; no de cancelada, "fim": ela só termina uma vez.
   reference      String
+  // Quando a marca foi TOMADA (e, numa retomada, quando foi retomada): é o prazo da pendente.
   createdAt      DateTime              @default(now())
+  // Quando o envio foi CONFIRMADO pelo Resend — ou a decisão de nunca enviar (a conta que já assinou
+  // de novo, a excluída). VAZIO = PENDENTE: tomada e sem confirmação; pendente há mais de 15 minutos é
+  // retomada pela vez seguinte (quem a tomou caiu no meio — revisão da etapa 4.7, 28/10/2026).
+  sentAt         DateTime?
 
   @@unique([subscriptionId, kind, reference])
   @@map("subscription_email")

@@ -22,7 +22,8 @@ import servidor from "./servidor.js";
 import { prisma } from "../lib/prisma.js";
 import { enderecoDoSite } from "../lib/endereco-do-site.js";
 import { readFileSync, existsSync } from "node:fs";
-import { ANTECEDENCIA_DO_AVISO_EM_MS, avisarSobreAAssinatura, emailDevido, rodadaDosAvisos } from "../lib/avisos-da-assinatura.js";
+import { ANTECEDENCIA_DO_AVISO_EM_MS, PRAZO_DA_MARCA_PENDENTE_EM_MS, avisarSobreAAssinatura, emailDevido, marcaResolve, rodadaDosAvisos } from "../lib/avisos-da-assinatura.js";
+import { AssinaturaNaoEncontrada } from "../lib/stripe.js";
 import { diaNoEmail } from "../views/email-da-cobranca.js";
 
 // OS E-MAILS DA COBRANÇA (Fase 4, etapa 4.7, passo 7 — decisões do operador, 28/10/2026). O que estes
@@ -75,7 +76,9 @@ const atrasada = (id: string, userId: string, falha: Date, proxima: Date | null 
 
 const doTipo = (tipo: PedidoDeEmail["tipo"]) => enviarEmail.mock.calls.map(([p]) => p).filter((p) => p.tipo === tipo);
 const todos = () => enviarEmail.mock.calls.map(([p]) => p);
-const marcas = async (sub: string) => prisma.subscriptionEmail.findMany({ where: { subscription: { stripeSubscriptionId: sub } }, select: { kind: true, reference: true } });
+const marcas = async (sub: string) => prisma.subscriptionEmail.findMany({ where: { subscription: { stripeSubscriptionId: sub } }, select: { kind: true, reference: true }, orderBy: { id: "asc" } });
+/** As marcas com a confirmação do envio (`sentAt`): vazio = pendente. */
+const marcasCompletas = async (sub: string) => prisma.subscriptionEmail.findMany({ where: { subscription: { stripeSubscriptionId: sub } }, select: { kind: true, reference: true, sentAt: true }, orderBy: { id: "asc" } });
 
 beforeAll(() => {
   process.env.STRIPE_WEBHOOK_SECRET = SEGREDO;
@@ -117,6 +120,8 @@ describe("a cobrança que falhou", () => {
     expect(pedido?.mensagem.botao).toEqual({ texto: "Trocar cartão", endereco: enderecoDoSite(entrarPara("cartao")) });
     expect(pedido?.mensagem.botao?.endereco).toMatch(/\/login\?depois=cartao$/);
     expect(await marcas(sub)).toEqual([{ kind: "COBRANCA_FALHOU", reference: falha.toISOString() }]);
+    // O envio confirmado fica gravado na marca (vazio seria "pendente", retomável depois do prazo).
+    expect((await marcasCompletas(sub))[0]?.sentAt).toBeInstanceOf(Date);
 
     // Outros avisos da mesma falha (a Stripe tentando de novo): não sai outro.
     await enviar(avisoDaAssinatura(sub, "invoice.payment_failed"));
@@ -255,6 +260,8 @@ describe("a assinatura que terminou", () => {
     const sub = novoId("sub");
     buscarAssinatura.mockResolvedValue(naStripe(sub, excluida.id, { status: "canceled", pagoAte: new Date(Date.now() - 60_000) }));
     await enviar(avisoDaAssinatura(sub, "customer.subscription.deleted"));
+    // A marca fica CONSUMIDA (resolvida sem envio): a rodada do agendador não volta a esta assinatura.
+    expect((await marcasCompletas(sub)).map((m) => [m.kind, m.sentAt instanceof Date])).toEqual([["CANCELADA", true]]);
 
     const semConta = novoId("sub");
     buscarAssinatura.mockResolvedValue(naStripe(semConta, `conta-que-nao-existe-${S}`, { status: "past_due", pagoAte: new Date(Date.now() - 60_000) }));
@@ -335,7 +342,7 @@ describe("a rodada do agendador", () => {
     const sub = novoId("sub");
     const falha = new Date(Date.now() - 2.5 * DIA);
     const linha = await noBanco(sub, conta.id, { status: "past_due", currentPeriodEnd: falha });
-    await prisma.subscriptionEmail.create({ data: { subscriptionId: linha.id, kind: "COBRANCA_FALHOU", reference: falha.toISOString() } });
+    await prisma.subscriptionEmail.create({ data: { subscriptionId: linha.id, kind: "COBRANCA_FALHOU", reference: falha.toISOString(), sentAt: new Date() } });
     naStripeAgora.set(sub, atrasada(sub, conta.id, falha));
 
     await rodadaDosAvisos();
@@ -395,7 +402,7 @@ describe("a rodada do agendador", () => {
     const recebeu = novoId("sub");
     const falha = new Date(Date.now() - HORA);
     const linha = await noBanco(recebeu, conta.id, { status: "past_due", currentPeriodEnd: falha });
-    await prisma.subscriptionEmail.create({ data: { subscriptionId: linha.id, kind: "COBRANCA_FALHOU", reference: falha.toISOString() } });
+    await prisma.subscriptionEmail.create({ data: { subscriptionId: linha.id, kind: "COBRANCA_FALHOU", reference: falha.toISOString(), sentAt: new Date() } });
     await rodadaDosAvisos();
     expect([conferiuNaStripe(trancada), conferiuNaStripe(recebeu)]).toEqual([false, false]);
   });
@@ -415,6 +422,116 @@ describe("a rodada do agendador", () => {
     expect(daAssinatura(boa, "cobranca-falhou")).toHaveLength(1);
     const alertas = vi.mocked(console.error).mock.calls.map(([texto]) => String(texto));
     expect(alertas.some((texto) => texto.startsWith("[avisos]") && texto.includes(quebrada))).toBe(true);
+  });
+
+  // P1 DA REVISÃO DA ETAPA (28/10/2026): a cancelada de quem JÁ ASSINOU DE NOVO voltava à fila toda hora
+  // (a rodada regravava o espelho e renovava o `updatedAt` que a escolheu) — e, no dia em que a nova
+  // atrasasse, mandaria "sua assinatura terminou — reative" em vez de "troque o cartão".
+  it("cancelou e já assinou de novo: nenhum e-mail, a marca consumida, a rodada não volta à Stripe — e a nova atrasada não ressuscita o 'terminou'", async () => {
+    const conta = await novaConta();
+    const nova = novoId("sub");
+    await noBanco(nova, conta.id, { status: "active", currentPeriodEnd: new Date(Date.now() + 30 * DIA) });
+    const antiga = novoId("sub");
+    buscarAssinatura.mockResolvedValueOnce(naStripe(antiga, conta.id, { status: "canceled", pagoAte: new Date(Date.now() - 60_000) }));
+    await enviar(avisoDaAssinatura(antiga, "customer.subscription.deleted"));
+    expect(daAssinatura(antiga, "assinatura-cancelada")).toHaveLength(0);
+    expect((await marcasCompletas(antiga)).map((m) => [m.kind, m.sentAt instanceof Date])).toEqual([["CANCELADA", true]]);
+
+    buscarAssinatura.mockClear();
+    await rodadaDosAvisos();
+    await rodadaDosAvisos();
+    expect(conferiuNaStripe(antiga)).toBe(false);
+
+    // A nova atrasa e tranca: a antiga continua sem e-mail, e a nova trancada também não deve nada.
+    await prisma.subscription.update({ where: { stripeSubscriptionId: nova }, data: { status: "past_due", currentPeriodEnd: new Date(Date.now() - 4 * DIA) } });
+    await rodadaDosAvisos();
+    expect(daAssinatura(antiga, "assinatura-cancelada")).toHaveLength(0);
+    expect([conferiuNaStripe(antiga), conferiuNaStripe(nova)]).toEqual([false, false]);
+  });
+
+  it("a cancelada é só LIDA na Stripe: o espelho não é regravado, e a rodada seguinte não volta", async () => {
+    const conta = await novaConta();
+    const sub = novoId("sub");
+    const linha = await noBanco(sub, conta.id, { status: "canceled", currentPeriodEnd: new Date(Date.now() - 20 * DIA) });
+    naStripeAgora.set(sub, naStripe(sub, conta.id, { status: "canceled", pagoAte: new Date(Date.now() - 20 * DIA) }));
+    await rodadaDosAvisos();
+    expect(daAssinatura(sub, "assinatura-cancelada")).toHaveLength(1);
+    expect((await prisma.subscription.findUniqueOrThrow({ where: { id: linha.id } })).updatedAt.getTime()).toBe(linha.updatedAt.getTime());
+    buscarAssinatura.mockClear();
+    await rodadaDosAvisos();
+    expect(conferiuNaStripe(sub)).toBe(false);
+  });
+
+  // A7 DA REVISÃO DA ETAPA: quem tomou a marca e caiu antes de o Resend responder deixava o e-mail
+  // marcado e nunca enviado. A pendente velha é retomada; a recente é de quem está enviando agora.
+  it("a marca PENDENTE há mais que o prazo é retomada e enviada; a pendente recente, não", async () => {
+    const conta = await novaConta();
+    const falha = new Date(Date.now() - HORA);
+    const velha = novoId("sub");
+    const linhaVelha = await noBanco(velha, conta.id, { status: "past_due", currentPeriodEnd: falha });
+    await prisma.subscriptionEmail.create({ data: { subscriptionId: linhaVelha.id, kind: "COBRANCA_FALHOU", reference: falha.toISOString(), createdAt: new Date(Date.now() - PRAZO_DA_MARCA_PENDENTE_EM_MS - 60_000) } });
+    naStripeAgora.set(velha, atrasada(velha, conta.id, falha));
+    const outra = await novaConta();
+    const recente = novoId("sub");
+    const linhaRecente = await noBanco(recente, outra.id, { status: "past_due", currentPeriodEnd: falha });
+    await prisma.subscriptionEmail.create({ data: { subscriptionId: linhaRecente.id, kind: "COBRANCA_FALHOU", reference: falha.toISOString() } });
+    naStripeAgora.set(recente, atrasada(recente, outra.id, falha));
+
+    await rodadaDosAvisos();
+    expect(daAssinatura(velha, "cobranca-falhou")).toHaveLength(1);
+    expect((await marcasCompletas(velha))[0]?.sentAt).toBeInstanceOf(Date);
+    expect(daAssinatura(recente, "cobranca-falhou")).toHaveLength(0);
+    expect(conferiuNaStripe(recente)).toBe(false);
+    expect((await marcasCompletas(recente))[0]?.sentAt).toBeNull();
+  });
+
+  // P2 DA REVISÃO DA ETAPA: a assinatura que a Stripe não conhece virava alerta a cada hora.
+  it("a Stripe não conhece a assinatura: aviso (não alerta), contada em 'desconhecidas', e as outras seguem", async () => {
+    const avisos = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const conta = await novaConta();
+    const falha = new Date(Date.now() - HORA);
+    const sumida = novoId("sub");
+    await noBanco(sumida, conta.id, { status: "past_due", currentPeriodEnd: falha });
+    const outra = await novaConta();
+    const boa = novoId("sub");
+    await noBanco(boa, outra.id, { status: "past_due", currentPeriodEnd: falha });
+    naStripeAgora.set(boa, atrasada(boa, outra.id, falha));
+    buscarAssinatura.mockImplementation(async (id) => {
+      if (id === sumida) throw new AssinaturaNaoEncontrada(id);
+      const assinatura = naStripeAgora.get(id);
+      if (!assinatura) throw new Error(`a Stripe deste teste não conhece ${id}`);
+      return assinatura;
+    });
+
+    const rodada = await rodadaDosAvisos();
+    expect(rodada.desconhecidas).toBeGreaterThanOrEqual(1);
+    expect(daAssinatura(boa, "cobranca-falhou")).toHaveLength(1);
+    expect(avisos.mock.calls.some(([texto]) => String(texto).startsWith("[avisos]") && String(texto).includes(sumida))).toBe(true);
+    expect(vi.mocked(console.error).mock.calls.some(([texto]) => String(texto).includes(sumida))).toBe(false);
+  });
+
+  // P2 DA REVISÃO DA ETAPA: o job tem 5 minutos; passado o prazo, as assinaturas que sobram ficam para a próxima hora.
+  it("com o prazo esgotado, nada vai à Stripe: as assinaturas ficam adiadas, com aviso", async () => {
+    const avisos = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const conta = await novaConta();
+    const sub = novoId("sub");
+    await noBanco(sub, conta.id, { status: "past_due", currentPeriodEnd: new Date(Date.now() - HORA) });
+    naStripeAgora.set(sub, atrasada(sub, conta.id, new Date(Date.now() - HORA)));
+    const rodada = await rodadaDosAvisos(new Date(), 0);
+    expect(rodada.adiadas).toBeGreaterThanOrEqual(1);
+    expect(buscarAssinatura).not.toHaveBeenCalled();
+    expect(daAssinatura(sub, "cobranca-falhou")).toHaveLength(0);
+    expect(avisos.mock.calls.some(([texto]) => String(texto).includes("parou pelo prazo"))).toBe(true);
+  });
+
+  it("a conta excluída (LGPD): a rodada nem a escolhe — nenhuma ida à Stripe, mesmo sem marca", async () => {
+    const excluida = await novaConta({ deletedAt: new Date() });
+    const sub = novoId("sub");
+    await noBanco(sub, excluida.id, { status: "canceled", currentPeriodEnd: new Date(Date.now() - HORA) });
+    naStripeAgora.set(sub, naStripe(sub, excluida.id, { status: "canceled", pagoAte: new Date(Date.now() - HORA) }));
+    await rodadaDosAvisos();
+    expect(conferiuNaStripe(sub)).toBe(false);
+    expect(todos().filter((p) => p.referencia?.endsWith(`assinatura:${sub}`))).toHaveLength(0);
   });
 
   it("o job da publicação executa o arquivo da rodada", () => {
@@ -441,12 +558,29 @@ describe("qual e-mail é devido agora (função pura)", () => {
     expect(ANTECEDENCIA_DO_AVISO_EM_MS).toBe(DIA);
   });
 
-  it("cancelada: o de cancelada; nenhum outro status, e nem a atrasada sem data", () => {
+  it("cancelada: o de cancelada só sem dias pagos; nenhum outro status, e nem a atrasada sem data", () => {
     expect(emailDevido({ status: "canceled", currentPeriodEnd: null })).toEqual({ tipo: "CANCELADA", referencia: "fim", trancaEm: null });
+    expect(emailDevido({ status: "canceled", currentPeriodEnd: new Date(falha.getTime() - 1) }, falha)).toEqual({ tipo: "CANCELADA", referencia: "fim", trancaEm: null });
+    // Com dias pagos (o cancelamento na hora, pelo painel): nada AINDA — deve quando o período acabar.
+    expect(emailDevido({ status: "canceled", currentPeriodEnd: new Date(falha.getTime() + 10 * DIA) }, falha)).toBeNull();
     for (const status of ["active", "trialing", "incomplete", "incomplete_expired", "paused", "unpaid"]) {
       expect(emailDevido({ status, currentPeriodEnd: falha }, falha), status).toBeNull();
     }
     expect(emailDevido({ status: "past_due", currentPeriodEnd: null })).toBeNull();
+  });
+
+  it("a marca resolve o e-mail se foi enviada (ou consumida), ou se está pendente há menos que o prazo", () => {
+    const devido = { tipo: "COBRANCA_FALHOU" as const, referencia: falha.toISOString(), trancaEm: new Date(tranca) };
+    const agora = new Date();
+    const enviada = { kind: "COBRANCA_FALHOU" as const, reference: falha.toISOString(), sentAt: agora, createdAt: new Date(agora.getTime() - DIA) };
+    const pendenteRecente = { ...enviada, sentAt: null, createdAt: new Date(agora.getTime() - PRAZO_DA_MARCA_PENDENTE_EM_MS + 1000) };
+    const pendenteVelha = { ...enviada, sentAt: null, createdAt: new Date(agora.getTime() - PRAZO_DA_MARCA_PENDENTE_EM_MS - 1000) };
+    const deOutroEmail = { ...enviada, kind: "ANTES_DE_TRANCAR" as const };
+    expect(marcaResolve([enviada], devido, agora)).toBe(true);
+    expect(marcaResolve([pendenteRecente], devido, agora)).toBe(true);
+    expect(marcaResolve([pendenteVelha], devido, agora)).toBe(false);
+    expect(marcaResolve([deOutroEmail], devido, agora)).toBe(false);
+    expect(marcaResolve([], devido, agora)).toBe(false);
   });
 
   it("o dia sai no horário de Brasília", () => {

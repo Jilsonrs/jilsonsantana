@@ -11,6 +11,7 @@ CREATE TABLE "subscription_email" (
     "kind" "SubscriptionEmailKind" NOT NULL,
     "reference" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "sentAt" TIMESTAMP(3),
 
     CONSTRAINT "subscription_email_pkey" PRIMARY KEY ("id")
 );
