@@ -5651,8 +5651,9 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       `paymentMethodConfiguration` do Payment Element com intenção adiada). O que é do operador vem
       como pergunta na abertura de cada passo: os textos, a validade do QR (proposta: 1 hora), os
       dias do aviso antes de acabar (proposta: 3), e a decisão abaixo.
-      **Decisões de produto propostas (valem se ele não disser o contrário ao aprovar):** (a) **pagar
-      de novo só DEPOIS de o período acabar** — o pré-pago não soma tempo por cima do que está correndo
+      **Decisões de produto — a (a) DECIDIDA pelo operador em 28/10/2026 ("Só depois de acabar"), as
+      outras valem se ele não disser o contrário ao aprovar:** (a) **pagar de novo só DEPOIS de o
+      período acabar** — o pré-pago não soma tempo por cima do que está correndo
       (somar exige uma segunda assinatura começando no fim da primeira e a fatura dela paga por fora na
       hora certa: mais código e mais erro; reabre se os números mostrarem gente querendo renovar antes);
       (b) **sem código promocional no Pix, na primeira versão** — o desconto da Stripe é da assinatura,
