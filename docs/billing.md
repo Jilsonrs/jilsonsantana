@@ -490,6 +490,13 @@ agente, com a recomendação dele:
    e a lista "O que está incluído", além do CPF ou CNPJ. Ela só não pede o e-mail (é o da conta) e
    continua dentro do app, com o menu lateral. Revê, também na tela logada, o "Hoje você paga" só
    com código (10/10/2026).
+6. **O botão Assinar POR ÚLTIMO, como a Udemy** *(decisão do operador, 27/10/2026, depois de olhar a
+   tela no ar e mostrar a da Udemy: "O botão de assinar deveria ficar por último")*: na coluna de
+   resumo, a renovação, o reembolso, o pagamento seguro e a linha dos Termos vêm antes, e o botão é o
+   último (o aviso de erro, quando há, logo acima dele); "O que está incluído" sai da coluna e fica à
+   esquerda, logo depois da escolha do plano; o código promocional fica onde estava. **Recusada:** o
+   código dentro do resumo, como o "Aplicar cupom" da Udemy. No celular, uma coluna só, e o botão
+   continua sendo o último. Vale para as duas telas (item 5).
 *Reabre se os números mostrarem gente desistindo nesta tela, ou se a coluna confundir quem assina.*
 
 **O que a Stripe exige para aprovar o pagamento** `[FATO — context7 /websites/stripe, 12/10/2026:

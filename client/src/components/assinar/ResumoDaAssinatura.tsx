@@ -6,8 +6,9 @@ import { useT } from "@/lib/language";
 /**
  * A COLUNA DE RESUMO (decisão do operador, 12/10/2026; nas duas telas desde 27/10/2026, P80): o plano
  * e o valor, o desconto quando há código, o TOTAL DE HOJE, a renovação, o reembolso, o pagamento
- * seguro, o botão e a linha dos Termos. Todo valor é o do servidor: com código, o de hoje é o que a
- * Stripe calculou; e a renovação, sem o valor (a prévia não o diz) — nunca conta feita na tela.
+ * seguro, a linha dos Termos e, POR ÚLTIMO, o botão — como a Udemy (decisão do operador, 27/10/2026).
+ * Todo valor é o do servidor: com código, o de hoje é o que a Stripe calculou; e a renovação, sem o
+ * valor (a prévia não o diz) — nunca conta feita na tela.
  */
 export function ResumoDaAssinatura({ plano, comCodigo, erro, botao }: { plano: PlanoDaAssinatura; comCodigo: PreviaDaAssinatura | null; erro: string | null; botao: ReactNode }) {
   const t = useT().assinar;
@@ -37,13 +38,13 @@ export function ResumoDaAssinatura({ plano, comCodigo, erro, botao }: { plano: P
         <li>{t.reembolso}</li>
         <li>{t.pagamentoSeguro}</li>
       </ul>
+      <LinhaDosTermos />
       {erro && (
         <p role="alert" className="text-sm text-destructive">
           {erro}
         </p>
       )}
       {botao}
-      <LinhaDosTermos />
     </section>
   );
 }

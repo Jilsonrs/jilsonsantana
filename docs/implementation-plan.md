@@ -5155,6 +5155,12 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                         voltou ao retrato de antes.
                   - [x] **A tela olhada em dev pelo operador** (27/10/2026: *"ficou bom pode publicar
                         depois ajustamos com o Antigravity"*): o acabamento visual fica para a 6g.
+            - [x] **6h — O botão Assinar por último, como a Udemy** *(decisão do operador, 27/10/2026,
+                  depois de olhar a tela no ar — `billing.md` → *O que existe na tela*, item 6)*: no
+                  resumo, os Termos antes e o botão por último; "O que está incluído" à esquerda,
+                  depois da escolha do plano; o código onde estava. Nas duas telas (o formulário é um
+                  só). Teste de ordem (`AssinarPage.test.tsx`); mutação (os Termos depois do botão · a
+                  lista de volta à direita): as duas reprovam.
             - [ ] **6g — O ACABAMENTO VISUAL das telas de assinar, pelo Antigravity** *(pedido do
                   operador, 27/10/2026: passar ao Antigravity com um passo a passo; o Claude confere)*.
                   **Só visual** — nada de texto, comportamento, rota ou teste.
@@ -5164,8 +5170,9 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                      Para ver a `/assinar/concluido`: no DevTools, em `sessionStorage`, gravar
                      `jilson.assinar.tentativa` = `{"tentativa":"x","email":"a@b.com"}` — aparece o
                      "Confirmando sua assinatura…".
-                  2. Acabar as duas colunas (formulário à esquerda; o resumo, o botão e "O que está
-                     incluído" à direita; no celular, uma coluna só, nesta ordem) e os componentes
+                  2. Acabar as duas colunas (formulário à esquerda, com "O que está incluído" logo
+                     depois dos planos; à direita, o resumo com o botão POR ÚLTIMO — 6h, como a Udemy;
+                     no celular, uma coluna só, nesta ordem; não mudar a ordem) e os componentes
                      novos: `client/src/components/assinar/` (`FormularioDeAssinatura`,
                      `CampoDoDocumento`, `DadosDoVisitante`, `ResumoDaAssinatura`, `OQueEstaIncluido`,
                      `CriarSenhaDepoisDePagar`) e `client/src/pages/AssinaturaConcluidaSemLoginPage.tsx`.

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { ReactNode } from "react";
-import { act, screen, fireEvent, waitFor } from "@testing-library/react";
+import { act, screen, fireEvent, waitFor, within } from "@testing-library/react";
 import { focusManager, onlineManager } from "@tanstack/react-query";
 import { useLocation } from "react-router";
 import type { AssinaturaCriada, PlanosDaAssinatura, PreviaDaAssinatura } from "@jilson/core";
@@ -459,6 +459,22 @@ describe("AssinarPage — o CPF ou CNPJ, o resumo e o que está incluído", () =
     abrir();
     await screen.findByRole("radio", { name: /Mensal/ });
     expect(screen.queryByRole("heading", { name: "O que está incluído" })).toBeNull();
+  });
+
+  // COMO A UDEMY (decisão do operador, 27/10/2026): quem preenche de cima para baixo termina no botão.
+  // O formulário é o mesmo nas duas telas (P80): a ordem vale para a pública também.
+  it("a ordem, como a Udemy: no resumo, os Termos e o botão POR ÚLTIMO; \"O que está incluído\" fora do resumo, entre os planos e o código", async () => {
+    getPlanosDaAssinatura.mockResolvedValue({ ...PLANOS, incluido: { itens: ["Item A"], frase: "A frase de baixo." } });
+    abrir();
+    const incluido = await screen.findByRole("heading", { name: "O que está incluído" });
+    const resumo = screen.getByRole("region", { name: "Resumo" });
+    const botao = within(resumo).getByRole("button", { name: "Assinar" });
+    const vemDepois = (a: Node, b: Node) => Boolean(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(vemDepois(within(resumo).getByRole("link", { name: "Termos de Uso" }), botao)).toBe(true);
+    expect(resumo.lastElementChild?.contains(botao)).toBe(true);
+    expect(resumo.contains(incluido)).toBe(false);
+    expect(vemDepois(screen.getByRole("radio", { name: /Anual/ }), incluido)).toBe(true);
+    expect(vemDepois(incluido, screen.getByLabelText("Código promocional"))).toBe(true);
   });
 });
 
