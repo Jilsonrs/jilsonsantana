@@ -91,6 +91,49 @@
 > que a Stripe não conhece, 0 adiada(s), 0 com falha`, com o monitor ligado. **Desde esta
 > publicação os e-mails da cobrança saem sozinhos em produção.** O Cloud Scheduler e a conta
 > `jilson-agendador` existem desde 28/10/2026 (criados com o OK do operador, 7b).
+> **NO `dev`, AINDA NÃO PUBLICADO (28/10/2026, depois do `c12b0cd`): a etapa 4.9 (Pix pré-pago), passos
+> 1 a 4** — `a94e888` (1, a fundação), `abf0542` (2a, as rotas do Pix), `cd826da` (2b, a tela: cartão ou
+> Pix, o QR, o "QR de novo"), `cf9f455` (P110), `8bcd16e` (P109: a configuração só-Pix da conta de verdade
+> em `deploy/cloud-run.yaml`), `fb7ee7f` (3, o pré-pago em Faturamento e no reembolso) e `230264f` (4, o
+> e-mail "está acabando"). Duas migrations novas vão com a próxima publicação (`20261028200000_pix_pre_pago`
+> e `20261028230000_prepago_terminando`). **Na próxima publicação o Pix entra no ar** (atrás do "Em breve"):
+> a escolha "Como você quer pagar?" passa a aparecer na tela de assinar.
+>
+> **PARA CONTINUAR NO PRÓXIMO CHAT (a ordem):**
+> 1. **Passo 5 da 4.9 — Apple Pay e Google Pay (código, pequeno).** Uma rota que sirva o arquivo da Apple
+>    em `/.well-known/apple-developer-merchantid-domain-association` — o arquivo é o da Stripe, o MESMO
+>    para todas as contas (`https://stripe.com/files/apple-pay/apple-developer-merchantid-domain-association`,
+>    9.094 bytes; versioná-lo em `server/`), servido com `application/octet-stream`; **montada ANTES do
+>    portão "Em breve"** (`app.ts`: a Stripe confere o domínio buscando esse endereço, e o portão a
+>    mandaria para a página de espera; o `express.static` ignora pasta com ponto) e com teste (200 com o
+>    conteúdo; a mesma resposta com `COMING_SOON=true`). Nada muda no campo do cartão. Depois de
+>    publicar, o operador registra o domínio (item 3).
+> 2. **Publicar** (ordem do operador) e conferir de fora: a versão nova do app; `/api/billing/visitante/
+>    planos` com `pix: { configuracao }`; o arquivo da Apple (200); o job das migrations aplicando as
+>    duas; no banco de produção, só leitura, nenhuma tabela sem RLS. Depois, o operador vê a tela de
+>    assinar pela prévia (`/__preview`): a escolha cartão/Pix.
+> 3. **O registro do domínio na Stripe (operador, painel):** *Settings → Payments → Payment method
+>    domains → Add a new domain* → `www.jilsonsantana.com` — em modo de teste E ao vivo (são registros
+>    separados). A Stripe busca o arquivo do item 1 e marca o domínio como verificado; Apple Pay e Google
+>    Pay passam a aparecer sozinhos no campo do cartão (no Safari do iPhone/Mac com carteira; no Chrome
+>    com Google Pay). A prova é no aparelho, pelo operador.
+> 4. **Passo 6 da 4.9 — prova e revisão.** Na área restrita (roteiro fora do repo, cliente descartável):
+>    pagar com Pix de teste de ponta a ponta (a confirmação é à mão, na página de instruções da Stripe em
+>    teste); o que o `confirmPayment` devolve quando a pessoa FECHA a janela do QR; o "Mostrar o QR de
+>    novo"; o QR vencido (1 h); o reembolso do Pix; o relógio de teste para o "está acabando" e o
+>    "terminou". No banco de dev. A revisão de segurança da etapa inteira (`security-vulnerability-
+>    reviewer` + revisor geral, como na 4.7). O Pix de verdade (R$ 99,90 e o reembolso) é do teste do
+>    operador no passo 8 da 4.7.
+> 5. **Pendências do operador:** P111 (o texto do e-mail "está acabando", rascunho), P108 (a tela "já
+>    valeu?" quando o servidor recusa), e as do passo 8 da 4.7 (`pendencias.md`).
+> **O que o próximo chat precisa saber:** a suíte do servidor apaga o banco de teste local — perguntar
+> UMA vez e usar a resposta exata em `PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION`; rodar como o CI
+> (`STRIPE_SECRET_KEY= STRIPE_PUBLISHABLE_KEY= STRIPE_WEBHOOK_SECRET= RESEND_API_KEY= STRIPE_PIX_CONFIGURATION=`);
+> a mutação por roteiro com cópia de segurança de cada arquivo; os arquivos do Pix: `server/src/lib/
+> stripe-pix.ts`, `pix-pre-pago.ts`, `assinaturas.ts` (`processarPixPrePago`), `minha-assinatura.ts`
+> (`prePaga`), `stripe-devolucao.ts` (`periodoDevolvido`), `avisos-da-assinatura.ts`; no site,
+> `lib/pedido-de-assinatura.ts`, `lib/pix-pendente.ts`, `components/assinar/EscolhaDaFormaDePagamento.tsx`
+> e `QrDeNovo.tsx`. A spec: `billing.md` → *Formas de pagamento*.
 > **Publicado em 24–25/10/2026:** `d6c2906` — o endereço do CDN do Bunny corrigido (P105) e a
 > conferência dele no CI; `f09a903` — o download do arquivo da aula em pedaços (o Cloud Run recusava
 > acima de 32 MB); `294b106` — o segundo mais novo vence entre aparelhos. Conferidos de fora (o site
@@ -5838,6 +5881,13 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             `www.jilsonsantana.com` em *Payment method domains* (modo de teste e de verdade) e baixa o
             arquivo de lá; nada muda no código do campo (as carteiras aparecem sozinhas com `card`).
             A prova é no aparelho (iPhone/Safari e Chrome com Google Pay), pelo operador.
+            **Como fazer (anotado em 28/10/2026, ao encerrar a sessão):** o arquivo é o da Stripe, o
+            MESMO para todas as contas — `https://stripe.com/files/apple-pay/apple-developer-merchantid-domain-association`
+            (9.094 bytes, `application/octet-stream`; medido) —, versionado em `server/`; a rota entra
+            **antes do portão "Em breve"** no `app.ts` (a Stripe confere o domínio buscando o arquivo, e
+            o portão o mandaria para a página de espera); teste: 200 com o conteúdo, também com
+            `COMING_SOON=true`. O registro no painel só depois de publicar (o *Estado atual* → *Para
+            continuar no próximo chat*).
       - [ ] **Passo 6 — Prova e revisão.** Na área restrita: como se confirma um Pix de teste (a
             página de instruções da Stripe em teste), o pré-pago de ponta a ponta com o relógio de
             teste (nasce, avisa 3 dias antes, termina, "terminou"), o reembolso do Pix, o QR vencido;
