@@ -56,6 +56,14 @@ export type AssinaturaNaStripe = {
    * de produção (Fase 7) — senão dariam acesso para sempre (achado P2 da revisão, 09/10/2026).
    */
   livemode: boolean;
+  /**
+   * Quando a Stripe vai tentar cobrar de novo a última fatura, ainda aberta (`next_payment_attempt`
+   * — etapa 4.7, passo 7). Vazio: nenhuma tentativa marcada (elas acabaram, ou a fatura não está
+   * aberta). Só para o texto do e-mail da cobrança que falhou: nunca decide acesso.
+   */
+  proximaTentativa?: Date | null;
+  /** Encerrada porque as tentativas de cobrança acabaram (`cancellation_details.reason`). Só escolhe o texto do e-mail. */
+  encerradaSemPagamento?: boolean;
 };
 
 /**
@@ -535,7 +543,13 @@ export function paraAssinaturaNaStripe(assinatura: Stripe.Subscription, devolvid
   // segunda metade do gate: o acesso vai até o fim do período pago, como a regra já diz
   // ("cobre cancelamento e pausa com uma regra só" — CLAUDE.md → Membership Gating).
   const status = assinatura.pause_collection ? "paused" : assinatura.status;
-  return { id: assinatura.id, status, pagoAte, clienteId, userId, pedido, doVisitante, livemode: assinatura.livemode };
+  // Para os e-mails da cobrança (etapa 4.7, passo 7). A data se lê na fatura buscada AGORA, e não no
+  // aviso da falha: com as automações da Stripe ela não vem nele (context7 /websites/stripe, 28/10/2026).
+  const ultima = assinatura.latest_invoice;
+  const proxima = typeof ultima === "object" && ultima !== null && ultima.status === "open" ? ultima.next_payment_attempt : null;
+  const proximaTentativa = proxima ? new Date(proxima * 1000) : null;
+  const encerradaSemPagamento = assinatura.cancellation_details?.reason === "payment_failed";
+  return { id: assinatura.id, status, pagoAte, clienteId, userId, pedido, doVisitante, livemode: assinatura.livemode, proximaTentativa, encerradaSemPagamento };
 }
 
 /**

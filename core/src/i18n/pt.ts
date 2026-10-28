@@ -361,6 +361,39 @@ export const pt = {
         confirmada: "Sua assinatura foi confirmada: você já tem acesso a todos os cursos e trilhas.",
         comoEntrar: "Para entrar, use seu e-mail e sua senha. Se ainda não criou a senha, ou não lembra dela, use \"Receber código de acesso\" na tela de entrar.",
         botao: "Entrar na escola"
+      },
+      // OS E-MAILS DA COBRANÇA (etapa 4.7, passo 7 — decisões do operador, 28/10/2026): RASCUNHO do
+      // agente, que o operador confere depois, vendo os e-mails de verdade (pedido dele, 28/10/2026).
+      // `{data}` é o dia, no horário de Brasília.
+      // Na cobrança que falhou: a próxima tentativa (sem ela, a frase sai) e até quando as aulas ficam abertas.
+      cobrancaFalhou: {
+        assunto: "Não conseguimos renovar sua assinatura",
+        titulo: "Não conseguimos renovar sua assinatura",
+        naoPassou: "O pagamento da renovação não passou no seu cartão.",
+        novaTentativa: "Vamos tentar de novo no dia {data}.",
+        abertasAte: "Suas aulas continuam abertas até o dia {data}. Para não perder o acesso, troque o cartão:",
+        botao: "Trocar cartão"
+      },
+      // No último dia antes de as aulas trancarem.
+      antesDeTrancar: {
+        assunto: "Sua assinatura ainda não foi paga",
+        titulo: "Sua assinatura ainda não foi paga",
+        semPagamento: "Continuamos sem conseguir cobrar a renovação no seu cartão.",
+        perdeAcesso: "Se não for pago até o dia {data}, você perde o acesso às aulas. Troque o cartão para continuar estudando:",
+        botao: "Trocar cartão"
+      },
+      // No fim de uma assinatura que foi paga: uma versão para quando as tentativas de cobrança
+      // acabaram, e outra para os outros casos (a pedido, o reembolso, o painel).
+      cancelada: {
+        assuntoSemPagamento: "Sua assinatura foi cancelada",
+        tituloSemPagamento: "Sua assinatura foi cancelada",
+        semPagamento: "Não conseguimos cobrar a renovação, e sua assinatura foi cancelada.",
+        progressoAoReativar: "Seu progresso continua guardado: ao reativar, você continua de onde parou.",
+        assunto: "Sua assinatura terminou",
+        titulo: "Sua assinatura terminou",
+        terminou: "Sua assinatura terminou, e o acesso às aulas foi encerrado.",
+        progressoSeVoltar: "Seu progresso continua guardado: se voltar, você continua de onde parou.",
+        botao: "Reativar assinatura"
       }
     },
     inicio: {

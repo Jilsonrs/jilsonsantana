@@ -192,6 +192,16 @@ trocou o cartão —, as aulas reabrem na hora. **Dois e-mails automáticos, ped
 falha ("não conseguimos renovar; vamos tentar de novo no dia X", com o link para trocar o
 cartão — a Stripe diz a data da próxima tentativa) e antes de trancar ("se não for pago até o dia
 Y, você perde o acesso"). Entram na etapa 4.7, que traz o envio de e-mail.
+**Como saem — decisões do operador, 28/10/2026 (etapa 4.7, passo 7):** o da falha **na hora** (com a
+data da próxima tentativa, lida na fatura buscada na Stripe, e o dia em que as aulas trancam) e o
+"antes de trancar" **no último dia antes de trancar**, por uma rodada de hora em hora (um agendador —
+o agente tinha recomendado um e-mail só, com as duas datas; ele escolheu os dois). As outras
+tentativas da Stripe não mandam e-mail. **No código desde 28/10/2026:** a regra de qual e-mail é
+devido mora em `server/src/lib/avisos-da-assinatura.ts`, chamada pelo aviso da Stripe (e pela rodada
+do agendador, passo 7b); cada e-mail sai uma vez (a marca em `subscription_email`, por falha). Os
+textos são rascunho do agente, que o operador confere (P107).
+*Reabre se os números mostrarem gente perdendo as aulas sem ter lido os dois e-mails, ou reclamando
+de e-mail demais.*
 **NO CÓDIGO desde 12/10/2026 (etapa 4.6b).** A regra mora em `assinaturaDaAcesso`
 (`server/src/lib/acesso.ts`); o prazo, em `TOLERANCIA_DA_COBRANCA_ATRASADA_EM_DIAS` (`core`).
 Os 3 dias contam do "pago até" do espelho, que numa atrasada é o instante da renovação não paga.
@@ -249,7 +259,9 @@ link para reativação ou instrução, igual a AI quando não consegue cobrar ca
 reativa")*. No painel da Stripe a opção é **"cancelar a assinatura"** — nunca "marcar como não
 paga" nem "deixar atrasada" —, nos dois ambientes (tarefa do operador: pendência P60). Quem foi
 cancelado assim lê "Reativar assinatura" e assina de novo pela tela de assinar; o e-mail entra
-na etapa 4.7, que traz o envio de e-mail.
+na etapa 4.7, que traz o envio de e-mail. **No código desde 28/10/2026 (passo 7):** o de cancelada
+tem uma versão para este caso — "Não conseguimos cobrar a renovação, e sua assinatura foi
+cancelada" —, escolhida pelo motivo que a Stripe grava (`cancellation_details.reason`).
 `[FATO — context7 /websites/stripe, 10/10/2026]` "Não paga" (`unpaid`) **não tenta mais cobrar**,
 mas continua gerando fatura a cada período; **cancelada é estado final** — não se reativa,
 cria-se outra (é o que "Reativar assinatura" faz).
@@ -270,6 +282,13 @@ acontece em telas nativas da escola (o aluno nunca sai do site).
   o aluno, como a Anthropic faz")*. Não é botão do admin: sai sozinho quando a Stripe avisa.
   Entra na etapa 4.7, que traz o envio de e-mail. *Reabre se o e-mail incomodar quem cancelou
   de propósito — aí separa-se o cancelamento pedido do cancelamento por falta de pagamento.*
+  **Quando sai — decisão do operador, 28/10/2026:** só no FIM de uma assinatura que foi paga — o
+  fim do período de quem cancelou, as tentativas de cobrança que acabaram, o reembolso, o
+  cancelamento pelo painel —, nunca para quem desistiu no meio do primeiro pagamento (a assinatura
+  que expira sem pagar, `incomplete_expired`); e nada no clique de cancelar. *Convenção de
+  engenharia (o texto diz que o acesso acabou):* com a conta ainda com aulas — o cancelamento na
+  hora pelo painel, com dias pagos —, o e-mail espera o período acabar. No código desde 28/10/2026
+  (`lib/avisos-da-assinatura.ts`).
 - **Faseamento:** captura de motivo = lançamento · **"pausar 1 mês"** (pause
   collection da Stripe) = logo depois, não no lançamento.
 

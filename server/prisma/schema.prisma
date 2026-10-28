@@ -715,9 +715,38 @@ model Subscription {
   livemode             Boolean   @default(false)
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
+  // Os e-mails da cobrança já tomados para esta assinatura (etapa 4.7, passo 7).
+  emails               SubscriptionEmail[]
 
   @@index([ownerUserId])
   @@map("subscription")
+}
+
+// OS E-MAILS DA COBRANÇA (Fase 4, etapa 4.7, passo 7 — decisões do operador, 28/10/2026): a marca
+// de que um deles foi TOMADO para sair — UMA vez cada (`avisos-da-assinatura.ts`). Quem toma é
+// quem cria a linha (a única); se o envio falha, a linha sai, e a vez seguinte tenta de novo.
+// Não é o espelho: nada aqui decide acesso.
+model SubscriptionEmail {
+  id             Int                   @id @default(autoincrement())
+  subscriptionId Int
+  subscription   Subscription          @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  kind           SubscriptionEmailKind
+  // A que o e-mail se refere: nos da cobrança que falhou, o instante da falha (o "pago até" da
+  // atrasada, em ISO) — uma falha nova é outro e-mail; no de cancelada, "fim": ela só termina uma vez.
+  reference      String
+  createdAt      DateTime              @default(now())
+
+  @@unique([subscriptionId, kind, reference])
+  @@map("subscription_email")
+}
+
+enum SubscriptionEmailKind {
+  // Na falha da renovação: a próxima tentativa e até quando as aulas ficam abertas.
+  COBRANCA_FALHOU
+  // No último dia antes de as aulas trancarem.
+  ANTES_DE_TRANCAR
+  // No fim de uma assinatura que foi paga.
+  CANCELADA
 }
 
 // A CONTAGEM DO LIMITE DE TENTATIVAS (25/10/2026 — o servidor passa a ter até 3 cópias): uma linha

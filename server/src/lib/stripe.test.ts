@@ -49,6 +49,24 @@ describe("o espelho a partir da assinatura da Stripe", () => {
     expect(paraAssinaturaNaStripe(assinatura({ itens: [] })).pagoAte).toBeNull();
   });
 
+  // OS E-MAILS DA COBRANÇA (etapa 4.7, passo 7): a data da próxima tentativa vem da última fatura,
+  // só enquanto ela está ABERTA; e o motivo do fim escolhe o texto do e-mail de cancelada.
+  it("a próxima tentativa: a da última fatura aberta; paga, sem data, ou sem expandir — nenhuma", () => {
+    const quando = inicio + 2 * DIA;
+    const comFatura = (fatura: Fatura & { next_payment_attempt?: number | null }) => paraAssinaturaNaStripe(assinatura({ status: "past_due", fatura })).proximaTentativa;
+    expect(comFatura({ status: "open", next_payment_attempt: quando })?.getTime()).toBe(quando * 1000);
+    expect(comFatura({ status: "open", next_payment_attempt: null })).toBeNull();
+    expect(comFatura({ status: "paid", next_payment_attempt: quando })).toBeNull();
+    expect(comFatura("in_sem_expandir")).toBeNull();
+  });
+
+  it("encerrada sem pagamento: só quando o motivo do fim é a cobrança que falhou", () => {
+    const comMotivo = (reason: string | null) => paraAssinaturaNaStripe({ ...assinatura({ status: "canceled" }), cancellation_details: { reason } } as unknown as Stripe.Subscription).encerradaSemPagamento;
+    expect(comMotivo("payment_failed")).toBe(true);
+    expect([comMotivo("cancellation_requested"), comMotivo("payment_disputed"), comMotivo(null)]).toEqual([false, false, false]);
+    expect(paraAssinaturaNaStripe(assinatura({ status: "canceled" })).encerradaSemPagamento).toBe(false);
+  });
+
   it("a conta: o userId da assinatura; sem ele, o do cliente; cliente apagado ou só o id, nenhum", () => {
     expect(paraAssinaturaNaStripe(assinatura({ metadata: { userId: "u-assinatura" }, cliente: { id: "cus_1", metadata: { userId: "u-cliente" } } })).userId).toBe("u-assinatura");
     expect(paraAssinaturaNaStripe(assinatura({ cliente: { id: "cus_1", metadata: { userId: "u-cliente" } } })).userId).toBe("u-cliente");

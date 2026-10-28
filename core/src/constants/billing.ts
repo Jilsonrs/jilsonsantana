@@ -129,6 +129,21 @@ export const TELA_DE_TROCAR_O_CARTAO = "/aluno/conta/faturamento/cartao";
 export const TELA_DE_CANCELAR = "/aluno/conta/faturamento/cancelar";
 export const TELA_DE_MUDAR_DE_PLANO = "/aluno/conta/faturamento/plano";
 
+/**
+ * ENTRAR E SEGUIR: os lugares para onde um link de FORA do app leva depois de entrar — o "Já tem
+ * conta? Entrar" da tela pública de assinar (P80, 27/10/2026) e os botões dos e-mails da cobrança
+ * (etapa 4.7, passo 7). LISTA FECHADA: o endereço só diz o NOME (`/login?depois=cartao`); quem já
+ * está logado vai direto, e um nome fora da lista vai ao Início. Aqui, e não no site: o e-mail é
+ * montado no servidor, e a tela de entrar lê a mesma lista — um nome não diverge do outro.
+ */
+export const DESTINOS_DEPOIS_DE_ENTRAR = { assinar: TELA_DE_ASSINAR, cartao: TELA_DE_TROCAR_O_CARTAO } as const;
+export type DestinoDepoisDeEntrar = keyof typeof DESTINOS_DEPOIS_DE_ENTRAR;
+
+/** O endereço da tela de entrar que, depois de entrar, leva a `destino`. */
+export function entrarPara(destino: DestinoDepoisDeEntrar): string {
+  return `/login?depois=${destino}`;
+}
+
 /** O cartão guardado, como a tela o mostra: NUNCA o número — a bandeira, os 4 últimos e a validade. */
 export type CartaoDaAssinatura = { bandeira: string; final: string; mes: number; ano: number };
 

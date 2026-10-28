@@ -5213,6 +5213,78 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             de trancar" sai num dia em que a Stripe pode não mandar aviso nenhum, e a escola não
             tem fila nem agendador (CLAUDE.md → *Background Jobs*); as saídas são dizer as duas
             datas num e-mail só, na falha, ou pendurá-lo numa nova tentativa da Stripe.
+            **DECISÕES DO OPERADOR (28/10/2026), cada uma à pergunta do agente:** (a) **dois e-mails
+            na cobrança que falhou — um na falha e outro 1 dia antes de trancar —, com um agendador**
+            (o agente recomendou um e-mail só, com as duas datas, sem agendador; ele escolheu os dois)
+            — fecha a questão em aberto acima; as outras tentativas da Stripe não mandam e-mail;
+            (b) **o de cancelada sai só no fim de uma assinatura que foi paga**: o fim do período de
+            quem cancelou, as tentativas que acabaram, o reembolso, o cancelamento pelo painel — e
+            nunca para quem desistiu no meio do primeiro pagamento.
+            **O PLANO DO PASSO 7, APROVADO pelo operador em 28/10/2026** (*"Aprovo o plano"*). Um
+            commit por parte. *Docs check (context7):* Stripe → `/websites/stripe` → a data da
+            próxima tentativa é o `next_payment_attempt` da fatura (vazio quando as tentativas
+            acabam; com as automações da Stripe ele não vem no aviso da falha, por isso se lê na
+            fatura buscada na hora) · o aviso `customer.subscription.deleted` sai no cancelamento
+            direto e no fim do período de quem cancelou, com o motivo (`cancellation_details.reason`)
+            — 2 consultas.
+            - [x] **7a — Os três e-mails e a regra de quando cada um sai** (servidor + migration).
+                  UMA regra (`server/src/lib/avisos-da-assinatura.ts`) olha a assinatura como a Stripe
+                  diz agora: atrasada, antes do último dia → "a cobrança falhou" (com a data da
+                  próxima tentativa, da Stripe, e o link para trocar o cartão); atrasada, no último dia
+                  antes de trancar → "antes de trancar" (com o dia em que tranca: `aulasAbertasAte`, a
+                  mesma conta da tela); já trancada → nada (o de cancelada vem no fim das tentativas);
+                  cancelada (`canceled` — nunca a que expirou sem pagar) → "assinatura cancelada", com
+                  o link para reativar. **Uma vez cada:** uma tabela nova (`subscription_email`, com
+                  RLS) marca o e-mail tomado — a assinatura, o tipo e a falha a que ele se refere —;
+                  o envio que falha desmarca, e a vez seguinte tenta de novo; a chave do Resend é o id
+                  da marca. **Quem chama:** o aviso da Stripe, depois do commit, em todo aviso da
+                  assinatura (como as boas-vindas), e a rodada do agendador (7b). **Os links:** trocar
+                  o cartão → `/login?depois=cartao` (um destino novo na lista fechada da tela de
+                  entrar, que leva a Faturamento → cartão; quem já está logado vai direto); reativar →
+                  `/login?depois=assinar` (já existe). **Os textos** no `pt.ts` (`app.email`, fora de
+                  Admin → Textos), com o rascunho aprovado pelo operador antes. Testes: os três casos,
+                  as janelas de data, uma vez cada, o envio que falha e volta, a expirada e a sem dono
+                  sem e-mail, o aviso da Stripe chamando, a migration do zero. Mutação.
+                  **FEITO (28/10/2026), no `dev`.** A regra (`lib/avisos-da-assinatura.ts`:
+                  `emailDevido` e `avisarSobreAAssinatura`), a montagem sem banco
+                  (`views/email-da-cobranca.ts`), a migration `20261028120000_emails_da_assinatura`
+                  (`subscription_email`, com RLS — no banco de teste recriado do zero: *No difference
+                  detected*, nenhuma tabela sem RLS), a data da próxima tentativa e o motivo do fim lidos
+                  na assinatura buscada (`proximaTentativa`, `encerradaSemPagamento`), o destino
+                  `cartao` na lista do `core` (`DESTINOS_DEPOIS_DE_ENTRAR`, que a tela de entrar e os
+                  e-mails usam) e o aviso da Stripe chamando a regra depois do commit. **Os textos:**
+                  rascunho do agente; o operador pediu para conferir depois (P107) — a prévia
+                  (`email:previa`) grava os quatro e-mails. Testes: `avisos-da-assinatura.test.ts`
+                  (16), `stripe.test.ts` (2) e `LoginPage.test.tsx` (2, e os nomes que não viram
+                  destino). Mutação: 14 de 14 reprovaram (o último dia que nunca chega · a trancada
+                  que manda · sem a marca · a marca que não volta · a cancelada com dias pagos · a
+                  expirada que manda · o aviso sem a regra · a data da fatura paga · nunca "sem
+                  pagamento" · a frase da data passada · a conta excluída · sempre "terminou" · a data
+                  sem o fuso, em UTC como o CI · a tela de entrar sem o cartão). Gates: typecheck,
+                  lint, build; site 993, servidor 1361 (como o CI). **Até a 7b, o "antes de trancar"
+                  só sai se um aviso da Stripe chegar no último dia.**
+            - [ ] **7b — A rodada de hora em hora (o agendador).** Um comando do servidor
+                  (`server/src/tarefas/avisos-da-cobranca.ts`): as assinaturas atrasadas e as
+                  canceladas nos últimos 3 dias que ainda não receberam o e-mail devido, conferidas uma
+                  a uma na Stripe (`sincronizarSeLivre`) e passadas à regra da 7a; sai sozinho no fim.
+                  **No Google Cloud** (o mapa já previa: *Cloud Scheduler — o aviso antes de trancar*;
+                  o agente roda os comandos com o OK do operador): ligar o Cloud Scheduler; um Cloud Run
+                  **Job** `jilson-prod-avisos`, com a MESMA imagem e a mesma conta do site
+                  (`jilson-site`), como o das migrations; uma tarefa do Scheduler, de hora em hora, que
+                  executa esse job. A publicação (`deploy.yml`) passa a atualizar a imagem do job
+                  junto. **Por que um job, e não uma rota no site:** nenhuma porta nova na internet,
+                  nenhuma senha nova e nenhuma biblioteca nova — quem pode executar o job é só a conta
+                  do agendador. **Custo:** o Scheduler usa 1 das 3 tarefas grátis da conta de
+                  faturamento (depois, US$ 0,10 por tarefa ao mês, sem cobrança por execução — página
+                  do Google, 28/10/2026); o job, ~720 execuções de segundos por mês: centavos `[a
+                  conferir]`. O `CLAUDE.md` (*Background Jobs*) e o mapa do `tech-stack.md` registram a
+                  peça nova, com o gatilho de reabertura.
+            - [ ] **7c — Prova e revisão:** na área restrita, com o relógio de teste da Stripe (a
+                  falha e a data da próxima tentativa, o dia antes de trancar, o cancelamento depois das
+                  tentativas, a expirada sem e-mail); no banco de dev; os e-mails olhados pelo operador
+                  no Gmail e no Outlook. A revisão de segurança entra na revisão da etapa inteira.
+            **Fora do passo:** o e-mail no clique de cancelar (decisão (b)) · um e-mail a cada nova
+            tentativa (decisão (a)) · o aviso de renovação do plano anual.
       - [ ] **Passo 8 — O teste com cartão de verdade e a abertura ao público.** O teste do
             operador no site no ar (mensal → anual → reembolso), olhando a taxa da Stripe. Antes
             de abrir: as pendências P58 (o nome na fatura) e P60 (a opção do painel) — a P91 (o

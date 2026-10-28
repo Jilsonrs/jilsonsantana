@@ -355,6 +355,7 @@ describe("LoginPage — para onde ir depois de entrar", () => {
       extraRoutes: [
         { path: "/inicio", element: <div>HOME DO ALUNO</div> },
         { path: "/aluno/assinar", element: <div>TELA DE ASSINAR</div> },
+        { path: "/aluno/conta/faturamento/cartao", element: <div>TELA DE TROCAR O CARTÃO</div> },
       ],
     });
   }
@@ -372,7 +373,21 @@ describe("LoginPage — para onde ir depois de entrar", () => {
     expect(await screen.findByText("TELA DE ASSINAR")).toBeTruthy();
   });
 
-  for (const depois of ["https://outro-site.com", "//outro-site.com", "/admin", "assinar2", ""]) {
+  // O BOTÃO DOS E-MAILS DA COBRANÇA (etapa 4.7, passo 7): "Trocar cartão" leva a `/login?depois=cartao`.
+  it("com ?depois=cartao: depois de entrar, a tela de trocar o cartão", async () => {
+    renderComDestinos("/login?depois=cartao");
+    preencher({ email: "aluno@exemplo.com", senha: "minhasenha" });
+    enviar();
+    expect(await screen.findByText("TELA DE TROCAR O CARTÃO")).toBeTruthy();
+  });
+
+  it("já logado e com ?depois=cartao: direto para a tela de trocar o cartão", async () => {
+    useSession.mockReturnValue({ data: { user: { id: "u1" } }, isPending: false, refetch });
+    renderComDestinos("/login?depois=cartao");
+    expect(await screen.findByText("TELA DE TROCAR O CARTÃO")).toBeTruthy();
+  });
+
+  for (const depois of ["https://outro-site.com", "//outro-site.com", "/admin", "assinar2", "", "constructor", "__proto__", "toString"]) {
     it(`com ?depois=${depois || "(vazio)"}: o Início — nunca outro destino`, async () => {
       renderComDestinos(`/login?depois=${encodeURIComponent(depois)}`);
       preencher({ email: "aluno@exemplo.com", senha: "minhasenha" });

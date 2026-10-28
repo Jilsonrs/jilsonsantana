@@ -16,7 +16,7 @@
 > 5. **Item novo ganha o próximo número livre.** Número nunca se reutiliza, para que "P7" queira
 >    dizer sempre a mesma coisa em qualquer conversa.
 >
-> **Próximo número livre: P107** · Atualizada em 22/10/2026
+> **Próximo número livre: P108** · Atualizada em 28/10/2026
 >
 > **DESDE 12/10/2026 A ESCOLA É SÓ EM PORTUGUÊS E SÓ PARA O BRASIL** (decisão do operador; etapa
 > 4.6c do plano). A parte em inglês de qualquer item abaixo deixou de existir: revise só o
@@ -31,6 +31,7 @@
 
 | # | O que falta | Onde registrar |
 |---|---|---|
+| P107 | **Conferir os textos dos 3 e-mails da cobrança** (a cobrança que falhou, o aviso antes de trancar e a assinatura cancelada, em duas versões): são rascunho do Claude (28/10/2026), e você pediu para conferir depois. Para ver: `npm --workspace server run email:previa` e abrir os arquivos `previa-*.html` que ele diz; ou os e-mails de verdade da prova (passo 7c) | `core/src/i18n/pt.ts` (`app.email`) e o plano → etapa 4.7, passo 7 |
 | P102 | **A sua assinatura de teste no site no ar continua cobrando o seu cartão** todo mês, com o site fora. Manter (para o teste do passo 8 da etapa 4.7) ou cancelar pelo painel da Stripe? | o plano → etapa 4.7, passo 8 |
 | P95 | **Onde caíram os 9 e-mails da prova** (21/10/2026: o código de entrar, o da senha nova e as boas-vindas, para o Yahoo, o iCloud e o jilson@ da Microsoft): na caixa de entrada ou no spam, em cada um | o plano → etapa 4.7, passo 5, parte 4 |
 
