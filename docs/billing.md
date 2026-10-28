@@ -143,6 +143,17 @@ no PaymentIntent/SetupIntent/Checkout Session; suporte anunciado em 22/abr/2026.
 > botão **"Mostrar o QR de novo"** para quem fechou a janela sem pagar (o segredo do Pix fica só na aba,
 > até o servidor confirmar). **A tela nunca pede um QR novo sozinha**: só o clique em "Pagar com Pix" pede
 > — e o servidor devolve o MESMO QR enquanto ele estiver à espera.
+>
+> **A PRÉ-PAGA NAS TELAS DO ALUNO E NO REEMBOLSO (passo 3 — no código desde 28/10/2026; texto do
+> operador do mesmo dia):** em Faturamento e Assinatura, a pré-paga diz **"Seu acesso vai até {data}. Para
+> continuar, é só pagar de novo quando acabar."** e, em *Forma de pagamento*, **"Pix"** — sem parar a
+> renovação, manter, mudar de plano nem trocar o cartão (não há renovação nem cartão; o servidor recusa
+> essas operações com 409 `PrePago`). **O reembolso dos 7 dias devolve o Pix** (a primeira fatura da
+> pré-paga foi paga por fora: o dinheiro está no pagamento Pix, e é ele que volta — para a conta de quem
+> pagou, pela Stripe), e encerra a assinatura na hora. **O período pago da pré-paga é o do Pix:** devolvido
+> por inteiro — pelo reembolso ou pelo painel —, ele deixa de contar, e o aviso de devolução acha a
+> assinatura pela coluna do espelho (o Pix não tem fatura). Quando o período acaba, a Stripe encerra a
+> assinatura e sai o e-mail "terminou — reative" de sempre; o aviso "está acabando" é o passo 4.
 
 **O que isso acrescenta à Fase 4:** o Payment Element precisa das opções de mandato, e a régua de
 inadimplência ganha um caminho próprio — **falha de Pix não se retenta como cartão** (não existe

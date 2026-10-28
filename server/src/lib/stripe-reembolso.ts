@@ -54,6 +54,22 @@ export async function buscarOQueFoiPago(assinaturaId: string): Promise<OQueFoiPa
 }
 
 /**
+ * O que foi pago numa assinatura PRÉ-PAGA (etapa 4.9, passo 3): a primeira fatura dela foi paga POR FORA, e o
+ * dinheiro está no pagamento Pix de que ela nasceu — é dele que o reembolso devolve. Um pagamento só; a moeda
+ * é a da cobrança. Sem cobrança (o Pix não caiu — não acontece numa pré-paga), nada foi pago.
+ */
+export async function buscarOQueFoiPagoNoPix(pagamentoId: string): Promise<OQueFoiPago> {
+  let cobranca: Stripe.Charge | string | null;
+  try {
+    cobranca = (await stripe().paymentIntents.retrieve(pagamentoId, { expand: ["latest_charge"] })).latest_charge;
+  } catch (erro) {
+    throw erroSemMensagem(erro, "a leitura da cobrança do Pix");
+  }
+  if (!cobranca || typeof cobranca === "string" || cobranca.amount <= 0) return { moeda: null, pagamentos: [] };
+  return { moeda: cobranca.currency, pagamentos: [{ pagamentoId, centavos: cobranca.amount, devolvido: cobranca.amount_refunded }] };
+}
+
+/**
  * ENCERRA a assinatura na hora — é o que o reembolso faz, e nunca "parar a renovação": sem
  * crédito proporcional e sem fatura nova (o dinheiro volta pela devolução, por inteiro). O motivo
  * vai junto; o motivo exato da escola (`metadata.motivo`) é gravado depois e, se falhar, é só

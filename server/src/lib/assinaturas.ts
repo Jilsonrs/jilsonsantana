@@ -132,6 +132,16 @@ async function donoDaAssinaturaNova(tx: Prisma.TransactionClient, agora: Assinat
   return { motivo: "sem userId" };
 }
 
+/**
+ * De que assinatura é o pagamento devolvido: a PRÉ-PAGA, pela coluna do espelho (etapa 4.9, passo 3 — o Pix de
+ * que ela nasceu não tem fatura, e a Stripe não a acharia por ele); a recorrente, pela fatura, na Stripe
+ * (`assinaturaDoPagamento`). O espelho primeiro: é local.
+ */
+async function assinaturaDoPagamentoDevolvido(pagamentoId: string): Promise<string | null> {
+  const prePaga = await prisma.subscription.findUnique({ where: { pixPaymentIntentId: pagamentoId }, select: { stripeSubscriptionId: true } });
+  return prePaga?.stripeSubscriptionId ?? assinaturaDoPagamento(pagamentoId);
+}
+
 export async function processarAviso(aviso: AvisoDaStripe): Promise<Desfecho> {
   if (await prisma.stripeEvent.findUnique({ where: { id: aviso.id }, select: { id: true } })) return { resultado: "repetido" };
   // O PIX PRÉ-PAGO que caiu (etapa 4.9): a assinatura ainda não existe — nasce aqui, e daí em diante é
@@ -140,7 +150,7 @@ export async function processarAviso(aviso: AvisoDaStripe): Promise<Desfecho> {
   const marcar = { id: aviso.id, type: aviso.tipo };
   // O aviso de dinheiro devolvido só traz o pagamento: a assinatura dele se acha na Stripe. Se a
   // busca falhar, sobe — nada fica marcado, e a Stripe entrega de novo.
-  const assinaturaId = aviso.assinatura ?? (aviso.pagamento ? await assinaturaDoPagamento(aviso.pagamento) : null);
+  const assinaturaId = aviso.assinatura ?? (aviso.pagamento ? await assinaturaDoPagamentoDevolvido(aviso.pagamento) : null);
 
   if (!assinaturaId) {
     try {

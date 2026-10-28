@@ -5784,7 +5784,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                   method`, e o novo clique gera outro QR no mesmo pagamento); e a janela do QR no celular.
                   **P110, decidida pelo operador no mesmo dia:** com o Pix, a linha do pagamento seguro sai sem a
                   parte do cartão — "Pagamento seguro, processado pela Stripe." (`app.assinar.pix.pagamentoSeguro`).
-      - [ ] **Passo 3 — O pré-pago nas telas do aluno e nas operações.** `minha-assinatura.ts`:
+      - [x] **Passo 3 — O pré-pago nas telas do aluno e nas operações.** `minha-assinatura.ts`:
             a pré-paga vem com `prePago: true` e `acessoAte`, sem parar/manter/mudar de plano/trocar
             cartão (a renovação não existe); Faturamento mostra "Seu acesso vai até DD/MM; para
             continuar, é só pagar de novo quando acabar" (texto dele). **O reembolso dos 7 dias
@@ -5792,6 +5792,26 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             `pixPaymentIntentId`) e `cancelarNaHora`; o aviso `charge.refunded` de um Pix acha a
             assinatura **pela coluna do espelho**, não pela fatura (hoje só a fatura). As rotas de
             cartão e de plano recusam a pré-paga (409 `PrePago`). Testes nos dois lados; mutação.
+            **FEITO (28/10/2026), no `dev`.** Texto do operador (decidido na abertura): *"Seu acesso vai até
+            {data}. Para continuar, é só pagar de novo quando acabar."*, e "Pix" em *Forma de pagamento*.
+            **Como ficou:** `DetalhesDaAssinatura.pixPaymentIntentId` (lido dos metadados da Stripe, como o
+            espelho) e a regra `prePaga()` em `minha-assinatura.ts` — a mesma para a tela e para as
+            operações: `podeManter` e `aceitaCartaoNovo` são falsos na pré-paga; a leitura sai `vai-cancelar`
+            com `prePago: true`, `acessoAte` e sem botões; preparar/aplicar cartão, cancelar e manter respondem
+            **409 `PrePago`** (`RECUSAS`); mudar de plano já era `indisponivel` (não renova). **O reembolso:**
+            `buscarOQueFoiPagoNoPix` (o Pix, não as faturas — a primeira fatura da pré-paga foi paga por fora
+            e não tem pagamento), `devolver` pelo id do Pix, `cancelarNaHora`; a saída da tela mostra o valor do
+            Pix. **O período pago da pré-paga é o do PIX:** `periodoDevolvido` (`stripe-devolucao.ts`) olha a
+            cobrança do Pix quando há `pix_payment_intent` nos metadados, nas duas leituras (`buscarAssinatura`,
+            o espelho; `buscarDetalhes`, a tela) — conferir a fatura devolveria o acesso a quem recebeu o Pix de
+            volta. **O aviso de devolução** (`charge.refunded` e os `refund.*`) acha a assinatura pela coluna
+            `pixPaymentIntentId` do espelho antes de perguntar à Stripe (`assinaturaDoPagamentoDevolvido`).
+            Na tela: `BlocoDoPlano` (o texto), `BlocoDoCartao` ("Pix", ícone de QR, sem botão). **Testes:**
+            `minha-assinatura` (+2), `cancelar-assinatura` (+1), `trocar-cartao` (+1), `reembolso` (+3),
+            `stripe-webhook` (+1), `stripe-reembolso.test.ts` (+3: a pré-paga no espelho, o que foi pago no Pix,
+            o Pix devolvido por inteiro), `FaturamentoPage` (+3). **Mutação: 9 de 9 reprovaram.** Gates:
+            typecheck, lint, build; site e servidor como o CI. *Docs check (context7): not triggered* (nenhuma
+            chamada nova à Stripe; `refunds.create` por `payment_intent` já existia).
       - [ ] **Passo 4 — Os e-mails do pré-pago.** `emailDevido`: ativa + pré-paga + acaba em N dias
             (proposta: 3) → `PREPAGO_TERMINANDO` ("seu acesso acaba dia X; depois, é só pagar de novo" —
             texto dele), pela rodada de hora em hora (a consulta ganha as pré-pagas perto do fim); no

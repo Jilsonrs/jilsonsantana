@@ -37,7 +37,8 @@ export function BlocoDoPlano({ assinatura }: { assinatura: AssinaturaComAcesso }
           )}
           {assinatura.situacao === SituacaoDoFaturamento.VAI_CANCELAR && acessoAte && (
             <div className="rounded-xl border border-border/60 bg-muted/30 p-3.5">
-              <p className="text-sm text-muted-foreground">{t.faturamento.vaiCancelar.replace("{data}", dataPorExtenso(acessoAte))}</p>
+              {/* A PRÉ-PAGA (etapa 4.9): até quando vai o acesso, e que se paga de novo quando acabar — texto do operador. */}
+              <p className="text-sm text-muted-foreground">{(assinatura.prePago ? t.faturamento.prePago : t.faturamento.vaiCancelar).replace("{data}", dataPorExtenso(acessoAte))}</p>
             </div>
           )}
           {assinatura.situacao === SituacaoDoFaturamento.ATRASADA && (

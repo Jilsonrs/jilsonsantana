@@ -1,7 +1,7 @@
 import Stripe from "stripe";
 import type { CartaoDaAssinatura, MotivoDoCancelamento, Plano } from "@jilson/core";
-import { AssinaturaNaoEncontrada, erroSemMensagem, FORMAS_DE_PAGAMENTO, paraAssinaturaNaStripe, planoDoPreco, stripe } from "./stripe.js";
-import { faturaDevolvida } from "./stripe-devolucao.js";
+import { AssinaturaNaoEncontrada, erroSemMensagem, FORMAS_DE_PAGAMENTO, paraAssinaturaNaStripe, planoDoPreco, stripe, METADADO_DO_PIX } from "./stripe.js";
+import { periodoDevolvido } from "./stripe-devolucao.js";
 import { MARCA_DA_TROCA } from "./stripe-plano.js";
 
 // GERIR UMA ASSINATURA QUE JÁ EXISTE (Fase 4, etapa 4.6 — billing.md → Minha assinatura). A
@@ -34,6 +34,8 @@ export type DetalhesDaAssinatura = {
   clienteId: string | null;
   /** A conta da escola que a STRIPE diz ser a dona (a que o checkout gravou lá) — ou nenhuma. Não sai do servidor. */
   userId: string | null;
+  /** O Pix PRÉ-PAGO de que ela nasceu (etapa 4.9): vazio na recorrente. É ele que diz "pré-paga" à tela e às operações. Não sai do servidor. */
+  pixPaymentIntentId: string | null;
   /** A última fatura, se ainda está em aberto (a cobrança falhou): é a que o cartão novo paga. Não sai do servidor. */
   faturaEmAbertoId: string | null;
   /** O item da assinatura (ela tem um só): é nele que o preço troca. Não sai do servidor. */
@@ -62,7 +64,7 @@ export function paraCartao(forma: string | Stripe.PaymentMethod | null | undefin
  * espelho (`paraAssinaturaNaStripe`), para a tela e o gate nunca discordarem.
  */
 export function paraDetalhesDaAssinatura(assinatura: Stripe.Subscription, devolvida: boolean = false): DetalhesDaAssinatura {
-  const { status, pagoAte, clienteId, userId } = paraAssinaturaNaStripe(assinatura, devolvida);
+  const { status, pagoAte, clienteId, userId, pixPaymentIntentId } = paraAssinaturaNaStripe(assinatura, devolvida);
   const daAssinatura = assinatura.default_payment_method;
   const fatura = assinatura.latest_invoice;
   const itens = assinatura.items.data;
@@ -89,6 +91,7 @@ export function paraDetalhesDaAssinatura(assinatura: Stripe.Subscription, devolv
     cartao: paraCartao(daAssinatura) ?? paraCartao(padraoDoCliente),
     clienteId,
     userId,
+    pixPaymentIntentId: pixPaymentIntentId ?? null,
     faturaEmAbertoId: typeof fatura === "object" && fatura !== null && fatura.status === "open" ? fatura.id : null,
     itemId: itens[0]?.id ?? null,
     agendamentoId: typeof assinatura.schedule === "string" ? assinatura.schedule : (assinatura.schedule?.id ?? null),
@@ -128,7 +131,7 @@ const COM_OS_DETALHES = ["latest_invoice.payments", "default_payment_method", "c
 
 /** Os detalhes, já sabendo se a última fatura foi devolvida (uma ida a mais à Stripe, só quando há o que conferir). */
 async function comADevolucao(assinatura: Stripe.Subscription): Promise<DetalhesDaAssinatura> {
-  return paraDetalhesDaAssinatura(assinatura, await faturaDevolvida(assinatura.latest_invoice));
+  return paraDetalhesDaAssinatura(assinatura, await periodoDevolvido(assinatura, assinatura.metadata[METADADO_DO_PIX] || null));
 }
 
 /** A assinatura como a Stripe diz AGORA, para a tela. A que ela não conhece: `AssinaturaNaoEncontrada`. */

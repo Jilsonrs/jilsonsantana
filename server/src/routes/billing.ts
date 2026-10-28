@@ -215,7 +215,8 @@ router.post("/billing/cartao", requireAuth, ...limiteDeTentativas.cobranca, asyn
   const preparo = await prepararTrocaDeCartao(user.id);
   if (preparo.resultado === "desconhecida") registrarAssinaturaDesconhecida(user.id, "trocar cartão");
   if (preparo.resultado !== "ok") {
-    res.status(preparo.resultado === "desconhecida" ? 404 : 409).json({ error: preparo.resultado === "desconhecida" ? "AssinaturaDesconhecida" : "SemAssinatura" });
+    const [status, error] = RECUSAS[preparo.resultado];
+    res.status(status).json({ error });
     return;
   }
   const resposta: TrocaDeCartaoPreparada = { segredo: preparo.segredo };
@@ -235,17 +236,10 @@ router.post("/billing/cartao/aplicar", requireAuth, ...limiteDeTentativas.cobran
     return;
   }
   const troca = await aplicarCartaoNovo(user.id);
-  if (troca.resultado === "desconhecida") {
-    registrarAssinaturaDesconhecida(user.id, "trocar cartão");
-    res.status(404).json({ error: "AssinaturaDesconhecida" });
-    return;
-  }
-  if (troca.resultado === "sem-assinatura") {
-    res.status(409).json({ error: "SemAssinatura" });
-    return;
-  }
-  if (troca.resultado === "sem-cartao-novo") {
-    res.status(409).json({ error: "CartaoNaoConfirmado" });
+  if (troca.resultado === "desconhecida") registrarAssinaturaDesconhecida(user.id, "trocar cartão");
+  if (troca.resultado !== "ok") {
+    const [status, error] = RECUSAS[troca.resultado];
+    res.status(status).json({ error });
     return;
   }
   // `confirmar`: o banco pediu uma confirmação para a cobrança em aberto — o site a completa.
@@ -265,6 +259,9 @@ router.post("/billing/cartao/aplicar", requireAuth, ...limiteDeTentativas.cobran
 const RECUSAS = {
   desconhecida: [404, "AssinaturaDesconhecida"],
   "sem-assinatura": [409, "SemAssinatura"],
+  // A pré-paga (etapa 4.9): nasceu de um Pix — não tem cartão, renovação nem troca de plano a mexer.
+  "pre-paga": [409, "PrePago"],
+  "sem-cartao-novo": [409, "CartaoNaoConfirmado"],
   ocupada: [409, "Ocupada"],
   "fora-do-prazo": [409, "ForaDoPrazo"],
   "nada-a-devolver": [409, "NadaADevolver"],

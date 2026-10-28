@@ -638,6 +638,10 @@ export const pt = {
       formaDePagamento: "Forma de pagamento",
       cartao: "{bandeira} •••• {final} · vence em {mes}/{ano}",
       semCartao: "Nenhum cartão cadastrado.",
+      // O PIX PRÉ-PAGO (etapa 4.9, passo 3 — textos do operador, 28/10/2026): no lugar da próxima cobrança,
+      // até quando vai o acesso; em "Forma de pagamento", "Pix" (não há cartão, nem o que trocar).
+      prePago: "Seu acesso vai até {data}. Para continuar, é só pagar de novo quando acabar.",
+      pix: "Pix",
       trocarCartao: "Trocar cartão",
       adicionarCartao: "Adicionar cartão",
       semAssinatura: "Você ainda não tem uma assinatura.",

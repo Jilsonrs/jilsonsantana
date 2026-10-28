@@ -79,7 +79,7 @@ beforeEach(() => {
   buscarDetalhes.mockReset().mockImplementation(async (id) => {
     const dados = naStripe[id];
     if (!dados) throw new AssinaturaNaoEncontrada(id);
-    return { id, status: "active", pagoAte: null, plano: "mensal", preco: { centavos: 9990, moeda: "brl" }, fimDoPeriodo: null, comecouEm: null, acabaEm: null, acabaNoFimDoPeriodo: false, cartao: VISA, clienteId: "cus_da_conta", userId: null, faturaEmAbertoId: null, itemId: "si_do_teste", agendamentoId: null, agendamentoNosso: false, trocaMarcada: null, faturaDaTrocaId: null, ...dados };
+    return { id, status: "active", pagoAte: null, plano: "mensal", preco: { centavos: 9990, moeda: "brl" }, fimDoPeriodo: null, comecouEm: null, acabaEm: null, acabaNoFimDoPeriodo: false, cartao: VISA, clienteId: "cus_da_conta", userId: null, pixPaymentIntentId: null, faturaEmAbertoId: null, itemId: "si_do_teste", agendamentoId: null, agendamentoNosso: false, trocaMarcada: null, faturaDaTrocaId: null, ...dados };
   });
   buscarAssinatura.mockReset().mockRejectedValue(new Error("a sincronia não devia ter sido chamada"));
   buscarProximaCobranca.mockReset().mockResolvedValue({ centavos: 9990, moeda: "brl" });
@@ -186,6 +186,22 @@ describe("GET /api/billing/minha-assinatura — a conta com acesso", () => {
     // "Manter a assinatura" — parar de novo, não.
     expect(res.body).toMatchObject({ situacao: "vai-cancelar", acessoAte: EM_30_DIAS.toISOString(), proximaCobranca: null, plano: "mensal", aceitaCartao: true, podeParar: false, podeManter: true });
     expect(buscarProximaCobranca).not.toHaveBeenCalled();
+  });
+
+  // A PRÉ-PAGA (etapa 4.9, passo 3): nasceu de um Pix, termina no fim do período e não tem cartão.
+  it("pré-paga (Pix): vai cancelar com a data e a marca `prePago`, sem cartão — e sem parar, manter, mudar de plano nem aceitar cartão; a próxima cobrança nem é pedida", async () => {
+    naStripe[ASSINATURA_DE_TESTE] = { ...ativa(), acabaEm: EM_30_DIAS, acabaNoFimDoPeriodo: true, cartao: null, pixPaymentIntentId: "pi_pix_do_teste" };
+    const res = await ler(member);
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ situacao: "vai-cancelar", prePago: true, acessoAte: EM_30_DIAS.toISOString(), proximaCobranca: null, cartao: null, aceitaCartao: false, podeParar: false, podeManter: false, podeMudarDePlano: false });
+    expect(buscarProximaCobranca).not.toHaveBeenCalled();
+    // O id do Pix não sai do servidor.
+    expect(JSON.stringify(res.body)).not.toContain("pi_");
+  });
+
+  it("a recorrente não leva a marca de pré-paga", async () => {
+    naStripe[ASSINATURA_DE_TESTE] = { ...ativa(), acabaEm: EM_30_DIAS };
+    expect((await ler(member)).body).not.toHaveProperty("prePago");
   });
 
   it("a assinatura já encerrou e ainda tem dias pagos: acesso até o fim deles", async () => {

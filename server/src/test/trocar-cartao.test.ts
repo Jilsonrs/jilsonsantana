@@ -91,7 +91,7 @@ beforeEach(async () => {
   naStripe = {};
   buscarDetalhes.mockReset().mockImplementation(async (id) => {
     if (id !== SUB) throw new AssinaturaNaoEncontrada(id);
-    return { id, status: "active", pagoAte: EM_30_DIAS, plano: "mensal", preco: { centavos: 9990, moeda: "brl" }, fimDoPeriodo: EM_30_DIAS, comecouEm: null, acabaEm: null, acabaNoFimDoPeriodo: false, cartao: { bandeira: "visa", final: "4242", mes: 12, ano: 2028 }, clienteId: CLIENTE, userId: memberId, faturaEmAbertoId: null, itemId: "si_do_teste", agendamentoId: null, agendamentoNosso: false, trocaMarcada: null, faturaDaTrocaId: null, ...detalhes };
+    return { id, status: "active", pagoAte: EM_30_DIAS, plano: "mensal", preco: { centavos: 9990, moeda: "brl" }, fimDoPeriodo: EM_30_DIAS, comecouEm: null, acabaEm: null, acabaNoFimDoPeriodo: false, cartao: { bandeira: "visa", final: "4242", mes: 12, ano: 2028 }, clienteId: CLIENTE, userId: memberId, pixPaymentIntentId: null, faturaEmAbertoId: null, itemId: "si_do_teste", agendamentoId: null, agendamentoNosso: false, trocaMarcada: null, faturaDaTrocaId: null, ...detalhes };
   });
   buscarAssinatura.mockReset().mockImplementation(async (id) => ({ id, status: "active", pagoAte: EM_30_DIAS, clienteId: CLIENTE, userId: memberId, livemode: false, ...naStripe }));
   criarPedidoDeCartao.mockReset().mockResolvedValue("seti_segredo_do_teste");
@@ -300,7 +300,7 @@ describe("POST /api/billing/cartao/aplicar — o cartão novo vai para a assinat
 describe("POST /api/billing/cartao/aplicar — com a cobrança atrasada", () => {
   beforeEach(async () => {
     await comEspelho("past_due", PASSADO);
-    detalhes = { status: "past_due", pagoAte: PASSADO, faturaEmAbertoId: "in_em_aberto" };
+    detalhes = { status: "past_due", pagoAte: PASSADO, pixPaymentIntentId: null, faturaEmAbertoId: "in_em_aberto" };
   });
 
   it("o cartão novo paga a fatura em aberto, e o espelho é acertado pela rotina de sempre", async () => {
@@ -454,8 +454,20 @@ describe("POST /api/billing/cartao/aplicar — sem cobrança atrasada, nada é c
   });
 
   it("em dia com a fatura da renovação ainda aberta (a Stripe está cobrando): não cobra por cima", async () => {
-    detalhes = { faturaEmAbertoId: "in_da_renovacao" };
+    detalhes = { pixPaymentIntentId: null, faturaEmAbertoId: "in_da_renovacao" };
     await aplicar(member);
     expect(pagarFatura).not.toHaveBeenCalled();
+  });
+});
+
+// A PRÉ-PAGA (etapa 4.9, passo 3): não tem cartão nem cobrança por vir — não há onde pôr um cartão.
+describe("trocar o cartão — a pré-paga (Pix)", () => {
+  it("preparar e aplicar respondem 409 PrePago, e nada é aberto nem posto na Stripe", async () => {
+    detalhes = { acabaEm: EM_30_DIAS, acabaNoFimDoPeriodo: true, cartao: null, pixPaymentIntentId: "pi_pix_do_teste" };
+    const preparo = await preparar(member);
+    expect([preparo.status, preparo.body]).toEqual([409, { error: "PrePago" }]);
+    const aplicado = await aplicar(member);
+    expect([aplicado.status, aplicado.body]).toEqual([409, { error: "PrePago" }]);
+    for (const dublê of [criarPedidoDeCartao, buscarCartaoConfirmado, definirCartao, soltarOutrosCartoes, pagarFatura]) expect(dublê).not.toHaveBeenCalled();
   });
 });

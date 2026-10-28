@@ -259,6 +259,24 @@ describe("o aviso da Stripe — o dinheiro devolvido", () => {
     await prisma.subscription.deleteMany({ where: { stripeSubscriptionId: sub } });
   });
 
+  // A PRÉ-PAGA (etapa 4.9, passo 3): o Pix de que ela nasceu não tem fatura — a Stripe não acha a
+  // assinatura por ele; o espelho acha, pela coluna. A história é a mesma: encerrada e devolvida.
+  it("o Pix pré-pago devolvido (pelo painel, ou pelo reembolso): a assinatura é achada pela COLUNA do espelho — sem perguntar à Stripe de quem é o pagamento —, sincronizada, e o acesso acaba", async () => {
+    const sub = novoId("sub");
+    const pix = novoId("pi");
+    await prisma.subscription.create({ data: { ownerUserId: doGate, status: "active", currentPeriodEnd: new Date(Date.now() + 30 * DIA), stripeSubscriptionId: sub, pixPaymentIntentId: pix } });
+    expect(await temAcessoAtivo(doGate)).toBe(true);
+    // Encerrada e com o Pix devolvido, a Stripe (lida de novo) diz: o período não conta mais como pago.
+    buscarAssinatura.mockResolvedValue(naStripe(sub, { userId: doGate, status: "canceled", pagoAte: null, pixPaymentIntentId: pix }));
+    const aviso = avisoDeDevolucao(pix);
+    expect((await enviar(aviso)).status).toBe(200);
+    expect(assinaturaDoPagamento).not.toHaveBeenCalled();
+    expect(buscarAssinatura).toHaveBeenCalledWith(sub);
+    expect(await temAcessoAtivo(doGate)).toBe(false);
+    expect(await marcado(aviso.id)).not.toBeNull();
+    await prisma.subscription.deleteMany({ where: { stripeSubscriptionId: sub } });
+  });
+
   it("o aviso repetido não procura a assinatura de novo", async () => {
     const sub = novoId("sub");
     assinaturaDoPagamento.mockReset().mockResolvedValue(sub);

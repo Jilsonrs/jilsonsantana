@@ -1,7 +1,7 @@
 import Stripe from "stripe";
 import { DuracaoDoDesconto, PLANOS, formatarDocumentoFiscal, type DescontoDoCodigo, type DocumentoFiscal, type Plano, type TipoDeDocumento } from "@jilson/core";
 import { erroSemMensagem, stripe } from "./stripe-cliente.js";
-import { faturaDevolvida } from "./stripe-devolucao.js";
+import { periodoDevolvido } from "./stripe-devolucao.js";
 
 // A biblioteca já com a chave e o erro sem a mensagem dela moram em `stripe-cliente.ts`, e saem
 // por aqui para quem já os importava deste arquivo.
@@ -620,7 +620,8 @@ export class AssinaturaNaoEncontrada extends Error {
 export async function buscarAssinatura(id: string): Promise<AssinaturaNaStripe> {
   try {
     const assinatura = await stripe().subscriptions.retrieve(id, { expand: ["customer", "latest_invoice.payments"] });
-    return paraAssinaturaNaStripe(assinatura, await faturaDevolvida(assinatura.latest_invoice));
+    // A pré-paga (etapa 4.9): o período devolvido é o do Pix de que ela nasceu, não o da fatura (paga por fora).
+    return paraAssinaturaNaStripe(assinatura, await periodoDevolvido(assinatura, assinatura.metadata[METADADO_DO_PIX] || null));
   } catch (erro) {
     if (erro instanceof Stripe.errors.StripeInvalidRequestError && erro.code === "resource_missing") throw new AssinaturaNaoEncontrada(id);
     // Era a única ida à Stripe que subia com a mensagem dela — e o aviso a cola no registro

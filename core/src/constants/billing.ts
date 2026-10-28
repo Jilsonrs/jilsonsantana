@@ -198,6 +198,12 @@ export type MinhaAssinatura =
        */
       terminaAoCancelar: boolean;
       /**
+       * PRÉ-PAGA (etapa 4.9, passo 3): nasceu de um Pix, não renova e não tem cartão — `acessoAte` é até quando
+       * vai o acesso; parar, manter, mudar de plano e trocar o cartão não existem (o servidor recusa com
+       * `PrePago`). Para continuar, paga-se de novo quando acabar. Opcional porque a API só acrescenta.
+       */
+      prePago?: boolean;
+      /**
        * A saída do reembolso: quanto volta e até quando dá para pedir (em ISO). Só dentro do prazo
        * e com dinheiro a devolver — a assinatura de cortesia nunca tem. Quem confere é o servidor,
        * de novo, na hora da ação.
