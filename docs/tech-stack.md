@@ -192,6 +192,7 @@ acima (proteção, cache, certificado próprio), e por isso é opcional.
 | Artifact Registry | as versões montadas do site (só as últimas) | cota grátis pequena `[a conferir]` |
 | IAM + Workload Identity Federation | quem pode o quê; o GitHub publica sem chave guardada | grátis |
 | Cloud Logging | os registros do servidor | cota grátis mensal `[a conferir]` |
+| App Optimize API | a aba **Custo** do serviço no Cloud Run (*Observabilidade → Custo*): o custo do site por dia e a mudança no período. Só lê os dados de custo e de uso — não mexe no serviço, no job, nas chaves nem na publicação. **Ligada pelo operador em 28/10/2026.** Primeira leitura: R$ 18,06 no total, de 23 a 28/10 `[medido 28/10]`. Está em *Preview* (sem garantia do Google: se a aba falhar, o site não sente). *Reabre quando sair do Preview e o Google publicar o preço — conferir antes de manter* | grátis no Preview `[medido 28/10]`; depois, `[a conferir]` |
 | Orçamento e alertas | o aviso de gasto (R$ 100/mês; avisos em 50%, 90%, 100% e 150%). **Conta o gasto DEPOIS do crédito** (o padrão do Google; conferido no painel em 26/10/2026: "R$ 0,00 — inclui uma economia de −R$ 13,88"): enquanto o crédito de teste durar, marca zero e não dispara. **Fica assim** *(decisão do operador, 26/10/2026)*: o aviso é para cobrança de verdade; o consumo do crédito se vê em *Faturamento → Créditos*. *Reabre se o crédito sumir mais rápido que o previsto, ou se o operador quiser aviso de consumo durante o crédito (um segundo orçamento, sem descontar o crédito)* | grátis |
 
 **O MAPA — o que pode servir à escola, e QUANDO** *(ordenado pelo que deve chegar primeiro)*:
@@ -360,7 +361,8 @@ parte "ligado, esperando" bate com a conta medida em 22/10; os preços com o ser
   **US$ 26**. **Com a configuração adotada** (1 proc · 1 GB, 1 sempre ligada e até 3), a cópia
   ocupada custa ~US$ 0,095 por hora: 100 alunos ≈ **US$ 13–23/mês** · 500 ≈ **US$ 23–38** · 1.000 ≈
   **US$ 38–55** (estudando ~4 h por dia no pico; os pedidos, ~US$ 2 a mais com 1.000). *O gasto real
-  se acompanha em **Faturamento → Relatórios**, filtrando o serviço Cloud Run.* Ocupada, a cópia de 2 proc · 2 GB custa ~US$ 0,19 por hora (US$ 0,000053 por segundo);
+  se acompanha em **Faturamento → Relatórios**, filtrando o serviço Cloud Run, ou na aba **Custo** do
+  próprio serviço (desde 28/10/2026, pela App Optimize API).* Ocupada, a cópia de 2 proc · 2 GB custa ~US$ 0,19 por hora (US$ 0,000053 por segundo);
   pedidos, US$ 0,40 por milhão depois de 2 milhões grátis. O jeito barato de crescer é **1 cópia sempre
   ligada e as outras ligando só com carga** (máximo de 3 a 5): paga-se a cópia extra só nas horas de pico.
   - 100 alunos: ~US$ 10–15 · 500 alunos: ~US$ 30–50 · 1.000 alunos: ~US$ 50–110 *(estudando ~4 h por dia
