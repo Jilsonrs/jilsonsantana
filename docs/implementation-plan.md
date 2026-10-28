@@ -75,6 +75,7 @@
 > assinatura sem login (401); o login com um e-mail que não existe (401); o aviso da Stripe sem
 > assinatura (400); o público no "Em breve", também na `/assinar` e na aula; o job das migrations com
 > sucesso, sem migration nova. **O vigia protege as páginas abertas depois desta publicação.**
+> **Conferido pelo operador no ar em 28/10/2026:** o botão Assinar por último (6h) apareceu certo.
 > **Publicado em 24–25/10/2026:** `d6c2906` — o endereço do CDN do Bunny corrigido (P105) e a
 > conferência dele no CI; `f09a903` — o download do arquivo da aula em pedaços (o Cloud Run recusava
 > acima de 32 MB); `294b106` — o segundo mais novo vence entre aparelhos. Conferidos de fora (o site
@@ -5194,9 +5195,17 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                      campos. Os quatro gates verdes (`typecheck`, `lint`, `test`, `build`), conferidos
                      pelo código de saída. Commit no branch e **parar**: sem merge na `dev` nem na
                      `main` — o Claude confere o diff e faz o merge na `dev`.
-            - [ ] **Depois da publicação com a 6a:** o CPF passa a ser OBRIGATÓRIO no servidor
+            - [x] **Depois da publicação com a 6a:** o CPF passa a ser OBRIGATÓRIO no servidor
                   (`assinarSchema`, `core/src/schemas/billing.ts`) — tira o "sem o CPF ainda
                   assina" e o teste dele.
+                  **FEITO (28/10/2026), no `dev`:** sem o CPF, 400 `ValidationError` antes de
+                  qualquer ida à Stripe; saíram o caminho "sem o CPF, com um número na ficha"
+                  (`temNumeroFiscalDoBrasil` e o desfecho `sem-documento`) e o teste dele; a
+                  incompleta só se reaproveita com o número da fatura igual ao do pedido, sempre.
+                  Testes: o novo "sem o CPF ou CNPJ: 400, e nada vai à Stripe"; os pedidos dos testes
+                  levam um CPF (`billing.test.ts`, `checkout-uma-ligacao.test.ts`,
+                  `limite-de-tentativas.test.ts`). Mutação (o CPF opcional de novo · reaproveitar sem
+                  olhar o número da fatura): as duas reprovam.
       - [ ] **Passo 7 — Os e-mails automáticos da assinatura.** A cobrança que falhou (com a
             data da próxima tentativa), o aviso antes de trancar e a assinatura cancelada (com
             o link para reativar). Os textos são do operador. **Depende só do passo 3** — pode

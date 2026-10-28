@@ -319,11 +319,6 @@ export async function criarClienteDoVisitante(cliente: ClienteDoVisitante): Prom
   }
 }
 
-/**
- * Deixa no cliente o número fiscal desta tentativa (quem corrigiu o CPF entre um clique e outro):
- * igual ao que já está, nada; diferente, entra o novo e saem os do Brasil que estavam. Devolve se
- * MUDOU — e aí a tentativa anterior não serve mais, porque a fatura dela leva o número antigo.
- */
 /** O número do Brasil entre os números fiscais (de uma fatura), como `chaveDoNumeroFiscal`. Função pura. */
 function numeroFiscalDoBrasil(numeros: ReadonlyArray<{ type: string; value: string | null }> | null | undefined): string | null {
   const doBrasil = (numeros ?? []).find((n) => (n.type === "br_cpf" || n.type === "br_cnpj") && n.value);
@@ -331,19 +326,10 @@ function numeroFiscalDoBrasil(numeros: ReadonlyArray<{ type: string; value: stri
 }
 
 /**
- * A ficha do cliente já tem um CPF ou CNPJ? Para o pedido de quem está logado que vem SEM o número
- * (achado P2 da revisão de segurança do passo 6): sem número em lugar nenhum, não se assina — é o
- * CPF obrigatório que restringe a venda ao Brasil (`billing.md`).
+ * Deixa no cliente o número fiscal desta tentativa (quem corrigiu o CPF entre um clique e outro):
+ * igual ao que já está, nada; diferente, entra o novo e saem os do Brasil que estavam. Devolve se
+ * MUDOU — e aí a tentativa anterior não serve mais, porque a fatura dela leva o número antigo.
  */
-export async function temNumeroFiscalDoBrasil(clienteId: string): Promise<boolean> {
-  try {
-    const guardados = (await stripe().customers.listTaxIds(clienteId, { limit: 20 })).data;
-    return guardados.some((t) => t.type === "br_cpf" || t.type === "br_cnpj");
-  } catch (erro) {
-    throw erroSemMensagem(erro, "a leitura do número fiscal do cliente");
-  }
-}
-
 export async function acertarNumeroFiscal(clienteId: string, documento: DocumentoFiscal): Promise<boolean> {
   const novo = paraNumeroFiscal(documento);
   try {

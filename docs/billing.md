@@ -535,8 +535,9 @@ customer's full billing address for tax calculation […] use the Address Elemen
   dois na tela), e **nunca** vai nos dados do cartão (`billing_details.tax_id`, proibido numa conta
   do Brasil): vai na **ficha do cliente** (`tax_id_data`, `br_cpf`/`br_cnpj`) — o visitante desde o
   passo 4, quem está logado desde o passo 6 (`acertarNumeroFiscal`, `server/src/lib/stripe.ts`).
-  **Sem o CPF no pedido de quem está logado, só segue quem já tem um na ficha** (400
-  `DocumentoInvalido` se não tiver — até o CPF virar obrigatório no servidor), e **a incompleta só é
+  **O CPF é OBRIGATÓRIO também no pedido de quem está logado desde 28/10/2026** (`assinarSchema`: sem
+  ele, 400 `ValidationError`, antes de qualquer ida à Stripe — até ali, sem o número só seguia quem já
+  tinha um na ficha, para a aba aberta antes da publicação da 6a), e **a incompleta só é
   reaproveitada se a FATURA dela saiu com o mesmo número do pedido** (`numeroFiscalDaFatura`) — não
   basta a ficha de agora: um clique que trocou o número e falhou no meio deixaria uma fatura com o
   número antigo (P2 da revisão de segurança do passo 6, 27/10/2026).
