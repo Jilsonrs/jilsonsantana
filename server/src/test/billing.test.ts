@@ -625,6 +625,21 @@ describe("POST /api/billing/assinatura", () => {
       expect(criarAssinatura).not.toHaveBeenCalled();
     });
 
+    // A3 DA REVISÃO DA ETAPA (28/10/2026): a incompleta PAGA entre a lista e o cancelamento (outra aba, no
+    // mesmo instante) — o número do pedido novo NÃO pode ir para a ficha de quem acabou de pagar.
+    it("a incompleta de outro plano foi PAGA no meio: 409, e o CPF do pedido novo NÃO vai para a ficha", async () => {
+      vi.spyOn(console, "error").mockImplementation(() => {});
+      await semAssinatura(async () => {
+        expect((await assinarComo({ plano: "mensal", documento: CPF }, member)).status).toBe(200);
+        cancelarIncompleta.mockResolvedValueOnce("active");
+        const res = await assinarComo({ plano: "anual", documento: OUTRO_CPF }, member);
+        expect([res.status, res.body]).toEqual([409, { error: "JaAssinante" }]);
+      });
+      expect(acertarNumeroFiscal).toHaveBeenCalledTimes(1);
+      expect(acertarNumeroFiscal.mock.calls.map(([, documento]) => documento.numero)).toEqual(["52998224725"]);
+      expect(criarAssinatura).toHaveBeenCalledTimes(1);
+    });
+
     // P2 DA REVISÃO DE SEGURANÇA DO PASSO 6: um clique anterior trocou o número na ficha e falhou antes de
     // cancelar a incompleta — a ficha diz "não mudou", mas a fatura dela saiu com o número antigo.
     it("a incompleta cuja FATURA saiu com outro número não é reaproveitada, mesmo com a ficha já igual ao pedido", async () => {

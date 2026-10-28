@@ -5331,6 +5331,43 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             de abrir: as pendências P58 (o nome na fatura) e P60 (a opção do painel) — a P91 (o
             Radar) fechou em 20/10/2026, e a P75 (o limite do reembolso) em 21/10/2026 —, a cópia do banco
             (Fase 7) e a revisão de segurança da etapa inteira. A publicação é ordem dele.
+            **A REVISÃO DA ETAPA INTEIRA — FEITA em 28/10/2026** *(pedido do operador: dois revisores em
+            paralelo no Fable 5.1, esforço máximo — o `security-vulnerability-reviewer` e um revisor
+            geral —, sobre os 25 commits de código da 4.7, passos 1 a 7; só leitura)*. **Nenhum P0;
+            nenhum P1 fora da 7b do mesmo dia.** Os achados e o destino de cada um *(decisões do
+            operador no mesmo dia: "O P1 e os P2 (a) e (c)"; "A3, A5, A6, A4 e A7 agora; A2 vira
+            pendência")*:
+            - **P1 (segurança) = A1 (geral)** — a rodada voltava toda hora à cancelada de quem já assinou
+              de novo (e à da conta excluída), e mandaria "reative" no dia em que a nova atrasasse →
+              **corrigido** (`f059df9`, a 7b).
+            - **P2 (a)** — a assinatura que a Stripe não conhece alertava a cada hora → **corrigido**
+              (`f059df9`).
+            - **P2 (b)** — o job da rodada roda com a conta do site (`jilson-site`), como o das migrations;
+              o revisor sugeriu uma conta só dele, com acesso só às 4 chaves → **fica assim** *(decisão do
+              operador, 28/10/2026)*. *Reabre se o site ganhar um papel novo no Google Cloud, ou se um
+              incidente mostrar o job como caminho.*
+            - **P2 (c) + A7** — o job de 5 min podia morrer no meio, e a marca tomada sem envio nunca saía
+              → **corrigidos** (`f059df9`: o prazo da rodada; a marca pendente, retomada depois de 15 min).
+            - **A2** — a tela de depois do pagamento insiste a cada 2 s mesmo com 429/5xx, sem frase
+              própria → **P108** (precisa do texto do operador).
+            - **A3** — o CPF ia para a ficha da Stripe ANTES de o laço descobrir a tentativa paga no meio
+              (os dois checkouts) → **corrigido** (reordenado; teste nos dois caminhos).
+            - **A4** — documentos velhos: a seção *Limite de tentativas* do `billing.md` (contagem em
+              memória, `x-real-ip`, Railway, "3 em andamento", sem a rota da senha) e dois comentários
+              "provisório até a G4" → **reconciliados**. *O sub-item "o `pedacos.test.ts` não existe" era
+              alarme falso: existe.*
+            - **A5** — três telas de acesso navegavam com `navigate()` direto → **`useIrPara()`**, que
+              ganhou `substituir` (o "voltar" não volta ao formulário de entrar).
+            - **A6** — um assert de teste que não podia falhar → **tirado**.
+            **O que os dois conferiram e acharam sólido** (resumo): o webhook (corpo cru, idempotência,
+            a trava, o 200 só no fim); a conta que nasce só na sincronia, com acesso pela regra do gate;
+            `disableSignUp` nos dois lugares e as rotas de pedir código desligadas; a tentativa só como
+            resumo e nunca no endereço; a senha depois de pagar uma vez; preço, cliente, assinatura e
+            conta nunca do navegador; os limites (no banco, com HMAC); RLS em toda tabela nova; os 30
+            textos aprovados (P81) iguais no `pt.ts`; nenhum texto cravado; `escapeHtml` no template.
+            **O que não puderam conferir** (fora do repositório — ficam para o passo 8): a IAM do Google,
+            o RLS no banco de produção (o SQL abaixo), o painel da Stripe (P60; um endpoint de webhook só;
+            os e-mails da própria Stripe desligados) e a prova 7c.
             **A venda sem login foi LIGADA em 27/10/2026, antes da abertura** *(decisão do operador:
             "quando a escola estiver pronta é só tirar o aviso")*: `ASSINAR_SEM_LOGIN: "true"` em
             `deploy/cloud-run.yaml`, para ele testar tudo no site no ar, atrás do "Em breve". No dia de

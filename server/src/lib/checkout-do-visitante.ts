@@ -147,9 +147,8 @@ async function decidir(email: string, pedido: AssinarSemLoginInput, ficha: Ficha
     const viva = existentes.find((a) => a.status !== "incomplete");
     if (viva) return { resultado: "viva-na-stripe", assinaturaId: viva.id };
 
-    // O número fiscal desta tentativa, agora — com a trava, e antes de a assinatura (e a primeira
-    // fatura dela) nascer. A ficha nova já nasceu com ele.
-    if (!ficha.nova) await acertarNumeroFiscal(ficha.stripeCustomerId, pedido.documento);
+    // O número fiscal desta tentativa, na forma em que a fatura o guarda. Vai para a ficha do cliente
+    // só DEPOIS do laço (abaixo).
     const numeroDoPedido = chaveDoNumeroFiscal(pedido.documento);
 
     let assinatura: AssinaturaNoCheckout | null = null;
@@ -178,6 +177,11 @@ async function decidir(email: string, pedido: AssinarSemLoginInput, ficha: Ficha
       }
     }
 
+    // O número fiscal desta tentativa na ficha do cliente — com a trava, antes de a assinatura (e a
+    // primeira fatura dela) nascer, e só DEPOIS de o laço provar que nenhuma tentativa foi paga no meio
+    // (A3 da revisão da etapa, 28/10/2026): antes, a paga entre a lista e o cancelamento ficava com a
+    // ficha trocada pelo número do outro pedido. A ficha nova já nasceu com ele.
+    if (!ficha.nova) await acertarNumeroFiscal(ficha.stripeCustomerId, pedido.documento);
     const reaproveitada = assinatura !== null;
     const tentativa = reaproveitada && pedido.tentativa ? pedido.tentativa : novaTentativa();
     // A tentativa vai SÓ ao navegador; a ficha e a assinatura na Stripe guardam o resumo dela.

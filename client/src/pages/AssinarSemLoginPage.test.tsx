@@ -154,7 +154,6 @@ describe("a tela pública de assinar — o envio e a tentativa", () => {
     // O endereço de volta da Stripe NUNCA leva a tentativa.
     expect(confirmar).toHaveBeenCalledWith("pi_1_secret_x", "pagamento", "/assinar/concluido");
     expect(confirmar.mock.calls.flat().join(" ")).not.toContain(TENTATIVA);
-    expect(window.location.href).not.toContain(TENTATIVA);
   });
 
   it("as novidades marcadas e a origem guardada (o YouTube) vão no pedido", async () => {

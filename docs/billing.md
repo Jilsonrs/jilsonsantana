@@ -1523,9 +1523,10 @@ tentativa de outra pessoa:
 | `POST previa` | — | 20 a cada 15 min |
 | `GET planos` | — | 120 a cada 15 min |
 | `POST confirmacao` ("o pagamento já valeu?") | — | 900 a cada 15 min (a tela pergunta a cada 2 s; duas abas cabem) |
+| `POST senha` (criar a senha logo depois de pagar — passo 5) | — | 10 a cada 15 min |
 
-E, somando todos os endereços, **no máximo 3 `POST assinatura` em andamento ao mesmo tempo** (*Assinar
-sem conta*, acima).
+E, somando todos os endereços, **no máximo as ligações da cópia menos 2 (8 por cópia) `POST assinatura`
+em andamento ao mesmo tempo, com e sem login** (*Assinar sem conta*, acima; o teto único é da 6f).
 
 - **Os e-mails novos contam CLIENTES CRIADOS, nunca pedidos** (`contarClienteNovo`): a regra de
   assinar a chama no instante em que um cliente novo vai nascer na Stripe — quem erra o CPF, ou
@@ -1563,13 +1564,14 @@ cartão e de cobrança.
 - **A chave:** a rota pelo DESENHO dela, como foi declarada (`/billing/cartao`) — nunca o endereço
   como foi digitado: o Express aceita `/API/…`, `/Api/…` e a barra no fim, e cada grafia abriria
   uma contagem (achado P1 da revisão de segurança, corrigido no mesmo dia); sem o método, então o
-  `HEAD` conta junto com o `GET` — + a conta da sessão, ou o endereço: o `x-real-ip`, o mesmo do
-  limite do login (`CLAUDE.md` → *Quality Gates*). **O IPv6 conta pela faixa /56**: quem recebe
-  uma faixa inteira da operadora trocaria de endereço a cada pedido.
-- **O endereço tem que ser um IP.** Em produção, sem o `x-real-ip` ou com um que não é IP (a
-  borda deixou de reescrevê-lo), o pedido **não conta por endereço** — contar pela conexão
-  juntaria a escola inteira na contagem do proxy da Railway —, o teto da conta continua, e vai
-  **um alerta** por processo. Fora de produção, vale a conexão.
+  `HEAD` conta junto com o `GET` — + a conta da sessão, ou o endereço: o de `ipDoPedido` (o último
+  `x-forwarded-for`, o que a frente do Google Cloud Run anexa — medido no ar na G4, 23/10/2026), o
+  mesmo do limite do login (`CLAUDE.md` → *Quality Gates*). **O IPv6 conta pela faixa /56**: quem
+  recebe uma faixa inteira da operadora trocaria de endereço a cada pedido.
+- **O endereço tem que ser um IP.** Em produção, sem um IP válido em `ipDoPedido` (a frente deixou
+  de anexá-lo), o pedido **não conta por endereço** — contar pela conexão juntaria a escola inteira
+  na contagem da frente do Google —, o teto da conta continua, e vai **um alerta** por processo.
+  Fora de produção, vale a conexão.
 - **O limite por conta só existe depois do `requireAuth`:** montado sem sessão é erro (500, e o
   alerta), nunca uma contagem de todo mundo junto — um robô trancaria a escola inteira. **Rota
   pública ganha grupo próprio**, por endereço (e, no "Enviar de novo", também por e-mail) — existe
@@ -1595,16 +1597,18 @@ cartão e de cobrança.
 `[FATO — medido no código da `express-rate-limit@8.7.0`, 19/10/2026]` as conferências de endereço
 do pacote (o `trust proxy`, o `X-Forwarded-For`) só rodam na chave padrão dele — com a nossa, não
 disparam · os cabeçalhos antigos de contagem vêm ligados de fábrica (desligados aqui) · o
-`Retry-After` só sai com os cabeçalhos ligados (a recusa põe o nosso) · na contagem em memória a
-janela de cada chave começa no primeiro pedido dela · `ipKeyGenerator`: IPv4 fica como está, o
+`Retry-After` só sai com os cabeçalhos ligados (a recusa põe o nosso) · a janela de cada chave começa
+no primeiro pedido dela (medido então na contagem em memória; vale igual na do banco) · `ipKeyGenerator`: IPv4 fica como está, o
 IPv4 "embrulhado" (`::ffff:127.0.0.1`) vira IPv4, e o IPv6 vira a faixa (`2001:db8:1:2::1` e
 `2001:db8:1:2:ffff::9` → `2001:db8:1::/56`).
 
 **Limitações conhecidas:**
-- **A contagem é em memória:** publicar zera, e com dois servidores cada um contaria o seu.
-  *Gatilho: subir um segundo servidor — aí a contagem vai para um lugar comum.*
-- **O endereço depende de a Railway reescrever o `x-real-ip`**, como o limite do login. *Gatilho:
-  trocar de hospedagem ou pôr uma CDN na frente — o mesmo do login.*
+- **A contagem está no BANCO desde 25/10/2026** (`lib/loja-de-tentativas.ts`; o gatilho se cumpriu
+  com as 3 cópias no Cloud Run): publicar não zera, e as cópias contam juntas. *(Era em memória até
+  então: publicar zerava, e cada servidor contaria o seu.)*
+- **O endereço depende de a frente do Google Cloud Run anexar o IP no fim do `x-forwarded-for`**
+  (medido no ar na G4, 23/10/2026), como o limite do login. *Gatilho: pôr um balanceador ou o Cloud
+  Armor na frente — o mesmo do login.*
 - **Confirmar o cartão no campo da Stripe vai do navegador DIRETO para ela**, sem passar por aqui:
   o que este limite segura é abrir o pedido de guardar cartão e criar a assinatura. Um pedido já
   aberto pode ser confirmado de novo com outro cartão, e quem segura essa parte é a proteção da
