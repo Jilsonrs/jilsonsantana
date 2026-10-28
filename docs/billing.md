@@ -192,6 +192,21 @@ trocou o cartão —, as aulas reabrem na hora. **Dois e-mails automáticos, ped
 falha ("não conseguimos renovar; vamos tentar de novo no dia X", com o link para trocar o
 cartão — a Stripe diz a data da próxima tentativa) e antes de trancar ("se não for pago até o dia
 Y, você perde o acesso"). Entram na etapa 4.7, que traz o envio de e-mail.
+**Como saem — decisões do operador, 28/10/2026 (etapa 4.7, passo 7):** o da falha **na hora** (com a
+data da próxima tentativa, lida na fatura buscada na Stripe, e o dia em que as aulas trancam) e o
+"antes de trancar" **no último dia antes de trancar**, por uma rodada de hora em hora (um agendador —
+o agente tinha recomendado um e-mail só, com as duas datas; ele escolheu os dois). As outras
+tentativas da Stripe não mandam e-mail. **No código desde 28/10/2026:** a regra de qual e-mail é
+devido mora em `server/src/lib/avisos-da-assinatura.ts`, chamada pelo aviso da Stripe (e pela rodada
+do agendador, passo 7b); cada e-mail sai uma vez (a marca em `subscription_email`, por falha). *A marca
+fica pendente até o Resend confirmar e, pendente há mais de 15 minutos, é retomada pela vez seguinte —
+quem a tomou caiu no meio; a chave do Resend impede o dobro (revisão da etapa, 28/10/2026).* **Quem
+cancelou e já assinou de novo, e a conta excluída, não recebem o de cancelada** (a marca é consumida sem
+envio — "reative" seria errado); a cancelada com dias pagos recebe quando o período acaba. **Os
+textos foram conferidos pelo operador em 28/10/2026**, nos e-mails de verdade (uma frase dele, no da
+falha); moram em `pt.ts` (`app.email`), fora de Admin → Textos.
+*Reabre se os números mostrarem gente perdendo as aulas sem ter lido os dois e-mails, ou reclamando
+de e-mail demais.*
 **NO CÓDIGO desde 12/10/2026 (etapa 4.6b).** A regra mora em `assinaturaDaAcesso`
 (`server/src/lib/acesso.ts`); o prazo, em `TOLERANCIA_DA_COBRANCA_ATRASADA_EM_DIAS` (`core`).
 Os 3 dias contam do "pago até" do espelho, que numa atrasada é o instante da renovação não paga.
@@ -249,7 +264,9 @@ link para reativação ou instrução, igual a AI quando não consegue cobrar ca
 reativa")*. No painel da Stripe a opção é **"cancelar a assinatura"** — nunca "marcar como não
 paga" nem "deixar atrasada" —, nos dois ambientes (tarefa do operador: pendência P60). Quem foi
 cancelado assim lê "Reativar assinatura" e assina de novo pela tela de assinar; o e-mail entra
-na etapa 4.7, que traz o envio de e-mail.
+na etapa 4.7, que traz o envio de e-mail. **No código desde 28/10/2026 (passo 7):** o de cancelada
+tem uma versão para este caso — "Não conseguimos cobrar a renovação, e sua assinatura foi
+cancelada" —, escolhida pelo motivo que a Stripe grava (`cancellation_details.reason`).
 `[FATO — context7 /websites/stripe, 10/10/2026]` "Não paga" (`unpaid`) **não tenta mais cobrar**,
 mas continua gerando fatura a cada período; **cancelada é estado final** — não se reativa,
 cria-se outra (é o que "Reativar assinatura" faz).
@@ -270,6 +287,13 @@ acontece em telas nativas da escola (o aluno nunca sai do site).
   o aluno, como a Anthropic faz")*. Não é botão do admin: sai sozinho quando a Stripe avisa.
   Entra na etapa 4.7, que traz o envio de e-mail. *Reabre se o e-mail incomodar quem cancelou
   de propósito — aí separa-se o cancelamento pedido do cancelamento por falta de pagamento.*
+  **Quando sai — decisão do operador, 28/10/2026:** só no FIM de uma assinatura que foi paga — o
+  fim do período de quem cancelou, as tentativas de cobrança que acabaram, o reembolso, o
+  cancelamento pelo painel —, nunca para quem desistiu no meio do primeiro pagamento (a assinatura
+  que expira sem pagar, `incomplete_expired`); e nada no clique de cancelar. *Convenção de
+  engenharia (o texto diz que o acesso acabou):* com a conta ainda com aulas — o cancelamento na
+  hora pelo painel, com dias pagos —, o e-mail espera o período acabar. No código desde 28/10/2026
+  (`lib/avisos-da-assinatura.ts`).
 - **Faseamento:** captura de motivo = lançamento · **"pausar 1 mês"** (pause
   collection da Stripe) = logo depois, não no lançamento.
 
@@ -535,8 +559,9 @@ customer's full billing address for tax calculation […] use the Address Elemen
   dois na tela), e **nunca** vai nos dados do cartão (`billing_details.tax_id`, proibido numa conta
   do Brasil): vai na **ficha do cliente** (`tax_id_data`, `br_cpf`/`br_cnpj`) — o visitante desde o
   passo 4, quem está logado desde o passo 6 (`acertarNumeroFiscal`, `server/src/lib/stripe.ts`).
-  **Sem o CPF no pedido de quem está logado, só segue quem já tem um na ficha** (400
-  `DocumentoInvalido` se não tiver — até o CPF virar obrigatório no servidor), e **a incompleta só é
+  **O CPF é OBRIGATÓRIO também no pedido de quem está logado desde 28/10/2026** (`assinarSchema`: sem
+  ele, 400 `ValidationError`, antes de qualquer ida à Stripe — até ali, sem o número só seguia quem já
+  tinha um na ficha, para a aba aberta antes da publicação da 6a), e **a incompleta só é
   reaproveitada se a FATURA dela saiu com o mesmo número do pedido** (`numeroFiscalDaFatura`) — não
   basta a ficha de agora: um clique que trocou o número e falhou no meio deixaria uma fatura com o
   número antigo (P2 da revisão de segurança do passo 6, 27/10/2026).
@@ -1499,9 +1524,10 @@ tentativa de outra pessoa:
 | `POST previa` | — | 20 a cada 15 min |
 | `GET planos` | — | 120 a cada 15 min |
 | `POST confirmacao` ("o pagamento já valeu?") | — | 900 a cada 15 min (a tela pergunta a cada 2 s; duas abas cabem) |
+| `POST senha` (criar a senha logo depois de pagar — passo 5) | — | 10 a cada 15 min |
 
-E, somando todos os endereços, **no máximo 3 `POST assinatura` em andamento ao mesmo tempo** (*Assinar
-sem conta*, acima).
+E, somando todos os endereços, **no máximo as ligações da cópia menos 2 (8 por cópia) `POST assinatura`
+em andamento ao mesmo tempo, com e sem login** (*Assinar sem conta*, acima; o teto único é da 6f).
 
 - **Os e-mails novos contam CLIENTES CRIADOS, nunca pedidos** (`contarClienteNovo`): a regra de
   assinar a chama no instante em que um cliente novo vai nascer na Stripe — quem erra o CPF, ou
@@ -1539,13 +1565,14 @@ cartão e de cobrança.
 - **A chave:** a rota pelo DESENHO dela, como foi declarada (`/billing/cartao`) — nunca o endereço
   como foi digitado: o Express aceita `/API/…`, `/Api/…` e a barra no fim, e cada grafia abriria
   uma contagem (achado P1 da revisão de segurança, corrigido no mesmo dia); sem o método, então o
-  `HEAD` conta junto com o `GET` — + a conta da sessão, ou o endereço: o `x-real-ip`, o mesmo do
-  limite do login (`CLAUDE.md` → *Quality Gates*). **O IPv6 conta pela faixa /56**: quem recebe
-  uma faixa inteira da operadora trocaria de endereço a cada pedido.
-- **O endereço tem que ser um IP.** Em produção, sem o `x-real-ip` ou com um que não é IP (a
-  borda deixou de reescrevê-lo), o pedido **não conta por endereço** — contar pela conexão
-  juntaria a escola inteira na contagem do proxy da Railway —, o teto da conta continua, e vai
-  **um alerta** por processo. Fora de produção, vale a conexão.
+  `HEAD` conta junto com o `GET` — + a conta da sessão, ou o endereço: o de `ipDoPedido` (o último
+  `x-forwarded-for`, o que a frente do Google Cloud Run anexa — medido no ar na G4, 23/10/2026), o
+  mesmo do limite do login (`CLAUDE.md` → *Quality Gates*). **O IPv6 conta pela faixa /56**: quem
+  recebe uma faixa inteira da operadora trocaria de endereço a cada pedido.
+- **O endereço tem que ser um IP.** Em produção, sem um IP válido em `ipDoPedido` (a frente deixou
+  de anexá-lo), o pedido **não conta por endereço** — contar pela conexão juntaria a escola inteira
+  na contagem da frente do Google —, o teto da conta continua, e vai **um alerta** por processo.
+  Fora de produção, vale a conexão.
 - **O limite por conta só existe depois do `requireAuth`:** montado sem sessão é erro (500, e o
   alerta), nunca uma contagem de todo mundo junto — um robô trancaria a escola inteira. **Rota
   pública ganha grupo próprio**, por endereço (e, no "Enviar de novo", também por e-mail) — existe
@@ -1571,16 +1598,18 @@ cartão e de cobrança.
 `[FATO — medido no código da `express-rate-limit@8.7.0`, 19/10/2026]` as conferências de endereço
 do pacote (o `trust proxy`, o `X-Forwarded-For`) só rodam na chave padrão dele — com a nossa, não
 disparam · os cabeçalhos antigos de contagem vêm ligados de fábrica (desligados aqui) · o
-`Retry-After` só sai com os cabeçalhos ligados (a recusa põe o nosso) · na contagem em memória a
-janela de cada chave começa no primeiro pedido dela · `ipKeyGenerator`: IPv4 fica como está, o
+`Retry-After` só sai com os cabeçalhos ligados (a recusa põe o nosso) · a janela de cada chave começa
+no primeiro pedido dela (medido então na contagem em memória; vale igual na do banco) · `ipKeyGenerator`: IPv4 fica como está, o
 IPv4 "embrulhado" (`::ffff:127.0.0.1`) vira IPv4, e o IPv6 vira a faixa (`2001:db8:1:2::1` e
 `2001:db8:1:2:ffff::9` → `2001:db8:1::/56`).
 
 **Limitações conhecidas:**
-- **A contagem é em memória:** publicar zera, e com dois servidores cada um contaria o seu.
-  *Gatilho: subir um segundo servidor — aí a contagem vai para um lugar comum.*
-- **O endereço depende de a Railway reescrever o `x-real-ip`**, como o limite do login. *Gatilho:
-  trocar de hospedagem ou pôr uma CDN na frente — o mesmo do login.*
+- **A contagem está no BANCO desde 25/10/2026** (`lib/loja-de-tentativas.ts`; o gatilho se cumpriu
+  com as 3 cópias no Cloud Run): publicar não zera, e as cópias contam juntas. *(Era em memória até
+  então: publicar zerava, e cada servidor contaria o seu.)*
+- **O endereço depende de a frente do Google Cloud Run anexar o IP no fim do `x-forwarded-for`**
+  (medido no ar na G4, 23/10/2026), como o limite do login. *Gatilho: pôr um balanceador ou o Cloud
+  Armor na frente — o mesmo do login.*
 - **Confirmar o cartão no campo da Stripe vai do navegador DIRETO para ela**, sem passar por aqui:
   o que este limite segura é abrir o pedido de guardar cartão e criar a assinatura. Um pedido já
   aberto pode ser confirmado de novo com outro cartão, e quem segura essa parte é a proteção da

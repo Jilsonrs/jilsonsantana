@@ -3,7 +3,7 @@ import { DuracaoDoDesconto, type AssinarInput } from "@jilson/core";
 import { prisma } from "./prisma.js";
 import { assinaturaDaAcesso, cobrancaAtrasada, temAcessoAtivo } from "./acesso.js";
 import { sincronizarSeLivre } from "./assinaturas.js";
-import { acertarNumeroFiscal, assinaturasDoCliente, buscarCodigo, buscarPrecos, cancelarIncompleta, chaveDoNumeroFiscal, criarAssinatura, criarCliente, DocumentoRecusado, temNumeroFiscalDoBrasil, type AssinaturaNoCheckout, type CodigoPromocional } from "./stripe.js";
+import { acertarNumeroFiscal, assinaturasDoCliente, buscarCodigo, buscarPrecos, cancelarIncompleta, chaveDoNumeroFiscal, criarAssinatura, criarCliente, DocumentoRecusado, type AssinaturaNoCheckout, type CodigoPromocional } from "./stripe.js";
 
 // ASSINAR COM A CONTA LOGADA (Fase 4, etapa 4.2 — billing.md; CLAUDE.md → Membership Gating).
 // A regra, na ordem — e tudo dentro de UMA TRAVA POR CONTA (dois cliques, ou duas abas, nunca
@@ -40,8 +40,6 @@ export type Desfecho =
   | { resultado: "codigo-invalido" }
   /** A Stripe recusou o CPF ou CNPJ que o `core` aceitou: nada foi criado. */
   | { resultado: "documento-recusado" }
-  /** O pedido veio sem o CPF ou CNPJ, e a ficha do cliente não tem nenhum: nada foi criado. */
-  | { resultado: "sem-documento" }
   | { resultado: "ativa" }
   | { resultado: "pagar"; segredo: string; tipo: "pagamento" | "cartao" };
 
@@ -167,14 +165,9 @@ async function decidir(conta: Conta, pedido: AssinarInput, clienteId: string, pr
     // Nada aqui mexe no cliente dela — nem o número fiscal.
     if (viva) return { resultado: "viva-na-stripe", assinaturaId: viva.id };
 
-    // O CPF ou CNPJ, na FICHA DO CLIENTE (nunca nos dados do cartão: numa conta do Brasil a Stripe
-    // proíbe — context7 /websites/stripe, 27/10/2026), com a trava e antes de a assinatura (e a
-    // primeira fatura dela) nascer. Sem ele no pedido (a tela de antes desta publicação, ou alguém
-    // chamando o servidor direto), só segue quem já tem um na ficha — achado P2 da revisão de
-    // segurança do passo 6: é o CPF obrigatório que restringe a venda ao Brasil.
-    if (pedido.documento) await acertarNumeroFiscal(clienteId, pedido.documento);
-    else if (!(await temNumeroFiscalDoBrasil(clienteId))) return { resultado: "sem-documento" };
-    const numeroDoPedido = pedido.documento ? chaveDoNumeroFiscal(pedido.documento) : null;
+    // O CPF ou CNPJ do pedido (obrigatório — `assinarSchema`: é ele que restringe a venda ao Brasil),
+    // na forma em que a fatura o guarda. Vai para a ficha do cliente só DEPOIS do laço (abaixo).
+    const numeroDoPedido = chaveDoNumeroFiscal(pedido.documento);
 
     let assinatura: AssinaturaNoCheckout | null = null;
     for (const incompleta of existentes) {
@@ -184,8 +177,7 @@ async function decidir(conta: Conta, pedido: AssinarInput, clienteId: string, pr
       // depois de 10 recusas ela o cancela, e a assinatura continua aberta com o segredo morto
       // (medido na área restrita, 21/10/2026 — achado do passo 4 da etapa 4.7; correção autorizada
       // pelo operador no mesmo dia). Entregá-lo de novo prenderia o aluno.
-      const mesmoNumero = numeroDoPedido === null || incompleta.numeroFiscalDaFatura === numeroDoPedido;
-      const aMesma = incompleta.precoId === precoId && incompleta.codigoId === codigoId && mesmoNumero && incompleta.pagamentoCancelado !== true && incompleta.segredoDoPagamento !== null;
+      const aMesma = incompleta.precoId === precoId && incompleta.codigoId === codigoId && incompleta.numeroFiscalDaFatura === numeroDoPedido && incompleta.pagamentoCancelado !== true && incompleta.segredoDoPagamento !== null;
       if (aMesma && !assinatura) {
         assinatura = incompleta;
         continue;
@@ -199,6 +191,13 @@ async function decidir(conta: Conta, pedido: AssinarInput, clienteId: string, pr
       }
     }
 
+    // O CPF ou CNPJ, na FICHA DO CLIENTE (nunca nos dados do cartão: numa conta do Brasil a Stripe
+    // proíbe — context7 /websites/stripe, 27/10/2026), com a trava e antes de a assinatura (e a
+    // primeira fatura dela) nascer — e só DEPOIS de o laço provar que nenhuma tentativa foi paga no
+    // meio (A3 da revisão da etapa, 28/10/2026): antes, a paga entre a lista e o cancelamento ficava
+    // com a ficha trocada pelo número do outro pedido. Na reaproveitada, a fatura já tem o número; a
+    // ficha fica certa para as cobranças seguintes.
+    await acertarNumeroFiscal(clienteId, pedido.documento);
     assinatura ??= await criarAssinatura({ clienteId, userId: conta.id, precoId, plano: pedido.plano, codigoId });
     // A Stripe recusou o desconto na criação (o código esgotou entre a prévia e o clique).
     if (!assinatura) return { resultado: "codigo-invalido" };

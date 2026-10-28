@@ -72,15 +72,19 @@ export function trocarDeVersaoAgora(): boolean {
 }
 
 /** Carregar um endereço do jeito normal do navegador — num objeto, para o teste observar. */
-export const navegador = { ir: (endereco: string): void => window.location.assign(endereco) };
+/** O carregamento normal de página (trocável nos testes). `substituir`: sem deixar a tela de agora no histórico — o "voltar" não volta ao formulário de entrar. */
+export const navegador = { ir: (endereco: string, opcoes: { substituir?: boolean } = {}): void => (opcoes.substituir ? window.location.replace(endereco) : window.location.assign(endereco)) };
 
 /**
  * Ir para outra tela de dentro do código (ex.: a próxima aula ao fim do vídeo):
  * navegação interna, ou carregamento normal se já existe versão nova.
  */
-export function useIrPara(): (endereco: string) => void {
+export function useIrPara(): (endereco: string, opcoes?: { substituir?: boolean }) => void {
   const navigate = useNavigate();
-  return (endereco) => (trocarDeVersaoAgora() ? navegador.ir(endereco) : navigate(endereco));
+  return (endereco, opcoes) => {
+    if (trocarDeVersaoAgora()) return opcoes?.substituir ? navegador.ir(endereco, { substituir: true }) : navegador.ir(endereco);
+    return opcoes?.substituir ? navigate(endereco, { replace: true }) : navigate(endereco);
+  };
 }
 
 /**

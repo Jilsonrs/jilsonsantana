@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Link, useNavigate } from "react-router";
+import { Link } from "react-router";
+import { useIrPara } from "@/lib/versao";
 import { useQueryClient } from "@tanstack/react-query";
 import { loginSchema, type LoginInput } from "@jilson/core";
 import { signIn } from "@/lib/auth-client";
@@ -21,7 +22,7 @@ import { ErroDoCampo, FalhaDoFormulario } from "./MolduraDeAcesso";
 type Props = { emailInicial?: string; aoEnviarCodigo: (email: string) => void };
 
 export function EntrarComSenha({ emailInicial, aoEnviarCodigo }: Props) {
-  const navigate = useNavigate();
+  const irPara = useIrPara();
   const destino = useDestinoDepoisDeEntrar();
   const t = useT();
   const queryClient = useQueryClient();
@@ -67,7 +68,7 @@ export function EntrarComSenha({ emailInicial, aoEnviarCodigo }: Props) {
     // passa por ele — sem isto, quem entrasse em seguida na mesma aba veria por instantes o que
     // era da conta anterior.
     queryClient.clear();
-    navigate(destino, { replace: true });
+    irPara(destino, { substituir: true });
   }
 
   // "Receber código de acesso": só o e-mail precisa estar certo — a senha, aqui, não importa.

@@ -22,7 +22,7 @@ import { LojaNoBanco } from "./loja-de-tentativas.js";
 // - **Quem fica de fora:** `GET /billing/assinatura` ("já tenho acesso?"), que a tela de depois do
 //   pagamento repete a cada 2 s — lê só o banco.
 // - **A conta é a da sessão** (o `requireAuth` vem antes); o endereço vem de `ipDoPedido`
-//   (`x-forwarded-for`, na frente do Cloud Run — provisório até a medição em produção na G4).
+//   (o último `x-forwarded-for`, o que a frente do Cloud Run anexa — medido no ar na G4, 23/10/2026).
 
 const MINUTO = 60_000;
 const HORA = 60 * MINUTO;
@@ -118,8 +118,8 @@ export function ipDoPedido(cabecalho: string | null | undefined): string | null 
 }
 
 /**
- * O endereço de quem pediu: lido por `ipDoPedido` (`x-forwarded-for`, provisório até a medição em
- * produção na G4 — o mesmo do limite do login, `lib/auth.ts`). O IPv6 vira a faixa /56: quem recebe
+ * O endereço de quem pediu: lido por `ipDoPedido` (o último `x-forwarded-for`, o que a frente do Cloud
+ * Run anexa — medido no ar na G4, 23/10/2026; o mesmo do limite do login, `lib/auth.ts`). O IPv6 vira a faixa /56: quem recebe
  * uma faixa inteira da operadora trocaria de endereço a cada pedido e nunca passaria do teto.
  * **Em produção ele tem que ser um IP** (achado da revisão de segurança, 19/10/2026): ausente ou
  * estranho, a frente deixou de escrevê-lo — contar pela conexão juntaria a escola inteira numa

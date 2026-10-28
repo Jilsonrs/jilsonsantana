@@ -14,18 +14,17 @@ export const previaSchema = z.object({
 export type PreviaInput = z.infer<typeof previaSchema>;
 
 /**
- * Corpo de `POST /api/billing/assinatura` — assinar (Fase 4, etapa 4.2). Só o plano e, se houver,
- * o código promocional: a conta é a da sessão, e o preço é achado no servidor. Sem código, o
- * campo NÃO vem (vazio é recusado: a tela não manda o que o aluno não aplicou).
+ * Corpo de `POST /api/billing/assinatura` — assinar (Fase 4, etapa 4.2). O plano, o CPF ou CNPJ e,
+ * se houver, o código promocional: a conta é a da sessão, e o preço é achado no servidor. Sem
+ * código, o campo NÃO vem (vazio é recusado: a tela não manda o que o aluno não aplicou).
  */
 export const assinarSchema = z.object({
   plano: z.enum(PLANOS),
   codigo: z.string().trim().min(1).max(64).optional(),
-  // O CPF ou CNPJ (etapa 4.7, passo 6 — as duas telas iguais, decisão do operador de 27/10/2026):
-  // vai para a FICHA DO CLIENTE na Stripe, nunca para os dados do cartão. A tela sempre manda.
-  // OPCIONAL só nesta publicação: a aba aberta antes dela ainda assina sem ele (a API só acrescenta
-  // — CLAUDE.md → Rendering Boundary). Vira obrigatório na publicação seguinte (o plano, passo 6).
-  documento: documentoFiscalSchema.optional(),
+  // O CPF ou CNPJ, OBRIGATÓRIO (etapa 4.7, passo 6 — as duas telas iguais, decisão do operador de
+  // 27/10/2026; obrigatório no servidor desde a publicação seguinte à da 6a): é ele que restringe a
+  // venda ao Brasil. Vai para a FICHA DO CLIENTE na Stripe, nunca para os dados do cartão.
+  documento: documentoFiscalSchema,
 });
 export type AssinarInput = z.infer<typeof assinarSchema>;
 /** O corpo como a TELA o manda (o CPF ou CNPJ é o texto digitado; o servidor o confere e converte). */

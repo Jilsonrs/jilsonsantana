@@ -3,6 +3,7 @@ import { avisosConfigurados, verificarAviso } from "../lib/stripe.js";
 import { processarAviso } from "../lib/assinaturas.js";
 import { assinaturaDaAcesso } from "../lib/acesso.js";
 import { mandarBoasVindasDaAssinatura } from "../lib/boas-vindas.js";
+import { avisarSobreAAssinatura } from "../lib/avisos-da-assinatura.js";
 
 // O AVISO DA STRIPE (webhook — Fase 4, etapa 4.1; CLAUDE.md → Membership Gating). Montado em
 // `app.ts` ACIMA do `express.json()`: a verificação precisa do corpo CRU, byte a byte — com o
@@ -58,6 +59,10 @@ router.post("/stripe/webhook", express.raw({ type: "application/json" }), async 
   // As boas-vindas de quem assinou sem conta (etapa 4.7, passo 5): DEPOIS do commit, e em todo aviso
   // da assinatura — inclusive o repetido —, até sair uma vez. Nunca derruba este 200.
   if (aviso.assinatura) await mandarBoasVindasDaAssinatura(aviso.assinatura);
+  // Os e-mails da cobrança (etapa 4.7, passo 7): a cobrança que falhou, o aviso antes de trancar, a
+  // assinatura que terminou — com o que a Stripe acabou de dizer, DEPOIS do commit, uma vez cada. O
+  // aviso repetido não traz a assinatura de agora: o que ficar para trás, a rodada do agendador manda.
+  if (desfecho.resultado === "atualizada") await avisarSobreAAssinatura(desfecho.assinatura);
   res.json({ recebido: true });
 });
 

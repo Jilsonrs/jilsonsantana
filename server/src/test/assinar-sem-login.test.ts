@@ -385,6 +385,19 @@ describe("assinar sem login — a ficha e a tentativa", () => {
     expect(acertarNumeroFiscal).toHaveBeenCalledWith((await ficha(email))?.stripeCustomerId, { tipo: "cpf", numero: "52998224725" });
   });
 
+  // A3 DA REVISÃO DA ETAPA (28/10/2026): a tentativa PAGA entre a lista e o cancelamento (outra aba, no
+  // mesmo instante) — o número do pedido novo NÃO pode ir para a ficha de quem acabou de pagar.
+  it("a tentativa foi PAGA no meio (outra aba): 409 'já tem conta', e o CPF do pedido novo NÃO vai para a ficha", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const email = novoEmail();
+    expect((await assinar(pedido(email))).status).toBe(200);
+    cancelarIncompleta.mockResolvedValueOnce("active");
+    const outra = await assinar(pedido(email, { documento: OUTRO_CPF }));
+    expect([outra.status, outra.body]).toEqual([409, { error: "JaTemConta" }]);
+    expect(acertarNumeroFiscal).not.toHaveBeenCalled();
+    expect(criarAssinatura).toHaveBeenCalledTimes(1);
+  });
+
   it("SEM o código da tentativa (outra pessoa que sabe o e-mail): NUNCA recebe o segredo da tentativa em andamento — ela é cancelada e nasce outra", async () => {
     const email = novoEmail();
     const dona = await assinar(pedido(email));

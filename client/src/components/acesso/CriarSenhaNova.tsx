@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useNavigate } from "react-router";
+import { useIrPara } from "@/lib/versao";
 import { useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import { senhaNovaSchema, VALIDADE_DO_CODIGO_EM_MINUTOS } from "@jilson/core";
@@ -27,7 +27,7 @@ type Props = { email: string };
 
 export function CriarSenhaNova({ email }: Props) {
   const t = useT();
-  const navigate = useNavigate();
+  const irPara = useIrPara();
   const queryClient = useQueryClient();
   const [falha, setFalha] = useState<FalhaDoCodigo | null>(null);
   const [outro, setOutro] = useState<"enviando" | "enviado" | "limite" | "falha" | null>(null);
@@ -48,7 +48,7 @@ export function CriarSenhaNova({ email }: Props) {
       // A senha está criada: entra com ela, neste aparelho.
       const entrou = await signIn.email({ email, password: senha });
       if (entrou.error) {
-        navigate("/login", { replace: true });
+        irPara("/login", { substituir: true });
         return;
       }
     } catch (erro) {
@@ -58,7 +58,7 @@ export function CriarSenhaNova({ email }: Props) {
     }
     // Quem entra começa do zero (o mesmo da tela de entrar — decisão do operador, 11/10/2026).
     queryClient.clear();
-    navigate(POS_LOGIN, { replace: true });
+    irPara(POS_LOGIN, { substituir: true });
   }
 
   async function pedirOutro() {

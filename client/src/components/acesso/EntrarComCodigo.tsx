@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useNavigate } from "react-router";
+import { useIrPara } from "@/lib/versao";
 import { useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import { VALIDADE_DO_CODIGO_EM_MINUTOS } from "@jilson/core";
@@ -25,7 +25,7 @@ type Props = { email: string; aoVoltar: () => void };
 
 export function EntrarComCodigo({ email, aoVoltar }: Props) {
   const t = useT();
-  const navigate = useNavigate();
+  const irPara = useIrPara();
   const destino = useDestinoDepoisDeEntrar();
   const queryClient = useQueryClient();
   const [falha, setFalha] = useState<FalhaDoCodigo | null>(null);
@@ -52,7 +52,7 @@ export function EntrarComCodigo({ email, aoVoltar }: Props) {
     }
     // Quem entra começa do zero (o mesmo da senha — decisão do operador, 11/10/2026).
     queryClient.clear();
-    navigate(destino, { replace: true });
+    irPara(destino, { substituir: true });
   }
 
   async function pedirOutro() {

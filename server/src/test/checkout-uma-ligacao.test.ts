@@ -29,8 +29,8 @@ vi.mock("../lib/stripe.js", async (importOriginal) => ({
   assinaturasDoCliente: () => assinaturasDoCliente(),
   criarAssinatura: () => criarAssinatura(),
   buscarAssinatura: (id: string) => buscarAssinatura(id),
-  // O pedido destes testes vem sem o CPF: a ficha já tem um (passo 6 — o caso sem nenhum é de billing.test.ts).
-  temNumeroFiscalDoBrasil: async () => true,
+  // O CPF na ficha do cliente (etapa 4.7, passo 6) também iria à rede: aqui, a ficha já tem este número.
+  acertarNumeroFiscal: async () => false,
 }));
 
 // UMA ligação, e o prazo curto: o pedido que esperasse uma segunda falharia em 3 s, não em 10.
@@ -44,10 +44,14 @@ const { default: servidor } = (await import("./servidor.js")) as { default: Serv
 const { prisma } = await import("../lib/prisma.js");
 const { ASSINATURA_DE_TESTE } = await import("../lib/assinatura-de-teste.js");
 const { contarClienteNovo } = await import("../lib/limite-de-tentativas.js");
+const { chaveDoNumeroFiscal } = await import("../lib/stripe.js");
 
 const CHAVES = { STRIPE_SECRET_KEY: "sk_test_da_suite_local", STRIPE_PUBLISHABLE_KEY: "pk_test_da_suite_local" } as const;
 const antes = Object.fromEntries(Object.keys(CHAVES).map((nome) => [nome, process.env[nome]]));
 const VIVA = "sub_uma_ligacao_viva";
+// O CPF é obrigatório no pedido; a primeira fatura da assinatura sai com ele — é o que deixa o novo clique reaproveitá-la.
+const CPF = "529.982.247-25";
+const NUMERO_NA_FATURA = chaveDoNumeroFiscal({ tipo: "cpf", numero: "52998224725" });
 let member: string[] = [];
 let memberId = "";
 
@@ -100,17 +104,17 @@ describe("assinar com o banco aceitando UMA ligação", () => {
     const lista: AssinaturaNoCheckout[] = [];
     assinaturasDoCliente.mockImplementation(async () => lista);
     criarAssinatura.mockImplementation(async () => {
-      const nova: AssinaturaNoCheckout = { id: `sub_uma_ligacao_${++n}`, status: "incomplete", precoId: "price_mensal", codigoId: null, segredoDoPagamento: "pi_uma_ligacao_secret_x", segredoDoCartao: null };
+      const nova: AssinaturaNoCheckout = { id: `sub_uma_ligacao_${++n}`, status: "incomplete", precoId: "price_mensal", codigoId: null, segredoDoPagamento: "pi_uma_ligacao_secret_x", segredoDoCartao: null, numeroFiscalDaFatura: NUMERO_NA_FATURA };
       lista.push(nova);
       return nova;
     });
 
-    const primeiro = await request(servidor).post("/api/billing/assinatura").set("Cookie", member).send({ plano: "mensal" });
+    const primeiro = await request(servidor).post("/api/billing/assinatura").set("Cookie", member).send({ plano: "mensal", documento: CPF });
     expect([primeiro.status, primeiro.body]).toEqual([200, { estado: "pagar", segredo: "pi_uma_ligacao_secret_x", tipo: "pagamento" }]);
     // O cliente ficou gravado, na transação curta só dele.
     expect((await prisma.stripeCustomer.findUnique({ where: { userId: memberId } }))?.stripeCustomerId).toBe("cus_uma_ligacao_1");
 
-    const segundo = await request(servidor).post("/api/billing/assinatura").set("Cookie", member).send({ plano: "mensal" });
+    const segundo = await request(servidor).post("/api/billing/assinatura").set("Cookie", member).send({ plano: "mensal", documento: CPF });
     expect([segundo.status, segundo.body.segredo]).toEqual([200, "pi_uma_ligacao_secret_x"]);
     expect(criarCliente).toHaveBeenCalledTimes(1);
     expect(criarAssinatura).toHaveBeenCalledTimes(1);
@@ -119,7 +123,7 @@ describe("assinar com o banco aceitando UMA ligação", () => {
   it("a Stripe diz que há assinatura viva e o espelho não sabe: a sincronia (com a trava DA ASSINATURA) também roda numa ligação só — e responde 'já é assinante', com o espelho gravado", async () => {
     assinaturasDoCliente.mockResolvedValue([{ id: VIVA, status: "active", precoId: "price_mensal", codigoId: null, segredoDoPagamento: null, segredoDoCartao: null }]);
     buscarAssinatura.mockResolvedValue({ id: VIVA, status: "active", pagoAte: new Date(Date.now() + 30 * 24 * 3600 * 1000), clienteId: "cus_uma_ligacao_1", userId: memberId, livemode: false });
-    const res = await request(servidor).post("/api/billing/assinatura").set("Cookie", member).send({ plano: "mensal" });
+    const res = await request(servidor).post("/api/billing/assinatura").set("Cookie", member).send({ plano: "mensal", documento: CPF });
     expect([res.status, res.body]).toEqual([409, { error: "JaAssinante" }]);
     expect(await prisma.subscription.findUnique({ where: { stripeSubscriptionId: VIVA }, select: { ownerUserId: true, status: true } })).toEqual({ ownerUserId: memberId, status: "active" });
   });

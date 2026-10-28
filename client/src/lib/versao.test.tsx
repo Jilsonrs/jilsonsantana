@@ -2,18 +2,20 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, renderHook, screen, fireEvent } from "@testing-library/react";
 import { AxiosError, AxiosHeaders } from "axios";
-import { Link, MemoryRouter, Route, Routes, useLocation } from "react-router";
+import { Link, MemoryRouter, Route, Routes, useLocation, useNavigationType } from "react-router";
 import {
   VERSAO_DESTE_APP,
   anotarVersaoDoServidor,
   desviarLinksQuandoHouverVersaoNova,
   esquecerVersaoDoServidor,
   haVersaoNova,
+  navegador,
   PEDACOS_DO_ADMIN,
   PEDACOS_DO_ALUNO,
   preCarregarPedacos,
   semInterromper,
   trocarDeVersaoAgora,
+  useIrPara,
   usePreCarregarDoAdmin,
 } from "./versao";
 import { aoFalhar, aoResponder } from "./api";
@@ -192,5 +194,50 @@ describe("o pré-carregamento do que o aluno usa", () => {
   it("a lista inclui o formulário de assinar", async () => {
     const modulos = await Promise.all(PEDACOS_DO_ALUNO.map((pedaco) => pedaco()));
     expect(modulos.some((m) => typeof (m as { FormularioDeAssinatura?: unknown }).FormularioDeAssinatura === "function")).toBe(true);
+  });
+});
+
+// IR PARA OUTRA TELA DE DENTRO DO CÓDIGO (`useIrPara`): navegação interna sem versão nova, carregamento
+// normal com ela. `substituir` (A5 da revisão da etapa 4.7, 28/10/2026 — as telas de acesso): a tela de
+// agora sai do histórico, como o `replace: true` que elas tinham com o `navigate()` direto.
+describe("ir para outra tela de dentro do código (useIrPara)", () => {
+  function Botoes() {
+    const irPara = useIrPara();
+    return (
+      <>
+        <button onClick={() => irPara("/aluno/aula/2")}>empilhar</button>
+        <button onClick={() => irPara("/aluno/aula/2", { substituir: true })}>substituir</button>
+      </>
+    );
+  }
+  function Como() {
+    return <p data-testid="como">{`${useLocation().pathname} ${useNavigationType()}`}</p>;
+  }
+  function abrir() {
+    render(
+      <MemoryRouter initialEntries={["/aluno/aula/1"]}>
+        <Botoes />
+        <Routes>
+          <Route path="*" element={<Como />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+  }
+
+  it("sem versão nova: navegação interna — `substituir` troca a tela de agora no histórico; sem ele, empilha", () => {
+    abrir();
+    fireEvent.click(screen.getByText("substituir"));
+    expect(screen.getByTestId("como").textContent).toBe("/aluno/aula/2 REPLACE");
+    fireEvent.click(screen.getByText("empilhar"));
+    expect(screen.getByTestId("como").textContent).toBe("/aluno/aula/2 PUSH");
+  });
+
+  it("com versão nova: o carregamento normal da página, levando o mesmo pedido de substituir", () => {
+    anotarVersaoDoServidor("outra-versao");
+    const ir = vi.spyOn(navegador, "ir").mockImplementation(() => {});
+    abrir();
+    fireEvent.click(screen.getByText("substituir"));
+    expect(ir).toHaveBeenCalledWith("/aluno/aula/2", { substituir: true });
+    expect(screen.getByTestId("como").textContent).toBe("/aluno/aula/1 POP");
   });
 });

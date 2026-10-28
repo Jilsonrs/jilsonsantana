@@ -15,8 +15,6 @@ const cancelarIncompleta = vi.fn<(id: string) => Promise<string>>();
 const criarAssinatura = vi.fn<(pedido: PedidoDeAssinatura) => Promise<AssinaturaNoCheckout | null>>();
 // O CPF ou CNPJ na FICHA DO CLIENTE (etapa 4.7, passo 6): devolve se o número MUDOU.
 const acertarNumeroFiscal = vi.fn<(clienteId: string, documento: DocumentoFiscal) => Promise<boolean>>();
-// "A ficha do cliente já tem um CPF ou CNPJ?" — para o pedido que vem sem o número (P2 da revisão do passo 6).
-const temNumeroFiscalDoBrasil = vi.fn<(clienteId: string) => Promise<boolean>>();
 // A busca que a SINCRONIA faz na Stripe (etapa 4.4): o checkout a chama quando a Stripe diz que
 // a conta já assina e o espelho não dá acesso.
 const buscarAssinatura = vi.fn<(id: string) => Promise<AssinaturaNaStripe>>();
@@ -30,7 +28,6 @@ vi.mock("../lib/stripe.js", async (importOriginal) => ({
   cancelarIncompleta: (id: string) => cancelarIncompleta(id),
   criarAssinatura: (pedido: PedidoDeAssinatura) => criarAssinatura(pedido),
   acertarNumeroFiscal: (clienteId: string, documento: DocumentoFiscal) => acertarNumeroFiscal(clienteId, documento),
-  temNumeroFiscalDoBrasil: (clienteId: string) => temNumeroFiscalDoBrasil(clienteId),
   buscarAssinatura: (id: string) => buscarAssinatura(id),
 }));
 
@@ -324,7 +321,9 @@ describe("GET /api/billing/assinatura", () => {
 
 describe("POST /api/billing/assinatura", () => {
   const S = `${Date.now()}`;
-  const assinarComo = (corpo: object, cookies: string[] = []) => request(servidor).post("/api/billing/assinatura").set("Cookie", cookies).send(corpo);
+  // O CPF ou CNPJ é OBRIGATÓRIO (etapa 4.7, passo 6): o pedido leva este, a não ser que o teste diga
+  // outro — ou `documento: undefined`, para o pedido sem nenhum.
+  const assinarComo = (corpo: object, cookies: string[] = []) => request(servidor).post("/api/billing/assinatura").set("Cookie", cookies).send({ documento: "529.982.247-25", ...corpo });
   let memberId = "";
   let memberEmail = "";
 
@@ -380,8 +379,6 @@ describe("POST /api/billing/assinatura", () => {
       fichas.set(clienteId, chaveDoNumeroFiscal(documento));
       return antes !== chaveDoNumeroFiscal(documento);
     });
-    // Sem o número no pedido, as contas destes testes já têm um na ficha — o caso sem nenhum tem teste próprio.
-    temNumeroFiscalDoBrasil.mockReset().mockResolvedValue(true);
   });
 
   afterAll(async () => {
@@ -614,23 +611,33 @@ describe("POST /api/billing/assinatura", () => {
       });
     });
 
-    it("sem o CPF, com um número já na ficha (a tela de antes desta publicação): assina como antes, e a ficha não é mexida", async () => {
+    // O CPF OBRIGATÓRIO NO SERVIDOR (a publicação seguinte à da 6a): é ele que restringe a venda ao
+    // Brasil. O pedido sem ele — uma aba de antes da 6a, ou alguém chamando o servidor direto — é
+    // recusado antes de qualquer ida à Stripe, tenha a ficha do cliente um número ou não.
+    it("sem o CPF ou CNPJ: 400, e nada vai à Stripe", async () => {
       await semAssinatura(async () => {
-        expect((await assinarComo({ plano: "mensal" }, member)).status).toBe(200);
+        const res = await assinarComo({ plano: "mensal", documento: undefined }, member);
+        expect([res.status, res.body.error]).toEqual([400, "ValidationError"]);
       });
-      expect(temNumeroFiscalDoBrasil).toHaveBeenCalled();
+      expect(criarCliente).not.toHaveBeenCalled();
       expect(acertarNumeroFiscal).not.toHaveBeenCalled();
-      expect(criarAssinatura).toHaveBeenCalledTimes(1);
+      expect(assinaturasDoCliente).not.toHaveBeenCalled();
+      expect(criarAssinatura).not.toHaveBeenCalled();
     });
 
-    // P2 DA REVISÃO DE SEGURANÇA DO PASSO 6: é o CPF obrigatório que restringe a venda ao Brasil.
-    it("sem o CPF e sem número na ficha (alguém chamando o servidor direto): 400 DocumentoInvalido, e nada nasce", async () => {
-      temNumeroFiscalDoBrasil.mockResolvedValue(false);
+    // A3 DA REVISÃO DA ETAPA (28/10/2026): a incompleta PAGA entre a lista e o cancelamento (outra aba, no
+    // mesmo instante) — o número do pedido novo NÃO pode ir para a ficha de quem acabou de pagar.
+    it("a incompleta de outro plano foi PAGA no meio: 409, e o CPF do pedido novo NÃO vai para a ficha", async () => {
+      vi.spyOn(console, "error").mockImplementation(() => {});
       await semAssinatura(async () => {
-        const res = await assinarComo({ plano: "mensal" }, member);
-        expect([res.status, res.body]).toEqual([400, { error: "DocumentoInvalido" }]);
+        expect((await assinarComo({ plano: "mensal", documento: CPF }, member)).status).toBe(200);
+        cancelarIncompleta.mockResolvedValueOnce("active");
+        const res = await assinarComo({ plano: "anual", documento: OUTRO_CPF }, member);
+        expect([res.status, res.body]).toEqual([409, { error: "JaAssinante" }]);
       });
-      expect(criarAssinatura).not.toHaveBeenCalled();
+      expect(acertarNumeroFiscal).toHaveBeenCalledTimes(1);
+      expect(acertarNumeroFiscal.mock.calls.map(([, documento]) => documento.numero)).toEqual(["52998224725"]);
+      expect(criarAssinatura).toHaveBeenCalledTimes(1);
     });
 
     // P2 DA REVISÃO DE SEGURANÇA DO PASSO 6: um clique anterior trocou o número na ficha e falhou antes de

@@ -234,6 +234,12 @@ no `CLAUDE.md`; quando forem substituídas por entradas mais novas, descem para 
 *(c) **Ao fechar a fase** (condição dele, no mesmo dia): as etapas que desceram antes e as que chegam com o fechamento se juntam numa seção só, em ordem — o histórico tem que continuar útil para consulta.*
 *(d) **GATILHO DE REABERTURA:** o título que fica no plano passar a esconder contexto de que a etapa seguinte precisa — uma sessão refazer, ou contradizer, algo que estava numa etapa movida.*
 
+*Atualizado Out 2026 (27) — **NO LANÇAMENTO A ESCOLA VENDE SÓ PARA O BRASIL; A VENDA PARA FORA VIRA UMA FASE PRÓPRIA, COM OUTRA EMPRESA COMO VENDEDORA. Decisões do operador, 12/10/2026 (*"caminho 1, só Brasil e aviso para os do exterior com e-mail"*; *"eu não vou cuidar de impostos do exterior com contador […] tem que ser com empresa terceirizada na fase do exterior"*; *"dólar sai para a fase do exterior"*). Revê o "cadastro aberto a todos os países" e tira o dólar (etapa 4.8) de antes do lançamento.** Detalhe: `billing.md` → *A tela pública de assinar*, e o plano → etapas 4.7 e 4.8 e *Post-MVP → Fase do exterior*.*
+*(a) **O dado que decidiu:** com a empresa no Brasil, a Stripe não cuida do imposto de fora por nenhum caminho — o Brasil não está na lista de países do Stripe Tax nem na do Managed Payments (páginas lidas em 12/10/2026) —, e na União Europeia o imposto é devido desde a primeira venda.*
+*(b) **O que decidiu:** a tela de assinar pede o país; quem não é do Brasil lê um aviso e deixa o e-mail, e a rota recusa no servidor. Quando a fase do exterior abrir, quem é de fora também paga dentro do site. A direção para ela é a Paddle como vendedora, *"se a Paddle resolver"* — condicional: ainda não é peça de stack.*
+*(c) **O que NÃO mudou:** a escola continua bilíngue (as páginas em inglês servem a quem mora no Brasil e mostram o aviso a quem é de fora); a trava da moeda pelo país do cartão continua sendo a regra da fase do exterior; a Stripe continua sendo a cobrança de quem é do Brasil.*
+*(d) **GATILHO DE REABERTURA:** a lista de quem pediu para ser avisado mostrar procura de fora que pague o trabalho; ou o Stripe Tax ou o Managed Payments passarem a aceitar empresa do Brasil.*
+
 ---
 
 ## Registros de pesquisa — o porquê de uma decisão, guardado inteiro
