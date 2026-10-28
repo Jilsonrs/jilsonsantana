@@ -660,6 +660,9 @@ describe("AssinarPage — o Pix pré-pago", () => {
     expect(screen.queryByLabelText("Código promocional")).toBeNull();
     expect(naTela()).toContain("Acesso até 28/02/2026");
     expect(naTela()).not.toContain("Renova todo mês");
+    // A linha do pagamento seguro sem a parte do cartão (decisão do operador, P110, 28/10/2026).
+    expect(naTela()).toContain("Pagamento seguro, processado pela Stripe.");
+    expect(naTela()).not.toContain("A escola não guarda os dados do seu cartão.");
     expect(screen.getByRole("button", { name: "Pagar com Pix" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Assinar" })).toBeNull();
     expect(cartao()?.dataset).toMatchObject({ centavos: "9990", pix: "pmc_so_pix", chave: "pk_test_da_tela" });
@@ -671,6 +674,7 @@ describe("AssinarPage — o Pix pré-pago", () => {
     fireEvent.click(screen.getByRole("radio", { name: /^Cartão/ }));
     expect(screen.getByLabelText("Código promocional")).toBeTruthy();
     expect(naTela()).toContain("Renova uma vez por ano por R$ 995,00, até você cancelar.");
+    expect(naTela()).toContain("A escola não guarda os dados do seu cartão.");
     expect(cartao()?.dataset.pix).toBe("");
   });
 

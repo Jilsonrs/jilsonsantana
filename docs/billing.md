@@ -136,8 +136,9 @@ no PaymentIntent/SetupIntent/Checkout Session; suporte anunciado em 22/abr/2026.
 > estuda por 1 mês ou 1 ano. Não renova sozinho: quando acabar, é só pagar de novo."* Com o Pix: o código
 > promocional some (e o aplicado é esquecido), o resumo diz **"Acesso até DD/MM/AAAA"** no lugar da
 > renovação (a previsão do fim do período, contada de hoje), o botão diz **"Pagar com Pix"**, e o campo da
-> Stripe abre em modo pagamento só com o Pix; a confirmação abre o QR da própria Stripe (imagem e "copia e
-> cola"). Depois, a tela de concluído de sempre, que pergunta ao servidor até a assinatura valer — com o
+> Stripe abre em modo pagamento só com o Pix, e a linha do pagamento seguro sai sem a parte do cartão —
+> **"Pagamento seguro, processado pela Stripe."** *(decisão do operador, P110, 28/10/2026)*; a confirmação
+> abre o QR da própria Stripe (imagem e "copia e cola"). Depois, a tela de concluído de sempre, que pergunta ao servidor até a assinatura valer — com o
 > botão **"Mostrar o QR de novo"** para quem fechou a janela sem pagar (o segredo do Pix fica só na aba,
 > até o servidor confirmar). **A tela nunca pede um QR novo sozinha**: só o clique em "Pagar com Pix" pede
 > — e o servidor devolve o MESMO QR enquanto ele estiver à espera.

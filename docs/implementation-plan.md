@@ -5781,8 +5781,8 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                   concluído em qualquer caso sem erro; se vier erro, ela fica com a frase de sempre e o novo
                   clique recebe o mesmo QR); o QR vencido depois de 1 h (o pagamento volta a `requires_payment_
                   method`, e o novo clique gera outro QR no mesmo pagamento); e a janela do QR no celular.
-                  **Pergunta ao operador (P110):** a frase "Pagamento seguro… A escola não guarda os dados do seu
-                  cartão" continua no resumo com o Pix escolhido.
+                  **P110, decidida pelo operador no mesmo dia:** com o Pix, a linha do pagamento seguro sai sem a
+                  parte do cartão — "Pagamento seguro, processado pela Stripe." (`app.assinar.pix.pagamentoSeguro`).
       - [ ] **Passo 3 — O pré-pago nas telas do aluno e nas operações.** `minha-assinatura.ts`:
             a pré-paga vem com `prePago: true` e `acessoAte`, sem parar/manter/mudar de plano/trocar
             cartão (a renovação não existe); Faturamento mostra "Seu acesso vai até DD/MM; para

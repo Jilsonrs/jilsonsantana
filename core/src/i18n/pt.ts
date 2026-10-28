@@ -615,6 +615,8 @@ export const pt = {
         acessoAte: "Acesso até {data}",
         botao: "Pagar com Pix",
         qrDeNovo: "Mostrar o QR de novo",
+        // Com o Pix não há cartão: a linha do resumo sai sem a parte do cartão (decisão do operador, P110, 28/10/2026).
+        pagamentoSeguro: "Pagamento seguro, processado pela Stripe.",
       },
     },
     // FATURAMENTO E ASSINATURA (Fase 4, etapa 4.6). Textos APROVADOS pelo operador em 11/10/2026. O título da tela é o rótulo do menu (`nav.faturamento`); os nomes dos

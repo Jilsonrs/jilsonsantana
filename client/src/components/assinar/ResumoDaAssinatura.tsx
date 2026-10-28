@@ -40,7 +40,7 @@ export function ResumoDaAssinatura({ plano, comCodigo, erro, botao, pix = false 
       <ul className="space-y-1.5 text-sm text-muted-foreground">
         <li>{renovacao}</li>
         <li>{t.reembolso}</li>
-        <li>{t.pagamentoSeguro}</li>
+        <li>{pix ? t.pix.pagamentoSeguro : t.pagamentoSeguro}</li>
       </ul>
       <LinhaDosTermos />
       {erro && (
