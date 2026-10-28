@@ -634,18 +634,20 @@
 > (simples, com o texto e a foto dele). **Depois da abertura:** o painel de assinaturas (4.7b), os E2E
 > da cobrança (4.10) e a vitrine fora do React (C5).
 > **O risco, dito sem rodeio:** com o JilsonAI na abertura, o mês fica apertado — é o maior bloco e o
-> mais incerto. Por isso ele começa primeiro, pelas decisões de produto. *Proposta do agente, a
+> mais incerto (vem logo depois do Pix — a ordem do operador, abaixo). *Proposta do agente, a
 > confirmar pelo operador: um ponto de checagem em 11/11/2026 — se o JilsonAI não estiver respondendo
 > no chat do aluno, ele decide se a abertura espera ou se o JilsonAI entra logo depois (a linha do
 > cartão muda em Admin → Textos).*
 
-**A ordem — proposta do agente, a aprovar pelo operador** (o código é do agente; o que é do operador
-corre em paralelo):
+**A ordem — aprovada pelo operador em 28/10/2026, com UMA mudança dele:** *"O PIX vai ser logo após o
+cartão para fechar 100% a parte de assinatura e pagamento"* — o Pix antes do JilsonAI (o agente tinha
+proposto o JilsonAI primeiro). O ponto de checagem de 11/11 segue como proposta. O código é do agente;
+o que é do operador corre em paralelo:
 
 | # | Bloco | De quem | Depende de |
 |---|---|---|---|
-| 1 | **JilsonAI**: as decisões de produto (`jilsonai.md`), depois as Fases 0–3 (o chat com o contexto do curso, a escalação para o Jilson, o medidor de uso) | agente + operador (decisões, persona) | — |
-| 2 | **Pix recorrente** (4.9) — alto risco | agente | — |
+| 1 | **Pix recorrente** (4.9) — alto risco: fecha a assinatura e o pagamento por inteiro | agente | — |
+| 2 | **JilsonAI**: as decisões de produto (`jilsonai.md`), depois as Fases 0–3 (o chat com o contexto do curso, a escalação para o Jilson, o medidor de uso) | agente + operador (decisões, persona) | — |
 | 3 | **Trilhas**: a tela de montar no admin (Bloco 6b) | agente | — |
 | 4 | **Certificados** (6.5): ao concluir o curso e a trilha | agente | 3 |
 | 5 | **A home lendo os cursos do banco** (C4) | agente | os cursos cadastrados (P16) |
