@@ -58,6 +58,15 @@
 > sucesso, aplicando a `20261027130000_resumo_da_tentativa` (só dados, sem mudar a estrutura).
 > **Falta:** o operador abrir a `/assinar` no ar (pelo `/__preview`) — só ele vê a página atrás do
 > "Em breve". **Destravado por esta publicação:** o CPF obrigatório no servidor (etapa 4.7, passo 6).
+> **Publicado em 27/10/2026, depois: `76f5f43` — A VENDA SEM LOGIN LIGADA, antes da abertura**
+> (decisão do operador: `ASSINAR_SEM_LOGIN: "true"` em `deploy/cloud-run.yaml`; o risco aceito por
+> ele em `billing.md` → *Assinar sem conta*), **revisão `jilson-prod-00043`**, conferida de fora: a
+> chave no serviço (`ASSINAR_SEM_LOGIN=true`, com `COMING_SOON=true`); `/api/billing/visitante/planos`
+> → 200, com o mensal e o anual (antes, 404); o público segue no "Em breve", também na `/assinar`; a
+> saúde e o curso (200); a assinatura sem login (401); o login com um e-mail que não existe (401); o
+> aviso da Stripe sem assinatura (400); o job das migrations com sucesso, sem migration nova. A versão
+> do app não mudou (`mvr43nr8-51a660b2`): só a configuração mudou. **Falta: o teste do operador no
+> ar**, como visitante, pela prévia.
 > **Publicado em 24–25/10/2026:** `d6c2906` — o endereço do CDN do Bunny corrigido (P105) e a
 > conferência dele no CI; `f09a903` — o download do arquivo da aula em pedaços (o Cloud Run recusava
 > acima de 32 MB); `294b106` — o segundo mais novo vence entre aparelhos. Conferidos de fora (o site
@@ -5146,6 +5155,12 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                         voltou ao retrato de antes.
                   - [x] **A tela olhada em dev pelo operador** (27/10/2026: *"ficou bom pode publicar
                         depois ajustamos com o Antigravity"*): o acabamento visual fica para a 6g.
+            - [x] **6h — O botão Assinar por último, como a Udemy** *(decisão do operador, 27/10/2026,
+                  depois de olhar a tela no ar — `billing.md` → *O que existe na tela*, item 6)*: no
+                  resumo, os Termos antes e o botão por último; "O que está incluído" à esquerda,
+                  depois da escolha do plano; o código onde estava. Nas duas telas (o formulário é um
+                  só). Teste de ordem (`AssinarPage.test.tsx`); mutação (os Termos depois do botão · a
+                  lista de volta à direita): as duas reprovam.
             - [ ] **6g — O ACABAMENTO VISUAL das telas de assinar, pelo Antigravity** *(pedido do
                   operador, 27/10/2026: passar ao Antigravity com um passo a passo; o Claude confere)*.
                   **Só visual** — nada de texto, comportamento, rota ou teste.
@@ -5155,8 +5170,9 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                      Para ver a `/assinar/concluido`: no DevTools, em `sessionStorage`, gravar
                      `jilson.assinar.tentativa` = `{"tentativa":"x","email":"a@b.com"}` — aparece o
                      "Confirmando sua assinatura…".
-                  2. Acabar as duas colunas (formulário à esquerda; o resumo, o botão e "O que está
-                     incluído" à direita; no celular, uma coluna só, nesta ordem) e os componentes
+                  2. Acabar as duas colunas (formulário à esquerda, com "O que está incluído" logo
+                     depois dos planos; à direita, o resumo com o botão POR ÚLTIMO — 6h, como a Udemy;
+                     no celular, uma coluna só, nesta ordem; não mudar a ordem) e os componentes
                      novos: `client/src/components/assinar/` (`FormularioDeAssinatura`,
                      `CampoDoDocumento`, `DadosDoVisitante`, `ResumoDaAssinatura`, `OQueEstaIncluido`,
                      `CriarSenhaDepoisDePagar`) e `client/src/pages/AssinaturaConcluidaSemLoginPage.tsx`.
@@ -6337,6 +6353,23 @@ outro aparelho e "daqui a um mês", e o Safari apaga o armazenamento do site em 
 - [ ] LGPD: privacy policy, terms, consent, data export/delete path (in Portuguese only — the
       English versions left on 12/10/2026)
 - [ ] Error/loading states everywhere; security review (subagent) on auth/billing/video
+      - [x] **A página em branco ao reabrir uma página de antes de uma publicação** *(achado do
+            operador, 27/10/2026: "Eu abro uma aula para assistir e mudo de guia […] quando volto
+            fica tudo em branco")*. **Medido no registro do Google:** às 00:58:53 o Safari reabriu
+            uma página de 26/10 e pediu o arquivo PRINCIPAL do app daquela versão (404) — sem ele o
+            app nem começa, e a proteção de `recarregar.ts`, que mora no app, nunca roda. **O
+            conserto:** um vigia escrito no começo da página do app (`client/src/lib/arquivo-que-sumiu.ts`,
+            ligado pelo `vite.config.ts`; a `/assinar` o recebe pelas etiquetas do app): script ou
+            folha de estilo do app que não chega recarrega a página uma vez, com a MESMA trava de 30 s
+            do app. Testes executam o vigia de verdade; mutação (nunca reconhece o arquivo · sem a
+            trava · qualquer arquivo recarrega · o vigia no fim da página · o Vite sem o plugin): as
+            cinco reprovam.
+            **Em aberto:** a aba da aula no Chrome (por volta de 01:27) ficou em branco SEM fazer
+            pedido nenhum ao site — não é este caso. Na próxima vez: o Console do navegador
+            (botão direito → Inspecionar → Console) com o que estiver em vermelho.
+            *(Achado junto, reportado e não consertado: a home aponta `og:image` para
+            `/img/og-home.jpg`, que não existe — 404 no registro; o cartão do link compartilhado sai
+            sem foto.)*
 - [ ] **A proteção na entrada, revista antes da abertura** *(pedido do operador, 27/10/2026)* — conferir
       com o operador os sinais de ataque e a escada do que ligar (`tech-stack.md` → *Proteção na
       entrada*), e se algum gatilho já se cumpriu. Nada se liga sem gatilho.

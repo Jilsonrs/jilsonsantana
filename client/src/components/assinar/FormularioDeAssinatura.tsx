@@ -134,7 +134,8 @@ export function FormularioDeAssinatura({
     return resposta.estado === "pagar" ? { estado: "pagar", segredo: resposta.segredo, tipo: resposta.tipo } : { estado: "ativa" };
   }
 
-  // À esquerda, o que se preenche; à direita (no celular, embaixo), o resumo com o botão e a lista.
+  // À esquerda, o que se preenche, com "O que está incluído" logo depois dos planos; à direita (no
+  // celular, embaixo), o resumo com o botão por último — como a Udemy (decisão do operador, 27/10/2026).
   const tela = (botao: ReactNode) => (
     <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
       <div className="space-y-8">
@@ -162,6 +163,7 @@ export function FormularioDeAssinatura({
           {semLogin && <CaixaDeNovidades marcada={novidades} aoMudar={setNovidades} travado={enviando} />}
         </PageSection>
         <EscolhaDoPlano planos={dados.planos} escolhido={plano} aoEscolher={setPlano} travado={enviando} />
+        <OQueEstaIncluido incluido={dados.incluido} />
         <CodigoPromocional
           aplicado={comCodigo ? codigo : null}
           recusado={recusado}
@@ -178,7 +180,6 @@ export function FormularioDeAssinatura({
       </div>
       <div className="space-y-8">
         <ResumoDaAssinatura plano={escolhido} comCodigo={comCodigo} erro={erro} botao={botao} />
-        <OQueEstaIncluido incluido={dados.incluido} />
       </div>
     </div>
   );
