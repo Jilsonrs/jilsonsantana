@@ -262,7 +262,12 @@ reativando logo depois de trancar) ou que ainda sobra abuso.*
 link para reativar** *(decisão do operador, 10/10/2026: "é melhor cancelar e enviar e-mail com
 link para reativação ou instrução, igual a AI quando não consegue cobrar cancela e depois paga
 reativa")*. No painel da Stripe a opção é **"cancelar a assinatura"** — nunca "marcar como não
-paga" nem "deixar atrasada" —, nos dois ambientes (tarefa do operador: pendência P60). Quem foi
+paga" nem "deixar atrasada" —, nos dois ambientes. **P60 FECHADA em 28/10/2026, conferida pelo
+operador no painel da conta de verdade** (*Billing → Revenue recovery → Retries*): cartões com
+**Smart Retries, até 8 vezes em 2 semanas**; na primeira falha, **deixar atrasada** (`past_due` — os
+3 dias de aulas); **no fim das tentativas, cancelar**; a fatura fica em aberto; e, em *Settings →
+Billing → Subscriptions and emails*, **os cinco e-mails da própria Stripe desligados** (a escola
+manda os dela). Na área restrita, a prova 7c do mesmo dia viu o cancelamento acontecer. Quem foi
 cancelado assim lê "Reativar assinatura" e assina de novo pela tela de assinar; o e-mail entra
 na etapa 4.7, que traz o envio de e-mail. **No código desde 28/10/2026 (passo 7):** o de cancelada
 tem uma versão para este caso — "Não conseguimos cobrar a renovação, e sua assinatura foi

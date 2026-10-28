@@ -5359,7 +5359,9 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       - [ ] **Passo 8 — O teste com cartão de verdade e a abertura ao público.** O teste do
             operador no site no ar (mensal → anual → reembolso), olhando a taxa da Stripe. Antes
             de abrir: as pendências P58 (o nome na fatura) e P60 (a opção do painel) — a P91 (o
-            Radar) fechou em 20/10/2026, e a P75 (o limite do reembolso) em 21/10/2026 —, a cópia do banco
+            Radar) fechou em 20/10/2026, a P75 (o limite do reembolso) em 21/10/2026 **e a P60 em
+            28/10/2026** (a conta de verdade em "cancelar", Smart Retries 8× em 2 semanas, os e-mails
+            da Stripe desligados — `billing.md` → *Régua de inadimplência*) —, a cópia do banco
             (Fase 7) e a revisão de segurança da etapa inteira. A publicação é ordem dele.
             **A REVISÃO DA ETAPA INTEIRA — FEITA em 28/10/2026** *(pedido do operador: dois revisores em
             paralelo no Fable 5.1, esforço máximo — o `security-vulnerability-reviewer` e um revisor
