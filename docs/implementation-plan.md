@@ -5609,7 +5609,42 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       *"The payment method type `pix` is invalid. Please ensure the provided type is activated in your
       dashboard"*. **Primeiro passo da etapa: o operador ativa o Pix no painel** (*Settings → Payments →
       Payment methods*), na área restrita e na conta de verdade; só então a medição do desenho (o
-      Pix avulso na primeira fatura, cancelada no fim do período) faz sentido. **Trazido da 4.2 (10/10/2026):** o Pix é um item a mais na
+      Pix avulso na primeira fatura, cancelada no fim do período) faz sentido.
+      **O operador ativou o Pix nos dois (28/10/2026) — e também o Apple Pay e o Google Pay, "se for
+      simples e atender ao desenho".** As medições seguintes, no mesmo dia (3 roteiros fora do repo,
+      clientes descartáveis apagados; *Docs check (context7):* Stripe → `/websites/stripe` → 4
+      consultas nesta abertura — Pix Automático, elegibilidade por país, cobrança da 1ª fatura,
+      carteiras no Payment Element):
+      - `[FATO]` **`pix` em `payment_settings.payment_method_types` de uma ASSINATURA é recusado mesmo
+        com o Pix ativado** — *"ensure … your account is enabled for any preview features that you are
+        trying to use"*: o Pix em assinatura é recurso de prévia que a conta do Brasil não tem
+        (coerente com "sem Pix Automático no Brasil"). Nas três formas: cobrada automaticamente só
+        Pix; cartão e Pix; fatura enviada.
+      - `[FATO]` **o Pix AVULSO funciona**, do jeito que a conta exige (formas de pagamento DINÂMICAS:
+        `automatic_payment_methods`, e `payment_method_types` num PaymentIntent solto é recusado como
+        "no longer supported"): o pagamento nasce com `["card","pix"]` (o que está ligado no painel),
+        confirmado com `pix` fica `requires_action` com `pix_display_qr_code` — imagem do QR, código
+        "copia e cola", página da Stripe com as instruções — e a validade é nossa
+        (`expires_after_seconds`; medido com 1 h). **Em teste ele NÃO paga sozinho** (40 s depois,
+        ainda `requires_action`): a confirmação de teste é à mão (a página de instruções em teste,
+        ou o painel) — conferir no plano.
+      - `[FATO]` **o caminho do pré-pago funciona:** assinatura criada como hoje (cartão,
+        `default_incomplete`) com `cancel_at_period_end: true` → `invoices.pay(fatura, {
+        paid_out_of_band: true })` → a assinatura fica **`active`**, a fatura `paid`, o período de 31
+        dias, `cancel_at` no fim, **sem nenhum cartão** — a Stripe aceita.
+      - Carteiras: Apple Pay e Google Pay **não são tipo de pagamento**: aparecem sozinhos no Payment
+        Element quando `card` está ligado, o aparelho tem carteira, o site é https e **o domínio está
+        registrado** no painel (*Payment method domains*); o Apple Pay exige servir um arquivo da Apple
+        em `/.well-known/apple-developer-merchantid-domain-association` (o site não o tem). O cartão
+        da carteira é um `card` normal: fica na assinatura e renova. **É simples e atende.**
+      **A direção que o agente propõe (a aprovar):** o Pix é um PaymentIntent AVULSO, numa configuração
+      de formas de pagamento só com Pix; quando ele é pago (aviso `payment_intent.succeeded`), a
+      sincronia cria a assinatura pré-paga — `cancel_at_period_end: true`, a primeira fatura paga por
+      fora, o PaymentIntent gravado nos metadados dela — e o espelho nasce como hoje; no fim do período
+      ela termina (o e-mail "terminou — reative" já existe); a rodada ganha o aviso "seu acesso acaba
+      em X dias — pague de novo"; a troca de plano e a troca de cartão não valem para o pré-pago; o
+      reembolso dos 7 dias devolve o Pix. O plano detalhado, com as telas e os textos (dele), vem
+      depois do OK. **Trazido da 4.2 (10/10/2026):** o Pix é um item a mais na
       lista de formas de pagamento do servidor (na 4.2, só cartão), sem refazer a tela. A home já
       diz "Pagamento no cartão ou no Pix": esta etapa fecha antes do lançamento.
       **Trazido da revisão de segurança da 4.2 (10/10/2026):** com o Pix o pagamento chega minutos
