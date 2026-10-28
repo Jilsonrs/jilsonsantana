@@ -5553,7 +5553,8 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       como proibido. As quatro perguntas a fazer a ela estão em `billing.md`. É peça nova de
       stack: só entra com a resposta dela e o OK dele, num plano próprio.
 - [ ] **4.9 — Pix recorrente (código).** O mandato no Payment Element e a régua própria do Pix (falha
-      de Pix não se retenta como cartão). **Trazido da 4.2 (10/10/2026):** o Pix é um item a mais na
+      de Pix não se retenta como cartão). **ENTRA NA ABERTURA** *(decisão do operador, 28/10/2026, P84 —
+      recomendação do agente): a linha "Pagamento no cartão ou no Pix" do cartão de preço fica.* **Trazido da 4.2 (10/10/2026):** o Pix é um item a mais na
       lista de formas de pagamento do servidor (na 4.2, só cartão), sem refazer a tela. A home já
       diz "Pagamento no cartão ou no Pix": esta etapa fecha antes do lançamento.
       **Trazido da revisão de segurança da 4.2 (10/10/2026):** com o Pix o pagamento chega minutos
@@ -6480,6 +6481,12 @@ outro aparelho e "daqui a um mês", e o Safari apaga o armazenamento do site em 
   quando está concluída. CI verde nos dois jobs.
 
 ## Phase 6 — JilsonAI (lean v1 + suporte)  *(medium risk)*  → ver **JILSONAI.md** (roadmap interno)
+
+> **O JILSONAI ENTRA NO DIA DA ABERTURA** *(decisão do operador, 28/10/2026, à pergunta da P84 — o
+> agente recomendou abrir antes e trazê-lo logo depois)*. **A abertura ao público (etapa 4.7, passo 8)
+> passa a depender desta fase**, e a linha "Suporte com JilsonAI + Jilson" do cartão de preço fica
+> como está. *Reabre se a Fase 6 atrasar a abertura além do que o operador aceitar — aí a linha muda
+> em Admin → Textos e a escola abre antes.*
 
 - [ ] JilsonAI Fases 0–3 (gateway, chat com contexto do curso, escalação humana, tools com
       escopo + msg privada). Inclui tool `recommendTrilha` (sugere trilha curada pelo objetivo).

@@ -81,6 +81,9 @@ no PaymentIntent/SetupIntent/Checkout Session; suporte anunciado em 22/abr/2026.
 inadimplência ganha um caminho próprio — **falha de Pix não se retenta como cartão** (não existe
 "tentar o mesmo cartão de novo"). *Gatilho de reabertura: se o Pix recorrente exigir mais
 manutenção do que traz em conversão, ele sai e fica só o cartão.*
+**O Pix e o JilsonAI entram NO DIA DA ABERTURA** *(decisões do operador, 28/10/2026 — P84)*: as duas
+linhas do cartão de preço ("Suporte com JilsonAI + Jilson" e "Pagamento no cartão ou no Pix") ficam
+como estão, e a abertura passa a depender da etapa 4.9 e da Fase 6 (o plano).
 
 ## Reembolso: 7 dias, por lei *(set/2026)*
 
