@@ -744,11 +744,21 @@ pública de assinar*), o teto da prévia (*Limite de tentativas*), o código de 
   planos`, `POST previa`, `POST assinatura` e `POST confirmacao`. A mesma proteção das de quem está
   logado (`lib/protecao-da-cobranca.ts`: nada em cache; pedido que muda alguma coisa e vem de outro
   site, recusado); os planos e a prévia saem das mesmas funções (`lib/vitrine-da-assinatura.ts`).
-- **FORA DO AR NO SITE ATÉ O PASSO 8** *(no plano aprovado pelo operador em 21/10/2026)*: em
-  produção, sem `ASSINAR_SEM_LOGIN=true` na Railway, as quatro respondem 404 (`NaoEncontrado`), sem
-  ir à Stripe nem ao banco; fora de produção, ligadas. É o que impede, se a `dev` for publicada
-  antes da hora, o site de vender sem o e-mail de criar a senha (passo 5) e sem a tela (passo 6).
-  **O operador liga a variável no passo 8.**
+- **A CHAVE DA VENDA SEM LOGIN** *(no plano aprovado pelo operador em 21/10/2026)*: em produção,
+  sem `ASSINAR_SEM_LOGIN=true` (`deploy/cloud-run.yaml`), as quatro respondem 404 (`NaoEncontrado`),
+  sem ir à Stripe nem ao banco; fora de produção, ligadas. Foi o que impediu o site de vender antes
+  do e-mail de criar a senha (passo 5) e da tela (passo 6).
+  **LIGADA em 27/10/2026, antes da abertura** *(decisão do operador, depois de publicado o passo 6)*:
+  *"tem que deixar tudo funcionando já que os usários comuns veem o aviso eu tenho que testar tudo
+  com adm e member assim quando a escola estiver pronta é só tirar o aviso"*. Ele testa a compra no
+  site no ar, atrás do "Em breve"; no dia de abrir, só tira o aviso. **O risco, dito a ele e
+  aceito:** a API não fica atrás do aviso — quem achar a rota compra de verdade, antes dos Termos, da
+  Política e dos e-mails do passo 7: *"Ninguem conhece o site então niguém vai comprar e tem o aviso
+  que ninguem vê a home a não ser eu por causa do token e se alguem comprasse que não vai acontecer
+  seria ótimo dinheiro entrando"*. **Recusada:** a venda sem login seguir o aviso (enquanto ele
+  estiver no ar, só quem entrou pela prévia compra) — cerca de 1 sessão de código.
+  *Reabre se aparecer, antes da abertura, uma assinatura de quem não é o operador (Admin →
+  Assinaturas ou o painel da Stripe), ou o registro mostrar robôs tentando assinar pela API.*
 - **O pedido de assinar** (`assinarSemLoginSchema`, no `core`): o e-mail, o CPF ou CNPJ, o plano, o
   código, a resposta da caixa de novidades (obrigatória, sim ou não), a origem (`origem` e
   `campanha`, o UTM do primeiro acesso — **nunca recusa o pedido**: valor estranho vira nada, e o

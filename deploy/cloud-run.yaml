@@ -9,6 +9,10 @@ BETTER_AUTH_URL: "https://www.jilsonsantana.com"
 # O endereço do site nas páginas públicas (canonical, Open Graph, sitemap) — server/src/routes/home.ts.
 BASE_URL: "https://www.jilsonsantana.com"
 COMING_SOON: "true"
+# A venda SEM LOGIN (etapa 4.7), ligada antes da abertura por decisão do operador (27/10/2026): com o
+# "Em breve" no ar só ele vê a home e a tela de assinar, e testa a compra no site. Desligada, as rotas
+# /api/billing/visitante/* respondem 404. O risco aceito: billing.md → Assinar sem conta.
+ASSINAR_SEM_LOGIN: "true"
 BUNNY_STREAM_LESSONS_LIBRARY_ID: "762605"
 # O CDN Hostname da jilsonsantana-stream (Bunny → Stream → API). O CI confere no próprio
 # Bunny que ele existe (deploy/conferir-bunny.sh) — na G2 ele entrou errado, sem erro nenhum.
