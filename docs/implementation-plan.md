@@ -5593,9 +5593,15 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       para empresa de software, e curso gravado por assinatura não aparece nem como aceito nem
       como proibido. As quatro perguntas a fazer a ela estão em `billing.md`. É peça nova de
       stack: só entra com a resposta dela e o OK dele, num plano próprio.
-- [ ] **4.9 — Pix recorrente (código).** O mandato no Payment Element e a régua própria do Pix (falha
-      de Pix não se retenta como cartão). **ENTRA NA ABERTURA** *(decisão do operador, 28/10/2026, P84 —
-      recomendação do agente): a linha "Pagamento no cartão ou no Pix" do cartão de preço fica.* **Trazido da 4.2 (10/10/2026):** o Pix é um item a mais na
+- [ ] **4.9 — Pix PRÉ-PAGO (código, ALTO RISCO).** *(Era "Pix recorrente": em 28/10/2026, ao abrir a
+      etapa, a documentação da Stripe disse que o Pix Automático NÃO existe para empresa do Brasil —
+      `billing.md` → *Formas de pagamento*, a correção do fato.)* **Decisão do operador, 28/10/2026:**
+      quem paga com Pix paga UMA vez (o mensal ou o anual) e estuda pelo período; não renova sozinho —
+      para continuar, paga de novo; a escola avisa antes de acabar. O cartão segue recorrente.
+      **ENTRA NA ABERTURA, logo depois do cartão** *(ordem dele: "fechar 100% a parte de assinatura e
+      pagamento")*: a linha "Pagamento no cartão ou no Pix" do cartão de preço fica. **O plano da etapa
+      (o desenho na Stripe, a régua do pré-pago, as telas e os textos) vem depois da medição na área
+      restrita, para o OK dele.** O texto antigo da etapa, abaixo, vale no que não depender do mandato. **Trazido da 4.2 (10/10/2026):** o Pix é um item a mais na
       lista de formas de pagamento do servidor (na 4.2, só cartão), sem refazer a tela. A home já
       diz "Pagamento no cartão ou no Pix": esta etapa fecha antes do lançamento.
       **Trazido da revisão de segurança da 4.2 (10/10/2026):** com o Pix o pagamento chega minutos

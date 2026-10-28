@@ -77,6 +77,28 @@ aplicativo do banco (Pix Automático) e a Stripe cobra sozinha a cada período.
 use Pix as the payment method for recurring billing for customers in Brazil", via mandate options
 no PaymentIntent/SetupIntent/Checkout Session; suporte anunciado em 22/abr/2026.]`
 
+> **⚠️ CORREÇÃO DO FATO ACIMA — `[FATO — context7 /websites/stripe, 28/10/2026, ao abrir a etapa 4.9]`:
+> "Stripe accounts in Brazil can accept Pix one-time payments with BRL settlement. Pix Automático
+> isn't available in Brazil. Businesses outside Brazil can accept Pix payments from customers in Brazil,
+> including eligible recurring payments through Pix Automático."** — e, na página do Pix Automático:
+> *"Pix Automático isn't available to businesses domiciled in Brazil."* O anúncio de abril vale para
+> empresa de FORA do Brasil vendendo para brasileiro. **A conta da escola é do Brasil: o Pix recorrente
+> pelo Stripe NÃO está disponível para ela hoje.** O que está: o **Pix avulso** (um pagamento por vez,
+> com liquidação em reais). O desenho da 4.9 ("o mandato no Payment Element") não se aplica.
+>
+> **A DECISÃO DO OPERADOR (28/10/2026), à pergunta do agente — o PIX É PRÉ-PAGO:** *"Mudamos a
+> assinatura e o texto onde o PIX paga e estuda por 1 mês ou ano, quando quiser pagar novamente, tipo
+> pré-pago; muita gente vai assinar só por um mês."* Quem paga com Pix escolhe o mensal ou o anual,
+> paga uma vez e estuda pelo período pago; **não renova sozinho** — para continuar, paga de novo (a
+> escola avisa antes de acabar). **O cartão continua recorrente** como hoje. O agente tinha recomendado
+> o Pix só no anual; ele quis nos dois períodos. As duas linhas do cartão de preço continuam
+> verdadeiras ("Pagamento no cartão ou no Pix"); o texto da tela de assinar passa a explicar a
+> diferença (texto dele, na etapa). **O desenho na Stripe, a régua do pré-pago (o aviso antes de
+> acabar) e o que muda nas telas são o plano da etapa 4.9**, a aprovar — com a medição na área restrita
+> antes de qualquer código, como manda a receita.
+> *Reabre se a Stripe liberar o Pix Automático para empresa do Brasil (aí o Pix pode voltar a ser
+> recorrente, como opção), ou se os números mostrarem que o pré-pago não renova.*
+
 **O que isso acrescenta à Fase 4:** o Payment Element precisa das opções de mandato, e a régua de
 inadimplência ganha um caminho próprio — **falha de Pix não se retenta como cartão** (não existe
 "tentar o mesmo cartão de novo"). *Gatilho de reabertura: se o Pix recorrente exigir mais
