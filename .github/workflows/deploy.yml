@@ -89,6 +89,27 @@ jobs:
             --wait \
             --quiet
 
+      # A RODADA DOS E-MAILS DA COBRANÇA (etapa 4.7, passo 7b — decisão do operador, 28/10/2026): o job
+      # que o Cloud Scheduler executa de hora em hora passa a usar a MESMA imagem desta publicação, para o
+      # código da rodada andar junto com o do site e com as migrations que acabaram de rodar. O comando
+      # mora AQUI, versionado (há teste). Sem porta na internet: quem executa o job é só a conta do
+      # agendador. Sem nova tentativa automática (`--max-retries=0`): a próxima rodada, uma hora depois,
+      # é a nova tentativa. Antes do serviço: se este passo falhar, a publicação para aqui, como a das
+      # migrations.
+      - name: Atualizar o job da rodada dos e-mails da cobrança
+        run: |
+          IMAGE="${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_ARTIFACT_REPOSITORY }}/app:${{ github.event.workflow_run.head_sha }}"
+          gcloud run jobs update ${{ vars.GCP_AVISOS_JOB_NAME }} \
+            --image="$IMAGE" \
+            --region="${{ vars.GCP_REGION }}" \
+            --command=node \
+            --args=server/dist/tarefas/avisos-da-cobranca.js \
+            --max-retries=0 \
+            --task-timeout=300s \
+            --env-vars-file=deploy/cloud-run.yaml \
+            --set-secrets=DATABASE_URL=DATABASE_URL:latest,STRIPE_SECRET_KEY=STRIPE_SECRET_KEY:latest,RESEND_API_KEY=RESEND_API_KEY:latest,SENTRY_DSN=SENTRY_DSN:latest \
+            --quiet
+
       # Só atualiza o serviço se as migrations rodaram com sucesso.
       # A configuração segue a "conta mínima" do Bloco G:
       # - região: us-east4

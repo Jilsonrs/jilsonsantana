@@ -21,7 +21,8 @@ vi.mock("../lib/email.js", async (importOriginal) => ({
 import servidor from "./servidor.js";
 import { prisma } from "../lib/prisma.js";
 import { enderecoDoSite } from "../lib/endereco-do-site.js";
-import { ANTECEDENCIA_DO_AVISO_EM_MS, avisarSobreAAssinatura, emailDevido } from "../lib/avisos-da-assinatura.js";
+import { readFileSync, existsSync } from "node:fs";
+import { ANTECEDENCIA_DO_AVISO_EM_MS, avisarSobreAAssinatura, emailDevido, rodadaDosAvisos } from "../lib/avisos-da-assinatura.js";
 import { diaNoEmail } from "../views/email-da-cobranca.js";
 
 // OS E-MAILS DA COBRANÇA (Fase 4, etapa 4.7, passo 7 — decisões do operador, 28/10/2026). O que estes
@@ -304,6 +305,123 @@ describe("uma vez cada", () => {
     const alertas = erros.mock.calls.map(([texto]) => String(texto)).filter((texto) => texto.startsWith("[email]"));
     expect(alertas.some((texto) => texto.includes(sub))).toBe(true);
     expect(alertas.join(" ")).not.toContain(conta.email);
+  });
+});
+
+// A RODADA DE HORA EM HORA (etapa 4.7, passo 7b): o job do agendador. As assinaturas daqui nascem
+// direto no banco, no estado em que a rodada as encontraria; a Stripe responde por um mapa — o que
+// sobrou de outros arquivos de teste no banco cai na falha dela, e por isso os testes conferem
+// assinatura por assinatura.
+describe("a rodada do agendador", () => {
+  const naStripeAgora = new Map<string, AssinaturaNaStripe>();
+  beforeEach(() => {
+    naStripeAgora.clear();
+    buscarAssinatura.mockImplementation(async (id) => {
+      const assinatura = naStripeAgora.get(id);
+      if (!assinatura) throw new Error(`a Stripe deste teste não conhece ${id}`);
+      return assinatura;
+    });
+    // A falha da Stripe nas assinaturas de outros testes vira alerta: aqui, esperado.
+    vi.spyOn(console, "error").mockImplementation(() => {});
+  });
+  async function noBanco(sub: string, conta: string, dados: { status: string; currentPeriodEnd: Date | null; updatedAt?: Date }) {
+    return prisma.subscription.create({ data: { stripeSubscriptionId: sub, ownerUserId: conta, status: dados.status, currentPeriodEnd: dados.currentPeriodEnd, livemode: false, ...(dados.updatedAt ? { updatedAt: dados.updatedAt } : {}) } });
+  }
+  const conferiuNaStripe = (sub: string) => buscarAssinatura.mock.calls.some(([id]) => id === sub);
+  const daAssinatura = (sub: string, tipo: PedidoDeEmail["tipo"]) => doTipo(tipo).filter((p) => p.referencia?.endsWith(`assinatura:${sub}`));
+
+  it("no último dia antes de trancar: confere na Stripe e manda o 'antes de trancar'; na rodada seguinte, nem vai à Stripe", async () => {
+    const conta = await novaConta();
+    const sub = novoId("sub");
+    const falha = new Date(Date.now() - 2.5 * DIA);
+    const linha = await noBanco(sub, conta.id, { status: "past_due", currentPeriodEnd: falha });
+    await prisma.subscriptionEmail.create({ data: { subscriptionId: linha.id, kind: "COBRANCA_FALHOU", reference: falha.toISOString() } });
+    naStripeAgora.set(sub, atrasada(sub, conta.id, falha));
+
+    await rodadaDosAvisos();
+    expect(conferiuNaStripe(sub)).toBe(true);
+    expect(daAssinatura(sub, "antes-de-trancar")).toHaveLength(1);
+    expect(daAssinatura(sub, "cobranca-falhou")).toHaveLength(0);
+
+    buscarAssinatura.mockClear();
+    await rodadaDosAvisos();
+    expect(conferiuNaStripe(sub)).toBe(false);
+    expect(daAssinatura(sub, "antes-de-trancar")).toHaveLength(1);
+  });
+
+  it("pagou e o aviso da Stripe se perdeu: a rodada acerta o espelho pela Stripe e não manda nada", async () => {
+    const conta = await novaConta();
+    const sub = novoId("sub");
+    await noBanco(sub, conta.id, { status: "past_due", currentPeriodEnd: new Date(Date.now() - 2.5 * DIA) });
+    naStripeAgora.set(sub, naStripe(sub, conta.id));
+    await rodadaDosAvisos();
+    expect((await prisma.subscription.findUniqueOrThrow({ where: { stripeSubscriptionId: sub } })).status).toBe("active");
+    expect(todos().filter((p) => p.referencia?.endsWith(`assinatura:${sub}`))).toHaveLength(0);
+  });
+
+  it("o e-mail da falha que não saiu (o aviso se perdeu): a rodada manda", async () => {
+    const conta = await novaConta();
+    const sub = novoId("sub");
+    const falha = new Date(Date.now() - HORA);
+    await noBanco(sub, conta.id, { status: "past_due", currentPeriodEnd: falha });
+    naStripeAgora.set(sub, atrasada(sub, conta.id, falha));
+    await rodadaDosAvisos();
+    expect(daAssinatura(sub, "cobranca-falhou")).toHaveLength(1);
+  });
+
+  it("a cancelada há pouco, e a com dias pagos cujo período acabou agora: a rodada manda; a de 10 dias atrás nem vai à Stripe", async () => {
+    const conta = await novaConta();
+    const recente = novoId("sub");
+    await noBanco(recente, conta.id, { status: "canceled", currentPeriodEnd: new Date(Date.now() - 20 * DIA) });
+    naStripeAgora.set(recente, naStripe(recente, conta.id, { status: "canceled", pagoAte: new Date(Date.now() - 20 * DIA) }));
+    const outra = await novaConta();
+    const acabouAgora = novoId("sub");
+    await noBanco(acabouAgora, outra.id, { status: "canceled", currentPeriodEnd: new Date(Date.now() - HORA), updatedAt: new Date(Date.now() - 5 * DIA) });
+    naStripeAgora.set(acabouAgora, naStripe(acabouAgora, outra.id, { status: "canceled", pagoAte: new Date(Date.now() - HORA) }));
+    const terceira = await novaConta();
+    const antiga = novoId("sub");
+    await noBanco(antiga, terceira.id, { status: "canceled", currentPeriodEnd: new Date(Date.now() - 10 * DIA), updatedAt: new Date(Date.now() - 10 * DIA) });
+
+    await rodadaDosAvisos();
+    expect(daAssinatura(recente, "assinatura-cancelada")).toHaveLength(1);
+    expect(daAssinatura(acabouAgora, "assinatura-cancelada")).toHaveLength(1);
+    expect(conferiuNaStripe(antiga)).toBe(false);
+  });
+
+  it("a já trancada e a que já recebeu o e-mail devido: nem vai à Stripe", async () => {
+    const conta = await novaConta();
+    const trancada = novoId("sub");
+    await noBanco(trancada, conta.id, { status: "past_due", currentPeriodEnd: new Date(Date.now() - 4 * DIA) });
+    const recebeu = novoId("sub");
+    const falha = new Date(Date.now() - HORA);
+    const linha = await noBanco(recebeu, conta.id, { status: "past_due", currentPeriodEnd: falha });
+    await prisma.subscriptionEmail.create({ data: { subscriptionId: linha.id, kind: "COBRANCA_FALHOU", reference: falha.toISOString() } });
+    await rodadaDosAvisos();
+    expect([conferiuNaStripe(trancada), conferiuNaStripe(recebeu)]).toEqual([false, false]);
+  });
+
+  it("uma assinatura que falha na Stripe não para a rodada: vira alerta [avisos], e a seguinte manda", async () => {
+    const conta = await novaConta();
+    const quebrada = novoId("sub");
+    const falha = new Date(Date.now() - HORA);
+    await noBanco(quebrada, conta.id, { status: "past_due", currentPeriodEnd: falha });
+    const outra = await novaConta();
+    const boa = novoId("sub");
+    await noBanco(boa, outra.id, { status: "past_due", currentPeriodEnd: falha });
+    naStripeAgora.set(boa, atrasada(boa, outra.id, falha));
+
+    const rodada = await rodadaDosAvisos();
+    expect(rodada.falhas).toBeGreaterThanOrEqual(1);
+    expect(daAssinatura(boa, "cobranca-falhou")).toHaveLength(1);
+    const alertas = vi.mocked(console.error).mock.calls.map(([texto]) => String(texto));
+    expect(alertas.some((texto) => texto.startsWith("[avisos]") && texto.includes(quebrada))).toBe(true);
+  });
+
+  it("o job da publicação executa o arquivo da rodada", () => {
+    const raiz = new URL("../../../", import.meta.url);
+    const publicacao = readFileSync(new URL(".github/workflows/deploy.yml", raiz), "utf8");
+    expect(publicacao).toContain("--args=server/dist/tarefas/avisos-da-cobranca.js");
+    expect(existsSync(new URL("server/src/tarefas/avisos-da-cobranca.ts", raiz))).toBe(true);
   });
 });
 

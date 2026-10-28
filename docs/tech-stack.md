@@ -185,6 +185,8 @@ acima (proteção, cache, certificado próprio), e por isso é opcional.
 |---|---|---|
 | Cloud Run (serviço) | o site: o contêiner da aplicação | **1 processador e 1 GB por cópia, de 1 a 3 cópias** (desde 25/10/2026 — decisões do operador): a cópia sempre ligada ~US$ 13/mês (512 MB seriam ~US$ 10, 2 GB ~US$ 19); as outras só nas horas de carga, do mesmo tamanho |
 | Cloud Run (Job) | as migrations, antes de cada publicação | centavos (roda segundos por publicação) |
+| Cloud Run (Job) da rodada | `jilson-prod-avisos`: a rodada dos e-mails da cobrança (etapa 4.7, passo 7b — `server/src/tarefas/avisos-da-cobranca.ts`), com a mesma imagem e a mesma conta do site; a publicação o atualiza. **Criado em 28/10/2026** | centavos: ~720 execuções de segundos por mês `[a conferir]` |
+| Cloud Scheduler | a tarefa `jilson-prod-avisos-de-hora-em-hora`, que executa o job da rodada de hora em hora, com a conta `jilson-agendador` (só ela pode executá-lo). **Ligado em 28/10/2026, PAUSADO até a publicação da 7b** (decisão do operador: "2 e-mails, com agendador") | 1 das 3 tarefas grátis por conta de faturamento; depois, US$ 0,10 por tarefa ao mês, sem cobrança por execução `[medido 28/10]` |
 | Mapeamento de domínio | `www.jilsonsantana.com` e o domínio sem "www" | grátis (em *Preview*) |
 | Secret Manager | o cofre das 13 chaves | 6 grátis; ~US$ 0,06/mês cada outra `[medido 22/10]` |
 | Artifact Registry | as versões montadas do site (só as últimas) | cota grátis pequena `[a conferir]` |
@@ -196,8 +198,7 @@ acima (proteção, cache, certificado próprio), e por isso é opcional.
 
 | Recurso | O que faz pela escola | Quando ligar (o gatilho) | Custo |
 |---|---|---|---|
-| **Cloud Storage + Cloud Scheduler** (cópia do banco) | um `pg_dump` noturno do banco, guardado fora do Neon — a cópia fria que a Fase 7 pede e que hoje não existe | **antes do primeiro aluno pagante** (Fase 7) | centavos por mês `[a conferir]` |
-| **Cloud Scheduler** (tarefas com hora marcada) | e-mail com data marcada, como o "aviso antes de trancar" do passo 7 da etapa 4.7 — hoje a escola não tem agendador | quando o passo 7 precisar de envio com hora marcada | algumas tarefas grátis por conta `[a conferir]` |
+| **Cloud Storage** (cópia do banco; o Cloud Scheduler já está ligado desde 28/10/2026) | um `pg_dump` noturno do banco, guardado fora do Neon — a cópia fria que a Fase 7 pede e que hoje não existe | **antes do primeiro aluno pagante** (Fase 7) | centavos por mês `[a conferir]` |
 | **Uptime check** (Cloud Monitoring) | testa o site a cada minuto e manda e-mail se ele cair — o Sentry só vê erro de quem chegou ao servidor | barato e útil já; ligar na abertura ao público (passo 8 da 4.7) | cota grátis `[a conferir]` |
 | **Mais processador e memória** no Cloud Run | página mais rápida sob carga | o painel do Cloud Run mostrar processador acima de ~70% por bastante tempo, ou o tempo de resposta subindo | linear: 1 → 2 processadores e 2 GB ≈ US$ 26/mês parado `[medido 22/10]` |
 | **Mais de uma instância** | atender muita gente ao mesmo tempo | **LIGADO em 25/10/2026: até 3 cópias** (os contadores e o cache dos textos já no banco). *Subir o máximo:* o teste de carga mostra ~200 pedidos por segundo por 3 cópias — passar disso, ou o processador das 3 ficar acima de ~70% | só nas horas de carga, ~US$ 0,09 por hora por cópia ocupada de 1 processador e 512 MB `[a conferir]` |

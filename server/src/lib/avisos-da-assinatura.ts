@@ -1,7 +1,9 @@
+import { TOLERANCIA_DA_COBRANCA_ATRASADA_EM_DIAS } from "@jilson/core";
 import { Prisma, prisma, SubscriptionEmailKind } from "./prisma.js";
 import { aulasAbertasAte, cobrancaAtrasada, encerradaDeVez, temAcessoAtivo } from "./acesso.js";
 import { enviarEmail, type TipoDeEmail } from "./email.js";
 import { getDict } from "./dict.js";
+import { sincronizarSeLivre } from "./assinaturas.js";
 import { montarAvisoDaCobranca, type EmailDevido } from "../views/email-da-cobranca.js";
 import type { AssinaturaNaStripe } from "./stripe.js";
 
@@ -28,6 +30,11 @@ import type { AssinaturaNaStripe } from "./stripe.js";
 const DIA_EM_MS = 24 * 60 * 60 * 1000;
 /** O "antes de trancar" sai no último dia antes de as aulas trancarem (decisão do operador, 28/10/2026: "1 dia antes"). */
 export const ANTECEDENCIA_DO_AVISO_EM_MS = DIA_EM_MS;
+/**
+ * Até onde a rodada do agendador olha para trás: os dias de tolerância da cobrança atrasada (depois
+ * deles, as aulas já trancaram e não há e-mail devido) — e a cancelada há menos tempo que isso.
+ */
+const JANELA_DA_RODADA_EM_MS = TOLERANCIA_DA_COBRANCA_ATRASADA_EM_DIAS * DIA_EM_MS;
 /** A referência do e-mail de cancelada: a assinatura só termina uma vez. */
 const FIM = "fim";
 
@@ -100,4 +107,50 @@ export async function avisarSobreAAssinatura(naStripe: AssinaturaNaStripe, agora
   } catch (erro) {
     console.error(`[email] o e-mail da cobrança da assinatura ${naStripe.id} não saiu: ${erro instanceof Error ? erro.name : "falha sem tipo"}`);
   }
+}
+
+/** O que a rodada fez: as assinaturas conferidas na Stripe, as ocupadas (ficam para a próxima) e as que falharam. */
+export type Rodada = { conferidas: number; ocupadas: number; falhas: number };
+
+/**
+ * A RODADA DO AGENDADOR (etapa 4.7, passo 7b — de hora em hora, pelo job `jilson-prod-avisos`,
+ * `tarefas/avisos-da-cobranca.ts`). Procura as assinaturas com um e-mail da cobrança devido que ainda
+ * não saiu — a atrasada com as aulas ainda abertas, a cancelada há pouco, e a cancelada com dias pagos
+ * cujo período acabou agora —, confere cada uma na Stripe AGORA (`sincronizarSeLivre`: o pagamento
+ * pode ter passado e o aviso dele ter se perdido; ocupada, fica para a próxima rodada, sem esperar a
+ * trava) e passa à regra. É ela que manda o "antes de trancar" e o que o aviso da Stripe não mandou.
+ * Uma assinatura que falha não para as outras: vira alerta e conta em `falhas`.
+ */
+export async function rodadaDosAvisos(agora: Date = new Date()): Promise<Rodada> {
+  const desde = new Date(agora.getTime() - JANELA_DA_RODADA_EM_MS);
+  const candidatas = await prisma.subscription.findMany({
+    where: {
+      ownerUserId: { not: null },
+      OR: [
+        { status: "past_due", currentPeriodEnd: { gt: desde } },
+        { status: "canceled", OR: [{ updatedAt: { gt: desde } }, { currentPeriodEnd: { gt: desde, lte: agora } }] },
+      ],
+    },
+    select: { stripeSubscriptionId: true, status: true, currentPeriodEnd: true, emails: { select: { kind: true, reference: true } } },
+    orderBy: { id: "asc" },
+  });
+  const rodada: Rodada = { conferidas: 0, ocupadas: 0, falhas: 0 };
+  for (const candidata of candidatas) {
+    const devido = emailDevido(candidata, agora);
+    // Nada devido, ou já tomado: nem vai à Stripe.
+    if (!devido || candidata.emails.some((m) => m.kind === devido.tipo && m.reference === devido.referencia)) continue;
+    try {
+      const sincronia = await sincronizarSeLivre(candidata.stripeSubscriptionId);
+      if (!sincronia) {
+        rodada.ocupadas++;
+        continue;
+      }
+      rodada.conferidas++;
+      if (sincronia.resultado === "atualizada") await avisarSobreAAssinatura(sincronia.assinatura, agora);
+    } catch (erro) {
+      rodada.falhas++;
+      console.error(`[avisos] a rodada não conferiu a assinatura ${candidata.stripeSubscriptionId}: ${erro instanceof Error ? erro.message : String(erro)}`);
+    }
+  }
+  return rodada;
 }

@@ -76,6 +76,10 @@
 > assinatura (400); o público no "Em breve", também na `/assinar` e na aula; o job das migrations com
 > sucesso, sem migration nova. **O vigia protege as páginas abertas depois desta publicação.**
 > **Conferido pelo operador no ar em 28/10/2026:** o botão Assinar por último (6h) apareceu certo.
+> **No Google Cloud desde 28/10/2026, à espera da publicação da 7b (etapa 4.7, passo 7):** o Cloud
+> Scheduler ligado, a tarefa `jilson-prod-avisos-de-hora-em-hora` **PAUSADA**, o job
+> `jilson-prod-avisos` (ainda com a imagem `d1d85fa`, que não tem a rodada — não executar antes de
+> publicar) e a conta `jilson-agendador`.
 > **Publicado em 24–25/10/2026:** `d6c2906` — o endereço do CDN do Bunny corrigido (P105) e a
 > conferência dele no CI; `f09a903` — o download do arquivo da aula em pedaços (o Cloud Run recusava
 > acima de 32 MB); `294b106` — o segundo mais novo vence entre aparelhos. Conferidos de fora (o site
@@ -5263,7 +5267,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                   sem o fuso, em UTC como o CI · a tela de entrar sem o cartão). Gates: typecheck,
                   lint, build; site 993, servidor 1361 (como o CI). **Até a 7b, o "antes de trancar"
                   só sai se um aviso da Stripe chegar no último dia.**
-            - [ ] **7b — A rodada de hora em hora (o agendador).** Um comando do servidor
+            - [x] **7b — A rodada de hora em hora (o agendador).** Um comando do servidor
                   (`server/src/tarefas/avisos-da-cobranca.ts`): as assinaturas atrasadas e as
                   canceladas nos últimos 3 dias que ainda não receberam o e-mail devido, conferidas uma
                   a uma na Stripe (`sincronizarSeLivre`) e passadas à regra da 7a; sai sozinho no fim.
@@ -5279,6 +5283,26 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                   do Google, 28/10/2026); o job, ~720 execuções de segundos por mês: centavos `[a
                   conferir]`. O `CLAUDE.md` (*Background Jobs*) e o mapa do `tech-stack.md` registram a
                   peça nova, com o gatilho de reabertura.
+                  **FEITO (28/10/2026), no `dev`.** A rodada (`rodadaDosAvisos`, em
+                  `lib/avisos-da-assinatura.ts`: a atrasada com as aulas abertas, a cancelada há pouco e
+                  a cancelada com dias pagos cujo período acabou; pula, sem ir à Stripe, o que já saiu)
+                  e o comando do job (`server/src/tarefas/avisos-da-cobranca.ts`: o alerta liga antes de
+                  carregar o resto, e sai com `process.exit`). **No Google Cloud, criados pelo agente com
+                  o OK do operador (28/10/2026, *"Pode criar"*):** o Cloud Scheduler ligado; a conta
+                  `jilson-agendador`; o job `jilson-prod-avisos` (us-east4, a imagem no ar e a conta
+                  `jilson-site`, sem nova tentativa, 5 min, 4 chaves: banco, Stripe, Resend, Sentry); no
+                  job, `jilson-agendador` com Cloud Run Invoker e `jilson-publicacao` com Cloud Run
+                  Developer (como no das migrations — sem ele, a publicação quebraria); a tarefa
+                  `jilson-prod-avisos-de-hora-em-hora` (`0 * * * *`), **PAUSADA**; no GitHub, a variável
+                  `GCP_AVISOS_JOB_NAME`. A publicação (`deploy.yml`) atualiza o job antes do serviço.
+                  Testes: 7 da rodada e 1 que confere o comando na publicação. Mutação: 7 de 7
+                  reprovaram (sem as atrasadas · sem pular o que já saiu · sem conferir na Stripe · uma
+                  falha que para a rodada · a cancelada sem a janela do período · sem a cancelada de
+                  agora há pouco · a publicação com outro comando).
+                  **Depois da publicação (no passo 7c):** retomar a tarefa do agendador
+                  (`gcloud scheduler jobs resume jilson-prod-avisos-de-hora-em-hora --location=us-east4`),
+                  forçar uma rodada (`gcloud scheduler jobs run …`) e conferir no registro do job a linha
+                  `[avisos] a rodada terminou`.
             - [ ] **7c — Prova e revisão:** na área restrita, com o relógio de teste da Stripe (a
                   falha e a data da próxima tentativa, o dia antes de trancar, o cancelamento depois das
                   tentativas, a expirada sem e-mail); no banco de dev; os e-mails olhados pelo operador
