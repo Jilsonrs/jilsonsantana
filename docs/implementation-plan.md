@@ -5601,7 +5601,15 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       **ENTRA NA ABERTURA, logo depois do cartão** *(ordem dele: "fechar 100% a parte de assinatura e
       pagamento")*: a linha "Pagamento no cartão ou no Pix" do cartão de preço fica. **O plano da etapa
       (o desenho na Stripe, a régua do pré-pago, as telas e os textos) vem depois da medição na área
-      restrita, para o OK dele.** O texto antigo da etapa, abaixo, vale no que não depender do mandato. **Trazido da 4.2 (10/10/2026):** o Pix é um item a mais na
+      restrita, para o OK dele.** O texto antigo da etapa, abaixo, vale no que não depender do mandato.
+      **Medido em 28/10/2026, na área restrita** (roteiro fora do repo, cliente descartável, sem banco):
+      a conta é do Brasil (`BR`, `brl`); a configuração de formas de pagamento diz **`pix: available
+      false, preference off`** — e criar assinatura com `payment_settings.payment_method_types: ["pix"]`
+      falha nas três formas (cobrada automaticamente só Pix; cartão e Pix; fatura enviada) com
+      *"The payment method type `pix` is invalid. Please ensure the provided type is activated in your
+      dashboard"*. **Primeiro passo da etapa: o operador ativa o Pix no painel** (*Settings → Payments →
+      Payment methods*), na área restrita e na conta de verdade; só então a medição do desenho (o
+      Pix avulso na primeira fatura, cancelada no fim do período) faz sentido. **Trazido da 4.2 (10/10/2026):** o Pix é um item a mais na
       lista de formas de pagamento do servidor (na 4.2, só cartão), sem refazer a tela. A home já
       diz "Pagamento no cartão ou no Pix": esta etapa fecha antes do lançamento.
       **Trazido da revisão de segurança da 4.2 (10/10/2026):** com o Pix o pagamento chega minutos
