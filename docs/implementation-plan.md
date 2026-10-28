@@ -5210,7 +5210,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                   levam um CPF (`billing.test.ts`, `checkout-uma-ligacao.test.ts`,
                   `limite-de-tentativas.test.ts`). Mutação (o CPF opcional de novo · reaproveitar sem
                   olhar o número da fatura): as duas reprovam.
-      - [ ] **Passo 7 — Os e-mails automáticos da assinatura.** A cobrança que falhou (com a
+      - [x] **Passo 7 — Os e-mails automáticos da assinatura.** A cobrança que falhou (com a
             data da próxima tentativa), o aviso antes de trancar e a assinatura cancelada (com
             o link para reativar). Os textos são do operador. **Depende só do passo 3** — pode
             vir antes dos passos 4 a 6. **Questão em aberto, para a abertura:** o aviso "antes
@@ -5320,10 +5320,25 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                   dias pagos já devendo · sem consumir, nos dois casos · a rodada regravando a cancelada ·
                   qualquer marca resolvendo · tomar sem retomar · o envio sem confirmar a marca · a
                   desconhecida virando alerta · sem o prazo · a consulta sem excluir a conta excluída).
-            - [ ] **7c — Prova e revisão:** na área restrita, com o relógio de teste da Stripe (a
+            - [x] **7c — Prova e revisão:** na área restrita, com o relógio de teste da Stripe (a
                   falha e a data da próxima tentativa, o dia antes de trancar, o cancelamento depois das
                   tentativas, a expirada sem e-mail); no banco de dev; os e-mails olhados pelo operador
                   no Gmail e no Outlook. A revisão de segurança entra na revisão da etapa inteira.
+                  **FEITA em 28/10/2026 — 20 de 20 pontos**, com as funções de verdade, 3 contas
+                  descartáveis no banco de dev (a migration aplicada lá antes; nenhuma tabela sem RLS) e
+                  um relógio de teste da Stripe: a renovação que falha (cartão `pm_card_chargeCustomerFail`)
+                  → atrasada, com a próxima tentativa lida da fatura e o e-mail da falha na hora, uma vez;
+                  no último dia, a rodada mandou o "antes de trancar"; a Stripe cancelou a atrasada entre 10
+                  e 17 dias depois da falha e o e-mail "foi cancelada" saiu; a cancelada a pedido, no fim do
+                  período, recebeu "terminou"; a que expirou sem pagar, nada; a rodada seguinte não repete
+                  nada; o banco voltou ao retrato de antes. `[FATO — medido]` o relógio de teste ACEITA
+                  começar no passado (40 dias atrás) — é o que deixa o "pago até" do espelho no passado de
+                  verdade, e a regra do gate (relógio do servidor) ver a cancelada sem aulas ·
+                  `cancellation_details.reason` vem `payment_failed` no cancelamento pelas tentativas ·
+                  `next_payment_attempt` veio ~2 dias depois da falha. **Os 4 e-mails de verdade** foram ao
+                  Yahoo (3) e ao iCloud (1) do operador — são os textos da P107 para ele conferir. **A
+                  revisão da etapa** (segurança + geral) está abaixo do passo 8.
+                  **Falta, depois da publicação:** retomar a tarefa do agendador e forçar uma rodada (7b).
             **Fora do passo:** o e-mail no clique de cancelar (decisão (b)) · um e-mail a cada nova
             tentativa (decisão (a)) · o aviso de renovação do plano anual.
       - [ ] **Passo 8 — O teste com cartão de verdade e a abertura ao público.** O teste do
