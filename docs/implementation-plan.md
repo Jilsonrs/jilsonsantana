@@ -76,10 +76,21 @@
 > assinatura (400); o público no "Em breve", também na `/assinar` e na aula; o job das migrations com
 > sucesso, sem migration nova. **O vigia protege as páginas abertas depois desta publicação.**
 > **Conferido pelo operador no ar em 28/10/2026:** o botão Assinar por último (6h) apareceu certo.
-> **No Google Cloud desde 28/10/2026, à espera da publicação da 7b (etapa 4.7, passo 7):** o Cloud
-> Scheduler ligado, a tarefa `jilson-prod-avisos-de-hora-em-hora` **PAUSADA**, o job
-> `jilson-prod-avisos` (ainda com a imagem `d1d85fa`, que não tem a rodada — não executar antes de
-> publicar) e a conta `jilson-agendador`.
+> **Publicado em 28/10/2026: `c12b0cd`** — a etapa 4.7, passo 7 (os e-mails da cobrança e a rodada
+> do agendador), o CPF obrigatório no servidor, a revisão da etapa inteira (o P1 e os P2 corrigidos)
+> e a frase do operador no e-mail da falha (P107); ordem do operador: *"pode publicar"*. **Revisão
+> `jilson-prod-00045`**, conferida de fora: a versão nova do app (`mvs757nl-7734a2c8`; antes,
+> `mvrh8d0t-b7ff4103`); o site e a `/assinar` no "Em breve"; a saúde, os cursos, as trilhas, os
+> textos e a sessão (200); a venda sem login (200); a assinatura sem login (401); o login com um
+> e-mail que não existe (401); o aviso da Stripe sem assinatura (400); o job das migrations com
+> sucesso, aplicando a `20261028120000_emails_da_assinatura` (a tabela `subscription_email`); **no
+> banco de produção, só leitura: nenhuma tabela sem RLS** (a nova incluída); o job
+> `jilson-prod-avisos` atualizado pela publicação para a mesma imagem, com o comando da rodada;
+> **o agendador RETOMADO** (`0 * * * *`, horário de Brasília) e a primeira rodada forçada às 14:19
+> UTC — no registro do job: `[avisos] a rodada terminou: 0 conferida(s) na Stripe, 0 ocupada(s), 0
+> que a Stripe não conhece, 0 adiada(s), 0 com falha`, com o monitor ligado. **Desde esta
+> publicação os e-mails da cobrança saem sozinhos em produção.** O Cloud Scheduler e a conta
+> `jilson-agendador` existem desde 28/10/2026 (criados com o OK do operador, 7b).
 > **Publicado em 24–25/10/2026:** `d6c2906` — o endereço do CDN do Bunny corrigido (P105) e a
 > conferência dele no CI; `f09a903` — o download do arquivo da aula em pedaços (o Cloud Run recusava
 > acima de 32 MB); `294b106` — o segundo mais novo vence entre aparelhos. Conferidos de fora (o site
@@ -5310,7 +5321,9 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                   **Depois da publicação (no passo 7c):** retomar a tarefa do agendador
                   (`gcloud scheduler jobs resume jilson-prod-avisos-de-hora-em-hora --location=us-east4`),
                   forçar uma rodada (`gcloud scheduler jobs run …`) e conferir no registro do job a linha
-                  `[avisos] a rodada terminou`.
+                  `[avisos] a rodada terminou`. **FEITO em 28/10/2026, depois da publicação `c12b0cd`**
+                  (revisão `jilson-prod-00045`): a tarefa retomada (`ENABLED`), a rodada forçada às 14:19
+                  UTC, a linha no registro (0 conferidas, 0 falhas) e o monitor ligado no job.
                   **Revisto na revisão da etapa (28/10/2026):** a rodada só LÊ a cancelada na Stripe
                   (`buscarAssinatura`), sem regravar o espelho — regravar renovava o `updatedAt` que a
                   escolheu, e ela voltava toda hora (P1); a consulta ignora a conta excluída; a
@@ -5339,7 +5352,8 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                   `next_payment_attempt` veio ~2 dias depois da falha. **Os 4 e-mails de verdade** foram ao
                   Yahoo (3) e ao iCloud (1) do operador — são os textos da P107 para ele conferir. **A
                   revisão da etapa** (segurança + geral) está abaixo do passo 8.
-                  **Falta, depois da publicação:** retomar a tarefa do agendador e forçar uma rodada (7b).
+                  **Depois da publicação (28/10/2026, `c12b0cd`):** o agendador retomado e a primeira
+                  rodada no registro do job (7b) — o passo 7 está inteiro no ar.
             **Fora do passo:** o e-mail no clique de cancelar (decisão (b)) · um e-mail a cada nova
             tentativa (decisão (a)) · o aviso de renovação do plano anual.
       - [ ] **Passo 8 — O teste com cartão de verdade e a abertura ao público.** O teste do
@@ -5393,11 +5407,16 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             o SQL de RLS do `CLAUDE.md` (a tabela `guest_checkout` é nova — esperado: zero linhas) ·
             conferir com o operador o tamanho do caixa de ligações do banco na Railway
             (`connection_limit` na `DATABASE_URL`, que hoje não tem): é dele que depende quanto
-            os 3 "assinar sem login" em andamento ocupam.
+            os 3 "assinar sem login" em andamento ocupam. **FEITOS:** o SQL de RLS rodado no banco de
+            produção em 28/10/2026 (só leitura, depois da publicação `c12b0cd`): **zero linhas**, com
+            `guest_checkout`, `limite_de_tentativa` e `subscription_email` · o caixa de ligações: **10
+            por cópia** desde a 6f (decisão do operador, 27/10/2026 — `lib/ligacoes.ts`), e o teto de
+            assinaturas em andamento é as ligações menos 2, com e sem login.
             **Da revisão de segurança do passo 5 (21/10/2026):** depois de publicar, conferir no
             mesmo banco que a conta de admin ficou com o e-mail confirmado (a migration
             `20261021220100_admin_com_email_confirmado` roda na publicação) — antes disso, não usar
-            "Receber código de acesso" com ela · **a cota do plano do Resend contra o pior caso**: o
+            "Receber código de acesso" com ela **(FEITO: conferido em 24/10/2026 — o *Estado atual*)** ·
+            **a cota do plano do Resend contra o pior caso**: o
             teto de códigos é por caixa (6 por dia), não da escola — N contas somam N × 6, e com a
             cota esgotada códigos e boas-vindas falham para todos até o dia seguinte (só os alertas
             `[email]` mostram).
