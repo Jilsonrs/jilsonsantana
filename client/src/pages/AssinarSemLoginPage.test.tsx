@@ -245,7 +245,7 @@ describe("a tela pública de assinar — o Pix pré-pago", () => {
     expect(assinarSemLogin).not.toHaveBeenCalled();
     expect(guardados).toEqual([
       { tentativa: TENTATIVA, email: EMAIL },
-      { segredo: "pi_pix_secret_x", chavePublicavel: "pk_test_da_tela" },
+      { segredo: "pi_pix_secret_x", chavePublicavel: "pk_test_da_tela", email: "visitante@exemplo.com" },
     ]);
     // O e-mail de quem paga vai na confirmação — o que o SERVIDOR devolveu (em minúsculas), nunca o digitado (P113).
     expect(confirmar).toHaveBeenCalledWith("pi_pix_secret_x", "pix", "/assinar/concluido", { email: "visitante@exemplo.com" });

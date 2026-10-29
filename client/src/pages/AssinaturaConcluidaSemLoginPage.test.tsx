@@ -13,8 +13,8 @@ vi.mock("@/lib/api", async (importOriginal) => ({
 }));
 
 // A fronteira com o Stripe.js (o QR do Pix de novo — etapa 4.9) vira dublê; a tela a carrega por `import()`.
-const mostrarQrDeNovo = vi.fn<(chavePublicavel: string, segredo: string) => Promise<boolean>>();
-vi.mock("@/lib/stripe-do-site", () => ({ mostrarQrDeNovo: (chavePublicavel: string, segredo: string) => mostrarQrDeNovo(chavePublicavel, segredo) }));
+const mostrarQrDeNovo = vi.fn<(chavePublicavel: string, segredo: string, email?: string) => Promise<"aberto" | "pago" | "falhou">>();
+vi.mock("@/lib/stripe-do-site", () => ({ mostrarQrDeNovo: (chavePublicavel: string, segredo: string, email?: string) => mostrarQrDeNovo(chavePublicavel, segredo, email) }));
 
 import { navegador } from "@/lib/versao";
 import { esquecerPix, guardarPix, lerPix } from "@/lib/pix-pendente";
@@ -40,7 +40,7 @@ beforeEach(() => {
   confirmarSemLogin.mockReset().mockResolvedValue({ confirmada: true });
   criarSenhaSemLogin.mockReset().mockResolvedValue({ entrou: true });
   ir = vi.spyOn(navegador, "ir").mockImplementation(() => {});
-  mostrarQrDeNovo.mockReset().mockResolvedValue(true);
+  mostrarQrDeNovo.mockReset().mockResolvedValue("aberto");
   esquecerTentativa();
   esquecerPix();
 });
@@ -162,11 +162,11 @@ describe("depois do pagamento, sem conta — o QR do Pix de novo", () => {
 
   it("com um Pix guardado: o botão enquanto o pagamento não vale; o clique abre o QR com o que foi guardado; valeu, o botão some, o Pix é esquecido e a senha aparece", async () => {
     comTentativa();
-    guardarPix({ segredo: "pi_pix_secret_x", chavePublicavel: "pk_test_da_tela" });
+    guardarPix({ segredo: "pi_pix_secret_x", chavePublicavel: "pk_test_da_tela", email: "visitante@exemplo.com" });
     confirmarSemLogin.mockResolvedValue({ confirmada: false });
     abrir({ conferirACada: 20 });
     fireEvent.click(await screen.findByRole("button", { name: "Mostrar o QR de novo" }));
-    await waitFor(() => expect(mostrarQrDeNovo).toHaveBeenCalledWith("pk_test_da_tela", "pi_pix_secret_x"));
+    await waitFor(() => expect(mostrarQrDeNovo).toHaveBeenCalledWith("pk_test_da_tela", "pi_pix_secret_x", "visitante@exemplo.com"));
     expect(lerPix()).not.toBeNull();
 
     confirmarSemLogin.mockResolvedValue({ confirmada: true });

@@ -168,6 +168,9 @@ no PaymentIntent/SetupIntent/Checkout Session; suporte anunciado em 22/abr/2026.
 > vai à Stripe na confirmação** (a Stripe o exige assim; provado no navegador no mesmo dia); fechar a janela do
 > QR resolve o `confirmPayment` SEM erro, com o pagamento à espera, e a tela vai para a de concluído; o
 > "Mostrar o QR de novo" abre a janela (desktop e celular) e, fechada, o `handleNextAction` resolve sem erro;
+> **com o QR VENCIDO, o mesmo botão gera um QR novo no MESMO pagamento** (decisão do operador, P115, 29/10/2026:
+> lê o pagamento e, vencido, o confirma de novo com o e-mail de quem paga — provado no navegador); só se nada
+> abrir, a frase dele: "Não foi possível mostrar o QR. Volte e clique em Pagar com Pix.";
 > o idioma da janela é o do Stripe.js (`locale` em `OPCOES_DO_STRIPE`), não o do campo.
 >
 > **A PRÉ-PAGA NAS TELAS DO ALUNO E NO REEMBOLSO (passo 3 — no código desde 28/10/2026; texto do
@@ -180,8 +183,10 @@ no PaymentIntent/SetupIntent/Checkout Session; suporte anunciado em 22/abr/2026.
 > pagou, pela Stripe), e encerra a assinatura na hora. **O período pago da pré-paga é o do Pix:** devolvido
 > por inteiro — pelo reembolso ou pelo painel —, ele deixa de contar, e o aviso de devolução acha a
 > assinatura pela coluna do espelho (o Pix não tem fatura). *Ressalva (achado 6 do passo 6, 29/10/2026):
-> devolvido pelo painel SEM cancelar a assinatura, só a data do espelho recua — a assinatura segue `active`
-> e o gate libera `active` sem olhar a data; decisão pendente, P114.* Quando o período acaba, a Stripe encerra a
+> devolvido pelo painel da Stripe SEM cancelar a assinatura, só a data do espelho recua — a assinatura segue
+> `active` e o gate libera `active` sem olhar a data. **Decisão do operador (P114, 29/10/2026): o painel da
+> Stripe não é caminho de gestão — o reembolso é um clique no `/admin`, cartão e Pix, que devolve, encerra e
+> corta o acesso (etapa 4.7b, as ações); no painel, só em emergência, e aí devolver E cancelar.*** Quando o período acaba, a Stripe encerra a
 > assinatura e sai o e-mail "terminou — reative" de sempre.
 >
 > **A RÉGUA DO PRÉ-PAGO (passo 4 — no código desde 28/10/2026; decisão do operador do mesmo dia: "3 dias

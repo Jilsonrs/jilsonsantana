@@ -166,15 +166,44 @@ export async function confirmarNoBanco(chavePublicavel: string, segredo: string)
   return paymentIntent.status === "succeeded" ? "confirmado" : "nao-concluido";
 }
 
+/** O que fazer com o QR, pelo status do pagamento agora: reabrir o mesmo, gerar outro no mesmo pagamento, nada (já pago), ou não há como. */
+export type ComoMostrarOQr = "reabrir" | "gerar-novo" | "pago" | "sem-jeito";
+
 /**
- * MOSTRA O QR DO PIX DE NOVO (etapa 4.9, passo 2b), para quem fechou a janela do QR sem pagar: a tela de
- * concluído chama com o segredo guardado na aba (`lib/pix-pendente.ts`), e o Stripe.js abre a janela do
- * QR por cima da tela. O que ela devolve NÃO decide nada: quem diz que a assinatura valeu é o servidor,
- * que a tela de concluído continua perguntando. Devolve se conseguiu abrir.
+ * Pelo status do pagamento Pix lido agora. `[FATO — medido na área restrita, 29/10/2026, passo 6]` o QR
+ * vencido volta o pagamento a `requires_payment_method` (o `handleNextAction` então LANÇA: "not in the
+ * requires_action state"), e confirmá-lo de novo dá um QR novo no MESMO pagamento. `requires_confirmation`
+ * (criado e nunca confirmado — a aba fechou antes) também se confirma. Cancelado não tem volta: é o
+ * clique em "Pagar com Pix" na tela de assinar. Função pura, com teste.
  */
-export async function mostrarQrDeNovo(chavePublicavel: string, segredo: string): Promise<boolean> {
+export function comoMostrarOQr(status: string): ComoMostrarOQr {
+  if (status === "requires_action") return "reabrir";
+  if (status === "requires_payment_method" || status === "requires_confirmation") return "gerar-novo";
+  if (status === "succeeded") return "pago";
+  return "sem-jeito";
+}
+
+/** O que o "Mostrar o QR de novo" conseguiu: a janela abriu, o Pix já estava pago (a tela de concluído confirma sozinha), ou não deu. */
+export type QrMostrado = "aberto" | "pago" | "falhou";
+
+/**
+ * MOSTRA O QR DO PIX DE NOVO (etapa 4.9, passo 2b; P115, decisão do operador, 29/10/2026: "o mesmo botão
+ * gera o QR novo quando venceu"), para quem fechou a janela do QR sem pagar: a tela de concluído chama com
+ * o segredo e o e-mail guardados na aba (`lib/pix-pendente.ts`). Lê o pagamento AGORA e, pelo status
+ * (`comoMostrarOQr`): reabre o mesmo QR (`handleNextAction`), ou — vencido — confirma o MESMO pagamento de
+ * novo com o Pix e o e-mail de quem paga (`confirmPixPayment`, que cria a forma de pagamento e abre a
+ * janela do QR novo). O que volta NÃO decide nada: quem diz que a assinatura valeu é o servidor, que a tela
+ * de concluído continua perguntando.
+ */
+export async function mostrarQrDeNovo(chavePublicavel: string, segredo: string, email?: string): Promise<QrMostrado> {
   const stripe = await stripeDoSite(chavePublicavel);
-  if (!stripe) return false;
-  const { error } = await stripe.handleNextAction({ clientSecret: segredo });
-  return !error;
+  if (!stripe) return "falhou";
+  const { paymentIntent, error } = await stripe.retrievePaymentIntent(segredo);
+  if (error || !paymentIntent) return "falhou";
+  const como = comoMostrarOQr(paymentIntent.status);
+  if (como === "pago") return "pago";
+  if (como === "sem-jeito") return "falhou";
+  if (como === "reabrir") return (await stripe.handleNextAction({ clientSecret: segredo })).error ? "falhou" : "aberto";
+  const novo = await stripe.confirmPixPayment(segredo, { payment_method: email ? { billing_details: { email } } : {} });
+  return novo.error ? "falhou" : "aberto";
 }

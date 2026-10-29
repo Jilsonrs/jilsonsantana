@@ -5551,6 +5551,18 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
          - **Ativa** → Cancelar no fim do período (continua assistindo até o fim do que pagou) ·
            Cancelar e devolver o dinheiro (só dentro dos 7 dias; corta o acesso na hora) ·
            Conferir na Stripe.
+           **Decisão do operador, 29/10/2026 (à pergunta P114 do passo 6 da 4.9):** *"Tanto de cartão
+           quanto no Pix não dá para fazer esse gerenciamento pelo /admin e um clique reembolso já
+           resolver tudo, ou mesmo de forma automática após aprovação, sem depender de ficar entrando no
+           site da Stripe e fazer trabalho manual — sou operador solo, quanto mais automatizar melhor."*
+           Vale para esta tela: **"Cancelar e devolver o dinheiro" é UM clique, para o cartão e para a
+           pré-paga do Pix** (devolve o Pix, encerra na hora e corta o acesso — a operação do aluno,
+           `reembolsarMinhaAssinatura`/`stripe-reembolso.ts`, já faz isso; o painel chama a mesma, sem o
+           prazo dos 7 dias, que é o direito do aluno, não o limite do operador), e o **pedido de
+           reembolso** do item 2 vira um fluxo: o aluno pede, o admin aprova com um clique, e o resto é
+           automático. **O painel da Stripe deixa de ser caminho de gestão**: devolver lá sem cancelar
+           não corta o acesso (o gate libera `active` sem olhar a data) — fica só para emergência, e o
+           `billing.md` avisa.
          - **Ativa, com o cancelamento marcado** → Desfazer o cancelamento.
          - **Pagamento atrasado** → Tentar cobrar de novo agora (o aluno avisou que resolveu o
            cartão) · Copiar o link para trocar o cartão (a tela é a da etapa 4.6) · Cancelar.
@@ -5983,8 +5995,26 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                   mostra só "Pix" e a frase do QR; o clique abre a janela do QR; o pagamento na Stripe fica com
                   o e-mail do servidor. Testes: `stripe-do-site.test.ts` (+2), as duas telas (+e-mail na
                   confirmação), `pagar-com-pix.test.ts` (o corpo com o e-mail).
-            - [ ] **Decisões do operador:** P112 (o aviso no painel), P114 (a devolução pelo painel), P115 (a
-                  frase do QR vencido).
+            - [x] **P114 — a devolução pelo painel (decisão do operador, 29/10/2026):** não é regra para o
+                  painel da Stripe, é um clique no `/admin` — registrado na etapa 4.7b (as ações), onde mora;
+                  até lá, o `billing.md` avisa que devolver no painel sem cancelar não corta o acesso.
+            - [x] **P115 — o QR vencido (decisão do operador, 29/10/2026: "o mesmo botão gera o QR novo quando
+                  venceu").** `mostrarQrDeNovo` lê o pagamento AGORA (`retrievePaymentIntent`) e decide pelo status
+                  (`comoMostrarOQr`, função pura): `requires_action` → reabre o MESMO QR (`handleNextAction`);
+                  `requires_payment_method` (vencido) ou `requires_confirmation` → confirma o MESMO pagamento de
+                  novo com o Pix e o e-mail de quem paga (`confirmPixPayment`), e a janela abre com o QR novo;
+                  pago → nada (a tela confirma sozinha); cancelado → a frase aprovada por ele, *"Não foi possível
+                  mostrar o QR. Volte e clique em Pagar com Pix."* (`app.assinar.pix.qrNaoAbriu`), que aparece só
+                  se nada abriu. O e-mail viaja com o Pix guardado na aba (`PixGuardado.email`). **Provado no
+                  navegador** (com a validade do QR baixada a 60 s só no computador, cópia de segurança e
+                  restaurada — `git diff` vazio): o QR venceu (`requires_payment_method`,
+                  `payment_intent_payment_attempt_expired`), o botão abriu a janela em 1,2 s com um QR NOVO no
+                  MESMO pagamento (venceria 10:51:00; o antigo, 10:49:45), em português, e fechar não mostrou a
+                  frase; com o QR ainda valendo, o botão reabriu o MESMO (0,8 s, a mesma validade). Testes:
+                  `stripe-do-site.test.ts` (+1), `AssinaturaConcluidaPage.test.tsx` (+2: a frase; o Stripe.js que
+                  lança), as telas de assinar (o e-mail guardado). **Mutação: 4 de 4 reprovaram.**
+            - [ ] **Decisão do operador:** P112 (o aviso `payment_intent.succeeded` no endereço de avisos da conta
+                  de verdade — tarefa dele no painel).
       **Fora da 4.9:** somar tempo pagando antes de acabar (decisão (a)) · código promocional no Pix
       (decisão (b)) · Pix na troca de plano · o Pix Automático (quando a Stripe liberar para o Brasil) ·
       **Apple Pay e Google Pay** (decisão do operador, 28/10/2026). **Trazido da 4.2 (10/10/2026):** o Pix é um item a mais na

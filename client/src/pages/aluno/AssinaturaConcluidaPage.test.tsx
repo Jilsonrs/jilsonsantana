@@ -11,8 +11,8 @@ vi.mock("@/lib/api", async (importOriginal) => ({
   getSituacaoDaAssinatura: (...args: unknown[]) => getSituacaoDaAssinatura(...args),
 }));
 // A fronteira com o Stripe.js (o QR do Pix de novo — etapa 4.9) vira dublê; a tela a carrega por `import()`.
-const mostrarQrDeNovo = vi.fn<(chavePublicavel: string, segredo: string) => Promise<boolean>>();
-vi.mock("@/lib/stripe-do-site", () => ({ mostrarQrDeNovo: (chavePublicavel: string, segredo: string) => mostrarQrDeNovo(chavePublicavel, segredo) }));
+const mostrarQrDeNovo = vi.fn<(chavePublicavel: string, segredo: string, email?: string) => Promise<"aberto" | "pago" | "falhou">>();
+vi.mock("@/lib/stripe-do-site", () => ({ mostrarQrDeNovo: (chavePublicavel: string, segredo: string, email?: string) => mostrarQrDeNovo(chavePublicavel, segredo, email) }));
 
 import { esquecerPix, guardarPix, lerPix } from "@/lib/pix-pendente";
 import { AssinaturaConcluidaPage } from "./AssinaturaConcluidaPage";
@@ -25,7 +25,7 @@ import { AssinaturaConcluidaPage } from "./AssinaturaConcluidaPage";
 
 beforeEach(() => {
   getSituacaoDaAssinatura.mockReset().mockResolvedValue({ temAcesso: false });
-  mostrarQrDeNovo.mockReset().mockResolvedValue(true);
+  mostrarQrDeNovo.mockReset().mockResolvedValue("aberto");
   esquecerPix();
 });
 
@@ -146,19 +146,43 @@ describe("AssinaturaConcluidaPage — o QR do Pix de novo", () => {
   });
 
   it("com um Pix guardado: o botão enquanto o servidor não confirma; o clique abre o QR com o segredo e a chave guardados; confirmada, o botão some e o Pix é esquecido", async () => {
-    guardarPix({ segredo: "pi_pix_secret_x", chavePublicavel: "pk_test_da_tela" });
+    guardarPix({ segredo: "pi_pix_secret_x", chavePublicavel: "pk_test_da_tela", email: "aluno@teste.local" });
     getSituacaoDaAssinatura.mockResolvedValue({ temAcesso: false });
     abrir();
     const botao = await screen.findByRole("button", { name: "Mostrar o QR de novo" });
     fireEvent.click(botao);
-    await waitFor(() => expect(mostrarQrDeNovo).toHaveBeenCalledWith("pk_test_da_tela", "pi_pix_secret_x"));
+    // Com o e-mail guardado: é com ele que um QR vencido vira um QR novo no mesmo pagamento (P115).
+    await waitFor(() => expect(mostrarQrDeNovo).toHaveBeenCalledWith("pk_test_da_tela", "pi_pix_secret_x", "aluno@teste.local"));
+    expect(screen.queryByRole("alert")).toBeNull();
     // Enquanto o servidor não confirma, o Pix continua guardado — a pessoa pode precisar do QR de novo.
-    expect(lerPix()).toEqual({ segredo: "pi_pix_secret_x", chavePublicavel: "pk_test_da_tela" });
+    expect(lerPix()).toEqual({ segredo: "pi_pix_secret_x", chavePublicavel: "pk_test_da_tela", email: "aluno@teste.local" });
 
     getSituacaoDaAssinatura.mockResolvedValue({ temAcesso: true });
     expect(await screen.findByText("Assinatura confirmada. Bons estudos!")).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Mostrar o QR de novo" })).toBeNull();
     expect(lerPix()).toBeNull();
     expect(window.sessionStorage.getItem("jilson.assinar.pix")).toBeNull();
+  });
+
+  it("o QR não abriu de jeito nenhum (nem reabrir, nem gerar outro): a frase aprovada manda voltar; o clique seguinte tenta de novo e a apaga se der certo (P115)", async () => {
+    guardarPix({ segredo: "pi_pix_secret_x", chavePublicavel: "pk_test_da_tela", email: "aluno@teste.local" });
+    getSituacaoDaAssinatura.mockResolvedValue({ temAcesso: false });
+    mostrarQrDeNovo.mockResolvedValueOnce("falhou");
+    abrir();
+    const botao = await screen.findByRole("button", { name: "Mostrar o QR de novo" });
+    fireEvent.click(botao);
+    expect((await screen.findByRole("alert")).textContent).toBe("Não foi possível mostrar o QR. Volte e clique em Pagar com Pix.");
+    fireEvent.click(botao);
+    await waitFor(() => expect(mostrarQrDeNovo).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(screen.queryByRole("alert")).toBeNull());
+  });
+
+  it("o Stripe.js falhou no meio (lançou): a mesma frase, nunca a tela parada", async () => {
+    guardarPix({ segredo: "pi_pix_secret_x", chavePublicavel: "pk_test_da_tela", email: "aluno@teste.local" });
+    getSituacaoDaAssinatura.mockResolvedValue({ temAcesso: false });
+    mostrarQrDeNovo.mockRejectedValueOnce(new Error("IntegrationError"));
+    abrir();
+    fireEvent.click(await screen.findByRole("button", { name: "Mostrar o QR de novo" }));
+    expect((await screen.findByRole("alert")).textContent).toBe("Não foi possível mostrar o QR. Volte e clique em Pagar com Pix.");
   });
 });

@@ -32,7 +32,7 @@ export type PedidoDaTela = {
 export async function pedirAoServidor(pedido: PedidoDaTela): Promise<AssinaturaCriada> {
   if (pedido.forma === "cartao") esquecerPix();
   const criada = pedido.semLogin ? await pedirSemLogin(pedido) : await pedirLogado(pedido);
-  if (criada.estado === "pagar" && criada.tipo === "pix") guardarPix({ segredo: criada.segredo, chavePublicavel: pedido.chavePublicavel });
+  if (criada.estado === "pagar" && criada.tipo === "pix") guardarPix({ segredo: criada.segredo, chavePublicavel: pedido.chavePublicavel, ...(criada.email ? { email: criada.email } : {}) });
   return criada;
 }
 

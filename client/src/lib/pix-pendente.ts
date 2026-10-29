@@ -6,7 +6,12 @@
 // chave publicável vai junto: a tela de concluído não lê os planos (seria uma ida à Stripe à toa).
 // A mesma forma de `tentativa-de-assinar.ts`.
 
-export type PixGuardado = { segredo: string; chavePublicavel: string };
+/**
+ * `email`: o de quem paga, que o servidor devolveu com o segredo (P113). É com ele que o "Mostrar o QR de
+ * novo" gera um QR NOVO no mesmo pagamento quando o anterior venceu (P115, decisão do operador,
+ * 29/10/2026): o quadro do Pix não pede e-mail, e a Stripe o recebe na confirmação.
+ */
+export type PixGuardado = { segredo: string; chavePublicavel: string; email?: string };
 
 const CHAVE = "jilson.assinar.pix";
 let naMemoria: PixGuardado | null = null;
@@ -28,7 +33,8 @@ export function lerPix(): PixGuardado | null {
     const bruto = window.sessionStorage.getItem(CHAVE);
     const lido: unknown = bruto ? JSON.parse(bruto) : null;
     if (lido && typeof lido === "object" && "segredo" in lido && "chavePublicavel" in lido && typeof lido.segredo === "string" && typeof lido.chavePublicavel === "string") {
-      naMemoria = { segredo: lido.segredo, chavePublicavel: lido.chavePublicavel };
+      const email = "email" in lido && typeof lido.email === "string" ? lido.email : null;
+      naMemoria = email ? { segredo: lido.segredo, chavePublicavel: lido.chavePublicavel, email } : { segredo: lido.segredo, chavePublicavel: lido.chavePublicavel };
       return naMemoria;
     }
   } catch {

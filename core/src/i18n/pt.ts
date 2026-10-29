@@ -625,6 +625,9 @@ export const pt = {
         acessoAte: "Acesso até {data}",
         botao: "Pagar com Pix",
         qrDeNovo: "Mostrar o QR de novo",
+        // Só quando nem reabrir nem gerar outro QR deu certo (o QR vencido gera outro no mesmo botão) — P115,
+        // decisão do operador, 29/10/2026.
+        qrNaoAbriu: "Não foi possível mostrar o QR. Volte e clique em Pagar com Pix.",
         // Com o Pix não há cartão: a linha do resumo sai sem a parte do cartão (decisão do operador, P110, 28/10/2026).
         pagamentoSeguro: "Pagamento seguro, processado pela Stripe.",
       },

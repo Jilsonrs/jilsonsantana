@@ -710,8 +710,9 @@ describe("AssinarPage — o Pix pré-pago", () => {
     expect(criarAssinatura).not.toHaveBeenCalled();
     // O e-mail de quem paga vai na confirmação — o que o SERVIDOR devolveu, nunca a tela (P113).
     expect(confirmar).toHaveBeenCalledWith("pi_pix_secret_x", "pix", "/aluno/assinar/concluido", { email: "aluno@teste.local" });
-    expect(guardadoAntes).toEqual({ segredo: "pi_pix_secret_x", chavePublicavel: "pk_test_da_tela" });
-    expect(JSON.parse(window.sessionStorage.getItem("jilson.assinar.pix") ?? "null")).toEqual({ segredo: "pi_pix_secret_x", chavePublicavel: "pk_test_da_tela" });
+    // Com o e-mail que o servidor devolveu: o "QR de novo" gera outro QR com ele quando o anterior venceu (P115).
+    expect(guardadoAntes).toEqual({ segredo: "pi_pix_secret_x", chavePublicavel: "pk_test_da_tela", email: "aluno@teste.local" });
+    expect(JSON.parse(window.sessionStorage.getItem("jilson.assinar.pix") ?? "null")).toEqual({ segredo: "pi_pix_secret_x", chavePublicavel: "pk_test_da_tela", email: "aluno@teste.local" });
   });
 
   it("no cartão, com o Pix no ar: nada do Pix é pedido nem guardado", async () => {

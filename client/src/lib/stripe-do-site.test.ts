@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { OPCOES_DO_STRIPE, opcoesDoCampo, opcoesDoElemento, type PedidoDeCartao } from "./stripe-do-site";
+import { comoMostrarOQr, OPCOES_DO_STRIPE, opcoesDoCampo, opcoesDoElemento, type PedidoDeCartao } from "./stripe-do-site";
 
 // AS OPÇÕES COM QUE O CAMPO DA STRIPE ABRE (etapa 4.9, passo 6 — 29/10/2026). As telas simulam o módulo
 // inteiro, então nenhum teste de tela vê estas linhas; e o Stripe.js recusa opção errada EM SILÊNCIO (o
@@ -47,5 +47,16 @@ describe("opcoesDoElemento", () => {
 
   it("no cartão, o campo fica como sempre", () => {
     expect(opcoesDoElemento(false)).toEqual({});
+  });
+});
+
+describe("comoMostrarOQr (P115)", () => {
+  it("à espera: reabre o MESMO QR; vencido (ou nunca confirmado): gera outro no MESMO pagamento; pago: nada; cancelado: não há como", () => {
+    expect(comoMostrarOQr("requires_action")).toBe("reabrir");
+    expect(comoMostrarOQr("requires_payment_method")).toBe("gerar-novo");
+    expect(comoMostrarOQr("requires_confirmation")).toBe("gerar-novo");
+    expect(comoMostrarOQr("succeeded")).toBe("pago");
+    expect(comoMostrarOQr("canceled")).toBe("sem-jeito");
+    expect(comoMostrarOQr("processing")).toBe("sem-jeito");
   });
 });
