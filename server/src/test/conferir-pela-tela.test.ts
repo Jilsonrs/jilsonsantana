@@ -118,14 +118,33 @@ describe("POST /api/billing/conferir — logado", () => {
       const cliente = novoId("cus");
       await prisma.stripeCustomer.create({ data: { userId: memberId, stripeCustomerId: cliente, livemode: false } });
       const sub = novoId("sub");
-      assinaturasDoCliente.mockResolvedValue([viva(sub), { ...viva(novoId("sub")), status: "canceled" }]);
+      assinaturasDoCliente.mockResolvedValue([viva(sub), { ...viva(novoId("sub")), status: "incomplete_expired" }]);
       buscarAssinatura.mockImplementation(async (id) => naStripe(id, { clienteId: cliente }));
       expect((await conferir()).status).toBe(204);
       expect(assinaturasDoCliente).toHaveBeenCalledWith(cliente);
       expect(listarPixDoCliente).toHaveBeenCalledWith(cliente);
-      // A encerrada não gasta ida à Stripe.
+      // A que expirou sem o primeiro pagamento não gasta ida à Stripe.
       expect(buscarAssinatura.mock.calls).toEqual([[sub]]);
       expect(await prisma.subscription.findUnique({ where: { stripeSubscriptionId: sub } })).toMatchObject({ ownerUserId: memberId, status: "active" });
+      expect(await temAcessoAtivo(memberId)).toBe(true);
+    });
+  });
+
+  // C5 da revisão do grupo 1 (29/10/2026): a cancelada com dias pagos ainda dá acesso pelo gate, e o aviso dela também
+  // pode ter se perdido.
+  it("a Stripe diz que a assinatura foi cancelada com dias pagos (o aviso se perdeu): a conferência a sincroniza e o acesso abre até o fim dos dias pagos", async () => {
+    vi.spyOn(console, "info").mockImplementation(() => {});
+    await semAcesso(async () => {
+      const cliente = novoId("cus");
+      await prisma.stripeCustomer.create({ data: { userId: memberId, stripeCustomerId: cliente, livemode: false } });
+      const sub = novoId("sub");
+      const pagoAte = new Date(Date.now() + 10 * DIA);
+      assinaturasDoCliente.mockResolvedValue([{ ...viva(sub), status: "canceled" }]);
+      buscarAssinatura.mockImplementation(async (id) => naStripe(id, { status: "canceled", pagoAte, clienteId: cliente }));
+      expect(await temAcessoAtivo(memberId)).toBe(false);
+      expect((await conferir()).status).toBe(204);
+      expect(buscarAssinatura.mock.calls).toEqual([[sub]]);
+      expect(await prisma.subscription.findUnique({ where: { stripeSubscriptionId: sub } })).toMatchObject({ ownerUserId: memberId, status: "canceled", currentPeriodEnd: pagoAte });
       expect(await temAcessoAtivo(memberId)).toBe(true);
     });
   });
@@ -210,5 +229,54 @@ describe("POST /api/billing/visitante/conferir — sem conta", () => {
     const teto = LIMITES_DO_VISITANTE.conferir.endereco.porJanela;
     for (let i = 0; i < teto; i++) expect((await conferirSemLogin("qualquer", "192.0.2.12")).status).toBe(204);
     expect((await conferirSemLogin("qualquer", "192.0.2.12")).status).toBe(429);
+  });
+});
+
+// C4 da revisão do grupo 1 (29/10/2026): a tela repete o pedido a cada minuto; com a Stripe fora do ar, um 500 e um
+// alerta por pedido gastariam a cota de alertas da cópia (`monitor.ts`) e calariam os que importam.
+describe("a conferência pedida pela tela, com a Stripe fora do ar", () => {
+  it("204 nas duas portas, sem 500 nem alerta [api]; UM alerta a cada 15 min por cópia (o relógio que volta não o cala), o resto no registro — e nada muda", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    try {
+      const erro = vi.spyOn(console, "error").mockImplementation(() => {});
+      const registro = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const alertas = () => erro.mock.calls.map(([texto]) => String(texto)).filter((texto) => texto.includes("conferência pedida pela tela"));
+      const inicio = Date.now();
+      vi.setSystemTime(inicio);
+      const tentativa = `tentativa-${novoId("t")}`;
+      const ficha = await prisma.guestCheckout.create({ data: { id: novoId("pedido"), email: novoEmail(), stripeCustomerId: novoId("cus"), livemode: false, tentativa: resumoDaTentativa(tentativa) } });
+      assinaturasDoCliente.mockRejectedValue(new Error("[stripe] a lista das assinaturas do cliente falhou: api_error, status 500"));
+      await semAcesso(async () => {
+        const cliente = novoId("cus");
+        await prisma.stripeCustomer.create({ data: { userId: memberId, stripeCustomerId: cliente, livemode: false } });
+
+        expect((await conferir()).status).toBe(204);
+        expect(assinaturasDoCliente).toHaveBeenCalledWith(cliente);
+        expect(alertas()).toHaveLength(1);
+        expect(alertas()[0]).toContain(`(a conta ${memberId})`);
+        expect(alertas()[0]).toContain("api_error, status 500");
+
+        vi.setSystemTime(inicio + 14 * 60_000);
+        expect((await conferirSemLogin(tentativa, "192.0.2.13")).status).toBe(204);
+        expect(assinaturasDoCliente).toHaveBeenCalledWith(ficha.stripeCustomerId);
+        expect(alertas()).toHaveLength(1);
+        expect(registro.mock.calls.some(([texto]) => String(texto).includes(`(a ficha ${ficha.id})`))).toBe(true);
+
+        vi.setSystemTime(inicio + 15 * 60_000);
+        expect((await conferir()).status).toBe(204);
+        expect(alertas()).toHaveLength(2);
+
+        vi.setSystemTime(inicio);
+        expect((await conferir()).status).toBe(204);
+        expect(alertas()).toHaveLength(3);
+
+        expect(erro.mock.calls.some(([texto]) => String(texto).startsWith("[api]"))).toBe(false);
+        expect(await temAcessoAtivo(memberId)).toBe(false);
+        expect(await prisma.user.findUnique({ where: { email: ficha.email } })).toBeNull();
+        expect(enviarEmail).not.toHaveBeenCalled();
+      });
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

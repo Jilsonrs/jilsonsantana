@@ -6357,9 +6357,19 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             depois da publicação diz (sem alerta, ela serve). *Docs check (context7): Stripe → `/websites/stripe` → 2
             consultas (o endereço sem versão própria recebe na da conta, e outra versão exige endereço novo; as mensais
             de uma linha sem quebra).*
-      - [ ] **C4 — a conferência pedida pela tela que falha** responde 204 do mesmo jeito, registra, e alerta no
-            máximo uma vez a cada 15 min por cópia.
-      - [ ] **C5 — a conferência pula só a `incomplete_expired`** (a cancelada com dias pagos ainda dá acesso pelo gate).
+      - [x] **C4 — a conferência pedida pela tela que falha** responde 204 do mesmo jeito, registra, e alerta no
+            máximo uma vez a cada 15 min por cópia. **FEITO (29/10/2026):** `conferirPelaTela`
+            (`server/src/lib/conferencia-pela-tela.ts`), nas duas portas (`/billing/conferir` e
+            `/billing/visitante/conferir`): a falha volta `null`, e o registro diz de quem (a conta ou a ficha) e o
+            motivo; o limite do alerta é um só para as duas portas, por cópia (protege a cota de alertas da cópia, como
+            os do E3 e do E5). Teste: `conferir-pela-tela.test.ts` (+1: 204 nas duas portas, sem 500 nem `[api]`, um
+            alerta em 15 min, o relógio que volta, e nada muda). **Mutação: 9 de 9 reprovaram.**
+      - [x] **C5 — a conferência pula só a `incomplete_expired`** (a cancelada com dias pagos ainda dá acesso pelo gate).
+            **FEITO (29/10/2026):** `ENCERRADAS_NA_CONFERENCIA` (`assinaturas.ts`) só com ela. A cancelada sempre já
+            foi paga (cancelar a incompleta a leva para `incomplete_expired` — `cancelarIncompleta`) e a lista é das
+            últimas 20: a ida a mais à Stripe é limitada, e só para quem está sem acesso. Teste:
+            `conferir-pela-tela.test.ts` (+1: a cancelada com dias pagos volta a dar acesso; o teste do E2 passou a
+            pular a que expirou). **Mutação: 3 de 3 reprovaram.**
       **As decisões do operador:** P116 a P127 em `pendencias.md` (P126 são as conferências fora do repositório).
       **Respondidas em 29/10/2026:** P116 (a frase do E3), P117 (os botões do Pix em conferência na 4.7b), P118
       (o E14), P119 (o E15), P120 (a ação "Liberar acesso pago por fora" na 4.7b), P121 (a ação "Corrigir o e-mail" na 4.7b), P122 (a contestação corta o acesso — E7), P123 (o E16), P124 (o E17), P127 (o E18). **Para depois:** P125 (quando for criar um desses códigos) e P126 (as conferências nos painéis, por prints).

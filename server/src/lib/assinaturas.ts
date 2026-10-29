@@ -502,8 +502,13 @@ export async function sincronizarPedido(email: string): Promise<Conferida[] | nu
   return conferirUmaAUma((await assinaturasDoCliente(pedido.stripeCustomerId)).map((a) => a.id));
 }
 
-/** As encerradas não cobram nem dão acesso: a conferência pedida pela tela não gasta ida à Stripe com elas. */
-const ENCERRADAS_NA_CONFERENCIA: ReadonlySet<string> = new Set(["incomplete_expired", "canceled"]);
+/**
+ * A que expirou sem o primeiro pagamento não cobra nem dá acesso: a conferência pedida pela tela não gasta ida à Stripe
+ * com ela. A CANCELADA vai (C5 da revisão do grupo 1, 29/10/2026): com dias pagos, o gate ainda dá acesso
+ * (`assinaturaDaAcesso`), e o aviso dela também pode ter se perdido — e ela sempre já foi paga (cancelar a incompleta
+ * a leva para `incomplete_expired`, `cancelarIncompleta`). A lista é das últimas 20 (`assinaturasDoCliente`).
+ */
+const ENCERRADAS_NA_CONFERENCIA: ReadonlySet<string> = new Set(["incomplete_expired"]);
 
 /**
  * A CONFERÊNCIA PEDIDA PELA TELA DE DEPOIS DO PAGAMENTO (E2 da revisão ampla da cobrança, 29/10/2026 — plano → 4.9b):

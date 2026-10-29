@@ -13,7 +13,7 @@ import { CABECALHO_DO_IP, contarClienteNovo, cotaDeClientesNovosEsgotada, ipDoPe
 import { marcaDoEndereco } from "../lib/loja-de-tentativas.js";
 import { protecaoDaCobranca } from "../lib/protecao-da-cobranca.js";
 import { comVaga } from "../lib/assinaturas-em-andamento.js";
-import { conferirOCliente } from "../lib/assinaturas.js";
+import { conferirPelaTela } from "../lib/conferencia-pela-tela.js";
 import { mandarBoasVindasDaAssinatura } from "../lib/boas-vindas.js";
 import { temAcessoAtivo } from "../lib/acesso.js";
 import { resumoDaTentativa } from "../lib/tentativa-do-visitante.js";
@@ -208,7 +208,8 @@ router.post("/billing/visitante/confirmacao", ...limiteSemLogin.confirmacao, asy
 // fez a tem —, acha a ficha e confere o cliente dela, sem esperar trava (`conferirOCliente`); se o pagamento passou,
 // a conta NASCE ali e as boas-vindas saem, como no "Conferir na Stripe" do admin. A tentativa desconhecida, ou a ficha
 // que já tem acesso: 204 do mesmo jeito, sem ir à Stripe — a resposta não diz se a tentativa existe. A pergunta de
-// sempre ("já valeu?") vê o resultado.
+// sempre ("já valeu?") vê o resultado. A Stripe fora do ar também é 204: vira registro, e no máximo um alerta a cada
+// 15 min (C4, `conferirPelaTela`).
 router.post("/billing/visitante/conferir", ...limiteSemLogin.conferir, async (req, res) => {
   const corpo = validate(confirmacaoSemLoginSchema, req.body, res);
   if (corpo === null) return;
@@ -218,9 +219,11 @@ router.post("/billing/visitante/conferir", ...limiteSemLogin.conferir, async (re
   }
   const ficha = await prisma.guestCheckout.findUnique({ where: { tentativa: resumoDaTentativa(corpo.tentativa) }, select: { id: true, userId: true, stripeCustomerId: true } });
   if (ficha && !(ficha.userId && (await temAcessoAtivo(ficha.userId)))) {
-    const feitas = await conferirOCliente(ficha.stripeCustomerId);
-    for (const sincronia of feitas) if (sincronia.resultado === "atualizada") await mandarBoasVindasDaAssinatura(sincronia.assinatura.id);
-    console.info(`[stripe] conferência pedida pela tela: a ficha ${ficha.id}, ${feitas.length} assinatura(s) sincronizada(s)`);
+    const feitas = await conferirPelaTela(ficha.stripeCustomerId, `a ficha ${ficha.id}`);
+    if (feitas) {
+      for (const sincronia of feitas) if (sincronia.resultado === "atualizada") await mandarBoasVindasDaAssinatura(sincronia.assinatura.id);
+      console.info(`[stripe] conferência pedida pela tela: a ficha ${ficha.id}, ${feitas.length} assinatura(s) sincronizada(s)`);
+    }
   }
   res.status(204).end();
 });

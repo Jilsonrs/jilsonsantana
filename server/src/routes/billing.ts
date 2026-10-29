@@ -8,7 +8,7 @@ import { lerPlanos, lerPrevia } from "../lib/vitrine-da-assinatura.js";
 import { protecaoDaCobranca } from "../lib/protecao-da-cobranca.js";
 import { atrasadaSemAcesso, convidaAReativar, temAcessoAtivo } from "../lib/acesso.js";
 import { assinar } from "../lib/checkout.js";
-import { conferirOCliente } from "../lib/assinaturas.js";
+import { conferirPelaTela } from "../lib/conferencia-pela-tela.js";
 import { prisma } from "../lib/prisma.js";
 import { pagarComPix } from "../lib/pix-pre-pago.js";
 import { pixConfigurado } from "../lib/stripe-pix.js";
@@ -127,7 +127,8 @@ router.get("/billing/assinatura", requireAuth, async (req, res) => {
 
 // POST /api/billing/conferir — a tela de depois do pagamento pede que o servidor confira na Stripe (E2 da revisão
 // ampla da cobrança): o aviso pode ter se perdido. Só o cliente da conta da SESSÃO; quem já tem acesso nem vai à
-// Stripe. Nunca espera trava (`conferirOCliente`). 204: a pergunta de sempre ("já tenho acesso?") vê o resultado.
+// Stripe. Nunca espera trava (`conferirOCliente`). 204: a pergunta de sempre ("já tenho acesso?") vê o resultado —
+// inclusive com a Stripe fora do ar, que vira registro e no máximo um alerta a cada 15 min (C4, `conferirPelaTela`).
 router.post("/billing/conferir", requireAuth, ...limiteDeTentativas.conferir, async (req, res) => {
   const user = req.user;
   if (!user) {
@@ -141,8 +142,8 @@ router.post("/billing/conferir", requireAuth, ...limiteDeTentativas.conferir, as
   if (!(await temAcessoAtivo(user.id))) {
     const cliente = await prisma.stripeCustomer.findUnique({ where: { userId: user.id }, select: { stripeCustomerId: true } });
     if (cliente) {
-      const feitas = await conferirOCliente(cliente.stripeCustomerId);
-      console.info(`[stripe] conferência pedida pela tela: a conta ${user.id}, ${feitas.length} assinatura(s) sincronizada(s), acesso ${(await temAcessoAtivo(user.id)) ? "sim" : "não"}`);
+      const feitas = await conferirPelaTela(cliente.stripeCustomerId, `a conta ${user.id}`);
+      if (feitas) console.info(`[stripe] conferência pedida pela tela: a conta ${user.id}, ${feitas.length} assinatura(s) sincronizada(s), acesso ${(await temAcessoAtivo(user.id)) ? "sim" : "não"}`);
     }
   }
   res.status(204).end();
