@@ -134,3 +134,17 @@ export const sincronizarContaSchema = z.object({
   email: enderecoDeEmailSchema,
 });
 export type SincronizarContaInput = z.infer<typeof sincronizarContaSchema>;
+
+/**
+ * Corpo de `POST /api/billing/campo-nao-abriu` — o campo de pagamento da Stripe não abriu na tela (E3 da revisão
+ * ampla da cobrança, 29/10/2026). É o único jeito de o operador saber: o pedido de assinar nem chega ao servidor.
+ * Só QUAL tela e QUAL falha, de listas fechadas — nada de texto livre, que iria para o registro e para o alerta.
+ */
+export const TELAS_DO_CAMPO = ["assinar", "assinar-sem-login", "trocar-cartao"] as const;
+export type TelaDoCampo = (typeof TELAS_DO_CAMPO)[number];
+export const campoNaoAbriuSchema = z.object({
+  tela: z.enum(TELAS_DO_CAMPO),
+  /** `nao-carregou`: o campo não ficou pronto no prazo (o Stripe.js nem chegou, ou travou); `erro-ao-carregar`: a Stripe disse que falhou. */
+  motivo: z.enum(["nao-carregou", "erro-ao-carregar"]),
+});
+export type CampoNaoAbriuInput = z.infer<typeof campoNaoAbriuSchema>;

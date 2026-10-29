@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { comVaga } from "../lib/assinaturas-em-andamento.js";
-import { assinarSchema, cancelarSchema, mudarDePlanoSchema, pixSchema, previaSchema, type AssinaturaCriada, type CartaoTrocado, type PlanosDaAssinatura, type PreviaDaAssinatura, type PlanoMudado, type ReembolsoFeito, type RenovacaoParada, type SituacaoDaAssinatura, type TrocaDeCartaoPreparada, type TrocaDesfeita, type TrocaDisponivel } from "@jilson/core";
+import { assinarSchema, campoNaoAbriuSchema, cancelarSchema, mudarDePlanoSchema, pixSchema, previaSchema, type AssinaturaCriada, type CartaoTrocado, type PlanosDaAssinatura, type PreviaDaAssinatura, type PlanoMudado, type ReembolsoFeito, type RenovacaoParada, type SituacaoDaAssinatura, type TrocaDeCartaoPreparada, type TrocaDesfeita, type TrocaDisponivel } from "@jilson/core";
 import { requireAuth } from "../middleware/auth.js";
 import { validate } from "../lib/http.js";
 import { cobrancaConfigurada } from "../lib/stripe.js";
@@ -12,7 +12,7 @@ import { pagarComPix } from "../lib/pix-pre-pago.js";
 import { pixConfigurado } from "../lib/stripe-pix.js";
 import { desistirDaTroca, lerTrocaDePlano, mudarMeuPlano } from "../lib/meu-plano.js";
 import { aplicarCartaoNovo, lerMinhaAssinatura, manterMinhaAssinatura, pararMinhaRenovacao, prepararTrocaDeCartao, reembolsarMinhaAssinatura, registrarAssinaturaDesconhecida } from "../lib/minha-assinatura.js";
-import { limiteDeTentativas } from "../lib/limite-de-tentativas.js";
+import { limiteDeTentativas, limiteSemLogin } from "../lib/limite-de-tentativas.js";
 
 // ASSINAR COM A CONTA LOGADA (Fase 4, etapa 4.2 — billing.md; CLAUDE.md → Membership Gating).
 // Tudo aqui exige login, e a conta é SEMPRE a da sessão. O site diz só QUAL plano e o código
@@ -31,6 +31,31 @@ router.use("/billing", protecaoDaCobranca);
 
 // GET /api/billing/planos — os dois planos com o valor lido da Stripe (o mostrado é o cobrado) e
 // a chave que o site usa para abrir o campo do cartão.
+/**
+ * O ALERTA DO CAMPO QUE NÃO ABRIU (E3 da revisão ampla da cobrança, 29/10/2026): no máximo um a cada 15 minutos POR
+ * CÓPIA, na memória dela — protege a cota de alertas, que também é por cópia (`monitor.ts`); um robô mandando o
+ * aviso a gastaria. Os outros ficam no registro, com a tela e o motivo.
+ */
+const INTERVALO_DO_ALERTA_DO_CAMPO = 15 * 60_000;
+let alertouCampoEm: number | null = null;
+function alertarCampoQueNaoAbriu(agora: number): boolean {
+  if (alertouCampoEm !== null && agora >= alertouCampoEm && agora - alertouCampoEm < INTERVALO_DO_ALERTA_DO_CAMPO) return false;
+  alertouCampoEm = agora;
+  return true;
+}
+
+// POST /api/billing/campo-nao-abriu — a tela diz que o campo de pagamento da Stripe não abriu (E3): é o único jeito
+// de o operador saber, porque o pedido de assinar nem chega aqui. Sem login (o visitante também paga), com o teto
+// por endereço; o corpo diz só QUAL tela e QUAL falha (listas fechadas). Nada vai à Stripe.
+router.post("/billing/campo-nao-abriu", ...limiteSemLogin.campoNaoAbriu, (req, res) => {
+  const relato = validate(campoNaoAbriuSchema, req.body, res);
+  if (relato === null) return;
+  const linha = `[stripe] site: o campo de pagamento não abriu na tela ${relato.tela} (${relato.motivo})`;
+  if (alertarCampoQueNaoAbriu(Date.now())) console.error(`${linha} — se acontecer com mais de uma pessoa, é defeito nosso (a chave publicável, as opções do campo, o Stripe.js): abrir a tela e conferir`);
+  else console.warn(linha);
+  res.status(204).end();
+});
+
 router.get("/billing/planos", requireAuth, ...limiteDeTentativas.leitura, async (_req, res) => {
   const resposta: PlanosDaAssinatura | null = cobrancaConfigurada() ? await lerPlanos() : null;
   if (!resposta) {

@@ -62,6 +62,8 @@ export const LIMITES_DO_VISITANTE = {
   confirmacao: { endereco: { porJanela: 900 } },
   /** Criar a senha logo depois de pagar (passo 5): uma vez por conta; o teto segura quem insiste. */
   senha: { endereco: { porJanela: 10 } },
+  /** O campo de pagamento que não abriu (E3 da 4.9b): a tela avisa uma vez por campo; o teto segura o robô. */
+  campoNaoAbriu: { endereco: { porJanela: 5 } },
 } as const satisfies Record<string, { endereco: Teto; email?: Teto } | number>;
 
 /** Já avisamos que a contagem por endereço parou? Uma vez por processo basta (zera nos testes). */
@@ -374,6 +376,7 @@ export const limiteSemLogin = {
   leitura: tetosSemLogin("visitante-leitura", LIMITES_DO_VISITANTE.leitura),
   confirmacao: tetosSemLogin("visitante-confirmacao", LIMITES_DO_VISITANTE.confirmacao),
   senha: tetosSemLogin("visitante-senha", LIMITES_DO_VISITANTE.senha),
+  campoNaoAbriu: tetosSemLogin("campo-nao-abriu", LIMITES_DO_VISITANTE.campoNaoAbriu),
 };
 
 /**

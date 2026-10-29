@@ -6,9 +6,10 @@ import { codigoDoErro } from "@/lib/course-form";
 import { passouDoLimite } from "@/lib/faturamento";
 import { useT } from "@/lib/language";
 import { pedirAoServidor } from "@/lib/pedido-de-assinatura";
-import { CampoDoCartao, CartaoProvider, type Cartao } from "@/lib/stripe-do-site";
+import { CartaoProvider, type Cartao } from "@/lib/stripe-do-site";
 import { semInterromper } from "@/lib/versao";
 import { BotaoDeAssinar } from "./BotaoDeAssinar";
+import { CampoVigiado } from "./CampoVigiado";
 import { CampoDoDocumento } from "./CampoDoDocumento";
 import { CodigoPromocional } from "./CodigoPromocional";
 import { CaixaDeNovidades, CampoDoEmail } from "./DadosDoVisitante";
@@ -179,7 +180,7 @@ export function FormularioDeAssinatura({
         )}
         {!semCartao && (
           <PageSection title={t.pagamento} className="pt-0 sm:pt-0">
-            <CampoDoCartao pix={comPix} />
+            <CampoVigiado tela={semLogin ? "assinar-sem-login" : "assinar"} pix={comPix} />
           </PageSection>
         )}
       </div>

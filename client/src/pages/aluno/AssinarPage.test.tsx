@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import type { ReactNode } from "react";
+import { useEffect } from "react";
 import { act, screen, fireEvent, waitFor, within } from "@testing-library/react";
 import { focusManager, onlineManager } from "@tanstack/react-query";
 import { useLocation } from "react-router";
@@ -14,8 +15,12 @@ const criarAssinatura = vi.fn();
 const pagarComPix = vi.fn();
 const getSituacaoDaAssinatura = vi.fn();
 const getMinhaAssinatura = vi.fn();
+// O vigia do campo de pagamento (E3 da revisão ampla): o campo de mentira fica pronto, ou falha quando o teste pede.
+const avisarCampoQueNaoAbriu = vi.fn(async (_corpo: unknown) => undefined);
+let campoFalha = false;
 vi.mock("@/lib/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/api")>()),
+  avisarCampoQueNaoAbriu: (corpo: unknown) => avisarCampoQueNaoAbriu(corpo),
   getMinhaAssinatura: (...args: unknown[]) => getMinhaAssinatura(...args),
   getPlanosDaAssinatura: (...args: unknown[]) => getPlanosDaAssinatura(...args),
   getPreviaDaAssinatura: (...args: unknown[]) => getPreviaDaAssinatura(...args),
@@ -34,7 +39,11 @@ vi.mock("@/lib/stripe-do-site", () => ({
       {children}
     </div>
   ),
-  CampoDoCartao: () => <div>campo do cartão</div>,
+  // Como o campo de verdade, avisa que ficou pronto (o vigia do campo — E3 — não mostra a frase de "não carregou").
+  CampoDoCartao: function CampoDeMentira({ aoFicarPronto, aoFalhar }: { aoFicarPronto?: () => void; aoFalhar?: () => void }) {
+    useEffect(() => (campoFalha ? aoFalhar?.() : aoFicarPronto?.()), []);
+    return <div>campo do cartão</div>;
+  },
   useCartao: () => ({ validar: () => validar(), confirmar: (segredo: string, tipo: string, voltarPara: string, pagador?: { email: string }) => (pagador ? confirmar(segredo, tipo, voltarPara, pagador) : confirmar(segredo, tipo, voltarPara)) }),
 }));
 
@@ -71,6 +80,8 @@ const PAGAR_PIX: AssinaturaCriada = { estado: "pagar", segredo: "pi_pix_secret_x
 const erroDoServidor = (codigo: string) => ({ response: { data: { error: codigo } } });
 
 beforeEach(() => {
+  campoFalha = false;
+  avisarCampoQueNaoAbriu.mockClear();
   getSituacaoDaAssinatura.mockReset().mockResolvedValue({ temAcesso: false, reativar: false });
   getMinhaAssinatura.mockReset().mockResolvedValue(RENOVA);
   getPlanosDaAssinatura.mockReset().mockResolvedValue(PLANOS);
@@ -778,5 +789,15 @@ describe("AssinarPage — o Pix pré-pago", () => {
     await waitFor(() => expect(pagarComPix).toHaveBeenCalled());
     expect((await screen.findByRole("alert")).textContent).toBe(FRASE);
     expect(confirmar).not.toHaveBeenCalled();
+  });
+});
+
+describe("AssinarPage — o campo de pagamento que não carregou (E3)", () => {
+  it("a frase do operador, e o servidor é avisado com o nome DESTA tela", async () => {
+    campoFalha = true;
+    abrir();
+    await screen.findByRole("radio", { name: /Mensal/ });
+    expect(await screen.findByText("O campo de pagamento não carregou. Tente outro navegador ou desative o bloqueador; se continuar, escreva para suporte@jilsonsantana.com.")).toBeTruthy();
+    expect(avisarCampoQueNaoAbriu).toHaveBeenCalledWith({ tela: "assinar", motivo: "erro-ao-carregar" });
   });
 });

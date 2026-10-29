@@ -6223,8 +6223,23 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       - [ ] **E2 — a tela de depois do pagamento pede conferência:** sem confirmação em ~30 s, pede ao servidor que
             confira na Stripe (a sincronia das portas: a assinatura viva, o Pix pago), com limite; nada do navegador
             vale como prova.
-      - [ ] **E3 — o vigia do campo de pagamento:** o Stripe.js que não carrega, ou o campo que não fica pronto em
-            ~15 s, mostra uma frase e avisa o servidor, que alerta (`[site] …`). **A frase, APROVADA pelo operador
+      - [x] **E3 — o vigia do campo de pagamento:** o Stripe.js que não carrega, ou o campo que não fica pronto em
+            ~15 s, mostra uma frase e avisa o servidor, que alerta (`[site] …`).
+            **FEITO (29/10/2026):** `CampoVigiado` (`components/assinar/`, fora da fronteira com o Stripe.js, para ter
+            teste) em volta do `CampoDoCartao`, que passa adiante o `onReady` e o `onLoadError` da Stripe
+            (`[FATO — docs da Stripe, context7, 29/10/2026]`): sem "pronto" em 15 s, ou com a falha, a frase aprovada
+            (`app.assinar.campoNaoCarregou`) e UM aviso ao servidor — `POST /api/billing/campo-nao-abriu`, sem login,
+            com o teto por endereço (5 a cada 15 min, `limiteSemLogin.campoNaoAbriu`) e o corpo de listas fechadas
+            (`campoNaoAbriuSchema`: a tela e o motivo); o servidor alerta **`[stripe] site: …`** (e não `[site]`: as
+            regras de alerta do Sentry são por origem, e a de `stripe` com certeza avisa), no máximo um a cada 15 min
+            por cópia. Nas três telas: assinar (logado e sem conta) e trocar o cartão. Testes: `CampoVigiado.test.tsx`
+            (novo, 5), as três telas (+1 cada: o nome da tela no aviso), `campo-nao-abriu.test.ts` (novo, 4).
+            **Mutação: 15 de 16 reprovaram** (o site 7 de 8, o servidor 4 de 4); a que passou é a ligação do
+            `onLoadError` dentro da fronteira — e a prova no navegador a exercitou. **Provado no navegador** (Chrome do
+            agente em `localhost`, a `/assinar` sem conta, a Stripe de teste): o campo de verdade abriu, e 20 s depois
+            nenhuma frase — no cartão e no Pix; sem internet, a troca para cartão mostrou a frase em menos de 10 s (a
+            Stripe disse que falhou); com a internet de volta, o aviso do navegador chegou ao servidor (204) e virou a
+            linha de alerta. **A frase, APROVADA pelo operador
             em 29/10/2026 (P116, a sugestão do revisor):** *"O campo de pagamento não carregou. Tente outro
             navegador ou desative o bloqueador; se continuar, escreva para suporte@jilsonsantana.com."*
       - [x] **E4 — a conferência na subida do servidor:** a chave publicável e a secreta no mesmo modo (hoje só se

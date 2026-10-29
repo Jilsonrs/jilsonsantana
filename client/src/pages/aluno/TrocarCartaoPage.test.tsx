@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { ReactNode } from "react";
+import { useEffect } from "react";
 import { screen, fireEvent, waitFor } from "@testing-library/react";
 import type { CartaoTrocado, MinhaAssinatura, PlanosDaAssinatura, TrocaDeCartaoPreparada } from "@jilson/core";
 import { renderWithProviders } from "@/test-utils";
@@ -10,8 +11,12 @@ const getMinhaAssinatura = vi.fn<() => Promise<MinhaAssinatura>>();
 const getPlanosDaAssinatura = vi.fn<() => Promise<PlanosDaAssinatura>>();
 const prepararTrocaDeCartao = vi.fn<() => Promise<TrocaDeCartaoPreparada>>();
 const aplicarCartaoNovo = vi.fn<() => Promise<CartaoTrocado>>();
+// O vigia do campo de pagamento (E3 da revisão ampla): o campo de mentira fica pronto, ou falha quando o teste pede.
+const avisarCampoQueNaoAbriu = vi.fn(async (_corpo: unknown) => undefined);
+let campoFalha = false;
 vi.mock("@/lib/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/api")>()),
+  avisarCampoQueNaoAbriu: (corpo: unknown) => avisarCampoQueNaoAbriu(corpo),
   getMinhaAssinatura: () => getMinhaAssinatura(),
   getPlanosDaAssinatura: () => getPlanosDaAssinatura(),
   prepararTrocaDeCartao: (...args: unknown[]) => (prepararTrocaDeCartao as (...a: unknown[]) => Promise<TrocaDeCartaoPreparada>)(...args),
@@ -30,7 +35,11 @@ vi.mock("@/lib/stripe-do-site", () => ({
       {children}
     </div>
   ),
-  CampoDoCartao: () => <div>campo do cartão</div>,
+  // Como o campo de verdade, avisa que ficou pronto (o vigia do campo — E3 — não mostra a frase de "não carregou").
+  CampoDoCartao: function CampoDeMentira({ aoFicarPronto, aoFalhar }: { aoFicarPronto?: () => void; aoFalhar?: () => void }) {
+    useEffect(() => (campoFalha ? aoFalhar?.() : aoFicarPronto?.()), []);
+    return <div>campo do cartão</div>;
+  },
   useCartao: () => ({ validar: () => validar(), confirmar: (segredo: string, tipo: string, voltarPara: string) => confirmar(segredo, tipo, voltarPara) }),
 }));
 
@@ -94,6 +103,8 @@ const ordem = () =>
     .map(([, nome]) => nome);
 
 beforeEach(() => {
+  campoFalha = false;
+  avisarCampoQueNaoAbriu.mockClear();
   getMinhaAssinatura.mockReset().mockResolvedValue(ATIVA);
   getPlanosDaAssinatura.mockReset().mockResolvedValue(PLANOS);
   prepararTrocaDeCartao.mockReset().mockResolvedValue({ segredo: "seti_1_secret_x" });
@@ -327,3 +338,11 @@ describe("TrocarCartaoPage — o envio", () => {
   });
 });
 
+describe("TrocarCartaoPage — o campo de pagamento que não carregou (E3)", () => {
+  it("a frase do operador, e o servidor é avisado com o nome DESTA tela", async () => {
+    campoFalha = true;
+    abrir();
+    expect(await screen.findByText("O campo de pagamento não carregou. Tente outro navegador ou desative o bloqueador; se continuar, escreva para suporte@jilsonsantana.com.")).toBeTruthy();
+    expect(avisarCampoQueNaoAbriu).toHaveBeenCalledWith({ tela: "trocar-cartao", motivo: "erro-ao-carregar" });
+  });
+});

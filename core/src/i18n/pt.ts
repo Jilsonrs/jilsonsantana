@@ -587,6 +587,9 @@ export const pt = {
       entrar: "Entrar",
       emailJaTemConta: "Este e-mail já tem conta. Entre para assinar.",
       novidades: "Quero receber novidades e ofertas da escola por e-mail.",
+      // O campo de pagamento da Stripe não carregou (bloqueador, rede de empresa, defeito nosso) — o vigia do campo (E3
+      // da revisão ampla da cobrança). Texto APROVADO pelo operador em 29/10/2026 (P116, a sugestão do revisor).
+      campoNaoCarregou: "O campo de pagamento não carregou. Tente outro navegador ou desative o bloqueador; se continuar, escreva para suporte@jilsonsantana.com.",
       // O mesmo e-mail assinando em outra aba (`Ocupada`).
       ocupadaOutraAba: "Este e-mail já tem uma assinatura em andamento em outra aba. Termine por lá ou aguarde um instante.",
       // DEPOIS DO PAGAMENTO, SEM CONTA (etapa 4.7, passo 6e2): a senha nasce na tela (decisão do operador,
