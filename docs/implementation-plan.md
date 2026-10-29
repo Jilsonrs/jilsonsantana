@@ -106,28 +106,41 @@
 > está no ar, atrás do "Em breve"**: a escolha "Como você quer pagar?" aparece na tela de assinar. **Falta: o
 > operador ver a tela de assinar pela prévia** (`/__preview`).
 >
-> **PARA CONTINUAR NO PRÓXIMO CHAT (a ordem):** *(o passo 5 — Apple Pay e Google Pay — SAIU por
-> decisão do operador em 28/10/2026; a escola fica com cartão e Pix.)*
-> 1. ~~**Publicar** e conferir de fora~~ **FEITO em 29/10/2026 (UTC): `d9dc5e6`, revisão `00046` — a
->    conferência está acima.** Falta só o operador ver a tela de assinar pela prévia (`/__preview`): a
->    escolha cartão/Pix.
-> 2. **Passo 6 da 4.9 — prova e revisão.** Na área restrita (roteiro fora do repo, cliente descartável):
->    pagar com Pix de teste de ponta a ponta (a confirmação é à mão, na página de instruções da Stripe em
->    teste); o que o `confirmPayment` devolve quando a pessoa FECHA a janela do QR; o "Mostrar o QR de
->    novo"; o QR vencido (1 h); o reembolso do Pix; o relógio de teste para o "está acabando" e o
->    "terminou". No banco de dev. A revisão de segurança da etapa inteira (`security-vulnerability-
->    reviewer` + revisor geral, como na 4.7). O Pix de verdade (R$ 99,90 e o reembolso) é do teste do
->    operador no passo 8 da 4.7.
-> 3. **Pendências do operador:** P111 (o texto do e-mail "está acabando", rascunho), P108 (a tela "já
->    valeu?" quando o servidor recusa), e as do passo 8 da 4.7 (`pendencias.md`).
+> **NO `dev`, AINDA NÃO PUBLICADO (29/10/2026, depois do `d9dc5e6`): o passo 6 da 4.9 — a prova, as
+> revisões e as correções.** `12aee69` (parte 1: **o campo do Pix não abria no navegador** — corrigido; a
+> janela do QR em português; o Pix da aba esquecido ao pagar por cartão), `c89058b` (parte 2: a pré-paga nasce
+> paga em todo caminho, o valor conferido com o preço), `4fcf5cc` (parte 3: o Pix pago sem assinatura vira
+> assinatura na hora, nas quatro portas e no force-sync; a ficha presa à tentativa que pagou; o QR só com o
+> mesmo preço), `316bf36` (P113: o quadro do Pix sem o campo de e-mail), `73fd108` (P115: o QR vencido vira QR
+> novo no mesmo botão; P114 registrada na 4.7b), `2e01aa1` (P108 e P111) e o fechamento (o ajuste da P108 e
+> este registro). **ATENÇÃO: no ar (`d9dc5e6`) o campo do Pix NÃO ABRE** — quem olhar a `/assinar` pela
+> prévia vê "Pagar com Pix" sem o campo; é a próxima publicação que conserta. Nenhuma migration nova.
+>
+> **PARA CONTINUAR NO PRÓXIMO CHAT (a ordem):**
+> 1. **Publicar** (ordem do operador) e conferir de fora como sempre — a versão nova do app,
+>    `/api/billing/visitante/planos` com `pix`, o job das migrations sem migration nova. Depois, o operador vê
+>    a `/assinar` pela prévia: a escolha cartão/Pix e o quadro do Pix (agora sem o campo de e-mail).
+> 2. **P112 — do operador, ANTES de qualquer Pix de verdade:** incluir `payment_intent.succeeded` no
+>    endereço de avisos da conta de verdade da Stripe (hoje são 7 avisos e ele não está); depois, registrar
+>    no `billing.md` (a lista dos avisos).
+> 3. **A segunda passada da revisão de segurança, só das correções** (`d9dc5e6..` o fim do passo 6), no
+>    Fable 5.1: em 29/10/2026 o limite mensal de gasto da conta barrou o modelo (a sessão seguiu no Opus 5.5,
+>    que conferiu à mão os pontos de risco e não achou problema novo — o registro no passo 6). Rodar quando o
+>    limite permitir, antes do teste com dinheiro de verdade.
+> 4. **O passo 8 da 4.7 — o teste do operador com cartão e Pix reais** (R$ 99,90 e o reembolso, também do
+>    Pix), com as pendências dele em `pendencias.md` (P102, P95, P93).
 > **O que o próximo chat precisa saber:** a suíte do servidor apaga o banco de teste local — perguntar
 > UMA vez e usar a resposta exata em `PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION`; rodar como o CI
 > (`STRIPE_SECRET_KEY= STRIPE_PUBLISHABLE_KEY= STRIPE_WEBHOOK_SECRET= RESEND_API_KEY= STRIPE_PIX_CONFIGURATION=`);
-> a mutação por roteiro com cópia de segurança de cada arquivo; os arquivos do Pix: `server/src/lib/
-> stripe-pix.ts`, `pix-pre-pago.ts`, `assinaturas.ts` (`processarPixPrePago`), `minha-assinatura.ts`
-> (`prePaga`), `stripe-devolucao.ts` (`periodoDevolvido`), `avisos-da-assinatura.ts`; no site,
-> `lib/pedido-de-assinatura.ts`, `lib/pix-pendente.ts`, `components/assinar/EscolhaDaFormaDePagamento.tsx`
-> e `QrDeNovo.tsx`. A spec: `billing.md` → *Formas de pagamento*.
+> a mutação por roteiro com cópia de segurança de cada arquivo; o Pix de teste se simula pelo e-mail de
+> cobrança (`succeed_immediately@example.com`, `fill_never@example.com` — e desde a P113 o e-mail digitado
+> no formulário É o de cobrança); os servidores de dev em segundo plano: `npm run dev:client` da raiz. Os
+> arquivos do Pix: `server/src/lib/stripe-pix.ts`, `pix-pre-pago.ts`, `assinaturas.ts` (`processarPixPago`,
+> `pixPagoSemEspelho`), `checkout.ts` e `checkout-do-visitante.ts` (`pixPagoDaConta`, `pixPagoDoEmail`),
+> `minha-assinatura.ts` (`prePaga`), `stripe-devolucao.ts` (`periodoDevolvido`), `avisos-da-assinatura.ts`;
+> no site, `lib/stripe-do-site.tsx` (`opcoesDoCampo`, `opcoesDoElemento`, `mostrarQrDeNovo`),
+> `lib/pedido-de-assinatura.ts`, `lib/pix-pendente.ts`, `lib/assinar.ts` (`useConfirmacaoSemLogin`),
+> `components/assinar/EscolhaDaFormaDePagamento.tsx` e `QrDeNovo.tsx`. A spec: `billing.md` → *Formas de pagamento*.
 > **Publicado em 24–25/10/2026:** `d6c2906` — o endereço do CDN do Bunny corrigido (P105) e a
 > conferência dele no CI; `f09a903` — o download do arquivo da aula em pedaços (o Cloud Run recusava
 > acima de 32 MB); `294b106` — o segundo mais novo vence entre aparelhos. Conferidos de fora (o site
@@ -5464,8 +5477,9 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
               dia: *"Não conseguimos confirmar agora. Seu pagamento não se perde: entre com "Receber código de
               acesso" ou tente de novo em alguns minutos."* — `app.assinar.naoConfirmouAgora`): a pergunta
               respeita o `Retry-After` do servidor (`esperaDaProximaConferencia`) e, depois de 3 recusas
-              SEGUIDAS (`RECUSAS_ATE_O_AVISO`), a frase entra no lugar do "demorando"; qualquer resposta zera a
-              conta, e a pergunta continua. Testes: `assinar.test.ts` (+2), `AssinaturaConcluidaSemLoginPage.test.tsx`
+              SEGUIDAS (`RECUSAS_ATE_O_AVISO`), a frase entra no lugar do "demorando" — **e na hora, na recusa que
+              pede espera** (ajuste do operador no mesmo dia: o servidor pede até 15 min, e 3 recusas assim seriam
+              ~30 min de "Confirmando…"); qualquer resposta zera a conta, e a pergunta continua. Testes: `assinar.test.ts` (+2), `AssinaturaConcluidaSemLoginPage.test.tsx`
               (+2). **Mutação: 3 de 3 reprovaram.**
             - **A3** — o CPF ia para a ficha da Stripe ANTES de o laço descobrir a tentativa paga no meio
               (os dois checkouts) → **corrigido** (reordenado; teste nos dois caminhos).
@@ -5903,7 +5917,9 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             servido em `/.well-known/apple-developer-merchantid-domain-association` **antes do portão
             "Em breve"**, e o domínio registrado em *Settings → Payments → Payment method domains* (teste
             e ao vivo). Nada muda no campo do cartão.
-      - [ ] **Passo 6 — Prova e revisão.** Na área restrita: como se confirma um Pix de teste (a
+      - [x] **Passo 6 — Prova e revisão.** *(Fechado em 29/10/2026: a prova, as duas revisões, as partes 1 a 3 e as
+            decisões P113, P114 e P115 — abaixo. Ficam: a P112, do operador; a segunda passada no Fable 5.1; e o Pix
+            de verdade no passo 8 da 4.7.)* Na área restrita: como se confirma um Pix de teste (a
             página de instruções da Stripe em teste), o pré-pago de ponta a ponta com o relógio de
             teste (nasce, avisa 3 dias antes, termina, "terminou"), o reembolso do Pix, o QR vencido;
             no banco de dev; a revisão de segurança (`security-vulnerability-reviewer`); o Pix de
@@ -6004,6 +6020,18 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             - [x] **P114 — a devolução pelo painel (decisão do operador, 29/10/2026):** não é regra para o
                   painel da Stripe, é um clique no `/admin` — registrado na etapa 4.7b (as ações), onde mora;
                   até lá, o `billing.md` avisa que devolver no painel sem cancelar não corta o acesso.
+            - [ ] **A segunda passada (só as correções) — PENDENTE no Fable 5.1:** o agente de revisão parou no
+                  limite mensal de gasto da conta (29/10/2026). A conferência à mão, no Opus 5.5, dos pontos de
+                  risco das partes 2 e 3 e das P113/P115: o `processarPixPago` chamado pelas rotas só transforma
+                  em assinatura o Pix NOSSO já pago do cliente DAQUELA conta ou ficha (os metadados são do nosso
+                  servidor), sem tocar no CPF nem na tentativa; a conta nasce presa à tentativa que PAGOU (a coluna
+                  `tentativa` é única, e o resumo é de bytes aleatórios — sem colisão); o `garantirFaturaPaga` só
+                  vê assinaturas pré-pagas (achadas pela coluna do Pix ou pelos metadados), e fatura paga, anulada
+                  ou incobrável não é paga de novo; o e-mail devolvido ao site é o da própria sessão ou o digitado
+                  pelo visitante; as linhas novas de registro só têm ids. **Nada novo achado**; um P3 — os
+                  comentários "até 9 idas à Stripe dentro da trava" passaram a 10 — corrigido no fechamento. *O
+                  clique "sem o código" de quem sabe só o e-mail ainda cancela o QR à espera da pessoa (o "um QR
+                  por vez" de sempre, aceito na 4.7): incomoda, não toma a conta.*
             - [x] **P115 — o QR vencido (decisão do operador, 29/10/2026: "o mesmo botão gera o QR novo quando
                   venceu").** `mostrarQrDeNovo` lê o pagamento AGORA (`retrievePaymentIntent`) e decide pelo status
                   (`comoMostrarOQr`, função pura): `requires_action` → reabre o MESMO QR (`handleNextAction`);

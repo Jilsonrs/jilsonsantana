@@ -89,6 +89,19 @@ describe("depois do pagamento, sem conta — a confirmação", () => {
     expect(await screen.findByRole("heading", { name: "Assinatura confirmada." })).toBeTruthy();
   });
 
+  it("a recusa que PEDE ESPERA (Retry-After): a frase na hora, e a próxima pergunta só depois da espera", async () => {
+    comTentativa();
+    const frase = 'Não conseguimos confirmar agora. Seu pagamento não se perde: entre com "Receber código de acesso" ou tente de novo em alguns minutos.';
+    confirmarSemLogin.mockRejectedValue(
+      new AxiosError("erro", "ERR_BAD_REQUEST", undefined, undefined, { status: 429, statusText: "", headers: { "retry-after": "600" }, config: { headers: new AxiosHeaders() }, data: { error: "MuitasTentativas" } }),
+    );
+    abrir({ conferirACada: 20, demora: 60_000 });
+    expect(await screen.findByText(frase)).toBeTruthy();
+    // Com o intervalo de 20 ms, sem respeitar a espera já haveria várias perguntas.
+    await new Promise((pronto) => setTimeout(pronto, 200));
+    expect(confirmarSemLogin).toHaveBeenCalledTimes(1);
+  });
+
   it("duas recusas, uma resposta, duas recusas: nunca 3 SEGUIDAS — a frase não aparece", async () => {
     comTentativa();
     const frase = 'Não conseguimos confirmar agora. Seu pagamento não se perde: entre com "Receber código de acesso" ou tente de novo em alguns minutos.';

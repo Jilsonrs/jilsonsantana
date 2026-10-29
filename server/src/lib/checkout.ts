@@ -47,7 +47,7 @@ export type Desfecho =
 /** Encerradas: não cobram mais e não impedem uma assinatura nova. */
 const ENCERRADAS: ReadonlySet<string> = new Set(["incomplete_expired", "canceled"]);
 
-/** Até 9 idas à Stripe dentro da trava (10 s cada, com uma nova tentativa): a lista, o Pix à espera (etapa 4.9), o número fiscal, cancelar e criar — o mesmo do visitante. */
+/** Até 10 idas à Stripe dentro da trava (10 s cada, com uma nova tentativa): a lista, o Pix já pago e o à espera (etapa 4.9), o número fiscal, cancelar e criar — o mesmo do visitante. O limite é prático, não o pior caso somado: cada ida leva centenas de milissegundos. */
 const TEMPO_DA_TRANSACAO = { maxWait: 10_000, timeout: 120_000 };
 /** Uma ida à Stripe (criar o cliente), com uma nova tentativa. */
 const TEMPO_DO_CLIENTE = { maxWait: 10_000, timeout: 30_000 };

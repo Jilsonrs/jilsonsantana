@@ -57,7 +57,7 @@ export type OpcoesDoVisitante = { antesDeCriarCliente?: (tx: Prisma.TransactionC
 /** Encerradas: não cobram mais e não impedem uma assinatura nova. */
 export const ENCERRADAS: ReadonlySet<string> = new Set(["incomplete_expired", "canceled"]);
 
-/** Até 9 idas à Stripe dentro da trava (10 s cada, com uma nova tentativa): a lista, o Pix à espera (etapa 4.9), o número fiscal, cancelar e criar. */
+/** Até 10 idas à Stripe dentro da trava (10 s cada, com uma nova tentativa): a lista, o Pix já pago e o à espera (etapa 4.9), o número fiscal, cancelar e criar. O limite é prático, não o pior caso somado. */
 const TEMPO_DA_TRANSACAO = { maxWait: 10_000, timeout: 120_000 };
 /** Uma ida à Stripe na ficha: criar o cliente. */
 const TEMPO_DA_FICHA = { maxWait: 10_000, timeout: 30_000 };

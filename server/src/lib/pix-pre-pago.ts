@@ -57,7 +57,7 @@ export type DesfechoDoPixSemLogin =
 /** O que se decide COM a trava e se resolve FORA dela: a assinatura viva (sincronizada, como no checkout) e o Pix já pago (processado pela rotina do aviso). */
 type VivaNaStripe = { resultado: "viva-na-stripe"; assinaturaId: string } | { resultado: "pix-pago"; pagamento: PagamentoPrePago };
 
-/** Até 9 idas à Stripe dentro da trava (10 s cada, com uma nova tentativa): as duas listas, os cancelamentos, o número fiscal e o QR. */
+/** Até 10 idas à Stripe dentro da trava (10 s cada, com uma nova tentativa): as listas (assinaturas, Pix pagos, Pix à espera), os cancelamentos, o número fiscal e o QR. O limite é prático, não o pior caso somado. */
 const TEMPO_DA_TRANSACAO = { maxWait: 10_000, timeout: 120_000 };
 
 /**

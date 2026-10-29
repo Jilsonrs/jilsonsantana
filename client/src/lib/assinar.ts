@@ -84,8 +84,10 @@ export function esperaDaProximaConferencia(erro: unknown, conferirACada: number)
  * "O pagamento já valeu?" para quem assinou SEM CONTA (etapa 4.7, passo 6e2): pergunta a cada
  * `conferirACada` até a resposta ser sim — o aviso da Stripe é que faz a conta nascer. Sem tentativa, nada.
  * Recusado (P108 — decisão do operador, 29/10/2026), respeita a espera que o servidor pedir e, depois de
- * `RECUSAS_ATE_O_AVISO` recusas seguidas, diz `naoConfirmouAgora` — a tela mostra a frase dele; qualquer
- * resposta do servidor zera a conta. A pergunta continua: quando o pagamento valer, a tela segue.
+ * `RECUSAS_ATE_O_AVISO` recusas seguidas, diz `naoConfirmouAgora` — a tela mostra a frase dele; a recusa que
+ * PEDE ESPERA (`Retry-After`, até 15 min) já conta como o bastante: sem isso, a frase viria só depois de até
+ * ~30 minutos de "Confirmando…" (ajuste decidido por ele no mesmo dia). Qualquer resposta do servidor zera a
+ * conta. A pergunta continua: quando o pagamento valer, a tela segue.
  */
 export function useConfirmacaoSemLogin(tentativa: string | null, conferirACada = 2000) {
   const [recusasSeguidas, setRecusasSeguidas] = useState(0);
@@ -97,7 +99,7 @@ export function useConfirmacaoSemLogin(tentativa: string | null, conferirACada =
         setRecusasSeguidas(0);
         return resposta;
       } catch (erro) {
-        setRecusasSeguidas((n) => n + 1);
+        setRecusasSeguidas((n) => (segundosPedidos(erro) === null ? n + 1 : Math.max(n + 1, RECUSAS_ATE_O_AVISO)));
         throw erro;
       }
     },
