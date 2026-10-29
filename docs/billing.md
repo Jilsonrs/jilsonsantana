@@ -189,6 +189,18 @@ no PaymentIntent/SetupIntent/Checkout Session; suporte anunciado em 22/abr/2026.
 > corta o acesso (etapa 4.7b, as ações); no painel, só em emergência, e aí devolver E cancelar.*** Quando o período acaba, a Stripe encerra a
 > assinatura e sai o e-mail "terminou — reative" de sempre.
 >
+> **O PIX PAGO QUE NÃO VIRA ASSINATURA SOZINHO — EM CONFERÊNCIA** *(a segunda revisão de segurança do passo 6;
+> o operador decidiu corrigir tudo antes de publicar, 29/10/2026 — o plano → etapa 4.9, passo 6, parte 4)*: o
+> valor pago diferente do preço do plano (ou o preço fora de venda), a primeira fatura que não se paga por fora,
+> a pré-paga que acabou sem ser paga, ou o Pix processado e a pessoa ainda sem acesso. Nada nasce; o Pix ganha a
+> marca `em_conferencia` nos metadados (com o motivo), sai **um** alerta para o operador, e as quatro portas
+> (cartão e Pix, logado e sem conta) respondem 409 `PixEmConferencia` — a pessoa **não paga de novo**. O operador
+> libera o acesso ou devolve o Pix. A frase da tela, aprovada por ele: *"Recebemos o seu Pix e estamos conferindo o
+> pagamento. Já fomos avisados e vamos responder pelo seu e-mail. Se precisar, escreva para
+> suporte@jilsonsantana.com."* (no site a partir da parte 5). **O Pix DEVOLVIDO por inteiro antes de virar
+> assinatura não vira assinatura** (seria acesso sem pagar): a incompleta dele é encerrada, e a pessoa pode
+> pagar de novo.
+>
 > **A RÉGUA DO PRÉ-PAGO (passo 4 — no código desde 28/10/2026; decisão do operador do mesmo dia: "3 dias
 > antes", um e-mail só):** quando faltam até **3 dias** para o fim do acesso, a rodada de hora em hora
 > manda **"Seu acesso está acabando"** (o dia em que acaba; que é só pagar de novo quando acabar; **sem

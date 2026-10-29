@@ -238,6 +238,12 @@ export type AssinaturaNoCheckout = {
    */
   resumoDaTentativa?: string | null;
   /**
+   * O Pix de que ela nasceu, se é uma PRÉ-PAGA (etapa 4.9): a pré-paga ainda incompleta (o aviso do Pix no
+   * meio, ou a primeira fatura que não pôde ser paga por fora) NUNCA se cancela nem se reaproveita no
+   * checkout — o Pix dela já foi pago (achado 2 da segunda revisão do passo 6, 29/10/2026).
+   */
+  pixPaymentIntentId?: string | null;
+  /**
    * A Stripe CANCELOU o pagamento de hoje desta assinatura (etapa 4.7, passo 4). `[FATO — medido na
    * área restrita, 21/10/2026]` depois de 10 recusas no mesmo pagamento ela o cancela sozinha, e a
    * assinatura continua incompleta, com a fatura aberta e o segredo do pagamento morto: entregar esse
@@ -279,6 +285,7 @@ export function paraAssinaturaNoCheckout(assinatura: Stripe.Subscription): Assin
     segredoDoPagamento: segredo,
     segredoDoCartao: typeof cartao === "object" && cartao !== null ? cartao.client_secret : null,
     resumoDaTentativa: assinatura.metadata[METADADOS_DO_VISITANTE.tentativa] || null,
+    pixPaymentIntentId: assinatura.metadata[METADADO_DO_PIX] || null,
     pagamentoCancelado: pagamentoDeHoje !== null && cancelado,
     numeroFiscalDaFatura: numeroFiscalDoBrasil(typeof fatura === "object" && fatura !== null ? fatura.customer_tax_ids : null),
   };

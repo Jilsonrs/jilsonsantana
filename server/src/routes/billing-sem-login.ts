@@ -128,6 +128,11 @@ router.post("/billing/visitante/assinatura", ...limiteSemLogin.assinar, async (r
     res.status(400).json({ error: "DocumentoInvalido" });
     return;
   }
+  // Um Pix deste e-mail foi pago e não virou assinatura sozinho: em conferência, nada de cobrar de novo (segunda revisão do passo 6 da 4.9).
+  if (desfecho.resultado === "em-conferencia") {
+    res.status(409).json({ error: "PixEmConferencia" });
+    return;
+  }
   const resposta: AssinaturaSemLogin =
     desfecho.resultado === "ativa" ? { estado: "ativa", tentativa: desfecho.tentativa } : { estado: "pagar", segredo: desfecho.segredo, tipo: desfecho.tipo, tentativa: desfecho.tentativa };
   res.json(resposta);
@@ -173,6 +178,10 @@ router.post("/billing/visitante/pix", ...limiteSemLogin.assinar, async (req, res
   }
   if (desfecho.resultado === "documento-recusado") {
     res.status(400).json({ error: "DocumentoInvalido" });
+    return;
+  }
+  if (desfecho.resultado === "em-conferencia") {
+    res.status(409).json({ error: "PixEmConferencia" });
     return;
   }
   const resposta: AssinaturaSemLogin = { estado: "pagar", segredo: desfecho.segredo, tipo: "pix", tentativa: desfecho.tentativa, email: desfecho.email };

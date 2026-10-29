@@ -19,7 +19,7 @@ import { MARCA_DO_PREPAGO, METADADO_DO_PIX, METADADOS_DO_VISITANTE, metadadosDoV
 //      continuam lendo só o espelho.
 // UM PIX, UMA ASSINATURA: a chave de idempotência da criação é o id do pagamento (a Stripe devolve a
 // mesma assinatura por 24 h) e os metadados dela guardam esse id (`METADADO_DO_PIX`) — é por eles que o
-// espelho e a busca (`assinaturaDoPagamentoPrePago`) a acham depois. A regra de quando cada camada é
+// espelho e a lista das assinaturas do cliente (`assinaturasDoPix`) a acham depois. A regra de quando cada camada é
 // consultada mora em `assinaturas.ts` (`processarPixPrePago`).
 // Pagar de novo é SÓ depois de o período acabar (decisão do operador, 28/10/2026): não há soma de tempo.
 
@@ -30,16 +30,16 @@ export const VALIDADE_DO_PIX_EM_SEGUNDOS = 60 * 60;
 const JANELA_DA_CHAVE = 5 * 60 * 1000;
 
 /**
- * A chave de repetição da criação e do pagar-por-fora: do Pix e da JANELA de 5 minutos (achado 5 do
- * passo 6, 29/10/2026). A Stripe guarda por 24 h a primeira resposta de cada chave — INCLUSIVE a falha
- * (a lição de `chaveDaDevolucao`): com a chave fixa de antes, um 500 da Stripe na criação seria devolvido
- * de novo a cada reentrega do aviso, o dia inteiro, e o aluno pagaria sem entrar. Com a janela, a reentrega
- * de segundos depois recebe a MESMA assinatura (a corrida que a chave protege), e a de minutos depois é
- * um pedido novo — que a busca pelos metadados (`assinaturaDoPagamentoPrePago`) já vê antes de criar.
- * Função pura.
+ * A chave de repetição da criação (pelo id do Pix) e do pagar-por-fora (pelo id da FATURA — achado 5 da
+ * segunda revisão: pelo Pix, duas faturas na mesma janela dividiriam a chave), com a JANELA de 5 minutos
+ * (achado 5 do passo 6, 29/10/2026). A Stripe guarda por 24 h a primeira resposta de cada chave — INCLUSIVE
+ * a falha (a lição de `chaveDaDevolucao`): com a chave fixa de antes, um 500 da Stripe na criação seria
+ * devolvido de novo a cada reentrega do aviso, o dia inteiro. A janela é uma GRADE: uma nova tentativa
+ * logo depois da virada cai noutra chave — por isso, antes de criar, a lista CONSISTENTE das assinaturas do
+ * cliente (`assinaturasDoPix`) acha a que já nasceu. Função pura.
  */
-export function chaveDoPrePago(oQue: "criar" | "fatura", pagamentoId: string, agora: Date = new Date()): string {
-  return `prepago-${oQue}:${pagamentoId}:${Math.floor(agora.getTime() / JANELA_DA_CHAVE)}`;
+export function chaveDoPrePago(oQue: "criar" | "fatura", id: string, agora: Date = new Date()): string {
+  return `prepago-${oQue}:${id}:${Math.floor(agora.getTime() / JANELA_DA_CHAVE)}`;
 }
 
 /** O Pix está configurado? Sem a configuração só-Pix, as rotas do Pix respondem 503 — nunca abrem o campo com cartão. */
@@ -112,17 +112,18 @@ export function paraPedidoDeAssinaturaPrePaga(pagamento: PagamentoPrePago): Stri
 
 /**
  * A assinatura pré-paga de um Pix que CAIU: cria (idempotente na Stripe pelo id do Pix, na janela de
- * `chaveDoPrePago`) e garante a primeira fatura paga por fora. Devolve o id da assinatura.
+ * `chaveDoPrePago`) e garante a primeira fatura paga por fora. Devolve o id e se a fatura ficou PAGA — quem
+ * chama não grava espelho de uma assinatura que não valeu (achado 3 da segunda revisão).
  */
-export async function criarAssinaturaPrePaga(pagamento: PagamentoPrePago): Promise<string> {
+export async function criarAssinaturaPrePaga(pagamento: PagamentoPrePago): Promise<{ id: string; faturaPaga: boolean }> {
   let assinatura: Stripe.Subscription;
   try {
     assinatura = await stripe().subscriptions.create(paraPedidoDeAssinaturaPrePaga(pagamento), { idempotencyKey: chaveDoPrePago("criar", pagamento.id) });
   } catch (erro) {
     throw erroSemMensagem(erro, "a assinatura pré-paga do Pix");
   }
-  await garantirFaturaPaga(assinatura.id, pagamento.id, assinatura.latest_invoice);
-  return assinatura.id;
+  const fatura = await garantirFaturaPaga(assinatura.id, assinatura.latest_invoice);
+  return { id: assinatura.id, faturaPaga: fatura.status === "paid" };
 }
 
 /** O que a fatura da pré-paga ficou: `paid`, ou o status que a Stripe diz quando não dá para pagar por fora. */
@@ -130,14 +131,13 @@ export type FaturaDaPrePaga = { fatura: string | null; status: string };
 
 /**
  * A PRIMEIRA FATURA DA PRÉ-PAGA PAGA POR FORA — em TODO caminho, não só na criação (achado 5 do passo 6,
- * 29/10/2026): se a Stripe caiu entre o criar e o pagar, a reentrega do aviso acha a assinatura (no
- * espelho, ou pela busca) e, sem isto, a sincronizaria `incomplete` — o aluno pagou o Pix e não entra, e
- * em ~23 h a Stripe expira a assinatura. Lê a fatura (a dada, ou a última da assinatura, buscada agora):
- * `paid` → nada; `open` ou `draft` → paga por fora (idempotente na janela); qualquer outra (anulada,
- * incobrável) não se paga, e quem chama alerta pela falta de acesso. Se o pagar falhar e a fatura
- * estiver paga (dois ao mesmo tempo), segue; se não, sobe sem a mensagem crua da Stripe.
+ * 29/10/2026): se a Stripe caiu entre o criar e o pagar, a reentrega do aviso acha a assinatura e, sem
+ * isto, a sincronizaria `incomplete` — o aluno pagou o Pix e não entra. Lê a fatura (a dada, ou a última da
+ * assinatura, buscada agora): `paid` → nada; `open` ou `draft` → paga por fora (idempotente na janela, pela
+ * fatura); qualquer outra (anulada, incobrável) não se paga, e quem chama põe o Pix em conferência. Se o
+ * pagar falhar e a fatura estiver paga (dois ao mesmo tempo), segue; se não, sobe sem a mensagem crua.
  */
-export async function garantirFaturaPaga(assinaturaId: string, pagamentoId: string, fatura?: Stripe.Invoice | string | null): Promise<FaturaDaPrePaga> {
+export async function garantirFaturaPaga(assinaturaId: string, fatura?: Stripe.Invoice | string | null): Promise<FaturaDaPrePaga> {
   try {
     let lida: Stripe.Invoice | null = typeof fatura === "object" && fatura !== null ? fatura : null;
     if (!lida) {
@@ -148,7 +148,7 @@ export async function garantirFaturaPaga(assinaturaId: string, pagamentoId: stri
     if (lida.status === "paid") return { fatura: lida.id, status: "paid" };
     if (lida.status !== "open" && lida.status !== "draft") return { fatura: lida.id, status: lida.status ?? "?" };
     try {
-      await stripe().invoices.pay(lida.id, { paid_out_of_band: true }, { idempotencyKey: chaveDoPrePago("fatura", pagamentoId) });
+      await stripe().invoices.pay(lida.id, { paid_out_of_band: true }, { idempotencyKey: chaveDoPrePago("fatura", lida.id) });
     } catch (erro) {
       // Dois ao mesmo tempo: o outro pagou no meio. Só o estado da fatura decide.
       if ((await stripe().invoices.retrieve(lida.id)).status !== "paid") throw erro;
@@ -164,17 +164,54 @@ export type PixPendente = { id: string; segredo: string; plano: string; precoId:
 /** Os estados em que o pagamento ainda pode ser pago ou cancelado — nunca `processing` nem `succeeded`. */
 const PENDENTES: ReadonlySet<string> = new Set(["requires_payment_method", "requires_confirmation", "requires_action"]);
 
+/** Nos metadados do Pix PAGO que não pôde virar assinatura sozinho: o motivo. É a marca do "em conferência". */
+export const METADADO_EM_CONFERENCIA = "em_conferencia";
+
 /**
- * Os pagamentos Pix NOSSOS deste cliente ainda à espera: o novo clique segue com o do mesmo plano (o
- * mesmo QR), e cancela os outros — como o checkout cancela a incompleta de outro plano. Sem isto, dois
- * QRs abertos podiam ser pagos os dois.
+ * Um Pix NOSSO já pago — e, se ele está EM CONFERÊNCIA (pagou e não pôde virar assinatura sozinho: o valor
+ * não bate com o preço, ou a assinatura dele acabou sem ser paga — achado 4 da segunda revisão do passo 6,
+ * 29/10/2026), o motivo. Em conferência, a pessoa vê o aviso dela e não paga de novo; o operador libera o
+ * acesso ou devolve o Pix.
  */
-export async function pagamentosPixPendentes(clienteId: string): Promise<PixPendente[]> {
+export type PixPago = PagamentoPrePago & { emConferencia: string | null };
+
+/** Os Pix NOSSOS de um cliente, lidos numa ida SÓ à Stripe: os pagos (sem os devolvidos por inteiro) e os à espera. */
+export type PixDoCliente = { pagos: PixPago[]; pendentes: PixPendente[] };
+
+/** O Pix foi devolvido por inteiro? Pela cobrança (vem expandida na lista). Na dúvida — sem a cobrança —, não. */
+function devolvidoPorInteiro(pagamento: Stripe.PaymentIntent): boolean {
+  const cobranca = pagamento.latest_charge;
+  return typeof cobranca === "object" && cobranca !== null && cobranca.amount > 0 && cobranca.amount_refunded >= cobranca.amount;
+}
+
+/**
+ * Os Pix de um cliente, separados (função pura, com teste). UMA lista para as duas perguntas — "há um Pix
+ * pago?" e "há um QR à espera?" (achado 6 da segunda revisão, 29/10/2026): em duas idas, um Pix que caísse
+ * entre elas não seria visto nem como pago nem como à espera, e o clique de quem soubesse só o e-mail
+ * seguiria como se ninguém tivesse pago. O Pix DEVOLVIDO por inteiro não conta como pago (achado 1): ele
+ * nunca vira assinatura, e a pessoa pode pagar de novo. Só `succeeded` é pago: o Pix é de notificação
+ * imediata (`requires_action` → `succeeded` | `requires_payment_method`); `processing` não entra.
+ */
+export function paraPixDoCliente(pagamentos: Stripe.PaymentIntent[], clienteId: string): PixDoCliente {
+  const nossos = pagamentos.filter((p) => Boolean(p.metadata[MARCA_DO_PREPAGO]));
+  const pendentes = nossos
+    .filter((p) => PENDENTES.has(p.status) && Boolean(p.client_secret))
+    .map((p) => ({ id: p.id, segredo: p.client_secret ?? "", plano: p.metadata[MARCA_DO_PREPAGO] ?? "", precoId: p.metadata.precoId || null, resumoDaTentativa: p.metadata[METADADOS_DO_VISITANTE.tentativa] || null }));
+  const pagos: PixPago[] = [];
+  for (const p of nossos) {
+    if (p.status !== "succeeded" || devolvidoPorInteiro(p)) continue;
+    const pago = pagamentoPrePagoDe(p, `cliente ${clienteId}`);
+    if (pago) pagos.push({ ...pago, emConferencia: p.metadata[METADADO_EM_CONFERENCIA] || null });
+  }
+  return { pagos, pendentes };
+}
+
+/** Os Pix NOSSOS deste cliente, numa ida só (`paraPixDoCliente`). Sem o Pix configurado não há Pix nenhum, e não vai à Stripe. */
+export async function listarPixDoCliente(clienteId: string): Promise<PixDoCliente> {
+  if (!pixConfigurado()) return { pagos: [], pendentes: [] };
   try {
-    const lista = await stripe().paymentIntents.list({ customer: clienteId, limit: 20 });
-    return lista.data
-      .filter((p) => PENDENTES.has(p.status) && Boolean(p.metadata[MARCA_DO_PREPAGO]) && Boolean(p.client_secret))
-      .map((p) => ({ id: p.id, segredo: p.client_secret ?? "", plano: p.metadata[MARCA_DO_PREPAGO] ?? "", precoId: p.metadata.precoId || null, resumoDaTentativa: p.metadata[METADADOS_DO_VISITANTE.tentativa] || null }));
+    const lista = await stripe().paymentIntents.list({ customer: clienteId, limit: 20, expand: ["data.latest_charge"] });
+    return paraPixDoCliente(lista.data, clienteId);
   } catch (erro) {
     throw erroSemMensagem(erro, "a lista dos pagamentos Pix do cliente");
   }
@@ -189,41 +226,6 @@ export async function cancelarPagamentoPix(id: string): Promise<void> {
   }
 }
 
-/**
- * UM PAGAMENTO ABERTO POR VEZ, no sentido do cartão: quando a pessoa segue por CARTÃO (o checkout,
- * logado ou sem login), todo Pix NOSSO à espera deste cliente é cancelado — o QR copiado no app do
- * banco podia ser pago depois do cartão, e nasceriam duas assinaturas. Devolve quantos cancelou.
- * Sem o Pix configurado não há QR nenhum, e não vai à Stripe.
- */
-export async function cancelarPagamentosPixPendentes(clienteId: string): Promise<number> {
-  if (!pixConfigurado()) return 0;
-  const pendentes = await pagamentosPixPendentes(clienteId);
-  for (const pendente of pendentes) await cancelarPagamentoPix(pendente.id);
-  return pendentes.length;
-}
-
-/**
- * OS PIX NOSSOS JÁ PAGOS deste cliente (achado 4 do passo 6, 29/10/2026): entre o Pix cair e o aviso
- * chegar (segundos; horas, se o aviso estiver falhando) a assinatura ainda não existe, e quem olhasse só
- * as assinaturas e os Pix à espera trataria a pessoa como quem nunca pagou — outro QR, outro cartão, a
- * tentativa da ficha trocada por um clique alheio. Quem chama processa cada um pela rotina do aviso
- * (`processarPixPago`, `assinaturas.ts`) antes de decidir. Só `succeeded`: o Pix é de notificação
- * imediata (`requires_action` → `succeeded` | `requires_payment_method`); `processing` não entra.
- * Sem o Pix configurado não há Pix nenhum, e não vai à Stripe (como `cancelarPagamentosPixPendentes`).
- */
-export async function pagamentosPixPagos(clienteId: string): Promise<PagamentoPrePago[]> {
-  if (!pixConfigurado()) return [];
-  try {
-    const lista = await stripe().paymentIntents.list({ customer: clienteId, limit: 20 });
-    return lista.data
-      .filter((p) => p.status === "succeeded" && Boolean(p.metadata[MARCA_DO_PREPAGO]))
-      .map((p) => pagamentoPrePagoDe(p, `cliente ${clienteId}`))
-      .filter((p): p is PagamentoPrePago => p !== null);
-  } catch (erro) {
-    throw erroSemMensagem(erro, "a lista dos pagamentos Pix pagos do cliente");
-  }
-}
-
 /** Um pagamento Pix lido AGORA: o status e, se for nosso, o Pix pré-pago — para o "outro" que foi pago no meio de um cancelamento. */
 export async function lerPagamentoPix(id: string): Promise<{ status: string; pagamento: PagamentoPrePago | null }> {
   try {
@@ -234,19 +236,40 @@ export async function lerPagamentoPix(id: string): Promise<{ status: string; pag
   }
 }
 
-const ID_DE_PAGAMENTO = /^pi_[A-Za-z0-9]+$/;
+/**
+ * Põe o Pix EM CONFERÊNCIA: o motivo nos metadados dele — a marca dura, e o clique seguinte a lê na mesma
+ * lista (`listarPixDoCliente`), sem processar de novo. Devolve se a marca é NOVA: quem chama alerta uma vez
+ * só, não a cada clique (achado 4 da segunda revisão).
+ */
+export async function marcarEmConferencia(pagamentoId: string, motivo: string): Promise<boolean> {
+  try {
+    const pagamento = await stripe().paymentIntents.retrieve(pagamentoId);
+    if (pagamento.metadata[METADADO_EM_CONFERENCIA]) return false;
+    await stripe().paymentIntents.update(pagamentoId, { metadata: { [METADADO_EM_CONFERENCIA]: motivo.slice(0, 450) } });
+    return true;
+  } catch (erro) {
+    throw erroSemMensagem(erro, "a marca de conferência do Pix");
+  }
+}
+
+/** Uma assinatura pré-paga de um Pix, como a Stripe diz agora: o status e se a primeira fatura dela está paga. */
+export type PrePagaDoPix = { id: string; status: string; faturaPaga: boolean };
 
 /**
- * A assinatura pré-paga que um Pix JÁ virou, na Stripe (pelos metadados) — a cinta para o aviso que
- * chega depois de a chave de idempotência vencer (24 h). A busca da Stripe pode atrasar um pouco; é
- * por isso que o espelho é consultado antes dela (`assinaturas.ts`).
+ * As assinaturas pré-pagas que um Pix já virou, pela LISTA das assinaturas do cliente — consistente, ao
+ * contrário da busca por metadados, que atrasa (achado 5 da segunda revisão, 29/10/2026: com a busca, uma
+ * nova tentativa logo depois de uma falha podia criar uma SEGUNDA assinatura para o mesmo Pix).
  */
-export async function assinaturaDoPagamentoPrePago(pagamentoId: string): Promise<string | null> {
-  if (!ID_DE_PAGAMENTO.test(pagamentoId)) return null;
+export async function assinaturasDoPix(clienteId: string, pagamentoId: string): Promise<PrePagaDoPix[]> {
   try {
-    const encontradas = await stripe().subscriptions.search({ query: `metadata['${METADADO_DO_PIX}']:'${pagamentoId}'`, limit: 1 });
-    return encontradas.data[0]?.id ?? null;
+    const lista = await stripe().subscriptions.list({ customer: clienteId, status: "all", limit: 100, expand: ["data.latest_invoice"] });
+    return lista.data
+      .filter((a) => a.metadata[METADADO_DO_PIX] === pagamentoId)
+      .map((a) => {
+        const fatura = a.latest_invoice;
+        return { id: a.id, status: a.status, faturaPaga: typeof fatura === "object" && fatura !== null && fatura.status === "paid" };
+      });
   } catch (erro) {
-    throw erroSemMensagem(erro, "a busca da assinatura do Pix");
+    throw erroSemMensagem(erro, "a lista das assinaturas do Pix");
   }
 }

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import Stripe from "stripe";
 import { pagamentosDaFatura } from "./stripe-devolucao.js";
-import { chaveDoNumeroFiscal, chavePublicavel, erroSemMensagem, pagamentoPrePagoDoAviso, paraAssinaturaNaStripe, paraAssinaturaNoCheckout, paraCodigoPromocional, paraNumeroFiscal, paraPedidoDeAssinatura, paraPedidoDeCliente, paraPedidoDeClienteDoVisitante, paraPrecosDosPlanos } from "./stripe.js";
+import { chaveDoNumeroFiscal, chavePublicavel, erroSemMensagem, METADADO_DO_PIX, pagamentoPrePagoDoAviso, paraAssinaturaNaStripe, paraAssinaturaNoCheckout, paraCodigoPromocional, paraNumeroFiscal, paraPedidoDeAssinatura, paraPedidoDeCliente, paraPedidoDeClienteDoVisitante, paraPrecosDosPlanos } from "./stripe.js";
 
 // O ESPELHO A PARTIR DA STRIPE (Fase 4, etapa 4.1) — função pura, teste unitário (CLAUDE.md →
 // Testing: só função pura, sem I/O). O que protege é o "PAGO ATÉ": quando a renovação falha, a
@@ -258,7 +258,14 @@ function doCheckout({ status = "incomplete", fatura = { status: "open", confirma
 
 describe("a assinatura como o checkout a vê", () => {
   it("incompleta com a fatura aberta: o segredo do pagamento, o plano e nenhum código", () => {
-    expect(paraAssinaturaNoCheckout(doCheckout())).toEqual({ id: "sub_1", status: "incomplete", precoId: "price_mensal", codigoId: null, segredoDoPagamento: "pi_1_secret_x", segredoDoCartao: null, resumoDaTentativa: null, pagamentoCancelado: false, numeroFiscalDaFatura: null });
+    expect(paraAssinaturaNoCheckout(doCheckout())).toEqual({ id: "sub_1", status: "incomplete", precoId: "price_mensal", codigoId: null, segredoDoPagamento: "pi_1_secret_x", segredoDoCartao: null, resumoDaTentativa: null, pagamentoCancelado: false, numeroFiscalDaFatura: null, pixPaymentIntentId: null });
+  });
+
+  // A PRÉ-PAGA (achado 2 da segunda revisão do passo 6 da 4.9): é pelo Pix de que nasceu que as portas a
+  // reconhecem — e nunca a cancelam nem a reaproveitam como um cartão começado.
+  it("a pré-paga leva o Pix de que nasceu; a do cartão, nada", () => {
+    expect(paraAssinaturaNoCheckout(doCheckout({ metadata: { userId: "u1", plano: "mensal", [METADADO_DO_PIX]: "pi_do_pix" } })).pixPaymentIntentId).toBe("pi_do_pix");
+    expect(paraAssinaturaNoCheckout(doCheckout()).pixPaymentIntentId).toBeNull();
   });
 
   // O NÚMERO DA FATURA (P2 da revisão de segurança do passo 6): é com ele — não com a ficha de agora —

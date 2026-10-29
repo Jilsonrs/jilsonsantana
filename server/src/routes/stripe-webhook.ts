@@ -38,12 +38,12 @@ router.post("/stripe/webhook", express.raw({ type: "application/json" }), async 
   // repetido (a reentrega) não alerta de novo; e se o processamento falhar, a Stripe entrega de
   // novo e o alerta sai então.
   if (aviso.devolucaoFalhou && desfecho.resultado !== "repetido") console.error(`[stripe] aviso ${aviso.id} (${aviso.tipo}): uma devolução do pagamento ${aviso.pagamento ?? "?"} FALHOU — o dinheiro não voltou ao aluno; conferir e devolver pelo painel da Stripe`);
-  // O PIX PAGO que terminou SEM ACESSO (achado 5 do passo 6 da etapa 4.9, 29/10/2026): o dinheiro
-  // entrou e a assinatura não abre (incompleta, sem assinatura, ou sem conta) — pagante trancado, que
-  // hoje só o aluno descobriria. Uma vez por aviso, como a devolução que falhou.
-  if (aviso.pagamentoPrePago && desfecho.resultado !== "repetido") {
-    const semAcesso = !("assinatura" in desfecho) || !assinaturaDaAcesso({ status: desfecho.assinatura.status, currentPeriodEnd: desfecho.assinatura.pagoAte });
-    if (semAcesso) console.error(`[stripe] aviso ${aviso.id}: o Pix ${aviso.pagamentoPrePago.id} foi PAGO e ${"assinatura" in desfecho ? `a assinatura ${desfecho.assinatura.id} (${desfecho.assinatura.status})` : "nenhuma assinatura"} dá acesso — pagante trancado; conferir no painel da Stripe`);
+  // O PIX PAGO cuja assinatura terminou SEM ACESSO (achado 5 do passo 6 da etapa 4.9, 29/10/2026): o
+  // dinheiro entrou e a assinatura não abre — pagante trancado, que hoje só o aluno descobriria. Uma vez
+  // por aviso. O Pix que nem virou assinatura já alertou na rotina (em conferência, uma vez só) ou foi
+  // devolvido antes (nada a alertar) — segunda revisão do passo 6.
+  if (aviso.pagamentoPrePago && "assinatura" in desfecho && !assinaturaDaAcesso({ status: desfecho.assinatura.status, currentPeriodEnd: desfecho.assinatura.pagoAte })) {
+    console.error(`[stripe] aviso ${aviso.id}: o Pix ${aviso.pagamentoPrePago.id} foi PAGO e a assinatura ${desfecho.assinatura.id} (${desfecho.assinatura.status}) não dá acesso — pagante trancado; conferir no painel da Stripe`);
   }
   if (desfecho.resultado === "sem-conta") {
     // Assinatura sem conta na escola: em voz alta. Se ela dá acesso, há alguém PAGANDO e trancado
