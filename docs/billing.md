@@ -46,6 +46,29 @@ na entrada Out 2026 (28) do changelog do `CLAUDE.md`; o texto antigo destas seç
 dado novo — o Stripe Tax ou o Managed Payments aceitarem empresa do Brasil, ou a empresa mudar
 de país.*
 
+## O nome na fatura do cartão e o nome público *(decisão do operador, 28/10/2026 — P58)*
+
+- **Na fatura do cartão do aluno** (o *statement descriptor* da conta de verdade): **`JILSONSANTANA.COM`**
+  — o aluno reconhece o site na hora, que é o que mais evita contestação. *(Recomendação do agente,
+  escolhida entre "JILSON SANTANA" e outro nome.)* O descritor curto (o prefixo que a Stripe usa quando
+  um produto tem descritor próprio): **`JILSON`**. **Aplicados pelo operador no painel da conta de
+  verdade em 28/10/2026 — P58 fechada.**
+- **O nome público da empresa** (o que a Stripe escreve embaixo do campo do cartão: "…você permite que
+  **Jilson Santana** faça a cobrança para pagamentos futuros…"): **`Jilson Santana`** — o mesmo nome do
+  remetente dos e-mails da escola.
+- Onde: painel da Stripe, conta de verdade, *Settings → Business → Business details*. A área restrita não
+  mostra fatura nenhuma, então lá o campo fica como está. **Nenhum código:** o site não escreve
+  descritor por cobrança.
+- **Os dados de suporte na mesma tela** *(preenchidos pelo operador em 28/10/2026)*: o nome
+  `Jilson Santana`; o e-mail `suporte@jilsonsantana.com`; o site `https://www.jilsonsantana.com` (com
+  `www` — sem ele, 404); e três páginas que **ainda não existem**, com o endereço final já escrito
+  (*a regra de `ROTAS_PUBLICAS`, `core/src/constants/site.ts` — decisão do operador, set/2026: o link
+  nasce no lugar certo*): suporte `…/contato`, privacidade `…/privacidade` e termos `…/termos`. **As
+  três precisam estar no ar antes de abrir ao público** (o passo 8); até lá, quem as abre vê o "Em
+  breve". O telefone fica cadastrado e fora dos recibos.
+*Reabre se a escola mudar de nome ou de endereço, ou se contestações mostrarem que o aluno não
+reconhece a cobrança.*
+
 ## Formas de pagamento: cartão E Pix *(decisão do operador, set/2026)*
 
 A escola aceita **cartão e Pix**, e o Pix é **recorrente**: o aluno autoriza uma vez no
@@ -54,10 +77,107 @@ aplicativo do banco (Pix Automático) e a Stripe cobra sozinha a cada período.
 use Pix as the payment method for recurring billing for customers in Brazil", via mandate options
 no PaymentIntent/SetupIntent/Checkout Session; suporte anunciado em 22/abr/2026.]`
 
+> **⚠️ CORREÇÃO DO FATO ACIMA — `[FATO — context7 /websites/stripe, 28/10/2026, ao abrir a etapa 4.9]`:
+> "Stripe accounts in Brazil can accept Pix one-time payments with BRL settlement. Pix Automático
+> isn't available in Brazil. Businesses outside Brazil can accept Pix payments from customers in Brazil,
+> including eligible recurring payments through Pix Automático."** — e, na página do Pix Automático:
+> *"Pix Automático isn't available to businesses domiciled in Brazil."* O anúncio de abril vale para
+> empresa de FORA do Brasil vendendo para brasileiro. **A conta da escola é do Brasil: o Pix recorrente
+> pelo Stripe NÃO está disponível para ela hoje.** O que está: o **Pix avulso** (um pagamento por vez,
+> com liquidação em reais). O desenho da 4.9 ("o mandato no Payment Element") não se aplica.
+>
+> **A DECISÃO DO OPERADOR (28/10/2026), à pergunta do agente — o PIX É PRÉ-PAGO:** *"Mudamos a
+> assinatura e o texto onde o PIX paga e estuda por 1 mês ou ano, quando quiser pagar novamente, tipo
+> pré-pago; muita gente vai assinar só por um mês."* Quem paga com Pix escolhe o mensal ou o anual,
+> paga uma vez e estuda pelo período pago; **não renova sozinho** — para continuar, paga de novo (a
+> escola avisa antes de acabar). **O cartão continua recorrente** como hoje. O agente tinha recomendado
+> o Pix só no anual; ele quis nos dois períodos. As duas linhas do cartão de preço continuam
+> verdadeiras ("Pagamento no cartão ou no Pix"); o texto da tela de assinar passa a explicar a
+> diferença (texto dele, na etapa). **O desenho na Stripe, a régua do pré-pago (o aviso antes de
+> acabar) e o que muda nas telas são o plano da etapa 4.9**, a aprovar — com a medição na área restrita
+> antes de qualquer código, como manda a receita.
+> *Reabre se a Stripe liberar o Pix Automático para empresa do Brasil (aí o Pix pode voltar a ser
+> recorrente, como opção), ou se os números mostrarem que o pré-pago não renova.*
+>
+> **APPLE PAY E GOOGLE PAY: FORA** *(decisão do operador, 28/10/2026, ao fim do dia — revê o "com Apple
+> Pay e Google Pay juntos" aprovado pela manhã)*: *"Cartão de crédito e Pix atende a todos os públicos e
+> desisti de Google Pay e Apple Pay; quanto menos complicar melhor, principalmente para os mais cautelosos:
+> quem tiver medo de colocar o cartão paga um mês ou quantos quiser via Pix, estuda e pega seu certificado,
+> volta quando quiser."* A escola oferece **cartão (recorrente) e Pix (pré-pago)**, e só. Nenhum código
+> muda: o campo do cartão já abre só com `card`, e as carteiras nunca apareceram (exigiriam o domínio
+> registrado na Stripe, que não será feito). *Reabre se alunos pedirem a carteira, ou se um dado de
+> conversão mostrar que o cartão digitado perde venda.*
+>
+> **COMO É NA STRIPE (etapa 4.9, passo 1 — no código desde 28/10/2026, `server/src/lib/stripe-pix.ts`
+> e `assinaturas.ts`):** o Pix é um **pagamento solto** (`PaymentIntent`), numa configuração de formas de
+> pagamento **só com Pix** (`STRIPE_PIX_CONFIGURATION` — a conta exige formas dinâmicas, e sem ela o
+> campo mostraria o cartão como cobrança avulsa), com o plano, o preço e quem paga nos metadados; quando
+> ele cai (`payment_intent.succeeded`), a rotina do espelho cria a **assinatura pré-paga** — a mesma de
+> sempre, `cancel_at_period_end: true`, a primeira fatura **paga por fora** (`paid_out_of_band`; a
+> Stripe a deixa ativa sem cartão, medido) — e grava o espelho com o id do Pix
+> (`Subscription.pixPaymentIntentId`). **Um Pix, uma assinatura:** a trava no id do pagamento, o
+> espelho pela coluna, a chave de idempotência da criação (24 h) e a busca pelos metadados. A conta do
+> visitante nasce como no cartão (os mesmos metadados). O gate, as telas e os e-mails continuam lendo só
+> o espelho; o que muda para o pré-pago nas telas e no reembolso é o passo 3.
+>
+> **AS DUAS PORTAS DO PIX (passo 2a — no código desde 28/10/2026, `server/src/lib/pix-pre-pago.ts`; a
+> tela é o passo 2b):** `POST /api/billing/pix` (logado) e `POST /api/billing/visitante/pix` (sem conta)
+> criam o pagamento Pix e devolvem só o segredo dele ao site — com as mesmas peças do checkout por cartão:
+> a conta é a da sessão (ou a ficha do e-mail), o preço é o do plano no servidor, o CPF ou CNPJ é
+> obrigatório e vai para a ficha do cliente antes do QR (também no QR reaproveitado: a fatura só nasce
+> quando o Pix cai, e leva o número de então), os mesmos limites de tentativas e o mesmo teto de "ao mesmo
+> tempo". **Sem código promocional** (decisão (b)): o campo não existe nessas rotas. As regras que o cartão
+> já tinha valem no Pix: quem já tem acesso não paga (409 `JaAssinante`; pagar de novo é só depois de
+> acabar — decisão (a)); a assinatura VIVA na Stripe com o espelho atrasado é sincronizada, sem QR (a
+> cobrança do cartão atrasada há mais de 3 dias manda trocar o cartão — 409 `CobrancaAtrasada`); o e-mail
+> que já tem conta é mandado entrar. **Um QR por vez:** o novo clique do mesmo plano recebe o MESMO QR; o
+> de outro plano cancela o anterior; o visitante só reaproveita o QR com o código da tentativa (sem ele, o
+> anterior morre e nasce outro). **Um pagamento aberto por vez, nos dois sentidos:** o Pix cancela o
+> cartão começado e não pago, e o checkout por cartão cancela o Pix à espera — senão o QR copiado no app
+> do banco e o cartão podiam ser pagos os dois. A validade do QR é **1 hora** (decisão do operador,
+> 28/10/2026). **Em produção o Pix só existe com a configuração só-Pix da conta de verdade**
+> (`STRIPE_PIX_CONFIGURATION`, em `deploy/cloud-run.yaml` — criada pelo operador no painel em 28/10/2026,
+> P109; entra no ar na publicação seguinte): sem ela, as rotas respondem 503, a vitrine diz `pix: null`,
+> e a tela não oferece o Pix.
+>
+> **A TELA (passo 2b — no código desde 28/10/2026; textos aprovados pelo operador no mesmo dia):** nas duas
+> telas de assinar, quando os planos trazem `pix`, a escolha **"Como você quer pagar?"** vem antes do campo —
+> *Cartão: "Renova sozinho todo mês (ou todo ano). Cancele quando quiser."* · *Pix: "Você paga uma vez e
+> estuda por 1 mês ou 1 ano. Não renova sozinho: quando acabar, é só pagar de novo."* Com o Pix: o código
+> promocional some (e o aplicado é esquecido), o resumo diz **"Acesso até DD/MM/AAAA"** no lugar da
+> renovação (a previsão do fim do período, contada de hoje), o botão diz **"Pagar com Pix"**, e o campo da
+> Stripe abre em modo pagamento só com o Pix, e a linha do pagamento seguro sai sem a parte do cartão —
+> **"Pagamento seguro, processado pela Stripe."** *(decisão do operador, P110, 28/10/2026)*; a confirmação
+> abre o QR da própria Stripe (imagem e "copia e cola"). Depois, a tela de concluído de sempre, que pergunta ao servidor até a assinatura valer — com o
+> botão **"Mostrar o QR de novo"** para quem fechou a janela sem pagar (o segredo do Pix fica só na aba,
+> até o servidor confirmar). **A tela nunca pede um QR novo sozinha**: só o clique em "Pagar com Pix" pede
+> — e o servidor devolve o MESMO QR enquanto ele estiver à espera.
+>
+> **A PRÉ-PAGA NAS TELAS DO ALUNO E NO REEMBOLSO (passo 3 — no código desde 28/10/2026; texto do
+> operador do mesmo dia):** em Faturamento e Assinatura, a pré-paga diz **"Seu acesso vai até {data}. Para
+> continuar, é só pagar de novo quando acabar."** e, em *Forma de pagamento*, **"Pix"** — sem parar a
+> renovação, manter, mudar de plano nem trocar o cartão (não há renovação nem cartão; o servidor recusa
+> essas operações com 409 `PrePago`). **O reembolso dos 7 dias devolve o Pix** (a primeira fatura da
+> pré-paga foi paga por fora: o dinheiro está no pagamento Pix, e é ele que volta — para a conta de quem
+> pagou, pela Stripe), e encerra a assinatura na hora. **O período pago da pré-paga é o do Pix:** devolvido
+> por inteiro — pelo reembolso ou pelo painel —, ele deixa de contar, e o aviso de devolução acha a
+> assinatura pela coluna do espelho (o Pix não tem fatura). Quando o período acaba, a Stripe encerra a
+> assinatura e sai o e-mail "terminou — reative" de sempre.
+>
+> **A RÉGUA DO PRÉ-PAGO (passo 4 — no código desde 28/10/2026; decisão do operador do mesmo dia: "3 dias
+> antes", um e-mail só):** quando faltam até **3 dias** para o fim do acesso, a rodada de hora em hora
+> manda **"Seu acesso está acabando"** (o dia em que acaba; que é só pagar de novo quando acabar; **sem
+> botão**, porque pagar de novo é só depois de acabar — o botão "Reativar assinatura" vem no e-mail de
+> "terminou", que a pré-paga recebe quando a Stripe a encerra no fim do período). O Pix devolvido antes
+> disso não recebe nada. O texto é rascunho do agente (P111).
+
 **O que isso acrescenta à Fase 4:** o Payment Element precisa das opções de mandato, e a régua de
 inadimplência ganha um caminho próprio — **falha de Pix não se retenta como cartão** (não existe
 "tentar o mesmo cartão de novo"). *Gatilho de reabertura: se o Pix recorrente exigir mais
 manutenção do que traz em conversão, ele sai e fica só o cartão.*
+**O Pix e o JilsonAI entram NO DIA DA ABERTURA** *(decisões do operador, 28/10/2026 — P84)*: as duas
+linhas do cartão de preço ("Suporte com JilsonAI + Jilson" e "Pagamento no cartão ou no Pix") ficam
+como estão, e a abertura passa a depender da etapa 4.9 e da Fase 6 (o plano).
 
 ## Reembolso: 7 dias, por lei *(set/2026)*
 
@@ -262,7 +382,12 @@ reativando logo depois de trancar) ou que ainda sobra abuso.*
 link para reativar** *(decisão do operador, 10/10/2026: "é melhor cancelar e enviar e-mail com
 link para reativação ou instrução, igual a AI quando não consegue cobrar cancela e depois paga
 reativa")*. No painel da Stripe a opção é **"cancelar a assinatura"** — nunca "marcar como não
-paga" nem "deixar atrasada" —, nos dois ambientes (tarefa do operador: pendência P60). Quem foi
+paga" nem "deixar atrasada" —, nos dois ambientes. **P60 FECHADA em 28/10/2026, conferida pelo
+operador no painel da conta de verdade** (*Billing → Revenue recovery → Retries*): cartões com
+**Smart Retries, até 8 vezes em 2 semanas**; na primeira falha, **deixar atrasada** (`past_due` — os
+3 dias de aulas); **no fim das tentativas, cancelar**; a fatura fica em aberto; e, em *Settings →
+Billing → Subscriptions and emails*, **os cinco e-mails da própria Stripe desligados** (a escola
+manda os dela). Na área restrita, a prova 7c do mesmo dia viu o cancelamento acontecer. Quem foi
 cancelado assim lê "Reativar assinatura" e assina de novo pela tela de assinar; o e-mail entra
 na etapa 4.7, que traz o envio de e-mail. **No código desde 28/10/2026 (passo 7):** o de cancelada
 tem uma versão para este caso — "Não conseguimos cobrar a renovação, e sua assinatura foi

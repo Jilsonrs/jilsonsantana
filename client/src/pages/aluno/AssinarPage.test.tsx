@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import type { ReactNode } from "react";
 import { act, screen, fireEvent, waitFor, within } from "@testing-library/react";
 import { focusManager, onlineManager } from "@tanstack/react-query";
@@ -11,6 +11,7 @@ import type { Desfecho, PedidoDeCartao } from "@/lib/stripe-do-site";
 const getPlanosDaAssinatura = vi.fn();
 const getPreviaDaAssinatura = vi.fn();
 const criarAssinatura = vi.fn();
+const pagarComPix = vi.fn();
 const getSituacaoDaAssinatura = vi.fn();
 const getMinhaAssinatura = vi.fn();
 vi.mock("@/lib/api", async (importOriginal) => ({
@@ -19,6 +20,7 @@ vi.mock("@/lib/api", async (importOriginal) => ({
   getPlanosDaAssinatura: (...args: unknown[]) => getPlanosDaAssinatura(...args),
   getPreviaDaAssinatura: (...args: unknown[]) => getPreviaDaAssinatura(...args),
   criarAssinatura: (...args: unknown[]) => criarAssinatura(...args),
+  pagarComPix: (...args: unknown[]) => pagarComPix(...args),
   getSituacaoDaAssinatura: (...args: unknown[]) => getSituacaoDaAssinatura(...args),
 }));
 
@@ -28,7 +30,7 @@ const validar = vi.fn<() => Promise<Desfecho>>();
 const confirmar = vi.fn<(segredo: string, tipo: string, voltarPara: string) => Promise<Desfecho>>();
 vi.mock("@/lib/stripe-do-site", () => ({
   CartaoProvider: ({ pedido, children }: { pedido: PedidoDeCartao; children: ReactNode }) => (
-    <div data-testid="cartao" data-centavos={pedido.centavos} data-moeda={pedido.moeda} data-formas={pedido.formasDePagamento.join(",")} data-chave={pedido.chavePublicavel}>
+    <div data-testid="cartao" data-centavos={pedido.centavos} data-moeda={pedido.moeda} data-formas={pedido.formasDePagamento.join(",")} data-chave={pedido.chavePublicavel} data-pix={pedido.pix?.configuracao ?? ""}>
       {children}
     </div>
   ),
@@ -36,6 +38,7 @@ vi.mock("@/lib/stripe-do-site", () => ({
   useCartao: () => ({ validar: () => validar(), confirmar: (segredo: string, tipo: string, voltarPara: string) => confirmar(segredo, tipo, voltarPara) }),
 }));
 
+import { esquecerPix, lerPix } from "@/lib/pix-pendente";
 import { AssinarPage } from "./AssinarPage";
 
 // ASSINAR COM A CONTA LOGADA (Fase 4, etapa 4.2). O que estes testes protegem:
@@ -62,6 +65,9 @@ const PLANOS: PlanosDaAssinatura = {
 };
 const CEM_PARA_SEMPRE: PreviaDaAssinatura = { centavosHoje: 0, moeda: "brl", desconto: { percentual: 100, centavos: null, duracao: "para-sempre", meses: null } };
 const PAGAR: AssinaturaCriada = { estado: "pagar", segredo: "pi_1_secret_x", tipo: "pagamento" };
+// O Pix pré-pago no ar (etapa 4.9): o servidor manda a configuração só-Pix.
+const COM_PIX: PlanosDaAssinatura = { ...PLANOS, pix: { configuracao: "pmc_so_pix" } };
+const PAGAR_PIX: AssinaturaCriada = { estado: "pagar", segredo: "pi_pix_secret_x", tipo: "pix" };
 const erroDoServidor = (codigo: string) => ({ response: { data: { error: codigo } } });
 
 beforeEach(() => {
@@ -70,8 +76,10 @@ beforeEach(() => {
   getPlanosDaAssinatura.mockReset().mockResolvedValue(PLANOS);
   getPreviaDaAssinatura.mockReset().mockResolvedValue(CEM_PARA_SEMPRE);
   criarAssinatura.mockReset().mockResolvedValue(PAGAR);
+  pagarComPix.mockReset().mockResolvedValue(PAGAR_PIX);
   validar.mockReset().mockResolvedValue({ ok: true });
   confirmar.mockReset().mockResolvedValue({ ok: true });
+  esquecerPix();
 });
 
 /** A assinatura de quem já assina e RENOVA, como a tela de Faturamento e Assinatura a recebe. */
@@ -606,5 +614,124 @@ describe("AssinarPage — o envio", () => {
     expect(validar).toHaveBeenCalledTimes(1);
     soltar(PAGAR);
     expect(await screen.findByText("tela de concluído")).toBeTruthy();
+  });
+});
+
+// O PIX PRÉ-PAGO (etapa 4.9, passo 2b — textos aprovados pelo operador em 28/10/2026). O que protege:
+//   - a escolha "Como você quer pagar?" só existe quando o servidor diz que o Pix está no ar; o Cartão
+//     vem marcado e nada muda no campo nem no resumo;
+//   - com o Pix: o código promocional some (e o aplicado é esquecido — o Pix é o preço cheio), o resumo
+//     diz "Acesso até" (um mês ou um ano à frente, contado de hoje), o botão diz "Pagar com Pix" e o
+//     campo abre com a configuração só-Pix e o valor do plano;
+//   - o envio: confere o campo → pede o Pix com SÓ o plano e o CPF → guarda o segredo ANTES de
+//     confirmar (para o "QR de novo") → confirma com o tipo pix → tela de concluído;
+//   - as recusas do servidor seguem o caminho do cartão (quem já assina relê a situação).
+describe("AssinarPage — o Pix pré-pago", () => {
+  afterEach(() => vi.useRealTimers());
+  const escolherPix = async () => fireEvent.click(await screen.findByRole("radio", { name: /^Pix/ }));
+
+  it("sem o Pix no ar: a escolha não aparece, e o campo abre sem a configuração só-Pix", async () => {
+    abrir();
+    await screen.findByRole("radio", { name: /Mensal/ });
+    expect(screen.queryByText("Como você quer pagar?")).toBeNull();
+    expect(screen.queryByRole("radio", { name: /^Pix/ })).toBeNull();
+    expect(cartao()?.dataset.pix).toBe("");
+    expect(screen.getByRole("button", { name: "Assinar" })).toBeTruthy();
+  });
+
+  it("com o Pix no ar: a escolha com os dois textos, o Cartão marcado — e nada muda no campo nem no resumo", async () => {
+    getPlanosDaAssinatura.mockResolvedValue(COM_PIX);
+    abrir();
+    const cartaoRadio = (await screen.findByRole("radio", { name: /^Cartão/ })) as HTMLInputElement;
+    expect(screen.getByText("Como você quer pagar?")).toBeTruthy();
+    expect(cartaoRadio.checked).toBe(true);
+    expect(cartaoRadio.closest("label")?.textContent).toBe("CartãoRenova sozinho todo mês (ou todo ano). Cancele quando quiser.");
+    expect(screen.getByRole("radio", { name: /^Pix/ }).closest("label")?.textContent).toBe("PixVocê paga uma vez e estuda por 1 mês ou 1 ano. Não renova sozinho: quando acabar, é só pagar de novo.");
+    expect(cartao()?.dataset).toMatchObject({ centavos: "9990", pix: "" });
+    expect(naTela()).toContain("Renova todo mês por R$ 99,90, até você cancelar.");
+    expect(screen.getByLabelText("Código promocional")).toBeTruthy();
+  });
+
+  it("escolher o Pix: o código some, o resumo diz 'Acesso até' (o dia que não existe vira o último do mês), o botão diz 'Pagar com Pix', e o campo abre só com o Pix e o valor do plano", async () => {
+    vi.useFakeTimers({ toFake: ["Date"], now: new Date(2026, 0, 31, 12) });
+    getPlanosDaAssinatura.mockResolvedValue(COM_PIX);
+    abrir();
+    await escolherPix();
+    expect(screen.queryByLabelText("Código promocional")).toBeNull();
+    expect(naTela()).toContain("Acesso até 28/02/2026");
+    expect(naTela()).not.toContain("Renova todo mês");
+    // A linha do pagamento seguro sem a parte do cartão (decisão do operador, P110, 28/10/2026).
+    expect(naTela()).toContain("Pagamento seguro, processado pela Stripe.");
+    expect(naTela()).not.toContain("A escola não guarda os dados do seu cartão.");
+    expect(screen.getByRole("button", { name: "Pagar com Pix" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Assinar" })).toBeNull();
+    expect(cartao()?.dataset).toMatchObject({ centavos: "9990", pix: "pmc_so_pix", chave: "pk_test_da_tela" });
+    // O anual: um ano à frente, e o valor dele.
+    fireEvent.click(screen.getByRole("radio", { name: /Anual/ }));
+    expect(naTela()).toContain("Acesso até 31/01/2027");
+    expect(cartao()?.dataset.centavos).toBe("99500");
+    // De volta ao cartão: tudo como antes.
+    fireEvent.click(screen.getByRole("radio", { name: /^Cartão/ }));
+    expect(screen.getByLabelText("Código promocional")).toBeTruthy();
+    expect(naTela()).toContain("Renova uma vez por ano por R$ 995,00, até você cancelar.");
+    expect(naTela()).toContain("A escola não guarda os dados do seu cartão.");
+    expect(cartao()?.dataset.pix).toBe("");
+  });
+
+  it("o código aplicado é esquecido ao escolher o Pix: o total volta ao cheio, e o pedido vai sem código", async () => {
+    getPlanosDaAssinatura.mockResolvedValue(COM_PIX);
+    getPreviaDaAssinatura.mockResolvedValue({ centavosHoje: 4995, moeda: "brl", desconto: { percentual: 50, centavos: null, duracao: "uma-vez", meses: null } });
+    abrir();
+    await aplicar("METADE");
+    await waitFor(() => expect(naTela()).toContain("Total de hojeR$ 49,95"));
+    await escolherPix();
+    expect(naTela()).toContain("Total de hojeR$ 99,90");
+    expect(cartao()?.dataset.centavos).toBe("9990");
+    assinar("Pagar com Pix");
+    expect(await screen.findByText("tela de concluído")).toBeTruthy();
+    expect(pagarComPix).toHaveBeenCalledWith({ plano: "mensal", documento: CPF });
+    expect(criarAssinatura).not.toHaveBeenCalled();
+  });
+
+  it("o envio no Pix: confere o campo → pede o Pix com SÓ o plano e o CPF → guarda o segredo e a chave ANTES de confirmar → confirma com o tipo pix → tela de concluído", async () => {
+    getPlanosDaAssinatura.mockResolvedValue(COM_PIX);
+    const ordem: string[] = [];
+    let guardadoAntes: unknown = null;
+    validar.mockImplementation(async () => (ordem.push("confere"), { ok: true }));
+    pagarComPix.mockImplementation(async () => (ordem.push("pede"), PAGAR_PIX));
+    confirmar.mockImplementation(async () => (ordem.push("confirma"), (guardadoAntes = lerPix()), { ok: true }));
+    abrir();
+    await escolherPix();
+    fireEvent.click(screen.getByRole("radio", { name: /Anual/ }));
+    assinar("Pagar com Pix");
+    expect(await screen.findByText("tela de concluído")).toBeTruthy();
+    expect(ordem).toEqual(["confere", "pede", "confirma"]);
+    expect(pagarComPix).toHaveBeenCalledWith({ plano: "anual", documento: CPF });
+    expect(criarAssinatura).not.toHaveBeenCalled();
+    expect(confirmar).toHaveBeenCalledWith("pi_pix_secret_x", "pix", "/aluno/assinar/concluido");
+    expect(guardadoAntes).toEqual({ segredo: "pi_pix_secret_x", chavePublicavel: "pk_test_da_tela" });
+    expect(JSON.parse(window.sessionStorage.getItem("jilson.assinar.pix") ?? "null")).toEqual({ segredo: "pi_pix_secret_x", chavePublicavel: "pk_test_da_tela" });
+  });
+
+  it("no cartão, com o Pix no ar: nada do Pix é pedido nem guardado", async () => {
+    getPlanosDaAssinatura.mockResolvedValue(COM_PIX);
+    abrir();
+    await screen.findByRole("radio", { name: /^Cartão/ });
+    assinar();
+    expect(await screen.findByText("tela de concluído")).toBeTruthy();
+    expect(pagarComPix).not.toHaveBeenCalled();
+    expect(lerPix()).toBeNull();
+  });
+
+  it("o servidor diz que a conta já assina (409) no Pix: a tela relê a situação, como no cartão — e nada fica guardado", async () => {
+    getPlanosDaAssinatura.mockResolvedValue(COM_PIX);
+    pagarComPix.mockRejectedValue(erroDoServidor("JaAssinante"));
+    abrir();
+    await escolherPix();
+    getSituacaoDaAssinatura.mockResolvedValue({ temAcesso: true });
+    assinar("Pagar com Pix");
+    expect(await screen.findByText("Você já é assinante.")).toBeTruthy();
+    expect(confirmar).not.toHaveBeenCalled();
+    expect(lerPix()).toBeNull();
   });
 });

@@ -22,7 +22,7 @@ import servidor from "./servidor.js";
 import { prisma } from "../lib/prisma.js";
 import { enderecoDoSite } from "../lib/endereco-do-site.js";
 import { readFileSync, existsSync } from "node:fs";
-import { ANTECEDENCIA_DO_AVISO_EM_MS, PRAZO_DA_MARCA_PENDENTE_EM_MS, avisarSobreAAssinatura, emailDevido, marcaResolve, rodadaDosAvisos } from "../lib/avisos-da-assinatura.js";
+import { ANTECEDENCIA_DO_AVISO_EM_MS, ANTECEDENCIA_DO_PREPAGO_EM_MS, PRAZO_DA_MARCA_PENDENTE_EM_MS, avisarSobreAAssinatura, emailDevido, marcaResolve, rodadaDosAvisos } from "../lib/avisos-da-assinatura.js";
 import { AssinaturaNaoEncontrada } from "../lib/stripe.js";
 import { diaNoEmail } from "../views/email-da-cobranca.js";
 
@@ -331,8 +331,10 @@ describe("a rodada do agendador", () => {
     // A falha da Stripe nas assinaturas de outros testes vira alerta: aqui, esperado.
     vi.spyOn(console, "error").mockImplementation(() => {});
   });
-  async function noBanco(sub: string, conta: string, dados: { status: string; currentPeriodEnd: Date | null; updatedAt?: Date }) {
-    return prisma.subscription.create({ data: { stripeSubscriptionId: sub, ownerUserId: conta, status: dados.status, currentPeriodEnd: dados.currentPeriodEnd, livemode: false, ...(dados.updatedAt ? { updatedAt: dados.updatedAt } : {}) } });
+  async function noBanco(sub: string, conta: string, dados: { status: string; currentPeriodEnd: Date | null; updatedAt?: Date; pixPaymentIntentId?: string }) {
+    return prisma.subscription.create({
+      data: { stripeSubscriptionId: sub, ownerUserId: conta, status: dados.status, currentPeriodEnd: dados.currentPeriodEnd, livemode: false, ...(dados.updatedAt ? { updatedAt: dados.updatedAt } : {}), ...(dados.pixPaymentIntentId ? { pixPaymentIntentId: dados.pixPaymentIntentId } : {}) },
+    });
   }
   const conferiuNaStripe = (sub: string) => buscarAssinatura.mock.calls.some(([id]) => id === sub);
   const daAssinatura = (sub: string, tipo: PedidoDeEmail["tipo"]) => doTipo(tipo).filter((p) => p.referencia?.endsWith(`assinatura:${sub}`));
@@ -354,6 +356,54 @@ describe("a rodada do agendador", () => {
     await rodadaDosAvisos();
     expect(conferiuNaStripe(sub)).toBe(false);
     expect(daAssinatura(sub, "antes-de-trancar")).toHaveLength(1);
+  });
+
+  // A PRÉ-PAGA (etapa 4.9, passo 4 — decisão do operador, 28/10/2026: "3 dias antes").
+  it("a pré-paga (Pix) a até 3 dias do fim: a rodada confere na Stripe e manda o 'está acabando' — uma vez, com o dia, sem botão; a de 10 dias nem é escolhida; a que terminou recebe o 'terminou' de sempre", async () => {
+    const conta = await novaConta();
+    const [perto, longe, acabou] = [novoId("sub"), novoId("sub"), novoId("sub")];
+    const fim = new Date(Date.now() + 2 * DIA);
+    const fimPassado = new Date(Date.now() - HORA);
+    await noBanco(perto, conta.id, { status: "active", currentPeriodEnd: fim, pixPaymentIntentId: novoId("pi") });
+    await noBanco(longe, conta.id, { status: "active", currentPeriodEnd: new Date(Date.now() + 10 * DIA), pixPaymentIntentId: novoId("pi") });
+    // A que terminou é de OUTRA conta: na mesma, o "terminou" seria suprimido (ela ainda tem acesso pela outra).
+    const outraConta = await novaConta();
+    await noBanco(acabou, outraConta.id, { status: "canceled", currentPeriodEnd: fimPassado, pixPaymentIntentId: novoId("pi") });
+    naStripeAgora.set(perto, naStripe(perto, conta.id, { pagoAte: fim, pixPaymentIntentId: "pi_perto" }));
+    naStripeAgora.set(acabou, naStripe(acabou, outraConta.id, { status: "canceled", pagoAte: fimPassado, pixPaymentIntentId: "pi_acabou" }));
+
+    await rodadaDosAvisos();
+    expect(conferiuNaStripe(perto)).toBe(true);
+    expect(conferiuNaStripe(longe)).toBe(false);
+    const [email] = daAssinatura(perto, "prepago-terminando");
+    expect(daAssinatura(perto, "prepago-terminando")).toHaveLength(1);
+    expect(email?.para).toBe(conta.email);
+    expect(email?.mensagem.assunto).toContain(diaNoEmail(fim));
+    expect(email?.mensagem.paragrafos.join(" ")).toContain(diaNoEmail(fim));
+    // Sem botão: pagar de novo é só depois de acabar.
+    expect(email?.mensagem.botao).toBeUndefined();
+    expect(await marcas(perto)).toEqual([{ kind: "PREPAGO_TERMINANDO", reference: fim.toISOString() }]);
+    // A que terminou: o "terminou" de sempre, com o botão de reativar.
+    expect(daAssinatura(acabou, "assinatura-cancelada")).toHaveLength(1);
+    expect(daAssinatura(acabou, "assinatura-cancelada")[0]?.mensagem.botao?.texto).toBe("Reativar assinatura");
+
+    // A rodada seguinte: nada de novo, e a pré-paga nem vai à Stripe.
+    buscarAssinatura.mockClear();
+    await rodadaDosAvisos();
+    expect(conferiuNaStripe(perto)).toBe(false);
+    expect(daAssinatura(perto, "prepago-terminando")).toHaveLength(1);
+  });
+
+  it("a pré-paga cujo Pix foi devolvido (a Stripe diz 'não pago'): a rodada acerta o espelho e não manda o 'está acabando'", async () => {
+    const conta = await novaConta();
+    const sub = novoId("sub");
+    const fim = new Date(Date.now() + 2 * DIA);
+    await noBanco(sub, conta.id, { status: "active", currentPeriodEnd: fim, pixPaymentIntentId: novoId("pi") });
+    naStripeAgora.set(sub, naStripe(sub, conta.id, { status: "canceled", pagoAte: null, pixPaymentIntentId: "pi_devolvido" }));
+    await rodadaDosAvisos();
+    expect(conferiuNaStripe(sub)).toBe(true);
+    expect(daAssinatura(sub, "prepago-terminando")).toHaveLength(0);
+    expect((await prisma.subscription.findUniqueOrThrow({ where: { stripeSubscriptionId: sub } })).status).toBe("canceled");
   });
 
   it("pagou e o aviso da Stripe se perdeu: a rodada acerta o espelho pela Stripe e não manda nada", async () => {
@@ -567,6 +617,19 @@ describe("qual e-mail é devido agora (função pura)", () => {
       expect(emailDevido({ status, currentPeriodEnd: falha }, falha), status).toBeNull();
     }
     expect(emailDevido({ status: "past_due", currentPeriodEnd: null })).toBeNull();
+  });
+
+  it("a pré-paga (Pix): 'está acabando' quando faltam até 3 dias para o fim do acesso — antes, nada; acabou, nada (o 'terminou' vem com a cancelada); a recorrente ativa, nunca", () => {
+    const fim = new Date("2026-11-28T15:00:00Z");
+    const prePaga = { status: "active", currentPeriodEnd: fim, pixPaymentIntentId: "pi_pix" };
+    expect(emailDevido(prePaga, new Date(fim.getTime() - ANTECEDENCIA_DO_PREPAGO_EM_MS - 1))).toBeNull();
+    expect(emailDevido(prePaga, new Date(fim.getTime() - ANTECEDENCIA_DO_PREPAGO_EM_MS))).toEqual({ tipo: "PREPAGO_TERMINANDO", referencia: fim.toISOString(), trancaEm: fim });
+    expect(emailDevido(prePaga, new Date(fim.getTime() - 1))?.tipo).toBe("PREPAGO_TERMINANDO");
+    expect(emailDevido(prePaga, fim)).toBeNull();
+    expect(emailDevido({ status: "active", currentPeriodEnd: fim, pixPaymentIntentId: null }, new Date(fim.getTime() - DIA))).toBeNull();
+    expect(emailDevido({ status: "active", currentPeriodEnd: null, pixPaymentIntentId: "pi_pix" }, fim)).toBeNull();
+    expect(emailDevido({ status: "canceled", currentPeriodEnd: fim, pixPaymentIntentId: "pi_pix" }, new Date(fim.getTime() + 1))?.tipo).toBe("CANCELADA");
+    expect(ANTECEDENCIA_DO_PREPAGO_EM_MS).toBe(3 * DIA);
   });
 
   it("a marca resolve o e-mail se foi enviada (ou consumida), ou se está pendente há menos que o prazo", () => {

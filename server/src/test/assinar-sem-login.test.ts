@@ -61,7 +61,7 @@ const PRECOS: PrecoDoPlano[] = [
 const CEM_PARA_SEMPRE: CodigoPromocional = { id: "promo_cem", desconto: { percentual: 100, centavos: null, duracao: "para-sempre", meses: null } };
 const CPF = "529.982.247-25";
 const OUTRO_CPF = "111.444.777-35";
-const AMBIENTE = ["STRIPE_SECRET_KEY", "STRIPE_PUBLISHABLE_KEY", "NODE_ENV", "ASSINAR_SEM_LOGIN"] as const;
+const AMBIENTE = ["STRIPE_SECRET_KEY", "STRIPE_PUBLISHABLE_KEY", "NODE_ENV", "ASSINAR_SEM_LOGIN", "STRIPE_PIX_CONFIGURATION"] as const;
 const antes = Object.fromEntries(AMBIENTE.map((nome) => [nome, process.env[nome]]));
 
 let n = 0;
@@ -93,6 +93,8 @@ const paga = (sub: string, f: { id: string; stripeCustomerId: string }): Assinat
 beforeAll(() => {
   process.env.STRIPE_SECRET_KEY = "sk_test_da_suite_local";
   process.env.STRIPE_PUBLISHABLE_KEY = "pk_test_da_suite_local";
+  // Sem o Pix (etapa 4.9): estes testes são os do cartão; o Pix tem os dele (`pagar-com-pix.test.ts`).
+  delete process.env.STRIPE_PIX_CONFIGURATION;
 });
 
 // O número fiscal de cada cliente na Stripe agora; a fatura de cada assinatura nasce com ele (como na Stripe).

@@ -44,3 +44,18 @@ export async function faturaDevolvida(fatura: string | Stripe.Invoice | null | u
   for (const id of pagamentos) devolvido += (await cobrancaDoPagamento(id)).devolvido;
   return devolvido >= fatura.amount_paid;
 }
+
+/**
+ * O PIX PRÉ-PAGO devolvido por inteiro (etapa 4.9, passo 3): a primeira fatura da pré-paga foi paga POR FORA,
+ * sem cobrança nela — o dinheiro está no pagamento Pix de que ela nasceu. Devolvido ele, o período deixa de
+ * contar como pago. Na dúvida (sem cobrança para ler), NÃO — como na fatura.
+ */
+export async function pixDevolvido(pagamentoId: string): Promise<boolean> {
+  const { centavos, devolvido } = await cobrancaDoPagamento(pagamentoId);
+  return centavos > 0 && devolvido >= centavos;
+}
+
+/** O período desta assinatura foi devolvido? A recorrente, pela última fatura; a PRÉ-PAGA, pelo Pix de que nasceu. */
+export async function periodoDevolvido(assinatura: Stripe.Subscription, pixPaymentIntentId: string | null): Promise<boolean> {
+  return pixPaymentIntentId ? pixDevolvido(pixPaymentIntentId) : faturaDevolvida(assinatura.latest_invoice);
+}

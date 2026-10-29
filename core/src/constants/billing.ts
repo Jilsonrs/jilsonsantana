@@ -39,6 +39,12 @@ export type PlanosDaAssinatura = {
    * API só acrescenta: sem ele, a tela não mostra a lista.
    */
   incluido?: { itens: string[]; frase: string };
+  /**
+   * O PIX PRÉ-PAGO (etapa 4.9, passo 2 — decisão do operador, 28/10/2026): a configuração de formas de
+   * pagamento SÓ COM PIX da Stripe, com que o site abre o campo do Pix. Vazio ou ausente: a escola não
+   * oferece Pix (a tela não mostra a escolha). Opcional porque a API só acrescenta.
+   */
+  pix?: { configuracao: string } | null;
 };
 
 /** Por quanto tempo o desconto de um código promocional vale. */
@@ -83,16 +89,17 @@ export type SituacaoDaAssinatura = {
 /**
  * Resposta de `POST /api/billing/assinatura`. `ativa`: a Stripe já ativou (nada a pagar, hoje nem
  * depois). `pagar`: o site confirma com o segredo — `pagamento` cobra hoje; `cartao` só guarda o
- * cartão, para a cobrança seguinte (nada a pagar hoje, mas o desconto acaba).
+ * cartão, para a cobrança seguinte (nada a pagar hoje, mas o desconto acaba); `pix` é o Pix pré-pago
+ * (etapa 4.9): um pagamento solto, e a assinatura nasce quando ele cai.
  */
-export type AssinaturaCriada = { estado: "ativa" } | { estado: "pagar"; segredo: string; tipo: "pagamento" | "cartao" };
+export type AssinaturaCriada = { estado: "ativa" } | { estado: "pagar"; segredo: string; tipo: "pagamento" | "cartao" | "pix" };
 
 /**
  * Resposta de `POST /api/billing/visitante/assinatura` — assinar SEM CONTA (etapa 4.7, passo 4). A
  * mesma da conta logada, e mais a `tentativa`: o código desta tentativa, que o site devolve no
  * próximo clique (para seguir com ela) e com que a tela de depois do pagamento pergunta se valeu.
  */
-export type AssinaturaSemLogin = { estado: "ativa"; tentativa: string } | { estado: "pagar"; segredo: string; tipo: "pagamento" | "cartao"; tentativa: string };
+export type AssinaturaSemLogin = { estado: "ativa"; tentativa: string } | { estado: "pagar"; segredo: string; tipo: "pagamento" | "cartao" | "pix"; tentativa: string };
 
 /**
  * Resposta de `POST /api/billing/visitante/confirmacao`: o pagamento desta tentativa já valeu — a
@@ -190,6 +197,12 @@ export type MinhaAssinatura =
        * manter) e a cobrança em aberto não é mais tentada — decisão do operador, 11/10/2026.
        */
       terminaAoCancelar: boolean;
+      /**
+       * PRÉ-PAGA (etapa 4.9, passo 3): nasceu de um Pix, não renova e não tem cartão — `acessoAte` é até quando
+       * vai o acesso; parar, manter, mudar de plano e trocar o cartão não existem (o servidor recusa com
+       * `PrePago`). Para continuar, paga-se de novo quando acabar. Opcional porque a API só acrescenta.
+       */
+      prePago?: boolean;
       /**
        * A saída do reembolso: quanto volta e até quando dá para pedir (em ISO). Só dentro do prazo
        * e com dinheiro a devolver — a assinatura de cortesia nunca tem. Quem confere é o servidor,

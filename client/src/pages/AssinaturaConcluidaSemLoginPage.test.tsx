@@ -12,7 +12,12 @@ vi.mock("@/lib/api", async (importOriginal) => ({
   criarSenhaSemLogin: (...args: unknown[]) => criarSenhaSemLogin(...args),
 }));
 
+// A fronteira com o Stripe.js (o QR do Pix de novo — etapa 4.9) vira dublê; a tela a carrega por `import()`.
+const mostrarQrDeNovo = vi.fn<(chavePublicavel: string, segredo: string) => Promise<boolean>>();
+vi.mock("@/lib/stripe-do-site", () => ({ mostrarQrDeNovo: (chavePublicavel: string, segredo: string) => mostrarQrDeNovo(chavePublicavel, segredo) }));
+
 import { navegador } from "@/lib/versao";
+import { esquecerPix, guardarPix, lerPix } from "@/lib/pix-pendente";
 import { esquecerTentativa, guardarTentativa, lerTentativa } from "@/lib/tentativa-de-assinar";
 import { AssinaturaConcluidaSemLoginPage } from "./AssinaturaConcluidaSemLoginPage";
 
@@ -35,7 +40,9 @@ beforeEach(() => {
   confirmarSemLogin.mockReset().mockResolvedValue({ confirmada: true });
   criarSenhaSemLogin.mockReset().mockResolvedValue({ entrou: true });
   ir = vi.spyOn(navegador, "ir").mockImplementation(() => {});
+  mostrarQrDeNovo.mockReset().mockResolvedValue(true);
   esquecerTentativa();
+  esquecerPix();
 });
 afterEach(() => vi.restoreAllMocks());
 
@@ -139,5 +146,32 @@ describe("depois do pagamento, sem conta — a senha", () => {
     abrir();
     await criarSenha();
     expect((await screen.findByRole("alert")).textContent).toBe("Não foi possível entrar agora. Tente novamente em alguns minutos.");
+  });
+});
+
+// O QR DO PIX DE NOVO (etapa 4.9, passo 2b), como na tela de quem está logado: com o segredo que a aba
+// guardou, enquanto o pagamento não vale; valeu, o segredo é esquecido e vem a senha.
+describe("depois do pagamento, sem conta — o QR do Pix de novo", () => {
+  it("sem um Pix guardado nesta aba: sem o botão", async () => {
+    comTentativa();
+    confirmarSemLogin.mockResolvedValue({ confirmada: false });
+    abrir({ conferirACada: 20 });
+    await screen.findByRole("heading", { name: "Confirmando sua assinatura…" });
+    expect(screen.queryByRole("button", { name: "Mostrar o QR de novo" })).toBeNull();
+  });
+
+  it("com um Pix guardado: o botão enquanto o pagamento não vale; o clique abre o QR com o que foi guardado; valeu, o botão some, o Pix é esquecido e a senha aparece", async () => {
+    comTentativa();
+    guardarPix({ segredo: "pi_pix_secret_x", chavePublicavel: "pk_test_da_tela" });
+    confirmarSemLogin.mockResolvedValue({ confirmada: false });
+    abrir({ conferirACada: 20 });
+    fireEvent.click(await screen.findByRole("button", { name: "Mostrar o QR de novo" }));
+    await waitFor(() => expect(mostrarQrDeNovo).toHaveBeenCalledWith("pk_test_da_tela", "pi_pix_secret_x"));
+    expect(lerPix()).not.toBeNull();
+
+    confirmarSemLogin.mockResolvedValue({ confirmada: true });
+    expect(await screen.findByLabelText("Crie uma senha")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Mostrar o QR de novo" })).toBeNull();
+    expect(lerPix()).toBeNull();
   });
 });

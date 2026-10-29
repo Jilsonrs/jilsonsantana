@@ -65,7 +65,7 @@ const PRECOS: PrecoDoPlano[] = [
   { plano: "anual", precoId: "price_anual", centavos: 99500, moeda: "brl" },
 ];
 const CEM_PARA_SEMPRE: CodigoPromocional = { id: "promo_cem", desconto: { percentual: 100, centavos: null, duracao: "para-sempre", meses: null } };
-const AMBIENTE = ["STRIPE_SECRET_KEY", "STRIPE_PUBLISHABLE_KEY"] as const;
+const AMBIENTE = ["STRIPE_SECRET_KEY", "STRIPE_PUBLISHABLE_KEY", "STRIPE_PIX_CONFIGURATION"] as const;
 const antes = Object.fromEntries(AMBIENTE.map((nome) => [nome, process.env[nome]]));
 let member: string[] = [];
 
@@ -87,6 +87,8 @@ beforeEach(() => {
   calcularPrevia.mockReset().mockResolvedValue({ centavosHoje: 0, moeda: "brl" });
   process.env.STRIPE_SECRET_KEY = "sk_test_da_suite_local";
   process.env.STRIPE_PUBLISHABLE_KEY = "pk_test_da_suite_local";
+  // Sem o Pix (etapa 4.9): estes testes são os do cartão; o Pix tem os dele (`pagar-com-pix.test.ts`).
+  delete process.env.STRIPE_PIX_CONFIGURATION;
 });
 
 afterAll(() => {
@@ -116,6 +118,8 @@ describe("GET /api/billing/planos", () => {
       formasDePagamento: ["card"],
       // "O que está incluído": a lista do cartão de preço da home (passo 6d).
       incluido: { itens: [...fabrica.home.pricing.features], frase: fabrica.home.pricing.footer },
+      // O Pix pré-pago (etapa 4.9): só com a configuração só-Pix no ambiente — aqui não há.
+      pix: null,
     });
   });
 

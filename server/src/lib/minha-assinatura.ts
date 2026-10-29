@@ -17,7 +17,7 @@ import {
   type MotivoDado,
   type PedidoDeCartao,
 } from "./stripe-assinatura.js";
-import { aDevolver, buscarOQueFoiPago, cancelarNaHora, devolver } from "./stripe-reembolso.js";
+import { aDevolver, buscarOQueFoiPago, buscarOQueFoiPagoNoPix, cancelarNaHora, devolver, type OQueFoiPago } from "./stripe-reembolso.js";
 import { anularFatura, segredoDaFatura, soltarAgendamento } from "./stripe-plano.js";
 
 // MINHA ASSINATURA (Fase 4, etapa 4.6 — billing.md; CLAUDE.md → Membership Gating). O que a tela
@@ -38,6 +38,15 @@ import { anularFatura, segredoDaFatura, soltarAgendamento } from "./stripe-plano
 /** Renovam sozinhas, se não estiverem marcadas para acabar. */
 const RENOVAM: ReadonlySet<string> = new Set(["active", "trialing"]);
 
+/**
+ * PRÉ-PAGA (etapa 4.9, passo 3): nasceu de um Pix — não renova, não tem cartão e termina no fim do período.
+ * Parar, manter, mudar de plano e trocar o cartão não cabem; o reembolso dos 7 dias devolve o Pix. Uma regra
+ * só, para a tela (que não mostra os botões) e para as operações (que recusam com `pre-paga`).
+ */
+export function prePaga(detalhes: Pick<DetalhesDaAssinatura, "pixPaymentIntentId">): boolean {
+  return detalhes.pixPaymentIntentId !== null;
+}
+
 const iso = (data: Date | null): string | null => (data ? data.toISOString() : null);
 
 /** Esta assinatura vai gerar uma próxima cobrança? Só para ela se pede a prévia à Stripe. */
@@ -51,7 +60,7 @@ export function renova(detalhes: DetalhesDaAssinatura): boolean {
  * regra só, para a tela (que mostra o botão) e para a operação (que recusa) nunca discordarem.
  */
 export function aceitaCartaoNovo(detalhes: DetalhesDaAssinatura): boolean {
-  return !encerradaDeVez(detalhes) && detalhes.clienteId !== null;
+  return !encerradaDeVez(detalhes) && !prePaga(detalhes) && detalhes.clienteId !== null;
 }
 
 /**
@@ -60,7 +69,8 @@ export function aceitaCartaoNovo(detalhes: DetalhesDaAssinatura): boolean {
  * só, para a tela (que mostra "Manter a assinatura") e para a operação (que recusa).
  */
 export function podeManter(detalhes: DetalhesDaAssinatura): boolean {
-  return RENOVAM.has(detalhes.status) && detalhes.acabaEm !== null;
+  // A pré-paga está marcada para acabar desde que nasceu: não há renovação a retomar (sem cartão, a Stripe nem conseguiria cobrar).
+  return RENOVAM.has(detalhes.status) && detalhes.acabaEm !== null && !prePaga(detalhes);
 }
 
 /**
@@ -128,7 +138,7 @@ export function paraMinhaAssinatura(detalhes: DetalhesDaAssinatura, proxima: { c
   }
   // `podeParar` e `podeManter`: as MESMAS regras das operações (`renova`, `podeManter`) — a tela
   // nunca mostra um botão que o servidor vai recusar.
-  const comum = { plano: detalhes.plano, preco: detalhes.preco, cartao: detalhes.cartao, aceitaCartao: aceitaCartaoNovo(detalhes), podeParar: renova(detalhes), podeManter: podeManter(detalhes), terminaAoCancelar: oQueCancelarFaz(detalhes) === "terminar", reembolso, podeMudarDePlano: outroPlano(detalhes) !== null, trocaMarcada: detalhes.trocaMarcada ? { plano: detalhes.trocaMarcada.plano, em: detalhes.trocaMarcada.em.toISOString() } : null };
+  const comum = { ...(prePaga(detalhes) ? { prePago: true } : {}), plano: detalhes.plano, preco: detalhes.preco, cartao: detalhes.cartao, aceitaCartao: aceitaCartaoNovo(detalhes), podeParar: renova(detalhes), podeManter: podeManter(detalhes), terminaAoCancelar: oQueCancelarFaz(detalhes) === "terminar", reembolso, podeMudarDePlano: outroPlano(detalhes) !== null, trocaMarcada: detalhes.trocaMarcada ? { plano: detalhes.trocaMarcada.plano, em: detalhes.trocaMarcada.em.toISOString() } : null };
   if (atrasada) {
     const ate = aulasAbertasAte({ currentPeriodEnd: detalhes.pagoAte });
     return { situacao: SituacaoDoFaturamento.ATRASADA, ...comum, proximaCobranca: null, acessoAte: null, aulasAte: iso(ate), aulasTrancadas: !(ate !== null && ate > agora) };
@@ -258,10 +268,15 @@ export async function lerMinhaAssinatura(userId: string): Promise<Leitura> {
 async function reembolsoDisponivel(detalhes: DetalhesDaAssinatura): Promise<SaidaDoReembolso> {
   const ate = prazoDoReembolso(detalhes);
   if (!ate || !noPrazoDoReembolso(detalhes)) return null;
-  const pago = await buscarOQueFoiPago(detalhes.id);
+  const pago = await oQueFoiPago(detalhes);
   const centavos = aDevolver(pago);
   if (centavos <= 0 || !pago.moeda) return null;
   return { centavos, moeda: pago.moeda, ate: ate.toISOString() };
+}
+
+/** Tudo o que foi pago nesta assinatura: a recorrente, pelas faturas; a PRÉ-PAGA, pelo Pix de que nasceu (a fatura dela foi paga por fora). */
+function oQueFoiPago(detalhes: DetalhesDaAssinatura): Promise<OQueFoiPago> {
+  return detalhes.pixPaymentIntentId ? buscarOQueFoiPagoNoPix(detalhes.pixPaymentIntentId) : buscarOQueFoiPago(detalhes.id);
 }
 
 // ── TROCAR O CARTÃO (passo 4) ────────────────────────────────────────────────────────────────
@@ -276,8 +291,8 @@ async function reembolsoDisponivel(detalhes: DetalhesDaAssinatura): Promise<Said
 // troca do cartão não decide nada pelo espelho.
 // Repetir não faz mal: aplicar duas vezes põe o mesmo cartão, e a fatura já paga não é cobrada.
 
-/** `sem-assinatura`: a conta não tem assinatura que ainda possa ser cobrada. */
-type SemOndePor = { resultado: "sem-assinatura" } | { resultado: "desconhecida" };
+/** `sem-assinatura`: a conta não tem assinatura que ainda possa ser cobrada. `pre-paga`: a dela nasceu de um Pix — não tem cartão (etapa 4.9). */
+type SemOndePor = { resultado: "sem-assinatura" } | { resultado: "desconhecida" } | { resultado: "pre-paga" };
 
 /** A assinatura desta conta que ACEITA cartão novo (`aceitaCartaoNovo`), e de quem é o pedido. */
 async function ondePorOCartao(userId: string): Promise<{ resultado: "ok"; detalhes: DetalhesDaAssinatura; pedido: PedidoDeCartao } | SemOndePor> {
@@ -285,6 +300,7 @@ async function ondePorOCartao(userId: string): Promise<{ resultado: "ok"; detalh
   if (achada.resultado === "desconhecida") return achada;
   if (achada.resultado === "nenhuma") return { resultado: "sem-assinatura" };
   const { detalhes } = achada;
+  if (prePaga(detalhes)) return { resultado: "pre-paga" };
   if (!aceitaCartaoNovo(detalhes) || !detalhes.clienteId) return { resultado: "sem-assinatura" };
   return { resultado: "ok", detalhes, pedido: { clienteId: detalhes.clienteId, userId, assinaturaId: detalhes.id } };
 }
@@ -372,7 +388,7 @@ export async function aplicarCartaoNovo(userId: string): Promise<Troca> {
  * `sem-assinatura`: nada a parar ou a manter (nenhuma com acesso, ou já encerrada de vez).
  * `ocupada`: a assinatura está sendo acertada neste instante; nada foi feito — tentar de novo.
  */
-type NaoFeita = { resultado: "sem-assinatura" } | { resultado: "desconhecida" } | { resultado: "ocupada" };
+type NaoFeita = { resultado: "sem-assinatura" } | { resultado: "desconhecida" } | { resultado: "ocupada" } | { resultado: "pre-paga" };
 
 export type Parada = ({ resultado: "ok" } & RenovacaoParada) | NaoFeita;
 
@@ -389,6 +405,8 @@ export async function pararMinhaRenovacao(userId: string, dado: MotivoDado): Pro
   const achada = await assinaturaDaConta(userId);
   if (achada.resultado === "desconhecida") return achada;
   if (achada.resultado === "nenhuma") return { resultado: "sem-assinatura" };
+  // A pré-paga (etapa 4.9) já termina no fim do período: não há renovação a parar — e o reembolso é outra porta.
+  if (prePaga(achada.detalhes)) return { resultado: "pre-paga" };
   const { id } = achada.detalhes;
   if (oQueCancelarFaz(achada.detalhes) === "nada") return { resultado: "sem-assinatura" };
   const operacao = await operarNaAssinatura(
@@ -450,6 +468,7 @@ export async function manterMinhaAssinatura(userId: string): Promise<Mantida> {
   if (achada.resultado === "desconhecida") return achada;
   if (achada.resultado === "nenhuma") return { resultado: "sem-assinatura" };
   const { detalhes } = achada;
+  if (prePaga(detalhes)) return { resultado: "pre-paga" };
   const { id } = detalhes;
   // Já renova: não há o que desfazer (o segundo clique, ou a segunda aba).
   if (renova(detalhes)) return { resultado: "ok" };
@@ -547,7 +566,7 @@ export async function reembolsarMinhaAssinatura(userId: string, dado: MotivoDado
       // depois, já inclui essa cobrança na devolução. `[FATO — medido, 11/10/2026]` ao encerrar
       // na hora a própria Stripe anula essa fatura; anular aqui não depende disso.
       if (agora.faturaDaTrocaId) await anularFatura(agora.faturaDaTrocaId);
-      const pago = await buscarOQueFoiPago(id);
+      const pago = await oQueFoiPago(agora);
       const centavos = aDevolver(pago);
       if (centavos <= 0 || !pago.moeda) return { resultado: "nada-a-devolver" };
       // Já encerrada (a devolução falhou da outra vez, ou foi encerrada pelo painel): só devolve.

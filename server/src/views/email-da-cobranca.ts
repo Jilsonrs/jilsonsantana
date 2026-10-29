@@ -47,6 +47,11 @@ export function montarAvisoDaCobranca(
     const t = e.antesDeTrancar;
     return { assunto: t.assunto, titulo: t.titulo, paragrafos: [t.semPagamento, t.perdeAcesso.replace("{data}", ate)], ...botao(t.botao, "cartao") };
   }
+  if (devido.tipo === "PREPAGO_TERMINANDO") {
+    // SEM botão: pagar de novo é só DEPOIS de acabar (decisão do operador, etapa 4.9) — o botão de reativar vem no "terminou".
+    const t = e.prePagoTerminando;
+    return { assunto: t.assunto.replace("{data}", ate), titulo: t.titulo, paragrafos: [t.acaba.replace("{data}", ate), t.depois] };
+  }
   const t = e.cancelada;
   return naStripe.encerradaSemPagamento
     ? { assunto: t.assuntoSemPagamento, titulo: t.tituloSemPagamento, paragrafos: [t.semPagamento, t.progressoAoReativar], ...botao(t.botao, "assinar") }

@@ -75,8 +75,10 @@ const comEspelho = (status: string, currentPeriodEnd: Date | null) => prisma.sub
 /** O que a Stripe diz da assinatura do member@ (os detalhes da tela e o que a sincronia lê). */
 let detalhes: Partial<DetalhesDaAssinatura> = {};
 let naStripe: Partial<AssinaturaNaStripe> = {};
-const daStripe = (id: string): DetalhesDaAssinatura => ({ id, status: "active", pagoAte: EM_30_DIAS, plano: "mensal", preco: { centavos: 9990, moeda: "brl" }, fimDoPeriodo: EM_30_DIAS, comecouEm: null, acabaEm: null, acabaNoFimDoPeriodo: false, cartao: null, clienteId: CLIENTE, userId: memberId, faturaEmAbertoId: null, itemId: "si_do_teste", agendamentoId: null, agendamentoNosso: false, trocaMarcada: null, faturaDaTrocaId: null, ...detalhes });
+const daStripe = (id: string): DetalhesDaAssinatura => ({ id, status: "active", pagoAte: EM_30_DIAS, plano: "mensal", preco: { centavos: 9990, moeda: "brl" }, fimDoPeriodo: EM_30_DIAS, comecouEm: null, acabaEm: null, acabaNoFimDoPeriodo: false, cartao: null, clienteId: CLIENTE, userId: memberId, pixPaymentIntentId: null, faturaEmAbertoId: null, itemId: "si_do_teste", agendamentoId: null, agendamentoNosso: false, trocaMarcada: null, faturaDaTrocaId: null, ...detalhes });
 const PARADA: Partial<DetalhesDaAssinatura> = { acabaEm: EM_30_DIAS, acabaNoFimDoPeriodo: true };
+/** A PRÉ-PAGA (etapa 4.9): nasceu de um Pix, marcada para acabar desde que nasceu, sem cartão. */
+const PRE_PAGA: Partial<DetalhesDaAssinatura> = { acabaEm: EM_30_DIAS, acabaNoFimDoPeriodo: true, cartao: null, pixPaymentIntentId: "pi_pix_do_teste" };
 
 /** Segura a trava da assinatura, como faz quem a está sincronizando neste instante. */
 async function comAAssinaturaOcupada(enquanto: () => Promise<void>): Promise<void> {
@@ -332,7 +334,7 @@ describe("POST /api/billing/minha-assinatura/cancelar — com a cobrança atrasa
   const ONTEM = new Date(Date.now() - DIA);
   beforeEach(async () => {
     await comEspelho("past_due", ONTEM);
-    detalhes = { status: "past_due", pagoAte: ONTEM, faturaEmAbertoId: "in_em_aberto" };
+    detalhes = { status: "past_due", pagoAte: ONTEM, pixPaymentIntentId: null, faturaEmAbertoId: "in_em_aberto" };
     naStripe = { status: "past_due", pagoAte: ONTEM };
   });
 
@@ -340,7 +342,7 @@ describe("POST /api/billing/minha-assinatura/cancelar — com a cobrança atrasa
   // viva na Stripe, tentando cobrar. Sem achá-la, o site diria "sem assinatura" a quem quer sair.
   it("com as aulas JÁ TRANCADAS (mais de 3 dias): cancela do mesmo jeito — encerra e anula a cobrança em aberto", async () => {
     await comEspelho("past_due", PASSADO);
-    detalhes = { status: "past_due", pagoAte: PASSADO, faturaEmAbertoId: "in_em_aberto" };
+    detalhes = { status: "past_due", pagoAte: PASSADO, pixPaymentIntentId: null, faturaEmAbertoId: "in_em_aberto" };
     expect((await temAcesso()).temAcesso).toBe(false);
     const res = await cancelar(member, { motivo: "caro" });
     expect([res.status, res.body]).toEqual([200, { acessoAte: null, terminou: true }]);
@@ -422,7 +424,7 @@ describe("POST /api/billing/minha-assinatura/cancelar — com a cobrança atrasa
   });
 
   it("a cobrança atrasou entre a leitura e a trava (outra aba, ou a renovação que falhou agora): vale o de AGORA — termina na hora", async () => {
-    buscarDetalhes.mockImplementationOnce(async (id) => ({ ...daStripe(id), status: "active", pagoAte: EM_30_DIAS, faturaEmAbertoId: null }));
+    buscarDetalhes.mockImplementationOnce(async (id) => ({ ...daStripe(id), status: "active", pagoAte: EM_30_DIAS, pixPaymentIntentId: null, faturaEmAbertoId: null }));
     expect((await cancelar(member, {})).body).toEqual({ acessoAte: null, terminou: true });
     expect(pararRenovacao).not.toHaveBeenCalled();
   });
@@ -585,5 +587,21 @@ describe("POST /api/billing/minha-assinatura/manter — voltar atrás", () => {
       erro.mockRestore();
     }
     expect(buscarAssinatura).not.toHaveBeenCalled();
+  });
+});
+
+// A PRÉ-PAGA (etapa 4.9, passo 3): já termina no fim do período — não há renovação a parar nem a retomar
+// (sem cartão, a Stripe nem conseguiria cobrar). O reembolso dos 7 dias é outra porta.
+describe("a pré-paga (Pix) não para nem volta", () => {
+  it("cancelar e manter respondem 409 PrePago — nada muda na Stripe, e o acesso continua", async () => {
+    detalhes = PRE_PAGA;
+    const parada = await cancelar(member, {});
+    expect([parada.status, parada.body]).toEqual([409, { error: "PrePago" }]);
+    const mantida = await manter(member);
+    expect([mantida.status, mantida.body]).toEqual([409, { error: "PrePago" }]);
+    expect(pararRenovacao).not.toHaveBeenCalled();
+    expect(retomarRenovacao).not.toHaveBeenCalled();
+    expect(cancelarNaHora).not.toHaveBeenCalled();
+    expect((await temAcesso()).temAcesso).toBe(true);
   });
 });

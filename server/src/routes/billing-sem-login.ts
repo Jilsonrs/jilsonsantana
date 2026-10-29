@@ -1,12 +1,14 @@
 import { Router } from "express";
 import { fromNodeHeaders } from "better-auth/node";
-import { assinarSemLoginSchema, confirmacaoSemLoginSchema, previaSchema, senhaDepoisDePagarSchema, type AssinaturaSemLogin, type ConfirmacaoSemLogin, type PlanosDaAssinatura, type PreviaDaAssinatura, type SenhaCriada } from "@jilson/core";
+import { assinarSemLoginSchema, confirmacaoSemLoginSchema, pixSemLoginSchema, previaSchema, senhaDepoisDePagarSchema, type AssinaturaSemLogin, type ConfirmacaoSemLogin, type PlanosDaAssinatura, type PreviaDaAssinatura, type SenhaCriada } from "@jilson/core";
 import { auth } from "../lib/auth.js";
 import { criarSenhaDepoisDePagar } from "../lib/senha-depois-de-pagar.js";
 import { validate } from "../lib/http.js";
 import { cobrancaConfigurada } from "../lib/stripe.js";
 import { lerPlanos, lerPrevia } from "../lib/vitrine-da-assinatura.js";
 import { assinarComoVisitante, pagamentoConfirmado } from "../lib/checkout-do-visitante.js";
+import { pagarComPixSemLogin } from "../lib/pix-pre-pago.js";
+import { pixConfigurado } from "../lib/stripe-pix.js";
 import { CABECALHO_DO_IP, contarClienteNovo, cotaDeClientesNovosEsgotada, ipDoPedido, limiteSemLogin } from "../lib/limite-de-tentativas.js";
 import { marcaDoEndereco } from "../lib/loja-de-tentativas.js";
 import { protecaoDaCobranca } from "../lib/protecao-da-cobranca.js";
@@ -128,6 +130,52 @@ router.post("/billing/visitante/assinatura", ...limiteSemLogin.assinar, async (r
   }
   const resposta: AssinaturaSemLogin =
     desfecho.resultado === "ativa" ? { estado: "ativa", tentativa: desfecho.tentativa } : { estado: "pagar", segredo: desfecho.segredo, tipo: desfecho.tipo, tentativa: desfecho.tentativa };
+  res.json(resposta);
+});
+
+// POST /api/billing/visitante/pix — pagar com PIX, pré-pago, SEM CONTA (etapa 4.9, passo 2): a mesma
+// ficha, os mesmos limites e o mesmo teto do assinar sem login; a conta nasce quando o Pix cai.
+router.post("/billing/visitante/pix", ...limiteSemLogin.assinar, async (req, res) => {
+  const corpo = validate(pixSemLoginSchema, req.body, res);
+  if (corpo === null) return;
+  if (!cobrancaConfigurada() || !pixConfigurado()) {
+    console.error("[stripe] pix (sem login) recusado: STRIPE_SECRET_KEY ou STRIPE_PIX_CONFIGURATION ausente");
+    res.status(503).json({ error: "NaoConfigurado" });
+    return;
+  }
+  const esgotada = await cotaDeClientesNovosEsgotada(req);
+  if (esgotada !== null) {
+    res.set("Retry-After", String(esgotada));
+    res.status(429).json({ error: "MuitasTentativas" });
+    return;
+  }
+  const vaga = await comVaga(() => pagarComPixSemLogin(corpo, { antesDeCriarCliente: (tx) => contarClienteNovo(req, tx) }));
+  if (vaga.cheio) {
+    res.set("Retry-After", "2");
+    res.status(409).json({ error: "MuitosAoMesmoTempo" });
+    return;
+  }
+  const desfecho = vaga.resultado;
+  if (desfecho.resultado === "ja-tem-conta") {
+    const ip = ipDoPedido(req.get(CABECALHO_DO_IP));
+    console.info(`[api] pix sem login: e-mail com conta, recusado (endereço ${ip ? marcaDoEndereco(ip) : "sem endereço"})`);
+    res.status(409).json({ error: "JaTemConta" });
+    return;
+  }
+  if (desfecho.resultado === "ocupada") {
+    res.status(409).json({ error: "Ocupada" });
+    return;
+  }
+  if (desfecho.resultado === "muitos-emails-novos") {
+    res.set("Retry-After", String(desfecho.segundos));
+    res.status(429).json({ error: "MuitasTentativas" });
+    return;
+  }
+  if (desfecho.resultado === "documento-recusado") {
+    res.status(400).json({ error: "DocumentoInvalido" });
+    return;
+  }
+  const resposta: AssinaturaSemLogin = { estado: "pagar", segredo: desfecho.segredo, tipo: "pix", tentativa: desfecho.tentativa };
   res.json(resposta);
 });
 

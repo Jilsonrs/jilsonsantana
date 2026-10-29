@@ -3,6 +3,7 @@ import type { Prisma } from "./prisma.js";
 import { DuracaoDoDesconto, type AssinarSemLoginInput } from "@jilson/core";
 import { prisma } from "./prisma.js";
 import { sincronizarSeLivre } from "./assinaturas.js";
+import { cancelarPagamentosPixPendentes } from "./stripe-pix.js";
 import { temAcessoAtivo } from "./acesso.js";
 import { mandarBoasVindasDaAssinatura } from "./boas-vindas.js";
 import { novaTentativa, resumoDaTentativa } from "./tentativa-do-visitante.js";
@@ -44,7 +45,7 @@ export type DesfechoDoVisitante =
   | { resultado: "pagar"; segredo: string; tipo: "pagamento" | "cartao"; tentativa: string };
 
 /** A ficha do e-mail. `nova`: o cliente da Stripe acabou de nascer, já com o número fiscal desta tentativa. */
-type Ficha = { id: string; stripeCustomerId: string; nova: boolean };
+export type Ficha = { id: string; stripeCustomerId: string; nova: boolean };
 
 /**
  * O que a ROTA passa: `antesDeCriarCliente` conta um cliente novo do endereço de quem pediu
@@ -54,21 +55,21 @@ type Ficha = { id: string; stripeCustomerId: string; nova: boolean };
 export type OpcoesDoVisitante = { antesDeCriarCliente?: (tx: Prisma.TransactionClient) => Promise<number | null> };
 
 /** Encerradas: não cobram mais e não impedem uma assinatura nova. */
-const ENCERRADAS: ReadonlySet<string> = new Set(["incomplete_expired", "canceled"]);
+export const ENCERRADAS: ReadonlySet<string> = new Set(["incomplete_expired", "canceled"]);
 
-/** Até 7 idas à Stripe dentro da trava (10 s cada, com uma nova tentativa): o número fiscal, a lista, cancelar e criar. */
+/** Até 9 idas à Stripe dentro da trava (10 s cada, com uma nova tentativa): a lista, o Pix à espera (etapa 4.9), o número fiscal, cancelar e criar. */
 const TEMPO_DA_TRANSACAO = { maxWait: 10_000, timeout: 120_000 };
 /** Uma ida à Stripe na ficha: criar o cliente. */
 const TEMPO_DA_FICHA = { maxWait: 10_000, timeout: 30_000 };
 
 /** A trava deste e-mail, SEM ESPERAR — a mesma família da trava da conta (`checkout.ts`). */
-async function travarSeLivre(tx: Prisma.TransactionClient, email: string): Promise<boolean> {
+export async function travarSeLivre(tx: Prisma.TransactionClient, email: string): Promise<boolean> {
   const [trava] = await tx.$queryRaw<{ livre: boolean }[]>`SELECT pg_try_advisory_xact_lock(hashtext(${`assinar-email:${email}`})) AS livre`;
   return trava?.livre === true;
 }
 
 /** Este e-mail já tem conta? AO PÉ DA LETRA, em minúsculas — como o login acha a conta (CLAUDE.md → Server). */
-async function temConta(db: Pick<Prisma.TransactionClient, "user">, email: string): Promise<boolean> {
+export async function temConta(db: Pick<Prisma.TransactionClient, "user">, email: string): Promise<boolean> {
   return (await db.user.findUnique({ where: { email }, select: { id: true } })) !== null;
 }
 
@@ -76,7 +77,7 @@ async function temConta(db: Pick<Prisma.TransactionClient, "user">, email: strin
  * A ficha deste e-mail JÁ VIROU CONTA? A conta pode ter mudado de e-mail depois de nascer (quando
  * houver troca de e-mail): quem souber o e-mail antigo nunca opera no cliente da Stripe dela.
  */
-async function fichaComConta(db: Pick<Prisma.TransactionClient, "guestCheckout">, fichaId: string): Promise<boolean> {
+export async function fichaComConta(db: Pick<Prisma.TransactionClient, "guestCheckout">, fichaId: string): Promise<boolean> {
   return (await db.guestCheckout.findUnique({ where: { id: fichaId }, select: { userId: true } }))?.userId != null;
 }
 
@@ -86,7 +87,7 @@ async function fichaComConta(db: Pick<Prisma.TransactionClient, "guestCheckout">
  * transação curta só dela, com a trava do e-mail: se o resto falhar, ela fica, e um e-mail é sempre
  * UM cliente. Se a ficha já virou conta, quem diz é a decisão (`fichaComConta`).
  */
-async function fichaDoEmail(email: string, pedido: AssinarSemLoginInput, opcoes: OpcoesDoVisitante): Promise<Ficha | "ocupada" | "ja-tem-conta" | { espera: number }> {
+export async function fichaDoEmail(email: string, pedido: Pick<AssinarSemLoginInput, "documento">, opcoes: OpcoesDoVisitante): Promise<Ficha | "ocupada" | "ja-tem-conta" | { espera: number }> {
   // A que já existe volta como está — inclusive a que já virou conta: quem decide isso é a decisão,
   // com a trava (`fichaComConta`), num lugar só.
   const guardada = await prisma.guestCheckout.findUnique({ where: { email }, select: { id: true, stripeCustomerId: true } });
@@ -117,7 +118,7 @@ type NaTrava = DesfechoDoVisitante | { resultado: "viva-na-stripe"; assinaturaId
  * se perdeu). SINCRONIZA — é ali que a conta nasce — e responde "já tem conta": o caminho, agora, é
  * entrar. Fora da trava do e-mail e SEM ESPERAR a da assinatura, como no checkout (`checkout.ts`).
  */
-async function sincronizarAViva(email: string, assinaturaId: string): Promise<DesfechoDoVisitante> {
+export async function sincronizarAViva(email: string, assinaturaId: string): Promise<DesfechoDoVisitante> {
   const sincronia = await sincronizarSeLivre(assinaturaId);
   if (!sincronia) {
     console.info(`[stripe] visitante: a assinatura ${assinaturaId} está viva na Stripe, e o espelho dela está sendo acertado agora`);
@@ -146,6 +147,10 @@ async function decidir(email: string, pedido: AssinarSemLoginInput, ficha: Ficha
     // Viva: alguém já pagou. Nada aqui mexe no cliente dela — nem o número fiscal.
     const viva = existentes.find((a) => a.status !== "incomplete");
     if (viva) return { resultado: "viva-na-stripe", assinaturaId: viva.id };
+
+    // UM PAGAMENTO ABERTO POR VEZ (etapa 4.9): o Pix à espera desta ficha morre quando o e-mail segue
+    // por cartão — o QR copiado no app do banco podia ser pago depois (`checkout.ts` explica).
+    await cancelarPagamentosPixPendentes(ficha.stripeCustomerId);
 
     // O número fiscal desta tentativa, na forma em que a fatura o guarda. Vai para a ficha do cliente
     // só DEPOIS do laço (abaixo).

@@ -15,11 +15,14 @@ vi.mock("../lib/stripe-assinatura.js", async (importOriginal) => ({
   buscarProximaCobranca: (id: string) => buscarProximaCobranca(id),
 }));
 const buscarOQueFoiPago = vi.fn<(id: string) => Promise<OQueFoiPago>>();
+// A PRÉ-PAGA (etapa 4.9): o que foi pago é o Pix de que ela nasceu.
+const buscarOQueFoiPagoNoPix = vi.fn<(pagamentoId: string) => Promise<OQueFoiPago>>();
 const cancelarNaHora = vi.fn<(id: string, dado: MotivoDado) => Promise<void>>();
 const devolver = vi.fn<(pagamento: Pagamento, dono: DonoDaDevolucao) => Promise<void>>();
 vi.mock("../lib/stripe-reembolso.js", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../lib/stripe-reembolso.js")>()),
   buscarOQueFoiPago: (id: string) => buscarOQueFoiPago(id),
+  buscarOQueFoiPagoNoPix: (pagamentoId: string) => buscarOQueFoiPagoNoPix(pagamentoId),
   cancelarNaHora: (id: string, dado: MotivoDado) => cancelarNaHora(id, dado),
   devolver: (pagamento: Pagamento, dono: DonoDaDevolucao) => devolver(pagamento, dono),
 }));
@@ -138,10 +141,11 @@ beforeEach(async () => {
   pago = UMA_COBRANCA();
   buscarDetalhes.mockReset().mockImplementation(async (id) => {
     if (id !== SUB) throw new AssinaturaNaoEncontrada(id);
-    return { id, status: "active", pagoAte: EM_28_DIAS, plano: "mensal", preco: { centavos: 9990, moeda: "brl" }, fimDoPeriodo: EM_28_DIAS, comecouEm: HA_2_DIAS, acabaEm: null, acabaNoFimDoPeriodo: false, cartao: null, clienteId: CLIENTE, userId: memberId, faturaEmAbertoId: null, itemId: "si_do_teste", agendamentoId: null, agendamentoNosso: false, trocaMarcada: null, faturaDaTrocaId: null, ...detalhes };
+    return { id, status: "active", pagoAte: EM_28_DIAS, plano: "mensal", preco: { centavos: 9990, moeda: "brl" }, fimDoPeriodo: EM_28_DIAS, comecouEm: HA_2_DIAS, acabaEm: null, acabaNoFimDoPeriodo: false, cartao: null, clienteId: CLIENTE, userId: memberId, pixPaymentIntentId: null, faturaEmAbertoId: null, itemId: "si_do_teste", agendamentoId: null, agendamentoNosso: false, trocaMarcada: null, faturaDaTrocaId: null, ...detalhes };
   });
   buscarProximaCobranca.mockReset().mockResolvedValue({ centavos: 9990, moeda: "brl" });
   buscarOQueFoiPago.mockReset().mockImplementation(async () => ({ moeda: pago.moeda, pagamentos: pago.pagamentos.map((p) => ({ ...p })) }));
+  buscarOQueFoiPagoNoPix.mockReset().mockImplementation(async () => ({ moeda: pago.moeda, pagamentos: pago.pagamentos.map((p) => ({ ...p })) }));
   // Como na Stripe: encerrada, a assinatura é `canceled`; devolvido TUDO, o período deixa de estar pago.
   cancelarNaHora.mockReset().mockImplementation(async () => {
     detalhes = { ...detalhes, status: "canceled" };
@@ -319,7 +323,7 @@ describe("POST /api/billing/minha-assinatura/reembolso — quando não devolve",
 
   it("o prazo venceu entre o clique e a trava: vale o de AGORA — 409, nada é encerrado", async () => {
     // A primeira leitura (achar a assinatura da conta) ainda está no prazo; a segunda, com a trava, não.
-    buscarDetalhes.mockImplementationOnce(async (id) => ({ id, status: "active", pagoAte: EM_28_DIAS, plano: "mensal", preco: null, fimDoPeriodo: EM_28_DIAS, comecouEm: HA_2_DIAS, acabaEm: null, acabaNoFimDoPeriodo: false, cartao: null, clienteId: CLIENTE, userId: memberId, faturaEmAbertoId: null, itemId: "si_do_teste", agendamentoId: null, agendamentoNosso: false, trocaMarcada: null, faturaDaTrocaId: null }));
+    buscarDetalhes.mockImplementationOnce(async (id) => ({ id, status: "active", pagoAte: EM_28_DIAS, plano: "mensal", preco: null, fimDoPeriodo: EM_28_DIAS, comecouEm: HA_2_DIAS, acabaEm: null, acabaNoFimDoPeriodo: false, cartao: null, clienteId: CLIENTE, userId: memberId, pixPaymentIntentId: null, faturaEmAbertoId: null, itemId: "si_do_teste", agendamentoId: null, agendamentoNosso: false, trocaMarcada: null, faturaDaTrocaId: null }));
     detalhes = { comecouEm: HA_8_DIAS };
     const res = await reembolsar(member, {});
     expect([res.status, res.body]).toEqual([409, { error: "ForaDoPrazo" }]);
@@ -587,5 +591,38 @@ describe("GET /api/billing/minha-assinatura — a saída do reembolso", () => {
   it("nenhum código da Stripe chega ao navegador", async () => {
     const texto = JSON.stringify((await ler()).body);
     for (const trecho of [SUB, "sub_", "cus_", "pi_"]) expect(texto, trecho).not.toContain(trecho);
+  });
+});
+
+// A PRÉ-PAGA (etapa 4.9, passo 3): a primeira fatura dela foi paga POR FORA — o dinheiro está no Pix de que
+// ela nasceu, e é ele que volta. O resto é o reembolso de sempre: o prazo, encerrar na hora, continuar logada.
+describe("POST /api/billing/minha-assinatura/reembolso — a pré-paga (Pix)", () => {
+  const PIX = "pi_pix_do_teste";
+  beforeEach(() => {
+    detalhes = { acabaEm: EM_28_DIAS, acabaNoFimDoPeriodo: true, cartao: null, pixPaymentIntentId: PIX };
+    pago = { moeda: "brl", pagamentos: [{ pagamentoId: PIX, centavos: 9990, devolvido: 0 }] };
+  });
+
+  it("a tela mostra a saída do reembolso com o valor do PIX — lido do pagamento, não das faturas", async () => {
+    expect((await ler()).body).toMatchObject({ prePago: true, reembolso: { centavos: 9990, moeda: "brl" } });
+    expect(buscarOQueFoiPagoNoPix).toHaveBeenCalledWith(PIX);
+    expect(buscarOQueFoiPago).not.toHaveBeenCalled();
+  });
+
+  it("devolve o Pix, encerra na hora, o acesso acaba e a pessoa continua logada", async () => {
+    const res = await reembolsar(member, {});
+    expect([res.status, res.body]).toEqual([200, { centavos: 9990, moeda: "brl" }]);
+    expect(cancelarNaHora).toHaveBeenCalledWith(SUB, expect.anything());
+    expect(devolver).toHaveBeenCalledWith({ pagamentoId: PIX, centavos: 9990, devolvido: 0 }, { userId: memberId, assinaturaId: SUB });
+    expect(buscarOQueFoiPago).not.toHaveBeenCalled();
+    expect((await situacao()).body).toMatchObject({ temAcesso: false });
+    expect((await ler()).status).toBe(200);
+  });
+
+  it("o Pix já tinha voltado (pelo painel): 409, sem encerrar nem devolver de novo", async () => {
+    pago = { moeda: "brl", pagamentos: [{ pagamentoId: PIX, centavos: 9990, devolvido: 9990 }] };
+    const res = await reembolsar(member, {});
+    expect([res.status, res.body]).toEqual([409, { error: "NadaADevolver" }]);
+    nadaMudouNaStripe();
   });
 });

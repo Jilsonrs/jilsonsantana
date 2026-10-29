@@ -396,6 +396,16 @@ export const pt = {
         terminou: "Sua assinatura terminou, e o acesso às aulas foi encerrado.",
         progressoSeVoltar: "Seu progresso continua guardado: se voltar, você continua de onde parou.",
         botao: "Reativar assinatura"
+      },
+      // O E-MAIL DO PRÉ-PAGO (etapa 4.9, passo 4 — decisão do operador, 28/10/2026: 3 dias antes de acabar):
+      // RASCUNHO do agente, para o operador revisar (P111). Sem botão: pagar de novo é só depois de acabar
+      // (decisão (a) da etapa) — o botão "Reativar assinatura" vem no e-mail de "terminou", que já existe.
+      // `{data}` é o dia em que o acesso acaba, no horário de Brasília.
+      prePagoTerminando: {
+        assunto: "Seu acesso às aulas termina no dia {data}",
+        titulo: "Seu acesso está acabando",
+        acaba: "Você pagou com Pix, e o seu acesso às aulas vai até o dia {data}.",
+        depois: "Quando acabar, é só pagar de novo para continuar: seu progresso fica guardado, e você segue de onde parou."
       }
     },
     inicio: {
@@ -601,7 +611,23 @@ export const pt = {
       confirmando: "Confirmando sua assinatura…",
       confirmada: "Assinatura confirmada. Bons estudos!",
       comecar: "Começar a estudar",
-      demorando: "Está demorando mais que o normal. Seu pagamento não se perde: esta página continua conferindo."
+      demorando: "Está demorando mais que o normal. Seu pagamento não se perde: esta página continua conferindo.",
+      // O PIX PRÉ-PAGO (etapa 4.9, passo 2b). Textos APROVADOS pelo operador em 28/10/2026: a escolha
+      // antes do campo de pagamento (só aparece quando o servidor diz que o Pix está no ar), a linha do
+      // resumo no lugar da renovação (`{data}` é o fim do período pago, contado de hoje), o botão, e o
+      // "QR de novo" das telas de concluído, para quem fechou o QR sem pagar.
+      pix: {
+        comoPagar: "Como você quer pagar?",
+        cartao: "Cartão",
+        cartaoDescricao: "Renova sozinho todo mês (ou todo ano). Cancele quando quiser.",
+        pix: "Pix",
+        pixDescricao: "Você paga uma vez e estuda por 1 mês ou 1 ano. Não renova sozinho: quando acabar, é só pagar de novo.",
+        acessoAte: "Acesso até {data}",
+        botao: "Pagar com Pix",
+        qrDeNovo: "Mostrar o QR de novo",
+        // Com o Pix não há cartão: a linha do resumo sai sem a parte do cartão (decisão do operador, P110, 28/10/2026).
+        pagamentoSeguro: "Pagamento seguro, processado pela Stripe.",
+      },
     },
     // FATURAMENTO E ASSINATURA (Fase 4, etapa 4.6). Textos APROVADOS pelo operador em 11/10/2026. O título da tela é o rótulo do menu (`nav.faturamento`); os nomes dos
     // planos e "Assinar" / "Reativar assinatura" são os de `assinar`.
@@ -622,6 +648,10 @@ export const pt = {
       formaDePagamento: "Forma de pagamento",
       cartao: "{bandeira} •••• {final} · vence em {mes}/{ano}",
       semCartao: "Nenhum cartão cadastrado.",
+      // O PIX PRÉ-PAGO (etapa 4.9, passo 3 — textos do operador, 28/10/2026): no lugar da próxima cobrança,
+      // até quando vai o acesso; em "Forma de pagamento", "Pix" (não há cartão, nem o que trocar).
+      prePago: "Seu acesso vai até {data}. Para continuar, é só pagar de novo quando acabar.",
+      pix: "Pix",
       trocarCartao: "Trocar cartão",
       adicionarCartao: "Adicionar cartão",
       semAssinatura: "Você ainda não tem uma assinatura.",

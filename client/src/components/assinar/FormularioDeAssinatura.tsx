@@ -1,19 +1,18 @@
 import { useState, type ReactNode } from "react";
-import { DuracaoDoDesconto, enderecoDeEmailSchema, lerDocumentoFiscal, Plano, TELA_DE_CONCLUIDO_SEM_LOGIN, type AssinaturaCriada, type PlanosDaAssinatura } from "@jilson/core";
+import { DuracaoDoDesconto, enderecoDeEmailSchema, lerDocumentoFiscal, Plano, TELA_DE_CONCLUIDO_SEM_LOGIN, type PlanosDaAssinatura } from "@jilson/core";
 import { PageSection } from "@/components/layout/PageLayout";
-import { assinarSemLogin, criarAssinatura } from "@/lib/api";
-import { getStoredAttribution } from "@/lib/attribution";
-import { telaDeConcluido, usePrevia } from "@/lib/assinar";
+import { telaDeConcluido, usePrevia, type FormaDePagamento } from "@/lib/assinar";
 import { codigoDoErro } from "@/lib/course-form";
 import { passouDoLimite } from "@/lib/faturamento";
 import { useT } from "@/lib/language";
+import { pedirAoServidor } from "@/lib/pedido-de-assinatura";
 import { CampoDoCartao, CartaoProvider, type Cartao } from "@/lib/stripe-do-site";
-import { guardarTentativa, lerTentativa } from "@/lib/tentativa-de-assinar";
 import { semInterromper } from "@/lib/versao";
 import { BotaoDeAssinar } from "./BotaoDeAssinar";
 import { CampoDoDocumento } from "./CampoDoDocumento";
 import { CodigoPromocional } from "./CodigoPromocional";
 import { CaixaDeNovidades, CampoDoEmail } from "./DadosDoVisitante";
+import { EscolhaDaFormaDePagamento } from "./EscolhaDaFormaDePagamento";
 import { EscolhaDoPlano } from "./EscolhaDoPlano";
 import { OQueEstaIncluido } from "./OQueEstaIncluido";
 import { BotaoComCartao } from "./PagamentoComCartao";
@@ -31,7 +30,14 @@ import { ResumoDaAssinatura } from "./ResumoDaAssinatura";
  *
  * SEM LOGIN (`semLogin`, a tela pública — etapa 4.7, passo 6e): pede também o e-mail e as novidades,
  * usa as rotas do visitante, e guarda a TENTATIVA que o servidor devolve — só na memória e no
- * `sessionStorage`, antes de o cartão confirmar (`lib/tentativa-de-assinar.ts`).
+ * `sessionStorage`, antes de o cartão confirmar (`lib/tentativa-de-assinar.ts`). O pedido ao servidor,
+ * nas quatro combinações, mora em `lib/pedido-de-assinatura.ts`.
+ *
+ * O PIX PRÉ-PAGO (etapa 4.9, passo 2b): quando o servidor diz que o Pix está no ar (`dados.pix`), a
+ * escolha "Como você quer pagar?" vem antes do campo. Com o Pix, o código promocional some (o Pix é o
+ * preço cheio), o resumo diz até quando vai o acesso, o botão diz "Pagar com Pix" e o campo abre em modo
+ * pagamento, só com o Pix; a confirmação abre o QR da própria Stripe. A tela NUNCA pede um QR novo
+ * sozinha: só o clique no botão pede.
  */
 export function FormularioDeAssinatura({
   dados,
@@ -56,6 +62,7 @@ export function FormularioDeAssinatura({
   const [email, setEmail] = useState("");
   const [erroDoEmail, setErroDoEmail] = useState<string | null>(null);
   const [novidades, setNovidades] = useState(false);
+  const [forma, setForma] = useState<FormaDePagamento>("cartao");
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const previa = usePrevia(plano, codigo, semLogin);
@@ -68,6 +75,13 @@ export function FormularioDeAssinatura({
   // Nada a pagar, hoje nem depois: sem cartão. Se o desconto acaba, o cartão é pedido mesmo com
   // zero hoje — a cobrança seguinte precisa dele.
   const semCartao = comCodigo !== null && comCodigo.centavosHoje === 0 && comCodigo.desconto.duracao === DuracaoDoDesconto.PARA_SEMPRE;
+  const pixNoAr = dados.pix != null;
+  const comPix = pixNoAr && forma === "pix";
+  // Escolher o Pix esquece o código: o Pix não tem código promocional (decisão (b) da etapa 4.9).
+  const escolherForma = (nova: FormaDePagamento) => {
+    setForma(nova);
+    if (nova === "pix") setCodigo(null);
+  };
 
   async function enviar(cartao: Cartao | null) {
     if (enviando || conferindo) return;
@@ -83,7 +97,7 @@ export function FormularioDeAssinatura({
           const preenchido = await cartao.validar();
           if (!preenchido.ok) return setErro(preenchido.mensagem ?? t.erro);
         }
-        const criada = semLogin ? await assinarComoVisitante() : await criarAssinatura(comCodigo && codigo ? { plano, codigo, documento } : { plano, documento });
+        const criada = await pedirAoServidor({ semLogin, forma: comPix ? "pix" : "cartao", plano, codigo: comCodigo && codigo ? codigo : null, documento, email, novidades, chavePublicavel: dados.chavePublicavel });
         if (criada.estado === "pagar") {
           // O servidor pede pagamento e a tela não tinha cartão: o código mudou no meio do caminho.
           if (!cartao) {
@@ -113,25 +127,6 @@ export function FormularioDeAssinatura({
     } finally {
       setEnviando(false);
     }
-  }
-
-  /** O pedido do visitante: a tentativa desta aba segue (é a mesma assinatura); a nova fica guardada antes do cartão. */
-  async function assinarComoVisitante(): Promise<AssinaturaCriada> {
-    const origem = getStoredAttribution();
-    const anterior = lerTentativa();
-    const doMesmoEmail = anterior !== null && anterior.email.toLowerCase() === email.trim().toLowerCase();
-    const resposta = await assinarSemLogin({
-      email,
-      documento,
-      plano,
-      novidades,
-      ...(comCodigo && codigo ? { codigo } : {}),
-      ...(doMesmoEmail ? { tentativa: anterior.tentativa } : {}),
-      ...(origem?.source ? { origem: origem.source } : {}),
-      ...(origem?.campaign ? { campanha: origem.campaign } : {}),
-    });
-    guardarTentativa({ tentativa: resposta.tentativa, email: email.trim() });
-    return resposta.estado === "pagar" ? { estado: "pagar", segredo: resposta.segredo, tipo: resposta.tipo } : { estado: "ativa" };
   }
 
   // À esquerda, o que se preenche, com "O que está incluído" logo depois dos planos; à direita (no
@@ -164,14 +159,17 @@ export function FormularioDeAssinatura({
         </PageSection>
         <EscolhaDoPlano planos={dados.planos} escolhido={plano} aoEscolher={setPlano} travado={enviando} />
         <OQueEstaIncluido incluido={dados.incluido} />
-        <CodigoPromocional
-          aplicado={comCodigo ? codigo : null}
-          recusado={recusado}
-          conferindo={conferindo}
-          travado={enviando}
-          aoAplicar={setCodigo}
-          aoRemover={() => setCodigo(null)}
-        />
+        {pixNoAr && !semCartao && <EscolhaDaFormaDePagamento escolhida={forma} aoEscolher={escolherForma} travado={enviando} />}
+        {!comPix && (
+          <CodigoPromocional
+            aplicado={comCodigo ? codigo : null}
+            recusado={recusado}
+            conferindo={conferindo}
+            travado={enviando}
+            aoAplicar={setCodigo}
+            aoRemover={() => setCodigo(null)}
+          />
+        )}
         {!semCartao && (
           <PageSection title={t.pagamento} className="pt-0 sm:pt-0">
             <CampoDoCartao />
@@ -179,15 +177,15 @@ export function FormularioDeAssinatura({
         )}
       </div>
       <div className="space-y-8">
-        <ResumoDaAssinatura plano={escolhido} comCodigo={comCodigo} erro={erro} botao={botao} />
+        <ResumoDaAssinatura plano={escolhido} comCodigo={comCodigo} erro={erro} botao={botao} pix={comPix} />
       </div>
     </div>
   );
 
   if (semCartao) return tela(<BotaoDeAssinar enviando={enviando} aoClicar={() => void enviar(null)} reativar={reativar} />);
   return (
-    <CartaoProvider pedido={{ chavePublicavel: dados.chavePublicavel, centavos: centavosHoje, moeda: escolhido.moeda, formasDePagamento: dados.formasDePagamento }}>
-      {tela(<BotaoComCartao enviando={enviando} aoEnviar={(cartao) => void enviar(cartao)} reativar={reativar} />)}
+    <CartaoProvider pedido={{ chavePublicavel: dados.chavePublicavel, centavos: centavosHoje, moeda: escolhido.moeda, formasDePagamento: dados.formasDePagamento, pix: comPix && dados.pix ? dados.pix : null }}>
+      {tela(<BotaoComCartao enviando={enviando} aoEnviar={(cartao) => void enviar(cartao)} reativar={reativar} pix={comPix} />)}
     </CartaoProvider>
   );
 }

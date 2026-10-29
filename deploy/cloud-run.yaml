@@ -13,6 +13,10 @@ COMING_SOON: "true"
 # "Em breve" no ar só ele vê a home e a tela de assinar, e testa a compra no site. Desligada, as rotas
 # /api/billing/visitante/* respondem 404. O risco aceito: billing.md → Assinar sem conta.
 ASSINAR_SEM_LOGIN: "true"
+# O PIX PRÉ-PAGO (etapa 4.9): a configuração de formas de pagamento SÓ COM PIX da conta de verdade,
+# criada pelo operador no painel em 28/10/2026 (P109). Não é segredo. Sem ela, as rotas do Pix
+# respondem 503 e a tela não oferece o Pix. A da área restrita fica no server/.env.
+STRIPE_PIX_CONFIGURATION: "pmc_1UVbbJCb0IFa2F76AZ6JkqND"
 BUNNY_STREAM_LESSONS_LIBRARY_ID: "762605"
 # O CDN Hostname da jilsonsantana-stream (Bunny → Stream → API). O CI confere no próprio
 # Bunny que ele existe (deploy/conferir-bunny.sh) — na G2 ele entrou errado, sem erro nenhum.

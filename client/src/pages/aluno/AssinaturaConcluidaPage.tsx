@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
+import { QrDeNovo } from "@/components/assinar/QrDeNovo";
 import { PageContainer, PageHeader } from "@/components/layout/PageLayout";
 import { Button } from "@/components/ui/button";
 import { REATIVOU, useSituacaoDaAssinatura } from "@/lib/assinar";
@@ -54,6 +55,9 @@ export function AssinaturaConcluidaPage({ conferirACada = 2000, demora = 20_000 
           {demorou && <p className="max-w-[60ch] text-sm text-muted-foreground">{t.assinar.demorando}</p>}
         </div>
       )}
+      {/* Quem pagou com Pix e fechou a janela do QR sem pagar (etapa 4.9): o botão enquanto o servidor
+          não confirma. Fica montado nos dois estados: é ao receber "confirmado" que ele esquece o Pix. */}
+      <QrDeNovo confirmado={temAcesso} />
     </PageContainer>
   );
 }

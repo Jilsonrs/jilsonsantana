@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { EMAIL_DE_SUPORTE } from "@jilson/core";
 import { CriarSenhaDepoisDePagar } from "@/components/assinar/CriarSenhaDepoisDePagar";
+import { QrDeNovo } from "@/components/assinar/QrDeNovo";
 import { useConfirmacaoSemLogin } from "@/lib/assinar";
 import { useT } from "@/lib/language";
 import { lerTentativa } from "@/lib/tentativa-de-assinar";
@@ -31,27 +32,32 @@ export function AssinaturaConcluidaSemLoginPage({ conferirACada = 2000, demora =
   }, [demora]);
 
   if (!guardada) return null;
-  if (confirmacao.data?.confirmada) {
-    const [antes, depois = ""] = t.emailErrado.split("{contato}");
-    return (
-      <div className="max-w-2xl space-y-6">
-        <h1 className="text-2xl font-semibold text-foreground">{t.confirmadaSemLogin}</h1>
-        <p className="text-foreground">{t.crieSuaSenha.replace("{email}", guardada.email)}</p>
-        <CriarSenhaDepoisDePagar tentativa={guardada.tentativa} />
-        <p className="text-sm text-muted-foreground">
-          {antes}
-          <a href={`mailto:${EMAIL_DE_SUPORTE}`} className="underline underline-offset-2 hover:text-foreground">
-            {EMAIL_DE_SUPORTE}
-          </a>
-          {depois}
-        </p>
-      </div>
-    );
-  }
+  const confirmada = confirmacao.data?.confirmada === true;
+  const [antes, depois = ""] = t.emailErrado.split("{contato}");
   return (
-    <div className="max-w-2xl space-y-3" aria-live="polite">
-      <h1 className="text-2xl font-semibold text-foreground">{t.confirmando}</h1>
-      {demorou && <p className="text-muted-foreground">{t.demorando}</p>}
+    <div className="max-w-2xl space-y-6">
+      {confirmada ? (
+        <>
+          <h1 className="text-2xl font-semibold text-foreground">{t.confirmadaSemLogin}</h1>
+          <p className="text-foreground">{t.crieSuaSenha.replace("{email}", guardada.email)}</p>
+          <CriarSenhaDepoisDePagar tentativa={guardada.tentativa} />
+          <p className="text-sm text-muted-foreground">
+            {antes}
+            <a href={`mailto:${EMAIL_DE_SUPORTE}`} className="underline underline-offset-2 hover:text-foreground">
+              {EMAIL_DE_SUPORTE}
+            </a>
+            {depois}
+          </p>
+        </>
+      ) : (
+        <div className="space-y-3" aria-live="polite">
+          <h1 className="text-2xl font-semibold text-foreground">{t.confirmando}</h1>
+          {demorou && <p className="text-muted-foreground">{t.demorando}</p>}
+        </div>
+      )}
+      {/* Quem pagou com Pix e fechou a janela do QR sem pagar (etapa 4.9): o botão enquanto o pagamento
+          não vale. Fica montado nos dois estados: é ao receber "confirmado" que ele esquece o Pix. */}
+      <QrDeNovo confirmado={confirmada} />
     </div>
   );
 }

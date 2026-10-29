@@ -387,3 +387,35 @@ describe("FaturamentoPage — mudar de plano", () => {
   });
 
 });
+
+// A PRÉ-PAGA (etapa 4.9, passo 3 — texto do operador, 28/10/2026): nasceu de um Pix, não renova e não tem
+// cartão. O que a tela diz é o que o SERVIDOR mandou (`prePago`, as permissões); aqui só se desenha.
+describe("FaturamentoPage — a pré-paga (Pix)", () => {
+  const PRE_PAGA: MinhaAssinatura = { ...ATIVA, situacao: "vai-cancelar", proximaCobranca: null, acessoAte: MEIO_DIA, cartao: null, aceitaCartao: false, podeParar: false, podeManter: false, podeMudarDePlano: false, prePago: true };
+
+  it("diz até quando vai o acesso e que se paga de novo quando acabar; a forma de pagamento é Pix; sem trocar cartão, cancelar, manter nem mudar de plano", async () => {
+    getMinhaAssinatura.mockResolvedValue(PRE_PAGA);
+    abrir();
+    expect(await screen.findByText("Seu acesso vai até 10/11/2026. Para continuar, é só pagar de novo quando acabar.")).toBeTruthy();
+    expect(naTela()).not.toContain("Sua assinatura termina em");
+    expect(naTela()).not.toContain("Próxima cobrança");
+    expect(screen.getByText("Pix")).toBeTruthy();
+    expect(naTela()).not.toContain("Nenhum cartão cadastrado.");
+    for (const nome of ["Trocar cartão", "Adicionar cartão", "Cancelar assinatura", "Mudar de plano"]) expect(screen.queryByRole("link", { name: nome })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Manter a assinatura" })).toBeNull();
+  });
+
+  it("ainda no prazo do reembolso: o caminho para cancelar (e receber o Pix de volta) continua", async () => {
+    getMinhaAssinatura.mockResolvedValue({ ...PRE_PAGA, reembolso: { centavos: 9990, moeda: "brl", ate: MEIO_DIA } });
+    abrir();
+    expect(await screen.findByRole("link", { name: "Cancelar assinatura" })).toBeTruthy();
+  });
+
+  it("a renovação parada de um cartão (sem a marca): continua com o texto de sempre e o cartão", async () => {
+    getMinhaAssinatura.mockResolvedValue({ ...ATIVA, situacao: "vai-cancelar", proximaCobranca: null, acessoAte: MEIO_DIA, podeParar: false, podeManter: true });
+    abrir();
+    expect(await screen.findByText("Sua assinatura termina em 10/11/2026. Você continua com acesso até lá.")).toBeTruthy();
+    expect(naTela()).not.toContain("pagar de novo quando acabar");
+    expect(screen.queryByText("Pix")).toBeNull();
+  });
+});

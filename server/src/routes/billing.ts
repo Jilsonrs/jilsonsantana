@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { comVaga } from "../lib/assinaturas-em-andamento.js";
-import { assinarSchema, cancelarSchema, mudarDePlanoSchema, previaSchema, type AssinaturaCriada, type CartaoTrocado, type PlanosDaAssinatura, type PreviaDaAssinatura, type PlanoMudado, type ReembolsoFeito, type RenovacaoParada, type SituacaoDaAssinatura, type TrocaDeCartaoPreparada, type TrocaDesfeita, type TrocaDisponivel } from "@jilson/core";
+import { assinarSchema, cancelarSchema, mudarDePlanoSchema, pixSchema, previaSchema, type AssinaturaCriada, type CartaoTrocado, type PlanosDaAssinatura, type PreviaDaAssinatura, type PlanoMudado, type ReembolsoFeito, type RenovacaoParada, type SituacaoDaAssinatura, type TrocaDeCartaoPreparada, type TrocaDesfeita, type TrocaDisponivel } from "@jilson/core";
 import { requireAuth } from "../middleware/auth.js";
 import { validate } from "../lib/http.js";
 import { cobrancaConfigurada } from "../lib/stripe.js";
@@ -8,6 +8,8 @@ import { lerPlanos, lerPrevia } from "../lib/vitrine-da-assinatura.js";
 import { protecaoDaCobranca } from "../lib/protecao-da-cobranca.js";
 import { atrasadaSemAcesso, convidaAReativar, temAcessoAtivo } from "../lib/acesso.js";
 import { assinar } from "../lib/checkout.js";
+import { pagarComPix } from "../lib/pix-pre-pago.js";
+import { pixConfigurado } from "../lib/stripe-pix.js";
 import { desistirDaTroca, lerTrocaDePlano, mudarMeuPlano } from "../lib/meu-plano.js";
 import { aplicarCartaoNovo, lerMinhaAssinatura, manterMinhaAssinatura, pararMinhaRenovacao, prepararTrocaDeCartao, reembolsarMinhaAssinatura, registrarAssinaturaDesconhecida } from "../lib/minha-assinatura.js";
 import { limiteDeTentativas } from "../lib/limite-de-tentativas.js";
@@ -127,6 +129,50 @@ router.post("/billing/assinatura", requireAuth, ...limiteDeTentativas.cobranca, 
   res.json(resposta);
 });
 
+// POST /api/billing/pix — pagar com PIX, pré-pago (etapa 4.9, passo 2). A regra mora em
+// `lib/pix-pre-pago.ts`; aqui, só a conta da SESSÃO e a resposta. O segredo do pagamento vai SÓ na
+// resposta — nunca para o registro. O mesmo limite e o mesmo teto do assinar com cartão.
+router.post("/billing/pix", requireAuth, ...limiteDeTentativas.cobranca, async (req, res) => {
+  const user = req.user;
+  if (!user) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  const corpo = validate(pixSchema, req.body, res);
+  if (corpo === null) return;
+  if (!cobrancaConfigurada() || !pixConfigurado()) {
+    console.error("[stripe] pix recusado: STRIPE_SECRET_KEY ou STRIPE_PIX_CONFIGURATION ausente");
+    res.status(503).json({ error: "NaoConfigurado" });
+    return;
+  }
+  const vaga = await comVaga(() => pagarComPix({ id: user.id, email: user.email, nome: user.name ?? null }, corpo));
+  if (vaga.cheio) {
+    res.set("Retry-After", "2");
+    res.status(409).json({ error: "MuitosAoMesmoTempo" });
+    return;
+  }
+  const desfecho = vaga.resultado;
+  if (desfecho.resultado === "ja-assinante") {
+    res.status(409).json({ error: "JaAssinante" });
+    return;
+  }
+  if (desfecho.resultado === "ocupada") {
+    res.status(409).json({ error: "Ocupada" });
+    return;
+  }
+  // A cobrança do cartão falhou há mais de 3 dias: o caminho é trocar o cartão daquela assinatura, não um Pix por cima dela.
+  if (desfecho.resultado === "atrasada") {
+    res.status(409).json({ error: "CobrancaAtrasada" });
+    return;
+  }
+  if (desfecho.resultado === "documento-recusado") {
+    res.status(400).json({ error: "DocumentoInvalido" });
+    return;
+  }
+  const resposta: AssinaturaCriada = { estado: "pagar", segredo: desfecho.segredo, tipo: "pix" };
+  res.json(resposta);
+});
+
 // GET /api/billing/minha-assinatura — a assinatura da conta da SESSÃO, para a tela de Faturamento
 // e Assinatura (etapa 4.6): o plano, a próxima cobrança e o cartão, como a Stripe diz agora. O
 // pedido não diz de quem nem qual: a regra mora em `lib/minha-assinatura.ts`.
@@ -169,7 +215,8 @@ router.post("/billing/cartao", requireAuth, ...limiteDeTentativas.cobranca, asyn
   const preparo = await prepararTrocaDeCartao(user.id);
   if (preparo.resultado === "desconhecida") registrarAssinaturaDesconhecida(user.id, "trocar cartão");
   if (preparo.resultado !== "ok") {
-    res.status(preparo.resultado === "desconhecida" ? 404 : 409).json({ error: preparo.resultado === "desconhecida" ? "AssinaturaDesconhecida" : "SemAssinatura" });
+    const [status, error] = RECUSAS[preparo.resultado];
+    res.status(status).json({ error });
     return;
   }
   const resposta: TrocaDeCartaoPreparada = { segredo: preparo.segredo };
@@ -189,17 +236,10 @@ router.post("/billing/cartao/aplicar", requireAuth, ...limiteDeTentativas.cobran
     return;
   }
   const troca = await aplicarCartaoNovo(user.id);
-  if (troca.resultado === "desconhecida") {
-    registrarAssinaturaDesconhecida(user.id, "trocar cartão");
-    res.status(404).json({ error: "AssinaturaDesconhecida" });
-    return;
-  }
-  if (troca.resultado === "sem-assinatura") {
-    res.status(409).json({ error: "SemAssinatura" });
-    return;
-  }
-  if (troca.resultado === "sem-cartao-novo") {
-    res.status(409).json({ error: "CartaoNaoConfirmado" });
+  if (troca.resultado === "desconhecida") registrarAssinaturaDesconhecida(user.id, "trocar cartão");
+  if (troca.resultado !== "ok") {
+    const [status, error] = RECUSAS[troca.resultado];
+    res.status(status).json({ error });
     return;
   }
   // `confirmar`: o banco pediu uma confirmação para a cobrança em aberto — o site a completa.
@@ -219,6 +259,9 @@ router.post("/billing/cartao/aplicar", requireAuth, ...limiteDeTentativas.cobran
 const RECUSAS = {
   desconhecida: [404, "AssinaturaDesconhecida"],
   "sem-assinatura": [409, "SemAssinatura"],
+  // A pré-paga (etapa 4.9): nasceu de um Pix — não tem cartão, renovação nem troca de plano a mexer.
+  "pre-paga": [409, "PrePago"],
+  "sem-cartao-novo": [409, "CartaoNaoConfirmado"],
   ocupada: [409, "Ocupada"],
   "fora-do-prazo": [409, "ForaDoPrazo"],
   "nada-a-devolver": [409, "NadaADevolver"],

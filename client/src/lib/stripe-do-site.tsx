@@ -40,6 +40,8 @@ export type PedidoDeCartao = {
   moeda: string;
   /** A lista do servidor — a mesma com que ele cria a assinatura. */
   formasDePagamento: string[];
+  /** O PIX PRÉ-PAGO (etapa 4.9): a configuração só-Pix do servidor. Com ela, o campo abre em modo pagamento, só com o Pix. */
+  pix?: { configuracao: string } | null;
 };
 
 /** Dá o campo do cartão e o `useCartao()` a quem estiver dentro. */
@@ -50,11 +52,16 @@ export function CartaoProvider({ pedido, children }: { pedido: PedidoDeCartao; c
   // simplesmente não aparece, sem erro na tela. E os tipos não acusaram porque as opções eram
   // montadas com `...espalhar`, que o TypeScript não confere — por isso aqui é tudo escrito
   // por extenso, com o tipo: nome de opção errado volta a quebrar a compilação.
-  const opcoes: StripeElementsOptionsMode =
-    pedido.centavos > 0
+  // O PIX PRÉ-PAGO (etapa 4.9, passo 2b): um PAGAMENTO SOLTO (`mode: "payment"`), só com o Pix da
+  // configuração do servidor (context7 /websites/stripe, 28/10/2026: `paymentMethodConfiguration` nas
+  // opções do Elements com intenção adiada; é a mesma configuração do pagamento que o servidor cria). O
+  // `allowedPaymentMethodTypes` reforça: nunca cartão aqui — seria uma cobrança avulsa, não assinatura.
+  const opcoes: StripeElementsOptionsMode = pedido.pix
+    ? { mode: "payment", amount: pedido.centavos, currency: pedido.moeda, paymentMethodConfiguration: pedido.pix.configuracao, allowedPaymentMethodTypes: ["pix"], locale: IDIOMA_DO_CAMPO, appearance: APARENCIA }
+    : pedido.centavos > 0
       ? { mode: "subscription", amount: pedido.centavos, currency: pedido.moeda, allowedPaymentMethodTypes: pedido.formasDePagamento, locale: IDIOMA_DO_CAMPO, appearance: APARENCIA }
       : { mode: "setup", currency: pedido.moeda, allowedPaymentMethodTypes: pedido.formasDePagamento, locale: IDIOMA_DO_CAMPO, appearance: APARENCIA };
-  // A `key`: trocar entre "cobra hoje" e "só guarda o cartão" monta um campo novo.
+  // A `key`: trocar entre "cobra hoje", "só guarda o cartão" e o Pix monta um campo novo.
   return (
     <Elements key={opcoes.mode} stripe={stripeDoSite(pedido.chavePublicavel)} options={opcoes}>
       {children}
@@ -74,7 +81,7 @@ export type Cartao = {
   /** Confere o que o aluno preencheu, antes de criar qualquer coisa no servidor. */
   validar: () => Promise<Desfecho>;
   /** Confirma com o segredo que o servidor devolveu: `pagamento` cobra hoje; `cartao` só guarda o cartão. */
-  confirmar: (segredo: string, tipo: "pagamento" | "cartao", voltarPara: string) => Promise<Desfecho>;
+  confirmar: (segredo: string, tipo: "pagamento" | "cartao" | "pix", voltarPara: string) => Promise<Desfecho>;
 };
 
 /** Só os erros de cartão e de preenchimento trazem frase para o aluno; o resto vira a frase da escola. */
@@ -98,7 +105,8 @@ export function useCartao(): Cartao {
       // `if_required`: o cartão confirma sem sair da tela (a conferência do banco abre por cima);
       // só forma de pagamento que precise sair volta pelo endereço abaixo.
       const pedido = { elements, clientSecret: segredo, confirmParams: { return_url: new URL(voltarPara, window.location.origin).toString() }, redirect: "if_required" as const };
-      const { error } = tipo === "pagamento" ? await stripe.confirmPayment(pedido) : await stripe.confirmSetup(pedido);
+      // O Pix pré-pago (etapa 4.9) confirma como pagamento: a própria Stripe.js mostra o QR e espera o Pix cair.
+      const { error } = tipo === "cartao" ? await stripe.confirmSetup(pedido) : await stripe.confirmPayment(pedido);
       return error ? falhou(error) : { ok: true };
     },
   };
@@ -122,4 +130,17 @@ export async function confirmarNoBanco(chavePublicavel: string, segredo: string)
   // SÓ o pagamento que PASSOU é "confirmado" (achado da revisão de segurança, 11/10/2026): em
   // qualquer outro estado quem diz o que aconteceu é o servidor, relendo a assinatura.
   return paymentIntent.status === "succeeded" ? "confirmado" : "nao-concluido";
+}
+
+/**
+ * MOSTRA O QR DO PIX DE NOVO (etapa 4.9, passo 2b), para quem fechou a janela do QR sem pagar: a tela de
+ * concluído chama com o segredo guardado na aba (`lib/pix-pendente.ts`), e o Stripe.js abre a janela do
+ * QR por cima da tela. O que ela devolve NÃO decide nada: quem diz que a assinatura valeu é o servidor,
+ * que a tela de concluído continua perguntando. Devolve se conseguiu abrir.
+ */
+export async function mostrarQrDeNovo(chavePublicavel: string, segredo: string): Promise<boolean> {
+  const stripe = await stripeDoSite(chavePublicavel);
+  if (!stripe) return false;
+  const { error } = await stripe.handleNextAction({ clientSecret: segredo });
+  return !error;
 }

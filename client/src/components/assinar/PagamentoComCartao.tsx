@@ -6,7 +6,7 @@ import { BotaoDeAssinar } from "./BotaoDeAssinar";
  * o envio confere e confirma. O campo do cartão (`CampoDoCartao`) fica no formulário, e o botão na
  * coluna de resumo (etapa 4.7, passo 6d) — os dois no mesmo `CartaoProvider`.
  */
-export function BotaoComCartao({ enviando, aoEnviar, reativar }: { enviando: boolean; aoEnviar: (cartao: Cartao) => void; reativar?: boolean }) {
+export function BotaoComCartao({ enviando, aoEnviar, reativar, pix }: { enviando: boolean; aoEnviar: (cartao: Cartao) => void; reativar?: boolean; pix?: boolean }) {
   const cartao = useCartao();
-  return <BotaoDeAssinar enviando={enviando} aoClicar={() => aoEnviar(cartao)} reativar={reativar} />;
+  return <BotaoDeAssinar enviando={enviando} aoClicar={() => aoEnviar(cartao)} reativar={reativar} pix={pix} />;
 }

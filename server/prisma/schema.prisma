@@ -713,6 +713,11 @@ model Subscription {
   // de teste saem do banco de produção (Fase 7), senão dariam acesso para sempre. Sem saber
   // (a assinatura de teste do seed), FALSO.
   livemode             Boolean   @default(false)
+  // O PIX PRÉ-PAGO (etapa 4.9, 28/10/2026): o pagamento Pix (solto, na Stripe) que esta assinatura
+  // nasceu para representar — paga por fora, cancela no fim do período, nunca renova. Vazio =
+  // assinatura recorrente (cartão). É por esta coluna que as telas, a rodada e o reembolso sabem
+  // que ela é pré-paga; e é única: um Pix vira UMA assinatura (a idempotência do aviso).
+  pixPaymentIntentId   String?   @unique
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
   // Os e-mails da cobrança já tomados para esta assinatura (etapa 4.7, passo 7).
@@ -752,6 +757,8 @@ enum SubscriptionEmailKind {
   ANTES_DE_TRANCAR
   // No fim de uma assinatura que foi paga.
   CANCELADA
+  // Na PRÉ-PAGA (Pix, etapa 4.9): 3 dias antes de o acesso acabar (decisão do operador, 28/10/2026).
+  PREPAGO_TERMINANDO
 }
 
 // A CONTAGEM DO LIMITE DE TENTATIVAS (25/10/2026 — o servidor passa a ter até 3 cópias): uma linha

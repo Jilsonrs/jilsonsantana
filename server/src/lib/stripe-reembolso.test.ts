@@ -24,8 +24,8 @@ vi.mock("./stripe-cliente.js", async (importOriginal) => ({
 }));
 
 import { AssinaturaNaoEncontrada, buscarAssinatura } from "./stripe.js";
-import { cobrancaDoPagamento, faturaDevolvida } from "./stripe-devolucao.js";
-import { aDevolver, assinaturaDoPagamento, buscarOQueFoiPago, cancelarNaHora, chaveDaDevolucao, devolver, paraPedidoDeDevolucao } from "./stripe-reembolso.js";
+import { cobrancaDoPagamento, faturaDevolvida, periodoDevolvido, pixDevolvido } from "./stripe-devolucao.js";
+import { aDevolver, assinaturaDoPagamento, buscarOQueFoiPago, buscarOQueFoiPagoNoPix, cancelarNaHora, chaveDaDevolucao, devolver, paraPedidoDeDevolucao } from "./stripe-reembolso.js";
 
 const DONO = { userId: "u-1", assinaturaId: "sub_1" };
 const recusa = (code: string) => new Stripe.errors.StripeInvalidRequestError({ message: "mensagem crua da Stripe, com sk_test_abc", type: "invalid_request_error", code, statusCode: 400 });
@@ -217,6 +217,21 @@ describe("a busca da assinatura para o espelho", () => {
     expect((await buscarAssinatura("sub_1")).pagoAte?.getTime()).toBe(fim * 1000);
   });
 
+  // A PRÉ-PAGA (etapa 4.9, passo 3): a fatura dela foi paga POR FORA (sem pagamento para ler); quem diz se o
+  // período foi devolvido é o PIX dos metadados.
+  it("a PRÉ-PAGA: o período devolvido é o do Pix de que ela nasceu — a fatura paga por fora não tem pagamento", async () => {
+    const prePaga = (status: string) => ({ ...daStripe(status, fatura("in_1", 9990, [])), metadata: { userId: "u-1", pix_payment_intent: "pi_pix" } });
+    falsa.subscriptions.retrieve.mockResolvedValue(prePaga("canceled"));
+    comCobrancas({ pi_pix: { amount: 9990, amount_refunded: 9990 } });
+    const devolvida = await buscarAssinatura("sub_1");
+    expect([devolvida.status, devolvida.pagoAte?.getTime(), devolvida.pixPaymentIntentId]).toEqual(["canceled", inicio * 1000, "pi_pix"]);
+    expect(falsa.paymentIntents.retrieve.mock.calls).toEqual([["pi_pix", { expand: ["latest_charge"] }]]);
+
+    falsa.subscriptions.retrieve.mockResolvedValue(prePaga("active"));
+    comCobrancas({ pi_pix: { amount: 9990, amount_refunded: 0 } });
+    expect((await buscarAssinatura("sub_1")).pagoAte?.getTime()).toBe(fim * 1000);
+  });
+
   it("a Stripe não conhece a assinatura; a leitura da cobrança que falha sobe (nada é gravado com dado pela metade)", async () => {
     falsa.subscriptions.retrieve.mockRejectedValue(recusa("resource_missing"));
     await expect(buscarAssinatura("sub_1")).rejects.toBeInstanceOf(AssinaturaNaoEncontrada);
@@ -245,5 +260,31 @@ describe("de que assinatura é o pagamento (o aviso de dinheiro devolvido)", () 
   it("a Stripe fora do ar: sobe — o aviso não fica marcado, e ela entrega de novo", async () => {
     falsa.invoicePayments.list.mockRejectedValue(foraDoAr());
     await expect(assinaturaDoPagamento("pi_1")).rejects.toThrow("[stripe] a busca da assinatura do pagamento falhou: StripeConnectionError");
+  });
+});
+
+// A PRÉ-PAGA (etapa 4.9, passo 3): o que foi pago é o Pix de que ela nasceu — é dele que o reembolso devolve.
+describe("o que foi pago numa pré-paga (o Pix)", () => {
+  it("o Pix: quanto cobrou, quanto já voltou e a moeda — um pagamento só", async () => {
+    falsa.paymentIntents.retrieve.mockResolvedValue({ id: "pi_pix", latest_charge: { amount: 9990, amount_refunded: 1000, currency: "brl" } });
+    expect(await buscarOQueFoiPagoNoPix("pi_pix")).toEqual({ moeda: "brl", pagamentos: [{ pagamentoId: "pi_pix", centavos: 9990, devolvido: 1000 }] });
+    expect(falsa.paymentIntents.retrieve.mock.calls).toEqual([["pi_pix", { expand: ["latest_charge"] }]]);
+  });
+
+  it("sem cobrança (o Pix não caiu): nada foi pago; a leitura que falha sobe, sem a mensagem da Stripe", async () => {
+    falsa.paymentIntents.retrieve.mockResolvedValue({ id: "pi_pix", latest_charge: null });
+    expect(await buscarOQueFoiPagoNoPix("pi_pix")).toEqual({ moeda: null, pagamentos: [] });
+    falsa.paymentIntents.retrieve.mockRejectedValue(foraDoAr());
+    await expect(buscarOQueFoiPagoNoPix("pi_pix")).rejects.toThrow("[stripe] a leitura da cobrança do Pix falhou: StripeConnectionError");
+  });
+
+  it("o Pix devolvido por inteiro — e só por inteiro — deixa de contar como pago; o período da recorrente continua pela fatura", async () => {
+    comCobrancas({ pi_pix: { amount: 9990, amount_refunded: 9990 }, pi_meio: { amount: 9990, amount_refunded: 5000 }, pi_1: { amount: 9990, amount_refunded: 9990 } });
+    expect(await pixDevolvido("pi_pix")).toBe(true);
+    expect(await pixDevolvido("pi_meio")).toBe(false);
+    // Seguro: só a última fatura é lida aqui (o dublê tem o formato que `faturaDevolvida` usa).
+    const comFatura = { latest_invoice: fatura("in_1", 9990, [pago("pi_1")]) } as unknown as Stripe.Subscription;
+    expect(await periodoDevolvido(comFatura, "pi_meio")).toBe(false);
+    expect(await periodoDevolvido(comFatura, null)).toBe(true);
   });
 });
