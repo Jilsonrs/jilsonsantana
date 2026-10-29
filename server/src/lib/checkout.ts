@@ -2,9 +2,9 @@ import type { Prisma } from "./prisma.js";
 import { DuracaoDoDesconto, type AssinarInput } from "@jilson/core";
 import { prisma } from "./prisma.js";
 import { assinaturaDaAcesso, cobrancaAtrasada, temAcessoAtivo } from "./acesso.js";
-import { sincronizarSeLivre } from "./assinaturas.js";
+import { pixPagoSemEspelho, processarPixPago, sincronizarSeLivre } from "./assinaturas.js";
 import { cancelarPagamentosPixPendentes } from "./stripe-pix.js";
-import { acertarNumeroFiscal, assinaturasDoCliente, buscarCodigo, buscarPrecos, cancelarIncompleta, chaveDoNumeroFiscal, criarAssinatura, criarCliente, DocumentoRecusado, type AssinaturaNoCheckout, type CodigoPromocional } from "./stripe.js";
+import { acertarNumeroFiscal, assinaturasDoCliente, buscarCodigo, buscarPrecos, cancelarIncompleta, chaveDoNumeroFiscal, criarAssinatura, criarCliente, DocumentoRecusado, type AssinaturaNoCheckout, type CodigoPromocional, type PagamentoPrePago } from "./stripe.js";
 
 // ASSINAR COM A CONTA LOGADA (Fase 4, etapa 4.2 — billing.md; CLAUDE.md → Membership Gating).
 // A regra, na ordem — e tudo dentro de UMA TRAVA POR CONTA (dois cliques, ou duas abas, nunca
@@ -78,7 +78,7 @@ export async function clienteDaConta(conta: Conta): Promise<string | null> {
 }
 
 /** O que se decide COM a trava da conta. A assinatura viva sai da trava para ser sincronizada fora dela. */
-type NaTrava = Desfecho | { resultado: "viva-na-stripe"; assinaturaId: string };
+type NaTrava = Desfecho | { resultado: "viva-na-stripe"; assinaturaId: string } | { resultado: "pix-pago"; pagamento: PagamentoPrePago };
 
 /**
  * A Stripe diz que a conta tem assinatura viva, e o espelho não dá acesso: o aviso atrasou ou se
@@ -149,7 +149,24 @@ export async function assinar(conta: Conta, pedido: AssinarInput): Promise<Desfe
     console.error(`${erro.message} — conferir o formato do número fiscal na Stripe (conta ${conta.id})`);
     return { resultado: "documento-recusado" };
   }
+  if (decisao.resultado === "pix-pago") return pixPagoDaConta(conta, decisao.pagamento);
   return decisao.resultado === "viva-na-stripe" ? sincronizarAViva(conta, decisao.assinaturaId) : decisao;
+}
+
+/**
+ * A conta tem um Pix NOSSO já PAGO e sem assinatura (o aviso ainda não chegou, ou se perdeu — achado 4
+ * do passo 6 da 4.9): a assinatura pré-paga nasce AGORA, pela rotina do aviso, fora da trava da conta —
+ * e a resposta é "já é assinante", nunca outro cartão ou outro QR por cima. Se depois disso a conta segue
+ * sem acesso, precisa de gente, em voz alta (como `sincronizarAViva`).
+ */
+export async function pixPagoDaConta(conta: Conta, pagamento: PagamentoPrePago): Promise<Desfecho> {
+  const desfecho = await processarPixPago(pagamento);
+  if (await temAcessoAtivo(conta.id)) {
+    console.info(`[stripe] checkout: a conta ${conta.id} tinha o Pix ${pagamento.id} pago e sem assinatura; processado agora, com acesso`);
+    return { resultado: "ja-assinante" };
+  }
+  console.error(`[stripe] checkout: a conta ${conta.id} tem o Pix ${pagamento.id} PAGO e segue sem acesso depois de processá-lo (${desfecho.resultado}) — pagante trancado; conferir no painel da Stripe`);
+  return { resultado: "ja-assinante" };
 }
 
 /** A decisão, COM a trava da conta: o que a Stripe diz do cliente, o número fiscal, e a assinatura. */
@@ -165,6 +182,10 @@ async function decidir(conta: Conta, pedido: AssinarInput, clienteId: string, pr
     // sincronia, que conserta o espelho, roda depois de soltar esta trava (`sincronizarAViva`).
     // Nada aqui mexe no cliente dela — nem o número fiscal.
     if (viva) return { resultado: "viva-na-stripe", assinaturaId: viva.id };
+    // O Pix JÁ PAGO cujo aviso ainda não chegou (achado 4 do passo 6 da 4.9): a assinatura dele nasce
+    // fora da trava (`pixPagoDaConta`) — nunca um cartão por cima.
+    const pixPago = await pixPagoSemEspelho(tx, clienteId);
+    if (pixPago) return { resultado: "pix-pago", pagamento: pixPago };
 
     // UM PAGAMENTO ABERTO POR VEZ (etapa 4.9): o Pix à espera desta conta morre quando ela segue por
     // cartão — o QR copiado no app do banco podia ser pago depois, e nasceriam duas assinaturas. (O

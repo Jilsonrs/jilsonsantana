@@ -1,16 +1,30 @@
 import { describe, it, expect, vi, beforeAll, afterAll, afterEach, beforeEach } from "vitest";
 import request from "supertest";
-import type { AssinaturaNaStripe, AssinaturaNoCheckout } from "../lib/stripe.js";
+import type { AssinaturaNaStripe, AssinaturaNoCheckout, PagamentoPrePago, PrecoDoPlano } from "../lib/stripe.js";
 
 // A Stripe na NOSSA fronteira: só o que iria à rede vira dublê — a lista de assinaturas do
 // cliente e a busca de uma assinatura. A rotina da sincronia (a trava, o espelho, a sessão)
 // roda de verdade, contra o banco.
 const assinaturasDoCliente = vi.fn<(clienteId: string) => Promise<AssinaturaNoCheckout[]>>();
 const buscarAssinatura = vi.fn<(id: string) => Promise<AssinaturaNaStripe>>();
+const buscarPrecos = vi.fn<() => Promise<PrecoDoPlano[]>>();
 vi.mock("../lib/stripe.js", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../lib/stripe.js")>()),
   assinaturasDoCliente: (clienteId: string) => assinaturasDoCliente(clienteId),
   buscarAssinatura: (id: string) => buscarAssinatura(id),
+  buscarPrecos: () => buscarPrecos(),
+}));
+// O Pix pago cujo aviso se perdeu (passo 6 da 4.9, achado 9): o force-sync o transforma em assinatura antes de listar.
+const pagamentosPixPagos = vi.fn<(clienteId: string) => Promise<PagamentoPrePago[]>>();
+const criarAssinaturaPrePaga = vi.fn<(pagamento: PagamentoPrePago) => Promise<string>>();
+const garantirFaturaPaga = vi.fn<(assinaturaId: string, pagamentoId: string) => Promise<{ fatura: string | null; status: string }>>();
+const assinaturaDoPagamentoPrePago = vi.fn<(pagamentoId: string) => Promise<string | null>>();
+vi.mock("../lib/stripe-pix.js", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../lib/stripe-pix.js")>()),
+  pagamentosPixPagos: (clienteId: string) => pagamentosPixPagos(clienteId),
+  criarAssinaturaPrePaga: (pagamento: PagamentoPrePago) => criarAssinaturaPrePaga(pagamento),
+  garantirFaturaPaga: (assinaturaId: string, pagamentoId: string) => garantirFaturaPaga(assinaturaId, pagamentoId),
+  assinaturaDoPagamentoPrePago: (pagamentoId: string) => assinaturaDoPagamentoPrePago(pagamentoId),
 }));
 
 import servidor from "./servidor.js";
@@ -64,6 +78,11 @@ beforeAll(async () => {
 beforeEach(() => {
   naStripe = {};
   assinaturasDoCliente.mockReset().mockResolvedValue([]);
+  buscarPrecos.mockReset().mockResolvedValue([{ plano: "mensal", precoId: "price_mensal", centavos: 9990, moeda: "brl" }, { plano: "anual", precoId: "price_anual", centavos: 99500, moeda: "brl" }]);
+  pagamentosPixPagos.mockReset().mockResolvedValue([]);
+  criarAssinaturaPrePaga.mockReset().mockRejectedValue(new Error("este teste não combinou a criação da pré-paga"));
+  garantirFaturaPaga.mockReset().mockResolvedValue({ fatura: "in_da_suite", status: "paid" });
+  assinaturaDoPagamentoPrePago.mockReset().mockResolvedValue(null);
   buscarAssinatura.mockReset().mockImplementation(async (id) => {
     const dados = naStripe[id];
     if (!dados) throw new AssinaturaNaoEncontrada(id);
@@ -294,5 +313,28 @@ describe("forçar a sincronia — o que ela faz", () => {
     } finally {
       registro.mockRestore();
     }
+  });
+});
+
+describe("forçar a sincronia — o Pix pago cujo aviso se perdeu (passo 6 da 4.9)", () => {
+  it("um Pix nosso pago e sem assinatura: a pré-paga nasce na sincronia, e a conta ganha acesso", async () => {
+    await prisma.stripeCustomer.create({ data: { userId: aluno, stripeCustomerId: CLIENTE, livemode: false } });
+    const pi = `pi_${S}_perdido`;
+    pagamentosPixPagos.mockResolvedValue([{ id: pi, plano: "mensal", precoId: "price_mensal", clienteId: CLIENTE, livemode: false, centavos: 9990, userId: aluno, visitante: null }]);
+    const sub = `sub_${S}_do_pix`;
+    criarAssinaturaPrePaga.mockImplementation(async (pagamento) => {
+      naStripe[sub] = { pixPaymentIntentId: pagamento.id };
+      assinaturasDoCliente.mockResolvedValue([listada(sub)]);
+      return sub;
+    });
+    expect(await temAcessoAtivo(aluno)).toBe(false);
+    const res = await sincronizar({ email: emailDoAluno }, admin);
+    expect(res.status).toBe(200);
+    expect(criarAssinaturaPrePaga).toHaveBeenCalledTimes(1);
+    expect((await espelho(sub))).toMatchObject({ ownerUserId: aluno, status: "active", pixPaymentIntentId: pi });
+    expect(await temAcessoAtivo(aluno)).toBe(true);
+    // De novo: o espelho já tem o Pix — nada é criado outra vez.
+    expect((await sincronizar({ email: emailDoAluno }, admin)).status).toBe(200);
+    expect(criarAssinaturaPrePaga).toHaveBeenCalledTimes(1);
   });
 });

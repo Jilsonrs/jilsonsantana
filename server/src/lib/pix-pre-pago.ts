@@ -1,11 +1,12 @@
 import type { PixInput, PixSemLoginInput } from "@jilson/core";
 import { prisma } from "./prisma.js";
 import { temAcessoAtivo } from "./acesso.js";
-import { clienteDaConta, sincronizarAViva as sincronizarAVivaDaConta, travarSeLivre, type Conta } from "./checkout.js";
-import { ENCERRADAS, fichaComConta, fichaDoEmail, sincronizarAViva as sincronizarAVivaDoEmail, temConta, travarSeLivre as travarEmailSeLivre, type OpcoesDoVisitante } from "./checkout-do-visitante.js";
+import { clienteDaConta, pixPagoDaConta, sincronizarAViva as sincronizarAVivaDaConta, travarSeLivre, type Conta } from "./checkout.js";
+import { ENCERRADAS, fichaComConta, fichaDoEmail, pixPagoDoEmail, sincronizarAViva as sincronizarAVivaDoEmail, temConta, travarSeLivre as travarEmailSeLivre, type OpcoesDoVisitante } from "./checkout-do-visitante.js";
+import { pixPagoSemEspelho } from "./assinaturas.js";
 import { novaTentativa, resumoDaTentativa } from "./tentativa-do-visitante.js";
-import { acertarNumeroFiscal, assinaturasDoCliente, buscarPrecos, cancelarIncompleta, DocumentoRecusado } from "./stripe.js";
-import { cancelarPagamentoPix, criarPagamentoPix, pagamentosPixPendentes, type PixPendente } from "./stripe-pix.js";
+import { acertarNumeroFiscal, assinaturasDoCliente, buscarPrecos, cancelarIncompleta, DocumentoRecusado, type PagamentoPrePago } from "./stripe.js";
+import { cancelarPagamentoPix, criarPagamentoPix, lerPagamentoPix, pagamentosPixPendentes, type PixPendente } from "./stripe-pix.js";
 
 // PAGAR COM PIX, PRÉ-PAGO (Fase 4, etapa 4.9, passo 2 — billing.md → *Formas de pagamento*; decisões
 // do operador, 28/10/2026). O clique no "Pagar com Pix" cria um PAGAMENTO SOLTO na Stripe
@@ -23,10 +24,16 @@ import { cancelarPagamentoPix, criarPagamentoPix, pagamentosPixPendentes, type P
 //     Pix à espera): o cartão e o QR não ficam os dois à espera, senão podiam ser pagos os dois;
 //   - o CPF ou CNPJ vai para a ficha do cliente ANTES do pagamento — também no QR reaproveitado: a
 //     fatura só nasce quando o Pix cai, e leva o número de então;
-//   - UM QR POR VEZ: o novo clique do MESMO plano segue com o Pix que já está à espera (o mesmo QR);
-//     o de outro plano cancela o anterior antes de criar outro — dois QRs abertos podiam ser pagos os
-//     dois. O visitante só segue com o Pix da MESMA tentativa (quem sabe só o e-mail não recebe o QR
-//     de outra pessoa).
+//   - UM QR POR VEZ: o novo clique do MESMO plano, com o MESMO preço, segue com o Pix que já está à
+//     espera (o mesmo QR); o de outro plano — ou do mesmo plano com o preço de antes de uma mudança
+//     (achado 7 do passo 6, 29/10/2026: o QR velho cobraria o valor velho) — cancela o anterior antes
+//     de criar outro: dois QRs abertos podiam ser pagos os dois. O visitante só segue com o Pix da
+//     MESMA tentativa (quem sabe só o e-mail não recebe o QR de outra pessoa);
+//   - O PIX JÁ PAGO cujo aviso ainda não chegou (achado 4 do passo 6): é tratado como a assinatura
+//     viva — a rotina do aviso o transforma em assinatura FORA da trava (`pixPagoDaConta`,
+//     `pixPagoDoEmail`), e a resposta é "já é assinante" / "já tem conta", sem QR, sem mexer no CPF
+//     nem na tentativa da ficha. Sem isto, nesses segundos a pessoa (ou quem soubesse só o e-mail dela)
+//     ganharia outro QR, e a tentativa da ficha trocada ficaria com a conta paga.
 // SEM código promocional (decisão (b)): o desconto da Stripe é da assinatura, e o Pix é pagamento solto.
 
 export type DesfechoDoPix =
@@ -46,8 +53,8 @@ export type DesfechoDoPixSemLogin =
   | { resultado: "muitos-emails-novos"; segundos: number }
   | { resultado: "pagar"; segredo: string; tipo: "pix"; tentativa: string };
 
-/** O que se decide COM a trava. A assinatura viva sai da trava para ser sincronizada fora dela (como no checkout). */
-type VivaNaStripe = { resultado: "viva-na-stripe"; assinaturaId: string };
+/** O que se decide COM a trava e se resolve FORA dela: a assinatura viva (sincronizada, como no checkout) e o Pix já pago (processado pela rotina do aviso). */
+type VivaNaStripe = { resultado: "viva-na-stripe"; assinaturaId: string } | { resultado: "pix-pago"; pagamento: PagamentoPrePago };
 
 /** Até 9 idas à Stripe dentro da trava (10 s cada, com uma nova tentativa): as duas listas, os cancelamentos, o número fiscal e o QR. */
 const TEMPO_DA_TRANSACAO = { maxWait: 10_000, timeout: 120_000 };
@@ -73,11 +80,25 @@ async function assinaturasAbertas(clienteId: string, quem: string): Promise<{ vi
   return null;
 }
 
-/** O Pix à espera que o novo clique segue; os outros são cancelados. Devolve o que ficou, ou nada. */
-async function umQrPorVez(clienteId: string, serve: (pendente: PixPendente) => boolean): Promise<PixPendente | null> {
+/**
+ * O Pix à espera que o novo clique segue; os outros são cancelados. Devolve o que ficou, ou nada — ou o
+ * "outro" que foi PAGO entre a lista e o cancelamento (a Stripe recusa cancelar o pago — achado 9 do
+ * passo 6, 29/10/2026): em vez de um 500 mudo, ele volta para ser processado fora da trava.
+ */
+async function umQrPorVez(clienteId: string, serve: (pendente: PixPendente) => boolean): Promise<PixPendente | null | { pago: PagamentoPrePago }> {
   const pendentes = await pagamentosPixPendentes(clienteId);
   const mesmo = pendentes.find(serve) ?? null;
-  for (const outro of pendentes) if (outro !== mesmo) await cancelarPagamentoPix(outro.id);
+  for (const outro of pendentes) {
+    if (outro === mesmo) continue;
+    try {
+      await cancelarPagamentoPix(outro.id);
+    } catch (erro) {
+      const lido = await lerPagamentoPix(outro.id);
+      if (lido.status !== "succeeded" || !lido.pagamento) throw erro;
+      console.warn(`[stripe] pix: o pagamento ${outro.id} (cliente ${clienteId}) foi PAGO no meio do cancelamento — processado em vez de cancelado`);
+      return { pago: lido.pagamento };
+    }
+  }
   return mesmo;
 }
 
@@ -102,7 +123,10 @@ export async function pagarComPix(conta: Conta, pedido: PixInput): Promise<Desfe
       if (await temAcessoAtivo(conta.id, tx)) return { resultado: "ja-assinante" };
       const aberta = await assinaturasAbertas(clienteId, `conta ${conta.id}`);
       if (aberta) return "viva" in aberta ? { resultado: "viva-na-stripe", assinaturaId: aberta.viva } : { resultado: "ja-assinante" };
-      const pendente = await umQrPorVez(clienteId, (p) => p.plano === pedido.plano);
+      const pixPago = await pixPagoSemEspelho(tx, clienteId);
+      if (pixPago) return { resultado: "pix-pago", pagamento: pixPago };
+      const pendente = await umQrPorVez(clienteId, (p) => p.plano === pedido.plano && p.precoId === preco.precoId);
+      if (pendente && "pago" in pendente) return { resultado: "pix-pago", pagamento: pendente.pago };
       await acertarNumeroFiscal(clienteId, pedido.documento);
       if (pendente) return { resultado: "pagar", segredo: pendente.segredo, tipo: "pix" };
       const pagamento = await criarPagamentoPix({ clienteId, precoId: preco.precoId, plano: pedido.plano, centavos: preco.centavos, userId: conta.id });
@@ -113,6 +137,10 @@ export async function pagarComPix(conta: Conta, pedido: PixInput): Promise<Desfe
     if (!(erro instanceof DocumentoRecusado)) throw erro;
     console.error(`${erro.message} — conferir o formato do número fiscal na Stripe (conta ${conta.id})`);
     return { resultado: "documento-recusado" };
+  }
+  if (decisao.resultado === "pix-pago") {
+    const depois = await pixPagoDaConta(conta, decisao.pagamento);
+    return depois.resultado === "atrasada" ? { resultado: "atrasada" } : { resultado: "ja-assinante" };
   }
   if (decisao.resultado !== "viva-na-stripe") return decisao;
   // A mesma sincronia do checkout por cartão, fora da trava: conserta o espelho e diz o que a conta é agora.
@@ -139,8 +167,11 @@ export async function pagarComPixSemLogin(pedido: PixSemLoginInput, opcoes: Opco
       // Alguém já PAGOU por este e-mail: a sincronia faz a conta nascer, e o caminho passa a ser entrar.
       const aberta = await assinaturasAbertas(ficha.stripeCustomerId, `ficha ${ficha.id}`);
       if (aberta) return "viva" in aberta ? { resultado: "viva-na-stripe", assinaturaId: aberta.viva } : { resultado: "ja-tem-conta" };
+      const pixPago = await pixPagoSemEspelho(tx, ficha.stripeCustomerId);
+      if (pixPago) return { resultado: "pix-pago", pagamento: pixPago };
       const resumoDaAnterior = tentativaAnterior === null ? null : resumoDaTentativa(tentativaAnterior);
-      const pendente = await umQrPorVez(ficha.stripeCustomerId, (p) => p.plano === pedido.plano && resumoDaAnterior !== null && p.resumoDaTentativa === resumoDaAnterior);
+      const pendente = await umQrPorVez(ficha.stripeCustomerId, (p) => p.plano === pedido.plano && p.precoId === preco.precoId && resumoDaAnterior !== null && p.resumoDaTentativa === resumoDaAnterior);
+      if (pendente && "pago" in pendente) return { resultado: "pix-pago", pagamento: pendente.pago };
       // A ficha nova já nasceu com o número desta tentativa.
       if (!ficha.nova) await acertarNumeroFiscal(ficha.stripeCustomerId, pedido.documento);
       if (pendente && tentativaAnterior !== null) return { resultado: "pagar", segredo: pendente.segredo, tipo: "pix", tentativa: tentativaAnterior };
@@ -162,6 +193,10 @@ export async function pagarComPixSemLogin(pedido: PixSemLoginInput, opcoes: Opco
     if (!(erro instanceof DocumentoRecusado)) throw erro;
     console.error(`${erro.message} — conferir o formato do número fiscal na Stripe`);
     return { resultado: "documento-recusado" };
+  }
+  if (decisao.resultado === "pix-pago") {
+    await pixPagoDoEmail(email, decisao.pagamento);
+    return { resultado: "ja-tem-conta" };
   }
   if (decisao.resultado !== "viva-na-stripe") return decisao;
   // A mesma sincronia do assinar sem login, fora da trava: é ali que a conta nasce.

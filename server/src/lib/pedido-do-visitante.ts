@@ -75,6 +75,11 @@ export async function contaDoPedido(tx: Prisma.TransactionClient, pedidoId: stri
   // Uma conta é sempre UM cliente na Stripe: o da ficha passa a ser o da conta (o checkout de quem
   // está logado e "Minha assinatura" o acham por aqui).
   await tx.stripeCustomer.create({ data: { userId: id, stripeCustomerId: pedido.stripeCustomerId, livemode: pedido.livemode } });
-  await tx.guestCheckout.update({ where: { id: pedido.id }, data: { userId: id } });
+  // A ficha volta a apontar para a tentativa que PAGOU (achado 4 do passo 6 da 4.9, 29/10/2026): um
+  // clique posterior com o mesmo e-mail e sem o código (de outra aba — ou de outra pessoa) troca a
+  // tentativa da ficha, e sem isto "o pagamento já valeu?" e a senha de depois de pagar responderiam a
+  // ESSA tentativa, não à que pagou. O resumo vem da assinatura (os metadados que o nosso servidor
+  // gravou), nunca do pedido.
+  await tx.guestCheckout.update({ where: { id: pedido.id }, data: { userId: id, ...(assinatura.resumoDaTentativa ? { tentativa: assinatura.resumoDaTentativa } : {}) } });
   return { id, nova: true };
 }

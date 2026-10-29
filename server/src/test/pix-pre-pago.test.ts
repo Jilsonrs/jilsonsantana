@@ -84,6 +84,7 @@ function criadaDoPix(pagamento: PagamentoPrePago): string {
     doVisitante: pagamento.visitante?.escolha ?? { novidades: false, origem: null, campanha: null },
     livemode: pagamento.livemode,
     pixPaymentIntentId: pagamento.id,
+    resumoDaTentativa: pagamento.visitante?.resumoDaTentativa ?? null,
   });
   return id;
 }
@@ -270,6 +271,17 @@ describe("o Pix pré-pago que caiu — o visitante", () => {
     // As boas-vindas saem para a conta que nasceu — a rota só conhece a assinatura depois de processar o aviso.
     const boasVindas = enviarEmail.mock.calls.map(([p]) => p).filter((p) => p.tipo === "boas-vindas");
     expect(boasVindas.map((p) => p.para)).toEqual([ficha.email]);
+  });
+
+  it("a ficha volta a apontar para a tentativa que PAGOU (achado 4 do passo 6): um clique posterior sem o código tinha trocado a tentativa dela", async () => {
+    const pi = novoId("pi");
+    // A ficha já está com a tentativa de um clique POSTERIOR ao pagamento (de outra aba — ou de outra pessoa).
+    const ficha = await prisma.guestCheckout.create({ data: { id: novoId("pedido"), email: `visitante-pix-${n}-${S}@teste.local`, stripeCustomerId: `cus_${pi}`, livemode: false, tentativa: `resumo-do-clique-posterior-${S}` } });
+    const aviso = pixCaiu(pi, { prepago: "mensal", precoId: "price_mensal", pedido: ficha.id, tentativa: `resumo-da-que-pagou-${S}`, novidades: "nao" });
+    expect((await enviar(aviso)).status).toBe(200);
+    const depois = await prisma.guestCheckout.findUniqueOrThrow({ where: { id: ficha.id } });
+    expect(depois.userId).not.toBeNull();
+    expect(depois.tentativa).toBe(`resumo-da-que-pagou-${S}`);
   });
 });
 

@@ -5958,10 +5958,21 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                   (150 s, 7 idas × 20 s); o comentário morto de `FORMAS_DE_PAGAMENTO`; o teste eco anotado.
                   Testes: `pix-pre-pago.test.ts` (+4), `stripe-pix-rede.test.ts` (+5). **Mutação: 5 de 5
                   reprovaram.**
-            - [ ] **Parte 3 — o servidor, o Pix pago sem assinatura:** detectar e processar na hora (achados
-                  4, 7 e 9: checkout por Pix e por cartão, logado e visitante; o force-sync do admin; o
-                  reaproveitamento só com o mesmo preço; o "outro" pago no meio com alerta) e a tentativa
-                  que pagou gravada na ficha ao nascer a conta.
+            - [x] **Parte 3 — o servidor, o Pix pago sem assinatura (29/10/2026).** `pagamentosPixPagos` +
+                  `pixPagoSemEspelho` (o Pix nosso `succeeded` sem espelho) e `processarPixPago` (a MESMA
+                  rotina do aviso, sem `event.id`): nas quatro portas — `pagarComPix`, `pagarComPixSemLogin`,
+                  e o `decidir` dos dois checkouts por cartão — o Pix pago cujo aviso ainda não chegou vira
+                  assinatura FORA da trava (`pixPagoDaConta`, `pixPagoDoEmail`) e a resposta é "já assina" /
+                  "já tem conta": sem outro QR, sem cartão por cima, sem tocar no CPF nem na tentativa da
+                  ficha (achado 4); `contaDoPedido` grava na ficha a tentativa que PAGOU (lida dos metadados
+                  da assinatura — `AssinaturaNaStripe.resumoDaTentativa`), então "já valeu?" e a senha
+                  respondem só a quem pagou; o force-sync do admin (`sincronizarConta`/`sincronizarPedido`)
+                  processa os Pix pagos sem espelho antes de listar (achado 9); `PixPendente.precoId`: o QR
+                  só é reaproveitado com o MESMO preço (achado 7); o "outro" Pix pago no meio do
+                  cancelamento é lido (`lerPagamentoPix`) e processado, em vez de 500 (achado 9).
+                  `pagamentosPixPagos` não vai à Stripe sem o Pix configurado. Testes: `pagar-com-pix.test.ts`
+                  (+6), `pix-pre-pago.test.ts` (+1), `admin-assinaturas.test.ts` (+1), `stripe-pix-rede.test.ts`
+                  (+2). **Mutação: 6 de 6 reprovaram.**
             - [ ] **Decisões do operador:** P112 (o aviso no painel), P113 (o e-mail no quadro), P114 (a
                   devolução pelo painel), P115 (a frase do QR vencido).
       **Fora da 4.9:** somar tempo pagando antes de acabar (decisão (a)) · código promocional no Pix

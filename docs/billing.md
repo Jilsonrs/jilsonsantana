@@ -121,7 +121,12 @@ no PaymentIntent/SetupIntent/Checkout Session; suporte anunciado em 22/abr/2026.
 > primeira fatura GARANTIDA paga por fora (`garantirFaturaPaga`) — sem isto, a Stripe caindo entre o
 > criar e o pagar deixava o aluno pago e trancado —, o VALOR do Pix é conferido com o preço antes de criar
 > (diferente ou fora de venda: nada nasce, aviso marcado, alerta), e o Pix pago que termina sem acesso é
-> alerta `[stripe]` na rota. A conta do
+> alerta `[stripe]` na rota. **E o Pix JÁ PAGO cujo aviso ainda não chegou (parte 3, 29/10/2026)** é tratado
+> como a assinatura viva nas quatro portas (Pix e cartão, logado e visitante) e no force-sync do admin: a
+> assinatura nasce na hora pela mesma rotina do aviso (`processarPixPago`), a resposta é "já assina" / "já
+> tem conta", sem outro QR nem cartão por cima; a conta do visitante nasce presa à tentativa que PAGOU (a
+> ficha volta a apontar para ela), então um clique posterior com o mesmo e-mail e sem o código não fica com
+> a conta. O QR só é reaproveitado com o MESMO plano e o MESMO preço; o do preço antigo é cancelado. A conta do
 > visitante nasce como no cartão (os mesmos metadados). O gate, as telas e os e-mails continuam lendo só
 > o espelho; o que muda para o pré-pago nas telas e no reembolso é o passo 3.
 >

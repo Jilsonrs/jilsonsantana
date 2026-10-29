@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeAll, afterAll, afterEach, beforeEach } 
 import request from "supertest";
 import { createHash } from "node:crypto";
 import type { DocumentoFiscal } from "@jilson/core";
-import type { AssinaturaNaStripe, AssinaturaNoCheckout, PedidoDeAssinatura, PrecoDoPlano } from "../lib/stripe.js";
+import type { AssinaturaNaStripe, AssinaturaNoCheckout, PagamentoPrePago, PedidoDeAssinatura, PrecoDoPlano } from "../lib/stripe.js";
 import type { PagamentoPixCriado, PedidoDePix, PixPendente } from "../lib/stripe-pix.js";
 import type { PedidoDeEmail, Envio } from "../lib/email.js";
 
@@ -35,12 +35,24 @@ const pagamentosPixPendentes = vi.fn<(clienteId: string) => Promise<PixPendente[
 const cancelarPagamentoPix = vi.fn<(id: string) => Promise<void>>();
 // O que o checkout por CARTÃO chama (um pagamento aberto por vez): a função de verdade tem teste de rede próprio.
 const cancelarPagamentosPixPendentes = vi.fn<(clienteId: string) => Promise<number>>();
+// O Pix JÁ PAGO cujo aviso ainda não chegou (passo 6, achado 4): a lista dos pagos, a leitura de um, e o que a
+// rotina do aviso faz na Stripe para transformá-lo em assinatura (a rotina em si roda de verdade, contra o banco).
+const pagamentosPixPagos = vi.fn<(clienteId: string) => Promise<PagamentoPrePago[]>>();
+const lerPagamentoPix = vi.fn<(id: string) => Promise<{ status: string; pagamento: PagamentoPrePago | null }>>();
+const criarAssinaturaPrePaga = vi.fn<(pagamento: PagamentoPrePago) => Promise<string>>();
+const garantirFaturaPaga = vi.fn<(assinaturaId: string, pagamentoId: string) => Promise<{ fatura: string | null; status: string }>>();
+const assinaturaDoPagamentoPrePago = vi.fn<(pagamentoId: string) => Promise<string | null>>();
 vi.mock("../lib/stripe-pix.js", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../lib/stripe-pix.js")>()),
   criarPagamentoPix: (pedido: PedidoDePix) => criarPagamentoPix(pedido),
   pagamentosPixPendentes: (clienteId: string) => pagamentosPixPendentes(clienteId),
   cancelarPagamentoPix: (id: string) => cancelarPagamentoPix(id),
   cancelarPagamentosPixPendentes: (clienteId: string) => cancelarPagamentosPixPendentes(clienteId),
+  pagamentosPixPagos: (clienteId: string) => pagamentosPixPagos(clienteId),
+  lerPagamentoPix: (id: string) => lerPagamentoPix(id),
+  criarAssinaturaPrePaga: (pagamento: PagamentoPrePago) => criarAssinaturaPrePaga(pagamento),
+  garantirFaturaPaga: (assinaturaId: string, pagamentoId: string) => garantirFaturaPaga(assinaturaId, pagamentoId),
+  assinaturaDoPagamentoPrePago: (pagamentoId: string) => assinaturaDoPagamentoPrePago(pagamentoId),
 }));
 const enviarEmail = vi.fn<(pedido: PedidoDeEmail) => Promise<Envio>>();
 vi.mock("../lib/email.js", async (importOriginal) => ({
@@ -68,7 +80,12 @@ import { LIMITES_DO_VISITANTE } from "../lib/limite-de-tentativas.js";
 //     o checkout por cartão cancela o Pix à espera;
 //   - o CPF ou CNPJ vai para a ficha do cliente antes do QR, também no reaproveitado;
 //   - NADA grava o espelho: a assinatura nasce quando o Pix cai (`pix-pre-pago.test.ts`);
-//   - dois cliques ao mesmo tempo: "ocupada" na hora; o teto de "ao mesmo tempo"; os limites sem login.
+//   - dois cliques ao mesmo tempo: "ocupada" na hora; o teto de "ao mesmo tempo"; os limites sem login;
+//   - O PIX JÁ PAGO cujo aviso ainda não chegou (passo 6, achado 4, 29/10/2026): nas quatro portas
+//     (Pix e cartão, logado e visitante) ele vira assinatura NA HORA e a resposta é "já assina" /
+//     "já tem conta" — sem outro QR, sem outro cartão, sem mexer no CPF nem na tentativa da ficha;
+//     a conta nasce presa à tentativa que PAGOU; o QR só é reaproveitado com o MESMO preço; o
+//     "outro" Pix pago no meio do cancelamento é processado, não um 500.
 
 const S = `${Date.now()}`;
 const DIA = 24 * 60 * 60 * 1000;
@@ -99,6 +116,20 @@ type SubNaStripe = AssinaturaNoCheckout & { cliente: string };
 type PixNaStripe = PixPendente & { cliente: string; status: string; pedido: PedidoDePix };
 let naStripe: SubNaStripe[] = [];
 let pixNaStripe: PixNaStripe[] = [];
+/** As pré-pagas que a Stripe de mentira "criou" de um Pix pago, por id — é o que `buscarAssinatura` devolve para a sincronia. */
+let prePagas = new Map<string, PagamentoPrePago>();
+/** Um Pix da Stripe de mentira lido como o pagamento pré-pago (o que `pagamentosPixPagos` devolve). */
+const paraPago = (p: PixNaStripe): PagamentoPrePago => ({ id: p.id, plano: p.pedido.plano, precoId: p.pedido.precoId, clienteId: p.cliente, livemode: false, centavos: p.pedido.centavos, userId: "userId" in p.pedido ? p.pedido.userId : null, visitante: "visitante" in p.pedido ? p.pedido.visitante : null });
+/** A Stripe de mentira passa a conhecer as pré-pagas criadas: o que a sincronia lê de cada uma. */
+const stripeConhecePrePagas = async (id: string): Promise<AssinaturaNaStripe> => {
+  const pg = prePagas.get(id);
+  if (!pg) throw new Error(`a Stripe deste teste não conhece ${id}`);
+  return { id, status: "active", pagoAte: new Date(Date.now() + 30 * DIA), clienteId: pg.clienteId, userId: pg.userId, pedido: pg.visitante?.pedido ?? null, doVisitante: pg.visitante?.escolha, livemode: false, pixPaymentIntentId: pg.id, resumoDaTentativa: pg.visitante?.resumoDaTentativa ?? null };
+};
+/** O Pix de um cliente caiu — e o aviso ainda não chegou. */
+const pixCaiu = (cliente: string) => {
+  pixNaStripe = pixNaStripe.map((p) => (p.cliente === cliente && p.status === "requires_action" ? { ...p, status: "succeeded" } : p));
+};
 // Os clientes criados: um id novo por teste INTEIRO — a ficha do visitante guarda o id e é única por cliente.
 let clientes = 0;
 const incompleta = (id: string, cliente: string, precoId = "price_mensal"): SubNaStripe => ({ id, cliente, status: "incomplete", precoId, codigoId: null, segredoDoPagamento: `pi_${id}_secret_x`, segredoDoCartao: null });
@@ -190,12 +221,26 @@ beforeEach(async () => {
   buscarAssinatura.mockReset().mockRejectedValue(new Error("este teste não combinou o que a Stripe diz da assinatura"));
   criarPagamentoPix.mockReset().mockImplementation(async (p) => {
     const id = `pi_${S}_${++n}`;
-    pixNaStripe.push({ id, cliente: p.clienteId, status: "requires_action", segredo: `${id}_secret_x`, plano: p.plano, resumoDaTentativa: "visitante" in p ? p.visitante.resumoDaTentativa : null, pedido: p });
+    pixNaStripe.push({ id, cliente: p.clienteId, status: "requires_action", segredo: `${id}_secret_x`, plano: p.plano, precoId: p.precoId, resumoDaTentativa: "visitante" in p ? p.visitante.resumoDaTentativa : null, pedido: p });
     return { id, segredo: `${id}_secret_x`, livemode: false };
   });
   pagamentosPixPendentes.mockReset().mockImplementation(async (clienteId) =>
-    pixNaStripe.filter((p) => p.cliente === clienteId && p.status === "requires_action").map(({ id, segredo, plano, resumoDaTentativa }) => ({ id, segredo, plano, resumoDaTentativa })),
+    pixNaStripe.filter((p) => p.cliente === clienteId && p.status === "requires_action").map(({ id, segredo, plano, precoId, resumoDaTentativa }) => ({ id, segredo, plano, precoId, resumoDaTentativa })),
   );
+  prePagas = new Map();
+  pagamentosPixPagos.mockReset().mockImplementation(async (clienteId) => pixNaStripe.filter((p) => p.cliente === clienteId && p.status === "succeeded").map(paraPago));
+  lerPagamentoPix.mockReset().mockImplementation(async (id) => {
+    const p = pixNaStripe.find((x) => x.id === id);
+    return { status: p?.status ?? "canceled", pagamento: p && p.status === "succeeded" ? paraPago(p) : null };
+  });
+  criarAssinaturaPrePaga.mockReset().mockImplementation(async (pagamento) => {
+    const id = `sub_${S}_${++n}`;
+    naStripe.push(viva(id, pagamento.clienteId));
+    prePagas.set(id, pagamento);
+    return id;
+  });
+  garantirFaturaPaga.mockReset().mockResolvedValue({ fatura: "in_da_suite", status: "paid" });
+  assinaturaDoPagamentoPrePago.mockReset().mockResolvedValue(null);
   cancelarPagamentoPix.mockReset().mockImplementation(async (id) => {
     pixNaStripe = pixNaStripe.map((p) => (p.id === id ? { ...p, status: "canceled" } : p));
   });
@@ -599,5 +644,113 @@ describe("os planos dizem se o Pix está no ar", () => {
     delete process.env.STRIPE_PIX_CONFIGURATION;
     expect((await request(servidor).get("/api/billing/planos").set("Cookie", member)).body.pix).toBeNull();
     expect((await request(servidor).get("/api/billing/visitante/planos").set("x-forwarded-for", novoEndereco())).body.pix).toBeNull();
+  });
+});
+
+describe("o Pix JÁ PAGO cujo aviso ainda não chegou (passo 6, achado 4)", () => {
+  // As pré-pagas que nascem aqui são do member@: saem entre um teste e outro (o `semAssinatura` só mexe na assinatura de teste).
+  afterEach(async () => {
+    await prisma.subscription.deleteMany({ where: { ownerUserId: memberId, pixPaymentIntentId: { not: null } } });
+  });
+
+  it("logado, 'Pagar com Pix' de novo: a assinatura nasce na hora, 409 JaAssinante — sem outro QR, sem mexer no CPF", async () => {
+    await semAssinatura(async () => {
+      expect((await pix({ plano: "mensal" })).status).toBe(200);
+      const cliente = await clienteDoMember();
+      pixCaiu(cliente);
+      buscarAssinatura.mockImplementation(stripeConhecePrePagas);
+      const res = await pix({ plano: "anual" });
+      expect([res.status, res.body]).toEqual([409, { error: "JaAssinante" }]);
+      expect(criarAssinaturaPrePaga).toHaveBeenCalledTimes(1);
+      expect(criarAssinaturaPrePaga.mock.calls[0]?.[0]).toMatchObject({ plano: "mensal", clienteId: cliente, userId: memberId });
+      expect(garantirFaturaPaga).not.toHaveBeenCalled();
+      expect(criarPagamentoPix).toHaveBeenCalledTimes(1);
+      expect(acertarNumeroFiscal).toHaveBeenCalledTimes(1);
+      expect(await pixDoMember()).toBe(1);
+      expect(await temAcessoAtivo(memberId)).toBe(true);
+    });
+  });
+
+  it("logado, o checkout por CARTÃO com um Pix pago: idem — nenhum cartão por cima do Pix", async () => {
+    await semAssinatura(async () => {
+      expect((await pix({ plano: "mensal" })).status).toBe(200);
+      pixCaiu(await clienteDoMember());
+      buscarAssinatura.mockImplementation(stripeConhecePrePagas);
+      const res = await cartao({ plano: "mensal" });
+      expect([res.status, res.body]).toEqual([409, { error: "JaAssinante" }]);
+      expect(criarAssinatura).not.toHaveBeenCalled();
+      expect(cancelarPagamentosPixPendentes).not.toHaveBeenCalled();
+      expect(await pixDoMember()).toBe(1);
+      expect(await temAcessoAtivo(memberId)).toBe(true);
+    });
+  });
+
+  it("o visitante clica de novo SEM o código (ou alguém com o e-mail dele): a conta nasce presa à tentativa que PAGOU, 409 JaTemConta, boas-vindas — sem outro QR, sem trocar a tentativa da ficha", async () => {
+    const email = novoEmail();
+    const endereco = novoEndereco();
+    const primeiro = await pixVisitante(pedido(email), endereco);
+    expect(primeiro.status).toBe(200);
+    const tentativaPaga = String(primeiro.body.tentativa);
+    const f = await ficha(email);
+    pixCaiu(f!.stripeCustomerId);
+    buscarAssinatura.mockImplementation(stripeConhecePrePagas);
+    const res = await pixVisitante(pedido(email, { documento: OUTRO_CPF }), endereco);
+    expect([res.status, res.body]).toEqual([409, { error: "JaTemConta" }]);
+    const conta = await prisma.user.findUnique({ where: { email } });
+    expect(conta).not.toBeNull();
+    expect(await temAcessoAtivo(conta!.id)).toBe(true);
+    const depois = await ficha(email);
+    expect(depois?.userId).toBe(conta!.id);
+    expect(depois?.tentativa).toBe(sha256(tentativaPaga));
+    expect(criarPagamentoPix).toHaveBeenCalledTimes(1);
+    expect(acertarNumeroFiscal).not.toHaveBeenCalled();
+    expect(enviarEmail.mock.calls.some(([e]) => e.tipo === "boas-vindas" && e.para === email)).toBe(true);
+    // Com a conta nascida, o código da tentativa que pagou responde "já valeu"; o do clique alheio, não.
+    expect((await request(servidor).post("/api/billing/visitante/confirmacao").set("x-forwarded-for", endereco).send({ tentativa: tentativaPaga })).body).toEqual({ confirmada: true });
+  });
+
+  it("o visitante segue por CARTÃO com um Pix pago: a conta nasce, 409 JaTemConta, nenhuma assinatura por cartão", async () => {
+    const email = novoEmail();
+    const endereco = novoEndereco();
+    expect((await pixVisitante(pedido(email), endereco)).status).toBe(200);
+    pixCaiu((await ficha(email))!.stripeCustomerId);
+    buscarAssinatura.mockImplementation(stripeConhecePrePagas);
+    const res = await cartaoVisitante(pedido(email), endereco);
+    expect([res.status, res.body]).toEqual([409, { error: "JaTemConta" }]);
+    expect(criarAssinatura).not.toHaveBeenCalled();
+    expect((await prisma.user.findUnique({ where: { email } }))).not.toBeNull();
+  });
+
+  it("o QR só é reaproveitado com o MESMO preço (achado 7): mudou o preço do plano, o QR antigo é cancelado e nasce outro no preço novo", async () => {
+    await semAssinatura(async () => {
+      const antigo = await pix({ plano: "mensal" });
+      expect(antigo.status).toBe(200);
+      const idAntigo = String(antigo.body.segredo).split("_secret_")[0];
+      buscarPrecos.mockResolvedValue([{ plano: "mensal", precoId: "price_mensal_novo", centavos: 10990, moeda: "brl" }, PRECOS[1]!]);
+      const novo = await pix({ plano: "mensal" });
+      expect(novo.status).toBe(200);
+      expect(String(novo.body.segredo).split("_secret_")[0]).not.toBe(idAntigo);
+      expect(cancelarPagamentoPix).toHaveBeenCalledWith(idAntigo);
+      expect(criarPagamentoPix).toHaveBeenCalledTimes(2);
+      expect(criarPagamentoPix.mock.calls[1]?.[0]).toMatchObject({ precoId: "price_mensal_novo", centavos: 10990 });
+    });
+  });
+
+  it("o 'outro' Pix foi PAGO entre a lista e o cancelamento (achado 9): processado em vez de 500 — 409 JaAssinante, a assinatura nasce", async () => {
+    const avisos = vi.spyOn(console, "warn").mockImplementation(() => {});
+    await semAssinatura(async () => {
+      expect((await pix({ plano: "mensal" })).status).toBe(200);
+      cancelarPagamentoPix.mockImplementationOnce(async (id) => {
+        pixNaStripe = pixNaStripe.map((p) => (p.id === id ? { ...p, status: "succeeded" } : p));
+        throw new Error("[stripe] o cancelamento do pagamento Pix falhou: invalid_request_error (payment_intent_unexpected_state), status 400");
+      });
+      buscarAssinatura.mockImplementation(stripeConhecePrePagas);
+      const res = await pix({ plano: "anual" });
+      expect([res.status, res.body]).toEqual([409, { error: "JaAssinante" }]);
+      expect(criarAssinaturaPrePaga).toHaveBeenCalledTimes(1);
+      expect(criarPagamentoPix).toHaveBeenCalledTimes(1);
+      expect(await pixDoMember()).toBe(1);
+      expect(avisos.mock.calls.some(([texto]) => String(texto).includes("PAGO no meio do cancelamento"))).toBe(true);
+    });
   });
 });

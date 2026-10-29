@@ -3,7 +3,7 @@ import { prisma } from "./prisma.js";
 import { cobrancaAtrasada, temAcessoAtivo } from "./acesso.js";
 import { AssinaturaNaoEncontrada, assinaturasDoCliente, buscarAssinatura, buscarPrecos, type AssinaturaNaStripe, type AvisoDaStripe, type PagamentoPrePago } from "./stripe.js";
 import { assinaturaDoPagamento } from "./stripe-reembolso.js";
-import { assinaturaDoPagamentoPrePago, criarAssinaturaPrePaga, garantirFaturaPaga } from "./stripe-pix.js";
+import { assinaturaDoPagamentoPrePago, criarAssinaturaPrePaga, garantirFaturaPaga, pagamentosPixPagos } from "./stripe-pix.js";
 import { contaDoPedido, type SemContaDoVisitante } from "./pedido-do-visitante.js";
 
 // O ESPELHO DA ASSINATURA (Fase 4, etapa 4.1 — CLAUDE.md → Membership Gating). A assinatura da
@@ -206,12 +206,22 @@ export async function processarAviso(aviso: AvisoDaStripe): Promise<Desfecho> {
  * e o pagamento; o preço saiu de venda) NÃO vira assinatura — fica marcado, com alerta, para gente decidir
  * (devolver, ou criar à mão): a assinatura cheia por um valor menor seria acesso sem pagar o preço.
  */
-async function processarPixPrePago(aviso: AvisoDaStripe, pagamento: PagamentoPrePago): Promise<Desfecho> {
-  const marcar = { id: aviso.id, type: aviso.tipo };
+function processarPixPrePago(aviso: AvisoDaStripe, pagamento: PagamentoPrePago): Promise<Desfecho> {
+  return processarPixPago(pagamento, aviso);
+}
+
+/**
+ * A MESMA rotina do aviso, para o Pix pago que o aviso ainda não trouxe (achado 4 do passo 6, 29/10/2026):
+ * o checkout por Pix e por cartão (logado e visitante) e o force-sync do admin a chamam quando acham um
+ * Pix nosso `succeeded` sem espelho (`pixPagoSemEspelho`). Sem aviso, nenhum `event.id` é marcado — o
+ * aviso que chegar depois encontra o espelho e é "atualizada" de novo, como a sincronia sem aviso.
+ */
+export async function processarPixPago(pagamento: PagamentoPrePago, aviso?: AvisoDaStripe): Promise<Desfecho> {
+  const marcar = aviso ? { id: aviso.id, type: aviso.tipo } : null;
   try {
     return await prisma.$transaction(async (tx): Promise<Desfecho> => {
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`pix:${pagamento.id}`}))`;
-      if (await tx.stripeEvent.findUnique({ where: { id: aviso.id }, select: { id: true } })) return { resultado: "repetido" };
+      if (marcar && (await tx.stripeEvent.findUnique({ where: { id: marcar.id }, select: { id: true } }))) return { resultado: "repetido" };
       const noEspelho = await tx.subscription.findUnique({ where: { pixPaymentIntentId: pagamento.id }, select: { stripeSubscriptionId: true } });
       let assinaturaId = noEspelho?.stripeSubscriptionId ?? (await assinaturaDoPagamentoPrePago(pagamento.id));
       if (assinaturaId) {
@@ -219,20 +229,41 @@ async function processarPixPrePago(aviso: AvisoDaStripe, pagamento: PagamentoPre
       } else {
         const preco = (await buscarPrecos()).find((p) => p.precoId === pagamento.precoId) ?? null;
         if (!preco || preco.centavos !== pagamento.centavos) {
-          console.error(`[stripe] aviso ${aviso.id}: o Pix ${pagamento.id} pagou ${pagamento.centavos} centavos e o preço ${pagamento.precoId} ${preco ? `custa ${preco.centavos}` : "não está mais à venda"} — a assinatura pré-paga NÃO foi criada; conferir no painel da Stripe (devolver o Pix, ou criar a assinatura à mão)`);
-          await tx.stripeEvent.create({ data: marcar });
+          console.error(`[stripe] ${marcar ? `aviso ${marcar.id}` : "pix pago sem aviso"}: o Pix ${pagamento.id} pagou ${pagamento.centavos} centavos e o preço ${pagamento.precoId} ${preco ? `custa ${preco.centavos}` : "não está mais à venda"} — a assinatura pré-paga NÃO foi criada; conferir no painel da Stripe (devolver o Pix, ou criar a assinatura à mão)`);
+          if (marcar) await tx.stripeEvent.create({ data: marcar });
           return { resultado: "sem-assinatura" };
         }
         assinaturaId = await criarAssinaturaPrePaga(pagamento);
       }
       await travar(tx, assinaturaId);
       const sincronia = await sincronizar(tx, assinaturaId);
-      await tx.stripeEvent.create({ data: marcar });
+      if (marcar) await tx.stripeEvent.create({ data: marcar });
       return sincronia;
     }, TEMPO_DO_PIX);
   } catch (erro) {
     const motivo = erro instanceof Error ? erro.message : String(erro);
-    throw new Error(`[stripe] aviso ${aviso.id} (pagamento pré-pago ${pagamento.id}) falhou: ${motivo}`, { cause: erro });
+    throw new Error(`[stripe] ${marcar ? `aviso ${marcar.id} (pagamento pré-pago ${pagamento.id})` : `o Pix pago ${pagamento.id}`} falhou: ${motivo}`, { cause: erro });
+  }
+}
+
+/**
+ * O primeiro Pix NOSSO já PAGO deste cliente que ainda não virou espelho — ou nada. Quem chama
+ * (`processarPixPago`) o transforma em assinatura antes de criar outro QR ou outro cartão. Lê o espelho
+ * pela transação de quem chama (com a trava da conta ou do e-mail): o aviso pode ter chegado no meio.
+ */
+export async function pixPagoSemEspelho(tx: Prisma.TransactionClient, clienteId: string): Promise<PagamentoPrePago | null> {
+  for (const pagamento of await pagamentosPixPagos(clienteId)) {
+    if (!(await tx.subscription.findUnique({ where: { pixPaymentIntentId: pagamento.id }, select: { id: true } }))) return pagamento;
+  }
+  return null;
+}
+
+/** Os Pix pagos deste cliente que ainda não têm espelho, cada um pela rotina do aviso: o que o force-sync e a sincronia da ficha fazem ANTES de listar as assinaturas. */
+async function processarPixPagosSemEspelho(clienteId: string): Promise<void> {
+  for (const pagamento of await pagamentosPixPagos(clienteId)) {
+    if (await prisma.subscription.findUnique({ where: { pixPaymentIntentId: pagamento.id }, select: { id: true } })) continue;
+    console.info(`[stripe] sincronia: o Pix ${pagamento.id} do cliente ${clienteId} está pago e sem assinatura — processado agora`);
+    await processarPixPago(pagamento);
   }
 }
 
@@ -325,10 +356,10 @@ export type Conferida = { id: string } & (Sincronia | { resultado: "nao-encontra
 export async function sincronizarConta(userId: string): Promise<Conferida[]> {
   // FECHA na dúvida, como o gate: no Prisma, um filtro vazio traria as assinaturas de todo mundo.
   if (typeof userId !== "string" || userId.length === 0) throw new Error("[stripe] sincronia de conta sem a conta");
-  const [cliente, noEspelho] = await Promise.all([
-    prisma.stripeCustomer.findUnique({ where: { userId }, select: { stripeCustomerId: true } }),
-    prisma.subscription.findMany({ where: { ownerUserId: userId }, select: { stripeSubscriptionId: true }, orderBy: { id: "asc" } }),
-  ]);
+  const cliente = await prisma.stripeCustomer.findUnique({ where: { userId }, select: { stripeCustomerId: true } });
+  // O Pix pago cujo aviso se perdeu não tem assinatura para a lista achar (achado 9 do passo 6 da 4.9): nasce aqui, antes.
+  if (cliente) await processarPixPagosSemEspelho(cliente.stripeCustomerId);
+  const noEspelho = await prisma.subscription.findMany({ where: { ownerUserId: userId }, select: { stripeSubscriptionId: true }, orderBy: { id: "asc" } });
   const naStripe = cliente ? await assinaturasDoCliente(cliente.stripeCustomerId) : [];
   return conferirUmaAUma([...naStripe.map((a) => a.id), ...noEspelho.map((a) => a.stripeSubscriptionId)]);
 }
@@ -344,6 +375,7 @@ export async function sincronizarPedido(email: string): Promise<Conferida[] | nu
   if (typeof email !== "string" || email.length === 0) throw new Error("[stripe] sincronia de ficha sem o e-mail");
   const pedido = await prisma.guestCheckout.findUnique({ where: { email }, select: { stripeCustomerId: true } });
   if (!pedido) return null;
+  await processarPixPagosSemEspelho(pedido.stripeCustomerId);
   return conferirUmaAUma((await assinaturasDoCliente(pedido.stripeCustomerId)).map((a) => a.id));
 }
 

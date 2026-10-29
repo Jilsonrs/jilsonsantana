@@ -2,12 +2,12 @@ import { randomUUID } from "node:crypto";
 import type { Prisma } from "./prisma.js";
 import { DuracaoDoDesconto, type AssinarSemLoginInput } from "@jilson/core";
 import { prisma } from "./prisma.js";
-import { sincronizarSeLivre } from "./assinaturas.js";
+import { pixPagoSemEspelho, processarPixPago, sincronizarSeLivre } from "./assinaturas.js";
 import { cancelarPagamentosPixPendentes } from "./stripe-pix.js";
 import { temAcessoAtivo } from "./acesso.js";
 import { mandarBoasVindasDaAssinatura } from "./boas-vindas.js";
 import { novaTentativa, resumoDaTentativa } from "./tentativa-do-visitante.js";
-import { acertarNumeroFiscal, assinaturasDoCliente, chaveDoNumeroFiscal, buscarCodigo, buscarPrecos, cancelarIncompleta, criarAssinatura, criarClienteDoVisitante, DocumentoRecusado, type AssinaturaNoCheckout } from "./stripe.js";
+import { acertarNumeroFiscal, assinaturasDoCliente, chaveDoNumeroFiscal, buscarCodigo, buscarPrecos, cancelarIncompleta, criarAssinatura, criarClienteDoVisitante, DocumentoRecusado, type AssinaturaNoCheckout, type PagamentoPrePago } from "./stripe.js";
 
 // ASSINAR SEM CONTA (Fase 4, etapa 4.7, passo 4 — billing.md → *Assinar sem conta*; CLAUDE.md →
 // Membership Gating). A regra é a do checkout de quem está logado (`checkout.ts`), com três
@@ -111,7 +111,7 @@ export async function fichaDoEmail(email: string, pedido: Pick<AssinarSemLoginIn
 }
 
 /** O que se decide COM a trava do e-mail. A assinatura viva sai da trava para ser sincronizada fora dela. */
-type NaTrava = DesfechoDoVisitante | { resultado: "viva-na-stripe"; assinaturaId: string };
+type NaTrava = DesfechoDoVisitante | { resultado: "viva-na-stripe"; assinaturaId: string } | { resultado: "pix-pago"; pagamento: PagamentoPrePago };
 
 /**
  * A Stripe diz que a ficha tem assinatura VIVA: o pagamento passou, e o aviso ainda não chegou (ou
@@ -136,6 +136,25 @@ export async function sincronizarAViva(email: string, assinaturaId: string): Pro
   return { resultado: "ja-tem-conta" };
 }
 
+/**
+ * A ficha tem um Pix NOSSO já PAGO e sem assinatura (o aviso ainda não chegou, ou se perdeu — achado 4 do
+ * passo 6 da 4.9): a assinatura pré-paga nasce AGORA, pela rotina do aviso, fora da trava do e-mail — e é
+ * ali que a conta nasce. A resposta é "já tem conta": o caminho é entrar. Se depois disso não há conta
+ * com acesso, precisa de gente, em voz alta (como `sincronizarAViva`).
+ */
+export async function pixPagoDoEmail(email: string, pagamento: PagamentoPrePago): Promise<DesfechoDoVisitante> {
+  const desfecho = await processarPixPago(pagamento);
+  const conta = await prisma.user.findUnique({ where: { email }, select: { id: true } });
+  if (conta && (await temAcessoAtivo(conta.id))) {
+    console.info(`[stripe] visitante: o Pix ${pagamento.id} estava pago e sem assinatura; processado agora, a conta ${conta.id} tem acesso`);
+    // A conta pode ter nascido agora: as boas-vindas saem daqui (depois do commit).
+    if ("assinatura" in desfecho) await mandarBoasVindasDaAssinatura(desfecho.assinatura.id);
+    return { resultado: "ja-tem-conta" };
+  }
+  console.error(`[stripe] visitante: o Pix ${pagamento.id} está PAGO e segue sem conta com acesso depois de processá-lo (${desfecho.resultado}) — pagante trancado; conferir no painel da Stripe`);
+  return { resultado: "ja-tem-conta" };
+}
+
 /** A decisão, COM a trava do e-mail: o que a Stripe diz do cliente, o número fiscal, e a tentativa. */
 async function decidir(email: string, pedido: AssinarSemLoginInput, ficha: Ficha, precoId: string, codigoId: string | null, acaba: boolean): Promise<NaTrava> {
   return prisma.$transaction(async (tx): Promise<NaTrava> => {
@@ -147,6 +166,9 @@ async function decidir(email: string, pedido: AssinarSemLoginInput, ficha: Ficha
     // Viva: alguém já pagou. Nada aqui mexe no cliente dela — nem o número fiscal.
     const viva = existentes.find((a) => a.status !== "incomplete");
     if (viva) return { resultado: "viva-na-stripe", assinaturaId: viva.id };
+    // O Pix JÁ PAGO cujo aviso ainda não chegou: a assinatura (e a conta) nascem fora da trava (`pixPagoDoEmail`).
+    const pixPago = await pixPagoSemEspelho(tx, ficha.stripeCustomerId);
+    if (pixPago) return { resultado: "pix-pago", pagamento: pixPago };
 
     // UM PAGAMENTO ABERTO POR VEZ (etapa 4.9): o Pix à espera desta ficha morre quando o e-mail segue
     // por cartão — o QR copiado no app do banco podia ser pago depois (`checkout.ts` explica).
@@ -239,6 +261,7 @@ export async function assinarComoVisitante(pedido: AssinarSemLoginInput, opcoes:
     console.error(`${erro.message} — conferir o formato do número fiscal na Stripe`);
     return { resultado: "documento-recusado" };
   }
+  if (decisao.resultado === "pix-pago") return pixPagoDoEmail(email, decisao.pagamento);
   return decisao.resultado === "viva-na-stripe" ? sincronizarAViva(email, decisao.assinaturaId) : decisao;
 }
 

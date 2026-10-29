@@ -1,7 +1,7 @@
 import type Stripe from "stripe";
 import type { Plano } from "@jilson/core";
 import { erroSemMensagem, stripe } from "./stripe-cliente.js";
-import { MARCA_DO_PREPAGO, METADADO_DO_PIX, METADADOS_DO_VISITANTE, metadadosDoVisitante, type PagamentoPrePago, type TentativaDoVisitante } from "./stripe.js";
+import { MARCA_DO_PREPAGO, METADADO_DO_PIX, METADADOS_DO_VISITANTE, metadadosDoVisitante, pagamentoPrePagoDe, type PagamentoPrePago, type TentativaDoVisitante } from "./stripe.js";
 
 // O PIX PRÉ-PAGO (Fase 4, etapa 4.9 — billing.md → *Formas de pagamento*; decisão do operador,
 // 28/10/2026). Numa conta do Brasil a Stripe não cobra Pix de novo sozinha (sem Pix Automático) e
@@ -159,8 +159,8 @@ export async function garantirFaturaPaga(assinaturaId: string, pagamentoId: stri
   }
 }
 
-/** Um pagamento Pix NOSSO ainda à espera (o QR aberto, ou vencido sem pagar). */
-export type PixPendente = { id: string; segredo: string; plano: string; resumoDaTentativa: string | null };
+/** Um pagamento Pix NOSSO ainda à espera (o QR aberto, ou vencido sem pagar). `precoId`: o preço de quando nasceu — só se reaproveita o do MESMO preço. */
+export type PixPendente = { id: string; segredo: string; plano: string; precoId: string | null; resumoDaTentativa: string | null };
 /** Os estados em que o pagamento ainda pode ser pago ou cancelado — nunca `processing` nem `succeeded`. */
 const PENDENTES: ReadonlySet<string> = new Set(["requires_payment_method", "requires_confirmation", "requires_action"]);
 
@@ -174,7 +174,7 @@ export async function pagamentosPixPendentes(clienteId: string): Promise<PixPend
     const lista = await stripe().paymentIntents.list({ customer: clienteId, limit: 20 });
     return lista.data
       .filter((p) => PENDENTES.has(p.status) && Boolean(p.metadata[MARCA_DO_PREPAGO]) && Boolean(p.client_secret))
-      .map((p) => ({ id: p.id, segredo: p.client_secret ?? "", plano: p.metadata[MARCA_DO_PREPAGO] ?? "", resumoDaTentativa: p.metadata[METADADOS_DO_VISITANTE.tentativa] || null }));
+      .map((p) => ({ id: p.id, segredo: p.client_secret ?? "", plano: p.metadata[MARCA_DO_PREPAGO] ?? "", precoId: p.metadata.precoId || null, resumoDaTentativa: p.metadata[METADADOS_DO_VISITANTE.tentativa] || null }));
   } catch (erro) {
     throw erroSemMensagem(erro, "a lista dos pagamentos Pix do cliente");
   }
@@ -200,6 +200,38 @@ export async function cancelarPagamentosPixPendentes(clienteId: string): Promise
   const pendentes = await pagamentosPixPendentes(clienteId);
   for (const pendente of pendentes) await cancelarPagamentoPix(pendente.id);
   return pendentes.length;
+}
+
+/**
+ * OS PIX NOSSOS JÁ PAGOS deste cliente (achado 4 do passo 6, 29/10/2026): entre o Pix cair e o aviso
+ * chegar (segundos; horas, se o aviso estiver falhando) a assinatura ainda não existe, e quem olhasse só
+ * as assinaturas e os Pix à espera trataria a pessoa como quem nunca pagou — outro QR, outro cartão, a
+ * tentativa da ficha trocada por um clique alheio. Quem chama processa cada um pela rotina do aviso
+ * (`processarPixPago`, `assinaturas.ts`) antes de decidir. Só `succeeded`: o Pix é de notificação
+ * imediata (`requires_action` → `succeeded` | `requires_payment_method`); `processing` não entra.
+ * Sem o Pix configurado não há Pix nenhum, e não vai à Stripe (como `cancelarPagamentosPixPendentes`).
+ */
+export async function pagamentosPixPagos(clienteId: string): Promise<PagamentoPrePago[]> {
+  if (!pixConfigurado()) return [];
+  try {
+    const lista = await stripe().paymentIntents.list({ customer: clienteId, limit: 20 });
+    return lista.data
+      .filter((p) => p.status === "succeeded" && Boolean(p.metadata[MARCA_DO_PREPAGO]))
+      .map((p) => pagamentoPrePagoDe(p, `cliente ${clienteId}`))
+      .filter((p): p is PagamentoPrePago => p !== null);
+  } catch (erro) {
+    throw erroSemMensagem(erro, "a lista dos pagamentos Pix pagos do cliente");
+  }
+}
+
+/** Um pagamento Pix lido AGORA: o status e, se for nosso, o Pix pré-pago — para o "outro" que foi pago no meio de um cancelamento. */
+export async function lerPagamentoPix(id: string): Promise<{ status: string; pagamento: PagamentoPrePago | null }> {
+  try {
+    const pagamento = await stripe().paymentIntents.retrieve(id);
+    return { status: pagamento.status, pagamento: pagamentoPrePagoDe(pagamento, `pagamento ${id}`) };
+  } catch (erro) {
+    throw erroSemMensagem(erro, "a leitura do pagamento Pix");
+  }
 }
 
 const ID_DE_PAGAMENTO = /^pi_[A-Za-z0-9]+$/;
