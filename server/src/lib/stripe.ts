@@ -615,8 +615,35 @@ export function verificarAviso(corpo: unknown, cabecalho: string | undefined): A
   const segredo = process.env.STRIPE_WEBHOOK_SECRET;
   if (!segredo) throw new Error("Stripe sem STRIPE_WEBHOOK_SECRET");
   if (!Buffer.isBuffer(corpo) || !cabecalho) throw new Error("aviso sem corpo cru ou sem assinatura");
-  const evento = Stripe.webhooks.constructEvent(corpo, cabecalho, segredo);
+  return paraAviso(Stripe.webhooks.constructEvent(corpo, cabecalho, segredo));
+}
+
+/**
+ * O evento da Stripe como o site o processa — o do endereço de avisos (já verificado) e o da conferência da rodada
+ * (lido pela API, que já é autenticada — `avisosDaStripe`). Função pura.
+ */
+export function paraAviso(evento: Stripe.Event): AvisoDaStripe {
   return { id: evento.id, tipo: evento.type, assinatura: assinaturaDoAviso(evento), pagamento: pagamentoDoAviso(evento), devolucaoFalhou: devolucaoQueFalhou(evento), pagamentoPrePago: pagamentoPrePagoDoAviso(evento) };
+}
+
+/**
+ * Os avisos (eventos) da Stripe dos tipos que o endereço de avisos assina (`AVISOS_DO_ENDERECO`), criados entre
+ * `desde` e `ate` — no máximo `maximo`, dos mais novos para os mais velhos (E1 da revisão ampla da cobrança,
+ * 29/10/2026: a rodada confere se cada um foi processado). `[FATO — docs da Stripe, context7, 29/10/2026]` a lista
+ * aceita até 20 tipos e guarda 30 dias. A recusa sobe sem a mensagem crua.
+ */
+export async function avisosDaStripe(desde: Date, ate: Date, maximo: number): Promise<Stripe.Event[]> {
+  try {
+    const eventos: Stripe.Event[] = [];
+    const pedido = { types: [...AVISOS_DO_ENDERECO], created: { gte: Math.floor(desde.getTime() / 1000), lte: Math.floor(ate.getTime() / 1000) }, limit: 100 };
+    for await (const evento of stripe().events.list(pedido)) {
+      eventos.push(evento);
+      if (eventos.length >= maximo) break;
+    }
+    return eventos;
+  } catch (erro) {
+    throw erroSemMensagem(erro, "a lista dos avisos da Stripe");
+  }
 }
 
 /**

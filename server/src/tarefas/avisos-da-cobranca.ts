@@ -5,7 +5,8 @@ import { esvaziarMonitor, ligarMonitor } from "../lib/monitor.js";
 // operador, 28/10/2026: "2 e-mails, com agendador"). É o que o Cloud Run Job `jilson-prod-avisos`
 // executa, com a MESMA imagem e a mesma conta do site, quando o Cloud Scheduler manda — sem porta na
 // internet, sem senha nova: quem pode executar o job é só a conta do agendador (CLAUDE.md →
-// *Background Jobs*). Roda `rodadaDosAvisos()` (`lib/avisos-da-assinatura.ts`) e SAI.
+// *Background Jobs*). Roda a conferência dos avisos da Stripe (`lib/avisos-perdidos.ts`, E1 da 4.9b) e depois
+// `rodadaDosAvisos()` (`lib/avisos-da-assinatura.ts`), e SAI.
 // O alerta liga ANTES de carregar o resto (por isso o `import()` depois): uma falha ao carregar — o
 // banco sem endereço, por exemplo — já o encontra ligado. Termina com `process.exit`: as ligações com
 // o banco e o Sentry seguram o processo aberto, e o job pagaria o tempo parado.
@@ -16,10 +17,18 @@ ligarMonitor({ dsn: process.env.SENTRY_DSN, producao, versao: null });
 
 let codigo = 0;
 try {
-  const { rodadaDosAvisos } = await import("../lib/avisos-da-assinatura.js");
+  const { PRAZO_DA_RODADA_EM_MS, rodadaDosAvisos } = await import("../lib/avisos-da-assinatura.js");
+  const { conferirAvisosPerdidos } = await import("../lib/avisos-perdidos.js");
   const { prisma } = await import("../lib/prisma.js");
   try {
-    const rodada = await rodadaDosAvisos();
+    // Primeiro, os avisos da Stripe que o site não processou (E1 da revisão ampla da cobrança, 29/10/2026 —
+    // `lib/avisos-perdidos.ts`): é deles que saem o espelho certo e os próprios e-mails da cobrança.
+    const inicio = Date.now();
+    const conferencia = await conferirAvisosPerdidos();
+    console.info(`[avisos] a conferência dos avisos da Stripe terminou: ${conferencia.conferidos} conferido(s), ${conferencia.perdidos} sem registro, ${conferencia.processados} processado(s) agora, ${conferencia.falhas} com falha, ${conferencia.adiados} adiado(s) para a próxima`);
+    if (conferencia.falhas > 0) codigo = 1;
+    // A rodada dos e-mails fica com o resto do prazo: o job tem 5 minutos ao todo (`--task-timeout=300s`).
+    const rodada = await rodadaDosAvisos(new Date(), Math.max(PRAZO_DA_RODADA_EM_MS - (Date.now() - inicio), 0));
     console.info(`[avisos] a rodada terminou: ${rodada.conferidas} conferida(s) na Stripe, ${rodada.ocupadas} ocupada(s), ${rodada.desconhecidas} que a Stripe não conhece, ${rodada.adiadas} adiada(s) para a próxima, ${rodada.falhas} com falha`);
     if (rodada.falhas > 0) codigo = 1;
   } finally {

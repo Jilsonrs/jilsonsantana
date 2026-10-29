@@ -6202,10 +6202,24 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       e ninguém soube"** — E5, E4, E1, E3, E2; **grupo 2, segurança** — E8, E10, E9, E7, E6; **grupo 3, ajustes do
       Pix** — E11, E12, E13, E17; **grupo 4, telas e e-mails novos** (cada texto vai a ele antes) — E14, E15, E16,
       E18. Publicar é ordem dele, como sempre.
-      - [ ] **E1 — a rodada de hora em hora confere os avisos:** pede à Stripe os eventos recentes dos tipos tratados
+      - [x] **E1 — a rodada de hora em hora confere os avisos:** pede à Stripe os eventos recentes dos tipos tratados
             (ela guarda 30 dias) e processa, pela mesma rotina do aviso, os que o site não registrou (`stripe_event`),
             com um alerta. Pega o aviso esquecido no endereço, o segredo trocado, o endereço desligado e o aviso de
             fim ou de devolução perdido (que hoje deixa o espelho `active` e o acesso aberto sem pagamento).
+            **FEITO (29/10/2026):** `lib/avisos-perdidos.ts` (`conferirAvisosPerdidos`): os avisos dos tipos de
+            `AVISOS_DO_ENDERECO` dos últimos **3 dias** (o tempo em que a Stripe tenta entregar) até **10 min** atrás (a
+            entrega normal ainda pode estar chegando), lidos da API (`avisosDaStripe`, `stripe.ts` — autenticada, sem
+            assinatura a conferir); os sem marca vão, do mais velho para o mais novo, pela MESMA rotina do endereço —
+            `processarAviso` e **`depoisDoAviso`** (`lib/depois-do-aviso.ts`: os alertas, o registro, as boas-vindas e
+            os e-mails da cobrança saíram da rota para cá, sem mudar nada — a suíte inteira passou antes de seguir), e
+            `paraAviso` separou o "evento → aviso" da verificação da assinatura. Um alerta por rodada, com texto fixo (o
+            Sentry junta as rodadas), e outro se algum falhar de novo (fica sem marca, para a próxima). A conferência
+            roda primeiro na tarefa da rodada (`tarefas/avisos-da-cobranca.ts`), com 1 minuto de prazo; a rodada dos
+            e-mails fica com o resto dos 4 (o job tem 5). Testes: `avisos-perdidos.test.ts` (novo, 7, contra o banco),
+            `avisos-da-stripe-rede.test.ts` (novo, 3). **Mutação: 10 de 10 reprovaram.** *Sem teste:* a tarefa em si (o
+            `process.exit`); a prova é o registro da rodada no ar (`[avisos] a conferência dos avisos da Stripe
+            terminou: …`). *Reabre se a rodada ficar parada mais de 3 dias (P126: o alerta de "a rodada não rodou"), ou
+            se a lista passar do máximo (2.000) com frequência.*
       - [ ] **E2 — a tela de depois do pagamento pede conferência:** sem confirmação em ~30 s, pede ao servidor que
             confira na Stripe (a sincronia das portas: a assinatura viva, o Pix pago), com limite; nada do navegador
             vale como prova.
