@@ -91,20 +91,26 @@
 > que a Stripe não conhece, 0 adiada(s), 0 com falha`, com o monitor ligado. **Desde esta
 > publicação os e-mails da cobrança saem sozinhos em produção.** O Cloud Scheduler e a conta
 > `jilson-agendador` existem desde 28/10/2026 (criados com o OK do operador, 7b).
-> **NO `dev`, AINDA NÃO PUBLICADO (28/10/2026, depois do `c12b0cd`): a etapa 4.9 (Pix pré-pago), passos
-> 1 a 4** — `a94e888` (1, a fundação), `abf0542` (2a, as rotas do Pix), `cd826da` (2b, a tela: cartão ou
-> Pix, o QR, o "QR de novo"), `cf9f455` (P110), `8bcd16e` (P109: a configuração só-Pix da conta de verdade
-> em `deploy/cloud-run.yaml`), `fb7ee7f` (3, o pré-pago em Faturamento e no reembolso) e `230264f` (4, o
-> e-mail "está acabando"). Duas migrations novas vão com a próxima publicação (`20261028200000_pix_pre_pago`
-> e `20261028230000_prepago_terminando`). **Na próxima publicação o Pix entra no ar** (atrás do "Em breve"):
-> a escolha "Como você quer pagar?" passa a aparecer na tela de assinar.
+> **Publicado em 29/10/2026 (UTC; noite de 28/10 no Brasil): `d9dc5e6`** — a etapa 4.9 (Pix pré-pago),
+> passos 1 a 4: `a94e888` (1, a fundação), `abf0542` (2a, as rotas do Pix), `cd826da` (2b, a tela: cartão
+> ou Pix, o QR, o "QR de novo"), `cf9f455` (P110), `8bcd16e` (P109: a configuração só-Pix da conta de
+> verdade em `deploy/cloud-run.yaml`), `fb7ee7f` (3, o pré-pago em Faturamento e no reembolso) e `230264f`
+> (4, o e-mail "está acabando"); ordem do operador: *"Publica"*. **Revisão `jilson-prod-00046`**, conferida
+> de fora: a versão nova do app (`mvstjfq9-9c3fa01b`; antes, `mvs757nl-7734a2c8`);
+> **`/api/billing/visitante/planos` → 200 com `pix: { configuracao }`** (o mensal e o anual); o site e a
+> `/assinar` no "Em breve"; a saúde, os cursos, as trilhas, os textos e a sessão (200); a assinatura sem
+> login (401); o login com um e-mail que não existe (401); o aviso da Stripe sem assinatura (400); o job
+> das migrations com sucesso, aplicando a `20261028200000_pix_pre_pago` e a
+> `20261028230000_prepago_terminando` (as duas concluídas na tabela do Prisma, lida só leitura); **no banco
+> de produção, só leitura: nenhuma tabela sem RLS**; o job `jilson-prod-avisos` na mesma imagem. **O Pix
+> está no ar, atrás do "Em breve"**: a escolha "Como você quer pagar?" aparece na tela de assinar. **Falta: o
+> operador ver a tela de assinar pela prévia** (`/__preview`).
 >
 > **PARA CONTINUAR NO PRÓXIMO CHAT (a ordem):** *(o passo 5 — Apple Pay e Google Pay — SAIU por
 > decisão do operador em 28/10/2026; a escola fica com cartão e Pix.)*
-> 1. **Publicar** (ordem do operador) e conferir de fora: a versão nova do app; `/api/billing/visitante/
->    planos` com `pix: { configuracao }`; o job das migrations aplicando as duas (`20261028200000_pix_pre_
->    pago` e `20261028230000_prepago_terminando`); no banco de produção, só leitura, nenhuma tabela sem
->    RLS. Depois, o operador vê a tela de assinar pela prévia (`/__preview`): a escolha cartão/Pix.
+> 1. ~~**Publicar** e conferir de fora~~ **FEITO em 29/10/2026 (UTC): `d9dc5e6`, revisão `00046` — a
+>    conferência está acima.** Falta só o operador ver a tela de assinar pela prévia (`/__preview`): a
+>    escolha cartão/Pix.
 > 2. **Passo 6 da 4.9 — prova e revisão.** Na área restrita (roteiro fora do repo, cliente descartável):
 >    pagar com Pix de teste de ponta a ponta (a confirmação é à mão, na página de instruções da Stripe em
 >    teste); o que o `confirmPayment` devolve quando a pessoa FECHA a janela do QR; o "Mostrar o QR de
