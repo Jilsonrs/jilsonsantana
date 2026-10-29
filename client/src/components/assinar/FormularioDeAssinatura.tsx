@@ -105,7 +105,10 @@ export function FormularioDeAssinatura({
             return setErro(t.erro);
           }
           // O endereço de volta NUNCA leva a tentativa (ela está na memória e no `sessionStorage`).
-          const confirmado = await cartao.confirmar(criada.segredo, criada.tipo, semLogin ? TELA_DE_CONCLUIDO_SEM_LOGIN : telaDeConcluido(reativar));
+          const voltarPara = semLogin ? TELA_DE_CONCLUIDO_SEM_LOGIN : telaDeConcluido(reativar);
+          // No Pix, o e-mail de quem paga vai na confirmação — o que o SERVIDOR devolveu (P113).
+          const pagador = criada.tipo === "pix" && criada.email ? { email: criada.email } : null;
+          const confirmado = pagador ? await cartao.confirmar(criada.segredo, criada.tipo, voltarPara, pagador) : await cartao.confirmar(criada.segredo, criada.tipo, voltarPara);
           if (!confirmado.ok) return setErro(confirmado.mensagem ?? t.erro);
         }
         aoConcluir();
@@ -172,7 +175,7 @@ export function FormularioDeAssinatura({
         )}
         {!semCartao && (
           <PageSection title={t.pagamento} className="pt-0 sm:pt-0">
-            <CampoDoCartao />
+            <CampoDoCartao pix={comPix} />
           </PageSection>
         )}
       </div>

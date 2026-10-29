@@ -27,7 +27,7 @@ vi.mock("@/lib/api", async (importOriginal) => ({
 // A NOSSA fronteira com o Stripe.js vira dublê (nunca `@stripe/*`): o campo é um marcador que
 // mostra com o que foi aberto, e o cartão responde o que o teste mandar.
 const validar = vi.fn<() => Promise<Desfecho>>();
-const confirmar = vi.fn<(segredo: string, tipo: string, voltarPara: string) => Promise<Desfecho>>();
+const confirmar = vi.fn<(segredo: string, tipo: string, voltarPara: string, pagador?: { email: string }) => Promise<Desfecho>>();
 vi.mock("@/lib/stripe-do-site", () => ({
   CartaoProvider: ({ pedido, children }: { pedido: PedidoDeCartao; children: ReactNode }) => (
     <div data-testid="cartao" data-centavos={pedido.centavos} data-moeda={pedido.moeda} data-formas={pedido.formasDePagamento.join(",")} data-chave={pedido.chavePublicavel} data-pix={pedido.pix?.configuracao ?? ""}>
@@ -35,7 +35,7 @@ vi.mock("@/lib/stripe-do-site", () => ({
     </div>
   ),
   CampoDoCartao: () => <div>campo do cartão</div>,
-  useCartao: () => ({ validar: () => validar(), confirmar: (segredo: string, tipo: string, voltarPara: string) => confirmar(segredo, tipo, voltarPara) }),
+  useCartao: () => ({ validar: () => validar(), confirmar: (segredo: string, tipo: string, voltarPara: string, pagador?: { email: string }) => (pagador ? confirmar(segredo, tipo, voltarPara, pagador) : confirmar(segredo, tipo, voltarPara)) }),
 }));
 
 import { esquecerPix, guardarPix, lerPix } from "@/lib/pix-pendente";
@@ -67,7 +67,7 @@ const CEM_PARA_SEMPRE: PreviaDaAssinatura = { centavosHoje: 0, moeda: "brl", des
 const PAGAR: AssinaturaCriada = { estado: "pagar", segredo: "pi_1_secret_x", tipo: "pagamento" };
 // O Pix pré-pago no ar (etapa 4.9): o servidor manda a configuração só-Pix.
 const COM_PIX: PlanosDaAssinatura = { ...PLANOS, pix: { configuracao: "pmc_so_pix" } };
-const PAGAR_PIX: AssinaturaCriada = { estado: "pagar", segredo: "pi_pix_secret_x", tipo: "pix" };
+const PAGAR_PIX: AssinaturaCriada = { estado: "pagar", segredo: "pi_pix_secret_x", tipo: "pix", email: "aluno@teste.local" };
 const erroDoServidor = (codigo: string) => ({ response: { data: { error: codigo } } });
 
 beforeEach(() => {
@@ -708,7 +708,8 @@ describe("AssinarPage — o Pix pré-pago", () => {
     expect(ordem).toEqual(["confere", "pede", "confirma"]);
     expect(pagarComPix).toHaveBeenCalledWith({ plano: "anual", documento: CPF });
     expect(criarAssinatura).not.toHaveBeenCalled();
-    expect(confirmar).toHaveBeenCalledWith("pi_pix_secret_x", "pix", "/aluno/assinar/concluido");
+    // O e-mail de quem paga vai na confirmação — o que o SERVIDOR devolveu, nunca a tela (P113).
+    expect(confirmar).toHaveBeenCalledWith("pi_pix_secret_x", "pix", "/aluno/assinar/concluido", { email: "aluno@teste.local" });
     expect(guardadoAntes).toEqual({ segredo: "pi_pix_secret_x", chavePublicavel: "pk_test_da_tela" });
     expect(JSON.parse(window.sessionStorage.getItem("jilson.assinar.pix") ?? "null")).toEqual({ segredo: "pi_pix_secret_x", chavePublicavel: "pk_test_da_tela" });
   });

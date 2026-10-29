@@ -44,14 +44,15 @@ export type DesfechoDoPix =
   | { resultado: "atrasada" }
   /** A Stripe recusou o CPF ou CNPJ que o `core` aceitou: nada foi criado. */
   | { resultado: "documento-recusado" }
-  | { resultado: "pagar"; segredo: string; tipo: "pix" };
+  /** `email`: o de quem paga, que o site entrega à Stripe na confirmação (o quadro do Pix não o pede — P113). */
+  | { resultado: "pagar"; segredo: string; tipo: "pix"; email: string };
 
 export type DesfechoDoPixSemLogin =
   | { resultado: "ja-tem-conta" }
   | { resultado: "ocupada" }
   | { resultado: "documento-recusado" }
   | { resultado: "muitos-emails-novos"; segundos: number }
-  | { resultado: "pagar"; segredo: string; tipo: "pix"; tentativa: string };
+  | { resultado: "pagar"; segredo: string; tipo: "pix"; tentativa: string; email: string };
 
 /** O que se decide COM a trava e se resolve FORA dela: a assinatura viva (sincronizada, como no checkout) e o Pix já pago (processado pela rotina do aviso). */
 type VivaNaStripe = { resultado: "viva-na-stripe"; assinaturaId: string } | { resultado: "pix-pago"; pagamento: PagamentoPrePago };
@@ -128,10 +129,10 @@ export async function pagarComPix(conta: Conta, pedido: PixInput): Promise<Desfe
       const pendente = await umQrPorVez(clienteId, (p) => p.plano === pedido.plano && p.precoId === preco.precoId);
       if (pendente && "pago" in pendente) return { resultado: "pix-pago", pagamento: pendente.pago };
       await acertarNumeroFiscal(clienteId, pedido.documento);
-      if (pendente) return { resultado: "pagar", segredo: pendente.segredo, tipo: "pix" };
+      if (pendente) return { resultado: "pagar", segredo: pendente.segredo, tipo: "pix", email: conta.email };
       const pagamento = await criarPagamentoPix({ clienteId, precoId: preco.precoId, plano: pedido.plano, centavos: preco.centavos, userId: conta.id });
       console.info(`[stripe] pix: conta ${conta.id}, plano ${pedido.plano} → pagamento ${pagamento.id}`);
-      return { resultado: "pagar", segredo: pagamento.segredo, tipo: "pix" };
+      return { resultado: "pagar", segredo: pagamento.segredo, tipo: "pix", email: conta.email };
     }, TEMPO_DA_TRANSACAO);
   } catch (erro) {
     if (!(erro instanceof DocumentoRecusado)) throw erro;
@@ -174,7 +175,7 @@ export async function pagarComPixSemLogin(pedido: PixSemLoginInput, opcoes: Opco
       if (pendente && "pago" in pendente) return { resultado: "pix-pago", pagamento: pendente.pago };
       // A ficha nova já nasceu com o número desta tentativa.
       if (!ficha.nova) await acertarNumeroFiscal(ficha.stripeCustomerId, pedido.documento);
-      if (pendente && tentativaAnterior !== null) return { resultado: "pagar", segredo: pendente.segredo, tipo: "pix", tentativa: tentativaAnterior };
+      if (pendente && tentativaAnterior !== null) return { resultado: "pagar", segredo: pendente.segredo, tipo: "pix", tentativa: tentativaAnterior, email };
       const tentativa = novaTentativa();
       const resumo = resumoDaTentativa(tentativa);
       const pagamento = await criarPagamentoPix({
@@ -187,7 +188,7 @@ export async function pagarComPixSemLogin(pedido: PixSemLoginInput, opcoes: Opco
       // A tentativa nova passa a ser a da ficha (pelo resumo): é com o código dela que a tela de depois do pagamento pergunta.
       await tx.guestCheckout.update({ where: { id: ficha.id }, data: { tentativa: resumo } });
       console.info(`[stripe] pix: ficha ${ficha.id}, plano ${pedido.plano} → pagamento ${pagamento.id}`);
-      return { resultado: "pagar", segredo: pagamento.segredo, tipo: "pix", tentativa };
+      return { resultado: "pagar", segredo: pagamento.segredo, tipo: "pix", tentativa, email };
     }, TEMPO_DA_TRANSACAO);
   } catch (erro) {
     if (!(erro instanceof DocumentoRecusado)) throw erro;

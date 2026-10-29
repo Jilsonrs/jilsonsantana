@@ -175,7 +175,7 @@ router.post("/billing/visitante/pix", ...limiteSemLogin.assinar, async (req, res
     res.status(400).json({ error: "DocumentoInvalido" });
     return;
   }
-  const resposta: AssinaturaSemLogin = { estado: "pagar", segredo: desfecho.segredo, tipo: "pix", tentativa: desfecho.tentativa };
+  const resposta: AssinaturaSemLogin = { estado: "pagar", segredo: desfecho.segredo, tipo: "pix", tentativa: desfecho.tentativa, email: desfecho.email };
   res.json(resposta);
 });
 

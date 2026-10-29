@@ -314,7 +314,8 @@ describe("POST /api/billing/pix — com a conta logada", () => {
       const res = await pix({ plano: "anual" });
       expect(res.status).toBe(200);
       const clienteId = await clienteDoMember();
-      expect(res.body).toEqual({ estado: "pagar", segredo: `${pixNaStripe[0]?.id}_secret_x`, tipo: "pix" });
+      // Com o e-mail de quem paga (P113): o quadro do Pix não o pede, e o site o entrega à Stripe na confirmação.
+      expect(res.body).toEqual({ estado: "pagar", segredo: `${pixNaStripe[0]?.id}_secret_x`, tipo: "pix", email: memberEmail });
       expect(criarCliente).toHaveBeenCalledWith({ userId: memberId, email: memberEmail, nome: expect.anything() });
       expect(criarPagamentoPix).toHaveBeenCalledWith({ clienteId, precoId: "price_anual", plano: "anual", centavos: 99500, userId: memberId });
       expect(acertarNumeroFiscal).toHaveBeenCalledWith(clienteId, { tipo: "cpf", numero: CPF_LIMPO });
@@ -516,7 +517,7 @@ describe("POST /api/billing/visitante/pix — sem conta", () => {
     if (typeof tentativa !== "string") throw new Error("sem tentativa");
 
     const mesma = await pixVisitante(pedido(email, { tentativa }), endereco);
-    expect(mesma.body).toEqual({ estado: "pagar", segredo: primeiro.body.segredo, tipo: "pix", tentativa });
+    expect(mesma.body).toEqual({ estado: "pagar", segredo: primeiro.body.segredo, tipo: "pix", tentativa, email: email.toLowerCase() });
     const outroCpf = await pixVisitante(pedido(email, { tentativa, documento: OUTRO_CPF }), endereco);
     expect(outroCpf.body).toEqual(mesma.body);
     expect(criarPagamentoPix).toHaveBeenCalledTimes(1);

@@ -162,8 +162,10 @@ no PaymentIntent/SetupIntent/Checkout Session; suporte anunciado em 22/abr/2026.
 > botão **"Mostrar o QR de novo"** para quem fechou a janela sem pagar (o segredo do Pix fica só na aba,
 > até o servidor confirmar). **A tela nunca pede um QR novo sozinha**: só o clique em "Pagar com Pix" pede
 > — e o servidor devolve o MESMO QR enquanto ele estiver à espera.
-> **Medido no navegador em 29/10/2026 (passo 6):** o quadro do Pix da Stripe tem um campo "E-mail" próprio
-> (vazio, a validação barra com "Endereço de e-mail incompleto." — decisão pendente, P113); fechar a janela do
+> **Medido no navegador em 29/10/2026 (passo 6):** o quadro do Pix da Stripe tinha um campo "E-mail" próprio
+> (vazio, a validação barrava com "Endereço de e-mail incompleto.") — **decisão do operador (P113, 29/10/2026):
+> o campo fica ESCONDIDO e o e-mail que o servidor devolve com o segredo (a conta, ou o visitante em minúsculas)
+> vai à Stripe na confirmação** (a Stripe o exige assim; provado no navegador no mesmo dia); fechar a janela do
 > QR resolve o `confirmPayment` SEM erro, com o pagamento à espera, e a tela vai para a de concluído; o
 > "Mostrar o QR de novo" abre a janela (desktop e celular) e, fechada, o `handleNextAction` resolve sem erro;
 > o idioma da janela é o do Stripe.js (`locale` em `OPCOES_DO_STRIPE`), não o do campo.

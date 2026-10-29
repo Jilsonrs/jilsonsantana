@@ -24,7 +24,7 @@ vi.mock("@/lib/api", async (importOriginal) => ({
 }));
 // A NOSSA fronteira com o Stripe.js vira dublê (nunca `@stripe/*`), como no teste da tela logada.
 const validar = vi.fn<() => Promise<Desfecho>>();
-const confirmar = vi.fn<(segredo: string, tipo: string, voltarPara: string) => Promise<Desfecho>>();
+const confirmar = vi.fn<(segredo: string, tipo: string, voltarPara: string, pagador?: { email: string }) => Promise<Desfecho>>();
 vi.mock("@/lib/stripe-do-site", () => ({
   CartaoProvider: ({ pedido, children }: { pedido: PedidoDeCartao; children: ReactNode }) => (
     <div data-testid="cartao" data-centavos={pedido.centavos} data-pix={pedido.pix?.configuracao ?? ""}>
@@ -32,7 +32,7 @@ vi.mock("@/lib/stripe-do-site", () => ({
     </div>
   ),
   CampoDoCartao: () => <div>campo do cartão</div>,
-  useCartao: () => ({ validar: () => validar(), confirmar: (segredo: string, tipo: string, voltarPara: string) => confirmar(segredo, tipo, voltarPara) }),
+  useCartao: () => ({ validar: () => validar(), confirmar: (segredo: string, tipo: string, voltarPara: string, pagador?: { email: string }) => (pagador ? confirmar(segredo, tipo, voltarPara, pagador) : confirmar(segredo, tipo, voltarPara)) }),
 }));
 
 import { navegador } from "@/lib/versao";
@@ -63,7 +63,7 @@ const TENTATIVA = "TentativaDoServidor_24bytesAAAAAA";
 const PAGAR: AssinaturaSemLogin = { estado: "pagar", segredo: "pi_1_secret_x", tipo: "pagamento", tentativa: TENTATIVA };
 // O Pix pré-pago no ar (etapa 4.9): o servidor manda a configuração só-Pix.
 const COM_PIX: PlanosDaAssinatura = { ...PLANOS, pix: { configuracao: "pmc_so_pix" } };
-const PAGAR_PIX: AssinaturaSemLogin = { estado: "pagar", segredo: "pi_pix_secret_x", tipo: "pix", tentativa: TENTATIVA };
+const PAGAR_PIX: AssinaturaSemLogin = { estado: "pagar", segredo: "pi_pix_secret_x", tipo: "pix", tentativa: TENTATIVA, email: "visitante@exemplo.com" };
 const EMAIL = "Visitante@Exemplo.com";
 const CPF = "529.982.247-25";
 const erroDoServidor = (codigo: string, status = 409) =>
@@ -247,7 +247,8 @@ describe("a tela pública de assinar — o Pix pré-pago", () => {
       { tentativa: TENTATIVA, email: EMAIL },
       { segredo: "pi_pix_secret_x", chavePublicavel: "pk_test_da_tela" },
     ]);
-    expect(confirmar).toHaveBeenCalledWith("pi_pix_secret_x", "pix", "/assinar/concluido");
+    // O e-mail de quem paga vai na confirmação — o que o SERVIDOR devolveu (em minúsculas), nunca o digitado (P113).
+    expect(confirmar).toHaveBeenCalledWith("pi_pix_secret_x", "pix", "/assinar/concluido", { email: "visitante@exemplo.com" });
     expect(confirmar.mock.calls.flat().join(" ")).not.toContain(TENTATIVA);
   });
 

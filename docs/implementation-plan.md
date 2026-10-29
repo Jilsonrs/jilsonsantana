@@ -5973,8 +5973,18 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                   `pagamentosPixPagos` não vai à Stripe sem o Pix configurado. Testes: `pagar-com-pix.test.ts`
                   (+6), `pix-pre-pago.test.ts` (+1), `admin-assinaturas.test.ts` (+1), `stripe-pix-rede.test.ts`
                   (+2). **Mutação: 6 de 6 reprovaram.**
-            - [ ] **Decisões do operador:** P112 (o aviso no painel), P113 (o e-mail no quadro), P114 (a
-                  devolução pelo painel), P115 (a frase do QR vencido).
+            - [x] **P113 — o e-mail no quadro do Pix (decisão do operador, 29/10/2026: esconder o campo e
+                  mandar o e-mail já digitado).** O servidor devolve `email` com o segredo do Pix (a conta da
+                  sessão, ou o do visitante em minúsculas — `AssinaturaCriada`/`AssinaturaSemLogin`, API
+                  aditiva); o site esconde o campo (`opcoesDoElemento`: `fields.billingDetails.email: "never"`)
+                  e o entrega na confirmação (`confirmar(…, { email })`, só no Pix) — `[FATO — docs da Stripe,
+                  context7 (4ª consulta Stripe da sessão), 29/10/2026]` com o campo escondido a Stripe EXIGE o
+                  e-mail em `payment_method_data.billing_details`. **Provado no navegador:** o quadro do Pix
+                  mostra só "Pix" e a frase do QR; o clique abre a janela do QR; o pagamento na Stripe fica com
+                  o e-mail do servidor. Testes: `stripe-do-site.test.ts` (+2), as duas telas (+e-mail na
+                  confirmação), `pagar-com-pix.test.ts` (o corpo com o e-mail).
+            - [ ] **Decisões do operador:** P112 (o aviso no painel), P114 (a devolução pelo painel), P115 (a
+                  frase do QR vencido).
       **Fora da 4.9:** somar tempo pagando antes de acabar (decisão (a)) · código promocional no Pix
       (decisão (b)) · Pix na troca de plano · o Pix Automático (quando a Stripe liberar para o Brasil) ·
       **Apple Pay e Google Pay** (decisão do operador, 28/10/2026). **Trazido da 4.2 (10/10/2026):** o Pix é um item a mais na

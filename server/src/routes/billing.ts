@@ -169,7 +169,7 @@ router.post("/billing/pix", requireAuth, ...limiteDeTentativas.cobranca, async (
     res.status(400).json({ error: "DocumentoInvalido" });
     return;
   }
-  const resposta: AssinaturaCriada = { estado: "pagar", segredo: desfecho.segredo, tipo: "pix" };
+  const resposta: AssinaturaCriada = { estado: "pagar", segredo: desfecho.segredo, tipo: "pix", email: desfecho.email };
   res.json(resposta);
 });
 

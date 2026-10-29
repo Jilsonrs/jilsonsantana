@@ -56,5 +56,5 @@ async function pedirSemLogin({ forma, plano, codigo, documento, email, novidades
   };
   const resposta = forma === "pix" ? await pagarComPixSemLogin(corpo) : await assinarSemLogin(codigo ? { ...corpo, codigo } : corpo);
   guardarTentativa({ tentativa: resposta.tentativa, email: email.trim() });
-  return resposta.estado === "pagar" ? { estado: "pagar", segredo: resposta.segredo, tipo: resposta.tipo } : { estado: "ativa" };
+  return resposta.estado === "pagar" ? { estado: "pagar", segredo: resposta.segredo, tipo: resposta.tipo, ...(resposta.email ? { email: resposta.email } : {}) } : { estado: "ativa" };
 }

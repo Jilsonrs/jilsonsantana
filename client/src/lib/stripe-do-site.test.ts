@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { OPCOES_DO_STRIPE, opcoesDoCampo, type PedidoDeCartao } from "./stripe-do-site";
+import { OPCOES_DO_STRIPE, opcoesDoCampo, opcoesDoElemento, type PedidoDeCartao } from "./stripe-do-site";
 
 // AS OPÇÕES COM QUE O CAMPO DA STRIPE ABRE (etapa 4.9, passo 6 — 29/10/2026). As telas simulam o módulo
 // inteiro, então nenhum teste de tela vê estas linhas; e o Stripe.js recusa opção errada EM SILÊNCIO (o
@@ -37,5 +37,15 @@ describe("opcoesDoCampo", () => {
 describe("OPCOES_DO_STRIPE", () => {
   it("o Stripe.js é carregado em português: a janela do QR aberta fora do campo sairia no idioma do navegador", () => {
     expect(OPCOES_DO_STRIPE.locale).toBe("pt-BR");
+  });
+});
+
+describe("opcoesDoElemento", () => {
+  it("no Pix, o quadro não pede e-mail (o aluno já o deu — P113); a Stripe o exige na confirmação, que o leva", () => {
+    expect(opcoesDoElemento(true)).toEqual({ fields: { billingDetails: { email: "never" } } });
+  });
+
+  it("no cartão, o campo fica como sempre", () => {
+    expect(opcoesDoElemento(false)).toEqual({});
   });
 });

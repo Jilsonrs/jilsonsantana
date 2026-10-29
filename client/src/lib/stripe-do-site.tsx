@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js/pure";
-import type { Stripe, StripeConstructorOptions, StripeElementLocale, StripeElementsOptionsMode, StripeError } from "@stripe/stripe-js";
+import type { ConfirmPaymentData, Stripe, StripeConstructorOptions, StripeElementLocale, StripeElementsOptionsMode, StripeError, StripePaymentElementOptions } from "@stripe/stripe-js";
 
 // A NOSSA FRONTEIRA COM O STRIPE.JS (Fase 4, etapa 4.2). Só este arquivo importa `@stripe/*` no
 // site; as telas usam o que sai daqui, e os testes simulam ESTE módulo (nunca o da Stripe).
@@ -86,9 +86,20 @@ export function CartaoProvider({ pedido, children }: { pedido: PedidoDeCartao; c
   );
 }
 
-/** O campo de pagamento da Stripe. */
-export function CampoDoCartao() {
-  return <PaymentElement />;
+/**
+ * AS OPÇÕES DO CAMPO EM SI (não do Elements). No PIX, o quadro da Stripe pede um e-mail próprio — e o
+ * aluno já o digitou no nosso formulário, ou está logado: o campo fica ESCONDIDO (decisão do operador,
+ * P113, 29/10/2026) e o e-mail que o servidor devolveu vai na confirmação (`confirmar`). `[FATO — docs da
+ * Stripe, context7, 29/10/2026]` com `fields.billingDetails.email: "never"` a Stripe EXIGE o e-mail em
+ * `payment_method_data.billing_details` ao confirmar, senão recusa o pagamento. Função pura, com teste.
+ */
+export function opcoesDoElemento(pix: boolean): StripePaymentElementOptions {
+  return pix ? { fields: { billingDetails: { email: "never" } } } : {};
+}
+
+/** O campo de pagamento da Stripe. `pix`: o quadro do Pix, sem o campo de e-mail (`opcoesDoElemento`). */
+export function CampoDoCartao({ pix = false }: { pix?: boolean }) {
+  return <PaymentElement options={opcoesDoElemento(pix)} />;
 }
 
 /** Deu certo, ou não — com a frase da Stripe quando ela é para o aluno ler (cartão recusado, dado faltando). */
@@ -97,8 +108,11 @@ export type Desfecho = { ok: true } | { ok: false; mensagem: string | null };
 export type Cartao = {
   /** Confere o que o aluno preencheu, antes de criar qualquer coisa no servidor. */
   validar: () => Promise<Desfecho>;
-  /** Confirma com o segredo que o servidor devolveu: `pagamento` cobra hoje; `cartao` só guarda o cartão. */
-  confirmar: (segredo: string, tipo: "pagamento" | "cartao" | "pix", voltarPara: string) => Promise<Desfecho>;
+  /**
+   * Confirma com o segredo que o servidor devolveu: `pagamento` cobra hoje; `cartao` só guarda o cartão;
+   * `pix` abre o QR — e leva `pagador`, o e-mail que o servidor devolveu, porque o quadro do Pix não o pede.
+   */
+  confirmar: (segredo: string, tipo: "pagamento" | "cartao" | "pix", voltarPara: string, pagador?: { email: string }) => Promise<Desfecho>;
 };
 
 /** Só os erros de cartão e de preenchimento trazem frase para o aluno; o resto vira a frase da escola. */
@@ -117,11 +131,14 @@ export function useCartao(): Cartao {
       const { error } = await elements.submit();
       return error ? falhou(error) : { ok: true };
     },
-    async confirmar(segredo, tipo, voltarPara) {
+    async confirmar(segredo, tipo, voltarPara, pagador) {
       if (!stripe || !elements) return { ok: false, mensagem: null };
       // `if_required`: o cartão confirma sem sair da tela (a conferência do banco abre por cima);
       // só forma de pagamento que precise sair volta pelo endereço abaixo.
-      const pedido = { elements, clientSecret: segredo, confirmParams: { return_url: new URL(voltarPara, window.location.origin).toString() }, redirect: "if_required" as const };
+      const return_url = new URL(voltarPara, window.location.origin).toString();
+      // O e-mail de quem paga, no Pix (o campo escondido — `opcoesDoElemento`): escrito por extenso, com o tipo.
+      const confirmParams: ConfirmPaymentData = pagador ? { return_url, payment_method_data: { billing_details: { email: pagador.email } } } : { return_url };
+      const pedido = { elements, clientSecret: segredo, confirmParams, redirect: "if_required" as const };
       // O Pix pré-pago (etapa 4.9) confirma como pagamento: a própria Stripe.js mostra o QR e espera o Pix cair.
       const { error } = tipo === "cartao" ? await stripe.confirmSetup(pedido) : await stripe.confirmPayment(pedido);
       return error ? falhou(error) : { ok: true };
