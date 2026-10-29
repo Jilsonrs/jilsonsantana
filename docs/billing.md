@@ -1586,6 +1586,20 @@ encerrada de vez com dias pagos: tem acesso e o servidor recusa cartão.
   **Desde a 4.9b (E4, 29/10/2026) a lista mora no código** (`AVISOS_DO_ENDERECO`, `server/src/lib/stripe.ts`), e
   **a subida do servidor em produção confere o endereço**: desligado, ausente ou sem um dos 8, sai um alerta. Aviso
   novo tratado no código entra nessa lista e no endereço.
+- **A versão do endereço de avisos** *(4.9b, C3, 29/10/2026)*: a Stripe manda cada aviso na versão da API do
+  endereço (sem versão própria, na versão padrão da conta), e o site lê a da biblioteca — hoje a `2026-09-30.endive`.
+  Numa versão de antes da `2025-03-31.basil`, o aviso de fatura chega sem a assinatura dele. **A subida em produção
+  aceita a mesma linha (`.endive`) numa versão igual ou mais nova** — as versões mensais de uma linha não quebram nada
+  (documentação da Stripe) — e alerta qualquer outra, inclusive a padrão da conta. A rodada de hora em hora não
+  processa aviso de fatura no formato antigo, e alerta. **Para trocar a versão, um endereço NOVO** (o que existe não
+  muda de versão):
+  1. no Workbench → Webhooks, criar um endereço com a mesma URL e `?versao=endive` no fim (o site não lê o que vem
+     depois do `?`), os 8 avisos e a versão da biblioteca — o painel oferece a da conta ou a mais recente; outra, só
+     pela API;
+  2. pôr o segredo do endereço novo (`whsec_…`) em `STRIPE_WEBHOOK_SECRET`, no Secret Manager, e publicar;
+  3. desligar o endereço antigo.
+  Até o passo 3, os dois entregam o mesmo aviso: um passa e o outro é recusado (pode vir o alerta do segredo trocado,
+  que para ao desligar o antigo). O mesmo aviso nunca conta duas vezes.
 - **A chave da Stripe em produção lê tudo o que a sincronia precisa** *(P71, respondida pelo
   operador em 12/10/2026)*: a chave que está na Railway é a comum (`sk_live_`), e não uma
   restrita — pagamentos, faturas, devoluções e agendamentos. E a `SENTRY_DSN` está preenchida:

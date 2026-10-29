@@ -2,7 +2,7 @@ import type Stripe from "stripe";
 import { prisma } from "./prisma.js";
 import { processarAviso } from "./assinaturas.js";
 import { depoisDoAviso } from "./depois-do-aviso.js";
-import { avisosDaStripe, paraAviso } from "./stripe.js";
+import { avisoEmFormatoAntigo, avisosDaStripe, paraAviso } from "./stripe.js";
 
 // A CONFERÊNCIA DOS AVISOS DA STRIPE (E1 da revisão ampla da cobrança, 29/10/2026 — plano → etapa 4.9b). A rodada de
 // hora em hora pergunta à Stripe pelos avisos dos tipos que o site trata e processa, pela MESMA rotina do endereço de
@@ -26,8 +26,11 @@ export const MAXIMO_DA_LISTA = 2_000;
 /** O tempo da conferência dentro do job (5 min no total; a rodada dos e-mails fica com o resto — `tarefas/`). */
 export const PRAZO_DA_CONFERENCIA_EM_MS = 60_000;
 
-/** O que a conferência fez: os avisos lidos da Stripe, os sem registro, os processados agora, os que falharam e os que ficaram para a próxima rodada. */
-export type ConferenciaDosAvisos = { conferidos: number; perdidos: number; processados: number; falhas: number; adiados: number };
+/**
+ * O que a conferência fez: os avisos lidos da Stripe, os sem registro, os processados agora, os que falharam, os que
+ * ficaram para a próxima rodada, e os de fatura num formato antigo da API, que ela não processa (C3).
+ */
+export type ConferenciaDosAvisos = { conferidos: number; perdidos: number; processados: number; falhas: number; adiados: number; formatoAntigo: number };
 
 export async function conferirAvisosPerdidos(agora: number = Date.now(), prazoEmMs: number = PRAZO_DA_CONFERENCIA_EM_MS): Promise<ConferenciaDosAvisos> {
   const inicio = Date.now();
@@ -36,19 +39,26 @@ export async function conferirAvisosPerdidos(agora: number = Date.now(), prazoEm
     eventos = await avisosDaStripe(new Date(agora - JANELA_DA_CONFERENCIA_MS), new Date(agora - ESPERA_DA_ENTREGA_MS), MAXIMO_DA_LISTA);
   } catch (erro) {
     console.error(`[stripe] rodada: não consegui conferir os avisos da Stripe — ${erro instanceof Error ? erro.message : String(erro)}`);
-    return { conferidos: 0, perdidos: 0, processados: 0, falhas: 1, adiados: 0 };
+    return { conferidos: 0, perdidos: 0, processados: 0, falhas: 1, adiados: 0, formatoAntigo: 0 };
   }
   if (eventos.length >= MAXIMO_DA_LISTA) console.warn(`[stripe] rodada: a lista dos avisos chegou ao máximo (${MAXIMO_DA_LISTA}); os mais velhos dos 3 dias não foram conferidos`);
   const vistos = new Set((await prisma.stripeEvent.findMany({ where: { id: { in: eventos.map((evento) => evento.id) } }, select: { id: true } })).map((marca) => marca.id));
   // Os mais velhos primeiro (a lista vem dos mais novos): a ordem em que a Stripe os teria entregado.
   const perdidos = eventos.filter((evento) => !vistos.has(evento.id)).sort((a, b) => a.created - b.created);
-  const resultado: ConferenciaDosAvisos = { conferidos: eventos.length, perdidos: perdidos.length, processados: 0, falhas: 0, adiados: 0 };
+  const resultado: ConferenciaDosAvisos = { conferidos: eventos.length, perdidos: perdidos.length, processados: 0, falhas: 0, adiados: 0, formatoAntigo: 0 };
   if (perdidos.length === 0) return resultado;
 
   console.error("[stripe] rodada: há avisos da Stripe que o site não processou (não chegaram ao endereço de avisos, ou falharam ao chegar) — processados agora pela rodada; conferir as entregas do endereço de avisos no painel da Stripe (Workbench → Webhooks)");
   for (const evento of perdidos) {
     if (Date.now() - inicio >= prazoEmMs) {
       resultado.adiados += 1;
+      continue;
+    }
+    // O aviso de fatura num formato antigo da API (C3 da revisão do grupo 1): processado, seria marcado "sem
+    // assinatura" e a reentrega de verdade viraria "repetido". Fica SEM marca, com o alerta abaixo.
+    if (avisoEmFormatoAntigo(evento)) {
+      resultado.formatoAntigo += 1;
+      console.warn(`[stripe] rodada: o aviso ${evento.id} (${evento.type}) veio na versão ${evento.api_version ?? "?"} da API, sem o "parent" da fatura — não processado`);
       continue;
     }
     const aviso = paraAviso(evento);
@@ -63,6 +73,7 @@ export async function conferirAvisosPerdidos(agora: number = Date.now(), prazoEm
     }
   }
   if (resultado.falhas > 0) console.error("[stripe] rodada: avisos da Stripe que o site não processou falharam também na rodada — ficam para a próxima; conferir o registro da rodada");
+  if (resultado.formatoAntigo > 0) console.error("[stripe] rodada: avisos de fatura num formato antigo da API da Stripe ficaram sem processar — a versão padrão da conta é anterior à 2025-03-31.basil; conferir a versão no Workbench (o espelho dessas assinaturas se acerta pelos avisos da assinatura e pelo \"Conferir na Stripe\")");
   if (resultado.adiados > 0) console.warn(`[stripe] rodada: ${resultado.adiados} aviso(s) sem registro ficaram para a próxima rodada (o prazo da conferência acabou)`);
   return resultado;
 }

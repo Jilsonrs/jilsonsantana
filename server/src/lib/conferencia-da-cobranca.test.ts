@@ -11,11 +11,11 @@ vi.mock("./stripe-cliente.js", async (importOriginal) => ({
   stripe: () => falsa,
 }));
 
-import { conferirCobrancaNaSubida, modoDaChave, problemaDasChaves, problemaDoEndereco, type EnderecoDeAvisos } from "./conferencia-da-cobranca.js";
-import { AVISOS_DO_ENDERECO } from "./stripe.js";
+import { conferirCobrancaNaSubida, modoDaChave, problemaDasChaves, problemaDoEndereco, versaoServeAoSite, type EnderecoDeAvisos } from "./conferencia-da-cobranca.js";
+import { AVISOS_DO_ENDERECO, VERSAO_DA_API } from "./stripe.js";
 
 const URL_DOS_AVISOS = "https://www.escola.teste/api/stripe/webhook";
-const endereco = (dados: Partial<EnderecoDeAvisos> = {}): EnderecoDeAvisos => ({ id: "we_1", url: URL_DOS_AVISOS, status: "enabled", enabled_events: [...AVISOS_DO_ENDERECO], ...dados });
+const endereco = (dados: Partial<EnderecoDeAvisos> = {}): EnderecoDeAvisos => ({ id: "we_1", url: URL_DOS_AVISOS, status: "enabled", enabled_events: [...AVISOS_DO_ENDERECO], api_version: VERSAO_DA_API, ...dados });
 const AMBIENTE = ["STRIPE_SECRET_KEY", "STRIPE_PUBLISHABLE_KEY", "STRIPE_WEBHOOK_SECRET", "BETTER_AUTH_URL"] as const;
 const antes = Object.fromEntries(AMBIENTE.map((nome) => [nome, process.env[nome]]));
 // As chaves de mentira, com a forma das de verdade — e o teste confere que nenhuma vai ao registro.
@@ -74,6 +74,37 @@ describe("o endereço de avisos", () => {
     expect(problemaDoEndereco([], URL_DOS_AVISOS)).toContain("nenhum endereço de avisos");
     expect(problemaDoEndereco([endereco({ url: "https://outro.site/api/stripe/webhook" })], URL_DOS_AVISOS)).toContain("nenhum endereço de avisos");
     expect(problemaDoEndereco([endereco({ status: "disabled" })], URL_DOS_AVISOS)).toContain("está desligado");
+  });
+
+  // C3 da revisão do grupo 1 (29/10/2026): o aviso chega na versão da API do endereço, e o site lê a da biblioteca —
+  // serve a mesma linha numa versão igual ou mais nova (as mensais de uma linha não quebram nada).
+  it("a versão do endereço: a da biblioteca ou uma mais nova da mesma linha serve; mais velha, de outra linha, sem linha ou a padrão da conta, não", () => {
+    const SITE = "2026-09-30.endive";
+    expect(versaoServeAoSite(SITE, SITE)).toBe(true);
+    expect(versaoServeAoSite("2026-10-28.endive", SITE)).toBe(true);
+    expect(versaoServeAoSite("2026-09-30.endive", "2026-10-28.endive")).toBe(false);
+    expect(versaoServeAoSite("2026-03-31.dahlia", SITE)).toBe(false);
+    expect(versaoServeAoSite("2027-03-31.fig", SITE)).toBe(false);
+    expect(versaoServeAoSite("2024-06-20", SITE)).toBe(false);
+    expect(versaoServeAoSite(null, SITE)).toBe(false);
+    expect(versaoServeAoSite("endive", SITE)).toBe(false);
+    // A da própria biblioteca tem a forma que a regra lê (senão, depois de uma atualização, todo endereço daria alarme).
+    expect(versaoServeAoSite(VERSAO_DA_API)).toBe(true);
+  });
+
+  it("o endereço numa versão que o site não lê: o problema, com a versão (ou a padrão da conta); na do site ou numa mensal mais nova, nada", () => {
+    expect(problemaDoEndereco([endereco()], URL_DOS_AVISOS)).toBeNull();
+    expect(problemaDoEndereco([endereco({ api_version: "2026-10-28.endive" })], URL_DOS_AVISOS, "2026-09-30.endive")).toBeNull();
+    const antiga = problemaDoEndereco([endereco({ api_version: "2024-06-20" })], URL_DOS_AVISOS);
+    expect(antiga).toContain("we_1 (versão 2024-06-20)");
+    expect(antiga).toContain(`numa versão da API que o site lê (a ${VERSAO_DA_API}`);
+    expect(problemaDoEndereco([endereco({ api_version: null })], URL_DOS_AVISOS)).toContain("versão padrão da conta");
+    expect(problemaDoEndereco([endereco({ enabled_events: ["*"], api_version: "2024-06-20" })], URL_DOS_AVISOS)).toContain("numa versão da API que o site lê");
+    // Na troca de um endereço pelo outro, o velho ainda entrega: ainda é problema, e só ele aparece; desligado, não conta.
+    const naTroca = problemaDoEndereco([endereco({ id: "we_velho", api_version: "2025-09-30.clover" }), endereco({ id: "we_novo" })], URL_DOS_AVISOS);
+    expect(naTroca).toContain("we_velho (versão 2025-09-30.clover)");
+    expect(naTroca).not.toContain("we_novo");
+    expect(problemaDoEndereco([endereco({ id: "we_velho", status: "disabled", api_version: "2025-09-30.clover" }), endereco({ id: "we_novo" })], URL_DOS_AVISOS)).toBeNull();
   });
 
   it("faltando avisos (o caso da P112): diz quais — e vale o que os ligados assinam JUNTOS; o desligado não conta", () => {

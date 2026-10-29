@@ -1,11 +1,11 @@
 import Stripe from "stripe";
 import { DuracaoDoDesconto, PLANOS, formatarDocumentoFiscal, type DescontoDoCodigo, type DocumentoFiscal, type Plano, type TipoDeDocumento } from "@jilson/core";
-import { erroSemMensagem, stripe } from "./stripe-cliente.js";
+import { erroSemMensagem, stripe, VERSAO_DA_API } from "./stripe-cliente.js";
 import { periodoDevolvido } from "./stripe-devolucao.js";
 
 // A biblioteca já com a chave e o erro sem a mensagem dela moram em `stripe-cliente.ts`, e saem
 // por aqui para quem já os importava deste arquivo.
-export { erroSemMensagem, stripe };
+export { erroSemMensagem, stripe, VERSAO_DA_API };
 
 // A NOSSA FRONTEIRA COM A STRIPE (Fase 4, etapa 4.1 — billing.md; CLAUDE.md → Membership
 // Gating). Tudo que fala com a Stripe passa por aqui — e, para gerir uma assinatura que já
@@ -651,6 +651,17 @@ export function verificarAviso(corpo: unknown, cabecalho: string | undefined): A
   if (!segredo) throw new Error("Stripe sem STRIPE_WEBHOOK_SECRET");
   if (!Buffer.isBuffer(corpo) || !cabecalho) throw new Error("aviso sem corpo cru ou sem assinatura");
   return paraAviso(Stripe.webhooks.constructEvent(corpo, cabecalho, segredo));
+}
+
+/**
+ * O aviso de FATURA num formato antigo da API (C3 da revisão do grupo 1, 29/10/2026): sem o `parent`, que só existe a
+ * partir da `2025-03-31.basil` — é dele que sai a assinatura da fatura (`assinaturaDoAviso`). `[FATO — a biblioteca,
+ * `Events.d.ts`: o `data` do evento LISTADO pela API vem na versão de quando ele nasceu (a padrão da conta), não na da
+ * biblioteca.]` Processado assim, ele seria marcado "sem assinatura", e a reentrega de verdade viraria "repetido".
+ * Função pura.
+ */
+export function avisoEmFormatoAntigo(evento: Stripe.Event): boolean {
+  return evento.type.startsWith("invoice.") && !("parent" in evento.data.object);
 }
 
 /**

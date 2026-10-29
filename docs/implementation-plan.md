@@ -6343,9 +6343,20 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             `contarRelatoDoCampo` (`billing.ts`; até 1.000 endereços contados entre dois alertas). Teste:
             `campo-nao-abriu.test.ts` (o primeiro reescrito: 1 alerta, os de menos de 6 h no registro com a marca e sem
             o IP, e o alerta seguinte com "3 relato(s) de 2 endereço(s)"). **Mutação: 4 de 4 reprovaram.**
-      - [ ] **C3 — o formato da API:** a rodada não processa (nem marca) aviso de fatura sem o `parent` (formato
+      - [x] **C3 — o formato da API:** a rodada não processa (nem marca) aviso de fatura sem o `parent` (formato
             anterior à `2025-03-31.basil`) e alerta; a subida (E4) confere a versão da API do endereço de avisos contra
-            a da biblioteca (`Stripe.API_VERSION`).
+            a da biblioteca (`Stripe.API_VERSION`). **FEITO (29/10/2026):** `avisoEmFormatoAntigo` (`stripe.ts`, função
+            pura) — a rodada o pula sem marca, registra cada um e alerta uma vez (`formatoAntigo` na conta da rodada e
+            na linha do job); `versaoServeAoSite` (`conferencia-da-cobranca.ts`): **a mesma linha da biblioteca
+            (`.endive`), numa versão igual ou mais nova** — as mensais de uma linha não quebram nada, e exigir a exata
+            daria alarme a cada subida com o endereço na "mais recente" do painel; a padrão da conta (sem versão
+            própria) não serve. A versão da biblioteca mora num lugar só (`VERSAO_DA_API`, `stripe-cliente.ts`). O
+            passo a passo da troca: `billing.md` → *A versão do endereço de avisos*. Testes: `avisos-perdidos.test.ts`
+            (+1, e a conta nova nos outros 6), `stripe.test.ts` (+1), `conferencia-da-cobranca.test.ts` (+2).
+            **Mutação: 9 de 9 reprovaram.** **A versão do endereço de produção não é conhecida:** a primeira subida
+            depois da publicação diz (sem alerta, ela serve). *Docs check (context7): Stripe → `/websites/stripe` → 2
+            consultas (o endereço sem versão própria recebe na da conta, e outra versão exige endereço novo; as mensais
+            de uma linha sem quebra).*
       - [ ] **C4 — a conferência pedida pela tela que falha** responde 204 do mesmo jeito, registra, e alerta no
             máximo uma vez a cada 15 min por cópia.
       - [ ] **C5 — a conferência pula só a `incomplete_expired`** (a cancelada com dias pagos ainda dá acesso pelo gate).

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import Stripe from "stripe";
 import { pagamentosDaFatura } from "./stripe-devolucao.js";
-import { AVISOS_DO_ENDERECO, chaveDoNumeroFiscal, chavePublicavel, erroSemMensagem, idDoAvisoNoCorpo, METADADO_DO_PIX, pagamentoPrePagoDoAviso, pareceAvisoDaStripe, paraAssinaturaNaStripe, paraAssinaturaNoCheckout, paraCodigoPromocional, paraNumeroFiscal, paraPedidoDeAssinatura, paraPedidoDeCliente, paraPedidoDeClienteDoVisitante, paraPrecosDosPlanos, verificarAviso } from "./stripe.js";
+import { AVISOS_DO_ENDERECO, avisoEmFormatoAntigo, chaveDoNumeroFiscal, chavePublicavel, erroSemMensagem, idDoAvisoNoCorpo, METADADO_DO_PIX, pagamentoPrePagoDoAviso, pareceAvisoDaStripe, paraAssinaturaNaStripe, paraAssinaturaNoCheckout, paraCodigoPromocional, paraNumeroFiscal, paraPedidoDeAssinatura, paraPedidoDeCliente, paraPedidoDeClienteDoVisitante, paraPrecosDosPlanos, verificarAviso } from "./stripe.js";
 
 // O ESPELHO A PARTIR DA STRIPE (Fase 4, etapa 4.1) — função pura, teste unitário (CLAUDE.md →
 // Testing: só função pura, sem I/O). O que protege é o "PAGO ATÉ": quando a renovação falha, a
@@ -520,5 +520,21 @@ describe("o id do aviso no corpo cru", () => {
     expect(idDoAvisoNoCorpo(corpo({ id: `evt_${"a".repeat(65)}` }))).toBeNull();
     expect(idDoAvisoNoCorpo(corpo("null"))).toBeNull();
     expect(idDoAvisoNoCorpo(corpo(`{"id":"evt_1QaBcD2eFgHiJkLm","x":"${"a".repeat(600 * 1024)}"}`))).toBeNull();
+  });
+});
+
+// O AVISO DE FATURA NUM FORMATO ANTIGO DA API (C3 da revisão do grupo 1, 29/10/2026): o listado pela API vem na versão de
+// quando nasceu, e antes da 2025-03-31.basil a fatura não tem o "parent" — de onde sai a assinatura dela.
+describe("o aviso de fatura num formato antigo da API", () => {
+  const evento = (type: string, objeto: Record<string, unknown>) =>
+    // Seguro: o objeto de teste tem só os campos que a função lê; a forma completa é da Stripe.
+    ({ id: "evt_1", type, data: { object: objeto } }) as unknown as Stripe.Event;
+  it("a fatura sem o parent: formato antigo; com o parent (mesmo vazio): não; o que não é fatura: nunca", () => {
+    expect(avisoEmFormatoAntigo(evento("invoice.paid", { id: "in_1", object: "invoice", subscription: "sub_1" }))).toBe(true);
+    expect(avisoEmFormatoAntigo(evento("invoice.payment_failed", { id: "in_1", object: "invoice" }))).toBe(true);
+    expect(avisoEmFormatoAntigo(evento("invoice.paid", { id: "in_1", object: "invoice", parent: { subscription_details: { subscription: "sub_1" } } }))).toBe(false);
+    expect(avisoEmFormatoAntigo(evento("invoice.paid", { id: "in_1", object: "invoice", parent: null }))).toBe(false);
+    expect(avisoEmFormatoAntigo(evento("customer.subscription.updated", { id: "sub_1", object: "subscription" }))).toBe(false);
+    expect(avisoEmFormatoAntigo(evento("charge.refunded", { id: "ch_1", object: "charge", payment_intent: "pi_1" }))).toBe(false);
   });
 });

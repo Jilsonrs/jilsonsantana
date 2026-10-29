@@ -67,7 +67,7 @@ describe("a conferência dos avisos da Stripe na rodada", () => {
     await prisma.stripeEvent.create({ data: { id: visto.id, type: visto.type } });
     avisosDaStripe.mockResolvedValue([perdido, visto]);
 
-    expect(await conferirAvisosPerdidos(AGORA)).toEqual({ conferidos: 2, perdidos: 1, processados: 1, falhas: 0, adiados: 0 });
+    expect(await conferirAvisosPerdidos(AGORA)).toEqual({ conferidos: 2, perdidos: 1, processados: 1, falhas: 0, adiados: 0, formatoAntigo: 0 });
     expect(await espelho(perdida)).toMatchObject({ ownerUserId: assinante, status: "active" });
     expect(await marcado(perdido.id)).not.toBeNull();
     expect(await espelho(vista)).toBeNull();
@@ -75,7 +75,7 @@ describe("a conferência dos avisos da Stripe na rodada", () => {
     expect(alertas(erro)).toHaveLength(1);
     expect(alertas(erro)[0]).toContain("não processou");
 
-    expect(await conferirAvisosPerdidos(AGORA)).toEqual({ conferidos: 2, perdidos: 0, processados: 0, falhas: 0, adiados: 0 });
+    expect(await conferirAvisosPerdidos(AGORA)).toEqual({ conferidos: 2, perdidos: 0, processados: 0, falhas: 0, adiados: 0, formatoAntigo: 0 });
     expect(alertas(erro)).toHaveLength(1);
     expect(buscarAssinatura).toHaveBeenCalledTimes(1);
   });
@@ -99,7 +99,7 @@ describe("a conferência dos avisos da Stripe na rodada", () => {
     avisosDaStripe.mockResolvedValue([aviso]);
     buscarAssinatura.mockRejectedValueOnce(new Error("[stripe] a busca da assinatura falhou: api_error, status 500"));
 
-    expect(await conferirAvisosPerdidos(AGORA)).toEqual({ conferidos: 1, perdidos: 1, processados: 0, falhas: 1, adiados: 0 });
+    expect(await conferirAvisosPerdidos(AGORA)).toEqual({ conferidos: 1, perdidos: 1, processados: 0, falhas: 1, adiados: 0, formatoAntigo: 0 });
     expect(await marcado(aviso.id)).toBeNull();
     expect(alertas(erro)).toHaveLength(2);
     expect(alertas(erro)[1]).toContain("falharam também na rodada");
@@ -112,7 +112,7 @@ describe("a conferência dos avisos da Stripe na rodada", () => {
   it("a lista da Stripe falhou: UM alerta, a falha conta, e nada é processado", async () => {
     const erro = vi.spyOn(console, "error").mockImplementation(() => {});
     avisosDaStripe.mockRejectedValue(new Error("[stripe] a lista dos avisos da Stripe falhou: api_error, status 500"));
-    expect(await conferirAvisosPerdidos(AGORA)).toEqual({ conferidos: 0, perdidos: 0, processados: 0, falhas: 1, adiados: 0 });
+    expect(await conferirAvisosPerdidos(AGORA)).toEqual({ conferidos: 0, perdidos: 0, processados: 0, falhas: 1, adiados: 0, formatoAntigo: 0 });
     expect(alertas(erro)).toHaveLength(1);
     expect(alertas(erro)[0]).toContain("não consegui conferir os avisos da Stripe");
     expect(buscarAssinatura).not.toHaveBeenCalled();
@@ -123,15 +123,36 @@ describe("a conferência dos avisos da Stripe na rodada", () => {
     const registro = vi.spyOn(console, "warn").mockImplementation(() => {});
     const aviso = avisoDaAssinatura(novoId("sub"), 60 * 60 * 1000);
     avisosDaStripe.mockResolvedValue([aviso]);
-    expect(await conferirAvisosPerdidos(AGORA, 0)).toEqual({ conferidos: 1, perdidos: 1, processados: 0, falhas: 0, adiados: 1 });
+    expect(await conferirAvisosPerdidos(AGORA, 0)).toEqual({ conferidos: 1, perdidos: 1, processados: 0, falhas: 0, adiados: 1, formatoAntigo: 0 });
     expect(await marcado(aviso.id)).toBeNull();
     expect(buscarAssinatura).not.toHaveBeenCalled();
     expect(registro.mock.calls.some(([texto]) => String(texto).includes("ficaram para a próxima rodada"))).toBe(true);
   });
 
+  // C3 da revisão do grupo 1 (29/10/2026): o aviso listado pela API vem na versão de quando nasceu — a fatura de antes
+  // da 2025-03-31.basil não traz o "parent", e processada assim seria marcada "sem assinatura".
+  it("o aviso de fatura num formato antigo da API: NÃO processado nem marcado, com um alerta; o de formato novo, sim", async () => {
+    const erro = vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    vi.spyOn(console, "info").mockImplementation(() => {});
+    const antiga = novoId("sub");
+    const nova = novoId("sub");
+    const daFatura = (sub: string, formatoNovo: boolean): Stripe.Event =>
+      // Seguro: o objeto de teste tem só os campos que a rotina lê; a forma completa é da Stripe.
+      ({ id: novoId("evt"), object: "event", type: "invoice.paid", api_version: formatoNovo ? "2026-09-30.endive" : "2024-06-20", created: Math.floor((AGORA - 60 * 60 * 1000) / 1000), data: { object: formatoNovo ? { id: novoId("in"), object: "invoice", parent: { subscription_details: { subscription: sub } } } : { id: novoId("in"), object: "invoice", subscription: sub } } }) as unknown as Stripe.Event;
+    const velho = daFatura(antiga, false);
+    const novo = daFatura(nova, true);
+    avisosDaStripe.mockResolvedValue([velho, novo]);
+    expect(await conferirAvisosPerdidos(AGORA)).toEqual({ conferidos: 2, perdidos: 2, processados: 1, falhas: 0, adiados: 0, formatoAntigo: 1 });
+    expect(await marcado(velho.id)).toBeNull();
+    expect(await marcado(novo.id)).not.toBeNull();
+    expect(buscarAssinatura.mock.calls).toEqual([[nova]]);
+    expect(alertas(erro).some((linha) => linha.includes("formato antigo da API"))).toBe(true);
+  });
+
   it("nada sem registro: nenhum alerta, nada processado", async () => {
     const erro = vi.spyOn(console, "error").mockImplementation(() => {});
-    expect(await conferirAvisosPerdidos(AGORA)).toEqual({ conferidos: 0, perdidos: 0, processados: 0, falhas: 0, adiados: 0 });
+    expect(await conferirAvisosPerdidos(AGORA)).toEqual({ conferidos: 0, perdidos: 0, processados: 0, falhas: 0, adiados: 0, formatoAntigo: 0 });
     expect(alertas(erro)).toEqual([]);
   });
 });
