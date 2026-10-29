@@ -106,26 +106,32 @@
 > está no ar, atrás do "Em breve"**: a escolha "Como você quer pagar?" aparece na tela de assinar. **Falta: o
 > operador ver a tela de assinar pela prévia** (`/__preview`).
 >
-> **NO `dev`, AINDA NÃO PUBLICADO (29/10/2026, depois do `d9dc5e6`): o passo 6 da 4.9 — a prova, as
-> revisões e as correções.** `12aee69` (parte 1: **o campo do Pix não abria no navegador** — corrigido; a
-> janela do QR em português; o Pix da aba esquecido ao pagar por cartão), `c89058b` (parte 2: a pré-paga nasce
-> paga em todo caminho, o valor conferido com o preço), `4fcf5cc` (parte 3: o Pix pago sem assinatura vira
-> assinatura na hora, nas quatro portas e no force-sync; a ficha presa à tentativa que pagou; o QR só com o
-> mesmo preço), `316bf36` (P113: o quadro do Pix sem o campo de e-mail), `73fd108` (P115: o QR vencido vira QR
-> novo no mesmo botão; P114 registrada na 4.7b), `2e01aa1` (P108 e P111), o fechamento (`fd930b3`: o ajuste da
-> P108), a parte 4 (a segunda revisão de segurança: o servidor — `62d3fdd`) e a parte 5 (o site). **ATENÇÃO: no ar (`d9dc5e6`) o campo do Pix NÃO ABRE** — quem olhar a `/assinar` pela
-> prévia vê "Pagar com Pix" sem o campo; é a próxima publicação que conserta. Nenhuma migration nova.
+> **Publicado em 29/10/2026: `09187af`** — o passo 6 da 4.9: `12aee69` (parte 1: **o campo do Pix não abria no
+> navegador** — corrigido; a janela do QR em português; o Pix da aba esquecido ao pagar por cartão), `c89058b`
+> (parte 2: a pré-paga nasce paga em todo caminho, o valor conferido com o preço), `4fcf5cc` (parte 3: o Pix pago
+> sem assinatura vira assinatura na hora, nas quatro portas e no force-sync; a ficha presa à tentativa que pagou;
+> o QR só com o mesmo preço), `316bf36` (P113), `73fd108` (P115; P114 registrada na 4.7b), `2e01aa1` e `fd930b3`
+> (P108 e P111), `62d3fdd` (parte 4: a segunda revisão de segurança, o servidor) e `70f597d` (parte 5: o site);
+> ordem do operador: *"Publicar (já autorizei, depois da revisão)"*. A terceira passada da revisão (só as
+> correções) não achou P0 nem P1. **A publicação foi PARADA no meio da montagem da imagem** (nada tinha mudado no
+> ar) quando a revisão ampla (4.9b) apontou publicar sem a P112 como P1; **o operador fez a P112** (o endereço de
+> avisos da conta de verdade com 8 avisos, incluindo o `payment_intent.succeeded`) e a publicação foi retomada.
+> **Revisão `jilson-prod-00047`** (100% do tráfego), conferida de fora: a versão nova do app (`mvu0vw00-1035c50a`;
+> antes, `mvstjfq9-9c3fa01b`); `/api/billing/visitante/planos` → 200 com o Pix e os dois planos; a home e a
+> `/assinar` no "Em breve"; a saúde, os cursos, as trilhas, os textos e a sessão (200); a assinatura sem login
+> (401); o login com um e-mail que não existe (401); o aviso da Stripe sem assinatura (400); o job das migrations
+> com sucesso, *"No pending migrations to apply"* (46 migrations); o job `jilson-prod-avisos` na mesma imagem do
+> site. **No banco de produção (branch `production`), só leitura: nenhuma tabela sem RLS; nenhum registro do modo
+> de teste** em `subscription`, `stripe_customer` e `guest_checkout` (1 assinatura e 1 cliente, os do operador, de
+> verdade — a verificação pendente da revisão de segurança ampla). **O campo do Pix passa a abrir no ar** (atrás do
+> "Em breve"). **Falta: o operador ver a `/assinar` pela prévia** (`/__preview`).
 >
-> **PARA CONTINUAR NO PRÓXIMO CHAT (a ordem — atualizado em 29/10/2026, no meio da correção):**
-> 0. **A segunda revisão de segurança do passo 6** (Opus 5.5, esforço máximo, a pedido do operador) achou 10
->    problemas, e o operador decidiu **corrigir tudo antes de publicar**. **As correções estão no `dev`**: a
->    parte 4 (o servidor — mutação 29 de 29) e a parte 5 (o site — 8 de 9) do passo 6 da 4.9.
-> 1. **A revisão de segurança de novo (Opus 5.5, esforço máximo), só das correções** (as partes 4 e 5). Achado grave vai ao
->    operador antes de publicar.
-> 2. **Publicar** (o operador já mandou publicar depois da revisão) e conferir de fora como sempre — a versão
->    do app, `/api/billing/visitante/planos` com `pix`, o job das migrations sem migration nova, RLS no banco
->    de produção só leitura. Depois, o operador vê a `/assinar` pela prévia (no ar hoje o campo do Pix não abre).
-> 3. **O passo 9 da 4.7 — quem não terminou de assinar, e a tabela de leads** (decisões do operador,
+> **PARA CONTINUAR NO PRÓXIMO CHAT (a ordem — atualizado em 29/10/2026, depois da publicação `09187af`):**
+> 1. **A revisão ampla da cobrança (a etapa 4.9b): as decisões do operador, uma por vez** — P116 a P127, em
+>    `pendencias.md` (P126 são as conferências nos painéis, por prints) — **e o OK dele para o bloco de engenharia
+>    E1 a E13** (o agente recomenda começar pelo "pagou, ou quis pagar, e ninguém soube": E5, E4, E1, E3 e E2).
+>    O roteiro "quando um aluno não conseguir pagar" está em `billing.md`, como rascunho, para ele revisar.
+> 2. **O passo 9 da 4.7 — quem não terminou de assinar, e a tabela de leads** (decisões do operador,
 >    29/10/2026): registrar no plano e construir. O e-mail "você não terminou a assinatura" 2 horas depois
 >    da última tentativa; aos 7 dias, a ficha e o cliente da Stripe (com o CPF) são apagados; quem marcou
 >    "Quero receber novidades" vira LEAD (nome e e-mail, nunca o CPF), e o lembrete dos outros traz o botão
@@ -133,12 +139,11 @@
 >    nome" no formulário de assinar sem conta; tudo na rodada de hora em hora (`jilson-prod-avisos`). A
 >    tabela de leads serve depois à captura do YouTube e do LinkedIn. **Todo texto** (o e-mail, o campo, o
 >    consentimento, a página de descadastro) vai ao operador para aprovar.
-> 4. **P93, um passo por vez, com a confirmação dele:** o 1º e-mail (o código de entrar) foi enviado ao Yahoo
+> 3. **P93, um passo por vez, com a confirmação dele:** o 1º e-mail (o código de entrar) foi enviado ao Yahoo
 >    em 29/10/2026 e espera a resposta; depois o código da senha nova, as boas-vindas e as telas de entrar e
 >    de senha nova.
-> 5. **P112** (do operador, antes de qualquer Pix de verdade: `payment_intent.succeeded` no endereço de avisos
->    da conta de verdade; depois, registrar no `billing.md`) e **o passo 8 da 4.7** (o teste dele com cartão e
->    Pix reais, R$ 99,90 e o reembolso), com a P102.
+> 4. **O passo 8 da 4.7** (o teste dele com cartão e Pix reais, R$ 99,90 e o reembolso — a P112 já está feita),
+>    com a P102.
 > **O que o próximo chat precisa saber:** a suíte do servidor apaga o banco de teste local — perguntar
 > UMA vez e usar a resposta exata em `PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION`; rodar como o CI
 > (`STRIPE_SECRET_KEY= STRIPE_PUBLISHABLE_KEY= STRIPE_WEBHOOK_SECRET= RESEND_API_KEY= STRIPE_PIX_CONFIGURATION=`);
@@ -5931,10 +5936,10 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             servido em `/.well-known/apple-developer-merchantid-domain-association` **antes do portão
             "Em breve"**, e o domínio registrado em *Settings → Payments → Payment method domains* (teste
             e ao vivo). Nada muda no campo do cartão.
-      - [ ] **Passo 6 — Prova e revisão.** *(Fechado em 29/10/2026 — a prova, as duas revisões, as partes 1 a 3 e as
-            decisões P113, P114 e P115 — e REABERTO no mesmo dia pela segunda passada, que achou 10 problemas: a
-            as partes 4 (o servidor) e 5 (o site) estão feitas; ficam a terceira passada, a P112, do operador, e o
-            Pix de verdade no passo 8 da 4.7.)* Na área restrita: como se confirma um Pix de teste (a
+      - [x] **Passo 6 — Prova e revisão.** *(Fechado em 29/10/2026 — a prova, as duas revisões, as partes 1 a 3 e as
+            decisões P113, P114 e P115 —, REABERTO no mesmo dia pela segunda passada, que achou 10 problemas, e
+            FECHADO de novo: as partes 4 (o servidor) e 5 (o site), a terceira passada e a P112, feitas. O que ela
+            deixou vai para a revisão ampla (4.9b); o Pix de verdade fica no passo 8 da 4.7.)* Na área restrita: como se confirma um Pix de teste (a
             página de instruções da Stripe em teste), o pré-pago de ponta a ponta com o relógio de
             teste (nasce, avisa 3 dias antes, termina, "terminou"), o reembolso do Pix, o QR vencido;
             no banco de dev; a revisão de segurança (`security-vulnerability-reviewer`); o Pix de
@@ -6114,8 +6119,13 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                   segredo do cliente, o Stripe.js lê `status`, `amount` e `currency` do pagamento (`retrievePaymentIntent`).
                   *Não provado no navegador:* o caminho feliz do QR vencido (o valor bate, o QR novo abre) — a prova da
                   P115 foi antes desta mudança.
-            - [ ] **A terceira passada da revisão de segurança (Opus 5.5, esforço máximo — pedido do operador), só das
-                  partes 4 e 5.** Achado grave vai ao operador antes de publicar.
+            - [x] **A terceira passada da revisão de segurança (Opus 5.5, esforço máximo — pedido do operador), só das
+                  partes 4 e 5 (29/10/2026).** **Nenhum P0 nem P1:** as correções fecham os 10 achados. Ficaram 2 P2 e
+                  2 P3, levados para a revisão ampla (a etapa 4.9b, abaixo): o Pix em conferência não tem saída pelo
+                  sistema (só devolver — P117); o "QR de novo" confere só o valor, e o servidor confere o id do preço e
+                  o valor (um preço recriado com o mesmo valor põe em conferência quem pagou o QR novo — E11); o 409
+                  `PixEmConferencia` sem login revela um pouco mais sobre um e-mail (P124); `TEMPO_DO_PIX` (150 s)
+                  abaixo do pior caso, que passou a 8 idas à Stripe (E12).
             - [x] **P115 — o QR vencido (decisão do operador, 29/10/2026: "o mesmo botão gera o QR novo quando
                   venceu").** `mostrarQrDeNovo` lê o pagamento AGORA (`retrievePaymentIntent`) e decide pelo status
                   (`comoMostrarOQr`, função pura): `requires_action` → reabre o MESMO QR (`handleNextAction`);
@@ -6131,8 +6141,11 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                   frase; com o QR ainda valendo, o botão reabriu o MESMO (0,8 s, a mesma validade). Testes:
                   `stripe-do-site.test.ts` (+1), `AssinaturaConcluidaPage.test.tsx` (+2: a frase; o Stripe.js que
                   lança), as telas de assinar (o e-mail guardado). **Mutação: 4 de 4 reprovaram.**
-            - [ ] **Decisão do operador:** P112 (o aviso `payment_intent.succeeded` no endereço de avisos da conta
-                  de verdade — tarefa dele no painel).
+            - [x] **P112 — FEITA pelo operador em 29/10/2026**, com o agente guiando pelos prints dele: o endereço de
+                  avisos da conta de verdade passou de 7 para 8 avisos, com o `payment_intent.succeeded` (só ele) —
+                  `billing.md` → *O aviso do Pix chega ao site no ar*. A publicação deste passo foi PARADA no meio da
+                  montagem da imagem, quando a revisão ampla (4.9b) apontou publicar sem a P112 como P1 — nada tinha
+                  mudado no ar —, e retomada depois dela.
       **Fora da 4.9:** somar tempo pagando antes de acabar (decisão (a)) · código promocional no Pix
       (decisão (b)) · Pix na troca de plano · o Pix Automático (quando a Stripe liberar para o Brasil) ·
       **Apple Pay e Google Pay** (decisão do operador, 28/10/2026). **Trazido da 4.2 (10/10/2026):** o Pix é um item a mais na
@@ -6145,6 +6158,76 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       paga nesse instante) *(feito no código no passo 2a, 28/10/2026 — um QR por vez e um pagamento
       aberto por vez; a prova na área restrita fica no passo 6)* · se entrar forma de pagamento que saia do site e volte, tirar do
       endereço da volta o segredo que a Stripe acrescenta.
+- [ ] **4.9b — A REVISÃO AMPLA DA COBRANÇA (pedido do operador, 29/10/2026).** Nas palavras dele: *"uma revisão
+      minuciosa de tudo que foi feito relacionado a Stripe até o momento para evitar ao máximo erros, invasão e
+      principalmente o aluno não conseguir pagar e eu não ficar sabendo ou mesmo não ter como resolver e quando
+      acontecer os caminhos para receber"*. Dois revisores em paralelo, no Opus 5.5 com esforço máximo (escolha dele):
+      o `security-vulnerability-reviewer` (invasão e fraude) e um revisor geral (o aluno que não consegue pagar: o que
+      ele vê, se o operador fica sabendo, se há como resolver e como receber) — sobre o `dev` em `70f597d`, só
+      leitura. **Nenhum P0 de invasão.** O que pesa é o "pagou, ou quis pagar, e ninguém soube":
+      **Os achados graves (P0/P1, os dois revisores):** (a) **publicar sem a P112** — feita no mesmo dia (4.9, passo
+      6); (b) **o campo de pagamento que não abre é invisível**: o erro fica no navegador e o pedido nem chega ao
+      servidor (`stripe-do-site.tsx`, `FormularioDeAssinatura.tsx`) — já aconteceu duas vezes (10/10 e 29/10),
+      achado só abrindo a tela à mão, e o alerta das telas (Fase 7) não o pegaria, porque o erro não é lançado;
+      (c) **a assinatura do aviso que não confere só gera `console.warn`** (`stripe-webhook.ts:32`): com o segredo
+      trocado ou colado errado, TODOS os avisos são recusados com 400 e ninguém sabe — e a conferência de cada
+      publicação (o aviso sem assinatura → 400) não distingue o segredo certo do errado; (d) **nada confere se os
+      avisos chegaram**, e a tela de depois do pagamento nunca confere sozinha na Stripe nem mostra o contato do
+      suporte ("Confirmando…" para sempre); (e) **a cobrança atrasada sem outro cartão**: o Pix é recusado
+      ("atrasada") e a saída (cancelar e assinar com Pix) fica escondida; (f) **quem tenta e não consegue pagar** só
+      aparece no painel da Stripe, e nenhuma frase de erro de pagamento cita o suporte.
+      **A PROPOSTA DE ENGENHARIA (do agente, a APROVAR pelo operador como bloco; nenhuma peça nova de stack):**
+      - [ ] **E1 — a rodada de hora em hora confere os avisos:** pede à Stripe os eventos recentes dos tipos tratados
+            (ela guarda 30 dias) e processa, pela mesma rotina do aviso, os que o site não registrou (`stripe_event`),
+            com um alerta. Pega o aviso esquecido no endereço, o segredo trocado, o endereço desligado e o aviso de
+            fim ou de devolução perdido (que hoje deixa o espelho `active` e o acesso aberto sem pagamento).
+      - [ ] **E2 — a tela de depois do pagamento pede conferência:** sem confirmação em ~30 s, pede ao servidor que
+            confira na Stripe (a sincronia das portas: a assinatura viva, o Pix pago), com limite; nada do navegador
+            vale como prova.
+      - [ ] **E3 — o vigia do campo de pagamento:** o Stripe.js que não carrega, ou o campo que não fica pronto em
+            ~15 s, mostra uma frase (P116) e avisa o servidor, que alerta (`[site] …`).
+      - [ ] **E4 — a conferência na subida do servidor:** a chave publicável e a secreta no mesmo modo (hoje só se
+            confere a `pk_`), e o endereço de avisos de produção ativo e com todos os eventos que o código trata —
+            faltou um, alerta.
+      - [ ] **E5 — o aviso com a assinatura que não confere vira alerta** quando o cabeçalho tem o formato da Stripe e
+            a hora é recente (no máximo um a cada 15 min por cópia); cabeçalho ausente ou malformado continua só
+            registro. Na conferência de cada publicação, o reenvio de um aviso pelo painel (200) no lugar do 400.
+      - [ ] **E6 — uma vez por dia, a rodada relê as assinaturas `active` com o período vencido há mais de 2 dias**,
+            e alerta a que a Stripe diz devolvida ou vencida (a devolução pelo painel sem cancelar, P114; o aviso de
+            fim perdido).
+      - [ ] **E7 — a contestação e o aviso de fraude** (`charge.dispute.created`, `radar.early_fraud_warning.created`)
+            tratados com alerta e cadastrados no endereço de avisos; hoje só o e-mail da Stripe avisa, e a disputa
+            não corta o acesso (P122).
+      - [ ] **E8 — a trava contra pedido de outro site aceita só `same-origin`** (ou o cabeçalho ausente); hoje
+            recusa só `cross-site` (`protecao-da-cobranca.ts`): uma página num subdomínio de `jilsonsantana.com`
+            apontando para terceiro poderia mandar o aluno logado reembolsar ou cancelar.
+      - [ ] **E9 — o teto do Sentry com uma reserva para `[stripe]`, `[email]` e `[avisos]`** (hoje um apagão com
+            centenas de `[api]` gasta o dia, e o alerta seguinte de pagante trancado não sai), e um alerta quando o
+            limite começar a descartar.
+      - [ ] **E10 — HSTS e `frame-ancestors 'self'` nas páginas** (hoje a `/assinar` pode ser emoldurada por outro
+            site).
+      - [ ] **E11 — o Pix conferido pelo plano e pelo valor**, com a pré-paga criada no preço de agora desse plano
+            (hoje, pelo id do preço — a terceira passada do passo 6).
+      - [ ] **E12 — `TEMPO_DO_PIX` 180 s** (o pior caso passou a 8 idas à Stripe — a terceira passada).
+      - [ ] **E13 — o id da conta nas linhas `[api]` de `/billing`**: o alerta diz quem (a busca por `sub_`, `pi_`
+            e `cus_` é da 4.7b).
+      **As decisões do operador:** P116 a P125, e as conferências fora do repositório (P126), em `pendencias.md`.
+      **Riscos aceitos que os revisores citaram, sem mudança:** a API fora do "Em breve"; a cota da Stripe sem cache
+      de preços; o reembolso repetido; o teto por endereço num Wi-Fi compartilhado; o cartão de fora do Brasil.
+      **Menores (P3), registrados sem pedido agora:** o Pix some da tela sem alerta se a configuração faltar
+      (`vitrine-da-assinatura.ts`); "Seu pagamento não se perde" aparece também para quem fechou o QR sem pagar;
+      sem `sessionStorage`, logo depois de pagar sem conta a pessoa cai na tela de entrar, sem explicação; o anual
+      por Pix (R$ 995) está logo abaixo do limite de Pix noturno dos bancos (R$ 1.000, das 20h às 6h) — **se o
+      preço do anual subir, o Pix à noite pode falhar no banco**; os gatilhos de reabertura aceitos ("muitos ao
+      mesmo tempo", 429 da Stripe) só aparecem no registro.
+      **Conferido no banco de produção (branch `production`), só leitura, 29/10/2026:** nenhum registro do modo de
+      teste em `subscription`, `stripe_customer` e `guest_checkout` (o gate não lê `livemode` — a verificação que o
+      revisor de segurança deixou pendente).
+      **O roteiro "quando um aluno não conseguir pagar"**, com o que existe hoje: `billing.md` → *Quando um aluno não
+      conseguir pagar* (rascunho do agente, a revisar pelo operador).
+      *Docs check (context7): Stripe → `/websites/stripe` → o revisor geral, 3 consultas (o aviso que falha e o
+      e-mail da Stripe; a assinatura com "enviar fatura"; o Pix em fatura); o agente, 1 (o Workbench → Webhooks,
+      para guiar a P112).*
 - [ ] **4.10 — Fechamento da fase (código + painel).** **O E2E de assinar abre o campo DE VERDADE
       da Stripe e paga com o cartão de teste** — na 4.2 o campo não abria e nenhum teste acusou,
       porque todos usam um dublê; o roteiro que provou está descrito no item 4.2 (passo 6). E2E de ponta a ponta (assinar, renovar, cancelar,

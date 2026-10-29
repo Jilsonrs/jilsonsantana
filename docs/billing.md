@@ -1545,6 +1545,11 @@ encerrada de vez com dias pagos: tem acesso e o servidor recusa cartão.
   dado direto no painel cortar o acesso, acerta o espelho quando a sincronia do reembolso pela
   tela falha, e avisa da devolução que o banco rejeita dias depois. *Se um aviso novo passar a
   ser tratado no código, ele tem que ser incluído nesse endereço também.*
+- **O aviso do Pix chega ao site no ar** *(P112, feita pelo operador em 29/10/2026, conferida pelos
+  prints dele)*: o mesmo endereço passou de 7 para **8 avisos** — entrou o `payment_intent.succeeded`, e
+  **só ele**. Sem ele, um Pix pago em produção só virava assinatura se a pessoa clicasse de novo, ou no
+  "Conferir na Stripe" do admin, sem alerta. *Não marcar "todos os eventos":* com o `invoice.created`, a
+  Stripe passa a esperar a resposta do site antes de cobrar as renovações.
 - **A chave da Stripe em produção lê tudo o que a sincronia precisa** *(P71, respondida pelo
   operador em 12/10/2026)*: a chave que está na Railway é a comum (`sk_live_`), e não uma
   restrita — pagamentos, faturas, devoluções e agendamentos. E a `SENTRY_DSN` está preenchida:
@@ -1815,6 +1820,44 @@ IPv4 "embrulhado" (`::ffff:127.0.0.1`) vira IPv4, e o IPv6 vira a faixa (`2001:d
   vez a cada confirmação do banco não concluída, e só repete quando a assinatura está ocupada —
   nunca no limite. Se ele for recusado, a troca pendente vence sozinha em ~23 h, e a troca seguinte
   a anula.
+
+## Quando um aluno não conseguir pagar *(roteiro de hoje — rascunho do agente, 29/10/2026, a revisar pelo operador)*
+
+Saiu da revisão ampla da cobrança (o plano → etapa 4.9b), e descreve **o que existe hoje**. As decisões em
+aberto estão marcadas com o número da pendência; a proposta de engenharia que fecha os buracos é a 4.9b (E1 a E13).
+
+**Como você fica sabendo, hoje:**
+- um e-mail do Sentry que começa com `[stripe]`, `[api]`, `[email]` ou `[avisos]` — o `sub_…`, `pi_…`, `cus_…`
+  ou `evt_…` dentro dele é a pista;
+- um e-mail da própria Stripe dizendo que o endereço de avisos está falhando;
+- o aluno escrevendo para suporte@jilsonsantana.com (ou respondendo a um e-mail da escola).
+
+**O que hoje NÃO chega a você:** o campo de pagamento que não abre (a 4.9b, E3); o cartão recusado e quem
+desistiu (só no painel da Stripe → Pagamentos); o segredo do endereço de avisos trocado (E5 e E1).
+
+**O que fazer, passo a passo:**
+1. **Ache a pessoa.** Cole o id do alerta na busca do painel da Stripe → abra o cliente → pegue o e-mail.
+2. **Confira.** Admin → Assinaturas → o e-mail → **"Conferir na Stripe"**. Se ela tem acesso, responda que está
+   liberado — sem senha, ela entra por **"Receber código de acesso"**, na tela de entrar.
+3. **Pagou e continua sem acesso:**
+   - **Pix "em conferência":** devolva o Pix no painel e peça que pague de novo pela tela. **Não** crie a
+     assinatura à mão no painel: a marca fica no Pix, e a pessoa nunca mais consegue pagar pelo site (P117).
+   - **E-mail digitado errado, ou o alerta "SEM CONTA":** devolva no painel; ela assina de novo, com o e-mail certo
+     ou logada (P121).
+4. **Não consegue pagar:**
+   - cartão recusado: escolher **Pix** na mesma tela;
+   - o campo não aparece: outro navegador, sem bloqueador de anúncio, o 4G ou o celular — **se acontecer com duas
+     pessoas, é defeito nosso: avise o agente**;
+   - cobrança atrasada e sem outro cartão: Faturamento e Assinatura → Cancelar (termina na hora; nada mais é
+     cobrado) → Reativar assinatura → Pix (P118);
+   - "muitas tentativas": esperar 15 minutos.
+5. **Receber por fora, numa emergência — a decidir (P120); não usar antes de testar na área restrita.** O que se
+   sabe: a assinatura criada no painel, **no cliente que o site já criou para a pessoa**, libera o acesso sozinha
+   quando a fatura fica paga; "enviar fatura por e-mail" libera **antes** de pagar; o link de pagamento avulso não
+   libera nada; e quem nem chegou ao campo de pagamento não tem cliente.
+6. **Reembolso que falhou:** devolva pelo painel. No painel, é sempre **devolver E cancelar** (P114).
+7. **No Sentry:** depois de resolver, marque "Resolvido", nunca "Ignorar"; e veja quantas vezes o erro aconteceu —
+   um e-mail só pode ser muita gente.
 
 ## Pendências de verificação
 
