@@ -1,5 +1,5 @@
 import express, { Router } from "express";
-import { avisosConfigurados, verificarAviso } from "../lib/stripe.js";
+import { avisosConfigurados, pareceAvisoDaStripe, verificarAviso } from "../lib/stripe.js";
 import { processarAviso } from "../lib/assinaturas.js";
 import { assinaturaDaAcesso } from "../lib/acesso.js";
 import { mandarBoasVindasDaAssinatura } from "../lib/boas-vindas.js";
@@ -16,6 +16,22 @@ import { avisarSobreAAssinatura } from "../lib/avisos-da-assinatura.js";
 
 const router = Router();
 
+/**
+ * O ALERTA DO AVISO QUE NÃO CONFERE (E5 da revisão ampla da cobrança, 29/10/2026): no máximo um a cada 15 minutos
+ * POR CÓPIA do servidor, na memória dela. É por cópia de propósito (CLAUDE.md → Server: só fica por cópia o que
+ * protege um recurso da própria cópia): ele protege a cota de alertas, que também é por cópia (`monitor.ts`) — um
+ * robô forjando avisos a gastaria, e o alerta seguinte de pagante trancado ficaria só no registro.
+ */
+const INTERVALO_DO_ALERTA_DE_ASSINATURA = 15 * 60_000;
+let alertouAssinaturaEm: number | null = null;
+
+function alertarAssinaturaQueNaoConfere(agora: number): boolean {
+  // O relógio que volta atrás não cala o alerta para sempre.
+  if (alertouAssinaturaEm !== null && agora >= alertouAssinaturaEm && agora - alertouAssinaturaEm < INTERVALO_DO_ALERTA_DE_ASSINATURA) return false;
+  alertouAssinaturaEm = agora;
+  return true;
+}
+
 // POST /api/stripe/webhook
 router.post("/stripe/webhook", express.raw({ type: "application/json" }), async (req, res) => {
   // Sem o segredo, nenhum aviso é aceito — nunca "aceitar sem verificar".
@@ -29,7 +45,16 @@ router.post("/stripe/webhook", express.raw({ type: "application/json" }), async 
     aviso = verificarAviso(req.body, req.header("stripe-signature"));
   } catch (erro) {
     // Só a mensagem: o erro de verificação da Stripe carrega o corpo inteiro do aviso.
-    console.warn(`[stripe] aviso recusado (a assinatura não confere): ${erro instanceof Error ? erro.message : "?"}`);
+    const motivo = erro instanceof Error ? erro.message : "?";
+    // O cabeçalho é da Stripe e recente, e mesmo assim não confere: o segredo do endereço de avisos não é o deste
+    // servidor (aí TODO aviso de verdade está sendo recusado), ou alguém forja com cuidado — alerta (E5). O resto
+    // (sem cabeçalho, malformado, velho) é ruído de robô: só registro.
+    const agora = Date.now();
+    if (pareceAvisoDaStripe(req.header("stripe-signature"), agora) && alertarAssinaturaQueNaoConfere(agora)) {
+      console.error(`[stripe] aviso recusado: o cabeçalho é da Stripe e recente, e a assinatura não confere — se o segredo do endereço de avisos (STRIPE_WEBHOOK_SECRET, no Secret Manager) não for o do painel da Stripe, TODO aviso de verdade está sendo recusado; conferir as entregas no painel (${motivo})`);
+    } else {
+      console.warn(`[stripe] aviso recusado (a assinatura não confere): ${motivo}`);
+    }
     res.status(400).json({ error: "AssinaturaInvalida" });
     return;
   }

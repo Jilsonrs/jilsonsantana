@@ -6216,9 +6216,19 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       - [ ] **E4 — a conferência na subida do servidor:** a chave publicável e a secreta no mesmo modo (hoje só se
             confere a `pk_`), e o endereço de avisos de produção ativo e com todos os eventos que o código trata —
             faltou um, alerta.
-      - [ ] **E5 — o aviso com a assinatura que não confere vira alerta** quando o cabeçalho tem o formato da Stripe e
+      - [x] **E5 — o aviso com a assinatura que não confere vira alerta** quando o cabeçalho tem o formato da Stripe e
             a hora é recente (no máximo um a cada 15 min por cópia); cabeçalho ausente ou malformado continua só
             registro. Na conferência de cada publicação, o reenvio de um aviso pelo painel (200) no lugar do 400.
+            **FEITO (29/10/2026):** `pareceAvisoDaStripe` (`stripe.ts`, função pura: `t=` com até 5 min de diferença e
+            ao menos um `v1=` de 64 hexadecimais — `[FATO — docs da Stripe, context7, 29/10/2026]`, e a Stripe assina
+            cada nova tentativa de entrega com a hora dela) e, na rota (`stripe-webhook.ts`), o alerta `[stripe] aviso
+            recusado: o cabeçalho é da Stripe e recente…` no máximo um a cada 15 min por cópia (a marca na memória,
+            com o motivo escrito: protege a cota de alertas, que é por cópia); o resto continua `warn`. **Assim o
+            segredo trocado alerta sozinho no primeiro aviso de verdade** — o reenvio pelo painel (200) continua sendo
+            a prova manual, na P126. Testes: `stripe-webhook.test.ts` (+2: o segredo trocado alerta uma vez, cala por
+            15 min e volta; sem cabeçalho, malformado, velho e adiantado não alertam — com a prova de que o alerta
+            estava livre), `stripe.test.ts` (+2); o teste "nenhuma recusa fica muda" passou a olhar o alerta e o
+            registro juntos (dependia da ordem dos testes). **Mutação: 6 de 6 reprovaram.**
       - [ ] **E6 — uma vez por dia, a rodada relê as assinaturas `active` com o período vencido há mais de 2 dias**,
             e alerta a que a Stripe diz devolvida ou vencida (a devolução pelo painel sem cancelar, P114; o aviso de
             fim perdido).

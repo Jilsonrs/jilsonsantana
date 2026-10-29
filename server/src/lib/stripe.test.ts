@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import Stripe from "stripe";
 import { pagamentosDaFatura } from "./stripe-devolucao.js";
-import { chaveDoNumeroFiscal, chavePublicavel, erroSemMensagem, METADADO_DO_PIX, pagamentoPrePagoDoAviso, paraAssinaturaNaStripe, paraAssinaturaNoCheckout, paraCodigoPromocional, paraNumeroFiscal, paraPedidoDeAssinatura, paraPedidoDeCliente, paraPedidoDeClienteDoVisitante, paraPrecosDosPlanos } from "./stripe.js";
+import { chaveDoNumeroFiscal, chavePublicavel, erroSemMensagem, METADADO_DO_PIX, pagamentoPrePagoDoAviso, pareceAvisoDaStripe, paraAssinaturaNaStripe, paraAssinaturaNoCheckout, paraCodigoPromocional, paraNumeroFiscal, paraPedidoDeAssinatura, paraPedidoDeCliente, paraPedidoDeClienteDoVisitante, paraPrecosDosPlanos } from "./stripe.js";
 
 // O ESPELHO A PARTIR DA STRIPE (Fase 4, etapa 4.1) — função pura, teste unitário (CLAUDE.md →
 // Testing: só função pura, sem I/O). O que protege é o "PAGO ATÉ": quando a renovação falha, a
@@ -435,5 +435,35 @@ describe("o aviso do Pix pré-pago", () => {
     } finally {
       avisos.mockRestore();
     }
+  });
+});
+
+// O CABEÇALHO QUE PARECE DA STRIPE (E5 da revisão ampla da cobrança, 29/10/2026): é ele que separa o segredo trocado
+// (alerta) do ruído de robô (só registro). A forma e a tolerância são as da Stripe (`t=`, `v1=` de 64 hexadecimais, 5 min).
+describe("o cabeçalho de assinatura que parece da Stripe", () => {
+  const agora = Date.UTC(2031, 2, 1, 12, 0, 0);
+  const hora = agora / 1000;
+  const v1 = "a".repeat(64);
+
+  it("o da Stripe, com a hora de agora (ou até 5 min de diferença, para os dois lados): sim — também com várias assinaturas e o v0 de teste", () => {
+    expect(pareceAvisoDaStripe(`t=${hora},v1=${v1}`, agora)).toBe(true);
+    expect(pareceAvisoDaStripe(`t=${hora - 300},v1=${v1}`, agora)).toBe(true);
+    expect(pareceAvisoDaStripe(`t=${hora + 300},v1=${v1}`, agora)).toBe(true);
+    expect(pareceAvisoDaStripe(`t=${hora},v1=${v1},v1=${"b".repeat(64)},v0=${"c".repeat(64)}`, agora)).toBe(true);
+    expect(pareceAvisoDaStripe(`t=${hora}, v1=${v1}`, agora)).toBe(true);
+  });
+
+  it("velho ou adiantado (mais de 5 min), sem cabeçalho, sem hora, sem v1, v1 que não é hexadecimal de 64, hora que não é número: não", () => {
+    expect(pareceAvisoDaStripe(`t=${hora - 301},v1=${v1}`, agora)).toBe(false);
+    expect(pareceAvisoDaStripe(`t=${hora + 301},v1=${v1}`, agora)).toBe(false);
+    expect(pareceAvisoDaStripe(undefined, agora)).toBe(false);
+    expect(pareceAvisoDaStripe("", agora)).toBe(false);
+    expect(pareceAvisoDaStripe(`v1=${v1}`, agora)).toBe(false);
+    expect(pareceAvisoDaStripe(`t=${hora}`, agora)).toBe(false);
+    expect(pareceAvisoDaStripe(`t=${hora},v0=${v1}`, agora)).toBe(false);
+    expect(pareceAvisoDaStripe(`t=${hora},v1=${"A".repeat(64)}`, agora)).toBe(false);
+    expect(pareceAvisoDaStripe(`t=${hora},v1=${"a".repeat(63)}`, agora)).toBe(false);
+    expect(pareceAvisoDaStripe(`t=agora,v1=${v1}`, agora)).toBe(false);
+    expect(pareceAvisoDaStripe("isto não é da Stripe", agora)).toBe(false);
   });
 });

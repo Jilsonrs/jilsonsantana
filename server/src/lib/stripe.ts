@@ -573,6 +573,26 @@ export function pagamentoPrePagoDe(pagamento: Stripe.PaymentIntent, origem: stri
  * `express.json()` antes, a verificação falha). Lança se a assinatura não confere. NUNCA aceita
  * aviso sem verificar: sem o segredo, quem chama recusa antes (`avisosConfigurados`).
  */
+/** A tolerância da Stripe entre a hora do aviso (`t=`) e a nossa: a mesma da biblioteca, 5 minutos. */
+export const TOLERANCIA_DO_AVISO_EM_SEGUNDOS = 300;
+
+/**
+ * O cabeçalho de assinatura PARECE da Stripe, e é recente? (E5 da revisão ampla da cobrança, 29/10/2026.)
+ * `[FATO — docs da Stripe, context7, 29/10/2026]` a Stripe assina cada entrega com a hora do envio (`t=`) e uma
+ * ou mais assinaturas `v1=` (HMAC-SHA256, 64 caracteres hexadecimais), e a biblioteca aceita até 5 minutos de
+ * diferença; cada nova tentativa de entrega é assinada de novo, com a hora dela. Um aviso assim que NÃO confere é
+ * o segredo trocado no Secret Manager (aí TODO aviso de verdade é recusado) ou alguém forjando com cuidado — os
+ * dois pedem gente. O cabeçalho ausente, malformado ou velho é ruído (robô, reenvio antigo). Função pura.
+ */
+export function pareceAvisoDaStripe(cabecalho: string | undefined, agora: number = Date.now()): boolean {
+  if (!cabecalho) return false;
+  const partes = cabecalho.split(",").map((parte) => parte.trim().split("="));
+  const hora = partes.find(([chave]) => chave === "t")?.[1];
+  const assinaturas = partes.filter(([chave, valor]) => chave === "v1" && /^[0-9a-f]{64}$/.test(valor ?? ""));
+  if (!hora || !/^\d{1,12}$/.test(hora) || assinaturas.length === 0) return false;
+  return Math.abs(agora / 1000 - Number(hora)) <= TOLERANCIA_DO_AVISO_EM_SEGUNDOS;
+}
+
 export function verificarAviso(corpo: unknown, cabecalho: string | undefined): AvisoDaStripe {
   const segredo = process.env.STRIPE_WEBHOOK_SECRET;
   if (!segredo) throw new Error("Stripe sem STRIPE_WEBHOOK_SECRET");

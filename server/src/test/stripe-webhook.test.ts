@@ -61,10 +61,13 @@ const avisoDaAssinatura = (subId: string, type = "customer.subscription.updated"
   data: { object: { id: subId, object: "subscription", ...objeto } },
 });
 
-/** Envia o aviso como a Stripe: corpo formatado com espaços e quebras, assinado com o segredo. */
-function enviar(aviso: Aviso, { segredo = SEGREDO, mexer = false, semAssinatura = false } = {}) {
+/**
+ * Envia o aviso como a Stripe: corpo formatado com espaços e quebras, assinado com o segredo. `hora`: a do
+ * cabeçalho, em segundos (a Stripe assina com a hora da entrega); `cabecalho`: um escrito à mão, no lugar do da Stripe.
+ */
+function enviar(aviso: Aviso, { segredo = SEGREDO, mexer = false, semAssinatura = false, hora, cabecalho: escrito }: { segredo?: string; mexer?: boolean; semAssinatura?: boolean; hora?: number; cabecalho?: string } = {}) {
   const corpo = JSON.stringify({ object: "event", ...aviso }, null, 2);
-  const cabecalho = Stripe.webhooks.generateTestHeaderString({ payload: corpo, secret: segredo });
+  const cabecalho = escrito ?? Stripe.webhooks.generateTestHeaderString({ payload: corpo, secret: segredo, ...(hora === undefined ? {} : { timestamp: hora }) });
   const req = request(servidor).post("/api/stripe/webhook").set("Content-Type", "application/json");
   if (!semAssinatura) req.set("Stripe-Signature", cabecalho);
   return req.send(mexer ? corpo.replace("subscription", "subscriptiom") : corpo);
@@ -125,6 +128,63 @@ describe("o aviso da Stripe — quem entra", () => {
     }
     expect(buscarAssinatura).not.toHaveBeenCalled();
     expect(await espelho(sub)).toBeNull();
+  });
+
+  // O SEGREDO TROCADO (E5 da revisão ampla da cobrança, 29/10/2026): o cabeçalho é da Stripe e recente, e a
+  // assinatura não confere — TODO aviso de verdade estaria sendo recusado, em silêncio. Vira alerta, no máximo um a
+  // cada 15 min por cópia (a cota de alertas é por cópia). O relógio de mentira (só a data) fica longe dos outros testes.
+  it("o cabeçalho da Stripe, recente, assinado com OUTRO segredo (o segredo trocado): 400 e UM alerta — o seguinte, em menos de 15 min, só no registro; depois, alerta de novo", async () => {
+    const erro = vi.spyOn(console, "error").mockImplementation(() => {});
+    const registro = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const alertas = () => erro.mock.calls.filter(([texto]) => String(texto).startsWith("[stripe] aviso recusado"));
+    vi.useFakeTimers({ toFake: ["Date"] });
+    try {
+      const inicio = new Date("2031-03-01T12:00:00Z").getTime();
+      vi.setSystemTime(inicio);
+      const res = await enviar(avisoDaAssinatura(novoId("sub")), { segredo: "whsec_trocado" });
+      expect([res.status, res.body]).toEqual([400, { error: "AssinaturaInvalida" }]);
+      expect(alertas()).toHaveLength(1);
+      expect(String(alertas()[0]?.[0])).toContain("STRIPE_WEBHOOK_SECRET");
+
+      vi.setSystemTime(inicio + 14 * 60_000);
+      expect((await enviar(avisoDaAssinatura(novoId("sub")), { segredo: "whsec_trocado" })).status).toBe(400);
+      expect(alertas()).toHaveLength(1);
+      expect(registro.mock.calls.some(([texto]) => String(texto).includes("aviso recusado"))).toBe(true);
+
+      vi.setSystemTime(inicio + 16 * 60_000);
+      expect((await enviar(avisoDaAssinatura(novoId("sub")), { segredo: "whsec_trocado" })).status).toBe(400);
+      expect(alertas()).toHaveLength(2);
+    } finally {
+      vi.useRealTimers();
+      erro.mockRestore();
+      registro.mockRestore();
+    }
+    expect(buscarAssinatura).not.toHaveBeenCalled();
+  });
+
+  it("sem cabeçalho, malformado, ou velho/adiantado (mais de 5 min — um reenvio antigo): 400 e só registro, nenhum alerta", async () => {
+    const erro = vi.spyOn(console, "error").mockImplementation(() => {});
+    const registro = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const alertas = () => erro.mock.calls.filter(([texto]) => String(texto).startsWith("[stripe] aviso recusado"));
+    vi.useFakeTimers({ toFake: ["Date"] });
+    try {
+      // Bem longe de qualquer outro alerta deste arquivo: aqui o alerta estaria livre para sair.
+      const agora = new Date("2032-06-01T12:00:00Z").getTime();
+      vi.setSystemTime(agora);
+      const hora = Math.floor(agora / 1000);
+      for (const opcoes of [{ semAssinatura: true }, { cabecalho: "isto não é da Stripe" }, { cabecalho: `t=${hora},v1=curto` }, { segredo: "whsec_trocado", hora: hora - 6 * 60 }, { segredo: "whsec_trocado", hora: hora + 6 * 60 }]) {
+        expect((await enviar(avisoDaAssinatura(novoId("sub")), opcoes)).status).toBe(400);
+      }
+      expect(alertas()).toHaveLength(0);
+      expect(registro.mock.calls.filter(([texto]) => String(texto).includes("aviso recusado"))).toHaveLength(5);
+      // A prova de que o alerta estava livre: o mesmo segredo trocado, com a hora de agora, alerta.
+      await enviar(avisoDaAssinatura(novoId("sub")), { segredo: "whsec_trocado" });
+      expect(alertas()).toHaveLength(1);
+    } finally {
+      vi.useRealTimers();
+      erro.mockRestore();
+      registro.mockRestore();
+    }
   });
 });
 
@@ -485,8 +545,9 @@ describe("o aviso da Stripe — o registro", () => {
 
       const recusado = avisoDaAssinatura(novoId("sub"));
       await enviar(recusado, { segredo: "whsec_de_outra_pessoa" });
-      // Como o terminal mostraria: um objeto de erro sai com os campos dele (o da Stripe leva o corpo).
-      const linhas = aviso.mock.calls.flat().map((x) => (typeof x === "string" ? x : inspect(x))).join(" ");
+      // Como o terminal mostraria: um objeto de erro sai com os campos dele (o da Stripe leva o corpo). A recusa
+      // pode sair como alerta ou como registro (E5: depende do cabeçalho e de quando foi o último alerta) — as duas.
+      const linhas = [...erro.mock.calls, ...aviso.mock.calls].flat().map((x) => (typeof x === "string" ? x : inspect(x))).join(" ");
       expect(linhas).toContain("aviso recusado");
       expect(linhas).not.toContain(recusado.id);
       expect(linhas).not.toContain(String(recusado.data.object.id));
