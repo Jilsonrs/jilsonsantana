@@ -40,6 +40,8 @@ export const LIMITES = {
   acao: { conta: { porJanela: 10 }, endereco: { porJanela: 20 } },
   /** As leituras que vão à Stripe: os planos, a minha assinatura, a troca de plano. */
   leitura: { conta: { porJanela: 60 }, endereco: { porJanela: 120 } },
+  /** "Confira na Stripe" pedido pela tela de depois do pagamento (E2 da 4.9b): ela pede no máximo 5 vezes. */
+  conferir: { conta: { porJanela: 10 }, endereco: { porJanela: 30 } },
 } as const satisfies Record<string, { conta: Teto; endereco: Teto }>;
 
 /**
@@ -64,6 +66,8 @@ export const LIMITES_DO_VISITANTE = {
   senha: { endereco: { porJanela: 10 } },
   /** O campo de pagamento que não abriu (E3 da 4.9b): a tela avisa uma vez por campo; o teto segura o robô. */
   campoNaoAbriu: { endereco: { porJanela: 5 } },
+  /** "Confira na Stripe" pedido pela tela de depois do pagamento, sem conta (E2 da 4.9b): ela pede no máximo 5 vezes. */
+  conferir: { endereco: { porJanela: 10 } },
 } as const satisfies Record<string, { endereco: Teto; email?: Teto } | number>;
 
 /** Já avisamos que a contagem por endereço parou? Uma vez por processo basta (zera nos testes). */
@@ -327,6 +331,7 @@ export const limiteDeTentativas = {
   cobranca: tetos("cobranca", LIMITES.cobranca),
   acao: tetos("acao", LIMITES.acao),
   leitura: tetos("leitura", LIMITES.leitura),
+  conferir: tetos("conferir", LIMITES.conferir),
 };
 
 /**
@@ -377,6 +382,7 @@ export const limiteSemLogin = {
   confirmacao: tetosSemLogin("visitante-confirmacao", LIMITES_DO_VISITANTE.confirmacao),
   senha: tetosSemLogin("visitante-senha", LIMITES_DO_VISITANTE.senha),
   campoNaoAbriu: tetosSemLogin("campo-nao-abriu", LIMITES_DO_VISITANTE.campoNaoAbriu),
+  conferir: tetosSemLogin("visitante-conferir", LIMITES_DO_VISITANTE.conferir),
 };
 
 /**

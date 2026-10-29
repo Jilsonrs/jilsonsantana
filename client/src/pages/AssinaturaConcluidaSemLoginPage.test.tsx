@@ -7,11 +7,13 @@ import { renderWithProviders } from "@/test-utils";
 const confirmarSemLogin = vi.fn();
 const criarSenhaSemLogin = vi.fn();
 const getPlanosSemLogin = vi.fn();
+const conferirSemLogin = vi.fn<(tentativa: string) => Promise<void>>();
 vi.mock("@/lib/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/api")>()),
   confirmarSemLogin: (...args: unknown[]) => confirmarSemLogin(...args),
   criarSenhaSemLogin: (...args: unknown[]) => criarSenhaSemLogin(...args),
   getPlanosSemLogin: (...args: unknown[]) => getPlanosSemLogin(...args),
+  conferirSemLogin: (tentativa: string) => conferirSemLogin(tentativa),
 }));
 
 // A fronteira com o Stripe.js (o QR do Pix de novo — etapa 4.9) vira dublê; a tela a carrega por `import()`.
@@ -47,12 +49,13 @@ beforeEach(() => {
   ir = vi.spyOn(navegador, "ir").mockImplementation(() => {});
   mostrarQrDeNovo.mockReset().mockResolvedValue("aberto");
   getPlanosSemLogin.mockReset().mockResolvedValue(PLANOS_DE_AGORA);
+  conferirSemLogin.mockReset().mockResolvedValue(undefined);
   esquecerTentativa();
   esquecerPix();
 });
 afterEach(() => vi.restoreAllMocks());
 
-const abrir = (props: { conferirACada?: number; demora?: number } = {}) => renderWithProviders(<AssinaturaConcluidaSemLoginPage {...props} />);
+const abrir = (props: { conferirACada?: number; demora?: number; pedirConferencia?: { primeiraEm: number; aCada: number } } = {}) => renderWithProviders(<AssinaturaConcluidaSemLoginPage {...props} />);
 const comTentativa = () => guardarTentativa({ tentativa: TENTATIVA, email: EMAIL });
 async function criarSenha(senha = SENHA) {
   fireEvent.change(await screen.findByLabelText("Crie uma senha"), { target: { value: senha } });
@@ -242,5 +245,34 @@ describe("depois do pagamento, sem conta — o QR do Pix de novo", () => {
     const precosDeAgora = mostrarQrDeNovo.mock.calls[0]![3];
     expect(await precosDeAgora()).toEqual([9990, 99500]);
     expect(getPlanosSemLogin).toHaveBeenCalledTimes(1);
+  });
+});
+
+// O PEDIDO DE CONFERÊNCIA (E2 da revisão ampla da cobrança, 29/10/2026), sem conta: pela tentativa desta aba.
+describe("depois do pagamento, sem conta — o pedido de conferência na Stripe", () => {
+  it("sem confirmação: pede com a tentativa desta aba, depois do prazo, no máximo 5 vezes; sem tentativa, nada", async () => {
+    comTentativa();
+    confirmarSemLogin.mockResolvedValue({ confirmada: false });
+    abrir({ conferirACada: 20, pedirConferencia: { primeiraEm: 40, aCada: 25 } });
+    await waitFor(() => expect(conferirSemLogin).toHaveBeenCalledTimes(5), { timeout: 2_000 });
+    expect(conferirSemLogin.mock.calls.every(([t]) => t === TENTATIVA)).toBe(true);
+    await new Promise((fim) => setTimeout(fim, 150));
+    expect(conferirSemLogin).toHaveBeenCalledTimes(5);
+  });
+
+  it("sem a tentativa nesta aba: não pede nada (vai para a tela de entrar)", async () => {
+    abrir({ pedirConferencia: { primeiraEm: 20, aCada: 20 } });
+    await waitFor(() => expect(ir).toHaveBeenCalledWith("/login"));
+    await new Promise((fim) => setTimeout(fim, 120));
+    expect(conferirSemLogin).not.toHaveBeenCalled();
+  });
+
+  it("confirmada: não pede", async () => {
+    comTentativa();
+    confirmarSemLogin.mockResolvedValue({ confirmada: true });
+    abrir({ conferirACada: 20, pedirConferencia: { primeiraEm: 40, aCada: 25 } });
+    expect(await screen.findByLabelText("Crie uma senha")).toBeTruthy();
+    await new Promise((fim) => setTimeout(fim, 150));
+    expect(conferirSemLogin).not.toHaveBeenCalled();
   });
 });

@@ -1268,8 +1268,10 @@ por mais 31 dias, com acesso.
   por ali, e o registro grita. Só acontece se a régua da Stripe terminar em "marcar como não
   paga" — **decidido em 10/10/2026: a régua termina em CANCELAR** (*Régua de inadimplência*,
   acima); falta a configuração no painel (pendência P60).
-- **A tela de depois do pagamento não chama a sincronia:** se o aviso atrasar, ela fica em "está
-  demorando" até ele chegar, ou até a pessoa voltar à tela de assinar e clicar de novo.
+- ~~**A tela de depois do pagamento não chama a sincronia**~~ — **chama desde a 4.9b (E2, 29/10/2026)**: sem
+  confirmação em 30 s, ela pede ao servidor que confira na Stripe (`POST /api/billing/conferir`, e, sem conta,
+  `/api/billing/visitante/conferir` pela tentativa da aba), de novo a cada minuto, no máximo 5 vezes; o servidor
+  confere sem esperar trava, e a pergunta de sempre vê o resultado. E a rodada de hora em hora confere os avisos (E1).
 - **A sincronia do admin olha as últimas 20 assinaturas** do cliente na Stripe.
 - **Assinatura paga sem conta** (a Stripe não diz de quem é) não se resolve por aqui: é a etapa 4.7.
   *(Para a do VISITANTE, resolvida na etapa 4.7, passo 4: com o e-mail da ficha de espera, a

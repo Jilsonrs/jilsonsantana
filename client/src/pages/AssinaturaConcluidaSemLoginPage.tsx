@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { EMAIL_DE_SUPORTE } from "@jilson/core";
 import { CriarSenhaDepoisDePagar } from "@/components/assinar/CriarSenhaDepoisDePagar";
 import { QrDeNovo } from "@/components/assinar/QrDeNovo";
-import { getPlanosSemLogin } from "@/lib/api";
-import { useConfirmacaoSemLogin } from "@/lib/assinar";
+import { conferirSemLogin, getPlanosSemLogin } from "@/lib/api";
+import { useConfirmacaoSemLogin, usePedirConferencia } from "@/lib/assinar";
 import { useT } from "@/lib/language";
 import { lerTentativa } from "@/lib/tentativa-de-assinar";
 import { navegador } from "@/lib/versao";
@@ -16,11 +16,15 @@ import { navegador } from "@/lib/versao";
  * Sem tentativa nesta aba (outra aba, outro aparelho, ou já usada), a conta se abre pela tela de
  * entrar, com o código por e-mail.
  */
-export function AssinaturaConcluidaSemLoginPage({ conferirACada = 2000, demora = 20_000 }: { conferirACada?: number; demora?: number }) {
+export function AssinaturaConcluidaSemLoginPage({ conferirACada = 2000, demora = 20_000, pedirConferencia }: { conferirACada?: number; demora?: number; pedirConferencia?: { primeiraEm: number; aCada: number } }) {
   const t = useT().assinar;
   const [guardada] = useState(lerTentativa);
   const confirmacao = useConfirmacaoSemLogin(guardada?.tentativa ?? null, conferirACada);
   const [demorou, setDemorou] = useState(false);
+  // Sem confirmação em 30 s, o servidor confere na Stripe pela tentativa desta aba (E2 da revisão ampla).
+  const tentativa = guardada?.tentativa ?? null;
+  const pedir = useCallback(() => (tentativa ? conferirSemLogin(tentativa) : Promise.resolve()), [tentativa]);
+  usePedirConferencia(confirmacao.confirmada, tentativa ? pedir : null, pedirConferencia);
 
   // Efeito: sem tentativa, a página troca por outra — navegação não acontece enquanto se desenha.
   useEffect(() => {

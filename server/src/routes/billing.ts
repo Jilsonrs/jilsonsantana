@@ -8,6 +8,8 @@ import { lerPlanos, lerPrevia } from "../lib/vitrine-da-assinatura.js";
 import { protecaoDaCobranca } from "../lib/protecao-da-cobranca.js";
 import { atrasadaSemAcesso, convidaAReativar, temAcessoAtivo } from "../lib/acesso.js";
 import { assinar } from "../lib/checkout.js";
+import { conferirOCliente } from "../lib/assinaturas.js";
+import { prisma } from "../lib/prisma.js";
 import { pagarComPix } from "../lib/pix-pre-pago.js";
 import { pixConfigurado } from "../lib/stripe-pix.js";
 import { desistirDaTroca, lerTrocaDePlano, mudarMeuPlano } from "../lib/meu-plano.js";
@@ -100,6 +102,29 @@ router.get("/billing/assinatura", requireAuth, async (req, res) => {
   // `atrasada`: a cobrança falhou há mais de 3 dias — o caminho é trocar o cartão, não assinar de novo.
   const resposta: SituacaoDaAssinatura = { temAcesso, reativar: await convidaAReativar(user.id, temAcesso), atrasada: await atrasadaSemAcesso(user.id, temAcesso) };
   res.json(resposta);
+});
+
+// POST /api/billing/conferir — a tela de depois do pagamento pede que o servidor confira na Stripe (E2 da revisão
+// ampla da cobrança): o aviso pode ter se perdido. Só o cliente da conta da SESSÃO; quem já tem acesso nem vai à
+// Stripe. Nunca espera trava (`conferirOCliente`). 204: a pergunta de sempre ("já tenho acesso?") vê o resultado.
+router.post("/billing/conferir", requireAuth, ...limiteDeTentativas.conferir, async (req, res) => {
+  const user = req.user;
+  if (!user) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  if (!cobrancaConfigurada()) {
+    res.status(503).json({ error: "NaoConfigurado" });
+    return;
+  }
+  if (!(await temAcessoAtivo(user.id))) {
+    const cliente = await prisma.stripeCustomer.findUnique({ where: { userId: user.id }, select: { stripeCustomerId: true } });
+    if (cliente) {
+      const feitas = await conferirOCliente(cliente.stripeCustomerId);
+      console.info(`[stripe] conferência pedida pela tela: a conta ${user.id}, ${feitas.length} assinatura(s) sincronizada(s), acesso ${(await temAcessoAtivo(user.id)) ? "sim" : "não"}`);
+    }
+  }
+  res.status(204).end();
 });
 
 // POST /api/billing/assinatura — assinar. A regra inteira mora em `lib/checkout.ts`; aqui, só a

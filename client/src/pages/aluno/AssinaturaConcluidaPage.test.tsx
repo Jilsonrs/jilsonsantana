@@ -7,10 +7,12 @@ import { renderWithProviders } from "@/test-utils";
 
 const getSituacaoDaAssinatura = vi.fn();
 const getPlanosDaAssinatura = vi.fn();
+const conferirMinhaAssinatura = vi.fn<() => Promise<void>>();
 vi.mock("@/lib/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/api")>()),
   getSituacaoDaAssinatura: (...args: unknown[]) => getSituacaoDaAssinatura(...args),
   getPlanosDaAssinatura: (...args: unknown[]) => getPlanosDaAssinatura(...args),
+  conferirMinhaAssinatura: () => conferirMinhaAssinatura(),
 }));
 // A fronteira com o Stripe.js (o QR do Pix de novo — etapa 4.9) vira dublê; a tela a carrega por `import()`.
 // `precosDeAgora`: o que a tela entrega para o Stripe.js perguntar, só se o QR venceu (achado 8 da segunda revisão do passo 6).
@@ -32,6 +34,7 @@ beforeEach(() => {
   getSituacaoDaAssinatura.mockReset().mockResolvedValue({ temAcesso: false });
   mostrarQrDeNovo.mockReset().mockResolvedValue("aberto");
   getPlanosDaAssinatura.mockReset().mockResolvedValue(PLANOS_DE_AGORA);
+  conferirMinhaAssinatura.mockReset().mockResolvedValue(undefined);
   esquecerPix();
 });
 
@@ -203,5 +206,56 @@ describe("AssinaturaConcluidaPage — o QR do Pix de novo", () => {
     abrir();
     fireEvent.click(await screen.findByRole("button", { name: "Mostrar o QR de novo" }));
     expect((await screen.findByRole("alert")).textContent).toBe("Não foi possível mostrar o QR. Volte e clique em Pagar com Pix.");
+  });
+});
+
+// O PEDIDO DE CONFERÊNCIA (E2 da revisão ampla da cobrança, 29/10/2026): sem confirmação, a tela pede ao servidor
+// que confira na Stripe — o aviso pode ter se perdido. Com os prazos encurtados pelo teste (30 s e 1 min na tela).
+describe("AssinaturaConcluidaPage — o pedido de conferência na Stripe", () => {
+  const abrirComConferencia = () =>
+    renderWithProviders(<AssinaturaConcluidaPage conferirACada={20} demora={60_000} pedirConferencia={{ primeiraEm: 40, aCada: 25 }} />, { route: "/aluno/assinar/concluido", path: "/aluno/assinar/concluido" });
+
+  it("sem confirmação: pede depois do primeiro prazo e de novo a cada intervalo — no máximo 5 vezes", async () => {
+    getSituacaoDaAssinatura.mockResolvedValue({ temAcesso: false });
+    abrirComConferencia();
+    expect(conferirMinhaAssinatura).not.toHaveBeenCalled();
+    await waitFor(() => expect(conferirMinhaAssinatura).toHaveBeenCalledTimes(5), { timeout: 2_000 });
+    await new Promise((fim) => setTimeout(fim, 150));
+    expect(conferirMinhaAssinatura).toHaveBeenCalledTimes(5);
+  });
+
+  it("antes do primeiro prazo: nada é pedido (a entrega normal do aviso leva segundos)", async () => {
+    getSituacaoDaAssinatura.mockResolvedValue({ temAcesso: false });
+    renderWithProviders(<AssinaturaConcluidaPage conferirACada={20} demora={60_000} pedirConferencia={{ primeiraEm: 5_000, aCada: 10 }} />, { route: "/aluno/assinar/concluido", path: "/aluno/assinar/concluido" });
+    await new Promise((fim) => setTimeout(fim, 200));
+    expect(conferirMinhaAssinatura).not.toHaveBeenCalled();
+  });
+
+  it("confirmada antes do prazo: não pede nenhuma", async () => {
+    getSituacaoDaAssinatura.mockResolvedValue({ temAcesso: true });
+    abrirComConferencia();
+    expect(await screen.findByText("Assinatura confirmada. Bons estudos!")).toBeTruthy();
+    await new Promise((fim) => setTimeout(fim, 150));
+    expect(conferirMinhaAssinatura).not.toHaveBeenCalled();
+  });
+
+  it("confirmada depois de um pedido: para de pedir", async () => {
+    getSituacaoDaAssinatura.mockResolvedValue({ temAcesso: false });
+    conferirMinhaAssinatura.mockImplementation(async () => {
+      getSituacaoDaAssinatura.mockResolvedValue({ temAcesso: true });
+    });
+    abrirComConferencia();
+    expect(await screen.findByText("Assinatura confirmada. Bons estudos!", undefined, { timeout: 2_000 })).toBeTruthy();
+    await new Promise((fim) => setTimeout(fim, 150));
+    expect(conferirMinhaAssinatura).toHaveBeenCalledTimes(1);
+  });
+
+  it("o pedido que falha (rede) não derruba a tela: continua confirmando, e pede de novo no intervalo", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    getSituacaoDaAssinatura.mockResolvedValue({ temAcesso: false });
+    conferirMinhaAssinatura.mockRejectedValueOnce(new Error("Network Error"));
+    abrirComConferencia();
+    await waitFor(() => expect(conferirMinhaAssinatura.mock.calls.length).toBeGreaterThanOrEqual(2), { timeout: 2_000 });
+    expect(screen.getByText("Confirmando sua assinatura…")).toBeTruthy();
   });
 });

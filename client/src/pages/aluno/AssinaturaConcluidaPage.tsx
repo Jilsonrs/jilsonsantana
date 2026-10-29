@@ -4,8 +4,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { QrDeNovo } from "@/components/assinar/QrDeNovo";
 import { PageContainer, PageHeader } from "@/components/layout/PageLayout";
 import { Button } from "@/components/ui/button";
-import { getPlanosDaAssinatura } from "@/lib/api";
-import { REATIVOU, useSituacaoDaAssinatura } from "@/lib/assinar";
+import { conferirMinhaAssinatura, getPlanosDaAssinatura } from "@/lib/api";
+import { REATIVOU, usePedirConferencia, useSituacaoDaAssinatura } from "@/lib/assinar";
 import { useT } from "@/lib/language";
 
 /**
@@ -17,11 +17,13 @@ import { useT } from "@/lib/language";
  * endereço sai só o TÍTULO — quem veio de "Reativar assinatura" continua lendo isso (decisão do
  * operador, 11/10/2026).
  */
-export function AssinaturaConcluidaPage({ conferirACada = 2000, demora = 20_000 }: { conferirACada?: number; demora?: number }) {
+export function AssinaturaConcluidaPage({ conferirACada = 2000, demora = 20_000, pedirConferencia }: { conferirACada?: number; demora?: number; pedirConferencia?: { primeiraEm: number; aCada: number } }) {
   const t = useT();
   const queryClient = useQueryClient();
   const situacao = useSituacaoDaAssinatura(conferirACada);
   const temAcesso = situacao.data?.temAcesso === true;
+  // Sem confirmação em 30 s, o servidor confere na Stripe (E2 da revisão ampla): o aviso pode ter se perdido.
+  usePedirConferencia(temAcesso, conferirMinhaAssinatura, pedirConferencia);
   const [demorou, setDemorou] = useState(false);
   const [doEndereco] = useSearchParams();
   const reativou = doEndereco.get(REATIVOU) === "1";

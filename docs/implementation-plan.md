@@ -6220,9 +6220,20 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             `process.exit`); a prova é o registro da rodada no ar (`[avisos] a conferência dos avisos da Stripe
             terminou: …`). *Reabre se a rodada ficar parada mais de 3 dias (P126: o alerta de "a rodada não rodou"), ou
             se a lista passar do máximo (2.000) com frequência.*
-      - [ ] **E2 — a tela de depois do pagamento pede conferência:** sem confirmação em ~30 s, pede ao servidor que
+      - [x] **E2 — a tela de depois do pagamento pede conferência:** sem confirmação em ~30 s, pede ao servidor que
             confira na Stripe (a sincronia das portas: a assinatura viva, o Pix pago), com limite; nada do navegador
-            vale como prova.
+            vale como prova. **FEITO (29/10/2026):** `conferirOCliente` (`assinaturas.ts`): o Pix pago sem espelho
+            (pela rotina sem aviso) e as assinaturas não encerradas do cliente (`sincronizarSeLivre`) — **sem esperar
+            nenhuma trava**, porque quem pede é o aluno; `POST /api/billing/conferir` (a conta da sessão; quem já tem
+            acesso nem vai à Stripe; teto por conta, 10 a cada 15 min) e `POST /api/billing/visitante/conferir` (pela
+            tentativa da aba: a ficha que pagou ganha a conta e as boas-vindas, como no "Conferir na Stripe" do admin;
+            a tentativa desconhecida responde igual, sem ir à Stripe; teto por endereço, 10). No site,
+            `usePedirConferencia` (`lib/assinar.ts`): aos 30 s sem confirmação e depois a cada minuto, no máximo 5; o
+            pedido não decide nada — a pergunta "já valeu?" de sempre vê o resultado. Testes:
+            `conferir-pela-tela.test.ts` (novo, 8, contra o banco), as duas telas de concluído (+5, +3). **Mutação: 13
+            de 13 reprovaram** — duas passaram na primeira rodada porque os MEUS testes não provavam nada (o aluno
+            ficava com acesso de um teste para o outro, e no de "quem tem acesso" ele nem tinha cliente na Stripe);
+            corrigidos, reprovaram. O `billing.md` (*limitações conhecidas*) deixou de dizer que a tela não confere.
       - [x] **E3 — o vigia do campo de pagamento:** o Stripe.js que não carrega, ou o campo que não fica pronto em
             ~15 s, mostra uma frase e avisa o servidor, que alerta (`[site] …`).
             **FEITO (29/10/2026):** `CampoVigiado` (`components/assinar/`, fora da fronteira com o Stripe.js, para ter
