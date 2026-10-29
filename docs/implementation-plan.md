@@ -127,10 +127,12 @@
 > "Em breve"). **Falta: o operador ver a `/assinar` pela prévia** (`/__preview`).
 >
 > **PARA CONTINUAR NO PRÓXIMO CHAT (a ordem — atualizado em 29/10/2026, depois da publicação `09187af`):**
-> 1. **A revisão ampla da cobrança (a etapa 4.9b): as decisões do operador, uma por vez** — P116 a P127, em
->    `pendencias.md` (P126 são as conferências nos painéis, por prints) — **e o OK dele para o bloco de engenharia
->    E1 a E13** (o agente recomenda começar pelo "pagou, ou quis pagar, e ninguém soube": E5, E4, E1, E3 e E2).
->    O roteiro "quando um aluno não conseguir pagar" está em `billing.md`, como rascunho, para ele revisar.
+> 1. **A revisão ampla da cobrança (a etapa 4.9b): o bloco de engenharia APROVADO (29/10/2026), na ordem do
+>    plano** — grupo 1 (E5, E4, E1, E3, E2), grupo 2 (E8, E10, E9, E7, E6), grupo 3 (E11, E12, E13, E17), grupo 4
+>    (E14, E15, E16, E18; cada texto vai ao operador antes). Um commit por parte. As decisões P116–P124 e P127 já
+>    foram respondidas (registradas na 4.9b, na 4.7b e no `billing.md`); ficam a P126 (as conferências nos painéis,
+>    por prints — fazer junto com o operador) e a P125 (só quando ele for criar um desses códigos). O roteiro
+>    "quando um aluno não conseguir pagar" está em `billing.md`, como rascunho, para ele revisar.
 > 2. **O passo 9 da 4.7 — quem não terminou de assinar, e a tabela de leads** (decisões do operador,
 >    29/10/2026): registrar no plano e construir. O e-mail "você não terminou a assinatura" 2 horas depois
 >    da última tentativa; aos 7 dias, a ficha e o cliente da Stripe (com o CPF) são apagados; quem marcou
@@ -5608,6 +5610,25 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
          - **Cancelada** → Copiar o link para reativar (o e-mail automático do sistema já
            terá saído sozinho: decisão dele de 10/10/2026, etapa 4.7).
          - **Paga e sem conta na escola** → Ligar a uma conta (etapa 4.7).
+         - **Pix "em conferência"** (pagou e não virou assinatura sozinho — a 4.9b) → **Aceitar este Pix**
+           (cria a pré-paga no preço de agora do plano, tira a marca de conferência e grava pelo
+           `sincronizar`) · **Devolver** (o Pix volta e a pessoa paga de novo pela tela). *Decisão do
+           operador, 29/10/2026 (P117).* Até esta tela existir, só devolver, pelo painel da Stripe — nunca
+           criar a assinatura à mão lá (`billing.md` → *Quando um aluno não conseguir pagar*).
+         - **Qualquer conta, quando o site não conseguiu cobrar** → **Liberar acesso pago por fora** (o
+           operador recebeu por Pix direto ou transferência): o plano e o período, com confirmação, e fica
+           registrado quem liberou, quando e até quando. *Decisão do operador, 29/10/2026 (P120 — a revisão
+           ampla da cobrança, 4.9b).* **Não é cortesia:** a decisão de 10/10/2026 (o admin não presenteia acesso
+           pela tela — `billing.md` → *Sincronizar e perder o acesso*) continua. **Trava de engenharia:** o acesso
+           sai de uma assinatura de verdade na Stripe, pré-paga e paga por fora (como a do Pix:
+           `cancel_at_period_end`, a fatura `paid_out_of_band`), gravada pelo `sincronizar` — nunca de um desvio
+           em `temAcessoAtivo()`; assim o espelho, a régua e os e-mails continuam valendo.
+         - **Conta que nasceu com o e-mail digitado errado** → **Corrigir o e-mail**: o admin digita o certo, o site
+           manda o código de entrar para ele, e a troca só vale depois do código confirmado. *Decisão do operador,
+           29/10/2026 (P121).* **Travas de engenharia (é a porta de tomar conta):** o e-mail novo não pode ser de
+           outra conta; a troca encerra todas as sessões; a ficha do visitante e o cliente da Stripe passam ao
+           e-mail novo; fica registrado quem trocou e quando. A troca de e-mail do Better Auth continua desligada
+           para o aluno.
 
          Toda ação pede confirmação dizendo o efeito ("Fulano continua com acesso até 10/11"), e
          a tela se atualiza com o que a Stripe respondeu.
@@ -6176,7 +6197,11 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       suporte ("Confirmando…" para sempre); (e) **a cobrança atrasada sem outro cartão**: o Pix é recusado
       ("atrasada") e a saída (cancelar e assinar com Pix) fica escondida; (f) **quem tenta e não consegue pagar** só
       aparece no painel da Stripe, e nenhuma frase de erro de pagamento cita o suporte.
-      **A PROPOSTA DE ENGENHARIA (do agente, a APROVAR pelo operador como bloco; nenhuma peça nova de stack):**
+      **O BLOCO DE ENGENHARIA (proposta do agente; nenhuma peça nova de stack) — APROVADO pelo operador em
+      29/10/2026, nesta ordem, um commit por parte, cada uma com teste, mutação e os quatro gates:** **grupo 1, "pagou
+      e ninguém soube"** — E5, E4, E1, E3, E2; **grupo 2, segurança** — E8, E10, E9, E7, E6; **grupo 3, ajustes do
+      Pix** — E11, E12, E13, E17; **grupo 4, telas e e-mails novos** (cada texto vai a ele antes) — E14, E15, E16,
+      E18. Publicar é ordem dele, como sempre.
       - [ ] **E1 — a rodada de hora em hora confere os avisos:** pede à Stripe os eventos recentes dos tipos tratados
             (ela guarda 30 dias) e processa, pela mesma rotina do aviso, os que o site não registrou (`stripe_event`),
             com um alerta. Pega o aviso esquecido no endereço, o segredo trocado, o endereço desligado e o aviso de
@@ -6185,7 +6210,9 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             confira na Stripe (a sincronia das portas: a assinatura viva, o Pix pago), com limite; nada do navegador
             vale como prova.
       - [ ] **E3 — o vigia do campo de pagamento:** o Stripe.js que não carrega, ou o campo que não fica pronto em
-            ~15 s, mostra uma frase (P116) e avisa o servidor, que alerta (`[site] …`).
+            ~15 s, mostra uma frase e avisa o servidor, que alerta (`[site] …`). **A frase, APROVADA pelo operador
+            em 29/10/2026 (P116, a sugestão do revisor):** *"O campo de pagamento não carregou. Tente outro
+            navegador ou desative o bloqueador; se continuar, escreva para suporte@jilsonsantana.com."*
       - [ ] **E4 — a conferência na subida do servidor:** a chave publicável e a secreta no mesmo modo (hoje só se
             confere a `pk_`), e o endereço de avisos de produção ativo e com todos os eventos que o código trata —
             faltou um, alerta.
@@ -6197,7 +6224,9 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             fim perdido).
       - [ ] **E7 — a contestação e o aviso de fraude** (`charge.dispute.created`, `radar.early_fraud_warning.created`)
             tratados com alerta e cadastrados no endereço de avisos; hoje só o e-mail da Stripe avisa, e a disputa
-            não corta o acesso (P122).
+            não corta o acesso. **Decisão do operador, 29/10/2026 (P122): a contestação CORTA o acesso na hora** (se
+            resolvida a favor da escola, ele libera de novo pela 4.7b); o aviso de fraude só alerta —
+            `billing.md` → *Reembolso*.
       - [ ] **E8 — a trava contra pedido de outro site aceita só `same-origin`** (ou o cabeçalho ausente); hoje
             recusa só `cross-site` (`protecao-da-cobranca.ts`): uma página num subdomínio de `jilsonsantana.com`
             apontando para terceiro poderia mandar o aluno logado reembolsar ou cancelar.
@@ -6211,7 +6240,28 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       - [ ] **E12 — `TEMPO_DO_PIX` 180 s** (o pior caso passou a 8 idas à Stripe — a terceira passada).
       - [ ] **E13 — o id da conta nas linhas `[api]` de `/billing`**: o alerta diz quem (a busca por `sub_`, `pi_`
             e `cus_` é da 4.7b).
-      **As decisões do operador:** P116 a P125, e as conferências fora do repositório (P126), em `pendencias.md`.
+      - [ ] **E14 — o Pix na cobrança atrasada** *(decisão do operador, 29/10/2026, P118)*: ao lado de "Trocar
+            cartão" (Faturamento, a aula trancada e o e-mail da falha), um "Pagar com Pix" que encerra a atrasada
+            e abre o Pix do plano — pela operação da assinatura (`operarNaAssinatura`), um pagamento aberto por vez.
+            A frase e o botão vão ao operador para aprovar.
+      - [ ] **E15 — o suporte nas frases de erro de pagamento** *(decisão do operador, 29/10/2026, P119)*: as
+            frases de erro de pagamento (as de assinar, de trocar o cartão e a "Está demorando…" de depois do
+            pagamento) passam a citar suporte@jilsonsantana.com, e depois de um cartão recusado a tela sugere
+            pagar com Pix. **Cada frase reescrita vai ao operador, uma a uma, antes de entrar no site.**
+      - [ ] **E16 — o aviso "uma senha foi criada"** *(decisão do operador, 29/10/2026, P123)*: a senha criada logo
+            depois de pagar (`senha-depois-de-pagar.ts`) manda um e-mail para a caixa — se não foi a pessoa, ela
+            cria outra pelo "Esqueci minha senha", que desconecta os outros aparelhos (conferir na prova). Pela
+            porta de sempre (`enviarEmail`, depois do commit, com a chave). O texto vai ao operador.
+      - [ ] **E17 — sem login, o "em conferência" só para a aba que pagou** *(decisão do operador, 29/10/2026,
+            P124)*: nas duas portas sem login, o 409 `PixEmConferencia` só com o código da tentativa do Pix pago
+            (`pago.visitante?.resumoDaTentativa === resumoDaTentativa(pedido.tentativa)`); os outros, 409 `Ocupada`,
+            sem nunca criar outro pagamento.
+      - [ ] **E18 — o e-mail de confirmação para quem assina logado** *(decisão do operador, 29/10/2026, P127)*:
+            sai da sincronia que dá o acesso, uma vez por assinatura (a mesma regra das boas-vindas: depois do
+            commit, `enviarEmail`, chave estável), para cartão e Pix. O texto vai ao operador.
+      **As decisões do operador:** P116 a P127 em `pendencias.md` (P126 são as conferências fora do repositório).
+      **Respondidas em 29/10/2026:** P116 (a frase do E3), P117 (os botões do Pix em conferência na 4.7b), P118
+      (o E14), P119 (o E15), P120 (a ação "Liberar acesso pago por fora" na 4.7b), P121 (a ação "Corrigir o e-mail" na 4.7b), P122 (a contestação corta o acesso — E7), P123 (o E16), P124 (o E17), P127 (o E18). **Para depois:** P125 (quando for criar um desses códigos) e P126 (as conferências nos painéis, por prints).
       **Riscos aceitos que os revisores citaram, sem mudança:** a API fora do "Em breve"; a cota da Stripe sem cache
       de preços; o reembolso repetido; o teto por endereço num Wi-Fi compartilhado; o cartão de fora do Brasil.
       **Menores (P3), registrados sem pedido agora:** o Pix some da tela sem alerta se a configuração faltar
