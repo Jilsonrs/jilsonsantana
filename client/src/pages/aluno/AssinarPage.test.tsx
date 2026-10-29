@@ -436,6 +436,17 @@ describe("AssinarPage — o CPF ou CNPJ, o resumo e o que está incluído", () =
     expect((await screen.findByRole("alert")).textContent).toBe("Aguarde um instante e tente novamente.");
   });
 
+  // O clique duplo, ou o Pix devolvido que o servidor acabou de limpar (409 Ocupada): a frase de esperar —
+  // decisão do operador, 29/10/2026. Sem ela, a frase genérica mandava conferir os dados.
+  it("ocupada (409 Ocupada): a frase de esperar, e o cartão não confirma", async () => {
+    criarAssinatura.mockRejectedValue(erroDoServidor("Ocupada"));
+    abrir();
+    await screen.findByRole("radio", { name: /Mensal/ });
+    assinar();
+    expect((await screen.findByRole("alert")).textContent).toBe("Aguarde um instante e tente novamente.");
+    expect(confirmar).not.toHaveBeenCalled();
+  });
+
   it("o anual no resumo: o plano, o total de hoje e a renovação de uma vez por ano, com o valor", async () => {
     abrir();
     fireEvent.click(await screen.findByRole("radio", { name: /Anual/ }));
@@ -749,5 +760,23 @@ describe("AssinarPage — o Pix pré-pago", () => {
     expect(await screen.findByText("Você já é assinante.")).toBeTruthy();
     expect(confirmar).not.toHaveBeenCalled();
     expect(lerPix()).toBeNull();
+  });
+
+  // Um Pix desta conta foi pago e está EM CONFERÊNCIA (a segunda revisão de segurança do passo 6 da 4.9): a
+  // frase aprovada pelo operador, por cartão e por Pix — nada de pagar de novo.
+  it("um Pix pago em conferência (409 PixEmConferencia): a frase do operador, por cartão e por Pix, e nada confirma", async () => {
+    const FRASE = "Recebemos o seu Pix e estamos conferindo o pagamento. Já fomos avisados e vamos responder pelo seu e-mail. Se precisar, escreva para suporte@jilsonsantana.com.";
+    getPlanosDaAssinatura.mockResolvedValue(COM_PIX);
+    criarAssinatura.mockRejectedValue(erroDoServidor("PixEmConferencia"));
+    pagarComPix.mockRejectedValue(erroDoServidor("PixEmConferencia"));
+    abrir();
+    await screen.findByRole("radio", { name: /Mensal/ });
+    assinar();
+    expect((await screen.findByRole("alert")).textContent).toBe(FRASE);
+    await escolherPix();
+    assinar("Pagar com Pix");
+    await waitFor(() => expect(pagarComPix).toHaveBeenCalled());
+    expect((await screen.findByRole("alert")).textContent).toBe(FRASE);
+    expect(confirmar).not.toHaveBeenCalled();
   });
 });

@@ -123,7 +123,11 @@ export function FormularioDeAssinatura({
       // Só a tela pública ouve estes (as rotas do visitante): o e-mail que já tem conta entra para
       // assinar (decisão do operador, 21/10/2026); o mesmo e-mail noutra aba; muita gente ao mesmo tempo.
       else if (semLogin && motivo === "JaTemConta") setErroDoEmail(t.emailJaTemConta);
-      else if (semLogin && motivo === "Ocupada") setErro(t.ocupadaOutraAba);
+      // Logado, "Ocupada" é o clique duplo ou o Pix devolvido que acabou de ser limpo: esperar e tentar de novo
+      // (decisão do operador, 29/10/2026).
+      else if (motivo === "Ocupada") setErro(semLogin ? t.ocupadaOutraAba : t.aguardeUmInstante);
+      // Um Pix desta pessoa foi pago e está em conferência (nas duas telas, por cartão e por Pix): não pagar de novo.
+      else if (motivo === "PixEmConferencia") setErro(t.pix.emConferencia);
       // Muitas assinaturas ao mesmo tempo nesta cópia do site (com e sem login): esperar e tentar de novo.
       else if (motivo === "MuitosAoMesmoTempo") setErro(t.aguardeUmInstante);
       else setErro(passouDoLimite(falha) ? comum.muitasTentativas : t.erro);

@@ -272,4 +272,24 @@ describe("a tela pública de assinar — o Pix pré-pago", () => {
     expect(screen.queryByText("Como você quer pagar?")).toBeNull();
     expect(screen.getByTestId("cartao").dataset.pix).toBe("");
   });
+
+  // Um Pix deste e-mail foi pago e está EM CONFERÊNCIA (a segunda revisão de segurança do passo 6 da 4.9): a
+  // frase aprovada pelo operador, por cartão e por Pix — nada de pagar de novo.
+  it("um Pix pago em conferência (409 PixEmConferencia): a frase do operador, por cartão e por Pix, e nada confirma", async () => {
+    const FRASE = "Recebemos o seu Pix e estamos conferindo o pagamento. Já fomos avisados e vamos responder pelo seu e-mail. Se precisar, escreva para suporte@jilsonsantana.com.";
+    getPlanosSemLogin.mockResolvedValue(COM_PIX);
+    assinarSemLogin.mockRejectedValue(erroDoServidor("PixEmConferencia"));
+    pagarComPixSemLogin.mockRejectedValue(erroDoServidor("PixEmConferencia"));
+    abrir();
+    await screen.findByLabelText("Seu e-mail");
+    preencher();
+    assinar();
+    expect((await screen.findByRole("alert")).textContent).toBe(FRASE);
+    await escolherPix();
+    fireEvent.click(screen.getByRole("button", { name: "Pagar com Pix" }));
+    await waitFor(() => expect(pagarComPixSemLogin).toHaveBeenCalled());
+    expect((await screen.findByRole("alert")).textContent).toBe(FRASE);
+    expect(confirmar).not.toHaveBeenCalled();
+    expect(ir).not.toHaveBeenCalled();
+  });
 });

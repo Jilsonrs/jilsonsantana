@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { comoMostrarOQr, OPCOES_DO_STRIPE, opcoesDoCampo, opcoesDoElemento, type PedidoDeCartao } from "./stripe-do-site";
 
 // AS OPÇÕES COM QUE O CAMPO DA STRIPE ABRE (etapa 4.9, passo 6 — 29/10/2026). As telas simulam o módulo
@@ -50,13 +50,29 @@ describe("opcoesDoElemento", () => {
   });
 });
 
-describe("comoMostrarOQr (P115)", () => {
-  it("à espera: reabre o MESMO QR; vencido (ou nunca confirmado): gera outro no MESMO pagamento; pago: nada; cancelado: não há como", () => {
-    expect(comoMostrarOQr("requires_action")).toBe("reabrir");
-    expect(comoMostrarOQr("requires_payment_method")).toBe("gerar-novo");
-    expect(comoMostrarOQr("requires_confirmation")).toBe("gerar-novo");
-    expect(comoMostrarOQr("succeeded")).toBe("pago");
-    expect(comoMostrarOQr("canceled")).toBe("sem-jeito");
-    expect(comoMostrarOQr("processing")).toBe("sem-jeito");
+describe("comoMostrarOQr (P115; achado 8 da segunda revisão do passo 6)", () => {
+  /** Os preços de agora (o mensal e o anual); conta quantas vezes foram lidos. */
+  const precos = (centavos: number[] = [9990, 99500]) => vi.fn(async () => centavos);
+
+  it("à espera: reabre o MESMO QR; vencido (ou nunca confirmado) com o valor de um plano: gera outro no MESMO pagamento; pago: nada; cancelado: não há como", async () => {
+    expect(await comoMostrarOQr("requires_action", 9990, precos())).toBe("reabrir");
+    expect(await comoMostrarOQr("requires_payment_method", 9990, precos())).toBe("gerar-novo");
+    expect(await comoMostrarOQr("requires_confirmation", 99500, precos())).toBe("gerar-novo");
+    expect(await comoMostrarOQr("succeeded", 9990, precos())).toBe("pago");
+    expect(await comoMostrarOQr("canceled", 9990, precos())).toBe("sem-jeito");
+    expect(await comoMostrarOQr("processing", 9990, precos())).toBe("sem-jeito");
+  });
+
+  it("vencido com um valor que NÃO é mais o preço de nenhum plano (o preço mudou): não há como — pago, ficaria em conferência; a frase manda pagar de novo pelo botão", async () => {
+    expect(await comoMostrarOQr("requires_payment_method", 9990, precos([10990, 99500]))).toBe("sem-jeito");
+    expect(await comoMostrarOQr("requires_confirmation", 9990, precos([10990, 99500]))).toBe("sem-jeito");
+  });
+
+  it("os preços só são lidos quando o QR venceu: reabrir, pago e cancelado não vão ao servidor", async () => {
+    const lidos = precos();
+    for (const status of ["requires_action", "succeeded", "canceled"]) await comoMostrarOQr(status, 9990, lidos);
+    expect(lidos).not.toHaveBeenCalled();
+    await comoMostrarOQr("requires_payment_method", 9990, lidos);
+    expect(lidos).toHaveBeenCalledTimes(1);
   });
 });

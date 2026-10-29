@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { EMAIL_DE_SUPORTE } from "@jilson/core";
 import { CriarSenhaDepoisDePagar } from "@/components/assinar/CriarSenhaDepoisDePagar";
 import { QrDeNovo } from "@/components/assinar/QrDeNovo";
+import { getPlanosSemLogin } from "@/lib/api";
 import { useConfirmacaoSemLogin } from "@/lib/assinar";
 import { useT } from "@/lib/language";
 import { lerTentativa } from "@/lib/tentativa-de-assinar";
@@ -58,7 +59,7 @@ export function AssinaturaConcluidaSemLoginPage({ conferirACada = 2000, demora =
       )}
       {/* Quem pagou com Pix e fechou a janela do QR sem pagar (etapa 4.9): o botão enquanto o pagamento
           não vale. Fica montado nos dois estados: é ao receber "confirmado" que ele esquece o Pix. */}
-      <QrDeNovo confirmado={confirmada} />
+      <QrDeNovo confirmado={confirmada} lerPlanos={getPlanosSemLogin} />
     </div>
   );
 }

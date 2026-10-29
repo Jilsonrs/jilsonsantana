@@ -113,26 +113,19 @@
 > assinatura na hora, nas quatro portas e no force-sync; a ficha presa à tentativa que pagou; o QR só com o
 > mesmo preço), `316bf36` (P113: o quadro do Pix sem o campo de e-mail), `73fd108` (P115: o QR vencido vira QR
 > novo no mesmo botão; P114 registrada na 4.7b), `2e01aa1` (P108 e P111), o fechamento (`fd930b3`: o ajuste da
-> P108) e a parte 4 (a segunda revisão de segurança: o servidor). **ATENÇÃO: no ar (`d9dc5e6`) o campo do Pix NÃO ABRE** — quem olhar a `/assinar` pela
+> P108), a parte 4 (a segunda revisão de segurança: o servidor — `62d3fdd`) e a parte 5 (o site). **ATENÇÃO: no ar (`d9dc5e6`) o campo do Pix NÃO ABRE** — quem olhar a `/assinar` pela
 > prévia vê "Pagar com Pix" sem o campo; é a próxima publicação que conserta. Nenhuma migration nova.
 >
 > **PARA CONTINUAR NO PRÓXIMO CHAT (a ordem — atualizado em 29/10/2026, no meio da correção):**
 > 0. **A segunda revisão de segurança do passo 6** (Opus 5.5, esforço máximo, a pedido do operador) achou 10
->    problemas, e o operador decidiu **corrigir tudo antes de publicar**. **A parte do SERVIDOR está no `dev`**
->    (a parte 4 do passo 6 da 4.9: o que cada achado virou, os testes e a mutação — 29 de 29).
-> 1. **A parte do site** (a parte 5 do passo 6): o texto APROVADO pelo operador para o `PixEmConferencia` —
->    *"Recebemos o seu Pix e estamos conferindo o pagamento. Já fomos avisados e vamos responder pelo seu
->    e-mail. Se precisar, escreva para suporte@jilsonsantana.com."* — no dicionário (`app.assinar`), mostrado
->    pelo `FormularioDeAssinatura` nas duas portas (logado e visitante), com teste; o **achado 8**: o "Mostrar o
->    QR de novo" só gera QR novo se o valor do Pix vencido ainda for o preço de um plano (senão, a frase
->    `qrNaoAbriu`, que manda clicar em "Pagar com Pix" de novo), com teste; e, logado, o 409 `Ocupada` com a
->    frase `aguardeUmInstante` (decisão do operador, 29/10/2026, ao caso raro do achado 1). Mutação, gates, commit.
-> 2. **A revisão de segurança de novo (Opus 5.5, esforço máximo), só das correções.** Achado grave vai ao
+>    problemas, e o operador decidiu **corrigir tudo antes de publicar**. **As correções estão no `dev`**: a
+>    parte 4 (o servidor — mutação 29 de 29) e a parte 5 (o site — 8 de 9) do passo 6 da 4.9.
+> 1. **A revisão de segurança de novo (Opus 5.5, esforço máximo), só das correções** (as partes 4 e 5). Achado grave vai ao
 >    operador antes de publicar.
-> 3. **Publicar** (o operador já mandou publicar depois da revisão) e conferir de fora como sempre — a versão
+> 2. **Publicar** (o operador já mandou publicar depois da revisão) e conferir de fora como sempre — a versão
 >    do app, `/api/billing/visitante/planos` com `pix`, o job das migrations sem migration nova, RLS no banco
 >    de produção só leitura. Depois, o operador vê a `/assinar` pela prévia (no ar hoje o campo do Pix não abre).
-> 4. **O passo 9 da 4.7 — quem não terminou de assinar, e a tabela de leads** (decisões do operador,
+> 3. **O passo 9 da 4.7 — quem não terminou de assinar, e a tabela de leads** (decisões do operador,
 >    29/10/2026): registrar no plano e construir. O e-mail "você não terminou a assinatura" 2 horas depois
 >    da última tentativa; aos 7 dias, a ficha e o cliente da Stripe (com o CPF) são apagados; quem marcou
 >    "Quero receber novidades" vira LEAD (nome e e-mail, nunca o CPF), e o lembrete dos outros traz o botão
@@ -140,10 +133,10 @@
 >    nome" no formulário de assinar sem conta; tudo na rodada de hora em hora (`jilson-prod-avisos`). A
 >    tabela de leads serve depois à captura do YouTube e do LinkedIn. **Todo texto** (o e-mail, o campo, o
 >    consentimento, a página de descadastro) vai ao operador para aprovar.
-> 5. **P93, um passo por vez, com a confirmação dele:** o 1º e-mail (o código de entrar) foi enviado ao Yahoo
+> 4. **P93, um passo por vez, com a confirmação dele:** o 1º e-mail (o código de entrar) foi enviado ao Yahoo
 >    em 29/10/2026 e espera a resposta; depois o código da senha nova, as boas-vindas e as telas de entrar e
 >    de senha nova.
-> 6. **P112** (do operador, antes de qualquer Pix de verdade: `payment_intent.succeeded` no endereço de avisos
+> 5. **P112** (do operador, antes de qualquer Pix de verdade: `payment_intent.succeeded` no endereço de avisos
 >    da conta de verdade; depois, registrar no `billing.md`) e **o passo 8 da 4.7** (o teste dele com cartão e
 >    Pix reais, R$ 99,90 e o reembolso), com a P102.
 > **O que o próximo chat precisa saber:** a suíte do servidor apaga o banco de teste local — perguntar
@@ -5940,7 +5933,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             e ao vivo). Nada muda no campo do cartão.
       - [ ] **Passo 6 — Prova e revisão.** *(Fechado em 29/10/2026 — a prova, as duas revisões, as partes 1 a 3 e as
             decisões P113, P114 e P115 — e REABERTO no mesmo dia pela segunda passada, que achou 10 problemas: a
-            parte 4 (o servidor) está feita; ficam a parte 5 (o site), a terceira passada, a P112, do operador, e o
+            as partes 4 (o servidor) e 5 (o site) estão feitas; ficam a terceira passada, a P112, do operador, e o
             Pix de verdade no passo 8 da 4.7.)* Na área restrita: como se confirma um Pix de teste (a
             página de instruções da Stripe em teste), o pré-pago de ponta a ponta com o relógio de
             teste (nasce, avisa 3 dias antes, termina, "terminou"), o reembolso do Pix, o QR vencido;
@@ -6101,13 +6094,26 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                   (`status: "all"` traz todos os estados, inclusive `incomplete_expired`) e os metadados do pagamento
                   (a atualização junta as chaves às que existem; o valor tem até 500 caracteres — o motivo vai cortado
                   em 450). A lista de pagamentos com `expand: ["data.latest_charge"]` é a expansão comum de lista.
-            - [ ] **Parte 5 — o site, a segunda revisão.** A frase APROVADA pelo operador para o 409 `PixEmConferencia`
-                  — *"Recebemos o seu Pix e estamos conferindo o pagamento. Já fomos avisados e vamos responder pelo seu
-                  e-mail. Se precisar, escreva para suporte@jilsonsantana.com."* — no dicionário, nas duas telas de
-                  assinar; o **achado 8** (o "QR de novo" só gera QR novo se o valor do Pix vencido ainda for o preço de
-                  um plano; senão, a frase `qrNaoAbriu`); e, logado, o 409 `Ocupada` passa a mostrar a frase já aprovada
-                  *"Aguarde um instante e tente novamente."* (`aguardeUmInstante`) — **decisão do operador, 29/10/2026**,
-                  à pergunta do caso raro do achado 1 (sem conta fica a frase de hoje, que já diz "aguarde um instante").
+            - [x] **Parte 5 — o site, a segunda revisão (29/10/2026).** O 409 `PixEmConferencia` mostra a frase
+                  APROVADA pelo operador — *"Recebemos o seu Pix e estamos conferindo o pagamento. Já fomos avisados e
+                  vamos responder pelo seu e-mail. Se precisar, escreva para suporte@jilsonsantana.com."*
+                  (`app.assinar.pix.emConferencia`) — nas duas telas de assinar, por cartão e por Pix
+                  (`FormularioDeAssinatura`). Logado, o 409 `Ocupada` mostra *"Aguarde um instante e tente novamente."*
+                  (`aguardeUmInstante`) — **decisão do operador, 29/10/2026**, à pergunta do caso raro do achado 1 (o
+                  Pix devolvido com a incompleta aberta; vale também para o clique duplo); sem conta fica a frase de
+                  hoje (`ocupadaOutraAba`), que já diz "aguarde um instante". **Achado 8:** `comoMostrarOQr` (sem
+                  Stripe.js, com teste) dá QR novo ao QR vencido só se o VALOR do pagamento ainda for o preço de um
+                  plano — senão, a frase `qrNaoAbriu` manda clicar em "Pagar com Pix", que cria o Pix no preço de
+                  agora; os preços só são lidos nesse caso, pela rota de cada tela (`QrDeNovo.lerPlanos`:
+                  `getPlanosDaAssinatura` logado, `getPlanosSemLogin` sem conta). Testes: `stripe-do-site.test.ts`
+                  (+2, e o de antes reescrito), `AssinarPage.test.tsx` (+2), `AssinarSemLoginPage.test.tsx` (+1), as
+                  duas telas de concluído (+1 cada). **Mutação: 8 de 9 reprovaram.** A que passou é a linha que, DENTRO
+                  da fronteira com o Stripe.js (`mostrarQrDeNovo`), só repassa o status, o valor e quem lê os preços à
+                  decisão: a regra do repo é simular o nosso módulo, nunca o da Stripe, e ela fica sem teste de
+                  propósito. *Docs check (context7):* Stripe → `/websites/stripe` → 1 consulta (a 3ª da sessão): com o
+                  segredo do cliente, o Stripe.js lê `status`, `amount` e `currency` do pagamento (`retrievePaymentIntent`).
+                  *Não provado no navegador:* o caminho feliz do QR vencido (o valor bate, o QR novo abre) — a prova da
+                  P115 foi antes desta mudança.
             - [ ] **A terceira passada da revisão de segurança (Opus 5.5, esforço máximo — pedido do operador), só das
                   partes 4 e 5.** Achado grave vai ao operador antes de publicar.
             - [x] **P115 — o QR vencido (decisão do operador, 29/10/2026: "o mesmo botão gera o QR novo quando

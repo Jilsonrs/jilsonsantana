@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import type { PlanosDaAssinatura } from "@jilson/core";
 import { Button } from "@/components/ui/button";
 import { useT } from "@/lib/language";
 import { esquecerPix, lerPix } from "@/lib/pix-pendente";
@@ -12,8 +13,10 @@ import { esquecerPix, lerPix } from "@/lib/pix-pendente";
  * (`import()`, já em `PEDACOS_DO_ALUNO`): estas telas estão no pacote de todo aluno, e o Stripe.js só é
  * preciso aqui. O que a janela devolve não decide nada — quem diz que a assinatura valeu é o servidor, que
  * a tela continua perguntando.
+ * `lerPlanos`: os planos de AGORA, pela rota desta tela (logado ou visitante). Só são lidos se o QR venceu: o
+ * QR novo sai só se o valor do pagamento ainda for o preço de um plano (achado 8 da segunda revisão do passo 6).
  */
-export function QrDeNovo({ confirmado }: { confirmado: boolean }) {
+export function QrDeNovo({ confirmado, lerPlanos }: { confirmado: boolean; lerPlanos: () => Promise<PlanosDaAssinatura> }) {
   const t = useT().assinar.pix;
   const [pix] = useState(lerPix);
   const [abrindo, setAbrindo] = useState(false);
@@ -29,7 +32,8 @@ export function QrDeNovo({ confirmado }: { confirmado: boolean }) {
     setNaoAbriu(false);
     try {
       const { mostrarQrDeNovo } = await import("@/lib/stripe-do-site");
-      if ((await mostrarQrDeNovo(pix.chavePublicavel, pix.segredo, pix.email)) === "falhou") {
+      const precosDeAgora = async () => (await lerPlanos()).planos.map((p) => p.centavos);
+      if ((await mostrarQrDeNovo(pix.chavePublicavel, pix.segredo, pix.email, precosDeAgora)) === "falhou") {
         console.warn("[pix] a janela do QR não abriu de novo");
         setNaoAbriu(true);
       }

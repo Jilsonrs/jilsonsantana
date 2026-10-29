@@ -174,11 +174,15 @@ export type ComoMostrarOQr = "reabrir" | "gerar-novo" | "pago" | "sem-jeito";
  * vencido volta o pagamento a `requires_payment_method` (o `handleNextAction` então LANÇA: "not in the
  * requires_action state"), e confirmá-lo de novo dá um QR novo no MESMO pagamento. `requires_confirmation`
  * (criado e nunca confirmado — a aba fechou antes) também se confirma. Cancelado não tem volta: é o
- * clique em "Pagar com Pix" na tela de assinar. Função pura, com teste.
+ * clique em "Pagar com Pix" na tela de assinar.
+ * O QR NOVO SÓ SAI SE O VALOR DO PAGAMENTO AINDA FOR O PREÇO DE UM PLANO (achado 8 da segunda revisão do
+ * passo 6, 29/10/2026): o pagamento guarda o valor de quando nasceu, e pago depois de o preço mudar ele fica
+ * EM CONFERÊNCIA no servidor. Então não há como, e a frase manda clicar em "Pagar com Pix" de novo — que
+ * cria o Pix no preço de agora. Os preços só são lidos neste caso (`precosDeAgora`). Sem Stripe.js: com teste.
  */
-export function comoMostrarOQr(status: string): ComoMostrarOQr {
+export async function comoMostrarOQr(status: string, centavos: number, precosDeAgora: () => Promise<number[]>): Promise<ComoMostrarOQr> {
   if (status === "requires_action") return "reabrir";
-  if (status === "requires_payment_method" || status === "requires_confirmation") return "gerar-novo";
+  if (status === "requires_payment_method" || status === "requires_confirmation") return (await precosDeAgora()).includes(centavos) ? "gerar-novo" : "sem-jeito";
   if (status === "succeeded") return "pago";
   return "sem-jeito";
 }
@@ -192,15 +196,16 @@ export type QrMostrado = "aberto" | "pago" | "falhou";
  * o segredo e o e-mail guardados na aba (`lib/pix-pendente.ts`). Lê o pagamento AGORA e, pelo status
  * (`comoMostrarOQr`): reabre o mesmo QR (`handleNextAction`), ou — vencido — confirma o MESMO pagamento de
  * novo com o Pix e o e-mail de quem paga (`confirmPixPayment`, que cria a forma de pagamento e abre a
- * janela do QR novo). O que volta NÃO decide nada: quem diz que a assinatura valeu é o servidor, que a tela
- * de concluído continua perguntando.
+ * janela do QR novo) — se o valor dele ainda for o preço de um plano (`precosDeAgora`, lido pela tela). O que
+ * volta NÃO decide nada: quem diz que a assinatura valeu é o servidor, que a tela de concluído continua
+ * perguntando.
  */
-export async function mostrarQrDeNovo(chavePublicavel: string, segredo: string, email?: string): Promise<QrMostrado> {
+export async function mostrarQrDeNovo(chavePublicavel: string, segredo: string, email: string | undefined, precosDeAgora: () => Promise<number[]>): Promise<QrMostrado> {
   const stripe = await stripeDoSite(chavePublicavel);
   if (!stripe) return "falhou";
   const { paymentIntent, error } = await stripe.retrievePaymentIntent(segredo);
   if (error || !paymentIntent) return "falhou";
-  const como = comoMostrarOQr(paymentIntent.status);
+  const como = await comoMostrarOQr(paymentIntent.status, paymentIntent.amount, precosDeAgora);
   if (como === "pago") return "pago";
   if (como === "sem-jeito") return "falhou";
   if (como === "reabrir") return (await stripe.handleNextAction({ clientSecret: segredo })).error ? "falhou" : "aberto";

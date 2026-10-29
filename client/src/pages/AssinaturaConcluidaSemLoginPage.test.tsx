@@ -6,15 +6,20 @@ import { renderWithProviders } from "@/test-utils";
 
 const confirmarSemLogin = vi.fn();
 const criarSenhaSemLogin = vi.fn();
+const getPlanosSemLogin = vi.fn();
 vi.mock("@/lib/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/api")>()),
   confirmarSemLogin: (...args: unknown[]) => confirmarSemLogin(...args),
   criarSenhaSemLogin: (...args: unknown[]) => criarSenhaSemLogin(...args),
+  getPlanosSemLogin: (...args: unknown[]) => getPlanosSemLogin(...args),
 }));
 
 // A fronteira com o Stripe.js (o QR do Pix de novo — etapa 4.9) vira dublê; a tela a carrega por `import()`.
-const mostrarQrDeNovo = vi.fn<(chavePublicavel: string, segredo: string, email?: string) => Promise<"aberto" | "pago" | "falhou">>();
-vi.mock("@/lib/stripe-do-site", () => ({ mostrarQrDeNovo: (chavePublicavel: string, segredo: string, email?: string) => mostrarQrDeNovo(chavePublicavel, segredo, email) }));
+// `precosDeAgora`: o que a tela entrega para o Stripe.js perguntar, só se o QR venceu (achado 8 da segunda revisão do passo 6).
+type PrecosDeAgora = () => Promise<number[]>;
+const mostrarQrDeNovo = vi.fn<(chavePublicavel: string, segredo: string, email: string | undefined, precosDeAgora: PrecosDeAgora) => Promise<"aberto" | "pago" | "falhou">>();
+vi.mock("@/lib/stripe-do-site", () => ({ mostrarQrDeNovo: (chavePublicavel: string, segredo: string, email: string | undefined, precosDeAgora: PrecosDeAgora) => mostrarQrDeNovo(chavePublicavel, segredo, email, precosDeAgora) }));
+const PLANOS_DE_AGORA = { chavePublicavel: "pk_test_da_tela", planos: [{ plano: "mensal", centavos: 9990, moeda: "brl" }, { plano: "anual", centavos: 99500, moeda: "brl" }], formasDePagamento: ["card"] };
 
 import { navegador } from "@/lib/versao";
 import { esquecerPix, guardarPix, lerPix } from "@/lib/pix-pendente";
@@ -41,6 +46,7 @@ beforeEach(() => {
   criarSenhaSemLogin.mockReset().mockResolvedValue({ entrou: true });
   ir = vi.spyOn(navegador, "ir").mockImplementation(() => {});
   mostrarQrDeNovo.mockReset().mockResolvedValue("aberto");
+  getPlanosSemLogin.mockReset().mockResolvedValue(PLANOS_DE_AGORA);
   esquecerTentativa();
   esquecerPix();
 });
@@ -214,12 +220,27 @@ describe("depois do pagamento, sem conta — o QR do Pix de novo", () => {
     confirmarSemLogin.mockResolvedValue({ confirmada: false });
     abrir({ conferirACada: 20 });
     fireEvent.click(await screen.findByRole("button", { name: "Mostrar o QR de novo" }));
-    await waitFor(() => expect(mostrarQrDeNovo).toHaveBeenCalledWith("pk_test_da_tela", "pi_pix_secret_x", "visitante@exemplo.com"));
+    await waitFor(() => expect(mostrarQrDeNovo).toHaveBeenCalledWith("pk_test_da_tela", "pi_pix_secret_x", "visitante@exemplo.com", expect.any(Function)));
     expect(lerPix()).not.toBeNull();
 
     confirmarSemLogin.mockResolvedValue({ confirmada: true });
     expect(await screen.findByLabelText("Crie uma senha")).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Mostrar o QR de novo" })).toBeNull();
     expect(lerPix()).toBeNull();
+  });
+
+  // O QR VENCIDO só ganha outro se o valor ainda for o preço de um plano (achado 8): a tela entrega os preços de
+  // AGORA, pela rota do visitante — e só os lê quando o Stripe.js pergunta (o QR venceu).
+  it("os preços de agora vêm da rota do visitante, e só quando o Stripe.js pergunta (o QR venceu — achado 8)", async () => {
+    comTentativa();
+    guardarPix({ segredo: "pi_pix_secret_x", chavePublicavel: "pk_test_da_tela", email: "visitante@exemplo.com" });
+    confirmarSemLogin.mockResolvedValue({ confirmada: false });
+    abrir({ conferirACada: 20 });
+    fireEvent.click(await screen.findByRole("button", { name: "Mostrar o QR de novo" }));
+    await waitFor(() => expect(mostrarQrDeNovo).toHaveBeenCalledTimes(1));
+    expect(getPlanosSemLogin).not.toHaveBeenCalled();
+    const precosDeAgora = mostrarQrDeNovo.mock.calls[0]![3];
+    expect(await precosDeAgora()).toEqual([9990, 99500]);
+    expect(getPlanosSemLogin).toHaveBeenCalledTimes(1);
   });
 });

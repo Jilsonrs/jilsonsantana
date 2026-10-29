@@ -169,8 +169,10 @@ no PaymentIntent/SetupIntent/Checkout Session; suporte anunciado em 22/abr/2026.
 > QR resolve o `confirmPayment` SEM erro, com o pagamento à espera, e a tela vai para a de concluído; o
 > "Mostrar o QR de novo" abre a janela (desktop e celular) e, fechada, o `handleNextAction` resolve sem erro;
 > **com o QR VENCIDO, o mesmo botão gera um QR novo no MESMO pagamento** (decisão do operador, P115, 29/10/2026:
-> lê o pagamento e, vencido, o confirma de novo com o e-mail de quem paga — provado no navegador); só se nada
-> abrir, a frase dele: "Não foi possível mostrar o QR. Volte e clique em Pagar com Pix.";
+> lê o pagamento e, vencido, o confirma de novo com o e-mail de quem paga — provado no navegador) — **só se o
+> valor do pagamento ainda for o preço de um plano** (achado 8 da segunda revisão, 29/10/2026: pago depois de o
+> preço mudar, ele ficaria em conferência); só se nada abrir, a frase dele: "Não foi possível mostrar o QR. Volte e
+> clique em Pagar com Pix." — que cria o Pix no preço de agora;
 > o idioma da janela é o do Stripe.js (`locale` em `OPCOES_DO_STRIPE`), não o do campo.
 >
 > **A PRÉ-PAGA NAS TELAS DO ALUNO E NO REEMBOLSO (passo 3 — no código desde 28/10/2026; texto do
@@ -197,7 +199,7 @@ no PaymentIntent/SetupIntent/Checkout Session; suporte anunciado em 22/abr/2026.
 > (cartão e Pix, logado e sem conta) respondem 409 `PixEmConferencia` — a pessoa **não paga de novo**. O operador
 > libera o acesso ou devolve o Pix. A frase da tela, aprovada por ele: *"Recebemos o seu Pix e estamos conferindo o
 > pagamento. Já fomos avisados e vamos responder pelo seu e-mail. Se precisar, escreva para
-> suporte@jilsonsantana.com."* (no site a partir da parte 5). **O Pix DEVOLVIDO por inteiro antes de virar
+> suporte@jilsonsantana.com."* — nas duas telas de assinar (parte 5). **O Pix DEVOLVIDO por inteiro antes de virar
 > assinatura não vira assinatura** (seria acesso sem pagar): a incompleta dele é encerrada, e a pessoa pode
 > pagar de novo.
 >

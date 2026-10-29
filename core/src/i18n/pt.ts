@@ -630,6 +630,9 @@ export const pt = {
         // Só quando nem reabrir nem gerar outro QR deu certo (o QR vencido gera outro no mesmo botão) — P115,
         // decisão do operador, 29/10/2026.
         qrNaoAbriu: "Não foi possível mostrar o QR. Volte e clique em Pagar com Pix.",
+        // O Pix foi pago e não virou assinatura sozinho (409 `PixEmConferencia` — a segunda revisão de segurança do
+        // passo 6 da etapa 4.9): a pessoa não paga de novo. Texto APROVADO pelo operador em 29/10/2026.
+        emConferencia: "Recebemos o seu Pix e estamos conferindo o pagamento. Já fomos avisados e vamos responder pelo seu e-mail. Se precisar, escreva para suporte@jilsonsantana.com.",
         // Com o Pix não há cartão: a linha do resumo sai sem a parte do cartão (decisão do operador, P110, 28/10/2026).
         pagamentoSeguro: "Pagamento seguro, processado pela Stripe.",
       },
