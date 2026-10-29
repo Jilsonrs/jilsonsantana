@@ -489,6 +489,24 @@ export function avisosConfigurados(): boolean {
   return Boolean(process.env.STRIPE_WEBHOOK_SECRET);
 }
 
+/**
+ * OS AVISOS QUE O ENDEREÇO DE AVISOS DA CONTA PRECISA ASSINAR (P69, 12/10/2026, e P112, 29/10/2026 — `billing.md` →
+ * *Os avisos de devolução chegam ao site no ar*). A conferência da subida (`conferencia-da-cobranca.ts`, E4 da
+ * revisão ampla) alerta quando falta um. **Aviso novo tratado aqui entra nesta lista** — senão o endereço nunca o
+ * manda, e nada avisa. (`refund.updated` e `charge.refund.updated` também são tratados, mas não são exigidos: o
+ * `refund.failed` já traz a devolução que falha.) O teste prova que cada um da lista é tratado (`stripe.test.ts`).
+ */
+export const AVISOS_DO_ENDERECO = [
+  "charge.refunded",
+  "customer.subscription.created",
+  "customer.subscription.deleted",
+  "customer.subscription.updated",
+  "invoice.paid",
+  "invoice.payment_failed",
+  "payment_intent.succeeded",
+  "refund.failed",
+] as const;
+
 /** De que assinatura o aviso fala — ou nenhuma (aviso que não mexe em assinatura). */
 function assinaturaDoAviso(evento: Stripe.Event): string | null {
   switch (evento.type) {

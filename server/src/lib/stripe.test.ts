@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import Stripe from "stripe";
 import { pagamentosDaFatura } from "./stripe-devolucao.js";
-import { chaveDoNumeroFiscal, chavePublicavel, erroSemMensagem, METADADO_DO_PIX, pagamentoPrePagoDoAviso, pareceAvisoDaStripe, paraAssinaturaNaStripe, paraAssinaturaNoCheckout, paraCodigoPromocional, paraNumeroFiscal, paraPedidoDeAssinatura, paraPedidoDeCliente, paraPedidoDeClienteDoVisitante, paraPrecosDosPlanos } from "./stripe.js";
+import { AVISOS_DO_ENDERECO, chaveDoNumeroFiscal, chavePublicavel, erroSemMensagem, METADADO_DO_PIX, pagamentoPrePagoDoAviso, pareceAvisoDaStripe, paraAssinaturaNaStripe, paraAssinaturaNoCheckout, paraCodigoPromocional, paraNumeroFiscal, paraPedidoDeAssinatura, paraPedidoDeCliente, paraPedidoDeClienteDoVisitante, paraPrecosDosPlanos, verificarAviso } from "./stripe.js";
 
 // O ESPELHO A PARTIR DA STRIPE (Fase 4, etapa 4.1) — função pura, teste unitário (CLAUDE.md →
 // Testing: só função pura, sem I/O). O que protege é o "PAGO ATÉ": quando a renovação falha, a
@@ -465,5 +465,39 @@ describe("o cabeçalho de assinatura que parece da Stripe", () => {
     expect(pareceAvisoDaStripe(`t=${hora},v1=${"a".repeat(63)}`, agora)).toBe(false);
     expect(pareceAvisoDaStripe(`t=agora,v1=${v1}`, agora)).toBe(false);
     expect(pareceAvisoDaStripe("isto não é da Stripe", agora)).toBe(false);
+  });
+});
+
+// OS AVISOS QUE O ENDEREÇO PRECISA ASSINAR (E4 da revisão ampla, 29/10/2026): a conferência da subida exige do
+// endereço de avisos exatamente esta lista — então cada um dela tem que ser TRATADO aqui. O aviso é assinado de
+// verdade e passa pela verificação, como chega da Stripe. Um tipo novo na lista sem o caso abaixo reprova.
+describe("os avisos que o endereço de avisos precisa assinar", () => {
+  const SEGREDO = "whsec_da_lista";
+  const objetoDo: Record<(typeof AVISOS_DO_ENDERECO)[number], Record<string, unknown>> = {
+    "charge.refunded": { id: "ch_1", object: "charge", payment_intent: "pi_1" },
+    "customer.subscription.created": { id: "sub_1", object: "subscription" },
+    "customer.subscription.deleted": { id: "sub_1", object: "subscription" },
+    "customer.subscription.updated": { id: "sub_1", object: "subscription" },
+    "invoice.paid": { id: "in_1", object: "invoice", parent: { subscription_details: { subscription: "sub_1" } } },
+    "invoice.payment_failed": { id: "in_1", object: "invoice", parent: { subscription_details: { subscription: "sub_1" } } },
+    "payment_intent.succeeded": { id: "pi_1", object: "payment_intent", amount: 9990, currency: "brl", customer: "cus_1", livemode: true, metadata: { prepago: "mensal", precoId: "price_mensal", userId: "conta-1" } },
+    "refund.failed": { id: "re_1", object: "refund", payment_intent: "pi_1", status: "failed" },
+  };
+
+  it("cada um é tratado: dele sai a assinatura, o pagamento devolvido ou o Pix pago", () => {
+    const antes = process.env.STRIPE_WEBHOOK_SECRET;
+    process.env.STRIPE_WEBHOOK_SECRET = SEGREDO;
+    try {
+      expect(Object.keys(objetoDo).sort()).toEqual([...AVISOS_DO_ENDERECO].sort());
+      for (const tipo of AVISOS_DO_ENDERECO) {
+        const corpo = JSON.stringify({ id: `evt_${tipo}`, object: "event", type: tipo, data: { object: objetoDo[tipo] } });
+        const aviso = verificarAviso(Buffer.from(corpo), Stripe.webhooks.generateTestHeaderString({ payload: corpo, secret: SEGREDO }));
+        const tratado = aviso.assinatura !== null || aviso.pagamento !== null || aviso.pagamentoPrePago !== null;
+        expect([tipo, tratado]).toEqual([tipo, true]);
+      }
+    } finally {
+      if (antes === undefined) delete process.env.STRIPE_WEBHOOK_SECRET;
+      else process.env.STRIPE_WEBHOOK_SECRET = antes;
+    }
   });
 });

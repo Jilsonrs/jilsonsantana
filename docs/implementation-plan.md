@@ -6213,9 +6213,18 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             ~15 s, mostra uma frase e avisa o servidor, que alerta (`[site] …`). **A frase, APROVADA pelo operador
             em 29/10/2026 (P116, a sugestão do revisor):** *"O campo de pagamento não carregou. Tente outro
             navegador ou desative o bloqueador; se continuar, escreva para suporte@jilsonsantana.com."*
-      - [ ] **E4 — a conferência na subida do servidor:** a chave publicável e a secreta no mesmo modo (hoje só se
+      - [x] **E4 — a conferência na subida do servidor:** a chave publicável e a secreta no mesmo modo (hoje só se
             confere a `pk_`), e o endereço de avisos de produção ativo e com todos os eventos que o código trata —
-            faltou um, alerta.
+            faltou um, alerta. **FEITO (29/10/2026):** `lib/conferencia-da-cobranca.ts` — `problemaDasChaves` (a
+            publicável `pk_`, a secreta `sk_` ou `rk_`, do mesmo modo; o registro diz o modo, nunca a chave),
+            `problemaDoEndereco` (um endereço de avisos da conta aponta para o site, LIGADO, e os ligados assinam
+            juntos todos os de `AVISOS_DO_ENDERECO`, ou "todos os eventos") e `conferirCobrancaNaSubida`, chamada no
+            `index.ts` só em produção, uma vez por subida de cada cópia: cada problema vira alerta `[stripe] subida: …`,
+            e nunca derruba a subida. **A lista dos avisos exigidos passou a morar no código**
+            (`AVISOS_DO_ENDERECO`, `stripe.ts`: os 8 da P69 e da P112), com um teste que assina cada um de verdade e
+            prova que ele é tratado. Testes: `conferencia-da-cobranca.test.ts` (novo, 10), `stripe.test.ts` (+1).
+            **Mutação: 11 de 11 reprovaram.** *Sem teste:* a chamada no `index.ts` (a subida não roda na suíte, como
+            a do fuso do banco); a prova é o primeiro registro da subida depois da publicação.
       - [x] **E5 — o aviso com a assinatura que não confere vira alerta** quando o cabeçalho tem o formato da Stripe e
             a hora é recente (no máximo um a cada 15 min por cópia); cabeçalho ausente ou malformado continua só
             registro. Na conferência de cada publicação, o reenvio de um aviso pelo painel (200) no lugar do 400.

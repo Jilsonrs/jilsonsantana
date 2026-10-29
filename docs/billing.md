@@ -1581,6 +1581,9 @@ encerrada de vez com dias pagos: tem acesso e o servidor recusa cartão.
   **só ele**. Sem ele, um Pix pago em produção só virava assinatura se a pessoa clicasse de novo, ou no
   "Conferir na Stripe" do admin, sem alerta. *Não marcar "todos os eventos":* com o `invoice.created`, a
   Stripe passa a esperar a resposta do site antes de cobrar as renovações.
+  **Desde a 4.9b (E4, 29/10/2026) a lista mora no código** (`AVISOS_DO_ENDERECO`, `server/src/lib/stripe.ts`), e
+  **a subida do servidor em produção confere o endereço**: desligado, ausente ou sem um dos 8, sai um alerta. Aviso
+  novo tratado no código entra nessa lista e no endereço.
 - **A chave da Stripe em produção lê tudo o que a sincronia precisa** *(P71, respondida pelo
   operador em 12/10/2026)*: a chave que está na Railway é a comum (`sk_live_`), e não uma
   restrita — pagamentos, faturas, devoluções e agendamentos. E a `SENTRY_DSN` está preenchida:
