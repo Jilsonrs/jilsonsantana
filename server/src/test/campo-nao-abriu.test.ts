@@ -20,7 +20,10 @@ afterEach(() => {
 });
 
 describe("POST /api/billing/campo-nao-abriu", () => {
-  it("sem login: 204 e UM alerta, com a tela e o motivo; o seguinte, em menos de 15 min, só no registro; depois, alerta de novo", async () => {
+  // C2 da revisão do grupo 1 (29/10/2026): o relato chega sem login, então um robô o manda à vontade — no máximo UM
+  // alerta a cada 6 h por cópia, com quantos relatos e de quantos endereços desde o anterior (é o número de endereços
+  // que diz "defeito nosso" ou "um robô"); no registro, a marca do endereço, nunca o IP.
+  it("sem login: 204 e UM alerta; os seguintes, em menos de 6 h, só no registro (com a marca do endereço); o alerta seguinte conta os relatos e os endereços desde o anterior", async () => {
     const erro = vi.spyOn(console, "error").mockImplementation(() => {});
     const registro = vi.spyOn(console, "warn").mockImplementation(() => {});
     vi.useFakeTimers({ toFake: ["Date"] });
@@ -28,16 +31,25 @@ describe("POST /api/billing/campo-nao-abriu", () => {
     vi.setSystemTime(inicio);
     expect((await avisar({ tela: "assinar-sem-login", motivo: "nao-carregou" })).status).toBe(204);
     expect(alertas(erro)).toHaveLength(1);
+    expect(alertas(erro)[0]).toContain("1 relato(s) de 1 endereço(s)");
     expect(alertas(erro)[0]).toContain("na tela assinar-sem-login (nao-carregou)");
 
     vi.setSystemTime(inicio + 14 * 60_000);
-    expect((await avisar({ tela: "trocar-cartao", motivo: "erro-ao-carregar" })).status).toBe(204);
+    const endereco = novoEndereco();
+    expect((await avisar({ tela: "trocar-cartao", motivo: "erro-ao-carregar" }, endereco)).status).toBe(204);
+    vi.setSystemTime(inicio + 5 * 60 * 60_000);
+    expect((await avisar({ tela: "assinar", motivo: "nao-carregou" }, endereco)).status).toBe(204);
     expect(alertas(erro)).toHaveLength(1);
-    expect(registro.mock.calls.some(([texto]) => String(texto).includes("na tela trocar-cartao (erro-ao-carregar)"))).toBe(true);
+    const linhas = registro.mock.calls.map(([texto]) => String(texto)).filter((texto) => texto.startsWith("[stripe] site:"));
+    expect(linhas).toHaveLength(2);
+    expect(linhas[0]).toMatch(/na tela trocar-cartao \(erro-ao-carregar\), endereço [0-9a-f]{16}$/);
+    expect(linhas.join(" ")).not.toContain(endereco);
 
-    vi.setSystemTime(inicio + 16 * 60_000);
+    vi.setSystemTime(inicio + 6 * 60 * 60_000 + 60_000);
     expect((await avisar({ tela: "assinar", motivo: "nao-carregou" })).status).toBe(204);
     expect(alertas(erro)).toHaveLength(2);
+    // Os dois do mesmo endereço e este: 3 relatos de 2 endereços.
+    expect(alertas(erro)[1]).toContain("3 relato(s) de 2 endereço(s)");
   });
 
   it("o corpo fora das listas (outra tela, texto livre, vazio): 400, e nada no registro nem alerta", async () => {

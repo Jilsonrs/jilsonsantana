@@ -611,6 +611,41 @@ export function pareceAvisoDaStripe(cabecalho: string | undefined, agora: number
   return Math.abs(agora / 1000 - Number(hora)) <= TOLERANCIA_DO_AVISO_EM_SEGUNDOS;
 }
 
+/**
+ * O `id` do aviso no corpo cru, SEM confiar nele — só a forma `evt_…` (C1 da revisão do grupo 1, 29/10/2026): é para
+ * perguntar à Stripe se ele existe, quando a assinatura não confere. Corpo que não é JSON, grande demais, ou sem um
+ * `id` dessa forma: nada. Função pura.
+ */
+export function idDoAvisoNoCorpo(corpo: unknown): string | null {
+  if (!Buffer.isBuffer(corpo) || corpo.length > 512 * 1024) return null;
+  let lido: unknown;
+  try {
+    lido = JSON.parse(corpo.toString("utf8"));
+  } catch {
+    return null;
+  }
+  if (typeof lido !== "object" || lido === null || !("id" in lido)) return null;
+  const { id } = lido;
+  return typeof id === "string" && /^evt_[A-Za-z0-9]{8,64}$/.test(id) ? id : null;
+}
+
+/**
+ * Este aviso existe NESTA conta da Stripe? (C1 da revisão do grupo 1, 29/10/2026.) É o que separa o segredo trocado
+ * (o aviso é da Stripe, e a assinatura não confere: TODO aviso de verdade está sendo recusado — alerta) do aviso
+ * forjado por um robô (a Stripe não o conhece — só registro, como manda o `CLAUDE.md`). Na dúvida — a Stripe não
+ * respondeu —, não: a rodada de hora em hora (E1) acha o segredo trocado pela API de qualquer jeito.
+ */
+export async function avisoExisteNaStripe(id: string): Promise<boolean> {
+  try {
+    await stripe().events.retrieve(id);
+    return true;
+  } catch (erro) {
+    if (erro instanceof Stripe.errors.StripeError && (erro.code === "resource_missing" || erro.statusCode === 404)) return false;
+    console.warn(`[stripe] aviso recusado: não consegui conferir na Stripe se o aviso existe — ${erroSemMensagem(erro, "a conferência do aviso").message}`);
+    return false;
+  }
+}
+
 export function verificarAviso(corpo: unknown, cabecalho: string | undefined): AvisoDaStripe {
   const segredo = process.env.STRIPE_WEBHOOK_SECRET;
   if (!segredo) throw new Error("Stripe sem STRIPE_WEBHOOK_SECRET");

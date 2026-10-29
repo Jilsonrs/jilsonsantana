@@ -14,7 +14,8 @@ import { pagarComPix } from "../lib/pix-pre-pago.js";
 import { pixConfigurado } from "../lib/stripe-pix.js";
 import { desistirDaTroca, lerTrocaDePlano, mudarMeuPlano } from "../lib/meu-plano.js";
 import { aplicarCartaoNovo, lerMinhaAssinatura, manterMinhaAssinatura, pararMinhaRenovacao, prepararTrocaDeCartao, reembolsarMinhaAssinatura, registrarAssinaturaDesconhecida } from "../lib/minha-assinatura.js";
-import { limiteDeTentativas, limiteSemLogin } from "../lib/limite-de-tentativas.js";
+import { CABECALHO_DO_IP, ipDoPedido, limiteDeTentativas, limiteSemLogin } from "../lib/limite-de-tentativas.js";
+import { marcaDoEndereco } from "../lib/loja-de-tentativas.js";
 
 // ASSINAR COM A CONTA LOGADA (Fase 4, etapa 4.2 — billing.md; CLAUDE.md → Membership Gating).
 // Tudo aqui exige login, e a conta é SEMPRE a da sessão. O site diz só QUAL plano e o código
@@ -34,16 +35,31 @@ router.use("/billing", protecaoDaCobranca);
 // GET /api/billing/planos — os dois planos com o valor lido da Stripe (o mostrado é o cobrado) e
 // a chave que o site usa para abrir o campo do cartão.
 /**
- * O ALERTA DO CAMPO QUE NÃO ABRIU (E3 da revisão ampla da cobrança, 29/10/2026): no máximo um a cada 15 minutos POR
- * CÓPIA, na memória dela — protege a cota de alertas, que também é por cópia (`monitor.ts`); um robô mandando o
- * aviso a gastaria. Os outros ficam no registro, com a tela e o motivo.
+ * O ALERTA DO CAMPO QUE NÃO ABRIU (E3 da revisão ampla da cobrança; C2 da revisão do grupo 1, 29/10/2026): o relato
+ * chega SEM login, então um robô o manda à vontade — no máximo UM alerta a cada 6 horas POR CÓPIA, com quantos
+ * relatos chegaram e de quantos endereços (a marca do endereço, nunca o IP) desde o anterior: é o número de
+ * endereços que diz "defeito nosso" (muita gente) ou "um robô" (um endereço só). Por cópia, na memória dela, de
+ * propósito (CLAUDE.md → Server): protege a cota de alertas, que também é por cópia (`monitor.ts`). Os outros relatos
+ * ficam no registro, com a tela, o motivo e a marca do endereço.
  */
-const INTERVALO_DO_ALERTA_DO_CAMPO = 15 * 60_000;
+const INTERVALO_DO_ALERTA_DO_CAMPO = 6 * 60 * 60_000;
+/** Até quantos endereços distintos a cópia conta entre dois alertas: o resto conta como relato, não como endereço novo. */
+const MAXIMO_DE_ENDERECOS_CONTADOS = 1_000;
 let alertouCampoEm: number | null = null;
-function alertarCampoQueNaoAbriu(agora: number): boolean {
-  if (alertouCampoEm !== null && agora >= alertouCampoEm && agora - alertouCampoEm < INTERVALO_DO_ALERTA_DO_CAMPO) return false;
+let relatosDesdeOAlerta = 0;
+const enderecosDesdeOAlerta = new Set<string>();
+
+/** Conta o relato; devolve o resumo para alertar (desde o alerta anterior, com este), ou nada se ainda não passaram as 6 h. */
+function contarRelatoDoCampo(marca: string, agora: number): { relatos: number; enderecos: number } | null {
+  relatosDesdeOAlerta += 1;
+  if (enderecosDesdeOAlerta.size < MAXIMO_DE_ENDERECOS_CONTADOS) enderecosDesdeOAlerta.add(marca);
+  // O relógio que volta atrás não cala o alerta para sempre.
+  if (alertouCampoEm !== null && agora >= alertouCampoEm && agora - alertouCampoEm < INTERVALO_DO_ALERTA_DO_CAMPO) return null;
+  const resumo = { relatos: relatosDesdeOAlerta, enderecos: enderecosDesdeOAlerta.size };
   alertouCampoEm = agora;
-  return true;
+  relatosDesdeOAlerta = 0;
+  enderecosDesdeOAlerta.clear();
+  return resumo;
 }
 
 // POST /api/billing/campo-nao-abriu — a tela diz que o campo de pagamento da Stripe não abriu (E3): é o único jeito
@@ -52,9 +68,14 @@ function alertarCampoQueNaoAbriu(agora: number): boolean {
 router.post("/billing/campo-nao-abriu", ...limiteSemLogin.campoNaoAbriu, (req, res) => {
   const relato = validate(campoNaoAbriuSchema, req.body, res);
   if (relato === null) return;
-  const linha = `[stripe] site: o campo de pagamento não abriu na tela ${relato.tela} (${relato.motivo})`;
-  if (alertarCampoQueNaoAbriu(Date.now())) console.error(`${linha} — se acontecer com mais de uma pessoa, é defeito nosso (a chave publicável, as opções do campo, o Stripe.js): abrir a tela e conferir`);
-  else console.warn(linha);
+  const ip = ipDoPedido(req.get(CABECALHO_DO_IP));
+  const marca = ip ? marcaDoEndereco(ip) : "sem-endereco";
+  const resumo = contarRelatoDoCampo(marca, Date.now());
+  if (resumo) {
+    console.error(`[stripe] site: o campo de pagamento não abriu — ${resumo.relatos} relato(s) de ${resumo.enderecos} endereço(s) desde o último alerta, o mais recente na tela ${relato.tela} (${relato.motivo}); de vários endereços é defeito nosso (a chave publicável, as opções do campo, o Stripe.js): abrir a tela e conferir`);
+  } else {
+    console.warn(`[stripe] site: o campo de pagamento não abriu na tela ${relato.tela} (${relato.motivo}), endereço ${marca}`);
+  }
   res.status(204).end();
 });
 

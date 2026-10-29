@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import Stripe from "stripe";
 import { pagamentosDaFatura } from "./stripe-devolucao.js";
-import { AVISOS_DO_ENDERECO, chaveDoNumeroFiscal, chavePublicavel, erroSemMensagem, METADADO_DO_PIX, pagamentoPrePagoDoAviso, pareceAvisoDaStripe, paraAssinaturaNaStripe, paraAssinaturaNoCheckout, paraCodigoPromocional, paraNumeroFiscal, paraPedidoDeAssinatura, paraPedidoDeCliente, paraPedidoDeClienteDoVisitante, paraPrecosDosPlanos, verificarAviso } from "./stripe.js";
+import { AVISOS_DO_ENDERECO, chaveDoNumeroFiscal, chavePublicavel, erroSemMensagem, idDoAvisoNoCorpo, METADADO_DO_PIX, pagamentoPrePagoDoAviso, pareceAvisoDaStripe, paraAssinaturaNaStripe, paraAssinaturaNoCheckout, paraCodigoPromocional, paraNumeroFiscal, paraPedidoDeAssinatura, paraPedidoDeCliente, paraPedidoDeClienteDoVisitante, paraPrecosDosPlanos, verificarAviso } from "./stripe.js";
 
 // O ESPELHO A PARTIR DA STRIPE (Fase 4, etapa 4.1) — função pura, teste unitário (CLAUDE.md →
 // Testing: só função pura, sem I/O). O que protege é o "PAGO ATÉ": quando a renovação falha, a
@@ -499,5 +499,26 @@ describe("os avisos que o endereço de avisos precisa assinar", () => {
       if (antes === undefined) delete process.env.STRIPE_WEBHOOK_SECRET;
       else process.env.STRIPE_WEBHOOK_SECRET = antes;
     }
+  });
+});
+
+// O ID DO AVISO NO CORPO (C1 da revisão do grupo 1, 29/10/2026): é ele que a rota pergunta à Stripe quando a assinatura
+// não confere — só com a forma de um id dela, e sem quebrar com qualquer coisa que um robô mande.
+describe("o id do aviso no corpo cru", () => {
+  const corpo = (valor: unknown) => Buffer.from(typeof valor === "string" ? valor : JSON.stringify(valor));
+  it("o id com a forma da Stripe (evt_ e letras e números): sai", () => {
+    expect(idDoAvisoNoCorpo(corpo({ id: "evt_1QaBcD2eFgHiJkLm", object: "event" }))).toBe("evt_1QaBcD2eFgHiJkLm");
+  });
+  it("sem corpo cru, JSON quebrado, sem id, id de outra forma, de outro tipo, curto ou longo demais: nada", () => {
+    expect(idDoAvisoNoCorpo("evt_1QaBcD2eFgHiJkLm")).toBeNull();
+    expect(idDoAvisoNoCorpo(corpo("{ quebrado"))).toBeNull();
+    expect(idDoAvisoNoCorpo(corpo({ object: "event" }))).toBeNull();
+    expect(idDoAvisoNoCorpo(corpo({ id: "evt_com_sublinhado_1" }))).toBeNull();
+    expect(idDoAvisoNoCorpo(corpo({ id: "cus_1QaBcD2eFgHiJkLm" }))).toBeNull();
+    expect(idDoAvisoNoCorpo(corpo({ id: 123 }))).toBeNull();
+    expect(idDoAvisoNoCorpo(corpo({ id: "evt_1234567" }))).toBeNull();
+    expect(idDoAvisoNoCorpo(corpo({ id: `evt_${"a".repeat(65)}` }))).toBeNull();
+    expect(idDoAvisoNoCorpo(corpo("null"))).toBeNull();
+    expect(idDoAvisoNoCorpo(corpo(`{"id":"evt_1QaBcD2eFgHiJkLm","x":"${"a".repeat(600 * 1024)}"}`))).toBeNull();
   });
 });

@@ -1,5 +1,5 @@
 import express, { Router } from "express";
-import { avisosConfigurados, pareceAvisoDaStripe, verificarAviso } from "../lib/stripe.js";
+import { avisoExisteNaStripe, avisosConfigurados, idDoAvisoNoCorpo, pareceAvisoDaStripe, verificarAviso } from "../lib/stripe.js";
 import { processarAviso } from "../lib/assinaturas.js";
 import { depoisDoAviso } from "../lib/depois-do-aviso.js";
 
@@ -15,17 +15,32 @@ import { depoisDoAviso } from "../lib/depois-do-aviso.js";
 const router = Router();
 
 /**
- * O ALERTA DO AVISO QUE NÃO CONFERE (E5 da revisão ampla da cobrança, 29/10/2026): no máximo um a cada 15 minutos
- * POR CÓPIA do servidor, na memória dela. É por cópia de propósito (CLAUDE.md → Server: só fica por cópia o que
- * protege um recurso da própria cópia): ele protege a cota de alertas, que também é por cópia (`monitor.ts`) — um
- * robô forjando avisos a gastaria, e o alerta seguinte de pagante trancado ficaria só no registro.
+ * O AVISO QUE NÃO CONFERE (E5 da revisão ampla da cobrança, e C1 da revisão do grupo 1, 29/10/2026) só vira ALERTA
+ * quando a Stripe confirma que ele é dela (`avisoExisteNaStripe`): aí o segredo do endereço de avisos está trocado e
+ * TODO aviso de verdade está sendo recusado. O forjado — que um robô manda à vontade, com um cabeçalho de formato
+ * certo — continua só registro (CLAUDE.md → Server: o que um robô causa sozinho nunca é `error`).
+ * Dois limites, os dois POR CÓPIA, na memória dela, de propósito (CLAUDE.md: só fica por cópia o que protege um
+ * recurso da própria cópia): no máximo UMA pergunta à Stripe por minuto (o robô não faz o site gastar a cota da API
+ * da Stripe) e no máximo UM alerta a cada 15 minutos (a cota de alertas também é por cópia — `monitor.ts`).
  */
+const INTERVALO_DA_CONFERENCIA_DO_AVISO = 60_000;
 const INTERVALO_DO_ALERTA_DE_ASSINATURA = 15 * 60_000;
+let conferiuAvisoEm: number | null = null;
 let alertouAssinaturaEm: number | null = null;
 
+/** Passou o intervalo desde a última vez? Marca agora, se sim. O relógio que volta atrás não cala o limite para sempre. */
+function passouDesde(ultima: number | null, agora: number, intervalo: number): boolean {
+  return ultima === null || agora < ultima || agora - ultima >= intervalo;
+}
+
+function conferirAvisoNaStripeAgora(agora: number): boolean {
+  if (!passouDesde(conferiuAvisoEm, agora, INTERVALO_DA_CONFERENCIA_DO_AVISO)) return false;
+  conferiuAvisoEm = agora;
+  return true;
+}
+
 function alertarAssinaturaQueNaoConfere(agora: number): boolean {
-  // O relógio que volta atrás não cala o alerta para sempre.
-  if (alertouAssinaturaEm !== null && agora >= alertouAssinaturaEm && agora - alertouAssinaturaEm < INTERVALO_DO_ALERTA_DE_ASSINATURA) return false;
+  if (!passouDesde(alertouAssinaturaEm, agora, INTERVALO_DO_ALERTA_DE_ASSINATURA)) return false;
   alertouAssinaturaEm = agora;
   return true;
 }
@@ -44,14 +59,17 @@ router.post("/stripe/webhook", express.raw({ type: "application/json" }), async 
   } catch (erro) {
     // Só a mensagem: o erro de verificação da Stripe carrega o corpo inteiro do aviso.
     const motivo = erro instanceof Error ? erro.message : "?";
-    // O cabeçalho é da Stripe e recente, e mesmo assim não confere: o segredo do endereço de avisos não é o deste
-    // servidor (aí TODO aviso de verdade está sendo recusado), ou alguém forja com cuidado — alerta (E5). O resto
-    // (sem cabeçalho, malformado, velho) é ruído de robô: só registro.
+    // O cabeçalho é da Stripe e recente, o corpo traz um `id` de aviso, e a Stripe confirma que o aviso é dela: o
+    // segredo do endereço de avisos não é o deste servidor — alerta (E5, C1). O resto (sem cabeçalho, malformado,
+    // velho, forjado, ou a Stripe sem responder) é registro; a rodada (E1) acha o segredo trocado de qualquer jeito.
     const agora = Date.now();
-    if (pareceAvisoDaStripe(req.header("stripe-signature"), agora) && alertarAssinaturaQueNaoConfere(agora)) {
-      console.error(`[stripe] aviso recusado: o cabeçalho é da Stripe e recente, e a assinatura não confere — se o segredo do endereço de avisos (STRIPE_WEBHOOK_SECRET, no Secret Manager) não for o do painel da Stripe, TODO aviso de verdade está sendo recusado; conferir as entregas no painel (${motivo})`);
+    const id = pareceAvisoDaStripe(req.header("stripe-signature"), agora) ? idDoAvisoNoCorpo(req.body) : null;
+    const daStripe = id !== null && conferirAvisoNaStripeAgora(agora) && (await avisoExisteNaStripe(id));
+    if (daStripe && alertarAssinaturaQueNaoConfere(agora)) {
+      console.error(`[stripe] aviso recusado: a Stripe confirma que o aviso é dela, e a assinatura não confere — o segredo do endereço de avisos (STRIPE_WEBHOOK_SECRET, no Secret Manager) não é o do painel da Stripe: TODO aviso de verdade está sendo recusado (${motivo})`);
+      console.warn(`[stripe] aviso recusado: o aviso conferido na Stripe foi o ${id}`);
     } else {
-      console.warn(`[stripe] aviso recusado (a assinatura não confere): ${motivo}`);
+      console.warn(`[stripe] aviso recusado (a assinatura não confere${daStripe ? `; o aviso ${id} é da Stripe` : ""}): ${motivo}`);
     }
     res.status(400).json({ error: "AssinaturaInvalida" });
     return;

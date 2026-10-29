@@ -6318,6 +6318,37 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       - [ ] **E18 — o e-mail de confirmação para quem assina logado** *(decisão do operador, 29/10/2026, P127)*:
             sai da sincronia que dá o acesso, uma vez por assinatura (a mesma regra das boas-vindas: depois do
             commit, `enviarEmail`, chave estável), para cartão e Pix. O texto vai ao operador.
+      **A REVISÃO DE SEGURANÇA DO GRUPO 1** (29/10/2026, `security-vulnerability-reviewer`, Opus 5.5, esforço máximo,
+      sobre `76742f9..bdcc04b`): **nenhum P0.** Dois P1 da mesma causa — **dois alertas novos que um robô dispara à
+      vontade** (o do E5, com um cabeçalho de mentira de formato certo; o do E3, sem login): juntos, uns 192 por dia
+      por cópia contra o teto de 150 do Sentry, e os alertas que importam (pagante trancado, Pix sem acesso) deixam de
+      chegar; e o do E5 contradizia a regra escrita do `CLAUDE.md` ("aviso com assinatura trocada" nunca é `error`).
+      Cinco P2: o E1 leria errado um aviso de fatura num formato antigo da API e o marcaria (a reentrega de verdade
+      viraria "repetido"); a falha da Stripe na conferência pedida pela tela (E2) vira um alerta por pedido; a
+      conferência pulava a cancelada com dias pagos; e dois que dependem do operador — a ficha do visitante que fica
+      com a última tentativa quando a assinatura não traz o resumo (já existia; vira P0 com as ações da 4.7b) e a
+      rodada parada que não avisa ninguém. **Decisão do operador (29/10/2026): corrigir os 2 P1 e os 3 P2 do código
+      do grupo, uma revisão curta só das correções, e publicar.**
+      - [x] **C1 — o alerta do E5 só com a Stripe confirmando** que o aviso recusado existe na conta (o `id` do corpo,
+            `events.retrieve`; no máximo uma conferência por minuto por cópia): forjado continua `warn`, como manda o
+            `CLAUDE.md`. A rodada (E1) continua achando o segredo trocado pela API, sem depender disto. **FEITO
+            (29/10/2026):** `idDoAvisoNoCorpo` (função pura: só `evt_` e letras e números, corpo até 512 KB) e
+            `avisoExisteNaStripe` (`stripe.ts`; `resource_missing` = forjado; a Stripe sem responder = não, com
+            registro); na rota, uma pergunta por minuto e um alerta a cada 15 min, os dois por cópia. O `CLAUDE.md`
+            (*Server*) ganhou a razão: alerta que um anônimo dispara cala os outros. Testes: `stripe-webhook.test.ts`
+            (os do E5 reescritos, +2: o forjado e o limite de perguntas), `stripe.test.ts` (+2),
+            `avisos-da-stripe-rede.test.ts` (+3). **Mutação: 5 de 5 reprovaram.**
+      - [x] **C2 — o alerta do E3 no máximo a cada 6 h por cópia**, com quantos relatos e de quantos endereços (a marca
+            do endereço) desde o último; a marca também na linha de registro. **FEITO (29/10/2026):**
+            `contarRelatoDoCampo` (`billing.ts`; até 1.000 endereços contados entre dois alertas). Teste:
+            `campo-nao-abriu.test.ts` (o primeiro reescrito: 1 alerta, os de menos de 6 h no registro com a marca e sem
+            o IP, e o alerta seguinte com "3 relato(s) de 2 endereço(s)"). **Mutação: 4 de 4 reprovaram.**
+      - [ ] **C3 — o formato da API:** a rodada não processa (nem marca) aviso de fatura sem o `parent` (formato
+            anterior à `2025-03-31.basil`) e alerta; a subida (E4) confere a versão da API do endereço de avisos contra
+            a da biblioteca (`Stripe.API_VERSION`).
+      - [ ] **C4 — a conferência pedida pela tela que falha** responde 204 do mesmo jeito, registra, e alerta no
+            máximo uma vez a cada 15 min por cópia.
+      - [ ] **C5 — a conferência pula só a `incomplete_expired`** (a cancelada com dias pagos ainda dá acesso pelo gate).
       **As decisões do operador:** P116 a P127 em `pendencias.md` (P126 são as conferências fora do repositório).
       **Respondidas em 29/10/2026:** P116 (a frase do E3), P117 (os botões do Pix em conferência na 4.7b), P118
       (o E14), P119 (o E15), P120 (a ação "Liberar acesso pago por fora" na 4.7b), P121 (a ação "Corrigir o e-mail" na 4.7b), P122 (a contestação corta o acesso — E7), P123 (o E16), P124 (o E17), P127 (o E18). **Para depois:** P125 (quando for criar um desses códigos) e P126 (as conferências nos painéis, por prints).
