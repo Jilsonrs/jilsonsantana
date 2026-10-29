@@ -99,6 +99,15 @@ no PaymentIntent/SetupIntent/Checkout Session; suporte anunciado em 22/abr/2026.
 > *Reabre se a Stripe liberar o Pix Automático para empresa do Brasil (aí o Pix pode voltar a ser
 > recorrente, como opção), ou se os números mostrarem que o pré-pago não renova.*
 >
+> **APPLE PAY E GOOGLE PAY: FORA** *(decisão do operador, 28/10/2026, ao fim do dia — revê o "com Apple
+> Pay e Google Pay juntos" aprovado pela manhã)*: *"Cartão de crédito e Pix atende a todos os públicos e
+> desisti de Google Pay e Apple Pay; quanto menos complicar melhor, principalmente para os mais cautelosos:
+> quem tiver medo de colocar o cartão paga um mês ou quantos quiser via Pix, estuda e pega seu certificado,
+> volta quando quiser."* A escola oferece **cartão (recorrente) e Pix (pré-pago)**, e só. Nenhum código
+> muda: o campo do cartão já abre só com `card`, e as carteiras nunca apareceram (exigiriam o domínio
+> registrado na Stripe, que não será feito). *Reabre se alunos pedirem a carteira, ou se um dado de
+> conversão mostrar que o cartão digitado perde venda.*
+>
 > **COMO É NA STRIPE (etapa 4.9, passo 1 — no código desde 28/10/2026, `server/src/lib/stripe-pix.ts`
 > e `assinaturas.ts`):** o Pix é um **pagamento solto** (`PaymentIntent`), numa configuração de formas de
 > pagamento **só com Pix** (`STRIPE_PIX_CONFIGURATION` — a conta exige formas dinâmicas, e sem ela o
