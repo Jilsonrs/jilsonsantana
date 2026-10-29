@@ -71,6 +71,41 @@ describe("depois do pagamento, sem conta — a confirmação", () => {
     expect(screen.queryByLabelText("Crie uma senha")).toBeNull();
   });
 
+  it("o servidor recusou a pergunta 3 vezes seguidas (P108): a frase do operador no lugar do demorando — e a pergunta continua; valeu, a tela segue", async () => {
+    comTentativa();
+    const frase = 'Não conseguimos confirmar agora. Seu pagamento não se perde: entre com "Receber código de acesso" ou tente de novo em alguns minutos.';
+    // As 3 primeiras perguntas são recusadas (o limite de tentativas); depois, "ainda não" — até valer.
+    let valeu = false;
+    confirmarSemLogin.mockImplementation(async () => {
+      if (confirmarSemLogin.mock.calls.length <= 3) throw erroDoServidor("MuitasTentativas", 429);
+      return { confirmada: valeu };
+    });
+    abrir({ conferirACada: 20, demora: 60_000 });
+    expect(await screen.findByText(frase)).toBeTruthy();
+    expect(screen.queryByText("Está demorando mais que o normal. Seu pagamento não se perde: esta página continua conferindo.")).toBeNull();
+    // A próxima resposta (não valeu ainda) zera a conta: a frase sai.
+    await waitFor(() => expect(screen.queryByText(frase)).toBeNull());
+    valeu = true;
+    expect(await screen.findByRole("heading", { name: "Assinatura confirmada." })).toBeTruthy();
+  });
+
+  it("duas recusas, uma resposta, duas recusas: nunca 3 SEGUIDAS — a frase não aparece", async () => {
+    comTentativa();
+    const frase = 'Não conseguimos confirmar agora. Seu pagamento não se perde: entre com "Receber código de acesso" ou tente de novo em alguns minutos.';
+    const roteiro = ["recusa", "recusa", "nao", "recusa", "recusa"];
+    const vistas: boolean[] = [];
+    confirmarSemLogin.mockImplementation(async () => {
+      vistas.push(screen.queryByText(frase) !== null);
+      const passo = roteiro[confirmarSemLogin.mock.calls.length - 1];
+      if (passo === "recusa") throw erroDoServidor("MuitasTentativas", 429);
+      return { confirmada: passo === undefined };
+    });
+    abrir({ conferirACada: 20, demora: 60_000 });
+    expect(await screen.findByRole("heading", { name: "Assinatura confirmada." })).toBeTruthy();
+    expect(confirmarSemLogin.mock.calls.length).toBeGreaterThanOrEqual(6);
+    expect(vistas.some(Boolean)).toBe(false);
+  });
+
   it("valeu: o título, o e-mail repetido, o campo da senha e o contato do suporte", async () => {
     comTentativa();
     abrir();

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { DuracaoDoDesconto, Plano, TELA_DE_CONCLUIDO, type DescontoDoCodigo } from "@jilson/core";
 import { confirmarSemLogin, getPlanosDaAssinatura, getPlanosSemLogin, getPreviaDaAssinatura, getPreviaSemLogin, getSituacaoDaAssinatura } from "@/lib/api";
@@ -53,17 +54,57 @@ export function usePlanosDaAssinatura(ligado: boolean) {
   return useQuery({ queryKey: ["billing", "planos"], queryFn: getPlanosDaAssinatura, enabled: ligado });
 }
 
+/** Quantas recusas SEGUIDAS da pergunta "já valeu?" até a tela dizer que não conseguiu confirmar agora (P108). */
+export const RECUSAS_ATE_O_AVISO = 3;
+
+/**
+ * O `Retry-After` (em segundos) de uma recusa do servidor — o limite de tentativas o manda com o 429 —, ou
+ * nada. Lido pela forma da resposta, sem depender do Axios aqui (como `codigoDaRecusa`). Função pura.
+ */
+export function segundosPedidos(erro: unknown): number | null {
+  if (typeof erro !== "object" || erro === null || !("response" in erro)) return null;
+  // Seguro: a linha acima provou que é um objeto com `response`; o resto é opcional.
+  const cabecalhos = (erro as { response?: { headers?: Record<string, unknown> } }).response?.headers;
+  const valor = cabecalhos?.["retry-after"];
+  const segundos = typeof valor === "string" || typeof valor === "number" ? Number(valor) : NaN;
+  return Number.isFinite(segundos) && segundos > 0 ? segundos : null;
+}
+
+/**
+ * Quanto esperar até a próxima pergunta "já valeu?" (P108 — achado A2 da revisão da etapa 4.7): o intervalo de
+ * sempre; se o servidor recusou pedindo espera (`Retry-After`), a espera dele — perguntar antes só gastaria
+ * mais tentativas do endereço, que outras pessoas no mesmo Wi-Fi dividem. Função pura.
+ */
+export function esperaDaProximaConferencia(erro: unknown, conferirACada: number): number {
+  const segundos = segundosPedidos(erro);
+  return segundos === null ? conferirACada : Math.max(conferirACada, segundos * 1000);
+}
+
 /**
  * "O pagamento já valeu?" para quem assinou SEM CONTA (etapa 4.7, passo 6e2): pergunta a cada
  * `conferirACada` até a resposta ser sim — o aviso da Stripe é que faz a conta nascer. Sem tentativa, nada.
+ * Recusado (P108 — decisão do operador, 29/10/2026), respeita a espera que o servidor pedir e, depois de
+ * `RECUSAS_ATE_O_AVISO` recusas seguidas, diz `naoConfirmouAgora` — a tela mostra a frase dele; qualquer
+ * resposta do servidor zera a conta. A pergunta continua: quando o pagamento valer, a tela segue.
  */
 export function useConfirmacaoSemLogin(tentativa: string | null, conferirACada = 2000) {
-  return useQuery({
+  const [recusasSeguidas, setRecusasSeguidas] = useState(0);
+  const consulta = useQuery({
     queryKey: ["billing", "visitante", "confirmacao", tentativa],
-    queryFn: () => confirmarSemLogin(tentativa ?? ""),
+    queryFn: async () => {
+      try {
+        const resposta = await confirmarSemLogin(tentativa ?? "");
+        setRecusasSeguidas(0);
+        return resposta;
+      } catch (erro) {
+        setRecusasSeguidas((n) => n + 1);
+        throw erro;
+      }
+    },
     enabled: tentativa !== null,
-    refetchInterval: (consulta) => (consulta.state.data?.confirmada ? false : conferirACada),
+    refetchInterval: (q) => (q.state.data?.confirmada ? false : esperaDaProximaConferencia(q.state.error, conferirACada)),
   });
+  return { confirmada: consulta.data?.confirmada === true, naoConfirmouAgora: recusasSeguidas >= RECUSAS_ATE_O_AVISO };
 }
 
 /** Os dois planos para o VISITANTE, sem login (a tela pública de assinar — etapa 4.7, passo 6c). */

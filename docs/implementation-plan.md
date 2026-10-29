@@ -5460,7 +5460,13 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             - **P2 (c) + A7** — o job de 5 min podia morrer no meio, e a marca tomada sem envio nunca saía
               → **corrigidos** (`f059df9`: o prazo da rodada; a marca pendente, retomada depois de 15 min).
             - **A2** — a tela de depois do pagamento insiste a cada 2 s mesmo com 429/5xx, sem frase
-              própria → **P108** (precisa do texto do operador).
+              própria → **P108** → **corrigido em 29/10/2026** (frase sugerida, aprovada pelo operador no mesmo
+              dia: *"Não conseguimos confirmar agora. Seu pagamento não se perde: entre com "Receber código de
+              acesso" ou tente de novo em alguns minutos."* — `app.assinar.naoConfirmouAgora`): a pergunta
+              respeita o `Retry-After` do servidor (`esperaDaProximaConferencia`) e, depois de 3 recusas
+              SEGUIDAS (`RECUSAS_ATE_O_AVISO`), a frase entra no lugar do "demorando"; qualquer resposta zera a
+              conta, e a pergunta continua. Testes: `assinar.test.ts` (+2), `AssinaturaConcluidaSemLoginPage.test.tsx`
+              (+2). **Mutação: 3 de 3 reprovaram.**
             - **A3** — o CPF ia para a ficha da Stripe ANTES de o laço descobrir a tentativa paga no meio
               (os dois checkouts) → **corrigido** (reordenado; teste nos dois caminhos).
             - **A4** — documentos velhos: a seção *Limite de tentativas* do `billing.md` (contagem em
@@ -5886,7 +5892,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             de novo é só depois de acabar (decisão (a)) — "Reativar assinatura" vem no "terminou" de sempre,
             que a pré-paga recebe quando a Stripe a encerra no fim do período (testado). **O texto é RASCUNHO
             do agente** (`app.email.prePagoTerminando`; a prévia em `npm --workspace server run email:previa`)
-            — revisão dele: **P111**. **Testes:** `avisos-da-assinatura.test.ts` (+3: a rodada com a pré-paga a
+            — revisão dele: **P111** — *aprovado como está pelo operador em 29/10/2026*. **Testes:** `avisos-da-assinatura.test.ts` (+3: a rodada com a pré-paga a
             2 dias, a de 10 dias e a que terminou; o Pix devolvido; a regra pura). **Mutação: 5 de 5
             reprovaram.** Gates: typecheck, lint, build; site e servidor como o CI. *Docs check (context7):
             not triggered.*

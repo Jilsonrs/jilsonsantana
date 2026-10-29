@@ -32,7 +32,7 @@ export function AssinaturaConcluidaSemLoginPage({ conferirACada = 2000, demora =
   }, [demora]);
 
   if (!guardada) return null;
-  const confirmada = confirmacao.data?.confirmada === true;
+  const { confirmada } = confirmacao;
   const [antes, depois = ""] = t.emailErrado.split("{contato}");
   return (
     <div className="max-w-2xl space-y-6">
@@ -52,7 +52,8 @@ export function AssinaturaConcluidaSemLoginPage({ conferirACada = 2000, demora =
       ) : (
         <div className="space-y-3" aria-live="polite">
           <h1 className="text-2xl font-semibold text-foreground">{t.confirmando}</h1>
-          {demorou && <p className="text-muted-foreground">{t.demorando}</p>}
+          {/* O servidor recusou a pergunta algumas vezes seguidas (P108): a frase do operador no lugar do "demorando". */}
+          {confirmacao.naoConfirmouAgora ? <p className="text-muted-foreground">{t.naoConfirmouAgora}</p> : demorou && <p className="text-muted-foreground">{t.demorando}</p>}
         </div>
       )}
       {/* Quem pagou com Pix e fechou a janela do QR sem pagar (etapa 4.9): o botão enquanto o pagamento
