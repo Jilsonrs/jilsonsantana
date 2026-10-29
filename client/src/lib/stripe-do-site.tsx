@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js/pure";
-import type { Stripe, StripeElementLocale, StripeElementsOptionsMode, StripeError } from "@stripe/stripe-js";
+import type { Stripe, StripeConstructorOptions, StripeElementLocale, StripeElementsOptionsMode, StripeError } from "@stripe/stripe-js";
 
 // A NOSSA FRONTEIRA COM O STRIPE.JS (Fase 4, etapa 4.2). Só este arquivo importa `@stripe/*` no
 // site; as telas usam o que sai daqui, e os testes simulam ESTE módulo (nunca o da Stripe).
@@ -14,22 +14,29 @@ import type { Stripe, StripeElementLocale, StripeElementsOptionsMode, StripeErro
 //
 // `/pure`: o script da Stripe só é baixado quando a tela de assinar abre, não em toda página.
 
+/** O idioma do campo do cartão e das janelas da Stripe: a escola é só em português (12/10/2026). */
+const IDIOMA_DO_CAMPO: StripeElementLocale = "pt-BR";
+
+/**
+ * Como o Stripe.js é carregado. O IDIOMA vai aqui também, não só no campo: a janela do QR do Pix
+ * aberta pelo "Mostrar o QR de novo" (`handleNextAction`) não passa pelo campo, e sem isto ela sai
+ * no idioma do NAVEGADOR `[FATO — medido em 29/10/2026, passo 6 da etapa 4.9: num Chrome em inglês,
+ * "Simulate scan", "Copy the code"]`. Sem a ajuda de teste da Stripe (o botão "stripe" no canto da
+ * tela): ela aparece sozinha com as chaves de teste, e a produção fica com chaves de teste até o
+ * lançamento (decisão do operador, 10/10/2026: "não precisamos desse botão").
+ */
+export const OPCOES_DO_STRIPE: StripeConstructorOptions = { locale: IDIOMA_DO_CAMPO, developerTools: { assistant: { enabled: false } } };
+
 const carregadas = new Map<string, Promise<Stripe | null>>();
 /** Uma Stripe por chave publicável (carregar de novo a cada desenho recriaria o campo). */
 function stripeDoSite(chavePublicavel: string): Promise<Stripe | null> {
   let stripe = carregadas.get(chavePublicavel);
   if (!stripe) {
-    // Sem a ajuda de teste da Stripe (o botão "stripe" no canto da tela): ela aparece sozinha
-    // com as chaves de teste, e a produção fica com chaves de teste até o lançamento (decisão do
-    // operador, 10/10/2026: "não precisamos desse botão").
-    stripe = loadStripe(chavePublicavel, { developerTools: { assistant: { enabled: false } } });
+    stripe = loadStripe(chavePublicavel, OPCOES_DO_STRIPE);
     carregadas.set(chavePublicavel, stripe);
   }
   return stripe;
 }
-
-/** O idioma do campo do cartão: a escola é só em português (12/10/2026). */
-const IDIOMA_DO_CAMPO: StripeElementLocale = "pt-BR";
 /** A cor da marca (`docs/design.md`); o campo mora numa moldura da Stripe e não herda o CSS do site. */
 const APARENCIA: StripeElementsOptionsMode["appearance"] = { theme: "stripe", variables: { colorPrimary: "#238FE8", borderRadius: "8px" } };
 
@@ -44,23 +51,33 @@ export type PedidoDeCartao = {
   pix?: { configuracao: string } | null;
 };
 
+/**
+ * AS OPÇÕES COM QUE O CAMPO ABRE. Função pura, com teste — as linhas que nenhum teste de tela vê
+ * (as telas simulam este módulo) e que o Stripe.js recusa EM SILÊNCIO, sem erro na tela nem no console:
+ * - `allowedPaymentMethodTypes`: o campo só mostra as formas da lista do servidor.
+ *   `[FATO — medido no navegador, 10/10/2026]` o Stripe.js no ar RECUSA a opção antiga
+ *   (`paymentMethodTypes`: "is no longer supported in this version of Stripe.js") e o campo
+ *   simplesmente não aparece. E os tipos não acusaram porque as opções eram montadas com
+ *   `...espalhar`, que o TypeScript não confere — por isso aqui é tudo escrito por extenso, com o
+ *   tipo: nome de opção errado volta a quebrar a compilação.
+ * - O PIX PRÉ-PAGO (etapa 4.9, passo 2b): um PAGAMENTO SOLTO (`mode: "payment"`), só com o Pix da
+ *   configuração do servidor (context7 /websites/stripe, 28/10/2026: `paymentMethodConfiguration` nas
+ *   opções do Elements com intenção adiada; é a mesma configuração do pagamento que o servidor cria).
+ *   É a configuração, SOZINHA, que garante "nunca cartão aqui": `[FATO — medido no navegador,
+ *   29/10/2026, passo 6]` o Stripe.js RECUSA `paymentMethodConfiguration` junto com
+ *   `allowedPaymentMethodTypes` ("You may only specify one of these parameters: allowedPaymentMethodTypes,
+ *   paymentMethodTypes or paymentMethodConfiguration"), o `react-stripe-js` engole o erro, e o campo
+ *   não aparece. O teste trava a forma; a prova de que abre é no navegador.
+ */
+export function opcoesDoCampo(pedido: PedidoDeCartao): StripeElementsOptionsMode {
+  if (pedido.pix) return { mode: "payment", amount: pedido.centavos, currency: pedido.moeda, paymentMethodConfiguration: pedido.pix.configuracao, locale: IDIOMA_DO_CAMPO, appearance: APARENCIA };
+  if (pedido.centavos > 0) return { mode: "subscription", amount: pedido.centavos, currency: pedido.moeda, allowedPaymentMethodTypes: pedido.formasDePagamento, locale: IDIOMA_DO_CAMPO, appearance: APARENCIA };
+  return { mode: "setup", currency: pedido.moeda, allowedPaymentMethodTypes: pedido.formasDePagamento, locale: IDIOMA_DO_CAMPO, appearance: APARENCIA };
+}
+
 /** Dá o campo do cartão e o `useCartao()` a quem estiver dentro. */
 export function CartaoProvider({ pedido, children }: { pedido: PedidoDeCartao; children: ReactNode }) {
-  // `allowedPaymentMethodTypes`: o campo só mostra as formas da lista do servidor.
-  // `[FATO — medido no navegador, 10/10/2026]` o Stripe.js no ar RECUSA a opção antiga
-  // (`paymentMethodTypes`: "is no longer supported in this version of Stripe.js") e o campo
-  // simplesmente não aparece, sem erro na tela. E os tipos não acusaram porque as opções eram
-  // montadas com `...espalhar`, que o TypeScript não confere — por isso aqui é tudo escrito
-  // por extenso, com o tipo: nome de opção errado volta a quebrar a compilação.
-  // O PIX PRÉ-PAGO (etapa 4.9, passo 2b): um PAGAMENTO SOLTO (`mode: "payment"`), só com o Pix da
-  // configuração do servidor (context7 /websites/stripe, 28/10/2026: `paymentMethodConfiguration` nas
-  // opções do Elements com intenção adiada; é a mesma configuração do pagamento que o servidor cria). O
-  // `allowedPaymentMethodTypes` reforça: nunca cartão aqui — seria uma cobrança avulsa, não assinatura.
-  const opcoes: StripeElementsOptionsMode = pedido.pix
-    ? { mode: "payment", amount: pedido.centavos, currency: pedido.moeda, paymentMethodConfiguration: pedido.pix.configuracao, allowedPaymentMethodTypes: ["pix"], locale: IDIOMA_DO_CAMPO, appearance: APARENCIA }
-    : pedido.centavos > 0
-      ? { mode: "subscription", amount: pedido.centavos, currency: pedido.moeda, allowedPaymentMethodTypes: pedido.formasDePagamento, locale: IDIOMA_DO_CAMPO, appearance: APARENCIA }
-      : { mode: "setup", currency: pedido.moeda, allowedPaymentMethodTypes: pedido.formasDePagamento, locale: IDIOMA_DO_CAMPO, appearance: APARENCIA };
+  const opcoes = opcoesDoCampo(pedido);
   // A `key`: trocar entre "cobra hoje", "só guarda o cartão" e o Pix monta um campo novo.
   return (
     <Elements key={opcoes.mode} stripe={stripeDoSite(pedido.chavePublicavel)} options={opcoes}>

@@ -5747,7 +5747,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             sem a configuração só-Pix · o aviso sem marca · `verificarAviso` sem o pagamento · a rota
             sem a assinatura nova · o id do Pix não lido). Gates: typecheck, lint, build; site e
             servidor como o CI.
-      - [ ] **Passo 2 — Pagar com Pix nas duas telas (rotas + site).** `POST /billing/pix` (login,
+      - [x] **Passo 2 — Pagar com Pix nas duas telas (rotas + site).** *(Fechado em 29/10/2026: a prova no navegador, que ficava para o passo 6, foi feita — ver lá.)* `POST /billing/pix` (login,
             `limiteDeTentativas.cobranca`, `comVaga`, o CPF obrigatório como no cartão) e
             `POST /billing/visitante/pix` (`limiteSemLogin.assinar` — e-mail e endereço —, a ficha e a
             tentativa como hoje, `contarClienteNovo`): respondem `{ estado: "pagar", segredo, tipo: "pix"
@@ -5890,10 +5890,78 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             teste (nasce, avisa 3 dias antes, termina, "terminou"), o reembolso do Pix, o QR vencido;
             no banco de dev; a revisão de segurança (`security-vulnerability-reviewer`); o Pix de
             verdade (R$ 99,90 e o reembolso) é do teste do operador no passo 8 da 4.7.
+            **EM ANDAMENTO (29/10/2026) — a PROVA e as REVISÕES estão FEITAS; as correções saem em partes
+            (um commit cada), e as decisões de produto vão ao operador uma a uma.** *Docs check (context7):*
+            Stripe → `/websites/stripe` → 3 consultas (o Pix de teste ×2 — a doc que vale é a página do Pix
+            lida pelo agente de busca —, o `handleNextAction` e o fechamento da janela do QR).
+            **A prova pelas ROTAS** (roteiro fora do repo, conta descartável, banco de dev, Stripe de teste —
+            tudo apagado no fim, retrato do banco igual ao de antes): logado 28 de 32 (as 4 falhas não eram
+            do produto: o teto de 5 pedidos/15 min por conta, e o campo `paid_out_of_band`, que não existe
+            mais na API `2026-09-30.endive` — a fatura paga por fora aparece em `invoice.payments` como um
+            `payment_record` pago); o QR vencido com conta nova 7 de 7; o visitante 21 de 21 (a conta nasce
+            do Pix, boas-vindas, confirmação, senha, 409 `JaTemConta`); o relógio de teste 16 de 16 — criado
+            33 dias no passado, como na prova 7c da 4.7: o "está acabando" a 2 dias do fim e o "terminou" no
+            fim SAÍRAM DE VERDADE para o operador (com o relógio no presente, o "terminou" só é marcado
+            como consumido: a regra confere o acesso pelo relógio do servidor, e o período pago ainda está
+            no futuro real). **Fatos medidos:** o Pix de teste se simula pelo `billing_details.email`
+            (`succeed_immediately@example.com` paga em segundos; `fill_never@example.com` nunca paga e vence
+            pelo prazo; e-mail com domínio qualquer paga sozinho em ~3 min); `expires_after_seconds` mínimo
+            é 60; re-confirmar um pagamento em `requires_action` dá um QR novo; o vencido volta a
+            `requires_payment_method` com `payment_intent_payment_attempt_expired`; **o branch `dev` do Neon
+            estava DUAS migrations atrás** (as da 4.9 foram aplicadas na suíte e em produção, nunca no dev —
+            `migrate deploy` em 29/10/2026).
+            **A prova no NAVEGADOR** (Chrome do agente em `localhost:5173`, visitante, Stripe de teste):
+            ao fechar a janela do QR, o `confirmPayment` resolve SEM erro, com o pagamento em
+            `requires_action`, e a tela vai para a de concluído com "Mostrar o QR de novo"; o botão abre a
+            janela (0,6 s; no desktop e no celular, 390×844) e, fechada, o `handleNextAction` resolve sem
+            erro; pago o Pix, a tela de concluído confirma sozinha e esquece o QR. *Uma vez, com o e-mail de
+            teste que paga sozinho, o "QR de novo" não abriu janela (resolveu em 3,6 s); com o `fill_never`
+            abriu 3 de 3 — provável artefato do modo de teste; o teste do operador com Pix real (passo 8 da
+            4.7) inclui fechar o QR e mostrar de novo.*
+            **ACHADOS (a revisão de segurança + a geral, no Fable 5.1, conferidos no código):**
+            (1) **P1 — o endereço de avisos da conta de verdade NÃO recebe `payment_intent.succeeded`**
+            (`billing.md` → os 7 avisos cadastrados): em produção, um Pix pago nunca viraria assinatura,
+            sem alerta — **P112, do operador, antes de qualquer Pix real**; (2) **P1 — o campo do Pix não
+            abria no navegador**: o Stripe.js recusa `paymentMethodConfiguration` junto com
+            `allowedPaymentMethodTypes` e o `react-stripe-js` engole o erro — *corrigido na parte 1*; (3) o
+            quadro do Pix da Stripe tem um campo "E-mail" próprio (o aluno digita duas vezes) — **P113**;
+            (4) **P1 estreito — a janela entre o Pix cair e o aviso chegar**: um clique "sem login" com o
+            e-mail de quem acabou de pagar troca a tentativa da ficha e cria a senha da conta paga pela vítima
+            — *parte 3*: o Pix pago sem assinatura vira "viva" (processado na hora) e a senha fica amarrada à
+            tentativa que PAGOU; (5) **P2 — pagou e ficou sem acesso em silêncio**: se o `invoices.pay` por
+            fora falhar, a reentrega acha a assinatura incompleta pela busca e não a paga — *parte 2*:
+            garantir a fatura paga em todo caminho + alerta; (6) **Pix devolvido pelo painel sem cancelar
+            mantém o acesso** (o gate libera `active` sem olhar a data) — **P114**; (7) **P2 — o QR é
+            reaproveitado por plano, não por preço** — *parte 3*; (8) a janela do "QR de novo" saía no
+            idioma do navegador — *parte 1* (`locale` no Stripe.js); depois de 1 h o botão não faz nada
+            visível — **P115** (frase); (9) menores: o force-sync do admin não enxerga Pix pago sem
+            assinatura (*parte 3*), o valor do Pix não é conferido com o preço (*parte 2*), o Pix guardado
+            na aba sobrevivia ao cartão (*parte 1*), o "outro" Pix pago no meio dá 500 sem alerta (*parte
+            3*), comentário morto em `stripe.ts` (*parte 2*), `pix-pre-pago.test.ts` com uma afirmação que
+            é eco do dublê (*parte 2*), `TEMPO_DA_OPERACAO` abaixo do pior caso (*parte 2*), textos
+            superados no `billing.md` (*parte 1*). O `[FATO]` de `processing`: o Pix é de notificação
+            imediata (`requires_action` → `succeeded` | `requires_payment_method`); `processing` fica fora
+            das listas de propósito.
+            - [x] **Parte 1 — o site (29/10/2026).** `opcoesDoCampo` (função pura, `stripe-do-site.tsx`):
+                  no Pix só a configuração só-Pix, nunca com `allowedPaymentMethodTypes` (teste
+                  `stripe-do-site.test.ts`); `OPCOES_DO_STRIPE` com `locale: "pt-BR"` (a janela do QR);
+                  `pedirAoServidor` esquece o Pix da aba ao pagar por cartão (`AssinarPage.test.tsx`).
+                  **Mutação: 3 de 3 reprovaram.** Docs: o registro acima, P112–P115 em `pendencias.md`, e
+                  os trechos superados do `billing.md`.
+            - [ ] **Parte 2 — o servidor, a criação da pré-paga:** a fatura garantida paga em todo caminho
+                  (achado 5) + alerta quando o Pix pago termina sem acesso; o valor conferido com o preço;
+                  `TEMPO_DA_OPERACAO`; o comentário morto; o teste eco.
+            - [ ] **Parte 3 — o servidor, o Pix pago sem assinatura:** detectar e processar na hora (achados
+                  4, 7 e 9: checkout por Pix e por cartão, logado e visitante; o force-sync do admin; o
+                  reaproveitamento só com o mesmo preço; o "outro" pago no meio com alerta) e a tentativa
+                  que pagou gravada na ficha ao nascer a conta.
+            - [ ] **Decisões do operador:** P112 (o aviso no painel), P113 (o e-mail no quadro), P114 (a
+                  devolução pelo painel), P115 (a frase do QR vencido).
       **Fora da 4.9:** somar tempo pagando antes de acabar (decisão (a)) · código promocional no Pix
       (decisão (b)) · Pix na troca de plano · o Pix Automático (quando a Stripe liberar para o Brasil) ·
       **Apple Pay e Google Pay** (decisão do operador, 28/10/2026). **Trazido da 4.2 (10/10/2026):** o Pix é um item a mais na
-      lista de formas de pagamento do servidor (na 4.2, só cartão), sem refazer a tela. A home já
+      lista de formas de pagamento do servidor (na 4.2, só cartão), sem refazer a tela *(superado em
+      28/10/2026: o Pix é pagamento solto, fora de `FORMAS_DE_PAGAMENTO`, que segue só `card`)*. A home já
       diz "Pagamento no cartão ou no Pix": esta etapa fecha antes do lançamento.
       **Trazido da revisão de segurança da 4.2 (10/10/2026):** com o Pix o pagamento chega minutos
       depois do pedido — conferir na área restrita que trocar de plano com um Pix pendente

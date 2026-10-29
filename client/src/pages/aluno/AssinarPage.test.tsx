@@ -38,7 +38,7 @@ vi.mock("@/lib/stripe-do-site", () => ({
   useCartao: () => ({ validar: () => validar(), confirmar: (segredo: string, tipo: string, voltarPara: string) => confirmar(segredo, tipo, voltarPara) }),
 }));
 
-import { esquecerPix, lerPix } from "@/lib/pix-pendente";
+import { esquecerPix, guardarPix, lerPix } from "@/lib/pix-pendente";
 import { AssinarPage } from "./AssinarPage";
 
 // ASSINAR COM A CONTA LOGADA (Fase 4, etapa 4.2). O que estes testes protegem:
@@ -720,6 +720,20 @@ describe("AssinarPage — o Pix pré-pago", () => {
     assinar();
     expect(await screen.findByText("tela de concluído")).toBeTruthy();
     expect(pagarComPix).not.toHaveBeenCalled();
+    expect(lerPix()).toBeNull();
+  });
+
+  it("quem escolheu o Pix, desistiu e pagou por CARTÃO: o Pix guardado na aba é esquecido ANTES de confirmar (a tela de concluído não oferece um QR morto)", async () => {
+    getPlanosDaAssinatura.mockResolvedValue(COM_PIX);
+    guardarPix({ segredo: "pi_antigo_secret_x", chavePublicavel: "pk_test_da_tela" });
+    let guardadoAoConfirmar: unknown = "não lido";
+    confirmar.mockImplementation(async () => ((guardadoAoConfirmar = lerPix()), { ok: true }));
+    abrir();
+    await screen.findByRole("radio", { name: /^Cartão/ });
+    assinar();
+    expect(await screen.findByText("tela de concluído")).toBeTruthy();
+    expect(criarAssinatura).toHaveBeenCalled();
+    expect(guardadoAoConfirmar).toBeNull();
     expect(lerPix()).toBeNull();
   });
 

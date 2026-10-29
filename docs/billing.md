@@ -71,7 +71,7 @@ reconhece a cobrança.*
 
 ## Formas de pagamento: cartão E Pix *(decisão do operador, set/2026)*
 
-A escola aceita **cartão e Pix**, e o Pix é **recorrente**: o aluno autoriza uma vez no
+*(Superado em 28/10/2026 — fica como história; a correção vem logo abaixo.)* A escola aceita **cartão e Pix**, e o Pix é **recorrente**: o aluno autoriza uma vez no
 aplicativo do banco (Pix Automático) e a Stripe cobra sozinha a cada período.
 `[FATO — documentação da Stripe consultada em set/2026: "You can now create subscriptions that
 use Pix as the payment method for recurring billing for customers in Brazil", via mandate options
@@ -152,16 +152,24 @@ no PaymentIntent/SetupIntent/Checkout Session; suporte anunciado em 22/abr/2026.
 > botão **"Mostrar o QR de novo"** para quem fechou a janela sem pagar (o segredo do Pix fica só na aba,
 > até o servidor confirmar). **A tela nunca pede um QR novo sozinha**: só o clique em "Pagar com Pix" pede
 > — e o servidor devolve o MESMO QR enquanto ele estiver à espera.
+> **Medido no navegador em 29/10/2026 (passo 6):** o quadro do Pix da Stripe tem um campo "E-mail" próprio
+> (vazio, a validação barra com "Endereço de e-mail incompleto." — decisão pendente, P113); fechar a janela do
+> QR resolve o `confirmPayment` SEM erro, com o pagamento à espera, e a tela vai para a de concluído; o
+> "Mostrar o QR de novo" abre a janela (desktop e celular) e, fechada, o `handleNextAction` resolve sem erro;
+> o idioma da janela é o do Stripe.js (`locale` em `OPCOES_DO_STRIPE`), não o do campo.
 >
 > **A PRÉ-PAGA NAS TELAS DO ALUNO E NO REEMBOLSO (passo 3 — no código desde 28/10/2026; texto do
 > operador do mesmo dia):** em Faturamento e Assinatura, a pré-paga diz **"Seu acesso vai até {data}. Para
 > continuar, é só pagar de novo quando acabar."** e, em *Forma de pagamento*, **"Pix"** — sem parar a
 > renovação, manter, mudar de plano nem trocar o cartão (não há renovação nem cartão; o servidor recusa
-> essas operações com 409 `PrePago`). **O reembolso dos 7 dias devolve o Pix** (a primeira fatura da
+> trocar o cartão, cancelar e manter com 409 `PrePago`, e mudar de plano com 409 `TrocaIndisponivel`, como
+> toda assinatura que não renova). **O reembolso dos 7 dias devolve o Pix** (a primeira fatura da
 > pré-paga foi paga por fora: o dinheiro está no pagamento Pix, e é ele que volta — para a conta de quem
 > pagou, pela Stripe), e encerra a assinatura na hora. **O período pago da pré-paga é o do Pix:** devolvido
 > por inteiro — pelo reembolso ou pelo painel —, ele deixa de contar, e o aviso de devolução acha a
-> assinatura pela coluna do espelho (o Pix não tem fatura). Quando o período acaba, a Stripe encerra a
+> assinatura pela coluna do espelho (o Pix não tem fatura). *Ressalva (achado 6 do passo 6, 29/10/2026):
+> devolvido pelo painel SEM cancelar a assinatura, só a data do espelho recua — a assinatura segue `active`
+> e o gate libera `active` sem olhar a data; decisão pendente, P114.* Quando o período acaba, a Stripe encerra a
 > assinatura e sai o e-mail "terminou — reative" de sempre.
 >
 > **A RÉGUA DO PRÉ-PAGO (passo 4 — no código desde 28/10/2026; decisão do operador do mesmo dia: "3 dias
@@ -171,7 +179,7 @@ no PaymentIntent/SetupIntent/Checkout Session; suporte anunciado em 22/abr/2026.
 > "terminou", que a pré-paga recebe quando a Stripe a encerra no fim do período). O Pix devolvido antes
 > disso não recebe nada. O texto é rascunho do agente (P111).
 
-**O que isso acrescenta à Fase 4:** o Payment Element precisa das opções de mandato, e a régua de
+*(Superado em 28/10/2026: sem mandato, o Pix é pré-pago — ver o quadro acima.)* **O que isso acrescenta à Fase 4:** o Payment Element precisa das opções de mandato, e a régua de
 inadimplência ganha um caminho próprio — **falha de Pix não se retenta como cartão** (não existe
 "tentar o mesmo cartão de novo"). *Gatilho de reabertura: se o Pix recorrente exigir mais
 manutenção do que traz em conversão, ele sai e fica só o cartão.*
@@ -535,7 +543,12 @@ gera mais aviso, o acesso ficaria liberado para sempre. *(Achado P1 da revisão 
   ROTINA do aviso, que o checkout e o admin também chamam quando o aviso atrasa ou se perde — ver
   "Sincronizar e perder o acesso", abaixo. Continua valendo: nada no navegador libera acesso.)*
 - **As formas de pagamento são UMA lista no servidor** (`FORMAS_DE_PAGAMENTO`, hoje só `card`); o
-  site abre o campo de pagamento com ela. O Pix (etapa 4.9) é um item a mais.
+  site abre o campo de pagamento com ela. **O Pix NÃO entra nela** (etapa 4.9, 28/10/2026): é pagamento
+  solto, e o campo abre com a configuração só-Pix (`paymentMethodConfiguration`), **sozinha** —
+  `[FATO — medido no navegador, 29/10/2026, passo 6]` o Stripe.js recusa a configuração junto com
+  `allowedPaymentMethodTypes` ("You may only specify one of these parameters") e o campo não aparece,
+  sem erro na tela nem no console; os testes de tela não veem (simulam o módulo). Corrigido no mesmo dia;
+  `stripe-do-site.test.ts` trava a forma.
 - **No site, só `client/src/lib/stripe-do-site.tsx` importa `@stripe/*`**; os testes simulam esse
   arquivo, nunca a biblioteca.
 
@@ -1632,7 +1645,7 @@ de uma operadora de celular, não paga pelo vizinho); **cada rota conta separado
 
 | Grupo | Rotas | Por conta | Por endereço |
 |---|---|---|---|
-| Guardar cartão ou cobrar | `POST` assinatura, cartao, cartao/aplicar, minha-assinatura/plano | 5 a cada 15 min, e 20 por dia | 10 e 40 |
+| Guardar cartão ou cobrar | `POST` assinatura, **pix** *(etapa 4.9, 28/10/2026)*, cartao, cartao/aplicar, minha-assinatura/plano | 5 a cada 15 min, e 20 por dia | 10 e 40 |
 | Outras ações | `POST` previa, minha-assinatura/cancelar, …/manter, …/reembolso, …/plano/desistir | 10 a cada 15 min | 20 |
 | Leituras que vão à Stripe | `GET` planos, minha-assinatura, minha-assinatura/plano | 60 a cada 15 min | 120 |
 
@@ -1643,7 +1656,7 @@ tentativa de outra pessoa:
 
 | Rota (`/billing/visitante/…`) | Por e-mail (com o endereço) | Por endereço |
 |---|---|---|
-| `POST assinatura` | 5 a cada 15 min, e 20 por dia | 10 e 40 |
+| `POST assinatura` e `POST pix` *(etapa 4.9, 28/10/2026 — cada rota conta separado, como com login)* | 5 a cada 15 min, e 20 por dia | 10 e 40 |
 | E-mails novos — cada um, um cliente novo na Stripe | — | **10 por dia** |
 | Conferir código promocional — a prévia E o assinar que traz código, numa contagem só | — | **40 por dia** |
 | `POST previa` | — | 20 a cada 15 min |
