@@ -1,9 +1,9 @@
 import { Prisma } from "./prisma.js";
 import { prisma } from "./prisma.js";
 import { cobrancaAtrasada, temAcessoAtivo } from "./acesso.js";
-import { AssinaturaNaoEncontrada, assinaturasDoCliente, buscarAssinatura, type AssinaturaNaStripe, type AvisoDaStripe, type PagamentoPrePago } from "./stripe.js";
+import { AssinaturaNaoEncontrada, assinaturasDoCliente, buscarAssinatura, buscarPrecos, type AssinaturaNaStripe, type AvisoDaStripe, type PagamentoPrePago } from "./stripe.js";
 import { assinaturaDoPagamento } from "./stripe-reembolso.js";
-import { assinaturaDoPagamentoPrePago, criarAssinaturaPrePaga } from "./stripe-pix.js";
+import { assinaturaDoPagamentoPrePago, criarAssinaturaPrePaga, garantirFaturaPaga } from "./stripe-pix.js";
 import { contaDoPedido, type SemContaDoVisitante } from "./pedido-do-visitante.js";
 
 // O ESPELHO DA ASSINATURA (Fase 4, etapa 4.1 — CLAUDE.md → Membership Gating). A assinatura da
@@ -70,6 +70,13 @@ const TEMPO_DA_TRANSACAO = { maxWait: 10_000, timeout: 30_000 };
  * mesma conta do checkout (`checkout.ts`).
  */
 const TEMPO_DA_OPERACAO = { maxWait: 10_000, timeout: 90_000 };
+/**
+ * O Pix que caiu (`processarPixPrePago`): até 7 idas à Stripe dentro da transação — a busca, os preços,
+ * criar, pagar por fora (e reler a fatura se falhar), a assinatura para o espelho e a cobrança do Pix
+ * (`periodoDevolvido`) —, cada uma com 10 s e uma nova tentativa (`stripe-cliente.ts`): 7 × 20 s = 140 s
+ * no pior caso (achado da revisão geral, 29/10/2026 — os 90 s de antes não cobriam).
+ */
+const TEMPO_DO_PIX = { maxWait: 10_000, timeout: 150_000 };
 
 function eRepetido(erro: unknown): boolean {
   return erro instanceof Prisma.PrismaClientKnownRequestError && erro.code === "P2002";
@@ -192,6 +199,12 @@ export async function processarAviso(aviso: AvisoDaStripe): Promise<Desfecho> {
  * metadados (o aviso que chegar depois disso). O aviso fica marcado na MESMA transação: se algo
  * falhar, nada fica, a rota responde 5xx e a Stripe entrega de novo — e a criação repetida devolve
  * a mesma assinatura.
+ * A assinatura ACHADA (no espelho ou pela busca) tem a primeira fatura GARANTIDA paga por fora antes da
+ * sincronia (achado 5 do passo 6, 29/10/2026): a Stripe pode ter caído entre o criar e o pagar, e a
+ * reentrega sincronizaria uma `incomplete` — o aluno pagou e não entra. E o VALOR do Pix é conferido com
+ * o preço do plano antes de criar (achado 9): um Pix nosso com valor diferente (o preço mudou entre o QR
+ * e o pagamento; o preço saiu de venda) NÃO vira assinatura — fica marcado, com alerta, para gente decidir
+ * (devolver, ou criar à mão): a assinatura cheia por um valor menor seria acesso sem pagar o preço.
  */
 async function processarPixPrePago(aviso: AvisoDaStripe, pagamento: PagamentoPrePago): Promise<Desfecho> {
   const marcar = { id: aviso.id, type: aviso.tipo };
@@ -200,12 +213,23 @@ async function processarPixPrePago(aviso: AvisoDaStripe, pagamento: PagamentoPre
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`pix:${pagamento.id}`}))`;
       if (await tx.stripeEvent.findUnique({ where: { id: aviso.id }, select: { id: true } })) return { resultado: "repetido" };
       const noEspelho = await tx.subscription.findUnique({ where: { pixPaymentIntentId: pagamento.id }, select: { stripeSubscriptionId: true } });
-      const assinaturaId = noEspelho?.stripeSubscriptionId ?? (await assinaturaDoPagamentoPrePago(pagamento.id)) ?? (await criarAssinaturaPrePaga(pagamento));
+      let assinaturaId = noEspelho?.stripeSubscriptionId ?? (await assinaturaDoPagamentoPrePago(pagamento.id));
+      if (assinaturaId) {
+        await garantirFaturaPaga(assinaturaId, pagamento.id);
+      } else {
+        const preco = (await buscarPrecos()).find((p) => p.precoId === pagamento.precoId) ?? null;
+        if (!preco || preco.centavos !== pagamento.centavos) {
+          console.error(`[stripe] aviso ${aviso.id}: o Pix ${pagamento.id} pagou ${pagamento.centavos} centavos e o preço ${pagamento.precoId} ${preco ? `custa ${preco.centavos}` : "não está mais à venda"} — a assinatura pré-paga NÃO foi criada; conferir no painel da Stripe (devolver o Pix, ou criar a assinatura à mão)`);
+          await tx.stripeEvent.create({ data: marcar });
+          return { resultado: "sem-assinatura" };
+        }
+        assinaturaId = await criarAssinaturaPrePaga(pagamento);
+      }
       await travar(tx, assinaturaId);
       const sincronia = await sincronizar(tx, assinaturaId);
       await tx.stripeEvent.create({ data: marcar });
       return sincronia;
-    }, TEMPO_DA_OPERACAO);
+    }, TEMPO_DO_PIX);
   } catch (erro) {
     const motivo = erro instanceof Error ? erro.message : String(erro);
     throw new Error(`[stripe] aviso ${aviso.id} (pagamento pré-pago ${pagamento.id}) falhou: ${motivo}`, { cause: erro });

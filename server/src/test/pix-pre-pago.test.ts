@@ -8,16 +8,24 @@ import type { PedidoDeEmail, Envio } from "../lib/email.js";
 // busca pelos metadados. O aviso, a verificação da assinatura dele, a trava, o espelho, o gate e a
 // conta do visitante rodam de verdade, contra o banco.
 const buscarAssinatura = vi.fn<(id: string) => Promise<AssinaturaNaStripe>>();
+/** Os preços como a Stripe diz: é com eles que o valor do Pix é conferido antes de criar a pré-paga. */
+const PRECOS = [
+  { plano: "mensal", precoId: "price_mensal", centavos: 9990, moeda: "brl" },
+  { plano: "anual", precoId: "price_anual", centavos: 99500, moeda: "brl" },
+] as const;
 vi.mock("../lib/stripe.js", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../lib/stripe.js")>()),
   buscarAssinatura: (id: string) => buscarAssinatura(id),
+  buscarPrecos: async () => PRECOS.map((p) => ({ ...p })),
 }));
 const criarAssinaturaPrePaga = vi.fn<(pagamento: PagamentoPrePago) => Promise<string>>();
 const assinaturaDoPagamentoPrePago = vi.fn<(pagamentoId: string) => Promise<string | null>>();
+const garantirFaturaPaga = vi.fn<(assinaturaId: string, pagamentoId: string) => Promise<{ fatura: string | null; status: string }>>();
 vi.mock("../lib/stripe-pix.js", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../lib/stripe-pix.js")>()),
   criarAssinaturaPrePaga: (pagamento: PagamentoPrePago) => criarAssinaturaPrePaga(pagamento),
   assinaturaDoPagamentoPrePago: (pagamentoId: string) => assinaturaDoPagamentoPrePago(pagamentoId),
+  garantirFaturaPaga: (assinaturaId: string, pagamentoId: string) => garantirFaturaPaga(assinaturaId, pagamentoId),
 }));
 const enviarEmail = vi.fn<(pedido: PedidoDeEmail) => Promise<Envio>>();
 vi.mock("../lib/email.js", async (importOriginal) => ({
@@ -37,7 +45,10 @@ import { temAcessoAtivo } from "../lib/acesso.js";
 //   - a assinatura que já existe na Stripe (a busca pelos metadados) não é criada de novo;
 //   - o visitante: a conta nasce da ficha, como na assinatura por cartão;
 //   - o pagamento que não é nosso, ou veio incompleto, não cria nada;
-//   - a criação que falha deixa o aviso sem marca — a Stripe entrega de novo, e aí nasce uma só.
+//   - a criação que falha deixa o aviso sem marca — a Stripe entrega de novo, e aí nasce uma só;
+//   - a assinatura ACHADA (espelho ou busca) tem a fatura garantida paga antes da sincronia; o valor
+//     do Pix diferente do preço não cria nada (marcado, com alerta); e o Pix pago que termina sem
+//     acesso é alerta (achados 5 e 9 do passo 6, 29/10/2026).
 
 const SEGREDO = "whsec_teste_da_suite_local";
 const S = `${Date.now()}`;
@@ -46,11 +57,11 @@ let n = 0;
 const novoId = (prefixo: string) => `${prefixo}_${S}_${++n}`;
 
 type Aviso = { id: string; type: string; data: { object: Record<string, unknown> } };
-/** O aviso de um Pix que caiu, como a Stripe manda: o pagamento com os NOSSOS metadados. */
+/** O aviso de um Pix que caiu, como a Stripe manda: o pagamento com os NOSSOS metadados, no valor do plano. */
 const pixCaiu = (pi: string, metadata: Record<string, string>, extra: Record<string, unknown> = {}): Aviso => ({
   id: novoId("evt"),
   type: "payment_intent.succeeded",
-  data: { object: { id: pi, object: "payment_intent", amount: 9990, currency: "brl", customer: `cus_${pi}`, livemode: false, metadata, ...extra } },
+  data: { object: { id: pi, object: "payment_intent", amount: metadata.prepago === "anual" ? 99500 : 9990, currency: "brl", customer: `cus_${pi}`, livemode: false, metadata, ...extra } },
 });
 function enviar(aviso: Aviso) {
   const corpo = JSON.stringify({ object: "event", ...aviso }, null, 2);
@@ -99,6 +110,7 @@ beforeEach(() => {
     return criadaDoPix(pagamento);
   });
   assinaturaDoPagamentoPrePago.mockReset().mockResolvedValue(null);
+  garantirFaturaPaga.mockReset().mockResolvedValue({ fatura: "in_teste", status: "paid" });
   enviarEmail.mockReset().mockResolvedValue({ enviado: true, id: "re_teste" });
 });
 
@@ -123,9 +135,11 @@ describe("o Pix pré-pago que caiu — a conta logada", () => {
 
     expect(criarAssinaturaPrePaga).toHaveBeenCalledTimes(1);
     const [pagamento] = criarAssinaturaPrePaga.mock.calls[0]!;
-    expect(pagamento).toMatchObject({ id: pi, plano: "anual", precoId: "price_anual", clienteId: `cus_${pi}`, userId: conta.id, visitante: null, centavos: 9990, livemode: false });
+    expect(pagamento).toMatchObject({ id: pi, plano: "anual", precoId: "price_anual", clienteId: `cus_${pi}`, userId: conta.id, visitante: null, centavos: 99500, livemode: false });
     const espelho = await espelhoDoPix(pi);
     expect(espelho).toMatchObject({ status: "active", ownerUserId: conta.id, pixPaymentIntentId: pi });
+    // O "pago até" é o que a Stripe (de mentira) disse: prova a GRAVAÇÃO no espelho, não o período —
+    // o período de verdade é da Stripe, provado na área restrita (passo 6).
     expect(espelho?.currentPeriodEnd?.getTime()).toBeGreaterThan(Date.now() + 360 * DIA);
     expect(await temAcessoAtivo(conta.id)).toBe(true);
     expect(await prisma.stripeEvent.findUnique({ where: { id: aviso.id } })).not.toBeNull();
@@ -138,6 +152,9 @@ describe("o Pix pré-pago que caiu — a conta logada", () => {
     expect(criarAssinaturaPrePaga).toHaveBeenCalledTimes(1);
     expect(assinaturaDoPagamentoPrePago).toHaveBeenCalledTimes(1);
     expect(await prisma.subscription.count({ where: { ownerUserId: conta.id } })).toBe(1);
+    // A assinatura ACHADA no espelho tem a fatura garantida paga antes da sincronia (a criação já garante a dela).
+    expect(garantirFaturaPaga).toHaveBeenCalledTimes(1);
+    expect(garantirFaturaPaga).toHaveBeenCalledWith(espelho?.stripeSubscriptionId, pi);
   });
 
   it("dois avisos do mesmo Pix AO MESMO TEMPO: uma assinatura só", async () => {
@@ -158,6 +175,65 @@ describe("o Pix pré-pago que caiu — a conta logada", () => {
     expect((await enviar(pixCaiu(pi, { prepago: "mensal", precoId: "price_mensal", userId: conta.id }))).status).toBe(200);
     expect(criarAssinaturaPrePaga).not.toHaveBeenCalled();
     expect((await espelhoDoPix(pi))?.stripeSubscriptionId).toBe(existente);
+    // … e a fatura dela é garantida paga: a Stripe pode ter caído entre o criar e o pagar por fora.
+    expect(garantirFaturaPaga).toHaveBeenCalledWith(existente, pi);
+  });
+
+  it("a assinatura achada pela busca e o pagar por fora que FALHA de novo: 500, o aviso sem marca, nada no espelho", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const conta = await novaConta();
+    const pi = novoId("pi");
+    const existente = criadaDoPix({ id: pi, plano: "mensal", precoId: "price_mensal", clienteId: `cus_${pi}`, livemode: false, centavos: 9990, userId: conta.id, visitante: null });
+    assinaturaDoPagamentoPrePago.mockResolvedValue(existente);
+    garantirFaturaPaga.mockRejectedValueOnce(new Error("[stripe] a fatura da assinatura pré-paga falhou"));
+    const aviso = pixCaiu(pi, { prepago: "mensal", precoId: "price_mensal", userId: conta.id });
+    expect((await enviar(aviso)).status).toBe(500);
+    expect(await prisma.stripeEvent.findUnique({ where: { id: aviso.id } })).toBeNull();
+    expect(await espelhoDoPix(pi)).toBeNull();
+    // A Stripe entrega de novo; desta vez a fatura é paga, e o espelho nasce.
+    expect((await enviar(aviso)).status).toBe(200);
+    expect((await espelhoDoPix(pi))?.status).toBe("active");
+  });
+
+  it("o VALOR do Pix é diferente do preço do plano: nada é criado, o aviso fica marcado (sem reentrega) e sai o alerta", async () => {
+    const alertas = vi.spyOn(console, "error").mockImplementation(() => {});
+    const conta = await novaConta();
+    const pi = novoId("pi");
+    const aviso = pixCaiu(pi, { prepago: "anual", precoId: "price_anual", userId: conta.id }, { amount: 9990 });
+    expect((await enviar(aviso)).status).toBe(200);
+    expect(criarAssinaturaPrePaga).not.toHaveBeenCalled();
+    expect(await espelhoDoPix(pi)).toBeNull();
+    expect(await prisma.stripeEvent.findUnique({ where: { id: aviso.id } })).not.toBeNull();
+    expect(alertas.mock.calls.some(([texto]) => String(texto).includes(pi) && String(texto).includes("NÃO foi criada") && String(texto).includes("custa 99500"))).toBe(true);
+    // O mesmo aviso de novo: repetido, e o alerta não sai duas vezes.
+    alertas.mockClear();
+    expect((await enviar(aviso)).status).toBe(200);
+    expect(alertas).not.toHaveBeenCalled();
+  });
+
+  it("o preço do Pix não está mais à venda (mudou entre o QR e o pagamento): idem, com o motivo", async () => {
+    const alertas = vi.spyOn(console, "error").mockImplementation(() => {});
+    const conta = await novaConta();
+    const pi = novoId("pi");
+    expect((await enviar(pixCaiu(pi, { prepago: "mensal", precoId: "price_velho", userId: conta.id }))).status).toBe(200);
+    expect(criarAssinaturaPrePaga).not.toHaveBeenCalled();
+    expect(alertas.mock.calls.some(([texto]) => String(texto).includes(pi) && String(texto).includes("não está mais à venda"))).toBe(true);
+  });
+
+  it("o Pix virou assinatura, mas ela NÃO dá acesso (incompleta — a fatura não pôde ser paga): o espelho grava, e sai o alerta de pagante trancado", async () => {
+    const alertas = vi.spyOn(console, "error").mockImplementation(() => {});
+    const conta = await novaConta();
+    const pi = novoId("pi");
+    criarAssinaturaPrePaga.mockImplementationOnce(async (pagamento) => {
+      const id = criadaDoPix(pagamento);
+      naStripe.set(id, { ...naStripe.get(id)!, status: "incomplete", pagoAte: new Date(Date.now() - DIA) });
+      return id;
+    });
+    const aviso = pixCaiu(pi, { prepago: "mensal", precoId: "price_mensal", userId: conta.id });
+    expect((await enviar(aviso)).status).toBe(200);
+    expect((await espelhoDoPix(pi))?.status).toBe("incomplete");
+    expect(await temAcessoAtivo(conta.id)).toBe(false);
+    expect(alertas.mock.calls.some(([texto]) => String(texto).includes(pi) && String(texto).includes("pagante trancado"))).toBe(true);
   });
 
   it("a criação na Stripe FALHA: 500, o aviso fica sem marca; a Stripe entrega de novo e nasce uma só", async () => {

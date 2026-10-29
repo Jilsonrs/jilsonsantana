@@ -116,7 +116,12 @@ no PaymentIntent/SetupIntent/Checkout Session; suporte anunciado em 22/abr/2026.
 > sempre, `cancel_at_period_end: true`, a primeira fatura **paga por fora** (`paid_out_of_band`; a
 > Stripe a deixa ativa sem cartão, medido) — e grava o espelho com o id do Pix
 > (`Subscription.pixPaymentIntentId`). **Um Pix, uma assinatura:** a trava no id do pagamento, o
-> espelho pela coluna, a chave de idempotência da criação (24 h) e a busca pelos metadados. A conta do
+> espelho pela coluna, a chave de idempotência da criação (na janela de 5 min — `chaveDoPrePago`) e a
+> busca pelos metadados. **Desde 29/10/2026 (passo 6, parte 2):** a assinatura achada pela reentrega tem a
+> primeira fatura GARANTIDA paga por fora (`garantirFaturaPaga`) — sem isto, a Stripe caindo entre o
+> criar e o pagar deixava o aluno pago e trancado —, o VALOR do Pix é conferido com o preço antes de criar
+> (diferente ou fora de venda: nada nasce, aviso marcado, alerta), e o Pix pago que termina sem acesso é
+> alerta `[stripe]` na rota. A conta do
 > visitante nasce como no cartão (os mesmos metadados). O gate, as telas e os e-mails continuam lendo só
 > o espelho; o que muda para o pré-pago nas telas e no reembolso é o passo 3.
 >

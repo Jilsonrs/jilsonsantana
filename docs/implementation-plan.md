@@ -5948,9 +5948,16 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                   `pedirAoServidor` esquece o Pix da aba ao pagar por cartão (`AssinarPage.test.tsx`).
                   **Mutação: 3 de 3 reprovaram.** Docs: o registro acima, P112–P115 em `pendencias.md`, e
                   os trechos superados do `billing.md`.
-            - [ ] **Parte 2 — o servidor, a criação da pré-paga:** a fatura garantida paga em todo caminho
-                  (achado 5) + alerta quando o Pix pago termina sem acesso; o valor conferido com o preço;
-                  `TEMPO_DA_OPERACAO`; o comentário morto; o teste eco.
+            - [x] **Parte 2 — o servidor, a criação da pré-paga (29/10/2026).** `garantirFaturaPaga`
+                  (`stripe-pix.ts`): a primeira fatura paga por fora em TODO caminho — a assinatura achada no
+                  espelho ou pela busca também (achado 5); `chaveDoPrePago`: as chaves de idempotência da
+                  criação e do pagar-por-fora com janela de 5 min (a Stripe repete por 24 h a primeira
+                  resposta, inclusive a falha); o VALOR do Pix conferido com o preço antes de criar — diferente
+                  ou fora de venda, nada nasce, o aviso fica marcado e sai alerta (achado 9); o alerta
+                  `[stripe] … pagante trancado` na rota quando o Pix pago termina sem acesso; `TEMPO_DO_PIX`
+                  (150 s, 7 idas × 20 s); o comentário morto de `FORMAS_DE_PAGAMENTO`; o teste eco anotado.
+                  Testes: `pix-pre-pago.test.ts` (+4), `stripe-pix-rede.test.ts` (+5). **Mutação: 5 de 5
+                  reprovaram.**
             - [ ] **Parte 3 — o servidor, o Pix pago sem assinatura:** detectar e processar na hora (achados
                   4, 7 e 9: checkout por Pix e por cartão, logado e visitante; o force-sync do admin; o
                   reaproveitamento só com o mesmo preço; o "outro" pago no meio com alerta) e a tentativa

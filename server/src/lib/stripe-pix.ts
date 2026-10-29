@@ -26,6 +26,22 @@ import { MARCA_DO_PREPAGO, METADADO_DO_PIX, METADADOS_DO_VISITANTE, metadadosDoV
 /** Quanto tempo o QR do Pix vale: 1 hora (decisão do operador, 28/10/2026, na abertura do passo 2 da etapa 4.9). */
 export const VALIDADE_DO_PIX_EM_SEGUNDOS = 60 * 60;
 
+/** De quantos em quantos minutos a chave de repetição da Stripe muda (como `chaveDaDevolucao`, `stripe-reembolso.ts`). */
+const JANELA_DA_CHAVE = 5 * 60 * 1000;
+
+/**
+ * A chave de repetição da criação e do pagar-por-fora: do Pix e da JANELA de 5 minutos (achado 5 do
+ * passo 6, 29/10/2026). A Stripe guarda por 24 h a primeira resposta de cada chave — INCLUSIVE a falha
+ * (a lição de `chaveDaDevolucao`): com a chave fixa de antes, um 500 da Stripe na criação seria devolvido
+ * de novo a cada reentrega do aviso, o dia inteiro, e o aluno pagaria sem entrar. Com a janela, a reentrega
+ * de segundos depois recebe a MESMA assinatura (a corrida que a chave protege), e a de minutos depois é
+ * um pedido novo — que a busca pelos metadados (`assinaturaDoPagamentoPrePago`) já vê antes de criar.
+ * Função pura.
+ */
+export function chaveDoPrePago(oQue: "criar" | "fatura", pagamentoId: string, agora: Date = new Date()): string {
+  return `prepago-${oQue}:${pagamentoId}:${Math.floor(agora.getTime() / JANELA_DA_CHAVE)}`;
+}
+
 /** O Pix está configurado? Sem a configuração só-Pix, as rotas do Pix respondem 503 — nunca abrem o campo com cartão. */
 export function pixConfigurado(): boolean {
   return Boolean(process.env.STRIPE_PIX_CONFIGURATION);
@@ -95,27 +111,51 @@ export function paraPedidoDeAssinaturaPrePaga(pagamento: PagamentoPrePago): Stri
 }
 
 /**
- * A assinatura pré-paga de um Pix que CAIU: cria (idempotente na Stripe pelo id do Pix, por 24 h) e
- * paga a primeira fatura por fora. Se a fatura já estiver paga (a criação repetida devolveu a mesma
- * assinatura), não paga de novo. Devolve o id da assinatura.
+ * A assinatura pré-paga de um Pix que CAIU: cria (idempotente na Stripe pelo id do Pix, na janela de
+ * `chaveDoPrePago`) e garante a primeira fatura paga por fora. Devolve o id da assinatura.
  */
 export async function criarAssinaturaPrePaga(pagamento: PagamentoPrePago): Promise<string> {
+  let assinatura: Stripe.Subscription;
   try {
-    const assinatura = await stripe().subscriptions.create(paraPedidoDeAssinaturaPrePaga(pagamento), { idempotencyKey: `prepago:${pagamento.id}` });
-    const fatura = assinatura.latest_invoice;
-    const faturaId = typeof fatura === "string" ? fatura : (fatura?.id ?? null);
-    const jaPaga = typeof fatura === "object" && fatura !== null && fatura.status === "paid";
-    if (faturaId && !jaPaga) {
-      try {
-        await stripe().invoices.pay(faturaId, { paid_out_of_band: true }, { idempotencyKey: `prepago-fatura:${pagamento.id}` });
-      } catch (erro) {
-        // Dois ao mesmo tempo: o outro pagou no meio. Só o estado da fatura decide.
-        if ((await stripe().invoices.retrieve(faturaId)).status !== "paid") throw erro;
-      }
-    }
-    return assinatura.id;
+    assinatura = await stripe().subscriptions.create(paraPedidoDeAssinaturaPrePaga(pagamento), { idempotencyKey: chaveDoPrePago("criar", pagamento.id) });
   } catch (erro) {
     throw erroSemMensagem(erro, "a assinatura pré-paga do Pix");
+  }
+  await garantirFaturaPaga(assinatura.id, pagamento.id, assinatura.latest_invoice);
+  return assinatura.id;
+}
+
+/** O que a fatura da pré-paga ficou: `paid`, ou o status que a Stripe diz quando não dá para pagar por fora. */
+export type FaturaDaPrePaga = { fatura: string | null; status: string };
+
+/**
+ * A PRIMEIRA FATURA DA PRÉ-PAGA PAGA POR FORA — em TODO caminho, não só na criação (achado 5 do passo 6,
+ * 29/10/2026): se a Stripe caiu entre o criar e o pagar, a reentrega do aviso acha a assinatura (no
+ * espelho, ou pela busca) e, sem isto, a sincronizaria `incomplete` — o aluno pagou o Pix e não entra, e
+ * em ~23 h a Stripe expira a assinatura. Lê a fatura (a dada, ou a última da assinatura, buscada agora):
+ * `paid` → nada; `open` ou `draft` → paga por fora (idempotente na janela); qualquer outra (anulada,
+ * incobrável) não se paga, e quem chama alerta pela falta de acesso. Se o pagar falhar e a fatura
+ * estiver paga (dois ao mesmo tempo), segue; se não, sobe sem a mensagem crua da Stripe.
+ */
+export async function garantirFaturaPaga(assinaturaId: string, pagamentoId: string, fatura?: Stripe.Invoice | string | null): Promise<FaturaDaPrePaga> {
+  try {
+    let lida: Stripe.Invoice | null = typeof fatura === "object" && fatura !== null ? fatura : null;
+    if (!lida) {
+      const ultima = (await stripe().subscriptions.retrieve(assinaturaId, { expand: ["latest_invoice"] })).latest_invoice;
+      lida = typeof ultima === "object" && ultima !== null ? ultima : null;
+    }
+    if (!lida) return { fatura: null, status: "sem-fatura" };
+    if (lida.status === "paid") return { fatura: lida.id, status: "paid" };
+    if (lida.status !== "open" && lida.status !== "draft") return { fatura: lida.id, status: lida.status ?? "?" };
+    try {
+      await stripe().invoices.pay(lida.id, { paid_out_of_band: true }, { idempotencyKey: chaveDoPrePago("fatura", pagamentoId) });
+    } catch (erro) {
+      // Dois ao mesmo tempo: o outro pagou no meio. Só o estado da fatura decide.
+      if ((await stripe().invoices.retrieve(lida.id)).status !== "paid") throw erro;
+    }
+    return { fatura: lida.id, status: "paid" };
+  } catch (erro) {
+    throw erroSemMensagem(erro, "a fatura da assinatura pré-paga");
   }
 }
 

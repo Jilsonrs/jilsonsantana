@@ -398,9 +398,10 @@ export async function cancelarIncompleta(id: string): Promise<string> {
   }
 }
 
-// AS FORMAS DE PAGAMENTO DA ASSINATURA — uma lista só, aqui. Nesta etapa, cartão; o Pix (etapa
-// 4.9) é um item a mais, com o mandato. O SITE recebe esta mesma lista (`GET /api/billing/planos`)
-// para abrir o campo de pagamento: as duas pontas nunca discordam.
+// AS FORMAS DE PAGAMENTO DA ASSINATURA — uma lista só, aqui: cartão. O SITE recebe esta mesma lista
+// (`GET /api/billing/planos`) para abrir o campo de pagamento: as duas pontas nunca discordam. O PIX
+// NÃO ENTRA AQUI (etapa 4.9, 28/10/2026): numa conta do Brasil a Stripe recusa `pix` numa assinatura;
+// ele é um pagamento solto (`stripe-pix.ts`), com a configuração só-Pix que `planos.pix` leva ao site.
 export const FORMAS_DE_PAGAMENTO: Stripe.SubscriptionCreateParams.PaymentSettings.PaymentMethodType[] = ["card"];
 
 /**

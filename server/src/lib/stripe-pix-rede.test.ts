@@ -9,7 +9,7 @@ import type { PagamentoPrePago } from "./stripe.js";
 // mensagem crua da Stripe.
 const falsa = {
   paymentIntents: { create: vi.fn(), list: vi.fn(), cancel: vi.fn() },
-  subscriptions: { create: vi.fn(), search: vi.fn() },
+  subscriptions: { create: vi.fn(), search: vi.fn(), retrieve: vi.fn() },
   invoices: { pay: vi.fn(), retrieve: vi.fn() },
 };
 vi.mock("./stripe-cliente.js", async (importOriginal) => ({
@@ -17,7 +17,7 @@ vi.mock("./stripe-cliente.js", async (importOriginal) => ({
   stripe: () => falsa,
 }));
 
-import { assinaturaDoPagamentoPrePago, cancelarPagamentoPix, cancelarPagamentosPixPendentes, criarAssinaturaPrePaga, criarPagamentoPix, pagamentosPixPendentes, paraPedidoDeAssinaturaPrePaga, paraPedidoDePix, pixConfigurado, VALIDADE_DO_PIX_EM_SEGUNDOS } from "./stripe-pix.js";
+import { assinaturaDoPagamentoPrePago, cancelarPagamentoPix, cancelarPagamentosPixPendentes, chaveDoPrePago, criarAssinaturaPrePaga, criarPagamentoPix, garantirFaturaPaga, pagamentosPixPendentes, paraPedidoDeAssinaturaPrePaga, paraPedidoDePix, pixConfigurado, VALIDADE_DO_PIX_EM_SEGUNDOS } from "./stripe-pix.js";
 
 const recusa = () => new Stripe.errors.StripeInvalidRequestError({ message: "mensagem crua da Stripe, com sk_test_abc", type: "invalid_request_error", statusCode: 400 });
 const PAGAMENTO: PagamentoPrePago = { id: "pi_1", plano: "mensal", precoId: "price_mensal", clienteId: "cus_1", livemode: false, centavos: 9990, userId: "conta-1", visitante: null };
@@ -95,13 +95,25 @@ describe("o pedido da assinatura pré-paga (função pura)", () => {
   });
 });
 
+describe("a chave de repetição da pré-paga (função pura)", () => {
+  it("é do Pix e da janela de 5 minutos: igual dentro da janela, outra depois — a Stripe repete por 24 h a primeira resposta, inclusive a falha", () => {
+    const t0 = new Date("2026-10-29T10:00:00Z");
+    expect(chaveDoPrePago("criar", "pi_1", t0)).toBe(chaveDoPrePago("criar", "pi_1", new Date("2026-10-29T10:04:59Z")));
+    expect(chaveDoPrePago("criar", "pi_1", t0)).not.toBe(chaveDoPrePago("criar", "pi_1", new Date("2026-10-29T10:05:00Z")));
+    expect(chaveDoPrePago("criar", "pi_1", t0)).not.toBe(chaveDoPrePago("fatura", "pi_1", t0));
+    expect(chaveDoPrePago("criar", "pi_1", t0)).not.toBe(chaveDoPrePago("criar", "pi_2", t0));
+  });
+});
+
 describe("criar a assinatura pré-paga", () => {
-  it("cria com a chave de idempotência do Pix e paga a primeira fatura por fora, também com chave", async () => {
+  it("cria com a chave de idempotência do Pix (na janela) e paga a primeira fatura por fora, também com chave", async () => {
     falsa.subscriptions.create.mockResolvedValue({ id: "sub_1", latest_invoice: { id: "in_1", status: "open" } });
     falsa.invoices.pay.mockResolvedValue({ id: "in_1", status: "paid" });
     expect(await criarAssinaturaPrePaga(PAGAMENTO)).toBe("sub_1");
-    expect(falsa.subscriptions.create).toHaveBeenCalledWith(expect.objectContaining({ cancel_at_period_end: true }), { idempotencyKey: "prepago:pi_1" });
-    expect(falsa.invoices.pay).toHaveBeenCalledWith("in_1", { paid_out_of_band: true }, { idempotencyKey: "prepago-fatura:pi_1" });
+    expect(falsa.subscriptions.create).toHaveBeenCalledWith(expect.objectContaining({ cancel_at_period_end: true }), { idempotencyKey: chaveDoPrePago("criar", "pi_1") });
+    expect(falsa.invoices.pay).toHaveBeenCalledWith("in_1", { paid_out_of_band: true }, { idempotencyKey: chaveDoPrePago("fatura", "pi_1") });
+    // A fatura veio na criação: não vai buscar a assinatura de novo.
+    expect(falsa.subscriptions.retrieve).not.toHaveBeenCalled();
   });
 
   it("a criação repetida devolveu a mesma assinatura, já com a fatura paga: não paga de novo", async () => {
@@ -118,7 +130,46 @@ describe("criar a assinatura pré-paga", () => {
 
     falsa.invoices.retrieve.mockResolvedValueOnce({ id: "in_1", status: "open" });
     const erro = await criarAssinaturaPrePaga(PAGAMENTO).catch((e: unknown) => e);
+    expect(String(erro)).toContain("[stripe] a fatura da assinatura pré-paga falhou");
+    expect(String(erro)).not.toContain("sk_test");
+  });
+
+  it("a criação recusada sobe sem a mensagem crua, e nada é pago", async () => {
+    falsa.subscriptions.create.mockRejectedValue(recusa());
+    const erro = await criarAssinaturaPrePaga(PAGAMENTO).catch((e: unknown) => e);
     expect(String(erro)).toContain("[stripe] a assinatura pré-paga do Pix falhou");
+    expect(String(erro)).not.toContain("sk_test");
+    expect(falsa.invoices.pay).not.toHaveBeenCalled();
+  });
+});
+
+describe("garantir a fatura da pré-paga paga (a assinatura achada pela reentrega)", () => {
+  it("sem a fatura em mãos, busca a assinatura com a última fatura: aberta → paga por fora, com a chave na janela", async () => {
+    falsa.subscriptions.retrieve.mockResolvedValue({ id: "sub_1", latest_invoice: { id: "in_1", status: "open" } });
+    falsa.invoices.pay.mockResolvedValue({ id: "in_1", status: "paid" });
+    expect(await garantirFaturaPaga("sub_1", "pi_1")).toEqual({ fatura: "in_1", status: "paid" });
+    expect(falsa.subscriptions.retrieve).toHaveBeenCalledWith("sub_1", { expand: ["latest_invoice"] });
+    expect(falsa.invoices.pay).toHaveBeenCalledWith("in_1", { paid_out_of_band: true }, { idempotencyKey: chaveDoPrePago("fatura", "pi_1") });
+  });
+
+  it("já paga: nada a fazer; anulada ou incobrável: não se paga, e o status volta para quem chama alertar", async () => {
+    falsa.subscriptions.retrieve.mockResolvedValueOnce({ id: "sub_1", latest_invoice: { id: "in_1", status: "paid" } });
+    expect(await garantirFaturaPaga("sub_1", "pi_1")).toEqual({ fatura: "in_1", status: "paid" });
+    falsa.subscriptions.retrieve.mockResolvedValueOnce({ id: "sub_1", latest_invoice: { id: "in_1", status: "void" } });
+    expect(await garantirFaturaPaga("sub_1", "pi_1")).toEqual({ fatura: "in_1", status: "void" });
+    falsa.subscriptions.retrieve.mockResolvedValueOnce({ id: "sub_1", latest_invoice: null });
+    expect(await garantirFaturaPaga("sub_1", "pi_1")).toEqual({ fatura: null, status: "sem-fatura" });
+    expect(falsa.invoices.pay).not.toHaveBeenCalled();
+  });
+
+  it("o pagar falhou: se a fatura está paga (outro pagou no meio), segue; se não, sobe sem a mensagem crua", async () => {
+    falsa.subscriptions.retrieve.mockResolvedValue({ id: "sub_1", latest_invoice: { id: "in_1", status: "open" } });
+    falsa.invoices.pay.mockRejectedValue(recusa());
+    falsa.invoices.retrieve.mockResolvedValueOnce({ id: "in_1", status: "paid" });
+    expect(await garantirFaturaPaga("sub_1", "pi_1")).toEqual({ fatura: "in_1", status: "paid" });
+    falsa.invoices.retrieve.mockResolvedValueOnce({ id: "in_1", status: "open" });
+    const erro = await garantirFaturaPaga("sub_1", "pi_1").catch((e: unknown) => e);
+    expect(String(erro)).toContain("[stripe] a fatura da assinatura pré-paga falhou");
     expect(String(erro)).not.toContain("sk_test");
   });
 });
