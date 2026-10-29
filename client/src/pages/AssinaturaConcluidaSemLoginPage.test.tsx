@@ -6,15 +6,20 @@ import { renderWithProviders } from "@/test-utils";
 
 const confirmarSemLogin = vi.fn();
 const criarSenhaSemLogin = vi.fn();
+const getPlanosSemLogin = vi.fn();
 vi.mock("@/lib/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/api")>()),
   confirmarSemLogin: (...args: unknown[]) => confirmarSemLogin(...args),
   criarSenhaSemLogin: (...args: unknown[]) => criarSenhaSemLogin(...args),
+  getPlanosSemLogin: (...args: unknown[]) => getPlanosSemLogin(...args),
 }));
 
 // A fronteira com o Stripe.js (o QR do Pix de novo — etapa 4.9) vira dublê; a tela a carrega por `import()`.
-const mostrarQrDeNovo = vi.fn<(chavePublicavel: string, segredo: string) => Promise<boolean>>();
-vi.mock("@/lib/stripe-do-site", () => ({ mostrarQrDeNovo: (chavePublicavel: string, segredo: string) => mostrarQrDeNovo(chavePublicavel, segredo) }));
+// `precosDeAgora`: o que a tela entrega para o Stripe.js perguntar, só se o QR venceu (achado 8 da segunda revisão do passo 6).
+type PrecosDeAgora = () => Promise<number[]>;
+const mostrarQrDeNovo = vi.fn<(chavePublicavel: string, segredo: string, email: string | undefined, precosDeAgora: PrecosDeAgora) => Promise<"aberto" | "pago" | "falhou">>();
+vi.mock("@/lib/stripe-do-site", () => ({ mostrarQrDeNovo: (chavePublicavel: string, segredo: string, email: string | undefined, precosDeAgora: PrecosDeAgora) => mostrarQrDeNovo(chavePublicavel, segredo, email, precosDeAgora) }));
+const PLANOS_DE_AGORA = { chavePublicavel: "pk_test_da_tela", planos: [{ plano: "mensal", centavos: 9990, moeda: "brl" }, { plano: "anual", centavos: 99500, moeda: "brl" }], formasDePagamento: ["card"] };
 
 import { navegador } from "@/lib/versao";
 import { esquecerPix, guardarPix, lerPix } from "@/lib/pix-pendente";
@@ -40,7 +45,8 @@ beforeEach(() => {
   confirmarSemLogin.mockReset().mockResolvedValue({ confirmada: true });
   criarSenhaSemLogin.mockReset().mockResolvedValue({ entrou: true });
   ir = vi.spyOn(navegador, "ir").mockImplementation(() => {});
-  mostrarQrDeNovo.mockReset().mockResolvedValue(true);
+  mostrarQrDeNovo.mockReset().mockResolvedValue("aberto");
+  getPlanosSemLogin.mockReset().mockResolvedValue(PLANOS_DE_AGORA);
   esquecerTentativa();
   esquecerPix();
 });
@@ -69,6 +75,54 @@ describe("depois do pagamento, sem conta — a confirmação", () => {
     await waitFor(() => expect(confirmarSemLogin.mock.calls.length).toBeGreaterThan(1));
     expect(confirmarSemLogin).toHaveBeenCalledWith(TENTATIVA);
     expect(screen.queryByLabelText("Crie uma senha")).toBeNull();
+  });
+
+  it("o servidor recusou a pergunta 3 vezes seguidas (P108): a frase do operador no lugar do demorando — e a pergunta continua; valeu, a tela segue", async () => {
+    comTentativa();
+    const frase = 'Não conseguimos confirmar agora. Seu pagamento não se perde: entre com "Receber código de acesso" ou tente de novo em alguns minutos.';
+    // As 3 primeiras perguntas são recusadas (o limite de tentativas); depois, "ainda não" — até valer.
+    let valeu = false;
+    confirmarSemLogin.mockImplementation(async () => {
+      if (confirmarSemLogin.mock.calls.length <= 3) throw erroDoServidor("MuitasTentativas", 429);
+      return { confirmada: valeu };
+    });
+    abrir({ conferirACada: 20, demora: 60_000 });
+    expect(await screen.findByText(frase)).toBeTruthy();
+    expect(screen.queryByText("Está demorando mais que o normal. Seu pagamento não se perde: esta página continua conferindo.")).toBeNull();
+    // A próxima resposta (não valeu ainda) zera a conta: a frase sai.
+    await waitFor(() => expect(screen.queryByText(frase)).toBeNull());
+    valeu = true;
+    expect(await screen.findByRole("heading", { name: "Assinatura confirmada." })).toBeTruthy();
+  });
+
+  it("a recusa que PEDE ESPERA (Retry-After): a frase na hora, e a próxima pergunta só depois da espera", async () => {
+    comTentativa();
+    const frase = 'Não conseguimos confirmar agora. Seu pagamento não se perde: entre com "Receber código de acesso" ou tente de novo em alguns minutos.';
+    confirmarSemLogin.mockRejectedValue(
+      new AxiosError("erro", "ERR_BAD_REQUEST", undefined, undefined, { status: 429, statusText: "", headers: { "retry-after": "600" }, config: { headers: new AxiosHeaders() }, data: { error: "MuitasTentativas" } }),
+    );
+    abrir({ conferirACada: 20, demora: 60_000 });
+    expect(await screen.findByText(frase)).toBeTruthy();
+    // Com o intervalo de 20 ms, sem respeitar a espera já haveria várias perguntas.
+    await new Promise((pronto) => setTimeout(pronto, 200));
+    expect(confirmarSemLogin).toHaveBeenCalledTimes(1);
+  });
+
+  it("duas recusas, uma resposta, duas recusas: nunca 3 SEGUIDAS — a frase não aparece", async () => {
+    comTentativa();
+    const frase = 'Não conseguimos confirmar agora. Seu pagamento não se perde: entre com "Receber código de acesso" ou tente de novo em alguns minutos.';
+    const roteiro = ["recusa", "recusa", "nao", "recusa", "recusa"];
+    const vistas: boolean[] = [];
+    confirmarSemLogin.mockImplementation(async () => {
+      vistas.push(screen.queryByText(frase) !== null);
+      const passo = roteiro[confirmarSemLogin.mock.calls.length - 1];
+      if (passo === "recusa") throw erroDoServidor("MuitasTentativas", 429);
+      return { confirmada: passo === undefined };
+    });
+    abrir({ conferirACada: 20, demora: 60_000 });
+    expect(await screen.findByRole("heading", { name: "Assinatura confirmada." })).toBeTruthy();
+    expect(confirmarSemLogin.mock.calls.length).toBeGreaterThanOrEqual(6);
+    expect(vistas.some(Boolean)).toBe(false);
   });
 
   it("valeu: o título, o e-mail repetido, o campo da senha e o contato do suporte", async () => {
@@ -162,16 +216,31 @@ describe("depois do pagamento, sem conta — o QR do Pix de novo", () => {
 
   it("com um Pix guardado: o botão enquanto o pagamento não vale; o clique abre o QR com o que foi guardado; valeu, o botão some, o Pix é esquecido e a senha aparece", async () => {
     comTentativa();
-    guardarPix({ segredo: "pi_pix_secret_x", chavePublicavel: "pk_test_da_tela" });
+    guardarPix({ segredo: "pi_pix_secret_x", chavePublicavel: "pk_test_da_tela", email: "visitante@exemplo.com" });
     confirmarSemLogin.mockResolvedValue({ confirmada: false });
     abrir({ conferirACada: 20 });
     fireEvent.click(await screen.findByRole("button", { name: "Mostrar o QR de novo" }));
-    await waitFor(() => expect(mostrarQrDeNovo).toHaveBeenCalledWith("pk_test_da_tela", "pi_pix_secret_x"));
+    await waitFor(() => expect(mostrarQrDeNovo).toHaveBeenCalledWith("pk_test_da_tela", "pi_pix_secret_x", "visitante@exemplo.com", expect.any(Function)));
     expect(lerPix()).not.toBeNull();
 
     confirmarSemLogin.mockResolvedValue({ confirmada: true });
     expect(await screen.findByLabelText("Crie uma senha")).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Mostrar o QR de novo" })).toBeNull();
     expect(lerPix()).toBeNull();
+  });
+
+  // O QR VENCIDO só ganha outro se o valor ainda for o preço de um plano (achado 8): a tela entrega os preços de
+  // AGORA, pela rota do visitante — e só os lê quando o Stripe.js pergunta (o QR venceu).
+  it("os preços de agora vêm da rota do visitante, e só quando o Stripe.js pergunta (o QR venceu — achado 8)", async () => {
+    comTentativa();
+    guardarPix({ segredo: "pi_pix_secret_x", chavePublicavel: "pk_test_da_tela", email: "visitante@exemplo.com" });
+    confirmarSemLogin.mockResolvedValue({ confirmada: false });
+    abrir({ conferirACada: 20 });
+    fireEvent.click(await screen.findByRole("button", { name: "Mostrar o QR de novo" }));
+    await waitFor(() => expect(mostrarQrDeNovo).toHaveBeenCalledTimes(1));
+    expect(getPlanosSemLogin).not.toHaveBeenCalled();
+    const precosDeAgora = mostrarQrDeNovo.mock.calls[0]![3];
+    expect(await precosDeAgora()).toEqual([9990, 99500]);
+    expect(getPlanosSemLogin).toHaveBeenCalledTimes(1);
   });
 });

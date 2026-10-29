@@ -27,7 +27,7 @@ vi.mock("@/lib/api", async (importOriginal) => ({
 // A NOSSA fronteira com o Stripe.js vira dublê (nunca `@stripe/*`): o campo é um marcador que
 // mostra com o que foi aberto, e o cartão responde o que o teste mandar.
 const validar = vi.fn<() => Promise<Desfecho>>();
-const confirmar = vi.fn<(segredo: string, tipo: string, voltarPara: string) => Promise<Desfecho>>();
+const confirmar = vi.fn<(segredo: string, tipo: string, voltarPara: string, pagador?: { email: string }) => Promise<Desfecho>>();
 vi.mock("@/lib/stripe-do-site", () => ({
   CartaoProvider: ({ pedido, children }: { pedido: PedidoDeCartao; children: ReactNode }) => (
     <div data-testid="cartao" data-centavos={pedido.centavos} data-moeda={pedido.moeda} data-formas={pedido.formasDePagamento.join(",")} data-chave={pedido.chavePublicavel} data-pix={pedido.pix?.configuracao ?? ""}>
@@ -35,10 +35,10 @@ vi.mock("@/lib/stripe-do-site", () => ({
     </div>
   ),
   CampoDoCartao: () => <div>campo do cartão</div>,
-  useCartao: () => ({ validar: () => validar(), confirmar: (segredo: string, tipo: string, voltarPara: string) => confirmar(segredo, tipo, voltarPara) }),
+  useCartao: () => ({ validar: () => validar(), confirmar: (segredo: string, tipo: string, voltarPara: string, pagador?: { email: string }) => (pagador ? confirmar(segredo, tipo, voltarPara, pagador) : confirmar(segredo, tipo, voltarPara)) }),
 }));
 
-import { esquecerPix, lerPix } from "@/lib/pix-pendente";
+import { esquecerPix, guardarPix, lerPix } from "@/lib/pix-pendente";
 import { AssinarPage } from "./AssinarPage";
 
 // ASSINAR COM A CONTA LOGADA (Fase 4, etapa 4.2). O que estes testes protegem:
@@ -67,7 +67,7 @@ const CEM_PARA_SEMPRE: PreviaDaAssinatura = { centavosHoje: 0, moeda: "brl", des
 const PAGAR: AssinaturaCriada = { estado: "pagar", segredo: "pi_1_secret_x", tipo: "pagamento" };
 // O Pix pré-pago no ar (etapa 4.9): o servidor manda a configuração só-Pix.
 const COM_PIX: PlanosDaAssinatura = { ...PLANOS, pix: { configuracao: "pmc_so_pix" } };
-const PAGAR_PIX: AssinaturaCriada = { estado: "pagar", segredo: "pi_pix_secret_x", tipo: "pix" };
+const PAGAR_PIX: AssinaturaCriada = { estado: "pagar", segredo: "pi_pix_secret_x", tipo: "pix", email: "aluno@teste.local" };
 const erroDoServidor = (codigo: string) => ({ response: { data: { error: codigo } } });
 
 beforeEach(() => {
@@ -436,6 +436,17 @@ describe("AssinarPage — o CPF ou CNPJ, o resumo e o que está incluído", () =
     expect((await screen.findByRole("alert")).textContent).toBe("Aguarde um instante e tente novamente.");
   });
 
+  // O clique duplo, ou o Pix devolvido que o servidor acabou de limpar (409 Ocupada): a frase de esperar —
+  // decisão do operador, 29/10/2026. Sem ela, a frase genérica mandava conferir os dados.
+  it("ocupada (409 Ocupada): a frase de esperar, e o cartão não confirma", async () => {
+    criarAssinatura.mockRejectedValue(erroDoServidor("Ocupada"));
+    abrir();
+    await screen.findByRole("radio", { name: /Mensal/ });
+    assinar();
+    expect((await screen.findByRole("alert")).textContent).toBe("Aguarde um instante e tente novamente.");
+    expect(confirmar).not.toHaveBeenCalled();
+  });
+
   it("o anual no resumo: o plano, o total de hoje e a renovação de uma vez por ano, com o valor", async () => {
     abrir();
     fireEvent.click(await screen.findByRole("radio", { name: /Anual/ }));
@@ -708,9 +719,11 @@ describe("AssinarPage — o Pix pré-pago", () => {
     expect(ordem).toEqual(["confere", "pede", "confirma"]);
     expect(pagarComPix).toHaveBeenCalledWith({ plano: "anual", documento: CPF });
     expect(criarAssinatura).not.toHaveBeenCalled();
-    expect(confirmar).toHaveBeenCalledWith("pi_pix_secret_x", "pix", "/aluno/assinar/concluido");
-    expect(guardadoAntes).toEqual({ segredo: "pi_pix_secret_x", chavePublicavel: "pk_test_da_tela" });
-    expect(JSON.parse(window.sessionStorage.getItem("jilson.assinar.pix") ?? "null")).toEqual({ segredo: "pi_pix_secret_x", chavePublicavel: "pk_test_da_tela" });
+    // O e-mail de quem paga vai na confirmação — o que o SERVIDOR devolveu, nunca a tela (P113).
+    expect(confirmar).toHaveBeenCalledWith("pi_pix_secret_x", "pix", "/aluno/assinar/concluido", { email: "aluno@teste.local" });
+    // Com o e-mail que o servidor devolveu: o "QR de novo" gera outro QR com ele quando o anterior venceu (P115).
+    expect(guardadoAntes).toEqual({ segredo: "pi_pix_secret_x", chavePublicavel: "pk_test_da_tela", email: "aluno@teste.local" });
+    expect(JSON.parse(window.sessionStorage.getItem("jilson.assinar.pix") ?? "null")).toEqual({ segredo: "pi_pix_secret_x", chavePublicavel: "pk_test_da_tela", email: "aluno@teste.local" });
   });
 
   it("no cartão, com o Pix no ar: nada do Pix é pedido nem guardado", async () => {
@@ -720,6 +733,20 @@ describe("AssinarPage — o Pix pré-pago", () => {
     assinar();
     expect(await screen.findByText("tela de concluído")).toBeTruthy();
     expect(pagarComPix).not.toHaveBeenCalled();
+    expect(lerPix()).toBeNull();
+  });
+
+  it("quem escolheu o Pix, desistiu e pagou por CARTÃO: o Pix guardado na aba é esquecido ANTES de confirmar (a tela de concluído não oferece um QR morto)", async () => {
+    getPlanosDaAssinatura.mockResolvedValue(COM_PIX);
+    guardarPix({ segredo: "pi_antigo_secret_x", chavePublicavel: "pk_test_da_tela" });
+    let guardadoAoConfirmar: unknown = "não lido";
+    confirmar.mockImplementation(async () => ((guardadoAoConfirmar = lerPix()), { ok: true }));
+    abrir();
+    await screen.findByRole("radio", { name: /^Cartão/ });
+    assinar();
+    expect(await screen.findByText("tela de concluído")).toBeTruthy();
+    expect(criarAssinatura).toHaveBeenCalled();
+    expect(guardadoAoConfirmar).toBeNull();
     expect(lerPix()).toBeNull();
   });
 
@@ -733,5 +760,23 @@ describe("AssinarPage — o Pix pré-pago", () => {
     expect(await screen.findByText("Você já é assinante.")).toBeTruthy();
     expect(confirmar).not.toHaveBeenCalled();
     expect(lerPix()).toBeNull();
+  });
+
+  // Um Pix desta conta foi pago e está EM CONFERÊNCIA (a segunda revisão de segurança do passo 6 da 4.9): a
+  // frase aprovada pelo operador, por cartão e por Pix — nada de pagar de novo.
+  it("um Pix pago em conferência (409 PixEmConferencia): a frase do operador, por cartão e por Pix, e nada confirma", async () => {
+    const FRASE = "Recebemos o seu Pix e estamos conferindo o pagamento. Já fomos avisados e vamos responder pelo seu e-mail. Se precisar, escreva para suporte@jilsonsantana.com.";
+    getPlanosDaAssinatura.mockResolvedValue(COM_PIX);
+    criarAssinatura.mockRejectedValue(erroDoServidor("PixEmConferencia"));
+    pagarComPix.mockRejectedValue(erroDoServidor("PixEmConferencia"));
+    abrir();
+    await screen.findByRole("radio", { name: /Mensal/ });
+    assinar();
+    expect((await screen.findByRole("alert")).textContent).toBe(FRASE);
+    await escolherPix();
+    assinar("Pagar com Pix");
+    await waitFor(() => expect(pagarComPix).toHaveBeenCalled());
+    expect((await screen.findByRole("alert")).textContent).toBe(FRASE);
+    expect(confirmar).not.toHaveBeenCalled();
   });
 });

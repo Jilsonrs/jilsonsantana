@@ -92,14 +92,26 @@ export type SituacaoDaAssinatura = {
  * cartão, para a cobrança seguinte (nada a pagar hoje, mas o desconto acaba); `pix` é o Pix pré-pago
  * (etapa 4.9): um pagamento solto, e a assinatura nasce quando ele cai.
  */
-export type AssinaturaCriada = { estado: "ativa" } | { estado: "pagar"; segredo: string; tipo: "pagamento" | "cartao" | "pix" };
+export type AssinaturaCriada =
+  | { estado: "ativa" }
+  | {
+      estado: "pagar";
+      segredo: string;
+      tipo: "pagamento" | "cartao" | "pix";
+      /**
+       * No PIX, o e-mail de quem paga (a conta da sessão, ou o do visitante em minúsculas), que o site
+       * entrega à Stripe na confirmação: o quadro do Pix não pede e-mail (decisão do operador, P113,
+       * 29/10/2026), e a Stripe exige o campo escondido na confirmação. Vem do servidor, nunca da tela.
+       */
+      email?: string;
+    };
 
 /**
  * Resposta de `POST /api/billing/visitante/assinatura` — assinar SEM CONTA (etapa 4.7, passo 4). A
  * mesma da conta logada, e mais a `tentativa`: o código desta tentativa, que o site devolve no
  * próximo clique (para seguir com ela) e com que a tela de depois do pagamento pergunta se valeu.
  */
-export type AssinaturaSemLogin = { estado: "ativa"; tentativa: string } | { estado: "pagar"; segredo: string; tipo: "pagamento" | "cartao" | "pix"; tentativa: string };
+export type AssinaturaSemLogin = { estado: "ativa"; tentativa: string } | { estado: "pagar"; segredo: string; tipo: "pagamento" | "cartao" | "pix"; tentativa: string; email?: string };
 
 /**
  * Resposta de `POST /api/billing/visitante/confirmacao`: o pagamento desta tentativa já valeu — a

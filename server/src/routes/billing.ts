@@ -125,6 +125,11 @@ router.post("/billing/assinatura", requireAuth, ...limiteDeTentativas.cobranca, 
     res.status(400).json({ error: "DocumentoInvalido" });
     return;
   }
+  // Um Pix desta conta foi pago e não virou assinatura sozinho: em conferência, nada de cobrar de novo (segunda revisão do passo 6 da 4.9).
+  if (desfecho.resultado === "em-conferencia") {
+    res.status(409).json({ error: "PixEmConferencia" });
+    return;
+  }
   const resposta: AssinaturaCriada = desfecho.resultado === "ativa" ? { estado: "ativa" } : { estado: "pagar", segredo: desfecho.segredo, tipo: desfecho.tipo };
   res.json(resposta);
 });
@@ -169,7 +174,11 @@ router.post("/billing/pix", requireAuth, ...limiteDeTentativas.cobranca, async (
     res.status(400).json({ error: "DocumentoInvalido" });
     return;
   }
-  const resposta: AssinaturaCriada = { estado: "pagar", segredo: desfecho.segredo, tipo: "pix" };
+  if (desfecho.resultado === "em-conferencia") {
+    res.status(409).json({ error: "PixEmConferencia" });
+    return;
+  }
+  const resposta: AssinaturaCriada = { estado: "pagar", segredo: desfecho.segredo, tipo: "pix", email: desfecho.email };
   res.json(resposta);
 });
 

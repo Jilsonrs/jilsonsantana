@@ -24,7 +24,7 @@ vi.mock("@/lib/api", async (importOriginal) => ({
 }));
 // A NOSSA fronteira com o Stripe.js vira dublê (nunca `@stripe/*`), como no teste da tela logada.
 const validar = vi.fn<() => Promise<Desfecho>>();
-const confirmar = vi.fn<(segredo: string, tipo: string, voltarPara: string) => Promise<Desfecho>>();
+const confirmar = vi.fn<(segredo: string, tipo: string, voltarPara: string, pagador?: { email: string }) => Promise<Desfecho>>();
 vi.mock("@/lib/stripe-do-site", () => ({
   CartaoProvider: ({ pedido, children }: { pedido: PedidoDeCartao; children: ReactNode }) => (
     <div data-testid="cartao" data-centavos={pedido.centavos} data-pix={pedido.pix?.configuracao ?? ""}>
@@ -32,7 +32,7 @@ vi.mock("@/lib/stripe-do-site", () => ({
     </div>
   ),
   CampoDoCartao: () => <div>campo do cartão</div>,
-  useCartao: () => ({ validar: () => validar(), confirmar: (segredo: string, tipo: string, voltarPara: string) => confirmar(segredo, tipo, voltarPara) }),
+  useCartao: () => ({ validar: () => validar(), confirmar: (segredo: string, tipo: string, voltarPara: string, pagador?: { email: string }) => (pagador ? confirmar(segredo, tipo, voltarPara, pagador) : confirmar(segredo, tipo, voltarPara)) }),
 }));
 
 import { navegador } from "@/lib/versao";
@@ -63,7 +63,7 @@ const TENTATIVA = "TentativaDoServidor_24bytesAAAAAA";
 const PAGAR: AssinaturaSemLogin = { estado: "pagar", segredo: "pi_1_secret_x", tipo: "pagamento", tentativa: TENTATIVA };
 // O Pix pré-pago no ar (etapa 4.9): o servidor manda a configuração só-Pix.
 const COM_PIX: PlanosDaAssinatura = { ...PLANOS, pix: { configuracao: "pmc_so_pix" } };
-const PAGAR_PIX: AssinaturaSemLogin = { estado: "pagar", segredo: "pi_pix_secret_x", tipo: "pix", tentativa: TENTATIVA };
+const PAGAR_PIX: AssinaturaSemLogin = { estado: "pagar", segredo: "pi_pix_secret_x", tipo: "pix", tentativa: TENTATIVA, email: "visitante@exemplo.com" };
 const EMAIL = "Visitante@Exemplo.com";
 const CPF = "529.982.247-25";
 const erroDoServidor = (codigo: string, status = 409) =>
@@ -245,9 +245,10 @@ describe("a tela pública de assinar — o Pix pré-pago", () => {
     expect(assinarSemLogin).not.toHaveBeenCalled();
     expect(guardados).toEqual([
       { tentativa: TENTATIVA, email: EMAIL },
-      { segredo: "pi_pix_secret_x", chavePublicavel: "pk_test_da_tela" },
+      { segredo: "pi_pix_secret_x", chavePublicavel: "pk_test_da_tela", email: "visitante@exemplo.com" },
     ]);
-    expect(confirmar).toHaveBeenCalledWith("pi_pix_secret_x", "pix", "/assinar/concluido");
+    // O e-mail de quem paga vai na confirmação — o que o SERVIDOR devolveu (em minúsculas), nunca o digitado (P113).
+    expect(confirmar).toHaveBeenCalledWith("pi_pix_secret_x", "pix", "/assinar/concluido", { email: "visitante@exemplo.com" });
     expect(confirmar.mock.calls.flat().join(" ")).not.toContain(TENTATIVA);
   });
 
@@ -270,5 +271,25 @@ describe("a tela pública de assinar — o Pix pré-pago", () => {
     await screen.findByLabelText("Seu e-mail");
     expect(screen.queryByText("Como você quer pagar?")).toBeNull();
     expect(screen.getByTestId("cartao").dataset.pix).toBe("");
+  });
+
+  // Um Pix deste e-mail foi pago e está EM CONFERÊNCIA (a segunda revisão de segurança do passo 6 da 4.9): a
+  // frase aprovada pelo operador, por cartão e por Pix — nada de pagar de novo.
+  it("um Pix pago em conferência (409 PixEmConferencia): a frase do operador, por cartão e por Pix, e nada confirma", async () => {
+    const FRASE = "Recebemos o seu Pix e estamos conferindo o pagamento. Já fomos avisados e vamos responder pelo seu e-mail. Se precisar, escreva para suporte@jilsonsantana.com.";
+    getPlanosSemLogin.mockResolvedValue(COM_PIX);
+    assinarSemLogin.mockRejectedValue(erroDoServidor("PixEmConferencia"));
+    pagarComPixSemLogin.mockRejectedValue(erroDoServidor("PixEmConferencia"));
+    abrir();
+    await screen.findByLabelText("Seu e-mail");
+    preencher();
+    assinar();
+    expect((await screen.findByRole("alert")).textContent).toBe(FRASE);
+    await escolherPix();
+    fireEvent.click(screen.getByRole("button", { name: "Pagar com Pix" }));
+    await waitFor(() => expect(pagarComPixSemLogin).toHaveBeenCalled());
+    expect((await screen.findByRole("alert")).textContent).toBe(FRASE);
+    expect(confirmar).not.toHaveBeenCalled();
+    expect(ir).not.toHaveBeenCalled();
   });
 });

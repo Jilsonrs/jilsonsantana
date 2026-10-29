@@ -2,7 +2,7 @@ import type { AssinaturaCriada, Plano } from "@jilson/core";
 import { assinarSemLogin, criarAssinatura, pagarComPix, pagarComPixSemLogin } from "@/lib/api";
 import type { FormaDePagamento } from "@/lib/assinar";
 import { getStoredAttribution } from "@/lib/attribution";
-import { guardarPix } from "@/lib/pix-pendente";
+import { esquecerPix, guardarPix } from "@/lib/pix-pendente";
 import { guardarTentativa, lerTentativa } from "@/lib/tentativa-de-assinar";
 
 /** O que a tela de assinar manda ao servidor: QUAL plano, o código (só no cartão), o CPF ou CNPJ e, sem login, o e-mail e as novidades. */
@@ -25,11 +25,14 @@ export type PedidoDaTela = {
  * o CPF ou CNPJ e os dados do visitante — nunca preço, cliente nem conta. Sem login, a tentativa desta
  * aba segue quando é do mesmo e-mail, e a que o servidor devolve fica guardada ANTES de o campo
  * confirmar. No Pix, o segredo do pagamento fica guardado para a tela de concluído ("Mostrar o QR de
- * novo"), também antes.
+ * novo"), também antes. Quem segue por CARTÃO esquece o Pix que esta aba guardou antes (achado da
+ * revisão geral, 29/10/2026): o servidor cancela aquele Pix ao criar a assinatura por cartão, e a tela
+ * de concluído mostraria um "Mostrar o QR de novo" que não abre nada.
  */
 export async function pedirAoServidor(pedido: PedidoDaTela): Promise<AssinaturaCriada> {
+  if (pedido.forma === "cartao") esquecerPix();
   const criada = pedido.semLogin ? await pedirSemLogin(pedido) : await pedirLogado(pedido);
-  if (criada.estado === "pagar" && criada.tipo === "pix") guardarPix({ segredo: criada.segredo, chavePublicavel: pedido.chavePublicavel });
+  if (criada.estado === "pagar" && criada.tipo === "pix") guardarPix({ segredo: criada.segredo, chavePublicavel: pedido.chavePublicavel, ...(criada.email ? { email: criada.email } : {}) });
   return criada;
 }
 
@@ -53,5 +56,5 @@ async function pedirSemLogin({ forma, plano, codigo, documento, email, novidades
   };
   const resposta = forma === "pix" ? await pagarComPixSemLogin(corpo) : await assinarSemLogin(codigo ? { ...corpo, codigo } : corpo);
   guardarTentativa({ tentativa: resposta.tentativa, email: email.trim() });
-  return resposta.estado === "pagar" ? { estado: "pagar", segredo: resposta.segredo, tipo: resposta.tipo } : { estado: "ativa" };
+  return resposta.estado === "pagar" ? { estado: "pagar", segredo: resposta.segredo, tipo: resposta.tipo, ...(resposta.email ? { email: resposta.email } : {}) } : { estado: "ativa" };
 }

@@ -398,7 +398,7 @@ export const pt = {
         botao: "Reativar assinatura"
       },
       // O E-MAIL DO PRÉ-PAGO (etapa 4.9, passo 4 — decisão do operador, 28/10/2026: 3 dias antes de acabar):
-      // RASCUNHO do agente, para o operador revisar (P111). Sem botão: pagar de novo é só depois de acabar
+      // Texto APROVADO pelo operador em 29/10/2026 (P111; rascunho do agente). Sem botão: pagar de novo é só depois de acabar
       // (decisão (a) da etapa) — o botão "Reativar assinatura" vem no e-mail de "terminou", que já existe.
       // `{data}` é o dia em que o acesso acaba, no horário de Brasília.
       prePagoTerminando: {
@@ -612,6 +612,8 @@ export const pt = {
       confirmada: "Assinatura confirmada. Bons estudos!",
       comecar: "Começar a estudar",
       demorando: "Está demorando mais que o normal. Seu pagamento não se perde: esta página continua conferindo.",
+      // Quando o servidor recusa a pergunta "já valeu?" algumas vezes seguidas (P108, aprovada pelo operador em 29/10/2026).
+      naoConfirmouAgora: "Não conseguimos confirmar agora. Seu pagamento não se perde: entre com \"Receber código de acesso\" ou tente de novo em alguns minutos.",
       // O PIX PRÉ-PAGO (etapa 4.9, passo 2b). Textos APROVADOS pelo operador em 28/10/2026: a escolha
       // antes do campo de pagamento (só aparece quando o servidor diz que o Pix está no ar), a linha do
       // resumo no lugar da renovação (`{data}` é o fim do período pago, contado de hoje), o botão, e o
@@ -625,6 +627,12 @@ export const pt = {
         acessoAte: "Acesso até {data}",
         botao: "Pagar com Pix",
         qrDeNovo: "Mostrar o QR de novo",
+        // Só quando nem reabrir nem gerar outro QR deu certo (o QR vencido gera outro no mesmo botão) — P115,
+        // decisão do operador, 29/10/2026.
+        qrNaoAbriu: "Não foi possível mostrar o QR. Volte e clique em Pagar com Pix.",
+        // O Pix foi pago e não virou assinatura sozinho (409 `PixEmConferencia` — a segunda revisão de segurança do
+        // passo 6 da etapa 4.9): a pessoa não paga de novo. Texto APROVADO pelo operador em 29/10/2026.
+        emConferencia: "Recebemos o seu Pix e estamos conferindo o pagamento. Já fomos avisados e vamos responder pelo seu e-mail. Se precisar, escreva para suporte@jilsonsantana.com.",
         // Com o Pix não há cartão: a linha do resumo sai sem a parte do cartão (decisão do operador, P110, 28/10/2026).
         pagamentoSeguro: "Pagamento seguro, processado pela Stripe.",
       },

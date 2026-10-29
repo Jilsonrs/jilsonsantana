@@ -87,6 +87,12 @@ export type AssinaturaNaStripe = {
   encerradaSemPagamento?: boolean;
   /** O Pix pré-pago de que ela nasceu (etapa 4.9), pelos metadados; vazio = recorrente. */
   pixPaymentIntentId?: string | null;
+  /**
+   * O resumo da tentativa do VISITANTE que PAGOU (`metadata.tentativa`): quando a conta nasce, a ficha
+   * volta a apontar para ela (achado 4 do passo 6 da 4.9, 29/10/2026) — um clique posterior sem o
+   * código não pode ficar com a conta paga por outra tentativa. Vazio: não veio de um visitante.
+   */
+  resumoDaTentativa?: string | null;
 };
 
 /**
@@ -232,6 +238,12 @@ export type AssinaturaNoCheckout = {
    */
   resumoDaTentativa?: string | null;
   /**
+   * O Pix de que ela nasceu, se é uma PRÉ-PAGA (etapa 4.9): a pré-paga ainda incompleta (o aviso do Pix no
+   * meio, ou a primeira fatura que não pôde ser paga por fora) NUNCA se cancela nem se reaproveita no
+   * checkout — o Pix dela já foi pago (achado 2 da segunda revisão do passo 6, 29/10/2026).
+   */
+  pixPaymentIntentId?: string | null;
+  /**
    * A Stripe CANCELOU o pagamento de hoje desta assinatura (etapa 4.7, passo 4). `[FATO — medido na
    * área restrita, 21/10/2026]` depois de 10 recusas no mesmo pagamento ela o cancela sozinha, e a
    * assinatura continua incompleta, com a fatura aberta e o segredo do pagamento morto: entregar esse
@@ -273,6 +285,7 @@ export function paraAssinaturaNoCheckout(assinatura: Stripe.Subscription): Assin
     segredoDoPagamento: segredo,
     segredoDoCartao: typeof cartao === "object" && cartao !== null ? cartao.client_secret : null,
     resumoDaTentativa: assinatura.metadata[METADADOS_DO_VISITANTE.tentativa] || null,
+    pixPaymentIntentId: assinatura.metadata[METADADO_DO_PIX] || null,
     pagamentoCancelado: pagamentoDeHoje !== null && cancelado,
     numeroFiscalDaFatura: numeroFiscalDoBrasil(typeof fatura === "object" && fatura !== null ? fatura.customer_tax_ids : null),
   };
@@ -398,9 +411,10 @@ export async function cancelarIncompleta(id: string): Promise<string> {
   }
 }
 
-// AS FORMAS DE PAGAMENTO DA ASSINATURA — uma lista só, aqui. Nesta etapa, cartão; o Pix (etapa
-// 4.9) é um item a mais, com o mandato. O SITE recebe esta mesma lista (`GET /api/billing/planos`)
-// para abrir o campo de pagamento: as duas pontas nunca discordam.
+// AS FORMAS DE PAGAMENTO DA ASSINATURA — uma lista só, aqui: cartão. O SITE recebe esta mesma lista
+// (`GET /api/billing/planos`) para abrir o campo de pagamento: as duas pontas nunca discordam. O PIX
+// NÃO ENTRA AQUI (etapa 4.9, 28/10/2026): numa conta do Brasil a Stripe recusa `pix` numa assinatura;
+// ele é um pagamento solto (`stripe-pix.ts`), com a configuração só-Pix que `planos.pix` leva ao site.
 export const FORMAS_DE_PAGAMENTO: Stripe.SubscriptionCreateParams.PaymentSettings.PaymentMethodType[] = ["card"];
 
 /**
@@ -528,14 +542,22 @@ function devolucaoQueFalhou(evento: Stripe.Event): boolean {
  */
 export function pagamentoPrePagoDoAviso(evento: Stripe.Event): PagamentoPrePago | null {
   if (evento.type !== "payment_intent.succeeded") return null;
-  const pagamento = evento.data.object;
+  return pagamentoPrePagoDe(evento.data.object, `aviso ${evento.id}`);
+}
+
+/**
+ * Um PaymentIntent da Stripe lido como o NOSSO Pix pré-pago — pelo aviso, pela lista dos pagamentos do
+ * cliente (`pagamentosPixPagos`, `stripe-pix.ts`) ou por uma leitura solta. `origem` só aparece no
+ * registro. Função pura.
+ */
+export function pagamentoPrePagoDe(pagamento: Stripe.PaymentIntent, origem: string): PagamentoPrePago | null {
   const m = pagamento.metadata ?? {};
   const plano = m[MARCA_DO_PREPAGO];
   if (!plano || !(PLANOS as readonly string[]).includes(plano)) return null;
   const clienteId = typeof pagamento.customer === "string" ? pagamento.customer : (pagamento.customer?.id ?? null);
   const precoId = m.precoId || null;
   if (!clienteId || !precoId) {
-    console.warn(`[stripe] aviso ${evento.id}: o pagamento pré-pago ${pagamento.id} veio sem ${clienteId ? "preço" : "cliente"} — ignorado`);
+    console.warn(`[stripe] ${origem}: o pagamento pré-pago ${pagamento.id} veio sem ${clienteId ? "preço" : "cliente"} — ignorado`);
     return null;
   }
   const M = METADADOS_DO_VISITANTE;
@@ -600,7 +622,8 @@ export function paraAssinaturaNaStripe(assinatura: Stripe.Subscription, devolvid
   const encerradaSemPagamento = assinatura.cancellation_details?.reason === "payment_failed";
   // O Pix pré-pago de que ela nasceu (etapa 4.9): vazio na recorrente.
   const pixPaymentIntentId = assinatura.metadata[METADADO_DO_PIX] || null;
-  return { id: assinatura.id, status, pagoAte, clienteId, userId, pedido, doVisitante, livemode: assinatura.livemode, proximaTentativa, encerradaSemPagamento, pixPaymentIntentId };
+  const resumoDaTentativa = assinatura.metadata[M.tentativa] || null;
+  return { id: assinatura.id, status, pagoAte, clienteId, userId, pedido, doVisitante, livemode: assinatura.livemode, proximaTentativa, encerradaSemPagamento, pixPaymentIntentId, resumoDaTentativa };
 }
 
 /**

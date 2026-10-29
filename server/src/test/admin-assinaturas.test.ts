@@ -1,16 +1,40 @@
 import { describe, it, expect, vi, beforeAll, afterAll, afterEach, beforeEach } from "vitest";
 import request from "supertest";
-import type { AssinaturaNaStripe, AssinaturaNoCheckout } from "../lib/stripe.js";
+import type { AssinaturaNaStripe, AssinaturaNoCheckout, PagamentoPrePago, PrecoDoPlano } from "../lib/stripe.js";
+import type { PixDoCliente, PrePagaDoPix } from "../lib/stripe-pix.js";
 
 // A Stripe na NOSSA fronteira: só o que iria à rede vira dublê — a lista de assinaturas do
 // cliente e a busca de uma assinatura. A rotina da sincronia (a trava, o espelho, a sessão)
 // roda de verdade, contra o banco.
 const assinaturasDoCliente = vi.fn<(clienteId: string) => Promise<AssinaturaNoCheckout[]>>();
 const buscarAssinatura = vi.fn<(id: string) => Promise<AssinaturaNaStripe>>();
+const buscarPrecos = vi.fn<() => Promise<PrecoDoPlano[]>>();
 vi.mock("../lib/stripe.js", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../lib/stripe.js")>()),
   assinaturasDoCliente: (clienteId: string) => assinaturasDoCliente(clienteId),
   buscarAssinatura: (id: string) => buscarAssinatura(id),
+  buscarPrecos: () => buscarPrecos(),
+}));
+// O Pix pago cujo aviso se perdeu (passo 6 da 4.9, achado 9): o force-sync o transforma em assinatura antes de
+// listar. A lista dos Pix do cliente, a lista das pré-pagas de um Pix, a criação, a fatura, a marca de conferência
+// e a devolução são a Stripe; a rotina do aviso roda de verdade.
+const listarPixDoCliente = vi.fn<(clienteId: string) => Promise<PixDoCliente>>();
+const criarAssinaturaPrePaga = vi.fn<(pagamento: PagamentoPrePago) => Promise<{ id: string; faturaPaga: boolean }>>();
+const garantirFaturaPaga = vi.fn<(assinaturaId: string) => Promise<{ fatura: string | null; status: string }>>();
+const assinaturasDoPix = vi.fn<(clienteId: string, pagamentoId: string) => Promise<PrePagaDoPix[]>>();
+const marcarEmConferencia = vi.fn<(pagamentoId: string, motivo: string) => Promise<boolean>>();
+vi.mock("../lib/stripe-pix.js", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../lib/stripe-pix.js")>()),
+  listarPixDoCliente: (clienteId: string) => listarPixDoCliente(clienteId),
+  criarAssinaturaPrePaga: (pagamento: PagamentoPrePago) => criarAssinaturaPrePaga(pagamento),
+  garantirFaturaPaga: (assinaturaId: string) => garantirFaturaPaga(assinaturaId),
+  assinaturasDoPix: (clienteId: string, pagamentoId: string) => assinaturasDoPix(clienteId, pagamentoId),
+  marcarEmConferencia: (pagamentoId: string, motivo: string) => marcarEmConferencia(pagamentoId, motivo),
+}));
+const pixDevolvido = vi.fn<(pagamentoId: string) => Promise<boolean>>();
+vi.mock("../lib/stripe-devolucao.js", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../lib/stripe-devolucao.js")>()),
+  pixDevolvido: (pagamentoId: string) => pixDevolvido(pagamentoId),
 }));
 
 import servidor from "./servidor.js";
@@ -64,6 +88,13 @@ beforeAll(async () => {
 beforeEach(() => {
   naStripe = {};
   assinaturasDoCliente.mockReset().mockResolvedValue([]);
+  buscarPrecos.mockReset().mockResolvedValue([{ plano: "mensal", precoId: "price_mensal", centavos: 9990, moeda: "brl" }, { plano: "anual", precoId: "price_anual", centavos: 99500, moeda: "brl" }]);
+  listarPixDoCliente.mockReset().mockResolvedValue({ pagos: [], pendentes: [] });
+  criarAssinaturaPrePaga.mockReset().mockRejectedValue(new Error("este teste não combinou a criação da pré-paga"));
+  garantirFaturaPaga.mockReset().mockResolvedValue({ fatura: "in_da_suite", status: "paid" });
+  assinaturasDoPix.mockReset().mockResolvedValue([]);
+  marcarEmConferencia.mockReset().mockRejectedValue(new Error("este teste não combinou a marca de conferência"));
+  pixDevolvido.mockReset().mockResolvedValue(false);
   buscarAssinatura.mockReset().mockImplementation(async (id) => {
     const dados = naStripe[id];
     if (!dados) throw new AssinaturaNaoEncontrada(id);
@@ -291,6 +322,45 @@ describe("forçar a sincronia — o que ela faz", () => {
       expect(linhas).toContain(aluno);
       expect(linhas).toContain(sub);
       expect(linhas).not.toContain(emailDoAluno);
+    } finally {
+      registro.mockRestore();
+    }
+  });
+});
+
+describe("forçar a sincronia — o Pix pago cujo aviso se perdeu (passo 6 da 4.9)", () => {
+  it("um Pix nosso pago e sem assinatura: a pré-paga nasce na sincronia, e a conta ganha acesso", async () => {
+    await prisma.stripeCustomer.create({ data: { userId: aluno, stripeCustomerId: CLIENTE, livemode: false } });
+    const pi = `pi_${S}_perdido`;
+    listarPixDoCliente.mockResolvedValue({ pagos: [{ id: pi, plano: "mensal", precoId: "price_mensal", clienteId: CLIENTE, livemode: false, centavos: 9990, userId: aluno, visitante: null, emConferencia: null }], pendentes: [] });
+    const sub = `sub_${S}_do_pix`;
+    criarAssinaturaPrePaga.mockImplementation(async (pagamento) => {
+      naStripe[sub] = { pixPaymentIntentId: pagamento.id };
+      assinaturasDoCliente.mockResolvedValue([listada(sub)]);
+      return { id: sub, faturaPaga: true };
+    });
+    expect(await temAcessoAtivo(aluno)).toBe(false);
+    const res = await sincronizar({ email: emailDoAluno }, admin);
+    expect(res.status).toBe(200);
+    expect(criarAssinaturaPrePaga).toHaveBeenCalledTimes(1);
+    expect((await espelho(sub))).toMatchObject({ ownerUserId: aluno, status: "active", pixPaymentIntentId: pi });
+    expect(await temAcessoAtivo(aluno)).toBe(true);
+    // De novo: o espelho já tem o Pix — nada é criado outra vez.
+    expect((await sincronizar({ email: emailDoAluno }, admin)).status).toBe(200);
+    expect(criarAssinaturaPrePaga).toHaveBeenCalledTimes(1);
+  });
+
+  it("um Pix pago EM CONFERÊNCIA (segunda revisão do passo 6): a sincronia não o processa — fica para o operador, sem criar nada", async () => {
+    await prisma.stripeCustomer.create({ data: { userId: aluno, stripeCustomerId: CLIENTE, livemode: false } });
+    const pi = `pi_${S}_em_conferencia`;
+    listarPixDoCliente.mockResolvedValue({ pagos: [{ id: pi, plano: "mensal", precoId: "price_mensal", clienteId: CLIENTE, livemode: false, centavos: 9990, userId: aluno, visitante: null, emConferencia: "pagou 9990 centavos e o preço price_mensal custa 10990" }], pendentes: [] });
+    const registro = vi.spyOn(console, "info").mockImplementation(() => {});
+    try {
+      expect((await sincronizar({ email: emailDoAluno }, admin)).status).toBe(200);
+      expect(criarAssinaturaPrePaga).not.toHaveBeenCalled();
+      expect(assinaturasDoPix).not.toHaveBeenCalled();
+      expect(await temAcessoAtivo(aluno)).toBe(false);
+      expect(registro.mock.calls.some(([texto]) => String(texto).includes(pi) && String(texto).includes("EM CONFERÊNCIA"))).toBe(true);
     } finally {
       registro.mockRestore();
     }

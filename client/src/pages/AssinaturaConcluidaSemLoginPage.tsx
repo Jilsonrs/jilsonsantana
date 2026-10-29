@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { EMAIL_DE_SUPORTE } from "@jilson/core";
 import { CriarSenhaDepoisDePagar } from "@/components/assinar/CriarSenhaDepoisDePagar";
 import { QrDeNovo } from "@/components/assinar/QrDeNovo";
+import { getPlanosSemLogin } from "@/lib/api";
 import { useConfirmacaoSemLogin } from "@/lib/assinar";
 import { useT } from "@/lib/language";
 import { lerTentativa } from "@/lib/tentativa-de-assinar";
@@ -32,7 +33,7 @@ export function AssinaturaConcluidaSemLoginPage({ conferirACada = 2000, demora =
   }, [demora]);
 
   if (!guardada) return null;
-  const confirmada = confirmacao.data?.confirmada === true;
+  const { confirmada } = confirmacao;
   const [antes, depois = ""] = t.emailErrado.split("{contato}");
   return (
     <div className="max-w-2xl space-y-6">
@@ -52,12 +53,13 @@ export function AssinaturaConcluidaSemLoginPage({ conferirACada = 2000, demora =
       ) : (
         <div className="space-y-3" aria-live="polite">
           <h1 className="text-2xl font-semibold text-foreground">{t.confirmando}</h1>
-          {demorou && <p className="text-muted-foreground">{t.demorando}</p>}
+          {/* O servidor recusou a pergunta algumas vezes seguidas (P108): a frase do operador no lugar do "demorando". */}
+          {confirmacao.naoConfirmouAgora ? <p className="text-muted-foreground">{t.naoConfirmouAgora}</p> : demorou && <p className="text-muted-foreground">{t.demorando}</p>}
         </div>
       )}
       {/* Quem pagou com Pix e fechou a janela do QR sem pagar (etapa 4.9): o botão enquanto o pagamento
           não vale. Fica montado nos dois estados: é ao receber "confirmado" que ele esquece o Pix. */}
-      <QrDeNovo confirmado={confirmada} />
+      <QrDeNovo confirmado={confirmada} lerPlanos={getPlanosSemLogin} />
     </div>
   );
 }
