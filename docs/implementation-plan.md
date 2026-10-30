@@ -190,7 +190,9 @@
 >    por prints — fazer junto com o operador) e a P125 (só quando ele for criar um desses códigos). O roteiro
 >    "quando um aluno não conseguir pagar" está em `billing.md`, como rascunho, para ele revisar.
 > 2. **O passo 9 da 4.7 — quem não terminou de assinar, e a tabela de leads** (decisões do operador,
->    29/10/2026): registrar no plano e construir. O e-mail "você não terminou a assinatura" 2 horas depois
+>    29/10/2026): **REGISTRADO no plano em 30/10/2026 (etapa 4.7 → Passo 9), com o plano do bloco em 5 partes
+>    (9a a 9e), APROVADO no mesmo dia ("Aprovo como está")** — com o CPF na fatura anulada da tentativa com
+>    cartão aceito (a Stripe não deixa apagar fatura; medido na área restrita) e o "Seu nome" obrigatório. O e-mail "você não terminou a assinatura" 2 horas depois
 >    da última tentativa; aos 7 dias, a ficha e o cliente da Stripe (com o CPF) são apagados; quem marcou
 >    "Quero receber novidades" vira LEAD (nome e e-mail, nunca o CPF), e o lembrete dos outros traz o botão
 >    "Quero receber novidades" (clicou, vira lead; não clicou, sai em 7 dias); descadastrar; o campo "Seu
@@ -5616,6 +5618,166 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             (o operador marcou "não é spam"; os três ficaram na entrada). Mesmo remetente, mesmo
             domínio, um minuto entre eles — a diferença é o conteúdo ("cancelada", "reativar"), não a
             configuração. O do iCloud ("terminou"): a confirmar com o operador.
+      - [ ] **Passo 9 — Quem não terminou de assinar, e a tabela de leads (código, ALTO RISCO: apaga
+            cliente na Stripe).** *(Decisões do operador de 29/10/2026, registradas aqui em 30/10/2026 —
+            até então, só no "PARA CONTINUAR".)*
+            **AS DECISÕES DELE (29/10/2026):** (a) quem começou a assinar sem conta e não pagou recebe o
+            e-mail "você não terminou a assinatura" **2 horas depois da última tentativa**; (b) **aos 7
+            dias**, a ficha (`guest_checkout`) e o cliente da Stripe (com o CPF) são **apagados**; (c) quem
+            marcou "Quero receber novidades" vira **LEAD** — nome e e-mail, **nunca o CPF**; (d) o lembrete
+            de quem NÃO marcou traz o botão "Quero receber novidades": clicou, vira lead; não clicou, sai em
+            7 dias; (e) **descadastrar**; (f) o campo **"Seu nome"** no formulário de assinar sem conta —
+            **revê a P83** (21/10/2026: "o nome não se pede"; `billing.md` → *A tela pública de assinar*);
+            (g) tudo na **rodada de hora em hora** (`jilson-prod-avisos`); (h) a tabela de leads serve depois
+            à captura do YouTube e do LinkedIn; (i) **todo texto** — o e-mail, o campo, o consentimento, a
+            página de descadastro — vai a ele antes de entrar.
+            **O QUE A STRIPE FAZ AO APAGAR UM CLIENTE** `[FATO — context7 /websites/stripe, e MEDIDO na área
+            restrita em 30/10/2026 com um cliente descartável: CPF de teste, uma tentativa com cartão
+            cancelada como o site cancela, o cliente apagado]`:
+            - apagar o cliente **cancela na hora toda assinatura ativa dele** — por isso a limpeza só apaga
+              depois de conferir na Stripe que não houve pagamento (9c);
+            - o CPF sai do cadastro do cliente, mas **a fatura anulada da tentativa com cartão guarda uma
+              cópia do CPF, do e-mail, do nome do cliente e dos dados da assinatura** — e a Stripe **recusa
+              apagar** fatura já fechada (só anula; a ferramenta dela de apagar dados pessoais também não
+              alcança fatura, por regra fiscal). A tentativa com cartão fecha a primeira fatura no clique
+              (`default_incomplete`), antes de pagar. **No Pix não há fatura antes de o Pix cair:** ali o CPF
+              sai inteiro;
+            - **consequência no desenho:** o nome NÃO vai para a Stripe (nem para o cliente, nem para os
+              dados da assinatura ou do Pix) — fica só no nosso banco, que apaga de verdade;
+            - **DECISÃO DO OPERADOR (30/10/2026), à pergunta do agente — ACEITO:** o CPF das tentativas
+              com cartão fica na fatura anulada, visível só no painel da Stripe (era a recomendação do agente
+              — é o que a própria Stripe orienta para pedido de exclusão). **Recusado:** mudar o checkout por
+              cartão para a fatura nascer só depois do cartão aprovado (bloco à parte, alto risco).
+              *Reabre se um pedido de exclusão (LGPD) exigir tirar o CPF também da fatura, ou se o checkout
+              por cartão for refeito por outro motivo.*
+            **O PLANO DO PASSO 9 — APROVADO pelo operador em 30/10/2026** (*"Aprovo como está"*, à pergunta do
+            agente com as duas recomendações: o CPF na fatura anulada, acima, e o "Seu nome" obrigatório). Um commit por parte, cada
+            um com os quatro gates. *Docs check (context7):* Stripe → `/websites/stripe` → apagar o cliente
+            cancela as assinaturas ativas; fatura fechada não se apaga (só se anula) e a remoção de dados
+            pessoais da Stripe não alcança fatura — 2 consultas, e a medição acima; Better Auth →
+            `/better-auth/better-auth` → na 9a, antes de editar `pedido-do-visitante.ts` (importa
+            `generateId`): a conta passa a nascer com o `name`.
+            - [x] **9a — A ficha guarda a tentativa, e a tabela de leads** (servidor, `core` e migration).
+                  A migration: `guest_checkout` ganha o nome, a caixa de novidades da ÚLTIMA tentativa, a
+                  hora da última tentativa, as marcas do lembrete (tomada e confirmada, com a pendente
+                  retomada depois de 15 min, como a `subscription_email`) e a marca de "não apagada" (a
+                  limpeza achou pagamento: o alerta sai uma vez). **As fichas que já existem:** a última
+                  tentativa = `updatedAt`, e o lembrete dado como resolvido — ninguém recebe lembrete de
+                  tentativa de antes da publicação, e a limpeza alcança as antigas. **A tabela nova `lead`**
+                  (com RLS): o e-mail (único, em minúsculas), o nome, de onde veio (a caixa ao assinar, o
+                  botão do lembrete — o YouTube e o LinkedIn entram depois), quando consentiu, quando o e-mail
+                  foi PROVADO (só quando a pessoa clica num link que a escola mandou àquela caixa; a caixa
+                  marcada no formulário não prova — P96), quando se descadastrou, e o UTM do primeiro acesso.
+                  O `core`: o pedido sem login ganha o nome (aparado, até 100 caracteres, **obrigatório** —
+                  decisão do operador, 30/10/2026), no cartão e no Pix.
+                  `checkout-do-visitante.ts` e `pix-pre-pago.ts`: com a trava do e-mail e na mesma transação,
+                  a ficha guarda o nome, a caixa e a hora DESTA tentativa — também na tentativa reaproveitada
+                  —; **a ficha que sumiu no meio** (a limpeza dos 7 dias no mesmo instante) → `ocupada`, e o
+                  novo clique cria outra. `pedido-do-visitante.ts`: a conta que nasce do pagamento leva o nome
+                  da ficha (aparece em Minha conta, que já tem o campo). Testes: o pedido (sem nome, só
+                  espaços, longo demais), a ficha nos dois caminhos e na reaproveitada, a ficha que sumiu, a
+                  conta com o nome, a migration do zero e o acerto das fichas antigas, o RLS. Mutação.
+                  **FEITO (30/10/2026), no `dev`.** A migration `20261030200000_quem_nao_terminou` (no banco de
+                  teste recriado do zero: *No difference detected*; nenhuma tabela sem RLS): na ficha, o nome, a
+                  caixa, o UTM e a hora da última tentativa (`ultimaTentativaEm`, com o valor de fábrica "agora"),
+                  as marcas do lembrete (`lembreteTomadoEm`, `lembreteEnviadoEm`) e a de não apagada
+                  (`naoApagadaEm`); as fichas antigas com a última tentativa = `updatedAt` e o lembrete resolvido;
+                  a tabela `lead` (o tipo `OrigemDoLead`; o id não é sequencial, porque vai no link de
+                  descadastrar). No `core`, `nomeDaPessoaSchema` (aparado, até 100, sem caractere de controle) e
+                  `TAMANHO_DO_NOME`. **O nome é OPCIONAL no servidor nesta publicação** (convenção de engenharia —
+                  *API aditiva*: a aba aberta antes dela não o manda), e a tela sempre o manda (9b); vira
+                  obrigatório no servidor na publicação seguinte (o checkbox depois da 9e), como o CPF fez na 6a. O
+                  pedido sem o nome não apaga o nome que a ficha já tinha. Nos dois caminhos, com a trava do e-mail,
+                  a ficha relida (`situacaoDaFicha` / `desfechoDaFicha`, no lugar de `fichaComConta`) e o que a
+                  tentativa deixou gravado (`dadosDaTentativa`) — também no reaproveitamento e no mesmo QR do Pix. A
+                  conta nasce com `name` = o nome da ficha. *Docs check (context7):* Better Auth →
+                  `/better-auth/better-auth` → o `name` é campo do núcleo do usuário (`z.string()` no Better Auth):
+                  a conta nascer com ele é o que o Better Auth espera, e nada muda no login nem na sessão — 1
+                  consulta. Testes: 13 novos — 6 no cartão (`assinar-sem-login.test.ts`), 3 no Pix
+                  (`pagar-com-pix.test.ts`), 1 na conta (`conta-do-visitante.test.ts`) e 3 da migration
+                  (`migration-quem-nao-terminou.test.ts`). **Mutação: 14 de 14 reprovaram** (a ficha sem o nome · o
+                  reaproveitamento sem gravar · o mesmo QR sem gravar · o QR novo sem gravar · a ficha que sumiu
+                  tratada como livre · a conta sem o nome · o nome na Stripe, no cartão e no Pix · o nome com quebra
+                  de linha · com 101 caracteres · o pedido sem nome apagando o da ficha · a migration sem acertar a
+                  última tentativa · sem o RLS · sem resolver o lembrete das antigas). Gates: typecheck, lint,
+                  build; site 1072, servidor 1640 (como o CI).
+            - [ ] **9b — O campo "Seu nome" na tela de assinar sem conta** (site). Em "Seus dados", antes
+                  do e-mail (proposta: como a Udemy e o Mosh); vai no pedido do cartão e no do Pix; o aviso
+                  quando falta. **Os textos vão ao operador antes** (o rótulo e o aviso). Testes de tela (o
+                  campo, o aviso, o nome nos dois pedidos). Mutação.
+            - [ ] **9c — O lembrete e a limpeza, na rodada de hora em hora** (servidor).
+                  `lib/quem-nao-terminou.ts`: a regra numa função pura (a ficha e a hora → nada, lembrar ou
+                  apagar) e os dois passos que o job roda DEPOIS dos e-mails da cobrança, com o resto do
+                  prazo (o que não couber fica para a próxima hora, com um aviso).
+                  **O lembrete** — a ficha sem conta, nenhuma conta com o e-mail, a última tentativa entre 2
+                  horas e 7 dias atrás, **um por ficha**: antes de mandar, a Stripe é conferida (assinatura
+                  viva ou Pix pago → nada: é o pagamento cujo aviso atrasou); quem marcou a caixa vira lead
+                  nessa hora; o e-mail sai pelo `enviarEmail()`, fora de transação e de trava: o botão de
+                  terminar a assinatura (`/assinar`) e, embaixo, o link de descadastrar (para quem é lead) ou
+                  o "Quero receber novidades" (para quem não é).
+                  **A limpeza** — a ficha sem conta e a última tentativa há 7 dias ou mais: com a trava do
+                  e-mail (ocupada → a próxima hora), relida; quem marcou a caixa e ainda não é lead vira lead
+                  (o lembrete pode não ter saído); a Stripe conferida — **só se apaga o cliente cujas
+                  assinaturas estão todas encerradas sem pagamento e que não tem Pix pago** (o Pix ainda à
+                  espera é cancelado antes); qualquer pagamento → não apaga, e o alerta sai uma vez (alguém
+                  pagou e não tem conta: precisa de gente); apaga o cliente na Stripe e SÓ DEPOIS a ficha (a
+                  Stripe falhou → a ficha fica, e a próxima hora tenta; o cliente que ela não conhece mais
+                  conta como apagado); a ficha do outro modo da Stripe não é apagada lá, só avisada.
+                  O e-mail: `views/email-do-lembrete.ts`, o texto no `pt.ts` (`app.email.lembrete`); o modelo
+                  de todo e-mail ganha um LINK de texto depois do botão (só http(s), escapado); a prévia
+                  (`email:previa`) o grava. **O texto vai ao operador antes, como e-mail de verdade na caixa
+                  dele** (o jeito da P93). `tarefas/avisos-da-cobranca.ts` chama os dois passos; a linha do
+                  registro conta lembretes, leads, fichas apagadas, ocupadas, com pagamento e com falha.
+                  O `CLAUDE.md` (*Membership Gating*) ganha a trava: **apagar um cliente da Stripe cancela na
+                  hora as assinaturas ativas dele** — só a limpeza dos 7 dias apaga, e só depois de conferir.
+                  Testes: as janelas (1h59 nada; 2 h lembra; 7 dias apaga; com conta, nunca), um lembrete por
+                  ficha, a marca pendente retomada, o envio que falha devolve a marca, o lead de quem marcou e
+                  o link de quem não marcou, a Stripe com pagamento (nem lembrete nem limpeza; o alerta uma
+                  vez), a ordem da limpeza (a Stripe antes da ficha), a Stripe que falha, o cliente que ela não
+                  conhece, a trava ocupada, o prazo, o job chamando os passos. Mutação.
+            - [ ] **9d — As duas páginas públicas: "Quero receber novidades" e "Descadastrar"** (servidor).
+                  Páginas do servidor como a `/assinar` (o menu e o rodapé do site, `noindex`), **fora do
+                  "Em breve"**: o link de um e-mail tem de funcionar sempre — o de descadastrar, por lei.
+                  **Abrir o link não faz nada sozinho:** a página pede o clique num botão. Os programas de
+                  segurança de e-mail abrem os links por conta própria; sem isso, eles fariam alguém virar
+                  lead, ou se descadastrar, sem ter clicado. "Quero receber novidades" (`/novidades/<código>`):
+                  o clique cria o lead (do botão do lembrete, com o e-mail provado); depois dos 7 dias (a
+                  ficha apagada), "este link não vale mais". "Descadastrar" (`/descadastrar/<código>`): o
+                  clique descadastra O E-MAIL — o lead e, se houver conta com ele, a caixa de novidades da
+                  conta; repetir não muda nada; o link vale para sempre. **Os códigos dos links não ficam
+                  guardados:** são uma assinatura do servidor (HMAC com o segredo que o site já tem, como as
+                  contagens do limite de tentativas — `loja-de-tentativas.ts`) sobre o id da ficha ou do lead:
+                  quem tiver uma cópia do banco não forja um link. *Se esse segredo for trocado, os links
+                  antigos param de valer (a página diz para escrever ao suporte).* O pedido de outro site é
+                  recusado (a proteção da cobrança) e cada endereço tem um teto de pedidos. **Os textos das
+                  duas páginas vão ao operador antes.** Testes: abrir não muda nada; o clique cria o lead e o
+                  descadastra; o código errado, o de outra ficha, o da ficha apagada; repetir; o "Em breve"
+                  ligado; outro site; o teto; `escapeHtml`; `noindex`. Mutação.
+            - [ ] **9e — Prova e revisão.** O `security-vulnerability-reviewer` só sobre o diff do passo (P0
+                  e P1 travam a publicação; P2 e P3 se fecham com teste e mutação); a prova na área restrita (a
+                  limpeza de um cliente descartável, com e sem pagamento); a prova pela rota (servidor local,
+                  banco de dev, ficha descartável: o lembrete, o clique, o descadastro, a limpeza); o e-mail e
+                  as páginas olhados pelo operador. **Antes de publicar:** contar, só lendo, as fichas sem
+                  conta no banco de produção — na primeira rodada, as de mais de 7 dias são apagadas, com os
+                  clientes delas na Stripe.
+            - [ ] **Depois da publicação do passo 9: o nome passa a OBRIGATÓRIO no servidor**
+                  (`assinarSemLoginSchema`, `core/src/schemas/billing.ts`) — tira o `.optional()` e o teste "o
+                  pedido sem o nome segue"; a aba aberta antes da publicação já terá saído (convenção *API
+                  aditiva*).
+            **Fora do passo 9:** a tela dos leads no admin (entra com a captura do YouTube e do LinkedIn, ou
+            antes, se o operador pedir) · mandar novidades aos leads (4d → *E-mails promocionais*; ali se
+            decide se o descadastro é o nosso ou o do Resend — os dois não podem divergir) · confirmar o
+            e-mail de quem marcou a caixa (P96; o botão do lembrete já prova a caixa de quem clica) · o nome
+            na tela de quem está logado e no cliente da Stripe · o descadastro de um clique dos provedores
+            (`List-Unsubscribe`: entra com os e-mails promocionais) · o checkout por cartão com a fatura
+            nascendo só depois de pago.
+            **Riscos da proposta, com gatilho:** quem digita o e-mail de outra pessoa faz a escola mandar a
+            ela um lembrete — um por ficha, no teto que já existe de 10 e-mails novos por endereço por dia;
+            *reabre se o Resend mostrar queixas de spam, ou o registro mostrar muitos lembretes saindo do
+            mesmo endereço* · o nome da conta é o da ÚLTIMA tentativa, que só difere do da tentativa paga se
+            outra pessoa usar o mesmo e-mail nos segundos entre o pagamento e a conta nascer · a Política de
+            Privacidade (Fase 7) passa a dizer: a lista de leads, o lembrete, os 7 dias e o CPF que fica na
+            fatura anulada da Stripe.
 - [ ] **4.7b — Admin → Assinaturas vira um PAINEL de assinaturas (código, ALTO RISCO).**
       **MAPA APROVADO pelo operador (10/10/2026: "Aprovo o mapa"), e fica para DEPOIS da 4.7**
       (decisão dele no mesmo dia: *"o Painel pode ficar para depois da 4.7 que é mais

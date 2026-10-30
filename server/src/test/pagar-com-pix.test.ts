@@ -1113,3 +1113,66 @@ describe("a segunda revisão do passo 6 (29/10/2026) — nas portas", () => {
     expect(criarAssinatura).not.toHaveBeenCalled();
   });
 });
+
+// QUEM NÃO TERMINOU DE ASSINAR (etapa 4.7, passo 9 — decisões do operador, 29/10/2026): no Pix também, a ficha
+// guarda o que a ÚLTIMA tentativa deixou — e o nome nunca vai à Stripe.
+describe("o que a tentativa do Pix deixa na ficha (passo 9)", () => {
+  it("o QR novo: a ficha guarda o nome, a caixa, a origem e a hora — e o nome NÃO vai à Stripe", async () => {
+    vi.useFakeTimers({ toFake: ["Date"], now: Date.now() });
+    const agora = Date.now();
+    const email = novoEmail();
+    const res = await pixVisitante(pedido(email, { nome: "Ana do Pix", novidades: true, origem: "linkedin", campanha: "post-1" }), novoEndereco());
+    expect(res.status).toBe(200);
+    const f = await ficha(email);
+    expect([f?.nome, f?.novidades, f?.acquisitionSource, f?.acquisitionCampaign, f?.ultimaTentativaEm.getTime()]).toEqual(["Ana do Pix", true, "linkedin", "post-1", agora]);
+    expect(JSON.stringify([criarClienteDoVisitante.mock.calls, criarPagamentoPix.mock.calls, acertarNumeroFiscal.mock.calls])).not.toContain("Ana do Pix");
+  });
+
+  it("o MESMO QR (o novo clique com a tentativa): a hora, o nome e a caixa passam a ser os dele", async () => {
+    vi.useFakeTimers({ toFake: ["Date"], now: Date.now() });
+    const email = novoEmail();
+    const endereco = novoEndereco();
+    const primeiro = await pixVisitante(pedido(email, { nome: "Primeiro", novidades: false }), endereco);
+    const meiaHoraDepois = Date.now() + 30 * 60_000;
+    vi.setSystemTime(meiaHoraDepois);
+    const mesma = await pixVisitante(pedido(email, { nome: "Segundo", novidades: true, tentativa: primeiro.body.tentativa }), endereco);
+    expect(mesma.body.segredo).toBe(primeiro.body.segredo);
+    expect(criarPagamentoPix).toHaveBeenCalledTimes(1);
+    const f = await ficha(email);
+    expect([f?.nome, f?.novidades, f?.ultimaTentativaEm.getTime()]).toEqual(["Segundo", true, meiaHoraDepois]);
+  });
+
+  it("a ficha que SUMIU no meio do pedido (a limpeza dos 7 dias a apagou): 409 'ocupada', e nenhum QR nasce", async () => {
+    const email = novoEmail();
+    const endereco = novoEndereco();
+    await pixVisitante(pedido(email), endereco);
+    const antiga = await ficha(email);
+    if (!antiga) throw new Error("a ficha não nasceu");
+    listarPixDoCliente.mockClear();
+    criarPagamentoPix.mockClear();
+    // Como em `assinar-sem-login.test.ts`: a leitura SEM a trava acha a ficha, e ela some antes da trava. A
+    // função ORIGINAL volta para o lugar no fim (desfazer um espião no Prisma deixa o método vazio).
+    // Seguro: só para trocar e devolver esta propriedade; o resto do objeto não é tocado.
+    const delegado = prisma.guestCheckout as unknown as Record<string, unknown>;
+    const original = prisma.guestCheckout.findUnique;
+    let leituras = 0;
+    Object.defineProperty(delegado, "findUnique", {
+      configurable: true,
+      writable: true,
+      value: async (...args: Parameters<typeof original>) => {
+        const lida = await original(...args);
+        if (++leituras === 1 && lida) await prisma.guestCheckout.deleteMany({ where: { id: antiga.id } });
+        return lida;
+      },
+    });
+    try {
+      const res = await pixVisitante(pedido(email), endereco);
+      expect([res.status, res.body]).toEqual([409, { error: "Ocupada" }]);
+      expect(leituras).toBe(1);
+    } finally {
+      Object.defineProperty(delegado, "findUnique", { configurable: true, writable: true, value: original });
+    }
+    expect(listarPixDoCliente).not.toHaveBeenCalled();
+    expect(criarPagamentoPix).not.toHaveBeenCalled();
+  });
+});

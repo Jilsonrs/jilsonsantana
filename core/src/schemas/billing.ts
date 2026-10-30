@@ -73,6 +73,17 @@ const campoDeOrigem = z
   .catch(undefined)
   .transform((valor) => valor?.trim().slice(0, 100) || undefined);
 
+/** Até quantos caracteres o nome da pessoa tem (etapa 4.7, passo 9). */
+export const TAMANHO_DO_NOME = 100;
+
+/**
+ * O NOME de quem assina sem conta (etapa 4.7, passo 9 — o campo "Seu nome", obrigatório na tela por
+ * decisão do operador, 30/10/2026): aparado nas pontas, até 100 caracteres, sem caractere de controle
+ * (quebra de linha, tabulação) — ele vai para a conta, para o lead e para o texto dos e-mails. Nunca
+ * vai para a Stripe (a fatura anulada guarda o que for para lá, e não se apaga).
+ */
+export const nomeDaPessoaSchema = z.string().trim().min(1).max(TAMANHO_DO_NOME).regex(/^[^\p{Cc}]+$/u);
+
 /**
  * Corpo de `POST /api/billing/visitante/assinatura` — assinar SEM CONTA (Fase 4, etapa 4.7, passo 4
  * — billing.md → *Assinar sem conta*). O site diz: o e-mail (com ele a conta nasce no pagamento), o
@@ -83,6 +94,10 @@ const campoDeOrigem = z
  * cancelada e nasce outra. Preço, valor e conta nunca vêm do navegador.
  */
 export const assinarSemLoginSchema = z.object({
+  // O nome (passo 9): OPCIONAL no servidor NESTA publicação — a API só acrescenta, e a aba aberta antes
+  // dela não o manda (CLAUDE.md → Rendering Boundary) —; a tela sempre o manda. Passa a obrigatório no
+  // servidor na publicação seguinte (o plano → etapa 4.7, passo 9), como o CPF fez na 6a.
+  nome: nomeDaPessoaSchema.optional(),
   email: enderecoDeEmailSchema,
   documento: documentoFiscalSchema,
   plano: z.enum(PLANOS),

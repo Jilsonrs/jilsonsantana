@@ -76,22 +76,51 @@ export async function temConta(db: Pick<Prisma.TransactionClient, "user">, email
 }
 
 /**
- * A ficha deste e-mail JÁ VIROU CONTA? A conta pode ter mudado de e-mail depois de nascer (quando
- * houver troca de e-mail): quem souber o e-mail antigo nunca opera no cliente da Stripe dela.
+ * A ficha deste e-mail, relida COM a trava: JÁ VIROU CONTA (a conta pode ter mudado de e-mail depois
+ * de nascer: quem souber o e-mail antigo nunca opera no cliente da Stripe dela), SUMIU (a limpeza dos
+ * 7 dias a apagou no meio, com o cliente na Stripe — etapa 4.7, passo 9), ou está livre.
  */
-export async function fichaComConta(db: Pick<Prisma.TransactionClient, "guestCheckout">, fichaId: string): Promise<boolean> {
-  return (await db.guestCheckout.findUnique({ where: { id: fichaId }, select: { userId: true } }))?.userId != null;
+export async function situacaoDaFicha(db: Pick<Prisma.TransactionClient, "guestCheckout">, fichaId: string): Promise<"com-conta" | "sumiu" | "livre"> {
+  const ficha = await db.guestCheckout.findUnique({ where: { id: fichaId }, select: { userId: true } });
+  if (!ficha) return "sumiu";
+  return ficha.userId != null ? "com-conta" : "livre";
+}
+
+/** A ficha relida com a trava, como desfecho: com conta → "já tem conta"; sumiu → "ocupada" (o novo clique cria outra ficha); livre → nada. */
+export async function desfechoDaFicha(db: Pick<Prisma.TransactionClient, "guestCheckout">, fichaId: string): Promise<{ resultado: "ja-tem-conta" | "ocupada" } | null> {
+  const situacao = await situacaoDaFicha(db, fichaId);
+  if (situacao === "com-conta") return { resultado: "ja-tem-conta" };
+  if (situacao === "sumiu") {
+    console.info(`[stripe] visitante: a ficha ${fichaId} foi apagada no meio do pedido (a limpeza dos 7 dias) — o novo clique cria outra`);
+    return { resultado: "ocupada" };
+  }
+  return null;
+}
+
+/**
+ * O QUE A TENTATIVA DEIXA NA FICHA (etapa 4.7, passo 9): o nome digitado, a caixa de novidades, a origem e a
+ * hora — os da ÚLTIMA tentativa, que o lembrete, o lead e a limpeza dos 7 dias leem. Função pura. O nome que
+ * não veio (a aba aberta antes da publicação do passo 9) não apaga o que a ficha já tinha.
+ */
+export function dadosDaTentativa(pedido: Pick<AssinarSemLoginInput, "nome" | "novidades" | "origem" | "campanha">, agora: Date = new Date()) {
+  return {
+    ...(pedido.nome ? { nome: pedido.nome } : {}),
+    novidades: pedido.novidades,
+    acquisitionSource: pedido.origem ?? null,
+    acquisitionCampaign: pedido.campanha ?? null,
+    ultimaTentativaEm: agora,
+  };
 }
 
 /**
  * A ficha de espera deste e-mail — a que já existe (sem mexer no cliente da Stripe: o número fiscal
  * só muda na decisão, com a trava), ou uma nova, com o cliente novo já com o número fiscal, numa
  * transação curta só dela, com a trava do e-mail: se o resto falhar, ela fica, e um e-mail é sempre
- * UM cliente. Se a ficha já virou conta, quem diz é a decisão (`fichaComConta`).
+ * UM cliente. Se a ficha já virou conta, quem diz é a decisão (`situacaoDaFicha`).
  */
 export async function fichaDoEmail(email: string, pedido: Pick<AssinarSemLoginInput, "documento">, opcoes: OpcoesDoVisitante): Promise<Ficha | "ocupada" | "ja-tem-conta" | { espera: number }> {
   // A que já existe volta como está — inclusive a que já virou conta: quem decide isso é a decisão,
-  // com a trava (`fichaComConta`), num lugar só.
+  // com a trava (`situacaoDaFicha`), num lugar só.
   const guardada = await prisma.guestCheckout.findUnique({ where: { email }, select: { id: true, stripeCustomerId: true } });
   if (guardada) return { ...guardada, nova: false };
   return prisma.$transaction(async (tx): Promise<Ficha | "ocupada" | "ja-tem-conta" | { espera: number }> => {
@@ -185,8 +214,11 @@ export async function pixPagoDoEmail(email: string, pagamento: PagamentoPrePago)
 async function decidir(email: string, pedido: AssinarSemLoginInput, ficha: Ficha, precoId: string, codigoId: string | null, acaba: boolean): Promise<NaTrava> {
   return prisma.$transaction(async (tx): Promise<NaTrava> => {
     if (!(await travarSeLivre(tx, email))) return { resultado: "ocupada" };
-    // De novo, com a trava e pela MESMA ligação: a conta pode ter nascido no meio.
-    if ((await temConta(tx, email)) || (await fichaComConta(tx, ficha.id))) return { resultado: "ja-tem-conta" };
+    // De novo, com a trava e pela MESMA ligação: a conta pode ter nascido no meio — ou a ficha ter sido
+    // apagada pela limpeza dos 7 dias (passo 9), e com ela o cliente da Stripe.
+    if (await temConta(tx, email)) return { resultado: "ja-tem-conta" };
+    const daFicha = await desfechoDaFicha(tx, ficha.id);
+    if (daFicha) return daFicha;
 
     const existentes = (await assinaturasDoCliente(ficha.stripeCustomerId)).filter((a) => !ENCERRADAS.has(a.status));
     // Viva: alguém já pagou. Nada aqui mexe no cliente dela — nem o número fiscal.
@@ -260,16 +292,16 @@ async function decidir(email: string, pedido: AssinarSemLoginInput, ficha: Ficha
     });
     // A Stripe recusou o desconto na criação (o código esgotou entre a prévia e o clique).
     if (!assinatura) return { resultado: "codigo-invalido" };
-    // A tentativa nova passa a ser a da ficha (pelo resumo): é com o código dela que a tela de depois do pagamento pergunta.
-    if (!reaproveitada) {
-      // SÓ se a ficha ainda não tem conta (achado 6 da segunda revisão): a conta pode ter nascido no meio —
-      // alguém pagou por este e-mail —, e a tentativa nova não pode ficar com ela. A incompleta que acabou de
-      // nascer é encerrada (se não der, expira sozinha).
-      const gravou = await tx.guestCheckout.updateMany({ where: { id: ficha.id, userId: null }, data: { tentativa: resumo } });
-      if (gravou.count === 0) {
-        await cancelarIncompleta(assinatura.id).catch(() => console.warn(`[stripe] visitante: a assinatura ${assinatura?.id ?? "?"} (ficha ${ficha.id}) não foi encerrada — expira sozinha`));
-        return { resultado: "ja-tem-conta" };
-      }
+    // A tentativa passa a ser a da ficha: a NOVA, pelo resumo (é com o código dela que a tela de depois do
+    // pagamento pergunta); e, nova ou reaproveitada, o que ela deixou — o nome, a caixa, a origem e a hora
+    // (passo 9: o lembrete, o lead e a limpeza dos 7 dias leem a ÚLTIMA tentativa).
+    // SÓ se a ficha ainda não tem conta (achado 6 da segunda revisão): a conta pode ter nascido no meio —
+    // alguém pagou por este e-mail —, e a tentativa nova não pode ficar com ela. A incompleta que acabou de
+    // nascer é encerrada (se não der, expira sozinha).
+    const gravou = await tx.guestCheckout.updateMany({ where: { id: ficha.id, userId: null }, data: { ...(reaproveitada ? {} : { tentativa: resumo }), ...dadosDaTentativa(pedido) } });
+    if (gravou.count === 0 && !reaproveitada) {
+      await cancelarIncompleta(assinatura.id).catch(() => console.warn(`[stripe] visitante: a assinatura ${assinatura?.id ?? "?"} (ficha ${ficha.id}) não foi encerrada — expira sozinha`));
+      return { resultado: "ja-tem-conta" };
     }
     console.info(`[stripe] visitante: ficha ${ficha.id}, plano ${pedido.plano} → assinatura ${assinatura.id} (${assinatura.status})${reaproveitada ? ", a mesma tentativa" : ""}`);
 

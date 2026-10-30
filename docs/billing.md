@@ -787,7 +787,7 @@ customer's full billing address for tax calculation […] use the Address Elemen
 | País ou endereço | só o país | endereço completo | nada | **sem País** (etapa 4.6c, 12/10/2026); **endereço, não** (sugestão do agente, abaixo) |
 | CPF ou número fiscal | não pede | só de empresa, opcional | nada | **sim, o CPF** (decisão dele, 12/10/2026) |
 | Receber novidades por e-mail | caixa já marcada | caixa desmarcada | não pergunta | **sim, desmarcada** (decisão dele, 12/10/2026) |
-| Nome completo | sim | sim | o nome é opcional | **não se pede** (decisão dele, 21/10/2026: em Minha conta, ou na hora do certificado — fecha a P83) |
+| Nome completo | sim | sim | o nome é opcional | **não se pede** (decisão dele, 21/10/2026: em Minha conta, ou na hora do certificado — fecha a P83) · **REVISTO em 29/10/2026 (decisão dele): o campo "Seu nome" entra no formulário sem conta, obrigatório (30/10/2026)** — plano → etapa 4.7, passo 9 |
 | Apple Pay, Google Pay, PayPal | os dois primeiros | Apple Pay e PayPal | só cartão (Pix na 4.9) | não na abertura |
 | Depoimentos na tela de pagamento | não | 2 | só na home | não na abertura |
 | Nota de avaliações, contagem de cursos e de horas | "31.000 cursos" | "52+ courses", nota 4,6 | não | não se aplica hoje |
@@ -938,7 +938,10 @@ pública de assinar*), o teto da prévia (*Limite de tentativas*), o código de 
 - **A FICHA DE ESPERA** (`GuestCheckout`, tabela `guest_checkout`): quem assina sem conta deixa o
   e-mail, em minúsculas, ligado a UM cliente da Stripe. Uma ficha por e-mail. O CPF ou CNPJ não
   mora nela: fica no cliente da Stripe. `tentativa` é o código público da tentativa em andamento
-  (parte B). A ficha some com a conta (cascade).
+  (parte B). A ficha some com a conta (cascade). **Desde o passo 9 (30/10/2026)** ela guarda também o
+  que a ÚLTIMA tentativa deixou — o nome, a caixa de novidades, o UTM e a hora —, gravado com a trava do
+  e-mail nos dois caminhos (cartão e Pix): é o que o lembrete, o lead e a limpeza dos 7 dias leem. **O
+  nome nunca vai para a Stripe.**
 - **A CONTA NASCE SÓ NA ROTINA DO ESPELHO** (`sincronizar`, `server/src/lib/assinaturas.ts` — a
   única que grava o espelho), em `server/src/lib/pedido-do-visitante.ts`: a assinatura sem espelho
   e sem conta que leva a ficha (`metadata.pedido`, da assinatura ou do cliente) ganha a conta da
@@ -952,7 +955,8 @@ pública de assinar*), o teto da prévia (*Limite de tentativas*), o código de 
   é informação, não aviso: é o normal de toda tentativa. O código de 100% ativa a assinatura no
   clique, e a conta nasce dele (é a cortesia).
 - **A conta nasce:** com o e-mail da ficha em minúsculas (o Better Auth busca assim — com outra
-  grafia, o login nunca a acharia), papel de aluno, sem nome (P83, passo 5), **sem senha** — o login
+  grafia, o login nunca a acharia), papel de aluno, com o nome da ficha (o da última tentativa — passo 9,
+  30/10/2026; antes dele, sem nome: P83), **sem senha** — o login
   dela responde "e-mail ou senha inválidos", como numa senha errada, até a pessoa criar a senha pelo
   e-mail (passo 5) — e com o que o visitante escolheu **na tentativa que foi paga**: a caixa de
   novidades (`marketingConsent`; sem a marca exata, é não) e a origem (`acquisitionSource` e
@@ -979,6 +983,13 @@ pública de assinar*), o teto da prévia (*Limite de tentativas*), o código de 
 - **A ficha de quem desistiu fica guardada** (o e-mail aqui; o e-mail e o CPF no cliente da
   Stripe), sem prazo para sair. *Gatilho: a exclusão de dados a pedido (Fase 7, LGPD) — ela apaga a
   ficha junto; e, se as fichas sem pagamento passarem de algumas centenas, uma limpeza das antigas.*
+  **REVISTO pela decisão do operador de 29/10/2026** (plano → etapa 4.7, passo 9 — a construir): o
+  lembrete "você não terminou a assinatura" 2 horas depois da última tentativa, e a ficha e o cliente da
+  Stripe apagados 7 dias depois dela. `[FATO — medido na área restrita em 30/10/2026]` apagar o cliente
+  tira o CPF do cadastro dele, mas a fatura anulada da tentativa com cartão guarda uma cópia do CPF, do
+  e-mail e dos dados da assinatura, e a Stripe recusa apagar fatura fechada; no Pix não há fatura antes
+  de pagar. **O operador aceitou (30/10/2026)** que o CPF fique na fatura anulada, visível só no painel da
+  Stripe; por isso o nome digitado não vai para a Stripe.
 - **A conta apagada com `deletedAt` (exclusão a pedido) continua com o e-mail**, e a tela diria
   "já tem conta". *Gatilho: a exclusão de conta, quando for construída.*
 

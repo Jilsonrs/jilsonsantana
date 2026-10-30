@@ -2,7 +2,7 @@ import type { PixInput, PixSemLoginInput } from "@jilson/core";
 import { prisma } from "./prisma.js";
 import { temAcessoAtivo } from "./acesso.js";
 import { clienteDaConta, pixPagoDaConta, sincronizarAViva as sincronizarAVivaDaConta, travarSeLivre, type Conta } from "./checkout.js";
-import { emConferenciaSoParaQuemPagou, ENCERRADAS, fichaComConta, fichaDoEmail, pixPagoDoEmail, sincronizarAViva as sincronizarAVivaDoEmail, temConta, travarSeLivre as travarEmailSeLivre, type OpcoesDoVisitante } from "./checkout-do-visitante.js";
+import { dadosDaTentativa, desfechoDaFicha, emConferenciaSoParaQuemPagou, ENCERRADAS, fichaDoEmail, pixPagoDoEmail, sincronizarAViva as sincronizarAVivaDoEmail, temConta, travarSeLivre as travarEmailSeLivre, type OpcoesDoVisitante } from "./checkout-do-visitante.js";
 import { cancelarOutrosPix, pixDaPrePagaIncompleta, pixPagoSemEspelho } from "./assinaturas.js";
 import { novaTentativa, resumoDaTentativa } from "./tentativa-do-visitante.js";
 import { acertarNumeroFiscal, assinaturasDoCliente, buscarPrecos, cancelarIncompleta, DocumentoRecusado, type PagamentoPrePago } from "./stripe.js";
@@ -157,7 +157,10 @@ export async function pagarComPixSemLogin(pedido: PixSemLoginInput, opcoes: Opco
     if ("espera" in ficha) return { resultado: "muitos-emails-novos", segundos: ficha.espera };
     decisao = await prisma.$transaction(async (tx): Promise<DesfechoDoPixSemLogin | VivaNaStripe> => {
       if (!(await travarEmailSeLivre(tx, email))) return { resultado: "ocupada" };
-      if ((await temConta(tx, email)) || (await fichaComConta(tx, ficha.id))) return { resultado: "ja-tem-conta" };
+      // Com a trava: a conta pode ter nascido no meio — ou a ficha ter sido apagada pela limpeza dos 7 dias (passo 9).
+      if (await temConta(tx, email)) return { resultado: "ja-tem-conta" };
+      const daFicha = await desfechoDaFicha(tx, ficha.id);
+      if (daFicha) return daFicha;
       // Alguém já PAGOU por este e-mail: a assinatura (e a conta) nascem fora da trava, e o caminho passa a
       // ser entrar. UMA lista dos Pix (achado 6 da segunda revisão), e o Pix pago antes de qualquer
       // cancelamento (achado 2).
@@ -179,7 +182,11 @@ export async function pagarComPixSemLogin(pedido: PixSemLoginInput, opcoes: Opco
       if ("pago" in outros) return { resultado: "pix-pago", pagamento: outros.pago };
       // A ficha nova já nasceu com o número desta tentativa.
       if (!ficha.nova) await acertarNumeroFiscal(ficha.stripeCustomerId, pedido.documento);
-      if (outros.mantido && tentativaAnterior !== null) return { resultado: "pagar", segredo: outros.mantido.segredo, tipo: "pix", tentativa: tentativaAnterior, email };
+      if (outros.mantido && tentativaAnterior !== null) {
+        // O MESMO QR: a tentativa é a mesma, mas o que ela deixou (o nome, a caixa, a origem e a hora) é o deste clique (passo 9).
+        await tx.guestCheckout.updateMany({ where: { id: ficha.id, userId: null }, data: dadosDaTentativa(pedido) });
+        return { resultado: "pagar", segredo: outros.mantido.segredo, tipo: "pix", tentativa: tentativaAnterior, email };
+      }
       const tentativa = novaTentativa();
       const resumo = resumoDaTentativa(tentativa);
       const pagamento = await criarPagamentoPix({
@@ -190,9 +197,10 @@ export async function pagarComPixSemLogin(pedido: PixSemLoginInput, opcoes: Opco
         visitante: { pedido: ficha.id, resumoDaTentativa: resumo, escolha: { novidades: pedido.novidades, origem: pedido.origem ?? null, campanha: pedido.campanha ?? null } },
       });
       // A tentativa nova passa a ser a da ficha (pelo resumo): é com o código dela que a tela de depois do
-      // pagamento pergunta. SÓ se a ficha ainda não tem conta (achado 6 da segunda revisão): a conta pode ter
-      // nascido no meio — alguém pagou por este e-mail —, e aí a tentativa nova não vale nada.
-      const gravou = await tx.guestCheckout.updateMany({ where: { id: ficha.id, userId: null }, data: { tentativa: resumo } });
+      // pagamento pergunta — com o que ela deixou: o nome, a caixa, a origem e a hora (passo 9). SÓ se a ficha
+      // ainda não tem conta (achado 6 da segunda revisão): a conta pode ter nascido no meio — alguém pagou por
+      // este e-mail —, e aí a tentativa nova não vale nada.
+      const gravou = await tx.guestCheckout.updateMany({ where: { id: ficha.id, userId: null }, data: { tentativa: resumo, ...dadosDaTentativa(pedido) } });
       if (gravou.count === 0) {
         await cancelarPagamentoPix(pagamento.id).catch(() => console.warn(`[stripe] pix: o pagamento ${pagamento.id} (ficha ${ficha.id}) não foi cancelado — vence sozinho em 1 hora`));
         return { resultado: "ja-tem-conta" };
