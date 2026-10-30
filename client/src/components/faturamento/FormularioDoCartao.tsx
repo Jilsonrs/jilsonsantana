@@ -6,7 +6,8 @@ import { aplicarCartaoNovo, prepararTrocaDeCartao } from "@/lib/api";
 import { codigoDoErro } from "@/lib/course-form";
 import { TELA_DO_FATURAMENTO, passouDoLimite } from "@/lib/faturamento";
 import { useT } from "@/lib/language";
-import { CampoDoCartao, CartaoProvider, confirmarNoBanco, useCartao } from "@/lib/stripe-do-site";
+import { CartaoProvider, confirmarNoBanco, useCartao } from "@/lib/stripe-do-site";
+import { CampoVigiado } from "@/components/assinar/CampoVigiado";
 import { semInterromper } from "@/lib/versao";
 
 type Props = {
@@ -86,7 +87,7 @@ function CampoEBotao({ chavePublicavel, aoTrocar, aoNaoTerOndePor }: Pick<Props,
             void enviar();
           }}
         >
-          <CampoDoCartao />
+          <CampoVigiado tela="trocar-cartao" />
           {noBanco && (
             <div className="rounded-xl border border-border/60 bg-muted/30 p-3.5">
               <p role="status" className="text-sm font-medium text-foreground">

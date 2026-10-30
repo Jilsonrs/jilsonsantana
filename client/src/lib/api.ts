@@ -32,6 +32,7 @@ import type {
   CorpoDeAssinarSemLogin,
   CorpoDePix,
   CorpoDePixSemLogin,
+  CampoNaoAbriuInput,
   AssinaturaSemLogin,
   ConfirmacaoSemLogin,
   SenhaCriada,
@@ -1049,6 +1050,28 @@ export async function confirmarSemLogin(tentativa: string): Promise<ConfirmacaoS
 export async function criarSenhaSemLogin(corpo: { tentativa: string; senha: string }): Promise<SenhaCriada> {
   const { data } = await client.post<SenhaCriada>("/billing/visitante/senha", corpo);
   return data;
+}
+
+/**
+ * "Confira na Stripe" — a tela de depois do pagamento, sem confirmação, pede ao servidor que confira a assinatura da
+ * conta da sessão (E2 da revisão ampla da cobrança): o aviso da Stripe pode ter se perdido. Não decide nada — a
+ * pergunta de sempre (`getSituacaoDaAssinatura`) vê o resultado. NUNCA tenta de novo sozinho (quem repete é a tela).
+ */
+export async function conferirMinhaAssinatura(): Promise<void> {
+  await client.post("/billing/conferir", {});
+}
+
+/** A mesma conferência, para quem pagou SEM CONTA, pela tentativa desta aba (POST: ela nunca vai no endereço). */
+export async function conferirSemLogin(tentativa: string): Promise<void> {
+  await client.post("/billing/visitante/conferir", { tentativa });
+}
+
+/**
+ * O campo de pagamento da Stripe não abriu nesta tela (E3 da revisão ampla da cobrança): o servidor alerta o
+ * operador. Sem login (o visitante também paga). Só a tela e o motivo, de listas fechadas. NUNCA tenta de novo.
+ */
+export async function avisarCampoQueNaoAbriu(corpo: CampoNaoAbriuInput): Promise<void> {
+  await client.post("/billing/campo-nao-abriu", corpo);
 }
 
 /** Os mesmos planos para o VISITANTE, sem login (a tela pública de assinar — etapa 4.7, passo 6c). */

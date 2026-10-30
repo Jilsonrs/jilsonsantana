@@ -1,9 +1,7 @@
 import express, { Router } from "express";
-import { avisosConfigurados, verificarAviso } from "../lib/stripe.js";
+import { avisoExisteNaStripe, avisosConfigurados, idDoAvisoNoCorpo, pareceAvisoDaStripe, verificarAviso } from "../lib/stripe.js";
 import { processarAviso } from "../lib/assinaturas.js";
-import { assinaturaDaAcesso } from "../lib/acesso.js";
-import { mandarBoasVindasDaAssinatura } from "../lib/boas-vindas.js";
-import { avisarSobreAAssinatura } from "../lib/avisos-da-assinatura.js";
+import { depoisDoAviso } from "../lib/depois-do-aviso.js";
 
 // O AVISO DA STRIPE (webhook — Fase 4, etapa 4.1; CLAUDE.md → Membership Gating). Montado em
 // `app.ts` ACIMA do `express.json()`: a verificação precisa do corpo CRU, byte a byte — com o
@@ -15,6 +13,37 @@ import { avisarSobreAAssinatura } from "../lib/avisos-da-assinatura.js";
 // recusaria TODO aviso, e só o painel da Stripe mostraria.
 
 const router = Router();
+
+/**
+ * O AVISO QUE NÃO CONFERE (E5 da revisão ampla da cobrança, e C1 da revisão do grupo 1, 29/10/2026) só vira ALERTA
+ * quando a Stripe confirma que ele é dela (`avisoExisteNaStripe`): aí o segredo do endereço de avisos está trocado e
+ * TODO aviso de verdade está sendo recusado. O forjado — que um robô manda à vontade, com um cabeçalho de formato
+ * certo — continua só registro (CLAUDE.md → Server: o que um robô causa sozinho nunca é `error`).
+ * Dois limites, os dois POR CÓPIA, na memória dela, de propósito (CLAUDE.md: só fica por cópia o que protege um
+ * recurso da própria cópia): no máximo UMA pergunta à Stripe por minuto (o robô não faz o site gastar a cota da API
+ * da Stripe) e no máximo UM alerta a cada 15 minutos (a cota de alertas também é por cópia — `monitor.ts`).
+ */
+const INTERVALO_DA_CONFERENCIA_DO_AVISO = 60_000;
+const INTERVALO_DO_ALERTA_DE_ASSINATURA = 15 * 60_000;
+let conferiuAvisoEm: number | null = null;
+let alertouAssinaturaEm: number | null = null;
+
+/** Passou o intervalo desde a última vez? Marca agora, se sim. O relógio que volta atrás não cala o limite para sempre. */
+function passouDesde(ultima: number | null, agora: number, intervalo: number): boolean {
+  return ultima === null || agora < ultima || agora - ultima >= intervalo;
+}
+
+function conferirAvisoNaStripeAgora(agora: number): boolean {
+  if (!passouDesde(conferiuAvisoEm, agora, INTERVALO_DA_CONFERENCIA_DO_AVISO)) return false;
+  conferiuAvisoEm = agora;
+  return true;
+}
+
+function alertarAssinaturaQueNaoConfere(agora: number): boolean {
+  if (!passouDesde(alertouAssinaturaEm, agora, INTERVALO_DO_ALERTA_DE_ASSINATURA)) return false;
+  alertouAssinaturaEm = agora;
+  return true;
+}
 
 // POST /api/stripe/webhook
 router.post("/stripe/webhook", express.raw({ type: "application/json" }), async (req, res) => {
@@ -29,49 +58,26 @@ router.post("/stripe/webhook", express.raw({ type: "application/json" }), async 
     aviso = verificarAviso(req.body, req.header("stripe-signature"));
   } catch (erro) {
     // Só a mensagem: o erro de verificação da Stripe carrega o corpo inteiro do aviso.
-    console.warn(`[stripe] aviso recusado (a assinatura não confere): ${erro instanceof Error ? erro.message : "?"}`);
+    const motivo = erro instanceof Error ? erro.message : "?";
+    // O cabeçalho é da Stripe e recente, o corpo traz um `id` de aviso, e a Stripe confirma que o aviso é dela: o
+    // segredo do endereço de avisos não é o deste servidor — alerta (E5, C1). O resto (sem cabeçalho, malformado,
+    // velho, forjado, ou a Stripe sem responder) é registro; a rodada (E1) acha o segredo trocado de qualquer jeito.
+    const agora = Date.now();
+    const id = pareceAvisoDaStripe(req.header("stripe-signature"), agora) ? idDoAvisoNoCorpo(req.body) : null;
+    const daStripe = id !== null && conferirAvisoNaStripeAgora(agora) && (await avisoExisteNaStripe(id));
+    if (daStripe && alertarAssinaturaQueNaoConfere(agora)) {
+      console.error(`[stripe] aviso recusado: a Stripe confirma que o aviso é dela, e a assinatura não confere — o segredo do endereço de avisos (STRIPE_WEBHOOK_SECRET, no Secret Manager) não é o do painel da Stripe: TODO aviso de verdade está sendo recusado (${motivo})`);
+      console.warn(`[stripe] aviso recusado: o aviso conferido na Stripe foi o ${id}`);
+    } else {
+      console.warn(`[stripe] aviso recusado (a assinatura não confere${daStripe ? `; o aviso ${id} é da Stripe` : ""}): ${motivo}`);
+    }
     res.status(400).json({ error: "AssinaturaInvalida" });
     return;
   }
   const desfecho = await processarAviso(aviso);
-  // Precisa de gente: a devolução que falhou é dinheiro que NÃO voltou. Uma vez por aviso — o
-  // repetido (a reentrega) não alerta de novo; e se o processamento falhar, a Stripe entrega de
-  // novo e o alerta sai então.
-  if (aviso.devolucaoFalhou && desfecho.resultado !== "repetido") console.error(`[stripe] aviso ${aviso.id} (${aviso.tipo}): uma devolução do pagamento ${aviso.pagamento ?? "?"} FALHOU — o dinheiro não voltou ao aluno; conferir e devolver pelo painel da Stripe`);
-  // O PIX PAGO cuja assinatura terminou SEM ACESSO (achado 5 do passo 6 da etapa 4.9, 29/10/2026): o
-  // dinheiro entrou e a assinatura não abre — pagante trancado, que hoje só o aluno descobriria. Uma vez
-  // por aviso. O Pix que nem virou assinatura já alertou na rotina (em conferência, uma vez só) ou foi
-  // devolvido antes (nada a alertar) — segunda revisão do passo 6.
-  if (aviso.pagamentoPrePago && "assinatura" in desfecho && !assinaturaDaAcesso({ status: desfecho.assinatura.status, currentPeriodEnd: desfecho.assinatura.pagoAte })) {
-    console.error(`[stripe] aviso ${aviso.id}: o Pix ${aviso.pagamentoPrePago.id} foi PAGO e a assinatura ${desfecho.assinatura.id} (${desfecho.assinatura.status}) não dá acesso — pagante trancado; conferir no painel da Stripe`);
-  }
-  if (desfecho.resultado === "sem-conta") {
-    // Assinatura sem conta na escola: em voz alta. Se ela dá acesso, há alguém PAGANDO e trancado
-    // fora (achado P1 da revisão) — o force-sync (etapa 4.4) conserta depois que a conta existir.
-    const { id, clienteId, status, pagoAte } = desfecho.assinatura;
-    const linha = `[stripe] aviso ${aviso.id} (${aviso.tipo}): assinatura ${id} do cliente ${clienteId} (${status}) SEM CONTA — ${desfecho.motivo}`;
-    if (assinaturaDaAcesso({ status, currentPeriodEnd: pagoAte })) console.error(`${linha}; ela dá acesso: o assinante está trancado fora`);
-    // A tentativa do visitante que ainda não foi paga (etapa 4.7, passo 4): o normal de toda
-    // assinatura dele até o pagamento passar — a conta nasce no aviso seguinte. Não é aviso.
-    else if (desfecho.motivo === "aguardando o pagamento") console.info(linha);
-    else console.warn(linha);
-  } else {
-    const qual = "assinatura" in desfecho ? ` — assinatura ${desfecho.assinatura.id} (${desfecho.assinatura.status})` : "";
-    // A conta tinha acesso e deixou de ter: as sessões dela caíram junto (etapa 4.4).
-    const caiu = desfecho.resultado === "atualizada" && desfecho.perdeuAcesso ? "; a conta perdeu o acesso: sessões encerradas" : "";
-    // A conta do visitante nasceu agora, do pagamento (etapa 4.7, passo 4) — o id, nunca o e-mail.
-    const nasceu = desfecho.resultado === "atualizada" && desfecho.contaNova ? `; a conta ${desfecho.contaNova} nasceu da ficha ${desfecho.assinatura.pedido ?? "?"}` : "";
-    console.info(`[stripe] aviso ${aviso.id} (${aviso.tipo}): ${desfecho.resultado}${qual}${caiu}${nasceu}`);
-  }
-  // As boas-vindas de quem assinou sem conta (etapa 4.7, passo 5): DEPOIS do commit, e em todo aviso
-  // da assinatura — inclusive o repetido —, até sair uma vez. Nunca derruba este 200. A assinatura que
-  // NASCEU de um Pix pré-pago (etapa 4.9) só é conhecida depois de processar o aviso.
-  const assinaturaDoAviso = aviso.assinatura ?? ("assinatura" in desfecho ? desfecho.assinatura.id : null);
-  if (assinaturaDoAviso) await mandarBoasVindasDaAssinatura(assinaturaDoAviso);
-  // Os e-mails da cobrança (etapa 4.7, passo 7): a cobrança que falhou, o aviso antes de trancar, a
-  // assinatura que terminou — com o que a Stripe acabou de dizer, DEPOIS do commit, uma vez cada. O
-  // aviso repetido não traz a assinatura de agora: o que ficar para trás, a rodada do agendador manda.
-  if (desfecho.resultado === "atualizada") await avisarSobreAAssinatura(desfecho.assinatura);
+  // Os alertas, o registro, as boas-vindas e os e-mails da cobrança: os MESMOS da conferência da rodada, que
+  // processa o aviso que não chegou (`depois-do-aviso.ts`; E1 da revisão ampla da cobrança). Nunca derruba este 200.
+  await depoisDoAviso(aviso, desfecho);
   res.json({ recebido: true });
 });
 

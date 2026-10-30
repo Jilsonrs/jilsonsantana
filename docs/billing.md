@@ -227,6 +227,13 @@ estabelecimento comercial), com devolução **imediata e corrigida** dos valores
 ordem pública — pode-se dar mais, nunca menos. Depois do prazo, o cancelamento não devolve dinheiro:
 o acesso vai até o fim do período já pago.
 
+**A contestação do pagamento corta o acesso na hora** *(decisão do operador, 29/10/2026, P122 — a revisão ampla
+da cobrança, plano → 4.9b, E7; ainda não construído)*: quem contesta no banco (chargeback) já pediu o dinheiro de
+volta, e o acesso acaba quando a contestação chega — um cartão roubado deixa de estudar o ano inteiro. Se a
+contestação for resolvida a favor da escola, o operador libera de novo pelo admin (4.7b). O **aviso de fraude** da
+Stripe (`radar.early_fraud_warning`) só alerta. Hoje nenhum dos dois é tratado: o acesso continua, e só o e-mail da
+Stripe avisa. *Cortar o acesso não apaga nada* (CLAUDE.md → *Churn não apaga nada*).
+
 **Um prazo só: os 7 dias da lei** *(12/10/2026 — etapa 4.6c)*. Com a escola só para o Brasil,
 saíram a promessa de 7 dias "ao mundo" da página em inglês (22/09/2026) e os 14 dias para fora do
 Brasil (10/10/2026), que nunca chegaram ao código (`PRAZO_DO_REEMBOLSO_EM_DIAS = 7`, no `core`).
@@ -383,6 +390,10 @@ O que a pessoa vê *(escolhas do operador, 12/10/2026)*:
 - **A tela de assinar** leva essa pessoa a Faturamento e Assinatura: não se assina de novo por
   cima de uma assinatura viva (o servidor recusa com 409 `CobrancaAtrasada`). O botão da home
   continua dizendo "Reativar assinatura" e chega ao mesmo lugar.
+- **Sem outro cartão, a pessoa paga com Pix** *(decisão do operador, 29/10/2026, P118 — a revisão ampla
+  da cobrança, plano → 4.9b, E14; ainda não construído)*: na cobrança atrasada, ao lado de "Trocar cartão",
+  um "Pagar com Pix" que encerra a atrasada e abre o Pix do plano. Hoje o Pix é recusado (409 `atrasada`) e
+  a saída fica escondida (Cancelar → Reativar → Pix). A frase e o botão vão ao operador para aprovar.
 - **Passar dos 3 dias não desloga ninguém:** a aula tranca pelo gate, e a pessoa continua
   logada, que é o que ela precisa para trocar o cartão. O cancelamento automático que vem
   depois (as tentativas acabaram) também não desloga: ela já estava sem as aulas.
@@ -508,6 +519,11 @@ velha ("atrasada") podia gravar por cima da nova ("cancelada") — e, como assin
 gera mais aviso, o acesso ficaria liberado para sempre. *(Achado P1 da revisão da etapa 4.1.)*
 
 ## Assinar com a conta logada *(Fase 4, etapa 4.2 — 10/10/2026)*
+
+**Quem assina logado recebe um e-mail nosso confirmando** *(decisão do operador, 29/10/2026, P127 — a revisão
+ampla da cobrança; plano → 4.9b, E18; ainda não construído)*: como as boas-vindas de quem assina sem conta, no
+visual da escola — a assinatura confirmada, o plano, até quando e como entrar. O texto vai ao operador. Hoje
+quem assina logado só vê a confirmação na tela. *O recibo automático da Stripe não foi o escolhido.*
 
 **Decisões do operador:**
 - **A tela mora em `/aluno/assinar`; a de depois do pagamento, em `/aluno/assinar/concluido`**
@@ -887,6 +903,16 @@ confundir quem assina — foi o motivo da decisão de 10/10.*
 
 ## Assinar sem conta: a conta nasce no pagamento *(Fase 4, etapa 4.7, passo 4 — 21/10/2026)*
 
+**O e-mail digitado errado se corrige pelo admin, sem devolver** *(decisão do operador, 29/10/2026, P121 — a
+revisão ampla da cobrança; a ação mora na etapa 4.7b, ainda não construída)*. Hoje não há como trocar o e-mail
+da conta (a troca do Better Auth está desligada), e o caminho é devolver e a pessoa assinar de novo.
+
+**O "Pix em conferência" só aparece para a aba que pagou** *(decisão do operador, 29/10/2026, P124 — a terceira
+passada da revisão do passo 6 da 4.9; plano → 4.9b, E17; ainda não construído)*: sem login, o 409
+`PixEmConferencia` sai só para quem traz o código da tentativa que pagou; quem só sabe o e-mail recebe o 409
+`Ocupada` (a frase de "outra aba"), e nada é cobrado nem criado. Hoje a frase sai para qualquer um que digite o
+e-mail — e revela que ele pagou um Pix que travou.
+
 **Decisões do operador (21/10/2026):** o plano do passo, em três partes (*"Sim, pode seguir"*) —
 a ficha de espera e a conta que nasce dela; as rotas sem login; a prova e a revisão. As respostas
 da abertura estão nas seções de cada assunto: o e-mail que já tem conta e o cartão de fora (*A tela
@@ -1072,6 +1098,11 @@ pública de assinar*), o teto da prévia (*Limite de tentativas*), o código de 
   (só para e-mail confirmado, decisão (4) do passo 5) precisam de confirmação própria — P96. *Reabre
   se um dono de e-mail reclamar de conta criada no nome dele, ou quando o e-mail da escola deixar de
   correr risco de cair no spam (aí ele prefere entrar só por código).*
+  **O aviso "uma senha foi criada"** *(decisão do operador, 29/10/2026, P123 — a revisão ampla da cobrança
+  achou o risco um pouco maior: a dona do e-mail que depois assinar teria a assinatura dela visível e
+  cancelável por quem pagou; plano → 4.9b, E16; ainda não construído)*: quando a senha é criada logo depois de
+  pagar, sai um e-mail para a caixa dizendo que uma senha foi criada nesta conta e que, se não foi a pessoa,
+  ela crie outra pelo "Esqueci minha senha" — que desconecta os outros aparelhos. O texto vai ao operador.
 - **As boas-vindas** (`lib/boas-vindas.ts`): saem depois de **qualquer** sincronia da assinatura de
   quem assinou sem conta — o aviso da Stripe (inclusive o repetido), o novo clique de quem já pagou,
   a conferência do admin —, sempre **depois do commit**, e só com a conta com acesso. **Uma vez:** a
@@ -1237,8 +1268,10 @@ por mais 31 dias, com acesso.
   por ali, e o registro grita. Só acontece se a régua da Stripe terminar em "marcar como não
   paga" — **decidido em 10/10/2026: a régua termina em CANCELAR** (*Régua de inadimplência*,
   acima); falta a configuração no painel (pendência P60).
-- **A tela de depois do pagamento não chama a sincronia:** se o aviso atrasar, ela fica em "está
-  demorando" até ele chegar, ou até a pessoa voltar à tela de assinar e clicar de novo.
+- ~~**A tela de depois do pagamento não chama a sincronia**~~ — **chama desde a 4.9b (E2, 29/10/2026)**: sem
+  confirmação em 30 s, ela pede ao servidor que confira na Stripe (`POST /api/billing/conferir`, e, sem conta,
+  `/api/billing/visitante/conferir` pela tentativa da aba), de novo a cada minuto, no máximo 5 vezes; o servidor
+  confere sem esperar trava, e a pergunta de sempre vê o resultado. E a rodada de hora em hora confere os avisos (E1).
 - **A sincronia do admin olha as últimas 20 assinaturas** do cliente na Stripe.
 - **Assinatura paga sem conta** (a Stripe não diz de quem é) não se resolve por aqui: é a etapa 4.7.
   *(Para a do VISITANTE, resolvida na etapa 4.7, passo 4: com o e-mail da ficha de espera, a
@@ -1545,6 +1578,28 @@ encerrada de vez com dias pagos: tem acesso e o servidor recusa cartão.
   dado direto no painel cortar o acesso, acerta o espelho quando a sincronia do reembolso pela
   tela falha, e avisa da devolução que o banco rejeita dias depois. *Se um aviso novo passar a
   ser tratado no código, ele tem que ser incluído nesse endereço também.*
+- **O aviso do Pix chega ao site no ar** *(P112, feita pelo operador em 29/10/2026, conferida pelos
+  prints dele)*: o mesmo endereço passou de 7 para **8 avisos** — entrou o `payment_intent.succeeded`, e
+  **só ele**. Sem ele, um Pix pago em produção só virava assinatura se a pessoa clicasse de novo, ou no
+  "Conferir na Stripe" do admin, sem alerta. *Não marcar "todos os eventos":* com o `invoice.created`, a
+  Stripe passa a esperar a resposta do site antes de cobrar as renovações.
+  **Desde a 4.9b (E4, 29/10/2026) a lista mora no código** (`AVISOS_DO_ENDERECO`, `server/src/lib/stripe.ts`), e
+  **a subida do servidor em produção confere o endereço**: desligado, ausente ou sem um dos 8, sai um alerta. Aviso
+  novo tratado no código entra nessa lista e no endereço.
+- **A versão do endereço de avisos** *(4.9b, C3, 29/10/2026)*: a Stripe manda cada aviso na versão da API do
+  endereço (sem versão própria, na versão padrão da conta), e o site lê a da biblioteca — hoje a `2026-09-30.endive`.
+  Numa versão de antes da `2025-03-31.basil`, o aviso de fatura chega sem a assinatura dele. **A subida em produção
+  aceita a mesma linha (`.endive`) numa versão igual ou mais nova** — as versões mensais de uma linha não quebram nada
+  (documentação da Stripe) — e alerta qualquer outra, inclusive a padrão da conta. A rodada de hora em hora não
+  processa aviso de fatura no formato antigo, e alerta. **Para trocar a versão, um endereço NOVO** (o que existe não
+  muda de versão):
+  1. no Workbench → Webhooks, criar um endereço com a mesma URL e `?versao=endive` no fim (o site não lê o que vem
+     depois do `?`), os 8 avisos e a versão da biblioteca — o painel oferece a da conta ou a mais recente; outra, só
+     pela API;
+  2. pôr o segredo do endereço novo (`whsec_…`) em `STRIPE_WEBHOOK_SECRET`, no Secret Manager, e publicar;
+  3. desligar o endereço antigo.
+  Até o passo 3, os dois entregam o mesmo aviso: um passa e o outro é recusado (pode vir o alerta do segredo trocado,
+  que para ao desligar o antigo). O mesmo aviso nunca conta duas vezes.
 - **A chave da Stripe em produção lê tudo o que a sincronia precisa** *(P71, respondida pelo
   operador em 12/10/2026)*: a chave que está na Railway é a comum (`sk_live_`), e não uma
   restrita — pagamentos, faturas, devoluções e agendamentos. E a `SENTRY_DSN` está preenchida:
@@ -1815,6 +1870,49 @@ IPv4 "embrulhado" (`::ffff:127.0.0.1`) vira IPv4, e o IPv6 vira a faixa (`2001:d
   vez a cada confirmação do banco não concluída, e só repete quando a assinatura está ocupada —
   nunca no limite. Se ele for recusado, a troca pendente vence sozinha em ~23 h, e a troca seguinte
   a anula.
+
+## Quando um aluno não conseguir pagar *(roteiro de hoje — rascunho do agente, 29/10/2026, a revisar pelo operador)*
+
+Saiu da revisão ampla da cobrança (o plano → etapa 4.9b), e descreve **o que existe hoje**. As decisões em
+aberto estão marcadas com o número da pendência; a proposta de engenharia que fecha os buracos é a 4.9b (E1 a E13).
+
+**Como você fica sabendo, hoje:**
+- um e-mail do Sentry que começa com `[stripe]`, `[api]`, `[email]` ou `[avisos]` — o `sub_…`, `pi_…`, `cus_…`
+  ou `evt_…` dentro dele é a pista;
+- um e-mail da própria Stripe dizendo que o endereço de avisos está falhando;
+- o aluno escrevendo para suporte@jilsonsantana.com (ou respondendo a um e-mail da escola).
+
+**O que hoje NÃO chega a você:** o campo de pagamento que não abre (a 4.9b, E3); o cartão recusado e quem
+desistiu (só no painel da Stripe → Pagamentos); o segredo do endereço de avisos trocado (E5 e E1).
+
+**O que fazer, passo a passo:**
+1. **Ache a pessoa.** Cole o id do alerta na busca do painel da Stripe → abra o cliente → pegue o e-mail.
+2. **Confira.** Admin → Assinaturas → o e-mail → **"Conferir na Stripe"**. Se ela tem acesso, responda que está
+   liberado — sem senha, ela entra por **"Receber código de acesso"**, na tela de entrar.
+3. **Pagou e continua sem acesso:**
+   - **Pix "em conferência":** devolva o Pix no painel e peça que pague de novo pela tela. **Não** crie a
+     assinatura à mão no painel: a marca fica no Pix, e a pessoa nunca mais consegue pagar pelo site. *(Decisão
+     do operador, 29/10/2026, P117: o admin ganha "Aceitar este Pix" e "Devolver" no painel de assinaturas — a
+     etapa 4.7b.)*
+   - **E-mail digitado errado, ou o alerta "SEM CONTA":** devolva no painel; ela assina de novo, com o e-mail certo
+     ou logada. *(Decisão do operador, 29/10/2026, P121: o e-mail digitado errado passa a ser corrigido pelo admin,
+     sem devolver — a etapa 4.7b.)*
+4. **Não consegue pagar:**
+   - cartão recusado: escolher **Pix** na mesma tela;
+   - o campo não aparece: outro navegador, sem bloqueador de anúncio, o 4G ou o celular — **se acontecer com duas
+     pessoas, é defeito nosso: avise o agente**;
+   - cobrança atrasada e sem outro cartão: Faturamento e Assinatura → Cancelar (termina na hora; nada mais é
+     cobrado) → Reativar assinatura → Pix (até o "Pagar com Pix" na própria cobrança atrasada — P118, E14);
+   - "muitas tentativas": esperar 15 minutos.
+5. **Receber por fora, numa emergência:** *decisão do operador, 29/10/2026 (P120)* — vira uma ação no admin,
+   **"Liberar acesso pago por fora"** (a etapa 4.7b): você recebe (Pix direto, transferência) e libera por um
+   clique, com o período. **Até ela existir, não use o painel da Stripe para isso:** a assinatura criada lá no
+   cliente que o site criou libera o acesso quando a fatura fica paga, mas "enviar fatura por e-mail" libera
+   **antes** de pagar, o link de pagamento avulso não libera nada, e quem nem chegou ao campo de pagamento não
+   tem cliente — nunca foi testado.
+6. **Reembolso que falhou:** devolva pelo painel. No painel, é sempre **devolver E cancelar** (P114).
+7. **No Sentry:** depois de resolver, marque "Resolvido", nunca "Ignorar"; e veja quantas vezes o erro aconteceu —
+   um e-mail só pode ser muita gente.
 
 ## Pendências de verificação
 

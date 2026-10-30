@@ -6,6 +6,7 @@ import { desligarComCalma } from "./lib/desligar.js";
 import { avisarQueSubiu, esvaziarMonitor } from "./lib/monitor.js";
 import { enderecoDoSite } from "./lib/endereco-do-site.js";
 import { conferirFusoDoBanco } from "./lib/prisma.js";
+import { conferirCobrancaNaSubida } from "./lib/conferencia-da-cobranca.js";
 
 // Entrada de PRODUÇÃO (`dist/index.js` — o que Dockerfile e Cloud Run executam).
 // A montagem do app vive em `app.ts`, que não escuta porta, para que supertest
@@ -42,6 +43,14 @@ const servidor = app.listen(PORT, () => {
   conferirFusoDoBanco().catch((erro: unknown) =>
     console.error(`[api] não consegui conferir o fuso do banco: ${erro instanceof Error ? erro.message : String(erro)}`),
   );
+  // A cobrança (E4 da revisão ampla, 29/10/2026 — `lib/conferencia-da-cobranca.ts`): as chaves da Stripe no mesmo
+  // modo, e o endereço de avisos ligado com todos os avisos que o site trata. Só em produção: em dev os avisos
+  // chegam pelo `stripe listen`, sem endereço cadastrado.
+  if (process.env.NODE_ENV === "production") {
+    conferirCobrancaNaSubida().catch((erro: unknown) =>
+      console.error(`[stripe] subida: a conferência da cobrança falhou: ${erro instanceof Error ? erro.message : String(erro)}`),
+    );
+  }
 });
 
 // Na publicação, o servidor antigo termina o que estava atendendo antes de sair

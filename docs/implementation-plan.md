@@ -106,26 +106,34 @@
 > está no ar, atrás do "Em breve"**: a escolha "Como você quer pagar?" aparece na tela de assinar. **Falta: o
 > operador ver a tela de assinar pela prévia** (`/__preview`).
 >
-> **NO `dev`, AINDA NÃO PUBLICADO (29/10/2026, depois do `d9dc5e6`): o passo 6 da 4.9 — a prova, as
-> revisões e as correções.** `12aee69` (parte 1: **o campo do Pix não abria no navegador** — corrigido; a
-> janela do QR em português; o Pix da aba esquecido ao pagar por cartão), `c89058b` (parte 2: a pré-paga nasce
-> paga em todo caminho, o valor conferido com o preço), `4fcf5cc` (parte 3: o Pix pago sem assinatura vira
-> assinatura na hora, nas quatro portas e no force-sync; a ficha presa à tentativa que pagou; o QR só com o
-> mesmo preço), `316bf36` (P113: o quadro do Pix sem o campo de e-mail), `73fd108` (P115: o QR vencido vira QR
-> novo no mesmo botão; P114 registrada na 4.7b), `2e01aa1` (P108 e P111), o fechamento (`fd930b3`: o ajuste da
-> P108), a parte 4 (a segunda revisão de segurança: o servidor — `62d3fdd`) e a parte 5 (o site). **ATENÇÃO: no ar (`d9dc5e6`) o campo do Pix NÃO ABRE** — quem olhar a `/assinar` pela
-> prévia vê "Pagar com Pix" sem o campo; é a próxima publicação que conserta. Nenhuma migration nova.
+> **Publicado em 29/10/2026: `09187af`** — o passo 6 da 4.9: `12aee69` (parte 1: **o campo do Pix não abria no
+> navegador** — corrigido; a janela do QR em português; o Pix da aba esquecido ao pagar por cartão), `c89058b`
+> (parte 2: a pré-paga nasce paga em todo caminho, o valor conferido com o preço), `4fcf5cc` (parte 3: o Pix pago
+> sem assinatura vira assinatura na hora, nas quatro portas e no force-sync; a ficha presa à tentativa que pagou;
+> o QR só com o mesmo preço), `316bf36` (P113), `73fd108` (P115; P114 registrada na 4.7b), `2e01aa1` e `fd930b3`
+> (P108 e P111), `62d3fdd` (parte 4: a segunda revisão de segurança, o servidor) e `70f597d` (parte 5: o site);
+> ordem do operador: *"Publicar (já autorizei, depois da revisão)"*. A terceira passada da revisão (só as
+> correções) não achou P0 nem P1. **A publicação foi PARADA no meio da montagem da imagem** (nada tinha mudado no
+> ar) quando a revisão ampla (4.9b) apontou publicar sem a P112 como P1; **o operador fez a P112** (o endereço de
+> avisos da conta de verdade com 8 avisos, incluindo o `payment_intent.succeeded`) e a publicação foi retomada.
+> **Revisão `jilson-prod-00047`** (100% do tráfego), conferida de fora: a versão nova do app (`mvu0vw00-1035c50a`;
+> antes, `mvstjfq9-9c3fa01b`); `/api/billing/visitante/planos` → 200 com o Pix e os dois planos; a home e a
+> `/assinar` no "Em breve"; a saúde, os cursos, as trilhas, os textos e a sessão (200); a assinatura sem login
+> (401); o login com um e-mail que não existe (401); o aviso da Stripe sem assinatura (400); o job das migrations
+> com sucesso, *"No pending migrations to apply"* (46 migrations); o job `jilson-prod-avisos` na mesma imagem do
+> site. **No banco de produção (branch `production`), só leitura: nenhuma tabela sem RLS; nenhum registro do modo
+> de teste** em `subscription`, `stripe_customer` e `guest_checkout` (1 assinatura e 1 cliente, os do operador, de
+> verdade — a verificação pendente da revisão de segurança ampla). **O campo do Pix passa a abrir no ar** (atrás do
+> "Em breve"). **Falta: o operador ver a `/assinar` pela prévia** (`/__preview`).
 >
-> **PARA CONTINUAR NO PRÓXIMO CHAT (a ordem — atualizado em 29/10/2026, no meio da correção):**
-> 0. **A segunda revisão de segurança do passo 6** (Opus 5.5, esforço máximo, a pedido do operador) achou 10
->    problemas, e o operador decidiu **corrigir tudo antes de publicar**. **As correções estão no `dev`**: a
->    parte 4 (o servidor — mutação 29 de 29) e a parte 5 (o site — 8 de 9) do passo 6 da 4.9.
-> 1. **A revisão de segurança de novo (Opus 5.5, esforço máximo), só das correções** (as partes 4 e 5). Achado grave vai ao
->    operador antes de publicar.
-> 2. **Publicar** (o operador já mandou publicar depois da revisão) e conferir de fora como sempre — a versão
->    do app, `/api/billing/visitante/planos` com `pix`, o job das migrations sem migration nova, RLS no banco
->    de produção só leitura. Depois, o operador vê a `/assinar` pela prévia (no ar hoje o campo do Pix não abre).
-> 3. **O passo 9 da 4.7 — quem não terminou de assinar, e a tabela de leads** (decisões do operador,
+> **PARA CONTINUAR NO PRÓXIMO CHAT (a ordem — atualizado em 29/10/2026, depois da publicação `09187af`):**
+> 1. **A revisão ampla da cobrança (a etapa 4.9b): o bloco de engenharia APROVADO (29/10/2026), na ordem do
+>    plano** — grupo 1 (E5, E4, E1, E3, E2), grupo 2 (E8, E10, E9, E7, E6), grupo 3 (E11, E12, E13, E17), grupo 4
+>    (E14, E15, E16, E18; cada texto vai ao operador antes). Um commit por parte. As decisões P116–P124 e P127 já
+>    foram respondidas (registradas na 4.9b, na 4.7b e no `billing.md`); ficam a P126 (as conferências nos painéis,
+>    por prints — fazer junto com o operador) e a P125 (só quando ele for criar um desses códigos). O roteiro
+>    "quando um aluno não conseguir pagar" está em `billing.md`, como rascunho, para ele revisar.
+> 2. **O passo 9 da 4.7 — quem não terminou de assinar, e a tabela de leads** (decisões do operador,
 >    29/10/2026): registrar no plano e construir. O e-mail "você não terminou a assinatura" 2 horas depois
 >    da última tentativa; aos 7 dias, a ficha e o cliente da Stripe (com o CPF) são apagados; quem marcou
 >    "Quero receber novidades" vira LEAD (nome e e-mail, nunca o CPF), e o lembrete dos outros traz o botão
@@ -133,12 +141,11 @@
 >    nome" no formulário de assinar sem conta; tudo na rodada de hora em hora (`jilson-prod-avisos`). A
 >    tabela de leads serve depois à captura do YouTube e do LinkedIn. **Todo texto** (o e-mail, o campo, o
 >    consentimento, a página de descadastro) vai ao operador para aprovar.
-> 4. **P93, um passo por vez, com a confirmação dele:** o 1º e-mail (o código de entrar) foi enviado ao Yahoo
+> 3. **P93, um passo por vez, com a confirmação dele:** o 1º e-mail (o código de entrar) foi enviado ao Yahoo
 >    em 29/10/2026 e espera a resposta; depois o código da senha nova, as boas-vindas e as telas de entrar e
 >    de senha nova.
-> 5. **P112** (do operador, antes de qualquer Pix de verdade: `payment_intent.succeeded` no endereço de avisos
->    da conta de verdade; depois, registrar no `billing.md`) e **o passo 8 da 4.7** (o teste dele com cartão e
->    Pix reais, R$ 99,90 e o reembolso), com a P102.
+> 4. **O passo 8 da 4.7** (o teste dele com cartão e Pix reais, R$ 99,90 e o reembolso — a P112 já está feita),
+>    com a P102.
 > **O que o próximo chat precisa saber:** a suíte do servidor apaga o banco de teste local — perguntar
 > UMA vez e usar a resposta exata em `PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION`; rodar como o CI
 > (`STRIPE_SECRET_KEY= STRIPE_PUBLISHABLE_KEY= STRIPE_WEBHOOK_SECRET= RESEND_API_KEY= STRIPE_PIX_CONFIGURATION=`);
@@ -5603,6 +5610,25 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
          - **Cancelada** → Copiar o link para reativar (o e-mail automático do sistema já
            terá saído sozinho: decisão dele de 10/10/2026, etapa 4.7).
          - **Paga e sem conta na escola** → Ligar a uma conta (etapa 4.7).
+         - **Pix "em conferência"** (pagou e não virou assinatura sozinho — a 4.9b) → **Aceitar este Pix**
+           (cria a pré-paga no preço de agora do plano, tira a marca de conferência e grava pelo
+           `sincronizar`) · **Devolver** (o Pix volta e a pessoa paga de novo pela tela). *Decisão do
+           operador, 29/10/2026 (P117).* Até esta tela existir, só devolver, pelo painel da Stripe — nunca
+           criar a assinatura à mão lá (`billing.md` → *Quando um aluno não conseguir pagar*).
+         - **Qualquer conta, quando o site não conseguiu cobrar** → **Liberar acesso pago por fora** (o
+           operador recebeu por Pix direto ou transferência): o plano e o período, com confirmação, e fica
+           registrado quem liberou, quando e até quando. *Decisão do operador, 29/10/2026 (P120 — a revisão
+           ampla da cobrança, 4.9b).* **Não é cortesia:** a decisão de 10/10/2026 (o admin não presenteia acesso
+           pela tela — `billing.md` → *Sincronizar e perder o acesso*) continua. **Trava de engenharia:** o acesso
+           sai de uma assinatura de verdade na Stripe, pré-paga e paga por fora (como a do Pix:
+           `cancel_at_period_end`, a fatura `paid_out_of_band`), gravada pelo `sincronizar` — nunca de um desvio
+           em `temAcessoAtivo()`; assim o espelho, a régua e os e-mails continuam valendo.
+         - **Conta que nasceu com o e-mail digitado errado** → **Corrigir o e-mail**: o admin digita o certo, o site
+           manda o código de entrar para ele, e a troca só vale depois do código confirmado. *Decisão do operador,
+           29/10/2026 (P121).* **Travas de engenharia (é a porta de tomar conta):** o e-mail novo não pode ser de
+           outra conta; a troca encerra todas as sessões; a ficha do visitante e o cliente da Stripe passam ao
+           e-mail novo; fica registrado quem trocou e quando. A troca de e-mail do Better Auth continua desligada
+           para o aluno.
 
          Toda ação pede confirmação dizendo o efeito ("Fulano continua com acesso até 10/11"), e
          a tela se atualiza com o que a Stripe respondeu.
@@ -5931,10 +5957,10 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             servido em `/.well-known/apple-developer-merchantid-domain-association` **antes do portão
             "Em breve"**, e o domínio registrado em *Settings → Payments → Payment method domains* (teste
             e ao vivo). Nada muda no campo do cartão.
-      - [ ] **Passo 6 — Prova e revisão.** *(Fechado em 29/10/2026 — a prova, as duas revisões, as partes 1 a 3 e as
-            decisões P113, P114 e P115 — e REABERTO no mesmo dia pela segunda passada, que achou 10 problemas: a
-            as partes 4 (o servidor) e 5 (o site) estão feitas; ficam a terceira passada, a P112, do operador, e o
-            Pix de verdade no passo 8 da 4.7.)* Na área restrita: como se confirma um Pix de teste (a
+      - [x] **Passo 6 — Prova e revisão.** *(Fechado em 29/10/2026 — a prova, as duas revisões, as partes 1 a 3 e as
+            decisões P113, P114 e P115 —, REABERTO no mesmo dia pela segunda passada, que achou 10 problemas, e
+            FECHADO de novo: as partes 4 (o servidor) e 5 (o site), a terceira passada e a P112, feitas. O que ela
+            deixou vai para a revisão ampla (4.9b); o Pix de verdade fica no passo 8 da 4.7.)* Na área restrita: como se confirma um Pix de teste (a
             página de instruções da Stripe em teste), o pré-pago de ponta a ponta com o relógio de
             teste (nasce, avisa 3 dias antes, termina, "terminou"), o reembolso do Pix, o QR vencido;
             no banco de dev; a revisão de segurança (`security-vulnerability-reviewer`); o Pix de
@@ -6114,8 +6140,13 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                   segredo do cliente, o Stripe.js lê `status`, `amount` e `currency` do pagamento (`retrievePaymentIntent`).
                   *Não provado no navegador:* o caminho feliz do QR vencido (o valor bate, o QR novo abre) — a prova da
                   P115 foi antes desta mudança.
-            - [ ] **A terceira passada da revisão de segurança (Opus 5.5, esforço máximo — pedido do operador), só das
-                  partes 4 e 5.** Achado grave vai ao operador antes de publicar.
+            - [x] **A terceira passada da revisão de segurança (Opus 5.5, esforço máximo — pedido do operador), só das
+                  partes 4 e 5 (29/10/2026).** **Nenhum P0 nem P1:** as correções fecham os 10 achados. Ficaram 2 P2 e
+                  2 P3, levados para a revisão ampla (a etapa 4.9b, abaixo): o Pix em conferência não tem saída pelo
+                  sistema (só devolver — P117); o "QR de novo" confere só o valor, e o servidor confere o id do preço e
+                  o valor (um preço recriado com o mesmo valor põe em conferência quem pagou o QR novo — E11); o 409
+                  `PixEmConferencia` sem login revela um pouco mais sobre um e-mail (P124); `TEMPO_DO_PIX` (150 s)
+                  abaixo do pior caso, que passou a 8 idas à Stripe (E12).
             - [x] **P115 — o QR vencido (decisão do operador, 29/10/2026: "o mesmo botão gera o QR novo quando
                   venceu").** `mostrarQrDeNovo` lê o pagamento AGORA (`retrievePaymentIntent`) e decide pelo status
                   (`comoMostrarOQr`, função pura): `requires_action` → reabre o MESMO QR (`handleNextAction`);
@@ -6131,8 +6162,11 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                   frase; com o QR ainda valendo, o botão reabriu o MESMO (0,8 s, a mesma validade). Testes:
                   `stripe-do-site.test.ts` (+1), `AssinaturaConcluidaPage.test.tsx` (+2: a frase; o Stripe.js que
                   lança), as telas de assinar (o e-mail guardado). **Mutação: 4 de 4 reprovaram.**
-            - [ ] **Decisão do operador:** P112 (o aviso `payment_intent.succeeded` no endereço de avisos da conta
-                  de verdade — tarefa dele no painel).
+            - [x] **P112 — FEITA pelo operador em 29/10/2026**, com o agente guiando pelos prints dele: o endereço de
+                  avisos da conta de verdade passou de 7 para 8 avisos, com o `payment_intent.succeeded` (só ele) —
+                  `billing.md` → *O aviso do Pix chega ao site no ar*. A publicação deste passo foi PARADA no meio da
+                  montagem da imagem, quando a revisão ampla (4.9b) apontou publicar sem a P112 como P1 — nada tinha
+                  mudado no ar —, e retomada depois dela.
       **Fora da 4.9:** somar tempo pagando antes de acabar (decisão (a)) · código promocional no Pix
       (decisão (b)) · Pix na troca de plano · o Pix Automático (quando a Stripe liberar para o Brasil) ·
       **Apple Pay e Google Pay** (decisão do operador, 28/10/2026). **Trazido da 4.2 (10/10/2026):** o Pix é um item a mais na
@@ -6145,6 +6179,216 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       paga nesse instante) *(feito no código no passo 2a, 28/10/2026 — um QR por vez e um pagamento
       aberto por vez; a prova na área restrita fica no passo 6)* · se entrar forma de pagamento que saia do site e volte, tirar do
       endereço da volta o segredo que a Stripe acrescenta.
+- [ ] **4.9b — A REVISÃO AMPLA DA COBRANÇA (pedido do operador, 29/10/2026).** Nas palavras dele: *"uma revisão
+      minuciosa de tudo que foi feito relacionado a Stripe até o momento para evitar ao máximo erros, invasão e
+      principalmente o aluno não conseguir pagar e eu não ficar sabendo ou mesmo não ter como resolver e quando
+      acontecer os caminhos para receber"*. Dois revisores em paralelo, no Opus 5.5 com esforço máximo (escolha dele):
+      o `security-vulnerability-reviewer` (invasão e fraude) e um revisor geral (o aluno que não consegue pagar: o que
+      ele vê, se o operador fica sabendo, se há como resolver e como receber) — sobre o `dev` em `70f597d`, só
+      leitura. **Nenhum P0 de invasão.** O que pesa é o "pagou, ou quis pagar, e ninguém soube":
+      **Os achados graves (P0/P1, os dois revisores):** (a) **publicar sem a P112** — feita no mesmo dia (4.9, passo
+      6); (b) **o campo de pagamento que não abre é invisível**: o erro fica no navegador e o pedido nem chega ao
+      servidor (`stripe-do-site.tsx`, `FormularioDeAssinatura.tsx`) — já aconteceu duas vezes (10/10 e 29/10),
+      achado só abrindo a tela à mão, e o alerta das telas (Fase 7) não o pegaria, porque o erro não é lançado;
+      (c) **a assinatura do aviso que não confere só gera `console.warn`** (`stripe-webhook.ts:32`): com o segredo
+      trocado ou colado errado, TODOS os avisos são recusados com 400 e ninguém sabe — e a conferência de cada
+      publicação (o aviso sem assinatura → 400) não distingue o segredo certo do errado; (d) **nada confere se os
+      avisos chegaram**, e a tela de depois do pagamento nunca confere sozinha na Stripe nem mostra o contato do
+      suporte ("Confirmando…" para sempre); (e) **a cobrança atrasada sem outro cartão**: o Pix é recusado
+      ("atrasada") e a saída (cancelar e assinar com Pix) fica escondida; (f) **quem tenta e não consegue pagar** só
+      aparece no painel da Stripe, e nenhuma frase de erro de pagamento cita o suporte.
+      **O BLOCO DE ENGENHARIA (proposta do agente; nenhuma peça nova de stack) — APROVADO pelo operador em
+      29/10/2026, nesta ordem, um commit por parte, cada uma com teste, mutação e os quatro gates:** **grupo 1, "pagou
+      e ninguém soube"** — E5, E4, E1, E3, E2; **grupo 2, segurança** — E8, E10, E9, E7, E6; **grupo 3, ajustes do
+      Pix** — E11, E12, E13, E17; **grupo 4, telas e e-mails novos** (cada texto vai a ele antes) — E14, E15, E16,
+      E18. Publicar é ordem dele, como sempre.
+      - [x] **E1 — a rodada de hora em hora confere os avisos:** pede à Stripe os eventos recentes dos tipos tratados
+            (ela guarda 30 dias) e processa, pela mesma rotina do aviso, os que o site não registrou (`stripe_event`),
+            com um alerta. Pega o aviso esquecido no endereço, o segredo trocado, o endereço desligado e o aviso de
+            fim ou de devolução perdido (que hoje deixa o espelho `active` e o acesso aberto sem pagamento).
+            **FEITO (29/10/2026):** `lib/avisos-perdidos.ts` (`conferirAvisosPerdidos`): os avisos dos tipos de
+            `AVISOS_DO_ENDERECO` dos últimos **3 dias** (o tempo em que a Stripe tenta entregar) até **10 min** atrás (a
+            entrega normal ainda pode estar chegando), lidos da API (`avisosDaStripe`, `stripe.ts` — autenticada, sem
+            assinatura a conferir); os sem marca vão, do mais velho para o mais novo, pela MESMA rotina do endereço —
+            `processarAviso` e **`depoisDoAviso`** (`lib/depois-do-aviso.ts`: os alertas, o registro, as boas-vindas e
+            os e-mails da cobrança saíram da rota para cá, sem mudar nada — a suíte inteira passou antes de seguir), e
+            `paraAviso` separou o "evento → aviso" da verificação da assinatura. Um alerta por rodada, com texto fixo (o
+            Sentry junta as rodadas), e outro se algum falhar de novo (fica sem marca, para a próxima). A conferência
+            roda primeiro na tarefa da rodada (`tarefas/avisos-da-cobranca.ts`), com 1 minuto de prazo; a rodada dos
+            e-mails fica com o resto dos 4 (o job tem 5). Testes: `avisos-perdidos.test.ts` (novo, 7, contra o banco),
+            `avisos-da-stripe-rede.test.ts` (novo, 3). **Mutação: 10 de 10 reprovaram.** *Sem teste:* a tarefa em si (o
+            `process.exit`); a prova é o registro da rodada no ar (`[avisos] a conferência dos avisos da Stripe
+            terminou: …`). *Reabre se a rodada ficar parada mais de 3 dias (P126: o alerta de "a rodada não rodou"), ou
+            se a lista passar do máximo (2.000) com frequência.*
+      - [x] **E2 — a tela de depois do pagamento pede conferência:** sem confirmação em ~30 s, pede ao servidor que
+            confira na Stripe (a sincronia das portas: a assinatura viva, o Pix pago), com limite; nada do navegador
+            vale como prova. **FEITO (29/10/2026):** `conferirOCliente` (`assinaturas.ts`): o Pix pago sem espelho
+            (pela rotina sem aviso) e as assinaturas não encerradas do cliente (`sincronizarSeLivre`) — **sem esperar
+            nenhuma trava**, porque quem pede é o aluno; `POST /api/billing/conferir` (a conta da sessão; quem já tem
+            acesso nem vai à Stripe; teto por conta, 10 a cada 15 min) e `POST /api/billing/visitante/conferir` (pela
+            tentativa da aba: a ficha que pagou ganha a conta e as boas-vindas, como no "Conferir na Stripe" do admin;
+            a tentativa desconhecida responde igual, sem ir à Stripe; teto por endereço, 10). No site,
+            `usePedirConferencia` (`lib/assinar.ts`): aos 30 s sem confirmação e depois a cada minuto, no máximo 5; o
+            pedido não decide nada — a pergunta "já valeu?" de sempre vê o resultado. Testes:
+            `conferir-pela-tela.test.ts` (novo, 8, contra o banco), as duas telas de concluído (+5, +3). **Mutação: 13
+            de 13 reprovaram** — duas passaram na primeira rodada porque os MEUS testes não provavam nada (o aluno
+            ficava com acesso de um teste para o outro, e no de "quem tem acesso" ele nem tinha cliente na Stripe);
+            corrigidos, reprovaram. O `billing.md` (*limitações conhecidas*) deixou de dizer que a tela não confere.
+      - [x] **E3 — o vigia do campo de pagamento:** o Stripe.js que não carrega, ou o campo que não fica pronto em
+            ~15 s, mostra uma frase e avisa o servidor, que alerta (`[site] …`).
+            **FEITO (29/10/2026):** `CampoVigiado` (`components/assinar/`, fora da fronteira com o Stripe.js, para ter
+            teste) em volta do `CampoDoCartao`, que passa adiante o `onReady` e o `onLoadError` da Stripe
+            (`[FATO — docs da Stripe, context7, 29/10/2026]`): sem "pronto" em 15 s, ou com a falha, a frase aprovada
+            (`app.assinar.campoNaoCarregou`) e UM aviso ao servidor — `POST /api/billing/campo-nao-abriu`, sem login,
+            com o teto por endereço (5 a cada 15 min, `limiteSemLogin.campoNaoAbriu`) e o corpo de listas fechadas
+            (`campoNaoAbriuSchema`: a tela e o motivo); o servidor alerta **`[stripe] site: …`** (e não `[site]`: as
+            regras de alerta do Sentry são por origem, e a de `stripe` com certeza avisa), no máximo um a cada 15 min
+            por cópia. Nas três telas: assinar (logado e sem conta) e trocar o cartão. Testes: `CampoVigiado.test.tsx`
+            (novo, 5), as três telas (+1 cada: o nome da tela no aviso), `campo-nao-abriu.test.ts` (novo, 4).
+            **Mutação: 15 de 16 reprovaram** (o site 7 de 8, o servidor 4 de 4); a que passou é a ligação do
+            `onLoadError` dentro da fronteira — e a prova no navegador a exercitou. **Provado no navegador** (Chrome do
+            agente em `localhost`, a `/assinar` sem conta, a Stripe de teste): o campo de verdade abriu, e 20 s depois
+            nenhuma frase — no cartão e no Pix; sem internet, a troca para cartão mostrou a frase em menos de 10 s (a
+            Stripe disse que falhou); com a internet de volta, o aviso do navegador chegou ao servidor (204) e virou a
+            linha de alerta. **A frase, APROVADA pelo operador
+            em 29/10/2026 (P116, a sugestão do revisor):** *"O campo de pagamento não carregou. Tente outro
+            navegador ou desative o bloqueador; se continuar, escreva para suporte@jilsonsantana.com."*
+      - [x] **E4 — a conferência na subida do servidor:** a chave publicável e a secreta no mesmo modo (hoje só se
+            confere a `pk_`), e o endereço de avisos de produção ativo e com todos os eventos que o código trata —
+            faltou um, alerta. **FEITO (29/10/2026):** `lib/conferencia-da-cobranca.ts` — `problemaDasChaves` (a
+            publicável `pk_`, a secreta `sk_` ou `rk_`, do mesmo modo; o registro diz o modo, nunca a chave),
+            `problemaDoEndereco` (um endereço de avisos da conta aponta para o site, LIGADO, e os ligados assinam
+            juntos todos os de `AVISOS_DO_ENDERECO`, ou "todos os eventos") e `conferirCobrancaNaSubida`, chamada no
+            `index.ts` só em produção, uma vez por subida de cada cópia: cada problema vira alerta `[stripe] subida: …`,
+            e nunca derruba a subida. **A lista dos avisos exigidos passou a morar no código**
+            (`AVISOS_DO_ENDERECO`, `stripe.ts`: os 8 da P69 e da P112), com um teste que assina cada um de verdade e
+            prova que ele é tratado. Testes: `conferencia-da-cobranca.test.ts` (novo, 10), `stripe.test.ts` (+1).
+            **Mutação: 11 de 11 reprovaram.** *Sem teste:* a chamada no `index.ts` (a subida não roda na suíte, como
+            a do fuso do banco); a prova é o primeiro registro da subida depois da publicação.
+      - [x] **E5 — o aviso com a assinatura que não confere vira alerta** quando o cabeçalho tem o formato da Stripe e
+            a hora é recente (no máximo um a cada 15 min por cópia); cabeçalho ausente ou malformado continua só
+            registro. Na conferência de cada publicação, o reenvio de um aviso pelo painel (200) no lugar do 400.
+            **FEITO (29/10/2026):** `pareceAvisoDaStripe` (`stripe.ts`, função pura: `t=` com até 5 min de diferença e
+            ao menos um `v1=` de 64 hexadecimais — `[FATO — docs da Stripe, context7, 29/10/2026]`, e a Stripe assina
+            cada nova tentativa de entrega com a hora dela) e, na rota (`stripe-webhook.ts`), o alerta `[stripe] aviso
+            recusado: o cabeçalho é da Stripe e recente…` no máximo um a cada 15 min por cópia (a marca na memória,
+            com o motivo escrito: protege a cota de alertas, que é por cópia); o resto continua `warn`. **Assim o
+            segredo trocado alerta sozinho no primeiro aviso de verdade** — o reenvio pelo painel (200) continua sendo
+            a prova manual, na P126. Testes: `stripe-webhook.test.ts` (+2: o segredo trocado alerta uma vez, cala por
+            15 min e volta; sem cabeçalho, malformado, velho e adiantado não alertam — com a prova de que o alerta
+            estava livre), `stripe.test.ts` (+2); o teste "nenhuma recusa fica muda" passou a olhar o alerta e o
+            registro juntos (dependia da ordem dos testes). **Mutação: 6 de 6 reprovaram.**
+      - [ ] **E6 — uma vez por dia, a rodada relê as assinaturas `active` com o período vencido há mais de 2 dias**,
+            e alerta a que a Stripe diz devolvida ou vencida (a devolução pelo painel sem cancelar, P114; o aviso de
+            fim perdido).
+      - [ ] **E7 — a contestação e o aviso de fraude** (`charge.dispute.created`, `radar.early_fraud_warning.created`)
+            tratados com alerta e cadastrados no endereço de avisos; hoje só o e-mail da Stripe avisa, e a disputa
+            não corta o acesso. **Decisão do operador, 29/10/2026 (P122): a contestação CORTA o acesso na hora** (se
+            resolvida a favor da escola, ele libera de novo pela 4.7b); o aviso de fraude só alerta —
+            `billing.md` → *Reembolso*.
+      - [ ] **E8 — a trava contra pedido de outro site aceita só `same-origin`** (ou o cabeçalho ausente); hoje
+            recusa só `cross-site` (`protecao-da-cobranca.ts`): uma página num subdomínio de `jilsonsantana.com`
+            apontando para terceiro poderia mandar o aluno logado reembolsar ou cancelar.
+      - [ ] **E9 — o teto do Sentry com uma reserva para `[stripe]`, `[email]` e `[avisos]`** (hoje um apagão com
+            centenas de `[api]` gasta o dia, e o alerta seguinte de pagante trancado não sai), e um alerta quando o
+            limite começar a descartar.
+      - [ ] **E10 — HSTS e `frame-ancestors 'self'` nas páginas** (hoje a `/assinar` pode ser emoldurada por outro
+            site).
+      - [ ] **E11 — o Pix conferido pelo plano e pelo valor**, com a pré-paga criada no preço de agora desse plano
+            (hoje, pelo id do preço — a terceira passada do passo 6).
+      - [ ] **E12 — `TEMPO_DO_PIX` 180 s** (o pior caso passou a 8 idas à Stripe — a terceira passada).
+      - [ ] **E13 — o id da conta nas linhas `[api]` de `/billing`**: o alerta diz quem (a busca por `sub_`, `pi_`
+            e `cus_` é da 4.7b).
+      - [ ] **E14 — o Pix na cobrança atrasada** *(decisão do operador, 29/10/2026, P118)*: ao lado de "Trocar
+            cartão" (Faturamento, a aula trancada e o e-mail da falha), um "Pagar com Pix" que encerra a atrasada
+            e abre o Pix do plano — pela operação da assinatura (`operarNaAssinatura`), um pagamento aberto por vez.
+            A frase e o botão vão ao operador para aprovar.
+      - [ ] **E15 — o suporte nas frases de erro de pagamento** *(decisão do operador, 29/10/2026, P119)*: as
+            frases de erro de pagamento (as de assinar, de trocar o cartão e a "Está demorando…" de depois do
+            pagamento) passam a citar suporte@jilsonsantana.com, e depois de um cartão recusado a tela sugere
+            pagar com Pix. **Cada frase reescrita vai ao operador, uma a uma, antes de entrar no site.**
+      - [ ] **E16 — o aviso "uma senha foi criada"** *(decisão do operador, 29/10/2026, P123)*: a senha criada logo
+            depois de pagar (`senha-depois-de-pagar.ts`) manda um e-mail para a caixa — se não foi a pessoa, ela
+            cria outra pelo "Esqueci minha senha", que desconecta os outros aparelhos (conferir na prova). Pela
+            porta de sempre (`enviarEmail`, depois do commit, com a chave). O texto vai ao operador.
+      - [ ] **E17 — sem login, o "em conferência" só para a aba que pagou** *(decisão do operador, 29/10/2026,
+            P124)*: nas duas portas sem login, o 409 `PixEmConferencia` só com o código da tentativa do Pix pago
+            (`pago.visitante?.resumoDaTentativa === resumoDaTentativa(pedido.tentativa)`); os outros, 409 `Ocupada`,
+            sem nunca criar outro pagamento.
+      - [ ] **E18 — o e-mail de confirmação para quem assina logado** *(decisão do operador, 29/10/2026, P127)*:
+            sai da sincronia que dá o acesso, uma vez por assinatura (a mesma regra das boas-vindas: depois do
+            commit, `enviarEmail`, chave estável), para cartão e Pix. O texto vai ao operador.
+      **A REVISÃO DE SEGURANÇA DO GRUPO 1** (29/10/2026, `security-vulnerability-reviewer`, Opus 5.5, esforço máximo,
+      sobre `76742f9..bdcc04b`): **nenhum P0.** Dois P1 da mesma causa — **dois alertas novos que um robô dispara à
+      vontade** (o do E5, com um cabeçalho de mentira de formato certo; o do E3, sem login): juntos, uns 192 por dia
+      por cópia contra o teto de 150 do Sentry, e os alertas que importam (pagante trancado, Pix sem acesso) deixam de
+      chegar; e o do E5 contradizia a regra escrita do `CLAUDE.md` ("aviso com assinatura trocada" nunca é `error`).
+      Cinco P2: o E1 leria errado um aviso de fatura num formato antigo da API e o marcaria (a reentrega de verdade
+      viraria "repetido"); a falha da Stripe na conferência pedida pela tela (E2) vira um alerta por pedido; a
+      conferência pulava a cancelada com dias pagos; e dois que dependem do operador — a ficha do visitante que fica
+      com a última tentativa quando a assinatura não traz o resumo (já existia; vira P0 com as ações da 4.7b) e a
+      rodada parada que não avisa ninguém. **Decisão do operador (29/10/2026): corrigir os 2 P1 e os 3 P2 do código
+      do grupo, uma revisão curta só das correções, e publicar.**
+      - [x] **C1 — o alerta do E5 só com a Stripe confirmando** que o aviso recusado existe na conta (o `id` do corpo,
+            `events.retrieve`; no máximo uma conferência por minuto por cópia): forjado continua `warn`, como manda o
+            `CLAUDE.md`. A rodada (E1) continua achando o segredo trocado pela API, sem depender disto. **FEITO
+            (29/10/2026):** `idDoAvisoNoCorpo` (função pura: só `evt_` e letras e números, corpo até 512 KB) e
+            `avisoExisteNaStripe` (`stripe.ts`; `resource_missing` = forjado; a Stripe sem responder = não, com
+            registro); na rota, uma pergunta por minuto e um alerta a cada 15 min, os dois por cópia. O `CLAUDE.md`
+            (*Server*) ganhou a razão: alerta que um anônimo dispara cala os outros. Testes: `stripe-webhook.test.ts`
+            (os do E5 reescritos, +2: o forjado e o limite de perguntas), `stripe.test.ts` (+2),
+            `avisos-da-stripe-rede.test.ts` (+3). **Mutação: 5 de 5 reprovaram.**
+      - [x] **C2 — o alerta do E3 no máximo a cada 6 h por cópia**, com quantos relatos e de quantos endereços (a marca
+            do endereço) desde o último; a marca também na linha de registro. **FEITO (29/10/2026):**
+            `contarRelatoDoCampo` (`billing.ts`; até 1.000 endereços contados entre dois alertas). Teste:
+            `campo-nao-abriu.test.ts` (o primeiro reescrito: 1 alerta, os de menos de 6 h no registro com a marca e sem
+            o IP, e o alerta seguinte com "3 relato(s) de 2 endereço(s)"). **Mutação: 4 de 4 reprovaram.**
+      - [x] **C3 — o formato da API:** a rodada não processa (nem marca) aviso de fatura sem o `parent` (formato
+            anterior à `2025-03-31.basil`) e alerta; a subida (E4) confere a versão da API do endereço de avisos contra
+            a da biblioteca (`Stripe.API_VERSION`). **FEITO (29/10/2026):** `avisoEmFormatoAntigo` (`stripe.ts`, função
+            pura) — a rodada o pula sem marca, registra cada um e alerta uma vez (`formatoAntigo` na conta da rodada e
+            na linha do job); `versaoServeAoSite` (`conferencia-da-cobranca.ts`): **a mesma linha da biblioteca
+            (`.endive`), numa versão igual ou mais nova** — as mensais de uma linha não quebram nada, e exigir a exata
+            daria alarme a cada subida com o endereço na "mais recente" do painel; a padrão da conta (sem versão
+            própria) não serve. A versão da biblioteca mora num lugar só (`VERSAO_DA_API`, `stripe-cliente.ts`). O
+            passo a passo da troca: `billing.md` → *A versão do endereço de avisos*. Testes: `avisos-perdidos.test.ts`
+            (+1, e a conta nova nos outros 6), `stripe.test.ts` (+1), `conferencia-da-cobranca.test.ts` (+2).
+            **Mutação: 9 de 9 reprovaram.** **A versão do endereço de produção não é conhecida:** a primeira subida
+            depois da publicação diz (sem alerta, ela serve). *Docs check (context7): Stripe → `/websites/stripe` → 2
+            consultas (o endereço sem versão própria recebe na da conta, e outra versão exige endereço novo; as mensais
+            de uma linha sem quebra).*
+      - [x] **C4 — a conferência pedida pela tela que falha** responde 204 do mesmo jeito, registra, e alerta no
+            máximo uma vez a cada 15 min por cópia. **FEITO (29/10/2026):** `conferirPelaTela`
+            (`server/src/lib/conferencia-pela-tela.ts`), nas duas portas (`/billing/conferir` e
+            `/billing/visitante/conferir`): a falha volta `null`, e o registro diz de quem (a conta ou a ficha) e o
+            motivo; o limite do alerta é um só para as duas portas, por cópia (protege a cota de alertas da cópia, como
+            os do E3 e do E5). Teste: `conferir-pela-tela.test.ts` (+1: 204 nas duas portas, sem 500 nem `[api]`, um
+            alerta em 15 min, o relógio que volta, e nada muda). **Mutação: 9 de 9 reprovaram.**
+      - [x] **C5 — a conferência pula só a `incomplete_expired`** (a cancelada com dias pagos ainda dá acesso pelo gate).
+            **FEITO (29/10/2026):** `ENCERRADAS_NA_CONFERENCIA` (`assinaturas.ts`) só com ela. A cancelada sempre já
+            foi paga (cancelar a incompleta a leva para `incomplete_expired` — `cancelarIncompleta`) e a lista é das
+            últimas 20: a ida a mais à Stripe é limitada, e só para quem está sem acesso. Teste:
+            `conferir-pela-tela.test.ts` (+1: a cancelada com dias pagos volta a dar acesso; o teste do E2 passou a
+            pular a que expirou). **Mutação: 3 de 3 reprovaram.**
+      **As decisões do operador:** P116 a P127 em `pendencias.md` (P126 são as conferências fora do repositório).
+      **Respondidas em 29/10/2026:** P116 (a frase do E3), P117 (os botões do Pix em conferência na 4.7b), P118
+      (o E14), P119 (o E15), P120 (a ação "Liberar acesso pago por fora" na 4.7b), P121 (a ação "Corrigir o e-mail" na 4.7b), P122 (a contestação corta o acesso — E7), P123 (o E16), P124 (o E17), P127 (o E18). **Para depois:** P125 (quando for criar um desses códigos) e P126 (as conferências nos painéis, por prints).
+      **Riscos aceitos que os revisores citaram, sem mudança:** a API fora do "Em breve"; a cota da Stripe sem cache
+      de preços; o reembolso repetido; o teto por endereço num Wi-Fi compartilhado; o cartão de fora do Brasil.
+      **Menores (P3), registrados sem pedido agora:** o Pix some da tela sem alerta se a configuração faltar
+      (`vitrine-da-assinatura.ts`); "Seu pagamento não se perde" aparece também para quem fechou o QR sem pagar;
+      sem `sessionStorage`, logo depois de pagar sem conta a pessoa cai na tela de entrar, sem explicação; o anual
+      por Pix (R$ 995) está logo abaixo do limite de Pix noturno dos bancos (R$ 1.000, das 20h às 6h) — **se o
+      preço do anual subir, o Pix à noite pode falhar no banco**; os gatilhos de reabertura aceitos ("muitos ao
+      mesmo tempo", 429 da Stripe) só aparecem no registro.
+      **Conferido no banco de produção (branch `production`), só leitura, 29/10/2026:** nenhum registro do modo de
+      teste em `subscription`, `stripe_customer` e `guest_checkout` (o gate não lê `livemode` — a verificação que o
+      revisor de segurança deixou pendente).
+      **O roteiro "quando um aluno não conseguir pagar"**, com o que existe hoje: `billing.md` → *Quando um aluno não
+      conseguir pagar* (rascunho do agente, a revisar pelo operador).
+      *Docs check (context7): Stripe → `/websites/stripe` → o revisor geral, 3 consultas (o aviso que falha e o
+      e-mail da Stripe; a assinatura com "enviar fatura"; o Pix em fatura); o agente, 1 (o Workbench → Webhooks,
+      para guiar a P112).*
 - [ ] **4.10 — Fechamento da fase (código + painel).** **O E2E de assinar abre o campo DE VERDADE
       da Stripe e paga com o cartão de teste** — na 4.2 o campo não abria e nenhum teste acusou,
       porque todos usam um dublê; o roteiro que provou está descrito no item 4.2 (passo 6). E2E de ponta a ponta (assinar, renovar, cancelar,

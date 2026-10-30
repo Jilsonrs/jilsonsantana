@@ -7,6 +7,13 @@ import Stripe from "stripe";
 // (`stripe.ts`, `stripe-assinatura.ts`, `stripe-devolucao.ts`, `stripe-reembolso.ts`): rota,
 // regra e tela nunca importam daqui.
 
+/**
+ * A versão da API da Stripe com que a biblioteca fala — e em que o site lê os avisos (C3 da revisão do grupo 1,
+ * 29/10/2026): o endereço de avisos precisa estar nela (`conferencia-da-cobranca.ts`), e o aviso lido pela API na
+ * rodada vem na versão de quando nasceu (`avisoEmFormatoAntigo`, `stripe.ts`).
+ */
+export const VERSAO_DA_API: string = Stripe.API_VERSION;
+
 let cliente: Stripe | null = null;
 /** A biblioteca da Stripe, já com a chave. Só a fronteira com a Stripe a usa. */
 export function stripe(): Stripe {

@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import type { ReactNode } from "react";
+import { useEffect } from "react";
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { AxiosError, AxiosHeaders } from "axios";
 import type { AssinaturaSemLogin, PlanosDaAssinatura } from "@jilson/core";
@@ -13,8 +14,12 @@ const getPreviaDaAssinatura = vi.fn();
 const assinarSemLogin = vi.fn();
 const pagarComPixSemLogin = vi.fn();
 const criarAssinatura = vi.fn();
+// O vigia do campo de pagamento (E3 da revisão ampla): o campo de mentira fica pronto, ou falha quando o teste pede.
+const avisarCampoQueNaoAbriu = vi.fn(async (_corpo: unknown) => undefined);
+let campoFalha = false;
 vi.mock("@/lib/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/api")>()),
+  avisarCampoQueNaoAbriu: (corpo: unknown) => avisarCampoQueNaoAbriu(corpo),
   getPlanosSemLogin: (...args: unknown[]) => getPlanosSemLogin(...args),
   getPreviaSemLogin: (...args: unknown[]) => getPreviaSemLogin(...args),
   getPreviaDaAssinatura: (...args: unknown[]) => getPreviaDaAssinatura(...args),
@@ -31,7 +36,11 @@ vi.mock("@/lib/stripe-do-site", () => ({
       {children}
     </div>
   ),
-  CampoDoCartao: () => <div>campo do cartão</div>,
+  // Como o campo de verdade, avisa que ficou pronto (o vigia do campo — E3 — não mostra a frase de "não carregou").
+  CampoDoCartao: function CampoDeMentira({ aoFicarPronto, aoFalhar }: { aoFicarPronto?: () => void; aoFalhar?: () => void }) {
+    useEffect(() => (campoFalha ? aoFalhar?.() : aoFicarPronto?.()), []);
+    return <div>campo do cartão</div>;
+  },
   useCartao: () => ({ validar: () => validar(), confirmar: (segredo: string, tipo: string, voltarPara: string, pagador?: { email: string }) => (pagador ? confirmar(segredo, tipo, voltarPara, pagador) : confirmar(segredo, tipo, voltarPara)) }),
 }));
 
@@ -71,6 +80,8 @@ const erroDoServidor = (codigo: string, status = 409) =>
 
 let ir: ReturnType<typeof vi.spyOn>;
 beforeEach(() => {
+  campoFalha = false;
+  avisarCampoQueNaoAbriu.mockClear();
   for (const f of [getPlanosSemLogin, getPreviaSemLogin, getPreviaDaAssinatura, assinarSemLogin, pagarComPixSemLogin, criarAssinatura, validar, confirmar]) f.mockReset();
   getPlanosSemLogin.mockResolvedValue(PLANOS);
   assinarSemLogin.mockResolvedValue(PAGAR);
@@ -291,5 +302,15 @@ describe("a tela pública de assinar — o Pix pré-pago", () => {
     expect((await screen.findByRole("alert")).textContent).toBe(FRASE);
     expect(confirmar).not.toHaveBeenCalled();
     expect(ir).not.toHaveBeenCalled();
+  });
+});
+
+describe("a tela pública de assinar — o campo de pagamento que não carregou (E3)", () => {
+  it("a frase do operador, e o servidor é avisado com o nome DESTA tela", async () => {
+    campoFalha = true;
+    abrir();
+    await screen.findByLabelText("Seu e-mail");
+    expect(await screen.findByText("O campo de pagamento não carregou. Tente outro navegador ou desative o bloqueador; se continuar, escreva para suporte@jilsonsantana.com.")).toBeTruthy();
+    expect(avisarCampoQueNaoAbriu).toHaveBeenCalledWith({ tela: "assinar-sem-login", motivo: "erro-ao-carregar" });
   });
 });

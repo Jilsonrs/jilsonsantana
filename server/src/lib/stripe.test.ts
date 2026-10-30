@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import Stripe from "stripe";
 import { pagamentosDaFatura } from "./stripe-devolucao.js";
-import { chaveDoNumeroFiscal, chavePublicavel, erroSemMensagem, METADADO_DO_PIX, pagamentoPrePagoDoAviso, paraAssinaturaNaStripe, paraAssinaturaNoCheckout, paraCodigoPromocional, paraNumeroFiscal, paraPedidoDeAssinatura, paraPedidoDeCliente, paraPedidoDeClienteDoVisitante, paraPrecosDosPlanos } from "./stripe.js";
+import { AVISOS_DO_ENDERECO, avisoEmFormatoAntigo, chaveDoNumeroFiscal, chavePublicavel, erroSemMensagem, idDoAvisoNoCorpo, METADADO_DO_PIX, pagamentoPrePagoDoAviso, pareceAvisoDaStripe, paraAssinaturaNaStripe, paraAssinaturaNoCheckout, paraCodigoPromocional, paraNumeroFiscal, paraPedidoDeAssinatura, paraPedidoDeCliente, paraPedidoDeClienteDoVisitante, paraPrecosDosPlanos, verificarAviso } from "./stripe.js";
 
 // O ESPELHO A PARTIR DA STRIPE (Fase 4, etapa 4.1) — função pura, teste unitário (CLAUDE.md →
 // Testing: só função pura, sem I/O). O que protege é o "PAGO ATÉ": quando a renovação falha, a
@@ -435,5 +435,106 @@ describe("o aviso do Pix pré-pago", () => {
     } finally {
       avisos.mockRestore();
     }
+  });
+});
+
+// O CABEÇALHO QUE PARECE DA STRIPE (E5 da revisão ampla da cobrança, 29/10/2026): é ele que separa o segredo trocado
+// (alerta) do ruído de robô (só registro). A forma e a tolerância são as da Stripe (`t=`, `v1=` de 64 hexadecimais, 5 min).
+describe("o cabeçalho de assinatura que parece da Stripe", () => {
+  const agora = Date.UTC(2031, 2, 1, 12, 0, 0);
+  const hora = agora / 1000;
+  const v1 = "a".repeat(64);
+
+  it("o da Stripe, com a hora de agora (ou até 5 min de diferença, para os dois lados): sim — também com várias assinaturas e o v0 de teste", () => {
+    expect(pareceAvisoDaStripe(`t=${hora},v1=${v1}`, agora)).toBe(true);
+    expect(pareceAvisoDaStripe(`t=${hora - 300},v1=${v1}`, agora)).toBe(true);
+    expect(pareceAvisoDaStripe(`t=${hora + 300},v1=${v1}`, agora)).toBe(true);
+    expect(pareceAvisoDaStripe(`t=${hora},v1=${v1},v1=${"b".repeat(64)},v0=${"c".repeat(64)}`, agora)).toBe(true);
+    expect(pareceAvisoDaStripe(`t=${hora}, v1=${v1}`, agora)).toBe(true);
+  });
+
+  it("velho ou adiantado (mais de 5 min), sem cabeçalho, sem hora, sem v1, v1 que não é hexadecimal de 64, hora que não é número: não", () => {
+    expect(pareceAvisoDaStripe(`t=${hora - 301},v1=${v1}`, agora)).toBe(false);
+    expect(pareceAvisoDaStripe(`t=${hora + 301},v1=${v1}`, agora)).toBe(false);
+    expect(pareceAvisoDaStripe(undefined, agora)).toBe(false);
+    expect(pareceAvisoDaStripe("", agora)).toBe(false);
+    expect(pareceAvisoDaStripe(`v1=${v1}`, agora)).toBe(false);
+    expect(pareceAvisoDaStripe(`t=${hora}`, agora)).toBe(false);
+    expect(pareceAvisoDaStripe(`t=${hora},v0=${v1}`, agora)).toBe(false);
+    expect(pareceAvisoDaStripe(`t=${hora},v1=${"A".repeat(64)}`, agora)).toBe(false);
+    expect(pareceAvisoDaStripe(`t=${hora},v1=${"a".repeat(63)}`, agora)).toBe(false);
+    expect(pareceAvisoDaStripe(`t=agora,v1=${v1}`, agora)).toBe(false);
+    expect(pareceAvisoDaStripe("isto não é da Stripe", agora)).toBe(false);
+  });
+});
+
+// OS AVISOS QUE O ENDEREÇO PRECISA ASSINAR (E4 da revisão ampla, 29/10/2026): a conferência da subida exige do
+// endereço de avisos exatamente esta lista — então cada um dela tem que ser TRATADO aqui. O aviso é assinado de
+// verdade e passa pela verificação, como chega da Stripe. Um tipo novo na lista sem o caso abaixo reprova.
+describe("os avisos que o endereço de avisos precisa assinar", () => {
+  const SEGREDO = "whsec_da_lista";
+  const objetoDo: Record<(typeof AVISOS_DO_ENDERECO)[number], Record<string, unknown>> = {
+    "charge.refunded": { id: "ch_1", object: "charge", payment_intent: "pi_1" },
+    "customer.subscription.created": { id: "sub_1", object: "subscription" },
+    "customer.subscription.deleted": { id: "sub_1", object: "subscription" },
+    "customer.subscription.updated": { id: "sub_1", object: "subscription" },
+    "invoice.paid": { id: "in_1", object: "invoice", parent: { subscription_details: { subscription: "sub_1" } } },
+    "invoice.payment_failed": { id: "in_1", object: "invoice", parent: { subscription_details: { subscription: "sub_1" } } },
+    "payment_intent.succeeded": { id: "pi_1", object: "payment_intent", amount: 9990, currency: "brl", customer: "cus_1", livemode: true, metadata: { prepago: "mensal", precoId: "price_mensal", userId: "conta-1" } },
+    "refund.failed": { id: "re_1", object: "refund", payment_intent: "pi_1", status: "failed" },
+  };
+
+  it("cada um é tratado: dele sai a assinatura, o pagamento devolvido ou o Pix pago", () => {
+    const antes = process.env.STRIPE_WEBHOOK_SECRET;
+    process.env.STRIPE_WEBHOOK_SECRET = SEGREDO;
+    try {
+      expect(Object.keys(objetoDo).sort()).toEqual([...AVISOS_DO_ENDERECO].sort());
+      for (const tipo of AVISOS_DO_ENDERECO) {
+        const corpo = JSON.stringify({ id: `evt_${tipo}`, object: "event", type: tipo, data: { object: objetoDo[tipo] } });
+        const aviso = verificarAviso(Buffer.from(corpo), Stripe.webhooks.generateTestHeaderString({ payload: corpo, secret: SEGREDO }));
+        const tratado = aviso.assinatura !== null || aviso.pagamento !== null || aviso.pagamentoPrePago !== null;
+        expect([tipo, tratado]).toEqual([tipo, true]);
+      }
+    } finally {
+      if (antes === undefined) delete process.env.STRIPE_WEBHOOK_SECRET;
+      else process.env.STRIPE_WEBHOOK_SECRET = antes;
+    }
+  });
+});
+
+// O ID DO AVISO NO CORPO (C1 da revisão do grupo 1, 29/10/2026): é ele que a rota pergunta à Stripe quando a assinatura
+// não confere — só com a forma de um id dela, e sem quebrar com qualquer coisa que um robô mande.
+describe("o id do aviso no corpo cru", () => {
+  const corpo = (valor: unknown) => Buffer.from(typeof valor === "string" ? valor : JSON.stringify(valor));
+  it("o id com a forma da Stripe (evt_ e letras e números): sai", () => {
+    expect(idDoAvisoNoCorpo(corpo({ id: "evt_1QaBcD2eFgHiJkLm", object: "event" }))).toBe("evt_1QaBcD2eFgHiJkLm");
+  });
+  it("sem corpo cru, JSON quebrado, sem id, id de outra forma, de outro tipo, curto ou longo demais: nada", () => {
+    expect(idDoAvisoNoCorpo("evt_1QaBcD2eFgHiJkLm")).toBeNull();
+    expect(idDoAvisoNoCorpo(corpo("{ quebrado"))).toBeNull();
+    expect(idDoAvisoNoCorpo(corpo({ object: "event" }))).toBeNull();
+    expect(idDoAvisoNoCorpo(corpo({ id: "evt_com_sublinhado_1" }))).toBeNull();
+    expect(idDoAvisoNoCorpo(corpo({ id: "cus_1QaBcD2eFgHiJkLm" }))).toBeNull();
+    expect(idDoAvisoNoCorpo(corpo({ id: 123 }))).toBeNull();
+    expect(idDoAvisoNoCorpo(corpo({ id: "evt_1234567" }))).toBeNull();
+    expect(idDoAvisoNoCorpo(corpo({ id: `evt_${"a".repeat(65)}` }))).toBeNull();
+    expect(idDoAvisoNoCorpo(corpo("null"))).toBeNull();
+    expect(idDoAvisoNoCorpo(corpo(`{"id":"evt_1QaBcD2eFgHiJkLm","x":"${"a".repeat(600 * 1024)}"}`))).toBeNull();
+  });
+});
+
+// O AVISO DE FATURA NUM FORMATO ANTIGO DA API (C3 da revisão do grupo 1, 29/10/2026): o listado pela API vem na versão de
+// quando nasceu, e antes da 2025-03-31.basil a fatura não tem o "parent" — de onde sai a assinatura dela.
+describe("o aviso de fatura num formato antigo da API", () => {
+  const evento = (type: string, objeto: Record<string, unknown>) =>
+    // Seguro: o objeto de teste tem só os campos que a função lê; a forma completa é da Stripe.
+    ({ id: "evt_1", type, data: { object: objeto } }) as unknown as Stripe.Event;
+  it("a fatura sem o parent: formato antigo; com o parent (mesmo vazio): não; o que não é fatura: nunca", () => {
+    expect(avisoEmFormatoAntigo(evento("invoice.paid", { id: "in_1", object: "invoice", subscription: "sub_1" }))).toBe(true);
+    expect(avisoEmFormatoAntigo(evento("invoice.payment_failed", { id: "in_1", object: "invoice" }))).toBe(true);
+    expect(avisoEmFormatoAntigo(evento("invoice.paid", { id: "in_1", object: "invoice", parent: { subscription_details: { subscription: "sub_1" } } }))).toBe(false);
+    expect(avisoEmFormatoAntigo(evento("invoice.paid", { id: "in_1", object: "invoice", parent: null }))).toBe(false);
+    expect(avisoEmFormatoAntigo(evento("customer.subscription.updated", { id: "sub_1", object: "subscription" }))).toBe(false);
+    expect(avisoEmFormatoAntigo(evento("charge.refunded", { id: "ch_1", object: "charge", payment_intent: "pi_1" }))).toBe(false);
   });
 });

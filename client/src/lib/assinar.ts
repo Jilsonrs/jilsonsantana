@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { DuracaoDoDesconto, Plano, TELA_DE_CONCLUIDO, type DescontoDoCodigo } from "@jilson/core";
 import { confirmarSemLogin, getPlanosDaAssinatura, getPlanosSemLogin, getPreviaDaAssinatura, getPreviaSemLogin, getSituacaoDaAssinatura } from "@/lib/api";
@@ -107,6 +107,36 @@ export function useConfirmacaoSemLogin(tentativa: string | null, conferirACada =
     refetchInterval: (q) => (q.state.data?.confirmada ? false : esperaDaProximaConferencia(q.state.error, conferirACada)),
   });
   return { confirmada: consulta.data?.confirmada === true, naoConfirmouAgora: recusasSeguidas >= RECUSAS_ATE_O_AVISO };
+}
+
+/** Quando a tela de depois do pagamento pede a primeira conferência na Stripe, de quanto em quanto pede de novo, e quantas no máximo (E2). */
+export const PRIMEIRA_CONFERENCIA_EM_MS = 30_000;
+export const CONFERENCIA_A_CADA_MS = 60_000;
+export const MAXIMO_DE_CONFERENCIAS = 5;
+
+/**
+ * A TELA DE DEPOIS DO PAGAMENTO PEDE CONFERÊNCIA (E2 da revisão ampla da cobrança, 29/10/2026 — plano → 4.9b): sem
+ * confirmação em 30 s, pede ao servidor que confira na Stripe — o aviso pode ter se perdido, e aí a pergunta "já
+ * valeu?" responderia "não" para sempre —, e de novo a cada minuto, no máximo 5 vezes. O pedido não decide nada: o
+ * servidor lê a Stripe, e a pergunta de sempre vê o resultado. Confirmado, para. `pedir` precisa ser estável.
+ */
+export function usePedirConferencia(confirmado: boolean, pedir: (() => Promise<void>) | null, { primeiraEm = PRIMEIRA_CONFERENCIA_EM_MS, aCada = CONFERENCIA_A_CADA_MS, maximo = MAXIMO_DE_CONFERENCIAS } = {}) {
+  const pedidas = useRef(0);
+  // Efeito: é um relógio — pedir a conferência depende do tempo sem confirmação, não de dado nenhum.
+  useEffect(() => {
+    if (confirmado || !pedir) return;
+    let relogio: ReturnType<typeof setTimeout> | undefined;
+    const agendar = (espera: number) => {
+      if (pedidas.current >= maximo) return;
+      relogio = setTimeout(() => {
+        pedidas.current += 1;
+        pedir().catch(() => console.warn("[pagamento] a conferência na Stripe não foi pedida agora"));
+        agendar(aCada);
+      }, espera);
+    };
+    agendar(pedidas.current === 0 ? primeiraEm : aCada);
+    return () => clearTimeout(relogio);
+  }, [confirmado, pedir, primeiraEm, aCada, maximo]);
 }
 
 /** Os dois planos para o VISITANTE, sem login (a tela pública de assinar — etapa 4.7, passo 6c). */

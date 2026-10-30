@@ -13,6 +13,11 @@ import { CABECALHO_DO_IP, contarClienteNovo, cotaDeClientesNovosEsgotada, ipDoPe
 import { marcaDoEndereco } from "../lib/loja-de-tentativas.js";
 import { protecaoDaCobranca } from "../lib/protecao-da-cobranca.js";
 import { comVaga } from "../lib/assinaturas-em-andamento.js";
+import { conferirPelaTela } from "../lib/conferencia-pela-tela.js";
+import { mandarBoasVindasDaAssinatura } from "../lib/boas-vindas.js";
+import { temAcessoAtivo } from "../lib/acesso.js";
+import { resumoDaTentativa } from "../lib/tentativa-do-visitante.js";
+import { prisma } from "../lib/prisma.js";
 
 // ASSINAR SEM LOGIN (Fase 4, etapa 4.7, passo 4 — billing.md → *Assinar sem conta*; CLAUDE.md →
 // Membership Gating). As portas que a tela pública de assinar (passo 6) vai usar: os planos, a
@@ -196,6 +201,31 @@ router.post("/billing/visitante/confirmacao", ...limiteSemLogin.confirmacao, asy
   if (corpo === null) return;
   const resposta: ConfirmacaoSemLogin = { confirmada: await pagamentoConfirmado(corpo.tentativa) };
   res.json(resposta);
+});
+
+// POST /api/billing/visitante/conferir — a tela de depois do pagamento, SEM CONTA, pede que o servidor confira na
+// Stripe (E2 da revisão ampla da cobrança): o aviso pode ter se perdido. Pela tentativa guardada na aba — só quem a
+// fez a tem —, acha a ficha e confere o cliente dela, sem esperar trava (`conferirOCliente`); se o pagamento passou,
+// a conta NASCE ali e as boas-vindas saem, como no "Conferir na Stripe" do admin. A tentativa desconhecida, ou a ficha
+// que já tem acesso: 204 do mesmo jeito, sem ir à Stripe — a resposta não diz se a tentativa existe. A pergunta de
+// sempre ("já valeu?") vê o resultado. A Stripe fora do ar também é 204: vira registro, e no máximo um alerta a cada
+// 15 min (C4, `conferirPelaTela`).
+router.post("/billing/visitante/conferir", ...limiteSemLogin.conferir, async (req, res) => {
+  const corpo = validate(confirmacaoSemLoginSchema, req.body, res);
+  if (corpo === null) return;
+  if (!cobrancaConfigurada()) {
+    res.status(503).json({ error: "NaoConfigurado" });
+    return;
+  }
+  const ficha = await prisma.guestCheckout.findUnique({ where: { tentativa: resumoDaTentativa(corpo.tentativa) }, select: { id: true, userId: true, stripeCustomerId: true } });
+  if (ficha && !(ficha.userId && (await temAcessoAtivo(ficha.userId)))) {
+    const feitas = await conferirPelaTela(ficha.stripeCustomerId, `a ficha ${ficha.id}`);
+    if (feitas) {
+      for (const sincronia of feitas) if (sincronia.resultado === "atualizada") await mandarBoasVindasDaAssinatura(sincronia.assinatura.id);
+      console.info(`[stripe] conferência pedida pela tela: a ficha ${ficha.id}, ${feitas.length} assinatura(s) sincronizada(s)`);
+    }
+  }
+  res.status(204).end();
 });
 
 // POST /api/billing/visitante/senha — criar a senha LOGO DEPOIS DE PAGAR, na própria tela (etapa

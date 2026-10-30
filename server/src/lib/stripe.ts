@@ -1,11 +1,11 @@
 import Stripe from "stripe";
 import { DuracaoDoDesconto, PLANOS, formatarDocumentoFiscal, type DescontoDoCodigo, type DocumentoFiscal, type Plano, type TipoDeDocumento } from "@jilson/core";
-import { erroSemMensagem, stripe } from "./stripe-cliente.js";
+import { erroSemMensagem, stripe, VERSAO_DA_API } from "./stripe-cliente.js";
 import { periodoDevolvido } from "./stripe-devolucao.js";
 
 // A biblioteca já com a chave e o erro sem a mensagem dela moram em `stripe-cliente.ts`, e saem
 // por aqui para quem já os importava deste arquivo.
-export { erroSemMensagem, stripe };
+export { erroSemMensagem, stripe, VERSAO_DA_API };
 
 // A NOSSA FRONTEIRA COM A STRIPE (Fase 4, etapa 4.1 — billing.md; CLAUDE.md → Membership
 // Gating). Tudo que fala com a Stripe passa por aqui — e, para gerir uma assinatura que já
@@ -489,6 +489,24 @@ export function avisosConfigurados(): boolean {
   return Boolean(process.env.STRIPE_WEBHOOK_SECRET);
 }
 
+/**
+ * OS AVISOS QUE O ENDEREÇO DE AVISOS DA CONTA PRECISA ASSINAR (P69, 12/10/2026, e P112, 29/10/2026 — `billing.md` →
+ * *Os avisos de devolução chegam ao site no ar*). A conferência da subida (`conferencia-da-cobranca.ts`, E4 da
+ * revisão ampla) alerta quando falta um. **Aviso novo tratado aqui entra nesta lista** — senão o endereço nunca o
+ * manda, e nada avisa. (`refund.updated` e `charge.refund.updated` também são tratados, mas não são exigidos: o
+ * `refund.failed` já traz a devolução que falha.) O teste prova que cada um da lista é tratado (`stripe.test.ts`).
+ */
+export const AVISOS_DO_ENDERECO = [
+  "charge.refunded",
+  "customer.subscription.created",
+  "customer.subscription.deleted",
+  "customer.subscription.updated",
+  "invoice.paid",
+  "invoice.payment_failed",
+  "payment_intent.succeeded",
+  "refund.failed",
+] as const;
+
 /** De que assinatura o aviso fala — ou nenhuma (aviso que não mexe em assinatura). */
 function assinaturaDoAviso(evento: Stripe.Event): string | null {
   switch (evento.type) {
@@ -573,12 +591,105 @@ export function pagamentoPrePagoDe(pagamento: Stripe.PaymentIntent, origem: stri
  * `express.json()` antes, a verificação falha). Lança se a assinatura não confere. NUNCA aceita
  * aviso sem verificar: sem o segredo, quem chama recusa antes (`avisosConfigurados`).
  */
+/** A tolerância da Stripe entre a hora do aviso (`t=`) e a nossa: a mesma da biblioteca, 5 minutos. */
+export const TOLERANCIA_DO_AVISO_EM_SEGUNDOS = 300;
+
+/**
+ * O cabeçalho de assinatura PARECE da Stripe, e é recente? (E5 da revisão ampla da cobrança, 29/10/2026.)
+ * `[FATO — docs da Stripe, context7, 29/10/2026]` a Stripe assina cada entrega com a hora do envio (`t=`) e uma
+ * ou mais assinaturas `v1=` (HMAC-SHA256, 64 caracteres hexadecimais), e a biblioteca aceita até 5 minutos de
+ * diferença; cada nova tentativa de entrega é assinada de novo, com a hora dela. Um aviso assim que NÃO confere é
+ * o segredo trocado no Secret Manager (aí TODO aviso de verdade é recusado) ou alguém forjando com cuidado — os
+ * dois pedem gente. O cabeçalho ausente, malformado ou velho é ruído (robô, reenvio antigo). Função pura.
+ */
+export function pareceAvisoDaStripe(cabecalho: string | undefined, agora: number = Date.now()): boolean {
+  if (!cabecalho) return false;
+  const partes = cabecalho.split(",").map((parte) => parte.trim().split("="));
+  const hora = partes.find(([chave]) => chave === "t")?.[1];
+  const assinaturas = partes.filter(([chave, valor]) => chave === "v1" && /^[0-9a-f]{64}$/.test(valor ?? ""));
+  if (!hora || !/^\d{1,12}$/.test(hora) || assinaturas.length === 0) return false;
+  return Math.abs(agora / 1000 - Number(hora)) <= TOLERANCIA_DO_AVISO_EM_SEGUNDOS;
+}
+
+/**
+ * O `id` do aviso no corpo cru, SEM confiar nele — só a forma `evt_…` (C1 da revisão do grupo 1, 29/10/2026): é para
+ * perguntar à Stripe se ele existe, quando a assinatura não confere. Corpo que não é JSON, grande demais, ou sem um
+ * `id` dessa forma: nada. Função pura.
+ */
+export function idDoAvisoNoCorpo(corpo: unknown): string | null {
+  if (!Buffer.isBuffer(corpo) || corpo.length > 512 * 1024) return null;
+  let lido: unknown;
+  try {
+    lido = JSON.parse(corpo.toString("utf8"));
+  } catch {
+    return null;
+  }
+  if (typeof lido !== "object" || lido === null || !("id" in lido)) return null;
+  const { id } = lido;
+  return typeof id === "string" && /^evt_[A-Za-z0-9]{8,64}$/.test(id) ? id : null;
+}
+
+/**
+ * Este aviso existe NESTA conta da Stripe? (C1 da revisão do grupo 1, 29/10/2026.) É o que separa o segredo trocado
+ * (o aviso é da Stripe, e a assinatura não confere: TODO aviso de verdade está sendo recusado — alerta) do aviso
+ * forjado por um robô (a Stripe não o conhece — só registro, como manda o `CLAUDE.md`). Na dúvida — a Stripe não
+ * respondeu —, não: a rodada de hora em hora (E1) acha o segredo trocado pela API de qualquer jeito.
+ */
+export async function avisoExisteNaStripe(id: string): Promise<boolean> {
+  try {
+    await stripe().events.retrieve(id);
+    return true;
+  } catch (erro) {
+    if (erro instanceof Stripe.errors.StripeError && (erro.code === "resource_missing" || erro.statusCode === 404)) return false;
+    console.warn(`[stripe] aviso recusado: não consegui conferir na Stripe se o aviso existe — ${erroSemMensagem(erro, "a conferência do aviso").message}`);
+    return false;
+  }
+}
+
 export function verificarAviso(corpo: unknown, cabecalho: string | undefined): AvisoDaStripe {
   const segredo = process.env.STRIPE_WEBHOOK_SECRET;
   if (!segredo) throw new Error("Stripe sem STRIPE_WEBHOOK_SECRET");
   if (!Buffer.isBuffer(corpo) || !cabecalho) throw new Error("aviso sem corpo cru ou sem assinatura");
-  const evento = Stripe.webhooks.constructEvent(corpo, cabecalho, segredo);
+  return paraAviso(Stripe.webhooks.constructEvent(corpo, cabecalho, segredo));
+}
+
+/**
+ * O aviso de FATURA num formato antigo da API (C3 da revisão do grupo 1, 29/10/2026): sem o `parent`, que só existe a
+ * partir da `2025-03-31.basil` — é dele que sai a assinatura da fatura (`assinaturaDoAviso`). `[FATO — a biblioteca,
+ * `Events.d.ts`: o `data` do evento LISTADO pela API vem na versão de quando ele nasceu (a padrão da conta), não na da
+ * biblioteca.]` Processado assim, ele seria marcado "sem assinatura", e a reentrega de verdade viraria "repetido".
+ * Função pura.
+ */
+export function avisoEmFormatoAntigo(evento: Stripe.Event): boolean {
+  return evento.type.startsWith("invoice.") && !("parent" in evento.data.object);
+}
+
+/**
+ * O evento da Stripe como o site o processa — o do endereço de avisos (já verificado) e o da conferência da rodada
+ * (lido pela API, que já é autenticada — `avisosDaStripe`). Função pura.
+ */
+export function paraAviso(evento: Stripe.Event): AvisoDaStripe {
   return { id: evento.id, tipo: evento.type, assinatura: assinaturaDoAviso(evento), pagamento: pagamentoDoAviso(evento), devolucaoFalhou: devolucaoQueFalhou(evento), pagamentoPrePago: pagamentoPrePagoDoAviso(evento) };
+}
+
+/**
+ * Os avisos (eventos) da Stripe dos tipos que o endereço de avisos assina (`AVISOS_DO_ENDERECO`), criados entre
+ * `desde` e `ate` — no máximo `maximo`, dos mais novos para os mais velhos (E1 da revisão ampla da cobrança,
+ * 29/10/2026: a rodada confere se cada um foi processado). `[FATO — docs da Stripe, context7, 29/10/2026]` a lista
+ * aceita até 20 tipos e guarda 30 dias. A recusa sobe sem a mensagem crua.
+ */
+export async function avisosDaStripe(desde: Date, ate: Date, maximo: number): Promise<Stripe.Event[]> {
+  try {
+    const eventos: Stripe.Event[] = [];
+    const pedido = { types: [...AVISOS_DO_ENDERECO], created: { gte: Math.floor(desde.getTime() / 1000), lte: Math.floor(ate.getTime() / 1000) }, limit: 100 };
+    for await (const evento of stripe().events.list(pedido)) {
+      eventos.push(evento);
+      if (eventos.length >= maximo) break;
+    }
+    return eventos;
+  } catch (erro) {
+    throw erroSemMensagem(erro, "a lista dos avisos da Stripe");
+  }
 }
 
 /**

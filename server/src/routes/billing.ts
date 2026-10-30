@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { comVaga } from "../lib/assinaturas-em-andamento.js";
-import { assinarSchema, cancelarSchema, mudarDePlanoSchema, pixSchema, previaSchema, type AssinaturaCriada, type CartaoTrocado, type PlanosDaAssinatura, type PreviaDaAssinatura, type PlanoMudado, type ReembolsoFeito, type RenovacaoParada, type SituacaoDaAssinatura, type TrocaDeCartaoPreparada, type TrocaDesfeita, type TrocaDisponivel } from "@jilson/core";
+import { assinarSchema, campoNaoAbriuSchema, cancelarSchema, mudarDePlanoSchema, pixSchema, previaSchema, type AssinaturaCriada, type CartaoTrocado, type PlanosDaAssinatura, type PreviaDaAssinatura, type PlanoMudado, type ReembolsoFeito, type RenovacaoParada, type SituacaoDaAssinatura, type TrocaDeCartaoPreparada, type TrocaDesfeita, type TrocaDisponivel } from "@jilson/core";
 import { requireAuth } from "../middleware/auth.js";
 import { validate } from "../lib/http.js";
 import { cobrancaConfigurada } from "../lib/stripe.js";
@@ -8,11 +8,14 @@ import { lerPlanos, lerPrevia } from "../lib/vitrine-da-assinatura.js";
 import { protecaoDaCobranca } from "../lib/protecao-da-cobranca.js";
 import { atrasadaSemAcesso, convidaAReativar, temAcessoAtivo } from "../lib/acesso.js";
 import { assinar } from "../lib/checkout.js";
+import { conferirPelaTela } from "../lib/conferencia-pela-tela.js";
+import { prisma } from "../lib/prisma.js";
 import { pagarComPix } from "../lib/pix-pre-pago.js";
 import { pixConfigurado } from "../lib/stripe-pix.js";
 import { desistirDaTroca, lerTrocaDePlano, mudarMeuPlano } from "../lib/meu-plano.js";
 import { aplicarCartaoNovo, lerMinhaAssinatura, manterMinhaAssinatura, pararMinhaRenovacao, prepararTrocaDeCartao, reembolsarMinhaAssinatura, registrarAssinaturaDesconhecida } from "../lib/minha-assinatura.js";
-import { limiteDeTentativas } from "../lib/limite-de-tentativas.js";
+import { CABECALHO_DO_IP, ipDoPedido, limiteDeTentativas, limiteSemLogin } from "../lib/limite-de-tentativas.js";
+import { marcaDoEndereco } from "../lib/loja-de-tentativas.js";
 
 // ASSINAR COM A CONTA LOGADA (Fase 4, etapa 4.2 — billing.md; CLAUDE.md → Membership Gating).
 // Tudo aqui exige login, e a conta é SEMPRE a da sessão. O site diz só QUAL plano e o código
@@ -31,6 +34,51 @@ router.use("/billing", protecaoDaCobranca);
 
 // GET /api/billing/planos — os dois planos com o valor lido da Stripe (o mostrado é o cobrado) e
 // a chave que o site usa para abrir o campo do cartão.
+/**
+ * O ALERTA DO CAMPO QUE NÃO ABRIU (E3 da revisão ampla da cobrança; C2 da revisão do grupo 1, 29/10/2026): o relato
+ * chega SEM login, então um robô o manda à vontade — no máximo UM alerta a cada 6 horas POR CÓPIA, com quantos
+ * relatos chegaram e de quantos endereços (a marca do endereço, nunca o IP) desde o anterior: é o número de
+ * endereços que diz "defeito nosso" (muita gente) ou "um robô" (um endereço só). Por cópia, na memória dela, de
+ * propósito (CLAUDE.md → Server): protege a cota de alertas, que também é por cópia (`monitor.ts`). Os outros relatos
+ * ficam no registro, com a tela, o motivo e a marca do endereço.
+ */
+const INTERVALO_DO_ALERTA_DO_CAMPO = 6 * 60 * 60_000;
+/** Até quantos endereços distintos a cópia conta entre dois alertas: o resto conta como relato, não como endereço novo. */
+const MAXIMO_DE_ENDERECOS_CONTADOS = 1_000;
+let alertouCampoEm: number | null = null;
+let relatosDesdeOAlerta = 0;
+const enderecosDesdeOAlerta = new Set<string>();
+
+/** Conta o relato; devolve o resumo para alertar (desde o alerta anterior, com este), ou nada se ainda não passaram as 6 h. */
+function contarRelatoDoCampo(marca: string, agora: number): { relatos: number; enderecos: number } | null {
+  relatosDesdeOAlerta += 1;
+  if (enderecosDesdeOAlerta.size < MAXIMO_DE_ENDERECOS_CONTADOS) enderecosDesdeOAlerta.add(marca);
+  // O relógio que volta atrás não cala o alerta para sempre.
+  if (alertouCampoEm !== null && agora >= alertouCampoEm && agora - alertouCampoEm < INTERVALO_DO_ALERTA_DO_CAMPO) return null;
+  const resumo = { relatos: relatosDesdeOAlerta, enderecos: enderecosDesdeOAlerta.size };
+  alertouCampoEm = agora;
+  relatosDesdeOAlerta = 0;
+  enderecosDesdeOAlerta.clear();
+  return resumo;
+}
+
+// POST /api/billing/campo-nao-abriu — a tela diz que o campo de pagamento da Stripe não abriu (E3): é o único jeito
+// de o operador saber, porque o pedido de assinar nem chega aqui. Sem login (o visitante também paga), com o teto
+// por endereço; o corpo diz só QUAL tela e QUAL falha (listas fechadas). Nada vai à Stripe.
+router.post("/billing/campo-nao-abriu", ...limiteSemLogin.campoNaoAbriu, (req, res) => {
+  const relato = validate(campoNaoAbriuSchema, req.body, res);
+  if (relato === null) return;
+  const ip = ipDoPedido(req.get(CABECALHO_DO_IP));
+  const marca = ip ? marcaDoEndereco(ip) : "sem-endereco";
+  const resumo = contarRelatoDoCampo(marca, Date.now());
+  if (resumo) {
+    console.error(`[stripe] site: o campo de pagamento não abriu — ${resumo.relatos} relato(s) de ${resumo.enderecos} endereço(s) desde o último alerta, o mais recente na tela ${relato.tela} (${relato.motivo}); de vários endereços é defeito nosso (a chave publicável, as opções do campo, o Stripe.js): abrir a tela e conferir`);
+  } else {
+    console.warn(`[stripe] site: o campo de pagamento não abriu na tela ${relato.tela} (${relato.motivo}), endereço ${marca}`);
+  }
+  res.status(204).end();
+});
+
 router.get("/billing/planos", requireAuth, ...limiteDeTentativas.leitura, async (_req, res) => {
   const resposta: PlanosDaAssinatura | null = cobrancaConfigurada() ? await lerPlanos() : null;
   if (!resposta) {
@@ -75,6 +123,30 @@ router.get("/billing/assinatura", requireAuth, async (req, res) => {
   // `atrasada`: a cobrança falhou há mais de 3 dias — o caminho é trocar o cartão, não assinar de novo.
   const resposta: SituacaoDaAssinatura = { temAcesso, reativar: await convidaAReativar(user.id, temAcesso), atrasada: await atrasadaSemAcesso(user.id, temAcesso) };
   res.json(resposta);
+});
+
+// POST /api/billing/conferir — a tela de depois do pagamento pede que o servidor confira na Stripe (E2 da revisão
+// ampla da cobrança): o aviso pode ter se perdido. Só o cliente da conta da SESSÃO; quem já tem acesso nem vai à
+// Stripe. Nunca espera trava (`conferirOCliente`). 204: a pergunta de sempre ("já tenho acesso?") vê o resultado —
+// inclusive com a Stripe fora do ar, que vira registro e no máximo um alerta a cada 15 min (C4, `conferirPelaTela`).
+router.post("/billing/conferir", requireAuth, ...limiteDeTentativas.conferir, async (req, res) => {
+  const user = req.user;
+  if (!user) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  if (!cobrancaConfigurada()) {
+    res.status(503).json({ error: "NaoConfigurado" });
+    return;
+  }
+  if (!(await temAcessoAtivo(user.id))) {
+    const cliente = await prisma.stripeCustomer.findUnique({ where: { userId: user.id }, select: { stripeCustomerId: true } });
+    if (cliente) {
+      const feitas = await conferirPelaTela(cliente.stripeCustomerId, `a conta ${user.id}`);
+      if (feitas) console.info(`[stripe] conferência pedida pela tela: a conta ${user.id}, ${feitas.length} assinatura(s) sincronizada(s), acesso ${(await temAcessoAtivo(user.id)) ? "sim" : "não"}`);
+    }
+  }
+  res.status(204).end();
 });
 
 // POST /api/billing/assinatura — assinar. A regra inteira mora em `lib/checkout.ts`; aqui, só a

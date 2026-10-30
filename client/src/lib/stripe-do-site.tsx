@@ -97,9 +97,14 @@ export function opcoesDoElemento(pix: boolean): StripePaymentElementOptions {
   return pix ? { fields: { billingDetails: { email: "never" } } } : {};
 }
 
-/** O campo de pagamento da Stripe. `pix`: o quadro do Pix, sem o campo de e-mail (`opcoesDoElemento`). */
-export function CampoDoCartao({ pix = false }: { pix?: boolean }) {
-  return <PaymentElement options={opcoesDoElemento(pix)} />;
+/**
+ * O campo de pagamento da Stripe. `pix`: o quadro do Pix, sem o campo de e-mail (`opcoesDoElemento`). `aoFicarPronto`
+ * e `aoFalhar`: o que a Stripe diz do campo — pronto na tela, ou falhou ao carregar (`onReady`, `onLoadError` —
+ * `[FATO — docs da Stripe, context7, 29/10/2026]`). Quem vigia o campo é `CampoVigiado` (E3 da revisão ampla), fora
+ * desta fronteira, para ter teste.
+ */
+export function CampoDoCartao({ pix = false, aoFicarPronto, aoFalhar }: { pix?: boolean; aoFicarPronto?: () => void; aoFalhar?: () => void }) {
+  return <PaymentElement options={opcoesDoElemento(pix)} onReady={() => aoFicarPronto?.()} onLoadError={() => aoFalhar?.()} />;
 }
 
 /** Deu certo, ou não — com a frase da Stripe quando ela é para o aluno ler (cartão recusado, dado faltando). */
