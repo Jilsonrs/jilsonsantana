@@ -417,7 +417,8 @@ model StripeCustomer {
 // quando a Stripe diz que o pagamento passou, na rotina que grava o espelho (`assinaturas.ts`),
 // e então `userId` deixa de ser vazio. O CPF ou CNPJ NÃO mora aqui: fica no cliente da Stripe
 // (decisão de 12/10/2026 — um dado pessoal a menos no banco da escola). O consentimento de
-// novidades e a origem (UTM) vão na ASSINATURA da Stripe, presos à tentativa que foi paga.
+// novidades e a origem (UTM) vão na ASSINATURA da Stripe, presos à tentativa que foi paga — e,
+// desde o passo 9, a ficha também guarda os da ÚLTIMA tentativa, com o nome (para o lembrete e o lead).
 // `tentativa`: o RESUMO (SHA-256, hexadecimal) do código da tentativa de assinar em andamento —
 // o código vai só ao navegador de quem a criou, e é só com ele que a tela de depois do pagamento
 // pergunta se valeu; aqui fica só o resumo (etapa 4.7, passo 6b — `lib/tentativa-do-visitante.ts`).
@@ -437,10 +438,56 @@ model GuestCheckout {
   // tentativa criou a senha — UMA vez. Não se deduz da linha de senha: o Better Auth a apaga quando o
   // dono do e-mail entra pelo código pela primeira vez.
   senhaCriadaEm    DateTime?
+  // QUEM NÃO TERMINOU DE ASSINAR (etapa 4.7, passo 9 — decisões do operador, 29/10/2026): o que a
+  // ÚLTIMA tentativa deixou — o nome digitado, a caixa de novidades e a origem (o UTM do primeiro
+  // acesso) — e quando ela foi feita. Daqui saem o lembrete (2 horas depois), o lead e a limpeza (7
+  // dias depois). O NOME NUNCA VAI PARA A STRIPE: a fatura anulada guarda o que for para lá, e a Stripe
+  // não deixa apagá-la (medido em 30/10/2026). A conta que nasce do pagamento leva este nome.
+  nome                String?
+  novidades           Boolean   @default(false)
+  acquisitionSource   String?
+  acquisitionCampaign String?
+  ultimaTentativaEm   DateTime  @default(now())
+  // O lembrete "você não terminou a assinatura" — UM por ficha: quando foi TOMADO para sair e quando o
+  // Resend CONFIRMOU. Tomado e sem confirmação há mais de 15 minutos é retomado (quem o tomou caiu no
+  // meio), como a marca dos e-mails da cobrança (`subscription_email`).
+  lembreteTomadoEm    DateTime?
+  lembreteEnviadoEm   DateTime?
+  // A limpeza dos 7 dias achou pagamento na Stripe e NÃO apagou: o alerta saiu nesta hora — uma vez só.
+  naoApagadaEm        DateTime?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
   @@map("guest_checkout")
+}
+
+// DE ONDE VEIO O LEAD (etapa 4.7, passo 9). O YouTube e o LinkedIn entram depois, com a captura deles.
+enum OrigemDoLead {
+  // Marcou "Quero receber novidades" ao assinar sem conta, e não terminou de assinar.
+  CAIXA_AO_ASSINAR
+  // Clicou em "Quero receber novidades" no lembrete de quem não terminou de assinar.
+  LEMBRETE
+}
+
+// OS LEADS (etapa 4.7, passo 9 — decisões do operador, 29/10/2026): quem aceitou receber novidades da
+// escola sem ser aluno — NOME E E-MAIL, NUNCA O CPF. Um por e-mail (em minúsculas). `confirmadoEm`: quando
+// o e-mail foi PROVADO — a pessoa clicou num link que a escola mandou àquela caixa; a caixa marcada no
+// formulário não prova (P96). `descadastradoEm`: vazio = recebe novidades. O id não é sequencial: ele vai
+// no link de descadastrar, e um número publicaria quantos leads a escola tem.
+model Lead {
+  id                  String       @id
+  email               String       @unique
+  nome                String?
+  origem              OrigemDoLead
+  consentimentoEm     DateTime
+  confirmadoEm        DateTime?
+  descadastradoEm     DateTime?
+  acquisitionSource   String?
+  acquisitionCampaign String?
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+
+  @@map("lead")
 }
 
 // OS EVENTOS DO VÍDEO (Fase 5, Bloco MEDIR, etapa 1 — pedido do operador, 09/10/2026).

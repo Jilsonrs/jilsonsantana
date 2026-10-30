@@ -12,6 +12,11 @@ Isto é o diferencial que ninguém copia barato: o **JilsonAI** não é um chatb
 é o tecido da escola. Concorrentes "ensinam IA" rodando vídeos numa plataforma comum; aqui a
 própria experiência de estudar é um caso de uso de IA bem-feito.
 
+> ⚠️ **Out/2026:** a Hashtag já vende assistente de IA 24h + trilhas personalizadas + certificado.
+> O princípio-estrela continua sendo o filtro de produto, mas **ter** tutor de IA e trilha virou
+> **paridade** — a copy nunca diz "só aqui". O diferencial vendável é a tabela em `strategy.md` §2
+> (correção out/2026).
+
 **Filtro de decisão (aplicar a cada feature, como o Copy Filter faz com a copy):**
 > *"Essa parte da escola é uma demonstração viva de IA bem-usada, ou é mecânica comum?"*
 > A busca não é caixa+filtros → é o JilsonAI entendendo o objetivo. O onboarding não é formulário →
@@ -69,6 +74,11 @@ sobre crescimento rápido.
   a Hashtag), mas sem custo de produção extra porque o conteúdo já existe.
 - **Diferencial =** autoridade pessoal + simplicidade + ângulo de IA aplicada ("**X + Claude**") +
   **JilsonAI** + **acessibilidade**.
+  *Afinado out/2026 (o tutor de IA e a trilha a Hashtag também tem):* **quem ensina é quem faz**
+  (BI Sênior com IA em produção) · **IA aplicada a dados de verdade** — "a IA faz, o analista
+  confere" · **mensal sem fidelidade** · **certificado por competências** · **sem urgência
+  fabricada**. O JilsonAI diferencia pela **qualidade** (método, voz, escalação pro Jilson), não por
+  existir. Detalhe em `strategy.md` §2.
 - **Missão:** dados acessíveis a todos, sem complexidade.
 - **Voz da marca:** tornar o complexo simples; curto, direto, focado no que importa; aprender rápido
   e aplicar já.
@@ -248,18 +258,28 @@ Automação & IA). Fio condutor: **dados na era da IA** ("X + Claude").
 
 ## Canais
 
-- **Udemy (+100 mil alunos) — MOTOR de aquisição inicial.** A alavanca de curto prazo é **e-mail
-  pra base Udemy** convidando pro canal/site. Mesmo conversão baixa (0,3–0,5%) já dá centenas de
-  assinantes (ordem da meta de 500). Udemy em si fica **fora do escopo de build** (projeto à parte),
-  mas é o canal de aquisição nº 1 no lançamento. Não há UDEMY.md aqui.
-- **YouTube "Jilson Santana" — em rebuild PT (~1.580 inscritos), compounding de médio/longo prazo.**
-  Era inglês, está virando PT. 1 vídeo/semana. **Não é o motor no curto prazo** (base pequena, ainda
-  a reconstruir) — vira motor à medida que cresce. AdSense é **bônus** (RPM PT/BR baixo).
+- ~~**Udemy (+100 mil alunos) — MOTOR de aquisição inicial** (e-mail pra base convidando pro
+  canal/site)~~ — **removido em 30/10/2026** `[decisão do operador: "não vai mais ter captura do
+  público na Udemy, vou começar de forma independente no YouTube"]`. A Udemy segue como **renda** e
+  como **âncora de credibilidade** (+100 mil alunos), fora do escopo de build. **Separação total**
+  `[decisão do operador, 30/10: "eu não vou apontar alunos da Udemy para o YouTube"]` — nem ponte
+  passiva (perfil de instrutor ou aula final da Udemy apontando pro canal).
+- **YouTube "Jilson Santana" — motor PRINCIPAL de aquisição** (rebuild PT, ~1.580 inscritos em jun/2026).
+  Estratégia no projeto do canal (`YouTube-Project.md`). AdSense é **bônus** (RPM PT/BR baixo).
+  [INFER] Sem a base Udemy, o crescimento da escola anda no ritmo do canal — cadência de publicação
+  vira caminho crítico da meta (conta em `strategy.md` §6).
+- **LinkedIn — segundo canal de aquisição** `[decisão do operador, 30/10/2026]`. Distribuição do
+  conteúdo do YouTube (clipe nativo + texto curto), não produção nova; link no 1º comentário, com
+  `utm_source=linkedin`. Idioma do perfil e formato: **P134**. Detalhe em `strategy.md` §5.
 - **YouTube em inglês:** o canal separado de Set 2026 existia para alimentar o lado EN da escola,
   que saiu em 12/10/2026. **O que fazer com ele é decisão do operador** (P90), fora do site.
-- **Táticas de captura aprovadas:** **campanha de e-mail pra base Udemy** (convite pro canal + site);
-  lição "Próximos passos" no fim dos cursos; 1–2 e-mails educativos/mês; trailer do canal; CTA guiada
-  por identidade (tagline oficial); escassez de founding member (sem lock vitalício) pros alunos Udemy.
+- **Táticas de captura aprovadas:** ~~campanha de e-mail pra base Udemy~~ *(removida 30/10/2026)*;
+  lição "Próximos passos" no fim dos cursos *(só nos cursos da escola — na Udemy, nenhuma ponte,
+  30/10/2026)*; 1–2 e-mails educativos/mês; trailer do canal; CTA guiada
+  por identidade (tagline oficial). ~~escassez de founding member (sem lock vitalício) pros alunos
+  Udemy~~ — *removido em 30/10/2026 por contradizer a decisão "Sem oferta de fundador" (set/2026, seção
+  Pricing acima).* **Proposta out/2026:** material dos vídeos do YouTube (dataset, prompts, arquivo
+  final) baixado no site com e-mail + UTM do vídeo — pós-launch, mesma página da P29 (`strategy.md` §5).
 
 ---
 
@@ -281,7 +301,8 @@ Automação & IA). Fio condutor: **dados na era da IA** ("X + Claude").
 - **Fora do site, sem mudança:** a tentativa no LinkedIn Learning segue como projeto à parte até o
   operador dizer o contrário. **O canal do YouTube em inglês é decisão dele** (P90).
 - **Gatilho de reabertura:** só por decisão dele, com dado novo — o Stripe Tax ou o Managed Payments aceitarem empresa do Brasil, ou a empresa mudar de país. Voltar ao inglês é projeto novo, não "religar".
-- LinkedIn (rede) deprioritizado.
+- ~~LinkedIn (rede) deprioritizado.~~ **Revertido em 30/10/2026** `[decisão do operador]`: o LinkedIn
+  é o **segundo canal de aquisição** (ver *Canais*).
 
 ---
 
@@ -374,7 +395,7 @@ GitHub Actions.**
 | 5 — Progresso + captura de evento | LessonProgress + conclusão de trilha + LessonEvent | baixo–médio |
 | 6 — JilsonAI (v1 + suporte) | ver JILSONAI.md (Fases 0–3) + `recommendTrilha` | médio |
 | 6.5 — Certificados | PDF a 100% (nome + competências) | baixo–médio |
-| 7 — Launch | e-mails, LGPD, segurança, performance, founding-member | médio |
+| 7 — Launch | e-mails, LGPD, segurança, performance ~~, founding-member~~ *(removido 30/10 — não existe desde set/2026)* | médio |
 
 - **MVP = Fases 0 → 7.** **~70% do risco está nas Fases 3 (Bunny) e 4 (Stripe).**
 - **Pós-MVP:** Analytics · JilsonAI Fase 4–6 (RAG + `buildLearningPlan` + memória) · cohorts ao
@@ -466,3 +487,9 @@ ferramenta"). Nada infla o MVP (0–7) — são lentes, filtros e seams, não fa
 *Atualizado Set 2026 (18/09) — **TETO DE 1.000 ASSINANTES PAGANDO MENSAL** `[decisão do operador]`, + **duas correções na derivação**. A escada de números passa de três para quatro: **~378–469 = a conta · ~400 = o piso · 500 = a meta · 1.000 = o TETO**. **O que o teto vale:** R$ 99.900/mês bruto, **R$ 1,2M/ano**, **R$ 72–82k/mês líquido ≈ US$ 14–16k** — **~2,3× a renda-objetivo de US$ 6k mesmo na conta mais pessimista**, e **dentro do EPP** (limite do Simples é R$ 4,8M/ano), então não muda enquadramento. **O teto é no plano MENSAL** `[decisão do operador]`, não no mix 75/25 das linhas acima: mensal puro fatura **~R$ 51k/ano a mais** que o mesmo número de assinantes no mix, porque o anual dá 17% de desconto — e a conta dos ~378 **sobrevive à troca**, porque a alíquota progressiva come a diferença. **CORREÇÃO 1 — o Simples é PROGRESSIVO, não 6% fixo:** os 6% são a alíquota de quem fatura até R$ 180k/ano; a efetiva sobe com o faturamento (**~9,5% na conta · ~10,4% aos 500 · ~13% aos 1.000**), custando **~R$ 2,3 mil/mês aos 500** e **~R$ 7 mil/mês (R$ 84k/ano) aos 1.000**. O alerta que existia aqui era só *Anexo III × Anexo V* — o problema acontece **mesmo ficando no Anexo III**. ⚠️ A estrutura progressiva é certa; **os valores de faixa são [A CONFIRMAR COM O CONTADOR]**, junto da comparação com **Lucro Presumido** (a ~13% efetiva ele merece ser comparado). **CORREÇÃO 2 — faltava o custo de API do JilsonAI no ARPU:** é custo variável por assinante (R$ 5–15/mês), **maior que a taxa da Stripe**, e não estava descontado em lugar nenhum; incluindo-o, **o "piso" de ~400 vira a conta**. Por isso o ARPU deixa de ser um número único (R$ 85,04) e vira **faixa: R$ 67–82**. **Sobre a churn:** os 7% são **hipótese, nunca medida** `[enquadramento do operador]` — números de reposição ficam como referência, **não como restrição à meta**. **GATILHO DE REABERTURA:** o teto se revisa se o contador fechar um enquadramento que mova o ARPU líquido em mais de ~10%, **ou** quando houver **12 meses de churn medida** (mesmo gatilho que já vale para a meta de 500). **Não é gatilho:** ritmo de crescimento abaixo do esperado no começo — teto é destino, não previsão. Análise completa e derivação em `strategy.md` §6.*
 
 *Atualizado Out 2026 (12/10) — **A ESCOLA É SÓ EM PORTUGUÊS E SÓ PARA O BRASIL** `[decisão do operador]`, revertendo a escola bilíngue de 14/09/2026. Reescrito: *Idioma & foco*. Saíram: a tagline em inglês, o preço em dólar (tier 1 e *Pricing*), o canal do YouTube em inglês como parte da escola (o canal em si é decisão dele — P90) e o `IDIOMAS.md` da lista de documentos. **Gatilho de reabertura:** só por decisão dele, com dado novo — o Stripe Tax ou o Managed Payments aceitarem empresa do Brasil, ou a empresa mudar de país. Voltar ao inglês é projeto novo, não "religar".*
+
+*Atualizado Out 2026 (30/10) — **concorrência e duas sobras de founding member.** (1) A análise das lives de lançamento da Hashtag (set e out/2026) mostrou que o plano deles já tem assistente de IA 24h, trilhas personalizadas e certificado: o *Princípio-estrela* ganha o alerta de que tutor de IA e trilha são **paridade**, e *Identidade & posicionamento* afina o **Diferencial** (quem ensina é quem faz · IA×dados com "a IA faz, o analista confere" · mensal sem fidelidade · certificado por competências · sem urgência fabricada). Racional em `strategy.md` §2–§3. (2) **Duas menções a founding member que contradiziam a decisão de set/2026** ("Sem oferta de fundador", seção Pricing) foram riscadas: a tática de captura em *Canais* e o item da Fase 7 no roadmap. (3) *Canais* ganha a proposta de captura pelo material dos vídeos (P29). **Preço, meta, teto e derivação não mudaram** `[decisão do operador, 30/10]`.*
+
+*Atualizado Out 2026 (30/10, 2) — **SEM CAPTURA DO PÚBLICO DA UDEMY** `[decisão do operador]`. *Canais*: a Udemy deixa de ser o motor de aquisição inicial e o **YouTube passa a ser o único motor**; a campanha de e-mail pra base Udemy sai das táticas aprovadas. A Udemy segue como renda e credibilidade. Preço, meta e teto não mudam; o calendário sim — conta em `strategy.md` §6. Ponte passiva Udemy → canal em aberto: **P133**.*
+
+*Atualizado Out 2026 (30/10, 3) — **LINKEDIN COMO SEGUNDO CANAL + SEPARAÇÃO TOTAL DA UDEMY** `[decisões do operador]`. *Canais*: o YouTube passa de "único" a "motor principal" e o LinkedIn entra como segundo canal (distribuição do conteúdo do YouTube, `utm_source=linkedin`); a Udemy não aponta alunos nem para o canal (P133 resolvida). *Idioma & foco*: "LinkedIn deprioritizado" revertido. Idioma do perfil e formato do LinkedIn: **P134**.*

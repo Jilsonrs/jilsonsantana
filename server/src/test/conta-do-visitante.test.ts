@@ -134,6 +134,24 @@ describe("a conta nasce no pagamento", () => {
     expect(login.status).toBe(401);
   });
 
+  // O NOME (etapa 4.7, passo 9 — revê a P83): vem da FICHA (a última tentativa), nunca da Stripe — o nome não
+  // vai para lá (a fatura anulada guarda o que for, e não se apaga).
+  it("a conta nasce com o NOME da ficha; a ficha sem nome (a aba de antes do passo 9) dá conta sem nome", async () => {
+    const comNome = await prisma.guestCheckout.create({ data: { id: novoId("pedido"), email: novoEmail(), stripeCustomerId: novoId("cus"), livemode: false, nome: "Nome da Ficha" } });
+    const sub = novoId("sub");
+    buscarAssinatura.mockResolvedValue(doVisitante(sub, comNome));
+    expect((await enviar(avisoDaAssinatura(sub, "customer.subscription.created"))).status).toBe(200);
+    expect((await contaDoEmail(comNome.email))?.name).toBe("Nome da Ficha");
+
+    const semNome = await novaFicha();
+    const outra = novoId("sub");
+    buscarAssinatura.mockResolvedValue(doVisitante(outra, semNome));
+    expect((await enviar(avisoDaAssinatura(outra, "customer.subscription.created"))).status).toBe(200);
+    const conta = await contaDoEmail(semNome.email);
+    expect(conta).not.toBeNull();
+    expect(conta?.name).toBeNull();
+  });
+
   it("quem NÃO marcou novidades nasce sem consentimento, e sem origem quando não veio nenhuma", async () => {
     const ficha = await novaFicha();
     const sub = novoId("sub");

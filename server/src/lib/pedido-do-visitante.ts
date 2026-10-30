@@ -38,13 +38,13 @@ export type DonoDoPedido = { id: string; nova: boolean } | { motivo: SemContaDoV
 /**
  * A conta desta assinatura de VISITANTE — COM a trava da assinatura e DENTRO da transação do
  * espelho (`tx`). A ficha que já tem conta devolve a conta dela (outra assinatura da mesma ficha);
- * senão, paga e com o e-mail livre, a conta NASCE: com o e-mail da ficha, papel de aluno, e o que o
- * visitante escolheu na tentativa paga (novidades e origem).
+ * senão, paga e com o e-mail livre, a conta NASCE: com o e-mail e o nome da ficha, papel de aluno, e
+ * o que o visitante escolheu na tentativa paga (novidades e origem).
  */
 export async function contaDoPedido(tx: Prisma.TransactionClient, pedidoId: string, assinatura: AssinaturaNaStripe): Promise<DonoDoPedido> {
   const pedido = await tx.guestCheckout.findUnique({
     where: { id: pedidoId },
-    select: { id: true, email: true, stripeCustomerId: true, livemode: true, userId: true },
+    select: { id: true, email: true, stripeCustomerId: true, livemode: true, userId: true, nome: true },
   });
   if (!pedido) return { motivo: "pedido inexistente" };
   // A ficha é de UM cliente da Stripe: uma assinatura de outro cliente que diga ser desta ficha não
@@ -66,6 +66,10 @@ export async function contaDoPedido(tx: Prisma.TransactionClient, pedidoId: stri
     data: {
       id,
       email,
+      // O nome digitado ao assinar (etapa 4.7, passo 9 — revê a P83): o da ficha, que guarda o da ÚLTIMA
+      // tentativa. NÃO vem da Stripe, como a escolha abaixo: o nome nunca vai para lá (a fatura anulada
+      // guarda o que for, e não se apaga). Sem nome (a aba de antes da publicação), a conta nasce sem.
+      name: pedido.nome,
       role: Role.MEMBER,
       marketingConsent: escolha.novidades,
       acquisitionSource: escolha.origem,

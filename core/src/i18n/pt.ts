@@ -433,7 +433,44 @@ export const pt = {
         titulo: "Seu acesso está acabando",
         acaba: "Você pagou com Pix, e o seu acesso às aulas vai até o dia {data}.",
         depois: "Quando acabar, é só pagar de novo para continuar: seu progresso fica guardado, e você segue de onde parou."
+      },
+      // O LEMBRETE DE QUEM NÃO TERMINOU DE ASSINAR (etapa 4.7, passo 9 — decisões do operador, 29/10/2026: 2 horas
+      // depois da última tentativa). Texto APROVADO pelo operador em 30/10/2026 (rascunho do agente, conferido nos dois
+      // e-mails de verdade). SEM O NOME (decisão do operador, 30/10/2026, depois da revisão de segurança: o e-mail vai para
+      // uma caixa que ninguém provou, e o nome digitado servia a um golpe — só texto fixo). Depois do botão, quem
+      // NÃO marcou "Quero receber novidades" lê `querNovidades`, o link `linkNovidades` e `apagamos`; quem marcou (é lead)
+      // lê `eLead` e o link `linkDescadastrar`. `naoFoiVoce` fecha os dois.
+      lembrete: {
+        assunto: "Sua assinatura não foi concluída",
+        titulo: "Falta pouco",
+        naoConcluida: "Você começou a assinar a escola, mas o pagamento não foi concluído. Nada foi cobrado.",
+        botao: "Terminar a assinatura",
+        querNovidades: "Quer receber novidades e ofertas da escola por e-mail?",
+        linkNovidades: "Quero receber novidades",
+        apagamos: "Se você não terminar a assinatura nem pedir as novidades, apagamos os seus dados em 7 dias.",
+        eLead: "Você pediu para receber novidades e ofertas da escola por e-mail. Se mudar de ideia:",
+        linkDescadastrar: "Não quero mais receber",
+        naoFoiVoce: "Se não foi você que começou esta assinatura, ignore este e-mail."
       }
+    },
+    // AS PÁGINAS DOS LINKS DO E-MAIL (etapa 4.7, passo 9): "Quero receber novidades" (o link do lembrete) e
+    // "Descadastrar" (em todo e-mail a um lead). Páginas do servidor, com o menu e o rodapé do site; fora de Admin →
+    // Textos, como os textos dos e-mails. Textos APROVADOS pelo operador em 30/10/2026 (rascunho do agente). `{email}`: o
+    // e-mail da pessoa; `{contato}`: o e-mail do suporte.
+    linksDoEmail: {
+      tituloNovidades: "Novidades",
+      tituloDescadastrar: "Descadastrar",
+      novidadesTitulo: "Quer receber novidades?",
+      novidadesTexto: "Vamos mandar para {email} as novidades e ofertas da escola. Você pode se descadastrar quando quiser, pelo link que vem nos e-mails.",
+      novidadesBotao: "Quero receber novidades",
+      novidadesPronto: "Você vai receber as novidades e ofertas da escola por e-mail.",
+      descadastrarTitulo: "Não quer mais receber novidades?",
+      descadastrarTexto: "O e-mail {email} deixa de receber as novidades e ofertas da escola.",
+      descadastrarBotao: "Descadastrar",
+      descadastrarPronto: "Você não vai mais receber as novidades e ofertas da escola.",
+      pronto: "Pronto.",
+      naoValeTitulo: "Este link não vale mais.",
+      naoValeTexto: "Se precisar, escreva para {contato}."
     },
     inicio: {
       ola: "Olá",
@@ -611,6 +648,12 @@ export const pt = {
       incluidoTitulo: "O que está incluído",
       // SÓ DA TELA PÚBLICA (etapa 4.7, passo 6e): o visitante, sem conta. Textos APROVADOS pelo operador
       // em 27/10/2026 (P81). O aviso de e-mail inválido é o da tela de entrar (`login.emailInvalido`).
+      // O nome (etapa 4.7, passo 9 — o campo obrigatório, antes do e-mail, sem linha de ajuda): textos
+      // APROVADOS pelo operador em 30/10/2026. `nomeSoLetras`: o nome com dígito, símbolo ou endereço de site (decisão
+      // do operador, 30/10/2026, depois da revisão de segurança: o campo aceita só letras).
+      nome: "Seu nome",
+      nomeVazio: "Informe seu nome.",
+      nomeSoLetras: "Use só letras no nome.",
       email: "Seu e-mail",
       emailAjuda: "É com ele que você entra na escola.",
       // "Já tem conta? Entrar" — "Entrar" é o link (leva ao login e, depois, à tela de assinar do app).

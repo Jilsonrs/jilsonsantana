@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { pt } from "@jilson/core";
 import { LOGO_DO_EMAIL, montarEmail, type MensagemDeEmail } from "./views/email.js";
 import { montarAvisoDaCobranca, type EmailDevido } from "./views/email-da-cobranca.js";
+import { montarLembrete } from "./views/email-do-lembrete.js";
 
 // A PRÉVIA DO MODELO DE E-MAIL (etapa 4.7, passo 3) — para o operador e o parceiro de design
 // olharem o desenho sem mandar nada: `npm --workspace server run email:previa`, e abrir o arquivo
@@ -55,6 +56,10 @@ const exemplos: Array<[string, MensagemDeEmail]> = [
   ["previa-confirmada-mensal.html", montarAvisoDaCobranca({ tipo: "CONFIRMADA", referencia: "inicio", trancaEm: null }, { plano: "mensal" }, falha, pt.app.email, site)],
   ["previa-confirmada-anual.html", montarAvisoDaCobranca({ tipo: "CONFIRMADA", referencia: "inicio", trancaEm: null }, { plano: "anual" }, falha, pt.app.email, site)],
   ["previa-confirmada-pix.html", montarAvisoDaCobranca({ tipo: "CONFIRMADA", referencia: "inicio", trancaEm: new Date(falha.getTime() + 30 * DIA) }, { plano: "mensal" }, falha, pt.app.email, site)],
+  // O lembrete de quem não terminou de assinar (etapa 4.7, passo 9): quem não marcou a caixa de novidades (o link de
+  // pedir) e quem marcou (é lead: o link de descadastrar). Os links são de exemplo.
+  ["previa-lembrete-sem-novidades.html", montarLembrete({ link: { tipo: "novidades", endereco: site("/novidades/exemplo") } }, pt.app.email.lembrete, site)],
+  ["previa-lembrete-lead.html", montarLembrete({ link: { tipo: "descadastrar", endereco: site("/descadastrar/exemplo") } }, pt.app.email.lembrete, site)],
 ];
 for (const [nome, mensagem] of exemplos) {
   const caminho = join(pasta, nome);

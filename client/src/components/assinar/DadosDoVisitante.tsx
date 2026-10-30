@@ -1,3 +1,4 @@
+import { TAMANHO_DO_NOME } from "@jilson/core";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ENTRAR_PARA_ASSINAR } from "@/lib/acesso-por-codigo";
@@ -5,7 +6,36 @@ import { useT } from "@/lib/language";
 
 // SÓ NA TELA PÚBLICA (etapa 4.7, passo 6e): o que a tela de quem está logado não pede — o e-mail (o
 // da conta, ali) e a caixa de novidades (a escolha que a pessoa fez ao assinar pela primeira vez —
-// decisão do operador, 27/10/2026). Textos aprovados por ele no mesmo dia (P81).
+// decisão do operador, 27/10/2026). Textos aprovados por ele no mesmo dia (P81). E, desde o passo 9, o
+// nome (obrigatório, antes do e-mail, sem linha de ajuda — textos aprovados por ele em 30/10/2026).
+
+/** O nome: vai para a conta que nasce do pagamento e para o lead — nunca para a Stripe (etapa 4.7, passo 9). */
+export function CampoDoNome({ valor, aoMudar, erro, travado }: { valor: string; aoMudar: (valor: string) => void; erro: string | null; travado: boolean }) {
+  const t = useT().assinar;
+  return (
+    <div className="space-y-2">
+      <Label htmlFor="nome-do-visitante">{t.nome}</Label>
+      <Input
+        id="nome-do-visitante"
+        type="text"
+        name="name"
+        autoComplete="name"
+        value={valor}
+        onChange={(evento) => aoMudar(evento.target.value)}
+        disabled={travado}
+        maxLength={TAMANHO_DO_NOME}
+        className="max-w-md"
+        aria-invalid={erro ? true : undefined}
+        aria-describedby={erro ? "nome-do-visitante-erro" : undefined}
+      />
+      {erro && (
+        <p id="nome-do-visitante-erro" role="alert" className="text-sm text-destructive">
+          {erro}
+        </p>
+      )}
+    </div>
+  );
+}
 
 /** O e-mail, com "Já tem conta? Entrar": quem já tem conta entra e assina pela tela do app (decisão de 21/10/2026). */
 export function CampoDoEmail({ valor, aoMudar, erro, travado }: { valor: string; aoMudar: (valor: string) => void; erro: string | null; travado: boolean }) {

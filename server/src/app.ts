@@ -15,6 +15,7 @@ import lessonsRouter from "./routes/lessons.js";
 import searchRouter from "./routes/search.js";
 import homeRouter from "./routes/home.js";
 import assinarRouter from "./routes/assinar.js";
+import linksDoEmailRouter from "./routes/links-do-email.js";
 import adminSiteTextRouter from "./routes/admin-site-text.js";
 import siteTextRouter from "./routes/site-text.js";
 import adminTestimonialsRouter from "./routes/admin-testimonials.js";
@@ -153,6 +154,12 @@ app.use("/api", adminAssinaturasRouter);
 // cima) responde 500 `ErroInterno`, sem copiar status nem cabeçalho do erro. Rota nova de
 // `/api` entra ACIMA desta linha.
 app.use("/api", tratarErroDaApi);
+
+// ── Os links dos e-mails (etapa 4.7, passo 9) ───────────────────────────────
+// "Quero receber novidades" e "Descadastrar": as páginas do servidor que o link de um e-mail abre. Montadas ANTES do
+// portão "Em breve" (abaixo, só em produção): o link de um e-mail tem de funcionar sempre — o de descadastrar, por lei.
+// Só abrem com o código assinado pelo servidor (`lib/links-do-email.ts`).
+app.use("/", linksDoEmailRouter);
 
 // ── Home pública (SSR, sem React) ───────────────────────────────────────────
 // Registrada em TODOS os ambientes (em dev o operador abre localhost:3000).

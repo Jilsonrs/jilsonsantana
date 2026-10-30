@@ -52,8 +52,9 @@ import { AssinarSemLoginPage } from "./AssinarSemLoginPage";
 // A TELA PÚBLICA DE ASSINAR, a parte do app (etapa 4.7, passos 6c e 6e). O que estes testes protegem:
 //   - os planos e a prévia vêm das rotas SEM LOGIN (o visitante não tem sessão), com o Mensal marcado;
 //   - carregando, erro e "sem planos" — nunca uma tela em branco;
-//   - o visitante diz o e-mail (com "Já tem conta? Entrar", que volta à tela de assinar do app), o
-//     CPF ou CNPJ e as novidades (desmarcada); errado, nada vai ao servidor nem ao cartão;
+//   - o visitante diz o nome (passo 9: obrigatório, antes do e-mail), o e-mail (com "Já tem conta?
+//     Entrar", que volta à tela de assinar do app), o CPF ou CNPJ e as novidades (desmarcada); errado,
+//     nada vai ao servidor nem ao cartão;
 //   - A TENTATIVA (ela abre a conta): guardada só na memória e no `sessionStorage`, ANTES de o cartão
 //     confirmar; nunca no endereço de volta da Stripe; a do mesmo e-mail segue no novo clique;
 //   - depois do pagamento, a tela de concluído carrega inteira (página do servidor);
@@ -74,6 +75,7 @@ const PAGAR: AssinaturaSemLogin = { estado: "pagar", segredo: "pi_1_secret_x", t
 const COM_PIX: PlanosDaAssinatura = { ...PLANOS, pix: { configuracao: "pmc_so_pix" } };
 const PAGAR_PIX: AssinaturaSemLogin = { estado: "pagar", segredo: "pi_pix_secret_x", tipo: "pix", tentativa: TENTATIVA, email: "visitante@exemplo.com" };
 const EMAIL = "Visitante@Exemplo.com";
+const NOME = "Maria da Silva";
 const CPF = "529.982.247-25";
 const erroDoServidor = (codigo: string, status = 409) =>
   new AxiosError("erro", "ERR_BAD_REQUEST", undefined, undefined, { status, statusText: "", headers: {}, config: { headers: new AxiosHeaders() }, data: { error: codigo } });
@@ -96,7 +98,8 @@ beforeEach(() => {
 afterEach(() => vi.restoreAllMocks());
 
 const abrir = () => renderWithProviders(<AssinarSemLoginPage />);
-const preencher = ({ email = EMAIL, documento = CPF } = {}) => {
+const preencher = ({ nome = NOME, email = EMAIL, documento = CPF } = {}) => {
+  fireEvent.change(screen.getByLabelText("Seu nome"), { target: { value: nome } });
   fireEvent.change(screen.getByLabelText("Seu e-mail"), { target: { value: email } });
   fireEvent.change(screen.getByLabelText("CPF ou CNPJ"), { target: { value: documento } });
 };
@@ -155,6 +158,47 @@ describe("a tela pública de assinar — os dados do visitante", () => {
     expect(validar).not.toHaveBeenCalled();
     expect(assinarSemLogin).not.toHaveBeenCalled();
   });
+
+  // O NOME (etapa 4.7, passo 9 — decisões do operador, 29 e 30/10/2026: obrigatório, antes do e-mail, sem linha de ajuda).
+  it("o campo \"Seu nome\" vem ANTES do e-mail, sem linha de ajuda, e o navegador pode preenchê-lo", async () => {
+    abrir();
+    const nome = await screen.findByLabelText("Seu nome");
+    expect(nome.compareDocumentPosition(screen.getByLabelText("Seu e-mail")) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect([nome.getAttribute("autocomplete"), nome.getAttribute("aria-describedby")]).toEqual(["name", null]);
+  });
+
+  it("o nome vazio, ou só de espaços: o aviso embaixo dele — e nada vai ao cartão nem ao servidor; corrigido, o aviso some e o pedido sai", async () => {
+    abrir();
+    await screen.findByLabelText("Seu nome");
+    preencher({ nome: "   " });
+    assinar();
+    expect((await screen.findByRole("alert")).textContent).toBe("Informe seu nome.");
+    expect(screen.getByLabelText("Seu nome").getAttribute("aria-invalid")).toBe("true");
+    expect(screen.getByLabelText("Seu nome").getAttribute("aria-describedby")).toBe("nome-do-visitante-erro");
+    expect(validar).not.toHaveBeenCalled();
+    expect(assinarSemLogin).not.toHaveBeenCalled();
+
+    fireEvent.change(screen.getByLabelText("Seu nome"), { target: { value: "Ana" } });
+    expect(screen.queryByText("Informe seu nome.")).toBeNull();
+    assinar();
+    await waitFor(() => expect(assinarSemLogin).toHaveBeenCalledWith(expect.objectContaining({ nome: "Ana" })));
+  });
+
+  // SÓ LETRAS (decisão do operador, 30/10/2026, depois da revisão de segurança do passo 9): o nome servia a um golpe no e-mail.
+  it("o nome com número, símbolo ou endereço de site: o aviso 'Use só letras no nome.' — e nada vai ao cartão nem ao servidor", async () => {
+    abrir();
+    await screen.findByLabelText("Seu nome");
+    for (const nome of ["Ana 2", "regularize em golpe.com.br", "Ana@Silva"]) {
+      preencher({ nome });
+      assinar();
+      expect((await screen.findByRole("alert")).textContent, nome).toBe("Use só letras no nome.");
+    }
+    expect(validar).not.toHaveBeenCalled();
+    expect(assinarSemLogin).not.toHaveBeenCalled();
+    preencher({ nome: "Maria-Clara D'Ávila" });
+    assinar();
+    await waitFor(() => expect(assinarSemLogin).toHaveBeenCalledWith(expect.objectContaining({ nome: "Maria-Clara D'Ávila" })));
+  });
 });
 
 describe("a tela pública de assinar — o envio e a tentativa", () => {
@@ -166,7 +210,7 @@ describe("a tela pública de assinar — o envio e a tentativa", () => {
     preencher();
     assinar();
     await waitFor(() => expect(ir).toHaveBeenCalledWith("/assinar/concluido"));
-    expect(assinarSemLogin).toHaveBeenCalledWith({ email: EMAIL, documento: CPF, plano: "mensal", novidades: false });
+    expect(assinarSemLogin).toHaveBeenCalledWith({ nome: NOME, email: EMAIL, documento: CPF, plano: "mensal", novidades: false });
     expect(criarAssinatura).not.toHaveBeenCalled();
     expect(guardadaAntesDoCartao).toEqual({ tentativa: TENTATIVA, email: EMAIL });
     expect(JSON.parse(window.sessionStorage.getItem("jilson.assinar.tentativa") ?? "null")).toEqual({ tentativa: TENTATIVA, email: EMAIL });
@@ -182,7 +226,7 @@ describe("a tela pública de assinar — o envio e a tentativa", () => {
     preencher();
     fireEvent.click(screen.getByRole("checkbox", { name: "Quero receber novidades e ofertas da escola por e-mail." }));
     assinar();
-    await waitFor(() => expect(assinarSemLogin).toHaveBeenCalledWith({ email: EMAIL, documento: CPF, plano: "mensal", novidades: true, origem: "youtube", campanha: "video-excel" }));
+    await waitFor(() => expect(assinarSemLogin).toHaveBeenCalledWith({ nome: NOME, email: EMAIL, documento: CPF, plano: "mensal", novidades: true, origem: "youtube", campanha: "video-excel" }));
   });
 
   it("o cartão recusado e um novo clique: a tentativa do MESMO e-mail segue — a de outro e-mail, não", async () => {
@@ -252,7 +296,7 @@ describe("a tela pública de assinar — o Pix pré-pago", () => {
     expect(screen.getByTestId("cartao").dataset.pix).toBe("pmc_so_pix");
     fireEvent.click(screen.getByRole("button", { name: "Pagar com Pix" }));
     await waitFor(() => expect(ir).toHaveBeenCalledWith("/assinar/concluido"));
-    expect(pagarComPixSemLogin).toHaveBeenCalledWith({ email: EMAIL, documento: CPF, plano: "mensal", novidades: false });
+    expect(pagarComPixSemLogin).toHaveBeenCalledWith({ nome: NOME, email: EMAIL, documento: CPF, plano: "mensal", novidades: false });
     expect(assinarSemLogin).not.toHaveBeenCalled();
     expect(guardados).toEqual([
       { tentativa: TENTATIVA, email: EMAIL },

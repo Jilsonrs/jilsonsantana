@@ -725,3 +725,140 @@ describe("os limites sem login", () => {
     expect(Number(recusa.headers["retry-after"])).toBeGreaterThan(15 * 60);
   });
 });
+
+// QUEM NÃO TERMINOU DE ASSINAR (etapa 4.7, passo 9 — decisões do operador, 29/10/2026). O lembrete (2 horas
+// depois), o lead e a limpeza dos 7 dias leem o que a ÚLTIMA tentativa deixou na ficha — e o nome NUNCA vai à
+// Stripe: a fatura anulada guarda o que for para lá, e não se apaga (medido na área restrita, 30/10/2026).
+describe("o que a tentativa deixa na ficha (passo 9)", () => {
+  it("a ficha guarda o nome (aparado), a caixa, a origem e a hora — e o nome NÃO vai à Stripe, nem no cliente nem na assinatura", async () => {
+    vi.useFakeTimers({ toFake: ["Date"], now: Date.now() });
+    const agora = Date.now();
+    const email = novoEmail();
+    const res = await assinar(pedido(email, { nome: "  Maria da Silva  ", novidades: true, origem: "youtube", campanha: "video-excel" }));
+    expect(res.status).toBe(200);
+    const f = await ficha(email);
+    expect([f?.nome, f?.novidades, f?.acquisitionSource, f?.acquisitionCampaign, f?.ultimaTentativaEm.getTime()]).toEqual(["Maria da Silva", true, "youtube", "video-excel", agora]);
+    expect(JSON.stringify([criarClienteDoVisitante.mock.calls, criarAssinatura.mock.calls, acertarNumeroFiscal.mock.calls])).not.toContain("Maria");
+  });
+
+  it("o NOVO CLIQUE na mesma tentativa (reaproveitada): a hora, o nome, a caixa e a origem passam a ser os dele", async () => {
+    vi.useFakeTimers({ toFake: ["Date"], now: Date.now() });
+    const email = novoEmail();
+    const primeiro = await assinar(pedido(email, { nome: "Primeiro Nome", novidades: true, origem: "youtube" }));
+    const umaHoraDepois = Date.now() + 60 * 60_000;
+    vi.setSystemTime(umaHoraDepois);
+    const segundo = await assinar(pedido(email, { nome: "Segundo Nome", novidades: false, tentativa: primeiro.body.tentativa }));
+    expect(segundo.body.segredo).toBe(primeiro.body.segredo);
+    expect(criarAssinatura).toHaveBeenCalledTimes(1);
+    const f = await ficha(email);
+    expect([f?.nome, f?.novidades, f?.acquisitionSource, f?.ultimaTentativaEm.getTime()]).toEqual(["Segundo Nome", false, null, umaHoraDepois]);
+  });
+
+  it("a tentativa NOVA (outra pessoa, sem o código): a ficha passa a ter o que ela deixou", async () => {
+    const email = novoEmail();
+    await assinar(pedido(email, { nome: "Quem Começou", novidades: false }));
+    await assinar(pedido(email, { nome: "Quem Clicou Depois", novidades: true }));
+    expect(criarAssinatura).toHaveBeenCalledTimes(2);
+    const f = await ficha(email);
+    expect([f?.nome, f?.novidades]).toEqual(["Quem Clicou Depois", true]);
+  });
+
+  it("o pedido SEM o nome (a aba aberta antes da publicação do passo 9) segue — e não apaga o nome que a ficha já tinha", async () => {
+    const email = novoEmail();
+    const primeiro = await assinar(pedido(email, { nome: "Com Nome" }));
+    const segundo = await assinar(pedido(email, { tentativa: primeiro.body.tentativa }));
+    expect(segundo.status).toBe(200);
+    expect((await ficha(email))?.nome).toBe("Com Nome");
+  });
+
+  // SÓ LETRAS (decisão do operador, 30/10/2026, depois da revisão de segurança do passo 9): o nome servia a um golpe no
+  // e-mail — dígito, símbolo, endereço de site e os caracteres invisíveis ou que invertem o texto ficam de fora.
+  it("o nome que não vale — vazio, só espaços, longo demais, com dígito, símbolo, endereço de site ou caractere invisível: 400, e nada vai à Stripe nem ao banco", async () => {
+    const recusados = [
+      "",
+      "   ",
+      "x".repeat(101),
+      "Maria 2",
+      "seu acesso foi bloqueado, regularize em golpe.com.br",
+      "golpe.com.br",
+      "https://golpe.com",
+      "Ana@Silva",
+      "Ana/Silva",
+      "Ana: Silva",
+      "R$ Ana",
+      "Ana\u200BSilva",
+      "Ana \u202Eavlis",
+      "Ana 😀",
+      "-Ana",
+      "Ana--Silva",
+    ];
+    for (const nome of recusados) {
+      const email = novoEmail();
+      // Um endereço por pedido: são mais pedidos que o teto por endereço, e o teste é do nome, não do limite.
+      const res = await assinar(pedido(email, { nome }), `198.51.100.${200 + recusados.indexOf(nome)}`);
+      expect([res.status, res.body.error], JSON.stringify(nome)).toEqual([400, "ValidationError"]);
+      expect(await ficha(email)).toBeNull();
+    }
+    expect(buscarPrecos).not.toHaveBeenCalled();
+    expect(criarClienteDoVisitante).not.toHaveBeenCalled();
+    // O teto, 100 caracteres, passa.
+    expect((await assinar(pedido(novoEmail(), { nome: "x".repeat(100) }))).status).toBe(200);
+  });
+
+  it("os nomes de verdade passam — acento, hífen, apóstrofo, abreviação — e os espaços de dentro ficam um só", async () => {
+    const nomes: Array<[string, string]> = [
+      ["José da Silva", "José da Silva"],
+      ["Maria-Clara D'Ávila", "Maria-Clara D'Ávila"],
+      ["Ana O’Neil", "Ana O’Neil"],
+      ["João Jr.", "João Jr."],
+      ["M. Souza", "M. Souza"],
+      ["  Ana   Paula\tSouza  ", "Ana Paula Souza"],
+      ["Ñandú Çağlar", "Ñandú Çağlar"],
+    ];
+    for (const [digitado, gravado] of nomes) {
+      const email = novoEmail();
+      const res = await assinar(pedido(email, { nome: digitado }));
+      expect(res.status, digitado).toBe(200);
+      expect((await ficha(email))?.nome, digitado).toBe(gravado);
+    }
+  });
+
+  it("a ficha que SUMIU no meio do pedido (a limpeza dos 7 dias a apagou, com o cliente da Stripe): 409 'ocupada', e nada vai à Stripe — o novo clique cria outra ficha", async () => {
+    const email = novoEmail();
+    await assinar(pedido(email));
+    const antiga = await ficha(email);
+    if (!antiga) throw new Error("a ficha não nasceu");
+    assinaturasDoCliente.mockClear();
+    criarAssinatura.mockClear();
+    // A leitura SEM a trava (a do `prisma`, fora da transação) acha a ficha, e a limpeza a apaga logo depois —
+    // antes de o pedido entrar na trava. A troca segue o jeito de `billing.test.ts`: no Prisma, desfazer um
+    // espião deixa o método vazio para os testes seguintes; no fim, a função ORIGINAL volta para o lugar.
+    // Seguro: só para trocar e devolver esta propriedade; o resto do objeto não é tocado.
+    const delegado = prisma.guestCheckout as unknown as Record<string, unknown>;
+    const original = prisma.guestCheckout.findUnique;
+    let leituras = 0;
+    Object.defineProperty(delegado, "findUnique", {
+      configurable: true,
+      writable: true,
+      value: async (...args: Parameters<typeof original>) => {
+        const lida = await original(...args);
+        if (++leituras === 1 && lida) await prisma.guestCheckout.deleteMany({ where: { id: antiga.id } });
+        return lida;
+      },
+    });
+    try {
+      const res = await assinar(pedido(email));
+      expect([res.status, res.body]).toEqual([409, { error: "Ocupada" }]);
+      expect(leituras).toBe(1);
+    } finally {
+      Object.defineProperty(delegado, "findUnique", { configurable: true, writable: true, value: original });
+    }
+    expect(assinaturasDoCliente).not.toHaveBeenCalled();
+    expect(criarAssinatura).not.toHaveBeenCalled();
+    // O novo clique: outra ficha, com outro cliente da Stripe.
+    expect((await assinar(pedido(email))).status).toBe(200);
+    const nova = await ficha(email);
+    expect(nova?.id).not.toBe(antiga.id);
+    expect(nova?.stripeCustomerId).not.toBe(antiga.stripeCustomerId);
+  });
+});

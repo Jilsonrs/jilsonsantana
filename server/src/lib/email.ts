@@ -21,7 +21,9 @@ import { getDict } from "./dict.js";
 //   3. NÃO EXPÕE: o registro leva o tipo, a `referencia` (ids NOSSOS) e o id do Resend — nunca o
 //      destinatário nem o conteúdo (o "crie sua senha" carrega um link que dá acesso à conta).
 //   4. SÓ PARA UM ENDEREÇO, e válido: `para` é o `User.email` lido do NOSSO banco (minúsculas),
-//      nunca o que veio num aviso de fora. Fora disso, não envia.
+//      nunca o que veio num aviso de fora. Fora disso, não envia. A ÚNICA exceção (decisão do operador, etapa 4.7,
+//      passo 9): o lembrete de quem não terminou de assinar vai para o e-mail da FICHA (`guest_checkout`, também do nosso
+//      banco), que ninguém provou — por isso ele leva só texto fixo, um por ficha (`lib/quem-nao-terminou.ts`).
 //   5. SÓ PARA O RESEND: o endereço da API é fixo; uma `RESEND_BASE_URL` esquecida num `.env` não
 //      desvia a chave e os links de acesso para outro servidor.
 //
@@ -44,7 +46,7 @@ const API_DO_RESEND = "https://api.resend.com";
 const TEMPO_LIMITE_MS = 10_000;
 
 /** Os e-mails que existem. Cada passo que cria um e-mail acrescenta o dele aqui. */
-export type TipoDeEmail = "prova" | "codigo" | "boas-vindas" | "cobranca-falhou" | "antes-de-trancar" | "assinatura-cancelada" | "prepago-terminando" | "senha-criada" | "assinatura-confirmada";
+export type TipoDeEmail = "prova" | "codigo" | "boas-vindas" | "cobranca-falhou" | "antes-de-trancar" | "assinatura-cancelada" | "prepago-terminando" | "senha-criada" | "assinatura-confirmada" | "lembrete-da-assinatura";
 
 export type PedidoDeEmail = {
   /** O `User.email` lido do NOSSO banco. */

@@ -86,6 +86,23 @@ describe("montarEmail", () => {
     expect(texto.indexOf('Depois <b>"Pix"</b>')).toBeLessThan(texto.indexOf("MARCA-DO-RODAPE"));
   });
 
+  // O LINK DE TEXTO depois do botão (etapa 4.7, passo 9 — o "Quero receber novidades" e o "Descadastrar" do lembrete):
+  // escapado no HTML, por extenso no texto, e só http(s) — como o botão.
+  it("o link de texto depois do botão: escapado no HTML, por extenso no texto, na ordem — e só http(s)", () => {
+    const endereco = "https://www.jilsonsantana.com/novidades/abc?x=1&y=2";
+    const { html, texto } = montarEmail({ assunto: "A", paragrafos: ["ANTES"], botao: { texto: "BOTAO", endereco: CRIAR_SENHA }, depoisDoBotao: ["Quer?", { link: 'Quero <b>"sim"</b>', endereco }, "Fim."] }, MARCAS);
+    expect(html).toContain(`href="https://www.jilsonsantana.com/novidades/abc?x=1&amp;y=2"`);
+    expect(html).toContain("Quero &lt;b&gt;&quot;sim&quot;&lt;/b&gt;</a>");
+    expect(html).not.toContain("<b>");
+    expect(html.indexOf(">BOTAO<")).toBeLessThan(html.indexOf("Quer?"));
+    expect(html.indexOf("Quer?")).toBeLessThan(html.indexOf("Quero &lt;b&gt;"));
+    expect(html.indexOf("Quero &lt;b&gt;")).toBeLessThan(html.indexOf("Fim."));
+    expect(texto).toContain(`Quer?\n\nQuero <b>"sim"</b>: ${endereco}\n\nFim.`);
+    for (const ruim of ["javascript:alert(1)", "data:text/html,oi", "//outro-site.com", "https://x.com/ com espaço"]) {
+      expect(() => montarEmail({ assunto: "A", paragrafos: [], depoisDoBotao: [{ link: "L", endereco: ruim }] }, MARCAS), ruim).toThrow();
+    }
+  });
+
   it("sem botão, nenhum link no corpo", () => {
     const { html } = montarEmail({ assunto: "A", paragrafos: ["Um."] }, MARCAS);
 

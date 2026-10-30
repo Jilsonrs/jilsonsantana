@@ -420,6 +420,16 @@ describe("AssinarPage — o CPF ou CNPJ, o resumo e o que está incluído", () =
     expect(criarAssinatura).not.toHaveBeenCalled();
   });
 
+  // O nome (etapa 4.7, passo 9) é só da tela pública: a conta logada já existe.
+  it("quem está logado não preenche nome nem e-mail: só o CPF ou CNPJ, e o pedido não leva nome", async () => {
+    abrir();
+    await screen.findByRole("radio", { name: /Mensal/ });
+    expect(screen.queryByLabelText("Seu nome")).toBeNull();
+    expect(screen.queryByLabelText("Seu e-mail")).toBeNull();
+    assinar();
+    await waitFor(() => expect(criarAssinatura).toHaveBeenCalledWith({ plano: "mensal", documento: CPF }));
+  });
+
   it("o CNPJ também vale, e vai no pedido como foi digitado (quem confere e converte é o servidor)", async () => {
     abrir();
     await screen.findByRole("radio", { name: /Mensal/ });
