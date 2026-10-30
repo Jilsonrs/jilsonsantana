@@ -148,7 +148,7 @@
 >    antes). Um commit por parte. **Sem nova rodada de revisão a cada correção** *(operador, 29/10/2026: "fechando
 >    P1, P2, P3 e seguindo em frente e rodando os testes no que precisar para não ficar em polimento infinito")*:
 >    P0 e P1 travam a publicação; P2 e P3 se fecham com teste e mutação, sem revisar de novo. A P128 (o fuso do
->    banco na subida) espera a resposta dele. As decisões P116–P124 e P127 já
+>    banco na subida) foi respondida e feita: as conferências rodam antes de abrir a porta. As decisões P116–P124 e P127 já
 >    foram respondidas (registradas na 4.9b, na 4.7b e no `billing.md`); ficam a P126 (as conferências nos painéis,
 >    por prints — fazer junto com o operador) e a P125 (só quando ele for criar um desses códigos). O roteiro
 >    "quando um aluno não conseguir pagar" está em `billing.md`, como rascunho, para ele revisar.
@@ -6452,6 +6452,18 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       Testes: `conferencia-da-cobranca.test.ts`, `campo-nao-abriu.test.ts` (+2: os relatos espalhados no tempo e o
       robô num bloco IPv6), `stripe.test.ts` (+1), `conferir-pela-tela.test.ts`, `avisos-perdidos.test.ts` e
       `avisos-da-stripe-rede.test.ts` (+3).
+      - [x] **P128 — as conferências da subida rodam ANTES de abrir a porta** *(decisão do operador, 30/10/2026, entre
+            isso, o processador sempre ligado — uns US$ 45 por mês — e calar a falha)*. Achado na publicação `f36e274`:
+            a conferência do fuso do banco esgotava o tempo da conexão em 7 de 11 subidas desde 27/10, cada uma com um
+            alerta à toa — no Cloud Run, depois de a porta abrir e sem pedido, quase não há processador; durante a
+            subida, há. **FEITO (30/10/2026):** `conferirNaSubida` (`server/src/lib/conferencias-da-subida.ts`),
+            esperada no `index.ts` antes do `listen`: o fuso do banco e, em produção, a cobrança, uma depois da outra,
+            cada uma com um teto de 15 s (a espera do Google na subida é de 240 s) — a que passa do teto fica no
+            registro e a subida segue; a que falha depois do teto também fica no registro, sem alerta. Teste:
+            `conferencias-da-subida.test.ts` (novo, 6). **Mutação: 5 de 5 reprovaram.** *Sem teste:* a chamada no
+            `index.ts` (a subida não roda na suíte); a prova é o registro da próxima subida no ar — sem a falha do fuso,
+            e com a linha "a cobrança confere". *Reabre se a falha continuar depois desta mudança: a causa é outra, e
+            aí as opções são o processador sempre ligado ou levar as conferências para a rodada de hora em hora.*
       **As decisões do operador:** P116 a P127 em `pendencias.md` (P126 são as conferências fora do repositório).
       **Respondidas em 29/10/2026:** P116 (a frase do E3), P117 (os botões do Pix em conferência na 4.7b), P118
       (o E14), P119 (o E15), P120 (a ação "Liberar acesso pago por fora" na 4.7b), P121 (a ação "Corrigir o e-mail" na 4.7b), P122 (a contestação corta o acesso — E7), P123 (o E16), P124 (o E17), P127 (o E18). **Para depois:** P125 (quando for criar um desses códigos) e P126 (as conferências nos painéis, por prints).

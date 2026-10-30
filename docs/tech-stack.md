@@ -265,7 +265,7 @@ contagem só e travam a escola inteira.
 - **Identity Platform / Firebase Auth**: a identidade é nossa, no Better Auth (`CLAUDE.md` → *Tech Stack*). Sem gatilho: arquitetural.
 - **Firebase Hosting** na frente do site: só repassa ao servidor o cookie `__session` `[conhecido, não conferido]`, o que derrubaria o login.
 - **Cloud Build**: a imagem se monta no GitHub Actions. *Gatilho: os minutos do GitHub acabarem.*
-- **Processador cheio o tempo todo** (cobrança por instância, ~US$ 45/mês): o "ligado, esperando" já tira a espera. *Gatilho: trabalho em segundo plano entre pedidos.*
+- **Processador cheio o tempo todo** (cobrança por instância, ~US$ 45/mês): o "ligado, esperando" já tira a espera. *Gatilho: trabalho em segundo plano entre pedidos.* *(P128, 30/10/2026: as conferências da subida esgotavam o tempo sem processador; foram para ANTES de abrir a porta, sem custo, por decisão do operador. O gatilho continua valendo para o próximo trabalho em segundo plano.)*
 
 **DESEMPENHO — para quem vem de hospedagem compartilhada e VPS:** o serviço "ligado, esperando" com
 1 processador e 512 MB equivale a um **VPS pequeno, só para a escola** — o mesmo tamanho de uso

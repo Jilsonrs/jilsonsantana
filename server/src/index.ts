@@ -5,8 +5,7 @@ import app from "./app.js";
 import { desligarComCalma } from "./lib/desligar.js";
 import { avisarQueSubiu, esvaziarMonitor } from "./lib/monitor.js";
 import { enderecoDoSite } from "./lib/endereco-do-site.js";
-import { conferirFusoDoBanco } from "./lib/prisma.js";
-import { conferirCobrancaNaSubida } from "./lib/conferencia-da-cobranca.js";
+import { conferirNaSubida } from "./lib/conferencias-da-subida.js";
 
 // Entrada de PRODUÇÃO (`dist/index.js` — o que Dockerfile e Cloud Run executam).
 // A montagem do app vive em `app.ts`, que não escuta porta, para que supertest
@@ -33,24 +32,15 @@ if (process.env.NODE_ENV === "production" && enderecoDoSite("/") === null) {
 
 const PORT = process.env.PORT ?? 3000;
 
+// AS CONFERÊNCIAS DA SUBIDA, ANTES DE ABRIR A PORTA (P128 — `lib/conferencias-da-subida.ts`): no Cloud Run, depois de
+// abrir, sem pedido, não há processador para elas — o fuso do banco esgotava o tempo da conexão em 7 de 11 subidas. Cada
+// uma tem um teto (15 s), e nunca impede a subida.
+await conferirNaSubida(process.env.NODE_ENV === "production");
+
 const servidor = app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   // Um aviso por subida: é a prova, em produção, de que o alerta chega ao Sentry.
   avisarQueSubiu(versaoNoAr);
-  // O fuso do banco (Prisma 7: o adaptador do `pg` lê as datas como UTC — `lib/prisma.ts`).
-  // O motivo vai DENTRO do texto: com o erro como segundo argumento, o Sentry guardaria só o erro,
-  // sem a etiqueta `[api]`, e o alerta seria descartado.
-  conferirFusoDoBanco().catch((erro: unknown) =>
-    console.error(`[api] não consegui conferir o fuso do banco: ${erro instanceof Error ? erro.message : String(erro)}`),
-  );
-  // A cobrança (E4 da revisão ampla, 29/10/2026 — `lib/conferencia-da-cobranca.ts`): as chaves da Stripe no mesmo
-  // modo, e o endereço de avisos ligado com todos os avisos que o site trata. Só em produção: em dev os avisos
-  // chegam pelo `stripe listen`, sem endereço cadastrado.
-  if (process.env.NODE_ENV === "production") {
-    conferirCobrancaNaSubida().catch((erro: unknown) =>
-      console.error(`[stripe] subida: a conferência da cobrança falhou: ${erro instanceof Error ? erro.message : String(erro)}`),
-    );
-  }
 });
 
 // Na publicação, o servidor antigo termina o que estava atendendo antes de sair
