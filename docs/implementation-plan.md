@@ -156,14 +156,27 @@
 > a falha do fuso do banco. **Conferido no registro do job (30/10/2026):** a rodada das 12h UTC (a primeira com o E6) fez a
 > conferência das ativas vencidas — 0 conferidas, 0 com falha — e saiu com código 0.
 >
-> **PARA CONTINUAR NO PRÓXIMO CHAT (a ordem — atualizado em 30/10/2026, depois da publicação `0f8c0c7`):**
+> **Publicado em 30/10/2026: `5313557`** — a 4.9b, grupos 3 e 4: `3e4af1d` e `d2c4a12` (o grupo 3 e os achados da revisão
+> dele), `002e5ce` (E15), `b2376a4` (E16 e E18, com a migration `20261030120000_email_de_confirmacao`), `50c508e` (E14),
+> `b569ae3` (o que a prova na área restrita achou), `c623002` (os achados da revisão do grupo 4 e a P131) e `37ab510` (a
+> prova pela rota); ordem do operador: *"Publicar agora"*, depois das revisões de segurança sem P0 nem P1 aberto e da
+> prova pela rota (16 de 16). CI e publicação com sucesso. **Revisão `jilson-prod-00050`** (100% do tráfego), conferida de
+> fora: o job das migrations aplicou a `20261030120000_email_de_confirmacao` (*"All migrations have been successfully
+> applied"*) e o banco de produção tem o tipo `CONFIRMADA`, com 0 tabelas sem RLS (leitura); a subida com *"a cobrança
+> confere — […] os 11 avisos, na linha da API do site (2026-09-30.endive)"* e nenhuma linha de erro; a página, 200; a
+> sessão sem login, 401, com a versão nova do app (`mvv00bvk-4af06e93`); `/aluno/pagar-com-pix`, 200; o job da rodada na
+> mesma imagem do site. **Nenhum e-mail de confirmação saiu na publicação:** a única assinatura de produção (a de teste do
+> operador, de 10/10) é de fora da janela de 2 dias (leitura, antes de publicar).
+>
+> **PARA CONTINUAR NO PRÓXIMO CHAT (a ordem — atualizado em 30/10/2026, depois da publicação `5313557`):**
 > 1. **A revisão ampla da cobrança (a etapa 4.9b): o bloco de engenharia APROVADO (29/10/2026), na ordem do
 >    plano** — grupo 1 (E5, E4, E1, E3, E2) **FEITO e publicado (`f36e274`)**, com as correções C1 a C5; **o grupo 2 (E8, E10,
 >    E9, E7, E6), os R1 a R6, a P128 e os achados da revisão do grupo 2: FEITOS e publicados (`0f8c0c7`).** **O grupo 3
->    (E11, E12, E13, E17) e os achados da revisão dele, e do grupo 4 o E15, o E16 e o E18: FEITOS na `dev`, ainda não
->    publicados** (o E18 traz uma migration), **e o E14 também (o grupo 4 inteiro)**, com a revisão do grupo 4 feita (nenhum
->    P0; o P1 respondido por ele — P131, "manter logada" —; os P2/P3 fechados), e a prova pela rota do E14 feita (16 de 16).
->    **O próximo:** a ordem dele para publicar (traz a migration do E18). Uma
+>    (E11, E12, E13, E17) e o grupo 4 (E14, E15, E16, E18), com os achados das duas revisões e a P131: FEITOS e publicados
+>    (`5313557`).** **O bloco de engenharia da 4.9b está todo no ar.** Fica, da 4.9b, o que é do operador: a P126 (as
+>    conferências nos painéis) e a P125 (quando ele for criar um desses códigos). *Achado reportado, não mexido (P3): a
+>    contestação (E7) passa chave de repetição no encerramento, que a Stripe ignora — numa reentrega em menos de 5 min
+>    depois de uma falha no meio, o encerramento repetido dá 404 e o aviso falha até a janela virar (resolve sozinho).* Uma
 >    revisão de segurança por grupo, só do que mudou, antes de publicar. Um commit por parte. **Sem nova rodada de revisão a cada correção** *(operador, 29/10/2026: "fechando
 >    P1, P2, P3 e seguindo em frente e rodando os testes no que precisar para não ficar em polimento infinito")*:
 >    P0 e P1 travam a publicação; P2 e P3 se fecham com teste e mutação, sem revisar de novo. A P128 (o fuso do
