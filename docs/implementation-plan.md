@@ -162,8 +162,8 @@
 >    E9, E7, E6), os R1 a R6, a P128 e os achados da revisão do grupo 2: FEITOS e publicados (`0f8c0c7`).** **O grupo 3
 >    (E11, E12, E13, E17) e os achados da revisão dele, e do grupo 4 o E15, o E16 e o E18: FEITOS na `dev`, ainda não
 >    publicados** (o E18 traz uma migration), **e o E14 também (o grupo 4 inteiro)**, com a revisão do grupo 4 feita (nenhum
->    P0; o P1 respondido por ele — P131, "manter logada" —; os P2/P3 fechados). **O próximo:** a prova pela rota do E14 e a
->    ordem dele para publicar. Uma
+>    P0; o P1 respondido por ele — P131, "manter logada" —; os P2/P3 fechados), e a prova pela rota do E14 feita (16 de 16).
+>    **O próximo:** a ordem dele para publicar (traz a migration do E18). Uma
 >    revisão de segurança por grupo, só do que mudou, antes de publicar. Um commit por parte. **Sem nova rodada de revisão a cada correção** *(operador, 29/10/2026: "fechando
 >    P1, P2, P3 e seguindo em frente e rodando os testes no que precisar para não ficar em polimento infinito")*:
 >    P0 e P1 travam a publicação; P2 e P3 se fecham com teste e mutação, sem revisar de novo. A P128 (o fuso do
@@ -6428,10 +6428,15 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
               encerrar a já encerrada dá 404 `resource_missing`), e na marca ela devolve a resposta GUARDADA da primeira vez. Os
               dois sumiram com o achado P2 da revisão abaixo: não há mais marca antes — o comentário vai no próprio
               encerramento, sem chave — e a rota relê a assinatura com a trava e só encerra a atrasada.
-        - [ ] **A prova pela rota** (antes de publicar, ou junto da P126): servidor local com o banco de dev, conta
-              descartável com uma atrasada de teste, `POST /api/billing/minha-assinatura/pix`, o Pix pago
-              (`succeed_immediately`) e os avisos entregues ao servidor local: a pré-paga nasce, sai a confirmação e NÃO
-              sai o "terminou".
+        - [x] **A prova pela rota** (30/10/2026, depois das correções da revisão do grupo 4): servidor local (porta 3997)
+              com o banco de DEV (que recebeu a migration do E18 por `migrate deploy`), conta descartável com uma atrasada de
+              verdade (relógio de teste; o 1º mês pago, a renovação recusada), e os avisos reais da Stripe entregues ao
+              servidor local. **16 de 16 pontos:** Faturamento diz atrasada com as aulas trancadas → `POST
+              /api/billing/minha-assinatura/pix` só com o CPF → 200 com o QR → na Stripe, a atrasada `canceled` com "Trocada
+              pelo Pix", a cobrança em aberto `void`, o Pix de 9990 centavos só com Pix e o plano mensal → continua logada →
+              o aviso do encerramento: 200 e o "terminou" consumido sem envio → o Pix pago (`succeed_immediately`) e o aviso:
+              a pré-paga `active`, as aulas de volta, e a confirmação do E18 entregue ao Resend (caixa de teste). Nenhum erro
+              nem alerta no registro do servidor; a limpeza devolveu o banco de dev ao retrato de antes.
       - [x] **E15 — o suporte nas frases de erro de pagamento** *(decisão do operador, 29/10/2026, P119)*: as
             frases de erro de pagamento (as de assinar, de trocar o cartão e a "Está demorando…" de depois do
             pagamento) passam a citar suporte@jilsonsantana.com, e depois de um cartão recusado a tela sugere
