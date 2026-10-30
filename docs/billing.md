@@ -1233,6 +1233,13 @@ e-mails de verdade, em `pt.ts` → `app.email.lembrete`).
 - **Os links dos e-mails** (`lib/links-do-email.ts`): o código é uma assinatura do servidor (HMAC com o segredo do site,
   separado por propósito) sobre o id da ficha ou do lead — nada fica guardado, o mesmo e-mail repetido sai com o mesmo
   link, e quem tiver uma cópia do banco não forja um link. *Trocar o `BETTER_AUTH_SECRET` derruba também estes links.*
+- **As duas páginas dos links** (`routes/links-do-email.ts`, `views/pagina-do-link.ts` — textos aprovados pelo operador
+  em 30/10/2026): `/novidades/<id>/<assinatura>` e `/descadastrar/<id>/<assinatura>`. **Abrir o link não faz nada
+  sozinho** (os programas de segurança de e-mail abrem os links por conta própria): a página pergunta, com o e-mail da
+  pessoa, e o clique no botão envia o pedido. O código que não vale (adulterado, de outro tipo, da ficha já apagada) dá
+  a mesma página, sem dizer qual; o pedido de outro site é recusado; 20 cliques a cada 15 min por endereço. Montadas
+  ANTES do "Em breve" — **e o endereço não tem ponto**: o portão deixa passar todo endereço com ponto (acha que é
+  arquivo), e sem ele o teste não provaria a ordem.
 - **Os leads** (`lib/leads.ts`, a tabela `lead`): um por e-mail, em minúsculas; o que já existe ganha o que faltava; o
   descadastrado só volta com um consentimento DEPOIS do descadastro. **Descadastrar vale para o e-mail:** o lead e, se
   houver conta com ele, a caixa de novidades da conta.

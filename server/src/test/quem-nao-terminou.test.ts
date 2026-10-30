@@ -136,11 +136,13 @@ describe("os links do e-mail", () => {
     expect(idDoLink("descadastrar", codigoDoLink("novidades", id))).toBeNull();
     expect(caminhoDoLink("novidades", id)).toBe(`/novidades/${codigoDoLink("novidades", id)}`);
     const codigo = codigoDoLink("novidades", id);
-    const assinatura = codigo.slice(codigo.lastIndexOf(".") + 1);
+    // O id e a assinatura, separados por uma barra — sem ponto (o portão do "Em breve" deixa passar endereço com ponto).
+    expect(codigo).toMatch(/^[0-9a-f-]{36}\/[A-Za-z0-9_-]{43}$/);
+    const assinatura = codigo.slice(codigo.lastIndexOf("/") + 1);
     const trocada = `${assinatura[0] === "A" ? "B" : "A"}${assinatura.slice(1)}`;
-    expect(idDoLink("novidades", `${id}.${trocada}`)).toBeNull();
-    expect(idDoLink("novidades", `${randomUUID()}.${assinatura}`)).toBeNull();
-    for (const malformado of ["", id, `${id}.`, `.${assinatura}`, `nao-e-uuid.${assinatura}`, `${id}.${assinatura}x`, `${id.toUpperCase()}.${assinatura}`]) expect(idDoLink("novidades", malformado), malformado).toBeNull();
+    expect(idDoLink("novidades", `${id}/${trocada}`)).toBeNull();
+    expect(idDoLink("novidades", `${randomUUID()}/${assinatura}`)).toBeNull();
+    for (const malformado of ["", id, `${id}/`, `/${assinatura}`, `nao-e-uuid/${assinatura}`, `${id}/${assinatura}x`, `${id.toUpperCase()}/${assinatura}`, `${id}.${assinatura}`]) expect(idDoLink("novidades", malformado), malformado).toBeNull();
     const segredo = process.env.BETTER_AUTH_SECRET;
     try {
       process.env.BETTER_AUTH_SECRET = "outro-segredo-qualquer";

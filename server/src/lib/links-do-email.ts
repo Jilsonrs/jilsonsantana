@@ -22,12 +22,16 @@ function assinatura(tipo: TipoDeLink, id: string): Buffer {
   return createHmac("sha256", segredo).update(`links-do-email\u001f${tipo}\u001f${id}`).digest();
 }
 
-/** O código do link: o id e a assinatura do servidor. */
+/**
+ * O código do link: o id e a assinatura do servidor, separados por uma BARRA — dois pedaços do caminho. Sem ponto: o
+ * portão do "Em breve" deixa passar todo endereço com ponto (acha que é um arquivo), e o link só funciona com o
+ * portão ligado porque as páginas vêm ANTES dele (`app.ts`) — o teste disso depende de o endereço não ter ponto.
+ */
 export function codigoDoLink(tipo: TipoDeLink, id: string): string {
-  return `${id}.${assinatura(tipo, id).toString("base64url")}`;
+  return `${id}/${assinatura(tipo, id).toString("base64url")}`;
 }
 
-/** O caminho da página do link no site (`/novidades/<código>` ou `/descadastrar/<código>`). */
+/** O caminho da página do link no site (`/novidades/<id>/<assinatura>` ou `/descadastrar/<id>/<assinatura>`). */
 export function caminhoDoLink(tipo: TipoDeLink, id: string): string {
   return `/${tipo}/${codigoDoLink(tipo, id)}`;
 }
@@ -37,10 +41,10 @@ export function caminhoDoLink(tipo: TipoDeLink, id: string): string {
  * com a assinatura trocada. A comparação não deixa o tempo da resposta dizer quanto da assinatura acertou.
  */
 export function idDoLink(tipo: TipoDeLink, codigo: string): string | null {
-  const ponto = codigo.lastIndexOf(".");
-  if (ponto <= 0) return null;
-  const id = codigo.slice(0, ponto);
-  const parte = codigo.slice(ponto + 1);
+  const barra = codigo.lastIndexOf("/");
+  if (barra <= 0) return null;
+  const id = codigo.slice(0, barra);
+  const parte = codigo.slice(barra + 1);
   if (!ID.test(id) || !/^[A-Za-z0-9_-]{43}$/.test(parte)) return null;
   const recebida = Buffer.from(parte, "base64url");
   const esperada = assinatura(tipo, id);

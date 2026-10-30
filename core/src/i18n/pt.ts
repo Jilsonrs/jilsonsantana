@@ -453,6 +453,25 @@ export const pt = {
         naoFoiVoce: "Se não foi você que começou esta assinatura, ignore este e-mail."
       }
     },
+    // AS PÁGINAS DOS LINKS DO E-MAIL (etapa 4.7, passo 9): "Quero receber novidades" (o link do lembrete) e
+    // "Descadastrar" (em todo e-mail a um lead). Páginas do servidor, com o menu e o rodapé do site; fora de Admin →
+    // Textos, como os textos dos e-mails. Textos APROVADOS pelo operador em 30/10/2026 (rascunho do agente). `{email}`: o
+    // e-mail da pessoa; `{contato}`: o e-mail do suporte.
+    linksDoEmail: {
+      tituloNovidades: "Novidades",
+      tituloDescadastrar: "Descadastrar",
+      novidadesTitulo: "Quer receber novidades?",
+      novidadesTexto: "Vamos mandar para {email} as novidades e ofertas da escola. Você pode se descadastrar quando quiser, pelo link que vem nos e-mails.",
+      novidadesBotao: "Quero receber novidades",
+      novidadesPronto: "Você vai receber as novidades e ofertas da escola por e-mail.",
+      descadastrarTitulo: "Não quer mais receber novidades?",
+      descadastrarTexto: "O e-mail {email} deixa de receber as novidades e ofertas da escola.",
+      descadastrarBotao: "Descadastrar",
+      descadastrarPronto: "Você não vai mais receber as novidades e ofertas da escola.",
+      pronto: "Pronto.",
+      naoValeTitulo: "Este link não vale mais.",
+      naoValeTexto: "Se precisar, escreva para {contato}."
+    },
     inicio: {
       ola: "Olá",
       intro: "Aqui é o seu ponto de partida. O que você começar a estudar aparece nesta tela, para você continuar de onde parou.",

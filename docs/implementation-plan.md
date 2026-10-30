@@ -5779,7 +5779,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                   é EQUIVALENTE:** apagar a ficha antes da Stripe DENTRO da mesma transação — se a Stripe falha, a
                   transação desfaz a exclusão (o teste disso existe). Gates: typecheck, lint, build; site 1075,
                   servidor 1672 (como o CI).
-            - [ ] **9d — As duas páginas públicas: "Quero receber novidades" e "Descadastrar"** (servidor).
+            - [x] **9d — As duas páginas públicas: "Quero receber novidades" e "Descadastrar"** (servidor).
                   Páginas do servidor como a `/assinar` (o menu e o rodapé do site, `noindex`), **fora do
                   "Em breve"**: o link de um e-mail tem de funcionar sempre — o de descadastrar, por lei.
                   **Abrir o link não faz nada sozinho:** a página pede o clique num botão. Os programas de
@@ -5797,6 +5797,26 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                   duas páginas vão ao operador antes.** Testes: abrir não muda nada; o clique cria o lead e o
                   descadastra; o código errado, o de outra ficha, o da ficha apagada; repetir; o "Em breve"
                   ligado; outro site; o teto; `escapeHtml`; `noindex`. Mutação.
+                  **FEITO (30/10/2026), no `dev`.** **Os textos, APROVADOS pelo operador em 30/10/2026** (à
+                  pergunta do agente, "Aprovo todos" — com o e-mail da pessoa no texto): `app.linksDoEmail`, fora
+                  de Admin → Textos (como os do e-mail — sem aba nova no admin). A rota
+                  (`routes/links-do-email.ts`: abrir mostra a pergunta; o clique — o POST — cria o lead do lembrete
+                  com o e-mail provado, ou descadastra o e-mail; o código que não vale dá a mesma página, 404; o
+                  pedido de outro site, 403; o teto de 20 cliques a cada 15 min por endereço — `limiteSemLogin.links`;
+                  nada guardado no caminho, `noindex`), a página (`views/pagina-do-link.ts`: o menu e o rodapé do
+                  site, o texto e um botão, tudo por `escapeHtml`) e a montagem ANTES do portão do "Em breve"
+                  (`app.ts`). **Achado pela mutação, corrigido no mesmo passo:** o código do link era `<id>.<assinatura>`,
+                  e o portão do "Em breve" deixa passar todo endereço com ponto (acha que é arquivo) — então o teste
+                  não provava que as páginas vêm antes do portão. **O código passou a ser `<id>/<assinatura>`** (dois
+                  pedaços do caminho, sem ponto: `/novidades/<id>/<assinatura>`), e o teste sobe um site NOVO em modo
+                  de produção, com o "Em breve" ligado (`links-do-email-em-breve.test.ts`): o link abre, a home não.
+                  Testes: 10 novos (9 em `links-do-email.test.ts` e 1 em `links-do-email-em-breve.test.ts`) e o dos
+                  links da 9c ajustado ao formato. **Mutação: 11 de 11 reprovaram** (abrir o link cria o lead · o
+                  clique sem a trava de outro site · o lead do lembrete sem o e-mail provado · o descadastrar aceitando
+                  o código das novidades · abrir o link descadastra · o texto sem escape · a página no Google · o
+                  clique sem teto · as páginas atrás do "Em breve" · a página guardada no caminho · repetir o
+                  descadastro mudando a data); as duas dos links da 9c, de novo com o formato novo: reprovam. Gates:
+                  typecheck, lint, build; site 1075, servidor 1682 (como o CI).
             - [ ] **9e — Prova e revisão.** O `security-vulnerability-reviewer` só sobre o diff do passo (P0
                   e P1 travam a publicação; P2 e P3 se fecham com teste e mutação); a prova na área restrita (a
                   limpeza de um cliente descartável, com e sem pagamento); a prova pela rota (servidor local,

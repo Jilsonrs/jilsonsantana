@@ -68,6 +68,8 @@ export const LIMITES_DO_VISITANTE = {
   campoNaoAbriu: { endereco: { porJanela: 5 } },
   /** "Confira na Stripe" pedido pela tela de depois do pagamento, sem conta (E2 da 4.9b): ela pede no máximo 5 vezes. */
   conferir: { endereco: { porJanela: 10 } },
+  /** O clique nas páginas dos links do e-mail — "Quero receber novidades" e "Descadastrar" (etapa 4.7, passo 9): uma pessoa clica uma vez; o teto segura o robô. */
+  links: { endereco: { porJanela: 20 } },
 } as const satisfies Record<string, { endereco: Teto; email?: Teto } | number>;
 
 /** Já avisamos que a contagem por endereço parou? Uma vez por processo basta (zera nos testes). */
@@ -383,6 +385,7 @@ export const limiteSemLogin = {
   senha: tetosSemLogin("visitante-senha", LIMITES_DO_VISITANTE.senha),
   campoNaoAbriu: tetosSemLogin("campo-nao-abriu", LIMITES_DO_VISITANTE.campoNaoAbriu),
   conferir: tetosSemLogin("visitante-conferir", LIMITES_DO_VISITANTE.conferir),
+  links: tetosSemLogin("links-do-email", LIMITES_DO_VISITANTE.links),
 };
 
 /**
