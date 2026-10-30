@@ -162,7 +162,7 @@ const pix = (corpo: object, cookies: string[] = member) => request(servidor).pos
 const cartao = (corpo: object, cookies: string[] = member) => request(servidor).post("/api/billing/assinatura").set("Cookie", cookies).send({ documento: CPF, ...corpo });
 const pixVisitante = (corpo: object, endereco: string) => request(servidor).post("/api/billing/visitante/pix").set("x-forwarded-for", endereco).send(corpo);
 const cartaoVisitante = (corpo: object, endereco: string) => request(servidor).post("/api/billing/visitante/assinatura").set("x-forwarded-for", endereco).send(corpo);
-const pedido = (email: string, extra: object = {}) => ({ email, documento: CPF, plano: "mensal", novidades: false, ...extra });
+const pedido = (email: string, extra: object = {}) => ({ nome: "Ana Visitante", email, documento: CPF, plano: "mensal", novidades: false, ...extra });
 const ficha = (email: string) => prisma.guestCheckout.findUnique({ where: { email: email.toLowerCase() } });
 const clienteDoMember = async () => (await prisma.stripeCustomer.findUniqueOrThrow({ where: { userId: memberId } })).stripeCustomerId;
 const pixDoMember = () => prisma.subscription.count({ where: { ownerUserId: memberId, pixPaymentIntentId: { not: null } } });
@@ -488,10 +488,11 @@ describe("POST /api/billing/pix — com a conta logada", () => {
 });
 
 describe("POST /api/billing/visitante/pix — sem conta", () => {
-  it("o corpo: sem e-mail, CPF errado ou plano fora da lista — 400, antes da Stripe e sem ficha", async () => {
+  it("o corpo: sem e-mail, sem o nome, CPF errado ou plano fora da lista — 400, antes da Stripe e sem ficha", async () => {
     const endereco = novoEndereco();
     const email = novoEmail();
-    expect((await pixVisitante({ documento: CPF, plano: "mensal", novidades: false }, endereco)).status).toBe(400);
+    expect((await pixVisitante({ nome: "Ana Visitante", documento: CPF, plano: "mensal", novidades: false }, endereco)).status).toBe(400);
+    expect((await pixVisitante(pedido(email, { nome: undefined }), endereco)).status).toBe(400);
     expect((await pixVisitante(pedido(email, { documento: "529.982.247-24" }), endereco)).status).toBe(400);
     expect((await pixVisitante(pedido(email, { plano: "semanal" }), endereco)).status).toBe(400);
     expect(buscarPrecos).not.toHaveBeenCalled();

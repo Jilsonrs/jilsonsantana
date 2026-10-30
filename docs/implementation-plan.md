@@ -203,8 +203,8 @@
 >    `99f95a4` 9c, `7e03dcc` 9d, `86ee52a` 9e (os achados da revisão de segurança, com as decisões do operador de 30/10: o
 >    lembrete sem o nome, o nome só com letras, sem teto diário) e `d2369fd` (a junção dos documentos). Antes de publicar,
 >    só lendo: 0 fichas no banco de produção; depois, o RLS da `lead` conferido e as páginas dos links respondendo antes do
->    "Em breve" (o *Estado atual*). **Falta deste passo:** o nome OBRIGATÓRIO no servidor numa publicação seguinte (o
->    checkbox depois da 9e). **Pergunta pendente ao operador (LGPD, não trava): a P135** — por quanto tempo guardar o lead
+>    "Em breve" (o *Estado atual*). **O nome OBRIGATÓRIO no servidor: FEITO no `dev` (30/10/2026, o checkbox depois da
+>    9e), ainda não publicado.** **Pergunta pendente ao operador (LGPD, não trava): a P135** — por quanto tempo guardar o lead
 >    da caixa que nunca provou o e-mail, e se o descadastro apaga o nome e o UTM. **E a junção dos documentos (30/10):** o
 >    operador tinha mudado `docs/pendencias.md`, `docs/project-description.md` e `docs/strategy.md` no Projeto partindo de
 >    versões antigas; a pedido dele, a versão do git recebeu SÓ o que ele acrescentou (as decisões de 30/10 sobre a
@@ -5917,10 +5917,27 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                   - [x] **A publicação (30/10/2026, `4819776`, ordem do operador):** antes, só lendo, **0 fichas** no
                         banco de produção; depois, **o RLS da `lead` conferido** (nenhuma tabela sem RLS) e **a primeira
                         rodada com o código novo (17:00 UTC) sem falha** — o *Estado atual*.
-            - [ ] **Depois da publicação do passo 9: o nome passa a OBRIGATÓRIO no servidor**
+            - [x] **Depois da publicação do passo 9: o nome passa a OBRIGATÓRIO no servidor**
                   (`assinarSemLoginSchema`, `core/src/schemas/billing.ts`) — tira o `.optional()` e o teste "o
                   pedido sem o nome segue"; a aba aberta antes da publicação já terá saído (convenção *API
-                  aditiva*).
+                  aditiva*). **FEITO (30/10/2026):** sem o `.optional()` — vale para o cartão e para o Pix sem
+                  conta (o `pixSemLoginSchema` é o mesmo schema sem o código); `dadosDaTentativa` grava o nome
+                  sempre. O teste "o pedido sem o nome segue" virou dois: o pedido sem o nome, 400, sem ficha e
+                  sem ida à Stripe; e o novo clique sem o nome na mesma tentativa, 400, com a ficha guardando o
+                  nome de antes — e o Pix sem o nome, 400; o schema conferido nos dois. **Mutação: o
+                  `.optional()` de volta reprovou os 4.** **A revisão de segurança, só do diff: nenhum P0 nem P1;
+                  um P2, anterior a ele, que o nome obrigatório tornava mais sério** — a regra "só letras"
+                  (`NOME_SO_COM_LETRAS`) aceitava os invisíveis que o Unicode conta como letra ou acento (o
+                  preenchimento do coreano, U+3164; os seletores de variação; o U+034F) e o acento solto: um nome
+                  feito só deles passava visualmente vazio. **Fechado no mesmo commit:** fora os
+                  `Default_Ignorable_Code_Point`, e toda palavra começa por uma letra — medido antes: os nomes de
+                  verdade continuam passando (o acento composto e o decomposto, D'Ávila, Conceição, Müller, Jr.);
+                  nenhum texto mudou (a tela já mostra "Use só letras no nome."). Testes: 6 casos recusados e o
+                  acento decomposto aceito. **Mutação: as 3 variantes reprovaram** (a regra antiga, sem a
+                  exclusão dos invisíveis, a palavra começando por acento). Gates (depois das duas partes): build, typecheck, lint;
+                  site 1076, servidor 1692 (como o CI). *Docs check (context7): não disparado — nenhuma chamada à
+                  Stripe mudou (só o schema do pedido e o que vai para a ficha no nosso banco).* **Falta: publicar —
+                  só com a ordem do operador.**
             **Fora do passo 9:** a tela dos leads no admin (entra com a captura do YouTube e do LinkedIn, ou
             antes, se o operador pedir) · mandar novidades aos leads (4d → *E-mails promocionais*; ali se
             decide se o descadastro é o nosso ou o do Resend — os dois não podem divergir) · confirmar o
