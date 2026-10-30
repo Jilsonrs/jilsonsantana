@@ -248,8 +248,8 @@
 > 3. **P93, um passo por vez, com a confirmação dele:** **os três e-mails APROVADOS em 30/10/2026** — o código de
 >    entrar e o da senha nova como estão; as boas-vindas com o título dele, "Olá, {primeiro nome}! Seja bem-vindo(a)" (o nome digitado ao assinar, e só um nome comum — decisão dele à
 >    pergunta da revisão de segurança; a caixa não é provada, P94), no `dev`, ainda não publicado. A troca de
->    senha pelo código, testada por ele no site no ar: funcionou. **Falta:** os textos das telas de entrar e de senha
->    nova (a `pendencias.md` → P93).
+>    senha pelo código, testada por ele no site no ar: funcionou. **E os textos das telas de entrar e de senha nova:
+>    APROVADOS (vistos em fotos de cada estado). A P93 está FECHADA.**
 > 4. **O passo 8 da 4.7** (o teste dele com cartão e Pix reais, R$ 99,90 e o reembolso — a P112 já está feita),
 >    com a P102.
 > **O que o próximo chat precisa saber:** a suíte do servidor apaga o banco de teste local — perguntar
@@ -833,7 +833,7 @@ o que é do operador corre em paralelo:
 | 10 | **Fechamento**: a revisão de segurança final, a proteção na entrada revista, onde os e-mails caem (Gmail e Outlook de outra pessoa, mail-tester), o teste com cartão de verdade e tirar o "Em breve" | agente + operador | tudo acima |
 
 **Do operador, em paralelo (sem esperar o código):** a 6g com o Antigravity · cadastrar os 5 cursos
-(P16) e montar a Trilha 1 · revisar a FAQ (P12) e os textos do código no e-mail (P93) · os textos das
+(P16) e montar a Trilha 1 · revisar a FAQ (P12) · os textos das
 páginas (Termos, Privacidade, Contato, Quem somos) e a foto · a persona do JilsonAI.
 
 ---
@@ -5075,7 +5075,10 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             (a ferramenta de escrita decodifica essas sequências; o teste rodava certo). Gates: build, typecheck, lint; site 1076,
             servidor 1698 (como o CI).
             *Docs check (context7): não disparado — nenhuma chamada ao Better Auth nem à Stripe mudou (só a
-            leitura do nome da ficha no nosso banco).* Faltam os textos das telas (P93).
+            leitura do nome da ficha no nosso banco).*
+            **E as telas (30/10/2026): os textos APROVADOS** ("aprovado e vamos seguir em frente"), vistos em
+            11 fotos de cada estado — a tela de entrar com o código, os avisos do código, a senha nova e os
+            avisos da senha. **A P93 fecha** e sai da `pendencias.md`.
             *(Nasceu como "o e-mail com o link e a tela de definir a senha"; virou o código no
             e-mail na abertura.)*
             **ABERTURA (21/10/2026) — as decisões do operador, uma a uma, e o plano aprovado
@@ -5158,7 +5161,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                   do zero (o cache limpo). As falhas: o código recusado (400/403), o excesso (429, a
                   frase das tentativas) e a queda de rede dizem coisas diferentes. O cliente do
                   Better Auth ganhou o `emailOTPClient`; pedir o código é pela nossa rota
-                  (`pedirCodigo`). Os textos são **rascunho do agente: P93**. **Testes:** 23 de tela
+                  (`pedirCodigo`). Os textos eram rascunho do agente; **aprovados pelo operador em 30/10/2026 (P93)**. **Testes:** 23 de tela
                   (`LoginPage.codigo.test.tsx`, `EsqueciMinhaSenhaPage.test.tsx`), e os 22 de antes da
                   tela de entrar passam sem mudar. **Mutação: 14 de 16 na primeira rodada** — uma é
                   equivalente (o campo de e-mail do navegador já tira os espaços das pontas) e a outra

@@ -297,7 +297,7 @@ export const pt = {
       credenciaisIncorretas: "E-mail ou senha incorretos.",
       falha: "Não foi possível entrar agora. Tente novamente em alguns minutos.",
       // O CÓDIGO NO E-MAIL na tela de entrar (etapa 4.7, passo 5 — decisões do operador, 21/10/2026).
-      // RASCUNHO do agente, para o operador revisar. `{minutos}` é a validade do código.
+      // APROVADO pelo operador em 30/10/2026 (P93, vendo cada estado da tela). `{minutos}` é a validade do código.
       esqueciSenha: "Esqueci minha senha",
       receberCodigo: "Receber código de acesso",
       enviandoCodigo: "Enviando o código…",
@@ -310,8 +310,8 @@ export const pt = {
       outroEnviado: "Enviamos outro código.",
       entrarComSenha: "Entrar com senha"
     },
-    // "ESQUECI MINHA SENHA" — a tela do código e da senha nova (etapa 4.7, passo 5). RASCUNHO do
-    // agente, para o operador revisar.
+    // "ESQUECI MINHA SENHA" — a tela do código e da senha nova (etapa 4.7, passo 5). APROVADO pelo
+    // operador em 30/10/2026 (P93, vendo cada estado da tela).
     senhaNova: {
       tituloPrefixo: "Senha",
       tituloEnfase: "Nova",
