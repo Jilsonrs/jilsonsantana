@@ -35,6 +35,7 @@ import billingSemLoginRouter from "./routes/billing-sem-login.js";
 import contaCodigoRouter from "./routes/conta-codigo.js";
 import billingRouter from "./routes/billing.js";
 import adminAssinaturasRouter from "./routes/admin-assinaturas.js";
+import { cabecalhosDeSeguranca } from "./lib/cabecalhos-de-seguranca.js";
 import { tratarErroDaApi } from "./lib/erro-da-api.js";
 import { anotarErroDoSite } from "./lib/erro-do-site.js";
 
@@ -81,15 +82,12 @@ app.use("/api", stripeWebhookRouter);
 // JSON body parsing for the REST of the API — AFTER the auth handler.
 app.use(express.json());
 
-// A JANELA DA ESCOLA ISOLADA de quem a abre (achado P1 da revisão de segurança do Bloco
-// AULA, etapa 6, 07/10/2026). Sem este cabeçalho, um site de terceiros que abre a escola
-// numa janela continua "no mesmo grupo" dela, e o canal do aviso de legenda (que aceita a
-// moldura do Bunny — o mesmo endereço para todo cliente do Bunny) fica menos garantido.
-// `same-origin-allow-popups`: quem abre a escola perde a referência a ela; as janelas que
-// a escola abrir continuam funcionando. Só vale para a página principal — a moldura do
-// player não muda. Em toda resposta: nas que não são página, o navegador o ignora.
+// OS CABEÇALHOS DE SEGURANÇA, em toda resposta (`lib/cabecalhos-de-seguranca.ts`): a janela da
+// escola isolada de quem a abre (Bloco AULA, etapa 6), a escola que não se deixa emoldurar e o
+// "só https" em produção (E10 da revisão ampla da cobrança, 29/10/2026).
+const CABECALHOS_DE_SEGURANCA = cabecalhosDeSeguranca(process.env.NODE_ENV === "production");
 app.use((_req, res, next) => {
-  res.setHeader("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
+  res.set(CABECALHOS_DE_SEGURANCA);
   next();
 });
 

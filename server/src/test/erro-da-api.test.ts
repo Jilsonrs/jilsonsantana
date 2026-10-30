@@ -155,6 +155,31 @@ describe("o endereço malformado", () => {
   });
 });
 
+// Revisão do grupo 2 da 4.9b: a falha ao processar um aviso da Stripe é alerta de COBRANÇA — `[stripe]`, com a reserva da
+// cota de alertas; qualquer outra rota continua `[api]`.
+describe("a falha do aviso da Stripe", () => {
+  it("sai como [stripe] (a reserva da cota); a de outra rota, como [api]", async () => {
+    const mini = express();
+    mini.post("/api/stripe/webhook", () => {
+      throw new Error("o processamento do aviso caiu");
+    });
+    mini.post("/api/outra", () => {
+      throw new Error("outra rota caiu");
+    });
+    mini.use("/api", tratarErroDaApi);
+    const escuta = http.createServer(mini);
+    await new Promise<void>((pronto) => escuta.listen(0, "127.0.0.1", () => pronto()));
+    try {
+      expect((await request(escuta).post("/api/stripe/webhook?x=1")).status).toBe(500);
+      expect((await request(escuta).post("/api/outra")).status).toBe(500);
+      expect(linhas()).toContain("[stripe] POST /api/stripe/webhook falhou");
+      expect(linhas()).toContain("[api] POST /api/outra falhou");
+    } finally {
+      await new Promise((fechou) => escuta.close(fechou));
+    }
+  });
+});
+
 describe("com a resposta já começada", () => {
   it("não tenta responder de novo: o erro ORIGINAL segue adiante, e o Express fecha a conexão", async () => {
     // Um app mínimo, escutando só em 127.0.0.1 como o servidor dos testes (`servidor.ts`).

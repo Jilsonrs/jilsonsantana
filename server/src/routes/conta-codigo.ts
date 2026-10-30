@@ -3,6 +3,7 @@ import { pedirCodigoSchema, type CodigoPedido, type MotivoDoCodigo } from "@jils
 import { auth } from "../lib/auth.js";
 import { validate } from "../lib/http.js";
 import { limiteDoCodigo } from "../lib/limite-de-tentativas.js";
+import { pedidoDeOutroSite } from "../lib/protecao-da-cobranca.js";
 
 // PEDIR O CÓDIGO NO E-MAIL (Fase 4, etapa 4.7, passo 5 — decisões do operador, 21/10/2026): para
 // ENTRAR sem senha ("Receber código de acesso") e para criar uma SENHA nova ("Esqueci minha senha").
@@ -27,7 +28,7 @@ router.post(
     res.set("Cache-Control", "private, no-store");
     // O pedido de OUTRO SITE é recusado (como nas rotas de cobrança): sem isso, uma página qualquer
     // faria o navegador de quem a visita pedir códigos para e-mails à escolha dela.
-    if (req.get("sec-fetch-site") === "cross-site") {
+    if (pedidoDeOutroSite(req)) {
       console.warn(`[api] ${req.method} ${req.baseUrl}${req.path} recusado: o pedido veio de outro site`);
       res.status(403).json({ error: "OutroSite" });
       return;

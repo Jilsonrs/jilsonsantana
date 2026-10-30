@@ -1,3 +1,4 @@
+import { alertarConfiguracaoAusente } from "../lib/alerta-de-configuracao.js";
 import { Router } from "express";
 import { fromNodeHeaders } from "better-auth/node";
 import { assinarSemLoginSchema, confirmacaoSemLoginSchema, pixSemLoginSchema, previaSchema, senhaDepoisDePagarSchema, type AssinaturaSemLogin, type ConfirmacaoSemLogin, type PlanosDaAssinatura, type PreviaDaAssinatura, type SenhaCriada } from "@jilson/core";
@@ -56,7 +57,7 @@ router.use("/billing/visitante", (_req, res, next) => {
 router.get("/billing/visitante/planos", ...limiteSemLogin.leitura, async (_req, res) => {
   const resposta: PlanosDaAssinatura | null = cobrancaConfigurada() ? await lerPlanos() : null;
   if (!resposta) {
-    console.error("[stripe] planos (sem login) recusados: STRIPE_SECRET_KEY ou STRIPE_PUBLISHABLE_KEY ausente ou trocada");
+    alertarConfiguracaoAusente("[stripe] planos (sem login) recusados: STRIPE_SECRET_KEY ou STRIPE_PUBLISHABLE_KEY ausente ou trocada");
     res.status(503).json({ error: "NaoConfigurado" });
     return;
   }
@@ -69,7 +70,7 @@ router.post("/billing/visitante/previa", ...limiteSemLogin.previa, async (req, r
   const corpo = validate(previaSchema, req.body, res);
   if (corpo === null) return;
   if (!cobrancaConfigurada()) {
-    console.error("[stripe] prévia (sem login) recusada: STRIPE_SECRET_KEY ausente");
+    alertarConfiguracaoAusente("[stripe] prévia (sem login) recusada: STRIPE_SECRET_KEY ausente");
     res.status(503).json({ error: "NaoConfigurado" });
     return;
   }
@@ -87,7 +88,7 @@ router.post("/billing/visitante/assinatura", ...limiteSemLogin.assinar, async (r
   const corpo = validate(assinarSemLoginSchema, req.body, res);
   if (corpo === null) return;
   if (!cobrancaConfigurada()) {
-    console.error("[stripe] assinatura (sem login) recusada: STRIPE_SECRET_KEY ausente");
+    alertarConfiguracaoAusente("[stripe] assinatura (sem login) recusada: STRIPE_SECRET_KEY ausente");
     res.status(503).json({ error: "NaoConfigurado" });
     return;
   }
@@ -149,7 +150,7 @@ router.post("/billing/visitante/pix", ...limiteSemLogin.assinar, async (req, res
   const corpo = validate(pixSemLoginSchema, req.body, res);
   if (corpo === null) return;
   if (!cobrancaConfigurada() || !pixConfigurado()) {
-    console.error("[stripe] pix (sem login) recusado: STRIPE_SECRET_KEY ou STRIPE_PIX_CONFIGURATION ausente");
+    alertarConfiguracaoAusente("[stripe] pix (sem login) recusado: STRIPE_SECRET_KEY ou STRIPE_PIX_CONFIGURATION ausente");
     res.status(503).json({ error: "NaoConfigurado" });
     return;
   }

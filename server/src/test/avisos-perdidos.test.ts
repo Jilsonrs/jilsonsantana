@@ -9,10 +9,12 @@ import type { AssinaturaNaStripe } from "../lib/stripe.js";
 // próxima rodada; a lista que falha alerta; o mais velho vai primeiro; o prazo para a conferência.
 const avisosDaStripe = vi.fn<(desde: Date, ate: Date, maximo: number) => Promise<Stripe.Event[]>>();
 const buscarAssinatura = vi.fn<(id: string) => Promise<AssinaturaNaStripe>>();
+const comAFaturaRelida = vi.fn<(evento: Stripe.Event) => Promise<Stripe.Event>>();
 vi.mock("../lib/stripe.js", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../lib/stripe.js")>()),
   avisosDaStripe: (desde: Date, ate: Date, maximo: number) => avisosDaStripe(desde, ate, maximo),
   buscarAssinatura: (id: string) => buscarAssinatura(id),
+  comAFaturaRelida: (evento: Stripe.Event) => comAFaturaRelida(evento),
 }));
 
 import { prisma } from "../lib/prisma.js";
@@ -41,6 +43,7 @@ beforeAll(async () => {
 beforeEach(() => {
   avisosDaStripe.mockReset().mockResolvedValue([]);
   buscarAssinatura.mockReset().mockImplementation(async (id) => naStripe(id));
+  comAFaturaRelida.mockReset().mockImplementation(async (evento) => evento);
 });
 afterEach(() => vi.restoreAllMocks());
 afterAll(async () => {
@@ -129,25 +132,36 @@ describe("a conferência dos avisos da Stripe na rodada", () => {
     expect(registro.mock.calls.some(([texto]) => String(texto).includes("ficaram para a próxima rodada"))).toBe(true);
   });
 
-  // C3 da revisão do grupo 1 (29/10/2026): o aviso listado pela API vem na versão de quando nasceu — a fatura de antes
-  // da 2025-03-31.basil não traz o "parent", e processada assim seria marcada "sem assinatura".
-  it("o aviso de fatura num formato antigo da API: NÃO processado nem marcado, com um alerta; o de formato novo, sim", async () => {
+  // C3 e R5 das revisões do grupo 1 (29/10/2026): o aviso listado pela API vem na versão de quando nasceu — a fatura de
+  // antes da 2025-03-31.basil não traz o "parent", e lida assim seria marcada "sem assinatura". A rodada relê a fatura
+  // pela API (na versão do site) e processa.
+  it("o aviso de fatura num formato antigo: processado com a fatura relida (o espelho nasce e ele fica marcado); a releitura que falha é falha, sem marca; o de formato novo não é relido", async () => {
     const erro = vi.spyOn(console, "error").mockImplementation(() => {});
     vi.spyOn(console, "warn").mockImplementation(() => {});
     vi.spyOn(console, "info").mockImplementation(() => {});
-    const antiga = novoId("sub");
-    const nova = novoId("sub");
     const daFatura = (sub: string, formatoNovo: boolean): Stripe.Event =>
       // Seguro: o objeto de teste tem só os campos que a rotina lê; a forma completa é da Stripe.
       ({ id: novoId("evt"), object: "event", type: "invoice.paid", api_version: formatoNovo ? "2026-09-30.endive" : "2024-06-20", created: Math.floor((AGORA - 60 * 60 * 1000) / 1000), data: { object: formatoNovo ? { id: novoId("in"), object: "invoice", parent: { subscription_details: { subscription: sub } } } : { id: novoId("in"), object: "invoice", subscription: sub } } }) as unknown as Stripe.Event;
+    const antiga = novoId("sub");
+    const semReleitura = novoId("sub");
+    const nova = novoId("sub");
     const velho = daFatura(antiga, false);
+    const velhoQueFalha = daFatura(semReleitura, false);
     const novo = daFatura(nova, true);
-    avisosDaStripe.mockResolvedValue([velho, novo]);
-    expect(await conferirAvisosPerdidos(AGORA)).toEqual({ conferidos: 2, perdidos: 2, processados: 1, falhas: 0, adiados: 0, formatoAntigo: 1 });
-    expect(await marcado(velho.id)).toBeNull();
+    comAFaturaRelida.mockImplementation(async (evento) => {
+      if (evento.id !== velho.id) throw new Error("[stripe] a releitura da fatura do aviso falhou: api_error, status 500");
+      // Seguro: a fatura relida de teste tem só o que a rotina lê.
+      return { ...evento, data: { object: { id: "in_relida", object: "invoice", parent: { subscription_details: { subscription: antiga } } } } } as unknown as Stripe.Event;
+    });
+    avisosDaStripe.mockResolvedValue([velho, velhoQueFalha, novo]);
+    expect(await conferirAvisosPerdidos(AGORA)).toEqual({ conferidos: 3, perdidos: 3, processados: 2, falhas: 1, adiados: 0, formatoAntigo: 2 });
+    expect(comAFaturaRelida.mock.calls.map(([evento]) => evento.id)).toEqual([velho.id, velhoQueFalha.id]);
+    expect(await marcado(velho.id)).not.toBeNull();
+    expect(await espelho(antiga)).toMatchObject({ ownerUserId: assinante, status: "active" });
+    expect(await marcado(velhoQueFalha.id)).toBeNull();
     expect(await marcado(novo.id)).not.toBeNull();
-    expect(buscarAssinatura.mock.calls).toEqual([[nova]]);
-    expect(alertas(erro).some((linha) => linha.includes("formato antigo da API"))).toBe(true);
+    expect(buscarAssinatura.mock.calls).toEqual([[antiga], [nova]]);
+    expect(alertas(erro).some((linha) => linha.includes("falharam também na rodada"))).toBe(true);
   });
 
   it("nada sem registro: nenhum alerta, nada processado", async () => {

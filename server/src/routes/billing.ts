@@ -14,7 +14,7 @@ import { pagarComPix } from "../lib/pix-pre-pago.js";
 import { pixConfigurado } from "../lib/stripe-pix.js";
 import { desistirDaTroca, lerTrocaDePlano, mudarMeuPlano } from "../lib/meu-plano.js";
 import { aplicarCartaoNovo, lerMinhaAssinatura, manterMinhaAssinatura, pararMinhaRenovacao, prepararTrocaDeCartao, reembolsarMinhaAssinatura, registrarAssinaturaDesconhecida } from "../lib/minha-assinatura.js";
-import { CABECALHO_DO_IP, ipDoPedido, limiteDeTentativas, limiteSemLogin } from "../lib/limite-de-tentativas.js";
+import { enderecoDoPedido, limiteDeTentativas, limiteSemLogin } from "../lib/limite-de-tentativas.js";
 import { marcaDoEndereco } from "../lib/loja-de-tentativas.js";
 
 // ASSINAR COM A CONTA LOGADA (Fase 4, etapa 4.2 — billing.md; CLAUDE.md → Membership Gating).
@@ -35,30 +35,44 @@ router.use("/billing", protecaoDaCobranca);
 // GET /api/billing/planos — os dois planos com o valor lido da Stripe (o mostrado é o cobrado) e
 // a chave que o site usa para abrir o campo do cartão.
 /**
- * O ALERTA DO CAMPO QUE NÃO ABRIU (E3 da revisão ampla da cobrança; C2 da revisão do grupo 1, 29/10/2026): o relato
- * chega SEM login, então um robô o manda à vontade — no máximo UM alerta a cada 6 horas POR CÓPIA, com quantos
- * relatos chegaram e de quantos endereços (a marca do endereço, nunca o IP) desde o anterior: é o número de
- * endereços que diz "defeito nosso" (muita gente) ou "um robô" (um endereço só). Por cópia, na memória dela, de
- * propósito (CLAUDE.md → Server): protege a cota de alertas, que também é por cópia (`monitor.ts`). Os outros relatos
- * ficam no registro, com a tela, o motivo e a marca do endereço.
+ * O ALERTA DO CAMPO QUE NÃO ABRIU (E3 da revisão ampla da cobrança; C2 e R2 das revisões do grupo 1, 29/10/2026): o
+ * relato chega SEM login, então um robô o manda à vontade. O alerta sai quando, numa janela de 6 horas, os relatos vêm
+ * de pelo menos 3 endereços diferentes — é isso que diz "defeito nosso" (muita gente); um endereço só é um aluno (o
+ * bloqueador, o navegador, e a tela já lhe diz o que fazer) ou um robô, e fica no registro. No máximo UM alerta a cada
+ * 6 horas POR CÓPIA. O endereço conta pela chave do limite de tentativas (R3: o IPv6 pelo bloco /56 — um robô num
+ * bloco é um endereço só), e vai só a marca dele, nunca o IP. Por cópia, na memória dela, de propósito (CLAUDE.md →
+ * Server): protege a cota de alertas, que também é por cópia (`monitor.ts`).
  */
 const INTERVALO_DO_ALERTA_DO_CAMPO = 6 * 60 * 60_000;
-/** Até quantos endereços distintos a cópia conta entre dois alertas: o resto conta como relato, não como endereço novo. */
+/** Quantos endereços diferentes, na mesma janela, fazem o alerta sair. */
+const ENDERECOS_PARA_ALERTAR = 3;
+/** Até quantos endereços distintos a cópia conta numa janela: o resto conta como relato, não como endereço novo. */
 const MAXIMO_DE_ENDERECOS_CONTADOS = 1_000;
+let janelaDoCampoDesde: number | null = null;
 let alertouCampoEm: number | null = null;
-let relatosDesdeOAlerta = 0;
-const enderecosDesdeOAlerta = new Set<string>();
+let relatosNaJanela = 0;
+const enderecosNaJanela = new Set<string>();
 
-/** Conta o relato; devolve o resumo para alertar (desde o alerta anterior, com este), ou nada se ainda não passaram as 6 h. */
+/** Passaram as 6 h desde `desde`? O relógio que volta atrás não segura nada para sempre. */
+function passaramSeisHoras(desde: number | null, agora: number): boolean {
+  return desde === null || agora < desde || agora - desde >= INTERVALO_DO_ALERTA_DO_CAMPO;
+}
+
+/** Conta o relato; devolve o resumo da janela para alertar (com este), ou nada. */
 function contarRelatoDoCampo(marca: string, agora: number): { relatos: number; enderecos: number } | null {
-  relatosDesdeOAlerta += 1;
-  if (enderecosDesdeOAlerta.size < MAXIMO_DE_ENDERECOS_CONTADOS) enderecosDesdeOAlerta.add(marca);
-  // O relógio que volta atrás não cala o alerta para sempre.
-  if (alertouCampoEm !== null && agora >= alertouCampoEm && agora - alertouCampoEm < INTERVALO_DO_ALERTA_DO_CAMPO) return null;
-  const resumo = { relatos: relatosDesdeOAlerta, enderecos: enderecosDesdeOAlerta.size };
+  if (passaramSeisHoras(janelaDoCampoDesde, agora)) {
+    janelaDoCampoDesde = agora;
+    relatosNaJanela = 0;
+    enderecosNaJanela.clear();
+  }
+  relatosNaJanela += 1;
+  if (enderecosNaJanela.size < MAXIMO_DE_ENDERECOS_CONTADOS) enderecosNaJanela.add(marca);
+  if (enderecosNaJanela.size < ENDERECOS_PARA_ALERTAR || !passaramSeisHoras(alertouCampoEm, agora)) return null;
+  const resumo = { relatos: relatosNaJanela, enderecos: enderecosNaJanela.size };
   alertouCampoEm = agora;
-  relatosDesdeOAlerta = 0;
-  enderecosDesdeOAlerta.clear();
+  janelaDoCampoDesde = agora;
+  relatosNaJanela = 0;
+  enderecosNaJanela.clear();
   return resumo;
 }
 
@@ -68,11 +82,11 @@ function contarRelatoDoCampo(marca: string, agora: number): { relatos: number; e
 router.post("/billing/campo-nao-abriu", ...limiteSemLogin.campoNaoAbriu, (req, res) => {
   const relato = validate(campoNaoAbriuSchema, req.body, res);
   if (relato === null) return;
-  const ip = ipDoPedido(req.get(CABECALHO_DO_IP));
-  const marca = ip ? marcaDoEndereco(ip) : "sem-endereco";
+  const chave = enderecoDoPedido(req);
+  const marca = chave ? marcaDoEndereco(chave) : "sem-endereco";
   const resumo = contarRelatoDoCampo(marca, Date.now());
   if (resumo) {
-    console.error(`[stripe] site: o campo de pagamento não abriu — ${resumo.relatos} relato(s) de ${resumo.enderecos} endereço(s) desde o último alerta, o mais recente na tela ${relato.tela} (${relato.motivo}); de vários endereços é defeito nosso (a chave publicável, as opções do campo, o Stripe.js): abrir a tela e conferir`);
+    console.error(`[stripe] site: o campo de pagamento não abriu para ${resumo.enderecos} endereços diferentes em menos de 6 h (${resumo.relatos} relato(s)), o mais recente na tela ${relato.tela} (${relato.motivo}) — de vários endereços é defeito nosso (a chave publicável, as opções do campo, o Stripe.js): abrir a tela e conferir; o próximo alerta, só depois de 6 h`);
   } else {
     console.warn(`[stripe] site: o campo de pagamento não abriu na tela ${relato.tela} (${relato.motivo}), endereço ${marca}`);
   }

@@ -1,3 +1,4 @@
+import { alertarConfiguracaoAusente } from "../lib/alerta-de-configuracao.js";
 import express, { Router } from "express";
 import { avisoExisteNaStripe, avisosConfigurados, idDoAvisoNoCorpo, pareceAvisoDaStripe, verificarAviso } from "../lib/stripe.js";
 import { processarAviso } from "../lib/assinaturas.js";
@@ -49,7 +50,7 @@ function alertarAssinaturaQueNaoConfere(agora: number): boolean {
 router.post("/stripe/webhook", express.raw({ type: "application/json" }), async (req, res) => {
   // Sem o segredo, nenhum aviso é aceito — nunca "aceitar sem verificar".
   if (!avisosConfigurados()) {
-    console.error("[stripe] aviso recusado: STRIPE_WEBHOOK_SECRET não configurado");
+    alertarConfiguracaoAusente("[stripe] aviso recusado: STRIPE_WEBHOOK_SECRET não configurado");
     res.status(503).json({ error: "NaoConfigurado" });
     return;
   }

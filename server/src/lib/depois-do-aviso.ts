@@ -22,6 +22,30 @@ export async function depoisDoAviso(aviso: AvisoDaStripe, desfecho: Desfecho): P
   if (aviso.pagamentoPrePago && "assinatura" in desfecho && !assinaturaDaAcesso({ status: desfecho.assinatura.status, currentPeriodEnd: desfecho.assinatura.pagoAte })) {
     console.error(`[stripe] aviso ${aviso.id}: o Pix ${aviso.pagamentoPrePago.id} foi PAGO e a assinatura ${desfecho.assinatura.id} (${desfecho.assinatura.status}) não dá acesso — pagante trancado; conferir no painel da Stripe`);
   }
+  // A CONTESTAÇÃO (E7 — P122 e 30/10/2026): precisa de gente — responder no painel da Stripe, no prazo, e decidir se
+  // devolve ou libera de novo (a 4.7b). Uma vez por aviso. O INQUÉRITO e a contestação ABERTA só alertam; quando o
+  // DINHEIRO SAI, o alerta diz como ficou a assinatura e se a conta perdeu o acesso (pode ter outra assinatura).
+  if (aviso.contestacao && desfecho.resultado !== "repetido") {
+    const { id, motivo, centavos, prazo, pagamento, fase } = aviso.contestacao;
+    const valor = `R$ ${(centavos / 100).toFixed(2).replace(".", ",")}`;
+    const responder = `responder no painel da Stripe${prazo ? ` até ${prazo.toISOString().slice(0, 10)}` : ""}`;
+    if (fase === "inquerito") {
+      console.error(`[stripe] inquérito ${id}: o banco perguntou sobre o pagamento ${pagamento ?? "?"} (${valor}, ${motivo}) — o acesso continua; ${responder}, ou devolver o dinheiro agora, sem taxa`);
+    } else if (fase === "aberta") {
+      console.error(`[stripe] contestação ${id}: o pagamento ${pagamento ?? "?"} (${valor}) foi contestado no banco (${motivo}) — o acesso é cortado e a assinatura cancelada quando o dinheiro sair da conta; ${responder}`);
+    } else {
+      const comoFicou =
+        "assinatura" in desfecho
+          ? `a assinatura ${desfecho.assinatura.id} ficou ${desfecho.assinatura.status}${desfecho.resultado === "atualizada" && desfecho.perdeuAcesso ? " e a conta perdeu o acesso" : " — a conta não perdeu o acesso por aqui (já não tinha, ou tem outra assinatura)"}`
+          : "o pagamento não é de uma assinatura da escola";
+      console.error(`[stripe] contestação ${id}: o dinheiro do pagamento ${pagamento ?? "?"} (${valor}, ${motivo}) saiu da conta — ${comoFicou}; ${responder}`);
+    }
+  }
+  // O AVISO DE FRAUDE (E7 — P122: só alerta, o acesso fica). Devolver o dinheiro agora evita a contestação, e a taxa dela.
+  if (aviso.avisoDeFraude && desfecho.resultado !== "repetido") {
+    const { id, cobranca, pagamento, tipo } = aviso.avisoDeFraude;
+    console.error(`[stripe] aviso de fraude ${id}: a cobrança ${cobranca} (pagamento ${pagamento ?? "?"}) recebeu um aviso de fraude do banco (${tipo}) — conferir no painel da Stripe; devolver o dinheiro agora evita a contestação`);
+  }
   if (desfecho.resultado === "sem-conta") {
     // Assinatura sem conta na escola: em voz alta. Se ela dá acesso, há alguém PAGANDO e trancado
     // fora (achado P1 da revisão) — o force-sync (etapa 4.4) conserta depois que a conta existir.

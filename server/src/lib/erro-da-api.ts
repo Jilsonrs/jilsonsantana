@@ -55,6 +55,10 @@ export const tratarErroDaApi: ErrorRequestHandler = (erro, req, res, next) => {
     return;
   }
   const rastro = erro instanceof Error ? (erro.stack ?? erro.message) : `erro que não é Error (${typeof erro})`;
-  console.error(`[api] ${endereco} falhou: ${rastro}`);
+  // A falha ao processar um aviso da Stripe é alerta de COBRANÇA (revisão do grupo 2 da 4.9b): com a etiqueta `[stripe]`,
+  // ela tem a reserva da cota (`monitor.ts`) — com `[api]`, um apagão a calaria. Só um aviso que já passou na
+  // verificação da assinatura chega a falhar aqui: um anônimo não a dispara.
+  const etiqueta = req.originalUrl.split("?")[0] === "/api/stripe/webhook" ? "stripe" : "api";
+  console.error(`[${etiqueta}] ${endereco} falhou: ${rastro}`);
   res.status(500).json({ error: "ErroInterno" });
 };

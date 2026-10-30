@@ -228,11 +228,16 @@ ordem pública — pode-se dar mais, nunca menos. Depois do prazo, o cancelament
 o acesso vai até o fim do período já pago.
 
 **A contestação do pagamento corta o acesso na hora** *(decisão do operador, 29/10/2026, P122 — a revisão ampla
-da cobrança, plano → 4.9b, E7; ainda não construído)*: quem contesta no banco (chargeback) já pediu o dinheiro de
-volta, e o acesso acaba quando a contestação chega — um cartão roubado deixa de estudar o ano inteiro. Se a
-contestação for resolvida a favor da escola, o operador libera de novo pelo admin (4.7b). O **aviso de fraude** da
-Stripe (`radar.early_fraud_warning`) só alerta. Hoje nenhum dos dois é tratado: o acesso continua, e só o e-mail da
-Stripe avisa. *Cortar o acesso não apaga nada* (CLAUDE.md → *Churn não apaga nada*).
+da cobrança, plano → 4.9b, E7; no código desde 30/10/2026)*: quem contesta no banco (chargeback) já pediu o dinheiro
+de volta, e o acesso acaba quando o dinheiro sai da conta — um cartão roubado deixa de estudar o ano inteiro. **O
+INQUÉRITO só alerta** *(decisão do operador, 30/10/2026)*: nele o banco só pergunta, o dinheiro não sai e ainda dá para
+devolver sem taxa; se ele virar contestação, o corte vem com o dinheiro que sai. **E a
+assinatura é cancelada na Stripe** *(decisão do operador, 30/10/2026: o cartão contestado nunca mais é cobrado)*; a
+pessoa recebe o e-mail de sempre de assinatura encerrada, e o operador, um alerta com o valor, o motivo e o prazo para
+responder à contestação no painel da Stripe. Se a contestação for resolvida a favor da escola, o operador libera de
+novo pelo admin (4.7b — "Liberar acesso pago por fora": a cancelada não volta). O **aviso de fraude** da Stripe
+(`radar.early_fraud_warning`) só alerta — devolver o dinheiro logo evita a contestação e a taxa dela. *Cortar o acesso
+não apaga nada* (CLAUDE.md → *Churn não apaga nada*).
 
 **Um prazo só: os 7 dias da lei** *(12/10/2026 — etapa 4.6c)*. Com a escola só para o Brasil,
 saíram a promessa de 7 dias "ao mundo" da página em inglês (22/09/2026) e os 14 dias para fora do
@@ -1584,15 +1589,20 @@ encerrada de vez com dias pagos: tem acesso e o servidor recusa cartão.
   "Conferir na Stripe" do admin, sem alerta. *Não marcar "todos os eventos":* com o `invoice.created`, a
   Stripe passa a esperar a resposta do site antes de cobrar as renovações.
   **Desde a 4.9b (E4, 29/10/2026) a lista mora no código** (`AVISOS_DO_ENDERECO`, `server/src/lib/stripe.ts`), e
-  **a subida do servidor em produção confere o endereço**: desligado, ausente ou sem um dos 8, sai um alerta. Aviso
-  novo tratado no código entra nessa lista e no endereço.
+  **a subida do servidor em produção confere o endereço**: desligado, ausente ou sem um dos avisos, sai um alerta. Aviso
+  novo tratado no código entra nessa lista e no endereço. **Desde o E7 (30/10/2026) são 10:** entraram
+  `charge.dispute.created` (a contestação) e `radar.early_fraud_warning.created` (o aviso de fraude) — o operador os
+  incluiu no endereço em 30/10/2026 (P129, conferida pelo print dele: os 10 avisos, na versão `2026-09-30.endive` da
+  API, a mesma da biblioteca). **Depois da revisão do grupo 2, 11:** entrou `charge.dispute.funds_withdrawn` (o dinheiro
+  da contestação saiu — é ele que corta o acesso), que o operador inclui antes de publicar (P130).
 - **A versão do endereço de avisos** *(4.9b, C3, 29/10/2026)*: a Stripe manda cada aviso na versão da API do
   endereço (sem versão própria, na versão padrão da conta), e o site lê a da biblioteca — hoje a `2026-09-30.endive`.
   Numa versão de antes da `2025-03-31.basil`, o aviso de fatura chega sem a assinatura dele. **A subida em produção
-  aceita a mesma linha (`.endive`) numa versão igual ou mais nova** — as versões mensais de uma linha não quebram nada
-  (documentação da Stripe) — e alerta qualquer outra, inclusive a padrão da conta. A rodada de hora em hora não
-  processa aviso de fatura no formato antigo, e alerta. **Para trocar a versão, um endereço NOVO** (o que existe não
-  muda de versão):
+  aceita qualquer versão da mesma linha (`.endive`)** — as versões mensais de uma linha não quebram nada
+  (documentação da Stripe), e é numa mensal mais nova que a biblioteca fica a cada atualização pequena — e alerta
+  qualquer outra, inclusive a padrão da conta; quando tudo passa, ela escreve "a cobrança confere" no registro. A
+  rodada de hora em hora relê pela API a fatura do aviso que veio no formato antigo, e o processa. **Para trocar a
+  versão, um endereço NOVO** (o que existe não muda de versão):
   1. no Workbench → Webhooks, criar um endereço com a mesma URL e `?versao=endive` no fim (o site não lê o que vem
      depois do `?`), os 8 avisos e a versão da biblioteca — o painel oferece a da conta ou a mais recente; outra, só
      pela API;
@@ -1640,6 +1650,9 @@ encerrada de vez com dias pagos: tem acesso e o servidor recusa cartão.
   desse cancelamento — aí a pessoa pagou um período que quis cancelar.
 - **Pedido que muda cobrança e vem de outro site é recusado** (403 `OutroSite`, pelo
   `Sec-Fetch-Site` do navegador): segunda trava além do cookie, para todo `/api/billing`.
+  **Desde a 4.9b (E8, 29/10/2026) só a mesma origem passa** (e o pedido aberto pela própria pessoa, ou sem o
+  cabeçalho): o pedido de um subdomínio de jilsonsantana.com também é recusado — `pedidoDeOutroSite`, a mesma regra
+  do pedido de código por e-mail.
   Navegador antigo que não manda o cabeçalho fica só com a primeira.
 - **O ano do Anual e a conta da troca — o que foi medido (11/10/2026, com o relógio de teste):**
   sem pedir nada, a Stripe mantém o ANIVERSÁRIO da assinatura — quem assinou o Mensal em 11/10 e
@@ -1910,7 +1923,9 @@ desistiu (só no painel da Stripe → Pagamentos); o segredo do endereço de avi
    cliente que o site criou libera o acesso quando a fatura fica paga, mas "enviar fatura por e-mail" libera
    **antes** de pagar, o link de pagamento avulso não libera nada, e quem nem chegou ao campo de pagamento não
    tem cliente — nunca foi testado.
-6. **Reembolso que falhou:** devolva pelo painel. No painel, é sempre **devolver E cancelar** (P114).
+6. **Reembolso que falhou:** devolva pelo painel. No painel, é sempre **devolver E cancelar** (P114). Se só
+   devolver, a conferência diária da rodada (as 9h, E6) alerta no dia seguinte: *"a assinatura … está ativa na Stripe
+   sem período pago"* — é cancelar no painel.
 7. **No Sentry:** depois de resolver, marque "Resolvido", nunca "Ignorar"; e veja quantas vezes o erro aconteceu —
    um e-mail só pode ser muita gente.
 

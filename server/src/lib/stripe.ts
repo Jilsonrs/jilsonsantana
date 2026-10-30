@@ -24,7 +24,27 @@ export { erroSemMensagem, stripe, VERSAO_DA_API };
  * DEVOLVIDO fala de uma cobrança, não de uma assinatura — a assinatura se acha pelo pagamento.
  * `devolucaoFalhou`: uma devolução que tinha sido aceita FALHOU depois — o dinheiro não voltou.
  */
-export type AvisoDaStripe = { id: string; tipo: string; assinatura: string | null; pagamento?: string | null; devolucaoFalhou?: boolean; pagamentoPrePago?: PagamentoPrePago | null };
+export type AvisoDaStripe = { id: string; tipo: string; assinatura: string | null; pagamento?: string | null; devolucaoFalhou?: boolean; pagamentoPrePago?: PagamentoPrePago | null; contestacao?: Contestacao | null; avisoDeFraude?: AvisoDeFraude | null };
+
+/**
+ * A CONTESTAÇÃO de um pagamento no banco (chargeback — E7 da revisão ampla da cobrança; decisões do operador P122 e de
+ * 30/10/2026). O id, o motivo que o banco deu, o valor, o prazo para responder no painel da Stripe, o pagamento e a
+ * FASE: o INQUÉRITO (o banco só pergunta — `warning_*`: o dinheiro não sai, e ainda dá para devolver sem taxa), a
+ * contestação ABERTA, e o DINHEIRO QUE SAIU da conta (`charge.dispute.funds_withdrawn`). **Só o dinheiro que saiu
+ * corta o acesso e cancela a assinatura** *(decisão do operador, 30/10/2026: "inquérito só alerta")*; as outras duas
+ * só alertam. `[FATO — docs da Stripe, context7, 30/10/2026]` o inquérito também chega por `charge.dispute.created`, e
+ * quando ele vira contestação a Stripe manda o `charge.dispute.funds_withdrawn`.
+ */
+export type Contestacao = { id: string; motivo: string; centavos: number; prazo: Date | null; pagamento: string | null; fase: "inquerito" | "aberta" | "dinheiro-saiu" };
+/** O AVISO DE FRAUDE do banco sobre uma cobrança (E7 — P122: só alerta). */
+export type AvisoDeFraude = { id: string; cobranca: string; pagamento: string | null; tipo: string };
+/**
+ * Nos metadados da assinatura CONTESTADA: o id da contestação. Com ele, o período não conta como pago
+ * (`paraAssinaturaNaStripe`) — a assinatura é cancelada na mesma hora, quando o dinheiro sai (`cancelarPorContestacao`), e só a marca segura o
+ * acesso cortado: sem ela, a cancelada daria acesso até o fim do período. Liberar de novo a contestação ganha é tirar a
+ * marca (a ação do admin, etapa 4.7b).
+ */
+export const METADADO_DA_CONTESTACAO = "contestacao";
 
 /**
  * O PIX PRÉ-PAGO que CAIU (etapa 4.9 — billing.md → *Formas de pagamento*): o aviso
@@ -258,7 +278,19 @@ export type AssinaturaNoCheckout = {
    * antigo, e o clique seguinte, com o número novo, ouviria "não mudou".
    */
   numeroFiscalDaFatura?: string | null;
+  /**
+   * O FIM do período da assinatura (o maior `current_period_end` dos itens), ou nada (R4 da revisão das correções,
+   * 29/10/2026): a conferência pedida pela tela não vai à Stripe pela cancelada que já acabou — o "pago até" nunca
+   * passa dele (`paraAssinaturaNaStripe`). Sem a data, a conferência vai, que é o lado seguro.
+   */
+  fimDoPeriodo?: Date | null;
 };
+
+/** O maior `current_period_end` dos itens da assinatura, ou nada. Função pura. */
+function fimDoPeriodoDosItens(assinatura: Stripe.Subscription): Date | null {
+  const fins = assinatura.items.data.map((item) => item.current_period_end).filter((fim) => typeof fim === "number" && Number.isFinite(fim));
+  return fins.length > 0 ? new Date(Math.max(...fins) * 1000) : null;
+}
 
 /** O número fiscal como chave de comparação: o tipo da Stripe e o número com a pontuação de costume. Função pura. */
 export function chaveDoNumeroFiscal(documento: DocumentoFiscal): string {
@@ -288,6 +320,7 @@ export function paraAssinaturaNoCheckout(assinatura: Stripe.Subscription): Assin
     pixPaymentIntentId: assinatura.metadata[METADADO_DO_PIX] || null,
     pagamentoCancelado: pagamentoDeHoje !== null && cancelado,
     numeroFiscalDaFatura: numeroFiscalDoBrasil(typeof fatura === "object" && fatura !== null ? fatura.customer_tax_ids : null),
+    fimDoPeriodo: fimDoPeriodoDosItens(assinatura),
   };
 }
 
@@ -490,13 +523,16 @@ export function avisosConfigurados(): boolean {
 }
 
 /**
- * OS AVISOS QUE O ENDEREÇO DE AVISOS DA CONTA PRECISA ASSINAR (P69, 12/10/2026, e P112, 29/10/2026 — `billing.md` →
+ * OS AVISOS QUE O ENDEREÇO DE AVISOS DA CONTA PRECISA ASSINAR (P69, 12/10/2026; P112, 29/10/2026; e a contestação e o
+ * aviso de fraude, E7 da 4.9b, 30/10/2026 — `billing.md` →
  * *Os avisos de devolução chegam ao site no ar*). A conferência da subida (`conferencia-da-cobranca.ts`, E4 da
  * revisão ampla) alerta quando falta um. **Aviso novo tratado aqui entra nesta lista** — senão o endereço nunca o
  * manda, e nada avisa. (`refund.updated` e `charge.refund.updated` também são tratados, mas não são exigidos: o
  * `refund.failed` já traz a devolução que falha.) O teste prova que cada um da lista é tratado (`stripe.test.ts`).
  */
 export const AVISOS_DO_ENDERECO = [
+  "charge.dispute.created",
+  "charge.dispute.funds_withdrawn",
   "charge.refunded",
   "customer.subscription.created",
   "customer.subscription.deleted",
@@ -504,6 +540,7 @@ export const AVISOS_DO_ENDERECO = [
   "invoice.paid",
   "invoice.payment_failed",
   "payment_intent.succeeded",
+  "radar.early_fraud_warning.created",
   "refund.failed",
 ] as const;
 
@@ -531,6 +568,14 @@ function assinaturaDoAviso(evento: Stripe.Event): string | null {
  * 11/10/2026]`: quem acha a assinatura é o servidor, pelo pagamento (`stripe-reembolso.ts`).
  */
 function pagamentoDoAviso(evento: Stripe.Event): string | null {
+  // A CONTESTAÇÃO cujo DINHEIRO SAIU (E7): o pagamento contestado — é por ele que a assinatura se acha, como na
+  // devolução. A contestação que só se ABRIU (e o inquérito) não acha assinatura nenhuma: só alerta
+  // (`depois-do-aviso.ts`) — cai no "nenhum" lá embaixo. Sem pagamento (a cobrança solta), nada: alerta do mesmo jeito.
+  if (evento.type === "charge.dispute.funds_withdrawn") {
+    const contestado = evento.data.object.payment_intent;
+    if (!contestado) return null;
+    return typeof contestado === "string" ? contestado : contestado.id;
+  }
   // A devolução que mudou de situação também: se FALHOU, o período volta a contar como pago, e
   // o espelho tem que saber — pela sincronia de sempre.
   if (evento.type !== "charge.refunded" && !eAvisoDeDevolucao(evento)) return null;
@@ -664,12 +709,62 @@ export function avisoEmFormatoAntigo(evento: Stripe.Event): boolean {
   return evento.type.startsWith("invoice.") && !("parent" in evento.data.object);
 }
 
+type AvisoDeFatura = Extract<Stripe.Event, { type: "invoice.paid" | "invoice.payment_failed" }>;
+function eAvisoDeFatura(evento: Stripe.Event): evento is AvisoDeFatura {
+  return evento.type === "invoice.paid" || evento.type === "invoice.payment_failed";
+}
+
+/**
+ * O aviso de fatura com a fatura RELIDA pela API — na versão da biblioteca, já com o `parent` (R5 da revisão das
+ * correções, 29/10/2026): o `data` do aviso listado nunca muda, mas a fatura de hoje diz de que assinatura ela é. Só a
+ * rodada usa (o aviso em formato antigo — `avisoEmFormatoAntigo`); o resto do aviso fica como veio. Outro tipo de aviso
+ * volta como está.
+ */
+export async function comAFaturaRelida(evento: Stripe.Event): Promise<Stripe.Event> {
+  if (!eAvisoDeFatura(evento)) return evento;
+  const id = evento.data.object.id;
+  if (!id) return evento;
+  try {
+    const fatura = await stripe().invoices.retrieve(id);
+    return { ...evento, data: { ...evento.data, object: fatura } };
+  } catch (erro) {
+    throw erroSemMensagem(erro, "a releitura da fatura do aviso");
+  }
+}
+
 /**
  * O evento da Stripe como o site o processa — o do endereço de avisos (já verificado) e o da conferência da rodada
  * (lido pela API, que já é autenticada — `avisosDaStripe`). Função pura.
  */
 export function paraAviso(evento: Stripe.Event): AvisoDaStripe {
-  return { id: evento.id, tipo: evento.type, assinatura: assinaturaDoAviso(evento), pagamento: pagamentoDoAviso(evento), devolucaoFalhou: devolucaoQueFalhou(evento), pagamentoPrePago: pagamentoPrePagoDoAviso(evento) };
+  return {
+    id: evento.id,
+    tipo: evento.type,
+    assinatura: assinaturaDoAviso(evento),
+    pagamento: pagamentoDoAviso(evento),
+    devolucaoFalhou: devolucaoQueFalhou(evento),
+    pagamentoPrePago: pagamentoPrePagoDoAviso(evento),
+    contestacao: contestacaoDoAviso(evento),
+    avisoDeFraude: avisoDeFraudeDoAviso(evento),
+  };
+}
+
+/** A contestação de um aviso `charge.dispute.created` ou `charge.dispute.funds_withdrawn`, ou nada. Função pura. */
+function contestacaoDoAviso(evento: Stripe.Event): Contestacao | null {
+  if (evento.type !== "charge.dispute.created" && evento.type !== "charge.dispute.funds_withdrawn") return null;
+  const disputa = evento.data.object;
+  const prazo = disputa.evidence_details?.due_by;
+  const pagamento = disputa.payment_intent ? (typeof disputa.payment_intent === "string" ? disputa.payment_intent : disputa.payment_intent.id) : null;
+  const fase = evento.type === "charge.dispute.funds_withdrawn" ? "dinheiro-saiu" : disputa.status.startsWith("warning_") ? "inquerito" : "aberta";
+  return { id: disputa.id, motivo: disputa.reason, centavos: disputa.amount, prazo: prazo ? new Date(prazo * 1000) : null, pagamento, fase };
+}
+
+/** O aviso de fraude de um aviso `radar.early_fraud_warning.created`, ou nada. Função pura. */
+function avisoDeFraudeDoAviso(evento: Stripe.Event): AvisoDeFraude | null {
+  if (evento.type !== "radar.early_fraud_warning.created") return null;
+  const aviso = evento.data.object;
+  const pagamento = aviso.payment_intent ? (typeof aviso.payment_intent === "string" ? aviso.payment_intent : aviso.payment_intent.id) : null;
+  return { id: aviso.id, cobranca: typeof aviso.charge === "string" ? aviso.charge : aviso.charge.id, pagamento, tipo: aviso.fraud_type };
 }
 
 /**
@@ -702,7 +797,9 @@ export function paraAssinaturaNaStripe(assinatura: Stripe.Subscription, devolvid
   let pagoAte: Date | null = null;
   if (itens.length > 0) {
     const fatura = assinatura.latest_invoice;
-    const paga = typeof fatura === "object" && fatura !== null && fatura.status === "paid" && !devolvida;
+    // A CONTESTADA (E7): o período não conta como pago — a marca segura o acesso cortado (`METADADO_DA_CONTESTACAO`).
+    const contestada = Boolean(assinatura.metadata[METADADO_DA_CONTESTACAO]);
+    const paga = typeof fatura === "object" && fatura !== null && fatura.status === "paid" && !devolvida && !contestada;
     const segundos = paga ? Math.max(...itens.map((i) => i.current_period_end)) : Math.min(...itens.map((i) => i.current_period_start));
     pagoAte = new Date(segundos * 1000);
   }

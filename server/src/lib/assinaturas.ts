@@ -1,8 +1,8 @@
 import { Prisma } from "./prisma.js";
 import { prisma } from "./prisma.js";
-import { cobrancaAtrasada, temAcessoAtivo } from "./acesso.js";
+import { assinaturaDaAcesso, cobrancaAtrasada, encerradaDeVez, temAcessoAtivo } from "./acesso.js";
 import { AssinaturaNaoEncontrada, assinaturasDoCliente, buscarAssinatura, buscarPrecos, cancelarIncompleta, type AssinaturaNaStripe, type AvisoDaStripe, type PagamentoPrePago } from "./stripe.js";
-import { assinaturaDoPagamento } from "./stripe-reembolso.js";
+import { assinaturaDoPagamento, cancelarPorContestacao } from "./stripe-reembolso.js";
 import { pixDevolvido } from "./stripe-devolucao.js";
 import { assinaturasDoPix, cancelarPagamentoPix, criarAssinaturaPrePaga, garantirFaturaPaga, lerPagamentoPix, listarPixDoCliente, marcarEmConferencia, type PixPago, type PixPendente, type PrePagaDoPix } from "./stripe-pix.js";
 import { contaDoPedido, type SemContaDoVisitante } from "./pedido-do-visitante.js";
@@ -181,11 +181,17 @@ export async function processarAviso(aviso: AvisoDaStripe): Promise<Desfecho> {
       await travar(tx, assinaturaId);
       // Com a trava: o mesmo aviso que esperava na fila já foi processado por quem veio antes.
       if (await tx.stripeEvent.findUnique({ where: { id: aviso.id }, select: { id: true } })) return { resultado: "repetido" };
+      // A CONTESTAÇÃO CUJO DINHEIRO SAIU (E7 — P122 e 30/10/2026): a assinatura é marcada e cancelada na Stripe, com a
+      // trava dela; a sincronia logo abaixo corta o acesso e derruba as sessões. Se a Stripe falhar, nada fica marcado e
+      // o aviso volta.
+      if (aviso.contestacao?.fase === "dinheiro-saiu") await cancelarPorContestacao(assinaturaId, aviso.contestacao.id);
       const sincronia = await sincronizar(tx, assinaturaId);
       // Marcado na MESMA transação do espelho — também quando não há conta: o aviso foi visto.
       await tx.stripeEvent.create({ data: marcar });
       return sincronia;
-    }, TEMPO_DA_TRANSACAO);
+      // A contestação faz até 5 idas à Stripe aqui dentro (a marca, o cancelamento, a fatura, a busca, a cobrança): o
+      // tempo das operações, para a trava não soltar no meio do cancelamento.
+    }, aviso.contestacao?.fase === "dinheiro-saiu" ? TEMPO_DA_OPERACAO : TEMPO_DA_TRANSACAO);
   } catch (erro) {
     // O registro precisa dizer QUAL aviso e QUAL assinatura falharam (achado P2 da revisão) —
     // sem o corpo do aviso, que nunca vai para o registro.
@@ -504,9 +510,11 @@ export async function sincronizarPedido(email: string): Promise<Conferida[] | nu
 
 /**
  * A que expirou sem o primeiro pagamento não cobra nem dá acesso: a conferência pedida pela tela não gasta ida à Stripe
- * com ela. A CANCELADA vai (C5 da revisão do grupo 1, 29/10/2026): com dias pagos, o gate ainda dá acesso
- * (`assinaturaDaAcesso`), e o aviso dela também pode ter se perdido — e ela sempre já foi paga (cancelar a incompleta
- * a leva para `incomplete_expired`, `cancelarIncompleta`). A lista é das últimas 20 (`assinaturasDoCliente`).
+ * com ela. A CANCELADA vai (C5 da revisão do grupo 1, 29/10/2026) enquanto o período dela não acabou: com dias pagos,
+ * o gate ainda dá acesso (`assinaturaDaAcesso`), e o aviso dela também pode ter se perdido. Quem diz se os dias foram
+ * PAGOS é o "pago até" da sincronia (`paraAssinaturaNaStripe`), nunca o status — a assinatura criada no painel com
+ * "enviar fatura" nasce ativa sem pagamento. A cancelada já acabada fica de fora (R4): o "pago até" nunca passa do fim
+ * do período, e quem paga por Pix junta uma cancelada por período. A lista é das últimas 20 (`assinaturasDoCliente`).
  */
 const ENCERRADAS_NA_CONFERENCIA: ReadonlySet<string> = new Set(["incomplete_expired"]);
 
@@ -522,8 +530,11 @@ export async function conferirOCliente(clienteId: string): Promise<Sincronia[]> 
   if (typeof clienteId !== "string" || clienteId.length === 0) throw new Error("[stripe] conferência sem o cliente");
   await processarPixPagosSemEspelho(clienteId);
   const feitas: Sincronia[] = [];
-  for (const { id, status } of await assinaturasDoCliente(clienteId)) {
+  const agora = Date.now();
+  for (const { id, status, fimDoPeriodo } of await assinaturasDoCliente(clienteId)) {
     if (ENCERRADAS_NA_CONFERENCIA.has(status)) continue;
+    // A regra do próprio gate, nunca uma cópia: a encerrada que ele não libera mais nem com o fim do período.
+    if (encerradaDeVez({ status }) && fimDoPeriodo && !assinaturaDaAcesso({ status, currentPeriodEnd: fimDoPeriodo }, new Date(agora))) continue;
     try {
       const sincronia = await sincronizarSeLivre(id);
       if (sincronia) feitas.push(sincronia);
