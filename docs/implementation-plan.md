@@ -6396,10 +6396,15 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             cartão" (Faturamento, a aula trancada e o e-mail da falha), um "Pagar com Pix" que encerra a atrasada
             e abre o Pix do plano — pela operação da assinatura (`operarNaAssinatura`), um pagamento aberto por vez.
             A frase e o botão vão ao operador para aprovar.
-      - [ ] **E15 — o suporte nas frases de erro de pagamento** *(decisão do operador, 29/10/2026, P119)*: as
+      - [x] **E15 — o suporte nas frases de erro de pagamento** *(decisão do operador, 29/10/2026, P119)*: as
             frases de erro de pagamento (as de assinar, de trocar o cartão e a "Está demorando…" de depois do
             pagamento) passam a citar suporte@jilsonsantana.com, e depois de um cartão recusado a tela sugere
-            pagar com Pix. **Cada frase reescrita vai ao operador, uma a uma, antes de entrar no site.**
+            pagar com Pix. **Cada frase reescrita vai ao operador, uma a uma, antes de entrar no site.** **FEITO
+            (30/10/2026), com as frases APROVADAS pelo operador no mesmo dia** (`core/src/i18n/pt.ts`): `assinar.erro`,
+            `assinar.cartaoRecusado` (nova), `erroDoCartao` e `demorando`, todas com a saída pelo suporte. O cartão
+            recusado (`card_declined`, lido em `falhou`, `stripe-do-site.tsx`) mostra a frase que sugere o Pix só quando o
+            Pix está no ar; sem ele, a da Stripe. Testes: `AssinarPage.test.tsx` (+1), `stripe-do-site.test.ts` (+2) e as
+            frases novas nos testes das telas. **Mutação: 4 de 4 reprovaram.**
       - [ ] **E16 — o aviso "uma senha foi criada"** *(decisão do operador, 29/10/2026, P123)*: a senha criada logo
             depois de pagar (`senha-depois-de-pagar.ts`) manda um e-mail para a caixa — se não foi a pessoa, ela
             cria outra pelo "Esqueci minha senha", que desconecta os outros aparelhos (conferir na prova). Pela
@@ -6427,9 +6432,12 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             escapava do E17, e o alerta dele saía a cada clique. **FEITO:** decide pela tentativa gravada na própria
             pré-paga (`resumoDaTentativa`), e o alerta sai no máximo a cada 15 min por Pix (`alertarNoMaximoACada15Min`).
             Teste: `pagar-com-pix.test.ts` (as duas portas; um alerta só).
-      - [ ] **(P2) Quem pagou e perdeu o código da aba** (outra aba, outro aparelho) recebe o 409 `Ocupada`, cuja frase
+      - [x] **(P2) Quem pagou e perdeu o código da aba** (outra aba, outro aparelho) recebe o 409 `Ocupada`, cuja frase
             (*"Este e-mail já tem uma assinatura em andamento em outra aba. Termine por lá ou aguarde um instante."*) não
-            dá saída. **Decisão do operador: o texto** (vai junto com as frases do E15).
+            dá saída. **FEITO (30/10/2026), com o texto APROVADO pelo operador junto com o E15:** *"Este e-mail já tem uma
+            assinatura em andamento. Termine por onde começou ou aguarde um instante. Se você já pagou, vamos responder
+            pelo seu e-mail; se precisar, escreva para suporte@jilsonsantana.com."* — não conta a ninguém que houve
+            pagamento, e dá a saída (`assinar.ocupadaOutraAba`).
       - [ ] **E18 — o e-mail de confirmação para quem assina logado** *(decisão do operador, 29/10/2026, P127)*:
             sai da sincronia que dá o acesso, uma vez por assinatura (a mesma regra das boas-vindas: depois do
             commit, `enviarEmail`, chave estável), para cartão e Pix. O texto vai ao operador.

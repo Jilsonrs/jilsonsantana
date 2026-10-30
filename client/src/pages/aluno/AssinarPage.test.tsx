@@ -544,12 +544,30 @@ describe("AssinarPage — o envio", () => {
     expect(botao.disabled).toBe(false);
   });
 
+  // E15 (a frase aprovada pelo operador em 30/10/2026): o cartão RECUSADO pelo banco, com o Pix no ar, sugere o Pix;
+  // sem o Pix no ar, fica a frase da Stripe.
+  it("cartão RECUSADO com o Pix no ar: a frase que sugere o Pix; sem o Pix no ar, a da Stripe", async () => {
+    confirmar.mockResolvedValue({ ok: false, mensagem: "Seu cartão foi recusado.", recusado: true });
+    getPlanosDaAssinatura.mockResolvedValue(COM_PIX);
+    const { unmount } = abrir();
+    await screen.findByRole("radio", { name: /Mensal/ });
+    assinar();
+    expect((await screen.findByRole("alert")).textContent).toBe("Seu cartão foi recusado. Tente outro cartão ou pague com Pix; se precisar, escreva para suporte@jilsonsantana.com.");
+    unmount();
+
+    getPlanosDaAssinatura.mockResolvedValue(PLANOS);
+    abrir();
+    await screen.findByRole("radio", { name: /Mensal/ });
+    assinar();
+    expect((await screen.findByRole("alert")).textContent).toBe("Seu cartão foi recusado.");
+  });
+
   it("falha sem frase para o aluno (a Stripe não carregou): a frase da escola", async () => {
     validar.mockResolvedValue({ ok: false, mensagem: null });
     abrir();
     await screen.findByRole("radio", { name: /Mensal/ });
     assinar();
-    expect((await screen.findByRole("alert")).textContent).toBe("Não foi possível concluir a assinatura. Confira os dados e tente de novo.");
+    expect((await screen.findByRole("alert")).textContent).toBe("Não foi possível concluir a assinatura. Confira os dados e tente de novo; se continuar, escreva para suporte@jilsonsantana.com.");
   });
 
   it("com o código de 100%: cria com o plano E o código, sem cartão, e vai para a tela de concluído", async () => {
@@ -569,7 +587,7 @@ describe("AssinarPage — o envio", () => {
     await aplicar("TESTE100");
     await screen.findByText("TESTE100");
     assinar();
-    expect((await screen.findByRole("alert")).textContent).toBe("Não foi possível concluir a assinatura. Confira os dados e tente de novo.");
+    expect((await screen.findByRole("alert")).textContent).toBe("Não foi possível concluir a assinatura. Confira os dados e tente de novo; se continuar, escreva para suporte@jilsonsantana.com.");
     expect(screen.queryByText("tela de concluído")).toBeNull();
   });
 
@@ -610,7 +628,7 @@ describe("AssinarPage — o envio", () => {
     abrir();
     await screen.findByRole("radio", { name: /Mensal/ });
     assinar();
-    expect((await screen.findByRole("alert")).textContent).toBe("Não foi possível concluir a assinatura. Confira os dados e tente de novo.");
+    expect((await screen.findByRole("alert")).textContent).toBe("Não foi possível concluir a assinatura. Confira os dados e tente de novo; se continuar, escreva para suporte@jilsonsantana.com.");
     expect(confirmar).not.toHaveBeenCalled();
   });
 

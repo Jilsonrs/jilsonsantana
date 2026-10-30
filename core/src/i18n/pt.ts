@@ -551,7 +551,11 @@ export const pt = {
       botaoReativar: "Reativar assinatura",
       processando: "Processando…",
       erroPlanos: "Não foi possível carregar os planos. Tente de novo.",
-      erro: "Não foi possível concluir a assinatura. Confira os dados e tente de novo.",
+      // As frases de erro de pagamento com a saída pelo suporte (E15 da revisão ampla da cobrança — decisão do operador
+      // P119; textos APROVADOS por ele em 30/10/2026).
+      erro: "Não foi possível concluir a assinatura. Confira os dados e tente de novo; se continuar, escreva para suporte@jilsonsantana.com.",
+      // O cartão RECUSADO, quando o Pix está no ar (E15, aprovado em 30/10/2026): a tela sugere pagar com Pix.
+      cartaoRecusado: "Seu cartão foi recusado. Tente outro cartão ou pague com Pix; se precisar, escreva para suporte@jilsonsantana.com.",
       // Muita gente assinando sem login no mesmo instante (o servidor atende 3 de cada vez — etapa
       // 4.7, passo 4): o pedido volta com `MuitosAoMesmoTempo`. Texto do operador (21/10/2026), para
       // a pessoa esperar antes de clicar de novo. Quem o mostra é a tela pública (passo 6).
@@ -590,8 +594,10 @@ export const pt = {
       // O campo de pagamento da Stripe não carregou (bloqueador, rede de empresa, defeito nosso) — o vigia do campo (E3
       // da revisão ampla da cobrança). Texto APROVADO pelo operador em 29/10/2026 (P116, a sugestão do revisor).
       campoNaoCarregou: "O campo de pagamento não carregou. Tente outro navegador ou desative o bloqueador; se continuar, escreva para suporte@jilsonsantana.com.",
-      // O mesmo e-mail assinando em outra aba (`Ocupada`).
-      ocupadaOutraAba: "Este e-mail já tem uma assinatura em andamento em outra aba. Termine por lá ou aguarde um instante.",
+      // O mesmo e-mail com uma assinatura em andamento (`Ocupada`, sem login) — inclusive quem pagou e perdeu o código da
+      // aba (revisão do grupo 3 da 4.9b): não conta a ninguém que houve pagamento, e dá a saída. Texto APROVADO pelo
+      // operador em 30/10/2026 (com o E15).
+      ocupadaOutraAba: "Este e-mail já tem uma assinatura em andamento. Termine por onde começou ou aguarde um instante. Se você já pagou, vamos responder pelo seu e-mail; se precisar, escreva para suporte@jilsonsantana.com.",
       // DEPOIS DO PAGAMENTO, SEM CONTA (etapa 4.7, passo 6e2): a senha nasce na tela (decisão do operador,
       // 21/10/2026). Textos APROVADOS por ele em 27/10/2026 (P81). Enquanto confirma, valem os de cima
       // (`confirmando`, `demorando`); os avisos de senha curta, longa ou só de espaços são os de `senhaNova`;
@@ -614,7 +620,8 @@ export const pt = {
       confirmando: "Confirmando sua assinatura…",
       confirmada: "Assinatura confirmada. Bons estudos!",
       comecar: "Começar a estudar",
-      demorando: "Está demorando mais que o normal. Seu pagamento não se perde: esta página continua conferindo.",
+      // Com a saída pelo suporte (E15, aprovado pelo operador em 30/10/2026).
+      demorando: "Está demorando mais que o normal. Seu pagamento não se perde: esta página continua conferindo. Se passar de alguns minutos, escreva para suporte@jilsonsantana.com.",
       // Quando o servidor recusa a pergunta "já valeu?" algumas vezes seguidas (P108, aprovada pelo operador em 29/10/2026).
       naoConfirmouAgora: "Não conseguimos confirmar agora. Seu pagamento não se perde: entre com \"Receber código de acesso\" ou tente de novo em alguns minutos.",
       // O PIX PRÉ-PAGO (etapa 4.9, passo 2b). Textos APROVADOS pelo operador em 28/10/2026: a escolha
@@ -676,7 +683,8 @@ export const pt = {
       salvando: "Salvando…",
       cartaoAtualizado: "Cartão atualizado.",
       cartaoAtualizadoEPago: "Cartão atualizado e pagamento confirmado.",
-      erroDoCartao: "Não foi possível salvar o cartão. Confira os dados e tente de novo.",
+      // Com a saída pelo suporte (E15, aprovado pelo operador em 30/10/2026).
+      erroDoCartao: "Não foi possível salvar o cartão. Confira os dados e tente de novo; se continuar, escreva para suporte@jilsonsantana.com.",
       // AS TELAS DA SESSÃO (b): mudar de plano, cancelar e a confirmação do banco. Textos em
       // português APROVADOS pelo operador em 11/10/2026, bloco a bloco. O INGLÊS é rascunho do
       // agente: ele será revisado com o Antigravity (pendência P72). `{valor}` e `{data}` são

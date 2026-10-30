@@ -107,8 +107,11 @@ export function CampoDoCartao({ pix = false, aoFicarPronto, aoFalhar }: { pix?: 
   return <PaymentElement options={opcoesDoElemento(pix)} onReady={() => aoFicarPronto?.()} onLoadError={() => aoFalhar?.()} />;
 }
 
-/** Deu certo, ou não — com a frase da Stripe quando ela é para o aluno ler (cartão recusado, dado faltando). */
-export type Desfecho = { ok: true } | { ok: false; mensagem: string | null };
+/**
+ * Deu certo, ou não — com a frase da Stripe quando ela é para o aluno ler (cartão recusado, dado faltando). `recusado`:
+ * o banco recusou o cartão (`card_declined`) — a tela de assinar sugere o Pix, quando ele está no ar (E15).
+ */
+export type Desfecho = { ok: true } | { ok: false; mensagem: string | null; recusado?: boolean };
 
 export type Cartao = {
   /** Confere o que o aluno preencheu, antes de criar qualquer coisa no servidor. */
@@ -120,10 +123,10 @@ export type Cartao = {
   confirmar: (segredo: string, tipo: "pagamento" | "cartao" | "pix", voltarPara: string, pagador?: { email: string }) => Promise<Desfecho>;
 };
 
-/** Só os erros de cartão e de preenchimento trazem frase para o aluno; o resto vira a frase da escola. */
-function falhou(erro: StripeError): Desfecho {
+/** Só os erros de cartão e de preenchimento trazem frase para o aluno; o resto vira a frase da escola. Função pura. */
+export function falhou(erro: Pick<StripeError, "type" | "code" | "message">): Desfecho {
   const paraOAluno = erro.type === "card_error" || erro.type === "validation_error";
-  return { ok: false, mensagem: paraOAluno ? (erro.message ?? null) : null };
+  return { ok: false, mensagem: paraOAluno ? (erro.message ?? null) : null, recusado: erro.type === "card_error" && erro.code === "card_declined" };
 }
 
 /** O cartão que o aluno está preenchendo. Só dentro de `CartaoProvider`. */

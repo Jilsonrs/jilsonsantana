@@ -124,7 +124,7 @@ describe("AssinaturaConcluidaPage", () => {
     let sim = false;
     getSituacaoDaAssinatura.mockImplementation(async () => ({ temAcesso: sim }));
     abrir(40);
-    expect(await screen.findByText("Está demorando mais que o normal. Seu pagamento não se perde: esta página continua conferindo.")).toBeTruthy();
+    expect(await screen.findByText("Está demorando mais que o normal. Seu pagamento não se perde: esta página continua conferindo. Se passar de alguns minutos, escreva para suporte@jilsonsantana.com.")).toBeTruthy();
     expect(screen.getByText("Confirmando sua assinatura…")).toBeTruthy();
     sim = true;
     expect(await screen.findByText("Assinatura confirmada. Bons estudos!")).toBeTruthy();

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { comoMostrarOQr, OPCOES_DO_STRIPE, opcoesDoCampo, opcoesDoElemento, type PedidoDeCartao } from "./stripe-do-site";
+import { comoMostrarOQr, falhou, OPCOES_DO_STRIPE, opcoesDoCampo, opcoesDoElemento, type PedidoDeCartao } from "./stripe-do-site";
 
 // AS OPÇÕES COM QUE O CAMPO DA STRIPE ABRE (etapa 4.9, passo 6 — 29/10/2026). As telas simulam o módulo
 // inteiro, então nenhum teste de tela vê estas linhas; e o Stripe.js recusa opção errada EM SILÊNCIO (o
@@ -74,5 +74,19 @@ describe("comoMostrarOQr (P115; achado 8 da segunda revisão do passo 6)", () =>
     expect(lidos).not.toHaveBeenCalled();
     await comoMostrarOQr("requires_payment_method", 9990, lidos);
     expect(lidos).toHaveBeenCalledTimes(1);
+  });
+});
+
+// O ERRO DA STRIPE COMO A TELA O LÊ (E15 da revisão ampla da cobrança, 30/10/2026): a frase da Stripe só para o erro de
+// cartão e de preenchimento; e o RECUSADO pelo banco (`card_declined`) marcado — é ele que faz a tela sugerir o Pix.
+describe("falhou", () => {
+  it("o cartão recusado pelo banco: a frase da Stripe e recusado; outro erro de cartão, a frase sem recusado", () => {
+    expect(falhou({ type: "card_error", code: "card_declined", message: "Seu cartão foi recusado." })).toEqual({ ok: false, mensagem: "Seu cartão foi recusado.", recusado: true });
+    expect(falhou({ type: "card_error", code: "incorrect_cvc", message: "O código está errado." })).toEqual({ ok: false, mensagem: "O código está errado.", recusado: false });
+  });
+
+  it("o preenchimento: a frase, sem recusado; erro que não é para o aluno ler: sem frase (a tela usa a da escola)", () => {
+    expect(falhou({ type: "validation_error", code: "incomplete_number", message: "O número do cartão está incompleto." })).toEqual({ ok: false, mensagem: "O número do cartão está incompleto.", recusado: false });
+    expect(falhou({ type: "api_error", code: undefined, message: "mensagem crua" })).toEqual({ ok: false, mensagem: null, recusado: false });
   });
 });

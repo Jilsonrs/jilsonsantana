@@ -110,7 +110,8 @@ export function FormularioDeAssinatura({
           // No Pix, o e-mail de quem paga vai na confirmação — o que o SERVIDOR devolveu (P113).
           const pagador = criada.tipo === "pix" && criada.email ? { email: criada.email } : null;
           const confirmado = pagador ? await cartao.confirmar(criada.segredo, criada.tipo, voltarPara, pagador) : await cartao.confirmar(criada.segredo, criada.tipo, voltarPara);
-          if (!confirmado.ok) return setErro(confirmado.mensagem ?? t.erro);
+          // O cartão recusado, com o Pix no ar: a frase que sugere o Pix (E15); senão, a da Stripe.
+          if (!confirmado.ok) return setErro(confirmado.recusado && pixNoAr ? t.cartaoRecusado : (confirmado.mensagem ?? t.erro));
         }
         aoConcluir();
       });
