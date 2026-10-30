@@ -112,34 +112,32 @@ describe("encerrar a assinatura para reembolsar", () => {
 
 // A CONTESTAÇÃO (E7 da revisão ampla da cobrança, 30/10/2026): a marca ANTES do cancelamento (sem ela, a cancelada daria
 // acesso até o fim do período), na hora, uma vez só pela mesma contestação (a marca, e a encerrada que não se cancela de
-// novo), com a chave de repetição na janela de 5 min (a falha guardada pela Stripe não se repete o dia todo), e a fatura
-// em aberto anulada depois.
+// novo), SEM chave de repetição (medido na prova do E14: com ela, a marca repetida devolvia a resposta guardada e o
+// cancelamento repetido dava 404), e a fatura em aberto anulada depois.
 describe("cancelar a assinatura contestada", () => {
-  const AGORA = new Date("2031-05-01T10:00:00Z");
-  const janela = Math.floor(AGORA.getTime() / (5 * 60 * 1000));
-
-  it("primeiro a marca, depois o cancelamento NA HORA — sem crédito nem fatura nova, com as chaves de repetição na janela", async () => {
+  it("primeiro a marca, depois o cancelamento NA HORA — sem crédito nem fatura nova, e sem chave de repetição", async () => {
     falsa.subscriptions.update.mockResolvedValue({ id: "sub_1", status: "active", latest_invoice: { id: "in_1", status: "paid" } });
     falsa.subscriptions.cancel.mockResolvedValue({ id: "sub_1", status: "canceled" });
-    await cancelarPorContestacao("sub_1", "dp_1", AGORA);
-    expect(falsa.subscriptions.update).toHaveBeenCalledWith("sub_1", { metadata: { contestacao: "dp_1" }, expand: ["latest_invoice"] }, { idempotencyKey: `contestacao/dp_1/marca/${janela}` });
-    expect(falsa.subscriptions.cancel).toHaveBeenCalledWith("sub_1", { prorate: false, invoice_now: false, cancellation_details: { comment: "Contestação dp_1" } }, { idempotencyKey: `contestacao/dp_1/cancelamento/${janela}` });
+    await cancelarPorContestacao("sub_1", "dp_1");
+    expect(falsa.subscriptions.update.mock.calls).toEqual([["sub_1", { metadata: { contestacao: "dp_1" }, expand: ["latest_invoice"] }]]);
+    expect(falsa.subscriptions.cancel.mock.calls).toEqual([["sub_1", { prorate: false, invoice_now: false, cancellation_details: { comment: "Contestação dp_1" } }]]);
     expect(falsa.subscriptions.update.mock.invocationCallOrder[0]).toBeLessThan(falsa.subscriptions.cancel.mock.invocationCallOrder[0] ?? 0);
     expect(falsa.invoices.voidInvoice).not.toHaveBeenCalled();
   });
 
-  it("a chave muda depois de 5 minutos: a falha que a Stripe guarda não se repete o dia todo", async () => {
-    falsa.subscriptions.update.mockResolvedValue({ id: "sub_1", status: "canceled" });
-    await cancelarPorContestacao("sub_1", "dp_1", AGORA);
-    await cancelarPorContestacao("sub_1", "dp_1", new Date(AGORA.getTime() + 5 * 60 * 1000));
-    const chaves = falsa.subscriptions.update.mock.calls.map((chamada) => (chamada[2] as { idempotencyKey: string }).idempotencyKey);
-    expect(new Set(chaves).size).toBe(2);
+  it("o aviso que volta depois de uma falha no meio: a marca de novo, com a resposta de AGORA — a já cancelada não se cancela de novo", async () => {
+    falsa.subscriptions.update.mockResolvedValueOnce({ id: "sub_1", status: "active", latest_invoice: { id: "in_1", status: "paid" } }).mockResolvedValueOnce({ id: "sub_1", status: "canceled", latest_invoice: { id: "in_1", status: "paid" } });
+    falsa.subscriptions.cancel.mockResolvedValue({ id: "sub_1", status: "canceled" });
+    await cancelarPorContestacao("sub_1", "dp_1");
+    await cancelarPorContestacao("sub_1", "dp_1");
+    expect(falsa.subscriptions.update.mock.calls[0]).toEqual(falsa.subscriptions.update.mock.calls[1]);
+    expect(falsa.subscriptions.cancel).toHaveBeenCalledTimes(1);
   });
 
   it("a já encerrada (a reentrega do aviso): só a marca, sem cancelar de novo", async () => {
     for (const status of ["canceled", "incomplete_expired"]) {
       falsa.subscriptions.update.mockResolvedValue({ id: "sub_1", status });
-      await cancelarPorContestacao("sub_1", "dp_1", AGORA);
+      await cancelarPorContestacao("sub_1", "dp_1");
     }
     expect(falsa.subscriptions.update).toHaveBeenCalledTimes(2);
     expect(falsa.subscriptions.cancel).not.toHaveBeenCalled();
@@ -147,15 +145,15 @@ describe("cancelar a assinatura contestada", () => {
 
   it("a marca não foi gravada: nada se cancela, e a falha sobe sem a mensagem da Stripe", async () => {
     falsa.subscriptions.update.mockRejectedValue(foraDoAr());
-    await expect(cancelarPorContestacao("sub_1", "dp_1", AGORA)).rejects.toThrow(/o cancelamento da assinatura contestada/);
-    await expect(cancelarPorContestacao("sub_1", "dp_1", AGORA)).rejects.not.toThrow(/sk_test_abc/);
+    await expect(cancelarPorContestacao("sub_1", "dp_1")).rejects.toThrow(/o cancelamento da assinatura contestada/);
+    await expect(cancelarPorContestacao("sub_1", "dp_1")).rejects.not.toThrow(/sk_test_abc/);
     expect(falsa.subscriptions.cancel).not.toHaveBeenCalled();
   });
 
   it("a marca gravou e o cancelamento falhou: a falha SOBE (o aviso volta), sem a mensagem da Stripe", async () => {
     falsa.subscriptions.update.mockResolvedValue({ id: "sub_1", status: "active", latest_invoice: { id: "in_1", status: "open" } });
     falsa.subscriptions.cancel.mockRejectedValue(foraDoAr());
-    const falha: unknown = await cancelarPorContestacao("sub_1", "dp_1", AGORA).catch((erro: unknown) => erro);
+    const falha: unknown = await cancelarPorContestacao("sub_1", "dp_1").catch((erro: unknown) => erro);
     if (!(falha instanceof Error)) throw new Error("o cancelamento devia falhar");
     expect(falha.message).toContain("o cancelamento da assinatura contestada");
     expect(falha.message).not.toContain("sk_test_abc");
@@ -167,13 +165,13 @@ describe("cancelar a assinatura contestada", () => {
     falsa.subscriptions.update.mockResolvedValue({ id: "sub_1", status: "past_due", latest_invoice: { id: "in_aberta", status: "open" } });
     falsa.subscriptions.cancel.mockResolvedValue({ id: "sub_1", status: "canceled" });
     falsa.invoices.voidInvoice.mockResolvedValue({ id: "in_aberta", status: "void" });
-    await cancelarPorContestacao("sub_1", "dp_1", AGORA);
+    await cancelarPorContestacao("sub_1", "dp_1");
     expect(falsa.invoices.voidInvoice).toHaveBeenCalledWith("in_aberta");
     expect(falsa.subscriptions.cancel.mock.invocationCallOrder[0]).toBeLessThan(falsa.invoices.voidInvoice.mock.invocationCallOrder[0] ?? 0);
     expect(erro).not.toHaveBeenCalled();
 
     falsa.invoices.voidInvoice.mockRejectedValue(foraDoAr());
-    await expect(cancelarPorContestacao("sub_1", "dp_2", AGORA)).resolves.toBeUndefined();
+    await expect(cancelarPorContestacao("sub_1", "dp_2")).resolves.toBeUndefined();
     expect(erro.mock.calls.flat().join(" ")).toContain("a cobrança em aberto NÃO foi anulada");
     erro.mockRestore();
   });

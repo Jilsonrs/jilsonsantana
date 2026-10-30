@@ -156,14 +156,26 @@
 > a falha do fuso do banco. **Conferido no registro do job (30/10/2026):** a rodada das 12h UTC (a primeira com o E6) fez a
 > conferência das ativas vencidas — 0 conferidas, 0 com falha — e saiu com código 0.
 >
-> **PARA CONTINUAR NO PRÓXIMO CHAT (a ordem — atualizado em 30/10/2026, depois da publicação `0f8c0c7`):**
+> **Publicado em 30/10/2026: `5313557`** — a 4.9b, grupos 3 e 4: `3e4af1d` e `d2c4a12` (o grupo 3 e os achados da revisão
+> dele), `002e5ce` (E15), `b2376a4` (E16 e E18, com a migration `20261030120000_email_de_confirmacao`), `50c508e` (E14),
+> `b569ae3` (o que a prova na área restrita achou), `c623002` (os achados da revisão do grupo 4 e a P131) e `37ab510` (a
+> prova pela rota); ordem do operador: *"Publicar agora"*, depois das revisões de segurança sem P0 nem P1 aberto e da
+> prova pela rota (16 de 16). CI e publicação com sucesso. **Revisão `jilson-prod-00050`** (100% do tráfego), conferida de
+> fora: o job das migrations aplicou a `20261030120000_email_de_confirmacao` (*"All migrations have been successfully
+> applied"*) e o banco de produção tem o tipo `CONFIRMADA`, com 0 tabelas sem RLS (leitura); a subida com *"a cobrança
+> confere — […] os 11 avisos, na linha da API do site (2026-09-30.endive)"* e nenhuma linha de erro; a página, 200; a
+> sessão sem login, 401, com a versão nova do app (`mvv00bvk-4af06e93`); `/aluno/pagar-com-pix`, 200; o job da rodada na
+> mesma imagem do site. **Nenhum e-mail de confirmação saiu na publicação:** a única assinatura de produção (a de teste do
+> operador, de 10/10) é de fora da janela de 2 dias (leitura, antes de publicar).
+>
+> **PARA CONTINUAR NO PRÓXIMO CHAT (a ordem — atualizado em 30/10/2026, depois da publicação `5313557`):**
 > 1. **A revisão ampla da cobrança (a etapa 4.9b): o bloco de engenharia APROVADO (29/10/2026), na ordem do
 >    plano** — grupo 1 (E5, E4, E1, E3, E2) **FEITO e publicado (`f36e274`)**, com as correções C1 a C5; **o grupo 2 (E8, E10,
 >    E9, E7, E6), os R1 a R6, a P128 e os achados da revisão do grupo 2: FEITOS e publicados (`0f8c0c7`).** **O grupo 3
->    (E11, E12, E13, E17) e os achados da revisão dele, e do grupo 4 o E15, o E16 e o E18: FEITOS na `dev`, ainda não
->    publicados** (o E18 traz uma migration), **e o E14 também (o grupo 4 inteiro)**, com a revisão do grupo 4 feita (nenhum
->    P0; o P1 respondido por ele — P131, "manter logada" —; os P2/P3 fechados), e a prova pela rota do E14 feita (16 de 16).
->    **O próximo:** a ordem dele para publicar (traz a migration do E18). Uma
+>    (E11, E12, E13, E17) e o grupo 4 (E14, E15, E16, E18), com os achados das duas revisões e a P131: FEITOS e publicados
+>    (`5313557`).** **O bloco de engenharia da 4.9b está todo no ar.** Fica, da 4.9b, o que é do operador: a P126 (as
+>    conferências nos painéis) e a P125 (quando ele for criar um desses códigos). O achado da contestação (E7: a chave de
+>    repetição que fazia a reentrega do aviso falhar por até 5 min) foi corrigido por ordem dele (30/10/2026). Uma
 >    revisão de segurança por grupo, só do que mudou, antes de publicar. Um commit por parte. **Sem nova rodada de revisão a cada correção** *(operador, 29/10/2026: "fechando
 >    P1, P2, P3 e seguindo em frente e rodando os testes no que precisar para não ficar em polimento infinito")*:
 >    P0 e P1 travam a publicação; P2 e P3 se fecham com teste e mutação, sem revisar de novo. A P128 (o fuso do
@@ -6342,14 +6354,21 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             (`paraAviso`: a contestação, com o pagamento, o motivo, o valor e o prazo; o aviso de fraude, com a
             cobrança, o pagamento e o tipo). A contestação acha a assinatura pelo pagamento (como a devolução) e, com a
             trava dela, `cancelarPorContestacao` (`stripe-reembolso.ts`) põe a MARCA `contestacao` na assinatura e só
-            então a cancela na hora (sem crédito nem fatura nova; as chaves de repetição fazem valer uma vez; a já
-            encerrada não se cancela de novo); a sincronia de sempre corta o acesso e derruba as sessões —
+            então a cancela na hora (sem crédito nem fatura nova; vale uma vez pela marca, que é a mesma, e pela já
+            encerrada que não se cancela de novo — **sem chave de repetição desde 30/10/2026**, ver abaixo); a sincronia
+            de sempre corta o acesso e derruba as sessões —
             `paraAssinaturaNaStripe` não conta como pago o período da assinatura com a marca (sem ela, a cancelada
             daria acesso até o fim do período). Alertas (`depois-do-aviso.ts`, uma vez por aviso): **`[stripe]
             contestação …`** com o valor, o motivo, como ficou a assinatura e o prazo para responder no painel — também
             quando o pagamento não é de uma assinatura da escola —; **`[stripe] aviso de fraude …`**, que só alerta. A
             Stripe que falha não marca o aviso (ele volta). Testes: `contestacao.test.ts` (novo, 4), `stripe.test.ts`
-            (+4), `stripe-reembolso.test.ts` (+3). **Mutação: 10 de 10 reprovaram.** **A P129, feita pelo operador em
+            (+4), `stripe-reembolso.test.ts` (+3). **Mutação: 10 de 10 reprovaram.** **Conserto de 30/10/2026 (ordem do
+            operador, depois da publicação `5313557`):** a prova do E14 mediu que a chave de repetição devolve, na marca,
+            a resposta GUARDADA da primeira vez, e que a Stripe a ignora no cancelamento (cancelar a já cancelada dá 404) —
+            o aviso da contestação que voltasse em menos de 5 min, depois de uma falha no meio, falharia até a janela
+            virar. As chaves saíram: a resposta da marca é a de agora, e a já cancelada não se cancela de novo. Provado na
+            área restrita (cancelar duas vezes seguidas, sem erro, e o período sem contar como pago); teste novo; mutação
+            2 de 2. **A P129, feita pelo operador em
             30/10/2026 (conferida pelo print dele):** o endereço de avisos da conta de verdade passou a assinar os 10
             avisos — entraram `charge.dispute.created` e `radar.early_fraud_warning.created` —, na versão
             `2026-09-30.endive`, a mesma da biblioteca. *Docs check (context7): Stripe → `/websites/stripe` → 1 consulta (a
