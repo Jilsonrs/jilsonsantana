@@ -38,8 +38,14 @@ describe("o espelho a partir da assinatura da Stripe", () => {
     expect(paraAssinaturaNaStripe(assinatura()).plano).toBeNull();
   });
 
-  it("a atrasada encerrada para pagar com Pix (E14): a marca nos metadados; sem ela, não", () => {
-    expect(paraAssinaturaNaStripe(assinatura({ status: "canceled", metadata: { trocadaPorPix: "2031-05-01T10:00:00.000Z" } })).trocadaPorPix).toBe(true);
+  // A atrasada encerrada para pagar com Pix (E14): é o PRÓPRIO encerramento que diz — o comentário que vai com ele (achado P2
+  // da revisão do grupo 4: uma marca gravada antes ficaria se o encerramento falhasse, e calaria um "terminou" de verdade).
+  it("a atrasada encerrada para pagar com Pix (E14): encerrada COM o comentário; viva, ou com outro comentário, ou só com a marca antiga, não", () => {
+    const com = (status: string, comment: string | null, metadata: Record<string, string> = {}) => ({ ...assinatura({ status, metadata }), cancellation_details: { comment, feedback: null, reason: "cancellation_requested" } }) as unknown as Stripe.Subscription;
+    expect(paraAssinaturaNaStripe(com("canceled", "Trocada pelo Pix")).trocadaPorPix).toBe(true);
+    expect(paraAssinaturaNaStripe(com("canceled", "Contestação dp_1")).trocadaPorPix).toBe(false);
+    expect(paraAssinaturaNaStripe(com("past_due", "Trocada pelo Pix")).trocadaPorPix).toBe(false);
+    expect(paraAssinaturaNaStripe(com("active", null, { trocadaPorPix: "sim" })).trocadaPorPix).toBe(false);
     expect(paraAssinaturaNaStripe(assinatura({ status: "canceled" })).trocadaPorPix).toBe(false);
   });
 

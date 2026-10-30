@@ -1,5 +1,5 @@
 import Stripe from "stripe";
-import { erroSemMensagem, METADADO_DA_CONTESTACAO, METADADO_DA_TROCA_POR_PIX, stripe } from "./stripe.js";
+import { COMENTARIO_DA_TROCA_POR_PIX, erroSemMensagem, METADADO_DA_CONTESTACAO, stripe } from "./stripe.js";
 import { cobrancaDoPagamento, pagamentosDaFatura } from "./stripe-devolucao.js";
 import { paraMotivoNaStripe, type MotivoDado } from "./stripe-assinatura.js";
 import { anularFatura } from "./stripe-plano.js";
@@ -123,20 +123,16 @@ export async function cancelarPorContestacao(assinaturaId: string, contestacaoId
 }
 
 /**
- * ENCERRA NA HORA a assinatura ATRASADA que a pessoa vai pagar com Pix (4.9b, E14 — decisão do operador, P118): primeiro a
- * marca (`METADADO_DA_TROCA_POR_PIX`, que cala o e-mail de "terminou"), depois o encerramento — sem crédito e sem fatura
- * nova, como o cancelar com a cobrança atrasada. Quem anula a cobrança em aberto é quem chama, depois disto: anulada com
- * a assinatura ainda viva, a Stripe a dá como `active` de novo (medido, 11/10/2026).
- * REPETIR NÃO FAZ MAL, e SEM chave de repetição `[FATO — medido na área restrita, 30/10/2026]`: a chave não vale para
- * encerrar (a Stripe a ignora nesse pedido; encerrar de novo a já encerrada dá 404 `resource_missing`), e na marca ela
- * devolveria a resposta GUARDADA da primeira vez — a assinatura ainda atrasada —, e a já encerrada seria encerrada de
- * novo. Gravar a mesma marca outra vez não muda nada; a resposta, então, é a de agora: já encerrada, não se encerra.
+ * ENCERRA NA HORA a assinatura ATRASADA que a pessoa vai pagar com Pix (4.9b, E14 — decisão do operador, P118): sem crédito
+ * e sem fatura nova, como o cancelar com a cobrança atrasada, com o comentário `COMENTARIO_DA_TROCA_POR_PIX` — é ele que
+ * cala o e-mail de "terminou", e vai no mesmo pedido do encerramento. Quem anula a cobrança em aberto é quem chama, depois
+ * disto: anulada com a assinatura ainda viva, a Stripe a dá como `active` de novo (medido, 11/10/2026).
+ * SEM chave de repetição `[FATO — medido na área restrita, 30/10/2026]`: a Stripe a ignora no encerramento, e encerrar de
+ * novo a já encerrada dá 404 `resource_missing`. Quem chama relê a assinatura com a trava e só encerra a atrasada.
  */
 export async function encerrarParaOPix(assinaturaId: string): Promise<void> {
   try {
-    const marcada = await stripe().subscriptions.update(assinaturaId, { metadata: { [METADADO_DA_TROCA_POR_PIX]: "sim" } });
-    if (marcada.status === "canceled" || marcada.status === "incomplete_expired") return;
-    await stripe().subscriptions.cancel(assinaturaId, { prorate: false, invoice_now: false, cancellation_details: { comment: "Trocada pelo Pix" } });
+    await stripe().subscriptions.cancel(assinaturaId, { prorate: false, invoice_now: false, cancellation_details: { comment: COMENTARIO_DA_TROCA_POR_PIX } });
   } catch (erro) {
     throw erroSemMensagem(erro, "o encerramento da assinatura atrasada para o Pix");
   }

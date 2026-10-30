@@ -47,10 +47,12 @@ export type AvisoDeFraude = { id: string; cobranca: string; pagamento: string | 
 export const METADADO_DA_CONTESTACAO = "contestacao";
 
 /**
- * Nos metadados da assinatura ATRASADA que a pessoa encerrou para pagar com Pix (4.9b, E14 — decisão do operador, P118):
- * o "sua assinatura terminou — reative" não sai para ela (`avisos-da-assinatura.ts`), porque ela está pagando agora.
+ * O comentário do ENCERRAMENTO da assinatura atrasada que a pessoa trocou pelo Pix (4.9b, E14 — decisão do operador, P118):
+ * com ele, o "sua assinatura terminou — reative" não sai (`avisos-da-assinatura.ts`), porque ela está pagando agora. Vai NO
+ * PRÓPRIO encerramento, e não numa marca gravada antes (achado P2 da revisão do grupo 4, 30/10/2026): uma marca que ficasse
+ * de um encerramento que falhou calaria o "terminou" de um fim de verdade, meses depois.
  */
-export const METADADO_DA_TROCA_POR_PIX = "trocadaPorPix";
+export const COMENTARIO_DA_TROCA_POR_PIX = "Trocada pelo Pix";
 
 /**
  * O PIX PRÉ-PAGO que CAIU (etapa 4.9 — billing.md → *Formas de pagamento*): o aviso
@@ -111,7 +113,7 @@ export type AssinaturaNaStripe = {
   proximaTentativa?: Date | null;
   /** Encerrada porque as tentativas de cobrança acabaram (`cancellation_details.reason`). Só escolhe o texto do e-mail. */
   encerradaSemPagamento?: boolean;
-  /** A atrasada que a pessoa encerrou para pagar com Pix (E14 — `METADADO_DA_TROCA_POR_PIX`). Só cala o e-mail de "terminou". */
+  /** A atrasada que a pessoa encerrou para pagar com Pix (E14 — `COMENTARIO_DA_TROCA_POR_PIX`). Só cala o e-mail de "terminou". */
   trocadaPorPix?: boolean;
   /** O Pix pré-pago de que ela nasceu (etapa 4.9), pelos metadados; vazio = recorrente. */
   pixPaymentIntentId?: string | null;
@@ -838,7 +840,7 @@ export function paraAssinaturaNaStripe(assinatura: Stripe.Subscription, devolvid
   const proxima = typeof ultima === "object" && ultima !== null && ultima.status === "open" ? ultima.next_payment_attempt : null;
   const proximaTentativa = proxima ? new Date(proxima * 1000) : null;
   const encerradaSemPagamento = assinatura.cancellation_details?.reason === "payment_failed";
-  const trocadaPorPix = Boolean(assinatura.metadata[METADADO_DA_TROCA_POR_PIX]);
+  const trocadaPorPix = assinatura.status === "canceled" && assinatura.cancellation_details?.comment === COMENTARIO_DA_TROCA_POR_PIX;
   // O Pix pré-pago de que ela nasceu (etapa 4.9): vazio na recorrente.
   const pixPaymentIntentId = assinatura.metadata[METADADO_DO_PIX] || null;
   const resumoDaTentativa = assinatura.metadata[M.tentativa] || null;

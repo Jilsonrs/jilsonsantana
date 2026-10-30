@@ -161,8 +161,9 @@
 >    plano** — grupo 1 (E5, E4, E1, E3, E2) **FEITO e publicado (`f36e274`)**, com as correções C1 a C5; **o grupo 2 (E8, E10,
 >    E9, E7, E6), os R1 a R6, a P128 e os achados da revisão do grupo 2: FEITOS e publicados (`0f8c0c7`).** **O grupo 3
 >    (E11, E12, E13, E17) e os achados da revisão dele, e do grupo 4 o E15, o E16 e o E18: FEITOS na `dev`, ainda não
->    publicados** (o E18 traz uma migration), **e o E14 também (o grupo 4 inteiro)**. **O próximo:** a revisão de segurança
->    de tudo desde `0af2891` e a ordem dele para publicar. Uma
+>    publicados** (o E18 traz uma migration), **e o E14 também (o grupo 4 inteiro)**, com a revisão do grupo 4 feita (nenhum
+>    P0; o P1 respondido por ele — P131, "manter logada" —; os P2/P3 fechados). **O próximo:** a prova pela rota do E14 e a
+>    ordem dele para publicar. Uma
 >    revisão de segurança por grupo, só do que mudou, antes de publicar. Um commit por parte. **Sem nova rodada de revisão a cada correção** *(operador, 29/10/2026: "fechando
 >    P1, P2, P3 e seguindo em frente e rodando os testes no que precisar para não ficar em polimento infinito")*:
 >    P0 e P1 travam a publicação; P2 e P3 se fecham com teste e mutação, sem revisar de novo. A P128 (o fuso do
@@ -6407,7 +6408,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             pagar com Pix, entre na escola e escolha 'Pagar com Pix' em Faturamento."* (só com o Pix no ar). **Servidor:**
             `POST /api/billing/minha-assinatura/pix` (só o CPF ou CNPJ no corpo; `lib/pix-da-atrasada.ts`): o CPF na ficha
             ANTES de tudo (recusado, nada muda) → a atrasada relida e ENCERRADA com a trava dela, com a marca
-            `trocadaPorPix` (que cala o "sua assinatura terminou") → a cobrança em aberto ANULADA depois de encerrar (paga no
+            o comentário "Trocada pelo Pix" (que cala o "sua assinatura terminou") → a cobrança em aberto ANULADA depois de encerrar (paga no
             instante: alerta e sem Pix; não anulada: alerta) → o Pix pré-pago de sempre, do plano da atrasada, pelo preço do
             servidor. A pessoa continua logada. Encerrar só depois do Pix pago não é seguro (a Stripe tentaria o cartão de
             novo e os dois seriam cobrados) — por isso o texto avisa que o acesso volta quando o Pix cair. Docs check
@@ -6420,13 +6421,13 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             e-mails 6; uma sobreviveu antes — o campo do Pix que não confere não tinha teste; ganhou).
         - [x] **A prova na área restrita, do lado da Stripe** (30/10/2026, roteiro fora do repositório com as funções de
               verdade e um relógio de teste no passado): a renovação falhou de verdade (`past_due`, fatura `open`); encerrar
-              deixou `canceled` com a marca e o comentário, a fatura ficou `void`, e a assinatura lida para o espelho diz
-              encerrada, sem período pago, `trocadaPorPix` e o plano. **Ela achou dois defeitos que os testes não pegavam,
-              corrigidos com teste:** (1) a marca levava a hora, e o pedido repetido com a mesma chave de repetição era
-              recusado (`StripeIdempotencyError`) — quem tentasse de novo depois de uma falha no meio teria erro por 5 min;
-              (2) `[FATO — medido]` a chave de repetição não vale para encerrar (a Stripe a ignora; encerrar a já encerrada dá
-              404), e na marca ela devolve a resposta GUARDADA da primeira vez — então a marca vai sem chave (gravar a mesma
-              marca de novo não muda nada) e a já encerrada não se encerra de novo.
+              deixou `canceled` com o comentário, a fatura ficou `void`, e a assinatura lida para o espelho diz encerrada, sem
+              período pago, "trocada pelo Pix" e o plano. **Ela achou dois defeitos que os testes não pegavam:** (1) a marca
+              gravada antes levava a hora, e o pedido repetido com a mesma chave de repetição era recusado
+              (`StripeIdempotencyError`); (2) `[FATO — medido]` a chave de repetição não vale para encerrar (a Stripe a ignora;
+              encerrar a já encerrada dá 404 `resource_missing`), e na marca ela devolve a resposta GUARDADA da primeira vez. Os
+              dois sumiram com o achado P2 da revisão abaixo: não há mais marca antes — o comentário vai no próprio
+              encerramento, sem chave — e a rota relê a assinatura com a trava e só encerra a atrasada.
         - [ ] **A prova pela rota** (antes de publicar, ou junto da P126): servidor local com o banco de dev, conta
               descartável com uma atrasada de teste, `POST /api/billing/minha-assinatura/pix`, o Pix pago
               (`succeed_immediately`) e os avisos entregues ao servidor local: a pré-paga nasce, sai a confirmação e NÃO
@@ -6498,6 +6499,27 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             (cartão — `paraAssinaturaNaStripe`). A prévia (`email:previa`) monta os três. Testes:
             `avisos-da-assinatura.test.ts` (+8) e `stripe.test.ts` (+1). **Mutação: 12 de 12 reprovaram** (uma
             sobreviveu antes — a leitura do plano pelo intervalo não tinha teste; ganhou).
+      **A REVISÃO DO GRUPO 4** (30/10/2026, `security-vulnerability-reviewer`, Opus 5.5, esforço máximo, sobre
+      `d2c4a12..50c508e` — E15, E16, E18, E14): **nenhum P0.** Conferidos sem achado: no E14, a conta e a assinatura saem só da
+      sessão, o corpo só leva o CPF, o plano e o preço são do servidor, a ordem encerrar → anular, a cobrança paga no instante,
+      o espelho por um escritor só, as duas abas; no E16, o e-mail depois do commit e uma vez; no E18, a marca e a chave, sem
+      dobrar com as boas-vindas; a API aditiva, os pedaços do app e nenhum alerta novo que um anônimo dispare. **Um P1, que era
+      decisão do operador:** a regra escrita dizia que só o reembolso mantém a pessoa logada ao perder as aulas, e o código já
+      tinha o cancelar da atrasada (decisão dele, 11/10/2026) — e agora o Pix da atrasada, sem o qual quem ainda está nos 3
+      dias sai da conta no meio do QR. **Respondida (P131, 30/10/2026): "Manter logada".** A regra passou a listar as três
+      operações (`CLAUDE.md` → Access Architecture, `assinaturas.ts`, `billing.md`). *Reabre se ele preferir que perder as
+      aulas sempre deslogue.* **Quatro P2/P3, fechados com teste e mutação (8 de 8 reprovaram):**
+      - [x] **(P2) Encerrada e a sincronia falhou** (Stripe lenta): com o espelho velho ("ainda tem aulas", nos 3 dias), a porta
+            do Pix respondia "já é assinante", sem QR e com o cartão já encerrado. **FEITO:** confere de novo (mantendo a
+            sessão); sem conseguir, 409 `Ocupada` (tentar de novo), nunca "já é assinante".
+      - [x] **(P2) A marca gravada ANTES do encerramento** ficava se ele falhasse, e calaria o "terminou" de um fim de verdade,
+            meses depois. **FEITO:** "trocada pelo Pix" agora é o comentário do PRÓPRIO encerramento (encerrada E com o
+            comentário — `COMENTARIO_DA_TROCA_POR_PIX`); a marca saiu. Medido de novo na área restrita. Isso também fecha o
+            terceiro achado (a chave de repetição da marca), que a prova já tinha encontrado.
+      - [x] **(P3) O aviso de senha criada que falha ao ser montado** (os textos que não vêm do banco) derrubava o 200 já
+            ganho: a senha gravada, a sessão sem abrir. **FEITO:** nunca lança — vira alerta `[email]`.
+      - [x] **(P3) O CPF ia para a ficha sem a trava da conta:** duas abas juntas trocariam o número as duas. **FEITO:** com a
+            trava da conta; ocupada, 409 `Ocupada`.
       **A REVISÃO DE SEGURANÇA DO GRUPO 1** (29/10/2026, `security-vulnerability-reviewer`, Opus 5.5, esforço máximo,
       sobre `76742f9..bdcc04b`): **nenhum P0.** Dois P1 da mesma causa — **dois alertas novos que um robô dispara à
       vontade** (o do E5, com um cabeçalho de mentira de formato certo; o do E3, sem login): juntos, uns 192 por dia

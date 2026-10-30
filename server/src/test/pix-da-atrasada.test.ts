@@ -278,6 +278,58 @@ describe("POST /api/billing/minha-assinatura/pix — encerrar e pagar", () => {
     expect((await espelho()).status).toBe("past_due");
   });
 
+  // ACHADO P2 DA REVISÃO DO GRUPO 4 (30/10/2026): encerrada na Stripe, e a sincronia da operação falhou — com o espelho velho
+  // ("ainda tem aulas", nos 3 dias), a porta do Pix respondia "já é assinante", sem QR, com o cartão já encerrado.
+  it("ainda nos 3 dias, encerrada e a sincronia falhou: confere de novo e gera o Pix — nunca 'já é assinante'", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    await prisma.subscription.update({ where: { stripeSubscriptionId: SUB }, data: { currentPeriodEnd: falhaHa(1) } });
+    detalhes = { pagoAte: falhaHa(1) };
+    naStripe = { pagoAte: falhaHa(1) };
+    buscarAssinatura.mockRejectedValueOnce(new Error("[stripe] a Stripe demorou"));
+    const res = await pagarAAtrasada();
+    expect([res.status, res.body.estado]).toEqual([200, "pagar"]);
+    expect((await espelho()).status).toBe("canceled");
+    expect(criarPagamentoPix).toHaveBeenCalledTimes(1);
+    // A segunda conferência também mantém a pessoa logada (é ela que vai pagar o QR).
+    expect(await estaDentro()).toBe(true);
+  });
+
+  it("ainda nos 3 dias, encerrada e o espelho não acerta nem na segunda: 409 Ocupada (tentar de novo) — sem Pix e nunca 'já é assinante'", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    await prisma.subscription.update({ where: { stripeSubscriptionId: SUB }, data: { currentPeriodEnd: falhaHa(1) } });
+    detalhes = { pagoAte: falhaHa(1) };
+    buscarAssinatura.mockRejectedValue(new Error("[stripe] a Stripe fora do ar"));
+    const res = await pagarAAtrasada();
+    expect([res.status, res.body]).toEqual([409, { error: "Ocupada" }]);
+    expect(encerrarParaOPix).toHaveBeenCalledTimes(1);
+    expect(criarPagamentoPix).not.toHaveBeenCalled();
+  });
+
+  // ACHADO P3 DA REVISÃO DO GRUPO 4: o CPF ia para a ficha sem a trava da conta — duas abas juntas trocariam o número as duas.
+  it("outra aba desta conta pagando agora (a trava da conta ocupada): 409 Ocupada, sem mexer no CPF nem encerrar", async () => {
+    let soltar: () => void = () => {};
+    let travou: () => void = () => {};
+    const comATrava = new Promise<void>((resolve) => (travou = resolve));
+    const segurando = prisma.$transaction(
+      async (tx) => {
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`assinar:${memberId}`}))`;
+        travou();
+        await new Promise<void>((resolve) => (soltar = resolve));
+      },
+      { timeout: 20_000 },
+    );
+    await comATrava;
+    try {
+      const res = await pagarAAtrasada();
+      expect([res.status, res.body]).toEqual([409, { error: "Ocupada" }]);
+    } finally {
+      soltar();
+      await segurando;
+    }
+    expect(acertarNumeroFiscal).not.toHaveBeenCalled();
+    expect(encerrarParaOPix).not.toHaveBeenCalled();
+  });
+
   it("a assinatura ocupada (sendo acertada agora): 409 Ocupada, sem ir à Stripe para encerrar", async () => {
     await comAAssinaturaOcupada(async () => {
       const res = await pagarAAtrasada();

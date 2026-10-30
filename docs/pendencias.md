@@ -16,7 +16,7 @@
 > 5. **Item novo ganha o próximo número livre.** Número nunca se reutiliza, para que "P7" queira
 >    dizer sempre a mesma coisa em qualquer conversa.
 >
-> **Próximo número livre: P131** · Atualizada em 30/10/2026
+> **Próximo número livre: P132** · Atualizada em 30/10/2026
 >
 > **DESDE 12/10/2026 A ESCOLA É SÓ EM PORTUGUÊS E SÓ PARA O BRASIL** (decisão do operador; etapa
 > 4.6c do plano). A parte em inglês de qualquer item abaixo deixou de existir: revise só o

@@ -39,9 +39,10 @@ import { contaDoPedido, type SemContaDoVisitante } from "./pedido-do-visitante.j
 // assinatura antiga de quem já estava sem acesso, nunca deslogam ninguém. E isto NÃO é a
 // fronteira: quem só deixa o período pago vencer não recebe aviso da Stripe e continua logado —
 // quem tranca a aula é o gate, a cada pedido.
-// UMA EXCEÇÃO, decidida pelo operador (11/10/2026): depois do REEMBOLSO pedido pela própria
-// pessoa, ela continua logada — lê a confirmação e segue no site, sem as aulas. É a opção
-// `manterSessao`, que só a operação de reembolso do dono usa.
+// A EXCEÇÃO, decidida pelo operador, em TRÊS operações da própria pessoa: o REEMBOLSO e o CANCELAR
+// com a cobrança atrasada (11/10/2026) e o PIX DA ATRASADA (P131, 30/10/2026) — ela continua logada:
+// lê a confirmação, ou paga o QR, e segue no site, sem as aulas. É a opção `manterSessao`, que só
+// essas três operações usam (CLAUDE.md → Access Architecture).
 //
 // O AVISO DE DINHEIRO DEVOLVIDO (`charge.refunded`) fala de uma cobrança, não de uma assinatura:
 // a assinatura se acha pelo pagamento, e daí em diante é a sincronia de sempre — é o que faz o
@@ -97,7 +98,7 @@ function travar(tx: Prisma.TransactionClient, assinaturaId: string) {
 
 /**
  * COM a trava desta assinatura já tomada por `tx`: o que a Stripe diz AGORA vira o espelho.
- * `manterSessao`: quem perde o acesso NÃO é deslogado — só o reembolso pedido pelo dono.
+ * `manterSessao`: quem perde o acesso NÃO é deslogado — só nas três operações do dono (o reembolso, o cancelar da atrasada e o Pix da atrasada).
  */
 async function sincronizar(tx: Prisma.TransactionClient, assinaturaId: string, { manterSessao = false }: { manterSessao?: boolean } = {}): Promise<Sincronia> {
   // Na Stripe, AGORA. Se ela não responder, a exceção sobe: nada é gravado.

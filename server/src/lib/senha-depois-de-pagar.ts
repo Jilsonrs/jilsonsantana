@@ -74,15 +74,22 @@ export async function criarSenhaDepoisDePagar(tentativa: string, senha: string):
   return desfecho;
 }
 
-/** O e-mail "uma senha foi criada", para o `User.email` lido do nosso banco. Nunca lança (`enviarEmail`). */
+/**
+ * O e-mail "uma senha foi criada", para o `User.email` lido do nosso banco. NUNCA LANÇA (achado P3 da revisão do grupo 4):
+ * a senha já foi gravada, e uma falha aqui — ler os textos, montar — derrubaria o 200 já ganho e a sessão não abriria.
+ */
 async function avisarSenhaCriada(contaId: string, email: string): Promise<void> {
-  const t = (await getDict()).app.email.senhaCriada;
-  const entrar = enderecoDoSite("/login");
-  await enviarEmail({
-    para: email,
-    tipo: "senha-criada",
-    referencia: `conta:${contaId}`,
-    chave: `senha-criada/${contaId}`,
-    mensagem: { assunto: t.assunto, titulo: t.titulo, paragrafos: [t.criada, t.naoFoiVoce], ...(entrar ? { botao: { texto: t.botao, endereco: entrar } } : {}) },
-  });
+  try {
+    const t = (await getDict()).app.email.senhaCriada;
+    const entrar = enderecoDoSite("/login");
+    await enviarEmail({
+      para: email,
+      tipo: "senha-criada",
+      referencia: `conta:${contaId}`,
+      chave: `senha-criada/${contaId}`,
+      mensagem: { assunto: t.assunto, titulo: t.titulo, paragrafos: [t.criada, t.naoFoiVoce], ...(entrar ? { botao: { texto: t.botao, endereco: entrar } } : {}) },
+    });
+  } catch (erro) {
+    console.error(`[email] o aviso de senha criada da conta ${contaId} não saiu: ${erro instanceof Error ? erro.name : "falha sem tipo"}`);
+  }
 }

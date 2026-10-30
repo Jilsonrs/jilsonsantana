@@ -1453,7 +1453,8 @@ Stripe guardou o cartão de teste e o resumo passou a mostrá-lo:
   conta — trata a última fatura devolvida POR INTEIRO como não paga; a devolução parcial continua
   contando. Custa uma ida a mais à Stripe em cada busca da assinatura cuja última fatura tem
   pagamento. *Reabre se essa ida a mais pesar (a busca roda dentro da trava do aviso).*
-- **Depois do reembolso pedido pelo dono, a sessão fica** (`manterSessao`, só nessa operação).
+- **Depois do reembolso pedido pelo dono, a sessão fica** (`manterSessao` — a mesma exceção vale para o cancelar com a
+  cobrança atrasada, decisão de 11/10/2026, e para o Pix da atrasada, P131, 30/10/2026; só nessas três operações).
   Se a devolução deu certo e a sincronia falhou, quem acerta o espelho é o aviso da Stripe — e
   aí a pessoa é deslogada, como em toda perda de acesso.
 - **O aviso de dinheiro devolvido** (`charge.refunded`) traz só a cobrança: o servidor acha a
