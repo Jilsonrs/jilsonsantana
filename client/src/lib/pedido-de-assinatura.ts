@@ -5,7 +5,7 @@ import { getStoredAttribution } from "@/lib/attribution";
 import { esquecerPix, guardarPix } from "@/lib/pix-pendente";
 import { guardarTentativa, lerTentativa } from "@/lib/tentativa-de-assinar";
 
-/** O que a tela de assinar manda ao servidor: QUAL plano, o código (só no cartão), o CPF ou CNPJ e, sem login, o e-mail e as novidades. */
+/** O que a tela de assinar manda ao servidor: QUAL plano, o código (só no cartão), o CPF ou CNPJ e, sem login, o nome, o e-mail e as novidades. */
 export type PedidoDaTela = {
   semLogin: boolean;
   forma: FormaDePagamento;
@@ -13,6 +13,8 @@ export type PedidoDaTela = {
   /** O código promocional APLICADO (a prévia o aceitou). No Pix não existe: o Pix é sempre o preço cheio (decisão (b) da etapa 4.9). */
   codigo: string | null;
   documento: string;
+  /** Sem login (etapa 4.7, passo 9): vai para a conta que nasce do pagamento e para o lead — nunca para a Stripe. */
+  nome: string;
   email: string;
   novidades: boolean;
   /** Vai guardada com o segredo do Pix: a tela de concluído abre o QR de novo com ela, sem ler os planos. */
@@ -41,11 +43,12 @@ function pedirLogado({ forma, plano, codigo, documento }: PedidoDaTela): Promise
   return criarAssinatura(codigo ? { plano, codigo, documento } : { plano, documento });
 }
 
-async function pedirSemLogin({ forma, plano, codigo, documento, email, novidades }: PedidoDaTela): Promise<AssinaturaCriada> {
+async function pedirSemLogin({ forma, plano, codigo, documento, nome, email, novidades }: PedidoDaTela): Promise<AssinaturaCriada> {
   const origem = getStoredAttribution();
   const anterior = lerTentativa();
   const doMesmoEmail = anterior !== null && anterior.email.toLowerCase() === email.trim().toLowerCase();
   const corpo = {
+    nome,
     email,
     documento,
     plano,

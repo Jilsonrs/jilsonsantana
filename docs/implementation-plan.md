@@ -5367,7 +5367,8 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                   2. Acabar as duas colunas (formulário à esquerda, com "O que está incluído" logo
                      depois dos planos; à direita, o resumo com o botão POR ÚLTIMO — 6h, como a Udemy;
                      no celular, uma coluna só, nesta ordem; não mudar a ordem) e os componentes
-                     novos: `client/src/components/assinar/` (`FormularioDeAssinatura`,
+                     novos: `client/src/components/assinar/` (`FormularioDeAssinatura`, `SeusDados` —
+                     desde o passo 9, com o campo "Seu nome" (`CampoDoNome`) antes do e-mail —,
                      `CampoDoDocumento`, `DadosDoVisitante`, `ResumoDaAssinatura`, `OQueEstaIncluido`,
                      `CriarSenhaDepoisDePagar`) e `client/src/pages/AssinaturaConcluidaSemLoginPage.tsx`.
                   3. Na página do servidor (`server/src/views/assinar.ts`) mexer só nas classes da
@@ -5701,10 +5702,25 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                   de linha · com 101 caracteres · o pedido sem nome apagando o da ficha · a migration sem acertar a
                   última tentativa · sem o RLS · sem resolver o lembrete das antigas). Gates: typecheck, lint,
                   build; site 1072, servidor 1640 (como o CI).
-            - [ ] **9b — O campo "Seu nome" na tela de assinar sem conta** (site). Em "Seus dados", antes
+            - [x] **9b — O campo "Seu nome" na tela de assinar sem conta** (site). Em "Seus dados", antes
                   do e-mail (proposta: como a Udemy e o Mosh); vai no pedido do cartão e no do Pix; o aviso
                   quando falta. **Os textos vão ao operador antes** (o rótulo e o aviso). Testes de tela (o
                   campo, o aviso, o nome nos dois pedidos). Mutação.
+                  **FEITO (30/10/2026), no `dev`.** **Os textos, APROVADOS pelo operador em 30/10/2026** (à
+                  pergunta do agente, "Aprovo, sem linha de ajuda"): o rótulo **"Seu nome"** e o aviso **"Informe
+                  seu nome."** (`app.assinar.nome` e `nomeVazio`), sem linha de ajuda embaixo. O campo
+                  (`CampoDoNome`, em `DadosDoVisitante.tsx`: `autocomplete="name"`, até 100 caracteres) vem antes do
+                  e-mail, só na tela pública; a conferência é a do `core` (`nomeDaPessoaSchema`), antes do e-mail e
+                  do CPF, e o aviso vai embaixo do primeiro campo errado; o nome vai no pedido do cartão e no do Pix
+                  (`pedido-de-assinatura.ts`), nunca no de quem está logado. **"Seus dados" saiu do formulário**
+                  (com o OK do operador, no mesmo dia: o formulário chegara ao teto de ~200 linhas) — o componente
+                  `SeusDados.tsx` e o estado com a conferência em `lib/seus-dados.ts` (`useSeusDados`); a tela não
+                  mudou, e o formulário caiu para 175 linhas. Testes: 3 novos e os de antes ajustados
+                  (`AssinarSemLoginPage.test.tsx`: o campo antes do e-mail, o aviso e o pedido com o nome;
+                  `AssinarPage.test.tsx`: a tela logada sem o nome). **Mutação: 9 de 9 reprovaram** (o nome sem
+                  conferir · fora do pedido · depois do e-mail · sem o `autocomplete` · o aviso que não some ao
+                  corrigir · a tela logada pedindo o nome · o aviso errado · o pedido logado levando o nome · o aviso
+                  sem ligação com o campo). Gates: typecheck, lint, build; site 1075, servidor 1640 (como o CI).
             - [ ] **9c — O lembrete e a limpeza, na rodada de hora em hora** (servidor).
                   `lib/quem-nao-terminou.ts`: a regra numa função pura (a ficha e a hora → nada, lembrar ou
                   apagar) e os dois passos que o job roda DEPOIS dos e-mails da cobrança, com o resto do

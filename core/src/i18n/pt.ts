@@ -611,6 +611,10 @@ export const pt = {
       incluidoTitulo: "O que está incluído",
       // SÓ DA TELA PÚBLICA (etapa 4.7, passo 6e): o visitante, sem conta. Textos APROVADOS pelo operador
       // em 27/10/2026 (P81). O aviso de e-mail inválido é o da tela de entrar (`login.emailInvalido`).
+      // O nome (etapa 4.7, passo 9 — o campo obrigatório, antes do e-mail, sem linha de ajuda): textos
+      // APROVADOS pelo operador em 30/10/2026.
+      nome: "Seu nome",
+      nomeVazio: "Informe seu nome.",
       email: "Seu e-mail",
       emailAjuda: "É com ele que você entra na escola.",
       // "Já tem conta? Entrar" — "Entrar" é o link (leva ao login e, depois, à tela de assinar do app).

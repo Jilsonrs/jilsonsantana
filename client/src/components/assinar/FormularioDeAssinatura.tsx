@@ -1,23 +1,23 @@
 import { useState, type ReactNode } from "react";
-import { DuracaoDoDesconto, enderecoDeEmailSchema, lerDocumentoFiscal, Plano, TELA_DE_CONCLUIDO_SEM_LOGIN, type PlanosDaAssinatura } from "@jilson/core";
+import { DuracaoDoDesconto, Plano, TELA_DE_CONCLUIDO_SEM_LOGIN, type PlanosDaAssinatura } from "@jilson/core";
 import { PageSection } from "@/components/layout/PageLayout";
 import { telaDeConcluido, usePrevia, type FormaDePagamento } from "@/lib/assinar";
 import { codigoDoErro } from "@/lib/course-form";
 import { passouDoLimite } from "@/lib/faturamento";
 import { useT } from "@/lib/language";
 import { pedirAoServidor } from "@/lib/pedido-de-assinatura";
+import { useSeusDados } from "@/lib/seus-dados";
 import { CartaoProvider, type Cartao } from "@/lib/stripe-do-site";
 import { semInterromper } from "@/lib/versao";
 import { BotaoDeAssinar } from "./BotaoDeAssinar";
 import { CampoVigiado } from "./CampoVigiado";
-import { CampoDoDocumento } from "./CampoDoDocumento";
 import { CodigoPromocional } from "./CodigoPromocional";
-import { CaixaDeNovidades, CampoDoEmail } from "./DadosDoVisitante";
 import { EscolhaDaFormaDePagamento } from "./EscolhaDaFormaDePagamento";
 import { EscolhaDoPlano } from "./EscolhaDoPlano";
 import { OQueEstaIncluido } from "./OQueEstaIncluido";
 import { BotaoComCartao } from "./PagamentoComCartao";
 import { ResumoDaAssinatura } from "./ResumoDaAssinatura";
+import { SeusDados } from "./SeusDados";
 
 /**
  * ASSINAR — os dados, o plano, o código promocional e o cartão (Fase 4, etapa 4.2), com a coluna de
@@ -29,8 +29,9 @@ import { ResumoDaAssinatura } from "./ResumoDaAssinatura";
  * cria a assinatura → o cartão confirma com o segredo que ele devolveu. Com desconto de 100% PARA
  * SEMPRE não há cartão: a assinatura já nasce ativa (decisão do operador, 09/10/2026).
  *
- * SEM LOGIN (`semLogin`, a tela pública — etapa 4.7, passo 6e): pede também o e-mail e as novidades,
- * usa as rotas do visitante, e guarda a TENTATIVA que o servidor devolve — só na memória e no
+ * SEM LOGIN (`semLogin`, a tela pública — etapa 4.7, passo 6e): pede também o nome (passo 9), o e-mail e
+ * as novidades — "Seus dados" (`SeusDados`, `useSeusDados`) —, usa as rotas do visitante, e guarda a
+ * TENTATIVA que o servidor devolve — só na memória e no
  * `sessionStorage`, antes de o cartão confirmar (`lib/tentativa-de-assinar.ts`). O pedido ao servidor,
  * nas quatro combinações, mora em `lib/pedido-de-assinatura.ts`.
  *
@@ -55,14 +56,10 @@ export function FormularioDeAssinatura({
   /** A tela pública, sem conta (etapa 4.7, passo 6e). */
   semLogin?: boolean;
 }) {
-  const { assinar: t, comum, login } = useT();
+  const { assinar: t, comum } = useT();
   const [plano, setPlano] = useState<Plano>(Plano.MENSAL);
   const [codigo, setCodigo] = useState<string | null>(null);
-  const [documento, setDocumento] = useState("");
-  const [erroDoDocumento, setErroDoDocumento] = useState<string | null>(null);
-  const [email, setEmail] = useState("");
-  const [erroDoEmail, setErroDoEmail] = useState<string | null>(null);
-  const [novidades, setNovidades] = useState(false);
+  const seus = useSeusDados(semLogin);
   const [forma, setForma] = useState<FormaDePagamento>("cartao");
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
@@ -87,8 +84,7 @@ export function FormularioDeAssinatura({
   async function enviar(cartao: Cartao | null) {
     if (enviando || conferindo) return;
     // Os dados primeiro: errados, nada vai ao servidor nem ao cartão.
-    if (semLogin && !enderecoDeEmailSchema.safeParse(email).success) return setErroDoEmail(login.emailInvalido);
-    if (!lerDocumentoFiscal(documento)) return setErroDoDocumento(t.documentoInvalido);
+    if (!seus.conferir()) return;
     setEnviando(true);
     setErro(null);
     try {
@@ -98,7 +94,8 @@ export function FormularioDeAssinatura({
           const preenchido = await cartao.validar();
           if (!preenchido.ok) return setErro(preenchido.mensagem ?? t.erro);
         }
-        const criada = await pedirAoServidor({ semLogin, forma: comPix ? "pix" : "cartao", plano, codigo: comCodigo && codigo ? codigo : null, documento, email, novidades, chavePublicavel: dados.chavePublicavel });
+        const { nome, email, documento, novidades } = seus;
+        const criada = await pedirAoServidor({ semLogin, forma: comPix ? "pix" : "cartao", plano, codigo: comCodigo && codigo ? codigo : null, documento, nome, email, novidades, chavePublicavel: dados.chavePublicavel });
         if (criada.estado === "pagar") {
           // O servidor pede pagamento e a tela não tinha cartão: o código mudou no meio do caminho.
           if (!cartao) {
@@ -121,10 +118,10 @@ export function FormularioDeAssinatura({
       if (motivo === "JaAssinante" || motivo === "CobrancaAtrasada") aoSaberQueJaAssina();
       else if (motivo === "CodigoInvalido") void previa.refetch();
       // A Stripe recusou o número que o `core` aceitou (o servidor responde 400 `DocumentoInvalido`).
-      else if (motivo === "DocumentoInvalido") setErroDoDocumento(t.documentoInvalido);
+      else if (motivo === "DocumentoInvalido") seus.recusarDocumento();
       // Só a tela pública ouve estes (as rotas do visitante): o e-mail que já tem conta entra para
       // assinar (decisão do operador, 21/10/2026); o mesmo e-mail noutra aba; muita gente ao mesmo tempo.
-      else if (semLogin && motivo === "JaTemConta") setErroDoEmail(t.emailJaTemConta);
+      else if (semLogin && motivo === "JaTemConta") seus.recusarEmail(t.emailJaTemConta);
       // Logado, "Ocupada" é o clique duplo ou o Pix devolvido que acabou de ser limpo: esperar e tentar de novo
       // (decisão do operador, 29/10/2026).
       else if (motivo === "Ocupada") setErro(semLogin ? t.ocupadaOutraAba : t.aguardeUmInstante);
@@ -143,29 +140,7 @@ export function FormularioDeAssinatura({
   const tela = (botao: ReactNode) => (
     <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
       <div className="space-y-8">
-        <PageSection title={t.seusDados} className="space-y-6 pt-0 sm:pt-0">
-          {semLogin && (
-            <CampoDoEmail
-              valor={email}
-              aoMudar={(valor) => {
-                setEmail(valor);
-                setErroDoEmail(null);
-              }}
-              erro={erroDoEmail}
-              travado={enviando}
-            />
-          )}
-          <CampoDoDocumento
-            valor={documento}
-            aoMudar={(valor) => {
-              setDocumento(valor);
-              setErroDoDocumento(null);
-            }}
-            erro={erroDoDocumento}
-            travado={enviando}
-          />
-          {semLogin && <CaixaDeNovidades marcada={novidades} aoMudar={setNovidades} travado={enviando} />}
-        </PageSection>
+        <SeusDados dados={seus} semLogin={semLogin} travado={enviando} />
         <EscolhaDoPlano planos={dados.planos} escolhido={plano} aoEscolher={setPlano} travado={enviando} />
         <OQueEstaIncluido incluido={dados.incluido} />
         {pixNoAr && !semCartao && <EscolhaDaFormaDePagamento escolhida={forma} aoEscolher={escolherForma} travado={enviando} />}
