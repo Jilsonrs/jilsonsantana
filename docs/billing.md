@@ -1594,7 +1594,7 @@ encerrada de vez com dias pagos: tem acesso e o servidor recusa cartão.
   `charge.dispute.created` (a contestação) e `radar.early_fraud_warning.created` (o aviso de fraude) — o operador os
   incluiu no endereço em 30/10/2026 (P129, conferida pelo print dele: os 10 avisos, na versão `2026-09-30.endive` da
   API, a mesma da biblioteca). **Depois da revisão do grupo 2, 11:** entrou `charge.dispute.funds_withdrawn` (o dinheiro
-  da contestação saiu — é ele que corta o acesso), que o operador inclui antes de publicar (P130).
+  da contestação saiu — é ele que corta o acesso), que o operador incluiu em 30/10/2026 (P130, conferida pelo print dele: os 11 avisos, na `2026-09-30.endive`).
 - **A versão do endereço de avisos** *(4.9b, C3, 29/10/2026)*: a Stripe manda cada aviso na versão da API do
   endereço (sem versão própria, na versão padrão da conta), e o site lê a da biblioteca — hoje a `2026-09-30.endive`.
   Numa versão de antes da `2025-03-31.basil`, o aviso de fatura chega sem a assinatura dele. **A subida em produção

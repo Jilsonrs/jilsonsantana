@@ -140,12 +140,27 @@
 > — a linha "a cobrança confere" entra com o R1). **Achado na subida, de antes desta publicação:** a conferência do
 > fuso do banco falhou por tempo de conexão, como em 7 das 11 subidas desde 27/10 (P128).
 >
-> **PARA CONTINUAR NO PRÓXIMO CHAT (a ordem — atualizado em 30/10/2026, depois da publicação `f36e274`):**
+> **Publicado em 30/10/2026: `0f8c0c7`** — a 4.9b, grupo 2: `5c204a7` (R1 a R6, a revisão curta das correções),
+> `15b6e40` (E8 e E10), `a0f7eea` (E9), `073e80e` (E6), `dd8cd9b` (P128), `e34c0b5` (E7) e `7f7cbba` (os achados da
+> revisão do grupo 2, com o inquérito que só alerta); ordem do operador: *"Publicar agora"*, depois da revisão de
+> segurança sem P0 nem P1 e da P129 e da P130 (o endereço de avisos com os 11 avisos, na `2026-09-30.endive`, conferido
+> pelos prints dele). **Revisão `jilson-prod-00049`** (100% do tráfego), conferida de fora: a versão do app a mesma
+> (`mvu7ui5z-74d3d2b9` — o grupo 2 não mexe nas telas); **os cabeçalhos novos na página** (`content-security-policy:
+> frame-ancestors 'self'`, `x-frame-options: SAMEORIGIN`, `strict-transport-security: max-age=31536000`); **a trava contra
+> outro site** — o pedido `same-site` e o sem `Sec-Fetch-Site` com o `Origin` de outro site, 403 `OutroSite`; o da mesma
+> origem passa (400, a validação); os cursos, as trilhas, os textos e a sessão (200); a assinatura sem login (401); a
+> vitrine com o Pix; a home no "Em breve"; o job das migrations com sucesso, *"No pending migrations to apply"* (46;
+> nenhuma migration); os dois jobs na mesma imagem do site. **Na subida, pela primeira vez, a prova positiva:** *"[stripe]
+> subida: a cobrança confere — as chaves no mesmo modo, e o endereço de avisos ligado, com os 11 avisos, na linha da API
+> do site (2026-09-30.endive)"*, ANTES do *"Server running"* (a P128: as conferências rodam antes de abrir a porta), e sem
+> a falha do fuso do banco. **Falta conferir:** a rodada das 12h UTC (a primeira com o E6) no registro do job.
+>
+> **PARA CONTINUAR NO PRÓXIMO CHAT (a ordem — atualizado em 30/10/2026, depois da publicação `0f8c0c7`):**
 > 1. **A revisão ampla da cobrança (a etapa 4.9b): o bloco de engenharia APROVADO (29/10/2026), na ordem do
->    plano** — grupo 1 (E5, E4, E1, E3, E2) **FEITO e publicado (`f36e274`)**, com as correções C1 a C5; os achados
->    da revisão curta (R1 a R6) fechados no `dev`, a publicar com o grupo 2. **O próximo: o grupo 2** (E8, E10, E9,
->    E7, E6), depois o grupo 3 (E11, E12, E13, E17) e o grupo 4 (E14, E15, E16, E18; cada texto vai ao operador
->    antes). Um commit por parte. **Sem nova rodada de revisão a cada correção** *(operador, 29/10/2026: "fechando
+>    plano** — grupo 1 (E5, E4, E1, E3, E2) **FEITO e publicado (`f36e274`)**, com as correções C1 a C5; **o grupo 2 (E8, E10,
+>    E9, E7, E6), os R1 a R6, a P128 e os achados da revisão do grupo 2: FEITOS e publicados (`0f8c0c7`).** **O próximo:
+>    o grupo 3** (E11, E12, E13, E17), depois o grupo 4 (E14, E15, E16, E18; cada texto vai ao operador antes). Uma
+>    revisão de segurança por grupo, só do que mudou, antes de publicar. Um commit por parte. **Sem nova rodada de revisão a cada correção** *(operador, 29/10/2026: "fechando
 >    P1, P2, P3 e seguindo em frente e rodando os testes no que precisar para não ficar em polimento infinito")*:
 >    P0 e P1 travam a publicação; P2 e P3 se fecham com teste e mutação, sem revisar de novo. A P128 (o fuso do
 >    banco na subida) foi respondida e feita: as conferências rodam antes de abrir a porta. As decisões P116–P124 e P127 já
@@ -6499,8 +6514,8 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             também quando o inquérito vira contestação). `Contestacao.fase` (`inquerito`, `aberta`, `dinheiro-saiu`); só o
             dinheiro que saiu leva o pagamento ao processamento; os outros dois só alertam (`[stripe] inquérito …`, com
             "devolver o dinheiro agora, sem taxa"; `[stripe] contestação … quando o dinheiro sair da conta`).
-            `AVISOS_DO_ENDERECO` agora tem 11 — **antes de publicar, a P130** (o operador inclui o
-            `charge.dispute.funds_withdrawn` no endereço).
+            `AVISOS_DO_ENDERECO` agora tem 11 — **a P130, feita pelo operador em 30/10/2026** (conferida pelo print dele: o
+            endereço com os 11 avisos, na `2026-09-30.endive`).
       - [x] **(P2) Nenhum teste cobria "a marca gravou e o cancelamento falhou".** Agora cobre: a falha sobe, sem a mensagem
             crua, e o aviso volta (`stripe-reembolso.test.ts`).
       - [x] **(P2) O que só se confere nos painéis:** a regra de alerta do Sentry para as quatro origens da reserva
