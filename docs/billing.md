@@ -228,11 +228,14 @@ ordem pública — pode-se dar mais, nunca menos. Depois do prazo, o cancelament
 o acesso vai até o fim do período já pago.
 
 **A contestação do pagamento corta o acesso na hora** *(decisão do operador, 29/10/2026, P122 — a revisão ampla
-da cobrança, plano → 4.9b, E7; ainda não construído)*: quem contesta no banco (chargeback) já pediu o dinheiro de
-volta, e o acesso acaba quando a contestação chega — um cartão roubado deixa de estudar o ano inteiro. Se a
-contestação for resolvida a favor da escola, o operador libera de novo pelo admin (4.7b). O **aviso de fraude** da
-Stripe (`radar.early_fraud_warning`) só alerta. Hoje nenhum dos dois é tratado: o acesso continua, e só o e-mail da
-Stripe avisa. *Cortar o acesso não apaga nada* (CLAUDE.md → *Churn não apaga nada*).
+da cobrança, plano → 4.9b, E7; no código desde 30/10/2026)*: quem contesta no banco (chargeback) já pediu o dinheiro
+de volta, e o acesso acaba quando a contestação chega — um cartão roubado deixa de estudar o ano inteiro. **E a
+assinatura é cancelada na Stripe** *(decisão do operador, 30/10/2026: o cartão contestado nunca mais é cobrado)*; a
+pessoa recebe o e-mail de sempre de assinatura encerrada, e o operador, um alerta com o valor, o motivo e o prazo para
+responder à contestação no painel da Stripe. Se a contestação for resolvida a favor da escola, o operador libera de
+novo pelo admin (4.7b — "Liberar acesso pago por fora": a cancelada não volta). O **aviso de fraude** da Stripe
+(`radar.early_fraud_warning`) só alerta — devolver o dinheiro logo evita a contestação e a taxa dela. *Cortar o acesso
+não apaga nada* (CLAUDE.md → *Churn não apaga nada*).
 
 **Um prazo só: os 7 dias da lei** *(12/10/2026 — etapa 4.6c)*. Com a escola só para o Brasil,
 saíram a promessa de 7 dias "ao mundo" da página em inglês (22/09/2026) e os 14 dias para fora do
@@ -1584,8 +1587,10 @@ encerrada de vez com dias pagos: tem acesso e o servidor recusa cartão.
   "Conferir na Stripe" do admin, sem alerta. *Não marcar "todos os eventos":* com o `invoice.created`, a
   Stripe passa a esperar a resposta do site antes de cobrar as renovações.
   **Desde a 4.9b (E4, 29/10/2026) a lista mora no código** (`AVISOS_DO_ENDERECO`, `server/src/lib/stripe.ts`), e
-  **a subida do servidor em produção confere o endereço**: desligado, ausente ou sem um dos 8, sai um alerta. Aviso
-  novo tratado no código entra nessa lista e no endereço.
+  **a subida do servidor em produção confere o endereço**: desligado, ausente ou sem um dos avisos, sai um alerta. Aviso
+  novo tratado no código entra nessa lista e no endereço. **Desde o E7 (30/10/2026) são 10:** entraram
+  `charge.dispute.created` (a contestação) e `radar.early_fraud_warning.created` (o aviso de fraude) — o operador os
+  inclui no endereço antes de publicar (P129).
 - **A versão do endereço de avisos** *(4.9b, C3, 29/10/2026)*: a Stripe manda cada aviso na versão da API do
   endereço (sem versão própria, na versão padrão da conta), e o site lê a da biblioteca — hoje a `2026-09-30.endive`.
   Numa versão de antes da `2025-03-31.basil`, o aviso de fatura chega sem a assinatura dele. **A subida em produção

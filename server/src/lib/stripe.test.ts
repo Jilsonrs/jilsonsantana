@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import Stripe from "stripe";
 import { pagamentosDaFatura } from "./stripe-devolucao.js";
-import { AVISOS_DO_ENDERECO, avisoEmFormatoAntigo, chaveDoNumeroFiscal, chavePublicavel, erroSemMensagem, idDoAvisoNoCorpo, METADADO_DO_PIX, pagamentoPrePagoDoAviso, pareceAvisoDaStripe, paraAssinaturaNaStripe, paraAssinaturaNoCheckout, paraCodigoPromocional, paraNumeroFiscal, paraPedidoDeAssinatura, paraPedidoDeCliente, paraPedidoDeClienteDoVisitante, paraPrecosDosPlanos, verificarAviso } from "./stripe.js";
+import { AVISOS_DO_ENDERECO, avisoEmFormatoAntigo, METADADO_DA_CONTESTACAO, paraAviso, chaveDoNumeroFiscal, chavePublicavel, erroSemMensagem, idDoAvisoNoCorpo, METADADO_DO_PIX, pagamentoPrePagoDoAviso, pareceAvisoDaStripe, paraAssinaturaNaStripe, paraAssinaturaNoCheckout, paraCodigoPromocional, paraNumeroFiscal, paraPedidoDeAssinatura, paraPedidoDeCliente, paraPedidoDeClienteDoVisitante, paraPrecosDosPlanos, verificarAviso } from "./stripe.js";
 
 // O ESPELHO A PARTIR DA STRIPE (Fase 4, etapa 4.1) — função pura, teste unitário (CLAUDE.md →
 // Testing: só função pura, sem I/O). O que protege é o "PAGO ATÉ": quando a renovação falha, a
@@ -47,6 +47,14 @@ describe("o espelho a partir da assinatura da Stripe", () => {
 
   it("sem item: sem data", () => {
     expect(paraAssinaturaNaStripe(assinatura({ itens: [] })).pagoAte).toBeNull();
+  });
+
+  // A CONTESTAÇÃO (E7 — P122): a marca na assinatura faz o período não contar como pago, mesmo com a fatura paga e sem
+  // devolução — é ela que segura o acesso cortado depois do cancelamento.
+  it("a assinatura CONTESTADA (com a marca): pago só até o COMEÇO do período, mesmo com a fatura paga", () => {
+    const contestada = assinatura({ status: "canceled", metadata: { [METADADO_DA_CONTESTACAO]: "dp_1" } });
+    expect(paraAssinaturaNaStripe(contestada).pagoAte?.getTime()).toBe(inicio * 1000);
+    expect(paraAssinaturaNaStripe(assinatura({ status: "canceled", metadata: { [METADADO_DA_CONTESTACAO]: "" } })).pagoAte?.getTime()).toBe(fim * 1000);
   });
 
   // OS E-MAILS DA COBRANÇA (etapa 4.7, passo 7): a data da próxima tentativa vem da última fatura,
@@ -481,6 +489,7 @@ describe("o cabeçalho de assinatura que parece da Stripe", () => {
 describe("os avisos que o endereço de avisos precisa assinar", () => {
   const SEGREDO = "whsec_da_lista";
   const objetoDo: Record<(typeof AVISOS_DO_ENDERECO)[number], Record<string, unknown>> = {
+    "charge.dispute.created": { id: "dp_1", object: "dispute", amount: 9990, charge: "ch_1", payment_intent: "pi_1", reason: "fraudulent", evidence_details: { due_by: 1_900_000_000 } },
     "charge.refunded": { id: "ch_1", object: "charge", payment_intent: "pi_1" },
     "customer.subscription.created": { id: "sub_1", object: "subscription" },
     "customer.subscription.deleted": { id: "sub_1", object: "subscription" },
@@ -488,10 +497,11 @@ describe("os avisos que o endereço de avisos precisa assinar", () => {
     "invoice.paid": { id: "in_1", object: "invoice", parent: { subscription_details: { subscription: "sub_1" } } },
     "invoice.payment_failed": { id: "in_1", object: "invoice", parent: { subscription_details: { subscription: "sub_1" } } },
     "payment_intent.succeeded": { id: "pi_1", object: "payment_intent", amount: 9990, currency: "brl", customer: "cus_1", livemode: true, metadata: { prepago: "mensal", precoId: "price_mensal", userId: "conta-1" } },
+    "radar.early_fraud_warning.created": { id: "issfr_1", object: "radar.early_fraud_warning", charge: "ch_1", payment_intent: "pi_1", fraud_type: "made_with_stolen_card", actionable: true },
     "refund.failed": { id: "re_1", object: "refund", payment_intent: "pi_1", status: "failed" },
   };
 
-  it("cada um é tratado: dele sai a assinatura, o pagamento devolvido ou o Pix pago", () => {
+  it("cada um é tratado: dele sai a assinatura, o pagamento devolvido ou contestado, o Pix pago ou o aviso de fraude", () => {
     const antes = process.env.STRIPE_WEBHOOK_SECRET;
     process.env.STRIPE_WEBHOOK_SECRET = SEGREDO;
     try {
@@ -499,13 +509,36 @@ describe("os avisos que o endereço de avisos precisa assinar", () => {
       for (const tipo of AVISOS_DO_ENDERECO) {
         const corpo = JSON.stringify({ id: `evt_${tipo}`, object: "event", type: tipo, data: { object: objetoDo[tipo] } });
         const aviso = verificarAviso(Buffer.from(corpo), Stripe.webhooks.generateTestHeaderString({ payload: corpo, secret: SEGREDO }));
-        const tratado = aviso.assinatura !== null || aviso.pagamento !== null || aviso.pagamentoPrePago !== null;
+        const tratado = aviso.assinatura !== null || aviso.pagamento !== null || aviso.pagamentoPrePago !== null || aviso.avisoDeFraude !== null;
         expect([tipo, tratado]).toEqual([tipo, true]);
       }
     } finally {
       if (antes === undefined) delete process.env.STRIPE_WEBHOOK_SECRET;
       else process.env.STRIPE_WEBHOOK_SECRET = antes;
     }
+  });
+});
+
+// A CONTESTAÇÃO E O AVISO DE FRAUDE (E7 da revisão ampla, 30/10/2026): o que o site lê de cada um — o pagamento (é por ele
+// que a assinatura se acha), o motivo, o valor e o prazo; e só esses dois tipos trazem esses campos.
+describe("a contestação e o aviso de fraude no aviso", () => {
+  // Seguro: os avisos de teste têm só os campos que a função lê; a forma completa é da Stripe.
+  const evento = (type: string, object: Record<string, unknown>) => ({ id: `evt_${type}`, object: "event", type, data: { object } }) as unknown as Stripe.Event;
+
+  it("a contestação: o pagamento, o id, o motivo, o valor e o prazo; sem pagamento, nenhum (e a contestação continua)", () => {
+    const aviso = paraAviso(evento("charge.dispute.created", { id: "dp_1", object: "dispute", amount: 9990, charge: "ch_1", payment_intent: "pi_1", reason: "fraudulent", evidence_details: { due_by: 1_900_000_000 } }));
+    expect(aviso).toMatchObject({ pagamento: "pi_1", contestacao: { id: "dp_1", motivo: "fraudulent", centavos: 9990, prazo: new Date(1_900_000_000 * 1000) }, avisoDeFraude: null });
+    const semPagamento = paraAviso(evento("charge.dispute.created", { id: "dp_2", object: "dispute", amount: 100, charge: "ch_2", payment_intent: null, reason: "general", evidence_details: { due_by: null } }));
+    expect(semPagamento).toMatchObject({ pagamento: null, contestacao: { id: "dp_2", prazo: null } });
+  });
+
+  it("o aviso de fraude: a cobrança, o pagamento e o tipo — sem mexer em pagamento nenhum (só alerta)", () => {
+    const aviso = paraAviso(evento("radar.early_fraud_warning.created", { id: "issfr_1", object: "radar.early_fraud_warning", charge: "ch_1", payment_intent: "pi_1", fraud_type: "made_with_stolen_card", actionable: true }));
+    expect(aviso).toMatchObject({ pagamento: null, assinatura: null, contestacao: null, avisoDeFraude: { id: "issfr_1", cobranca: "ch_1", pagamento: "pi_1", tipo: "made_with_stolen_card" } });
+  });
+
+  it("os outros avisos não trazem nenhum dos dois", () => {
+    expect(paraAviso(evento("charge.refunded", { id: "ch_1", object: "charge", payment_intent: "pi_1" }))).toMatchObject({ contestacao: null, avisoDeFraude: null });
   });
 });
 

@@ -16,7 +16,7 @@
 > 5. **Item novo ganha o próximo número livre.** Número nunca se reutiliza, para que "P7" queira
 >    dizer sempre a mesma coisa em qualquer conversa.
 >
-> **Próximo número livre: P129** · Atualizada em 30/10/2026
+> **Próximo número livre: P130** · Atualizada em 30/10/2026
 >
 > **DESDE 12/10/2026 A ESCOLA É SÓ EM PORTUGUÊS E SÓ PARA O BRASIL** (decisão do operador; etapa
 > 4.6c do plano). A parte em inglês de qualquer item abaixo deixou de existir: revise só o
@@ -31,6 +31,7 @@
 
 | # | O que falta | Onde registrar |
 |---|---|---|
+| P129 | **Antes de publicar o grupo 2 da 4.9b: incluir dois avisos no endereço de avisos da conta de verdade** (Workbench → Webhooks), como na P112 — `charge.dispute.created` (a contestação) e `radar.early_fraud_warning.created` (o aviso de fraude), sem tirar nenhum dos 8 de hoje e sem marcar "todos os eventos". Sem eles, a contestação não chega ao site (o acesso não é cortado) e a subida do servidor alerta. O agente guia, com prints. | o plano → 4.9b, E7 |
 | P126 | **O que só se confere nos painéis** (4.9b), para fazermos juntos, por prints. **Stripe:** a configuração do Pix só com o Pix; o Portal do Cliente desligado; 2FA em todo acesso; para qual caixa vão os e-mails da Stripe de "endereço de avisos falhando", contestação e cobrança que falhou; as entregas recentes do endereço de avisos em 200, e um reenvio que prove o segredo. **Sentry:** as regras de alerta ativas (inclusive para a origem `monitor`, o aviso de que o limite de alertas começou a descartar — E9), o aviso de cota, nada de cobrança marcado como "ignorado". **Google Cloud:** o agendador ativo e a última rodada sem falha; só as contas do site e dos jobs leem as chaves da Stripe; as duas chaves de verdade; um alerta de "a rodada não rodou" (recurso novo do Google: antes, o mapa do `tech-stack.md`). **Resend:** o domínio verificado e os e-mails que voltaram. **GoDaddy:** nenhum subdomínio apontando para serviço de terceiros | o plano → 4.9b |
 | P102 | **A sua assinatura de teste no site no ar continua cobrando o seu cartão** todo mês, com o site fora. Manter (para o teste do passo 8 da etapa 4.7) ou cancelar pelo painel da Stripe? *28/10/2026, à pergunta do agente: "Eu não cheguei a testar com o cartão real, estou esperando terminar tudo antes de testar" — fica até o passo 8; na hora, conferir no painel da Stripe (modo de verdade) se existe alguma assinatura cobrando o seu cartão, antes do teste.* | o plano → etapa 4.7, passo 8 |
 

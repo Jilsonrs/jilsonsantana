@@ -25,7 +25,7 @@ vi.mock("./stripe-cliente.js", async (importOriginal) => ({
 
 import { AssinaturaNaoEncontrada, buscarAssinatura } from "./stripe.js";
 import { cobrancaDoPagamento, faturaDevolvida, periodoDevolvido, pixDevolvido } from "./stripe-devolucao.js";
-import { aDevolver, assinaturaDoPagamento, buscarOQueFoiPago, buscarOQueFoiPagoNoPix, cancelarNaHora, chaveDaDevolucao, devolver, paraPedidoDeDevolucao } from "./stripe-reembolso.js";
+import { aDevolver, assinaturaDoPagamento, buscarOQueFoiPago, buscarOQueFoiPagoNoPix, cancelarNaHora, cancelarPorContestacao, chaveDaDevolucao, devolver, paraPedidoDeDevolucao } from "./stripe-reembolso.js";
 
 const DONO = { userId: "u-1", assinaturaId: "sub_1" };
 const recusa = (code: string) => new Stripe.errors.StripeInvalidRequestError({ message: "mensagem crua da Stripe, com sk_test_abc", type: "invalid_request_error", code, statusCode: 400 });
@@ -107,6 +107,35 @@ describe("encerrar a assinatura para reembolsar", () => {
   it("não encerrou: sobe, sem a mensagem da Stripe", async () => {
     falsa.subscriptions.cancel.mockRejectedValue(foraDoAr());
     await expect(cancelarNaHora("sub_1", {})).rejects.toThrow("[stripe] o encerramento da assinatura falhou: StripeConnectionError");
+  });
+});
+
+// A CONTESTAÇÃO (E7 da revisão ampla da cobrança, 30/10/2026): a marca ANTES do cancelamento (sem ela, a cancelada daria
+// acesso até o fim do período), na hora, e uma vez só pela mesma contestação.
+describe("cancelar a assinatura contestada", () => {
+  it("primeiro a marca, depois o cancelamento NA HORA — sem crédito nem fatura nova, com as chaves de repetição", async () => {
+    falsa.subscriptions.update.mockResolvedValue({ id: "sub_1", status: "active" });
+    falsa.subscriptions.cancel.mockResolvedValue({ id: "sub_1", status: "canceled" });
+    await cancelarPorContestacao("sub_1", "dp_1");
+    expect(falsa.subscriptions.update).toHaveBeenCalledWith("sub_1", { metadata: { contestacao: "dp_1" } }, { idempotencyKey: "contestacao/dp_1/marca" });
+    expect(falsa.subscriptions.cancel).toHaveBeenCalledWith("sub_1", { prorate: false, invoice_now: false, cancellation_details: { comment: "Contestação dp_1" } }, { idempotencyKey: "contestacao/dp_1/cancelamento" });
+    expect(falsa.subscriptions.update.mock.invocationCallOrder[0]).toBeLessThan(falsa.subscriptions.cancel.mock.invocationCallOrder[0] ?? 0);
+  });
+
+  it("a já encerrada (a reentrega do aviso): só a marca, sem cancelar de novo", async () => {
+    for (const status of ["canceled", "incomplete_expired"]) {
+      falsa.subscriptions.update.mockResolvedValue({ id: "sub_1", status });
+      await cancelarPorContestacao("sub_1", "dp_1");
+    }
+    expect(falsa.subscriptions.update).toHaveBeenCalledTimes(2);
+    expect(falsa.subscriptions.cancel).not.toHaveBeenCalled();
+  });
+
+  it("a marca não foi gravada: nada se cancela, e a falha sobe sem a mensagem da Stripe", async () => {
+    falsa.subscriptions.update.mockRejectedValue(foraDoAr());
+    await expect(cancelarPorContestacao("sub_1", "dp_1")).rejects.toThrow(/o cancelamento da assinatura contestada/);
+    await expect(cancelarPorContestacao("sub_1", "dp_1")).rejects.not.toThrow(/sk_test_abc/);
+    expect(falsa.subscriptions.cancel).not.toHaveBeenCalled();
   });
 });
 

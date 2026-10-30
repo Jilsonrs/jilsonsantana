@@ -1,5 +1,5 @@
 import Stripe from "stripe";
-import { erroSemMensagem, stripe } from "./stripe.js";
+import { erroSemMensagem, METADADO_DA_CONTESTACAO, stripe } from "./stripe.js";
 import { cobrancaDoPagamento, pagamentosDaFatura } from "./stripe-devolucao.js";
 import { paraMotivoNaStripe, type MotivoDado } from "./stripe-assinatura.js";
 
@@ -87,6 +87,23 @@ export async function cancelarNaHora(assinaturaId: string, dado: MotivoDado): Pr
     await stripe().subscriptions.update(assinaturaId, { metadata });
   } catch (erro) {
     console.warn(`[stripe] reembolso: o motivo da assinatura ${assinaturaId} não foi gravado: ${erroSemMensagem(erro, "a gravação do motivo").message}`);
+  }
+}
+
+/**
+ * A ASSINATURA CONTESTADA (E7 da revisão ampla da cobrança; decisões do operador P122 e de 30/10/2026): primeiro a marca
+ * (`METADADO_DA_CONTESTACAO`, que faz o período não contar como pago), e só então o cancelamento na hora — sem crédito
+ * nem fatura nova, e o cartão contestado nunca mais é cobrado. Na ordem inversa, a cancelada sem marca daria acesso até
+ * o fim do período. A assinatura já encerrada não se cancela de novo (a reentrega do aviso). As chaves de repetição
+ * fazem a mesma contestação valer uma vez só (24 h). A recusa sobe sem a mensagem crua.
+ */
+export async function cancelarPorContestacao(assinaturaId: string, contestacaoId: string): Promise<void> {
+  try {
+    const marcada = await stripe().subscriptions.update(assinaturaId, { metadata: { [METADADO_DA_CONTESTACAO]: contestacaoId } }, { idempotencyKey: `contestacao/${contestacaoId}/marca` });
+    if (marcada.status === "canceled" || marcada.status === "incomplete_expired") return;
+    await stripe().subscriptions.cancel(assinaturaId, { prorate: false, invoice_now: false, cancellation_details: { comment: `Contestação ${contestacaoId}` } }, { idempotencyKey: `contestacao/${contestacaoId}/cancelamento` });
+  } catch (erro) {
+    throw erroSemMensagem(erro, "o cancelamento da assinatura contestada");
   }
 }
 

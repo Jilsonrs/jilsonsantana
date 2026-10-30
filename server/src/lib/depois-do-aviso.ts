@@ -22,6 +22,18 @@ export async function depoisDoAviso(aviso: AvisoDaStripe, desfecho: Desfecho): P
   if (aviso.pagamentoPrePago && "assinatura" in desfecho && !assinaturaDaAcesso({ status: desfecho.assinatura.status, currentPeriodEnd: desfecho.assinatura.pagoAte })) {
     console.error(`[stripe] aviso ${aviso.id}: o Pix ${aviso.pagamentoPrePago.id} foi PAGO e a assinatura ${desfecho.assinatura.id} (${desfecho.assinatura.status}) não dá acesso — pagante trancado; conferir no painel da Stripe`);
   }
+  // A CONTESTAÇÃO (E7 — P122): precisa de gente — responder à contestação no painel da Stripe, no prazo, e decidir se
+  // libera de novo (a 4.7b). Uma vez por aviso; também quando o pagamento não é de uma assinatura da escola.
+  if (aviso.contestacao && desfecho.resultado !== "repetido") {
+    const { id, motivo, centavos, prazo } = aviso.contestacao;
+    const comoFicou = "assinatura" in desfecho ? `a assinatura ${desfecho.assinatura.id} foi cancelada e o acesso, cortado` : "o pagamento não é de uma assinatura da escola";
+    console.error(`[stripe] contestação ${id}: o pagamento ${aviso.pagamento ?? "?"} (R$ ${(centavos / 100).toFixed(2).replace(".", ",")}) foi contestado no banco (${motivo}) — ${comoFicou}; responder à contestação no painel da Stripe${prazo ? ` até ${prazo.toISOString().slice(0, 10)}` : ""}`);
+  }
+  // O AVISO DE FRAUDE (E7 — P122: só alerta, o acesso fica). Devolver o dinheiro agora evita a contestação, e a taxa dela.
+  if (aviso.avisoDeFraude && desfecho.resultado !== "repetido") {
+    const { id, cobranca, pagamento, tipo } = aviso.avisoDeFraude;
+    console.error(`[stripe] aviso de fraude ${id}: a cobrança ${cobranca} (pagamento ${pagamento ?? "?"}) recebeu um aviso de fraude do banco (${tipo}) — conferir no painel da Stripe; devolver o dinheiro agora evita a contestação`);
+  }
   if (desfecho.resultado === "sem-conta") {
     // Assinatura sem conta na escola: em voz alta. Se ela dá acesso, há alguém PAGANDO e trancado
     // fora (achado P1 da revisão) — o force-sync (etapa 4.4) conserta depois que a conta existir.

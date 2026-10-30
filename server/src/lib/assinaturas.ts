@@ -2,7 +2,7 @@ import { Prisma } from "./prisma.js";
 import { prisma } from "./prisma.js";
 import { cobrancaAtrasada, temAcessoAtivo } from "./acesso.js";
 import { AssinaturaNaoEncontrada, assinaturasDoCliente, buscarAssinatura, buscarPrecos, cancelarIncompleta, type AssinaturaNaStripe, type AvisoDaStripe, type PagamentoPrePago } from "./stripe.js";
-import { assinaturaDoPagamento } from "./stripe-reembolso.js";
+import { assinaturaDoPagamento, cancelarPorContestacao } from "./stripe-reembolso.js";
 import { pixDevolvido } from "./stripe-devolucao.js";
 import { assinaturasDoPix, cancelarPagamentoPix, criarAssinaturaPrePaga, garantirFaturaPaga, lerPagamentoPix, listarPixDoCliente, marcarEmConferencia, type PixPago, type PixPendente, type PrePagaDoPix } from "./stripe-pix.js";
 import { contaDoPedido, type SemContaDoVisitante } from "./pedido-do-visitante.js";
@@ -181,6 +181,9 @@ export async function processarAviso(aviso: AvisoDaStripe): Promise<Desfecho> {
       await travar(tx, assinaturaId);
       // Com a trava: o mesmo aviso que esperava na fila já foi processado por quem veio antes.
       if (await tx.stripeEvent.findUnique({ where: { id: aviso.id }, select: { id: true } })) return { resultado: "repetido" };
+      // A CONTESTAÇÃO (E7 — P122): a assinatura é marcada e cancelada na Stripe, com a trava dela; a sincronia logo
+      // abaixo corta o acesso e derruba as sessões. Se a Stripe falhar, nada fica marcado e o aviso volta.
+      if (aviso.contestacao) await cancelarPorContestacao(assinaturaId, aviso.contestacao.id);
       const sincronia = await sincronizar(tx, assinaturaId);
       // Marcado na MESMA transação do espelho — também quando não há conta: o aviso foi visto.
       await tx.stripeEvent.create({ data: marcar });

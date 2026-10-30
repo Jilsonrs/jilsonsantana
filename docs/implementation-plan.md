@@ -5641,7 +5641,11 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
            pela tela — `billing.md` → *Sincronizar e perder o acesso*) continua. **Trava de engenharia:** o acesso
            sai de uma assinatura de verdade na Stripe, pré-paga e paga por fora (como a do Pix:
            `cancel_at_period_end`, a fatura `paid_out_of_band`), gravada pelo `sincronizar` — nunca de um desvio
-           em `temAcessoAtivo()`; assim o espelho, a régua e os e-mails continuam valendo.
+           em `temAcessoAtivo()`; assim o espelho, a régua e os e-mails continuam valendo. **E a CONTESTAÇÃO GANHA**
+           (E7, 30/10/2026): a assinatura contestada foi cancelada na Stripe, com a marca `contestacao`
+           (`METADADO_DA_CONTESTACAO`), que faz o período dela não contar como pago — liberar de novo é TIRAR A MARCA
+           (pela operação na assinatura, com a sincronia): o período que a pessoa pagou volta a valer até o fim, e a
+           assinatura continua cancelada (para seguir depois, ela assina de novo).
          - **Conta que nasceu com o e-mail digitado errado** → **Corrigir o e-mail**: o admin digita o certo, o site
            manda o código de entrar para ele, e a troca só vale depois do código confirmado. *Decisão do operador,
            29/10/2026 (P121).* **Travas de engenharia (é a porta de tomar conta):** o e-mail novo não pode ser de
@@ -6309,11 +6313,28 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             no registro; a falha fica para amanhã, com um alerta só no fim. Teste: `ativas-vencidas.test.ts` (novo, 8).
             **Mutação: 9 de 9 reprovaram** (uma sobreviveu antes: o teste calculava a idade pela própria constante —
             corrigido). O roteiro de `billing.md` (*Quando um aluno não conseguir pagar*, item 6) cita o alerta.
-      - [ ] **E7 — a contestação e o aviso de fraude** (`charge.dispute.created`, `radar.early_fraud_warning.created`)
+      - [x] **E7 — a contestação e o aviso de fraude** (`charge.dispute.created`, `radar.early_fraud_warning.created`)
             tratados com alerta e cadastrados no endereço de avisos; hoje só o e-mail da Stripe avisa, e a disputa
             não corta o acesso. **Decisão do operador, 29/10/2026 (P122): a contestação CORTA o acesso na hora** (se
             resolvida a favor da escola, ele libera de novo pela 4.7b); o aviso de fraude só alerta —
-            `billing.md` → *Reembolso*.
+            `billing.md` → *Reembolso*. **E CANCELA a assinatura na Stripe** *(decisão do operador, 30/10/2026: "cortar
+            e cancelar" — o cartão contestado nunca mais é cobrado; a pessoa recebe o e-mail de sempre de assinatura
+            encerrada)*. **FEITO (30/10/2026):** os dois avisos em `AVISOS_DO_ENDERECO` (agora 10) e lidos do aviso
+            (`paraAviso`: a contestação, com o pagamento, o motivo, o valor e o prazo; o aviso de fraude, com a
+            cobrança, o pagamento e o tipo). A contestação acha a assinatura pelo pagamento (como a devolução) e, com a
+            trava dela, `cancelarPorContestacao` (`stripe-reembolso.ts`) põe a MARCA `contestacao` na assinatura e só
+            então a cancela na hora (sem crédito nem fatura nova; as chaves de repetição fazem valer uma vez; a já
+            encerrada não se cancela de novo); a sincronia de sempre corta o acesso e derruba as sessões —
+            `paraAssinaturaNaStripe` não conta como pago o período da assinatura com a marca (sem ela, a cancelada
+            daria acesso até o fim do período). Alertas (`depois-do-aviso.ts`, uma vez por aviso): **`[stripe]
+            contestação …`** com o valor, o motivo, como ficou a assinatura e o prazo para responder no painel — também
+            quando o pagamento não é de uma assinatura da escola —; **`[stripe] aviso de fraude …`**, que só alerta. A
+            Stripe que falha não marca o aviso (ele volta). Testes: `contestacao.test.ts` (novo, 4), `stripe.test.ts`
+            (+4), `stripe-reembolso.test.ts` (+3). **Mutação: 10 de 10 reprovaram.** **Antes de publicar: a P129** (o
+            operador inclui os dois avisos no endereço de avisos da conta de verdade; sem isso, a subida alerta e a
+            contestação não chega ao site). *Docs check (context7): Stripe → `/websites/stripe` → 1 consulta (a
+            contestação e o aviso de fraude trazem a cobrança e o pagamento, não a assinatura); os campos, na biblioteca
+            (`Disputes.d.ts`, `Radar/EarlyFraudWarnings.d.ts`).*
       - [x] **E8 — a trava contra pedido de outro site aceita só `same-origin`** (ou o cabeçalho ausente); hoje
             recusa só `cross-site` (`protecao-da-cobranca.ts`): uma página num subdomínio de `jilsonsantana.com`
             apontando para terceiro poderia mandar o aluno logado reembolsar ou cancelar. **FEITO (29/10/2026):**
