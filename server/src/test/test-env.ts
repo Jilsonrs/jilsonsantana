@@ -57,6 +57,12 @@ export function loadTestEnv(): void {
         `(ver server/.env.example). Erro: ${result.error.message}`,
     );
   }
+  // A SUÍTE NUNCA MANDA E-MAIL DE VERDADE (decisão do operador, 30/10/2026, na P126): sem a chave do Resend, o
+  // balcão de e-mail não envia. Em 26/10/2026 ela rodou num terminal com a chave e mandou dezenas de boas-vindas para
+  // endereços `@teste.local`, que voltaram e pesam na reputação do domínio de envio. O teste que precisa de uma chave a
+  // define dentro dele (falsa, com o servidor falso — `email-rede.test.ts`); o envio de verdade se prova de propósito,
+  // nos roteiros de prova.
+  delete process.env.RESEND_API_KEY;
 }
 
 /**

@@ -7045,6 +7045,15 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       - [x] **(P2) O que só se confere nos painéis:** a regra de alerta do Sentry para as quatro origens da reserva
             (`stripe`, `email`, `avisos`, `monitor`) e o alerta de "a rodada não rodou" (o E6 depende da rodada das 12h
             UTC) — entraram na P126.
+      - [x] **Achado da P126 (30/10/2026): a suíte do servidor mandava e-mail DE VERDADE** quando a chave do Resend
+            estava no ambiente de quem a rodava (o teste de assinar sem conta não troca o envio por um falso). No painel do
+            Resend, dezenas de boas-vindas para `visitante-…@teste.local`, de 26/10, voltaram (*Bounced*) — o que pesa na
+            reputação do domínio de envio. **Decisão do operador (30/10/2026): "Travar na suíte"** (antes, ele perguntou
+            como se testa o envio: pelos roteiros de prova, de propósito, como os da P93). **FEITO:** o `loadTestEnv`
+            (`server/src/test/test-env.ts`, o preparo de cada arquivo de teste) apaga a `RESEND_API_KEY`; o teste da rede de
+            e-mail define a sua, falsa, com o servidor falso. Teste novo: `suite-sem-email.test.ts` (2). **Mutação: sem a
+            trava, os 2 reprovam** — com e sem a chave no terminal. Gates: build, typecheck, lint; site 1076, servidor 1700
+            (como o CI). *Docs check (context7): não disparado.*
       - [x] **(P3) A chave de repetição fixa** guardava a falha da Stripe por 24 h: agora leva a janela de 5 min, como a da
             devolução.
       - [x] **(P3) O alerta dizia "acesso cortado" sem olhar o resultado:** agora diz o status da assinatura e se a conta
