@@ -180,25 +180,34 @@ describe("cancelar a assinatura contestada", () => {
 });
 
 // O PIX NA COBRANÇA ATRASADA (E14 da revisão ampla da cobrança, 30/10/2026): a marca que cala o "terminou" ANTES do
-// encerramento, na hora, sem crédito nem fatura nova, com as chaves de repetição na janela de 5 min.
+// encerramento, na hora, sem crédito nem fatura nova; repetir não encerra a já encerrada.
 describe("encerrar a atrasada para pagar com Pix", () => {
-  const AGORA = new Date("2031-05-01T10:00:00Z");
-  const janela = Math.floor(AGORA.getTime() / (5 * 60 * 1000));
-
   it("primeiro a marca, depois o encerramento NA HORA — sem crédito nem fatura nova; a cobrança em aberto fica para quem chama", async () => {
     falsa.subscriptions.update.mockResolvedValue({ id: "sub_1", status: "past_due" });
     falsa.subscriptions.cancel.mockResolvedValue({ id: "sub_1", status: "canceled" });
-    await encerrarParaOPix("sub_1", AGORA);
-    expect(falsa.subscriptions.update).toHaveBeenCalledWith("sub_1", { metadata: { trocadaPorPix: AGORA.toISOString() } }, { idempotencyKey: `pix-da-atrasada/sub_1/marca/${janela}` });
-    expect(falsa.subscriptions.cancel).toHaveBeenCalledWith("sub_1", { prorate: false, invoice_now: false, cancellation_details: { comment: "Trocada pelo Pix" } }, { idempotencyKey: `pix-da-atrasada/sub_1/encerramento/${janela}` });
+    await encerrarParaOPix("sub_1");
+    expect(falsa.subscriptions.update).toHaveBeenCalledWith("sub_1", { metadata: { trocadaPorPix: "sim" } });
+    expect(falsa.subscriptions.cancel).toHaveBeenCalledWith("sub_1", { prorate: false, invoice_now: false, cancellation_details: { comment: "Trocada pelo Pix" } });
     expect(falsa.subscriptions.update.mock.invocationCallOrder[0]).toBeLessThan(falsa.subscriptions.cancel.mock.invocationCallOrder[0] ?? 0);
     expect(falsa.invoices.voidInvoice).not.toHaveBeenCalled();
   });
 
+  // [FATO — área restrita, 30/10/2026] com chave de repetição, a marca repetida devolvia a resposta GUARDADA (ainda atrasada)
+  // e a já encerrada era encerrada de novo (404). Sem chave, a resposta é a de agora.
+  it("repetido: a mesma marca, sem chave de repetição — e a já encerrada não se encerra de novo", async () => {
+    falsa.subscriptions.update.mockResolvedValueOnce({ id: "sub_1", status: "past_due" }).mockResolvedValueOnce({ id: "sub_1", status: "canceled" });
+    falsa.subscriptions.cancel.mockResolvedValue({ id: "sub_1", status: "canceled" });
+    await encerrarParaOPix("sub_1");
+    await encerrarParaOPix("sub_1");
+    expect(falsa.subscriptions.update.mock.calls[0]).toEqual(falsa.subscriptions.update.mock.calls[1]);
+    expect(falsa.subscriptions.update.mock.calls[0]).toHaveLength(2);
+    expect(falsa.subscriptions.cancel).toHaveBeenCalledTimes(1);
+  });
+
   it("a marca não foi gravada: nada se encerra, e a falha sobe sem a mensagem da Stripe", async () => {
     falsa.subscriptions.update.mockRejectedValue(foraDoAr());
-    await expect(encerrarParaOPix("sub_1", AGORA)).rejects.toThrow(/o encerramento da assinatura atrasada para o Pix/);
-    await expect(encerrarParaOPix("sub_1", AGORA)).rejects.not.toThrow(/sk_test_abc/);
+    await expect(encerrarParaOPix("sub_1")).rejects.toThrow(/o encerramento da assinatura atrasada para o Pix/);
+    await expect(encerrarParaOPix("sub_1")).rejects.not.toThrow(/sk_test_abc/);
     expect(falsa.subscriptions.cancel).not.toHaveBeenCalled();
   });
 });

@@ -153,7 +153,8 @@
 > nenhuma migration); os dois jobs na mesma imagem do site. **Na subida, pela primeira vez, a prova positiva:** *"[stripe]
 > subida: a cobrança confere — as chaves no mesmo modo, e o endereço de avisos ligado, com os 11 avisos, na linha da API
 > do site (2026-09-30.endive)"*, ANTES do *"Server running"* (a P128: as conferências rodam antes de abrir a porta), e sem
-> a falha do fuso do banco. **Falta conferir:** a rodada das 12h UTC (a primeira com o E6) no registro do job.
+> a falha do fuso do banco. **Conferido no registro do job (30/10/2026):** a rodada das 12h UTC (a primeira com o E6) fez a
+> conferência das ativas vencidas — 0 conferidas, 0 com falha — e saiu com código 0.
 >
 > **PARA CONTINUAR NO PRÓXIMO CHAT (a ordem — atualizado em 30/10/2026, depois da publicação `0f8c0c7`):**
 > 1. **A revisão ampla da cobrança (a etapa 4.9b): o bloco de engenharia APROVADO (29/10/2026), na ordem do
@@ -6417,9 +6418,19 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             um defeito antes do commit: a releitura da assinatura depois do clique desmontava o formulário (e o QR) —
             a tela agora fica com a atrasada do instante do clique. **Mutação: 26 de 26 reprovaram** (servidor 10, telas 10,
             e-mails 6; uma sobreviveu antes — o campo do Pix que não confere não tinha teste; ganhou).
-        - [ ] **A prova na área restrita** (antes de publicar, ou junto da P126): uma atrasada de teste (relógio de teste da
-              Stripe), o "Gerar o Pix", e conferir na Stripe a assinatura encerrada com a marca, a fatura anulada e o Pix
-              do plano; pago (`succeed_immediately`), a pré-paga nasce e sai o e-mail de confirmação.
+        - [x] **A prova na área restrita, do lado da Stripe** (30/10/2026, roteiro fora do repositório com as funções de
+              verdade e um relógio de teste no passado): a renovação falhou de verdade (`past_due`, fatura `open`); encerrar
+              deixou `canceled` com a marca e o comentário, a fatura ficou `void`, e a assinatura lida para o espelho diz
+              encerrada, sem período pago, `trocadaPorPix` e o plano. **Ela achou dois defeitos que os testes não pegavam,
+              corrigidos com teste:** (1) a marca levava a hora, e o pedido repetido com a mesma chave de repetição era
+              recusado (`StripeIdempotencyError`) — quem tentasse de novo depois de uma falha no meio teria erro por 5 min;
+              (2) `[FATO — medido]` a chave de repetição não vale para encerrar (a Stripe a ignora; encerrar a já encerrada dá
+              404), e na marca ela devolve a resposta GUARDADA da primeira vez — então a marca vai sem chave (gravar a mesma
+              marca de novo não muda nada) e a já encerrada não se encerra de novo.
+        - [ ] **A prova pela rota** (antes de publicar, ou junto da P126): servidor local com o banco de dev, conta
+              descartável com uma atrasada de teste, `POST /api/billing/minha-assinatura/pix`, o Pix pago
+              (`succeed_immediately`) e os avisos entregues ao servidor local: a pré-paga nasce, sai a confirmação e NÃO
+              sai o "terminou".
       - [x] **E15 — o suporte nas frases de erro de pagamento** *(decisão do operador, 29/10/2026, P119)*: as
             frases de erro de pagamento (as de assinar, de trocar o cartão e a "Está demorando…" de depois do
             pagamento) passam a citar suporte@jilsonsantana.com, e depois de um cartão recusado a tela sugere

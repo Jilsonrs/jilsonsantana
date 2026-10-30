@@ -126,14 +126,17 @@ export async function cancelarPorContestacao(assinaturaId: string, contestacaoId
  * ENCERRA NA HORA a assinatura ATRASADA que a pessoa vai pagar com Pix (4.9b, E14 — decisão do operador, P118): primeiro a
  * marca (`METADADO_DA_TROCA_POR_PIX`, que cala o e-mail de "terminou"), depois o encerramento — sem crédito e sem fatura
  * nova, como o cancelar com a cobrança atrasada. Quem anula a cobrança em aberto é quem chama, depois disto: anulada com
- * a assinatura ainda viva, a Stripe a dá como `active` de novo (medido, 11/10/2026). As chaves de repetição valem por 5
- * minutos: o clique repetido em seguida recebe a mesma resposta.
+ * a assinatura ainda viva, a Stripe a dá como `active` de novo (medido, 11/10/2026).
+ * REPETIR NÃO FAZ MAL, e SEM chave de repetição `[FATO — medido na área restrita, 30/10/2026]`: a chave não vale para
+ * encerrar (a Stripe a ignora nesse pedido; encerrar de novo a já encerrada dá 404 `resource_missing`), e na marca ela
+ * devolveria a resposta GUARDADA da primeira vez — a assinatura ainda atrasada —, e a já encerrada seria encerrada de
+ * novo. Gravar a mesma marca outra vez não muda nada; a resposta, então, é a de agora: já encerrada, não se encerra.
  */
-export async function encerrarParaOPix(assinaturaId: string, agora: Date = new Date()): Promise<void> {
-  const janela = Math.floor(agora.getTime() / JANELA_DA_CHAVE);
+export async function encerrarParaOPix(assinaturaId: string): Promise<void> {
   try {
-    await stripe().subscriptions.update(assinaturaId, { metadata: { [METADADO_DA_TROCA_POR_PIX]: agora.toISOString() } }, { idempotencyKey: `pix-da-atrasada/${assinaturaId}/marca/${janela}` });
-    await stripe().subscriptions.cancel(assinaturaId, { prorate: false, invoice_now: false, cancellation_details: { comment: "Trocada pelo Pix" } }, { idempotencyKey: `pix-da-atrasada/${assinaturaId}/encerramento/${janela}` });
+    const marcada = await stripe().subscriptions.update(assinaturaId, { metadata: { [METADADO_DA_TROCA_POR_PIX]: "sim" } });
+    if (marcada.status === "canceled" || marcada.status === "incomplete_expired") return;
+    await stripe().subscriptions.cancel(assinaturaId, { prorate: false, invoice_now: false, cancellation_details: { comment: "Trocada pelo Pix" } });
   } catch (erro) {
     throw erroSemMensagem(erro, "o encerramento da assinatura atrasada para o Pix");
   }
