@@ -297,7 +297,7 @@ export const pt = {
       credenciaisIncorretas: "E-mail ou senha incorretos.",
       falha: "Não foi possível entrar agora. Tente novamente em alguns minutos.",
       // O CÓDIGO NO E-MAIL na tela de entrar (etapa 4.7, passo 5 — decisões do operador, 21/10/2026).
-      // RASCUNHO do agente, para o operador revisar. `{minutos}` é a validade do código.
+      // APROVADO pelo operador em 30/10/2026 (P93, vendo cada estado da tela). `{minutos}` é a validade do código.
       esqueciSenha: "Esqueci minha senha",
       receberCodigo: "Receber código de acesso",
       enviandoCodigo: "Enviando o código…",
@@ -310,8 +310,8 @@ export const pt = {
       outroEnviado: "Enviamos outro código.",
       entrarComSenha: "Entrar com senha"
     },
-    // "ESQUECI MINHA SENHA" — a tela do código e da senha nova (etapa 4.7, passo 5). RASCUNHO do
-    // agente, para o operador revisar.
+    // "ESQUECI MINHA SENHA" — a tela do código e da senha nova (etapa 4.7, passo 5). APROVADO pelo
+    // operador em 30/10/2026 (P93, vendo cada estado da tela).
     senhaNova: {
       tituloPrefixo: "Senha",
       tituloEnfase: "Nova",
@@ -341,8 +341,8 @@ export const pt = {
     email: {
       topo: "Jilson Santana",
       rodape: "Jilson Santana · jilsonsantana.com",
-      // O E-MAIL DO CÓDIGO (etapa 4.7, passo 5): RASCUNHO do agente (21/10/2026), para o operador
-      // revisar. `{codigo}` são os 6 números; `{minutos}`, a validade.
+      // O E-MAIL DO CÓDIGO (etapa 4.7, passo 5): APROVADO pelo operador em 30/10/2026 (P93, vendo os dois
+      // e-mails no Yahoo dele). `{codigo}` são os 6 números; `{minutos}`, a validade.
       codigo: {
         assuntoEntrar: "Seu código de acesso: {codigo}",
         tituloEntrar: "Seu código de acesso",
@@ -354,10 +354,13 @@ export const pt = {
         naoFoiVoce: "Se não foi você que pediu, ignore este e-mail: ninguém entra na sua conta sem este código."
       },
       // O E-MAIL DE BOAS-VINDAS de quem assinou sem conta (etapa 4.7, passo 5 — decisão do
-      // operador, 21/10/2026): RASCUNHO do agente, para o operador revisar.
+      // operador, 21/10/2026): APROVADO por ele em 30/10/2026 (P93), com o título que ele escreveu.
+      // `{nome}` é o PRIMEIRO nome da conta; a conta sem um nome que passe na regra (só letras)
+      // recebe `tituloSemNome` (`server/src/lib/boas-vindas.ts`).
       boasVindas: {
         assunto: "Sua assinatura está confirmada",
-        titulo: "Boas-vindas à escola",
+        titulo: "Olá, {nome}! Seja bem-vindo(a)",
+        tituloSemNome: "Olá! Seja bem-vindo(a)",
         confirmada: "Sua assinatura foi confirmada: você já tem acesso a todos os cursos e trilhas.",
         comoEntrar: "Para entrar, use seu e-mail e sua senha. Se ainda não criou a senha, ou não lembra dela, use \"Receber código de acesso\" na tela de entrar.",
         botao: "Entrar na escola"

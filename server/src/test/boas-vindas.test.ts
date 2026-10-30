@@ -20,6 +20,8 @@ vi.mock("../lib/email.js", async (importOriginal) => ({
 import servidor from "./servidor.js";
 import { prisma } from "../lib/prisma.js";
 import { enderecoDoSite } from "../lib/endereco-do-site.js";
+import { primeiroNomeDoTitulo } from "../lib/boas-vindas.js";
+import { pt } from "@jilson/core";
 
 // O E-MAIL DE BOAS-VINDAS de quem assinou sem conta (Fase 4, etapa 4.7, passo 5 — decisão do
 // operador, 21/10/2026). O que estes testes protegem:
@@ -29,6 +31,8 @@ import { enderecoDoSite } from "../lib/endereco-do-site.js";
 //   - o envio que falhou volta a tentar no aviso seguinte — inclusive no aviso REPETIDO;
 //   - quem assinou logado (sem ficha de espera) e a assinatura sem acesso não recebem;
 //   - uma falha nas boas-vindas nunca derruba o 200 do aviso;
+//   - o título leva o PRIMEIRO nome digitado ao assinar (o da ficha), e só o que passa na regra (só
+//     letras) — decisão do operador, 30/10/2026 (P93); sem ele, o título sem nome;
 //   - o botão: em produção, só https.
 
 const SEGREDO = "whsec_teste_da_suite_local";
@@ -46,8 +50,8 @@ function enviar(aviso: Aviso) {
   return request(servidor).post("/api/stripe/webhook").set("Content-Type", "application/json").set("Stripe-Signature", cabecalho).send(corpo);
 }
 
-async function novaFicha() {
-  return prisma.guestCheckout.create({ data: { id: novoId("pedido"), email: novoEmail(), stripeCustomerId: novoId("cus"), livemode: false } });
+async function novaFicha(nome?: string) {
+  return prisma.guestCheckout.create({ data: { id: novoId("pedido"), email: novoEmail(), stripeCustomerId: novoId("cus"), livemode: false, ...(nome ? { nome } : {}) } });
 }
 const paga = (sub: string, ficha: { id: string; stripeCustomerId: string }, dados: Partial<AssinaturaNaStripe> = {}): AssinaturaNaStripe => ({
   id: sub,
@@ -172,6 +176,91 @@ describe("as boas-vindas de quem assinou sem conta", () => {
     const alerta = vi.spyOn(console, "error").mockImplementation(() => {});
     expect((await enviar(avisoDaAssinatura(sub, "customer.subscription.created"))).status).toBe(200);
     expect(alerta.mock.calls.some(([linha]) => String(linha).includes("[email] as boas-vindas"))).toBe(true);
+  });
+});
+
+// O TÍTULO (decisão do operador, 30/10/2026, P93): "Olá, Maria! Seja bem-vindo(a)". O nome é o da FICHA (o digitado
+// ao assinar), nunca o da conta, que o aluno logado muda pela rota pronta `update-user`; e o e-mail vai a uma caixa
+// que ninguém provou (P94). Por isso só entra o nome que passa na regra de quem assina (só letras). O `{` conferido
+// nos testes: a marca `{nome}` com outra grafia no dicionário sairia escrita no e-mail.
+describe("o título das boas-vindas", () => {
+  const t = pt.app.email.boasVindas;
+  const tituloEnviado = () => boasVindas().at(-1)?.mensagem.titulo;
+
+  it("leva o PRIMEIRO nome que a pessoa digitou ao assinar", async () => {
+    const ficha = await novaFicha("Maria da Silva");
+    const sub = novoId("sub");
+    buscarAssinatura.mockResolvedValue(paga(sub, ficha));
+    await enviar(avisoDaAssinatura(sub, "customer.subscription.created"));
+    expect(tituloEnviado()).toBe(t.titulo.replace("{nome}", "Maria"));
+    expect(tituloEnviado()).toContain("Maria");
+    expect(tituloEnviado()).not.toContain("Silva");
+    expect(tituloEnviado()).not.toContain("{");
+  });
+
+  it("a conta sem nome (a ficha de antes do nome obrigatório): o título sem nome", async () => {
+    const ficha = await novaFicha();
+    const sub = novoId("sub");
+    buscarAssinatura.mockResolvedValue(paga(sub, ficha));
+    await enviar(avisoDaAssinatura(sub, "customer.subscription.created"));
+    expect(tituloEnviado()).toBe(t.tituloSemNome);
+    expect(tituloEnviado()).not.toContain("{");
+  });
+
+  it("o nome da CONTA trocado depois de entrar (antes de as boas-vindas saírem) não entra: o título leva o nome digitado ao assinar", async () => {
+    const ficha = await novaFicha("Maria");
+    const sub = novoId("sub");
+    buscarAssinatura.mockResolvedValue(paga(sub, ficha));
+    enviarEmail.mockResolvedValueOnce({ enviado: false, motivo: "falhou" });
+    await enviar(avisoDaAssinatura(sub, "customer.subscription.created"));
+    await prisma.user.update({ where: { email: ficha.email }, data: { name: "golpe.com.br/regularize ligue 0800" } });
+
+    await enviar(avisoDaAssinatura(sub));
+    expect(boasVindas()).toHaveLength(2);
+    expect(tituloEnviado()).toBe(t.titulo.replace("{nome}", "Maria"));
+    expect(JSON.stringify(boasVindas().at(-1))).not.toContain("golpe");
+  });
+
+  it("o nome da ficha FORA da regra (uma ficha antiga): o título sem nome, e nada do nome", async () => {
+    const ficha = await novaFicha("Ana 2 www.golpe.com.br");
+    const sub = novoId("sub");
+    buscarAssinatura.mockResolvedValue(paga(sub, ficha));
+    await enviar(avisoDaAssinatura(sub, "customer.subscription.created"));
+    expect(tituloEnviado()).toBe(t.tituloSemNome);
+    expect(JSON.stringify(boasVindas().at(-1))).not.toContain("golpe");
+  });
+
+  it("o nome com letras de outro alfabeto que PARECEM ponto (passa no 'só letras'): o título sem nome", async () => {
+    const ficha = await novaFicha("Sua-conta-foi-bloqueada-acesse-golpe\uA4F8com\uA4F8br Silva");
+    const sub = novoId("sub");
+    buscarAssinatura.mockResolvedValue(paga(sub, ficha));
+    await enviar(avisoDaAssinatura(sub, "customer.subscription.created"));
+    expect(tituloEnviado()).toBe(t.tituloSemNome);
+    expect(JSON.stringify(boasVindas().at(-1))).not.toContain("golpe");
+  });
+
+  // O NOME COMUM (decisão do operador, 30/10/2026, depois da revisão de segurança): até 30 letras do português e das
+  // línguas europeias, no máximo um hífen ou apóstrofo.
+  it("primeiroNomeDoTitulo: o primeiro nome comum; nada para o resto", () => {
+    expect(primeiroNomeDoTitulo("  Ana   Paula Souza ")).toBe("Ana");
+    expect(primeiroNomeDoTitulo("Maria-Clara D'Ávila")).toBe("Maria-Clara");
+    expect(primeiroNomeDoTitulo("D’Ávila Souza")).toBe("D’Ávila");
+    expect(primeiroNomeDoTitulo("Jose\u0301 da Silva")).toBe("Jos\u00E9"); // o acento em dois caracteres, juntado
+    for (const nome of ["Ñandú", "Çağlar", "Łukasz", "Zoë", "x".repeat(30)]) expect(primeiroNomeDoTitulo(nome), nome).toBe(nome);
+    const fora = [
+      null, "", "   ", "Ana 2", "www.golpe.com.br Ana", "\u3164", "$& Ana",
+      "Sua-conta-foi-bloqueada", // mais de um hífen
+      "Ana-Maria'Silva", // um hífen e um apóstrofo
+      "x".repeat(31), // mais de 30 letras
+      "golpe\uA4F8com\uA4F8br", // a letra lisu que parece ponto
+      "Ana\uA4FD", // a que parece dois-pontos
+      "Ana\u30CEgolpe", // a katakana que parece barra
+      "\u0222\u0222", // a que parece 8
+      "a" + "\u0301".repeat(60), // uma letra com 60 acentos
+      "M. Souza", // a abreviação
+      "Nguy\u1EC5n", // fora das letras europeias: sem nome, por decisão
+    ];
+    for (const nome of fora) expect(primeiroNomeDoTitulo(nome), JSON.stringify(nome)).toBeNull();
   });
 });
 
