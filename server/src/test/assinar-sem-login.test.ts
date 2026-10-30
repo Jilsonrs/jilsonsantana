@@ -800,7 +800,7 @@ describe("o que a tentativa deixa na ficha (passo 9)", () => {
       "R$ Ana",
       "Ana\u200BSilva",
       "Ana \u202Eavlis",
-      // Os invis\u00EDveis que o Unicode conta como letra ou acento (revis\u00E3o de seguran\u00E7a, 30/10/2026), e o acento solto.
+      // Os invisíveis que o Unicode conta como letra ou acento (revisão de segurança, 30/10/2026), e o acento solto.
       "\u3164",
       "Ana\u3164Silva",
       "Ana\uFE0F",
@@ -828,7 +828,7 @@ describe("o que a tentativa deixa na ficha (passo 9)", () => {
     const nomes: Array<[string, string]> = [
       ["José da Silva", "José da Silva"],
       // O acento DECOMPOSTO (a letra e o acento em dois caracteres, como alguns teclados mandam) também é nome.
-      ["José da Silva", "José da Silva"],
+      ["Jose\u0301 da Silva", "Jose\u0301 da Silva"],
       ["Maria-Clara D'Ávila", "Maria-Clara D'Ávila"],
       ["Ana O’Neil", "Ana O’Neil"],
       ["João Jr.", "João Jr."],

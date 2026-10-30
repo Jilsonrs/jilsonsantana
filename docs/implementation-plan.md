@@ -189,6 +189,16 @@
 > portão na frente, seria a página do "Em breve", 200); o clique de outro site, 403; a venda sem login (200); a sessão sem
 > login (200) e a minha assinatura sem login (401); a versão nova do app (`mvv787sn-a54444da`; antes, `mvv00bvk-4af06e93`).
 >
+> **Publicado em 30/10/2026: `eda8a5b`** — o nome obrigatório no servidor, só com letras visíveis (`bbd1b88`, o checkbox
+> depois da 9e) e o registro da publicação anterior (`0120c2f`); ordem do operador: *"Publicar agora"*, depois da revisão de
+> segurança sem P0 nem P1. CI e publicação com sucesso. **Revisão `jilson-prod-00053`** (100% do tráfego), conferida de
+> fora: o job das migrations, *"No pending migrations to apply"* (48); a subida com a cobrança conferida (os 11 avisos, na
+> `2026-09-30.endive`) e nenhuma linha de erro; a página, 200; a versão nova do app (`mvv996n6-d7060232`; antes,
+> `mvv787sn-a54444da`); os dois jobs na mesma imagem do site. **A prova do nome, de fora e sem efeito nenhum** (o pedido
+> sem o nome e com um plano que não existe, que nenhuma das duas versões deixa passar da validação): antes, a recusa citava
+> só o plano; depois, o nome e o plano — no cartão e no Pix. **Na revisão nova, o operador trocou a senha pelo código no
+> e-mail (P93):** o código pedido, a senha gravada e a entrada com ela, todos 200 no registro.
+>
 > **PARA CONTINUAR NO PRÓXIMO CHAT (a ordem — atualizado em 30/10/2026, depois da publicação `4819776`):**
 > **A META DO OPERADOR (30/10/2026): FECHAR A PARTE DE VENDA, testada com dinheiro de verdade.** A abertura ao público NÃO
 > entra agora: ela depende do JilsonAI (Fase 6 — P84, decisão de 28/10), das páginas de Termos, Privacidade e Contato (os
@@ -203,8 +213,8 @@
 >    `99f95a4` 9c, `7e03dcc` 9d, `86ee52a` 9e (os achados da revisão de segurança, com as decisões do operador de 30/10: o
 >    lembrete sem o nome, o nome só com letras, sem teto diário) e `d2369fd` (a junção dos documentos). Antes de publicar,
 >    só lendo: 0 fichas no banco de produção; depois, o RLS da `lead` conferido e as páginas dos links respondendo antes do
->    "Em breve" (o *Estado atual*). **O nome OBRIGATÓRIO no servidor: FEITO no `dev` (30/10/2026, o checkbox depois da
->    9e), ainda não publicado.** **Pergunta pendente ao operador (LGPD, não trava): a P135** — por quanto tempo guardar o lead
+>    "Em breve" (o *Estado atual*). **O nome OBRIGATÓRIO no servidor: FEITO e PUBLICADO (30/10/2026, `eda8a5b` — o
+>    checkbox depois da 9e).** **Pergunta pendente ao operador (LGPD, não trava): a P135** — por quanto tempo guardar o lead
 >    da caixa que nunca provou o e-mail, e se o descadastro apaga o nome e o UTM. **E a junção dos documentos (30/10):** o
 >    operador tinha mudado `docs/pendencias.md`, `docs/project-description.md` e `docs/strategy.md` no Projeto partindo de
 >    versões antigas; a pedido dele, a versão do git recebeu SÓ o que ele acrescentou (as decisões de 30/10 sobre a
@@ -235,9 +245,11 @@
 >    nome" no formulário de assinar sem conta; tudo na rodada de hora em hora (`jilson-prod-avisos`). A
 >    tabela de leads serve depois à captura do YouTube e do LinkedIn. **Todo texto** (o e-mail, o campo, o
 >    consentimento, a página de descadastro) vai ao operador para aprovar.
-> 3. **P93, um passo por vez, com a confirmação dele:** o 1º e-mail (o código de entrar) foi enviado ao Yahoo
->    em 29/10/2026 e espera a resposta; depois o código da senha nova, as boas-vindas e as telas de entrar e
->    de senha nova.
+> 3. **P93, um passo por vez, com a confirmação dele:** **os três e-mails APROVADOS em 30/10/2026** — o código de
+>    entrar e o da senha nova como estão; as boas-vindas com o título dele, "Olá, {primeiro nome}! Seja bem-vindo(a)" (o nome digitado ao assinar, e só um nome comum — decisão dele à
+>    pergunta da revisão de segurança; a caixa não é provada, P94), no `dev`, ainda não publicado. A troca de
+>    senha pelo código, testada por ele no site no ar: funcionou. **Falta:** os textos das telas de entrar e de senha
+>    nova (a `pendencias.md` → P93).
 > 4. **O passo 8 da 4.7** (o teste dele com cartão e Pix reais, R$ 99,90 e o reembolso — a P112 já está feita),
 >    com a P102.
 > **O que o próximo chat precisa saber:** a suíte do servidor apaga o banco de teste local — perguntar
@@ -5039,6 +5051,31 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                   Gates: typecheck, lint, build; site 902, servidor 1209 (como o CI).
       - [x] **Passo 5 — "Crie sua senha".** **FEITO (21/10/2026), no `dev`** — as quatro partes
             abaixo. Com o operador: os textos (P93) e onde os e-mails da prova caíram (P95).
+            **P93, os e-mails (30/10/2026):** os dois do código APROVADOS como estão; as boas-vindas com o
+            título dele — "Olá, {nome}! Seja bem-vindo(a)" (ele viu no Yahoo a versão mais longa, "… à
+            jilsonsantana.com, a sua escola na era da IA", e pediu só esta), sem nome: "Olá! Seja
+            bem-vindo(a)". O nome é o PRIMEIRO nome digitado ao assinar — o da FICHA, congelado quando a conta
+            nasce, nunca o da conta (`primeiroNomeDoTitulo`, `lib/boas-vindas.ts`: o aluno logado grava qualquer
+            nome pela rota pronta `update-user`, e a chave do envio é a mesma) —, e só se passar no
+            `nomeDaPessoaSchema` E for um NOME COMUM: até 30 letras do português e das línguas europeias (o
+            latim básico, o Latin-1 e o Latin Extended-A, com acento; o acento em dois caracteres juntado
+            antes, NFC), no máximo um hífen ou apóstrofo (**decisão do operador, 30/10/2026**, à pergunta da
+            revisão de segurança: "Só nome comum no título"). A caixa não é provada (P94): texto livre no título
+            seria a escola assinando o golpe de quem o escreveu. **A revisão de segurança, só do diff: nenhum P0
+            nem P1; três P2, fechados** — as letras de outros alfabetos que parecem ponto, dois-pontos, barra ou
+            8 (passam no "só letras"; a regra do nome comum, decidida por ele); o nome da conta, que muda e
+            faria a mesma chave de envio ter outro conteúdo (o da ficha); e os testes que comparavam o título
+            com o próprio dicionário (agora conferem o nome e que nenhuma `{` sobra). Testes: o primeiro nome,
+            a ficha sem nome, o nome da conta trocado depois de entrar, a ficha fora da regra, as letras que
+            parecem ponto, e a função (os nomes comuns e 15 fora). **Mutação: 10 de 10** (o nome da conta, sem
+            a regra de quem assina, sem a do nome comum, sem o limite de 30, vários hífens, qualquer alfabeto,
+            sem juntar o acento, o nome inteiro, sempre sem nome, e a marca `{nome}` com outra grafia no
+            dicionário). **E um defeito do agente, no teste do `bbd1b88`:** um comentário saíra com `\u00ED` no
+            lugar das letras acentuadas, e o "José" decomposto com o acento invisível de verdade — corrigidos
+            (a ferramenta de escrita decodifica essas sequências; o teste rodava certo). Gates: build, typecheck, lint; site 1076,
+            servidor 1698 (como o CI).
+            *Docs check (context7): não disparado — nenhuma chamada ao Better Auth nem à Stripe mudou (só a
+            leitura do nome da ficha no nosso banco).* Faltam os textos das telas (P93).
             *(Nasceu como "o e-mail com o link e a tela de definir a senha"; virou o código no
             e-mail na abertura.)*
             **ABERTURA (21/10/2026) — as decisões do operador, uma a uma, e o plano aprovado
