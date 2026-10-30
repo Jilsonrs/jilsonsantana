@@ -6297,9 +6297,18 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             15 min e volta; sem cabeçalho, malformado, velho e adiantado não alertam — com a prova de que o alerta
             estava livre), `stripe.test.ts` (+2); o teste "nenhuma recusa fica muda" passou a olhar o alerta e o
             registro juntos (dependia da ordem dos testes). **Mutação: 6 de 6 reprovaram.**
-      - [ ] **E6 — uma vez por dia, a rodada relê as assinaturas `active` com o período vencido há mais de 2 dias**,
+      - [x] **E6 — uma vez por dia, a rodada relê as assinaturas `active` com o período vencido há mais de 2 dias**,
             e alerta a que a Stripe diz devolvida ou vencida (a devolução pelo painel sem cancelar, P114; o aviso de
-            fim perdido).
+            fim perdido). **FEITO (29/10/2026):** `conferirAtivasVencidas` (`server/src/lib/ativas-vencidas.ts`), na
+            rodada das 12h UTC (9h no Brasil — `ehHoraDaConferenciaDasAtivas`; `tarefas/avisos-da-cobranca.ts`, depois
+            da conferência dos avisos): as ativas no site com o período pago vencido há mais de 2 dias (de conta não
+            apagada, as mais vencidas primeiro, até 50 por dia, 60 s de prazo) são relidas pela sincronia de sempre
+            (`sincronizarSeLivre`; a ocupada fica para amanhã). **Alerta** a que continua ativa sem período pago (o
+            reembolso pelo painel sem cancelar — a pessoa continua com as aulas: cancelar no painel), a encerrada na
+            Stripe (o espelho dava acesso a quem saiu — já acertado) e a que a Stripe não conhece; a que renovou fica
+            no registro; a falha fica para amanhã, com um alerta só no fim. Teste: `ativas-vencidas.test.ts` (novo, 8).
+            **Mutação: 9 de 9 reprovaram** (uma sobreviveu antes: o teste calculava a idade pela própria constante —
+            corrigido). O roteiro de `billing.md` (*Quando um aluno não conseguir pagar*, item 6) cita o alerta.
       - [ ] **E7 — a contestação e o aviso de fraude** (`charge.dispute.created`, `radar.early_fraud_warning.created`)
             tratados com alerta e cadastrados no endereço de avisos; hoje só o e-mail da Stripe avisa, e a disputa
             não corta o acesso. **Decisão do operador, 29/10/2026 (P122): a contestação CORTA o acesso na hora** (se

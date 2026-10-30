@@ -19,6 +19,7 @@ let codigo = 0;
 try {
   const { PRAZO_DA_RODADA_EM_MS, rodadaDosAvisos } = await import("../lib/avisos-da-assinatura.js");
   const { conferirAvisosPerdidos } = await import("../lib/avisos-perdidos.js");
+  const { conferirAtivasVencidas, ehHoraDaConferenciaDasAtivas } = await import("../lib/ativas-vencidas.js");
   const { prisma } = await import("../lib/prisma.js");
   try {
     // Primeiro, os avisos da Stripe que o site não processou (E1 da revisão ampla da cobrança, 29/10/2026 —
@@ -27,6 +28,12 @@ try {
     const conferencia = await conferirAvisosPerdidos();
     console.info(`[avisos] a conferência dos avisos da Stripe terminou: ${conferencia.conferidos} conferido(s), ${conferencia.perdidos} sem registro, ${conferencia.processados} processado(s) agora, ${conferencia.falhas} com falha, ${conferencia.adiados} adiado(s) para a próxima, ${conferencia.formatoAntigo} de fatura relida(s) pela API (formato antigo)`);
     if (conferencia.falhas > 0) codigo = 1;
+    // Uma vez por dia, as assinaturas ativas com o período vencido (E6 — `lib/ativas-vencidas.ts`).
+    if (ehHoraDaConferenciaDasAtivas(new Date())) {
+      const ativas = await conferirAtivasVencidas();
+      console.info(`[avisos] a conferência das assinaturas ativas vencidas terminou: ${ativas.conferidas} conferida(s), ${ativas.semPeriodoPago} sem período pago, ${ativas.encerradas} encerrada(s) na Stripe, ${ativas.renovadas} renovada(s), ${ativas.ocupadas} ocupada(s), ${ativas.desconhecidas} que a Stripe não conhece, ${ativas.falhas} com falha, ${ativas.adiadas} adiada(s) para amanhã`);
+      if (ativas.falhas > 0) codigo = 1;
+    }
     // A rodada dos e-mails fica com o resto do prazo: o job tem 5 minutos ao todo (`--task-timeout=300s`).
     const rodada = await rodadaDosAvisos(new Date(), Math.max(PRAZO_DA_RODADA_EM_MS - (Date.now() - inicio), 0));
     console.info(`[avisos] a rodada terminou: ${rodada.conferidas} conferida(s) na Stripe, ${rodada.ocupadas} ocupada(s), ${rodada.desconhecidas} que a Stripe não conhece, ${rodada.adiadas} adiada(s) para a próxima, ${rodada.falhas} com falha`);

@@ -1914,7 +1914,9 @@ desistiu (só no painel da Stripe → Pagamentos); o segredo do endereço de avi
    cliente que o site criou libera o acesso quando a fatura fica paga, mas "enviar fatura por e-mail" libera
    **antes** de pagar, o link de pagamento avulso não libera nada, e quem nem chegou ao campo de pagamento não
    tem cliente — nunca foi testado.
-6. **Reembolso que falhou:** devolva pelo painel. No painel, é sempre **devolver E cancelar** (P114).
+6. **Reembolso que falhou:** devolva pelo painel. No painel, é sempre **devolver E cancelar** (P114). Se só
+   devolver, a conferência diária da rodada (as 9h, E6) alerta no dia seguinte: *"a assinatura … está ativa na Stripe
+   sem período pago"* — é cancelar no painel.
 7. **No Sentry:** depois de resolver, marque "Resolvido", nunca "Ignorar"; e veja quantas vezes o erro aconteceu —
    um e-mail só pode ser muita gente.
 
