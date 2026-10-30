@@ -19,6 +19,12 @@ virou a referência contra a qual os outros se comparam. "AI-nativa" é termo de
 É IA" (content.md, A tese). Quando Hashtag/Xperiun colarem um chatbot na lateral, estarão entrando
 na **nossa** categoria — atrasados por definição. Custo: zero (é copy).
 
+> ⚠️ **Atualização out/2026 — a Hashtag já colou.** [FATO — transcripts das lives *Jornada IA* (set/26)
+> e *Intensivão de Claude* (out/26)] o plano anual deles inclui **assistente de IA 24h, trilhas
+> personalizadas, certificado por curso e atualizações**. O nome da categoria continua valendo como
+> posicionamento (ninguém batizou "AI-nativa"), mas **ter tutor de IA e trilha deixou de ser prova de
+> categoria** — virou o mínimo esperado. O que sustenta a categoria agora está na §2 (correção out/2026).
+
 **Quem serve:** profissional/estudante BR que quer aprender dados de forma prática e aplicada
 (Excel, Power BI, SQL, Python, IA aplicada) — do iniciante ao que quer subir de nível. Só em
 português, só no Brasil (12/10/2026 — §9).
@@ -40,13 +46,33 @@ na hora. Isso:
 
 > Filtro de decisão em tudo: *"isto é demonstração viva de IA bem-usada, ou mecânica comum?"*
 
+### Correção out/2026 — o que é paridade e o que é diferencial
+
+[FATO] A Hashtag vende assistente de IA 24h + trilhas personalizadas + certificado + atualizações
+(transcripts das duas lives de lançamento, set e out/2026). Logo, **ter** tutor de IA e trilha é
+**paridade**: entra na copy como *o que a escola entrega*, **nunca** como "só aqui" / "nenhuma
+plataforma tem". [INFER] O que eles não replicam barato:
+
+| Diferencial | Contra o quê | Por que é defensável |
+|---|---|---|
+| **Quem ensina é quem faz** — BI Sênior que usa IA em produção | catálogo de 30+ cursos com professores diferentes; quem apresenta a live não é quem dá o curso | é a pessoa, não o recurso |
+| **IA × dados integrados**, com o método *"a IA faz, o analista confere"* (bater o número com DAX/SQL) | IA generalista / no-code | exige saber dados de verdade |
+| **Mensal, sem fidelidade** | anual de 12 meses | já é decisão de preço (§6) |
+| **Certificado por competências** | certificado por curso concluído | já é decisão de produto |
+| **Sem urgência fabricada** | "maior oferta da história" repetida todo mês | já é regra de voz (§7) |
+| **JilsonAI na voz e no método do Jilson** | assistente genérico da escola | só vale se a persona for de fato distinta — provar na Fase 6, não prometer antes |
+
+> O fosso da §2 (gateway, persona, método, base que compõe) **continua certo como engenharia**; o
+> que mudou é que ele não pode mais ser vendido como *existência* do recurso — só como *qualidade*
+> e *método*.
+
 ---
 
 ## 3. Concorrentes (referências BR + globais)
 
 | Player | O que é | O que aprender | O que NÃO copiar |
 |--------|---------|----------------|------------------|
-| **Hashtag Treinamentos** | Escola BR ampla (Excel/Python/BI), comunidade, alto volume | amplitude com 1 marca; funil de conteúdo gratuito → assinatura | amplitude como fim em si; visual carregado |
+| **Hashtag Treinamentos** | Escola BR ampla (Excel/Python/BI/IA), alto volume. **Out/2026:** canal "Hashtag No Code & IA" (146K inscritos, criado ago/2025) + plano anual com 30+ cursos, **assistente de IA 24h, trilhas personalizadas, certificado por curso**, plantões ao vivo | amplitude com 1 marca; funil de conteúdo gratuito → assinatura; **didática das lives**: empresa fictícia com sujeira proposital nos dados, job real de freelance como projeto, mostrar a IA errando antes de acertar, auditar o número da IA | amplitude como fim em si; visual carregado; **urgência fabricada** ("maior oferta da história" repetida em set e out); **like-gating** (gravação só fica no ar se bater meta de likes); aulas que somem; **"garantia de resultado"** de 6 meses (risco Procon/CDC pra solo) |
 | **Xperiun** | Escola BR de dados, comunidade forte, gamificação | comunidade como retenção; narrativa de carreira | **gamificação pesada** (overhead solo) |
 | **DataTraining (How to Power BI)** | Catálogo evergreen de Power BI + site de treino | **catálogo evergreen compõe** (vídeos rendem anos); nicho claro | sem IA, sem trilha personalizada — a lacuna que o Jilson preenche |
 | **Mosh (codewithmosh)** | Autoridade pessoal solo, premium, simples | autoridade pessoal + simplicidade + assinatura única | tema dev (não dados) |
@@ -55,6 +81,9 @@ na hora. Isso:
 
 **A lacuna que o Jilson ocupa:** dados na prática (amplitude) + **IA no DNA** (trilha que monta,
 tutor 24/7) + autoridade pessoal + simplicidade Apple — combinação que nenhum deles tem junto.
+*Correção out/2026:* a Hashtag já junta amplitude + tutor de IA + trilha. A combinação que segue
+sendo só do Jilson é **autoridade de praticante em IA×dados + mensal sem fidelidade + zero urgência
+fabricada** (tabela na §2).
 
 ---
 
@@ -73,18 +102,34 @@ tutor 24/7) + autoridade pessoal + simplicidade Apple — combinação que nenhu
 
 ---
 
-## 5. Funil (Udemy → YouTube → site)
+## 5. Funil (YouTube + LinkedIn → site)
 
-> **Realidade jun/2026:** o canal YouTube ("Jilson Santana") está em **rebuild de inglês → PT**
-> (~1.580 inscritos, crescimento parado). Logo, **no curto prazo a Udemy é o motor**, não o YouTube.
+> **DECISÃO DO OPERADOR (30/10/2026): sem captura do público da Udemy.** *"Não vai mais ter captura
+> do público na Udemy, vou começar de forma independente no YouTube."* A escola nasce com o
+> **YouTube como motor principal de aquisição**, com o **LinkedIn como segundo canal** (decisão do
+> mesmo dia). A Udemy segue como **renda** e como **âncora de credibilidade** (+100 mil alunos é fato
+> e continua na copy), não como canal de captura.
+> **Separação total** `[decisão do operador, 30/10: "eu não vou apontar alunos da Udemy para o
+> YouTube"]`: nem e-mail pra base, nem ponte passiva (perfil de instrutor ou aula final da Udemy
+> apontando pro canal). *Substitui:* "no curto prazo a Udemy é o motor, não o YouTube" (jun/2026).
 
-- **Udemy (+100 mil alunos)** = **motor de aquisição inicial**. Alavanca de lançamento = **e-mail
-  pra base** convidando pro canal/site. Mesmo a 0,3–0,5% de conversão = centenas de assinantes (ordem
-  da meta de 500). Udemy fica fora do escopo de build (projeto à parte), mas é o canal nº 1 no launch.
-  Regra de termos: Udemy não manda direto pro site → manda pro YouTube (gratuito permitido) → site.
-- **YouTube "Jilson Santana"** = **rebuild PT, compounding de médio/longo prazo** (1 vídeo/semana).
-  Base pequena hoje → não é o motor no curto prazo; cresce alimentado pela própria campanha Udemy.
-  AdSense **bônus** (RPM PT/BR baixo).
+- ~~**Udemy (+100 mil alunos)** = motor de aquisição inicial (e-mail pra base, 0,3–0,5% = centenas
+  de assinantes)~~ — **removido em 30/10/2026** `[decisão do operador]`.
+- **YouTube "Jilson Santana"** = **motor principal de aquisição** (rebuild PT, ~1.580 inscritos em
+  jun/2026). Estratégia, cadência e SEO no projeto do canal (`YouTube-Project.md`). AdSense **bônus**
+  (RPM PT/BR baixo).
+  [INFER] **O que muda na prática:** sem a base Udemy, não há atalho de lançamento — o crescimento
+  da escola passa a andar no ritmo do canal. **Parar de publicar deixa de ser atraso e vira risco
+  existencial** pra escola. E o lançamento do site deixa de ter uma "onda" de entrada: os primeiros
+  assinantes chegam aos poucos, o que ao menos alivia o suporte no começo.
+- **LinkedIn = segundo canal de aquisição** `[decisão do operador, 30/10/2026]` — reverte o
+  "LinkedIn (rede) deprioritizado" de `project-description.md`. [INFER] Faz sentido pelo público: quem
+  trabalha com dados e quer subir de nível está lá, e é a mesma rede do horizonte B2B (§8).
+  **Regra anti-burnout:** LinkedIn é **distribuição** do que o YouTube já produz (clipe nativo 60–90s
+  + texto curto com um insight próprio), não uma segunda linha de produção. Link pro canal ou pra
+  escola no **1º comentário** (post com link externo no corpo tende a perder alcance — [INFER],
+  prática comum, não medida aqui). Link da escola sempre com `utm_source=linkedin`, pra comparar com o
+  YouTube. Idioma do perfil e formato: **P134**.
 - **Site** = conversão (assinatura R$99,90) + entrega de valor recorrente.
 - **Ferramentas gratuitas — "comoditize o complemento" (pós-launch, 1 piloto):** [FATO] estratégia
   formalizada por Joel Spolsky (Strategy Letter V) e executada pelas big techs — Google deu o
@@ -97,6 +142,13 @@ tutor 24/7) + autoridade pessoal + simplicidade Apple — combinação que nenhu
   grátis vive fora, como já decidido. ⚠️ Anti-burnout: é projeto, não decisão — fila pós-launch,
   começar com **1 template piloto** + captura de e-mail (Resend já existe). Candidato natural:
   material do "Excel do Zero" (courses.md §17.2).
+- **Material dos vídeos do YouTube como degrau de captura (out/2026, proposta do projeto do
+  canal):** hoje o vídeo leva direto à assinatura de R$ 99,90 — falta um degrau pra quem ainda não
+  decide. Dataset, guia de prompts copiáveis e arquivo final dos **Projetos Práticos e Cursos Nano**
+  passariam a ser baixados em jilsonsantana.com com e-mail, **mantendo o UTM do vídeo**. É a mesma
+  peça das ferramentas grátis acima, e a mesma página da **P29** (`pendencias.md`). [INFER] A
+  Hashtag captura e-mail por inscrição prévia + formulário de certificado de live; o equivalente sem
+  atrito e sem urgência é o arquivo. Mesma trava anti-burnout: pós-launch, 1 piloto.
 
 ---
 
@@ -108,6 +160,14 @@ tutor 24/7) + autoridade pessoal + simplicidade Apple — combinação que nenhu
   e não há assinante em dólar a somar.
 - *Validação (Gemini ~95% convergência):* mensal-sem-fidelidade ganha de anual-12x-travado em
   conversão × LTV; fidelidade carrega risco Procon/CDC/chargeback pra operador solo.
+- **Benchmark de preço — Hashtag (out/2026, só registro; preço NÃO muda)** `[decisão do operador,
+  30/10: "não vou mexer nos meus preços"]`. [FATO — transcripts] âncora R$ 1.500/ano → lista
+  **R$ 997/ano** → oferta de evento **12× R$ 59 (~R$ 597/ano)**, repetida em set e out. Nosso anual
+  (~R$ 995) fica **cara a cara com a lista deles** e acima da oferta de evento; nosso mensal sem
+  fidelidade **não tem equivalente** lá. [INFER] Não competir por preço (conflita com a voz e com a
+  regra de escassez): a resposta é deixar visível o que o anual deles não dá — mensal sem trava,
+  quem ensina é quem faz, certificado por competências. *Gatilho de reabertura:* conversão
+  medida do anual muito abaixo do mix 25% previsto.
 - **META DE RECEITA (B2C-first, atualizada Jun 2026): US$ 6.000 líquidos/mês.** O motor é a
   **base de pessoas físicas** (assinatura). Cohorts e B2B são **bônus em cima** — não load-bearing.
   - *Premissas (atualizar quando mudarem):* câmbio **R$ 5,15/US$** (spot 23/jun/2026) → meta
@@ -254,11 +314,15 @@ tutor 24/7) + autoridade pessoal + simplicidade Apple — combinação que nenhu
     pública** — mensal, nunca semanal; o drop pode ser mínimo (1 aula nova, 1 atualização de camada
     IA). O valor está na **previsibilidade, não no volume**. Decidir o dia **antes do go-live**
     (vira copy — content.md §3/§11).
-  - *Funil:* `vendas/mês = alcance × conversão`. **Motor inicial = e-mail pra base Udemy (100k)** →
-    convite pro canal/site; a 0,3–0,5% direto já gera centenas de assinantes. **YouTube PT (~1.580,
-    em rebuild)** entra como compounding de médio prazo, não fonte primária no launch. **Inputs reais
-    a preencher:** total Udemy alcançável por e-mail, novos alunos Udemy/mês, CTR e-mail→site, e
-    crescimento do canal PT a partir do baseline ~1.580.
+  - *Funil:* `vendas/mês = alcance × conversão`. **Motor = YouTube (principal) + LinkedIn
+    (segundo canal), desde 30/10/2026** `[decisão do operador — sem captura da Udemy]`. *(Antes: e-mail pra base Udemy como motor inicial.)*
+    **Inputs reais a preencher:** views/mês do canal, cliques no link da escola (UTM), conversão
+    visitante→assinante e crescimento do canal a partir de ~1.580.
+    [INFER — conta de ordem de grandeza, premissas marcadas] **40 vendas/mês** exigem ~800–1.300
+    visitantes/mês no site a 3–5% de conversão (o KPI desta seção). Se ~1% de quem assiste clica no
+    link da descrição (premissa, não medida), isso é **~80–130 mil views/mês** no canal. Leitura: as
+    tabelas de trajetória acima (40–60 novas/mês) **não valem pros primeiros meses** sem a Udemy —
+    continuam como referência de esforço, não como calendário. Recalibrar com 90 dias de UTM real.
 - **Custo JilsonAI não é existencial:** aluno médio gasta poucos reais/mês de API; a cauda
   (heavy/abusivo) é limitada por quota + rate-limit + medidor visível. Tiers de uso = seams pós-launch.
 - **KPIs a observar:** churn <8% (saudável BR 6–10%), conversão 3–5%, winback 15–25%,
@@ -356,3 +420,9 @@ fases novas.*
 *Atualização Set 2026 (18/09) — **TETO DE 1.000 ASSINANTES PAGANDO MENSAL** `[decisão do operador]`, **+ duas correções na derivação da §6**. **O que NÃO mudou: o método.** A conta por plano de ago/2026 (R$ 0,50 por transação, imposto sobre o bruto) continua correta e intacta — as correções abaixo entram **dentro** dela, não no lugar dela. **A escada passa de três para quatro números:** ~378–469 = a conta · ~400 = o piso · 500 = a meta · **1.000 = o TETO**. **O teto vale R$ 99.900/mês bruto (R$ 1,2M/ano), R$ 72–82k/mês líquido ≈ US$ 14–16k** — **~2,3× a renda-objetivo mesmo na conta mais pessimista** — e segue em **território EPP** (limite do Simples: R$ 4,8M/ano), sem mudar enquadramento. **É no plano MENSAL** `[decisão do operador]`, não no mix 75/25: mensal puro fatura **~R$ 51k/ano a mais** que o mesmo número de assinantes no mix, porque o anual dá 17% de desconto — e a conta **sobrevive à troca**, porque a alíquota progressiva come exatamente a diferença. **CORREÇÃO (1) — o Simples é PROGRESSIVO, não 6% fixo.** Os ~6% são a alíquota da 1ª faixa do Anexo III (até R$ 180k/ano); a efetiva sobe com a RBT12, isto é, **sobe junto com a base**: ~9,4% na conta · ~10,4% na meta · **~13,0% no teto**. Custa **~R$ 2,3 mil/mês aos 500** e **~R$ 7 mil/mês (R$ 84k/ano) aos 1.000** — o erro escala com a meta. O alerta que existia na §6 era **só** Anexo III × Anexo V; **o problema acontece mesmo ficando no III**, e isso nunca esteve escrito. ⚠️ A estrutura progressiva é certa; **os valores de faixa são [A CONFIRMAR COM O CONTADOR]**, agora com três perguntas em vez de uma: valores do Anexo III · III × V · **Simples × Lucro Presumido** (a ~13% efetiva ele merece comparação). **CORREÇÃO (2) — faltava o custo de API do JilsonAI no ARPU.** É custo variável por assinante (R$ 5–9 leve, R$ 25–45 heavy — `jilsonai.md`), **maior que a taxa da Stripe** (a R$ 10/aluno = ~10,5% do bruto, o dobro dos 5,2%), e não estava descontado em lugar nenhum. Incluindo-o, **o "piso" de ~400 vira a CONTA** e a margem que ele representava some. **Consequência de forma:** o ARPU deixa de ser número único (R$ 85,04) e vira **faixa R$ 67–82** — depende do tamanho da base (a alíquota) e do consumo de cada aluno (a API). **Sobre a churn:** os 7% são **hipótese, nunca medida** `[enquadramento do operador]`; a tabela de trajetória do teto fica como **referência de esforço, não restrição à meta** — não se usa número inventado para decidir se 1.000 é alcançável. **GATILHO DE REABERTURA (vale para a meta E para o teto):** 12 meses de churn **medida**, **ou** câmbio/enquadramento movendo o ARPU líquido mais de ~10% — o que inclui o contador fechar a questão do Anexo/regime. **NÃO é gatilho:** ritmo de crescimento abaixo do esperado no começo — **teto é destino, não previsão.***
 
 *Atualização Out 2026 (12/10) — **UM IDIOMA SÓ: PORTUGUÊS, PARA O BRASIL** `[decisão do operador]`, revertendo a escola bilíngue de 14/09. §9 reescrita ("Um idioma só"); §1 *Quem serve* volta a ser só o Brasil; §5 perde o canal do YouTube em inglês como frente da escola (o canal em si é decisão dele — P90); §6 perde o preço em dólar. **Gatilho de reabertura:** só por decisão dele, com dado novo — o Stripe Tax ou o Managed Payments aceitarem empresa do Brasil, ou a empresa mudar de país. Voltar ao inglês é projeto novo, não "religar".*
+
+*Atualização Out 2026 (30/10) — **ANÁLISE DAS LIVES DA HASHTAG (Jornada IA, set/26 · Intensivão de Claude, out/26) + vidIQ do canal "Hashtag No Code & IA"**, vinda do projeto do YouTube (`YouTube-Project.md` v6.4). **Correção principal:** a Hashtag já vende assistente de IA 24h, trilhas personalizadas e certificado → tutor de IA e trilha passam a ser **paridade**, não exclusividade. §1 ganha o alerta ("a Hashtag já colou"); §2 ganha a tabela *paridade × diferencial* (quem ensina é quem faz · IA×dados com "a IA faz, o analista confere" · mensal sem fidelidade · certificado por competências · sem urgência fabricada); §3 atualiza a linha da Hashtag (o que aprender da didática deles e o que não copiar: urgência repetida, like-gating, aulas que somem, garantia de resultado); §5 liga o material dos vídeos do YouTube à captura de e-mail (mesma página da P29); §6 registra o benchmark de preço **sem mexer no preço** `[decisão do operador, 30/10]`. **O que NÃO mudou:** preço, meta, teto, derivação, voz. O fosso de engenharia da §2 continua certo — muda só como ele é vendido.*
+
+*Atualização Out 2026 (30/10, 2) — **SEM CAPTURA DO PÚBLICO DA UDEMY; YOUTUBE É O ÚNICO MOTOR** `[decisão do operador]`. §5 reescrita (era "Udemy → YouTube → site", com a Udemy como motor de curto prazo); §6 troca o motor do funil e ganha a conta de ordem de grandeza do que o canal precisa entregar (~80–130 mil views/mês para 40 vendas/mês, premissas marcadas); §9 ajusta a menção à base. **O que NÃO mudou:** preço, meta (500), teto (1.000), derivação do ARPU. **O que muda de fato:** o calendário — as trajetórias da §6 deixam de valer para os primeiros meses. A Udemy segue como renda e como credibilidade. Ponte passiva Udemy → canal: **P133**.*
+
+*Atualização Out 2026 (30/10, 3) — **LINKEDIN COMO SEGUNDO CANAL + SEPARAÇÃO TOTAL DA UDEMY** `[decisões do operador]`. §5: o LinkedIn entra como segundo canal de aquisição (distribuição do conteúdo do YouTube, link no 1º comentário, `utm_source=linkedin`), revertendo o "LinkedIn deprioritizado"; o YouTube passa de "único" a "principal". A Udemy não aponta alunos nem para o canal (sem ponte passiva) — a P133 foi resolvida e saiu da lista. A conta de ordem de grandeza da §6 segue valendo só para o YouTube; o LinkedIn entra por cima quando houver UTM medido. Idioma do perfil e formato: **P134**.*

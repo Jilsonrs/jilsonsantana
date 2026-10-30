@@ -182,11 +182,13 @@
 >    conta no banco de produção (`production`) — na primeira rodada, as de mais de 7 dias são apagadas, com os clientes
 >    delas na Stripe; depois, o RLS da tabela `lead` no banco de produção e a primeira rodada no registro do job
 >    (`[avisos] quem não terminou de assinar: …`); e, numa publicação seguinte, o nome OBRIGATÓRIO no servidor (o
->    checkbox depois da 9e). **Pergunta pendente ao operador (LGPD, não trava):** por quanto tempo guardar o lead da
->    caixa que nunca provou o e-mail, e se o descadastro apaga o nome e o UTM. **E um achado fora do passo, reportado a
->    ele em 30/10:** `docs/pendencias.md`, `docs/project-description.md` e `docs/strategy.md` apareceram mudados fora da
->    sessão (a `pendencias.md` com uma versão antiga, "Próximo número livre: P47") — ficaram FORA dos commits, à espera
->    da decisão dele (pela regra, o git vence).
+>    checkbox depois da 9e). **Pergunta pendente ao operador (LGPD, não trava): a P135** — por quanto tempo guardar o lead
+>    da caixa que nunca provou o e-mail, e se o descadastro apaga o nome e o UTM. **E a junção dos documentos (30/10):** o
+>    operador tinha mudado `docs/pendencias.md`, `docs/project-description.md` e `docs/strategy.md` no Projeto partindo de
+>    versões antigas; a pedido dele, a versão do git recebeu SÓ o que ele acrescentou (as decisões de 30/10 sobre a
+>    Hashtag, a Udemy fora da aquisição, o YouTube como motor principal e o LinkedIn como segundo canal), com os números
+>    das pendências novas trocados para os livres (P44 → P132, P45 → P133, já resolvida, P46 → P134). **Ele atualiza os
+>    arquivos do Projeto a partir do git.**
 > 1. **A revisão ampla da cobrança (a etapa 4.9b): o bloco de engenharia APROVADO (29/10/2026), na ordem do
 >    plano** — grupo 1 (E5, E4, E1, E3, E2) **FEITO e publicado (`f36e274`)**, com as correções C1 a C5; **o grupo 2 (E8, E10,
 >    E9, E7, E6), os R1 a R6, a P128 e os achados da revisão do grupo 2: FEITOS e publicados (`0f8c0c7`).** **O grupo 3
@@ -5884,8 +5886,8 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                         · sem o prazo · o aviso de atraso a toda hora · o erro com o endereço inteiro · a troca com `$` · a
                         limpeza sem o lead · a margem menor · a assinatura pelos bytes · a tela sem o aviso de só letras).
                         Gates: typecheck, lint, build; site 1076, servidor 1691 (como o CI).
-                        **Fica com o operador (LGPD, pergunta para depois):** por quanto tempo guardar o lead da caixa que
-                        nunca provou o e-mail, e se o descadastro apaga o nome e o UTM (hoje ficam). **Verificação de
+                        **Fica com o operador (LGPD, pergunta para depois — P135):** por quanto tempo guardar o lead da caixa
+                        que nunca provou o e-mail, e se o descadastro apaga o nome e o UTM (hoje ficam). **Verificação de
                         depois da publicação:** o RLS da tabela `lead` no banco de produção (o SQL do `CLAUDE.md`).
             - [ ] **Depois da publicação do passo 9: o nome passa a OBRIGATÓRIO no servidor**
                   (`assinarSemLoginSchema`, `core/src/schemas/billing.ts`) — tira o `.optional()` e o teste "o
