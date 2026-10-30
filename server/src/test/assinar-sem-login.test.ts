@@ -75,7 +75,7 @@ let naStripe: NaStripe[] = [];
 
 const assinar = (corpo: object, endereco = "198.51.100.20") => request(servidor).post("/api/billing/visitante/assinatura").set("x-forwarded-for", endereco).send(corpo);
 const confirmar = (tentativa: unknown) => request(servidor).post("/api/billing/visitante/confirmacao").send({ tentativa });
-const pedido = (email: string, extra: object = {}) => ({ email, documento: CPF, plano: "mensal", novidades: false, ...extra });
+const pedido = (email: string, extra: object = {}) => ({ nome: "Ana Visitante", email, documento: CPF, plano: "mensal", novidades: false, ...extra });
 const ficha = (email: string) => prisma.guestCheckout.findUnique({ where: { email: email.toLowerCase() } });
 
 /** A assinatura do visitante como a Stripe diria agora — paga, com a ficha e a escolha. */
@@ -763,11 +763,23 @@ describe("o que a tentativa deixa na ficha (passo 9)", () => {
     expect([f?.nome, f?.novidades]).toEqual(["Quem Clicou Depois", true]);
   });
 
-  it("o pedido SEM o nome (a aba aberta antes da publicação do passo 9) segue — e não apaga o nome que a ficha já tinha", async () => {
+  // O NOME É OBRIGATÓRIO no servidor desde a publicação seguinte à do passo 9 (a aba aberta antes dela, que não o
+  // mandava, já saiu — CLAUDE.md → *API aditiva*). `nome: undefined` some do JSON: o pedido chega sem o campo.
+  it("o pedido SEM o nome: 400, e nada vai à Stripe nem ao banco", async () => {
+    const email = novoEmail();
+    const res = await assinar(pedido(email, { nome: undefined }));
+    expect([res.status, res.body.error]).toEqual([400, "ValidationError"]);
+    expect(await ficha(email)).toBeNull();
+    expect(buscarPrecos).not.toHaveBeenCalled();
+    expect(criarClienteDoVisitante).not.toHaveBeenCalled();
+  });
+
+  it("o novo clique SEM o nome, na mesma tentativa: 400 — a tentativa não é refeita, e a ficha guarda o nome de antes", async () => {
     const email = novoEmail();
     const primeiro = await assinar(pedido(email, { nome: "Com Nome" }));
-    const segundo = await assinar(pedido(email, { tentativa: primeiro.body.tentativa }));
-    expect(segundo.status).toBe(200);
+    const segundo = await assinar(pedido(email, { nome: undefined, tentativa: primeiro.body.tentativa }));
+    expect([segundo.status, segundo.body.error]).toEqual([400, "ValidationError"]);
+    expect(criarAssinatura).toHaveBeenCalledTimes(1);
     expect((await ficha(email))?.nome).toBe("Com Nome");
   });
 
@@ -788,6 +800,13 @@ describe("o que a tentativa deixa na ficha (passo 9)", () => {
       "R$ Ana",
       "Ana\u200BSilva",
       "Ana \u202Eavlis",
+      // Os invis\u00EDveis que o Unicode conta como letra ou acento (revis\u00E3o de seguran\u00E7a, 30/10/2026), e o acento solto.
+      "\u3164",
+      "Ana\u3164Silva",
+      "Ana\uFE0F",
+      "Ana\u{E0100}",
+      "Ana\u034FSilva",
+      "\u0301",
       "Ana 😀",
       "-Ana",
       "Ana--Silva",
@@ -808,6 +827,8 @@ describe("o que a tentativa deixa na ficha (passo 9)", () => {
   it("os nomes de verdade passam — acento, hífen, apóstrofo, abreviação — e os espaços de dentro ficam um só", async () => {
     const nomes: Array<[string, string]> = [
       ["José da Silva", "José da Silva"],
+      // O acento DECOMPOSTO (a letra e o acento em dois caracteres, como alguns teclados mandam) também é nome.
+      ["José da Silva", "José da Silva"],
       ["Maria-Clara D'Ávila", "Maria-Clara D'Ávila"],
       ["Ana O’Neil", "Ana O’Neil"],
       ["João Jr.", "João Jr."],

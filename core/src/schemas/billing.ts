@@ -79,9 +79,12 @@ export const TAMANHO_DO_NOME = 100;
 /**
  * Um nome de gente: palavras de LETRAS (com acento), separadas por um espaço, um hífen ou um apóstrofo, e um ponto só
  * no fim de uma palavra (abreviação: "Jr.", "M. Souza"). Fica de fora tudo o que serve a um golpe: dígito, `/ : @ $`,
- * endereço de site, e os caracteres invisíveis ou que invertem o texto.
+ * endereço de site, e os caracteres invisíveis ou que invertem o texto — também os que o Unicode conta como letra ou
+ * acento (o preenchimento do coreano, os seletores de variação: `Default_Ignorable_Code_Point`), e a palavra que não
+ * começa por uma letra (um acento solto). Sem isso, o nome obrigatório passava visualmente vazio (revisão de
+ * segurança, 30/10/2026).
  */
-export const NOME_SO_COM_LETRAS = /^[\p{L}\p{M}]+\.?(?:[ '’-][\p{L}\p{M}]+\.?)*$/u;
+export const NOME_SO_COM_LETRAS = /^(?!.*\p{Default_Ignorable_Code_Point})\p{L}[\p{L}\p{M}]*\.?(?:[ '’-]\p{L}[\p{L}\p{M}]*\.?)*$/u;
 
 /**
  * O NOME de quem assina sem conta (etapa 4.7, passo 9 — o campo "Seu nome", obrigatório na tela por
@@ -109,10 +112,9 @@ export const nomeDaPessoaSchema = z
  * cancelada e nasce outra. Preço, valor e conta nunca vêm do navegador.
  */
 export const assinarSemLoginSchema = z.object({
-  // O nome (passo 9): OPCIONAL no servidor NESTA publicação — a API só acrescenta, e a aba aberta antes
-  // dela não o manda (CLAUDE.md → Rendering Boundary) —; a tela sempre o manda. Passa a obrigatório no
-  // servidor na publicação seguinte (o plano → etapa 4.7, passo 9), como o CPF fez na 6a.
-  nome: nomeDaPessoaSchema.optional(),
+  // O nome (passo 9): OBRIGATÓRIO no servidor desde a publicação seguinte à do passo 9 — a aba aberta antes
+  // dela, que não o mandava, já saiu (CLAUDE.md → Rendering Boundary, *API aditiva*), como o CPF fez na 6a.
+  nome: nomeDaPessoaSchema,
   email: enderecoDeEmailSchema,
   documento: documentoFiscalSchema,
   plano: z.enum(PLANOS),

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { assinarSemLoginSchema, formatarDocumentoFiscal, lerDocumentoFiscal } from "@jilson/core";
+import { assinarSemLoginSchema, formatarDocumentoFiscal, lerDocumentoFiscal, pixSemLoginSchema } from "@jilson/core";
 
 // O CPF OU CNPJ DE QUEM ASSINA SEM CONTA (etapa 4.7, passo 4) — função pura do `core`, teste
 // unitário (CLAUDE.md → Testing: só função pura, sem I/O). A Stripe confere só o formato; quem
@@ -63,7 +63,7 @@ describe("a pontuação de costume (o formato que vai à Stripe)", () => {
 // O PEDIDO DE ASSINAR SEM CONTA: o CPF errado recusa o pedido; a origem (UTM) NUNCA recusa — um
 // valor estranho não pode impedir ninguém de assinar.
 describe("o pedido de assinar sem conta", () => {
-  const certo = { email: "ana@exemplo.com", documento: "529.982.247-25", plano: "mensal", novidades: false };
+  const certo = { nome: "Ana Souza", email: "ana@exemplo.com", documento: "529.982.247-25", plano: "mensal", novidades: false };
 
   it("o documento vira o documento conferido; o CPF errado recusa o pedido, sem repetir o número", () => {
     const ok = assinarSemLoginSchema.safeParse(certo);
@@ -89,8 +89,12 @@ describe("o pedido de assinar sem conta", () => {
     expect(r.success && r.data.tentativa).toBeUndefined();
   });
 
-  it("sem a resposta da caixa de novidades, ou sem o documento: recusado", () => {
-    expect(assinarSemLoginSchema.safeParse({ ...certo, novidades: undefined }).success).toBe(false);
-    expect(assinarSemLoginSchema.safeParse({ ...certo, documento: undefined }).success).toBe(false);
+  it("sem o nome, sem a resposta da caixa de novidades, ou sem o documento: recusado — no cartão e no Pix", () => {
+    for (const schema of [assinarSemLoginSchema, pixSemLoginSchema]) {
+      expect(schema.safeParse(certo).success).toBe(true);
+      expect(schema.safeParse({ ...certo, nome: undefined }).success).toBe(false);
+      expect(schema.safeParse({ ...certo, novidades: undefined }).success).toBe(false);
+      expect(schema.safeParse({ ...certo, documento: undefined }).success).toBe(false);
+    }
   });
 });

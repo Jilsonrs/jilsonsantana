@@ -99,12 +99,12 @@ export async function desfechoDaFicha(db: Pick<Prisma.TransactionClient, "guestC
 
 /**
  * O QUE A TENTATIVA DEIXA NA FICHA (etapa 4.7, passo 9): o nome digitado, a caixa de novidades, a origem e a
- * hora — os da ÚLTIMA tentativa, que o lembrete, o lead e a limpeza dos 7 dias leem. Função pura. O nome que
- * não veio (a aba aberta antes da publicação do passo 9) não apaga o que a ficha já tinha.
+ * hora — os da ÚLTIMA tentativa, que o lembrete, o lead e a limpeza dos 7 dias leem. Função pura. O nome é
+ * obrigatório no pedido (`assinarSemLoginSchema`).
  */
 export function dadosDaTentativa(pedido: Pick<AssinarSemLoginInput, "nome" | "novidades" | "origem" | "campanha">, agora: Date = new Date()) {
   return {
-    ...(pedido.nome ? { nome: pedido.nome } : {}),
+    nome: pedido.nome,
     novidades: pedido.novidades,
     acquisitionSource: pedido.origem ?? null,
     acquisitionCampaign: pedido.campanha ?? null,

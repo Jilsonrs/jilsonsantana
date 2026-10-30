@@ -174,15 +174,37 @@
 > avisos, na `2026-09-30.endive`) e nenhuma linha de erro; o job das migrations, *"No pending migrations to apply"* (47);
 > a página, 200; a sessão sem login, 401; o job da rodada na mesma imagem do site.
 >
-> **PARA CONTINUAR NO PRÓXIMO CHAT (a ordem — atualizado em 30/10/2026, depois do passo 9 da 4.7 no `dev`):**
-> 0. **O PASSO 9 DA 4.7 ESTÁ TODO NO `dev`, SEM PUBLICAR** (`840acac` 9a, `1db57ec` 9b, `99f95a4` 9c, `7e03dcc` 9d e o
->    commit das correções da revisão, 9e): a revisão de segurança feita (nenhum P0; os P1 e P2 corrigidos, com as
->    decisões do operador de 30/10: o lembrete sem o nome, o nome só com letras, sem teto diário), a prova na área restrita
->    e a prova pela rota (16 de 16, duas vezes). **Para publicar, na ordem dele:** antes, contar SÓ LENDO as fichas sem
->    conta no banco de produção (`production`) — na primeira rodada, as de mais de 7 dias são apagadas, com os clientes
->    delas na Stripe; depois, o RLS da tabela `lead` no banco de produção e a primeira rodada no registro do job
->    (`[avisos] quem não terminou de assinar: …`); e, numa publicação seguinte, o nome OBRIGATÓRIO no servidor (o
->    checkbox depois da 9e). **Pergunta pendente ao operador (LGPD, não trava): a P135** — por quanto tempo guardar o lead
+> **Publicado em 30/10/2026: `4819776`** — o passo 9 da 4.7 (quem não terminou de assinar, e a tabela de leads): `840acac`
+> (9a), `1db57ec` (9b), `99f95a4` (9c), `7e03dcc` (9d), `86ee52a` (9e, os achados da revisão de segurança) e `d2369fd` (a
+> junção dos documentos que o operador mudou no Projeto); ordem do operador: *"publica"*. **Antes de publicar, só lendo no
+> banco de produção: 0 fichas** — a primeira rodada não apagaria nada. CI e publicação com sucesso. **Revisão
+> `jilson-prod-00052`** (100% do tráfego), conferida: o job das migrations aplicou a `20261030200000_quem_nao_terminou` (*"All
+> migrations have been successfully applied"*; 48 no total); **no banco de produção, só leitura: nenhuma tabela sem RLS, a
+> `lead` com RLS e vazia**; a subida com *"a cobrança confere — […] os 11 avisos, na linha da API do site
+> (2026-09-30.endive)"* e nenhuma linha de erro; o job da rodada na mesma imagem do site. **A primeira rodada com o código
+> novo (17:00 UTC):** *"quem não terminou de assinar: 0 lembrete(s), 0 sem lembrete, 0 ficha(s) apagada(s) […] 0 com
+> falha"*, a execução com sucesso e nenhuma linha de aviso ou erro. **De fora:** a home no "Em breve"
+> (200); a saúde (200); **as duas páginas novas ANTES do "Em breve"** — `/novidades/<id>/<assinatura>` e
+> `/descadastrar/<id>/<assinatura>` com um código que não vale respondem 404 com "Este link não vale mais." e `noindex` (com o
+> portão na frente, seria a página do "Em breve", 200); o clique de outro site, 403; a venda sem login (200); a sessão sem
+> login (200) e a minha assinatura sem login (401); a versão nova do app (`mvv787sn-a54444da`; antes, `mvv00bvk-4af06e93`).
+>
+> **PARA CONTINUAR NO PRÓXIMO CHAT (a ordem — atualizado em 30/10/2026, depois da publicação `4819776`):**
+> **A META DO OPERADOR (30/10/2026): FECHAR A PARTE DE VENDA, testada com dinheiro de verdade.** A abertura ao público NÃO
+> entra agora: ela depende do JilsonAI (Fase 6 — P84, decisão de 28/10), das páginas de Termos, Privacidade e Contato (os
+> textos são dele: P61, P30) e da cópia do banco fora do Neon (Fase 7); e o acabamento visual da tela de assinar (6g) é do
+> Antigravity. **O que é do agente, nesta ordem:** (a) o nome OBRIGATÓRIO no servidor (o checkbox depois da 9e; publicar
+> só com a ordem dele); (b) a P93, um e-mail por vez (o código de entrar espera a resposta dele; depois o código da senha
+> nova e as boas-vindas, mandados de verdade ao Yahoo dele; por último as telas de entrar e de senha nova, que ele vê pela
+> prévia); (c) o passo 8 — o teste dele com cartão e Pix de verdade (R$ 99,90) e o reembolso, guiado passo a passo, com a
+> P102 antes, e a conferência só lendo depois de cada passo (o banco de produção, o registro do job e do serviço); (d) a
+> P126, conferindo os prints dele item por item; (e) registrar tudo e deixar aqui o que falta para abrir ao público.
+> 0. **O PASSO 9 DA 4.7 ESTÁ NO AR desde a publicação `4819776` (revisão `jilson-prod-00052`)** — `840acac` 9a, `1db57ec` 9b,
+>    `99f95a4` 9c, `7e03dcc` 9d, `86ee52a` 9e (os achados da revisão de segurança, com as decisões do operador de 30/10: o
+>    lembrete sem o nome, o nome só com letras, sem teto diário) e `d2369fd` (a junção dos documentos). Antes de publicar,
+>    só lendo: 0 fichas no banco de produção; depois, o RLS da `lead` conferido e as páginas dos links respondendo antes do
+>    "Em breve" (o *Estado atual*). **O nome OBRIGATÓRIO no servidor: FEITO no `dev` (30/10/2026, o checkbox depois da
+>    9e), ainda não publicado.** **Pergunta pendente ao operador (LGPD, não trava): a P135** — por quanto tempo guardar o lead
 >    da caixa que nunca provou o e-mail, e se o descadastro apaga o nome e o UTM. **E a junção dos documentos (30/10):** o
 >    operador tinha mudado `docs/pendencias.md`, `docs/project-description.md` e `docs/strategy.md` no Projeto partindo de
 >    versões antigas; a pedido dele, a versão do git recebeu SÓ o que ele acrescentou (as decisões de 30/10 sobre a
@@ -204,7 +226,7 @@
 >    por prints — fazer junto com o operador) e a P125 (só quando ele for criar um desses códigos). O roteiro
 >    "quando um aluno não conseguir pagar" está em `billing.md`, como rascunho, para ele revisar.
 > 2. **O passo 9 da 4.7 — quem não terminou de assinar, e a tabela de leads** (decisões do operador,
->    29/10/2026): **FEITO no `dev` em 30/10/2026 — o item 0, acima.** Registrado no plano (etapa 4.7 → Passo 9), com o plano do bloco em 5 partes
+>    29/10/2026): **FEITO e PUBLICADO em 30/10/2026 (`4819776`) — o item 0, acima.** Registrado no plano (etapa 4.7 → Passo 9), com o plano do bloco em 5 partes
 >    (9a a 9e), APROVADO no mesmo dia ("Aprovo como está") — com o CPF na fatura anulada da tentativa com
 >    cartão aceito (a Stripe não deixa apagar fatura; medido na área restrita) e o "Seu nome" obrigatório. O e-mail "você não terminou a assinatura" 2 horas depois
 >    da última tentativa; aos 7 dias, a ficha e o cliente da Stripe (com o CPF) são apagados; quem marcou
@@ -5831,7 +5853,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                   clique sem teto · as páginas atrás do "Em breve" · a página guardada no caminho · repetir o
                   descadastro mudando a data); as duas dos links da 9c, de novo com o formato novo: reprovam. Gates:
                   typecheck, lint, build; site 1075, servidor 1682 (como o CI).
-            - [ ] **9e — Prova e revisão.** O `security-vulnerability-reviewer` só sobre o diff do passo (P0
+            - [x] **9e — Prova e revisão.** O `security-vulnerability-reviewer` só sobre o diff do passo (P0
                   e P1 travam a publicação; P2 e P3 se fecham com teste e mutação); a prova na área restrita (a
                   limpeza de um cliente descartável, com e sem pagamento); a prova pela rota (servidor local,
                   banco de dev, ficha descartável: o lembrete, o clique, o descadastro, a limpeza); o e-mail e
@@ -5889,10 +5911,33 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                         **Fica com o operador (LGPD, pergunta para depois — P135):** por quanto tempo guardar o lead da caixa
                         que nunca provou o e-mail, e se o descadastro apaga o nome e o UTM (hoje ficam). **Verificação de
                         depois da publicação:** o RLS da tabela `lead` no banco de produção (o SQL do `CLAUDE.md`).
-            - [ ] **Depois da publicação do passo 9: o nome passa a OBRIGATÓRIO no servidor**
+                  - [x] **O que o operador viu (30/10/2026):** os dois lembretes, no Yahoo dele (aprovados — o "Olá"
+                        saiu depois, por decisão dele na revisão); **as páginas dos links: só os textos aprovados**, sem
+                        ele ter visto o desenho delas.
+                  - [x] **A publicação (30/10/2026, `4819776`, ordem do operador):** antes, só lendo, **0 fichas** no
+                        banco de produção; depois, **o RLS da `lead` conferido** (nenhuma tabela sem RLS) e **a primeira
+                        rodada com o código novo (17:00 UTC) sem falha** — o *Estado atual*.
+            - [x] **Depois da publicação do passo 9: o nome passa a OBRIGATÓRIO no servidor**
                   (`assinarSemLoginSchema`, `core/src/schemas/billing.ts`) — tira o `.optional()` e o teste "o
                   pedido sem o nome segue"; a aba aberta antes da publicação já terá saído (convenção *API
-                  aditiva*).
+                  aditiva*). **FEITO (30/10/2026):** sem o `.optional()` — vale para o cartão e para o Pix sem
+                  conta (o `pixSemLoginSchema` é o mesmo schema sem o código); `dadosDaTentativa` grava o nome
+                  sempre. O teste "o pedido sem o nome segue" virou dois: o pedido sem o nome, 400, sem ficha e
+                  sem ida à Stripe; e o novo clique sem o nome na mesma tentativa, 400, com a ficha guardando o
+                  nome de antes — e o Pix sem o nome, 400; o schema conferido nos dois. **Mutação: o
+                  `.optional()` de volta reprovou os 4.** **A revisão de segurança, só do diff: nenhum P0 nem P1;
+                  um P2, anterior a ele, que o nome obrigatório tornava mais sério** — a regra "só letras"
+                  (`NOME_SO_COM_LETRAS`) aceitava os invisíveis que o Unicode conta como letra ou acento (o
+                  preenchimento do coreano, U+3164; os seletores de variação; o U+034F) e o acento solto: um nome
+                  feito só deles passava visualmente vazio. **Fechado no mesmo commit:** fora os
+                  `Default_Ignorable_Code_Point`, e toda palavra começa por uma letra — medido antes: os nomes de
+                  verdade continuam passando (o acento composto e o decomposto, D'Ávila, Conceição, Müller, Jr.);
+                  nenhum texto mudou (a tela já mostra "Use só letras no nome."). Testes: 6 casos recusados e o
+                  acento decomposto aceito. **Mutação: as 3 variantes reprovaram** (a regra antiga, sem a
+                  exclusão dos invisíveis, a palavra começando por acento). Gates (depois das duas partes): build, typecheck, lint;
+                  site 1076, servidor 1692 (como o CI). *Docs check (context7): não disparado — nenhuma chamada à
+                  Stripe mudou (só o schema do pedido e o que vai para a ficha no nosso banco).* **Falta: publicar —
+                  só com a ordem do operador.**
             **Fora do passo 9:** a tela dos leads no admin (entra com a captura do YouTube e do LinkedIn, ou
             antes, se o operador pedir) · mandar novidades aos leads (4d → *E-mails promocionais*; ali se
             decide se o descadastro é o nosso ou o do Resend — os dois não podem divergir) · confirmar o
