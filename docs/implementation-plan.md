@@ -174,9 +174,8 @@
 >    E9, E7, E6), os R1 a R6, a P128 e os achados da revisão do grupo 2: FEITOS e publicados (`0f8c0c7`).** **O grupo 3
 >    (E11, E12, E13, E17) e o grupo 4 (E14, E15, E16, E18), com os achados das duas revisões e a P131: FEITOS e publicados
 >    (`5313557`).** **O bloco de engenharia da 4.9b está todo no ar.** Fica, da 4.9b, o que é do operador: a P126 (as
->    conferências nos painéis) e a P125 (quando ele for criar um desses códigos). *Achado reportado, não mexido (P3): a
->    contestação (E7) passa chave de repetição no encerramento, que a Stripe ignora — numa reentrega em menos de 5 min
->    depois de uma falha no meio, o encerramento repetido dá 404 e o aviso falha até a janela virar (resolve sozinho).* Uma
+>    conferências nos painéis) e a P125 (quando ele for criar um desses códigos). O achado da contestação (E7: a chave de
+>    repetição que fazia a reentrega do aviso falhar por até 5 min) foi corrigido por ordem dele (30/10/2026). Uma
 >    revisão de segurança por grupo, só do que mudou, antes de publicar. Um commit por parte. **Sem nova rodada de revisão a cada correção** *(operador, 29/10/2026: "fechando
 >    P1, P2, P3 e seguindo em frente e rodando os testes no que precisar para não ficar em polimento infinito")*:
 >    P0 e P1 travam a publicação; P2 e P3 se fecham com teste e mutação, sem revisar de novo. A P128 (o fuso do
@@ -6355,14 +6354,21 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             (`paraAviso`: a contestação, com o pagamento, o motivo, o valor e o prazo; o aviso de fraude, com a
             cobrança, o pagamento e o tipo). A contestação acha a assinatura pelo pagamento (como a devolução) e, com a
             trava dela, `cancelarPorContestacao` (`stripe-reembolso.ts`) põe a MARCA `contestacao` na assinatura e só
-            então a cancela na hora (sem crédito nem fatura nova; as chaves de repetição fazem valer uma vez; a já
-            encerrada não se cancela de novo); a sincronia de sempre corta o acesso e derruba as sessões —
+            então a cancela na hora (sem crédito nem fatura nova; vale uma vez pela marca, que é a mesma, e pela já
+            encerrada que não se cancela de novo — **sem chave de repetição desde 30/10/2026**, ver abaixo); a sincronia
+            de sempre corta o acesso e derruba as sessões —
             `paraAssinaturaNaStripe` não conta como pago o período da assinatura com a marca (sem ela, a cancelada
             daria acesso até o fim do período). Alertas (`depois-do-aviso.ts`, uma vez por aviso): **`[stripe]
             contestação …`** com o valor, o motivo, como ficou a assinatura e o prazo para responder no painel — também
             quando o pagamento não é de uma assinatura da escola —; **`[stripe] aviso de fraude …`**, que só alerta. A
             Stripe que falha não marca o aviso (ele volta). Testes: `contestacao.test.ts` (novo, 4), `stripe.test.ts`
-            (+4), `stripe-reembolso.test.ts` (+3). **Mutação: 10 de 10 reprovaram.** **A P129, feita pelo operador em
+            (+4), `stripe-reembolso.test.ts` (+3). **Mutação: 10 de 10 reprovaram.** **Conserto de 30/10/2026 (ordem do
+            operador, depois da publicação `5313557`):** a prova do E14 mediu que a chave de repetição devolve, na marca,
+            a resposta GUARDADA da primeira vez, e que a Stripe a ignora no cancelamento (cancelar a já cancelada dá 404) —
+            o aviso da contestação que voltasse em menos de 5 min, depois de uma falha no meio, falharia até a janela
+            virar. As chaves saíram: a resposta da marca é a de agora, e a já cancelada não se cancela de novo. Provado na
+            área restrita (cancelar duas vezes seguidas, sem erro, e o período sem contar como pago); teste novo; mutação
+            2 de 2. **A P129, feita pelo operador em
             30/10/2026 (conferida pelo print dele):** o endereço de avisos da conta de verdade passou a assinar os 10
             avisos — entraram `charge.dispute.created` e `radar.early_fraud_warning.created` —, na versão
             `2026-09-30.endive`, a mesma da biblioteca. *Docs check (context7): Stripe → `/websites/stripe` → 1 consulta (a
