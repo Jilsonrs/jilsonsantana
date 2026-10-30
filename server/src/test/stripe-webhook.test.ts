@@ -590,7 +590,9 @@ describe("o aviso da Stripe — o registro", () => {
       delete process.env.STRIPE_WEBHOOK_SECRET;
       await enviar(avisoDaAssinatura(novoId("sub")));
       process.env.STRIPE_WEBHOOK_SECRET = SEGREDO;
-      expect(erro.mock.calls.flat().join(" ")).toContain("STRIPE_WEBHOOK_SECRET não configurado");
+      // Alerta ou registro: a mesma linha alerta no máximo uma vez a cada 15 min (`alerta-de-configuracao.ts`, com teste
+      // próprio), e outro teste deste arquivo pode ter alertado antes.
+      expect([...erro.mock.calls, ...aviso.mock.calls].flat().join(" ")).toContain("STRIPE_WEBHOOK_SECRET não configurado");
 
       const recusado = avisoDaAssinatura(novoId("sub"));
       await enviar(recusado, { segredo: "whsec_de_outra_pessoa" });

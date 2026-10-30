@@ -229,7 +229,9 @@ o acesso vai até o fim do período já pago.
 
 **A contestação do pagamento corta o acesso na hora** *(decisão do operador, 29/10/2026, P122 — a revisão ampla
 da cobrança, plano → 4.9b, E7; no código desde 30/10/2026)*: quem contesta no banco (chargeback) já pediu o dinheiro
-de volta, e o acesso acaba quando a contestação chega — um cartão roubado deixa de estudar o ano inteiro. **E a
+de volta, e o acesso acaba quando o dinheiro sai da conta — um cartão roubado deixa de estudar o ano inteiro. **O
+INQUÉRITO só alerta** *(decisão do operador, 30/10/2026)*: nele o banco só pergunta, o dinheiro não sai e ainda dá para
+devolver sem taxa; se ele virar contestação, o corte vem com o dinheiro que sai. **E a
 assinatura é cancelada na Stripe** *(decisão do operador, 30/10/2026: o cartão contestado nunca mais é cobrado)*; a
 pessoa recebe o e-mail de sempre de assinatura encerrada, e o operador, um alerta com o valor, o motivo e o prazo para
 responder à contestação no painel da Stripe. Se a contestação for resolvida a favor da escola, o operador libera de
@@ -1590,7 +1592,9 @@ encerrada de vez com dias pagos: tem acesso e o servidor recusa cartão.
   **a subida do servidor em produção confere o endereço**: desligado, ausente ou sem um dos avisos, sai um alerta. Aviso
   novo tratado no código entra nessa lista e no endereço. **Desde o E7 (30/10/2026) são 10:** entraram
   `charge.dispute.created` (a contestação) e `radar.early_fraud_warning.created` (o aviso de fraude) — o operador os
-  inclui no endereço antes de publicar (P129).
+  incluiu no endereço em 30/10/2026 (P129, conferida pelo print dele: os 10 avisos, na versão `2026-09-30.endive` da
+  API, a mesma da biblioteca). **Depois da revisão do grupo 2, 11:** entrou `charge.dispute.funds_withdrawn` (o dinheiro
+  da contestação saiu — é ele que corta o acesso), que o operador inclui antes de publicar (P130).
 - **A versão do endereço de avisos** *(4.9b, C3, 29/10/2026)*: a Stripe manda cada aviso na versão da API do
   endereço (sem versão própria, na versão padrão da conta), e o site lê a da biblioteca — hoje a `2026-09-30.endive`.
   Numa versão de antes da `2025-03-31.basil`, o aviso de fatura chega sem a assinatura dele. **A subida em produção

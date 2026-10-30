@@ -1,4 +1,5 @@
 import { prisma } from "./prisma.js";
+import { STATUS_VIVOS } from "./acesso.js";
 import { sincronizarSeLivre } from "./assinaturas.js";
 import { AssinaturaNaoEncontrada } from "./stripe.js";
 
@@ -30,8 +31,8 @@ export function ehHoraDaConferenciaDasAtivas(agora: Date): boolean {
   return agora.getUTCHours() === HORA_DA_CONFERENCIA_DAS_ATIVAS_UTC;
 }
 
-/** Os status em que o gate dá acesso sem olhar a data (`assinaturaDaAcesso`). */
-const ATIVAS = ["active", "trialing"];
+/** Os status em que o gate dá acesso sem olhar a data — os do próprio gate (`acesso.ts`), nunca uma cópia. */
+const ATIVAS = [...STATUS_VIVOS];
 
 /**
  * O que a conferência fez: as relidas na Stripe; as ativas sem período pago e as encerradas (as duas com alerta); as
@@ -76,7 +77,7 @@ export async function conferirAtivasVencidas(agora: Date = new Date(), prazoEmMs
       }
       resultado.conferidas += 1;
       const { status, pagoAte } = sincronia.assinatura;
-      if (!ATIVAS.includes(status)) {
+      if (!STATUS_VIVOS.has(status)) {
         resultado.encerradas += 1;
         console.error(`[stripe] rodada: a assinatura ${id} estava ativa no site, mas a Stripe diz ${status} — o aviso do fim se perdeu, e as aulas ficaram abertas; o espelho já foi acertado`);
       } else if (!pagoAte || pagoAte < vencidaAntesDe) {

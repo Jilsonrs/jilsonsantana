@@ -10,7 +10,7 @@ import { prisma } from "./prisma.js";
 // criou, e é a única classe de bug que libera acesso sem pagamento sem erro nenhum.
 
 /** Assinatura saudável. */
-const STATUS_VIVOS: ReadonlySet<string> = new Set(["active", "trialing"]);
+export const STATUS_VIVOS: ReadonlySet<string> = new Set(["active", "trialing"]);
 /** O PRIMEIRO pagamento nunca aconteceu: não há período pago a honrar. */
 const NUNCA_PAGOU: ReadonlySet<string> = new Set(["incomplete", "incomplete_expired"]);
 /** A cobrança falhou, e a Stripe está tentando de novo. */

@@ -95,6 +95,9 @@ export function limparEvento(evento: Sentry.ErrorEvent): Sentry.ErrorEvent | nul
   return evento;
 }
 
+/** O começo do aviso diário de que o limite de alertas começou a descartar. */
+const AVISO_DO_DESCARTE = "[monitor] o limite de alertas começou a descartar";
+
 let ligado = false;
 let avisouDoLimite = 0;
 let alertouDoDescarte = 0;
@@ -163,6 +166,9 @@ export function ligarMonitor(ambiente: Ambiente, opcoes: Opcoes = {}): boolean {
     beforeSend: (evento) => {
       const limpo = limparEvento(evento);
       if (limpo === null) return null;
+      // O aviso de que o limite começou a descartar tem vaga PRÓPRIA, acima do teto (revisão do grupo 2 da 4.9b): quando
+      // é a cobrança que enche a janela, é justamente ele que precisa sair. Uma vez por dia (a marca, abaixo).
+      if (limpo.message?.startsWith(AVISO_DO_DESCARTE)) return limpo;
       if (podeEnviar(String(limpo.tags?.origem ?? "processo"))) return limpo;
       // `warn`, que não vira alerta — e uma vez por janela, para não encher o registro.
       if (Date.now() - avisouDoLimite > LIMITE_DE_ENVIOS.janelaMs) {
@@ -173,7 +179,7 @@ export function ligarMonitor(ambiente: Ambiente, opcoes: Opcoes = {}): boolean {
       // Vai pela reserva (`[monitor]`), e nunca entra em laço: a marca é posta antes de pedir o envio.
       if (Date.now() - alertouDoDescarte > UM_DIA) {
         alertouDoDescarte = Date.now();
-        Sentry.captureMessage("[monitor] o limite de alertas começou a descartar: o que passa dele fica só no registro do servidor (Cloud Run → Registros); a cobrança, os e-mails e a rodada têm uma reserva da cota", "error");
+        Sentry.captureMessage(`${AVISO_DO_DESCARTE}: o que passa dele fica só no registro do servidor (Cloud Run → Registros); a cobrança, os e-mails e a rodada têm uma reserva da cota`, "error");
       }
       return null;
     },

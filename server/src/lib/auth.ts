@@ -39,7 +39,7 @@ function devOrigins(): string[] {
 
 // Allow-list: CLIENT_URL (canonical client origin) + the dev origins above.
 // Deduplicated; undefined entries (unset CLIENT_URL) filtered out.
-const trustedOrigins = [
+export const trustedOrigins = [
   ...new Set(
     [process.env.CLIENT_URL, ...devOrigins()].filter(
       (origin): origin is string => Boolean(origin),

@@ -282,7 +282,9 @@ describe("a cota", () => {
     ligar(() => restam-- > 0);
     for (let i = 1; i <= 5; i++) console.error(`[api] GET /api/x falhou: a mesma falha, vez ${i}`);
     const saiu = await eventos();
-    expect(saiu.map((e) => e.message)).toEqual(["[api] GET /api/x falhou: a mesma falha, vez 1", "[api] GET /api/x falhou: a mesma falha, vez 2"]);
+    expect(saiu.filter((e) => e.message?.startsWith("[api] ")).map((e) => e.message)).toEqual(["[api] GET /api/x falhou: a mesma falha, vez 1", "[api] GET /api/x falhou: a mesma falha, vez 2"]);
+    // E o aviso de que o limite começou a descartar — uma vez, com vaga própria (E9 e a revisão do grupo 2).
+    expect(saiu.filter((e) => e.message?.startsWith("[monitor] o limite de alertas começou a descartar"))).toHaveLength(1);
     // As cinco linhas continuam no registro do servidor.
     expect(gritos.length).toBe(5);
     expect(avisos.filter((linha) => linha.includes("[monitor] limite de envios atingido")).length).toBe(1);
@@ -300,6 +302,16 @@ describe("a cota", () => {
     const doLimite = saiu.filter((e) => e.message?.startsWith("[monitor] o limite de alertas começou a descartar"));
     expect(doLimite).toHaveLength(1);
     expect(doLimite[0]).toMatchObject({ level: "error", tags: { origem: "monitor" } });
+  });
+
+  // Revisão do grupo 2 da 4.9b: quando é a própria cobrança que enche a janela, o aviso do descarte ainda sai — vaga
+  // própria, acima do teto.
+  it("ligado: a COBRANÇA enche a janela (30 [stripe]) — o 31º é descartado, e o aviso do descarte sai mesmo assim", async () => {
+    ligar(criarLimite());
+    for (let i = 1; i <= 31; i++) console.error(`[stripe] o pagante trancado, vez ${i}`);
+    const saiu = await eventos();
+    expect(saiu.filter((e) => e.message?.startsWith("[stripe] ")).length).toBe(30);
+    expect(saiu.filter((e) => e.message?.startsWith("[monitor] o limite de alertas começou a descartar"))).toHaveLength(1);
   });
 
   it("a linha que não é nossa não gasta o limite", async () => {

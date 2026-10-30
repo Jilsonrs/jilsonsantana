@@ -6330,9 +6330,10 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             contestação …`** com o valor, o motivo, como ficou a assinatura e o prazo para responder no painel — também
             quando o pagamento não é de uma assinatura da escola —; **`[stripe] aviso de fraude …`**, que só alerta. A
             Stripe que falha não marca o aviso (ele volta). Testes: `contestacao.test.ts` (novo, 4), `stripe.test.ts`
-            (+4), `stripe-reembolso.test.ts` (+3). **Mutação: 10 de 10 reprovaram.** **Antes de publicar: a P129** (o
-            operador inclui os dois avisos no endereço de avisos da conta de verdade; sem isso, a subida alerta e a
-            contestação não chega ao site). *Docs check (context7): Stripe → `/websites/stripe` → 1 consulta (a
+            (+4), `stripe-reembolso.test.ts` (+3). **Mutação: 10 de 10 reprovaram.** **A P129, feita pelo operador em
+            30/10/2026 (conferida pelo print dele):** o endereço de avisos da conta de verdade passou a assinar os 10
+            avisos — entraram `charge.dispute.created` e `radar.early_fraud_warning.created` —, na versão
+            `2026-09-30.endive`, a mesma da biblioteca. *Docs check (context7): Stripe → `/websites/stripe` → 1 consulta (a
             contestação e o aviso de fraude trazem a cobrança e o pagamento, não a assinatura); os campos, na biblioteca
             (`Disputes.d.ts`, `Radar/EarlyFraudWarnings.d.ts`).*
       - [x] **E8 — a trava contra pedido de outro site aceita só `same-origin`** (ou o cabeçalho ausente); hoje
@@ -6485,6 +6486,48 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             `index.ts` (a subida não roda na suíte); a prova é o registro da próxima subida no ar — sem a falha do fuso,
             e com a linha "a cobrança confere". *Reabre se a falha continuar depois desta mudança: a causa é outra, e
             aí as opções são o processador sempre ligado ou levar as conferências para a rodada de hora em hora.*
+      **A REVISÃO DO GRUPO 2** (30/10/2026, `security-vulnerability-reviewer`, Opus 5.5, esforço máximo, sobre
+      `f36e274..e34c0b5` — os R1 a R6, o E8, o E10, o E9, o E6, a P128 e o E7): **nenhum P0 nem P1.** Ninguém consegue
+      cancelar a assinatura de outra pessoa; o E8 não recusa pedido legítimo; o E10 só toca molduras de fora; a P128 não
+      trava a subida; o E6 não tira acesso de quem pagou; o E9 não entra em laço. **Três P2 e nove P3, fechados com teste
+      e mutação, sem nova revisão** (regra do operador de 29/10/2026) — **mutação: 14 de 15 reprovaram; a que passou era
+      uma linha repetida (equivalente), que saiu:**
+      - [x] **(P2) O INQUÉRITO cortava e cancelava como a contestação.** O banco abre o inquérito por
+            `charge.dispute.created` (`warning_*`): só pergunta, o dinheiro não sai e ainda dá para devolver sem taxa
+            `[FATO — docs da Stripe, context7, 30/10/2026]`. **Decisão do operador, 30/10/2026: "inquérito só alerta"** —
+            o corte e o cancelamento acontecem quando o dinheiro sai (`charge.dispute.funds_withdrawn`, que a Stripe manda
+            também quando o inquérito vira contestação). `Contestacao.fase` (`inquerito`, `aberta`, `dinheiro-saiu`); só o
+            dinheiro que saiu leva o pagamento ao processamento; os outros dois só alertam (`[stripe] inquérito …`, com
+            "devolver o dinheiro agora, sem taxa"; `[stripe] contestação … quando o dinheiro sair da conta`).
+            `AVISOS_DO_ENDERECO` agora tem 11 — **antes de publicar, a P130** (o operador inclui o
+            `charge.dispute.funds_withdrawn` no endereço).
+      - [x] **(P2) Nenhum teste cobria "a marca gravou e o cancelamento falhou".** Agora cobre: a falha sobe, sem a mensagem
+            crua, e o aviso volta (`stripe-reembolso.test.ts`).
+      - [x] **(P2) O que só se confere nos painéis:** a regra de alerta do Sentry para as quatro origens da reserva
+            (`stripe`, `email`, `avisos`, `monitor`) e o alerta de "a rodada não rodou" (o E6 depende da rodada das 12h
+            UTC) — entraram na P126.
+      - [x] **(P3) A chave de repetição fixa** guardava a falha da Stripe por 24 h: agora leva a janela de 5 min, como a da
+            devolução.
+      - [x] **(P3) O alerta dizia "acesso cortado" sem olhar o resultado:** agora diz o status da assinatura e se a conta
+            perdeu o acesso — ou "não perdeu por aqui" (outra assinatura, como a pré-paga de um Pix).
+      - [x] **(P3) A contestação fazia até 5 idas à Stripe com o tempo de transação de uma:** usa o tempo das operações
+            (`TEMPO_DA_OPERACAO`).
+      - [x] **(P3) A fatura em aberto da atrasada contestada** agora é anulada depois do cancelamento (como no cancelar do
+            aluno); se não der, é alerta, e o cancelamento vale.
+      - [x] **(P3) O aviso diário do descarte** passava pelo mesmo limite: tem vaga própria, acima do teto (uma vez por dia).
+      - [x] **(P3) A configuração da cobrança ausente** alertava a cada pedido sem login (e no endereço de avisos): agora no
+            máximo uma vez a cada 15 min por cópia (`alertarConfiguracaoAusente`, `lib/alerta-de-configuracao.ts`).
+      - [x] **(P3) A falha ao processar um aviso da Stripe** saía como `[api]`, fora da reserva: agora `[stripe]`
+            (`erro-da-api.ts`).
+      - [x] **(P3) Sem `Sec-Fetch-Site`** (o Safari antes do 16.4; o piso é o iOS 15), o pedido passava: agora decide o
+            `Origin` — só o do próprio site (o `BETTER_AUTH_URL` e os do login); o `null`, recusado.
+      - [x] **(P3) O E6 e o R4 repetiam partes da regra do gate:** agora usam as do próprio `acesso.ts` (`STATUS_VIVOS`,
+            `encerradaDeVez`, `assinaturaDaAcesso`).
+      Testes: `contestacao.test.ts` (as três fases; a conta com outra assinatura), `stripe.test.ts`,
+      `stripe-reembolso.test.ts` (+3), `monitor.test.ts` (+1), `erro-da-api.test.ts` (+1), `codigo-por-email.test.ts` (+1),
+      `alerta-de-configuracao.test.ts` e `configuracao-ausente.test.ts` (novos). *Docs check (context7): Stripe →
+      `/websites/stripe` → 1 consulta (o inquérito chega por `charge.dispute.created`, sem tirar o dinheiro; ao virar
+      contestação, `charge.dispute.funds_withdrawn`).*
       **As decisões do operador:** P116 a P127 em `pendencias.md` (P126 são as conferências fora do repositório).
       **Respondidas em 29/10/2026:** P116 (a frase do E3), P117 (os botões do Pix em conferência na 4.7b), P118
       (o E14), P119 (o E15), P120 (a ação "Liberar acesso pago por fora" na 4.7b), P121 (a ação "Corrigir o e-mail" na 4.7b), P122 (a contestação corta o acesso — E7), P123 (o E16), P124 (o E17), P127 (o E18). **Para depois:** P125 (quando for criar um desses códigos) e P126 (as conferências nos painéis, por prints).

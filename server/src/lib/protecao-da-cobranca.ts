@@ -1,4 +1,14 @@
 import type { Request, RequestHandler } from "express";
+import { trustedOrigins } from "./auth.js";
+import { enderecoDoSite } from "./endereco-do-site.js";
+
+/** As origens do próprio site: o endereço dele (`BETTER_AUTH_URL`) e as que o login aceita (`trustedOrigins`). */
+function origensDoSite(): Set<string> {
+  const origens = new Set(trustedOrigins);
+  const site = enderecoDoSite("/");
+  if (site) origens.add(new URL(site).origin);
+  return origens;
+}
 
 /**
  * O pedido veio de OUTRO SITE? (E8 da revisão ampla da cobrança, 29/10/2026) O navegador diz de onde ele veio
@@ -6,10 +16,15 @@ import type { Request, RequestHandler } from "express";
  * ausente (navegador antigo, ou quem não é navegador e não leva o cookie de ninguém). O `same-site` também é recusado:
  * é o pedido de um SUBDOMÍNIO de jilsonsantana.com, e uma página num subdomínio apontando para um serviço de terceiro
  * faria o navegador de quem a visita reembolsar ou cancelar. Usada aqui e no pedido de código (`conta-codigo.ts`).
+ * SEM o `Sec-Fetch-Site` (o Safari antes do 16.4 não o manda, e o piso é o iOS 15 — revisão do grupo 2 da 4.9b), decide
+ * o `Origin`: vindo, só passa o do próprio site — o `null` (página em moldura, arquivo) também é recusado. Sem os dois
+ * (quem não é navegador), passa: não leva o cookie de ninguém.
  */
 export function pedidoDeOutroSite(req: Request): boolean {
   const origem = req.get("sec-fetch-site");
-  return origem !== undefined && origem !== "same-origin" && origem !== "none";
+  if (origem !== undefined) return origem !== "same-origin" && origem !== "none";
+  const de = req.get("origin");
+  return de !== undefined && !origensDoSite().has(de);
 }
 
 /**

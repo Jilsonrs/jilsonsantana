@@ -28,15 +28,19 @@ export type AvisoDaStripe = { id: string; tipo: string; assinatura: string | nul
 
 /**
  * A CONTESTAÇÃO de um pagamento no banco (chargeback — E7 da revisão ampla da cobrança; decisões do operador P122 e de
- * 30/10/2026: corta o acesso na hora e cancela a assinatura). O id, o motivo que o banco deu, o valor e o prazo para
- * responder no painel da Stripe.
+ * 30/10/2026). O id, o motivo que o banco deu, o valor, o prazo para responder no painel da Stripe, o pagamento e a
+ * FASE: o INQUÉRITO (o banco só pergunta — `warning_*`: o dinheiro não sai, e ainda dá para devolver sem taxa), a
+ * contestação ABERTA, e o DINHEIRO QUE SAIU da conta (`charge.dispute.funds_withdrawn`). **Só o dinheiro que saiu
+ * corta o acesso e cancela a assinatura** *(decisão do operador, 30/10/2026: "inquérito só alerta")*; as outras duas
+ * só alertam. `[FATO — docs da Stripe, context7, 30/10/2026]` o inquérito também chega por `charge.dispute.created`, e
+ * quando ele vira contestação a Stripe manda o `charge.dispute.funds_withdrawn`.
  */
-export type Contestacao = { id: string; motivo: string; centavos: number; prazo: Date | null };
+export type Contestacao = { id: string; motivo: string; centavos: number; prazo: Date | null; pagamento: string | null; fase: "inquerito" | "aberta" | "dinheiro-saiu" };
 /** O AVISO DE FRAUDE do banco sobre uma cobrança (E7 — P122: só alerta). */
 export type AvisoDeFraude = { id: string; cobranca: string; pagamento: string | null; tipo: string };
 /**
  * Nos metadados da assinatura CONTESTADA: o id da contestação. Com ele, o período não conta como pago
- * (`paraAssinaturaNaStripe`) — a assinatura é cancelada na mesma hora (`cancelarPorContestacao`), e só a marca segura o
+ * (`paraAssinaturaNaStripe`) — a assinatura é cancelada na mesma hora, quando o dinheiro sai (`cancelarPorContestacao`), e só a marca segura o
  * acesso cortado: sem ela, a cancelada daria acesso até o fim do período. Liberar de novo a contestação ganha é tirar a
  * marca (a ação do admin, etapa 4.7b).
  */
@@ -528,6 +532,7 @@ export function avisosConfigurados(): boolean {
  */
 export const AVISOS_DO_ENDERECO = [
   "charge.dispute.created",
+  "charge.dispute.funds_withdrawn",
   "charge.refunded",
   "customer.subscription.created",
   "customer.subscription.deleted",
@@ -563,9 +568,10 @@ function assinaturaDoAviso(evento: Stripe.Event): string | null {
  * 11/10/2026]`: quem acha a assinatura é o servidor, pelo pagamento (`stripe-reembolso.ts`).
  */
 function pagamentoDoAviso(evento: Stripe.Event): string | null {
-  // A CONTESTAÇÃO (E7): o pagamento contestado — é por ele que a assinatura se acha, como na devolução. Sem pagamento
-  // (a cobrança solta), nada: a contestação alerta do mesmo jeito (`depois-do-aviso.ts`).
-  if (evento.type === "charge.dispute.created") {
+  // A CONTESTAÇÃO cujo DINHEIRO SAIU (E7): o pagamento contestado — é por ele que a assinatura se acha, como na
+  // devolução. A contestação que só se ABRIU (e o inquérito) não acha assinatura nenhuma: só alerta
+  // (`depois-do-aviso.ts`) — cai no "nenhum" lá embaixo. Sem pagamento (a cobrança solta), nada: alerta do mesmo jeito.
+  if (evento.type === "charge.dispute.funds_withdrawn") {
     const contestado = evento.data.object.payment_intent;
     if (!contestado) return null;
     return typeof contestado === "string" ? contestado : contestado.id;
@@ -743,12 +749,14 @@ export function paraAviso(evento: Stripe.Event): AvisoDaStripe {
   };
 }
 
-/** A contestação de um aviso `charge.dispute.created`, ou nada. Função pura. */
+/** A contestação de um aviso `charge.dispute.created` ou `charge.dispute.funds_withdrawn`, ou nada. Função pura. */
 function contestacaoDoAviso(evento: Stripe.Event): Contestacao | null {
-  if (evento.type !== "charge.dispute.created") return null;
+  if (evento.type !== "charge.dispute.created" && evento.type !== "charge.dispute.funds_withdrawn") return null;
   const disputa = evento.data.object;
   const prazo = disputa.evidence_details?.due_by;
-  return { id: disputa.id, motivo: disputa.reason, centavos: disputa.amount, prazo: prazo ? new Date(prazo * 1000) : null };
+  const pagamento = disputa.payment_intent ? (typeof disputa.payment_intent === "string" ? disputa.payment_intent : disputa.payment_intent.id) : null;
+  const fase = evento.type === "charge.dispute.funds_withdrawn" ? "dinheiro-saiu" : disputa.status.startsWith("warning_") ? "inquerito" : "aberta";
+  return { id: disputa.id, motivo: disputa.reason, centavos: disputa.amount, prazo: prazo ? new Date(prazo * 1000) : null, pagamento, fase };
 }
 
 /** O aviso de fraude de um aviso `radar.early_fraud_warning.created`, ou nada. Função pura. */

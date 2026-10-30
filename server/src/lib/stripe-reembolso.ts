@@ -2,6 +2,7 @@ import Stripe from "stripe";
 import { erroSemMensagem, METADADO_DA_CONTESTACAO, stripe } from "./stripe.js";
 import { cobrancaDoPagamento, pagamentosDaFatura } from "./stripe-devolucao.js";
 import { paraMotivoNaStripe, type MotivoDado } from "./stripe-assinatura.js";
+import { anularFatura } from "./stripe-plano.js";
 
 // O REEMBOLSO (Fase 4, etapa 4.6, sessão b — billing.md → Reembolso). A terceira parte da nossa
 // fronteira com a Stripe: o que foi pago numa assinatura, encerrá-la na hora e devolver o
@@ -95,15 +96,29 @@ export async function cancelarNaHora(assinaturaId: string, dado: MotivoDado): Pr
  * (`METADADO_DA_CONTESTACAO`, que faz o período não contar como pago), e só então o cancelamento na hora — sem crédito
  * nem fatura nova, e o cartão contestado nunca mais é cobrado. Na ordem inversa, a cancelada sem marca daria acesso até
  * o fim do período. A assinatura já encerrada não se cancela de novo (a reentrega do aviso). As chaves de repetição
- * fazem a mesma contestação valer uma vez só (24 h). A recusa sobe sem a mensagem crua.
+ * levam a JANELA de 5 minutos, como a da devolução (`chaveDaDevolucao`): a Stripe guarda por 24 h a primeira resposta de
+ * cada chave, inclusive a falha — com a chave fixa, um erro dela na marca ou no cancelamento se repetiria o dia todo,
+ * com as aulas abertas. Valer uma vez só continua garantido pela marca (a mesma) e pela encerrada que não se cancela de
+ * novo. Depois de cancelar, a fatura EM ABERTO de uma atrasada é anulada (como no cancelar do aluno), para não ser mais
+ * tentada no cartão contestado; se não der, é alerta, e o cancelamento vale. A recusa sobe sem a mensagem crua.
  */
-export async function cancelarPorContestacao(assinaturaId: string, contestacaoId: string): Promise<void> {
+export async function cancelarPorContestacao(assinaturaId: string, contestacaoId: string, agora: Date = new Date()): Promise<void> {
+  const janela = Math.floor(agora.getTime() / JANELA_DA_CHAVE);
+  let faturaEmAberto: string | null = null;
   try {
-    const marcada = await stripe().subscriptions.update(assinaturaId, { metadata: { [METADADO_DA_CONTESTACAO]: contestacaoId } }, { idempotencyKey: `contestacao/${contestacaoId}/marca` });
+    const marcada = await stripe().subscriptions.update(assinaturaId, { metadata: { [METADADO_DA_CONTESTACAO]: contestacaoId }, expand: ["latest_invoice"] }, { idempotencyKey: `contestacao/${contestacaoId}/marca/${janela}` });
     if (marcada.status === "canceled" || marcada.status === "incomplete_expired") return;
-    await stripe().subscriptions.cancel(assinaturaId, { prorate: false, invoice_now: false, cancellation_details: { comment: `Contestação ${contestacaoId}` } }, { idempotencyKey: `contestacao/${contestacaoId}/cancelamento` });
+    const fatura = marcada.latest_invoice;
+    faturaEmAberto = typeof fatura === "object" && fatura !== null && fatura.status === "open" ? fatura.id : null;
+    await stripe().subscriptions.cancel(assinaturaId, { prorate: false, invoice_now: false, cancellation_details: { comment: `Contestação ${contestacaoId}` } }, { idempotencyKey: `contestacao/${contestacaoId}/cancelamento/${janela}` });
   } catch (erro) {
     throw erroSemMensagem(erro, "o cancelamento da assinatura contestada");
+  }
+  if (!faturaEmAberto) return;
+  try {
+    if ((await anularFatura(faturaEmAberto)) === "paga") console.error(`[stripe] contestação ${contestacaoId}: a cobrança em aberto da assinatura ${assinaturaId} foi PAGA no instante do cancelamento — conferir no painel da Stripe`);
+  } catch (erro) {
+    console.error(`[stripe] contestação ${contestacaoId}: a assinatura ${assinaturaId} foi cancelada e a cobrança em aberto NÃO foi anulada — anular pelo painel da Stripe: ${erro instanceof Error ? erro.message : String(erro)}`);
   }
 }
 

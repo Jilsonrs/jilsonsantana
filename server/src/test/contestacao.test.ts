@@ -5,10 +5,12 @@ import type { PedidoDeEmail, Envio } from "../lib/email.js";
 
 // A CONTESTAÇÃO E O AVISO DE FRAUDE (E7 da revisão ampla da cobrança; decisões do operador P122 e de 30/10/2026). A
 // Stripe na NOSSA fronteira vira dublê (o que ela diz da assinatura, de que assinatura é o pagamento, e o cancelamento);
-// o processamento do aviso, a sincronia e o que vem depois rodam de verdade, contra o banco. O que protege: a
-// contestação cancela a assinatura na Stripe ANTES da sincronia, corta o acesso, derruba as sessões e alerta com o
-// prazo — uma vez só (a reentrega não cancela nem alerta de novo); a Stripe que falha não marca o aviso (ele volta);
-// a contestação de um pagamento que não é de assinatura alerta do mesmo jeito; o aviso de fraude só alerta.
+// o processamento do aviso, a sincronia e o que vem depois rodam de verdade, contra o banco. O que protege: o
+// INQUÉRITO e a contestação ABERTA só alertam (decisão do operador, 30/10/2026); quando o DINHEIRO SAI, a assinatura é
+// cancelada na Stripe ANTES da sincronia, o acesso cai, as sessões caem e o alerta diz como ficou — uma vez só (a
+// reentrega não cancela nem alerta de novo); a conta com outra assinatura não perde o acesso, e o alerta diz isso; a
+// Stripe que falha não marca o aviso (ele volta); o pagamento que não é de assinatura alerta do mesmo jeito; o aviso
+// de fraude só alerta.
 const buscarAssinatura = vi.fn<(id: string) => Promise<AssinaturaNaStripe>>();
 vi.mock("../lib/stripe.js", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../lib/stripe.js")>()),
@@ -41,15 +43,15 @@ const novoId = (prefixo: string) => `${prefixo}_contestacao_${S}_${++n}`;
 const PRAZO = 1_900_000_000;
 
 // Seguro: os avisos de teste têm só os campos que a rotina lê; a forma completa é da Stripe.
-const daContestacao = (pagamento: string | null) =>
-  ({ id: novoId("evt"), object: "event", type: "charge.dispute.created", created: Math.floor(Date.now() / 1000), data: { object: { id: novoId("dp"), object: "dispute", amount: 9990, charge: novoId("ch"), payment_intent: pagamento, reason: "fraudulent", evidence_details: { due_by: PRAZO } } } }) as unknown as Stripe.Event;
+const daContestacao = (pagamento: string | null, type = "charge.dispute.funds_withdrawn", status = "needs_response") =>
+  ({ id: novoId("evt"), object: "event", type, created: Math.floor(Date.now() / 1000), data: { object: { id: novoId("dp"), object: "dispute", amount: 9990, charge: novoId("ch"), payment_intent: pagamento, reason: "fraudulent", status, evidence_details: { due_by: PRAZO } } } }) as unknown as Stripe.Event;
 const doAvisoDeFraude = () =>
   ({ id: novoId("evt"), object: "event", type: "radar.early_fraud_warning.created", created: Math.floor(Date.now() / 1000), data: { object: { id: novoId("issfr"), object: "radar.early_fraud_warning", charge: novoId("ch"), payment_intent: novoId("pi"), fraud_type: "made_with_stolen_card", actionable: true } } }) as unknown as Stripe.Event;
 /** O que a Stripe diz da assinatura DEPOIS de marcada e cancelada: encerrada, com o período contestado sem contar. */
 const canceladaNaStripe = (id: string): AssinaturaNaStripe => ({ id, status: "canceled", pagoAte: new Date(Date.now() - 10 * DIA), clienteId: "cus_contestacao", userId: dono, livemode: false });
 const espelho = (id: string) => prisma.subscription.findUnique({ where: { stripeSubscriptionId: id } });
 const marcado = (id: string) => prisma.stripeEvent.findUnique({ where: { id } });
-const alertas = (erro: { mock: { calls: unknown[][] } }) => erro.mock.calls.map(([texto]) => String(texto)).filter((texto) => texto.startsWith("[stripe] contestação") || texto.startsWith("[stripe] aviso de fraude"));
+const alertas = (erro: { mock: { calls: unknown[][] } }) => erro.mock.calls.map(([texto]) => String(texto)).filter((texto) => texto.startsWith("[stripe] contestação") || texto.startsWith("[stripe] inquérito") || texto.startsWith("[stripe] aviso de fraude"));
 
 /** Uma assinatura ATIVA da conta, com uma sessão aberta. */
 async function assinanteComSessao(): Promise<string> {
@@ -79,7 +81,31 @@ afterAll(async () => {
 });
 
 describe("a contestação de um pagamento", () => {
-  it("cancela a assinatura na Stripe ANTES da sincronia, corta o acesso, derruba as sessões e alerta com o prazo — e a reentrega não faz nada de novo", async () => {
+  it("o INQUÉRITO e a contestação ABERTA só alertam: nada é cancelado nem sincronizado, e o acesso fica", async () => {
+    const erro = vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(console, "info").mockImplementation(() => {});
+    await assinanteComSessao();
+    const pagamento = novoId("pi");
+    assinaturaDoPagamento.mockResolvedValue(novoId("sub"));
+    for (const status of ["warning_needs_response", "needs_response"]) {
+      const evento = daContestacao(pagamento, "charge.dispute.created", status);
+      const aviso = paraAviso(evento);
+      const desfecho = await processarAviso(aviso);
+      await depoisDoAviso(aviso, desfecho);
+      expect(desfecho).toEqual({ resultado: "sem-assinatura" });
+      expect(await marcado(evento.id)).not.toBeNull();
+    }
+    expect(cancelarPorContestacao).not.toHaveBeenCalled();
+    expect(buscarAssinatura).not.toHaveBeenCalled();
+    expect(await temAcessoAtivo(dono)).toBe(true);
+    expect(await prisma.session.count({ where: { userId: dono } })).toBe(1);
+    expect(alertas(erro)).toHaveLength(2);
+    expect(alertas(erro)[0]).toMatch(/^\[stripe\] inquérito .*o acesso continua.*devolver o dinheiro agora, sem taxa/);
+    expect(alertas(erro)[0]).toContain(`pagamento ${pagamento}`);
+    expect(alertas(erro)[1]).toMatch(/^\[stripe\] contestação .*quando o dinheiro sair da conta/);
+  });
+
+  it("o DINHEIRO SAIU: cancela a assinatura na Stripe ANTES da sincronia, corta o acesso, derruba as sessões e alerta com o prazo — e a reentrega não faz nada de novo", async () => {
     const erro = vi.spyOn(console, "error").mockImplementation(() => {});
     vi.spyOn(console, "info").mockImplementation(() => {});
     const assinatura = await assinanteComSessao();
@@ -101,7 +127,7 @@ describe("a contestação de um pagamento", () => {
     expect(await marcado(evento.id)).not.toBeNull();
     expect(alertas(erro)).toHaveLength(1);
     expect(alertas(erro)[0]).toContain(`contestação ${aviso.contestacao?.id}`);
-    expect(alertas(erro)[0]).toContain(`a assinatura ${assinatura} foi cancelada e o acesso, cortado`);
+    expect(alertas(erro)[0]).toContain(`a assinatura ${assinatura} ficou canceled e a conta perdeu o acesso`);
     expect(alertas(erro)[0]).toContain("R$ 99,90");
     expect(alertas(erro)[0]).toContain(`até ${new Date(PRAZO * 1000).toISOString().slice(0, 10)}`);
 
@@ -110,6 +136,22 @@ describe("a contestação de um pagamento", () => {
     expect(deNovo).toEqual({ resultado: "repetido" });
     expect(cancelarPorContestacao).toHaveBeenCalledTimes(1);
     expect(alertas(erro)).toHaveLength(1);
+  });
+
+  it("a conta com OUTRA assinatura (a pré-paga de um Pix): a contestada é cancelada, mas a conta não perde o acesso — e o alerta diz isso", async () => {
+    const erro = vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(console, "info").mockImplementation(() => {});
+    const contestada = await assinanteComSessao();
+    await prisma.subscription.create({ data: { stripeSubscriptionId: novoId("sub"), ownerUserId: dono, status: "active", currentPeriodEnd: new Date(Date.now() + 25 * DIA), livemode: false } });
+    const pagamento = novoId("pi");
+    assinaturaDoPagamento.mockResolvedValue(contestada);
+    const aviso = paraAviso(daContestacao(pagamento));
+    const desfecho = await processarAviso(aviso);
+    await depoisDoAviso(aviso, desfecho);
+    expect(desfecho).toMatchObject({ resultado: "atualizada", perdeuAcesso: false });
+    expect(await temAcessoAtivo(dono)).toBe(true);
+    expect(alertas(erro)).toHaveLength(1);
+    expect(alertas(erro)[0]).toContain("a conta não perdeu o acesso por aqui");
   });
 
   it("a Stripe falhou ao cancelar: nada fica marcado nem muda — o aviso volta, e o acesso só cai quando ele valer", async () => {
@@ -138,7 +180,7 @@ describe("a contestação de um pagamento", () => {
     }
     expect(cancelarPorContestacao).not.toHaveBeenCalled();
     expect(alertas(erro)).toHaveLength(2);
-    expect(alertas(erro).every((linha) => linha.includes("o pagamento não é de uma assinatura da escola"))).toBe(true);
+    expect(alertas(erro).every((linha) => linha.includes("saiu da conta — o pagamento não é de uma assinatura da escola"))).toBe(true);
   });
 });
 

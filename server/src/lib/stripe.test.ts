@@ -489,7 +489,8 @@ describe("o cabeçalho de assinatura que parece da Stripe", () => {
 describe("os avisos que o endereço de avisos precisa assinar", () => {
   const SEGREDO = "whsec_da_lista";
   const objetoDo: Record<(typeof AVISOS_DO_ENDERECO)[number], Record<string, unknown>> = {
-    "charge.dispute.created": { id: "dp_1", object: "dispute", amount: 9990, charge: "ch_1", payment_intent: "pi_1", reason: "fraudulent", evidence_details: { due_by: 1_900_000_000 } },
+    "charge.dispute.created": { id: "dp_1", object: "dispute", amount: 9990, charge: "ch_1", payment_intent: "pi_1", reason: "fraudulent", status: "needs_response", evidence_details: { due_by: 1_900_000_000 } },
+    "charge.dispute.funds_withdrawn": { id: "dp_1", object: "dispute", amount: 9990, charge: "ch_1", payment_intent: "pi_1", reason: "fraudulent", status: "needs_response", evidence_details: { due_by: 1_900_000_000 } },
     "charge.refunded": { id: "ch_1", object: "charge", payment_intent: "pi_1" },
     "customer.subscription.created": { id: "sub_1", object: "subscription" },
     "customer.subscription.deleted": { id: "sub_1", object: "subscription" },
@@ -509,7 +510,7 @@ describe("os avisos que o endereço de avisos precisa assinar", () => {
       for (const tipo of AVISOS_DO_ENDERECO) {
         const corpo = JSON.stringify({ id: `evt_${tipo}`, object: "event", type: tipo, data: { object: objetoDo[tipo] } });
         const aviso = verificarAviso(Buffer.from(corpo), Stripe.webhooks.generateTestHeaderString({ payload: corpo, secret: SEGREDO }));
-        const tratado = aviso.assinatura !== null || aviso.pagamento !== null || aviso.pagamentoPrePago !== null || aviso.avisoDeFraude !== null;
+        const tratado = aviso.assinatura !== null || aviso.pagamento !== null || aviso.pagamentoPrePago !== null || aviso.avisoDeFraude !== null || aviso.contestacao !== null;
         expect([tipo, tratado]).toEqual([tipo, true]);
       }
     } finally {
@@ -525,11 +526,16 @@ describe("a contestação e o aviso de fraude no aviso", () => {
   // Seguro: os avisos de teste têm só os campos que a função lê; a forma completa é da Stripe.
   const evento = (type: string, object: Record<string, unknown>) => ({ id: `evt_${type}`, object: "event", type, data: { object } }) as unknown as Stripe.Event;
 
-  it("a contestação: o pagamento, o id, o motivo, o valor e o prazo; sem pagamento, nenhum (e a contestação continua)", () => {
-    const aviso = paraAviso(evento("charge.dispute.created", { id: "dp_1", object: "dispute", amount: 9990, charge: "ch_1", payment_intent: "pi_1", reason: "fraudulent", evidence_details: { due_by: 1_900_000_000 } }));
-    expect(aviso).toMatchObject({ pagamento: "pi_1", contestacao: { id: "dp_1", motivo: "fraudulent", centavos: 9990, prazo: new Date(1_900_000_000 * 1000) }, avisoDeFraude: null });
-    const semPagamento = paraAviso(evento("charge.dispute.created", { id: "dp_2", object: "dispute", amount: 100, charge: "ch_2", payment_intent: null, reason: "general", evidence_details: { due_by: null } }));
-    expect(semPagamento).toMatchObject({ pagamento: null, contestacao: { id: "dp_2", prazo: null } });
+  // Decisão do operador, 30/10/2026: o inquérito só alerta; só o dinheiro que saiu corta e cancela — por isso só ele
+  // leva o pagamento ao processamento (é pelo pagamento que a assinatura se acha).
+  it("a contestação em três fases: o inquérito e a aberta só alertam (sem pagamento para processar); o dinheiro que saiu leva o pagamento", () => {
+    const disputa = (status: string, payment_intent: string | null = "pi_1") => ({ id: "dp_1", object: "dispute", amount: 9990, charge: "ch_1", payment_intent, reason: "fraudulent", status, evidence_details: { due_by: 1_900_000_000 } });
+    for (const status of ["warning_needs_response", "warning_under_review"]) {
+      expect(paraAviso(evento("charge.dispute.created", disputa(status)))).toMatchObject({ pagamento: null, contestacao: { id: "dp_1", fase: "inquerito", pagamento: "pi_1", motivo: "fraudulent", centavos: 9990, prazo: new Date(1_900_000_000 * 1000) } });
+    }
+    expect(paraAviso(evento("charge.dispute.created", disputa("needs_response")))).toMatchObject({ pagamento: null, contestacao: { fase: "aberta", pagamento: "pi_1" } });
+    expect(paraAviso(evento("charge.dispute.funds_withdrawn", disputa("needs_response")))).toMatchObject({ pagamento: "pi_1", contestacao: { fase: "dinheiro-saiu", pagamento: "pi_1" }, avisoDeFraude: null });
+    expect(paraAviso(evento("charge.dispute.funds_withdrawn", disputa("needs_response", null)))).toMatchObject({ pagamento: null, contestacao: { fase: "dinheiro-saiu", pagamento: null } });
   });
 
   it("o aviso de fraude: a cobrança, o pagamento e o tipo — sem mexer em pagamento nenhum (só alerta)", () => {

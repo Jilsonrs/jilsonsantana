@@ -267,6 +267,25 @@ describe("a porta para pedir o código", () => {
     expect(enviarEmail).not.toHaveBeenCalled();
   });
 
+  // Revisão do grupo 2 da 4.9b: o Safari antes do 16.4 (o piso é o iOS 15) não manda o Sec-Fetch-Site — aí o Origin decide.
+  it("sem o Sec-Fetch-Site (Safari antigo), o Origin decide: de outro site, ou \"null\", é recusado; o do próprio site e nenhum passam", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const conta = await contaComSenha();
+    const pedir = (origem?: string) => {
+      const pedido = request(servidor).post("/api/conta/codigo");
+      return (origem ? pedido.set("Origin", origem) : pedido).send({ email: conta.email, motivo: "entrar" });
+    };
+    for (const origem of ["https://outro-site.example", "null"]) {
+      const res = await pedir(origem);
+      expect([res.status, res.body], origem).toEqual([403, { error: "OutroSite" }]);
+    }
+    expect(enviarEmail).not.toHaveBeenCalled();
+    expect((await pedir("http://localhost:5173")).status).toBe(200);
+    // O endereço do próprio site (BETTER_AUTH_URL) — é ele que vale em produção, onde a lista do login pode estar vazia.
+    expect(process.env.BETTER_AUTH_URL).toBeTruthy();
+    expect((await pedir(new URL(process.env.BETTER_AUTH_URL ?? "").origin)).status).toBe(200);
+  });
+
   it("o motivo inventado, ou sem e-mail: 400, e nada sai", async () => {
     for (const corpo of [{ email: novoEmail(), motivo: "trocar-email" }, { motivo: "entrar" }, { email: "nao-e-email", motivo: "senha" }]) {
       expect((await request(servidor).post("/api/conta/codigo").send(corpo)).status).toBe(400);
