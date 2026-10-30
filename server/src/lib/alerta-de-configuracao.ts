@@ -8,8 +8,12 @@
 export const INTERVALO_DO_ALERTA_DE_CONFIGURACAO = 15 * 60_000;
 const alertadaEm = new Map<string, number>();
 
-/** Alerta a linha (com a etiqueta), ou só a registra se ela já alertou há menos de 15 min. O relógio que volta não cala. */
-export function alertarConfiguracaoAusente(linha: string, agora: number = Date.now()): void {
+/**
+ * Alerta a linha (com a etiqueta), ou só a registra se a MESMA linha já alertou há menos de 15 min nesta cópia. O
+ * relógio que volta não cala. Serve a toda linha de alerta que um pedido repetido dispararia de novo (a pré-paga
+ * incompleta de um Pix — revisão do grupo 3 da 4.9b).
+ */
+export function alertarNoMaximoACada15Min(linha: string, agora: number = Date.now()): void {
   const antes = alertadaEm.get(linha);
   if (antes === undefined || agora < antes || agora - antes >= INTERVALO_DO_ALERTA_DE_CONFIGURACAO) {
     alertadaEm.set(linha, agora);
@@ -17,4 +21,9 @@ export function alertarConfiguracaoAusente(linha: string, agora: number = Date.n
     return;
   }
   console.warn(linha);
+}
+
+/** A configuração da cobrança ausente num pedido sem login (o nome de quem chama). */
+export function alertarConfiguracaoAusente(linha: string, agora: number = Date.now()): void {
+  alertarNoMaximoACada15Min(linha, agora);
 }

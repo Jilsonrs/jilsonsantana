@@ -1071,6 +1071,30 @@ describe("a segunda revisão do passo 6 (29/10/2026) — nas portas", () => {
     expect(criarPagamentoPix.mock.calls.length).toBe(pagamentos);
   });
 
+  // Revisão do grupo 3 da 4.9b: a PRÉ-PAGA incompleta cujo Pix não se lê pago é o terceiro caminho do "em conferência"
+  // sem login — também só para a aba dela (pela tentativa gravada na pré-paga), e o alerta sai uma vez só.
+  it.each([
+    ["pelo Pix", "pix"],
+    ["pelo cartão", "cartao"],
+  ])("a PRÉ-PAGA incompleta com o Pix que não se lê pago, sem login, %s: as outras abas recebem 409 Ocupada; a dela, PixEmConferencia; o alerta sai uma vez", async (_, porta) => {
+    const erro = vi.spyOn(console, "error").mockImplementation(() => {});
+    const email = novoEmail();
+    const endereco = novoEndereco();
+    const primeiro = await pixVisitante(pedido(email), endereco);
+    expect(primeiro.status).toBe(200);
+    const tentativa = (primeiro.body as { tentativa: string }).tentativa;
+    const cliente = (await ficha(email))!.stripeCustomerId;
+    const pix = pixNaStripe.find((x) => x.cliente === cliente)!;
+    naStripe.push({ ...incompleta(`sub_${S}_${++n}`, cliente), pixPaymentIntentId: pix.id, resumoDaTentativa: pix.resumoDaTentativa });
+    const pedir = porta === "pix" ? pixVisitante : cartaoVisitante;
+    const outra = await pedir(pedido(email), endereco);
+    expect([outra.status, outra.body]).toEqual([409, { error: "Ocupada" }]);
+    const daAba = await pedir(pedido(email, { tentativa }), endereco);
+    expect([daAba.status, daAba.body]).toEqual([409, { error: "PixEmConferencia" }]);
+    expect(erro.mock.calls.filter(([texto]) => String(texto).includes(`a pré-paga do Pix ${pix.id} está incompleta`))).toHaveLength(1);
+    expect(criarPagamentoPix).toHaveBeenCalledTimes(1);
+  });
+
   it.each([
     ["a aba que pagou (com o código da tentativa): 409 PixEmConferencia", true, "PixEmConferencia"],
     ["outra aba (sem o código): 409 Ocupada", false, "Ocupada"],

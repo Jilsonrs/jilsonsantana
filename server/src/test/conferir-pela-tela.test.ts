@@ -33,6 +33,7 @@ import { temAcessoAtivo } from "../lib/acesso.js";
 import { ASSINATURA_DE_TESTE } from "../lib/assinatura-de-teste.js";
 import { resumoDaTentativa } from "../lib/tentativa-do-visitante.js";
 import { LIMITES, LIMITES_DO_VISITANTE, zerarLimitesDeTentativas } from "../lib/limite-de-tentativas.js";
+import { assinaturasAoMesmoTempo, comVaga } from "../lib/assinaturas-em-andamento.js";
 
 const S = `${Date.now()}`;
 const DIA = 24 * 60 * 60 * 1000;
@@ -279,6 +280,31 @@ describe("a conferência pedida pela tela, com a Stripe fora do ar", () => {
       });
     } finally {
       vi.useRealTimers();
+    }
+  });
+});
+
+// Revisão do grupo 3 da 4.9b: a conferência pode processar um Pix pago (até 180 s com uma ligação do banco) — só com uma
+// vaga das assinaturas. Sem vaga, 204 sem conferir: a tela pergunta de novo no minuto seguinte.
+describe("a conferência pedida pela tela, sem vaga", () => {
+  it("muitas assinaturas em andamento nesta cópia: 204 nas duas portas, sem ir à Stripe", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    let soltar!: () => void;
+    const segura = new Promise<void>((ok) => (soltar = ok));
+    const ocupadas = Array.from({ length: assinaturasAoMesmoTempo() }, () => comVaga(() => segura));
+    try {
+      await semAcesso(async () => {
+        await prisma.stripeCustomer.create({ data: { userId: memberId, stripeCustomerId: novoId("cus"), livemode: false } });
+        expect((await conferir()).status).toBe(204);
+        const tentativa = `tentativa-${novoId("t")}`;
+        await prisma.guestCheckout.create({ data: { id: novoId("pedido"), email: novoEmail(), stripeCustomerId: novoId("cus"), livemode: false, tentativa: resumoDaTentativa(tentativa) } });
+        expect((await conferirSemLogin(tentativa, "192.0.2.15")).status).toBe(204);
+      });
+      expect(listarPixDoCliente).not.toHaveBeenCalled();
+      expect(assinaturasDoCliente).not.toHaveBeenCalled();
+    } finally {
+      soltar();
+      await Promise.all(ocupadas);
     }
   });
 });

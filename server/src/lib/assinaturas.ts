@@ -5,6 +5,7 @@ import { AssinaturaNaoEncontrada, assinaturasDoCliente, buscarAssinatura, buscar
 import { assinaturaDoPagamento, cancelarPorContestacao } from "./stripe-reembolso.js";
 import { pixDevolvido } from "./stripe-devolucao.js";
 import { assinaturasDoPix, cancelarPagamentoPix, criarAssinaturaPrePaga, garantirFaturaPaga, lerPagamentoPix, listarPixDoCliente, marcarEmConferencia, type PixPago, type PixPendente, type PrePagaDoPix } from "./stripe-pix.js";
+import { alertarNoMaximoACada15Min } from "./alerta-de-configuracao.js";
 import { contaDoPedido, type SemContaDoVisitante } from "./pedido-do-visitante.js";
 
 // O ESPELHO DA ASSINATURA (Fase 4, etapa 4.1 — CLAUDE.md → Membership Gating). A assinatura da
@@ -359,7 +360,8 @@ export async function pixPagoSemEspelho(tx: Prisma.TransactionClient, pagos: Pix
 export async function pixDaPrePagaIncompleta(pixId: string): Promise<{ resultado: "pix-pago"; pagamento: PagamentoPrePago } | { resultado: "em-conferencia" }> {
   const lido = await lerPagamentoPix(pixId);
   if (lido.status === "succeeded" && lido.pagamento) return { resultado: "pix-pago", pagamento: lido.pagamento };
-  console.error(`[stripe] pix: a pré-paga do Pix ${pixId} está incompleta e o Pix está ${lido.status} — conferir no painel`);
+  // Uma vez a cada 15 min por Pix, por cópia (revisão do grupo 3 da 4.9b): cada clique de novo dispararia o alerta.
+  alertarNoMaximoACada15Min(`[stripe] pix: a pré-paga do Pix ${pixId} está incompleta e o Pix está ${lido.status} — conferir no painel`);
   return { resultado: "em-conferencia" };
 }
 

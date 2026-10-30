@@ -48,6 +48,7 @@ import servidor from "./servidor.js";
 import { prisma } from "../lib/prisma.js";
 import { temAcessoAtivo } from "../lib/acesso.js";
 import { processarPixPago, TEMPO_DO_PIX } from "../lib/assinaturas.js";
+import { assinaturasAoMesmoTempo, comVaga } from "../lib/assinaturas-em-andamento.js";
 
 // O PIX PRÉ-PAGO QUE CAIU (Fase 4, etapa 4.9, passo 1 — decisão do operador, 28/10/2026). O que estes
 // testes protegem:
@@ -304,6 +305,30 @@ describe("o Pix pré-pago que caiu — a conta logada", () => {
 
     expect((await enviar(aviso)).status).toBe(200);
     expect(criarAssinaturaPrePaga).toHaveBeenCalledTimes(2);
+    expect((await espelhoDoPix(pi))?.status).toBe("active");
+  });
+});
+
+// Revisão do grupo 3 da 4.9b: o Pix pago segura uma ligação do banco por até 180 s — só com uma vaga das assinaturas,
+// que deixa sempre 2 ligações livres para o gate e as aulas.
+describe("o aviso do Pix pago sem vaga", () => {
+  it("muitas assinaturas em andamento nesta cópia: 503, sem abrir transação nem marcar o aviso — e com vaga, ele vale", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const conta = await novaConta();
+    const pi = novoId("pi");
+    const aviso = pixCaiu(pi, { prepago: "mensal", precoId: "price_mensal", userId: conta.id });
+    let soltar!: () => void;
+    const segura = new Promise<void>((ok) => (soltar = ok));
+    const ocupadas = Array.from({ length: assinaturasAoMesmoTempo() }, () => comVaga(() => segura));
+    try {
+      expect((await enviar(aviso)).status).toBe(503);
+      expect(criarAssinaturaPrePaga).not.toHaveBeenCalled();
+      expect(await prisma.stripeEvent.findUnique({ where: { id: aviso.id } })).toBeNull();
+    } finally {
+      soltar();
+      await Promise.all(ocupadas);
+    }
+    expect((await enviar(aviso)).status).toBe(200);
     expect((await espelhoDoPix(pi))?.status).toBe("active");
   });
 });

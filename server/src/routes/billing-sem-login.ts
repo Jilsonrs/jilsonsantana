@@ -220,7 +220,9 @@ router.post("/billing/visitante/conferir", ...limiteSemLogin.conferir, async (re
   }
   const ficha = await prisma.guestCheckout.findUnique({ where: { tentativa: resumoDaTentativa(corpo.tentativa) }, select: { id: true, userId: true, stripeCustomerId: true } });
   if (ficha && !(ficha.userId && (await temAcessoAtivo(ficha.userId)))) {
-    const feitas = await conferirPelaTela(ficha.stripeCustomerId, `a ficha ${ficha.id}`);
+    // Com uma vaga das assinaturas, como a conferência logada (revisão do grupo 3 da 4.9b): cheio, 204 sem conferir.
+    const vaga = await comVaga(() => conferirPelaTela(ficha.stripeCustomerId, `a ficha ${ficha.id}`));
+    const feitas = vaga.cheio ? null : vaga.resultado;
     if (feitas) {
       for (const sincronia of feitas) if (sincronia.resultado === "atualizada") await mandarBoasVindasDaAssinatura(sincronia.assinatura.id);
       console.info(`[stripe] conferência pedida pela tela: a ficha ${ficha.id}, ${feitas.length} assinatura(s) sincronizada(s)`);

@@ -6413,6 +6413,23 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             `pagar-com-pix.test.ts` (a aba que pagou e as outras, por Pix e por cartão; o Pix processado na hora pelas
             duas portas). **Mutação: 6 de 6 reprovaram** (uma sobreviveu antes — o caminho do cartão processado na hora
             não tinha teste; ganhou).
+      **A REVISÃO DO GRUPO 3** (30/10/2026, `security-vulnerability-reviewer`, Opus 5.5, esforço máximo, sobre
+      `0af2891..3e4af1d`): **nenhum P0 nem P1.** O E11 só dá o plano a quem pagou exatamente o preço de agora dele (o plano
+      e o valor nascem no servidor); o E12 cabe nos 180 s; o E13 só põe o id da conta; o E17 compara o resumo, nunca o
+      código, e não cria pagamento. **Três P2** — dois fechados com teste e mutação (6 de 6 reprovaram), um é texto do
+      operador:
+      - [x] **(P2) O Pix pago segurava uma ligação do banco por até 180 s fora do teto das portas** (no aviso e nas duas
+            rotas de conferir): com a Stripe lenta, as 2 ligações livres do gate e das aulas acabariam. **FEITO:** os três
+            caminhos pedem a vaga das assinaturas (`comVaga`); cheio, o aviso responde 503 (a Stripe entrega de novo, e a
+            rodada do E1 pega o resto) e as rotas de conferir, 204 sem conferir. Testes: `pix-pre-pago.test.ts`,
+            `conferir-pela-tela.test.ts`.
+      - [x] **(P2) O terceiro caminho do "em conferência" sem login** (a pré-paga incompleta cujo Pix não se lê pago)
+            escapava do E17, e o alerta dele saía a cada clique. **FEITO:** decide pela tentativa gravada na própria
+            pré-paga (`resumoDaTentativa`), e o alerta sai no máximo a cada 15 min por Pix (`alertarNoMaximoACada15Min`).
+            Teste: `pagar-com-pix.test.ts` (as duas portas; um alerta só).
+      - [ ] **(P2) Quem pagou e perdeu o código da aba** (outra aba, outro aparelho) recebe o 409 `Ocupada`, cuja frase
+            (*"Este e-mail já tem uma assinatura em andamento em outra aba. Termine por lá ou aguarde um instante."*) não
+            dá saída. **Decisão do operador: o texto** (vai junto com as frases do E15).
       - [ ] **E18 — o e-mail de confirmação para quem assina logado** *(decisão do operador, 29/10/2026, P127)*:
             sai da sincronia que dá o acesso, uma vez por assinatura (a mesma regra das boas-vindas: depois do
             commit, `enviarEmail`, chave estável), para cartão e Pix. O texto vai ao operador.

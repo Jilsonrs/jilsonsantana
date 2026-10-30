@@ -156,7 +156,10 @@ router.post("/billing/conferir", requireAuth, ...limiteDeTentativas.conferir, as
   if (!(await temAcessoAtivo(user.id))) {
     const cliente = await prisma.stripeCustomer.findUnique({ where: { userId: user.id }, select: { stripeCustomerId: true } });
     if (cliente) {
-      const feitas = await conferirPelaTela(cliente.stripeCustomerId, `a conta ${user.id}`);
+      // Com uma vaga das assinaturas: a conferência pode processar um Pix pago (até 180 s com uma ligação do banco).
+      // Cheio, 204 sem conferir — a tela pergunta de novo no minuto seguinte (revisão do grupo 3 da 4.9b).
+      const vaga = await comVaga(() => conferirPelaTela(cliente.stripeCustomerId, `a conta ${user.id}`));
+      const feitas = vaga.cheio ? null : vaga.resultado;
       if (feitas) console.info(`[stripe] conferência pedida pela tela: a conta ${user.id}, ${feitas.length} assinatura(s) sincronizada(s), acesso ${(await temAcessoAtivo(user.id)) ? "sim" : "não"}`);
     }
   }
