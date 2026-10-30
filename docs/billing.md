@@ -989,7 +989,8 @@ pública de assinar*), o teto da prévia (*Limite de tentativas*), o código de 
   tira o CPF do cadastro dele, mas a fatura anulada da tentativa com cartão guarda uma cópia do CPF, do
   e-mail e dos dados da assinatura, e a Stripe recusa apagar fatura fechada; no Pix não há fatura antes
   de pagar. **O operador aceitou (30/10/2026)** que o CPF fique na fatura anulada, visível só no painel da
-  Stripe; por isso o nome digitado não vai para a Stripe.
+  Stripe; por isso o nome digitado não vai para a Stripe. **Como ficou:** *Quem não terminou de assinar*,
+  logo abaixo.
 - **A conta apagada com `deletedAt` (exclusão a pedido) continua com o e-mail**, e a tela diria
   "já tem conta". *Gatilho: a exclusão de conta, quando for construída.*
 
@@ -1201,6 +1202,49 @@ o checkout sem login nunca reaproveita um pagamento que ela cancelou (`pagamento
 clique ganha outra tentativa. *Reabre se o Radar mostrar teste de cartão passando por uma mesma
 tentativa, ou se a conta de verdade se comportar diferente.*
 
+
+## Quem não terminou de assinar *(Fase 4, etapa 4.7, passo 9 — decisões do operador, 29/10/2026)*
+
+**As decisões dele (29/10/2026):** o e-mail "você não terminou a assinatura" 2 horas depois da última tentativa; aos 7
+dias, a ficha e o cliente da Stripe (com o CPF) apagados; quem marcou "Quero receber novidades" vira LEAD (nome e
+e-mail, nunca o CPF); o lembrete de quem não marcou traz "Quero receber novidades" (clicou, vira lead; não clicou, sai em
+7 dias); descadastrar; o campo "Seu nome" no formulário (obrigatório, sem linha de ajuda — 30/10/2026); tudo na rodada
+de hora em hora. **E as de 30/10/2026:** aceito que o CPF fique na fatura anulada da tentativa com cartão (a Stripe não
+deixa apagá-la — medido na área restrita); os textos do campo e do lembrete, aprovados por ele (o lembrete, nos dois
+e-mails de verdade, em `pt.ts` → `app.email.lembrete`).
+
+**Convenções de engenharia (como o código faz):**
+- **A ficha guarda o que a ÚLTIMA tentativa deixou** — o nome, a caixa, o UTM e a hora (`ultimaTentativaEm`) —, gravado
+  com a trava do e-mail nos dois caminhos (cartão e Pix), também no reaproveitamento e no mesmo QR. **O nome nunca vai
+  para a Stripe:** a conta que nasce do pagamento o lê da ficha. A ficha apagada no meio de um pedido (a limpeza no mesmo
+  instante) responde "ocupada", e o novo clique cria outra.
+- **A rodada** (`lib/quem-nao-terminou.ts`, chamada pelo job `jilson-prod-avisos` depois dos e-mails da cobrança, com o
+  resto do prazo menos uma margem para a última ficha): no máximo 100 fichas por hora, as mais antigas primeiro.
+- **O lembrete:** UM por ficha (a marca tomada e confirmada; a presa há mais de 15 min é retomada; o envio que falha
+  devolve a marca); nunca para o e-mail que tem conta, nem para a ficha cuja Stripe diz que houve pagamento (uma
+  assinatura além da incompleta, ou um pagamento pago — o aviso dela atrasou, ou o Pix está em conferência). Quem marcou
+  a caixa vira lead nessa hora e lê o link de descadastrar; quem não marcou lê o de pedir as novidades. A chave do Resend
+  é `lembrete-da-assinatura/<ficha>`.
+- **A limpeza dos 7 dias:** com a trava do e-mail (ocupada → a próxima hora), a ficha relida. **Só se apaga o cliente que
+  nunca pagou nada** (`podeApagar`): a lista inteira lida, todas as assinaturas `incomplete_expired`, nenhum pagamento
+  pago; os pagamentos ainda abertos (o QR vencido) são cancelados antes. Com pagamento: não apaga, o alerta `[stripe]`
+  sai uma vez, e a ficha é conferida de novo uma vez por dia. **A Stripe primeiro, a ficha depois.** Quem marcou a caixa
+  vira lead antes (o lembrete pode não ter saído). A ficha do outro modo da Stripe não é apagada lá, só avisada.
+- **Os links dos e-mails** (`lib/links-do-email.ts`): o código é uma assinatura do servidor (HMAC com o segredo do site,
+  separado por propósito) sobre o id da ficha ou do lead — nada fica guardado, o mesmo e-mail repetido sai com o mesmo
+  link, e quem tiver uma cópia do banco não forja um link. *Trocar o `BETTER_AUTH_SECRET` derruba também estes links.*
+- **Os leads** (`lib/leads.ts`, a tabela `lead`): um por e-mail, em minúsculas; o que já existe ganha o que faltava; o
+  descadastrado só volta com um consentimento DEPOIS do descadastro. **Descadastrar vale para o e-mail:** o lead e, se
+  houver conta com ele, a caixa de novidades da conta.
+
+**Limitações conhecidas:**
+- **Quem digita o e-mail de outra pessoa faz a escola mandar a ela um lembrete** — um por ficha, no teto que já existe de
+  10 e-mails novos por endereço por dia. *Reabre se o Resend mostrar queixas de spam, ou o registro mostrar muitos
+  lembretes saindo do mesmo endereço.*
+- **O nome da conta é o da última tentativa**, que só difere do da tentativa paga se outra pessoa usar o mesmo e-mail nos
+  segundos entre o pagamento e a conta nascer.
+- **A Política de Privacidade** (Fase 7) precisa dizer: a lista de leads, o lembrete, os 7 dias e o CPF que fica na
+  fatura anulada da Stripe.
 
 ## Sincronizar e perder o acesso *(Fase 4, etapa 4.4 — 10/10/2026)*
 

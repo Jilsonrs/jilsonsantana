@@ -5,8 +5,9 @@ import { esvaziarMonitor, ligarMonitor } from "../lib/monitor.js";
 // operador, 28/10/2026: "2 e-mails, com agendador"). É o que o Cloud Run Job `jilson-prod-avisos`
 // executa, com a MESMA imagem e a mesma conta do site, quando o Cloud Scheduler manda — sem porta na
 // internet, sem senha nova: quem pode executar o job é só a conta do agendador (CLAUDE.md →
-// *Background Jobs*). Roda a conferência dos avisos da Stripe (`lib/avisos-perdidos.ts`, E1 da 4.9b) e depois
-// `rodadaDosAvisos()` (`lib/avisos-da-assinatura.ts`), e SAI.
+// *Background Jobs*). Roda a conferência dos avisos da Stripe (`lib/avisos-perdidos.ts`, E1 da 4.9b), depois
+// `rodadaDosAvisos()` (`lib/avisos-da-assinatura.ts`) e, por último, a de quem não terminou de assinar — o lembrete e a
+// limpeza dos 7 dias (`lib/quem-nao-terminou.ts`, etapa 4.7, passo 9) —, e SAI.
 // O alerta liga ANTES de carregar o resto (por isso o `import()` depois): uma falha ao carregar — o
 // banco sem endereço, por exemplo — já o encontra ligado. Termina com `process.exit`: as ligações com
 // o banco e o Sentry seguram o processo aberto, e o job pagaria o tempo parado.
@@ -20,6 +21,7 @@ try {
   const { PRAZO_DA_RODADA_EM_MS, rodadaDosAvisos } = await import("../lib/avisos-da-assinatura.js");
   const { conferirAvisosPerdidos } = await import("../lib/avisos-perdidos.js");
   const { conferirAtivasVencidas, ehHoraDaConferenciaDasAtivas } = await import("../lib/ativas-vencidas.js");
+  const { MARGEM_DA_ULTIMA_FICHA_EM_MS, rodadaDeQuemNaoTerminou } = await import("../lib/quem-nao-terminou.js");
   const { prisma } = await import("../lib/prisma.js");
   try {
     // Primeiro, os avisos da Stripe que o site não processou (E1 da revisão ampla da cobrança, 29/10/2026 —
@@ -38,6 +40,11 @@ try {
     const rodada = await rodadaDosAvisos(new Date(), Math.max(PRAZO_DA_RODADA_EM_MS - (Date.now() - inicio), 0));
     console.info(`[avisos] a rodada terminou: ${rodada.conferidas} conferida(s) na Stripe, ${rodada.ocupadas} ocupada(s), ${rodada.desconhecidas} que a Stripe não conhece, ${rodada.adiadas} adiada(s) para a próxima, ${rodada.falhas} com falha`);
     if (rodada.falhas > 0) codigo = 1;
+    // Por último, quem não terminou de assinar (etapa 4.7, passo 9): com o que sobrou do prazo, menos a margem da última
+    // ficha (a limpeza de uma ficha vai à Stripe algumas vezes, e o job tem 5 minutos ao todo).
+    const fichas = await rodadaDeQuemNaoTerminou(new Date(), Math.max(PRAZO_DA_RODADA_EM_MS - MARGEM_DA_ULTIMA_FICHA_EM_MS - (Date.now() - inicio), 0));
+    console.info(`[avisos] quem não terminou de assinar: ${fichas.lembretes} lembrete(s), ${fichas.semLembrete} sem lembrete, ${fichas.apagadas} ficha(s) apagada(s), ${fichas.comPagamento} com pagamento (não apagada), ${fichas.outroModo} de outro modo, ${fichas.ocupadas} ocupada(s), ${fichas.falhas} com falha, ${fichas.adiadas} adiada(s) para a próxima`);
+    if (fichas.falhas > 0) codigo = 1;
   } finally {
     await prisma.$disconnect();
   }

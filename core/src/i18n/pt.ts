@@ -433,6 +433,24 @@ export const pt = {
         titulo: "Seu acesso está acabando",
         acaba: "Você pagou com Pix, e o seu acesso às aulas vai até o dia {data}.",
         depois: "Quando acabar, é só pagar de novo para continuar: seu progresso fica guardado, e você segue de onde parou."
+      },
+      // O LEMBRETE DE QUEM NÃO TERMINOU DE ASSINAR (etapa 4.7, passo 9 — decisões do operador, 29/10/2026: 2 horas
+      // depois da última tentativa). Texto APROVADO pelo operador em 30/10/2026 (rascunho do agente, conferido nos dois
+      // e-mails de verdade). `{nome}`: o nome digitado ao assinar (sem nome, a linha não aparece). Depois do botão, quem
+      // NÃO marcou "Quero receber novidades" lê `querNovidades`, o link `linkNovidades` e `apagamos`; quem marcou (é lead)
+      // lê `eLead` e o link `linkDescadastrar`. `naoFoiVoce` fecha os dois.
+      lembrete: {
+        assunto: "Sua assinatura não foi concluída",
+        titulo: "Falta pouco",
+        ola: "Olá, {nome}.",
+        naoConcluida: "Você começou a assinar a escola, mas o pagamento não foi concluído. Nada foi cobrado.",
+        botao: "Terminar a assinatura",
+        querNovidades: "Quer receber novidades e ofertas da escola por e-mail?",
+        linkNovidades: "Quero receber novidades",
+        apagamos: "Se você não terminar a assinatura nem pedir as novidades, apagamos os seus dados em 7 dias.",
+        eLead: "Você pediu para receber novidades e ofertas da escola por e-mail. Se mudar de ideia:",
+        linkDescadastrar: "Não quero mais receber",
+        naoFoiVoce: "Se não foi você que começou esta assinatura, ignore este e-mail."
       }
     },
     inicio: {

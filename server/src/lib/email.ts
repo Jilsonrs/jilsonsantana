@@ -44,7 +44,7 @@ const API_DO_RESEND = "https://api.resend.com";
 const TEMPO_LIMITE_MS = 10_000;
 
 /** Os e-mails que existem. Cada passo que cria um e-mail acrescenta o dele aqui. */
-export type TipoDeEmail = "prova" | "codigo" | "boas-vindas" | "cobranca-falhou" | "antes-de-trancar" | "assinatura-cancelada" | "prepago-terminando" | "senha-criada" | "assinatura-confirmada";
+export type TipoDeEmail = "prova" | "codigo" | "boas-vindas" | "cobranca-falhou" | "antes-de-trancar" | "assinatura-cancelada" | "prepago-terminando" | "senha-criada" | "assinatura-confirmada" | "lembrete-da-assinatura";
 
 export type PedidoDeEmail = {
   /** O `User.email` lido do NOSSO banco. */

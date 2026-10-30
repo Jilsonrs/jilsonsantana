@@ -5721,7 +5721,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                   conferir · fora do pedido · depois do e-mail · sem o `autocomplete` · o aviso que não some ao
                   corrigir · a tela logada pedindo o nome · o aviso errado · o pedido logado levando o nome · o aviso
                   sem ligação com o campo). Gates: typecheck, lint, build; site 1075, servidor 1640 (como o CI).
-            - [ ] **9c — O lembrete e a limpeza, na rodada de hora em hora** (servidor).
+            - [x] **9c — O lembrete e a limpeza, na rodada de hora em hora** (servidor).
                   `lib/quem-nao-terminou.ts`: a regra numa função pura (a ficha e a hora → nada, lembrar ou
                   apagar) e os dois passos que o job roda DEPOIS dos e-mails da cobrança, com o resto do
                   prazo (o que não couber fica para a próxima hora, com um aviso).
@@ -5751,6 +5751,34 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                   o link de quem não marcou, a Stripe com pagamento (nem lembrete nem limpeza; o alerta uma
                   vez), a ordem da limpeza (a Stripe antes da ficha), a Stripe que falha, o cliente que ela não
                   conhece, a trava ocupada, o prazo, o job chamando os passos. Mutação.
+                  **FEITO (30/10/2026), no `dev`.** **O texto do lembrete, APROVADO pelo operador em 30/10/2026**
+                  (rascunho do agente, nos dois e-mails de verdade mandados ao Yahoo dele — "Aprovo os dois"):
+                  `app.email.lembrete`. O que entrou: `lib/quem-nao-terminou.ts` (a regra pura
+                  `oQueFazerComAFicha`, `pagouOuEstaPagando` e `podeApagar`; o lembrete; a limpeza;
+                  `rodadaDeQuemNaoTerminou`); `lib/stripe-limpeza.ts` (lê TUDO do cliente — as assinaturas de
+                  qualquer status e os pagamentos, e diz se a lista veio cortada —, cancela o pagamento aberto e
+                  apaga; o cliente que a Stripe não conhece é "não existe"); `lib/leads.ts` (`registrarLead`,
+                  `leadAtivo` e `descadastrar`, que a 9d usa); `lib/links-do-email.ts` (o código do link: HMAC do
+                  `BETTER_AUTH_SECRET` sobre o id, separado por propósito e por tipo de link); o modelo de todo
+                  e-mail com o LINK de texto depois do botão (`views/email.ts`: só http(s), escapado, e por
+                  extenso no texto puro); `views/email-do-lembrete.ts`; o job chamando a rodada por último, com o
+                  resto do prazo menos 50 s (`MARGEM_DA_ULTIMA_FICHA_EM_MS`); a prévia (`email:previa`) com as
+                  duas versões. Os documentos: `CLAUDE.md` (*Membership Gating*: a trava de apagar cliente),
+                  `billing.md` (*Quem não terminou de assinar*) e `tech-stack.md` (o job). *Docs check
+                  (context7):* Stripe → `/websites/stripe` → as 2 consultas do começo do passo (apagar o cliente
+                  cancela as assinaturas ativas; fatura fechada não se apaga). Testes: 32 novos — 25 em
+                  `quem-nao-terminou.test.ts`, 6 em `stripe-limpeza-rede.test.ts` e 1 no modelo (`email.test.ts`).
+                  **Mutação: 25 de 26 reprovaram** (o lembrete com 1 hora · repetido · para quem tem conta · para
+                  quem pagou · a caixa sem virar lead, no lembrete e na limpeza · sempre o link de pedir · o envio
+                  que falha sem devolver a marca · a marca presa nunca retomada · apagar com assinatura ativa · com
+                  pagamento pago · a ficha apagada FORA da transação, antes da Stripe · o alerta a cada conferência
+                  · a não apagada conferida toda hora · sem a trava do e-mail · no outro modo da Stripe · sem o prazo
+                  · o job sem a rodada · o link sem o tipo · o link adulterado abrindo · o link de texto sem
+                  conferir http(s) · o descadastrado voltando com a caixa antiga · descadastrar sem desligar a
+                  conta · a lista cortada passando por completa · só as assinaturas vivas na lista). **A que passou
+                  é EQUIVALENTE:** apagar a ficha antes da Stripe DENTRO da mesma transação — se a Stripe falha, a
+                  transação desfaz a exclusão (o teste disso existe). Gates: typecheck, lint, build; site 1075,
+                  servidor 1672 (como o CI).
             - [ ] **9d — As duas páginas públicas: "Quero receber novidades" e "Descadastrar"** (servidor).
                   Páginas do servidor como a `/assinar` (o menu e o rodapé do site, `noindex`), **fora do
                   "Em breve"**: o link de um e-mail tem de funcionar sempre — o de descadastrar, por lei.
