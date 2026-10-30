@@ -90,7 +90,7 @@ afterEach(() => {
 });
 
 /** Liga de novo, com o limite que o teste pedir (ligar outra vez troca o cliente do Sentry). */
-const ligar = (limite?: () => boolean) => ligarMonitor({ dsn: DSN, producao: true, versao: "versao-de-teste" }, { transporte, limite });
+const ligar = (limite?: (etiqueta: string) => boolean) => ligarMonitor({ dsn: DSN, producao: true, versao: "versao-de-teste" }, { transporte, limite });
 
 describe("quando o alerta liga", () => {
   it("fora de produção não liga, mesmo com o endereço: no computador e nos testes os erros ficam no terminal", () => {
@@ -227,15 +227,40 @@ describe("o que NUNCA sai do servidor", () => {
 });
 
 describe("a cota", () => {
-  it("o limite por janela: 30 em 10 minutos; o 31º espera a janela andar", () => {
+  it("o limite por janela: 30 em 10 minutos para a cobrança; o 31º espera a janela andar", () => {
     let agora = 1_000_000;
     const pode = criarLimite(undefined, () => agora);
-    for (let i = 0; i < 30; i++) expect(pode()).toBe(true);
-    expect(pode()).toBe(false);
+    for (let i = 0; i < 30; i++) expect(pode("stripe")).toBe(true);
+    expect(pode("stripe")).toBe(false);
     agora += 10 * 60_000 - 1;
-    expect(pode()).toBe(false);
+    expect(pode("stripe")).toBe(false);
     agora += 1;
-    expect(pode()).toBe(true);
+    expect(pode("stripe")).toBe(true);
+  });
+
+  // E9 da revisão ampla da cobrança (29/10/2026): parte da cota é só da cobrança, dos e-mails, da rodada e do aviso do
+  // limite — um apagão de [api] não cala o alerta de pagante trancado.
+  it("a reserva: as outras etiquetas param em 20 por janela e 100 por dia; a cobrança, os e-mails, a rodada e o aviso do limite seguem até 30 e 150", () => {
+    let agora = 1_000_000;
+    const pode = criarLimite(undefined, () => agora);
+    for (let i = 0; i < 20; i++) expect(pode("api")).toBe(true);
+    expect(pode("api")).toBe(false);
+    expect(pode("processo")).toBe(false);
+    expect(pode()).toBe(false);
+    for (const etiqueta of ["stripe", "email", "avisos", "monitor"]) expect(pode(etiqueta), etiqueta).toBe(true);
+    for (let i = 0; i < 6; i++) expect(pode("stripe")).toBe(true);
+    expect(pode("stripe")).toBe(false);
+
+    const doDia = criarLimite(undefined, () => agora);
+    for (let janela = 0; janela < 5; janela++) {
+      for (let i = 0; i < 20; i++) expect(doDia("api")).toBe(true);
+      agora += 10 * 60_000;
+    }
+    expect(doDia("api")).toBe(false);
+    for (let i = 0; i < 30; i++) expect(doDia("stripe")).toBe(true);
+    agora += 10 * 60_000;
+    for (let i = 0; i < 20; i++) expect(doDia("email")).toBe(true);
+    expect(doDia("email")).toBe(false);
   });
 
   it("o limite do dia: 150; depois disso só no dia seguinte", () => {
@@ -243,13 +268,13 @@ describe("a cota", () => {
     const pode = criarLimite(undefined, () => agora);
     let enviados150 = 0;
     for (let janela = 0; janela < 10; janela++) {
-      for (let i = 0; i < 30; i++) if (pode()) enviados150++;
+      for (let i = 0; i < 30; i++) if (pode("stripe")) enviados150++;
       agora += 10 * 60_000;
     }
     expect(enviados150).toBe(150);
-    expect(pode()).toBe(false);
+    expect(pode("stripe")).toBe(false);
     agora += 24 * 60 * 60_000;
-    expect(pode()).toBe(true);
+    expect(pode("stripe")).toBe(true);
   });
 
   it("ligado: o defeito que se repete não manda mais que o limite — o resto fica no registro, com um aviso só", async () => {
@@ -261,6 +286,20 @@ describe("a cota", () => {
     // As cinco linhas continuam no registro do servidor.
     expect(gritos.length).toBe(5);
     expect(avisos.filter((linha) => linha.includes("[monitor] limite de envios atingido")).length).toBe(1);
+  });
+
+  // E9: com o limite de verdade — o apagão de [api] para em 20, o [stripe] ainda sai, e UM alerta diz que o limite
+  // começou a descartar (sem ele, ninguém saberia que há alertas calados).
+  it("ligado, com o limite de verdade: o apagão de [api] para em 20, o [stripe] seguinte sai, e um alerta só diz que o limite começou a descartar", async () => {
+    ligar(criarLimite());
+    for (let i = 1; i <= 25; i++) console.error(`[api] GET /api/x falhou: o apagão, vez ${i}`);
+    console.error("[stripe] o pagante trancado");
+    const saiu = await eventos();
+    expect(saiu.filter((e) => e.message?.startsWith("[api] ")).length).toBe(20);
+    expect(saiu.some((e) => e.message === "[stripe] o pagante trancado")).toBe(true);
+    const doLimite = saiu.filter((e) => e.message?.startsWith("[monitor] o limite de alertas começou a descartar"));
+    expect(doLimite).toHaveLength(1);
+    expect(doLimite[0]).toMatchObject({ level: "error", tags: { origem: "monitor" } });
   });
 
   it("a linha que não é nossa não gasta o limite", async () => {

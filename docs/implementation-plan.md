@@ -6313,9 +6313,17 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             pedido de código por e-mail (`conta-codigo.ts`), que tinha uma cópia da trava antiga. Testes:
             `mudar-de-plano.test.ts` e `codigo-por-email.test.ts` (o subdomínio recusado; a mesma origem, o `none` e
             sem o cabeçalho passam). **Mutação: 4 de 4 reprovaram.**
-      - [ ] **E9 — o teto do Sentry com uma reserva para `[stripe]`, `[email]` e `[avisos]`** (hoje um apagão com
+      - [x] **E9 — o teto do Sentry com uma reserva para `[stripe]`, `[email]` e `[avisos]`** (hoje um apagão com
             centenas de `[api]` gasta o dia, e o alerta seguinte de pagante trancado não sai), e um alerta quando o
-            limite começar a descartar.
+            limite começar a descartar. **FEITO (29/10/2026):** `criarLimite` (`monitor.ts`) pergunta pela etiqueta: as
+            de `ETIQUETAS_COM_RESERVA` (`stripe`, `email`, `avisos` e `monitor`) vão até 30 por janela e 150 por dia;
+            as outras param em 20 e 100 (`RESERVA_DE_ENVIOS`: 10 e 50). Quando o limite descarta pela primeira vez no
+            dia, sai UM alerta `[monitor] o limite de alertas começou a descartar…`, pela reserva — a marca é posta
+            antes de pedir o envio, então nunca entra em laço; ligar o monitor zera as marcas. O `CLAUDE.md` (*Server*)
+            ganhou a regra: alerta novo de cobrança usa uma dessas etiquetas. Testes: `monitor.test.ts` (+2: a reserva
+            na janela e no dia; com o limite de verdade, o apagão de `[api]` para em 20, o `[stripe]` sai e um alerta só
+            do descarte; os dois testes do limite passaram a usar a etiqueta da cobrança). **Mutação: 6 de 6
+            reprovaram.** Na P126, conferir que a regra de alerta do Sentry avisa também a origem `monitor`.
       - [x] **E10 — HSTS e `frame-ancestors 'self'` nas páginas** (hoje a `/assinar` pode ser emoldurada por outro
             site). **FEITO (29/10/2026):** `cabecalhosDeSeguranca` (`server/src/lib/cabecalhos-de-seguranca.ts`, função
             pura), em toda resposta (`app.ts`, no lugar do passo que só punha o `Cross-Origin-Opener-Policy`):

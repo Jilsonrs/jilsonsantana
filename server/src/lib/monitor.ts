@@ -25,7 +25,7 @@ import * as Sentry from "@sentry/node";
 
 export type Ambiente = { dsn: string | undefined; producao: boolean; versao: string | null };
 type Transporte = NonNullable<Parameters<typeof Sentry.init>[0]>["transport"];
-type Opcoes = { transporte?: Transporte; limite?: () => boolean };
+type Opcoes = { transporte?: Transporte; limite?: (etiqueta: string) => boolean };
 
 /** Linha NOSSA: começa com uma etiqueta entre colchetes, como `[stripe] …`. */
 const NOSSA = /^\[([a-z][a-z-]*)\] /;
@@ -48,14 +48,24 @@ export function mascarar(texto: string): string {
 export const LIMITE_DE_ENVIOS = { porJanela: 30, janelaMs: 10 * 60_000, porDia: 150 };
 const UM_DIA = 24 * 60 * 60_000;
 
-/** Devolve a pergunta "pode enviar mais um?" — que já conta o envio quando responde sim. */
-export function criarLimite(limite = LIMITE_DE_ENVIOS, agora: () => number = Date.now): () => boolean {
+/**
+ * A RESERVA (E9 da revisão ampla da cobrança, 29/10/2026): parte da cota fica só para as etiquetas da cobrança, dos
+ * e-mails e da rodada — e para o aviso de que o limite começou a descartar. Sem ela, um apagão com centenas de `[api]`
+ * gastava o dia, e o alerta seguinte de pagante trancado não saía. As outras etiquetas param antes: em 20 por janela
+ * e 100 por dia. **Alerta novo de cobrança usa uma destas etiquetas**, senão fica sem a reserva.
+ */
+export const RESERVA_DE_ENVIOS = { porJanela: 10, porDia: 50 };
+export const ETIQUETAS_COM_RESERVA: ReadonlySet<string> = new Set(["stripe", "email", "avisos", "monitor"]);
+
+/** Devolve a pergunta "pode enviar mais um desta etiqueta?" — que já conta o envio quando responde sim. */
+export function criarLimite(limite = LIMITE_DE_ENVIOS, agora: () => number = Date.now): (etiqueta?: string) => boolean {
   let enviados: number[] = [];
-  return () => {
+  return (etiqueta) => {
     const t = agora();
     enviados = enviados.filter((quando) => t - quando < UM_DIA);
     const naJanela = enviados.filter((quando) => t - quando < limite.janelaMs).length;
-    if (naJanela >= limite.porJanela || enviados.length >= limite.porDia) return false;
+    const guardado = etiqueta !== undefined && ETIQUETAS_COM_RESERVA.has(etiqueta) ? { porJanela: 0, porDia: 0 } : RESERVA_DE_ENVIOS;
+    if (naJanela >= limite.porJanela - guardado.porJanela || enviados.length >= limite.porDia - guardado.porDia) return false;
     enviados.push(t);
     return true;
   };
@@ -87,6 +97,7 @@ export function limparEvento(evento: Sentry.ErrorEvent): Sentry.ErrorEvent | nul
 
 let ligado = false;
 let avisouDoLimite = 0;
+let alertouDoDescarte = 0;
 
 export function monitorLigado(): boolean {
   return ligado;
@@ -103,6 +114,8 @@ export function ligarMonitor(ambiente: Ambiente, opcoes: Opcoes = {}): boolean {
     return false;
   }
   const podeEnviar = opcoes.limite ?? criarLimite();
+  avisouDoLimite = 0;
+  alertouDoDescarte = 0;
   Sentry.init({
     dsn: ambiente.dsn,
     environment: "production",
@@ -150,11 +163,17 @@ export function ligarMonitor(ambiente: Ambiente, opcoes: Opcoes = {}): boolean {
     beforeSend: (evento) => {
       const limpo = limparEvento(evento);
       if (limpo === null) return null;
-      if (podeEnviar()) return limpo;
+      if (podeEnviar(String(limpo.tags?.origem ?? "processo"))) return limpo;
       // `warn`, que não vira alerta — e uma vez por janela, para não encher o registro.
       if (Date.now() - avisouDoLimite > LIMITE_DE_ENVIOS.janelaMs) {
         avisouDoLimite = Date.now();
         console.warn("[monitor] limite de envios atingido: o que vier agora fica só no registro");
+      }
+      // E UM alerta por dia de que o limite começou a descartar (E9): sem ele, ninguém sabe que há alertas calados.
+      // Vai pela reserva (`[monitor]`), e nunca entra em laço: a marca é posta antes de pedir o envio.
+      if (Date.now() - alertouDoDescarte > UM_DIA) {
+        alertouDoDescarte = Date.now();
+        Sentry.captureMessage("[monitor] o limite de alertas começou a descartar: o que passa dele fica só no registro do servidor (Cloud Run → Registros); a cobrança, os e-mails e a rodada têm uma reserva da cota", "error");
       }
       return null;
     },
