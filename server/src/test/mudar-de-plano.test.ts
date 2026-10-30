@@ -172,13 +172,16 @@ describe("mudar de plano — quem entra", () => {
   // A SEGUNDA TRAVA contra o pedido forjado em outro site (achado da revisão de segurança,
   // 11/10/2026): o cookie já não viaja nesses pedidos; se viajasse, o servidor recusa pelo que o
   // navegador diz da origem. Vale para tudo o que MUDA alguma coisa em /api/billing.
-  it("pedido que muda alguma coisa, vindo de OUTRO SITE: 403 antes de tudo — do mesmo site, sem o cabeçalho, e a leitura passam", async () => {
+  // E8 da revisão ampla (29/10/2026): o `same-site` (um subdomínio) também é outro site; só a mesma origem passa.
+  it("pedido que muda alguma coisa, vindo de OUTRO SITE ou de um subdomínio: 403 antes de tudo — da mesma origem, aberto pela pessoa, sem o cabeçalho, e a leitura passam", async () => {
     const aviso = vi.spyOn(console, "warn").mockImplementation(() => {});
     try {
-      const deFora = (caminho: string) => request(servidor).post(`/api/billing/minha-assinatura${caminho}`).set("Cookie", member).set("Sec-Fetch-Site", "cross-site").send(anual());
-      for (const caminho of ["/plano", "/plano/desistir", "/cancelar", "/manter", "/reembolso"]) {
-        const res = await deFora(caminho);
-        expect([res.status, res.body], caminho).toEqual([403, { error: "OutroSite" }]);
+      const deFora = (caminho: string, origem: string) => request(servidor).post(`/api/billing/minha-assinatura${caminho}`).set("Cookie", member).set("Sec-Fetch-Site", origem).send(anual());
+      for (const origem of ["cross-site", "same-site"]) {
+        for (const caminho of ["/plano", "/plano/desistir", "/cancelar", "/manter", "/reembolso"]) {
+          const res = await deFora(caminho, origem);
+          expect([res.status, res.body], `${origem} ${caminho}`).toEqual([403, { error: "OutroSite" }]);
+        }
       }
       expect(aviso.mock.calls.flat().join(" ")).toContain("[api] POST /api/billing/minha-assinatura/reembolso recusado: o pedido veio de outro site");
     } finally {
@@ -186,9 +189,10 @@ describe("mudar de plano — quem entra", () => {
     }
     expect(buscarDetalhes).not.toHaveBeenCalled();
     nadaMudouNaStripe();
-    for (const origem of ["same-origin", "same-site", "none"]) {
+    for (const origem of ["same-origin", "none", undefined]) {
       trocarAgora.mockClear();
-      const res = await mudar(member, anual()).set("Sec-Fetch-Site", origem);
+      const pedido = mudar(member, anual());
+      const res = await (origem ? pedido.set("Sec-Fetch-Site", origem) : pedido);
       expect([res.status, trocarAgora.mock.calls.length], origem).toEqual([200, 1]);
     }
     expect((await oferta(member).set("Sec-Fetch-Site", "cross-site")).status).toBe(200);

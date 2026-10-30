@@ -1641,6 +1641,9 @@ encerrada de vez com dias pagos: tem acesso e o servidor recusa cartão.
   desse cancelamento — aí a pessoa pagou um período que quis cancelar.
 - **Pedido que muda cobrança e vem de outro site é recusado** (403 `OutroSite`, pelo
   `Sec-Fetch-Site` do navegador): segunda trava além do cookie, para todo `/api/billing`.
+  **Desde a 4.9b (E8, 29/10/2026) só a mesma origem passa** (e o pedido aberto pela própria pessoa, ou sem o
+  cabeçalho): o pedido de um subdomínio de jilsonsantana.com também é recusado — `pedidoDeOutroSite`, a mesma regra
+  do pedido de código por e-mail.
   Navegador antigo que não manda o cabeçalho fica só com a primeira.
 - **O ano do Anual e a conta da troca — o que foi medido (11/10/2026, com o relógio de teste):**
   sem pedir nada, a Stripe mantém o ANIVERSÁRIO da assinatura — quem assinou o Mensal em 11/10 e

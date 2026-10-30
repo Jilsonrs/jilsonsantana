@@ -258,10 +258,12 @@ describe("a porta para pedir o código", () => {
     expect(enviarEmail).not.toHaveBeenCalled();
   });
 
-  it("o pedido que vem de OUTRO SITE é recusado, e nada sai", async () => {
+  it("o pedido que vem de OUTRO SITE, ou de um subdomínio (E8), é recusado, e nada sai", async () => {
     const conta = await contaComSenha();
-    const res = await request(servidor).post("/api/conta/codigo").set("Sec-Fetch-Site", "cross-site").send({ email: conta.email, motivo: "entrar" });
-    expect([res.status, res.body]).toEqual([403, { error: "OutroSite" }]);
+    for (const origem of ["cross-site", "same-site"]) {
+      const res = await request(servidor).post("/api/conta/codigo").set("Sec-Fetch-Site", origem).send({ email: conta.email, motivo: "entrar" });
+      expect([res.status, res.body], origem).toEqual([403, { error: "OutroSite" }]);
+    }
     expect(enviarEmail).not.toHaveBeenCalled();
   });
 

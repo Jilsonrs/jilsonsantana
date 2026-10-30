@@ -6305,14 +6305,25 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             não corta o acesso. **Decisão do operador, 29/10/2026 (P122): a contestação CORTA o acesso na hora** (se
             resolvida a favor da escola, ele libera de novo pela 4.7b); o aviso de fraude só alerta —
             `billing.md` → *Reembolso*.
-      - [ ] **E8 — a trava contra pedido de outro site aceita só `same-origin`** (ou o cabeçalho ausente); hoje
+      - [x] **E8 — a trava contra pedido de outro site aceita só `same-origin`** (ou o cabeçalho ausente); hoje
             recusa só `cross-site` (`protecao-da-cobranca.ts`): uma página num subdomínio de `jilsonsantana.com`
-            apontando para terceiro poderia mandar o aluno logado reembolsar ou cancelar.
+            apontando para terceiro poderia mandar o aluno logado reembolsar ou cancelar. **FEITO (29/10/2026):**
+            `pedidoDeOutroSite` (`protecao-da-cobranca.ts`): passam a mesma origem, o `none` (a própria pessoa abriu
+            o endereço) e o cabeçalho ausente; o `same-site` e o `cross-site`, 403 `OutroSite`. A mesma regra no
+            pedido de código por e-mail (`conta-codigo.ts`), que tinha uma cópia da trava antiga. Testes:
+            `mudar-de-plano.test.ts` e `codigo-por-email.test.ts` (o subdomínio recusado; a mesma origem, o `none` e
+            sem o cabeçalho passam). **Mutação: 4 de 4 reprovaram.**
       - [ ] **E9 — o teto do Sentry com uma reserva para `[stripe]`, `[email]` e `[avisos]`** (hoje um apagão com
             centenas de `[api]` gasta o dia, e o alerta seguinte de pagante trancado não sai), e um alerta quando o
             limite começar a descartar.
-      - [ ] **E10 — HSTS e `frame-ancestors 'self'` nas páginas** (hoje a `/assinar` pode ser emoldurada por outro
-            site).
+      - [x] **E10 — HSTS e `frame-ancestors 'self'` nas páginas** (hoje a `/assinar` pode ser emoldurada por outro
+            site). **FEITO (29/10/2026):** `cabecalhosDeSeguranca` (`server/src/lib/cabecalhos-de-seguranca.ts`, função
+            pura), em toda resposta (`app.ts`, no lugar do passo que só punha o `Cross-Origin-Opener-Policy`):
+            `Content-Security-Policy: frame-ancestors 'self'` e `X-Frame-Options: SAMEORIGIN` (navegador antigo) em todo
+            ambiente; em produção, também `Strict-Transport-Security: max-age=31536000`, sem os subdomínios. As molduras
+            que a escola abre (o player do Bunny, o campo da Stripe) não mudam, e o parceiro de design abre o servidor
+            local direto, sem moldura. Teste: `janela-isolada.test.ts` (a página e a API; o de produção pela função).
+            **Mutação: 5 de 5 reprovaram.**
       - [ ] **E11 — o Pix conferido pelo plano e pelo valor**, com a pré-paga criada no preço de agora desse plano
             (hoje, pelo id do preço — a terceira passada do passo 6).
       - [ ] **E12 — `TEMPO_DO_PIX` 180 s** (o pior caso passou a 8 idas à Stripe — a terceira passada).
