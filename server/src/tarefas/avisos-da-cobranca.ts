@@ -25,7 +25,7 @@ try {
     // `lib/avisos-perdidos.ts`): é deles que saem o espelho certo e os próprios e-mails da cobrança.
     const inicio = Date.now();
     const conferencia = await conferirAvisosPerdidos();
-    console.info(`[avisos] a conferência dos avisos da Stripe terminou: ${conferencia.conferidos} conferido(s), ${conferencia.perdidos} sem registro, ${conferencia.processados} processado(s) agora, ${conferencia.falhas} com falha, ${conferencia.adiados} adiado(s) para a próxima, ${conferencia.formatoAntigo} em formato antigo`);
+    console.info(`[avisos] a conferência dos avisos da Stripe terminou: ${conferencia.conferidos} conferido(s), ${conferencia.perdidos} sem registro, ${conferencia.processados} processado(s) agora, ${conferencia.falhas} com falha, ${conferencia.adiados} adiado(s) para a próxima, ${conferencia.formatoAntigo} de fatura relida(s) pela API (formato antigo)`);
     if (conferencia.falhas > 0) codigo = 1;
     // A rodada dos e-mails fica com o resto do prazo: o job tem 5 minutos ao todo (`--task-timeout=300s`).
     const rodada = await rodadaDosAvisos(new Date(), Math.max(PRAZO_DA_RODADA_EM_MS - (Date.now() - inicio), 0));

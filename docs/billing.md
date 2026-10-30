@@ -1589,10 +1589,11 @@ encerrada de vez com dias pagos: tem acesso e o servidor recusa cartão.
 - **A versão do endereço de avisos** *(4.9b, C3, 29/10/2026)*: a Stripe manda cada aviso na versão da API do
   endereço (sem versão própria, na versão padrão da conta), e o site lê a da biblioteca — hoje a `2026-09-30.endive`.
   Numa versão de antes da `2025-03-31.basil`, o aviso de fatura chega sem a assinatura dele. **A subida em produção
-  aceita a mesma linha (`.endive`) numa versão igual ou mais nova** — as versões mensais de uma linha não quebram nada
-  (documentação da Stripe) — e alerta qualquer outra, inclusive a padrão da conta. A rodada de hora em hora não
-  processa aviso de fatura no formato antigo, e alerta. **Para trocar a versão, um endereço NOVO** (o que existe não
-  muda de versão):
+  aceita qualquer versão da mesma linha (`.endive`)** — as versões mensais de uma linha não quebram nada
+  (documentação da Stripe), e é numa mensal mais nova que a biblioteca fica a cada atualização pequena — e alerta
+  qualquer outra, inclusive a padrão da conta; quando tudo passa, ela escreve "a cobrança confere" no registro. A
+  rodada de hora em hora relê pela API a fatura do aviso que veio no formato antigo, e o processa. **Para trocar a
+  versão, um endereço NOVO** (o que existe não muda de versão):
   1. no Workbench → Webhooks, criar um endereço com a mesma URL e `?versao=endive` no fim (o site não lê o que vem
      depois do `?`), os 8 avisos e a versão da biblioteca — o painel oferece a da conta ou a mais recente; outra, só
      pela API;

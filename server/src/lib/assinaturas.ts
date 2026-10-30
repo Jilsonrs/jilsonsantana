@@ -504,9 +504,11 @@ export async function sincronizarPedido(email: string): Promise<Conferida[] | nu
 
 /**
  * A que expirou sem o primeiro pagamento não cobra nem dá acesso: a conferência pedida pela tela não gasta ida à Stripe
- * com ela. A CANCELADA vai (C5 da revisão do grupo 1, 29/10/2026): com dias pagos, o gate ainda dá acesso
- * (`assinaturaDaAcesso`), e o aviso dela também pode ter se perdido — e ela sempre já foi paga (cancelar a incompleta
- * a leva para `incomplete_expired`, `cancelarIncompleta`). A lista é das últimas 20 (`assinaturasDoCliente`).
+ * com ela. A CANCELADA vai (C5 da revisão do grupo 1, 29/10/2026) enquanto o período dela não acabou: com dias pagos,
+ * o gate ainda dá acesso (`assinaturaDaAcesso`), e o aviso dela também pode ter se perdido. Quem diz se os dias foram
+ * PAGOS é o "pago até" da sincronia (`paraAssinaturaNaStripe`), nunca o status — a assinatura criada no painel com
+ * "enviar fatura" nasce ativa sem pagamento. A cancelada já acabada fica de fora (R4): o "pago até" nunca passa do fim
+ * do período, e quem paga por Pix junta uma cancelada por período. A lista é das últimas 20 (`assinaturasDoCliente`).
  */
 const ENCERRADAS_NA_CONFERENCIA: ReadonlySet<string> = new Set(["incomplete_expired"]);
 
@@ -522,8 +524,10 @@ export async function conferirOCliente(clienteId: string): Promise<Sincronia[]> 
   if (typeof clienteId !== "string" || clienteId.length === 0) throw new Error("[stripe] conferência sem o cliente");
   await processarPixPagosSemEspelho(clienteId);
   const feitas: Sincronia[] = [];
-  for (const { id, status } of await assinaturasDoCliente(clienteId)) {
+  const agora = Date.now();
+  for (const { id, status, fimDoPeriodo } of await assinaturasDoCliente(clienteId)) {
     if (ENCERRADAS_NA_CONFERENCIA.has(status)) continue;
+    if (status === "canceled" && fimDoPeriodo && fimDoPeriodo.getTime() <= agora) continue;
     try {
       const sincronia = await sincronizarSeLivre(id);
       if (sincronia) feitas.push(sincronia);

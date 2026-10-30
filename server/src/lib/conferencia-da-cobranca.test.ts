@@ -78,11 +78,13 @@ describe("o endereço de avisos", () => {
 
   // C3 da revisão do grupo 1 (29/10/2026): o aviso chega na versão da API do endereço, e o site lê a da biblioteca —
   // serve a mesma linha numa versão igual ou mais nova (as mensais de uma linha não quebram nada).
-  it("a versão do endereço: a da biblioteca ou uma mais nova da mesma linha serve; mais velha, de outra linha, sem linha ou a padrão da conta, não", () => {
+  // R1 da revisão das correções (29/10/2026): qualquer versão da mesma linha — inclusive a mais velha que a da
+  // biblioteca, que é o endereço de hoje depois de uma atualização pequena da `stripe`.
+  it("a versão do endereço: qualquer uma da linha da biblioteca serve (mais nova ou mais velha); de outra linha, sem linha ou a padrão da conta, não", () => {
     const SITE = "2026-09-30.endive";
     expect(versaoServeAoSite(SITE, SITE)).toBe(true);
     expect(versaoServeAoSite("2026-10-28.endive", SITE)).toBe(true);
-    expect(versaoServeAoSite("2026-09-30.endive", "2026-10-28.endive")).toBe(false);
+    expect(versaoServeAoSite("2026-09-30.endive", "2026-10-28.endive")).toBe(true);
     expect(versaoServeAoSite("2026-03-31.dahlia", SITE)).toBe(false);
     expect(versaoServeAoSite("2027-03-31.fig", SITE)).toBe(false);
     expect(versaoServeAoSite("2024-06-20", SITE)).toBe(false);
@@ -97,7 +99,7 @@ describe("o endereço de avisos", () => {
     expect(problemaDoEndereco([endereco({ api_version: "2026-10-28.endive" })], URL_DOS_AVISOS, "2026-09-30.endive")).toBeNull();
     const antiga = problemaDoEndereco([endereco({ api_version: "2024-06-20" })], URL_DOS_AVISOS);
     expect(antiga).toContain("we_1 (versão 2024-06-20)");
-    expect(antiga).toContain(`numa versão da API que o site lê (a ${VERSAO_DA_API}`);
+    expect(antiga).toContain(`numa versão da API que o site lê (a linha ${VERSAO_DA_API.split(".")[1]}, como a ${VERSAO_DA_API})`);
     expect(problemaDoEndereco([endereco({ api_version: null })], URL_DOS_AVISOS)).toContain("versão padrão da conta");
     expect(problemaDoEndereco([endereco({ enabled_events: ["*"], api_version: "2024-06-20" })], URL_DOS_AVISOS)).toContain("numa versão da API que o site lê");
     // Na troca de um endereço pelo outro, o velho ainda entrega: ainda é problema, e só ele aparece; desligado, não conta.
@@ -121,19 +123,25 @@ describe("a conferência da subida", () => {
   /** As linhas de erro da conferência, como sairiam no registro. */
   const alertas = (erro: { mock: { calls: unknown[][] } }) => erro.mock.calls.map(([texto]) => String(texto)).filter((texto) => texto.startsWith("[stripe] subida:"));
 
-  it("tudo certo: nenhum alerta, e a lista vem da Stripe uma vez", async () => {
+  it("tudo certo: nenhum alerta, a lista vem da Stripe uma vez, e UMA linha diz que a cobrança confere (sem ela, nenhum alerta não distingue o certo do parado)", async () => {
     const erro = vi.spyOn(console, "error").mockImplementation(() => {});
+    const info = vi.spyOn(console, "info").mockImplementation(() => {});
     expect(await conferirCobrancaNaSubida()).toBe(true);
     expect(alertas(erro)).toEqual([]);
     expect(falsa.webhookEndpoints.list).toHaveBeenCalledTimes(1);
+    const confere = info.mock.calls.map(([texto]) => String(texto)).filter((texto) => texto.startsWith("[stripe] subida: a cobrança confere"));
+    expect(confere).toHaveLength(1);
+    expect(confere[0]).toContain(`os ${AVISOS_DO_ENDERECO.length} avisos`);
   });
 
-  it("o endereço sem um aviso: UM alerta, com o que falta", async () => {
+  it("o endereço sem um aviso: UM alerta, com o que falta — e nada de \"a cobrança confere\"", async () => {
     const erro = vi.spyOn(console, "error").mockImplementation(() => {});
+    const info = vi.spyOn(console, "info").mockImplementation(() => {});
     falsa.webhookEndpoints.list.mockResolvedValue({ data: [endereco({ enabled_events: AVISOS_DO_ENDERECO.filter((tipo) => tipo !== "payment_intent.succeeded") })] });
     expect(await conferirCobrancaNaSubida()).toBe(false);
     expect(alertas(erro)).toHaveLength(1);
     expect(alertas(erro)[0]).toContain("payment_intent.succeeded");
+    expect(info.mock.calls.some(([texto]) => String(texto).includes("a cobrança confere"))).toBe(false);
   });
 
   it("as chaves de modos diferentes: alerta — e nenhuma chave no registro", async () => {

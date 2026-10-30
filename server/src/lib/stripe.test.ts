@@ -251,14 +251,21 @@ describe("o código promocional no formato da tela", () => {
 
 // A ASSINATURA COMO O CHECKOUT A VÊ (etapa 4.2). O que protege: o segredo do pagamento só sai
 // de uma fatura AINDA ABERTA, e o plano e o código são os que o nosso checkout gravou.
-function doCheckout({ status = "incomplete", fatura = { status: "open", confirmation_secret: { client_secret: "pi_1_secret_x", type: "payment_intent" } } as object | string | null, cartao = null as { client_secret: string | null } | string | null, metadata = { userId: "u1", plano: "mensal" } as Record<string, string>, itens = [{ price: { id: "price_mensal" } }] as { price: { id: string } }[] } = {}): Stripe.Subscription {
+function doCheckout({ status = "incomplete", fatura = { status: "open", confirmation_secret: { client_secret: "pi_1_secret_x", type: "payment_intent" } } as object | string | null, cartao = null as { client_secret: string | null } | string | null, metadata = { userId: "u1", plano: "mensal" } as Record<string, string>, itens = [{ price: { id: "price_mensal" } }] as { price: { id: string }; current_period_end?: number }[] } = {}): Stripe.Subscription {
   // Seguro: o objeto de teste tem só os campos que a função lê; a forma completa é da Stripe.
   return { id: "sub_1", status, latest_invoice: fatura, pending_setup_intent: cartao, metadata, items: { data: itens } } as unknown as Stripe.Subscription;
 }
 
 describe("a assinatura como o checkout a vê", () => {
   it("incompleta com a fatura aberta: o segredo do pagamento, o plano e nenhum código", () => {
-    expect(paraAssinaturaNoCheckout(doCheckout())).toEqual({ id: "sub_1", status: "incomplete", precoId: "price_mensal", codigoId: null, segredoDoPagamento: "pi_1_secret_x", segredoDoCartao: null, resumoDaTentativa: null, pagamentoCancelado: false, numeroFiscalDaFatura: null, pixPaymentIntentId: null });
+    expect(paraAssinaturaNoCheckout(doCheckout())).toEqual({ id: "sub_1", status: "incomplete", precoId: "price_mensal", codigoId: null, segredoDoPagamento: "pi_1_secret_x", segredoDoCartao: null, resumoDaTentativa: null, pagamentoCancelado: false, numeroFiscalDaFatura: null, pixPaymentIntentId: null, fimDoPeriodo: null });
+  });
+
+  // R4 da revisão das correções (29/10/2026): é por ele que a conferência pula a cancelada que já acabou.
+  it("o fim do período: o maior current_period_end dos itens; sem a data, nada", () => {
+    const itens = [{ price: { id: "price_mensal" }, current_period_end: 1_900_000_000 }, { price: { id: "price_extra" }, current_period_end: 1_900_000_500 }];
+    expect(paraAssinaturaNoCheckout(doCheckout({ itens })).fimDoPeriodo).toEqual(new Date(1_900_000_500 * 1000));
+    expect(paraAssinaturaNoCheckout(doCheckout({ itens: [] })).fimDoPeriodo).toBeNull();
   });
 
   // A PRÉ-PAGA (achado 2 da segunda revisão do passo 6 da 4.9): é pelo Pix de que nasceu que as portas a

@@ -2,7 +2,7 @@ import type Stripe from "stripe";
 import { prisma } from "./prisma.js";
 import { processarAviso } from "./assinaturas.js";
 import { depoisDoAviso } from "./depois-do-aviso.js";
-import { avisoEmFormatoAntigo, avisosDaStripe, paraAviso } from "./stripe.js";
+import { avisoEmFormatoAntigo, avisosDaStripe, comAFaturaRelida, paraAviso } from "./stripe.js";
 
 // A CONFERÊNCIA DOS AVISOS DA STRIPE (E1 da revisão ampla da cobrança, 29/10/2026 — plano → etapa 4.9b). A rodada de
 // hora em hora pergunta à Stripe pelos avisos dos tipos que o site trata e processa, pela MESMA rotina do endereço de
@@ -28,7 +28,7 @@ export const PRAZO_DA_CONFERENCIA_EM_MS = 60_000;
 
 /**
  * O que a conferência fez: os avisos lidos da Stripe, os sem registro, os processados agora, os que falharam, os que
- * ficaram para a próxima rodada, e os de fatura num formato antigo da API, que ela não processa (C3).
+ * ficaram para a próxima rodada, e os de fatura num formato antigo da API, processados com a fatura relida (C3 e R5).
  */
 export type ConferenciaDosAvisos = { conferidos: number; perdidos: number; processados: number; falhas: number; adiados: number; formatoAntigo: number };
 
@@ -54,15 +54,17 @@ export async function conferirAvisosPerdidos(agora: number = Date.now(), prazoEm
       resultado.adiados += 1;
       continue;
     }
-    // O aviso de fatura num formato antigo da API (C3 da revisão do grupo 1): processado, seria marcado "sem
-    // assinatura" e a reentrega de verdade viraria "repetido". Fica SEM marca, com o alerta abaixo.
-    if (avisoEmFormatoAntigo(evento)) {
-      resultado.formatoAntigo += 1;
-      console.warn(`[stripe] rodada: o aviso ${evento.id} (${evento.type}) veio na versão ${evento.api_version ?? "?"} da API, sem o "parent" da fatura — não processado`);
-      continue;
-    }
-    const aviso = paraAviso(evento);
     try {
+      // O aviso de fatura num formato antigo da API (C3 e R5 das revisões do grupo 1): lido como veio, seria marcado
+      // "sem assinatura", e a reentrega de verdade viraria "repetido". A fatura relida pela API (na versão do site)
+      // diz de que assinatura ela é; se a releitura falhar, é falha como qualquer outra — sem marca, para a próxima.
+      let lido = evento;
+      if (avisoEmFormatoAntigo(evento)) {
+        resultado.formatoAntigo += 1;
+        console.warn(`[stripe] rodada: o aviso ${evento.id} (${evento.type}) veio na versão ${evento.api_version ?? "?"} da API, sem o "parent" da fatura — relida pela API`);
+        lido = await comAFaturaRelida(evento);
+      }
+      const aviso = paraAviso(lido);
       const desfecho = await processarAviso(aviso);
       await depoisDoAviso(aviso, desfecho);
       resultado.processados += 1;
@@ -73,7 +75,6 @@ export async function conferirAvisosPerdidos(agora: number = Date.now(), prazoEm
     }
   }
   if (resultado.falhas > 0) console.error("[stripe] rodada: avisos da Stripe que o site não processou falharam também na rodada — ficam para a próxima; conferir o registro da rodada");
-  if (resultado.formatoAntigo > 0) console.error("[stripe] rodada: avisos de fatura num formato antigo da API da Stripe ficaram sem processar — a versão padrão da conta é anterior à 2025-03-31.basil; conferir a versão no Workbench (o espelho dessas assinaturas se acerta pelos avisos da assinatura e pelo \"Conferir na Stripe\")");
   if (resultado.adiados > 0) console.warn(`[stripe] rodada: ${resultado.adiados} aviso(s) sem registro ficaram para a próxima rodada (o prazo da conferência acabou)`);
   return resultado;
 }

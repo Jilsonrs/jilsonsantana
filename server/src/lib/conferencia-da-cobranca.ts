@@ -67,29 +67,29 @@ export function problemaDoEndereco(enderecos: EnderecoDeAvisos[], url: string, v
   // A versão da API do endereço (C3 da revisão do grupo 1): o aviso chega nela, e o site lê os campos da versão da
   // biblioteca — o aviso de fatura numa versão antiga chegaria sem o "parent", e a assinatura dele se perderia.
   const outraVersao = ligados.filter((endereco) => !versaoServeAoSite(endereco.api_version, versao));
-  if (outraVersao.length > 0) return `o endereço de avisos ${outraVersao.map((endereco) => `${endereco.id} (versão ${endereco.api_version ?? "padrão da conta"})`).join(", ")} não está numa versão da API que o site lê (a ${versao}, ou uma mais nova da mesma linha): um aviso de fatura pode chegar sem a assinatura — criar um endereço novo nessa versão e trocar o segredo dos avisos (passo a passo: billing.md → A versão do endereço de avisos)`;
+  if (outraVersao.length > 0) return `o endereço de avisos ${outraVersao.map((endereco) => `${endereco.id} (versão ${endereco.api_version ?? "padrão da conta"})`).join(", ")} não está numa versão da API que o site lê (a linha ${linhaDaVersao(versao) ?? versao}, como a ${versao}): um aviso de fatura pode chegar sem a assinatura — criar um endereço novo nessa versão e trocar o segredo dos avisos (passo a passo: billing.md → A versão do endereço de avisos)`;
   return null;
 }
 
 /** A versão da API com o dia e a linha (`2026-09-30.endive`); as de antes da `2024-09-30.acacia` não têm linha. */
 const FORMA_DA_VERSAO = /^(\d{4}-\d{2}-\d{2})\.([a-z]+)$/;
 
-function partesDaVersao(versao: string | null): { dia: string; linha: string } | null {
-  const partes = versao ? FORMA_DA_VERSAO.exec(versao) : null;
-  return partes?.[1] && partes[2] ? { dia: partes[1], linha: partes[2] } : null;
+/** A linha da versão (`endive`), ou nada para a versão sem linha (de antes da `2024-09-30.acacia`) e a padrão da conta. */
+function linhaDaVersao(versao: string | null): string | null {
+  return (versao ? FORMA_DA_VERSAO.exec(versao)?.[2] : undefined) ?? null;
 }
 
 /**
- * A versão da API de um endereço de avisos serve ao site (C3 da revisão do grupo 1, 29/10/2026): da MESMA linha da
- * biblioteca (`.endive`) e não mais velha que ela. `[FATO — docs.stripe.com/api-versions, lido em 29/10/2026: as
+ * A versão da API de um endereço de avisos serve ao site (C3 e R1 das revisões do grupo 1, 29/10/2026): qualquer
+ * versão da MESMA linha da biblioteca (`.endive`). `[FATO — docs.stripe.com/api-versions, lido em 29/10/2026: as
  * versões mensais de uma linha não quebram nada; a quebra vem só com a linha nova, duas vezes por ano.]` Exigir a
- * versão exata daria alarme a cada subida com o endereço numa mensal mais nova, que é o que o painel cria como "a mais
- * recente". Sem versão própria (a padrão da conta), não dá para saber: não serve. Função pura.
+ * versão exata — ou "não mais velha que a da biblioteca" — daria alarme em toda subida depois de uma atualização
+ * pequena da `stripe`, que fixa a mensal nova da mesma linha, empurrando uma troca de segredo desnecessária. Sem
+ * versão própria (a padrão da conta), não dá para saber: não serve. Função pura.
  */
 export function versaoServeAoSite(doEndereco: string | null, doSite: string = VERSAO_DA_API): boolean {
-  const endereco = partesDaVersao(doEndereco);
-  const site = partesDaVersao(doSite);
-  return endereco !== null && site !== null && endereco.linha === site.linha && endereco.dia >= site.dia;
+  const linha = linhaDaVersao(doEndereco);
+  return linha !== null && linha === linhaDaVersao(doSite);
 }
 
 /**
@@ -121,5 +121,7 @@ export async function conferirCobrancaNaSubida(ambiente: NodeJS.ProcessEnv = pro
     tudoCerto = false;
     console.error(`[stripe] subida: não consegui conferir o endereço de avisos — ${erroSemMensagem(erro, "a lista dos endereços de avisos").message}`);
   }
+  // A prova de que a conferência rodou e passou (R1): sem esta linha, "nenhum alerta" não distingue o certo do parado.
+  if (tudoCerto) console.info(`[stripe] subida: a cobrança confere — as chaves no mesmo modo, e o endereço de avisos ligado, com os ${AVISOS_DO_ENDERECO.length} avisos, na linha da API do site (${VERSAO_DA_API})`);
   return tudoCerto;
 }

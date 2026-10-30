@@ -126,10 +126,29 @@
 > verdade — a verificação pendente da revisão de segurança ampla). **O campo do Pix passa a abrir no ar** (atrás do
 > "Em breve"). **Falta: o operador ver a `/assinar` pela prévia** (`/__preview`).
 >
-> **PARA CONTINUAR NO PRÓXIMO CHAT (a ordem — atualizado em 29/10/2026, depois da publicação `09187af`):**
+> **Publicado em 30/10/2026 (UTC; noite de 29/10 no Brasil): `f36e274`** — a 4.9b, grupo 1: `959f65e` (E5),
+> `1b8ab8f` (E4), `d97ef6a` (E1), `61b98ae` (E3) e `bdcc04b` (E2), mais as correções da revisão de segurança do
+> grupo 1 — `f5a5161` (C1 e C2), `e62058a` (C3) e `ee50f08` (C4 e C5); ordem do operador: *"Corrigir, revisar só
+> isso, publicar"*. A revisão curta das correções não achou P0 nem P1. **Revisão `jilson-prod-00048`** (100% do
+> tráfego), conferida de fora: a versão nova do app (`mvu7ui5z-74d3d2b9`; antes, `mvu0vw00-1035c50a`); as rotas
+> novas no ar — `POST /api/billing/conferir` sem login → 401, `/api/billing/visitante/conferir` e
+> `/api/billing/campo-nao-abriu` com o corpo vazio → 400 (a validação, sem alerta); `/api/billing/visitante/planos`
+> → 200 com o Pix; a home no "Em breve"; os cursos, as trilhas, os textos e a sessão (200); a assinatura sem login
+> (401); o job das migrations com sucesso, *"No pending migrations to apply"* (46; nenhuma migration nesta
+> publicação); os dois jobs na mesma imagem do site. **A conferência da cobrança na subida não alertou** (as chaves,
+> o endereço de avisos com os 8 avisos e a versão da API passaram; nesta versão ela só escreve quando acha problema
+> — a linha "a cobrança confere" entra com o R1). **Achado na subida, de antes desta publicação:** a conferência do
+> fuso do banco falhou por tempo de conexão, como em 7 das 11 subidas desde 27/10 (P128).
+>
+> **PARA CONTINUAR NO PRÓXIMO CHAT (a ordem — atualizado em 30/10/2026, depois da publicação `f36e274`):**
 > 1. **A revisão ampla da cobrança (a etapa 4.9b): o bloco de engenharia APROVADO (29/10/2026), na ordem do
->    plano** — grupo 1 (E5, E4, E1, E3, E2), grupo 2 (E8, E10, E9, E7, E6), grupo 3 (E11, E12, E13, E17), grupo 4
->    (E14, E15, E16, E18; cada texto vai ao operador antes). Um commit por parte. As decisões P116–P124 e P127 já
+>    plano** — grupo 1 (E5, E4, E1, E3, E2) **FEITO e publicado (`f36e274`)**, com as correções C1 a C5; os achados
+>    da revisão curta (R1 a R6) fechados no `dev`, a publicar com o grupo 2. **O próximo: o grupo 2** (E8, E10, E9,
+>    E7, E6), depois o grupo 3 (E11, E12, E13, E17) e o grupo 4 (E14, E15, E16, E18; cada texto vai ao operador
+>    antes). Um commit por parte. **Sem nova rodada de revisão a cada correção** *(operador, 29/10/2026: "fechando
+>    P1, P2, P3 e seguindo em frente e rodando os testes no que precisar para não ficar em polimento infinito")*:
+>    P0 e P1 travam a publicação; P2 e P3 se fecham com teste e mutação, sem revisar de novo. A P128 (o fuso do
+>    banco na subida) espera a resposta dele. As decisões P116–P124 e P127 já
 >    foram respondidas (registradas na 4.9b, na 4.7b e no `billing.md`); ficam a P126 (as conferências nos painéis,
 >    por prints — fazer junto com o operador) e a P125 (só quando ele for criar um desses códigos). O roteiro
 >    "quando um aluno não conseguir pagar" está em `billing.md`, como rascunho, para ele revisar.
@@ -6370,6 +6389,41 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             últimas 20: a ida a mais à Stripe é limitada, e só para quem está sem acesso. Teste:
             `conferir-pela-tela.test.ts` (+1: a cancelada com dias pagos volta a dar acesso; o teste do E2 passou a
             pular a que expirou). **Mutação: 3 de 3 reprovaram.**
+      **A REVISÃO CURTA DAS CORREÇÕES** (29/10/2026, `security-vulnerability-reviewer`, Opus 5.5, esforço máximo, sobre
+      `bdcc04b..ee50f08`): **nenhum P0 nem P1** — C1, C4 e C5 fecham os achados sem abrir outro, e C2 e C3 fecham o
+      problema que os motivou; nenhum alerta novo que um anônimo dispare à vontade, nenhuma ida à Stripe que ele
+      multiplique, e nada novo no registro além de ids, tipos, versões e a marca do endereço. **Dois P2 e quatro P3,
+      fechados por decisão do operador (29/10/2026: *"fechando P1, P2, P3 e seguindo em frente"*), com teste e
+      mutação e sem nova revisão — mutação: 11 de 11 reprovaram:**
+      - [x] **R1 (P2) — a versão do endereço depois de uma atualização pequena da `stripe`:** cada versão pequena da
+            biblioteca fixa a mensal nova da MESMA linha, e o endereço criado hoje ficaria "mais velho" — alerta em
+            toda subida, empurrando uma troca de segredo desnecessária. **FEITO:** `versaoServeAoSite` aceita
+            qualquer versão da linha da biblioteca; outra linha, versão sem linha e a padrão da conta continuam
+            alertando. E a subida escreve "a cobrança confere" quando tudo passa — sem isso, nenhum alerta não
+            distingue o certo do parado.
+      - [x] **R2 (P2) — o alerta do campo que não abriu saía no 1º relato** ("1 de 1", que o texto manda ler como "não
+            é defeito nosso") e calava a cópia por 6 h justamente quando muitos falham. **FEITO:** o alerta sai
+            quando, numa janela de 6 h, os relatos vêm de 3 endereços diferentes; no máximo 1 a cada 6 h por cópia;
+            um aluno sozinho fica no registro (a tela já lhe diz o que fazer).
+      - [x] **R3 (P3) — a marca do endereço era do IP inteiro**, e o limite agrupa o IPv6 por /56: um robô num bloco
+            forjava "muitos endereços". **FEITO:** a marca sai da chave do limite (`enderecoDoPedido`).
+      - [x] **R4 (P3) — a conferência pela tela sincronizava também a cancelada já acabada**, que nunca dá acesso — o
+            caso comum de quem paga por Pix (cada pré-paga vira cancelada). **FEITO:** a lista traz o fim do período
+            (`fimDoPeriodo`, o maior `current_period_end` dos itens), e a cancelada acabada não vai à Stripe; sem a
+            data, vai (o lado seguro). O comentário "ela sempre já foi paga" saiu: quem diz se houve pagamento é o
+            "pago até", nunca o status.
+      - [x] **R5 (P3) — o aviso de fatura em formato antigo voltava em toda rodada por 3 dias**, e o efeito dele se
+            perdia. **FEITO:** a rodada relê a fatura pela API (`comAFaturaRelida`, na versão do site, com o
+            `parent`) e processa; a releitura que falha é falha como qualquer outra, sem marca. O alerta "formato
+            antigo" saiu (não sobra nada sem processar).
+      - [x] **R6 (P3) — a única pergunta por minuto do E5 é gasta por qualquer pedido de formato certo:** com o
+            segredo de fato trocado, um robô adia o alerta imediato. **ACEITO, sem mudança** (a primeira opção do
+            revisor): a rodada (E1) acha o segredo trocado em até uns 70 min, sem depender disto. *Reabre se o
+            alerta do segredo trocado chegar atrasado na prática, ou se for preciso o alerta imediato à prova de
+            robô — aí, só perguntar à Stripe pelos endereços de IP dela, uma lista a manter no código.*
+      Testes: `conferencia-da-cobranca.test.ts`, `campo-nao-abriu.test.ts` (+2: os relatos espalhados no tempo e o
+      robô num bloco IPv6), `stripe.test.ts` (+1), `conferir-pela-tela.test.ts`, `avisos-perdidos.test.ts` e
+      `avisos-da-stripe-rede.test.ts` (+3).
       **As decisões do operador:** P116 a P127 em `pendencias.md` (P126 são as conferências fora do repositório).
       **Respondidas em 29/10/2026:** P116 (a frase do E3), P117 (os botões do Pix em conferência na 4.7b), P118
       (o E14), P119 (o E15), P120 (a ação "Liberar acesso pago por fora" na 4.7b), P121 (a ação "Corrigir o e-mail" na 4.7b), P122 (a contestação corta o acesso — E7), P123 (o E16), P124 (o E17), P127 (o E18). **Para depois:** P125 (quando for criar um desses códigos) e P126 (as conferências nos painéis, por prints).

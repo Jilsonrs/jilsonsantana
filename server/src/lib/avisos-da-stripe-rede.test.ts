@@ -4,13 +4,13 @@ import Stripe from "stripe";
 // A LISTA DOS AVISOS DA STRIPE (E1 da revisão ampla da cobrança, 29/10/2026), com a biblioteca trocada por um dublê
 // do tamanho do que a função usa (só a rede é falsa). O que protege: a rodada pede só os tipos que o endereço de
 // avisos assina, no intervalo pedido, em segundos; para no máximo; e a recusa sobe sem a mensagem crua da Stripe.
-const falsa = { events: { list: vi.fn(), retrieve: vi.fn() } };
+const falsa = { events: { list: vi.fn(), retrieve: vi.fn() }, invoices: { retrieve: vi.fn() } };
 vi.mock("./stripe-cliente.js", async (importOriginal) => ({
   ...(await importOriginal<typeof import("./stripe-cliente.js")>()),
   stripe: () => falsa,
 }));
 
-import { AVISOS_DO_ENDERECO, avisoExisteNaStripe, avisosDaStripe } from "./stripe.js";
+import { AVISOS_DO_ENDERECO, avisoExisteNaStripe, avisosDaStripe, comAFaturaRelida } from "./stripe.js";
 
 /** A lista da biblioteca é percorrida com `for await` (ela pagina sozinha): o dublê entrega os eventos assim. */
 const lista = (quantos: number) =>
@@ -21,6 +21,7 @@ const lista = (quantos: number) =>
 beforeEach(() => {
   falsa.events.list.mockReset();
   falsa.events.retrieve.mockReset();
+  falsa.invoices.retrieve.mockReset();
 });
 
 describe("os avisos da Stripe que a rodada confere", () => {
@@ -78,5 +79,34 @@ describe("o aviso existe na Stripe?", () => {
     expect(registro).toHaveBeenCalledTimes(1);
     expect(String(registro.mock.calls[0]?.[0])).not.toContain("sk_live_abc");
     registro.mockRestore();
+  });
+});
+
+// R5 da revisão das correções (29/10/2026): o aviso de fatura num formato antigo da API, com a fatura relida pela API
+// — na versão da biblioteca, já com o "parent". O resto do aviso fica como veio.
+describe("a fatura relida do aviso", () => {
+  // Seguro: os avisos de teste têm só os campos que a função lê; a forma completa é da Stripe.
+  const daFatura = { id: "evt_fatura", object: "event", type: "invoice.paid", api_version: "2024-06-20", created: 1_000, data: { object: { id: "in_1", object: "invoice", subscription: "sub_1" } } } as unknown as Stripe.Event;
+  const daAssinatura = { id: "evt_sub", object: "event", type: "customer.subscription.updated", created: 1_000, data: { object: { id: "sub_1", object: "subscription" } } } as unknown as Stripe.Event;
+
+  it("o aviso de fatura: pede a fatura pelo id e devolve o aviso com ela — o id e o tipo do aviso ficam", async () => {
+    const relida = { id: "in_1", object: "invoice", parent: { subscription_details: { subscription: "sub_1" } } };
+    falsa.invoices.retrieve.mockResolvedValue(relida);
+    const aviso = await comAFaturaRelida(daFatura);
+    expect(falsa.invoices.retrieve).toHaveBeenCalledWith("in_1");
+    expect(aviso).toMatchObject({ id: "evt_fatura", type: "invoice.paid", data: { object: relida } });
+  });
+
+  it("outro tipo de aviso volta como está, sem ir à Stripe", async () => {
+    expect(await comAFaturaRelida(daAssinatura)).toBe(daAssinatura);
+    expect(falsa.invoices.retrieve).not.toHaveBeenCalled();
+  });
+
+  it("a Stripe recusou: a falha sobe sem a mensagem crua dela", async () => {
+    falsa.invoices.retrieve.mockRejectedValue(new Stripe.errors.StripeAPIError({ message: "mensagem crua da Stripe, com sk_live_abc", type: "api_error", statusCode: 500 }));
+    const falha: unknown = await comAFaturaRelida(daFatura).catch((erro: unknown) => erro);
+    if (!(falha instanceof Error)) throw new Error("a releitura devia falhar");
+    expect(falha.message).toContain("a releitura da fatura do aviso");
+    expect(falha.message).not.toContain("sk_live_abc");
   });
 });

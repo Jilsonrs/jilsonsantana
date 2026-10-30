@@ -258,7 +258,19 @@ export type AssinaturaNoCheckout = {
    * antigo, e o clique seguinte, com o número novo, ouviria "não mudou".
    */
   numeroFiscalDaFatura?: string | null;
+  /**
+   * O FIM do período da assinatura (o maior `current_period_end` dos itens), ou nada (R4 da revisão das correções,
+   * 29/10/2026): a conferência pedida pela tela não vai à Stripe pela cancelada que já acabou — o "pago até" nunca
+   * passa dele (`paraAssinaturaNaStripe`). Sem a data, a conferência vai, que é o lado seguro.
+   */
+  fimDoPeriodo?: Date | null;
 };
+
+/** O maior `current_period_end` dos itens da assinatura, ou nada. Função pura. */
+function fimDoPeriodoDosItens(assinatura: Stripe.Subscription): Date | null {
+  const fins = assinatura.items.data.map((item) => item.current_period_end).filter((fim) => typeof fim === "number" && Number.isFinite(fim));
+  return fins.length > 0 ? new Date(Math.max(...fins) * 1000) : null;
+}
 
 /** O número fiscal como chave de comparação: o tipo da Stripe e o número com a pontuação de costume. Função pura. */
 export function chaveDoNumeroFiscal(documento: DocumentoFiscal): string {
@@ -288,6 +300,7 @@ export function paraAssinaturaNoCheckout(assinatura: Stripe.Subscription): Assin
     pixPaymentIntentId: assinatura.metadata[METADADO_DO_PIX] || null,
     pagamentoCancelado: pagamentoDeHoje !== null && cancelado,
     numeroFiscalDaFatura: numeroFiscalDoBrasil(typeof fatura === "object" && fatura !== null ? fatura.customer_tax_ids : null),
+    fimDoPeriodo: fimDoPeriodoDosItens(assinatura),
   };
 }
 
@@ -662,6 +675,29 @@ export function verificarAviso(corpo: unknown, cabecalho: string | undefined): A
  */
 export function avisoEmFormatoAntigo(evento: Stripe.Event): boolean {
   return evento.type.startsWith("invoice.") && !("parent" in evento.data.object);
+}
+
+type AvisoDeFatura = Extract<Stripe.Event, { type: "invoice.paid" | "invoice.payment_failed" }>;
+function eAvisoDeFatura(evento: Stripe.Event): evento is AvisoDeFatura {
+  return evento.type === "invoice.paid" || evento.type === "invoice.payment_failed";
+}
+
+/**
+ * O aviso de fatura com a fatura RELIDA pela API — na versão da biblioteca, já com o `parent` (R5 da revisão das
+ * correções, 29/10/2026): o `data` do aviso listado nunca muda, mas a fatura de hoje diz de que assinatura ela é. Só a
+ * rodada usa (o aviso em formato antigo — `avisoEmFormatoAntigo`); o resto do aviso fica como veio. Outro tipo de aviso
+ * volta como está.
+ */
+export async function comAFaturaRelida(evento: Stripe.Event): Promise<Stripe.Event> {
+  if (!eAvisoDeFatura(evento)) return evento;
+  const id = evento.data.object.id;
+  if (!id) return evento;
+  try {
+    const fatura = await stripe().invoices.retrieve(id);
+    return { ...evento, data: { ...evento.data, object: fatura } };
+  } catch (erro) {
+    throw erroSemMensagem(erro, "a releitura da fatura do aviso");
+  }
 }
 
 /**

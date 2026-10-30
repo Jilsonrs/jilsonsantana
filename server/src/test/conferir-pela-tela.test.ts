@@ -139,7 +139,9 @@ describe("POST /api/billing/conferir — logado", () => {
       await prisma.stripeCustomer.create({ data: { userId: memberId, stripeCustomerId: cliente, livemode: false } });
       const sub = novoId("sub");
       const pagoAte = new Date(Date.now() + 10 * DIA);
-      assinaturasDoCliente.mockResolvedValue([{ ...viva(sub), status: "canceled" }]);
+      // R4: a cancelada que já acabou (a pré-paga de um Pix antigo) não gasta ida à Stripe.
+      const acabada = { ...viva(novoId("sub")), status: "canceled", fimDoPeriodo: new Date(Date.now() - DIA) };
+      assinaturasDoCliente.mockResolvedValue([acabada, { ...viva(sub), status: "canceled", fimDoPeriodo: pagoAte }]);
       buscarAssinatura.mockImplementation(async (id) => naStripe(id, { status: "canceled", pagoAte, clienteId: cliente }));
       expect(await temAcessoAtivo(memberId)).toBe(false);
       expect((await conferir()).status).toBe(204);
