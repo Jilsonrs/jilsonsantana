@@ -1,5 +1,5 @@
 import Stripe from "stripe";
-import { erroSemMensagem, METADADO_DA_CONTESTACAO, stripe } from "./stripe.js";
+import { erroSemMensagem, METADADO_DA_CONTESTACAO, METADADO_DA_TROCA_POR_PIX, stripe } from "./stripe.js";
 import { cobrancaDoPagamento, pagamentosDaFatura } from "./stripe-devolucao.js";
 import { paraMotivoNaStripe, type MotivoDado } from "./stripe-assinatura.js";
 import { anularFatura } from "./stripe-plano.js";
@@ -119,6 +119,23 @@ export async function cancelarPorContestacao(assinaturaId: string, contestacaoId
     if ((await anularFatura(faturaEmAberto)) === "paga") console.error(`[stripe] contestação ${contestacaoId}: a cobrança em aberto da assinatura ${assinaturaId} foi PAGA no instante do cancelamento — conferir no painel da Stripe`);
   } catch (erro) {
     console.error(`[stripe] contestação ${contestacaoId}: a assinatura ${assinaturaId} foi cancelada e a cobrança em aberto NÃO foi anulada — anular pelo painel da Stripe: ${erro instanceof Error ? erro.message : String(erro)}`);
+  }
+}
+
+/**
+ * ENCERRA NA HORA a assinatura ATRASADA que a pessoa vai pagar com Pix (4.9b, E14 — decisão do operador, P118): primeiro a
+ * marca (`METADADO_DA_TROCA_POR_PIX`, que cala o e-mail de "terminou"), depois o encerramento — sem crédito e sem fatura
+ * nova, como o cancelar com a cobrança atrasada. Quem anula a cobrança em aberto é quem chama, depois disto: anulada com
+ * a assinatura ainda viva, a Stripe a dá como `active` de novo (medido, 11/10/2026). As chaves de repetição valem por 5
+ * minutos: o clique repetido em seguida recebe a mesma resposta.
+ */
+export async function encerrarParaOPix(assinaturaId: string, agora: Date = new Date()): Promise<void> {
+  const janela = Math.floor(agora.getTime() / JANELA_DA_CHAVE);
+  try {
+    await stripe().subscriptions.update(assinaturaId, { metadata: { [METADADO_DA_TROCA_POR_PIX]: agora.toISOString() } }, { idempotencyKey: `pix-da-atrasada/${assinaturaId}/marca/${janela}` });
+    await stripe().subscriptions.cancel(assinaturaId, { prorate: false, invoice_now: false, cancellation_details: { comment: "Trocada pelo Pix" } }, { idempotencyKey: `pix-da-atrasada/${assinaturaId}/encerramento/${janela}` });
+  } catch (erro) {
+    throw erroSemMensagem(erro, "o encerramento da assinatura atrasada para o Pix");
   }
 }
 

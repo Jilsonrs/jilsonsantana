@@ -6,6 +6,8 @@ import { getDict } from "./dict.js";
 import { sincronizarSeLivre } from "./assinaturas.js";
 import { AssinaturaNaoEncontrada, buscarAssinatura, type AssinaturaNaStripe } from "./stripe.js";
 import { montarAvisoDaCobranca, type EmailDevido } from "../views/email-da-cobranca.js";
+import { enderecoDoSite } from "./endereco-do-site.js";
+import { pixConfigurado } from "./stripe-pix.js";
 
 // OS E-MAILS DA COBRANÇA (Fase 4, etapa 4.7, passo 7 — decisões do operador, 28/10/2026;
 // billing.md → *Régua de inadimplência*). UMA regra decide qual e-mail é devido AGORA, pelo espelho
@@ -156,6 +158,8 @@ export async function avisarSobreAAssinatura(naStripe: AssinaturaNaStripe, agora
     // "Sua assinatura terminou — reative" para quem JÁ ASSINOU DE NOVO (esta não dá aulas, mas a conta
     // tem acesso por outra) seria errado — e é o retorno que a escola quer. Nunca.
     if (devido.tipo === SubscriptionEmailKind.CANCELADA && (await temAcessoAtivo(conta.id))) return consumir(espelho.id, devido, "a conta tem acesso por outra assinatura", naStripe.id);
+    // A atrasada que a pessoa encerrou para pagar com Pix (E14): "terminou — reative" para quem está pagando agora seria errado.
+    if (devido.tipo === SubscriptionEmailKind.CANCELADA && naStripe.trocadaPorPix) return consumir(espelho.id, devido, "a pessoa a encerrou para pagar com Pix", naStripe.id);
     // A confirmação é de quem assinou LOGADO (E18): a assinatura de que a conta nasceu sem login recebe as boas-vindas
     // (`boas-vindas.ts`, que roda antes desta). Elas são UMA por ficha: ainda não saíram, ou saíram depois de esta
     // assinatura nascer → são desta. Saíram antes → são de uma assinatura anterior, e esta (a pessoa assinou de novo,
@@ -166,7 +170,7 @@ export async function avisarSobreAAssinatura(naStripe: AssinaturaNaStripe, agora
     }
 
     // Montado ANTES de tomar a marca: uma falha aqui não deixa a marca presa sem e-mail.
-    const mensagem = montarAvisoDaCobranca(devido, naStripe, agora, (await getDict()).app.email);
+    const mensagem = montarAvisoDaCobranca(devido, naStripe, agora, (await getDict()).app.email, enderecoDoSite, pixConfigurado());
     const marca = await tomar(espelho.id, devido);
     if (marca === null) return;
     const tipo = TIPO_DO_ENVIO[devido.tipo];

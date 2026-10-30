@@ -160,8 +160,8 @@
 >    plano** — grupo 1 (E5, E4, E1, E3, E2) **FEITO e publicado (`f36e274`)**, com as correções C1 a C5; **o grupo 2 (E8, E10,
 >    E9, E7, E6), os R1 a R6, a P128 e os achados da revisão do grupo 2: FEITOS e publicados (`0f8c0c7`).** **O grupo 3
 >    (E11, E12, E13, E17) e os achados da revisão dele, e do grupo 4 o E15, o E16 e o E18: FEITOS na `dev`, ainda não
->    publicados** (o E18 traz uma migration). **O próximo: o E14** (o texto e o botão vão ao operador antes), depois a
->    revisão de segurança de tudo desde `0af2891` e a ordem dele para publicar. Uma
+>    publicados** (o E18 traz uma migration), **e o E14 também (o grupo 4 inteiro)**. **O próximo:** a revisão de segurança
+>    de tudo desde `0af2891` e a ordem dele para publicar. Uma
 >    revisão de segurança por grupo, só do que mudou, antes de publicar. Um commit por parte. **Sem nova rodada de revisão a cada correção** *(operador, 29/10/2026: "fechando
 >    P1, P2, P3 e seguindo em frente e rodando os testes no que precisar para não ficar em polimento infinito")*:
 >    P0 e P1 travam a publicação; P2 e P3 se fecham com teste e mutação, sem revisar de novo. A P128 (o fuso do
@@ -6394,10 +6394,32 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             e `cus_` é da 4.7b). **FEITO (30/10/2026):** o tratador de erro da API (`erro-da-api.ts`) escreve
             `… falhou (conta <id>): …` quando o pedido tem sessão — o id, nunca o e-mail —, em toda rota de `/api`.
             Teste: `erro-da-api.test.ts`. **Mutação: 1 de 1 reprovou.**
-      - [ ] **E14 — o Pix na cobrança atrasada** *(decisão do operador, 29/10/2026, P118)*: ao lado de "Trocar
+      - [x] **E14 — o Pix na cobrança atrasada** *(decisão do operador, 29/10/2026, P118)*: ao lado de "Trocar
             cartão" (Faturamento, a aula trancada e o e-mail da falha), um "Pagar com Pix" que encerra a atrasada
             e abre o Pix do plano — pela operação da assinatura (`operarNaAssinatura`), um pagamento aberto por vez.
-            A frase e o botão vão ao operador para aprovar.
+            A frase e o botão vão ao operador para aprovar. **FEITO (30/10/2026), com a tela, o endereço e os textos
+            APROVADOS pelo operador no mesmo dia** ("Tela própria"): o botão "Pagar com Pix" ao lado de "Trocar cartão" em
+            Faturamento (também dentro dos 3 dias) e na aula trancada; a tela `/aluno/pagar-com-pix` com *"Ao pagar com Pix,
+            sua assinatura no cartão é encerrada agora e você paga o plano {plano}: {valor} por {1 mês|1 ano}. O acesso volta
+            assim que o Pix for pago. O Pix não renova sozinho: quando acabar, é só pagar de novo."*, o CPF ou CNPJ e "Gerar
+            o Pix" (o QR de sempre; pago, a tela de concluído); e nos dois e-mails da atrasada, depois do botão, *"Se preferir
+            pagar com Pix, entre na escola e escolha 'Pagar com Pix' em Faturamento."* (só com o Pix no ar). **Servidor:**
+            `POST /api/billing/minha-assinatura/pix` (só o CPF ou CNPJ no corpo; `lib/pix-da-atrasada.ts`): o CPF na ficha
+            ANTES de tudo (recusado, nada muda) → a atrasada relida e ENCERRADA com a trava dela, com a marca
+            `trocadaPorPix` (que cala o "sua assinatura terminou") → a cobrança em aberto ANULADA depois de encerrar (paga no
+            instante: alerta e sem Pix; não anulada: alerta) → o Pix pré-pago de sempre, do plano da atrasada, pelo preço do
+            servidor. A pessoa continua logada. Encerrar só depois do Pix pago não é seguro (a Stripe tentaria o cartão de
+            novo e os dois seriam cobrados) — por isso o texto avisa que o acesso volta quando o Pix cair. Docs check
+            (context7): Stripe → `/websites/stripe` → anular fatura em aberto (só `open`/`uncollectible`; anulada não é
+            cobrável e não muda o status da assinatura). Testes: `pix-da-atrasada.test.ts` (15), `stripe-reembolso.test.ts`
+            (+2), `stripe.test.ts` (+1), `avisos-da-assinatura.test.ts` (+2), `email.test.ts` (+1); telas:
+            `PagarComPixPage.test.tsx` (13), `FaturamentoPage.test.tsx` e `LessonPage.test.tsx` (os botões). Um teste achou
+            um defeito antes do commit: a releitura da assinatura depois do clique desmontava o formulário (e o QR) —
+            a tela agora fica com a atrasada do instante do clique. **Mutação: 26 de 26 reprovaram** (servidor 10, telas 10,
+            e-mails 6; uma sobreviveu antes — o campo do Pix que não confere não tinha teste; ganhou).
+        - [ ] **A prova na área restrita** (antes de publicar, ou junto da P126): uma atrasada de teste (relógio de teste da
+              Stripe), o "Gerar o Pix", e conferir na Stripe a assinatura encerrada com a marca, a fatura anulada e o Pix
+              do plano; pago (`succeed_immediately`), a pré-paga nasce e sai o e-mail de confirmação.
       - [x] **E15 — o suporte nas frases de erro de pagamento** *(decisão do operador, 29/10/2026, P119)*: as
             frases de erro de pagamento (as de assinar, de trocar o cartão e a "Está demorando…" de depois do
             pagamento) passam a citar suporte@jilsonsantana.com, e depois de um cartão recusado a tela sugere

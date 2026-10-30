@@ -25,7 +25,7 @@ vi.mock("./stripe-cliente.js", async (importOriginal) => ({
 
 import { AssinaturaNaoEncontrada, buscarAssinatura } from "./stripe.js";
 import { cobrancaDoPagamento, faturaDevolvida, periodoDevolvido, pixDevolvido } from "./stripe-devolucao.js";
-import { aDevolver, assinaturaDoPagamento, buscarOQueFoiPago, buscarOQueFoiPagoNoPix, cancelarNaHora, cancelarPorContestacao, chaveDaDevolucao, devolver, paraPedidoDeDevolucao } from "./stripe-reembolso.js";
+import { aDevolver, assinaturaDoPagamento, buscarOQueFoiPago, buscarOQueFoiPagoNoPix, cancelarNaHora, cancelarPorContestacao, chaveDaDevolucao, devolver, encerrarParaOPix, paraPedidoDeDevolucao } from "./stripe-reembolso.js";
 
 const DONO = { userId: "u-1", assinaturaId: "sub_1" };
 const recusa = (code: string) => new Stripe.errors.StripeInvalidRequestError({ message: "mensagem crua da Stripe, com sk_test_abc", type: "invalid_request_error", code, statusCode: 400 });
@@ -176,6 +176,30 @@ describe("cancelar a assinatura contestada", () => {
     await expect(cancelarPorContestacao("sub_1", "dp_2", AGORA)).resolves.toBeUndefined();
     expect(erro.mock.calls.flat().join(" ")).toContain("a cobrança em aberto NÃO foi anulada");
     erro.mockRestore();
+  });
+});
+
+// O PIX NA COBRANÇA ATRASADA (E14 da revisão ampla da cobrança, 30/10/2026): a marca que cala o "terminou" ANTES do
+// encerramento, na hora, sem crédito nem fatura nova, com as chaves de repetição na janela de 5 min.
+describe("encerrar a atrasada para pagar com Pix", () => {
+  const AGORA = new Date("2031-05-01T10:00:00Z");
+  const janela = Math.floor(AGORA.getTime() / (5 * 60 * 1000));
+
+  it("primeiro a marca, depois o encerramento NA HORA — sem crédito nem fatura nova; a cobrança em aberto fica para quem chama", async () => {
+    falsa.subscriptions.update.mockResolvedValue({ id: "sub_1", status: "past_due" });
+    falsa.subscriptions.cancel.mockResolvedValue({ id: "sub_1", status: "canceled" });
+    await encerrarParaOPix("sub_1", AGORA);
+    expect(falsa.subscriptions.update).toHaveBeenCalledWith("sub_1", { metadata: { trocadaPorPix: AGORA.toISOString() } }, { idempotencyKey: `pix-da-atrasada/sub_1/marca/${janela}` });
+    expect(falsa.subscriptions.cancel).toHaveBeenCalledWith("sub_1", { prorate: false, invoice_now: false, cancellation_details: { comment: "Trocada pelo Pix" } }, { idempotencyKey: `pix-da-atrasada/sub_1/encerramento/${janela}` });
+    expect(falsa.subscriptions.update.mock.invocationCallOrder[0]).toBeLessThan(falsa.subscriptions.cancel.mock.invocationCallOrder[0] ?? 0);
+    expect(falsa.invoices.voidInvoice).not.toHaveBeenCalled();
+  });
+
+  it("a marca não foi gravada: nada se encerra, e a falha sobe sem a mensagem da Stripe", async () => {
+    falsa.subscriptions.update.mockRejectedValue(foraDoAr());
+    await expect(encerrarParaOPix("sub_1", AGORA)).rejects.toThrow(/o encerramento da assinatura atrasada para o Pix/);
+    await expect(encerrarParaOPix("sub_1", AGORA)).rejects.not.toThrow(/sk_test_abc/);
+    expect(falsa.subscriptions.cancel).not.toHaveBeenCalled();
   });
 });
 

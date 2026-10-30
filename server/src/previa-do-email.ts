@@ -45,8 +45,9 @@ const naFalha: EmailDevido = { tipo: "COBRANCA_FALHOU", referencia: falha.toISOS
 const noUltimoDia: EmailDevido = { tipo: "ANTES_DE_TRANCAR", referencia: falha.toISOString(), trancaEm };
 const fim: EmailDevido = { tipo: "CANCELADA", referencia: "fim", trancaEm: null };
 const exemplos: Array<[string, MensagemDeEmail]> = [
-  ["previa-cobranca-falhou.html", montarAvisoDaCobranca(naFalha, { proximaTentativa: new Date(falha.getTime() + 2 * DIA) }, falha, pt.app.email, site)],
-  ["previa-antes-de-trancar.html", montarAvisoDaCobranca(noUltimoDia, {}, falha, pt.app.email, site)],
+  // Com o Pix no ar (4.9b, E14): a frase do Pix depois do botão.
+  ["previa-cobranca-falhou.html", montarAvisoDaCobranca(naFalha, { proximaTentativa: new Date(falha.getTime() + 2 * DIA) }, falha, pt.app.email, site, true)],
+  ["previa-antes-de-trancar.html", montarAvisoDaCobranca(noUltimoDia, {}, falha, pt.app.email, site, true)],
   ["previa-cancelada-sem-pagamento.html", montarAvisoDaCobranca(fim, { encerradaSemPagamento: true }, falha, pt.app.email, site)],
   ["previa-cancelada.html", montarAvisoDaCobranca(fim, {}, falha, pt.app.email, site)],
   ["previa-prepago-terminando.html", montarAvisoDaCobranca({ tipo: "PREPAGO_TERMINANDO", referencia: trancaEm.toISOString(), trancaEm }, {}, falha, pt.app.email, site)],

@@ -31,6 +31,7 @@ import type {
   CorpoDeAssinar,
   CorpoDeAssinarSemLogin,
   CorpoDePix,
+  CorpoDePixDaAtrasada,
   CorpoDePixSemLogin,
   CampoNaoAbriuInput,
   AssinaturaSemLogin,
@@ -1103,6 +1104,12 @@ export async function pagarComPix(corpo: CorpoDePix): Promise<AssinaturaCriada> 
 }
 
 /** PAGAR COM PIX, pré-pago, SEM CONTA (etapa 4.9, passo 2): o mesmo pedido do assinar sem login, sem o código; devolve também a tentativa. */
+/** Pagar com Pix a cobrança ATRASADA (4.9b, E14): encerra a atrasada da conta da sessão e gera o Pix do mesmo plano. Só o CPF ou CNPJ vai. */
+export async function pagarAAtrasadaComPix(corpo: CorpoDePixDaAtrasada): Promise<AssinaturaCriada> {
+  const { data } = await client.post<AssinaturaCriada>("/billing/minha-assinatura/pix", corpo);
+  return data;
+}
+
 export async function pagarComPixSemLogin(corpo: CorpoDePixSemLogin): Promise<AssinaturaSemLogin> {
   const { data } = await client.post<AssinaturaSemLogin>("/billing/visitante/pix", corpo);
   return data;

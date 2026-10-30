@@ -397,9 +397,16 @@ O que a pessoa vê *(escolhas do operador, 12/10/2026)*:
   cima de uma assinatura viva (o servidor recusa com 409 `CobrancaAtrasada`). O botão da home
   continua dizendo "Reativar assinatura" e chega ao mesmo lugar.
 - **Sem outro cartão, a pessoa paga com Pix** *(decisão do operador, 29/10/2026, P118 — a revisão ampla
-  da cobrança, plano → 4.9b, E14; ainda não construído)*: na cobrança atrasada, ao lado de "Trocar cartão",
-  um "Pagar com Pix" que encerra a atrasada e abre o Pix do plano. Hoje o Pix é recusado (409 `atrasada`) e
-  a saída fica escondida (Cancelar → Reativar → Pix). A frase e o botão vão ao operador para aprovar.
+  da cobrança, plano → 4.9b, E14; no código desde 30/10/2026, com a tela e os textos aprovados por ele)*: na
+  cobrança atrasada, ao lado de "Trocar cartão" (Faturamento, também dentro dos 3 dias, e a aula trancada), um
+  "Pagar com Pix" leva à tela `/aluno/pagar-com-pix`, que avisa antes do clique: a assinatura no cartão se
+  encerra, o plano, o valor e o período, e que o Pix não renova. "Gerar o Pix" encerra a atrasada (a cobrança em
+  aberto é anulada depois) e abre o QR do mesmo plano; o acesso volta quando o Pix cai. Quem ainda estava nos 3
+  dias fica sem as aulas entre o clique e o Pix — o custo de não deixar o cartão e o Pix cobráveis ao mesmo
+  tempo. A atrasada encerrada assim não recebe o "sua assinatura terminou". Os dois e-mails da atrasada dizem,
+  depois do botão, que dá para pagar com Pix em Faturamento (só com o Pix no ar). *Reabre se a Stripe passar a
+  aceitar Pix como forma de pagamento de assinatura numa conta do Brasil (aí o Pix pagaria a própria
+  atrasada, sem encerrar).*
 - **Passar dos 3 dias não desloga ninguém:** a aula tranca pelo gate, e a pessoa continua
   logada, que é o que ela precisa para trocar o cartão. O cancelamento automático que vem
   depois (as tentativas acabaram) também não desloga: ela já estava sem as aulas.

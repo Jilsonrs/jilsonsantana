@@ -384,7 +384,9 @@ export const pt = {
         novaTentativa: "Vamos tentar de novo no dia {data}.",
         // Texto do operador (28/10/2026).
         abertasAte: "Você continua tendo acesso às aulas até o dia {data}. Para não perder o acesso, troque o cartão:",
-        botao: "Trocar cartão"
+        botao: "Trocar cartão",
+        // Texto aprovado pelo operador (30/10/2026 — 4.9b, E14, P118): depois do botão, só com o Pix no ar.
+        comPix: "Se preferir pagar com Pix, entre na escola e escolha \"Pagar com Pix\" em Faturamento."
       },
       // No último dia antes de as aulas trancarem.
       antesDeTrancar: {
@@ -392,7 +394,8 @@ export const pt = {
         titulo: "Sua assinatura ainda não foi paga",
         semPagamento: "Continuamos sem conseguir cobrar a renovação no seu cartão.",
         perdeAcesso: "Se não for pago até o dia {data}, você perde o acesso às aulas. Troque o cartão para continuar estudando:",
-        botao: "Trocar cartão"
+        botao: "Trocar cartão",
+        comPix: "Se preferir pagar com Pix, entre na escola e escolha \"Pagar com Pix\" em Faturamento."
       },
       // No fim de uma assinatura que foi paga: uma versão para quando as tentativas de cobrança
       // acabaram, e outra para os outros casos (a pedido, o reembolso, o painel).
@@ -695,6 +698,16 @@ export const pt = {
       prePago: "Seu acesso vai até {data}. Para continuar, é só pagar de novo quando acabar.",
       pix: "Pix",
       trocarCartao: "Trocar cartão",
+      // PAGAR COM PIX A COBRANÇA ATRASADA (4.9b, E14 — textos aprovados pelo operador, 30/10/2026, P118): o botão ao lado
+      // de "Trocar cartão" (Faturamento e a aula trancada) e a tela dele.
+      pagarComPix: "Pagar com Pix",
+      pixDaAtrasada: {
+        titulo: "Pagar com Pix",
+        texto: "Ao pagar com Pix, sua assinatura no cartão é encerrada agora e você paga o plano {plano}: {valor} por {periodo}. O acesso volta assim que o Pix for pago. O Pix não renova sozinho: quando acabar, é só pagar de novo.",
+        umMes: "1 mês",
+        umAno: "1 ano",
+        botao: "Gerar o Pix"
+      },
       adicionarCartao: "Adicionar cartão",
       semAssinatura: "Você ainda não tem uma assinatura.",
       terminou: "Sua assinatura terminou em {data}.",

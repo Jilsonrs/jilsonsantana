@@ -122,6 +122,8 @@ describe("a cobrança que falhou", () => {
     expect(texto).toContain(`acesso às aulas até o dia ${diaNoEmail(new Date(falha.getTime() + 3 * DIA))}`);
     expect(pedido?.mensagem.botao).toEqual({ texto: "Trocar cartão", endereco: enderecoDoSite(entrarPara("cartao")) });
     expect(pedido?.mensagem.botao?.endereco).toMatch(/\/login\?depois=cartao$/);
+    // Sem o Pix no ar (o ambiente da suíte), nada de Pix no e-mail.
+    expect(pedido?.mensagem.depoisDoBotao).toBeUndefined();
     expect(await marcas(sub)).toEqual([{ kind: "COBRANCA_FALHOU", reference: falha.toISOString() }]);
     // O envio confirmado fica gravado na marca (vazio seria "pendente", retomável depois do prazo).
     expect((await marcasCompletas(sub))[0]?.sentAt).toBeInstanceOf(Date);
@@ -142,6 +144,28 @@ describe("a cobrança que falhou", () => {
       const [pedido] = doTipo("cobranca-falhou");
       expect(pedido?.mensagem.paragrafos.join(" ")).not.toContain("Vamos tentar de novo");
       expect(pedido?.mensagem.paragrafos.join(" ")).toContain("acesso às aulas até o dia");
+    }
+  });
+
+  // O PIX NA COBRANÇA ATRASADA (4.9b, E14 — o texto aprovado pelo operador, 30/10/2026): com o Pix no ar, os dois e-mails
+  // da atrasada dizem, depois do botão, que dá para pagar com ele.
+  it("com o Pix no ar: o da falha e o 'antes de trancar' dizem, depois do botão, que dá para pagar com Pix", async () => {
+    const antes = process.env.STRIPE_PIX_CONFIGURATION;
+    process.env.STRIPE_PIX_CONFIGURATION = "pmc_so_pix_da_suite";
+    try {
+      const frase = 'Se preferir pagar com Pix, entre na escola e escolha "Pagar com Pix" em Faturamento.';
+      const conta = await novaConta();
+      const sub = novoId("sub");
+      const falha = new Date(Date.now() - 60_000);
+      const assinatura = atrasada(sub, conta.id, falha);
+      buscarAssinatura.mockResolvedValue(assinatura);
+      await enviar(avisoDaAssinatura(sub, "invoice.payment_failed"));
+      await avisarSobreAAssinatura(assinatura, new Date(falha.getTime() + 2 * DIA + HORA));
+      expect(doTipo("cobranca-falhou")[0]?.mensagem.depoisDoBotao).toEqual([frase]);
+      expect(doTipo("antes-de-trancar")[0]?.mensagem.depoisDoBotao).toEqual([frase]);
+    } finally {
+      if (antes === undefined) delete process.env.STRIPE_PIX_CONFIGURATION;
+      else process.env.STRIPE_PIX_CONFIGURATION = antes;
     }
   });
 
@@ -253,6 +277,20 @@ describe("a assinatura que terminou", () => {
 
     await prisma.subscription.update({ where: { stripeSubscriptionId: sub }, data: { currentPeriodEnd: new Date(Date.now() - 60_000) } });
     await avisarSobreAAssinatura(assinatura);
+    expect(doTipo("assinatura-cancelada")).toHaveLength(1);
+  });
+
+  it("a atrasada que a pessoa encerrou para pagar com Pix (E14): nenhum 'terminou' — a marca fica consumida, e a rodada não volta", async () => {
+    const conta = await novaConta();
+    const sub = novoId("sub");
+    buscarAssinatura.mockResolvedValue(naStripe(sub, conta.id, { status: "canceled", pagoAte: new Date(Date.now() - 5 * DIA), trocadaPorPix: true }));
+    expect((await enviar(avisoDaAssinatura(sub, "customer.subscription.deleted"))).status).toBe(200);
+    expect(doTipo("assinatura-cancelada")).toHaveLength(0);
+    expect((await marcasCompletas(sub)).map((m) => [m.kind, m.sentAt instanceof Date])).toEqual([["CANCELADA", true]]);
+    // A mesma, sem a marca do Pix: o "terminou" de sempre.
+    const outra = novoId("sub");
+    buscarAssinatura.mockResolvedValue(naStripe(outra, conta.id, { status: "canceled", pagoAte: new Date(Date.now() - 5 * DIA) }));
+    await enviar(avisoDaAssinatura(outra, "customer.subscription.deleted"));
     expect(doTipo("assinatura-cancelada")).toHaveLength(1);
   });
 

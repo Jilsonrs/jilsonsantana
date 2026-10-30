@@ -36,7 +36,8 @@ export function renderWithProviders(
   } = {},
 ) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(
+  // O `queryClient` volta junto: o teste que precisa de uma RELEITURA (o servidor mudou no meio) a pede por ele.
+  const tela = render(
     <QueryClientProvider client={queryClient}>
       <MemoryRouter initialEntries={[route]}>
         <Routes>
@@ -50,4 +51,5 @@ export function renderWithProviders(
       </MemoryRouter>
     </QueryClientProvider>,
   );
+  return { ...tela, queryClient };
 }

@@ -38,6 +38,11 @@ describe("o espelho a partir da assinatura da Stripe", () => {
     expect(paraAssinaturaNaStripe(assinatura()).plano).toBeNull();
   });
 
+  it("a atrasada encerrada para pagar com Pix (E14): a marca nos metadados; sem ela, não", () => {
+    expect(paraAssinaturaNaStripe(assinatura({ status: "canceled", metadata: { trocadaPorPix: "2031-05-01T10:00:00.000Z" } })).trocadaPorPix).toBe(true);
+    expect(paraAssinaturaNaStripe(assinatura({ status: "canceled" })).trocadaPorPix).toBe(false);
+  });
+
   it("última fatura paga: pago até o FIM do período", () => {
     expect(paraAssinaturaNaStripe(assinatura()).pagoAte?.getTime()).toBe(fim * 1000);
   });

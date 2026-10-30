@@ -32,6 +32,8 @@ export function montarAvisoDaCobranca(
   agora: Date,
   e: Dict["app"]["email"],
   enderecoDe: (caminho: string) => string | null = enderecoDoSite,
+  /** O Pix está no ar: os dois da cobrança atrasada dizem que dá para pagar com ele (4.9b, E14). */
+  comPix: boolean = false,
 ): MensagemDeEmail {
   const botao = (texto: string, destino: DestinoDepoisDeEntrar): Pick<MensagemDeEmail, "botao"> => {
     const endereco = enderecoDe(entrarPara(destino));
@@ -41,11 +43,11 @@ export function montarAvisoDaCobranca(
   if (devido.tipo === "COBRANCA_FALHOU") {
     const t = e.cobrancaFalhou;
     const proxima = naStripe.proximaTentativa && naStripe.proximaTentativa > agora ? [t.novaTentativa.replace("{data}", diaNoEmail(naStripe.proximaTentativa))] : [];
-    return { assunto: t.assunto, titulo: t.titulo, paragrafos: [t.naoPassou, ...proxima, t.abertasAte.replace("{data}", ate)], ...botao(t.botao, "cartao") };
+    return { assunto: t.assunto, titulo: t.titulo, paragrafos: [t.naoPassou, ...proxima, t.abertasAte.replace("{data}", ate)], ...botao(t.botao, "cartao"), ...(comPix ? { depoisDoBotao: [t.comPix] } : {}) };
   }
   if (devido.tipo === "ANTES_DE_TRANCAR") {
     const t = e.antesDeTrancar;
-    return { assunto: t.assunto, titulo: t.titulo, paragrafos: [t.semPagamento, t.perdeAcesso.replace("{data}", ate)], ...botao(t.botao, "cartao") };
+    return { assunto: t.assunto, titulo: t.titulo, paragrafos: [t.semPagamento, t.perdeAcesso.replace("{data}", ate)], ...botao(t.botao, "cartao"), ...(comPix ? { depoisDoBotao: [t.comPix] } : {}) };
   }
   if (devido.tipo === "CONFIRMADA") {
     // A confirmação (E18): no Pix, até quando vai o acesso; no cartão, o plano e quando renova. O botão leva ao Início.

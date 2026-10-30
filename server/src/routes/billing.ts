@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { comVaga } from "../lib/assinaturas-em-andamento.js";
-import { assinarSchema, campoNaoAbriuSchema, cancelarSchema, mudarDePlanoSchema, pixSchema, previaSchema, type AssinaturaCriada, type CartaoTrocado, type PlanosDaAssinatura, type PreviaDaAssinatura, type PlanoMudado, type ReembolsoFeito, type RenovacaoParada, type SituacaoDaAssinatura, type TrocaDeCartaoPreparada, type TrocaDesfeita, type TrocaDisponivel } from "@jilson/core";
+import { assinarSchema, campoNaoAbriuSchema, cancelarSchema, mudarDePlanoSchema, pixDaAtrasadaSchema, pixSchema, previaSchema, type AssinaturaCriada, type CartaoTrocado, type PlanosDaAssinatura, type PreviaDaAssinatura, type PlanoMudado, type ReembolsoFeito, type RenovacaoParada, type SituacaoDaAssinatura, type TrocaDeCartaoPreparada, type TrocaDesfeita, type TrocaDisponivel } from "@jilson/core";
 import { requireAuth } from "../middleware/auth.js";
 import { validate } from "../lib/http.js";
 import { cobrancaConfigurada } from "../lib/stripe.js";
@@ -11,6 +11,7 @@ import { assinar } from "../lib/checkout.js";
 import { conferirPelaTela } from "../lib/conferencia-pela-tela.js";
 import { prisma } from "../lib/prisma.js";
 import { pagarComPix } from "../lib/pix-pre-pago.js";
+import { pagarAAtrasadaComPix } from "../lib/pix-da-atrasada.js";
 import { pixConfigurado } from "../lib/stripe-pix.js";
 import { desistirDaTroca, lerTrocaDePlano, mudarMeuPlano } from "../lib/meu-plano.js";
 import { aplicarCartaoNovo, lerMinhaAssinatura, manterMinhaAssinatura, pararMinhaRenovacao, prepararTrocaDeCartao, reembolsarMinhaAssinatura, registrarAssinaturaDesconhecida } from "../lib/minha-assinatura.js";
@@ -265,6 +266,48 @@ router.post("/billing/pix", requireAuth, ...limiteDeTentativas.cobranca, async (
   }
   if (desfecho.resultado === "em-conferencia") {
     res.status(409).json({ error: "PixEmConferencia" });
+    return;
+  }
+  const resposta: AssinaturaCriada = { estado: "pagar", segredo: desfecho.segredo, tipo: "pix", email: desfecho.email };
+  res.json(resposta);
+});
+
+// POST /api/billing/minha-assinatura/pix — pagar com Pix a cobrança ATRASADA (4.9b, E14 — decisão do operador, P118):
+// ENCERRA a assinatura atrasada da conta da SESSÃO e gera o Pix do mesmo plano. O corpo leva só o CPF ou CNPJ — qual
+// assinatura e qual plano saem do servidor. A regra mora em `lib/pix-da-atrasada.ts`. O mesmo limite, o mesmo teto e as
+// mesmas respostas do `POST /billing/pix`; sem atrasada (pagou no meio, ou nunca houve), 409 `NaoAtrasada`.
+router.post("/billing/minha-assinatura/pix", requireAuth, ...limiteDeTentativas.cobranca, async (req, res) => {
+  const user = req.user;
+  if (!user) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  const corpo = validate(pixDaAtrasadaSchema, req.body, res);
+  if (corpo === null) return;
+  if (!cobrancaConfigurada() || !pixConfigurado()) {
+    console.error("[stripe] pix da atrasada recusado: STRIPE_SECRET_KEY ou STRIPE_PIX_CONFIGURATION ausente");
+    res.status(503).json({ error: "NaoConfigurado" });
+    return;
+  }
+  const vaga = await comVaga(() => pagarAAtrasadaComPix({ id: user.id, email: user.email, nome: user.name ?? null }, corpo.documento));
+  if (vaga.cheio) {
+    res.set("Retry-After", "2");
+    res.status(409).json({ error: "MuitosAoMesmoTempo" });
+    return;
+  }
+  const desfecho = vaga.resultado;
+  // Toda resposta que não é o QR, com o seu código — o tipo obriga a cobrir cada uma.
+  const recusa: Record<Exclude<typeof desfecho.resultado, "pagar">, [number, string]> = {
+    "nao-atrasada": [409, "NaoAtrasada"],
+    "ja-assinante": [409, "JaAssinante"],
+    ocupada: [409, "Ocupada"],
+    atrasada: [409, "CobrancaAtrasada"],
+    "documento-recusado": [400, "DocumentoInvalido"],
+    "em-conferencia": [409, "PixEmConferencia"],
+  };
+  if (desfecho.resultado !== "pagar") {
+    const [status, error] = recusa[desfecho.resultado];
+    res.status(status).json({ error });
     return;
   }
   const resposta: AssinaturaCriada = { estado: "pagar", segredo: desfecho.segredo, tipo: "pix", email: desfecho.email };
