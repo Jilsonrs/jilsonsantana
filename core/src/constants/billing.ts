@@ -147,6 +147,8 @@ export const TELA_DO_FATURAMENTO = "/aluno/conta/faturamento";
 export const TELA_DE_TROCAR_O_CARTAO = "/aluno/conta/faturamento/cartao";
 export const TELA_DE_CANCELAR = "/aluno/conta/faturamento/cancelar";
 export const TELA_DE_MUDAR_DE_PLANO = "/aluno/conta/faturamento/plano";
+/** Pagar com Pix a cobrança atrasada (4.9b, E14 — o endereço aprovado pelo operador, 30/10/2026). */
+export const TELA_DE_PAGAR_COM_PIX = "/aluno/pagar-com-pix";
 
 /**
  * ENTRAR E SEGUIR: os lugares para onde um link de FORA do app leva depois de entrar — o "Já tem

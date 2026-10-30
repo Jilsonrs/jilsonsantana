@@ -11,6 +11,19 @@ vi.mock("../lib/email.js", async (importOriginal) => ({
   enviarEmail: (pedido: PedidoDeEmail) => enviarEmail(pedido),
 }));
 
+// Os textos do banco (`getDict`): de verdade, salvo quando o teste liga a falha (o aviso de senha criada que não se monta).
+const falhaDosTextos = { ativa: false };
+vi.mock("../lib/dict.js", async (importOriginal) => {
+  const original = await importOriginal<typeof import("../lib/dict.js")>();
+  return {
+    ...original,
+    getDict: async () => {
+      if (falhaDosTextos.ativa) throw new Error("os textos não vieram do banco");
+      return original.getDict();
+    },
+  };
+});
+
 import servidor from "./servidor.js";
 import { prisma } from "../lib/prisma.js";
 import { auth } from "../lib/auth.js";
@@ -96,6 +109,42 @@ describe("a senha logo depois de pagar", () => {
     expect((await request(servidor).get("/api/me").set("Cookie", cookies)).status).toBe(200);
     expect(await senhasDa(conta.id)).toBe(1);
     expect((await entrar(conta.email, SENHA)).status).toBe(200);
+  });
+
+  // E16 (decisão do operador P123; texto aprovado em 30/10/2026): a senha criada avisa a caixa — uma vez, com a chave da
+  // conta, para o e-mail do nosso banco; se não foi a pessoa, o "Esqueci minha senha" desconecta quem entrou.
+  it("a senha criada manda o aviso para a caixa da conta — uma vez, com a chave da conta; a recusa seguinte não manda nada", async () => {
+    const conta = await nascida();
+    enviarEmail.mockClear();
+    expect((await criarSenha(conta.tentativa, SENHA)).status).toBe(200);
+    const avisos = enviarEmail.mock.calls.map(([pedido]) => pedido).filter((pedido) => pedido.tipo === "senha-criada");
+    expect(avisos).toHaveLength(1);
+    expect(avisos[0]).toMatchObject({ para: conta.email, chave: `senha-criada/${conta.id}`, referencia: `conta:${conta.id}`, mensagem: { assunto: "Uma senha foi criada para a sua conta", titulo: "Uma senha foi criada" } });
+    expect(avisos[0]?.mensagem.paragrafos).toEqual([
+      "Uma senha foi criada agora para entrar na escola com este e-mail.",
+      'Se não foi você, crie uma senha nova em "Esqueci minha senha", na tela de entrar: quem entrou com a senha anterior sai da conta na hora.',
+    ]);
+    expect((await criarSenha(conta.tentativa, `outra-senha-${S}`)).status).toBe(409);
+    expect(enviarEmail.mock.calls.filter(([pedido]) => pedido.tipo === "senha-criada")).toHaveLength(1);
+  });
+
+  // ACHADO P3 DA REVISÃO DO GRUPO 4 (30/10/2026): a senha já gravada, e o aviso que falha ao ser montado derrubava o 200 — a
+  // sessão não abria, e o clique seguinte recebia "já tem senha".
+  it("o aviso que falha ao ser montado (os textos não vieram) não derruba o 200: a sessão abre, e vira alerta [email]", async () => {
+    const conta = await nascida();
+    const erros = vi.spyOn(console, "error").mockImplementation(() => {});
+    falhaDosTextos.ativa = true;
+    let res: Awaited<ReturnType<typeof criarSenha>>;
+    try {
+      res = await criarSenha(conta.tentativa, SENHA);
+    } finally {
+      falhaDosTextos.ativa = false;
+    }
+    expect(res.status).toBe(200);
+    const cookies = (res.headers["set-cookie"] as unknown as string[] | undefined) ?? [];
+    expect((await request(servidor).get("/api/me").set("Cookie", cookies)).status).toBe(200);
+    expect(erros.mock.calls.some(([texto]) => String(texto).startsWith("[email]") && String(texto).includes(conta.id))).toBe(true);
+    erros.mockRestore();
   });
 
   it("UMA vez: a segunda é 'já tem senha', e a senha não muda", async () => {

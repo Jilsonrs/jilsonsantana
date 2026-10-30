@@ -288,7 +288,7 @@ describe("TrocarCartaoPage — o envio", () => {
     prepararTrocaDeCartao.mockRejectedValue(new Error("500"));
     abrir();
     await salvar();
-    expect((await screen.findByRole("alert")).textContent).toBe("Não foi possível salvar o cartão. Confira os dados e tente de novo.");
+    expect((await screen.findByRole("alert")).textContent).toBe("Não foi possível salvar o cartão. Confira os dados e tente de novo; se continuar, escreva para suporte@jilsonsantana.com.");
     expect(confirmar).not.toHaveBeenCalled();
     expect(screen.queryByRole("status")).toBeNull();
   });
@@ -315,7 +315,7 @@ describe("TrocarCartaoPage — o envio", () => {
     aplicarCartaoNovo.mockRejectedValueOnce(new Error("rede"));
     abrir();
     await salvar();
-    expect((await screen.findByRole("alert")).textContent).toBe("Não foi possível salvar o cartão. Confira os dados e tente de novo.");
+    expect((await screen.findByRole("alert")).textContent).toBe("Não foi possível salvar o cartão. Confira os dados e tente de novo; se continuar, escreva para suporte@jilsonsantana.com.");
     expect(screen.queryByRole("status")).toBeNull();
     await salvar();
     expect((await screen.findByRole("status")).textContent).toBe("Cartão atualizado.");

@@ -1,5 +1,5 @@
 import Stripe from "stripe";
-import { erroSemMensagem, METADADO_DA_CONTESTACAO, stripe } from "./stripe.js";
+import { COMENTARIO_DA_TROCA_POR_PIX, erroSemMensagem, METADADO_DA_CONTESTACAO, stripe } from "./stripe.js";
 import { cobrancaDoPagamento, pagamentosDaFatura } from "./stripe-devolucao.js";
 import { paraMotivoNaStripe, type MotivoDado } from "./stripe-assinatura.js";
 import { anularFatura } from "./stripe-plano.js";
@@ -119,6 +119,22 @@ export async function cancelarPorContestacao(assinaturaId: string, contestacaoId
     if ((await anularFatura(faturaEmAberto)) === "paga") console.error(`[stripe] contestação ${contestacaoId}: a cobrança em aberto da assinatura ${assinaturaId} foi PAGA no instante do cancelamento — conferir no painel da Stripe`);
   } catch (erro) {
     console.error(`[stripe] contestação ${contestacaoId}: a assinatura ${assinaturaId} foi cancelada e a cobrança em aberto NÃO foi anulada — anular pelo painel da Stripe: ${erro instanceof Error ? erro.message : String(erro)}`);
+  }
+}
+
+/**
+ * ENCERRA NA HORA a assinatura ATRASADA que a pessoa vai pagar com Pix (4.9b, E14 — decisão do operador, P118): sem crédito
+ * e sem fatura nova, como o cancelar com a cobrança atrasada, com o comentário `COMENTARIO_DA_TROCA_POR_PIX` — é ele que
+ * cala o e-mail de "terminou", e vai no mesmo pedido do encerramento. Quem anula a cobrança em aberto é quem chama, depois
+ * disto: anulada com a assinatura ainda viva, a Stripe a dá como `active` de novo (medido, 11/10/2026).
+ * SEM chave de repetição `[FATO — medido na área restrita, 30/10/2026]`: a Stripe a ignora no encerramento, e encerrar de
+ * novo a já encerrada dá 404 `resource_missing`. Quem chama relê a assinatura com a trava e só encerra a atrasada.
+ */
+export async function encerrarParaOPix(assinaturaId: string): Promise<void> {
+  try {
+    await stripe().subscriptions.cancel(assinaturaId, { prorate: false, invoice_now: false, cancellation_details: { comment: COMENTARIO_DA_TROCA_POR_PIX } });
+  } catch (erro) {
+    throw erroSemMensagem(erro, "o encerramento da assinatura atrasada para o Pix");
   }
 }
 

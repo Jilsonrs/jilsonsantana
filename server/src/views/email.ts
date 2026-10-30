@@ -33,6 +33,8 @@ export type MensagemDeEmail = {
   paragrafos: string[];
   /** O botão, depois dos parágrafos — o endereço só pode ser http(s). */
   botao?: { texto: string; endereco: string };
+  /** Parágrafos DEPOIS do botão, em texto puro — a outra saída (o Pix na cobrança atrasada: 4.9b, E14). */
+  depoisDoBotao?: string[];
 };
 
 export type EmailMontado = { assunto: string; html: string; texto: string };
@@ -73,6 +75,7 @@ export function montarEmail(mensagem: MensagemDeEmail, textos: Pick<Dict["app"][
     ? `<h1 style="margin:0 0 24px;font-family:${FONTE_DO_TITULO};font-size:32px;line-height:1.2;font-weight:700;letter-spacing:-0.03em;color:${TEXTO};">${escapeHtml(mensagem.titulo)}</h1>`
     : "";
   const paragrafos = mensagem.paragrafos.map((p) => `<p style="margin:0 0 16px;">${escapeHtml(p)}</p>`).join("\n                ");
+  const depoisDoBotao = (mensagem.depoisDoBotao ?? []).map((p, i) => `<p style="margin:${i === 0 ? 24 : 16}px 0 0;">${escapeHtml(p)}</p>`).join("\n                ");
   const botaoHtml = botao
     ? `<table role="presentation" align="center" cellpadding="0" cellspacing="0" style="margin:24px auto 0;">
                   <tr>
@@ -108,6 +111,7 @@ export function montarEmail(mensagem: MensagemDeEmail, textos: Pick<Dict["app"][
                 ${titulo}
                 ${paragrafos}
                 ${botaoHtml}
+                ${depoisDoBotao}
             </td>
           </tr>
           <tr>
@@ -128,7 +132,7 @@ export function montarEmail(mensagem: MensagemDeEmail, textos: Pick<Dict["app"][
 
   // A versão de texto puro: sem escape (não é HTML), com o endereço do botão por extenso.
   const texto =
-    [textos.topo, ...(mensagem.titulo ? [mensagem.titulo] : []), ...mensagem.paragrafos, ...(botao ? [`${botao.texto}: ${botao.endereco}`] : []), "—", textos.rodape].join("\n\n") + "\n";
+    [textos.topo, ...(mensagem.titulo ? [mensagem.titulo] : []), ...mensagem.paragrafos, ...(botao ? [`${botao.texto}: ${botao.endereco}`] : []), ...(mensagem.depoisDoBotao ?? []), "—", textos.rodape].join("\n\n") + "\n";
 
   return { assunto, html, texto };
 }

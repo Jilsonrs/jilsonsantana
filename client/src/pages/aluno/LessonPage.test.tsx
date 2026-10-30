@@ -222,6 +222,8 @@ describe("página da aula — o conteúdo", () => {
     await screen.findByRole("status");
     expect(screen.getByRole("link", { name: "Reativar assinatura" }).getAttribute("href")).toBe("/aluno/assinar");
     expect(screen.queryByRole("link", { name: "Assinar" })).toBeNull();
+    // Sem cobrança atrasada, nada de Pix aqui: o Pix está na tela de assinar.
+    expect(screen.queryByRole("link", { name: "Pagar com Pix" })).toBeNull();
   });
 
   // A COBRANÇA ATRASADA há mais de 3 dias (etapa 4.6b — escolha do operador, 12/10/2026): a aula
@@ -234,6 +236,8 @@ describe("página da aula — o conteúdo", () => {
     expect(aviso.textContent).toContain("Sua assinatura está com a cobrança atrasada.");
     expect(aviso.textContent).not.toContain("Esta aula é para assinantes.");
     expect(screen.getByRole("link", { name: "Trocar cartão" }).getAttribute("href")).toBe("/aluno/conta/faturamento/cartao");
+    // Ao lado, "Pagar com Pix" (4.9b, E14 — decisão do operador, P118).
+    expect(screen.getByRole("link", { name: "Pagar com Pix" }).getAttribute("href")).toBe("/aluno/pagar-com-pix");
     expect(screen.queryByRole("link", { name: "Reativar assinatura" })).toBeNull();
     expect(screen.queryByRole("link", { name: "Assinar" })).toBeNull();
   });

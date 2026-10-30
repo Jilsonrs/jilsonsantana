@@ -26,6 +26,7 @@ import { ProtecaoDoApp } from "@/components/ErroDaTela";
 import { AssinaturaConcluidaPage } from "@/pages/aluno/AssinaturaConcluidaPage";
 import { FaturamentoPage } from "@/pages/aluno/FaturamentoPage";
 import { TrocarCartaoPage } from "@/pages/aluno/TrocarCartaoPage";
+import { PagarComPixPage } from "@/pages/aluno/PagarComPixPage";
 import { CancelarPage } from "@/pages/aluno/CancelarPage";
 import { MudarDePlanoPage } from "@/pages/aluno/MudarDePlanoPage";
 import { AdminCoursesPage } from "@/pages/admin/AdminCoursesPage";
@@ -102,6 +103,8 @@ export default function App() {
           <Route path="/aluno/conta/faturamento/cartao" element={<TrocarCartaoPage />} />
           <Route path="/aluno/conta/faturamento/cancelar" element={<CancelarPage />} />
           <Route path="/aluno/conta/faturamento/plano" element={<MudarDePlanoPage />} />
+          {/* Pagar com Pix a cobrança atrasada (4.9b, E14 — o endereço aprovado pelo operador, 30/10/2026). */}
+          <Route path="/aluno/pagar-com-pix" element={<PagarComPixPage />} />
           {/* Assinar, com a conta logada (Fase 4, etapa 4.2; endereço decidido pelo
               operador em 10/10/2026). O /assinar curto fica para o visitante (4.7). */}
           <Route path="/aluno/assinar" element={<AssinarPage />} />

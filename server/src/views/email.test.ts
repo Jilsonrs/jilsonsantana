@@ -75,6 +75,17 @@ describe("montarEmail", () => {
     expect(texto).toBe(`MARCA-DO-TOPO\n\nUm.\n\nDois.\n\nCriar senha: ${CRIAR_SENHA}\n\n—\n\nMARCA-DO-RODAPE\n`);
   });
 
+  // A outra saída, depois do botão (4.9b, E14 — o Pix na cobrança atrasada): escapada no HTML e por extenso no texto,
+  // as duas DEPOIS do botão.
+  it("os parágrafos depois do botão vêm depois dele — escapados no HTML e por extenso no texto", () => {
+    const { html, texto } = montarEmail({ assunto: "A", paragrafos: ["ANTES"], botao: { texto: "BOTAO", endereco: CRIAR_SENHA }, depoisDoBotao: ['Depois <b>"Pix"</b>'] }, MARCAS);
+    expect(html).toContain("Depois &lt;b&gt;&quot;Pix&quot;&lt;/b&gt;");
+    expect(html).not.toContain("<b>");
+    expect(html.indexOf(">BOTAO<")).toBeLessThan(html.indexOf("Depois &lt;b&gt;"));
+    expect(texto.indexOf(`BOTAO: ${CRIAR_SENHA}`)).toBeLessThan(texto.indexOf('Depois <b>"Pix"</b>'));
+    expect(texto.indexOf('Depois <b>"Pix"</b>')).toBeLessThan(texto.indexOf("MARCA-DO-RODAPE"));
+  });
+
   it("sem botão, nenhum link no corpo", () => {
     const { html } = montarEmail({ assunto: "A", paragrafos: ["Um."] }, MARCAS);
 

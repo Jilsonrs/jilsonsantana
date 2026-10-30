@@ -25,7 +25,7 @@ vi.mock("./stripe-cliente.js", async (importOriginal) => ({
 
 import { AssinaturaNaoEncontrada, buscarAssinatura } from "./stripe.js";
 import { cobrancaDoPagamento, faturaDevolvida, periodoDevolvido, pixDevolvido } from "./stripe-devolucao.js";
-import { aDevolver, assinaturaDoPagamento, buscarOQueFoiPago, buscarOQueFoiPagoNoPix, cancelarNaHora, cancelarPorContestacao, chaveDaDevolucao, devolver, paraPedidoDeDevolucao } from "./stripe-reembolso.js";
+import { aDevolver, assinaturaDoPagamento, buscarOQueFoiPago, buscarOQueFoiPagoNoPix, cancelarNaHora, cancelarPorContestacao, chaveDaDevolucao, devolver, encerrarParaOPix, paraPedidoDeDevolucao } from "./stripe-reembolso.js";
 
 const DONO = { userId: "u-1", assinaturaId: "sub_1" };
 const recusa = (code: string) => new Stripe.errors.StripeInvalidRequestError({ message: "mensagem crua da Stripe, com sk_test_abc", type: "invalid_request_error", code, statusCode: 400 });
@@ -176,6 +176,25 @@ describe("cancelar a assinatura contestada", () => {
     await expect(cancelarPorContestacao("sub_1", "dp_2", AGORA)).resolves.toBeUndefined();
     expect(erro.mock.calls.flat().join(" ")).toContain("a cobrança em aberto NÃO foi anulada");
     erro.mockRestore();
+  });
+});
+
+// O PIX NA COBRANÇA ATRASADA (E14 da revisão ampla da cobrança, 30/10/2026): encerra NA HORA, sem crédito nem fatura nova,
+// com o comentário que cala o "terminou" no MESMO pedido (achado P2 da revisão do grupo 4: nada de marca gravada antes).
+describe("encerrar a atrasada para pagar com Pix", () => {
+  it("um pedido só: o encerramento na hora, com o comentário — sem marca antes, sem chave de repetição, e a cobrança em aberto fica para quem chama", async () => {
+    falsa.subscriptions.cancel.mockResolvedValue({ id: "sub_1", status: "canceled" });
+    await encerrarParaOPix("sub_1");
+    expect(falsa.subscriptions.cancel).toHaveBeenCalledWith("sub_1", { prorate: false, invoice_now: false, cancellation_details: { comment: "Trocada pelo Pix" } });
+    expect(falsa.subscriptions.cancel.mock.calls[0]).toHaveLength(2);
+    expect(falsa.subscriptions.update).not.toHaveBeenCalled();
+    expect(falsa.invoices.voidInvoice).not.toHaveBeenCalled();
+  });
+
+  it("a Stripe falhou: a falha sobe sem a mensagem dela", async () => {
+    falsa.subscriptions.cancel.mockRejectedValue(foraDoAr());
+    await expect(encerrarParaOPix("sub_1")).rejects.toThrow(/o encerramento da assinatura atrasada para o Pix/);
+    await expect(encerrarParaOPix("sub_1")).rejects.not.toThrow(/sk_test_abc/);
   });
 });
 

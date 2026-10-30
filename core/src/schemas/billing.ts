@@ -109,6 +109,15 @@ export type PixInput = z.infer<typeof pixSchema>;
 export type CorpoDePix = z.input<typeof pixSchema>;
 
 /**
+ * Corpo de `POST /api/billing/minha-assinatura/pix` — pagar com Pix a cobrança ATRASADA (4.9b, E14; decisão do operador,
+ * P118): só o CPF ou CNPJ. Qual assinatura se encerra e o plano do Pix são os da conta da sessão, lidos no servidor.
+ */
+export const pixDaAtrasadaSchema = z.object({
+  documento: documentoFiscalSchema,
+});
+export type CorpoDePixDaAtrasada = z.input<typeof pixDaAtrasadaSchema>;
+
+/**
  * Corpo de `POST /api/billing/visitante/pix` — pagar com Pix SEM CONTA: o mesmo pedido de assinar sem
  * login, sem o código promocional. `tentativa`: com ela, o novo clique segue com o MESMO Pix.
  */
@@ -140,7 +149,7 @@ export type SincronizarContaInput = z.infer<typeof sincronizarContaSchema>;
  * ampla da cobrança, 29/10/2026). É o único jeito de o operador saber: o pedido de assinar nem chega ao servidor.
  * Só QUAL tela e QUAL falha, de listas fechadas — nada de texto livre, que iria para o registro e para o alerta.
  */
-export const TELAS_DO_CAMPO = ["assinar", "assinar-sem-login", "trocar-cartao"] as const;
+export const TELAS_DO_CAMPO = ["assinar", "assinar-sem-login", "trocar-cartao", "pagar-com-pix"] as const;
 export type TelaDoCampo = (typeof TELAS_DO_CAMPO)[number];
 export const campoNaoAbriuSchema = z.object({
   tela: z.enum(TELAS_DO_CAMPO),

@@ -47,6 +47,14 @@ export type AvisoDeFraude = { id: string; cobranca: string; pagamento: string | 
 export const METADADO_DA_CONTESTACAO = "contestacao";
 
 /**
+ * O comentário do ENCERRAMENTO da assinatura atrasada que a pessoa trocou pelo Pix (4.9b, E14 — decisão do operador, P118):
+ * com ele, o "sua assinatura terminou — reative" não sai (`avisos-da-assinatura.ts`), porque ela está pagando agora. Vai NO
+ * PRÓPRIO encerramento, e não numa marca gravada antes (achado P2 da revisão do grupo 4, 30/10/2026): uma marca que ficasse
+ * de um encerramento que falhou calaria o "terminou" de um fim de verdade, meses depois.
+ */
+export const COMENTARIO_DA_TROCA_POR_PIX = "Trocada pelo Pix";
+
+/**
  * O PIX PRÉ-PAGO que CAIU (etapa 4.9 — billing.md → *Formas de pagamento*): o aviso
  * `payment_intent.succeeded` de um pagamento NOSSO, marcado nos metadados com o plano
  * (`MARCA_DO_PREPAGO`). É dele que a assinatura pré-paga nasce (`stripe-pix.ts`, `assinaturas.ts`).
@@ -105,6 +113,8 @@ export type AssinaturaNaStripe = {
   proximaTentativa?: Date | null;
   /** Encerrada porque as tentativas de cobrança acabaram (`cancellation_details.reason`). Só escolhe o texto do e-mail. */
   encerradaSemPagamento?: boolean;
+  /** A atrasada que a pessoa encerrou para pagar com Pix (E14 — `COMENTARIO_DA_TROCA_POR_PIX`). Só cala o e-mail de "terminou". */
+  trocadaPorPix?: boolean;
   /** O Pix pré-pago de que ela nasceu (etapa 4.9), pelos metadados; vazio = recorrente. */
   pixPaymentIntentId?: string | null;
   /**
@@ -113,6 +123,8 @@ export type AssinaturaNaStripe = {
    * código não pode ficar com a conta paga por outra tentativa. Vazio: não veio de um visitante.
    */
   resumoDaTentativa?: string | null;
+  /** O plano (metadados do nosso checkout, ou o intervalo do preço) — o texto do e-mail de confirmação (E18). */
+  plano?: Plano | null;
 };
 
 /**
@@ -828,10 +840,15 @@ export function paraAssinaturaNaStripe(assinatura: Stripe.Subscription, devolvid
   const proxima = typeof ultima === "object" && ultima !== null && ultima.status === "open" ? ultima.next_payment_attempt : null;
   const proximaTentativa = proxima ? new Date(proxima * 1000) : null;
   const encerradaSemPagamento = assinatura.cancellation_details?.reason === "payment_failed";
+  const trocadaPorPix = assinatura.status === "canceled" && assinatura.cancellation_details?.comment === COMENTARIO_DA_TROCA_POR_PIX;
   // O Pix pré-pago de que ela nasceu (etapa 4.9): vazio na recorrente.
   const pixPaymentIntentId = assinatura.metadata[METADADO_DO_PIX] || null;
   const resumoDaTentativa = assinatura.metadata[M.tentativa] || null;
-  return { id: assinatura.id, status, pagoAte, clienteId, userId, pedido, doVisitante, livemode: assinatura.livemode, proximaTentativa, encerradaSemPagamento, pixPaymentIntentId, resumoDaTentativa };
+  // O plano (E18, o e-mail de confirmação): o que o NOSSO checkout gravou nos metadados; sem ele, pelo intervalo do preço.
+  const doMetadado = assinatura.metadata.plano;
+  const intervalo = assinatura.items.data[0]?.price?.recurring?.interval;
+  const plano: Plano | null = PLANOS.find((p) => p === doMetadado) ?? (intervalo === "month" ? "mensal" : intervalo === "year" ? "anual" : null);
+  return { id: assinatura.id, status, pagoAte, clienteId, userId, pedido, doVisitante, livemode: assinatura.livemode, proximaTentativa, encerradaSemPagamento, trocadaPorPix, pixPaymentIntentId, resumoDaTentativa, plano };
 }
 
 /**

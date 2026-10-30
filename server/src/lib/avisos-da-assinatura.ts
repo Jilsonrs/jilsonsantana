@@ -1,11 +1,13 @@
 import { TOLERANCIA_DA_COBRANCA_ATRASADA_EM_DIAS } from "@jilson/core";
 import { Prisma, prisma, SubscriptionEmailKind } from "./prisma.js";
-import { assinaturaDaAcesso, aulasAbertasAte, cobrancaAtrasada, encerradaDeVez, temAcessoAtivo } from "./acesso.js";
+import { assinaturaDaAcesso, aulasAbertasAte, cobrancaAtrasada, encerradaDeVez, STATUS_VIVOS, temAcessoAtivo } from "./acesso.js";
 import { enviarEmail, type TipoDeEmail } from "./email.js";
 import { getDict } from "./dict.js";
 import { sincronizarSeLivre } from "./assinaturas.js";
 import { AssinaturaNaoEncontrada, buscarAssinatura, type AssinaturaNaStripe } from "./stripe.js";
 import { montarAvisoDaCobranca, type EmailDevido } from "../views/email-da-cobranca.js";
+import { enderecoDoSite } from "./endereco-do-site.js";
+import { pixConfigurado } from "./stripe-pix.js";
 
 // OS E-MAILS DA COBRANÇA (Fase 4, etapa 4.7, passo 7 — decisões do operador, 28/10/2026;
 // billing.md → *Régua de inadimplência*). UMA regra decide qual e-mail é devido AGORA, pelo espelho
@@ -21,7 +23,10 @@ import { montarAvisoDaCobranca, type EmailDevido } from "../views/email-da-cobra
 //     até o período acabar — o texto diz que o acesso acabou;
 //   - a PRÉ-PAGA (Pix, etapa 4.9, passo 4 — decisão do operador, 28/10/2026: "3 dias antes"), ativa e
 //     a até 3 dias do fim do acesso → "está acabando", sem botão (pagar de novo é só depois de acabar);
-//     quando acaba, a Stripe a encerra e sai o "terminou" de sempre, com o botão de reativar.
+//     quando acaba, a Stripe a encerra e sai o "terminou" de sempre, com o botão de reativar;
+//   - a assinatura que NASCEU há pouco (E18 — decisão do operador, P127) → "sua assinatura está
+//     confirmada", uma vez: no cartão, o plano e quando renova; no Pix, até quando vai o acesso. A de
+//     quem assinou sem conta não recebe: as boas-vindas já confirmam.
 // QUEM CHAMA: o aviso da Stripe, depois do commit, em todo aviso da assinatura (`stripe-webhook.ts`),
 // e a rodada de hora em hora do agendador (etapa 4.7, passo 7b), que é quem manda o "antes de trancar"
 // e o que ficou para trás. Fora de transação e de trava (CLAUDE.md → *Membership Gating*).
@@ -50,6 +55,13 @@ export const PRAZO_DA_RODADA_EM_MS = 240_000;
 const JANELA_DA_RODADA_EM_MS = TOLERANCIA_DA_COBRANCA_ATRASADA_EM_DIAS * DIA_EM_MS;
 /** A referência do e-mail de cancelada: a assinatura só termina uma vez. */
 const FIM = "fim";
+/** A referência do e-mail de confirmação: a assinatura só começa uma vez. */
+const INICIO = "inicio";
+/**
+ * A confirmação só para a assinatura que NASCEU há pouco (o espelho com menos que isto — E18): quem já assinava antes da
+ * publicação, ou renova, nunca recebe "sua assinatura está confirmada".
+ */
+export const JANELA_DA_CONFIRMACAO_EM_MS = 2 * DIA_EM_MS;
 
 /**
  * Qual e-mail da cobrança é devido AGORA para esta assinatura, pelo espelho dela. Função pura.
@@ -57,7 +69,7 @@ const FIM = "fim";
  * que não muda enquanto ela continua atrasada — `assinaturas.ts`): uma falha nova é outro e-mail.
  * A cancelada que ainda tem dias pagos não deve nada AINDA: deve quando o período acabar.
  */
-export function emailDevido(espelho: { status: string; currentPeriodEnd: Date | null; pixPaymentIntentId?: string | null }, agora: Date = new Date()): EmailDevido | null {
+export function emailDevido(espelho: { status: string; currentPeriodEnd: Date | null; pixPaymentIntentId?: string | null; createdAt?: Date }, agora: Date = new Date()): EmailDevido | null {
   if (cobrancaAtrasada(espelho)) {
     const trancaEm = aulasAbertasAte(espelho);
     if (!espelho.currentPeriodEnd || !trancaEm || trancaEm <= agora) return null;
@@ -68,10 +80,14 @@ export function emailDevido(espelho: { status: string; currentPeriodEnd: Date | 
   // (um período, um e-mail). Antes disso, nada; acabou, quem fala é a cancelada.
   if (espelho.status === "active" && espelho.pixPaymentIntentId && espelho.currentPeriodEnd) {
     const falta = espelho.currentPeriodEnd.getTime() - agora.getTime();
-    if (falta <= 0 || falta > ANTECEDENCIA_DO_PREPAGO_EM_MS) return null;
-    return { tipo: SubscriptionEmailKind.PREPAGO_TERMINANDO, referencia: espelho.currentPeriodEnd.toISOString(), trancaEm: espelho.currentPeriodEnd };
+    if (falta > 0 && falta <= ANTECEDENCIA_DO_PREPAGO_EM_MS) return { tipo: SubscriptionEmailKind.PREPAGO_TERMINANDO, referencia: espelho.currentPeriodEnd.toISOString(), trancaEm: espelho.currentPeriodEnd };
   }
   if (encerradaDeVez(espelho) && !assinaturaDaAcesso(espelho, agora)) return { tipo: SubscriptionEmailKind.CANCELADA, referencia: FIM, trancaEm: null };
+  // A CONFIRMAÇÃO (E18 — decisão do operador P127): a assinatura que dá acesso pelo status e nasceu há pouco. No Pix, a
+  // data é o fim do acesso pago.
+  if (STATUS_VIVOS.has(espelho.status) && espelho.createdAt && agora.getTime() - espelho.createdAt.getTime() <= JANELA_DA_CONFIRMACAO_EM_MS) {
+    return { tipo: SubscriptionEmailKind.CONFIRMADA, referencia: INICIO, trancaEm: espelho.pixPaymentIntentId ? espelho.currentPeriodEnd : null };
+  }
   return null;
 }
 
@@ -80,6 +96,7 @@ const TIPO_DO_ENVIO: Record<SubscriptionEmailKind, TipoDeEmail> = {
   ANTES_DE_TRANCAR: "antes-de-trancar",
   CANCELADA: "assinatura-cancelada",
   PREPAGO_TERMINANDO: "prepago-terminando",
+  CONFIRMADA: "assinatura-confirmada",
 };
 
 type MarcaGravada = { kind: SubscriptionEmailKind; reference: string; sentAt: Date | null; createdAt: Date };
@@ -131,7 +148,7 @@ async function consumir(assinaturaId: number, devido: EmailDevido, motivo: strin
  */
 export async function avisarSobreAAssinatura(naStripe: AssinaturaNaStripe, agora: Date = new Date()): Promise<void> {
   try {
-    const espelho = await prisma.subscription.findUnique({ where: { stripeSubscriptionId: naStripe.id }, select: { id: true, ownerUserId: true, status: true, currentPeriodEnd: true, pixPaymentIntentId: true } });
+    const espelho = await prisma.subscription.findUnique({ where: { stripeSubscriptionId: naStripe.id }, select: { id: true, ownerUserId: true, status: true, currentPeriodEnd: true, pixPaymentIntentId: true, createdAt: true } });
     if (!espelho?.ownerUserId) return;
     const devido = emailDevido(espelho, agora);
     if (!devido) return;
@@ -141,9 +158,19 @@ export async function avisarSobreAAssinatura(naStripe: AssinaturaNaStripe, agora
     // "Sua assinatura terminou — reative" para quem JÁ ASSINOU DE NOVO (esta não dá aulas, mas a conta
     // tem acesso por outra) seria errado — e é o retorno que a escola quer. Nunca.
     if (devido.tipo === SubscriptionEmailKind.CANCELADA && (await temAcessoAtivo(conta.id))) return consumir(espelho.id, devido, "a conta tem acesso por outra assinatura", naStripe.id);
+    // A atrasada que a pessoa encerrou para pagar com Pix (E14): "terminou — reative" para quem está pagando agora seria errado.
+    if (devido.tipo === SubscriptionEmailKind.CANCELADA && naStripe.trocadaPorPix) return consumir(espelho.id, devido, "a pessoa a encerrou para pagar com Pix", naStripe.id);
+    // A confirmação é de quem assinou LOGADO (E18): a assinatura de que a conta nasceu sem login recebe as boas-vindas
+    // (`boas-vindas.ts`, que roda antes desta). Elas são UMA por ficha: ainda não saíram, ou saíram depois de esta
+    // assinatura nascer → são desta. Saíram antes → são de uma assinatura anterior, e esta (a pessoa assinou de novo,
+    // logada) recebe a confirmação.
+    if (devido.tipo === SubscriptionEmailKind.CONFIRMADA) {
+      const ficha = await prisma.guestCheckout.findUnique({ where: { userId: conta.id }, select: { boasVindasEnviadaEm: true } });
+      if (ficha && (!ficha.boasVindasEnviadaEm || ficha.boasVindasEnviadaEm >= espelho.createdAt)) return consumir(espelho.id, devido, "a assinatura é a das boas-vindas", naStripe.id);
+    }
 
     // Montado ANTES de tomar a marca: uma falha aqui não deixa a marca presa sem e-mail.
-    const mensagem = montarAvisoDaCobranca(devido, naStripe, agora, (await getDict()).app.email);
+    const mensagem = montarAvisoDaCobranca(devido, naStripe, agora, (await getDict()).app.email, enderecoDoSite, pixConfigurado());
     const marca = await tomar(espelho.id, devido);
     if (marca === null) return;
     const tipo = TIPO_DO_ENVIO[devido.tipo];
@@ -171,7 +198,8 @@ export type Rodada = { conferidas: number; ocupadas: number; desconhecidas: numb
  * A RODADA DO AGENDADOR (etapa 4.7, passo 7b — de hora em hora, pelo job `jilson-prod-avisos`,
  * `tarefas/avisos-da-cobranca.ts`). Procura as assinaturas com um e-mail da cobrança devido que ainda
  * não saiu — a atrasada com as aulas ainda abertas, a cancelada há pouco, a cancelada com dias pagos
- * cujo período acabou agora, e a PRÉ-PAGA a até 3 dias do fim (etapa 4.9) — e passa cada uma à regra:
+ * cujo período acabou agora, a PRÉ-PAGA a até 3 dias do fim (etapa 4.9) e a que nasceu há pouco (a
+ * confirmação, E18) — e passa cada uma à regra:
  *   - a ATRASADA é conferida na Stripe AGORA (`sincronizarSeLivre`: o pagamento pode ter passado e o
  *     aviso dele ter se perdido; ocupada, fica para a próxima rodada, sem esperar a trava);
  *   - a CANCELADA é estado final na Stripe: só se LÊ (`buscarAssinatura`, para o motivo do fim), sem
@@ -192,9 +220,11 @@ export async function rodadaDosAvisos(agora: Date = new Date(), prazoEmMs: numbe
         { status: "canceled", OR: [{ updatedAt: { gt: desde } }, { currentPeriodEnd: { gt: desde, lte: agora } }] },
         // A pré-paga perto do fim: conferida na Stripe como a atrasada (o Pix pode ter sido devolvido).
         { status: "active", pixPaymentIntentId: { not: null }, currentPeriodEnd: { gt: agora, lte: new Date(agora.getTime() + ANTECEDENCIA_DO_PREPAGO_EM_MS) } },
+        // A que nasceu há pouco (E18): a confirmação que não saiu no aviso (o envio falhou) sai aqui.
+        { status: { in: [...STATUS_VIVOS] }, createdAt: { gt: new Date(agora.getTime() - JANELA_DA_CONFIRMACAO_EM_MS) } },
       ],
     },
-    select: { stripeSubscriptionId: true, status: true, currentPeriodEnd: true, pixPaymentIntentId: true, emails: { select: { kind: true, reference: true, sentAt: true, createdAt: true } } },
+    select: { stripeSubscriptionId: true, status: true, currentPeriodEnd: true, pixPaymentIntentId: true, createdAt: true, emails: { select: { kind: true, reference: true, sentAt: true, createdAt: true } } },
     orderBy: { id: "asc" },
   });
   const rodada: Rodada = { conferidas: 0, ocupadas: 0, desconhecidas: 0, adiadas: 0, falhas: 0 };

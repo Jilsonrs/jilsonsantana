@@ -220,7 +220,7 @@ describe("a tela pública de assinar — o envio e a tentativa", () => {
     await screen.findByLabelText("Seu e-mail");
     preencher();
     assinar();
-    expect((await screen.findByRole("alert")).textContent).toBe("Este e-mail já tem uma assinatura em andamento em outra aba. Termine por lá ou aguarde um instante.");
+    expect((await screen.findByRole("alert")).textContent).toBe("Este e-mail já tem uma assinatura em andamento. Termine por onde começou ou aguarde um instante. Se você já pagou, vamos responder pelo seu e-mail; se precisar, escreva para suporte@jilsonsantana.com.");
     assinar();
     await waitFor(() => expect(screen.getByRole("alert").textContent).toBe("Aguarde um instante e tente novamente."));
   });

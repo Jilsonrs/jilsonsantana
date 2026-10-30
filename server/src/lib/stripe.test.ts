@@ -27,6 +27,28 @@ function assinatura({
 }
 
 describe("o espelho a partir da assinatura da Stripe", () => {
+  // O plano, para o texto do e-mail de confirmação (4.9b, E18): o checkout do cartão não o grava nos metadados —
+  // vem do intervalo do preço; o Pix pré-pago grava.
+  it("o plano: dos metadados do nosso checkout; sem eles, pelo intervalo do preço; sem os dois, nenhum", () => {
+    const comIntervalo = (interval: string) => [{ current_period_start: inicio, current_period_end: fim, price: { recurring: { interval } } }];
+    expect(paraAssinaturaNaStripe(assinatura({ itens: comIntervalo("month") })).plano).toBe("mensal");
+    expect(paraAssinaturaNaStripe(assinatura({ itens: comIntervalo("year") })).plano).toBe("anual");
+    expect(paraAssinaturaNaStripe(assinatura({ itens: comIntervalo("month"), metadata: { plano: "anual" } })).plano).toBe("anual");
+    expect(paraAssinaturaNaStripe(assinatura({ itens: comIntervalo("week"), metadata: { plano: "outro" } })).plano).toBeNull();
+    expect(paraAssinaturaNaStripe(assinatura()).plano).toBeNull();
+  });
+
+  // A atrasada encerrada para pagar com Pix (E14): é o PRÓPRIO encerramento que diz — o comentário que vai com ele (achado P2
+  // da revisão do grupo 4: uma marca gravada antes ficaria se o encerramento falhasse, e calaria um "terminou" de verdade).
+  it("a atrasada encerrada para pagar com Pix (E14): encerrada COM o comentário; viva, ou com outro comentário, ou só com a marca antiga, não", () => {
+    const com = (status: string, comment: string | null, metadata: Record<string, string> = {}) => ({ ...assinatura({ status, metadata }), cancellation_details: { comment, feedback: null, reason: "cancellation_requested" } }) as unknown as Stripe.Subscription;
+    expect(paraAssinaturaNaStripe(com("canceled", "Trocada pelo Pix")).trocadaPorPix).toBe(true);
+    expect(paraAssinaturaNaStripe(com("canceled", "Contestação dp_1")).trocadaPorPix).toBe(false);
+    expect(paraAssinaturaNaStripe(com("past_due", "Trocada pelo Pix")).trocadaPorPix).toBe(false);
+    expect(paraAssinaturaNaStripe(com("active", null, { trocadaPorPix: "sim" })).trocadaPorPix).toBe(false);
+    expect(paraAssinaturaNaStripe(assinatura({ status: "canceled" })).trocadaPorPix).toBe(false);
+  });
+
   it("última fatura paga: pago até o FIM do período", () => {
     expect(paraAssinaturaNaStripe(assinatura()).pagoAte?.getTime()).toBe(fim * 1000);
   });

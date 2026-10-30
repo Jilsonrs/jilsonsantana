@@ -124,6 +124,8 @@ export const PEDACOS_DO_ALUNO: ReadonlyArray<Pedaco> = [
   () => import("@/components/assinar/FormularioDeAssinatura"),
   // O formulário de trocar o cartão (etapa 4.6): traz as mesmas bibliotecas da Stripe.
   () => import("@/components/faturamento/FormularioDoCartao"),
+  // O formulário de pagar com Pix a cobrança atrasada (4.9b, E14): as mesmas bibliotecas da Stripe.
+  () => import("@/components/faturamento/FormularioDoPixDaAtrasada"),
   // A confirmação do banco na troca de plano (etapa 4.6, sessão b): a tela de mudar de plano não
   // tem campo de cartão, e pede só esta parte da fronteira com o Stripe.js.
   () => import("@/lib/stripe-do-site"),

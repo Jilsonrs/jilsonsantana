@@ -5,6 +5,7 @@ import { AssinaturaNaoEncontrada, assinaturasDoCliente, buscarAssinatura, buscar
 import { assinaturaDoPagamento, cancelarPorContestacao } from "./stripe-reembolso.js";
 import { pixDevolvido } from "./stripe-devolucao.js";
 import { assinaturasDoPix, cancelarPagamentoPix, criarAssinaturaPrePaga, garantirFaturaPaga, lerPagamentoPix, listarPixDoCliente, marcarEmConferencia, type PixPago, type PixPendente, type PrePagaDoPix } from "./stripe-pix.js";
+import { alertarNoMaximoACada15Min } from "./alerta-de-configuracao.js";
 import { contaDoPedido, type SemContaDoVisitante } from "./pedido-do-visitante.js";
 
 // O ESPELHO DA ASSINATURA (Fase 4, etapa 4.1 — CLAUDE.md → Membership Gating). A assinatura da
@@ -38,9 +39,10 @@ import { contaDoPedido, type SemContaDoVisitante } from "./pedido-do-visitante.j
 // assinatura antiga de quem já estava sem acesso, nunca deslogam ninguém. E isto NÃO é a
 // fronteira: quem só deixa o período pago vencer não recebe aviso da Stripe e continua logado —
 // quem tranca a aula é o gate, a cada pedido.
-// UMA EXCEÇÃO, decidida pelo operador (11/10/2026): depois do REEMBOLSO pedido pela própria
-// pessoa, ela continua logada — lê a confirmação e segue no site, sem as aulas. É a opção
-// `manterSessao`, que só a operação de reembolso do dono usa.
+// A EXCEÇÃO, decidida pelo operador, em TRÊS operações da própria pessoa: o REEMBOLSO e o CANCELAR
+// com a cobrança atrasada (11/10/2026) e o PIX DA ATRASADA (P131, 30/10/2026) — ela continua logada:
+// lê a confirmação, ou paga o QR, e segue no site, sem as aulas. É a opção `manterSessao`, que só
+// essas três operações usam (CLAUDE.md → Access Architecture).
 //
 // O AVISO DE DINHEIRO DEVOLVIDO (`charge.refunded`) fala de uma cobrança, não de uma assinatura:
 // a assinatura se acha pelo pagamento, e daí em diante é a sincronia de sempre — é o que faz o
@@ -77,12 +79,13 @@ const TEMPO_DA_TRANSACAO = { maxWait: 10_000, timeout: 30_000 };
  */
 const TEMPO_DA_OPERACAO = { maxWait: 10_000, timeout: 90_000 };
 /**
- * O Pix que caiu (`processarPixPrePago`): até 7 idas à Stripe dentro da transação — a busca, os preços,
- * criar, pagar por fora (e reler a fatura se falhar), a assinatura para o espelho e a cobrança do Pix
- * (`periodoDevolvido`) —, cada uma com 10 s e uma nova tentativa (`stripe-cliente.ts`): 7 × 20 s = 140 s
- * no pior caso (achado da revisão geral, 29/10/2026 — os 90 s de antes não cobriam).
+ * O Pix que caiu (`processarPixPrePago`): até 8 idas à Stripe dentro da transação — as pré-pagas do Pix, a
+ * cobrança dele (`pixDevolvido`), os preços, criar, pagar por fora (e reler a fatura se falhar), a assinatura para o
+ * espelho e a cobrança do Pix de novo (`periodoDevolvido`) —, cada uma com 10 s e uma nova tentativa
+ * (`stripe-cliente.ts`): 8 × 20 s = 160 s no pior caso (E12 da revisão ampla, 30/10/2026 — os 150 s de antes eram de
+ * 7 idas; os 90 s de antes disso não cobriam nem essas).
  */
-const TEMPO_DO_PIX = { maxWait: 10_000, timeout: 150_000 };
+export const TEMPO_DO_PIX = { maxWait: 10_000, timeout: 180_000 };
 
 function eRepetido(erro: unknown): boolean {
   return erro instanceof Prisma.PrismaClientKnownRequestError && erro.code === "P2002";
@@ -95,7 +98,7 @@ function travar(tx: Prisma.TransactionClient, assinaturaId: string) {
 
 /**
  * COM a trava desta assinatura já tomada por `tx`: o que a Stripe diz AGORA vira o espelho.
- * `manterSessao`: quem perde o acesso NÃO é deslogado — só o reembolso pedido pelo dono.
+ * `manterSessao`: quem perde o acesso NÃO é deslogado — só nas três operações do dono (o reembolso, o cancelar da atrasada e o Pix da atrasada).
  */
 async function sincronizar(tx: Prisma.TransactionClient, assinaturaId: string, { manterSessao = false }: { manterSessao?: boolean } = {}): Promise<Sincronia> {
   // Na Stripe, AGORA. Se ela não responder, a exceção sobe: nada é gravado.
@@ -314,11 +317,14 @@ export async function processarPixPago(pagamento: PagamentoPrePago, aviso?: Avis
         } else if (escolhida) {
           return emConferencia(`a pré-paga ${escolhida.morta} acabou sem ser paga`);
         } else {
-          const preco = (await buscarPrecos()).find((p) => p.precoId === pagamento.precoId) ?? null;
+          // O PLANO e o VALOR (E11 da revisão ampla da cobrança, 30/10/2026): vale o preço de AGORA do plano do Pix, e o
+          // valor pago tem que ser o dele. O id do preço gravado no Pix pode ter saído de venda (um preço novo, com o
+          // mesmo valor) — e a Stripe não aceita assinatura nova num preço arquivado: a pré-paga nasce no preço de agora.
+          const preco = (await buscarPrecos()).find((p) => p.plano === pagamento.plano) ?? null;
           if (!preco || preco.centavos !== pagamento.centavos) {
-            return emConferencia(`pagou ${pagamento.centavos} centavos e o preço ${pagamento.precoId} ${preco ? `custa ${preco.centavos}` : "não está mais à venda"}`);
+            return emConferencia(`pagou ${pagamento.centavos} centavos e o plano ${pagamento.plano} ${preco ? `custa ${preco.centavos}` : "não está à venda"}`);
           }
-          const criada = await criarAssinaturaPrePaga(pagamento);
+          const criada = await criarAssinaturaPrePaga({ ...pagamento, precoId: preco.precoId });
           if (!criada.faturaPaga) return emConferencia(`a fatura da pré-paga ${criada.id} não pôde ser paga por fora`);
           assinaturaId = criada.id;
         }
@@ -355,7 +361,8 @@ export async function pixPagoSemEspelho(tx: Prisma.TransactionClient, pagos: Pix
 export async function pixDaPrePagaIncompleta(pixId: string): Promise<{ resultado: "pix-pago"; pagamento: PagamentoPrePago } | { resultado: "em-conferencia" }> {
   const lido = await lerPagamentoPix(pixId);
   if (lido.status === "succeeded" && lido.pagamento) return { resultado: "pix-pago", pagamento: lido.pagamento };
-  console.error(`[stripe] pix: a pré-paga do Pix ${pixId} está incompleta e o Pix está ${lido.status} — conferir no painel`);
+  // Uma vez a cada 15 min por Pix, por cópia (revisão do grupo 3 da 4.9b): cada clique de novo dispararia o alerta.
+  alertarNoMaximoACada15Min(`[stripe] pix: a pré-paga do Pix ${pixId} está incompleta e o Pix está ${lido.status} — conferir no painel`);
   return { resultado: "em-conferencia" };
 }
 

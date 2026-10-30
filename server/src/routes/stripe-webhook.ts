@@ -1,6 +1,7 @@
 import { alertarConfiguracaoAusente } from "../lib/alerta-de-configuracao.js";
 import express, { Router } from "express";
 import { avisoExisteNaStripe, avisosConfigurados, idDoAvisoNoCorpo, pareceAvisoDaStripe, verificarAviso } from "../lib/stripe.js";
+import { comVaga } from "../lib/assinaturas-em-andamento.js";
 import { processarAviso } from "../lib/assinaturas.js";
 import { depoisDoAviso } from "../lib/depois-do-aviso.js";
 
@@ -75,7 +76,21 @@ router.post("/stripe/webhook", express.raw({ type: "application/json" }), async 
     res.status(400).json({ error: "AssinaturaInvalida" });
     return;
   }
-  const desfecho = await processarAviso(aviso);
+  // O PIX PAGO segura uma ligação do banco por até 180 s (`TEMPO_DO_PIX` — 8 idas à Stripe): só com uma vaga das
+  // assinaturas (`assinaturas-em-andamento.ts`), que deixa sempre 2 ligações livres para o gate e as aulas (revisão do
+  // grupo 3 da 4.9b). Cheio, 503 sem abrir transação: a Stripe entrega de novo, e a rodada do E1 pega o que sobrar.
+  let desfecho;
+  if (aviso.pagamentoPrePago) {
+    const vaga = await comVaga(() => processarAviso(aviso));
+    if (vaga.cheio) {
+      console.warn(`[stripe] aviso ${aviso.id}: o Pix ${aviso.pagamentoPrePago.id} fica para a próxima entrega — muitas assinaturas em andamento nesta cópia`);
+      res.status(503).json({ error: "MuitosAoMesmoTempo" });
+      return;
+    }
+    desfecho = vaga.resultado;
+  } else {
+    desfecho = await processarAviso(aviso);
+  }
   // Os alertas, o registro, as boas-vindas e os e-mails da cobrança: os MESMOS da conferência da rodada, que
   // processa o aviso que não chegou (`depois-do-aviso.ts`; E1 da revisão ampla da cobrança). Nunca derruba este 200.
   await depoisDoAviso(aviso, desfecho);

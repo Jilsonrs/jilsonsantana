@@ -362,6 +362,16 @@ export const pt = {
         comoEntrar: "Para entrar, use seu e-mail e sua senha. Se ainda não criou a senha, ou não lembra dela, use \"Receber código de acesso\" na tela de entrar.",
         botao: "Entrar na escola"
       },
+      // O AVISO DE QUE UMA SENHA FOI CRIADA logo depois de pagar sem conta (E16 da revisão ampla da cobrança — decisão do
+      // operador P123): se não foi a pessoa, ela cria outra pelo "Esqueci minha senha", que desconecta os outros aparelhos
+      // (`revokeSessionsOnPasswordReset`, com teste). Texto APROVADO pelo operador em 30/10/2026.
+      senhaCriada: {
+        assunto: "Uma senha foi criada para a sua conta",
+        titulo: "Uma senha foi criada",
+        criada: "Uma senha foi criada agora para entrar na escola com este e-mail.",
+        naoFoiVoce: "Se não foi você, crie uma senha nova em \"Esqueci minha senha\", na tela de entrar: quem entrou com a senha anterior sai da conta na hora.",
+        botao: "Ir para a tela de entrar"
+      },
       // OS E-MAILS DA COBRANÇA (etapa 4.7, passo 7 — decisões do operador, 28/10/2026): rascunho do
       // agente, revisto pelo operador vendo os e-mails de verdade (28/10/2026, P107 — as frases dele
       // estão marcadas).
@@ -374,7 +384,9 @@ export const pt = {
         novaTentativa: "Vamos tentar de novo no dia {data}.",
         // Texto do operador (28/10/2026).
         abertasAte: "Você continua tendo acesso às aulas até o dia {data}. Para não perder o acesso, troque o cartão:",
-        botao: "Trocar cartão"
+        botao: "Trocar cartão",
+        // Texto aprovado pelo operador (30/10/2026 — 4.9b, E14, P118): depois do botão, só com o Pix no ar.
+        comPix: "Se preferir pagar com Pix, entre na escola e escolha \"Pagar com Pix\" em Faturamento."
       },
       // No último dia antes de as aulas trancarem.
       antesDeTrancar: {
@@ -382,7 +394,8 @@ export const pt = {
         titulo: "Sua assinatura ainda não foi paga",
         semPagamento: "Continuamos sem conseguir cobrar a renovação no seu cartão.",
         perdeAcesso: "Se não for pago até o dia {data}, você perde o acesso às aulas. Troque o cartão para continuar estudando:",
-        botao: "Trocar cartão"
+        botao: "Trocar cartão",
+        comPix: "Se preferir pagar com Pix, entre na escola e escolha \"Pagar com Pix\" em Faturamento."
       },
       // No fim de uma assinatura que foi paga: uma versão para quando as tentativas de cobrança
       // acabaram, e outra para os outros casos (a pedido, o reembolso, o painel).
@@ -396,6 +409,20 @@ export const pt = {
         terminou: "Sua assinatura terminou, e o acesso às aulas foi encerrado.",
         progressoSeVoltar: "Seu progresso continua guardado: se voltar, você continua de onde parou.",
         botao: "Reativar assinatura"
+      },
+      // A CONFIRMAÇÃO DE QUEM ASSINOU LOGADO (E18 da revisão ampla da cobrança — decisão do operador P127): uma vez por
+      // assinatura, no cartão e no Pix. Texto APROVADO pelo operador em 30/10/2026. `{plano}`: Mensal ou Anual;
+      // `{quando}`: todo mês ou todo ano; `{data}`: o fim do acesso pago com Pix, no horário de Brasília.
+      confirmada: {
+        assunto: "Sua assinatura está confirmada",
+        titulo: "Assinatura confirmada",
+        cartao: "Sua assinatura do plano {plano} foi confirmada: você tem acesso a todos os cursos e trilhas. Ela renova sozinha {quando}, até você cancelar.",
+        pix: "Seu Pix foi confirmado: você tem acesso a todos os cursos e trilhas até o dia {data}.",
+        mensal: "Mensal",
+        anual: "Anual",
+        todoMes: "todo mês",
+        todoAno: "todo ano",
+        botao: "Ir para a escola"
       },
       // O E-MAIL DO PRÉ-PAGO (etapa 4.9, passo 4 — decisão do operador, 28/10/2026: 3 dias antes de acabar):
       // Texto APROVADO pelo operador em 29/10/2026 (P111; rascunho do agente). Sem botão: pagar de novo é só depois de acabar
@@ -551,7 +578,11 @@ export const pt = {
       botaoReativar: "Reativar assinatura",
       processando: "Processando…",
       erroPlanos: "Não foi possível carregar os planos. Tente de novo.",
-      erro: "Não foi possível concluir a assinatura. Confira os dados e tente de novo.",
+      // As frases de erro de pagamento com a saída pelo suporte (E15 da revisão ampla da cobrança — decisão do operador
+      // P119; textos APROVADOS por ele em 30/10/2026).
+      erro: "Não foi possível concluir a assinatura. Confira os dados e tente de novo; se continuar, escreva para suporte@jilsonsantana.com.",
+      // O cartão RECUSADO, quando o Pix está no ar (E15, aprovado em 30/10/2026): a tela sugere pagar com Pix.
+      cartaoRecusado: "Seu cartão foi recusado. Tente outro cartão ou pague com Pix; se precisar, escreva para suporte@jilsonsantana.com.",
       // Muita gente assinando sem login no mesmo instante (o servidor atende 3 de cada vez — etapa
       // 4.7, passo 4): o pedido volta com `MuitosAoMesmoTempo`. Texto do operador (21/10/2026), para
       // a pessoa esperar antes de clicar de novo. Quem o mostra é a tela pública (passo 6).
@@ -590,8 +621,10 @@ export const pt = {
       // O campo de pagamento da Stripe não carregou (bloqueador, rede de empresa, defeito nosso) — o vigia do campo (E3
       // da revisão ampla da cobrança). Texto APROVADO pelo operador em 29/10/2026 (P116, a sugestão do revisor).
       campoNaoCarregou: "O campo de pagamento não carregou. Tente outro navegador ou desative o bloqueador; se continuar, escreva para suporte@jilsonsantana.com.",
-      // O mesmo e-mail assinando em outra aba (`Ocupada`).
-      ocupadaOutraAba: "Este e-mail já tem uma assinatura em andamento em outra aba. Termine por lá ou aguarde um instante.",
+      // O mesmo e-mail com uma assinatura em andamento (`Ocupada`, sem login) — inclusive quem pagou e perdeu o código da
+      // aba (revisão do grupo 3 da 4.9b): não conta a ninguém que houve pagamento, e dá a saída. Texto APROVADO pelo
+      // operador em 30/10/2026 (com o E15).
+      ocupadaOutraAba: "Este e-mail já tem uma assinatura em andamento. Termine por onde começou ou aguarde um instante. Se você já pagou, vamos responder pelo seu e-mail; se precisar, escreva para suporte@jilsonsantana.com.",
       // DEPOIS DO PAGAMENTO, SEM CONTA (etapa 4.7, passo 6e2): a senha nasce na tela (decisão do operador,
       // 21/10/2026). Textos APROVADOS por ele em 27/10/2026 (P81). Enquanto confirma, valem os de cima
       // (`confirmando`, `demorando`); os avisos de senha curta, longa ou só de espaços são os de `senhaNova`;
@@ -614,7 +647,8 @@ export const pt = {
       confirmando: "Confirmando sua assinatura…",
       confirmada: "Assinatura confirmada. Bons estudos!",
       comecar: "Começar a estudar",
-      demorando: "Está demorando mais que o normal. Seu pagamento não se perde: esta página continua conferindo.",
+      // Com a saída pelo suporte (E15, aprovado pelo operador em 30/10/2026).
+      demorando: "Está demorando mais que o normal. Seu pagamento não se perde: esta página continua conferindo. Se passar de alguns minutos, escreva para suporte@jilsonsantana.com.",
       // Quando o servidor recusa a pergunta "já valeu?" algumas vezes seguidas (P108, aprovada pelo operador em 29/10/2026).
       naoConfirmouAgora: "Não conseguimos confirmar agora. Seu pagamento não se perde: entre com \"Receber código de acesso\" ou tente de novo em alguns minutos.",
       // O PIX PRÉ-PAGO (etapa 4.9, passo 2b). Textos APROVADOS pelo operador em 28/10/2026: a escolha
@@ -664,6 +698,16 @@ export const pt = {
       prePago: "Seu acesso vai até {data}. Para continuar, é só pagar de novo quando acabar.",
       pix: "Pix",
       trocarCartao: "Trocar cartão",
+      // PAGAR COM PIX A COBRANÇA ATRASADA (4.9b, E14 — textos aprovados pelo operador, 30/10/2026, P118): o botão ao lado
+      // de "Trocar cartão" (Faturamento e a aula trancada) e a tela dele.
+      pagarComPix: "Pagar com Pix",
+      pixDaAtrasada: {
+        titulo: "Pagar com Pix",
+        texto: "Ao pagar com Pix, sua assinatura no cartão é encerrada agora e você paga o plano {plano}: {valor} por {periodo}. O acesso volta assim que o Pix for pago. O Pix não renova sozinho: quando acabar, é só pagar de novo.",
+        umMes: "1 mês",
+        umAno: "1 ano",
+        botao: "Gerar o Pix"
+      },
       adicionarCartao: "Adicionar cartão",
       semAssinatura: "Você ainda não tem uma assinatura.",
       terminou: "Sua assinatura terminou em {data}.",
@@ -676,7 +720,8 @@ export const pt = {
       salvando: "Salvando…",
       cartaoAtualizado: "Cartão atualizado.",
       cartaoAtualizadoEPago: "Cartão atualizado e pagamento confirmado.",
-      erroDoCartao: "Não foi possível salvar o cartão. Confira os dados e tente de novo.",
+      // Com a saída pelo suporte (E15, aprovado pelo operador em 30/10/2026).
+      erroDoCartao: "Não foi possível salvar o cartão. Confira os dados e tente de novo; se continuar, escreva para suporte@jilsonsantana.com.",
       // AS TELAS DA SESSÃO (b): mudar de plano, cancelar e a confirmação do banco. Textos em
       // português APROVADOS pelo operador em 11/10/2026, bloco a bloco. O INGLÊS é rascunho do
       // agente: ele será revisado com o Antigravity (pendência P72). `{valor}` e `{data}` são

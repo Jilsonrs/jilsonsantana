@@ -4,7 +4,7 @@ import type { CartaoDaAssinatura } from "@jilson/core";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageSection } from "@/components/layout/PageLayout";
-import { descreverCartao, TELA_DE_TROCAR_O_CARTAO } from "@/lib/faturamento";
+import { descreverCartao, TELA_DE_PAGAR_COM_PIX, TELA_DE_TROCAR_O_CARTAO } from "@/lib/faturamento";
 import { useT } from "@/lib/language";
 
 /**
@@ -12,8 +12,9 @@ import { useT } from "@/lib/language";
  * validade — e o caminho para trocá-lo. O botão só aparece quando o SERVIDOR diz que a
  * assinatura aceita cartão novo (a encerrada de vez, ainda com dias pagos, não aceita).
  * A PRÉ-PAGA (etapa 4.9): "Pix" — não há cartão, nem o que trocar.
+ * A COBRANÇA ATRASADA (4.9b, E14 — decisão do operador, P118): "Pagar com Pix" ao lado de "Trocar cartão".
  */
-export function BlocoDoCartao({ cartao, aceitaCartao, prePago = false }: { cartao: CartaoDaAssinatura | null; aceitaCartao: boolean; prePago?: boolean }) {
+export function BlocoDoCartao({ cartao, aceitaCartao, prePago = false, pagarComPix = false }: { cartao: CartaoDaAssinatura | null; aceitaCartao: boolean; prePago?: boolean; pagarComPix?: boolean }) {
   const t = useT().faturamento;
   return (
     <PageSection title={t.formaDePagamento}>
@@ -27,10 +28,19 @@ export function BlocoDoCartao({ cartao, aceitaCartao, prePago = false }: { carta
               {cartao ? descreverCartao(t, cartao) : prePago ? t.pix : t.semCartao}
             </p>
           </div>
-          {aceitaCartao && (
-            <Button asChild variant="outline">
-              <Link to={TELA_DE_TROCAR_O_CARTAO}>{cartao ? t.trocarCartao : t.adicionarCartao}</Link>
-            </Button>
+          {(aceitaCartao || pagarComPix) && (
+            <div className="flex flex-wrap gap-2">
+              {aceitaCartao && (
+                <Button asChild variant="outline">
+                  <Link to={TELA_DE_TROCAR_O_CARTAO}>{cartao ? t.trocarCartao : t.adicionarCartao}</Link>
+                </Button>
+              )}
+              {pagarComPix && (
+                <Button asChild variant="outline">
+                  <Link to={TELA_DE_PAGAR_COM_PIX}>{t.pagarComPix}</Link>
+                </Button>
+              )}
+            </div>
           )}
         </CardContent>
       </Card>

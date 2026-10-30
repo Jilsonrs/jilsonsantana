@@ -74,7 +74,7 @@ describe("depois do pagamento, sem conta — a confirmação", () => {
     confirmarSemLogin.mockResolvedValue({ confirmada: false });
     abrir({ conferirACada: 20, demora: 60 });
     expect(await screen.findByRole("heading", { name: "Confirmando sua assinatura…" })).toBeTruthy();
-    expect(await screen.findByText("Está demorando mais que o normal. Seu pagamento não se perde: esta página continua conferindo.")).toBeTruthy();
+    expect(await screen.findByText("Está demorando mais que o normal. Seu pagamento não se perde: esta página continua conferindo. Se passar de alguns minutos, escreva para suporte@jilsonsantana.com.")).toBeTruthy();
     await waitFor(() => expect(confirmarSemLogin.mock.calls.length).toBeGreaterThan(1));
     expect(confirmarSemLogin).toHaveBeenCalledWith(TENTATIVA);
     expect(screen.queryByLabelText("Crie uma senha")).toBeNull();
@@ -91,7 +91,7 @@ describe("depois do pagamento, sem conta — a confirmação", () => {
     });
     abrir({ conferirACada: 20, demora: 60_000 });
     expect(await screen.findByText(frase)).toBeTruthy();
-    expect(screen.queryByText("Está demorando mais que o normal. Seu pagamento não se perde: esta página continua conferindo.")).toBeNull();
+    expect(screen.queryByText("Está demorando mais que o normal. Seu pagamento não se perde: esta página continua conferindo. Se passar de alguns minutos, escreva para suporte@jilsonsantana.com.")).toBeNull();
     // A próxima resposta (não valeu ainda) zera a conta: a frase sai.
     await waitFor(() => expect(screen.queryByText(frase)).toBeNull());
     valeu = true;

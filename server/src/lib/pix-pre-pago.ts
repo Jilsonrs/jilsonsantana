@@ -2,7 +2,7 @@ import type { PixInput, PixSemLoginInput } from "@jilson/core";
 import { prisma } from "./prisma.js";
 import { temAcessoAtivo } from "./acesso.js";
 import { clienteDaConta, pixPagoDaConta, sincronizarAViva as sincronizarAVivaDaConta, travarSeLivre, type Conta } from "./checkout.js";
-import { ENCERRADAS, fichaComConta, fichaDoEmail, pixPagoDoEmail, sincronizarAViva as sincronizarAVivaDoEmail, temConta, travarSeLivre as travarEmailSeLivre, type OpcoesDoVisitante } from "./checkout-do-visitante.js";
+import { emConferenciaSoParaQuemPagou, ENCERRADAS, fichaComConta, fichaDoEmail, pixPagoDoEmail, sincronizarAViva as sincronizarAVivaDoEmail, temConta, travarSeLivre as travarEmailSeLivre, type OpcoesDoVisitante } from "./checkout-do-visitante.js";
 import { cancelarOutrosPix, pixDaPrePagaIncompleta, pixPagoSemEspelho } from "./assinaturas.js";
 import { novaTentativa, resumoDaTentativa } from "./tentativa-do-visitante.js";
 import { acertarNumeroFiscal, assinaturasDoCliente, buscarPrecos, cancelarIncompleta, DocumentoRecusado, type PagamentoPrePago } from "./stripe.js";
@@ -72,12 +72,12 @@ const TEMPO_DA_TRANSACAO = { maxWait: 10_000, timeout: 120_000 };
  * entre a lista e o cancelamento (outra aba, no mesmo instante) volta como `pagaNoMeio`: a pessoa tem
  * acesso, e o cancelamento de uma assinatura paga precisa de gente. Nada: o caminho está livre para o QR.
  */
-async function assinaturasAbertas(clienteId: string, quem: string): Promise<{ viva: string } | { prePaga: string } | { pagaNoMeio: string } | null> {
+async function assinaturasAbertas(clienteId: string, quem: string): Promise<{ viva: string } | { prePaga: string; resumoDaTentativa: string | null } | { pagaNoMeio: string } | null> {
   const existentes = (await assinaturasDoCliente(clienteId)).filter((a) => !ENCERRADAS.has(a.status));
   const viva = existentes.find((a) => a.status !== "incomplete");
   if (viva) return { viva: viva.id };
   const prePaga = existentes.find((a) => a.pixPaymentIntentId);
-  if (prePaga?.pixPaymentIntentId) return { prePaga: prePaga.pixPaymentIntentId };
+  if (prePaga?.pixPaymentIntentId) return { prePaga: prePaga.pixPaymentIntentId, resumoDaTentativa: prePaga.resumoDaTentativa ?? null };
   for (const incompleta of existentes) {
     const ficou = await cancelarIncompleta(incompleta.id);
     if (ficou !== "incomplete_expired") {
@@ -163,11 +163,15 @@ export async function pagarComPixSemLogin(pedido: PixSemLoginInput, opcoes: Opco
       // cancelamento (achado 2).
       const pix = await listarPixDoCliente(ficha.stripeCustomerId);
       const pago = await pixPagoSemEspelho(tx, pix.pagos);
-      if (pago) return pago.emConferencia ? { resultado: "em-conferencia" } : { resultado: "pix-pago", pagamento: pago };
+      if (pago) return pago.emConferencia ? emConferenciaSoParaQuemPagou(pago.visitante?.resumoDaTentativa, tentativaAnterior) : { resultado: "pix-pago", pagamento: pago };
       const aberta = await assinaturasAbertas(ficha.stripeCustomerId, `ficha ${ficha.id}`);
       if (aberta) {
         if ("viva" in aberta) return { resultado: "viva-na-stripe", assinaturaId: aberta.viva };
-        if ("prePaga" in aberta) return await pixDaPrePagaIncompleta(aberta.prePaga);
+        if ("prePaga" in aberta) {
+          // A pré-paga incompleta (revisão do grupo 3): o "em conferência" só para a aba dela (E17).
+          const doPix = await pixDaPrePagaIncompleta(aberta.prePaga);
+          return doPix.resultado === "em-conferencia" ? emConferenciaSoParaQuemPagou(aberta.resumoDaTentativa, tentativaAnterior) : doPix;
+        }
         return { resultado: "ja-tem-conta" };
       }
       const resumoDaAnterior = tentativaAnterior === null ? null : resumoDaTentativa(tentativaAnterior);
@@ -203,7 +207,8 @@ export async function pagarComPixSemLogin(pedido: PixSemLoginInput, opcoes: Opco
   }
   if (decisao.resultado === "pix-pago") {
     const depois = await pixPagoDoEmail(email, decisao.pagamento);
-    return depois.resultado === "em-conferencia" || depois.resultado === "ocupada" ? { resultado: depois.resultado } : { resultado: "ja-tem-conta" };
+    if (depois.resultado === "em-conferencia") return emConferenciaSoParaQuemPagou(decisao.pagamento.visitante?.resumoDaTentativa, tentativaAnterior);
+    return depois.resultado === "ocupada" ? { resultado: "ocupada" } : { resultado: "ja-tem-conta" };
   }
   if (decisao.resultado !== "viva-na-stripe") return decisao;
   // A mesma sincronia do assinar sem login, fora da trava: é ali que a conta nasce.

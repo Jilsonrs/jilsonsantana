@@ -1,7 +1,7 @@
 import { lazy, Suspense } from "react";
 import { Link } from "react-router";
 import { ArrowRight, Lock } from "lucide-react";
-import { LessonKind, TELA_DE_TROCAR_O_CARTAO } from "@jilson/core";
+import { LessonKind, TELA_DE_PAGAR_COM_PIX, TELA_DE_TROCAR_O_CARTAO } from "@jilson/core";
 import type { PaginaDaAula } from "@/lib/api";
 import { useT } from "@/lib/language";
 import { TELA_DE_ASSINAR } from "@/lib/assinar";
@@ -104,10 +104,21 @@ export function LessonContent({
         <p className="max-w-[42ch] text-lg font-medium tracking-tight text-foreground">
           {atrasada ? t.aula.cobrancaAtrasada : t.aula.paraAssinantes}
         </p>
-        {podeAssinar && (
+        {podeAssinar && !atrasada && (
           <Button asChild size="lg" className="mt-5 min-h-11">
-            {atrasada ? <Link to={TELA_DE_TROCAR_O_CARTAO}>{t.faturamento.trocarCartao}</Link> : <Link to={TELA_DE_ASSINAR}>{reativar ? t.aula.reativar : t.aula.assinar}</Link>}
+            <Link to={TELA_DE_ASSINAR}>{reativar ? t.aula.reativar : t.aula.assinar}</Link>
           </Button>
+        )}
+        {/* A cobrança atrasada: "Trocar cartão" e, ao lado, "Pagar com Pix" (4.9b, E14 — decisão do operador, P118). */}
+        {podeAssinar && atrasada && (
+          <div className="mt-5 flex flex-wrap justify-center gap-3">
+            <Button asChild size="lg" className="min-h-11">
+              <Link to={TELA_DE_TROCAR_O_CARTAO}>{t.faturamento.trocarCartao}</Link>
+            </Button>
+            <Button asChild size="lg" variant="outline" className="min-h-11">
+              <Link to={TELA_DE_PAGAR_COM_PIX}>{t.faturamento.pagarComPix}</Link>
+            </Button>
+          </div>
         )}
       </div>
     );

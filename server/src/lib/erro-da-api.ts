@@ -59,6 +59,9 @@ export const tratarErroDaApi: ErrorRequestHandler = (erro, req, res, next) => {
   // ela tem a reserva da cota (`monitor.ts`) — com `[api]`, um apagão a calaria. Só um aviso que já passou na
   // verificação da assinatura chega a falhar aqui: um anônimo não a dispara.
   const etiqueta = req.originalUrl.split("?")[0] === "/api/stripe/webhook" ? "stripe" : "api";
-  console.error(`[${etiqueta}] ${endereco} falhou: ${rastro}`);
+  // De QUEM era o pedido (E13 da revisão ampla da cobrança, 30/10/2026): o id da conta da sessão — um id nosso, nunca o
+  // e-mail —, para o alerta dizer quem ficou sem o que pediu (a busca pela assinatura e pelo pagamento é da 4.7b).
+  const conta = req.user?.id;
+  console.error(`[${etiqueta}] ${endereco} falhou${conta ? ` (conta ${conta})` : ""}: ${rastro}`);
   res.status(500).json({ error: "ErroInterno" });
 };

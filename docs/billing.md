@@ -193,7 +193,8 @@ no PaymentIntent/SetupIntent/Checkout Session; suporte anunciado em 22/abr/2026.
 >
 > **O PIX PAGO QUE NÃO VIRA ASSINATURA SOZINHO — EM CONFERÊNCIA** *(a segunda revisão de segurança do passo 6;
 > o operador decidiu corrigir tudo antes de publicar, 29/10/2026 — o plano → etapa 4.9, passo 6, parte 4)*: o
-> valor pago diferente do preço do plano (ou o preço fora de venda), a primeira fatura que não se paga por fora,
+> valor pago diferente do preço de AGORA do plano (E11, 30/10/2026: o id de preço gravado no Pix que saiu de venda,
+> com o mesmo valor, vira assinatura no preço de agora), a primeira fatura que não se paga por fora,
 > a pré-paga que acabou sem ser paga, ou o Pix processado e a pessoa ainda sem acesso. Nada nasce; o Pix ganha a
 > marca `em_conferencia` nos metadados (com o motivo), sai **um** alerta para o operador, e as quatro portas
 > (cartão e Pix, logado e sem conta) respondem 409 `PixEmConferencia` — a pessoa **não paga de novo**. O operador
@@ -396,9 +397,16 @@ O que a pessoa vê *(escolhas do operador, 12/10/2026)*:
   cima de uma assinatura viva (o servidor recusa com 409 `CobrancaAtrasada`). O botão da home
   continua dizendo "Reativar assinatura" e chega ao mesmo lugar.
 - **Sem outro cartão, a pessoa paga com Pix** *(decisão do operador, 29/10/2026, P118 — a revisão ampla
-  da cobrança, plano → 4.9b, E14; ainda não construído)*: na cobrança atrasada, ao lado de "Trocar cartão",
-  um "Pagar com Pix" que encerra a atrasada e abre o Pix do plano. Hoje o Pix é recusado (409 `atrasada`) e
-  a saída fica escondida (Cancelar → Reativar → Pix). A frase e o botão vão ao operador para aprovar.
+  da cobrança, plano → 4.9b, E14; no código desde 30/10/2026, com a tela e os textos aprovados por ele)*: na
+  cobrança atrasada, ao lado de "Trocar cartão" (Faturamento, também dentro dos 3 dias, e a aula trancada), um
+  "Pagar com Pix" leva à tela `/aluno/pagar-com-pix`, que avisa antes do clique: a assinatura no cartão se
+  encerra, o plano, o valor e o período, e que o Pix não renova. "Gerar o Pix" encerra a atrasada (a cobrança em
+  aberto é anulada depois) e abre o QR do mesmo plano; o acesso volta quando o Pix cai. Quem ainda estava nos 3
+  dias fica sem as aulas entre o clique e o Pix — o custo de não deixar o cartão e o Pix cobráveis ao mesmo
+  tempo. A atrasada encerrada assim não recebe o "sua assinatura terminou". Os dois e-mails da atrasada dizem,
+  depois do botão, que dá para pagar com Pix em Faturamento (só com o Pix no ar). *Reabre se a Stripe passar a
+  aceitar Pix como forma de pagamento de assinatura numa conta do Brasil (aí o Pix pagaria a própria
+  atrasada, sem encerrar).*
 - **Passar dos 3 dias não desloga ninguém:** a aula tranca pelo gate, e a pessoa continua
   logada, que é o que ela precisa para trocar o cartão. O cancelamento automático que vem
   depois (as tentativas acabaram) também não desloga: ela já estava sem as aulas.
@@ -526,9 +534,11 @@ gera mais aviso, o acesso ficaria liberado para sempre. *(Achado P1 da revisão 
 ## Assinar com a conta logada *(Fase 4, etapa 4.2 — 10/10/2026)*
 
 **Quem assina logado recebe um e-mail nosso confirmando** *(decisão do operador, 29/10/2026, P127 — a revisão
-ampla da cobrança; plano → 4.9b, E18; ainda não construído)*: como as boas-vindas de quem assina sem conta, no
-visual da escola — a assinatura confirmada, o plano, até quando e como entrar. O texto vai ao operador. Hoje
-quem assina logado só vê a confirmação na tela. *O recibo automático da Stripe não foi o escolhido.*
+ampla da cobrança; plano → 4.9b, E18; no código desde 30/10/2026, com o texto aprovado por ele)*: no visual da
+escola — no cartão, o plano e que renova sozinho; no Pix, até quando vai o acesso; o botão leva ao Início. Sai
+uma vez por assinatura, pela mesma regra dos e-mails da cobrança (`avisos-da-assinatura.ts`), e só para a
+assinatura que nasceu há menos de 2 dias. A de quem assinou sem conta não recebe: as boas-vindas já confirmam.
+*O recibo automático da Stripe não foi o escolhido.* *Reabre se ele quiser o recibo da Stripe no lugar deste.*
 
 **Decisões do operador:**
 - **A tela mora em `/aluno/assinar`; a de depois do pagamento, em `/aluno/assinar/concluido`**
@@ -913,10 +923,10 @@ revisão ampla da cobrança; a ação mora na etapa 4.7b, ainda não construída
 da conta (a troca do Better Auth está desligada), e o caminho é devolver e a pessoa assinar de novo.
 
 **O "Pix em conferência" só aparece para a aba que pagou** *(decisão do operador, 29/10/2026, P124 — a terceira
-passada da revisão do passo 6 da 4.9; plano → 4.9b, E17; ainda não construído)*: sem login, o 409
+passada da revisão do passo 6 da 4.9; plano → 4.9b, E17; no código desde 30/10/2026)*: sem login, o 409
 `PixEmConferencia` sai só para quem traz o código da tentativa que pagou; quem só sabe o e-mail recebe o 409
-`Ocupada` (a frase de "outra aba"), e nada é cobrado nem criado. Hoje a frase sai para qualquer um que digite o
-e-mail — e revela que ele pagou um Pix que travou.
+`Ocupada` (a frase de "outra aba"), e nada é cobrado nem criado — nas duas portas (cartão e Pix), tanto com o Pix já
+em conferência quanto com o que entra em conferência ao ser processado ali (`emConferenciaSoParaQuemPagou`).
 
 **Decisões do operador (21/10/2026):** o plano do passo, em três partes (*"Sim, pode seguir"*) —
 a ficha de espera e a conta que nasce dela; as rotas sem login; a prova e a revisão. As respostas
@@ -1105,9 +1115,10 @@ pública de assinar*), o teto da prévia (*Limite de tentativas*), o código de 
   correr risco de cair no spam (aí ele prefere entrar só por código).*
   **O aviso "uma senha foi criada"** *(decisão do operador, 29/10/2026, P123 — a revisão ampla da cobrança
   achou o risco um pouco maior: a dona do e-mail que depois assinar teria a assinatura dela visível e
-  cancelável por quem pagou; plano → 4.9b, E16; ainda não construído)*: quando a senha é criada logo depois de
-  pagar, sai um e-mail para a caixa dizendo que uma senha foi criada nesta conta e que, se não foi a pessoa,
-  ela crie outra pelo "Esqueci minha senha" — que desconecta os outros aparelhos. O texto vai ao operador.
+  cancelável por quem pagou; plano → 4.9b, E16; no código desde 30/10/2026, com o texto aprovado por ele)*:
+  quando a senha é criada logo depois de pagar, sai um e-mail para a caixa dizendo que uma senha foi criada
+  nesta conta e que, se não foi a pessoa, ela crie outra pelo "Esqueci minha senha" — que desconecta os outros
+  aparelhos (`revokeSessionsOnPasswordReset`, com teste). Sai depois do commit, uma vez por conta.
 - **As boas-vindas** (`lib/boas-vindas.ts`): saem depois de **qualquer** sincronia da assinatura de
   quem assinou sem conta — o aviso da Stripe (inclusive o repetido), o novo clique de quem já pagou,
   a conferência do admin —, sempre **depois do commit**, e só com a conta com acesso. **Uma vez:** a
@@ -1442,7 +1453,8 @@ Stripe guardou o cartão de teste e o resumo passou a mostrá-lo:
   conta — trata a última fatura devolvida POR INTEIRO como não paga; a devolução parcial continua
   contando. Custa uma ida a mais à Stripe em cada busca da assinatura cuja última fatura tem
   pagamento. *Reabre se essa ida a mais pesar (a busca roda dentro da trava do aviso).*
-- **Depois do reembolso pedido pelo dono, a sessão fica** (`manterSessao`, só nessa operação).
+- **Depois do reembolso pedido pelo dono, a sessão fica** (`manterSessao` — a mesma exceção vale para o cancelar com a
+  cobrança atrasada, decisão de 11/10/2026, e para o Pix da atrasada, P131, 30/10/2026; só nessas três operações).
   Se a devolução deu certo e a sincronia falhou, quem acerta o espelho é o aviso da Stripe — e
   aí a pessoa é deslogada, como em toda perda de acesso.
 - **O aviso de dinheiro devolvido** (`charge.refunded`) traz só a cobrança: o servidor acha a
@@ -1594,7 +1606,7 @@ encerrada de vez com dias pagos: tem acesso e o servidor recusa cartão.
   `charge.dispute.created` (a contestação) e `radar.early_fraud_warning.created` (o aviso de fraude) — o operador os
   incluiu no endereço em 30/10/2026 (P129, conferida pelo print dele: os 10 avisos, na versão `2026-09-30.endive` da
   API, a mesma da biblioteca). **Depois da revisão do grupo 2, 11:** entrou `charge.dispute.funds_withdrawn` (o dinheiro
-  da contestação saiu — é ele que corta o acesso), que o operador inclui antes de publicar (P130).
+  da contestação saiu — é ele que corta o acesso), que o operador incluiu em 30/10/2026 (P130, conferida pelo print dele: os 11 avisos, na `2026-09-30.endive`).
 - **A versão do endereço de avisos** *(4.9b, C3, 29/10/2026)*: a Stripe manda cada aviso na versão da API do
   endereço (sem versão própria, na versão padrão da conta), e o site lê a da biblioteca — hoje a `2026-09-30.endive`.
   Numa versão de antes da `2025-03-31.basil`, o aviso de fatura chega sem a assinatura dele. **A subida em produção

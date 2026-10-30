@@ -140,12 +140,31 @@
 > — a linha "a cobrança confere" entra com o R1). **Achado na subida, de antes desta publicação:** a conferência do
 > fuso do banco falhou por tempo de conexão, como em 7 das 11 subidas desde 27/10 (P128).
 >
-> **PARA CONTINUAR NO PRÓXIMO CHAT (a ordem — atualizado em 30/10/2026, depois da publicação `f36e274`):**
+> **Publicado em 30/10/2026: `0f8c0c7`** — a 4.9b, grupo 2: `5c204a7` (R1 a R6, a revisão curta das correções),
+> `15b6e40` (E8 e E10), `a0f7eea` (E9), `073e80e` (E6), `dd8cd9b` (P128), `e34c0b5` (E7) e `7f7cbba` (os achados da
+> revisão do grupo 2, com o inquérito que só alerta); ordem do operador: *"Publicar agora"*, depois da revisão de
+> segurança sem P0 nem P1 e da P129 e da P130 (o endereço de avisos com os 11 avisos, na `2026-09-30.endive`, conferido
+> pelos prints dele). **Revisão `jilson-prod-00049`** (100% do tráfego), conferida de fora: a versão do app a mesma
+> (`mvu7ui5z-74d3d2b9` — o grupo 2 não mexe nas telas); **os cabeçalhos novos na página** (`content-security-policy:
+> frame-ancestors 'self'`, `x-frame-options: SAMEORIGIN`, `strict-transport-security: max-age=31536000`); **a trava contra
+> outro site** — o pedido `same-site` e o sem `Sec-Fetch-Site` com o `Origin` de outro site, 403 `OutroSite`; o da mesma
+> origem passa (400, a validação); os cursos, as trilhas, os textos e a sessão (200); a assinatura sem login (401); a
+> vitrine com o Pix; a home no "Em breve"; o job das migrations com sucesso, *"No pending migrations to apply"* (46;
+> nenhuma migration); os dois jobs na mesma imagem do site. **Na subida, pela primeira vez, a prova positiva:** *"[stripe]
+> subida: a cobrança confere — as chaves no mesmo modo, e o endereço de avisos ligado, com os 11 avisos, na linha da API
+> do site (2026-09-30.endive)"*, ANTES do *"Server running"* (a P128: as conferências rodam antes de abrir a porta), e sem
+> a falha do fuso do banco. **Conferido no registro do job (30/10/2026):** a rodada das 12h UTC (a primeira com o E6) fez a
+> conferência das ativas vencidas — 0 conferidas, 0 com falha — e saiu com código 0.
+>
+> **PARA CONTINUAR NO PRÓXIMO CHAT (a ordem — atualizado em 30/10/2026, depois da publicação `0f8c0c7`):**
 > 1. **A revisão ampla da cobrança (a etapa 4.9b): o bloco de engenharia APROVADO (29/10/2026), na ordem do
->    plano** — grupo 1 (E5, E4, E1, E3, E2) **FEITO e publicado (`f36e274`)**, com as correções C1 a C5; os achados
->    da revisão curta (R1 a R6) fechados no `dev`, a publicar com o grupo 2. **O próximo: o grupo 2** (E8, E10, E9,
->    E7, E6), depois o grupo 3 (E11, E12, E13, E17) e o grupo 4 (E14, E15, E16, E18; cada texto vai ao operador
->    antes). Um commit por parte. **Sem nova rodada de revisão a cada correção** *(operador, 29/10/2026: "fechando
+>    plano** — grupo 1 (E5, E4, E1, E3, E2) **FEITO e publicado (`f36e274`)**, com as correções C1 a C5; **o grupo 2 (E8, E10,
+>    E9, E7, E6), os R1 a R6, a P128 e os achados da revisão do grupo 2: FEITOS e publicados (`0f8c0c7`).** **O grupo 3
+>    (E11, E12, E13, E17) e os achados da revisão dele, e do grupo 4 o E15, o E16 e o E18: FEITOS na `dev`, ainda não
+>    publicados** (o E18 traz uma migration), **e o E14 também (o grupo 4 inteiro)**, com a revisão do grupo 4 feita (nenhum
+>    P0; o P1 respondido por ele — P131, "manter logada" —; os P2/P3 fechados), e a prova pela rota do E14 feita (16 de 16).
+>    **O próximo:** a ordem dele para publicar (traz a migration do E18). Uma
+>    revisão de segurança por grupo, só do que mudou, antes de publicar. Um commit por parte. **Sem nova rodada de revisão a cada correção** *(operador, 29/10/2026: "fechando
 >    P1, P2, P3 e seguindo em frente e rodando os testes no que precisar para não ficar em polimento infinito")*:
 >    P0 e P1 travam a publicação; P2 e P3 se fecham com teste e mutação, sem revisar de novo. A P128 (o fuso do
 >    banco na subida) foi respondida e feita: as conferências rodam antes de abrir a porta. As decisões P116–P124 e P127 já
@@ -6363,30 +6382,149 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             que a escola abre (o player do Bunny, o campo da Stripe) não mudam, e o parceiro de design abre o servidor
             local direto, sem moldura. Teste: `janela-isolada.test.ts` (a página e a API; o de produção pela função).
             **Mutação: 5 de 5 reprovaram.**
-      - [ ] **E11 — o Pix conferido pelo plano e pelo valor**, com a pré-paga criada no preço de agora desse plano
-            (hoje, pelo id do preço — a terceira passada do passo 6).
-      - [ ] **E12 — `TEMPO_DO_PIX` 180 s** (o pior caso passou a 8 idas à Stripe — a terceira passada).
-      - [ ] **E13 — o id da conta nas linhas `[api]` de `/billing`**: o alerta diz quem (a busca por `sub_`, `pi_`
-            e `cus_` é da 4.7b).
-      - [ ] **E14 — o Pix na cobrança atrasada** *(decisão do operador, 29/10/2026, P118)*: ao lado de "Trocar
+      - [x] **E11 — o Pix conferido pelo plano e pelo valor**, com a pré-paga criada no preço de agora desse plano
+            (hoje, pelo id do preço — a terceira passada do passo 6). **FEITO (30/10/2026):** `processarPixPago`
+            (`assinaturas.ts`) acha o preço de AGORA pelo plano do Pix; valor diferente → em conferência (com o
+            motivo); valor igual → a pré-paga nasce nesse preço (`criarAssinaturaPrePaga` com o `precoId` de agora — a
+            Stripe não aceita assinatura nova num preço arquivado). O id gravado no Pix que saiu de venda deixou de pôr
+            em conferência quem pagou o valor certo. Teste: `pix-pre-pago.test.ts` (o teste do "preço fora de venda"
+            virou o caso que agora vira assinatura). **Mutação: 3 de 3 reprovaram.**
+      - [x] **E12 — `TEMPO_DO_PIX` 180 s** (o pior caso passou a 8 idas à Stripe — a terceira passada). **FEITO
+            (30/10/2026):** 180 s, com a conta das 8 idas no comentário; teste do prazo (`pix-pre-pago.test.ts`).
+            **Mutação: 1 de 1 reprovou.**
+      - [x] **E13 — o id da conta nas linhas `[api]` de `/billing`**: o alerta diz quem (a busca por `sub_`, `pi_`
+            e `cus_` é da 4.7b). **FEITO (30/10/2026):** o tratador de erro da API (`erro-da-api.ts`) escreve
+            `… falhou (conta <id>): …` quando o pedido tem sessão — o id, nunca o e-mail —, em toda rota de `/api`.
+            Teste: `erro-da-api.test.ts`. **Mutação: 1 de 1 reprovou.**
+      - [x] **E14 — o Pix na cobrança atrasada** *(decisão do operador, 29/10/2026, P118)*: ao lado de "Trocar
             cartão" (Faturamento, a aula trancada e o e-mail da falha), um "Pagar com Pix" que encerra a atrasada
             e abre o Pix do plano — pela operação da assinatura (`operarNaAssinatura`), um pagamento aberto por vez.
-            A frase e o botão vão ao operador para aprovar.
-      - [ ] **E15 — o suporte nas frases de erro de pagamento** *(decisão do operador, 29/10/2026, P119)*: as
+            A frase e o botão vão ao operador para aprovar. **FEITO (30/10/2026), com a tela, o endereço e os textos
+            APROVADOS pelo operador no mesmo dia** ("Tela própria"): o botão "Pagar com Pix" ao lado de "Trocar cartão" em
+            Faturamento (também dentro dos 3 dias) e na aula trancada; a tela `/aluno/pagar-com-pix` com *"Ao pagar com Pix,
+            sua assinatura no cartão é encerrada agora e você paga o plano {plano}: {valor} por {1 mês|1 ano}. O acesso volta
+            assim que o Pix for pago. O Pix não renova sozinho: quando acabar, é só pagar de novo."*, o CPF ou CNPJ e "Gerar
+            o Pix" (o QR de sempre; pago, a tela de concluído); e nos dois e-mails da atrasada, depois do botão, *"Se preferir
+            pagar com Pix, entre na escola e escolha 'Pagar com Pix' em Faturamento."* (só com o Pix no ar). **Servidor:**
+            `POST /api/billing/minha-assinatura/pix` (só o CPF ou CNPJ no corpo; `lib/pix-da-atrasada.ts`): o CPF na ficha
+            ANTES de tudo (recusado, nada muda) → a atrasada relida e ENCERRADA com a trava dela, com a marca
+            o comentário "Trocada pelo Pix" (que cala o "sua assinatura terminou") → a cobrança em aberto ANULADA depois de encerrar (paga no
+            instante: alerta e sem Pix; não anulada: alerta) → o Pix pré-pago de sempre, do plano da atrasada, pelo preço do
+            servidor. A pessoa continua logada. Encerrar só depois do Pix pago não é seguro (a Stripe tentaria o cartão de
+            novo e os dois seriam cobrados) — por isso o texto avisa que o acesso volta quando o Pix cair. Docs check
+            (context7): Stripe → `/websites/stripe` → anular fatura em aberto (só `open`/`uncollectible`; anulada não é
+            cobrável e não muda o status da assinatura). Testes: `pix-da-atrasada.test.ts` (15), `stripe-reembolso.test.ts`
+            (+2), `stripe.test.ts` (+1), `avisos-da-assinatura.test.ts` (+2), `email.test.ts` (+1); telas:
+            `PagarComPixPage.test.tsx` (13), `FaturamentoPage.test.tsx` e `LessonPage.test.tsx` (os botões). Um teste achou
+            um defeito antes do commit: a releitura da assinatura depois do clique desmontava o formulário (e o QR) —
+            a tela agora fica com a atrasada do instante do clique. **Mutação: 26 de 26 reprovaram** (servidor 10, telas 10,
+            e-mails 6; uma sobreviveu antes — o campo do Pix que não confere não tinha teste; ganhou).
+        - [x] **A prova na área restrita, do lado da Stripe** (30/10/2026, roteiro fora do repositório com as funções de
+              verdade e um relógio de teste no passado): a renovação falhou de verdade (`past_due`, fatura `open`); encerrar
+              deixou `canceled` com o comentário, a fatura ficou `void`, e a assinatura lida para o espelho diz encerrada, sem
+              período pago, "trocada pelo Pix" e o plano. **Ela achou dois defeitos que os testes não pegavam:** (1) a marca
+              gravada antes levava a hora, e o pedido repetido com a mesma chave de repetição era recusado
+              (`StripeIdempotencyError`); (2) `[FATO — medido]` a chave de repetição não vale para encerrar (a Stripe a ignora;
+              encerrar a já encerrada dá 404 `resource_missing`), e na marca ela devolve a resposta GUARDADA da primeira vez. Os
+              dois sumiram com o achado P2 da revisão abaixo: não há mais marca antes — o comentário vai no próprio
+              encerramento, sem chave — e a rota relê a assinatura com a trava e só encerra a atrasada.
+        - [x] **A prova pela rota** (30/10/2026, depois das correções da revisão do grupo 4): servidor local (porta 3997)
+              com o banco de DEV (que recebeu a migration do E18 por `migrate deploy`), conta descartável com uma atrasada de
+              verdade (relógio de teste; o 1º mês pago, a renovação recusada), e os avisos reais da Stripe entregues ao
+              servidor local. **16 de 16 pontos:** Faturamento diz atrasada com as aulas trancadas → `POST
+              /api/billing/minha-assinatura/pix` só com o CPF → 200 com o QR → na Stripe, a atrasada `canceled` com "Trocada
+              pelo Pix", a cobrança em aberto `void`, o Pix de 9990 centavos só com Pix e o plano mensal → continua logada →
+              o aviso do encerramento: 200 e o "terminou" consumido sem envio → o Pix pago (`succeed_immediately`) e o aviso:
+              a pré-paga `active`, as aulas de volta, e a confirmação do E18 entregue ao Resend (caixa de teste). Nenhum erro
+              nem alerta no registro do servidor; a limpeza devolveu o banco de dev ao retrato de antes.
+      - [x] **E15 — o suporte nas frases de erro de pagamento** *(decisão do operador, 29/10/2026, P119)*: as
             frases de erro de pagamento (as de assinar, de trocar o cartão e a "Está demorando…" de depois do
             pagamento) passam a citar suporte@jilsonsantana.com, e depois de um cartão recusado a tela sugere
-            pagar com Pix. **Cada frase reescrita vai ao operador, uma a uma, antes de entrar no site.**
-      - [ ] **E16 — o aviso "uma senha foi criada"** *(decisão do operador, 29/10/2026, P123)*: a senha criada logo
+            pagar com Pix. **Cada frase reescrita vai ao operador, uma a uma, antes de entrar no site.** **FEITO
+            (30/10/2026), com as frases APROVADAS pelo operador no mesmo dia** (`core/src/i18n/pt.ts`): `assinar.erro`,
+            `assinar.cartaoRecusado` (nova), `erroDoCartao` e `demorando`, todas com a saída pelo suporte. O cartão
+            recusado (`card_declined`, lido em `falhou`, `stripe-do-site.tsx`) mostra a frase que sugere o Pix só quando o
+            Pix está no ar; sem ele, a da Stripe. Testes: `AssinarPage.test.tsx` (+1), `stripe-do-site.test.ts` (+2) e as
+            frases novas nos testes das telas. **Mutação: 4 de 4 reprovaram.**
+      - [x] **E16 — o aviso "uma senha foi criada"** *(decisão do operador, 29/10/2026, P123)*: a senha criada logo
             depois de pagar (`senha-depois-de-pagar.ts`) manda um e-mail para a caixa — se não foi a pessoa, ela
             cria outra pelo "Esqueci minha senha", que desconecta os outros aparelhos (conferir na prova). Pela
-            porta de sempre (`enviarEmail`, depois do commit, com a chave). O texto vai ao operador.
-      - [ ] **E17 — sem login, o "em conferência" só para a aba que pagou** *(decisão do operador, 29/10/2026,
+            porta de sempre (`enviarEmail`, depois do commit, com a chave). O texto vai ao operador. **FEITO
+            (30/10/2026), com o texto APROVADO pelo operador no mesmo dia** (`app.email.senhaCriada`): *"Uma senha foi
+            criada agora para entrar na escola com este e-mail."* e *"Se não foi você, crie uma senha nova em 'Esqueci
+            minha senha', na tela de entrar: quem entrou com a senha anterior sai da conta na hora."*, com o botão para a
+            tela de entrar. Sai **depois do commit** da transação que grava a senha, só quando ela foi criada
+            (`avisarSenhaCriada`), chave `senha-criada/<conta>`. A promessa do texto está provada: o "Esqueci minha senha"
+            derruba as sessões de antes (`revokeSessionsOnPasswordReset`; `codigo-por-email.test.ts` já reprova sem
+            isso). Teste: `senha-depois-de-pagar.test.ts` (o aviso uma vez, com o texto; a recusa seguinte não manda).
+            **Mutação: 3 de 3 reprovaram.**
+      - [x] **E17 — sem login, o "em conferência" só para a aba que pagou** *(decisão do operador, 29/10/2026,
             P124)*: nas duas portas sem login, o 409 `PixEmConferencia` só com o código da tentativa do Pix pago
             (`pago.visitante?.resumoDaTentativa === resumoDaTentativa(pedido.tentativa)`); os outros, 409 `Ocupada`,
-            sem nunca criar outro pagamento.
-      - [ ] **E18 — o e-mail de confirmação para quem assina logado** *(decisão do operador, 29/10/2026, P127)*:
+            sem nunca criar outro pagamento. **FEITO (30/10/2026):** `emConferenciaSoParaQuemPagou`
+            (`checkout-do-visitante.ts`, função pura), nos DOIS lugares de cada porta (cartão e Pix sem login): o Pix
+            que já estava em conferência e o que entra em conferência ao ser processado ali. Testes:
+            `pagar-com-pix.test.ts` (a aba que pagou e as outras, por Pix e por cartão; o Pix processado na hora pelas
+            duas portas). **Mutação: 6 de 6 reprovaram** (uma sobreviveu antes — o caminho do cartão processado na hora
+            não tinha teste; ganhou).
+      **A REVISÃO DO GRUPO 3** (30/10/2026, `security-vulnerability-reviewer`, Opus 5.5, esforço máximo, sobre
+      `0af2891..3e4af1d`): **nenhum P0 nem P1.** O E11 só dá o plano a quem pagou exatamente o preço de agora dele (o plano
+      e o valor nascem no servidor); o E12 cabe nos 180 s; o E13 só põe o id da conta; o E17 compara o resumo, nunca o
+      código, e não cria pagamento. **Três P2** — dois fechados com teste e mutação (6 de 6 reprovaram), um é texto do
+      operador:
+      - [x] **(P2) O Pix pago segurava uma ligação do banco por até 180 s fora do teto das portas** (no aviso e nas duas
+            rotas de conferir): com a Stripe lenta, as 2 ligações livres do gate e das aulas acabariam. **FEITO:** os três
+            caminhos pedem a vaga das assinaturas (`comVaga`); cheio, o aviso responde 503 (a Stripe entrega de novo, e a
+            rodada do E1 pega o resto) e as rotas de conferir, 204 sem conferir. Testes: `pix-pre-pago.test.ts`,
+            `conferir-pela-tela.test.ts`.
+      - [x] **(P2) O terceiro caminho do "em conferência" sem login** (a pré-paga incompleta cujo Pix não se lê pago)
+            escapava do E17, e o alerta dele saía a cada clique. **FEITO:** decide pela tentativa gravada na própria
+            pré-paga (`resumoDaTentativa`), e o alerta sai no máximo a cada 15 min por Pix (`alertarNoMaximoACada15Min`).
+            Teste: `pagar-com-pix.test.ts` (as duas portas; um alerta só).
+      - [x] **(P2) Quem pagou e perdeu o código da aba** (outra aba, outro aparelho) recebe o 409 `Ocupada`, cuja frase
+            (*"Este e-mail já tem uma assinatura em andamento em outra aba. Termine por lá ou aguarde um instante."*) não
+            dá saída. **FEITO (30/10/2026), com o texto APROVADO pelo operador junto com o E15:** *"Este e-mail já tem uma
+            assinatura em andamento. Termine por onde começou ou aguarde um instante. Se você já pagou, vamos responder
+            pelo seu e-mail; se precisar, escreva para suporte@jilsonsantana.com."* — não conta a ninguém que houve
+            pagamento, e dá a saída (`assinar.ocupadaOutraAba`).
+      - [x] **E18 — o e-mail de confirmação para quem assina logado** *(decisão do operador, 29/10/2026, P127)*:
             sai da sincronia que dá o acesso, uma vez por assinatura (a mesma regra das boas-vindas: depois do
-            commit, `enviarEmail`, chave estável), para cartão e Pix. O texto vai ao operador.
+            commit, `enviarEmail`, chave estável), para cartão e Pix. O texto vai ao operador. **FEITO (30/10/2026),
+            com o texto APROVADO pelo operador no mesmo dia** (`app.email.confirmada`): no cartão, *"Sua assinatura do
+            plano {Mensal|Anual} foi confirmada: você tem acesso a todos os cursos e trilhas. Ela renova sozinha {todo
+            mês|todo ano}, até você cancelar."*; no Pix, *"Seu Pix foi confirmado: você tem acesso a todos os cursos e
+            trilhas até o dia {data}."*; botão "Ir para a escola" (`/inicio`). **Como:** é mais um e-mail da MESMA regra
+            dos da cobrança (`emailDevido`, `avisos-da-assinatura.ts`), com a marca `CONFIRMADA` (migration
+            `20261030120000_email_de_confirmacao`, que só acrescenta o valor ao tipo) — uma vez por assinatura, depois
+            do commit, e a rodada de hora em hora manda a que falhou no aviso. **Só a assinatura viva que nasceu há
+            menos de 2 dias** (`JANELA_DA_CONFIRMACAO_EM_MS`): quem já assinava antes da publicação, ou renova, nunca a
+            recebe. **A de quem assinou sem conta não recebe** (as boas-vindas já confirmam): a marca fica consumida
+            quando as boas-vindas da ficha ainda não saíram ou saíram depois de a assinatura nascer; quem assinou sem
+            conta e depois assina de novo logado recebe. O plano vem dos metadados (Pix) ou do intervalo do preço
+            (cartão — `paraAssinaturaNaStripe`). A prévia (`email:previa`) monta os três. Testes:
+            `avisos-da-assinatura.test.ts` (+8) e `stripe.test.ts` (+1). **Mutação: 12 de 12 reprovaram** (uma
+            sobreviveu antes — a leitura do plano pelo intervalo não tinha teste; ganhou).
+      **A REVISÃO DO GRUPO 4** (30/10/2026, `security-vulnerability-reviewer`, Opus 5.5, esforço máximo, sobre
+      `d2c4a12..50c508e` — E15, E16, E18, E14): **nenhum P0.** Conferidos sem achado: no E14, a conta e a assinatura saem só da
+      sessão, o corpo só leva o CPF, o plano e o preço são do servidor, a ordem encerrar → anular, a cobrança paga no instante,
+      o espelho por um escritor só, as duas abas; no E16, o e-mail depois do commit e uma vez; no E18, a marca e a chave, sem
+      dobrar com as boas-vindas; a API aditiva, os pedaços do app e nenhum alerta novo que um anônimo dispare. **Um P1, que era
+      decisão do operador:** a regra escrita dizia que só o reembolso mantém a pessoa logada ao perder as aulas, e o código já
+      tinha o cancelar da atrasada (decisão dele, 11/10/2026) — e agora o Pix da atrasada, sem o qual quem ainda está nos 3
+      dias sai da conta no meio do QR. **Respondida (P131, 30/10/2026): "Manter logada".** A regra passou a listar as três
+      operações (`CLAUDE.md` → Access Architecture, `assinaturas.ts`, `billing.md`). *Reabre se ele preferir que perder as
+      aulas sempre deslogue.* **Quatro P2/P3, fechados com teste e mutação (8 de 8 reprovaram):**
+      - [x] **(P2) Encerrada e a sincronia falhou** (Stripe lenta): com o espelho velho ("ainda tem aulas", nos 3 dias), a porta
+            do Pix respondia "já é assinante", sem QR e com o cartão já encerrado. **FEITO:** confere de novo (mantendo a
+            sessão); sem conseguir, 409 `Ocupada` (tentar de novo), nunca "já é assinante".
+      - [x] **(P2) A marca gravada ANTES do encerramento** ficava se ele falhasse, e calaria o "terminou" de um fim de verdade,
+            meses depois. **FEITO:** "trocada pelo Pix" agora é o comentário do PRÓPRIO encerramento (encerrada E com o
+            comentário — `COMENTARIO_DA_TROCA_POR_PIX`); a marca saiu. Medido de novo na área restrita. Isso também fecha o
+            terceiro achado (a chave de repetição da marca), que a prova já tinha encontrado.
+      - [x] **(P3) O aviso de senha criada que falha ao ser montado** (os textos que não vêm do banco) derrubava o 200 já
+            ganho: a senha gravada, a sessão sem abrir. **FEITO:** nunca lança — vira alerta `[email]`.
+      - [x] **(P3) O CPF ia para a ficha sem a trava da conta:** duas abas juntas trocariam o número as duas. **FEITO:** com a
+            trava da conta; ocupada, 409 `Ocupada`.
       **A REVISÃO DE SEGURANÇA DO GRUPO 1** (29/10/2026, `security-vulnerability-reviewer`, Opus 5.5, esforço máximo,
       sobre `76742f9..bdcc04b`): **nenhum P0.** Dois P1 da mesma causa — **dois alertas novos que um robô dispara à
       vontade** (o do E5, com um cabeçalho de mentira de formato certo; o do E3, sem login): juntos, uns 192 por dia
@@ -6499,8 +6637,8 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             também quando o inquérito vira contestação). `Contestacao.fase` (`inquerito`, `aberta`, `dinheiro-saiu`); só o
             dinheiro que saiu leva o pagamento ao processamento; os outros dois só alertam (`[stripe] inquérito …`, com
             "devolver o dinheiro agora, sem taxa"; `[stripe] contestação … quando o dinheiro sair da conta`).
-            `AVISOS_DO_ENDERECO` agora tem 11 — **antes de publicar, a P130** (o operador inclui o
-            `charge.dispute.funds_withdrawn` no endereço).
+            `AVISOS_DO_ENDERECO` agora tem 11 — **a P130, feita pelo operador em 30/10/2026** (conferida pelo print dele: o
+            endereço com os 11 avisos, na `2026-09-30.endive`).
       - [x] **(P2) Nenhum teste cobria "a marca gravou e o cancelamento falhou".** Agora cobre: a falha sobe, sem a mensagem
             crua, e o aviso volta (`stripe-reembolso.test.ts`).
       - [x] **(P2) O que só se confere nos painéis:** a regra de alerta do Sentry para as quatro origens da reserva

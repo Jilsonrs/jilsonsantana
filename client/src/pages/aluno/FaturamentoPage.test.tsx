@@ -178,6 +178,8 @@ describe("FaturamentoPage — com acesso", () => {
     getMinhaAssinatura.mockResolvedValue({ ...ATIVA, situacao: "atrasada", proximaCobranca: null, aulasAte: MEIO_DIA, aulasTrancadas: false });
     abrir();
     expect((await screen.findByRole("alert")).textContent).toBe("Não conseguimos cobrar o seu cartão. Troque o cartão até 10/11/2026 para não perder o acesso.");
+    // Ainda nos 3 dias, o Pix também está ao lado (a tela dele diz que o cartão se encerra).
+    expect(screen.getByRole("link", { name: "Pagar com Pix" }).getAttribute("href")).toBe("/aluno/pagar-com-pix");
   });
 
   it("a cobrança falhou há mais de 3 dias: o alerta diz que as aulas estão trancadas — sem prometer data —, e o cartão continua trocável", async () => {
@@ -186,6 +188,8 @@ describe("FaturamentoPage — com acesso", () => {
     expect((await screen.findByRole("alert")).textContent).toBe("Não conseguimos cobrar o seu cartão, e as aulas estão trancadas. Troque o cartão para voltar a estudar.");
     expect(naTela()).not.toContain("10/11/2026");
     expect(screen.getByRole("link", { name: "Trocar cartão" }).getAttribute("href")).toBe("/aluno/conta/faturamento/cartao");
+    // Ao lado, "Pagar com Pix" (4.9b, E14 — decisão do operador, P118).
+    expect(screen.getByRole("link", { name: "Pagar com Pix" }).getAttribute("href")).toBe("/aluno/pagar-com-pix");
   });
 
   it("sem cartão guardado: diz que não há cartão, em vez de um cartão em branco", async () => {
@@ -195,8 +199,10 @@ describe("FaturamentoPage — com acesso", () => {
     expect(naTela()).not.toContain("••••");
   });
 
-  it("com cartão: o botão 'Trocar cartão' leva à tela de trocar", async () => {
+  it("com cartão: o botão 'Trocar cartão' leva à tela de trocar — e, em dia, sem 'Pagar com Pix'", async () => {
     abrir();
+    await screen.findByRole("link", { name: "Trocar cartão" });
+    expect(screen.queryByRole("link", { name: "Pagar com Pix" })).toBeNull();
     fireEvent.click(await screen.findByRole("link", { name: "Trocar cartão" }));
     expect(await screen.findByText("TELA DE TROCAR O CARTÃO")).toBeTruthy();
   });

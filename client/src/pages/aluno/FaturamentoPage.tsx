@@ -57,7 +57,7 @@ export function FaturamentoPage() {
       {viva && (
         <div className="space-y-8">
           <BlocoDoPlano assinatura={viva} />
-          <BlocoDoCartao cartao={viva.cartao} aceitaCartao={viva.aceitaCartao} prePago={viva.prePago === true} />
+          <BlocoDoCartao cartao={viva.cartao} aceitaCartao={viva.aceitaCartao} prePago={viva.prePago === true} pagarComPix={viva.situacao === SituacaoDoFaturamento.ATRASADA} />
         </div>
       )}
     </PageContainer>

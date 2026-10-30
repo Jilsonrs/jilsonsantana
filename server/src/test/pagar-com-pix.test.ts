@@ -874,16 +874,28 @@ describe("a segunda revisão do passo 6 (29/10/2026) — nas portas", () => {
     });
   });
 
-  it("o visitante com um Pix pago EM CONFERÊNCIA: 409 PixEmConferencia — por Pix e por cartão —, sem QR novo, sem cartão, sem conta", async () => {
+  // E17 da revisão ampla (decisão do operador, 29/10/2026, P124): sem login, o "em conferência" só para a ABA QUE PAGOU —
+  // pelo código da tentativa, que só ela tem. Outra aba, ou outra pessoa com o mesmo e-mail: "ocupada", sem contar que há
+  // um Pix pago para este e-mail, e sem nunca criar outro pagamento.
+  it("o visitante com um Pix pago EM CONFERÊNCIA: a aba que pagou recebe 409 PixEmConferencia (por Pix e por cartão); as outras, 409 Ocupada — sem QR novo, sem cartão, sem conta", async () => {
     const email = novoEmail();
     const endereco = novoEndereco();
-    expect((await pixVisitante(pedido(email), endereco)).status).toBe(200);
+    const primeiro = await pixVisitante(pedido(email), endereco);
+    expect(primeiro.status).toBe(200);
+    const tentativa = (primeiro.body as { tentativa: string }).tentativa;
+    expect(tentativa).toBeTruthy();
     const cliente = (await ficha(email))!.stripeCustomerId;
     pixNaStripe = pixNaStripe.map((p) => (p.cliente === cliente ? { ...p, status: "succeeded", emConferencia: "pagou 9990 centavos e o preço price_mensal custa 10990" } : p));
-    const porPix = await pixVisitante(pedido(email), endereco);
-    const porCartao = await cartaoVisitante(pedido(email), endereco);
+    const porPix = await pixVisitante(pedido(email, { tentativa }), endereco);
+    const porCartao = await cartaoVisitante(pedido(email, { tentativa }), endereco);
     expect([porPix.status, porPix.body]).toEqual([409, { error: "PixEmConferencia" }]);
     expect([porCartao.status, porCartao.body]).toEqual([409, { error: "PixEmConferencia" }]);
+    for (const outra of [pedido(email), pedido(email, { tentativa: "tentativa-de-outra-aba" })]) {
+      const outraPorPix = await pixVisitante(outra, endereco);
+      const outraPorCartao = await cartaoVisitante(outra, endereco);
+      expect([outraPorPix.status, outraPorPix.body]).toEqual([409, { error: "Ocupada" }]);
+      expect([outraPorCartao.status, outraPorCartao.body]).toEqual([409, { error: "Ocupada" }]);
+    }
     expect(criarPagamentoPix).toHaveBeenCalledTimes(1);
     expect(criarAssinatura).not.toHaveBeenCalled();
     expect(criarAssinaturaPrePaga).not.toHaveBeenCalled();
@@ -1033,22 +1045,71 @@ describe("a segunda revisão do passo 6 (29/10/2026) — nas portas", () => {
   it.each([
     ["a marca é NOVA: o Pix fica marcado e sai UM alerta", true],
     ["o Pix JÁ estava marcado: nenhum alerta a mais", false],
-  ])("o VISITANTE com o Pix processado e o e-mail ainda SEM CONTA com acesso — 409 PixEmConferencia (achados 3 e 4): %s", async (_, nova) => {
+  ])("o VISITANTE com o Pix processado e o e-mail ainda SEM CONTA com acesso — 409 PixEmConferencia para a aba que pagou (achados 3 e 4; E17): %s", async (_, nova) => {
     const alertas = vi.spyOn(console, "error").mockImplementation(() => {});
     const email = novoEmail();
     const endereco = novoEndereco();
-    expect((await pixVisitante(pedido(email), endereco)).status).toBe(200);
+    const primeiro = await pixVisitante(pedido(email), endereco);
+    expect(primeiro.status).toBe(200);
+    const tentativa = (primeiro.body as { tentativa: string }).tentativa;
     const cliente = (await ficha(email))!.stripeCustomerId;
     pixCaiu(cliente);
     const pi = pixNaStripe.find((p) => p.cliente === cliente && p.status === "succeeded")!.id;
     buscarAssinatura.mockImplementation(prePagaSemAcesso);
     if (!nova) marcarEmConferencia.mockResolvedValueOnce(false);
-    const res = await pixVisitante(pedido(email), endereco);
+    const res = await pixVisitante(pedido(email, { tentativa }), endereco);
     expect([res.status, res.body]).toEqual([409, { error: "PixEmConferencia" }]);
     expect(marcarEmConferencia).toHaveBeenCalledWith(pi, expect.stringContaining("o e-mail segue sem conta com acesso"));
     if (nova) expect(pixNaStripe.find((p) => p.id === pi)?.emConferencia).toContain("sem conta com acesso");
     expect(alertasDo(alertas, pi).filter(([texto]) => String(texto).includes("EM CONFERÊNCIA"))).toHaveLength(nova ? 1 : 0);
     const conta = await prisma.user.findUnique({ where: { email } });
     expect(conta === null || !(await temAcessoAtivo(conta.id))).toBe(true);
+    // E17: OUTRA aba (sem o código da tentativa) — "ocupada", sem contar do Pix pago e sem criar outro pagamento.
+    const pagamentos = criarPagamentoPix.mock.calls.length;
+    const outra = await pixVisitante(pedido(email), endereco);
+    expect([outra.status, outra.body]).toEqual([409, { error: "Ocupada" }]);
+    expect(criarPagamentoPix.mock.calls.length).toBe(pagamentos);
+  });
+
+  // Revisão do grupo 3 da 4.9b: a PRÉ-PAGA incompleta cujo Pix não se lê pago é o terceiro caminho do "em conferência"
+  // sem login — também só para a aba dela (pela tentativa gravada na pré-paga), e o alerta sai uma vez só.
+  it.each([
+    ["pelo Pix", "pix"],
+    ["pelo cartão", "cartao"],
+  ])("a PRÉ-PAGA incompleta com o Pix que não se lê pago, sem login, %s: as outras abas recebem 409 Ocupada; a dela, PixEmConferencia; o alerta sai uma vez", async (_, porta) => {
+    const erro = vi.spyOn(console, "error").mockImplementation(() => {});
+    const email = novoEmail();
+    const endereco = novoEndereco();
+    const primeiro = await pixVisitante(pedido(email), endereco);
+    expect(primeiro.status).toBe(200);
+    const tentativa = (primeiro.body as { tentativa: string }).tentativa;
+    const cliente = (await ficha(email))!.stripeCustomerId;
+    const pix = pixNaStripe.find((x) => x.cliente === cliente)!;
+    naStripe.push({ ...incompleta(`sub_${S}_${++n}`, cliente), pixPaymentIntentId: pix.id, resumoDaTentativa: pix.resumoDaTentativa });
+    const pedir = porta === "pix" ? pixVisitante : cartaoVisitante;
+    const outra = await pedir(pedido(email), endereco);
+    expect([outra.status, outra.body]).toEqual([409, { error: "Ocupada" }]);
+    const daAba = await pedir(pedido(email, { tentativa }), endereco);
+    expect([daAba.status, daAba.body]).toEqual([409, { error: "PixEmConferencia" }]);
+    expect(erro.mock.calls.filter(([texto]) => String(texto).includes(`a pré-paga do Pix ${pix.id} está incompleta`))).toHaveLength(1);
+    expect(criarPagamentoPix).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    ["a aba que pagou (com o código da tentativa): 409 PixEmConferencia", true, "PixEmConferencia"],
+    ["outra aba (sem o código): 409 Ocupada", false, "Ocupada"],
+  ])("idem pela porta do CARTÃO sem login (E17), com o Pix processado na hora e em conferência — %s; nenhuma assinatura por cartão", async (_, daQuePagou, erro) => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const email = novoEmail();
+    const endereco = novoEndereco();
+    const primeiro = await pixVisitante(pedido(email), endereco);
+    expect(primeiro.status).toBe(200);
+    const tentativa = (primeiro.body as { tentativa: string }).tentativa;
+    const cliente = (await ficha(email))!.stripeCustomerId;
+    pixCaiu(cliente);
+    buscarAssinatura.mockImplementation(prePagaSemAcesso);
+    const res = await cartaoVisitante(daQuePagou ? pedido(email, { tentativa }) : pedido(email), endereco);
+    expect([res.status, res.body]).toEqual([409, { error: erro }]);
+    expect(criarAssinatura).not.toHaveBeenCalled();
   });
 });

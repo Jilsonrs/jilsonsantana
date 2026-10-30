@@ -47,7 +47,8 @@ vi.mock("../lib/email.js", async (importOriginal) => ({
 import servidor from "./servidor.js";
 import { prisma } from "../lib/prisma.js";
 import { temAcessoAtivo } from "../lib/acesso.js";
-import { processarPixPago } from "../lib/assinaturas.js";
+import { processarPixPago, TEMPO_DO_PIX } from "../lib/assinaturas.js";
+import { assinaturasAoMesmoTempo, comVaga } from "../lib/assinaturas-em-andamento.js";
 
 // O PIX PRÉ-PAGO QUE CAIU (Fase 4, etapa 4.9, passo 1 — decisão do operador, 28/10/2026). O que estes
 // testes protegem:
@@ -308,6 +309,30 @@ describe("o Pix pré-pago que caiu — a conta logada", () => {
   });
 });
 
+// Revisão do grupo 3 da 4.9b: o Pix pago segura uma ligação do banco por até 180 s — só com uma vaga das assinaturas,
+// que deixa sempre 2 ligações livres para o gate e as aulas.
+describe("o aviso do Pix pago sem vaga", () => {
+  it("muitas assinaturas em andamento nesta cópia: 503, sem abrir transação nem marcar o aviso — e com vaga, ele vale", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const conta = await novaConta();
+    const pi = novoId("pi");
+    const aviso = pixCaiu(pi, { prepago: "mensal", precoId: "price_mensal", userId: conta.id });
+    let soltar!: () => void;
+    const segura = new Promise<void>((ok) => (soltar = ok));
+    const ocupadas = Array.from({ length: assinaturasAoMesmoTempo() }, () => comVaga(() => segura));
+    try {
+      expect((await enviar(aviso)).status).toBe(503);
+      expect(criarAssinaturaPrePaga).not.toHaveBeenCalled();
+      expect(await prisma.stripeEvent.findUnique({ where: { id: aviso.id } })).toBeNull();
+    } finally {
+      soltar();
+      await Promise.all(ocupadas);
+    }
+    expect((await enviar(aviso)).status).toBe(200);
+    expect((await espelhoDoPix(pi))?.status).toBe("active");
+  });
+});
+
 describe("o Pix pago que NÃO pode virar assinatura sozinho — EM CONFERÊNCIA (achados 3 e 4 da segunda revisão)", () => {
   it("o VALOR do Pix é diferente do preço do plano: nada é criado, o Pix fica marcado, o aviso também — e o alerta sai UMA vez, mesmo com outro aviso", async () => {
     const alertas = vi.spyOn(console, "error").mockImplementation(() => {});
@@ -330,14 +355,22 @@ describe("o Pix pago que NÃO pode virar assinatura sozinho — EM CONFERÊNCIA 
     expect(criarAssinaturaPrePaga).not.toHaveBeenCalled();
   });
 
-  it("o preço do Pix não está mais à venda (mudou entre o QR e o pagamento): idem, com o motivo", async () => {
+  // E11 da revisão ampla (30/10/2026): vale o preço de AGORA do plano — o id gravado no Pix pode ter saído de venda (um
+  // preço novo, com o mesmo valor), e a Stripe não aceita assinatura nova num preço arquivado.
+  it("o id do preço do Pix saiu de venda, mas o plano custa o MESMO valor: vira assinatura, no preço de AGORA — sem conferência", async () => {
     const alertas = vi.spyOn(console, "error").mockImplementation(() => {});
     const conta = await novaConta();
     const pi = novoId("pi");
     expect((await enviar(pixCaiu(pi, { prepago: "mensal", precoId: "price_velho", userId: conta.id }))).status).toBe(200);
-    expect(criarAssinaturaPrePaga).not.toHaveBeenCalled();
-    expect(marcas.get(pi)).toContain("não está mais à venda");
-    expect(alertasDo(alertas, pi, "EM CONFERÊNCIA")).toHaveLength(1);
+    expect(criarAssinaturaPrePaga).toHaveBeenCalledTimes(1);
+    expect(criarAssinaturaPrePaga.mock.calls[0]?.[0]).toMatchObject({ id: pi, plano: "mensal", precoId: "price_mensal", centavos: 9990 });
+    expect(marcas.has(pi)).toBe(false);
+    expect(alertasDo(alertas, pi, "EM CONFERÊNCIA")).toEqual([]);
+    expect((await espelhoDoPix(pi))?.status).toBe("active");
+  });
+
+  it("o prazo da transação do Pix cobre o pior caso: 8 idas à Stripe, de até 20 s cada (E12)", () => {
+    expect(TEMPO_DO_PIX.timeout).toBeGreaterThanOrEqual(8 * 20_000);
   });
 
   it("a assinatura criada cuja fatura NÃO pôde ser paga: em conferência, e o espelho NÃO é gravado (a assinatura não valeu)", async () => {
