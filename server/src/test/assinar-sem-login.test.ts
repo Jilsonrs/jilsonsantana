@@ -771,10 +771,31 @@ describe("o que a tentativa deixa na ficha (passo 9)", () => {
     expect((await ficha(email))?.nome).toBe("Com Nome");
   });
 
-  it("o nome que não vale — vazio, só espaços, com quebra de linha ou tabulação, longo demais: 400, e nada vai à Stripe nem ao banco", async () => {
-    for (const nome of ["", "   ", "Maria\nda Silva", "Maria\tda Silva", "x".repeat(101)]) {
+  // SÓ LETRAS (decisão do operador, 30/10/2026, depois da revisão de segurança do passo 9): o nome servia a um golpe no
+  // e-mail — dígito, símbolo, endereço de site e os caracteres invisíveis ou que invertem o texto ficam de fora.
+  it("o nome que não vale — vazio, só espaços, longo demais, com dígito, símbolo, endereço de site ou caractere invisível: 400, e nada vai à Stripe nem ao banco", async () => {
+    const recusados = [
+      "",
+      "   ",
+      "x".repeat(101),
+      "Maria 2",
+      "seu acesso foi bloqueado, regularize em golpe.com.br",
+      "golpe.com.br",
+      "https://golpe.com",
+      "Ana@Silva",
+      "Ana/Silva",
+      "Ana: Silva",
+      "R$ Ana",
+      "Ana\u200BSilva",
+      "Ana \u202Eavlis",
+      "Ana 😀",
+      "-Ana",
+      "Ana--Silva",
+    ];
+    for (const nome of recusados) {
       const email = novoEmail();
-      const res = await assinar(pedido(email, { nome }));
+      // Um endereço por pedido: são mais pedidos que o teto por endereço, e o teste é do nome, não do limite.
+      const res = await assinar(pedido(email, { nome }), `198.51.100.${200 + recusados.indexOf(nome)}`);
       expect([res.status, res.body.error], JSON.stringify(nome)).toEqual([400, "ValidationError"]);
       expect(await ficha(email)).toBeNull();
     }
@@ -782,6 +803,24 @@ describe("o que a tentativa deixa na ficha (passo 9)", () => {
     expect(criarClienteDoVisitante).not.toHaveBeenCalled();
     // O teto, 100 caracteres, passa.
     expect((await assinar(pedido(novoEmail(), { nome: "x".repeat(100) }))).status).toBe(200);
+  });
+
+  it("os nomes de verdade passam — acento, hífen, apóstrofo, abreviação — e os espaços de dentro ficam um só", async () => {
+    const nomes: Array<[string, string]> = [
+      ["José da Silva", "José da Silva"],
+      ["Maria-Clara D'Ávila", "Maria-Clara D'Ávila"],
+      ["Ana O’Neil", "Ana O’Neil"],
+      ["João Jr.", "João Jr."],
+      ["M. Souza", "M. Souza"],
+      ["  Ana   Paula\tSouza  ", "Ana Paula Souza"],
+      ["Ñandú Çağlar", "Ñandú Çağlar"],
+    ];
+    for (const [digitado, gravado] of nomes) {
+      const email = novoEmail();
+      const res = await assinar(pedido(email, { nome: digitado }));
+      expect(res.status, digitado).toBe(200);
+      expect((await ficha(email))?.nome, digitado).toBe(gravado);
+    }
   });
 
   it("a ficha que SUMIU no meio do pedido (a limpeza dos 7 dias a apagou, com o cliente da Stripe): 409 'ocupada', e nada vai à Stripe — o novo clique cria outra ficha", async () => {

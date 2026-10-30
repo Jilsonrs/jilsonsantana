@@ -9,13 +9,15 @@ import type { DepoisDoBotao, MensagemDeEmail } from "./email.js";
 // chama manda texto, nunca HTML: o modelo (`email.ts`) escapa tudo.
 //   - o botão leva à tela de assinar;
 //   - quem NÃO marcou "Quero receber novidades" ganha o link para pedir (clicou, vira lead; não clicou, os dados saem
-//     em 7 dias); quem marcou (é lead) ganha o link para descadastrar.
+//     em 7 dias); quem marcou (é lead) ganha o link para descadastrar;
+//   - SÓ TEXTO FIXO, SEM O NOME DIGITADO (decisão do operador, 30/10/2026, depois da revisão de segurança): o lembrete
+//     vai para uma caixa que ninguém provou, e o nome — escrito por quem digitou o e-mail — servia a um golpe assinado
+//     pela escola ("seu acesso foi bloqueado, regularize em…"). Nada do que o visitante digita entra neste e-mail.
 
-/** Os textos do lembrete (`app.email.lembrete`). `{nome}` é trocado no código. */
+/** Os textos do lembrete (`app.email.lembrete`). */
 export type TextosDoLembrete = {
   assunto: string;
   titulo: string;
-  ola: string;
   naoConcluida: string;
   botao: string;
   querNovidades: string;
@@ -26,8 +28,8 @@ export type TextosDoLembrete = {
   naoFoiVoce: string;
 };
 
-/** Para quem é o lembrete: o nome digitado (pode faltar) e o link — o de pedir as novidades, ou o de descadastrar. */
-export type Lembrete = { nome: string | null; link: { tipo: TipoDeLink; endereco: string } | null };
+/** O link do lembrete — o de pedir as novidades, ou o de descadastrar. Nada que o visitante digitou. */
+export type Lembrete = { link: { tipo: TipoDeLink; endereco: string } | null };
 
 /** O lembrete montado. Função pura. `enderecoDe`: o endereço absoluto de um caminho do site — sem um que sirva, sai sem o botão. */
 export function montarLembrete(lembrete: Lembrete, t: TextosDoLembrete, enderecoDe: (caminho: string) => string | null = enderecoDoSite): MensagemDeEmail {
@@ -42,7 +44,7 @@ export function montarLembrete(lembrete: Lembrete, t: TextosDoLembrete, endereco
   return {
     assunto: t.assunto,
     titulo: t.titulo,
-    paragrafos: [...(lembrete.nome ? [t.ola.replace("{nome}", lembrete.nome)] : []), t.naoConcluida],
+    paragrafos: [t.naoConcluida],
     ...(assinar ? { botao: { texto: t.botao, endereco: assinar } } : {}),
     depoisDoBotao: [...depois, t.naoFoiVoce],
   };

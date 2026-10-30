@@ -1,4 +1,5 @@
-import { OrigemDoLead, prisma } from "./prisma.js";
+import { randomUUID } from "node:crypto";
+import { OrigemDoLead, prisma, type Prisma } from "./prisma.js";
 import { travarSeLivre, temConta } from "./checkout-do-visitante.js";
 import { modoDaChave } from "./conferencia-da-cobranca.js";
 import { getDict } from "./dict.js";
@@ -16,14 +17,18 @@ import { montarLembrete, type Lembrete } from "../views/email-do-lembrete.js";
 //   - O LEMBRETE, 2 horas depois da última tentativa, UM por ficha: "você não terminou a assinatura", com o botão de
 //     terminar. Antes, a Stripe é conferida — quem já pagou (o aviso dela atrasou) não recebe. Quem marcou "Quero receber
 //     novidades" vira LEAD nessa hora (nome e e-mail, nunca o CPF) e lê o link de descadastrar; quem não marcou lê o link
-//     "Quero receber novidades" (clicou, vira lead — `routes/novidades.ts`).
+//     "Quero receber novidades" (clicou, vira lead — `routes/links-do-email.ts`). A ficha é RELIDA na hora (a da lista da
+//     rodada pode ter minutos), e a marca só é tomada se a última tentativa não mudou — quem voltou no meio não recebe.
 //   - A LIMPEZA, 7 dias depois da última tentativa: a ficha e o CLIENTE DA STRIPE (com o CPF) são apagados. APAGAR UM
 //     CLIENTE DA STRIPE CANCELA NA HORA AS ASSINATURAS ATIVAS DELE (context7 e medido, 30/10/2026): só se apaga o cliente
 //     que nunca pagou nada — todas as assinaturas expiradas sem pagamento, nenhum pagamento pago, a lista inteira lida.
 //     Qualquer pagamento: não apaga, e o alerta sai uma vez (alguém pagou e não tem conta — precisa de gente); a ficha é
 //     conferida de novo uma vez por dia. A Stripe primeiro, a ficha depois: se a Stripe falha, a ficha fica e a próxima
 //     hora tenta; o cliente que ela não conhece mais conta como apagado. Tudo com a TRAVA DO E-MAIL (a mesma do assinar
-//     sem login), que não espera: o visitante que volta exatamente agora segue, e a ficha fica para a próxima hora.
+//     sem login), que não espera: o visitante que volta exatamente agora segue, e a ficha fica para a próxima hora; e
+//     relida COM a trava — é ela que decide, e o lead da caixa é gravado com ela, na mesma transação. A limpeza que passou
+//     do prazo dela não apaga (a transação que segura a trava vence em 120 s; vencida, a trava solta e o visitante pode
+//     ter voltado): fica para a próxima hora.
 // Fora de transação e de trava, o e-mail (CLAUDE.md → Membership Gating). Uma ficha que falha não para as outras.
 
 const HORA_EM_MS = 60 * 60 * 1000;
@@ -38,13 +43,23 @@ export const PRAZO_DO_LEMBRETE_PENDENTE_EM_MS = 15 * 60 * 1000;
 export const INTERVALO_DA_NAO_APAGADA_EM_MS = DIA_EM_MS;
 /** No máximo tantas fichas por rodada (as mais antigas primeiro): o resto fica para a próxima hora. */
 export const MAXIMO_DE_FICHAS_POR_RODADA = 100;
-/**
- * A margem que o job deixa para a última ficha começada: a limpeza vai à Stripe até umas 7 vezes, e o job tem 5 minutos
- * ao todo (`tarefas/avisos-da-cobranca.ts`) — sem margem, uma ficha começada no fim do prazo passaria do tempo do job.
- */
-export const MARGEM_DA_ULTIMA_FICHA_EM_MS = 50_000;
 /** A limpeza vai à Stripe até umas 7 vezes com a trava do e-mail na mão (10 s cada, com uma nova tentativa). */
 const TEMPO_DA_LIMPEZA = { maxWait: 10_000, timeout: 120_000 };
+/**
+ * A limpeza só apaga o cliente da Stripe se começou há menos que isto: a transação que segura a trava do e-mail vence em
+ * 120 s, e a exclusão leva até uns 20 s — passou do prazo, a ficha fica para a próxima hora (P2 da revisão do passo 9).
+ */
+export const PRAZO_PARA_APAGAR_EM_MS = TEMPO_DA_LIMPEZA.timeout - 30_000;
+/**
+ * A margem que o job deixa para a última ficha começada: a limpeza de uma ficha pode chegar ao tempo da transação dela
+ * (120 s), e o job tem 5 minutos ao todo (`tarefas/avisos-da-cobranca.ts`) — sem margem, uma ficha começada no fim do
+ * prazo passaria do tempo do job, e o alerta único dela poderia se perder.
+ */
+export const MARGEM_DA_ULTIMA_FICHA_EM_MS = TEMPO_DA_LIMPEZA.timeout;
+/** A hora (UTC) em que a rodada confere se a limpeza está dando conta: 9h no Brasil, a mesma da conferência das ativas. */
+export const HORA_DO_AVISO_DE_ATRASO_UTC = 12;
+/** A ficha sem conta que passou disto sem ser apagada (e sem o alerta de pagamento) é limpeza atrasada. */
+export const ATRASO_DA_LIMPEZA_EM_MS = PRAZO_DA_FICHA_EM_MS + DIA_EM_MS;
 
 /** A ficha como a rodada a lê. */
 export type FichaDaRodada = {
@@ -131,8 +146,10 @@ export type RodadaDeQuemNaoTerminou = {
   /** A trava do e-mail ocupada, ou o lembrete tomado por outro: ficam para a próxima hora. */
   ocupadas: number;
   falhas: number;
-  /** As que ficaram para a próxima hora pelo prazo da rodada. */
+  /** As que ficaram para a próxima hora pelo prazo da rodada (ou a limpeza que passou do prazo dela). */
   adiadas: number;
+  /** Na rodada das 9h no Brasil: as fichas sem conta que passaram de 8 dias sem a limpeza (fora as com pagamento). */
+  atrasadas: number;
 };
 
 /** O link do lembrete: o de descadastrar (quem é lead) ou o de pedir as novidades (quem não é). Sem endereço que sirva, nenhum. */
@@ -161,8 +178,26 @@ function consentimentoDaCaixa(ficha: FichaDaRodada) {
   };
 }
 
+/** A ficha como está AGORA no banco (a da lista da rodada pode ter minutos). */
+const fichaAgora = (db: Pick<Prisma.TransactionClient, "guestCheckout">, id: string): Promise<FichaDaRodada | null> => db.guestCheckout.findUnique({ where: { id }, select: CAMPOS });
+
+/**
+ * O LEAD DA CAIXA, gravado DENTRO da transação da limpeza, com a ficha relida com a trava: nasce se não existe, e o que já
+ * existe só ganha o nome que faltava. Sem erro dentro da transação (`skipDuplicates`: dois ao mesmo tempo não a derrubam),
+ * e a caixa nunca reativa um descadastrado (`leads.ts`). Se a limpeza falhar, ele volta junto, e a próxima hora o grava.
+ */
+async function leadDaCaixaNaTrava(tx: Prisma.TransactionClient, ficha: FichaDaRodada): Promise<void> {
+  const c = consentimentoDaCaixa(ficha);
+  const email = c.email.toLowerCase();
+  await tx.lead.createMany({ data: [{ id: randomUUID(), ...c, email }], skipDuplicates: true });
+  if (c.nome) await tx.lead.updateMany({ where: { email, nome: null }, data: { nome: c.nome } });
+}
+
 /** O LEMBRETE desta ficha — UM. */
-async function lembrar(ficha: FichaDaRodada, agora: Date): Promise<"lembrete" | "sem-lembrete" | "ocupada" | "falha"> {
+async function lembrar(daLista: FichaDaRodada, agora: Date): Promise<"lembrete" | "sem-lembrete" | "ocupada" | "falha" | "nada"> {
+  // Relida AGORA: quem voltou no meio (outra tentativa, outra caixa, outro nome) não recebe o "você não terminou".
+  const ficha = await fichaAgora(prisma, daLista.id);
+  if (!ficha || oQueFazerComAFicha(ficha, agora) !== "lembrar") return "nada";
   if (await temConta(prisma, ficha.email)) {
     await semLembrete(ficha, agora, "o e-mail tem conta");
     return "sem-lembrete";
@@ -174,14 +209,15 @@ async function lembrar(ficha: FichaDaRodada, agora: Date): Promise<"lembrete" | 
     return "sem-lembrete";
   }
   // Quem marcou a caixa vira lead agora (a última tentativa decide); quem não marcou pode já ser lead de antes. Quem é
-  // lead (e recebe novidades) lê o link de descadastrar; os outros, o de pedir as novidades.
+  // lead (e recebe novidades) lê o link de descadastrar; os outros — e o descadastrado que marcou a caixa —, o de pedir.
   const lead = ficha.novidades ? await registrarLead(consentimentoDaCaixa(ficha)) : await leadAtivo(ficha.email);
   const recebeNovidades = lead !== null && ("ativo" in lead ? lead.ativo : true);
   // Montado ANTES de tomar a marca: uma falha aqui não deixa a marca presa sem e-mail.
-  const mensagem = montarLembrete({ nome: ficha.nome, link: linkDoLembrete(ficha, recebeNovidades ? { id: lead.id } : null) }, (await getDict()).app.email.lembrete);
+  const mensagem = montarLembrete({ link: linkDoLembrete(ficha, recebeNovidades ? { id: lead.id } : null) }, (await getDict()).app.email.lembrete);
   const limite = new Date(agora.getTime() - PRAZO_DO_LEMBRETE_PENDENTE_EM_MS);
+  // A marca só é tomada se a última tentativa ainda é a relida: quem voltou entre a leitura e aqui não recebe.
   const tomada = await prisma.guestCheckout.updateMany({
-    where: { id: ficha.id, userId: null, lembreteEnviadoEm: null, OR: [{ lembreteTomadoEm: null }, { lembreteTomadoEm: { lt: limite } }] },
+    where: { id: ficha.id, userId: null, lembreteEnviadoEm: null, ultimaTentativaEm: ficha.ultimaTentativaEm, OR: [{ lembreteTomadoEm: null }, { lembreteTomadoEm: { lt: limite } }] },
     data: { lembreteTomadoEm: agora },
   });
   if (tomada.count !== 1) return "ocupada";
@@ -200,7 +236,8 @@ async function lembrar(ficha: FichaDaRodada, agora: Date): Promise<"lembrete" | 
 }
 
 /** A LIMPEZA desta ficha, 7 dias depois da última tentativa. */
-async function apagar(ficha: FichaDaRodada, agora: Date): Promise<"apagada" | "com-pagamento" | "outro-modo" | "ocupada" | "nada"> {
+async function apagar(ficha: FichaDaRodada, agora: Date): Promise<"apagada" | "com-pagamento" | "outro-modo" | "ocupada" | "adiada" | "nada"> {
+  const inicio = Date.now();
   const modo = modoDaChave(process.env.STRIPE_SECRET_KEY, ["sk", "rk"]);
   if (modo === null) throw new Error("[stripe] limpeza: sem uma chave secreta da Stripe com a forma de chave");
   if (ficha.livemode !== (modo === "live")) {
@@ -209,14 +246,14 @@ async function apagar(ficha: FichaDaRodada, agora: Date): Promise<"apagada" | "c
     console.warn(`[stripe] limpeza: a ficha ${ficha.id} é do ${ficha.livemode ? "modo de verdade" : "modo de teste"} e a chave não — não apagada`);
     return "outro-modo";
   }
-  // Quem marcou a caixa vira lead (o lembrete pode não ter saído) — antes, fora da trava: se a limpeza falhar no meio,
-  // o lead fica, e a próxima hora não o duplica.
-  if (ficha.novidades) await registrarLead(consentimentoDaCaixa(ficha));
   return prisma.$transaction(async (tx) => {
     if (!(await travarSeLivre(tx, ficha.email))) return "ocupada";
-    // Relida COM a trava: o visitante pode ter voltado (a última tentativa mudou) ou ter pago (a conta nasceu).
-    const atual = await tx.guestCheckout.findUnique({ where: { id: ficha.id }, select: CAMPOS });
+    // Relida COM a trava — é ELA que decide, e o lead é gravado com ela: o visitante pode ter voltado (a última tentativa
+    // mudou), mudado a caixa ou o nome, ou ter pago (a conta nasceu).
+    const atual = await fichaAgora(tx, ficha.id);
     if (!atual || oQueFazerComAFicha(atual, agora) !== "apagar") return "nada";
+    // Quem marcou a caixa vira lead (o lembrete pode não ter saído).
+    if (atual.novidades) await leadDaCaixaNaTrava(tx, atual);
     const naStripe = await lerClienteNaStripe(atual.stripeCustomerId);
     if (naStripe !== "nao-existe") {
       const decisao = podeApagar(naStripe);
@@ -228,6 +265,12 @@ async function apagar(ficha: FichaDaRodada, agora: Date): Promise<"apagada" | "c
         return "com-pagamento";
       }
       for (const pagamento of decisao.aCancelar) await cancelarPagamentoAberto(pagamento);
+      // Antes de apagar: a transação (e com ela a trava) ainda vale, e sobra tempo para a exclusão — senão, a próxima hora.
+      await tx.$queryRaw`SELECT 1`;
+      if (Date.now() - inicio > PRAZO_PARA_APAGAR_EM_MS) {
+        console.warn(`[stripe] limpeza: a ficha ${atual.id} passou do prazo antes de apagar o cliente — fica para a próxima hora`);
+        return "adiada";
+      }
       await apagarClienteNaStripe(atual.stripeCustomerId);
     }
     await tx.guestCheckout.delete({ where: { id: atual.id } });
@@ -259,7 +302,7 @@ export async function rodadaDeQuemNaoTerminou(agora: Date = new Date(), prazoEmM
     console.warn(`[avisos] mais de ${MAXIMO_DE_FICHAS_POR_RODADA} fichas de quem não terminou de assinar para uma rodada — as mais antigas primeiro, o resto na próxima hora`);
     candidatas.length = MAXIMO_DE_FICHAS_POR_RODADA;
   }
-  const rodada: RodadaDeQuemNaoTerminou = { lembretes: 0, semLembrete: 0, apagadas: 0, comPagamento: 0, outroModo: 0, ocupadas: 0, falhas: 0, adiadas: 0 };
+  const rodada: RodadaDeQuemNaoTerminou = { lembretes: 0, semLembrete: 0, apagadas: 0, comPagamento: 0, outroModo: 0, ocupadas: 0, falhas: 0, adiadas: 0, atrasadas: 0 };
   for (const ficha of candidatas) {
     const fazer = oQueFazerComAFicha(ficha, agora);
     if (fazer === "nada") continue;
@@ -273,13 +316,14 @@ export async function rodadaDeQuemNaoTerminou(agora: Date = new Date(), prazoEmM
         if (feito === "lembrete") rodada.lembretes++;
         else if (feito === "sem-lembrete") rodada.semLembrete++;
         else if (feito === "ocupada") rodada.ocupadas++;
-        else rodada.falhas++;
+        else if (feito === "falha") rodada.falhas++;
       } else {
         const feito = await apagar(ficha, agora);
         if (feito === "apagada") rodada.apagadas++;
         else if (feito === "com-pagamento") rodada.comPagamento++;
         else if (feito === "outro-modo") rodada.outroModo++;
         else if (feito === "ocupada") rodada.ocupadas++;
+        else if (feito === "adiada") rodada.adiadas++;
       }
     } catch (erro) {
       rodada.falhas++;
@@ -287,5 +331,11 @@ export async function rodadaDeQuemNaoTerminou(agora: Date = new Date(), prazoEmM
     }
   }
   if (rodada.adiadas > 0) console.warn(`[avisos] a rodada de quem não terminou parou pelo prazo (${Math.round(prazoEmMs / 1000)} s): ${rodada.adiadas} ficha(s) ficaram para a próxima hora`);
+  // UMA VEZ POR DIA, a limpeza está dando conta? A ficha sem conta com mais de 8 dias (fora a com pagamento, que já
+  // alertou) quer dizer que os "7 dias" do e-mail não estão valendo — a rodada atrasando em silêncio (revisão do passo 9).
+  if (agora.getUTCHours() === HORA_DO_AVISO_DE_ATRASO_UTC) {
+    rodada.atrasadas = await prisma.guestCheckout.count({ where: { userId: null, naoApagadaEm: null, ultimaTentativaEm: { lt: new Date(agora.getTime() - ATRASO_DA_LIMPEZA_EM_MS) } } });
+    if (rodada.atrasadas > 0) console.error(`[avisos] ${rodada.atrasadas} ficha(s) de quem não terminou de assinar passaram de 8 dias sem a limpeza — conferir o registro do job da rodada`);
+  }
   return rodada;
 }

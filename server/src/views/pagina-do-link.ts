@@ -25,7 +25,7 @@ export function renderPaginaDoLink(dict: Dict, pagina: PaginaDoLink): string {
   if (pagina.estado === "pedir") {
     const [pergunta, texto, botao] = novidades ? [t.novidadesTitulo, t.novidadesTexto, t.novidadesBotao] : [t.descadastrarTitulo, t.descadastrarTexto, t.descadastrarBotao];
     corpo = `<h1>${escapeHtml(pergunta)}</h1>
-        <p>${escapeHtml(texto.replace("{email}", pagina.email))}</p>
+        <p>${escapeHtml(texto.replace("{email}", () => pagina.email))}</p>
         <form method="post" action="${escapeHtml(pagina.acao)}">
           <button type="submit" class="btn">${escapeHtml(botao)}</button>
         </form>`;

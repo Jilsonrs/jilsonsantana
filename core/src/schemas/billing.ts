@@ -77,12 +77,27 @@ const campoDeOrigem = z
 export const TAMANHO_DO_NOME = 100;
 
 /**
- * O NOME de quem assina sem conta (etapa 4.7, passo 9 — o campo "Seu nome", obrigatório na tela por
- * decisão do operador, 30/10/2026): aparado nas pontas, até 100 caracteres, sem caractere de controle
- * (quebra de linha, tabulação) — ele vai para a conta, para o lead e para o texto dos e-mails. Nunca
- * vai para a Stripe (a fatura anulada guarda o que for para lá, e não se apaga).
+ * Um nome de gente: palavras de LETRAS (com acento), separadas por um espaço, um hífen ou um apóstrofo, e um ponto só
+ * no fim de uma palavra (abreviação: "Jr.", "M. Souza"). Fica de fora tudo o que serve a um golpe: dígito, `/ : @ $`,
+ * endereço de site, e os caracteres invisíveis ou que invertem o texto.
  */
-export const nomeDaPessoaSchema = z.string().trim().min(1).max(TAMANHO_DO_NOME).regex(/^[^\p{Cc}]+$/u);
+export const NOME_SO_COM_LETRAS = /^[\p{L}\p{M}]+\.?(?:[ '’-][\p{L}\p{M}]+\.?)*$/u;
+
+/**
+ * O NOME de quem assina sem conta (etapa 4.7, passo 9 — o campo "Seu nome", obrigatório na tela por
+ * decisão do operador, 30/10/2026): aparado nas pontas, os espaços de dentro juntados num só, até 100
+ * caracteres, e SÓ LETRAS (`NOME_SO_COM_LETRAS` — decisão do operador, 30/10/2026, depois de a revisão de
+ * segurança mostrar o golpe: quem digita o e-mail de outra pessoa escrevia no nome "seu acesso foi
+ * bloqueado, regularize em golpe.com.br", e o e-mail da escola o entregava). Vai para a conta e para o lead;
+ * nunca para a Stripe (a fatura anulada guarda o que for para lá, e não se apaga) nem para o lembrete.
+ */
+export const nomeDaPessoaSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .max(TAMANHO_DO_NOME)
+  .transform((nome) => nome.replace(/\s+/gu, " "))
+  .pipe(z.string().regex(NOME_SO_COM_LETRAS));
 
 /**
  * Corpo de `POST /api/billing/visitante/assinatura` — assinar SEM CONTA (Fase 4, etapa 4.7, passo 4

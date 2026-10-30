@@ -1,4 +1,4 @@
-import { describe, it, expect, afterAll } from "vitest";
+import { describe, it, expect, vi, afterAll, afterEach } from "vitest";
 import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 import request from "supertest";
@@ -7,6 +7,7 @@ import servidor from "./servidor.js";
 import { prisma } from "../lib/prisma.js";
 import { caminhoDoLink, codigoDoLink } from "../lib/links-do-email.js";
 import { LIMITES_DO_VISITANTE } from "../lib/limite-de-tentativas.js";
+import { escapeHtml } from "../lib/html.js";
 
 // AS PÁGINAS DOS LINKS DO E-MAIL (etapa 4.7, passo 9 — decisões do operador, 29/10/2026; textos aprovados em 30/10).
 // O que estes testes protegem:
@@ -28,6 +29,10 @@ const novaFicha = (dados: { email?: string; nome?: string | null; acquisitionSou
 const novoLead = (email = novoEmail()) => prisma.lead.create({ data: { id: randomUUID(), email, origem: "CAIXA_AO_ASSINAR", consentimentoEm: new Date() } });
 const DO_SITE = { "sec-fetch-site": "same-origin" };
 const clicar = (caminho: string, cabecalhos: Record<string, string> = DO_SITE, endereco = "198.51.100.90") => request(servidor).post(caminho).set(cabecalhos).set("x-forwarded-for", endereco);
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 afterAll(async () => {
   await prisma.user.deleteMany({ where: { email: { endsWith: `-${S}@teste.local` } } });
@@ -87,6 +92,34 @@ describe("Quero receber novidades", () => {
       expect((await clicar(caminho)).status, caminho).toBe(404);
     }
     expect(await prisma.lead.count({ where: { email: { in: [ficha.email, apagada.email] } } })).toBe(0);
+  });
+
+  // P2 DA REVISÃO DE SEGURANÇA DO PASSO 9: a assinatura do link age por aquela pessoa, e o alerta vai para fora.
+  it("o erro numa página do link vai para o registro com o DESENHO da rota — nunca com a assinatura", async () => {
+    const ficha = await novaFicha();
+    const codigo = codigoDoLink("novidades", ficha.id);
+    // Seguro: só para trocar e devolver esta propriedade; o resto do objeto não é tocado (como em `billing.test.ts`).
+    const delegado = prisma.guestCheckout as unknown as Record<string, unknown>;
+    const original = prisma.guestCheckout.findUnique;
+    Object.defineProperty(delegado, "findUnique", { configurable: true, writable: true, value: () => Promise.reject(new Error("o banco caiu")) });
+    const alerta = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      expect((await request(servidor).get(`/novidades/${codigo}`)).status).toBe(500);
+    } finally {
+      Object.defineProperty(delegado, "findUnique", { configurable: true, writable: true, value: original });
+    }
+    const linhas = alerta.mock.calls.map(([linha]) => String(linha)).filter((linha) => linha.startsWith("[site]"));
+    expect(linhas).toHaveLength(1);
+    expect(linhas[0]).toContain("GET /novidades/:id/:assinatura falhou");
+    expect(linhas.join(" ")).not.toContain(codigo.slice(codigo.lastIndexOf("/") + 1));
+    expect(linhas.join(" ")).not.toContain(ficha.id);
+  });
+
+  it("o e-mail aparece como está, mesmo com os sinais que a troca de texto entenderia ($&, $')", async () => {
+    const lead = await novoLead(`a$&b$'c-${++n}-${S}@teste.local`);
+    const res = await request(servidor).get(caminhoDoLink("descadastrar", lead.id));
+    expect(res.text).toContain(escapeHtml(t.descadastrarTexto.replace("{email}", () => lead.email)));
+    expect(res.text).not.toContain("{email}");
   });
 
   it("todo valor passa por escapeHtml", async () => {

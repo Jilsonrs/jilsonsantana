@@ -23,7 +23,7 @@ vi.mock("../lib/stripe-limpeza.js", () => ({
 import { prisma } from "../lib/prisma.js";
 import { caminhoDoLink, codigoDoLink, idDoLink } from "../lib/links-do-email.js";
 import { descadastrar, leadAtivo, registrarLead } from "../lib/leads.js";
-import { ESPERA_DO_LEMBRETE_EM_MS, INTERVALO_DA_NAO_APAGADA_EM_MS, oQueFazerComAFicha, pagouOuEstaPagando, podeApagar, PRAZO_DA_FICHA_EM_MS, PRAZO_DO_LEMBRETE_PENDENTE_EM_MS, rodadaDeQuemNaoTerminou } from "../lib/quem-nao-terminou.js";
+import { ESPERA_DO_LEMBRETE_EM_MS, INTERVALO_DA_NAO_APAGADA_EM_MS, MARGEM_DA_ULTIMA_FICHA_EM_MS, oQueFazerComAFicha, pagouOuEstaPagando, podeApagar, PRAZO_DA_FICHA_EM_MS, PRAZO_DO_LEMBRETE_PENDENTE_EM_MS, PRAZO_PARA_APAGAR_EM_MS, rodadaDeQuemNaoTerminou } from "../lib/quem-nao-terminou.js";
 import { montarLembrete } from "../views/email-do-lembrete.js";
 
 // QUEM NÃO TERMINOU DE ASSINAR (etapa 4.7, passo 9 — decisões do operador, 29/10/2026). O que estes testes protegem:
@@ -78,6 +78,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.restoreAllMocks();
+  vi.useRealTimers();
 });
 
 afterAll(async () => {
@@ -140,6 +141,11 @@ describe("os links do e-mail", () => {
     expect(codigo).toMatch(/^[0-9a-f-]{36}\/[A-Za-z0-9_-]{43}$/);
     const assinatura = codigo.slice(codigo.lastIndexOf("/") + 1);
     const trocada = `${assinatura[0] === "A" ? "B" : "A"}${assinatura.slice(1)}`;
+    // A ÚLTIMA letra leva bits de sobra: trocá-la por uma de mesmo valor útil dá os mesmos bytes — e mesmo assim não abre.
+    const ultima = assinatura.at(-1) ?? "A";
+    const alfabeto = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+    const vizinha = alfabeto[alfabeto.indexOf(ultima) ^ 1] ?? "A";
+    expect(idDoLink("novidades", `${id}/${assinatura.slice(0, -1)}${vizinha}`)).toBeNull();
     expect(idDoLink("novidades", `${id}/${trocada}`)).toBeNull();
     expect(idDoLink("novidades", `${randomUUID()}/${assinatura}`)).toBeNull();
     for (const malformado of ["", id, `${id}/`, `/${assinatura}`, `nao-e-uuid/${assinatura}`, `${id}/${assinatura}x`, `${id.toUpperCase()}/${assinatura}`, `${id}.${assinatura}`]) expect(idDoLink("novidades", malformado), malformado).toBeNull();
@@ -157,19 +163,20 @@ describe("o lembrete, montado (função pura)", () => {
   const t = pt.app.email.lembrete;
   const site = (caminho: string) => `${SITE}${caminho}`;
 
-  it("quem NÃO marcou a caixa: o olá com o nome, o botão para a tela de assinar, o link de pedir as novidades e o aviso dos 7 dias", () => {
-    const mensagem = montarLembrete({ nome: "Ana", link: { tipo: "novidades", endereco: `${SITE}/novidades/x` } }, t, site);
+  // SÓ TEXTO FIXO (decisão do operador, 30/10/2026, depois da revisão de segurança): nada do que o visitante digitou.
+  it("quem NÃO marcou a caixa: só texto fixo, o botão para a tela de assinar, o link de pedir as novidades e o aviso dos 7 dias", () => {
+    const mensagem = montarLembrete({ link: { tipo: "novidades", endereco: `${SITE}/novidades/x` } }, t, site);
     expect(mensagem).toEqual({
       assunto: t.assunto,
       titulo: t.titulo,
-      paragrafos: ["Olá, Ana.", t.naoConcluida],
+      paragrafos: [t.naoConcluida],
       botao: { texto: t.botao, endereco: `${SITE}/assinar` },
       depoisDoBotao: [t.querNovidades, { link: t.linkNovidades, endereco: `${SITE}/novidades/x` }, t.apagamos, t.naoFoiVoce],
     });
   });
 
-  it("quem marcou (é lead): o link de descadastrar, sem o aviso dos 7 dias; sem nome, sem o olá", () => {
-    const mensagem = montarLembrete({ nome: null, link: { tipo: "descadastrar", endereco: `${SITE}/descadastrar/x` } }, t, site);
+  it("quem marcou (é lead): o link de descadastrar, sem o aviso dos 7 dias", () => {
+    const mensagem = montarLembrete({ link: { tipo: "descadastrar", endereco: `${SITE}/descadastrar/x` } }, t, site);
     expect(mensagem.paragrafos).toEqual([t.naoConcluida]);
     expect(mensagem.depoisDoBotao).toEqual([t.eLead, { link: t.linkDescadastrar, endereco: `${SITE}/descadastrar/x` }, t.naoFoiVoce]);
   });
@@ -178,7 +185,7 @@ describe("o lembrete, montado (função pura)", () => {
 describe("o lembrete, na rodada de hora em hora", () => {
   it("antes de 2 horas, nada; depois, UM lembrete para o e-mail da ficha — com o link de pedir as novidades, que prova a ficha — e a rodada seguinte não repete", async () => {
     const cedo = await novaFicha({ ultimaTentativaEm: atras(ESPERA_DO_LEMBRETE_EM_MS - 60_000) });
-    const devida = await novaFicha({ nome: "Bia" });
+    const devida = await novaFicha({ nome: "Bia Golpe" });
     const rodada = await rodadaDeQuemNaoTerminou(AGORA);
     expect(enviadosPara(cedo.email)).toEqual([]);
     const [pedido] = enviadosPara(devida.email);
@@ -186,7 +193,10 @@ describe("o lembrete, na rodada de hora em hora", () => {
     expect(pedido?.tipo).toBe("lembrete-da-assinatura");
     expect(pedido?.chave).toBe(`lembrete-da-assinatura/${devida.id}`);
     expect(pedido?.referencia).toBe(`ficha:${devida.id}`);
-    expect(pedido?.mensagem.paragrafos[0]).toBe("Olá, Bia.");
+    // O nome digitado NÃO entra no e-mail (decisão do operador, 30/10/2026): ele servia a um golpe assinado pela escola.
+    expect(pedido?.mensagem.paragrafos).toEqual([pt.app.email.lembrete.naoConcluida]);
+    expect(JSON.stringify(pedido?.mensagem)).not.toContain("Bia");
+    expect(JSON.stringify(pedido?.mensagem)).not.toContain("Golpe");
     const link = pedido?.mensagem.depoisDoBotao?.find((item) => typeof item !== "string");
     expect(typeof link === "object" ? link.link : null).toBe(pt.app.email.lembrete.linkNovidades);
     const codigo = typeof link === "object" ? link.endereco.replace(`${SITE}/novidades/`, "") : "";
@@ -377,6 +387,9 @@ describe("o prazo da rodada e o job", () => {
   it("o job de hora em hora roda a rodada de quem não terminou de assinar", () => {
     const job = readFileSync(new URL("../tarefas/avisos-da-cobranca.ts", import.meta.url), "utf8");
     expect(job).toContain("rodadaDeQuemNaoTerminou(");
+    // A margem do job cobre a limpeza de uma ficha inteira (o tempo da transação dela): começada no fim do prazo, ela
+    // termina antes dos 5 minutos do job — e o alerta único dela não se perde (P2 da revisão do passo 9).
+    expect(MARGEM_DA_ULTIMA_FICHA_EM_MS).toBeGreaterThanOrEqual(PRAZO_PARA_APAGAR_EM_MS + 30_000);
   });
 });
 
@@ -417,14 +430,107 @@ describe("o lead (registrar e descadastrar)", () => {
     expect(await descadastrar(randomUUID())).toBe(false);
   });
 
-  it("o descadastrado só volta com um consentimento DEPOIS do descadastro — a caixa de uma tentativa antiga não desfaz o 'não quero mais'", async () => {
+  // P1 DA REVISÃO DE SEGURANÇA DO PASSO 9: a caixa marcada não prova a caixa de e-mail — com ela, quem soubesse o e-mail de
+  // alguém que se descadastrou o poria de volta na lista. Só o clique num link que a escola mandou (confirmado) reativa.
+  it("o descadastrado só volta com um consentimento DEPOIS do descadastro e que PROVE A CAIXA — a caixa marcada, nem depois, não desfaz o 'não quero mais'", async () => {
     const email = novoEmail();
     const { id } = await registrarLead(consentimento(email, { consentimentoEm: atras(2 * DIA) }));
     await descadastrar(id, atras(DIA));
     expect((await registrarLead(consentimento(email, { consentimentoEm: atras(2 * DIA) }))).ativo).toBe(false);
+    expect((await registrarLead(consentimento(email, { consentimentoEm: AGORA }))).ativo).toBe(false);
+    expect((await prisma.lead.findUniqueOrThrow({ where: { id } })).descadastradoEm?.toISOString()).toBe(atras(DIA).toISOString());
     const volta = await registrarLead(consentimento(email, { origem: "LEMBRETE", consentimentoEm: AGORA, confirmadoEm: AGORA }));
     expect(volta).toEqual({ id, ativo: true });
     const lead = await prisma.lead.findUniqueOrThrow({ where: { id } });
-    expect([lead.descadastradoEm, lead.origem, lead.consentimentoEm.toISOString()]).toEqual([null, "LEMBRETE", AGORA.toISOString()]);
+    expect([lead.descadastradoEm, lead.origem, lead.consentimentoEm.toISOString(), lead.confirmadoEm?.toISOString()]).toEqual([null, "LEMBRETE", AGORA.toISOString(), AGORA.toISOString()]);
+  });
+});
+
+// OS ACHADOS DA REVISÃO DE SEGURANÇA DO PASSO 9 (30/10/2026): a releitura da ficha (quem voltou no meio não recebe o
+// lembrete nem tem nada apagado), o prazo da limpeza, o descadastrado que marca a caixa e a limpeza atrasada.
+describe("a revisão de segurança do passo 9", () => {
+  const velhaDe = (dias: number) => novaFicha({ ultimaTentativaEm: atras(dias * DIA), lembreteTomadoEm: atras((dias - 1) * DIA), lembreteEnviadoEm: atras((dias - 1) * DIA) });
+
+  it("quem VOLTOU entre a lista da rodada e o lembrete (outra tentativa) não recebe o lembrete — nem vira lead", async () => {
+    const antes = await novaFicha({ ultimaTentativaEm: atras(6 * HORA) });
+    const voltou = await novaFicha({ ultimaTentativaEm: atras(5 * HORA), novidades: true });
+    lerClienteNaStripe.mockImplementation(async (id) => {
+      if (id === antes.stripeCustomerId) await prisma.guestCheckout.update({ where: { id: voltou.id }, data: { ultimaTentativaEm: new Date() } });
+      return LIMPO;
+    });
+    await rodadaDeQuemNaoTerminou(AGORA);
+    expect(enviadosPara(antes.email)).toHaveLength(1);
+    expect(enviadosPara(voltou.email)).toEqual([]);
+    expect(await prisma.lead.findUnique({ where: { email: voltou.email } })).toBeNull();
+  });
+
+  it("quem voltou entre a releitura e a marca também não recebe: a marca exige a MESMA última tentativa", async () => {
+    const voltou = await novaFicha({ ultimaTentativaEm: atras(5 * HORA) });
+    lerClienteNaStripe.mockImplementation(async (id) => {
+      if (id === voltou.stripeCustomerId) await prisma.guestCheckout.update({ where: { id: voltou.id }, data: { ultimaTentativaEm: new Date() } });
+      return LIMPO;
+    });
+    await rodadaDeQuemNaoTerminou(AGORA);
+    expect(enviadosPara(voltou.email)).toEqual([]);
+    expect((await ficha(voltou.id))?.lembreteTomadoEm).toBeNull();
+  });
+
+  it("a limpeza: quem VOLTOU entre a lista da rodada e a trava não tem nada apagado — nem a ficha, nem o cliente da Stripe", async () => {
+    const antes = await velhaDe(10);
+    const voltou = await velhaDe(9);
+    lerClienteNaStripe.mockImplementation(async (id) => {
+      if (id === antes.stripeCustomerId) await prisma.guestCheckout.update({ where: { id: voltou.id }, data: { ultimaTentativaEm: new Date() } });
+      return LIMPO;
+    });
+    await rodadaDeQuemNaoTerminou(AGORA);
+    expect(await ficha(antes.id)).toBeNull();
+    expect(await ficha(voltou.id)).not.toBeNull();
+    expect(lerClienteNaStripe).not.toHaveBeenCalledWith(voltou.stripeCustomerId);
+    expect(apagarClienteNaStripe).not.toHaveBeenCalledWith(voltou.stripeCustomerId);
+  });
+
+  it("a limpeza que passou do prazo dela (a Stripe lenta) NÃO apaga o cliente: fica para a próxima hora", async () => {
+    vi.useFakeTimers({ toFake: ["Date"], now: Date.now() });
+    const lenta = await velhaDe(9);
+    lerClienteNaStripe.mockImplementation(async (id) => {
+      if (id === lenta.stripeCustomerId) vi.setSystemTime(Date.now() + PRAZO_PARA_APAGAR_EM_MS + 1000);
+      return LIMPO;
+    });
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const rodada = await rodadaDeQuemNaoTerminou(AGORA);
+    expect(rodada.adiadas).toBeGreaterThanOrEqual(1);
+    expect(apagarClienteNaStripe).not.toHaveBeenCalledWith(lenta.stripeCustomerId);
+    expect(await ficha(lenta.id)).not.toBeNull();
+    expect(PRAZO_PARA_APAGAR_EM_MS).toBe(90_000);
+  });
+
+  it("quem se descadastrou e depois marcou a caixa NÃO volta à lista pelo lembrete: o lembrete traz o link de pedir as novidades", async () => {
+    const email = novoEmail();
+    const lead = await prisma.lead.create({ data: { id: randomUUID(), email, origem: "CAIXA_AO_ASSINAR", consentimentoEm: atras(3 * DIA), descadastradoEm: atras(2 * DIA) } });
+    const f = await prisma.guestCheckout.create({ data: { id: randomUUID(), email, stripeCustomerId: `cus_qnt_${S}_${++n}`, livemode: false, novidades: true, ultimaTentativaEm: atras(3 * HORA) } });
+    await rodadaDeQuemNaoTerminou(AGORA);
+    expect((await prisma.lead.findUniqueOrThrow({ where: { id: lead.id } })).descadastradoEm).not.toBeNull();
+    const link = enviadosPara(email)[0]?.mensagem.depoisDoBotao?.find((item) => typeof item !== "string");
+    expect(typeof link === "object" ? link.link : null).toBe(pt.app.email.lembrete.linkNovidades);
+    expect(idDoLink("novidades", typeof link === "object" ? link.endereco.replace(`${SITE}/novidades/`, "") : "")).toBe(f.id);
+  });
+
+  it("uma vez por dia (9h no Brasil), a ficha que passou de 8 dias sem a limpeza vira alerta; fora dessa hora, não", async () => {
+    const dozeHoras = new Date(AGORA);
+    dozeHoras.setUTCHours(12, 30, 0, 0);
+    const presa = await novaFicha({ ultimaTentativaEm: new Date(dozeHoras.getTime() - 9 * DIA), lembreteTomadoEm: new Date(dozeHoras.getTime() - 8 * DIA), lembreteEnviadoEm: new Date(dozeHoras.getTime() - 8 * DIA) });
+    apagarClienteNaStripe.mockImplementation(async (id) => {
+      if (id === presa.stripeCustomerId) throw new Error("[stripe] a exclusão do cliente falhou: api_error, status 500");
+      return "apagado";
+    });
+    const alerta = vi.spyOn(console, "error").mockImplementation(() => {});
+    const avisoDeAtraso = () => alerta.mock.calls.filter(([linha]) => String(linha).includes("passaram de 8 dias sem a limpeza"));
+    const r1 = await rodadaDeQuemNaoTerminou(dozeHoras);
+    expect(r1.atrasadas).toBeGreaterThanOrEqual(1);
+    expect(avisoDeAtraso()).toHaveLength(1);
+    alerta.mockClear();
+    const r2 = await rodadaDeQuemNaoTerminou(new Date(dozeHoras.getTime() + HORA));
+    expect(r2.atrasadas).toBe(0);
+    expect(avisoDeAtraso()).toEqual([]);
   });
 });

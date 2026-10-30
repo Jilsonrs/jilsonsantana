@@ -7,7 +7,8 @@ import { useT } from "@/lib/language";
  * combinado, com o OK do operador, 30/10/2026). As duas telas pedem o CPF ou CNPJ; a pública (`semLogin`)
  * pede também o nome, o e-mail e a caixa de novidades. A conferência é a do `core`, a mesma do servidor:
  * errado, o aviso vai embaixo do PRIMEIRO campo errado (na ordem da tela: nome, e-mail, CPF), e nada vai
- * ao servidor nem ao cartão.
+ * ao servidor nem ao cartão. O nome vazio pede o nome; o nome com dígito, símbolo ou endereço de site pede só letras
+ * (decisão do operador, 30/10/2026, depois da revisão de segurança do passo 9).
  */
 export function useSeusDados(semLogin: boolean) {
   const { assinar: t, login } = useT();
@@ -43,7 +44,7 @@ export function useSeusDados(semLogin: boolean) {
     /** Confere os dados antes de enviar: certos, `true`; errado, o aviso no primeiro campo errado e `false`. */
     conferir: (): boolean => {
       if (semLogin && !nomeDaPessoaSchema.safeParse(nome).success) {
-        setErroDoNome(t.nomeVazio);
+        setErroDoNome(nome.trim() === "" ? t.nomeVazio : t.nomeSoLetras);
         return false;
       }
       if (semLogin && !enderecoDeEmailSchema.safeParse(email).success) {

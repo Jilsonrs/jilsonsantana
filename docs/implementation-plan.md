@@ -174,7 +174,19 @@
 > avisos, na `2026-09-30.endive`) e nenhuma linha de erro; o job das migrations, *"No pending migrations to apply"* (47);
 > a página, 200; a sessão sem login, 401; o job da rodada na mesma imagem do site.
 >
-> **PARA CONTINUAR NO PRÓXIMO CHAT (a ordem — atualizado em 30/10/2026, depois da publicação `d4a15b0`):**
+> **PARA CONTINUAR NO PRÓXIMO CHAT (a ordem — atualizado em 30/10/2026, depois do passo 9 da 4.7 no `dev`):**
+> 0. **O PASSO 9 DA 4.7 ESTÁ TODO NO `dev`, SEM PUBLICAR** (`840acac` 9a, `1db57ec` 9b, `99f95a4` 9c, `7e03dcc` 9d e o
+>    commit das correções da revisão, 9e): a revisão de segurança feita (nenhum P0; os P1 e P2 corrigidos, com as
+>    decisões do operador de 30/10: o lembrete sem o nome, o nome só com letras, sem teto diário), a prova na área restrita
+>    e a prova pela rota (16 de 16, duas vezes). **Para publicar, na ordem dele:** antes, contar SÓ LENDO as fichas sem
+>    conta no banco de produção (`production`) — na primeira rodada, as de mais de 7 dias são apagadas, com os clientes
+>    delas na Stripe; depois, o RLS da tabela `lead` no banco de produção e a primeira rodada no registro do job
+>    (`[avisos] quem não terminou de assinar: …`); e, numa publicação seguinte, o nome OBRIGATÓRIO no servidor (o
+>    checkbox depois da 9e). **Pergunta pendente ao operador (LGPD, não trava):** por quanto tempo guardar o lead da
+>    caixa que nunca provou o e-mail, e se o descadastro apaga o nome e o UTM. **E um achado fora do passo, reportado a
+>    ele em 30/10:** `docs/pendencias.md`, `docs/project-description.md` e `docs/strategy.md` apareceram mudados fora da
+>    sessão (a `pendencias.md` com uma versão antiga, "Próximo número livre: P47") — ficaram FORA dos commits, à espera
+>    da decisão dele (pela regra, o git vence).
 > 1. **A revisão ampla da cobrança (a etapa 4.9b): o bloco de engenharia APROVADO (29/10/2026), na ordem do
 >    plano** — grupo 1 (E5, E4, E1, E3, E2) **FEITO e publicado (`f36e274`)**, com as correções C1 a C5; **o grupo 2 (E8, E10,
 >    E9, E7, E6), os R1 a R6, a P128 e os achados da revisão do grupo 2: FEITOS e publicados (`0f8c0c7`).** **O grupo 3
@@ -190,8 +202,8 @@
 >    por prints — fazer junto com o operador) e a P125 (só quando ele for criar um desses códigos). O roteiro
 >    "quando um aluno não conseguir pagar" está em `billing.md`, como rascunho, para ele revisar.
 > 2. **O passo 9 da 4.7 — quem não terminou de assinar, e a tabela de leads** (decisões do operador,
->    29/10/2026): **REGISTRADO no plano em 30/10/2026 (etapa 4.7 → Passo 9), com o plano do bloco em 5 partes
->    (9a a 9e), APROVADO no mesmo dia ("Aprovo como está")** — com o CPF na fatura anulada da tentativa com
+>    29/10/2026): **FEITO no `dev` em 30/10/2026 — o item 0, acima.** Registrado no plano (etapa 4.7 → Passo 9), com o plano do bloco em 5 partes
+>    (9a a 9e), APROVADO no mesmo dia ("Aprovo como está") — com o CPF na fatura anulada da tentativa com
 >    cartão aceito (a Stripe não deixa apagar fatura; medido na área restrita) e o "Seu nome" obrigatório. O e-mail "você não terminou a assinatura" 2 horas depois
 >    da última tentativa; aos 7 dias, a ficha e o cliente da Stripe (com o CPF) são apagados; quem marcou
 >    "Quero receber novidades" vira LEAD (nome e e-mail, nunca o CPF), e o lembrete dos outros traz o botão
@@ -5824,6 +5836,57 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                   as páginas olhados pelo operador. **Antes de publicar:** contar, só lendo, as fichas sem
                   conta no banco de produção — na primeira rodada, as de mais de 7 dias são apagadas, com os
                   clientes delas na Stripe.
+                  - [x] **A prova na área restrita (30/10/2026)**, com as funções de verdade e clientes
+                        descartáveis: **quem nunca pagou** (uma tentativa com cartão expirada e um pagamento aberto) —
+                        a regra deixa apagar, o pagamento aberto é cancelado, o cliente é apagado e, depois, "não
+                        existe" (apagar de novo também); **quem pagou** (assinatura ativa, `pm_card_visa`) — "há uma
+                        assinatura active", nada apagado. `[FATO — medido]` o pagamento da fatura da tentativa expirada
+                        fica `canceled` (não trava a limpeza); na API nova, o pagamento solto não aceita mais a lista de
+                        formas de pagamento (`payment_method_types`) — o site já usa as formas automáticas.
+                  - [x] **A prova pela rota (30/10/2026) — 16 de 16**, com o servidor local (porta 3997), o banco
+                        de DEV (a migration do passo aplicada lá antes, com o retrato antes e depois: 2 contas, 0
+                        fichas, 2 assinaturas, 1 cliente, 2 cursos, 15 aulas; nenhuma tabela sem RLS) e a Stripe de
+                        teste: as duas tentativas sem conta pela rota (a ficha com o nome, a caixa, o UTM e a hora; o
+                        cliente da Stripe SEM o nome); a rodada de verdade mandou os 2 lembretes (ao Resend, caixas
+                        `delivered+…@resend.dev`) e a seguinte não repetiu; quem não marcou ficou sem lead, quem marcou
+                        virou lead da caixa; abrir o link não fez nada, o clique criou o lead do lembrete com o e-mail
+                        provado; o descadastro de outro site foi recusado, o do site descadastrou; o link adulterado não
+                        valeu; a limpeza apagou as 2 fichas e os 2 clientes da Stripe; depois dela, o link de pedir não
+                        vale; os leads ficaram. O banco voltou ao retrato de antes. **A primeira rodada da prova achou
+                        um ponto da SIMULAÇÃO, não do código:** envelhecer as fichas só no banco deixou as tentativas
+                        da Stripe ainda `incomplete` (elas expiram em ~23 h), e a regra fez certo — não apagou quem
+                        ainda podia pagar, e avisou; na segunda, as tentativas foram expiradas na Stripe antes da
+                        limpeza, como ela faz sozinha. **Rodada de novo depois das correções da revisão (abaixo): 16 de
+                        16**, e o banco de novo no retrato de antes.
+                  - [x] **A revisão de segurança (30/10/2026)** — `security-vulnerability-reviewer` sobre os 4 commits
+                        (`git diff b645c79..7e03dcc`): **nenhum P0; três P1 e sete P2.** **As decisões do operador, no
+                        mesmo dia, cada uma à pergunta do agente:** (1) **o lembrete sai SEM o nome digitado, e o nome
+                        aceita SÓ LETRAS** ("Tirar o 'Olá' e só letras") — o P1 do golpe: quem digitava o e-mail de outra
+                        pessoa escrevia no nome "seu acesso foi bloqueado, regularize em golpe.com.br", e o e-mail da
+                        escola o entregava; o aviso **"Use só letras no nome."** (`app.assinar.nomeSoLetras`) e o
+                        `app.email.lembrete.ola` saiu; (2) **sem teto diário de lembretes** ("Sem teto"; continua o máximo
+                        de 100 por hora). **As correções:** o nome no `core` (`NOME_SO_COM_LETRAS`: letras com acento,
+                        espaço, hífen, apóstrofo e o ponto de abreviação; os espaços de dentro juntados) · o lembrete só
+                        com texto fixo · o descadastrado só volta com o clique num link do e-mail (P1) · a exceção do
+                        lembrete escrita na regra (3) dos e-mails do `CLAUDE.md` e na garantia 4 de `email.ts` (P1) · a
+                        ficha relida na hora do lembrete, e a marca só com a mesma última tentativa · a limpeza decide e
+                        grava o lead da caixa com a ficha relida COM a trava, dentro da transação (sem erro:
+                        `skipDuplicates`) · a limpeza que passou de 90 s não apaga o cliente (`PRAZO_PARA_APAGAR_EM_MS`,
+                        com a transação conferida viva antes), e a margem do job cobre uma limpeza inteira (120 s) · uma
+                        vez por dia (9h no Brasil), a ficha sem conta com mais de 8 dias vira alerta `[avisos]` · o erro
+                        das páginas dos links vai ao registro com o desenho da rota, nunca com a assinatura
+                        (`erro-do-site.ts`) · a troca do `{email}` na página sem os padrões especiais do `$` · e, achado
+                        pela prova, o código do link comparado na FORMA EXATA (a última letra do base64url leva bits de
+                        sobra: outra letra dava a mesma assinatura — não abria nada novo, mas o teste do link adulterado
+                        passava por sorte). Testes: 13 novos e os de antes ajustados. **Mutação: 15 de 15 reprovaram** (o
+                        nome com símbolo, no servidor e na tela · o lembrete com o nome · a caixa reativando o
+                        descadastrado · o lembrete pela ficha velha · a marca sem a mesma tentativa · a limpeza sem reler
+                        · sem o prazo · o aviso de atraso a toda hora · o erro com o endereço inteiro · a troca com `$` · a
+                        limpeza sem o lead · a margem menor · a assinatura pelos bytes · a tela sem o aviso de só letras).
+                        Gates: typecheck, lint, build; site 1076, servidor 1691 (como o CI).
+                        **Fica com o operador (LGPD, pergunta para depois):** por quanto tempo guardar o lead da caixa que
+                        nunca provou o e-mail, e se o descadastro apaga o nome e o UTM (hoje ficam). **Verificação de
+                        depois da publicação:** o RLS da tabela `lead` no banco de produção (o SQL do `CLAUDE.md`).
             - [ ] **Depois da publicação do passo 9: o nome passa a OBRIGATÓRIO no servidor**
                   (`assinarSemLoginSchema`, `core/src/schemas/billing.ts`) — tira o `.optional()` e o teste "o
                   pedido sem o nome segue"; a aba aberta antes da publicação já terá saído (convenção *API

@@ -1241,13 +1241,34 @@ e-mails de verdade, em `pt.ts` → `app.email.lembrete`).
   ANTES do "Em breve" — **e o endereço não tem ponto**: o portão deixa passar todo endereço com ponto (acha que é
   arquivo), e sem ele o teste não provaria a ordem.
 - **Os leads** (`lib/leads.ts`, a tabela `lead`): um por e-mail, em minúsculas; o que já existe ganha o que faltava; o
-  descadastrado só volta com um consentimento DEPOIS do descadastro. **Descadastrar vale para o e-mail:** o lead e, se
-  houver conta com ele, a caixa de novidades da conta.
+  descadastrado só volta com um consentimento DEPOIS do descadastro e que PROVE A CAIXA (o clique num link que a escola
+  mandou àquele e-mail — a caixa marcada ao assinar não reativa ninguém; revisão de segurança, 30/10/2026).
+  **Descadastrar vale para o e-mail:** o lead e, se houver conta com ele, a caixa de novidades da conta.
+
+**A REVISÃO DE SEGURANÇA DO PASSO** (`security-vulnerability-reviewer`, 30/10/2026, sobre os 4 commits): nenhum P0; três
+P1 e sete P2. **As decisões do operador no mesmo dia, cada uma à pergunta do agente:**
+- **O lembrete sai SEM o nome, e o nome aceita SÓ LETRAS** (P1 — "Tirar o 'Olá' e só letras"): quem digitava o e-mail
+  de outra pessoa escrevia no nome "seu acesso foi bloqueado, regularize em golpe.com.br", e o lembrete da escola o
+  entregava. Agora o lembrete é só texto fixo, e o nome (`NOME_SO_COM_LETRAS`, no `core`) aceita letras com acento,
+  espaço, hífen, apóstrofo e o ponto de abreviação — com o aviso **"Use só letras no nome."** (`app.assinar.nomeSoLetras`).
+  O nome continua indo para a conta e para o lead.
+- **Sem teto diário de lembretes** ("Sem teto"): continua o máximo de 100 por hora. *Reabre se o Resend mostrar queixas
+  de spam ou devoluções acima do normal.*
+
+**As correções (engenharia):** o descadastrado só volta com o clique num link do e-mail — a caixa marcada não reativa
+(P1); a regra dos e-mails do `CLAUDE.md` ganhou a exceção do lembrete (P1); a ficha é RELIDA na hora do lembrete, e a
+marca exige a mesma última tentativa (quem voltou no meio não recebe); a limpeza decide e grava o lead com a ficha relida
+COM a trava, dentro da transação; a limpeza que passou de 90 s não apaga o cliente (a transação que segura a trava vence
+em 120 s), e a margem do job cobre uma limpeza inteira; uma vez por dia (9h no Brasil), a ficha sem conta com mais de 8
+dias vira alerta `[avisos]` (a limpeza atrasando em silêncio); o erro de uma página dos links vai ao registro com o
+desenho da rota, nunca com a assinatura; o código do link é comparado na forma EXATA (a última letra do base64url leva
+bits de sobra). **Fica com o operador:** por quanto tempo guardar o lead que nunca provou o e-mail, e se o descadastro
+apaga o nome e o UTM (LGPD — o plano → passo 9, 9e).
 
 **Limitações conhecidas:**
-- **Quem digita o e-mail de outra pessoa faz a escola mandar a ela um lembrete** — um por ficha, no teto que já existe de
-  10 e-mails novos por endereço por dia. *Reabre se o Resend mostrar queixas de spam, ou o registro mostrar muitos
-  lembretes saindo do mesmo endereço.*
+- **Quem digita o e-mail de outra pessoa faz a escola mandar a ela um lembrete** — um por ficha, só com texto fixo, no
+  teto que já existe de 10 e-mails novos por endereço por dia. *Reabre se o Resend mostrar queixas de spam ou devoluções
+  acima do normal.*
 - **O nome da conta é o da última tentativa**, que só difere do da tentativa paga se outra pessoa usar o mesmo e-mail nos
   segundos entre o pagamento e a conta nascer.
 - **A Política de Privacidade** (Fase 7) precisa dizer: a lista de leads, o lembrete, os 7 dias e o CPF que fica na

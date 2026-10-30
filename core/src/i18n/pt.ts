@@ -436,13 +436,13 @@ export const pt = {
       },
       // O LEMBRETE DE QUEM NÃO TERMINOU DE ASSINAR (etapa 4.7, passo 9 — decisões do operador, 29/10/2026: 2 horas
       // depois da última tentativa). Texto APROVADO pelo operador em 30/10/2026 (rascunho do agente, conferido nos dois
-      // e-mails de verdade). `{nome}`: o nome digitado ao assinar (sem nome, a linha não aparece). Depois do botão, quem
+      // e-mails de verdade). SEM O NOME (decisão do operador, 30/10/2026, depois da revisão de segurança: o e-mail vai para
+      // uma caixa que ninguém provou, e o nome digitado servia a um golpe — só texto fixo). Depois do botão, quem
       // NÃO marcou "Quero receber novidades" lê `querNovidades`, o link `linkNovidades` e `apagamos`; quem marcou (é lead)
       // lê `eLead` e o link `linkDescadastrar`. `naoFoiVoce` fecha os dois.
       lembrete: {
         assunto: "Sua assinatura não foi concluída",
         titulo: "Falta pouco",
-        ola: "Olá, {nome}.",
         naoConcluida: "Você começou a assinar a escola, mas o pagamento não foi concluído. Nada foi cobrado.",
         botao: "Terminar a assinatura",
         querNovidades: "Quer receber novidades e ofertas da escola por e-mail?",
@@ -649,9 +649,11 @@ export const pt = {
       // SÓ DA TELA PÚBLICA (etapa 4.7, passo 6e): o visitante, sem conta. Textos APROVADOS pelo operador
       // em 27/10/2026 (P81). O aviso de e-mail inválido é o da tela de entrar (`login.emailInvalido`).
       // O nome (etapa 4.7, passo 9 — o campo obrigatório, antes do e-mail, sem linha de ajuda): textos
-      // APROVADOS pelo operador em 30/10/2026.
+      // APROVADOS pelo operador em 30/10/2026. `nomeSoLetras`: o nome com dígito, símbolo ou endereço de site (decisão
+      // do operador, 30/10/2026, depois da revisão de segurança: o campo aceita só letras).
       nome: "Seu nome",
       nomeVazio: "Informe seu nome.",
+      nomeSoLetras: "Use só letras no nome.",
       email: "Seu e-mail",
       emailAjuda: "É com ele que você entra na escola.",
       // "Já tem conta? Entrar" — "Entrar" é o link (leva ao login e, depois, à tela de assinar do app).

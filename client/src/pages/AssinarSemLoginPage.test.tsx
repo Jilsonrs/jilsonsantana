@@ -183,6 +183,22 @@ describe("a tela pública de assinar — os dados do visitante", () => {
     assinar();
     await waitFor(() => expect(assinarSemLogin).toHaveBeenCalledWith(expect.objectContaining({ nome: "Ana" })));
   });
+
+  // SÓ LETRAS (decisão do operador, 30/10/2026, depois da revisão de segurança do passo 9): o nome servia a um golpe no e-mail.
+  it("o nome com número, símbolo ou endereço de site: o aviso 'Use só letras no nome.' — e nada vai ao cartão nem ao servidor", async () => {
+    abrir();
+    await screen.findByLabelText("Seu nome");
+    for (const nome of ["Ana 2", "regularize em golpe.com.br", "Ana@Silva"]) {
+      preencher({ nome });
+      assinar();
+      expect((await screen.findByRole("alert")).textContent, nome).toBe("Use só letras no nome.");
+    }
+    expect(validar).not.toHaveBeenCalled();
+    expect(assinarSemLogin).not.toHaveBeenCalled();
+    preencher({ nome: "Maria-Clara D'Ávila" });
+    assinar();
+    await waitFor(() => expect(assinarSemLogin).toHaveBeenCalledWith(expect.objectContaining({ nome: "Maria-Clara D'Ávila" })));
+  });
 });
 
 describe("a tela pública de assinar — o envio e a tentativa", () => {

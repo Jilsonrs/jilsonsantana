@@ -58,8 +58,8 @@ const exemplos: Array<[string, MensagemDeEmail]> = [
   ["previa-confirmada-pix.html", montarAvisoDaCobranca({ tipo: "CONFIRMADA", referencia: "inicio", trancaEm: new Date(falha.getTime() + 30 * DIA) }, { plano: "mensal" }, falha, pt.app.email, site)],
   // O lembrete de quem não terminou de assinar (etapa 4.7, passo 9): quem não marcou a caixa de novidades (o link de
   // pedir) e quem marcou (é lead: o link de descadastrar). Os links são de exemplo.
-  ["previa-lembrete-sem-novidades.html", montarLembrete({ nome: "Fulana", link: { tipo: "novidades", endereco: site("/novidades/exemplo") } }, pt.app.email.lembrete, site)],
-  ["previa-lembrete-lead.html", montarLembrete({ nome: "Fulana", link: { tipo: "descadastrar", endereco: site("/descadastrar/exemplo") } }, pt.app.email.lembrete, site)],
+  ["previa-lembrete-sem-novidades.html", montarLembrete({ link: { tipo: "novidades", endereco: site("/novidades/exemplo") } }, pt.app.email.lembrete, site)],
+  ["previa-lembrete-lead.html", montarLembrete({ link: { tipo: "descadastrar", endereco: site("/descadastrar/exemplo") } }, pt.app.email.lembrete, site)],
 ];
 for (const [nome, mensagem] of exemplos) {
   const caminho = join(pasta, nome);

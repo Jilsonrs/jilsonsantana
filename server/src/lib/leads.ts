@@ -19,9 +19,12 @@ export type Consentimento = {
 };
 
 /**
- * REGISTRA O CONSENTIMENTO: o lead nasce; o que já existe ganha o que faltava (o nome, a prova do e-mail); o
- * DESCADASTRADO só volta com um consentimento DEPOIS do descadastro — a caixa marcada numa tentativa antiga não desfaz o
- * "não quero mais". Devolve o lead como ficou: o id e se ele recebe novidades.
+ * REGISTRA O CONSENTIMENTO: o lead nasce; o que já existe ganha o que faltava (o nome, a prova do e-mail). O
+ * DESCADASTRADO só volta com um consentimento DEPOIS do descadastro e que PROVE A CAIXA (`confirmadoEm` — o clique num
+ * link que a escola mandou àquele e-mail): a caixa marcada ao assinar não prova nada, e com ela quem soubesse o e-mail de
+ * alguém que se descadastrou o poria de volta na lista (P1 da revisão de segurança do passo 9). Quem está descadastrado
+ * e marca a caixa recebe, no lembrete, o link "Quero receber novidades" — o clique é que reativa. Devolve o lead como
+ * ficou: o id e se ele recebe novidades.
  */
 export async function registrarLead(novo: Consentimento): Promise<{ id: string; ativo: boolean }> {
   const email = novo.email.toLowerCase();
@@ -49,13 +52,13 @@ export async function registrarLead(novo: Consentimento): Promise<{ id: string; 
         throw erro;
       }
     }
-    const volta = existente.descadastradoEm !== null && novo.consentimentoEm > existente.descadastradoEm;
+    const volta = existente.descadastradoEm !== null && novo.confirmadoEm !== null && novo.consentimentoEm > existente.descadastradoEm;
     const atualizado = await prisma.lead.update({
       where: { id: existente.id },
       data: {
         ...(existente.nome === null && novo.nome ? { nome: novo.nome } : {}),
         ...(existente.confirmadoEm === null && novo.confirmadoEm ? { confirmadoEm: novo.confirmadoEm } : {}),
-        ...(volta ? { descadastradoEm: null, consentimentoEm: novo.consentimentoEm, origem: novo.origem } : {}),
+        ...(volta ? { descadastradoEm: null, consentimentoEm: novo.consentimentoEm, origem: novo.origem, confirmadoEm: novo.confirmadoEm } : {}),
       },
       select: { id: true, descadastradoEm: true },
     });

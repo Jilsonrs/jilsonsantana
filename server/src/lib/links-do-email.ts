@@ -38,7 +38,8 @@ export function caminhoDoLink(tipo: TipoDeLink, id: string): string {
 
 /**
  * O id que o código prova — ou nada: o código de outro tipo de link, de outro servidor (outro segredo), malformado, ou
- * com a assinatura trocada. A comparação não deixa o tempo da resposta dizer quanto da assinatura acertou.
+ * com a assinatura trocada. Compara a FORMA EXATA da assinatura (a última letra do base64url leva bits de sobra: outra
+ * letra pode dar os mesmos bytes — achado da prova do passo 9), sem deixar o tempo da resposta dizer quanto acertou.
  */
 export function idDoLink(tipo: TipoDeLink, codigo: string): string | null {
   const barra = codigo.lastIndexOf("/");
@@ -46,7 +47,7 @@ export function idDoLink(tipo: TipoDeLink, codigo: string): string | null {
   const id = codigo.slice(0, barra);
   const parte = codigo.slice(barra + 1);
   if (!ID.test(id) || !/^[A-Za-z0-9_-]{43}$/.test(parte)) return null;
-  const recebida = Buffer.from(parte, "base64url");
-  const esperada = assinatura(tipo, id);
+  const recebida = Buffer.from(parte, "utf8");
+  const esperada = Buffer.from(assinatura(tipo, id).toString("base64url"), "utf8");
   return recebida.length === esperada.length && timingSafeEqual(recebida, esperada) ? id : null;
 }
