@@ -168,12 +168,18 @@
 > mesma imagem do site. **Nenhum e-mail de confirmação saiu na publicação:** a única assinatura de produção (a de teste do
 > operador, de 10/10) é de fora da janela de 2 dias (leitura, antes de publicar).
 >
-> **PARA CONTINUAR NO PRÓXIMO CHAT (a ordem — atualizado em 30/10/2026, depois da publicação `5313557`):**
+> **Publicado em 30/10/2026: `d4a15b0`** — o conserto da contestação (`f94cfb1`: a marca e o cancelamento sem chave de
+> repetição) e o registro da publicação anterior; ordem do operador: *"faz a correção […] publica"*. CI e publicação com
+> sucesso. **Revisão `jilson-prod-00051`** (100% do tráfego), conferida de fora: a subida com a cobrança conferida (os 11
+> avisos, na `2026-09-30.endive`) e nenhuma linha de erro; o job das migrations, *"No pending migrations to apply"* (47);
+> a página, 200; a sessão sem login, 401; o job da rodada na mesma imagem do site.
+>
+> **PARA CONTINUAR NO PRÓXIMO CHAT (a ordem — atualizado em 30/10/2026, depois da publicação `d4a15b0`):**
 > 1. **A revisão ampla da cobrança (a etapa 4.9b): o bloco de engenharia APROVADO (29/10/2026), na ordem do
 >    plano** — grupo 1 (E5, E4, E1, E3, E2) **FEITO e publicado (`f36e274`)**, com as correções C1 a C5; **o grupo 2 (E8, E10,
 >    E9, E7, E6), os R1 a R6, a P128 e os achados da revisão do grupo 2: FEITOS e publicados (`0f8c0c7`).** **O grupo 3
 >    (E11, E12, E13, E17) e o grupo 4 (E14, E15, E16, E18), com os achados das duas revisões e a P131: FEITOS e publicados
->    (`5313557`).** **O bloco de engenharia da 4.9b está todo no ar.** Fica, da 4.9b, o que é do operador: a P126 (as
+>    (`5313557`), e o conserto da contestação (`d4a15b0`).** **O bloco de engenharia da 4.9b está todo no ar.** Fica, da 4.9b, o que é do operador: a P126 (as
 >    conferências nos painéis) e a P125 (quando ele for criar um desses códigos). O achado da contestação (E7: a chave de
 >    repetição que fazia a reentrega do aviso falhar por até 5 min) foi corrigido por ordem dele (30/10/2026). Uma
 >    revisão de segurança por grupo, só do que mudou, antes de publicar. Um commit por parte. **Sem nova rodada de revisão a cada correção** *(operador, 29/10/2026: "fechando
