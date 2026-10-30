@@ -98,6 +98,23 @@ describe("a senha logo depois de pagar", () => {
     expect((await entrar(conta.email, SENHA)).status).toBe(200);
   });
 
+  // E16 (decisão do operador P123; texto aprovado em 30/10/2026): a senha criada avisa a caixa — uma vez, com a chave da
+  // conta, para o e-mail do nosso banco; se não foi a pessoa, o "Esqueci minha senha" desconecta quem entrou.
+  it("a senha criada manda o aviso para a caixa da conta — uma vez, com a chave da conta; a recusa seguinte não manda nada", async () => {
+    const conta = await nascida();
+    enviarEmail.mockClear();
+    expect((await criarSenha(conta.tentativa, SENHA)).status).toBe(200);
+    const avisos = enviarEmail.mock.calls.map(([pedido]) => pedido).filter((pedido) => pedido.tipo === "senha-criada");
+    expect(avisos).toHaveLength(1);
+    expect(avisos[0]).toMatchObject({ para: conta.email, chave: `senha-criada/${conta.id}`, referencia: `conta:${conta.id}`, mensagem: { assunto: "Uma senha foi criada para a sua conta", titulo: "Uma senha foi criada" } });
+    expect(avisos[0]?.mensagem.paragrafos).toEqual([
+      "Uma senha foi criada agora para entrar na escola com este e-mail.",
+      'Se não foi você, crie uma senha nova em "Esqueci minha senha", na tela de entrar: quem entrou com a senha anterior sai da conta na hora.',
+    ]);
+    expect((await criarSenha(conta.tentativa, `outra-senha-${S}`)).status).toBe(409);
+    expect(enviarEmail.mock.calls.filter(([pedido]) => pedido.tipo === "senha-criada")).toHaveLength(1);
+  });
+
   it("UMA vez: a segunda é 'já tem senha', e a senha não muda", async () => {
     const conta = await nascida();
     await criarSenha(conta.tentativa, SENHA);

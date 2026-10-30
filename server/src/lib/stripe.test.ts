@@ -27,6 +27,17 @@ function assinatura({
 }
 
 describe("o espelho a partir da assinatura da Stripe", () => {
+  // O plano, para o texto do e-mail de confirmação (4.9b, E18): o checkout do cartão não o grava nos metadados —
+  // vem do intervalo do preço; o Pix pré-pago grava.
+  it("o plano: dos metadados do nosso checkout; sem eles, pelo intervalo do preço; sem os dois, nenhum", () => {
+    const comIntervalo = (interval: string) => [{ current_period_start: inicio, current_period_end: fim, price: { recurring: { interval } } }];
+    expect(paraAssinaturaNaStripe(assinatura({ itens: comIntervalo("month") })).plano).toBe("mensal");
+    expect(paraAssinaturaNaStripe(assinatura({ itens: comIntervalo("year") })).plano).toBe("anual");
+    expect(paraAssinaturaNaStripe(assinatura({ itens: comIntervalo("month"), metadata: { plano: "anual" } })).plano).toBe("anual");
+    expect(paraAssinaturaNaStripe(assinatura({ itens: comIntervalo("week"), metadata: { plano: "outro" } })).plano).toBeNull();
+    expect(paraAssinaturaNaStripe(assinatura()).plano).toBeNull();
+  });
+
   it("última fatura paga: pago até o FIM do período", () => {
     expect(paraAssinaturaNaStripe(assinatura()).pagoAte?.getTime()).toBe(fim * 1000);
   });

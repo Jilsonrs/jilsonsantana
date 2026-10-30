@@ -362,6 +362,16 @@ export const pt = {
         comoEntrar: "Para entrar, use seu e-mail e sua senha. Se ainda não criou a senha, ou não lembra dela, use \"Receber código de acesso\" na tela de entrar.",
         botao: "Entrar na escola"
       },
+      // O AVISO DE QUE UMA SENHA FOI CRIADA logo depois de pagar sem conta (E16 da revisão ampla da cobrança — decisão do
+      // operador P123): se não foi a pessoa, ela cria outra pelo "Esqueci minha senha", que desconecta os outros aparelhos
+      // (`revokeSessionsOnPasswordReset`, com teste). Texto APROVADO pelo operador em 30/10/2026.
+      senhaCriada: {
+        assunto: "Uma senha foi criada para a sua conta",
+        titulo: "Uma senha foi criada",
+        criada: "Uma senha foi criada agora para entrar na escola com este e-mail.",
+        naoFoiVoce: "Se não foi você, crie uma senha nova em \"Esqueci minha senha\", na tela de entrar: quem entrou com a senha anterior sai da conta na hora.",
+        botao: "Ir para a tela de entrar"
+      },
       // OS E-MAILS DA COBRANÇA (etapa 4.7, passo 7 — decisões do operador, 28/10/2026): rascunho do
       // agente, revisto pelo operador vendo os e-mails de verdade (28/10/2026, P107 — as frases dele
       // estão marcadas).
@@ -396,6 +406,20 @@ export const pt = {
         terminou: "Sua assinatura terminou, e o acesso às aulas foi encerrado.",
         progressoSeVoltar: "Seu progresso continua guardado: se voltar, você continua de onde parou.",
         botao: "Reativar assinatura"
+      },
+      // A CONFIRMAÇÃO DE QUEM ASSINOU LOGADO (E18 da revisão ampla da cobrança — decisão do operador P127): uma vez por
+      // assinatura, no cartão e no Pix. Texto APROVADO pelo operador em 30/10/2026. `{plano}`: Mensal ou Anual;
+      // `{quando}`: todo mês ou todo ano; `{data}`: o fim do acesso pago com Pix, no horário de Brasília.
+      confirmada: {
+        assunto: "Sua assinatura está confirmada",
+        titulo: "Assinatura confirmada",
+        cartao: "Sua assinatura do plano {plano} foi confirmada: você tem acesso a todos os cursos e trilhas. Ela renova sozinha {quando}, até você cancelar.",
+        pix: "Seu Pix foi confirmado: você tem acesso a todos os cursos e trilhas até o dia {data}.",
+        mensal: "Mensal",
+        anual: "Anual",
+        todoMes: "todo mês",
+        todoAno: "todo ano",
+        botao: "Ir para a escola"
       },
       // O E-MAIL DO PRÉ-PAGO (etapa 4.9, passo 4 — decisão do operador, 28/10/2026: 3 dias antes de acabar):
       // Texto APROVADO pelo operador em 29/10/2026 (P111; rascunho do agente). Sem botão: pagar de novo é só depois de acabar

@@ -28,7 +28,7 @@ export function diaNoEmail(data: Date): string {
  */
 export function montarAvisoDaCobranca(
   devido: EmailDevido,
-  naStripe: Pick<AssinaturaNaStripe, "proximaTentativa" | "encerradaSemPagamento">,
+  naStripe: Pick<AssinaturaNaStripe, "proximaTentativa" | "encerradaSemPagamento" | "plano">,
   agora: Date,
   e: Dict["app"]["email"],
   enderecoDe: (caminho: string) => string | null = enderecoDoSite,
@@ -46,6 +46,14 @@ export function montarAvisoDaCobranca(
   if (devido.tipo === "ANTES_DE_TRANCAR") {
     const t = e.antesDeTrancar;
     return { assunto: t.assunto, titulo: t.titulo, paragrafos: [t.semPagamento, t.perdeAcesso.replace("{data}", ate)], ...botao(t.botao, "cartao") };
+  }
+  if (devido.tipo === "CONFIRMADA") {
+    // A confirmação (E18): no Pix, até quando vai o acesso; no cartão, o plano e quando renova. O botão leva ao Início.
+    const t = e.confirmada;
+    const anual = naStripe.plano === "anual";
+    const texto = devido.trancaEm ? t.pix.replace("{data}", ate) : t.cartao.replace("{plano}", anual ? t.anual : t.mensal).replace("{quando}", anual ? t.todoAno : t.todoMes);
+    const inicio = enderecoDe("/inicio");
+    return { assunto: t.assunto, titulo: t.titulo, paragrafos: [texto], ...(inicio ? { botao: { texto: t.botao, endereco: inicio } } : {}) };
   }
   if (devido.tipo === "PREPAGO_TERMINANDO") {
     // SEM botão: pagar de novo é só DEPOIS de acabar (decisão do operador, etapa 4.9) — o botão de reativar vem no "terminou".

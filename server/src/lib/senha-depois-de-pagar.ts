@@ -3,6 +3,9 @@ import { prisma } from "./prisma.js";
 import { auth } from "./auth.js";
 import { temAcessoAtivo } from "./acesso.js";
 import { resumoDaTentativa } from "./tentativa-do-visitante.js";
+import { getDict } from "./dict.js";
+import { enviarEmail } from "./email.js";
+import { enderecoDoSite } from "./endereco-do-site.js";
 
 // A SENHA LOGO DEPOIS DE PAGAR (Fase 4, etapa 4.7, passo 5 — decisão do operador, 21/10/2026: "na
 // própria tela, logo após pagar"; a pessoa já entra para estudar, e o e-mail não é preciso para
@@ -51,7 +54,7 @@ export async function criarSenhaDepoisDePagar(tentativa: string, senha: string):
 
   // Embaralhada ANTES da trava: o embaralhar demora, e a trava segura uma ligação com o banco.
   const embaralhada = await (await auth.$context).password.hash(senha);
-  return prisma.$transaction(async (tx): Promise<DesfechoDaSenha> => {
+  const desfecho = await prisma.$transaction(async (tx): Promise<DesfechoDaSenha> => {
     const [trava] = await tx.$queryRaw<{ livre: boolean }[]>`SELECT pg_try_advisory_xact_lock(hashtext(${`senha:${conta.id}`})) AS livre`;
     if (!trava?.livre) return { resultado: "ocupada" };
     if (await tx.account.findFirst({ where: { userId: conta.id, providerId: "credential" }, select: { id: true } })) return { resultado: "ja-tem-senha" };
@@ -64,5 +67,22 @@ export async function criarSenhaDepoisDePagar(tentativa: string, senha: string):
     // O e-mail confirmado (P94, acima): é o que faz a senha sobreviver à primeira entrada pelo código.
     await tx.user.update({ where: { id: conta.id }, data: { emailVerified: true } });
     return { resultado: "criada", contaId: conta.id, email: conta.email };
+  });
+  // O AVISO NA CAIXA (E16 — decisão do operador P123; texto aprovado em 30/10/2026): DEPOIS do commit, fora da trava, pela
+  // porta de sempre (que nunca lança), com a chave estável da conta — a senha nasce uma vez só.
+  if (desfecho.resultado === "criada") await avisarSenhaCriada(desfecho.contaId, desfecho.email);
+  return desfecho;
+}
+
+/** O e-mail "uma senha foi criada", para o `User.email` lido do nosso banco. Nunca lança (`enviarEmail`). */
+async function avisarSenhaCriada(contaId: string, email: string): Promise<void> {
+  const t = (await getDict()).app.email.senhaCriada;
+  const entrar = enderecoDoSite("/login");
+  await enviarEmail({
+    para: email,
+    tipo: "senha-criada",
+    referencia: `conta:${contaId}`,
+    chave: `senha-criada/${contaId}`,
+    mensagem: { assunto: t.assunto, titulo: t.titulo, paragrafos: [t.criada, t.naoFoiVoce], ...(entrar ? { botao: { texto: t.botao, endereco: entrar } } : {}) },
   });
 }

@@ -50,6 +50,10 @@ const exemplos: Array<[string, MensagemDeEmail]> = [
   ["previa-cancelada-sem-pagamento.html", montarAvisoDaCobranca(fim, { encerradaSemPagamento: true }, falha, pt.app.email, site)],
   ["previa-cancelada.html", montarAvisoDaCobranca(fim, {}, falha, pt.app.email, site)],
   ["previa-prepago-terminando.html", montarAvisoDaCobranca({ tipo: "PREPAGO_TERMINANDO", referencia: trancaEm.toISOString(), trancaEm }, {}, falha, pt.app.email, site)],
+  // A confirmação de quem assinou (4.9b, E18): no cartão, mensal e anual; no Pix, com o fim do acesso.
+  ["previa-confirmada-mensal.html", montarAvisoDaCobranca({ tipo: "CONFIRMADA", referencia: "inicio", trancaEm: null }, { plano: "mensal" }, falha, pt.app.email, site)],
+  ["previa-confirmada-anual.html", montarAvisoDaCobranca({ tipo: "CONFIRMADA", referencia: "inicio", trancaEm: null }, { plano: "anual" }, falha, pt.app.email, site)],
+  ["previa-confirmada-pix.html", montarAvisoDaCobranca({ tipo: "CONFIRMADA", referencia: "inicio", trancaEm: new Date(falha.getTime() + 30 * DIA) }, { plano: "mensal" }, falha, pt.app.email, site)],
 ];
 for (const [nome, mensagem] of exemplos) {
   const caminho = join(pasta, nome);

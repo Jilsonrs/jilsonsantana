@@ -527,9 +527,11 @@ gera mais aviso, o acesso ficaria liberado para sempre. *(Achado P1 da revisão 
 ## Assinar com a conta logada *(Fase 4, etapa 4.2 — 10/10/2026)*
 
 **Quem assina logado recebe um e-mail nosso confirmando** *(decisão do operador, 29/10/2026, P127 — a revisão
-ampla da cobrança; plano → 4.9b, E18; ainda não construído)*: como as boas-vindas de quem assina sem conta, no
-visual da escola — a assinatura confirmada, o plano, até quando e como entrar. O texto vai ao operador. Hoje
-quem assina logado só vê a confirmação na tela. *O recibo automático da Stripe não foi o escolhido.*
+ampla da cobrança; plano → 4.9b, E18; no código desde 30/10/2026, com o texto aprovado por ele)*: no visual da
+escola — no cartão, o plano e que renova sozinho; no Pix, até quando vai o acesso; o botão leva ao Início. Sai
+uma vez por assinatura, pela mesma regra dos e-mails da cobrança (`avisos-da-assinatura.ts`), e só para a
+assinatura que nasceu há menos de 2 dias. A de quem assinou sem conta não recebe: as boas-vindas já confirmam.
+*O recibo automático da Stripe não foi o escolhido.* *Reabre se ele quiser o recibo da Stripe no lugar deste.*
 
 **Decisões do operador:**
 - **A tela mora em `/aluno/assinar`; a de depois do pagamento, em `/aluno/assinar/concluido`**
@@ -1106,9 +1108,10 @@ pública de assinar*), o teto da prévia (*Limite de tentativas*), o código de 
   correr risco de cair no spam (aí ele prefere entrar só por código).*
   **O aviso "uma senha foi criada"** *(decisão do operador, 29/10/2026, P123 — a revisão ampla da cobrança
   achou o risco um pouco maior: a dona do e-mail que depois assinar teria a assinatura dela visível e
-  cancelável por quem pagou; plano → 4.9b, E16; ainda não construído)*: quando a senha é criada logo depois de
-  pagar, sai um e-mail para a caixa dizendo que uma senha foi criada nesta conta e que, se não foi a pessoa,
-  ela crie outra pelo "Esqueci minha senha" — que desconecta os outros aparelhos. O texto vai ao operador.
+  cancelável por quem pagou; plano → 4.9b, E16; no código desde 30/10/2026, com o texto aprovado por ele)*:
+  quando a senha é criada logo depois de pagar, sai um e-mail para a caixa dizendo que uma senha foi criada
+  nesta conta e que, se não foi a pessoa, ela crie outra pelo "Esqueci minha senha" — que desconecta os outros
+  aparelhos (`revokeSessionsOnPasswordReset`, com teste). Sai depois do commit, uma vez por conta.
 - **As boas-vindas** (`lib/boas-vindas.ts`): saem depois de **qualquer** sincronia da assinatura de
   quem assinou sem conta — o aviso da Stripe (inclusive o repetido), o novo clique de quem já pagou,
   a conferência do admin —, sempre **depois do commit**, e só com a conta com acesso. **Uma vez:** a

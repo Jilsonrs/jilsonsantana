@@ -22,7 +22,7 @@ import servidor from "./servidor.js";
 import { prisma } from "../lib/prisma.js";
 import { enderecoDoSite } from "../lib/endereco-do-site.js";
 import { readFileSync, existsSync } from "node:fs";
-import { ANTECEDENCIA_DO_AVISO_EM_MS, ANTECEDENCIA_DO_PREPAGO_EM_MS, PRAZO_DA_MARCA_PENDENTE_EM_MS, avisarSobreAAssinatura, emailDevido, marcaResolve, rodadaDosAvisos } from "../lib/avisos-da-assinatura.js";
+import { ANTECEDENCIA_DO_AVISO_EM_MS, ANTECEDENCIA_DO_PREPAGO_EM_MS, JANELA_DA_CONFIRMACAO_EM_MS, PRAZO_DA_MARCA_PENDENTE_EM_MS, avisarSobreAAssinatura, emailDevido, marcaResolve, rodadaDosAvisos } from "../lib/avisos-da-assinatura.js";
 import { AssinaturaNaoEncontrada } from "../lib/stripe.js";
 import { diaNoEmail } from "../views/email-da-cobranca.js";
 
@@ -35,7 +35,9 @@ import { diaNoEmail } from "../views/email-da-cobranca.js";
 //     sem o primeiro pagamento, a sem dono e a conta excluída → nada; a cancelada com dias pagos
 //     espera o período acabar;
 //   - o envio que falha volta a tentar; "duplicado" não; duas pontas juntas mandam um só;
-//   - uma falha na regra nunca derruba o 200 do aviso.
+//   - uma falha na regra nunca derruba o 200 do aviso;
+//   - a confirmação de quem assinou logado (E18): uma vez, só para a assinatura que nasceu há pouco, e
+//     nunca para a que já recebe as boas-vindas (quem assinou sem conta).
 
 const SEGREDO = "whsec_teste_da_suite_local";
 const S = `${Date.now()}`;
@@ -75,7 +77,8 @@ const naStripe = (id: string, userId: string, dados: Partial<AssinaturaNaStripe>
 const atrasada = (id: string, userId: string, falha: Date, proxima: Date | null = new Date(Date.now() + 2 * DIA)) => naStripe(id, userId, { status: "past_due", pagoAte: falha, proximaTentativa: proxima });
 
 const doTipo = (tipo: PedidoDeEmail["tipo"]) => enviarEmail.mock.calls.map(([p]) => p).filter((p) => p.tipo === tipo);
-const todos = () => enviarEmail.mock.calls.map(([p]) => p);
+/** Os e-mails da COBRANÇA enviados — a confirmação de quem assinou (E18) tem os testes dela, em "a confirmação". */
+const todos = () => enviarEmail.mock.calls.map(([p]) => p).filter((p) => p.tipo !== "assinatura-confirmada");
 const marcas = async (sub: string) => prisma.subscriptionEmail.findMany({ where: { subscription: { stripeSubscriptionId: sub } }, select: { kind: true, reference: true }, orderBy: { id: "asc" } });
 /** As marcas com a confirmação do envio (`sentAt`): vazio = pendente. */
 const marcasCompletas = async (sub: string) => prisma.subscriptionEmail.findMany({ where: { subscription: { stripeSubscriptionId: sub } }, select: { kind: true, reference: true, sentAt: true }, orderBy: { id: "asc" } });
@@ -230,7 +233,7 @@ describe("a assinatura que terminou", () => {
     expect(pedido?.mensagem.paragrafos.join(" ")).toContain("Não conseguimos cobrar a renovação");
   });
 
-  it("a que expirou sem o primeiro pagamento, a ativa e a que se renovou: nenhum e-mail", async () => {
+  it("a que expirou sem o primeiro pagamento, a ativa e a que se renovou: nenhum e-mail de fim", async () => {
     const conta = await novaConta();
     for (const status of ["incomplete_expired", "incomplete", "active", "trialing"]) {
       const sub = novoId("sub");
@@ -267,6 +270,85 @@ describe("a assinatura que terminou", () => {
     buscarAssinatura.mockResolvedValue(naStripe(semConta, `conta-que-nao-existe-${S}`, { status: "past_due", pagoAte: new Date(Date.now() - 60_000) }));
     expect((await enviar(avisoDaAssinatura(semConta, "invoice.payment_failed"))).status).toBe(200);
     expect(todos()).toHaveLength(0);
+  });
+});
+
+// A CONFIRMAÇÃO DE QUEM ASSINOU (4.9b, E18 — decisão do operador, P127; textos aprovados em 30/10/2026).
+describe("a confirmação de quem assinou", () => {
+  const confirmacoes = (sub: string) => doTipo("assinatura-confirmada").filter((p) => p.referencia?.endsWith(`assinatura:${sub}`));
+
+  it("assinou logado no cartão (mensal): 'sua assinatura está confirmada' sai UMA vez, com o plano, a renovação e o botão para a escola", async () => {
+    const conta = await novaConta();
+    const sub = novoId("sub");
+    buscarAssinatura.mockResolvedValue(naStripe(sub, conta.id, { plano: "mensal" }));
+    expect((await enviar(avisoDaAssinatura(sub, "customer.subscription.created"))).status).toBe(200);
+    await enviar(avisoDaAssinatura(sub, "invoice.paid"));
+    await enviar(avisoDaAssinatura(sub));
+
+    expect(confirmacoes(sub)).toHaveLength(1);
+    const [pedido] = confirmacoes(sub);
+    const espelho = await prisma.subscription.findUniqueOrThrow({ where: { stripeSubscriptionId: sub } });
+    expect([pedido?.para, pedido?.chave, pedido?.referencia]).toEqual([conta.email, `assinatura-confirmada/${espelho.id}/inicio`, `conta:${conta.id} assinatura:${sub}`]);
+    expect([pedido?.mensagem.assunto, pedido?.mensagem.titulo]).toEqual(["Sua assinatura está confirmada", "Assinatura confirmada"]);
+    expect(pedido?.mensagem.paragrafos).toEqual(["Sua assinatura do plano Mensal foi confirmada: você tem acesso a todos os cursos e trilhas. Ela renova sozinha todo mês, até você cancelar."]);
+    expect(pedido?.mensagem.botao).toEqual({ texto: "Ir para a escola", endereco: enderecoDoSite("/inicio") });
+    expect(pedido?.mensagem.botao?.endereco).toMatch(/\/inicio$/);
+    expect((await marcasCompletas(sub)).map((m) => [m.kind, m.reference, m.sentAt instanceof Date])).toEqual([["CONFIRMADA", "inicio", true]]);
+  });
+
+  it("o plano anual: o texto diz o plano e que renova todo ano", async () => {
+    const conta = await novaConta();
+    const sub = novoId("sub");
+    buscarAssinatura.mockResolvedValue(naStripe(sub, conta.id, { plano: "anual", pagoAte: new Date(Date.now() + 365 * DIA) }));
+    await enviar(avisoDaAssinatura(sub, "customer.subscription.created"));
+    expect(confirmacoes(sub)[0]?.mensagem.paragrafos).toEqual(["Sua assinatura do plano Anual foi confirmada: você tem acesso a todos os cursos e trilhas. Ela renova sozinha todo ano, até você cancelar."]);
+  });
+
+  it("o Pix pré-pago: o texto diz até quando vai o acesso — e o 'está acabando' não sai junto (falta mais que 3 dias)", async () => {
+    const conta = await novaConta();
+    const sub = novoId("sub");
+    const fim = new Date(Date.now() + 30 * DIA);
+    buscarAssinatura.mockResolvedValue(naStripe(sub, conta.id, { pagoAte: fim, pixPaymentIntentId: novoId("pi"), plano: "mensal" }));
+    await enviar(avisoDaAssinatura(sub, "customer.subscription.created"));
+    expect(confirmacoes(sub)).toHaveLength(1);
+    expect(confirmacoes(sub)[0]?.mensagem.paragrafos).toEqual([`Seu Pix foi confirmado: você tem acesso a todos os cursos e trilhas até o dia ${diaNoEmail(fim)}.`]);
+    expect(doTipo("prepago-terminando")).toHaveLength(0);
+  });
+
+  it("a assinatura que já existia (renovou, ou é de antes da confirmação) e a que ainda não foi paga: nenhuma confirmação", async () => {
+    const conta = await novaConta();
+    const sub = novoId("sub");
+    buscarAssinatura.mockResolvedValue(naStripe(sub, conta.id, { status: "incomplete", pagoAte: null }));
+    await enviar(avisoDaAssinatura(sub, "customer.subscription.created"));
+    expect(confirmacoes(sub)).toHaveLength(0);
+    // Paga, mas o espelho nasceu há mais que a janela: é uma assinatura antiga.
+    await prisma.subscription.update({ where: { stripeSubscriptionId: sub }, data: { createdAt: new Date(Date.now() - JANELA_DA_CONFIRMACAO_EM_MS - HORA) } });
+    buscarAssinatura.mockResolvedValue(naStripe(sub, conta.id));
+    await enviar(avisoDaAssinatura(sub, "invoice.paid"));
+    expect(confirmacoes(sub)).toHaveLength(0);
+    expect(await marcas(sub)).toEqual([]);
+  });
+
+  it("quem assinou sem conta: as boas-vindas confirmam, e a confirmação não sai (a marca fica consumida)", async () => {
+    const conta = await novaConta();
+    await prisma.guestCheckout.create({ data: { id: novoId("ficha"), email: conta.email, stripeCustomerId: novoId("cus"), livemode: false, userId: conta.id } });
+    const sub = novoId("sub");
+    buscarAssinatura.mockResolvedValue(naStripe(sub, conta.id, { plano: "mensal" }));
+    await enviar(avisoDaAssinatura(sub, "customer.subscription.created"));
+    await enviar(avisoDaAssinatura(sub, "invoice.paid"));
+    expect(doTipo("boas-vindas").filter((p) => p.para === conta.email)).toHaveLength(1);
+    expect(confirmacoes(sub)).toHaveLength(0);
+    expect((await marcasCompletas(sub)).map((m) => [m.kind, m.sentAt instanceof Date])).toEqual([["CONFIRMADA", true]]);
+  });
+
+  it("quem assinou sem conta, cancelou e assinou de novo LOGADO: a assinatura nova recebe a confirmação (as boas-vindas foram da primeira)", async () => {
+    const conta = await novaConta();
+    await prisma.guestCheckout.create({ data: { id: novoId("ficha"), email: conta.email, stripeCustomerId: novoId("cus"), livemode: false, userId: conta.id, boasVindasEnviadaEm: new Date(Date.now() - 40 * DIA) } });
+    const sub = novoId("sub");
+    buscarAssinatura.mockResolvedValue(naStripe(sub, conta.id, { plano: "mensal" }));
+    await enviar(avisoDaAssinatura(sub, "customer.subscription.created"));
+    expect(doTipo("boas-vindas").filter((p) => p.para === conta.email)).toHaveLength(0);
+    expect(confirmacoes(sub)).toHaveLength(1);
   });
 });
 
@@ -331,9 +413,11 @@ describe("a rodada do agendador", () => {
     // A falha da Stripe nas assinaturas de outros testes vira alerta: aqui, esperado.
     vi.spyOn(console, "error").mockImplementation(() => {});
   });
-  async function noBanco(sub: string, conta: string, dados: { status: string; currentPeriodEnd: Date | null; updatedAt?: Date; pixPaymentIntentId?: string }) {
+  // A assinatura nasce ANTIGA (10 dias) — a que a rodada encontra já existia —, salvo quando o teste diz
+  // `createdAt`: a nascida há pouco é a da confirmação (E18).
+  async function noBanco(sub: string, conta: string, dados: { status: string; currentPeriodEnd: Date | null; updatedAt?: Date; pixPaymentIntentId?: string; createdAt?: Date }) {
     return prisma.subscription.create({
-      data: { stripeSubscriptionId: sub, ownerUserId: conta, status: dados.status, currentPeriodEnd: dados.currentPeriodEnd, livemode: false, ...(dados.updatedAt ? { updatedAt: dados.updatedAt } : {}), ...(dados.pixPaymentIntentId ? { pixPaymentIntentId: dados.pixPaymentIntentId } : {}) },
+      data: { stripeSubscriptionId: sub, ownerUserId: conta, status: dados.status, currentPeriodEnd: dados.currentPeriodEnd, livemode: false, createdAt: dados.createdAt ?? new Date(Date.now() - 10 * DIA), ...(dados.updatedAt ? { updatedAt: dados.updatedAt } : {}), ...(dados.pixPaymentIntentId ? { pixPaymentIntentId: dados.pixPaymentIntentId } : {}) },
     });
   }
   const conferiuNaStripe = (sub: string) => buscarAssinatura.mock.calls.some(([id]) => id === sub);
@@ -584,6 +668,29 @@ describe("a rodada do agendador", () => {
     expect(todos().filter((p) => p.referencia?.endsWith(`assinatura:${sub}`))).toHaveLength(0);
   });
 
+  it("a confirmação que não saiu no aviso (o envio falhou): a rodada manda; a assinatura antiga nem é escolhida", async () => {
+    const conta = await novaConta();
+    const sub = novoId("sub");
+    naStripeAgora.set(sub, naStripe(sub, conta.id, { plano: "anual" }));
+    enviarEmail.mockResolvedValueOnce({ enviado: false, motivo: "falhou" });
+    await enviar(avisoDaAssinatura(sub, "customer.subscription.created"));
+    expect(await marcas(sub)).toEqual([]);
+    const outra = await novaConta();
+    const antiga = novoId("sub");
+    await noBanco(antiga, outra.id, { status: "active", currentPeriodEnd: new Date(Date.now() + 20 * DIA) });
+
+    await rodadaDosAvisos();
+    expect(daAssinatura(sub, "assinatura-confirmada")).toHaveLength(2);
+    expect(await marcas(sub)).toEqual([{ kind: "CONFIRMADA", reference: "inicio" }]);
+    expect(conferiuNaStripe(antiga)).toBe(false);
+    expect(daAssinatura(antiga, "assinatura-confirmada")).toHaveLength(0);
+
+    buscarAssinatura.mockClear();
+    await rodadaDosAvisos();
+    expect(conferiuNaStripe(sub)).toBe(false);
+    expect(daAssinatura(sub, "assinatura-confirmada")).toHaveLength(2);
+  });
+
   it("o job da publicação executa o arquivo da rodada", () => {
     const raiz = new URL("../../../", import.meta.url);
     const publicacao = readFileSync(new URL(".github/workflows/deploy.yml", raiz), "utf8");
@@ -630,6 +737,26 @@ describe("qual e-mail é devido agora (função pura)", () => {
     expect(emailDevido({ status: "active", currentPeriodEnd: null, pixPaymentIntentId: "pi_pix" }, fim)).toBeNull();
     expect(emailDevido({ status: "canceled", currentPeriodEnd: fim, pixPaymentIntentId: "pi_pix" }, new Date(fim.getTime() + 1))?.tipo).toBe("CANCELADA");
     expect(ANTECEDENCIA_DO_PREPAGO_EM_MS).toBe(3 * DIA);
+  });
+
+  it("a confirmação: a assinatura viva que nasceu dentro da janela — no Pix, com o fim do acesso; antes do fim da pré-paga, o 'está acabando' vem primeiro", () => {
+    const agora = new Date("2026-11-10T15:00:00Z");
+    const nasceu = (msAtras: number) => new Date(agora.getTime() - msAtras);
+    const fim = new Date(agora.getTime() + 30 * DIA);
+    const cartao = { status: "active", currentPeriodEnd: fim, createdAt: nasceu(HORA) };
+    expect(emailDevido(cartao, agora)).toEqual({ tipo: "CONFIRMADA", referencia: "inicio", trancaEm: null });
+    expect(emailDevido({ ...cartao, createdAt: nasceu(JANELA_DA_CONFIRMACAO_EM_MS) }, agora)?.tipo).toBe("CONFIRMADA");
+    expect(emailDevido({ ...cartao, createdAt: nasceu(JANELA_DA_CONFIRMACAO_EM_MS + 1) }, agora)).toBeNull();
+    expect(emailDevido({ ...cartao, status: "trialing" }, agora)?.tipo).toBe("CONFIRMADA");
+    for (const status of ["incomplete", "incomplete_expired", "paused", "unpaid"]) expect(emailDevido({ ...cartao, status }, agora), status).toBeNull();
+    // A atrasada e a cancelada recentes seguem as regras delas.
+    expect(emailDevido({ status: "past_due", currentPeriodEnd: nasceu(HORA), createdAt: nasceu(HORA) }, agora)?.tipo).toBe("COBRANCA_FALHOU");
+    expect(emailDevido({ status: "canceled", currentPeriodEnd: nasceu(HORA), createdAt: nasceu(HORA) }, agora)?.tipo).toBe("CANCELADA");
+    // O Pix: a data é o fim do acesso pago.
+    expect(emailDevido({ ...cartao, pixPaymentIntentId: "pi_pix" }, agora)).toEqual({ tipo: "CONFIRMADA", referencia: "inicio", trancaEm: fim });
+    const pertoDoFim = new Date(agora.getTime() + DIA);
+    expect(emailDevido({ status: "active", currentPeriodEnd: pertoDoFim, pixPaymentIntentId: "pi_pix", createdAt: nasceu(HORA) }, agora)?.tipo).toBe("PREPAGO_TERMINANDO");
+    expect(JANELA_DA_CONFIRMACAO_EM_MS).toBe(2 * DIA);
   });
 
   it("a marca resolve o e-mail se foi enviada (ou consumida), ou se está pendente há menos que o prazo", () => {

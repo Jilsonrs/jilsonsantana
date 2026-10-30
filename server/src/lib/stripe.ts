@@ -113,6 +113,8 @@ export type AssinaturaNaStripe = {
    * código não pode ficar com a conta paga por outra tentativa. Vazio: não veio de um visitante.
    */
   resumoDaTentativa?: string | null;
+  /** O plano (metadados do nosso checkout, ou o intervalo do preço) — o texto do e-mail de confirmação (E18). */
+  plano?: Plano | null;
 };
 
 /**
@@ -831,7 +833,11 @@ export function paraAssinaturaNaStripe(assinatura: Stripe.Subscription, devolvid
   // O Pix pré-pago de que ela nasceu (etapa 4.9): vazio na recorrente.
   const pixPaymentIntentId = assinatura.metadata[METADADO_DO_PIX] || null;
   const resumoDaTentativa = assinatura.metadata[M.tentativa] || null;
-  return { id: assinatura.id, status, pagoAte, clienteId, userId, pedido, doVisitante, livemode: assinatura.livemode, proximaTentativa, encerradaSemPagamento, pixPaymentIntentId, resumoDaTentativa };
+  // O plano (E18, o e-mail de confirmação): o que o NOSSO checkout gravou nos metadados; sem ele, pelo intervalo do preço.
+  const doMetadado = assinatura.metadata.plano;
+  const intervalo = assinatura.items.data[0]?.price?.recurring?.interval;
+  const plano: Plano | null = PLANOS.find((p) => p === doMetadado) ?? (intervalo === "month" ? "mensal" : intervalo === "year" ? "anual" : null);
+  return { id: assinatura.id, status, pagoAte, clienteId, userId, pedido, doVisitante, livemode: assinatura.livemode, proximaTentativa, encerradaSemPagamento, pixPaymentIntentId, resumoDaTentativa, plano };
 }
 
 /**

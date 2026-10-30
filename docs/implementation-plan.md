@@ -158,8 +158,10 @@
 > **PARA CONTINUAR NO PRÓXIMO CHAT (a ordem — atualizado em 30/10/2026, depois da publicação `0f8c0c7`):**
 > 1. **A revisão ampla da cobrança (a etapa 4.9b): o bloco de engenharia APROVADO (29/10/2026), na ordem do
 >    plano** — grupo 1 (E5, E4, E1, E3, E2) **FEITO e publicado (`f36e274`)**, com as correções C1 a C5; **o grupo 2 (E8, E10,
->    E9, E7, E6), os R1 a R6, a P128 e os achados da revisão do grupo 2: FEITOS e publicados (`0f8c0c7`).** **O próximo:
->    o grupo 3** (E11, E12, E13, E17), depois o grupo 4 (E14, E15, E16, E18; cada texto vai ao operador antes). Uma
+>    E9, E7, E6), os R1 a R6, a P128 e os achados da revisão do grupo 2: FEITOS e publicados (`0f8c0c7`).** **O grupo 3
+>    (E11, E12, E13, E17) e os achados da revisão dele, e do grupo 4 o E15, o E16 e o E18: FEITOS na `dev`, ainda não
+>    publicados** (o E18 traz uma migration). **O próximo: o E14** (o texto e o botão vão ao operador antes), depois a
+>    revisão de segurança de tudo desde `0af2891` e a ordem dele para publicar. Uma
 >    revisão de segurança por grupo, só do que mudou, antes de publicar. Um commit por parte. **Sem nova rodada de revisão a cada correção** *(operador, 29/10/2026: "fechando
 >    P1, P2, P3 e seguindo em frente e rodando os testes no que precisar para não ficar em polimento infinito")*:
 >    P0 e P1 travam a publicação; P2 e P3 se fecham com teste e mutação, sem revisar de novo. A P128 (o fuso do
@@ -6405,10 +6407,18 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             recusado (`card_declined`, lido em `falhou`, `stripe-do-site.tsx`) mostra a frase que sugere o Pix só quando o
             Pix está no ar; sem ele, a da Stripe. Testes: `AssinarPage.test.tsx` (+1), `stripe-do-site.test.ts` (+2) e as
             frases novas nos testes das telas. **Mutação: 4 de 4 reprovaram.**
-      - [ ] **E16 — o aviso "uma senha foi criada"** *(decisão do operador, 29/10/2026, P123)*: a senha criada logo
+      - [x] **E16 — o aviso "uma senha foi criada"** *(decisão do operador, 29/10/2026, P123)*: a senha criada logo
             depois de pagar (`senha-depois-de-pagar.ts`) manda um e-mail para a caixa — se não foi a pessoa, ela
             cria outra pelo "Esqueci minha senha", que desconecta os outros aparelhos (conferir na prova). Pela
-            porta de sempre (`enviarEmail`, depois do commit, com a chave). O texto vai ao operador.
+            porta de sempre (`enviarEmail`, depois do commit, com a chave). O texto vai ao operador. **FEITO
+            (30/10/2026), com o texto APROVADO pelo operador no mesmo dia** (`app.email.senhaCriada`): *"Uma senha foi
+            criada agora para entrar na escola com este e-mail."* e *"Se não foi você, crie uma senha nova em 'Esqueci
+            minha senha', na tela de entrar: quem entrou com a senha anterior sai da conta na hora."*, com o botão para a
+            tela de entrar. Sai **depois do commit** da transação que grava a senha, só quando ela foi criada
+            (`avisarSenhaCriada`), chave `senha-criada/<conta>`. A promessa do texto está provada: o "Esqueci minha senha"
+            derruba as sessões de antes (`revokeSessionsOnPasswordReset`; `codigo-por-email.test.ts` já reprova sem
+            isso). Teste: `senha-depois-de-pagar.test.ts` (o aviso uma vez, com o texto; a recusa seguinte não manda).
+            **Mutação: 3 de 3 reprovaram.**
       - [x] **E17 — sem login, o "em conferência" só para a aba que pagou** *(decisão do operador, 29/10/2026,
             P124)*: nas duas portas sem login, o 409 `PixEmConferencia` só com o código da tentativa do Pix pago
             (`pago.visitante?.resumoDaTentativa === resumoDaTentativa(pedido.tentativa)`); os outros, 409 `Ocupada`,
@@ -6438,9 +6448,23 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             assinatura em andamento. Termine por onde começou ou aguarde um instante. Se você já pagou, vamos responder
             pelo seu e-mail; se precisar, escreva para suporte@jilsonsantana.com."* — não conta a ninguém que houve
             pagamento, e dá a saída (`assinar.ocupadaOutraAba`).
-      - [ ] **E18 — o e-mail de confirmação para quem assina logado** *(decisão do operador, 29/10/2026, P127)*:
+      - [x] **E18 — o e-mail de confirmação para quem assina logado** *(decisão do operador, 29/10/2026, P127)*:
             sai da sincronia que dá o acesso, uma vez por assinatura (a mesma regra das boas-vindas: depois do
-            commit, `enviarEmail`, chave estável), para cartão e Pix. O texto vai ao operador.
+            commit, `enviarEmail`, chave estável), para cartão e Pix. O texto vai ao operador. **FEITO (30/10/2026),
+            com o texto APROVADO pelo operador no mesmo dia** (`app.email.confirmada`): no cartão, *"Sua assinatura do
+            plano {Mensal|Anual} foi confirmada: você tem acesso a todos os cursos e trilhas. Ela renova sozinha {todo
+            mês|todo ano}, até você cancelar."*; no Pix, *"Seu Pix foi confirmado: você tem acesso a todos os cursos e
+            trilhas até o dia {data}."*; botão "Ir para a escola" (`/inicio`). **Como:** é mais um e-mail da MESMA regra
+            dos da cobrança (`emailDevido`, `avisos-da-assinatura.ts`), com a marca `CONFIRMADA` (migration
+            `20261030120000_email_de_confirmacao`, que só acrescenta o valor ao tipo) — uma vez por assinatura, depois
+            do commit, e a rodada de hora em hora manda a que falhou no aviso. **Só a assinatura viva que nasceu há
+            menos de 2 dias** (`JANELA_DA_CONFIRMACAO_EM_MS`): quem já assinava antes da publicação, ou renova, nunca a
+            recebe. **A de quem assinou sem conta não recebe** (as boas-vindas já confirmam): a marca fica consumida
+            quando as boas-vindas da ficha ainda não saíram ou saíram depois de a assinatura nascer; quem assinou sem
+            conta e depois assina de novo logado recebe. O plano vem dos metadados (Pix) ou do intervalo do preço
+            (cartão — `paraAssinaturaNaStripe`). A prévia (`email:previa`) monta os três. Testes:
+            `avisos-da-assinatura.test.ts` (+8) e `stripe.test.ts` (+1). **Mutação: 12 de 12 reprovaram** (uma
+            sobreviveu antes — a leitura do plano pelo intervalo não tinha teste; ganhou).
       **A REVISÃO DE SEGURANÇA DO GRUPO 1** (29/10/2026, `security-vulnerability-reviewer`, Opus 5.5, esforço máximo,
       sobre `76742f9..bdcc04b`): **nenhum P0.** Dois P1 da mesma causa — **dois alertas novos que um robô dispara à
       vontade** (o do E5, com um cabeçalho de mentira de formato certo; o do E3, sem login): juntos, uns 192 por dia
