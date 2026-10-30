@@ -193,7 +193,8 @@ no PaymentIntent/SetupIntent/Checkout Session; suporte anunciado em 22/abr/2026.
 >
 > **O PIX PAGO QUE NÃO VIRA ASSINATURA SOZINHO — EM CONFERÊNCIA** *(a segunda revisão de segurança do passo 6;
 > o operador decidiu corrigir tudo antes de publicar, 29/10/2026 — o plano → etapa 4.9, passo 6, parte 4)*: o
-> valor pago diferente do preço do plano (ou o preço fora de venda), a primeira fatura que não se paga por fora,
+> valor pago diferente do preço de AGORA do plano (E11, 30/10/2026: o id de preço gravado no Pix que saiu de venda,
+> com o mesmo valor, vira assinatura no preço de agora), a primeira fatura que não se paga por fora,
 > a pré-paga que acabou sem ser paga, ou o Pix processado e a pessoa ainda sem acesso. Nada nasce; o Pix ganha a
 > marca `em_conferencia` nos metadados (com o motivo), sai **um** alerta para o operador, e as quatro portas
 > (cartão e Pix, logado e sem conta) respondem 409 `PixEmConferencia` — a pessoa **não paga de novo**. O operador
@@ -913,10 +914,10 @@ revisão ampla da cobrança; a ação mora na etapa 4.7b, ainda não construída
 da conta (a troca do Better Auth está desligada), e o caminho é devolver e a pessoa assinar de novo.
 
 **O "Pix em conferência" só aparece para a aba que pagou** *(decisão do operador, 29/10/2026, P124 — a terceira
-passada da revisão do passo 6 da 4.9; plano → 4.9b, E17; ainda não construído)*: sem login, o 409
+passada da revisão do passo 6 da 4.9; plano → 4.9b, E17; no código desde 30/10/2026)*: sem login, o 409
 `PixEmConferencia` sai só para quem traz o código da tentativa que pagou; quem só sabe o e-mail recebe o 409
-`Ocupada` (a frase de "outra aba"), e nada é cobrado nem criado. Hoje a frase sai para qualquer um que digite o
-e-mail — e revela que ele pagou um Pix que travou.
+`Ocupada` (a frase de "outra aba"), e nada é cobrado nem criado — nas duas portas (cartão e Pix), tanto com o Pix já
+em conferência quanto com o que entra em conferência ao ser processado ali (`emConferenciaSoParaQuemPagou`).
 
 **Decisões do operador (21/10/2026):** o plano do passo, em três partes (*"Sim, pode seguir"*) —
 a ficha de espera e a conta que nasce dela; as rotas sem login; a prova e a revisão. As respostas

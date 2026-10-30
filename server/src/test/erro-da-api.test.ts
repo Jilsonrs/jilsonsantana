@@ -14,6 +14,7 @@ vi.mock("../lib/stripe.js", async (importOriginal) => ({
 
 import servidor from "./servidor.js";
 import { tratarErroDaApi } from "../lib/erro-da-api.js";
+import { prisma } from "../lib/prisma.js";
 
 // O TRATADOR DE ERRO DA API (Fase 4, etapa 4.4 — achado da revisão de segurança da 4.2). O que
 // estes testes protegem:
@@ -78,10 +79,12 @@ describe("o erro que escapa de uma rota de /api", () => {
     expect(res.text).not.toContain("erro-da-api");
   });
 
-  it("não fica mudo: o registro leva o endereço e o erro — sem o que vem depois do \"?\"", async () => {
+  it("não fica mudo: o registro leva o endereço, a conta (E13: o id, nunca o e-mail) e o erro — sem o que vem depois do \"?\"", async () => {
     buscarPrecos.mockRejectedValue(new Error("a Stripe caiu"));
     await request(servidor).get("/api/billing/planos?token=nao_vai_para_o_registro").set("Cookie", member);
-    expect(linhas()).toContain("[api] GET /api/billing/planos falhou");
+    const conta = await prisma.user.findUniqueOrThrow({ where: { email: process.env.SEED_MEMBER_EMAIL }, select: { id: true } });
+    expect(linhas()).toContain(`[api] GET /api/billing/planos falhou (conta ${conta.id}): `);
+    expect(linhas()).not.toContain(process.env.SEED_MEMBER_EMAIL ?? "sem-email");
     expect(linhas()).toContain("a Stripe caiu");
     expect(linhas()).not.toContain("nao_vai_para_o_registro");
   });

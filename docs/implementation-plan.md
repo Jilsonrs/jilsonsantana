@@ -6378,11 +6378,20 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             que a escola abre (o player do Bunny, o campo da Stripe) não mudam, e o parceiro de design abre o servidor
             local direto, sem moldura. Teste: `janela-isolada.test.ts` (a página e a API; o de produção pela função).
             **Mutação: 5 de 5 reprovaram.**
-      - [ ] **E11 — o Pix conferido pelo plano e pelo valor**, com a pré-paga criada no preço de agora desse plano
-            (hoje, pelo id do preço — a terceira passada do passo 6).
-      - [ ] **E12 — `TEMPO_DO_PIX` 180 s** (o pior caso passou a 8 idas à Stripe — a terceira passada).
-      - [ ] **E13 — o id da conta nas linhas `[api]` de `/billing`**: o alerta diz quem (a busca por `sub_`, `pi_`
-            e `cus_` é da 4.7b).
+      - [x] **E11 — o Pix conferido pelo plano e pelo valor**, com a pré-paga criada no preço de agora desse plano
+            (hoje, pelo id do preço — a terceira passada do passo 6). **FEITO (30/10/2026):** `processarPixPago`
+            (`assinaturas.ts`) acha o preço de AGORA pelo plano do Pix; valor diferente → em conferência (com o
+            motivo); valor igual → a pré-paga nasce nesse preço (`criarAssinaturaPrePaga` com o `precoId` de agora — a
+            Stripe não aceita assinatura nova num preço arquivado). O id gravado no Pix que saiu de venda deixou de pôr
+            em conferência quem pagou o valor certo. Teste: `pix-pre-pago.test.ts` (o teste do "preço fora de venda"
+            virou o caso que agora vira assinatura). **Mutação: 3 de 3 reprovaram.**
+      - [x] **E12 — `TEMPO_DO_PIX` 180 s** (o pior caso passou a 8 idas à Stripe — a terceira passada). **FEITO
+            (30/10/2026):** 180 s, com a conta das 8 idas no comentário; teste do prazo (`pix-pre-pago.test.ts`).
+            **Mutação: 1 de 1 reprovou.**
+      - [x] **E13 — o id da conta nas linhas `[api]` de `/billing`**: o alerta diz quem (a busca por `sub_`, `pi_`
+            e `cus_` é da 4.7b). **FEITO (30/10/2026):** o tratador de erro da API (`erro-da-api.ts`) escreve
+            `… falhou (conta <id>): …` quando o pedido tem sessão — o id, nunca o e-mail —, em toda rota de `/api`.
+            Teste: `erro-da-api.test.ts`. **Mutação: 1 de 1 reprovou.**
       - [ ] **E14 — o Pix na cobrança atrasada** *(decisão do operador, 29/10/2026, P118)*: ao lado de "Trocar
             cartão" (Faturamento, a aula trancada e o e-mail da falha), um "Pagar com Pix" que encerra a atrasada
             e abre o Pix do plano — pela operação da assinatura (`operarNaAssinatura`), um pagamento aberto por vez.
@@ -6395,10 +6404,15 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             depois de pagar (`senha-depois-de-pagar.ts`) manda um e-mail para a caixa — se não foi a pessoa, ela
             cria outra pelo "Esqueci minha senha", que desconecta os outros aparelhos (conferir na prova). Pela
             porta de sempre (`enviarEmail`, depois do commit, com a chave). O texto vai ao operador.
-      - [ ] **E17 — sem login, o "em conferência" só para a aba que pagou** *(decisão do operador, 29/10/2026,
+      - [x] **E17 — sem login, o "em conferência" só para a aba que pagou** *(decisão do operador, 29/10/2026,
             P124)*: nas duas portas sem login, o 409 `PixEmConferencia` só com o código da tentativa do Pix pago
             (`pago.visitante?.resumoDaTentativa === resumoDaTentativa(pedido.tentativa)`); os outros, 409 `Ocupada`,
-            sem nunca criar outro pagamento.
+            sem nunca criar outro pagamento. **FEITO (30/10/2026):** `emConferenciaSoParaQuemPagou`
+            (`checkout-do-visitante.ts`, função pura), nos DOIS lugares de cada porta (cartão e Pix sem login): o Pix
+            que já estava em conferência e o que entra em conferência ao ser processado ali. Testes:
+            `pagar-com-pix.test.ts` (a aba que pagou e as outras, por Pix e por cartão; o Pix processado na hora pelas
+            duas portas). **Mutação: 6 de 6 reprovaram** (uma sobreviveu antes — o caminho do cartão processado na hora
+            não tinha teste; ganhou).
       - [ ] **E18 — o e-mail de confirmação para quem assina logado** *(decisão do operador, 29/10/2026, P127)*:
             sai da sincronia que dá o acesso, uma vez por assinatura (a mesma regra das boas-vindas: depois do
             commit, `enviarEmail`, chave estável), para cartão e Pix. O texto vai ao operador.

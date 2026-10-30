@@ -144,6 +144,17 @@ export async function sincronizarAViva(email: string, assinaturaId: string): Pro
  * ali que a conta nasce. A resposta é "já tem conta": o caminho é entrar. Se depois disso não há conta
  * com acesso, precisa de gente, em voz alta (como `sincronizarAViva`).
  */
+/**
+ * O "EM CONFERÊNCIA" SÓ PARA A ABA QUE PAGOU (E17 da revisão ampla da cobrança — decisão do operador, 29/10/2026, P124):
+ * sem login, quem prova que pagou é o código da tentativa que a aba guardou — só quem fez o pagamento o tem. Sem ele (outra
+ * aba, outra pessoa com o mesmo e-mail), a resposta é "ocupada": não conta que há um Pix pago para este e-mail, e nunca
+ * cria outro pagamento. Função pura.
+ */
+export function emConferenciaSoParaQuemPagou(pagamento: Pick<PagamentoPrePago, "visitante">, tentativa: string | null | undefined): { resultado: "em-conferencia" } | { resultado: "ocupada" } {
+  const daAba = typeof tentativa === "string" && tentativa.length > 0 ? resumoDaTentativa(tentativa) : null;
+  return daAba !== null && pagamento.visitante?.resumoDaTentativa === daAba ? { resultado: "em-conferencia" } : { resultado: "ocupada" };
+}
+
 export async function pixPagoDoEmail(email: string, pagamento: PagamentoPrePago): Promise<DesfechoDoVisitante> {
   const desfecho = await processarPixPago(pagamento);
   if (desfecho.resultado === "em-conferencia") return { resultado: "em-conferencia" };
@@ -186,7 +197,7 @@ async function decidir(email: string, pedido: AssinarSemLoginInput, ficha: Ficha
     // cobrar de novo. A PRÉ-PAGA ainda incompleta nunca se cancela nem se reaproveita (achado 2).
     const pix = await listarPixDoCliente(ficha.stripeCustomerId);
     const pago = await pixPagoSemEspelho(tx, pix.pagos);
-    if (pago) return pago.emConferencia ? { resultado: "em-conferencia" } : { resultado: "pix-pago", pagamento: pago };
+    if (pago) return pago.emConferencia ? emConferenciaSoParaQuemPagou(pago, pedido.tentativa) : { resultado: "pix-pago", pagamento: pago };
     const prePaga = existentes.find((a) => a.pixPaymentIntentId);
     if (prePaga?.pixPaymentIntentId) return await pixDaPrePagaIncompleta(prePaga.pixPaymentIntentId);
 
@@ -292,7 +303,10 @@ export async function assinarComoVisitante(pedido: AssinarSemLoginInput, opcoes:
     console.error(`${erro.message} — conferir o formato do número fiscal na Stripe`);
     return { resultado: "documento-recusado" };
   }
-  if (decisao.resultado === "pix-pago") return pixPagoDoEmail(email, decisao.pagamento);
+  if (decisao.resultado === "pix-pago") {
+    const depois = await pixPagoDoEmail(email, decisao.pagamento);
+    return depois.resultado === "em-conferencia" ? emConferenciaSoParaQuemPagou(decisao.pagamento, pedido.tentativa) : depois;
+  }
   return decisao.resultado === "viva-na-stripe" ? sincronizarAViva(email, decisao.assinaturaId) : decisao;
 }
 

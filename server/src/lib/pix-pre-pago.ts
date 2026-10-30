@@ -2,7 +2,7 @@ import type { PixInput, PixSemLoginInput } from "@jilson/core";
 import { prisma } from "./prisma.js";
 import { temAcessoAtivo } from "./acesso.js";
 import { clienteDaConta, pixPagoDaConta, sincronizarAViva as sincronizarAVivaDaConta, travarSeLivre, type Conta } from "./checkout.js";
-import { ENCERRADAS, fichaComConta, fichaDoEmail, pixPagoDoEmail, sincronizarAViva as sincronizarAVivaDoEmail, temConta, travarSeLivre as travarEmailSeLivre, type OpcoesDoVisitante } from "./checkout-do-visitante.js";
+import { emConferenciaSoParaQuemPagou, ENCERRADAS, fichaComConta, fichaDoEmail, pixPagoDoEmail, sincronizarAViva as sincronizarAVivaDoEmail, temConta, travarSeLivre as travarEmailSeLivre, type OpcoesDoVisitante } from "./checkout-do-visitante.js";
 import { cancelarOutrosPix, pixDaPrePagaIncompleta, pixPagoSemEspelho } from "./assinaturas.js";
 import { novaTentativa, resumoDaTentativa } from "./tentativa-do-visitante.js";
 import { acertarNumeroFiscal, assinaturasDoCliente, buscarPrecos, cancelarIncompleta, DocumentoRecusado, type PagamentoPrePago } from "./stripe.js";
@@ -163,7 +163,7 @@ export async function pagarComPixSemLogin(pedido: PixSemLoginInput, opcoes: Opco
       // cancelamento (achado 2).
       const pix = await listarPixDoCliente(ficha.stripeCustomerId);
       const pago = await pixPagoSemEspelho(tx, pix.pagos);
-      if (pago) return pago.emConferencia ? { resultado: "em-conferencia" } : { resultado: "pix-pago", pagamento: pago };
+      if (pago) return pago.emConferencia ? emConferenciaSoParaQuemPagou(pago, tentativaAnterior) : { resultado: "pix-pago", pagamento: pago };
       const aberta = await assinaturasAbertas(ficha.stripeCustomerId, `ficha ${ficha.id}`);
       if (aberta) {
         if ("viva" in aberta) return { resultado: "viva-na-stripe", assinaturaId: aberta.viva };
@@ -203,7 +203,8 @@ export async function pagarComPixSemLogin(pedido: PixSemLoginInput, opcoes: Opco
   }
   if (decisao.resultado === "pix-pago") {
     const depois = await pixPagoDoEmail(email, decisao.pagamento);
-    return depois.resultado === "em-conferencia" || depois.resultado === "ocupada" ? { resultado: depois.resultado } : { resultado: "ja-tem-conta" };
+    if (depois.resultado === "em-conferencia") return emConferenciaSoParaQuemPagou(decisao.pagamento, tentativaAnterior);
+    return depois.resultado === "ocupada" ? { resultado: "ocupada" } : { resultado: "ja-tem-conta" };
   }
   if (decisao.resultado !== "viva-na-stripe") return decisao;
   // A mesma sincronia do assinar sem login, fora da trava: é ali que a conta nasce.

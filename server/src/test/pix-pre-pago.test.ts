@@ -47,7 +47,7 @@ vi.mock("../lib/email.js", async (importOriginal) => ({
 import servidor from "./servidor.js";
 import { prisma } from "../lib/prisma.js";
 import { temAcessoAtivo } from "../lib/acesso.js";
-import { processarPixPago } from "../lib/assinaturas.js";
+import { processarPixPago, TEMPO_DO_PIX } from "../lib/assinaturas.js";
 
 // O PIX PRÉ-PAGO QUE CAIU (Fase 4, etapa 4.9, passo 1 — decisão do operador, 28/10/2026). O que estes
 // testes protegem:
@@ -330,14 +330,22 @@ describe("o Pix pago que NÃO pode virar assinatura sozinho — EM CONFERÊNCIA 
     expect(criarAssinaturaPrePaga).not.toHaveBeenCalled();
   });
 
-  it("o preço do Pix não está mais à venda (mudou entre o QR e o pagamento): idem, com o motivo", async () => {
+  // E11 da revisão ampla (30/10/2026): vale o preço de AGORA do plano — o id gravado no Pix pode ter saído de venda (um
+  // preço novo, com o mesmo valor), e a Stripe não aceita assinatura nova num preço arquivado.
+  it("o id do preço do Pix saiu de venda, mas o plano custa o MESMO valor: vira assinatura, no preço de AGORA — sem conferência", async () => {
     const alertas = vi.spyOn(console, "error").mockImplementation(() => {});
     const conta = await novaConta();
     const pi = novoId("pi");
     expect((await enviar(pixCaiu(pi, { prepago: "mensal", precoId: "price_velho", userId: conta.id }))).status).toBe(200);
-    expect(criarAssinaturaPrePaga).not.toHaveBeenCalled();
-    expect(marcas.get(pi)).toContain("não está mais à venda");
-    expect(alertasDo(alertas, pi, "EM CONFERÊNCIA")).toHaveLength(1);
+    expect(criarAssinaturaPrePaga).toHaveBeenCalledTimes(1);
+    expect(criarAssinaturaPrePaga.mock.calls[0]?.[0]).toMatchObject({ id: pi, plano: "mensal", precoId: "price_mensal", centavos: 9990 });
+    expect(marcas.has(pi)).toBe(false);
+    expect(alertasDo(alertas, pi, "EM CONFERÊNCIA")).toEqual([]);
+    expect((await espelhoDoPix(pi))?.status).toBe("active");
+  });
+
+  it("o prazo da transação do Pix cobre o pior caso: 8 idas à Stripe, de até 20 s cada (E12)", () => {
+    expect(TEMPO_DO_PIX.timeout).toBeGreaterThanOrEqual(8 * 20_000);
   });
 
   it("a assinatura criada cuja fatura NÃO pôde ser paga: em conferência, e o espelho NÃO é gravado (a assinatura não valeu)", async () => {
