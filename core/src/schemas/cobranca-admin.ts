@@ -203,6 +203,20 @@ export const TIPOS_DE_CASO = [
 ] as const;
 export type TipoDeCasoDaLista = (typeof TIPOS_DE_CASO)[number];
 
+/**
+ * O TIPO DE FRAUDE que o banco deu no aviso de fraude (o `fraud_type` da Stripe), como o operador lê — no resumo do caso e no
+ * registro da cobrança (texto do admin; 4.7b, passo 5c). O que não estiver aqui aparece como veio.
+ */
+export const NOME_DO_TIPO_DE_FRAUDE: Readonly<Record<string, string>> = {
+  card_never_received: "cartão que o dono nunca recebeu",
+  fraudulent_card_application: "cartão pedido com dados falsos",
+  made_with_counterfeit_card: "cartão falsificado",
+  made_with_lost_card: "cartão perdido",
+  made_with_stolen_card: "cartão roubado",
+  misc: "fraude, sem detalhe",
+  unauthorized_use_of_card: "uso do cartão sem autorização",
+};
+
 /** O nome de cada tipo de caso — o mesmo na tela "Precisa de você" e no e-mail ao operador (texto do admin). */
 export const NOME_DO_TIPO_DE_CASO: Record<TipoDeCasoDaLista, string> = {
   PIX_EM_CONFERENCIA: "Pix pago que não virou assinatura",

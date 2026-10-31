@@ -6688,7 +6688,14 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
               voltaram, o caso fechou; o retrato do banco igual antes e depois. **Banco de dev:** a migration aplicada, *No
               difference detected*, nenhuma tabela sem RLS. *Docs check (context7): Stripe → `/websites/stripe` → como ganhar
               uma contestação na área de teste (31/10/2026).*
-        - [ ] **Fechamento do bloco 4.** **A revisão de segurança (31/10/2026, só o que mudou — `933e0ca`, `7c53789`,
+        - [x] **Fechamento do bloco 4.** **PUBLICADO em 31/10/2026, com a ordem do operador ("Sim, pode publicar"): merge
+              `af6b441`**, revisão `jilson-prod-00058-xsc` (100% do tráfego), CI e Deploy verdes — junto foi o passo 5a, que a
+              conferência do revisor cobriu. **No ar:** `/api/health` 200; as rotas novas recusam quem não entrou (401).
+              **Em produção (só leitura, branch `production`):** nenhuma tabela sem RLS; a migration
+              `20261031230000_pago_por_fora` aplicada (a coluna `paidOutOfBand` existe); nenhum caso ainda. **A conferência
+              do revisor (31/10/2026, `16f1df1` e `c01f55d`): os seis P1 fechados, nenhum P0 nem P1 novo**; um P2 e cinco P3
+              novos, a fechar com teste e mutação no `dev` (sobem com a próxima publicação — o fechamento do bloco 5).
+              **A revisão de segurança (31/10/2026, só o que mudou — `933e0ca`, `7c53789`,
               `d2cc903`, `fe97314`): nenhum P0; seis P1, corrigidos antes de publicar, e sete P2** (seis fechados com
               teste e mutação, sem nova rodada; o sétimo é tela nova e foi ao operador — P149). Os P1: (1) **"Aceitar este
               Pix" com a pré-paga MORTA do mesmo Pix no espelho** dava 500 com a assinatura nova já paga (a coluna do Pix é
@@ -6712,7 +6719,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
               "Cancelar e devolver" não anula mais a troca de plano pendente; a pré-paga do Pix sem espelho é achada na
               Stripe para o "E encerrar"; a paga por fora cuja fatura não se paga morre na hora, e o checkout nunca a
               reaproveita; a liberação que valeu e ficou sem o registro é registrada na nova tentativa (e a transação dela
-              ganhou o tempo do Pix). **Mutação: 17 de 17 reprovaram.** *A publicação: a confirmar com o operador.*
+              ganhou o tempo do Pix). **Mutação: 17 de 17 reprovaram.**
       - [ ] **BLOCO 5 — CONTESTAÇÃO E FRAUDE SEM O PAINEL DA STRIPE**
         - [x] **5a — A contestação na ficha e nos casos:** o prazo, o motivo, o valor; aceitar. **FEITO (31/10/2026).** O prazo,
               o motivo e o valor já vinham na ficha (a cobrança contestada, bloco 1) e no caso (o resumo "fase · motivo ·
@@ -6728,7 +6735,28 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
               aceita pelo painel — na Stripe, `lost`; o caso fechado; aceitar de novo, 404; o retrato do banco igual antes e
               depois. *Docs check (context7): Stripe → `/websites/stripe` → fechar (aceitar) uma contestação (31/10/2026).*
         - [ ] **5b — Responder com provas** (P140: o painel monta, ele envia ou aceita a perda).
-        - [ ] **5c — O aviso de fraude:** devolver, cancelar e cortar sozinho, avisando (P141).
+        - [x] **5c — O aviso de fraude:** devolver, cancelar e cortar sozinho, avisando (P141). **FEITO (31/10/2026).** No aviso
+              `radar.early_fraud_warning.created` (`processarAviso`), com a trava da assinatura: a marca `aviso_de_fraude` e o
+              encerramento na hora (`cancelarPorAvisoDeFraude` — a mesma rotina da contestada, `marcarEEncerrar`, que junta os
+              ids), a cobrança avisada DEVOLVIDA MARCADA COMO FRAUDE (`devolverPorAvisoDeFraude`, `reason: "fraudulent"` —
+              decisão do operador no mesmo dia, à pergunta do passo: a Stripe bloqueia o cartão e o e-mail), e a sincronia, que
+              corta o acesso e derruba as sessões; a marca faz o período não contar como pago (`paraAssinaturaNaStripe`), porque
+              o aviso pode ser de uma cobrança antiga. A cobrança lida AGORA: a contestada não se devolve (segue pela
+              contestação), a já devolvida não tem o que fazer. Sem assinatura da escola, a cobrança é devolvida do mesmo jeito.
+              Se a Stripe falhar, nada fica marcado e o aviso volta; de novo, nada se repete. O caso chega JÁ FECHADO
+              (`casoJaResolvido`, gravado só depois de tudo dar certo), com a nota do que foi feito; o alerta `[stripe]` diz o
+              mesmo; o registro mostra o tipo em português (`NOME_DO_TIPO_DE_FRAUDE`), o que voltou e o valor. A pessoa recebe o
+              e-mail de sempre de assinatura encerrada, como na contestação. Testes: `contestacao.test.ts` (o aviso de fraude,
+              4 novos), `stripe-reembolso.test.ts` (+5), `stripe.test.ts` (+2), `registro-da-cobranca.test.ts` (+1) e "O que
+              aconteceu" (+1). **Mutação: 7 de 7 reprovaram.** **Prova pela rota** (servidor local, banco de dev, o cartão de
+              teste `pm_card_createIssuerFraudRecord` e o AVISO DE VERDADE da Stripe, entregue assinado à rota de avisos): a
+              assinatura encerrada na Stripe com a marca; a cobrança devolvida inteira, motivo `fraudulent`; o espelho
+              cancelado, sem acesso e sem sessão; o caso fechado "por Stripe" ("cartão roubado · cobrança …", a nota do que foi
+              feito); a reentrega, 200, e nenhuma devolução a mais; o cartão e o e-mail apareceram nas listas de bloqueio de
+              teste da Stripe (tirados na limpeza — é o bloqueio que o operador escolheu); o retrato do banco igual antes e
+              depois. *Docs check (context7): Stripe → `/websites/stripe` → o aviso de fraude (`actionable`), a devolução com
+              `reason: "fraudulent"` (as listas de bloqueio) (31/10/2026) — 3 consultas no bloco (a 3ª, sem achar o cartão de
+              teste do aviso; ele saiu da forma do id, `issfr_`, e foi confirmado na prova).*
         - [ ] **Fechamento do bloco 5.**
       - [ ] **BLOCO 6 — O ALUNO SOZINHO E O QUE MAIS ENTROU** (decisões do operador, 31/10/2026)
         - [ ] **6a — Minhas cobranças e os recibos**, na tela do aluno (P144).

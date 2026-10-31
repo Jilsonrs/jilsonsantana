@@ -1,5 +1,5 @@
 import type { LinhaDoRegistro, QuemFezNoRegistro } from "@jilson/core";
-import { pt } from "@jilson/core";
+import { NOME_DO_TIPO_DE_FRAUDE, pt } from "@jilson/core";
 import { dinheiro } from "@/lib/cobranca-ficha";
 import { TIPO_DO_CASO } from "@/lib/cobranca-casos";
 
@@ -41,6 +41,13 @@ const PEDACO: Partial<Record<string, string>> = {
   inquerito: "inquérito (o banco só perguntou)",
   aberta: "aberta",
   "dinheiro-saiu": "o dinheiro saiu da conta",
+  // O aviso de fraude (4.7b, passo 5c): a escola devolve, encerra e corta sozinha.
+  "devolvido-como-fraude": "devolvido, marcado como fraude",
+  "sem-devolucao:contestada": "nada devolvido: a cobrança já foi contestada",
+  "sem-devolucao:ja-devolvida": "nada devolvido: já tinha voltado inteira",
+  "sem-devolucao:nao-paga": "nada devolvido: a cobrança não está paga",
+  "sem-devolucao:nao-encontrada": "nada devolvido: a Stripe não achou a cobrança",
+  ...NOME_DO_TIPO_DE_FRAUDE,
 };
 
 /** O motivo de cancelamento como o aluno o leu. */

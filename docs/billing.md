@@ -240,9 +240,14 @@ novo pelo admin — **"Liberar de novo"**, no caso da contestação (no código 
 confere na Stripe que ela foi GANHA, tira a marca e o período pago volta a valer até o fim; a cancelada não volta. **A marca
 guarda TODAS as contestações da assinatura, e só sai com todas ganhas** *(revisão de segurança do bloco 4, 31/10/2026)*: com
 uma só, a segunda contestação apagava a primeira, e ganhar uma devolvia as aulas sem o dinheiro da outra. O **aviso de fraude** da Stripe
-(`radar.early_fraud_warning`) só alerta — devolver o dinheiro logo evita a contestação e a taxa dela. *(Decisão do
-operador, 31/10/2026, P141: o aviso de fraude passa a devolver, cancelar e cortar o acesso sozinho, avisando o operador
-— 4.7b, passo 5c; até lá, só alerta. E a contestação passa a ser respondida pelo admin, P140 — passo 5b.)* *Cortar o acesso
+(`radar.early_fraud_warning`) **a escola resolve sozinha** *(decisão do operador, 31/10/2026, P141; no código desde 31/10/2026,
+4.7b, passo 5c)*: encerra a assinatura na hora — com a marca `aviso_de_fraude`, que faz o período não contar como pago (o
+aviso pode ser de uma cobrança antiga) —, devolve a cobrança avisada **marcada como fraude** (decisão dele no mesmo dia: a
+Stripe põe o cartão e o e-mail na lista de bloqueio dela, e eles não pagam mais com cartão na escola) e corta o acesso. O
+caso chega ao operador **já fechado**, com o que foi feito, e o alerta diz isso. A cobrança já contestada não se devolve (o
+dinheiro segue pela contestação); a que não é de uma assinatura da escola é devolvida do mesmo jeito; a pessoa recebe o
+e-mail de sempre de assinatura encerrada, como na contestação. *(A contestação passa a ser respondida pelo admin, P140 —
+passo 5b.)* *Cortar o acesso
 não apaga nada* (CLAUDE.md → *Churn não apaga nada*).
 
 **Um prazo só: os 7 dias da lei** *(12/10/2026 — etapa 4.6c)*. Com a escola só para o Brasil,
@@ -2034,7 +2039,8 @@ lá, vale o texto de hoje):
   aulas assistidas e as horas, os e-mails enviados e a política de reembolso —, e ele confere e clica em "Enviar ao
   banco" ou em "Aceitar a perda". Esses dados vão ao banco do aluno: entram na Política de Privacidade. — passo 5b.
 - **O aviso de fraude devolve sozinho** (P141): o sistema devolve, cancela a assinatura e corta o acesso, e o caso chega
-  ao operador já resolvido. Substitui o "só alerta" de 29/10/2026 (*Reembolso*). — passo 5c.
+  ao operador já resolvido. Substitui o "só alerta" de 29/10/2026 (*Reembolso*). — passo 5c, no código desde 31/10/2026; a
+  devolução vai marcada como fraude (decisão do operador no mesmo dia).
 - **Sem botão de pedir reembolso depois dos 7 dias** (P138): a política é não devolver depois dos 7 dias, e um botão
   convida o pedido. O pedido chega pelo suporte e, quando o JilsonAI existir, por ele, que abre o caso.
 - **O aluno vê as próprias cobranças e baixa o recibo** em Faturamento (P144). — passo 6a.

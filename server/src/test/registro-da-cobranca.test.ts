@@ -125,6 +125,15 @@ describe("o resumo do aviso (sem dado pessoal)", () => {
     expect(resumoDoAviso(aviso({ contestacao: { id: "du_1", motivo: "fraudulent", centavos: 9990, prazo: null, pagamento: null, fase: "aberta" } }), { resultado: "sem-assinatura" })).toEqual({ detalhe: "aberta · fraudulent", centavos: 9990 });
     expect(resumoDoAviso(aviso({ avisoDeFraude: { id: "issfr_1", cobranca: "ch_1", pagamento: null, tipo: "made_with_stolen_card" } }), { resultado: "sem-assinatura" }).detalhe).toBe("made_with_stolen_card");
     expect(resumoDoAviso(aviso({ devolucaoFalhou: true }), { resultado: "sem-assinatura" }).detalhe).toBe("devolucao-falhou");
+    expect(resumoDoAviso(aviso({ devolucaoFalhou: true, devolucaoQueFalhou: { id: "re_1", centavos: 2000, cobranca: "ch_1" } }), { resultado: "sem-assinatura" })).toEqual({ detalhe: "devolucao-falhou", centavos: 2000 });
+  });
+
+  // P141 (4.7b, passo 5c): o registro diz o que a escola fez sozinha com o aviso de fraude, e o valor que voltou.
+  it("o aviso de fraude resolvido: o tipo, o que voltou (marcado como fraude) e quem perdeu o acesso — com o valor devolvido", () => {
+    const fraude = { avisoDeFraude: { id: "issfr_1", cobranca: "ch_1", pagamento: "pi_1", tipo: "made_with_stolen_card" } };
+    const devolvido = { encerrada: true, devolucao: { devolvidos: 9990, moeda: "brl" } };
+    expect(resumoDoAviso(aviso(fraude), { resultado: "atualizada", assinatura: assinatura({ status: "canceled" }), perdeuAcesso: true, contaNova: null, fraude: devolvido })).toEqual({ detalhe: "made_with_stolen_card · devolvido-como-fraude · perdeu-acesso", centavos: 9990 });
+    expect(resumoDoAviso(aviso(fraude), { resultado: "sem-assinatura", fraude: { encerrada: false, devolucao: { semDevolucao: "contestada" } } })).toEqual({ detalhe: "made_with_stolen_card · sem-devolucao:contestada", centavos: null });
   });
 
   it("a pré-paga do Pix (sempre com data de fim) não é 'vai cancelar'; perder o acesso e a conta que nasceu entram", () => {

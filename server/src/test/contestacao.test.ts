@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeAll, afterAll, beforeEach, afterEach } 
 import type Stripe from "stripe";
 import type { AssinaturaNaStripe } from "../lib/stripe.js";
 import type { PedidoDeEmail, Envio } from "../lib/email.js";
+import type { DevolucaoDaFraude } from "../lib/stripe-reembolso.js";
 
 // A CONTESTAÇÃO E O AVISO DE FRAUDE (E7 da revisão ampla da cobrança; decisões do operador P122 e de 30/10/2026). A
 // Stripe na NOSSA fronteira vira dublê (o que ela diz da assinatura, de que assinatura é o pagamento, e o cancelamento);
@@ -9,8 +10,10 @@ import type { PedidoDeEmail, Envio } from "../lib/email.js";
 // INQUÉRITO e a contestação ABERTA só alertam (decisão do operador, 30/10/2026); quando o DINHEIRO SAI, a assinatura é
 // cancelada na Stripe ANTES da sincronia, o acesso cai, as sessões caem e o alerta diz como ficou — uma vez só (a
 // reentrega não cancela nem alerta de novo); a conta com outra assinatura não perde o acesso, e o alerta diz isso; a
-// Stripe que falha não marca o aviso (ele volta); o pagamento que não é de assinatura alerta do mesmo jeito; o aviso
-// de fraude só alerta.
+// Stripe que falha não marca o aviso (ele volta); o pagamento que não é de assinatura alerta do mesmo jeito. O AVISO DE
+// FRAUDE (P141 — 4.7b, passo 5c): a escola encerra a assinatura (a marca antes da sincronia), devolve a cobrança marcada como
+// fraude e corta o acesso, sozinha — o caso chega FECHADO, com o que foi feito, e o alerta diz isso; sem assinatura, devolve
+// do mesmo jeito; a contestada não se devolve; a Stripe que falha não marca o aviso nem grava o caso.
 const buscarAssinatura = vi.fn<(id: string) => Promise<AssinaturaNaStripe>>();
 vi.mock("../lib/stripe.js", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../lib/stripe.js")>()),
@@ -18,10 +21,14 @@ vi.mock("../lib/stripe.js", async (importOriginal) => ({
 }));
 const assinaturaDoPagamento = vi.fn<(pagamento: string) => Promise<string | null>>();
 const cancelarPorContestacao = vi.fn<(assinatura: string, contestacao: string) => Promise<void>>();
+const cancelarPorAvisoDeFraude = vi.fn<(assinatura: string, aviso: string) => Promise<boolean>>();
+const devolverPorAvisoDeFraude = vi.fn<(cobranca: string, aviso: string, dono: { userId: string | null; assinaturaId: string | null }) => Promise<DevolucaoDaFraude>>();
 vi.mock("../lib/stripe-reembolso.js", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../lib/stripe-reembolso.js")>()),
   assinaturaDoPagamento: (pagamento: string) => assinaturaDoPagamento(pagamento),
   cancelarPorContestacao: (assinatura: string, contestacao: string) => cancelarPorContestacao(assinatura, contestacao),
+  cancelarPorAvisoDeFraude: (assinatura: string, aviso: string) => cancelarPorAvisoDeFraude(assinatura, aviso),
+  devolverPorAvisoDeFraude: (cobranca: string, aviso: string, dono: { userId: string | null; assinaturaId: string | null }) => devolverPorAvisoDeFraude(cobranca, aviso, dono),
 }));
 const enviarEmail = vi.fn<(pedido: PedidoDeEmail) => Promise<Envio>>();
 vi.mock("../lib/email.js", async (importOriginal) => ({
@@ -68,6 +75,8 @@ beforeEach(() => {
   buscarAssinatura.mockReset().mockImplementation(async (id) => canceladaNaStripe(id));
   assinaturaDoPagamento.mockReset().mockResolvedValue(null);
   cancelarPorContestacao.mockReset().mockResolvedValue(undefined);
+  cancelarPorAvisoDeFraude.mockReset().mockResolvedValue(true);
+  devolverPorAvisoDeFraude.mockReset().mockResolvedValue({ devolvidos: 9990, moeda: "brl" });
   enviarEmail.mockReset().mockResolvedValue({ enviado: true, id: "email_da_suite" });
 });
 afterEach(async () => {
@@ -77,6 +86,8 @@ afterEach(async () => {
 });
 afterAll(async () => {
   await prisma.stripeEvent.deleteMany({ where: { id: { contains: `contestacao_${S}` } } });
+  await prisma.billingCase.deleteMany({ where: { key: { contains: `contestacao_${S}` } } });
+  await prisma.billingLog.deleteMany({ where: { stripeEventId: { contains: `contestacao_${S}` } } });
   await prisma.user.deleteMany({ where: { id: dono } });
 });
 
@@ -192,22 +203,92 @@ describe("a contestação de um pagamento", () => {
   });
 });
 
-describe("o aviso de fraude", () => {
-  it("só alerta: nada é cancelado nem sincronizado, e o acesso fica", async () => {
+describe("o aviso de fraude (P141 — a escola resolve sozinha)", () => {
+  const casoDoAviso = (evento: Stripe.Event) => prisma.billingCase.findUnique({ where: { kind_key: { kind: "AVISO_DE_FRAUDE", key: `fraude:${(evento.data.object as { id: string }).id}` } } });
+
+  it("com a assinatura: ENCERRA (com a marca, antes da sincronia), DEVOLVE marcado como fraude, corta o acesso e derruba as sessões — o caso chega FECHADO, e a reentrega não faz nada de novo", async () => {
     const erro = vi.spyOn(console, "error").mockImplementation(() => {});
     vi.spyOn(console, "info").mockImplementation(() => {});
-    await assinanteComSessao();
+    const assinatura = await assinanteComSessao();
+    const evento = doAvisoDeFraude();
+    const aviso = paraAviso(evento);
+    assinaturaDoPagamento.mockImplementation(async (pedido) => (pedido === aviso.avisoDeFraude?.pagamento ? assinatura : null));
+    expect(await temAcessoAtivo(dono)).toBe(true);
+
+    const desfecho = await processarAviso(aviso);
+    await depoisDoAviso(aviso, desfecho);
+
+    expect(cancelarPorAvisoDeFraude.mock.calls).toEqual([[assinatura, aviso.avisoDeFraude?.id]]);
+    expect(cancelarPorAvisoDeFraude.mock.invocationCallOrder[0] ?? 0).toBeLessThan(buscarAssinatura.mock.invocationCallOrder[0] ?? 0);
+    expect(devolverPorAvisoDeFraude.mock.calls).toEqual([[aviso.avisoDeFraude?.cobranca, aviso.avisoDeFraude?.id, { userId: dono, assinaturaId: assinatura }]]);
+    expect(desfecho).toMatchObject({ resultado: "atualizada", perdeuAcesso: true, fraude: { encerrada: true, devolucao: { devolvidos: 9990 } } });
+    expect(await temAcessoAtivo(dono)).toBe(false);
+    expect(await prisma.session.count({ where: { userId: dono } })).toBe(0);
+    expect(await marcado(evento.id)).not.toBeNull();
+    expect(await casoDoAviso(evento)).toMatchObject({
+      open: false,
+      urgent: false,
+      closedBy: "STRIPE",
+      amount: 9990,
+      stripeSubscriptionId: assinatura,
+      detail: `cartão roubado · cobrança ${aviso.avisoDeFraude?.cobranca}`,
+      note: `resolvido sozinho: R$ 99,90 devolvidos, marcados como fraude; a assinatura ${assinatura} foi encerrada e a pessoa perdeu o acesso`,
+    });
+    expect(alertas(erro)).toHaveLength(1);
+    expect(alertas(erro)[0]).toContain(`aviso de fraude ${aviso.avisoDeFraude?.id}`);
+    expect(alertas(erro)[0]).toContain("Já resolvido: nada a fazer");
+
+    const deNovo = await processarAviso(aviso);
+    await depoisDoAviso(aviso, deNovo);
+    expect(deNovo).toEqual({ resultado: "repetido" });
+    expect(cancelarPorAvisoDeFraude).toHaveBeenCalledTimes(1);
+    expect(devolverPorAvisoDeFraude).toHaveBeenCalledTimes(1);
+    expect(alertas(erro)).toHaveLength(1);
+  });
+
+  it("a cobrança que não é de uma assinatura da escola: devolvida do mesmo jeito — o caso chega fechado, e o alerta diz isso", async () => {
+    const erro = vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(console, "info").mockImplementation(() => {});
     const evento = doAvisoDeFraude();
     const aviso = paraAviso(evento);
     const desfecho = await processarAviso(aviso);
     await depoisDoAviso(aviso, desfecho);
-    expect(desfecho).toEqual({ resultado: "sem-assinatura" });
-    expect(await prisma.billingCase.findUnique({ where: { kind_key: { kind: "AVISO_DE_FRAUDE", key: `fraude:${(evento.data.object as { id: string }).id}` } } })).toMatchObject({ open: true, urgent: false });
-    expect(cancelarPorContestacao).not.toHaveBeenCalled();
+    expect(desfecho).toEqual({ resultado: "sem-assinatura", fraude: { encerrada: false, devolucao: { devolvidos: 9990, moeda: "brl" } } });
+    expect(devolverPorAvisoDeFraude.mock.calls).toEqual([[aviso.avisoDeFraude?.cobranca, aviso.avisoDeFraude?.id, { userId: null, assinaturaId: null }]]);
+    expect(cancelarPorAvisoDeFraude).not.toHaveBeenCalled();
+    expect(await marcado(evento.id)).not.toBeNull();
+    expect(await casoDoAviso(evento)).toMatchObject({ open: false, note: "resolvido sozinho: R$ 99,90 devolvidos, marcados como fraude; a cobrança não é de uma assinatura da escola" });
+    expect(alertas(erro)).toHaveLength(1);
+  });
+
+  it("a cobrança já contestada: encerra e corta, mas nada é devolvido — o dinheiro segue pela contestação", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(console, "info").mockImplementation(() => {});
+    const assinatura = await assinanteComSessao();
+    assinaturaDoPagamento.mockResolvedValue(assinatura);
+    devolverPorAvisoDeFraude.mockResolvedValue({ semDevolucao: "contestada" });
+    const evento = doAvisoDeFraude();
+    const aviso = paraAviso(evento);
+    await depoisDoAviso(aviso, await processarAviso(aviso));
+    expect(cancelarPorAvisoDeFraude).toHaveBeenCalledTimes(1);
+    expect(await temAcessoAtivo(dono)).toBe(false);
+    expect(await casoDoAviso(evento)).toMatchObject({ open: false, amount: null, note: `resolvido sozinho: nada devolvido: a cobrança já foi contestada (segue pela contestação); a assinatura ${assinatura} foi encerrada e a pessoa perdeu o acesso` });
+  });
+
+  it("a Stripe falhou (ao encerrar, ou ao devolver): nada fica marcado nem gravado, o acesso fica — o aviso volta", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const assinatura = await assinanteComSessao();
+    assinaturaDoPagamento.mockResolvedValue(assinatura);
+    for (const falha of ["encerrar", "devolver"]) {
+      if (falha === "encerrar") cancelarPorAvisoDeFraude.mockRejectedValueOnce(new Error("[stripe] o encerramento da assinatura do aviso de fraude falhou: api_error, status 500"));
+      else devolverPorAvisoDeFraude.mockRejectedValueOnce(new Error("[stripe] a devolução do aviso de fraude falhou: api_error, status 500"));
+      const evento = doAvisoDeFraude();
+      await expect(processarAviso(paraAviso(evento)), falha).rejects.toThrow(/aviso de fraude falhou/);
+      expect(await marcado(evento.id), falha).toBeNull();
+      expect(await casoDoAviso(evento), falha).toBeNull();
+      expect(await espelho(assinatura), falha).toMatchObject({ status: "active" });
+    }
     expect(buscarAssinatura).not.toHaveBeenCalled();
     expect(await temAcessoAtivo(dono)).toBe(true);
-    expect(alertas(erro)).toHaveLength(1);
-    expect(alertas(erro)[0]).toContain(`aviso de fraude ${aviso.avisoDeFraude?.id}`);
-    expect(alertas(erro)[0]).toContain("made_with_stolen_card");
   });
 });

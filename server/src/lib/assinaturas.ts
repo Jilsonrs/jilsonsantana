@@ -3,7 +3,7 @@ import { prisma } from "./prisma.js";
 import { abrirCaso, resolvidoSozinho, TipoDeCaso, transacaoDaCobranca } from "./casos.js";
 import { assinaturaDaAcesso, cobrancaAtrasada, encerradaDeVez, temAcessoAtivo } from "./acesso.js";
 import { AssinaturaNaoEncontrada, assinaturasDoCliente, buscarAssinatura, buscarPrecos, cancelarIncompleta, type AssinaturaNaStripe, type AvisoDaStripe, type PagamentoPrePago } from "./stripe.js";
-import { assinaturaDoPagamento, cancelarPorContestacao, devolver } from "./stripe-reembolso.js";
+import { assinaturaDoPagamento, cancelarPorAvisoDeFraude, cancelarPorContestacao, devolver, devolverPorAvisoDeFraude, type DevolucaoDaFraude } from "./stripe-reembolso.js";
 import { cobrancaDoPagamento, pixDevolvido } from "./stripe-devolucao.js";
 import { assinaturasDoPix, cancelarPagamentoPix, criarAssinaturaPrePaga, garantirFaturaPaga, lerPagamentoPix, listarPixDoCliente, marcarEmConferencia, tirarDeConferencia, type PixPago, type PixPendente, type PrePagaDoPix } from "./stripe-pix.js";
 import { alertarNoMaximoACada15Min } from "./alerta-de-configuracao.js";
@@ -68,6 +68,11 @@ export type Sincronia =
  * assinatura sozinho — marcado, com um alerta (`processarPixPago`).
  */
 export type Desfecho = { resultado: "repetido" } | { resultado: "sem-assinatura" } | { resultado: "ocupada" } | { resultado: "em-conferencia" } | Sincronia;
+
+/** O que o AVISO DE FRAUDE fez (P141 — 4.7b, passo 5c): se encerrou a assinatura agora, e o que devolveu. */
+export type FraudeTratada = { encerrada: boolean; devolucao: DevolucaoDaFraude };
+/** O desfecho de um aviso processado — com o que o aviso de fraude fez, quando é ele (`depois-do-aviso.ts` conta ao operador). */
+export type DesfechoDoAviso = Desfecho & { fraude?: FraudeTratada };
 
 /** A busca na Stripe roda dentro da transação: o tempo dela (até ~20 s com uma nova tentativa) cabe aqui. */
 const TEMPO_DA_TRANSACAO = { maxWait: 10_000, timeout: 30_000 };
@@ -173,7 +178,7 @@ async function assinaturaDoPagamentoDevolvido(pagamentoId: string): Promise<stri
   return prePaga?.stripeSubscriptionId ?? assinaturaDoPagamento(pagamentoId);
 }
 
-export async function processarAviso(aviso: AvisoDaStripe): Promise<Desfecho> {
+export async function processarAviso(aviso: AvisoDaStripe): Promise<DesfechoDoAviso> {
   if (await prisma.stripeEvent.findUnique({ where: { id: aviso.id }, select: { id: true } })) return { resultado: "repetido" };
   // O PIX PRÉ-PAGO que caiu (etapa 4.9): a assinatura ainda não existe — nasce aqui, e daí em diante é
   // a sincronia de sempre.
@@ -182,8 +187,12 @@ export async function processarAviso(aviso: AvisoDaStripe): Promise<Desfecho> {
   // O aviso de dinheiro devolvido só traz o pagamento: a assinatura dele se acha na Stripe. Se a
   // busca falhar, sobe — nada fica marcado, e a Stripe entrega de novo.
   const assinaturaId = aviso.assinatura ?? (aviso.pagamento ? await assinaturaDoPagamentoDevolvido(aviso.pagamento) : null);
+  const fraude = aviso.avisoDeFraude ?? null;
 
   if (!assinaturaId) {
+    // O AVISO DE FRAUDE de uma cobrança que não é de assinatura da escola (P141 — 4.7b, passo 5c): devolvida do mesmo jeito,
+    // ANTES de marcar — se a Stripe falhar, nada fica marcado e o aviso volta (a devolução repetida não devolve duas vezes).
+    const devolucao = fraude ? await devolverPorAvisoDeFraude(fraude.cobranca, fraude.id, { userId: null, assinaturaId: null }) : null;
     try {
       await prisma.stripeEvent.create({ data: marcar });
     } catch (erro) {
@@ -191,11 +200,11 @@ export async function processarAviso(aviso: AvisoDaStripe): Promise<Desfecho> {
       if (eRepetido(erro)) return { resultado: "repetido" };
       throw erro;
     }
-    return { resultado: "sem-assinatura" };
+    return devolucao ? { resultado: "sem-assinatura", fraude: { encerrada: false, devolucao } } : { resultado: "sem-assinatura" };
   }
 
   try {
-    return await transacaoDaCobranca(async (tx): Promise<Desfecho> => {
+    return await transacaoDaCobranca(async (tx): Promise<DesfechoDoAviso> => {
       await travar(tx, assinaturaId);
       // Com a trava: o mesmo aviso que esperava na fila já foi processado por quem veio antes.
       if (await tx.stripeEvent.findUnique({ where: { id: aviso.id }, select: { id: true } })) return { resultado: "repetido" };
@@ -203,13 +212,23 @@ export async function processarAviso(aviso: AvisoDaStripe): Promise<Desfecho> {
       // trava dela; a sincronia logo abaixo corta o acesso e derruba as sessões. Se a Stripe falhar, nada fica marcado e
       // o aviso volta.
       if (aviso.contestacao?.fase === "dinheiro-saiu") await cancelarPorContestacao(assinaturaId, aviso.contestacao.id);
+      // O AVISO DE FRAUDE (P141 — 4.7b, passo 5c; decisão do operador, 31/10/2026): com a trava da assinatura, a marca e o
+      // encerramento na hora — a sincronia logo abaixo corta o acesso e derruba as sessões —, e então a cobrança avisada volta,
+      // marcada como fraude. Se a Stripe falhar, nada fica marcado e o aviso volta; de novo, nada se repete (a encerrada só
+      // ganha a marca, e a devolvida não tem o que devolver).
+      let tratada: FraudeTratada | null = null;
+      if (fraude) {
+        const encerrada = await cancelarPorAvisoDeFraude(assinaturaId, fraude.id);
+        const dono = (await tx.subscription.findUnique({ where: { stripeSubscriptionId: assinaturaId }, select: { ownerUserId: true } }))?.ownerUserId ?? null;
+        tratada = { encerrada, devolucao: await devolverPorAvisoDeFraude(fraude.cobranca, fraude.id, { userId: dono, assinaturaId }) };
+      }
       const sincronia = await sincronizar(tx, assinaturaId);
       // Marcado na MESMA transação do espelho — também quando não há conta: o aviso foi visto.
       await tx.stripeEvent.create({ data: marcar });
-      return sincronia;
-      // A contestação faz até 5 idas à Stripe aqui dentro (a marca, o cancelamento, a fatura, a busca, a cobrança): o
-      // tempo das operações, para a trava não soltar no meio do cancelamento.
-    }, aviso.contestacao?.fase === "dinheiro-saiu" ? TEMPO_DA_OPERACAO : TEMPO_DA_TRANSACAO);
+      return tratada ? { ...sincronia, fraude: tratada } : sincronia;
+      // A contestação e o aviso de fraude fazem várias idas à Stripe aqui dentro (a marca, o cancelamento, a fatura, a
+      // devolução, a busca, a cobrança): o tempo das operações, para a trava não soltar no meio do cancelamento.
+    }, aviso.contestacao?.fase === "dinheiro-saiu" || fraude ? TEMPO_DA_OPERACAO : TEMPO_DA_TRANSACAO);
   } catch (erro) {
     // O registro precisa dizer QUAL aviso e QUAL assinatura falharam (achado P2 da revisão) —
     // sem o corpo do aviso, que nunca vai para o registro.

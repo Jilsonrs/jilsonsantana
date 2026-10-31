@@ -1,10 +1,12 @@
+import { NOME_DO_TIPO_DE_FRAUDE } from "@jilson/core";
 import type { AvisoDaStripe } from "./stripe.js";
-import type { Desfecho } from "./assinaturas.js";
+import type { DesfechoDoAviso, FraudeTratada } from "./assinaturas.js";
 import { assinaturaDaAcesso } from "./acesso.js";
 import { mandarBoasVindasDaAssinatura } from "./boas-vindas.js";
 import { avisarSobreAAssinatura } from "./avisos-da-assinatura.js";
 import { registrarAviso } from "./registro-da-cobranca.js";
-import { abrirCaso, TipoDeCaso } from "./casos.js";
+import { abrirCaso, casoJaResolvido, TipoDeCaso } from "./casos.js";
+import { QuemFez } from "./prisma.js";
 import { avisarUrgentes } from "./avisos-ao-operador.js";
 
 // O QUE VEM DEPOIS DE PROCESSAR UM AVISO DA STRIPE — os alertas, o registro, as boas-vindas e os e-mails da cobrança.
@@ -13,7 +15,25 @@ import { avisarUrgentes } from "./avisos-ao-operador.js";
 // `avisos-perdidos.ts`), que processa o aviso que não chegou. Os dois fazem exatamente o mesmo. Nunca lança por
 // causa do e-mail (`enviarEmail` não lança); o registro leva ids e status, nunca o corpo do aviso.
 
-export async function depoisDoAviso(aviso: AvisoDaStripe, desfecho: Desfecho): Promise<void> {
+/** O que a escola fez com o aviso de fraude, numa frase sem dado pessoal: o que voltou, e como ficou a assinatura. Função pura. */
+export function oQueOAvisoDeFraudeFez(fraude: FraudeTratada | undefined, desfecho: DesfechoDoAviso): string {
+  const devolucao = fraude?.devolucao;
+  const devolveu = !devolucao
+    ? "nada devolvido"
+    : "devolvidos" in devolucao
+      ? `R$ ${(devolucao.devolvidos / 100).toFixed(2).replace(".", ",")} devolvidos, marcados como fraude`
+      : devolucao.semDevolucao === "contestada"
+        ? "nada devolvido: a cobrança já foi contestada (segue pela contestação)"
+        : devolucao.semDevolucao === "ja-devolvida"
+          ? "nada devolvido: a cobrança já tinha voltado inteira"
+          : "nada devolvido: a Stripe não tem a cobrança paga";
+  if (!("assinatura" in desfecho)) return `${devolveu}; a cobrança não é de uma assinatura da escola`;
+  const perdeu = desfecho.resultado === "atualizada" && desfecho.perdeuAcesso;
+  const ficou = desfecho.assinatura.status === "canceled" ? "foi encerrada" : `ficou ${desfecho.assinatura.status}`;
+  return `${devolveu}; a assinatura ${desfecho.assinatura.id} ${ficou}${perdeu ? " e a pessoa perdeu o acesso" : " — a conta não perdeu o acesso por aqui (já não tinha, ou tem outra assinatura)"}`;
+}
+
+export async function depoisDoAviso(aviso: AvisoDaStripe, desfecho: DesfechoDoAviso): Promise<void> {
   // O REGISTRO DA COBRANÇA (etapa 4.7b, passo 1f): o aviso processado vira uma linha — o painel mostra o que aconteceu.
   // Nunca lança (o aviso já está gravado).
   await registrarAviso(aviso, desfecho);
@@ -55,11 +75,16 @@ export async function depoisDoAviso(aviso: AvisoDaStripe, desfecho: Desfecho): P
       console.error(`[stripe] contestação ${id}: o dinheiro do pagamento ${pagamento ?? "?"} (${valor}, ${motivo}) saiu da conta — ${comoFicou}; ${responder}`);
     }
   }
-  // O AVISO DE FRAUDE (E7 — P122: só alerta, o acesso fica). Devolver o dinheiro agora evita a contestação, e a taxa dela.
+  // O AVISO DE FRAUDE (P141 — 4.7b, passo 5c; decisão do operador, 31/10/2026): a escola JÁ devolveu (marcado como fraude),
+  // encerrou a assinatura e cortou o acesso, sozinha (`processarAviso`) — o caso chega ao operador JÁ RESOLVIDO, e o alerta diz
+  // o que foi feito. Uma vez por aviso; gravado só agora, depois de tudo ter dado certo.
   if (aviso.avisoDeFraude && desfecho.resultado !== "repetido") {
     const { id, cobranca, pagamento, tipo } = aviso.avisoDeFraude;
-    await abrirCaso({ tipo: TipoDeCaso.AVISO_DE_FRAUDE, chave: `fraude:${id}`, urgente: false, assinatura: aviso.assinatura, objeto: cobranca, detalhe: `${tipo} · cobrança ${cobranca}` });
-    console.error(`[stripe] aviso de fraude ${id}: a cobrança ${cobranca} (pagamento ${pagamento ?? "?"}) recebeu um aviso de fraude do banco (${tipo}) — conferir no painel da Stripe; devolver o dinheiro agora evita a contestação`);
+    const feito = oQueOAvisoDeFraudeFez(desfecho.fraude, desfecho);
+    const devolucao = desfecho.fraude?.devolucao;
+    const assinatura = "assinatura" in desfecho ? desfecho.assinatura.id : aviso.assinatura;
+    await casoJaResolvido({ tipo: TipoDeCaso.AVISO_DE_FRAUDE, chave: `fraude:${id}`, urgente: false, assinatura, objeto: cobranca, centavos: devolucao && "devolvidos" in devolucao ? devolucao.devolvidos : null, detalhe: `${NOME_DO_TIPO_DE_FRAUDE[tipo] ?? tipo} · cobrança ${cobranca}` }, { quem: QuemFez.STRIPE, nota: `resolvido sozinho: ${feito}` });
+    console.error(`[stripe] aviso de fraude ${id}: a cobrança ${cobranca} (pagamento ${pagamento ?? "?"}, ${tipo}) — ${feito}. Já resolvido: nada a fazer`);
   }
   if (desfecho.resultado === "sem-conta") {
     // Assinatura sem conta na escola: em voz alta. Se ela dá acesso, há alguém PAGANDO e trancado

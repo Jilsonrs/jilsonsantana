@@ -43,7 +43,10 @@ export type DevolucaoQueFalhou = { id: string; centavos: number; cobranca: strin
  * quando ele vira contestação a Stripe manda o `charge.dispute.funds_withdrawn`.
  */
 export type Contestacao = { id: string; motivo: string; centavos: number; prazo: Date | null; pagamento: string | null; fase: "inquerito" | "aberta" | "dinheiro-saiu" };
-/** O AVISO DE FRAUDE do banco sobre uma cobrança (E7 — P122: só alerta). */
+/**
+ * O AVISO DE FRAUDE do banco sobre uma cobrança. Desde a 4.7b, passo 5c (decisão do operador, 31/10/2026, P141), a escola
+ * DEVOLVE, ENCERRA a assinatura e CORTA o acesso sozinha — e o caso chega ao operador já resolvido (`processarAviso`).
+ */
 export type AvisoDeFraude = { id: string; cobranca: string; pagamento: string | null; tipo: string };
 /**
  * Nos metadados da assinatura CONTESTADA: o id da contestação. Com ele, o período não conta como pago
@@ -52,6 +55,13 @@ export type AvisoDeFraude = { id: string; cobranca: string; pagamento: string | 
  * marca (a ação do admin, etapa 4.7b).
  */
 export const METADADO_DA_CONTESTACAO = "contestacao";
+
+/**
+ * Nos metadados da assinatura do AVISO DE FRAUDE (P141 — 4.7b, passo 5c): o id do aviso. Como a contestada, o período não conta
+ * como pago (`paraAssinaturaNaStripe`): a assinatura é encerrada na hora (`cancelarPorAvisoDeFraude`), e só a marca segura o
+ * acesso cortado — o aviso pode ser de uma cobrança antiga, e a última fatura continuaria paga.
+ */
+export const METADADO_DO_AVISO_DE_FRAUDE = "aviso_de_fraude";
 
 /**
  * Nos metadados da assinatura PAGA POR FORA (o "Liberar acesso pago por fora" do painel — decisão do operador, 29/10/2026,
@@ -658,6 +668,13 @@ function pagamentoDoAviso(evento: Stripe.Event): string | null {
     if (!contestado) return null;
     return typeof contestado === "string" ? contestado : contestado.id;
   }
+  // O AVISO DE FRAUDE (P141 — 4.7b, passo 5c): o pagamento da cobrança avisada — é por ele que a assinatura se acha, para ser
+  // encerrada. Sem pagamento, a cobrança é devolvida do mesmo jeito (`processarAviso`).
+  if (evento.type === "radar.early_fraud_warning.created") {
+    const avisado = evento.data.object.payment_intent;
+    if (!avisado) return null;
+    return typeof avisado === "string" ? avisado : avisado.id;
+  }
   // A devolução que mudou de situação também: se FALHOU, o período volta a contar como pago, e
   // o espelho tem que saber — pela sincronia de sempre.
   if (evento.type !== "charge.refunded" && !eAvisoDeDevolucao(evento)) return null;
@@ -914,9 +931,9 @@ export function paraAssinaturaNaStripe(assinatura: Stripe.Subscription, devolvid
   let pagoAte: Date | null = null;
   if (itens.length > 0) {
     const fatura = assinatura.latest_invoice;
-    // A CONTESTADA (E7): o período não conta como pago — a marca segura o acesso cortado (`METADADO_DA_CONTESTACAO`).
-    const contestada = Boolean(assinatura.metadata[METADADO_DA_CONTESTACAO]);
-    const paga = typeof fatura === "object" && fatura !== null && fatura.status === "paid" && !devolvida && !contestada;
+    // A CONTESTADA (E7) e a do AVISO DE FRAUDE (P141): o período não conta como pago — a marca segura o acesso cortado.
+    const semPeriodoPago = Boolean(assinatura.metadata[METADADO_DA_CONTESTACAO]) || Boolean(assinatura.metadata[METADADO_DO_AVISO_DE_FRAUDE]);
+    const paga = typeof fatura === "object" && fatura !== null && fatura.status === "paid" && !devolvida && !semPeriodoPago;
     const segundos = paga ? Math.max(...itens.map((i) => i.current_period_end)) : Math.min(...itens.map((i) => i.current_period_start));
     pagoAte = new Date(segundos * 1000);
   }
