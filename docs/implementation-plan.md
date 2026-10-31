@@ -7088,7 +7088,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             Pix; o Portal do Cliente sem link ativado (e o site nunca o abre: nenhum `billingPortal` no código); a verificação
             em duas etapas exigida da equipe, e a equipe é só o operador; os e-mails da Stripe para o Yahoo dele — contestação
             e falha do endereço de avisos ligados (e troca de chave e uso suspeito da API); *Failed payments* só existe por SMS
-            e fica desligado (o site já avisa o aluno); *Webhook event generation failures* o operador liga (combinado no dia: o
+            e fica desligado (o site já avisa o aluno); *Webhook event generation failures* LIGADO pelo operador no mesmo dia (o
             ponto cego que a conferência de hora em hora não vê); o endereço de avisos ativo, na `2026-09-30.endive`, com os 11
             avisos e as entregas em 200, e um **reenvio** (16:20) que chegou à revisão `jilson-prod-00054` e saiu *"repetido"*
             no registro — **o segredo bate**.
