@@ -116,7 +116,8 @@ async function sincronizar(tx: Prisma.TransactionClient, assinaturaId: string, {
   const quem = espelho ? { dono: espelho.ownerUserId, contaNova: null } : await donoDaAssinaturaNova(tx, agora);
   if ("motivo" in quem) return { resultado: "sem-conta", assinatura: agora, motivo: quem.motivo };
   const { dono, contaNova } = quem;
-  const dados = { status: agora.status, currentPeriodEnd: agora.pagoAte, stripeCustomerId: agora.clienteId, livemode: agora.livemode, pixPaymentIntentId: agora.pixPaymentIntentId ?? null };
+  // O plano, o fim marcado e o código vão junto (o painel da cobrança, etapa 4.7b): o gate não os lê.
+  const dados = { status: agora.status, currentPeriodEnd: agora.pagoAte, stripeCustomerId: agora.clienteId, livemode: agora.livemode, pixPaymentIntentId: agora.pixPaymentIntentId ?? null, plan: agora.planoAtual ?? null, cancelAt: agora.acabaEm ?? null, promotionCode: agora.codigoPromocional ?? null };
   const tinhaAcesso = dono !== null && (await temAcessoAtivo(dono, tx));
 
   if (espelho) await tx.subscription.update({ where: { id: espelho.id }, data: dados });

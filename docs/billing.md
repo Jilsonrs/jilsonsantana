@@ -509,6 +509,12 @@ O espelho se recalcula **buscando a assinatura na Stripe a cada aviso** (nunca o
 liga a assinatura à conta pelo `userId` que o NOSSO checkout grava na Stripe — ou, na do visitante
 que assinou sem conta, pela ficha de espera dele, e a conta nasce ali (etapa 4.7, passo 4: *Assinar
 sem conta*, abaixo).
+**Para o painel da cobrança, o espelho guarda também** *(etapa 4.7b, passo 1a — 31/10/2026; convenção de
+engenharia)*: o **plano do preço de agora** (muda quando o aluno troca de plano), **a data marcada para acabar**
+(vazia = renova; a pré-paga do Pix sempre tem) e o **código promocional em vigor**. Gravados pela mesma rotina, com o
+que a Stripe diz agora; **o gate não lê nenhum deles**. Uma linha de antes de 31/10 fica vazia até a próxima
+sincronia. `[FATO — medido na área de teste da Stripe, 31/10/2026]` a busca com `discounts.promotion_code` expandido
+devolve o código como o aluno o digitou; desfazer o cancelamento limpa a data.
 
 **As chaves:** `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` e `STRIPE_PUBLISHABLE_KEY` (esta não é
 segredo, mas mora junto: o servidor a entrega ao site, e trocar de ambiente é trocar as variáveis

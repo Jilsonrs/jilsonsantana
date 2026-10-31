@@ -125,6 +125,15 @@ export type AssinaturaNaStripe = {
   resumoDaTentativa?: string | null;
   /** O plano (metadados do nosso checkout, ou o intervalo do preço) — o texto do e-mail de confirmação (E18). */
   plano?: Plano | null;
+  /**
+   * O plano do PREÇO de agora (o painel da cobrança, etapa 4.7b): muda quando o aluno troca de plano — os metadados
+   * do checkout, que `plano` prefere, ficam com o da compra. A mesma conta da tela do aluno (`planoDoPreco`).
+   */
+  planoAtual?: Plano | null;
+  /** Marcada para acabar nesta data (vazio = renova) — `quandoAcaba`. Só para o painel e a tela: o gate nunca lê. */
+  acabaEm?: Date | null;
+  /** O código promocional EM VIGOR na assinatura, como o aluno o digitou (vazio = nenhum) — `codigoDaAssinatura`. */
+  codigoPromocional?: string | null;
 };
 
 /**
@@ -800,6 +809,32 @@ export async function avisosDaStripe(desde: Date, ate: Date, maximo: number): Pr
 }
 
 /**
+ * Quando a assinatura vai acabar, se está marcada para isso: a data avulsa (`cancel_at`), ou o fim do período
+ * quando é "no fim do período" (`cancel_at_period_end`). Vazio = renova. Função pura — a MESMA conta da tela do
+ * aluno (`paraDetalhesDaAssinatura`) e do espelho, para os dois nunca discordarem.
+ */
+export function quandoAcaba(assinatura: Stripe.Subscription): Date | null {
+  if (assinatura.cancel_at !== null && assinatura.cancel_at !== undefined) return new Date(assinatura.cancel_at * 1000);
+  if (!assinatura.cancel_at_period_end) return null;
+  const itens = assinatura.items.data;
+  return itens.length > 0 ? new Date(Math.max(...itens.map((i) => i.current_period_end)) * 1000) : null;
+}
+
+/**
+ * O código promocional da assinatura, como o aluno o digitou: o do primeiro desconto que veio de um código. Precisa
+ * de `discounts.promotion_code` expandido (`buscarAssinatura`); sem isso, só há ids, e a resposta é nenhum. O desconto
+ * que acabou (o "por N meses" vencido) sai da assinatura na Stripe, e o código sai junto. Função pura.
+ */
+export function codigoDaAssinatura(assinatura: Stripe.Subscription): string | null {
+  for (const desconto of assinatura.discounts ?? []) {
+    if (typeof desconto === "string") continue;
+    const codigo = desconto.promotion_code;
+    if (codigo !== null && typeof codigo === "object") return codigo.code;
+  }
+  return null;
+}
+
+/**
  * O formato do espelho, a partir da assinatura da Stripe (com `customer` e `latest_invoice`
  * expandidos). Função pura. `devolvida`: a última fatura foi devolvida por inteiro
  * (`faturaDevolvida`) — o período dela deixa de contar como pago.
@@ -848,7 +883,10 @@ export function paraAssinaturaNaStripe(assinatura: Stripe.Subscription, devolvid
   const doMetadado = assinatura.metadata.plano;
   const intervalo = assinatura.items.data[0]?.price?.recurring?.interval;
   const plano: Plano | null = PLANOS.find((p) => p === doMetadado) ?? (intervalo === "month" ? "mensal" : intervalo === "year" ? "anual" : null);
-  return { id: assinatura.id, status, pagoAte, clienteId, userId, pedido, doVisitante, livemode: assinatura.livemode, proximaTentativa, encerradaSemPagamento, trocadaPorPix, pixPaymentIntentId, resumoDaTentativa, plano };
+  // Para o painel da cobrança (etapa 4.7b): o plano do preço de AGORA, quando ela acaba e o código em vigor.
+  const precoDeAgora = itens[0]?.price;
+  const planoAtual = precoDeAgora ? planoDoPreco(precoDeAgora) : null;
+  return { id: assinatura.id, status, pagoAte, clienteId, userId, pedido, doVisitante, livemode: assinatura.livemode, proximaTentativa, encerradaSemPagamento, trocadaPorPix, pixPaymentIntentId, resumoDaTentativa, plano, planoAtual, acabaEm: quandoAcaba(assinatura), codigoPromocional: codigoDaAssinatura(assinatura) };
 }
 
 /**
@@ -867,7 +905,8 @@ export class AssinaturaNaoEncontrada extends Error {
 /** A assinatura como a Stripe diz AGORA — o espelho se recalcula daqui, nunca do retrato do aviso. */
 export async function buscarAssinatura(id: string): Promise<AssinaturaNaStripe> {
   try {
-    const assinatura = await stripe().subscriptions.retrieve(id, { expand: ["customer", "latest_invoice.payments"] });
+    // `discounts.promotion_code`: o código promocional em vigor, para o painel da cobrança (etapa 4.7b, passo 1a).
+    const assinatura = await stripe().subscriptions.retrieve(id, { expand: ["customer", "latest_invoice.payments", "discounts.promotion_code"] });
     // A pré-paga (etapa 4.9): o período devolvido é o do Pix de que ela nasceu, não o da fatura (paga por fora).
     return paraAssinaturaNaStripe(assinatura, await periodoDevolvido(assinatura, assinatura.metadata[METADADO_DO_PIX] || null));
   } catch (erro) {

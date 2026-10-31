@@ -287,7 +287,8 @@ describe("a busca da assinatura para o espelho", () => {
     falsa.subscriptions.retrieve.mockResolvedValue(daStripe("active", fatura("in_1", 9990, [pago("pi_1")])));
     comCobrancas({ pi_1: { amount: 9990, amount_refunded: 0 } });
     expect((await buscarAssinatura("sub_1")).pagoAte?.getTime()).toBe(fim * 1000);
-    expect(falsa.subscriptions.retrieve.mock.calls).toEqual([["sub_1", { expand: ["customer", "latest_invoice.payments"] }]]);
+    // O código promocional também (o painel da cobrança, 4.7b — `stripe-espelho-rede.test.ts`).
+    expect(falsa.subscriptions.retrieve.mock.calls).toEqual([["sub_1", { expand: ["customer", "latest_invoice.payments", "discounts.promotion_code"] }]]);
   });
 
   it("encerrada com a última fatura DEVOLVIDA POR INTEIRO: pago só até o começo do período — o acesso acaba", async () => {

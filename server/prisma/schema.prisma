@@ -765,6 +765,17 @@ model Subscription {
   // assinatura recorrente (cartão). É por esta coluna que as telas, a rodada e o reembolso sabem
   // que ela é pré-paga; e é única: um Pix vira UMA assinatura (a idempotência do aviso).
   pixPaymentIntentId   String?   @unique
+  // O PAINEL DA COBRANÇA (etapa 4.7b, passo 1a — 31/10/2026): o que a lista do admin mostra e filtra
+  // sem ir à Stripe a cada linha. Gravados pela MESMA rotina do resto (`sincronizar`), com o que a
+  // Stripe diz agora; o GATE NÃO LÊ NENHUM DELES (ele lê `status` e `currentPeriodEnd`). Uma linha de
+  // antes desta coluna fica vazia até a próxima sincronia (um aviso, a renovação, o "Conferir").
+  // `plan`: o plano do PREÇO de agora (muda quando o aluno troca de plano) — vazio quando o preço não
+  // é de nenhum dos dois. `cancelAt`: marcada para acabar nesta data (vazio = renova); a pré-paga do
+  // Pix sempre tem, porque nunca renova. `promotionCode`: o código que o aluno digitou, como a Stripe
+  // o guarda (vazio = sem código).
+  plan                 PlanoDaAssinatura?
+  cancelAt             DateTime?
+  promotionCode        String?
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
   // Os e-mails da cobrança já tomados para esta assinatura (etapa 4.7, passo 7).
@@ -772,6 +783,12 @@ model Subscription {
 
   @@index([ownerUserId])
   @@map("subscription")
+}
+
+// O PLANO DE UMA ASSINATURA no espelho (etapa 4.7b, passo 1a). Os mesmos nomes do `Plano` do `core`.
+enum PlanoDaAssinatura {
+  mensal
+  anual
 }
 
 // OS E-MAILS DA COBRANÇA (Fase 4, etapa 4.7, passo 7 — decisões do operador, 28/10/2026): a marca

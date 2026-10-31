@@ -6286,10 +6286,22 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       toda mudança na Stripe passa por `operarNaAssinatura`; o espelho continua com um escritor só (`sincronizar`);
       o número do cartão e o CPF inteiro nunca entram no banco da escola nem no registro.
       - [ ] **BLOCO 1 — VER TUDO** (só leitura: nada muda na Stripe)
-        - [ ] **1a — A base.** Migration: o espelho passa a guardar o plano, o "vai cancelar" e o código promocional
-              (gravados pelo `sincronizar`; as linhas que já existem se completam por uma conferência); e a tabela
-              do **registro** — quem fez (o operador, o aluno, a Stripe, a rodada, o JilsonAI), quando, em quem, o quê
-              e o que a Stripe respondeu —, com RLS. Sem tela.
+        - [x] **1a — A base: o espelho guarda o plano, o fim marcado e o código promocional.** **FEITO (31/10/2026).**
+              Migration `20261031120000_espelho_do_painel` (o enum `PlanoDaAssinatura` e as colunas `plan`, `cancelAt`
+              e `promotionCode` em `subscription`, vazias; a tabela já tinha RLS). O `sincronizar` as grava com o que a
+              Stripe diz agora (`planoAtual` — o plano do PREÇO, que muda na troca de plano —, `acabaEm` e
+              `codigoPromocional`, em `paraAssinaturaNaStripe`); a busca expande `discounts.promotion_code`; e a conta
+              de "quando acaba" virou uma só (`quandoAcaba`), usada também pela tela do aluno. O gate não lê nenhuma. **As
+              linhas antigas se completam na próxima sincronia** (um aviso, a renovação, o "Conferir"), sem rodada
+              extra: no ar há poucas. **Mudou de lugar:** a tabela do **registro** foi para o 1f, que é quem a escreve
+              primeiro (uma migration por recurso). Testes: `stripe.test.ts` (+3), `stripe-espelho-rede.test.ts`
+              (novo — a expansão pedida), `espelho-do-painel.test.ts` (novo — a gravação contra o banco, o vazio que
+              apaga o valor velho e a marca que não tira o acesso). **Mutação: 7 de 7 reprovaram.** **Provado na área
+              de teste da Stripe** (cliente, cupom e código descartáveis): plano, fim e código certos; desfazer limpa a
+              data. **Banco de dev:** `migrate deploy`, *No difference detected*, nenhuma tabela sem RLS, as 2
+              assinaturas intactas. *Docs check (context7): Stripe → `/websites/stripe` → a consulta da sessão
+              (31/10) e os tipos da `stripe@23.0.1` (`Subscription.discounts`, `Discount.promotion_code`,
+              `PromotionCode.code`); a expansão, medida na área de teste.*
         - [ ] **1b — A lista** (*A*, item 1): filtros, busca e a contagem no topo; a rota de admin e a tela. O "Conferir
               na Stripe" de hoje fica até ir para a ficha, no 3a. **No menu: "Cobrança"**, no lugar de "Assinaturas"
               (depois de "Alunos"), com o submenu Precisa de você · Assinaturas · Tentativas · O que aconteceu
@@ -6299,9 +6311,11 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
               conta, o espelho, os e-mails, o registro). Provada na área de teste.
         - [ ] **1d — A ficha do aluno, a tela.**
         - [ ] **1e — As tentativas que não terminaram** (*A*, item 3).
-        - [ ] **1f — O que aconteceu** (*A*, itens 4 e 5): cada aviso da Stripe processado e cada ação passam a
-              escrever no registro; a linha do tempo, da escola e do aluno; a contagem dos motivos de cancelamento.
-              Mexe no caminho do aviso: teste do aviso repetido e do fora de ordem.
+        - [ ] **1f — O que aconteceu** (*A*, itens 4 e 5): a tabela do **registro** (veio do 1a) — quem fez (o
+              operador, o aluno, a Stripe, a rodada, o JilsonAI), quando, em quem, o quê e o que a Stripe respondeu —,
+              com RLS; cada aviso da Stripe processado e cada ação passam a escrever nela; a linha do tempo, da escola
+              e do aluno; a contagem dos motivos de cancelamento. Mexe no caminho do aviso: teste do aviso repetido e
+              do fora de ordem.
         - [ ] **Fechamento do bloco 1:** a revisão de segurança, as fotos e publicar (com a ordem dele).
       - [ ] **BLOCO 2 — PRECISA DE VOCÊ** (os casos e o aviso ao operador)
         - [ ] **2a — Os casos, a base:** a tabela (com RLS), abrir sem repetir e fechar sozinho; os três primeiros

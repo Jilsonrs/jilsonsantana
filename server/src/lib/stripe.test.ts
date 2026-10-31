@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import Stripe from "stripe";
 import { pagamentosDaFatura } from "./stripe-devolucao.js";
+import { codigoDaAssinatura, quandoAcaba } from "./stripe.js";
 import { AVISOS_DO_ENDERECO, avisoEmFormatoAntigo, METADADO_DA_CONTESTACAO, paraAviso, chaveDoNumeroFiscal, chavePublicavel, erroSemMensagem, idDoAvisoNoCorpo, METADADO_DO_PIX, pagamentoPrePagoDoAviso, pareceAvisoDaStripe, paraAssinaturaNaStripe, paraAssinaturaNoCheckout, paraCodigoPromocional, paraNumeroFiscal, paraPedidoDeAssinatura, paraPedidoDeCliente, paraPedidoDeClienteDoVisitante, paraPrecosDosPlanos, verificarAviso } from "./stripe.js";
 
 // O ESPELHO A PARTIR DA STRIPE (Fase 4, etapa 4.1) — função pura, teste unitário (CLAUDE.md →
@@ -604,5 +605,43 @@ describe("o aviso de fatura num formato antigo da API", () => {
     expect(avisoEmFormatoAntigo(evento("invoice.paid", { id: "in_1", object: "invoice", parent: null }))).toBe(false);
     expect(avisoEmFormatoAntigo(evento("customer.subscription.updated", { id: "sub_1", object: "subscription" }))).toBe(false);
     expect(avisoEmFormatoAntigo(evento("charge.refunded", { id: "ch_1", object: "charge", payment_intent: "pi_1" }))).toBe(false);
+  });
+});
+
+// O PAINEL DA COBRANÇA (etapa 4.7b, passo 1a): o espelho passa a guardar o plano do preço de agora, quando a
+// assinatura acaba e o código promocional em vigor — para a lista do admin. O que protege: o plano depois de uma
+// TROCA de plano é o do preço novo (os metadados do checkout ficam com o da compra); a marca de acabar sai da mesma
+// conta da tela do aluno; e o código só sai do desconto expandido — um id solto não vira código.
+describe("o espelho para o painel da cobrança", () => {
+  const comPreco = (interval: string, interval_count = 1) => [{ current_period_start: inicio, current_period_end: fim, price: { recurring: { interval, interval_count } } }];
+  const com = (extra: Record<string, unknown>, base: Stripe.Subscription = assinatura()) => ({ ...base, cancel_at: null, cancel_at_period_end: false, discounts: [], ...extra }) as unknown as Stripe.Subscription;
+
+  it("o plano de AGORA sai do preço: depois de trocar de plano, os metadados dizem o da compra e o espelho diz o novo", () => {
+    expect(paraAssinaturaNaStripe(assinatura({ itens: comPreco("month") })).planoAtual).toBe("mensal");
+    expect(paraAssinaturaNaStripe(assinatura({ itens: comPreco("year") })).planoAtual).toBe("anual");
+    const trocou = paraAssinaturaNaStripe(assinatura({ itens: comPreco("year"), metadata: { plano: "mensal" } }));
+    expect(trocou.plano).toBe("mensal");
+    expect(trocou.planoAtual).toBe("anual");
+    expect(paraAssinaturaNaStripe(assinatura({ itens: comPreco("month", 3) })).planoAtual).toBeNull();
+    expect(paraAssinaturaNaStripe(assinatura()).planoAtual).toBeNull();
+  });
+
+  it("quando acaba: a data avulsa vence; 'no fim do período' é o fim do período; sem marca, renova", () => {
+    const avulsa = inicio + 10 * DIA;
+    expect(quandoAcaba(com({ cancel_at: avulsa, cancel_at_period_end: true }))?.getTime()).toBe(avulsa * 1000);
+    expect(quandoAcaba(com({ cancel_at_period_end: true }))?.getTime()).toBe(fim * 1000);
+    expect(quandoAcaba(com({}))).toBeNull();
+    expect(paraAssinaturaNaStripe(com({ cancel_at_period_end: true })).acabaEm?.getTime()).toBe(fim * 1000);
+    expect(paraAssinaturaNaStripe(com({})).acabaEm).toBeNull();
+  });
+
+  it("o código promocional: o do primeiro desconto que veio de um código; id solto ou desconto sem código, nenhum", () => {
+    const codigo = (code: string) => ({ id: `di_${code}`, promotion_code: { id: `promo_${code}`, code } });
+    expect(codigoDaAssinatura(com({ discounts: [codigo("TESTE100")] }))).toBe("TESTE100");
+    expect(codigoDaAssinatura(com({ discounts: [{ id: "di_cupom", promotion_code: null }, codigo("SEGUNDO")] }))).toBe("SEGUNDO");
+    expect(codigoDaAssinatura(com({ discounts: ["di_sem_expandir"] }))).toBeNull();
+    expect(codigoDaAssinatura(com({ discounts: [{ id: "di_1", promotion_code: "promo_sem_expandir" }] }))).toBeNull();
+    expect(codigoDaAssinatura(com({}))).toBeNull();
+    expect(paraAssinaturaNaStripe(com({ discounts: [codigo("TESTE100")] })).codigoPromocional).toBe("TESTE100");
   });
 });
