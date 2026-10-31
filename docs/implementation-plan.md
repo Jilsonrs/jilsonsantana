@@ -199,16 +199,34 @@
 > só o plano; depois, o nome e o plano — no cartão e no Pix. **Na revisão nova, o operador trocou a senha pelo código no
 > e-mail (P93):** o código pedido, a senha gravada e a entrada com ela, todos 200 no registro.
 >
-> **PARA CONTINUAR NO PRÓXIMO CHAT (a ordem — atualizado em 30/10/2026, depois da publicação `4819776`):**
-> **A META DO OPERADOR (30/10/2026): FECHAR A PARTE DE VENDA, testada com dinheiro de verdade.** A abertura ao público NÃO
-> entra agora: ela depende do JilsonAI (Fase 6 — P84, decisão de 28/10), das páginas de Termos, Privacidade e Contato (os
-> textos são dele: P61, P30) e da cópia do banco fora do Neon (Fase 7); e o acabamento visual da tela de assinar (6g) é do
-> Antigravity. **O que é do agente, nesta ordem:** (a) o nome OBRIGATÓRIO no servidor (o checkbox depois da 9e; publicar
-> só com a ordem dele); (b) a P93, um e-mail por vez (o código de entrar espera a resposta dele; depois o código da senha
-> nova e as boas-vindas, mandados de verdade ao Yahoo dele; por último as telas de entrar e de senha nova, que ele vê pela
-> prévia); (c) o passo 8 — o teste dele com cartão e Pix de verdade (R$ 99,90) e o reembolso, guiado passo a passo, com a
-> P102 antes, e a conferência só lendo depois de cada passo (o banco de produção, o registro do job e do serviço); (d) a
-> P126, conferindo os prints dele item por item; (e) registrar tudo e deixar aqui o que falta para abrir ao público.
+> **Publicado em 30/10/2026: `4b14900`** — a P93: `dc3dd72` (os e-mails aprovados e as boas-vindas com o primeiro nome) e
+> `fea9687` (as telas aprovadas; a P93 fecha); ordem do operador: *"Publicar agora"*, depois da revisão de segurança sem P0
+> nem P1. CI e publicação com sucesso. **Revisão `jilson-prod-00054`** (100% do tráfego), conferida de fora: o job das
+> migrations, *"No pending migrations to apply"* (48); a subida com a cobrança conferida e nenhuma linha de erro; a página,
+> 200; a versão nova do app (`mvvbqspl-b34b3a6f`); os dois jobs na mesma imagem do site.
+>
+> **PARA CONTINUAR NO PRÓXIMO CHAT (a ordem — atualizado em 30/10/2026, depois da publicação `4b14900`):**
+> **O DIA 30/10/2026 FECHOU A PARTE DE VENDA, menos o teste com dinheiro de verdade** — que o operador decidiu fazer **por
+> último, como um aluno de verdade, depois da 6g do Antigravity** (*"Eu nunca testei com meu cartão de verdade; iria testar
+> depois de todas as etapas concluídas e o Antigravity fizer a parte dele como um aluno de verdade faria, tipo um teste
+> final antes de ir para outra fase"*). **Feito no dia:** o nome obrigatório no servidor (`bbd1b88`, no ar em `eda8a5b`); a
+> P93 inteira — os três e-mails e as telas aprovados, as boas-vindas com o primeiro nome (`dc3dd72`, `fea9687`, no ar em
+> `4b14900`); a P102 (a única assinatura de verdade é a do teste de 10/10 com o código de 100% para sempre: R$ 0, sem
+> cartão — fica); a P126, as conferências nos painéis (o registro na 4.9b), com dois acréscimos — a regra do Sentry só da
+> cobrança e o vigia do Google da rodada de hora em hora — e a trava que impede a suíte de mandar e-mail de verdade
+> (`cf14dc3`, no `dev`, ainda não publicado: só código de teste). **A abertura ao público é no mês que vem** (operador,
+> 30/10/2026).
+> **O QUE FALTA PARA ABRIR AO PÚBLICO** — o roteiro é a tabela *A ordem* (neste plano: "A ordem — aprovada pelo operador em
+> 28/10/2026"); o Pix (o bloco 1) está feito. Faltam: (2) o JilsonAI (Fase 6 — a P84: o cartão de preço promete o JilsonAI);
+> (3) a tela de montar trilhas no admin (6b); (4) os certificados (6.5); (5) a home lendo os cursos do banco (C4, depois da
+> P16); (6) as páginas — Termos (com a cláusula da P61), Privacidade (com a resposta da P135), Contato e Quem somos (P30) e
+> o caminho de excluir a conta; (7) a cópia do banco fora do Neon, com teste de restauração; (8) o aviso de erro nas telas
+> do aluno (Sentry, parte 2); (9) a indexação (robots.txt, noindex, sitemap.xml e o `og:image` da home); (10) o fechamento —
+> a revisão de segurança final, a proteção na entrada revista, **o vigia de site fora (Uptime check — o mapa do
+> `tech-stack.md`)**, **a P136 (o e-mail falso com o domínio principal)**, onde os e-mails caem em caixas de OUTRAS pessoas
+> (Gmail, Outlook, mail-tester), **o passo 8 — o teste final com cartão e Pix de verdade (R$ 99,90) e o reembolso, olhando
+> a taxa, depois da 6g** — e tirar o "Em breve". **Do operador, em paralelo:** a 6g com o Antigravity, os 5 cursos (P16) e a
+> Trilha 1, a FAQ (P12), os textos das páginas e a persona do JilsonAI.
 > 0. **O PASSO 9 DA 4.7 ESTÁ NO AR desde a publicação `4819776` (revisão `jilson-prod-00052`)** — `840acac` 9a, `1db57ec` 9b,
 >    `99f95a4` 9c, `7e03dcc` 9d, `86ee52a` 9e (os achados da revisão de segurança, com as decisões do operador de 30/10: o
 >    lembrete sem o nome, o nome só com letras, sem teto diário) e `d2369fd` (a junção dos documentos). Antes de publicar,
@@ -225,15 +243,15 @@
 >    plano** — grupo 1 (E5, E4, E1, E3, E2) **FEITO e publicado (`f36e274`)**, com as correções C1 a C5; **o grupo 2 (E8, E10,
 >    E9, E7, E6), os R1 a R6, a P128 e os achados da revisão do grupo 2: FEITOS e publicados (`0f8c0c7`).** **O grupo 3
 >    (E11, E12, E13, E17) e o grupo 4 (E14, E15, E16, E18), com os achados das duas revisões e a P131: FEITOS e publicados
->    (`5313557`), e o conserto da contestação (`d4a15b0`).** **O bloco de engenharia da 4.9b está todo no ar.** Fica, da 4.9b, o que é do operador: a P126 (as
->    conferências nos painéis) e a P125 (quando ele for criar um desses códigos). O achado da contestação (E7: a chave de
+>    (`5313557`), e o conserto da contestação (`d4a15b0`).** **O bloco de engenharia da 4.9b está todo no ar.** Da 4.9b, a P126 (as conferências nos painéis)
+>    foi FEITA em 30/10/2026 (o registro na 4.9b); fica a P125 (quando ele for criar um desses códigos). O achado da contestação (E7: a chave de
 >    repetição que fazia a reentrega do aviso falhar por até 5 min) foi corrigido por ordem dele (30/10/2026). Uma
 >    revisão de segurança por grupo, só do que mudou, antes de publicar. Um commit por parte. **Sem nova rodada de revisão a cada correção** *(operador, 29/10/2026: "fechando
 >    P1, P2, P3 e seguindo em frente e rodando os testes no que precisar para não ficar em polimento infinito")*:
 >    P0 e P1 travam a publicação; P2 e P3 se fecham com teste e mutação, sem revisar de novo. A P128 (o fuso do
 >    banco na subida) foi respondida e feita: as conferências rodam antes de abrir a porta. As decisões P116–P124 e P127 já
->    foram respondidas (registradas na 4.9b, na 4.7b e no `billing.md`); ficam a P126 (as conferências nos painéis,
->    por prints — fazer junto com o operador) e a P125 (só quando ele for criar um desses códigos). O roteiro
+>    foram respondidas (registradas na 4.9b, na 4.7b e no `billing.md`); fica a P125 (só quando ele for criar um
+>    desses códigos). O roteiro
 >    "quando um aluno não conseguir pagar" está em `billing.md`, como rascunho, para ele revisar.
 > 2. **O passo 9 da 4.7 — quem não terminou de assinar, e a tabela de leads** (decisões do operador,
 >    29/10/2026): **FEITO e PUBLICADO em 30/10/2026 (`4819776`) — o item 0, acima.** Registrado no plano (etapa 4.7 → Passo 9), com o plano do bloco em 5 partes
@@ -247,14 +265,16 @@
 >    consentimento, a página de descadastro) vai ao operador para aprovar.
 > 3. **P93, um passo por vez, com a confirmação dele:** **os três e-mails APROVADOS em 30/10/2026** — o código de
 >    entrar e o da senha nova como estão; as boas-vindas com o título dele, "Olá, {primeiro nome}! Seja bem-vindo(a)" (o nome digitado ao assinar, e só um nome comum — decisão dele à
->    pergunta da revisão de segurança; a caixa não é provada, P94), no `dev`, ainda não publicado. A troca de
+>    pergunta da revisão de segurança; a caixa não é provada, P94), publicado em `4b14900`. A troca de
 >    senha pelo código, testada por ele no site no ar: funcionou. **E os textos das telas de entrar e de senha nova:
 >    APROVADOS (vistos em fotos de cada estado). A P93 está FECHADA.**
-> 4. **O passo 8 da 4.7** (o teste dele com cartão e Pix reais, R$ 99,90 e o reembolso — a P112 já está feita),
->    com a P102.
+> 4. **O passo 8 da 4.7 FICA PARA O FIM** *(decisão do operador, 30/10/2026)*: o teste dele com cartão e Pix reais (R$ 99,90
+>    — cartão: mensal → troca para o anual → reembolso; Pix: pagar → reembolso, olhando a taxa da Stripe), como um aluno de
+>    verdade, depois da 6g do Antigravity. A P102 fechou (o registro no passo 8).
 > **O que o próximo chat precisa saber:** a suíte do servidor apaga o banco de teste local — perguntar
 > UMA vez e usar a resposta exata em `PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION`; rodar como o CI
-> (`STRIPE_SECRET_KEY= STRIPE_PUBLISHABLE_KEY= STRIPE_WEBHOOK_SECRET= RESEND_API_KEY= STRIPE_PIX_CONFIGURATION=`);
+> (`STRIPE_SECRET_KEY= STRIPE_PUBLISHABLE_KEY= STRIPE_WEBHOOK_SECRET= RESEND_API_KEY= STRIPE_PIX_CONFIGURATION=` — a chave do
+> Resend a suíte já tira sozinha desde `cf14dc3`);
 > a mutação por roteiro com cópia de segurança de cada arquivo; o Pix de teste se simula pelo e-mail de
 > cobrança (`succeed_immediately@example.com`, `fill_never@example.com` — e desde a P113 o e-mail digitado
 > no formulário É o de cobrança); os servidores de dev em segundo plano: `npm run dev:client` da raiz. Os
@@ -5611,6 +5631,15 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             28/10/2026** (a conta de verdade em "cancelar", Smart Retries 8× em 2 semanas, os e-mails
             da Stripe desligados — `billing.md` → *Régua de inadimplência*) —, a cópia do banco
             (Fase 7) e a revisão de segurança da etapa inteira. A publicação é ordem dele.
+            **O TESTE COM DINHEIRO DE VERDADE FICA PARA O FIM** *(decisão do operador, 30/10/2026)*: *"Eu nunca testei com meu
+            cartão de verdade; iria testar depois de todas as etapas concluídas e o Antigravity fizer a parte dele como um aluno
+            de verdade faria, tipo um teste final antes de ir para outra fase"* — depois da 6g. O roteiro, quando chegar a hora:
+            cartão (mensal → troca para o anual → reembolso) e Pix (pagar → reembolso), olhando a taxa da Stripe, com a
+            conferência só lendo depois de cada passo (o banco de produção, o registro do serviço e do job, os e-mails).
+            **A P102 FECHOU (30/10/2026):** a única assinatura de verdade no banco de produção (só leitura) é a da conta de teste
+            `member@`, de 10/10 — o teste da etapa 4.3 com o código de 100% PARA SEMPRE (o cupom "FreeJS"): com ele o site nem
+            pede cartão, e ela renova a R$ 0. Não cobra cartão nenhum (a P102 partia do contrário). **Fica** *(decisão do
+            operador: "Fica como está")* — a conta de teste continua com acesso no ar para os testes da área logada.
             **A REVISÃO DA ETAPA INTEIRA — FEITA em 28/10/2026** *(pedido do operador: dois revisores em
             paralelo no Fable 5.1, esforço máximo — o `security-vulnerability-reviewer` e um revisor
             geral —, sobre os 25 commits de código da 4.7, passos 1 a 7; só leitura)*. **Nenhum P0;
@@ -7054,6 +7083,35 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             e-mail define a sua, falsa, com o servidor falso. Teste novo: `suite-sem-email.test.ts` (2). **Mutação: sem a
             trava, os 2 reprovam** — com e sem a chave no terminal. Gates: build, typecheck, lint; site 1076, servidor 1700
             (como o CI). *Docs check (context7): não disparado.*
+      - [x] **A P126 — as conferências nos painéis, FEITAS com o operador por prints (30/10/2026).**
+            **Stripe** (modo de verdade): a configuração "Pix pré-pago" (`pmc_1UVbbJCb0IFa2F76AZ6JkqND`, a do site) só com o
+            Pix; o Portal do Cliente sem link ativado (e o site nunca o abre: nenhum `billingPortal` no código); a verificação
+            em duas etapas exigida da equipe, e a equipe é só o operador; os e-mails da Stripe para o Yahoo dele — contestação
+            e falha do endereço de avisos ligados (e troca de chave e uso suspeito da API); *Failed payments* só existe por SMS
+            e fica desligado (o site já avisa o aluno); *Webhook event generation failures* o operador liga (combinado no dia: o
+            ponto cego que a conferência de hora em hora não vê); o endereço de avisos ativo, na `2026-09-30.endive`, com os 11
+            avisos e as entregas em 200, e um **reenvio** (16:20) que chegou à revisão `jilson-prod-00054` e saiu *"repetido"*
+            no registro — **o segredo bate**.
+            **Sentry:** havia só "Erro novo no servidor" (erro novo, que escala ou que volta depois de resolvido, de qualquer
+            origem) e a padrão "high priority": o MESMO erro de cobrança repetido enquanto aberto não avisava. **Decisão do
+            operador (30/10/2026): "Criar uma regra só da cobrança"** — criada por ele, guiado tela a tela: *"Cobrança: toda
+            ocorrência"* (*An event or issue activity is captured*; `origem` igual a `stripe`, `email`, `avisos` ou `monitor`;
+            e-mail para ele, no máximo 1 a cada 30 min por erro); o e-mail de teste chegou. A etiqueta conferida num erro real
+            (`origem:stripe` acha o de 26/10, já *Resolved*). O aviso de cota ligado (80% e 100%); nada arquivado em 30 dias.
+            *(Os avisos do Sentry vão para `jilson@jilsonsantana.com`.)*
+            **Google Cloud** (o agente, só lendo, pela linha de comando): o agendador ativo e as 6 últimas rodadas com sucesso;
+            só a conta do site (`jilson-site`, que roda os dois jobs) lê as 3 chaves da Stripe, e no projeto só o dono lê todo
+            segredo; as duas chaves de verdade (um roteiro que responde só "verdade" ou "teste"). **O alerta de "a rodada não
+            rodou" não existia — decisão do operador (30/10/2026): "resolve logo isso"**: o agente o criou pela API do Google,
+            com a conta dele — o canal de e-mail e a regra *"A rodada de hora em hora não rodou"* (2 horas sem uma rodada com
+            sucesso), conferida antes na medida (`completed_execution_count`: um ponto `succeeded` por hora) e lida de volta
+            depois; o mapa no `tech-stack.md`.
+            **Resend:** o domínio `alunos.jilsonsantana.com` verificado; nenhuma reclamação de spam; os que voltaram eram da
+            suíte de testes (o achado acima, travado em `cf14dc3`) e um da conta de teste `member@`, que não tem caixa.
+            **GoDaddy:** os 29 registros apontam para o que a escola usa — Google Cloud Run (o domínio e o `www`), Bunny
+            (`img`), Resend (`send.alunos`, `rsend.alunos`, a chave de assinatura), Microsoft 365 (o e-mail dele; os registros
+            antigos do Lync apontam para a Microsoft, que ninguém toma) e a própria GoDaddy; **nada da Railway**. **Achado:** o
+            domínio principal com o `_dmarc` em `p=none` — virou a **P136**, para antes de abrir.
       - [x] **(P3) A chave de repetição fixa** guardava a falha da Stripe por 24 h: agora leva a janela de 5 min, como a da
             devolução.
       - [x] **(P3) O alerta dizia "acesso cortado" sem olhar o resultado:** agora diz o status da assinatura e se a conta
