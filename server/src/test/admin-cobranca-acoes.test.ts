@@ -28,10 +28,19 @@ vi.mock("../lib/stripe-reembolso.js", async (importOriginal) => ({
 }));
 const buscarAssinatura = vi.fn<(id: string) => Promise<AssinaturaNaStripe>>();
 const assinaturasDoCliente = vi.fn().mockResolvedValue([]);
+const trocarNumeroFiscal = vi.fn<(cliente: string, documento: { tipo: string; numero: string }) => Promise<void>>();
 vi.mock("../lib/stripe.js", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../lib/stripe.js")>()),
   buscarAssinatura: (id: string) => buscarAssinatura(id),
   assinaturasDoCliente: (cliente: string) => assinaturasDoCliente(cliente),
+  trocarNumeroFiscal: (cliente: string, documento: { tipo: string; numero: string }) => trocarNumeroFiscal(cliente, documento),
+}));
+const anularFatura = vi.fn<(faturaId: string) => Promise<"anulada" | "paga">>();
+const soltarAgendamento = vi.fn<(agendamentoId: string) => Promise<void>>();
+vi.mock("../lib/stripe-plano.js", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../lib/stripe-plano.js")>()),
+  anularFatura: (faturaId: string) => anularFatura(faturaId),
+  soltarAgendamento: (agendamentoId: string) => soltarAgendamento(agendamentoId),
 }));
 const enviarEmail = vi.fn<(pedido: PedidoDeEmail) => Promise<Envio>>();
 vi.mock("../lib/email.js", async (importOriginal) => ({
@@ -74,6 +83,7 @@ beforeAll(async () => {
   member = await entrar(process.env.SEED_MEMBER_EMAIL, process.env.SEED_MEMBER_PASSWORD);
   adminId = (await prisma.user.findUniqueOrThrow({ where: { email: (process.env.SEED_ADMIN_EMAIL ?? "").toLowerCase() } })).id;
   await prisma.user.create({ data: { id: aluna, email: `${aluna}@teste.local` } });
+  await prisma.stripeCustomer.create({ data: { userId: aluna, stripeCustomerId: CLIENTE, livemode: false } });
   espelhoId = (await prisma.subscription.create({ data: { ownerUserId: aluna, status: "active", currentPeriodEnd: EM_30_DIAS, stripeSubscriptionId: SUB, stripeCustomerId: CLIENTE } })).id;
 });
 
@@ -86,12 +96,17 @@ beforeEach(() => {
   cancelarNaHora.mockReset().mockResolvedValue(undefined);
   buscarAssinatura.mockReset().mockImplementation(async (id) => ({ id, status: "active", pagoAte: EM_30_DIAS, clienteId: CLIENTE, userId: aluna, livemode: false, ...naStripe }));
   enviarEmail.mockReset().mockResolvedValue({ enviado: true, id: "re_teste" });
+  trocarNumeroFiscal.mockReset().mockResolvedValue(undefined);
+  anularFatura.mockReset().mockResolvedValue("anulada");
+  soltarAgendamento.mockReset().mockResolvedValue(undefined);
 });
 
 afterAll(async () => {
   await prisma.billingLog.deleteMany({ where: { OR: [{ userId: aluna }, { stripeSubscriptionId: SUB }] } });
   await prisma.subscriptionEmail.deleteMany({ where: { subscription: { stripeSubscriptionId: SUB } } });
   await prisma.subscription.deleteMany({ where: { stripeSubscriptionId: { contains: S } } });
+  await prisma.stripeCustomer.deleteMany({ where: { userId: aluna } });
+  await prisma.billingCase.deleteMany({ where: { key: { contains: S } } });
   await prisma.user.deleteMany({ where: { id: aluna } });
   if (ANTES === undefined) delete process.env.STRIPE_SECRET_KEY;
   else process.env.STRIPE_SECRET_KEY = ANTES;
@@ -182,5 +197,76 @@ describe("conferir e reenviar", () => {
     await abrirCaso({ tipo: TipoDeCaso.COBRANCA_EM_ABERTO, chave: `fatura:${S}`, urgente: false, assinatura: SUB });
     const outro = await prisma.billingCase.findUniqueOrThrow({ where: { kind_key: { kind: TipoDeCaso.COBRANCA_EM_ABERTO, key: `fatura:${S}` } } });
     expect((await request(servidor).post(`/api/admin/cobranca/casos/${outro.id}/reenviar`).set("Cookie", admin)).status).toBe(404);
+  });
+});
+
+describe("os consertos do caso (passo 3b)", () => {
+  const caso = async (tipo: TipoDeCaso, chave: string, objeto: string | null = null) => {
+    await abrirCaso({ tipo, chave: `${chave}:${S}`, urgente: false, conta: aluna, assinatura: SUB, objeto });
+    return (await prisma.billingCase.findUniqueOrThrow({ where: { kind_key: { kind: tipo, key: `${chave}:${S}` } } })).id;
+  };
+  const resolver = (id: number, acao: string) => request(servidor).post(`/api/admin/cobranca/casos/${id}/resolver`).set("Cookie", admin).send({ acao });
+
+  it("anular a cobrança em aberto: com a assinatura ENCERRADA, anula e fecha o caso — com ela VIVA, recusa (seria acesso sem pagar)", async () => {
+    const viva = await caso(TipoDeCaso.COBRANCA_EM_ABERTO, "fatura-viva", `in_${S}_viva`);
+    expect((await resolver(viva, "anular-cobranca")).body).toEqual({ error: "AssinaturaViva" });
+    expect(anularFatura).not.toHaveBeenCalled();
+    detalhes = { status: "canceled" };
+    const res = await resolver(viva, "anular-cobranca");
+    expect([res.status, res.body]).toEqual([200, { detalhe: "a cobrança em aberto foi anulada" }]);
+    expect(anularFatura.mock.calls).toEqual([[`in_${S}_viva`]]);
+    expect(await prisma.billingCase.findUniqueOrThrow({ where: { id: viva } })).toMatchObject({ open: false, closedBy: "OPERADOR", closedByUserId: adminId, note: "a cobrança em aberto foi anulada" });
+    expect(await ultimaDoRegistro("anular-cobranca")).toMatchObject({ who: "OPERADOR", userId: aluna });
+  });
+
+  it("…a fatura da TROCA de plano se anula com a assinatura viva (é o que a tela do aluno já faz)", async () => {
+    const daTroca = await caso(TipoDeCaso.COBRANCA_EM_ABERTO, "fatura-troca", `in_${S}_troca`);
+    detalhes = { faturaDaTrocaId: `in_${S}_troca` };
+    expect((await resolver(daTroca, "anular-cobranca")).status).toBe(200);
+    expect(anularFatura.mock.calls).toEqual([[`in_${S}_troca`]]);
+  });
+
+  it("soltar o agendamento e encerrar na hora (sem devolver): a mesma operação de sempre, com a trava e a sincronia", async () => {
+    await abrirCaso({ tipo: TipoDeCaso.TROCA_DE_PLANO, chave: `agendamento:sub_sched_${S}`, urgente: false, conta: aluna, assinatura: SUB });
+    const agendamento = (await prisma.billingCase.findUniqueOrThrow({ where: { kind_key: { kind: TipoDeCaso.TROCA_DE_PLANO, key: `agendamento:sub_sched_${S}` } } })).id;
+    expect((await resolver(agendamento, "soltar-agendamento")).status).toBe(200);
+    expect(soltarAgendamento.mock.calls).toEqual([[`sub_sched_${S}`]]);
+    const semPeriodo = await caso(TipoDeCaso.ATIVA_SEM_PERIODO_PAGO, "sub");
+    const res = await resolver(semPeriodo, "encerrar-na-hora");
+    expect([res.status, res.body]).toEqual([200, { detalhe: "encerrada agora, sem devolver" }]);
+    expect(cancelarNaHora.mock.calls).toEqual([[SUB, {}]]);
+  });
+
+  it("o conserto que não é do tipo do caso: 404; encerrar a já encerrada: 409", async () => {
+    const outro = await caso(TipoDeCaso.CONTESTACAO, "du");
+    expect((await resolver(outro, "anular-cobranca")).status).toBe(404);
+    const semPeriodo = await caso(TipoDeCaso.ATIVA_SEM_PERIODO_PAGO, "sub-encerrada");
+    detalhes = { status: "canceled" };
+    expect((await resolver(semPeriodo, "encerrar-na-hora")).body).toEqual({ error: "NadaAFazer" });
+    expect(cancelarNaHora).not.toHaveBeenCalled();
+  });
+});
+
+describe("o CPF e o link por e-mail (passo 3b)", () => {
+  it("corrigir o CPF: confere o número no servidor, troca em cada cliente da pessoa, e o número NUNCA vai ao registro", async () => {
+    expect((await acao("corrigir-documento", { conta: aluna, documento: "111.111.111-11" })).body).toEqual({ error: "DocumentoInvalido" });
+    expect(trocarNumeroFiscal).not.toHaveBeenCalled();
+    const res = await acao("corrigir-documento", { conta: aluna, documento: "529.982.247-25" });
+    expect([res.status, res.body]).toEqual([200, { detalhe: "CPF corrigido" }]);
+    expect(trocarNumeroFiscal.mock.calls).toEqual([[CLIENTE, { tipo: "cpf", numero: "52998224725" }]]);
+    const registro = await ultimaDoRegistro("corrigir-documento");
+    expect(registro).toMatchObject({ who: "OPERADOR", userId: aluna, detail: "CPF corrigido" });
+    expect(JSON.stringify(registro)).not.toContain("52998224725");
+    expect((await acao("corrigir-documento", { conta: `nao-existe-${S}`, documento: "529.982.247-25" })).status).toBe(404);
+  });
+
+  it("enviar o link: um e-mail à conta (o e-mail do banco), com o botão para entrar e seguir — e fica no registro", async () => {
+    const res = await acao("enviar-link", { conta: aluna, link: "trocarCartao" });
+    expect([res.status, res.body]).toEqual([200, { detalhe: "o link (trocarCartao) foi enviado" }]);
+    const [pedido] = enviarEmail.mock.calls.map(([p]) => p).filter((p) => p.tipo === "link-do-painel");
+    expect(pedido?.para).toBe(`${aluna}@teste.local`);
+    expect(pedido?.mensagem.botao?.endereco).toMatch(/\/login\?depois=cartao$/);
+    expect(await ultimaDoRegistro("enviar-link")).toMatchObject({ who: "OPERADOR", userId: aluna });
+    expect((await acao("enviar-link", { conta: aluna, link: "outro" })).status).toBe(400);
   });
 });

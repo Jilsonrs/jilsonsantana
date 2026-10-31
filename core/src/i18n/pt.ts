@@ -365,6 +365,14 @@ export const pt = {
         comoEntrar: "Para entrar, use seu e-mail e sua senha. Se ainda não criou a senha, ou não lembra dela, use \"Receber código de acesso\" na tela de entrar.",
         botao: "Entrar na escola"
       },
+      // O LINK QUE O OPERADOR MANDA DO PAINEL DA COBRANÇA (etapa 4.7b, passo 3b): trocar o cartão, reativar ou pagar a
+      // atrasada com Pix — o botão leva a entrar e seguir para a tela certa. RASCUNHO do agente: o operador aprova vendo
+      // o e-mail de prova, no fechamento do bloco 3.
+      linkDoPainel: {
+        trocarCartao: { assunto: "Troque o cartão da sua assinatura", titulo: "Troque o cartão", texto: "Use o botão abaixo para trocar o cartão da sua assinatura. Se houver uma cobrança atrasada, ela é paga com o cartão novo.", botao: "Trocar o cartão" },
+        reativar: { assunto: "Reative a sua assinatura", titulo: "Volte a estudar", texto: "Use o botão abaixo para reativar a sua assinatura. Você continua de onde parou.", botao: "Reativar assinatura" },
+        pagarComPix: { assunto: "Pague a cobrança atrasada com Pix", titulo: "Pague com Pix", texto: "Use o botão abaixo para pagar a cobrança atrasada com Pix. As aulas voltam assim que o Pix for confirmado.", botao: "Pagar com Pix" }
+      },
       // O AVISO DE QUE UMA SENHA FOI CRIADA logo depois de pagar sem conta (E16 da revisão ampla da cobrança — decisão do
       // operador P123): se não foi a pessoa, ela cria outra pelo "Esqueci minha senha", que desconecta os outros aparelhos
       // (`revokeSessionsOnPasswordReset`, com teste). Texto APROVADO pelo operador em 30/10/2026.

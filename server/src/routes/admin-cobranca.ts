@@ -1,10 +1,10 @@
 import { Router } from "express";
-import { acaoNaAssinaturaSchema, acharQuerySchema, casosQuerySchema, fecharCasoSchema, fichaQuerySchema, oQueAconteceuQuerySchema } from "@jilson/core";
+import { acaoNaAssinaturaSchema, acharQuerySchema, casosQuerySchema, corrigirDocumentoSchema, enviarLinkSchema, fecharCasoSchema, fichaQuerySchema, oQueAconteceuQuerySchema, resolverCasoSchema } from "@jilson/core";
 import type { Response } from "express";
 import { requireAdmin } from "../middleware/auth.js";
 import { parseId, validate } from "../lib/http.js";
 import { fecharPeloOperador, listarCasos } from "../lib/casos.js";
-import { cancelarPeloOperador, conferirPeloOperador, desfazerCancelamentoPeloOperador, reenviarPeloOperador, type NaoFeita, type Resultado } from "../lib/acoes-da-cobranca.js";
+import { cancelarPeloOperador, conferirPeloOperador, corrigirDocumentoPeloOperador, desfazerCancelamentoPeloOperador, enviarLinkPeloOperador, reenviarPeloOperador, resolverCasoPeloOperador, type NaoFeita, type Resultado } from "../lib/acoes-da-cobranca.js";
 import { cobrancaConfigurada } from "../lib/stripe.js";
 import { QuemFez } from "../lib/prisma.js";
 import { acharPeloCodigo, listarTentativas, montarFicha } from "../lib/ficha-da-cobranca.js";
@@ -76,6 +76,7 @@ const STATUS_DO_QUE_NAO_FOI: Record<NaoFeita, [number, string]> = {
   "pre-paga": [409, "PrePaga"],
   "nada-a-fazer": [409, "NadaAFazer"],
   "stripe-nao-conhece": [409, "StripeNaoConhece"],
+  "assinatura-viva": [409, "AssinaturaViva"],
 };
 function responder<T>(res: Response, resultado: Resultado<T>): void {
   if (resultado.resultado === "ok") {
@@ -129,6 +130,41 @@ router.post("/admin/cobranca/casos/:id/reenviar", requireAdmin, async (req, res)
   const id = parseId(req.params.id, res);
   if (id === null) return;
   responder(res, await reenviarPeloOperador(id, por));
+});
+
+// POST /api/admin/cobranca/casos/:id/resolver — { acao }: o conserto que o caso pede (passo 3b).
+router.post("/admin/cobranca/casos/:id/resolver", requireAdmin, async (req, res) => {
+  const por = operador(req, res);
+  if (!por) return;
+  const id = parseId(req.params.id, res);
+  if (id === null) return;
+  const corpo = validate(resolverCasoSchema, req.body, res);
+  if (corpo === null) return;
+  responder(res, await resolverCasoPeloOperador(id, corpo.acao, por));
+});
+
+// POST /api/admin/cobranca/acoes/corrigir-documento — { conta | visitante, documento }: o CPF ou CNPJ (passo 3b).
+router.post("/admin/cobranca/acoes/corrigir-documento", requireAdmin, async (req, res) => {
+  const por = operador(req, res);
+  if (!por) return;
+  const corpo = validate(corrigirDocumentoSchema, req.body, res);
+  if (corpo === null) return;
+  const quem = "conta" in corpo ? { conta: corpo.conta } : { visitante: corpo.visitante };
+  const resultado = await corrigirDocumentoPeloOperador(quem, corpo.documento, por);
+  if (resultado.resultado === "documento-invalido") {
+    res.status(400).json({ error: "DocumentoInvalido" });
+    return;
+  }
+  responder(res, resultado);
+});
+
+// POST /api/admin/cobranca/acoes/enviar-link — { conta, link }: o link por e-mail ao aluno (passo 3b).
+router.post("/admin/cobranca/acoes/enviar-link", requireAdmin, async (req, res) => {
+  const por = operador(req, res);
+  if (!por) return;
+  const corpo = validate(enviarLinkSchema, req.body, res);
+  if (corpo === null) return;
+  responder(res, await enviarLinkPeloOperador(corpo.conta, corpo.link, por));
 });
 
 // GET /api/admin/cobranca/achar?codigo=<sub_|cus_|pi_|ch_|in_|du_…> — de quem é o código que veio num alerta.

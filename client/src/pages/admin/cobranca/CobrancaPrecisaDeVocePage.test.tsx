@@ -8,10 +8,12 @@ type Consulta = { situacao: "abertos" | "fechados"; pagina: number };
 const adminListarCasos = vi.fn<(consulta: Consulta) => Promise<ListaDeCasos>>();
 const adminFecharCaso = vi.fn<(id: number, nota: string) => Promise<void>>();
 const adminReenviarEmail = vi.fn<(id: number) => Promise<{ detalhe: string }>>();
+const adminResolverCaso = vi.fn<(id: number, acao: string) => Promise<{ detalhe: string }>>();
 vi.mock("@/lib/api", () => ({
   adminListarCasos: (consulta: Consulta) => adminListarCasos(consulta),
   adminFecharCaso: (id: number, nota: string) => adminFecharCaso(id, nota),
   adminReenviarEmail: (id: number) => adminReenviarEmail(id),
+  adminResolverCaso: (id: number, acao: string) => adminResolverCaso(id, acao),
 }));
 
 import { CobrancaPrecisaDeVocePage } from "./CobrancaPrecisaDeVocePage";
@@ -34,6 +36,7 @@ const caso = (extra: Partial<CasoDaLista> = {}): CasoDaLista => ({
   fechadoEm: null,
   fechadoPor: null,
   nota: null,
+  conserto: null,
   ...extra,
 });
 const lista = (casos: CasoDaLista[], abertos = casos.length, urgentes = casos.filter((c) => c.urgente).length): ListaDeCasos => ({ casos, temMais: false, abertos, urgentes });
@@ -124,5 +127,39 @@ describe("Precisa de você — reenviar (passo 3a)", () => {
     expect(await screen.findByText("Feito: o e-mail saiu.")).toBeTruthy();
     expect(adminReenviarEmail.mock.calls).toEqual([[5]]);
     expect(screen.getAllByRole("button", { name: "Reenviar" })).toHaveLength(1);
+  });
+});
+
+describe("Precisa de você — os consertos (passo 3b)", () => {
+  it("cada caso com conserto mostra o botão; a confirmação diz o efeito; o conserto vai ao servidor e a lista é relida", async () => {
+    adminResolverCaso.mockReset().mockResolvedValue({ detalhe: "a cobrança em aberto foi anulada" });
+    adminListarCasos.mockResolvedValue(
+      lista([
+        caso({ id: 11, tipo: "COBRANCA_EM_ABERTO", urgente: false, conserto: "anular-cobranca" }),
+        caso({ id: 12, tipo: "TROCA_DE_PLANO", urgente: false, conserto: "soltar-agendamento" }),
+        caso({ id: 13, tipo: "ATIVA_SEM_PERIODO_PAGO", urgente: false, conserto: "encerrar-na-hora" }),
+        caso({ id: 14, tipo: "CONTESTACAO" }),
+      ]),
+    );
+    renderWithProviders(<CobrancaPrecisaDeVocePage />);
+    expect(await screen.findByRole("button", { name: "Soltar o agendamento" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Encerrar agora, sem devolver" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Anular a cobrança em aberto" }));
+    expect(screen.getByText("A cobrança em aberto é anulada: ela não será mais tentada.")).toBeTruthy();
+    expect(adminResolverCaso).not.toHaveBeenCalled();
+    const pedidosAntes = adminListarCasos.mock.calls.length;
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar" }));
+    expect(await screen.findByText("Feito: a cobrança em aberto foi anulada.")).toBeTruthy();
+    expect(adminResolverCaso.mock.calls).toEqual([[11, "anular-cobranca"]]);
+    await waitFor(() => expect(adminListarCasos.mock.calls.length).toBeGreaterThan(pedidosAntes));
+  });
+
+  it("a assinatura ainda viva: diz por que não anula", async () => {
+    adminResolverCaso.mockReset().mockRejectedValue({ response: { data: { error: "AssinaturaViva" } } });
+    adminListarCasos.mockResolvedValue(lista([caso({ id: 11, tipo: "COBRANCA_EM_ABERTO", urgente: false, conserto: "anular-cobranca" })]));
+    renderWithProviders(<CobrancaPrecisaDeVocePage />);
+    fireEvent.click(await screen.findByRole("button", { name: "Anular a cobrança em aberto" }));
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar" }));
+    expect((await screen.findByRole("alert")).textContent).toContain("anular a cobrança dela a reativaria sem pagamento");
   });
 });

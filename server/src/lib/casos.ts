@@ -1,4 +1,4 @@
-import { CASOS_POR_PAGINA, type CasoDaLista, type ListaDeCasos, type QuemFezNoRegistro, type TipoDeCasoDaLista } from "@jilson/core";
+import { CASOS_POR_PAGINA, type CasoDaLista, type ConsertoDoCaso, type ListaDeCasos, type QuemFezNoRegistro, type TipoDeCasoDaLista } from "@jilson/core";
 import { Prisma, prisma, QuemFez, TipoDeCaso } from "./prisma.js";
 
 // OS CASOS — "PRECISA DE VOCÊ" (Fase 4, etapa 4.7b, bloco 2 — o mapa aprovado pelo operador, 31/10/2026). Cada situação
@@ -105,7 +105,16 @@ export function paraCasoDaLista(linha: LinhaDoCaso): CasoDaLista {
     fechadoEm: linha.closedAt?.toISOString() ?? null,
     fechadoPor: linha.closedBy,
     nota: linha.note,
+    conserto: consertoDoCaso(linha.kind, linha.key),
   };
+}
+
+/** O conserto que o painel faz para o caso (passo 3b): a cobrança em aberto, o agendamento pela metade, a ativa sem período pago. */
+export function consertoDoCaso(tipo: TipoDeCasoDaLista, chave: string): ConsertoDoCaso | null {
+  if (tipo === "COBRANCA_EM_ABERTO") return "anular-cobranca";
+  if (tipo === "TROCA_DE_PLANO" && chave.startsWith("agendamento:")) return "soltar-agendamento";
+  if (tipo === "ATIVA_SEM_PERIODO_PAGO") return "encerrar-na-hora";
+  return null;
 }
 
 /**

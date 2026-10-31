@@ -6508,8 +6508,26 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
               e "Precisa de você" (+1). **Mutação: 10 de 10 reprovaram** (uma sobreviveu antes: o teste do "reenviar"
               barrava pelo motivo errado — corrigido). *Docs check (context7): não disparado — as idas à Stripe são as
               de sempre (`buscarDetalhes`, `pararRenovacao`, `retomarRenovacao`, a sincronia).*
-        - [ ] **3b — Os consertos que hoje só o painel da Stripe faz:** anular a cobrança em aberto, soltar o
-              agendamento, encerrar na hora sem devolver, corrigir o CPF ou CNPJ.
+        - [x] **3b — Os consertos que hoje só o painel da Stripe faz:** anular a cobrança em aberto, soltar o
+              agendamento, encerrar na hora sem devolver, corrigir o CPF ou CNPJ. **FEITO (31/10/2026).** Os três
+              consertos moram no **cartão do caso**, onde a situação já é conhecida (`POST
+              /api/admin/cobranca/casos/:id/resolver`, `{acao}`; o caso diz qual conserto tem — `conserto`): **anular a
+              cobrança em aberto** (caso "cobrança em aberto") só com a assinatura ENCERRADA, ou quando a fatura é a da
+              troca de plano — anular a renovação de uma assinatura viva a reativa sem pagamento (`[FATO — medido, 11/10]`),
+              e aí é 409 `AssinaturaViva`; **soltar o agendamento** pela metade (caso "troca de plano"); **encerrar
+              agora, sem devolver** (caso "ativa sem período pago": `cancelarNaHora`, sem crédito, pela operação na
+              assinatura). Cada um fecha o caso com o que foi feito e grava no registro. **Na ficha:** "Corrigir o CPF ou
+              CNPJ" (`POST …/acoes/corrigir-documento`, de uma conta ou de um visitante): o número é conferido no
+              `core` (o dígito: `[FATO — medido na área de teste, 31/10/2026]` a Stripe aceitou um CPF com o dígito
+              errado — ela confere só o formato), e a troca na Stripe cria o novo e só então apaga os antigos do Brasil
+              (`trocarNumeroFiscal`, em `stripe.ts`); o número nunca vai ao registro. E o **"Enviar por e-mail"** ao lado
+              de cada link (`POST …/acoes/enviar-link`, só com conta): o e-mail `link-do-painel`, com o texto no
+              dicionário (`app.email.linkDoPainel` — **rascunho do agente: vai ao operador no fechamento do bloco 3**).
+              Testes: `admin-cobranca-acoes.test.ts` (+6), `stripe-numero-fiscal-rede.test.ts` (novo), "Precisa de você"
+              (+2) e a ficha (+3). **Mutação: 7 de 7 reprovaram.** **Provado na área de teste da Stripe:** a troca do CPF
+              (o novo entra, o antigo sai). *Docs check (context7): Stripe → `/websites/stripe` → 31/10/2026, 3ª
+              consulta da sessão: os números fiscais do cliente — criar, listar, apagar ("to update a tax ID, delete the
+              old ID and create another one").*
         - [ ] **3c — Corrigir o e-mail** (P121) — sozinho no passo: é a porta de tomar conta.
         - [ ] **Fechamento do bloco 3.**
       - [ ] **BLOCO 4 — AS AÇÕES COM DINHEIRO** (prova pela rota em cada passo)

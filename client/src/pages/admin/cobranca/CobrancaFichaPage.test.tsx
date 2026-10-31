@@ -9,7 +9,11 @@ const adminFichaDaCobranca = vi.fn<(quem: Quem) => Promise<FichaDaCobranca>>();
 const adminConferir = vi.fn<(quem: Quem) => Promise<{ temAcesso: boolean; detalhe: string }>>();
 const adminCancelar = vi.fn<(assinatura: number) => Promise<{ detalhe: string }>>();
 const adminDesfazerCancelamento = vi.fn<(assinatura: number) => Promise<{ detalhe: string }>>();
+const adminCorrigirDocumento = vi.fn<(quem: Quem, documento: string) => Promise<{ detalhe: string }>>();
+const adminEnviarLink = vi.fn<(conta: string, link: string) => Promise<{ detalhe: string }>>();
 vi.mock("@/lib/api", () => ({
+  adminCorrigirDocumento: (quem: Quem, documento: string) => adminCorrigirDocumento(quem, documento),
+  adminEnviarLink: (conta: string, link: string) => adminEnviarLink(conta, link),
   adminFichaDaCobranca: (quem: Quem) => adminFichaDaCobranca(quem),
   adminConferir: (quem: Quem) => adminConferir(quem),
   adminCancelar: (assinatura: number) => adminCancelar(assinatura),
@@ -244,5 +248,34 @@ describe("a ficha — as ações (passo 3a)", () => {
     fireEvent.click(screen.getAllByRole("button", { name: "Copiar" })[0] as HTMLElement);
     await waitFor(() => expect(writeText).toHaveBeenCalledWith("https://escola.test/login?depois=cartao"));
     expect(await screen.findByRole("button", { name: "Copiado" })).toBeTruthy();
+  });
+});
+
+describe("a ficha — o CPF e o link por e-mail (passo 3b)", () => {
+  it("corrigir o CPF: manda o número aparado para quem a ficha mostra, e diz o que foi feito; o inválido diz isso", async () => {
+    adminCorrigirDocumento.mockReset().mockResolvedValueOnce({ detalhe: "CPF corrigido" }).mockRejectedValueOnce({ response: { data: { error: "DocumentoInvalido" } } });
+    abrir();
+    fireEvent.change(await screen.findByLabelText("Corrigir o CPF ou CNPJ"), { target: { value: " 529.982.247-25 " } });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar" }));
+    expect(await screen.findByText("Feito: CPF corrigido.")).toBeTruthy();
+    expect(adminCorrigirDocumento.mock.calls).toEqual([[{ conta: "u-1" }, "529.982.247-25"]]);
+    fireEvent.change(screen.getByLabelText("Corrigir o CPF ou CNPJ"), { target: { value: "111" } });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar" }));
+    expect((await screen.findByRole("alert")).textContent).toBe("Este CPF ou CNPJ não é válido.");
+  });
+
+  it("a ficha aberta por uma assinatura sem conta não tem o campo do CPF; a do visitante tem", async () => {
+    adminFichaDaCobranca.mockResolvedValue(ficha({ conta: null, temAcesso: false }));
+    abrir("?assinatura=7");
+    await screen.findByRole("heading", { name: "Assinatura sem conta" });
+    expect(screen.queryByLabelText("Corrigir o CPF ou CNPJ")).toBeNull();
+  });
+
+  it("enviar o link por e-mail (só com conta): manda a conta e o link, e diz o que foi feito", async () => {
+    adminEnviarLink.mockReset().mockResolvedValue({ detalhe: "o link (trocarCartao) foi enviado" });
+    abrir();
+    fireEvent.click((await screen.findAllByRole("button", { name: "Enviar por e-mail" }))[0] as HTMLElement);
+    expect(await screen.findByText("Feito: o link (trocarCartao) foi enviado.")).toBeTruthy();
+    expect(adminEnviarLink.mock.calls).toEqual([["u-1", "trocarCartao"]]);
   });
 });

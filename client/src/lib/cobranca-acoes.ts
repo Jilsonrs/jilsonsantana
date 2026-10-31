@@ -18,6 +18,10 @@ export function mensagemDaAcaoQueFalhou(erro: unknown): string {
       return "Não achamos isso no site.";
     case "NaoConfigurado":
       return "A Stripe não está configurada neste ambiente.";
+    case "AssinaturaViva":
+      return "A assinatura ainda está viva: anular a cobrança dela a reativaria sem pagamento. Encerre a assinatura antes.";
+    case "DocumentoInvalido":
+      return "Este CPF ou CNPJ não é válido.";
     default:
       return "Não foi possível. Tente de novo.";
   }

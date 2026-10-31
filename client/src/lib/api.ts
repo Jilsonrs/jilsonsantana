@@ -49,6 +49,8 @@ import type {
   ListaDeCasos,
   AcaoFeita,
   ConferenciaPelaFicha,
+  ConsertoDoCaso,
+  LinkParaOAluno,
   MinhaAssinatura,
   TrocaDeCartaoPreparada,
   CartaoTrocado,
@@ -1241,6 +1243,20 @@ export async function adminDesfazerCancelamento(assinatura: number): Promise<Aca
 }
 export async function adminReenviarEmail(casoId: number): Promise<AcaoFeita> {
   const { data } = await client.post<AcaoFeita>(`/admin/cobranca/casos/${casoId}/reenviar`);
+  return data;
+}
+
+/** Os consertos do passo 3b: o do caso, o CPF ou CNPJ, e o link por e-mail. */
+export async function adminResolverCaso(casoId: number, acao: ConsertoDoCaso): Promise<AcaoFeita> {
+  const { data } = await client.post<AcaoFeita>(`/admin/cobranca/casos/${casoId}/resolver`, { acao });
+  return data;
+}
+export async function adminCorrigirDocumento(quem: { conta: string } | { visitante: string }, documento: string): Promise<AcaoFeita> {
+  const { data } = await client.post<AcaoFeita>("/admin/cobranca/acoes/corrigir-documento", { ...quem, documento });
+  return data;
+}
+export async function adminEnviarLink(conta: string, link: LinkParaOAluno): Promise<AcaoFeita> {
+  const { data } = await client.post<AcaoFeita>("/admin/cobranca/acoes/enviar-link", { conta, link });
   return data;
 }
 

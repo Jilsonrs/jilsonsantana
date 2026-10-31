@@ -5,6 +5,7 @@ import type { CasoDaLista } from "@jilson/core";
 import * as api from "@/lib/api";
 import { O_QUE_RESOLVE, TIPO_DO_CASO } from "@/lib/cobranca-casos";
 import { mensagemDaAcaoQueFalhou } from "@/lib/cobranca-acoes";
+import { ConsertoDoCaso } from "@/components/admin/cobranca/ConsertoDoCaso";
 import { dinheiro, enderecoDaFicha } from "@/lib/cobranca-ficha";
 import { QUEM, quando } from "@/lib/cobranca-registro";
 import { Badge } from "@/components/ui/badge";
@@ -47,6 +48,7 @@ export function CartaoDoCaso({ caso }: { caso: CasoDaLista }) {
       {caso.aberto ? (
         <>
           <p className="text-sm text-muted-foreground">O que resolve: {O_QUE_RESOLVE[caso.tipo]}</p>
+          {caso.conserto ? <ConsertoDoCaso casoId={caso.id} conserto={caso.conserto} /> : null}
           {caso.tipo === "EMAIL_NAO_SAIU" ? (
             <div className="space-y-1">
               <Button type="button" size="sm" variant="outline" disabled={reenviar.isPending} onClick={() => reenviar.mutate()}>

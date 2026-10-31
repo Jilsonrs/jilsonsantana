@@ -234,6 +234,8 @@ export type CasoDaLista = {
   fechadoEm: string | null;
   fechadoPor: QuemFezNoRegistro | null;
   nota: string | null;
+  /** O conserto que o painel já faz para este caso (passo 3b) — ou nenhum ainda. */
+  conserto: ConsertoDoCaso | null;
 };
 
 /** A resposta de `GET /api/admin/cobranca/casos`: uma página e quantos casos abertos há (e quantos urgentes). */
@@ -260,3 +262,19 @@ export type AcaoFeita = { detalhe: string };
 
 /** O resultado de "Conferir na Stripe" pela ficha: se a pessoa ficou com acesso, e o que foi conferido. */
 export type ConferenciaPelaFicha = { temAcesso: boolean; detalhe: string };
+
+/** Os consertos que hoje só o painel da Stripe faz, a partir de um caso (passo 3b). */
+export const CONSERTOS_DO_CASO = ["anular-cobranca", "soltar-agendamento", "encerrar-na-hora"] as const;
+export type ConsertoDoCaso = (typeof CONSERTOS_DO_CASO)[number];
+export const resolverCasoSchema = z.object({ acao: z.enum(CONSERTOS_DO_CASO) });
+
+/** Corrigir o CPF ou CNPJ (passo 3b): de uma conta, ou da ficha de um visitante. O número é conferido no servidor. */
+export const corrigirDocumentoSchema = z.union([
+  z.object({ conta: z.string().min(1).max(100), documento: z.string().trim().min(1).max(30) }).strict(),
+  z.object({ visitante: z.string().min(1).max(100), documento: z.string().trim().min(1).max(30) }).strict(),
+]);
+
+/** Os links que o admin manda ao aluno por e-mail (passo 3b) — os mesmos da ficha. */
+export const LINKS_PARA_O_ALUNO = ["trocarCartao", "reativar", "pagarComPix"] as const;
+export type LinkParaOAluno = (typeof LINKS_PARA_O_ALUNO)[number];
+export const enviarLinkSchema = z.object({ conta: z.string().min(1).max(100), link: z.enum(LINKS_PARA_O_ALUNO) });

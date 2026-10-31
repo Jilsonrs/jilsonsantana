@@ -10,6 +10,7 @@ import { LinhasDoRegistro } from "@/components/admin/cobranca/LinhasDoRegistro";
 import { AcoesDaAssinatura } from "@/components/admin/cobranca/AcoesDaAssinatura";
 import { ConferirDaFicha } from "@/components/admin/cobranca/ConferirDaFicha";
 import { LinksParaOAluno } from "@/components/admin/cobranca/LinksParaOAluno";
+import { CorrigirDocumento } from "@/components/admin/cobranca/CorrigirDocumento";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PageContainer, PageHeader, PageSection } from "@/components/layout/PageLayout";
@@ -117,10 +118,13 @@ export function CobrancaFichaPage() {
           <CobrancasDaFicha cobrancas={ficha.data.cobrancas} maisCobrancas={ficha.data.maisCobrancas} stripeIndisponivel={stripeIndisponivel} />
         </PageSection>
         <PageSection title="Cartão, CPF e e-mails">
-          <ResumoDaFicha ficha={ficha.data} />
+          <div className="space-y-6">
+            <ResumoDaFicha ficha={ficha.data} />
+            {"conta" in quem || "visitante" in quem ? <CorrigirDocumento quem={"conta" in quem ? { conta: quem.conta } : { visitante: quem.visitante }} /> : null}
+          </div>
         </PageSection>
         <PageSection title="Links para o aluno" description="Copie e mande ao aluno: ele entra e cai na tela certa.">
-          <LinksParaOAluno links={ficha.data.links} />
+          <LinksParaOAluno links={ficha.data.links} conta={ficha.data.conta?.id ?? null} />
         </PageSection>
         <PageSection title="O que aconteceu">
           <LinhasDoRegistro linhas={ficha.data.registro} />
