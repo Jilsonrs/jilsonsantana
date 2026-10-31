@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { NOME_DO_TIPO_DE_CASO, Role, type TipoDeCasoDaLista } from "@jilson/core";
+import { NOME_DO_TIPO_DE_CASO, Role, TELA_PRECISA_DE_ATENDENTE, type TipoDeCasoDaLista } from "@jilson/core";
 import { prisma } from "./prisma.js";
 import { enviarEmail } from "./email.js";
 import { enderecoDoSite } from "./endereco-do-site.js";
@@ -19,7 +19,6 @@ import type { MensagemDeEmail } from "../views/email.js";
 export const HORA_DO_RESUMO_UTC = 12;
 /** No máximo tantos casos listados num e-mail (o resto, "e mais N", está no painel). */
 const CASOS_NO_EMAIL = 30;
-const PAINEL = "/admin/cobranca/precisa-de-voce";
 
 export function ehHoraDoResumo(agora: Date): boolean {
   return agora.getUTCHours() === HORA_DO_RESUMO_UTC;
@@ -34,8 +33,8 @@ export function linhaDoCaso(caso: CasoNoEmail): string {
 }
 
 function botao(): MensagemDeEmail["botao"] {
-  const endereco = enderecoDoSite(PAINEL);
-  return endereco ? { texto: "Abrir Precisa de você", endereco } : undefined;
+  const endereco = enderecoDoSite(TELA_PRECISA_DE_ATENDENTE);
+  return endereco ? { texto: "Abrir Precisa de atendente", endereco } : undefined;
 }
 
 /** O e-mail dos casos URGENTES. Função pura. */
@@ -44,7 +43,7 @@ export function mensagemDosUrgentes(casos: CasoNoEmail[]): MensagemDeEmail {
   const quais = casos.slice(0, CASOS_NO_EMAIL).map(linhaDoCaso);
   const mais = n > CASOS_NO_EMAIL ? [`E mais ${n - CASOS_NO_EMAIL}, no painel.`] : [];
   const link = botao();
-  return { assunto: `Precisa de você: ${n} ${n === 1 ? "caso urgente" : "casos urgentes"} na cobrança`, titulo: "Precisa de você", paragrafos: [n === 1 ? "Este caso da cobrança precisa de você agora:" : "Estes casos da cobrança precisam de você agora:", ...quais, ...mais], ...(link ? { botao: link } : {}) };
+  return { assunto: `Precisa de atendente: ${n} ${n === 1 ? "caso urgente" : "casos urgentes"} na cobrança`, titulo: "Precisa de atendente", paragrafos: [n === 1 ? "Este caso da cobrança precisa de atendente agora:" : "Estes casos da cobrança precisam de atendente agora:", ...quais, ...mais], ...(link ? { botao: link } : {}) };
 }
 
 /** O RESUMO da manhã: todos os casos abertos. Função pura. */

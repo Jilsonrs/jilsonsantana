@@ -436,7 +436,7 @@ describe("devolver de novo (o caso da devolução que falhou)", () => {
     vi.restoreAllMocks();
   });
 
-  it("na lista de 'Precisa de você', o caso da devolução que falhou traz o conserto — o do reembolso e o de uma cobrança com o valor; o antigo, de um pagamento, não", async () => {
+  it("na lista de 'Precisa de atendente', o caso da devolução que falhou traz o conserto — o do reembolso e o de uma cobrança com o valor; o antigo, de um pagamento, não", async () => {
     await casoDe(`sub:${SUB}_lista`);
     await casoDe(`devolucao:re_${S}_lista`, { objeto: `ch_${S}_1`, centavos: 100 });
     await casoDe(`cobranca:ch_${S}_lista`, { objeto: `ch_${S}_lista`, centavos: 100 });

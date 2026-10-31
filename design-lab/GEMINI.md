@@ -704,7 +704,7 @@ exceto o item 4, que é página pública.
     1. Da `dev`, abrir o branch `acabamento-cobranca`. Ligar `npm run dev:server` e `npm run dev:client` e entrar pelo
        Vite (`http://localhost:5173`) com o admin. Para ter o que ver, o banco de dev precisa de assinaturas e casos: peça
        ao Claude um roteiro de dados de teste, se a tela vier vazia — **não crie dado à mão no painel da Stripe**.
-    2. As telas, em **Admin → Cobrança** (o submenu): **Precisa de você** (`client/src/pages/admin/cobranca/CobrancaPrecisaDeVocePage.tsx`,
+    2. As telas, em **Admin → Financeiro**, sob o título **Receita** (o submenu): **Precisa de atendente** (`client/src/pages/admin/cobranca/CobrancaPrecisaDeVocePage.tsx`,
        com a faixa dos **números do mês** no topo — `NumerosDoMes` —, o cartão de cada caso — `CartaoDoCaso` — e os
        consertos dentro dele — `ConsertoDoCaso`, `ResponderComProvas`); **Assinaturas** (`CobrancaAssinaturasPage`,
        `FiltrosDasAssinaturas`, `ListaDasAssinaturas`, `LinhaDaAssinatura`); a **ficha** do aluno, aberta a partir de
@@ -982,7 +982,7 @@ Sem essa separação, a décima tela tem dez paletas paralelas e ninguém sabe q
   1. **Item 23 — Landing page de venda do curso (`/curso/:slug`) e mock na `design-lab/`:** acabamento da página de vendas do curso (cartão de assinar, bloco do autor, diferenciais com ✓ em duas colunas, ferramentas do curso, trilhas e outros cursos) para orientar a transposição para template rápido de servidor (Bloco C5). *(Ponto de retorno da próxima sessão com o Antigravity)*.
   2. **Item 14/15 — Polimento dos relatórios do Dashboard (`/dashboard`):** os 4 cartões de relatório hoje estão com o selo EM BREVE; recebem o acabamento visual definitivo quando as métricas agregadas chegarem.
   3. **Item 38 — a 6g, o acabamento das telas de assinar** *(entrou em 30/10/2026; a ordem entre os itens é do operador)*: é o que vem antes do teste final dele com dinheiro de verdade — o passo a passo está no item 38, na §2.
-  4. **Item 39 — o acabamento das telas novas da Cobrança, no admin, e da seção Cobranças do aluno** *(entrou em 31/10/2026, no fim da etapa 4.7b; a ordem entre os itens é do operador)*: o passo a passo está no item 39, na §2.
+  4. **Item 39 — o acabamento das telas novas do Financeiro (a Receita), no admin, e da seção Cobranças do aluno** *(entrou em 31/10/2026, no fim da etapa 4.7b; a ordem entre os itens é do operador)*: o passo a passo está no item 39, na §2.
 - **Status da sessão (12/10/2026):** O operador pausou os ajustes visuais para fechar a parte de cartões de crédito/faturamento com o Claude Code. Ao voltar, recomeçamos diretamente pelo Item 23.
 - **Vem aí no produto, e vai precisar de você** *(plano de etapas futuras)*: o **arrastar na ordem dos cursos e das perguntas** (mesma mecânica do Conteúdo), e as novas páginas públicas (a **página curta da trilha**, **Quem somos**, **Contato** e a **página de baixar material**). Elas seguem o fluxo padrão: mock na `design-lab/`, transposição para template de servidor, e acabamento no código.
 

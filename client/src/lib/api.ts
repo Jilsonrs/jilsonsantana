@@ -1267,7 +1267,7 @@ export async function adminProvasDaContestacao(casoId: number): Promise<ProvasDa
   const { data } = await client.get<ProvasDaContestacao>(`/admin/cobranca/casos/${casoId}/provas`);
   return data;
 }
-/** "Precisa de você": os casos abertos ou os fechados (etapa 4.7b, passo 2c). */
+/** "Precisa de atendente": os casos abertos ou os fechados (etapa 4.7b, passo 2c). */
 export async function adminListarCasos(consulta: { situacao: "abertos" | "fechados"; pagina: number }): Promise<ListaDeCasos> {
   const { data } = await client.get<ListaDeCasos>("/admin/cobranca/casos", { params: consulta });
   return data;

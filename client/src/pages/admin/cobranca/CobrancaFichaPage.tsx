@@ -35,7 +35,7 @@ export function CobrancaFichaPage() {
   const quem = quemDaFicha(parametros);
   const ficha = useFichaDoAdmin(quem);
   const voltar = (
-    <Link to="/admin/cobranca/assinaturas" className="text-sm text-primary underline-offset-4 hover:underline">
+    <Link to="/admin/financeiro/receita/assinaturas" className="text-sm text-primary underline-offset-4 hover:underline">
       ← Assinaturas
     </Link>
   );

@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
-/** Um caso de "Precisa de você": o que aconteceu, com quem, o que resolve — e, aberto, o "Fechar" com uma nota (passo 2c). */
+/** Um caso de "Precisa de atendente": o que aconteceu, com quem, o que resolve — e, aberto, o "Fechar" com uma nota (passo 2c). */
 export function CartaoDoCaso({ caso }: { caso: CasoDaLista }) {
   const [fechando, setFechando] = useState(false);
   const [nota, setNota] = useState("");

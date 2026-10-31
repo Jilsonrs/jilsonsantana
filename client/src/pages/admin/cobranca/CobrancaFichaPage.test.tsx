@@ -32,7 +32,7 @@ import { CobrancaFichaPage } from "./CobrancaFichaPage";
 // recusada com o motivo em português, a devolvida em parte com o valor, a contestada com o prazo, o recibo, o cartão,
 // o CPF escondido e os e-mails que saíram e os que não saíram.
 
-const ROTA = "/admin/cobranca/assinaturas/ficha";
+const ROTA = "/admin/financeiro/receita/assinaturas/ficha";
 const assinatura: AssinaturaDaLista = { id: 7, aluno: { id: "u-1", nome: "Ana Souza", email: "ana@exemplo.com" }, plano: "mensal", prePaga: false, situacao: "ativa", status: "active", pagoAte: "2026-11-20T15:00:00.000Z", acabaEm: null, daAcesso: true, codigo: null, deTeste: false, criadaEm: "2026-10-20T15:00:00.000Z" };
 const cobranca = (extra: Partial<CobrancaDaFicha>): CobrancaDaFicha => ({ id: "ch_1", em: "2026-11-20T15:00:00.000Z", centavos: 9990, moeda: "brl", forma: "cartao", cartao: { bandeira: "visa", final: "4242" }, situacao: "paga", devolvido: 0, motivoDaFalha: null, recibo: null, contestacao: null, ...extra });
 const ficha = (extra: Partial<FichaDaCobranca> = {}): FichaDaCobranca => ({

@@ -2,7 +2,7 @@ import { AsyncLocalStorage } from "node:async_hooks";
 import { CASOS_POR_PAGINA, type CasoDaLista, type ConsertoDoCaso, type ListaDeCasos, type QuemFezNoRegistro, type TipoDeCasoDaLista } from "@jilson/core";
 import { Prisma, prisma, QuemFez, TipoDeCaso } from "./prisma.js";
 
-// OS CASOS — "PRECISA DE VOCÊ" (Fase 4, etapa 4.7b, bloco 2 — o mapa aprovado pelo operador, 31/10/2026). Cada situação
+// OS CASOS — "PRECISA DE ATENDENTE" (Fase 4, etapa 4.7b, bloco 2 — o mapa aprovado pelo operador, 31/10/2026). Cada situação
 // da cobrança que precisa do operador vira UM caso (o tipo + a chave da situação), aberto no MESMO lugar em que o alerta
 // sai — o alerta continua (é ele que avisa até o aviso por e-mail, passo 2d). O caso fecha sozinho quando a situação se
 // resolve, ou pelo operador, com uma nota.
@@ -193,7 +193,7 @@ export function consertosDoCaso(tipo: TipoDeCasoDaLista, chave: string): Consert
 }
 
 /**
- * "PRECISA DE VOCÊ" (passo 2c): os casos abertos — os urgentes primeiro, e dos mais novos para os mais velhos — ou os
+ * "PRECISA DE ATENDENTE" (passo 2c): os casos abertos — os urgentes primeiro, e dos mais novos para os mais velhos — ou os
  * fechados (o fechamento mais recente primeiro). E quantos abertos há, e quantos urgentes.
  */
 export async function listarCasos({ situacao, pagina }: { situacao: "abertos" | "fechados"; pagina: number }): Promise<ListaDeCasos> {

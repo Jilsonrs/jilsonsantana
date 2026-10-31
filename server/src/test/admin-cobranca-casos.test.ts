@@ -5,7 +5,7 @@ import servidor from "./servidor.js";
 import { prisma, TipoDeCaso } from "../lib/prisma.js";
 import { abrirCaso } from "../lib/casos.js";
 
-// "PRECISA DE VOCÊ" — A LISTA E O FECHAR (etapa 4.7b, passo 2c). O que protege:
+// "PRECISA DE ATENDENTE" — A LISTA E O FECHAR (etapa 4.7b, passo 2c). O que protege:
 //   - SÓ ADMIN (401/403), e o pedido no formato (400);
 //   - os abertos com os URGENTES primeiro, e dos mais novos para os mais velhos; a contagem de abertos e de urgentes;
 //   - cada caso leva à ficha certa: a conta; a dona da assinatura; a assinatura sem conta; o visitante;
@@ -57,7 +57,7 @@ afterAll(async () => {
   await prisma.user.deleteMany({ where: { id: { in: [aluna, dona] } } });
 });
 
-describe("Precisa de você — quem entra", () => {
+describe("Precisa de atendente — quem entra", () => {
   it("sem login 401; aluno 403 — listar e fechar", async () => {
     expect((await listar({}, [])).status).toBe(401);
     expect((await listar({}, member)).status).toBe(403);
@@ -71,7 +71,7 @@ describe("Precisa de você — quem entra", () => {
   });
 });
 
-describe("Precisa de você — a lista", () => {
+describe("Precisa de atendente — a lista", () => {
   it("os urgentes primeiro, e dos mais novos para os mais velhos; a contagem de abertos e de urgentes", async () => {
     const lista = (await listar()).body as ListaDeCasos;
     expect(meus(lista).map((c) => c.detalhe?.split(" ")[0])).toEqual(["urgente-novo", "urgente-antigo", "comum-novo", "ficha"]);
@@ -88,7 +88,7 @@ describe("Precisa de você — a lista", () => {
   });
 });
 
-describe("Precisa de você — fechar", () => {
+describe("Precisa de atendente — fechar", () => {
   it("o operador fecha com a nota; entra no registro com quem fechou; fechar de novo é 404; vai para os fechados", async () => {
     const caso = meus((await listar()).body as ListaDeCasos).find((c) => c.detalhe?.startsWith("urgente-antigo"));
     expect(caso).toBeDefined();

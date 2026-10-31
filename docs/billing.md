@@ -1301,7 +1301,7 @@ apaga o nome e o UTM (LGPD — o plano → passo 9, 9e).
 ## Sincronizar e perder o acesso *(Fase 4, etapa 4.4 — 10/10/2026)*
 
 **Decisões do operador (10/10/2026):**
-- **Forçar a sincronia mora em Admin → "Assinaturas"** *(desde 31/10/2026: Admin → Cobrança → Assinaturas — o
+- **Forçar a sincronia mora em Admin → "Assinaturas"** *(desde 31/10/2026: Admin → Financeiro → Receita → Assinaturas — o
   item virou "Cobrança", P145)*, um item novo no menu (entre um item novo,
   um bloco no Dashboard e nenhuma tela): o e-mail do aluno e o botão "Conferir na Stripe". A tela
   diz se a conta ficou com acesso e o que a Stripe respondeu de cada assinatura. *Reabre quando a
@@ -1815,7 +1815,7 @@ encerrada de vez com dias pagos: tem acesso e o servidor recusa cartão.
 ## Códigos promocionais — como criar na Stripe *(decisão do operador, 19/10/2026)*
 
 *(Decisão do operador, 31/10/2026, P142: os códigos passam a ser criados, pausados e acompanhados pelo admin, com as
-regras abaixo no formulário — 4.7b, passo 6d, **no código desde 31/10/2026**: Admin → Cobrança → Códigos promocionais,
+regras abaixo no formulário — 4.7b, passo 6d, **no código desde 31/10/2026**: Admin → Financeiro → Receita → Códigos promocionais,
 `lib/codigos-do-painel.ts`. A cortesia nasce 100%, "para sempre", com o código sorteado pelo servidor (`PRESENTE-` e 6
 letras sem 0, O, 1 e I) e um limite de usos obrigatório; o desconto nasce com a validade — o fim do dia escolhido, no
 horário de Brasília — e sem limite de usos. Os dois tipos da P125 não existem no formulário nem passam no servidor. O
@@ -2065,20 +2065,20 @@ ela fica no painel da Stripe, com o passo a passo escrito aqui.*
 
 ## Quando um aluno não conseguir pagar *(roteiro reescrito no fim da 4.7b, 31/10/2026, sem o painel da Stripe — rascunho do agente, a revisar pelo operador)*
 
-**Tudo se resolve em Admin → Cobrança.** O painel da Stripe fica só para o que não é problema de aluno (*O painel da
+**Tudo se resolve em Admin → Financeiro → Receita.** O painel da Stripe fica só para o que não é problema de aluno (*O painel da
 cobrança* → *Fica na Stripe*: repasses, taxas, relatórios, impostos, a configuração da conta, o preço). **Um caso de aluno
 que peça o painel da Stripe é defeito do nosso painel: avise o agente.** *(A versão anterior deste roteiro, de 29/10/2026,
 mandava ao painel da Stripe; está no histórico do git.)*
 
 **Como você fica sabendo:**
-- **o e-mail da escola, de "Precisa de você"**: na hora, só o urgente — quem pagou e está sem acesso, e a contestação, que
+- **o e-mail da escola, de "Precisa de atendente"**: na hora, só o urgente — quem pagou e está sem acesso, e a contestação, que
   tem prazo; o resto num resumo por dia, de manhã *(decisão do operador, P137)*;
 - **um e-mail do Sentry** que começa com `[stripe]`, `[api]`, `[email]` ou `[avisos]` — o código dentro dele (`sub_…`,
   `cus_…`, `pi_…`, `ch_…`, `in_…`, `du_…`) é a pista;
 - **o aluno escrevendo** para suporte@jilsonsantana.com (ou respondendo a um e-mail da escola).
 
 **O que fazer:**
-1. **Comece por Cobrança → Precisa de você.** Cada caso diz o que aconteceu, com quem, e o que resolve; o botão está no
+1. **Comece por Receita → Precisa de atendente.** Cada caso diz o que aconteceu, com quem, e o que resolve; o botão está no
    próprio caso:
    - *Pix em conferência*: **Aceitar este Pix** (vira a assinatura) ou **Devolver o Pix** *(P117)*. Os dois recusam o que
      cobraria em dobro ou devolveria com o acesso aberto, e dizem o que fazer no lugar;
@@ -2095,7 +2095,7 @@ mandava ao painel da Stripe; está no histórico do git.)*
    - *e-mail que não saiu*: **Reenviar**;
    - *aviso de fraude*: chega já resolvido — a escola devolveu (marcado como fraude), encerrou e cortou o acesso sozinha
      *(P141)*; é só conferir.
-2. **Ache a pessoa.** Cobrança → Assinaturas: a busca acha pelo e-mail, pelo nome ou pelo código do alerta. Abra a
+2. **Ache a pessoa.** Receita → Assinaturas: a busca acha pelo e-mail, pelo nome ou pelo código do alerta. Abra a
    **ficha**: as assinaturas, as cobranças (com o motivo da recusa), o cartão, o CPF escondido, os e-mails que a escola
    mandou e o que aconteceu.
 3. **Confira.** Na ficha, **Conferir na Stripe** — lê a Stripe de novo e acerta o acesso. Se ela tem acesso, responda que
@@ -2106,7 +2106,7 @@ mandava ao painel da Stripe; está no histórico do git.)*
      com **Copiar** ou **Enviar por e-mail**; depois de ela trocar o cartão, **Tentar cobrar de novo agora**;
    - o campo de pagamento não aparece: outro navegador, sem bloqueador de anúncio, o 4G ou o celular — **se acontecer com
      duas pessoas, é defeito nosso: avise o agente**;
-   - começou e não terminou: Cobrança → **Tentativas** mostra quem parou;
+   - começou e não terminou: Receita → **Tentativas** mostra quem parou;
    - "muitas tentativas": esperar 15 minutos.
 5. **Dado errado:** **Corrigir o e-mail** (o código vai ao e-mail novo, e a troca só vale com ele confirmado — *P121*) e
    **Corrigir o CPF ou CNPJ** (vale para as próximas faturas).
@@ -2117,8 +2117,8 @@ mandava ao painel da Stripe; está no histórico do git.)*
    pagamento** (uma cobrança, inteira ou em parte; marque "E encerrar a assinatura agora" se for o caso).
 8. **Cancelar ou voltar atrás:** **Cancelar no fim do período** (o mesmo do aluno: vale até o fim do que foi pago),
    **Cancelar agora** (a cobrança atrasada) e **Desfazer o cancelamento**.
-9. **Cortesia ou campanha:** Cobrança → **Códigos promocionais** *(P142)*.
-10. **Tudo fica em Cobrança → O que aconteceu**, com quem fez: você, a Stripe, o aluno ou a rodada.
+9. **Cortesia ou campanha:** Receita → **Códigos promocionais** *(P142)*.
+10. **Tudo fica em Receita → O que aconteceu**, com quem fez: você, a Stripe, o aluno ou a rodada.
 11. **No Sentry:** depois de resolver, marque "Resolvido", nunca "Ignorar"; e veja quantas vezes o erro aconteceu — um
     e-mail só pode ser muita gente.
 

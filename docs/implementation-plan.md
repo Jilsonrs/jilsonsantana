@@ -6850,6 +6850,18 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
             operador; no `GEMINI.md`, o **item 39** — o acabamento das telas novas da Cobrança e da seção *Cobranças* do
             aluno —, ao lado do 38, com o passo a passo. A pergunta das telas da *mesma família* do item 38 vai ao
             operador no fechamento.
+      - [x] **O menu do painel: Financeiro → Receita, e "Precisa de atendente"** *(decisões do operador, 31/10/2026, ao
+            usar o painel no ar)*: "Cobrança" no menu vira **Financeiro**, e o que era a Cobrança é a **Receita** — um
+            título do nível 2 (o `grupo` da coluna do lado), com as 5 telas embaixo; Impostos e o que vier entram como
+            outros títulos (a pergunta, com a recomendação do agente, entre isso e a Receita como item com as telas em
+            abas). Os endereços seguem o menu (`/admin/financeiro/receita/<tela>`); o antigo não redireciona (regra dele
+            de 29/09). E **"Precisa de você" vira "Precisa de atendente"** em todo lugar — a tela, o menu, o e-mail ao
+            operador e os alertas —, porque *"no futuro posso ter outra pessoa me ajudando"*. Os nomes dos arquivos e as
+            rotas da API continuam com "cobranca" (código). *Sem gatilho — muda só por decisão dele.*
+      - [ ] **DEPOIS — o sino do atendente** *(pedido do operador, 31/10/2026, para quando houver outra pessoa ajudando)*:
+            o caso que precisa de atendente vira **alerta no sino**; o clique já abre a tela para resolver, e dali se
+            navega normalmente e se veem todos os atendimentos pendentes. Pede o papel de **atendente** (hoje só existem o
+            admin e o aluno) — o desenho é dele, quando chegar a hora. *Gatilho: a segunda pessoa no atendimento.*
       **OS 6 BLOCOS ENTRAM ANTES DA ABERTURA** *(decisão do operador, 31/10/2026, à pergunta P146 — entre isso, os
       blocos 1 a 4 antes e o 5 e o 6 logo depois, que o agente recomendou, e só os blocos 1 e 2 antes)*. Do bloco 6,
       respondido no mesmo dia: entram o 6a, o 6c e o 6d; o 6b saiu (P138). *A conta, dita sem rodeio:* são 23 passos e

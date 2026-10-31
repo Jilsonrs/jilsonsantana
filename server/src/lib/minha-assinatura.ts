@@ -629,7 +629,7 @@ export async function reembolsarAssinaturaDe(detalhes: DetalhesDaAssinatura, use
         // Da cobrança mais antiga para a mais nova (é a ordem de `buscarOQueFoiPago`).
         for (const pagamento of pago.pagamentos) await devolver(pagamento, { userId, assinaturaId: id });
       } catch (erro) {
-        console.error(`[stripe] reembolso: a assinatura ${id} (conta ${userId}) foi ENCERRADA e a devolução falhou — "Devolver de novo" no painel da cobrança (Precisa de você): ${erro instanceof Error ? erro.message : String(erro)}`);
+        console.error(`[stripe] reembolso: a assinatura ${id} (conta ${userId}) foi ENCERRADA e a devolução falhou — "Devolver de novo" no painel da cobrança (Precisa de atendente): ${erro instanceof Error ? erro.message : String(erro)}`);
         await abrirCaso({ tipo: TipoDeCaso.DEVOLUCAO_FALHOU, chave: `sub:${id}`, urgente: true, conta: userId, assinatura: id, centavos, detalhe: "o reembolso encerrou a assinatura e a devolução falhou" });
         return { resultado: "devolucao-falhou" };
       }

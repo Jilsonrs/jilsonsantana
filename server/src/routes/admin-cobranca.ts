@@ -51,7 +51,7 @@ router.get("/admin/cobranca/o-que-aconteceu", requireAdmin, async (req, res) => 
   res.json(await oQueAconteceu(pedido.pagina));
 });
 
-// GET /api/admin/cobranca/casos?situacao=abertos|fechados&pagina=… — "Precisa de você" (passo 2c).
+// GET /api/admin/cobranca/casos?situacao=abertos|fechados&pagina=… — "Precisa de atendente" (passo 2c).
 router.get("/admin/cobranca/casos", requireAdmin, async (req, res) => {
   res.set("Cache-Control", "private, no-store");
   const pedido = validate(casosQuerySchema, req.query, res);

@@ -4,7 +4,7 @@ import Stripe from "stripe";
 import type { AssinaturaNaStripe } from "../lib/stripe.js";
 import type { PedidoDeEmail, Envio } from "../lib/email.js";
 
-// OS CASOS — "PRECISA DE VOCÊ" (etapa 4.7b, passo 2a). Na NOSSA fronteira: a busca da assinatura e o balcão de e-mail;
+// OS CASOS — "PRECISA DE ATENDENTE" (etapa 4.7b, passo 2a). Na NOSSA fronteira: a busca da assinatura e o balcão de e-mail;
 // o resto roda de verdade, contra o banco. O que protege:
 //   - UM caso por situação: abrir de novo não duplica (atualiza o resumo e guarda quando abriu); fechado, a mesma
 //     situação REABRE, limpa;

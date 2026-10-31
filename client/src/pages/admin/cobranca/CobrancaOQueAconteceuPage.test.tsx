@@ -66,7 +66,7 @@ describe("Cobrança → O que aconteceu", () => {
     expect(screen.getByText("Aviso de fraude do banco · cartão roubado · devolvido, marcado como fraude · perdeu o acesso · R$ 99,90")).toBeTruthy();
     expect(screen.getAllByText("20/11/2026, 12:30 · Stripe")).toHaveLength(3);
     expect(screen.getByText("20/11/2026, 12:30 · A rodada de hora em hora")).toBeTruthy();
-    expect(screen.getByRole("link", { name: "Ana Souza" }).getAttribute("href")).toBe("/admin/cobranca/assinaturas/ficha?conta=u-1");
+    expect(screen.getByRole("link", { name: "Ana Souza" }).getAttribute("href")).toBe("/admin/financeiro/receita/assinaturas/ficha?conta=u-1");
   });
 
   it("as páginas: 'Próxima' pede a 2", async () => {

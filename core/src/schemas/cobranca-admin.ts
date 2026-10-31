@@ -188,7 +188,7 @@ export const REGISTRO_POR_PAGINA = 50;
 /** O que a tela pede ao registro: a página. */
 export const oQueAconteceuQuerySchema = z.object({ pagina: z.coerce.number().int().min(1).max(10_000).default(1) });
 
-/** O tipo de caso de "Precisa de você" (bloco 2) — os mesmos nomes do banco. */
+/** O tipo de caso de "Precisa de atendente" (bloco 2) — os mesmos nomes do banco. */
 export const TIPOS_DE_CASO = [
   "PIX_EM_CONFERENCIA",
   "PAGO_SEM_ASSINATURA",
@@ -219,7 +219,13 @@ export const NOME_DO_TIPO_DE_FRAUDE: Readonly<Record<string, string>> = {
   unauthorized_use_of_card: "uso do cartão sem autorização",
 };
 
-/** O nome de cada tipo de caso — o mesmo na tela "Precisa de você" e no e-mail ao operador (texto do admin). */
+/**
+ * A tela "Precisa de atendente" (Financeiro → Receita — decisão do operador, 31/10/2026): o menu, a rota do app e o
+ * botão do e-mail ao operador usam este endereço, para nunca ficarem diferentes numa troca de nome.
+ */
+export const TELA_PRECISA_DE_ATENDENTE = "/admin/financeiro/receita/precisa-de-atendente";
+
+/** O nome de cada tipo de caso — o mesmo na tela "Precisa de atendente" e no e-mail ao operador (texto do admin). */
 export const NOME_DO_TIPO_DE_CASO: Record<TipoDeCasoDaLista, string> = {
   PIX_EM_CONFERENCIA: "Pix pago que não virou assinatura",
   PAGO_SEM_ASSINATURA: "Dinheiro recebido sem assinatura",
@@ -235,7 +241,7 @@ export const NOME_DO_TIPO_DE_CASO: Record<TipoDeCasoDaLista, string> = {
   PEDIDO_DE_REEMBOLSO: "Pedido de reembolso",
 };
 
-/** Um caso de "Precisa de você" (passo 2c): o que aconteceu, com quem, e para onde ir (a ficha). */
+/** Um caso de "Precisa de atendente" (passo 2c): o que aconteceu, com quem, e para onde ir (a ficha). */
 export type CasoDaLista = {
   id: number;
   tipo: TipoDeCasoDaLista;

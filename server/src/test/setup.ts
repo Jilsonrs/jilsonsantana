@@ -27,7 +27,7 @@ beforeEach(async () => {
   await zerarLimitesDeTentativas();
 });
 
-// OS CASOS DE "PRECISA DE VOCÊ" (etapa 4.7b, bloco 2) também ficam no banco que os testes dividem: um caso urgente
+// OS CASOS DE "PRECISA DE ATENDENTE" (etapa 4.7b, bloco 2) também ficam no banco que os testes dividem: um caso urgente
 // deixado aberto por OUTRO arquivo faria o aviso ao operador sair no primeiro aviso da Stripe deste — um e-mail a mais
 // num teste que conta e-mails, e passaria ou reprovaria pela ordem. Cada arquivo começa sem os casos dos outros; os que
 // ele mesmo abre continuam valendo. Importado aqui dentro, pelo mesmo motivo do limite, acima.

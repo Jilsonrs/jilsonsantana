@@ -42,7 +42,7 @@ export async function depoisDoAviso(aviso: AvisoDaStripe, desfecho: DesfechoDoAv
   // novo e o alerta sai então.
   if (aviso.devolucaoFalhou && desfecho.resultado !== "repetido") {
     const falhou = aviso.devolucaoQueFalhou ?? null;
-    console.error(`[stripe] aviso ${aviso.id} (${aviso.tipo}): uma devolução${falhou ? ` de ${falhou.centavos} centavos` : ""} do pagamento ${aviso.pagamento ?? "?"} FALHOU — o dinheiro não voltou ao aluno; devolver de novo em Precisa de você`);
+    console.error(`[stripe] aviso ${aviso.id} (${aviso.tipo}): uma devolução${falhou ? ` de ${falhou.centavos} centavos` : ""} do pagamento ${aviso.pagamento ?? "?"} FALHOU — o dinheiro não voltou ao aluno; devolver de novo em Precisa de atendente`);
     // Um caso por DEVOLUÇÃO, com a cobrança e o valor dela (achado P1 da revisão do bloco 4, 31/10/2026): o "Devolver de novo"
     // devolve exatamente o que falhou. Sem a cobrança no aviso, o caso de antes (`pagamento:`), que manda para a ficha.
     await abrirCaso({ tipo: TipoDeCaso.DEVOLUCAO_FALHOU, chave: falhou?.cobranca ? `devolucao:${falhou.id}` : `pagamento:${aviso.pagamento ?? aviso.id}`, urgente: true, assinatura: aviso.assinatura, objeto: falhou?.cobranca ?? aviso.pagamento ?? null, centavos: falhou?.centavos ?? null, detalhe: "uma devolução falhou: o dinheiro não voltou ao aluno" });

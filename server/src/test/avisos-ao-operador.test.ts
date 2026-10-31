@@ -47,7 +47,7 @@ describe("o aviso dos casos urgentes", () => {
     expect(await avisarUrgentes()).toBe(1);
     const [email] = doTipo("casos-urgentes");
     expect(email?.para).toBe(emailDoAdmin);
-    expect(email?.mensagem.assunto).toBe("Precisa de você: 1 caso urgente na cobrança");
+    expect(email?.mensagem.assunto).toBe("Precisa de atendente: 1 caso urgente na cobrança");
     expect(email?.mensagem.paragrafos).toContain("Contestação no banco — aberta · fraudulent");
     expect(JSON.stringify(email?.mensagem)).not.toContain("não anulada");
     expect(await avisarUrgentes()).toBe(0);
@@ -109,10 +109,16 @@ describe("o aviso dos casos urgentes", () => {
     expect(doTipo("casos-urgentes").map((p) => p.mensagem.paragrafos.join(" "))).toEqual([expect.stringContaining("Pagou e está sem conta")]);
   });
 
-  it("a mensagem: o plural, e no máximo 30 casos listados (o resto, no painel)", () => {
+  it("a mensagem: o nome da tela, o botão que leva a ela, o plural, e no máximo 30 casos listados (o resto, no painel)", () => {
     const muitos = Array.from({ length: 32 }, () => ({ kind: "CONTESTACAO", detail: null }));
     const mensagem = mensagemDosUrgentes(muitos);
-    expect(mensagem.assunto).toBe("Precisa de você: 32 casos urgentes na cobrança");
+    expect(mensagem.assunto).toBe("Precisa de atendente: 32 casos urgentes na cobrança");
+    expect(mensagem.titulo).toBe("Precisa de atendente");
+    expect(mensagem.paragrafos[0]).toBe("Estes casos da cobrança precisam de atendente agora:");
+    expect(mensagemDosUrgentes(muitos.slice(0, 1)).paragrafos[0]).toBe("Este caso da cobrança precisa de atendente agora:");
+    // O botão abre a tela no admin (Financeiro → Receita — o endereço do menu e da rota do app).
+    expect(mensagem.botao?.texto).toBe("Abrir Precisa de atendente");
+    expect(new URL(mensagem.botao?.endereco ?? "http://x/sem-botao").pathname).toBe("/admin/financeiro/receita/precisa-de-atendente");
     expect(mensagem.paragrafos).toHaveLength(1 + 30 + 1);
     expect(mensagem.paragrafos[31]).toBe("E mais 2, no painel.");
   });
