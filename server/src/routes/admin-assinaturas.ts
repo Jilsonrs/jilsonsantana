@@ -19,11 +19,13 @@ import { listarAssinaturas } from "../lib/painel-da-cobranca.js";
 
 const router = Router();
 
-// GET /api/admin/assinaturas — A LISTA DO PAINEL DA COBRANÇA (etapa 4.7b, passo 1b). Só admin, só leitura, só do
-// espelho: abrir a lista não vai à Stripe. O filtro, a busca e a página vêm do endereço, conferidos.
-router.get("/admin/assinaturas", requireAdmin, async (req, res) => {
+// POST /api/admin/assinaturas/lista — A LISTA DO PAINEL DA COBRANÇA (etapa 4.7b, passo 1b). Só admin, só leitura, só
+// do espelho: abrir a lista não vai à Stripe. O filtro, a busca e a página vêm no CORPO, conferidos — nunca no endereço:
+// o Cloud Run guarda o endereço inteiro de cada pedido no registro, e a busca é o e-mail ou o nome de um aluno (achado
+// da revisão de segurança do bloco 1). Não muda nada: o POST é só para a busca não ir parar no registro.
+router.post("/admin/assinaturas/lista", requireAdmin, async (req, res) => {
   res.set("Cache-Control", "private, no-store");
-  const pedido = validate(listaDeAssinaturasQuerySchema, req.query, res);
+  const pedido = validate(listaDeAssinaturasQuerySchema, req.body, res);
   if (pedido === null) return;
   res.json(await listarAssinaturas(pedido));
 });

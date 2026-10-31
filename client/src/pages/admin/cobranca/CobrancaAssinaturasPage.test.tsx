@@ -31,6 +31,7 @@ const linha = (extra: Partial<AssinaturaDaLista> = {}): AssinaturaDaLista => ({
   status: "active",
   pagoAte: "2026-11-20T15:00:00.000Z",
   acabaEm: null,
+  daAcesso: true,
   codigo: null,
   deTeste: false,
   criadaEm: "2026-10-20T15:00:00.000Z",
@@ -87,7 +88,9 @@ describe("Cobrança → Assinaturas — as linhas", () => {
     adminListarAssinaturas.mockResolvedValue(
       resposta([
         linha({ id: 1, situacao: "vai-cancelar", plano: "anual", acabaEm: "2026-11-20T15:00:00.000Z", codigo: "TESTE100", deTeste: true }),
-        linha({ id: 2, aluno: null, situacao: "pre-paga", prePaga: true, acabaEm: "2026-12-01T15:00:00.000Z", pagoAte: null }),
+        linha({ id: 2, aluno: null, situacao: "pre-paga", prePaga: true, acabaEm: "2026-12-01T15:00:00.000Z", pagoAte: null, daAcesso: false }),
+        linha({ id: 4, aluno: { id: "u-4", nome: "Cris Cancelada", email: "cris@exemplo.com" }, situacao: "cancelada", status: "canceled", pagoAte: "2026-12-05T15:00:00.000Z", daAcesso: true }),
+        linha({ id: 5, aluno: null, situacao: "cancelada", status: "canceled", pagoAte: "2026-12-05T15:00:00.000Z", daAcesso: false }),
         linha({ id: 3, aluno: { id: "u-3", nome: null, email: "sem-nome@exemplo.com" }, situacao: "outra", status: "novo_status" }),
       ]),
     );
@@ -96,8 +99,11 @@ describe("Cobrança → Assinaturas — as linhas", () => {
     expect(screen.getByText("ana@exemplo.com")).toBeTruthy();
     expect(screen.getByText("Vai cancelar em 20/11/2026")).toBeTruthy();
     expect(screen.getByText("Anual · pago até 20/11/2026 · código TESTE100 · teste")).toBeTruthy();
-    expect(screen.getByText("Sem conta na escola")).toBeTruthy();
-    expect(screen.getByText("Pix · acesso até 01/12/2026")).toBeTruthy();
+    expect(screen.getAllByText("Sem conta na escola")).toHaveLength(2);
+    // "Acesso até" só quando o SERVIDOR diz que dá acesso (a regra do gate): a sem conta não dá a ninguém.
+    expect(screen.getByText("Pix · pago até 01/12/2026")).toBeTruthy();
+    expect(screen.getByText("Cancelada · acesso até 05/12/2026")).toBeTruthy();
+    expect(screen.getByText("Cancelada")).toBeTruthy();
     expect(screen.getByText("sem-nome@exemplo.com")).toBeTruthy();
     expect(screen.getByText("Na Stripe: novo_status")).toBeTruthy();
   });

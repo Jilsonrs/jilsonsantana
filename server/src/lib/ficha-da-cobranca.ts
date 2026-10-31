@@ -46,14 +46,18 @@ export function paraCobrancaDaFicha(cobranca: Stripe.Charge, contestacao?: Strip
   };
 }
 
-/** O CPF ou CNPJ do cliente com o meio escondido (os 3 primeiros e os 2 últimos dígitos). Função pura. */
+/**
+ * O CPF ou CNPJ do cliente no PADRÃO PÚBLICO de máscara (o do Diário Oficial e do Portal da Transparência): só o meio
+ * aparece — o começo e os dígitos verificadores, nunca. Mostrar outras posições deixaria um print da ficha, somado a
+ * uma publicação oficial da mesma pessoa, refazer o número inteiro (achado da revisão de segurança do bloco 1). Função pura.
+ */
 export function documentoEscondido(cliente: Stripe.Customer | null): string | null {
   const numero = cliente?.tax_ids?.data.find((t) => t.type === "br_cpf" || t.type === "br_cnpj");
   if (!numero) return null;
-  const digitos = numero.value.replace(/[^0-9A-Za-z]/g, "");
-  if (digitos.length < 6) return null;
-  const tipo = numero.type === "br_cpf" ? "CPF" : "CNPJ";
-  return `${tipo} ${digitos.slice(0, 3)}${"•".repeat(digitos.length - 5)}${digitos.slice(-2)}`;
+  const digitos = numero.value.replace(/[^0-9A-Za-z]/g, "").toUpperCase();
+  if (numero.type === "br_cpf" && digitos.length === 11) return `CPF ***.${digitos.slice(3, 6)}.${digitos.slice(6, 9)}-**`;
+  if (numero.type === "br_cnpj" && digitos.length === 14) return `CNPJ **.${digitos.slice(2, 5)}.${digitos.slice(5, 8)}/****-**`;
+  return null;
 }
 
 /** O cartão padrão do cliente (o que a Stripe cobra quando a assinatura não tem um próprio). Função pura. */

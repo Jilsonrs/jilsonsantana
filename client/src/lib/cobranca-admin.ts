@@ -22,20 +22,20 @@ export function dataCurta(iso: string): string {
   return new Date(iso).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
 }
 
-/** A situação de uma linha da lista, em português. */
-export function textoDaSituacao(assinatura: AssinaturaDaLista, agora: Date = new Date()): string {
-  const { acabaEm, pagoAte } = assinatura;
+/** A situação de uma linha da lista, em português. "Acesso até" só quando o servidor diz que ela dá acesso (a regra do gate). */
+export function textoDaSituacao(assinatura: AssinaturaDaLista): string {
+  const { acabaEm, pagoAte, daAcesso } = assinatura;
   switch (assinatura.situacao) {
     case "ativa":
       return "Ativa";
     case "vai-cancelar":
       return acabaEm ? `Vai cancelar em ${dataCurta(acabaEm)}` : "Vai cancelar";
     case "pre-paga":
-      return acabaEm ? `Pix · acesso até ${dataCurta(acabaEm)}` : "Pix";
+      return acabaEm ? `Pix · ${daAcesso ? "acesso até" : "pago até"} ${dataCurta(acabaEm)}` : "Pix";
     case "atrasada":
       return "Pagamento atrasado";
     case "cancelada":
-      return pagoAte && new Date(pagoAte) > agora ? `Cancelada · acesso até ${dataCurta(pagoAte)}` : "Cancelada";
+      return daAcesso && pagoAte ? `Cancelada · acesso até ${dataCurta(pagoAte)}` : "Cancelada";
     case "aguardando":
       return "Aguardando o primeiro pagamento";
     case "pausada":

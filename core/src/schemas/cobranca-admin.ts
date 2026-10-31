@@ -41,6 +41,12 @@ export type AssinaturaDaLista = {
   pagoAte: string | null;
   /** Marcada para acabar nesta data; vazio = renova. */
   acabaEm: string | null;
+  /**
+   * Esta assinatura dá acesso a alguém AGORA — a regra do gate (`assinaturaDaAcesso`), calculada no servidor e só com
+   * conta (achado da revisão de segurança do bloco 1: a tela não pode ter uma segunda cópia da regra). Só escolhe o
+   * texto ("acesso até"); nunca decide nada.
+   */
+  daAcesso: boolean;
   /** O código promocional em vigor, como o aluno o digitou. */
   codigo: string | null;
   /** Do modo de teste da Stripe (no ar, só as de antes do lançamento). */
