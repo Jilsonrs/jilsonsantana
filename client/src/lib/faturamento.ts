@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { SituacaoDoFaturamento, type CartaoDaAssinatura, type MinhaAssinatura } from "@jilson/core";
+import { NOME_DA_BANDEIRA, SituacaoDoFaturamento, type CartaoDaAssinatura, type MinhaAssinatura } from "@jilson/core";
 import { getMinhaAssinatura, getMinhasCobrancas } from "@/lib/api";
 import type { AppTexts } from "@/lib/language";
 
@@ -48,28 +48,15 @@ export function dataPorExtenso(iso: string): string {
   return new Intl.DateTimeFormat("pt-BR", { dateStyle: "short" }).format(new Date(iso));
 }
 
-// O nome da bandeira é nome próprio. A Stripe manda o código dela; o que
-// não estiver aqui (bandeira nova, ou "unknown") sai sem nome — só os 4 últimos e a validade.
-const BANDEIRAS: Partial<Record<string, string>> = {
-  visa: "Visa",
-  mastercard: "Mastercard",
-  amex: "American Express",
-  elo: "Elo",
-  hipercard: "Hipercard",
-  diners: "Diners Club",
-  discover: "Discover",
-  jcb: "JCB",
-  unionpay: "UnionPay",
-};
 
 /** O nome da bandeira, como o aluno lê — ou nada, se não for uma das conhecidas. */
 export function nomeDaBandeira(codigo: string): string | undefined {
-  return BANDEIRAS[codigo];
+  return NOME_DA_BANDEIRA[codigo];
 }
 
 /** O cartão por extenso: "Visa •••• 4242 · vence em 12/2028". Nunca o número. */
 export function descreverCartao(t: AppTexts["faturamento"], cartao: CartaoDaAssinatura): string {
-  const bandeira = BANDEIRAS[cartao.bandeira];
+  const bandeira = NOME_DA_BANDEIRA[cartao.bandeira];
   const frase = bandeira ? t.cartao.replace("{bandeira}", bandeira) : t.cartao.replace("{bandeira} ", "");
   return frase.replace("{final}", cartao.final).replace("{mes}", String(cartao.mes).padStart(2, "0")).replace("{ano}", String(cartao.ano));
 }

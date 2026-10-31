@@ -26,7 +26,7 @@ const recibo = (mudanca: Partial<ReciboDaEscola>): ReciboDaEscola => ({
   cartao: { bandeira: "visa", final: "4242" },
   situacao: "paga",
   devolvido: 0,
-  numero: "81DD-3FD1",
+  numero: "81DD-3FD1-33E6-F9FB",
   plano: "mensal",
   periodo: { de: "2026-10-31T15:00:00.000Z", ate: "2026-11-30T15:00:00.000Z" },
   detalhe: { preco: 9990, descontos: [{ codigo: "BLACK50", centavos: 4995 }], credito: 0 },
@@ -75,7 +75,7 @@ describe("o recibo da escola", () => {
   it("o recibo da chave: o número e a data, a escola, quem assina, o plano e o período, os valores, a forma, a situação e as dúvidas", async () => {
     abrir();
     expect((await screen.findByRole("heading", { level: 1 })).textContent).toBe("Recibo");
-    expect(await screen.findByText("Nº 81DD-3FD1 · 31/10/2026")).toBeTruthy();
+    expect(await screen.findByText("Nº 81DD-3FD1-33E6-F9FB · 31/10/2026")).toBeTruthy();
     expect(getRecibo).toHaveBeenCalledWith("81dd3fd133e6f9fb");
     expect(screen.getByText("67.633.954 JILSON RODRIGUES DE SANTANA")).toBeTruthy();
     expect(screen.getByText("CNPJ 67.633.954/0001-02")).toBeTruthy();

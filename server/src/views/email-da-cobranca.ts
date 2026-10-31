@@ -34,6 +34,8 @@ export function montarAvisoDaCobranca(
   enderecoDe: (caminho: string) => string | null = enderecoDoSite,
   /** O Pix está no ar: os dois da cobrança atrasada dizem que dá para pagar com ele (4.9b, E14). */
   comPix: boolean = false,
+  /** O recibo do pagamento, embaixo da confirmação (4.7b, passo 6a — decisão do operador, 31/10/2026). */
+  recibo: { linhas: string[]; endereco: string | null } | null = null,
 ): MensagemDeEmail {
   const botao = (texto: string, destino: DestinoDepoisDeEntrar): Pick<MensagemDeEmail, "botao"> => {
     const endereco = enderecoDe(entrarPara(destino));
@@ -55,7 +57,7 @@ export function montarAvisoDaCobranca(
     const anual = naStripe.plano === "anual";
     const texto = devido.trancaEm ? t.pix.replace("{data}", ate) : t.cartao.replace("{plano}", anual ? t.anual : t.mensal).replace("{quando}", anual ? t.todoAno : t.todoMes);
     const inicio = enderecoDe("/inicio");
-    return { assunto: t.assunto, titulo: t.titulo, paragrafos: [texto], ...(inicio ? { botao: { texto: t.botao, endereco: inicio } } : {}) };
+    return { assunto: t.assunto, titulo: t.titulo, paragrafos: [texto, ...(recibo?.linhas ?? [])], ...(inicio ? { botao: { texto: t.botao, endereco: inicio } } : {}), ...(recibo?.endereco ? { depoisDoBotao: [{ link: t.verRecibo, endereco: recibo.endereco }] } : {}) };
   }
   if (devido.tipo === "PREPAGO_TERMINANDO") {
     // SEM botão: pagar de novo é só DEPOIS de acabar (decisão do operador, etapa 4.9) — o botão de reativar vem no "terminou".

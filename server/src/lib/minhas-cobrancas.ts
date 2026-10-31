@@ -12,11 +12,18 @@ import { cobrancasDoCliente } from "./stripe-ficha.js";
 // o que passou: a recusa e o pendente ficam na ficha do admin.
 
 /**
- * A chave do recibo: o começo do resumo (SHA-256) do código da cobrança — a mesma para a mesma cobrança, e sem nenhum
- * código da Stripe no navegador. Ela só acha o recibo dentro das cobranças da conta da sessão. Função pura.
+ * A chave do recibo: o começo do resumo (SHA-256) do código do PAGAMENTO — a mesma para o mesmo pagamento, e sem nenhum
+ * código da Stripe no navegador. É dela que sai o número do recibo (único por recibo — decisão do operador, 31/10/2026).
+ * Ela só acha o recibo dentro das cobranças da conta da sessão. Função pura.
  */
-export function chaveDoRecibo(cobrancaId: string): string {
-  return createHash("sha256").update(cobrancaId).digest("hex").slice(0, 16);
+export function chaveDoRecibo(pagamentoId: string): string {
+  return createHash("sha256").update(pagamentoId).digest("hex").slice(0, 16);
+}
+
+/** A chave do recibo de uma cobrança: pelo pagamento dela (o mesmo que o e-mail conhece), ou pela própria cobrança, sem pagamento. Função pura. */
+export function chaveDaCobranca(cobranca: Stripe.Charge): string {
+  const pagamento = typeof cobranca.payment_intent === "string" ? cobranca.payment_intent : cobranca.payment_intent?.id;
+  return chaveDoRecibo(pagamento ?? cobranca.id);
 }
 
 /** Uma cobrança da Stripe como o aluno a vê — nada, se ela não passou. Função pura. */
@@ -31,7 +38,7 @@ export function paraMinhaCobranca(cobranca: Stripe.Charge): MinhaCobranca | null
     cartao: daFicha.cartao,
     situacao: daFicha.situacao,
     devolvido: daFicha.devolvido,
-    chave: chaveDoRecibo(cobranca.id),
+    chave: chaveDaCobranca(cobranca),
   };
 }
 

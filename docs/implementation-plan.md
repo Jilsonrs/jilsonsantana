@@ -6884,7 +6884,17 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                 situação e as dúvidas. O 404 diz "não encontrado", sem tentar de novo. Textos no dicionário
                 (`app.faturamento.recibo`), rascunho do agente. Testes: `ReciboPage.test.tsx` (reescrito, 7) e as rotas.
                 **Mutação: 9 de 9 reprovaram.** As fotos vão junto com o e-mail, no fim.
-          - [ ] **O recibo por e-mail** em todo pagamento (o e-mail de verdade, no Yahoo, para ele aprovar).
+          - [x] **O recibo por e-mail em todo pagamento** *(decisões do operador, 31/10/2026: ao assinar, o recibo vai DENTRO
+                da confirmação — ou das boas-vindas, de quem assinou sem conta —, embaixo do texto, num e-mail só; e o número
+                do recibo ÚNICO por recibo)*. O número passou a ser a chave inteira (`81DD-3FD1-33E6-F9FB`), e a chave sai do
+                PAGAMENTO (antes, da cobrança). Na renovação e na troca de plano (`invoice.paid` com `subscription_cycle` ou
+                `subscription_update`, só a última fatura paga da assinatura), o e-mail próprio "Recebemos seu pagamento"
+                (`lib/recibo-por-email.ts`, de `depois-do-aviso.ts`), com a chave `pagamento-recebido/<número>`. O pagamento
+                vem da assinatura já lida na sincronia (`ultimaFaturaPaga`, ou o Pix da pré-paga): o recibo é o mesmo da
+                tela, sem o nome de quem assina e sem CPF. Sem o recibo (a Stripe não respondeu), a confirmação sai sem ele.
+                Os nomes das bandeiras foram para o `core` (`NOME_DA_BANDEIRA`). Textos: rascunho do agente. Testes:
+                `recibo-por-email.test.ts` (novo, 6) e o recibo (número). **Mutação: 8 de 8 reprovaram.**
+          - [ ] **Fotos e os e-mails de verdade** no Yahoo, para ele aprovar.
           - [ ] **Publicar o bloco 6** (com a ordem dele).
       - [x] **No fim da 4.7b:** o roteiro do `billing.md` (*Quando um aluno não conseguir pagar*) reescrito sem o
             painel da Stripe; e a parte do Antigravity no `design-lab/GEMINI.md`, junto da 6g (item 38) — o *PARA

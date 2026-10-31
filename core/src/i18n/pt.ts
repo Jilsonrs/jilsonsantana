@@ -363,7 +363,9 @@ export const pt = {
         tituloSemNome: "Olá! Seja bem-vindo(a)",
         confirmada: "Sua assinatura foi confirmada: você já tem acesso a todos os cursos e trilhas.",
         comoEntrar: "Para entrar, use seu e-mail e sua senha. Se ainda não criou a senha, ou não lembra dela, use \"Receber código de acesso\" na tela de entrar.",
-        botao: "Entrar na escola"
+        botao: "Entrar na escola",
+        // O recibo do pagamento, embaixo (decisão do operador, 31/10/2026). Rascunho do agente.
+        verRecibo: "Ver o recibo para imprimir"
       },
       // O LINK QUE O OPERADOR MANDA DO PAINEL DA COBRANÇA (etapa 4.7b, passo 3b): trocar o cartão, reativar ou pagar a
       // atrasada com Pix — o botão leva a entrar e seguir para a tela certa. RASCUNHO do agente: o operador aprova vendo
@@ -442,7 +444,17 @@ export const pt = {
         anual: "Anual",
         todoMes: "todo mês",
         todoAno: "todo ano",
-        botao: "Ir para a escola"
+        botao: "Ir para a escola",
+        // O recibo do pagamento, embaixo (decisão do operador, 31/10/2026). Rascunho do agente.
+        verRecibo: "Ver o recibo para imprimir"
+      },
+      // O RECIBO POR E-MAIL em todo pagamento depois do primeiro — a renovação e a troca de plano (decisão do operador,
+      // 31/10/2026). O recibo vai no corpo; o botão abre o recibo na escola, para imprimir. Rascunho do agente.
+      pagamentoRecebido: {
+        assunto: "Recebemos seu pagamento",
+        titulo: "Pagamento recebido",
+        texto: "Recebemos o pagamento da sua assinatura. O recibo está aqui embaixo.",
+        botao: "Ver o recibo para imprimir"
       },
       // O E-MAIL DO PRÉ-PAGO (etapa 4.9, passo 4 — decisão do operador, 28/10/2026: 3 dias antes de acabar):
       // Texto APROVADO pelo operador em 29/10/2026 (P111; rascunho do agente). Sem botão: pagar de novo é só depois de acabar

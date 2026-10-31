@@ -50,6 +50,8 @@ vi.mock("../lib/stripe-cliente.js", async (importOriginal) => ({
 import servidor from "./servidor.js";
 import { prisma } from "../lib/prisma.js";
 import { chaveDoRecibo } from "../lib/minhas-cobrancas.js";
+/** A chave do recibo de uma cobrança: pelo pagamento dela. */
+const chaveDe = (c: CobrancaFalsa) => chaveDoRecibo(c.payment_intent ?? c.id);
 
 const S = `${Date.now()}`;
 const ANTES = process.env.STRIPE_SECRET_KEY;
@@ -127,12 +129,12 @@ afterAll(async () => {
 
 describe("o recibo da escola (passo 6a)", () => {
   it("sem login, 401; a chave fora do formato, 400 — e nada vai à Stripe; sem a Stripe configurada, 503", async () => {
-    expect((await ler(chaveDoRecibo(comDesconto.id), [])).status).toBe(401);
+    expect((await ler(chaveDe(comDesconto), [])).status).toBe(401);
     for (const chave of ["ch_123", "ABCDEF0123456789", "0123456789abcde"]) expect((await ler(chave)).status, chave).toBe(400);
     expect(falsa.charges.list).not.toHaveBeenCalled();
     delete process.env.STRIPE_SECRET_KEY;
     try {
-      const res = await ler(chaveDoRecibo(comDesconto.id));
+      const res = await ler(chaveDe(comDesconto));
       expect([res.status, res.body]).toEqual([503, { error: "NaoConfigurado" }]);
     } finally {
       process.env.STRIPE_SECRET_KEY = "sk_test_da_suite_local";
@@ -140,7 +142,7 @@ describe("o recibo da escola (passo 6a)", () => {
   });
 
   it("o cartão com desconto: o número, o plano e o período da linha do preço, o preço cheio e o desconto com o código — sem código da Stripe nem o CPF", async () => {
-    const chave = chaveDoRecibo(comDesconto.id);
+    const chave = chaveDe(comDesconto);
     const res = await ler(chave);
     expect(res.status).toBe(200);
     expect(res.headers["cache-control"]).toBe("private, no-store");
@@ -152,7 +154,7 @@ describe("o recibo da escola (passo 6a)", () => {
       cartao: { bandeira: "visa", final: "4242" },
       situacao: "paga",
       devolvido: 0,
-      numero: `${chave.slice(0, 4).toUpperCase()}-${chave.slice(4, 8).toUpperCase()}`,
+      numero: (chave.toUpperCase().match(/.{4}/g) ?? []).join("-"),
       plano: "mensal",
       periodo: { de: iso(INICIO), ate: iso(FIM) },
       detalhe: { preco: 9990, descontos: [{ codigo: "BLACK50", centavos: 4995 }], credito: 0 },
@@ -163,23 +165,23 @@ describe("o recibo da escola (passo 6a)", () => {
   });
 
   it("a troca de plano: o preço do plano novo e o crédito do plano anterior", async () => {
-    const res = await ler(chaveDoRecibo(daTroca.id));
+    const res = await ler(chaveDe(daTroca));
     expect([res.body.plano, res.body.centavos, res.body.detalhe]).toEqual(["anual", 94900, { preco: 99900, descontos: [], credito: 5000 }]);
   });
 
   it("o Pix pré-pago: o plano da marca do pagamento e o período da assinatura que ele virou, sem desconto", async () => {
-    const res = await ler(chaveDoRecibo(doPix.id));
+    const res = await ler(chaveDe(doPix));
     expect([res.body.forma, res.body.plano, res.body.periodo, res.body.detalhe]).toEqual(["pix", "anual", { de: iso(INICIO), ate: iso(INICIO + 365 * DIA) }, { preco: 99900, descontos: [], credito: 0 }]);
   });
 
   it("a conta que não fecha com o total pago: nenhum preço — só o total, o plano e o período", async () => {
-    const res = await ler(chaveDoRecibo(naoFecha.id));
+    const res = await ler(chaveDe(naoFecha));
     expect([res.body.centavos, res.body.plano, res.body.periodo, res.body.detalhe]).toEqual([5000, "mensal", { de: iso(INICIO), ate: iso(FIM) }, null]);
   });
 
   it("a chave de outra conta, a da cobrança que não passou e a que não existe: 404, as três iguais — e a fatura da outra conta nunca é lida", async () => {
     falsa.invoicePayments.list.mockClear();
-    for (const chave of [chaveDoRecibo(deOutraConta.id), chaveDoRecibo(recusada.id), "ffffffffffffffff"]) {
+    for (const chave of [chaveDe(deOutraConta), chaveDe(recusada), "ffffffffffffffff"]) {
       const res = await ler(chave);
       expect([res.status, res.body], chave).toEqual([404, { error: "NaoEncontrado" }]);
     }

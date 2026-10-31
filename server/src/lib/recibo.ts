@@ -1,6 +1,6 @@
 import type Stripe from "stripe";
 import type { ReciboDaEscola } from "@jilson/core";
-import { chaveDoRecibo, cobrancasDaConta, paraMinhaCobranca } from "./minhas-cobrancas.js";
+import { chaveDaCobranca, chaveDoRecibo, cobrancasDaConta, paraMinhaCobranca } from "./minhas-cobrancas.js";
 import { detalhesDaCobranca, type DetalhesDaCobranca } from "./stripe-recibo.js";
 
 // O RECIBO DA ESCOLA (Fase 4, etapa 4.7b, passo 6a — decisões do operador, 31/10/2026: no lugar do recibo da Stripe, que
@@ -8,10 +8,9 @@ import { detalhesDaCobranca, type DetalhesDaCobranca } from "./stripe-recibo.js"
 // escola, quem assina, o plano e o período, o preço, o desconto com o código, o total pago, a forma, a situação e as
 // dúvidas). A cobrança se acha pela chave, SÓ entre as da conta da sessão; os detalhes vêm da Stripe na hora.
 
-/** O número do recibo, para a pessoa e o suporte: os 8 primeiros da chave, "81DD-3FD1". Função pura. */
+/** O número do recibo, para a pessoa e o suporte: a chave inteira, "81DD-3FD1-33E6-F9FB" — único por recibo (decisão do operador, 31/10/2026). Função pura. */
 export function numeroDoRecibo(chave: string): string {
-  const numero = chave.slice(0, 8).toUpperCase();
-  return `${numero.slice(0, 4)}-${numero.slice(4)}`;
+  return (chave.toUpperCase().match(/.{1,4}/g) ?? []).join("-");
 }
 
 const soma = (valores: number[]) => valores.reduce((total, valor) => total + valor, 0);
@@ -38,6 +37,11 @@ export function paraRecibo(cobranca: Stripe.Charge, detalhes: DetalhesDaCobranca
 
 /** O recibo da cobrança desta chave, entre as da conta — nada, se a chave não é de uma cobrança dela que passou. */
 export async function reciboDaConta(contaId: string, chave: string): Promise<ReciboDaEscola | null> {
-  const cobranca = (await cobrancasDaConta(contaId)).find((c) => chaveDoRecibo(c.id) === chave && paraMinhaCobranca(c) !== null);
+  const cobranca = (await cobrancasDaConta(contaId)).find((c) => chaveDaCobranca(c) === chave && paraMinhaCobranca(c) !== null);
   return cobranca ? paraRecibo(cobranca, await detalhesDaCobranca(cobranca)) : null;
+}
+
+/** O recibo do PAGAMENTO, entre as cobranças da conta — para o e-mail (decisão do operador, 31/10/2026). Nada, se não passou. */
+export async function reciboDoPagamento(contaId: string, pagamentoId: string): Promise<ReciboDaEscola | null> {
+  return reciboDaConta(contaId, chaveDoRecibo(pagamentoId));
 }

@@ -366,3 +366,19 @@ export type ReciboDaEscola = Omit<MinhaCobranca, "chave"> & {
    */
   detalhe: { preco: number; descontos: { codigo: string | null; centavos: number }[]; credito: number } | null;
 };
+
+/**
+ * O nome da BANDEIRA do cartão, como o aluno lê — o app e o recibo por e-mail usam a mesma lista. É nome próprio; a Stripe manda
+ * o código dela, e o que não estiver aqui (bandeira nova, ou "unknown") sai sem nome.
+ */
+export const NOME_DA_BANDEIRA: Partial<Record<string, string>> = {
+  visa: "Visa",
+  mastercard: "Mastercard",
+  amex: "American Express",
+  elo: "Elo",
+  hipercard: "Hipercard",
+  diners: "Diners Club",
+  discover: "Discover",
+  jcb: "JCB",
+  unionpay: "UnionPay",
+};
