@@ -6371,11 +6371,29 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
               reprovaram.** **Provado na área de teste da Stripe:** o Pix gerado e não pago (o `fill_never`) aparece
               como esperando, e some ao ser cancelado. *Docs check (context7): não disparado — os tipos da
               `stripe@23.0.1` (`next_action.type = pix_display_qr_code`) e a prova na área de teste.*
-        - [ ] **1f — O que aconteceu** (*A*, itens 4 e 5): a tabela do **registro** (veio do 1a) — quem fez (o
+        - [x] **1f — O que aconteceu** (*A*, itens 4 e 5): a tabela do **registro** (veio do 1a) — quem fez (o
               operador, o aluno, a Stripe, a rodada, o JilsonAI), quando, em quem, o quê e o que a Stripe respondeu —,
               com RLS; cada aviso da Stripe processado e cada ação passam a escrever nela; a linha do tempo, da escola
               e do aluno; a contagem dos motivos de cancelamento. Mexe no caminho do aviso: teste do aviso repetido e
-              do fora de ordem.
+              do fora de ordem. **FEITO (31/10/2026).** Migration `20261031180000_registro_da_cobranca`: a tabela
+              `billing_log` (`BillingLog`, com RLS; o enum `QuemFez` — Stripe, operador, aluno, rodada, JilsonAI; a
+              ligação com a conta fica vazia se a conta for apagada) e a coluna `cancelReason` no espelho (o motivo que
+              o aluno escolheu, `metadata.motivo`, gravado pelo `sincronizar`; some quando ele volta atrás). **Cada
+              aviso processado vira UMA linha** (`registrarAviso`, em `lib/registro-da-cobranca.ts`, chamado por
+              `depois-do-aviso.ts` — os dois caminhos do aviso): o tipo, a conta, o cliente e um resumo sem dado
+              pessoal (o status de depois, "vai cancelar", o motivo, "perdeu o acesso", "a conta nasceu", a fase e o
+              valor da contestação); a reentrega não repete (o aviso repetido nem chega, e `stripeEventId` é único), e a
+              assinatura atualizada sem mudança (a renovação manda um "updated" junto do "paid") não ganha linha.
+              **Falhar ao gravar NÃO derruba o aviso** (é `console.warn`: o aviso já está gravado). As ações do
+              operador e do aluno entram no registro no bloco 3. `GET /api/admin/cobranca/o-que-aconteceu` (só admin):
+              a escola inteira, 50 por página, e os motivos contados; a ficha ganha o registro da pessoa (as 50 linhas
+              mais recentes, pela conta, pelas assinaturas e pelos clientes). **A tela** `/admin/cobranca/o-que-aconteceu`
+              (o item deixou de ser "em breve"): "Por que cancelaram" (com o MESMO texto que o aluno leu) e a linha do
+              tempo (quando, quem, o quê traduzido, o valor, o aluno levando à ficha); e a ficha ganhou "O que
+              aconteceu". Testes: `registro-da-cobranca.test.ts` (novo — pela rota de verdade do aviso, assinado),
+              `stripe.test.ts` (+1), a tela (novo) e a ficha (+1). **Mutação: 9 de 9 reprovaram.** **Banco de dev:**
+              `migrate deploy`, *No difference detected*, nenhuma tabela sem RLS. *Docs check (context7): não
+              disparado — nenhuma ida nova à Stripe (o motivo já estava nos metadados).*
         - [ ] **Fechamento do bloco 1:** a revisão de segurança, as fotos e publicar (com a ordem dele).
       - [ ] **BLOCO 2 — PRECISA DE VOCÊ** (os casos e o aviso ao operador)
         - [ ] **2a — Os casos, a base:** a tabela (com RLS), abrir sem repetir e fechar sozinho; os três primeiros

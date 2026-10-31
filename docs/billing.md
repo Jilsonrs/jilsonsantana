@@ -514,7 +514,11 @@ engenharia)*: o **plano do preço de agora** (muda quando o aluno troca de plano
 (vazia = renova; a pré-paga do Pix sempre tem) e o **código promocional em vigor**. Gravados pela mesma rotina, com o
 que a Stripe diz agora; **o gate não lê nenhum deles**. Uma linha de antes de 31/10 fica vazia até a próxima
 sincronia. `[FATO — medido na área de teste da Stripe, 31/10/2026]` a busca com `discounts.promotion_code` expandido
-devolve o código como o aluno o digitou; desfazer o cancelamento limpa a data.
+devolve o código como o aluno o digitou; desfazer o cancelamento limpa a data. **E o motivo do cancelamento** (passo
+1f): o que o aluno escolheu (`metadata.motivo`), para o painel contar; some quando ele volta atrás.
+**O REGISTRO DA COBRANÇA** *(etapa 4.7b, passo 1f — convenção de engenharia)*: cada aviso da Stripe processado vira
+uma linha da tabela `billing_log` (quem fez, o quê, em quem, um resumo sem dado pessoal) — é a linha do tempo do painel
+e o que a automação vai consultar. Falhar ao gravar nunca derruba o aviso.
 
 **As chaves:** `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` e `STRIPE_PUBLISHABLE_KEY` (esta não é
 segredo, mas mora junto: o servidor a entrega ao site, e trocar de ambiente é trocar as variáveis

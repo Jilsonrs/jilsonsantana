@@ -635,6 +635,12 @@ describe("o espelho para o painel da cobrança", () => {
     expect(paraAssinaturaNaStripe(com({})).acabaEm).toBeNull();
   });
 
+  it("o motivo do cancelamento: só um dos motivos da lista; outro texto nos metadados, nenhum", () => {
+    expect(paraAssinaturaNaStripe(assinatura({ metadata: { motivo: "caro" } })).motivoDoCancelamento).toBe("caro");
+    expect(paraAssinaturaNaStripe(assinatura({ metadata: { motivo: "qualquer coisa" } })).motivoDoCancelamento).toBeNull();
+    expect(paraAssinaturaNaStripe(assinatura()).motivoDoCancelamento).toBeNull();
+  });
+
   it("o código promocional: o do primeiro desconto que veio de um código; id solto ou desconto sem código, nenhum", () => {
     const codigo = (code: string) => ({ id: `di_${code}`, promotion_code: { id: `promo_${code}`, code } });
     expect(codigoDaAssinatura(com({ discounts: [codigo("TESTE100")] }))).toBe("TESTE100");

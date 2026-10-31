@@ -6,6 +6,7 @@ import { paraCartao } from "./stripe-assinatura.js";
 import { clienteDoCodigo, lerClienteNaStripe, type ClienteNaStripe } from "./stripe-ficha.js";
 import { paraAssinaturaDaLista } from "./painel-da-cobranca.js";
 import { PRAZO_DA_FICHA_EM_MS } from "./quem-nao-terminou.js";
+import { registroDaPessoa } from "./registro-da-cobranca.js";
 
 // A FICHA DO ALUNO NO PAINEL DA COBRANÇA (Fase 4, etapa 4.7b, passo 1c — o mapa aprovado pelo operador, 31/10/2026).
 // A conta, as assinaturas e os e-mails vêm do NOSSO banco; as cobranças (cartão e Pix), o cartão em uso e o CPF ou
@@ -123,7 +124,12 @@ export async function montarFicha(quem: FichaQuery): Promise<FichaDaCobranca | n
     if (boasVindas?.boasVindasEnviadaEm) emails.push({ tipo: "BOAS_VINDAS", em: boasVindas.boasVindasEnviadaEm.toISOString(), saiu: true });
   }
 
+  const doVisitante = "stripeCustomerId" in filtro ? [filtro.stripeCustomerId] : [];
+  const clientes = await clientesDaConta(conta?.id ?? null, [...doVisitante, ...linhas.map((l) => l.stripeCustomerId)]);
+  const registro = await registroDaPessoa({ conta: conta?.id ?? null, assinaturas: linhas.map((l) => l.stripeSubscriptionId), clientes });
+
   const ficha: FichaDaCobranca = {
+    registro,
     conta: conta ? { id: conta.id, nome: conta.name, email: conta.email, criadaEm: conta.createdAt.toISOString() } : null,
     visitante,
     pixEsperando: [],
@@ -137,8 +143,6 @@ export async function montarFicha(quem: FichaQuery): Promise<FichaDaCobranca | n
     stripeIndisponivel: false,
   };
 
-  const doVisitante = "stripeCustomerId" in filtro ? [filtro.stripeCustomerId] : [];
-  const clientes = await clientesDaConta(conta?.id ?? null, [...doVisitante, ...linhas.map((l) => l.stripeCustomerId)]);
   let naStripe: ClienteNaStripe[];
   try {
     naStripe = [];

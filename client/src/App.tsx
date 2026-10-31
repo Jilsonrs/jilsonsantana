@@ -39,6 +39,7 @@ import { AdminFaqPage } from "@/pages/admin/AdminFaqPage";
 import { CobrancaAssinaturasPage } from "@/pages/admin/cobranca/CobrancaAssinaturasPage";
 import { CobrancaFichaPage } from "@/pages/admin/cobranca/CobrancaFichaPage";
 import { CobrancaTentativasPage } from "@/pages/admin/cobranca/CobrancaTentativasPage";
+import { CobrancaOQueAconteceuPage } from "@/pages/admin/cobranca/CobrancaOQueAconteceuPage";
 import { AvisosPage } from "@/pages/admin/comunicacao/AvisosPage";
 import { AvisoEditorPage } from "@/pages/admin/comunicacao/AvisoEditorPage";
 import { MensagensAutomaticasPage } from "@/pages/admin/comunicacao/MensagensAutomaticasPage";
@@ -148,6 +149,7 @@ export default function App() {
           {/* A ficha do aluno (passo 1d): debaixo de "Assinaturas", que fica aceso no submenu. */}
           <Route path="/admin/cobranca/assinaturas/ficha" element={<CobrancaFichaPage />} />
           <Route path="/admin/cobranca/tentativas" element={<CobrancaTentativasPage />} />
+          <Route path="/admin/cobranca/o-que-aconteceu" element={<CobrancaOQueAconteceuPage />} />
         </Route>
         {/* Endereço que não existe no app — um favorito antigo de /conta, um
             endereço digitado errado — leva ao Início (decisão do operador,

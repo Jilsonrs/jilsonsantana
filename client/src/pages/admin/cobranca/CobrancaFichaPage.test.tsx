@@ -31,6 +31,7 @@ const ficha = (extra: Partial<FichaDaCobranca> = {}): FichaDaCobranca => ({
   documento: "CPF 529••••••25",
   emails: [],
   stripeIndisponivel: false,
+  registro: [],
   ...extra,
 });
 const abrir = (consulta = "?conta=u-1") => renderWithProviders(<CobrancaFichaPage />, { route: `${ROTA}${consulta}`, path: ROTA });
@@ -161,5 +162,14 @@ describe("a ficha do visitante e o Pix aberto (passo 1e)", () => {
     abrir("?visitante=ficha-2");
     expect(await screen.findByRole("heading", { name: "sem@exemplo.com" })).toBeTruthy();
     expect(screen.getByText("A limpeza dos 7 dias achou um pagamento e não apagou: alguém pagou e ficou sem conta.")).toBeTruthy();
+  });
+});
+
+describe("a ficha — o que aconteceu (passo 1f)", () => {
+  it("mostra o registro da pessoa, sem repetir o nome dela em cada linha", async () => {
+    adminFichaDaCobranca.mockResolvedValue(ficha({ registro: [{ id: 1, em: "2026-11-20T15:30:00.000Z", quem: "STRIPE", acao: "invoice.payment_failed", detalhe: "past_due", centavos: null, aluno: { id: "u-1", nome: "Ana Souza", email: "ana@exemplo.com" } }] }));
+    abrir();
+    expect(await screen.findByText("Cobrança recusada · pagamento atrasado")).toBeTruthy();
+    expect(screen.queryByRole("link", { name: "Ana Souza" })).toBeNull();
   });
 });

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { MotivoDoCancelamento } from "../constants/billing.js";
 
 // O PAINEL DA COBRANÇA DO ADMIN (Fase 4, etapa 4.7b — decisões do operador, 31/10/2026). Só ADMIN lê e usa estes
 // formatos; o aluno nunca os vê. A ASSINATURA vai ao navegador pelo id do ESPELHO (o nosso banco), nunca pelo da
@@ -134,6 +135,8 @@ export type FichaDaCobranca = {
   emails: EmailDaFicha[];
   /** A Stripe não respondeu: a ficha traz só o que está no banco. */
   stripeIndisponivel: boolean;
+  /** O que aconteceu na cobrança desta pessoa (passo 1f) — as 50 linhas mais recentes. */
+  registro: LinhaDoRegistro[];
 };
 
 /** Uma tentativa que não terminou (passo 1e): um visitante sem conta, ou uma conta com a assinatura esperando (ou que expirou sem) o primeiro pagamento. */
@@ -146,3 +149,30 @@ export type ListaDeTentativas = { tentativas: TentativaDaLista[]; temMais: boole
 
 /** Quantas tentativas a lista traz; as contas, só dos últimos 30 dias. */
 export const TENTATIVAS_NA_LISTA = 200;
+
+/** Quem fez o que está no registro (passo 1f). */
+export type QuemFezNoRegistro = "STRIPE" | "OPERADOR" | "ALUNO" | "RODADA" | "JILSONAI";
+
+/** Uma linha do registro da cobrança: quem, quando, o quê (o tipo do aviso da Stripe, ou a ação), o resumo e em quem. */
+export type LinhaDoRegistro = {
+  id: number;
+  em: string;
+  quem: QuemFezNoRegistro;
+  acao: string;
+  /** Resumo sem dado pessoal: partes separadas por " · " (o status, `vai-cancelar`, `motivo:…`, `perdeu-acesso`…). */
+  detalhe: string | null;
+  centavos: number | null;
+  aluno: { id: string; nome: string | null; email: string } | null;
+};
+
+/** Um motivo de cancelamento e quantas assinaturas o escolheram (passo 1f). */
+export type MotivoContado = { motivo: MotivoDoCancelamento; total: number };
+
+/** A resposta de `GET /api/admin/cobranca/o-que-aconteceu`: uma página do registro da escola e os motivos contados. */
+export type OQueAconteceu = { linhas: LinhaDoRegistro[]; temMais: boolean; motivos: MotivoContado[] };
+
+/** Quantas linhas do registro por página. */
+export const REGISTRO_POR_PAGINA = 50;
+
+/** O que a tela pede ao registro: a página. */
+export const oQueAconteceuQuerySchema = z.object({ pagina: z.coerce.number().int().min(1).max(10_000).default(1) });

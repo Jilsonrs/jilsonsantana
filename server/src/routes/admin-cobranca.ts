@@ -1,8 +1,9 @@
 import { Router } from "express";
-import { acharQuerySchema, fichaQuerySchema } from "@jilson/core";
+import { acharQuerySchema, fichaQuerySchema, oQueAconteceuQuerySchema } from "@jilson/core";
 import { requireAdmin } from "../middleware/auth.js";
 import { validate } from "../lib/http.js";
 import { acharPeloCodigo, listarTentativas, montarFicha } from "../lib/ficha-da-cobranca.js";
+import { oQueAconteceu } from "../lib/registro-da-cobranca.js";
 
 // O PAINEL DA COBRANÇA — A FICHA DO ALUNO E O "ACHAR PELO CÓDIGO" (Fase 4, etapa 4.7b, passo 1c). Só admin, só
 // leitura: nenhuma destas rotas muda nada na Stripe nem no banco. As operações moram em `lib/ficha-da-cobranca.ts`.
@@ -26,6 +27,14 @@ router.get("/admin/cobranca/ficha", requireAdmin, async (req, res) => {
 router.get("/admin/cobranca/tentativas", requireAdmin, async (_req, res) => {
   res.set("Cache-Control", "private, no-store");
   res.json(await listarTentativas());
+});
+
+// GET /api/admin/cobranca/o-que-aconteceu?pagina=… — o registro da escola inteira e os motivos de cancelamento (passo 1f).
+router.get("/admin/cobranca/o-que-aconteceu", requireAdmin, async (req, res) => {
+  res.set("Cache-Control", "private, no-store");
+  const pedido = validate(oQueAconteceuQuerySchema, req.query, res);
+  if (pedido === null) return;
+  res.json(await oQueAconteceu(pedido.pagina));
 });
 
 // GET /api/admin/cobranca/achar?codigo=<sub_|cus_|pi_|ch_|in_|du_…> — de quem é o código que veio num alerta.

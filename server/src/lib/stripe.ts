@@ -1,5 +1,5 @@
 import Stripe from "stripe";
-import { DuracaoDoDesconto, PLANOS, formatarDocumentoFiscal, type DescontoDoCodigo, type DocumentoFiscal, type Plano, type TipoDeDocumento } from "@jilson/core";
+import { DuracaoDoDesconto, MOTIVOS_DE_CANCELAMENTO, PLANOS, formatarDocumentoFiscal, type DescontoDoCodigo, type DocumentoFiscal, type MotivoDoCancelamento, type Plano, type TipoDeDocumento } from "@jilson/core";
 import { erroSemMensagem, stripe, VERSAO_DA_API } from "./stripe-cliente.js";
 import { periodoDevolvido } from "./stripe-devolucao.js";
 
@@ -134,6 +134,8 @@ export type AssinaturaNaStripe = {
   acabaEm?: Date | null;
   /** O código promocional EM VIGOR na assinatura, como o aluno o digitou (vazio = nenhum) — `codigoDaAssinatura`. */
   codigoPromocional?: string | null;
+  /** O motivo que o aluno escolheu ao cancelar (`metadata.motivo`, só os da lista do `core`) — o painel conta (passo 1f). */
+  motivoDoCancelamento?: MotivoDoCancelamento | null;
 };
 
 /**
@@ -886,7 +888,8 @@ export function paraAssinaturaNaStripe(assinatura: Stripe.Subscription, devolvid
   // Para o painel da cobrança (etapa 4.7b): o plano do preço de AGORA, quando ela acaba e o código em vigor.
   const precoDeAgora = itens[0]?.price;
   const planoAtual = precoDeAgora ? planoDoPreco(precoDeAgora) : null;
-  return { id: assinatura.id, status, pagoAte, clienteId, userId, pedido, doVisitante, livemode: assinatura.livemode, proximaTentativa, encerradaSemPagamento, trocadaPorPix, pixPaymentIntentId, resumoDaTentativa, plano, planoAtual, acabaEm: quandoAcaba(assinatura), codigoPromocional: codigoDaAssinatura(assinatura) };
+  const motivoDoCancelamento = MOTIVOS_DE_CANCELAMENTO.find((m) => m === assinatura.metadata.motivo) ?? null;
+  return { id: assinatura.id, status, pagoAte, clienteId, userId, pedido, doVisitante, livemode: assinatura.livemode, proximaTentativa, encerradaSemPagamento, trocadaPorPix, pixPaymentIntentId, resumoDaTentativa, plano, planoAtual, acabaEm: quandoAcaba(assinatura), codigoPromocional: codigoDaAssinatura(assinatura), motivoDoCancelamento };
 }
 
 /**

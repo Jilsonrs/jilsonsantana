@@ -4,7 +4,7 @@ import { novoPrisma } from "./ligacoes.js";
 // O cliente gerado pelo Prisma 7 (`prisma generate` → `src/generated/prisma`, fora do git). Todo
 // código do servidor importa o `Prisma` e os tipos do banco DAQUI, e não do caminho gerado. As
 // ligações (o `pg`, o TLS, o tamanho do pool) moram em `ligacoes.ts`.
-export { Prisma, NotificationKind, SubscriptionEmailKind, OrigemDoLead } from "../generated/prisma/client.js";
+export { Prisma, NotificationKind, SubscriptionEmailKind, OrigemDoLead, QuemFez } from "../generated/prisma/client.js";
 export type { PrismaClient } from "../generated/prisma/client.js";
 
 // Single shared Prisma client for the app's route handlers (Phase 2 on). Prisma

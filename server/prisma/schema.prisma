@@ -177,6 +177,9 @@ model User {
   // 21/10/2026 (Fase 4, etapa 4.7, passo 4): a ficha de espera de onde esta conta nasceu, se ela
   // nasceu de um pagamento sem conta. Mesma DEBT — REAPLICAR após cada `npm run auth:generate`.
   guestCheckout  GuestCheckout?
+  // 31/10/2026 (etapa 4.7b, passo 1f): o registro da cobrança desta pessoa. Mesma DEBT — REAPLICAR após cada
+  // `npm run auth:generate`.
+  billingLogs    BillingLog[]
 
   birthday            String?
   marketingConsent    Boolean?  @default(false)
@@ -776,6 +779,9 @@ model Subscription {
   plan                 PlanoDaAssinatura?
   cancelAt             DateTime?
   promotionCode        String?
+  // O motivo que o aluno escolheu ao cancelar (`metadata.motivo` na Stripe — os valores de `MOTIVOS_DE_CANCELAMENTO`
+  // do `core`), para o painel contar (passo 1f). Some quando ele volta atrás. Vazio = sem motivo, ou não cancelou.
+  cancelReason         String?
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
   // Os e-mails da cobrança já tomados para esta assinatura (etapa 4.7, passo 7).
@@ -783,6 +789,46 @@ model Subscription {
 
   @@index([ownerUserId])
   @@map("subscription")
+}
+
+// O REGISTRO DA COBRANÇA (etapa 4.7b, passo 1f — o mapa aprovado pelo operador, 31/10/2026): TUDO o que aconteceu na
+// cobrança, de quem fez — a Stripe (cada aviso processado), o operador, o aluno, a rodada de hora em hora e, no futuro,
+// o JilsonAI —, quando, em quem e o quê. É o que deixa o operador acompanhar e a automação agir sabendo o que já foi
+// feito. Só ACRESCENTA: nada aqui decide acesso, e nada se apaga com o churn. Sem dado pessoal além da ligação com a
+// conta: ids, valores e status. Apagada a conta (a exclusão a pedido, Fase 7), a linha fica sem dono (SetNull).
+model BillingLog {
+  id                   Int      @id @default(autoincrement())
+  createdAt            DateTime @default(now())
+  who                  QuemFez
+  // A conta de quem fez, quando foi uma pessoa (o operador ou o aluno). Vazio para a Stripe e a rodada.
+  actorUserId          String?
+  // O que aconteceu: o tipo do aviso da Stripe (`invoice.paid`…) ou o nome da ação (blocos 3 a 5). Texto, e não enum:
+  // o vocabulário da Stripe é dela, e não pode quebrar o registro no dia em que ela inventar um tipo.
+  action               String
+  // O aviso da Stripe que gerou a linha: um aviso, uma linha (a reentrega não repete).
+  stripeEventId        String?  @unique
+  userId               String?
+  user                 User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  stripeSubscriptionId String?
+  stripeCustomerId     String?
+  // O valor envolvido, em centavos (a contestação, a devolução), quando se sabe.
+  amount               Int?
+  // O resumo em poucas palavras, sem dado pessoal: o status de depois, o motivo, a fase.
+  detail               String?
+
+  @@index([userId, createdAt])
+  @@index([stripeSubscriptionId, createdAt])
+  @@index([createdAt])
+  @@map("billing_log")
+}
+
+// QUEM FEZ o que está no registro da cobrança (etapa 4.7b, passo 1f).
+enum QuemFez {
+  STRIPE
+  OPERADOR
+  ALUNO
+  RODADA
+  JILSONAI
 }
 
 // O PLANO DE UMA ASSINATURA no espelho (etapa 4.7b, passo 1a). Os mesmos nomes do `Plano` do `core`.

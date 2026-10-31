@@ -6,6 +6,7 @@ import { dinheiro, quemDaFicha, useFichaDoAdmin } from "@/lib/cobranca-ficha";
 import { LinhaDaAssinatura } from "@/components/admin/cobranca/LinhaDaAssinatura";
 import { CobrancasDaFicha } from "@/components/admin/cobranca/CobrancasDaFicha";
 import { ResumoDaFicha } from "@/components/admin/cobranca/ResumoDaFicha";
+import { LinhasDoRegistro } from "@/components/admin/cobranca/LinhasDoRegistro";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PageContainer, PageHeader, PageSection } from "@/components/layout/PageLayout";
@@ -111,6 +112,9 @@ export function CobrancaFichaPage() {
         </PageSection>
         <PageSection title="Cartão, CPF e e-mails">
           <ResumoDaFicha ficha={ficha.data} />
+        </PageSection>
+        <PageSection title="O que aconteceu">
+          <LinhasDoRegistro linhas={ficha.data.registro} />
         </PageSection>
       </div>
     </PageContainer>

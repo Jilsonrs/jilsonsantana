@@ -45,6 +45,7 @@ import type {
   FichaDaCobranca,
   OndeLeva,
   ListaDeTentativas,
+  OQueAconteceu,
   MinhaAssinatura,
   TrocaDeCartaoPreparada,
   CartaoTrocado,
@@ -1218,6 +1219,12 @@ export async function adminListarAssinaturas(consulta: { filtro: FiltroDasAssina
 /** A ficha do aluno no painel da Cobrança (etapa 4.7b, passo 1d): por conta, ou pela assinatura sem conta. */
 export async function adminFichaDaCobranca(quem: { conta: string } | { assinatura: number } | { visitante: string }): Promise<FichaDaCobranca> {
   const { data } = await client.get<FichaDaCobranca>("/admin/cobranca/ficha", { params: quem });
+  return data;
+}
+
+/** O que aconteceu na cobrança da escola, e os motivos de cancelamento contados (etapa 4.7b, passo 1f). */
+export async function adminOQueAconteceu(pagina: number): Promise<OQueAconteceu> {
+  const { data } = await client.get<OQueAconteceu>("/admin/cobranca/o-que-aconteceu", { params: { pagina } });
   return data;
 }
 

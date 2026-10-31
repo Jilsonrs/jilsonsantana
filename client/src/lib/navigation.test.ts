@@ -290,7 +290,7 @@ describe("itensSecundarios — o nível 2 só aparece quando vale a pena", () =>
       ["Precisa de você", "planejado"],
       ["Assinaturas", "ativo"],
       ["Tentativas", "ativo"],
-      ["O que aconteceu", "planejado"],
+      ["O que aconteceu", "ativo"],
     ]);
     expect(secoesVisiveis(Role.MEMBER).some((s) => s.to.startsWith("/admin/cobranca"))).toBe(false);
     const rotulos = doAdmin.map((s) => s.label);
