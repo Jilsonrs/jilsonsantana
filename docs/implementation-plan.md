@@ -6783,7 +6783,15 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
               depois. *Docs check (context7): Stripe → `/websites/stripe` → o aviso de fraude (`actionable`), a devolução com
               `reason: "fraudulent"` (as listas de bloqueio) (31/10/2026) — 3 consultas no bloco (a 3ª, sem achar o cartão de
               teste do aviso; ele saiu da forma do id, `issfr_`, e foi confirmado na prova).*
-        - [ ] **Fechamento do bloco 5.**
+        - [x] **Fechamento do bloco 5.** **PUBLICADO em 31/10/2026, com a ordem do operador ("Sim, pode publicar"): merge
+              `8d39117`**, revisão `jilson-prod-00059-9gg` (100% do tráfego), CI e Deploy verdes — junto foram as correções da
+              conferência do revisor do bloco 4 (`34d1380`). **No ar:** `/api/health` 200; a rota nova da prévia das provas
+              recusa quem não entrou (401). Sem migration neste bloco. **A revisão de segurança (31/10/2026, só o que mudou —
+              `378295c`, `34d1380`, `0804fba`): nenhum P0 nem P1**; dois P2 e dois P3, fechados com teste e mutação no `dev`
+              (5 de 5 reprovaram; sobem com a próxima publicação): (P2) o aviso de fraude e o "dinheiro saiu" da contestação passam pela vaga das
+              assinaturas (`comVaga`), como o Pix — um lote deles prenderia as ligações da cópia; (P2) o caso já resolvido que
+              não se grava vira alerta; (P3) o envio das provas não grava em dobro com o clique duplo; (P3) a devolução do aviso
+              de fraude sem assinatura que falha diz no alerta qual aviso foi.
       - [ ] **BLOCO 6 — O ALUNO SOZINHO E O QUE MAIS ENTROU** (decisões do operador, 31/10/2026)
         - [ ] **6a — Minhas cobranças e os recibos**, na tela do aluno (P144).
         - **6b — SAIU** *(P138, 31/10/2026: sem botão de pedir reembolso na tela do aluno; o pedido vem pelo suporte e,

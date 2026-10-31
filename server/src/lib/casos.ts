@@ -108,7 +108,9 @@ export async function casoJaResolvido(caso: NovoCaso, por: { quem: QuemFez; nota
         "detail" = COALESCE(EXCLUDED."detail", "billing_case"."detail"),
         "updatedAt" = now(), "closedAt" = now(), "closedBy" = EXCLUDED."closedBy", "closedByUserId" = NULL, "note" = EXCLUDED."note"`;
   } catch (erro) {
-    console.warn(`[api] o caso ${caso.tipo} ${caso.chave} não foi gravado: ${erro instanceof Error ? erro.message : String(erro)}`);
+    // O caso já resolvido é o que o operador vê no painel do que a escola fez sozinha (o aviso de fraude): sem ele, alerta
+    // (revisão de segurança do bloco 5 da 4.7b) — o dinheiro já voltou e a assinatura já acabou.
+    console.error(`[stripe] o caso já resolvido ${caso.tipo} ${caso.chave} (assinatura ${caso.assinatura ?? "-"}) não foi gravado — o painel não o mostra: ${erro instanceof Error ? erro.message : String(erro)}`);
   }
 }
 

@@ -1,7 +1,7 @@
 import { alertarConfiguracaoAusente } from "../lib/alerta-de-configuracao.js";
 import express, { Router } from "express";
 import { avisoExisteNaStripe, avisosConfigurados, idDoAvisoNoCorpo, pareceAvisoDaStripe, verificarAviso } from "../lib/stripe.js";
-import { comVaga } from "../lib/assinaturas-em-andamento.js";
+import { comVaga, avisoQuePedeVaga } from "../lib/assinaturas-em-andamento.js";
 import { processarAviso } from "../lib/assinaturas.js";
 import { depoisDoAviso } from "../lib/depois-do-aviso.js";
 
@@ -76,14 +76,15 @@ router.post("/stripe/webhook", express.raw({ type: "application/json" }), async 
     res.status(400).json({ error: "AssinaturaInvalida" });
     return;
   }
-  // O PIX PAGO segura uma ligação do banco por até 180 s (`TEMPO_DO_PIX` — 8 idas à Stripe): só com uma vaga das
-  // assinaturas (`assinaturas-em-andamento.ts`), que deixa sempre 2 ligações livres para o gate e as aulas (revisão do
-  // grupo 3 da 4.9b). Cheio, 503 sem abrir transação: a Stripe entrega de novo, e a rodada do E1 pega o que sobrar.
+  // O PIX PAGO segura uma ligação do banco por até 180 s (`TEMPO_DO_PIX` — 8 idas à Stripe), e o aviso de fraude e o dinheiro
+  // que saiu da contestação também demoram (`avisoQuePedeVaga`): só com uma vaga das assinaturas (`assinaturas-em-andamento.ts`),
+  // que deixa sempre 2 ligações livres para o gate e as aulas (revisão do grupo 3 da 4.9b; e a do bloco 5 da 4.7b). Cheio, 503
+  // sem abrir transação: a Stripe entrega de novo, e a rodada do E1 pega o que sobrar.
   let desfecho;
-  if (aviso.pagamentoPrePago) {
+  if (avisoQuePedeVaga(aviso)) {
     const vaga = await comVaga(() => processarAviso(aviso));
     if (vaga.cheio) {
-      console.warn(`[stripe] aviso ${aviso.id}: o Pix ${aviso.pagamentoPrePago.id} fica para a próxima entrega — muitas assinaturas em andamento nesta cópia`);
+      console.warn(`[stripe] aviso ${aviso.id} (${aviso.tipo}) fica para a próxima entrega — muitas assinaturas em andamento nesta cópia`);
       res.status(503).json({ error: "MuitosAoMesmoTempo" });
       return;
     }

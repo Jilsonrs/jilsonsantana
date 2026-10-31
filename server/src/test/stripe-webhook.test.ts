@@ -27,6 +27,7 @@ import { prisma } from "../lib/prisma.js";
 import { temAcessoAtivo } from "../lib/acesso.js";
 import { sincronizarAssinatura } from "../lib/assinaturas.js";
 import { ASSINATURA_DE_TESTE } from "../lib/assinatura-de-teste.js";
+import { assinaturasAoMesmoTempo, avisoQuePedeVaga, comVaga } from "../lib/assinaturas-em-andamento.js";
 
 // O AVISO DA STRIPE (webhook — Fase 4, etapa 4.1; CLAUDE.md → Membership Gating). O que estes
 // testes protegem — é a fronteira de dinheiro, e webhook não tem tela:
@@ -853,5 +854,36 @@ describe("o aviso da Stripe — perder o acesso derruba a sessão", () => {
     buscarAssinatura.mockRejectedValue(new Error("a Stripe não respondeu"));
     await expect(sincronizarAssinatura(sub)).rejects.toThrow(sub);
     expect(await espelho(sub)).toBeNull();
+  });
+});
+
+// A revisão de segurança do bloco 5 da 4.7b: o aviso de fraude e o dinheiro que saiu da contestação fazem várias idas à Stripe
+// com a trava e uma ligação do banco — passam pela vaga, como o Pix pago; um lote deles não prende as ligações da cópia.
+describe("o aviso que demora passa pela vaga", () => {
+  it("quem pede vaga: o Pix pago, o aviso de fraude e o dinheiro que saiu; a contestação aberta e o resto, não", () => {
+    const fraude = { id: "issfr_1", cobranca: "ch_1", pagamento: "pi_1", tipo: "misc" };
+    const contestacao = (fase: "inquerito" | "aberta" | "dinheiro-saiu") => ({ id: "du_1", motivo: "fraudulent", centavos: 1, prazo: null, pagamento: "pi_1", fase });
+    expect(avisoQuePedeVaga({ avisoDeFraude: fraude })).toBe(true);
+    expect(avisoQuePedeVaga({ contestacao: contestacao("dinheiro-saiu") })).toBe(true);
+    expect(avisoQuePedeVaga({ contestacao: contestacao("aberta") })).toBe(false);
+    expect(avisoQuePedeVaga({ contestacao: contestacao("inquerito") })).toBe(false);
+    expect(avisoQuePedeVaga({})).toBe(false);
+  });
+
+  it("o aviso de fraude com as vagas cheias: 503, e nada é processado (a Stripe entrega de novo)", async () => {
+    let soltar!: () => void;
+    const segura = new Promise<void>((ok) => (soltar = ok));
+    const ocupadas = Array.from({ length: assinaturasAoMesmoTempo() }, () => comVaga(() => segura));
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      const aviso: Aviso = { id: novoId("evt"), type: "radar.early_fraud_warning.created", data: { object: { id: novoId("issfr"), object: "radar.early_fraud_warning", charge: novoId("ch"), payment_intent: novoId("pi"), fraud_type: "misc", actionable: true } } };
+      const res = await enviar(aviso);
+      expect([res.status, res.body]).toEqual([503, { error: "MuitosAoMesmoTempo" }]);
+      expect(await marcado(aviso.id)).toBeNull();
+    } finally {
+      soltar();
+      await Promise.all(ocupadas);
+      vi.restoreAllMocks();
+    }
   });
 });

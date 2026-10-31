@@ -1,4 +1,5 @@
 import { limiteDeLigacoes } from "./ligacoes.js";
+import type { AvisoDaStripe } from "./stripe.js";
 
 // QUANTAS ASSINATURAS PODEM ESTAR EM ANDAMENTO AO MESMO TEMPO NESTA CÓPIA — com e sem login (achado
 // P1 da revisão de segurança do passo 6 da etapa 4.7, 27/10/2026; antes, só as sem login, com um teto
@@ -20,6 +21,16 @@ let avisouEm = 0;
 /** O teto desta cópia: as ligações dela menos as que ficam livres — pelo menos 1. */
 export function assinaturasAoMesmoTempo(): number {
   return Math.max(1, limiteDeLigacoes() - LIGACOES_SEMPRE_LIVRES);
+}
+
+/**
+ * O AVISO DA STRIPE que segura uma ligação do banco por muito tempo — várias idas à Stripe com a trava — e por isso passa pela
+ * vaga: o Pix pago (até 8 idas), o aviso de fraude (encerrar, devolver — 4.7b, passo 5c) e o dinheiro que saiu da contestação
+ * (marcar, cancelar). Sem a vaga, um lote deles (um teste de cartões roubados) prenderia as ligações da cópia, e as aulas de
+ * quem paga ficariam esperando (revisão de segurança do bloco 5 da 4.7b, 31/10/2026). Função pura.
+ */
+export function avisoQuePedeVaga(aviso: Pick<AvisoDaStripe, "pagamentoPrePago" | "avisoDeFraude" | "contestacao">): boolean {
+  return Boolean(aviso.pagamentoPrePago) || Boolean(aviso.avisoDeFraude) || aviso.contestacao?.fase === "dinheiro-saiu";
 }
 
 /** Roda a assinatura ocupando uma vaga; sem vaga, `{ cheio: true }` na hora, sem rodar nada. */

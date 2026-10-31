@@ -192,7 +192,14 @@ export async function processarAviso(aviso: AvisoDaStripe): Promise<DesfechoDoAv
   if (!assinaturaId) {
     // O AVISO DE FRAUDE de uma cobrança que não é de assinatura da escola (P141 — 4.7b, passo 5c): devolvida do mesmo jeito,
     // ANTES de marcar — se a Stripe falhar, nada fica marcado e o aviso volta (a devolução repetida não devolve duas vezes).
-    const devolucao = fraude ? await devolverPorAvisoDeFraude(fraude.cobranca, fraude.id, { userId: null, assinaturaId: null }) : null;
+    let devolucao: DevolucaoDaFraude | null = null;
+    try {
+      devolucao = fraude ? await devolverPorAvisoDeFraude(fraude.cobranca, fraude.id, { userId: null, assinaturaId: null }) : null;
+    } catch (erro) {
+      // O alerta diz QUAL aviso falhou, como no ramo com assinatura (revisão de segurança do bloco 5 da 4.7b).
+      const motivo = erro instanceof Error ? erro.message : String(erro);
+      throw new Error(`[stripe] aviso ${aviso.id} (fraude ${fraude?.id ?? "-"}, cobrança ${fraude?.cobranca ?? "-"}) falhou: ${motivo}`, { cause: erro });
+    }
     try {
       await prisma.stripeEvent.create({ data: marcar });
     } catch (erro) {

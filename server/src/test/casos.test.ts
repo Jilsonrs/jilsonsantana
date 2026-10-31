@@ -25,7 +25,7 @@ vi.mock("../lib/email.js", async (importOriginal) => ({
 
 import servidor from "./servidor.js";
 import { prisma, TipoDeCaso, QuemFez } from "../lib/prisma.js";
-import { abrirCaso, fecharCaso, transacaoDaCobranca } from "../lib/casos.js";
+import { abrirCaso, casoJaResolvido, fecharCaso, transacaoDaCobranca } from "../lib/casos.js";
 import { depoisDoAviso } from "../lib/depois-do-aviso.js";
 
 const S = `${Date.now()}`;
@@ -147,5 +147,17 @@ describe("o 'pagou e está sem conta'", () => {
     expect((await prisma.guestCheckout.findUniqueOrThrow({ where: { id: ficha.id } })).userId).not.toBeNull();
     expect(await doTipo(`sub:${sub}`)).toMatchObject({ open: false, closedBy: "STRIPE" });
     expect(await doTipo(`ficha:${ficha.id}`)).toMatchObject({ open: false, closedBy: "STRIPE" });
+  });
+});
+
+// A revisão de segurança do bloco 5 da 4.7b: o caso que chega já resolvido (o aviso de fraude) é o que o painel mostra do que a
+// escola fez sozinha — se não se grava, é alerta.
+describe("o caso que já chega resolvido", () => {
+  it("a gravação que falha vira alerta [stripe], com o caso e a assinatura — e nunca lança", async () => {
+    const erro = vi.spyOn(console, "error").mockImplementation(() => {});
+    // Seguro: o tipo inexistente é o jeito de fazer o banco recusar a gravação.
+    await expect(casoJaResolvido({ tipo: "NAO_EXISTE" as TipoDeCaso, chave: "fraude:issfr_nao_grava", urgente: false, assinatura: "sub_nao_grava" }, { quem: QuemFez.STRIPE, nota: "resolvido sozinho" })).resolves.toBeUndefined();
+    expect(erro.mock.calls.map(([linha]) => String(linha)).some((linha) => linha.startsWith("[stripe] o caso já resolvido NAO_EXISTE fraude:issfr_nao_grava (assinatura sub_nao_grava) não foi gravado"))).toBe(true);
+    erro.mockRestore();
   });
 });

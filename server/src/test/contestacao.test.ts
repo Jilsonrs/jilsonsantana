@@ -275,6 +275,14 @@ describe("o aviso de fraude (P141 — a escola resolve sozinha)", () => {
     expect(await casoDoAviso(evento)).toMatchObject({ open: false, amount: null, note: `resolvido sozinho: nada devolvido: a cobrança já foi contestada (segue pela contestação); a assinatura ${assinatura} foi encerrada e a pessoa perdeu o acesso` });
   });
 
+  it("sem assinatura, a devolução que falha: o erro diz QUAL aviso e qual cobrança, e nada fica marcado", async () => {
+    devolverPorAvisoDeFraude.mockRejectedValueOnce(new Error("[stripe] a devolução do aviso de fraude falhou: api_error, status 500"));
+    const evento = doAvisoDeFraude();
+    const aviso = paraAviso(evento);
+    await expect(processarAviso(aviso)).rejects.toThrow(`[stripe] aviso ${evento.id} (fraude ${aviso.avisoDeFraude?.id}, cobrança ${aviso.avisoDeFraude?.cobranca}) falhou`);
+    expect(await marcado(evento.id)).toBeNull();
+  });
+
   it("a Stripe falhou (ao encerrar, ou ao devolver): nada fica marcado nem gravado, o acesso fica — o aviso volta", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     const assinatura = await assinanteComSessao();
