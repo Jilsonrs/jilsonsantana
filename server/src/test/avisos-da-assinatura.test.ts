@@ -78,7 +78,8 @@ const atrasada = (id: string, userId: string, falha: Date, proxima: Date | null 
 
 const doTipo = (tipo: PedidoDeEmail["tipo"]) => enviarEmail.mock.calls.map(([p]) => p).filter((p) => p.tipo === tipo);
 /** Os e-mails da COBRANÇA enviados — a confirmação de quem assinou (E18) tem os testes dela, em "a confirmação". */
-const todos = () => enviarEmail.mock.calls.map(([p]) => p).filter((p) => p.tipo !== "assinatura-confirmada");
+// Os e-mails AO ALUNO: o aviso ao operador (4.7b, passo 2d) é outra função, com teste próprio.
+const todos = () => enviarEmail.mock.calls.map(([p]) => p).filter((p) => p.tipo !== "assinatura-confirmada" && p.tipo !== "casos-urgentes" && p.tipo !== "resumo-dos-casos");
 const marcas = async (sub: string) => prisma.subscriptionEmail.findMany({ where: { subscription: { stripeSubscriptionId: sub } }, select: { kind: true, reference: true }, orderBy: { id: "asc" } });
 /** As marcas com a confirmação do envio (`sentAt`): vazio = pendente. */
 const marcasCompletas = async (sub: string) => prisma.subscriptionEmail.findMany({ where: { subscription: { stripeSubscriptionId: sub } }, select: { kind: true, reference: true, sentAt: true }, orderBy: { id: "asc" } });

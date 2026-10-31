@@ -1,4 +1,4 @@
-import { beforeEach } from "vitest";
+import { beforeAll, beforeEach } from "vitest";
 import { loadTestEnv, assertTestDatabase } from "./test-env.js";
 
 // setupFiles do Vitest — roda em CADA worker, ANTES de os módulos do app serem
@@ -25,4 +25,13 @@ assertTestDatabase();
 beforeEach(async () => {
   const { zerarLimitesDeTentativas } = await import("../lib/limite-de-tentativas.js");
   await zerarLimitesDeTentativas();
+});
+
+// OS CASOS DE "PRECISA DE VOCÊ" (etapa 4.7b, bloco 2) também ficam no banco que os testes dividem: um caso urgente
+// deixado aberto por OUTRO arquivo faria o aviso ao operador sair no primeiro aviso da Stripe deste — um e-mail a mais
+// num teste que conta e-mails, e passaria ou reprovaria pela ordem. Cada arquivo começa sem os casos dos outros; os que
+// ele mesmo abre continuam valendo. Importado aqui dentro, pelo mesmo motivo do limite, acima.
+beforeAll(async () => {
+  const { prisma } = await import("../lib/prisma.js");
+  await prisma.billingCase.deleteMany();
 });

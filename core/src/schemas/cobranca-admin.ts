@@ -200,6 +200,22 @@ export const TIPOS_DE_CASO = [
 ] as const;
 export type TipoDeCasoDaLista = (typeof TIPOS_DE_CASO)[number];
 
+/** O nome de cada tipo de caso — o mesmo na tela "Precisa de você" e no e-mail ao operador (texto do admin). */
+export const NOME_DO_TIPO_DE_CASO: Record<TipoDeCasoDaLista, string> = {
+  PIX_EM_CONFERENCIA: "Pix pago que não virou assinatura",
+  PAGO_SEM_ASSINATURA: "Dinheiro recebido sem assinatura",
+  PAGOU_SEM_CONTA: "Pagou e está sem conta",
+  DIVERGENCIA: "O site e a Stripe discordam",
+  ATIVA_SEM_PERIODO_PAGO: "Ativa na Stripe sem período pago",
+  COBRANCA_EM_ABERTO: "Cobrança em aberto que não foi anulada",
+  DEVOLUCAO_FALHOU: "Devolução que falhou",
+  TROCA_DE_PLANO: "Troca de plano com defeito",
+  CONTESTACAO: "Contestação no banco",
+  AVISO_DE_FRAUDE: "Aviso de fraude do banco",
+  EMAIL_NAO_SAIU: "E-mail que não saiu",
+  PEDIDO_DE_REEMBOLSO: "Pedido de reembolso",
+};
+
 /** Um caso de "Precisa de você" (passo 2c): o que aconteceu, com quem, e para onde ir (a ficha). */
 export type CasoDaLista = {
   id: number;

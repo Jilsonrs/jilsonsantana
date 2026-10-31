@@ -45,6 +45,12 @@ try {
     const fichas = await rodadaDeQuemNaoTerminou(new Date(), Math.max(PRAZO_DA_RODADA_EM_MS - MARGEM_DA_ULTIMA_FICHA_EM_MS - (Date.now() - inicio), 0));
     console.info(`[avisos] quem não terminou de assinar: ${fichas.lembretes} lembrete(s), ${fichas.semLembrete} sem lembrete, ${fichas.apagadas} ficha(s) apagada(s), ${fichas.comPagamento} com pagamento (não apagada), ${fichas.outroModo} de outro modo, ${fichas.ocupadas} ocupada(s), ${fichas.falhas} com falha, ${fichas.adiadas} adiada(s) para a próxima`);
     if (fichas.falhas > 0) codigo = 1;
+    // O aviso ao operador (4.7b, passo 2d — P137): o urgente que nasceu numa tela do aluno sai aqui, em até uma hora; e,
+    // de manhã, o resumo dos casos abertos. Nunca lançam.
+    const { avisarUrgentes, ehHoraDoResumo, mandarResumoDosCasos } = await import("../lib/avisos-ao-operador.js");
+    const urgentes = await avisarUrgentes();
+    const resumo = ehHoraDoResumo(new Date()) ? await mandarResumoDosCasos() : false;
+    console.info(`[avisos] ao operador: ${urgentes} caso(s) urgente(s) avisado(s)${resumo ? "; o resumo da manhã saiu" : ""}`);
   } finally {
     await prisma.$disconnect();
   }

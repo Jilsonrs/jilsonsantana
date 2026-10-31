@@ -5,6 +5,7 @@ import { mandarBoasVindasDaAssinatura } from "./boas-vindas.js";
 import { avisarSobreAAssinatura } from "./avisos-da-assinatura.js";
 import { registrarAviso } from "./registro-da-cobranca.js";
 import { abrirCaso, TipoDeCaso } from "./casos.js";
+import { avisarUrgentes } from "./avisos-ao-operador.js";
 
 // O QUE VEM DEPOIS DE PROCESSAR UM AVISO DA STRIPE — os alertas, o registro, as boas-vindas e os e-mails da cobrança.
 // Mora aqui, e não na rota (estava em `routes/stripe-webhook.ts` até a 4.9b), porque são DOIS os caminhos de um aviso:
@@ -87,4 +88,7 @@ export async function depoisDoAviso(aviso: AvisoDaStripe, desfecho: Desfecho): P
   // assinatura que terminou — com o que a Stripe acabou de dizer, DEPOIS do commit, uma vez cada. O
   // aviso repetido não traz a assinatura de agora: o que ficar para trás, a rodada do agendador manda.
   if (desfecho.resultado === "atualizada") await avisarSobreAAssinatura(desfecho.assinatura);
+  // O caso URGENTE que este aviso (ou outro antes) abriu: o e-mail ao operador sai agora, fora de qualquer transação
+  // (4.7b, passo 2d — P137). Nunca lança.
+  await avisarUrgentes();
 }

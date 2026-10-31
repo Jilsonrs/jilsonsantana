@@ -6464,7 +6464,24 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
               Carregando, erro com "Tentar de novo" e vazio ("Nada precisa de você agora"). Os botões que resolvem
               chegam nos blocos 3 a 5. Testes: `admin-cobranca-casos.test.ts` (novo), a tela (novo) e o registro (+1).
               **Mutação: 7 de 7 reprovaram.** *Docs check (context7): não disparado.*
-        - [ ] **2d — O aviso ao operador** (P137: o urgente na hora; o resto num resumo de manhã).
+        - [x] **2d — O aviso ao operador** (P137: o urgente na hora; o resto num resumo de manhã). **FEITO
+              (31/10/2026).** `lib/avisos-ao-operador.ts`, para o e-mail de cada conta de admin (do nosso banco), pelo
+              `enviarEmail` (tipos novos `casos-urgentes` e `resumo-dos-casos`). **O urgente:** os casos urgentes abertos e
+              ainda não avisados são tomados num comando só (`notifiedAt` — duas cópias do servidor nunca mandam o mesmo
+              aviso) e saem num e-mail ("Precisa de você: N casos urgentes na cobrança", cada caso com o tipo e o resumo,
+              e o botão "Abrir Precisa de você"); se nenhum e-mail saiu, a marca volta e a vez seguinte tenta de novo; o
+              caso que reabre volta a ser avisado. **Quando sai — o e-mail nunca sai de dentro de uma transação
+              (`CLAUDE.md`):** ao fim do processamento de cada aviso da Stripe (`depois-do-aviso.ts` — a contestação, o Pix
+              em conferência, o "pagou e está sem conta" e a devolução que falhou vêm quase todos daí) e na rodada de hora
+              em hora. **O urgente aberto numa tela do aluno** (o checkout, o cancelamento, a sincronia da tela) **sai em
+              até uma hora** — o alerta do Sentry continua na hora. **O resumo da manhã:** na rodada das 12h UTC (9h em
+              Brasília, a mesma da conferência das ativas), todos os casos abertos (os urgentes primeiro, até 30 listados
+              e "e mais N"), um por dia (a chave do dia), e só se houver algum. **Os textos dos dois e-mails são rascunho
+              do agente** — vão ao operador no fechamento do bloco 2, no e-mail de verdade. Testes:
+              `avisos-ao-operador.test.ts` (novo); e os casos de "Precisa de você" passaram a começar vazios a cada
+              arquivo de teste (`setup.ts`, como o limite de tentativas: um caso urgente de outro arquivo faria o aviso
+              sair num teste que conta e-mails). **Mutação: 6 de 6 reprovaram.** *Docs check (context7): não
+              disparado.*
         - [ ] **Fechamento do bloco 2.**
       - [ ] **BLOCO 3 — AS AÇÕES SEM DINHEIRO**
         - [ ] **3a — O motor e as primeiras:** a confirmação com o efeito, o registro com quem fez; Conferir na
